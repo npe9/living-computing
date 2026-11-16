@@ -17073,3 +17073,24 @@ page is not consistent with itself.  A third witness is wanted before
 the model is changed: jb_af1c's addition sections
 (decks/fp_arith_f204d.strap, F204D7) test PSH for far-apart exponents,
 and the listing may show the sum it expects.
+
+### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs)
+
+    decks/problem_3_vfl_store_to_indicators.strap   (five statements)
+    L(BU, 3), V / ST(BU, 3), $AL / L(BU, 3), $AL / ST(BU, 64), R
+    R = 0  expected 0000000000000004
+
+C22-6578 printed pp.32-33, Problem 3.9, both methods: "L(BU, 3), $RLZ
+'$RLZ, $RZ, $RGZ fetched / ST(BU, 3), $AL '$AL, $AE, $AH stored".  The
+pocket card X22-6533-1's footnote c makes only indicator bits 0-19
+read-only (as transcribed in docs/microarchitecture_plan.md A.10).
+bsv/StretchStorage.bsv `writeWord` drops every ordinary store to word
+11 ("SIMPLIFICATION ... only the 'poke via STORE' path is unavailable",
+bsv/README.md "Scope") because `indicators` takes one write per
+instruction.  The drop is silent, against the project's "fail loud"
+convention, and it defeats the example's whole purpose.  The five 3.9
+decks check the verdict where the page's own program leaves a copy of
+it (accumulator bits 125-127, which DL and D+ leave unchanged, Reference
+Manual pp.95-96), and tests/run_tests.sh carries the expected indicator
+words as comments, to be restored when a store to word 11 merges into
+the instruction's single indicator write.

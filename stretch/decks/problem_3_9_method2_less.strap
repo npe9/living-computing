@@ -1,0 +1,125 @@
+! C22-6578 PROBLEM 3.9, "DOUBLE-PRECISION COMPARE", printed pp.32-34
+! (PDF 33-35), read in the ink.
+!
+!   "The accumulator contains a double precision floating-point
+!   quantity.  Another double precision floating-point quantity is
+!   stored in two full words, with the more significant part in M1, less
+!   significant part in M1+1.  Compare the two double precision
+!   quantities and set the appropriate indicators $AE, $AL and $AH."
+!
+!   Method 2.  Compare high order parts.  If they compare "equal,"
+!   perform the double precision subtraction to ascertain the result.
+!       DKOMP2  ST(U), A1               'save accumulator
+!               SLO(U), A1+1.
+!               K(U), M                 'single precision compare
+!               BAE, DPSUB              'usually unsuccessful
+!       END     BEW, $                  'end of program
+!       DPSUB   DL(U), A1+1.            'full-scale double precision subtract
+!               D-(U), M1+1.
+!               D+(N), A1
+!               D-(N), M1
+!               L(BU,3), $RLZ           '$RLZ, $RZ, $RGZ fetched
+!               ST(BU,3), $AL           $AL, $AE, $AH stored
+!               DL(U), A1+1.            'restore accumulator
+!               D+(U), A1
+!               B, END
+!       A1      DR(U), (2)
+!
+! UNCERTAIN READINGS AND THE PAGE'S OWN SLIPS, kept as printed:
+!   "K(U), M": the problem names the location M1, and nothing is called
+!     M.  The deck supplies "M SYN, M1" with its data, the one statement
+!     needed for it to assemble; the compare is of the high-order parts,
+!     as the page's own description says.
+!   "D-(U), M1+1." here against "D-(N), M1+1." in Method 1; the period
+!     after "M1+1" is printed like a small "L".  Read as M1+1. (U).
+!   The comment on ST(BU,3) has no opening quote mark in the ink.
+! The printed statements follow the deck's own two, which load the
+! accumulator, and come before the deck's data, as printed: spacing,
+! trailing periods and all.  The page defines neither M1 nor the
+! accumulator's value; the deck's are below.
+!
+! ASSEMBLED WITH ASM=strap2 (see problem_3_1.strap; "SLO (U)" with its
+! space assembles as SLO(U)).
+!
+! WHAT THE PROGRAM DOES, with the page of the rule:
+!   ST(U), A1 and SLO(U), A1+1. save the accumulator as two words:
+!     STORE, Reference Manual printed p.90; STORE LOW ORDER, p.97, "The
+!     exponent is obtained by subtracting 48 from the exponent in bits
+!     0-11 of the accumulator", the fraction is accumulator bits 60-107.
+!   The double-precision subtraction is Figure 28's (p.97), the order of
+!     its notes: low parts first, then add A1, then subtract M1.  ADD
+!     DOUBLE, p.95; LOAD DOUBLE, p.96.  The last D-(N) sets RLZ, RZ or
+!     RGZ "as in ADD" on the 96-bit difference.
+!   L(BU, 3), $RLZ fetches indicator bits 56-58 (RLZ, RZ, RGZ) into the
+!     accumulator's right end, offset 0: accumulator bits 125-127.
+!   ST(BU, 3), $AL stores them into bits 60-62 (AL, AE, AH).
+!   DL(U), A1+1. / D+(U), A1 restore the accumulator.  LOAD DOUBLE:
+!     "Accumulator bits 60-107 are set to zero.  Accumulator bits 108-127
+!     remain unchanged" (p.96); ADD DOUBLE: "Accumulator bits 108-127
+!     remain unchanged" (p.95).  So the THREE BITS THE PROGRAM FETCHED
+!     STAY IN ACCUMULATOR BITS 125-127, word 9's last three bits, and
+!     the deck checks them there: 4 = 100 = less, 2 = 010 = equal,
+!     1 = 001 = greater.
+!   METHOD 2'S COMPARE, K(U), M (p.90-91): "When the exponent
+!     difference between the operands exceeds 48, the algebraically
+!     larger of the two numbers, judged by exponent and fraction sign,
+!     is considered high ... When the exponent difference is 48 or
+!     less, a zero result is considered an equality."  Only on AE does
+!     the program reach DPSUB; either way it ends at END (comment (b),
+!     "convenient to end at the same place").  On the K path the
+!     accumulator is untouched and word 9 keeps what the deck put there.
+!
+! >>> THE COMPARISON INDICATORS THEMSELVES ARE NOT CHECKED: THE MODEL
+! DROPS THE STORE INTO THEM. <<<  ST(BU, 3), $AL changes nothing on
+! the model (bsv/StretchStorage.bsv, writeWord: stores to word 11 are a
+! documented SIMPLIFICATION, dropped silently).  Reproducer:
+! decks/problem_3_vfl_store_to_indicators.strap; docs/NEXT.md
+! "C22-6578 CHAPTER 3" item 6.  tests/run_tests.sh carries the
+! indicator word's expected value as a comment, to be restored when the
+! store is implemented.
+!
+! THIS DECK'S DATA AND RESULT, HAND-DERIVED (tests/problem_3_expected.py
+! p39_run follows the same rules and agrees):
+!   METHOD 1'S EXAMPLE THROUGH METHOD 2 (the accumulator and M as in
+!   problem_3_9_method1_less.strap).  K(U), M: (1, .111...1) against
+!   (2, .1), difference 1, high 48 bits of the difference zero: AE, so
+!   BAE takes DPSUB.  D-(U) leaves (-46, .01) unnormalized; + A1 puts its
+!   bit in place 49 as before; - M1: negative, RLZ.  AL, by way of DPSUB
+!   and B, END.
+!     A1         002FFFFFFFFFFFF0
+!     A1+1.      05F8000000000000
+!     word 8     002FFFFFFFFFFFF8
+!     word 9     0000000000000004   (100 = RLZ, less)
+!     indicator word, held back: 0000000000000028 (AL; RGZ) -- today
+!       the model shows K's AE (bit 61) instead, since the store that
+!       should replace it is dropped.
+!     PC 70, END.
+!
+! INJECTION: made on problem_3_9_method2_page_fault.strap, which shares this program.
+
+! --- the deck's own: load the accumulator with (AHI, ALO) ---
+START   DL(U), AHI
+        D+(U), ALO
+! --- the printed program ---
+DKOMP2  ST(U), A1
+        SLO(U), A1+1.
+        K(U), M
+        BAE, DPSUB
+END     BEW, $
+DPSUB   DL(U), A1+1.
+        D-(U), M1+1.
+        D+(N), A1
+        D-(N), M1
+        L(BU,3), $RLZ
+        ST(BU,3), $AL
+        DL(U), A1+1.
+        D+(U), A1
+        B, END
+A1      DR(U), (2)
+! --- the deck's data ---
+M       SYN, M1
+M1      DD(N), 1X2
+        DD(N), 0.0X-46
+AHI     DD(N), 281474976710655X1
+ALO     DD(N), 1X-47
+        END, START

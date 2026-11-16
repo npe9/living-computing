@@ -13577,6 +13577,34 @@ run "C22-6578 Problem 3.8 -- signed data (27 checks held back: address-8 sign fa
 #     "F19_m8:83=0x0118000000000008" "F20_129:84=0x0098100000000000" "F21_1000:85=0x005FA00000000000"
 #     "F22_1511:86=0x003BCE0000000000" "F23_m2132:87=0x0008540000000008" "F24_2179:88=0x0008830000000000"
 
+# C22-6578 Problem 3.9, printed pp.32-34: double-precision compare, both
+# methods (ST/SLO, D-/D+ in Figure 28's order, K, indicators fetched
+# with L(BU,3),$RLZ and stored with ST(BU,3),$AL).  One deck per case;
+# the deck loads the accumulator, then the page's program as printed.
+# The verdict is checked in accumulator bits 125-127 (word 9), where the
+# fetched RLZ/RZ/RGZ stay through the restore (Reference Manual p.95-96).
+# The model DROPS the store into AL/AE/AH (a documented simplification;
+# docs/NEXT.md C22-6578 CHAPTER 3 item 6, decks/problem_3_vfl_store_to_
+# indicators.strap), so the indicator word is held back except where K
+# itself sets it.  method2_page_fault pins the page's own claim that
+# Method 2 calls the smaller number high.
+run "C22-6578 Problem 3.9 Method 1 -- the page's example, less" ./run_program.sh ../decks/problem_3_9_method1_less.strap StretchP39M1LTb ASM=strap2 "PC=78" \
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+run "C22-6578 Problem 3.9 Method 1 -- equal" ./run_program.sh ../decks/problem_3_9_method1_equal.strap StretchP39M1ETb ASM=strap2 "PC=78" \
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x2"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000002000000024"
+run "C22-6578 Problem 3.9 Method 1 -- greater by the low part" ./run_program.sh ../decks/problem_3_9_method1_greater.strap StretchP39M1GTb ASM=strap2 "PC=78" \
+    "A1:40=0x0028000000000000" "A1_plus_1:41=0x05FC000000000000" "acc_left:8=0x002800000000000C" "verdict_acc_right:9=0x1"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000001000000022"
+run "C22-6578 Problem 3.9 Method 2 -- the page's counter-example (AH, as the page says)" ./run_program.sh ../decks/problem_3_9_method2_page_fault.strap StretchP39M2FTb ASM=strap2 "PC=70" \
+    "A1:41=0x0640000000000000" "A1_plus_1:42=0x0040000000000000" "acc_left:8=0x0640000000000000" "verdict_acc_right:9=0x0" \
+    "IND:11=0x0000001000000042"
+run "C22-6578 Problem 3.9 Method 2 -- less, through DPSUB" ./run_program.sh ../decks/problem_3_9_method2_less.strap StretchP39M2LTb ASM=strap2 "PC=70" \
+    "A1:41=0x002FFFFFFFFFFFF0" "A1_plus_1:42=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

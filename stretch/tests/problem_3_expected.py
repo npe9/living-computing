@@ -509,6 +509,51 @@ def p39(a1, a2, m1, m2):
     return 'RLZ' if a.neg else 'RGZ'
 
 
+def p39_run(method, ahi, alo, m1, m2):
+    """3.9 run whole, as a deck does: the deck loads the accumulator with
+    DL(U), AHI / D+(U), ALO, then the printed Method 1 or 2.  Returns the
+    comparison indicator ('AL', 'AE' or 'AH'), A1, A1+1, and the
+    accumulator at the end."""
+    a = Acc()
+    a.dload(ahi)
+    a.dadd(alo, normalized=False)
+    a1, a2 = a.store(), a.store_low()          # ST(U), A1 / SLO(U), A1+1.
+    if method == 2:
+        # K(U), M: Reference Manual printed p.90-91.
+        (ea, fa, na), (em, fm, nm) = (a.e, a.hi, a.neg), dec(m1)
+        if abs(ea - em) > 48:
+            # "the algebraically larger of the two numbers, judged by
+            # exponent and fraction sign, is considered high"
+            if na != nm:
+                ind = 'AL' if na else 'AH'
+            else:
+                ind = 'AH' if (ea > em) != na else 'AL'
+            return ind, a1, a2, a
+        ind = a.compare(m1)
+        if ind != 'AE':
+            return ind, a1, a2, a
+    r = Acc()
+    r.dload(a2)
+    r.dsub(m2, normalized=(method == 1))       # D-(N) in 1, D-(U) in 2
+    r.dadd(a1)
+    r.dsub(m1)
+    ind = 'AE' if r.hi == 0 and r.lo == 0 else ('AL' if r.neg else 'AH')
+    a = Acc()
+    a.dload(a2)                                # restore: DL(U), A1+1.
+    a.dadd(a1, normalized=False)               #          D+(U), A1
+    return ind, a1, a2, a
+
+
+P39_CASES = {
+    # name: (method, AHI, ALO, M1, M1+1)
+    'm1_less': (1, enc(1, M48, False), enc(-47, 1 << 47, False), enc(2, 1 << 47, False), enc(-46, 0, False)),
+    'm1_equal': (1, enc(1, M48, False), enc(-47, 1 << 47, False), enc(1, M48, False), enc(-47, 1 << 47, False)),
+    'm1_greater': (1, enc(1, 1 << 47, False), enc(-47, 3 << 46, False), enc(1, 1 << 47, False), enc(-47, 1 << 47, False)),
+    'm2_page_fault': (2, enc(50, 0, False), enc(2, 0, False), enc(1, M48, False), enc(-47, M48, False)),
+    'm2_less': (2, enc(1, M48, False), enc(-47, 1 << 47, False), enc(2, 1 << 47, False), enc(-46, 0, False)),
+}
+
+
 def self_checks():
     """Things known without this file."""
     ok = True
@@ -633,6 +678,15 @@ def decks(which):
         for k, (n, w) in enumerate(zip(P38_INTS, out)):
             assert value(w) == F(n, 1 << 48)
             print(f"  FLOAT+{k:<2d} {n:6d}/2**48  {h(w)}")
+
+    if which in ('39', 'all'):
+        print("problem_3_9  (the deck's AHI, ALO, M1, M1+1; true order by exact values)")
+        for name, c in P39_CASES.items():
+            ind, a1, a2, a = p39_run(*c)
+            va = value(c[1]) + value(c[2])
+            vm = value(c[3]) + value(c[4])
+            true = 'AL' if va < vm else 'AE' if va == vm else 'AH'
+            print(f"  {name:14s} {ind}  (true {true})  A1 {h(a1)}  A1+1 {h(a2)}  word 8 {h(a.word8())}  low {a.lo:012X}")
 
 
 if __name__ == '__main__':

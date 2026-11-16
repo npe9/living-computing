@@ -1,0 +1,98 @@
+! C22-6578 PROBLEM 3.9, "DOUBLE-PRECISION COMPARE", printed pp.32-34
+! (PDF 33-35), read in the ink.
+!
+!   "The accumulator contains a double precision floating-point
+!   quantity.  Another double precision floating-point quantity is
+!   stored in two full words, with the more significant part in M1, less
+!   significant part in M1+1.  Compare the two double precision
+!   quantities and set the appropriate indicators $AE, $AL and $AH."
+!
+!   Method 1.  Full-scale double-precision subtract followed by a
+!   test on the result.
+!       MKOMP   ST(U), A1               'save accumulator
+!               SLO (U), A1+1.
+!               DL(U), A1+1.            'double-precision subtract
+!               D-(N), M1+1.
+!               D+(N), A1
+!               D-(N), M1
+!               L(BU, 3), $RLZ          '$RLZ, $RZ, $RGZ fetched
+!               ST(BU, 3), $AL          '$AL, $AE, $AH stored
+!               DL(U), A1+1.            'restore accumulator
+!               D+(U), A1
+!               BEW, $
+!       A1      DR(U), (2)
+! The printed statements follow the deck's own two, which load the
+! accumulator, and come before the deck's data, as printed: spacing,
+! trailing periods and all.  The page defines neither M1 nor the
+! accumulator's value; the deck's are below.
+!
+! ASSEMBLED WITH ASM=strap2 (see problem_3_1.strap; "SLO (U)" with its
+! space assembles as SLO(U)).
+!
+! WHAT THE PROGRAM DOES, with the page of the rule:
+!   ST(U), A1 and SLO(U), A1+1. save the accumulator as two words:
+!     STORE, Reference Manual printed p.90; STORE LOW ORDER, p.97, "The
+!     exponent is obtained by subtracting 48 from the exponent in bits
+!     0-11 of the accumulator", the fraction is accumulator bits 60-107.
+!   The double-precision subtraction is Figure 28's (p.97), the order of
+!     its notes: low parts first, then add A1, then subtract M1.  ADD
+!     DOUBLE, p.95; LOAD DOUBLE, p.96.  The last D-(N) sets RLZ, RZ or
+!     RGZ "as in ADD" on the 96-bit difference.
+!   L(BU, 3), $RLZ fetches indicator bits 56-58 (RLZ, RZ, RGZ) into the
+!     accumulator's right end, offset 0: accumulator bits 125-127.
+!   ST(BU, 3), $AL stores them into bits 60-62 (AL, AE, AH).
+!   DL(U), A1+1. / D+(U), A1 restore the accumulator.  LOAD DOUBLE:
+!     "Accumulator bits 60-107 are set to zero.  Accumulator bits 108-127
+!     remain unchanged" (p.96); ADD DOUBLE: "Accumulator bits 108-127
+!     remain unchanged" (p.95).  So the THREE BITS THE PROGRAM FETCHED
+!     STAY IN ACCUMULATOR BITS 125-127, word 9's last three bits, and
+!     the deck checks them there: 4 = 100 = less, 2 = 010 = equal,
+!     1 = 001 = greater.
+!
+! >>> THE COMPARISON INDICATORS THEMSELVES ARE NOT CHECKED: THE MODEL
+! DROPS THE STORE INTO THEM. <<<  ST(BU, 3), $AL changes nothing on
+! the model (bsv/StretchStorage.bsv, writeWord: stores to word 11 are a
+! documented SIMPLIFICATION, dropped silently).  Reproducer:
+! decks/problem_3_vfl_store_to_indicators.strap; docs/NEXT.md
+! "C22-6578 CHAPTER 3" item 6.  tests/run_tests.sh carries the
+! indicator word's expected value as a comment, to be restored when the
+! store is implemented.
+!
+! THIS DECK'S DATA AND RESULT, HAND-DERIVED (tests/problem_3_expected.py
+! p39_run follows the same rules and agrees):
+!   GREATER BY THE LOW PART ONLY: high parts equal (1.0 = (1, .1)),
+!   low parts (-47, .11) against (-47, .1).  Difference of the low parts
+!   (-48, .1) normalized; + (1, .1) is an exponent difference of 49 (PSH,
+!   p.95); - (1, .1) leaves the one bit in place 50: positive, RGZ.  AH.
+!     A1         0028000000000000
+!     A1+1.      05FC000000000000
+!     word 8     002800000000000C   (low fraction's leading 1100)
+!     word 9     0000000000000001   (001 = RGZ, greater)
+!     indicator word, held back: 0000001000000022 (AH, bit 62; RGZ;
+!       PSH, bit 27)
+!     PC 78.
+!
+! INJECTION: made on problem_3_9_method1_less.strap, which shares this program.
+
+! --- the deck's own: load the accumulator with (AHI, ALO) ---
+START   DL(U), AHI
+        D+(U), ALO
+! --- the printed program ---
+MKOMP   ST(U), A1
+        SLO (U), A1+1.
+        DL(U), A1+1.
+        D-(N), M1+1.
+        D+(N), A1
+        D-(N), M1
+        L(BU, 3), $RLZ
+        ST(BU, 3), $AL
+        DL(U), A1+1.
+        D+(U), A1
+        BEW, $
+A1      DR(U), (2)
+! --- the deck's data ---
+M1      DD(N), 1X1
+        DD(N), 1X-47
+AHI     DD(N), 1X1
+ALO     DD(N), 3X-47
+        END, START
