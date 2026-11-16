@@ -710,7 +710,41 @@ transcribed and unused, and the suite stays green.
 > lines), and the semantics are identical, but IBM's example cannot
 > be run verbatim until it exists.
 
-## THE `$`-PREFIXED OPERATION FORMS FAIL WITH A BARE `KeyError` -- open
+## THE `$`-PREFIXED OPERATION FORMS FAIL WITH A BARE `KeyError` -- closed 2026-11-15: overtaken, they assemble
+
+**Closed without the diagnostic this entry asked for, because there is no
+miss left to diagnose.**  The entry was written 2026-10-31 (commit abb99dc).
+On 2026-11-06 (commit bacf234) strap_asm began taking "$OP" as OP, from
+C28-6129 printed p.10 (PDF 14): "Another special use of the $ character is
+to prefix any operation code in this manner: $OP.  This directs the compiler
+to suppress any error indications that arise in connection with the
+compilation of this statement."  That is the primary source the last
+paragraph below said the feature needed.  Measured 2026-11-15, on strap_asm
+and on strap2 alike:
+
+```
+  $KF(BU,8),200.0          OK      -- KF's word, 0o620010000400011420
+  $CM0000(BU,1),200.0      OK      -- CM0000's word, 0o620010000040000360
+  $QQQ(BU,8),200.0         REJECT  -- strap_asm: "line 2: unknown mnemonic
+                                      'QQQ' (not a supported instruction or
+                                      pseudo-op ...)"; strap2: "message 1:
+                                      ILLEGAL OP CODE QQQ"
+```
+
+and a search for any other bare miss found none: 318 operation names x
+{OP, $OP} x five field shapes on both assemblers, 6360 statements, raised
+nothing but AssemblerError/StrapError, none with "KeyError" in its text.
+`tests/check_dollar_op.py` now pins the two forms by name and that an
+unknown operation is named with its line (injection: the unknown-mnemonic
+error replaced by a bare KeyError fails that check alone), and runs on
+strap2 as well.  Its "$"-strip injection had a stale anchor and asserted
+before injecting; repaired and re-measured.
+
+Left as found: strap2's strict shim (`strap2.assemble`) reports a numbered
+message without its card ("message 1: ILLEGAL OP CODE QQQ"); the listing
+has the line.  `(CC*)` also assembles today on both.
+
+The entry as written, 2026-10-31:
 
 Measured 2026-10-31, with a defined operand so the error is the form
 and not the symbol:
