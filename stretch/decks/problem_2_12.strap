@@ -1,0 +1,283 @@
+! C22-6578 PROBLEM 2.12, "TRANSPOSITION OF RECTANGULAR MATRIX", printed
+! pp.23-25 (PDF 24-26), read in the ink (and at 170 dpi).
+!
+!   "Given an MxN matrix of floating-point words starting at location
+!   MATRX, with the elements stored row-wise.  Create the transpose of
+!   the matrix, also stored row-wise, occupying the same area.  Keep
+!   the number of temporary storage locations small for this purpose."
+!
+!   "Method 1.  Use V-flags for permuted elements.  Assume the matrix
+!   elements do not contain V-flags originally.  Advantage is taken
+!   also of $VF interruption."
+!
+! THE PRINTED STATEMENTS are TRANSP through "N SYN, 5" below, AS
+! PRINTED, the page's own M = 20, N = 5 and MATRX = 1000.0 included.
+! Nothing in them is changed; ' comments are written !'.  The deck's
+! additions, all marked: two statements before TRANSP that give $IA a
+! table ("$IA assumed to have meaningful value"), the 64-word table
+! ITAB whose every entry is "B, STRAY; NOP", STRAY itself (a second
+! BEW, $, so that any interruption other than the one the program
+! plants halts at a different address and fails the PC check), and the
+! matrix.
+!
+! WHAT THE PROGRAM DOES, from the page's analysis: location K of the
+! transpose is fetched from K' = K*N mod (M*N-1); each cycle is
+! followed until it reaches an element already carrying a V-flag, and
+! THAT LOAD INTERRUPTS: the program has put "B, ENDCYC" in the $VF
+! entry of the interruption table and forced the $VF mask bit on.  It
+! is the loop's only exit.  It restores the table entry at the end.
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement, not from
+! the model.  Element (r, c), r = 1..20, c = 1..5, is the floating word
+! 0108 0000 00r c 000 with r and c in hex -- exponent 4, a normalized
+! fraction carrying r and c, plus sign, flags T U V zero.  The answer
+! is the 5 x 20 transpose stored row-wise in the same hundred words:
+! word 1000 + 20(i-1) + (j-1) holds element (j, i), WITH NO V-FLAG LEFT
+! ON ANY OF THEM.  All hundred words are checked, and the word after.
+!
+! ONE PRINTED CLASH, recorded and pinned.  "TI, 1, $IND+1.0, INST+1.0
+! 'save old $MASK" saves the mask in the word after INST, and the word
+! after INST is TEMP, which NUCYCL then uses for the lead element of
+! every cycle.  So the closing "TI, 1, INST+1.0, $IND+1.0" loads the
+! mask register from the last cycle's lead element, not from the old
+! mask.  By a trace of the printed algorithm there are 8 cycles here
+! and the last lead element is (7, 4) with its V-flag, 0108000000704001;
+! the check TEMP_is_the_last_lead_element_NOT_the_saved_mask is that.
+! The mask register itself is not checked.  No stray interruption
+! follows from it in this run (the halt is at BEW, not STRAY).
+!
+! ALSO CHECKED: INST is "B, ENDCYC; NOP" again and table entry 37 is
+! "B, STRAY; NOP" again -- the two SWAPIs, the second through the
+! address SVA planted.  Those two expected words are the assembler's
+! own encodings of statements in this deck, read back; they say
+! "restored", not "encoded right".
+!
+! WHAT THIS EXERCISES, none of it run by a worked example before: an
+! interruption from a DATA FLAG ($VF) taken through a table entry the
+! program swapped in; BD/BE; LWF(U) and ST(U) carrying a flag set by
+! CM1111 on $SB+0.7; BZBN on bit 63 of an indexed word; CB+; the VFL
+! immediate operations LI, *I, -I; the VFL divide's remainder read
+! from $RM (Reference Manual printed p.70: "the low-order remainder
+! bit in bit position 59"); L(U) of an index word; LC (p.24, "bits 0-17
+! of the half-word").
+!
+! MEASURED, against a control of 105 of 105 (a hundred elements, the
+! guard, INST, entry 37, TEMP, and the halt PC): element (1, 2) given
+! a different fraction (..102000 -> ..109000).  OBSERVED 1 fails,
+! T_r2_c1 -- row 2, column 1 of the transpose, which is where (1, 2)
+! goes -- reading the changed word.
+
+        SLC, 2000.0
+! --- the deck's: an interruption table, and $IA ----------------------
+START   LVI, $13, ITAB
+        SV, $13, $IA
+! --- AS PRINTED ------------------------------------------------------
+TRANSP  BD, $+0.32                      !'special interruption scheme
+        LV, $1, $IA                     !'$IA assumed to have meaningful value
+        V+I, $1, 37.0                   !'find $VF interrupt table address
+        SVA, $1, SWAP2                  !'insert address in exit instruction
+        SWAPI, 1, 0($1), INST           !'swap old and new entries of interrupt table
+        TI, 1, $IND+1.0,INST+1.0        !'save old $MASK
+        CM1111(BU,1), $IND+1.37         !'force $VF mask to be 1
+        BE, $+.32                       !'end of interrupt measure
+        LVI, $1, 0
+        LI(BU, 18), M
+        *I(BU,18), N
+        -I(BU,18), 1, 20                !'M*N-1
+        ST(BU, 25), 20.0, 20-7          !'at full-word position of $4 value field
+        LC, $1, 20.0                    !'copy into $1 count field
+        CB+, $1, BZBN
+        B, BEW; CNOP; NOP               !'to insure CYCLE will start at full word
+NUCYCL  LX, $2, 17.0
+        TI, 1, MATRX($2), TEMP          !'file away leading element of cycle
+CYCLE   L(U), 18.0                      !'location of old element
+        *I(BU,18),N,128-18              !'answer is at 20 offset
+        /(BU,18),20.0,20                !'divide by M*N-1
+        L(BU,18),$RM+.60-.18,128-18     !'location of new element
+        LX, $3, $L
+        LWF(U), MATRX($3)               !'if operand has V-flag, interruption ensues
+        CM1111(BU,1), $SB+0.7           !'create V-flag
+        ST(U), MATRX($2)                !'store into vacated location
+        LX, $2, 19.0                    !'new address modifier
+        B, CYCLE                        !'endless loop dependent on $VF exit
+ENDCYC  TI, 1, TEMP, MATRX ($2)         !'transmit lead element of cycle.  It has V-flag
+BZBN    BZBN, MATRX+0.63($1),NUCYCL
+        CB+, $1, BZBN
+SWAP2   SWAPI, 1, 0, INST               !'left-address to be inserted by SVA instruction
+        TI, 1, INST+1.0, $IND+1.0
+BEW     BEW, $;CNOP
+INST    B, ENDCYC; NOP                  !'must begin at full word boundary, and does
+TEMP    DRZ(N), 1
+MATRX   SYN(BU,24), 1000.0              !'user specified starting address
+M       SYN, 20                         !'user specified, no. of rows
+N       SYN, 5                          !'user specified, no. of columns
+! --- the deck's: a stray interruption stops here, not at BEW ---------
+STRAY   BEW, $
+        SLC, 2100.0
+ITAB    B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        B, STRAY; NOP
+        SLC, 1000.0
+        DD(BU,64,8), (16)0108000000101000
+        DD(BU,64,8), (16)0108000000102000
+        DD(BU,64,8), (16)0108000000103000
+        DD(BU,64,8), (16)0108000000104000
+        DD(BU,64,8), (16)0108000000105000
+        DD(BU,64,8), (16)0108000000201000
+        DD(BU,64,8), (16)0108000000202000
+        DD(BU,64,8), (16)0108000000203000
+        DD(BU,64,8), (16)0108000000204000
+        DD(BU,64,8), (16)0108000000205000
+        DD(BU,64,8), (16)0108000000301000
+        DD(BU,64,8), (16)0108000000302000
+        DD(BU,64,8), (16)0108000000303000
+        DD(BU,64,8), (16)0108000000304000
+        DD(BU,64,8), (16)0108000000305000
+        DD(BU,64,8), (16)0108000000401000
+        DD(BU,64,8), (16)0108000000402000
+        DD(BU,64,8), (16)0108000000403000
+        DD(BU,64,8), (16)0108000000404000
+        DD(BU,64,8), (16)0108000000405000
+        DD(BU,64,8), (16)0108000000501000
+        DD(BU,64,8), (16)0108000000502000
+        DD(BU,64,8), (16)0108000000503000
+        DD(BU,64,8), (16)0108000000504000
+        DD(BU,64,8), (16)0108000000505000
+        DD(BU,64,8), (16)0108000000601000
+        DD(BU,64,8), (16)0108000000602000
+        DD(BU,64,8), (16)0108000000603000
+        DD(BU,64,8), (16)0108000000604000
+        DD(BU,64,8), (16)0108000000605000
+        DD(BU,64,8), (16)0108000000701000
+        DD(BU,64,8), (16)0108000000702000
+        DD(BU,64,8), (16)0108000000703000
+        DD(BU,64,8), (16)0108000000704000
+        DD(BU,64,8), (16)0108000000705000
+        DD(BU,64,8), (16)0108000000801000
+        DD(BU,64,8), (16)0108000000802000
+        DD(BU,64,8), (16)0108000000803000
+        DD(BU,64,8), (16)0108000000804000
+        DD(BU,64,8), (16)0108000000805000
+        DD(BU,64,8), (16)0108000000901000
+        DD(BU,64,8), (16)0108000000902000
+        DD(BU,64,8), (16)0108000000903000
+        DD(BU,64,8), (16)0108000000904000
+        DD(BU,64,8), (16)0108000000905000
+        DD(BU,64,8), (16)0108000000A01000
+        DD(BU,64,8), (16)0108000000A02000
+        DD(BU,64,8), (16)0108000000A03000
+        DD(BU,64,8), (16)0108000000A04000
+        DD(BU,64,8), (16)0108000000A05000
+        DD(BU,64,8), (16)0108000000B01000
+        DD(BU,64,8), (16)0108000000B02000
+        DD(BU,64,8), (16)0108000000B03000
+        DD(BU,64,8), (16)0108000000B04000
+        DD(BU,64,8), (16)0108000000B05000
+        DD(BU,64,8), (16)0108000000C01000
+        DD(BU,64,8), (16)0108000000C02000
+        DD(BU,64,8), (16)0108000000C03000
+        DD(BU,64,8), (16)0108000000C04000
+        DD(BU,64,8), (16)0108000000C05000
+        DD(BU,64,8), (16)0108000000D01000
+        DD(BU,64,8), (16)0108000000D02000
+        DD(BU,64,8), (16)0108000000D03000
+        DD(BU,64,8), (16)0108000000D04000
+        DD(BU,64,8), (16)0108000000D05000
+        DD(BU,64,8), (16)0108000000E01000
+        DD(BU,64,8), (16)0108000000E02000
+        DD(BU,64,8), (16)0108000000E03000
+        DD(BU,64,8), (16)0108000000E04000
+        DD(BU,64,8), (16)0108000000E05000
+        DD(BU,64,8), (16)0108000000F01000
+        DD(BU,64,8), (16)0108000000F02000
+        DD(BU,64,8), (16)0108000000F03000
+        DD(BU,64,8), (16)0108000000F04000
+        DD(BU,64,8), (16)0108000000F05000
+        DD(BU,64,8), (16)0108000001001000
+        DD(BU,64,8), (16)0108000001002000
+        DD(BU,64,8), (16)0108000001003000
+        DD(BU,64,8), (16)0108000001004000
+        DD(BU,64,8), (16)0108000001005000
+        DD(BU,64,8), (16)0108000001101000
+        DD(BU,64,8), (16)0108000001102000
+        DD(BU,64,8), (16)0108000001103000
+        DD(BU,64,8), (16)0108000001104000
+        DD(BU,64,8), (16)0108000001105000
+        DD(BU,64,8), (16)0108000001201000
+        DD(BU,64,8), (16)0108000001202000
+        DD(BU,64,8), (16)0108000001203000
+        DD(BU,64,8), (16)0108000001204000
+        DD(BU,64,8), (16)0108000001205000
+        DD(BU,64,8), (16)0108000001301000
+        DD(BU,64,8), (16)0108000001302000
+        DD(BU,64,8), (16)0108000001303000
+        DD(BU,64,8), (16)0108000001304000
+        DD(BU,64,8), (16)0108000001305000
+        DD(BU,64,8), (16)0108000001401000
+        DD(BU,64,8), (16)0108000001402000
+        DD(BU,64,8), (16)0108000001403000
+        DD(BU,64,8), (16)0108000001404000
+        DD(BU,64,8), (16)0108000001405000
+GUARD   DD(BU,64,8), (16)5555555555555555
+        END, START

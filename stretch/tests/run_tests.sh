@@ -13437,6 +13437,243 @@ run "Problem 2.2 Method 2" ./run_program.sh ../decks/problem_2_2_method2.strap S
 run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh ../decks/problem_2_2_method3.strap StretchProblem22M3Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# -- 3d. C22-6578 CHAPTER 2 FROM PROBLEM 2.3, read in the ink, 2026-11-15.
+# Every expected value is hand-derived in the deck's header; the decks say
+# which printed statements are wrong as printed and run those too.
+#
+# 2.3: every fifth bit deleted, Methods 1, 2, 3, 5, 6.  Method 2's printed
+# "BZXCZ, $-1.0" branches to the ST, not the L: the as-printed check pins
+# what that does (the first nibble twelve times).
+run "C22-6578 Problem 2.3 -- every fifth bit deleted, five methods" ./run_program.sh ../decks/problem_2_3.strap StretchP23Tb "PC=2060" \
+    "M1:1202=0xF1A509C3E786A5A5" "M2_as_printed_is_wrong:1203=0xFFFFFFFFFFFFA5A5" \
+    "M2_branch_corrected:1204=0xF1A509C3E786A5A5" "M3_pair1:1205=0xF1A509C3E786A5A5" \
+    "M3_pair2:1206=0xF1A509C3E786A5A5" "M3_pair3_VIC_corrected:1207=0xF1A509C3E786A5A5" \
+    "M5:1208=0xF1A509C3E786A5A5" "M6:1209=0xF1A509C3E786A5A5" \
+    "FIELD_unchanged:1201=0xF8AAB04F06EBE0DF"
+# 2.3 Method 4 is DECIMAL and the model refuses it out loud (OP): G2.3's
+# known gap.  These pin the refusal; the label carries the hand-derived
+# value each must become when the decimal arm lands.
+run "C22-6578 Problem 2.3 Method 4 -- decimal load REFUSED (pinned)" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
+    "M4a_REFUSED_want_907254361805A5A5:1203=0xA5A5" \
+    "M4b_REFUSED_want_907254361805A5A5:1204=0xA5A5" \
+    "M4c_REFUSED_want_907254361455A5A5:1205=0xA5A5"
+# 2.4: bit reversal, both methods; Method 2 depends on CONNECT leaving the
+# rest of the accumulator alone (RefMan printed pp.74-75).
+run "C22-6578 Problem 2.4 -- bit reversal, two methods" ./run_program.sh ../decks/problem_2_4.strap StretchP24Tb "PC=2014" \
+    "M1_DROW:1202=0xF7B3D591E6A2C480" "M2_DROW:1204=0xF7B3D591E6A2C480" \
+    "WORD_unchanged:1200=0x0123456789ABCDEF" "guard1:1201=0x5555555555555555" \
+    "guard2:1203=0x5555555555555555" "guard3:1205=0x5555555555555555"
+# 2.5: key words removed from 100 six-bit bytes.  AS PRINTED the program
+# stores one byte too many per key found (its "B, LODE" goes round the
+# CB); ANS1_w8 pins that.  Block 2 is "B, CAB", not printed, and is the
+# statement's answer.
+run "C22-6578 Problem 2.5 -- key words removed, as printed and with B, CAB" ./run_program.sh ../decks/problem_2_5.strap StretchP25Tb "PC=2033" \
+    "ANS1_w0:1220=0x0CA4587E6B74EC29" "ANS1_w1:1221=0x6CCFA0483D6764AF" \
+    "ANS1_w2:1222=0x2E401CE55C8EAC78" "ANS1_w3:1223=0xFC63546E2A70DFE1" \
+    "ANS1_w4:1224=0x4C4DAF442D26609E" "ANS1_w5:1225=0xED7C0CA4587E6B74" \
+    "ANS1_w6:1226=0xEC22505DE96CCFA0" "ANS1_w7:1227=0x483D6764AF2E401C" \
+    "ANS1_w8_as_printed_two_bytes_too_many:1228=0xE55C8EAC78A95FFF" \
+    "ANS1_w9:1229=0xFFFFFFFFFFFFFFFF" "ANS2_w0:1240=0x0CA4587E6B74EC29" \
+    "ANS2_w1:1241=0x6CCFA0483D6764AF" "ANS2_w2:1242=0x2E401CE55C8EAC78" \
+    "ANS2_w3:1243=0xFC63546E2A70DFE1" "ANS2_w4:1244=0x4C4DAF442D26609E" \
+    "ANS2_w5:1245=0xED7C0CA4587E6B74" "ANS2_w6:1246=0xEC22505DE96CCFA0" \
+    "ANS2_w7:1247=0x483D6764AF2E401C" "ANS2_w8_B_CAB_is_the_statement:1248=0xE55C8EAC78FFFFFF" \
+    "ANS2_w9:1249=0xFFFFFFFFFFFFFFFF"
+# 2.6 Methods 1 and 2, and Method 2's comment (b): sixteen B fields placed
+# by key, with a VFL multiply (product at offset 20) or two shifted adds.
+run "C22-6578 Problem 2.6 Methods 1-2 -- sorting by a 4-bit key" ./run_program.sh ../decks/problem_2_6.strap StretchP26Tb "PC=2048" \
+    "M1_w0:1210=0xB30F3B81F8B12F1B" "M1_w1:1211=0xB3FBB64F6BE5FEBA" "M1_w2:1212=0x6FAB07F0BD8FDB49" \
+    "M1_w3:1213=0xF4BFAFFB7BF7BCCF" "M1_w4:1214=0xCB2DF2B9EF9B5FF5" "M2_w0:1220=0xB30F3B81F8B12F1B" \
+    "M2_w1:1221=0xB3FBB64F6BE5FEBA" "M2_w2:1222=0x6FAB07F0BD8FDB49" "M2_w3:1223=0xF4BFAFFB7BF7BCCF" \
+    "M2_w4:1224=0xCB2DF2B9EF9B5FF5" "M2b_mid_w0:1230=0xB30F3B81F8B12F1B" \
+    "M2b_mid_w1:1231=0xB3FBB64F6BE5FEBA" "M2b_mid_w2:1232=0x6FAB07F0BD8FDB49" \
+    "M2b_mid_w3:1233=0xF4BFAFFB7BF7BCCF" "M2b_mid_w4:1234=0xCB2DF2B9EF9B5FF5" \
+    "M2b_right_w0:1240=0xB30F3B81F8B12F1B" "M2b_right_w1:1241=0xB3FBB64F6BE5FEBA" \
+    "M2b_right_w2:1242=0x6FAB07F0BD8FDB49" "M2b_right_w3:1243=0xF4BFAFFB7BF7BCCF" \
+    "M2b_right_w4:1244=0xCB2DF2B9EF9B5FF5"
+# 2.6 Method 3 DOES NOT SORT AS PRINTED: it prints K where COMPARE FIELD is
+# needed, and its fixup misaddresses the last field of every pass after the
+# refill.  All three blocks pin a HAND TRACE of the printed statements:
+# B1 as printed (fifteen copies of the first field), B2 with KF and the
+# largest key last (sorted), B3 with KF and general data (four fields lost).
+run "C22-6578 Problem 2.6 Method 3 -- printed K does not sort; hand traces pinned" ./run_program.sh ../decks/problem_2_6_method3.strap StretchP26M3Tb "PC=2098" "STEPS=200000" \
+    "B1_as_printed_DATA_w0:1200=0x7B07F07B07F07B07" "B1_as_printed_DATA_w1:1201=0xF07B07F07B07F07B" \
+    "B1_as_printed_DATA_w2:1202=0x07F07B07F07B07F0" "B1_as_printed_DATA_w3:1203=0x7B07F07B07F07B07" \
+    "B1_as_printed_DATA_w4:1204=0xF07B07F07B07F07B" "B1_as_printed_DATA_w5:1205=0x07F07B07F0ABFAFF" \
+    "B1_as_printed_ANS_w0:1210=0xB07F0B07F0B07F0B" "B1_as_printed_ANS_w1:1211=0x07F0B07F0B07F0B0" \
+    "B1_as_printed_ANS_w2:1212=0x7F0B07F0B07F0B07" "B1_as_printed_ANS_w3:1213=0xF0B07F0B07F0B07F" \
+    "B1_as_printed_ANS_w4:1214=0x0B07F0B07F0BFAFF" "B2_KF_sorted_DATA_w0:1220=0x0B30F31B81F82B12" \
+    "B2_KF_sorted_DATA_w1:1221=0xF13BB3FB4B64F65B" "B2_KF_sorted_DATA_w2:1222=0xE5FE6BA6FA7B07F0" \
+    "B2_KF_sorted_DATA_w3:1223=0x8BD8FD9B49F4AB5A" "B2_KF_sorted_DATA_w4:1224=0xF5BB7BF7CBCCFCDB" \
+    "B2_KF_sorted_DATA_w5:1225=0x2DF2EB9EF9FBFFFF" "B2_KF_sorted_ANS_w0:1230=0xB30F3B81F8B12F1B" \
+    "B2_KF_sorted_ANS_w1:1231=0xB3FBB64F6BE5FEBA" "B2_KF_sorted_ANS_w2:1232=0x6FAB07F0BD8FDB49" \
+    "B2_KF_sorted_ANS_w3:1233=0xF4B5AF5B7BF7BCCF" "B2_KF_sorted_ANS_w4:1234=0xCB2DF2B9EF9BFFFF" \
+    "B3_KF_last_not_largest_DATA_w0:1240=0x0B30F31B81F82B12" \
+    "B3_KF_last_not_largest_DATA_w1:1241=0xF13BB3FB4B64F65B" \
+    "B3_KF_last_not_largest_DATA_w2:1242=0xE5FE6BA6FA7B07F0" \
+    "B3_KF_last_not_largest_DATA_w3:1243=0x8BD8FD9B49F4FB5F" \
+    "B3_KF_last_not_largest_DATA_w4:1244=0xF5FB5FF5FB5FF5FB" \
+    "B3_KF_last_not_largest_DATA_w5:1245=0x5FF5FB5FF5ABFAFF" \
+    "B3_KF_last_not_largest_ANS_w0:1250=0xB30F3B81F8B12F1B" \
+    "B3_KF_last_not_largest_ANS_w1:1251=0xB3FBB64F6BE5FEBA" \
+    "B3_KF_last_not_largest_ANS_w2:1252=0x6FAB07F0BD8FDB49" \
+    "B3_KF_last_not_largest_ANS_w3:1253=0xF4B5FF5B5FF5B5FF" \
+    "B3_KF_last_not_largest_ANS_w4:1254=0x5B5FF5B5FF5BFAFF"
+# 2.7: B fields filed into sixteen tables through a master table of SIC
+# half-words, LVE and SVA on a 24-bit address.  The printed offset, -18,
+# indexes the master table by WORDS: key A lands in TABL 2A, and block 1
+# ("printed_") pins that for keys 0-7.  Block 2 ("m19_") has -19, not
+# printed, and is the statement's answer.
+run "C22-6578 Problem 2.7 -- sorting into tables via LVE/SVA on SIC entries" ./run_program.sh ../decks/problem_2_7.strap StretchP27Tb "PC=2060" \
+    "printed_T0_w0:1300=0xB20F2B70F7555555" "printed_T0_w1:1301=0x5555555555555555" \
+    "printed_T1_w0:1302=0x5555555555555555" "printed_T1_w1:1303=0x5555555555555555" \
+    "printed_T2_w0:1304=0xB61F6BA1FA555555" "printed_T2_w1:1305=0x5555555555555555" \
+    "printed_T3_w0:1306=0x5555555555555555" "printed_T3_w1:1307=0x5555555555555555" \
+    "printed_T4_w0:1308=0xBB2FBBF2FF555555" "printed_T4_w1:1309=0x5555555555555555" \
+    "printed_T5_w0:1310=0x5555555555555555" "printed_T5_w1:1311=0x5555555555555555" \
+    "printed_T6_w0:1312=0xB03F0B13F1B53F55" "printed_T6_w1:1313=0x5555555555555555" \
+    "printed_T7_w0:1314=0x5555555555555555" "printed_T7_w1:1315=0x5555555555555555" \
+    "printed_T8_w0:1316=0xBC4FC55555555555" "printed_T8_w1:1317=0x5555555555555555" \
+    "printed_T9_w0:1318=0x5555555555555555" "printed_T9_w1:1319=0x5555555555555555" \
+    "printed_T10_w0:1320=0xB45F4BE5FE555555" "printed_T10_w1:1321=0x5555555555555555" \
+    "printed_T11_w0:1322=0x5555555555555555" "printed_T11_w1:1323=0x5555555555555555" \
+    "printed_T12_w0:1324=0xB86F8BD6FD555555" "printed_T12_w1:1325=0x5555555555555555" \
+    "printed_T13_w0:1326=0x5555555555555555" "printed_T13_w1:1327=0x5555555555555555" \
+    "printed_T14_w0:1328=0xB37F3B97F9555555" "printed_T14_w1:1329=0x5555555555555555" \
+    "printed_T15_w0:1330=0x5555555555555555" "printed_T15_w1:1331=0x5555555555555555" \
+    "m19_T0_w0:1400=0xB20F2B70F7555555" "m19_T0_w1:1401=0x5555555555555555" \
+    "m19_T1_w0:1402=0xBA1FA55555555555" "m19_T1_w1:1403=0x5555555555555555" \
+    "m19_T2_w0:1404=0x5555555555555555" "m19_T2_w1:1405=0x5555555555555555" \
+    "m19_T3_w0:1406=0xB03F0B13F1B53F55" "m19_T3_w1:1407=0x5555555555555555" \
+    "m19_T4_w0:1408=0x5555555555555555" "m19_T4_w1:1409=0x5555555555555555" \
+    "m19_T5_w0:1410=0xBE5FE55555555555" "m19_T5_w1:1411=0x5555555555555555" \
+    "m19_T6_w0:1412=0x5555555555555555" "m19_T6_w1:1413=0x5555555555555555" \
+    "m19_T7_w0:1414=0xB47F455555555555" "m19_T7_w1:1415=0x5555555555555555" \
+    "m19_T8_w0:1416=0xB68F6BC8FC555555" "m19_T8_w1:1417=0x5555555555555555" \
+    "m19_T9_w0:1418=0xBB9FB55555555555" "m19_T9_w1:1419=0x5555555555555555" \
+    "m19_T10_w0:1420=0xBFAFF55555555555" "m19_T10_w1:1421=0x5555555555555555" \
+    "m19_T11_w0:1422=0x5555555555555555" "m19_T11_w1:1423=0x5555555555555555" \
+    "m19_T12_w0:1424=0xB8CF855555555555" "m19_T12_w1:1425=0x5555555555555555" \
+    "m19_T13_w0:1426=0x5555555555555555" "m19_T13_w1:1427=0x5555555555555555" \
+    "m19_T14_w0:1428=0xBDEFD55555555555" "m19_T14_w1:1429=0x5555555555555555" \
+    "m19_T15_w0:1430=0xB3FF3B9FF9555555" "m19_T15_w1:1431=0x5555555555555555"
+# 2.8 is decimal throughout and is NOT run (its deck says why).  Transcribing
+# it found that strap_asm assembles a DD in a decimal mode as a BINARY
+# integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two runs of
+# the one reproducer: strap_asm, pinning the wrong words, and the host STRAP
+# II, which is right.  docs/NEXT.md has the section.
+run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
+    "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
+    "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \
+    "DS4_WRONG_want_1238:1013=0xFF85000000000000" "BU_control:1014=0x000C000000000000"
+# The same deck through the host STRAP II: the rule's own values.
+run "host STRAP II: a decimal-mode DD is decimal" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDec2Tb "ASM=strap2" "PC=2000" \
+    "DU8:1010=0x0102000000000000" "DU4:1011=0x1234000000000000" "DUE:1012=0x0000000102050000" \
+    "DS4:1013=0x1238000000000000" "BU_control:1014=0x000C000000000000"
+# 2.9: the effective address of an instruction, worked out from its bits
+# without LVE, on twelve instructions and through two copies of the routine.
+# THE PRINTED ROUTINE IS WRONG for ordinary 19-bit half-words (its last
+# "B, MPLUS" should be "B, KMINUS": the "kminus_" copy) and for K-type
+# instructions with K = 1 (both copies).  Every check is a hand trace of the
+# printed statements; a label saying NOT_the_EA_ names what the problem asks.
+# The routine stores into the instruction that follows the store.
+run "C22-6578 Problem 2.9 -- effective address from the bits; hand traces" ./run_program.sh ../decks/problem_2_9.strap StretchP29Tb "PC=2015" "STEPS=100000" \
+    "printed_00_ok:1150=0x004B820000000000" "kminus_00_ok:1170=0x004B820000000000" \
+    "printed_01_ok:1151=0x001EC00000000000" "kminus_01_ok:1171=0x001EC00000000000" \
+    "printed_02_ok:1152=0x0019C80000000000" "kminus_02_ok:1172=0x0019C80000000000" \
+    "printed_03_NOT_the_EA_202p34:1153=0x0032AA0000000000" "kminus_03_ok:1173=0x0032A20000000000" \
+    "printed_04_NOT_the_EA_213p3:1154=0x00354B0000000000" "kminus_04_ok:1174=0x0035430000000000" \
+    "printed_05_NOT_the_EA_401p33:1155=0x0066690000000000" \
+    "kminus_05_NOT_the_EA_401p33:1175=0x0066690000000000" "printed_06_ok:1156=0x0064200000000000" \
+    "kminus_06_ok:1176=0x0064200000000000" "printed_07_NOT_the_EA_401p33:1157=0x0066690000000000" \
+    "kminus_07_NOT_the_EA_401p33:1177=0x0066690000000000" "printed_08_ok:1158=0x007D200000000000" \
+    "kminus_08_ok:1178=0x007D200000000000" "printed_09_NOT_the_EA_601p33:1159=0x0096E30000000000" \
+    "kminus_09_NOT_the_EA_601p33:1179=0x0096E30000000000" \
+    "printed_10_NOT_the_EA_701p1:1160=0x00AFC30000000000" \
+    "kminus_10_NOT_the_EA_701p1:1180=0x00AFC30000000000" \
+    "printed_11_NOT_the_EA_802p2:1161=0x00C88C0000000000" "kminus_11_ok:1181=0x00C8820000000000"
+# 2.9's statement TEST is printed "(2) 10,4", with a blank strap_asm refuses
+# and the host STRAP II ignores.  One of the three checks PINS the refusal.
+run "strap_asm refuses the blank in (2) 10, STRAP II ignores it (C22-6578 printed p.21)" python3 check_radix_blank.py
+# 2.10: element (p,q) of a 4 x 5 matrix, twice (3,4 and 1,1).  VFL multiply,
+# the product stored into an index register's value field, two V+.
+run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../decks/problem_2_10.strap StretchP210Tb "PC=2029" \
+    "A34_in_R_kept:1100=0xA000000000000304" "X3_for_A34:1101=0x012F400000000000" \
+    "A11_in_R:9=0xA000000000000101" "L_cleared:8=0" "X3_for_A11:19=0x012C000000000000" \
+    "X1_p_minus_1:17=0"
+# 2.11: a two-bit adder out of seven connectives, all sixteen (P, Q) pairs.
+# Each check is the whole word: R = (P + Q) mod 4 and nothing else moved.
+run "C22-6578 Problem 2.11 -- two-bit addition by connectives, 16 pairs" ./run_program.sh ../decks/problem_2_11.strap StretchP211Tb "PC=2224" \
+    "P0_plus_Q0_is_0:1200=0x8FC5A2C3C3C3C3C3" "P0_plus_Q1_is_1:1201=0x8FD5A6C3C3C3C3C3" \
+    "P0_plus_Q2_is_2:1202=0x8FE5AAC3C3C3C3C3" "P0_plus_Q3_is_3:1203=0x8FF5AEC3C3C3C3C3" \
+    "P1_plus_Q0_is_1:1204=0x9FC5A6C3C3C3C3C3" "P1_plus_Q1_is_2:1205=0x9FD5AAC3C3C3C3C3" \
+    "P1_plus_Q2_is_3:1206=0x9FE5AEC3C3C3C3C3" "P1_plus_Q3_is_0:1207=0x9FF5A2C3C3C3C3C3" \
+    "P2_plus_Q0_is_2:1208=0xAFC5AAC3C3C3C3C3" "P2_plus_Q1_is_3:1209=0xAFD5AEC3C3C3C3C3" \
+    "P2_plus_Q2_is_0:1210=0xAFE5A2C3C3C3C3C3" "P2_plus_Q3_is_1:1211=0xAFF5A6C3C3C3C3C3" \
+    "P3_plus_Q0_is_3:1212=0xBFC5AEC3C3C3C3C3" "P3_plus_Q1_is_0:1213=0xBFD5A2C3C3C3C3C3" \
+    "P3_plus_Q2_is_1:1214=0xBFE5A6C3C3C3C3C3" "P3_plus_Q3_is_2:1215=0xBFF5AAC3C3C3C3C3" \
+    "guard:1216=0x5555555555555555" "Z_still_zero:0=0"
+# 2.12: a 20 x 5 floating-point matrix transposed in place, AS PRINTED, by
+# cycles that end on a $VF data-flag INTERRUPTION through a table entry the
+# program swaps in.  All hundred words are checked against the transpose.
+# TEMP is where the program also saved the old mask: the last check pins
+# that printed clash.  Any other interruption halts at STRAY and fails PC.
+run "C22-6578 Problem 2.12 -- 20 x 5 transpose in place, the \$VF interruption as the loop exit" ./run_program.sh ../decks/problem_2_12.strap StretchP212Tb "PC=4053" "STEPS=2000000" \
+    "T_r1_c1:1000=0x0108000000101000" "T_r1_c2:1001=0x0108000000201000" \
+    "T_r1_c3:1002=0x0108000000301000" "T_r1_c4:1003=0x0108000000401000" \
+    "T_r1_c5:1004=0x0108000000501000" "T_r1_c6:1005=0x0108000000601000" \
+    "T_r1_c7:1006=0x0108000000701000" "T_r1_c8:1007=0x0108000000801000" \
+    "T_r1_c9:1008=0x0108000000901000" "T_r1_c10:1009=0x0108000000A01000" \
+    "T_r1_c11:1010=0x0108000000B01000" "T_r1_c12:1011=0x0108000000C01000" \
+    "T_r1_c13:1012=0x0108000000D01000" "T_r1_c14:1013=0x0108000000E01000" \
+    "T_r1_c15:1014=0x0108000000F01000" "T_r1_c16:1015=0x0108000001001000" \
+    "T_r1_c17:1016=0x0108000001101000" "T_r1_c18:1017=0x0108000001201000" \
+    "T_r1_c19:1018=0x0108000001301000" "T_r1_c20:1019=0x0108000001401000" \
+    "T_r2_c1:1020=0x0108000000102000" "T_r2_c2:1021=0x0108000000202000" \
+    "T_r2_c3:1022=0x0108000000302000" "T_r2_c4:1023=0x0108000000402000" \
+    "T_r2_c5:1024=0x0108000000502000" "T_r2_c6:1025=0x0108000000602000" \
+    "T_r2_c7:1026=0x0108000000702000" "T_r2_c8:1027=0x0108000000802000" \
+    "T_r2_c9:1028=0x0108000000902000" "T_r2_c10:1029=0x0108000000A02000" \
+    "T_r2_c11:1030=0x0108000000B02000" "T_r2_c12:1031=0x0108000000C02000" \
+    "T_r2_c13:1032=0x0108000000D02000" "T_r2_c14:1033=0x0108000000E02000" \
+    "T_r2_c15:1034=0x0108000000F02000" "T_r2_c16:1035=0x0108000001002000" \
+    "T_r2_c17:1036=0x0108000001102000" "T_r2_c18:1037=0x0108000001202000" \
+    "T_r2_c19:1038=0x0108000001302000" "T_r2_c20:1039=0x0108000001402000" \
+    "T_r3_c1:1040=0x0108000000103000" "T_r3_c2:1041=0x0108000000203000" \
+    "T_r3_c3:1042=0x0108000000303000" "T_r3_c4:1043=0x0108000000403000" \
+    "T_r3_c5:1044=0x0108000000503000" "T_r3_c6:1045=0x0108000000603000" \
+    "T_r3_c7:1046=0x0108000000703000" "T_r3_c8:1047=0x0108000000803000" \
+    "T_r3_c9:1048=0x0108000000903000" "T_r3_c10:1049=0x0108000000A03000" \
+    "T_r3_c11:1050=0x0108000000B03000" "T_r3_c12:1051=0x0108000000C03000" \
+    "T_r3_c13:1052=0x0108000000D03000" "T_r3_c14:1053=0x0108000000E03000" \
+    "T_r3_c15:1054=0x0108000000F03000" "T_r3_c16:1055=0x0108000001003000" \
+    "T_r3_c17:1056=0x0108000001103000" "T_r3_c18:1057=0x0108000001203000" \
+    "T_r3_c19:1058=0x0108000001303000" "T_r3_c20:1059=0x0108000001403000" \
+    "T_r4_c1:1060=0x0108000000104000" "T_r4_c2:1061=0x0108000000204000" \
+    "T_r4_c3:1062=0x0108000000304000" "T_r4_c4:1063=0x0108000000404000" \
+    "T_r4_c5:1064=0x0108000000504000" "T_r4_c6:1065=0x0108000000604000" \
+    "T_r4_c7:1066=0x0108000000704000" "T_r4_c8:1067=0x0108000000804000" \
+    "T_r4_c9:1068=0x0108000000904000" "T_r4_c10:1069=0x0108000000A04000" \
+    "T_r4_c11:1070=0x0108000000B04000" "T_r4_c12:1071=0x0108000000C04000" \
+    "T_r4_c13:1072=0x0108000000D04000" "T_r4_c14:1073=0x0108000000E04000" \
+    "T_r4_c15:1074=0x0108000000F04000" "T_r4_c16:1075=0x0108000001004000" \
+    "T_r4_c17:1076=0x0108000001104000" "T_r4_c18:1077=0x0108000001204000" \
+    "T_r4_c19:1078=0x0108000001304000" "T_r4_c20:1079=0x0108000001404000" \
+    "T_r5_c1:1080=0x0108000000105000" "T_r5_c2:1081=0x0108000000205000" \
+    "T_r5_c3:1082=0x0108000000305000" "T_r5_c4:1083=0x0108000000405000" \
+    "T_r5_c5:1084=0x0108000000505000" "T_r5_c6:1085=0x0108000000605000" \
+    "T_r5_c7:1086=0x0108000000705000" "T_r5_c8:1087=0x0108000000805000" \
+    "T_r5_c9:1088=0x0108000000905000" "T_r5_c10:1089=0x0108000000A05000" \
+    "T_r5_c11:1090=0x0108000000B05000" "T_r5_c12:1091=0x0108000000C05000" \
+    "T_r5_c13:1092=0x0108000000D05000" "T_r5_c14:1093=0x0108000000E05000" \
+    "T_r5_c15:1094=0x0108000000F05000" "T_r5_c16:1095=0x0108000001005000" \
+    "T_r5_c17:1096=0x0108000001105000" "T_r5_c18:1097=0x0108000001205000" \
+    "T_r5_c19:1098=0x0108000001305000" "T_r5_c20:1099=0x0108000001405000" \
+    "guard:1100=0x5555555555555555" "INST_restored:2027=0x01F9880000001800" \
+    "table_entry_37_restored:2137=0x01FB480000001800" \
+    "TEMP_is_the_last_lead_element_NOT_the_saved_mask:2028=0x0108000000704001"
+# -- end of 3d --
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

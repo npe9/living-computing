@@ -1,0 +1,243 @@
+! C22-6578 PROBLEM 2.11, "SIMULATION OF TWO-BIT ADDITION", printed p.23
+! (PDF 24), read in the ink (and at 170 dpi).
+!
+!   "If P, Q, R each define a two-bit non-overlapping field, using
+!   logical connectives only, create the lowest two bits of the sum
+!   C(P)+C(Q) and put it in $R.  ( C(X) means contents of X)."
+!
+!   Method 1.  C0011(BU, 2,2), P
+!              C0110(BU, 2,2), Q
+!              CM0101(BU, 2,2), R
+!              C0000(BU, 2,2), $Z        'or any other address
+!              C0011(BU,2,2), P, 1
+!              C0001(BU,2,2), Q, 1
+!              CM0110(BU,2,2), R
+!
+! THE STATEMENT SAYS "$R" AND THE PROGRAM STORES IN R.  The ink is "$R"
+! in the statement, clear at 170 dpi, and "R" in both CM statements.
+! The program is taken as meant: the sum is in the field R.  ($R is
+! left holding the carry, shifted, not the sum.)
+!
+! THE PRINTED STATEMENTS are the seven above, written sixteen times,
+! once for each pair (P, Q), with P, Q, R numbered P0..P15 and so on;
+! there is one BEW, $ at the end.  The fields are the deck's: in word
+! n, P is bits 2-3, Q bits 10-11 and R bits 20-21, and every other bit
+! is a fixed pattern (10 .. 111111 .. 01011010 .. 2C3C3C3C3C3) that
+! must come through unchanged.  R starts as (3n+1) mod 4, so all four
+! prior values of R occur and none may show through.
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement: word n
+! afterwards is word n with R = (P + Q) mod 4.  Not from the model.
+!
+! WHY THE SEVEN STATEMENTS ADD (Reference Manual printed pp.74-75, and
+! the truth table on this document's printed p.15): 0011 is "memory",
+! 0110 exclusive or, 0101 "accumulator", 0000 zero, 0001 and.  So R
+! gets P xor Q; the accumulator byte is cleared; P and Q, one place to
+! the left, leaves the carry out of the low bit in the second place;
+! and R xor that is the sum.  Each 2-bit storage byte is made an 8-bit
+! accumulator byte "by the addition of high-order zeros", and CM
+! truncates the result byte to two bits.
+!
+! MEASURED, against a control of 19 of 19 (sixteen words, the word
+! after them, word 0 -- $Z -- and the halt PC): Q of the sixth pair
+! given as 2 for 1 (9FD5.. -> 9FE5..).  OBSERVED 1 fails,
+! P1_plus_Q1_is_2, whose R reads 3: 1 + 2.
+
+        SLC, 1000.0
+! --- P = 0, Q = 0 ---
+START   C0011(BU, 2,2), P0
+        C0110(BU, 2,2), Q0
+        CM0101(BU, 2,2), R0
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P0, 1
+        C0001(BU,2,2), Q0, 1
+        CM0110(BU,2,2), R0
+! --- P = 0, Q = 1 ---
+        C0011(BU, 2,2), P1
+        C0110(BU, 2,2), Q1
+        CM0101(BU, 2,2), R1
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P1, 1
+        C0001(BU,2,2), Q1, 1
+        CM0110(BU,2,2), R1
+! --- P = 0, Q = 2 ---
+        C0011(BU, 2,2), P2
+        C0110(BU, 2,2), Q2
+        CM0101(BU, 2,2), R2
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P2, 1
+        C0001(BU,2,2), Q2, 1
+        CM0110(BU,2,2), R2
+! --- P = 0, Q = 3 ---
+        C0011(BU, 2,2), P3
+        C0110(BU, 2,2), Q3
+        CM0101(BU, 2,2), R3
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P3, 1
+        C0001(BU,2,2), Q3, 1
+        CM0110(BU,2,2), R3
+! --- P = 1, Q = 0 ---
+        C0011(BU, 2,2), P4
+        C0110(BU, 2,2), Q4
+        CM0101(BU, 2,2), R4
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P4, 1
+        C0001(BU,2,2), Q4, 1
+        CM0110(BU,2,2), R4
+! --- P = 1, Q = 1 ---
+        C0011(BU, 2,2), P5
+        C0110(BU, 2,2), Q5
+        CM0101(BU, 2,2), R5
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P5, 1
+        C0001(BU,2,2), Q5, 1
+        CM0110(BU,2,2), R5
+! --- P = 1, Q = 2 ---
+        C0011(BU, 2,2), P6
+        C0110(BU, 2,2), Q6
+        CM0101(BU, 2,2), R6
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P6, 1
+        C0001(BU,2,2), Q6, 1
+        CM0110(BU,2,2), R6
+! --- P = 1, Q = 3 ---
+        C0011(BU, 2,2), P7
+        C0110(BU, 2,2), Q7
+        CM0101(BU, 2,2), R7
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P7, 1
+        C0001(BU,2,2), Q7, 1
+        CM0110(BU,2,2), R7
+! --- P = 2, Q = 0 ---
+        C0011(BU, 2,2), P8
+        C0110(BU, 2,2), Q8
+        CM0101(BU, 2,2), R8
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P8, 1
+        C0001(BU,2,2), Q8, 1
+        CM0110(BU,2,2), R8
+! --- P = 2, Q = 1 ---
+        C0011(BU, 2,2), P9
+        C0110(BU, 2,2), Q9
+        CM0101(BU, 2,2), R9
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P9, 1
+        C0001(BU,2,2), Q9, 1
+        CM0110(BU,2,2), R9
+! --- P = 2, Q = 2 ---
+        C0011(BU, 2,2), P10
+        C0110(BU, 2,2), Q10
+        CM0101(BU, 2,2), R10
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P10, 1
+        C0001(BU,2,2), Q10, 1
+        CM0110(BU,2,2), R10
+! --- P = 2, Q = 3 ---
+        C0011(BU, 2,2), P11
+        C0110(BU, 2,2), Q11
+        CM0101(BU, 2,2), R11
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P11, 1
+        C0001(BU,2,2), Q11, 1
+        CM0110(BU,2,2), R11
+! --- P = 3, Q = 0 ---
+        C0011(BU, 2,2), P12
+        C0110(BU, 2,2), Q12
+        CM0101(BU, 2,2), R12
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P12, 1
+        C0001(BU,2,2), Q12, 1
+        CM0110(BU,2,2), R12
+! --- P = 3, Q = 1 ---
+        C0011(BU, 2,2), P13
+        C0110(BU, 2,2), Q13
+        CM0101(BU, 2,2), R13
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P13, 1
+        C0001(BU,2,2), Q13, 1
+        CM0110(BU,2,2), R13
+! --- P = 3, Q = 2 ---
+        C0011(BU, 2,2), P14
+        C0110(BU, 2,2), Q14
+        CM0101(BU, 2,2), R14
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P14, 1
+        C0001(BU,2,2), Q14, 1
+        CM0110(BU,2,2), R14
+! --- P = 3, Q = 3 ---
+        C0011(BU, 2,2), P15
+        C0110(BU, 2,2), Q15
+        CM0101(BU, 2,2), R15
+        C0000(BU, 2,2), $Z              !'or any other address
+        C0011(BU,2,2), P15, 1
+        C0001(BU,2,2), Q15, 1
+        CM0110(BU,2,2), R15
+HALT    BEW, $
+
+P0      SYN(BU,2,2), W0 + 0.2
+Q0      SYN(BU,2,2), W0 + 0.10
+R0      SYN(BU,2,2), W0 + 0.20
+P1      SYN(BU,2,2), W1 + 0.2
+Q1      SYN(BU,2,2), W1 + 0.10
+R1      SYN(BU,2,2), W1 + 0.20
+P2      SYN(BU,2,2), W2 + 0.2
+Q2      SYN(BU,2,2), W2 + 0.10
+R2      SYN(BU,2,2), W2 + 0.20
+P3      SYN(BU,2,2), W3 + 0.2
+Q3      SYN(BU,2,2), W3 + 0.10
+R3      SYN(BU,2,2), W3 + 0.20
+P4      SYN(BU,2,2), W4 + 0.2
+Q4      SYN(BU,2,2), W4 + 0.10
+R4      SYN(BU,2,2), W4 + 0.20
+P5      SYN(BU,2,2), W5 + 0.2
+Q5      SYN(BU,2,2), W5 + 0.10
+R5      SYN(BU,2,2), W5 + 0.20
+P6      SYN(BU,2,2), W6 + 0.2
+Q6      SYN(BU,2,2), W6 + 0.10
+R6      SYN(BU,2,2), W6 + 0.20
+P7      SYN(BU,2,2), W7 + 0.2
+Q7      SYN(BU,2,2), W7 + 0.10
+R7      SYN(BU,2,2), W7 + 0.20
+P8      SYN(BU,2,2), W8 + 0.2
+Q8      SYN(BU,2,2), W8 + 0.10
+R8      SYN(BU,2,2), W8 + 0.20
+P9      SYN(BU,2,2), W9 + 0.2
+Q9      SYN(BU,2,2), W9 + 0.10
+R9      SYN(BU,2,2), W9 + 0.20
+P10     SYN(BU,2,2), W10 + 0.2
+Q10     SYN(BU,2,2), W10 + 0.10
+R10     SYN(BU,2,2), W10 + 0.20
+P11     SYN(BU,2,2), W11 + 0.2
+Q11     SYN(BU,2,2), W11 + 0.10
+R11     SYN(BU,2,2), W11 + 0.20
+P12     SYN(BU,2,2), W12 + 0.2
+Q12     SYN(BU,2,2), W12 + 0.10
+R12     SYN(BU,2,2), W12 + 0.20
+P13     SYN(BU,2,2), W13 + 0.2
+Q13     SYN(BU,2,2), W13 + 0.10
+R13     SYN(BU,2,2), W13 + 0.20
+P14     SYN(BU,2,2), W14 + 0.2
+Q14     SYN(BU,2,2), W14 + 0.10
+R14     SYN(BU,2,2), W14 + 0.20
+P15     SYN(BU,2,2), W15 + 0.2
+Q15     SYN(BU,2,2), W15 + 0.10
+R15     SYN(BU,2,2), W15 + 0.20
+        SLC, 1200.0
+W0      DD(BU,64,8), (16)8FC5A6C3C3C3C3C3
+W1      DD(BU,64,8), (16)8FD5A2C3C3C3C3C3
+W2      DD(BU,64,8), (16)8FE5AEC3C3C3C3C3
+W3      DD(BU,64,8), (16)8FF5AAC3C3C3C3C3
+W4      DD(BU,64,8), (16)9FC5A6C3C3C3C3C3
+W5      DD(BU,64,8), (16)9FD5A2C3C3C3C3C3
+W6      DD(BU,64,8), (16)9FE5AEC3C3C3C3C3
+W7      DD(BU,64,8), (16)9FF5AAC3C3C3C3C3
+W8      DD(BU,64,8), (16)AFC5A6C3C3C3C3C3
+W9      DD(BU,64,8), (16)AFD5A2C3C3C3C3C3
+W10     DD(BU,64,8), (16)AFE5AEC3C3C3C3C3
+W11     DD(BU,64,8), (16)AFF5AAC3C3C3C3C3
+W12     DD(BU,64,8), (16)BFC5A6C3C3C3C3C3
+W13     DD(BU,64,8), (16)BFD5A2C3C3C3C3C3
+W14     DD(BU,64,8), (16)BFE5AEC3C3C3C3C3
+W15     DD(BU,64,8), (16)BFF5AAC3C3C3C3C3
+GUARD   DD(BU,64,8), (16)5555555555555555
+        END, START

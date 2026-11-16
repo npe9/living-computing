@@ -1,0 +1,200 @@
+! C22-6578 PROBLEM 2.7, "SORTING INTO RESERVED TABLE AREAS", printed
+! pp.19-20 (PDF 20-21), read in the ink.  The one printed method, as
+! printed and with its offset corrected.
+!
+!   "Given the same field description as in Problem 3 above, as well as
+!   reserved table area beginning at TABL 0,..., TABL 15, each of which
+!   is capable of holding the entire string (in this case 400 bits).
+!   Put the proper B fields in successive entry areas of the TABL areas
+!   as dictated by the contents of the A fields.  Assume the A fields
+!   are not all different."
+!   ("Problem 3 above" is the page's own slip for Problem 2.6.)
+!
+!   Method 1.  LX, $2, XW2
+!      LOAD    L(BU, 4)(V+I), 0.24($2), -18
+!              LX, $1, $L
+!              LVE, $3, MTABL($1)
+!              L(BU, 20), -0.20($2)
+!              ST(BU,20) (V+I), 0.20($3)
+!              SVA,$3, MTABL($1)
+!              CB, $2, LOAD
+!      XW2     XW, DATA, 16, $
+!      MTABL   SIC,TABL0;SIC, TABL1;SIC, TABL2;SIC, TABL3   'Master Table
+!              ... four to a line, to SIC, TABL15
+!
+! THE DECK'S ADDITIONS, all marked: the page prints no halt, and falls
+! from the CB into XW2, so each block ends in a branch and the deck has
+! one BEW, $; a CNOP puts each master table on a word boundary; labels
+! are MTABL/TABL0.. in block 1 (the printed names) and MTABC/TABC0.. in
+! block 2; DATA and the tables' fill are the deck's.  Each table is two
+! words here, not 400 bits: no key occurs more than three times.
+!
+! >>> THE PRINTED OFFSET, -18, INDEXES THE MASTER TABLE BY WORDS, AND
+! >>> THE TABLE IS LAID OUT BY HALF-WORDS.  Key A goes to TABL 2A. <<<
+! Worked by hand:
+!
+!   An offset of -18 is 110 in the 7-bit field (128-18).  The offset is
+!   the distance of the field's last bit from the accumulator's right
+!   end, bit 127, so the key's last bit lands in bit 17 of $L -- the
+!   last bit of the WORD part of a value field.  "LX, $1, $L" then
+!   gives $1 a value of A words, and MTABL($1) is MTABL + A.0.  But
+!   "SIC, TABLn" is a half-word and the page prints four to a line with
+!   semicolons, so entry n is at MTABL + n half-words, and MTABL + A.0
+!   is entry 2A.  Offset -19 puts the key in bit 18, the half-word bit.
+!
+!   Block 1 is AS PRINTED, run with keys 0-7 only so that entry 2A
+!   exists: the B fields of key A must appear in TABL 2A and the
+!   odd-numbered tables must stay untouched.  Block 2 has -19, NOT
+!   PRINTED, and keys over the whole range; it is the stated result.
+!
+! LVE AND SVA ON A SIC, Reference Manual printed pp.28-29: LVE takes
+! "the effective value plus sign of the instruction found at the
+! location" by "the rules which apply to that instruction ... the
+! lengths of the address and index fields are determined from the
+! instruction class"; SVA replaces "the first 18, 19, or 24 bits".  The
+! page's comment (b): SIC "specifies a 24-bit address, and this fact is
+! noted by LVE and SVA instructions."  So each table pointer is a bit
+! address, kept in the master table and advanced 20 bits per entry --
+! comment (a), that is how equal keys are kept apart.
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement (and, for
+! block 1, from the offset argument above), not from the model.  Field
+! i has B = hex B i A F i.  Tables are filled with 5555... beforehand.
+!
+!   Block 1 keys  3 3 0 7 5 3 1 0 6 7 1 2 4 6 5 2
+!     TABL0  B20F2 B70F7 (key 0)     TABL8  BC4FC       (key 4)
+!     TABL2  B61F6 BA1FA (key 1)     TABL10 B45F4 BE5FE (key 5)
+!     TABL4  BB2FB BF2FF (key 2)     TABL12 B86F8 BD6FD (key 6)
+!     TABL6  B03F0 B13F1 B53F5 (3)   TABL14 B37F3 B97F9 (key 7)
+!   Block 2 keys  3 3 0 15 7 3 8 0 12 15 1 9 8 14 5 10
+!     TABC0  B20F2 B70F7             TABC8  B68F6 BC8FC
+!     TABC1  BA1FA                   TABC9  BB9FB
+!     TABC3  B03F0 B13F1 B53F5       TABC10 BFAFF
+!     TABC5  BE5FE                   TABC12 B8CF8
+!     TABC7  B47F4                   TABC14 BDEFD
+!                                    TABC15 B3FF3 B9FF9
+!   and every other table, and every bit after the entries, is 5555....
+!
+! MEASURED, against a control of 65 of 65 (two words of each of 32
+! tables and the halt PC): block 2's last field given key 2 for key 10
+! (ABFAFF -> 2BFAFF).  OBSERVED 2 fail: m19_T2_w0, which gains BFAFF,
+! and m19_T10_w0, which loses it.
+
+        SLC, 1000.0
+! --- 1. AS PRINTED: offset -18 ---------------------------------
+START   LX, $2, XW2L
+LOADL   L(BU, 4)(V+I), 0.24($2), -18
+        LX, $1, $L
+        LVE, $3, MTABL($1)
+        L(BU, 20), -0.20($2)
+        ST(BU,20) (V+I), 0.20($3)
+        SVA,$3, MTABL($1)
+        CB, $2, LOADL
+        B, BLK2
+XW2L    XW, DATAL, 16, $
+        CNOP
+MTABL   SIC,TABL0;SIC, TABL1;SIC, TABL2;SIC, TABL3     !'Master Table
+        SIC, TABL4; SIC, TABL5;SIC, TABL6; SIC, TABL7
+        SIC, TABL8; SIC, TABL9;SIC, TABL10; SIC, TABL11
+        SIC, TABL12; SIC, TABL13; SIC, TABL14; SIC, TABL15
+
+! --- 2. offset -19, NOT PRINTED ---------------------------------
+BLK2    LX, $2, XW2C
+LOADC   L(BU, 4)(V+I), 0.24($2), -19
+        LX, $1, $L
+        LVE, $3, MTABC($1)
+        L(BU, 20), -0.20($2)
+        ST(BU,20) (V+I), 0.20($3)
+        SVA,$3, MTABC($1)
+        CB, $2, LOADC
+        B, HALT
+XW2C    XW, DATAC, 16, $
+        CNOP
+MTABC   SIC,TABC0;SIC, TABC1;SIC, TABC2;SIC, TABC3     !'Master Table
+        SIC, TABC4; SIC, TABC5;SIC, TABC6; SIC, TABC7
+        SIC, TABC8; SIC, TABC9;SIC, TABC10; SIC, TABC11
+        SIC, TABC12; SIC, TABC13; SIC, TABC14; SIC, TABC15
+
+HALT    BEW, $
+
+        SLC, 1290.0
+DATAL   DD(BU,64,8), (16)3B03F03B13F10B20
+        DD(BU,64,8), (16)F27B37F35B45F43B
+        DD(BU,64,8), (16)53F51B61F60B70F7
+        DD(BU,64,8), (16)6B86F87B97F91BA1
+        DD(BU,64,8), (16)FA2BB2FB4BC4FC6B
+        DD(BU,64,8), (16)D6FD5BE5FE2BF2FF
+        SLC, 1300.0
+TABL0   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL1   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL2   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL3   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL4   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL5   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL6   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL7   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL8   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL9   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL10  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL11  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL12  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL13  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL14  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABL15  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+        SLC, 1390.0
+DATAC   DD(BU,64,8), (16)3B03F03B13F10B20
+        DD(BU,64,8), (16)F2FB3FF37B47F43B
+        DD(BU,64,8), (16)53F58B68F60B70F7
+        DD(BU,64,8), (16)CB8CF8FB9FF91BA1
+        DD(BU,64,8), (16)FA9BB9FB8BC8FCEB
+        DD(BU,64,8), (16)DEFD5BE5FEABFAFF
+        SLC, 1400.0
+TABC0   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC1   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC2   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC3   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC4   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC5   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC6   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC7   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC8   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC9   DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC10  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC11  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC12  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC13  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC14  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+TABC15  DD(BU,64,8), (16)5555555555555555
+        DD(BU,64,8), (16)5555555555555555
+        END, START

@@ -23,6 +23,53 @@ accumulate.
 
 
 
+## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- open, 2026-11-15
+
+`C22-6578` printed p.21 (PDF 22), Problem 2.9, prints
+`TEST KFI(BU, 2), (2) 10,4`.  `strap_asm` raises "cannot parse
+expression '(2) 10'"; the same page says "Normally the STRAP assembler
+ignores all blanks in instructions and pseudo-instructions" (Problem 2.8
+comment (d)), and its other KFI lines, printed `(2)0000`, assemble.
+**The host STRAP II takes both spellings and gives the same word.**
+
+Reproducer `decks/repro_radix_blank.strap`; registered check
+`tests/check_radix_blank.py`, 3 of 3, one of which PINS the refusal and
+fails, on purpose, the day `strap_asm` is fixed (its docstring says what
+to change it to).  `decks/problem_2_9.strap` writes the statement
+without the blank and says so.  Not fixed here: `strap/` was out of
+bounds for the task that found it.
+
+## `strap_asm` ASSEMBLES A DECIMAL-MODE `DD` AS A BINARY INTEGER -- open, 2026-11-15
+
+Found transcribing `C22-6578` Problem 2.8 (`decks/problem_2_8.strap`),
+whose subfields are `(DU, 24, 8)` and `(DU, 48, 8)`.  Reproducer:
+`decks/repro_dd_decimal_mode.strap`, registered twice in
+`tests/run_tests.sh` section 3d.
+
+    DD(DU,16,8), 12        should be 0102          strap_asm: 000C
+    DD(DU,16,4), 1234      should be 1234          strap_asm: 04D2
+    DD(DU,48,8), 000125    should be 000000010205  strap_asm: 00000000007D
+    DD(D,16,4), -123       should be 1238          strap_asm: FF85
+
+The rule is `C22-6531` printed pp.28-29 (PDF 29-30): "The two decimal
+modes in DD and DDI statements represent the only cases in which Strap-1
+converts numbers to an internal decimal radix"; `DD(D, , 8), 432E3` --
+"Four binary zeros are inserted in the zone positions of each byte"; a
+4-bit sign byte in `D`, none in `DU`.  `parse_dd_literal` returns
+`int(field, 10)` whatever the mode, and a negative value is then stored
+as a two's complement, which is not a 7030 form.
+
+**The host STRAP II (`strap/strap2`, `ASM=strap2`) gets all four right**,
+so the first registered run pins `strap_asm`'s wrong words (labels
+`*_WRONG_want_*`) and the second checks the rule's values through
+STRAP II.  When `strap_asm` is fixed the first run's checks must be
+changed to the wanted values, not deleted.  Not fixed here: the task
+that found it was not allowed to edit `strap/`.
+
+Nothing in the suite depended on it: `grep -E 'DD\(DU?[,)]' decks/*.strap`
+finds a decimal-mode `DD` in these two decks and no other (measured
+2026-11-15; `decks/` only, the MCP listing sources were not swept).
+
 ## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS

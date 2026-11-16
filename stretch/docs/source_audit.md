@@ -580,6 +580,14 @@ finished; the next in book order is Problem 2.3.  The batch just run, 1.1,
 the model executed**, and that is the measured yield: see "G2.1, THE FIRST
 BATCH" below.*
 
+*Counted again 2026-11-15: **twenty have run, 24 remain** (2.8, which is
+transcribed but cannot run, and Chapters 3 and 4).  Chapter 2 is finished
+as far as the model can take it; the next in book order is Problem 3.1.
+Problems 2.3-2.7 and 2.9-2.12 again found **no wrong result in anything the
+model executed** -- and found nine defects in seven of the PRINTED methods,
+which the model's agreement with a hand trace is what shows.  See "G2.1,
+CHAPTER 2" below.*
+
 **G2.2 Buchholz Appendix B** adds six more worked programs, independent
 of `C22-6578`.
 
@@ -1795,6 +1803,83 @@ Problems 1.1-1.5 and 1.7-1.9, read in the ink, every printed method run:
 4. Not run, each for a stated reason in its deck: 1.1 Method 2 comment (b)
    (a zero count overwrites all of core) and 1.7 comment (c) (needs a second
    interruption inside the two-instruction window).
+
+# >>>>>> G2.1, CHAPTER 2, 2026-11-15: PROBLEMS 2.3 TO 2.12, NINE RUN, ONE BLOCKED <<<<<<
+
+`C22-6578` printed pp.14-25, read in the ink, every printed method
+transcribed.  Decks `decks/problem_2_{3,4,5,6,7,9,10,11,12}.strap`,
+`problem_2_3_method4.strap`, `problem_2_6_method3.strap`,
+`problem_2_8.strap` (not run); `tests/run_tests.sh` section 3d, fourteen
+registered runs, **333 checks, all passing as written** (the section was
+run on its own, exactly as registered; the full suite was not).
+
+**The model: no wrong result in anything it executed.**  That includes,
+each for the first time in a worked example: a data-flag interruption
+(`$VF`) through a table entry the program swaps in (2.12); `LVE`/`SVA`
+against a `SIC`'s 24-bit address (2.7); a store into the instruction that
+follows it (2.9); `KFI`, `M+` into an index value field, `*`/`/` with `$RM`
+(2.9, 2.10, 2.12); `CONNECT` leaving the rest of the accumulator alone
+(2.4); `(V+ICR)`'s refill inside the instruction (2.6 Method 3).  So the
+table's `C22-6578` row gains nine problems and no model bug.
+
+**The model: one refusal, known.**  Decimal VFL (G2.3): 2.3 Method 4's
+`L(DU)`/`LWF(D)` and 2.8's `+(D)` set OP.  2.3 Method 4 is registered as a
+pinned refusal whose labels carry the hand-derived values; 2.8 does not
+halt once its add is refused and is not registered.  The first OP that run
+reported was the add's, at half-word 2006, not the `LCV(DU)` before it --
+not examined further.
+
+**The assembler (`strap_asm`): two findings, both with reproducers and a
+section in `docs/NEXT.md`, neither fixed.**  The host STRAP II
+(`strap/strap2`) is right on both.
+
+1. A `DD` in mode `D`/`DU` is assembled as a binary integer
+   (`decks/repro_dd_decimal_mode.strap`; C22-6531 printed pp.28-29).
+2. A blank after a radix specifier, `(2) 10`, is refused
+   (`decks/repro_radix_blank.strap`, `tests/check_radix_blank.py`;
+   C22-6578 printed p.21).
+
+Not findings: `strap_asm`'s comment mark is `!`, so the printed `'`
+comments are written `!'`; a symbol in a `DD` data field (2.10's
+`DD(BU, 18), N`) is refused by STRAP II too.
+
+**The printed programs: nine defects in seven methods, each worked by hand
+from the Reference Manual.**  Seven of the nine were then run AS PRINTED and
+the model agreed with the hand trace; 2.3 Method 3's is not run (it does not
+terminate) and 2.12's is pinned only as far as what TEMP is left holding.
+Each deck's header has the argument.
+
+| Problem | Printed | What it does | Right |
+|---|---|---|---|
+| 2.3 M2 | `BZXCZ, $-1.0` | loops on the ST: first nibble twelve times | `$-2.0` |
+| 2.3 M3, pair 3 | `ST(B,4,3) (V+I)` | count never moves; not run | `(V+IC)` |
+| 2.5 | `B, LODE` after a key | one byte too many per key | `B, CAB` |
+| 2.6 M3 | `K(BU,4)` | every compare HIGH after a fixup; does not sort | `KF` |
+| 2.6 M3 | fixup after the last `(V+ICR)` | addresses through the refilled `$1` | -- |
+| 2.7 | offset `-18` | key A goes to table 2A | `-19` |
+| 2.9 | last `B, MPLUS` | bits 19-23 left in the sum | `B, KMINUS` |
+| 2.9 | K-type, K = 1 | `$1` overwritten before it is read | -- |
+| 2.12 | mask saved in `INST+1.0` | that word is TEMP, reused | -- |
+
+Also recorded, without a run: 2.6 Method 4 does not assemble as
+printed (`BZXCZ, $3, TEST`) and has three more visible defects -- it is
+transcribed in `problem_2_6_method3.strap`'s header; 2.8 prints the label
+`LCON` twice; 2.11's statement says `$R` where its program stores in `R`.
+
+**Open, and not decided here:**
+
+1. **2.8 and 2.3 Method 4 wait on the decimal arm.**  2.8's expected byte
+   forms (zone bits of a decimal store) were not derived.
+2. **2.6 Method 4 was not run.**  Running it means choosing four
+   corrections; that would test the deck's rewrite, not IBM's program.
+3. **2.9's K = 1 defect and 2.6 Method 3's last-compare defect have no
+   corrected form in the decks** -- each needs more than a one-word change.
+4. Every "printed defect" above rests on one reading of the ink and one
+   reading of the manual, by one reader.  The model agreeing shows the
+   model and the reader read the manual the same way; it does not make a
+   third witness.  The pages are legible; the uncertain characters are
+   listed in the deck headers (2.3 Method 4's `LWF(D,` comma; 2.6 comment
+   (b)'s `($)`).
 
 # >>>>>> G2 RE-CENSUSED, 2026-10-29: THE POOL G2.1 SIZES IS THE LOWEST-YIELDING <<<<<<
 

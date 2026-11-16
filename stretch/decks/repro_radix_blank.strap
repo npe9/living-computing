@@ -1,0 +1,29 @@
+! REPRODUCER: strap_asm.py refuses a blank between a radix specifier and
+! its number in an instruction's address field.  Found 2026-11-15
+! transcribing C22-6578 Problem 2.9 (problem_2_9.strap), printed p.21
+! (PDF 22), whose statement TEST is printed, with the blank,
+!
+!       TEST    KFI(BU, 2), (2) 10,4        'test if floating-point
+!
+! THE RULE.  C22-6578 printed p.21, Problem 2.8 comment (d): "Normally
+! the STRAP assembler ignores all blanks in instructions and pseudo-
+! instructions.  An exception is made for pseudo-instructions
+! specifying alphabetic characters".  The same page's other KFI lines
+! are printed "(2)0000", "(2)1000, 4", without the blank, and those
+! assemble.
+!
+! strap_asm:  AssemblerError, "cannot parse expression '(2) 10' at
+!             '(2) 10'".  OBSERVED 2026-11-15.
+! Wanted:     WITHB and NOB below assemble to the same word.
+!
+! tests/check_radix_blank.py is the registered check.  It PINS the
+! refusal today and says what it must become; docs/NEXT.md has the
+! section.  problem_2_9.strap writes the statement without the blank
+! and says so.
+
+        SLC, 1000.0
+START   BEW, $
+        CNOP
+NOB     KFI(BU, 2), (2)10,4
+WITHB   KFI(BU, 2), (2) 10,4
+        END, START

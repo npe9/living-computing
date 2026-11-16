@@ -302,7 +302,7 @@ if __name__ == "__main__":
                 print(f"   {base}: {detail}")
             if how == "unwritten":
                 unwritten.append((base, detail))
-    check("A1 decks whose cards load to their image", counts.get("same", 0), 734)   # 734 with decks/index_after_level.strap
+    check("A1 decks whose cards load to their image", counts.get("same", 0), 748)   # 748 with the fourteen C22-6578 ch.2 decks, problem_2_3 .. problem_2_12, repro_dd_decimal_mode, repro_radix_blank
     check("A2 none differ", counts.get("differs", 0), 0)
     check("A3 none stops", sorted(unwritten), [])
     # MCP's seven PUNFUL header cards: the BSP, IPL and MCP decks' (printed pp.2,
