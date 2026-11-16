@@ -13462,6 +13462,22 @@ run "C22-6578 Problem 2.4 -- bit reversal, two methods" ./run_program.sh ../deck
     "M1_DROW:1202=0xF7B3D591E6A2C480" "M2_DROW:1204=0xF7B3D591E6A2C480" \
     "WORD_unchanged:1200=0x0123456789ABCDEF" "guard1:1201=0x5555555555555555" \
     "guard2:1203=0x5555555555555555" "guard3:1205=0x5555555555555555"
+# 2.5: key words removed from 100 six-bit bytes.  AS PRINTED the program
+# stores one byte too many per key found (its "B, LODE" goes round the
+# CB); ANS1_w8 pins that.  Block 2 is "B, CAB", not printed, and is the
+# statement's answer.
+run "C22-6578 Problem 2.5 -- key words removed, as printed and with B, CAB" ./run_program.sh ../decks/problem_2_5.strap StretchP25Tb "PC=2033" \
+    "ANS1_w0:1220=0x0CA4587E6B74EC29" "ANS1_w1:1221=0x6CCFA0483D6764AF" \
+    "ANS1_w2:1222=0x2E401CE55C8EAC78" "ANS1_w3:1223=0xFC63546E2A70DFE1" \
+    "ANS1_w4:1224=0x4C4DAF442D26609E" "ANS1_w5:1225=0xED7C0CA4587E6B74" \
+    "ANS1_w6:1226=0xEC22505DE96CCFA0" "ANS1_w7:1227=0x483D6764AF2E401C" \
+    "ANS1_w8_as_printed_two_bytes_too_many:1228=0xE55C8EAC78A95FFF" \
+    "ANS1_w9:1229=0xFFFFFFFFFFFFFFFF" "ANS2_w0:1240=0x0CA4587E6B74EC29" \
+    "ANS2_w1:1241=0x6CCFA0483D6764AF" "ANS2_w2:1242=0x2E401CE55C8EAC78" \
+    "ANS2_w3:1243=0xFC63546E2A70DFE1" "ANS2_w4:1244=0x4C4DAF442D26609E" \
+    "ANS2_w5:1245=0xED7C0CA4587E6B74" "ANS2_w6:1246=0xEC22505DE96CCFA0" \
+    "ANS2_w7:1247=0x483D6764AF2E401C" "ANS2_w8_B_CAB_is_the_statement:1248=0xE55C8EAC78FFFFFF" \
+    "ANS2_w9:1249=0xFFFFFFFFFFFFFFFF"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
