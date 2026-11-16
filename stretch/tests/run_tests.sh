@@ -13456,6 +13456,12 @@ run "C22-6578 Problem 2.3 Method 4 -- decimal load REFUSED (pinned)" ./run_progr
     "M4a_REFUSED_want_907254361805A5A5:1203=0xA5A5" \
     "M4b_REFUSED_want_907254361805A5A5:1204=0xA5A5" \
     "M4c_REFUSED_want_907254361455A5A5:1205=0xA5A5"
+# 2.4: bit reversal, both methods; Method 2 depends on CONNECT leaving the
+# rest of the accumulator alone (RefMan printed pp.74-75).
+run "C22-6578 Problem 2.4 -- bit reversal, two methods" ./run_program.sh ../decks/problem_2_4.strap StretchP24Tb "PC=2014" \
+    "M1_DROW:1202=0xF7B3D591E6A2C480" "M2_DROW:1204=0xF7B3D591E6A2C480" \
+    "WORD_unchanged:1200=0x0123456789ABCDEF" "guard1:1201=0x5555555555555555" \
+    "guard2:1203=0x5555555555555555" "guard3:1205=0x5555555555555555"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

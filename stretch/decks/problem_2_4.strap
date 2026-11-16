@@ -1,0 +1,74 @@
+! C22-6578 PROBLEM 2.4, "BIT REVERSAL", printed pp.15-16 (PDF 16-17),
+! read in the ink.  Both printed methods.
+!
+!   "The 64-bit full word starting at WORD contains a binary message
+!   which would be easily interpretable when every bit in the word is
+!   reversed (WORD +0.63 becomes WORD +0.0, etc.).  Perform the bit
+!   reversal and put the result in DROW."
+!
+!   Method 1.  Load the entire word and store a bit at a time.
+!   Method 2.  Load a bit at a time and store the entire word.
+!
+! THE PRINTED STATEMENTS are the two blocks below, as printed, except:
+! Method 1's BEW, $ is replaced by falling into Method 2; Method 2's
+! XW1/XW2 are named XW1B/XW2B and its DROW is DROW2, because both
+! methods run in one program; WORD's contents and the guard words are
+! the deck's.
+!
+! EXPECTED VALUE, HAND-DERIVED from the problem statement, not from the
+! model.  WORD = 0123456789ABCDEF.  Reversing 64 bits reverses the
+! order of the sixteen hex digits and reverses the four bits of each:
+! F E D C B A 9 8 7 6 5 4 3 2 1 0 becomes F 7 B 3 D 5 9 1 E 6 A 2 C 4 8 0,
+! so DROW = F7B3D591E6A2C480.
+!
+! WHY EACH METHOD GIVES THAT (Reference Manual printed pages):
+!
+!  M1  The word goes to $R, so WORD +0.63 is at offset 0.  The ST's
+!      second-half index is $2: p.21, "the index field I in the second
+!      half of the instruction may be used to modify bits 35-50 ... bit
+!      position 3 of the index word is aligned with bit position 35",
+!      so one HALF-word of value is one unit of offset -- the page's
+!      comment (a) -- and CBH advances $2 by a half-word.  Offsets 0 to
+!      63 go to DROW +0.0 to +0.63 by progressive indexing on $1.
+!  M2  LF is CONNECT 0011, and pp.74-75: "In CONNECT, only those
+!      accumulator bytes which are combined with the storage operand
+!      can be affected.  The remainder of the accumulator contents
+!      remains unchanged."  That is why it is LF and not L: each bit is
+!      laid in at a rising offset and the bits below it stay.  The
+!      accumulator is left dirty by Method 1 on purpose.
+!
+! guard1-3 are the words after WORD, DROW and DROW2: a store that ran
+! on would show there.
+!
+! MEASURED, against a control of 7 of 7: WORD's LAST bit cleared
+! (..CDEF -> ..CDEE).  OBSERVED 3 fail: M1_DROW and M2_DROW, each
+! 77B3D591E6A2C480 -- the FIRST bit of the answer, which is what a
+! reversal predicts -- and WORD_unchanged.  The guards and the PC pass.
+
+        SLC, 1000.0
+! --- Method 1 ------------------------------------------------------
+START   TI, 1, WORD, $R
+        LX, $1, XW1
+        LX, $2, XW2
+STOR    ST(BU,1) (V+I), 0.1($1), 0($2)
+        CBH, $2, STOR
+! --- Method 2 ------------------------------------------------------
+        LX, $1, XW1B
+        LX, $2, XW2B
+LO      LF(BU,1) (V+I), 0.1($1), 0($2)
+        CBH, $2, LO
+        ST(BU, 64), DROW2
+HALT    BEW, $
+XW1     XW, DROW, 0, $
+XW2     XW, 0, 64, $
+XW1B    XW, WORD, 0, $
+XW2B    XW, 0, 64, $
+
+        SLC, 1200.0
+WORD    DD(BU,64,8), (16)0123456789ABCDEF
+GUARD1  DD(BU,64,8), (16)5555555555555555
+DROW    DD(BU,64,8), (16)AAAAAAAAAAAAAAAA
+GUARD2  DD(BU,64,8), (16)5555555555555555
+DROW2   DD(BU,64,8), (16)AAAAAAAAAAAAAAAA
+GUARD3  DD(BU,64,8), (16)5555555555555555
+        END, START
