@@ -17071,3 +17071,35 @@ are accumulator bits 60-63 (double-length fraction bits), not `$SB` bits
 `Q DD(N), 1/1.41421356205080` and `QQ DD(N), 2/1.41421356205080`, read at
 400 dpi: sqrt2 is 1.41421356237310.  Run as printed; every result is low
 by 2.279E-10, measured as ACC - ln x on all three passing arguments.
+
+### Second part: a STORE to location 8 is lost (found by Problem 4.9) -- 2026-11-16
+
+Reference Manual printed p.96, Store Rounded: the rounded fraction goes
+to storage bits 12-59, "The sign of the accumulator, as changed by the
+sign modifiers, is placed in storage bit 60.  The accumulator flag bits
+are placed in storage bits 61-63.  The entire accumulator and its sign
+byte register remain unchanged throughout the operation unless used as
+the effective address."  C22-6578 printed p.43 (4.9) ends COSF with
+`SRDN,$L` and printed p.43 Method 2 the same; 4.12/4.13 use `SRT(N), $L`.
+
+* **Reproducer:** `decks/repro_fp_store_location8.strap`.  t*t double
+  length (t = 1/3 as assembled), `SRDN, $L`: p.96 gives word 8 =
+  `007E 38E3 8E38 E378`; the model leaves `007E 38E3 8E38 E371`, the
+  accumulator unrounded with its own fraction bits in 60-63.  Registered
+  pinned at the wrong word, labelled.
+* The likely mechanism, NOT verified in the model source: the store is
+  written to word 8 and then the FP commit writes the unchanged
+  accumulator left half over it (`StretchExecute.bsv` commitFp,
+  "commitFp sends accLeft to word 8").  Confirming that is the fixer's
+  job, not this worklist's.
+* **OPEN, from the pages:** whether such a store also sets `$SB` from
+  storage bits 60-63.  p.96's "unless used as the effective address"
+  says the accumulator and `$SB` CAN change; it does not say how.  4.9
+  relies on the answer reading +cos "in the accumulator", which needs
+  `$SB` to change too.  The checks pin word 8 only.
+* **The loss is SRD's, not every store's.**  4.12 and 4.13 store
+  `SRT(N), $L` into location 8 and then `R/` divides by the accumulator:
+  had that store been lost, 4.12's answer would be u/(1 - t) = 6.857, not
+  the u/sqrt(1 - t) = 6.7072 that passed within 2.3 units.  So SRT's
+  store to word 8 takes effect in the model and SRD's does not.  Whether
+  SRT then leaves bits 60-63 as p.95 stores them was not checked.

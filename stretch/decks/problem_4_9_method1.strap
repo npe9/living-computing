@@ -1,0 +1,124 @@
+! C22-6578 PROBLEM 4.9, "COSINE OF 2 PI X", printed pp.42-43 (PDF
+! 43-44), Method 1, read in the ink at 300 dpi.
+!
+!   "Given a number -1/8 <= x <= 1/8 in the accumulator.  Create 2 pi x
+!   in the accumulator."
+!
+! WRONG IN THE INK: the statement omits "cos".  The title, the analysis
+! ("the series cos 2 pi x = 1 - (2 pi x)**2/2! + ...") and the program
+! all compute cos 2 pi x.  "If the last term included has 2K = 16, the
+! relative error estimate is less than 0.3 x 10**-15."
+!
+! THE THIRTEEN INSTRUCTIONS FROM COSF TO "BEW, $" ARE AS PRINTED.  The
+! data is substituted where this assembler refuses it, each under a
+! "printed:" comment: TPI "2*$PI", CONST's products "1/16*1/15" ...,
+! and WON's second entry, a zero DD(N) (decks/repro_dd_n_*.strap).
+! WON's "1, 0" is two words; the 0 is never read.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual:
+!   *(N), TPI        A = 2 pi x.
+!   D*(N), $L        A**2: location 8 as the operand, which printed p.37
+!                    says is accumulator bits 0-59 and $SB bits 4-7, so
+!                    A times A's own 48-bit fraction, sign squared away.
+!   SRD(N), TEMP     y = A**2 rounded (printed p.96).
+!   the loop         seven passes, $2 by CB+ (XW2 count 7): acc =
+!                    (1 - acc c) y with c = 1/240, 1/182, 1/132, 1/90,
+!                    1/56, 1/30, 1/12 in that order; D*N is the negative
+!                    multiply.  So acc = y(1 - y/12(1 - y/30(...))).
+!   E-I, 1           halves it (printed p.102): y/2 (1 - ...).
+!   D-(N), WON       minus 1: -cos A.
+!   SRDN, $L         STORE ROUNDED with the negative modifier into
+!                    location 8: +cos A, rounded, in bits 0-59 and its
+!                    sign, plus in bit 60 (p.96: "The sign of the
+!                    accumulator, as changed by the sign modifiers, is
+!                    placed in storage bit 60").
+!
+! WHERE THE ANSWER IS READ, AND WHAT IS OPEN: word 8 as SRDN stored it,
+! a full floating word.  WHETHER THE STORE ALSO SETS $SB is not stated:
+! p.37 describes location 8 as an operand "obtained", and p.96 says the
+! accumulator and its sign byte register "remain unchanged throughout
+! the operation unless used as the effective address".  The program
+! relies on the answer being +cos in "the accumulator"; $SB still holds
+! the minus of -cos unless the store changes it.  NOT CHECKED: OPEN, in
+! docs/NEXT.md.
+!
+! THE MODEL BUG FOUND BY 4.10 REACHES THIS PROGRAM, AND A SECOND ONE.
+!
+! 1. "D*(N), $L" (the operand fetch, printed p.37).  PREDICTED BY HAND
+!    before the run: the model would take the operand's sign from word
+!    8's bit 60, which I took to be fraction bit 49 of A, and the
+!    verifier prints that prediction.  THE PREDICTION WAS WRONG IN ITS
+!    DETAIL: TEMP comes out -A**2 for EVERY negative A (x = -.1, -.125,
+!    -.07) and +A**2 for every positive one, whatever that bit is.  So
+!    after the model's "*(N)" word 8's bit 60 is 0; the cause is the
+!    same, the operand's sign is not $SB's.
+! 2. "SRDN,$L" (the store, printed p.96).  Word 8 after it is NOT what
+!    SRDN stores: its bits 60-63 come out A, 1, 0, F for x = .1, .03,
+!    .125, -.1 where p.96 stores sign 0 and flags 000.  It is the
+!    accumulator as it was, unrounded: the store to location 8 is lost.
+!    Reproducer decks/repro_fp_store_location8.strap.  At x = .1 the
+!    stale bit 60 reads as a minus, so W8 is -cos.
+!
+! MEASURED, 2026-11-16, tests/verify_problem_4_fp.py 4.9m1:<x>, 1 exact
+! check and the PC, 3 within and 1 sign-byte check each:
+!   x = .125    ALL CHECKS PASSED, .20 units from the program's number,
+!               .61 from cos.  Lucky: the stale bits 60-63 are 0000 and
+!               the lost rounding is under a unit.
+!   x = .03     W8_sign_byte_plus_no_flags FAILS (1, the V flag), alone.
+!   x = .1      the two W8 value checks and the sign byte FAIL.
+!   x = -.1, -.125, -.07   TEMP_A_squared, both W8 value checks and the
+!               sign byte FAIL.
+!   The four registered are .125 and, --known-wrong with exactly those
+!   sets, .03, .1 and -.1.
+!
+! OBSERVED INJECTIONS at x = .125, each --sub on one data card:
+!   CONST's 1/12 -> 8.3333333333E-2 (4E-12 off)
+!       FAILED W8_cos_2_pi_x (17.39 units; the as-programmed check reads
+!       CONST and follows it) and the sign byte (7: the stale bits moved).
+!   TPI -> 6.2831853071
+!       FAILED both W8 value checks and the sign byte (B): the stale
+!       bit 60 is now 1 and W8 reads negative.
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PAGE, NOT THE MODEL (sixty-digit
+! decimal, from XARG, TPI and CONST as assembled):
+!   exact   the halt at the printed BEW; $2 = value 7.0, count 0,
+!           refill XW2.
+!   within  TEMP = A x trunc48(A), 4 units; word 8 = the series as
+!           programmed, 4 units; word 8 = cos 2 pi x itself, 8 units.
+!
+! THE HARNESS IS NOT PRINTED: START loads XARG and falls into COSF;
+! the verifier takes the argument as "4.9:<literal>".
+!
+!
+        SLC, 1000.0
+START   DL(N), XARG
+COSF    *(N), TPI                       !2*$PI
+        D*(N),$L                        !square
+        SRD(N), TEMP
+        LX, $2, XW2
+DMULT   D*N(N), CONST($2)
+        D+(N), WON
+        D*(N),TEMP
+        CB+, $2, DMULT
+EMI     E-I, 1
+        D-(N), WON
+        SRDN,$L
+HALT    BEW, $
+! printed: TPI DD(N), 2*$PI
+TPI     DD(N), 6.283185307179586476925286766559
+XW2     XW, 0, 7, $
+! printed: CONST DD(N), 1/16*1/15, 1/14*1/13, 1/12*1/11,1/10*1/9
+CONST   DD(N), 4.166666666666666666666666666667E-3, 5.494505494505494505494505494505E-3
+        DD(N), 7.575757575757575757575757575758E-3, 1.111111111111111111111111111111E-2
+! printed: DD(N), 1/8*1/7, 1/6*1/5, 1/4*1/3
+        DD(N), 1.785714285714285714285714285714E-2, 3.333333333333333333333333333333E-2
+        DD(N), 8.333333333333333333333333333333E-2
+! printed: WON DD(N), 1, 0
+WON     DD(N), 1
+        DD(BU,64,8), 0
+TEMP    DR(N), (1)
+
+        SLC, 1100.0
+XARG    DD(N), .1
+
+        END, START

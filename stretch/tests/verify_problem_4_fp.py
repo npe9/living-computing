@@ -250,7 +250,78 @@ def p4_10(sym):
                 "sqrt2 predicts -2.279E-10)" % (got - img('XARG').ln()))
 
 
-PROBLEMS = {'4.10': ('problem_4_10.strap', p4_10),
+def _frac_exp(v):
+    """(f, e) with v = f 2**e, 1/2 <= |f| < 1; f carries the sign."""
+    e = 0
+    f = abs(v)
+    while f >= 1:
+        f /= 2
+        e += 1
+    while f < D('0.5'):
+        f *= 2
+        e -= 1
+    return (f if v >= 0 else -f), e
+
+
+def p4_9m1(sym):
+    """COSF, printed p.43.  The argument is XARG, one per run."""
+    def a_of(img):
+        return img('XARG') * img('TPI')        # exact: two 48-bit fractions
+
+    def trunc48(v):
+        f, e = _frac_exp(v)
+        return D(int(f * 2 ** 48)) / D(2) ** 48 * D(2) ** e
+
+    def y_full(img):
+        a = a_of(img)
+        return a * trunc48(a)
+
+    def round48(v):
+        # STORE ROUNDED: one added at fraction bit 49, then truncated (p.96)
+        f, e = _frac_exp(v)
+        m = int(abs(f) * 2 ** 49) + 1
+        r = D(m >> 1) / D(2) ** 48 * D(2) ** e
+        return r if v >= 0 else -r
+
+    def as_programmed(img):
+        yt = round48(y_full(img))
+        acc = y_full(img)
+        for i in range(7):
+            acc = (1 - acc * img('CONST+%d' % i)) * yt
+        return 1 - acc / 2
+
+    def bug_bit(img):
+        f, _ = _frac_exp(a_of(img))
+        return int(abs(f) * 2 ** 49) & 1
+
+    exact = [('x2_value7_count0', 'addrIndex(2)', (7 << 46) | (sym['XW2'] // 64))]
+    within = [('TEMP_A_squared', 'TEMP', lambda img: round48(y_full(img)), 4),
+              ('W8_series_as_programmed', 8, as_programmed, 4),
+              ('W8_cos_2_pi_x', 8, lambda img: (2 * PI * img('XARG')).cos()
+               if hasattr(D, 'cos') else _cos(2 * PI * img('XARG')), 8)]
+    return dict(module='StretchP49M1Tb', halt='HALT', dump=(8, 'XARG'),
+                exact=exact, within=within,
+                low4=[('W8_sign_byte_plus_no_flags', 8, 0)],
+                pre=lambda img: "HAND PREDICTION: A = 2 pi x is %s, word 8 "
+                "bit 60 after *(N) = fraction bit 49 of A = %d, so the "
+                "location-8 bug %s" % (
+                    "negative" if a_of(img) < 0 else "positive", bug_bit(img),
+                    "BITES (y = -A**2)" if bug_bit(img) != (a_of(img) < 0)
+                    else "does not bite"))
+
+
+def _cos(v):
+    """cos by its series, sixty digits; |v| < 1."""
+    term = D(1)
+    tot = D(1)
+    for k in range(1, 40):
+        term *= -v * v / ((2 * k - 1) * (2 * k))
+        tot += term
+    return tot
+
+
+PROBLEMS = {'4.9m1': ('problem_4_9_method1.strap', p4_9m1),
+            '4.10': ('problem_4_10.strap', p4_10),
             '4.11': ('problem_4_11.strap', p4_11),
             '4.13': ('problem_4_13.strap', p4_13),
             '4.12': ('problem_4_12.strap', p4_12)}
@@ -269,7 +340,7 @@ def main():
         subs.append((args[i + 1], args[i + 2]))
         del args[i:i + 3]
     xarg = None
-    if len(args) == 1 and args[0].startswith('4.10:'):
+    if len(args) == 1 and ':' in args[0]:
         args[0], xarg = args[0].split(':', 1)
     if len(args) != 1 or args[0] not in PROBLEMS:
         raise SystemExit("usage: verify_problem_4_fp.py %s [--sub OLD NEW]..."
@@ -279,7 +350,8 @@ def main():
     with open(os.path.join(HERE, '..', 'decks', deck_name)) as f:
         src = f.read()
     if xarg is not None:
-        subs.insert(0, ("XARG    DD(N), 10.0", "XARG    DD(N), " + xarg))
+        m = re.search(r"^XARG    DD\(N\), .*$", src, re.M)
+        subs.insert(0, (m.group(0), "XARG    DD(N), " + xarg))
     for old, new in subs:
         if src.count(old) != 1:
             raise SystemExit("--sub: %r occurs %d times, need exactly 1"
@@ -301,6 +373,8 @@ def main():
     def img(s):
         return fp_value(prog.words[word_of(s)])
 
+    if 'pre' in spec:
+        print(spec['pre'](img))
     first, last = word_of(spec['dump'][0]), word_of(spec['dump'][1])
     halt = spec['halt']
     checks = ["PC=%d" % (halt if isinstance(halt, int) else sym[halt] // 32),
@@ -376,6 +450,20 @@ def main():
                 fails += 1
         if where == 'ACC' and 'report' in spec:
             print("NOTE " + spec['report'](img, got))
+    for label, a, want4 in spec.get('low4', []):
+        # the stored word's bits 60-63, sign and flags, compared exactly
+        n_within += 1
+        if a not in dump:
+            print("FAIL %s: word %d is not in the dump" % (label, a))
+            fails += 1
+            continue
+        got4 = dump[a] & 0xF
+        ok = got4 == want4
+        print("%s %s = %X, want %X" % ("PASS" if ok else "FAIL", label, got4, want4))
+        if not ok:
+            failed_within.add(label)
+            if label not in known_wrong:
+                fails += 1
     print("verify_problem_4_fp %s: %d exact checks and the PC through gen_tb, "
           "%d within-bound checks, %d dumped words read"
           % (args[0], len(spec['exact']), n_within, len(dump)))

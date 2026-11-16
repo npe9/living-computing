@@ -1992,3 +1992,26 @@ and 4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
 `L(B,12,1)` and `-I(BU,1)` turning a floating exponent into a VFL integer
 and back -- all right.  A fourth printed erratum: sqrt2 printed
 1.41421356205080.
+
+### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
+
+`tests/verify_problem_4_fp.py 4.9m1:<x>`, six arguments run, four
+registered.  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
+4.10), and `SRDN,$L` -- a STORE into location 8 -- is lost, leaving the
+accumulator's own bits 60-63 where p.96 stores the sign and flags (second
+reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
+passes, and by luck.  Erratum: the statement says "Create 2 pi x" for
+"cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
+`D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
+those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
+("undefined symbol U") -- read in the ink but not decided.
+
+## Where Chapter 4 stands, 2026-11-16
+
+Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
+one cause (location 8 as a floating-point operand and as a store),
+four assembler refusals, six printed errata.**  Not reached: 4.9
+Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
+(bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`
+field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
+4.1 (VFL square root).

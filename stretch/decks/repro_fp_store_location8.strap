@@ -1,0 +1,32 @@
+! REPRODUCER, a MODEL finding (docs/NEXT.md, "G2.1 CHAPTER 4: LOCATION 8
+! AS A FLOATING-POINT OPERAND", second part: the STORE).
+!
+! Reference Manual printed p.96 (PDF 99), Store Rounded (SRD): "The
+! rounding is performed by adding one to the fraction in the accumulator
+! in bit position 60 ... The 48 low-order bits are discarded ... The
+! sign of the accumulator, as changed by the sign modifiers, is placed
+! in storage bit 60.  The accumulator flag bits are placed in storage
+! bits 61-63.  The entire accumulator and its sign byte register remain
+! unchanged throughout the operation unless used as the effective
+! address."
+!
+! Here the effective address IS location 8.  The accumulator holds
+! t*t, t = 1/3 as assembled (a 48-bit truncation), double length, so
+! accumulator bits 60-63 are fraction bits 49-52 of t*t = 0001.
+! "SRDN, $L" must leave in word 8, worked by hand from p.96:
+!   exponent -3, fraction rounded up = E38E 38E3 8E37, sign 1 (the N
+!   modifier inverts plus), flags 000:  007E 38E3 8E38 E378.
+! The model leaves 007E 38E3 8E38 E371 -- the accumulator unrounded,
+! with its own fraction bits in 60-63, as if the store never happened.
+! OBSERVED 2026-11-16.  (Whether $SB also changes is not stated on
+! these pages and is not checked: OPEN.)
+!
+! Found by C22-6578 Problem 4.9, printed p.43, "SRDN,$L", the last
+! store of COSF (decks/problem_4_9_method1.strap).
+
+START   DL(N), THIRD
+        D*(N), THIRD
+        SRDN, $L
+HALT    BEW, $
+THIRD   DD(N), .33333333333333333333333333333
+        END, START

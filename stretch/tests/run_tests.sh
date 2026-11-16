@@ -13468,6 +13468,14 @@ run "C22-6578 Problem 4.10 -- LNX, ln .001, KNOWN WRONG (location 8, p.37)" pyth
 run "C22-6578 Problem 4.10 -- LNX, ln 1E-300, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:1.0E-300 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
 # The reproducer, pinned at the model's WRONG word so it cannot drift: p.37
 # wants PROD = 0x0038000000000000 (+1/4).  Flip the check when it is fixed.
+run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi .125)" python3 verify_problem_4_fp.py 4.9m1:.125
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (location 8, pp.37 and 96)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong TEMP_A_squared,W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+# The store reproducer, pinned at the model's WRONG word: p.96 wants word 8 =
+# 0x007E38E38E38E378 after SRDN,$L.  Flip the check when it is fixed.
+run "store to location 8: SRDN,\$L is lost, KNOWN WRONG (p.96)" ./run_program.sh ../decks/repro_fp_store_location8.strap StretchReproSt8Tb "PC=68" \
+    "W8_KNOWN_WRONG_p96_wants_007E38E38E38E378:8=0x007E38E38E38E371"
 run "location 8 as an FP operand: -1/2 squared, KNOWN WRONG (p.37 says +1/4)" ./run_program.sh ../decks/repro_fp_operand_location8.strap StretchReproLoc8Tb "PC=70" \
     "PROD_KNOWN_WRONG_p37_wants_0038000000000000:38=0x0038000000000008" \
     "CTRL_plus_quarter:39=0x0038000000000000"
