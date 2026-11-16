@@ -13459,6 +13459,13 @@ run "C22-6578 Problem 3.1 -- integer and fraction parts" ./run_program.sh ../dec
     "I_of_2.5:43=0x0048000000000000" "F_of_2.5:44=0x0008000000000000" \
     "acc_left_after:8=0x0600000000000028"
 
+# 3.2, the same shift and then a VFL store of 18 accumulator bits into
+# $1's count field, both printed spellings (17.28 and $1.28).  $1 starts
+# as a pattern, so the whole word is the check.
+run "C22-6578 Problem 3.2 -- integer part into the count field of \$1" ./run_program.sh ../decks/problem_3_2.strap StretchP32Tb ASM=strap2 "PC=81" \
+    "A_count:46=0xA5A5A5A0001DA5A5" "B_count_low18:47=0xA5A5A5A00015A5A5" \
+    "count_of_2.5:17=0xA5A5A5A00009A5A5"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
