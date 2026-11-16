@@ -379,8 +379,13 @@ $13 = AREADS + the disk address, p.327 ll.12-19 run) and as a library
 entry (YRLDTA = "LB" + 36 bits), which a card count never ends (0,
 p.324 l.28): DFETCH's end return, YLERR -> YAERR1 "LIBRARY ROUTINE WAS
 READ" (p.334 ll.7-16), ends it, sends its vector and ends the job.  The
-driver plays that end return (CHOSEN).  NOT BUILT: C, P, D cards, which wait on
-printed p.329 (R0.3).  Earlier note, kept: a loader run needs what the lost BSS
+driver plays that end return (CHOSEN).  R0.3, 2026-11-16: printed p.329 not
+found (search in the deck header), RECONSTRUCTED and labelled so
+(decks/mcp_p329_reconstruction.strap, every instruction CHOSEN, the eight
+entry addresses CITED; tests/check_p329_reconstruction.py), and mode octal
+runs C, P and D cards through it against absolute assembly.  Open: P/D
+continuations (need ALOWWD = 0), hex 12-7..12-9 unchecked, a 1 punch in a P
+card's origin point.  Earlier note, kept: a loader run needs what the lost BSS
 processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws

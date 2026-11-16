@@ -447,6 +447,29 @@ NO_DECK_PAGES = {47, 59, 60, 81, 82, 100, 275, 285, 416, 417}
 # KNOWN hole, not an accounted one.
 MISSING_PAGES = {329}
 
+# >>> AND ITS RECONSTRUCTION, 2026-11-16, IS NOT A TRANSCRIPTION. <<<
+# decks/mcp_p329_reconstruction.strap fills 235112.00-235153.40 to the
+# labels and addresses pp.320-331 fix, labelled RECONSTRUCTION with its
+# sources (plan R0.3, docs/bss_loader_spec.md 7.2).  p.329 STAYS in
+# MISSING_PAGES: the default image keeps the hole, and only a caller that
+# asks -- pages(..., p329=True) -- gets the reconstructed words.  The
+# merge checks its stand-ins against the landed definitions and theirs
+# (APCARD, AOIGN1, AOIGN3, AOCTH1, AOCTL6, APCRD2, APCRD4) against it.
+P329_RECONSTRUCTION = DECK("mcp_p329_reconstruction.strap")
+
+
+def pages(first, last, p329=False):
+    """The landed page decks first..last in order, with the p.329
+    reconstruction in p.329's place if asked."""
+    out = []
+    for n in range(first, last + 1):
+        if n in MISSING_PAGES:
+            if p329 and n == 329:
+                out.append((P329_RECONSTRUCTION, "printed p.329 RECONSTRUCTED"))
+        elif n not in NO_DECK_PAGES:
+            out.append((DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n))
+    return out
+
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<
 #

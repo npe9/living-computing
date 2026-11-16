@@ -14845,10 +14845,16 @@ run "MCP's binary loader chains to a library entry, LB + 36-bit name" ./run_load
 # ll.47-49 run as printed: "PC" + the TYPE card's third field's first six
 # characters (PCFORTRA, PCBSS).  Injection in gen_loader_deck_tb.py pcname().
 run "\$EOJ names the processor-control area PCFORTRA / PCBSS (p.395)" ./run_loader_deck.sh StretchLoaderPcNameTb pcname
+# R0.3: printed p.329 is missing from the scan; decks/mcp_p329_reconstruction.
+# strap is a RECONSTRUCTION (not IBM's code) fixed to the addresses and labels
+# the landed pages cite.  First its fit, then C, P and D cards through it,
+# against absolute assembly.  Injections in both files' headers.
+run "Reconstructed p.329 fits the hole: 34 words, cited labels, landed pages unchanged" python3 check_p329_reconstruction.py
+run "MCP's loader loads C, P and D cards through the RECONSTRUCTED p.329" ./run_loader_deck.sh StretchLoaderOctalTb octal
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

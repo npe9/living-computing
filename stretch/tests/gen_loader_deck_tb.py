@@ -187,11 +187,52 @@ MEASURED, restored by copy and cmp:
   - CONTROL: a card count planted in table 2's word 0 (bits 43-45)
     changes nothing -- all pass, 76,579 cycles -- as p.324 l.24 predicts
     (the library bit sends the count to 0 before it is read).
-NOT BUILT: C, P and D cards.  R0.3 is not done: printed p.329 is missing
-(mcp_image.MISSING_PAGES) and not reconstructed, and P, D and every C card
-with fewer than four half-words or a hex digit go through it
-(bss_loader_spec.md 7.2).  One C form avoids it (an origin and four
-half-words of digits 0-9, spec 7.2); it is not in this test.
+MODE "octal": C, P and D cards (C22-6728 p.85, formats C28-6379-0 p.21),
+loaded THROUGH THE RECONSTRUCTED p.329 (decks/mcp_p329_reconstruction.
+strap, mcp_image.pages(..., p329=True)): R0.3.  THE RESULTS BELOW TEST
+THAT RECONSTRUCTION, NOT IBM'S PAGE; the rest of the loader is as read.
+An absolute program at 120000 (OCT_BASE: four data words, two half-word
+instructions, a full-word one) is the deck's binary cards; then, between
+it and the branch card:
+  C1 origin 120000.0, four half words, digits 0-9 only in the hex
+     columns (78 91 67 10: the C form spec 7.2 says avoids p.329);
+  C2 origin 120002.0, two half words with hex (AF, CD: AOCTH1); the card
+     ends on blanks (AOCTL6);
+  C3 a continuation, origin blank (AOCTL6/AOCTL7: ALDTC), hex EA;
+  C4 origin 120000.0, first half word 1-punched in its point column
+     (AOIGN2 ignores it, AOIGN3), the second (hex E0) loaded over C1's
+     second half word at 120000.32;
+  C5 origin point 1-punched: the whole card ignored (AOIGN1);
+  P1 at a half-word instruction (APCARD/APCRD2, the half-word case);
+  P2 at the full-word instruction (APCRD4+3.32, NOP and the other half);
+  D1 at a half word (ADCRD1's dump calling sequence through APCRD4).
+THE ORACLE is absolute assembly: oct_expect writes, in STRAP, the program
+as the cards should leave it (corrected words; each patched instruction a
+branch to its patch, a NOP after a full word; the displaced instruction,
+the patch half words and the branch back at AHIWD, which the binary
+deck's own words put at 120010.00), compiled by the same assembler; every
+word 120000-120017 must equal it, plus the generic checks (no error card,
+the branch card's address returned).
+FIRST RUNS, 2026-11-16: 3 fail with the first p.329 (every hex character
+wrong: it added $LZC after the connective had reset the counts, Ref.
+Manual p.76; and the continuation one character off: $2 not reset to
+AOXW3), fixed in the deck and recorded there.  Then ALL TESTS PASSED:
+16 loaded words, the branch address, 10 no-error checks, 49,220 cycles.
+MEASURED INJECTIONS into the reconstruction, each restored by copy and
+cmp (scripted; observed sets):
+  - AOCTH1 LI(BU,4),9 -> 8 (each hex digit one low): 3 fail, loaded_120000,
+    _120002, _120003, the words holding a hex character (C4's loaded
+    half, C2's two, C3's); 120001 (C1's second word, digits only) passes.
+  - APCRD4's CM0000(BU,1),APCRDI -> two NOPs (APCRDI left on after P1):
+    9 fail, loaded_120005-120006 and 120011-120017: everything P2 and D1
+    write (the two P cards' patch areas and D1's are shifted and the
+    blank fields load), the cost (c) in the deck's header names.
+  - AOCTL6's LX,$2,AOXW3 -> NOP: 1 fails, loaded_120003 (C3's continuation
+    word, read one character off).
+CONTROL: the deck as committed, ALL TESTS PASSED.
+Not exercised: a P or D continuation (needs ALOWWD = 0, deck (b)), 12-0
+and 12-7..12-9 in a hex column, the letter B (12-2: no card punches it),
+the lower/upper bound errors.
 
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date
@@ -402,6 +443,143 @@ def bss_table(ncards, origin, tv, refill, commons):
     return t
 
 
+# THE OCTAL CARDS (mode octal, plan R1's remainder): C, P and D cards, which
+# go through printed p.329 -- RECONSTRUCTED (decks/mcp_p329_reconstruction.
+# strap), since the page is missing from the scan.  An absolute program
+# STRAP II punched (OCT_BASE) is loaded first; then the hand-punched octal
+# cards (Hollerith, C28-6379 p.21: origin "xxxxxx.x" in columns 2-9, half
+# words "xxxxxx.xx HH" from columns 12, 28, 44, 60); then the program's
+# branch card.  ORACLE: core must equal OCT_EXPECT assembled absolute -- the
+# program as the cards leave it, written out in STRAP: the corrected words,
+# each patched instruction replaced by B,PATCHn (and NOP after a full-word
+# one), and the patch area as C28-6379 pp.4-5 describe it: "(1) the
+# instruction replaced by the branch to the patch area, (2) the half-words
+# which appear on the patch card, (3) a branch instruction which transfers to
+# the next instruction after the one which was replaced", and for the dump
+# card "a calling sequence to the MCP dump routine", the half words its
+# parameters.  The calling sequence is the loader's own skeletons, ABDMP
+# (B,DMCP / ,DDUMP), ADFWA (SIC) and APBRCH (B), printed p.331 ll.19-23,
+# in the order ADCRD1 stores them (p.330 ll.26-37).
+OCT_BASE = [
+    "        SLC,(8)120000.0",
+    "W0      DD(BU,64),(8)1111111111111111",
+    "W1      DD(BU,64),(8)2222222222222222",
+    "W2      DD(BU,64),(8)3333333333333333",
+    "W3      DD(BU,64),(8)4444444444444444",
+    "START   LVI,$5,7",
+    "        LVI,$6,8",
+    "FW      L,W0",
+    "        LVI,$7,9",
+    "DMP     LVI,$8,10",
+    "        LVI,$9,11",
+    "        B,START",
+    "        END,START",
+]
+OCT_PATCH = ["        LVI,$10,1", "        LVI,$11,2", "        LVI,$12,3"]
+# The C cards' half words (CHOSEN values): C1's hex digits 0-9, C2's A-F.
+OCT_C1 = [0x12345678, 0x9ABCDE91, 0x01234567, 0x76543210]
+OCT_C2 = [0xFEDCBAAF, 0x0F0F0FCD]
+OCT_C3 = 0x13579BEA          # continuation card: lands where C2 stopped
+OCT_C4 = 0x2468ACE0          # second half word of a card whose first is ignored
+OCT_C5 = [0x77777777, 0x66666666]   # a whole card ignored
+# The dump parameters (C28-6379 p.21): lower and upper limits, format 0.0
+# ("Octal - hex with panel"), bit 24 0 (no more requests).
+OCT_DPARAM = [(0o120000 << 14), (0o120003 << 14) | (0o40 << 8), 0]
+
+
+def oct_halves(lines):
+    """The 32-bit half words a few half-word instructions assemble to."""
+    p = assemble("        SLC,(8)1000.0\n" + "".join("        %s\n" % s for s in lines))
+    out = []
+    for k in range(len(lines)):
+        w = p.words[0o1000 + k // 2]
+        out.append((w >> 32) & 0xFFFFFFFF if k % 2 == 0 else w & 0xFFFFFFFF)
+    return out
+
+
+def oct_card(kind, origin=None, halves=(), ignore_origin=False, ignore=()):
+    """A C, P or D card's 80 columns (12-bit Hollerith, row 12 high)."""
+    import cards as hollerith
+    from listing_oracle import fmt_half
+    cols = [0] * 80
+
+    def put(col, text):
+        for i, ch in enumerate(text):
+            cols[col - 1 + i] = hollerith.column_bits(ch)
+    put(1, kind)
+    if origin is not None:          # bit address -> "xxxxxx.x"
+        put(2, "%06o.%o" % (origin // 64, (origin % 64) // 8))
+    for i, h in enumerate(halves):
+        if h is not None:
+            put(12 + 16 * i, fmt_half(h))
+    if ignore_origin:
+        cols[8 - 1] |= 0o400        # a 1 punch in the origin's point column
+    for i in ignore:
+        cols[18 + 16 * i - 1] |= 0o400
+    return cols
+
+
+def oct_expect(patch):
+    """OCT_EXPECT: the program after the octal cards, in STRAP."""
+    words = [0o1111111111111111, 0o2222222222222222, 0o3333333333333333,
+             0o4444444444444444]
+    halves = []
+    for w in words:
+        halves += [w >> 32, w & 0xFFFFFFFF]
+    # C1 at 120000.0: four half words.  C2 at 120002.0: two (a short card).
+    # C3, no origin: "beginning at the location following the highest
+    # location loaded from the previous card" (C28 p.4), 120003.0.  C4 at
+    # 120000.0, first half word ignored: "The loading address is stepped"
+    # (C28 p.4), its second at 120000.4.  C5, ignored whole: nothing.
+    for k, h in enumerate(OCT_C1):
+        halves[k] = h
+    halves[4], halves[5] = OCT_C2
+    halves[6] = OCT_C3
+    halves[1] = OCT_C4
+    src = ["        SLC,(8)120000.0",
+           "DMCP    SYN,32.0",
+           "DDUMP   SYN,64.0"]
+    for k in range(4):
+        src.append("%-8sDD(BU,64),(8)%o" % ("W%d" % k, (halves[2 * k] << 32) | halves[2 * k + 1]))
+    src += ["START   B,PATCH",
+            "        LVI,$6,8",
+            "FW      B,PATCH2",
+            "        NOP",
+            "        LVI,$7,9",
+            "DMP     B,PATCH3",
+            "        LVI,$9,11",
+            "        B,START",
+            "PATCH   LVI,$5,7",
+            patch[0], patch[1],
+            "        B,START+.32",
+            "PATCH2  L,W0",
+            patch[2],
+            "        B,FW+1.0",
+            "PATCH3  LVI,$8,10",
+            "        B,DMCP",
+            "        ,DDUMP",
+            "        SIC,PARAMS",
+            "        B,DMP+.32",
+            "PARAMS  SYN,$"]
+    src += ["        DD(BU,32),(8)%o" % v for v in OCT_DPARAM]
+    src += ["        END,START"]
+    return src
+
+
+def octal_cards():
+    """The octal cards, in order, with what each is."""
+    ph = oct_halves([s.strip() for s in OCT_PATCH])
+    W0, START, FW, DMP = 0o120000 * 64, 0o120004 * 64, 0o120005 * 64, 0o120006 * 64 + 32
+    return [("C1", oct_card("C", W0, OCT_C1)),
+            ("C2", oct_card("C", W0 + 2 * 64, OCT_C2)),
+            ("C3", oct_card("C", None, [OCT_C3])),
+            ("C4", oct_card("C", W0, [0x55555555, OCT_C4], ignore=[0])),
+            ("C5", oct_card("C", W0 + 3 * 64 + 32, OCT_C5, ignore_origin=True)),
+            ("P1", oct_card("P", START, ph[:2])),
+            ("P2", oct_card("P", FW, ph[2:])),
+            ("D1", oct_card("D", DMP, OCT_DPARAM))], ph
+
+
 def card(name, stmt):
     return " " + name.ljust(8) + stmt
 
@@ -475,14 +653,15 @@ def pcname(module):
 def main():
     module = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else ""
-    if mode not in ("", "rel", "fortran", "bss", "bss2", "bsslib", "pcname"):
-        raise SystemExit("mode: none, rel, fortran, bss, bss2, bsslib or pcname, not %r" % mode)
+    if mode not in ("", "rel", "fortran", "bss", "bss2", "bsslib", "pcname", "octal"):
+        raise SystemExit("mode: none, rel, fortran, bss, bss2, bsslib, pcname or octal, not %r" % mode)
     if mode == "pcname":
         return pcname(module)
     two = mode in ("bss2", "bsslib")
-    pages = [(mcp_image.DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-             for n in range(99, 335)
-             if n not in mcp_image.NO_DECK_PAGES | mcp_image.MISSING_PAGES]
+    # Printed p.329 is missing from the scan; mode octal runs its
+    # RECONSTRUCTION (mcp_image.P329_RECONSTRUCTION), the others the image
+    # with the hole, which their paths never reach.
+    pages = mcp_image.pages(99, 334, p329=(mode == "octal"))
     image, _src, _d, _e = mcp_image.build(False, pages, end_at="SDISP")
     S = image.symtab
 
@@ -516,6 +695,21 @@ def main():
                     imgs.append(q2.punch._encode(c, c.seq, 0o1234))
                     kinds.append(c.kind)
             expect2 = compile_lines(SUB2_ABSOLUTE)
+    elif mode == "octal":
+        p2 = compile_lines(OCT_BASE)
+        if p2.punch.unwritten or p2.msg.items:
+            raise SystemExit("the punch: %s %s" % (p2.punch.unwritten, p2.msg.items))
+        bimgs = p2.punch.images(clock=0o1234)
+        bkinds = [c.kind for c in p2.punch.cards]
+        assert bkinds[-1] == "branch"
+        octs, patch = octal_cards()
+        # The octal cards between the program's binary cards and its branch
+        # card, which ends the load.
+        imgs = bimgs[:-1] + [cols for _n, cols in octs] + bimgs[-1:]
+        kinds = bkinds[:-1] + [n for n, _c in octs] + bkinds[-1:]
+        expect = compile_lines(oct_expect(["        " + s.strip() for s in OCT_PATCH]))
+        if expect.punch.unwritten or expect.msg.items:
+            raise SystemExit("the oracle: %s %s" % (expect.punch.unwritten, expect.msg.items))
     elif mode == "rel":
         p2 = compile_lines(REL_SOURCE)
         if p2.punch.unwritten:

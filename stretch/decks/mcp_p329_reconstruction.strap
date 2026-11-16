@@ -1,0 +1,283 @@
+! mcp_p329_reconstruction.strap -- RECONSTRUCTION of MCP printed page
+! 329, the LOADER's 235112.00-235153.40 (34 words), which is MISSING
+! FROM THE SCAN.  NOT IBM'S CODE.  Written 2026-11-16 to the addresses
+! and labels the surrounding printed pages fix, against the behaviour
+! C22-6728 (base edition) printed p.85 and Figure 42 (p.86) describe.
+!
+! WHY IT IS NOT A TRANSCRIPTION.  docs/MCP_Mar63_250-445.pdf goes from
+! PDF p.79 (PAGE NUMBER 328, last card TA000448 at 235111.40) to PDF
+! p.80 (PAGE NUMBER 330, first card TA000500 at 235154.00); the page
+! between is not in the PDF (195 pages for printed 250-445).  Searched
+! for a second copy, 2026-11-16: the volume-1 PDF and both OCR texts
+! (no 22LOADER card, no TA00044x-49x serial, no p.329 label but the
+! ones landed pages cite); C22-6728 and C22-6728-1 (prose and charts
+! only, no code: p.85-86 and -1 pp.90-94); C28-6379-0 (card formats,
+! no code); docs/chm/README.md and docs/archival_inventory.md (no
+! other edition of the listing held or listed).  Spec F3 (IBM
+! Archives, NARA RG 457) is outside the repository.  Not found, so
+! reconstructed (AGENTS.md: "where lost, reconstruct it labelled").
+! It is NOT one of the mcp_bootstrap_p*.strap transcriptions: nothing
+! here is read from ink, and nothing here may be cited as IBM's.
+! strap/mcp_image.py keeps p.329 in MISSING_PAGES; this deck is used
+! only where a caller asks for it (mcp_image.P329_RECONSTRUCTION).
+!
+! PAGES READ IN THE INK FOR THIS (110-170 dpi page images):
+!   L p.327 (PDF 78) ll.32-50: AOCTAL "-INITIALIZE FOR C CARDS",
+!     AOCTLA "-INITIALIZE FOR C AND P CARDS", "LVI,$3,0 -USED FOR
+!     CONTINUATION C AND P CARDS", "LCI,$3,4 -MAX. NO. OF HALFWDS PER
+!     CARD", AOCTLD "-PUT DECIMAL PT COLUMN IN AC", "BB,AOIGNI,AOIGN2
+!     -IF ON IGNORE CORRECTIONS ON CRD", "BB,ADCRDI,$+3.", "BB,APCRDI,
+!     $+2. -IF P CARD DONT TEST FOR 1", "BZRZ,AOCTL6 -NOT A DECIMAL
+!     POINT" (binary 235122.74 C0).
+!   L p.328 (PDF 79) all 50 lines: "BB,-.14($1),AOCTH1" (235116.34 02),
+!     "AOCTLP NOP,APCRD2 -IF P CARD THIS IS A BRANCH" (235135.30 00),
+!     "BXE,AOIGN1 -IGNORE WHOLE CARD" (235114.72 C2), "AOIGN2 BBZ,$R.55,
+!     $+1. -SET 1 BIT TO ZERO IF ON", "BZRZ,AOIGN3 -LAST HLF WD ON CRD
+!     TESTED" (235113.34 C0), line 50 "V+I,$3,.32 -ADVANCE OCTAL CRD LOC
+!     CTR A HLF WD" at 235111.40, the last row.
+!   L p.330 (PDF 80) all 50 lines: "B,APCRD4" (235150.50 00, lines 5,
+!     10), "B,APCRD4+1." (235151.50 00, line 37), line 1 at 235154.00
+!     "LF(BU,32),($4),64 -PICK UP OTHER HLF OF INSTR" with NO label,
+!     APCRD5 "-PICK UP BRANCH BACK TO PROGRAM", ADCARD, ADCRD1, ADCRD2.
+!   L p.331 (PDF 81) ll.1-23: AERR6 "-C OR P CARD INCORRECTLY PUNCHED",
+!     AERR7 "-NO ORIGIN PUNCHED IN FIRST C- / CARD ENCOUNTERED",
+!     ANORMR "NOP,APCRND", APBRCH "B,$ -USED IN P CARD ROUTING".
+!   C22-6728 p.85 (PDF 85), "Octal Cards (C, P, and D)" -- quoted at
+!     each use below; Figure 42 "The MCP Loader - Chart 3" (p.86).
+!   C28-6379-0 pp.4-5 (card classes 4-6) and p.21 (App. A formats).
+!   C22-6728-1 p.94, Figure 47 (the later loader's Chart 3, M- names):
+!     an analogue only; its MOCT4A "SAVE THE ORIGIN LAST USED".
+! The landed transcriptions pp.320, 324-334 were read for every
+! reference into 235112-235153 (grep of the decks; each listed below).
+!
+! WHAT IS CITED (fixed by a printed reference elsewhere):
+!   * the span 235112.00-235153.40 and its fall-through ends: p.328 l.50
+!     is a half word at 235111.40 with no branch, so 235112.00 continues
+!     AOIGN2; p.330 l.1 (235154.00) carries no label, so the word before
+!     it is reached only by falling through or a $-relative branch.
+!   * AOIGN3 235113.00 (p.328 l.49), AOIGN1 235114.40 (p.328 l.46),
+!     AOCTH1 235116.00 (p.328 l.29), AOCTL6 235122.40 (p.327 l.48),
+!     APCARD 235130.00 (p.320 l.33), APCRD2 235135.00 (p.328 l.13),
+!     APCRD4 235150.40 (p.330 ll.5, 10) and APCRD4+1. (p.330 l.37).
+!   * that this page NAMES AOCT4A, AOCTH2 (p.328), APCRD5, ADCRD1,
+!     ADCRD2 (p.330), AERR6, AERR7 (p.331): labels no landed card names
+!     (tests/check_never_used_symbols.py's ABSENT list).  And APT168
+!     (p.291 l.25, VF,2.40, named by no landed card).
+! Everything else is CHOSEN; each line says why.  The word count of
+! each region is forced by the cited addresses; the instructions in
+! it are not.
+!
+! THE REGIONS (half words): 2 + AOIGN3 3 + AOIGN1 3 + AOCTH1 9 +
+! AOCTL6 11 + APCARD 10 + APCRD2 23 + APCRD4 7 = 68 = 34 words.  49
+! statements; the serials TA000449-499 allow 51 cards (no evidence
+! either way: pp.328 and 330 each share serials).
+!
+! BEHAVIOUR THE LANDED PAGES FORCE, AND WHICH THIS PAGE MUST ABSORB:
+!   (a) A P or D card SKIPS the decimal-point CTI (p.327 ll.44-45 jump
+!       to l.47), so the BZRZ at l.48 sees the RZ the connective LF of
+!       l.42 left: a PUNCHED point column goes to AOCTL6, a blank one
+!       to AOCTL1.  So AOCTL6 opens with the decimal-point test itself.
+!   (b) A P or D card with a blank origin is converted as origin 0, and
+!       p.328 ll.9-12 then take AERR5B if ALOWWD > 0, before AOCTLP.  So
+!       a P or D continuation card reaches APCRD2 (and this page's
+!       continuation path) only with a lower limit of 0.  As read; not
+!       something this page can change.
+!   (c) Nothing landed turns ADCRDI off, and nothing landed turns
+!       APCRDI off before APCRND (p.330 l.11, at the END of a P card).
+!       Left on, (a) would make every blank half-word field of a P or D
+!       card load as a zero half word, and a P card after a D card
+!       would get a dump call.  This page turns both off once the
+!       instruction is displaced (APCRD4), so the corrections that
+!       follow take the C card's decimal-point test.  CHOSEN; APCRND's
+!       own CM0000 then finds APCRDI already off.
+!
+! EXTERNALS: forms copied from the landed decks that define or stand
+! them in (merge-checked by strap/mcp_image.py against the definitions).
+
+AOIGNI  SYN,ALL.5                    ! landed p.291 line 13
+APCRDI  SYN,ALL.6                    ! landed p.291 line 14
+ADCRDI  SYN,ALL.8                    ! landed p.291 line 16
+ALL     SYN(N), (8)232543.0          ! landed p.291 line 9 DRZ(N),1
+APT168  SYN(B,25,1), (8)232546.0     ! landed p.291 line 25 VF,2.40 (form as AOPT24's)
+AOPT24  SYN(B,25,1), (8)232545.40    ! landed p.291 line 24 VF,.24
+ALDCTR  SYN(N), (8)232552.0          ! landed p.291 line 34 DRZ(N),1
+ALDTC   SYN,ALDCTR.32                ! landed p.291 line 35
+AHGHWD  SYN(BU,32), (8)232553.40     ! landed p.291 line 37
+AHIWD   SYN(BU,32), (8)232554.0      ! landed p.291 line 38
+AOCTLA  SYN(BU,32,8), (8)235037.40   ! landed p.327 line 36
+AOCTL1  SYN(BU,64,8), (8)235051.0    ! landed p.327 line 49
+AOCTLP  SYN(BU,32,8), (8)235062.0    ! landed p.328 line 13
+AOCTL3  SYN(BU,32,8), (8)235062.40   ! landed p.328 line 14
+AOCTL5  SYN, (8)235064.40            ! landed p.328 line 18
+AOXW3   SYN(BU), (8)235251.0         ! landed p.331 line 43 XW (form as p.327's AOXW2)
+AOCTH2  SYN, (8)235074.0             ! landed p.328 line 30
+AOCT4A  SYN, (8)235100.40            ! landed p.328 line 36
+APCRD5  SYN, (8)235160.40            ! landed p.330 line 6
+ADCRD1  SYN, (8)235176.0             ! landed p.330 line 26
+ADCRD2  SYN, (8)235207.0             ! landed p.330 line 38
+AERR5B  SYN, (8)235226.40            ! landed p.331 line 7
+AERR6   SYN, (8)235230.0             ! landed p.331 line 9
+AERR7   SYN, (8)235231.40            ! landed p.331 line 11
+ANORMR  SYN, (8)235233.0             ! landed p.331 line 13
+APBRCH  SYN, (8)235237.0             ! landed p.331 line 19
+
+        SLC, (8)235112.0
+! -- AOIGN2's loop, continued (CHOSEN).  p.328 l.50 has just stepped the
+! loading address over an ignored half word; $1 is still at the field's
+! first column (AOCTLD's LF reads .70($1) and moves nothing).  APT168 is
+! 168 bits = 14 columns: AOCTL3 adds AOPT24 (2 more), so the next field,
+! 16 columns on (C28 p.21: half words at 12, 28, 44, 60), is where
+! AOCTL3 leaves $1 for AOCTLD.  CB counts the field against LCI,$3,4
+! (p.327 l.41) as the load path's CB,$3,AOCTL3 does (p.328 l.35); when
+! the fourth is past it falls into AOIGN3.  This is the only use of
+! APT168 that fits its value; APT168 is otherwise unnamed.
+        V+,$1,APT168                                         ! -SPACE TO THE NEXT HALF WORD FIELD
+        CB,$3,AOCTL3                                         ! -ANY MORE HALF WORDS ON CARD
+! -- AOIGN3, "LAST HLF WD ON CRD TESTED" (address CITED, p.328 l.49).
+! CHOSEN: an ignored card ends like a loaded one, through AOCT4A
+! (p.328 l.36, "-UPDATE HIWD", ALDTC, ANORMR), after AOIGNI, which
+! AOIGN1 set for this card only, is turned off: ALL is cleared only for
+! a new job (p.320 l.12).  "the location counter is stepped up by a
+! half word and no loading is done" (C22-6728 p.85).
+AOIGN3  CM0000(BU,1),AOIGNI                                  ! -IGNORE INDICATOR OFF
+        B,AOCT4A                                             ! -UPDATE HIWD AND OCTAL LOC CTR
+! -- AOIGN1, "IGNORE WHOLE CARD" (address CITED, p.328 l.46: AOIGNR
+! takes it when $3 is still 0, the origin's decimal-point column).
+! CHOSEN: turn on AOIGNI (p.291 l.13 "-IGNORE CORRECTIONS ON CARD";
+! p.327 l.43 sends every later field to AOIGN2 while it is on) and
+! convert the origin as usual: AOCTLA has set $1, $2 and AOCTL2's
+! return for it.  So the location counter steps from the card's origin.
+AOIGN1  CM1111(BU,1),AOIGNI                                  ! -IGNORE CORRECTIONS ON THIS CARD
+        B,AOCTL1                                             ! -PICK UP THE ORIGIN
+! -- AOCTH1, hex A-F (address CITED, p.328 l.29: a 12 punch in the hex
+! column).  On entry the digit row 0-9 is in the accumulator's 4-bit
+! field, put there by the connective LF(BU,4),$LZC+.3 of l.28, and RZ is
+! that connective's, on only for row 0.  The LZC itself no longer holds
+! the row: a connective sets the counts again (Reference Manual p.76),
+! and so does VFL arithmetic -- MEASURED on the model, 2026-11-16: a first
+! version that added $LZC+.3 after LI read the wrong digit on every hex
+! character.  A-F are the Hollerith 12-1 .. 12-6, so the value is the row
+! plus 9.  CHOSEN: the row is parked where the character goes (($2), which
+! AOCTH2 then overwrites), and LI/+ form row + 9 in a cleared accumulator,
+! so the result does not hang on the sign or the bits the connective left
+! (p.76: "the remainder of the accumulator remains unchanged").  A load and
+! a connective store at the same offset meet in the same bits (landed
+! "L(BU,4),.60(LWORKX) / SF(BU,4),.48(LXNT)").  12-0 takes AERR6, "C OR P
+! CARD INCORRECTLY PUNCHED" (p.331 l.9), which this page names; 12-7..12-9
+! are NOT checked (they store the low four bits of 16-18): no room.
+AOCTH1  BRZ,AERR6                                            ! -12-0 IS NOT A HEX DIGIT
+        SF(BU,4),($2)                                        ! -SAVE THE DIGIT ROW
+        LI(BU,4),9
+        +(BU,4),($2)                                         ! -A = 12-1 = 10 .. F = 12-6 = 15
+        B,AOCTH2                                             ! -STORE THE HEX CHARACTER
+        NOP                                                  ! -(CHOSEN: FILLS TO AOCTL6, NOT REACHED)
+! -- AOCTL6, "NOT A DECIMAL POINT" (address CITED, p.327 l.48).
+! C22-6728 p.85: "If the decimal point column does not contain 12, 3, 8
+! or 1, 3, 8 punches, a check is made to see if this is the beginning of
+! a continuation card with a blank location field. If so, the contents
+! of ALDTC are used as the origin for this card and the loading process
+! continues with the first half word on the card. If not, then the
+! contents of the card have been loaded and the loader's counters,
+! AHIWD and ALDTC, are updated and normal return is given."
+! CHOSEN: first the decimal-point test that P and D cards skipped
+! (forced, (a) above; the accumulator still holds the column, BBZ only
+! cleared its 1 bit).  Then "the beginning of a ... card": the origin
+! field is the one met before any LCI,$1 -- AOCTLA's last index operation
+! is LCI,$3,4 with $3's value 0 (p.327 ll.39, 41), every half-word field's
+! is LCI,$1,6 (p.328 l.17) with $1's value not 0, and "The index flag and
+! index result indicators are set in all of the preceding immediate index
+! arithmetic operations" (Reference Manual p.25), so XVZ is on exactly at
+! the origin field.  (KVI,$3,0 / BXE, as AOIGNR does it on p.328 ll.45-46,
+! needs one half word more than this region has.)  A continuation card's
+! origin is not converted, so $1 is still at column 2 and $2 at AOXW2's
+! seven characters: $1 goes on 8 columns (1.32 = 96 bits) to column 10,
+! where AOCTL3 expects it after an origin (p.328 l.16 "-ADVANCE OVER
+! BLANKS"), and $2 is set as the origin's seventh character leaves it,
+! AOXW3 (p.331 l.43 "-STORES OCTAL CHAR."; AOXW2's refill).  MEASURED, a
+! first version without the LX loaded a continuation card's half word
+! shifted by one character.
+AOCTL6  CTI0110(BU,12),(8)4102                               ! -P OR D CARD, TEST FOR DECIMAL POINT
+        BRZ,AOCTL1                                           ! -IT IS ONE
+        BZXVZ,AOCT4A                                         ! -NOT ORIGIN FIELD, CARD LOADED
+        V+I,$1,1.32                                          ! -CONTINUATION CARD, SKIP ORIGIN FIELD
+        LX,$2,AOXW3
+! AOCTL7 (CHOSEN name): the continuation, shared with P and D cards
+! from APCRD2.  Chart 3: "IS ORIGIN BLANK" yes -> "HAS THE PREVIOUS
+! ORIGIN BEEN SAVED" no -> "ERROR RETURN", yes -> "CONTINUE LOADING
+! CORRECTIONS".  AERR7 is "NO ORIGIN PUNCHED IN FIRST C-CARD
+! ENCOUNTERED" (p.331 ll.11-12); LV sets the index-value-zero
+! indicator.  A P continuation goes to APCRD5 (p.330 l.6, "-PICK UP
+! BRANCH BACK TO PROGRAM": it backs $3 over the last card's branch back,
+! which is why $3 must hold ALDTC there); a C or D one to ADCRD2 (p.330
+! ll.38-39: AOCTLP back to NOP, then AOCTL3, the C card's own path).
+! NOT turned off on a D continuation: ADCRDI (see (c)); with (b), that
+! path needs a lower limit of 0 to be reached at all.
+AOCTL7  LV,$3,ALDTC                                          ! -ORIGIN FROM OCTAL LOC CTR
+        BXVZ,AERR7                                           ! -NO PREVIOUS ORIGIN
+        BB,APCRDI,APCRD5                                     ! -P CARD CONTINUATION
+        B,ADCRD2                                             ! -C OR D CARD CONTINUATION
+! -- APCARD, the P card (address CITED, p.320 l.33).  CHOSEN, as the
+! landed ADCARD (p.330 ll.20-25) does for D: the patch area is AHIWD
+! and must exist ("IS THIS THE FIRST CARD OF THE DECK" yes -> "ERROR
+! RETURN", Figure 42; AERR5B as ADCARD takes it), turn on the P
+! indicator, make AOCTLP a branch to APCRD2 (p.328 l.13 "-IF P CARD
+! THIS IS A BRANCH"), make ANORMR a branch to APCRND (p.327 l.34 "-SET
+! BRANCH TO APCRDND TO NOP" is the C card's undoing of it; C22-6728
+! p.85: "ANORMR returns control to APCRDND where a branch to the PP is
+! stored"), and go to AOCTLA ("-INITIALIZE FOR C AND P CARDS").
+APCARD  LV,$3,AHIWD                                          ! -PATCH AREA
+        KVI,$3,0
+        BXE,AERR5B                                           ! -NOTHING LOADED YET
+        CM1111(BU,1),APCRDI                                  ! -P CARD INDICATOR
+        CM0000(BU,1),AOCTLP.19                               ! -AOCTLP BRANCHES TO APCRD2
+        CM0000(BU,1),ANORMR.19                               ! -ANORMR BRANCHES TO APCRND
+        B,AOCTLA
+! -- APCRD2, P and D after the origin (address CITED, p.328 l.13).  On
+! entry $3 is the origin, at least ALOWWD, and $1 is at column 10.
+! C22-6728 p.85: "The P card routine, APCARD, also picks up the full or
+! half word instruction at the location of the patch and moves it to
+! the location specified by AHIWD before it loads the corrections. It
+! inserts a branch to the patch area (and a NOP if the instruction being
+! replaced is a full word instruction)."  The NOP and the second half are
+! p.330 ll.1-5, which follow 235154.00 with no label: so the full-word
+! case reaches them by a branch to APCRD4+3.32, and the half-word case
+! goes to APCRD4.  On that page $4 is at the second half of the replaced
+! instruction and $3 at the patch area's second half word, which fixes
+! what this code leaves in them.  CHOSEN: a full-word instruction is one
+! whose bits 24-27 are 1000 (Reference Manual Figure 6, p.18;
+! bsv/StretchDecode.bsv instrLen); the test reads the copy in the patch
+! area.  AOCTLP goes back to NOP here, once the origin is used: nothing
+! landed does it on a P or D card that is not a continuation (APCRD5
+! and ADCRD2 do it on theirs, p.330 ll.9, 38), and left a branch it would
+! send the next C card's origin here.
+APCRD2  KVI,$3,0                                             ! -NO ORIGIN
+        BXE,AOCTL7                                           ! -CONTINUATION P OR D CARD
+        V+,$1,AOPT24                                         ! -ADVANCE OVER BLANKS
+        LV,$4,$3                                             ! -LOCATION OF THE PATCH
+        LV,$3,AHIWD                                          ! -PATCH AREA
+        LF(BU,32),($4)                                       ! -PICK UP INSTRUCTION
+        SF(BU,32),($3)                                       ! -MOVE IT TO PATCH AREA
+        LF(BU,32),APBRCH                                     ! -INSERT BRANCH TO PATCH AREA
+        SF(BU,32)(V+I),.32($4)
+        SVA,$3,-.32($4)
+        CM1111(BU,1),AOCTLP.19                               ! -RESET TO NOP
+        LF(BU,4),.24($3)                                     ! -IS IT A FULL WORD INSTRUCTION
+        V+I,$3,.32
+        CTI0110(BU,4),8
+        BZRZ,APCRD4                                          ! -NO
+        B,APCRD4+3.32                                        ! -YES, NOP AND OTHER HALF
+! -- APCRD4, P and D rejoin (address CITED, p.330 ll.5, 10; APCRD4+1.
+! CITED, p.330 l.37, ADCRD1's return after the dump calling sequence).
+! So APCRD4's first word is what a D card must do once and not again:
+! CHOSEN, the dump test, Figure 42's "IS THIS A DUMP CARD" yes ->
+! "INSERT DUMP CALLING SEQUENCE IN PATCH AREA" (ADCRD1, p.330 ll.26-37);
+! BBZ also turns ADCRDI off, see (c).  Then APCRDI off, see (c); the
+! patch area's upper bound, as AOCTL3 checks a C card's (AOCTLP's branch
+! skipped it); and the half-word loop entered at AOCTL5-.32, p.328 l.17
+! "LCI,$1,6 -SET COUNT TO PICK UP 6 OCTAL CHAR.", $1 being at column 12
+! (APCRD2's AOPT24, or APCRD5's, p.330 l.8).
+APCRD4  BBZ,ADCRDI,ADCRD1                                    ! -D CARD, INSERT DUMP CALLING SEQ.
+        CM0000(BU,1),APCRDI                                  ! -CORRECTIONS AS ON A C CARD
+        KV,$3,AHGHWD
+        BXH,AERR5B
+        B,AOCTL5-.32                                         ! -LOAD THE CORRECTIONS
