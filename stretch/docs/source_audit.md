@@ -2025,3 +2025,74 @@ counts; B.5's `ADD TO VALUE, X1, 7.17`, which names the left-zeros
 counter and assembles as address 7.0; B.5's `LOAD COUNT` from the word
 part of an index value (Reference Manual printed p.24).
 
+
+# >>>>>> G2.1, CHAPTER 3, 2026-11-16: TEN PROBLEMS, CHAPTER 3 FINISHED <<<<<<
+
+`C22-6578` chapter 3, "Floating-Point Arithmetic", printed pp.26-34,
+Problems 3.1-3.10.  Every printed method was read from the page images
+and transcribed as printed, and every one runs.  The expected values were
+derived by hand from the Reference Manual, with pages cited in each
+deck's header.  The long truncating sequences are checked against
+`tests/problem_3_expected.py`, a calculator written from the same
+manual pages, whose `--self` checks are registered.  Each problem is
+proven discriminating by a data-side injection on a copy of its deck,
+and the result is recorded in the header as OBSERVED.  All decks use
+`ASM=strap2` (see items 1-2 below).  The counts below do not change this
+section's earlier tables.
+
+| Problem | Deck(s) | Registered checks | Status |
+|---|---|---|---|
+| 3.1 integer and fraction parts | `problem_3_1` | 9 + PC | pass |
+| 3.2 integer part into the count of $1 | `problem_3_2` | 3 + PC | pass |
+| 3.3 degree-20 polynomial | `problem_3_3_method{1,2,3}` | 3, 2, 3 + PC each | pass |
+| 3.4 trapezoidal rule | `problem_3_4_method{1,2}` | 6 + PC each | pass; **the page's program never forms the integral** (NEXT.md ch.3 item 3) |
+| 3.5 tan(pi/4), continued fraction | `problem_3_5` | 10 + PC | pass |
+| 3.6 scalar product, LFT / *+ / SRD | `problem_3_6` | 3 + PC | pass |
+| 3.7 cube root | `problem_3_7` | 9 + PC | pass |
+| 3.8 VFL integers to normalized FP | `problem_3_8_positive` | 29 + PC | pass |
+| 3.8 comment (b), EPLUS removed | `problem_3_8_no_eplus` | 29 + PC | pass against the page's claim; **the manual's p.87 text disagrees** (item 5) |
+| 3.8 on signed data | `problem_3_8` | 2 + PC; 27 held back | **model fault**: address-8 sign (item 4) |
+| 3.9 double-precision compare | `problem_3_9_method1_{less,equal,greater}`, `problem_3_9_method2_{page_fault,less}` | 4 + PC each; page_fault 5 + PC; 4 indicator words held back | pass; **the indicator store is dropped** (item 6) |
+| 3.10 integer part of log2 N | `problem_3_10` | 3 + PC | pass |
+
+**What it found** (docs/NEXT.md, "C22-6578 CHAPTER 3: WHAT THE PAGES
+FOUND", items 1-6; each item has a reproducer deck):
+
+1-2. **`strap_asm.py` refuses two printed forms.**  The first is
+   `DD(N), 0.0X48`, a zero fraction with an exponent; the reproducer is
+   `problem_3_dd_zero_fraction`.  The second is a bare `*, X` taking the
+   dds of its symbol, C22-6578 p.30 comment (c); the reproducer is
+   `problem_3_bare_op_symbol_dds`.  The host STRAP II assembles both.
+3. **A fault in the book.**  Problem 3.4's M+ leaves the accumulator
+   unchanged, so the closing multiply takes the wrong value.
+4. **MODEL FAULT.**  A floating-point operand at address 8 takes its
+   sign from accumulator bit 60 instead of the sign byte, on fetch and on
+   store.  This is against Reference Manual p.80.  The reproducer is
+   `problem_3_fp_address_8_sign`.
+5. **UNSETTLED.**  A normalized ADD whose sum is non-zero only in the
+   low 48 bits.  The model normalizes it.  Manual pp.82 and 87 say the
+   result is a zero.  C22-6578's own comment (b) agrees with the model,
+   and its comment (a) agrees with the manual.  The reproducer is
+   `problem_3_fp_add_low_half_zero`, and `jb_af1c` is the third witness
+   to look in.
+6. **MODEL LIMITATION.**  A VFL store into the indicator register, word
+   11, is dropped silently.  `StretchStorage.bsv` documents this as a
+   simplification.  The reproducer is
+   `problem_3_vfl_store_to_indicators`.
+
+**Two of the page's claims about its own programs are pinned and hold
+on the model:**
+
+* Problem 3.9's p.34 counter-example: Method 2 calls the smaller number
+  high.
+* Problem 3.7's "round-off error in the last iteration".
+
+**Held-back checks, to be restored when the model is fixed:**
+
+* Problem 3.8's 27 checks on signed data.
+* The four 3.9 indicator words.
+
+Both sets are kept as comments in `tests/run_tests.sh` next to their
+decks.
+
+Chapter 4 ("Special Problems", printed p.35 on) has not been started.

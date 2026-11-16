@@ -1,0 +1,86 @@
+! C22-6578 PROBLEM 3.4, "MODIFIED TRAPEZOIDAL RULE", Method 2, "Separate
+! the function evaluation from the summing action in the loop", printed
+! pp.28-29 (PDF 29-30), read in the ink.  The problem statement is in
+! problem_3_4_method1.strap.
+!
+!       MTZR2   LX, $1, XW1
+!               L(U), B
+!               -(N), A
+!               /(N), N
+!               ST(U), H                    [p.29 from here]
+!               E -I(U), 1
+!               +(N),A
+!               B,STOR
+!       LOOP    L(U),TEMP
+!               +(N),H
+!       STOR    ST(U),TEMP              'new x
+!               B,FUNCT                 'branch to f(x) evaluation
+!       RTURN   M+(N),ANS               'new partial sum
+!               CB, $1, LOOP
+!               *(N), H
+!               BEW, $
+!       ANS     DD(N), 0
+!       TEMP    DR(N), (1)
+!       H       DR(N), (1)
+!       FUNCT   *(N), 8.0               'function evaluator
+!               *(N), 8.0
+!               B, RTURN
+!       XW1     XW, 0.0, 20, $
+!       A       DD(N), 0.0              'lower limit
+!       B       DD(N), 2.0              'upper limit
+!       N       DD(N), 20.0             'no. of strips
+!
+! THE WHOLE DECK IS THE PAGE: twenty-six statements as printed, data and
+! all, in the printed order -- ANS, TEMP and H between the main line and
+! FUNCT, where the page puts them -- and with the page's own spacing
+! ("E -I(U), 1" with its blank, "+(N),A" without one).  Nothing is the
+! deck's but END.
+!
+! ASSEMBLED WITH ASM=strap2: see problem_3_4_method1.strap.
+!
+! THE EXPECTED VALUES ARE METHOD 1'S, AND SO IS THE FAULT.  The
+! arithmetic is the same sequence of operations on the same data; the
+! two B's per loop touch nothing.  So ANS, TEMP, H and the accumulator
+! must come out as in problem_3_4_method1.strap, where they are derived
+! (Reference Manual rules, tests/problem_3_expected.py p34, and the
+! hand checks on them):
+!
+!   ANS       00CFF7786C2265B0   the sum of f, never multiplied by h
+!   TEMP      002F999999999900   x20
+!   H         007CCCCCCCCCCCD0   h
+!   acc_left  002B913458CD1EC0   f(x20) x h -- not the integral: M+
+!                                leaves the accumulator alone
+!                                (Reference Manual printed p.88-89)
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): "B DD(N), 2.0" changed to "B DD(N), 3.0".
+! FAIL ANS, TEMP, H, acc_left and B_as_assembled; N_as_assembled and the
+! PC passed.
+
+MTZR2   LX, $1, XW1
+        L(U), B
+        -(N), A
+        /(N), N
+        ST(U), H
+        E -I(U), 1
+        +(N),A
+        B,STOR
+LOOP    L(U),TEMP
+        +(N),H
+STOR    ST(U),TEMP
+        B,FUNCT
+RTURN   M+(N),ANS
+        CB, $1, LOOP
+        *(N), H
+        BEW, $
+ANS     DD(N), 0
+TEMP    DR(N), (1)
+H       DR(N), (1)
+FUNCT   *(N), 8.0
+        *(N), 8.0
+        B, RTURN
+XW1     XW, 0.0, 20, $
+A       DD(N), 0.0
+B       DD(N), 2.0
+N       DD(N), 20.0
+        END, MTZR2

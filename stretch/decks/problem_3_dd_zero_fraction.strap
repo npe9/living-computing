@@ -1,0 +1,35 @@
+! REPRODUCER, not a test: strap_asm.py refuses a floating-point constant
+! whose fraction is zero.  Found 2026-11-15 transcribing C22-6578
+! Chapter 3 (docs/NEXT.md, "C22-6578 CHAPTER 3").
+!
+!   python3 -c "import sys; sys.path.insert(0,'strap'); \
+!     from strap_asm import assemble; \
+!     assemble(open('decks/problem_3_dd_zero_fraction.strap').read())"
+!
+!   AssemblerError: line N: DD(N) literal '0.0X48' is zero, which is not
+!   implemented (no listed example)
+!
+! THERE ARE LISTED EXAMPLES.  All read in the ink:
+!   C22-6578 printed p.26, Problems 3.1 and 3.2:
+!       X48     DD(N), 0.0X48           'binary exponent of 48
+!   C22-6578 printed p.28-29, Problem 3.4:
+!       A       DD(N), 0.0              'lower limit
+!       ANS     DD(N), 0
+!   Reference Manual printed p.103, Figure 33:
+!       CON1    DD (N), +0E +48
+!
+! The host STRAP II (ASM=strap2) assembles all three: X48 is
+! 0600000000000000 (exponent 48, a zero fraction: C28-6129 printed p.27,
+! "EXPONENT ENTRY ... overrules and replaces the exponent computed by
+! STRAP"), and the other two are words of zero bits.  The page's own
+! comment says what X48 is for -- "forces the fraction of N to shift
+! right the proper amount" -- so the exponent is the whole of the
+! constant and a zero fraction is its point.
+!
+! decks/problem_3_1.strap runs the first on the model under ASM=strap2.
+
+START   BEW, $
+X48     DD(N), 0.0X48
+A       DD(N), 0.0
+ANS     DD(N), 0
+        END, START

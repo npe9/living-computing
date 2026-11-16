@@ -1,0 +1,139 @@
+! C22-6578 PROBLEM 3.7, "CUBE ROOT", printed p.31 (PDF 32), read in the
+! ink.
+!
+!   "Program to compute the cube root of a normalized floating-point
+!   number N by the following iteration formula:
+!     x(k+1) = x(k) (x(k)**3 + 2N) / (2 x(k)**3 + N)
+!            = x(k) [ 1/2 + (3N/2) / (2 x(k)**3 + N) ]
+!   Use it to compute the cube root of 8, with x(0) = 2.5.  Ten
+!   iterations will give full-length accuracy except for the round-off
+!   error in the last iteration."
+!
+!   Method 1
+!       CBRT    L(U), EN
+!               E -I, 1
+!               +(N), EN
+!               ST(U), TEMP             '3N/2 stored in TEMP
+!               LX, $2, XW2
+!               L, GUESS
+!       LOOP    ST, XK
+!               *, XK
+!               *, XK
+!               E + I, 1
+!               +, EN                   '2X ** 3 + N
+!               R/, TEMP
+!               +, HALF
+!               *, XK                   'new XK created
+!               CB, $2, LOOP
+!               ST, ANS
+!               BEW, $
+!       XW2     XW, 0.0, 10, XW2
+!       HALF    DD(N), 0.5
+!       ANS     DR(N), (1)
+!       TEMP    DR(N), (2)
+!       XK      SYN (N), TEMP + 1.0
+!       EN      DD(N), 8.0
+!       GUESS   DD(N), 2.5
+!
+! The twenty-four printed statements are the deck's last twenty-four, as
+! printed, data and all, with the page's own spacing ("E -I, 1",
+! "E + I, 1", "SYN (N), TEMP + 1.0").  BLOCK A before them is the deck's
+! copy of the seventeen instructions, the BEW left off, every symbol
+! with an A appended, and its own constants written 8, 5/2 and 1/2,
+! which the assembler makes exact.
+!
+! ASSEMBLED WITH ASM=strap2: strap_asm.py refuses "L, GUESS" and the
+! eight others like it (decks/problem_3_bare_op_symbol_dds.strap).  By
+! C22-6578 printed p.30 comment (c) every bare operation here takes (N)
+! from its symbol, and "E -I" and "E + I", which name no symbol, take
+! (U).
+!
+! THE EXPECTED VALUES ARE DERIVED FROM THE MANUAL'S RULES, NOT FROM THE
+! MODEL, by tests/problem_3_expected.py (p37), rules and pages in its
+! header; eighty truncating steps.  What is checkable by hand is:
+!
+!   BLOCK A, exact 8, 2.5 and .5:
+!     2 is a fixed point of the printed sequence with nothing to
+!     truncate: 2 x 2 x 2 = 8; E+I, 1 doubles it, 16; + 8 = 24;
+!     12 / 24 = .5; + .5 = 1; x 2 = 2.  The iteration converges
+!     cubically from 2.5 (comment (a)), so ten steps arrive:
+!       ANSA  = 2    0048000000000000
+!       XKA   = 2    0048000000000000   (the tenth iteration's input:
+!                                       it was already there)
+!       TEMPA = 12   008C000000000000   3N/2 = 4 + 8
+!
+!   THE PAGE, with 8.0, 2.5 and 0.5 as the host STRAP II makes them,
+!   each one unit of its 48th place short (8 - 2**-45, 2.5 - 2**-46,
+!   .5 - 2**-49; see problem_3_4_method1.strap):
+!     TEMP by hand: L(U), EN is 8 - 2**-45; E-I, 1 halves it, 4 -
+!     2**-46; + EN is 12 - 3 x 2**-46.  A number with exponent 4 has
+!     2**-44 for its 48th place, so that is 12 less three quarters of
+!     a unit, truncated to 12 less one unit:
+!       TEMP  = 008BFFFFFFFFFFF0
+!     The cube root of 8 - 2**-45 is 2 - 2**-45/12, a third of a unit
+!     below 2, which truncates to 2 less one unit.  The program gets
+!       ANS   = 002FFFFFFFFFFFE0        2 less two units
+!       XK    = 002FFFFFFFFFFFE0
+!     -- one unit further off, which is the page's own "except for the
+!     round-off error in the last iteration".  The exact words are the
+!     calculator's.
+!     EN_as_assembled 006FFFFFFFFFFFF0, GUESS_as_assembled
+!     0049FFFFFFFFFFF0, HALF_as_assembled 003FFFFFFFFFFFF0.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): "ENA DD(N), 8" changed to "ENA DD(N), 27".
+! FAIL A_ANS, A_XK and A_TEMP; the six checks of the page's own block
+! and the PC passed.  (A_ANS came back 004C000000000000: 3, the cube
+! root of 27.)
+
+! --- block A: the deck's copy, exact constants ------------------------
+CBRTA   L(U), ENA
+        E -I, 1
+        +(N), ENA
+        ST(U), TEMPA
+        LX, $2, XW2A
+        L, GUESSA
+LOOPA   ST, XKA
+        *, XKA
+        *, XKA
+        E + I, 1
+        +, ENA
+        R/, TEMPA
+        +, HALFA
+        *, XKA
+        CB, $2, LOOPA
+        ST, ANSA
+! --- the page, as printed -------------------------------------------
+CBRT    L(U), EN
+        E -I, 1
+        +(N), EN
+        ST(U), TEMP
+        LX, $2, XW2
+        L, GUESS
+LOOP    ST, XK
+        *, XK
+        *, XK
+        E + I, 1
+        +, EN
+        R/, TEMP
+        +, HALF
+        *, XK
+        CB, $2, LOOP
+        ST, ANS
+        BEW, $
+XW2     XW, 0.0, 10, XW2
+HALF    DD(N), 0.5
+ANS     DR(N), (1)
+TEMP    DR(N), (2)
+XK      SYN (N), TEMP + 1.0
+EN      DD(N), 8.0
+GUESS   DD(N), 2.5
+! --- block A's data -------------------------------------------------
+XW2A    XW, 0.0, 10, XW2A
+HALFA   DD(N), 1/2
+ANSA    DR(N), (1)
+TEMPA   DR(N), (2)
+XKA     SYN (N), TEMPA + 1.0
+ENA     DD(N), 8
+GUESSA  DD(N), 5/2
+        END, CBRTA

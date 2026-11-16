@@ -1,0 +1,102 @@
+! C22-6578 PROBLEM 3.10, "INTEGER PART OF Log2N", printed p.34 (PDF 35),
+! read in the ink.
+!
+!   "N is a positive floating number in DOG, and log2N can be written
+!   as an integer plus a positive fraction.  Find the integer and put
+!   its magnitude in the first 18-bits of the value field of $1, and
+!   the sign in the sign position of the value field of $1.  Assume no
+!   exponent flag."
+!   Analysis: N = 2**alpha * beta, 1/2 <= beta < 1, so log2 N =
+!   (alpha - 1) + (1 + log2 beta) with 0 <= 1 + log2 beta < 1, and
+!   "alpha - 1 expressed as an 18-bit VFL integer, is the desired
+!   quantity."
+!
+!   Method 1.   L(N), DOG
+!               E-I, 1
+!               L(B, 12, 1), 8.0, 6
+!               ST(B, 25, 1), $1
+!               BEW, $
+!
+! The five printed statements are the deck's last five before its data,
+! as printed.  Blocks A and B are the same four instructions on other
+! data with DOG renamed (the pattern of problem_3_2.strap).  Each block
+! is preceded by the deck's own LX, $1, PAT, which fills $1 with a
+! pattern so that a store reaching past the value field would show, and
+! blocks A and B are followed by the deck's own SX to keep what $1 held.
+! The page gives no DOG; the deck's are below.
+!
+! ASSEMBLED WITH ASM=strap2 (see problem_3_1.strap).
+!
+! WHAT EACH STATEMENT DOES, with the page of the rule:
+!   L(N), DOG: a normalized load, so the exponent is alpha.
+!   E-I, 1: no dds, so (U) (C22-6578 printed p.30, comment (c)); the
+!     exponent becomes alpha - 1.
+!   L(B, 12, 1), 8.0, 6: a VFL load of the 12-bit field at address 8.0.
+!     That field is accumulator bits 0-11: the exponent flag, the ten
+!     exponent bits, and the exponent sign.  Reference Manual printed
+!     p.61, LOAD: "The numeric part of the addressed operand is placed
+!     in the accumulator as specified by the offset.  The sign bit in
+!     the sign byte register is set according to the sign of the data";
+!     and of the byte size in a binary operation (p.61, ADD TO MEMORY,
+!     "Radix", which LOAD shares through ADD): "the byte size refers only
+!     to the length of the sign byte, thereby determining the position
+!     of the sign bit".  A one-bit sign byte makes bit 11, the exponent
+!     sign, the sign, and bits 0-10 (the flag, zero by the page's
+!     assumption, and the magnitude) the number.  The offset of 6 puts
+!     the number's units bit six places in from the accumulator's right
+!     end (problem_3_2.strap's header: offset 68 is bit 59), so the
+!     accumulator holds (alpha - 1) x 64.
+!   ST(B, 25, 1), $1: 25 bits to word 17 bits 0-24, the value field of
+!     $1 (Reference Manual printed p.23, LOAD VALUE: "The value field,
+!     bits 0-24, of the index word").  A one-bit sign byte again: bits
+!     0-23 the number, bit 24 its sign.  (alpha - 1) x 64 in 24 bits is
+!     alpha - 1 in bits 0-17 with bits 18-23 zero -- "the first
+!     18-bits".  Bits 25-63 of $1 are not touched.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED.  PAT is A5A5A5A5A5A5A5A5; its
+! bits 25-63 (00000025A5A5A5A5 of the word) survive.  The magnitude
+! lands at bits 0-17 (shift 46), the sign at bit 24 (8000000000 of the
+! word).
+!     block  N      alpha  log2 N      alpha - 1   $1 afterwards
+!     A      8      4      3           +3          0000C025A5A5A5A5
+!     B      3/16   -2     -2.415      -3          0000C0A5A5A5A5A5
+!     last   1000   10     9.966       +9          00024025A5A5A5A5
+!   (8 = .1 x 2**4; 3/16 = .11 x 2**-2; 1000 = .1111101 x 2**10.)
+!   PC 87: the printed BEW is the right half of word 43 in the host
+!   STRAP II's assembly (the VFL L and ST before it are full words),
+!   half-word 87.
+!   Block A is an exact power of two, where the page's "positive
+!   fraction" is zero; block B is N below 1, the negative sign.
+!
+! INJECTION, OBSERVED 2026-11-16 (data side, on a copy of the deck, the
+! deck itself untouched): DOGA changed from 8 to 7.  FAIL A_value only
+! (got 00008025A5A5A5A5, alpha - 1 = 2); B_value, the last block's $1
+! and the PC passed.
+
+START   LX, $1, PAT
+        L(N), DOGA
+        E-I, 1
+        L(B, 12, 1), 8.0, 6
+        ST(B, 25, 1), $1
+        SX, $1, RESA
+        LX, $1, PAT
+        L(N), DOGB
+        E-I, 1
+        L(B, 12, 1), 8.0, 6
+        ST(B, 25, 1), $1
+        SX, $1, RESB
+        LX, $1, PAT
+! --- the page, as printed -------------------------------------------
+        L(N), DOG
+        E-I, 1
+        L(B, 12, 1), 8.0, 6
+        ST(B, 25, 1), $1
+        BEW, $
+! --- the deck's data ------------------------------------------------
+DOG     DD(N), 1000
+DOGA    DD(N), 8
+DOGB    DD(N), 3/16
+PAT     DD(BU, 64), 11936128518282651045
+RESA    DR(BU, 64), (1)
+RESB    DR(BU, 64), (1)
+        END, START

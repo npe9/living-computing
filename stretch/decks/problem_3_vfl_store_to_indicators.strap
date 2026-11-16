@@ -1,0 +1,37 @@
+! REPRODUCER for a model limitation found 2026-11-16 by C22-6578 Problem
+! 3.9 (decks/problem_3_9_*.strap; docs/NEXT.md, "C22-6578 CHAPTER 3"
+! item 6): a VFL STORE whose field lies in the indicator register,
+! word 11, changes nothing.
+!
+! C22-6578 printed pp.32-33, Problem 3.9, both methods:
+!       L(BU, 3), $RLZ          '$RLZ, $RZ, $RGZ fetched
+!       ST(BU, 3), $AL          '$AL, $AE, $AH stored
+! The pocket reference card X22-6533-1, footnote c to word 11, makes
+! only indicator bits 0-19 read-only; AL, AE and AH are bits 60, 61 and
+! 62 (both as transcribed in docs/microarchitecture_plan.md A.10 and
+! strap/opcodes.py; the card was not re-read in the ink for this deck).
+! The model drops every ordinary store to word 11
+! (bsv/StretchStorage.bsv, writeWord, addrIndicators: "SIMPLIFICATION
+! ... only the 'poke via STORE' path is unavailable"), silently, so the
+! example's whole purpose is lost.
+!
+! THE DECK: put 100 (binary) into $AL, $AE, $AH and read the three
+! bits back with an ordinary VFL load.  V's leftmost bit is one, so
+! L(BU, 3), V loads 100 = 4.  Nothing between the store and the
+! reload sets a comparison indicator (p.59: AL, AE, AH are set "by the
+! comparison operations").
+!     R expected 0000000000000004   (by hand)
+!
+! OBSERVED ON THE MODEL 2026-11-16, ASM=strap2: R = 0 (FAIL), PC=72
+! (reached, PASS).  Indicator word 0000000000000140: bit 55, MOP, and
+! bit 57, RZ -- the reload found three zero bits; AL never came on.
+! R is reserved DR(N) so that it is a whole word.
+
+START   L(BU, 3), V
+        ST(BU, 3), $AL
+        L(BU, 3), $AL
+        ST(BU, 64), R
+        BEW, $
+R       DR(N), (1)
+V       DD(BU, 64), 9223372036854775808
+        END, START

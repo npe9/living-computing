@@ -1,0 +1,141 @@
+! C22-6578 PROBLEM 3.9, "DOUBLE-PRECISION COMPARE", printed pp.32-34
+! (PDF 33-35), read in the ink.
+!
+!   "The accumulator contains a double precision floating-point
+!   quantity.  Another double precision floating-point quantity is
+!   stored in two full words, with the more significant part in M1, less
+!   significant part in M1+1.  Compare the two double precision
+!   quantities and set the appropriate indicators $AE, $AL and $AH."
+!
+!   Method 2.  Compare high order parts.  If they compare "equal,"
+!   perform the double precision subtraction to ascertain the result.
+!       DKOMP2  ST(U), A1               'save accumulator
+!               SLO(U), A1+1.
+!               K(U), M                 'single precision compare
+!               BAE, DPSUB              'usually unsuccessful
+!       END     BEW, $                  'end of program
+!       DPSUB   DL(U), A1+1.            'full-scale double precision subtract
+!               D-(U), M1+1.
+!               D+(N), A1
+!               D-(N), M1
+!               L(BU,3), $RLZ           '$RLZ, $RZ, $RGZ fetched
+!               ST(BU,3), $AL           $AL, $AE, $AH stored
+!               DL(U), A1+1.            'restore accumulator
+!               D+(U), A1
+!               B, END
+!       A1      DR(U), (2)
+!
+! UNCERTAIN READINGS AND THE PAGE'S OWN SLIPS, kept as printed:
+!   "K(U), M": the problem names the location M1, and nothing is called
+!     M.  The deck supplies "M SYN, M1" with its data, the one statement
+!     needed for it to assemble; the compare is of the high-order parts,
+!     as the page's own description says.
+!   "D-(U), M1+1." here against "D-(N), M1+1." in Method 1; the period
+!     after "M1+1" is printed like a small "L".  Read as M1+1. (U).
+!   The comment on ST(BU,3) has no opening quote mark in the ink.
+! The printed statements follow the deck's own two, which load the
+! accumulator, and come before the deck's data, as printed: spacing,
+! trailing periods and all.  The page defines neither M1 nor the
+! accumulator's value; the deck's are below.
+!
+! ASSEMBLED WITH ASM=strap2 (see problem_3_1.strap; "SLO (U)" with its
+! space assembles as SLO(U)).
+!
+! WHAT THE PROGRAM DOES, with the page of the rule:
+!   ST(U), A1 and SLO(U), A1+1. save the accumulator as two words:
+!     STORE, Reference Manual printed p.90; STORE LOW ORDER, p.97, "The
+!     exponent is obtained by subtracting 48 from the exponent in bits
+!     0-11 of the accumulator", the fraction is accumulator bits 60-107.
+!   The double-precision subtraction is Figure 28's (p.97), the order of
+!     its notes: low parts first, then add A1, then subtract M1.  ADD
+!     DOUBLE, p.95; LOAD DOUBLE, p.96.  The last D-(N) sets RLZ, RZ or
+!     RGZ "as in ADD" on the 96-bit difference.
+!   L(BU, 3), $RLZ fetches indicator bits 56-58 (RLZ, RZ, RGZ) into the
+!     accumulator's right end, offset 0: accumulator bits 125-127.
+!   ST(BU, 3), $AL stores them into bits 60-62 (AL, AE, AH).
+!   DL(U), A1+1. / D+(U), A1 restore the accumulator.  LOAD DOUBLE:
+!     "Accumulator bits 60-107 are set to zero.  Accumulator bits 108-127
+!     remain unchanged" (p.96); ADD DOUBLE: "Accumulator bits 108-127
+!     remain unchanged" (p.95).  So the THREE BITS THE PROGRAM FETCHED
+!     STAY IN ACCUMULATOR BITS 125-127, word 9's last three bits, and
+!     the deck checks them there: 4 = 100 = less, 2 = 010 = equal,
+!     1 = 001 = greater.
+!   METHOD 2'S COMPARE, K(U), M (p.90-91): "When the exponent
+!     difference between the operands exceeds 48, the algebraically
+!     larger of the two numbers, judged by exponent and fraction sign,
+!     is considered high ... When the exponent difference is 48 or
+!     less, a zero result is considered an equality."  Only on AE does
+!     the program reach DPSUB; either way it ends at END (comment (b),
+!     "convenient to end at the same place").  On the K path the
+!     accumulator is untouched and word 9 keeps what the deck put there.
+!
+! >>> THE COMPARISON INDICATORS THEMSELVES ARE NOT CHECKED: THE MODEL
+! DROPS THE STORE INTO THEM. <<<  ST(BU, 3), $AL changes nothing on
+! the model (bsv/StretchStorage.bsv, writeWord: stores to word 11 are a
+! documented SIMPLIFICATION, dropped silently).  Reproducer:
+! decks/problem_3_vfl_store_to_indicators.strap; docs/NEXT.md
+! "C22-6578 CHAPTER 3" item 6.  tests/run_tests.sh carries the
+! indicator word's expected value as a comment, to be restored when the
+! store is implemented.
+!
+! THIS DECK'S DATA AND RESULT, HAND-DERIVED (tests/problem_3_expected.py
+! p39_run follows the same rules and agrees):
+!   THE PAGE'S OWN COUNTER-EXAMPLE TO METHOD 2, comment (a) on p.34,
+!   with E = 1:
+!     accumulator   (E+1+48, 0)  and  (E+1, 0)
+!     M1, M1+1      (E, .111...1)  and  (E-48, .111...1)
+!   "Present program would lead to (A1, A1+1.) larger, because of the
+!   48 unit difference in the exponent.  Correct answer should lead to
+!   (M1, M1+1.) larger".  THE DECK CHECKS THE PAGE'S CLAIM ABOUT ITS OWN
+!   PROGRAM: K(U) sees an exponent difference of 49, over 48, and the
+!   positive number with the larger exponent is high: AH, and BAE does
+!   not branch.  The order of the quantities is M larger; the program
+!   says otherwise, as the page says it will.
+!     A1         0640000000000000   (exponent 50, zero fraction)
+!     A1+1.      0040000000000000   (exponent 2, zero fraction)
+!     word 8     0640000000000000   (untouched on this path)
+!     word 9     0000000000000000
+!     indicator word 0000001000000042: AH (bit 62) set by K itself, so
+!       this one IS checked.  Instruction by instruction: the deck's
+!       DL(U) and D+(U) of zero fractions set RZ, and no LS since both
+!       operands are zero (p.96); ST(U) and SLO(U) set MOP and the
+!       result indicators "as in ADD TO MEMORY" (p.90, p.97): RZ again,
+!       a zero fraction stored, MOP on; K(U) sets MOP and PSH "as in
+!       ADD" (p.91): MOP off, PSH on for a difference over 48, and AH;
+!       "The arithmetic result ... indicators ... are not changed"
+!       (p.91), so RZ stays.  RZ bit 57, PSH bit 27, AH bit 62.
+!     PC 70, END.
+!
+! INJECTION, OBSERVED 2026-11-16 (data side, on a copy of the deck, the
+! deck itself untouched): AHI changed from 0.0X50 to 0.0X49, an exponent
+! difference of exactly 48.  K now finds a zero difference, AE, and the
+! program goes through DPSUB and finds M larger (verdict 4).  FAIL A1,
+! A1+1, word 8 (the changed exponent), verdict_acc_right (got 4) and IND
+! (got 0000002000000044); the PC passed (70: both paths end at END).
+
+! --- the deck's own: load the accumulator with (AHI, ALO) ---
+START   DL(U), AHI
+        D+(U), ALO
+! --- the printed program ---
+DKOMP2  ST(U), A1
+        SLO(U), A1+1.
+        K(U), M
+        BAE, DPSUB
+END     BEW, $
+DPSUB   DL(U), A1+1.
+        D-(U), M1+1.
+        D+(N), A1
+        D-(N), M1
+        L(BU,3), $RLZ
+        ST(BU,3), $AL
+        DL(U), A1+1.
+        D+(U), A1
+        B, END
+A1      DR(U), (2)
+! --- the deck's data ---
+M       SYN, M1
+M1      DD(N), 281474976710655X1
+        DD(N), 281474976710655X-47
+AHI     DD(N), 0.0X50
+ALO     DD(N), 0.0X2
+        END, START

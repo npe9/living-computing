@@ -13793,6 +13793,180 @@ run "Buchholz B.7 -- 8 x 8 bit matrix transposed in the accumulator" ./run_progr
 
 # ============== end of the Buchholz Appendix B group ==================
 
+# ======================================================================
+# C22-6578 CHAPTER 3, "FLOATING-POINT ARITHMETIC", printed pp.26-34.
+# G2.1's worklist, docs/source_audit.md "G2.1, CHAPTER 3".
+#
+# Every deck here is assembled by the host STRAP II (ASM=strap2), because
+# the page's own statements -- "DD(N), 0.0X48", "*, X" -- are refused by
+# strap_asm.py (docs/NEXT.md, "C22-6578 CHAPTER 3").  The expected words
+# are worked from the Reference Manual's rules in each deck's header and
+# by problem_3_expected.py, which is not the model and imports nothing
+# from it; its self-checks run first.
+# ======================================================================
+run "C22-6578 Chapter 3 -- the hand calculator's self-checks" python3 problem_3_expected.py --self
+
+# 3.1, DL(U) / D+(U) with a zero fraction of exponent 48 / ST(N) / SLO(N).
+# Block B (|N| < 1) is the page's "normalized" I arriving as a zero
+# fraction with exponent 48.
+run "C22-6578 Problem 3.1 -- integer and fraction parts" ./run_program.sh ../decks/problem_3_1.strap StretchP31Tb ASM=strap2 "PC=80" \
+    "A_I:46=0x0169A40000000008" "A_F:47=0x000C000000000008" \
+    "B_I_zero_exp48:49=0x0600000000000000" "B_F:50=0x0038000000000000" \
+    "C_I:52=0x02A8000280000000" "C_F:53=0x0008000000000000" \
+    "I_of_2.5:43=0x0048000000000000" "F_of_2.5:44=0x0008000000000000" \
+    "acc_left_after:8=0x0600000000000028"
+
+# 3.2, the same shift and then a VFL store of 18 accumulator bits into
+# $1's count field, both printed spellings (17.28 and $1.28).  $1 starts
+# as a pattern, so the whole word is the check.
+run "C22-6578 Problem 3.2 -- integer part into the count field of \$1" ./run_program.sh ../decks/problem_3_2.strap StretchP32Tb ASM=strap2 "PC=81" \
+    "A_count:46=0xA5A5A5A0001DA5A5" "B_count_low18:47=0xA5A5A5A00015A5A5" \
+    "count_of_2.5:17=0xA5A5A5A00009A5A5"
+
+# 3.3, a polynomial of degree 20 three ways.  x = 3 and integer
+# coefficients make every step exact, so all three must give P(3) =
+# 55,570,626,391 to the bit.  Method 3's SRD(N), 8.0 -- STORE ROUNDED
+# into the accumulator -- gets two more data sets: B_rounds is the one
+# where the 49th bit is a one and truncation would give a different word.
+run "C22-6578 Problem 3.3 Method 1 -- term by term" ./run_program.sh ../decks/problem_3_3_method1.strap StretchP33M1Tb ASM=strap2 "PC=76" \
+    "POLY:42=0x048CF04477570000" "XK_3_to_20:40=0x040CFD41B9100000" "acc_left:8=0x048CF04477570000"
+run "C22-6578 Problem 3.3 Method 2 -- nesting" ./run_program.sh ../decks/problem_3_3_method2.strap StretchP33M2Tb ASM=strap2 "PC=70" \
+    "POLY:38=0x048CF04477570000" "acc_left:8=0x048CF04477570000"
+run "C22-6578 Problem 3.3 Method 3 -- nesting, D*, D+ and SRD(N), 8.0" ./run_program.sh ../decks/problem_3_3_method3.strap StretchP33M3Tb ASM=strap2 "PC=85" \
+    "A_exact:69=0x048CF04477570000" "B_rounds:93=0x0049000000000020" "POLY:45=0x0028000000000150"
+
+# 3.4, the whole printed page as the deck, twice.  Sixty truncating
+# floating-point steps; the words are problem_3_expected.py's, from the
+# manual's rules.  >>> THE PRINTED PROGRAM DOES NOT FORM THE INTEGRAL:
+# M+ leaves the accumulator alone, so the closing "*(N), H" multiplies
+# the last integrand value.  The checks pin what the page leaves, and
+# their labels say so. <<<  B and N are checked as assembled because the
+# host STRAP II makes "2.0" and "20.0" one unit short.
+run "C22-6578 Problem 3.4 Method 1 -- modified trapezoidal rule, as printed" ./run_program.sh ../decks/problem_3_4_method1.strap StretchP34M1Tb ASM=strap2 "PC=80" \
+    "ANS_sum_of_f:45=0x00CFF7786C2265B0" "TEMP_x20:46=0x002F999999999900" "H:47=0x007CCCCCCCCCCCD0" \
+    "acc_left_last_f_times_h:8=0x002B913458CD1EC0" \
+    "B_as_assembled:43=0x002FFFFFFFFFFFF0" "N_as_assembled:44=0x00A9FFFFFFFFFFF0"
+run "C22-6578 Problem 3.4 Method 2 -- the function evaluator apart, as printed" ./run_program.sh ../decks/problem_3_4_method2.strap StretchP34M2Tb ASM=strap2 "PC=79" \
+    "ANS_sum_of_f:40=0x00CFF7786C2265B0" "TEMP_x20:41=0x002F999999999900" "H:42=0x007CCCCCCCCCCCD0" \
+    "acc_left_last_f_times_h:8=0x002B913458CD1EC0" \
+    "B_as_assembled:47=0x002FFFFFFFFFFFF0" "N_as_assembled:48=0x00A9FFFFFFFFFFF0"
+
+# 3.5, tan(pi/4) as a continued fraction, nineteen R/N -- RECIPROCAL
+# DIVIDE with the negative sign modifier -- and the statements written
+# with no dds at all ("*, X"), which the page's comment (c) explains.
+# Block A has exact 39 and 2 and F comes out two units below 1; the
+# page's own "39.0" and "2.0" are one unit short each and F comes out
+# 3 x 10**-13 above.  Both are pinned; STEPS for the twenty divides each.
+run "C22-6578 Problem 3.5 -- continued fraction, R/N and bare operations" ./run_program.sh ../decks/problem_3_5.strap StretchP35Tb ASM=strap2 "PC=92" STEPS=200000 \
+    "A_F:59=0x000FFFFFFFFFFFE0" "A_NUM_is_1:54=0x0028000000000000" \
+    "A_TEMP_x_squared:57=0x0009DE9E64DF22D0" "A_TEMP1:58=0x005DBC095777A5B8" \
+    "F:53=0x00280000000002A0" "NUM:48=0x000FFFFFFFFFFC20" \
+    "TEMP_x_squared:51=0x0009DE9E64DF22D0" "TEMP1:52=0x005DBC095777A6E8" \
+    "X_as_assembled:47=0x000C90FDAA221680" "TWO_as_assembled:49=0x002FFFFFFFFFFFF0"
+
+# 3.6, seventeen products summed in the 96-bit accumulator by LFT and *+
+# and stored once with SRD.  The sum is 2**80 + 2**41 + 2**32 + 138:
+# single precision, a truncating store and a rounding store give three
+# different words, and C is the rounded one.
+run "C22-6578 Problem 3.6 -- scalar product, LFT / *+ / SRD" ./run_program.sh ../decks/problem_3_6.strap StretchP36Tb ASM=strap2 "PC=71" \
+    "C_rounded:71=0x0A28000000001010" "acc_left_unrounded:8=0x0A28000000001008" \
+    "FT_last_factor:14=0x00A8000000000000"
+
+# 3.7, the cube root of 8 by ten cubically convergent iterations, bare
+# operations throughout and E -I / E + I with no dds (unnormalized by
+# the page's own rule).  Block A's exact 8, 2.5 and .5 land on exactly 2,
+# a fixed point with nothing to truncate; the page's "8.0" comes out two
+# units under 2, its own "round-off error in the last iteration".
+run "C22-6578 Problem 3.7 -- cube root" ./run_program.sh ../decks/problem_3_7.strap StretchP37Tb ASM=strap2 "PC=96" STEPS=200000 \
+    "A_ANS_is_2:58=0x0048000000000000" "A_XK_is_2:60=0x0048000000000000" "A_TEMP_is_12:59=0x008C000000000000" \
+    "ANS:51=0x002FFFFFFFFFFFE0" "XK:53=0x002FFFFFFFFFFFE0" "TEMP_3N_over_2:52=0x008BFFFFFFFFFFF0" \
+    "EN_as_assembled:54=0x006FFFFFFFFFFFF0" "GUESS_as_assembled:55=0x0049FFFFFFFFFFF0" \
+    "HALF_as_assembled:50=0x003FFFFFFFFFFFF0"
+
+# C22-6578 Problem 3.8, printed pp.31-32: VFL integers to normalized
+# floating point (LCV with progressive indexing, E+I, CBR+, SRT, /).
+# Twenty-five integers whose squares add up to 4**12, so the root is
+# 4096 and every quotient is exact; hand-derived values in the decks'
+# headers.  Three decks:
+#   _positive: the page's program on absolute values -- all checks.
+#   _no_eplus: comment (b), EPLUS removed.  The checks are THE PAGE'S
+#     CLAIM; the Reference Manual's p.87 text predicts zeros instead,
+#     and which is right is unsettled (docs/NEXT.md C22-6578 CHAPTER 3
+#     item 5, decks/problem_3_fp_add_low_half_zero.strap).
+#   (signed): the page's program on signed data.  The model takes a
+#     floating-point operand at address 8 with the sign of accumulator
+#     bit 60, not of the sign byte (Reference Manual p.80; NEXT.md item
+#     4, decks/problem_3_fp_address_8_sign.strap), so the 27 arithmetic
+#     checks fail today; they are carried as comments below and should
+#     be restored when the model is mended.
+run "C22-6578 Problem 3.8 -- VFL to normalized FP, positive data" ./run_program.sh ../decks/problem_3_8_positive.strap StretchP38PTb ASM=strap2 "PC=80" STEPS=400000 \
+    "SUM:43=0x0328000000000000" "ROOT:44=0x01A8000000000000" "F0_1:64=0x0178000000000000" \
+    "F1_2:65=0x0158000000000000" "F2_3:66=0x015C000000000000" "F3_1024:67=0x0038000000000000" \
+    "F4_512:68=0x0058000000000000" "F5_768:69=0x005C000000000000" "F6_100:70=0x00BC800000000000" \
+    "F7_99:71=0x00BC600000000000" "F8_7:72=0x013E000000000000" "F9_1234:73=0x0039A40000000000" \
+    "F10_321:74=0x007A080000000000" "F11_5:75=0x013A000000000000" "F12_64:76=0x00B8000000000000" \
+    "F13_640:77=0x005A000000000000" "F14_17:78=0x00F8800000000000" "F15_250:79=0x009FA00000000000" \
+    "F16_33:80=0x00D8400000000000" "F17_11:81=0x011B000000000000" "F18_400:82=0x007C800000000000" \
+    "F19_8:83=0x0118000000000000" "F20_129:84=0x0098100000000000" "F21_1000:85=0x005FA00000000000" \
+    "F22_1511:86=0x003BCE0000000000" "F23_2132:87=0x0008540000000000" "F24_2179:88=0x0008830000000000" \
+    "x1_after:17=0x000FF00000640029" "x2_after:18=0x001640000000002A"
+run "C22-6578 Problem 3.8 comment (b) -- EPLUS removed, the page's claim" ./run_program.sh ../decks/problem_3_8_no_eplus.strap StretchP38NTb ASM=strap2 "PC=79" STEPS=400000 \
+    "SUM_page_claim:42=0x08F8000000000000" "ROOT_page_claim:43=0x0478000000000000" "F0_1:63=0x0178000000000000" \
+    "F1_2:64=0x0158000000000000" "F2_3:65=0x015C000000000000" "F3_1024:66=0x0038000000000000" \
+    "F4_512:67=0x0058000000000000" "F5_768:68=0x005C000000000000" "F6_100:69=0x00BC800000000000" \
+    "F7_99:70=0x00BC600000000000" "F8_7:71=0x013E000000000000" "F9_1234:72=0x0039A40000000000" \
+    "F10_321:73=0x007A080000000000" "F11_5:74=0x013A000000000000" "F12_64:75=0x00B8000000000000" \
+    "F13_640:76=0x005A000000000000" "F14_17:77=0x00F8800000000000" "F15_250:78=0x009FA00000000000" \
+    "F16_33:79=0x00D8400000000000" "F17_11:80=0x011B000000000000" "F18_400:81=0x007C800000000000" \
+    "F19_8:82=0x0118000000000000" "F20_129:83=0x0098100000000000" "F21_1000:84=0x005FA00000000000" \
+    "F22_1511:85=0x003BCE0000000000" "F23_2132:86=0x0008540000000000" "F24_2179:87=0x0008830000000000" \
+    "x1_after:17=0x000FB00000640028" "x2_after:18=0x0016000000000029"
+run "C22-6578 Problem 3.8 -- signed data (27 checks held back: address-8 sign fault)" ./run_program.sh ../decks/problem_3_8.strap StretchP38Tb ASM=strap2 "PC=80" STEPS=400000 \
+    "x1_after:17=0x000FF00000640029" "x2_after:18=0x001640000000002A"
+# Held back until the address-8 sign fault is mended:
+#     "SUM:43=0x0328000000000000" "ROOT:44=0x01A8000000000000" "F0_1:64=0x0178000000000000"
+#     "F1_m2:65=0x0158000000000008" "F2_3:66=0x015C000000000000" "F3_1024:67=0x0038000000000000"
+#     "F4_m512:68=0x0058000000000008" "F5_768:69=0x005C000000000000" "F6_100:70=0x00BC800000000000"
+#     "F7_m99:71=0x00BC600000000008" "F8_7:72=0x013E000000000000" "F9_1234:73=0x0039A40000000000"
+#     "F10_m321:74=0x007A080000000008" "F11_5:75=0x013A000000000000" "F12_64:76=0x00B8000000000000"
+#     "F13_m640:77=0x005A000000000008" "F14_17:78=0x00F8800000000000" "F15_250:79=0x009FA00000000000"
+#     "F16_m33:80=0x00D8400000000008" "F17_11:81=0x011B000000000000" "F18_400:82=0x007C800000000000"
+#     "F19_m8:83=0x0118000000000008" "F20_129:84=0x0098100000000000" "F21_1000:85=0x005FA00000000000"
+#     "F22_1511:86=0x003BCE0000000000" "F23_m2132:87=0x0008540000000008" "F24_2179:88=0x0008830000000000"
+
+# C22-6578 Problem 3.9, printed pp.32-34: double-precision compare, both
+# methods (ST/SLO, D-/D+ in Figure 28's order, K, indicators fetched
+# with L(BU,3),$RLZ and stored with ST(BU,3),$AL).  One deck per case;
+# the deck loads the accumulator, then the page's program as printed.
+# The verdict is checked in accumulator bits 125-127 (word 9), where the
+# fetched RLZ/RZ/RGZ stay through the restore (Reference Manual p.95-96).
+# The model DROPS the store into AL/AE/AH (a documented simplification;
+# docs/NEXT.md C22-6578 CHAPTER 3 item 6, decks/problem_3_vfl_store_to_
+# indicators.strap), so the indicator word is held back except where K
+# itself sets it.  method2_page_fault pins the page's own claim that
+# Method 2 calls the smaller number high.
+run "C22-6578 Problem 3.9 Method 1 -- the page's example, less" ./run_program.sh ../decks/problem_3_9_method1_less.strap StretchP39M1LTb ASM=strap2 "PC=78" \
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+run "C22-6578 Problem 3.9 Method 1 -- equal" ./run_program.sh ../decks/problem_3_9_method1_equal.strap StretchP39M1ETb ASM=strap2 "PC=78" \
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x2"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000002000000024"
+run "C22-6578 Problem 3.9 Method 1 -- greater by the low part" ./run_program.sh ../decks/problem_3_9_method1_greater.strap StretchP39M1GTb ASM=strap2 "PC=78" \
+    "A1:40=0x0028000000000000" "A1_plus_1:41=0x05FC000000000000" "acc_left:8=0x002800000000000C" "verdict_acc_right:9=0x1"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000001000000022"
+run "C22-6578 Problem 3.9 Method 2 -- the page's counter-example (AH, as the page says)" ./run_program.sh ../decks/problem_3_9_method2_page_fault.strap StretchP39M2FTb ASM=strap2 "PC=70" \
+    "A1:41=0x0640000000000000" "A1_plus_1:42=0x0040000000000000" "acc_left:8=0x0640000000000000" "verdict_acc_right:9=0x0" \
+    "IND:11=0x0000001000000042"
+run "C22-6578 Problem 3.9 Method 2 -- less, through DPSUB" ./run_program.sh ../decks/problem_3_9_method2_less.strap StretchP39M2LTb ASM=strap2 "PC=70" \
+    "A1:41=0x002FFFFFFFFFFFF0" "A1_plus_1:42=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
+#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+
+# C22-6578 Problem 3.10, printed p.34: integer part of log2 N into the
+# value field of $1 (L(N), E-I, L(B,12,1) of the exponent at 8.0, ST(B,25,1)).
+# N = 8 (exact power of two), 3/16 (below 1: negative), 1000 (the printed block).
+run "C22-6578 Problem 3.10 -- integer part of log2 N" ./run_program.sh ../decks/problem_3_10.strap StretchP310Tb ASM=strap2 "PC=87" \
+    "A_value:48=0x0000C025A5A5A5A5" "B_value:49=0x0000C0A5A5A5A5A5" "x1_last:17=0x00024025A5A5A5A5"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

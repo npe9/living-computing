@@ -17206,3 +17206,129 @@ IBM's per-line error flag, seen on all eight at 300 dpi.
     the listed one.
   OPEN: the rules for 123 and 92 are what the listing shows, not text
     from the manual; 92 has a single witness.
+
+## C22-6578 CHAPTER 3: WHAT THE PAGES FOUND -- 2026-11-15
+
+G2.1's worklist, Chapter 3 ("FLOATING-POINT ARITHMETIC", printed
+pp.26-34).  Status and counts are in docs/source_audit.md, "G2.1,
+CHAPTER 3".  This section holds only the findings, each with the
+smallest thing that reproduces it.  Nothing in bsv/ or strap/ was
+changed.
+
+### 1. strap_asm.py refuses a floating-point constant with a zero fraction
+
+    decks/problem_3_dd_zero_fraction.strap      (three statements)
+    AssemblerError: DD(N) literal '0.0X48' is zero, which is not
+    implemented (no listed example)
+
+There are listed examples, read in the ink: C22-6578 printed p.26
+`X48 DD(N), 0.0X48` (Problems 3.1 and 3.2, whose whole method is that
+constant), printed pp.28-29 `A DD(N), 0.0` and `ANS DD(N), 0`, and
+Reference Manual printed p.103 Figure 33 `CON1 DD (N), +0E +48`.  The
+host STRAP II assembles them (0600000000000000 and two zero words).
+Every Chapter 3 deck is registered `ASM=strap2` for this reason and the
+next.
+
+### 2. strap_asm.py refuses "*, X" where X is defined (N) -- and the witness it asks for is printed
+
+    decks/problem_3_bare_op_symbol_dds.strap    (four statements)
+    AssemblerError: VFL operation on a symbol defined (N): what STRAP
+    compiles is not in C22-6531/C28-6129 and no MCP row witnesses it
+    yet; write the dds out
+
+C22-6578 printed p.30, Problem 3.5 comment (c), says what STRAP
+compiles: "Where the dds is not explicitly given in an instruction,
+STRAP will insert the dds of the rightmost symbolic address ... If the
+collection of symbolic addresses for the instruction is exhausted
+without a proper dds having been found, STRAP will use the (N) modifier
+for instructions which are unambiguously floating-point in nature.  The
+exception being E+I and variants which are assigned the (U) modifier.
+An operation which could be either VFL or floating-point is assumed
+VFL."  Problems 3.5, 3.7 and 3.8 are written that way throughout
+(`*, X`, `L, GUESS`, `ST, XK`, `+, SUM`, `/, ROOT`, `R/N, TEMP`).  The
+host STRAP II already does it; the reproducer's header gives the bits.
+
+### 3. Problem 3.4's printed program does not form the integral (a fault in the book, not the model)
+
+    decks/problem_3_4_method1.strap, problem_3_4_method2.strap
+
+Both printed methods end the loop `M+(N), ANS / CB, $1, LOOP / *(N), H
+/ BEW, $`.  ADD TO MEMORY leaves the accumulator unchanged (Reference
+Manual printed p.88-89), so the closing multiply takes the last
+integrand value, 1.95**4, not the sum: the accumulator ends at 1.4459,
+ANS holds the sum of f (63.8667) never multiplied by h, and the page's
+integral (6.38667) is in neither.  The model does what the manual says
+and the decks pin what the page leaves, bit for bit against a
+calculator written from the manual
+(tests/problem_3_expected.py).  An `L(U), ANS` before the last multiply
+is what the page lacks.  Nothing to fix here; recorded so that nobody
+"corrects" the check.
+
+### 4. A floating-point operand at address 8 takes its sign from accumulator bit 60 (a model fault)
+
+    decks/problem_3_fp_address_8_sign.strap     (fourteen statements)
+    R1 = 0089000000000008  expected 0089000000000000   (-3 squared at 8.0)
+    R2 = 0089000000000008  expected 0089000000000000   (+3, bit 60 a one)
+    R3 = 0089000000000000  PASS (control, operand in storage)
+    R4 = 006A000000000000  expected 006A000000000008   (STN(U), 8.0)
+    word 8 = 006A000000000008  expected 006A000000000000
+
+Reference Manual printed p.80: "in floating-point instructions when
+address 8 is used as the effective operand address, accumulator bit
+positions 0-59 and sign byte register bit positions 4-7 are used as the
+operand ... Bits 60-63 of the accumulator do not serve as operand bits
+... This rule applies to operations of both fetch and store type."
+C22-6578 printed p.28, Problem 3.4 comment (b), says the same.  The
+model treats word 8 as an ordinary word in both directions: a fetch
+takes the sign from accumulator bit 60, and a store puts the sign there
+and leaves the sign byte alone.  Found by Problem 3.8 (`*(N), $L`, the
+square of the accumulator): on signed data the sum of squares came back
+as the positive squares less the negative ones, and the deck's 27
+arithmetic checks fail.  tests/run_tests.sh registers
+decks/problem_3_8.strap with the checks that pass and carries the 27 as
+comments; restore them with the fix.  The fix belongs in the
+floating-point operand path for address 8 (bsv/, not touched here).
+
+### 5. A normalized single-precision ADD whose sum survives only in the low-order 48 bits (UNSETTLED)
+
+    decks/problem_3_fp_add_low_half_zero.strap  (ten statements)
+    R1 = 075C000000000000  manual's text: 0000000000000000
+    R2 = 075C000000000000  manual's text: 0150000000000000
+    R3 = 075C000000000000  PASS (control: leading bit in place 48)
+
+Reference Manual printed p.87, ADD: "This normalization is not performed
+if the overflow bit and high-order 48 bits of the intermediate sum are
+zero", with LS on and "a normal order of magnitude zero is produced";
+printed p.82, Zero Definition, says the same.  The model normalizes the
+whole 96-bit sum and returns the small operand (PSH on, LS off).
+Against the manual: C22-6578 printed p.32, Problem 3.8 comment (b),
+claims EPLUS can be removed "without causing any damage", which holds
+only if the machine behaves as the model does
+(decks/problem_3_8_no_eplus.strap is registered against the page's
+claim and passes; run against the manual's text it fails 27 of 27).
+Comment (a) on the same page describes the manual's behaviour, so the
+page is not consistent with itself.  A third witness is wanted before
+the model is changed: jb_af1c's addition sections
+(decks/fp_arith_f204d.strap, F204D7) test PSH for far-apart exponents,
+and the listing may show the sum it expects.
+
+### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs)
+
+    decks/problem_3_vfl_store_to_indicators.strap   (five statements)
+    L(BU, 3), V / ST(BU, 3), $AL / L(BU, 3), $AL / ST(BU, 64), R
+    R = 0  expected 0000000000000004
+
+C22-6578 printed pp.32-33, Problem 3.9, both methods: "L(BU, 3), $RLZ
+'$RLZ, $RZ, $RGZ fetched / ST(BU, 3), $AL '$AL, $AE, $AH stored".  The
+pocket card X22-6533-1's footnote c makes only indicator bits 0-19
+read-only (as transcribed in docs/microarchitecture_plan.md A.10).
+bsv/StretchStorage.bsv `writeWord` drops every ordinary store to word
+11 ("SIMPLIFICATION ... only the 'poke via STORE' path is unavailable",
+bsv/README.md "Scope") because `indicators` takes one write per
+instruction.  The drop is silent, against the project's "fail loud"
+convention, and it defeats the example's whole purpose.  The five 3.9
+decks check the verdict where the page's own program leaves a copy of
+it (accumulator bits 125-127, which DL and D+ leave unchanged, Reference
+Manual pp.95-96), and tests/run_tests.sh carries the expected indicator
+words as comments, to be restored when a store to word 11 merges into
+the instruction's single indicator write.

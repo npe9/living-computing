@@ -1,0 +1,51 @@
+! REPRODUCER, not a test: strap_asm.py refuses an operation written
+! with no data description whose address is a symbol defined (N).
+! Found 2026-11-15 transcribing C22-6578 Chapter 3 (docs/NEXT.md,
+! "C22-6578 CHAPTER 3").
+!
+!   python3 -c "import sys; sys.path.insert(0,'strap'); \
+!     from strap_asm import assemble; \
+!     assemble(open('decks/problem_3_bare_op_symbol_dds.strap').read())"
+!
+!   AssemblerError: line N: VFL operation on a symbol defined (N): what
+!   STRAP compiles is not in C22-6531/C28-6129 and no MCP row witnesses
+!   it yet; write the dds out
+!
+! C22-6578 SAYS WHAT STRAP COMPILES, printed p.30 (PDF 31), Problem 3.5
+! comment (c), read in the ink:
+!
+!   "Where the dds is not explicitly given in an instruction, STRAP will
+!   insert the dds of the rightmost symbolic address.  If the latter has
+!   no meaningful dds, the next-to-the-rightmost symbolic address will
+!   be used, etc.  If the collection of symbolic addresses for the
+!   instruction is exhausted without a proper dds having been found,
+!   STRAP will use the (N) modifier for instructions which are
+!   unambiguously floating-point in nature.  The exception being E+I
+!   and variants which are assigned the (U) modifier.  An operation
+!   which could be either VFL or floating-point is assumed VFL."
+!
+! and its programs depend on it: Problem 3.5 (printed pp.29-30) writes
+! "*, X", "ST, TEMP1", "-, TWO", "+, TEMP1", "R/, X" and "R/N, TEMP";
+! Problem 3.7 (printed p.31) writes "L, GUESS", "ST, XK", "*, XK",
+! "+, EN", "R/, TEMP", "+, HALF" and "ST, ANS"; Problem 3.8 (printed
+! p.32) writes "+, SUM" and "/, ROOT".  Every one names a symbol
+! defined DD(N), DR(N), DRZ(N) or SYN(N), and every one is meant as
+! floating point, normalized.
+!
+! The host STRAP II (ASM=strap2) compiles each of the four below to the
+! normalized floating-point operation: bit 18 of the half word, the
+! normalization modifier (Reference Manual printed p.80), is 0, and
+! the operation code is the one "*(N), X" has.
+!
+! decks/problem_3_5.strap and problem_3_7.strap run the printed
+! statements on the model under ASM=strap2.
+
+START   *, X
+        L, X
+        ST, Y
+        +, Z
+        BEW, $
+X       DD(N), 3
+Y       DR(N), (1)
+Z       SYN(N), X
+        END, START

@@ -1,0 +1,57 @@
+! C22-6578 PROBLEM 3.8, printed pp.31-32 -- THE SAME DECK AS
+! problem_3_8.strap WITH EVERY INTEGER MADE POSITIVE.
+!
+! problem_3_8.strap is the test: its header has the page, the reading
+! of each statement, the data and the hand derivation.  Eight of its
+! twenty-five integers are negative, and the model squares a negative
+! accumulator wrongly ("*(N), $L": decks/problem_3_fp_address_8_sign.strap,
+! docs/NEXT.md "C22-6578 CHAPTER 3" item 4), so that deck's sum is wrong
+! on the model today.  This copy has the absolute values, which the
+! fault does not touch, so that everything else the page uses -- LCV
+! with progressive indexing, E+I, ST(N), the square, the bare "+, SUM"
+! and "/, ROOT", CBR+ and its refill, SRT -- is tested and stays tested.
+!
+! The twenty printed statements are the deck's first twenty, as printed.
+!
+! ASSEMBLED WITH ASM=strap2.
+!
+! DATA: 1 2 3 1024 512 768 100 99 7 1234 / 321 5 64 640 17 250 33 11
+! 400 8 / 129 1000 1511 2132 2179.  The squares are problem_3_8.strap's
+! and add up to 4**12.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED, in problem_3_8.strap: SUM =
+! 2**24, ROOT = 4096, FLOAT+k = N(k)/4096 -- here all positive, so each
+! word is problem_3_8.strap's with the sign bit off -- and $1, $2 as
+! there.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): the sixth integer changed from 768 to 769.
+! The sum is then 16,778,753, not a square.  FAIL SUM, ROOT and all
+! twenty-five FLOAT checks (27); x1_after, x2_after and the PC passed.
+
+NORMV   Z, SUM
+        LX, $1, XW1
+        LX, $2, XW2
+LOOP    LCV(V+I)(D, 48,6), 0.48($1), 68
+EPLUS   E+I, 48
+        ST(N), 0($2)
+        *(N), $L
+        +, SUM
+        ST(U), SUM
+        CBR+, $2, LOOP
+        SRT, ROOT
+LOOP2   L(N), 0($2)
+        /, ROOT
+        ST(U), 0($2)
+        CB+, $2, LOOP2
+        BEW, $
+XW1     XW, STRNG, 25, $
+XW2     XW, FLOAT, 25, $
+SUM     DRZ(N), (1)
+ROOT    DRZ(N), (1)
+! --- the deck's data ------------------------------------------------
+STRNG   DD(D, 48, 6), 1, 2, 3, 1024, 512, 768, 100, 99, 7, 1234
+        DD(D, 48, 6), 321, 5, 64, 640, 17, 250, 33, 11, 400, 8
+        DD(D, 48, 6), 129, 1000, 1511, 2132, 2179
+FLOAT   DR(N), (25)
+        END, NORMV
