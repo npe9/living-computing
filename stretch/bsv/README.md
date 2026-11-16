@@ -416,7 +416,7 @@ LC is the carry out of the numeric width and PF is read from the
 unrounded accumulator -- both CHOSEN, in the arm's header and
 `docs/spec_factor.md` 4.6.  Timing: ST's budget plus 4 clocks at a
 nonzero offset (Perf. Char. Vol. 1 Table 3, `StretchTiming.bsv`).
-`decks/vfl_srd.strap` (nine cases, injections in its header),
+`decks/vfl_srd.strap` (eleven cases and a CYCLES pin, injections in its header),
 `decks/repro_vfl_srd.strap` and Buchholz B.2 as printed
 (`tests/verify_buchholz_b2.py printed`) are the checks.  Decimal `SRD`
 stays refused with the rest of decimal arithmetic.

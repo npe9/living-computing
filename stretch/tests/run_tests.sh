@@ -2339,17 +2339,18 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
 # >>> VFL STORE ROUNDED (SRD, code 101101), BUILT 2026-11-16: the ST arm with
 # one add in front (Reference Manual printed p.64).  <<<  Two decks.  The
 # reproducer cut from Buchholz B.2 (3 of 5 failed while SRD was refused),
-# and vfl_srd.strap, nine hand-derived cases with the indicator register
+# and vfl_srd.strap, eleven hand-derived cases with the indicator register
 # read after each: round up, a carry out of the field (LC, and PF off --
 # the case that separates the two PF readings), PF with no round, a
 # negative accumulator into a signed field, offset 0 ("equivalent to a
 # STORE"), a signed field whose carry crosses the numeric width, a carry
-# through the field, rounding the accumulator in place through $R, and
-# decimal SRD refused with OP.  MEASURED INJECTIONS in vfl_srd's header.
+# through the field, rounding the accumulator in place through $R, SRDN
+# signed and unsigned, and decimal SRD refused with OP; CYCLES pins the
+# Table 3 SRD term.  MEASURED INJECTIONS in vfl_srd's header.
 run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
-run "VFL SRD -- nine cases and their indicators: LC, PF, sign, offset 0, \$R, decimal OP (p.64)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2076" \
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal OP; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2094" "CYCLES=974+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2358,7 +2359,9 @@ run "VFL SRD -- nine cases and their indicators: LC, PF, sign, offset 0, \$R, de
     "T6_signed_carry:1115=0x000FFFFFFFFFFFFF" "I6_LC:1125=0x20000000140" \
     "T7_carry_through:1116=0xA80FFFFFFFFFFFFF" "I7:1126=0x120" \
     "T8_acc_rounded_in_place:1117=0x13C0" \
-    "T9_decimal_untouched:1118=0xFFFFFFFFFFFFFFFF" "I9_OP:1127=0x1000000000000"
+    "T9_decimal_untouched:1118=0xFFFFFFFFFFFFFFFF" "I9_OP:1127=0x1000000000000" \
+    "T10_srdn_signed:1130=0xAC08FFFFFFFFFFFF" "I10_srdn_minus:1132=0x190" \
+    "T11_srdn_unsigned:1131=0xACFFFFFFFFFFFFFF" "I11_srdn_minus:1133=0x190"
 
 # >>> CONNECT TO MEMORY ACROSS A WORD BOUNDARY, 2026-11-06 -- MCP's
 # printed p.78 line 42, "SF(BU,40,8),TREELX", needs it. <<<  Refused,

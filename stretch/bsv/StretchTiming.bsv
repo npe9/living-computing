@@ -211,12 +211,19 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // where ST has 1.8: 1.2 us = 4 clocks more, full word total 8.4
       // against 7.2.  Vol. 2's SRD page (printed p.118, PDF 125) is
       // measured at OFFSET 0 only, and there it equals the ST page
-      // (printed p.117) in all 96 cells to 0.01 us -- which is the
+      // (printed p.117) cell for cell to 0.01 us (each page's SUM line:
+      // 272 values, 3738.81 against 3738.83 us) -- which is the
       // Reference Manual's "A STORE ROUNDED with zero offset specified is
       // equivalent to a STORE" (printed p.64).  So the 4 clocks are
       // charged at a nonzero offset only.  CHOSEN where the two meet:
       // Table 3 does not mention the offset, and no page measures SRD at
-      // a nonzero one.
+      // a nonzero one.  The offset tested is the instruction's own
+      // (v.a.offset); execute() rounds at the offset as the second index
+      // leaves it (vflSecondIndex), which this function, having no
+      // storage, cannot see -- a second-indexed SRD whose offset moves
+      // to or from 0 is charged by its written offset.  A refused SRD
+      // (decimal) is charged too, like every refused operation here.
+      // Pinned by decks/vfl_srd.strap's CYCLES check (header).
       Bit#(16) srdRound = (v.code == 6'b101101 && v.a.offset != 0) ? 4 : 0;
       return 8 + 2 * zeroExtend(bytes) + srdRound;
     end

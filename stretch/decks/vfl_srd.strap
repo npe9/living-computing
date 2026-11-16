@@ -1,4 +1,4 @@
-! VFL STORE ROUNDED (SRD, VFL code 101101), hand-derived, nine cases with
+! VFL STORE ROUNDED (SRD, VFL code 101101), hand-derived, eleven cases with
 ! the indicator register read after each.  Built 2026-11-16 (the ST arm of
 ! bsv/StretchExecute.bsv, which SRD shares; its header has the readings).
 !
@@ -83,7 +83,17 @@
 !                    so the rounded value (16)12 + 1 = 13 goes back where
 !                    it came from and bits 56-63 keep their C0: word 9 =
 !                    (16)13C0, read out by ST into T8.
-!   9 decimal        SRD(DU,8,4): refused, Operation Code Invalid, as the
+!  10 SRDN, signed   (16)00AB80, plus, SRDN(B,16,8) at offset 8: AC, and
+!                    "the sign bit has been modified by the negative sign
+!                    modifier": sign byte (16)08.  T10 = (16)AC08FFFFFFFFFFFF.
+!                    The modified sign is minus: I10 = RLZ, RN, MOP = (16)190.
+!  11 SRDN, unsigned SRDN(BU,8,8): "If the unsigned modifier is specified,
+!                    the negative sign modifier has no effect on the field
+!                    stored.  However, the result indicators are set
+!                    according to the modified accumulator sign" (p.63): T11
+!                    = (16)ACFFFFFFFFFFFFFF, I11 = (16)190.  This is what the
+!                    printed "SRDN,$L" of C22-6578 4.9 does, at offset 0.
+!   9 decimal        (run last) SRD(DU,8,4): refused, Operation Code Invalid, as the
 !                    model refuses decimal arithmetic (the five added is a
 !                    decimal addition; only the decimal UNSIGNED STORE is
 !                    built).  T9 stays all ones; I9 = OP = (16)1000000000000.
@@ -93,7 +103,17 @@
 !       "PC=<HALT>" "T1:1110=0xACFFFFFFFFFFFFFF" ... (the line there)
 !
 ! OBSERVED 2026-11-16: ALL TESTS PASSED, 17 checks and the PC, on the first
-! run against the expectations above (worked before the run).
+! run against the expectations above (worked before the run).  Cases 10
+! and 11 were added after, and first run with case 9 ninth: their
+! indicator words came out (16)1000000000190 -- the OP from case 9 still on
+! after Z,$IND -- so case 9 was moved last; then all 21 checks pass.
+!
+! CYCLES=974 is the model's count, pinned (the line in run_tests.sh).
+! INJECTED: StretchTiming.bsv's SRD term (Perf. Char. Vol. 1 Table 3's
+! extra 1.2 us pre-execution, 4 clocks at a nonzero offset) set to 0:
+! FAIL cycles = 934, 40 fewer = ten SRDs at a nonzero offset times 4 --
+! cases 1-4, 6-8, 10, 11 and the refused decimal case 9, which is charged
+! too; case 5 (offset 0) is not.
 !
 ! MEASURED INJECTIONS in bsv/StretchExecute.bsv's ST arm, each on a copy,
 ! the arm restored from a saved copy and checked with cmp:
@@ -102,6 +122,9 @@
 !                                                 too, which was not
 !                                                 predicted: its carry is
 !                                                 above the numeric width
+!   the negative modifier ignored by SRD          FAIL T10 (AC00), I10 and
+!     (measured with all eleven cases)            I11 ((16)120, plus)
+!   (the five below were measured with cases 1-9 only)
 !   the one added AT the offset, not right of it  FAIL T3 alone (AC); T5
 !                                                 does not move, because
 !                                                 offset 0 adds nothing
@@ -161,7 +184,20 @@ START   L(BU,64,8), V1
         L(BU,64,8), V8
         SRD(BU,56,8), $R, 8
         ST(BU,64,8), T8, 0
-! -- 9. decimal: refused --------------------------------------------
+! -- 10. the negative modifier, signed: the sign bit stored is 1 -----
+        L(BU,64,8), V1
+        Z, $IND
+        SRDN(B,16,8), T10, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I10, 0
+! -- 11. the negative modifier, unsigned: field unchanged, minus ----
+        L(BU,64,8), V1
+        Z, $IND
+        SRDN(BU,8,8), T11, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I11, 0
+! -- 9. decimal: refused.  Run LAST: OP (bit 15) set here was still on
+!    in case 10's word after Z,$IND when this case ran ninth (observed).
         Z, $IND
         SRD(DU,8,4), T9, 4
         L(BU,64,8), $IND, 0
@@ -196,5 +232,11 @@ I5      DD(BU,64,8), 0
 I6      DD(BU,64,8), 0
 I7      DD(BU,64,8), 0
 I9      DD(BU,64,8), 0
+
+        SLC, 1130.0
+T10     DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T11     DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+I10     DD(BU,64,8), 0
+I11     DD(BU,64,8), 0
 
         END, START

@@ -196,7 +196,7 @@ model; nothing needs building for it.
 
 Built as the ST arm of `bsv/StretchExecute.bsv` with one add in front
 (Reference Manual printed p.64); the arm's header has the readings.
-`repro_vfl_srd.strap` (5 of 5), `vfl_srd.strap` (nine hand-derived
+`repro_vfl_srd.strap` (5 of 5), `vfl_srd.strap` (eleven hand-derived
 cases with the indicator register after each, measured injections in
 its header) and `verify_buchholz_b2.py printed` (eight N, 32 checks; it
 replaced the six-check partial line) are registered.  Timing: Perf.
@@ -215,7 +215,10 @@ What is still open about it:
   (`docs/spec_factor.md` 4.6).  `vfl_srd` case 2 (LC on, PF off) is the
   one that would move if a listing or a CE manual says otherwise.
 * **Timing at a nonzero offset is unmeasured**: no Vol. 2 page measures
-  SRD there.  Running `tests/atlas_oracle.py --pdf 125` (offset 0) would
+  SRD there.  The model's term (pinned by `vfl_srd`'s CYCLES=974, whose
+  injection moves it by 40 = ten SRDs x 4) keys on the WRITTEN offset;
+  a second index that moves the offset to or from 0 is not seen by
+  `eboxClocks`, and a refused decimal SRD is charged too.  Running `tests/atlas_oracle.py --pdf 125` (offset 0) would
   confirm the ST equality on the model; not run for this item.
 
 ### Table B.6 as printed does not transpose -- the BOOK's error, nothing to build
