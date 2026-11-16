@@ -16968,3 +16968,44 @@ IBM's per-line error flag, seen on all eight at 300 dpi.
     the listed one.
   OPEN: the rules for 123 and 92 are what the listing shows, not text
     from the manual; 92 has a single witness.
+
+## C22-6578 CHAPTER 3: WHAT THE PAGES FOUND -- 2026-11-15
+
+G2.1's worklist, Chapter 3 ("FLOATING-POINT ARITHMETIC", printed
+pp.26-34).  Status and counts are in docs/source_audit.md, "G2.1,
+CHAPTER 3".  This section holds only the findings, each with the
+smallest thing that reproduces it.  Nothing in bsv/ or strap/ was
+changed.
+
+### 1. strap_asm.py refuses a floating-point constant with a zero fraction
+
+    decks/problem_3_dd_zero_fraction.strap      (three statements)
+    AssemblerError: DD(N) literal '0.0X48' is zero, which is not
+    implemented (no listed example)
+
+There are listed examples, read in the ink: C22-6578 printed p.26
+`X48 DD(N), 0.0X48` (Problems 3.1 and 3.2, whose whole method is that
+constant), printed pp.28-29 `A DD(N), 0.0` and `ANS DD(N), 0`, and
+Reference Manual printed p.103 Figure 33 `CON1 DD (N), +0E +48`.  The
+host STRAP II assembles them (0600000000000000 and two zero words).
+Every Chapter 3 deck is registered `ASM=strap2` for this reason and the
+next.
+
+### 2. strap_asm.py refuses "*, X" where X is defined (N) -- and the witness it asks for is printed
+
+    decks/problem_3_bare_op_symbol_dds.strap    (four statements)
+    AssemblerError: VFL operation on a symbol defined (N): what STRAP
+    compiles is not in C22-6531/C28-6129 and no MCP row witnesses it
+    yet; write the dds out
+
+C22-6578 printed p.30, Problem 3.5 comment (c), says what STRAP
+compiles: "Where the dds is not explicitly given in an instruction,
+STRAP will insert the dds of the rightmost symbolic address ... If the
+collection of symbolic addresses for the instruction is exhausted
+without a proper dds having been found, STRAP will use the (N) modifier
+for instructions which are unambiguously floating-point in nature.  The
+exception being E+I and variants which are assigned the (U) modifier.
+An operation which could be either VFL or floating-point is assumed
+VFL."  Problems 3.5, 3.7 and 3.8 are written that way throughout
+(`*, X`, `L, GUESS`, `ST, XK`, `+, SUM`, `/, ROOT`, `R/N, TEMP`).  The
+host STRAP II already does it; the reproducer's header gives the bits.
