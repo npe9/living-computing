@@ -1,0 +1,102 @@
+! C22-6578 PROBLEM 3.1, "SEPARATION INTO INTEGER AND FRACTION PARTS",
+! printed p.26 (PDF 27), read in the ink.
+!
+!   "The floating-point number N in location DOG has a small (<=48)
+!   exponent magnitude.  Create two normalized floating-point numbers
+!   I, F in CAT, CAT+1 respectively such that: I = an integer;
+!   |F| < 1.0, sign of F = sign of N; and I + F = N."
+!
+!   Method 1.   DL(U), DOG
+!               D+(U), X48
+!               ST(N), CAT
+!               SLO(N), CAT + 1.0
+!               BEW, $
+!       X48     DD(N), 0.0X48           'binary exponent of 48
+!
+! The six printed statements are the deck's LAST six, as printed.  The
+! page prints no DOG and no CAT; those are the deck's.  Blocks A, B and
+! C are the same four instructions on other data, with DOG and CAT
+! renamed and the BEW left off; nothing else about them is changed.
+!
+! ASSEMBLED WITH ASM=strap2 (the host STRAP II).  strap_asm.py refuses
+! the page's own constant, "DD(N), 0.0X48": see
+! decks/problem_3_dd_zero_fraction.strap and docs/NEXT.md.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED, from the problem statement and
+! the Reference Manual, not from the model:
+!   D+(U), X48   printed p.95 (Add Double), by p.86-87's rule: "The
+!                fraction of the number with the algebraically smaller
+!                exponent is shifted right by the amount of the exponent
+!                difference."  X48 has a zero fraction and exponent 48,
+!                so N's fraction moves right 48 - e places in the 96-bit
+!                fraction: the integer part ends in accumulator bits
+!                12-59 and the fraction part begins at bit 60.
+!   ST(N), CAT   printed p.90: "the 48-bit operand fraction in the
+!                accumulator is normalized before being placed in
+!                storage ... Normalization is suppressed when the 48
+!                fraction bits are zero."
+!   SLO(N)       printed p.97: the fraction is bits 60-107, the exponent
+!                is the accumulator's less 48 (here 0), the sign is the
+!                accumulator's.
+!
+!   block   N            I (CAT)                  F (CAT+1)
+!   A       -1234.75     -1234 = -.1001101001 x 2^11   -.75 = -.11 x 2^0
+!                        0169A40000000008              000C000000000008
+!   B       .25          a zero fraction, exponent 48  .25 = .1 x 2^-1
+!                        0600000000000000              0038000000000000
+!   C       1048581.5    1048581 = (2^20 + 5) x 2^-21 x 2^21
+!                        02A8000280000000         .5   0008000000000000
+!   last    2.5          2 = .1 x 2^2                  .5 = .1 x 2^0
+!                        0048000000000000              0008000000000000
+!
+! The last is the page's own suggestion, comment (b): "the reader should
+! illustrate the program for himself using, for example, N = 2.5".
+!
+! BLOCK B IS WORTH READING.  For |N| < 1 the page's I is not "normalized":
+! the integer part is a zero fraction, ST(N) cannot normalize it, and CAT
+! receives an order-of-magnitude zero with exponent 48.  I + F = N still
+! holds.  The page's statement asks for "two normalized floating-point
+! numbers"; the program delivers one.
+!
+! tests/problem_3_expected.py works the same four cases from the same
+! rules and agrees with the table above.
+!
+! acc_left_after: word 8 (accumulator bits 0-63) after the last block.
+! D+(U) leaves exponent 48 and 2.5 x 2^-48 as a 96-bit fraction: bits
+! 12-59 hold 2 and bit 60 holds the half, so the word is
+! 0600000000000028.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): DOGA changed from -4939/4 to -4935/4 (-1233.75).  FAIL A_I only
+! (got 0169a20000000008); the other seven CAT checks and the PC
+! passed (acc_left_after was not in that run).
+
+START   DL(U), DOGA
+        D+(U), X48
+        ST(N), CATA
+        SLO(N), CATA + 1.0
+        DL(U), DOGB
+        D+(U), X48
+        ST(N), CATB
+        SLO(N), CATB + 1.0
+        DL(U), DOGC
+        D+(U), X48
+        ST(N), CATC
+        SLO(N), CATC + 1.0
+! --- the page, as printed -------------------------------------------
+        DL(U), DOG
+        D+(U), X48
+        ST(N), CAT
+        SLO(N), CAT + 1.0
+        BEW, $
+X48     DD(N), 0.0X48
+! --- the deck's data ------------------------------------------------
+DOG     DD(N), 5/2
+CAT     DR(N), (2)
+DOGA    DD(N), -4939/4
+CATA    DR(N), (2)
+DOGB    DD(N), 1/4
+CATB    DR(N), (2)
+DOGC    DD(N), 2097163/2
+CATC    DR(N), (2)
+        END, START

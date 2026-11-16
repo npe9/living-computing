@@ -13436,6 +13436,29 @@ run "Problem 2.2 Method 2" ./run_program.sh ../decks/problem_2_2_method2.strap S
 run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh ../decks/problem_2_2_method3.strap StretchProblem22M3Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# ======================================================================
+# C22-6578 CHAPTER 3, "FLOATING-POINT ARITHMETIC", printed pp.26-34.
+# G2.1's worklist, docs/source_audit.md "G2.1, CHAPTER 3".
+#
+# Every deck here is assembled by the host STRAP II (ASM=strap2), because
+# the page's own statements -- "DD(N), 0.0X48", "*, X" -- are refused by
+# strap_asm.py (docs/NEXT.md, "C22-6578 CHAPTER 3").  The expected words
+# are worked from the Reference Manual's rules in each deck's header and
+# by problem_3_expected.py, which is not the model and imports nothing
+# from it; its self-checks run first.
+# ======================================================================
+run "C22-6578 Chapter 3 -- the hand calculator's self-checks" python3 problem_3_expected.py --self
+
+# 3.1, DL(U) / D+(U) with a zero fraction of exponent 48 / ST(N) / SLO(N).
+# Block B (|N| < 1) is the page's "normalized" I arriving as a zero
+# fraction with exponent 48.
+run "C22-6578 Problem 3.1 -- integer and fraction parts" ./run_program.sh ../decks/problem_3_1.strap StretchP31Tb ASM=strap2 "PC=80" \
+    "A_I:46=0x0169A40000000008" "A_F:47=0x000C000000000008" \
+    "B_I_zero_exp48:49=0x0600000000000000" "B_F:50=0x0038000000000000" \
+    "C_I:52=0x02A8000280000000" "C_F:53=0x0008000000000000" \
+    "I_of_2.5:43=0x0048000000000000" "F_of_2.5:44=0x0008000000000000" \
+    "acc_left_after:8=0x0600000000000028"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
