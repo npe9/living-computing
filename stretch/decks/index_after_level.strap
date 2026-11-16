@@ -1,0 +1,246 @@
+! index_after_level.strap -- an I-box instruction that writes an index
+! register a pending look-ahead level is indexed by.
+!
+! A level's addresses are derived when it is loaded (rl_prepare), but the
+! E-box re-derived the effective address from the CURRENT index registers
+! when it dispatched the level.  An index instruction run ahead of the
+! level therefore moved its operand.  Found 2026-11-15 by the 7030 STRAP II
+! MAIN test's driver (step 4b-i): "ST(BU,64),9.0($9)" was loaded with its
+! word computed, then "V+I,$9,11.0" ran ahead of it, and the store landed
+! in the NEXT record, so every record showed its predecessor's value.  It
+! showed only for layouts where the store's level was still pending, which
+! is why each case here is repeated with 0, 1 and 2 extra pending loads.
+! The fix: bsv/StretchIBox.bsv's levelIndexedBy, and rl_prepare's
+! indexStorePending for the E-box sibling (a level storing into $X3 ahead
+! of a level indexed by $3).
+!
+! WEAKER STANDARD, STATED: hand-written from the sequential programming
+! model, not transcribed.  Expected values are worked out by hand from it.
+! Each case puts a slow level ahead (a store, then a load of the same word,
+! which waits for it) so the indexed level is still pending when the next
+! instruction is prepared.
+!
+! OBSERVED, 2026-11-15 (bsv/StretchIBox.bsv and StretchCore.bsv, each
+! restored from a copy checked with cmp):
+!   levelIndexedBy always False: FAIL DV0a DV0b DV1a DV1b DV2a (V0-V2, the
+!     V+I shape that found it) and AE0 (F2's floating store, overtaken by
+!     E0's LVI, landed in E0's word) only.  V2's store also missed DV2b and
+!     landed in DL0's word, which L0 then overwrites, so DV2b still passes.
+!   indexStorePending always False: FAIL GE0 GE1 GE2 only
+! NOT SHOWN TO DISCRIMINATE: L0-L2 (LV), S0-S2 (SV into $X3), F0, F1 and C
+! (SIC into $3, whose B drains the levels anyway) pass with the interlock
+! off: on this model those instructions do not get ahead of the level here.
+! They stay as guards, since the sequential model requires the same result.
+!
+        SLC, (8)2000.0
+START   NOP
+! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)
+        LVI, $3, DV0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        V+I, $3, 1.0
+        SV, $3, RV0
+! ---- V1: V+I, $3, 1.0, 1 extra pending load(s)
+        LVI, $3, DV1
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        V+I, $3, 1.0
+        SV, $3, RV1
+! ---- V2: V+I, $3, 1.0, 2 extra pending load(s)
+        LVI, $3, DV2
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        V+I, $3, 1.0
+        SV, $3, RV2
+! ---- L0: LV, $3, PTRX, 0 extra pending load(s)
+        LVI, $3, DL0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        LV, $3, PTRX
+        SV, $3, RL0
+! ---- L1: LV, $3, PTRX, 1 extra pending load(s)
+        LVI, $3, DL1
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        LV, $3, PTRX
+        SV, $3, RL1
+! ---- L2: LV, $3, PTRX, 2 extra pending load(s)
+        LVI, $3, DL2
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        LV, $3, PTRX
+        SV, $3, RL2
+! ---- S0: SV, $5, $X3, 0 extra pending load(s)
+        LVI, $3, DS0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        SV, $5, $X3
+        SV, $3, RS0
+! ---- S1: SV, $5, $X3, 1 extra pending load(s)
+        LVI, $3, DS1
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        SV, $5, $X3
+        SV, $3, RS1
+! ---- S2: SV, $5, $X3, 2 extra pending load(s)
+        LVI, $3, DS2
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        SV, $5, $X3
+        SV, $3, RS2
+! ---- F0: a floating ST level, V+I, 0 extra pending load(s)
+        LVI, $3, DF0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L, SRC
+        ST, 0($3)
+        V+I, $3, 1.0
+        SV, $3, RF0
+! ---- F1: a floating ST level, V+I, 1 extra pending load(s)
+        LVI, $3, DF1
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L, SRC
+        ST, 0($3)
+        V+I, $3, 1.0
+        SV, $3, RF1
+! ---- F2: a floating ST level, V+I, 2 extra pending load(s)
+        LVI, $3, DF2
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L, SRC
+        ST, 0($3)
+        V+I, $3, 1.0
+        SV, $3, RF2
+! ---- E0: a level stores into $X3, the next level is indexed by $3, 0
+        LVI, $3, AE0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XE0
+        ST(BU,64), $X3
+        L(BU,64), 0($3)
+        ST(BU,64), GE0
+! ---- E1: a level stores into $X3, the next level is indexed by $3, 1
+        LVI, $3, AE1
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XE1
+        ST(BU,64), $X3
+        L(BU,64), 0($3)
+        ST(BU,64), GE1
+! ---- E2: a level stores into $X3, the next level is indexed by $3, 2
+        LVI, $3, AE2
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XE2
+        ST(BU,64), $X3
+        L(BU,64), 0($3)
+        ST(BU,64), GE2
+! ---- C: SIC into $3 (the SIC,$15 shape), last because a wrong store
+! ---- lands in the code
+        LVI, $3, DC
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        ST(BU,64), 0($3)
+        SIC, $3
+        B, CNEXT
+CNEXT   SV, $3, RC
+        L(BU,64), DC
+        ST(BU,64), GC
+DONE    B, DONE
+        CNOP
+SRC     DD(BU,64), (16)5A5A5A5A5A5A5A5A
+TMP     DD(BU,64), 0
+PTRX    DD(BU,64), (16)0000400000000000
+AB      DD(BU,64), (16)BBBBBBBBBBBBBBBB
+DV0      DD(BU,64), 0
+        DD(BU,64), 0
+RV0      DD(BU,64), 0
+DV1      DD(BU,64), 0
+        DD(BU,64), 0
+RV1      DD(BU,64), 0
+DV2      DD(BU,64), 0
+        DD(BU,64), 0
+RV2      DD(BU,64), 0
+DL0      DD(BU,64), 0
+        DD(BU,64), 0
+RL0      DD(BU,64), 0
+DL1      DD(BU,64), 0
+        DD(BU,64), 0
+RL1      DD(BU,64), 0
+DL2      DD(BU,64), 0
+        DD(BU,64), 0
+RL2      DD(BU,64), 0
+DS0      DD(BU,64), 0
+        DD(BU,64), 0
+RS0      DD(BU,64), 0
+DS1      DD(BU,64), 0
+        DD(BU,64), 0
+RS1      DD(BU,64), 0
+DS2      DD(BU,64), 0
+        DD(BU,64), 0
+RS2      DD(BU,64), 0
+DF0      DD(BU,64), 0
+        DD(BU,64), 0
+RF0      DD(BU,64), 0
+DF1      DD(BU,64), 0
+        DD(BU,64), 0
+RF1      DD(BU,64), 0
+DF2      DD(BU,64), 0
+        DD(BU,64), 0
+RF2      DD(BU,64), 0
+AE0      DD(BU,64), (16)AAAAAAAAAAAAAAAA
+XE0      XW, AB
+GE0      DD(BU,64), 0
+AE1      DD(BU,64), (16)AAAAAAAAAAAAAAAA
+XE1      XW, AB
+GE1      DD(BU,64), 0
+AE2      DD(BU,64), (16)AAAAAAAAAAAAAAAA
+XE2      XW, AB
+GE2      DD(BU,64), 0
+DC      DD(BU,64), 0
+        DD(BU,64), 0
+RC      DD(BU,64), 0
+GC      DD(BU,64), 0
+        END, START
+

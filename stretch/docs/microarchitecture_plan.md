@@ -80,6 +80,7 @@ in parentheses); **open** = no stage assigned yet.
 | Updated indicator register; index-indicator branches resolved in the I-box | Blosk p.17 | planned (2c) |
 | Arithmetic-conditional branch guessed not taken; wrong-way recovery | Buchholz §15.2; Perf. Char. p.3-23 | done (3c), by snapshot rather than per-instruction recovery levels |
 | Four look-ahead levels, five counters, tags, indicators, IC per level | Buchholz §15.3 | partial (3a): levels, in-order removal, fetch-ahead; the five counters' separate interlocks are collapsed into head/tail |
+| A look-ahead level carries the operand address the I-box computed during preparation (the E-box does not re-index) | Buchholz §15.3 (operand addresses held per level); sequential model | partial: the model re-derives the address at dispatch, so an I-box index write waits while a pending level is indexed by that register (`levelIndexedBy`, `indexStorePending`, 2026-11-15). A conservative stall, not a measured time; carrying the address in the level removes it |
 | LAAR, forwarding, store-close-to-fetch cases (1)-(3) | Buchholz §15.4; Perf. Char. pp.3-20..21 | partial (3a/3b): same-word waits and Y invalidation; no data forwarding yet |
 | I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
 | Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |

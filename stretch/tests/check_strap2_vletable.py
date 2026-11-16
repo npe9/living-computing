@@ -98,6 +98,6 @@ if __name__ == "__main__":
     print(f"INFO {counts}")
     check("every assembled deck's vle table walks, kinds and pointers in place",
           (counts.get("does not walk", 0), counts.get("bad", 0)), (0, 0))
-    check("the decks walked", counts.get("walks", 0), 733)
+    check("the decks walked", counts.get("walks", 0), 734)   # 734 with decks/index_after_level.strap
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
     sys.exit(1 if fails else 0)

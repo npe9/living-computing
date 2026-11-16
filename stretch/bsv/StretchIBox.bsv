@@ -276,6 +276,65 @@ function Bool progressiveWord(Vector#(4, LaLevel) lv, WordAddr w);
   return (w >> 4) == 1 && progressiveWrites(lv, w[3:0]);
 endfunction
 
+// >>> AN INDEX REGISTER A PENDING LEVEL ADDRESSES THROUGH, 2026-11-15. <<<
+// A look-ahead level's operand and store addresses (`da`, `storeAddr`)
+// are derived at LOAD time, and the store-close-to-fetch waits and
+// levelHolds above compare against them -- but the E-box re-derives the
+// effective address from the decoded instruction and the CURRENT index
+// registers when the level is dispatched.  The two agree only if no
+// index register a pending level is modified by changes in between, and
+// nothing enforced that: an I-box instruction writing the register ran
+// ahead of the level and moved its operand.  Found by the 7030 STRAP II
+// MAIN test's driver (step 4b-i): "ST(BU,64),9.0($9)" loaded as a level
+// with da = word 0x42f, then "V+I,$9,11.0" ran ahead of it, and the
+// store landed at 0x43a, the NEXT record's word -- so every record
+// showed its predecessor's value, and only for layouts where the
+// store's level was still pending when the V+I was prepared.  The
+// invariant restored here: no index register a pending level addresses
+// through changes between that level's load and its dispatch.
+//
+// A ZERO INDEX FIELD MEANS NO INDEXING, so register 0 never matches.
+// THIS IS A CONSERVATIVE STALL, NOT A MEASURED ONE.  The real I-box
+// computes the effective address during preparation and the level
+// carries it, so the index arithmetic would not wait; the model waits
+// instead of carrying it (bsv/README.md, microarchitecture_plan.md §1a).
+// Test: decks/index_after_level.strap.
+function Bool usesIndex(DecodedInstr d, Bit#(4) j);
+  Bool r = False;
+  if (j != 0)
+    case (d) matches
+      tagged VflInt .v:     r = v.a.i1 == j || v.a.i2 == j;
+      tagged Connective .c: r = c.a.i1 == j || c.a.i2 == j;
+      tagged Fp .f:         r = f.idx == j;
+      default:              r = False;
+    endcase
+  return r;
+endfunction
+
+function Bool levelIndexedBy(Vector#(4, LaLevel) lv, Bit#(4) j);
+  Bool r = False;
+  for (Integer k = 0; k < 4; k = k + 1)
+    if (lv[k].valid && usesIndex(lv[k].di, j)) r = True;
+  return r;
+endfunction
+
+// The same, for a STORE into storage word w: words 16-31 are the index
+// registers (see progressiveWord).
+function Bool levelIndexedByWord(Vector#(4, LaLevel) lv, WordAddr w);
+  return (w >> 4) == 1 && levelIndexedBy(lv, w[3:0]);
+endfunction
+
+// The direct-index operations that write register J (Ref. Manual
+// pp.26-29): the loads, the adds, LVE and RNX.  SX/SV/SC/SR/SVA store
+// to storage instead, and KV/KC only compare.
+function Bool dixWritesJ(Bit#(5) code) =
+  code == dixop_LX || code == dixop_LV || code == dixop_LC || code == dixop_LR
+  || code == dixop_V_PLUS || code == dixop_V_PLUS_C || code == dixop_V_PLUS_CR
+  || code == dixop_LVE || code == dixop_RNX;
+function Bool dixStores(Bit#(5) code) =
+  code == dixop_SX || code == dixop_SV || code == dixop_SC || code == dixop_SR
+  || code == dixop_SVA;
+
 function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, Vector#(4, LaLevel) lv);
   Bool pending = False;
   for (Integer k = 0; k < 4; k = k + 1) if (lv[k].valid) pending = True;
@@ -299,15 +358,18 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       // their stores, V+ ...) now do too.
       h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1])
           || progressiveWrites(lv, x.j) || progressiveWrites(lv, x.idx)
-          || progressiveWord(lv, ea[18:1]);
+          || progressiveWord(lv, ea[18:1])
+          || (dixWritesJ(x.code) && levelIndexedBy(lv, x.j))
+          || (dixStores(x.code) && levelIndexedByWord(lv, ea[18:1]));
     end
     tagged ImmIndex .x:
       h = ((x.code == 4'b0111 || x.code == 4'b1111)                         // V+ICR / V-ICR
            && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
-          || progressiveWrites(lv, x.j);
+          || progressiveWrites(lv, x.j) || levelIndexedBy(lv, x.j);
     tagged CountBranch .x:
       h = ((x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
-          || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1));
+          || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1))
+          || levelIndexedBy(lv, x.j);
     tagged BranchInd .x: h = !indexIndicator(x.indNum) || (x.idx == 1 && progressiveWrites(lv, 1));
     tagged BranchOrMisc .x: begin
       // Unconditional branches drain the levels first: a halt (a
@@ -319,7 +381,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       else if (x.code == 3'b100) begin                                       // Z
         WordAddr zw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
         h = levelHolds(lv, zw) || eboxRegister(zw) || progressiveWrites(lv, x.idx)
-            || progressiveWord(lv, zw);
+            || progressiveWord(lv, zw) || levelIndexedByWord(lv, zw);
       end
       else if (x.code == 3'b000 || x.code == 3'b001) begin                   // R / RCZ
         // The operand is the index word AT THE EFFECTIVE ADDRESS (Ref.
@@ -331,7 +393,8 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
         WordAddr rw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
         h = (rw >> 4) != 1 || levelHolds(lv, rw)
             || levelHolds(lv, zeroExtend(st.readIndex(rw[3:0]).refill))
-            || progressiveWrites(lv, x.idx) || progressiveWord(lv, rw);
+            || progressiveWrites(lv, x.idx) || progressiveWord(lv, rw)
+            || levelIndexedByWord(lv, rw);
       end
       // EX/EXIC: drain the levels first, unconditionally.  BOTH ARE
       // IMPLEMENTED (EX 2026-09-25, EXIC 2026-09-29) and for both this
@@ -350,7 +413,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     tagged Sic .x: begin
       BitAddr ea = effAddr24(st, x.addr, x.idx);
       h = levelHolds(lv, ea[23:6]) || eboxRegister(ea[23:6]) || progressiveWrites(lv, x.idx)
-          || progressiveWord(lv, ea[23:6])
+          || progressiveWord(lv, ea[23:6]) || levelIndexedByWord(lv, ea[23:6])
           || iboxHazard(st, guessPending, decodeHalfWord(x.inner), lv);
     end
     default: h = True;

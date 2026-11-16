@@ -1436,7 +1436,19 @@ module mkStretchCore(StretchCore);
       commitNext(pc, len, pc + ((len == Full) ? 2 : 1));
     end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
-      if (la.count() < 4 && !progressivePending) begin
+      // >>> AND A LEVEL STORING INTO AN INDEX REGISTER THIS ONE IS
+      // INDEXED BY, 2026-11-15. <<<  The sibling of iboxHazard's
+      // levelIndexedBy (StretchIBox.bsv): prepareExec below derives this
+      // level's addresses from the index registers NOW, so a pending
+      // level that will store into word 16+j (a VFL ST to $Xj) must
+      // retire first, or the new level's `da` is computed from the old
+      // index.  Conservative, like the progressive wait beside it.
+      Bool indexStorePending = False;
+      for (Integer k = 0; k < 4; k = k + 1)
+        if (nl[k].valid &&& nl[k].storeAddr matches tagged Valid .sa
+            &&& (sa >> 4) == 1 &&& usesIndex(di, sa[3:0]))
+          indexStorePending = True;
+      if (la.count() < 4 && !progressivePending && !indexStorePending) begin
         // ONE derivation of this instruction's addresses, used for both
         // the operand read below and the level's storeAddr further
         // down -- see StretchIBox's prepareExec.

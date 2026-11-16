@@ -603,6 +603,30 @@ fail with the interlock off (KVI, V+I, CB, an indicator branch and a count
 branch through X1, LX and Z of the register as storage) and which do not, so
 the arms for those are not yet shown to be needed.
 
+### An index write waits for a pending level indexed by it (fixed 2026-11-15)
+
+A look-ahead level's operand and store addresses are derived when it is loaded,
+and the store-close-to-fetch waits compare against them. But the E-box
+re-derived the effective address from the current index registers when it
+dispatched the level. An I-box instruction that wrote the register in between
+moved the level's operand. The 7030 STRAP II MAIN test's driver (step 4b-i)
+found this: `ST(BU,64),9.0($9)` was loaded as a level, `V+I,$9,11.0` ran ahead
+of it, and the store landed in the next record. It showed only for layouts that
+kept the store pending, and the first diagnosis (a stale index after an LV) was
+wrong; a store and read trace in storage settled it. `iboxHazard` now holds an
+index write (direct-index loads and adds on J, immediate index, count and
+branch, and stores to words 16-31 by SX/SV/SC/SR/SVA, Z, R/RCZ and SIC) while a
+pending level is indexed by that register (`levelIndexedBy`). `rl_prepare` holds
+a new level indexed by register j while a pending level stores into word 16+j
+(`indexStorePending`).
+
+This is a conservative stall, not a measured time. On the real machine the
+level carries the address the I-box computed, so the index arithmetic would not
+wait (`../docs/microarchitecture_plan.md` §1a). Test:
+`../decks/index_after_level.strap`. Its header records which cases fail with
+each interlock off (the V+I shape and an overtaken floating store; the E-box
+sibling) and which do not (LV, SV into $X3, SIC), so those arms are guards only.
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED
