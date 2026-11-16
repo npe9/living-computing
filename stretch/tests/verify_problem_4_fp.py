@@ -60,6 +60,19 @@ def fp_value(w):
     return -v if (w >> 3) & 1 else v
 
 
+def _unit_of(v):
+    """2**(e-48) for 2**(e-1) <= |v| < 2**e."""
+    e = 0
+    a = abs(v)
+    while a >= 1:
+        a /= 2
+        e += 1
+    while a < D('0.5'):
+        a *= 2
+        e -= 1
+    return D(2) ** (e - 48)
+
+
 def units(got, want):
     """|got - want| in units of want's 48-bit fraction."""
     if want == 0:
@@ -190,7 +203,55 @@ def p4_13(sym, src=None):
                 steps=4000000)
 
 
-PROBLEMS = {'4.11': ('problem_4_11.strap', p4_11),
+def p4_10(sym):
+    """LNX, printed pp.44-45.  The argument is XARG, one per run."""
+    def parts(img, q, fln2, consts):
+        x = img('XARG')
+        e = 0
+        f = x
+        while f >= 1:
+            f /= 2
+            e += 1
+        while f < D('0.5'):
+            f *= 2
+            e -= 1
+        z = (f - q) / (f + q)
+        acc = D(0)
+        for c in consts:                  # CONST order: 1/17 first
+            acc = acc * z * z + c
+        return x, e, f, z, 2 * z * acc, (2 * e - 1) * fln2 / D(2) ** 48
+
+    def prog(img):
+        consts = [img('CONST+%d' % i) for i in range(9)]
+        return parts(img, img('Q'), img('FLN2'), consts)
+
+    def page(img):
+        # the page's constants exactly, Q as PRINTED (1/1.41421356205080)
+        consts = [D(1) / (2 * k + 1) for k in range(8, -1, -1)]
+        return parts(img, 1 / D('1.41421356205080'),
+                     D(2).ln() * D(2) ** 47, consts)
+
+    def scale(img):
+        _, _, _, _, t2, t1 = prog(img)
+        return max(abs(t1), abs(t2))
+
+    exact = [('TEMP_is_x', 'TEMP', None),
+             ('x1_value7_count0', 'addrIndex(1)', (7 << 46) | (sym['XW1'] // 64))]
+    within = [('TEMP1_Z', 'TEMP+1', lambda img: prog(img)[3], 4,
+               lambda img: abs(prog(img)[3])),
+              ('TEMP2_ln_F_over_q', 'TEMP+2', lambda img: prog(img)[4], 4, scale),
+              ('ACC_as_programmed', 'ACC',
+               lambda img: prog(img)[4] + prog(img)[5], 4, scale),
+              ('ACC_page_as_printed', 'ACC',
+               lambda img: page(img)[4] + page(img)[5], 16, scale)]
+    return dict(module='StretchP410Tb', halt='HALT', dump=(8, 'XARG'),
+                exact=exact, within=within,
+                report=lambda img, got: "ACC - ln x = %.4E (the misprinted "
+                "sqrt2 predicts -2.279E-10)" % (got - img('XARG').ln()))
+
+
+PROBLEMS = {'4.10': ('problem_4_10.strap', p4_10),
+            '4.11': ('problem_4_11.strap', p4_11),
             '4.13': ('problem_4_13.strap', p4_13),
             '4.12': ('problem_4_12.strap', p4_12)}
 
@@ -198,10 +259,18 @@ PROBLEMS = {'4.11': ('problem_4_11.strap', p4_11),
 def main():
     args = sys.argv[1:]
     subs = []
+    known_wrong = set()
+    if '--known-wrong' in args:
+        i = args.index('--known-wrong')
+        known_wrong = set(args[i + 1].split(','))
+        del args[i:i + 2]
     while '--sub' in args:
         i = args.index('--sub')
         subs.append((args[i + 1], args[i + 2]))
         del args[i:i + 3]
+    xarg = None
+    if len(args) == 1 and args[0].startswith('4.10:'):
+        args[0], xarg = args[0].split(':', 1)
     if len(args) != 1 or args[0] not in PROBLEMS:
         raise SystemExit("usage: verify_problem_4_fp.py %s [--sub OLD NEW]..."
                          % '|'.join(sorted(PROBLEMS)))
@@ -209,6 +278,8 @@ def main():
     deck_name, spec_fn = PROBLEMS[args[0]]
     with open(os.path.join(HERE, '..', 'decks', deck_name)) as f:
         src = f.read()
+    if xarg is not None:
+        subs.insert(0, ("XARG    DD(N), 10.0", "XARG    DD(N), " + xarg))
     for old, new in subs:
         if src.count(old) != 1:
             raise SystemExit("--sub: %r occurs %d times, need exactly 1"
@@ -236,6 +307,8 @@ def main():
               "DUMP=%d,%d" % (first, last - first + 1),
               "STEPS=%d" % spec.get('steps', 2000000)]
     for label, where, word in spec['exact']:
+        if word is None:
+            word = prog.words[sym['XARG'] // 64]
         addr = where if where.startswith('addrIndex') else str(word_of(where))
         checks.append("%s:%s=0x%X" % (label, addr, word))
     with tempfile.TemporaryDirectory() as tmp:
@@ -260,7 +333,10 @@ def main():
     dump = {int(a): int(v, 16)
             for a, v in re.findall(r"^MEMDUMP (\d+) ([0-9a-f]{16})$", r.stdout, re.M)}
     n_within = 0
-    for label, where, fn, bound in spec['within']:
+    failed_within = set()
+    for entry in spec['within']:
+        label, where, fn, bound = entry[:4]
+        scale = entry[4] if len(entry) > 4 else None
         n_within += 1
         if where == 'ACC':
             # The accumulator as the program left it: $L is word 8, and
@@ -287,20 +363,36 @@ def main():
                   % (label, dump[a], want))
             fails += 1
             continue
-        u = units(got, want)
+        u = units(got, want) if scale is None else (
+            abs(got - want) / _unit_of(scale(img)))
         if callable(bound):
             bound = bound(img)
         ok = u <= bound
         print("%s %s = %016x = %.17E, want %.17E, off %.2f units (bound %.0f)"
               % ("PASS" if ok else "FAIL", label, dump[a], got, want, u, bound))
         if not ok:
-            fails += 1
+            failed_within.add(label)
+            if label not in known_wrong:
+                fails += 1
+        if where == 'ACC' and 'report' in spec:
+            print("NOTE " + spec['report'](img, got))
     print("verify_problem_4_fp %s: %d exact checks and the PC through gen_tb, "
           "%d within-bound checks, %d dumped words read"
           % (args[0], len(spec['exact']), n_within, len(dump)))
     if len(dump) != last - first + 1:
         print("FAIL the dump is short: %d of %d words" % (len(dump), last - first + 1))
         fails += 1
+    if known_wrong:
+        # KNOWN WRONG: a model finding, registered so the suite stays green
+        # while the finding is open.  The run passes only if EXACTLY these
+        # within-bound checks fail; one that starts passing is a failure
+        # too, so a fix cannot go unnoticed.
+        if failed_within == known_wrong:
+            print("KNOWN WRONG, as documented: %s" % ','.join(sorted(known_wrong)))
+        else:
+            print("FAIL known-wrong set changed: documented %s, failed now %s"
+                  % (sorted(known_wrong), sorted(failed_within)))
+            fails += 1
     print("ALL CHECKS PASSED" if not fails else "FAILED")
     return 1 if fails else 0
 

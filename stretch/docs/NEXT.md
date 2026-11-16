@@ -17030,3 +17030,44 @@ assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
   should be `.18343 46424 95650`.  Run as printed.
 * 4.12's typeset formula, printed p.46, has an e with a bar over it for
   the inner exponent; read e**-x from the program.
+
+## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
+
+**A model bug, found by C22-6578 Problem 4.10 (printed p.44, "*(N), $L
+'Z**2").**  Reference Manual printed p.37 (PDF 40), "Accumulator and Sign
+Byte Register":
+
+> When location 8, the left half of the accumulator, is explicitly
+> addressed as the operand in a floating point operation, a word is
+> obtained that consists of bits 0-59 of the accumulator followed by bits
+> 4-7 of the accumulator sign byte, thus forming a proper floating point
+> word.
+
+The model returns word 8 as it stands, so the operand's sign and flags
+are accumulator bits 60-63 (double-length fraction bits), not `$SB` bits
+4-7.  No case in `StretchStorage.bsv` / `StretchExecute.bsv` names it.
+
+* **Reproducer:** `decks/repro_fp_operand_location8.strap`.  `DL(N)` of
+  -1/2, `*(N), $L`: p.37 gives +1/4, `0038 0000 0000 0000`; the model
+  gives `0038 0000 0000 0008`, -1/4.  The +1/2 control is right.
+  Registered pinned at the wrong word, labelled; flip it when fixed.
+* **4.10:** for x with fraction below 1/sqrt2, Z < 0 and the series is
+  summed in -Z**2; the model's values match that series to a few parts in
+  1E14 at x = 2.5, .001 and 1E-300.  Fraction above 1/sqrt2: passes.
+  Registered with `--known-wrong` on the three series checks.
+* **What else touches it, not re-examined:** 4.11's `LA(U), $L` (the
+  absolute modifier hides a wrong sign; the flag bits would differ only if
+  bits 61-63 of word 8 were nonzero) and 4.12/4.13's `SRT(N), $L`, a
+  STORE to location 8.  p.37 speaks of a word "obtained"; what a store
+  to location 8 does with its bits 60-63 is not stated on that page and
+  is OPEN.
+* **The fix belongs in the FP operand fetch**, not in `*`: every FP op
+  that reads its storage operand (`L`, `+`, `*`, `/`, `K`, ...) should
+  see bits 0-59 of word 8 and `$SB` bits 4-7 when the effective address
+  is word 8.  `*(N), $L` is the one printed case.
+
+### Problem 4.10 (LNX), printed pp.44-45: one more erratum
+
+`Q DD(N), 1/1.41421356205080` and `QQ DD(N), 2/1.41421356205080`, read at
+400 dpi: sqrt2 is 1.41421356237310.  Run as printed; every result is low
+by 2.279E-10, measured as ACC - ln x on all three passing arguments.

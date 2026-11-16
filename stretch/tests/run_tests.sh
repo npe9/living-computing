@@ -13454,6 +13454,24 @@ run "C22-6578 Chapter 4 -- the DD(N) forms and N*N strap_asm refuses, as refusal
 # as it stood.  Three printed errata in the deck's header.
 run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_problem_4_fp.py 4.11
 
+# 4.10, LNX, printed pp.44-45, one argument per run.  Fraction >= 1/sqrt2:
+# passes.  Fraction < 1/sqrt2: KNOWN WRONG -- the model reads location 8 as
+# an FP operand with word 8's bits 60-63 as its sign, where Reference Manual
+# printed p.37 says the sign byte's bits 4-7, so "*(N), $L" gives -Z**2.
+# These three runs pass only while exactly the three series checks fail;
+# when the model is fixed they fail, and --known-wrong comes off.
+run "C22-6578 Problem 4.10 -- LNX, ln .75" python3 verify_problem_4_fp.py 4.10:.75
+run "C22-6578 Problem 4.10 -- LNX, ln 3" python3 verify_problem_4_fp.py 4.10:3.0
+run "C22-6578 Problem 4.10 -- LNX, ln 1E6" python3 verify_problem_4_fp.py 4.10:1.0E6
+run "C22-6578 Problem 4.10 -- LNX, ln 2.5, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:2.5 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+run "C22-6578 Problem 4.10 -- LNX, ln .001, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:.001 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+run "C22-6578 Problem 4.10 -- LNX, ln 1E-300, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:1.0E-300 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
+# The reproducer, pinned at the model's WRONG word so it cannot drift: p.37
+# wants PROD = 0x0038000000000000 (+1/4).  Flip the check when it is fixed.
+run "location 8 as an FP operand: -1/2 squared, KNOWN WRONG (p.37 says +1/4)" ./run_program.sh ../decks/repro_fp_operand_location8.strap StretchReproLoc8Tb "PC=70" \
+    "PROD_KNOWN_WRONG_p37_wants_0038000000000000:38=0x0038000000000008" \
+    "CTRL_plus_quarter:39=0x0038000000000000"
+
 # 4.12, printed pp.46-47: f(pi) = 2x e**(e**-x) / sqrt(1 - e**-x), two calls
 # of EXP, "SRT(N), $L" into the accumulator itself and R/.  The answer is
 # read from $L and $SB, where the printed BEW leaves it.  Passed as stood.

@@ -1974,3 +1974,21 @@ two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
   ran here.  `bsv/README.md` already says so.
 * What is checked is the 8-point RULE, 2.724546, not the integral,
   2.723620: the integrand goes as sqrt(x) at 0.
+
+### 4.10 natural logarithm, printed pp.44-45 -- `decks/problem_4_10.strap` -- A MODEL BUG
+
+Run at six arguments (`tests/verify_problem_4_fp.py 4.10:<x>`), 2 exact
+checks and the PC plus 4 within-bound checks each.  **x = .75, 3, 1E6
+pass; x = 2.5, .001, 1E-300 fail the three series checks and nothing
+else.**  Cause, decided from the Reference Manual: location 8 addressed as
+a floating-point operand must carry `$SB` bits 4-7 as its sign (printed
+p.37); the model uses word 8's bits 60-63, so `*(N), $L` squares a
+negative Z to -Z**2.  Reproducer `decks/repro_fp_operand_location8.strap`;
+`docs/NEXT.md` "LOCATION 8 AS A FLOATING-POINT OPERAND".  The three
+failing runs are registered `--known-wrong` (they pass only while exactly
+those checks fail).  **This is the first wrong result in anything the
+model executed from `C22-6578`, after the twelve problems of Chapter 1
+and 4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
+`L(B,12,1)` and `-I(BU,1)` turning a floating exponent into a VFL integer
+and back -- all right.  A fourth printed erratum: sqrt2 printed
+1.41421356205080.

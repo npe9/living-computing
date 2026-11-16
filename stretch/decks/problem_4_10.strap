@@ -1,0 +1,147 @@
+! C22-6578 PROBLEM 4.10, "NATURAL LOGARITHM", printed pp.44-45 (PDF
+! 45-46), Method 1, read in the ink at 250 and 400 dpi.
+!
+!   "A positive single-precision normalized floating-point number x is in
+!   the accumulator.  Replace it by ln x.  Assume zero exponent flag for
+!   x."
+!
+!   x = F 2**E,  ln x = (E - 1/2) ln2 + ln(sqrt2 F),
+!   ln(sqrt2 F) = 2Z sum (Z**2)**k / (2k+1),  Z = (F - 1/sqrt2)/(F + 1/sqrt2),
+!   "Replacing the upper limit by Kmax = 8 ..."
+!
+! THE TWENTY-TWO INSTRUCTIONS FROM LNX TO "BEW, $" ARE AS PRINTED.  The
+! data is not: Q, QQ, CONST and FLN2 are written as DD(N) arithmetic or
+! with $N, which this assembler refuses (decks/repro_dd_n_expression.strap,
+! decks/repro_dd_n_math_constant.strap).  Each is kept as a "printed:"
+! comment above a decimal literal of the same number (truncated to 48
+! bits by this assembler's DD(N) rule).
+!
+! WRONG IN THE INK, AND RUN AS PRINTED: Q and QQ are printed
+! "1/1.41421356205080" and "2/1.41421356205080" (read at 400 dpi).
+! sqrt2 = 1.41421356237310; the last six digits are wrong.  The program
+! then computes ln(F/q) with q = 1/1.41421356205080 in place of
+! ln(sqrt2 F), so EVERY RESULT IS LOW BY ln(sqrt2 x 1.41421356205080 / 2)
+! ... precisely, by 2.279E-10 absolute, about 64,000 units of a result
+! near 1.  The checks follow the page as printed (below) and the header
+! records what ln x itself would be.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual:
+!   ST(U), TEMP      x kept; TEMP's bits 0-11 are E, sign in bit 11.
+!   F+(N), Q         ADD TO FRACTION (printed p.101): Q's fraction taken
+!                    with the ACCUMULATOR's exponent, (F + q) 2**E, then
+!                    normalized: (F + q)/2 x 2**(E+1), F + q being > 1.
+!   F-(N), QQ        QQ's fraction is q's again (2/y vs 1/y) and is taken
+!                    at exponent E+1: (F + q - 2q) 2**E = (F - q) 2**E.
+!   /(N), TEMP+1     Z = (F - q)/(F + q), the 2**E cancelling.
+!   *(N), $L         Z**2, the accumulator times its own left half.
+!   the loop         nine CONST words, eight D+ (seven by CB+ on $1,
+!                    XW1's count 7), nested in Z**2: the k = 0..8 sum.
+!   *(N), TEMP+1 / E+I, 1    times 2Z (E+I: printed p.102).
+!   L(B,12,1), TEMP, 69      E as a signed VFL integer (bits 0-10 the
+!                    magnitude, bit 11 the sign byte) with its units bit
+!                    at accumulator bit 58; the rest of the accumulator
+!                    zero, exponent field 0.
+!   -I(BU, 1), 1, 68         one at bit 59, i.e. one half of bit 58:
+!                    the accumulator is (2E - 1) 2**-48 as a fraction.
+!   D*(N), FLN2      FLN2 = $N with exponent 47 (comment (d)), so the
+!                    product is (E - 1/2) ln2.
+!   D+(N), TEMP+2    plus ln(F/q).  "BEW, $": the answer in the
+!                    accumulator.
+!
+! THE HARNESS IS NOT PRINTED: START loads XARG with DL(N) and falls into
+! LNX.  XARG is one argument per run; tests/verify_problem_4_fp.py takes
+! it as "4.10:<literal>" and rewrites XARG's card in a temporary copy.
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PAGE, NOT THE MODEL, in
+! sixty-digit decimal, from XARG as assembled:
+!   exact      the halt at the printed BEW; TEMP = XARG's word (ST(U) of
+!              an unnormalized load of a normalized word); $1 = value
+!              7.0, count 0, refill XW1 ("XW, 0, 7, $" refills to
+!              itself; CB+ printed p.31).
+!   within     each in units of 2**-48 times the LARGER of |(E - 1/2) ln2|
+!              and |ln(F/q)|, because the two cancel when x is near 1
+!              and units of the answer itself would then mean nothing:
+!     TEMP+1   Z = (F - q)/(F + q), q the word as assembled, 4 units of |Z|
+!     TEMP+2   2Z sum, the CONST words as assembled, 4
+!     ACC      the program's number from the words as assembled, 4
+!     ACC      the page's number with exact constants:
+!              (E - 1/2) ln2 + ln(F x 1.41421356205080), 16
+!   And printed, not checked: ACC - ln x, which should be -2.279E-10.
+!
+! >>> A MODEL BUG, FOUND HERE: "*(N), $L" SQUARES A NEGATIVE Z WRONG. <<<
+! Reference Manual printed p.37 (PDF 40): location 8 "explicitly
+! addressed as the operand in a floating point operation" is "bits 0-59
+! of the accumulator followed by bits 4-7 of the accumulator sign byte".
+! The model reads word 8's own bits 60-63 as the sign instead (zero here,
+! after the divide), so for Z < 0 it forms -Z**2 and the series becomes
+! sum (-Z**2)**k / (2k+1).  The failing values agree with that series to
+! a few parts in 1E14 (x = 2.5, .001, 1E-300).  Z < 0 exactly when x's
+! fraction is below q = .7071, i.e. for half of all x.
+! Reproducer: decks/repro_fp_operand_location8.strap.  docs/NEXT.md,
+! "G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND".
+!
+! MEASURED, 2026-11-16, tests/verify_problem_4_fp.py 4.10:<x>:
+!   x = .75, 3.0, 1.0E6 (fraction >= q)   ALL CHECKS PASSED: 2 exact and
+!       the PC, 4 within, at most .62 units from the program's number
+!       and 2.19 from the page's; ACC - ln x = -2.279E-10 each time,
+!       which is the misprinted sqrt2, to four figures.
+!   x = 2.5, .001, 1.0E-300 (fraction < q)  TEMP2_ln_F_over_q,
+!       ACC_as_programmed and ACC_page_as_printed FAIL and nothing else:
+!       Z is right to .4 units, L(B,12,1)/-I/D* handle E = 2, -9 and
+!       -996 right, and only the series is wrong.  REGISTERED AS KNOWN
+!       WRONG (--known-wrong): the run passes only while exactly those
+!       three fail.
+!
+! OBSERVED INJECTIONS, 2026-11-16, at x = 3.0, each
+!   python3 tests/verify_problem_4_fp.py 4.10:3.0 --sub OLD NEW
+!   FLN2 "X47" -> "X46"
+!       FAILED: ACC_page_as_printed alone (.5788 for 1.0986).  The
+!       as-programmed check reads FLN2 as assembled and follows it.
+!   Q -> .70710678134, QQ left alone
+!       FAILED: all four within checks (Z off 95,136 units: QQ is no
+!       longer 2Q and F- no longer subtracts q).
+!   CONST's 1/3 -> .33333333333 (3E-12 off)
+!       SURVIVED.  At x = 3 it multiplies 2Z**3 = 5E-5, under a unit.
+!       The floor: the higher coefficients are not resolved at |Z| < .15.
+!
+        SLC, 1000.0
+START   DL(N), XARG
+LNX     ST(U), TEMP                     !F+1/RT2
+        F+(N), Q
+        ST(U), TEMP+1
+        F-(N), QQ                       !F-1/RT2
+        /(N), TEMP+1                    !Z created
+        ST(U), TEMP+1
+        *(N), $L                        !Z**2
+        ST(U), TEMP+2
+        LX, $1, XW1
+        D*(N), CONST($1)
+ADD     D+(N), CONST+1.0($1)
+        D*(N), TEMP+2
+        CB+, $1, ADD
+        D+(N), CONST+1.0($1)
+        *(N), TEMP+1
+        E+I, 1
+        ST(U), TEMP+2
+        L(B,12,1), TEMP, 69             !exponent treatment
+        -I(BU, 1), 1, 68
+        D*(N), FLN2                     !2E-1 times ln2
+        D+(N), TEMP+2
+HALT    BEW, $
+! printed: Q DD(N), 1/1.41421356205080
+Q       DD(N), .7071067813476950488384137639     !1/RT2
+! printed: QQ DD(N), 2/1.41421356205080
+QQ      DD(N), 1.414213562695390097676827528     !2/RT2
+XW1     XW, 0, 7, $
+! printed: CONST DD(N), 1/17, 1/15, 1/13, 1/11, 1/9,1/7,1/5,1/3,1
+CONST   DD(N), .05882352941176470588235294118, .06666666666666666666666666667, .07692307692307692307692307692
+        DD(N), .09090909090909090909090909091, .1111111111111111111111111111, .1428571428571428571428571429
+        DD(N), .2, .3333333333333333333333333333, 1
+! printed: FLN2 DD(N), $NX47
+FLN2    DD(N), .6931471805599453094172321215X47     !$N*2**47
+TEMP    DRZ(N), (3)
+
+        SLC, 1100.0
+XARG    DD(N), 10.0
+
+        END, START
