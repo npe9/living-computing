@@ -13604,6 +13604,11 @@ run "C22-6578 Problem 3.9 Method 2 -- less, through DPSUB" ./run_program.sh ../d
     "A1:41=0x002FFFFFFFFFFFF0" "A1_plus_1:42=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
 #   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
 
+# C22-6578 Problem 3.10, printed p.34: integer part of log2 N into the
+# value field of $1 (L(N), E-I, L(B,12,1) of the exponent at 8.0, ST(B,25,1)).
+# N = 8 (exact power of two), 3/16 (below 1: negative), 1000 (the printed block).
+run "C22-6578 Problem 3.10 -- integer part of log2 N" ./run_program.sh ../decks/problem_3_10.strap StretchP310Tb ASM=strap2 "PC=87" \
+    "A_value:48=0x0000C025A5A5A5A5" "B_value:49=0x0000C0A5A5A5A5A5" "x1_last:17=0x00024025A5A5A5A5"
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
