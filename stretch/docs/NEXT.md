@@ -23,6 +23,29 @@ accumulate.
 
 
 
+
+## DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL -- open, 2026-11-16
+
+Two differences between strap2 and strap_asm, found when the C22-6578
+chapter 3-4 decks reached `check_strap2_oracles.py`. Both are allowed
+there by name, marked OPEN; neither is settled.
+
+1. **Numeric DD.** strap2 assembles `DD(N), 1.0` as `000FFFFFFFFFFFF0`
+(1 - 2^-48, exponent 0) and `-2.5` as `0049FFFFFFFFFFF8`; strap_asm gives
+the exact `0028000000000000` and `004A000000000008`. strap2's `dnum.py`
+reconstructs C22-6729 pp.104-113 and truncates at every step, so
+10 x (10^-1 truncated) falls just short of 1. Not yet read: whether
+OUTPUT's final conversion (pp.26, 158-159) rounds the 96-bit value to
+the word. Decks: problem_4_10..13, repro_fp_operand_location8. The
+chapter 4 decks run under strap2, so their bounds were met with these
+constants.
+
+2. **VFL store to `$AL`.** In problem_3_vfl_store_to_indicators (word 36)
+and problem_3_9_method1_equal/greater (word 39), strap_asm sets 0x1800 in
+the instruction's low half and strap2 does not. These decks run under
+strap2, so chapter 3's "a VFL store into the indicators is dropped"
+(model item 6) rests on strap2's encoding until this is settled.
+
 ## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- open, 2026-11-15
 
 `C22-6578` printed p.21 (PDF 22), Problem 2.9, prints

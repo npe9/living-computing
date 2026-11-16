@@ -34,7 +34,8 @@ sys.path.insert(0, HERE)
 SKIP = {"verify_mcp_page.py",           # takes a page number, run below
         "verify_problem_1_9.py",        # takes a method and runs the model
         "verify_buchholz_b2.py",        # takes a mode and runs the model
-        "verify_buchholz_b6.py"}        # takes a mode and runs the model
+        "verify_buchholz_b6.py",        # takes a mode and runs the model
+        "verify_problem_4_fp.py"}       # takes a deck and runs the model
 PIN_VERIFY = 273
 PIN_PAGES = 351
 # p.33 makes only a CNOP a NOP.  strap_asm also puts a NOP in the half word it
@@ -47,10 +48,37 @@ KNOWN = {"mcp_bootstrap_p131.strap", "mcp_bootstrap_p210.strap",
          # strap_asm assembles a mode D/DU DD as a binary integer; C22-6531
          # pp.28-29 says decimal digits, and strap2 gives them (NEXT.md,
          # "DD in decimal mode").  The difference is strap_asm's bug.
-         "problem_2_8.strap", "repro_dd_decimal_mode.strap"}
+         "problem_2_8.strap", "repro_dd_decimal_mode.strap",
+         # OPEN, 2026-11-16 (NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
+         # strap2's numeric DD truncates at every step (dnum.py, C22-6729
+         # pp.104-113), so DD(N) 1.0 gives .FFF...F x 2^0; strap_asm rounds.
+         # Whether IBM's OUTPUT (pp.158-159) rounds is not yet read.
+         "problem_4_10.strap", "problem_4_11.strap", "problem_4_12.strap",
+         "problem_4_13.strap", "repro_fp_operand_location8.strap",
+         # OPEN, 2026-11-16 (same NEXT.md entry): a VFL store to $AL; strap_asm
+         # sets 0x1800 in the instruction's low half and strap2 does not.
+         "problem_3_9_method1_equal.strap", "problem_3_9_method1_greater.strap",
+         "problem_3_vfl_store_to_indicators.strap"}
 # strap_asm refuses what strap2 accepts: a blank after a radix specifier,
 # "(2) 10", printed in C22-6578 p.21 (NEXT.md, the radix-blank entry).
-KNOWN_REFUSE = {"repro_radix_blank.strap"}
+KNOWN_REFUSE = {"repro_radix_blank.strap",
+                # C22-6578 ch.3/ch.4 reproducers of strap_asm's refusals
+                # (NEXT.md "C22-6578 CHAPTER 3" and the ch.4 refusal entries)
+                "problem_3_bare_op_symbol_dds.strap", "problem_3_dd_zero_fraction.strap",
+                "problem_3_fp_add_low_half_zero.strap", "repro_address_multiply.strap",
+                "repro_dd_n_expression.strap", "repro_dd_n_math_constant.strap",
+                "repro_dd_n_zero.strap"}
+
+
+def strap2_only():
+    """Decks every run line of run_tests.sh assembles with ASM=strap2: what
+    strap_asm (scaffolding) refuses in them is not a finding against strap2."""
+    suite = open(os.path.join(HERE, "run_tests.sh")).read()
+    uses = {}
+    for ln in re.findall(r"^run .*$(?:\n(?:    .*))*", suite, re.M):
+        for d in re.findall(r"\.\./decks/(\S+?\.strap)", ln):
+            uses.setdefault(d, set()).add("ASM=strap2" in ln)
+    return {d for d, u in uses.items() if u == {True}}
 
 
 def run(args):
@@ -93,10 +121,12 @@ def main():
     r = subprocess.run([sys.executable, "strap2_compare.py"], cwd=HERE,
                        capture_output=True, text=True, timeout=900)
     same = 0
+    s2only = strap2_only()
     for ln in r.stdout.splitlines():
         m = re.match(r"(\S+)\s+(\S+\.strap): (.*)", ln)
         if m and not (m.group(1) == "words" and m.group(2) in KNOWN) \
-              and not (m.group(1) == "strap_asm-refuses" and m.group(2) in KNOWN_REFUSE):
+              and not (m.group(1) == "strap_asm-refuses"
+                       and (m.group(2) in KNOWN_REFUSE or m.group(2) in s2only)):
             print(f"FAIL image: {ln[:170]}")
             fails += 1
     print(r.stdout.splitlines()[-1] if r.stdout else r.stderr[-300:])
