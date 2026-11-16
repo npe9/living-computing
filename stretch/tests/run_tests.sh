@@ -13454,6 +13454,11 @@ run "C22-6578 Chapter 4 -- the DD(N) forms and N*N strap_asm refuses, as refusal
 # as it stood.  Three printed errata in the deck's header.
 run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_problem_4_fp.py 4.11
 
+# 4.12, printed pp.46-47: f(pi) = 2x e**(e**-x) / sqrt(1 - e**-x), two calls
+# of EXP, "SRT(N), $L" into the accumulator itself and R/.  The answer is
+# read from $L and $SB, where the printed BEW leaves it.  Passed as stood.
+run "C22-6578 Problem 4.12 -- f(pi) through EXP twice, SRT into \$L, R/" python3 verify_problem_4_fp.py 4.12
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

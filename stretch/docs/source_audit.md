@@ -1937,3 +1937,16 @@ result.**  Three printed errata (a factorial with a zero too many, a
 missing comma, an offset one short of the bit its comment names) and one
 unstated loss of accuracy (1.39 |x| units, 847 measured at x = 709), all
 in the deck's header and in `NEXT.md`.
+
+### 4.12 transcendental function, printed pp.46-47 -- `decks/problem_4_12.strap` -- PASSES as the model stood
+
+2 exact checks and the PC, 6 within-bound checks
+(`tests/verify_problem_4_fp.py 4.12`).  f(pi) = 2x e**(e**-x) /
+sqrt(1 - e**-x) = 6.7071807483152..., read from `$L` and `$SB` where
+the printed `BEW` leaves it: 2.31 units from the program's own number,
+2.14 from the page's.  Adds to 4.11: `LN`, `E+I(U)`, `+`, **`SRT(N), $L`
+-- STORE ROOT whose storage operand is the accumulator's left half** --
+and `R/`.  **No wrong result.**  The page's comment (d), that it and EXP
+assemble together with "no multiply defined symbol", holds.  One
+uncertain reading, in the typeset formula only (an e with a bar over
+it, read e**-x from the program and from 4.13).

@@ -106,7 +106,45 @@ def p4_11(sym):
                 halt='HALT', dump=('X1', 'E8'), exact=exact, within=within)
 
 
-PROBLEMS = {'4.11': ('problem_4_11.strap', p4_11)}
+def exp_as_programmed(img, x):
+    """EXP's result as a real number: 2**(x * RLN2), RLN2 as assembled."""
+    return (x * img('RLN2') * D(2).ln()).exp()
+
+
+def p4_12(sym):
+    xw14 = sym['XW14'] // 64
+    halt = sym['ERR'] // 32 - 1           # the BEW printed above ERR
+
+    def t_prog(img):
+        return exp_as_programmed(img, -img('EKS'))
+
+    def u_prog(img):
+        return 2 * img('EKS') * exp_as_programmed(img, t_prog(img))
+
+    def t_true(img):
+        return (-img('EKS')).exp()
+
+    def u_true(img):
+        return 2 * img('EKS') * t_true(img).exp()
+
+    exact = [('x15_second_call', 'addrIndex(15)', (sym['RTURN'] + 32 + 64) << 40),
+             ('x14_value14_count0', 'addrIndex(14)', (14 << 46) | xw14)]
+    within = [
+        ('TEMP_t_as_programmed', 'TEMP', t_prog, 4),
+        ('TEMP1_u_as_programmed', 'TEMP+1', u_prog, 4),
+        ('ACC_f_as_programmed', 'ACC',
+         lambda img: u_prog(img) / (1 - t_prog(img)).sqrt(), 4),
+        ('TEMP_exp_minus_x', 'TEMP', t_true, 16),
+        ('TEMP1_2x_exp_t', 'TEMP+1', u_true, 16),
+        ('ACC_f_of_pi', 'ACC',
+         lambda img: u_true(img) / (1 - t_true(img)).sqrt(), 16),
+    ]
+    return dict(module='StretchP412Tb', halt=halt, dump=(8, 'WON'),
+                exact=exact, within=within)
+
+
+PROBLEMS = {'4.11': ('problem_4_11.strap', p4_11),
+            '4.12': ('problem_4_12.strap', p4_12)}
 
 
 def main():
@@ -134,13 +172,19 @@ def main():
     spec = spec_fn(sym)
 
     def word_of(s):
+        if isinstance(s, int):
+            return s
+        if '+' in s:                      # SYMBOL+words
+            base, off = s.split('+')
+            return sym[base] // 64 + int(off)
         return sym[s] // 64
 
     def img(s):
         return fp_value(prog.words[word_of(s)])
 
     first, last = word_of(spec['dump'][0]), word_of(spec['dump'][1])
-    checks = ["PC=%d" % (sym[spec['halt']] // 32),
+    halt = spec['halt']
+    checks = ["PC=%d" % (halt if isinstance(halt, int) else sym[halt] // 32),
               "DUMP=%d,%d" % (first, last - first + 1),
               "STEPS=%d" % spec.get('steps', 2000000)]
     for label, where, word in spec['exact']:
@@ -170,7 +214,20 @@ def main():
     n_within = 0
     for label, where, fn, bound in spec['within']:
         n_within += 1
-        a = word_of(where)
+        if where == 'ACC':
+            # The accumulator as the program left it: $L is word 8, and
+            # its sign is bit 4 of the sign byte register, word 10
+            # (C22-6578 printed p.55; Reference Manual printed p.86).
+            # Bits 60-63 of word 8 are fraction bits 49-52, not a sign.
+            if 8 not in dump or 10 not in dump:
+                print("FAIL %s: words 8 and 10 are not in the dump" % label)
+                fails += 1
+                continue
+            a = 8
+            dump = dict(dump)
+            dump[8] = (dump[8] & ~0xF) | (((dump[10] >> 59) & 1) << 3)
+        else:
+            a = word_of(where)
         if a not in dump:
             print("FAIL %s: word %d is not in the dump" % (label, a))
             fails += 1
