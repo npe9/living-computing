@@ -618,18 +618,23 @@ Char. Vol. 2's per-instruction atlas is the real timing oracle and that
 `perf_char_timing.py` is "shaped for" it. **M2's correctness is defined
 as how much of that residual it closes**.
 
-*Status 2026-11-16: written, first measurement taken.* The oracle is in
-`docs/atlas_oracle.md`. 93 of the 139 atlas pages are transcribed
-(`tests/perf_char_vol2_atlas.txt`; the fast self-check
-`tests/check_atlas_data.py` is in `run_tests.sh`). The 93 include all
-60 floating-point pages, PDF 42-101, which were added later on
-2026-11-16. With them came two new cross-check rules: forwarding twins
-and the PDF 104 FP quotations. `tests/atlas_oracle.py` runs 6,265 cases
-in about an hour. Today's residual has mean −18.9 clocks and median
-−7.1, with 7% exact. The largest single cause is that the model's VFL
+*Status 2026-11-16: written, first measurement taken, transcription complete.* The oracle is in
+`docs/atlas_oracle.md`. **All 139 atlas pages are transcribed**
+(`tests/perf_char_vol2_atlas.txt`, 28,272 times; the fast self-check
+`tests/check_atlas_data.py` is in `run_tests.sh`). The 60 floating-point
+pages, PDF 42-101, came with two cross-check rules: forwarding twins and
+the PDF 104 FP quotations. The last 46 pages also came on 2026-11-16:
+VFL with forwarding, PDF 143-169, and VFL immediate, PDF 171-189. With
+them came five more rules: `vfwd`, `vfwdib`, `index`, `immf` and `immn`.
+PDF 114 says the I-box operand should not change with forwarding;
+`vfwdib` finds 2,007 exact pairs and 94 near of 2,148. Eight cells are
+uncertain, each with a NOTE. `tests/atlas_oracle.py` runs 6,265 cases
+in about an hour. Its residual predates PDF 143-189: mean −18.9 clocks,
+median −7.1, 7% exact. The largest single cause is that the model's VFL
 time does not depend on the operation. FP residuals are unmeasured:
 the oracle has no FP generator. Remaining:
-- VFL forwarding and immediate (46 pages);
+- generator support for the forwarding INTERNL columns and the immediate
+  pages (the facts from PDF 114 are in that doc);
 - an FP generator;
 - the other generators listed in that doc.
 
