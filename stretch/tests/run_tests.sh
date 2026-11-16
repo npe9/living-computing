@@ -13515,6 +13515,17 @@ run "C22-6578 Problem 3.6 -- scalar product, LFT / *+ / SRD" ./run_program.sh ..
     "C_rounded:71=0x0A28000000001010" "acc_left_unrounded:8=0x0A28000000001008" \
     "FT_last_factor:14=0x00A8000000000000"
 
+# 3.7, the cube root of 8 by ten cubically convergent iterations, bare
+# operations throughout and E -I / E + I with no dds (unnormalized by
+# the page's own rule).  Block A's exact 8, 2.5 and .5 land on exactly 2,
+# a fixed point with nothing to truncate; the page's "8.0" comes out two
+# units under 2, its own "round-off error in the last iteration".
+run "C22-6578 Problem 3.7 -- cube root" ./run_program.sh ../decks/problem_3_7.strap StretchP37Tb ASM=strap2 "PC=96" STEPS=200000 \
+    "A_ANS_is_2:58=0x0048000000000000" "A_XK_is_2:60=0x0048000000000000" "A_TEMP_is_12:59=0x008C000000000000" \
+    "ANS:51=0x002FFFFFFFFFFFE0" "XK:53=0x002FFFFFFFFFFFE0" "TEMP_3N_over_2:52=0x008BFFFFFFFFFFF0" \
+    "EN_as_assembled:54=0x006FFFFFFFFFFFF0" "GUESS_as_assembled:55=0x0049FFFFFFFFFFF0" \
+    "HALF_as_assembled:50=0x003FFFFFFFFFFFF0"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
