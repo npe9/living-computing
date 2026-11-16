@@ -1,0 +1,45 @@
+! REPRODUCER: strap_asm.py assembles a DD in a DECIMAL mode as a binary
+! integer.  Found 2026-11-15 transcribing C22-6578 Problem 2.8
+! (problem_2_8.strap), whose D and E subfields are (DU, 24, 8) and
+! (DU, 48, 8).  docs/NEXT.md has the section.
+!
+! THE RULE, C22-6531 printed pp.28-29 (PDF 29-30), "Decimal Signed VFL":
+!   "The two decimal modes in DD and DDI statements represent the only
+!   cases in which Strap-1 converts numbers to an internal decimal
+!   radix."  Example a: "DD(D), -9534812 ... A 4-bit sign byte is
+!   formed.  Decimal-to-decimal conversion."  Example c: "DD(D, , 8),
+!   432E3 ... Four binary zeros are inserted in the zone positions of
+!   each byte."  Decimal Unsigned: "The numerical conversion is just as
+!   in decimal signed mode except for the omission of the sign byte."
+!
+! WHAT EACH WORD SHOULD BE, by that rule, and what strap_asm makes:
+!
+!   DU8    DD(DU,16,8), 12       0102   digits 1, 2       strap_asm 000C
+!   DU4    DD(DU,16,4), 1234     1234                     strap_asm 04D2
+!   DUE    DD(DU,48,8), 000125   000000010205             strap_asm 00000000007D
+!   DS4    DD(D,16,4), -123      1238   digits and S=1    strap_asm FF85
+!   BUCTL  DD(BU,16,8), 12       000C   the binary control, right
+!
+! DS4's sign byte is S T U V with S the sign (Reference Manual printed
+! p.36) and 1 for minus; FF85 is a two's complement, which is not a
+! 7030 number form at all.
+!
+! THE HOST STRAP II (strap/strap2, "ASM=strap2") ASSEMBLES ALL FIVE AS
+! THE RULE SAYS -- OBSERVED 0102, 1234, 0000 0001 0205, 1238, 000C.  So
+! the registered run is two runs of this one deck: under ASM=strap2 the
+! checks are the right values; under strap_asm they PIN THE WRONG ONES,
+! each label carrying what it must become.  The program is one BEW, $.
+
+        SLC, 1000.0
+START   BEW, $
+        SLC, 1010.0
+DU8     DD(DU,16,8), 12
+        SLC, 1011.0
+DU4     DD(DU,16,4), 1234
+        SLC, 1012.0
+DUE     DD(DU,48,8), 000125
+        SLC, 1013.0
+DS4     DD(D,16,4), -123
+        SLC, 1014.0
+BUCTL   DD(BU,16,8), 12
+        END, START

@@ -13556,6 +13556,19 @@ run "C22-6578 Problem 2.7 -- sorting into tables via LVE/SVA on SIC entries" ./r
     "m19_T13_w0:1426=0x5555555555555555" "m19_T13_w1:1427=0x5555555555555555" \
     "m19_T14_w0:1428=0xBDEFD55555555555" "m19_T14_w1:1429=0x5555555555555555" \
     "m19_T15_w0:1430=0xB3FF3B9FF9555555" "m19_T15_w1:1431=0x5555555555555555"
+# 2.8 is decimal throughout and is NOT run (its deck says why).  Transcribing
+# it found that strap_asm assembles a DD in a decimal mode as a BINARY
+# integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two runs of
+# the one reproducer: strap_asm, pinning the wrong words, and the host STRAP
+# II, which is right.  docs/NEXT.md has the section.
+run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
+    "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
+    "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \
+    "DS4_WRONG_want_1238:1013=0xFF85000000000000" "BU_control:1014=0x000C000000000000"
+# The same deck through the host STRAP II: the rule's own values.
+run "host STRAP II: a decimal-mode DD is decimal" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDec2Tb "ASM=strap2" "PC=2000" \
+    "DU8:1010=0x0102000000000000" "DU4:1011=0x1234000000000000" "DUE:1012=0x0000000102050000" \
+    "DS4:1013=0x1238000000000000" "BU_control:1014=0x000C000000000000"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

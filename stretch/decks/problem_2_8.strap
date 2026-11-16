@@ -1,0 +1,105 @@
+! C22-6578 PROBLEM 2.8, "PURCHASING LIST ARITHMETIC", printed pp.20-21
+! (PDF 21-22), read in the ink (and at 170 dpi).
+!
+! >>> TRANSCRIBED AND ASSEMBLED.  NOT REGISTERED AS A RUN: the program is
+! >>> decimal throughout and the model refuses the decimal add (OP at
+! >>> "+(D, 48, 8)", half-word 2006), docs/source_audit.md G2.3's known
+! >>> gap.  With the add refused the scan for the next field never
+! >>> finds its end mark and the program does not halt (OBSERVED: step
+! >>> cap reached, PC 2020, inside KOMF).  <<<
+!
+!   "A purchasing list consists of a string of fields, each of which
+!   has the following structure:  | A | B | C | D | E | F | G |
+!   Subfield A is an eight-bit byte consisting of 1's.
+!   Subfield B has two 8-bit bytes (item no.).
+!   Subfield C has six 8-bit bytes (coded name of product).
+!   Subfield D has three 8-bit bytes, and contains the number of units
+!     of the product desired in decimal (DU, 24, 8).
+!   Subfield E has six 8-bit bytes, and contains the unit price in
+!     cents of the product in decimal (DU, 48, 8).
+!   Subfield F has 12 8-bit bytes, and is blank (to be the total price
+!     field).
+!   Subfield G is an unknown number of 8-bit bytes.  It contains the
+!     remarks concerning the product and/or the entire purchase.  The
+!     first three 8-bit bytes of the subfield G in the last "product
+!     field" contains the 8-bit IQS expression END.  None of the 8-bit
+!     bytes in G are all 1's.
+!   If the complete string begins at LIST, write a program to fill in
+!   the total price for each product in (DU, "96", 8).  For simplicity
+!   of programming do repeated additions instead of decimal
+!   multiplications.  Create the grand total also, and put it (DU,
+!   "128", 8) in the pseudo accumulator 13.0 through 14.0 ($RM and
+!   $FT)."
+!
+! THE PRINTED STATEMENTS are START to XW2 below, as printed, except:
+!
+!  * THE PAGE PRINTS THE LABEL "LCON" TWICE, on "LX, $2, XW2" and on
+!    the LCV under it, and "B, LCON" at the end of the loop.  The loop
+!    must return to the LCV (returning to the LX would start the list
+!    again), so the second is LCON2 here and the branch is B, LCON2.
+!    That is the deck's reading; the ink has LCON on both lines.
+!  * ' comments are written !'.
+!
+! READINGS WORTH RECORDING:
+!  * "128-18" is right, and is the same device as Problem 2.7's -18:
+!    the converted count's last bit lands in bit 17 of $L, and LOAD
+!    COUNT takes "bits 0-17 of the half-word" (Reference Manual printed
+!    p.24).
+!  * "+(D, 48, 8)" is printed SIGNED, though E is described (DU, 48,
+!    8).  Not resolved here.
+!  * "(IQSQ)DD(DU,24,8),ENDQ": Q closes the alphabetic field; comment
+!    (d) is about the blanks.
+!
+! THE DATA is the deck's: two products, 3 at 125 cents and 2 at 40.
+! FROM THE PROBLEM STATEMENT the totals are 375 and 80 cents and the
+! grand total 455; the stored byte forms (zone bits) are not derived
+! here, because nothing can be run against them yet.
+!
+! A SECOND REASON IT CANNOT RUN ON THIS ASSEMBLER: strap_asm assembles
+! "DD(DU,48,8), 000125" as the BINARY integer 125, not as six decimal
+! digit bytes.  That is an assembler finding with its own reproducer,
+! repro_dd_decimal_mode.strap, and a section in docs/NEXT.md.
+
+        SLC, 1000.0
+START   Z, $FT
+LCON    LX, $2, XW2
+LCON2   LCV(DU, 24, 8)(V+I), 0.24+0.48($2),128-18    !'$R cleared too
+        LC, $1, $L; BXCZ, NEXT                       !'binary count field
+ADD     +(D, 48, 8),-0.48($2)
+        CB, $1, ADD
+NEXT    ST(DU, 64, 8) (V+I), 0.64($2), 16            !'store total into F
+        ST(DU, 32, 8) (V+I), 0.32($2)
+        M+(DU, 64, 4), $FT                           !'update grand total
+        L(BU, 32), TESTW
+        KF(BU, 24), 0($2),8                          !'test for end of string
+        BAE, LAST
+KOMF    KF(BU,24)(V+I), 0.8($2)                      !'test for beginning of new field
+        BZAE, KOMF
+MORE    V+I, $2, 1.0                                 !'bypass 64 more bits to new D field
+        B, LCON2
+LAST    L(DU, 64, 4), $FT
+        ST(DU, 64, 8), $FT
+        ST(DU, 64, 8), $RM, 64
+HALT    BEW, $
+TESTW   (IQSQ)DD(DU,24,8),ENDQ                       !'end mark for string
+        DD(BU, 8, 8), (2)11111111                    !'beginning mark for field
+XW2     XW, LIST+0.72, 0, $
+
+        SLC, 1200.0
+! product 1: item 07, "BOLTS ", 3 units at 000125 cents, remarks "OK"
+LIST    DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 07
+        (IQSQ)DD(BU,48,8),BOLTS Q
+        DD(DU,24,8), 003
+        DD(DU,48,8), 000125
+        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(BU,16,8),OKQ
+! product 2: item 12, "NUTS  ", 2 units at 000040 cents, remarks "END"
+        DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 12
+        (IQSQ)DD(BU,48,8),NUTS  Q
+        DD(DU,24,8), 002
+        DD(DU,48,8), 000040
+        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(DU,24,8),ENDQ
+        END, START
