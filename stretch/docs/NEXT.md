@@ -328,14 +328,19 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
+## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
 table, through ARNRM2's transfer vector and branch return
-(tests/gen_loader_deck_tb.py bss). Not run: a second subprogram
-(SRNXAD nonzero: the TWS read, AREADS, printed p.327 lines 11-22, and
-the library read) -- that needs the disk and the lost BSS processor's
-TWS layout. Earlier note, kept: a loader run needs what the lost BSS
+(tests/gen_loader_deck_tb.py bss).  R1 of
+docs/reading_notes/fortran_bss_plan.md, 2026-11-16: modes bss2 and bsslib
+chain through SRNXAD to a second subprogram, from TWS (YRLDTA = ATWSTA,
+$13 = AREADS + the disk address, p.327 ll.12-19 run) and as a library
+entry (YRLDTA = "LB" + 36 bits), which a card count never ends (0,
+p.324 l.28): DFETCH's end return, YLERR -> YAERR1 "LIBRARY ROUTINE WAS
+READ" (p.334 ll.7-16), ends it, sends its vector and ends the job.  The
+driver plays that end return (CHOSEN).  NOT BUILT: C, P, D cards, which wait on
+printed p.329 (R0.3).  Earlier note, kept: a loader run needs what the lost BSS
 processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
@@ -359,6 +364,18 @@ control card is still `B TYPE,GO`; BSS's type card is not settled.
 Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
+
+## HOW MCP REACHES THE PROCESSOR CHAIN -- read, 2026-11-16 (plan R0.5)
+
+Not on pp.266-274 (those decode the TYPE card; GO,FORTRAN is rewritten
+COMPILGO,BSS, p.271 ll.43-50) but in $EOJ, pp.395-397: the job's
+processor-control type area "PC" + the third field's first six
+characters (PCFORTRA; PCBSS for GO) is fetched, its first card broken into
+compiler type-area names at KSILO+2.0 on, each loaded by resume load as a
+binary deck (YDFCS), then "))))))))", the compiled program.  The names
+of the LPC, FORTRAN, STRAP II and BSS processors are the PC card's
+content, which no listing prints: not invented, not in prosa_dict.  The
+record is in the plan's R0.5.
 
 ## A DIGIT TOO LARGE FOR ITS RADIX -- closed 2026-11-15, host and 7030 deck
 
