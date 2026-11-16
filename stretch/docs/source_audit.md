@@ -598,10 +598,11 @@ remaining variants.  **Decimal stage 1 is built (2026-11-16):** decimal
 (`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  **Stage 2,
 the same day:** decimal `K`/`KF` and `KE`/`KFE`/`KR`/`KFR` in both
 radices (printed pp.65-67; `decks/vfl_decimal_compare.strap`, Figure 15
-as printed).  Remaining: decimal `LFT`, `DCV`, and decimal `*`/`*+`/`/`, which printed
-pp.68-70 define as LOAD TRANSIT AND SET's action with DTR, not as
-arithmetic -- so they wait for `LTRS`, not for a multiplier box
-(`docs/NEXT.md`, "DECIMAL VFL ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
+as printed).  **Stage 3, the same day:** `LTRS` in both radices, and
+decimal `*`/`*+`/`/`, which printed pp.68-70 define as LOAD TRANSIT AND
+SET's action with DTR, not as arithmetic (`decks/vfl_ltrs.strap`).
+Remaining: decimal `LFT` and `DCV` (`docs/NEXT.md`, "DECIMAL VFL
+ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
 need a case when they land.
 
 ## G3 — Assembler completeness, from `C22-6729`'s grammar

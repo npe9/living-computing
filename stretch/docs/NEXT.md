@@ -24,7 +24,7 @@ accumulate.
 
 
 
-## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1 and 2 built 2026-11-16; what they found
+## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 
 **Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,
 `M+MG`, signed and unsigned `ST`, and `SRD`.  The sums -- including
@@ -44,10 +44,28 @@ Figure 15 as printed.  Readings CHOSEN: a `KE` with AE off still
 fetches and sets the data flags; a decimal compare's "byte size less
 than four ... as in any other subtraction" inherits stage 1's open item.
 
-**Still refused:** `LTRS`, `LFT` (decimal), `DCV`, and decimal `*`, `*+`,
-`/`.
+**Stage 3, the same day: `LTRS` in both radices, and decimal `*`, `*+`,
+`/` as its action** (printed pp.67-70, read in the page images; the
+section below).  One arm in `vflIntOp`, dispatched for all four; the
+transit register gets the numeric part above a four-bit sign byte, the
+all-ones counter the effective offset, the left zeros counter's two
+high-order bits the discriminator (p.68's table: `*` 00, `/` 01, `*+` 10,
+LTRS 11), BTR or DTR by radix; location 7 written through `connCounts`.
+Oracle deck: `decks/vfl_ltrs.strap` (ten hand-derived cases).  Readings
+CHOSEN, each named in the deck: a decimal operand's numeric part goes in
+as FOUR-BIT digits ("Radix ... as in ADD", p.68; p.58); the full
+seven-bit effective offset goes to the counter in decimal too; Table 3's
+LTRS `v` is read as `x` (Vol. 1 printed p.3-8 gives a 9.6 us full word,
+which only `x` reproduces; the glossary's V = 96/92 does not), and its
+">48 bits" term is not charged.  **Open:** what the SAU does with a
+decimal field whose bytes are not digits, here as for every decimal arm;
+whether the BTR/DTR interruption (lower priority than every other, p.68)
+reaches a program on this model is not exercised by the deck (the
+harness runs with the interruption system off).
 
-### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong
+**Still refused:** `LFT` (decimal) and `DCV`.
+
+### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 
 Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is
 specified, this operation has the same action as LOAD TRANSIT AND SET,
@@ -58,8 +76,9 @@ decimal multiplication may be performed".  Printed p.69 says the same of
 `*+` ("the two high-order bits of the left zeros counter are set to
 10") and printed p.68's table gives DIVIDE 01.  So there is no decimal
 multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
-`LTRS`'s action plus DTR, and they wait for `LTRS` (unbuilt in either
-radix).  `docs/spec_decimal.md` section 2, Class C, had this already.
+`LTRS`'s action plus DTR, and they waited for `LTRS` (built 2026-11-16,
+stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
+already.
 
 ### Findings about the BINARY arms, recorded and not changed
 

@@ -451,14 +451,26 @@ data flags are set in every case (a reading, marked CHOSEN in the arm).
 `decks/vfl_decimal_compare.strap` runs printed p.66's Figure 15 as
 printed.
 
+**LOAD TRANSIT AND SET is built in both radices, 2026-11-16**, and with
+it decimal `*`, `*+` and `/`, which printed pp.68-70 define as LTRS's
+action, not arithmetic: the transit register (word 15) gets the operand's
+numeric part above a four-bit sign byte, the all-ones counter the
+effective offset, the left zeros counter's two high-order bits the
+operation's discriminator (LTRS 11, `*` 00, `/` 01, `*+` 10), and BTR or
+DTR comes on (printed pp.67-68).  The counts go to location 7 through
+`connCounts`, the connectives' route.  CHOSEN: a decimal operand is
+loaded as four-bit digits ("Radix ... as in ADD"); the full seven-bit
+offset is loaded.  Timing: Table 3's LTRS row, 16 + 2 x/y clocks
+(`StretchTiming.bsv`).  `decks/vfl_ltrs.strap`.
+
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`) except what `vflDecimalBuilt` lists (the
 radix conversions, and since 2026-11-16 the decimal loads, adds and
-stores above, and the compares below) -- `LTRS`, `LFT`, and `*`/`*+`/`/`,
-whose decimal form is LOAD TRANSIT AND SET's action (printed pp.68-70);
-radix conversion `DCV`; `LTRS`, `RNX`,
+stores above, the compares below, and since 2026-11-16 `LTRS` and
+decimal `*`/`*+`/`/`, which are its action) -- decimal `LFT`;
+radix conversion `DCV`; `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).
