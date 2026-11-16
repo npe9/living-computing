@@ -1,0 +1,108 @@
+! C22-6578 PROBLEM 3.9, "DOUBLE-PRECISION COMPARE", printed pp.32-34
+! (PDF 33-35), read in the ink.
+!
+!   "The accumulator contains a double precision floating-point
+!   quantity.  Another double precision floating-point quantity is
+!   stored in two full words, with the more significant part in M1, less
+!   significant part in M1+1.  Compare the two double precision
+!   quantities and set the appropriate indicators $AE, $AL and $AH."
+!
+!   Method 1.  Full-scale double-precision subtract followed by a
+!   test on the result.
+!       MKOMP   ST(U), A1               'save accumulator
+!               SLO (U), A1+1.
+!               DL(U), A1+1.            'double-precision subtract
+!               D-(N), M1+1.
+!               D+(N), A1
+!               D-(N), M1
+!               L(BU, 3), $RLZ          '$RLZ, $RZ, $RGZ fetched
+!               ST(BU, 3), $AL          '$AL, $AE, $AH stored
+!               DL(U), A1+1.            'restore accumulator
+!               D+(U), A1
+!               BEW, $
+!       A1      DR(U), (2)
+! The printed statements follow the deck's own two, which load the
+! accumulator, and come before the deck's data, as printed: spacing,
+! trailing periods and all.  The page defines neither M1 nor the
+! accumulator's value; the deck's are below.
+!
+! ASSEMBLED WITH ASM=strap2 (see problem_3_1.strap; "SLO (U)" with its
+! space assembles as SLO(U)).
+!
+! WHAT THE PROGRAM DOES, with the page of the rule:
+!   ST(U), A1 and SLO(U), A1+1. save the accumulator as two words:
+!     STORE, Reference Manual printed p.90; STORE LOW ORDER, p.97, "The
+!     exponent is obtained by subtracting 48 from the exponent in bits
+!     0-11 of the accumulator", the fraction is accumulator bits 60-107.
+!   The double-precision subtraction is Figure 28's (p.97), the order of
+!     its notes: low parts first, then add A1, then subtract M1.  ADD
+!     DOUBLE, p.95; LOAD DOUBLE, p.96.  The last D-(N) sets RLZ, RZ or
+!     RGZ "as in ADD" on the 96-bit difference.
+!   L(BU, 3), $RLZ fetches indicator bits 56-58 (RLZ, RZ, RGZ) into the
+!     accumulator's right end, offset 0: accumulator bits 125-127.
+!   ST(BU, 3), $AL stores them into bits 60-62 (AL, AE, AH).
+!   DL(U), A1+1. / D+(U), A1 restore the accumulator.  LOAD DOUBLE:
+!     "Accumulator bits 60-107 are set to zero.  Accumulator bits 108-127
+!     remain unchanged" (p.96); ADD DOUBLE: "Accumulator bits 108-127
+!     remain unchanged" (p.95).  So the THREE BITS THE PROGRAM FETCHED
+!     STAY IN ACCUMULATOR BITS 125-127, word 9's last three bits, and
+!     the deck checks them there: 4 = 100 = less, 2 = 010 = equal,
+!     1 = 001 = greater.
+!
+! >>> THE COMPARISON INDICATORS THEMSELVES ARE NOT CHECKED: THE MODEL
+! DROPS THE STORE INTO THEM. <<<  ST(BU, 3), $AL changes nothing on
+! the model (bsv/StretchStorage.bsv, writeWord: stores to word 11 are a
+! documented SIMPLIFICATION, dropped silently).  Reproducer:
+! decks/problem_3_vfl_store_to_indicators.strap; docs/NEXT.md
+! "C22-6578 CHAPTER 3" item 6.  tests/run_tests.sh carries the
+! indicator word's expected value as a comment, to be restored when the
+! store is implemented.
+!
+! THIS DECK'S DATA AND RESULT, HAND-DERIVED (tests/problem_3_expected.py
+! p39_run follows the same rules and agrees):
+!   THE PAGE'S OWN EXAMPLE, comment (a), with E = 1:
+!     accumulator   (E, .111...1)  and  (E-48, .1000...0)
+!                   = (1 - 2**-49) x 2**E
+!     M1, M1+1      (E+1, .1000...0)  and  (E+1-48, .000...0)
+!                   = 2**E
+!   The page: a high-order compare alone says AE; the program must say
+!   AL.  By Figure 28's order: (E-48, .1) - (E-47, 0) = (E-48, .1)
+!   normalized; + (E, .111...1): .111...1 with a one in bit 49;
+!   - (E+1, .1): the accumulator shifts right one place, .0111...1|1,
+!   less .1 is -2**-49 of 2**(E+1): negative, RLZ.  AL.
+!     A1         002FFFFFFFFFFFF0   (exponent 1, fraction all ones)
+!     A1+1.      05F8000000000000   (exponent -47, .1)
+!     word 8     002FFFFFFFFFFFF8   (restored; bits 60-63 are the low
+!                                    fraction's leading 1000)
+!     word 9     0000000000000004   (bits 64-107 zero; 100 = RLZ, less)
+!     indicator word, held back: 0000000000000028 (AL, bit 60, and RGZ,
+!       bit 58, from the restoring D+(U) of a positive number)
+!     PC 78, the BEW.
+!
+! INJECTION, OBSERVED 2026-11-16 (data side, on a copy of the deck, the
+! deck itself untouched): M1 changed from 1X2 to 281474976710655X1, so M
+! is A's high part with a zero low part and A is GREATER.  FAIL
+! verdict_acc_right only (got 1, AH); A1, A1+1, word 8 and the PC passed.
+
+! --- the deck's own: load the accumulator with (AHI, ALO) ---
+START   DL(U), AHI
+        D+(U), ALO
+! --- the printed program ---
+MKOMP   ST(U), A1
+        SLO (U), A1+1.
+        DL(U), A1+1.
+        D-(N), M1+1.
+        D+(N), A1
+        D-(N), M1
+        L(BU, 3), $RLZ
+        ST(BU, 3), $AL
+        DL(U), A1+1.
+        D+(U), A1
+        BEW, $
+A1      DR(U), (2)
+! --- the deck's data ---
+M1      DD(N), 1X2
+        DD(N), 0.0X-46
+AHI     DD(N), 281474976710655X1
+ALO     DD(N), 1X-47
+        END, START

@@ -62,6 +62,23 @@ The names Zoddsa, Zoimm, Zopo and ZOREEL are the guide's (p.202 says only
 that ZO... are relative locations); the bit positions are CHOSEN, as are
 the other names.
 
+AN AMBIGUOUS OP RESOLVED (p.23, read in the ink 2026-11-15: "the presence
+of a secondary op establishes the op as a variable field type op; the
+variable field length skeleton bit pattern is set up in the unit now; the
+location of the op index for a variable field length op is put in the unit
+and into $5").  The ambiguous entry holds one op index location and only
+"the Bits 32-63 of a Variable Field Length Op" (Fig. 23), so MAIN needs two
+things the entry does not hold.  CHOSEN, and generated here:
+  OPIVFL  the op index of a variable field length op: the one index word
+          every ambiguous name's VFL form answers to (asserted: one key for
+          all of them; it is already in OPIDX for the plain VFL names)
+  OPIFP   the op index of a floating op: likewise one word for every
+          ambiguous name's floating form, its secondary code 000 (a floating
+          op takes no secondary) -- for an ambiguous op a floating dds
+          settles (p.23: "the appropriate changes are made to the unit")
+  OPVFLH  bits 0-31 of a VFL skeleton, the same for every ambiguous name
+          (asserted), one word after OPFILL
+
 THE FILL CHAIN.  CHOSEN: one chain per distinct fill list, a control word
 per fill routine: CW(CCR) to chain to the next, CW(CR) for the last, with
 the routine in the address field and the count in the count field.  The
@@ -207,7 +224,24 @@ class Tables:
             self.chain_at[c] = a
             a += len(c)
         self.end = a
+        self.opvflh_at = a
         return self
+
+    def resolved(self):
+        """(OPIVFL's place in OPIDX, OPIFP's, the VFL skeleton's bits 0-31):
+        what MAIN Box 26 gives an ambiguous op a secondary or a dds settles
+        (p.23).  One of each for every ambiguous name, asserted."""
+        vfl, fp, hi = set(), set(), set()
+        for n, e in self.entries.items():
+            if not e.ambiguous:
+                continue
+            v, f = T.lookup(n, "BU"), T.lookup(n, "N")
+            vfl.add(self._index_key(n, v))
+            fp.add((question_bits(f), 0, tuple(f.fills)))
+            hi.add(v.skeleton >> 32)
+            assert v.skeleton & 0xFFFFFFFF == e.skeleton & 0xFFFFFFFF, n
+        assert len(vfl) == len(fp) == len(hi) == 1, (vfl, fp, hi)
+        return self.indexes.index(vfl.pop()), self.indexes.index(fp.pop()), hi.pop()
 
     def index_word(self, key):
         qb, abc, fills = key
@@ -267,6 +301,10 @@ class Tables:
         for c in self.chains:
             for i in range(len(c)):
                 L.append(f"        DD(BU,64), (16){self.fill_word(c, i):016X}   ! {c[i][0]},{c[i][1]}")
+        iv, ifp, hi = self.resolved()
+        L += [f"OPIVFL  SYN, OPIDX+{iv}.0",
+              f"OPIFP   SYN, OPIDX+{ifp}.0",
+              f"OPVFLH  DD(BU,64), (16){hi << 32:016X}"]
         L.append(END)
         return "\n".join(L) + "\n"
 

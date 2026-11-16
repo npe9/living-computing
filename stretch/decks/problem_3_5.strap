@@ -1,0 +1,143 @@
+! C22-6578 PROBLEM 3.5, "CONTINUED FRACTION EVALUATION", printed pp.29-30
+! (PDF 30-31), read in the ink.
+!
+!   "Evaluate the continued fraction
+!        F = x / (1 - x**2 / (3 - x**2 / (5 - x**2 / (7 - ...
+!                                              - x**2 / 39))))
+!   with x = pi/4."
+!
+!   Method 1.
+!       CONF    L(U), X
+!               *, X
+!               ST(U), TEMP             'x**2
+!               LX, $2, XW2
+!               L(U), NUM               '39
+!       LOOP    R/N, TEMP               'X*X/39
+!               ST, TEMP1
+!               L(U), NUM
+!               -, TWO
+!               ST(U), NUM
+!               +, TEMP1                '37-X*X/39     [p.30 from the CB]
+!               CB, $2, LOOP
+!               R/, X
+!               ST(U), TEMP2
+!               BEW, $
+!       X       DD(N), $PI/4
+!       NUM     DD(N), 39.0
+!       TWO     DD(N), 2.0
+!       XW2     XW, 0.0, 19, XW2
+!       TEMP    DR(N), (3)
+!       TEMP1   SYN(N), TEMP+1.0
+!       TEMP2   SYN(N), TEMP+2.0
+!
+! The twenty-two printed statements are the deck's last twenty-two, as
+! printed, data and all.  BLOCK A before them is the deck's copy of the
+! fifteen instructions with NUM, TWO, XW2, TEMP, TEMP1, TEMP2 and LOOP
+! renamed (an A appended), the BEW left off, and its own constants
+! written "39" and "2", which the assembler makes exact; see below.
+!
+! ASSEMBLED WITH ASM=strap2.  strap_asm.py refuses "*, X" and the six
+! others like it; decks/problem_3_bare_op_symbol_dds.strap.  The page's
+! own comment (c) is the rule the host STRAP II follows: no dds written,
+! so "the dds of the rightmost symbolic address" -- every one here is
+! (N) -- and the operations are normalized floating point.  "R/N" is
+! RECIPROCAL DIVIDE with the negative sign modifier, which comment (b)
+! says "should not be confused with R/(N)".
+!
+! WHAT THE PROGRAM DOES.  TEMP = x**2.  With the accumulator holding the
+! running denominator d (39 to begin), R/N, TEMP makes -x**2/d
+! (Reference Manual printed p.94: "The operand specified by the
+! effective address, the dividend, is divided by the operand in the
+! left half of the accumulator ... The sign of the dividend is modified
+! by the sign modifiers"), NUM steps down by two, and the sum is the
+! next denominator.  Nineteen times: 37, 35, ... 1.  Then R/, X is x/d.
+! The fraction is tan x, so F = tan(pi/4) = 1 and the last TEMP1 is
+! -(1 - pi/4) = -0.2146018366025517.
+!
+! THE EXPECTED VALUES ARE DERIVED FROM THE MANUAL'S RULES, NOT FROM THE
+! MODEL, by tests/problem_3_expected.py (p35); the rules and pages are
+! in its header.  About sixty truncating steps.
+!
+!   BLOCK A, exact 39 and 2:
+!     TEMP2A   000FFFFFFFFFFFE0   0.9999999999999929   F: 1, two units
+!                                 of the 48th place short, the way
+!                                 truncation errs
+!     NUMA     0028000000000000   exactly 1 = 39 - 19 x 2, by hand:
+!                                 integers, every subtraction exact
+!     TEMPA    0009DE9E64DF22D0   0.6168502750680780   x**2
+!                                 ((pi/4)**2 = 0.6168502750680849)
+!     TEMP1A   005DBC095777A5B8   -0.2146018366025499  -(1 - pi/4),
+!                                 sign bit on
+!
+!   THE PAGE, with 39.0 and 2.0 as the host STRAP II makes them, each
+!   one unit of its 48th place short (39 - 2**-42, 2 - 2**-47; see
+!   problem_3_4_method1.strap):
+!     TEMP2    00280000000002A0   1.0000000000002984
+!     NUM      000FFFFFFFFFFC20   0.9999999999997797
+!     TEMP     0009DE9E64DF22D0
+!     TEMP1    005DBC095777A6E8   -0.2146018366025668
+!     X_as_assembled 000C90FDAA221680, TWO_as_assembled 002FFFFFFFFFFFF0
+!   NUM by hand.  39 - 2**-42 less 2 - 2**-47 is 37 - 2**-42 + 2**-47,
+!   and the result is truncated to 48 bits.  While the result is 2 or
+!   more its 48th place is 2**-46 or coarser, so the 2**-47 is dropped
+!   every time and the 2**-42 is kept: 37 - 2**-42, 35 - 2**-42, ...
+!   3 - 2**-42 after eighteen steps.  The nineteenth result is below 1,
+!   its 48th place is 2**-48, and the 2**-47 survives once:
+!   NUM = 1 - 2**-42 + 2**-47 = 1 - 62 x 2**-48, fraction FFFFFFFFFFC2,
+!   exponent 0: 000FFFFFFFFFFC20.  The calculator agrees.
+!   So the page's F is 3 x 10**-13 above 1 where block A's is 7 x
+!   10**-15 below: what the one-unit-short constants cost.  WHICH THE
+!   7030's STRAP DID IS NOT DECIDED BY ANY PRINTED WORD
+!   (tests/check_strap2_dd.py); the model is checked against both.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): "TWOA DD(N), 2" changed to "TWOA DD(N), 3".
+! FAIL A_F, A_NUM and A_TEMP1; A_TEMP, the six checks of the page's own
+! block and the PC passed.
+
+! --- block A: the deck's copy, exact constants ------------------------
+CONFA   L(U), X
+        *, X
+        ST(U), TEMPA
+        LX, $2, XW2A
+        L(U), NUMA
+LOOPA   R/N, TEMPA
+        ST, TEMP1A
+        L(U), NUMA
+        -, TWOA
+        ST(U), NUMA
+        +, TEMP1A
+        CB, $2, LOOPA
+        R/, X
+        ST(U), TEMP2A
+! --- the page, as printed -------------------------------------------
+CONF    L(U), X
+        *, X
+        ST(U), TEMP
+        LX, $2, XW2
+        L(U), NUM
+LOOP    R/N, TEMP
+        ST, TEMP1
+        L(U), NUM
+        -, TWO
+        ST(U), NUM
+        +, TEMP1
+        CB, $2, LOOP
+        R/, X
+        ST(U), TEMP2
+        BEW, $
+X       DD(N), $PI/4
+NUM     DD(N), 39.0
+TWO     DD(N), 2.0
+XW2     XW, 0.0, 19, XW2
+TEMP    DR(N), (3)
+TEMP1   SYN(N), TEMP+1.0
+TEMP2   SYN(N), TEMP+2.0
+! --- block A's data -------------------------------------------------
+NUMA    DD(N), 39
+TWOA    DD(N), 2
+XW2A    XW, 0.0, 19, XW2A
+TEMPA   DR(N), (3)
+TEMP1A  SYN(N), TEMPA+1.0
+TEMP2A  SYN(N), TEMPA+2.0
+        END, CONFA

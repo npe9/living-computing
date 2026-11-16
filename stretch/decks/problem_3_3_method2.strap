@@ -1,0 +1,53 @@
+! C22-6578 PROBLEM 3.3, "POLYNOMIAL EVALUATION", Method 2, "Use the
+! nesting technique", printed p.27 (PDF 28), read in the ink.  The
+! problem statement is in problem_3_3_method1.strap.
+!
+!   Method 2.  Use the nesting technique.
+!               p(x) = (...((a20 x + a19)x + ...)x + a0.
+!               LX, $2, XWORD2
+!               L(N), A+20.0
+!       MULTI   *(N), X
+!               +(N), A($2)
+!               CB-, $2, MULTI
+!               ST(U), POLY
+!               BEW, $
+!       XWORD2  XW, 19.0, 20, $
+!
+! The eight printed statements are the deck's first eight, as printed.
+! (The page leaves the first statement unnamed; the deck names it START
+! so that END has somewhere to point.)
+! X, POLY and A are the deck's, the same data as Method 1: x = 3,
+! a(k) = (-1)**k (k + 1).
+!
+! ASSEMBLED WITH ASM=strap2, as the rest of Chapter 3 is.
+!
+! THE EXPECTED VALUE IS HAND-DERIVED, and is Method 1's: P(3) =
+! 55,570,626,391 = 048CF04477570000 (worked in problem_3_3_method1.strap).
+! Nesting forms only integers too -- each partial result is
+! a20 x**j + ... , at most 21 x 3**20 x 3/2 in magnitude, far below
+! 2**48 -- so every step is exact and the two methods must agree to the
+! bit.  The page's comment (a) says nesting is "more accurate"; on this
+! data there is no inaccuracy for it to remove.
+!
+! x2_after: CB- ran twenty times from value 19.0, count 20, so the
+! value field went 19, 18, ... 0, -1 and the count reached zero.  Not
+! checked: the page says nothing about $2 afterwards.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): a(7) changed from -8 to -9.  FAIL POLY and
+! acc_left (got 048cf0446ecc0000 for both); the PC passed.
+
+START   LX, $2, XWORD2
+        L(N), A+20.0
+MULTI   *(N), X
+        +(N), A($2)
+        CB-, $2, MULTI
+        ST(U), POLY
+        BEW, $
+XWORD2  XW, 19.0, 20, $
+! --- the deck's data ------------------------------------------------
+X       DD(N), 3
+POLY    DR(N), (1)
+A       DD(N), 1, -2, 3, -4, 5, -6, 7, -8, 9, -10, 11
+        DD(N), -12, 13, -14, 15, -16, 17, -18, 19, -20, 21
+        END, START

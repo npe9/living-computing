@@ -1,0 +1,27 @@
+! REPRODUCER, an ASSEMBLER finding (docs/NEXT.md, "G2.1 CHAPTER 4: WHAT
+! THE ASSEMBLER REFUSES IN A DD(N)").  strap_asm.py refuses this deck:
+!
+!   cannot parse DD(N) literal '$N'
+!
+! C28-6129 printed p.11 (PDF 15), "5. Symbols For Mathematical
+! Constants": $E e, $M log10 e, $N loge 2, $PI pi, $INF infinity.
+! "These five symbols may only be used in a data field of a Data
+! Definition pseudo operation where normalized floating point (N) has
+! been specified ...  CONSTANT DD(N), $PI assigns the floating point
+! equivalent of the quantity pi to the symbol CONSTANT."
+!
+! C22-6578 Chapter 4 uses them in every floating-point problem from 4.9
+! on: "DD(N), 2*$PI" (printed p.43), "DD(N), $NX47" (p.45), "DD(N),
+! 1024*$N", "1/$N", "$NX-11" (p.46), "DD(N), $PI" (p.47).
+!
+! When it assembles, LN2 must hold .693147180559945... with exponent 0:
+! 000B 1721 7F7D 1CF0 if the 48-bit fraction is truncated (the next
+! bits are 0111 1001, so rounding gives the same word).  "DD(N), $PI",
+! refused the same way, would be 3.14159... = .785398... x 2**2: 004C 90FD AA22 1680 truncated
+! (next bits 1100 0010; ROUNDING GIVES ...1690, so $PI can tell which
+! STRAP did, if a listing ever prints it).
+! tests/check_problem_4_dd_refusals.py asserts the refusal.
+
+START   BEW, $
+LN2     DD(N), $N
+        END, START

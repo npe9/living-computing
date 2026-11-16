@@ -614,8 +614,18 @@ specific errors.
 
 **G4.1 Write the atlas oracle.** `run_tests.sh:3057` has said Perf.
 Char. Vol. 2's per-instruction atlas is the real timing oracle and that
-`perf_char_timing.py` is "shaped for" it. It is still not written, and
-**M2's correctness is defined as how much of that residual it closes**.
+`perf_char_timing.py` is "shaped for" it. **M2's correctness is defined
+as how much of that residual it closes**.
+
+*Status 2026-11-16: written, first measurement taken.* The oracle is in
+`docs/atlas_oracle.md`. 33 of the 139 atlas pages are transcribed
+(`tests/perf_char_vol2_atlas.txt`; the fast self-check
+`tests/check_atlas_data.py` is in `run_tests.sh`). `tests/atlas_oracle.py`
+runs 6,265 cases in about an hour. Today's residual has mean −18.9
+clocks and median −7.1, with 7% exact. The largest single cause is that
+the model's VFL time does not depend on the operation. Remaining: FP
+pages 42-101 and VFL forwarding/immediate (106 pages), plus the
+generators listed in that doc.
 
 **G4.2 Keep the probe guard honest.** `verify_no_probes.py` caught three
 real accidents in one day; add a check for anything else that looks
@@ -2025,3 +2035,193 @@ counts; B.5's `ADD TO VALUE, X1, 7.17`, which names the left-zeros
 counter and assembles as address 7.0; B.5's `LOAD COUNT` from the word
 part of an index value (Reference Manual printed p.24).
 
+
+# >>>>>> G2.1, CHAPTER 3, 2026-11-16: TEN PROBLEMS, CHAPTER 3 FINISHED <<<<<<
+
+`C22-6578` chapter 3, "Floating-Point Arithmetic", printed pp.26-34,
+Problems 3.1-3.10.  Every printed method was read from the page images
+and transcribed as printed, and every one runs.  The expected values were
+derived by hand from the Reference Manual, with pages cited in each
+deck's header.  The long truncating sequences are checked against
+`tests/problem_3_expected.py`, a calculator written from the same
+manual pages, whose `--self` checks are registered.  Each problem is
+proven discriminating by a data-side injection on a copy of its deck,
+and the result is recorded in the header as OBSERVED.  All decks use
+`ASM=strap2` (see items 1-2 below).  The counts below do not change this
+section's earlier tables.
+
+| Problem | Deck(s) | Registered checks | Status |
+|---|---|---|---|
+| 3.1 integer and fraction parts | `problem_3_1` | 9 + PC | pass |
+| 3.2 integer part into the count of $1 | `problem_3_2` | 3 + PC | pass |
+| 3.3 degree-20 polynomial | `problem_3_3_method{1,2,3}` | 3, 2, 3 + PC each | pass |
+| 3.4 trapezoidal rule | `problem_3_4_method{1,2}` | 6 + PC each | pass; **the page's program never forms the integral** (NEXT.md ch.3 item 3) |
+| 3.5 tan(pi/4), continued fraction | `problem_3_5` | 10 + PC | pass |
+| 3.6 scalar product, LFT / *+ / SRD | `problem_3_6` | 3 + PC | pass |
+| 3.7 cube root | `problem_3_7` | 9 + PC | pass |
+| 3.8 VFL integers to normalized FP | `problem_3_8_positive` | 29 + PC | pass |
+| 3.8 comment (b), EPLUS removed | `problem_3_8_no_eplus` | 29 + PC | pass against the page's claim; **the manual's p.87 text disagrees** (item 5) |
+| 3.8 on signed data | `problem_3_8` | 2 + PC; 27 held back | **model fault**: address-8 sign (item 4) |
+| 3.9 double-precision compare | `problem_3_9_method1_{less,equal,greater}`, `problem_3_9_method2_{page_fault,less}` | 4 + PC each; page_fault 5 + PC; 4 indicator words held back | pass; **the indicator store is dropped** (item 6) |
+| 3.10 integer part of log2 N | `problem_3_10` | 3 + PC | pass |
+
+**What it found** (docs/NEXT.md, "C22-6578 CHAPTER 3: WHAT THE PAGES
+FOUND", items 1-6; each item has a reproducer deck):
+
+1-2. **`strap_asm.py` refuses two printed forms.**  The first is
+   `DD(N), 0.0X48`, a zero fraction with an exponent; the reproducer is
+   `problem_3_dd_zero_fraction`.  The second is a bare `*, X` taking the
+   dds of its symbol, C22-6578 p.30 comment (c); the reproducer is
+   `problem_3_bare_op_symbol_dds`.  The host STRAP II assembles both.
+3. **A fault in the book.**  Problem 3.4's M+ leaves the accumulator
+   unchanged, so the closing multiply takes the wrong value.
+4. **MODEL FAULT.**  A floating-point operand at address 8 takes its
+   sign from accumulator bit 60 instead of the sign byte, on fetch and on
+   store.  This is against Reference Manual p.80.  The reproducer is
+   `problem_3_fp_address_8_sign`.
+5. **UNSETTLED.**  A normalized ADD whose sum is non-zero only in the
+   low 48 bits.  The model normalizes it.  Manual pp.82 and 87 say the
+   result is a zero.  C22-6578's own comment (b) agrees with the model,
+   and its comment (a) agrees with the manual.  The reproducer is
+   `problem_3_fp_add_low_half_zero`, and `jb_af1c` is the third witness
+   to look in.
+6. **MODEL LIMITATION.**  A VFL store into the indicator register, word
+   11, is dropped silently.  `StretchStorage.bsv` documents this as a
+   simplification.  The reproducer is
+   `problem_3_vfl_store_to_indicators`.
+
+**Two of the page's claims about its own programs are pinned and hold
+on the model:**
+
+* Problem 3.9's p.34 counter-example: Method 2 calls the smaller number
+  high.
+* Problem 3.7's "round-off error in the last iteration".
+
+**Held-back checks, to be restored when the model is fixed:**
+
+* Problem 3.8's 27 checks on signed data.
+* The four 3.9 indicator words.
+
+Both sets are kept as comments in `tests/run_tests.sh` next to their
+decks.
+
+Chapter 4 ("Special Problems", printed p.35 on) has not been started.
+
+# >>>>>> G2.1, CHAPTER 4, 2026-11-15: THE LAST CHAPTER, FROM ITS LAST PROBLEM BACKWARDS <<<<<<
+
+`C22-6578`'s contents page (PDF 4) lists four chapters and eight
+appendices: 1 Instruction Arithmetic Unit Instructions (1.1-1.9),
+2 Variable Field Length Instructions (2.1-2.12), 3 Floating-Point
+Arithmetic (3.1-3.10), 4 Special Problems (4.1-4.13).  There is no
+Chapter 5, so this batch is Chapter 4 taken from 4.13 towards 4.1.
+The counts above are not edited; this section adds to them.
+
+**4.11 was built first because 4.12 and 4.13 both call it** ("Assume
+the existence of the previous exp (x) program", printed p.46).
+
+**How a floating result is checked here, and what that does not pin.**
+There is no independent bit-exact model of the 7030's double-length
+arithmetic in the project, so a result word is compared with the real
+number the page defines, within a bound derived from the printed
+program, not with a word (`tests/verify_problem_4_fp.py`).  The
+measured floor is in each deck: 4.11 catches a coefficient wrong by one
+part in 1E10 and passes one wrong by one part in 1E13.
+
+**Assembler refusals the chapter runs into**, each with a reproducer and
+held by `tests/check_problem_4_dd_refusals.py` (8 checks): arithmetic in
+a DD(N) entry, `$N`/`$PI`, a zero DD(N), and `*` in an address (the last
+is G3.1).  `docs/NEXT.md`, "G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES
+IN A DD(N)".  The decks run on marked substitutes.
+
+## The problems, in the order run
+
+### 4.11 EXP, printed pp.45-46 -- `decks/problem_4_11.strap` -- PASSES as the model stood
+
+11 exact checks and the PC, 12 within-bound checks
+(`tests/verify_problem_4_fp.py 4.11`).  Exercises `KMG`, `D*`, `D+`
+normalized and unnormalized, a signed VFL `ST` out of a floating
+accumulator, `SHFL`, `*`, `E+`, `LA(U)` on `$L`, and two connectives on
+the accumulator's exponent bits, in one printed subroutine.  **No wrong
+result.**  Three printed errata (a factorial with a zero too many, a
+missing comma, an offset one short of the bit its comment names) and one
+unstated loss of accuracy (1.39 |x| units, 847 measured at x = 709), all
+in the deck's header and in `NEXT.md`.
+
+### 4.12 transcendental function, printed pp.46-47 -- `decks/problem_4_12.strap` -- PASSES as the model stood
+
+2 exact checks and the PC, 6 within-bound checks
+(`tests/verify_problem_4_fp.py 4.12`).  f(pi) = 2x e**(e**-x) /
+sqrt(1 - e**-x) = 6.7071807483152..., read from `$L` and `$SB` where
+the printed `BEW` leaves it: 2.31 units from the program's own number,
+2.14 from the page's.  Adds to 4.11: `LN`, `E+I(U)`, `+`, **`SRT(N), $L`
+-- STORE ROOT whose storage operand is the accumulator's left half** --
+and `R/`.  **No wrong result.**  The page's comment (d), that it and EXP
+assemble together with "no multiply defined symbol", holds.  One
+uncertain reading, in the typeset formula only (an e with a bar over
+it, read e**-x from the program and from 4.13).
+
+### 4.13 numerical integration, printed pp.47-51 -- `decks/problem_4_13.strap` -- PASSES as the model stood
+
+9 exact checks and the PC, 2 within-bound checks
+(`tests/verify_problem_4_fp.py 4.13`).  The book's last and largest
+program: MAIN, the 8-point Legendre-Gauss subroutine LEGQ8, the
+integrand SUBR and EXP, about a hundred printed statements, assembled
+together.  ANS = 2.72454650263143, 2.11 units from the rule worked from
+the page.  Adds: **a `SIC, SUBR; NOP` word used as data, read by `LVE`
+and stored by `SVA` into two branches (self-modification, both words
+read back)**, `LFT` with `*N+` and `*+`, `SRD`, `SLO` with a sum kept in
+two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
+**No wrong result.**
+
+* **A misprint in the ink**: `LEGQ8X`'s fourth abscissa is printed
+  `.18343 46434 95650`; the Legendre-Gauss node is `.18343 46424 95650`.
+  Run as printed.  It is worth 5.3E-11 in the answer and the check
+  follows it (the expected value is computed from the nodes as
+  assembled); correcting it moves the model's ANS and the expected value
+  together.
+* **`SRD` is built.**  "G2.3 The arms still refused" above lists it; it
+  ran here.  `bsv/README.md` already says so.
+* What is checked is the 8-point RULE, 2.724546, not the integral,
+  2.723620: the integrand goes as sqrt(x) at 0.
+
+### 4.10 natural logarithm, printed pp.44-45 -- `decks/problem_4_10.strap` -- A MODEL BUG
+
+Run at six arguments (`tests/verify_problem_4_fp.py 4.10:<x>`), 2 exact
+checks and the PC plus 4 within-bound checks each.  **x = .75, 3, 1E6
+pass; x = 2.5, .001, 1E-300 fail the three series checks and nothing
+else.**  Cause, decided from the Reference Manual: location 8 addressed as
+a floating-point operand must carry `$SB` bits 4-7 as its sign (printed
+p.37); the model uses word 8's bits 60-63, so `*(N), $L` squares a
+negative Z to -Z**2.  Reproducer `decks/repro_fp_operand_location8.strap`;
+`docs/NEXT.md` "LOCATION 8 AS A FLOATING-POINT OPERAND".  The three
+failing runs are registered `--known-wrong` (they pass only while exactly
+those checks fail).  **It is the first wrong result in anything the
+model executed from `C22-6578` since the table above's one bug find,
+through the nine problems of Chapter 1 ("G2.1, THE FIRST BATCH") and
+4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
+`L(B,12,1)` and `-I(BU,1)` turning a floating exponent into a VFL integer
+and back -- all right.  A fourth printed erratum: sqrt2 printed
+1.41421356205080.
+
+### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
+
+`tests/verify_problem_4_fp.py 4.9m1:<x>`, six arguments run, four
+registered.  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
+4.10), and `SRDN,$L` -- a STORE into location 8 -- is lost, leaving the
+accumulator's own bits 60-63 where p.96 stores the sign and flags (second
+reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
+passes, and by luck.  Erratum: the statement says "Create 2 pi x" for
+"cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
+`D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
+those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
+("undefined symbol U") -- read in the ink but not decided.
+
+## Where Chapter 4 stands, 2026-11-16
+
+Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
+one cause (location 8 as a floating-point operand and as a store),
+four assembler refusals, six printed errata.**  Not reached: 4.9
+Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
+(bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`
+field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
+4.1 (VFL square root).

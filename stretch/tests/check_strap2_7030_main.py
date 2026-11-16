@@ -20,8 +20,9 @@ THE ORACLES.  For every name of the 7030 op table, "NAME,0":
              file must match bit for bit, step 4e).
   the rest   every other fixed-format word is zero but ZIFALL (Box 2)
 and the stand-ins: a branch-on-indicator op and a misspelling (status 5,
-MIBA and MBSPEC not written), nine op characters (5), a modifier (6, with
-Box 23 done), an illegal character first (2) and in the op (2), ( first
+MIBA and MBSPEC not written), nine op characters (5), a modifier (LX(SEOP):
+since step 4b-ii Box 26 runs, and this one is status 7, message 2, with
+Box 23 done; it was status 6 when Box 24 stopped), an illegal character first (2) and in the op (2), ( first
 (3), ' first (4), the null op ",0" (Box 8 to Box 17: the table holds it,
 p.21), and two statements on one card (Box 38 stops at the real
 semicolon).
@@ -136,7 +137,7 @@ def main():
 
     stmts = [(n, f"{n},0") for n in names]
     special = [("BAE", "BAE,0", 5), ("too long", "ABCDEFGHI,0", 5),
-               ("modifier", "LX(SEOP),$1,0", 6), ("illegal first", ")X,0", 2),
+               ("modifier", "LX(SEOP),$1,0", 7), ("illegal first", ")X,0", 2),
                ("illegal in op", "LX)Y,0", 2), ("entry mode", "(A)DD,0", 3),
                ("quote", "'COMMENT", 4), ("null op", ",0", 0)]
     cards = [card(" ", "", s) for _, s in stmts] + [card(" ", "", s) for _, s, _ in special]

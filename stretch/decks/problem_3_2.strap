@@ -1,0 +1,74 @@
+! C22-6578 PROBLEM 3.2, "INTEGER PART OF FLOATING-POINT WORD", printed
+! p.26 (PDF 27), read in the ink.
+!
+!   "The floating-point number N in location DOG is defined as in the
+!   previous problem.  Put the lowest 18-bits of the VFL integer
+!   corresponding to I into the first 18-bits of the count field of $1."
+!
+!   Method 1.   DL(U), DOG
+!               D+(U), X48
+!               ST(BU, 18), 17.28, 68   '$1.28 is also acceptable
+!               BEW, $
+!       X48     DD(N), 0.0X48
+!
+! The five printed statements are the deck's last five before its data,
+! as printed.  Blocks A and B are the same three instructions on other
+! data with DOG renamed; block B uses the page's other spelling, $1.28.
+! Each block is preceded by the deck's own LX, $1, PAT, which fills $1
+! with a pattern so that a store that reached outside the count field
+! would show, and blocks A and B are followed by the deck's own SX to
+! keep what $1 held.
+!
+! ASSEMBLED WITH ASM=strap2: see problem_3_1.strap.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED:
+!   After D+(U), X48 the integer part of N is in accumulator bits 12-59
+!   with its units bit at bit 59 (problem_3_1.strap's header, Reference
+!   Manual printed p.86-87 and p.95).  An offset of 68 names the field
+!   whose right end is 68 bits from the accumulator's right end, bit
+!   127: bit 59.  So the 18 bits stored are accumulator bits 42-59, the
+!   lowest 18 bits of the integer, and BU stores no sign.
+!   The count field of an index word is bits 28-45, 18 bits; 17.28 is
+!   word 17 ($1) bit 28.  Nothing else in $1 may change.
+!
+!   PAT is A5A5A5A5A5A5A5A5.  Its bits 28-45 are replaced:
+!     block  N            integer  lowest 18 bits   $1 afterwards
+!     A      -7.25        7        7                A5A5A5A0001DA5A5
+!     B      1048581.5    2^20+5   5                A5A5A5A00015A5A5
+!     last   2.5          2        2                A5A5A5A00009A5A5
+!   (the count sits at bits 28-45, so the hexadecimal digit that holds
+!   its two lowest bits also holds the pattern's bits 46-47, 01:
+!   7 -> 1D, 5 -> 15, 2 -> 09; A5A5A5A before it and A5A5 after it are
+!   the pattern's own.)
+!
+!   Block B is the reason for "lowest 18-bits": the integer has 21.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): DOGA changed from -29/4 to -37/4 (-9.25).  FAIL A_count only
+! (got a5a5a5a00025a5a5); the other two checks and the PC passed.
+
+START   LX, $1, PAT
+        DL(U), DOGA
+        D+(U), X48
+        ST(BU, 18), 17.28, 68
+        SX, $1, RESA
+        LX, $1, PAT
+        DL(U), DOGB
+        D+(U), X48
+        ST(BU, 18), $1.28, 68
+        SX, $1, RESB
+        LX, $1, PAT
+! --- the page, as printed -------------------------------------------
+        DL(U), DOG
+        D+(U), X48
+        ST(BU, 18), 17.28, 68
+        BEW, $
+X48     DD(N), 0.0X48
+! --- the deck's data ------------------------------------------------
+DOG     DD(N), 5/2
+DOGA    DD(N), -29/4
+DOGB    DD(N), 2097163/2
+PAT     DD(BU, 64), 11936128518282651045
+RESA    DR(BU, 64), (1)
+RESB    DR(BU, 64), (1)
+        END, START

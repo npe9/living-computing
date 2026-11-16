@@ -1,0 +1,255 @@
+! C22-6578 PROBLEM 4.13, "NUMERICAL INTEGRATION", printed pp.47-51 (PDF
+! 48-52), Method 1 (the program is printed pp.49-50), read in the ink
+! at 250 dpi.  THE LAST PROBLEM IN THE BOOK.
+!
+!   "Provide a subroutine to handle the numerical integration of any
+!   function over any finite interval.  Use it to evaluate:
+!   I = integral from 0 to 1 of 2x e**(e**-x) / sqrt(1 - e**-x) dx"
+!
+! The page's specification (c), printed p.48: LEGQ8 is entered by "LVI,
+! $15, $+1.0;B, LEGQ8"; "the leading 19 bits of the ensuing full word
+! must contain the address of the subroutine for the evaluation of the
+! integrand"; then the lower limit A, the upper limit B, the error
+! return at 3.0($15) and the normal return at 4.0($15) with "the
+! approximate value of the integral ... in the accumulator".
+!
+! FOUR PRINTED PIECES, assembled together in the page's order (its
+! arrangement (d), printed pp.48-49): MAIN, LEGQ8, SUBR, and EXP, which
+! the page gives as "(identical with a previous program)" and is
+! printed p.46 as decks/problem_4_11.strap has it, substitutes and
+! errata included.  EVERY INSTRUCTION IS AS PRINTED.  The label is
+! printed "Main" and the comment (a) calls it MAIN.
+!
+! SUBSTITUTED, two cards, for one cause: "DD(N), 0.0" (MAIN's lower
+! limit, and LEGQ8Z) is refused by this assembler, a zero DD(N)
+! (decks/repro_dd_n_zero.strap).  Each is "DD(BU,64,8), 0", a zero
+! fraction with exponent 0.  The program needs only a zero fraction:
+! DL(N) of it then D-(N) of 1.0 is -1.0 whatever the zero's exponent.
+!
+! WRONG IN THE INK, AND RUN AS PRINTED: LEGQ8X's fourth abscissa is
+! printed ".18343 46434 95650".  The 8-point Legendre-Gauss node is
+! .18343 46424 95650 -- the ninth digit is a 3 for a 2.  The other three
+! abscissae and all four weights agree with the standard table to their
+! fifteen printed digits.  The misprint is worth 5.3E-11 in the answer,
+! about fifteen thousand units of its 48-bit fraction, so it is far
+! above what the check resolves, and the check follows it: the expected
+! value below is computed from the nodes AS ASSEMBLED.
+!
+! WHAT IS COMPUTED IS THE RULE, NOT THE INTEGRAL.  With a = 0, b = 1:
+!
+!   G = 1/2 * sum over the four z, w of
+!           w * ( f(1/2 + z/2) + f(1/2 - z/2) )
+!     = 2.72454650263146   with the nodes as printed
+!       2.72454650268418   with the fourth node corrected
+!   I = 2.72362017099      the integral itself
+!
+! The integrand goes as 2e sqrt(x) at 0, so the 8-point rule is good to
+! three figures and no more (the page's comment (d): exact for
+! polynomials of 15th degree or less; (e): "in case of suspicion of
+! inaccuracy, the domain can be subdivided").  ANS is checked against G.
+!
+! WHAT THE PROGRAM DOES THAT 4.11 AND 4.12 DID NOT, by the Reference
+! Manual:
+!   SIC, SUBR; NOP     a word of DATA written as instructions: LVE, $2,
+!                      0.($15) takes the effective address of the half
+!                      word at 0.($15) without executing it (printed
+!                      p.29), and the two SVA store it into the address
+!                      fields of "B, $" at LEGQ8A and LEGQ8B (p.24).
+!                      THE PROGRAM MODIFIES ITSELF, and the check reads
+!                      both words back.
+!   DL / D- / E-I(U)   -(b-a)/2;  SRD(N), LEGQ8P stores it ROUNDED
+!                      (printed p.96);  D+ b;  SRD(N), LEGQ8Q.
+!   LFT / *N+ / *+     LOAD FACTOR then MULTIPLY AND ADD: Q -+ P z, the
+!                      argument, formed double-length in one step
+!                      (printed pp.98-99).
+!   D* W, D+ T, D+ S, ST(N) S, SLO(U) T
+!                      the sum is kept in TWO words, high and low: SLO
+!                      stores accumulator bits 60-107 as a word of its
+!                      own (printed p.97).
+!   *N(N), LEGQ8P      times -P = (b-a)/2.
+!   SX / LX of $2, $15 saved and restored through LEGQ82 and LEGQ8F.
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PAGE, NOT THE MODEL
+! (tests/verify_problem_4_fp.py 4.13, sixty-digit decimal arithmetic):
+!
+!   within a bound
+!     ANS     G as above, twice as in 4.11: within 8 units of the 48-bit
+!             fraction of G with EXP taken as 2**(x * RLN2), and within
+!             16 of G with a true e**x.  Every argument is between 0 and
+!             1, so EXP's 1.39 |x| is under a unit and a half per call,
+!             and 4.12 measured one f at 2.3 units; eight of them, each
+!             weighted by under .19, into a double-length sum.
+!             THE LOW BITS ARE NOT PINNED.
+!   exact, by hand
+!     the halt   the BEW after "ST(U), ANS", MAIN + 5.32, not the error
+!                BEW at MAIN + 4.0.
+!     LEGQ8P     -(1 - 0)/2 = -1/2 = 0008 0000 0000 0008.
+!     LEGQ8Q     (1 + 0)/2  =  1/2 = 0008 0000 0000 0000.
+!     $2         0, as it was: LEGQ8 "restored during exit".
+!     $15        MAIN + 1.0 in the value field, as MAIN's LVI left it.
+!     LEGQ82, LEGQ8F   the saved $2 and $15, the same two words.
+!     LEGQ8A, LEGQ8B   the word holding each "B, $", with that half
+!                word reading "B, SUBR" -- the same deck assembled with
+!                "B, SUBR" written there.
+!     $14        value 14.0, count 0, refill XW14 (EXP's, as in 4.11).
+!
+! OBSERVED INJECTIONS, 2026-11-15, each
+!   python3 tests/verify_problem_4_fp.py 4.13 --sub OLD NEW
+! with one data card changed.  Control: 9 exact checks and the PC pass,
+! 2 within-bound checks pass, ANS = 004A E5EF 84B4 EEC0 =
+! 2.72454650263143, off 2.11 units from the program's number and 2.04
+! from the rule's.
+!
+!   the upper limit 1.0 -> 2.0
+!       FAILED: P and Q (0028..08 and 0028..00, -1 and 1) and both ANS
+!       checks (6.99).  Nothing else.
+!   SUBR's WON 1.0 -> 1.00000000001
+!       FAILED: both ANS checks, off 3572 units, and only those.
+!   LEGQ8I's count, "XW, 0,4,$" -> "XW, 0,3,$"
+!       FAILED: both ANS checks (1.67: the fourth node pair is missing).
+!   the misprinted node corrected, ".18343 46434 95650" -> "...46424..."
+!       PASSED, AS IT SHOULD: ANS moved to 004A E5EF 84B5 D6A0 =
+!       2.72454650268415 and the expected value moved with it, off 2.18
+!       units.  The model follows a node changed in its ninth digit.
+!   the fourth weight's twelfth digit, "78362" -> "79362"
+!       PASSED likewise, off 1.96 units: the oracle reads the data.
+!   SUBR's WON 1.0 -> 1.00000000000001 (one part in 1E14)
+!       SURVIVED, off 5.11 units against 8.  The floor, as in 4.12.
+
+        SLC, 1000.0
+! Main program for numerical integration.  Answer should be in ANS.
+MAIN    LVI, $15, $+1.0; B, LEGQ8
+        SIC, SUBR; NOP
+! printed: DD(N), 0.0                   'lower limit
+        DD(BU,64,8), 0
+        DD(N), 1.0                      !upper limit
+        BEW, $; NOP                     !error measure
+        ST(U), ANS; BEW, $              !normal end of program
+ANS     DRZ(U), (1)
+! 8-point Legendre-Gauss integration subroutine
+! integrand evaluation subroutine with 1.($15) return must be provided by user, with
+!   effective address at 0.($15), lower limit must be at 1.($15) and upper limit at
+!   2.($15), both as floating-point numbers.
+! the integration subroutine will return normally at 4.($15), with answer in $L.
+! error return is 3.($15).
+LEGQ8   SX, $2, LEGQ82;SX,$15,LEGQ8F
+        LVE,$2,0.($15)
+        SVA, $2, LEGQ8A
+        SVA, $2,LEGQ8B
+        DL(N), 1.($15)
+        D-(N), 2.($15)                  !a-b
+        E-I(U),1                        !-(b-a) /2
+        SRD(N),LEGQ8P
+        D+(N), 2.($15)                  !(b+a)/2
+        SRD(N),LEGQ8Q
+        LX, $2, LEGQ8I;L(U),LEGQ8Z
+        ST(U), LEGQ8S;ST(U), LEGQ8T
+LEGQ8L  DL(U), LEGQ8Q
+        LFT(U), LEGQ8P
+        *N+(N), LEGQ8X($2)              !(b-a) z/2 + (b+a) /2
+        LVI, $15, $+1.0
+LEGQ8A  B, $                            !branch address changeable
+        B, LEGQ8E; NOP                  !error
+        ST(N), LEGQ8R                   !normal return from integrand subroutine
+        DL(U), LEGQ8Q
+        LFT(U), LEGQ8P
+        *+(N), LEGQ8X($2)               !-(b-a) z/2 + (b+a) /2
+        LVI, $15, $+1.0
+LEGQ8B  B, $                            !branch address changeable
+        B, LEGQ8E; NOP
+        +(N), LEGQ8R
+        D*(N), LEGQ8W($2)
+        D+(N), LEGQ8T
+        D+(N), LEGQ8S
+        ST(N), LEGQ8S
+        SLO(U), LEGQ8T
+        CB+, $2, LEGQ8L
+        *N(N), LEGQ8P
+        LX, $2, LEGQ82                  !normal return to main program
+        LX, $15, LEGQ8F
+        B, 4.0($15)
+LEGQ8E  LX, $2, LEGQ82
+        LX, $15, LEGQ8F
+        B, 3.0($15)
+LEGQ82  XW, 0                           !changeable
+LEGQ8F  XW, 0                           !changeable
+! printed: LEGQ8Z DD(N),0.0
+LEGQ8Z  DD(BU,64,8), 0
+LEGQ8I  XW, 0,4,$
+LEGQ8R  DR(N), (3)
+LEGQ8S  SYN(N), LEGQ8R+1.0
+LEGQ8T  SYN(N), LEGQ8R+2.0
+LEGQ8P  DR(N), (1)
+LEGQ8Q  DR(N), (1)
+LEGQ8X  DD(N), .96028 98564 97536, .79666 64774 13627
+        DD(N), .52553 24099 16329, .18343 46434 95650
+LEGQ8W  DD(N), .10122 85362 90376, .22238 10344 53374
+        DD(N), .31370 66458 77887, .36268 37833 78362
+! end of LEGQ8 subroutine
+! SUBR is a bona fide subroutine with 0($15) error exit and normal return 1.0($15).
+SUBR    SX, $15, SAVE15
+        ST(N), SAVEX
+        LN(N), SAVEX
+        LVI, $15, $+1.0;B, EXP          !go to EXP subroutine
+        B, ERR; NOP
+RTURN   ST(U), TEMP
+        LVI, $15, $+1.0;B, EXP          !go to EXP subroutine
+        B, ERR; NOP
+        *(N), SAVEX
+        E+I(U), 1
+        ST(U), SAVEX                    !2*X*e**e**-X
+        LN(U), TEMP
+        +(N), WON
+        SRT(N), $L                      !square root of 1-e**-x
+        R/(N), SAVEX
+        LX, $15, SAVE15; B, 1.0($15)    !normal return
+ERR     LX,$15, SAVE15; B,0.0($15)      !error return
+WON     DD(N), 1.0
+SAVE15  XW, 0
+SAVEX   DR(N), (1)
+TEMP    DR(N), (1)
+! EXP subroutine
+! (identical with a previous program)
+! ---- printed p.46, Method 1 ----
+EXP     KMG(N), KOMP
+        BAH,EXIT1
+        D*(N), RLN2                     !1/LN2
+        D+(U), E11
+        ST(B,12,1), TEMEX, 128-12-11    !I as exponent
+        SHFL,11
+        *(N), LN2X                      !LN2X-11
+        LX, $14, XW14
+        ST(U), TEMPF
+        D*(N), CONST($14)
+DPLUS   D+(N), CONST+1.0($14)
+        D*(N), TEMPF
+        CB+, $14, DPLUS
+        D+(N), CONST($14)
+        E+(N), TEMEX
+        B, 1.0($15)                     !normal return
+EXIT1   C0011(BU,1),10.4,128-11         !exponent sign
+        LA(U), $L                       !remove sign
+        C1111(BU,1), $L, 127            !insert exponent flag
+        B, 0.0($15)
+! printed: KOMP DD(N), 1024*$N
+KOMP    DD(N), 709.7827128933839968432456924
+! printed: RLN2 DD(N), 1/$N
+RLN2    DD(N), 1.442695040888963407359924681
+! printed: E11 DD(N), 0X11
+E11     DD(BU,64,8), (8)0005400000000000000000
+! printed: LN2X DD(N), $NX-11
+LN2X    DD(N), .6931471805599453094172321215X-11
+XW14    XW,0,14,$
+! printed: CONST DD(N), 1/13076743680000,1/87178291200
+CONST   DD(N), 7.647163731819816475901131986E-14, 1.147074559772972471385169798E-11
+! printed: DD(N), 1/6227020800, 1/479001600, 1/39916800
+        DD(N), 1.605904383682161459939237717E-10, 2.087675698786809897921009032E-9, 2.505210838544171877505210839E-8
+! printed: DD(N), 1/3628800, 1/362880, 1/40320, 1/5040, 1/720
+        DD(N), 2.755731922398589065255731922E-7, 2.755731922398589065255731922E-6, 2.480158730158730158730158730E-5, 1.984126984126984126984126984E-4, 1.388888888888888888888888889E-3
+! printed: DD(N), 1/120, 1/24, 1/6, 1/2, 1
+        DD(N), 8.333333333333333333333333333E-3, 4.166666666666666666666666667E-2, 1.666666666666666666666666667E-1, .5, 1
+TEMEX   DR(N), (1)
+TEMPF   DR(N), (1)
+
+
+        END, MAIN

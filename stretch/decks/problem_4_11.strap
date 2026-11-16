@@ -1,0 +1,286 @@
+! C22-6578 PROBLEM 4.11, "EXPONENTIAL OF x", printed pp.45-46 (PDF
+! 46-47), Method 1, read in the ink (the program at 300 dpi).
+!
+!   "Given a normalized floating-point number x in the accumulator.
+!   Find e**x, put it in the accumulator and branch to 1.0($15).  If
+!   e**x cannot be found or stored, branch to 0.0($15).  Alteration of
+!   $L, $R, $SB, $LZC, $AOC and $14 is permitted."
+!
+!   "If |x| > 1024 ln2, e**x = 2**(x/ln2) cannot be stored as a regular
+!   floating-point number.  A 0.0($15) return with the exponent flag on
+!   is sufficient.  Otherwise ... e**x = 2**(x/ln2) = 2**(I+F) = 2**I *
+!   2**F,  2**F = e**(F ln2) = sum (F ln2)**k / k!  terms beyond k = 15
+!   can be safely neglected."
+!
+! THE TWENTY INSTRUCTIONS FROM EXP TO "B, 0.0($15)" ARE AS PRINTED,
+! with one comma supplied (see 2 below).  THE DATA IS NOT: this
+! assembler refuses every form the page's constants are written in, so
+! each DD(N) below is a decimal literal of the same number, with the
+! printed statement kept beside it.  See "WHAT IS SUBSTITUTED".
+!
+! WHAT IS READ IN THE INK AND IS WRONG AS PRINTED, three things:
+!
+!  1. CONST's first entry is printed "1/13076743680000", fourteen
+!     digits.  15! = 1307674368000, thirteen.  The page has one zero
+!     too many, so its coefficient of (F ln2)**15 is 1/(10 * 15!).
+!     THE DECK RUNS IT AS PRINTED.  The whole term is at most
+!     0.6932**15 / 15! = 3.1E-15, under one unit of a 48-bit fraction
+!     (2**-48 = 3.6E-15), so the page's own "terms beyond k = 15 can be
+!     safely neglected" very nearly covers k = 15 itself, and the
+!     tolerance below does.
+!  2. "C1111(BU,1) $L, 127" is printed with no comma after the data
+!     description.  One is supplied; this assembler refuses the line
+!     without it ("unexpected trailing text").
+!  3. "C0011(BU,1),10.4,128-11" carries the comment "exponent sign" and
+!     does not reach it.  Reference Manual printed p.77, Figure 21: a
+!     connective's offset counts from accumulator bit 127, so offset
+!     117 with length 1 is bit 10, the LOW BIT OF THE EXPONENT
+!     MAGNITUDE; the exponent sign is bit 11 (printed p.78), which
+!     would be 128-12.  The same page's "ST(B,12,1), TEMEX, 128-12-11"
+!     counts correctly.  THE DECK RUNS IT AS PRINTED and the two error
+!     cases below pin what that does: x = +800 leaves the exponent 10,
+!     x = -800 makes it 11.  The page's requirement, "a 0.0($15) return
+!     with the exponent flag on", is met either way.
+!
+! WHAT IS SUBSTITUTED, and why (findings, docs/NEXT.md "G2.1 CHAPTER 4:
+! WHAT THE ASSEMBLER REFUSES IN A DD(N)"):
+!
+!   printed                      here
+!   KOMP  DD(N), 1024*$N         709.78271289338399684...
+!   RLN2  DD(N), 1/$N            1.44269504088896340736...
+!   E11   DD(N), 0X11            DD(BU,64,8), (8)00054 and seventeen zeros
+!   LN2X  DD(N), $NX-11          .693147180559945309417...X-11
+!   CONST DD(N), 1/n, ...        the decimal expansion of each 1/n
+!
+! C28-6129 printed p.27-28 (PDF 31-32) allows all of it: "Arithmetic
+! expressions ... are permitted in all DD statements regardless of the
+! use mode", "$N  log e 2" (printed p.11, PDF 15), and X "overrules and
+! replaces the exponent".  It does not say to how many bits STRAP
+! carries the arithmetic.  EACH SUBSTITUTE IS THE EXACT NUMBER
+! TRUNCATED TO 48 BITS, which is this assembler's DD(N) rule (fitted to
+! MCP printed p.359); a STRAP that rounded would differ by one unit in
+! some of the sixteen words.  E11 is a zero fraction with exponent +11:
+! bits 1-10 = 11, everything else 0 (Reference Manual printed p.78).
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual:
+!   KMG / BAH      |x| against 1024 ln2 (printed p.91); high goes to EXIT1.
+!   D*(N), RLN2    x / ln2 as a 96-bit fraction (printed p.97).
+!   D+(U), E11     unnormalized, so the result keeps the larger exponent,
+!                  11, and the fraction is shifted right to it (printed
+!                  p.95, "When unnormalized operation is specified, the
+!                  96-bit intermediate sum fraction is placed in
+!                  accumulator bits 12-107"): the integer part I is now
+!                  bits 12-22 and the fraction part F begins at bit 23.
+!   ST(B,12,1)     offset 128-12-11 = 105 puts the units bit at
+!                  accumulator bit 22, so the twelve-bit signed field is
+!                  bits 12-22 and the sign: I, as TEMEX's exponent and
+!                  exponent sign (bits 0-11).  |x| <= 1024 ln2 keeps I
+!                  below 1024 and the exponent flag, bit 0, off.
+!   SHFL, 11       shifts I out; the accumulator is F x 2**11 (p.102).
+!   *(N), LN2X     F ln2, the exponent -11 undoing the 2**11.
+!   the loop       ((...(G/15! + 1/14!)G + ...)G + 1)G + 1, fourteen
+!                  passes of CB+ on $14 and the "1" used twice.
+!   E+(N), TEMEX   adds I to the exponent (printed p.102).
+!
+! THE HARNESS IS NOT PRINTED.  The page is a subroutine and gives no
+! caller; START below is one, written to the calling sequence the same
+! book prints in Problem 4.12 (printed p.47): "LVI, $15, $+1.0; B, EXP"
+! then the error word "B, ERR; NOP", then the normal return.  Each case
+! stores the accumulator with ST(U) -- exponent, fraction bits 12-59,
+! the sign from $SB, no normalization (Reference Manual printed p.90) --
+! into Rn on the normal return or En on the error return; the other
+! keeps its sentinel, 7.
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PROBLEM STATEMENT, NOT FROM THE
+! MODEL: tests/verify_problem_4_fp.py computes e**x in sixty-digit
+! decimal arithmetic, x being the operand word as assembled, and
+! requires each Rn, decoded as a floating word, to agree within
+! 8 + 2|x| units of the 48-bit fraction.  THE LOW BITS ARE NOT PINNED.
+!
+! WHERE THE BOUND COMES FROM, which is the program and not the model:
+! RLN2 is ONE word.  1/ln2 = .7213 x 2**1 truncated to 48 bits is low
+! by up to 2**-47, 1.39 x 2**-48 relative, and "D*(N), RLN2" carries
+! that into x/ln2 whole: an absolute error of up to 1.39 |x/ln2|
+! 2**-48 in I + F, all of which lands in F, and so a relative error of
+! 1.39 |x| 2**-48 in e**x -- up to 1.39 |x| units, a result fraction
+! being between 1/2 and 1.  The page says nothing of it.  At x = 709
+! that is the low TEN bits of the answer.  The 8 is for the rest: the
+! k = 15 coefficient as printed (under a unit), the truncation of G =
+! F ln2 to one word, and fifteen double-length steps.
+!
+! SO THE VERIFIER CHECKS EACH RESULT TWICE: against 2**(x * RLN2), RLN2
+! being the word as assembled -- the number the program computes, with
+! the 1.39 |x| taken out -- within 4 units; and against e**x, the
+! number the page asks for, within 8 + 2|x|.  It prints the units it
+! saw, so the slack shows.
+!
+! The exact words are the two error cases and $14, by hand:
+!
+!   x = +800 = .78125 x 2**10 = 014C 8000 0000 0000.  KMG high.  C0011
+!     copies the sign bit of $SB (word 10 bit 4; C22-6578 printed p.55,
+!     appendix A3), 0, to bit 10, which is the low bit of exponent
+!     magnitude 10 = 0000001010 and is 0 already.  LA(U), $L reloads
+!     the left half without its sign.  C1111 sets bit 0.
+!     E6 = 814C 8000 0000 0000.
+!   x = -800 = 014C 8000 0000 0008.  The sign bit is 1, so bit 10
+!     becomes 1 and the exponent magnitude 11: 016C 8000 0000 0000.
+!     LA(U) takes the absolute value, so the stored sign is plus.
+!     E7 = 816C 8000 0000 0000.
+!   $14 after any normal return: value 14.0, count 0, refill XW14 -- CB+
+!     adds one full word to the value and takes one from the count
+!     (printed p.31), fourteen times, and "XW,0,14,$" refills to itself.
+!
+! THE CASES: x = 1, -2.5, 3.14159265358979, .001, -709.5, 709, then
+! +800 and -800 for the error return.  709.5 is NOT run: it is under
+! 1024 ln2 = 709.78, so the page lets it through, but e**709.5 =
+! .66 x 2**1024 and E+ would have to generate an exponent flag.  The
+! page's test is against 1024 ln2 where the format's limit is nearer
+! 1023 ln2; recorded, not exercised.
+!
+! OBSERVED INJECTIONS, 2026-11-15, each run as
+!   python3 tests/verify_problem_4_fp.py 4.11 --sub OLD NEW
+! with one data card changed and nothing else.  Control: 11 exact
+! checks and the PC pass, 12 within-bound checks pass; the tight six
+! were off .41, .29, 1.64, .62, .53 and 1.75 units, the loose six 1.29,
+! 1.85, 4.61, .62, 613 and 847 (x = -709.5 and 709: the 1.39 |x| above,
+! measured).
+!
+!   E11 exponent 10 for 11, "(8)00054..." -> "(8)00050..."
+!       FAILED: all ten within checks on R1 R2 R3 R5 R8 (R1 = 2e, twice
+!       the answer; R5 and R8 flagged).  R4, x = .001, PASSED both: its
+!       I is 0 and the lost bit was 0.  Every exact check passed.
+!   LN2X "X-11" -> "X-10"
+!       FAILED: all twelve within checks (R1 = 3.69 = e**(1 + .3069)).
+!   KOMP 709.78... -> 700
+!       FAILED: E5_sentinel and E8_sentinel (the two |x| > 700 took the
+!       error return: 816B 1600.. and 814B 1400..), and the four within
+!       checks on R5 and R8, which kept their 7.
+!   X6 800 -> 600
+!       FAILED: R6_sentinel and E6_plus800_flagged, and only those.
+!   CONST's 1/24 cut to ten digits, "4.1666666667E-2" (1 part in 1E10)
+!       FAILED: R8's tight check alone, off 4.25 units against 4.
+!   CONST's 1/24 cut to thirteen digits, "4.166666666667E-2"
+!       SURVIVED.  ALL CHECKS PASSED.  A coefficient wrong by one part
+!       in 1E13 moves no result by more than the bound, and that is the
+!       measured floor of this test: it does not pin the low two bits.
+
+        SLC, 1000.0
+START   DL(N), X1
+        LVI, $15, $+1.0; B, EXP
+        B, ERR1; NOP
+        ST(U), R1
+        B, CASE2
+ERR1    ST(U), E1
+CASE2   DL(N), X2
+        LVI, $15, $+1.0; B, EXP
+        B, ERR2; NOP
+        ST(U), R2
+        B, CASE3
+ERR2    ST(U), E2
+CASE3   DL(N), X3
+        LVI, $15, $+1.0; B, EXP
+        B, ERR3; NOP
+        ST(U), R3
+        B, CASE4
+ERR3    ST(U), E3
+CASE4   DL(N), X4
+        LVI, $15, $+1.0; B, EXP
+        B, ERR4; NOP
+        ST(U), R4
+        B, CASE5
+ERR4    ST(U), E4
+CASE5   DL(N), X5
+        LVI, $15, $+1.0; B, EXP
+        B, ERR5; NOP
+        ST(U), R5
+        B, CASE6
+ERR5    ST(U), E5
+CASE6   DL(N), X6
+        LVI, $15, $+1.0; B, EXP
+        B, ERR6; NOP
+        ST(U), R6
+        B, CASE7
+ERR6    ST(U), E6
+CASE7   DL(N), X7
+        LVI, $15, $+1.0; B, EXP
+        B, ERR7; NOP
+        ST(U), R7
+        B, CASE8
+ERR7    ST(U), E7
+CASE8   DL(N), X8
+        LVI, $15, $+1.0; B, EXP
+        B, ERR8; NOP
+        ST(U), R8
+        B, HALT
+ERR8    ST(U), E8
+HALT    BEW, $
+
+        SLC, 1100.0
+X1      DD(N), 1.0
+X2      DD(N), -2.5
+X3      DD(N), 3.14159265358979
+X4      DD(N), .001
+X5      DD(N), -709.5
+X6      DD(N), 800
+X7      DD(N), -800
+X8      DD(N), 709
+R1      DD(BU,64,8), 7
+R2      DD(BU,64,8), 7
+R3      DD(BU,64,8), 7
+R4      DD(BU,64,8), 7
+R5      DD(BU,64,8), 7
+R6      DD(BU,64,8), 7
+R7      DD(BU,64,8), 7
+R8      DD(BU,64,8), 7
+E1      DD(BU,64,8), 7
+E2      DD(BU,64,8), 7
+E3      DD(BU,64,8), 7
+E4      DD(BU,64,8), 7
+E5      DD(BU,64,8), 7
+E6      DD(BU,64,8), 7
+E7      DD(BU,64,8), 7
+E8      DD(BU,64,8), 7
+
+! ---- printed p.46, Method 1 ----
+        SLC, 1200.0
+EXP     KMG(N), KOMP
+        BAH,EXIT1
+        D*(N), RLN2                     !1/LN2
+        D+(U), E11
+        ST(B,12,1), TEMEX, 128-12-11    !I as exponent
+        SHFL,11
+        *(N), LN2X                      !LN2X-11
+        LX, $14, XW14
+        ST(U), TEMPF
+        D*(N), CONST($14)
+DPLUS   D+(N), CONST+1.0($14)
+        D*(N), TEMPF
+        CB+, $14, DPLUS
+        D+(N), CONST($14)
+        E+(N), TEMEX
+        B, 1.0($15)                     !normal return
+EXIT1   C0011(BU,1),10.4,128-11         !exponent sign
+        LA(U), $L                       !remove sign
+        C1111(BU,1), $L, 127            !insert exponent flag
+        B, 0.0($15)
+! printed: KOMP DD(N), 1024*$N
+KOMP    DD(N), 709.7827128933839968432456924
+! printed: RLN2 DD(N), 1/$N
+RLN2    DD(N), 1.442695040888963407359924681
+! printed: E11 DD(N), 0X11
+E11     DD(BU,64,8), (8)0005400000000000000000
+! printed: LN2X DD(N), $NX-11
+LN2X    DD(N), .6931471805599453094172321215X-11
+XW14    XW,0,14,$
+! printed: CONST DD(N), 1/13076743680000,1/87178291200
+CONST   DD(N), 7.647163731819816475901131986E-14, 1.147074559772972471385169798E-11
+! printed: DD(N), 1/6227020800, 1/479001600, 1/39916800
+        DD(N), 1.605904383682161459939237717E-10, 2.087675698786809897921009032E-9, 2.505210838544171877505210839E-8
+! printed: DD(N), 1/3628800, 1/362880, 1/40320, 1/5040, 1/720
+        DD(N), 2.755731922398589065255731922E-7, 2.755731922398589065255731922E-6, 2.480158730158730158730158730E-5, 1.984126984126984126984126984E-4, 1.388888888888888888888888889E-3
+! printed: DD(N), 1/120, 1/24, 1/6, 1/2, 1
+        DD(N), 8.333333333333333333333333333E-3, 4.166666666666666666666666667E-2, 1.666666666666666666666666667E-1, .5, 1
+TEMEX   DR(N), (1)
+TEMPF   DR(N), (1)
+
+        END, START

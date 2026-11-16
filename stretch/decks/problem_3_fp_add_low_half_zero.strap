@@ -1,0 +1,83 @@
+! REPRODUCER for a disagreement between the model and the Reference
+! Manual's text, found 2026-11-15 by C22-6578 Problem 3.8 comment (b)
+! (decks/problem_3_8_no_eplus.strap; docs/NEXT.md, "C22-6578 CHAPTER 3"
+! item 5): a single-precision normalized ADD whose 96-bit intermediate
+! sum has nothing in its high-order 48 bits.
+!
+! Reference Manual printed p.87 (PDF 90), read in the ink, of ADD:
+!   "When normalized operation is specified, the entire 96-bit
+!   intermediate sum fraction and overflow bit are shifted to form a
+!   normalized fraction and the result exponent is adjusted
+!   accordingly.  This normalization is not performed if the overflow
+!   bit and high-order 48 bits of the intermediate sum are zero."
+!   "Lost Significance (LS).  This indicator is turned on in addition
+!   when at least one operand fraction is non-zero if the high-order 48
+!   bits of the intermediate sum and overflow bit are zero and the
+!   intermediate result exponent flag is 0.  In this case, the final
+!   sum fraction is zero and a normal order of magnitude zero is
+!   produced with no further normalization, if specified, or exponent
+!   change."
+! and printed p.82, "Zero Definition": "In single-precision operations,
+! the high-order 48 bits and the overflow bit of the 96-bit intermediate
+! result fraction are tested for zero ... if the tested bits are zero,
+! post-normalization, if specified, is suspended.  The intermediate
+! result exponent field, the zero fraction, and fraction sign become
+! the final result value."
+!
+! The model's fpAdd (bsv/StretchFP.bsv) tests all 97 bits of the sum for
+! zero and otherwise normalizes the whole of it, so a sum that survives
+! only in the low-order half is shifted back up and returned.
+!
+! SMALL is 3 x 2**-60 = .11 x 2**-58.  Each case adds it to a ZERO
+! FRACTION with a larger exponent, which shifts SMALL's fraction right
+! by the exponent difference (printed p.86):
+!
+!   CASE 1.  + a word of zero bits (exponent 0): difference 58.  The
+!     two fraction bits land in places 59 and 60 of the 96.  High-order
+!     48 zero: the result is the zero fraction with exponent 0.
+!         R1 expected 0000000000000000
+!   CASE 2.  + a zero fraction with exponent -10: difference 48, the
+!     boundary.  The bits land in places 49 and 50, the first two of
+!     the low-order half.  High-order 48 zero.
+!         R2 expected 0150000000000000  (exponent -10, zero fraction)
+!   CASE 3, the control.  + a zero fraction with exponent -11:
+!     difference 47.  The leading bit lands in place 48, the last of
+!     the high-order half, so the sum is normalized as a whole and
+!     comes back as SMALL.
+!         R3 expected 075C000000000000  (.11 x 2**-58)
+!
+! OBSERVED ON THE MODEL 2026-11-15, ASM=strap2, PC=73 (reached):
+!     R1 = 075C000000000000   FAIL  (SMALL came back)
+!     R2 = 075C000000000000   FAIL  (SMALL came back)
+!     R3 = 075C000000000000   PASS
+!   and the indicator word was 0000001000000120: PSH (bit 27) on, LS
+!   (bit 26) off.
+!
+! WHICH IS RIGHT IS NOT SETTLED HERE.  The manual's text is quoted
+! above.  Against it: C22-6578 printed p.32, Problem 3.8 comment (b),
+! says a program that adds numbers of exponent -48 and less to a word
+! of zero bits suffers no "damage", which is so only if the machine
+! behaves as the model does -- though comment (a) of the same problem
+! describes the manual's behaviour.  jb_af1c's addition sections check
+! PSH for far-apart exponents (decks/fp_arith_f204d.strap, F204D7) but
+! the deck headers do not say they check the SUM in this case; that
+! listing is where a third witness would be.
+
+START   L(U), SMALL
+        +(N), ZERO
+        ST(U), R1
+        L(U), SMALL
+        +(N), ZM10
+        ST(U), R2
+        L(U), SMALL
+        +(N), ZM11
+        ST(U), R3
+        BEW, $
+SMALL   DD(N), 3X-58
+ZERO    DD(N), 0
+ZM10    DD(N), 0.0X-10
+ZM11    DD(N), 0.0X-11
+R1      DR(N), (1)
+R2      DR(N), (1)
+R3      DR(N), (1)
+        END, START

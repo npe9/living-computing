@@ -1,0 +1,84 @@
+! REPRODUCER for a model fault found 2026-11-15 by C22-6578 Problem 3.8
+! (decks/problem_3_8.strap; docs/NEXT.md, "C22-6578 CHAPTER 3" item 4):
+! a floating-point operation whose effective address is 8, the
+! accumulator's left half, treats word 8 as an ordinary storage word: a
+! FETCH takes its sign from accumulator bit 60 and not from the sign
+! byte register, and a STORE puts the sign there.
+!
+! Reference Manual printed p.80 (PDF 83):
+!   "in floating-point instructions when address 8 is used as the
+!   effective operand address, accumulator bit positions 0-59 and sign
+!   byte register bit positions 4-7 are used as the operand.  The four
+!   sign byte bits replace the four low-order bits of the accumulator
+!   operand.  Bits 60-63 of the accumulator do not serve as operand
+!   bits. ... This rule applies to operations of both fetch and store
+!   type."
+! C22-6578 printed p.28, Problem 3.4 comment (b), read in the ink:
+!   "For a floating-point instruction the address 8.0 or $L means the
+!   leading 60 bits of the accumulator plus the lowest four-bits of
+!   $SB."
+!
+! CASE 1.  The accumulator holds -3.  "*(N), 8.0" is (-3) x (-3) = +9:
+! the operand's sign is the sign byte's, negative, and the product of
+! two negatives is positive.  Accumulator bit 60 is a zero here, so a
+! fetch that reads it for the sign sees +3 and makes -9.
+!     R1 expected 0089000000000000 (+9 = .1001 x 2**4)
+!
+! CASE 2.  The accumulator holds +3 in its left half and a one in bit
+! 60, the first bit of the low-order fraction (DL(U), THREE then
+! D+(U), TINY, with TINY = 2**-47 = .1 x 2**-46: exponent difference
+! 48, so its leading bit lands on bit 60; Reference Manual printed
+! p.95).  "*(N), 8.0" is 3 x 3 = +9; "Bits 60-63 of the accumulator do
+! not serve as operand bits."  A fetch that reads bit 60 for the sign
+! sees -3 and makes -9.
+!     R2 expected 0089000000000000
+!
+! CASE 3, the control: the same square with the operand in storage,
+! "*(N), M3" on an accumulator of -3.
+!     R3 expected 0089000000000000
+!
+! CASE 4, the store side ("both fetch and store type").  The
+! accumulator holds +5 with a zero low half (DL(U), FIVE).  "STN(U),
+! 8.0" stores the accumulator with its sign inverted into address 8:
+! bits 0-59 are rewritten with themselves and the sign goes to the SIGN
+! BYTE, so the accumulator becomes -5, and accumulator bits 60-63 are
+! untouched.  A store that writes word 8 as an ordinary word instead
+! puts the sign in accumulator bit 60 and leaves the sign byte positive.
+!     R4 (ST(U) afterwards) expected 006A000000000008 (-5)
+!     word 8 afterwards     expected 006A000000000000 (bits 60-63 zero)
+!
+! The expected values are by hand: 9 = 1001 binary, four bits, so the
+! exponent is 4 and the fraction .1001 = 9; exponent field 008, word
+! 0089000000000000; a negative result would end in 8.  5 = 101 binary,
+! exponent 3 (006), fraction .101 = A.
+!
+! OBSERVED ON THE MODEL 2026-11-15, ASM=strap2, PC=77 (reached):
+!     R1 = 0089000000000008   FAIL  (-9)
+!     R2 = 0089000000000008   FAIL  (-9)
+!     R3 = 0089000000000000   PASS
+!     R4 = 006A000000000000   FAIL  (+5: the sign byte was not written)
+!     word 8 = 006A000000000008   FAIL  (the sign went to accumulator bit 60)
+
+START   L(U), M3
+        *(N), 8.0
+        ST(U), R1
+        DL(U), THREE
+        D+(U), TINY
+        *(N), 8.0
+        ST(U), R2
+        L(U), M3
+        *(N), M3
+        ST(U), R3
+        DL(U), FIVE
+        STN(U), 8.0
+        ST(U), R4
+        BEW, $
+M3      DD(N), -3
+THREE   DD(N), 3
+TINY    DD(N), 1X-46
+FIVE    DD(N), 5
+R1      DR(N), (1)
+R2      DR(N), (1)
+R3      DR(N), (1)
+R4      DR(N), (1)
+        END, START

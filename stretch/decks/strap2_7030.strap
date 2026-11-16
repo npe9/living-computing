@@ -2909,13 +2909,21 @@ COMREC  DD(BU,64), 0
 !      so the branch-on-indicator family and a misspelling end here; so does
 !      a ninth op character (CHOSEN: p.21 collects "eight characters ... or
 !      up to the next separator"; the host gives message 1)
-!   6  Box 24 found Fmodif on: Boxes 25-26 are step 4b-ii
+!   6  Box 25: a modifier on EXT.  Its parameters are the EXT pseudo-op
+!      subroutine's (p.22), step 4d.  Box 26 is not entered
+!   7  Box 26 gave a serious message of p.176, its number's bit on in MMSG
+!      (2, 4, 5, 33, 35).  The unit is as it stood when the message came
+!   9  Box 26: a dds mode that is no mode (CHOSEN: pp.176-178 name no MAIN
+!      message for it.  The host says 91, which p.177 gives to DECODE)
+!   10 Box 26: a dds field VALUE must evaluate and this stand-in cannot
+!      (step 5): more than one integer or one programmer symbol
 ! Every status but 1 then collects the rest of the statement through its
 ! semicolon (Box 38 MEDAF, AC p.16), the stand-in for Boxes 27-37.
 ! REGISTERS (p.12, p.20, p.22): $3 the character (GETCHA), $5 the op index's
 ! location, $6 the unit's fixed format.  CHOSEN: $10 the next Bop position.
 ! CHOSEN: Box 2 takes $6 from IBUFFW as it stands (rounding to a full word
-! and the coded expressions' start, Bcfldx and Bcfxtx, are step 4b-iii's);
+! and Bcfldx are step 4b-iii's; since 4b-ii it moves Ibuffw past the fixed
+! format and sets Bcfxtx, below);
 ! of the rest of Box 2 this zeros the fixed format (8 words), blanks Bop,
 ! turns Fmodif off and ZIFALL on.  ZICDID and the error fields are 4b-iv's.
 ! Box 23 (p.22, Fig. 23 p.192): the entry's second word is the skeleton
@@ -2945,6 +2953,23 @@ MAIN    LV, $6, IBUFFW
         LI(BU,24), 0
         ST(BU,24), MSTAT
         ST(BU,24), MOPN
+! Box 2, p.19: "Next MAIN updates Ibuffw to address the available area
+! after the fixed format where the coded expression(s), if any, followed by
+! the statement field characters will be put" and "The upper limit of the
+! buffer reserved for the units is put in GETFLD's index word, Bcfxtx".
+! Pulled forward from 4b-iii for Box 26's dds fields.  CHOSEN: the limit is
+! the cell IBUFLM, set by whoever gives MAIN its buffer.
+        LV, $9, IBUFFW
+        V+I, $9, 8.0
+        SV, $9, IBUFFW
+        L(BU,24), IBUFLM
+        ST(BU,24), BCFXTX
+        L(BU,64), MZERO
+        ST(BU,64), MMSG
+        ST(BU,64), MSECN
+        ST(BU,64), MSECB
+        ST(BU,64), MJDSN
+        ST(BU,64), MWASA
 ! Boxes 3-4 (p.20): GETCHA's Fblend (FEND here), "initially on", says the
 ! previous instruction ended a card block: Fblena on, Fblend off
         L(BU,1), FEND
@@ -3037,7 +3062,453 @@ MA17    L(BU,64), BOP
         L(BU,1), FMODIF
         KI(BU,1), 1
         BZAE, MA38
+! ======== STEP 4b-ii: MAIN, Boxes 25-26 (Chart AA p.14; text pp.22-23) ======
+! Box 25 (Chart AA p.14: "AN EXTRACT OPERATION", yes to AB.18 past Box 26.
+! p.22: "Since the EXT parameters are handled in the EXT pseudo-op
+! subroutine later, this type of case is postponed for the later
+! treatment").  CHOSEN: the extract operation is known by its name in Bop.
+        L(BU,64), BOP
+        K(BU,64), MEXT
+        BZAE, MB26
         LI(BU,24), 6
+        B, MAST
+! Box 26 (pp.22-23), once for each parenthesis after the op.  $3 holds its
+! (.  p.22: "However if the character after the ( is one of the characters
+! in the question character block which contains the legal first
+! characters for a secondary op, then MAIN collects the remaining
+! characters of the secondary op and looks up the op in the secondary op
+! table."  Otherwise the parenthesis is a data description.
+MB26    SIC, GETCHZ
+        B, GETCHA
+        BB, QCSEC($3), MS1
+        B, MJ1
+! -- a secondary op.  p.22: "The secondary op may not be greater than seven
+! characters in length since the dictionary part of a secondary op table
+! entry contains a special leading 8-bit byte code number to identify the
+! type of instruction which may have this secondary op.  This code number
+! is obtained from the current op index and is the first character put in
+! the secondary op collection buffer, Bop2x."  BOP2 is that buffer.  The
+! code is the op index's bits 24-26 (optab7030.py, CHOSEN).  An eighth
+! character makes it illegal.  CHOSEN: its characters are the legal op
+! characters (QCOP), and it must end at its ) (message 33, p.176: "2NDARY
+! OP NOT CLOSED BY RIGHT PAREN").
+MS1     M+1(BU,24), MSECN
+        L(BU,64), MBLANK
+        ST(BU,64), BOP2
+        L(BU,3), .24($5)
+        ST(BU,8), BOP2
+        LV, $10, KBOP2
+        LI(BU,24), 0
+        ST(BU,24), MOPN
+MS2     M+1(BU,24), MOPN
+        L(BU,24), MOPN
+        KI(BU,24), 8
+        BAL, MS3
+        LI(BU,1), 1
+        ST(BU,1), MSECB
+        B, MS4
+MS3     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        ST(BU,8)(V+I), .8($10)
+MS4     SIC, GETCHZ
+        B, GETCHA
+        BB, QCOP($3), MS2
+        SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)74
+        BZAE, MM33
+! CHOSEN (the host, pass1.py): a second secondary is not looked up.  It is
+! message 4 when the parentheses are done, whatever the first one was.
+        L(BU,24), MSECN
+        KI(BU,24), 1
+        BZAE, MB26N
+! pp.22-23: "When a secondary op follows a primary op which permits a
+! secondary op, MAIN makes up an appropriate argument for the table
+! look-up.  Thus the cases, such as -- + (BU, 3) (SEOP) and CW (V + I) --
+! are illegal, although in each instance the primary op does allow a
+! secondary op.  For these operations, MAIN would attempt to look up the
+! corresponding argument 1SEOPbbb or 4V+Ibbbb, respectively, in the
+! secondary op table.  Since neither argument is in the table, the illegal
+! op would be detected without further cross checking."  (p.22: "Once
+! again MBSPEC may be called upon to help" -- MBSPEC is not written, as at
+! Box 22.)
+        L(BU,64), BOP2
+        ST(BU,64), SECKEY
+        SIC, $15
+        B, BOPSER
+        , SECCB
+        B, MS6
+! found: the entry's second word is the skeleton bits it adds (Fig. 24
+! p.192, "SKELETON BIT PATTERN").  CHOSEN: they are added to the unit's
+! skeleton now.  The fields are apart, so the sum is the OR.
+        LV, $9, LLXW
+        L(BU,64), 0.0($9)
+        ST(BU,64), MSKEL
+        BB, .38($5), MS7
+        L(BU,64), 6.0($6)
+        B, MS8
+! p.23: "If the op is an ambiguous-type op, the presence of a secondary op
+! establishes the op as a variable field type op; the variable field
+! length skeleton bit pattern is set up in the unit now; the location of
+! the op index for a variable field length op is put in the unit and into
+! $5."  The entry gave the VFL skeleton's last half (Fig. 23).  OPVFLH is
+! its first, and OPIVFL the VFL op index (CHOSEN, optab7030.py).
+MS7     LI(BU,1), 1
+        ST(BU,1), MWASA
+        LVI, $5, OPIVFL
+        SV, $5, MLOC
+        L(BU,18), MLOC
+        ST(BU,18), 5.0($6)
+        L(BU,32), 6.32($6)
+        +(BU,64), OPVFLH
+MS8     +(BU,64), MSKEL
+        ST(BU,64), 6.0($6)
+        B, MB26N
+MS6     LI(BU,1), 1
+        ST(BU,1), MSECB
+! after a parenthesis's ): another ( is Box 26 again
+MB26N   SIC, GETCHZ
+        B, GETCHA
+        SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)34
+        BAE, MB26
+! the parentheses are done.  p.176: 4 "MORE THAN ONE SECONDARY OP", 2
+! "ILLEGAL SECONDARY OP".  CHOSEN (the host): 4 before 2.
+        L(BU,24), MSECN
+        KI(BU,24), 2
+        BZAL, MM4
+        L(BU,1), MSECB
+        KI(BU,1), 1
+        BAE, MM2
+        B, MA38
+! -- a data description: mode, field length, byte size.  p.176: 5 "MORE
+! THAN ONE DDS".  CHOSEN: the mode is up to two legal op characters,
+! looked up in MMTAB, and ends at , or ) (else 35, "DDS NOT CLOSED BY RT.
+! PAREN").
+MJ1     M+1(BU,24), MJDSN
+        L(BU,24), MJDSN
+        KI(BU,24), 2
+        BZAL, MM5
+        L(BU,16), MBLANK
+        ST(BU,16), MMODE
+        LVI, $10, MMODE
+        LI(BU,24), 0
+        ST(BU,24), MOPN
+        ST(BU,24), MJANY
+        ST(BU,24), MJFL
+MJ2     BB, QCOP($3), MJ2A
+        B, MJ3
+MJ2A    M+1(BU,24), MOPN
+        L(BU,24), MOPN
+        KI(BU,24), 3
+        BZAL, MM9
+        SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        ST(BU,8)(V+I), .8($10)
+        SIC, GETCHZ
+        B, GETCHA
+        B, MJ2
+MJ3     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)33
+        BAE, MJ3B
+        KI(BU,8), (8)74
+        BZAE, MM35
+MJ3B    LVI, $9, MMTAB
+        LCI, $8, 8
+MJ3A    L(BU,16), 0.0($9)
+        K(BU,16), MMODE
+        BAE, MJ4
+        V+I, $9, 1.0
+        CB, $8, MJ3A
+        B, MM9
+MJ4     L(BU,8), .16($9)
+        ST(BU,8), MMCODE
+        L(BU,8), .24($9)
+        ST(BU,8), MMBS
+        L(BU,8), .32($9)
+        ST(BU,8), MMCLS
+        KI(BU,8), 2
+        BAE, MJP
+        KI(BU,8), 3
+        BAE, MJ7
+        LI(BU,1), 1
+        ST(BU,1), MJANY
+! p.23: "Once again the ambiguity of an "ambiguous" op may be resolved.  If
+! at this point an explicit dds has just been detected, the appropriate
+! changes are made to the unit, etc."  CHOSEN: a mode B, BU, D or DU makes
+! the unit the VFL one, as a secondary does.  N or U makes it the floating
+! one: the VFL half of the skeleton cleared, the op index OPIFP
+! (optab7030.py).  The mode's own bits are not put in the skeleton here:
+! that is DECODE's, p.140 Boxes 5, 7-8.  Whether the mode fits a settled
+! op is DECODE's too (p.177: 91 "MODE INCONSISTENT WITH OP").
+        BB, .38($5), MJ5
+! CHOSEN (the host, pass1.py _secondaries_of): a floating mode on an op a
+! secondary has made VFL is the illegal secondary, message 2.  (The other
+! order needs no rule: OPIFP's secondary code is 000.)
+        L(BU,8), MMCLS
+        KI(BU,8), 1
+        BZAE, MJ7
+        L(BU,1), MWASA
+        KI(BU,1), 1
+        BZAE, MJ7
+        LI(BU,1), 1
+        ST(BU,1), MSECB
+        B, MJ7
+MJ5     L(BU,8), MMCLS
+        KI(BU,8), 1
+        BAE, MJ6
+        LVI, $5, OPIVFL
+        L(BU,32), 6.32($6)
+        +(BU,64), OPVFLH
+        ST(BU,64), 6.0($6)
+        B, MJ6A
+MJ6     LVI, $5, OPIFP
+        LI(BU,32), 0
+        ST(BU,32), 6.32($6)
+MJ6A    SV, $5, MLOC
+        L(BU,18), MLOC
+        ST(BU,18), 5.0($6)
+! the field length, then the byte size.  p.23: "If the data description is
+! not P-mode, MAIN has GETFLD encode the byte size and field length and
+! put the coded expressions in the unit.  MAIN calls on VALUE to evaluate
+! the coded expressions.  For the coded expression of each dds field that
+! VALUE can evaluate now, the following occurs: Erroneously specified
+! parameters are adjusted.  The absolute value of the dds field is put in
+! its specified field in the fixed format part of the unit.  The
+! dds-field-filled indicator is turned on.  The coded expression is erased
+! (by resetting Ibuffw) if there was no general parenthetical entry with
+! the dds field."  The adjustments are the host's: a field length over 64 is
+! message 36 and its low six bits are kept, a byte size over 8 message 37
+! and its low four (p.176: neither is serious).
+MJ7     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)33
+        BZAE, MJ9
+        SIC, MJFLK
+        B, MJFLD
+        L(BU,24), MJK
+        KI(BU,24), 0
+        BAE, MJ8
+        LI(BU,1), 1
+        ST(BU,1), MJANY
+        L(BU,24), MJK
+        KI(BU,24), 2
+        BAE, MJ7S
+        L(BU,24), MJVAL
+        KI(BU,24), 65
+        BAL, MJ7A
+        LI(BU,1), 1
+        ST(BU,1), MMSG+.36
+MJ7A    L(BU,6), MJVAL+.18
+        ST(BU,24), MJFL
+        LI(BU,1), 1
+        ST(BU,1), 2.27($6)
+        B, MJ8
+! p.23: "For the coded expression of each dds field that VALUE cannot
+! evaluate, that is, for a symbolic byte size or for a symbolic field
+! length, the following occurs: The appropriate symbolic-field-length or
+! symbolic-byte-size indicator in the fixed format part of the unit is
+! turned on.  The coded expression is left in the unit for DECODE to have
+! evaluated in Pass 2.  Ibuffw is updated to space over the dds coded
+! expression.  The Zifall indicator is turned off to indicate to Pass 2a
+! that it will have to evaluate a coded expression in this unit."  (MJFLD
+! does the last two.)
+MJ7S    LI(BU,1), 1
+        ST(BU,1), 2.28($6)
+MJ8     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)33
+        BZAE, MJ9
+        SIC, MJFLK
+        B, MJFLD
+        L(BU,24), MJK
+        KI(BU,24), 0
+        BAE, MJ9
+        LI(BU,1), 1
+        ST(BU,1), MJANY
+        L(BU,24), MJK
+        KI(BU,24), 2
+        BAE, MJ8S
+        L(BU,24), MJVAL
+        KI(BU,24), 9
+        BAL, MJ8A
+        LI(BU,1), 1
+        ST(BU,1), MMSG+.37
+MJ8A    L(BU,4), MJVAL+.20
+        ST(BU,8), MMBS
+        LI(BU,1), 1
+        ST(BU,1), 2.29($6)
+        B, MJ9
+MJ8S    LI(BU,1), 1
+        ST(BU,1), 2.30($6)
+! the dds's ) (else 35), then the unit's dds.  p.23: "In addition, the
+! appropriate mode indicator in the unit format is turned on, a null field
+! length or a null byte size causes the specified number to be substituted
+! by STRAP II."  CHOSEN (the host): the substitutes are field length 0 and
+! the mode's byte size (MMTAB), a null mode is BU, and a parenthesis with
+! nothing in it gives no dds.  Fig. 20 p.189: ZIDDS is the third word's
+! bits 50-62 (mode 3, field length 6, byte size 4: Fig. 29 p.201 prints
+! BU's "101", 64 as "000000" and 8 as "1000"; the other modes' codes in
+! MMTAB are optable.py's MODE_CODE, not re-read for this step).  "g.
+! explicit dds" is bit 25 of the second word, "m. dds filled in" bit 31,
+! "i. f.l. filled in" 27, "j. symbolic f.l." 28, "k. b.s. filled in" 29,
+! "l. symbolic b.s." 30.  CHOSEN (the host): g and m go on with any dds
+! that is not P-mode.
+MJ9     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)74
+        BZAE, MM35
+        L(BU,1), MJANY
+        KI(BU,1), 1
+        BZAE, MB26N
+! CHOSEN: a dds with no mode but a field, (,8), is an explicit dds too
+! (p.23: "If at this point an explicit dds has just been detected, the
+! appropriate changes are made to the unit"), and BU stands for its mode,
+! so it makes an ambiguous op the VFL one.  (An empty parenthesis is no
+! dds and settles nothing.)
+        L(BU,8), MMCLS
+        KI(BU,8), 3
+        BZAE, MJ9A
+        BB, .38($5), MJ9B
+        B, MJ9A
+MJ9B    LVI, $5, OPIVFL
+        SV, $5, MLOC
+        L(BU,18), MLOC
+        ST(BU,18), 5.0($6)
+        L(BU,32), 6.32($6)
+        +(BU,64), OPVFLH
+        ST(BU,64), 6.0($6)
+MJ9A    L(BU,8), MMCODE
+        ST(BU,3), 3.50($6)
+        L(BU,24), MJFL
+        ST(BU,6), 3.53($6)
+        L(BU,8), MMBS
+        ST(BU,4), 3.59($6)
+        LI(BU,1), 1
+        ST(BU,1), 2.25($6)
+        ST(BU,1), 2.31($6)
+        B, MB26N
+! P-mode.  p.23: "MAIN has the complete symbol routine, CPLTSY, collect the
+! characters of the P-mode symbol and put them in the area of the unit
+! reserved for the coded expressions.  This symbol becomes the coded
+! expression for the data description of this instruction.  MAIN computes
+! the length of the P-mode symbol by subtracting the value field of index
+! word, Ibuffw, from the value field of CPLTSY's updated index word,
+! Bsymbx, which was set equal to Ibuffw prior to the entrance into CPLTSY.
+! This length is saved in the fixed format part of the unit so DECODE will
+! know how long this special type of coded expression is during the Pass 2
+! evaluation."  Fig. 20: ZILPMS, and "h. P-mode", bit 26.  CHOSEN: Ibuffw
+! then spaces over the symbol and Zifall goes off, as for a symbolic
+! field.  The symbol starts with a letter or a digit and ends at the )
+! (else 9, 35).
+MJP     SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)33
+        BZAE, MM9
+        SIC, GETCHZ
+        B, GETCHA
+        SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        ST(BU,8), CHXT+.13
+        LV, $9, CHXT
+        L(BU,8), CHVAL($9)
+        KI(BU,8), 36
+        BZAL, MM9
+        LV, $9, IBUFFW
+        SV, $9, BSYMBX
+        SIC, CPLTSZ
+        B, CPLTSY
+        SV, $3, MTMP
+        L(BU,8), MTMP+.16
+        KI(BU,8), (8)74
+        BZAE, MM35
+        L(BU,24), BSYMBX
+        -(BU,24), IBUFFW
+        ST(BU,25), 3.0($6)
+        L(BU,24), BSYMBX
+        ST(BU,24), IBUFFW
+        LI(BU,1), 1
+        ST(BU,1), 2.26($6)
+        LI(BU,1), 0
+        ST(BU,1), 3.25($6)
+        B, MB26N
+! MJFLD: one dds field.  GETFLD encodes it at Ibuffw (p.23).  Then,
+! STANDING IN FOR VALUE (step 5), MJK says what it was:
+!   0  null (the prefix 1111, p.198)
+!   1  one integer and nothing else (1000, 110 and 24 bits, then 0000: no
+!      subscript, no more data, no operator, no g.p.; p.198 items 1A-1B,
+!      2A-2C, 2E, 2A, 3A, 4A): MJVAL is its value, and the
+!      expression is erased, Ibuffw as it was
+!   2  one programmer symbol and nothing else (1000, 100, its length in 7
+!      bits, its characters, then 0000).  PROVISIONAL: VALUE cannot
+!      evaluate it only while MAIN enters no symbols (step 4c).  Until
+!      VALUE is written every symbol is taken as undefined.  Ibuffw spaces
+!      over it and Zifall goes off
+! Anything else is status 10.
+MJFLD   LV, $9, IBUFFW
+        SV, $9, BCFLDX
+        LI(BU,1), 0
+        ST(BU,1), GFCHAR
+        SIC, GETFLZ
+        B, GETFLD
+        LV, $9, IBUFFW
+        L(BU,4), 0.0($9)
+        KI(BU,4), 15
+        BZAE, MJF1
+        LI(BU,24), 0
+        B, MJFX
+MJF1    L(BU,7), 0.0($9)
+        KI(BU,7), 70
+        BZAE, MJF2
+        L(BU,4), .31($9)
+        KI(BU,4), 0
+        BZAE, MM10
+        L(BU,24), .7($9)
+        ST(BU,24), MJVAL
+        LI(BU,24), 1
+        B, MJFX
+MJF2    KI(BU,7), 68
+        BZAE, MM10
+        LI(BU,24), 0
+        ST(BU,24), MTMP2
+        L(BU,7), .7($9)
+        ST(BU,7), MTMP2+.14
+        LV, $8, MTMP2
+        V+, $8, IBUFFW
+        L(BU,4), .14($8)
+        KI(BU,4), 0
+        BZAE, MM10
+        L(BU,24), BCFLDX
+        ST(BU,24), IBUFFW
+        LI(BU,1), 0
+        ST(BU,1), 3.25($6)
+        LI(BU,24), 2
+MJFX    ST(BU,24), MJK
+        LV, $8, MJFLK
+        B, 0($8)
+! Box 26's messages (p.176), standing in for the error message routine
+! (4b-iv): the number's bit in MMSG, and status 7
+MM2     LI(BU,1), 1
+        ST(BU,1), MMSG+.2
+        B, MM7
+MM4     LI(BU,1), 1
+        ST(BU,1), MMSG+.4
+        B, MM7
+MM5     LI(BU,1), 1
+        ST(BU,1), MMSG+.5
+        B, MM7
+MM33    LI(BU,1), 1
+        ST(BU,1), MMSG+.33
+        B, MM7
+MM35    LI(BU,1), 1
+        ST(BU,1), MMSG+.35
+MM7     LI(BU,24), 7
+        B, MAST
+MM9     LI(BU,24), 9
+        B, MAST
+MM10    LI(BU,24), 10
         B, MAST
 ! Boxes 19-22 stand-in: not found
 MA19    LI(BU,24), 5
@@ -3078,6 +3549,44 @@ QCOP    DD(BU,64), (16)7FE07FC0FFC8FFC0
         DD(BU,64), 0
         DD(BU,64), 0
         DD(BU,64), 0
+! Box 26's cells.  QCSEC is p.22's "question character block which contains
+! the legal first characters for a secondary op".  CHOSEN: V, S and C, the
+! first characters of the secondary table's names.  No mode starts with one.
+QCSEC   DD(BU,64), (16)0000240000001000
+        DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+! MMTAB: a mode's two characters, its code (Fig. 29 p.201), the byte size
+! that stands for a null one (CHOSEN, the host's DEFAULT_BS), and its
+! class: 0 VFL, 1 floating, 2 P-mode, 3 no mode written (BU's code).
+MMTAB   DD(BU,64), (16)3214050800000000
+        DD(BU,64), (16)3210070100000000
+        DD(BU,64), (16)3414040400000000
+        DD(BU,64), (16)3410060400000000
+        DD(BU,64), (16)2510030401000000
+        DD(BU,64), (16)1410010401000000
+        DD(BU,64), (16)2710000002000000
+        DD(BU,64), (16)1010050803000000
+MEXT    DD(BU,64), (16)3517131010101010
+KBOP2   XW, BOP2+.8, 0, 0
+BOP2    DD(BU,64), 0
+IBUFLM  DD(BU,64), 0
+MMSG    DD(BU,64), 0
+MSECN   DD(BU,64), 0
+MSECB   DD(BU,64), 0
+MJDSN   DD(BU,64), 0
+MWASA   DD(BU,64), 0
+MJANY   DD(BU,64), 0
+MMODE   DD(BU,64), 0
+MMCODE  DD(BU,64), 0
+MMBS    DD(BU,64), 0
+MMCLS   DD(BU,64), 0
+MJFL    DD(BU,64), 0
+MJK     DD(BU,64), 0
+MJVAL   DD(BU,64), 0
+MJFLK   DD(BU,64), 0
+MTMP2   DD(BU,64), 0
+MSKEL   DD(BU,64), 0
 ! >>> OPTAB: generated, do not edit (strap/strap2/optab7030.py) <<<
 ! The 7030 STRAP II's operation tables (C22-6729 Figs. 23, 24 p.192;
 ! p.22's op index; Fig. 11 p.67's control blocks), GENERATED by
@@ -4149,6 +4658,9 @@ OPFILL  SYN, $
         DD(BU,64), (16)0005C00000040000   ! STT19A,1
         DD(BU,64), (16)0006400000040000   ! SVF,1
         DD(BU,64), (16)0006800000040000   ! SXP10,1
+OPIVFL  SYN, OPIDX+27.0
+OPIFP   SYN, OPIDX+11.0
+OPVFLH  DD(BU,64), (16)0000008000000000
 ! <<< OPTAB end >>>
 !
 ! The input block: INX's value is the next card, its count the cards left;

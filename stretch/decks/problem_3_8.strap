@@ -1,0 +1,153 @@
+! C22-6578 PROBLEM 3.8, "NORMALIZED FLOATING-POINT VECTORS FROM VFL
+! DATA", printed pp.31-32 (PDF 32-33), read in the ink.
+!
+!   "Given a string of 25 fields beginning at STRNG.  Each field
+!   contains an integer with the description (D, 48, 6).  Write a
+!   program to: (a) Change each number Nk into a normalized
+!   floating-point number Fk.  (b) Create the sum of squares of Fk,
+!   then take the square root.  (c) Divide each Fk by the square root,
+!   and store in FLOAT through FLOAT+24.0.  (d) The sum of the squares
+!   of the resultant set of floating-point numbers should now be unity
+!   (barring a small round-off error)."
+!
+!   Method 1
+!       NORMV   Z, SUM
+!               LX, $1, XW1
+!               LX, $2, XW2
+!       LOOP    LCV(V+I)(D, 48,6), 0.48($1), 68
+!       EPLUS   E+I, 48                 'number is now unnormalized FP integer
+!               ST(N), 0($2)
+!               *(N), $L
+!               +, SUM
+!               ST(U), SUM
+!               CBR+, $2, LOOP          '$2 will be refilled on exit
+!               SRT, ROOT
+!       LOOP2   L(N), 0($2)
+!               /, ROOT
+!               ST(U), 0($2)
+!               CB+, $2, LOOP2
+!               BEW, $
+!       XW1     XW, STRNG, 25, $
+!       XW2     XW, FLOAT, 25, $
+!       SUM     DRZ(N), (1)
+!       ROOT    DRZ(N), (1)
+!
+! The twenty printed statements are the deck's first twenty, as printed.
+! STRNG and FLOAT are the deck's.
+!
+! ASSEMBLED WITH ASM=strap2: strap_asm.py refuses "+, SUM" and "/, ROOT"
+! (decks/problem_3_bare_op_symbol_dds.strap).
+!
+! WHAT EACH STATEMENT IS, with the page of the rule:
+!   LCV(V+I)(D, 48,6), 0.48($1), 68.  LOAD CONVERTED, decimal to binary,
+!     progressive indexing code 1.  Reference Manual printed p.29: "In
+!     progressive indexing, the value field ... of the index specified
+!     by I, is used as the effective address ... Subsequent to this
+!     use ... the address part ... of the instruction is added to the
+!     value field."  So the field at $1 is converted and $1 moves on 48
+!     bits.  Printed p.72: "The accumulator is cleared and the converted
+!     field is placed into it at the specified offset ... The sign bit
+!     in the sign byte register is set according to the sign of the
+!     data".  Offset 68 puts the integer's units bit at accumulator bit
+!     59, the last fraction bit of a floating-point word, and the
+!     exponent bits 0-11 are zero.
+!   E+I, 48 (no dds: unnormalized, C22-6578 p.30 comment (c)) makes the
+!     exponent 48: the accumulator is now the integer N as an
+!     unnormalized floating-point number.
+!   ST(N), 0($2) stores it normalized; *(N), $L squares it ($L is
+!     address 8.0); +, SUM / ST(U), SUM accumulate.
+!   CBR+, $2, LOOP: add 1.0 to the value, count down, branch while the
+!     count is not zero, and refill from the refill address when it is:
+!     XW2's refill field is "$", XW2 itself, so $2 is (FLOAT, 25) again.
+!   SRT, ROOT: STORE ROOT, printed p.94-95.
+!   LOOP2 divides each stored Fk by the root.
+!
+! DATA.  Twenty-five integers, some negative, whose squares add up to
+! 4**12 = 16,777,216, so the root is exactly 4096 and every quotient
+! N/4096 is exact -- only the exponent changes:
+!      1    -2     3  1024  -512   768   100   -99     7  1234
+!   -321     5    64  -640    17   250   -33    11   400    -8
+!    129  1000  1511 -2132  2179
+!   Squares, by rows: 1 + 4 + 9 + 1048576 + 262144 + 589824 + 10000 +
+!   9801 + 49 + 1522756 = 3443164;  103041 + 25 + 4096 + 409600 + 289 +
+!   62500 + 1089 + 121 + 160000 + 64 = 740825;  16641 + 1000000 +
+!   2283121 + 4545424 + 4748041 = 12593227.  3443164 + 740825 +
+!   12593227 = 16777216.
+!
+! THE EXPECTED VALUES ARE HAND-DERIVED.  Every partial sum is an integer
+! below 2**48, so every step is exact:
+!   SUM  = 2**24 = .1 x 2**25             0328000000000000
+!   ROOT = 2**12 = .1 x 2**13             01A8000000000000
+!     (exponent 25 is odd: one is added and the fraction shifted right,
+!     .01 x 2**26; the root of .01 is .1 and half of 26 is 13)
+!   FLOAT+k = N(k)/4096: N(k)'s own normalized fraction and sign, with
+!   an exponent of (number of bits in N(k)) - 12.  For example
+!     1/4096      .1 x 2**-11             0178000000000000
+!     -2/4096     -.1 x 2**-10            0158000000000008
+!     1234/4096   .10011010010 x 2**-1    0039A40000000000
+!     -2132/4096  -.100001010100 x 2**0   0008540000000008
+!   All twenty-five are in tests/run_tests.sh, and
+!   tests/problem_3_expected.py (p38) asserts each equals N(k)/4096.
+!   x1_after: $1's value has moved 25 x 48 = 1200 bits = 18 words and 48
+!     bits from STRNG; its count and refill are XW1's, untouched (V+I
+!     neither counts nor refills).
+!   x2_after: LOOP2's CB+ ran the count from 25 to zero and the value
+!     from FLOAT to FLOAT+25; the refill field is XW2's.
+!
+! THE PAGE'S COMMENT (a) is about the very first "+, SUM": SUM is a word
+! of zero bits, an order-of-magnitude zero with exponent 0, and "In the
+! present case the nonzeros all have larger exponents".  That is true
+! of this data (the smallest square is 1 = .1 x 2**1) and of any
+! nonzero integer.  A ZERO in the string is another matter and is not
+! in this data: 0 x 0 keeps exponent 96, the sum so far is shifted
+! right past the 48 bits, and the sum is lost.  COMMENT (b), that EPLUS
+! could be taken out "without causing any damage", is tested by
+! problem_3_8_no_eplus.strap: the model agrees with the page, the
+! Reference Manual's text (printed p.87) does not, and which is right is
+! not settled (docs/NEXT.md "C22-6578 CHAPTER 3" item 5).
+!
+! >>> ON THE MODEL TODAY THIS DECK'S ARITHMETIC CHECKS FAIL, AND THE
+! FAULT IS THE MODEL'S. <<<  OBSERVED 2026-11-15: SUM came back
+! 02EBA9C840000000 = 6,114,882, which is the squares of the seventeen
+! positive integers (11,446,049) LESS the squares of the eight negative
+! ones (5,331,167): "*(N), $L" on a negative accumulator made a negative
+! square.  ROOT and all twenty-five FLOAT words follow it and fail too
+! (27 of 27); x1_after, x2_after and the PC pass.  Reference Manual
+! printed p.80: a floating-point operand at address 8 is "accumulator
+! bit positions 0-59 and sign byte register bit positions 4-7"; the
+! model reads accumulator bit 60 for the sign.  The four-statement
+! reproducer is decks/problem_3_fp_address_8_sign.strap, and
+! docs/NEXT.md "C22-6578 CHAPTER 3" item 4 describes it.
+! tests/run_tests.sh registers this deck with the three checks that
+! pass and carries the twenty-seven that do not, as comments, to be
+! restored when the model is mended.
+! problem_3_8_positive.strap is this deck with absolute values, which
+! the fault does not touch: all 29 of its checks pass, and the data-side
+! injection was made there.
+
+NORMV   Z, SUM
+        LX, $1, XW1
+        LX, $2, XW2
+LOOP    LCV(V+I)(D, 48,6), 0.48($1), 68
+EPLUS   E+I, 48
+        ST(N), 0($2)
+        *(N), $L
+        +, SUM
+        ST(U), SUM
+        CBR+, $2, LOOP
+        SRT, ROOT
+LOOP2   L(N), 0($2)
+        /, ROOT
+        ST(U), 0($2)
+        CB+, $2, LOOP2
+        BEW, $
+XW1     XW, STRNG, 25, $
+XW2     XW, FLOAT, 25, $
+SUM     DRZ(N), (1)
+ROOT    DRZ(N), (1)
+! --- the deck's data ------------------------------------------------
+STRNG   DD(D, 48, 6), 1, -2, 3, 1024, -512, 768, 100, -99, 7, 1234
+        DD(D, 48, 6), -321, 5, 64, -640, 17, 250, -33, 11, 400, -8
+        DD(D, 48, 6), 129, 1000, 1511, -2132, 2179
+FLOAT   DR(N), (25)
+        END, NORMV

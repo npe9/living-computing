@@ -1,0 +1,35 @@
+! REPRODUCER, a MODEL finding (docs/NEXT.md, "G2.1 CHAPTER 4: LOCATION 8
+! AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN").
+!
+! Reference Manual printed p.37 (PDF 40), "Accumulator and Sign Byte
+! Register": "The accumulator may also be addressed as an operand in
+! storage.  When location 8, the left half of the accumulator, is
+! explicitly addressed as the operand in a floating point operation, a
+! word is obtained that consists of bits 0-59 of the accumulator
+! followed by bits 4-7 of the accumulator sign byte, thus forming a
+! proper floating point word."
+!
+! So with -1/2 in the accumulator, "*(N), $L" squares it: +1/4.
+!   PROD = +.25 = exponent -1, fraction .5 = 0038 0000 0000 0000.
+! The model reads word 8's own bits 60-63 as the operand's sign byte.
+! Those are accumulator fraction bits 48-51, zero after DL (printed
+! p.96), so it multiplies -1/2 by +1/2:
+!   PROD = 0038 0000 0000 0008, -1/4.   OBSERVED 2026-11-16.
+! The control, +1/2 squared, is right either way, 0038 0000 0000 0000.
+!
+! Found by C22-6578 Problem 4.10, printed p.44, "*(N), $L  'Z**2", which
+! squares a negative Z whenever x's fraction is below 1/sqrt2
+! (decks/problem_4_10.strap).
+
+START   DL(N), MHALF
+        *(N), $L
+        ST(U), PROD
+        DL(N), PHALF
+        *(N), $L
+        ST(U), CTRL
+HALT    BEW, $
+MHALF   DD(N), -.5
+PHALF   DD(N), .5
+PROD    DD(BU,64,8), 7
+CTRL    DD(BU,64,8), 7
+        END, START
