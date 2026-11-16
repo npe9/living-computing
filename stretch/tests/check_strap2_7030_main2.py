@@ -36,9 +36,14 @@ THE ORACLES.
           Four names' statements are known to differ and are pinned
           (ONE_FAMILY below: a question for the table, 4a-iii).
           A statement the host gives any other message is counted in an
-          INFO line and checked by the guide oracle alone.  Most are
-          message 1 for a mode that does not fit the op (D+(BU,8), M+1(N)),
-          which p.177 gives to DECODE (91), not MAIN.
+          INFO line, by the kind of the op's entry, and checked by the
+          guide oracle alone.  Message 1 there is the host refusing a mode
+          that does not fit the op (D+(BU,8), M+1(N)), which p.177 gives to
+          DECODE (91), not MAIN.
+          The host rows are counted in an INFO line: messages for every
+          row; the dds fields only where the unit stands (status 0 and no
+          message 2 or 4); ZIOTPT but for pseudo-ops; the op index but for
+          LINK and a unit still ambiguous with no dds and no secondary.
 
 THE SWEEP.  Every name of the 7030 op table but EXT and the null op, with
 (V+I), (SEOP) and (CR), and with (BU,8), (B,24,8), (U) and (N): 471 names,
@@ -63,35 +68,35 @@ PYTHONDONTWRITEBYTECODE=1.  About 10 minutes on a loaded machine.
 
 MEASURED INJECTIONS, 2026-11-16, into Box 26 in a copy of the deck (the
 deck itself untouched, checked with cmp against the saved copy); control:
-all 21 checks pass.
-  the secondary code always 001 (MS1 takes   FAIL guide sweep, host sweep,
-  no code from the op index)                 guide cases, host cases, p.23's
-                                             +(BU,3)(SEOP)/CW(V+I), the
-                                             floating-mode rule (+(N)(V+I)
-                                             no longer 2)
-  p.23 not done: an ambiguous op with a      FAIL guide sweep, guide cases,
-  secondary keeps its own op index ($5,      host cases (+(V+I)(N) not 2),
-  ZIOPX not OPIVFL)                          p.23's +(V+I) check, the
-                                             floating-mode rule.  The host
-                                             SWEEP passes: for an op whose
-                                             unit still holds the ambiguous
-                                             index the host oracle compares
-                                             only ZIOTPT's last half and not
-                                             the op index
-  a symbolic field's Ibuffw not moved past   FAIL guide cases, host cases
-  it                                         (the second symbol overwrites
-                                             the first), the +(BU,A) check
-  message 2 tested before message 4          FAIL guide cases, host cases,
-                                             the p.176 4-and-5 check
-  a floating mode leaves $5 and ZIOPX on     FAIL guide sweep, guide cases,
-  the ambiguous index (not OPIFP)            host cases, the floating-mode
-                                             rule.  The host SWEEP passes,
-                                             for the reason given above
-  a null byte size 0, not the mode's (MMTAB) FAIL guide sweep, host sweep,
-                                             ONE_FAMILY's list, guide cases,
-                                             host cases
-  Box 25 never taken (EXT's modifier read    FAIL guide cases, host cases,
-  as Box 26's)                               the Box 25 check
+all 22 checks pass, 68.3M model steps; the host rows compared (INFO):
+messages 2757, dds fields 1446, ZIOTPT 1271, op index 1437.
+  1 the secondary code always 001 (MS1     FAIL guide sweep, host sweep,
+    takes no code from the op index)       guide cases, host cases, p.23's
+                                           +(BU,3)(SEOP)/CW(V+I), the
+                                           floating-mode rule
+  2 p.23 not done: an ambiguous op with a  FAIL guide sweep, host sweep (op
+    secondary keeps its own op index       index), guide cases, host cases,
+    ($5, ZIOPX not OPIVFL)                 p.23's +(V+I) check, the
+                                           floating-mode rule
+  3 a symbolic field's Ibuffw not moved    FAIL guide cases, host cases (the
+    past it                                second symbol overwrites the
+                                           first), the +(BU,A) check
+  4 message 2 tested before message 4      FAIL guide cases, host cases,
+                                           the p.176 4-and-5 check
+  5 a floating mode leaves $5 and ZIOPX    FAIL guide sweep, host sweep (op
+    on the ambiguous index (not OPIFP)     index), guide cases, host cases,
+                                           the floating-mode rule
+  6 a null byte size 0, not the mode's     FAIL guide sweep, host sweep,
+    (MMTAB)                                ONE_FAMILY's list, guide cases,
+                                           host cases
+  7 Box 25 never taken (EXT's modifier     FAIL guide cases, host cases,
+    read as Box 26's)                      the Box 25 check
+  8 (,8) does not settle an ambiguous op   FAIL guide cases, host cases,
+    (MJ9's CHOSEN arm removed)             the +(,8) check
+An earlier form of the host oracle skipped the op index of every unit
+that still held an ambiguous index, and 2 and 5 then passed the host
+sweep; it was changed to compare wherever the unit has a dds or a
+secondary, and everything above was re-run.
 """
 import concurrent.futures
 import os
@@ -341,6 +346,9 @@ class Guide:
             if anything:
                 dds = (code << 10) | (fl << 4) | bs
                 flags |= {"DDS", "DSF"}
+                if cls == 3 and O.field(self.index(loc), 38, 1):
+                    sk = self.hi | (sk & 0xFFFFFFFF)    # (,8): CHOSEN, VFL
+                    loc = self.opivfl
         if secn >= 2:
             msgs, status = msgs | {4}, 7
         elif secbad:
@@ -390,7 +398,7 @@ CASES = [
     ("+", ["V+I", "V-I"]), ("LX", ["SEOP", "SEOP"]), ("+", ["SEOP", "V+I"]),
     ("+", ["VERYLONGS"]), ("+", ["CX"]), ("+", ["V+ICRXX"]),
     # the dds: nulls, the substitutes, 64, the adjustments (36, 37)
-    ("+", ["BU,8"]), ("+", [""]), ("+", [","]), ("+", [",8"]), ("+", ["BU,,4"]), ("+", ["BU"]),
+    ("+", ["BU,8"]), ("+", [""]), ("+", [","]), ("L", [",24"]), ("+", [",8"]), ("+", ["BU,,4"]), ("+", ["BU"]),
     ("+", ["BU,64"]), ("+", ["BU,72"]), ("+", ["BU,8,9"]), ("+", ["BU,200,15"]),
     ("+", ["B,1,1"]), ("LX", ["BU,8"]), ("DD", ["BU,64"]), ("DD", ["N"]), ("M+1", ["BU,24,8"]),
     # symbolic fields: the coded expression stays, Ibuffw past it
@@ -470,6 +478,8 @@ def main():
     bad_h = {"sweep": [], "cases": []}
     nh = {"sweep": 0, "cases": 0}
     host_only, statuses, known = [], {}, []
+    counted = {"messages": 0, "fields": 0, "ZIOTPT": 0, "op index": 0}
+    pseudo_of = lambda n: T.lookup(n).pseudo                            # noqa: E731
     for i, (n, groups) in enumerate(items):
         where = "sweep" if i < n_sweep else "cases"
         s = stmts[i]
@@ -500,6 +510,7 @@ def main():
             continue
         hmsgs, hf, hz, he, hbits = h
         nh[where] += 1
+        counted["messages"] += 1
         diff = []
         if set(hmsgs) != msgs:
             diff.append(("messages", sorted(msgs), hmsgs))
@@ -513,15 +524,25 @@ def main():
             loc = unit[5] >> O.LOC_SHIFT
             key = tb.indexes[loc - tb.idx] if 0 <= loc - tb.idx < len(tb.indexes) else None
             amb = key is not None and O.field(tb.index_word(key), 38, 1)
-            pseudo = T.lookup(n).pseudo
+            if amb and (unit_field(unit, U.ZIFDDS) or any(g[:1] and g[:1] in "VSC" for g in groups)):
+                amb = False         # Box 26 should have settled it: compare all
+            counted["fields"] += 1
+            counted["ZIOTPT"] += not pseudo_of(n)
+            pseudo = pseudo_of(n)
             if not pseudo:
                 m = ~MODEBITS & ((0xFFFFFFFF if amb else ~0) & (1 << 64) - 1)
                 if unit[6] & m != hz & m:
                     diff.append(("ZIOTPT", hex(unit[6]), hex(hz)))
+            if he.ambiguous:
+                # the host keeps an ambiguous op on its one entry, the VFL
+                # skeleton with ZOAMB on; a unit Box 26 settled is the VFL one
+                he = T.lookup(n, "BU")
             hkey = (O.question_bits(he), 0 if he.kind == "fp" and T.lookup(n).ambiguous
                     else O.secondary_code(n), tuple(he.fills))
-            if not amb and not (pseudo and not he.pseudo) and key != hkey:
-                diff.append(("op index", key, hkey))
+            if not amb and not (pseudo and not he.pseudo):
+                counted["op index"] += 1
+                if key != hkey:
+                    diff.append(("op index", key, hkey))
             if not pmode and got_coded != hbits(len(g_coded)):
                 diff.append(("coded", got_coded, hbits(len(g_coded))))
         if diff and n in ONE_FAMILY:
@@ -530,13 +551,15 @@ def main():
             bad_h[where].append((s, diff))
     check(f"guide, the sweep: {n_sweep} statements ({len(names)} names x {len(SWEEP)}), "
           "status, messages, Bop, $5, Ibuffw, the eight words bit for bit", bad_g["sweep"][:4], [])
-    check(f"host, the sweep: {nh['sweep']} statements, the messages and Box 26's fields",
+    check(f"host, the sweep: {nh['sweep']} statements, the messages (and Box 26's fields "
+          "where the unit stands)",
           bad_h["sweep"][:4], [])
     check("host, the sweep: the four names of ONE_FAMILY differ from the host in just these",
           sorted(known), sorted(ONE_FAMILY_DIFFERS))
     check(f"guide, the cases: {len(CASES)} statements, the same and the coded bits",
           bad_g["cases"][:4], [])
-    check(f"host, the cases: {nh['cases']} statements, the messages and Box 26's fields",
+    check(f"host, the cases: {nh['cases']} statements, the messages (and Box 26's fields "
+          "where the unit stands)",
           bad_h["cases"][:4], [])
     base = len(items)
     for j, (s, want_st, want_m, why) in enumerate(ILL_FORMED):
@@ -574,7 +597,21 @@ def main():
            unit_field(by["+(BU,8),0"][5:13], U.ZIFALL)), (0, 1))
     check("p.23: +(P,ALPHA1)'s ZILPMS is the symbol's 48 bits",
           unit_field(by["L(P,ALPHA1),0"][5:13], U.ZILPMS), 48)
+    check("CHOSEN: +(,8) makes the ambiguous op VFL, as +(BU,8): ZIOPX, $5 and ZIOTPT",
+          (by["+(,8),0"][10], by["+(,8),0"][2], hex(by["+(,8),0"][11])),
+          (by["+(BU,8),0"][10], by["+(BU,8),0"][2], hex(by["+(BU,8),0"][11])))
     check("Box 25: EXT(BU,8) is status 6 and the unit Box 23's", got("EXT(BU,8),0"), (6, []))
+    print(f"INFO host rows compared: {counted} (messages for every row; the dds fields where "
+          "the unit stands, status 0 and no 2 or 4; ZIOTPT but for pseudo-ops; the op index "
+          "but where the unit is still ambiguous with no dds or secondary, and LINK)")
+    m1 = {}
+    for s, why in host_only:
+        if why == "the host's [1]":
+            n = s.split("(")[0]
+            e = T.lookup(n)
+            k = ("ambiguous " if e.ambiguous else "") + e.kind
+            m1[k] = m1.get(k, 0) + 1
+    print(f"INFO the host's message-1 rows by the entry's kind: {dict(sorted(m1.items()))}")
     print(f"INFO statuses: {dict(sorted(statuses.items()))}")
     kinds = {}
     for s, why in host_only:

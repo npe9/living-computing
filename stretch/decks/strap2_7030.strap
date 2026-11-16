@@ -2922,7 +2922,8 @@ COMREC  DD(BU,64), 0
 ! REGISTERS (p.12, p.20, p.22): $3 the character (GETCHA), $5 the op index's
 ! location, $6 the unit's fixed format.  CHOSEN: $10 the next Bop position.
 ! CHOSEN: Box 2 takes $6 from IBUFFW as it stands (rounding to a full word
-! and the coded expressions' start, Bcfldx and Bcfxtx, are step 4b-iii's);
+! and Bcfldx are step 4b-iii's; since 4b-ii it moves Ibuffw past the fixed
+! format and sets Bcfxtx, below);
 ! of the rest of Box 2 this zeros the fixed format (8 words), blanks Bop,
 ! turns Fmodif off and ZIFALL on.  ZICDID and the error fields are 4b-iv's.
 ! Box 23 (p.22, Fig. 23 p.192): the entry's second word is the skeleton
@@ -3348,7 +3349,9 @@ MJ8S    LI(BU,1), 1
 ! by STRAP II."  CHOSEN (the host): the substitutes are field length 0 and
 ! the mode's byte size (MMTAB), a null mode is BU, and a parenthesis with
 ! nothing in it gives no dds.  Fig. 20 p.189: ZIDDS is the third word's
-! bits 50-62 (mode 3, field length 6, byte size 4: Fig. 29 p.201).  "g.
+! bits 50-62 (mode 3, field length 6, byte size 4: Fig. 29 p.201 prints
+! BU's "101", 64 as "000000" and 8 as "1000"; the other modes' codes in
+! MMTAB are optable.py's MODE_CODE, not re-read for this step).  "g.
 ! explicit dds" is bit 25 of the second word, "m. dds filled in" bit 31,
 ! "i. f.l. filled in" 27, "j. symbolic f.l." 28, "k. b.s. filled in" 29,
 ! "l. symbolic b.s." 30.  CHOSEN (the host): g and m go on with any dds
@@ -3360,7 +3363,24 @@ MJ9     SV, $3, MTMP
         L(BU,1), MJANY
         KI(BU,1), 1
         BZAE, MB26N
-        L(BU,8), MMCODE
+! CHOSEN: a dds with no mode but a field, (,8), is an explicit dds too
+! (p.23: "If at this point an explicit dds has just been detected, the
+! appropriate changes are made to the unit"), and BU stands for its mode,
+! so it makes an ambiguous op the VFL one.  (An empty parenthesis is no
+! dds and settles nothing.)
+        L(BU,8), MMCLS
+        KI(BU,8), 3
+        BZAE, MJ9A
+        BB, .38($5), MJ9B
+        B, MJ9A
+MJ9B    LVI, $5, OPIVFL
+        SV, $5, MLOC
+        L(BU,18), MLOC
+        ST(BU,18), 5.0($6)
+        L(BU,32), 6.32($6)
+        +(BU,64), OPVFLH
+        ST(BU,64), 6.0($6)
+MJ9A    L(BU,8), MMCODE
         ST(BU,3), 3.50($6)
         L(BU,24), MJFL
         ST(BU,6), 3.53($6)
@@ -3418,7 +3438,8 @@ MJP     SV, $3, MTMP
 ! STANDING IN FOR VALUE (step 5), MJK says what it was:
 !   0  null (the prefix 1111, p.198)
 !   1  one integer and nothing else (1000, 110 and 24 bits, then 0000: no
-!      more data, no operator, no g.p.): MJVAL is its value, and the
+!      subscript, no more data, no operator, no g.p.; p.198 items 1A-1B,
+!      2A-2C, 2E, 2A, 3A, 4A): MJVAL is its value, and the
 !      expression is erased, Ibuffw as it was
 !   2  one programmer symbol and nothing else (1000, 100, its length in 7
 !      bits, its characters, then 0000).  PROVISIONAL: VALUE cannot
