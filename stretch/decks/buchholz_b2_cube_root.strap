@@ -1,0 +1,180 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! B.2 "Cube-root Extraction (Table B.2)", text printed p.296 (PDF 321),
+! table printed p.297 (PDF 322), read from the page images.  Notation:
+! printed pp.292-294.
+!
+!   "The cube root x = N**(1/3) may be found by means of the recursion
+!   formula  x(k+1) = x(k) * (1/2 + (3N/2) / (2 x(k)**3 + N)).
+!   Let N be a normalized FLP number with exponent P and fraction F.
+!   A suitable choice of a starting value x0 will give a high accuracy
+!   in very few iterations.  For example, a value of x0 with exponent
+!   p = P/3 rounded to nearest integer in the positive direction and
+!   fraction f0 = 0.7109375 = 0.1011011 (binary) will give full 48-bit
+!   accuracy for any N in three iterations (k = 3), except for a
+!   possible rounding error in the last iteration.  This value of p is
+!   the final exponent of the (normalized) result ...  This program
+!   shows an effective combination of VFL and FLP arithmetic."
+!
+! TABLE B.2 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 200.0                    Start  LX, $1, 200.0
+!   100.32  LOAD (FU), 204.0                                L(U), 204.0
+!   101.0   ADD IMMEDIATE TO EXPONENT (FU), -1       (1)    E+I(U), -1
+!   101.32  ADD (FN), 204.0                                 +(N), 204.0
+!   102.0   STORE (FU), 203.0                        (2)    ST(U), 203.0
+!   102.32  LOAD (VB, 12, 1), 204.0, 117             (3)    L(B,12,1), 204.0, 117
+!   103.32  ADD IMMEDIATE (VBU, 1, 8), 1, 117        (4)    +I(BU,1,8), 1, 117
+!   104.32  DIVIDE IMMEDIATE (VBU, 2, 8), (2) 11, 116 (5)   /I(BU,2,8), (2)11, 116
+!   105.32  STORE ROUNDED (VB, 12, 1), 8.0, 117      (6)    SRD(B,12,1), 8.0, 117
+!   106.32  ADD TO FRACTION (FU), 202.0              (7)    F+(U), 202.0
+!   107.0   STORE (FU), 205.0                        (8)    ST(U), 205.0
+!   107.32  MULTIPLY (FN), 205.0                            *(N), 205.0
+!   108.0   MULTIPLY (FN), 205.0                            *(N), 205.0
+!   108.32  ADD IMMEDIATE TO EXPONENT (FU), 1        (9)    E+I(U), 1
+!   109.0   ADD (FN), 204.0                                 +(N), 204.0
+!   109.32  RECIPROCAL DIVIDE (FN), 203.0            (10)   R/(N), 203.0
+!   110.0   ADD (FN), 201.0                          (11)   +(N), 201.0
+!   110.32  MULTIPLY (FN), 205.0                            *(N), 205.0
+!   111.0   STORE (FU), 205.0                        (12)   ST(U), 205.0
+!   111.32  COUNT AND BRANCH, X1, 107.32             (13)   CB, $1, 107.32
+!   112.0   BRANCH ENABLED AND WAIT, 112.0           Stop   BEW, 112.0
+!
+!   200.0   INDEX, 0.0, 3, 200.0
+!   201.0   DATA, 0.5 E 0
+!   202.0   DATA, 0.7109375 E 0
+!   203.0   DATA
+!   204.0   DATA, N
+!   205.0   DATA, X
+!
+!   Notes: (1) Form N/2 by subtracting 1 from exponent.
+!     (2) Place 3N/2 in temporary storage.
+!     (3) Treating exponent of N as a signed VFL number P, load
+!         magnitude into accumulator exponent position and exponent
+!         sign into sign register.
+!     (4) Form P + 1 (to bias subsequent rounding operation in positive
+!         direction).
+!     (5) Divide by 3 (binary 11).  Offset is chosen to give signed
+!         quotient with one binary place to right of point for
+!         rounding.  (Rest of accumulator, corresponding to FLP
+!         fraction magnitude, is cleared.)
+!     (6) Form FLP number 0.0 E p, where p = (P + 1)/3 rounded to
+!         integer (= P/3 rounded with positive bias).  Rounded, signed
+!         result is returned to accumulator exponent position (exponent
+!         sign replaces extra quotient bit).  Fraction sign is
+!         immaterial.
+!     (7) Form x0 = f0 E p.       (8) Store x0 as first trial root.
+!     (9) Form 2 x(k)**3.         (10) Form (3N/2)/(2 x(k)**3 + N).
+!     (11) Add 1/2.               (12) Store x(k+1).
+!     (13) Traverse loop three times.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   LX p.282; L, ST, STORE ROUNDED (SRD), + p.277; * and / p.278;
+!   RECIPROCAL DIVIDE (R/), ADD TO FRACTION (F+), ADD IMMEDIATE TO
+!   EXPONENT (E+I) p.279; "Immediate addressing (I)" p.280, which is
+!   the I of +I and /I; CB and BEW p.284.  Mode symbols p.293-294: FN
+!   and FU are STRAP's (N) and (U); "VB binary signed" is (B, L, BS),
+!   "VBU binary unsigned" is (BU, L, BS).  "(2) 11" is the book's
+!   radix notation of p.292, binary 11 = 3, and assembles as written.
+!   COUNT AND BRANCH carries no mode symbol: the value is left alone
+!   and, by note (13), the branch is taken until the count runs out --
+!   STRAP's CB.
+!
+! ONE READING TO FLAG: the OCR text layer gives the location of
+! RECIPROCAL DIVIDE as "109.82".  The page image reads 109.32, and the
+! assembler puts the statement there.  Every half-word and full-word
+! location in the table agrees with where the statements assemble: the
+! four VFL statements at 102.32-105.32 each take a full word.
+!
+! >>> THIS DECK DOES NOT RUN TO THE BOOK'S ANSWER ON THE MODEL, AND THE
+! >>> REASON IS ONE UNBUILT OPERATION: VFL STORE ROUNDED.
+! The model refuses the SRD at 105.32 with Operation Code Invalid
+! ("StretchCore: OP site = vflIntOp/unimplemented-code code=101101",
+! half-word 211).  The store into 8.0 does not happen, the accumulator
+! keeps the unrounded quotient with its extra bit sitting in the
+! exponent-sign position, and x0 is formed with the wrong exponent.
+! Three iterations from that start do not converge.  The reproducer is
+! decks/repro_vfl_srd.strap and the item is in docs/NEXT.md.  The same
+! program with the SRD replaced by the two statements the Reference
+! Manual itself calls equivalent is
+! decks/buchholz_b2_cube_root_srd_substituted.strap, and THAT runs to
+! the book's answer.
+!
+! THE DATA IS THE DECK'S: N = 100 = 0.78125 * 2**7, so P = 7.
+!
+! EXPECTED, DERIVED BY HAND (Reference Manual 22-6530-2: FP format
+! printed pp.78-79; STORE ROUNDED printed p.64; VFL DIVIDE printed
+! p.70):
+!
+!   three_halves_n  203.0 = 150 = 0.5859375 * 2**8
+!                   = (16)0109600000000000.                [PASSES]
+!   x1              count 3 run down to 0, value 0.0, refill 200
+!                   = (16)00000000000000C8.                [PASSES]
+!   n, 0.5, f0      unchanged.                             [PASS]
+!   PC              the BEW at 112.0, half-word 224.       [PASSES]
+!
+!   and the VFL steps, for the record of what SRD has to do:
+!     (3) accumulator bits 0-10 = 7, sign register plus
+!     (4) bits 0-10 = 8
+!     (5) the 12 bits left of offset 116 hold 16; 16/3 = 5 remainder 1;
+!         5 at offset 116 is bits 0-10 = 2 and bit 11 = 1, i.e. 2.5
+!     (6) rounded at offset 117: 2 + (bit 11) = 3; stored as a signed
+!         12-bit field with a one-bit sign byte into 8.0-8.11:
+!         exponent 3, exponent sign plus.  p = 3.
+!     (7) x0 = 0.7109375 * 2**3 = 5.6875
+!
+!   x_root          205.0 = 100**(1/3) = 4.641588833612778892...
+!                   = 0.58019860420159736... * 2**3, whose fraction
+!                   truncated to 48 bits is (16)9487E54E3B0F, so the
+!                   word is (16)0069487E54E3B0F0 give or take one in
+!                   the last fraction place ("except for a possible
+!                   rounding error in the last iteration").
+!                   [FAILS: the model stores (16)002B4E42323F66B0,
+!                   which is 1.41.]
+!
+! tests/verify_buchholz_b2.py is the whole check, over eight values of
+! N and with the book's tolerance.  "verify_buchholz_b2.py printed"
+! FAILS today (OBSERVED 2026-11-15: the refusal at half-word 211 for
+! all eight N, and x_root outside the window for four of them -- 100,
+! 8, 0.75*2**-6 and 2**-6; the other four land inside it by luck) and
+! is the acceptance test for VFL SRD.  "verify_buchholz_b2.py
+! substituted" passes.  run_tests.sh registers this deck with the
+! checks marked PASSES above, six in all, and says so.
+!
+! INJECTION, DATA SIDE, OBSERVED, on the checks that are registered
+! (clean: 6 of 6): N changed from 100 to 108 ((16)00ED800000000000),
+! leaving the expectations alone:  FAILS 2 of 6, exactly
+! three_halves_n (the machine stores 162, (16)010A200000000000) and
+! n_unchanged.
+
+        SLC, 100.0
+START   LX, $1, 200.0                 ! Start
+        L(U), 204.0
+        E+I(U), -1                    ! (1)
+        +(N), 204.0
+        ST(U), 203.0                  ! (2)
+        L(B,12,1), 204.0, 117         ! (3)
+        +I(BU,1,8), 1, 117            ! (4)
+        /I(BU,2,8), (2)11, 116        ! (5)
+        SRD(B,12,1), 8.0, 117         ! (6)
+        F+(U), 202.0                  ! (7)
+        ST(U), 205.0                  ! (8)
+        *(N), 205.0
+        *(N), 205.0
+        E+I(U), 1                     ! (9)
+        +(N), 204.0
+        R/(N), 203.0                  ! (10)
+        +(N), 201.0                   ! (11)
+        *(N), 205.0
+        ST(U), 205.0                  ! (12)
+        CB, $1, 107.32                ! (13)
+        BEW, 112.0                    ! Stop
+
+        SLC, 200.0
+        XW, 0.0, 3, 200.0                      ! INDEX, 0.0, 3, 200.0
+        DD(BU,64,8), (16)0008000000000000      ! DATA, 0.5 E 0
+        DD(BU,64,8), (16)000B600000000000      ! DATA, 0.7109375 E 0
+        DD(BU,64,8), 0                         ! DATA
+        DD(BU,64,8), (16)00EC800000000000      ! DATA, N
+        DD(BU,64,8), 0                         ! DATA, X
+
+        END, START

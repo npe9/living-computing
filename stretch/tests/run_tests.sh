@@ -13674,6 +13674,125 @@ run "C22-6578 Problem 2.12 -- 20 x 5 transpose in place, the \$VF interruption a
     "TEMP_is_the_last_lead_element_NOT_the_saved_mask:2028=0x0108000000704001"
 # -- end of 3d --
 
+# ======================================================================
+# BUCHHOLZ APPENDIX B -- "Planning a Computer System" (1962), "Programming
+# Examples", printed pp.292-304 (PDF 317-329).  G2.2 of docs/source_audit.md.
+#
+# Seven tables, B.1-B.7, written in the book's own spelled-out notation
+# (printed pp.292-294).  Each deck's header prints the table, the STRAP
+# statement each line was assembled as, and the Appendix A.4 page that
+# gives the mnemonic.  The book prints no data and no results: every deck
+# supplies data, and every expected word is derived BY HAND from the
+# book's description, never from a run.  Locations are the book's own, so
+# the halt PC checks the Location column.  Each deck's header records its
+# data-side injections as OBSERVED.
+# ======================================================================
+
+# B.1, printed p.295.  LX, L(N), *(N), +(N), CB-, ST(U): Horner's rule over
+# four coefficients, one negative.  Passed against the model as it stood.
+run "Buchholz B.1 -- polynomial evaluation" ./run_program.sh ../decks/buchholz_b1_polynomial.strap StretchBuchB1Tb "PC=206" \
+    "p_result:202=0x00EC200000000000" "x1:17=0x00004080000000C8" "guard:203=99" \
+    "x_unchanged:201=0x004C000000000000" "a0_unchanged:300=0x006E000000000000" "a3_unchanged:303=0x0048000000000000"
+
+# B.2, printed pp.296-297.  THE TABLE AS PRINTED DOES NOT REACH THE BOOK'S
+# ANSWER, AND THE CAUSE IS ONE UNBUILT OPERATION: VFL STORE ROUNDED, the
+# "STORE ROUNDED (VB, 12, 1), 8.0, 117" at 105.32, which the model refuses
+# with OP (vflIntOp/unimplemented-code, code=101101).  docs/NEXT.md has the
+# item; decks/repro_vfl_srd.strap is the reproducer and its header has the
+# command (three cases, 3 of 5 fail today).
+#
+# So the printed deck is registered with the six checks that hold whether or
+# not SRD is built -- everything before 105.32, the loop count and the halt.
+# THE FAILING CHECK, DOCUMENTED AND NOT RUN HERE, is the root itself:
+#
+#     python3 verify_buchholz_b2.py printed
+#
+# which fails today for all eight N (the refusal) and is SRD's acceptance
+# test.  When SRD is built, replace the line below with that one.
+run "Buchholz B.2 -- cube root AS PRINTED, up to the unbuilt VFL SRD" ./run_program.sh ../decks/buchholz_b2_cube_root.strap StretchBuchB2PTb "PC=224" \
+    "three_halves_n:203=0x0109600000000000" "x1:17=0xC8" "n_unchanged:204=0x00EC800000000000" \
+    "half_unchanged:201=0x0008000000000000" "f0_unchanged:202=0x000B600000000000"
+
+# The same program with the SRD replaced by the pair the Reference Manual
+# calls equivalent (printed p.64, Programming Notes): +MGI at the rounding
+# position, then ST.  Eight N, each checked against the book's claim of
+# "full 48-bit accuracy ... except for a possible rounding error in the last
+# iteration", in exact rational arithmetic; 32 checks.  This is what runs
+# E+I, F+, R/, VFL /I and the signed VFL load with a one-bit sign byte.
+run "Buchholz B.2 -- cube root, SRD substituted, eight N to 48 bits" python3 verify_buchholz_b2.py substituted
+
+# B.3, printed p.298.  Three nested index loops over LFT(N), *+(N) and
+# SRD(N), with DL(U) of XFNZERO to clear the double accumulator; x4 and x5
+# are loaded FROM x1 and x2 (LX, $4, 17.0) and x4 refills from x1.  Passed
+# against the model as it stood.  c11 is an odd 49-bit sum, so it checks that
+# floating STORE ROUNDED rounds (Reference Manual printed p.96); the five
+# final index words are worked in the deck's header.
+run "Buchholz B.3 -- matrix multiplication, 2x3 by 3x2" ./run_program.sh ../decks/buchholz_b3_matrix_multiply.strap StretchBuchB3Tb "PC=215" \
+    "c00:320=0x00AB000000000000" "c01:321=0x0328000088000000" "c10:322=0x036E0000EC000000" "c11_rounded:323=0x06280000100003E0" \
+    "guard_lo:319=99" "guard_hi:324=99" \
+    "x1:17=0x004C8000000C0011" "x2:18=0x004D8000000800CA" "x3:19=0x00500000000800CB" \
+    "x4:20=0x004BC000000C0011" "x5:21=0x004F4000000400CA" "ft:14=0x006C000000000000"
+
+# B.4, printed pp.299-300.  LCV(V+I)(DU,60,6) at offset 68 -- decimal to
+# binary, straight into a floating fraction, with progressive indexing over
+# 60-bit fields that are not word aligned -- then *(N) of the accumulator by
+# itself (operand 8.0), SRT(N), /(N), CBR+ and CB+.  The book's own 25
+# numbers.  Passed against the model as it stood.  The data is built so the
+# sum of squares is a perfect square and every quotient is g/64: no rounding
+# rule is assumed anywhere (deck header).  F25 carries zone bits 11.
+run "Buchholz B.4 -- 25 decimal numbers to a normalized FLP vector" ./run_program.sh ../decks/buchholz_b4_decimal_vector.strap StretchBuchB4Tb "PC=215" STEPS=200000 \
+    "guard_lo:399=99" "guard_hi:425=99" \
+    "f1:400=0x003F000000000000" "f2:401=0x00B8000000000000" "f3:402=0x003E000000000000" "f4:403=0x00B8000000000000" \
+    "f5:404=0x003C800000000000" "f6:405=0x00B8000000000000" "f7:406=0x003A000000000000" "f8:407=0x00B8000000000000" \
+    "f9:408=0x0039000000000000" "f10:409=0x0098000000000000" "f11:410=0x0038000000000000" "f12:411=0x009C000000000000" \
+    "f13:412=0x005F000000000000" "f14:413=0x009C000000000000" "f15:414=0x005C000000000000" "f16:415=0x009C000000000000" \
+    "f17:416=0x005A000000000000" "f18:417=0x0078000000000000" "f19:418=0x0059000000000000" "f20:419=0x0078000000000000" \
+    "f21:420=0x0058000000000000" "f22:421=0x0078000000000000" "f23:422=0x007E000000000000" "f24:423=0x007A000000000000" \
+    "f25:424=0x007C000000000000" "root_sum_squares:204=0x01DC34FC00000000" "x1:17=0x0050DC00000000C9" "x2:18=0x00064000000000CA"
+
+# B.5, printed pp.301-303.  The connectives: CI0011 with byte size 1 (each
+# bit of the immediate spread to a byte), C0011, CM0101 across word
+# boundaries, CT0001 against the accumulator's own left half, CT1001, CM0000;
+# the left-zeros count added to two index values ("V+, $1, 7.17", which
+# assembles as 7.0 -- deck header), BRZ/BZRZ, LC from the word part of an
+# index value, BXCZ.  Passed against the model as it stood.  The walk through
+# the loop is in the deck's header; note (13)'s error stop is one of its
+# three observed injections.
+run "Buchholz B.5 -- editing a typed message" ./run_program.sh ../decks/buchholz_b5_edit_message.strap StretchBuchB5Tb "PC=224" \
+    "o0:400=0x4142434445464748" "o1:401=0x494A4B4C4D4E4F50" "o2:402=0x5152535455000000" "o3:403=0x00000000FFFFFFFF" \
+    "guard_lo:399=0xFFFFFFFFFFFFFFFF" "x1:17=0x0000C80000000000" "x2:18=0x0000E00000000000" \
+    "x3:19=0x00640000000C00C9" "control_word:201=0x00640000000C00C9" "acc_left:8=0x8080808080808080"
+
+# B.6, printed pp.303-304.  Progressive indexing on a connective with an
+# INDEXED OFFSET ("63 (X3)", the second I field), V-ICR on the offset index,
+# ST(V+IC), LCI, V+C with a negative VALUE; n = 2, a 128-by-128 bit matrix,
+# every one of its 256 output words compared.
+#
+# >>> THE TABLE AS PRINTED DOES NOT TRANSPOSE, AND THE FAULT IS THE BOOK'S. <<<
+# Line 101.32 is "CONNECT 0011 (V + I) (VBU, 1, 1)".  A byte size of 1 makes
+# each step replace EIGHT accumulator bits (0000000b), by the book's own
+# sec. 7.14 (printed pp.90-91) and Reference Manual printed p.75; stepping
+# the offset from 63 down to 0, each step's seven zeros erase the seven bits
+# before it, and every stored word ends up holding its last bit only.  The
+# model does exactly what the two sources say.  With (VBU, 1, 8) the same
+# program transposes the matrix.  Both are run: "printed" checks the one bit
+# per word that the printed line must leave, "corrected" the transpose.
+# Nothing here is a model or assembler fault.  The deck's header has the
+# argument and the two observed injections.
+run "Buchholz B.6 -- bit matrix AS PRINTED: (VBU,1,1) leaves one bit per word" python3 verify_buchholz_b6.py printed
+run "Buchholz B.6 -- bit matrix with (VBU,1,8): the 128 x 128 transpose" python3 verify_buchholz_b6.py corrected
+
+# Table B.7, printed p.304 (it belongs to section B.6).  Z into the right
+# half of the accumulator, then C0111(V+I)(BU,8,1) with an indexed offset:
+# byte size 1 spreads each row's eight bits to eight bytes and OR interleaves
+# them -- the 8-by-8 transpose in eight steps.  Passed against the model as
+# it stood.
+run "Buchholz B.7 -- 8 x 8 bit matrix transposed in the accumulator" ./run_program.sh ../decks/buchholz_b7_8x8_transpose.strap StretchBuchB7Tb "PC=209" \
+    "transposed:300=0x95A665C96A394D9B" "acc_right:9=0x95A665C96A394D9B" \
+    "x1:17=0x004B4000000000C9" "x2:18=0x00010080000000CA" "guard_lo:299=99" "guard_hi:301=99"
+
+# ============== end of the Buchholz Appendix B group ==================
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

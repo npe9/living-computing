@@ -1,0 +1,189 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! B.3 "Matrix Multiplication (Table B.3)", printed p.298 (PDF 323),
+! read from the page image.  Notation: printed pp.292-294.
+!
+!   "An m-by-n matrix A and an n-by-p matrix B are multiplied to
+!   produce an m-by-p matrix C.  Each element of A is a single FLP
+!   number, the elements being stored row by row at consecutive word
+!   locations starting with A.0.  Similarly, matrixes B and C are
+!   stored row by row starting at B.0 and C.0, respectively.  This
+!   program, which is essentially the matrix multiplication example of
+!   Table 11.5, illustrates indexing procedures."
+!
+! TABLE B.3 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 201.0                    Start  LX, $1, 201.0
+!   100.32  LOAD INDEX, X2, 202.0                           LX, $2, 202.0
+!   101.0   LOAD INDEX, X3, 203.0                    (1)    LX, $3, 203.0
+!   101.32  LOAD INDEX, X4, 17.0                            LX, $4, 17.0
+!   102.0   LOAD INDEX, X5, 18.0                     (2)    LX, $5, 18.0
+!   102.32  LOAD DOUBLE (FU), 204.0                  (3)    DL(U), 204.0
+!   103.0   LOAD FACTOR (FN), 0.0 (X4)                      LFT(N), 0.0($4)
+!   103.32  MULTIPLY AND ADD (FN), 0.0 (X5)          (4)    *+(N), 0.0($5)
+!   104.0   ADD IMMEDIATE TO VALUE, X5, P            (5)    V+I, $5, 2.0
+!   104.32  COUNT BRANCH AND REFILL (+), X4, 103.0   (6)    CBR+, $4, 103.0
+!   105.0   STORE ROUNDED (FN), 0.0 (X3)             (7)    SRD(N), 0.0($3)
+!   105.32  ADD IMMEDIATE TO VALUE, X3, 1.0          (8)    V+I, $3, 1.0
+!   106.0   COUNT BRANCH AND REFILL (+), X2, 102.0   (9)    CBR+, $2, 102.0
+!   106.32  ADD IMMEDIATE TO VALUE, X1, N            (10)   V+I, $1, 3.0
+!   107.0   COUNT BRANCH AND REFILL, X3, 101.32      (11)   CBR, $3, 101.32
+!   107.32  BRANCH ENABLED AND WAIT, 107.32          Stop   BEW, 107.32
+!
+!   201.0   INDEX, A.0, N, 17.0        i00           XW, 300.0, 3, 17.0
+!   202.0   INDEX, B.0, P, 202.0       j00           XW, 310.0, 2, 202.0
+!   203.0   INDEX, C.0, M, 203.0       k0            XW, 320.0, 2, 203.0
+!   204.0   DATA, XFNZERO
+!
+!   Notes: (1) Load index register x1 (i0) from i00, x2 (j0) from j00,
+!              and x3 (k) from k0.
+!     (2) Load x4 (i) from x1 (i0) and x5 (j) from x2 (j0).
+!     (3) Clear double-length accumulator before starting cumulative
+!         multiplication.
+!     (4) Accumulate product element in accumulator.
+!     (5) Increment j by p to advance to next column element of B.
+!     (6) Increment i by 1 to advance to next row element of A.
+!         Traverse inner loop n times.  At the end, reset i to i0 to
+!         restart same row of A.
+!     (7) Store product element.
+!     (8) Increment k by 1 to advance to next product element.
+!     (9) Increment j0 by 1 to start next column of B.  Traverse middle
+!         loop p times.  At the end, reset j0 to j00 to return to
+!         beginning of B.
+!     (10) Increment i0 by n to start next row of A.
+!     (11) Traverse outer loop m times.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   LOAD INDEX (LX) p.282.  LOAD DOUBLE (DL) p.279.  LOAD FACTOR (LFT),
+!   MULTIPLY AND ADD (*+) p.278.  STORE ROUNDED (SRD) p.277.  ADD
+!   IMMEDIATE TO VALUE (V + I) p.283.  COUNT, BRANCH, AND REFILL (CBR)
+!   p.284, "Same as COUNT AND BRANCH, but also refill the index
+!   register if the count has gone to zero"; the mode symbol "+" is
+!   "add 1.0 to value" (printed p.293), STRAP's CBR+; line 107.0 has
+!   none, STRAP's CBR.  No line carries F, and notes (6), (9), (11)
+!   say the loops are traversed n, p, m times: the branch is taken
+!   until the count runs out.
+!   "17.0" and "18.0" in an operand address are index registers x1
+!   and x2 (printed p.293) -- LX reads one index register into another.
+!
+! TWO THINGS THE PAGE LEAVES TO THE READER, AND HOW THEY ARE READ:
+!   The bare "P" and "N" of lines 104.0 and 106.32 are word counts,
+!   p.0 and n.0: notes (5) and (10) say "by p" and "by n" where note
+!   (8) says "by 1" for the table's "1.0".
+!   XFNZERO is printed p.292's "infinitesimal (zero fraction, zero
+!   exponent, exponent sign negative, and exponent flag 1), which
+!   behaves arithmetically like a true zero": exponent flag is bit 0
+!   and exponent sign bit 11 (Reference Manual 22-6530-2 printed
+!   pp.78-79), so the word is (16)8010000000000000.
+!
+! THE DATA IS THE DECK'S.  m = 2, n = 3, p = 2; A.0 = 300.0,
+! B.0 = 310.0, C.0 = 320.0, with a guard word either side of C.
+!
+!       A = |    1      -2    3 |        B = |  7   2**24+1 |
+!           | 2**24+1    5    6 |            |  9      10   |
+!                                            | 11      12   |
+!
+! EXPECTED, DERIVED BY HAND (and not from a run):
+!
+!   c00 = 1*7 - 2*9 + 3*11                       = 22
+!   c01 = (2**24+1) - 2*10 + 3*12                = 2**24 + 17
+!   c10 = 7*(2**24+1) + 5*9 + 6*11               = 7*2**24 + 118
+!   c11 = (2**24+1)**2 + 5*10 + 6*12             = 2**48 + 2**25 + 123
+!
+!   The first three are exact in 48 bits.  c11 IS NOT, AND THAT IS WHY
+!   THE DATA HAS 2**24+1 IN IT TWICE: the sum is odd and 49 bits long.
+!   MULTIPLY AND ADD keeps it whole ("floating-point MULTIPLY AND ADD
+!   is also a double-length operation", A.4 p.279), and STORE ROUNDED
+!   (FN) rounds it: Reference Manual printed p.96 (PDF 99), "The
+!   rounding is performed by adding one to the fraction in the
+!   accumulator in bit position 60 ... The 48 low-order bits are
+!   discarded."  Bit 60 is the 49th fraction bit, which is the 1 here,
+!   so the stored value is 2**48 + 2**25 + 124.  A plain STORE would
+!   leave 2**48 + 2**25 + 122.
+!
+!     c00  (16)00AB000000000000     22 = 0.6875 * 2**5
+!     c01  (16)0328000088000000     exponent 25
+!     c10  (16)036E0000EC000000     exponent 27
+!     c11  (16)06280000100003E0     exponent 49; ...3D0 if not rounded
+!
+!   AND THE FIVE INDEX REGISTERS, which are what the page is about:
+!     x1  i0: 300.0 + m*n = 306.0, count 3 never counted, refill 17.0
+!         = (16)004C8000000C0011
+!     x2  j0: counted to zero p times over, so last REFILLED from
+!         202.0: 310.0, 2, 202.0 = (16)004D8000000800CA
+!     x3  k: 320.0 + 4, then its count m ran out at 107.0 and it was
+!         refilled from 203.0: 320.0, 2, 203.0 = (16)00500000000800CB
+!     x4  i: refilled from 17.0 (x1) when its count ran out at the end
+!         of the last inner loop, when x1 still held the last row,
+!         303.0: 303.0, 3, 17.0 = (16)004BC000000C0011
+!     x5  j: last loaded from x2 on the second pass of the middle loop,
+!         when x2 was 311.0 with count 1, then advanced by p three
+!         times: 317.0, 1, 202.0 = (16)004F4000000400CA
+!   ft    the factor register, word 14 (A.3 printed p.276), holds the
+!         last LOAD FACTOR operand, a12 = 6: (16)006C000000000000.
+!   guards 319.0 and 324.0 still 99.
+!   PC    the BEW at 107.32, half-word 215.
+!
+! INJECTIONS, DATA SIDE, OBSERVED (private copies of this deck; the
+! clean deck passes 13 of 13):
+!
+!   b01 changed from 2**24+1 to 2**24 ((16)0328000000000000):
+!   FAILS 2 of 13, exactly c01 and c11.
+!
+!   a01 changed from -2 to +2 (sign bit off):  FAILS 2 of 13, exactly
+!   c00 and c01.
+!
+!   XFNZERO at 204.0 replaced by 1.0 ((16)0028000000000000), so the
+!   accumulator is not cleared:  FAILS 3 of 13, exactly c00, c01 and
+!   c10, each one too large.  c11 SURVIVES, and for a reason: the sum
+!   becomes 2**48 + 2**25 + 124, which is even and needs no rounding,
+!   and that is the very word the rounded odd sum gives.
+
+        SLC, 100.0
+START   LX, $1, 201.0             ! Start
+        LX, $2, 202.0
+        LX, $3, 203.0             ! (1)
+        LX, $4, 17.0
+        LX, $5, 18.0              ! (2)
+        DL(U), 204.0              ! (3)
+        LFT(N), 0.0($4)
+        *+(N), 0.0($5)            ! (4)
+        V+I, $5, 2.0              ! (5)   P
+        CBR+, $4, 103.0           ! (6)
+        SRD(N), 0.0($3)           ! (7)
+        V+I, $3, 1.0              ! (8)
+        CBR+, $2, 102.0           ! (9)
+        V+I, $1, 3.0              ! (10)  N
+        CBR, $3, 101.32           ! (11)
+        BEW, 107.32               ! Stop
+
+        SLC, 201.0
+        XW, 300.0, 3, 17.0                     ! INDEX, A.0, N, 17.0
+        XW, 310.0, 2, 202.0                    ! INDEX, B.0, P, 202.0
+        XW, 320.0, 2, 203.0                    ! INDEX, C.0, M, 203.0
+        DD(BU,64,8), (16)8010000000000000      ! DATA, XFNZERO
+
+        SLC, 300.0                             ! A, row by row
+        DD(BU,64,8), (16)0028000000000000      ! a00  1
+        DD(BU,64,8), (16)0048000000000008      ! a01  -2
+        DD(BU,64,8), (16)004C000000000000      ! a02  3
+        DD(BU,64,8), (16)0328000008000000      ! a10  2**24+1
+        DD(BU,64,8), (16)006A000000000000      ! a11  5
+        DD(BU,64,8), (16)006C000000000000      ! a12  6
+
+        SLC, 310.0                             ! B, row by row
+        DD(BU,64,8), (16)006E000000000000      ! b00  7
+        DD(BU,64,8), (16)0328000008000000      ! b01  2**24+1
+        DD(BU,64,8), (16)0089000000000000      ! b10  9
+        DD(BU,64,8), (16)008A000000000000      ! b11  10
+        DD(BU,64,8), (16)008B000000000000      ! b20  11
+        DD(BU,64,8), (16)008C000000000000      ! b21  12
+
+        SLC, 319.0
+        DD(BU,64,8), 99                        ! guard
+        DD(BU,64,8), 0                         ! C, row by row
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 99                        ! guard
+
+        END, START

@@ -1,0 +1,84 @@
+! REPRODUCER: VFL STORE ROUNDED (SRD) IS NOT BUILT.  Cut from Buchholz
+! Appendix B, Table B.2 (decks/buchholz_b2_cube_root.strap), whose
+! statement at 105.32, "STORE ROUNDED (VB, 12, 1), 8.0, 117", the model
+! refuses with Operation Code Invalid:
+!
+!     StretchCore:   OP site = vflIntOp/unimplemented-code  code=101101 decimal=0
+!
+! THE SOURCE IS Reference Manual 22-6530-2 printed p.64 (PDF 67),
+! "Store Rounded (SRD)", read from the page image:
+!
+!   "The field from the accumulator is rounded by adding to its
+!   magnitude one-half of the proper radix in the position to the right
+!   of the offset.  Carries are propagated as in any addition in that
+!   radix.  This rounded field replaces the addressed storage field.
+!   If a signed operation is specified, the contents of the accumulator
+!   sign byte register replace the rightmost byte of the storage field
+!   after the sign bit has been modified by the negative sign modifier.
+!   The contents of the accumulator and the sign byte register are not
+!   changed by this operation.  The accumulator sign is ignored in the
+!   actual rounding process."
+!
+!   Radix: "If a binary operation is specified, a binary one is added
+!   to the field from the accumulator in the bit position immediately
+!   to the right of the specified offset."
+!
+! THREE CASES, each expectation worked from those sentences:
+!
+!   round_up     accumulator (16)00AB80 at offset 0.  SRD(BU,8,8) at
+!                offset 8 takes the eight bits left of offset 8, AB;
+!                the bit immediately right of the offset is the 1 of
+!                80, so AB + 1 = AC.  The target word starts as
+!                (16)00FFFFFFFFFFFFFF and only its first byte changes:
+!                (16)ACFFFFFFFFFFFFFF.
+!   acc_kept     "The contents of the accumulator ... are not changed":
+!                a plain ST of the same 24 bits afterwards still stores
+!                00AB80: (16)00AB800000000000.     [passes today]
+!   round_down   accumulator (16)00AB7F: the bit right of the offset is
+!                0, AB stays AB: (16)ABFFFFFFFFFFFFFF.
+!   signed_1bit  Table B.2's own shape.  L(B,12,1) at offset 116 of the
+!                field (2)00000000101 1 -- magnitude 5, a one-bit sign
+!                byte that is minus -- puts 5 in accumulator bits 1-11:
+!                bits 0-10 hold 2 and bit 11 holds 1.  SRD(B,12,1) at
+!                offset 117 rounds the eleven bits left of offset 117
+!                by the bit at 11: 2 + 1 = 3, and the sign byte, minus,
+!                is the twelfth bit.  Into the first twelve bits of a
+!                word of ones: (2)00000000011 1 = (16)007, so
+!                (16)007FFFFFFFFFFFFF.
+!
+! HOW TO RUN IT (it is NOT in run_tests.sh, because it fails until SRD
+! is built; it is the acceptance test):
+!
+!   cd stretch/tests && ./run_program.sh ../decks/repro_vfl_srd.strap \
+!       StretchReproVflSrdTb "PC=2014" \
+!       "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
+!       "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
+!
+! OBSERVED 2026-11-15 against the model as it stands: the refusal line
+! above printed three times (the first is named, half-word 2002, the
+! first SRD); FAILS 3 of 5 -- round_up,
+! round_down and signed_1bit each still hold their initial word;
+! acc_kept and the PC pass.
+
+        SLC, 1000.0
+START   L(BU,24,8), VAL
+        SRD(BU,8,8), UP, 8
+        ST(BU,24,8), KEEP
+        L(BU,24,8), VAL2
+        SRD(BU,8,8), DOWN, 8
+        L(B,12,1), SRC, 116
+        SRD(B,12,1), SGN, 117
+        BEW, $
+
+        SLC, 1008.0
+VAL     DD(BU,24,8), (16)00AB80
+VAL2    DD(BU,24,8), (16)00AB7F
+SRC     DD(BU,12,8), (2)000000001011
+
+        SLC, 1010.0
+UP      DD(BU,64,8), (16)00FFFFFFFFFFFFFF
+KEEP    DD(BU,64,8), 0
+DOWN    DD(BU,64,8), (16)00FFFFFFFFFFFFFF
+SGN     DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+
+        END, START

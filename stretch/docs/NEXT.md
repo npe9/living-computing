@@ -70,6 +70,48 @@ Nothing in the suite depended on it: `grep -E 'DD\(DU?[,)]' decks/*.strap`
 finds a decimal-mode `DD` in these two decks and no other (measured
 2026-11-15; `decks/` only, the MCP listing sources were not swept).
 
+## BUCHHOLZ APPENDIX B: WHAT THE WORKED PROGRAMS FOUND -- 2026-11-15
+
+G2.2 of `source_audit.md`. The first item is an operation a printed
+program of Appendix B (printed pp.292-304) uses and the model does not
+perform; its reproducer deck carries the source, the hand-derived
+expectations and the command, and is not in `run_tests.sh` because it
+fails until the operation is built -- it is the acceptance test. The
+second item is an error in the book, recorded so it is not chased in the
+model; nothing needs building for it.
+
+### VFL STORE ROUNDED (`SRD`, VFL code 101101) is unbuilt
+
+Table B.2 (cube root), 105.32: `STORE ROUNDED (VB, 12, 1), 8.0, 117`.
+The model refuses it: `OP site = vflIntOp/unimplemented-code
+code=101101`. Source: Reference Manual printed p.64 (PDF 67) -- add a
+binary one "in the bit position immediately to the right of the
+specified offset", store the rounded field, sign byte as in `ST`,
+accumulator and sign byte register unchanged, `LC` if the carry leaves
+the field. (Floating-point `SRD` is a different arm and is built.)
+
+* Reproducer: `decks/repro_vfl_srd.strap` -- round up, round down,
+  accumulator kept, and B.2's own signed one-bit-sign-byte shape.
+  Today 3 of 5 fail.
+* Acceptance on the book's program: `cd tests && python3
+  verify_buchholz_b2.py printed` (eight N; fails for all eight today).
+  When it passes, swap it in for the "AS PRINTED, up to the unbuilt VFL
+  SRD" line in `run_tests.sh`.
+* Not tested by either: decimal `SRD` (adds five), and `LC`.
+
+### Table B.6 as printed does not transpose -- the BOOK's error, nothing to build
+
+Recorded here so nobody chases it in the model. Table B.6 line 101.32,
+`CONNECT 0011 (V + I) (VBU, 1, 1), N.0 (X1), 63 (X3)`, has byte size 1.
+The book's own sec. 7.14 (printed pp.90-91) and Reference Manual printed
+p.75 both say a byte smaller than eight is filled out to eight bits
+before it meets the accumulator, so each step writes `0000000b` over
+eight accumulator bits and erases the seven bits the previous steps
+placed. `(VBU, 1, 8)` is what the program needs. The model follows the
+sources in both cases; `tests/verify_buchholz_b6.py printed` and
+`corrected` are both registered and both pass. Deck:
+`decks/buchholz_b6_bit_matrix_transpose.strap`.
+
 ## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS

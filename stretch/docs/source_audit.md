@@ -1982,3 +1982,46 @@ highest-value item (the interruption mechanism is manual-derived only).
 Its comment (d) states a corner no deck exercises: *"The SIC action is
 not performed unless the ensuing branch is successful, and even then it
 is performed AFTER the execution of the branch."*
+
+## G2.2, BUCHHOLZ APPENDIX B
+
+*Begun 2026-11-15.* Appendix B of `Planning_A_Computer_System.pdf`,
+"Programming Examples", is printed pp.292-304 (PDF 317-329): three pages
+of notation and then **seven tables, B.1 to B.7** (the item above says
+six; B.6's section carries two tables, the large bit matrix and the
+8-by-8 one). The notation is the book's own -- operations spelled out,
+`(FN)`/`(FU)`/`(VBU, L, BS)` mode symbols, addresses as `word.bit` -- and
+**Appendix A.4 (printed pp.277-284, PDF 302-309) gives the mnemonic in
+parentheses after every spelled-out name**, so no mapping is inferred
+from usage. The book prints neither data nor results; each deck supplies
+data and derives its expected words by hand. The locations are the
+book's (100.0 up), so the halt PC checks the Location column.
+
+The decks are `decks/buchholz_b*.strap`; the tests are the "BUCHHOLZ
+APPENDIX B" group in `tests/run_tests.sh`.
+
+| Table | Printed | Deck | Exercises | Status |
+|---|---|---|---|---|
+| B.1 Polynomial evaluation | p.295 | `buchholz_b1_polynomial` | `LX`, `L(N)`, `*(N)`, `+(N)`, `CB-`, `ST(U)` | **passes 7 of 7** against the model as it stood; two data injections observed |
+| B.2 Cube-root extraction | pp.296-297 | `buchholz_b2_cube_root` (as printed), `buchholz_b2_cube_root_srd_substituted` | `E+I`, `F+`, `R/`, VFL `L(B,12,1)`, `+I`, `/I`, **VFL `SRD`**, `CB` | **FINDING: VFL `SRD` is unbuilt** and refused at 105.32 (`decks/repro_vfl_srd.strap`, `NEXT.md`). As printed: 6 of 6 on the checks that do not depend on it; the root is wrong and `verify_buchholz_b2.py printed` fails for all eight N. With `SRD` replaced by the Reference Manual's equivalent (`+MGI`, `ST`; printed p.64): **32 of 32 over eight N**, each root inside the book's "48-bit accuracy, except for a possible rounding error" |
+| B.3 Matrix multiplication | p.298 | `buchholz_b3_matrix_multiply` | `DL(U)` of `XFNZERO`, `LFT(N)`, `*+(N)`, `SRD(N)`, `V+I`, `CBR+`, `CBR`, `LX` from an index register | **passes 13 of 13** against the model as it stood, including a 49-bit sum that floating `SRD` must round and all five final index words; three data injections observed |
+| B.4 Decimal numbers to a normalized FLP vector | pp.299-300 | `buchholz_b4_decimal_vector` | `LCV(V+I)(DU,60,6)` at offset 68, `*(N)` by operand 8.0, `SRT(N)`, `/(N)`, `CBR+`, `CB+` | **passes 31 of 31** against the model as it stood, the book's 25 numbers; zone bits shown not to matter; three data injections observed |
+| B.5 Editing a typed message | pp.301-303 | `buchholz_b5_edit_message` | `CI0011` with byte size 1, `C0011`, `CM0101`, `CT0001`, `CT1001`, `CM0000`, the left-zeros count as an index operand, `BRZ`/`BZRZ`, `LC`, `SX`, `BXCZ` | **passes 11 of 11** against the model as it stood; three data injections observed, one of them note (13)'s error stop. The book's `ADD TO VALUE, X1, 7.17` names the LZC register; a 19-bit address holds 7.0 (Reference Manual printed p.76) |
+| B.6 Transposition of a large bit matrix | pp.303-304 | `buchholz_b6_bit_matrix_transpose` | `C0011(V+I)` with an **indexed offset**, `V-ICR`, `ST(V+IC)`, `LCI`, `V+C`, `BZXCZ` | **FINDING, AND IT IS THE BOOK'S: the table as printed does not transpose.** Its `(VBU, 1, 1)` makes each `CONNECT 0011` replace eight accumulator bits (the book's own sec. 7.14, printed pp.90-91; Reference Manual printed p.75), so every stored word keeps only its last bit. The model does what both sources say: `verify_buchholz_b6.py printed` passes on exactly that, 256 of 256 words. With `(VBU, 1, 8)`, `verify_buchholz_b6.py corrected`: **the 128-by-128 transpose, 256 of 256 words**, A untouched, three index words. Two data injections observed |
+| B.7 Transposition of an 8-by-8 bit matrix | p.304 | `buchholz_b7_8x8_transpose` | `Z` into the accumulator, `C0111(V+I)(BU,8,1)` with an indexed offset, `V-IC`, `BZXCZ`, `ST` | **passes 7 of 7** against the model as it stood; two data injections observed |
+
+**What the seven found.** One unbuilt operation in the model (VFL
+`SRD`, B.2), one error in the book (B.6's byte size), and no wrong
+result in anything the model executed. Five tables run as printed
+(B.1, B.3, B.4, B.5, B.7). Not exercised by any of them: decimal
+arithmetic, `SIC`, the I-O operations, Transmit, the indicator-setting
+mode symbol `Z`, and index mode `H`.
+
+**The readings that were not mechanical**, each argued in its deck's
+header: B.1's `COUNT AND BRANCH` sense (A.4 p.284 words the on-off
+modifier the other way round from the notation's `F`, printed p.293;
+settled by the table's own note); B.3's bare `P` and `N` as word
+counts; B.5's `ADD TO VALUE, X1, 7.17`, which names the left-zeros
+counter and assembles as address 7.0; B.5's `LOAD COUNT` from the word
+part of an index value (Reference Manual printed p.24).
+

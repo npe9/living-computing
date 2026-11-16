@@ -1,0 +1,126 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! "PROGRAMMING EXAMPLES", B.1 "Polynomial Evaluation (Table B.1)",
+! printed p.295 (PDF 320), read from the page image.  The notation is
+! the book's own, defined on printed pp.292-294 (PDF 317-319).
+!
+!   "The polynomial p(x) = SUM(k=0..m) a_k x^k is best evaluated by the
+!   expression p = (...((a_m x + a_m-1)x + a_m-2)x + ...)x + a_0 using
+!   repeated floating-point multiplication and addition.  This example
+!   illustrates the universal-accumulator concept applied to
+!   floating-point arithmetic with simple indexing."
+!
+! TABLE B.1 AS PRINTED, and the STRAP statement each line is assembled
+! as.  The book spells operations out; its own Appendix A.4 gives the
+! mnemonic in parentheses after each name, and that is the mapping
+! used -- none is inferred from how the table uses it.
+!
+!   100.0   LOAD INDEX, X1, 200.0             (1)    LX, $1, 200.0
+!   100.32  LOAD (FN), 301.0 (X1)             (2)    L(N), 301.0($1)
+!   101.0   MULTIPLY (FN), 201.0              (3)    *(N), 201.0
+!   101.32  ADD (FN), 300.0 (X1)              (4)    +(N), 300.0($1)
+!   102.0   COUNT AND BRANCH (-), X1, 101.0   (5)    CB-, $1, 101.0
+!   102.32  STORE (FU), 202.0                 (6)    ST(U), 202.0
+!   103.0   BRANCH ENABLED AND WAIT, 103.0    Stop   BEW, 103.0
+!
+!   200.0   INDEX, M.0 - 1.0, M, 200.0               XW, 2.0, 3, 200.0
+!   201.0   DATA, X
+!   202.0   DATA, P
+!   300.0   DATA, A0
+!   301.0   DATA, A1
+!   302.0   DATA, A2
+!   . . . .
+!
+!   Notes: (1) Set up index register 1.
+!          (2) Load accumulator with initial a_m = a_(1+m-1).
+!          (3) Multiply accumulator contents (a_k) by x.
+!          (4) Add a_(k-1).
+!          (5) Traverse loop m times, each time reducing index value
+!              by 1.0.
+!          (6) Store result.
+!
+! THE MAPPINGS, by page:
+!   LOAD INDEX (LX), A.4 printed p.282.  LOAD (L), ADD (+), STORE (ST),
+!   p.277; MULTIPLY (*), p.278.  "FN  FLP normalized", "FU  FLP
+!   unnormalized", printed p.293 -- STRAP's (N) and (U).
+!   COUNT AND BRANCH (CB), p.284.  The mode symbol "-" is "subtract 1.0
+!   from value / for index branching only" (printed p.293), which is
+!   A.4's advance modifier 11 (p.284) and STRAP's CB-.  There is no F
+!   ("branch if indicator off") on the line, and note (5) says the loop
+!   is traversed m times, so the branch is taken while the count has
+!   NOT gone to zero: that is STRAP's CB, not CBZ.  NOTE that A.4 p.284
+!   words its on-off modifier the other way round from the "F" of
+!   p.293 ("1: Branch if count has gone to zero"); the reading here
+!   rests on note (5), and a CBZ- would leave the loop after one pass
+!   and fail the P check below.
+!   BRANCH ENABLED AND WAIT (BEW), p.284.
+!   x1 in an index-address position is $1; "Index registers are
+!   referred to as x0 to x15 in the index addresses and as 16.0 to 31.0
+!   in the operand address" (printed p.293).
+!
+! THE LOCATIONS ARE THE BOOK'S: 100.0 through 103.0, 200.0-202.0,
+! 300.0 up.  The half-word addresses in the table (100.32, 101.32,
+! 102.32) are where the assembler puts those statements, which is the
+! only check on the Location column there is.
+!
+! THE DATA IS THE DECK'S; the page prints M, X, P and A0... as
+! symbols.  m = 3, x = 3, and
+!
+!     a0 = 7,  a1 = -3,  a2 = 5,  a3 = 2
+!
+! EXPECTED RESULTS, DERIVED BY HAND from the page's expression and not
+! from any run:
+!
+!     ((2*3 + 5)*3 - 3)*3 + 7:   2, 6, 11, 33, 30, 90, 97
+!
+!   Every intermediate is a small integer, exact in a 48-bit fraction,
+!   so no rounding rule is involved.  a1 is negative so that the sign
+!   of an operand matters: with |a1| the answer would be 115.
+!
+!   P        97 = 0.7578125 * 2**7.  Fraction 97/128 = (2).1100001, so
+!            bits 12-18 are 1100001; exponent 7 in bits 1-10; all signs
+!            plus.  (Format: Reference Manual 22-6530-2 printed
+!            pp.78-79 -- bit 0 exponent flag, 1-10 exponent, 11
+!            exponent sign, 12-59 fraction, 60 fraction sign.)
+!            = (16)00EC200000000000.
+!   x1       "Traverse loop m times, each time reducing index value by
+!            1.0": value 2.0 - 3*1.0 = -1.0 (word 1 in bits 0-17, sign
+!            bit 24 on), count 3 - 3 = 0, refill 200 untouched.
+!            = (16)00004080000000C8.
+!   guard    203.0, the word after P, must still hold its 99.
+!   coefficients and X must be unchanged (a store through the index
+!            would hit them): A0 and A3 are checked.
+!   PC       the BEW at 103.0, half-word address 206.
+!
+! INJECTIONS, DATA SIDE, OBSERVED (each a one-word change to this deck,
+! run, and reverted; the clean deck passes 7 of 7):
+!
+!   A2 changed from 5 to 6 (the machine computes 106 and stores
+!   (16)00ED400000000000):  FAILS 1 of 7, exactly P.
+!
+!   The index word's count changed from 3 to 2 (one pass fewer, so a0
+!   is never added and x1 ends at value 0.0; the machine computes
+!   (2*3+5)*3-3 = 30 and stores (16)00AF000000000000):  FAILS 2 of 7,
+!   exactly P and x1.
+
+        SLC, 100.0
+START   LX, $1, 200.0             ! (1)
+        L(N), 301.0($1)           ! (2)
+        *(N), 201.0               ! (3)
+        +(N), 300.0($1)           ! (4)
+        CB-, $1, 101.0            ! (5)
+        ST(U), 202.0              ! (6)
+        BEW, 103.0                ! Stop
+
+        SLC, 200.0
+        XW, 2.0, 3, 200.0         ! INDEX, M.0 - 1.0, M, 200.0
+        DD(BU,64,8), (16)004C000000000000      ! DATA, X    3.0
+        DD(BU,64,8), 0                         ! DATA, P
+        DD(BU,64,8), 99                        ! guard (the deck's)
+
+        SLC, 300.0
+        DD(BU,64,8), (16)006E000000000000      ! DATA, A0   7.0
+        DD(BU,64,8), (16)004C000000000008      ! DATA, A1  -3.0
+        DD(BU,64,8), (16)006A000000000000      ! DATA, A2   5.0
+        DD(BU,64,8), (16)0048000000000000      ! A3         2.0
+
+        END, START

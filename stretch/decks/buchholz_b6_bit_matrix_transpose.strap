@@ -1,0 +1,446 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! B.6 "Transposition of a Large Bit Matrix (Table B.6)", table and
+! notes printed p.303 (PDF 328), text printed p.304 (PDF 329), read
+! from the page images.  Notation: pp.292-294.
+!
+!   "A square 64n-by-64n bit matrix beginning at address A.0 is to be
+!   transposed and stored at nonoverlapping addresses starting at B.0.
+!   The technique chosen here is to assemble 64 successive bits of a
+!   column into a 64-bit word in the accumulator and then store that
+!   word in a row of the transposed matrix."  The example "illustrates
+!   the use of bit address and offset indexing with VFL operations".
+!
+! TABLE B.6 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 201.0                    Start  LX, $1, 201.0
+!   100.32  LOAD INDEX, X2, 202.0                           LX, $2, 202.0
+!   101.0   LOAD INDEX, X3, 203.0                           LX, $3, 203.0
+!   101.32  CONNECT 0011 (V + I) (VBU, 1, 1), N.0 (X1), 63 (X3)
+!                                    (1)   C0011(V+I)(BU,1,1), 2.0($1), 63($3)
+!   102.32  SUBTRACT IMMEDIATE FROM VALUE COUNT AND REFILL, X3, 0.32
+!                                    (2)   V-ICR, $3, 0.32
+!   103.0   BRANCH XCZ (F), 101.32   (3)   BZXCZ, 101.32
+!   103.32  STORE (V + IC) (VBU, 64, 8), 1.0 (X2)
+!                                    (4)   ST(V+IC)(BU,64,8), 1.0($2)
+!   104.32  BRANCH XCZ (F), 101.32   (5)   BZXCZ, 101.32
+!   105.0   LOAD COUNT IMMEDIATE, X2, N        (6)   LCI, $2, 2
+!   105.32  ADD TO VALUE AND COUNT, X1, 204.0  (7)   V+C, $1, 204.0
+!   106.0   BRANCH XCZ (F), 101.32                   BZXCZ, 101.32
+!   106.32  BRANCH ENABLED AND WAIT, 106.32    Stop  BEW, 106.32
+!
+!   201.0   INDEX, A.0, 64*N, 201.0            XW, 1000.0, 128, 201.0
+!   202.0   INDEX, B.0, N, 202.0               XW, 2000.0, 2, 202.0
+!   203.0   INDEX, 0.0, 64, 203.0              XW, 0.0, 64, 203.0
+!   204.0   VALUE, -N*N*64.0 + 0.01            VF, -255.63
+!
+!   Notes: (1) Assemble 64 successive column bits in the right half
+!         accumulator by indexing the offset from 63 to 0.
+!     (2) 0.32 means a 1 in the low-order bit of the 19-bit address in
+!         this instruction, which matches the low-order position of the
+!         offset field; thus the effective offset will be reduced by 1.
+!     (3) Branch if the index count is not zero.
+!     (4) Store 64 row bits of the transposed matrix.
+!     (5) Traverse the loop n times.
+!     (6) Reset x2 count to n.
+!     (7) Advance the column index to the start of the next column by
+!         subtracting the length of the column (64n**2 words) and
+!         adding 0.01.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   CONNECT (C) p.281, connective 0011 = the memory bit (p.281-282).
+!   Progressive indexing p.280, with the codes of printed p.294:
+!   "(V + I) add immediate to value", "(V + IC) (same) and count".
+!   SUBTRACT IMMEDIATE FROM VALUE, COUNT, AND REFILL (V - ICR), ADD TO
+!   VALUE AND COUNT (V + C) p.283; LOAD COUNT IMMEDIATE (LCI) p.282;
+!   STORE (ST) p.277.  BRANCH XCZ (F) is BRANCH ON INDICATOR, index
+!   count zero, "branch if indicator off" (p.284, p.293): STRAP's
+!   BZXCZ.
+!   "63 (X3)" is an indexed OFFSET: the VFL format is
+!   "O(M, L, BS), A(I), F(I) ... there may be one [I] for modifying the
+!   address and another for modifying the offset" (printed p.293).
+!   Note (2)'s arithmetic is Reference Manual 22-6530-2 printed p.21
+!   (PDF 24): "In the variable field instructions, the 19 bits which
+!   form the length, byte size, and offset field are indexed as a
+!   single field" -- so the half-word bit of x3's value, 0.32, lines
+!   up with the low-order offset bit.
+!   -N*N*64.0 + 0.01 with n = 2 is -256.0 + 0.01 = -255.63 (63 bits
+!   short of 256 words; carries past the period are modulo 64, p.293).
+!
+! >>> THE TABLE AS PRINTED DOES NOT TRANSPOSE THE MATRIX, AND THE
+! >>> FAULT IS THE BOOK'S: THE BYTE SIZE IN LINE 101.32.
+!
+! "(VBU, 1, 1)" is a one-bit field with byte size 1.  The book's own
+! section 7.14 (printed pp.90-91, PDF 115-116) says: "When the byte
+! size is less than 8, each memory byte is automatically filled with
+! leading 0s to make an 8-bit byte before these are combined with
+! 8-bit bytes from the accumulator."  Note (1) of Table B.5, one page
+! earlier in this appendix, uses exactly that ("Specifying a byte size
+! of 1 causes each 1 to be expanded to an 8-bit byte 0000 0001").  And
+! Reference Manual printed p.75 (PDF 78) is explicit about the
+! one-byte case: "if the field length is a multiple of the byte size,
+! and if the byte size is less than eight, high-order zeros are added
+! to the high-order byte as well as to all other bytes".
+!
+! So each CONNECT 0011 replaces EIGHT accumulator bits with 0000000b:
+! the column bit at the offset, and seven zeros to its left.  The
+! offset runs from 63 down to 0, i.e. left to right, so the seven
+! zeros of each step land on the seven bits placed just before it.
+! Worked through: the bit placed at offset k is erased by the steps at
+! offsets k-1 ... k-7, whenever there is one.  Only offset 0 has none.
+! EVERY WORD STORED HOLDS ONE BIT, THE LAST OF ITS 64, IN ITS LAST
+! POSITION, and 63 zeros.
+!
+! With "(VBU, 1, 8)" -- a one-bit field in a byte size of eight, which
+! is not a whole byte, so "only those bits ... that are included in the
+! field length take part in the processing.  No high-order zeros are
+! added" (same page) -- one accumulator bit is replaced per step and
+! the program transposes the matrix.  That one change is the whole
+! correction.  (Table B.7 has byte size 1 too, but with connective
+! 0111, OR, where the added zeros are harmless.)
+!
+! THE MODEL AGREES WITH THE MANUAL ON BOTH: this deck, as printed,
+! leaves one bit per word, and the corrected line gives the transpose.
+! Nothing is wrong in the model or the assembler here.
+!
+! THE CHECK IS tests/verify_buchholz_b6.py, which compares EVERY word:
+!
+!   verify_buchholz_b6.py printed     this deck as it stands.  For row j
+!       of the output and word w of that row, the word must be
+!       A[64w+63][j] in bit 63 and nothing else.
+!   verify_buchholz_b6.py corrected   this deck with line 101.32's
+!       (BU,1,1) rewritten as (BU,1,8) by the verifier, in memory.  Row
+!       j, word w, bit i of the output must be A[64w+i][j]: the
+!       transpose.
+!
+!   Both also check that A is untouched (256 words), the four guard
+!   words, the three index registers and the halt.  The expectations
+!   are computed from the A that is in this deck, by the definition of
+!   a transpose; nothing is taken from a run.
+!
+! THE DATA IS THE DECK'S.  n = 2: a 128-by-128 matrix, A.0 = 1000.0
+! (256 words, two per row), B.0 = 2000.0.  Bit (r, c) is 1 when
+!
+!     (r*r + 5*c + r*c + (c >> 3) + 3*(r >> 4) + ((r*c) >> 5)) mod 7 < 3
+!
+! which gives 128 different rows, 128 different columns, and 7928 of
+! the 16384 positions differing from their mirror image.  n = 2 rather
+! than 1 so that N.0, 64*N, N and N*N*64.0 are all different numbers.
+!
+! THE INDEX WORDS, BY HAND:
+!   x1  each column: 128 steps of +2.0, then -255.63: a net +0.01.
+!       After 128 columns, 1000.0 + 128 bits = 1002.0; count 128 run
+!       down to 0; refill 201 = (16)00FA8000000000C9.
+!   x2  256 stores of +1.0: 2256.0; count reset to 2 by the last LCI;
+!       refill 202 = (16)02340000000800CA.
+!   x3  refilled from 203.0 every 64 steps: 0.0, 64, 203
+!       = (16)00000000010000CB.
+!   PC  the BEW at 106.32, half-word 213.
+!
+! INJECTIONS, DATA SIDE, OBSERVED through the verifier's second
+! argument (a changed copy of this deck), against "corrected" (clean:
+! 10 of 10 checks, 512 of 512 words):
+!
+!   VALUE at 204.0 changed from -255.63 to -255.62, so each column step
+!   is two bits:  FAILS 2 of 10 -- x1 (1004.0) and the transpose, 254
+!   of its 256 words wrong (row 0 is still column 0; row 1 holds
+!   column 2).  A is untouched.
+!
+!   The count in the index word at 203.0 changed from 64 to 63, so a
+!   word is stored after 63 bits:  FAILS 3 of 10 -- x1, x3 and the
+!   transpose, all 256 words wrong (the first differs in its last bit
+!   only: (16)...4080 for (16)...4081).
+!
+!   And against "printed", the same VALUE injection (-255.62):  FAILS
+!   2 of 10 -- x1 and the one-bit-per-word check, 118 of 256 words
+!   wrong (the surviving bit now comes from every other column).
+!
+! (A change to the matrix itself cannot fail this check, and is not an
+! injection: the expectation is computed from the matrix in the deck.)
+
+        SLC, 100.0
+START   LX, $1, 201.0                               ! Start
+        LX, $2, 202.0
+        LX, $3, 203.0
+        C0011(V+I)(BU,1,1), 2.0($1), 63($3)         ! (1)   N.0 (X1), 63 (X3)
+        V-ICR, $3, 0.32                             ! (2)
+        BZXCZ, 101.32                               ! (3)
+        ST(V+IC)(BU,64,8), 1.0($2)                  ! (4)
+        BZXCZ, 101.32                               ! (5)
+        LCI, $2, 2                                  ! (6)   N
+        V+C, $1, 204.0                              ! (7)
+        BZXCZ, 101.32
+        BEW, 106.32                                 ! Stop
+
+        SLC, 201.0
+        XW, 1000.0, 128, 201.0                      ! INDEX, A.0, 64*N, 201.0
+        XW, 2000.0, 2, 202.0                        ! INDEX, B.0, N, 202.0
+        XW, 0.0, 64, 203.0                          ! INDEX, 0.0, 64, 203.0
+        VF, -255.63                                 ! VALUE, -N*N*64.0 + 0.01
+
+        SLC, 999.0
+        DD(BU,64,8), 99                             ! guard below A
+! A: 128 rows of two words, row by row from 1000.0.
+        DD(BU,64,8), (16)933226644CC99993      ! row 0, columns 0-63
+        DD(BU,64,8), (16)3226644CC9999332      ! row 0, columns 64-127
+        DD(BU,64,8), (16)C3C3C3C3E1E1E1E1      ! row 1, columns 0-63
+        DD(BU,64,8), (16)7070707038383838      ! row 1, columns 64-127
+        DD(BU,64,8), (16)0000FFFF000000FF      ! row 2, columns 0-63
+        DD(BU,64,8), (16)FF000000FFFF0000      ! row 2, columns 64-127
+        DD(BU,64,8), (16)8718E30E70C71CE1      ! row 3, columns 0-63
+        DD(BU,64,8), (16)0E30C31CE18E38C3      ! row 3, columns 64-127
+        DD(BU,64,8), (16)934C32C926996493      ! row 4, columns 0-63
+        DD(BU,64,8), (16)4C32C9269964934C      ! row 4, columns 64-127
+        DD(BU,64,8), (16)4AAA95544AAA9554      ! row 5, columns 0-63
+        DD(BU,64,8), (16)4AAA95544AAA9554      ! row 5, columns 64-127
+        DD(BU,64,8), (16)A5A5A929294A4A4A      ! row 6, columns 0-63
+        DD(BU,64,8), (16)5252569494B5A5A5      ! row 6, columns 64-127
+        DD(BU,64,8), (16)919988CC4C666622      ! row 7, columns 0-63
+        DD(BU,64,8), (16)33119999CCCC4466      ! row 7, columns 64-127
+        DD(BU,64,8), (16)C1781E83E03C07C1      ! row 8, columns 0-63
+        DD(BU,64,8), (16)781E83E03C07C178      ! row 8, columns 64-127
+        DD(BU,64,8), (16)00FF007F001FC007      ! row 9, columns 0-63
+        DD(BU,64,8), (16)F001FC00FF00FF00      ! row 9, columns 64-127
+        DD(BU,64,8), (16)8E6318C67118C631      ! row 10, columns 0-63
+        DD(BU,64,8), (16)0CC7318CE3388E63      ! row 10, columns 64-127
+        DD(BU,64,8), (16)9292496D24B692DB      ! row 11, columns 0-63
+        DD(BU,64,8), (16)496D249292494924      ! row 11, columns 64-127
+        DD(BU,64,8), (16)5050505050505050      ! row 12, columns 0-63
+        DD(BU,64,8), (16)5050505050505050      ! row 12, columns 64-127
+        DD(BU,64,8), (16)B4925A492DA494D2      ! row 13, columns 0-63
+        DD(BU,64,8), (16)4A6925A492524B29      ! row 13, columns 64-127
+        DD(BU,64,8), (16)98C6339846318C66      ! row 14, columns 0-63
+        DD(BU,64,8), (16)318C6319CC6398C6      ! row 14, columns 64-127
+        DD(BU,64,8), (16)C00FE007F003F801      ! row 15, columns 0-63
+        DD(BU,64,8), (16)7C007E803FC01FE0      ! row 15, columns 64-127
+        DD(BU,64,8), (16)FC0F00F03F03C0FC      ! row 16, columns 0-63
+        DD(BU,64,8), (16)0F00F03F03C0FC0F      ! row 16, columns 64-127
+        DD(BU,64,8), (16)333119988CCCC666      ! row 17, columns 0-63
+        DD(BU,64,8), (16)63333119188C8CC6      ! row 17, columns 64-127
+        DD(BU,64,8), (16)49494B5AD2929296      ! row 18, columns 0-63
+        DD(BU,64,8), (16)B4A424252D694949      ! row 18, columns 64-127
+        DD(BU,64,8), (16)AAAA5555AAAA5555      ! row 19, columns 0-63
+        DD(BU,64,8), (16)AAAA5555AAAA5555      ! row 19, columns 64-127
+        DD(BU,64,8), (16)49A45B24926D9249      ! row 20, columns 0-63
+        DD(BU,64,8), (16)A45B24926D9249A4      ! row 20, columns 64-127
+        DD(BU,64,8), (16)638C31C618638C31      ! row 21, columns 0-63
+        DD(BU,64,8), (16)C618638C31C61863      ! row 21, columns 64-127
+        DD(BU,64,8), (16)0FFFF000013FFEC0      ! row 22, columns 0-63
+        DD(BU,64,8), (16)00077FF880000FFF      ! row 22, columns 64-127
+        DD(BU,64,8), (16)F878783C3C3C1E1E      ! row 23, columns 0-63
+        DD(BU,64,8), (16)1E0F0F0F07070703      ! row 23, columns 64-127
+        DD(BU,64,8), (16)2266CCCC99113322      ! row 24, columns 0-63
+        DD(BU,64,8), (16)66CCCC9911332266      ! row 24, columns 64-127
+        DD(BU,64,8), (16)4A96A54AD2A54B52      ! row 25, columns 0-63
+        DD(BU,64,8), (16)A56952A52952B429      ! row 25, columns 64-127
+        DD(BU,64,8), (16)AA55AA55AA55AA55      ! row 26, columns 0-63
+        DD(BU,64,8), (16)AA55AA55AA55AA55      ! row 26, columns 64-127
+        DD(BU,64,8), (16)4D9B364C99366CD9      ! row 27, columns 0-63
+        DD(BU,64,8), (16)B264C9B264C99224      ! row 27, columns 64-127
+        DD(BU,64,8), (16)61C3878E1C387061      ! row 28, columns 0-63
+        DD(BU,64,8), (16)C3878E1C387061C3      ! row 28, columns 64-127
+        DD(BU,64,8), (16)0000000000000000      ! row 29, columns 0-63
+        DD(BU,64,8), (16)0000000080E0FCFF      ! row 29, columns 64-127
+        DD(BU,64,8), (16)F0C3071C38E1C30E      ! row 30, columns 0-63
+        DD(BU,64,8), (16)1C70E1870E38F0C3      ! row 30, columns 64-127
+        DD(BU,64,8), (16)26C9324C9926C932      ! row 31, columns 0-63
+        DD(BU,64,8), (16)649926C913649926      ! row 31, columns 64-127
+        DD(BU,64,8), (16)A552A9542A954AA5      ! row 32, columns 0-63
+        DD(BU,64,8), (16)52A9542A954AA552      ! row 32, columns 64-127
+        DD(BU,64,8), (16)54A52A5254A52A52      ! row 33, columns 0-63
+        DD(BU,64,8), (16)54A52A5254A52A52      ! row 33, columns 64-127
+        DD(BU,64,8), (16)933232262664644C      ! row 34, columns 0-63
+        DD(BU,64,8), (16)4CC9C99999939332      ! row 34, columns 64-127
+        DD(BU,64,8), (16)0E0787C3E1F07038      ! row 35, columns 0-63
+        DD(BU,64,8), (16)1C0E0F87C3C1E070      ! row 35, columns 64-127
+        DD(BU,64,8), (16)FFFF0000FF0000FF      ! row 36, columns 0-63
+        DD(BU,64,8), (16)FF0000FF0000FFFF      ! row 36, columns 64-127
+        DD(BU,64,8), (16)0E718E308638C738      ! row 37, columns 0-63
+        DD(BU,64,8), (16)C318E31CE10C718E      ! row 37, columns 64-127
+        DD(BU,64,8), (16)9B6C32D96492C924      ! row 38, columns 0-63
+        DD(BU,64,8), (16)924924934D269B6C      ! row 38, columns 64-127
+        DD(BU,64,8), (16)A15555422AAA8555      ! row 39, columns 0-63
+        DD(BU,64,8), (16)540AAAA99555522A      ! row 39, columns 64-127
+        DD(BU,64,8), (16)5252525252525252      ! row 40, columns 0-63
+        DD(BU,64,8), (16)5252525252525252      ! row 40, columns 64-127
+        DD(BU,64,8), (16)9988CC66223399CC      ! row 41, columns 0-63
+        DD(BU,64,8), (16)4466331199CC6622      ! row 41, columns 64-127
+        DD(BU,64,8), (16)07E03C03E01E83F0      ! row 42, columns 0-63
+        DD(BU,64,8), (16)1F81780FC07C07E0      ! row 42, columns 64-127
+        DD(BU,64,8), (16)FF00FF00FC01F803      ! row 43, columns 0-63
+        DD(BU,64,8), (16)E00FC01F007F00FF      ! row 43, columns 64-127
+        DD(BU,64,8), (16)1CC663188CE3311C      ! row 44, columns 0-63
+        DD(BU,64,8), (16)C663188CE3311CC6      ! row 44, columns 64-127
+        DD(BU,64,8), (16)92DA4949692524B4      ! row 45, columns 0-63
+        DD(BU,64,8), (16)9692D24B49492D24      ! row 45, columns 64-127
+        DD(BU,64,8), (16)AAAAAAAA2A005555      ! row 46, columns 0-63
+        DD(BU,64,8), (16)5555555580AAAAAA      ! row 46, columns 64-127
+        DD(BU,64,8), (16)5249259652492596      ! row 47, columns 0-63
+        DD(BU,64,8), (16)5249259652492596      ! row 47, columns 64-127
+        DD(BU,64,8), (16)6619C6318C639866      ! row 48, columns 0-63
+        DD(BU,64,8), (16)19C6318C63986619      ! row 48, columns 64-127
+        DD(BU,64,8), (16)F8013FC007F8003F      ! row 49, columns 0-63
+        DD(BU,64,8), (16)E007FC001FE003FC      ! row 49, columns 64-127
+        DD(BU,64,8), (16)00E0FC1F0380F07E      ! row 50, columns 0-63
+        DD(BU,64,8), (16)0F01C0F83F0700E0      ! row 50, columns 64-127
+        DD(BU,64,8), (16)6263632333333331      ! row 51, columns 0-63
+        DD(BU,64,8), (16)3111191919989898      ! row 51, columns 64-127
+        DD(BU,64,8), (16)29494AD296B42529      ! row 52, columns 0-63
+        DD(BU,64,8), (16)494AD296B4252949      ! row 52, columns 64-127
+        DD(BU,64,8), (16)5542AA5550AA5550      ! row 53, columns 0-63
+        DD(BU,64,8), (16)AA1554AA0555AA85      ! row 53, columns 64-127
+        DD(BU,64,8), (16)24DB24DB24DB24DB      ! row 54, columns 0-63
+        DD(BU,64,8), (16)24DB24DB24DB24DB      ! row 54, columns 64-127
+        DD(BU,64,8), (16)638E38638E186386      ! row 55, columns 0-63
+        DD(BU,64,8), (16)1861C61871C61C71      ! row 55, columns 64-127
+        DD(BU,64,8), (16)FFF8800000077FFF      ! row 56, columns 0-63
+        DD(BU,64,8), (16)F8800000077FFFF8      ! row 56, columns 64-127
+        DD(BU,64,8), (16)030707070F0F0F1E      ! row 57, columns 0-63
+        DD(BU,64,8), (16)1E1E3C3C3C787878      ! row 57, columns 64-127
+        DD(BU,64,8), (16)66CC99332644C899      ! row 58, columns 0-63
+        DD(BU,64,8), (16)3366CC89113266CC      ! row 58, columns 64-127
+        DD(BU,64,8), (16)2B52A54A942952A5      ! row 59, columns 0-63
+        DD(BU,64,8), (16)4A942952A54A9429      ! row 59, columns 64-127
+        DD(BU,64,8), (16)54A952A54A15AA54      ! row 60, columns 0-63
+        DD(BU,64,8), (16)A952A54A15AA54A9      ! row 60, columns 64-127
+        DD(BU,64,8), (16)266CC993266CC993      ! row 61, columns 0-63
+        DD(BU,64,8), (16)266CC993266CC993      ! row 61, columns 64-127
+        DD(BU,64,8), (16)61E1C3C387878E0E      ! row 62, columns 0-63
+        DD(BU,64,8), (16)1C1C3838707061E1      ! row 62, columns 64-127
+        DD(BU,64,8), (16)FFFF0000000000FF      ! row 63, columns 0-63
+        DD(BU,64,8), (16)FFFFFF0000000000      ! row 63, columns 64-127
+        DD(BU,64,8), (16)70C30E38E1871C70      ! row 64, columns 0-63
+        DD(BU,64,8), (16)C30E38E1871C70C3      ! row 64, columns 64-127
+        DD(BU,64,8), (16)936499269926C932      ! row 65, columns 0-63
+        DD(BU,64,8), (16)C9324C934C936499      ! row 65, columns 64-127
+        DD(BU,64,8), (16)954AA9544AA5542A      ! row 66, columns 0-63
+        DD(BU,64,8), (16)A5522A9552A9954A      ! row 66, columns 64-127
+        DD(BU,64,8), (16)A94A525495A5294A      ! row 67, columns 0-63
+        DD(BU,64,8), (16)5294A5A92A4A5695      ! row 67, columns 64-127
+        DD(BU,64,8), (16)C9C9C9C9C9C9C9C9      ! row 68, columns 0-63
+        DD(BU,64,8), (16)C9C9C9C9C9C9C9C9      ! row 68, columns 64-127
+        DD(BU,64,8), (16)0F83C1F0381E0783      ! row 69, columns 0-63
+        DD(BU,64,8), (16)E0703C0E87C1E078      ! row 69, columns 64-127
+        DD(BU,64,8), (16)00FF0000FF0003FF      ! row 70, columns 0-63
+        DD(BU,64,8), (16)001FFC00FFE000FF      ! row 70, columns 64-127
+        DD(BU,64,8), (16)718C610CE31CE318      ! row 71, columns 0-63
+        DD(BU,64,8), (16)C738C63086318E71      ! row 71, columns 64-127
+        DD(BU,64,8), (16)92C96C3693492492      ! row 72, columns 0-63
+        DD(BU,64,8), (16)C96C3693492492C9      ! row 72, columns 64-127
+        DD(BU,64,8), (16)95555554422AAAAA      ! row 73, columns 0-63
+        DD(BU,64,8), (16)A985555554520AAA      ! row 73, columns 64-127
+        DD(BU,64,8), (16)A5A5A49494925252      ! row 74, columns 0-63
+        DD(BU,64,8), (16)5A4A4B69292DA5A5      ! row 74, columns 64-127
+        DD(BU,64,8), (16)CC663399CC663399      ! row 75, columns 0-63
+        DD(BU,64,8), (16)CC663399CC663399      ! row 75, columns 64-127
+        DD(BU,64,8), (16)07F00FC03E817807      ! row 76, columns 0-63
+        DD(BU,64,8), (16)F00FC03E817807F0      ! row 76, columns 64-127
+        DD(BU,64,8), (16)07C03F00F807C07F      ! row 77, columns 0-63
+        DD(BU,64,8), (16)00F80F80FF01F00F      ! row 77, columns 64-127
+        DD(BU,64,8), (16)633118CCE633198C      ! row 78, columns 0-63
+        DD(BU,64,8), (16)C66331188CC66331      ! row 78, columns 64-127
+        DD(BU,64,8), (16)969692929292D2D2      ! row 79, columns 0-63
+        DD(BU,64,8), (16)DA5A4B4B49494949      ! row 79, columns 64-127
+        DD(BU,64,8), (16)00555555AAAAAA00      ! row 80, columns 0-63
+        DD(BU,64,8), (16)555555AAAAAA0055      ! row 80, columns 64-127
+        DD(BU,64,8), (16)5A69B4D269A4D249      ! row 81, columns 0-63
+        DD(BU,64,8), (16)A492492492492492      ! row 81, columns 64-127
+        DD(BU,64,8), (16)31CC31CC31CC31CC      ! row 82, columns 0-63
+        DD(BU,64,8), (16)31CC31CC31CC31CC      ! row 82, columns 64-127
+        DD(BU,64,8), (16)F8000FFC8007FE80      ! row 83, columns 0-63
+        DD(BU,64,8), (16)07FEC0037FC0017F      ! row 83, columns 64-127
+        DD(BU,64,8), (16)F0F83E0F0701C0F0      ! row 84, columns 0-63
+        DD(BU,64,8), (16)F83E0F0701C0F0F8      ! row 84, columns 64-127
+        DD(BU,64,8), (16)8898999919191131      ! row 85, columns 0-63
+        DD(BU,64,8), (16)3133333333236266      ! row 85, columns 64-127
+        DD(BU,64,8), (16)4B5294A5294AD294      ! row 86, columns 0-63
+        DD(BU,64,8), (16)25695A92A42D4B52      ! row 86, columns 64-127
+        DD(BU,64,8), (16)1552AA55AA8550AA      ! row 87, columns 0-63
+        DD(BU,64,8), (16)552AA554AA550AA1      ! row 87, columns 64-127
+        DD(BU,64,8), (16)49B64992649B2449      ! row 88, columns 0-63
+        DD(BU,64,8), (16)B64992649B2449B6      ! row 88, columns 64-127
+        DD(BU,64,8), (16)3863C60C3863C60C      ! row 89, columns 0-63
+        DD(BU,64,8), (16)3863C60C3863C60C      ! row 89, columns 64-127
+        DD(BU,64,8), (16)FFFFFCE080000000      ! row 90, columns 0-63
+        DD(BU,64,8), (16)0000031F7FFFFFFF      ! row 90, columns 64-127
+        DD(BU,64,8), (16)E0C183070F1E3C78      ! row 91, columns 0-63
+        DD(BU,64,8), (16)F0E0C183070F1E1C      ! row 91, columns 64-127
+        DD(BU,64,8), (16)993264C91326CC99      ! row 92, columns 0-63
+        DD(BU,64,8), (16)3264C91326CC9932      ! row 92, columns 64-127
+        DD(BU,64,8), (16)4AB54A952A942954      ! row 93, columns 0-63
+        DD(BU,64,8), (16)2952A952A54AA54A      ! row 93, columns 64-127
+        DD(BU,64,8), (16)15A95295AA52A52A      ! row 94, columns 0-63
+        DD(BU,64,8), (16)54A54A54A94A15A9      ! row 94, columns 64-127
+        DD(BU,64,8), (16)49999332644CC999      ! row 95, columns 0-63
+        DD(BU,64,8), (16)B226644C99933226      ! row 95, columns 64-127
+        DD(BU,64,8), (16)C3C3C3C3C3C3C3C3      ! row 96, columns 0-63
+        DD(BU,64,8), (16)C3C3C3C3C3C3C3C3      ! row 96, columns 64-127
+        DD(BU,64,8), (16)0000FFFF00000000      ! row 97, columns 0-63
+        DD(BU,64,8), (16)FFFF000000FFFFFF      ! row 97, columns 64-127
+        DD(BU,64,8), (16)1C70871CE18738E1      ! row 98, columns 0-63
+        DD(BU,64,8), (16)0E38C30E70C31C70      ! row 98, columns 64-127
+        DD(BU,64,8), (16)649364934C924D32      ! row 99, columns 0-63
+        DD(BU,64,8), (16)C926C92699249B64      ! row 99, columns 64-127
+        DD(BU,64,8), (16)A5544AA995522AA5      ! row 100, columns 0-63
+        DD(BU,64,8), (16)544AA995522AA554      ! row 100, columns 64-127
+        DD(BU,64,8), (16)2B4A5A525494A5A5      ! row 101, columns 0-63
+        DD(BU,64,8), (16)A9294A4A52529495      ! row 101, columns 64-127
+        DD(BU,64,8), (16)333391999989C8CC      ! row 102, columns 0-63
+        DD(BU,64,8), (16)4C44666626323333      ! row 102, columns 64-127
+        DD(BU,64,8), (16)C1F03C07C1F03C07      ! row 103, columns 0-63
+        DD(BU,64,8), (16)C1F03C07C1F03C07      ! row 103, columns 64-127
+        DD(BU,64,8), (16)00FF00FF000FF000      ! row 104, columns 0-63
+        DD(BU,64,8), (16)FF00FF000FF000FF      ! row 104, columns 64-127
+        DD(BU,64,8), (16)18C6318CE318C671      ! row 105, columns 0-63
+        DD(BU,64,8), (16)0CE33886711CC338      ! row 105, columns 64-127
+        DD(BU,64,8), (16)6D2492DB49243692      ! row 106, columns 0-63
+        DD(BU,64,8), (16)C94924B692496D24      ! row 106, columns 64-127
+        DD(BU,64,8), (16)AAA8A18585155555      ! row 107, columns 0-63
+        DD(BU,64,8), (16)5555555555555450      ! row 107, columns 64-127
+        DD(BU,64,8), (16)29A5B496524A4929      ! row 108, columns 0-63
+        DD(BU,64,8), (16)A5B496524A4929A5      ! row 108, columns 64-127
+        DD(BU,64,8), (16)318C66318C663398      ! row 109, columns 0-63
+        DD(BU,64,8), (16)463398C63398C423      ! row 109, columns 64-127
+        DD(BU,64,8), (16)C01FC01FC01FC01F      ! row 110, columns 0-63
+        DD(BU,64,8), (16)C01FC01FC01FC01F      ! row 110, columns 64-127
+        DD(BU,64,8), (16)0780FC0F00F80F00      ! row 111, columns 0-63
+        DD(BU,64,8), (16)F81F00F01F01F03F      ! row 111, columns 64-127
+        DD(BU,64,8), (16)C6633331188CCCC6      ! row 112, columns 0-63
+        DD(BU,64,8), (16)633331188CCCC663      ! row 112, columns 64-127
+        DD(BU,64,8), (16)92929696B4B4A4A4      ! row 113, columns 0-63
+        DD(BU,64,8), (16)242425252D2D6969      ! row 113, columns 64-127
+        DD(BU,64,8), (16)5555AAAA005555AA      ! row 114, columns 0-63
+        DD(BU,64,8), (16)AA555500AAAA5555      ! row 114, columns 64-127
+        DD(BU,64,8), (16)9249B64B249249B4      ! row 115, columns 0-63
+        DD(BU,64,8), (16)5B259249A4DA2D92      ! row 115, columns 64-127
+        DD(BU,64,8), (16)C618639C638C31C6      ! row 116, columns 0-63
+        DD(BU,64,8), (16)18639C638C31C618      ! row 116, columns 64-127
+        DD(BU,64,8), (16)1FFEC0001FFEC000      ! row 117, columns 0-63
+        DD(BU,64,8), (16)1FFEC0001FFEC000      ! row 117, columns 64-127
+        DD(BU,64,8), (16)E0F0F87C3C1E1F0F      ! row 118, columns 0-63
+        DD(BU,64,8), (16)07030381C0E0E0F0      ! row 118, columns 64-127
+        DD(BU,64,8), (16)C4CC889919333322      ! row 119, columns 0-63
+        DD(BU,64,8), (16)6644CCCC99991133      ! row 119, columns 64-127
+        DD(BU,64,8), (16)942D4AD2A5295294      ! row 120, columns 0-63
+        DD(BU,64,8), (16)2D4AD2A52952942D      ! row 120, columns 64-127
+        DD(BU,64,8), (16)55AA552A150A8542      ! row 121, columns 0-63
+        DD(BU,64,8), (16)A150A854AA55AA55      ! row 121, columns 64-127
+        DD(BU,64,8), (16)9B264D9324499224      ! row 122, columns 0-63
+        DD(BU,64,8), (16)499264D9B26C9B26      ! row 122, columns 64-127
+        DD(BU,64,8), (16)C3860C3871E3C78E      ! row 123, columns 0-63
+        DD(BU,64,8), (16)1C3871C3860C1830      ! row 123, columns 64-127
+        DD(BU,64,8), (16)0000000000000000      ! row 124, columns 0-63
+        DD(BU,64,8), (16)0000000000000000      ! row 124, columns 64-127
+        DD(BU,64,8), (16)E1830F1C38F0C187      ! row 125, columns 0-63
+        DD(BU,64,8), (16)0E3C70E1C3071E38      ! row 125, columns 64-127
+        DD(BU,64,8), (16)CC9326C91364C932      ! row 126, columns 0-63
+        DD(BU,64,8), (16)6499324C9926CC93      ! row 126, columns 64-127
+        DD(BU,64,8), (16)954AA552A552A954      ! row 127, columns 0-63
+        DD(BU,64,8), (16)29542A952A954AA5      ! row 127, columns 64-127
+        DD(BU,64,8), 99                             ! guard above A, 1256.0
+
+        SLC, 1999.0
+        DD(BU,64,8), 99                             ! guard below B
+        SLC, 2256.0
+        DD(BU,64,8), 99                             ! guard above B
+
+        END, START

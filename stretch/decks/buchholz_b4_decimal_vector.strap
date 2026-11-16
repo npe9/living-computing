@@ -1,0 +1,205 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! B.4 "Conversion of Decimal Numbers to a Floating-point Normalized
+! Vector (Table B.4)", text printed p.299 (PDF 324), table printed
+! p.300 (PDF 325), read from the page images.  Notation: pp.292-294.
+!
+!   "A group of 25 decimal fixed-point numbers is to be converted to a
+!   normalized vector of 25 binary FLP numbers.  The decimal numbers
+!   are positive, unsigned, and ten digits long.  The decimal digits
+!   are expressed in a 6-bit code whose low-order 4 bits are the
+!   corresponding binary integers; thus the field length is 60 and the
+!   byte size 6.  The decimal numbers are stored consecutively starting
+!   at address D.  The vector is to be 'normalized' by replacing each
+!   number F(k) by the expression  F(k) / sqrt(SUM F(k)**2).  ...  The
+!   vector is to be stored in consecutive word locations starting at
+!   address F.0.  This example shows the use of radix conversion and
+!   progressive indexing combined with FLP operations."
+!
+! TABLE B.4 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 201.0                   Start  LX, $1, 201.0
+!   100.32  LOAD INDEX, X2, 202.0                          LX, $2, 202.0
+!   101.0   LOAD (FU), 203.0                               L(U), 203.0
+!   101.32  STORE (FU), 204.0                       (1)    ST(U), 204.0
+!   102.0   LOAD CONVERTED (V + I) (VDU, 60, 6), 0.60 (X1), 68
+!                                                   (2)    LCV(V+I)(DU,60,6), 0.60($1), 68
+!   103.0   STORE (FU), F.0 (X2)                    (3)    ST(U), 400.0($2)
+!   103.32  MULTIPLY (FN), 8.0                      (4)    *(N), 8.0
+!   104.0   ADD (FN), 204.0                                +(N), 204.0
+!   104.32  COUNT BRANCH AND REFILL (+), X2, 101.32        CBR+, $2, 101.32
+!   105.0   STORE ROOT (FN), 204.0                  (5)    SRT(N), 204.0
+!   105.32  LOAD (FN), F.0 (X2)                            L(N), 400.0($2)
+!   106.0   DIVIDE (FN), 204.0                             /(N), 204.0
+!   106.32  STORE (FU), F.0 (X2)                    (6)    ST(U), 400.0($2)
+!   107.0   COUNT AND BRANCH (+), X2, 105.32               CB+, $2, 105.32
+!   107.32  BRANCH ENABLED AND WAIT, 107.32         Stop   BEW, 107.32
+!
+!   201.0   INDEX, D, 0, 201.0                      XW, 300.0, 0, 201.0
+!   202.0   INDEX, 0.0, 25, 202.0                   XW, 0.0, 25, 202.0
+!   203.0   DATA, XFNZERO
+!   204.0   DATA
+!
+!   Notes: (1) Current SUM F(k)**2 to temporary storage.
+!     (2) Convert decimal integer to binary and place in FLP fraction
+!         position of accumulator, the exponent being zero.
+!         Progressive indexing is used to increment the index value by
+!         0.60 after the present operand field is fetched.
+!     (3) Store F(k) temporarily in unnormalized form.  (The exponent
+!         need not be adjusted to correspond to the actual
+!         decimal-point position of the original field, for the
+!         subsequent normalization process cancels out the exponent
+!         discrepancy.)
+!     (4) Square F(k).
+!     (5) Place (SUM F(k)**2)**(1/2) in temporary storage.
+!     (6) Replace each F(k) by normalized value.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   LOAD CONVERTED (LCV) p.280.  Progressive indexing p.280: "The
+!   specified index value is used as the address of the memory operand
+!   of the VFL operation; this is followed by one of six immediate
+!   index-arithmetic operations", and "(V + I)  add immediate to value"
+!   printed p.294 -- STRAP's LCV(V+I), where the address field 0.60 is
+!   the immediate and x1's value is the operand address.  "VDU decimal
+!   unsigned" p.294 is STRAP's (DU, 60, 6); for a radix conversion the
+!   radix modifier "specifies the radix of the unconverted operand ...
+!   1: Conversion is from decimal to binary" (p.281).  STORE ROOT (SRT)
+!   and DIVIDE p.278-279.  COUNT, BRANCH, AND REFILL (CBR) and COUNT
+!   AND BRANCH (CB) p.284, each with the mode symbol "+", "add 1.0 to
+!   value" (printed p.293): CBR+ and CB+.
+!   "8.0" as a floating operand is the accumulator itself: A.3 note d
+!   (printed p.276), "In FLP operations only, the explicit operand
+!   address 8.0 is interpreted to mean the 64 bits 8.0 to 8.59 and
+!   10.04 to 10.07, which combine to make up a proper single-length
+!   signed FLP number".
+!   The offset 68 puts the converted integer's low-order bit at
+!   accumulator bit 127 - 68 = 59, the last fraction bit of a
+!   floating-point word (note 2).
+!
+! THE SYMBOLS D AND F ARE THE DECK'S ADDRESSES: D = 300.0, F.0 = 400.0.
+! Every location in the table agrees with where the statements
+! assemble; LCV is the one full-word statement, at 102.0.
+!
+! THE DATA IS THE DECK'S, and it is built so that every expected word
+! can be worked by hand with no rounding rule assumed.
+!
+!   F(k) = g(k) * 204798976, where 204798976 = 199999 * 2**10 and the
+!   25 integers g(k) are
+!
+!     30 1 28 1 25 1 20 1 18 2 16 3 15 3 12 3 10 4 9 4 8 4 7 5 6
+!
+!   whose squares add up to 4096 = 64**2.  So
+!     SUM F(k)**2 = (199999 * 2**10 * 64)**2,  a perfect square,
+!     the root is 199999 * 2**16, and F(k) / root = g(k) / 64 exactly.
+!   199999**2 * 4096 is under 2**48, so every square and every partial
+!   sum fits a 48-bit fraction exactly.  The largest F is 6143969280,
+!   ten digits.
+!
+!   The numbers are written as (16) constants, one 60-bit field each,
+!   so the six bits of every digit are visible.  THE FIRST 24 CARRY
+!   ZONE BITS 00; THE 25TH CARRIES 11 ON EVERY DIGIT.  The page fixes
+!   only the low four bits ("a 6-bit code whose low-order 4 bits are
+!   the corresponding binary integers"), and Reference Manual 22-6530-2
+!   printed pp.72-73 (PDF 75-76), Load Converted, says the operand "is
+!   converted from decimal to binary after conversion of the decimal
+!   field to byte size four" -- so the zone bits must not matter, and
+!   f25 checks that they do not.
+!
+! EXPECTED, DERIVED BY HAND (not from a run):
+!
+!   f1..f25   400.0-424.0 hold g(k)/64, normalized.  The exponent of
+!             the stored F(k) (2**-48 too small, note 3) cancels in the
+!             division, as the note says.  For example
+!               f1  = 30/64 = 0.9375 * 2**-1 = (16)003F000000000000
+!               f2  =  1/64 = 0.5    * 2**-5 = (16)00B8000000000000
+!             (bit 11 is the exponent sign; Reference Manual printed
+!             pp.78-79).  All 25 are in run_tests.sh.
+!   root_sum_squares   204.0.  The accumulator holds the integer F in
+!             fraction bits ending at bit 59 with exponent 0, i.e.
+!             F * 2**-48; the root of the sum is therefore
+!             199999 * 2**16 * 2**-48 = (199999 / 2**18) * 2**-14
+!             = (16)01DC34FC00000000.
+!   x1        300.0 + 25 * 0.60 = 300.0 + 1500 bits = 323.28; count 0
+!             (V + I does not count); refill 201
+!             = (16)0050DC00000000C9.
+!   x2        counted to zero and refilled from 202.0 at the end of the
+!             first loop (value back to 0.0, count 25), then the second
+!             loop's CB+ 25 times: 25.0, count 0, refill 202
+!             = (16)00064000000000CA.
+!   guards    399.0 and 425.0 still 99.
+!   PC        the BEW at 107.32, half-word 215.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD: 31 of 31.
+!
+! INJECTIONS, DATA SIDE, OBSERVED (private copies of this deck):
+!
+!   The 60-bit fields of F1 and F2 exchanged (the sum of squares is
+!   the same):  FAILS 2 of 31, exactly f1 and f2, each holding the
+!   other's value.
+!
+!   The last place of F3 changed from 8 to 9 (5734371329; the sum is
+!   no longer a perfect square):  FAILS 26 of 31 -- root_sum_squares
+!   and all twenty-five of f1..f25, every one off in its low-order
+!   bits.  The two index words, the guards and the PC stand.
+!
+!   The count in the index word at 202.0 changed from 25 to 24:
+!   FAILS 28 of 31 -- root_sum_squares, all of f1..f25 (f25 is never
+!   stored and still holds the model's unwritten-core pattern,
+!   (16)AAAAAAAAAAAAAAAA), x1 and x2.
+
+        SLC, 100.0
+START   LX, $1, 201.0                         ! Start
+        LX, $2, 202.0
+        L(U), 203.0
+        ST(U), 204.0                          ! (1)
+        LCV(V+I)(DU,60,6), 0.60($1), 68       ! (2)
+        ST(U), 400.0($2)                      ! (3)   F.0 (X2)
+        *(N), 8.0                             ! (4)
+        +(N), 204.0
+        CBR+, $2, 101.32
+        SRT(N), 204.0                         ! (5)
+        L(N), 400.0($2)                       !       F.0 (X2)
+        /(N), 204.0
+        ST(U), 400.0($2)                      ! (6)   F.0 (X2)
+        CB+, $2, 105.32
+        BEW, 107.32                           ! Stop
+
+        SLC, 201.0
+        XW, 300.0, 0, 201.0                    ! INDEX, D, 0, 201.0
+        XW, 0.0, 25, 202.0                     ! INDEX, 0.0, 25, 202.0
+        DD(BU,64,8), (16)8010000000000000      ! DATA, XFNZERO
+        DD(BU,64,8), 0                         ! DATA
+
+! D: twenty-five ten-place numbers, six bits a place, end to end from 300.0.
+        SLC, 300.0
+        DD(BU,60,8), (16)181103246242200      ! F1  = 6143969280 = 30 * 204798976
+        DD(BU,60,8), (16)0020041C92091C6      ! F2  = 0204798976 =  1 * 204798976
+        DD(BU,60,8), (16)1470C40C7043088      ! F3  = 5734371328 = 28 * 204798976
+        DD(BU,60,8), (16)0020041C92091C6      ! F4  = 0204798976 =  1 * 204798976
+        DD(BU,60,8), (16)141049247104000      ! F5  = 5119974400 = 25 * 204798976
+        DD(BU,60,8), (16)0020041C92091C6      ! F6  = 0204798976 =  1 * 204798976
+        DD(BU,60,8), (16)100245247245080      ! F7  = 4095979520 = 20 * 204798976
+        DD(BU,60,8), (16)0020041C92091C6      ! F8  = 0204798976 =  1 * 204798976
+        DD(BU,60,8), (16)0C62060C8045188      ! F9  = 3686381568 = 18 * 204798976
+        DD(BU,60,8), (16)0040091491C9142      ! F10 = 0409597952 =  2 * 204798976
+        DD(BU,60,8), (16)0C21C61C80C6046      ! F11 = 3276783616 = 16 * 204798976
+        DD(BU,60,8), (16)0060440C9189088      ! F12 = 0614396928 =  3 * 204798976
+        DD(BU,60,8), (16)0C01C1248106100      ! F13 = 3071984640 = 15 * 204798976
+        DD(BU,60,8), (16)0060440C9189088      ! F14 = 0614396928 =  3 * 204798976
+        DD(BU,60,8), (16)0841471481C7042      ! F15 = 2457587712 = 12 * 204798976
+        DD(BU,60,8), (16)0060440C9189088      ! F16 = 0614396928 =  3 * 204798976
+        DD(BU,60,8), (16)080107248247180      ! F17 = 2047989760 = 10 * 204798976
+        DD(BU,60,8), (16)008049049149004      ! F18 = 0819195904 =  4 * 204798976
+        DD(BU,60,8), (16)048103049007204      ! F19 = 1843190784 =  9 * 204798976
+        DD(BU,60,8), (16)008049049149004      ! F20 = 0819195904 =  4 * 204798976
+        DD(BU,60,8), (16)0460C80C9048008      ! F21 = 1638391808 =  8 * 204798976
+        DD(BU,60,8), (16)008049049149004      ! F22 = 0819195904 =  4 * 204798976
+        DD(BU,60,8), (16)0440C31490880C2      ! F23 = 1433592832 =  7 * 204798976
+        DD(BU,60,8), (16)040083249108200      ! F24 = 1023994880 =  5 * 204798976
+        DD(BU,60,8), (16)C72CB8DF9CF8D76      ! F25 = 1228793856 =  6 * 204798976   zone bits 11 on every digit
+
+        SLC, 399.0
+        DD(BU,64,8), 99                        ! guard below F
+        SLC, 425.0
+        DD(BU,64,8), 99                        ! guard above F
+
+        END, START
