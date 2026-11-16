@@ -39,6 +39,14 @@
 !   right by "SV, $0, 17.0".  Not corrected here: it needs $1 saved
 !   first, more than a one-word change.
 !
+!  SOURCES FOR THE BITS.  That bits 28-30 of a K-type instruction are
+!   not an index field: Reference Manual printed p.26 (PDF 29), "The I
+!   field is a one-bit field" and "specified by instruction bit 30",
+!   and this page's own comment (a), "If bits 25-27 have 100: K-type".
+!   The AMOUNTS in defect 1 (8, 8, 10) and every test instruction's 32
+!   bits are strap_asm's encodings of the test statements, not read
+!   from a format page; the pinned values rest on those encodings.
+!
 ! EXPECTED VALUES ARE HAND-DERIVED, two ways, neither from the model:
 !   statement  numeric address + the value of the index the
 !              instruction names (comment (a): "the algebraic sum of

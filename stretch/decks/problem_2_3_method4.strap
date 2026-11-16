@@ -19,9 +19,11 @@
 ! >>> PINS THE REFUSAL.  It is docs/source_audit.md G2.3's known gap,
 ! >>> "the decimal VFL set", not a new finding.  <<<
 !
-! WHAT THE CHECKS PIN TODAY: each L / LWF sets OP and loads nothing, the
-! accumulator stays zero, and each ST stores 48 zero bits: every FIEL
-! word is 000000000000A5A5.  The halt PC is reached.
+! WHAT THE CHECKS PIN TODAY, AS OBSERVED: the model reports one OP, at
+! half-word 2000 (the first L(DU)); all three FIEL words end
+! 000000000000A5A5, i.e. each ST stored 48 zero bits; the halt PC is
+! reached.  Whether the LWF(D) and the second L(DU) also set OP was not
+! observed separately (OP is an indicator, and the model prints it once).
 !
 ! WHAT THEY MUST BECOME when the decimal arm lands -- HAND-DERIVED from
 ! the page and the Reference Manual, not from any model:
