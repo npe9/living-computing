@@ -1862,6 +1862,14 @@ sign byte -- traced before the run) and then loops in `KOMF` without
 writing product 2; the loop is not traced and 2.8 stays unregistered
 (`docs/NEXT.md` G2.3).
 
+*2026-11-16, later: 2.8 traced and registered.*  The loop is the printed
+program's, not the model's: `KOMF`'s `KF(BU,24)` compares three bytes with
+the accumulator's N D (11111111) (printed pp.56, 65), never the one-byte
+mark the following `V+I, $2, 1.0` assumes.  Registered as printed (a
+deliberate stop in the loop), with `KF(BU,8)` (halts, 36/8/44: the pre-run
+trace's values), and with the signed ADD made `DU` too (the statement's
+375/80/455).  Two new rows in the defect table below; `docs/NEXT.md` G2.3.
+
 **The assembler (`strap_asm`): two findings, both with reproducers and a
 section in `docs/NEXT.md`, neither fixed.**  The host STRAP II
 (`strap/strap2`) is right on both.
@@ -1877,7 +1885,7 @@ comments are written `!'`; a symbol in a `DD` data field (2.10's
 `DD(BU, 18), N`) is refused by STRAP II too.
 
 **The printed programs: nine defects in seven methods, each worked by hand
-from the Reference Manual.**  Seven of the nine were then run AS PRINTED and
+from the Reference Manual** (eleven in eight since 2.8 was traced, below).  Seven of the nine were then run AS PRINTED and
 the model agreed with the hand trace; 2.3 Method 3's is not run (it does not
 terminate) and 2.12's is pinned only as far as what TEMP is left holding.
 Each deck's header has the argument.
@@ -1893,6 +1901,8 @@ Each deck's header has the argument.
 | 2.9 | last `B, MPLUS` | bits 19-23 left in the sum | `B, KMINUS` |
 | 2.9 | K-type, K = 1 | `$1` overwritten before it is read | -- |
 | 2.12 | mask saved in `INST+1.0` | that word is TEMP, reused | -- |
+| 2.8 | `KOMF KF(BU,24)(V+I)` | never matches: loops past the list | `KF(BU,8)` |
+| 2.8 | `+(D, 48, 8)` | E's last digit read as a sign: 36, 8, 44 | `+(DU, 48, 8)` |
 
 Also recorded, without a run: 2.6 Method 4 does not assemble as
 printed (`BZXCZ, $3, TEST`) and has three more visible defects -- it is
@@ -1901,8 +1911,9 @@ transcribed in `problem_2_6_method3.strap`'s header; 2.8 prints the label
 
 **Open, and not decided here:**
 
-1. **2.8 and 2.3 Method 4 wait on the decimal arm.**  2.8's expected byte
-   forms (zone bits of a decimal store) were not derived.
+1. ~~**2.8 and 2.3 Method 4 wait on the decimal arm.**~~  Both run since
+   G2.3 stage 1; 2.8 registered 2026-11-16 (its stored digits carry zone
+   0000 -- observed on the model, not derived by hand).
 2. **2.6 Method 4 was not run.**  Running it means choosing four
    corrections; that would test the deck's rewrite, not IBM's program.
 3. **2.9's K = 1 defect and 2.6 Method 3's last-compare defect have no

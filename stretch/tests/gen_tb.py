@@ -621,6 +621,13 @@ if __name__ == '__main__':
     #                             there, for an image too big for a `case`
     #   DUMP=FIRST,COUNT       -- after the run, display COUNT words of
     #                             core from word FIRST as MEMDUMP lines
+    #   STOPAT=HW,N            -- stop DELIBERATELY at the Nth arrival of
+    #                             the instruction counter at half-word HW
+    #                             (generate()'s stop_at_pc/_hits): for a
+    #                             program that loops by design or by
+    #                             misprint, where there is no halt to pin.
+    #                             The checks then read mid-run state, so
+    #                             pin only words the loop cannot move
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -662,6 +669,8 @@ if __name__ == '__main__':
     wait_for_io = False
     mem_dump = None
     fast_load = None
+    stop_at_pc = None
+    stop_at_pc_hits = 1
     for spec in sys.argv[3:]:
         if spec == 'ASM=strap2':
             continue
@@ -670,6 +679,9 @@ if __name__ == '__main__':
             wait_for_io = True
         elif spec.startswith('PC='):
             pc_check = int(spec[3:], 0)
+        elif spec.startswith('STOPAT='):
+            hw, n = spec[7:].split(',')
+            stop_at_pc, stop_at_pc_hits = int(hw, 0), int(n, 0)
         elif spec.startswith('STEPS='):
             step_cap = int(spec[6:], 0)
         elif spec.startswith('CYCLES<='):
@@ -710,4 +722,5 @@ if __name__ == '__main__':
                     tape_checks=tape_checks, pc_check=pc_check,
                     cycle_bound=cycle_bound,
                     cycle_window=cycle_window, wait_for_io=wait_for_io,
-                    mem_dump=mem_dump, fast_load=fast_load))
+                    mem_dump=mem_dump, fast_load=fast_load,
+                    stop_at_pc=stop_at_pc, stop_at_pc_hits=stop_at_pc_hits))

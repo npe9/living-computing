@@ -1,0 +1,64 @@
+! C22-6578 PROBLEM 2.8, "PURCHASING LIST ARITHMETIC", printed pp.20-21,
+! WITH BOTH PRINTED DEFECTS CORRECTED.  problem_2_8.strap as printed, with
+! two cards changed:
+!
+!   printed   KOMF  KF(BU,24)(V+I), 0.8($2)     here  KF(BU,8)(V+I), 0.8($2)
+!   printed   ADD   +(D, 48, 8),-0.48($2)       here  +(DU, 48, 8),-0.48($2)
+!
+! The KOMF card: problem_2_8_komf8.strap's header.  The ADD card: the
+! statement describes E as "(DU, 48, 8)" (printed p.20), and the printed
+! signed "+(D, ...)" takes E's last byte as a sign byte.
+!
+! OBSERVED 2026-11-16 (ASM=strap2), the run halts with the problem's own
+! answer: F1 = 375 (word 1203 bytes 3-5 = 03 07 05), F2 = 80 (word 1207
+! bytes 3-5 = 00 08 00), grand total 455 in $FT one digit a byte (word 14 =
+! (16)040505), $RM 0.  So these two cards are the program's only defects
+! on this data.
+!
+! THE TWO BLANK F SUBFIELDS are two 48-bit DDs each, as in problem_2_8.strap.
+
+        SLC, 1000.0
+START   Z, $FT
+LCON    LX, $2, XW2
+LCON2   LCV(DU, 24, 8)(V+I), 0.24+0.48($2),128-18    !'$R cleared too
+        LC, $1, $L; BXCZ, NEXT                       !'binary count field
+ADD     +(DU, 48, 8),-0.48($2)       !'MEANT: DU -- printed D
+        CB, $1, ADD
+NEXT    ST(DU, 64, 8) (V+I), 0.64($2), 16            !'store total into F
+        ST(DU, 32, 8) (V+I), 0.32($2)
+        M+(DU, 64, 4), $FT                           !'update grand total
+        L(BU, 32), TESTW
+        KF(BU, 24), 0($2),8                          !'test for end of string
+        BAE, LAST
+KOMF    KF(BU,8)(V+I), 0.8($2)                       !'MEANT: (BU,8) -- printed (BU,24)
+        BZAE, KOMF
+MORE    V+I, $2, 1.0                                 !'bypass 64 more bits to new D field
+        B, LCON2
+LAST    L(DU, 64, 4), $FT
+        ST(DU, 64, 8), $FT
+        ST(DU, 64, 8), $RM, 64
+HALT    BEW, $
+TESTW   (IQSQ)DD(DU,24,8),ENDQ                       !'end mark for string
+        DD(BU, 8, 8), (2)11111111                    !'beginning mark for field
+XW2     XW, LIST+0.72, 0, $
+
+        SLC, 1200.0
+! product 1: item 07, "BOLTS ", 3 units at 000125 cents, remarks "OK"
+LIST    DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 07
+        (IQSQ)DD(BU,48,8),BOLTS Q
+        DD(DU,24,8), 003
+        DD(DU,48,8), 000125
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,16,8),OKQ
+! product 2: item 12, "NUTS  ", 2 units at 000040 cents, remarks "END"
+        DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 12
+        (IQSQ)DD(BU,48,8),NUTS  Q
+        DD(DU,24,8), 002
+        DD(DU,48,8), 000040
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(DU,24,8),ENDQ
+        END, START

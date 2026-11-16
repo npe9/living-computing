@@ -13745,11 +13745,41 @@ run "C22-6578 Problem 2.7 -- sorting into tables via LVE/SVA on SIC entries" ./r
     "m19_T13_w0:1426=0x5555555555555555" "m19_T13_w1:1427=0x5555555555555555" \
     "m19_T14_w0:1428=0xBDEFD55555555555" "m19_T14_w1:1429=0x5555555555555555" \
     "m19_T15_w0:1430=0xB3FF3B9FF9555555" "m19_T15_w1:1431=0x5555555555555555"
-# 2.8 is decimal throughout and is NOT run (its deck says why).  Transcribing
-# it found that strap_asm assembles a DD in a decimal mode as a BINARY
-# integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two runs of
-# the one reproducer: strap_asm, pinning the wrong words, and the host STRAP
-# II, which is right.  docs/NEXT.md has the section.
+# 2.8, decimal throughout, assembled by the host STRAP II (strap_asm gets
+# decimal DDs wrong, below).  THE PRINTED PROGRAM IS WRONG AT KOMF and cannot
+# leave its loop: "KF(BU,24)(V+I), 0.8($2)" compares three bytes with the
+# accumulator's N D (11111111), never the one-byte all-ones mark the
+# following "V+I, $2, 1.0" assumes (traced on the model 2026-11-16 against
+# Reference Manual printed pp.21, 56, 65; the deck's header has the trace).
+# As in 2.9 and 4.9m1: the cards as printed, pinned to what they do (here a
+# DELIBERATE STOP at the 40th arrival at KOMF, past the list's end, checking
+# only words the loop cannot move), and the cards that were meant.  The
+# printed "+(D,48,8)" is signed, so the KOMF-only run gets 36/8/44, NOT the
+# statement's 375/80/455; correcting the ADD too gets the statement's.
+# INJECTIONS, measured 2026-11-16 in StretchExecute.bsv, each reverted from a
+# saved copy and compared with cmp:
+#  (1) KF's accumulator field taken at offset 0 whatever the offset
+#      ("(acc.mag >> offSh) & nmask" -> "acc.mag & nmask"): the as-printed
+#      run still PASSES (it never reaches the end test's match); komf8 and
+#      corrected FAIL the step cap, PC (2022, in KOMF on product 2: the end
+#      test cannot see END) and FT (0x44 / 0x455, the packed total never
+#      expanded), 3 failures each.
+#  (2) the decimal ADD reading its field unsigned (fieldToSM's unsign forced
+#      to 1 in the + arm): as-printed FAILS F1 (0x307054941) and FT (0x375);
+#      komf8 FAILS F1, F2, FT (it now gets 375/80/455); corrected PASSES.
+run "C22-6578 Problem 2.8 -- as printed: KF(BU,24) at KOMF never matches, a deliberate stop in the loop" ./run_program.sh ../decks/problem_2_8.strap StretchP28Tb ASM=strap2 STOPAT=2020,40 STEPS=6000 \
+    "F1_36_signed_add:1203=0x0000000003064941" "F2_never_written:1207=0x0000000000003547" \
+    "FT_packed_36:14=0x36" "RM_untouched:13=0"
+run "C22-6578 Problem 2.8 -- KOMF as meant, KF(BU,8): halts, 36/8/44 by the printed signed ADD" ./run_program.sh ../decks/problem_2_8_komf8.strap StretchP28K8Tb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_36_NOT_375:1203=0x0000000003064941" "F2_8_NOT_80:1207=0x0000000000083547" \
+    "FT_44_NOT_455:14=0x404" "RM:13=0"
+run "C22-6578 Problem 2.8 -- KOMF and ADD as meant: the statement's 375, 80, 455" ./run_program.sh ../decks/problem_2_8_corrected.strap StretchP28CTb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_375:1203=0x0000000307054941" "F2_80:1207=0x0000000008003547" \
+    "FT_455:14=0x40505" "RM:13=0"
+# Transcribing 2.8 found that strap_asm assembles a DD in a decimal mode as a
+# BINARY integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two
+# runs of the one reproducer: strap_asm, pinning the wrong words, and the
+# host STRAP II, which is right.  docs/NEXT.md has the section.
 run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
     "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
     "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \
