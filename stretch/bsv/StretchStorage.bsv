@@ -379,9 +379,9 @@ module mkStretchStorage(StretchStorage);
   // stores to word 7 changes the other fifty bits and leaves the
   // counts alone.  **This is a documented simplification, not the
   // architecture** -- the manual makes location 7 an ordinary
-  // addressable word -- and it is the same one this model already
-  // makes for the indicator register, where writeWord(11) is a
-  // no-op and the write is folded in elsewhere.  Nothing in the
+  // addressable word -- and it is the same one this model made for
+  // the indicator register, where writeWord(11) was a no-op until
+  // 2026-11-16 (now indStW, commitIndicators).  Nothing in the
   // corpus stores to word 7; MCP reads it (printed p.17's "$LZC+.3")
   // and never writes it.
   //

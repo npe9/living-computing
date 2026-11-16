@@ -749,10 +749,11 @@ function Action writeHWWithWord(StretchStorage st, HWordAddr ha, Bit#(32) v, Wor
   endaction;
 
 // A half-word store whose target is word 11, the INDICATOR REGISTER.
-// st.writeWord(11) is a deliberate no-op: the execute stage writes
-// `indicators` exactly once per instruction via setIndicatorBits, and a
-// plain register cannot take two independent writes in one rule. So the
-// store is FOLDED into `ind`, the Word64 that shared tail writes -- the
+// The store is FOLDED into `ind`, the Word64 the shared tail writes via
+// setIndicatorBits.  It was written this way when st.writeWord(11) was a
+// no-op.  writeWord(11) has taken a store since 2026-11-16 (StretchStorage
+// indStW, Reference Manual printed p.37), and this arm does not call it,
+// so the fold is still the only write.  It uses the
 // same technique the BB arm already uses for a single bit (see the
 // `bw == 11` case), generalised to a half-word.
 //
@@ -5902,8 +5903,10 @@ function ActionValue#(ExecDispatch)
               WordAddr zw = baWord(effAddr24(st, {bm.addr,5'b0}, bm.idx));
               if (zw == 11)
                 // Store Zero to the INDICATOR register clears the
-                // settable bits 20-63 (bits 0-19 are read-only, p.41);
-                // writeWord(11) is a no-op, so fold into `ind` (the
+                // settable bits 20-63 (bits 0-19 are read-only, p.41).
+                // Folded into `ind`, written when writeWord(11) was a
+                // no-op (it is not since 2026-11-16, StretchStorage
+                // indStW; this arm never calls it) -- the
                 // Word64 the shared tail writes once via
                 // setIndicatorBits), keeping IBM bits 0-19 = BSV 63:44.
                 // This is the diagnostic's `Z,$IND` reset before a test.
@@ -6766,9 +6769,9 @@ function ActionValue#(ExecDispatch)
       //
       // BB on the INDICATOR register (word 11): p.41 says "BRANCH ON BIT
       // may also be used to test and change the contents of positions
-      // 20-63 of the indicator register". A plain st.writeWord(11) is a
-      // no-op (indicators are written once per rule via setIndicatorBits;
-      // a Reg cannot take two writes in one rule), so the write below
+      // 20-63 of the indicator register". Written when a plain
+      // st.writeWord(11) was a no-op (until 2026-11-16; it now goes
+      // through StretchStorage's indStW), the write below still
       // special-cases word 11 and folds the modified bit into `ind`
       // instead -- see that arm. Verified by bb_indicator.strap
       // (BB1,$AH sets AH, then BB,$AH branches on it); it unblocks
@@ -6981,8 +6984,9 @@ function ActionValue#(ExecDispatch)
                          endcase;
             if (bw == 11) begin
               // BB changing an INDICATOR-register bit (p.41: positions
-              // 20-63). writeWord(11) is a no-op, so fold the modified
-              // bit into `ind` -- the Word64 the shared tail writes once
+              // 20-63). Fold the modified bit into `ind` (the shape
+              // from when writeWord(11) was a no-op, before 2026-11-16)
+              // -- the Word64 the shared tail writes once
               // via setIndicatorBits -- instead. prefetch[0] read back
               // the indicator value (lookupSpecial(11)=indicators), so
               // it equals `ind` here; bits 0-19 are read-only, left as

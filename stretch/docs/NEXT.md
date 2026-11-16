@@ -17448,7 +17448,23 @@ Three things are registered and pass:
   in its header was wrong);
 * the four held-back 3.9 indicator words.
 
-Injections are in the decks' headers.  The record follows.
+Injections are in the decks' headers.
+
+**Still open after the fix:**
+
+* **p.37's IF exception.**  "In the execution of the operations BRANCH ON
+  INDICATOR and BRANCH ON BIT when the interruption system is enabled,
+  the actuation of indicator IF that results if a branch is attempted to
+  a protected location is considered to be associated with the
+  instruction at that location".  So IF is on after such an operation,
+  whatever the operation wrote.  This is not modelled specially; BB's
+  fold path is unchanged.
+* **The order in the index half-word stores.**  `SV`/`SC`/`SR`/`SVA`
+  into word 11 fold the store and then apply their own index result
+  indicators.  p.37 says the store's result overrides.  Nothing measured
+  discriminates the two (bsv/README.md, the Word 11 entry).
+
+The record follows.
 
     decks/problem_3_vfl_store_to_indicators.strap   (five statements)
     L(BU, 3), V / ST(BU, 3), $AL / L(BU, 3), $AL / ST(BU, 64), R
@@ -17574,8 +17590,10 @@ assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
   STRAP II really compile C22-6578 printed p.43's `SRDN,$L` (4.9 Methods
   1 and 2) as VFL?  If it did, the printed COSF is wrong in the ink.
   The alternative is that `$L` carries a floating-point dds in STRAP II.
-  C28-6129's table of `$` symbols would decide it, and it has not been
-  read for this.  Until then 4.9m1's W8 checks stay `--known-wrong`,
+  C28-6129's table of `$` symbols would decide it, and so might C22-6531
+  Appendix A p.56, the source of `strap/opcodes.py` SYSTEM_SYMBOLS, which
+  records only (word, bit) for `$L`.  Neither has been read for this;
+  C28-6129 has no text layer.  Until then 4.9m1's W8 checks stay `--known-wrong`,
   relabelled; the VFL SRD itself is unimplemented and fails loud.
 
 The record of the find, as it was written, follows.
