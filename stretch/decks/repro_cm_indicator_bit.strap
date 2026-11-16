@@ -18,6 +18,21 @@
 !       StretchReproCmIndTb "PC=66" "IND:11=0x0000000000000121"
 ! (0x121 assumes MOP and RGZ as observed plus NM; re-derive the other
 ! bits when the store is built.)  Not registered: it fails until then.
+!
+! FIXED AND REGISTERED 2026-11-16 (bsv/StretchStorage.bsv, writeWord(11)
+! -> indStW).  The word is 0000000000000001, NOT 0x121: Reference Manual
+! printed p.37 makes a store into the indicator register act as on an
+! ordinary word holding the indicators at the start of the instruction,
+! and "The setting of any of the indicators 20-63 that would normally
+! occur as part of the store operation is overridden by this result" --
+! so the CM's own MOP and RGZ do not survive, and NM is alone.
+! INJECTION 3, measured 2026-11-16 (writeWord(11) back to noAction), over
+! the 28 location-8/indicator suite lines: FAILED this deck's checks
+! (problem_3_vfl_store_to_indicators R = 0 and IND = 0000000000000140;
+! repro_cm_indicator_bit IND = 0000000000000120), and the IND checks of
+! four 3.9 decks: method1_less 0x20, method1_equal 0x2000000020,
+! method1_greater 0x1000000020, method2_less 0x24.  Nothing else
+! (method2_page_fault's IND, set by K alone, passes either way).
 
 START   CM1111(BU,1),$IND.63
         BEW, $

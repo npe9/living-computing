@@ -14024,26 +14024,27 @@ run "C22-6578 Problem 3.8 -- signed data" ./run_program.sh ../decks/problem_3_8.
 # the deck loads the accumulator, then the page's program as printed.
 # The verdict is checked in accumulator bits 125-127 (word 9), where the
 # fetched RLZ/RZ/RGZ stay through the restore (Reference Manual p.95-96).
-# The model DROPS the store into AL/AE/AH (a documented simplification;
-# docs/NEXT.md C22-6578 CHAPTER 3 item 6, decks/problem_3_vfl_store_to_
-# indicators.strap), so the indicator word is held back except where K
-# itself sets it.  method2_page_fault pins the page's own claim that
-# Method 2 calls the smaller number high.
+# The indicator word is checked too.  Until 2026-11-16 the model dropped
+# the store into AL/AE/AH (docs/NEXT.md C22-6578 CHAPTER 3 item 6,
+# decks/problem_3_vfl_store_to_indicators.strap) and the four IND checks
+# were held back as comments; the store now lands in indicator bits 20-63
+# as Reference Manual printed p.37 says.  method2_page_fault pins the
+# page's own claim that Method 2 calls the smaller number high.
 run "C22-6578 Problem 3.9 Method 1 -- the page's example, less" ./run_program.sh ../decks/problem_3_9_method1_less.strap StretchP39M1LTb ASM=strap2 "PC=78" \
-    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
-#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4" \
+    "IND:11=0x0000000000000028"
 run "C22-6578 Problem 3.9 Method 1 -- equal" ./run_program.sh ../decks/problem_3_9_method1_equal.strap StretchP39M1ETb ASM=strap2 "PC=78" \
-    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x2"
-#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000002000000024"
+    "A1:40=0x002FFFFFFFFFFFF0" "A1_plus_1:41=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x2" \
+    "IND:11=0x0000002000000024"
 run "C22-6578 Problem 3.9 Method 1 -- greater by the low part" ./run_program.sh ../decks/problem_3_9_method1_greater.strap StretchP39M1GTb ASM=strap2 "PC=78" \
-    "A1:40=0x0028000000000000" "A1_plus_1:41=0x05FC000000000000" "acc_left:8=0x002800000000000C" "verdict_acc_right:9=0x1"
-#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000001000000022"
+    "A1:40=0x0028000000000000" "A1_plus_1:41=0x05FC000000000000" "acc_left:8=0x002800000000000C" "verdict_acc_right:9=0x1" \
+    "IND:11=0x0000001000000022"
 run "C22-6578 Problem 3.9 Method 2 -- the page's counter-example (AH, as the page says)" ./run_program.sh ../decks/problem_3_9_method2_page_fault.strap StretchP39M2FTb ASM=strap2 "PC=70" \
     "A1:41=0x0640000000000000" "A1_plus_1:42=0x0040000000000000" "acc_left:8=0x0640000000000000" "verdict_acc_right:9=0x0" \
     "IND:11=0x0000001000000042"
 run "C22-6578 Problem 3.9 Method 2 -- less, through DPSUB" ./run_program.sh ../decks/problem_3_9_method2_less.strap StretchP39M2LTb ASM=strap2 "PC=70" \
-    "A1:41=0x002FFFFFFFFFFFF0" "A1_plus_1:42=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4"
-#   held back (the indicator store is dropped, NEXT.md item 6): "IND:11=0x0000000000000028"
+    "A1:41=0x002FFFFFFFFFFFF0" "A1_plus_1:42=0x05F8000000000000" "acc_left:8=0x002FFFFFFFFFFFF8" "verdict_acc_right:9=0x4" \
+    "IND:11=0x0000000000000028"
 
 # C22-6578 Problem 3.10, printed p.34: integer part of log2 N into the
 # value field of $1 (L(N), E-I, L(B,12,1) of the exponent at 8.0, ST(B,25,1)).
@@ -14115,6 +14116,13 @@ run "C22-6578 ch.3 item 4 -- an FP operand and an FP store at address 8 (p.80)" 
     "R1_minus3_squared:43=0x0089000000000000" "R2_bit60_ignored:44=0x0089000000000000" \
     "R3_control:45=0x0089000000000000" "R4_minus5:46=0x006A000000000008" \
     "W8_bits_60_63_untouched:8=0x006A000000000000" "SB_minus:10=0x0800000000000000"
+# A store into the indicator register lands in bits 20-63 and overrides the
+# storing instruction's own indicators there (Reference Manual printed p.37;
+# fixed 2026-11-16, docs/NEXT.md "C22-6578 CHAPTER 3" item 6).
+run "C22-6578 ch.3 item 6 -- ST(BU,3),\$AL then L(BU,3),\$AL reads 100 back (p.37)" ./run_program.sh ../decks/problem_3_vfl_store_to_indicators.strap StretchP3VSITb ASM=strap2 "PC=72" \
+    "R:37=4" "IND_AL_and_the_last_stores_MOP_RGZ:11=0x0000000000000128"
+run "MCP p.356 line 33 -- CM1111(BU,1),\$IND.63 sets NM, and only NM (p.37)" ./run_program.sh ../decks/repro_cm_indicator_bit.strap StretchReproCmIndTb "PC=66" \
+    "IND_NM_alone:11=0x0000000000000001"
 
 # 4.12, printed pp.46-47: f(pi) = 2x e**(e**-x) / sqrt(1 - e**-x), two calls
 # of EXP, "SRT(N), $L" into the accumulator itself and R/.  The answer is

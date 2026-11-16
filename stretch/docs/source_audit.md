@@ -2086,10 +2086,11 @@ FOUND", items 1-6; each item has a reproducer deck):
    and its comment (a) agrees with the manual.  The reproducer is
    `problem_3_fp_add_low_half_zero`, and `jb_af1c` is the third witness
    to look in.
-6. **MODEL LIMITATION.**  A VFL store into the indicator register, word
-   11, is dropped silently.  `StretchStorage.bsv` documents this as a
-   simplification.  The reproducer is
-   `problem_3_vfl_store_to_indicators`.
+6. **MODEL LIMITATION, LIFTED 2026-11-16.**  A VFL store into the
+   indicator register, word 11, was dropped silently (a documented
+   simplification in `StretchStorage.bsv`).  It now lands in bits 20-63
+   as Reference Manual printed p.37 says.  The reproducer,
+   `problem_3_vfl_store_to_indicators`, is registered and passes.
 
 **Two of the page's claims about its own programs are pinned and hold
 on the model:**
@@ -2098,12 +2099,12 @@ on the model:**
   high.
 * Problem 3.7's "round-off error in the last iteration".
 
-**Held-back checks, to be restored when the model is fixed:**
+**Held-back checks, restored 2026-11-16 with the two fixes:**
 
-* Problem 3.8's 27 checks on signed data -- RESTORED 2026-11-16 with
-  the location-8 fix, and passing.
-* The four 3.9 indicator words, kept as comments in `tests/run_tests.sh`
-  next to their decks.
+* Problem 3.8's 27 checks on signed data.
+* The four 3.9 indicator words.
+
+Both are ordinary checks in `tests/run_tests.sh` again, and pass.
 
 Chapter 4 ("Special Problems", printed p.35 on) has not been started.
 

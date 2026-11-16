@@ -17432,7 +17432,23 @@ the model is changed: jb_af1c's addition sections
 (decks/fp_arith_f204d.strap, F204D7) test PSH for far-apart exponents,
 and the listing may show the sum it expects.
 
-### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs)
+### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs) -- FIXED 2026-11-16
+
+**FIXED.**  `StretchStorage.bsv`: `writeWord(11)` now drives a wire,
+`indStW`, and `commitIndicators` merges it into bits 20-63.  The store
+overrides the instruction's own indicator settings there, by Reference
+Manual printed p.37, right column: "The setting of any of the indicators
+20-63 that would normally occur as part of the store operation is
+overridden by this result."  Bits 0-19 "can be read, but not loaded".
+Three things are registered and pass:
+
+* the reproducer, R = 4, IND = 0000000000000128;
+* `decks/repro_cm_indicator_bit.strap`, IND = 0000000000000001 (NM
+  alone; the CM's own MOP and RGZ are overridden, so the 0x121 guessed
+  in its header was wrong);
+* the four held-back 3.9 indicator words.
+
+Injections are in the decks' headers.  The record follows.
 
     decks/problem_3_vfl_store_to_indicators.strap   (five statements)
     L(BU, 3), V / ST(BU, 3), $AL / L(BU, 3), $AL / ST(BU, 64), R

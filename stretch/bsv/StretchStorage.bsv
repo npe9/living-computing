@@ -333,6 +333,7 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) intervalTimerAndClock <- mkConfigReg(0);
   RWire#(Bit#(28)) timerW <- mkRWire;   // word 1 IBM bits 0-27 stored this clock
   RWire#(Word64)   indW   <- mkRWire;   // setIndicatorBits' value this clock
+  RWire#(Word64)   indStW <- mkRWire;   // a STORE into word 11 this clock (writeWord)
   RWire#(Maybe#(Tuple2#(Bit#(5), Bit#(7)))) ioW <- mkRWire; // ioStatus this clock
   // EPGK..CS, indicators 9-13: IBM bits 9-13 are model bits 54-50.
   Word64 ioStatusMask = 64'h1F << (63 - 13);
@@ -565,6 +566,25 @@ module mkStretchStorage(StretchStorage);
   (* fire_when_enabled, no_implicit_conditions *)
   rule commitIndicators;
     Word64 ind = fromMaybe(indicators, indW.wget);
+    // A STORE INTO THE INDICATOR REGISTER, Reference Manual printed p.37:
+    // "Bit positions 0-19 of the indicator register can be read, but not
+    // loaded.  Any attempt to store into these positions has no effect.
+    // Bit positions 20-63 may either be read or loaded. ... When an
+    // instruction calls for storing into any part of the indicator
+    // register, the result in bits 20-63 of the indicator register will
+    // be the same as if this operation had acted upon any other storage
+    // location whose initial contents were the same as those of the
+    // indicator register at the start of execution of the instruction.
+    // The setting of any of the indicators 20-63 that would normally
+    // occur as part of the store operation is overridden by this
+    // result."  The stored word was built from word 11 as read at the
+    // start of the instruction (the read-modify-write every store
+    // does), so IBM 20-63 (model 43:0) are taken from it whole, over
+    // whatever the instruction's own setIndicatorBits wrote there; IBM
+    // 0-19 (model 63:44) keep the instruction's value.  TS and the I/O
+    // report below are in 0-19 and are OR-ed on afterwards as before.
+    if (indStW.wget matches tagged Valid .sv)
+      ind = {ind[63:44], sv[43:0]};
     // TIME SIGNAL IS INDICATOR 4.  Reference Manual printed p.44,
     // "Attention Request": "4. Time Signal (TS).  The interval timer
     // has become zero."  IBM bit n is index 63-n everywhere in this
@@ -914,18 +934,17 @@ module mkStretchStorage(StretchStorage);
       addrAccLeft: accLeft <= v;
       addrAccRight: accRight <= v;
       addrAccSignByte: accSignByte <= {v[63:56], 56'b0};   // IBM bits 0-7: the sign byte
-      // SIMPLIFICATION: real hardware lets a generic STORE-type
-      // instruction write indicator bits 20-63 directly (Reference
-      // Card footnote c: only bits 0-19 are read-only). This
-      // implementation treats word 11 as fully read-only via ordinary
-      // memory stores instead, because the execute stage separately
-      // writes `indicators` exactly once per instruction from its own
-      // side effects (setIndicatorBits, see StretchExecute.bsv) and a
-      // plain register cannot accept two independent writes in the
-      // same rule. Indicators remain fully readable and are still set
-      // by every instruction that defines them -- only the "poke via
-      // STORE" path is unavailable. See bsv/README.md "Scope".
-      addrIndicators: noAction;
+      // THE INDICATOR REGISTER TAKES A STORE IN BITS 20-63 (Reference
+      // Manual printed p.37; pocket card X22-6533-1 footnote c, "Bit
+      // positions 0-19 are read only").  It goes through a wire because
+      // the instruction's own setIndicatorBits writes the same register
+      // in the same clock; commitIndicators merges the two, the store
+      // winning in 20-63 as p.37 says.  Until 2026-11-16 this arm was a
+      // no-op (a "SIMPLIFICATION" that silently lost C22-6578 Problem
+      // 3.9's ST(BU,3),$AL and MCP p.356's CM1111(BU,1),$IND.63).
+      // The arms that FOLD a store into `ind` themselves (Z, BB, the
+      // half-word index stores, StretchExecute.bsv) never call this.
+      addrIndicators: indStW.wset(v);
       addrMask: mask <= {20'hFFFFF, v[43:16], 16'h0000};   // IBM 0-19 = 1, 48-63 = 0 always
       addrRemainder: remainder <= v;
       addrFactor: factor <= v;
