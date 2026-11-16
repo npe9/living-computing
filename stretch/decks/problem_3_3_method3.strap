@@ -1,0 +1,118 @@
+! C22-6578 PROBLEM 3.3, "POLYNOMIAL EVALUATION", Method 3, "Use nesting
+! technique and double operations for extra accuracy", printed p.27
+! (PDF 28), read in the ink.  The problem statement is in
+! problem_3_3_method1.strap.
+!
+!   Method 3.
+!               LX, $2, XW2
+!               L(N), A+20.0
+!       DMULT   D*(N), X
+!               D+(N), A($2)
+!               SRD(N), 8.0
+!               CB-, $2, DMULT
+!               ST(U), POLY
+!               BEW, $
+!       XW2     XW, 19.0, 20, $
+!
+! The nine printed statements are the deck's last nine before its data,
+! as printed.
+!
+! ASSEMBLED WITH ASM=strap2, as the rest of Chapter 3 is.
+!
+! WHAT "SRD(N), 8.0" IS.  STORE ROUNDED whose address is the
+! accumulator's own left word.  Reference Manual printed p.96: rounding
+! is "adding one to the fraction in the accumulator in bit position 60
+! ... The 48 low-order bits are discarded ... The entire accumulator and
+! its sign byte register remain unchanged throughout the operation
+! unless used as the effective address" -- and here it is.  C22-6578
+! printed p.28 comment (b): address 8.0 in a floating-point instruction
+! "means the leading 60 bits of the accumulator plus the lowest
+! four-bits of $SB".  So the rounded 48-bit fraction replaces
+! accumulator bits 12-59 and the next D* multiplies the rounded value.
+!
+! TWO DATA SETS, because the first cannot tell rounding from truncation.
+!
+! BLOCK A is the deck's copy of the nine statements (XW2A, DMULTA, XA,
+! POLYA, AA for XW2, DMULT, X, POLY, A; BEW left off) on Method 1's
+! data, x = 3, a(k) = (-1)**k (k + 1).  Every partial result is an
+! integer below 2**48, bit 60 onward is zero, rounding adds nothing:
+! POLYA = P(3) = 55,570,626,391 = 048CF04477570000 as in Methods 1, 2.
+!
+! THE LAST BLOCK, the page as printed, has x = 1 + 2**-47 and
+! a(20) = 1 + 2**-47, a(19) = ... = a(0) = 0 (words of zero bits), so
+! POLY is a(20) x**20 rounded twenty times.  HAND-DERIVED:
+!   Write the accumulator as 1 + m u, u = 2**-47, the unit of the 48th
+!   fraction place when the exponent is 1 (fraction .1000...0m).
+!   D*(N), X: (1 + m u)(1 + u) = 1 + (m + 1) u + m u**2, exact in 96
+!   bits.  D+(N) of a zero fraction with exponent 0 changes nothing.
+!   SRD rounds at the 49th place, u/2: m u**2 = m 2**-47 u is below u/2
+!   for every m here, so each step is exactly m -> m + 1 and nothing is
+!   ever carried up.  Start m = 1; after twenty steps m = 21:
+!   POLY = 1 + 21 u, fraction 800000000015, exponent 1:
+!                                              0028000000000150
+!   Truncation would give the same word, so this block does not test
+!   the rounding either.  It tests that D* keeps 96 bits and that the
+!   store into 8.0 feeds the next multiply.
+!
+! BLOCK B is the one that rounds.  x = 3/2, a(1) = a(0) = 0,
+! a(2) = 1 + 2**-47, and the loop is entered with $2 = (1.0, 2): two
+! steps, POLYB = round(round(a(2) x) x).
+!   a(2) x = 3/2 + 3 x 2**-48, exponent 1, fraction .11 + 3 x 2**-49:
+!   the 48th place is 2**-47, so 3 x 2**-48 is one unit and a half.
+!   Bits 12-59 hold C00000000001 and bit 60 holds a one; adding one at
+!   bit 60 carries: C00000000002.  (Truncated: C00000000001.)
+!   Step 2: (3/2 + 2 x 2**-47) x 3/2 = 9/4 + 3 x 2**-47, exponent 2,
+!   the 48th place is 2**-46: one unit and a half again.  Fraction
+!   .1001 + 3 x 2**-49: 900000000001 and a one at bit 60, rounded to
+!   900000000002.  (Truncating twice: 9/4 + 2**-47 x 3/2 truncated, a
+!   fraction of 900000000000.)
+!   POLYB = exponent 2, fraction 900000000002:  0049000000000020
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): AB's a(2) changed from 1 + 2**-47 to exactly
+! 1, where both products are exact (3/2, 9/4) and nothing rounds.
+! FAIL B_rounds only (got 0049000000000000); A_exact, POLY and the PC
+! passed.
+
+! --- block A: the deck's copy, on Method 1's data --------------------
+START   LX, $2, XW2A
+        L(N), AA+20.0
+DMULTA  D*(N), XA
+        D+(N), AA($2)
+        SRD(N), 8.0
+        CB-, $2, DMULTA
+        ST(U), POLYA
+! --- block B: the deck's copy, two steps that round -------------------
+        LX, $2, XW2B
+        L(N), AB+2.0
+DMULTB  D*(N), XB
+        D+(N), AB($2)
+        SRD(N), 8.0
+        CB-, $2, DMULTB
+        ST(U), POLYB
+! --- the page, as printed -------------------------------------------
+        LX, $2, XW2
+        L(N), A+20.0
+DMULT   D*(N), X
+        D+(N), A($2)
+        SRD(N), 8.0
+        CB-, $2, DMULT
+        ST(U), POLY
+        BEW, $
+XW2     XW, 19.0, 20, $
+! --- the deck's data ------------------------------------------------
+X       DD(N), 140737488355329X1
+POLY    DR(N), (1)
+A       DRZ(N), (20)
+        DD(N), 140737488355329X1
+XW2A    XW, 19.0, 20, $
+XA      DD(N), 3
+POLYA   DR(N), (1)
+AA      DD(N), 1, -2, 3, -4, 5, -6, 7, -8, 9, -10, 11
+        DD(N), -12, 13, -14, 15, -16, 17, -18, 19, -20, 21
+XW2B    XW, 1.0, 2, $
+XB      DD(N), 3/2
+POLYB   DR(N), (1)
+AB      DRZ(N), (2)
+        DD(N), 140737488355329X1
+        END, START

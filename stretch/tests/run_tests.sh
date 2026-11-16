@@ -13466,6 +13466,18 @@ run "C22-6578 Problem 3.2 -- integer part into the count field of \$1" ./run_pro
     "A_count:46=0xA5A5A5A0001DA5A5" "B_count_low18:47=0xA5A5A5A00015A5A5" \
     "count_of_2.5:17=0xA5A5A5A00009A5A5"
 
+# 3.3, a polynomial of degree 20 three ways.  x = 3 and integer
+# coefficients make every step exact, so all three must give P(3) =
+# 55,570,626,391 to the bit.  Method 3's SRD(N), 8.0 -- STORE ROUNDED
+# into the accumulator -- gets two more data sets: B_rounds is the one
+# where the 49th bit is a one and truncation would give a different word.
+run "C22-6578 Problem 3.3 Method 1 -- term by term" ./run_program.sh ../decks/problem_3_3_method1.strap StretchP33M1Tb ASM=strap2 "PC=76" \
+    "POLY:42=0x048CF04477570000" "XK_3_to_20:40=0x040CFD41B9100000" "acc_left:8=0x048CF04477570000"
+run "C22-6578 Problem 3.3 Method 2 -- nesting" ./run_program.sh ../decks/problem_3_3_method2.strap StretchP33M2Tb ASM=strap2 "PC=70" \
+    "POLY:38=0x048CF04477570000" "acc_left:8=0x048CF04477570000"
+run "C22-6578 Problem 3.3 Method 3 -- nesting, D*, D+ and SRD(N), 8.0" ./run_program.sh ../decks/problem_3_3_method3.strap StretchP33M3Tb ASM=strap2 "PC=85" \
+    "A_exact:69=0x048CF04477570000" "B_rounds:93=0x0049000000000020" "POLY:45=0x0028000000000150"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
