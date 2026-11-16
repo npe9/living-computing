@@ -17436,6 +17436,13 @@ Manual pp.95-96), and tests/run_tests.sh carries the expected indicator
 words as comments, to be restored when a store to word 11 merges into
 the instruction's single indicator write.
 
+**Not an assembler artifact (settled 2026-11-16).**  Both assemblers
+compile `ST(BU, 3), $AL` as 0002FC80018010D0 (11.60), and the deck gives
+R = 0 under either; the one word they differ in is the NOP pad before
+`R DR(N)`.  MCP printed p.356 lines 33 and 40 write indicator bits with
+a VFL connective (`$IND.63`, `$PG0`), so MCP's $DUMP needs this too.
+See "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL".
+
 ## G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES IN A DD(N) -- 2026-11-15
 
 `C22-6578` Chapter 4 ("Special Problems", printed pp.35-51) was worked
