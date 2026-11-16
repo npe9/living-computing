@@ -1,0 +1,24 @@
+! REPRODUCER for a model limitation (docs/NEXT.md, "C22-6578 CHAPTER 3"
+! item 6, and "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO
+! $AL"): a VFL to-memory operation into the indicator register, word 11,
+! is dropped.  This is MCP's own form, not a book's.
+!
+! MCP printed p.356 (docs/MCP_Mar63_250-445.pdf PDF p.106), line 33,
+! read in the ink:
+!   235726.00  000013.77 80 001000.36 F0  ACNVER CM1111(BU,1),$IND.63
+!                                         -SET NOISY MODE
+! CONNECT TO MEMORY with connective 1111 (all ones) on the one-bit field
+! 11.63 = NM (pocket card X22-6533-1, "63 NM 0 P,C Noisy Mode"; "c = Bit
+! positions 0-19 are read only", so 63 is writable).  The bit must be 1.
+!
+! Expected: word 11 bit 63 on.  OBSERVED 2026-11-16 (strap_asm; the two
+! assemblers give the same image): word 11 = 0000000000000120, MOP (55)
+! and RGZ (58), NM off.  PC = 66 (the BEW), reached.
+!   cd tests && ./run_program.sh ../decks/repro_cm_indicator_bit.strap \
+!       StretchReproCmIndTb "PC=66" "IND:11=0x0000000000000121"
+! (0x121 assumes MOP and RGZ as observed plus NM; re-derive the other
+! bits when the store is built.)  Not registered: it fails until then.
+
+START   CM1111(BU,1),$IND.63
+        BEW, $
+        END, START

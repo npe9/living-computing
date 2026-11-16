@@ -71,7 +71,16 @@
 !   The four registered are .125 and, --known-wrong with exactly those
 !   sets, .03, .1 and -.1.
 !
-! OBSERVED INJECTIONS at x = .125, each --sub on one data card:
+! RE-MEASURED 2026-11-16, when strap_asm took STRAP II's DNUM chain
+! (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"): ".125" now
+! assembles as 125 x (1/1000 truncated), one unit below 1/8, and FAILS
+! both W8 value checks and the sign byte (F), as .1 does.  The passing
+! case is registered as "1X-2", exactly 1/8 (C28-6129 printed p.27, X
+! replaces the exponent): ALL CHECKS PASSED, .20 and .61 units as before.
+! ".125" is registered too, --known-wrong with that set.
+!
+! OBSERVED INJECTIONS at x = .125 (an exact 1/8 then; `1X-2` now; not
+! re-run since 2026-11-16), each --sub on one data card:
 !   CONST's 1/12 -> 8.3333333333E-2 (4E-12 off)
 !       FAILED W8_cos_2_pi_x (17.39 units; the as-programmed check reads
 !       CONST and follows it) and the sign byte (7: the stale bits moved).

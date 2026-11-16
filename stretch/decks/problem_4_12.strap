@@ -74,6 +74,9 @@
 ! with one data card changed.  Control: 2 exact checks and the PC pass,
 ! 6 within-bound checks pass; t, u, f were off .29, 1.47 and 2.31 units
 ! from the program's numbers and 3.13, 1.37 and 2.14 from the page's.
+! RE-MEASURED 2026-11-16, with the deck's decimal constants now assembled through STRAP II's DNUM chain (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
+!   all checks pass; t, u, f .29, 1.47, 1.31 from the program's numbers,
+!   3.13, 1.37, 1.14 from the page's.  The injections below were not re-run.
 !
 !   EKS pi -> 800
 !       FAILED everything but nothing unexpectedly: the halt is ERR

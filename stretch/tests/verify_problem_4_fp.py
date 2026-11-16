@@ -168,7 +168,11 @@ def p4_13(sym, src=None):
     def rule(e):
         # s * sum of w (f(t + s z) + f(t - s z)), a = 0 and b = 1 so s = t
         # = 1/2 exactly; the nodes and weights are the words AS ASSEMBLED
-        # from the page's fifteen-digit decimals, erratum and all.
+        # from the page's fifteen-digit decimals, erratum and all.  NOT as
+        # assembled: b.  The printed "DD(N), 1.0" is one unit below 1 under
+        # STRAP II (P and Q above), so s = t = 1/2 - 2**-49 in the program;
+        # the rule keeps the problem's interval [0, 1], and that unit is
+        # inside the bound (3.11 units measured 2026-11-16, 2.11 on b = 1).
         def g(img):
             h = D('0.5')
             tot = D(0)
@@ -178,8 +182,9 @@ def p4_13(sym, src=None):
             return h * tot
         return g
 
-    exact = [('P_minus_half_b_minus_a', 'LEGQ8P', 0x0008000000000008),
-             ('Q_half_b_plus_a', 'LEGQ8Q', 0x0008000000000000),
+    # b is the printed DD(N), 1.0: one unit below 1 under STRAP II (deck header)
+    exact = [('P_minus_half_b_minus_a', 'LEGQ8P', 0x003FFFFFFFFFFFF8),
+             ('Q_half_b_plus_a', 'LEGQ8Q', 0x003FFFFFFFFFFFF0),
              ('x2_restored', 'addrIndex(2)', 0),
              ('x15_restored', 'addrIndex(15)', x15),
              ('LEGQ82_saved_x2', 'LEGQ82', 0),

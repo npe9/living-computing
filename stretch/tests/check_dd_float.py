@@ -30,6 +30,15 @@ CHECKS
   fig3_s7                         DD(N),183007S7 = 0022+ 545337.. +TUV
   dd_n_aligns_to_word             a DD(N) after a half-word B lands on
                                   the next full word
+  dnum_1p0_is_1_minus_2e-48,      DD(N),1.0,-2.5,.5 as STRAP II's DNUM
+  dnum_minus_2p5, dnum_p5         makes them (C22-6729 pp.108-111: P.R.
+                                  times 10**running exponent, a negative
+                                  power inverted, every step truncated --
+                                  Reference Manual printed p.81), worked
+                                  by hand: 000FFFFFFFFFFFF0,
+                                  0049FFFFFFFFFFF8, 003FFFFFFFFFFFF0
+                                  (docs/NEXT.md, "DD(N) 1.0 IS 1 - 2^-48")
+  dnum_1x0_exact_half_control     DD(N),1X0 = 0008000000000000, exact
   UNREPRODUCED (reported FAIL, not counted in the exit status):
   p359_l41_1e512                  DD(N),1.E512 printed 3246+ 0..0 +000
   p359_l42_9e615                  DD(N),9.99999E615 printed 3246+
@@ -39,12 +48,18 @@ CHECKS
     two different numbers; exact exponents are 1701 and 2047).
 
 MEASURED INJECTIONS (python3 check_dd_float.py --inject):
-    control, assembler as is            PASS (12/12; the two
+    control, assembler as is            PASS (16/16; the two
                                          UNREPRODUCED rows FAIL as
                                          expected)
     truncation -> round half up         FAIL p359_l38_1e32,
                                              p359_l39_1e64,
-                                             p359_l40_1e128
+                                             p359_l40_1e128, dnum_1p0,
+                                             dnum_minus_2p5, dnum_p5
+                                         (measured 2026-11-16)
+    a negative scale divides P.R.       FAIL dnum_1p0, dnum_minus_2p5,
+      (the exact-quotient reading)           dnum_p5 -- nothing else, the
+                                             1X0 control passes
+                                         (measured 2026-11-16)
     DD(N) not routed to the float rule  FAIL p359_l33_1e1 ..
                                              p359_l39_1e64,
                                              p359_l40_1e128, fig3_x7,
@@ -59,8 +74,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STRAP = os.path.join(HERE, "..", "strap")
 sys.path.insert(0, STRAP)
 
-TRUNC = "frac = (v.numerator << 48) // v.denominator    # truncated: see above"
-ROUND = "frac = ((v.numerator << 49) // v.denominator + 1) >> 1"
+TRUNC = "    return pr[0], pr[1] >> (_D96 - 48)"
+ROUND = "    return (lambda q: (q[0], q[1] >> 48))(_d96_norm(pr[0], pr[1] + (1 << 47)))"
+SCALE = "        pr = _d96_mul(pr, _d96_pow10(scale))"
+DIVIDE = ("        pr = _d96_mul(pr, _d96_pow10(scale)) if scale > 0 else _d96_norm("
+          "pr[0] - _d96_pow10(-scale)[0] - 2, (pr[1] << 98) // _d96_pow10(-scale)[1])")
 ROUTE = "    if mode == 'N':\n        return _dd_normalized(field, lineno)\n"
 EPATH = "    if dec is not None and not dec[2] and dec[1].denominator == 1:"
 ALIGN = "return (64 if _fmode in ('N', 'U') else 0), \\"
@@ -124,6 +142,20 @@ def main(asm):
     check("dd_n_aligns_to_word",
           "ERROR" if p is None else "bit %d" % p.symtab.get("FL", -1),
           "bit %d" % (0o145 * 64))
+    # C22-6729 pp.108-111: a digit after the point lowers the running
+    # exponent (p.108 box 18), which raises 10 to it and multiplies (p.109
+    # boxes 36-38), a negative power being MQ3's inverse (p.111 box 13);
+    # Reference Manual printed p.81, the machine truncates.  So "1.0" is
+    # 10 x (1/10 truncated) = 1 - 2^-96 in 96 bits, 0.FFFFFFFFFFFF x 2^0
+    # in the word; "-2.5" is 25 x (1/10 truncated), 0.9FFFFFFFFFFF x 2^2,
+    # sign 8; ".5" is 0.FFFFFFFFFFFF x 2^-1.  Worked by hand, not taken
+    # from strap2.  "1X0" (X replaces the exponent, C28-6129 p.27) is
+    # exactly one half: the control.
+    g, _ = words(asm, "        DD(N),1.0,-2.5,.5,1X0\n", 4)
+    check("dnum_1p0_is_1_minus_2e-48", g[0], "%022o" % 0x000FFFFFFFFFFFF0)
+    check("dnum_minus_2p5", g[1], "%022o" % 0x0049FFFFFFFFFFF8)
+    check("dnum_p5", g[2], "%022o" % 0x003FFFFFFFFFFFF0)
+    check("dnum_1x0_exact_half_control", g[3], "%022o" % 0x0008000000000000)
     g, _ = words(asm, "        DD(N),1.E512\n", 1)
     check("p359_l41_1e512", g[0], "%022o" % fp("3246+ 0000000000000000 +000"), counted=False)
     g, _ = words(asm, "        DD(N),9.99999E615\n", 1)
@@ -149,6 +181,8 @@ if __name__ == "__main__":
         res = [("control", main(strap_asm))]
         print("-- injected: truncation -> round half up")
         res.append(("round", main(patched(TRUNC, ROUND))))
+        print("-- injected: a negative scale divides P.R. instead of inverting")
+        res.append(("divide", main(patched(SCALE, DIVIDE))))
         print("-- injected: DD(N) not routed to the float rule")
         res.append(("route", main(patched(ROUTE, ""))))
         print("-- injected: E-notation integer path removed")

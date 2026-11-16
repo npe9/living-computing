@@ -90,6 +90,10 @@
 !       -996 right, and only the series is wrong.  REGISTERED AS KNOWN
 !       WRONG (--known-wrong): the run passes only while exactly those
 !       three fail.
+! RE-MEASURED 2026-11-16, with the decimal constants now assembled through STRAP II's DNUM chain (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II"):
+!   the same verdicts; .75, 3.0, 1.0E6 at most .93 units from the
+!   program's number and 1.86 from the page's.  The injections below
+!   were not re-run.
 !
 ! OBSERVED INJECTIONS, 2026-11-16, at x = 3.0, each
 !   python3 tests/verify_problem_4_fp.py 4.10:3.0 --sub OLD NEW

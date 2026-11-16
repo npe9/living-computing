@@ -14083,7 +14083,11 @@ run "C22-6578 Problem 4.10 -- LNX, ln .001, KNOWN WRONG (location 8, p.37)" pyth
 run "C22-6578 Problem 4.10 -- LNX, ln 1E-300, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:1.0E-300 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
 # The reproducer, pinned at the model's WRONG word so it cannot drift: p.37
 # wants PROD = 0x0038000000000000 (+1/4).  Flip the check when it is fixed.
-run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi .125)" python3 verify_problem_4_fp.py 4.9m1:.125
+# x = 1/8 is written 1X-2, which is exactly 1/8: STRAP II assembles ".125" as
+# 125 x (1/1000 truncated), one unit low (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48"),
+# and that x meets the location-8 store fault as .1 does (second line).
+run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m1:1X-2
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .125 as STRAP II assembles it, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.125 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (location 8, pp.37 and 96)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong TEMP_A_squared,W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
