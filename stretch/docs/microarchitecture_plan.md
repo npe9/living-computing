@@ -5687,16 +5687,28 @@ Staged, each step green and committed:
      `mkEBox` instantiates `mkDivBox` (StretchDivBox.bsv) once, issues
      the request on `NeedBox`, holds the instruction exactly as for a
      read (`boxWait`), and `canResume()` is "read answered OR box
-     answered". VFL `/` is done (the 96-bit combinational `/` and `%`,
-     118,755 LUT4 + 22,896 CCU2C alone); FP `/`, `R/`, `D/` (three
-     inlined copies of `fpDivFrac`) are NEXT, onto the same box and
-     the same bail. Timing is held fixed: the box's
-     clocks are taken off the E-box budget (`ebox.boxClocks()` in
-     `rl_exec_resume`). Call sites: `execute()`'s two callers in
-     `mkEBox` (`start`, `resume`) and `vflIntOp`; for the FP step,
-     `fpArithClass` (and its test harness `StretchFpCommitTest.bsv`)
-     and `fpDiv`/`fpDivDouble`, which will take the quotient and
-     remainder as an argument and report what to divide. Two scheduling facts surfaced and are
+     answered". VFL `/` first (the 96-bit combinational `/` and `%`,
+     118,755 LUT4 + 22,896 CCU2C alone), then FP `/`, `R/`, `D/` (three
+     inlined copies of `fpDivFrac`'s 96 unrolled steps) onto the same
+     box and the same bail: `fpArithClass` reports the fractions to
+     divide in a new `FpCommit.divReq` and takes the answer as
+     `divQR`; `fpDivFrac` survives only as the testbenches' reference.
+     The E-box time is held fixed: the box's clocks are taken off the
+     E-box budget (`ebox.boxClocks()` in `rl_exec_resume`). **The
+     overlap is not**: while the box runs, the held level stops
+     `rl_prepare` executing I-box instructions, which used to overlap
+     the countdown. Measured: 8 of the 16 FP-divide decks are +1 to
+     +16 clocks, mostly in proportion to the box's clocks (re-measured
+     at 48 and 96 bits a clock). The f217a (+2) and f217c (+1)
+     residues are constant and unexplained. No CYCLES check moved; the
+     table is in StretchDivBox.bsv's header. **Next for this step:**
+     let `rl_prepare` run independent I-box instructions during a box
+     wait (`prepareExec` already knows whether one would bail for a
+     read and overwrite `held`). Call sites: `execute()`'s two callers in
+     `mkEBox` (`start`, `resume`), `vflIntOp`, `fpArithClass` (and its
+     test harness `StretchFpCommitTest.bsv`), and `fpDiv`/`fpDivDouble`,
+     which now take the quotient and remainder as an argument and
+     report what to divide (`boxDvd`/`boxDvs`). Two scheduling facts surfaced and are
      recorded in the box: its state must be CRegs with the rule on port
      0 and the methods on port 1 (otherwise bsc G0096, dynamic
      scheduling, because `resume()` both polls and requests), and no

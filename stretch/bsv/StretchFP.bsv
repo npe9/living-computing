@@ -754,6 +754,15 @@ endfunction
 // 96-bit one, and it keeps the E-box's shape; a multi-cycle divider is
 // a structural change nothing in the diagnostic asks for.
 //
+// >>> NOTHING IN THE CORE CALLS THIS ANY MORE (2026-11-15). <<<  The
+// FPGA asked for the structural change: fpDiv and fpDivDouble now take
+// the quotient and remainder as an ARGUMENT and report the dividend
+// and divisor they want divided, and mkEBox's one divide box
+// (StretchDivBox.bsv, mkDivBox) does these same 96 steps a few per
+// clock.  This function stays as the REFERENCE the box's testbenches
+// are checked against, bit for bit -- and everything below about why
+// it is 96 steps and what the 49th bit is still describes the box.
+//
 // IT IS 96 STEPS AND NOT 49, WHICH IS THE BUG jb_af1c F217A1 CAUGHT ON
 // THE FIRST RUN.  Stopping after 49 iterations computes
 // floor(dvd[95:47] / dvs), not floor(dvd / dvs) -- the whole 96-bit
@@ -786,6 +795,14 @@ typedef struct {
   Bit#(7) lzc;        // left zeros count, p.94's "excess of divisor shifting"
   Bool    generated;
   Bool    propagated;
+  // WHAT THE DIVIDE BOX IS TO DIVIDE: the pre-normalized 96-bit
+  // dividend fraction and 48-bit divisor fraction, i.e. exactly the
+  // two arguments fpDivFrac used to be called with here.  They do not
+  // depend on the `qr` argument, so the caller reads them from a first
+  // evaluation, sends them to the box, and evaluates again with the
+  // answer.  Meaningless (zero) when `zd`: nothing is divided.
+  Bit#(96) boxDvd;
+  Bit#(48) boxDvs;
 } FpDivResult deriving (Bits, Eq, FShow);
 
 // DIVIDE (/, pp.93-94).  `dvd` is the accumulator operand (the
@@ -808,9 +825,16 @@ typedef struct {
 // same way ("the pre-normalization process follows the rules for
 // unnormalized processing") and only the EXPONENT comes from p.94's
 // table instead of the subtraction.
-function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy);
+//
+// `qr` IS THE DIVISION'S ANSWER, SUPPLIED FROM OUTSIDE: the 49-bit
+// quotient and the remainder of r.boxDvd by r.boxDvs, which is what
+// fpDivFrac returned when it was called in the middle of this
+// function.  See FpDivResult's boxDvd/boxDvs.
+function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy,
+                           Tuple2#(Bit#(49), Bit#(49)) qr);
   FpDivResult r = FpDivResult { res: dvd, zd: False, pf: False, lzc: 0,
-                                generated: False, propagated: False };
+                                generated: False, propagated: False,
+                                boxDvd: 0, boxDvs: 0 };
   if (dvs.frac == 0) begin
     // "When the indicator ZD is set to one, further processing of the
     // division is suspended and the accumulator contents remain
@@ -848,7 +872,9 @@ function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy);
   Int#(14) de = fpExpFull(dvd) - ds;
   lzc = lzc - ds;
 
-  let {q, rem} = fpDivFrac(d96, vf);
+  r.boxDvd = d96;
+  r.boxDvs = vf;
+  let {q, rem} = qr;
   Bool ovf = (q[48] == 1);
   Bit#(48) qf = ovf ? q[48:1] : q[47:0];
   if (ovf) begin de = de + 1; lzc = lzc + 1; end
@@ -1058,6 +1084,9 @@ typedef struct {
   Bit#(7)  lzc;
   Bool     generated;
   Bool     propagated;
+  // The divide box's operands, as in FpDivResult.
+  Bit#(96) boxDvd;
+  Bit#(48) boxDvs;
 } FpDivDblResult deriving (Bits, Eq, FShow);
 
 // DIVIDE DOUBLE (D/, p.94).  "The operand in the accumulator bits
@@ -1090,11 +1119,13 @@ typedef struct {
 // included) less 48, the remainder being what is left after 48
 // quotient bits.  F217WA4 and WA5 are what pin the unflagged half:
 // they want -46 and -47 from dividends at +2.
-function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bool noisy);
+// `qr` is the division's answer supplied from outside, as in fpDiv.
+function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bool noisy,
+                                    Tuple2#(Bit#(49), Bit#(49)) qr);
   FpNum z = fpdHead(dvd);
   FpDivDblResult r = FpDivDblResult { res: z, q49: 0, rem: z, zd: False, pf: False,
                                       lc: False, ru: False, lzc: 0, generated: False,
-                                      propagated: False };
+                                      propagated: False, boxDvd: 0, boxDvs: 0 };
   if (dvs.frac == 0) begin
     r.zd = True;
     return r;
@@ -1130,7 +1161,9 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   Int#(14) de = fpExpFull(fpdHead(dvd)) - ds;
   lzc = lzc - ds;
 
-  let {q, rem} = fpDivFrac(d96, vf);
+  r.boxDvd = d96;
+  r.boxDvs = vf;
+  let {q, rem} = qr;
   Bool ovf = (q[48] == 1);
   Bit#(48) qf = ovf ? q[48:1] : q[47:0];
   // The 49th quotient bit, accumulator IBM 60 -- p.99: "the quotient

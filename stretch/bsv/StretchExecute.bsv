@@ -1343,6 +1343,16 @@ typedef struct {
   Maybe#(Word64) remainder;
   Maybe#(Bit#(7)) leftZerosCount;            // st.setLeftZerosCount
   Maybe#(Tuple2#(WordAddr, Word64)) store;   // the computed-address store
+  // NOT A WRITE: A REQUEST.  The three divide arms (/, R/, D/) of
+  // fpArithClass report here the dividend and divisor fractions they
+  // need divided; commitFp ignores it.  execute() sends it to the
+  // divide box (ExecDispatch's NeedBox) when it has no answer yet, and
+  // on the re-run hands the answer in as fpArithClass's `divQR` --
+  // the request is then still reported, and simply not acted on.
+  // Invalid for every other opcode and for a zero divisor, which is
+  // p.93's "further processing of the division is suspended" as
+  // structure: nothing is sent.
+  Maybe#(DivReq) divReq;
 } FpCommit deriving (Bits, Eq, FShow);
 
 function Action commitFp(StretchStorage st, FpCommit fpc);
@@ -1370,7 +1380,8 @@ function Tuple2#(Word64, FpCommit)
                               factor: tagged Invalid,
                               remainder: tagged Invalid,
                               leftZerosCount: tagged Invalid,
-                              store: tagged Invalid };
+                              store: tagged Invalid,
+                              divReq: tagged Invalid };
     Bool isST   = (c == fpop_ST);
     Bool isSRD  = (c == fpop_SRD);
     Bool isSLO  = (c == fpop_SLO);
@@ -1727,7 +1738,8 @@ function Tuple2#(Word64, FpCommit)
                  WordAddr ea, FpNum acc, Word64 accL,
                  Word64 accS, Word64 accR0, Word64 factor0,
                  Bool normalized, Bool noisy,
-                 Bool protViol, Word64 operand, Word64 ind0);
+                 Bool protViol, Word64 operand, Word64 ind0,
+                 Tuple2#(Bit#(49), Bit#(49)) divQR);
     Word64 ind = ind0;
     FpCommit fpc = FpCommit { accLeft: tagged Invalid,
                               accRight: tagged Invalid,
@@ -1735,7 +1747,8 @@ function Tuple2#(Word64, FpCommit)
                               factor: tagged Invalid,
                               remainder: tagged Invalid,
                               leftZerosCount: tagged Invalid,
-                              store: tagged Invalid };
+                              store: tagged Invalid,
+                              divReq: tagged Invalid };
     FpNum opnd0 = fpFromWord(operand);
     FpNum opnd = fpApplySignMods(opnd0, absSign, invSign);
     ind = setBit(ind, ind_TF, opnd0.flags[2]);
@@ -2109,8 +2122,16 @@ function Tuple2#(Word64, FpCommit)
         // So the accumulator's RIGHT word is never written, and
         // fpAccLeft carries IBM 60-63 through -- the same shape
         // MULTIPLY has, and the reason / needs no readAccRight.
-        FpDivResult r = fpDiv(acc, opnd, normalized, noisy);
+        //
+        // THE DIVISION ITSELF IS THE DIVIDE BOX'S (2026-11-15): `divQR`
+        // is its answer, and r.boxDvd/boxDvs are what it is asked to
+        // divide.  On the evaluation that produces the request divQR
+        // is zeros and everything below is computed and DISCARDED by
+        // execute(), which bails before committing.
+        FpDivResult r = fpDiv(acc, opnd, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
+        if (!r.zd)
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
         if (r.zd) begin
           // p.93: "When division is suppressed because of a zero
           // divisor, the accumulator and the sign byte register
@@ -2153,8 +2174,10 @@ function Tuple2#(Word64, FpCommit)
         // other way round.  The sign modifiers still land on the
         // ADDRESSED operand, which here is the dividend rather
         // than the divisor, and `opnd` already carries them.
-        FpDivResult r = fpDiv(opnd, acc, normalized, noisy);
+        FpDivResult r = fpDiv(opnd, acc, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
+        if (!r.zd)
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
         if (r.zd) begin
           // The zero divisor is now the ACCUMULATOR's fraction.
           // Nothing is written, as in DIVIDE; jb_af1c F217XA8
@@ -2194,8 +2217,10 @@ function Tuple2#(Word64, FpCommit)
         // and jb_af1c F217WA checks it in every sub-test.
         Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
-        FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy);
+        FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
+        if (!r.zd)
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
         if (r.zd) begin
           // As in DIVIDE: nothing is written and the result and
           // range indicators are left alone.
@@ -6564,12 +6589,16 @@ function ActionValue#(ExecDispatch)
         Bool isSLO = (c == fpop_SLO);  // STORE LOW ORDER (p.97)
         // (A note here used to say divide was "deferred to the
         // multi-cycle arithmetic unit... decodes but does not execute".
-        // /, R/, D/ and SRT are all implemented now, combinationally,
-        // for the same reason fpMul is: see fpDivFrac's header. The
-        // real machine's divide really is iterative -- about 3.5
-        // quotient bits per cycle, Buchholz p.213 -- but that is a
-        // timing property this model expresses as a cycle budget in
-        // StretchTiming, not as datapath structure.)
+        // /, R/, D/ and SRT are all implemented now.  SRT is still
+        // combinational, for the same reason fpMul is.  THE THREE
+        // DIVIDES ARE NOT, since 2026-11-15: their 96 restoring steps
+        // are done by mkEBox's divide box (StretchDivBox.bsv), reached
+        // by the NeedBox bail below, because three inlined copies of
+        // fpDivFrac did not fit the FPGA.  The real machine's divide
+        // really is iterative -- about 3.5 quotient bits per cycle,
+        // Buchholz p.213 -- but the box's rate is NOT yet that: the
+        // instruction's TIME is still the cycle budget in
+        // StretchTiming, with the box's clocks taken out of it.)
         Bool isSHF = (c == fpop_SHF);
         Bool isEplI = (c == fpop_E_PLUS_I);  // E+I (add immediate to exponent)
         // The no-operand store group, lifted into fpStoreClass above.
@@ -6625,14 +6654,33 @@ function ActionValue#(ExecDispatch)
           needsRead = tagged Valid ea;
         else begin
           // One commit point, as for fpStoreClass above.
+          //
+          // THE DIVIDES GO ROUND TWICE.  With no box result in hand,
+          // /, R/ and D/ come back carrying fpcA.divReq -- the
+          // fractions to divide -- and this arm BAILS on it exactly as
+          // it bails for the operand above: nothing is committed and
+          // `ind` is not taken (needsRead is the placeholder that
+          // makes execute()'s bail guards apply; see ExecDispatch).
+          // mkEBox runs the box and re-runs the instruction with the
+          // quotient and remainder, which go in as divQR.  A zero
+          // divisor makes no request (p.93: "further processing of
+          // the division is suspended") and completes at once.
+          Tuple2#(Bit#(49), Bit#(49)) divQR = tuple2(0, 0);
+          if (boxResult matches tagged Valid .b)
+            divQR = tuple2(b.q[48:0], {1'b0, b.rem});
           let {indAr, fpcA} = fpArithClass(c, fp.absSign, fp.invSign, ea, acc,
                                            accL, accS, st.readAccRight(),
                                            st.readFactor(),
                                            normalized, noisy,
                                            protViolates(st, ea),
-                                           prefetch[0], ind);
-          ind = indAr;
-          commitFp(st, fpcA);
+                                           prefetch[0], ind, divQR);
+          if (fpcA.divReq matches tagged Valid .rq &&& !isValid(boxResult)) begin
+            needsBox  = tagged Valid rq;
+            needsRead = tagged Valid 0;
+          end else begin
+            ind = indAr;
+            commitFp(st, fpcA);
+          end
         end
         end  // AD guard
       end

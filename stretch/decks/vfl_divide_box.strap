@@ -95,8 +95,11 @@
 !
 ! THE CLOCK COUNT IS ASSERTED EXACTLY, and the number was MEASURED ON
 ! THE MODEL AS IT WAS BEFORE THE BOX EXISTED (the combinational
-! divide), so it is the check that moving the divide into the box did
-! not move the time: see tests/run_tests.sh at this deck's entry.
+! divide).  It checks that the box's clocks are absorbed into the
+! E-box budget.  It does NOT check the I-box overlap the box can cost:
+! every instruction after a divide here is look-ahead class, so
+! nothing overlapped in the first place.  The FP decks that DID move
+! are tabled in bsv/StretchDivBox.bsv's header.
 
         SLC, (8)2000.0
 

@@ -4052,8 +4052,10 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # divisor.  Every expected value is hand-derived in the deck header
 # from printed p.70, and ALL 21 CHECKS PASSED ON THE MODEL AS IT WAS
 # BEFORE THE BOX (combinational divide), CYCLES included: 1196 is that
-# model's count, so =1196+-0 is the check that the box changed the
-# hardware and not the time.  The injections and their observed
+# model's count, so =1196+-0 checks that the box's clocks are absorbed
+# into the E-box budget.  It cannot see the I-box overlap a box wait
+# costs (nothing here overlaps); eight FP decks do show it, +1 to +16
+# clocks, tabled in bsv/StretchDivBox.bsv.  The injections and their observed
 # failures are in the deck header.
 run "/, VFL Divide at the edges of the divide box (full width, last bit, remainder signs)" ./run_program.sh ../decks/vfl_divide_box.strap StretchVflDivBoxTb \
     "PC=2146" \
@@ -10205,6 +10207,22 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f216d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# >>> THE FP DIVIDES NOW GO THROUGH mkDivBox (2026-11-16). <<<  /, R/ and
+# D/ no longer inline fpDivFrac; fpArithClass reports the fractions in
+# FpCommit.divReq, execute() bails with NeedBox, and the answer comes back
+# as divQR.  The F217/F219 blocks below are what check it.  Two
+# injections at the point where the answer is handed back
+# (StretchExecute.bsv, `divQR = tuple2(b.q[48:0], {1'b0, b.rem})`), each
+# run on all seventeen FP-divide sections in a private tree copy, OBSERVED:
+#   REMAINDER ZEROED (49'b0): ONLY F219T-Y fails (SEN set, PC 1416).
+#     Every F217W D/ block divides exactly, so a zero remainder is the
+#     right answer there -- including F217WE, "remainder underflow".
+#     The D/ remainder is therefore checked by ONE block in the suite.
+#   QUOTIENT ONE BIT HIGH (b.q[49:1]): 8 of 17 fail -- F217A, F217D,
+#     F217WA, F217XA, F217XD, F219K-P2, F219T-Y (SEN set) and the
+#     R23-9694 p.82 self-check (PC 2057, want 2056).  F217B/C, WB-WE and
+#     XB/XC pass: they check signs, registers left alone and indicators
+#     that a doubled quotient does not disturb.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \

@@ -161,9 +161,32 @@ endfunction
 // answer taken at T+4 (mkDivBox's CReg note says why it is readable
 // in the clock of the last reduction).
 // This step replaces combinational hardware with iterative hardware
-// WITHOUT moving any instruction's total time (the core subtracts the
-// clocks the box took from the budget it charges afterwards); making
-// the box's own count BE the time is a later, sourced step, and when
+// and keeps the E-BOX's time: the core subtracts the clocks the box
+// took from the budget it charges afterwards.  >>> IT DOES NOT KEEP
+// EVERY INSTRUCTION'S TIME, AND THAT WAS MEASURED, 2026-11-16. <<<
+// While the divide waits on the box its look-ahead level is held, so
+// the instruction unit cannot execute an I-box instruction alongside
+// it (rl_prepare's `!ebox.busyFor(OwnerLA)`, and the held level still
+// counts in iboxHazard).  The old divide completed and retired in its
+// first clock, and the I-box overlapped the budget countdown.  So a
+// divide followed by I-box work now takes longer:
+//   halt clocks, before the box -> after it at 24 / 48 / 96 bits a
+//   clock (4 / 2 / 1 box clocks), measured on the eight moved decks:
+//     fp_arith_f217b   220 -> 236 / 228 / 224   (+4 per box clock)
+//     fp_arith_f217wb  205 -> 221 / 213 / 209   (+4 per box clock)
+//     fp_arith_f217xb  201 -> 217 / 209 / 205   (+4 per box clock)
+//     fp_arith_f217we  142 -> 150 / 146 / 144   (+2 per box clock)
+//     fp_zm_cleared    563 -> 571 / 567 / 565   (+2 per box clock)
+//     fp_arith_f217d   750 -> 754 / 750 / 750   (only above 2 clocks)
+//     fp_arith_f217a   475 -> 477 / 477 / 477   (+2, constant)
+//     fp_arith_f217c   180 -> 181 / 181 / 181   (+1, constant)
+//   The other eight FP-divide decks, the three VFL-divide decks, MCP's
+//   bootstrap and all thirteen CYCLES-checked suite entries are unchanged.
+// The per-box-clock rows are that hold window, since they shrink with
+// the box.  The two constant rows are something else and are not yet
+// explained.  Getting the overlap back needs the I-box to run during a
+// box wait, which is rl_prepare's business.  Making the box's own
+// count BE the time is a later, sourced step, and when
 // it comes this constant goes and mkFpDivBox's structure -- trial,
 // intermediate and last reduction cycles, the normalisation loop --
 // comes in.  For the same reason this box has none of those phases:

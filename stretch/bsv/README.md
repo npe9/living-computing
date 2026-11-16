@@ -695,7 +695,12 @@ runs in `mkDivBox` (`StretchDivBox.bsv`). `execute()` takes a
 `Maybe#(DivRsp) boxResult` and has a third answer, `NeedBox DivReq`,
 beside `Complete` and `NeedOperand`. The arm returns `NeedBox` with the
 dividend and divisor when it has no result, and uses the quotient and
-remainder when it does. `mkEBox` issues the request, holds the
+remainder when it does. The floating-point divides `/`, `R/` and `D/`
+use the same box and bail: they used to inline `fpDivFrac`'s 96 unrolled
+restoring steps three times. Now `fpArithClass` reports the fractions it
+needs divided in `FpCommit.divReq` and takes the answer as `divQR`.
+`fpDiv`/`fpDivDouble` take the quotient and remainder as an argument.
+`mkEBox` issues the request, holds the
 instruction exactly as it does for an operand read (`boxWait`), and
 `canResume()` becomes "the read answered, OR the box has its answer".
 `resume()` then re-runs `execute()` with the answer. An instruction that
@@ -704,9 +709,20 @@ also sets `needsRead` (to a placeholder), so every existing
 `!isValid(needsRead)` guard keeps the bail free of writes. A zero divisor
 never sends a request (p.70: "the division is not attempted").
 
-**Time is unchanged by construction.** `rl_exec_resume` subtracts the
-clocks the box took (`ebox.boxClocks()`) from the E-box budget it then
-charges. The I-box-dispatched path is charged `budget - elapsed` already.
+**The E-box time is unchanged; the overlap is not.** `rl_exec_resume`
+subtracts the clocks the box took (`ebox.boxClocks()`) from the E-box
+budget it then charges. The I-box-dispatched path is charged
+`budget - elapsed` already. But while the divide waits on the box, its
+look-ahead level is held, and the instruction unit executes no I-box
+instruction (`rl_prepare`'s `!ebox.busyFor(OwnerLA)`). The old divide
+retired in its first clock and the I-box overlapped the countdown. So 8
+of the 16 FP-divide decks got slower: f217b, f217wb and f217xb by 16
+clocks, f217we and fp_zm_cleared by 8, f217d by 4, f217a by 2 and f217c
+by 1. The first five shrink in proportion when the box is made faster
+(the hold window). f217d's +4 goes away at 2 box clocks. f217a's and
+f217c's are constant and not yet explained. No suite CYCLES check moved,
+because none of those decks has one. The box header has the table.
+Getting the overlap back is an `rl_prepare` change.
 The box takes 4 clocks, and the smallest divide budget is 4 (FP `/`). An
 overrun would print `DIVIDE BOX OVERRAN THE E-BOX BUDGET`. The 24 bits a
 clock is invented, to fit that budget, and the box header says so. Whether
