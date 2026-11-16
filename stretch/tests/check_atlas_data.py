@@ -118,6 +118,27 @@ QUOTED_109 = {
     "KVI": ("KV", "immediate"), "KCI": ("KC", "immediate"),
 }
 
+# PDF 104's floating-point subject rows quote their own time ("ST(U) (4.82
+# IN A ST(U) ENVIRONMENT)").  The figure is compared with the instruction's
+# own FP sheet without forwarding, NORMALIZED 1. block, (U) row, EXTERNAL
+# OPERAND with no indexing.  PDF 102 puts every instruction of the test on
+# the same external operand; that it is unindexed is an ASSUMPTION (the
+# ix_ext figure is the same as ni_ext on all six sheets except DL, 1.41
+# against 1.40).  The quoted figures sit within 0.02 of the sheets: the
+# environment run is a different measurement, so this rule's far pairs
+# are expected and its counts are what is checked.
+QUOTED_FP = {
+    "ST(U)": (48, "ST"), "SLO(U)": (49, "SLO"), "SRD(U)": (50, "SRD"),
+    "L(U)": (64, "L"), "DL(U)": (66, "DL"), "LFT(U)": (68, "LFT"),
+}
+
+# FP pages with forwarding (PDF 73-101) repeat, page for page, the pages
+# without it (PDF 42-70): same instruction, same blocks and rows.  Where
+# forwarding cannot help (ST, the shifts, *, /, ...) the two print the same
+# figure; elsewhere they differ for real.  The pair is made on the EXTERNAL
+# and I-BOX columns, the only ones both print.
+FWD_OFFSET = 31
+
 # (pdf, instr, block, row, col): (this file, perf_char_timing.py, verdict)
 ADJUDICATED = {}
 
@@ -136,6 +157,14 @@ def twin_pairs(page, by_pdf=None):
                 t = tgt.get(QUOTED_109[r.row])
                 if t is not None and t.kind == "time":
                     yield "quoted", r, t
+    if page.pdf == 104 and by_pdf:
+        for r in page.records:
+            if r.col == "quoted" and r.row in QUOTED_FP:
+                pdf, ins = QUOTED_FP[r.row]
+                for t in (by_pdf[pdf].records if pdf in by_pdf else ()):
+                    if (t.instr, t.block, t.row, t.col, t.kind) == (
+                            ins, "NORMALIZED 1.", "(U)", "ni_ext", "time"):
+                        yield "quotefp", r, t
     idx = {(r.instr, r.block, r.row, r.col): r for r in page.records
            if r.kind == "time"}
     if page.cls == "VFL":
@@ -149,6 +178,18 @@ def twin_pairs(page, by_pdf=None):
                 if t:
                     yield "ibox", r, t
     elif page.cls == "FP":
+        base = by_pdf.get(page.pdf - FWD_OFFSET) if by_pdf else None
+        if base is not None and base.cls == "FP" and page.records and \
+                base.records and \
+                page.records[0].cond.get("forwarding") == "yes" and \
+                base.records[0].cond.get("forwarding") == "no":
+            bidx = {(r.instr, r.block, r.row, r.col): r for r in base.records
+                    if r.kind == "time"}
+            for key, r in idx.items():
+                t = bidx.get(key)
+                if t is not None and (r.cond.get("ah_indicator") ==
+                                      t.cond.get("ah_indicator")):
+                    yield "fwd", r, t
         for (ins, blk, row, col), r in idx.items():
             if not row.startswith("NEG "):
                 t = idx.get((ins, blk, "NEG " + row, col))
