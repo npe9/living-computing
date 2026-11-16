@@ -30,6 +30,9 @@
 ! a longer slow prefix the four levels are full and the I unit, which
 ! prepares in order, cannot reach the V+I before the store retires; why an
 ! SV of $3 at Q0 does not overtake was not traced.  They stay as guards.
+! NOR IS THE RULE'S BREADTH SHOWN: a wait only for an instruction that uses
+! register j would pass every case here, and words 11 and 12 are in the
+! rule because the pages print them, not because a case needs them.
 !
         SLC, (8)2000.0
 START   NOP

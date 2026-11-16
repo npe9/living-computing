@@ -388,10 +388,14 @@ endfunction
 // nothing -- no I-box instruction, no new level -- until that level has
 // retired.
 //
-// TWO THINGS ARE NOT ON THOSE PAGES AND ARE THE MODEL'S CHOICE: what
-// releases STORE WAIT (here, the storing level's retirement, when its
-// value is in the register), and how long the "I RCY" recovery takes
-// (not charged).  A conservative wait, not a measured time.
+// THREE THINGS ARE NOT ON THOSE PAGES AND ARE THE MODEL'S CHOICE: what
+// STORE WAIT blocks (here, all preparation; the pages draw only its
+// turn-on, and no box takes it as a condition), what releases it (here,
+// the storing level's retirement, when its value is in the register),
+// and how long the "I RCY" recovery takes (not charged).  A conservative
+// wait, not a measured time.  (All three figures read in the page
+// images: PDF 77, printed 1-27/1-28; PDF 84, 1-41/1-42; PDF 88,
+// 1-49/1-50.)
 //
 // It replaces two narrower things.  `indexStorePending` (a new level
 // indexed by j waited for a level storing word 16+j) is subsumed.  And it

@@ -647,33 +647,37 @@ waited for a pending level storing word 16+j (`indexStorePending`), but an I-box
 index instruction did not wait at all: `ST(BU,64),$X3` then `V+I,$3,1.0` read
 the old $3. This failed the same way on commit 3204601, so it predates this
 work. A probe written for this change found it, and so did a reading of the 7101
-I-unit flow diagrams (finding M2).
+I-unit flow diagrams.
 
 Those diagrams draw the 7030's mechanism, keyed on the store's own address and
-nothing else (R23-9732; PDF 84 read in the page image for this change, PDF 77
-and 88 as transcribed in `../docs/reading_notes/` and checked by the
-coordinator):
+nothing else (R23-9732, I UNIT FLOW DIAGRAMS; all three read in the page
+images for this change):
 
 - Fig. 3.1.20, "ZL FP3 TRIGGER" (PDF 84, printed 1-41/1-42), under "FPL 4 E TGR
   ON": "ZOAR EQ 11 + 12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR", "BLOCK
   STORE WAIT TGR TOF", "TON I RCY REQ TGR (28.42.72.1)".
-- Fig. 3.1.13 sheet 3 (PDF 77): the same, for the right half-word.
-- Fig. 3.1.24 (PDF 88), for VFL: "W EQ 11 + 12 + 16 - 31" -> "VFL 5 CL 2 COND
-  STORE WAIT".
+- Fig. 3.1.13 sheet 3, "ZR FP TRIGGERS" (PDF 77, printed 1-27/1-28), from
+  "FPR4E": "ZOAR EQ 11 +12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR",
+  "TON IRCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.24, "WBC TRIGGER" (PDF 88, printed 1-49/1-50), for VFL: "W EQ 11 +
+  12 + 16 - 31 (28.11.55.1)" -> "VFL CL 2 . VFL 5E" -> "VFL 5 CL 2 COND STORE
+  WAIT (28.21.71.1)", and the same from "ZL 11 + 12 + 16 - 31".
 
 So `storeWait` (`StretchIBox.bsv`) is True while any pending level stores into
 word 11, 12 or 16-31, and `rl_prepare` then prepares nothing until that level
 retires: no I-box instruction and no new level. It replaces `indexStorePending`.
-The pages do not show what releases STORE WAIT or how long the I-unit recovery
-takes. The model releases it at the store's retirement and charges no recovery
-time. It is a conservative wait, not a measured time. A field crossing into word
+The pages draw only the trigger's turn-on. Three things are the model's
+choice: that STORE WAIT holds all preparation (no box takes it as a
+condition), that the store's retirement releases it, and that the I-unit
+recovery costs nothing. It is a conservative wait, not a measured time. A field crossing into word
 16-31 from word 15 is refused by `execute()`, so the store's first word is
 enough.
 
 Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
-pending `ST(BU,64),$X3`). Its header records the measured injection. Words 11
-and 12 are in the rule because the page prints them, but no test case shows
-that their wait is needed (a direct-index read of either word already waits
+pending `ST(BU,64),$X3`). Its header records the measured injection. Two parts of
+the rule are not shown to be needed by any test: its breadth (a wait only for
+instructions that use register j would pass every case), and words 11 and 12,
+which are in it because the pages print them (a direct-index read of either word already waits
 through `levelHolds`).
 
 Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle

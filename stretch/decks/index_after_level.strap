@@ -30,7 +30,8 @@
 ! which waits for it) so the indexed level is still pending when the next
 ! instruction is prepared.
 !
-! OBSERVED, 2026-11-15, the carried form (the four bsv files each restored
+! OBSERVED, 2026-11-15, the carried form, on commit 5adbbb4 (before the
+! store wait; the four bsv files each restored
 ! from a copy checked with cmp; run with this deck's run_tests.sh line):
 !   E-box re-indexes (rl_au_remove dispatches h.di, not the carried
 !     instruction; the stall already gone): FAIL DV0a DV0b DV1a DV1b DV2a
