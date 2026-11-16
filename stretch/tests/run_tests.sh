@@ -2336,6 +2336,30 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
     "mplus_refused_head:304=18446744073709551615" \
     "mplus_refused_tail:305=18446744073709551615"
 
+# >>> VFL STORE ROUNDED (SRD, code 101101), BUILT 2026-11-16: the ST arm with
+# one add in front (Reference Manual printed p.64).  <<<  Two decks.  The
+# reproducer cut from Buchholz B.2 (3 of 5 failed while SRD was refused),
+# and vfl_srd.strap, nine hand-derived cases with the indicator register
+# read after each: round up, a carry out of the field (LC, and PF off --
+# the case that separates the two PF readings), PF with no round, a
+# negative accumulator into a signed field, offset 0 ("equivalent to a
+# STORE"), a signed field whose carry crosses the numeric width, a carry
+# through the field, rounding the accumulator in place through $R, and
+# decimal SRD refused with OP.  MEASURED INJECTIONS in vfl_srd's header.
+run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
+    "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
+    "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
+run "VFL SRD -- nine cases and their indicators: LC, PF, sign, offset 0, \$R, decimal OP (p.64)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2076" \
+    "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
+    "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
+    "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
+    "T4_negative_signed:1113=0xAC08FFFFFFFFFFFF" "I4_minus:1123=0x190" \
+    "T5_offset0:1114=0xAB80FFFFFFFFFFFF" "I5:1124=0x120" \
+    "T6_signed_carry:1115=0x000FFFFFFFFFFFFF" "I6_LC:1125=0x20000000140" \
+    "T7_carry_through:1116=0xA80FFFFFFFFFFFFF" "I7:1126=0x120" \
+    "T8_acc_rounded_in_place:1117=0x13C0" \
+    "T9_decimal_untouched:1118=0xFFFFFFFFFFFFFFFF" "I9_OP:1127=0x1000000000000"
+
 # >>> CONNECT TO MEMORY ACROSS A WORD BOUNDARY, 2026-11-06 -- MCP's
 # printed p.78 line 42, "SF(BU,40,8),TREELX", needs it. <<<  Refused,
 # it left OP set and MCP typed the mount messages with a blank reel
@@ -13779,24 +13803,16 @@ run "Buchholz B.1 -- polynomial evaluation" ./run_program.sh ../decks/buchholz_b
     "p_result:202=0x00EC200000000000" "x1:17=0x00004080000000C8" "guard:203=99" \
     "x_unchanged:201=0x004C000000000000" "a0_unchanged:300=0x006E000000000000" "a3_unchanged:303=0x0048000000000000"
 
-# B.2, printed pp.296-297.  THE TABLE AS PRINTED DOES NOT REACH THE BOOK'S
-# ANSWER, AND THE CAUSE IS ONE UNBUILT OPERATION: VFL STORE ROUNDED, the
-# "STORE ROUNDED (VB, 12, 1), 8.0, 117" at 105.32, which the model refuses
-# with OP (vflIntOp/unimplemented-code, code=101101).  docs/NEXT.md has the
-# item; decks/repro_vfl_srd.strap is the reproducer and its header has the
-# command (three cases, 3 of 5 fail today).
-#
-# So the printed deck is registered with the six checks that hold whether or
-# not SRD is built -- everything before 105.32, the loop count and the halt.
-# THE FAILING CHECK, DOCUMENTED AND NOT RUN HERE, is the root itself:
-#
-#     python3 verify_buchholz_b2.py printed
-#
-# which fails today for all eight N (the refusal) and is SRD's acceptance
-# test.  When SRD is built, replace the line below with that one.
-run "Buchholz B.2 -- cube root AS PRINTED, up to the unbuilt VFL SRD" ./run_program.sh ../decks/buchholz_b2_cube_root.strap StretchBuchB2PTb "PC=224" \
-    "three_halves_n:203=0x0109600000000000" "x1:17=0xC8" "n_unchanged:204=0x00EC800000000000" \
-    "half_unchanged:201=0x0008000000000000" "f0_unchanged:202=0x000B600000000000"
+# B.2, printed pp.296-297, AS PRINTED.  Its "STORE ROUNDED (VB, 12, 1), 8.0,
+# 117" at 105.32 is the VFL STORE ROUNDED, which the model refused with OP
+# until 2026-11-16 (docs/NEXT.md).  This is SRD's acceptance test on the
+# book's own program: eight N, each root checked against the book's "full
+# 48-bit accuracy ... except for a possible rounding error in the last
+# iteration" in exact rational arithmetic, plus the halt, x1 and 3N/2.
+# It replaces the line that checked only what held without SRD.  The SRD
+# stores into 8.0, the accumulator itself -- the Programming Notes' "An
+# unsigned STORE ROUNDED addressing the accumulator" in signed form.
+run "Buchholz B.2 -- cube root AS PRINTED, VFL SRD into 8.0, eight N to 48 bits" python3 verify_buchholz_b2.py printed
 
 # The same program with the SRD replaced by the pair the Reference Manual
 # calls equivalent (printed p.64, Programming Notes): +MGI at the rounding
@@ -14080,22 +14096,32 @@ run "C22-6578 Problem 4.10 -- LNX, ln 1E6" python3 verify_problem_4_fp.py 4.10:1
 run "C22-6578 Problem 4.10 -- LNX, ln 2.5" python3 verify_problem_4_fp.py 4.10:2.5
 run "C22-6578 Problem 4.10 -- LNX, ln .001" python3 verify_problem_4_fp.py 4.10:.001
 run "C22-6578 Problem 4.10 -- LNX, ln 1E-300" python3 verify_problem_4_fp.py 4.10:1.0E-300
-# x = 1/8 is written 1X-2, which is exactly 1/8: STRAP II assembles ".125" as
-# 125 x (1/1000 truncated), one unit low (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48").
-# THE W8 CHECKS STILL FAIL, AND NOT FOR THE REASON FIRST GIVEN.  The printed
-# "SRDN,$L" has no dds, and both assemblers compile it as the VFL STORE
-# ROUNDED (code 101101) by C22-6578 printed p.30's rule ("An operation which
-# could be either VFL or floating-point is assumed VFL"); the model does not
-# implement that operation and turns OP on, so word 8 keeps the unrounded
-# accumulator.  It was recorded as "a store to location 8 is lost"; the FP
-# store to 8 is fixed and pinned by repro_fp_store_location8.strap, and this
-# is OPEN in docs/NEXT.md.  -.1's TEMP_A_squared ("D*(N), $L") passes since
-# the location-8 operand fix, 2026-11-16.
-run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m1:1X-2
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .125 as STRAP II assembles it, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.125 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+# 4.9 Method 1, COSF, printed pp.42-43.  x = 1/8 is written 1X-2, which is
+# exactly 1/8: STRAP II assembles ".125" as 125 x (1/1000 truncated), one
+# unit low (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48").
+#
+# THE PRINTED LAST CARD, "SRDN,$L", IS THE VFL STORE ROUNDED, SETTLED FROM
+# THE INK 2026-11-16 (tests/check_srdn_dollar_l.py, below): $L carries the
+# dds (BU,64,8) (C28-6129 printed p.10), and the dds picks the class (p.6).
+# At offset 0 "A STORE ROUNDED ... is equivalent to a STORE" (Reference
+# Manual printed p.64): word 8 receives accumulator bits 64-127, word 9,
+# and the cosine is lost -- the book's COSF is wrong in the ink.  So "4.9m1"
+# checks what the card does (word 8 = word 9 exactly, with TEMP and x2),
+# and "4.9m1fp" runs the card the analysis meant, "SRDN(N),$L", and checks
+# the cosine read as the accumulator (words 8 and 10, p.80) and $SB 4-7.
+# These were --known-wrong while the VFL SRD was unbuilt; 1X-2 passed then
+# only because the refused store left word 8 alone.
+run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, SRDN,\$L is the VFL SRD: word 8 = word 9, x = 1/8" python3 verify_problem_4_fp.py 4.9m1:1X-2
+run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, word 8 = word 9, x = .125 as STRAP II assembles it" python3 verify_problem_4_fp.py 4.9m1:.125
+run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, word 8 = word 9, x = .03" python3 verify_problem_4_fp.py 4.9m1:.03
+run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, word 8 = word 9, x = .1" python3 verify_problem_4_fp.py 4.9m1:.1
+run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, word 8 = word 9, x = -.1" python3 verify_problem_4_fp.py 4.9m1:-.1
+run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m1fp:1X-2
+run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = .125 as STRAP II assembles it" python3 verify_problem_4_fp.py 4.9m1fp:.125
+run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = .03" python3 verify_problem_4_fp.py 4.9m1fp:.03
+run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = .1" python3 verify_problem_4_fp.py 4.9m1fp:.1
+run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = -.1" python3 verify_problem_4_fp.py 4.9m1fp:-.1
+run "SRDN,\$L is the VFL SRD (BU,64,8) in both assemblers: \$L's dds, C28-6129 printed pp.6, 10" python3 check_srdn_dollar_l.py
 # Location 8 as a floating-point address, both directions (Reference
 # Manual printed p.80: accumulator bits 0-59 plus sign byte bits 4-7, "both
 # fetch and store type"; fixed 2026-11-16, docs/NEXT.md).  The store:

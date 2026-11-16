@@ -408,10 +408,24 @@ another, which is what a two-way interchange is for.
   sixteen injections, each observed; the deck oracles are jb_ax5b
   routine 1262 TEST 2A/2B/3A/3B, transcribed for their encoding.
 
+**VFL STORE ROUNDED (`SRD`, code 101101) executes since 2026-11-16**,
+binary only, as the ST arm of `vflIntOp` with one add in front: a one
+at the bit right of the offset, added to the magnitude (Reference
+Manual printed p.64), nothing at offset 0 ("equivalent to a STORE").
+LC is the carry out of the numeric width and PF is read from the
+unrounded accumulator -- both CHOSEN, in the arm's header and
+`docs/spec_factor.md` 4.6.  Timing: ST's budget plus 4 clocks at a
+nonzero offset (Perf. Char. Vol. 1 Table 3, `StretchTiming.bsv`).
+`decks/vfl_srd.strap` (nine cases, injections in its header),
+`decks/repro_vfl_srd.strap` and Buchholz B.2 as printed
+(`tests/verify_buchholz_b2.py printed`) are the checks.  Decimal `SRD`
+stays refused with the rest of decimal arithmetic.
+
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`) except the unsigned store (`ST(DU)`, built
+Decimal-mode VFL (`c=1`, decimal `SRD` included) except the unsigned
+store (`ST(DU)`, built
 2026-11-08 for MCP's `$TIME`, `decks/vfl_st_decimal.strap`), radix
 conversion (`CV`, `DCV`, `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
@@ -430,8 +444,8 @@ NOT        LFT(11) KE(19) KR(21) CV(27) /(29) LTRCV(35)
            LWF(37) SRD(45) KFE(51) KFR(53) *+(57) DCV(59) LTRS(61)
 ```
 
-(A census of that date. `LWF` executes since 2026-11-09, and later entries in
-this file record others.)
+(A census of that date. `LWF` executes since 2026-11-09, binary `SRD`
+since 2026-11-16, and later entries in this file record others.)
 
 **`*` MOVED ACROSS ON 2026-10-25** and the census above already
 reflects it: eleven of twenty-four. `decks/vfl_multiply.strap` is the

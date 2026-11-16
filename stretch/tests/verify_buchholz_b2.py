@@ -4,8 +4,9 @@ B.2, "Cube-root Extraction" (printed pp.296-297), checked against the
 BOOK'S OWN CLAIM over several N instead of against one word.
 
     printed      decks/buchholz_b2_cube_root.strap, the table as printed.
-                 FAILS until the model builds VFL STORE ROUNDED; it is that
-                 operation's acceptance test and is not in run_tests.sh.
+                 VFL STORE ROUNDED's acceptance test.  It failed while the
+                 model refused SRD; built 2026-11-16, it passes for all
+                 eight N (32 checks) and is registered in run_tests.sh.
     substituted  decks/buchholz_b2_cube_root_srd_substituted.strap, the same
                  program with SRD replaced by the Reference Manual's own
                  equivalent (that deck's header).  Registered.

@@ -205,7 +205,20 @@ function Bit#(16) eboxClocks(DecodedInstr d);
                     : zeroExtend(len_) - zeroExtend(bsz);
       Bit#(8) y = (v.m.decimal == 1) ? zeroExtend(bsz) : 8;
       Bit#(8) bytes = (x + y - 1) / y;
-      return 8 + 2 * zeroExtend(bytes);
+      // SRD (VFL STORE ROUNDED, code 101101).  Table 3 (Vol. 1 printed
+      // p.3-7, PDF 25, read in the image) gives it ST's execution and
+      // termination, .6(x/y) and .6, and a pre-execution time of 3.0 us
+      // where ST has 1.8: 1.2 us = 4 clocks more, full word total 8.4
+      // against 7.2.  Vol. 2's SRD page (printed p.118, PDF 125) is
+      // measured at OFFSET 0 only, and there it equals the ST page
+      // (printed p.117) in all 96 cells to 0.01 us -- which is the
+      // Reference Manual's "A STORE ROUNDED with zero offset specified is
+      // equivalent to a STORE" (printed p.64).  So the 4 clocks are
+      // charged at a nonzero offset only.  CHOSEN where the two meet:
+      // Table 3 does not mention the offset, and no page measures SRD at
+      // a nonzero one.
+      Bit#(16) srdRound = (v.code == 6'b101101 && v.a.offset != 0) ? 4 : 0;
+      return 8 + 2 * zeroExtend(bytes) + srdRound;
     end
     // NOT GIVEN THE SAME TREATMENT, deliberately.  The connectives have
     // no VflMod -- no sign and no radix bit -- so p.3-10's x and y have

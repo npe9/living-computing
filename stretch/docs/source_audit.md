@@ -591,7 +591,8 @@ CHAPTER 2" below.*
 **G2.2 Buchholz Appendix B** adds six more worked programs, independent
 of `C22-6578`.
 
-**G2.3 The arms still refused.** `SRD`, the decimal VFL set, `SWAP`'s
+**G2.3 The arms still refused.** The decimal VFL set (decimal `SRD`
+among them; binary VFL `SRD` is built since 2026-11-16), `SWAP`'s
 remaining variants. `storeTarget`'s invariant names the ones that will
 need a case when they land.
 
@@ -2018,7 +2019,7 @@ APPENDIX B" group in `tests/run_tests.sh`.
 | Table | Printed | Deck | Exercises | Status |
 |---|---|---|---|---|
 | B.1 Polynomial evaluation | p.295 | `buchholz_b1_polynomial` | `LX`, `L(N)`, `*(N)`, `+(N)`, `CB-`, `ST(U)` | **passes 7 of 7** against the model as it stood; two data injections observed |
-| B.2 Cube-root extraction | pp.296-297 | `buchholz_b2_cube_root` (as printed), `buchholz_b2_cube_root_srd_substituted` | `E+I`, `F+`, `R/`, VFL `L(B,12,1)`, `+I`, `/I`, **VFL `SRD`**, `CB` | **FINDING: VFL `SRD` is unbuilt** and refused at 105.32 (`decks/repro_vfl_srd.strap`, `NEXT.md`). As printed: 6 of 6 on the checks that do not depend on it; the root is wrong and `verify_buchholz_b2.py printed` fails for all eight N. With `SRD` replaced by the Reference Manual's equivalent (`+MGI`, `ST`; printed p.64): **32 of 32 over eight N**, each root inside the book's "48-bit accuracy, except for a possible rounding error" |
+| B.2 Cube-root extraction | pp.296-297 | `buchholz_b2_cube_root` (as printed), `buchholz_b2_cube_root_srd_substituted` | `E+I`, `F+`, `R/`, VFL `L(B,12,1)`, `+I`, `/I`, **VFL `SRD`**, `CB` | **FINDING: VFL `SRD` was unbuilt** and refused at 105.32 (`decks/repro_vfl_srd.strap`, `NEXT.md`); as printed the root was wrong for four of eight N. **BUILT 2026-11-16: `verify_buchholz_b2.py printed` passes, 32 of 32 over eight N, and is registered.** With `SRD` replaced by the Reference Manual's equivalent (`+MGI`, `ST`; printed p.64): **32 of 32 over eight N**, each root inside the book's "48-bit accuracy, except for a possible rounding error" |
 | B.3 Matrix multiplication | p.298 | `buchholz_b3_matrix_multiply` | `DL(U)` of `XFNZERO`, `LFT(N)`, `*+(N)`, `SRD(N)`, `V+I`, `CBR+`, `CBR`, `LX` from an index register | **passes 13 of 13** against the model as it stood, including a 49-bit sum that floating `SRD` must round and all five final index words; three data injections observed |
 | B.4 Decimal numbers to a normalized FLP vector | pp.299-300 | `buchholz_b4_decimal_vector` | `LCV(V+I)(DU,60,6)` at offset 68, `*(N)` by operand 8.0, `SRT(N)`, `/(N)`, `CBR+`, `CB+` | **passes 31 of 31** against the model as it stood, the book's 25 numbers; zone bits shown not to matter; three data injections observed |
 | B.5 Editing a typed message | pp.301-303 | `buchholz_b5_edit_message` | `CI0011` with byte size 1, `C0011`, `CM0101`, `CT0001`, `CT1001`, `CM0000`, the left-zeros count as an index operand, `BRZ`/`BZRZ`, `LC`, `SX`, `BXCZ` | **passes 11 of 11** against the model as it stood; three data injections observed, one of them note (13)'s error stop. The book's `ADD TO VALUE, X1, 7.17` names the LZC register; a 19-bit address holds 7.0 (Reference Manual printed p.76) |
@@ -2026,7 +2027,7 @@ APPENDIX B" group in `tests/run_tests.sh`.
 | B.7 Transposition of an 8-by-8 bit matrix | p.304 | `buchholz_b7_8x8_transpose` | `Z` into the accumulator, `C0111(V+I)(BU,8,1)` with an indexed offset, `V-IC`, `BZXCZ`, `ST` | **passes 7 of 7** against the model as it stood; two data injections observed |
 
 **What the seven found.** One unbuilt operation in the model (VFL
-`SRD`, B.2), one error in the book (B.6's byte size), and no wrong
+`SRD`, B.2; built 2026-11-16), one error in the book (B.6's byte size), and no wrong
 result in anything the model executed. Five tables run as printed
 (B.1, B.3, B.4, B.5, B.7). Not exercised by any of them: decimal
 arithmetic, `SIC`, the I-O operations, Transmit, the indicator-setting
@@ -2214,6 +2215,16 @@ and back -- all right.  A fourth printed erratum: sqrt2 printed
 1.41421356205080.
 
 ### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
+
+**SETTLED 2026-11-16: THE PRINTED `SRDN,$L` IS THE VFL SRD, AND THE BOOK'S
+COSF IS WRONG IN THE INK.**  C28-6129 printed p.10 gives `$L` the dds
+(BU,64,8) and printed p.6 says the dds picks the class;
+`tests/check_srdn_dollar_l.py` pins both assemblers.  At offset 0 it "is
+equivalent to a STORE" (Reference Manual printed p.64), so word 8 gets
+word 9.  With the VFL SRD built, `4.9m1` checks that (word 8 = word 9,
+TEMP, x2) and `4.9m1fp` the card with `SRDN(N)` (the cosine, read as the
+accumulator, and `$SB` 4-7): five arguments each, all pass, no
+`--known-wrong`.
 
 **CORRECTED 2026-11-16.**  The operand bug is fixed, and x = -.1's
 `TEMP_A_squared` passes.  The "lost store" was not a store into location

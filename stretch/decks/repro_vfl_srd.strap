@@ -1,4 +1,7 @@
-! REPRODUCER: VFL STORE ROUNDED (SRD) IS NOT BUILT.  Cut from Buchholz
+! REPRODUCER: VFL STORE ROUNDED (SRD) WAS NOT BUILT -- BUILT 2026-11-16,
+! and this deck now passes 5 of 5 and is registered in tests/run_tests.sh
+! (bsv/StretchExecute.bsv's ST arm, which SRD shares; decks/vfl_srd.strap
+! is the full hand-derived deck).  Cut from Buchholz
 ! Appendix B, Table B.2 (decks/buchholz_b2_cube_root.strap), whose
 ! statement at 105.32, "STORE ROUNDED (VB, 12, 1), 8.0, 117", the model
 ! refuses with Operation Code Invalid:
@@ -46,8 +49,7 @@
 !                word of ones: (2)00000000011 1 = (16)007, so
 !                (16)007FFFFFFFFFFFFF.
 !
-! HOW TO RUN IT (it is NOT in run_tests.sh, because it fails until SRD
-! is built; it is the acceptance test):
+! HOW TO RUN IT (registered in run_tests.sh since SRD was built):
 !
 !   cd stretch/tests && ./run_program.sh ../decks/repro_vfl_srd.strap \
 !       StretchReproVflSrdTb "PC=2014" \
@@ -59,6 +61,7 @@
 ! first SRD); FAILS 3 of 5 -- round_up,
 ! round_down and signed_1bit each still hold their initial word;
 ! acc_kept and the PC pass.
+! OBSERVED 2026-11-16 with SRD built: ALL TESTS PASSED, 5 of 5.
 
         SLC, 1000.0
 START   L(BU,24,8), VAL

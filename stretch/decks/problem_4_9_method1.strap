@@ -9,6 +9,39 @@
 ! all compute cos 2 pi x.  "If the last term included has 2K = 16, the
 ! relative error estimate is less than 0.3 x 10**-15."
 !
+! >>> SECOND ERROR IN THE INK, SETTLED 2026-11-16: THE LAST CARD DOES NOT
+! >>> LEAVE THE COSINE ANYWHERE. <<<  "SRDN,$L" is the VFL STORE ROUNDED,
+! not the floating one, under STRAP II and STRAP I alike, read in the page
+! images:
+!   C28-6129 printed p.10 (PDF 14), class 2 system symbols: "STRAP also
+!   assigns a data description to each symbol with a use mode of binary
+!   unsigned (BU), a byte size of 8 and a field length equal to the length
+!   of the register", and the table: "Left half of accumulator  $L  8.0".
+!   Printed p.6 (PDF 10): "in cases where the operation mnemonic is the
+!   same for VFL and floating point instructions, it is the data
+!   description that tells STRAP to which class the operation belongs".
+!   STRAP I (C22-6531 printed p.56) gives $L no dds, and C22-6578 printed
+!   p.30 says an op "which could be either VFL or floating-point is
+!   assumed VFL".
+! So the card is SRD(BU,64,8) at offset 0 with the N modifier
+! (tests/check_srdn_dollar_l.py pins both assemblers), and "A STORE ROUNDED
+! with zero offset specified is equivalent to a STORE" (Reference Manual
+! printed p.64): word 8 receives accumulator bits 64-127, which is word 9,
+! and the accumulator is otherwise unchanged.  The cosine's high-order
+! fraction is overwritten by its low-order bits.  tests/verify_problem_4_fp.py
+! "4.9m1" checks exactly that (word 8 = word 9 at the halt, with TEMP and
+! x2); "4.9m1fp" runs the card the analysis meant, "SRDN(N),$L", and checks
+! the cosine read as the accumulator (word 8 bits 0-59 and $SB bits 4-7,
+! p.80) and $SB 4-7 = 0000.  OBSERVED 2026-11-16, x = 1X-2, .125, .03, .1,
+! -.1: ALL CHECKS PASSED in both, 4.9m1fp's cosine 0.01 to 1.39 units from
+! cos and 0.05 to 0.78 from the series as programmed.  Word 8 = word 9 is
+! (16)9C0F0DF4E4A00000 at 1/8.  INJECTION, MEASURED: on the model with
+! SRD unbuilt, 4.9m1:.1 FAILS W8_is_W9 alone (word 8 (16)000CF1BBCDCBFA6A,
+! the unrounded -cos left half; word 9 (16)3EDA92BFF1000000).  Before the VFL SRD was built the store was
+! refused (OP) and word 8 kept the unrounded accumulator, so the old W8
+! checks passed at 1X-2 by luck and are retired; the record below is as
+! it was written.
+!
 ! THE THIRTEEN INSTRUCTIONS FROM COSF TO "BEW, $" ARE AS PRINTED.  The
 ! data is substituted where this assembler refuses it, each under a
 ! "printed:" comment: TPI "2*$PI", CONST's products "1/16*1/15" ...,

@@ -85,9 +85,12 @@
 ! location in the table agrees with where the statements assemble: the
 ! four VFL statements at 102.32-105.32 each take a full word.
 !
-! >>> THIS DECK DOES NOT RUN TO THE BOOK'S ANSWER ON THE MODEL, AND THE
-! >>> REASON IS ONE UNBUILT OPERATION: VFL STORE ROUNDED.
-! The model refuses the SRD at 105.32 with Operation Code Invalid
+! >>> RUNS TO THE BOOK'S ANSWER SINCE 2026-11-16, WHEN VFL STORE ROUNDED
+! >>> WAS BUILT (bsv/StretchExecute.bsv, the ST arm).  OBSERVED that day:
+! >>> "verify_buchholz_b2.py printed" passes for all eight N, 32 checks,
+! >>> and replaces this deck's six-check line in run_tests.sh.  What
+! >>> follows is the record from before, kept as written.
+! The model refused the SRD at 105.32 with Operation Code Invalid
 ! ("StretchCore: OP site = vflIntOp/unimplemented-code code=101101",
 ! half-word 211).  The store into 8.0 does not happen, the accumulator
 ! keeps the unrounded quotient with its extra bit sitting in the
@@ -137,8 +140,8 @@
 ! all eight N, and x_root outside the window for four of them -- 100,
 ! 8, 0.75*2**-6 and 2**-6; the other four land inside it by luck) and
 ! is the acceptance test for VFL SRD.  "verify_buchholz_b2.py
-! substituted" passes.  run_tests.sh registers this deck with the
-! checks marked PASSES above, six in all, and says so.
+! substituted" passes.  run_tests.sh registered this deck with the
+! checks marked PASSES above, six in all, until SRD was built.
 !
 ! INJECTION, DATA SIDE, OBSERVED, on the checks that are registered
 ! (clean: 6 of 6): N changed from 100 to 108 ((16)00ED800000000000),

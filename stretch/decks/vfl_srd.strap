@@ -1,0 +1,200 @@
+! VFL STORE ROUNDED (SRD, VFL code 101101), hand-derived, nine cases with
+! the indicator register read after each.  Built 2026-11-16 (the ST arm of
+! bsv/StretchExecute.bsv, which SRD shares; its header has the readings).
+!
+! SOURCE: Reference Manual 22-6530-2 printed p.64 (PDF 67), read in the
+! page image:
+!   "The field from the accumulator is rounded by adding to its magnitude
+!   one-half of the proper radix in the position to the right of the
+!   offset.  Carries are propagated as in any addition in that radix.
+!   This rounded field replaces the addressed storage field.  If a signed
+!   operation is specified, the contents of the accumulator sign byte
+!   register replace the rightmost byte of the storage field after the
+!   sign bit has been modified by the negative sign modifier.  The
+!   contents of the accumulator and the sign byte register are not
+!   changed by this operation.  The accumulator sign is ignored in the
+!   actual rounding process."
+!   Radix: "If a binary operation is specified, a binary one is added to
+!   the field from the accumulator in the bit position immediately to the
+!   right of the specified offset."
+!   "Partial Field (PF); To-Memory Operation (MOP); Arithmetic Result
+!   (RLZ, RZ, RGZ, RN).  These indicators are set as in STORE."
+!   "Lost Carry (LC).  This indicator is turned on when the rounding
+!   process causes a carry to be propagated beyond the left end of the
+!   field stored."
+!   Programming Notes: "An unsigned STORE ROUNDED addressing the
+!   accumulator as the storage operand can also be used for this
+!   purpose [rounding the accumulator]."  "A STORE ROUNDED with zero
+!   offset specified is equivalent to a STORE."
+! STORE, printed p.63: PF "if there is any one-bit in the accumulator to
+! the left of the last bit position stored"; MOP "is turned on"; the
+! result indicators "are set according to the data field stored.  The
+! sign of the accumulator, as modified by the negative sign modifier,
+! affects the setting whether it is stored or not."
+!
+! TWO READINGS ARE CHOSEN, and case 2 is the one that tells them apart:
+!   PF is read from the accumulator AS IT STANDS (SRD does not change it),
+!     not from the rounded quantity; the carry is LC's business.
+!   LC is the carry out of the NUMERIC width (field length less the sign
+!     byte when signed), docs/spec_factor.md 4.6; case 6 is signed.
+!
+! THE INDICATOR WORDS.  Each case loads its accumulator, then clears the
+! register (Z,$IND), then does the SRD, then copies $IND out with L and
+! ST -- the order decks/load_converted.strap uses, so the word is the
+! SRD's alone.  IBM bit n is 2**(63-n): LC 22 = (16)20000000000, PF 23 =
+! (16)10000000000, OP 15 = (16)1000000000000, MOP 55 = (16)100, RLZ 56 =
+! (16)80, RZ 57 = (16)40, RGZ 58 = (16)20, RN 59 = (16)10.  Every target
+! word starts as all ones, so the bits outside the field are checked too.
+!
+!   1 round up       acc (16)00AB80.  SRD(BU,8,8) at offset 8: AB, and
+!                    the bit right of the offset is the 1 of 80: AC.
+!                    T1 = (16)ACFFFFFFFFFFFFFF.  I1 = MOP, RGZ = (16)120.
+!   2 carry out      acc (16)00FF80: FF + 1 = 100, the field stores 00
+!                    and the carry leaves it: LC.  The accumulator above
+!                    the field is zero, so PF stays off (PF FROM THE
+!                    ROUNDED SUM WOULD TURN IT ON).  Stored field zero:
+!                    RZ.  T2 = (16)00FFFFFFFFFFFFFF, I2 = (16)20000000140.
+!   3 PF, no round   acc (16)01AB00: AB, the bit right of the offset 0,
+!                    so AB; the 01 above it is PF.  T3 =
+!                    (16)ABFFFFFFFFFFFFFF, I3 = (16)10000000120.
+!   4 negative acc,  LN(BU,64,8) of 00AB80: the same magnitude, minus.
+!     signed field   "The accumulator sign is ignored in the actual
+!                    rounding process": AB rounds to AC.  SRD(B,16,8):
+!                    eight numeric bits AC, then the sign byte register,
+!                    zones 0000, sign 1, flags 000 = (16)08.  T4 =
+!                    (16)AC08FFFFFFFFFFFF.  Result minus, not zero: RLZ,
+!                    RN; I4 = (16)190.
+!   5 offset 0       "equivalent to a STORE": nothing is added (there is
+!                    no bit to the right of offset 0).  SRD(BU,16,8) at
+!                    offset 0 of (16)00AB80 stores AB80.  T5 =
+!                    (16)AB80FFFFFFFFFFFF, I5 = (16)120.
+!   6 signed carry   acc (16)000FF8.  SRD(B,12,4) at offset 4: eight
+!     across the     numeric bits FF, the bit right of the offset is the
+!     numeric width  8's 1, FF + 1 = 100: numeric 00 and LC.  The sign
+!                    nibble is the register's positions 4-7, sign plus
+!                    and flags off, 0000.  T6 = (16)000FFFFFFFFFFFFF,
+!                    I6 = LC, MOP, RZ = (16)20000000140.
+!   7 carry through  acc (16)00A7F8.  SRD(BU,12,8) at offset 4: A7F, and
+!     the field      the 1 of 8 carries through the four ones: A80.
+!                    T7 = (16)A80FFFFFFFFFFFFF, I7 = (16)120.
+!   8 into $R        The Programming Note's use.  acc right half
+!                    (16)12C0.  SRD(BU,56,8), $R, 8: the field is
+!                    accumulator bits 64-119, which IS word 9 bits 0-55,
+!                    so the rounded value (16)12 + 1 = 13 goes back where
+!                    it came from and bits 56-63 keep their C0: word 9 =
+!                    (16)13C0, read out by ST into T8.
+!   9 decimal        SRD(DU,8,4): refused, Operation Code Invalid, as the
+!                    model refuses decimal arithmetic (the five added is a
+!                    decimal addition; only the decimal UNSIGNED STORE is
+!                    built).  T9 stays all ones; I9 = OP = (16)1000000000000.
+!
+! RUN (registered in tests/run_tests.sh):
+!   cd stretch/tests && ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb \
+!       "PC=<HALT>" "T1:1110=0xACFFFFFFFFFFFFFF" ... (the line there)
+!
+! OBSERVED 2026-11-16: ALL TESTS PASSED, 17 checks and the PC, on the first
+! run against the expectations above (worked before the run).
+!
+! MEASURED INJECTIONS in bsv/StretchExecute.bsv's ST arm, each on a copy,
+! the arm restored from a saved copy and checked with cmp:
+!   PF from the ROUNDED sum (the other reading)   FAIL I2, I6 (PF on:
+!                                                 (16)30000000140) -- I6
+!                                                 too, which was not
+!                                                 predicted: its carry is
+!                                                 above the numeric width
+!   the one added AT the offset, not right of it  FAIL T3 alone (AC); T5
+!                                                 does not move, because
+!                                                 offset 0 adds nothing
+!                                                 either way
+!   LC never set                                  FAIL I2, I6 ((16)140)
+!   the round subtracted for a minus accumulator  FAIL T4 alone (AB08)
+!   SRD unbuilt (the model before 2026-11-16)     FAIL 15: T1-T7, I1-I7
+!                                                 (OP), T8 (12C0); T9, I9
+!                                                 and the PC pass, since
+!                                                 decimal SRD is OP either
+!                                                 way
+
+        SLC, 1000.0
+! -- 1. round up ---------------------------------------------------
+START   L(BU,64,8), V1
+        Z, $IND
+        SRD(BU,8,8), T1, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I1, 0
+! -- 2. the carry leaves the field: LC, and PF off ------------------
+        L(BU,64,8), V2
+        Z, $IND
+        SRD(BU,8,8), T2, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I2, 0
+! -- 3. a one above the field: PF -----------------------------------
+        L(BU,64,8), V3
+        Z, $IND
+        SRD(BU,8,8), T3, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I3, 0
+! -- 4. a negative accumulator, a signed field ----------------------
+        LN(BU,64,8), V1
+        Z, $IND
+        SRD(B,16,8), T4, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I4, 0
+! -- 5. offset 0 ----------------------------------------------------
+        L(BU,64,8), V1
+        Z, $IND
+        SRD(BU,16,8), T5, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I5, 0
+! -- 6. a signed field, the carry crosses the numeric width ---------
+        L(BU,64,8), V6
+        Z, $IND
+        SRD(B,12,4), T6, 4
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I6, 0
+! -- 7. a carry through the field -----------------------------------
+        L(BU,64,8), V7
+        Z, $IND
+        SRD(BU,12,8), T7, 4
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I7, 0
+! -- 8. rounding the accumulator in place ---------------------------
+        L(BU,64,8), V8
+        SRD(BU,56,8), $R, 8
+        ST(BU,64,8), T8, 0
+! -- 9. decimal: refused --------------------------------------------
+        Z, $IND
+        SRD(DU,8,4), T9, 4
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), I9, 0
+HALT    BEW, $
+
+        SLC, 1100.0
+V1      DD(BU,64,8), (16)00AB80
+V2      DD(BU,64,8), (16)00FF80
+V3      DD(BU,64,8), (16)01AB00
+V6      DD(BU,64,8), (16)000FF8
+V7      DD(BU,64,8), (16)00A7F8
+V8      DD(BU,64,8), (16)12C0
+
+        SLC, 1110.0
+T1      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T2      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T3      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T4      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T5      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T6      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T7      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T8      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+T9      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+
+        SLC, 1120.0
+I1      DD(BU,64,8), 0
+I2      DD(BU,64,8), 0
+I3      DD(BU,64,8), 0
+I4      DD(BU,64,8), 0
+I5      DD(BU,64,8), 0
+I6      DD(BU,64,8), 0
+I7      DD(BU,64,8), 0
+I9      DD(BU,64,8), 0
+
+        END, START

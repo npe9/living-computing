@@ -2822,9 +2822,55 @@ function ActionValue#(VflOutcome)
               ind = setResultIndicatorsF(ind, shifted);
             end
           end
-          6'b001101: begin // ST (Store) -- prefetch/bail-out shape,
+          6'b001101, 6'b101101: begin // ST (Store) and SRD (Store
+            // Rounded) -- prefetch/bail-out shape,
             // inlining writeField's own internal RMW read rather
             // than calling it.
+            //
+            // >>> SRD IS THIS ARM WITH ONE ADD IN FRONT OF IT, 2026-11-16.
+            // <<<  Reference Manual 22-6530-2 printed p.64 (PDF 67), read
+            // in the page image: "The field from the accumulator is
+            // rounded by adding to its magnitude one-half of the proper
+            // radix in the position to the right of the offset. ...  This
+            // rounded field replaces the addressed storage field.  If a
+            // signed operation is specified, the contents of the
+            // accumulator sign byte register replace the rightmost byte
+            // ... The contents of the accumulator and the sign byte
+            // register are not changed by this operation.  The
+            // accumulator sign is ignored in the actual rounding
+            // process."  Unsigned, negative sign: "as in STORE".  So
+            // everything below -- field insertion, the sign byte, the
+            // crossing and refill paths, protection, the immediate
+            // refusal (p.56: "If immediate addressing is specified in a
+            // to-memory operation, the operation is not performed and
+            // ... OP") -- is STORE's, and SRD adds only `srdRound`.
+            //
+            //   * Binary (p.64, Radix): "a binary one is added to the
+            //     field from the accumulator in the bit position
+            //     immediately to the right of the specified offset."
+            //     Added to the MAGNITUDE, 129 bits wide so a carry out of
+            //     the accumulator's left end is kept for a field that
+            //     reaches past it.  "A STORE ROUNDED with zero offset
+            //     specified is equivalent to a STORE": offset 0 adds
+            //     nothing (there is no bit to its right).
+            //   * Decimal SRD is REFUSED with OP above (decimalStoreU is
+            //     code 001101 only): its "four-bit byte with value five"
+            //     is a decimal addition, and decimal arithmetic is
+            //     unbuilt.  decks/vfl_srd.strap pins the refusal.
+            //   * LC (p.64): "turned on when the rounding process causes
+            //     a carry to be propagated beyond the left end of the
+            //     field stored."  Read as the carry out of the NUMERIC
+            //     width (field length, less the sign byte when signed),
+            //     docs/spec_factor.md 4.6 -- the sign byte is not
+            //     rounded, it is the sign byte register's.
+            //   * PF "as in STORE" (p.63: "any one-bit in the accumulator
+            //     to the left of the last bit position stored") is read
+            //     from the accumulator AS IT IS, unrounded, because the
+            //     operation does not change it; the carry is LC's.  The
+            //     arithmetic result indicators are "set according to the
+            //     data field stored", which is the rounded field.  Both
+            //     are CHOSEN readings, recorded in docs/spec_factor.md
+            //     4.6 and docs/NEXT.md.
             //
             // >>> A STORE MAY NOW CROSS A WORD BOUNDARY, 2026-10-24,
             // AND MCP IS THE SOURCE THAT SAYS IT MUST. <<<
@@ -2891,7 +2937,14 @@ function ActionValue#(VflOutcome)
               vflOk = False;
             end else begin
               SM128 acc = readAcc(st);
-              SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+              // srdRound: zero for ST and for SRD at offset 0 (see the
+              // arm's header).
+              Bool isSrd = (vi.code == 6'b101101);
+              Bit#(129) srdRound = (isSrd && offSh != 0)
+                                     ? (129'd1 << (offSh - 1)) : 0;
+              Bit#(129) srdSum = zeroExtend(acc.mag) + srdRound;
+              Bit#(128) unrounded = acc.mag >> offSh;
+              SM128 shifted = SM128 { sign: acc.sign, mag: truncate(srdSum >> offSh) };
               Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
               // A decimal offset is limited to digit positions by ignoring
               // its two low-order bits (printed p.57).
@@ -2915,7 +2968,14 @@ function ActionValue#(VflOutcome)
                 Bit#(128) stored = shifted.mag & ~(above << w8);
                 Word64 i1 = setResultIndicatorsF(i0, SM128{sign:fsign, mag:stored});
                 Word64 i2 = setBit(i1, ind_MOP, 1);
-                return (above != 0) ? setBit(i2, ind_PF, 1) : i2;
+                // PF from the accumulator as it stands (unrounded; for ST
+                // the two are the same).  LC: SRD's carry left the
+                // numeric width -- the bits above it differ only if the
+                // round carried into them.  ST never sets it (p.64: "The
+                // lost carry indicator cannot be turned on by a STORE").
+                Bit#(128) aboveAcc = unrounded >> w8;
+                Word64 i3 = (aboveAcc != 0) ? setBit(i2, ind_PF, 1) : i2;
+                return (above != aboveAcc) ? setBit(i3, ind_LC, 1) : i3;
               endfunction
               function Word64 decStoreInd(Word64 i0);
                 Bit#(64) lenMask = (len_ == 64) ? '1 : ((64'd1 << len_) - 1);

@@ -192,24 +192,31 @@ fails until the operation is built -- it is the acceptance test. The
 second item is an error in the book, recorded so it is not chased in the
 model; nothing needs building for it.
 
-### VFL STORE ROUNDED (`SRD`, VFL code 101101) is unbuilt
+### VFL STORE ROUNDED (`SRD`, VFL code 101101) -- BUILT 2026-11-16
 
-Table B.2 (cube root), 105.32: `STORE ROUNDED (VB, 12, 1), 8.0, 117`.
-The model refuses it: `OP site = vflIntOp/unimplemented-code
-code=101101`. Source: Reference Manual printed p.64 (PDF 67) -- add a
-binary one "in the bit position immediately to the right of the
-specified offset", store the rounded field, sign byte as in `ST`,
-accumulator and sign byte register unchanged, `LC` if the carry leaves
-the field. (Floating-point `SRD` is a different arm and is built.)
+Built as the ST arm of `bsv/StretchExecute.bsv` with one add in front
+(Reference Manual printed p.64); the arm's header has the readings.
+`repro_vfl_srd.strap` (5 of 5), `vfl_srd.strap` (nine hand-derived
+cases with the indicator register after each, measured injections in
+its header) and `verify_buchholz_b2.py printed` (eight N, 32 checks; it
+replaced the six-check partial line) are registered.  Timing: Perf.
+Char. Vol. 1 Table 3 (printed p.3-7) gives SRD 1.2 us more
+pre-execution than ST, charged at a nonzero offset only, because Vol. 2
+printed p.118 (offset 0) equals ST's page (`StretchTiming.bsv`).
 
-* Reproducer: `decks/repro_vfl_srd.strap` -- round up, round down,
-  accumulator kept, and B.2's own signed one-bit-sign-byte shape.
-  Today 3 of 5 fail.
-* Acceptance on the book's program: `cd tests && python3
-  verify_buchholz_b2.py printed` (eight N; fails for all eight today).
-  When it passes, swap it in for the "AS PRINTED, up to the unbuilt VFL
-  SRD" line in `run_tests.sh`.
-* Not tested by either: decimal `SRD` (adds five), and `LC`.
+What is still open about it:
+
+* **Decimal `SRD` is refused with OP** (`decks/vfl_srd.strap` case 9),
+  like every decimal arithmetic operation; its "four-bit byte with value
+  five" is a decimal addition.  Build it with decimal `+`.
+* **Two indicator readings are CHOSEN** (p.64 does not settle them):
+  PF from the accumulator as it stands, not the rounded sum; LC as the
+  carry out of the numeric width, not the whole field with its sign byte
+  (`docs/spec_factor.md` 4.6).  `vfl_srd` case 2 (LC on, PF off) is the
+  one that would move if a listing or a CE manual says otherwise.
+* **Timing at a nonzero offset is unmeasured**: no Vol. 2 page measures
+  SRD there.  Running `tests/atlas_oracle.py --pdf 125` (offset 0) would
+  confirm the ST equality on the model; not run for this item.
 
 ### Table B.6 as printed does not transpose -- the BOOK's error, nothing to build
 
@@ -17640,8 +17647,24 @@ the printed `N*N` and `DD(N),0` with no substitute.
     pins p.80's words.
   * This also explains why SRT seemed to work and SRD did not: `SRT(N),
     $L` was always written with a dds.
-* **OPEN, a book/assembler question rather than a model one.**  Did
-  STRAP II really compile C22-6578 printed p.43's `SRDN,$L` (4.9 Methods
+* **SETTLED 2026-11-16, from the ink: YES, VFL, and the book's COSF is
+  wrong.**  C28-6129 printed p.10 (PDF 14) gives every special-register
+  system symbol "a data description ... binary unsigned (BU), a byte size
+  of 8 and a field length equal to the length of the register" ("Left
+  half of accumulator $L 8.0"); printed p.6 says the dds "tells STRAP to
+  which class the operation belongs".  STRAP I (C22-6531 printed p.56)
+  gives `$L` no dds, and C22-6578 p.30 assumes VFL.  So `SRDN,$L` is
+  SRD(BU,64,8) at offset 0, "equivalent to a STORE" (RefMan p.64): word 8
+  gets word 9.  Neither assembler needed a fix;
+  `tests/check_srdn_dollar_l.py` pins both.  4.9 Method 1 is registered
+  both ways (`4.9m1`: word 8 = word 9; `4.9m1fp`: the card with
+  `SRDN(N)`, the cosine), no `--known-wrong`.  Method 2 (printed p.43)
+  ends the same way and is still not run.  Not settled: strap2 prints no
+  message for p.7's no-dds cases ("an error message is printed on the
+  output listing"), and gives every special register (BU,64,8) rather
+  than its own length (a CHOSEN in `strap2/optable.py`).
+  The question as it was written:
+  Did STRAP II really compile C22-6578 printed p.43's `SRDN,$L` (4.9 Methods
   1 and 2) as VFL?  If it did, the printed COSF is wrong in the ink.
   The alternative is that `$L` carries a floating-point dds in STRAP II.
   C28-6129's table of `$` symbols would decide it, and so might C22-6531

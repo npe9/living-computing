@@ -400,6 +400,11 @@ to also store them.
 
 ## 4. SRD — Store Rounded — `6'b101101` (45)
 
+**BUILT 2026-11-16 (binary), as 4.6 below reads it**: the ST arm of
+`vflIntOp` with the round added to the magnitude; PF from the unrounded
+accumulator and LC out of the numeric width are the readings taken.
+Decimal `SRD` is refused with OP.  `decks/vfl_srd.strap` is the check.
+
 ### 4.1 Operation paragraph, verbatim
 
 Reference Manual, **printed p.64** (`rm67-067.png`):

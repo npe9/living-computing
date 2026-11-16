@@ -125,8 +125,10 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       BitAddr ea = prog ? st.readIndex(v.a.i1).addr
                         : effAddr24(st, v.a.addr, v.a.i1);
       WordAddr w = ea[23:6];
-      // The four storing VflInt operations: ST, M+, M+MG, M+1.
-      Bool stores = (v.code == 6'b001101) || (v.code == 6'b001001)
+      // The five storing VflInt operations: ST, SRD (built 2026-11-16,
+      // execute()'s ST arm), M+, M+MG, M+1.
+      Bool stores = (v.code == 6'b001101) || (v.code == 6'b101101)
+                 || (v.code == 6'b001001)
                  || (v.code == 6'b101001) || (v.code == 6'b101011);
       // M+/M+1/M+MG, unlike ST since 2026-10-24, still cannot cross a
       // word boundary -- see protViolates' note -- and refuse with OP.

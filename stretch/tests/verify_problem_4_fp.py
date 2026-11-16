@@ -268,8 +268,9 @@ def _frac_exp(v):
     return (f if v >= 0 else -f), e
 
 
-def p4_9m1(sym):
-    """COSF, printed p.43.  The argument is XARG, one per run."""
+def p4_9m1(sym, fp_store=False):
+    """COSF, printed p.43.  The argument is XARG, one per run.  fp_store:
+    the last card as "SRDN(N),$L" (PROBLEMS '4.9m1fp')."""
     def a_of(img):
         return img('XARG') * img('TPI')        # exact: two 48-bit fractions
 
@@ -300,13 +301,33 @@ def p4_9m1(sym):
         return int(abs(f) * 2 ** 49) & 1
 
     exact = [('x2_value7_count0', 'addrIndex(2)', (7 << 46) | (sym['XW2'] // 64))]
-    within = [('TEMP_A_squared', 'TEMP', lambda img: round48(y_full(img)), 4),
-              ('W8_series_as_programmed', 8, as_programmed, 4),
-              ('W8_cos_2_pi_x', 8, lambda img: (2 * PI * img('XARG')).cos()
-               if hasattr(D, 'cos') else _cos(2 * PI * img('XARG')), 8)]
+    # AS STRAP ASSEMBLES THE PRINTED CARD (settled 2026-11-16, the deck's
+    # header and tests/check_srdn_dollar_l.py): "SRDN,$L" is the VFL STORE
+    # ROUNDED, (BU,64,8) at offset 0, which "is equivalent to a STORE"
+    # (Reference Manual printed p.64).  An unsigned 64-bit field at offset 0
+    # is accumulator bits 64-127, word 9, and "The contents of the
+    # accumulator ... are not changed by this operation", so at the halt
+    # word 8 equals word 9 exactly.  cos 2 pi x is not left anywhere: the
+    # book's COSF is wrong in the ink.  The cosine checks are '4.9m1fp',
+    # the card with the floating-point dds written in.
+    within = [('TEMP_A_squared', 'TEMP', lambda img: round48(y_full(img)), 4)]
+    same = [('W8_is_W9_vfl_srd_offset0_is_a_store', 8, 9)]
+    if fp_store:
+        # "SRDN(N),$L": the floating-point SRD into location 8, Reference
+        # Manual printed p.80 -- the rounded word's bits 0-59 go to
+        # accumulator 0-59 and its bits 60-63 (sign, as changed by the N
+        # modifier, and flags; p.96) to $SB bits 4-7.  So the answer is
+        # read as the accumulator, words 8 and 10, and $SB 4-7 must be
+        # 0000: -cos negated is plus, and the flags are off.
+        within += [('ACC_series_as_programmed', 'ACC', as_programmed, 4),
+                   ('ACC_cos_2_pi_x', 'ACC', lambda img: (2 * PI * img('XARG')).cos()
+                    if hasattr(D, 'cos') else _cos(2 * PI * img('XARG')), 8)]
+        same = []
     return dict(module='StretchP49M1Tb', halt='HALT', dump=(8, 'XARG'),
-                exact=exact, within=within,
-                low4=[('W8_sign_byte_plus_no_flags', 8, 0)],
+                exact=exact, within=within, same=same,
+                bits=[('SB_4_7_plus_no_flags', 10, 56, 4, 0)] if fp_store else [],
+                # (the location-8 operand bug this predicted is fixed;
+                # kept as a record of the hand prediction)
                 pre=lambda img: "HAND PREDICTION: A = 2 pi x is %s, word 8 "
                 "bit 60 after *(N) = fraction bit 49 of A = %d, so the "
                 "location-8 bug %s" % (
@@ -326,6 +347,8 @@ def _cos(v):
 
 
 PROBLEMS = {'4.9m1': ('problem_4_9_method1.strap', p4_9m1),
+            '4.9m1fp': ('problem_4_9_method1.strap',
+                        lambda sym: p4_9m1(sym, fp_store=True)),
             '4.10': ('problem_4_10.strap', p4_10),
             '4.11': ('problem_4_11.strap', p4_11),
             '4.13': ('problem_4_13.strap', p4_13),
@@ -357,6 +380,9 @@ def main():
     if xarg is not None:
         m = re.search(r"^XARG    DD\(N\), .*$", src, re.M)
         subs.insert(0, (m.group(0), "XARG    DD(N), " + xarg))
+    if args[0] == '4.9m1fp':
+        # the floating-point dds written into the printed "SRDN,$L"
+        subs.append(("        SRDN,$L\n", "        SRDN(N),$L\n"))
     for old, new in subs:
         if src.count(old) != 1:
             raise SystemExit("--sub: %r occurs %d times, need exactly 1"
@@ -455,6 +481,35 @@ def main():
                 fails += 1
         if where == 'ACC' and 'report' in spec:
             print("NOTE " + spec['report'](img, got))
+    for label, a, b in spec.get('same', []):
+        # two dumped words equal, bit for bit
+        n_within += 1
+        if a not in dump or b not in dump:
+            print("FAIL %s: word %d or %d is not in the dump" % (label, a, b))
+            fails += 1
+            continue
+        ok = dump[a] == dump[b]
+        print("%s %s: word %d = %016x, word %d = %016x"
+              % ("PASS" if ok else "FAIL", label, a, dump[a], b, dump[b]))
+        if not ok:
+            failed_within.add(label)
+            if label not in known_wrong:
+                fails += 1
+    for label, a, lsb, width, want in spec.get('bits', []):
+        # a field of a dumped word, compared exactly; lsb counts from the
+        # right (IBM bits 4-7 of word 10 are lsb 56, width 4)
+        n_within += 1
+        if a not in dump:
+            print("FAIL %s: word %d is not in the dump" % (label, a))
+            fails += 1
+            continue
+        got = (dump[a] >> lsb) & ((1 << width) - 1)
+        ok = got == want
+        print("%s %s = %X, want %X" % ("PASS" if ok else "FAIL", label, got, want))
+        if not ok:
+            failed_within.add(label)
+            if label not in known_wrong:
+                fails += 1
     for label, a, want4 in spec.get('low4', []):
         # the stored word's bits 60-63, sign and flags, compared exactly
         n_within += 1
