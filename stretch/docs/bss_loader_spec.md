@@ -784,8 +784,14 @@ code uses. With the exact card count (same day) the subprogram end ran
 too: `ARNRM2` transmitted a one-word transfer vector from table + 3.0 +
 3 half-words (the transmit takes word 4) to origin + 1.0, over the A8
 name the data card loaded, and with `SRNXAD` zero returned `KSILO+10`'s
-address through the branch return. Not yet run: a next table
-(`SRNXAD` nonzero, the TWS or library read), C, P and D cards.
+address through the branch return. Run 2026-11-16 (modes `bss2` and
+`bsslib`): a next table, `SRNXAD` nonzero. For TWS, `YRLDTA` was set to
+`ATWSTA` and `$13` to `AREADS` plus the disk address, with the count
+reduced by the in-arc card number. For the library, `YRLDTA` was set to
+`LB` plus 36 bits and `$13` to `AREAD1`. Both returned normally to resume
+load. Measured: a library routine's card count wraps (0 less 1), so it
+never reaches `ARNRM2`, and its vector is not sent. Not yet run: C, P
+and D cards (§7.2).
 
 ### 7.2 Printed p.329: lost, inside the loader
 

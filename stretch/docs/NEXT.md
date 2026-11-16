@@ -234,14 +234,19 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
+## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
 table, through ARNRM2's transfer vector and branch return
-(tests/gen_loader_deck_tb.py bss). Not run: a second subprogram
-(SRNXAD nonzero: the TWS read, AREADS, printed p.327 lines 11-22, and
-the library read) -- that needs the disk and the lost BSS processor's
-TWS layout. Earlier note, kept: a loader run needs what the lost BSS
+(tests/gen_loader_deck_tb.py bss).  R1 of
+docs/reading_notes/fortran_bss_plan.md, 2026-11-16: modes bss2 and bsslib
+chain through SRNXAD to a second subprogram, from TWS (YRLDTA = ATWSTA,
+$13 = AREADS + the disk address, p.327 ll.12-19 run) and as a library
+entry (YRLDTA = "LB" + 36 bits).  OPEN, measured: a library routine's
+card count is 0 and wraps (p.324 l.28, p.326 ll.41-44), so its last card
+returns normally and its vector is never sent -- the loader as read does
+not end a library routine.  NOT BUILT: C, P, D cards, which wait on
+printed p.329 (R0.3).  Earlier note, kept: a loader run needs what the lost BSS
 processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws

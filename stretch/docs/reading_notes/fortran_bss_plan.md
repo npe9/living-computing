@@ -135,8 +135,9 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 
 **STRAP II.** The host STRAP II (`strap/strap2/`, `punch.py`) punches the BSS cards: PUNREL stages 1-3, PUNFPC, ENTER, PUNCDC, COMBLOCK, SLCRCOM, FEND. `tests/check_strap2_punch.py` checks them, and grep confirms all of these names in `strap/strap2/`.
 
+**Run since (R1, 2026-11-16):** modes `bss2` and `bsslib`. A second subprogram with `SRNXAD` ≠ 0, both from TWS (`AREADS`, p.327 ll.11-22) and as a library entry, with the loader handing the next read to resume load. See R1's status below.
+
 **Not run:**
-- A second subprogram, with `SRNXAD` ≠ 0: the TWS/disk read `AREADS` (p.327 ll.11-22) and the library read.
 - C, P and D cards, which go through p.329.
 - K, A and Z cards, which are absent from the 1963 loader.
 
@@ -472,6 +473,15 @@ All are under `http://www.bitsavers.org/pdf/ibm/7090/` unless another location i
 - Oracle: absolute-assembly equality, the pattern the suite already uses.
 - Inject: a wrong `SRNXAD` chain, a wrong named-common index width.
 - Size: about 1 day of testbench work; no new 7030 code.
+- **STATUS 2026-11-16: the second subprogram and the library entry ran. C, P and D were NOT built (R0.3).** Details and injections are in `tests/gen_loader_deck_tb.py`'s header.
+  - **`bss2`, 29 checks.** Table 1's `SRNXAD` points at a second table, so `ARNRM2`-`ARNRM5` (p.327 ll.1-22) run with a next table. The second subprogram (four named commons, so `i` is 3 bits; BL2 shared; a two-word vector) then loads equal to its absolute assembly and ends the job through `ARNRM4`.
+    - `YRLDTA` holds `))))))))`.
+    - `$13` holds `AREADS` (p.331 l.40) with its value increased by the disk address (CHOSEN 557, arc 1 word 45) and its count reduced by (557 mod 512) // 15 = 3. That is p.327 ll.12-19 as read, now run.
+    - Injections: a wrong `SRNXAD` failed 17 checks (the whole second subprogram, the chain end and `$13`). A wrong `i` width (punch.py) failed exactly the second subprogram's 6 instruction words.
+  - **`bsslib`, 28 checks.** Table 2's bit 63 is 1. `YRLDTA` holds `LB` and the planted 36 bits (CHOSEN `SINE  `; spec G7), and `$13` holds `AREAD1`.
+  - **Finding:** a library routine's card count is set to 0 (p.324 l.28) and is decremented before it is tested (p.326 ll.41-44). So the count wraps, the routine's last card returns *normally*, and its transfer vector is *not* transmitted. The loader as read does not end a library routine; that must happen in resume load's read of the LB area or elsewhere. Open.
+  - Control: a card count planted in a library table changes nothing (p.324 l.24).
+  - **C, P, D: stopped.** R0.3 is not done. Printed p.329 is missing and not reconstructed, and P, D, hex digits and every short C card go through it (spec §7.2). The one C form that avoids p.329 (an origin and four half-words of 0-9) is not tested.
 
 ### R2. RECONSTRUCT the BSS processor as a 7030 program (medium; about 2-4K words, a guess; basis: 9F07's BSS Control of about 870 FAP lines plus Library Search of about 1,200, scaled up for the 7030's segmentation phases and three tables)
 
