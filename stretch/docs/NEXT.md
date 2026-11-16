@@ -17082,11 +17082,15 @@ byte register remain unchanged throughout the operation unless used as
 the effective address."  C22-6578 printed p.43 (4.9) ends COSF with
 `SRDN,$L` and printed p.43 Method 2 the same; 4.12/4.13 use `SRT(N), $L`.
 
-* **Reproducer:** `decks/repro_fp_store_location8.strap`.  t*t double
-  length (t = 1/3 as assembled), `SRDN, $L`: p.96 gives word 8 =
-  `007E 38E3 8E38 E378`; the model leaves `007E 38E3 8E38 E371`, the
-  accumulator unrounded with its own fraction bits in 60-63.  Registered
-  pinned at the wrong word, labelled.
+* **Reproducer:** `decks/repro_fp_store_location8.strap`.  s*s double
+  length (s = .6 as assembled), `SRDN, $L`.  Accumulator bits 60-63 are
+  `1110`, so rounding carries into bit 59: p.96 gives word 8 =
+  `003B 851E B851 EB78`.  The model leaves `003B 851E B851 EB6E` --
+  bits 0-59 UNROUNDED -- and `$SB` = 0, unchanged.  So the store did not
+  happen by either reading of p.96; it is not a sign byte sent to `$SB`
+  instead of word 8.  (The first version used 1/9, whose rounding does
+  not carry, and could not tell those apart; a review caught it.)
+  Registered pinned at both wrong words, labelled.
 * The likely mechanism, NOT verified in the model source: the store is
   written to word 8 and then the FP commit writes the unchanged
   accumulator left half over it (`StretchExecute.bsv` commitFp,

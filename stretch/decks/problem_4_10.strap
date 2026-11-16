@@ -20,9 +20,8 @@
 ! "1/1.41421356205080" and "2/1.41421356205080" (read at 400 dpi).
 ! sqrt2 = 1.41421356237310; the last six digits are wrong.  The program
 ! then computes ln(F/q) with q = 1/1.41421356205080 in place of
-! ln(sqrt2 F), so EVERY RESULT IS LOW BY ln(sqrt2 x 1.41421356205080 / 2)
-! ... precisely, by 2.279E-10 absolute, about 64,000 units of a result
-! near 1.  The checks follow the page as printed (below) and the header
+! ln(sqrt2 F), so EVERY RESULT IS LOW BY ln(sqrt2 / 1.41421356205080) =
+! 2.279E-10 absolute, about 64,000 units of a result near 1.  The checks follow the page as printed (below) and the header
 ! records what ln x itself would be.
 !
 ! WHAT THE PROGRAM DOES, by the Reference Manual:

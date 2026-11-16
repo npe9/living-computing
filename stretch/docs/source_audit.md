@@ -1986,9 +1986,10 @@ p.37); the model uses word 8's bits 60-63, so `*(N), $L` squares a
 negative Z to -Z**2.  Reproducer `decks/repro_fp_operand_location8.strap`;
 `docs/NEXT.md` "LOCATION 8 AS A FLOATING-POINT OPERAND".  The three
 failing runs are registered `--known-wrong` (they pass only while exactly
-those checks fail).  **This is the first wrong result in anything the
-model executed from `C22-6578`, after the twelve problems of Chapter 1
-and 4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
+those checks fail).  **It is the first wrong result in anything the
+model executed from `C22-6578` since the table above's one bug find,
+through the nine problems of Chapter 1 ("G2.1, THE FIRST BATCH") and
+4.11-4.13.**  Also exercises `F+`/`F-` (add to fraction), `/`,
 `L(B,12,1)` and `-I(BU,1)` turning a floating exponent into a VFL integer
 and back -- all right.  A fourth printed erratum: sqrt2 printed
 1.41421356205080.

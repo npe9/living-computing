@@ -11,22 +11,33 @@
 ! address."
 !
 ! Here the effective address IS location 8.  The accumulator holds
-! t*t, t = 1/3 as assembled (a 48-bit truncation), double length, so
-! accumulator bits 60-63 are fraction bits 49-52 of t*t = 0001.
-! "SRDN, $L" must leave in word 8, worked by hand from p.96:
-!   exponent -3, fraction rounded up = E38E 38E3 8E37, sign 1 (the N
-!   modifier inverts plus), flags 000:  007E 38E3 8E38 E378.
-! The model leaves 007E 38E3 8E38 E371 -- the accumulator unrounded,
-! with its own fraction bits in 60-63, as if the store never happened.
-! OBSERVED 2026-11-16.  (Whether $SB also changes is not stated on
-! these pages and is not checked: OPEN.)
+! s*s, s = .6 as assembled (0009 9999 9999 9990), double length.  Its
+! bits 60-63 are fraction bits 49-52 of s*s = 1110, so ROUNDING CARRIES
+! INTO BIT 59: the stored fraction is B851E B851 EB7, the unrounded one
+! ...EB6.  Worked by hand from p.96, "SRDN, $L" must leave in word 8
+!   exponent -1, fraction rounded, sign 1 (N inverts plus), flags 000:
+!   003B 851E B851 EB78
+! and whatever p.96's "unless used as the effective address" does to
+! $SB, bits 0-59 of word 8 must end ...EB7.
+!
+! THE MODEL, OBSERVED 2026-11-16 with words 8-10 dumped:
+!   word 8   003B 851E B851 EB6E   bits 0-59 UNROUNDED, bits 60-63 the
+!                                  accumulator's own fraction bits
+!   word 10  0000 0000 0000 0000   $SB unchanged, still plus
+! So the store did not happen at all, by either reading of p.96: it is
+! not a sign byte routed to $SB instead of word 8.  (An earlier version
+! of this deck used t*t, t = 1/3, whose rounding does not carry; it
+! could not tell a lost store from a redirected sign byte.)
+!
+! Registered pinned at the model's WRONG words; flip both when fixed.
+! SRT(N), $L (4.12, 4.13) DOES take effect in the model; this is SRD's.
 !
 ! Found by C22-6578 Problem 4.9, printed p.43, "SRDN,$L", the last
 ! store of COSF (decks/problem_4_9_method1.strap).
 
-START   DL(N), THIRD
-        D*(N), THIRD
+START   DL(N), SIX
+        D*(N), SIX
         SRDN, $L
 HALT    BEW, $
-THIRD   DD(N), .33333333333333333333333333333
+SIX     DD(N), .6
         END, START
