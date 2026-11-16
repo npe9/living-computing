@@ -628,8 +628,9 @@ VFL with forwarding, PDF 143-169, and VFL immediate, PDF 171-189. With
 them came five more rules: `vfwd`, `vfwdib`, `index`, `immf` and `immn`.
 PDF 114 says the I-box operand should not change with forwarding;
 `vfwdib` finds 2,007 exact pairs and 94 near of 2,148. Eight cells are
-uncertain, each with a NOTE. `tests/atlas_oracle.py` runs 6,265 cases
-in about an hour. Its residual predates PDF 143-189: mean −18.9 clocks,
+uncertain, each with a NOTE. `tests/atlas_oracle.py` ran 6,265 cases
+in about an hour; with the new pages `--list` reports 12,353 cases with
+a generator (run time unmeasured). Its residual predates PDF 143-189: mean −18.9 clocks,
 median −7.1, 7% exact. The largest single cause is that the model's VFL
 time does not depend on the operation. FP residuals are unmeasured:
 the oracle has no FP generator. Remaining:

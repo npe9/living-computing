@@ -18,8 +18,10 @@
 # PDF 171-189, were read the same way on
 # 2026-11-16 by independent readers working from 300 dpi tiles and crops of
 # the page images only (no OCR, no text layer, no other sheet open), each
-# page re-read column by column on a second cut; every pair that broke its
-# column's pattern was then re-read on a fresh crop before its TALLY was set.
+# page re-read column by column (on PDF 143-148 against the tiles already
+# viewed, on 171-174 as a spot check); the isolated pairs that broke a
+# column's pattern were re-read on fresh crops before the TALLY was set
+# (docs/atlas_oracle.md says which).
 # The sheets mirror the printed pages: one line per printed row,
 # cells in printed column order, so a re-reader can lay a sheet beside its
 # page.

@@ -89,9 +89,16 @@ to 189:
   forwarding and immediate pages. PDF 114 says of the I-box operand,
   "there should be no difference in times between no forwarding vs.
   forwarding, and this was indeed the case"; `vfwdib` bears that out
-  (2,007 exact and 94 near of 2,148), and 40 of its 47 far pairs are on
-  PDF 143 (+), where the forwarding page's binary rows run 0.16 µs
-  slower (B,8,1: 4.96 against 4.80). PDF 114 says the immediate run used
+  (2,007 exact and 94 near of 2,148). 40 of its 47 far pairs are on
+  PDF 143 (+), on the signed rows (B and D) of both blocks:
+  - With forwarding, the signed rows print the times of the unsigned rows:
+    (B,8,1) is 4.96 against PDF 116's 4.80, and (D,8,4) is 5.07, close to
+    (DU,8,4)'s 5.09.
+  - The INVERT block shows none of PDF 116's recomplement cost:
+    INVERT (B,8,1) is 4.96 against 7.20, and (D,64,4) 13.50 against
+    23.41.
+  The same pattern runs through every column of PDF 143, so it is the
+  page and not a misread. The other 7 are M+1 INVERT cells on PDF 153. PDF 114 says the immediate run used
   the standard operand in the address field and states no relation to
   the memory pages, so both pairings are counted. Neither fits
   throughout: +I follows the forwarding page, and the compares KI..KFEI
@@ -152,12 +159,22 @@ to 189:
   - PDF 153 prints M+ followed by a glyph this printer uses for both I and
     1. It is read as M+1.
   - PDF 169's faint C is read as CT0111.
-- **How PDF 143-189 were read.** Independent readers read 300 dpi tiles
-  of the page images with no other sheet open, and each read every page
-  twice. A far pair that broke its column's pattern was re-read on a new
-  crop, and all of those stand as printed. Where the volume repeats a page
-  (KI/KRI/KEI, and KFI/KFRI/KFEI from two readers), the readings agree
-  cell for cell.
+- **How PDF 143-189 were read.** Seven independent readers worked from
+  300 dpi tiles of the page images, with no other sheet open.
+  - Most pages were re-read column by column on a second cut. On PDF
+    143-148 the second pass compared against the tiles already viewed,
+    not a new cut. On PDF 171-174 it was a spot check.
+  - A detector then listed every far pair whose difference was unique in
+    a column that otherwise agrees. Those on PDF 145, 148, 153, 154, 156,
+    162, 164, 168 and 169 were re-read on new crops, and all stand as
+    printed.
+  - The detector's hits on the M+ invert block (PDF 144) and on the
+    to-memory INTERNL tails (143) repeat across rows and pages. They were
+    judged real from that repetition, not re-read cell by cell.
+  - Where the volume repeats a page, the data rows diff identical:
+    KI/KRI/KEI (177-179), and KFI/KFRI/KFEI (180-182, where 182 had a
+    different reader).
+  - The 262 indicator marks on these pages are in no TALLY and no SUM.
 
 ## How to run
 
@@ -181,7 +198,12 @@ sets `BLUESPECDIR` and `PATH` itself.
 - **Per-instruction clocks are measured by subtraction.** The figure is
   (cycles of the full program − cycles of a baseline with an empty body
   and no count branch) / 10,000.
-- **Run time.** The full run is **6,265 cases in 3,618 s (about one
+- **Run time.** *Measured before PDF 143-189 were added.* With them,
+  `--list` reports **12,353 cases with a generator** (2026-11-16). The run
+  time of that set is unmeasured, and by the per-case rate below it is
+  about two hours. The forwarding pages' WB XOVR cases will run with the
+  generator's FL//2 field placement, not PDF 114's (150000.74)₈. The full
+  run was **6,265 cases in 3,618 s (about one
   hour) wall** at `--jobs 12` on a 16-CPU machine. That is two
   simulations a case, about 0.58 s a case in aggregate. The longest
   bodies (T 100WD, the conversions) dominate.
@@ -240,7 +262,7 @@ The report echoes this list in its header:
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
 
-### Not generated (917 transcribed cells, each listed with its reason by `--list`)
+### Not generated (917 transcribed cells as of the 93-page run; with all 139 pages `--list` reports 16,291: 9,406 FP cells (no FP generator), 3,908 INTERNL cells of PDF 143-169, the marks, CV/DCV, and the immediate pages, reported as "no generator for VFL instruction LI" and so on)
 
 - 450 ENV cells (PDF 104), which are environment averages.
 - 192 CV and DCV cells, whose accumulator addressing the page does not
