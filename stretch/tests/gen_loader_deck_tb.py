@@ -194,11 +194,14 @@ THAT RECONSTRUCTION, NOT IBM'S PAGE; the rest of the loader is as read.
 An absolute program at 120000 (OCT_BASE: four data words, two half-word
 instructions, a full-word one) is the deck's binary cards; then, between
 it and the branch card:
-  C1 origin 120000.0, four half words, hex A-F in all four (AOCTH1);
-  C2 origin 120002.0, two half words (the card ends on blanks, AOCTL6);
-  C3 a continuation, origin blank (AOCTL6/AOCTL7: ALDTC);
+  C1 origin 120000.0, four half words, digits 0-9 only in the hex
+     columns (78 91 67 10: the C form spec 7.2 says avoids p.329);
+  C2 origin 120002.0, two half words with hex (AF, CD: AOCTH1); the card
+     ends on blanks (AOCTL6);
+  C3 a continuation, origin blank (AOCTL6/AOCTL7: ALDTC), hex EA;
   C4 origin 120000.0, first half word 1-punched in its point column
-     (AOIGN2 ignores it, AOIGN3), the second loaded;
+     (AOIGN2 ignores it, AOIGN3), the second (hex E0) loaded over C1's
+     second half word at 120000.32;
   C5 origin point 1-punched: the whole card ignored (AOIGN1);
   P1 at a half-word instruction (APCARD/APCRD2, the half-word case);
   P2 at the full-word instruction (APCRD4+3.32, NOP and the other half);
@@ -228,7 +231,8 @@ cmp (scripted; observed sets):
     word, read one character off).
 CONTROL: the deck as committed, ALL TESTS PASSED.
 Not exercised: a P or D continuation (needs ALOWWD = 0, deck (b)), 12-0
-and 12-7..12-9 in a hex column, the lower/upper bound errors.
+and 12-7..12-9 in a hex column, the letter B (12-2: no card punches it),
+the lower/upper bound errors.
 
 ITS OWN BUILD DIRECTORIES (build-loader, simbuild-loader): built in the
 shared bsv/build without -show-schedule, it left mkStretchCore up to date

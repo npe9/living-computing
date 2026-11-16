@@ -13,7 +13,9 @@ own binaries still assemble to what they printed with it in place:
                           that page's printed binary puts it (AOIGN3 p.328
                           l.49, AOIGN1 l.46, AOCTH1 l.29, APCRD2 l.13;
                           AOCTL6 p.327 l.48; APCARD p.320 l.33; APCRD4 p.330
-                          ll.5, 10, and APCRD4+1. l.37);
+                          ll.5, 10);
+  full_word_at_APCRD4     APCRD4+1. (p.330 l.37, ADCRD1's return) is an
+                          instruction boundary: APCRD4 holds a full word;
   landed_words_unchanged  every word of pp.99-334 outside the span is the
                           same with the reconstruction as without it (the
                           merge also refuses a stand-in that disagrees);
@@ -33,6 +35,8 @@ P329_DECK (the committed deck is not touched):
     RECONSTRUCTED places it at bit 5150176" (strap/mcp_image.py's
     stand-in check: p.320's APCARD SYN disagrees by a half word).
   - V+,$1,APT168 changed to V+,$1,AOPT24: FAIL names_APT168 only.
+  - APCRD4's BBZ,ADCRDI,ADCRD1 replaced by two half-word NOPs (placement
+    kept): FAIL full_word_at_APCRD4 and names_ADCRD1 (its only use).
 Control (the deck as committed): ALL CHECKS PASSED.
 """
 import os
@@ -78,8 +82,12 @@ def main():
     check("span_only", sorted(extra), [])
     for n, v in CITED.items():
         check("label_" + n, with_.symtab.get(n), v)
-    # APCRD4+1. (p.330 l.37 prints 235151.50): a full word after APCRD4.
-    check("label_APCRD4+1", with_.symtab["APCRD4"] + 64, 0o235151 * 64 + 32)
+    # APCRD4+1. (p.330 l.37 prints 235151.50): ADCRD1 returns a full word
+    # past APCRD4, so APCRD4's instruction must be a full word -- bits
+    # 24-27 = 1000 (Reference Manual Figure 6, p.18) in the half word at
+    # 235150.40, i.e. word bits 56-59.
+    w = with_.words.get(0o235150, 0)
+    check("full_word_at_APCRD4", (w >> 4) & 0xF, 0b1000)
     diff = [w for w in set(without.written_words) if w not in span
             and with_.words.get(w) != without.words.get(w)]
     check("landed_words_unchanged", sorted(diff), [])
