@@ -474,8 +474,8 @@ DECKS = {'4.7m1': ('problem_4_7_method1.strap', 'StretchP47M1Tb'),
 # applied BEFORE the expected words are worked, so they follow it (unlike
 # --sub, which is an injection the expectation does not follow).
 VARIANTS = {'4.5n37': [("\nN       SYN,40\n", "\nN       SYN,37\n")],
-            '4.5k0': [("(16)6991892315442001", "(16)E991892315000000"),
-                      ("(16)31530A2527420001", "(16)B1530A2527000000")]}
+            '4.5k0': [("DD(BU,64),(16)6991892315442001", "DD(BU,64),(16)E991892315000000"),
+                      ("DD(BU,64),(16)31530A2527420001", "DD(BU,64),(16)B1530A2527000000")]}
 
 
 def halt_pc(words, lo, hi):
