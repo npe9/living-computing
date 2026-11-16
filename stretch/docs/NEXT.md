@@ -99,9 +99,16 @@ radix).  `docs/spec_decimal.md` section 2, Class C, had this already.
   the total the program as printed computes, because the printed
   `+(D,48,8)` is SIGNED and so reads E's last byte as a sign (traced by
   hand before the run).  Then it loops in `KOMF` (PC 2022) and never
-  writes product 2.  NOT TRACED: whether `KOMF`'s `KF(BU,24)(V+I)`
-  against the `TESTW` accumulator can find this deck's next field.  A
-  compare question, binary; stage 2 does not change it.
+  writes product 2.  NOT TRACED, AND A POSSIBLE MODEL BUG in `KF` with
+  `(V+I)` until it is.  Two readings, neither checked against a page:
+  (a) `KOMF`'s `KF(BU,24)(V+I), 0.8($2)` writes no offset, and if the
+  progressive increment is the offset field, `$2` never advances and the
+  loop is the printed program's; (b) the accumulator `L(BU,32), TESTW`
+  leaves (E, N, D, FF) and an offset-0 field compare reads its low 24
+  bits, which no byte string in this deck's G subfields matches.  My
+  hand trace before the run predicted a halt with F2 = 8 and $FT =
+  (16)404; the run does not reach it, so the trace or the model is
+  wrong.
 * **Two deck-writing errors, mine, found by runs:** `T, 1, $IND, Ik`
   names INDEX REGISTER 1 as TRANSMIT's count -- the immediate count of
   one is `TI, 1, ...`.  The first `vfl_decimal_add` and the revised
