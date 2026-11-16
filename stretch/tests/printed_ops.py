@@ -119,9 +119,13 @@ def optab_names():
     (other than a secondary) the host accepts, and the listing-witnessed
     ones, without the branch-on-indicator family (C22-6729 p.22: MIBA
     supplies it, "not in the op table").  No host-order spelling (*+A, +MGN)
-    and no form no list prints is in it."""
+    and no form no list prints is in it.  And the null op, eight blanks:
+    C22-6729 printed p.21, Box 8, read in the ink 2026-11-15: "since the
+    buffer was blanked out in the initialization, Bopx is already set up
+    for the look-up of the null op in the primary op table" (Chart AA
+    p.14, Box 8 to Box 17)."""
     out = set()
     for n, s in printed.items():
         if kinds_of(s) - {"S"} and A.classify_branch_indicator(n) is None and look(n):
             out.add(n)
-    return out | LISTING_WITNESSED
+    return out | LISTING_WITNESSED | {""}

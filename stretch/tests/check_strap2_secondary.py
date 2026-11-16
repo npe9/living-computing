@@ -110,7 +110,9 @@ from strap2 import optab7030 as O                   # noqa: E402
 REP = {O.ABC["VFL"]: "V+I", O.ABC["SEOP"]: "SEOP", O.ABC["CW"]: "CR"}
 bad, n = [], 0
 for name in printed_ops.optab_names():
-    if name == "EXT":
+    # "" is the null op (p.21 Box 8: a comma first looks up a blank Bop):
+    # an entry of the table, but no statement writes a secondary on it.
+    if name in ("EXT", ""):
         continue
     code = O.secondary_code(name)
     for fam, sec in REP.items():
