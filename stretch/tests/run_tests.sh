@@ -13544,6 +13544,15 @@ run "Buchholz B.5 -- editing a typed message" ./run_program.sh ../decks/buchholz
 run "Buchholz B.6 -- bit matrix AS PRINTED: (VBU,1,1) leaves one bit per word" python3 verify_buchholz_b6.py printed
 run "Buchholz B.6 -- bit matrix with (VBU,1,8): the 128 x 128 transpose" python3 verify_buchholz_b6.py corrected
 
+# Table B.7, printed p.304 (it belongs to section B.6).  Z into the right
+# half of the accumulator, then C0111(V+I)(BU,8,1) with an indexed offset:
+# byte size 1 spreads each row's eight bits to eight bytes and OR interleaves
+# them -- the 8-by-8 transpose in eight steps.  Passed against the model as
+# it stood.
+run "Buchholz B.7 -- 8 x 8 bit matrix transposed in the accumulator" ./run_program.sh ../decks/buchholz_b7_8x8_transpose.strap StretchBuchB7Tb "PC=209" \
+    "transposed:300=0x95A665C96A394D9B" "acc_right:9=0x95A665C96A394D9B" \
+    "x1:17=0x004B4000000000C9" "x2:18=0x00010080000000CA" "guard_lo:299=99" "guard_hi:301=99"
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

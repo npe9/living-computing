@@ -123,10 +123,11 @@
 !   "ADD TO VALUE, X1, 7.17".  7.17 is the left-zeros count's address
 !   in A.3 (printed p.276: "7.17, 7 bits, LZC").  But the address of
 !   an index-arithmetic instruction is 19 bits, a word and a half-word
-!   bit, and cannot hold ".17".  The operand of V+ is "bits 0-24 of the
-!   half-word specified by bits 0-18 of the effective address"
-!   (Reference Manual printed p.23-24, Load Value and the operations
-!   after it), and Reference Manual printed p.76 says why that works:
+!   bit, and cannot hold ".17".  Reference Manual printed p.24 (PDF
+!   27), Add to Value: "The address part, bits 0-24, of the half-word
+!   addressed by bits 0-18 of the effective address is added to the
+!   address part, bits 0-24, of the index word specified by J."  And
+!   Reference Manual printed p.76 says why that works for the count:
 !   "The position of the left-zeros counter in the first half word of
 !   location 7 is such that it corresponds to that part of an index
 !   value field which indexes the bit address of an instruction."  So
@@ -144,9 +145,10 @@
 !   address."  That is note (12).
 !
 !   Note (13) relies on LOAD COUNT (and STORE INDEX after it) setting
-!   the index count zero indicator: Reference Manual printed pp.22-23,
-!   Index Indicators -- the index result indicators are set by any
-!   index operation that specifies an index in J, comparisons excepted.
+!   the index count zero indicator: Reference Manual printed p.23
+!   (PDF 26), Index Indicators -- the index result indicators are set
+!   by any index operation that specifies an index in J, comparisons
+!   excepted.
 !
 ! AND ONE THING THE PAGE DOES NOT MENTION: statement 101.0's nine
 ! bytes end at accumulator bit 64 and so begin seven bits to the left

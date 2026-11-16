@@ -1,0 +1,120 @@
+! Buchholz (ed.), "Planning a Computer System" (1962), APPENDIX B,
+! Table B.7 "Transposition of an 8-by-8-bit Matrix", printed p.304
+! (PDF 329), read from the page image.  It belongs to section B.6:
+!
+!   "A more efficient, but longer, program can be written by making use
+!   of the bit-interleaving ability of the connective operations.  The
+!   core of such a program is the transposition of a small 8-by-8
+!   matrix within the accumulator; this is done in eight steps, 8 bits
+!   at a time (see Table B.7).  By dividing the larger matrix into a
+!   group of 8-by-8 submatrixes, each submatrix may be transposed
+!   separately and stored at the mirror-image position with respect to
+!   the main diagonal of the full matrix.  The full program, not shown
+!   here, would be almost four times as fast as that of Table B.6."
+!
+! TABLE B.7 AS PRINTED, with the STRAP statement beside each line:
+!
+!   100.0   LOAD INDEX, X1, 201.0                  Start  LX, $1, 201.0
+!   100.32  LOAD INDEX, X2, 202.0                         LX, $2, 202.0
+!   101.0   STORE ZERO, 9.0                        (1)    Z, 9.0
+!   101.32  CONNECT 0111 (V + I) (VBU, 8, 1), 0.08 (X1), 7 (X2)
+!                                        (2)   C0111(V+I)(BU,8,1), 0.08($1), 7($2)
+!   102.32  SUBTRACT IMMEDIATE FROM VALUE AND COUNT, X2, 0.32
+!                                              V-IC, $2, 0.32
+!   103.0   BRANCH XCZ (F), 101.32             BZXCZ, 101.32
+!   103.32  STORE (VBU, 64, 8), A.0     (3)    ST(BU,64,8), 300.0
+!   104.32  BRANCH ENABLED AND WAIT, 104.32    Stop   BEW, 104.32
+!
+!   201.0   INDEX, A.0, 0, 201.0               XW, 300.0, 0, 201.0
+!   202.0   INDEX, 0.0, 8, 202.0               XW, 0.0, 8, 202.0
+!
+!   Notes: (1) Clear right half accumulator.
+!     (2) Or 8 bits from A.0 into the accumulator, 8 bits apart.
+!     (3) Store transposed matrix back into A.0.
+!
+! THE MAPPINGS, by page of the book's Appendix A.4:
+!   STORE ZERO (Z) printed p.286 (PDF 311): "Store an all-zero word at
+!   the specified full-word location"; 9.0 is the right half of the
+!   accumulator (A.3, printed p.276).  CONNECT (C) p.281; 0111 is
+!   m OR a (p.281-282; Reference Manual 22-6530-2 Figure 20, printed
+!   p.76).  Progressive indexing "(V + I)" p.280 and p.294.  SUBTRACT
+!   IMMEDIATE FROM VALUE AND COUNT (V - IC) p.283.  BRANCH XCZ (F):
+!   BZXCZ, as in Table B.6.  STORE (ST) p.277.  "7 (X2)" is an indexed
+!   offset, as in Table B.6 (deck buchholz_b6_bit_matrix_transpose has
+!   the sources).
+!
+! HOW IT WORKS, AND WHY BYTE SIZE 1 IS RIGHT HERE.  "(VBU, 8, 1)" is
+! eight one-bit bytes, and each is "filled with leading 0s to make an
+! 8-bit byte" (the book's sec. 7.14, printed p.90): eight bits of a row
+! become 64 bits, one data bit at the right of each byte.  With the
+! connective OR the seven zeros of each byte change nothing, so the
+! eight rows interleave.  (Table B.6 uses byte size 1 with connective
+! 0011, where the zeros do damage: see that deck.)
+!
+! THE DATA IS THE DECK'S: A.0 = 300.0, and the matrix, row r = byte r
+! of the word, is on the left; its transpose on the right.
+!
+!      1 1 0 1 0 0 0 1   D1          1 0 0 1 0 1 0 1   95
+!      0 0 1 1 1 0 1 0   3A          1 0 1 0 0 1 1 0   A6
+!      0 1 1 0 1 1 0 0   6C          0 1 1 0 0 1 0 1   65
+!      1 0 0 0 0 1 0 1   85          1 1 0 0 1 0 0 1   C9
+!      0 0 0 1 1 1 1 1   1F          0 1 1 0 1 0 1 0   6A
+!      1 1 1 0 0 0 1 0   E2          0 0 1 1 1 0 0 1   39
+!      0 1 0 0 1 0 0 1   49          0 1 0 0 1 1 0 1   4D
+!      1 0 1 1 0 1 1 1   B7          1 0 0 1 1 0 1 1   9B
+!
+!   26 of the 64 positions differ from their mirror image.
+!
+! EXPECTED, DERIVED BY HAND:
+!
+!   Row r is connected at offset 7 - r (x2's value goes 0.0, -0.32,
+!   -1.0, ...; each 0.32 is one in the offset, Table B.6 note 2).  The
+!   64-bit operand then ends at accumulator bit 120 + r, and its byte
+!   c has its data bit at accumulator bit 64 + 8c + r.  So bit 8c + r
+!   of the right half is A[r][c]: byte c of the result, bit r, which
+!   is the transpose.
+!
+!   transposed  300.0 = (16)95A665C96A394D9B  (was (16)D13A6C851FE249B7)
+!   acc_right   9.0 holds the same word: STORE does not change the
+!               accumulator.
+!   x1          300.0 + 8 * 0.08 = 301.0, count 0 (V + I does not
+!               count), refill 201 = (16)004B4000000000C9
+!   x2          value 8 * -0.32 = -4.0 (sign bit 24 on), count 8 run
+!               down to 0, refill 202 and NOT refilled (V - IC has no
+!               R) = (16)00010080000000CA
+!   guards      299.0 and 301.0 still 99.
+!   PC          the BEW at 104.32, half-word 209.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD: 7 of 7.
+!
+! INJECTIONS, DATA SIDE, OBSERVED (private copies of this deck):
+!
+!   Bit (7, 7) of the matrix turned off (the word's last byte B7
+!   changed to B6):  FAILS 2 of 7, exactly transposed and acc_right,
+!   each (16)...9A where (16)...9B is expected.
+!
+!   The count in the index word at 202.0 changed from 8 to 7, so the
+!   last row is never connected:  FAILS 4 of 7 -- transposed and
+!   acc_right ((16)94A664C86A384C9A: the last bit of every byte is
+!   missing), x1 (300.56) and x2 (-3.32).
+
+        SLC, 100.0
+START   LX, $1, 201.0                              ! Start
+        LX, $2, 202.0
+        Z, 9.0                                     ! (1)
+        C0111(V+I)(BU,8,1), 0.08($1), 7($2)        ! (2)
+        V-IC, $2, 0.32
+        BZXCZ, 101.32
+        ST(BU,64,8), 300.0                         ! (3)   A.0
+        BEW, 104.32                                ! Stop
+
+        SLC, 201.0
+        XW, 300.0, 0, 201.0                        ! INDEX, A.0, 0, 201.0
+        XW, 0.0, 8, 202.0                          ! INDEX, 0.0, 8, 202.0
+
+        SLC, 299.0
+        DD(BU,64,8), 99                            ! guard
+        DD(BU,64,8), (16)D13A6C851FE249B7          ! A.0, the matrix
+        DD(BU,64,8), 99                            ! guard
+
+        END, START
