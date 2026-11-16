@@ -54,7 +54,11 @@ import StretchStorage::*;
 //                   decimal addition (printed pp.60-63), through
 //                   mkDecBox (StretchDecBox.bsv).
 //
-// STILL REFUSED: the comparisons (K, KF, KE, KFE, KR, KFR), LTRS, LFT,
+//   K, KF, KE, KFE, KR, KFR
+//                   decimal comparison (printed pp.65-67), a subtraction
+//                   through mkDecBox (stage 2, 2026-11-16).
+//
+// STILL REFUSED: LTRS, LFT,
 // and *, *+ and / -- whose decimal form is NOT arithmetic at all but
 // LOAD TRANSIT AND SET's action with DTR (printed pp.68-70), so they
 // wait for LTRS -- and DCV (unused by MCP).
@@ -63,7 +67,10 @@ function Bool vflDecimalBuilt(Bit#(6) code);
       || code == 6'b000101 || code == 6'b100101                        // L LWF
       || code == 6'b001101 || code == 6'b101101                        // ST SRD
       || code == 6'b000001 || code == 6'b100001                        // + +MG
-      || code == 6'b001001 || code == 6'b101011 || code == 6'b101001;  // M+ M+1 M+MG
+      || code == 6'b001001 || code == 6'b101011 || code == 6'b101001   // M+ M+1 M+MG
+      || code == 6'b010001 || code == 6'b110001                        // K KF
+      || code == 6'b010011 || code == 6'b110011                        // KE KFE
+      || code == 6'b010101 || code == 6'b110101;                       // KR KFR
 endfunction
 
 function Bit#(7) effLength(Bit#(6) length) =

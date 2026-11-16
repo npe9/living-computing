@@ -1,0 +1,205 @@
+! DECIMAL COMPARE, AND KE/KFE/KR/KFR IN BOTH RADICES -- G2.3 stage 2,
+! built 2026-11-16.
+!
+! Expected values HAND-DERIVED from the Reference Manual 22-6530-2,
+! printed pp.65-67 (PDF 68-70), read in the page images; none from a run.
+! After each case the indicator register is copied with TI (count one,
+! sets no indicator) to Ck.  The comparison indicators are AL 0x8, AE
+! 0x4, AH 0x2.  Each chain starts from Z,$IND; compare does not touch
+! the arithmetic result indicators (p.65), so in F1-F4, where the LOADs
+! come after the Z, the last L's RGZ (0x20, a positive nonzero result)
+! is on too; everywhere else the Z follows the L and only the comparison
+! indicators are left.  Expected: C1 0x28, C2 0x22, C3 0x28, C4 0x22,
+! C5 0x4, C6 0x2, C7 0x2, C8 0x4, C9 0x4, C10 0x4, C11 0x8, C12 0x8,
+! C13 0x4, C14 0x2, C15 0x8, C16 0x4, C17 0x8.
+!
+! F1-F4 ARE printed p.66's FIGURE 15, "Comparing Unsigned Fields", both
+! programs as printed, on two pairs of 15-digit fields in six-bit bytes
+! (zone 11 on every byte, p.58: "only the four low-order bits of each
+! byte take part"):
+!     USING COMPARE IF EQUAL            NOT USING COMPARE IF EQUAL
+!     L (DU, 60, 6), M, 0               L (DU, 60, 6), M, 0
+!     K (DU, 60, 6), N, 0               K (DU, 60, 6), N, 0
+!     L (DU, 30, 6), M+.60, 0           BZAE, END
+!     KE (DU, 30, 6), N+.60, 0          L (DU, 30, 6), M+.60, 0
+!                                       K (DU, 30, 6), N+.60, 0
+!                                 END   Continuation of program
+!   pair A: M 123456789012345, N 123456789012399: high parts equal (AE),
+!     low parts 12345 < 12399 -> AL, both programs (F1, F3).
+!   pair B: M 123456789112300, same N: high part 1234567891 > 1234567890
+!     -> AH; KE is skipped ("If the accumulator-equal indicator is off ...
+!     the comparison is not performed"), the BZAE leaves -> AH (F2, F4).
+!
+! K1 acc 53200+, K(D,16,4) 532+ at offset 8: "The contents of the
+!    accumulator left of the specified offset" = 532 -> AE.
+! K2 acc 45623+ against 532-: unlike signs, positive high -> AH.
+! K3 acc 45623-, offset 8: -456 against -532; "If the signs of both
+!    operands are negative, the more negative operand ... is considered
+!    low" -> -456 is high: AH.
+! K4 acc 00000- (p.60's example 4) against +0: "A negative zero is
+!    considered equal to a positive zero" -> AE.
+! K5 acc 53201+, offset 9 = 8: the 01 right of the offset does not
+!    participate -> AE.
+! KF1 acc 12345- , KF(DU,8,4) 45: "A positive sign is assumed for the
+!    accumulator field", same length in bytes -> 45 against 45: AE.
+! KF2 then KFE(DU,8,4) 46: AE was on, so performed: 45 < 46 -> AL.
+! KF3 then KFE(DU,8,4) 45: AE now off -> not performed, AL stays (were it
+!    performed, 45 against 45 would give AE).  It was KE(DU,8,4) at first;
+!    injection 3 below showed that case cannot tell skipped from performed
+!    (-12345 against 45 is low either way), so it is KFE.
+! R1-R3 printed p.66's COMPARE FOR RANGE with p.67's Figure 16 reading:
+!    K the lower bound 100, KR the upper bound 900:
+!    R1 acc 500: K -> AH; KR, acc < 900 -> "the AE indicator is turned
+!       on, and AH is turned off" -> AE (in range).
+!    R2 acc 950: K -> AH; KR, acc >= 900 -> "AH is left on" -> AH.
+!    R3 acc 50: K -> AL; KR with AH off -> "the comparison result
+!       indicators are not changed" -> AL.
+! B1 BINARY KR, the same shape: acc 5, K 1 -> AH, KR 9 -> AE.
+! B2 BINARY KE with AE on: acc 5, K 5 -> AE, KE 6 -> AL.
+!
+! MEASURED INJECTIONS, 2026-11-16, each in a separate copy of bsv/ (diffed
+! against the worktree first: StretchExecute.bsv alone differs), rebuilt:
+!   1. decimal compares take the binary answer (the decimal branch made
+!      "if (False && ...)"): FAILS C2 and C4 (0x28: Figure 15's pair B
+!      comes out low, the zone bits deciding it) and C9 (0x8: offset 9
+!      used as 9, not 8).  The other decimal cases happen to order the
+!      same either way.
+!   2. KR's AH-off guard removed: FAILS C15 alone (0xC, AE turned on over
+!      AL).
+!   3. KE/KFE's AE-off guard removed (always performed): FAILED C2 alone
+!      (0x28) with C12 written as KE; C12 was then changed to KFE (above)
+!      and the injection re-run: FAILS C2 (0x28) and C12 (0x4), 16 pass.
+
+        SLC, 1000.0
+START   Z, $IND
+        L(DU,60,6), MA, 0
+        K(DU,60,6), NN, 0
+        L(DU,30,6), MA+.60, 0
+        KE(DU,30,6), NN+.60, 0
+        TI, 1, $IND, C1
+        Z, $IND
+        L(DU,60,6), MB, 0
+        K(DU,60,6), NN, 0
+        L(DU,30,6), MB+.60, 0
+        KE(DU,30,6), NN+.60, 0
+        TI, 1, $IND, C2
+        Z, $IND
+        L(DU,60,6), MA, 0
+        K(DU,60,6), NN, 0
+        BZAE, END1
+        L(DU,30,6), MA+.60, 0
+        K(DU,30,6), NN+.60, 0
+END1    TI, 1, $IND, C3
+        Z, $IND
+        L(DU,60,6), MB, 0
+        K(DU,60,6), NN, 0
+        BZAE, END2
+        L(DU,30,6), MB+.60, 0
+        K(DU,30,6), NN+.60, 0
+END2    TI, 1, $IND, C4
+! --- K
+        L(D,24,4), P53200
+        Z, $IND
+        K(D,16,4), P532, 8
+        TI, 1, $IND, C5
+        L(D,24,4), P45623
+        Z, $IND
+        K(D,16,4), N532, 8
+        TI, 1, $IND, C6
+        L(D,24,4), N45623
+        Z, $IND
+        K(D,16,4), N532, 8
+        TI, 1, $IND, C7
+        L(D,24,4), N53200
+        +(D,16,4), P532, 8
+        Z, $IND
+        K(D,16,4), Z0P
+        TI, 1, $IND, C8
+        L(D,24,4), P53201
+        Z, $IND
+        K(D,16,4), P532, 9
+        TI, 1, $IND, C9
+! --- KF, KFE, KE
+        L(D,24,4), N12345
+        Z, $IND
+        KF(DU,8,4), D45
+        TI, 1, $IND, C10
+        KFE(DU,8,4), D46
+        TI, 1, $IND, C11
+        KFE(DU,8,4), D45
+        TI, 1, $IND, C12
+! --- KR
+        L(DU,12,4), D500
+        Z, $IND
+        K(DU,12,4), D100
+        KR(DU,12,4), D900
+        TI, 1, $IND, C13
+        L(DU,12,4), D950
+        Z, $IND
+        K(DU,12,4), D100
+        KR(DU,12,4), D900
+        TI, 1, $IND, C14
+        L(DU,12,4), D050
+        Z, $IND
+        K(DU,12,4), D100
+        KR(DU,12,4), D900
+        TI, 1, $IND, C15
+! --- binary KR, KE
+        L(BU,8,8), B5
+        Z, $IND
+        K(BU,8,8), B1
+        KR(BU,8,8), B9
+        TI, 1, $IND, C16
+        Z, $IND
+        K(BU,8,8), B5
+        KE(BU,8,8), B6
+        TI, 1, $IND, C17
+HALT    BEW, $
+
+        SLC, 1500.0
+MA      DD(BU,64), (16)C72CF4D76DF8E70C
+        DD(BU,64), (16)72CF4D4000000000
+MB      DD(BU,64), (16)C72CF4D76DF8E71C
+        DD(BU,64), (16)72CF0C0000000000
+NN      DD(BU,64), (16)C72CF4D76DF8E70C
+        DD(BU,64), (16)72CF9E4000000000
+P53200  DD(BU,64), (16)5320000000000000
+P45623  DD(BU,64), (16)4562300000000000
+N45623  DD(BU,64), (16)4562380000000000
+N53200  DD(BU,64), (16)5320080000000000
+P53201  DD(BU,64), (16)5320100000000000
+N12345  DD(BU,64), (16)1234580000000000
+P532    DD(BU,64), (16)5320000000000000
+N532    DD(BU,64), (16)5328000000000000
+Z0P     DD(BU,64), (16)0000000000000000
+D45     DD(BU,64), (16)4500000000000000
+D46     DD(BU,64), (16)4600000000000000
+D100    DD(BU,64), (16)1000000000000000
+D500    DD(BU,64), (16)5000000000000000
+D900    DD(BU,64), (16)9000000000000000
+D950    DD(BU,64), (16)9500000000000000
+D050    DD(BU,64), (16)0500000000000000
+B1      DD(BU,64), (16)0100000000000000
+B5      DD(BU,64), (16)0500000000000000
+B6      DD(BU,64), (16)0600000000000000
+B9      DD(BU,64), (16)0900000000000000
+
+        SLC, 1700.0
+C1      DD(BU,64), 0
+C2      DD(BU,64), 0
+C3      DD(BU,64), 0
+C4      DD(BU,64), 0
+C5      DD(BU,64), 0
+C6      DD(BU,64), 0
+C7      DD(BU,64), 0
+C8      DD(BU,64), 0
+C9      DD(BU,64), 0
+C10     DD(BU,64), 0
+C11     DD(BU,64), 0
+C12     DD(BU,64), 0
+C13     DD(BU,64), 0
+C14     DD(BU,64), 0
+C15     DD(BU,64), 0
+C16     DD(BU,64), 0
+C17     DD(BU,64), 0
+        END, START

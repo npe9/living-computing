@@ -4025,7 +4025,37 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b010001, 6'b110001: begin // K (Compare), KF (Compare Field)
+          6'b010001, 6'b110001,  // K (Compare), KF (Compare Field)
+          6'b010011, 6'b110011,  // KE, KFE (Compare [Field] if Equal)
+          6'b010101, 6'b110101: begin // KR, KFR (Compare [Field] for Range)
+            // >>> KE, KFE, KR AND KFR SHARE THIS ARM, 2026-11-16 (G2.3
+            // stage 2), BOTH RADICES. <<<  Reference Manual printed
+            // pp.65-67, read in the page images.  COMPARE IF EQUAL (p.65):
+            // "If the accumulator-equal indicator is off when this
+            // operation is interpreted, the comparison is not performed
+            // and the comparison result indicators are not changed.
+            // Otherwise, the operation is executed exactly as is
+            // COMPARE."  COMPARE FOR RANGE (p.66): "If the
+            // accumulator-high indicator is off when this operation is
+            // interpreted, the comparison is performed and the comparison
+            // result indicators are not changed.  Otherwise, the
+            // operation is identical to COMPARE except for the setting of
+            // the comparison result indicators.  If the accumulator
+            // operand is equal to or higher than the storage operand, the
+            // accumulator-high indicator is left on.  If the accumulator
+            // operand is less than the storage operand, the AE indicator
+            // is turned on, and AH is turned off."  KFE and KFR are the
+            // same on COMPARE FIELD (pp.66-67).  The data flags and MOP
+            // are "set as in COMPARE" in every case -- the condition
+            // guards only the comparison result indicators -- which is
+            // how KE's "comparison is not performed" is read here: the
+            // operand is still fetched (its flags are reported) and the
+            // result is not used.  CHOSEN; no page says whether a KE with
+            // AE off sets the data flags.
+            //
+            // The codes' low bits: bit 1 (code 0100x1x) marks the
+            // conditional ones, and KE/KR differ in bit 2 -- 010011 KE,
+            // 010101 KR (strap/opcodes.py, from the pocket card).
             // -> AL/AE/AH.  Same prefetch/bail-out shape as L above.
             //
             // COMPARE FIELD, Reference Manual printed p.65, verbatim:
@@ -4063,7 +4093,9 @@ function ActionValue#(VflOutcome)
             // image IS an IOCD card, and so the first of the two
             // operations standing between MCP and knowing what
             // devices it has (docs/boot_plan.md A2).
-            Bool fieldCmp = (vi.code == 6'b110001);
+            Bool fieldCmp = (vi.code[5] == 1);
+            Bool condEq    = (vi.code[4:0] == 5'b10011);   // KE, KFE
+            Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -4147,7 +4179,57 @@ function ActionValue#(VflOutcome)
                 SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 c = smCompare(accSh, opnd);
               end
-              ind = setAccCmpIndicatorsF(ind, c);
+              // >>> DECIMAL K, KF, KE, KFE, KR, KFR, 2026-11-16. <<<
+              // "Radix.  These modifiers operate as in ADD" (p.65): four-
+              // bit bytes, the offset's two low-order bits ignored.  And
+              // the Programming Note, item 4: "The comparison is performed
+              // by making a subtraction and testing the result.  A decimal
+              // digit with byte size less than four is handled as in any
+              // other subtraction."  So the decimal magnitudes go to
+              // mkDecBox as a subtraction: no end carry means the
+              // accumulator's is the smaller, an all-zero difference means
+              // equal.  Signs as smCompare's (p.65 item 1: "+x > +y > +0 =
+              // -0 > -y > -x").  Compare writes no storage and no
+              // accumulator, so the box may be asked on any run that has
+              // the operand; a later refill bail just asks it again.
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.kDig, .kHi} = decCompact(opnd.mag[63:0], bsz);
+              Bit#(7) kNum = (vi.m.unsign == 1) ? len_
+                           : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) kAccMag = fieldCmp
+                ? ((acc.mag >> offDec) & decDigitMask(decDigitCount(kNum, bsz)))
+                : (acc.mag >> offDec);
+              Bit#(1) kAccSign = fieldCmp ? 0 : acc.sign;
+              Bool ah0 = (ind[63 - ind_AH] == 1);
+              Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
+              if (vi.m.decimal == 1 && !skipCmp) begin
+                if (decOf(boxResult) matches tagged Valid .kr) begin
+                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
+                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
+                  // magnitude order from the subtraction (a digit beyond
+                  // the 32nd makes the storage operand the larger)
+                  Cmp3 m = kHi ? CmpLow
+                         : (kr.r == 0) ? CmpEqual
+                         : kr.carry ? CmpHigh : CmpLow;
+                  c = (as_ != bs_) ? ((as_ == 1) ? CmpLow : CmpHigh)
+                    : (as_ == 0) ? m
+                    : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True });
+                  needsRead = tagged Valid 0;
+                end
+              end
+              if (skipCmp) begin
+                // KE/KFE with AE off: comparison indicators unchanged
+              end else if (condRange && !ah0) begin
+                // KR/KFR with AH off: comparison indicators unchanged
+              end else if (condRange) begin
+                if (c == CmpLow) begin
+                  ind = setBit(ind, ind_AE, 1);
+                  ind = setBit(ind, ind_AH, 0);
+                end
+              end else
+                ind = setAccCmpIndicatorsF(ind, c);
             end
           end
           6'b000011: begin // LCV (Load Converted)

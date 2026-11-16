@@ -24,7 +24,7 @@ accumulate.
 
 
 
-## DECIMAL VFL ARITHMETIC (G2.3) -- stage 1 built 2026-11-16; what it found
+## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1 and 2 built 2026-11-16; what they found
 
 **Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,
 `M+MG`, signed and unsigned `ST`, and `SRD`.  The sums -- including
@@ -36,8 +36,16 @@ read by both execute() and the I-box's `prepareExec`.  Oracle deck:
 `decks/vfl_decimal_add.strap` (printed p.60's five ADD examples and 35
 hand-derived cases).
 
-**Still refused:** the comparisons (stage 2), `LTRS`, `LFT`, `DCV`, and
-decimal `*`, `*+`, `/`.
+**Stage 2, built the same day:** decimal `K`, `KF`, and `KE`, `KFE`,
+`KR`, `KFR` in both radices (printed pp.65-67), one arm, the decimal
+magnitude order from a `mkDecBox` subtraction.  Oracle deck:
+`decks/vfl_decimal_compare.strap`, whose C1-C4 are printed p.66's
+Figure 15 as printed.  Readings CHOSEN: a `KE` with AE off still
+fetches and sets the data flags; a decimal compare's "byte size less
+than four ... as in any other subtraction" inherits stage 1's open item.
+
+**Still refused:** `LTRS`, `LFT` (decimal), `DCV`, and decimal `*`, `*+`,
+`/`.
 
 ### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong
 

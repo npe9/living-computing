@@ -441,14 +441,24 @@ by `prepareExec`.  `tests/run_decbox_test.sh` tests the box alone
 `decks/vfl_decimal_add.strap` is the deck.  Open items: `docs/NEXT.md`,
 "DECIMAL VFL ARITHMETIC (G2.3)".
 
+**THE COMPARES, stage 2 (2026-11-16): decimal `K`/`KF`, and `KE`, `KFE`,
+`KR`, `KFR` in both radices (printed pp.65-67).**  One arm.  A decimal
+compare is a subtraction through `mkDecBox` (p.65's Programming Note,
+item 4); the sign rule is the binary one ("-0 = +0").  `KE`/`KFE` leave
+the comparison indicators alone when AE is off; `KR`/`KFR` when AH is
+off, and otherwise turn AE on and AH off for a low accumulator.  The
+data flags are set in every case (a reading, marked CHOSEN in the arm).
+`decks/vfl_decimal_compare.strap` runs printed p.66's Figure 15 as
+printed.
+
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`) except what `vflDecimalBuilt` lists (the
 radix conversions, and since 2026-11-16 the decimal loads, adds and
-stores above) -- the decimal compares, `LTRS`, `LFT`, and `*`/`*+`/`/`,
+stores above, and the compares below) -- `LTRS`, `LFT`, and `*`/`*+`/`/`,
 whose decimal form is LOAD TRANSIT AND SET's action (printed pp.68-70);
-radix conversion `DCV`; the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
+radix conversion `DCV`; `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).

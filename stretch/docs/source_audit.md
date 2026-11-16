@@ -595,8 +595,10 @@ of `C22-6578`.
 remaining variants.  **Decimal stage 1 is built (2026-11-16):** decimal
 `L`, `LWF`, `+`/`-`, `+MG`, `M+`, `M+1`/`M-1`, `M+MG`, signed `ST` and
 `SRD`, the sums through the decimal box `mkDecBox`
-(`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  Remaining:
-the decimal compares (stage 2), and decimal `*`/`*+`/`/`, which printed
+(`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  **Stage 2,
+the same day:** decimal `K`/`KF` and `KE`/`KFE`/`KR`/`KFR` in both
+radices (printed pp.65-67; `decks/vfl_decimal_compare.strap`, Figure 15
+as printed).  Remaining: decimal `LFT`, `DCV`, and decimal `*`/`*+`/`/`, which printed
 pp.68-70 define as LOAD TRANSIT AND SET's action with DTR, not as
 arithmetic -- so they wait for `LTRS`, not for a multiplier box
 (`docs/NEXT.md`, "DECIMAL VFL ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
