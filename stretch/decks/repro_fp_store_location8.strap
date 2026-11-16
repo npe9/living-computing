@@ -10,6 +10,40 @@
 ! unchanged throughout the operation unless used as the effective
 ! address."
 !
+! CHANGED 2026-11-16: THE STORE IS NOW "SRDN(N), $L".  The printed form
+! "SRDN, $L", with no dds, is not a floating-point instruction at all:
+! both assemblers compile it as the VFL STORE ROUNDED, code 101101 (C22-6578
+! printed p.30, Problem 3.5 comment (c): "An operation which could be
+! either VFL or floating-point is assumed VFL"), which the model does not
+! implement -- it turns OP on, and the trace said so ("OP site =
+! vflIntOp/unimplemented-code code=101101").  THAT was the "lost store"
+! below; the floating-point store to 8 had a fault of its own all the
+! same (it wrote word 8 whole, sign into bit 60).
+!
+! WHAT p.80 SAYS THE STORE DOES, settled 2026-11-16 in the ink (printed
+! p.80, PDF 83): "The four sign byte bits replace the four low-order bits
+! of the accumulator operand.  Bits 60-63 of the accumulator do not serve
+! as operand bits.  For all floating-point single-precision operations,
+! they remain unchanged. ... This rule applies to operations of both
+! fetch and store type."  So the stored word's bits 0-59 go to
+! accumulator 0-59, its bits 60-63 (sign, flags) to $SB bits 4-7, and
+! accumulator bits 60-63 keep their 1110.  The "003B 851E B851 EB78" below
+! read word 8 as an ordinary word; p.80's answer is
+!   word 8   003B 851E B851 EB7E    (rounded 0-59, bits 60-63 unchanged)
+!   word 9   147A E147 AE20 0000    (untouched)
+!   word 10  0800 0000 0000 0000    ($SB: minus from N, flags 000)
+! Registered with those three checks; PC 67, and all pass (bsv/
+! StretchExecute.bsv fpStoreToLoc8).
+
+! INJECTION 2, measured 2026-11-16 (fpStoreToLoc8 disabled, so word 8 is
+! written whole, the old store), over the same 28 lines: FAILED the store
+! repro's W8 (003B851EB851EB78) and $SB (0); problem_3_fp_address_8_sign's
+! R4 (+5, 006A000000000000), word 8 (006A000000000008) and $SB (0).
+! Nothing else -- in particular 4.12/4.13's "SRT(N), $L" and Problem 3.3
+! Method 3's "SRD(N), 8.0" pass either way, so they do not witness this.
+!
+! THE ORIGINAL RECORD, 2026-11-16, of the VFL form:
+!
 ! Here the effective address IS location 8.  The accumulator holds
 ! s*s, s = .6 as assembled (0009 9999 9999 9990), double length.  Its
 ! bits 60-63 are fraction bits 49-52 of s*s = 1110, so ROUNDING CARRIES
@@ -37,7 +71,7 @@
 
 START   DL(N), SIX
         D*(N), SIX
-        SRDN, $L
+        SRDN(N), $L
 HALT    BEW, $
 SIX     DD(N), .6
         END, START

@@ -2080,20 +2080,22 @@ FOUND", items 1-6; each item has a reproducer deck):
    `problem_3_bare_op_symbol_dds`.  The host STRAP II assembles both.
 3. **A fault in the book.**  Problem 3.4's M+ leaves the accumulator
    unchanged, so the closing multiply takes the wrong value.
-4. **MODEL FAULT.**  A floating-point operand at address 8 takes its
-   sign from accumulator bit 60 instead of the sign byte, on fetch and on
-   store.  This is against Reference Manual p.80.  The reproducer is
-   `problem_3_fp_address_8_sign`.
+4. **MODEL FAULT, FIXED 2026-11-16.**  A floating-point operand at
+   address 8 took its sign from accumulator bit 60 instead of the sign
+   byte, on fetch and on store.  This is against Reference Manual p.80.
+   The reproducer, `problem_3_fp_address_8_sign`, is registered and
+   passes.
 5. **UNSETTLED.**  A normalized ADD whose sum is non-zero only in the
    low 48 bits.  The model normalizes it.  Manual pp.82 and 87 say the
    result is a zero.  C22-6578's own comment (b) agrees with the model,
    and its comment (a) agrees with the manual.  The reproducer is
    `problem_3_fp_add_low_half_zero`, and `jb_af1c` is the third witness
    to look in.
-6. **MODEL LIMITATION.**  A VFL store into the indicator register, word
-   11, is dropped silently.  `StretchStorage.bsv` documents this as a
-   simplification.  The reproducer is
-   `problem_3_vfl_store_to_indicators`.
+6. **MODEL LIMITATION, LIFTED 2026-11-16.**  A VFL store into the
+   indicator register, word 11, was dropped silently (a documented
+   simplification in `StretchStorage.bsv`).  It now lands in bits 20-63
+   as Reference Manual printed p.37 says.  The reproducer,
+   `problem_3_vfl_store_to_indicators`, is registered and passes.
 
 **Two of the page's claims about its own programs are pinned and hold
 on the model:**
@@ -2102,13 +2104,12 @@ on the model:**
   high.
 * Problem 3.7's "round-off error in the last iteration".
 
-**Held-back checks, to be restored when the model is fixed:**
+**Held-back checks, restored 2026-11-16 with the two fixes:**
 
 * Problem 3.8's 27 checks on signed data.
 * The four 3.9 indicator words.
 
-Both sets are kept as comments in `tests/run_tests.sh` next to their
-decks.
+Both are ordinary checks in `tests/run_tests.sh` again, and pass.
 
 Chapter 4 ("Special Problems", printed p.35 on) has not been started.
 
@@ -2190,7 +2191,10 @@ two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
 * What is checked is the 8-point RULE, 2.724546, not the integral,
   2.723620: the integrand goes as sqrt(x) at 0.
 
-### 4.10 natural logarithm, printed pp.44-45 -- `decks/problem_4_10.strap` -- A MODEL BUG
+### 4.10 natural logarithm, printed pp.44-45 -- `decks/problem_4_10.strap` -- A MODEL BUG, FIXED 2026-11-16
+
+**FIXED 2026-11-16: all six arguments pass, and `--known-wrong` is off.**
+The record of the find follows.
 
 Run at six arguments (`tests/verify_problem_4_fp.py 4.10:<x>`), 2 exact
 checks and the PC plus 4 within-bound checks each.  **x = .75, 3, 1E6
@@ -2211,6 +2215,17 @@ and back -- all right.  A fourth printed erratum: sqrt2 printed
 
 ### 4.9 cosine, Method 1, printed pp.42-43 -- `decks/problem_4_9_method1.strap` -- BOTH LOCATION-8 BUGS
 
+**CORRECTED 2026-11-16.**  The operand bug is fixed, and x = -.1's
+`TEMP_A_squared` passes.  The "lost store" was not a store into location
+8.  The printed `SRDN,$L` has no dds, so both assemblers compile it as
+the VFL STORE ROUNDED (code 101101), by C22-6578 printed p.30's rule: "An
+operation which could be either VFL or floating-point is assumed VFL".
+The model does not implement that operation, and it turns OP on.  The FP
+`SRDN(N), $L` stores into location 8 correctly since the fix.
+`repro_fp_store_location8` now pins that form.  The W8 checks stay
+`--known-wrong` while this is OPEN (docs/NEXT.md).  The record of the
+find follows.
+
 `tests/verify_problem_4_fp.py 4.9m1:<x>`, six arguments run, four
 registered (five since 2026-11-16: `1X-2` and `.125`).  `D*(N), $L` squares a negative A to -A**2 (the operand bug of
 4.10), and `SRDN,$L` -- a STORE into location 8 -- is lost, leaving the
@@ -2227,7 +2242,8 @@ those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
-one cause (location 8 as a floating-point operand and as a store),
+one cause (location 8 as a floating-point operand and as a store), both
+FIXED 2026-11-16; the "lost" 4.9 store was the VFL SRD, see above,
 four assembler refusals, six printed errata.**  Not reached: 4.9
 Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
 (bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`

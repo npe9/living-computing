@@ -69,8 +69,12 @@
 !     "convenient to end at the same place").  On the K path the
 !     accumulator is untouched and word 9 keeps what the deck put there.
 !
-! >>> THE COMPARISON INDICATORS THEMSELVES ARE NOT CHECKED: THE MODEL
-! DROPS THE STORE INTO THEM. <<<  ST(BU, 3), $AL changes nothing on
+! FIXED 2026-11-16, AND THE INDICATOR WORD IS NOW CHECKED: a store into
+! word 11 lands in its bits 20-63 (Reference Manual printed p.37,
+! bsv/StretchStorage.bsv indStW).  The paragraph below is the record of
+! the limitation.
+! >>> (UNTIL 2026-11-16) THE COMPARISON INDICATORS THEMSELVES WERE NOT
+! CHECKED: THE MODEL DROPPED THE STORE INTO THEM. <<<  ST(BU, 3), $AL changed nothing on
 ! the model (bsv/StretchStorage.bsv, writeWord: stores to word 11 are a
 ! documented SIMPLIFICATION, dropped silently).  Reproducer:
 ! decks/problem_3_vfl_store_to_indicators.strap; docs/NEXT.md
@@ -90,9 +94,9 @@
 !     A1+1.      05F8000000000000
 !     word 8     002FFFFFFFFFFFF8
 !     word 9     0000000000000004   (100 = RLZ, less)
-!     indicator word, held back: 0000000000000028 (AL; RGZ) -- today
-!       the model shows K's AE (bit 61) instead, since the store that
-!       should replace it is dropped.
+!     indicator word (checked since 2026-11-16): 0000000000000028 (AL; RGZ) -- until
+!       the fix the model showed K's AE (bit 61) instead, since the
+!       store that should replace it was dropped.
 !     PC 70, END.
 !
 ! INJECTION: made on problem_3_9_method2_page_fault.strap, which shares this program.

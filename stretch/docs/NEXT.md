@@ -17376,7 +17376,15 @@ calculator written from the manual
 is what the page lacks.  Nothing to fix here; recorded so that nobody
 "corrects" the check.
 
-### 4. A floating-point operand at address 8 takes its sign from accumulator bit 60 (a model fault)
+### 4. A floating-point operand at address 8 takes its sign from accumulator bit 60 (a model fault) -- FIXED 2026-11-16
+
+**FIXED.**  `StretchExecute.bsv` `fpLoc8Operand` (fetch) and
+`fpStoreToLoc8` (store), Reference Manual printed p.80.  The reproducer
+is registered with the values below as its checks, and they pass.  A
+store to 8 also sets `$SB` bits 4-7, and accumulator bits 60-63 do not
+change.  So R4 = -5 and `$SB` = 0800000000000000.  Problem 3.8's 27
+signed checks are restored.  Injections are in the deck's header.  The
+record follows.
 
     decks/problem_3_fp_address_8_sign.strap     (fourteen statements)
     R1 = 0089000000000008  expected 0089000000000000   (-3 squared at 8.0)
@@ -17424,7 +17432,39 @@ the model is changed: jb_af1c's addition sections
 (decks/fp_arith_f204d.strap, F204D7) test PSH for far-apart exponents,
 and the listing may show the sum it expects.
 
-### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs)
+### 6. A VFL store into the indicator register is dropped (a documented simplification that Problem 3.9 needs) -- FIXED 2026-11-16
+
+**FIXED.**  `StretchStorage.bsv`: `writeWord(11)` now drives a wire,
+`indStW`, and `commitIndicators` merges it into bits 20-63.  The store
+overrides the instruction's own indicator settings there, by Reference
+Manual printed p.37, right column: "The setting of any of the indicators
+20-63 that would normally occur as part of the store operation is
+overridden by this result."  Bits 0-19 "can be read, but not loaded".
+Three things are registered and pass:
+
+* the reproducer, R = 4, IND = 0000000000000128;
+* `decks/repro_cm_indicator_bit.strap`, IND = 0000000000000001 (NM
+  alone; the CM's own MOP and RGZ are overridden, so the 0x121 guessed
+  in its header was wrong);
+* the four held-back 3.9 indicator words.
+
+Injections are in the decks' headers.
+
+**Still open after the fix:**
+
+* **p.37's IF exception.**  "In the execution of the operations BRANCH ON
+  INDICATOR and BRANCH ON BIT when the interruption system is enabled,
+  the actuation of indicator IF that results if a branch is attempted to
+  a protected location is considered to be associated with the
+  instruction at that location".  So IF is on after such an operation,
+  whatever the operation wrote.  This is not modelled specially; BB's
+  fold path is unchanged.
+* **The order in the index half-word stores.**  `SV`/`SC`/`SR`/`SVA`
+  into word 11 fold the store and then apply their own index result
+  indicators.  p.37 says the store's result overrides.  Nothing measured
+  discriminates the two (bsv/README.md, the Word 11 entry).
+
+The record follows.
 
     decks/problem_3_vfl_store_to_indicators.strap   (five statements)
     L(BU, 3), V / ST(BU, 3), $AL / L(BU, 3), $AL / ST(BU, 64), R
@@ -17516,6 +17556,47 @@ assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
   the inner exponent; read e**-x from the program.
 
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
+
+**FIXED 2026-11-16, both directions; ONE PART WAS MISDIAGNOSED.**
+
+* **The fetch.**  `fpLoc8Operand` in `StretchExecute.bsv`.  4.10 passes
+  at all six arguments, and `--known-wrong` is off.
+* **The store.**  `fpStoreToLoc8`, settled from Reference Manual printed
+  p.80, read in the ink.  "The four sign byte bits replace the four
+  low-order bits of the accumulator operand.  Bits 60-63 of the
+  accumulator do not serve as operand bits.  For all floating-point
+  single-precision operations, they remain unchanged. ... This rule
+  applies to operations of both fetch and store type."
+  * **A store to 8 DOES set `$SB`.**  The stored word's bits 60-63 go to
+    sign byte bits 4-7, its bits 0-59 go to accumulator 0-59, and
+    accumulator bits 60-63 and the zone bits 0-3 are unchanged.
+  * p.96's "unless used as the effective address" is this case.
+  * The `...EB78` this section wanted read word 8 as an ordinary word.
+    By p.80 it is word 8 = `003B 851E B851 EB7E` and `$SB` =
+    `0800 0000 0000 0000`.
+* **"SRDN, $L is lost" WAS NOT A LOST STORE.**  Neither assembler
+  compiles the printed `SRDN,$L` as a floating-point SRD.  It has no
+  dds, so both compile the VFL STORE ROUNDED, a full word with code
+  101101.  This follows C22-6578 printed p.30, Problem 3.5 comment (c):
+  "An operation which could be either VFL or floating-point is assumed
+  VFL."  The model does not implement the VFL SRD and turns OP on (the
+  probe's trace reads `OP site = vflIntOp/unimplemented-code
+  code=101101`), so word 8 keeps the unrounded accumulator.
+  * The reproducer now uses the floating-point form, `SRDN(N), $L`, and
+    pins p.80's words.
+  * This also explains why SRT seemed to work and SRD did not: `SRT(N),
+    $L` was always written with a dds.
+* **OPEN, a book/assembler question rather than a model one.**  Did
+  STRAP II really compile C22-6578 printed p.43's `SRDN,$L` (4.9 Methods
+  1 and 2) as VFL?  If it did, the printed COSF is wrong in the ink.
+  The alternative is that `$L` carries a floating-point dds in STRAP II.
+  C28-6129's table of `$` symbols would decide it, and so might C22-6531
+  Appendix A p.56, the source of `strap/opcodes.py` SYSTEM_SYMBOLS, which
+  records only (word, bit) for `$L`.  Neither has been read for this;
+  C28-6129 has no text layer.  Until then 4.9m1's W8 checks stay `--known-wrong`,
+  relabelled; the VFL SRD itself is unimplemented and fails loud.
+
+The record of the find, as it was written, follows.
 
 **A model bug, found by C22-6578 Problem 4.10 (printed p.44, "*(N), $L
 'Z**2").**  Reference Manual printed p.37 (PDF 40), "Accumulator and Sign

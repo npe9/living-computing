@@ -161,7 +161,8 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   alone. That is what gives each counter a single writer, without
   which a `CM` in the same arm makes the whole connective a
   scheduling conflict; it is the same simplification this model
-  already makes for the indicator register at word 11.
+  made for the indicator register at word 11 until 2026-11-16 (that
+  one is lifted: see "Word 11" below).
   Verified against C22-6578 Problem 2.2 Method 3's own `CT0110`
   (byte-equality test via XOR) — see `strap/README.md`.
 - **Immediate index arithmetic** — all pocket-card ops except `LVS`,
@@ -773,16 +774,51 @@ dividend and divisor). It passed unchanged on the model before the box,
   VFL sign sat in bit 0 of word 8 over a 127-bit magnitude and word 10
   kept its LOW byte; the diagnostic's full-64-bit checks of the left
   half and its CM1111/CT1100 on `10.0` exposed both.
-- **Word 11 (Indicators): the index half-word stores now write it; the
-  general STORE path still does not.** Real hardware allows writing
-  bits 20-63 directly (Reference Card footnote c). The execute stage
-  still owns the single per-instruction write to `indicators` (see
-  "Toolchain"), so `st.writeWord(11)` remains a no-op; instead the four
-  index half-word stores -- `SV`, `SC`, `SR` and `SVA` -- FOLD their
-  half-word into the `ind` value that write uses, via
-  `isIndicatorHW`/`foldIndicatorHW` in `StretchExecute.bsv`. The `BB`
-  arm already did this for a single bit. Other store-type instructions
-  targeting word 11 are still no-ops.
+- ~~**Location 8 as a floating-point address is an ordinary word.**~~
+  **FIXED 2026-11-16.** Reference Manual printed p.80: "in
+  floating-point instructions when address 8 is used as the effective
+  operand address, accumulator bit positions 0-59 and sign byte register
+  bit positions 4-7 are used as the operand. ... Bits 60-63 of the
+  accumulator do not serve as operand bits. For all floating-point
+  single-precision operations, they remain unchanged. ... This rule
+  applies to operations of both fetch and store type." The fetch is
+  `fpLoc8Operand` (the word still makes its storage round trip, so no
+  timing moved). The store is `fpStoreToLoc8`, a rewrite of the
+  `FpCommit` record into `accLeft`/`accSign` fields, so each register
+  still takes one write. A store to 8 therefore sets `$SB` bits 4-7.
+  Reproducers: `decks/problem_3_fp_address_8_sign.strap`,
+  `repro_fp_operand_location8.strap` and `repro_fp_store_location8.strap`.
+  The witnesses are C22-6578 Problems 3.8 and 4.10. VFL operations on 8
+  are untouched: p.80, "In operations other than floating point, the
+  contents of the left half of the accumulator, bit positions 0-63,
+  participate".
+- ~~**Word 11 (Indicators): the general STORE path does not write
+  it.**~~ **LIFTED 2026-11-16.** Reference Manual printed p.37: bits
+  0-19 "can be read, but not loaded. Any attempt to store into these
+  positions has no effect. Bit positions 20-63 may either be read or
+  loaded", and a store's result in 20-63 is what it would be on an
+  ordinary word holding the indicators at the start of the
+  instruction -- "The setting of any of the indicators 20-63 that
+  would normally occur as part of the store operation is overridden by
+  this result." `st.writeWord(11)` now sets a wire (`indStW`) that
+  `commitIndicators` merges over the instruction's own
+  `setIndicatorBits` value in model bits 43:0, before TS and the I/O
+  report are OR-ed into 0-19. Every store path that ends in
+  `writeWord` reaches it: the VFL `ST` (C22-6578 Problem 3.9's
+  `ST(BU, 3), $AL`, `decks/problem_3_vfl_store_to_indicators.strap`),
+  the `CM` connective (MCP printed p.356 line 33,
+  `CM1111(BU,1),$IND.63`, `decks/repro_cm_indicator_bit.strap`), FP
+  stores. A VFL field CROSSING into or out of word 11 is still
+  refused (a crossing tail below word 32 is; see the crossing-field `ST` entry below), and
+  so is loud, not lost.
+
+  The four index half-word stores -- `SV`, `SC`, `SR` and `SVA` --
+  and `BB` and `Z` keep their older shape: they FOLD the store into
+  the `ind` value the instruction writes, via
+  `isIndicatorHW`/`foldIndicatorHW` in `StretchExecute.bsv`, and never
+  call `writeWord(11)`. Their order differs from p.37 in one case,
+  noted below (the index result indicators are applied AFTER the
+  fold); nothing measured discriminates it.
 
   Driven out by ja_ax1a p.25's IBIN35 block
   (`decks/ibox1_bind_ind.strap`), which sets XL by hand --

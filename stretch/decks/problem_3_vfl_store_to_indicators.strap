@@ -22,7 +22,29 @@
 ! comparison operations").
 !     R expected 0000000000000004   (by hand)
 !
-! OBSERVED ON THE MODEL 2026-11-16, ASM=strap2: R = 0 (FAIL), PC=72
+! FIXED 2026-11-16 (bsv/StretchStorage.bsv, writeWord(11) -> indStW,
+! merged by commitIndicators).  Reference Manual printed p.37, right
+! column, read in the ink: "Bit positions 0-19 of the indicator register
+! can be read, but not loaded.  Any attempt to store into these positions
+! has no effect.  Bit positions 20-63 may either be read or loaded. ...
+! When an instruction calls for storing into any part of the indicator
+! register, the result in bits 20-63 of the indicator register will be
+! the same as if this operation had acted upon any other storage location
+! whose initial contents were the same as those of the indicator register
+! at the start of execution of the instruction.  The setting of any of the
+! indicators 20-63 that would normally occur as part of the store
+! operation is overridden by this result."
+! Registered: R = 4, and word 11 = 0000000000000128 at the halt -- AL
+! (60) from the store, MOP (55) and RGZ (58) from the last ST of 4.
+! INJECTION 3, measured 2026-11-16 (writeWord(11) back to noAction), over
+! the 28 location-8/indicator suite lines: FAILED this deck's checks
+! (problem_3_vfl_store_to_indicators R = 0 and IND = 0000000000000140;
+! repro_cm_indicator_bit IND = 0000000000000120), and the IND checks of
+! four 3.9 decks: method1_less 0x20, method1_equal 0x2000000020,
+! method1_greater 0x1000000020, method2_less 0x24.  Nothing else
+! (method2_page_fault's IND, set by K alone, passes either way).
+!
+! OBSERVED ON THE MODEL BEFORE THE FIX, 2026-11-16, ASM=strap2: R = 0 (FAIL), PC=72
 ! (reached, PASS).  Indicator word 0000000000000140: bit 55, MOP, and
 ! bit 57, RZ -- the reload found three zero bits; AL never came on.
 ! R is reserved DR(N) so that it is a whole word.

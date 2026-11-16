@@ -17,6 +17,15 @@
 !   PROD = 0038 0000 0000 0008, -1/4.   OBSERVED 2026-11-16.
 ! The control, +1/2 squared, is right either way, 0038 0000 0000 0000.
 !
+! FIXED 2026-11-16 (bsv/StretchExecute.bsv fpLoc8Operand): PROD =
+! 0038 0000 0000 0000, registered as a normal check and passing.
+! INJECTION 1, measured 2026-11-16 (fpLoc8Operand returning the word
+! unchanged, the old fetch), over the 28 location-8/indicator suite lines:
+! FAILED R1 and R2 here (0089000000000008 each); the operand repro's PROD
+! (0038000000000008); Problem 3.8 signed, all 27 arithmetic checks; 4.10
+! at 2.5, .001 and 1E-300, the three series checks each; 4.9m1 at -.1,
+! TEMP_A_squared (its known-wrong set changed).  Nothing else.
+!
 ! The halves are written "1X0" (1 = .5 x 2**1, X replacing the exponent
 ! with 0; C28-6129 printed p.27), which is exactly 1/2.  ".5" is not:
 ! STRAP II's DNUM makes it 5 x (1/10 truncated), one unit below 1/2 in
