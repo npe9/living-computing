@@ -123,6 +123,19 @@ made to a COPY with --file=; the original was `cmp`-clean after.
    1) against (48, 0, 0); 'vfwd' (95, 0, 1) against (96, 0, 0); PDF 165's
    SUM.
 
+MEASURED INJECTIONS, 2026-11-16, on the VFL immediate pages (PDF 171-189),
+same method.
+
+ * PDF 171 (+I), first block, (B,32,1) ni_imm 6.76 -> 6.16: four failures:
+   'immf' (78, 7, 11) against (79, 7, 10); 'index' (47, 0, 1) against
+   (48, 0, 0); 'invert' (45, 2, 1) against (46, 2, 0); PDF 171's SUM.
+   'immn' does NOT fail: the pair (PDF 116's 6.60) was already far, and
+   stays far -- a far-to-far change is invisible to a count.
+ * PDF 188 (CI0011, one block, no invert), (BU,16,4) ix_imm 6.00 -> 6.60:
+   four failures: 'immf' (61, 2, 7) against (62, 2, 6); 'immn' (62, 1, 7)
+   against (63, 1, 6); 'index' (33, 1, 1) against (34, 1, 0); PDF 188's
+   SUM.
+
     python3 tests/check_atlas_data.py          # the check
     python3 tests/check_atlas_data.py -v       # plus per-column grid census
     python3 tests/check_atlas_data.py --tally  # print TALLY and SUM lines
@@ -205,12 +218,14 @@ VFL_FWD_OFFSET = 27
 # OPERAND.  PDF 114: "The 24 bit address of the instruction contained the
 # equivalent of the standard operand (444...4)16.  There is, of course, no
 # case of forwarding with immediate operands."  The volume does NOT say how
-# these figures relate to the memory-operand pages.  What is OBSERVED is
-# that they track the forwarding page's EXTERNL OPERAND column (PDF 171
-# (B,8,1) 4.96 = PDF 143's, not PDF 116's 4.80), so the immediate column is
-# paired with the same instruction's EXTERNL OPERAND column on both runs:
-# 'immf' against the forwarding page, 'immn' against the no-forwarding page.
-# Both are counted, neither is required to agree.
+# these figures relate to the memory-operand pages, so the immediate column
+# is paired with the same instruction's EXTERNL OPERAND column on BOTH
+# runs: 'immf' against the forwarding page, 'immn' against the no-forwarding
+# page.  Both are counted, neither is required to agree, and neither fits
+# throughout: on +I the forwarding page fits better (PDF 171 (B,8,1) 4.96 =
+# PDF 143's, not PDF 116's 4.80); over all 19 pages 'immn' has more exact
+# pairs (929 of 1,600 against 731), and on the compares KI..KFEI neither fits
+# (the immediate figure is lower, e.g. 3.61 against 4.20).
 IMM_BASE = {
     "+I": "+", "+MGI": "+MG", "LI": "L", "LWFI": "LWF", "LFTI": "LFT",
     "LTRSI": "LTRS", "KI": "K", "KRI": "KR", "KEI": "KE", "KFI": "KF",

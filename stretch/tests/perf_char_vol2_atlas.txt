@@ -2,8 +2,8 @@
 # per-instruction timing atlas, transcribed.
 #
 #   docs/7030_Performance_Characteristics_Vol2_Mar61.pdf, PDF pages 37-189.
-#   120 of the 139 table pages are transcribed here; the #KIND lines below say
-#   which, and which remain.
+#   All 139 table pages are transcribed here; the #KIND lines below say
+#   which pages are tables and which are text.
 #   Reader: tests/atlas_oracle.py (load_atlas).  Self-check:
 #   tests/check_atlas_data.py.  Prose: docs/atlas_oracle.md.
 #
@@ -14,7 +14,8 @@
 # 2026-11-16 (300 dpi table crops; every column whose last digit alternates
 # -- 3.60/3.61, 2.70/2.71, 4.36/4.37 -- re-read as a zoomed column strip;
 # each page's instruction name checked against its printed title).
-# The VFL sheets with forwarding, PDF 143-169, were read the same way on
+# The VFL sheets with forwarding, PDF 143-169, and the immediate sheets,
+# PDF 171-189, were read the same way on
 # 2026-11-16 by independent readers working from 300 dpi tiles and crops of
 # the page images only (no OCR, no text layer, no other sheet open), each
 # page re-read column by column on a second cut; every pair that broke its
@@ -253,25 +254,25 @@
 #KIND	168	transcribed	VFL	VFL INSTRUCTION CM0101, FORWARDING, DIRECT ADDRESSING
 #KIND	169	transcribed	VFL	VFL INSTRUCTION CT0111, FORWARDING, DIRECT ADDRESSING
 #KIND	170	other	dump	TIMING TEST: a listing of octal words (C and P cards), no times; printed 163
-#KIND	171	remaining	VFL	VFL INSTRUCTION +I, IMMEDIATE ADDRESSING
-#KIND	172	remaining	VFL	VFL INSTRUCTION +MGI, IMMEDIATE ADDRESSING
-#KIND	173	remaining	VFL	VFL INSTRUCTION LI, IMMEDIATE ADDRESSING
-#KIND	174	remaining	VFL	VFL INSTRUCTION LWFI, IMMEDIATE ADDRESSING
-#KIND	175	remaining	VFL	VFL INSTRUCTION LFTI, IMMEDIATE ADDRESSING
-#KIND	176	remaining	VFL	VFL INSTRUCTION LTRSI, IMMEDIATE ADDRESSING
-#KIND	177	remaining	VFL	VFL INSTRUCTION KI, IMMEDIATE ADDRESSING
-#KIND	178	remaining	VFL	VFL INSTRUCTION KRI, IMMEDIATE ADDRESSING
-#KIND	179	remaining	VFL	VFL INSTRUCTION KEI, IMMEDIATE ADDRESSING
-#KIND	180	remaining	VFL	VFL INSTRUCTION KFI, IMMEDIATE ADDRESSING
-#KIND	181	remaining	VFL	VFL INSTRUCTION KFRI, IMMEDIATE ADDRESSING
-#KIND	182	remaining	VFL	VFL INSTRUCTION KFEI, IMMEDIATE ADDRESSING
-#KIND	183	remaining	VFL	VFL INSTRUCTION *I, IMMEDIATE ADDRESSING
-#KIND	184	remaining	VFL	VFL INSTRUCTION /I, IMMEDIATE ADDRESSING
-#KIND	185	remaining	VFL	VFL INSTRUCTION *I+, IMMEDIATE ADDRESSING
-#KIND	186	remaining	VFL	VFL INSTRUCTION LCVI, IMMEDIATE ADDRESSING
-#KIND	187	remaining	VFL	VFL INSTRUCTION LTRCVI, IMMEDIATE ADDRESSING
-#KIND	188	remaining	VFL	VFL INSTRUCTION CI0011, IMMEDIATE ADDRESSING
-#KIND	189	remaining	VFL	VFL INSTRUCTION CTI0111, IMMEDIATE ADDRESSING
+#KIND	171	transcribed	VFL	VFL INSTRUCTION +I, IMMEDIATE ADDRESSING
+#KIND	172	transcribed	VFL	VFL INSTRUCTION +MGI, IMMEDIATE ADDRESSING
+#KIND	173	transcribed	VFL	VFL INSTRUCTION LI, IMMEDIATE ADDRESSING
+#KIND	174	transcribed	VFL	VFL INSTRUCTION LWFI, IMMEDIATE ADDRESSING
+#KIND	175	transcribed	VFL	VFL INSTRUCTION LFTI, IMMEDIATE ADDRESSING
+#KIND	176	transcribed	VFL	VFL INSTRUCTION LTRSI, IMMEDIATE ADDRESSING
+#KIND	177	transcribed	VFL	VFL INSTRUCTION KI, IMMEDIATE ADDRESSING
+#KIND	178	transcribed	VFL	VFL INSTRUCTION KRI, IMMEDIATE ADDRESSING
+#KIND	179	transcribed	VFL	VFL INSTRUCTION KEI, IMMEDIATE ADDRESSING
+#KIND	180	transcribed	VFL	VFL INSTRUCTION KFI, IMMEDIATE ADDRESSING
+#KIND	181	transcribed	VFL	VFL INSTRUCTION KFRI, IMMEDIATE ADDRESSING
+#KIND	182	transcribed	VFL	VFL INSTRUCTION KFEI, IMMEDIATE ADDRESSING
+#KIND	183	transcribed	VFL	VFL INSTRUCTION *I, IMMEDIATE ADDRESSING
+#KIND	184	transcribed	VFL	VFL INSTRUCTION /I, IMMEDIATE ADDRESSING
+#KIND	185	transcribed	VFL	VFL INSTRUCTION *I+, IMMEDIATE ADDRESSING
+#KIND	186	transcribed	VFL	VFL INSTRUCTION LCVI, IMMEDIATE ADDRESSING
+#KIND	187	transcribed	VFL	VFL INSTRUCTION LTRCVI, IMMEDIATE ADDRESSING
+#KIND	188	transcribed	VFL	VFL INSTRUCTION CI0011, IMMEDIATE ADDRESSING
+#KIND	189	transcribed	VFL	VFL INSTRUCTION CTI0111, IMMEDIATE ADDRESSING
 
 
 
@@ -6419,3 +6420,1135 @@ TALLY	index	45	23	2
 TALLY	vfwd	96	7	37
 TALLY	vfwdib	68	2	0
 SUM	350	2885.27
+
+PAGE	pdf=171	printed=164	class=VFL
+HEAD	VFL INSTRUCTION +I | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	+I
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group headed 'IMMED. OPERAND' (keys ni_imm, ix_imm); the other eight columns are headed but blank on every row.
+NOTE	Row labels are (BU,..), (B,..), (DU,..), (D,..) as printed; 24 rows per block.
+NOTE	Printed page number 164 at top right has a short vertical rule beside it (left) and a vertical line at the right end of the heading; layout marks, not figures.
+NOTE	(B,64,1) reads 9.16 in the first block and 9.17 in the INVERT SIGN block (both groups); each read from its own ink.
+BLOCK	-
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.36	4.36
+(BU,16,8)	4.96	4.96
+(BU,32,8)	6.16	6.16
+(BU,48,8)	7.36	7.36
+(BU,64,8)	8.56	8.56
+(B,1,1)	4.20	4.20
+(B,8,1)	4.96	4.96
+(B,16,1)	5.56	5.56
+(B,32,1)	6.76	6.76
+(B,48,1)	7.96	7.96
+(B,64,1)	9.16	9.16
+(DU,4,4)	4.47	4.47
+(DU,8,4)	5.09	5.09
+(DU,16,4)	6.30	6.30
+(DU,32,4)	8.70	8.70
+(DU,48,4)	11.10	11.10
+(DU,64,4)	13.50	13.50
+(D,4,4)	4.20	4.20
+(D,8,4)	5.07	5.07
+(D,16,4)	6.30	6.30
+(D,32,4)	8.70	8.70
+(D,48,4)	11.10	11.10
+(D,64,4)	13.50	13.50
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.36	4.36
+(BU,16,8)	4.96	4.96
+(BU,32,8)	6.16	6.16
+(BU,48,8)	7.36	7.36
+(BU,64,8)	8.56	8.56
+(B,1,1)	4.20	4.20
+(B,8,1)	4.96	4.96
+(B,16,1)	5.56	5.56
+(B,32,1)	6.76	6.76
+(B,48,1)	7.96	7.96
+(B,64,1)	9.17	9.17
+(DU,4,4)	4.47	4.47
+(DU,8,4)	5.09	5.09
+(DU,16,4)	6.30	6.30
+(DU,32,4)	8.70	8.70
+(DU,48,4)	11.10	11.10
+(DU,64,4)	13.50	13.50
+(D,4,4)	4.20	4.20
+(D,8,4)	5.07	5.07
+(D,16,4)	6.30	6.30
+(D,32,4)	8.70	8.70
+(D,48,4)	11.10	11.10
+(D,64,4)	13.50	13.50
+TALLY	immf	79	7	10
+TALLY	immn	46	0	50
+TALLY	index	48	0	0
+TALLY	invert	46	2	0
+SUM	96	688.94
+
+PAGE	pdf=172	printed=165	class=VFL
+HEAD	VFL INSTRUCTION +MGI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	+MGI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group headed 'IMMED. OPERAND' (keys ni_imm, ix_imm); the other eight columns are headed but blank on every row.
+NOTE	Printed page number 165 is at the BOTTOM right of the page (not top right); 165 = PDF-7.
+NOTE	Heading word WORD is smudged (reads like WCRD); taken as INSTRUCTION AT FULL WORD ADDRESS.
+NOTE	Row labels are (BU,..), (B,..), (DU,..), (D,..) as printed; 24 rows per block.
+NOTE	Small stray specks/dash in the blank ni_ibox column area on row (BU,64,8) of the first block; not a figure.
+BLOCK	-
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.36	4.36
+(BU,16,8)	4.96	4.96
+(BU,32,8)	6.16	6.16
+(BU,48,8)	7.36	7.36
+(BU,64,8)	8.56	8.56
+(B,1,1)	4.20	4.20
+(B,8,1)	4.96	4.96
+(B,16,1)	5.56	5.56
+(B,32,1)	6.76	6.76
+(B,48,1)	7.96	7.96
+(B,64,1)	9.17	9.17
+(DU,4,4)	4.47	4.47
+(DU,8,4)	5.09	5.09
+(DU,16,4)	6.30	6.30
+(DU,32,4)	8.70	8.70
+(DU,48,4)	11.10	11.10
+(DU,64,4)	13.50	13.50
+(D,4,4)	4.20	4.20
+(D,8,4)	5.07	5.07
+(D,16,4)	6.30	6.30
+(D,32,4)	8.70	8.70
+(D,48,4)	11.10	11.10
+(D,64,4)	13.50	13.50
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.80	4.80
+(BU,16,8)	5.40	5.40
+(BU,32,8)	6.60	6.60
+(BU,48,8)	7.80	7.80
+(BU,64,8)	9.00	9.00
+(B,1,1)	4.20	4.20
+(B,8,1)	5.40	5.40
+(B,16,1)	6.00	6.00
+(B,32,1)	7.20	7.20
+(B,48,1)	8.40	8.40
+(B,64,1)	9.60	9.60
+(DU,4,4)	4.80	4.80
+(DU,8,4)	5.40	5.40
+(DU,16,4)	6.60	6.60
+(DU,32,4)	9.00	9.00
+(DU,48,4)	11.41	11.40
+(DU,64,4)	13.80	13.80
+(D,4,4)	4.20	4.20
+(D,8,4)	5.40	5.40
+(D,16,4)	6.60	6.60
+(D,32,4)	9.00	9.00
+(D,48,4)	11.41	11.40
+(D,64,4)	13.80	13.80
+TALLY	immf	48	6	42
+TALLY	immn	52	2	42
+TALLY	index	46	2	0
+TALLY	invert	6	0	42
+SUM	96	704.50
+
+PAGE	pdf=173	printed=166	class=VFL
+HEAD	VFL INSTRUCTION LI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group headed 'IMMED. OPERAND' (keys ni_imm, ix_imm); the other eight columns are headed but blank on every row.
+NOTE	Row labels are (BU,..), (B,..), (DU,..), (D,..) as printed; 24 rows per block. The two blocks read identical figure-for-figure.
+NOTE	Scattered specks in the blank columns (e.g. dots near ni_ibox on (BU,64,8), a dot before 6.00 at ix_imm (DU,16,4) in the INVERT block); not figures.
+BLOCK	-
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.20	4.20
+(BU,16,8)	4.80	4.80
+(BU,32,8)	6.00	6.00
+(BU,48,8)	7.20	7.20
+(BU,64,8)	8.40	8.40
+(B,1,1)	4.20	4.20
+(B,8,1)	4.80	4.80
+(B,16,1)	5.40	5.40
+(B,32,1)	6.60	6.60
+(B,48,1)	7.80	7.80
+(B,64,1)	9.00	9.00
+(DU,4,4)	4.20	4.20
+(DU,8,4)	4.80	4.80
+(DU,16,4)	6.00	6.00
+(DU,32,4)	8.40	8.40
+(DU,48,4)	10.80	10.80
+(DU,64,4)	13.20	13.20
+(D,4,4)	4.20	4.20
+(D,8,4)	4.80	4.80
+(D,16,4)	6.00	6.00
+(D,32,4)	8.40	8.40
+(D,48,4)	10.80	10.80
+(D,64,4)	13.20	13.20
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.20	4.20
+(BU,16,8)	4.80	4.80
+(BU,32,8)	6.00	6.00
+(BU,48,8)	7.20	7.20
+(BU,64,8)	8.40	8.40
+(B,1,1)	4.20	4.20
+(B,8,1)	4.80	4.80
+(B,16,1)	5.40	5.40
+(B,32,1)	6.60	6.60
+(B,48,1)	7.80	7.80
+(B,64,1)	9.00	9.00
+(DU,4,4)	4.20	4.20
+(DU,8,4)	4.80	4.80
+(DU,16,4)	6.00	6.00
+(DU,32,4)	8.40	8.40
+(DU,48,4)	10.80	10.80
+(DU,64,4)	13.20	13.20
+(D,4,4)	4.20	4.20
+(D,8,4)	4.80	4.80
+(D,16,4)	6.00	6.00
+(D,32,4)	8.40	8.40
+(D,48,4)	10.80	10.80
+(D,64,4)	13.20	13.20
+TALLY	immf	68	10	18
+TALLY	immn	78	0	18
+TALLY	index	48	0	0
+TALLY	invert	48	0	0
+SUM	96	669.60
+
+PAGE	pdf=174	printed=167	class=VFL
+HEAD	VFL INSTRUCTION LWFI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LWFI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group headed 'IMMED. OPERAND' (keys ni_imm, ix_imm; the first M of IMMED. on the NO INDEXING side is printed broken); the other eight columns are headed but blank on every row.
+NOTE	Printed page number 167 is at the BOTTOM right of the page (not top right); 167 = PDF-7.
+NOTE	Row labels are (BU,..), (B,..), (DU,..), (D,..) as printed; 24 rows per block. Both blocks read identical figure-for-figure, and identical to PDF 173 (LI).
+BLOCK	-
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.20	4.20
+(BU,16,8)	4.80	4.80
+(BU,32,8)	6.00	6.00
+(BU,48,8)	7.20	7.20
+(BU,64,8)	8.40	8.40
+(B,1,1)	4.20	4.20
+(B,8,1)	4.80	4.80
+(B,16,1)	5.40	5.40
+(B,32,1)	6.60	6.60
+(B,48,1)	7.80	7.80
+(B,64,1)	9.00	9.00
+(DU,4,4)	4.20	4.20
+(DU,8,4)	4.80	4.80
+(DU,16,4)	6.00	6.00
+(DU,32,4)	8.40	8.40
+(DU,48,4)	10.80	10.80
+(DU,64,4)	13.20	13.20
+(D,4,4)	4.20	4.20
+(D,8,4)	4.80	4.80
+(D,16,4)	6.00	6.00
+(D,32,4)	8.40	8.40
+(D,48,4)	10.80	10.80
+(D,64,4)	13.20	13.20
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	4.20	4.20
+(BU,8,8)	4.20	4.20
+(BU,16,8)	4.80	4.80
+(BU,32,8)	6.00	6.00
+(BU,48,8)	7.20	7.20
+(BU,64,8)	8.40	8.40
+(B,1,1)	4.20	4.20
+(B,8,1)	4.80	4.80
+(B,16,1)	5.40	5.40
+(B,32,1)	6.60	6.60
+(B,48,1)	7.80	7.80
+(B,64,1)	9.00	9.00
+(DU,4,4)	4.20	4.20
+(DU,8,4)	4.80	4.80
+(DU,16,4)	6.00	6.00
+(DU,32,4)	8.40	8.40
+(DU,48,4)	10.80	10.80
+(DU,64,4)	13.20	13.20
+(D,4,4)	4.20	4.20
+(D,8,4)	4.80	4.80
+(D,16,4)	6.00	6.00
+(D,32,4)	8.40	8.40
+(D,48,4)	10.80	10.80
+(D,64,4)	13.20	13.20
+TALLY	immf	68	10	18
+TALLY	immn	78	0	18
+TALLY	index	48	0	0
+TALLY	invert	48	0	0
+SUM	96	669.60
+
+PAGE	pdf=175	printed=168	class=VFL
+HEAD	VFL INSTRUCTION LFTI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LFTI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Upper block (B,32,1) INDEXING: the final 0 of 13.20 has a horizontal flaw through it (looks like a barred 0 at zoom); read as 0, not 8 (no pinched waist).
+BLOCK	-
+(BU,1,8)	13.20	13.20
+(BU,8,8)	13.20	13.20
+(BU,16,8)	13.20	13.20
+(BU,32,8)	13.20	13.20
+(BU,48,8)	13.20	13.20
+(BU,64,8)	*01*	*01*
+(B,1,1)	13.20	13.20
+(B,8,1)	13.20	13.20
+(B,16,1)	13.20	13.20
+(B,32,1)	13.20	13.20
+(B,48,1)	13.20	13.20
+(B,64,1)	*01*	*01*
+(DU,4,4)	19.81	19.81
+(DU,8,4)	19.81	19.81
+(DU,16,4)	19.81	19.81
+(DU,32,4)	19.81	19.81
+(DU,48,4)	19.81	19.81
+(DU,64,4)	24.61	24.61
+(D,4,4)	19.81	19.81
+(D,8,4)	19.81	19.81
+(D,16,4)	19.81	19.81
+(D,32,4)	19.81	19.81
+(D,48,4)	19.81	19.81
+(D,64,4)	24.61	24.61
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.20	13.20
+(BU,8,8)	13.20	13.20
+(BU,16,8)	13.20	13.20
+(BU,32,8)	13.20	13.20
+(BU,48,8)	13.20	13.20
+(BU,64,8)	*01*	*01*
+(B,1,1)	13.20	13.20
+(B,8,1)	13.20	13.20
+(B,16,1)	13.20	13.20
+(B,32,1)	13.20	13.20
+(B,48,1)	13.20	13.20
+(B,64,1)	*01*	*01*
+(DU,4,4)	19.81	19.81
+(DU,8,4)	19.81	19.81
+(DU,16,4)	19.81	19.81
+(DU,32,4)	19.81	19.81
+(DU,48,4)	19.81	19.81
+(DU,64,4)	24.61	24.61
+(D,4,4)	19.81	19.81
+(D,8,4)	19.81	19.81
+(D,16,4)	19.81	19.81
+(D,32,4)	19.81	19.81
+(D,48,4)	19.81	19.81
+(D,64,4)	24.61	24.61
+TALLY	immf	86	2	0
+TALLY	immn	85	3	0
+TALLY	index	44	0	0
+TALLY	invert	44	0	0
+SUM	88	1517.28
+
+PAGE	pdf=176	printed=169	class=VFL
+HEAD	VFL INSTRUCTION LTRSI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LTRSI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Printed page number 169 is at the BOTTOM right of the page on this sheet (not the top right).
+BLOCK	-
+(BU,1,8)	13.20	13.20
+(BU,8,8)	13.20	13.20
+(BU,16,8)	13.20	13.20
+(BU,32,8)	13.20	13.20
+(BU,48,8)	13.20	13.20
+(BU,64,8)	*01*	*01*
+(B,1,1)	13.20	13.20
+(B,8,1)	13.20	13.20
+(B,16,1)	13.20	13.20
+(B,32,1)	13.20	13.20
+(B,48,1)	13.20	13.20
+(B,64,1)	*01*	*01*
+(DU,4,4)	19.81	19.81
+(DU,8,4)	19.81	19.81
+(DU,16,4)	19.81	19.81
+(DU,32,4)	19.81	19.81
+(DU,48,4)	19.81	19.81
+(DU,64,4)	24.61	24.61
+(D,4,4)	19.81	19.81
+(D,8,4)	19.81	19.81
+(D,16,4)	19.81	19.81
+(D,32,4)	19.81	19.81
+(D,48,4)	19.81	19.81
+(D,64,4)	24.61	24.61
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.20	13.20
+(BU,8,8)	13.20	13.20
+(BU,16,8)	13.20	13.20
+(BU,32,8)	13.20	13.20
+(BU,48,8)	13.20	13.20
+(BU,64,8)	*01*	*01*
+(B,1,1)	13.20	13.20
+(B,8,1)	13.20	13.20
+(B,16,1)	13.20	13.20
+(B,32,1)	13.20	13.20
+(B,48,1)	13.20	13.20
+(B,64,1)	*01*	*01*
+(DU,4,4)	19.81	19.81
+(DU,8,4)	19.81	19.81
+(DU,16,4)	19.81	19.81
+(DU,32,4)	19.81	19.81
+(DU,48,4)	19.81	19.81
+(DU,64,4)	24.61	24.61
+(D,4,4)	19.81	19.81
+(D,8,4)	19.81	19.81
+(D,16,4)	19.81	19.81
+(D,32,4)	19.81	19.81
+(D,48,4)	19.81	19.81
+(D,64,4)	24.61	24.61
+TALLY	immf	85	3	0
+TALLY	immn	83	5	0
+TALLY	index	44	0	0
+TALLY	invert	44	0	0
+SUM	88	1517.28
+
+PAGE	pdf=177	printed=170	class=VFL
+HEAD	VFL INSTRUCTION KI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	4.20	4.20
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	13	83
+TALLY	immn	29	0	67
+TALLY	index	25	0	23
+TALLY	invert	26	0	22
+SUM	96	423.99
+
+PAGE	pdf=178	printed=171	class=VFL
+HEAD	VFL INSTRUCTION KRI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KRI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Printed page number 171 is at the BOTTOM right of the page (not the top right).
+NOTE	Dark dash-like marks along the top-left edge above the heading (scan/punch artefact, not table content).
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	4.20	4.20
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	13	83
+TALLY	immn	29	0	67
+TALLY	index	25	0	23
+TALLY	invert	26	0	22
+SUM	96	423.99
+
+PAGE	pdf=179	printed=172	class=VFL
+HEAD	VFL INSTRUCTION KEI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KEI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Upper block: a faint thin hand-drawn (pencil?) line runs diagonally through the INDEXING IMMED. OPERAND column from about (B,16,1) to (D,4,4), crossing the figures 3.92 (B,16,1), 4.20 (B,32,1), 3.92 (DU,8,4)/(DU,16,4), 4.20 (DU,32,4), 6.60 (DU,48,4); a second faint curved line in the NO INDEXING blank columns near (B,8,1)-(B,64,1). The figures under the line are still legible and read as printed.
+NOTE	Lower block (B,48,1) NO INDEXING 4.20: a small stray mark sits on the decimal point; figure legible as 4.20.
+NOTE	Upper block (B,16,1) INDEXING 3.92: the pencil line passes vertically through the leading 3 (zoomed); the 3's top hook and lower bowl are visible, so read as 3.92, not 1.92.
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	4.20	4.20
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	4.20	4.20
+(D,8,4)	4.20	4.20
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	13	83
+TALLY	immn	29	0	67
+TALLY	index	25	0	23
+TALLY	invert	26	0	22
+SUM	96	423.99
+
+PAGE	pdf=180	printed=173	class=VFL
+HEAD	VFL INSTRUCTION KFI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KFI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Printed page number 173 is at the BOTTOM right of the page (not the top right).
+NOTE	Pattern differs from pdf 177-179 (KI/KRI/KEI): here (B,8,1) and (D,8,4) are 3.61/3.92 (not 4.20), and in the INVERT block (B,8,1) and (D,8,4) are also 3.61/3.92 -- read from ink, rechecked at tile resolution.
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	8	88
+TALLY	immn	33	0	63
+TALLY	index	20	0	28
+TALLY	invert	28	0	20
+SUM	96	419.64
+
+PAGE	pdf=181	printed=174	class=VFL
+HEAD	VFL INSTRUCTION KFRI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KFRI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); all other columns blank on every row.
+NOTE	Lower block: two faint small marks in the left margin beside the (BU,48,8) and (B,1,1) labels (smudges, not content).
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	8	88
+TALLY	immn	33	0	63
+TALLY	index	20	0	28
+TALLY	invert	28	0	20
+SUM	96	419.64
+
+PAGE	pdf=182	printed=175	class=VFL
+HEAD	VFL INSTRUCTION KFEI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	KFEI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	INVERT SIGN block (BU,48,8) ix_imm: a vertical pen/pencil stroke runs through the 9 of 3.92; the printed figure reads 3.92.
+BLOCK	-
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	4.80	4.80
+(BU,64,8)	6.00	6.00
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	3.61	3.92
+(B,32,1)	4.20	4.20
+(B,48,1)	5.40	5.40
+(B,64,1)	6.60	6.60
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	4.20	4.20
+(DU,48,4)	6.60	6.60
+(DU,64,4)	9.00	9.00
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	6.60	6.60
+(D,64,4)	9.00	9.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,8)	3.61	3.92
+(BU,32,8)	3.61	3.92
+(BU,48,8)	3.61	3.92
+(BU,64,8)	3.61	3.92
+(B,1,1)	3.61	3.92
+(B,8,1)	3.61	3.92
+(B,16,1)	4.20	4.20
+(B,32,1)	4.20	4.20
+(B,48,1)	4.20	4.20
+(B,64,1)	4.20	4.20
+(DU,4,4)	3.61	3.92
+(DU,8,4)	3.61	3.92
+(DU,16,4)	3.61	3.92
+(DU,32,4)	3.61	3.92
+(DU,48,4)	3.61	3.92
+(DU,64,4)	3.61	3.92
+(D,4,4)	3.61	3.92
+(D,8,4)	3.61	3.92
+(D,16,4)	4.20	4.20
+(D,32,4)	4.20	4.20
+(D,48,4)	4.20	4.20
+(D,64,4)	4.20	4.20
+TALLY	immf	0	8	88
+TALLY	immn	33	0	63
+TALLY	index	20	0	28
+TALLY	invert	28	0	20
+SUM	96	419.64
+
+PAGE	pdf=183	printed=176	class=VFL
+HEAD	VFL INSTRUCTION *I | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	*I
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Only the 12 binary rows (BU,1,8)..(B,64,1) are printed in each block; no decimal rows. Rest of page is empty ruled lines. No margin marks.
+NOTE	Printed page number 176 is at the top right of this page.
+BLOCK	-
+(BU,1,8)	10.80	10.80
+(BU,8,8)	10.80	10.80
+(BU,16,8)	10.80	10.80
+(BU,32,8)	10.80	10.80
+(BU,48,8)	10.80	10.80
+(BU,64,8)	11.40	11.40
+(B,1,1)	11.40	11.41
+(B,8,1)	11.40	11.40
+(B,16,1)	11.40	11.40
+(B,32,1)	11.41	11.40
+(B,48,1)	11.40	11.41
+(B,64,1)	12.01	12.00
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	10.80	10.80
+(BU,8,8)	10.80	10.80
+(BU,16,8)	10.80	10.80
+(BU,32,8)	10.80	10.80
+(BU,48,8)	10.80	10.80
+(BU,64,8)	11.40	11.40
+(B,1,1)	11.40	11.40
+(B,8,1)	11.40	11.40
+(B,16,1)	11.40	11.40
+(B,32,1)	11.41	11.40
+(B,48,1)	11.40	11.40
+(B,64,1)	12.00	12.01
+TALLY	immf	40	8	0
+TALLY	immn	41	7	0
+TALLY	index	18	6	0
+TALLY	invert	20	4	0
+SUM	48	537.66
+
+PAGE	pdf=184	printed=177	class=VFL
+HEAD	VFL INSTRUCTION /I | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	/I
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Only the 12 binary rows (BU,1,8)..(B,64,1) are printed in each block; no decimal rows. Rest of page is empty ruled lines. No margin marks.
+NOTE	Rows (BU,1,8) and (B,1,1) print the indicator mark *24* instead of a time, in both columns of both blocks.
+NOTE	Twins that differ: upper block (BU,16,8) ni 21.00 vs ix 21.01; INVERT SIGN block (B,8,1) ni 21.01 vs ix 21.00 (both checked at 150% zoom).
+BLOCK	-
+(BU,1,8)	*24*	*24*
+(BU,8,8)	20.41	20.41
+(BU,16,8)	21.00	21.01
+(BU,32,8)	22.21	22.21
+(BU,48,8)	23.41	23.41
+(BU,64,8)	24.61	24.61
+(B,1,1)	*24*	*24*
+(B,8,1)	21.01	21.01
+(B,16,1)	21.61	21.61
+(B,32,1)	22.81	22.81
+(B,48,1)	24.01	24.01
+(B,64,1)	25.21	25.21
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	*24*	*24*
+(BU,8,8)	20.41	20.41
+(BU,16,8)	21.01	21.01
+(BU,32,8)	22.21	22.21
+(BU,48,8)	23.41	23.41
+(BU,64,8)	24.61	24.61
+(B,1,1)	*24*	*24*
+(B,8,1)	21.01	21.00
+(B,16,1)	21.61	21.61
+(B,32,1)	22.81	22.81
+(B,48,1)	24.01	24.01
+(B,64,1)	25.21	25.21
+TALLY	immf	0	0	36
+TALLY	immn	0	0	36
+TALLY	index	18	2	0
+TALLY	invert	18	2	0
+SUM	40	905.18
+
+PAGE	pdf=185	printed=178	class=VFL
+HEAD	VFL INSTRUCTION *I+ | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	*I+
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Only the 12 binary rows (BU,1,8)..(B,64,1) are printed in each block; no decimal rows. Rest of page is empty ruled lines. No PF or other margin marks found (right margin checked at full resolution).
+NOTE	Printed page number 178 is at the top right of this page.
+BLOCK	-
+(BU,1,8)	13.80	13.80
+(BU,8,8)	18.01	18.01
+(BU,16,8)	18.61	18.61
+(BU,32,8)	19.81	19.81
+(BU,48,8)	21.61	21.61
+(BU,64,8)	22.81	22.81
+(B,1,1)	14.40	14.41
+(B,8,1)	18.61	18.61
+(B,16,1)	19.21	19.21
+(B,32,1)	20.41	20.41
+(B,48,1)	22.21	22.21
+(B,64,1)	23.41	23.41
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	13.80	13.80
+(BU,8,8)	18.01	18.01
+(BU,16,8)	18.61	18.61
+(BU,32,8)	19.81	19.81
+(BU,48,8)	21.61	21.61
+(BU,64,8)	22.81	22.81
+(B,1,1)	14.40	14.41
+(B,8,1)	18.61	18.61
+(B,16,1)	19.21	19.21
+(B,32,1)	20.41	20.41
+(B,48,1)	22.21	22.21
+(B,64,1)	23.41	23.41
+TALLY	immf	5	3	40
+TALLY	immn	4	4	40
+TALLY	index	22	2	0
+TALLY	invert	24	0	0
+SUM	48	931.62
+
+PAGE	pdf=186	printed=179	class=VFL
+HEAD	VFL INSTRUCTION LCVI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LCVI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Twins that differ, upper block: (BU,16,8) 17.40/17.41, (BU,48,8) 39.01/39.02, (B,8,1) 11.40/11.41, (DU,64,4) 36.62/36.61. INVERT SIGN block: (B,8,1) 11.40/11.41.
+BLOCK	-
+(BU,1,8)	6.00	6.00
+(BU,8,8)	11.40	11.40
+(BU,16,8)	17.40	17.41
+(BU,32,8)	28.21	28.21
+(BU,48,8)	39.01	39.02
+(BU,64,8)	50.42	50.42
+(B,1,1)	4.20	4.20
+(B,8,1)	11.40	11.41
+(B,16,1)	16.80	16.80
+(B,32,1)	28.21	28.21
+(B,48,1)	39.01	39.01
+(B,64,1)	50.42	50.42
+(DU,4,4)	23.41	23.41
+(DU,8,4)	24.61	24.61
+(DU,16,4)	26.41	26.41
+(DU,32,4)	30.01	30.01
+(DU,48,4)	33.01	33.01
+(DU,64,4)	36.62	36.61
+(D,4,4)	22.21	22.21
+(D,8,4)	23.41	23.41
+(D,16,4)	25.21	25.21
+(D,32,4)	28.21	28.21
+(D,48,4)	31.81	31.81
+(D,64,4)	35.41	35.41
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	6.00	6.00
+(BU,8,8)	11.40	11.40
+(BU,16,8)	17.41	17.41
+(BU,32,8)	28.21	28.21
+(BU,48,8)	39.01	39.01
+(BU,64,8)	50.42	50.42
+(B,1,1)	4.20	4.20
+(B,8,1)	11.40	11.41
+(B,16,1)	16.80	16.80
+(B,32,1)	28.21	28.21
+(B,48,1)	39.01	39.01
+(B,64,1)	50.42	50.42
+(DU,4,4)	23.41	23.41
+(DU,8,4)	24.61	24.61
+(DU,16,4)	26.41	26.41
+(DU,32,4)	30.01	30.01
+(DU,48,4)	33.01	33.01
+(DU,64,4)	36.61	36.61
+(D,4,4)	22.21	22.21
+(D,8,4)	23.41	23.41
+(D,16,4)	25.21	25.21
+(D,32,4)	28.21	28.21
+(D,48,4)	31.81	31.81
+(D,64,4)	35.41	35.41
+TALLY	immf	72	22	2
+TALLY	immn	83	11	2
+TALLY	index	43	5	0
+TALLY	invert	45	3	0
+SUM	96	2571.27
+
+PAGE	pdf=187	printed=180	class=VFL
+HEAD	VFL INSTRUCTION LTRCVI | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	LTRCVI
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Printed page number 180 is at the top right of this page. Read from own crops mine-187a/b.png; second pass against tiles t187Un/Ux/Ln/Lx agreed on all cells.
+NOTE	Twins that differ, upper block: (BU,8,8) 11.41/11.40, (B,1,1) 6.62/6.63, (B,8,1) 11.41/11.40, (B,48,1) 39.62/39.61, (DU,64,4) 35.42/35.41, (D,64,4) 35.42/35.41. INVERT SIGN block: (B,1,1) 6.62/6.63, (B,8,1) 11.41/11.40, (B,48,1) 39.61/39.62.
+BLOCK	-
+(BU,1,8)	7.22	7.22
+(BU,8,8)	11.41	11.40
+(BU,16,8)	16.20	16.20
+(BU,32,8)	25.81	25.81
+(BU,48,8)	39.62	39.62
+(BU,64,8)	51.02	51.02
+(B,1,1)	6.62	6.63
+(B,8,1)	11.41	11.40
+(B,16,1)	16.20	16.20
+(B,32,1)	25.81	25.81
+(B,48,1)	39.62	39.61
+(B,64,1)	51.02	51.02
+(DU,4,4)	30.61	30.61
+(DU,8,4)	30.61	30.61
+(DU,16,4)	30.61	30.61
+(DU,32,4)	30.61	30.61
+(DU,48,4)	30.61	30.61
+(DU,64,4)	35.42	35.41
+(D,4,4)	30.61	30.61
+(D,8,4)	30.61	30.61
+(D,16,4)	30.61	30.61
+(D,32,4)	30.61	30.61
+(D,48,4)	30.61	30.61
+(D,64,4)	35.42	35.41
+BLOCK	INVERT SIGN OF INSTRUCTION
+(BU,1,8)	7.22	7.22
+(BU,8,8)	11.40	11.40
+(BU,16,8)	16.20	16.20
+(BU,32,8)	25.81	25.81
+(BU,48,8)	39.62	39.62
+(BU,64,8)	51.02	51.02
+(B,1,1)	6.62	6.63
+(B,8,1)	11.41	11.40
+(B,16,1)	16.20	16.20
+(B,32,1)	25.81	25.81
+(B,48,1)	39.61	39.62
+(B,64,1)	51.02	51.02
+(DU,4,4)	30.61	30.61
+(DU,8,4)	30.61	30.61
+(DU,16,4)	30.61	30.61
+(DU,32,4)	30.61	30.61
+(DU,48,4)	30.61	30.61
+(DU,64,4)	35.41	35.41
+(D,4,4)	30.61	30.61
+(D,8,4)	30.61	30.61
+(D,16,4)	30.61	30.61
+(D,32,4)	30.61	30.61
+(D,48,4)	30.61	30.61
+(D,64,4)	35.41	35.41
+TALLY	immf	72	16	8
+TALLY	immn	75	13	8
+TALLY	index	39	9	0
+TALLY	invert	43	5	0
+SUM	96	2715.49
+
+PAGE	pdf=188	printed=181	class=VFL
+HEAD	VFL INSTRUCTION CI0011 | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	CI0011
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Connective page: one uncaptioned block of 35 rows varying byte size, no INVERT SIGN block. Rows absent from the print: (BU,48,1) (BU,48,2) (BU,64,1) (BU,64,2) (BU,64,3); (BU,8,*) (BU,16,*) (BU,32,*) have all byte sizes 1-8, (BU,48,*) starts at byte size 3, (BU,64,*) at byte size 4. Rest of page is empty ruled lines.
+NOTE	Mnemonic read as CI0011 (letters C I, digits 0011). Twin that differs: (BU,64,5) 11.41/11.40.
+BLOCK	-
+(BU,8,1)	8.40	8.40
+(BU,8,2)	6.00	6.00
+(BU,8,3)	5.40	5.40
+(BU,8,4)	4.80	4.80
+(BU,8,5)	4.80	4.80
+(BU,8,6)	4.80	4.80
+(BU,8,7)	4.80	4.80
+(BU,8,8)	4.20	4.20
+(BU,16,1)	13.20	13.20
+(BU,16,2)	8.40	8.40
+(BU,16,3)	7.20	7.20
+(BU,16,4)	6.00	6.00
+(BU,16,5)	6.00	6.00
+(BU,16,6)	5.40	5.40
+(BU,16,7)	5.40	5.40
+(BU,16,8)	4.80	4.80
+(BU,32,1)	13.20	13.20
+(BU,32,2)	13.20	13.20
+(BU,32,3)	10.20	10.20
+(BU,32,4)	8.40	8.40
+(BU,32,5)	7.80	7.80
+(BU,32,6)	7.20	7.20
+(BU,32,7)	6.60	6.60
+(BU,32,8)	6.00	6.00
+(BU,48,3)	13.20	13.20
+(BU,48,4)	10.80	10.80
+(BU,48,5)	9.60	9.60
+(BU,48,6)	8.40	8.40
+(BU,48,7)	7.80	7.80
+(BU,48,8)	7.20	7.20
+(BU,64,4)	13.20	13.20
+(BU,64,5)	11.41	11.40
+(BU,64,6)	10.20	10.20
+(BU,64,7)	9.60	9.60
+(BU,64,8)	8.40	8.40
+TALLY	immf	62	2	6
+TALLY	immn	63	1	6
+TALLY	index	34	1	0
+SUM	70	564.01
+
+PAGE	pdf=189	printed=182	class=VFL
+HEAD	VFL INSTRUCTION CTI0111 | IMMEDIATE ADDRESSING | OFFSET 0 | INSTRUCTION AT FULL WORD ADDRESS
+INSTR	CTI0111
+COND	forwarding=unstated	addressing=immediate
+COLS	ni_imm	ni_ext_wbx	ni_ibox	ni_int	ni_int_wbx	ix_imm	ix_ext_wbx	ix_ibox	ix_int	ix_int_wbx
+SHOWN	ni_imm	ix_imm
+NOTE	First column of each group is headed "IMMED. OPERAND" (keys ni_imm / ix_imm); the other four columns are blank on every row.
+NOTE	Connective page: one uncaptioned block of 35 rows varying byte size, no INVERT SIGN block. Rows absent from the print: (BU,48,1) (BU,48,2) (BU,64,1) (BU,64,2) (BU,64,3); (BU,8,*) (BU,16,*) (BU,32,*) have all byte sizes 1-8, (BU,48,*) starts at byte size 3, (BU,64,*) at byte size 4. Rest of page is empty ruled lines.
+NOTE	Mnemonic read at 300% zoom as CTI0111 (letters C T I, digits 0111). Printed page number 182 is at the top right of this page.
+NOTE	Twins that differ: (BU,8,4)..(BU,8,8) and (BU,16,8) 3.61/3.92; (BU,16,1) 12.00/12.01; (BU,64,4) 12.01/12.00.
+BLOCK	-
+(BU,8,1)	7.20	7.20
+(BU,8,2)	4.80	4.80
+(BU,8,3)	4.20	4.20
+(BU,8,4)	3.61	3.92
+(BU,8,5)	3.61	3.92
+(BU,8,6)	3.61	3.92
+(BU,8,7)	3.61	3.92
+(BU,8,8)	3.61	3.92
+(BU,16,1)	12.00	12.01
+(BU,16,2)	7.20	7.20
+(BU,16,3)	6.00	6.00
+(BU,16,4)	4.80	4.80
+(BU,16,5)	4.80	4.80
+(BU,16,6)	4.20	4.20
+(BU,16,7)	4.20	4.20
+(BU,16,8)	3.61	3.92
+(BU,32,1)	12.01	12.01
+(BU,32,2)	12.01	12.01
+(BU,32,3)	9.00	9.00
+(BU,32,4)	7.20	7.20
+(BU,32,5)	6.60	6.60
+(BU,32,6)	6.00	6.00
+(BU,32,7)	5.40	5.40
+(BU,32,8)	4.80	4.80
+(BU,48,3)	12.01	12.01
+(BU,48,4)	9.60	9.60
+(BU,48,5)	8.40	8.40
+(BU,48,6)	7.20	7.20
+(BU,48,7)	6.60	6.60
+(BU,48,8)	6.00	6.00
+(BU,64,4)	12.01	12.00
+(BU,64,5)	10.20	10.20
+(BU,64,6)	9.00	9.00
+(BU,64,7)	8.40	8.40
+(BU,64,8)	7.20	7.20
+TALLY	immf	46	5	19
+TALLY	immn	55	2	13
+TALLY	index	27	2	6
+SUM	70	483.26

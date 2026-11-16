@@ -1672,7 +1672,7 @@ run "An op and a dds that disagree are refused, not guessed (C28-6129 printed p.
 run "Secondary ops only on their own family, field P one code (C22-6729 printed p.22; Reference Manual printed p.21)" python3 check_secondary_ops.py
 # THE ATLAS'S DATA FILE, NOT THE ATLAS ORACLE.  Perf. Char. Vol. 2's
 # per-instruction timing atlas is transcribed in perf_char_vol2_atlas.txt
-# (93 of its 139 table pages so far).  This is the fast self-check of that
+# (all 139 of its table pages).  This is the fast self-check of that
 # file: it parses, its coverage list is total, the page's own redundancy
 # counts are the recorded ones, and the five pages perf_char_timing.py had
 # already transcribed agree cell for cell.  The slow thing -- running the
