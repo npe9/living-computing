@@ -17009,3 +17009,19 @@ An operation which could be either VFL or floating-point is assumed
 VFL."  Problems 3.5, 3.7 and 3.8 are written that way throughout
 (`*, X`, `L, GUESS`, `ST, XK`, `+, SUM`, `/, ROOT`, `R/N, TEMP`).  The
 host STRAP II already does it; the reproducer's header gives the bits.
+
+### 3. Problem 3.4's printed program does not form the integral (a fault in the book, not the model)
+
+    decks/problem_3_4_method1.strap, problem_3_4_method2.strap
+
+Both printed methods end the loop `M+(N), ANS / CB, $1, LOOP / *(N), H
+/ BEW, $`.  ADD TO MEMORY leaves the accumulator unchanged (Reference
+Manual printed p.88-89), so the closing multiply takes the last
+integrand value, 1.95**4, not the sum: the accumulator ends at 1.4459,
+ANS holds the sum of f (63.8667) never multiplied by h, and the page's
+integral (6.38667) is in neither.  The model does what the manual says
+and the decks pin what the page leaves, bit for bit against a
+calculator written from the manual
+(tests/problem_3_expected.py).  An `L(U), ANS` before the last multiply
+is what the page lacks.  Nothing to fix here; recorded so that nobody
+"corrects" the check.

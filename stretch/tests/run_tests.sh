@@ -13478,6 +13478,22 @@ run "C22-6578 Problem 3.3 Method 2 -- nesting" ./run_program.sh ../decks/problem
 run "C22-6578 Problem 3.3 Method 3 -- nesting, D*, D+ and SRD(N), 8.0" ./run_program.sh ../decks/problem_3_3_method3.strap StretchP33M3Tb ASM=strap2 "PC=85" \
     "A_exact:69=0x048CF04477570000" "B_rounds:93=0x0049000000000020" "POLY:45=0x0028000000000150"
 
+# 3.4, the whole printed page as the deck, twice.  Sixty truncating
+# floating-point steps; the words are problem_3_expected.py's, from the
+# manual's rules.  >>> THE PRINTED PROGRAM DOES NOT FORM THE INTEGRAL:
+# M+ leaves the accumulator alone, so the closing "*(N), H" multiplies
+# the last integrand value.  The checks pin what the page leaves, and
+# their labels say so. <<<  B and N are checked as assembled because the
+# host STRAP II makes "2.0" and "20.0" one unit short.
+run "C22-6578 Problem 3.4 Method 1 -- modified trapezoidal rule, as printed" ./run_program.sh ../decks/problem_3_4_method1.strap StretchP34M1Tb ASM=strap2 "PC=80" \
+    "ANS_sum_of_f:45=0x00CFF7786C2265B0" "TEMP_x20:46=0x002F999999999900" "H:47=0x007CCCCCCCCCCCD0" \
+    "acc_left_last_f_times_h:8=0x002B913458CD1EC0" \
+    "B_as_assembled:43=0x002FFFFFFFFFFFF0" "N_as_assembled:44=0x00A9FFFFFFFFFFF0"
+run "C22-6578 Problem 3.4 Method 2 -- the function evaluator apart, as printed" ./run_program.sh ../decks/problem_3_4_method2.strap StretchP34M2Tb ASM=strap2 "PC=79" \
+    "ANS_sum_of_f:40=0x00CFF7786C2265B0" "TEMP_x20:41=0x002F999999999900" "H:42=0x007CCCCCCCCCCCD0" \
+    "acc_left_last_f_times_h:8=0x002B913458CD1EC0" \
+    "B_as_assembled:47=0x002FFFFFFFFFFFF0" "N_as_assembled:48=0x00A9FFFFFFFFFFF0"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

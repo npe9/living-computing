@@ -1,0 +1,126 @@
+! C22-6578 PROBLEM 3.4, "MODIFIED TRAPEZOIDAL RULE", Method 1, "Create a
+! summing loop with the f(xk) evaluation inside the loop", printed p.28
+! (PDF 29), read in the ink.
+!
+!   "Evaluate the integral I = INTEGRAL(0..2) x**4 dx by the modified
+!   trapezoidal rule
+!     INTEGRAL(a..b) f(x) dx ~ h [ f(a+h/2) + f(a+3h/2) + ... +
+!     f(a+nh-h/2) ]  where h = (b-a)/n.  Use n = 20 for this purpose."
+!
+!       MTZR    LX, $1, XW1
+!               L(U), B
+!               -(N), A
+!               /(N), N
+!               ST(U), H
+!               E-I(U), 1               'or 128.0
+!               +(N), A
+!               B, STOR
+!       LOOP    L(U), TEMP
+!               +(N), H
+!       STOR    ST(U), TEMP             'update temp
+!               *(N), 8.0               'or $L
+!               *(N), 8.0               'new integrand value
+!               M+(N), ANS
+!               CB, $1, LOOP
+!               *(N), H
+!               BEW, $
+!       XW1     XW, 0.0, 20, $
+!       A       DD(N), 0.0              'lower limit
+!       B       DD(N), 2.0              'upper limit
+!       N       DD(N), 20.0             'no. of strips
+!       ANS     DD(N), 0
+!       TEMP    DR(N), (1)
+!       H       DR(N), (1)
+!
+! THE WHOLE DECK IS THE PAGE: twenty-four statements, as printed, data
+! and all.  The five printed remarks are in this header and not on the
+! cards.  Nothing is the deck's but END.
+!
+! ASSEMBLED WITH ASM=strap2 (the host STRAP II): strap_asm.py refuses
+! "DD(N), 0.0" and "DD(N), 0" (decks/problem_3_dd_zero_fraction.strap).
+!
+! >>> THE PRINTED PROGRAM DOES NOT FORM THE INTEGRAL. <<<
+! "M+(N), ANS" is ADD TO MEMORY: Reference Manual printed p.88-89, "The
+! exponent and fraction of the sum replace bits 0-59 of the storage
+! word ... The contents of the entire accumulator and its sign byte
+! register remain unchanged throughout the operation".  So after the
+! loop the accumulator still holds the LAST integrand value, f(x20) =
+! 1.95**4, and the page's closing "*(N), H" multiplies that by h, not
+! the sum.  ANS holds the sum of the twenty integrand values, never
+! multiplied by h; the accumulator ends holding 1.95**4 x 0.1 = 1.4459,
+! which is nothing.  The integral the page asks for, 6.38667 (the rule's
+! value; the true integral is 6.4), is in neither place.  An "L(U), ANS"
+! before the last multiply is what the page lacks.  Method 2 (printed
+! pp.28-29) has the same ending.
+! THE DECK RUNS THE PAGE AS PRINTED and the checks say what the printed
+! program leaves, with the model doing what the manual says:
+!
+!   ANS       00CFF7786C2265B0   63.866724999991...  the sum of f
+!   TEMP      002F999999999900   1.9499999999999...  x20
+!   H         007CCCCCCCCCCCD0   0.1000000000000000  h
+!   acc_left  002B913458CD1EC0   1.44590062499978    f(x20) x h
+!   B_as_assembled 002FFFFFFFFFFFF0,  N_as_assembled 00A9FFFFFFFFFFF0
+!
+! THE EXPECTED VALUES ARE DERIVED FROM THE MANUAL'S RULES, NOT FROM THE
+! MODEL, by tests/problem_3_expected.py (p34), because sixty truncating
+! steps on 48-bit fractions are not paper work.  The rules it applies
+! and their pages are in its header: every "+", "*" and "/" forms its
+! exact result and keeps the leading 48 bits (truncation, printed p.80
+! and p.86-87, 92, 93-94); M+ does the same into storage; E-I(U), 1
+! takes one from the exponent (printed p.102-103); "*(N), 8.0" squares
+! the accumulator (C22-6578 printed p.28 comment (b): address 8.0
+! "means the leading 60 bits of the accumulator plus the lowest
+! four-bits of $SB").
+!
+! WHAT CAN BE SAID WITHOUT THE CALCULATOR, as a check on it:
+!   In exact arithmetic h = 1/10, x(i) = (2i - 1)/20, the sum of
+!   x(i)**4 for i = 1..20 is 63.866725 (= 10,218,676 / 160,000:
+!   SUM of (2i-1)**4 for i = 1..20 is 10,218,676), and 1.95**4 / 10 =
+!   1.445900625.  The words above are those numbers short by a few
+!   parts in 10**13, the direction truncation errs.
+!   H by hand: 2.0 arrives as 2 - 2**-47 and 20.0 as 20 - 2**-43
+!   (below).  (2 - 2**-47)/(20 - 2**-43) = 0.1 x (1 - 2**-48) /
+!   (1 - 2**-43/20) = 0.1 x (1 + 0.30 x 2**-47), which is above 0.1 by
+!   0.48 of a unit of the 48th place of a number with exponent -3
+!   (2**-51).  0.1 is .CCCCCCCCCCCC|CCC... x 2**-3, 0.8 of a unit beyond
+!   the 48th place; 0.8 + 0.48 carries, so the truncated fraction is
+!   CCCCCCCCCCCD: H = 007CCCCCCCCCCCD0.
+!
+! THE DECIMAL CONSTANTS.  The host STRAP II converts "2.0" as 20 x a
+! truncated 1/10 and "20.0" as 200 x the same, so each is one unit of
+! its 48th place short (tests/check_strap2_dd.py; "No printed word
+! decides this").  The two input checks pin what was actually loaded,
+! so the derivation's premise is itself tested.  With exact 2 and 20
+! the calculator gives the same ANS, TEMP and acc_left and H one unit
+! lower (007CCCCCCCCCCCC0): the truncations absorb the difference.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): "B DD(N), 2.0" changed to "B DD(N), 3.0".
+! FAIL ANS, TEMP, H, acc_left and B_as_assembled; N_as_assembled and the
+! PC passed.
+
+MTZR    LX, $1, XW1
+        L(U), B
+        -(N), A
+        /(N), N
+        ST(U), H
+        E-I(U), 1
+        +(N), A
+        B, STOR
+LOOP    L(U), TEMP
+        +(N), H
+STOR    ST(U), TEMP
+        *(N), 8.0
+        *(N), 8.0
+        M+(N), ANS
+        CB, $1, LOOP
+        *(N), H
+        BEW, $
+XW1     XW, 0.0, 20, $
+A       DD(N), 0.0
+B       DD(N), 2.0
+N       DD(N), 20.0
+ANS     DD(N), 0
+TEMP    DR(N), (1)
+H       DR(N), (1)
+        END, MTZR

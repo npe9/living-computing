@@ -319,15 +319,20 @@ def fl(x):
     return enc(e, int(f), x < 0)
 
 
-def low(x, units=1):
-    """What the host STRAP II makes of a decimal with a point that is an
-    exact binary number: one unit of the 48th place short, because the
-    conversion multiplies by a truncated 1/10 (tests/check_strap2_dd.py,
-    "17.5 is ... one unit low in 48 bits, and 1.0 and .5 likewise").  The
-    decks check these input words too, so this is a premise that is tested,
-    not one that is trusted."""
-    e, f, n = dec(fl(x))
-    return enc(e, f - units, n)
+# What the host STRAP II makes of the pages' decimal constants.  A decimal
+# with a point comes out one unit of the 48th place short when it is an
+# exact binary number, because the conversion multiplies by a truncated
+# 1/10 (tests/check_strap2_dd.py: "17.5 is ... one unit low in 48 bits,
+# and 1.0 and .5 likewise").  These are copied from its output, and every
+# deck that uses one checks the word in storage too, so they are premises
+# that are tested, not trusted.
+D_0_5 = 0x003FFFFFFFFFFFF0        # DD(N), 0.5     .FFFFFFFFFFFF x 2^-1
+D_2_0 = 0x002FFFFFFFFFFFF0        # DD(N), 2.0     .FFFFFFFFFFFF x 2^1
+D_2_5 = 0x0049FFFFFFFFFFF0        # DD(N), 2.5     .9FFFFFFFFFFF x 2^2
+D_8_0 = 0x006FFFFFFFFFFFF0        # DD(N), 8.0     .FFFFFFFFFFFF x 2^3
+D_20_0 = 0x00A9FFFFFFFFFFF0       # DD(N), 20.0    .9FFFFFFFFFFF x 2^5
+D_39_0 = 0x00C9BFFFFFFFFFF0       # DD(N), 39.0    .9BFFFFFFFFFF x 2^6
+D_PI_4 = 0x000C90FDAA221680       # DD(N), $PI/4   .C90FDAA22168 x 2^0
 
 
 # ---------------------------------------------------------------------------
@@ -571,6 +576,17 @@ def decks(which):
         print(f"  method 3 block B POLYB {h(poly)}")
         poly, a = p33_m3(fl(1 + u), [0] * 20 + [fl(1 + u)])
         print(f"  method 3 last    POLY  {h(poly)} word 8 {h(a.word8())} low half {a.lo:012X}")
+    if which in ('34', 'all'):
+        print("problem_3_4  A = 0, B = 2.0 and N = 20.0 as the host STRAP II makes them")
+        for name, (b, n) in (('printed', (D_2_0, D_20_0)), ('exact 2, 20', (fl(2), fl(20)))):
+            ans, temp, hh, a = p34(0, b, n)
+            print(f"  {name}: B {h(b)} N {h(n)}")
+            print(f"    ANS {h(ans)} = {float(value(ans)):.15f}   (times h = {float(value(ans) * value(hh)):.15f})")
+            print(f"    TEMP {h(temp)} = {float(value(temp)):.15f}   H {h(hh)} = {float(value(hh)):.17f}")
+            print(f"    word 8 {h(a.word8())} = {float(value(a.left())):.15f}")
+        exact = sum(F(2 * i + 1, 20) ** 4 for i in range(20))
+        print(f"  in exact arithmetic: sum f = {float(exact):.15f}, times 1/10 = {float(exact / 10):.15f}, "
+              f"last f times h = {float(F(39, 20) ** 4 / 10):.15f}")
 
 
 if __name__ == '__main__':
