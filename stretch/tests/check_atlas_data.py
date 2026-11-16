@@ -25,6 +25,11 @@ WHAT IT CHECKS
       neg      FP: a NEG row against the row above it with the same
                modifiers, same block and column
       ibox     FP: I-BOX OPERAND against EXTERNAL OPERAND
+      fwd      FP: a page with forwarding (PDF 73-101) against the page
+               31 earlier without it, same instruction, block, row and
+               column (EXTERNAL and I-BOX; INTERNAL is blank without)
+      quotefp  PDF 104's FP subject rows (ST(U) ... LFT(U)) against the
+               instruction's no-forwarding sheet; see QUOTED_FP
       noncon   BRANCH: a NONCON column against its CONSEC twin
       quoted   PDF 104's row captions quote the instruction's own figure
                ("5.73 IN A LX ENVIRONMENT"); the index-arithmetic ones are
@@ -75,6 +80,22 @@ The failure sets are the OBSERVED ones.
    after the reading.  Had 312.68 been the original mis-reading, nothing
    here would know.  That is what the REACH line counts.
 
+MEASURED INJECTIONS, 2026-11-16, on the floating-point pages (PDF 42-101).
+Each was made to a COPY of the file and the check run with --file=; the
+original was never written and `cmp` against HEAD was clean after.
+
+ * A record three rules reach -- PDF 88 (*+), NORMALIZED 1., (U) ni_ext
+   6.60 -> 6.90: four failures: 'fwd' (127, 0, 1) against (128, 0, 0);
+   'ibox' (63, 0, 1) against (64, 0, 0); 'neg' (87, 0, 9) against
+   (88, 0, 8); PDF 88's SUM.
+ * A record only 'neg' reaches -- PDF 72 (SHF), ADDRESS FIELD NOT
+   INDEXED, (U) shift_95 8.70 -> 8.40: two failures: 'neg' (47, 0, 1)
+   against (48, 0, 0); PDF 72's SUM.  (The INTERNAL columns and PDF 71
+   are reached the same way.  'neg' compares within a column, so a
+   misread repeated down a whole column would pass it.)
+ * A record only 'quotefp' reaches -- PDF 104 ST(U) quoted 4.82 -> 4.80:
+   two failures: 'quotefp' (3, 6, 3) against (2, 6, 4); PDF 104's SUM.
+
     python3 tests/check_atlas_data.py          # the check
     python3 tests/check_atlas_data.py -v       # plus per-column grid census
     python3 tests/check_atlas_data.py --tally  # print TALLY and SUM lines
@@ -118,6 +139,29 @@ QUOTED_109 = {
     "KVI": ("KV", "immediate"), "KCI": ("KC", "immediate"),
 }
 
+# PDF 104's floating-point subject rows quote their own time ("ST(U) (4.82
+# IN A ST(U) ENVIRONMENT)").  The figure is compared with the instruction's
+# own FP sheet without forwarding, NORMALIZED 1. block, (U) row, EXTERNAL
+# OPERAND with no indexing.  PDF 102 puts every instruction of the test on
+# the same external operand; that it is unindexed is an ASSUMPTION (the
+# ix_ext figure is the same as ni_ext on all six sheets except DL, 1.41
+# against 1.40).  That it is the no-forwarding sheet is supported by the
+# ink: L(U) 1.34 and DL(U) 1.41 fit PDF 64/66 (1.33, 1.40), not the
+# forwarding PDF 95/97 (2.41).  The quoted figures sit within 0.02 of the sheets: the
+# environment run is a different measurement, so this rule's far pairs
+# are expected and its counts are what is checked.
+QUOTED_FP = {
+    "ST(U)": (48, "ST"), "SLO(U)": (49, "SLO"), "SRD(U)": (50, "SRD"),
+    "L(U)": (64, "L"), "DL(U)": (66, "DL"), "LFT(U)": (68, "LFT"),
+}
+
+# FP pages with forwarding (PDF 73-101) repeat, page for page, the pages
+# without it (PDF 42-70): same instruction, same blocks and rows.  Where
+# forwarding cannot help (ST, the shifts, *, /, ...) the two print the same
+# figure; elsewhere they differ for real.  The pair is made on the EXTERNAL
+# and I-BOX columns, the only ones both print.
+FWD_OFFSET = 31
+
 # (pdf, instr, block, row, col): (this file, perf_char_timing.py, verdict)
 ADJUDICATED = {}
 
@@ -136,6 +180,14 @@ def twin_pairs(page, by_pdf=None):
                 t = tgt.get(QUOTED_109[r.row])
                 if t is not None and t.kind == "time":
                     yield "quoted", r, t
+    if page.pdf == 104 and by_pdf:
+        for r in page.records:
+            if r.col == "quoted" and r.row in QUOTED_FP:
+                pdf, ins = QUOTED_FP[r.row]
+                for t in (by_pdf[pdf].records if pdf in by_pdf else ()):
+                    if (t.instr, t.block, t.row, t.col, t.kind) == (
+                            ins, "NORMALIZED 1.", "(U)", "ni_ext", "time"):
+                        yield "quotefp", r, t
     idx = {(r.instr, r.block, r.row, r.col): r for r in page.records
            if r.kind == "time"}
     if page.cls == "VFL":
@@ -149,6 +201,18 @@ def twin_pairs(page, by_pdf=None):
                 if t:
                     yield "ibox", r, t
     elif page.cls == "FP":
+        base = by_pdf.get(page.pdf - FWD_OFFSET) if by_pdf else None
+        if base is not None and base.cls == "FP" and page.records and \
+                base.records and \
+                page.records[0].cond.get("forwarding") == "yes" and \
+                base.records[0].cond.get("forwarding") == "no":
+            bidx = {(r.instr, r.block, r.row, r.col): r for r in base.records
+                    if r.kind == "time"}
+            for key, r in idx.items():
+                t = bidx.get(key)
+                if t is not None and (r.cond.get("ah_indicator") ==
+                                      t.cond.get("ah_indicator")):
+                    yield "fwd", r, t
         for (ins, blk, row, col), r in idx.items():
             if not row.startswith("NEG "):
                 t = idx.get((ins, blk, "NEG " + row, col))

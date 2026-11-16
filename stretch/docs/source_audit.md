@@ -618,14 +618,19 @@ Char. Vol. 2's per-instruction atlas is the real timing oracle and that
 as how much of that residual it closes**.
 
 *Status 2026-11-16: written, first measurement taken.* The oracle is in
-`docs/atlas_oracle.md`. 33 of the 139 atlas pages are transcribed
+`docs/atlas_oracle.md`. 93 of the 139 atlas pages are transcribed
 (`tests/perf_char_vol2_atlas.txt`; the fast self-check
-`tests/check_atlas_data.py` is in `run_tests.sh`). `tests/atlas_oracle.py`
-runs 6,265 cases in about an hour. Today's residual has mean −18.9
-clocks and median −7.1, with 7% exact. The largest single cause is that
-the model's VFL time does not depend on the operation. Remaining: FP
-pages 42-101 and VFL forwarding/immediate (106 pages), plus the
-generators listed in that doc.
+`tests/check_atlas_data.py` is in `run_tests.sh`). The 93 include all
+60 floating-point pages, PDF 42-101, which were added later on
+2026-11-16. With them came two new cross-check rules: forwarding twins
+and the PDF 104 FP quotations. `tests/atlas_oracle.py` runs 6,265 cases
+in about an hour. Today's residual has mean −18.9 clocks and median
+−7.1, with 7% exact. The largest single cause is that the model's VFL
+time does not depend on the operation. FP residuals are unmeasured:
+the oracle has no FP generator. Remaining:
+- VFL forwarding and immediate (46 pages);
+- an FP generator;
+- the other generators listed in that doc.
 
 **G4.2 Keep the probe guard honest.** `verify_no_probes.py` caught three
 real accidents in one day; add a check for anything else that looks
