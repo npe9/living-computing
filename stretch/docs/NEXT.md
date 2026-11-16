@@ -100,20 +100,103 @@ is written out in `docs/strap2_7030.md` (step 2, sub-slice d): in place of
 the digit from CHVAL($9), fall into CPN6; then move the three rows into
 CARDS and raise the NOTEC count.
 
-## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open, 2026-11-12
+## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open; researched 2026-11-15, no code changed
 
 strap2 takes `L,JOE(3)`, where JOE has no dimensions, as index register 3, as it
-always has.  C22-6729 p.177's messages say STRAP II did not: 72 CANT SUBSCRIPT
-CONSTANT, TRY INDEX (`L,100(3)`); 74 CANNOT SUBSCRIPT SYMBOL WITH NO DDS; and
-p.40's "A(1)(I) where I must be a bit address".  So an integer entry was a
-subscript wherever it stood.  Not settled:
-  - what a symbol with a dds and no dimensions makes of a subscript (a
-    one-dimensional stride of FL is a guess);
-  - what 72 and 74 assemble.
+always has.  Measured 2026-11-15 (INFO a DD(BU,64), JOE SYN,3): `L,INFO(3)`,
+`L,JOE(3)` and `L,100(3)` all print index 3 and no message, the same as
+`L,INFO($3)` and `L,100($3)`.
+
+**A CITATION CORRECTED.**  The "p.40" this entry cited for "A(1)(I) where I
+must be a bit address" is C28-6129 printed p.40 (PDF 44), DR item 9, not
+C22-6729 p.40, which is Chart MOVE and says nothing of subscripts.
+
+**WHAT THE PAGES SAY**, read in the ink 2026-11-15.  C28-6129 was read whole
+for this (PDF 5-79): PDF 5-16, 30, 36, 38, 44, 58, 71 by the session, PDF 17-79 by three
+readers whose quotes below were re-read on the page where marked (+).
+
+1. C28-6129 printed p.11 (PDF 15), "Address Field", the rule in prose (+):
+   "The index field is a 4-bit field, enclosed in parentheses, immediately
+   following the address expression.  STRAP bit addresses, system symbols and
+   programmer symbols that are defined as bit addresses are all legal entries
+   in an index field. ... All of the following entries are equivalent in an
+   index subfied [sic] of an address: 4.32 = 4.0 = $4 = 20.0 = 52.0 and all
+   are translated by STRAP to mean index register 4.  If an integer is written
+   in the index field, the meaning is entirely different.  The integer tells
+   STRAP that the symbol in the address field proper has been defined as an
+   array and the integer is addressing an element in that array.  (See Data
+   Reservation Pseudo Operation.)"
+2. printed p.32 (PDF 36), restriction 3 (+): 'The "I" or "K" fields (see
+   Expression of Machine Instructions) must contain at least one STRAP bit
+   address term.'
+3. printed p.34 (PDF 38), item 8 "I, J 4-Bit Index Fields" (+): "Note:
+   Integers represent index register number.  A "1" in the bit position
+   immediately to the left of the final sum field is discarded with no error
+   indication."  That is an integer TERM summed with a bit address term in an
+   index field (restriction 3), and the J field, where N28-1081 page 8 (PDF
+   66, not re-read) has "LX, 5, BOX"; it is not an integer standing alone in
+   an I field's parentheses.
+4. Every index on pp.3-4's twelve formats is a system symbol (+): "ST(U),
+   BUCKET($2)", "M+(BU, 24, 8), DUMMY($9), 6($4)", "ST(V+I)(BU, 24, 8),
+   .30($8), 2($14)".  A CONSTANT takes a bit-style index there.
+5. printed p.40 (PDF 44) (+): "to apply index register I to the second element
+   of a one dimensional array A, write: A(1)(I) where I must be a bit
+   address."
+6. C22-6729 p.56, VALUE's output (+): "Sinsx (BU, 2)  00 integer style (S) /
+   10 bit style (X)".  The style of the entry is what makes it S or X.
+7. The messages.  C22-6729 p.177 (+): "72 VALUE CANT SUBSCRIPT CONSTANT, TRY
+   INDEX 72", "73 VALUE SUBSCRIPT OR INDEX INCORRECT 73", "74 VALUE CANNOT
+   SUBSCRIPT SYMBOL WITH NO DDS 74".  The 1961 Appendix D, C28-6129 printed
+   p.55 (PDF 58), gives each a meaning (+): "64 44 CAN'T SUBSCRIPT CONSTANT.
+   TRY INDEX. -- A subscript has been specified with a constant."; "66 46
+   CAN'T SUBSCRIPT SYMBOL WITH NO DDS -- A subscript has been specified with
+   a symbol that does not have a data description."; "63 43 SUBSCRIPT WRITTEN
+   IN BIT-STYLE -- A point has been used in a subscript."  N28-1081 page 14
+   (PDF 72, not re-read) repeats 69-78 without meanings.  None is serious
+   (p.176's footnote, 1-28; N28-1081 page 13, 1-18).
+8. C22-6729 pp.55-59, VALUE's text (+), says nothing of 72 or 74 or of what
+   is assembled after them; Chart RD p.54 draws no box for them.
+
+So an integer in an address's parentheses was a SUBSCRIPT, never an index:
+items 1, 5, 6 say so directly and 72's "TRY INDEX" assumes it.  strap2's
+index 3 for `L,JOE(3)` and `L,100(3)` is not what STRAP II did.
+
+**A PRINTED EXAMPLE, AND IT POINTS A THIRD WAY.**  C28-6129 printed p.26
+(PDF 30), right column (+):
+   "2. L(BU), INFO(7)(.30)1265(.20)(10)138-(6)43(.10)553"
+with the table "Example 2 / Number 1265 / Radix 7; 138 / 10; 43 / 6; 553 / 6"
+and "The second example also illustrates 3 separate parenthetical integer
+entries in the address field.  Of significance here is the fact that the
+radix need not be specified within the same set of parentheses as the bit
+address specification for the integer entry."  Here `(7)` stands directly
+after the plain symbol INFO and is a RADIX: neither index nor subscript.  No
+assembled bits are printed.  strap2 today (measured) makes it index 7 and
+reads 1265 in decimal: `L(BU),INFO(7)(.30)1265` prints 000100.11 E7, where
+`L(BU),INFO(.30)1265` prints 000100.11 E2 -- so strap2 disagrees with the
+table on this line, in the index and in the radix both.  C22-6729 p.85,
+Boxes 65, 66, 79-81, 74 (+): "The expression is tested for the possibility of
+being a GP or radix.  If neither, Gfsfsb (subscript-allowed indicator) is
+tested.  If off, and the number of operators is equal to zero, the radix
+indicator (Gfrads) is turned on."  It does not print how "the possibility of
+being a ... radix" is tested, so whether INFO(7) is a radix because a g.p.
+follows, or wherever one absolute datum stands in parentheses after a symbol
+with no dimensions, the pages do not say; `_paren` (getfld.py) takes "after a
+datum" as S/X first, CHOSEN.
+
+**NOT CHANGED, AND WHY.**  The one printed example fixes a radix, not what
+`L,JOE(3)` assembles, and prints no bits; it contradicts the reading of
+Boxes 79-81 that `_paren` and the 7030 deck's GETFLD share, so following it
+is a change to GETFLD's classification in both, to be made against Chart BK
+p.82 in the ink, not here.  Still not settled, and no page read says:
+  - what 72 and 74 assemble (the address without the subscript is a guess);
+  - what a symbol with a dds and no dimensions makes of a subscript: 74's
+    test is "NO DDS" ("does not have a data description"), not "no
+    dimensions" (a one-dimensional stride of FL is a guess);
+  - whether a lone `(n)` after a symbol with no g.p. behind it is p.26's
+    radix or p.11's subscript.
 No deck in decks/ writes an integer index (searched 2026-11-12: symbols and
 constants; the only hits are UNTAIL's tail level), so refusing it would cost
-no deck.  Decide from a printed example, not from the messages alone.  Array
-subscripts and 75-77: tests/check_strap2_subscripts.py.
+no deck.  Array subscripts and 75-77: tests/check_strap2_subscripts.py.
 
 ## AFTER FORTRAN IV: SCIENTIFIC WORKLOADS -- planned 2026-11-12
 
