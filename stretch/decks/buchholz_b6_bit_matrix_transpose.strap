@@ -150,6 +150,10 @@
 !   transpose, all 256 words wrong (the first differs in its last bit
 !   only: (16)...4080 for (16)...4081).
 !
+!   And against "printed", the same VALUE injection (-255.62):  FAILS
+!   2 of 10 -- x1 and the one-bit-per-word check, 118 of 256 words
+!   wrong (the surviving bit now comes from every other column).
+!
 ! (A change to the matrix itself cannot fail this check, and is not an
 ! injection: the expectation is computed from the matrix in the deck.)
 

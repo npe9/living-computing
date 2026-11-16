@@ -25,12 +25,13 @@ accumulate.
 
 ## BUCHHOLZ APPENDIX B: WHAT THE WORKED PROGRAMS FOUND -- 2026-11-15
 
-G2.2 of `source_audit.md`. Each item below is an operation a printed
+G2.2 of `source_audit.md`. The first item is an operation a printed
 program of Appendix B (printed pp.292-304) uses and the model does not
-perform. Each has a reproducer deck whose header carries the source, the
-hand-derived expectations and the command; none of the reproducers is in
-`run_tests.sh`, because each fails until the operation is built -- they
-are the acceptance tests.
+perform; its reproducer deck carries the source, the hand-derived
+expectations and the command, and is not in `run_tests.sh` because it
+fails until the operation is built -- it is the acceptance test. The
+second item is an error in the book, recorded so it is not chased in the
+model; nothing needs building for it.
 
 ### VFL STORE ROUNDED (`SRD`, VFL code 101101) is unbuilt
 

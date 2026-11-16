@@ -1577,7 +1577,7 @@ transcription.
 | `R23-9713_7101_Maint_Console_1961.pdf` | Maintenance console CE manual -- the console controls (start/stop, display/store, single step, repeat) |
 | `R23-9694/9695_CE_Intro_Pgmg_Vol2/3` | CE introductory programming |
 | `R23-9702_7503_Card_Rdr_7614_Rdr_Ctl_CE` | Card reader/control CE manual |
-| `Planning_A_Computer_System.pdf` (Buchholz 1962) | The design book: ch.14 CPU, ch.15 look-ahead -- primary source for the microarchitecture (`microarchitecture_plan.md`) |
+| `Planning_A_Computer_System.pdf` (Buchholz 1962) | The design book: ch.14 CPU, ch.15 look-ahead -- primary source for the microarchitecture (`microarchitecture_plan.md`). **Appendix B's seven worked programs (B.1-B.7, printed pp.292-304) are transcribed and run**, `decks/buchholz_b*.strap`; status in `source_audit.md` "G2.2, BUCHHOLZ APPENDIX B" |
 | `TR00.722_Stretch_I-Unit_Design_Mar60.pdf` (Blosk) | The I-unit design report -- registers, data paths, timing diagrams |
 | `TR00.03000.703_StretchVM_59.pdf` (Cocke & Kolsky) | Look-ahead ("virtual memory") simulation study -- the level/counter/interlock logic |
 | `Bloch_EngrDesOfStretch_1959.pdf`, `ADescriptionOfStretch_Dec59.pdf` | Engineering-design overviews |
