@@ -11,7 +11,7 @@
 !   BMATX8 and N to be 8.  BMATX8 is assumed to be defined elsewhere in
 !   the symbolic program.  (b) 0.N is equivalent to 0.8, since N is 8."
 !
-! THE SEVENTEEN PRINTED STATEMENTS FROM BMX8T TO "N SYN,8" ARE AS
+! THE EIGHTEEN PRINTED STATEMENTS FROM BMX8T TO "N SYN,8" ARE AS
 ! PRINTED.  The deck defines BMATX8, between two guard words.  Assembled
 ! by the host STRAP II (ASM=strap2).  Problem 4.7 Method 1 is this
 ! program "with LOC and N redefined to be BMX64 and 64": deck
@@ -79,8 +79,8 @@
 !                    ever written into the left half (it starts 0).
 !   acc_right (9)    bit 127 holds A[6][7] as loaded: 1.
 !   guards           unchanged.  PC: 82, the half word of the printed BEW.
-!   Index words: value bits 0-23 (bit address), count 28-45, refill
-!   46-63 (printed p.38).
+!   Index words: value bits 0-23 (bit address) and sign 24 (printed
+!   p.21), count 28-45 and refill 46-63 (printed p.24).
 !
 ! PASSED AGAINST THE MODEL AS IT STOOD (run line in tests/run_tests.sh).
 !

@@ -17550,8 +17550,13 @@ page knows it (4.6 Method 2: `LVI,$2,8-1 '7 half-words`; this program's
 1.0 = 31 words, which returns `$3` to the next column after eight 4-word
 steps, so the program is self-consistent and computes sum over k of
 Lw[4i+k] Rw[j+4k] (storage-order words): 63 of 64 elements wrong in the
-deck's data.  No single definition of N repairs it (`N SYN,8.0` fixes
-the V+I's but makes `N*N` a product of bit addresses, 8190 half words).
+deck's data.  No single definition of N repairs it: `N SYN,8.0` fixes
+the V+I's, but STRAP II multiplies bit addresses as integers of bits
+(C28-6129 Section II printed pp.35-36, "2.0 * 2.0" is 16384 bits), so
+`N*N` is 512 x 512 and V-ICR assembles 8190 half words.  Open reading:
+p.35's exception for mixed terms in "immediate operation address
+fields" (its example is a VFL `LI`) is not applied to V-ICR by strap2;
+applied, `N*N-1.0` would be 0, and the program still wrong.
 The page never defines N; the deck uses `N SYN,8` as 4.6 does.  Run as
 printed (the model matches the printed program's trace word for word)
 and corrected (`N+N`, `2*N*N-1.0`, `N+N`: L * R).

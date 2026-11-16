@@ -39,10 +39,21 @@
 !       P'[i][j] = sum over k of Lw[4i + k] * Rw[j + 4k]
 !   with Lw, Rw the 64 words of L and R in storage order.  Every read
 !   stays inside the two matrices (the largest index is 35).
-!   No one definition of N repairs it: with "N SYN,8.0" (a bit address)
-!   the two V+I advance 8 words, and the count fields still take 8, but
-!   N*N is then a product of bit addresses and V-ICR assembles 8190 half
-!   words (checked on strap2).
+!   "N SYN,8.0" (a bit address) does not repair it: the two V+I then
+!   advance 8 words and the count fields still take 8, but STRAP II
+!   multiplies "both bit address terms and integer terms ... as 24-bit
+!   integers and the point is forgotten", the product "treated as an
+!   integer" (C28-6129 Section II printed pp.35-36, whose example is
+!   2.0 * 2.0 = 16384 bits), so N*N is 512 x 512, and strap2 assembles
+!   V-ICR as 8190 half words.  The page's own way to a word count would
+!   have been "(N*N)." (p.36: "enclosed in parentheses and followed by a
+!   period ... treated like a standard binary bit address").
+!   ONE READING LEFT OPEN: p.35 makes an exception for "immediate
+!   operation address fields" mixing integers and bit addresses ("all
+!   terms are considered to be bit addresses"); its example is a VFL
+!   LI(BU,24,8), and strap2 does not apply it to V-ICR.  If it did apply,
+!   N*N-1.0 would be .64 - 1.0 = 0 and the printed program would still not
+!   form L * R.
 !   THE DECK RUNS AS PRINTED, and corrected ("--corrected", three cards
 !   replaced in a copy, tests/verify_problem_4_matrix.py CORRECTIONS):
 !       V+I,$3,N          ->  V+I,$3,N+N          (N words)

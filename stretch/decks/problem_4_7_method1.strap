@@ -8,7 +8,7 @@
 !   "Method 1.  Bit-by-bit operation.  Same as Method 1 of previous
 !   program with LOC and N redefined to be BMX64 and 64 respectively."
 !
-! SO THE PAGE PRINTS NO STATEMENTS FOR THIS METHOD.  The seventeen below
+! SO THE PAGE PRINTS NO STATEMENTS FOR THIS METHOD.  The eighteen below
 ! are Problem 4.6 Method 1's, printed p.39, as printed there, with the two
 ! SYN cards redefined as the sentence says (each marked "printed (4.6):").
 ! problem_4_6_method1.strap has the reading and the page references.

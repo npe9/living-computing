@@ -20,7 +20,8 @@ deck's data words as strap2 assembles them and works the expected words:
   trace       for a program as PRINTED where it does not do what the
               statement asks, the program's own steps, written out below
               from the Reference Manual (22-6530-2, printed page = PDF - 3):
-              index words printed p.38, progressive indexing p.21, V+/V+C
+              index words pp.21 and 24, progressive indexing and the
+              second I field (index bit 3 at instruction bit 35) p.21, V+/V+C
               p.24, V+I/V-ICR/C-I p.25, CB/CBR/CBZR p.26 ("The setting of
               the index flag and index result indicators precedes the
               refill"), VFL load p.61, CONNECT pp.75-76 (bytes of fewer
@@ -58,8 +59,8 @@ M18 = (1 << 18) - 1
 
 
 def xword(v, count, refill):
-    """An index word (printed p.38): value bits 0-23 as a bit address,
-    sign bit 24, count bits 28-45, refill bits 46-63."""
+    """An index word: value bits 0-23 as a bit address, sign bit 24
+    (printed p.21), count bits 28-45, refill bits 46-63 (printed p.24)."""
     return ((abs(v) & 0xFFFFFF) << 40) | ((1 if v < 0 else 0) << 39) | \
         ((count & M18) << 18) | (refill & M18)
 

@@ -10,7 +10,7 @@
 !   a time, 8-bits are loaded with each connect instruction and the
 !   entire transposed matrix is stored in one instruction."
 !
-! THE NINE PRINTED STATEMENTS FROM BMX8T2 TO XW1 ARE AS PRINTED, with
+! THE TEN PRINTED STATEMENTS FROM BMX8T2 TO XW1 ARE AS PRINTED, with
 ! the page's ' comments written !' (this deck's comment mark).  BMATX8
 ! "is assumed to be defined elsewhere" (Method 1's comment (a)): the
 ! deck defines it, between two guard words.  Assembled by the host
@@ -30,7 +30,12 @@
 !                     the index modifies the offset (C22-6578 printed
 !                     p.39, 4.5 comment (b): "Bits in the half-word
 !                     position in the index value field influence the
-!                     offset directly"), so 0($2) is offset 7.
+!                     offset directly"; Reference Manual printed p.21:
+!                     the second I field indexes instruction bits 35-50
+!                     with "bit position 3 of the index word ... aligned
+!                     with bit position 35", so value bit 18, the half
+!                     word, meets bit 50, the offset's last), so 0($2)
+!                     is offset 7.
 !   LI(BU,1), 0       "The entire left and right halves of the
 !                     accumulator ... are cleared" (Load, printed p.61).
 !   C0111(BU,8,1)(V+IC), 0.8($1), 0($2)
