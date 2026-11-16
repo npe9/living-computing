@@ -80,6 +80,7 @@ PDF page is the printed page plus 3):
   address 8 C22-6578 printed p.28 comment (b): "the leading 60 bits of the
             accumulator plus the lowest four-bits of $SB".
 """
+import math
 import sys
 from fractions import Fraction
 
@@ -466,16 +467,18 @@ def p37(EN, GUESS, HALF):
     return a.store(normalized=True), temp, xk, a
 
 
-def p38(ints):
+def p38(ints, eplus=True):
     """3.8.  LCV leaves the integer in accumulator bits 12-59 with a zero
     exponent (offset 68 puts its units bit at bit 59) and the sign in the
-    sign byte; E+I,48 makes that an unnormalized integer."""
+    sign byte; E+I,48 makes that an unnormalized integer.  eplus=False is
+    the program with the page's EPLUS statement taken out, comment (b)."""
     a = Acc()
     total = 0
     floats = []
     for n in ints:
         a.e, a.hi, a.lo, a.neg = 0, abs(n), 0, n < 0
-        a.exp_add(48)
+        if eplus:
+            a.exp_add(48)
         floats.append(a.store(normalized=True))
         a.mul(a.left())
         a.add(total)
@@ -484,7 +487,10 @@ def p38(ints):
     out = []
     for w in floats:
         a.load(w, normalized=True)
-        a.div(root)
+        try:
+            a.div(root)
+        except ZeroDivisionError:
+            pass                          # p.93: ZD, "the accumulator ... remain unchanged"
         out.append(a.store())
     return out, total, root
 
@@ -546,6 +552,8 @@ def h(w):
 
 F = Fraction
 P33_COEF = [(-1) ** k * (k + 1) for k in range(21)]
+P38_INTS = [1, -2, 3, 1024, -512, 768, 100, -99, 7, 1234, -321, 5, 64, -640, 17,
+            250, -33, 11, 400, -8, 129, 1000, 1511, -2132, 2179]
 
 
 def decks(which):
@@ -612,6 +620,19 @@ def decks(which):
         bv[1] -= 1
         c, a = p36([fl(x) for x in av], [fl(x) for x in bv])
         print(f"  with b(1) = 65535: C {h(c)}")
+    if which in ('38', 'all'):
+        total = sum(n * n for n in P38_INTS)
+        print(f"problem_3_8  sum of squares = {total} = 4**{total.bit_length() // 2}, root {math.isqrt(total)}")
+        out, tot, root = p38(P38_INTS)
+        print(f"  SUM {h(tot)}  ROOT {h(root)}")
+        for k, (n, w) in enumerate(zip(P38_INTS, out)):
+            assert value(w) == F(n, math.isqrt(total))
+            print(f"  FLOAT+{k:<2d} {n:6d}/4096  {h(w)}")
+        out, tot, root = p38(P38_INTS, eplus=False)
+        print(f"  without EPLUS: SUM {h(tot)}  ROOT {h(root)}")
+        for k, (n, w) in enumerate(zip(P38_INTS, out)):
+            assert value(w) == F(n, 1 << 48)
+            print(f"  FLOAT+{k:<2d} {n:6d}/2**48  {h(w)}")
 
 
 if __name__ == '__main__':

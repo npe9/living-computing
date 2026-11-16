@@ -17025,3 +17025,51 @@ calculator written from the manual
 (tests/problem_3_expected.py).  An `L(U), ANS` before the last multiply
 is what the page lacks.  Nothing to fix here; recorded so that nobody
 "corrects" the check.
+
+### 4. A floating-point operand at address 8 takes its sign from accumulator bit 60 (a model fault)
+
+    decks/problem_3_fp_address_8_sign.strap     (fourteen statements)
+    R1 = 0089000000000008  expected 0089000000000000   (-3 squared at 8.0)
+    R2 = 0089000000000008  expected 0089000000000000   (+3, bit 60 a one)
+    R3 = 0089000000000000  PASS (control, operand in storage)
+    R4 = 006A000000000000  expected 006A000000000008   (STN(U), 8.0)
+    word 8 = 006A000000000008  expected 006A000000000000
+
+Reference Manual printed p.80: "in floating-point instructions when
+address 8 is used as the effective operand address, accumulator bit
+positions 0-59 and sign byte register bit positions 4-7 are used as the
+operand ... Bits 60-63 of the accumulator do not serve as operand bits
+... This rule applies to operations of both fetch and store type."
+C22-6578 printed p.28, Problem 3.4 comment (b), says the same.  The
+model treats word 8 as an ordinary word in both directions: a fetch
+takes the sign from accumulator bit 60, and a store puts the sign there
+and leaves the sign byte alone.  Found by Problem 3.8 (`*(N), $L`, the
+square of the accumulator): on signed data the sum of squares came back
+as the positive squares less the negative ones, and the deck's 27
+arithmetic checks fail.  tests/run_tests.sh registers
+decks/problem_3_8.strap with the checks that pass and carries the 27 as
+comments; restore them with the fix.  The fix belongs in the
+floating-point operand path for address 8 (bsv/, not touched here).
+
+### 5. A normalized single-precision ADD whose sum survives only in the low-order 48 bits (UNSETTLED)
+
+    decks/problem_3_fp_add_low_half_zero.strap  (ten statements)
+    R1 = 075C000000000000  manual's text: 0000000000000000
+    R2 = 075C000000000000  manual's text: 0150000000000000
+    R3 = 075C000000000000  PASS (control: leading bit in place 48)
+
+Reference Manual printed p.87, ADD: "This normalization is not performed
+if the overflow bit and high-order 48 bits of the intermediate sum are
+zero", with LS on and "a normal order of magnitude zero is produced";
+printed p.82, Zero Definition, says the same.  The model normalizes the
+whole 96-bit sum and returns the small operand (PSH on, LS off).
+Against the manual: C22-6578 printed p.32, Problem 3.8 comment (b),
+claims EPLUS can be removed "without causing any damage", which holds
+only if the machine behaves as the model does
+(decks/problem_3_8_no_eplus.strap is registered against the page's
+claim and passes; run against the manual's text it fails 27 of 27).
+Comment (a) on the same page describes the manual's behaviour, so the
+page is not consistent with itself.  A third witness is wanted before
+the model is changed: jb_af1c's addition sections
+(decks/fp_arith_f204d.strap, F204D7) test PSH for far-apart exponents,
+and the listing may show the sum it expects.

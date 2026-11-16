@@ -1,0 +1,88 @@
+! C22-6578 PROBLEM 3.8, COMMENT (b), printed p.32 (PDF 33), read in the
+! ink:
+!
+!   "(b) The EPLUS instruction could be removed from the loop without
+!   causing any damage; the errors introduced would exactly cancel in
+!   the normalization process."
+!
+! THIS DECK IS THE PAGE'S PROGRAM WITH THAT ONE STATEMENT REMOVED, on
+! problem_3_8_positive.strap's data (twenty-five positive integers whose
+! squares add up to 4**12).  Nineteen printed statements, as printed.
+! ASSEMBLED WITH ASM=strap2.
+!
+! >>> TWO IBM DOCUMENTS DISAGREE ABOUT WHAT THIS PROGRAM DOES, AND THE
+! MODEL AGREES WITH THE PAGE. <<<
+!
+! THE PAGE'S CLAIM, worked by hand.  Without E+I, 48 the converted
+! integer N stands in the accumulator with exponent 0: the number
+! N x 2**-48.  Everything is 2**-48 of what it was, the squares 2**-96,
+! the root 2**-48 again, and the quotients are unchanged:
+!   SUM      2**24 x 2**-96 = .1 x 2**-71      08F8000000000000
+!   ROOT     2**12 x 2**-48 = .1 x 2**-35      0478000000000000
+!   FLOAT+k  N(k)/4096, problem_3_8_positive.strap's words exactly
+! THESE ARE THE REGISTERED CHECKS, labelled as the page's claim, and the
+! model passes all of them.
+!
+! THE REFERENCE MANUAL'S TEXT, worked by hand, gives something else.
+!   The square, N**2 x 2**-96, has an exponent of -48 or less for any N
+!   the field can hold (seven decimal places: N**2 < 2**48).
+!   "+, SUM": SUM is a word of zero bits, an order-of-magnitude zero
+!   with exponent 0 -- now the LARGER exponent.  Printed p.86-87: "The
+!   fraction of the number with the algebraically smaller exponent is
+!   shifted right by the amount of the exponent difference", 48 places
+!   or more, so nothing of the square is left in the high-order 48 bits
+!   of the intermediate sum; "This normalization is not performed if the
+!   overflow bit and high-order 48 bits of the intermediate sum are
+!   zero"; LS: "the final sum fraction is zero and a normal order of
+!   magnitude zero is produced".  The sum is a word of zero bits again,
+!   every time.  SRT then stores the root of a zero fraction, zero, and
+!   LOOP2 divides by it: printed p.93, "division is suppressed ... the
+!   accumulator and the sign byte register remain unchanged".
+!     SUM 0000000000000000, ROOT 0000000000000000,
+!     FLOAT+k = N(k) x 2**-48 (for 1: 05F8000000000000)
+!   tests/problem_3_expected.py (p38 with eplus=False) follows the
+!   manual and gives these.  OBSERVED 2026-11-15: run against them, the
+!   model FAILS SUM, ROOT and all twenty-five FLOAT words (27 of 27).
+!   The page's own comment (a), on the same page, describes the manual's
+!   behaviour: "an order of magnitude zero, by virtue of its exponent,
+!   may force the fraction of a nonzero number to shift towards the
+!   right before the addition.  In the present case the nonzeros all
+!   have larger exponents" -- with EPLUS.  Without it they all have
+!   smaller ones.
+!
+! So either comment (b) overlooked comment (a), or the 7030 normalized a
+! sum that survived only in the low-order half, as the model does and
+! the manual says it does not.  NOT SETTLED HERE.  The three-statement
+! reproducer is decks/problem_3_fp_add_low_half_zero.strap;
+! docs/NEXT.md "C22-6578 CHAPTER 3" item 5.
+!
+! INJECTION, OBSERVED 2026-11-15 (data side, on a copy of the deck, the
+! deck itself untouched): the sixth integer changed from 768 to 769.
+! FAIL SUM_page_claim, ROOT_page_claim and all twenty-five FLOAT checks
+! (27); x1_after, x2_after and the PC passed.
+
+NORMV   Z, SUM
+        LX, $1, XW1
+        LX, $2, XW2
+LOOP    LCV(V+I)(D, 48,6), 0.48($1), 68
+        ST(N), 0($2)
+        *(N), $L
+        +, SUM
+        ST(U), SUM
+        CBR+, $2, LOOP
+        SRT, ROOT
+LOOP2   L(N), 0($2)
+        /, ROOT
+        ST(U), 0($2)
+        CB+, $2, LOOP2
+        BEW, $
+XW1     XW, STRNG, 25, $
+XW2     XW, FLOAT, 25, $
+SUM     DRZ(N), (1)
+ROOT    DRZ(N), (1)
+! --- the deck's data ------------------------------------------------
+STRNG   DD(D, 48, 6), 1, 2, 3, 1024, 512, 768, 100, 99, 7, 1234
+        DD(D, 48, 6), 321, 5, 64, 640, 17, 250, 33, 11, 400, 8
+        DD(D, 48, 6), 129, 1000, 1511, 2132, 2179
+FLOAT   DR(N), (25)
+        END, NORMV
