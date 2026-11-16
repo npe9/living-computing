@@ -2661,8 +2661,10 @@ typedef struct {
   // connective operations, so their previous values may be used as
   // operands in the operation."
   //
-  // vflIntOp shares this type and always returns Invalid here; only
-  // the connectives set the counts.
+  // vflIntOp shares this type; of its arms only LOAD TRANSIT AND SET
+  // (and decimal *, *+, /, which are its action) sets the counts --
+  // printed p.67, the effective offset to the all-ones counter and two
+  // bits of the left zeros counter.
   Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts;
   // "I need the divider" -- see ExecDispatch's NeedBox.  When Valid,
   // needsRead is Valid too (a placeholder), so the bail is suppressed
@@ -2812,6 +2814,7 @@ function ActionValue#(VflOutcome)
                          || (vi.code == 6'b000001)    // + , -
                          || (vi.code == 6'b010001)    // K
                          || (vi.code == 6'b001011)    // LFT
+                         || (vi.code == 6'b111101)    // LTRS
                          || (vi.code == 6'b111001);   // *+
         Bool dfSupp = False;
         if (vflFetchType && !immediate) begin
@@ -2846,7 +2849,17 @@ function ActionValue#(VflOutcome)
         if (dfSupp) begin
           // suppressed: deliberately nothing at all
         end else begin
-        case (vi.code)
+        // DECIMAL *, *+ AND / ARE LOAD TRANSIT AND SET (printed p.68:
+        // "If decimal is specified, this operation has the same action
+        // as LOAD TRANSIT AND SET, except that the two high-order bits
+        // of the left zeros counter are set to zeros"; p.69 *+ "10";
+        // p.70 DIVIDE "01"), so they are dispatched to LTRS's arm, which
+        // reads vi.code for those two bits.
+        Bool ltrsAction = (vi.code == 6'b111101)
+                       || (vi.m.decimal == 1 && (vi.code == 6'b011001     // *
+                                              || vi.code == 6'b111001     // *+
+                                              || vi.code == 6'b011101));  // /
+        case (ltrsAction ? 6'b111101 : vi.code)
           6'b000101, 6'b100101: begin // L (Load), LWF -- first arm converted to the
             // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
             // Every other arm below still calls readField/readHW/
@@ -3521,8 +3534,8 @@ function ActionValue#(VflOutcome)
             // specified by the offset."  PF if either factor exceeds
             // 48 bits (the 48 low-order bits are used), or if product
             // bits pass the accumulator's left end; FT is unchanged.
-            // Decimal *+ (LOAD TRANSIT AND SET's action) is refused
-            // above with the rest of the decimal VFL set.
+            // Decimal *+ never reaches this arm: it is LOAD TRANSIT AND
+            // SET's action (p.69) and is dispatched to the LTRS arm.
             //
             // ARRIVED VIA MCP: printed p.95 lines 49 and 55 and p.96
             // lines 1-2, MOVE's table layout -- "LFT,TIODCT(TMXA)
@@ -4525,6 +4538,99 @@ function ActionValue#(VflOutcome)
               // accumulator, which this operation never touches.
               ind = setResultIndicatorsF(ind,
                       SM128 { sign: sgn, mag: payload });
+            end
+          end
+          6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
+            // LOAD TRANSIT AND SET, Reference Manual printed p.67 (PDF 70),
+            // read in the page image:
+            //
+            //   "The transit register (location 15), the left zeros
+            //   counter, and the all-ones counter are cleared.  A four-bit
+            //   sign byte, in which the leftmost bit is set to the sign of
+            //   the addressed storage operand as modified by the negative
+            //   sign modifier, is placed in the four low-order bits of the
+            //   transit register.  The remaining three bits of this sign
+            //   byte are zero.  The numeric part of the addressed operand
+            //   is positioned immediately to the left of this sign byte in
+            //   the transit register.  The effective offset specified by
+            //   the instruction is placed in the all-ones counter (bits
+            //   44-50 of location 7).  The two high-order bits of the left
+            //   zeros counter (bits 17-18 of location 7) are set to ones."
+            //
+            // and p.68 (PDF 71): BTR or DTR "depending on the value of the
+            // radix modifier"; PF if the numeric part "contains more than
+            // 60 significant bits ... the transit register is loaded up to
+            // its left end.  Higher-order bits are lost"; data flags and
+            // MOP "as in ADD"; RLZ/RZ/RGZ/RN "according to the contents of
+            // the transit register".  The same page's table gives the two
+            // left-zeros bits: MULTIPLY 00, DIVIDE 01, MULTIPLY AND ADD
+            // 10, LOAD TRANSIT AND SET 11.  The accumulator is not touched.
+            //
+            // THE EFFECTIVE OFFSET is vi.a.offset as vflSecondIndex left
+            // it (the second half's I field, printed p.21).  All seven
+            // bits, in decimal too: p.60's "two low-order bits ... ignored"
+            // is ADD's (CHOSEN; decks/vfl_ltrs.strap).
+            //
+            // A DECIMAL OPERAND'S NUMERIC PART IS LOADED AS FOUR-BIT
+            // DIGITS, zones dropped (decCompact): "Radix.  This modifier
+            // operates as in ADD" (p.68), and ADD's decimal operand "is
+            // converted to a four-bit byte for processing" (p.58).  CHOSEN;
+            // the page does not show a decimal transit register.
+            //
+            // THE COUNTS go back through connCounts and are written by the
+            // caller after this function's own writes -- the connectives'
+            // route to location 7 (VflOutcome's comment).
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(128) num = opnd.mag;
+              Bool numHi = False;
+              if (vi.m.decimal == 1) begin
+                match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
+                num = dg; numHi = dhi;
+              end
+              Bit#(60) n60 = truncate(num);
+              st.writeWord(addrTransit, (zeroExtend(n60) << 4)
+                                        | (zeroExtend(opnd.sign) << 3));
+              Bit#(2) lzHigh = case (vi.code)
+                                 6'b011001: 2'b00;   // *
+                                 6'b011101: 2'b01;   // /
+                                 6'b111001: 2'b10;   // *+
+                                 default:   2'b11;   // LTRS
+                               endcase;
+              connCounts = tagged Valid tuple2({lzHigh, 5'b0}, vi.a.offset);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              if (numHi || (num >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+              SM128 trv = SM128 { sign: opnd.sign, mag: zeroExtend(n60) };
+              if (vi.m.decimal == 1) begin
+                ind = setBit(ind, ind_DTR, 1);
+                ind = setResultIndicatorsDec(ind, trv);
+              end else begin
+                ind = setBit(ind, ind_BTR, 1);
+                ind = setResultIndicatorsF(ind, trv);
+              end
             end
           end
           default: begin
@@ -6224,6 +6330,10 @@ function ActionValue#(ExecDispatch)
         needsBox   = vo.needsBox;
         vflPending = vo.vflPending;
         ind        = vo.ind;
+        // LTRS's counts (location 7), after vflIntOp's own writes: see
+        // VflOutcome's connCounts comment and the Connective case below.
+        if (vo.connCounts matches tagged Valid {.lzcv, .aocv})
+          st.setConnectiveCounts(lzcv, aocv);
       end
 
       // -----------------------------------------------------------

@@ -2670,6 +2670,24 @@ run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offs
     "C13_KR_in_range:1712=0x4" "C14_KR_high:1713=0x2" "C15_KR_AH_off:1714=0x8" \
     "C16_bin_KR:1715=0x4" "C17_bin_KE:1716=0x8" \
     "C18_KE_performed_zoned:1717=0x22" "C19_KR_performed_zoned:1718=0x2"
+# LOAD TRANSIT AND SET in both radices, and decimal *, / and *+, which printed
+# pp.68-70 define as LTRS's action with their own two left-zeros-counter bits
+# (* 00, / 01, *+ 10, LTRS 11).  Ten cases, every value hand-derived from
+# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES 974 is a
+# MODEL PIN: Table 3's LTRS row (Vol. 1 printed p.3-8), 16 + 2 x/y clocks,
+# StretchTiming.bsv.  INJECTIONS: in the deck's header.
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=974+-0 \
+    "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
+    "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
+    "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
+    "T4_PF_low60_kept:1208=0x10" "I4_BTR_PF_RGZ:1209=0x0000010001000020" \
+    "W5_offset_second_indexed_8:1210=0x0000600000010000" \
+    "T6_dec_digits:1211=0x12340" "W6_dec_lzc11_aoc12:1212=0x0000600000018000" "I6_DTR_RGZ:1213=0x0000000000800020" \
+    "T7_dec_mul_minus:1214=0x123458" "W7_mul_lzc00_aoc20:1215=0x0000000000028000" "I7_DTR_RLZ_RN_noOP:1216=0x0000000000800090" \
+    "T8_dec_div:1217=0x970" "W8_div_lzc01_aoc4:1218=0x0000200000008000" "I8_DTR_RGZ:1219=0x0000000000800020" \
+    "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
+    "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
+    "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).
@@ -13745,11 +13763,41 @@ run "C22-6578 Problem 2.7 -- sorting into tables via LVE/SVA on SIC entries" ./r
     "m19_T13_w0:1426=0x5555555555555555" "m19_T13_w1:1427=0x5555555555555555" \
     "m19_T14_w0:1428=0xBDEFD55555555555" "m19_T14_w1:1429=0x5555555555555555" \
     "m19_T15_w0:1430=0xB3FF3B9FF9555555" "m19_T15_w1:1431=0x5555555555555555"
-# 2.8 is decimal throughout and is NOT run (its deck says why).  Transcribing
-# it found that strap_asm assembles a DD in a decimal mode as a BINARY
-# integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two runs of
-# the one reproducer: strap_asm, pinning the wrong words, and the host STRAP
-# II, which is right.  docs/NEXT.md has the section.
+# 2.8, decimal throughout, assembled by the host STRAP II (strap_asm gets
+# decimal DDs wrong, below).  THE PRINTED PROGRAM IS WRONG AT KOMF and cannot
+# leave its loop: "KF(BU,24)(V+I), 0.8($2)" compares three bytes with the
+# accumulator's N D (11111111), never the one-byte all-ones mark the
+# following "V+I, $2, 1.0" assumes (traced on the model 2026-11-16 against
+# Reference Manual printed pp.21, 56, 65; the deck's header has the trace).
+# As in 2.9 and 4.9m1: the cards as printed, pinned to what they do (here a
+# DELIBERATE STOP at the 40th arrival at KOMF, past the list's end, checking
+# only words the loop cannot move), and the cards that were meant.  The
+# printed "+(D,48,8)" is signed, so the KOMF-only run gets 36/8/44, NOT the
+# statement's 375/80/455; correcting the ADD too gets the statement's.
+# INJECTIONS, measured 2026-11-16 in StretchExecute.bsv, each reverted from a
+# saved copy and compared with cmp:
+#  (1) KF's accumulator field taken at offset 0 whatever the offset
+#      ("(acc.mag >> offSh) & nmask" -> "acc.mag & nmask"): the as-printed
+#      run still PASSES (it never reaches the end test's match); komf8 and
+#      corrected FAIL the step cap, PC (2022, in KOMF on product 2: the end
+#      test cannot see END) and FT (0x44 / 0x455, the packed total never
+#      expanded), 3 failures each.
+#  (2) the decimal ADD reading its field unsigned (fieldToSM's unsign forced
+#      to 1 in the + arm): as-printed FAILS F1 (0x307054941) and FT (0x375);
+#      komf8 FAILS F1, F2, FT (it now gets 375/80/455); corrected PASSES.
+run "C22-6578 Problem 2.8 -- as printed: KF(BU,24) at KOMF never matches, a deliberate stop in the loop" ./run_program.sh ../decks/problem_2_8.strap StretchP28Tb ASM=strap2 STOPAT=2020,40 STEPS=6000 \
+    "F1_36_signed_add:1203=0x0000000003064941" "F2_never_written:1207=0x0000000000003547" \
+    "FT_packed_36:14=0x36" "RM_untouched:13=0"
+run "C22-6578 Problem 2.8 -- KOMF as meant, KF(BU,8): halts, 36/8/44 by the printed signed ADD" ./run_program.sh ../decks/problem_2_8_komf8.strap StretchP28K8Tb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_36_NOT_375:1203=0x0000000003064941" "F2_8_NOT_80:1207=0x0000000000083547" \
+    "FT_44_NOT_455:14=0x404" "RM:13=0"
+run "C22-6578 Problem 2.8 -- KOMF and ADD as meant: the statement's 375, 80, 455" ./run_program.sh ../decks/problem_2_8_corrected.strap StretchP28CTb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_375:1203=0x0000000307054941" "F2_80:1207=0x0000000008003547" \
+    "FT_455:14=0x40505" "RM:13=0"
+# Transcribing 2.8 found that strap_asm assembles a DD in a decimal mode as a
+# BINARY integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two
+# runs of the one reproducer: strap_asm, pinning the wrong words, and the
+# host STRAP II, which is right.  docs/NEXT.md has the section.
 run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
     "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
     "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \

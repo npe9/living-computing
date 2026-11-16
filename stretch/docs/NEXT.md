@@ -24,7 +24,7 @@ accumulate.
 
 
 
-## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1 and 2 built 2026-11-16; what they found
+## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 
 **Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,
 `M+MG`, signed and unsigned `ST`, and `SRD`.  The sums -- including
@@ -44,10 +44,29 @@ Figure 15 as printed.  Readings CHOSEN: a `KE` with AE off still
 fetches and sets the data flags; a decimal compare's "byte size less
 than four ... as in any other subtraction" inherits stage 1's open item.
 
-**Still refused:** `LTRS`, `LFT` (decimal), `DCV`, and decimal `*`, `*+`,
-`/`.
+**Stage 3, the same day: `LTRS` in both radices, and decimal `*`, `*+`,
+`/` as its action** (printed pp.67-70, read in the page images; the
+section below).  One arm in `vflIntOp`, dispatched for all four; the
+transit register gets the numeric part above a four-bit sign byte, the
+all-ones counter the effective offset, the left zeros counter's two
+high-order bits the discriminator (p.68's table: `*` 00, `/` 01, `*+` 10,
+LTRS 11), BTR or DTR by radix; location 7 written through `connCounts`.
+Oracle deck: `decks/vfl_ltrs.strap` (ten hand-derived cases).  Readings
+CHOSEN, each named in the deck: a decimal operand's numeric part goes in
+as FOUR-BIT digits ("Radix ... as in ADD", p.68; p.58); the full
+seven-bit effective offset goes to the counter in decimal too; Table 3's
+LTRS `v` is read as `x` (Vol. 1 printed p.3-8 gives a 9.6 us full word,
+which only `x` reproduces; the glossary's V = 96/92 does not), and its
+">48 bits" term is not charged.  `docs/spec_decimal.md` Class E had read the decimal
+transit register as "a bit pattern either way"; annotated there.  **Open:** what the SAU does with a
+decimal field whose bytes are not digits, here as for every decimal arm;
+whether the BTR/DTR interruption (lower priority than every other, p.68)
+reaches a program on this model is not exercised by the deck (the
+harness runs with the interruption system off).
 
-### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong
+**Still refused:** `LFT` (decimal) and `DCV`.
+
+### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 
 Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is
 specified, this operation has the same action as LOAD TRANSIT AND SET,
@@ -58,8 +77,9 @@ decimal multiplication may be performed".  Printed p.69 says the same of
 `*+` ("the two high-order bits of the left zeros counter are set to
 10") and printed p.68's table gives DIVIDE 01.  So there is no decimal
 multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
-`LTRS`'s action plus DTR, and they wait for `LTRS` (unbuilt in either
-radix).  `docs/spec_decimal.md` section 2, Class C, had this already.
+`LTRS`'s action plus DTR, and they waited for `LTRS` (built 2026-11-16,
+stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
+already.
 
 ### Findings about the BINARY arms, recorded and not changed
 
@@ -93,22 +113,42 @@ radix).  `docs/spec_decimal.md` section 2, Class C, had this already.
   recomplemented subtraction 8) to fit inside the smallest Table 3
   budget, which `eboxClocks` already charges by byte; no source for the
   SAU's decimal cycle was read.
-* **Problem 2.8 runs part of the way and is not registered.**  With
-  `ASM=strap2` (and its two `DD(BU,96,8)` blanks split in two, since
-  STRAP II refuses a field over 64), product 1's F field gets `36` --
-  the total the program as printed computes, because the printed
-  `+(D,48,8)` is SIGNED and so reads E's last byte as a sign (traced by
-  hand before the run).  Then it loops in `KOMF` (PC 2022) and never
-  writes product 2.  NOT TRACED, AND A POSSIBLE MODEL BUG in `KF` with
-  `(V+I)` until it is.  Two readings, neither checked against a page:
-  (a) `KOMF`'s `KF(BU,24)(V+I), 0.8($2)` writes no offset, and if the
-  progressive increment is the offset field, `$2` never advances and the
-  loop is the printed program's; (b) the accumulator `L(BU,32), TESTW`
-  leaves (E, N, D, FF) and an offset-0 field compare reads its low 24
-  bits, which no byte string in this deck's G subfields matches.  My
-  hand trace before the run predicted a halt with F2 = 8 and $FT =
-  (16)404; the run does not reach it, so the trace or the model is
-  wrong.
+* **Problem 2.8: SETTLED 2026-11-16 -- the printed program is wrong, the
+  model is right, and the pre-run hand trace was wrong about one card.**
+  Traced on the model clock by clock (counter, X1, X2, accumulator, word
+  11).  `L(BU,32),TESTW` leaves E N D (11111111) = (16)354733FF in the
+  accumulator's low 32 bits; the end test `KF(BU,24),0($2),8` compares
+  E N D (offset 8) and is right; `KOMF  KF(BU,24)(V+I),0.8($2)` compares
+  three storage bytes with the THREE-byte accumulator field at offset 0,
+  N D (11111111) -- printed p.65: "the same length in bytes as the field
+  from storage exclusive of the sign byte, and its location is specified
+  by the offset in the usual manner"; p.56: the offset "specifies the
+  number of bits by which the right end of the accumulator operand is
+  offset from the right end of the accumulator".  Every pass gives AL or
+  AH (the unsigned 24-bit order), never AE, and X2 walks off the list.
+  Of the two readings this entry used to carry -- (a) the progressive
+  increment is the absent offset, so X2 never advances; (b) an offset-0
+  three-byte field compare can match nothing in this list -- (a) is
+  refuted (X2 advances 0.8 a pass: p.21, the address part "is added to
+  the value field" after use) and (b) is the cause.  **Where the ink errs:** MORE's `V+I, $2, 1.0` ("bypass 64 more
+  bits to new D field") puts X2 on D only if KOMF matched at the field's
+  all-ones mark A with a ONE-byte compare (A+8+64 = A+72 = D); the
+  printed three-byte field can only match a window N D (11111111)
+  starting at A-16, which would land 16 bits short of D.  So `(BU,24)`
+  should be `(BU,8)`.  Registered the 2.9/4.9m1 way: the cards as printed
+  (a deliberate stop at the 40th arrival at KOMF, new gen_tb `STOPAT=`,
+  pinning F1 = 36, F2 unwritten, $FT 36), `problem_2_8_komf8.strap` (only
+  KOMF changed: halts with F2 = 8, $FT = (16)404 -- exactly what the
+  pre-run trace predicted, which had taken KOMF to stop at the mark), and
+  `problem_2_8_corrected.strap` (the signed `+(D,48,8)` made `DU` too:
+  the statement's 375, 80, 455).  Two measured injections in the deck
+  header and run_tests.sh.
+* **An invalid digit met by a decimal ADD, live in Problem 2.8.**  LCV
+  leaves the BINARY count 3 in $L bits 0-17, a (16)C in a digit position;
+  the following decimal `+` adds E to the whole accumulator and turns
+  $L's (16)0000C000... into (16)00012000... (mkDecBox's digit step).  No
+  source says what the SAU does with it (StretchDecBox.bsv's header).
+  Not pinned; F and $FT do not depend on it.
 * **Two deck-writing errors, mine, found by runs:** `T, 1, $IND, Ik`
   names INDEX REGISTER 1 as TRANSMIT's count -- the immediate count of
   one is `TI, 1, ...`.  The first `vfl_decimal_add` and the revised

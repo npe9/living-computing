@@ -58,10 +58,13 @@ import StretchStorage::*;
 //                   decimal comparison (printed pp.65-67), a subtraction
 //                   through mkDecBox (stage 2, 2026-11-16).
 //
-// STILL REFUSED: LTRS, LFT,
-// and *, *+ and / -- whose decimal form is NOT arithmetic at all but
-// LOAD TRANSIT AND SET's action with DTR (printed pp.68-70), so they
-// wait for LTRS -- and DCV (unused by MCP).
+//   LTRS, and *, *+, /
+//                   LOAD TRANSIT AND SET (printed pp.67-68), and the
+//                   three whose decimal form is NOT arithmetic at all but
+//                   LTRS's action with DTR and their own two left-zeros
+//                   bits (printed pp.68-70) -- built 2026-11-16.
+//
+// STILL REFUSED: LFT (decimal) and DCV (unused by MCP).
 function Bool vflDecimalBuilt(Bit#(6) code);
   return code == 6'b000011 || code == 6'b011011 || code == 6'b100011   // LCV CV LTRCV
       || code == 6'b000101 || code == 6'b100101                        // L LWF
@@ -70,7 +73,9 @@ function Bool vflDecimalBuilt(Bit#(6) code);
       || code == 6'b001001 || code == 6'b101011 || code == 6'b101001   // M+ M+1 M+MG
       || code == 6'b010001 || code == 6'b110001                        // K KF
       || code == 6'b010011 || code == 6'b110011                        // KE KFE
-      || code == 6'b010101 || code == 6'b110101;                       // KR KFR
+      || code == 6'b010101 || code == 6'b110101                        // KR KFR
+      || code == 6'b111101                                             // LTRS
+      || code == 6'b011001 || code == 6'b111001 || code == 6'b011101;  // * *+ /
 endfunction
 
 function Bit#(7) effLength(Bit#(6) length) =

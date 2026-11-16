@@ -225,7 +225,22 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // (decimal) is charged too, like every refused operation here.
       // Pinned by decks/vfl_srd.strap's CYCLES check (header).
       Bit#(16) srdRound = (v.code == 6'b101101 && v.a.offset != 0) ? 4 : 0;
-      return 8 + 2 * zeroExtend(bytes) + srdRound;
+      // LOAD TRANSIT AND SET, and decimal *, *+, / (which are its action,
+      // Reference Manual printed pp.68-70).  Table 3 (Vol. 1 printed p.3-8,
+      // PDF 26, read in the image): pre-execution 2.4 us, execution
+      // .6(v/y + 3), termination .6, Full Word Total 9.6 us -- 8 + (2*v/y
+      // + 6) + 2 clocks.  CHOSEN: v read as x.  The glossary (printed
+      // p.3-10, PDF 28) defines V as "96 in binary - 92 in decimal", which
+      // gives 12.0 us at a 64-bit binary field, not the printed 9.6; x/y = 8
+      // (a 64-bit unsigned binary field) gives 9.6 exactly.  The comment
+      // "If the effective FL is greater than 48 bits, add .6(t/8 - 1)" is
+      // NOT charged: at FL 64 it too would contradict the 9.6.
+      Bool ltrsAction = (v.code == 6'b111101)
+                     || (v.m.decimal == 1 && (v.code == 6'b011001
+                                           || v.code == 6'b111001
+                                           || v.code == 6'b011101));
+      return ltrsAction ? 16 + 2 * zeroExtend(bytes)
+                        : 8 + 2 * zeroExtend(bytes) + srdRound;
     end
     // NOT GIVEN THE SAME TREATMENT, deliberately.  The connectives have
     // no VflMod -- no sign and no radix bit -- so p.3-10's x and y have
