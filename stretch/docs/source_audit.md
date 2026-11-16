@@ -2239,13 +2239,68 @@ like .1 (registered --known-wrong; NEXT.md "DD(N) 1.0 IS 1 - 2^-48").  Erratum: 
 those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
 ("undefined symbol U") -- read in the ink but not decided.
 
+### 4.6 8 x 8 bit transpose, printed pp.39-40 -- `decks/problem_4_6_method{1,2,3}.strap`, `problem_4_6_method3_n5.strap` -- PASSES as the model stood
+
+Three methods, four runs, every word worked by hand in the deck headers
+(9, 7, 7 and 7 exact checks and the PC), **assembled by the host STRAP
+II** (`ASM=strap2`): Method 3's `SF(BU,N*N,N), LOC` is printed with the
+page's own remark that STRAP II multiplies in the data description, and
+strap2 does (the same word as `SF(BU,64,8)`), so no card is substituted.
+Method 1 exchanges single bits with `LF`/`SF` (C0011/CM0101) under
+`(V+ICR)` and `V+C`; Methods 2 and 3 OR eight one-bit bytes a row into
+the accumulator (`C0111(BU,8,1)(V+IC)`, offset indexed by half words in
+`$2`) and store the right half.  Method 3 also runs at N = 5, the page's
+"or any integer not exceeding 8": `SF(BU,25,5)` truncating 8-bit result
+bytes to 5 (Reference Manual printed p.75), with the word's other 39 bits
+untouched.  **No wrong result, no printed erratum.**  Two readings: the
+connect is printed `C0 111` in Method 2 (both assemblers squeeze the
+blank to the same word), and Method 1's `N($3)` is right as printed (an
+integer in a 24-bit VFL address counts bits, C28-6129 Section I printed
+pp.8-9).
+
+### 4.7 64 x 64 bit transpose, printed pp.40-41 -- `decks/problem_4_7_method{1,2}.strap` -- PASSES as the model stood; Method 2 is wrong AS PRINTED
+
+`tests/verify_problem_4_matrix.py`, three runs, each the 64 rows, the
+index words and saved index cells, the accumulator, guards and the PC,
+worked from the data and the statement, not the model.  Method 1 is 4.6
+Method 1 with N = 64, as the page says (2016 bit exchanges).  Method 2
+transposes 8 x 8 blocks in the accumulator; the column block's connect
+at offset 71-r runs past the accumulator's left end, which the model
+handles as the partial-field rule says (printed p.76).  **Two printed
+errata in Method 2**: a comma for a semicolon (STRAP II refuses the card;
+supplied), and **`XW2 XW,LOC,7,XW222`: `$2` counts 7 and is stepped 8
+times a block**, so it is refilled a row early and 1500 of the 4096 bits
+come out wrong.  Run as printed (checked against a trace of the printed
+statements, which the verifier asserts gives the transpose with 8; the
+model matches it word for word) and corrected (the transpose).  **No
+model finding.**  `docs/NEXT.md`, "PROBLEMS 4.6-4.8".
+
+### 4.8 product of square matrices, printed p.42 -- `decks/problem_4_8.strap` -- PASSES as the model stood; wrong AS PRINTED
+
+`tests/verify_problem_4_matrix.py 4.8`, two runs, 64 elements, `$2`-`$4`,
+XW22, guards and the PC each.  `LFT(U)`, `*+(N)`, `SRD(N)`, `DL(U)`,
+`CBR+`, `CB`, and `V-ICR,$3,N*N-1.0` and `DD(N),0` assembled as printed
+by strap2 (strap_asm refuses both; the earlier Chapter 4 decks
+substituted).  L and R are small integers, so every element is an exact
+word.  **Printed erratum: `V+I,$3,N` and `V+I,$2,N` advance N half
+words, not N words** (C28-6129 Section I printed pp.8-9), so the printed
+program forms sum Lw[4i+k] Rw[j+4k] and 63 of 64 elements are wrong; it
+is self-consistent because `N*N-1.0` is also counted in half words (31.0).
+Run as printed (the model matches the trace) and corrected (L * R).
+**No model finding.**  Assembler side: `repro_address_multiply.strap`'s
+header said `N*N-1.0` assembles to 63.0; it is 31.0, and strap2 agrees.
+
 ## Where Chapter 4 stands, 2026-11-16
 
-Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
-one cause (location 8 as a floating-point operand and as a store), both
-FIXED 2026-11-16; the "lost" 4.9 store was the VFL SRD, see above,
-four assembler refusals, six printed errata.**  Not reached: 4.9
-Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
-(bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`
-field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
-4.1 (VFL square root).
+Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
+methods), 4.7 (two), 4.8.  **Two model bugs, one cause (location 8 as a
+floating-point operand and as a store), both FIXED 2026-11-16; the
+"lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
+nine printed errata.**  Not reached: 4.9 Method 2, 4.5 (field-length
+indexing through the second I field and `$LZC`/`$AOC`), 4.4, 4.3, 4.2
+(decimal VFL, refused), 4.1 (VFL square root).  The note that the second
+I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
+`vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
+offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it
+(offset indexing by half words, `0($2)`, `7($3)`, `64-8($3)`); 4.5 is
+the first printed program to index the field LENGTH.

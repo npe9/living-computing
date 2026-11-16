@@ -1,0 +1,107 @@
+! C22-6578 PROBLEM 4.6, "TRANSPOSITION OF AN 8 x 8 BIT MATRIX", printed
+! p.40 (PDF 41), Method 3, read in the ink at 300 dpi.
+!
+!   "Method 3.  Same technique as above, but coded to accommodate all NxN
+!   matrices with N <= 8."
+!   "Comments: (a) The store field instruction will not be assembled
+!   correctly by STRAP I, because of the multiplication in the data
+!   description field.  STRAP II will do it properly."
+!
+! THE TWELVE PRINTED STATEMENTS ARE AS PRINTED, "SF(BU,N*N,N), LOC"
+! INCLUDED: this deck is assembled by the host STRAP II (ASM=strap2),
+! which multiplies in the data description as the page says STRAP II
+! will (it compiles the same word as "SF(BU,64,8), LOC"; strap_asm
+! refuses "*" in a field, decks/repro_address_multiply.strap, G3.1).
+! The page gives the first statement no label; the deck's own
+! "START CNOP" before it names its address for END.  BMATX8 is the
+! deck's, between guards.
+!
+! TWO RUNS: this deck, N = 8 as printed, and problem_4_6_method3_n5.strap,
+! N = 5, the page's own "'or any integer not exceeding 8", that one card
+! changed.  For N = 5 the matrix is the first 25 bits of the same word;
+! the other 39 bits are data the program must not touch.
+
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2; printed page
+! = PDF - 3).  As Method 2 (see problem_4_6_method2.strap, which has the
+! page references), with N in place of 8:
+!   LVI,$2,N-1        N-1 half words, offset N-1 through 0($2).
+!   C0111(BU,N,1)(V+IC),0.N($1),0($2)
+!                     row r: N one-bit bytes, each widened to eight
+!                     bits, ORed into the accumulator with right end at
+!                     bit 127-(N-1-r).  Byte c's data bit lands at
+!                     127 - (N-1-r) - 8(N-1-c) = 128 - 9N + 8c + r + 8.
+!   SF(BU,N*N,N),LOC  SF = CM0101, "a" (Figure 20, printed p.76), CONNECT
+!                     TO MEMORY: N*N bits in N-bit bytes.  The
+!                     accumulator operand is N eight-bit bytes from
+!                     offset 0; "each result byte is truncated" to its
+!                     N low-order bits (printed p.75).  Accumulator byte c
+!                     occupies bits 128-8N+8c .. 135-8N+8c, and its N
+!                     low-order bits are bits 136-9N+8c+r, r = 0..N-1:
+!                     A[0][c] .. A[N-1][c], column c, stored as row c.
+!
+!   N = 8: the result is Method 2's: CM0101 with byte size 8 is a store.
+!   N = 5: bits 91+8c+r of the accumulator, stored 25 bits in 5-bit bytes.
+!
+! THE DATA AND THE EXPECTED VALUES, worked by hand:
+!
+!   BMATX8 = (16)3C9E15A7D2604B8F.  As an 8 x 8 matrix its transpose is
+!   (16)590E94E8C3F15B33 (problem_4_6_method2.strap has the table).
+!
+!   As a 5 x 5 matrix, the first 25 bits, and its transpose:
+!      0 0 1 1 1          0 1 0 0 0
+!      1 0 0 1 0          0 0 1 0 1
+!      0 1 1 1 1          1 0 1 0 0
+!      0 0 0 0 1          1 1 1 0 1
+!      0 1 0 1 1          1 0 1 1 1
+!   18 of the 25 positions differ from their mirror image.  Stored, the
+!   transpose is 01000 00101 10100 11101 10111 and bits 25-63 are as
+!   loaded: (16)4169DBA7D2604B8F (bit 24 is 1 both before and after, so
+!   the seventh hexadecimal digit stays A).
+!
+!                    N = 8                       N = 5
+!   BMATX8 (200.0)   (16)590E94E8C3F15B33        (16)4169DBA7D2604B8F
+!   acc_right (9)    (16)590E94E8C3F15B33        (16)0000000805141D17
+!   acc_left (8)     0                           0
+!   x1 (17)          value 200.0 + N x 0.N = 201.0 / 200.25, count 0,
+!                    refill XW1 (word 38): (16)0032400000000026 /
+!                    (16)0032190000000026
+!   x2 (18)          0                           0
+!   guards           unchanged.  PC: 75, the half word of the printed BEW.
+!
+!   N = 5, acc_right: accumulator bit 91+8c+r is A[r][c], word 9's bit
+!   27+8c+r; byte c+3 of word 9 is 000 then column c: 08 05 14 1D 17.
+!   Accumulator bits 0-87 stay as LI left them, 0.
+
+! PASSED AGAINST THE MODEL AS IT STOOD, both runs.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16 (a private copy of the deck):
+!   BMATX8's first byte 3C -> 1C (A[0][2] turned off), the program and
+!   the checks untouched.  PREDICTED: the transpose's third byte, column 2,
+!   94 -> 14 (A[0][2] is now row 2's bit 0).
+!   OBSERVED, N = 8: FAIL BMATX8_transposed and acc_right, both
+!   (16)590E14E8C3F15B33; the other five and the PC pass.
+!   OBSERVED, N = 5 (problem_4_6_method3_n5.strap, the same change): FAIL
+!   BMATX8_5x5_transposed ((16)4149DBA7D2604B8F: bit 10, A[0][2]'s place in
+!   the 5 x 5 transpose, off) and acc_right ((16)0000000805041D17: column
+!   2's byte 14 -> 04); the other five and the PC pass.
+
+! --- printed p.40, Method 3 -------------------------------------------
+START   CNOP
+        LX,$1,XW1
+        LVI, $2,N-1
+        LI(BU,1),0
+        B,CNNECT
+VMI     V-I, $2,1                       !'reduce offset by 1
+CNNECT  C0111(BU,N,1)(V+IC),0.N($1),0($2)
+        BZXCZ,VMI
+        SF(BU,N*N,N),LOC
+        BEW,$
+XW1     XW,LOC,N,$
+LOC     SYN,BMATX8                      !'or any location desired
+N       SYN,8                           !'or any integer not exceeding 8
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMATX8  DD(BU,64),(16)3C9E15A7D2604B8F
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START

@@ -1,0 +1,118 @@
+! C22-6578 PROBLEM 4.6, "TRANSPOSITION OF AN 8 x 8 BIT MATRIX", printed
+! p.39 (PDF 40), Method 1, read in the ink at 300 dpi.
+!
+!   "Given an 8x8 matrix whose elements are bits stored consecutively
+!   and row-wise starting at BMATX8.  Create the transpose and store the
+!   latter in the same area."
+!
+!   "Method 1.  Bit-by-bit operation"
+!   Comments: "(a) The program is written to accommodate an NxN bit
+!   matrix beginning at LOC.  The SYN pseudo-instructions define LOC as
+!   BMATX8 and N to be 8.  BMATX8 is assumed to be defined elsewhere in
+!   the symbolic program.  (b) 0.N is equivalent to 0.8, since N is 8."
+!
+! THE EIGHTEEN PRINTED STATEMENTS FROM BMX8T TO "N SYN,8" ARE AS
+! PRINTED.  The deck defines BMATX8, between two guard words.  Assembled
+! by the host STRAP II (ASM=strap2).  Problem 4.7 Method 1 is this
+! program "with LOC and N redefined to be BMX64 and 64": deck
+! problem_4_7_method1.strap.
+!
+! "N($3)" IS RIGHT AS PRINTED, though it looks like a missing "0.": in a
+! VFL instruction's 24-bit address field an integer counts bits
+! (C28-6129 Section I printed pp.8-9, "INTEGER ADDRESSES"; C22-6531 the
+! same table), so N($3) advances $3 by eight bits, one row.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2; printed page
+! = PDF - 3):
+!   LF and SF are connectives: LF = C0011, SF = CM0101 (C28-6129
+!   Appendix C printed p.50; strap_asm's CONNECTIVE_ALIASES has the
+!   listings that confirm both).  0011 is "m" and 0101 is "a" (Figure 20,
+!   printed p.76).  With field length 1 and the default byte size 8 the
+!   one byte is short: "only those bits ... included in the field length
+!   take part" (printed p.75), so each moves exactly one bit, and
+!   CONNECT leaves "the remainder of the accumulator ... unchanged".
+!
+!   LF(BU,1),0.0($3),64   bit at $3 into accumulator bit 63 (offset 64:
+!                         right end 64 bits from bit 127).
+!   LF(BU,1),0.0($2)      bit at $2 into accumulator bit 127.
+!   SF(BU,1)(V+ICR),0.1($2),64   bit 63 to $2's place; $2 += 0.1,
+!   SF(BU,1)(V+ICR),N($3)        bit 127 to $3's place; $3 += 0.8:
+!                         the two bits are exchanged.  Each counts its
+!                         index down and refills it at zero (printed
+!                         p.21).
+!   BZXCZ, LOF            while $3's count is not zero.
+!   V+C,$2,VF; V+C,$3,VF  add VF's value, 0.1+0.N = 0.9, and count down
+!                         (printed p.24); SX keeps each as its refill.
+!
+!   XW2 = LOC+0.1 (A[0][1]), XW3 = LOC+0.8 (A[1][0]), counts N-1 = 7,
+!   refills XW22 and XW33, which the first line fills from XW2 and XW3.
+!   Row i starts at $2 = LOC + 0.(9i+1), $3 = LOC + 0.(9i+8), count 7-i:
+!   the inner loop exchanges A[i][j] and A[j][i] for j = i+1..7 and is
+!   refilled to the row's start, V+C moves both to the next row's first
+!   element above (below) the diagonal and takes the count to 6-i.  Row
+!   6 leaves count 0 and the second BZXCZ falls to BEW.  28 exchanges,
+!   each pair above the diagonal once.
+!
+! THE DATA AND THE EXPECTED VALUES, worked by hand:
+!
+!      BMATX8 as loaded               its transpose
+!      0 0 1 1 1 1 0 0   3C           0 1 0 1 1 0 0 1   59
+!      1 0 0 1 1 1 1 0   9E           0 0 0 0 1 1 1 0   0E
+!      0 0 0 1 0 1 0 1   15           1 0 0 1 0 1 0 0   94
+!      1 0 1 0 0 1 1 1   A7           1 1 1 0 1 0 0 0   E8
+!      1 1 0 1 0 0 1 0   D2           1 1 0 0 0 0 1 1   C3
+!      0 1 1 0 0 0 0 0   60           1 1 1 1 0 0 0 1   F1
+!      0 1 0 0 1 0 1 1   4B           0 1 0 1 1 0 1 1   5B
+!      1 0 0 0 1 1 1 1   8F           0 0 1 1 0 0 1 1   33
+!
+!   BMATX8 (200.0)   (16)590E94E8C3F15B33
+!   x2 (18)          row 6 refilled to 200.55 count 1, V+C: 200.55 +
+!                    0.9 = 201.0, count 0, refill XW22 (word 44):
+!                    (16)003240000000002C.  In general LOC + N*N bits.
+!   XW22             the same word: SX after the last V+C.
+!   x3 (19)          200.62 + 0.9 = 201.7, count 0, refill XW33 (word
+!                    45): (16)003247000000002D.  In general LOC + N*N +
+!                    N - 1 bits.
+!   XW33             the same word.
+!   acc_left (8)     bit 63 holds A[7][6] of the matrix as loaded, the
+!                    last bit LF brought from $3: 1, and nothing else was
+!                    ever written into the left half (it starts 0).
+!   acc_right (9)    bit 127 holds A[6][7] as loaded: 1.
+!   guards           unchanged.  PC: 82, the half word of the printed BEW.
+!   Index words: value bits 0-23 (bit address) and sign 24 (printed
+!   p.21), count 28-45 and refill 46-63 (printed p.24).
+!
+! PASSED AGAINST THE MODEL AS IT STOOD (run line in tests/run_tests.sh).
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16 (a private copy of the deck):
+!   BMATX8's first byte 3C -> 1C (A[0][2] turned off), the program and
+!   the checks untouched.  PREDICTED: the transpose's third byte, column 2,
+!   94 -> 14 (A[0][2] is now row 2's bit 0).
+!   OBSERVED: FAIL BMATX8_transposed only (got (16)590E14E8C3F15B33); the
+!   index words, XW22/XW33, the accumulator, the guards and the PC pass.
+
+! --- printed p.39, Method 1 -------------------------------------------
+BMX8T   LX, $2, XW2; SX, $2, XW22
+        LX, $3, XW3; SX, $3, XW33
+LOF     LF(BU,1),0.0($3),64
+        LF(BU,1), 0.0($2)
+        SF(BU,1)(V+ICR),0.1($2),64
+        SF(BU,1)(V+ICR),N($3)
+        BZXCZ,LOF
+        V+C,$2, VF; SX,$2,XW22
+        V+C, $3, VF; SX, $3,XW33
+        BZXCZ, LOF
+        BEW,$
+XW2     XW, LOC+0.1,N-1,XW22
+XW3     XW,LOC+0.N,N-1, XW33
+XW22    XW,0
+XW33    XW,0
+VF      VF,0.1+0.N
+LOC     SYN, BMATX8
+N       SYN,8
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMATX8  DD(BU,64),(16)3C9E15A7D2604B8F
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, BMX8T

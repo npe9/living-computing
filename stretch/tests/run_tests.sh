@@ -14136,6 +14136,51 @@ run "C22-6578 Problem 4.12 -- f(pi) through EXP twice, SRT into \$L, R/" python3
 # One abscissa is misprinted in its ninth digit and is run as printed.
 run "C22-6578 Problem 4.13 -- LEGQ8, numerical integration, four printed pieces" python3 verify_problem_4_fp.py 4.13
 
+# 4.6, printed pp.39-40: an 8 x 8 bit matrix transposed in place, three
+# methods.  Method 1 exchanges bits by LF/SF (C0011/CM0101) with V+ICR and
+# V+C; Methods 2 and 3 OR eight one-bit bytes per row into the accumulator
+# by C0111 and store it whole, Method 3 by "SF(BU,N*N,N)", which only the
+# host STRAP II assembles (ASM=strap2 throughout).  Method 3 is run as
+# printed, N = 8, and with the page's "or any integer not exceeding 8",
+# N = 5 (5-bit bytes, the word's other 39 bits untouched).  Every word is
+# worked by hand in the deck's header.  All passed as the model stood.
+run "C22-6578 Problem 4.6 Method 1 -- 8 x 8 bit transpose, bit by bit (LF/SF)" ./run_program.sh ../decks/problem_4_6_method1.strap StretchP46M1Tb ASM=strap2 "PC=82" \
+    "BMATX8_transposed:200=0x590E94E8C3F15B33" "x2:18=0x003240000000002C" "XW22:44=0x003240000000002C" \
+    "x3:19=0x003247000000002D" "XW33:45=0x003247000000002D" "acc_left:8=1" "acc_right:9=1" \
+    "guard1:199=0xA5A5A5A5A5A5A5A5" "guard2:201=0x5A5A5A5A5A5A5A5A"
+run "C22-6578 Problem 4.6 Method 2 -- 8 x 8 bit transpose by C0111 into the accumulator" ./run_program.sh ../decks/problem_4_6_method2.strap StretchP46M2Tb ASM=strap2 "PC=75" \
+    "BMATX8_transposed:200=0x590E94E8C3F15B33" "acc_right:9=0x590E94E8C3F15B33" "acc_left:8=0" \
+    "x1:17=0x0032400000000026" "x2:18=0" "guard1:199=0xA5A5A5A5A5A5A5A5" "guard2:201=0x5A5A5A5A5A5A5A5A"
+run "C22-6578 Problem 4.6 Method 3 -- N x N, N = 8, SF(BU,N*N,N)" ./run_program.sh ../decks/problem_4_6_method3.strap StretchP46M3Tb ASM=strap2 "PC=75" \
+    "BMATX8_transposed:200=0x590E94E8C3F15B33" "acc_right:9=0x590E94E8C3F15B33" "acc_left:8=0" \
+    "x1:17=0x0032400000000026" "x2:18=0" "guard1:199=0xA5A5A5A5A5A5A5A5" "guard2:201=0x5A5A5A5A5A5A5A5A"
+run "C22-6578 Problem 4.6 Method 3 -- N = 5, SF into 5-bit bytes" ./run_program.sh ../decks/problem_4_6_method3_n5.strap StretchP46M3N5Tb ASM=strap2 "PC=75" \
+    "BMATX8_5x5_transposed:200=0x4169DBA7D2604B8F" "acc_right:9=0x0000000805141D17" "acc_left:8=0" \
+    "x1:17=0x0032190000000026" "x2:18=0" "guard1:199=0xA5A5A5A5A5A5A5A5" "guard2:201=0x5A5A5A5A5A5A5A5A"
+
+# 4.7, printed pp.40-41: a 64 x 64 bit matrix transposed in place.  Method 1
+# is 4.6 Method 1 with N = 64 (2016 exchanges); Method 2 transposes 8 x 8
+# blocks in the accumulator by C0111, the column block's operand running
+# past the accumulator's left end (partial field, printed p.76).  64 rows
+# and the index words, worked by verify_problem_4_matrix.py from the data
+# and the statement, not the model.  Method 2 AS PRINTED gives $2 a count
+# of 7 for eight rows a block and does not transpose (1500 bits wrong);
+# its run checks the trace of the printed statements, the corrected run
+# (count 8) the transpose.  All passed as the model stood.
+run "C22-6578 Problem 4.7 Method 1 -- 64 x 64 bit transpose, bit by bit" python3 verify_problem_4_matrix.py 4.7m1 ../decks/problem_4_7_method1.strap ASM=strap2
+run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, as printed (XW2 count 7: not a transpose)" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2
+run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, XW2 count 8: the transpose" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2 --corrected
+
+# 4.8, printed p.42: P = L * R for 8 x 8 floating matrices, LFT / *+ / SRD,
+# CBR+, and "V-ICR,$3,N*N-1.0" assembled as printed by strap2.  AS PRINTED
+# "V+I,$3,N" and "V+I,$2,N" advance N HALF words (an integer in a 19-bit
+# field, C28-6129 printed pp.8-9), so the program forms sum Lw[4i+k] Rw[j+4k]
+# and 63 of 64 elements differ from L * R; the run checks that, the
+# corrected run (N+N, 2*N*N-1.0) checks L * R.  Small integers: every word
+# is exact.  Both passed as the model stood.
+run "C22-6578 Problem 4.8 -- product of square matrices, as printed (N half words: not L * R)" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2
+run "C22-6578 Problem 4.8 -- product of square matrices, corrected: L * R" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2 --corrected
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

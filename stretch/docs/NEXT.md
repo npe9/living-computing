@@ -17555,6 +17555,60 @@ assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
 * 4.12's typeset formula, printed p.46, has an e with a bar over it for
   the inner exponent; read e**-x from the program.
 
+## G2.1 CHAPTER 4: PROBLEMS 4.6-4.8, PRINTED ERRATA, NO MODEL FINDING -- 2026-11-16
+
+Run on the host STRAP II (`ASM=strap2`), which assembles the pages'
+`N*N` as printed, so these decks carry no substitute.  Every run passed
+against the model as it stood; what was found is in the ink.
+
+### Problem 4.7 Method 2, printed pp.40-41: two errata, run as printed and corrected
+
+`decks/problem_4_7_method2.strap`, `tests/verify_problem_4_matrix.py
+4.7m2` (with and without `--corrected`).
+
+1. `LX,$2,XW2;SX,$2,XW22,SX,$2,XW222`: a comma for the second
+   semicolon.  STRAP II refuses it ("EXTRA FIELDS"); supplied.
+2. **`XW2 XW,LOC,7,XW222` gives `$2` a count of 7, and `$2` is stepped
+   eight times a block** by `(V+ICR)` in OFDIA1 and again in OFDIA2, as
+   `$1` is with its count of 8.  At the seventh row `$2` is refilled to
+   the block's first row (Reference Manual printed pp.21, 26), so the
+   column block is read and written a row out of step: 1500 of 4096 bits
+   come out wrong, in every row.  The model reproduces the printed
+   program's 64 wrong words exactly (a trace of the printed statements
+   in the verifier, which gives the transpose with count 8), and with 8
+   gives the transpose.
+
+### Problem 4.8, printed p.42: as printed it does not form L * R
+
+`decks/problem_4_8.strap`, `tests/verify_problem_4_matrix.py 4.8` (with
+and without `--corrected`).  **`V+I,$3,N` ('advance $3 to next row') and
+`V+I,$2,N` advance N HALF words**: an integer in a 19-bit field counts
+half words (C28-6129 Section I printed pp.8-9, "INTEGER ADDRESSES",
+whose own example is `V+I, $3, 13` = 6.32; C22-6531 the same), and the
+page knows it (4.6 Method 2: `LVI,$2,8-1 '7 half-words`; this program's
+`V+I,$4,1.0` for one word).  `V-ICR,$3,N*N-1.0` is 64 half words less
+1.0 = 31 words, which returns `$3` to the next column after eight 4-word
+steps, so the program is self-consistent and computes sum over k of
+Lw[4i+k] Rw[j+4k] (storage-order words): 63 of 64 elements wrong in the
+deck's data.  No single definition of N repairs it: `N SYN,8.0` fixes
+the V+I's, but STRAP II multiplies bit addresses as integers of bits
+(C28-6129 Section II printed pp.35-36, "2.0 * 2.0" is 16384 bits), so
+`N*N` is 512 x 512 and V-ICR assembles 8190 half words.  Open reading:
+p.35's exception for mixed terms in "immediate operation address
+fields" (its example is a VFL `LI`) is not applied to V-ICR by strap2;
+applied, `N*N-1.0` would be 0, and the program still wrong.
+The page never defines N; the deck uses `N SYN,8` as 4.6 does.  Run as
+printed (the model matches the printed program's trace word for word)
+and corrected (`N+N`, `2*N*N-1.0`, `N+N`: L * R).
+
+**The assembler side of the same rule:** `decks/repro_address_multiply.strap`
+said `N*N-1.0` "must be 63.0 full words".  It is 31.0 by the rule above,
+and the host STRAP II assembles 31.0 (`0007C70F`); the header is
+corrected.  strap_asm still refuses the card (G3.1, held by
+`check_problem_4_dd_refusals.py`); when it is built, its answer must be
+31.0, not 63.0.  The 4.6-4.8 decks are assembled by strap2 and carry
+the printed `N*N` and `DD(N),0` with no substitute.
+
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
 
 **FIXED 2026-11-16, both directions; ONE PART WAS MISDIAGNOSED.**

@@ -1,0 +1,36 @@
+! C22-6578 PROBLEM 4.6, Method 3, printed p.40 (PDF 41), WITH N = 5: the
+! page's own "N SYN,8 'or any integer not exceeding 8", the one card
+! changed.  Everything else -- the twelve printed statements, the data,
+! the derivation -- is problem_4_6_method3.strap's, which has the N = 5
+! column of expected values and the hand-worked 5 x 5 transpose.
+!
+! "SF(BU,N*N,N),LOC" is now SF(BU,25,5): connect to memory into 5-bit
+! bytes, each result byte "truncated" to its five low-order bits
+! (Reference Manual printed p.75).  The other 39 bits of BMATX8 are data
+! the program must not touch.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16: see problem_4_6_method3.strap.
+
+! --- printed p.40, Method 3 -------------------------------------------
+START   CNOP
+        LX,$1,XW1
+        LVI, $2,N-1
+        LI(BU,1),0
+        B,CNNECT
+VMI     V-I, $2,1                       !'reduce offset by 1
+CNNECT  C0111(BU,N,1)(V+IC),0.N($1),0($2)
+        BZXCZ,VMI
+        SF(BU,N*N,N),LOC
+        BEW,$
+XW1     XW,LOC,N,$
+LOC     SYN,BMATX8                      !'or any location desired
+N       SYN,5                           !'or any integer not exceeding 8
+!                                       printed: N SYN,8
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMATX8  DD(BU,64),(16)3C9E15A7D2604B8F
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START

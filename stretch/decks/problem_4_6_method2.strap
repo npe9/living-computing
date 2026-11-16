@@ -1,0 +1,113 @@
+! C22-6578 PROBLEM 4.6, "TRANSPOSITION OF AN 8 x 8 BIT MATRIX", printed
+! pp.39-40 (PDF 40-41), Method 2, read in the ink at 300 dpi.
+!
+!   "Given an 8x8 matrix whose elements are bits stored consecutively
+!   and row-wise starting at BMATX8.  Create the transpose and store the
+!   latter in the same area."
+!
+!   "Method 2.  Take advantage of the special properties of connective
+!   operations."  Comment (a): "Instead of transporting 2*64 bits one at
+!   a time, 8-bits are loaded with each connect instruction and the
+!   entire transposed matrix is stored in one instruction."
+!
+! THE TEN PRINTED STATEMENTS FROM BMX8T2 TO XW1 ARE AS PRINTED, with
+! the page's ' comments written !' (this deck's comment mark).  BMATX8
+! "is assumed to be defined elsewhere" (Method 1's comment (a)): the
+! deck defines it, between two guard words.  Assembled by the host
+! STRAP II (ASM=strap2).
+!
+! A READING, NOT AN ERRATUM: the connect is printed "C0 111(BU,8,1)
+! (V+IC),..." with a blank between C0 and 111, where Method 3 prints
+! "C0111".  It is kept as printed: both assemblers squeeze the blank and
+! compile the same word (checked, 0000088144100E72 for each, with $1/$2).
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2; printed page
+! = PDF - 3):
+!   LX, $1, XW1       $1 = BMATX8, count 8, refill XW1.
+!   LVI, $2, 8-1      '7 half-words: bits 0-18 of $2's value = 7 (printed
+!                     p.25), so the value is 3.32 (224 bits).  A half
+!                     word in an index value is one unit of offset when
+!                     the index modifies the offset (C22-6578 printed
+!                     p.39, 4.5 comment (b): "Bits in the half-word
+!                     position in the index value field influence the
+!                     offset directly"; Reference Manual printed p.21:
+!                     the second I field indexes instruction bits 35-50
+!                     with "bit position 3 of the index word ... aligned
+!                     with bit position 35", so value bit 18, the half
+!                     word, meets bit 50, the offset's last), so 0($2)
+!                     is offset 7.
+!   LI(BU,1), 0       "The entire left and right halves of the
+!                     accumulator ... are cleared" (Load, printed p.61).
+!   C0111(BU,8,1)(V+IC), 0.8($1), 0($2)
+!                     CONNECT, connective 0111 = m OR a (Figure 20,
+!                     printed p.76).  Field 8 bits, byte size 1: eight
+!                     one-bit bytes, each "converted into an eight-bit
+!                     byte ... by the addition of high-order zeros"; the
+!                     accumulator operand is as many 8-bit bytes, its
+!                     right end at the offset; "the remainder of the
+!                     accumulator remains unchanged" (printed pp.75-76).
+!                     Progressive indexing V+IC: the operand is at $1's
+!                     value, then $1 += 0.8 and its count goes down one
+!                     (printed p.21; no refill without R).
+!   BZXCZ, VMI        branch while the count of $1 is not zero; V-I, $2,
+!                     1 takes one half word, so one offset, off $2.
+!   ST(BU,64), BMATX8 the right half of the accumulator, offset 0.
+!
+!   Row r (r = 0..7) is connected at offset 7 - r, so its right end is
+!   accumulator bit 120 + r and its byte c (c = 0..7) has its data bit
+!   at bit 120 + r - 8(7 - c) = 64 + 8c + r.  So right-half bit 8c + r
+!   is A[r][c]: byte c of the stored word is column c, the transpose.
+!   The seven zeros of each byte are ORed and change nothing; the first
+!   operand reaches back to bit 57 of the cleared left half.
+!
+! THE DATA AND THE EXPECTED VALUES, worked by hand:
+!
+!      BMATX8 as loaded               its transpose
+!      0 0 1 1 1 1 0 0   3C           0 1 0 1 1 0 0 1   59
+!      1 0 0 1 1 1 1 0   9E           0 0 0 0 1 1 1 0   0E
+!      0 0 0 1 0 1 0 1   15           1 0 0 1 0 1 0 0   94
+!      1 0 1 0 0 1 1 1   A7           1 1 1 0 1 0 0 0   E8
+!      1 1 0 1 0 0 1 0   D2           1 1 0 0 0 0 1 1   C3
+!      0 1 1 0 0 0 0 0   60           1 1 1 1 0 0 0 1   F1
+!      0 1 0 0 1 0 1 1   4B           0 1 0 1 1 0 1 1   5B
+!      1 0 0 0 1 1 1 1   8F           0 0 1 1 0 0 1 1   33
+!
+!   24 of the 64 positions differ from their mirror image.
+!
+!   BMATX8 (200.0)   (16)590E94E8C3F15B33
+!   acc_right (9)    the same: STORE does not change the accumulator.
+!   acc_left (8)     0: cleared by LI, and only ORed with zeros after.
+!   x1 (17)          value 200.0 + 8 x 0.8 = 201.0 (12864 bits, bits
+!                    0-23), count 8 run down to 0, refill XW1, word 38
+!                    (bits 46-63): (16)0032400000000026.
+!   x2 (18)          3.32 less seven half words = 0, count 0 (LVI does
+!                    not touch it, and the deck loads none), refill 0.
+!   guards 199, 201  unchanged.
+!   PC               75, the half word of the printed BEW, $.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD (run line in tests/run_tests.sh).
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16 (a private copy of the deck):
+!   BMATX8's first byte 3C -> 1C (A[0][2] turned off), the program and
+!   the checks untouched.  PREDICTED: the transpose's third byte, column 2,
+!   94 -> 14 (A[0][2] is now row 2's bit 0).
+!   OBSERVED: FAIL BMATX8_transposed and acc_right, both (16)590E14E8C3F15B33;
+!   the other five checks and the PC pass.
+
+! --- printed p.40, Method 2 -------------------------------------------
+BMX8T2  LX, $1,XW1
+        LVI,$2,8-1                      !'7 half-words
+        LI(BU,1),0                      !'zero accumulator
+        B,CNNECT
+VMI     V-I, $2, 1                      !'reduce offset by 1
+CNNECT  C0 111(BU,8,1)(V+IC),0.8($1),0($2)
+        BZXCZ,VMI
+        ST(BU,64),BMATX8
+        BEW,$
+XW1     XW,BMATX8,8,$
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMATX8  DD(BU,64),(16)3C9E15A7D2604B8F
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, BMX8T2

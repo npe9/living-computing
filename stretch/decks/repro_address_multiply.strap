@@ -14,8 +14,15 @@
 ! the multiplication in the data description field.  STRAP II will do
 ! it properly."
 !
-! When it assembles with N = 8 the immediate must be 63.0 full words:
-! the same half word as "V-ICR,$3,63.0".
+! WHAT IT ASSEMBLES TO is NOT 63.0, as this header used to say.  N is an
+! integer (N SYN, 8), and an integer in a 19-bit field counts HALF words
+! (C28-6129 Section I printed pp.8-9, "INTEGER ADDRESSES"): N*N is 64
+! half words, less the bit address 1.0, two half words: 62 half words,
+! 31.0.  The host STRAP II assembles exactly that (0007C70F, where
+! "V-ICR,$3,63.0" is 000FC70F), and so does 4.8's printed program, which
+! is wrong for that reason (decks/problem_4_8.strap; docs/NEXT.md
+! "PROBLEMS 4.6-4.8").  The control below, 63.0, is only a card that
+! assembles.
 ! tests/check_problem_4_dd_refusals.py asserts the refusal.
 
 N       SYN, 8

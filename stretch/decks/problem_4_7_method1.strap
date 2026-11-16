@@ -1,0 +1,138 @@
+! C22-6578 PROBLEM 4.7, "TRANSPOSITION OF A 64 x 64 BIT MATRIX", printed
+! p.40 (PDF 41), Method 1, read in the ink at 300 dpi.
+!
+!   "Given a 64x64 matrix whose elements are bits stored consecutively
+!   and row-wise starting at BMX64.  Create the transpose and store it in
+!   the same area."
+!
+!   "Method 1.  Bit-by-bit operation.  Same as Method 1 of previous
+!   program with LOC and N redefined to be BMX64 and 64 respectively."
+!
+! SO THE PAGE PRINTS NO STATEMENTS FOR THIS METHOD.  The eighteen below
+! are Problem 4.6 Method 1's, printed p.39, as printed there, with the two
+! SYN cards redefined as the sentence says (each marked "printed (4.6):").
+! problem_4_6_method1.strap has the reading and the page references.
+! Assembled by the host STRAP II (ASM=strap2).  BMX64 is the deck's: 64
+! words at 200.0-263.0, between guards at 199.0 and 264.0.
+!
+! N = 64 IS GENERAL IN EVERY PRINTED FIELD: XW2 = LOC+0.1 count 63;
+! XW3 = LOC+0.N = LOC+1.0, the next row; VF = 0.1+0.64 = 1.1, one row
+! and one bit; "N($3)" is 64 bits in a VFL address (an integer in a
+! 24-bit field counts bits, C28-6129 Section I printed pp.8-9).  The
+! inner loop exchanges A[i][j] and A[j][i], j = i+1..63, for rows i =
+! 0..62: 2016 exchanges, each of the 2016 pairs above the diagonal once
+! (the derivation for general N is in problem_4_6_method1.strap).
+!
+! THE DATA: 64 words drawn once from Python's random.Random(4707)
+! (getrandbits(64), in order), written below; nothing in them is
+! symmetric.  THE EXPECTED VALUES are worked by
+! tests/verify_problem_4_matrix.py from the data as assembled and the
+! statement (bit (r, c) to (c, r)), not from the model:
+!   rows 0-63     the transpose, all 64 words.
+!   x2 (18)       LOC + N*N bits = 264.0, count 0, refill XW22; XW22 the
+!                 same word.
+!   x3 (19)       LOC + N*N + N - 1 bits = 264.63, count 0, refill XW33;
+!                 XW33 the same word.
+!   acc_left (8)  bit 63 is A[63][62] as loaded, the last bit LF took
+!                 from $3, and nothing else (the accumulator starts 0).
+!   acc_right (9) bit 127 is A[62][63] as loaded.
+!   guards        unchanged.  PC: the half word of the printed BEW.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   the first word of BMX64 (16)09C4D5B1949524CB -> (16)01C4D5B1949524CB
+!   (A[0][4] turned off), by --sub on the copy that runs; the expected words
+!   are worked from the deck as it stands.  PREDICTED: row 4's bit 0.
+!   OBSERVED: FAIL row04 only, (16)7A1A56121855F9EA for (16)FA1A56121855F9EA;
+!   the other 63 rows, $2, $3, XW22, XW33, the accumulator, the guards
+!   and the PC pass.
+
+! --- printed p.39 (4.6 Method 1), LOC and N as p.40 redefines them ----
+BMX8T   LX, $2, XW2; SX, $2, XW22
+        LX, $3, XW3; SX, $3, XW33
+LOF     LF(BU,1),0.0($3),64
+        LF(BU,1), 0.0($2)
+        SF(BU,1)(V+ICR),0.1($2),64
+        SF(BU,1)(V+ICR),N($3)
+        BZXCZ,LOF
+        V+C,$2, VF; SX,$2,XW22
+        V+C, $3, VF; SX, $3,XW33
+        BZXCZ, LOF
+        BEW,$
+XW2     XW, LOC+0.1,N-1,XW22
+XW3     XW,LOC+0.N,N-1, XW33
+XW22    XW,0
+XW33    XW,0
+VF      VF,0.1+0.N
+LOC     SYN, BMX64                      !printed (4.6): LOC SYN, BMATX8
+N       SYN,64                          !printed (4.6): N SYN,8
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMX64   DD(BU,64),(16)09C4D5B1949524CB
+        DD(BU,64),(16)3E7CC7063D99F6DC
+        DD(BU,64),(16)3C94FE7009B7D6BC
+        DD(BU,64),(16)9AA9D0810044A572
+        DD(BU,64),(16)8B0203191EDE42BD
+        DD(BU,64),(16)673AB9B2FD6A3FB2
+        DD(BU,64),(16)1BFCDD8277E81C1F
+        DD(BU,64),(16)340FD17DC7D9B984
+        DD(BU,64),(16)050D707C7222BF40
+        DD(BU,64),(16)70E175C9BCB65970
+        DD(BU,64),(16)36575FF92D6C2FCC
+        DD(BU,64),(16)BE23BBF9328801F7
+        DD(BU,64),(16)4857F5D89FF91B9A
+        DD(BU,64),(16)8722862F994B92F5
+        DD(BU,64),(16)BF09DE737B26E413
+        DD(BU,64),(16)02BE7C9C77129CA5
+        DD(BU,64),(16)37E2E88AD3107D27
+        DD(BU,64),(16)99D0E0B16ABCC3AB
+        DD(BU,64),(16)F27FD3C20B479E5F
+        DD(BU,64),(16)DD3D7B9300342B51
+        DD(BU,64),(16)920147972430FECC
+        DD(BU,64),(16)FE8C69B3CF6409D9
+        DD(BU,64),(16)ED56DF29970CFF42
+        DD(BU,64),(16)E041D1F1244A682C
+        DD(BU,64),(16)F4BFD992B8B81306
+        DD(BU,64),(16)C2162A09733D8C3A
+        DD(BU,64),(16)25B43C9675BEA7C7
+        DD(BU,64),(16)ADA7BE61AA20D7AD
+        DD(BU,64),(16)91AC94FC84D3D342
+        DD(BU,64),(16)57561395DC895D0D
+        DD(BU,64),(16)F80887C91866488D
+        DD(BU,64),(16)809D579D9DE97BD6
+        DD(BU,64),(16)B66D8B15F39FAB93
+        DD(BU,64),(16)A73BDF186F6B7E7B
+        DD(BU,64),(16)B1EE8D9535A6862D
+        DD(BU,64),(16)8B4939F81A1DBAC2
+        DD(BU,64),(16)4CB5A9823F2013D4
+        DD(BU,64),(16)80DACC0D7AC9E650
+        DD(BU,64),(16)C2A00EDF6D9BD82F
+        DD(BU,64),(16)331833758C5852FD
+        DD(BU,64),(16)34FE1C1C4256F814
+        DD(BU,64),(16)089D0B26B64C692D
+        DD(BU,64),(16)64B4C18602805C91
+        DD(BU,64),(16)3DA29A9A8FDACD49
+        DD(BU,64),(16)80E82FAA48CD2C23
+        DD(BU,64),(16)5AB4EA7443A66998
+        DD(BU,64),(16)02E639EF9C6924DA
+        DD(BU,64),(16)EE60C3745345506E
+        DD(BU,64),(16)FE6F136D17E962EB
+        DD(BU,64),(16)BABA0BE50CC8B219
+        DD(BU,64),(16)4BFE78E100EEDF5B
+        DD(BU,64),(16)2E22AD4E57AF313A
+        DD(BU,64),(16)ECF26099537B976C
+        DD(BU,64),(16)A1E5609F90330263
+        DD(BU,64),(16)9628DD51ADBC159F
+        DD(BU,64),(16)AE9E7B5A80708F10
+        DD(BU,64),(16)38F9FDD2A03D40F8
+        DD(BU,64),(16)A86C55404298544F
+        DD(BU,64),(16)3B792D79FDC13D6E
+        DD(BU,64),(16)E1F48024D3072B12
+        DD(BU,64),(16)6DBBCB15B6E8B1A1
+        DD(BU,64),(16)E21A1CE8FB1E305C
+        DD(BU,64),(16)BE5178FDCB632187
+        DD(BU,64),(16)91B0DA687F898A6C
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, BMX8T
