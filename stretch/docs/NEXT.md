@@ -242,10 +242,10 @@ table, through ARNRM2's transfer vector and branch return
 docs/reading_notes/fortran_bss_plan.md, 2026-11-16: modes bss2 and bsslib
 chain through SRNXAD to a second subprogram, from TWS (YRLDTA = ATWSTA,
 $13 = AREADS + the disk address, p.327 ll.12-19 run) and as a library
-entry (YRLDTA = "LB" + 36 bits).  OPEN, measured: a library routine's
-card count is 0 and wraps (p.324 l.28, p.326 ll.41-44), so its last card
-returns normally and its vector is never sent -- the loader as read does
-not end a library routine.  NOT BUILT: C, P, D cards, which wait on
+entry (YRLDTA = "LB" + 36 bits), which a card count never ends (0,
+p.324 l.28): DFETCH's end return, YLERR -> YAERR1 "LIBRARY ROUTINE WAS
+READ" (p.334 ll.7-16), ends it, sends its vector and ends the job.  The
+driver plays that end return (CHOSEN).  NOT BUILT: C, P, D cards, which wait on
 printed p.329 (R0.3).  Earlier note, kept: a loader run needs what the lost BSS
 processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from

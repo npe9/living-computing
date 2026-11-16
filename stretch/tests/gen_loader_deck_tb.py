@@ -131,8 +131,8 @@ runs ARNRM2 -> ARNRM5 with a next table (printed p.327 ll.1-22): KSILO+9.32
 takes table 2's address, YRLDTA takes ATWSTA ("))))))))", a subprogram on
 TWS), $13 takes AREADS plus table 2's disk address, and the loader returns
 NORMALLY.  The driver then feeds the second subprogram's binary cards as
-resume load would read them.  It has four named commons in another order
-(BL2 shared with the first, at index 2 not 2-of-3; i 3 bits wide), its own
+resume load would read them.  It has four named commons (i 3 bits wide,
+not 2), BL2 shared with the first at index 1 (index 2 there), its own
 origin, a two-word vector at table + 5.0, and refill 0, so its last card
 ends the job through ARNRM4's branch return.  ORACLE: core equals both
 subprograms assembled absolute (each common at its table origin, the two
@@ -140,14 +140,18 @@ vectors over the A8 names); YRLDTA equals ATWSTA's 48 bits; $13 equals
 AREADS with value -13.0 + 557.0 and count 35 - (557 mod 512) // 15 = 32,
 p.327 ll.12-19 as read (the arc bits cleared by LFI(BU,9) before the /I
 by 15.: 557 is arc 1, word 45, so a missed clear would give count -2).
+PAGES READ IN THE INK for R1, 2026-11-16: p.291 ll.6-31 (ABSSID, ARCDCT,
+ALB, ATWSTA), p.324 ll.10-29, p.326 ll.37-45, p.327 ll.1-28, p.332
+ll.27-42, p.334 ll.1-19 (PDF = printed - 249 to p.328, - 250 after).
 FIRST RUN, 2026-11-16: 29 checks pass, PC at DONE, 76,369 cycles ($13
-first measured with disk address 5: value -8.0, count 35, as read).
-MEASURED INJECTIONS, each restored by copy and cmp:
-  - wrong SRNXAD chain (table 1's refill SUB2_TABLE + 1, here): 17 fail --
-    every word of the second subprogram and its commons BL4/BL5/BL6
-    (121400-121600, 122000-122011, left sentinel), branch_address_from_
-    KSILO10, read_source_13 and the PC (0: off the end); the first
-    subprogram's 13 words and YRLDTA pass.
+first measured with disk address 5: value -8.0, count 35, as read); with
+BL2 moved to index 1 (the run committed), 76,366 cycles.
+MEASURED INJECTIONS (BL2 at index 1), each restored by copy and cmp:
+  - wrong SRNXAD chain (table 1's refill SUB2_TABLE + 1, here): the step
+    cap is reached and 17 checks fail -- every word of the second
+    subprogram and its commons BL4/BL5/BL6 (121400-121600, 122000-122011,
+    left sentinel), branch_address_from_KSILO10, read_source_13 and the
+    PC; the first subprogram's 13 words and YRLDTA pass.
   - wrong named-common index width (strap/strap2/punch.py, w =
     (ncommon - 1).bit_length() or 1: the same 2 bits for three commons,
     2 not 3 for four): 6 fail, exactly the second subprogram's
@@ -156,21 +160,33 @@ MODE "bsslib": the same, but table 2 is a LIBRARY entry: word 0 bit 63 is
 1 and bits 0-35 a 36-bit name (CHOSEN, "SINE  " in A6: how an A8 name
 becomes 36 bits is spec G7, unprinted).  ARNRM3 (p.327 ll.23-27) must put
 "LB" (ALB, p.291 l.29) and those 36 bits in YRLDTA and AREAD1 in $13.
-FIRST RUN, 2026-11-16: 28 checks pass, 76,084 cycles.  YRLDTA = "LBSINE  "
-(LF(BU,12,6) and LF(BU,36,6) are connectives at byte size 6, so each
-character becomes an eight-bit byte, Reference Manual p.75 as quoted in
-bsv/StretchVFL.bsv; SF(BU,48,6) packs the eight bytes back).
-MEASURED, AND RECORDED AS A FINDING: a library routine's card count is
-set to 0 ("LIBRARY ROUTINE CARD CT.=0", p.324 l.28) and ARNRM1 decrements
-before it tests (p.326 ll.41-44), so the count wraps and ARNRM2 is never
-reached by count.  The routine's FORTRAN branch card returns NORMALLY (the
-PC check is NRET), and its vector is NOT transmitted: 122001-122002 keep
-the A8 names the cards loaded.  How the loader learns a library routine
-has ended is not in pp.320-334 as read; resume load's reading of the LB
-area is the open place (p.332).
-CONTROL: a card count planted in table 2's word 0 (bits 43-45) changes
-nothing in bsslib -- all 28 pass, 76,084 cycles -- as p.324 l.24 predicts
-(the library bit sends the count to 0 before it is read).
+YRLDTA = "LBSINE  " (LF(BU,12,6) and LF(BU,36,6) are connectives at byte
+size 6, so each character becomes an eight-bit byte, Reference Manual p.75
+as quoted in bsv/StretchVFL.bsv; SF(BU,48,6) packs the eight bytes back).
+HOW A LIBRARY ROUTINE ENDS.  Its card count is set to 0 ("LIBRARY ROUTINE
+CARD CT.=0", p.324 l.28) and ARNRM1 decrements before it tests (p.326
+ll.41-44), so no card ends it: the first run (2026-11-16, B,NRET after
+the last card) measured the count wrapping, the FORTRAN branch card
+returning normally and the vector left untransmitted.  The end comes from
+resume load: DFETCH's second return is B,YLERR (p.332 ll.40-41, "NOP
+-FORGET ERROR RETURN." before it), and YLERR, "CASE WHERE BRANCH CARD IS
+MISSING" (p.334 ll.2-3), on a BSS job whose current table is a library
+one takes YAERR1, "-FETCH END RETURN ON A BSS JOB": LI(BU,18),1. "-LIBRARY
+ROUTINE WAS READ" / ST(BU,18),ARCDCT / B,ARNORM (p.334 ll.12-16).  So the
+driver, after the last library card, plays DFETCH reaching the end of the
+LB area: LVI,$15,AEND / B,YLERR (CHOSEN: that the area's end gives this
+return; DFETCH's end-of-area behaviour was not re-read for this).  ARNRM1
+then counts 1 to 0, ARNRM2 sends the two-word vector and ARNRM4 ends the
+job through AEND's branch return.  RUN, 2026-11-16: every check passes
+(29 printed before the end-return's D check, 30 with it), PC at DONE,
+76,579 cycles: both vectors sent, KSILO+10's address returned.
+MEASURED, restored by copy and cmp:
+  - p.334 l.14 as LI(BU,18),2. (decks/mcp_bootstrap_p334.strap): 4 fail,
+    vector_122001, vector_122002 (the A8 names left), branch_address_
+    from_KSILO10 and the PC (ARNRM1 counts 2 to 1 and returns normally).
+  - CONTROL: a card count planted in table 2's word 0 (bits 43-45)
+    changes nothing -- all pass, 76,579 cycles -- as p.324 l.24 predicts
+    (the library bit sends the count to 0 before it is read).
 NOT BUILT: C, P and D cards.  R0.3 is not done: printed p.329 is missing
 (mcp_image.MISSING_PAGES) and not reconstructed, and P, D and every C card
 with fewer than four half-words or a hex digit go through it
@@ -317,7 +333,7 @@ BSS_TABLE = 0o107000
 # writes a subprogram to TWS is spec G6, unprinted).  Every field of table 2
 # differs from table 1: origin, card count, four named commons not three (so
 # the relocation's i field is 3 bits wide, not 2: p.324 ll.20-23), common
-# origins (BL2 shared, at another index), vector length 2 not 1, and the
+# origins (BL2 shared, at index 1 not 2), vector length 2 not 1, and the
 # vector's place (table + 3.0 + 4.32 = word 5, not word 4).
 SUB2_ORIGIN = 0o122000
 SUB2_TABLE = 0o107100
@@ -345,8 +361,8 @@ SUB2_BODY = [
     "LAST    SYN,$",
 ]
 SUB2_COMMONS = [("", 0o121300, ["BZ2     DR(BU,64),1", "CL      SYN,$"]),
-                ("BL4", 0o121400, ["W4      DD(BU,64),(8)4444"]),
                 ("BL2", 0o121100, ["W2      DR(BU,64),1"]),
+                ("BL4", 0o121400, ["W4      DD(BU,64),(8)4444"]),
                 ("BL5", 0o121500, ["W5      DD(BU,64),(8)5555", "        DD(BU,64),(8)5556"]),
                 ("BL6", 0o121600, ["W6      DD(BU,64),(8)6666"])]
 SUB2_SIZES = {"BL4": 1, "BL2": 2, "BL5": 2, "BL6": 1}
@@ -476,6 +492,7 @@ def main():
            "YBCBU   SYN,(8)%o.%02o" % (S["YBCBU"] // 64, S["YBCBU"] % 64),
            "LOWLIM  SYN,(8)%o.0" % LOW,
            "HIGHLIM SYN,(8)%o.0" % HIGH,
+           "YLERR   SYN,(8)%o.%02o" % (S["YLERR"] // 64, S["YLERR"] % 64),
            # The new-job bit, .25 of L: tested BZBZ,.57($15) (p.320
            # line 11), set the way ALOADR sets its own (p.320 line 14).
            "START   CM1111(BU,1),A0+.57"]
@@ -496,7 +513,23 @@ def main():
         if mode in ("bss", "bss2") and k == len(imgs) - 1:
             drv.append("        B,ERR")         # the last card must branch-return
         if mode == "bsslib" and k == len(imgs) - 1:
-            drv.append("        B,NRET")        # measured: see the header
+            # The count of a library routine is 0 and never ends it
+            # (p.324 l.28); resume load's DFETCH reaches the end of the LB
+            # area and takes its second return, B,YLERR (p.332 ll.40-41),
+            # whose YAERR1 "-FETCH END RETURN ON A BSS JOB" sets the count
+            # to 1, "-LIBRARY ROUTINE WAS READ", and goes to ARNORM (p.334
+            # ll.12-16).  The driver plays DFETCH's end return, with $15 at
+            # a calling sequence as resume load's YLOADA would be.
+            drv += ["        LVI,$15,AEND",
+                    "        B,YLERR",
+                    "AEND    VF,YBCBU",
+                    "        ,LOWLIM",
+                    "        ,HIGHLIM",
+                    "        B,ERR",
+                    "DEND    VF,0",
+                    "        B,DONE",
+                    "BAEND   VF,0",
+                    "        B,ERR"]
         if two and k == boundary:
             # SRNXAD nonzero: ARNRM2's normal return (p.327 l.22 or l.27).
             # Keep the read source resume load would use.
@@ -506,7 +539,7 @@ def main():
             drv.append("E%d      NOP" % k)       # the error return: next card
     drv += ["        B,DONE", "ERR     B,ERR", "DONE    B,DONE"]
     if two:
-        drv += ["NRET    B,NRET", "SAV13   XW,0"]
+        drv += ["SAV13   XW,0"]
     for k, cols in enumerate(imgs):
         drv.append("        CNOP")
         for w, v in enumerate(card_words(cols)):
@@ -597,11 +630,11 @@ def main():
         kind = "loaded" if wr == full else "zeroed" if fl == full else "partial"
         if mode.startswith("bss") and w == 0o120001:
             exp, kind = BSS_TV, "vector"     # ARNRM2 transmits the vector over the A8 name
-        if mode == "bss2" and SUB2_ORIGIN + 1 <= w <= SUB2_ORIGIN + len(SUB2_TV):
+        if two and SUB2_ORIGIN + 1 <= w <= SUB2_ORIGIN + len(SUB2_TV):
             exp, kind = SUB2_TV[w - SUB2_ORIGIN - 1], "vector"
         checks.append(("%s_%o" % (kind, w), str(w), exp))
-    if mode in ("bss", "bss2"):
-        ba = d.symtab["BA%d" % (len(imgs) - 1)]
+    if mode.startswith("bss"):
+        ba = d.symtab["BAEND" if mode == "bsslib" else "BA%d" % (len(imgs) - 1)]
         sh = 64 - ba % 64 - 24
         want = (d.words[ba // 64] & ~(0xffffff << sh)) | (bss_start << sh)
         checks.append(("branch_address_from_KSILO10", str(ba // 64), want))
@@ -657,8 +690,11 @@ def main():
     for k in range(len(imgs)):
         dk = d.symtab["D%d" % k]
         checks.append(("no_error_card_%d" % (k + 1), str(dk // 64), d.words[dk // 64]))
+    if mode == "bsslib":
+        dk = d.symtab["DEND"]
+        checks.append(("no_error_fetch_end", str(dk // 64), d.words[dk // 64]))
     print(generate(module, image, checks,
-                   pc_check=d.symtab["NRET" if mode == "bsslib" else "DONE"] // 32,
+                   pc_check=d.symtab["DONE"] // 32,
                    cycle_bound=20000000, step_cap=2000000,
                    fast_load=os.path.join(os.path.abspath(STRETCH), "bsv", "build-loader",
                                           module + ".hex")))

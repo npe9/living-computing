@@ -474,12 +474,17 @@ All are under `http://www.bitsavers.org/pdf/ibm/7090/` unless another location i
 - Inject: a wrong `SRNXAD` chain, a wrong named-common index width.
 - Size: about 1 day of testbench work; no new 7030 code.
 - **STATUS 2026-11-16: the second subprogram and the library entry ran. C, P and D were NOT built (R0.3).** Details and injections are in `tests/gen_loader_deck_tb.py`'s header.
-  - **`bss2`, 29 checks.** Table 1's `SRNXAD` points at a second table, so `ARNRM2`-`ARNRM5` (p.327 ll.1-22) run with a next table. The second subprogram (four named commons, so `i` is 3 bits; BL2 shared; a two-word vector) then loads equal to its absolute assembly and ends the job through `ARNRM4`.
+  - **`bss2`, 29 checks.** Table 1's `SRNXAD` points at a second table, so `ARNRM2`-`ARNRM5` (p.327 ll.1-22) run with a next table. The second subprogram (four named commons, so `i` is 3 bits; BL2 shared, at index 1 where the first has it at 2; a two-word vector) then loads equal to its absolute assembly and ends the job through `ARNRM4`.
     - `YRLDTA` holds `))))))))`.
     - `$13` holds `AREADS` (p.331 l.40) with its value increased by the disk address (CHOSEN 557, arc 1 word 45) and its count reduced by (557 mod 512) // 15 = 3. That is p.327 ll.12-19 as read, now run.
-    - Injections: a wrong `SRNXAD` failed 17 checks (the whole second subprogram, the chain end and `$13`). A wrong `i` width (punch.py) failed exactly the second subprogram's 6 instruction words.
-  - **`bsslib`, 28 checks.** Table 2's bit 63 is 1. `YRLDTA` holds `LB` and the planted 36 bits (CHOSEN `SINE  `; spec G7), and `$13` holds `AREAD1`.
-  - **Finding:** a library routine's card count is set to 0 (p.324 l.28) and is decremented before it is tested (p.326 ll.41-44). So the count wraps, the routine's last card returns *normally*, and its transfer vector is *not* transmitted. The loader as read does not end a library routine; that must happen in resume load's read of the LB area or elsewhere. Open.
+    - Injections: a wrong `SRNXAD` failed 17 checks and ran out the step cap (the whole second subprogram, the chain end and `$13`). A wrong `i` width (punch.py) failed exactly the second subprogram's 6 instruction words.
+  - **`bsslib`, 29 checks plus the end return's.** Table 2's bit 63 is 1. `YRLDTA` holds `LB` and the planted 36 bits (CHOSEN `SINE  `; spec G7), and `$13` holds `AREAD1`.
+  - **How a library routine ends.** Its card count is set to 0 (p.324 l.28) and is decremented before it is tested (p.326 ll.41-44), so no card ends it. A first run measured the count wrapping and the vector left untransmitted. The end comes from resume load.
+    - DFETCH's second return is `B,YLERR` (p.332 ll.40-41).
+    - `YLERR` handles the "CASE WHERE BRANCH CARD IS MISSING" (p.334 ll.2-3). On a BSS job with a library table it goes to `YAERR1`, "-FETCH END RETURN ON A BSS JOB": `LI(BU,18),1.` "-LIBRARY ROUTINE WAS READ" / `ST(BU,18),ARCDCT` / `B,ARNORM` (p.334 ll.12-16, read in the ink).
+    - The driver plays that end return. It is CHOSEN that the LB area's end gives it; DFETCH's end-of-area behaviour was not re-read.
+    - ARNRM1 then counts 1 to 0. Both vector words are sent and the job ends through the branch return.
+    - Injection: p.334 l.14 as `LI(BU,18),2.` fails exactly the two vector words, the branch address and the PC.
   - Control: a card count planted in a library table changes nothing (p.324 l.24).
   - **C, P, D: stopped.** R0.3 is not done. Printed p.329 is missing and not reconstructed, and P, D, hex digits and every short C card go through it (spec §7.2). The one C form that avoids p.329 (an origin and four half-words of 0-9) is not tested.
 

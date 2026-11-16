@@ -789,8 +789,10 @@ address through the branch return. Run 2026-11-16 (modes `bss2` and
 `ATWSTA` and `$13` to `AREADS` plus the disk address, with the count
 reduced by the in-arc card number. For the library, `YRLDTA` was set to
 `LB` plus 36 bits and `$13` to `AREAD1`. Both returned normally to resume
-load. Measured: a library routine's card count wraps (0 less 1), so it
-never reaches `ARNRM2`, and its vector is not sent. Not yet run: C, P
+load. A library routine's card count is 0, and a card never ends it. Its
+end comes through DFETCH's end return, `YLERR` → `YAERR1` "-LIBRARY ROUTINE
+WAS READ" (L p.334 ll.7-16), which sets the count to 1 and enters
+`ARNORM`. Run that way, its vector is sent and the job ends. Not yet run: C, P
 and D cards (§7.2).
 
 ### 7.2 Printed p.329: lost, inside the loader

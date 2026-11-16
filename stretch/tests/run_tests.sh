@@ -14713,8 +14713,8 @@ run "MCP's binary loader takes STRAP II's FORTRAN cards as BSS-only (code 4)" ./
 run "MCP's binary loader loads a STRAP II FORTRAN deck, commons relocated" ./run_loader_deck.sh StretchLoaderBssTb bss
 # R1 (docs/reading_notes/fortran_bss_plan.md): a second subprogram through
 # SRNXAD, from TWS (ATWSTA, $13 from the disk address) and as a library
-# entry (LB + 36 bits).  The library routine's count wraps and its vector
-# is not sent -- measured, recorded.  Injections in gen_loader_deck_tb.py's header.
+# entry (LB + 36 bits), ended by DFETCH's end return (YLERR -> YAERR1,
+# p.334).  Injections in gen_loader_deck_tb.py's header.
 run "MCP's binary loader chains to a second subprogram on TWS (SRNXAD)" ./run_loader_deck.sh StretchLoaderBss2Tb bss2
 run "MCP's binary loader chains to a library entry, LB + 36-bit name" ./run_loader_deck.sh StretchLoaderBssLibTb bsslib
 
