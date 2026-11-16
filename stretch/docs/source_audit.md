@@ -2276,6 +2276,11 @@ Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
 methods), 4.7 (two), 4.8.  **Two model bugs,
 one cause (location 8 as a floating-point operand and as a store),
 four assembler refusals, nine printed errata.**  Not reached: 4.9
-Method 2, 4.5 (the `i2`
-field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
-4.1 (VFL square root).
+Method 2, 4.5 (field-length indexing through the second I field and
+`$LZC`/`$AOC`), 4.4, 4.3, 4.2 (decimal VFL, refused), 4.1 (VFL square
+root).  The note that the second I field is "decoded and read NOWHERE"
+(above, "(b)") is out of date: `vflSecondIndex` (`StretchExecute.bsv`)
+indexes length, byte size and offset as one field, and 4.6 Methods 2-3
+and 4.7 Method 2 ran on it (offset indexing by half words, `0($2)`,
+`7($3)`, `64-8($3)`); 4.5 is the first printed program to index the
+field LENGTH.
