@@ -13495,6 +13495,23 @@ run "Buchholz B.3 -- matrix multiplication, 2x3 by 3x2" ./run_program.sh ../deck
     "x1:17=0x004C8000000C0011" "x2:18=0x004D8000000800CA" "x3:19=0x00500000000800CB" \
     "x4:20=0x004BC000000C0011" "x5:21=0x004F4000000400CA" "ft:14=0x006C000000000000"
 
+# B.4, printed pp.299-300.  LCV(V+I)(DU,60,6) at offset 68 -- decimal to
+# binary, straight into a floating fraction, with progressive indexing over
+# 60-bit fields that are not word aligned -- then *(N) of the accumulator by
+# itself (operand 8.0), SRT(N), /(N), CBR+ and CB+.  The book's own 25
+# numbers.  Passed against the model as it stood.  The data is built so the
+# sum of squares is a perfect square and every quotient is g/64: no rounding
+# rule is assumed anywhere (deck header).  F25 carries zone bits 11.
+run "Buchholz B.4 -- 25 decimal numbers to a normalized FLP vector" ./run_program.sh ../decks/buchholz_b4_decimal_vector.strap StretchBuchB4Tb "PC=215" STEPS=200000 \
+    "guard_lo:399=99" "guard_hi:425=99" \
+    "f1:400=0x003F000000000000" "f2:401=0x00B8000000000000" "f3:402=0x003E000000000000" "f4:403=0x00B8000000000000" \
+    "f5:404=0x003C800000000000" "f6:405=0x00B8000000000000" "f7:406=0x003A000000000000" "f8:407=0x00B8000000000000" \
+    "f9:408=0x0039000000000000" "f10:409=0x0098000000000000" "f11:410=0x0038000000000000" "f12:411=0x009C000000000000" \
+    "f13:412=0x005F000000000000" "f14:413=0x009C000000000000" "f15:414=0x005C000000000000" "f16:415=0x009C000000000000" \
+    "f17:416=0x005A000000000000" "f18:417=0x0078000000000000" "f19:418=0x0059000000000000" "f20:419=0x0078000000000000" \
+    "f21:420=0x0058000000000000" "f22:421=0x0078000000000000" "f23:422=0x007E000000000000" "f24:423=0x007A000000000000" \
+    "f25:424=0x007C000000000000" "root_sum_squares:204=0x01DC34FC00000000" "x1:17=0x0050DC00000000C9" "x2:18=0x00064000000000CA"
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
