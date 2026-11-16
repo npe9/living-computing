@@ -29,3 +29,10 @@ mkdir -p build-divbox simbuild-divbox
 "$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkDivBoxTb \
        -o divbox_sim +RTS -K512m -RTS
 ./divbox_sim
+# mkDivBox, the box the core instantiates (2026-11-15): same file, its
+# own testbench, checked against the `/` and `%` it replaced.
+"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -info-dir build-divbox \
+       -g mkCoreDivBoxTb -u StretchDivBox.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild-divbox -bdir build-divbox -e mkCoreDivBoxTb \
+       -o coredivbox_sim +RTS -K512m -RTS
+./coredivbox_sim

@@ -80,7 +80,8 @@ in parentheses); **open** = no stage assigned yet.
 | Updated indicator register; index-indicator branches resolved in the I-box | Blosk p.17 | planned (2c) |
 | Arithmetic-conditional branch guessed not taken; wrong-way recovery | Buchholz §15.2; Perf. Char. p.3-23 | done (3c), by snapshot rather than per-instruction recovery levels |
 | Four look-ahead levels, five counters, tags, indicators, IC per level | Buchholz §15.3 | partial (3a): levels, in-order removal, fetch-ahead; the five counters' separate interlocks are collapsed into head/tail |
-| A look-ahead level carries the operand address the I-box computed during preparation (the E-box does not re-index) | Buchholz §15.3 (operand addresses held per level); sequential model | partial: the model re-derives the address at dispatch, so an I-box index write waits while a pending level is indexed by that register (`levelIndexedBy`, `indexStorePending`, 2026-11-15). A conservative stall, not a measured time; carrying the address in the level removes it |
+| The arithmetic unit never indexes: a look-ahead level holds op code, operand, indicators and instruction counter, and no address or index field; the instruction unit forms the address, requests the operand and puts a store's address in the look-ahead address register | Buchholz §15.3-15.5 (printed pp.238-241, PDF 263-266); 7101 CE manual R23-9732 Fig. 3.2.2 (PDF 93: the load pulses gate tag bits, op code, indicators, IC and data into a level) | done (2026-11-15), by the model's own device: the level carries the I-box's indexing (`LaCarry`: effective address, and VFL length/byte size/offset after the second index) and the E-box is dispatched the instruction with its index fields cleared, so an I-box index write no longer waits for a pending level (`levelIndexedBy` removed; `decks/index_after_level.strap`). Still the model's and not the machine's: the level holds an address where the machine's holds the fetched operand; progressive indexing reads its register in the E-box under `progressiveWrites`/`progressivePending`; and a pending level that stores into word 11, 12 or 16-31 holds ALL preparation until it retires (`storeWait`, 2026-11-16: the 7101's STORE WAIT, R23-9732 Figs 3.1.13/3.1.20/3.1.24, PDF 77/84/88, keyed on the store's own address; it replaced `indexStorePending` and closed an I-box index instruction overtaking such a store, `decks/index_after_index_store.strap`). What releases STORE WAIT and the I-unit recovery's time are not on those pages; the model releases it at the store's retirement and charges nothing |
+| STORE WAIT and I-unit recovery: preparing a store whose own address is word 11, 12 or 16-31 turns on STORE WAIT and requests an I-unit recovery | R23-9732 Figs 3.1.13 sheet 3, 3.1.20, 3.1.24 (PDF 77, 84, 88; printed 1-27/1-28, 1-41/1-42, 1-49/1-50) | partial (2026-11-16): `storeWait` holds all preparation while a pending level stores into 11, 12 or 16-31, released at its retirement; the recovery is not charged. What STORE WAIT blocks and what releases it are not on those pages. `decks/index_after_index_store.strap` |
 | LAAR, forwarding, store-close-to-fetch cases (1)-(3) | Buchholz §15.4; Perf. Char. pp.3-20..21 | partial (3a/3b): same-word waits and Y invalidation; no data forwarding yet |
 | I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
 | Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
@@ -5680,6 +5681,44 @@ Staged, each step green and committed:
      fetches (the arithmetic itself is still one clock: step 2b, the
      serial/parallel unit timing, remains the optional refinement).
      Behavior-neutral: suite green, every CYCLES<= count unchanged.
+   - **5d done (2026-11-16): the first arithmetic box behind the
+     same bail -- the divider.** `execute()` gains a third answer,
+     `NeedBox DivReq`, and an argument `Maybe#(DivRsp) boxResult`;
+     `mkEBox` instantiates `mkDivBox` (StretchDivBox.bsv) once, issues
+     the request on `NeedBox`, holds the instruction exactly as for a
+     read (`boxWait`), and `canResume()` is "read answered OR box
+     answered". VFL `/` first (the 96-bit combinational `/` and `%`,
+     118,755 LUT4 + 22,896 CCU2C alone), then FP `/`, `R/`, `D/` (three
+     inlined copies of `fpDivFrac`'s 96 unrolled steps) onto the same
+     box and the same bail: `fpArithClass` reports the fractions to
+     divide in a new `FpCommit.divReq` and takes the answer as
+     `divQR`; `fpDivFrac` survives only as the testbenches' reference.
+     The E-box time is held fixed: the box's clocks are taken off the
+     E-box budget (`ebox.boxClocks()` in `rl_exec_resume`). **The
+     overlap is not**: while the box runs, the held level stops
+     `rl_prepare` executing I-box instructions, which used to overlap
+     the countdown. Measured: 8 of the 16 FP-divide decks are +1 to
+     +16 clocks, mostly in proportion to the box's clocks (re-measured
+     at 48 and 96 bits a clock). The f217a (+2) and f217c (+1)
+     residues are constant and unexplained. No CYCLES check moved; the
+     table is in StretchDivBox.bsv's header. **Next for this step:**
+     let `rl_prepare` run independent I-box instructions during a box
+     wait (`prepareExec` already knows whether one would bail for a
+     read and overwrite `held`). Call sites: `execute()`'s two callers in
+     `mkEBox` (`start`, `resume`), `vflIntOp`, `fpArithClass` (and its
+     test harness `StretchFpCommitTest.bsv`), and `fpDiv`/`fpDivDouble`,
+     which now take the quotient and remainder as an argument and
+     report what to divide (`boxDvd`/`boxDvs`). Two scheduling facts surfaced and are
+     recorded in the box: its state must be CRegs with the rule on port
+     0 and the methods on port 1 (otherwise bsc G0096, dynamic
+     scheduling, because `resume()` both polls and requests), and no
+     method may carry an implicit condition (one on `response` became
+     the condition of all of `resume()` and stalled every read).
+     Remaining: make the box's count the time (Table 2, R23-9732 figs
+     3.8.15/3.8.19 -- see the box header's open item on two clock
+     periods per pass), then multiply, SRT and the `/ 10` chain of the
+     binary-to-decimal conversion (96 constant divides in the
+     generated Verilog), which are the next combinational giants.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

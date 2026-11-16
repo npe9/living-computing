@@ -1,0 +1,211 @@
+! VFL DIVIDE AT THE EDGES OF ITS DATAPATH -- the cases that matter once
+! the division is done by an ITERATIVE BOX (bsv/StretchDivBox.bsv,
+! mkDivBox) rather than by a combinational `/` and `%` inside
+! execute().  decks/vfl_divide.strap is the deck about WHAT divide
+! means (the offset, the two signs, the CE manual's zero rule); this
+! one is about the arithmetic being right at full width and at the
+! last quotient bit, which is where a shift-and-subtract loop goes
+! wrong and a `/` operator cannot.
+!
+! THE RULES, all from Reference Manual printed p.70 (quoted in full at
+! the head of decks/vfl_divide.strap):
+!   "Both dividend and divisor are treated as integers, and only the
+!   integral part of the quotient is developed.  The length of the
+!   dividend to the left of the offset cannot exceed 96 significant
+!   bits, and the divisor cannot exceed 48 significant numeric bits."
+!   "Bits 60-63 of RM form a four-bit remainder sign byte with bit 60,
+!   the sign bit, SET TO THE ORIGINAL ACCUMULATOR SIGN.  Bits 61-63
+!   are set to zero.  Bits 0-59 of RM are replaced by the integer
+!   remainder with the LOW-ORDER REMAINDER BIT IN BIT POSITION 59."
+!   and of a zero divisor: "THE DIVISION IS NOT ATTEMPTED, and both
+!   the accumulator and the remainder register remain unchanged."
+!
+! So the whole of RM, read as one 64-bit word, is
+!       (remainder << 4) | (original accumulator sign << 3)
+! and every RM expectation below is that expression worked by hand.
+!
+! WHAT EACH CHECK ESTABLISHES, AND THE ARITHMETIC BEHIND IT
+!   B1,B2  MAXIMUM WIDTH BOTH WAYS, done first so PF is still clean.
+!          Dividend 2**96 - 1 (ninety-six one bits), divisor
+!          2**48 - 1 (forty-eight).  (2**48 - 1)(2**48 + 1) =
+!          2**96 - 1 exactly, so the quotient is 2**48 + 1 =
+!          281474976710657 and the remainder is 0: RM = 0.
+!          THE QUOTIENT IS ODD ON PURPOSE -- its last bit is the last
+!          one the loop develops.
+!   B3     and PF is OFF: 96 and 48 significant bits are the limits,
+!          not beyond them.
+!   C1,C2  A QUOTIENT WIDER THAN A WORD.  2**96 - 1 divided by 1 is
+!          2**96 - 1: the low 64 bits read all ones and the 32 above
+!          them read 0xFFFFFFFF.  Every one of the 96 quotient bits is
+!          a one, so a loop that stops early, or starts late, shows.
+!   C3     remainder 0, RM = 0.
+!   A1,A2  DIVIDEND SMALLER THAN DIVISOR.  5 by 7 is 0 remainder 5:
+!          RM = 5 << 4 = 80.
+!   D1,D2  THE LARGEST REMAINDER A 48-BIT DIVISOR CAN LEAVE.
+!          2**49 - 3 by 2**48 - 1: twice the divisor is 2**49 - 2,
+!          one too many, so the quotient is 1 and the remainder is
+!          (2**49 - 3) - (2**48 - 1) = 2**48 - 2, the divisor less
+!          one.  RM = (2**48 - 2) << 4 = 4503599627370464.
+!   E1,E2  NEGATIVE DIVIDEND, POSITIVE DIVISOR.  -7 by 2: quotient
+!          magnitude 3, sign negative, which as a (B,64,8) field is
+!          (3 << 8) | 8 = 776.  Remainder 1 carrying the DIVIDEND's
+!          sign: RM = (1 << 4) | 8 = 24.
+!   E3,E4  POSITIVE DIVIDEND, NEGATIVE DIVISOR.  7 by -2: the same
+!          quotient, 776, and the remainder 1 now POSITIVE because
+!          the dividend was: RM = 1 << 4 = 16.  E2 and E4 differ in
+!          exactly the sign bit, and vfl_divide.strap's T13 is the
+!          negative-by-negative case, so the four sign combinations
+!          are all checked between the two decks.
+!   G1,G2  A ZERO DIVIDEND.  0 by 3 is 0 remainder 0; RM = 0, which
+!          also shows RM was REPLACED (it held 16).
+!   F1-F3  THE ZERO DIVISOR IS NEVER SENT TO THE BOX.  9 by 0 after
+!          RM has been set to 80 again: the accumulator still holds
+!          9, RM still holds 80, and ZD is on.
+!
+! INJECTIONS, MEASURED 2026-11-16, each in a private copy of the tree
+! (so the working file was never edited and needs no restore).  The
+! lists are the OBSERVED failing checks of this deck's suite entry:
+!
+!   THE LAST QUOTIENT BIT DROPPED (mkDivBox's response returns
+!     `rg_dq & ~1`): 5 fail -- max_width_quotient (2**48, not 2**48+1),
+!     q96_low64 (...FE), largest_remainder_quotient (0), and both
+!     mixed-sign quotients (520 = 2 with a minus sign).  Exactly the
+!     odd quotients; q96_high32 and every remainder still pass, which
+!     is the separation wanted.
+!   THE REMAINDER NOT RESTORED (divRestoringStep keeps the difference
+!     even when it borrowed): 13 fail -- every quotient and remainder
+!     check except q96 (a divisor of 1 never borrows), the PF check
+!     and the zero-divisor accumulator and ZD checks (no division).
+!     zero_divisor_keeps_rm fails too, as a CASCADE: RM was set by the
+!     wrong 5/7 just before, and the zero divisor kept that.
+!   ONE REDUCTION CLOCK TOO FEW (the box's clock counter loaded with
+!     3 rather than 4, so 72 of the 96 steps run): 11 fail, including max_width_pf_off
+!     -- the unfinished quotient sits 24 places too high and its
+!     deposit overflows -- and the zero-divisor RM cascade again.
+!
+! THE CYCLES CHECK PASSED UNDER ALL THREE, and the third is the one to
+! notice: a box that is a clock faster is still absorbed, because the
+! core takes the clocks the box actually took off the E-box budget.
+! That is the design of this step (behaviour, not time, is the box's),
+! and it means CYCLES here guards the BUDGET, not the box's speed;
+! mkCoreDivBoxTb's literal 4 is what guards that, and it failed under
+! the third injection with "clocks = 3, want 4" (on the two vectors
+! whose truncated answer happened to be right; the other six failed
+! the answer check first).
+!
+! THE CLOCK COUNT IS ASSERTED EXACTLY, and the number was MEASURED ON
+! THE MODEL AS IT WAS BEFORE THE BOX EXISTED (the combinational
+! divide).  It checks that the box's clocks are absorbed into the
+! E-box budget.  It does NOT check the I-box overlap the box can cost:
+! every instruction after a divide here is look-ahead class, so
+! nothing overlapped in the first place.  The FP decks that DID move
+! are tabled in bsv/StretchDivBox.bsv's header.
+
+        SLC, (8)2000.0
+
+! -- maximum width: 96 significant bits by 48 ----------------------
+START   L(BU,64), ONES64, 32       ! ones in accumulator bits 32-95
+        +(BU,64), ONES32, 0        ! and in 0-31: 2**96 - 1
+        /(BU,64), MAX48, 0         ! by 2**48 - 1
+        ST(BU,64), B1, 0           ! 2**48 + 1
+        L(BU,64), $RM, 0
+        ST(BU,64), B2, 0           ! 0
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), B3, 0           ! PF off
+
+! -- a quotient of 96 one bits --------------------------------------
+        L(BU,64), ONES64, 32
+        +(BU,64), ONES32, 0
+        /(BU,64), ONE, 0           ! by 1
+        ST(BU,64), C1, 0           ! low 64 bits: all ones
+        ST(BU,32), C2+.32, 64      ! the 32 above them
+        L(BU,64), $RM, 0
+        ST(BU,64), C3, 0           ! 0
+
+! -- dividend smaller than divisor ----------------------------------
+        L(BU,64), FIVE, 0
+        /(BU,64), SEVEN, 0
+        ST(BU,64), A1, 0           ! 0
+        L(BU,64), $RM, 0
+        ST(BU,64), A2, 0           ! 5 << 4
+
+! -- the largest remainder -------------------------------------------
+        L(BU,64), DVD49, 0         ! 2**49 - 3
+        /(BU,64), MAX48, 0
+        ST(BU,64), D1, 0           ! 1
+        L(BU,64), $RM, 0
+        ST(BU,64), D2, 0           ! (2**48 - 2) << 4
+
+! -- the remainder takes the dividend's sign ------------------------
+        L(B,64,8), NEG7, 0
+        /(B,64,8), POS2, 0
+        ST(B,64,8), E1, 0          ! -3
+        L(BU,64), $RM, 0
+        ST(BU,64), E2, 0           ! (1 << 4) | 8
+
+        L(B,64,8), POS7, 0
+        /(B,64,8), NEG2, 0
+        ST(B,64,8), E3, 0          ! -3
+        L(BU,64), $RM, 0
+        ST(BU,64), E4, 0           ! 1 << 4
+
+! -- a zero dividend -------------------------------------------------
+        L(BU,64), ZERO, 0
+        /(BU,64), THREE, 0
+        ST(BU,64), G1, 0           ! 0
+        L(BU,64), $RM, 0
+        ST(BU,64), G2, 0           ! 0
+
+! -- and the zero divisor, which the box never sees -----------------
+        L(BU,64), FIVE, 0
+        /(BU,64), SEVEN, 0         ! RM = 80 again
+        L(BU,64), NINE, 0
+        /(BU,64), ZERO, 0
+        ST(BU,64), F1, 0           ! still 9
+        L(BU,64), $RM, 0
+        ST(BU,64), F2, 0           ! still 80
+        L(BU,1), $IND+.24, 0
+        ST(BU,64), F3, 0           ! ZD
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+ONES64  DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+ONES32  DD(BU,64,8), (16)FFFFFFFF
+MAX48   DD(BU,64,8), (16)FFFFFFFFFFFF
+ONE     DD(BU,64,8), 1
+FIVE    DD(BU,64,8), 5
+SEVEN   DD(BU,64,8), 7
+THREE   DD(BU,64,8), 3
+NINE    DD(BU,64,8), 9
+ZERO    DD(BU,64,8), 0
+DVD49   DD(BU,64,8), (16)1FFFFFFFFFFFD
+! A signed field with byte size 8 is (magnitude << 8) | (sign << 3),
+! as in decks/vfl_divide.strap.
+NEG7    DD(BU,64,8), 1800            ! -(7)
+POS7    DD(BU,64,8), 1792            ! +(7)
+NEG2    DD(BU,64,8), 520             ! -(2)
+POS2    DD(BU,64,8), 512             ! +(2)
+
+B1      DD(BU,64,8), 0
+B2      DD(BU,64,8), 0
+B3      DD(BU,64,8), 0
+C1      DD(BU,64,8), 0
+C2      DD(BU,64,8), 0
+C3      DD(BU,64,8), 0
+A1      DD(BU,64,8), 0
+A2      DD(BU,64,8), 0
+D1      DD(BU,64,8), 0
+D2      DD(BU,64,8), 0
+E1      DD(BU,64,8), 0
+E2      DD(BU,64,8), 0
+E3      DD(BU,64,8), 0
+E4      DD(BU,64,8), 0
+G1      DD(BU,64,8), 0
+G2      DD(BU,64,8), 0
+F1      DD(BU,64,8), 0
+F2      DD(BU,64,8), 0
+F3      DD(BU,64,8), 0
+
+        END, START

@@ -55,6 +55,7 @@ pulled from bitsavers.org):
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
+| `StretchDivBox.bsv` | The divide boxes. `mkDivBox`, the one the core instantiates (once, inside `mkEBox`): a 96-by-48 iterative restoring divider behind `request`/`responseReady`/`response`, 24 quotient bits a clock, four clocks, reached by `execute()`'s `NeedBox` bail -- see "The divide box" below. `mkFpDivBox`, the standalone sourced-structure FSM (trial/intermediate/last reduction, the normalisation loop) that the later timing step is to grow it into. Each has its own testbench (`mkCoreDivBoxTb`, `mkDivBoxTb`; `../tests/run_divbox_test.sh`). |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
 | `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../tests/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
@@ -603,7 +604,7 @@ fail with the interlock off (KVI, V+I, CB, an indicator branch and a count
 branch through X1, LX and Z of the register as storage) and which do not, so
 the arms for those are not yet shown to be needed.
 
-### An index write waits for a pending level indexed by it (fixed 2026-11-15)
+### A look-ahead level carries the I-box's indexing (2026-11-15)
 
 A look-ahead level's operand and store addresses are derived when it is loaded,
 and the store-close-to-fetch waits compare against them. But the E-box
@@ -613,19 +614,124 @@ moved the level's operand. The 7030 STRAP II MAIN test's driver (step 4b-i)
 found this: `ST(BU,64),9.0($9)` was loaded as a level, `V+I,$9,11.0` ran ahead
 of it, and the store landed in the next record. It showed only for layouts that
 kept the store pending, and the first diagnosis (a stale index after an LV) was
-wrong; a store and read trace in storage settled it. `iboxHazard` now holds an
-index write (direct-index loads and adds on J, immediate index, count and
-branch, and stores to words 16-31 by SX/SV/SC/SR/SVA, Z, R/RCZ and SIC) while a
-pending level is indexed by that register (`levelIndexedBy`). `rl_prepare` holds
-a new level indexed by register j while a pending level stores into word 16+j
-(`indexStorePending`).
+wrong; a store and read trace in storage settled it.
 
-This is a conservative stall, not a measured time. On the real machine the
-level carries the address the I-box computed, so the index arithmetic would not
-wait (`../docs/microarchitecture_plan.md` §1a). Test:
-`../decks/index_after_level.strap`. Its header records which cases fail with
-each interlock off (the V+I shape and an overtaken floating store; the E-box
-sibling) and which do not (LV, SV into $X3, SIC), so those arms are guards only.
+The first fix, the same day, was a stall: `iboxHazard` held an index write while
+a pending level was indexed by that register (`levelIndexedBy`). That stall is
+gone. The level now carries what the I-box's indexing produced (`LaCarry` in
+`StretchTypes.bsv`: the effective address, and a VFL instruction's length, byte
+size and offset after the second index). `rl_prepare` reads the index registers
+once (`carryIndex`), derives `da` and `storeAddr` from the instruction as
+carried, and `rl_au_remove` hands the E-box that instruction with its index
+fields cleared (`carriedInstr`), so `execute()` indexes nothing and is not
+edited. This is the machine's arrangement: a level holds an operation code, the
+operand, indicators and an instruction counter, and no address or index field
+(Buchholz section 15.3, printed pp.238-240; 7101 CE manual R23-9732 Fig. 3.2.2,
+PDF 93). An I-box index write behind a level therefore runs without waiting.
+
+Three things are left as they were, each for a stated reason:
+
+- **Progressive indexing still reads its register in the E-box.** The
+  instruction reads and writes that register in two parts, and
+  `progressiveWrites` and `progressivePending` already hold it still. Its
+  second index is carried like any other.
+- **An immediate VFL address is carried unindexed**, because `execute()` takes
+  the immediate operand from the address field and never from the effective
+  address. Whether the 7030 indexes an immediate address was not checked here.
+- **The level's decoded instruction is kept beside the carried values.** The
+  timing functions read it, and `eboxClocks` must not see a length the second
+  index has changed; that would move times for a reason no table gives.
+
+**The store wait (2026-11-16).** The other direction is a level that stores into
+an index register, and the model handled it badly. A new level indexed by j
+waited for a pending level storing word 16+j (`indexStorePending`), but an I-box
+index instruction did not wait at all: `ST(BU,64),$X3` then `V+I,$3,1.0` read
+the old $3. This failed the same way on commit 3204601, so it predates this
+work. A probe written for this change found it, and so did a reading of the 7101
+I-unit flow diagrams.
+
+Those diagrams draw the 7030's mechanism, keyed on the store's own address and
+nothing else (R23-9732, I UNIT FLOW DIAGRAMS; all three read in the page
+images for this change):
+
+- Fig. 3.1.20, "ZL FP3 TRIGGER" (PDF 84, printed 1-41/1-42), under "FPL 4 E TGR
+  ON": "ZOAR EQ 11 + 12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR", "BLOCK
+  STORE WAIT TGR TOF", "TON I RCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.13 sheet 3, "ZR FP TRIGGERS" (PDF 77, printed 1-27/1-28), from
+  "FPR4E": "ZOAR EQ 11 +12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR",
+  "TON IRCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.24, "WBC TRIGGER" (PDF 88, printed 1-49/1-50), for VFL: "W EQ 11 +
+  12 + 16 - 31 (28.11.55.1)" -> "VFL CL 2 . VFL 5E" -> "VFL 5 CL 2 COND STORE
+  WAIT (28.21.71.1)", and the same from "ZL 11 + 12 + 16 - 31".
+
+So `storeWait` (`StretchIBox.bsv`) is True while any pending level stores into
+word 11, 12 or 16-31, and `rl_prepare` then prepares nothing until that level
+retires: no I-box instruction and no new level. It replaces `indexStorePending`.
+The pages draw only the trigger's turn-on. Three things are the model's
+choice: that STORE WAIT holds all preparation (no box takes it as a
+condition), that the store's retirement releases it, and that the I-unit
+recovery costs nothing. It is a conservative wait, not a measured time. A field crossing into word
+16-31 from word 15 is refused by `execute()`, so the store's first word is
+enough.
+
+Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
+pending `ST(BU,64),$X3`). Its header records the measured injection. Two parts of
+the rule are not shown to be needed by any test: its breadth (a wait only for
+instructions that use register j would pass every case), and words 11 and 12,
+which are in it because the pages print them (a direct-index read of either word already waits
+through `levelHolds`).
+
+Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle
+count. Its header records the measured injections: the E-box re-indexing fails
+the V+I cases and the overtaken floating store, the missing wait fails the
+E-box sibling, and the old stall put back fails only the cycle count.
+
+### The divide box (2026-11-16)
+
+The VFL divide arm of `execute()` computed `dvd / dsrSafe` and
+`dvd % dsrSafe` on 96 bits with a variable divisor. Synthesised alone that
+was 118,755 LUT4 + 22,896 CCU2C, about twice the ULX3S. The division now
+runs in `mkDivBox` (`StretchDivBox.bsv`). `execute()` takes a
+`Maybe#(DivRsp) boxResult` and has a third answer, `NeedBox DivReq`,
+beside `Complete` and `NeedOperand`. The arm returns `NeedBox` with the
+dividend and divisor when it has no result, and uses the quotient and
+remainder when it does. The floating-point divides `/`, `R/` and `D/`
+use the same box and bail: they used to inline `fpDivFrac`'s 96 unrolled
+restoring steps three times. Now `fpArithClass` reports the fractions it
+needs divided in `FpCommit.divReq` and takes the answer as `divQR`.
+`fpDiv`/`fpDivDouble` take the quotient and remainder as an argument.
+`mkEBox` issues the request, holds the
+instruction exactly as it does for an operand read (`boxWait`), and
+`canResume()` becomes "the read answered, OR the box has its answer".
+`resume()` then re-runs `execute()` with the answer. An instruction that
+needs an operand word and then the box does both in turn. A box bail
+also sets `needsRead` (to a placeholder), so every existing
+`!isValid(needsRead)` guard keeps the bail free of writes. A zero divisor
+never sends a request (p.70: "the division is not attempted").
+
+**The E-box time is unchanged; the overlap is not.** `rl_exec_resume`
+subtracts the clocks the box took (`ebox.boxClocks()`) from the E-box
+budget it then charges. The I-box-dispatched path is charged
+`budget - elapsed` already. But while the divide waits on the box, its
+look-ahead level is held, and the instruction unit executes no I-box
+instruction (`rl_prepare`'s `!ebox.busyFor(OwnerLA)`). The old divide
+retired in its first clock and the I-box overlapped the countdown. So 8
+of the 16 FP-divide decks got slower: f217b, f217wb and f217xb by 16
+clocks, f217we and fp_zm_cleared by 8, f217d by 4, f217a by 2 and f217c
+by 1. The first five shrink in proportion when the box is made faster
+(the hold window). f217d's +4 goes away at 2 box clocks. f217a's and
+f217c's are constant and not yet explained. No suite CYCLES check moved,
+because none of those decks has one. The box header has the table.
+Getting the overlap back is an `rl_prepare` change.
+The box takes 4 clocks, and the smallest divide budget is 4 (FP `/`). An
+overrun would print `DIVIDE BOX OVERRAN THE E-BOX BUDGET`. The 24 bits a
+clock is invented, to fit that budget, and the box header says so. Whether
+the box's own count should *be* the time is the later, sourced step.
+
+Test: `../decks/vfl_divide_box.strap` (full width, a 96-bit quotient,
+the largest remainder, the four sign cases with `vfl_divide.strap`, zero
+dividend and divisor). It passed unchanged on the model before the box,
+`CYCLES=1196+-0` included.
 
 ### Documented simplifications (deliberate, not oversights)
 

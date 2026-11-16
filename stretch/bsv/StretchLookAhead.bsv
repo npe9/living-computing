@@ -56,7 +56,8 @@ module mkLookAhead #(StretchStorage st) (LookAhead);
   // explicit.
   Vector#(4, Array#(Reg#(LaLevel))) la <- replicateM(mkCReg(2, LaLevel{valid: False, kind: Whole, di: tagged Invalid,
         pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
-        waitFor: tagged Invalid, branch: False, target: 0, storeAddr: tagged Invalid}));
+        waitFor: tagged Invalid, branch: False, target: 0, storeAddr: tagged Invalid,
+        carry: LaCarry{addr: 0, lbo: 0}}));
   function Vector#(4, LaLevel) laRead(Integer port);
     Vector#(4, LaLevel) v = newVector;
     for (Integer k = 0; k < 4; k = k + 1) v[k] = la[k][port];

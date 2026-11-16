@@ -1583,7 +1583,13 @@ run "SMAC on C22-6678-1 p.47, assembled against p.48's code" python3 check_smac_
 # Hand-written from RefMan printed p.21.  Injections and the cases they do
 # not reach are in the deck's header.
 run "An index read after a pending progressive write" ./run_program.sh ../decks/index_after_progressive.strap StretchIdxProgTb D1a:1088=0x1111111111111111 D1b:1089=0x1111111111111111 D1end:1090=0xeeee D2:1091=0x1111111111111111 R2:1121=0x111000000000000 D3:1092=0x1111111111111111 R3:1122=0x111800000000000 M4:1116=0x0 D5:1093=0x1111111111111111 R5:1123=0x7777 D6a:1095=0x1111111111111111 D6b:1096=0x0 D7a:1097=0x1111111111111111 D7b:1098=0x10740000000bbbb M8:1117=0x0 M9:1118=0x0 R10:1119=0x117000000000000 D10:1114=0x1111111111111111 R11:1120=0x116800000000000 D11:1115=0x1111111111111111 R12:1111=0x111000000000000 R13:1112=0x115800000000000 D13:1109=0x1111111111111111 R14:1113=0x0 D14:1110=0x1111111111111111 PC=2168
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+# CYCLES pins that the index write does NOT wait: 2721 with the stall of
+# 3204601 (levelIndexedBy), 2407 with the level carrying the I-box's indexing.
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2407+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+# The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
+# instruction behind a pending level storing into its index word.  Injections
+# in the deck's header.
+run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1132+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
 # THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
 # docs/smac_7030.md), against strap/smac.py card for card and against the
 # bulletin's printed cards.  Injections in the shell, observed 2026-11-08
@@ -4028,9 +4034,51 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # executes.  Below 65 bits it is worse: the CONDITION is miscompiled
 # and the else arm is taken.  tests/toolchain/ has the probe, the
 # controls that prove the `if` is sound, and the finding that both
-# bsc 2026.01 and 2026.07 do it.  The arm divides by
+# bsc 2026.01 and 2026.07 do it.  The arm divided by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
+# (Since 2026-11-15 there is no `/` in the arm at all: the division is
+# mkDivBox's, the zero divisor never sends it a request, and dsrSafe
+# is gone.  The finding about bsc stands; see tests/toolchain/.)
+#
+# >>> THE DIVIDE BOX AT THE EDGES OF ITS DATAPATH. <<<  The VFL divide
+# arm's 96-bit `/` and `%` (118,755 LUT4 + 22,896 CCU2C alone, twice
+# the ULX3S) became an iterative restoring divider, mkDivBox in
+# bsv/StretchDivBox.bsv, reached by execute()'s NeedBox bail.  This
+# deck is the full-width and last-bit cases a shift-and-subtract loop
+# can get wrong and a `/` operator cannot: 96 by 48 significant bits, a
+# quotient of 96 one bits, the largest remainder, dividend below
+# divisor, both mixed-sign remainders, a zero dividend and a zero
+# divisor.  Every expected value is hand-derived in the deck header
+# from printed p.70, and ALL 21 CHECKS PASSED ON THE MODEL AS IT WAS
+# BEFORE THE BOX (combinational divide), CYCLES included: 1196 is that
+# model's count, so =1196+-0 checks that the box's clocks are absorbed
+# into the E-box budget.  It cannot see the I-box overlap a box wait
+# costs (nothing here overlaps); eight FP decks do show it, +1 to +16
+# clocks, tabled in bsv/StretchDivBox.bsv.  The injections and their observed
+# failures are in the deck header.
+run "/, VFL Divide at the edges of the divide box (full width, last bit, remainder signs)" ./run_program.sh ../decks/vfl_divide_box.strap StretchVflDivBoxTb \
+    "PC=2146" \
+    "CYCLES=1196+-0" \
+    "max_width_quotient:1166=281474976710657" \
+    "max_width_remainder:1167=0" \
+    "max_width_pf_off:1168=0" \
+    "q96_low64:1169=0xffffffffffffffff" \
+    "q96_high32:1170=0xffffffff" \
+    "q96_remainder:1171=0" \
+    "small_dividend_quotient:1172=0" \
+    "small_dividend_rm:1173=80" \
+    "largest_remainder_quotient:1174=1" \
+    "largest_remainder_rm:1175=4503599627370464" \
+    "neg_by_pos_quotient:1176=776" \
+    "neg_by_pos_rm:1177=24" \
+    "pos_by_neg_quotient:1178=776" \
+    "pos_by_neg_rm:1179=16" \
+    "zero_dividend_quotient:1180=0" \
+    "zero_dividend_rm:1181=0" \
+    "zero_divisor_keeps_acc:1182=9" \
+    "zero_divisor_keeps_rm:1183=80" \
+    "zero_divisor_sets_zd:1184=1"
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
     "req_word0:1030=0x1020001121001222" \
@@ -9239,6 +9287,16 @@ run "bsv smoke test (make run)" make run
 # (Measured: the suite reported "ONE OR MORE TESTS FAILED" with ZERO
 # FAIL lines, which is the run() status check added 2026-10-27
 # working -- before it, a build failure with no FAIL lines passed.)
+#
+# AND mkDivBox, THE BOX THE CORE NOW INSTANTIATES (2026-11-16), is the
+# second testbench in the same script: mkCoreDivBoxTb checks it against
+# the `/` and `%` operators it replaced in execute() and against
+# fpDivFrac, and asserts a LITERAL 4 clocks, the smallest divide budget
+# the core absorbs it into.  Injections, measured: the last quotient bit
+# dropped fails 5 of 8 (the odd quotients); the remainder never
+# restored fails 7 of 8 and mkFpDivBox's 4 of 5 too (they share
+# divRestoringStep); one reduction clock too few fails 8 of 8, two of
+# them as "clocks = 3, want 4".
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
@@ -10149,6 +10207,22 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f216d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# >>> THE FP DIVIDES NOW GO THROUGH mkDivBox (2026-11-16). <<<  /, R/ and
+# D/ no longer inline fpDivFrac; fpArithClass reports the fractions in
+# FpCommit.divReq, execute() bails with NeedBox, and the answer comes back
+# as divQR.  The F217/F219 blocks below are what check it.  Two
+# injections at the point where the answer is handed back
+# (StretchExecute.bsv, `divQR = tuple2(b.q[48:0], {1'b0, b.rem})`), each
+# run on all seventeen FP-divide sections in a private tree copy, OBSERVED:
+#   REMAINDER ZEROED (49'b0): ONLY F219T-Y fails (SEN set, PC 1416).
+#     Every F217W D/ block divides exactly, so a zero remainder is the
+#     right answer there -- including F217WE, "remainder underflow".
+#     The D/ remainder is therefore checked by ONE block in the suite.
+#   QUOTIENT ONE BIT HIGH (b.q[49:1]): 8 of 17 fail -- F217A, F217D,
+#     F217WA, F217XA, F217XD, F219K-P2, F219T-Y (SEN set) and the
+#     R23-9694 p.82 self-check (PC 2057, want 2056).  F217B/C, WB-WE and
+#     XB/XC pass: they check signs, registers left alone and indicators
+#     that a doubled quotient does not disturb.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \

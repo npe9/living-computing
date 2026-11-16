@@ -98,6 +98,6 @@ if __name__ == "__main__":
     print(f"INFO {counts}")
     check("every assembled deck's vle table walks, kinds and pointers in place",
           (counts.get("does not walk", 0), counts.get("bad", 0)), (0, 0))
-    check("the decks walked", counts.get("walks", 0), 792)   # 792: 748 with the fourteen C22-6578 ch.2 decks, then the nine Buchholz App. B decks (757), then the C22-6578 ch.3 and ch.4 decks (792)
+    check("the decks walked", counts.get("walks", 0), 793)   # 793: 748 with the fourteen C22-6578 ch.2 decks, then the nine Buchholz App. B decks (757), then the C22-6578 ch.3 and ch.4 decks (792), then index_after_index_store (793)
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
     sys.exit(1 if fails else 0)

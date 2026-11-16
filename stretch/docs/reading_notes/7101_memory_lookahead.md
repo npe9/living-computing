@@ -1163,6 +1163,14 @@ operand-ADDRESS field in a level** -- op code (10 positions), tags, FROM bits, i
    as a pseudo-store level, LAOP 02/04/06, written back only on recovery, Fig 3.2.27). The
    model's stall is a correctness device with no hardware counterpart, as its own comment says;
    these pages are the citation for that statement and for what replaces it.
+   **STATUS 2026-11-16 (items 2 and 3):** the stall is removed. The level now
+   carries the I-box's indexing (`LaCarry`, `carryIndex`/`carriedInstr`) and
+   the E-box indexes nothing; `levelIndexedBy`, `levelIndexedByWord` and their
+   uses are gone. The line numbers above refer to commit 3204601. The model
+   still carries an address where these pages carry data; see `bsv/README.md`,
+   "A look-ahead level carries the I-box's indexing". Item 4's `indexStorePending` was
+   replaced the same day by a broader wait on any pending store to word 11, 12 or 16-31
+   (`storeWait`, after the I-unit diagrams' STORE WAIT, R23-9732 PDF 77/84/88).
 4. **The new-level-waits-for-index-store stall.** `StretchCore.bsv:1439-1451`
    `indexStorePending` (a level indexed by Xj waits for a pending level that STORES into Xj).
    This one plausibly HAS a hardware counterpart: an arithmetic store into index storage is
