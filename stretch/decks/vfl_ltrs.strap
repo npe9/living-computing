@@ -72,9 +72,14 @@
 !    has the factors "available in the accumulator and the transit
 !    register"): $L 0, $R 0123456789ABCDEF.
 !
-! OBSERVED 2026-11-16: all 27 checks pass as hand-derived, first run.
+! 11 L(BU,64),$TR right after an LTRS: R11 (16)1234560 (added after the
+!    review; the I-box waits on E-box registers 7-15, StretchIBox's
+!    eboxRegister, but a VFL fetch goes through the E-box itself).
 !
-! TIMING, a MODEL PIN (CYCLES 926): LTRS is charged Table 3's row, 16 + 2 x/y
+! OBSERVED 2026-11-16: all 27 checks of cases 1-10 pass as hand-derived,
+! first run.
+!
+! TIMING, a MODEL PIN (CYCLES 974; 926 before case 11 was added): LTRS is charged Table 3's row, 16 + 2 x/y
 ! clocks (StretchTiming.bsv).  In the ten cases above each LTRS is followed
 ! by I-box transmits that hide the E-box's time -- with the old generic
 ! charge the deck counted the same 684 clocks then -- so eight LTRS are run
@@ -87,7 +92,8 @@
 !    (16)F1F2F3F40, T8 9070, T9 F00 and I9 (RGZ for RZ) fail.
 !  D LTRS charged the generic 8 + 2 x/y: only CYCLES fails, 870 for 926
 !    (seven of the eight back-to-back LTRS, 8 clocks each; the first
-!    overlaps the transmits before it).
+!    overlaps the transmits before it).  Measured BEFORE case 11 was added;
+!    not re-measured at 974.
 !
         SLC, 1000.0
 START   L(BU,64), ACCV
@@ -138,6 +144,12 @@ START   L(BU,64), ACCV
         TI, 1, $TR, T10
         TI, 1, $IND, I10
         TI, 2, $L, ACC
+! 11: a VFL fetch of $TR straight after an LTRS, no transmit between: the
+! load must see the new transit register.  LTRS(BU,24,8) DA gives
+! (16)1234560 (case 1), so L(BU,64),$TR leaves $R (16)1234560.
+        LTRS(BU,24,8), DA
+        L(BU,64), $TR
+        TI, 1, $R, R11
 ! TIMING: eight LTRS back to back, so the E-box is the critical path (above,
 ! each LTRS is followed by I-box transmits that hide its time).
         LTRS(BU,64,8), ACCV
@@ -195,4 +207,5 @@ T10     DD(BU,64), 0
 I10     DD(BU,64), 0
 ACC     DD(BU,64), 0
         DD(BU,64), 0
+R11     DD(BU,64), 0
         END, START

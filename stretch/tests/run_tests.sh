@@ -2673,10 +2673,10 @@ run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offs
 # LOAD TRANSIT AND SET in both radices, and decimal *, / and *+, which printed
 # pp.68-70 define as LTRS's action with their own two left-zeros-counter bits
 # (* 00, / 01, *+ 10, LTRS 11).  Ten cases, every value hand-derived from
-# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES 926 is a
+# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES 974 is a
 # MODEL PIN: Table 3's LTRS row (Vol. 1 printed p.3-8), 16 + 2 x/y clocks,
 # StretchTiming.bsv.  INJECTIONS: in the deck's header.
-run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2101 CYCLES=926+-0 \
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=974+-0 \
     "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
     "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
     "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
@@ -2687,7 +2687,7 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
     "T8_dec_div:1217=0x970" "W8_div_lzc01_aoc4:1218=0x0000200000008000" "I8_DTR_RGZ:1219=0x0000000000800020" \
     "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
     "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
-    "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF"
+    "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

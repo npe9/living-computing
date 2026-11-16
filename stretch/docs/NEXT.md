@@ -57,7 +57,8 @@ as FOUR-BIT digits ("Radix ... as in ADD", p.68; p.58); the full
 seven-bit effective offset goes to the counter in decimal too; Table 3's
 LTRS `v` is read as `x` (Vol. 1 printed p.3-8 gives a 9.6 us full word,
 which only `x` reproduces; the glossary's V = 96/92 does not), and its
-">48 bits" term is not charged.  **Open:** what the SAU does with a
+">48 bits" term is not charged.  `docs/spec_decimal.md` Class E had read the decimal
+transit register as "a bit pattern either way"; annotated there.  **Open:** what the SAU does with a
 decimal field whose bytes are not digits, here as for every decimal arm;
 whether the BTR/DTR interruption (lower priority than every other, p.68)
 reaches a program on this model is not exercised by the deck (the
@@ -125,9 +126,11 @@ already.
   number of bits by which the right end of the accumulator operand is
   offset from the right end of the accumulator".  Every pass gives AL or
   AH (the unsigned 24-bit order), never AE, and X2 walks off the list.
-  Reading (a) above is refuted (X2 advances 0.8 a pass: p.21, the
-  address part "is added to the value field" after use); (b) was the
-  cause.  **Where the ink errs:** MORE's `V+I, $2, 1.0` ("bypass 64 more
+  Of the two readings this entry used to carry -- (a) the progressive
+  increment is the absent offset, so X2 never advances; (b) an offset-0
+  three-byte field compare can match nothing in this list -- (a) is
+  refuted (X2 advances 0.8 a pass: p.21, the address part "is added to
+  the value field" after use) and (b) is the cause.  **Where the ink errs:** MORE's `V+I, $2, 1.0` ("bypass 64 more
   bits to new D field") puts X2 on D only if KOMF matched at the field's
   all-ones mark A with a ONE-byte compare (A+8+64 = A+72 = D); the
   printed three-byte field can only match a window N D (11111111)
