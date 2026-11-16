@@ -1,0 +1,73 @@
+! C22-6578 PROBLEM 2.3, METHOD 4, printed pp.14-15 (PDF 15-16), read in
+! the ink.  The problem and Methods 1, 2, 3, 5, 6 are problem_2_3.strap.
+!
+!   "Method 4.  Remembering decimal information is processed in the
+!   accumulator in 4-bit bytes, it is possible to write just two
+!   instructions to solve this problem under restrictions stated below.
+!   The decimal load operation behaves like a decimal "add to zero"
+!   operation.
+!       L(DU, 60, 5), FIELD -0.01
+!       ST(BU, 48), FIEL
+!            or
+!       LWF(D, 60, 5), FIELD -0.01
+!       ST(B, 48, 4), FIEL"
+!
+! One printed character is uncertain: the first comma of "LWF(D, 60, 5)"
+! is damaged in the scan and reads as a comma by position only.
+!
+! >>> THE MODEL REFUSES THE DECIMAL LOAD, OUT LOUD (OP), AND THIS DECK
+! >>> PINS THE REFUSAL.  It is docs/source_audit.md G2.3's known gap,
+! >>> "the decimal VFL set", not a new finding.  <<<
+!
+! WHAT THE CHECKS PIN TODAY: each L / LWF sets OP and loads nothing, the
+! accumulator stays zero, and each ST stores 48 zero bits: every FIEL
+! word is 000000000000A5A5.  The halt PC is reached.
+!
+! WHAT THEY MUST BECOME when the decimal arm lands -- HAND-DERIVED from
+! the page and the Reference Manual, not from any model:
+!
+!   FIELD's kept nibbles are decimal digits here, 907254361805, with
+!   deleted bits 1 1 0 1 0 0 1 0 1 1 0 1 (985C5520EC1C40B, then 1111).
+!   Starting one bit early makes each 5-bit byte one deleted bit and
+!   four kept bits; a decimal operation uses "only the four low-order
+!   bits of each byte" (Reference Manual printed p.61), so the
+!   accumulator holds the twelve digits in 4-bit bytes and ST(BU,48)
+!   stores them:
+!
+!     M4a  FIEL1 = 907254361805A5A5
+!     M4b  FIEL2 = 907254361805A5A5.  Signed, the twelfth byte is the
+!          sign byte, Z S T U V (p.36): 5 = 0101 is S=0 T=1 U=0 V=1,
+!          loaded WITH its flags; ST(B,48,4) stores eleven digits and
+!          S T U V, which is the nibble 5 again.
+!     M4c  comment (b), IBM's own claim: "The byte (1 1 1 1)2, for
+!          instance, will become (0101)2 with a carry to the higher
+!          byte."  FIELDB is the same with the tenth and eleventh
+!          digits 3 and F: 3 F -> 4 5, FIEL3 = 907254361455A5A5.
+!
+!   FIELD -0.01 is the last bit of the word before (GUARD, a 1; for
+!   FIELDB it is FIELD's own last bit, a 1).  It is a zone bit and must
+!   not matter.  Comment (c)'s protected-area case is not run.
+!
+! NO DATA INJECTION CAN MOVE THE VALUE CHECKS while they pin a refusal,
+! and none is claimed.  OBSERVED instead, before the pins were written:
+! with the hand-derived values as the expectations, all three value
+! checks FAIL (each word 0xa5a5) and the PC check passes, with
+! "StretchCore: OP SET by the instruction at half-word 2000".
+
+        SLC, 1000.0
+START   L(DU, 60, 5), FIELD -0.01
+        ST(BU, 48), FIEL1
+        LWF(D, 60, 5), FIELD -0.01
+        ST(B, 48, 4), FIEL2
+        L(DU, 60, 5), FIELDB -0.01
+        ST(BU, 48), FIEL3
+HALT    BEW, $
+
+        SLC, 1200.0
+GUARD   DD(BU,64,8), (16)0000000000000001
+FIELD   DD(BU,64,8), (16)985C5520EC1C40BF
+FIELDB  DD(BU,64,8), (16)985C5520EC19FCBF
+FIEL1   DD(BU,64,8), (16)000000000000A5A5
+FIEL2   DD(BU,64,8), (16)000000000000A5A5
+FIEL3   DD(BU,64,8), (16)000000000000A5A5
+        END, START

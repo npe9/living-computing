@@ -1,0 +1,160 @@
+! C22-6578 PROBLEM 2.3, "DELETION OF EVERY FIFTH BIT IN A FIELD",
+! printed pp.14-15 (PDF 15-16), read in the ink.  Methods 1, 2, 3, 5, 6.
+! Method 4 (decimal) is problem_2_3_method4.strap.
+!
+!   "Given a string of 60 bits starting at FIELD, delete every fifth bit
+!   starting at FIELD +0.04 and put the 48 bit result consecutively
+!   starting at FIEL.  Assume that there is no overlap between (FIELD -
+!   FIELD +0.59) and (FIEL - FIEL +0.47)."
+!
+! THE PRINTED STATEMENTS are every line below that is not marked
+! otherwise.  What the deck adds or changes, all of it marked:
+!
+!  * Labels.  The page reuses VFIELD/VFIEL/LOAD in each method; the deck
+!    numbers the FIEL areas (FIEL1..FIEL8), the control words
+!    (VFIEL1..VFIEL6) and the loop labels, so that every method runs in
+!    one program on the one FIELD.  Method 1's BZXCZ, LOAD is printed;
+!    Method 3's pairs "instead of LOADA and LOADA +1.0" get Method 2's
+!    frame with the branch written $-2.0.
+!  * No halt until the end: Method 2's printed BEW, $ is replaced by
+!    falling into the next method (a CNOP keeps each one word-aligned,
+!    which the printed $-1.0 depends on).
+!  * FIELD's data, FIEL's initial contents.
+!
+! TWO PRINTED STATEMENTS ARE WRONG AS PRINTED, by the page's own text:
+!
+!  1. Method 2, "BZXCZ, $-1.0".  Method 3 says the L and the ST are at
+!     "LOADA and LOADA +1.0", so the BZXCZ is at LOADA +2.0 and $-1.0 is
+!     the ST, not the L.  As printed the loop stores the FIRST group
+!     twelve times.  The deck runs it AS PRINTED (FIEL2, expected
+!     FFFFFFFFFFFF, the first nibble twelve times) and again with $-2.0
+!     (FIEL3, NOT PRINTED), which is the stated result.
+!  2. Method 3, third pair, "ST(B,4,3) (V+I), 0.04($3)".  With (V+I) the
+!     count in $3 is never touched, so the BZXCZ that closes the loop
+!     never sees XCZ change.  Read at 200 dpi: the print is (V+I), where
+!     the other two pairs and Methods 1-2 print (V+IC).  The deck runs
+!     it with (V+IC), NOT PRINTED, and does not run the printed form
+!     (it does not terminate).
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement and the
+! Reference Manual, not taken from the model.  FIELD is twelve 5-bit
+! groups; the four kept bits of each, in hex, then the deleted bit:
+!
+!     F/1 1/0 A/1 5/1 0/0 9/1 C/0 3/0 E/1 7/1 8/0 6/1
+!
+!   = F8AAB04F06EBE0D, and four 1s fill the word (F8AAB04F06EBE0DF) so a
+! load that ran past bit 59 would show.  The answer is the kept nibbles,
+! F1A509C3E786, in FIEL +0.0 to +0.47; FIEL +0.48 to +0.63 start as A5A5
+! and must be left alone.  Every FIELn word ends F1A509C3E786A5A5, but
+! FIEL2 (above).
+!
+! WHY EACH METHOD GIVES THAT (Reference Manual printed pages):
+!
+!  M1  L(B,5,1): a signed field with a one-bit sign byte (p.36 table:
+!      byte size 1 is S alone), so the fifth bit is the SIGN and the
+!      other four the magnitude; ST(BU,4) stores the magnitude.  The
+!      deleted bits are 1 in seven groups, so the sign is exercised.
+!  M2  L(BU,5), then ST(BU,4) at offset 1 drops the low-order bit.
+!  M3  pair 1: load only four of the five.  Pair 2: (B,5,2) is a sign
+!      byte S T (p.36), so three bits are magnitude, the fourth is the
+!      sign and the fifth the T flag; ST(B,4,1) stores three bits and
+!      the sign.  Pair 3: LWF(B,5,4) is one bit and S T U V; ST(B,4,3)
+!      stores one bit and S T U -- LOAD WITH FLAG (p.61) because LOAD
+!      would clear T and U, which here are data.
+!  M5  Offset indexing, p.21: the second half's I "may be used to modify
+!      bits 35-50 of the instruction ... bit position 3 of the index
+!      word is aligned with bit position 35", so bit 18 of the value
+!      field is one unit of offset, and that is the page's comment (a),
+!      "5 units in the 19 bit address subfield".  Offsets 56, 51, ... 1.
+!  M6  Connectives, pp.74-75: each 5-bit storage byte becomes an 8-bit
+!      accumulator byte "by the addition of high-order zeros"; CM0101 at
+!      offset 1 with byte size 4 truncates each result byte to four.
+!
+! Progressive indexing, p.21: the value field is the effective address
+! and is then incremented; XCZ follows the new count.
+!
+! MEASURED, against a control of 10 of 10 (nine words and the halt PC):
+!  * FIELD's last KEPT bit set (..E0DF -> ..E0FF): OBSERVED 8 fail -- M1,
+!    M2_branch_corrected, the three M3, M5, M6 (each ...E787) and
+!    FIELD_unchanged.  M2_as_printed passes, as it must: it never reads
+!    past the first group.
+!  * FIELD's last DELETED bit cleared (..E0DF -> ..E0CF): OBSERVED 1
+!    fails, FIELD_unchanged alone.  No method's answer depends on a
+!    deleted bit.
+
+        SLC, 1000.0
+! --- Method 1 ------------------------------------------------------
+START   LV, $2, VFIELD
+        LX, $3, VFIEL1
+LOAD    L(B, 5, 1) (V+I), 0.05($2)
+        ST(BU,4) (V+IC), 0.04($3)
+        BZXCZ, LOAD
+        CNOP
+! --- Method 2, AS PRINTED: BZXCZ, $-1.0 ----------------------------
+        LV, $2, VFIELD
+        LX, $3, VFIEL2
+LOADA   L(BU, 5) (V+I), 0.05($2)
+        ST(BU, 4) (V+IC), 0.04($3), 1
+        BZXCZ, $-1.0
+        CNOP
+! --- Method 2, branch address corrected to LOADA (not printed) -----
+        LV, $2, VFIELD
+        LX, $3, VFIEL3
+LOADB   L(BU, 5) (V+I), 0.05($2)
+        ST(BU, 4) (V+IC), 0.04($3), 1
+        BZXCZ, $-2.0
+        CNOP
+! --- Method 3, first pair ------------------------------------------
+        LV, $2, VFIELD
+        LX, $3, VFIEL4
+LOADC   L(BU, 4) (V+I), 0.05($2)
+        ST(BU, 4) (V+IC), 0.04($3)
+        BZXCZ, $-2.0
+        CNOP
+! --- Method 3, second pair -----------------------------------------
+        LV, $2, VFIELD
+        LX, $3, VFIEL5
+LOADD   L(B, 5, 2) (V+I), 0.05($2)
+        ST(B, 4,1) (V+IC), 0.04($3)
+        BZXCZ, $-2.0
+        CNOP
+! --- Method 3, third pair, (V+I) corrected to (V+IC) (not printed) -
+        LV, $2, VFIELD
+        LX, $3, VFIEL6
+LOADE   LWF(B,5,4) (V+I), 0.05($2)
+        ST(B,4,3) (V+IC), 0.04($3)
+        BZXCZ, $-2.0
+        CNOP
+! --- Method 5 ------------------------------------------------------
+        LX, $1, XW1; LVI, $2, 56
+        L(BU, 60), FIELD
+STORE   ST(BU, 4) (V+I), 0.04($1), 0($2)
+        V-I, $2, 5
+        BZXVLZ, STORE
+! --- Method 6 ------------------------------------------------------
+        CNOP
+        C0011 (BU, 60, 5), FIELD
+        CM0101 (BU, 48, 4), FIEL8, 1
+HALT    BEW, $
+
+VFIELD  VF, FIELD
+VFIEL1  XW, FIEL1, 12, $
+VFIEL2  XW, FIEL2, 12, $
+VFIEL3  XW, FIEL3, 12, $
+VFIEL4  XW, FIEL4, 12, $
+VFIEL5  XW, FIEL5, 12, $
+VFIEL6  XW, FIEL6, 12, $
+XW1     XW, FIEL7, 0, $
+
+        SLC, 1200.0
+GUARD   DD(BU,64,8), (16)0000000000000001
+FIELD   DD(BU,64,8), (16)F8AAB04F06EBE0DF
+FIEL1   DD(BU,64,8), (16)000000000000A5A5
+FIEL2   DD(BU,64,8), (16)000000000000A5A5
+FIEL3   DD(BU,64,8), (16)000000000000A5A5
+FIEL4   DD(BU,64,8), (16)000000000000A5A5
+FIEL5   DD(BU,64,8), (16)000000000000A5A5
+FIEL6   DD(BU,64,8), (16)000000000000A5A5
+FIEL7   DD(BU,64,8), (16)000000000000A5A5
+FIEL8   DD(BU,64,8), (16)000000000000A5A5
+        END, START

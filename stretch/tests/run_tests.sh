@@ -13436,6 +13436,28 @@ run "Problem 2.2 Method 2" ./run_program.sh ../decks/problem_2_2_method2.strap S
 run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh ../decks/problem_2_2_method3.strap StretchProblem22M3Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# -- 3d. C22-6578 CHAPTER 2 FROM PROBLEM 2.3, read in the ink, 2026-11-15.
+# Every expected value is hand-derived in the deck's header; the decks say
+# which printed statements are wrong as printed and run those too.
+#
+# 2.3: every fifth bit deleted, Methods 1, 2, 3, 5, 6.  Method 2's printed
+# "BZXCZ, $-1.0" branches to the ST, not the L: the as-printed check pins
+# what that does (the first nibble twelve times).
+run "C22-6578 Problem 2.3 -- every fifth bit deleted, five methods" ./run_program.sh ../decks/problem_2_3.strap StretchP23Tb "PC=2060" \
+    "M1:1202=0xF1A509C3E786A5A5" "M2_as_printed_is_wrong:1203=0xFFFFFFFFFFFFA5A5" \
+    "M2_branch_corrected:1204=0xF1A509C3E786A5A5" "M3_pair1:1205=0xF1A509C3E786A5A5" \
+    "M3_pair2:1206=0xF1A509C3E786A5A5" "M3_pair3_VIC_corrected:1207=0xF1A509C3E786A5A5" \
+    "M5:1208=0xF1A509C3E786A5A5" "M6:1209=0xF1A509C3E786A5A5" \
+    "FIELD_unchanged:1201=0xF8AAB04F06EBE0DF"
+# 2.3 Method 4 is DECIMAL and the model refuses it out loud (OP): G2.3's
+# known gap.  These pin the refusal; the label carries the hand-derived
+# value each must become when the decimal arm lands.
+run "C22-6578 Problem 2.3 Method 4 -- decimal load REFUSED (pinned)" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
+    "M4a_REFUSED_want_907254361805A5A5:1203=0xA5A5" \
+    "M4b_REFUSED_want_907254361805A5A5:1204=0xA5A5" \
+    "M4c_REFUSED_want_907254361455A5A5:1205=0xA5A5"
+# -- end of 3d --
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
