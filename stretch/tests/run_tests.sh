@@ -13600,6 +13600,18 @@ run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../dec
     "A34_in_R_kept:1100=0xA000000000000304" "X3_for_A34:1101=0x012F400000000000" \
     "A11_in_R:9=0xA000000000000101" "L_cleared:8=0" "X3_for_A11:19=0x012C000000000000" \
     "X1_p_minus_1:17=0"
+# 2.11: a two-bit adder out of seven connectives, all sixteen (P, Q) pairs.
+# Each check is the whole word: R = (P + Q) mod 4 and nothing else moved.
+run "C22-6578 Problem 2.11 -- two-bit addition by connectives, 16 pairs" ./run_program.sh ../decks/problem_2_11.strap StretchP211Tb "PC=2224" \
+    "P0_plus_Q0_is_0:1200=0x8FC5A2C3C3C3C3C3" "P0_plus_Q1_is_1:1201=0x8FD5A6C3C3C3C3C3" \
+    "P0_plus_Q2_is_2:1202=0x8FE5AAC3C3C3C3C3" "P0_plus_Q3_is_3:1203=0x8FF5AEC3C3C3C3C3" \
+    "P1_plus_Q0_is_1:1204=0x9FC5A6C3C3C3C3C3" "P1_plus_Q1_is_2:1205=0x9FD5AAC3C3C3C3C3" \
+    "P1_plus_Q2_is_3:1206=0x9FE5AEC3C3C3C3C3" "P1_plus_Q3_is_0:1207=0x9FF5A2C3C3C3C3C3" \
+    "P2_plus_Q0_is_2:1208=0xAFC5AAC3C3C3C3C3" "P2_plus_Q1_is_3:1209=0xAFD5AEC3C3C3C3C3" \
+    "P2_plus_Q2_is_0:1210=0xAFE5A2C3C3C3C3C3" "P2_plus_Q3_is_1:1211=0xAFF5A6C3C3C3C3C3" \
+    "P3_plus_Q0_is_3:1212=0xBFC5AEC3C3C3C3C3" "P3_plus_Q1_is_0:1213=0xBFD5A2C3C3C3C3C3" \
+    "P3_plus_Q2_is_1:1214=0xBFE5A6C3C3C3C3C3" "P3_plus_Q3_is_2:1215=0xBFF5AAC3C3C3C3C3" \
+    "guard:1216=0x5555555555555555" "Z_still_zero:0=0"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
