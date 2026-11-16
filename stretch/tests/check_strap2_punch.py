@@ -302,7 +302,7 @@ if __name__ == "__main__":
                 print(f"   {base}: {detail}")
             if how == "unwritten":
                 unwritten.append((base, detail))
-    check("A1 decks whose cards load to their image", counts.get("same", 0), 793)   # 793: 748 with the fourteen C22-6578 ch.2 decks, then the nine Buchholz App. B decks (757), then the C22-6578 ch.3 and ch.4 decks (792), then index_after_index_store (793)
+    check("A1 decks whose cards load to their image", counts.get("same", 0), 794)   # 794: 748 with the fourteen C22-6578 ch.2 decks, then the nine Buchholz App. B decks (757), then the C22-6578 ch.3 and ch.4 decks (792), then index_after_index_store (793), then vfl_divide_box (794)
     check("A2 none differ", counts.get("differs", 0), 0)
     check("A3 none stops", sorted(unwritten), [])
     # MCP's seven PUNFUL header cards: the BSP, IPL and MCP decks' (printed pp.2,
