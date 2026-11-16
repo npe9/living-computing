@@ -2219,12 +2219,32 @@ like .1 (registered --known-wrong; NEXT.md "DD(N) 1.0 IS 1 - 2^-48").  Erratum: 
 those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
 ("undefined symbol U") -- read in the ink but not decided.
 
+### 4.6 8 x 8 bit transpose, printed pp.39-40 -- `decks/problem_4_6_method{1,2,3}.strap`, `problem_4_6_method3_n5.strap` -- PASSES as the model stood
+
+Three methods, four runs, every word worked by hand in the deck headers
+(9, 7, 7 and 7 exact checks and the PC), **assembled by the host STRAP
+II** (`ASM=strap2`): Method 3's `SF(BU,N*N,N), LOC` is printed with the
+page's own remark that STRAP II multiplies in the data description, and
+strap2 does (the same word as `SF(BU,64,8)`), so no card is substituted.
+Method 1 exchanges single bits with `LF`/`SF` (C0011/CM0101) under
+`(V+ICR)` and `V+C`; Methods 2 and 3 OR eight one-bit bytes a row into
+the accumulator (`C0111(BU,8,1)(V+IC)`, offset indexed by half words in
+`$2`) and store the right half.  Method 3 also runs at N = 5, the page's
+"or any integer not exceeding 8": `SF(BU,25,5)` truncating 8-bit result
+bytes to 5 (Reference Manual printed p.75), with the word's other 39 bits
+untouched.  **No wrong result, no printed erratum.**  Two readings: the
+connect is printed `C0 111` in Method 2 (both assemblers squeeze the
+blank to the same word), and Method 1's `N($3)` is right as printed (an
+integer in a 24-bit VFL address counts bits, C28-6129 Section I printed
+pp.8-9).
+
 ## Where Chapter 4 stands, 2026-11-16
 
-Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1.  **Two model bugs,
+Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
+methods).  **Two model bugs,
 one cause (location 8 as a floating-point operand and as a store),
 four assembler refusals, six printed errata.**  Not reached: 4.9
-Method 2, 4.8 (needs `N*N` in an address; substitutable), 4.7, 4.6
-(bit-matrix transposes, all connectives, exact checks), 4.5 (the `i2`
+Method 2, 4.8 (`N*N` in an address, which strap2 assembles), 4.7 (64 x
+64 bit transposes), 4.5 (the `i2`
 field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
 4.1 (VFL square root).
