@@ -17609,6 +17609,25 @@ corrected.  strap_asm still refuses the card (G3.1, held by
 31.0, not 63.0.  The 4.6-4.8 decks are assembled by strap2 and carry
 the printed `N*N` and `DD(N),0` with no substitute.
 
+## G2.1 CHAPTER 4: PROBLEM 4.5 AND AFTER, NO MODEL FINDING -- 2026-11-16
+
+Assembled by the host STRAP II (`ASM=strap2`); every run passed against
+the model as it stood.  Recorded here for what the pages leave open.
+
+### Problem 4.5, printed pp.38-39: wrong when x_1 y_1 is non-zero
+
+`decks/problem_4_5.strap`, `tests/verify_problem_4_matrix.py 4.5k0`.
+The first printed program to index a field length takes `$LZC` as the
+length of `CT0011(BU,0),...,0($1)` and `CM0000(BU,0),KEYVEC+0.1,0($1)`.
+When the first common non-zero component is the first one, `$LZC` is 0
+and the length is 64 (Reference Manual printed p.56): the counts run
+over the whole image words, the clear runs 64 bits from KEYVEC+0.1 into
+the next word (SAVEX, $1's saved value) and never clears KEYVEC bit 0,
+so the loop repeats one wrong product.  Nothing to build: the model
+does what the page's instructions say, and the trace and the model
+agree.  A program using this method needs x_1 y_1 = 0, or a first pass
+of its own.
+
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
 
 **FIXED 2026-11-16, both directions; ONE PART WAS MISDIAGNOSED.**

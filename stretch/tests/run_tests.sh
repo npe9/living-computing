@@ -14181,6 +14181,21 @@ run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, XW2 count 8: the tr
 run "C22-6578 Problem 4.8 -- product of square matrices, as printed (N half words: not L * R)" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2
 run "C22-6578 Problem 4.8 -- product of square matrices, corrected: L * R" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2 --corrected
 
+# 4.5, printed pp.38-39: the scalar product of two compressed sparse vectors,
+# the first printed program to index a FIELD LENGTH -- $LZC loaded into $1's
+# value at bits 2-8, which the second I field adds to instruction bits 35-40
+# (Reference Manual printed p.56), and $AOC, at the half-word bit, doubled
+# into a word index.  The double sum keeps its low half in the accumulator
+# across L(U) (p.88), and words 8 and 9 are checked.  Worked by a trace of
+# the printed statements, asserted equal to the exact sum of x_k y_k.  N = 40
+# and N = 37 pass.  The third run is the case the page does not exclude:
+# x_1 y_1 non-zero makes the indexed length 0, which is 64 (p.56), and the
+# program sums one wrong product m times and clears bit 0 of $1's saved value;
+# the model matches that trace.  All passed as the model stood.
+run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N = 40" python3 verify_problem_4_matrix.py 4.5 ../decks/problem_4_5.strap ASM=strap2
+run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N = 37" python3 verify_problem_4_matrix.py 4.5n37 ../decks/problem_4_5.strap ASM=strap2
+run "C22-6578 Problem 4.5 -- x_1 y_1 non-zero: length 0 is 64, as printed (not the scalar product)" python3 verify_problem_4_matrix.py 4.5k0 ../decks/problem_4_5.strap ASM=strap2
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

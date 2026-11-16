@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """verify_problem_4_matrix.py PROBLEM DECK ASM=strap2 [--corrected]
 [--sub OLD NEW]... -- C22-6578 Problems 4.7 and 4.8, the 64 x 64 bit
-matrix transposes and the product of square matrices, checked word for
-word against what the PAGE defines, worked here and not by the model.
+matrix transposes and the product of square matrices, and 4.3-4.5, the
+sparse-vector problems, checked word for word against what the PAGE
+defines, worked here and not by the model.
 
     4.7m1   decks/problem_4_7_method1.strap   transpose, bit by bit
     4.7m2   decks/problem_4_7_method2.strap   transpose, 8 x 8 blocks
     4.8     decks/problem_4_8.strap           P = L * R, floating point
+    4.5     decks/problem_4_5.strap           sparse scalar product, N = 40
+    4.5n37  decks/problem_4_5.strap           the same deck, N = 37
+    4.5k0   decks/problem_4_5.strap           x_1 y_1 non-zero, as printed
 
 THE DECK AND ITS ASSEMBLER ARE NAMED ON THE RUN LINE, as run_program.sh's
 are: the decks are assembled by the host STRAP II (they hold "N*N", which
@@ -282,6 +286,107 @@ def trace_4_8(sym, words, step3, sub3, step2):
 
 
 # ---------------------------------------------------------------------------
+# 4.5, printed pp.38-39, as a trace of its own statements.
+# ---------------------------------------------------------------------------
+
+def popcount(v):
+    return bin(v).count('1')
+
+
+def lzc_of(v, n):
+    """Left zeros of an n-bit result field; n if it is all zero (p.76)."""
+    return n - v.bit_length()
+
+
+def trace_4_5(sym, words, N):
+    """The printed program, statement by statement, on a copy of storage.
+    Returns the words it leaves and the accumulator state.  The second I
+    field ($1) adds index value bits 3-18 to instruction bits 35-50 (p.56):
+    LV,$1,8.0 after LF(BU,25),$LZC-0.2,128-25 puts the left-zeros count at
+    value bits 2-8, so bits 3-8 -- the count modulo 64 -- are the length;
+    the instruction's own length is 0, and a length of 0 is 64 (p.56)."""
+    from problem_3_expected import Acc
+    mem = Bits(words)
+    w = lambda s: s // 64                       # noqa: E731
+    XB, YB, KEY = sym['XBMAGE'], sym['YBMAGE'], sym['KEYVEC']
+    SAVEX, PRODT = w(sym['SAVEX']), w(sym['PRODT'])
+    XV, YV = w(sym['XVEC']), w(sym['YVEC'])
+    regs = {1: words[w(sym['SENT1'])], 2: words[w(sym['SENT2'])],
+            3: words[w(sym['SENT3'])]}          # the deck's preamble
+    for i in range(3):                          # TI,3,17.0,SAVEX
+        mem.w[SAVEX + i] = regs[1 + i]
+    nmask = (1 << N) - 1
+    res = mem.get(XB, N) & mem.get(YB, N)       # L, C0001: "and" (Fig. 20)
+    aoc, lzc = popcount(res), lzc_of(res, N)
+    mem.put(KEY, N, res)                        # ST(BU,N),KEYVEC
+    count3 = aoc                                # L(BU,7),$AOC,64+18; LX
+    acc = Acc()
+    acc.dload(words.get(w(sym['ZERO']), 0), normalized=False)
+    mem.w[PRODT] = acc.store(normalized=False)  # DL(U),ZERO;ST(U),PRODT
+    products = []
+    last = (lzc, aoc)
+    if count3 != 0:                             # BXCZ,FIN; B,LOF
+        while True:
+            k = lzc                             # LOF: $LZC into $1
+            length = (k & 63) or 64
+            fx = mem.get(XB, length)            # CT0011(BU,0),XBMAGE,0($1)
+            ax = popcount(fx)                   # LV,$2,7.32; V+,$2,18.0
+            fy = mem.get(YB, length)            # CT0011(BU,0),YBMAGE,0($1)
+            ay = popcount(fy)
+            last = (lzc_of(fy, length), ay)
+            count3 = (count3 - 1) & M18         # LV,$3,7.32; V+C,$3,19.0
+            acc.load(mem.w[PRODT], normalized=False)          # L(U)
+            acc.load_factor(mem.w.get(XV + ax, 0), normalized=False)  # LFT(U)
+            acc.mul_add(mem.w.get(YV + ay, 0), normalized=True)     # *+(N)
+            mem.w[PRODT] = acc.store(normalized=False)         # ST(U)
+            products.append((k, ax, ay))
+            if count3 == 0:                     # BZXCZ,LOOP falls
+                break
+            mem.put(KEY + 1, length, 0)         # LOOP: CM0000 at KEYVEC+0.1
+            lzc = lzc_of(mem.get(KEY, N) & nmask, N)   # CT0011(BU,N),KEYVEC
+    for i in range(3):                          # FIN: TI,3,SAVEX,17.0
+        regs[1 + i] = mem.w[SAVEX + i]
+    w7 = (last[0] << (63 - 23)) | (last[1] << (63 - 50))
+    # acc bits 108-127: cleared by the VFL L(BU,7) (p.61) and untouched by
+    # every floating operation after it (pp.88, 96, 98)
+    w9 = (acc.lo & ((1 << 44) - 1)) << 20
+    return mem, regs, acc, w7, w9, products
+
+
+def spec_4_5(sym, words, corrected, N):
+    from problem_3_expected import value
+    from fractions import Fraction
+    w = lambda s: s // 64                       # noqa: E731
+    xb, yb = words[w(sym['XBMAGE'])], words[w(sym['YBMAGE'])]
+    bit = lambda v, i: (v >> (63 - i)) & 1     # noqa: E731
+    # the statement: the sum over k < N of x_k y_k, x_k the (number of
+    # ones of XBMAGE before k)-th word of XVEC
+    xs = [k for k in range(N) if bit(xb, k)]
+    ys = [k for k in range(N) if bit(yb, k)]
+    common = [k for k in range(N) if bit(xb, k) and bit(yb, k)]
+    S = sum(value(words[w(sym['XVEC']) + xs.index(k)]) *
+            value(words[w(sym['YVEC']) + ys.index(k)]) for k in common)
+    mem, regs, acc, w7, w9, products = trace_4_5(sym, words, N)
+    got = Fraction((acc.hi << 48) | acc.lo, 1 << 96) * Fraction(2) ** acc.e
+    got = -got if acc.neg else got
+    if common and common[0] != 0:
+        assert got == S, "trace of the printed program is not the scalar product"
+    PRODT = w(sym['PRODT'])
+    exact = [("PRODT", PRODT, mem.w[PRODT]),
+             ("KEYVEC", w(sym['KEYVEC']), mem.w[w(sym['KEYVEC'])])]
+    exact += [("SAVEX%d" % i, w(sym['SAVEX']) + i, mem.w[w(sym['SAVEX']) + i])
+              for i in range(3)]
+    exact += [("x%d_restored" % j, 16 + j, regs[j]) for j in (1, 2, 3)]
+    exact += [("w7_lzc_aoc", 7, w7), ("acc_left", 8, acc.word8()),
+              ("acc_right", 9, w9)]
+    note = ("statement: N = %d, common non-zero k = %s, sum = %s (%d bits); "
+            "trace: %d products %s, sum %s"
+            % (N, common, S, abs(S).numerator.bit_length() if S else 0,
+               len(products), products, got))
+    return exact, note
+
+
+# ---------------------------------------------------------------------------
 
 CORRECTIONS = {
     # printed p.41: $2 counts 7 and is used eight times a block
@@ -295,7 +400,16 @@ CORRECTIONS = {
 }
 DECKS = {'4.7m1': ('problem_4_7_method1.strap', 'StretchP47M1Tb'),
          '4.7m2': ('problem_4_7_method2.strap', 'StretchP47M2Tb'),
-         '4.8': ('problem_4_8.strap', 'StretchP48Tb')}
+         '4.8': ('problem_4_8.strap', 'StretchP48Tb'),
+         '4.5': ('problem_4_5.strap', 'StretchP45Tb'),
+         '4.5n37': ('problem_4_5.strap', 'StretchP45N37Tb'),
+         '4.5k0': ('problem_4_5.strap', 'StretchP45K0Tb')}
+# A run of a deck under a different N, or other data, the page allows:
+# applied BEFORE the expected words are worked, so they follow it (unlike
+# --sub, which is an injection the expectation does not follow).
+VARIANTS = {'4.5n37': [("\nN       SYN,40\n", "\nN       SYN,37\n")],
+            '4.5k0': [("(16)6991892315442001", "(16)E991892315000000"),
+                      ("(16)31530A2527420001", "(16)B1530A2527000000")]}
 
 
 def halt_pc(words, lo, hi):
@@ -381,7 +495,10 @@ def spec_4_8(sym, words, corrected):
     return exact, note
 
 
-SPECS = {'4.7m1': spec_4_7m1, '4.7m2': spec_4_7m2, '4.8': spec_4_8}
+SPECS = {'4.7m1': spec_4_7m1, '4.7m2': spec_4_7m2, '4.8': spec_4_8,
+         '4.5': lambda s, w, c: spec_4_5(s, w, c, 40),
+         '4.5n37': lambda s, w, c: spec_4_5(s, w, c, 37),
+         '4.5k0': lambda s, w, c: spec_4_5(s, w, c, 40)}
 
 
 def main():
@@ -410,6 +527,8 @@ def main():
             src = src.replace(old, new)
             print("%s: %r -> %r" % (what, old, new))
         return src
+    if problem in VARIANTS:
+        src = apply(src, VARIANTS[problem], "VARIANT")
     if corrected:
         src = apply(src, CORRECTIONS[problem], "CORRECTED")
     run_src = apply(src, subs, "INJECTED")

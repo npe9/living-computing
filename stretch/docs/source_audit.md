@@ -2290,17 +2290,44 @@ Run as printed (the model matches the trace) and corrected (L * R).
 **No model finding.**  Assembler side: `repro_address_multiply.strap`'s
 header said `N*N-1.0` assembles to 63.0; it is 31.0, and strap2 agrees.
 
+### 4.5 scalar product of compressed sparse vectors, printed pp.38-39 -- `decks/problem_4_5.strap` -- PASSES as the model stood; wrong as printed when x_1 y_1 is non-zero
+
+**The first printed program to index a field LENGTH.**  `LF(BU,25),
+$LZC-0.2,128-25; LV,$1,8.0` puts the left-zeros count at `$1`'s value
+bits 2-8, and the second I field adds index bits 3-18 to instruction
+bits 35-50 (Reference Manual printed p.56), so `CT0011(BU,0),XBMAGE,
+0($1)` takes the count as its length; `LV,$2,7.32; V+,$2,18.0` turns the
+all-ones count, at the half-word bit, into a word index.  The double sum
+keeps its low half in the accumulator across `L(U),PRODT` (p.88, bits
+60-127 not changed), and the data makes that low half carry ~32 bits, so
+words 8 and 9 are checked as well as PRODT.  `tests/verify_problem_4_matrix.py
+4.5`, `4.5n37`, `4.5k0`: 13 checks and the PC each, worked by a trace of
+the printed statements asserted equal to the exact sum of x_k y_k, all
+assembled by strap2 as printed.  **No model finding**: N = 40 and N = 37
+pass, KEYVEC left with the last common bit, location 7, $1-$3 restored
+from sentinels.
+
+* **Wrong as printed when x_1 and y_1 are both non-zero** -- a case the
+  page does not exclude, not a misprint.  `$LZC` = 0 makes the indexed
+  length 0, which is 64 (p.56): both CT0011 count the whole image words,
+  and `CM0000` at `KEYVEC+0.1` clears 64 bits, bit 0 of SAVEX ($1's saved
+  value) included and KEYVEC's bit 0 not, so every pass finds k = 0
+  again.  Run as `4.5k0`: the program forms one wrong product ten times
+  (-1006433504772300 for the statement's 1185029187485492); the model
+  matches the trace word for word, the crossing CONNECT TO MEMORY
+  included.  No correction supplied.
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two), 4.8.  **Two model bugs, one cause (location 8 as a
+methods), 4.7 (two), 4.8, 4.5.  **Two model bugs, one cause (location 8 as a
 floating-point operand and as a store), both FIXED 2026-11-16; the
 "lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
-nine printed errata.**  Not reached: 4.9 Method 2, 4.5 (field-length
-indexing through the second I field and `$LZC`/`$AOC`), 4.4, 4.3, 4.2
-(decimal VFL, refused), 4.1 (VFL square root).  The note that the second
+nine printed errata, and one unexcluded case (4.5, k1 = 0).**  Not
+reached: 4.9 Method 2, 4.4, 4.3, 4.2 (decimal VFL, refused), 4.1 (VFL
+square root).  The note that the second
 I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
 `vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
 offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it
-(offset indexing by half words, `0($2)`, `7($3)`, `64-8($3)`); 4.5 is
-the first printed program to index the field LENGTH.
+(offset indexing by half words, `0($2)`, `7($3)`, `64-8($3)`); 4.5, the
+first printed program to index the field LENGTH, ran on it too.
