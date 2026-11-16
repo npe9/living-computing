@@ -1,0 +1,229 @@
+! C22-6578 PROBLEM 2.6, METHOD 3, "Repeated compares for minimum",
+! printed p.18 (PDF 19), read in the ink (and at 170 dpi).  The problem
+! and Methods 1-2 are problem_2_6.strap.  Method 4 is transcribed at
+! the end of this header and NOT RUN.
+!
+! >>> THE PRINTED METHOD 3 DOES NOT SORT.  Two defects, both found by
+! >>> working the printed statements by hand against the Reference
+! >>> Manual, and THE MODEL AGREES WITH THE HAND TRACE IN ALL THREE
+! >>> BLOCKS, 34 of 34.  Neither is a model or assembler finding. <<<
+!
+!  DEFECT 1, "KOMP K(BU,4) (V+ICR), 0.24($1), 20".  COMPARE uses "the
+!   contents of the accumulator left of the specified offset" (printed
+!   p.65), all of it.  FIXMIN leaves a second copy of the new minimum
+!   at offset 24 ("LF(BU,24), 9.16" copies it down, it does not move
+!   it), so after the first fixup of a pass the accumulator left of
+!   offset 20 is never less than 16 and every later K says HIGH.  The
+!   operation wanted is COMPARE FIELD, KF, which compares "a field in
+!   the accumulator ... the same length ... as the field from storage"
+!   (p.65).  Method 4 prints KF in the same place, and Problem 2.8's
+!   comment (b) says "the KF's cannot be replaced by simple K
+!   operations".  The ink is K, clear.
+!
+!  DEFECT 2, the last compare of every pass.  (V+ICR) refills $1 from
+!   XW11 when the count reaches zero, and p.21 puts the refill inside
+!   the same instruction ("The setting [of the index indicators] occurs
+!   prior to the refill").  So when the LAST field compared is a new
+!   minimum, FIXMIN's "-0.24($1)" is taken from the refilled $1 and
+!   names the field before the pass's first, not the field compared.
+!   The last field is therefore never exchanged, and if an earlier
+!   fixup happened in that pass a field is overwritten and lost.  The
+!   method works only when the sixteenth field holds the largest key.
+!   (With that, XW2's count of 14, one pass short for 16 fields, is
+!   enough.)
+!
+! THE THREE BLOCKS.  Each is the printed text with its own labels
+! (suffix 1, 2, 3; FIXMIN is FIXMN) and own DATA and ANS; the printed
+! BEW, $ is a branch to the next block; ' comments are written !'.
+!
+!  BLOCK1  AS PRINTED, on the keys 7 2 13 0 9 15 4 11 1 14 6 3 12 8 5 10
+!          (problem_2_6.strap's data).  HAND TRACE: the first compare
+!          finds 2 < 7 and fixes up; from then on every K is HIGH, each
+!          fixup hands the previous field on, and the refill case
+!          writes the first field back.  Fields 0-14 all end as field
+!          0's original contents, 7B07F0; field 15 is untouched.
+!  BLOCK2  K replaced by KF, NOT PRINTED; the same data but with keys 15
+!          and 10 exchanged so that field 15 holds the largest.  HAND
+!          TRACE: sorted, and ANS is the statement's answer for that
+!          data: B30F3 B81F8 B12F1 BB3FB B64F6 BE5FE BA6FA B07F0 BD8FD
+!          B49F4 B5AF5 B7BF7 BCCFC B2DF2 B9EF9 BFFFF.
+!  BLOCK3  KF again, on block 1's data, where field 15's key (10) is not
+!          the largest.  HAND TRACE: keys end 0 1 2 3 4 5 6 7 8 9 15 15
+!          15 15 15 10 -- defect 2: from the pass where 10 is the
+!          minimum left, it is missed, and the field holding 15 is
+!          copied over 11, 12, 13 and 14.
+!
+! EXPECTED VALUES ARE HAND-DERIVED: the three traces were worked from
+! the printed statements and the manual pages above (mechanised on the
+! host as a forty-line trace of the fifteen statements that knows
+! nothing of the model), and the statement's answer by sorting.  The
+! checks are every word of DATA after the run and of ANS, per block.
+!
+! MEASURED, against a control of 34 of 34: block 2's fields 0 and 1
+! with their keys exchanged (7B07F0 2B12F1 -> 2B07F0 7B12F1).  OBSERVED
+! 5 fail, all in block 2 and exactly the predicted ones: DATA words 0,
+! 1, 2 (the third and eighth sorted fields) and ANS words 0 and 2.
+!
+! ---------------------------------------------------------------------
+! METHOD 4, "Repeated compares for both maximum and minimum", printed
+! pp.18-19 (PDF 19-20), read in the ink.  TRANSCRIBED, NOT RUN:
+!
+!           LX, $1, XW1
+!           LX, $2, XW2
+!           LX, $3, XW3; SX, $3, XW33
+!   LODE    L(BU,24), 0($1)
+!           LF(BU,24), 0($2), 64
+!           KF(BU,4), 0($2), 20
+!           BAH, SWICH
+!   TEST    KF(BU,4)(V+ICR), 0.24($3),20     'test against assumed minimum
+!           BAH, FIXMIN
+!           KF(BU,4), -.24($3), 64+20        'test against assumed maximum
+!           BAL, FIXMAX
+!   AGAIN   BZXCZ, $3, TEST
+!           ST(BU,24) (V+I), 0.24($1)        'store minimum
+!           ST(BU,24)(V-I), 0.24($2), 64     'store maximum
+!           V+C, $3, VF3; CB, $3, LODE-1
+!   PACK    LV, $1, XW11;LX, $2, XW22
+!   LOAD2   L(BU, 24)(V+I), 0.24($1)
+!           ST(BU,20)(V+IC), 0.20($2)
+!           BZXCZ, LOAD2
+!           BEW, $
+!   SWICH   SWAPI, 1, $L, $R
+!           B, TEST
+!   FIXMIN  LF(BU, 24), -0.24($3), 24
+!           ST(BU, 24), -0.24($3), 64
+!           ST(BU, 24), 9.40, 24             'new minimum
+!           B, AGAIN
+!   FIXMAX  LF(BU, 24), -0.24($3), 64+24
+!           ST(BU, 24), -0.24($3), 64
+!           ST(BU,24), 8.40, 64+24           'new maximum
+!           B, AGAIN
+!   XW1     XW, DATA, 16, $
+!   XW2     XW, DATA +0.360, 0, $
+!   XW3     XW, DATA + 0.24, 14, XW33
+!   XW33    XW, 0
+!   XW22    XW, ANS, 16, $
+!   XW11    VF, DATA + .4
+!   VF3     VF, 0.24
+!   ANS     DRZ(BU, 20), (16)
+!
+! WHY IT IS NOT RUN.  It cannot be run as printed, and what would run
+! is the deck's rewrite, not IBM's program:
+!   * "AGAIN BZXCZ, $3, TEST" has an operand too many for BZXCZ.
+!   * FIXMIN's "ST(BU, 24), -0.24($3), 64" stores the MAXIMUM (offset
+!     64) where the old minimum (offset 0) belongs; FIXMAX prints the
+!     same line, where 64 is right.
+!   * LOAD2 loads 24 bits from DATA + .4 and stores 20: the low 20 of
+!     the 24 are sixteen bits of B and the NEXT field's key.
+!   * Both "-0.24($3)" tests and fixups after "(V+ICR)" have defect 2.
+! Each is a reading of the ink at 170 dpi, not an inference from use.
+
+        SLC, 1000.0
+! --- BLOCK 1: AS PRINTED  ---------------------------------------------------
+START   LX, $1, XW11; LX, $2, XW21
+        B, STIX1
+VPC1    V+C, $1, VF1                    !'outer loop, restart with changed $1
+STIX1   SX, $1, XW111                   !'save $1 contents for later refill use
+        L(BU,24), 0($2)                 !'load assumed minimum
+KOMP1   K(BU,4) (V+ICR), 0.24($1), 20 !'inner loop, test against assumed min
+        BAH, FIXMN1                    !'usually unsuccessful
+AGAIN1  BZXCZ, KOMP1
+        SF(BU,24)(V+IC), 0.24($2)       !'store proven minimum
+        BZXCZ, VPC1
+        LX, $1, XW1A1; LV, $2, VF21
+PACK1   L(BU,20)(V+I), 0.24($2)         !'skip A field
+        ST(BU,20) (V+IC), 0.20 ($1)     !'store sorted B field
+        BZXCZ, PACK1
+        B, BLK2
+FIXMN1  LF(BU,24), -0.24($1), 24        !'fixup routine, load new minimum
+        SF(BU,24), -0.24($1)            !'store old guess in its place
+        LF(BU,24), 9.16                 !'position new min. in accumulator
+        B, AGAIN1                       !'return to inner loop
+XW11    XW, DATA1 +0.24, 15, XW111
+XW111   XW, 0                           !'will be changed during computation
+XW21    XW, DATA1, 14, $
+XW1A1   XW, ANS1, 16, $
+VF21    VF, DATA1 +0.04
+
+! --- BLOCK 2: KF for K (NOT PRINTED), last field largest  ---------------------------------------------------
+BLK2    LX, $1, XW12; LX, $2, XW22
+        B, STIX2
+VPC2    V+C, $1, VF1                    !'outer loop, restart with changed $1
+STIX2   SX, $1, XW112                   !'save $1 contents for later refill use
+        L(BU,24), 0($2)                 !'load assumed minimum
+KOMP2   KF(BU,4) (V+ICR), 0.24($1), 20 !'inner loop, test against assumed min
+        BAH, FIXMN2                    !'usually unsuccessful
+AGAIN2  BZXCZ, KOMP2
+        SF(BU,24)(V+IC), 0.24($2)       !'store proven minimum
+        BZXCZ, VPC2
+        LX, $1, XW1A2; LV, $2, VF22
+PACK2   L(BU,20)(V+I), 0.24($2)         !'skip A field
+        ST(BU,20) (V+IC), 0.20 ($1)     !'store sorted B field
+        BZXCZ, PACK2
+        B, BLK3
+FIXMN2  LF(BU,24), -0.24($1), 24        !'fixup routine, load new minimum
+        SF(BU,24), -0.24($1)            !'store old guess in its place
+        LF(BU,24), 9.16                 !'position new min. in accumulator
+        B, AGAIN2                       !'return to inner loop
+XW12    XW, DATA2 +0.24, 15, XW112
+XW112   XW, 0                           !'will be changed during computation
+XW22    XW, DATA2, 14, $
+XW1A2   XW, ANS2, 16, $
+VF22    VF, DATA2 +0.04
+
+! --- BLOCK 3: KF for K (NOT PRINTED), general data  ---------------------------------------------------
+BLK3    LX, $1, XW13; LX, $2, XW23
+        B, STIX3
+VPC3    V+C, $1, VF1                    !'outer loop, restart with changed $1
+STIX3   SX, $1, XW113                   !'save $1 contents for later refill use
+        L(BU,24), 0($2)                 !'load assumed minimum
+KOMP3   KF(BU,4) (V+ICR), 0.24($1), 20 !'inner loop, test against assumed min
+        BAH, FIXMN3                    !'usually unsuccessful
+AGAIN3  BZXCZ, KOMP3
+        SF(BU,24)(V+IC), 0.24($2)       !'store proven minimum
+        BZXCZ, VPC3
+        LX, $1, XW1A3; LV, $2, VF23
+PACK3   L(BU,20)(V+I), 0.24($2)         !'skip A field
+        ST(BU,20) (V+IC), 0.20 ($1)     !'store sorted B field
+        BZXCZ, PACK3
+HALT    BEW, $
+FIXMN3  LF(BU,24), -0.24($1), 24        !'fixup routine, load new minimum
+        SF(BU,24), -0.24($1)            !'store old guess in its place
+        LF(BU,24), 9.16                 !'position new min. in accumulator
+        B, AGAIN3                       !'return to inner loop
+XW13    XW, DATA3 +0.24, 15, XW113
+XW113   XW, 0                           !'will be changed during computation
+XW23    XW, DATA3, 14, $
+XW1A3   XW, ANS3, 16, $
+VF23    VF, DATA3 +0.04
+
+VF1     VF, 0.24
+
+        SLC, 1200.0
+DATA1   DD(BU,64,8), (16)7B07F02B12F1DB2D
+        DD(BU,64,8), (16)F20B30F39B49F4FB
+        DD(BU,64,8), (16)5FF54B64F6BB7BF7
+        DD(BU,64,8), (16)1B81F8EB9EF96BA6
+        DD(BU,64,8), (16)FA3BB3FBCBCCFC8B
+        DD(BU,64,8), (16)D8FD5BE5FEABFAFF
+        SLC, 1210.0
+ANS1    DRZ(BU, 20), (16)
+        SLC, 1220.0
+DATA2   DD(BU,64,8), (16)7B07F02B12F1DB2D
+        DD(BU,64,8), (16)F20B30F39B49F4AB
+        DD(BU,64,8), (16)5AF54B64F6BB7BF7
+        DD(BU,64,8), (16)1B81F8EB9EF96BA6
+        DD(BU,64,8), (16)FA3BB3FBCBCCFC8B
+        DD(BU,64,8), (16)D8FD5BE5FEFBFFFF
+        SLC, 1230.0
+ANS2    DRZ(BU, 20), (16)
+        SLC, 1240.0
+DATA3   DD(BU,64,8), (16)7B07F02B12F1DB2D
+        DD(BU,64,8), (16)F20B30F39B49F4FB
+        DD(BU,64,8), (16)5FF54B64F6BB7BF7
+        DD(BU,64,8), (16)1B81F8EB9EF96BA6
+        DD(BU,64,8), (16)FA3BB3FBCBCCFC8B
+        DD(BU,64,8), (16)D8FD5BE5FEABFAFF
+        SLC, 1250.0
+ANS3    DRZ(BU, 20), (16)
+        END, START

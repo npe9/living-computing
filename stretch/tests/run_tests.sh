@@ -13478,6 +13478,46 @@ run "C22-6578 Problem 2.5 -- key words removed, as printed and with B, CAB" ./ru
     "ANS2_w5:1245=0xED7C0CA4587E6B74" "ANS2_w6:1246=0xEC22505DE96CCFA0" \
     "ANS2_w7:1247=0x483D6764AF2E401C" "ANS2_w8_B_CAB_is_the_statement:1248=0xE55C8EAC78FFFFFF" \
     "ANS2_w9:1249=0xFFFFFFFFFFFFFFFF"
+# 2.6 Methods 1 and 2, and Method 2's comment (b): sixteen B fields placed
+# by key, with a VFL multiply (product at offset 20) or two shifted adds.
+run "C22-6578 Problem 2.6 Methods 1-2 -- sorting by a 4-bit key" ./run_program.sh ../decks/problem_2_6.strap StretchP26Tb "PC=2048" \
+    "M1_w0:1210=0xB30F3B81F8B12F1B" "M1_w1:1211=0xB3FBB64F6BE5FEBA" "M1_w2:1212=0x6FAB07F0BD8FDB49" \
+    "M1_w3:1213=0xF4BFAFFB7BF7BCCF" "M1_w4:1214=0xCB2DF2B9EF9B5FF5" "M2_w0:1220=0xB30F3B81F8B12F1B" \
+    "M2_w1:1221=0xB3FBB64F6BE5FEBA" "M2_w2:1222=0x6FAB07F0BD8FDB49" "M2_w3:1223=0xF4BFAFFB7BF7BCCF" \
+    "M2_w4:1224=0xCB2DF2B9EF9B5FF5" "M2b_mid_w0:1230=0xB30F3B81F8B12F1B" \
+    "M2b_mid_w1:1231=0xB3FBB64F6BE5FEBA" "M2b_mid_w2:1232=0x6FAB07F0BD8FDB49" \
+    "M2b_mid_w3:1233=0xF4BFAFFB7BF7BCCF" "M2b_mid_w4:1234=0xCB2DF2B9EF9B5FF5" \
+    "M2b_right_w0:1240=0xB30F3B81F8B12F1B" "M2b_right_w1:1241=0xB3FBB64F6BE5FEBA" \
+    "M2b_right_w2:1242=0x6FAB07F0BD8FDB49" "M2b_right_w3:1243=0xF4BFAFFB7BF7BCCF" \
+    "M2b_right_w4:1244=0xCB2DF2B9EF9B5FF5"
+# 2.6 Method 3 DOES NOT SORT AS PRINTED: it prints K where COMPARE FIELD is
+# needed, and its fixup misaddresses the last field of every pass after the
+# refill.  All three blocks pin a HAND TRACE of the printed statements:
+# B1 as printed (fifteen copies of the first field), B2 with KF and the
+# largest key last (sorted), B3 with KF and general data (four fields lost).
+run "C22-6578 Problem 2.6 Method 3 -- printed K does not sort; hand traces pinned" ./run_program.sh ../decks/problem_2_6_method3.strap StretchP26M3Tb "PC=2098" "STEPS=200000" \
+    "B1_as_printed_DATA_w0:1200=0x7B07F07B07F07B07" "B1_as_printed_DATA_w1:1201=0xF07B07F07B07F07B" \
+    "B1_as_printed_DATA_w2:1202=0x07F07B07F07B07F0" "B1_as_printed_DATA_w3:1203=0x7B07F07B07F07B07" \
+    "B1_as_printed_DATA_w4:1204=0xF07B07F07B07F07B" "B1_as_printed_DATA_w5:1205=0x07F07B07F0ABFAFF" \
+    "B1_as_printed_ANS_w0:1210=0xB07F0B07F0B07F0B" "B1_as_printed_ANS_w1:1211=0x07F0B07F0B07F0B0" \
+    "B1_as_printed_ANS_w2:1212=0x7F0B07F0B07F0B07" "B1_as_printed_ANS_w3:1213=0xF0B07F0B07F0B07F" \
+    "B1_as_printed_ANS_w4:1214=0x0B07F0B07F0BFAFF" "B2_KF_sorted_DATA_w0:1220=0x0B30F31B81F82B12" \
+    "B2_KF_sorted_DATA_w1:1221=0xF13BB3FB4B64F65B" "B2_KF_sorted_DATA_w2:1222=0xE5FE6BA6FA7B07F0" \
+    "B2_KF_sorted_DATA_w3:1223=0x8BD8FD9B49F4AB5A" "B2_KF_sorted_DATA_w4:1224=0xF5BB7BF7CBCCFCDB" \
+    "B2_KF_sorted_DATA_w5:1225=0x2DF2EB9EF9FBFFFF" "B2_KF_sorted_ANS_w0:1230=0xB30F3B81F8B12F1B" \
+    "B2_KF_sorted_ANS_w1:1231=0xB3FBB64F6BE5FEBA" "B2_KF_sorted_ANS_w2:1232=0x6FAB07F0BD8FDB49" \
+    "B2_KF_sorted_ANS_w3:1233=0xF4B5AF5B7BF7BCCF" "B2_KF_sorted_ANS_w4:1234=0xCB2DF2B9EF9BFFFF" \
+    "B3_KF_last_not_largest_DATA_w0:1240=0x0B30F31B81F82B12" \
+    "B3_KF_last_not_largest_DATA_w1:1241=0xF13BB3FB4B64F65B" \
+    "B3_KF_last_not_largest_DATA_w2:1242=0xE5FE6BA6FA7B07F0" \
+    "B3_KF_last_not_largest_DATA_w3:1243=0x8BD8FD9B49F4FB5F" \
+    "B3_KF_last_not_largest_DATA_w4:1244=0xF5FB5FF5FB5FF5FB" \
+    "B3_KF_last_not_largest_DATA_w5:1245=0x5FF5FB5FF5ABFAFF" \
+    "B3_KF_last_not_largest_ANS_w0:1250=0xB30F3B81F8B12F1B" \
+    "B3_KF_last_not_largest_ANS_w1:1251=0xB3FBB64F6BE5FEBA" \
+    "B3_KF_last_not_largest_ANS_w2:1252=0x6FAB07F0BD8FDB49" \
+    "B3_KF_last_not_largest_ANS_w3:1253=0xF4B5FF5B5FF5B5FF" \
+    "B3_KF_last_not_largest_ANS_w4:1254=0x5B5FF5B5FF5BFAFF"
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

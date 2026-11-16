@@ -1,0 +1,106 @@
+! C22-6578 PROBLEM 2.6, "SORTING ON THE BASIS OF SUBFIELDS", Methods 1
+! and 2 with Method 2's comment (b), printed pp.17-18 (PDF 18-19), read
+! in the ink.  Method 3 is problem_2_6_method3.strap.  Method 4 is not
+! run; docs/source_audit.md says why.
+!
+!   "Given 16 consecutive fields beginning at DATA, each of the
+!   following appearance:  | A (4-bits) | B (20 bits) |
+!   The four-bit subfield "A" may contain any integer number from 0
+!   through 15.  Assume all A subfields are different in content, sort
+!   on the basis of A subfields and put the correspondent B subfields
+!   together in a string beginning at ANS."
+!
+! THE PRINTED STATEMENTS are Method 1 and Method 2 below as printed,
+! except: no BEW, $ between blocks; Method 2's LOOP is LOOP2 and each
+! block has its own ANS (ANS1..ANS4), word-aligned so a check can name
+! its words; the printed ' comments are written !'.  The DATA is the
+! deck's.
+!
+! COMMENT (b) prints three columns of first and last lines with dots
+! between, "the following sets of instructions lead to the same
+! results".  The left column is Method 1 itself.  The middle and right
+! columns are run with the dots read as Method 1's two middle lines
+! (the multiply and the store into $1) -- that reading is the deck's,
+! the page prints dots.  In the left column the page prints
+! "L(BU,20)(V+I), 0.20 ($)": the 2 of ($2) is missing in the ink.
+!
+! EXPECTED VALUES ARE HAND-DERIVED from the problem statement, not from
+! the model.  Field i (i = 0..15) has
+!     A = 7 2 13 0 9 15 4 11 1 14 6 3 12 8 5 10
+!     B = hex B i A F i   (so B names both its position and its key)
+! and the answer is the sixteen B's in order of A, 320 bits, five words:
+!     B30F3 B81F8 B12F1 BB3FB B64F6 BE5FE BA6FA B07F0
+!     BD8FD B49F4 BFAFF B7BF7 BCCFC B2DF2 B9EF9 B5FF5
+!
+! WHY (Reference Manual printed pages):
+!  M1  *(BU,24): p.68, "the product ... is placed into the cleared
+!      accumulator at offset 20" -- the page's 'answer at offset 20.
+!      VALF is "VF, 20": an integer with no point is 20 units of the
+!      field's last place, 20 BITS, which is what makes A*20 a bit
+!      address.  ST(B,25,1), 17.0, 20 puts 24 bits and a sign into $1's
+!      value field and sign, and ANS($1) is ANS + 20A bits.
+!  M2  20A = 16A + 4A: the same 4 bits loaded at offset 22 and added at
+!      offset 24.  -0.4($2) is a negative address, comment (c): "-A
+!      will be assembled as 2**18-A"; the sum with $2 wraps.
+!  Progressive indexing, p.21.
+!
+! MEASURED, against a control of 21 of 21 (five words of each of four
+! answers and the halt PC): the keys of fields 0 and 1 exchanged
+! (7B07F0 2B12F1 -> 2B07F0 7B12F1).  OBSERVED 8 fail, words 0 and 2 of
+! each answer -- the third and eighth B's, which exchange (..B07F0 in
+! word 0, ..B12F1 in word 2).  Nothing else moves.
+
+        SLC, 1000.0
+! --- Method 1 ------------------------------------------------------
+ASORT   LX, $2, XW2
+LOOP    L(BU, 4) (V+I), 0.04($2)
+        *(BU, 24), VALF                 !'answer at offset 20
+        ST(B, 25, 1), 17.0, 20          !'store into index register value field
+        L(BU, 20) (V+I), 0.20($2)
+        ST(BU, 20), ANS1($1)
+        CB, $2, LOOP
+! --- Method 2 ------------------------------------------------------
+ASORT2  LX, $2, XW2A
+LOOP2   L(BU, 4), -0.4($2), 20 + 2
+        +(BU, 4), -0.4($2), 20 + 4
+        ST(B, 25, 1), 17.0, 20
+        L(BU, 20) (V+IC), 0.24($2)
+        ST(BU, 20), ANS2($1)
+        BZXCZ, LOOP2
+! --- Method 2 comment (b), middle column ----------------------------
+        LX, $2, XW2
+LOOP3   L(BU, 4) (V+I), 0.24($2)
+        *(BU, 24), VALF
+        ST(B, 25, 1), 17.0, 20
+        L(BU,20), -0.20($2)
+        ST(BU,20), ANS3($1)
+        CB, $2, LOOP3
+! --- Method 2 comment (b), right column -----------------------------
+        LX, $2, XW2A
+LOOP4   L(BU, 4), -0.04($2)
+        *(BU, 24), VALF
+        ST(B, 25, 1), 17.0, 20
+        L(BU,20) (V+IC), 0.24($2)
+        ST(BU,20), ANS4($1)
+        BZXCZ, LOOP4
+HALT    BEW, $
+XW2     XW, DATA, 16, $
+VALF    VF, 20
+XW2A    XW, DATA + 0.4, 16, $
+
+        SLC, 1200.0
+DATA    DD(BU,64,8), (16)7B07F02B12F1DB2D
+        DD(BU,64,8), (16)F20B30F39B49F4FB
+        DD(BU,64,8), (16)5FF54B64F6BB7BF7
+        DD(BU,64,8), (16)1B81F8EB9EF96BA6
+        DD(BU,64,8), (16)FA3BB3FBCBCCFC8B
+        DD(BU,64,8), (16)D8FD5BE5FEABFAFF
+        SLC, 1210.0
+ANS1    DRZ(BU, 20), (16)
+        SLC, 1220.0
+ANS2    DRZ(BU, 20), (16)
+        SLC, 1230.0
+ANS3    DRZ(BU, 20), (16)
+        SLC, 1240.0
+ANS4    DRZ(BU, 20), (16)
+        END, ASORT
