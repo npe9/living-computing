@@ -1,0 +1,194 @@
+! C22-6578 PROBLEM 2.9, "EFFECTIVE ADDRESS CREATION", printed pp.21-22
+! (PDF 22-23), read in the ink (and at 170 dpi).
+!
+!   "Find the effective address of the instruction beginning at the
+!   19-bit address INST without using the LVE instruction.  Put the
+!   answer in the value field of $1."
+!
+! THE PRINTED STATEMENTS are the routine EFFADR .. IMMED below, as
+! printed, except:
+!  * its "BEW, $" is "B, RET", so a driver can run it on twelve
+!    instructions in one program;
+!  * "TEST KFI(BU, 2), (2) 10,4" is written "(2)10,4": strap_asm
+!    refuses the printed blank.  That is an assembler finding,
+!    repro_radix_blank.strap / tests/check_radix_blank.py;
+!  * NOTVFL and KMINUS are NOTVF and KMINU (six characters with the
+!    second copy's suffix); ' comments are written !'.
+! The driver (START .. INST), the test instructions and the second
+! copy of the routine are the deck's.
+!
+! >>> THE PRINTED ROUTINE IS WRONG FOR TWO CLASSES OF INSTRUCTION.
+! >>> Found by following the printed statements on the instruction's
+! >>> bits, as the page's comment (b) tells the reader to; the model
+! >>> agrees with the hand trace on all 24 results. <<<
+!
+!  DEFECT 1.  The last line, "B, MPLUS  'otherwise 4 bit I field
+!   assumption valid".  An ordinary half-word instruction has a 19-bit
+!   address, and the 13 bits after it must be taken off before the
+!   add, which is what KMINUS does.  Going straight to MPLUS leaves
+!   instruction bits 19-23 in the sum: LX, $4 adds 8 bits (its J
+!   field, 0100, and a 0), B adds 8, V+, $5 adds 10.  "B, KMINUS" is
+!   right, and the second copy of the routine has it (NOT PRINTED).
+!  DEFECT 2.  K-type instructions with K = 1.  The routine begins by
+!   taking bits 28-31 for an I field "assumed" and storing THAT
+!   register's value in $1.  In CB, CBH and the indicator branches
+!   bits 28-30 are operation bits and not zero (CB is 100K), so for
+!   K = 1 it first overwrites $1 with $9's value (or $3's for BB and
+!   BXCZ, 001K) and KSV then stores $1 into itself.  The answer is the
+!   address plus the WRONG register.  With K = 0 the overwrite is put
+!   right by "SV, $0, 17.0".  Not corrected here: it needs $1 saved
+!   first, more than a one-word change.
+!
+! EXPECTED VALUES ARE HAND-DERIVED, two ways, neither from the model:
+!   statement  numeric address + the value of the index the
+!              instruction names (comment (a): "the algebraic sum of
+!              the (positive) numeric address and the value field of
+!              the specified index register");
+!   trace      the printed statements followed on the instruction's 32
+!              bits.  Those bits are the routine's INPUT; they are
+!              taken from the assembled test instruction.
+! $1 = 1.1, $2 = 2.2, $3 = 3.3, $8 = 8.8, $9 = 9.9, $0 = 0.
+!
+!   instruction            statement  printed    with B, KMINUS
+!   +(N), 300.0($2)        302.2      302.2      302.2
+!   *(U), 123.0            123.0      123.0      123.0
+!   L(BU,8), 100.5($3)     103.8      103.8      103.8
+!   LX, $4, 200.32($2)     202.34     202.42 *   202.34
+!   B, 210.0($3)           213.3      213.11 *   213.3
+!   CB, $4, 400.32($1)     401.33     409.41 *   409.41 *
+!   CB, $4, 400.32         400.32     400.32     400.32
+!   CBH, $4, 400.32($1)    401.33     409.41 *   409.41 *
+!   LVI, $2, 500.32        500.32     500.32     500.32
+!   BB, 62.5, 600.32($1)   601.33     603.35 *   603.35 *   (second half)
+!   BXCZ, 700.0($1)        701.1      703.3  *   703.3  *
+!   V+, $5, 800.0($2)      802.2      802.12 *   802.2
+!
+! Each check is the whole of $1 after the routine, value << 40.  A
+! starred entry is checked AT THE TRACED VALUE and its label says
+! NOT_the_EA_ and the address the problem asks for.
+!
+! WHAT THIS EXERCISES: KFI, the immediate compare of a field; M+ into
+! an index register's value and sign; a VFL operand that is the
+! accumulator itself ($R.32 + 0.18 is 9.50); and "ST(BU,4), SV+0.19"
+! STORING INTO THE INSTRUCTION THAT FOLLOWS IT.
+!
+! MEASURED, against a control of 25 of 25 (twelve results from each
+! copy and the halt PC): $2 loaded with 2.3 for 2.2.  OBSERVED 6 fail,
+! cases 00, 03 and 11 of both copies -- the three that name $2 -- each
+! one bit higher.
+
+        SLC, 1000.0
+START   LX, $2, X2I
+        LX, $3, X3I
+        LX, $8, X8I
+        LX, $9, X9I
+        LX, $6, X6I
+LOOPD   TI, 1, CASES($6), INST
+        LX, $1, X1I
+        B, EFFADR
+RET     SX, $1, RES1($6)
+        LX, $1, X1I
+        B, EFFAD2
+RET2    SX, $1, RES2($6)
+        V+I, $6, 1.0
+        CB, $6, LOOPD
+HALT    BEW, $
+X1I     XW, 1.1, 0, 0
+X2I     XW, 2.2, 0, 0
+X3I     XW, 3.3, 0, 0
+X8I     XW, 8.8, 0, 0
+X9I     XW, 9.9, 0, 0
+X6I     XW, 0, 12, 0
+INST    DD(BU,64,8), 0
+! --- THE PRINTED ROUTINE ---------------------------------------------
+EFFADR  L(BU, 32), INST
+        KFI(BU,4), (2)0000              !' assume four-bit index field
+        BAE, NOX                       !'assume indexing needed
+        ST(BU,4),SV+0.19               !'store in J field of SV instruction
+SV     SV, $0, 17.0                    !'index value field now in $1
+        B, TEST
+NOX    Z, 17.0
+TEST   KFI(BU, 2), (2)10,4             !'test if floating-point
+        BZAE, NOTFP
+FP     -(BU, 32-18), $R.32 + 0.18      !'floating-point measure
+MPLUS  M+(B, 25, 1), 17.0, 32-24       !'25-bit add
+        B, RET
+NOTFP  KFI(BU,4), (2)1000, 4           !'test if VFL left address
+        BZAE, NOTVF
+VFL    -(BU, 32-24), $R.32+0.24        !'VFL measure
+        B, MPLUS
+NOTVF  KFI(BU,3), (2)100,4             !'test if K type indexing, CB, BIND
+        BAE, KTYPE
+        KFI(BU,9), (2)111000000,4       !'test if K type indexing, BB
+        BAE, KTYPE
+        KFI(BU,5), (2)10000, 4          !'test if immediate indexing
+        BAE, IMMED
+        B, MPLUS                      !'otherwise 4 bit I field assumption valid
+KTYPE  ST(BU, 1), KSV + 0.22
+KSV    SV, $0, 17.0
+KMINU  -(BU, 32-19), $R.32+0.19        !'19-bit address
+        B, MPLUS
+IMMED  Z, 17.0
+        B, KMINU
+
+! --- THE SAME WITH ITS LAST "B, MPLUS" MADE "B, KMINUS".  NOT PRINTED. --
+EFFAD2  L(BU, 32), INST
+        KFI(BU,4), (2)0000              !' assume four-bit index field
+        BAE, NOX2                       !'assume indexing needed
+        ST(BU,4),SV2+0.19               !'store in J field of SV instruction
+SV2     SV, $0, 17.0                    !'index value field now in $1
+        B, TEST2
+NOX2    Z, 17.0
+TEST2   KFI(BU, 2), (2)10,4             !'test if floating-point
+        BZAE, NOTFP2
+FP2     -(BU, 32-18), $R.32 + 0.18      !'floating-point measure
+MPLUS2  M+(B, 25, 1), 17.0, 32-24       !'25-bit add
+        B, RET2
+NOTFP2  KFI(BU,4), (2)1000, 4           !'test if VFL left address
+        BZAE, NOTVF2
+VFL2    -(BU, 32-24), $R.32+0.24        !'VFL measure
+        B, MPLUS2
+NOTVF2  KFI(BU,3), (2)100,4             !'test if K type indexing, CB, BIND
+        BAE, KTYPE2
+        KFI(BU,9), (2)111000000,4       !'test if K type indexing, BB
+        BAE, KTYPE2
+        KFI(BU,5), (2)10000, 4          !'test if immediate indexing
+        BAE, IMMED2
+        B, KMINU2                      !'otherwise 4 bit I field assumption valid
+KTYPE2  ST(BU, 1), KSV2 + 0.22
+KSV2    SV, $0, 17.0
+KMINU2  -(BU, 32-19), $R.32+0.19        !'19-bit address
+        B, MPLUS2
+IMMED2  Z, 17.0
+        B, KMINU2
+
+        SLC, 1100.0
+! THE TEST INSTRUCTIONS, one to a word; never executed.
+CASES   +(N), 300.0($2)
+        CNOP
+        *(U), 123.0
+        CNOP
+        L(BU,8), 100.5($3)
+        CNOP
+        LX, $4, 200.32($2)
+        CNOP
+        B, 210.0($3)
+        CNOP
+        CB, $4, 400.32($1)
+        CNOP
+        CB, $4, 400.32
+        CNOP
+        CBH, $4, 400.32($1)
+        CNOP
+        LVI, $2, 500.32
+        BB, 62.5, 600.32($1)
+        NOP
+        BXCZ, 700.0($1)
+        CNOP
+        V+, $5, 800.0($2)
+        CNOP
+        SLC, 1150.0
+RES1    DRZ(BU,64), (12)
+        SLC, 1170.0
+RES2    DRZ(BU,64), (12)
+        END, START

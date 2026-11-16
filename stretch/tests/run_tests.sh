@@ -13569,6 +13569,31 @@ run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_prog
 run "host STRAP II: a decimal-mode DD is decimal" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDec2Tb "ASM=strap2" "PC=2000" \
     "DU8:1010=0x0102000000000000" "DU4:1011=0x1234000000000000" "DUE:1012=0x0000000102050000" \
     "DS4:1013=0x1238000000000000" "BU_control:1014=0x000C000000000000"
+# 2.9: the effective address of an instruction, worked out from its bits
+# without LVE, on twelve instructions and through two copies of the routine.
+# THE PRINTED ROUTINE IS WRONG for ordinary 19-bit half-words (its last
+# "B, MPLUS" should be "B, KMINUS": the "kminus_" copy) and for K-type
+# instructions with K = 1 (both copies).  Every check is a hand trace of the
+# printed statements; a label saying NOT_the_EA_ names what the problem asks.
+# The routine stores into the instruction that follows the store.
+run "C22-6578 Problem 2.9 -- effective address from the bits; hand traces" ./run_program.sh ../decks/problem_2_9.strap StretchP29Tb "PC=2015" "STEPS=100000" \
+    "printed_00_ok:1150=0x004B820000000000" "kminus_00_ok:1170=0x004B820000000000" \
+    "printed_01_ok:1151=0x001EC00000000000" "kminus_01_ok:1171=0x001EC00000000000" \
+    "printed_02_ok:1152=0x0019C80000000000" "kminus_02_ok:1172=0x0019C80000000000" \
+    "printed_03_NOT_the_EA_202p34:1153=0x0032AA0000000000" "kminus_03_ok:1173=0x0032A20000000000" \
+    "printed_04_NOT_the_EA_213p3:1154=0x00354B0000000000" "kminus_04_ok:1174=0x0035430000000000" \
+    "printed_05_NOT_the_EA_401p33:1155=0x0066690000000000" \
+    "kminus_05_NOT_the_EA_401p33:1175=0x0066690000000000" "printed_06_ok:1156=0x0064200000000000" \
+    "kminus_06_ok:1176=0x0064200000000000" "printed_07_NOT_the_EA_401p33:1157=0x0066690000000000" \
+    "kminus_07_NOT_the_EA_401p33:1177=0x0066690000000000" "printed_08_ok:1158=0x007D200000000000" \
+    "kminus_08_ok:1178=0x007D200000000000" "printed_09_NOT_the_EA_601p33:1159=0x0096E30000000000" \
+    "kminus_09_NOT_the_EA_601p33:1179=0x0096E30000000000" \
+    "printed_10_NOT_the_EA_701p1:1160=0x00AFC30000000000" \
+    "kminus_10_NOT_the_EA_701p1:1180=0x00AFC30000000000" \
+    "printed_11_NOT_the_EA_802p2:1161=0x00C88C0000000000" "kminus_11_ok:1181=0x00C8820000000000"
+# 2.9's statement TEST is printed "(2) 10,4", with a blank strap_asm refuses
+# and the host STRAP II ignores.  One of the three checks PINS the refusal.
+run "strap_asm refuses the blank in (2) 10, STRAP II ignores it (C22-6578 printed p.21)" python3 check_radix_blank.py
 # -- end of 3d --
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
