@@ -1,0 +1,184 @@
+! C22-6578 PROBLEM 4.5, "SCALAR PRODUCT OF COMPRESSED SPARSE VECTORS",
+! printed pp.38-39 (PDF 39-40), Method 1, read in the ink at 300 dpi.
+!
+!   "X and Y are two N-dimensional sparse vectors, N <= 64, with the
+!   non-zero components stored in consecutive floating-point words
+!   beginning at XVEC and YVEC respectively, and bit images stored at
+!   XBMAGE and YBMAGE respectively.  Find the scalar product of these two
+!   vectors."  Analysis: "the multiplication need be performed only when
+!   x_k and y_k are both non-zero ... The $AOC will yield the number of
+!   multiplications to be performed and the $LZC will give information
+!   about the subscript K for a needed multiplication."
+!   Comment (b): "The second I field in a VFL instruction can be used to
+!   index the field length and byte size besides the offset.  Bits in
+!   the half-word position in the index value field influence the offset
+!   directly, bits in 2**6 times full word position influence the byte
+!   size directly, and bits in 2**9 times full word position influence
+!   the field length directly.  Note that $LZC is given at the bit level
+!   and $AOC is given at the half-word level, necessitating a small
+!   amount of adjustment."
+!
+! THE FIRST PRINTED PROGRAM TO INDEX A FIELD LENGTH.  The thirty-two
+! printed statements from "TI, 3, 17.0, SAVEX" to "SAVEX SYN(N),
+! PRODT+2.0" are AS PRINTED, assembled by the host STRAP II (ASM=strap2;
+! strap2 assembles them clean, "$LZC-0.2" and "64+18" included).  The
+! deck adds: a START line that sets $1-$3 to sentinels, so the save and
+! restore are seen; N, which the page uses and never defines (N SYN,40;
+! a second run takes N = 37); and the data between two guards.
+! Readings: the LX comment is printed with a double mark, ''$AOC; the
+! space in "C0001(BU, N)" squeezes out.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2, printed
+! page = PDF - 3):
+!   L(BU,N); C0001(BU,N), YBMAGE   the two images ANDed (connective 0001
+!                     is m.a, Figure 20, p.76) into the accumulator's
+!                     right N bits.  p.76: $AOC (location 7 bits 44-50)
+!                     counts the ones of the result, $LZC (bits 17-23) its
+!                     left zeros.  So $AOC = m, the number of products,
+!                     and $LZC = k1, the first k with x_k y_k non-zero.
+!   ST(BU,N), KEYVEC  the key, N bits.
+!   L(BU,7),$AOC,64+18; LX,$3,8.0   VFL LOAD clears the accumulator
+!                     (p.61) and puts the 7 bits with their right end at
+!                     bit 127-82 = 45: $3 gets value 0 and COUNT m (count
+!                     field bits 28-45, p.21).  LX sets XCZ (p.23: the
+!                     index result indicators are set in any operation
+!                     naming an index in J), so BXCZ,FIN leaves at m = 0.
+!   DL(U),ZERO;ST(U),PRODT   PRODT = 0; DL zeroes accumulator bits 60-107
+!                     (p.96).
+!   LOF  LF(BU,25),$LZC-0.2,128-25   LF is C0011 (C28-6129 App. C p.50):
+!                     location 7 bits 15-39 into accumulator bits 0-24
+!                     (offset 103), so $LZC lands at bits 2-8; "the
+!                     counts are set at the end ... so their previous
+!                     values may be used as operands" (p.76).
+!   LV,$1,8.0         $1's value is accumulator bits 0-24 (p.23): $LZC at
+!                     value bits 2-8.  p.56: index bits 3-18 add to
+!                     instruction bits 35-50 (length 35-40, byte size
+!                     41-43, offset 44-50), the three high-order index
+!                     bits ignored.  Bit 8 is 2**9 words: $LZC mod 64
+!                     becomes the LENGTH of "CT0011(BU,0), ..., 0($1)",
+!                     whose own length is 0.
+!   CT0011(BU,0),XBMAGE,0($1)   $AOC = ones of XBMAGE's first k bits:
+!                     the index of x_k in XVEC.  LV,$2,7.32 takes location
+!                     7 bits 32-55 as the value, $AOC at bits 12-18, bit
+!                     18 a half word; V+,$2,18.0 adds $2 to itself: words.
+!   the same for YBMAGE into $3, by V+C, which also counts $3 down.
+!   L(U),PRODT        bits 0-59 and the sign back; bits 60-127 "are not
+!                     changed" (p.88): the low-order part of the double
+!                     sum stays in the accumulator, as the page says.
+!   LFT(U); *+(N)     the 96-bit product added to accumulator bits 0-107,
+!                     normalized (p.98); ST(U),PRODT the high part.
+!   BZXCZ,LOOP        while $3's count is not zero.
+!   LOOP  CM0000(BU,0),KEYVEC+0.1,0($1)   zeroes KEYVEC bits 1..k: bit k
+!                     goes; CT0011(BU,N),KEYVEC finds the next k in $LZC.
+!   FIN   TI,3,SAVEX,17.0   $1-$3 restored.
+!
+! >>> AS PRINTED THE PROGRAM IS WRONG WHEN x_1 AND y_1 ARE BOTH NON-ZERO
+! (k1 = 0).  NOT AN ERRATUM IN THE INK: A CASE THE PAGE DOES NOT EXCLUDE.
+!   $LZC = 0 makes the indexed length 0, and "A length field of zero in
+!   an instruction specifies a 64-bit storage field" (p.56).  So the two
+!   CT0011 count the ones of the WHOLE image words, past N, and the
+!   CM0000 at KEYVEC+0.1 clears 64 bits: KEYVEC bits 1-63 and bit 0 of
+!   the next word, SAVEX -- $1's saved value.  KEYVEC bit 0 is never
+!   cleared, every CT0011 finds k = 0 again, and all m products are the
+!   same wrong one.  Run as printed as "4.5k0" (the images with bit 0
+!   set in both and the bits past N cleared, a VARIANT in
+!   tests/verify_problem_4_matrix.py): the statement's sum is
+!   1185029187485492; the program forms x[17] y[17] ten times,
+!   -1006433504772300, and restores $1 with its value bit 0 cleared.  The
+!   model matches that trace word for word (the crossing CONNECT TO MEMORY
+!   included).  No correction is supplied: the page's method has no
+!   one-line repair.
+!
+! THE DATA AND THE EXPECTED VALUES.  Every expected word is worked by
+! tests/verify_problem_4_matrix.py from the words as strap2 assembles them,
+! by a trace of the printed statements (written from the pages cited
+! above, with problem_3_expected.py's floating arithmetic, not the model),
+! and the trace's sum is asserted to equal the exact rational sum of
+! x_k y_k over the statement before anything runs.
+!   XBMAGE  (16)6991892315442001: 16 ones in bits 0-39, 4 past N.
+!   YBMAGE  (16)31530A2527420001: 15 ones in bits 0-39, 3 past N.
+!   Common, N = 40: k = 2, 7, 11, 15, 20, 26, 31, 37, 39 (m = 9); N = 37
+!   drops 37 and 39 (m = 7), so the bits past N are seen to be ignored.
+!   XVEC, YVEC: integers of 24-25 bits, drawn from Python's
+!   random.Random(45), except two x words written in hex, 0x9ABCD 2**-30
+!   (x[5]) and -0xF0F0F 2**-25 (x[12]), so that the double sum carries
+!   about 32 bits below the 48 of PRODT: the "low order part" is real,
+!   and the low half is checked (word 9), not only PRODT.
+!
+!   N = 40   sum = 252527774333568938177975 / 2**30 (78 bits)
+!     PRODT          (16)060D5E63B789B8F0
+!     word 8, 9      (16)060D5E63B789B8FF, (16)A51D6DC000000000
+!     KEYVEC         (16)0000000001000000   only bit 39 is left
+!     location 7     (16)000002000001E000   the last CT0011 (YBMAGE, 39
+!                    bits): left zeros 2, ones 15
+!   N = 37   sum = 750936233602647388878263 / 2**30 (80 bits)
+!     PRODT          (16)0649F0455B506EC0
+!     word 8, 9      (16)0649F0455B506ECF, (16)E9475B7000000000
+!     KEYVEC         (16)0000000100000000   only bit 31
+!     location 7     (16)0000020000016000   left zeros 2, ones 11
+!   Both: SAVEX..SAVEX+2 and $1-$3 = the sentinels SENT1-3, the guards,
+!   and the halt at the printed BEW.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD, 2026-11-16, all three runs (13
+! checks and the PC each): N = 40, N = 37 and the k1 = 0 trace.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   x[1], used at k = 2, 17034263 -> 17034264 ("DD(N),17034263" ->
+!   "DD(N),17034264", by --sub on the copy that runs; the expected words
+!   are worked from the deck as it stands).  PREDICTED: the sum moves by
+!   y[0] = 21366672, an integer, so PRODT and word 8 change and word 9
+!   (the sum's bits below 2**-4) does not.  OBSERVED, N = 40: FAIL PRODT
+!   ((16)060D5E63CBEA31F0 for ...B789B8F0) and acc_left, nothing else.
+!
+! --- the deck's: $1, $2, $3 set to sentinels, so the save and restore show
+START   LX,$1,SENT1;LX,$2,SENT2;LX,$3,SENT3
+! --- printed pp.38-39, Method 1 ---------------------------------------
+        TI, 3, 17.0, SAVEX              !'save $1, $2, $3
+        L(BU, N), XBMAGE
+        C0001(BU, N), YBMAGE            !'1 bit if both items non-zero
+        ST(BU,N), KEYVEC
+        L(BU,7), $AOC, 64+18
+        LX, $3, 8.0                     !"$AOC in $3 count field
+        DL(U), ZERO;ST(U),PRODT
+        BXCZ, FIN
+        B, LOF; CNOP
+LOOP    CM0000(BU,0),KEYVEC+0.1,0($1)   !'field length indexing
+        CT0011(BU,N),KEYVEC             !'test left zeros
+LOF     LF(BU,25),$LZC-0.2,128-25       !'low order part untouched
+        LV, $1, 8.0                     !'C(LZC)at field length position
+        CT0011(BU,0),XBMAGE,0($1)       !'field length indexing
+        LV,$2,7.32
+        V+, $2, 18.0                    !'XVEC modifier properly positioned
+        CT0011(BU,0),YBMAGE,0($1)       !'field length indexing
+        LV, $3, 7.32
+        V+C, $3, 19.0                   !'YVEC modifier
+        L(U), PRODT                     !'restore high order part
+        LFT(U), XVEC($2)                !'computation part
+        *+(N), YVEC($3)
+        ST(U),PRODT
+        BZXCZ, LOOP
+FIN     TI, 3, SAVEX, 17.0              !'restore $1, $2, $3
+        BEW, $                          !'answer in acc. as well as PRODT
+ZERO    DD(N), 0
+PRODT   DRZ(N), (5)
+KEYVEC  SYN(N), PRODT+1.0
+SAVEX   SYN(N), PRODT+2.0
+! --- the deck's: N, which the page does not define, and the data ------
+N       SYN,40
+SENT1   XW,(16)923456,(16)2A5A5,(16)15A5A
+SENT2   XW,(16)234567,(16)1B6B6,(16)26B6B
+SENT3   XW,(16)345678,(16)0C7C7,(16)37C7C
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+XBMAGE  DD(BU,64),(16)6991892315442001
+YBMAGE  DD(BU,64),(16)31530A2527420001
+XVEC    DD(N),22403998;DD(N),17034263;DD(N),-18562047;DD(N),9113154;DD(N),-24637540
+        DD(BU,64),(16)0159ABCD00000000;DD(N),12338178;DD(N),33335348;DD(N),-29358032;DD(N),-12918830
+        DD(N),33117138;DD(N),-15468938;DD(BU,64),(16)00BF0F0F00000008;DD(N),13180364;DD(N),-9467984
+        DD(N),-19148403;DD(N),20352055;DD(N),11534490;DD(N),11402744;DD(N),-19411424
+YVEC    DD(N),21366672;DD(N),28291697;DD(N),-24920213;DD(N),15423931;DD(N),13621555
+        DD(N),-16766179;DD(N),32263641;DD(N),18246373;DD(N),-22296819;DD(N),21140207
+        DD(N),-27996420;DD(N),26990375;DD(N),-27183878;DD(N),10464099;DD(N),-29335060
+        DD(N),19067132;DD(N),14030765;DD(N),-8725427;DD(N),10058335
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START
