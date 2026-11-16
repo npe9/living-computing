@@ -13436,6 +13436,28 @@ run "Problem 2.2 Method 2" ./run_program.sh ../decks/problem_2_2_method2.strap S
 run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh ../decks/problem_2_2_method3.strap StretchProblem22M3Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# ======================================================================
+# BUCHHOLZ APPENDIX B -- "Planning a Computer System" (1962), "Programming
+# Examples", printed pp.292-304 (PDF 317-329).  G2.2 of docs/source_audit.md.
+#
+# Seven tables, B.1-B.7, written in the book's own spelled-out notation
+# (printed pp.292-294).  Each deck's header prints the table, the STRAP
+# statement each line was assembled as, and the Appendix A.4 page that
+# gives the mnemonic.  The book prints no data and no results: every deck
+# supplies data, and every expected word is derived BY HAND from the
+# book's description, never from a run.  Locations are the book's own, so
+# the halt PC checks the Location column.  Each deck's header records its
+# data-side injections as OBSERVED.
+# ======================================================================
+
+# B.1, printed p.295.  LX, L(N), *(N), +(N), CB-, ST(U): Horner's rule over
+# four coefficients, one negative.  Passed against the model as it stood.
+run "Buchholz B.1 -- polynomial evaluation" ./run_program.sh ../decks/buchholz_b1_polynomial.strap StretchBuchB1Tb "PC=206" \
+    "p_result:202=0x00EC200000000000" "x1:17=0x00004080000000C8" "guard:203=99" \
+    "x_unchanged:201=0x004C000000000000" "a0_unchanged:300=0x006E000000000000" "a3_unchanged:303=0x0048000000000000"
+
+# ============== end of the Buchholz Appendix B group ==================
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

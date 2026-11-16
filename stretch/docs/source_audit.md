@@ -1897,3 +1897,25 @@ highest-value item (the interruption mechanism is manual-derived only).
 Its comment (d) states a corner no deck exercises: *"The SIC action is
 not performed unless the ensuing branch is successful, and even then it
 is performed AFTER the execution of the branch."*
+
+## G2.2, BUCHHOLZ APPENDIX B
+
+*Begun 2026-11-15.* Appendix B of `Planning_A_Computer_System.pdf`,
+"Programming Examples", is printed pp.292-304 (PDF 317-329): three pages
+of notation and then **seven tables, B.1 to B.7** (the item above says
+six; B.6's section carries two tables, the large bit matrix and the
+8-by-8 one). The notation is the book's own -- operations spelled out,
+`(FN)`/`(FU)`/`(VBU, L, BS)` mode symbols, addresses as `word.bit` -- and
+**Appendix A.4 (printed pp.277-284, PDF 302-309) gives the mnemonic in
+parentheses after every spelled-out name**, so no mapping is inferred
+from usage. The book prints neither data nor results; each deck supplies
+data and derives its expected words by hand. The locations are the
+book's (100.0 up), so the halt PC checks the Location column.
+
+The decks are `decks/buchholz_b*.strap`; the tests are the "BUCHHOLZ
+APPENDIX B" group in `tests/run_tests.sh`.
+
+| Table | Printed | Deck | Exercises | Status |
+|---|---|---|---|---|
+| B.1 Polynomial evaluation | p.295 | `buchholz_b1_polynomial` | `LX`, `L(N)`, `*(N)`, `+(N)`, `CB-`, `ST(U)` | **passes 7 of 7** against the model as it stood; two data injections observed |
+
