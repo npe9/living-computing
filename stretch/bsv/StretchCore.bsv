@@ -1209,6 +1209,10 @@ module mkStretchCore(StretchCore);
     Bool fromLA = ebox.busyFor(OwnerLA);
     Bit#(16) ebn = eb;
     Bool done = False;
+    // Clocks this instruction has spent in the divide box (0 for every
+    // instruction that did not use it), read BEFORE resume() clears the
+    // wait.  See the charge below.
+    Bit#(16) boxK = ebox.boxClocks();
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
@@ -1221,7 +1225,31 @@ module mkStretchCore(StretchCore);
         // Timed off the level's instruction AS DECODED, as rl_au_remove
         // times it: the box holds the carried one, whose length the
         // second index may have changed.
-        ebn = eboxClocks(la.headLevel().di);
+        //
+        // THE DIVIDE BOX'S CLOCKS COME OFF THE BUDGET, 2026-11-15, so
+        // that moving the divide out of execute() into an iterative
+        // box changes the hardware and NOT the time.  The budget is
+        // charged from completion; a divide used to complete in the
+        // clock it started and now completes `boxK` clocks later
+        // (mkDivBox: 4), so charging the whole budget again would
+        // lengthen every divide by that much.  Whether the box's own
+        // count should REPLACE the table is a later, sourced step.
+        //
+        // IF THE BOX EVER TAKES LONGER THAN THE BUDGET the difference
+        // cannot be absorbed and the instruction really is longer;
+        // that is reported, not hidden.  It can only happen when this
+        // rule lost clocks to rl_recover, rl_io or rl_idx_write while
+        // the result waited: the smallest divide budget is 4 (FP `/`)
+        // and the box takes exactly 4.
+        //
+        // The OTHER branch needs no such term: an I-box-dispatched
+        // instruction is charged `budget - elapsed` from its own start
+        // clock, which already contains the box's time.
+        Bit#(16) ebudget = eboxClocks(la.headLevel().di);
+        if (boxK > ebudget)
+          $display("StretchCore: DIVIDE BOX OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
+                   pc, boxK, ebudget);
+        ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
         la.retireHead();
       end else begin
         commitNext(pc, len, o.next);

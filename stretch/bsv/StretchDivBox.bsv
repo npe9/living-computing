@@ -108,6 +108,184 @@ Integer divBitsPerCycle = 6;
 Integer divShiftWidth = 6;
 Integer divTotalBits    = 96;
 
+// ---------------------------------------------------------------------
+// ONE RESTORING STEP, shared by both boxes in this file so that there
+// is exactly one statement of the arithmetic.  Shift the next dividend
+// bit into the partial remainder, subtract the divisor if it goes, and
+// report the quotient bit.  `fpDivFrac` (StretchFP.bsv) is 96 of these
+// in a row; the boxes are the same 96, a few per clock.
+// ---------------------------------------------------------------------
+function Tuple3#(Bit#(49), Bit#(96), Bit#(1))
+    divRestoringStep(Bit#(49) rem0, Bit#(96) dvd0, Bit#(48) d);
+  Bit#(49) rem = { rem0[47:0], dvd0[95] };
+  Bit#(96) dvd = { dvd0[94:0], 1'b0 };
+  // ONE SUBTRACTOR, and its borrow IS the comparison: written as
+  // `if (rem >= d) rem = rem - d` this synthesised a comparator's
+  // carry chain beside the subtractor's, twice the arithmetic for the
+  // same answer (measured on mkDivBox: 1,664 CCU2C before).
+  Bit#(50) diff = {1'b0, rem} - {2'b0, d};
+  Bit#(1)  qb   = ~diff[49];
+  if (qb == 1) rem = diff[48:0];
+  return tuple3(rem, dvd, qb);
+endfunction
+
+// ---------------------------------------------------------------------
+// THE BOX THE CORE ACTUALLY INSTANTIATES (2026-11-15): mkDivBox.
+//
+// WHY IT EXISTS.  The model has to fit a ULX3S (ECP5-85F, about 84,000
+// logic cells).  The VFL divide arm of execute() was `dvd / dsrSafe`
+// and `dvd % dsrSafe` on 96 bits with a variable divisor -- measured
+// alone at 118,755 LUT4 + 22,896 CCU2C, twice the FPGA by itself --
+// and the floating-point arms inlined fpDivFrac's 96 unrolled
+// subtract-and-select stages three times over (/, R/, D/).  All of
+// that is now this one module, instantiated once in mkEBox and reached
+// through execute()'s `NeedBox` bail (see ExecDispatch).
+//
+// ONE DATAPATH SERVES BOTH UNITS, and that is sourced: R23-9694
+// printed p.121 says of the VFL divide "AS IN MULTIPLY, THIS OPERATION
+// IS ACTUALLY PERFORMED BY PAU", and figure 3.8.19 says of the SAU
+// divide's loop "REDUCTION CYCLES JUST LIKE FP".  96-bit dividend,
+// 48-bit divisor: the double- and single-precision fraction lengths.
+// The integer divide needs all 96 quotient bits; the floating-point
+// divide takes the low 49, which is exactly what fpDivFrac's 49-bit
+// shift register keeps.  The remainder is below the divisor, so 48
+// bits hold it.
+//
+// >>> WHAT IS INVENTED HERE, AND IT IS AGAIN ONE NUMBER -- BUT A
+// DIFFERENT ONE, CHOSEN FOR A DIFFERENT REASON. <<<
+// `coreDivBitsPerCycle` is 24.  It is NOT a claim about the 7030 and
+// it is NOT mkFpDivBox's 6.  It is the smallest rate at which the box
+// answers inside the SMALLEST existing divide budget: eboxClocks
+// charges floating-point `/` 4 clocks, and 96 bits in four reduction
+// clocks is 24 a clock -- request at T, reductions at T+1 .. T+4, the
+// answer taken at T+4 (mkDivBox's CReg note says why it is readable
+// in the clock of the last reduction).
+// This step replaces combinational hardware with iterative hardware
+// WITHOUT moving any instruction's total time (the core subtracts the
+// clocks the box took from the budget it charges afterwards); making
+// the box's own count BE the time is a later, sourced step, and when
+// it comes this constant goes and mkFpDivBox's structure -- trial,
+// intermediate and last reduction cycles, the normalisation loop --
+// comes in.  For the same reason this box has none of those phases:
+// each would be a clock the 4-clock budget does not have.
+//
+// THE COST OF 24: twenty-four 49-bit subtract-and-select stages
+// chained in one clock.  That is a quarter of what fpDivFrac chained,
+// and one instance instead of four, but it is still a long path; it is
+// an area fix, not yet a clock-rate fix.
+//
+// >>> OPEN, AND SOURCED: CLOCKS PER REDUCTION PASS. <<<  A
+// transcription of R23-9732's PAU/SAU timing charts made alongside
+// this work (figures 3.8.15, PDF 239-241; 3.8.19, PDF 243; 3.8.20
+// RECIPROCAL DIVIDE, PDF 244) reports that every normalisation and
+// every reduction pass on 3.8.15 and 3.8.19 is drawn as one D3 period
+// plus one D4 period -- TWO clock periods per pass -- and that the
+// zero-divisor case is drawn as four periods.  mkFpDivBox below
+// spends ONE clock per pass and its header records that discrepancy
+// against Table 2 as unresolved.  THAT REPORT WAS NOT RE-READ AT THE
+// INK FOR THIS CHANGE and is recorded as a pointer for the timing
+// step, not as a finding: read the three figures before building on
+// it.  Nothing in mkDivBox depends on it.
+// ---------------------------------------------------------------------
+typedef struct {
+  Bit#(96) dvd;
+  Bit#(48) dvs;
+} DivReq deriving (Bits, Eq, FShow);
+
+typedef struct {
+  Bit#(96) q;      // all 96 quotient bits
+  Bit#(48) rem;    // the remainder, which is below the divisor
+} DivRsp deriving (Bits, Eq, FShow);
+
+// >>> INVENTED, to fit the existing 4-clock budget.  See above. <<<
+Integer coreDivBitsPerCycle = 24;
+
+interface DivBox;
+  method Action request(DivReq r);
+  method Bool responseReady();
+  // A VALUE, NOT AN ActionValue: taking the answer changes nothing in
+  // the box.  The caller knows whether it is waiting (mkEBox's
+  // `boxWait`), so the box needs no "idle again" state, and `request`
+  // is then the ONLY method that writes the box's state -- which is
+  // what lets one caller rule poll, take and re-request in one clock.
+  method DivRsp response();
+endinterface
+
+typedef enum { CDivIdle, CDivReduce, CDivDone } CoreDivState
+  deriving (Bits, Eq, FShow);
+
+(* synthesize *)
+module mkDivBox(DivBox);
+  // >>> CREGS, AND THE PORT ASSIGNMENT IS THE SCHEDULE. <<<
+  // rl_reduce reads and writes port 0; every method reads and writes
+  // port 1.  So the rule is ordered BEFORE all of the methods, and no
+  // rule of this module falls between two of them.  With plain Regs
+  // the first build failed with bsc's G0096 ("requires dynamic
+  // scheduling, which is not supported by Bluesim"): mkEBox.resume
+  // polls responseReady (which must read rg_state before rl_reduce
+  // writes it) and may call request (which writes what rl_reduce
+  // reads, so must come after it) -- rl_reduce between two method
+  // calls of one caller rule, across a synthesis boundary.
+  //
+  // THE CONSEQUENCE FOR TIME: a method sees rl_reduce's update in the
+  // same clock, so the answer is readable in the clock of the last
+  // reduction, not the one after.  request at clock T, reductions at
+  // T+1 .. T+4, answer taken at T+4.  See coreDivBitsPerCycle.
+  Reg#(CoreDivState) rg_state[2] <- mkCReg(2, CDivIdle);
+  // ONE 96-BIT REGISTER HOLDS THE DIVIDEND AND THE QUOTIENT: the
+  // dividend leaves at the top a bit at a time and the quotient bit
+  // that step developed enters at the bottom, so after 96 steps the
+  // register is the quotient.
+  Reg#(Bit#(96))     rg_dq[2]    <- mkCReg(2, 0);
+  Reg#(Bit#(49))     rg_rem[2]   <- mkCReg(2, 0);
+  // Written only by request, read only by rl_reduce: rule before
+  // method, which is the order the CRegs already impose.
+  Reg#(Bit#(48))     rg_dvs      <- mkReg(0);
+  // Reduction clocks still to do.  It counts CLOCKS, not steps, and
+  // every clock does exactly coreDivBitsPerCycle steps: guarding each
+  // step on a step counter (as mkFpDivBox does, where the rate need
+  // not divide 96) put a wide select behind every step (measured at
+  // 32 a clock: 9,325 LUT4 with the guard, 4,284 without).  So the
+  // rate MUST divide 96, and elaboration refuses one that does not.
+  Reg#(Bit#(8))      rg_ctr[2]   <- mkCReg(2, 0);
+  Integer coreDivClocks = divTotalBits / coreDivBitsPerCycle;
+  if (coreDivClocks * coreDivBitsPerCycle != divTotalBits)
+    error("mkDivBox: coreDivBitsPerCycle must divide 96");
+
+  rule rl_reduce (rg_state[0] == CDivReduce);
+    Bit#(49) rem = rg_rem[0];
+    Bit#(96) dq  = rg_dq[0];
+    for (Integer k = 0; k < coreDivBitsPerCycle; k = k + 1) begin
+      match {.r2, .d2, .qb} = divRestoringStep(rem, dq, rg_dvs);
+      rem = r2;
+      dq  = { d2[95:1], qb };
+    end
+    rg_rem[0] <= rem; rg_dq[0] <= dq; rg_ctr[0] <= rg_ctr[0] - 1;
+    if (rg_ctr[0] == 1) rg_state[0] <= CDivDone;
+  endrule
+
+  // >>> NO METHOD HAS AN IMPLICIT CONDITION, ON PURPOSE. <<<  The
+  // caller polls responseReady(), as every caller of StretchStorage
+  // polls its handshake.  The first version guarded response() on
+  // CDivDone, and bsc -- which does not push a method's condition
+  // inside the `if` that calls it -- made that the condition of the
+  // WHOLE of mkEBox.resume(): no instruction could resume from an
+  // operand read unless the divider happened to hold a result, and
+  // decks/vfl_divide.strap ran to the step cap on its first load.
+  // The smoke test passed, because nothing in it waits for a read.
+  method Action request(DivReq r);
+    rg_dq[1]    <= r.dvd;
+    rg_dvs      <= r.dvs;
+    rg_rem[1]   <= 0;
+    rg_ctr[1]   <= fromInteger(coreDivClocks);
+    rg_state[1] <= CDivReduce;
+  endmethod
+
+  method Bool responseReady() = (rg_state[1] == CDivDone);
+
+  method DivRsp response() = DivRsp { q: rg_dq[1], rem: rg_rem[1][47:0] };
+endmodule
+
 typedef enum { DivIdle, DivNorm, DivTrial, DivReduce, DivLast, DivDone }
   DivState deriving (Bits, Eq, FShow);
 
@@ -176,13 +354,10 @@ module mkFpDivBox(FpDivBox);
     Bit#(8)  n   = rg_ctr;
     for (Integer k = 0; k < divBitsPerCycle; k = k + 1)
       if (n != 0) begin
-        rem = { rem[47:0], dvd[95] };
-        dvd = { dvd[94:0], 1'b0 };
-        if (rem >= {1'b0, rg_dvs}) begin
-          rem = rem - {1'b0, rg_dvs};
-          q   = { q[47:0], 1'b1 };
-        end else
-          q   = { q[47:0], 1'b0 };
+        match {.r2, .d2, .qb} = divRestoringStep(rem, dvd, rg_dvs);
+        rem = r2;
+        dvd = d2;
+        q   = { q[47:0], qb };
         n = n - 1;
       end
     rg_rem <= rem; rg_q <= q; rg_dvd <= dvd; rg_ctr <= n;
@@ -323,6 +498,106 @@ module mkDivBoxTb(Empty);
                idx, tpl_1(got), tpl_2(got), took, norm);
     issued <= False;
     if (idx == fromInteger(valueOf(NDivVec) - 1)) done <= True;
+    else idx <= idx + 1;
+  endrule
+
+  rule rl_finish (done);
+    if (fails == 0) $display("ALL TESTS PASSED");
+    else $display("%0d TEST(S) FAILED", fails);
+    $finish(0);
+  endrule
+endmodule
+
+// ---------------------------------------------------------------------
+// mkDivBox's OWN TESTBENCH, in the same file for the same reason
+// mkDivBoxTb is.  THREE ASSERTIONS PER VECTOR:
+//
+//   AGAINST THE OPERATORS.  q == dvd / dvs and rem == dvd % dvs on 96
+//   bits -- the very expressions this box replaced in execute()'s VFL
+//   divide arm.  They are fine in a testbench; they are what did not
+//   fit in an FPGA.
+//
+//   AGAINST fpDivFrac.  The low 49 quotient bits and the remainder,
+//   which is what the floating-point arms take.
+//
+//   THE CLOCK COUNT, a LITERAL 4: request at clock T, four reduction
+//   clocks T+1 .. T+4, and the answer is taken at T+4.  4 is eboxClocks' budget for floating-point `/`, the
+//   smallest divide budget there is, and the core relies on the box
+//   fitting it (StretchCore's rl_exec_resume).
+//
+// The vectors are the cases the VFL arm's manual pages name: dividend
+// below divisor, both at maximum width, a remainder one below the
+// divisor, a one-bit divisor, a quotient needing all 96 bits.  (A zero
+// divisor is never sent: p.70's "THE DIVISION IS NOT ATTEMPTED".)
+// ---------------------------------------------------------------------
+typedef 8 NCoreDivVec;
+
+(* synthesize *)
+module mkCoreDivBoxTb(Empty);
+  DivBox         box    <- mkDivBox;
+  Reg#(Bit#(4))  idx    <- mkReg(0);
+  Reg#(Bit#(8))  fails  <- mkReg(0);
+  Reg#(Bool)     issued <- mkReg(False);
+  Reg#(Bool)     done   <- mkReg(False);
+  Reg#(Bit#(16)) clk    <- mkReg(0);
+  Reg#(Bit#(16)) t0     <- mkReg(0);
+
+  rule rl_clk; clk <= clk + 1; endrule
+
+  function Bit#(96) dvdOf(Bit#(4) i) =
+    case (i)
+      0: 96'h000000000000_000000000005;   // dividend below divisor
+      1: 96'hffffffffffff_ffffffffffff;   // maximum by maximum
+      2: 96'hffffffffffff_ffffffffffff;   // maximum by one: q is 96 bits
+      3: 96'h000000000000_0000000000ef;   // 239 / 60, MCP's clock divide
+      4: 96'h123456789abc_def012345678;
+      5: 96'h800000000000_000000000000;
+      6: 96'h000000000001_fffffffffffd;   // remainder = divisor - 1
+      default: 96'h000000000000_000000000000;   // zero dividend
+    endcase;
+  function Bit#(48) dvsOf(Bit#(4) i) =
+    case (i)
+      0: 48'h000000000007;
+      1: 48'hffffffffffff;
+      2: 48'h000000000001;
+      3: 48'h00000000003c;
+      4: 48'h00000fedcba9;
+      5: 48'h800000000001;
+      6: 48'hffffffffffff;
+      default: 48'h000000000003;
+    endcase;
+
+  Integer expClocks = 4;   // a LITERAL: see the header
+
+  rule rl_issue (!done && !issued);
+    box.request(DivReq { dvd: dvdOf(idx), dvs: dvsOf(idx) });
+    issued <= True;
+    t0 <= clk;
+  endrule
+
+  rule rl_collect (!done && issued && box.responseReady());
+    let got = box.response();
+    Bit#(96) dvd = dvdOf(idx);
+    Bit#(96) dvs = zeroExtend(dvsOf(idx));
+    Bit#(96) wq  = dvd / dvs;
+    Bit#(96) wr  = dvd % dvs;
+    let fq = fpDivFrac(dvd, dvsOf(idx));
+    Bit#(16) took = clk - t0;
+    if (got.q != wq || zeroExtend(got.rem) != wr) begin
+      $display("FAIL coredivbox[%0d] vs operators: q=%h want %h, rem=%h want %h",
+               idx, got.q, wq, got.rem, wr);
+      fails <= fails + 1;
+    end else if (got.q[48:0] != tpl_1(fq) || {1'b0, got.rem} != tpl_2(fq)) begin
+      $display("FAIL coredivbox[%0d] vs fpDivFrac: q49=%h want %h, rem=%h want %h",
+               idx, got.q[48:0], tpl_1(fq), got.rem, tpl_2(fq));
+      fails <= fails + 1;
+    end else if (took != fromInteger(expClocks)) begin
+      $display("FAIL coredivbox[%0d] clocks = %0d, want %0d", idx, took, expClocks);
+      fails <= fails + 1;
+    end else
+      $display("PASS coredivbox[%0d] q=%h rem=%h in %0d clocks", idx, got.q, got.rem, took);
+    issued <= False;
+    if (idx == fromInteger(valueOf(NCoreDivVec) - 1)) done <= True;
     else idx <= idx + 1;
   endrule
 

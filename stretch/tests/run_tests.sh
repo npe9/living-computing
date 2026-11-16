@@ -4034,9 +4034,49 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # executes.  Below 65 bits it is worse: the CONDITION is miscompiled
 # and the else arm is taken.  tests/toolchain/ has the probe, the
 # controls that prove the `if` is sound, and the finding that both
-# bsc 2026.01 and 2026.07 do it.  The arm divides by
+# bsc 2026.01 and 2026.07 do it.  The arm divided by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
+# (Since 2026-11-15 there is no `/` in the arm at all: the division is
+# mkDivBox's, the zero divisor never sends it a request, and dsrSafe
+# is gone.  The finding about bsc stands; see tests/toolchain/.)
+#
+# >>> THE DIVIDE BOX AT THE EDGES OF ITS DATAPATH. <<<  The VFL divide
+# arm's 96-bit `/` and `%` (118,755 LUT4 + 22,896 CCU2C alone, twice
+# the ULX3S) became an iterative restoring divider, mkDivBox in
+# bsv/StretchDivBox.bsv, reached by execute()'s NeedBox bail.  This
+# deck is the full-width and last-bit cases a shift-and-subtract loop
+# can get wrong and a `/` operator cannot: 96 by 48 significant bits, a
+# quotient of 96 one bits, the largest remainder, dividend below
+# divisor, both mixed-sign remainders, a zero dividend and a zero
+# divisor.  Every expected value is hand-derived in the deck header
+# from printed p.70, and ALL 21 CHECKS PASSED ON THE MODEL AS IT WAS
+# BEFORE THE BOX (combinational divide), CYCLES included: 1196 is that
+# model's count, so =1196+-0 is the check that the box changed the
+# hardware and not the time.  The injections and their observed
+# failures are in the deck header.
+run "/, VFL Divide at the edges of the divide box (full width, last bit, remainder signs)" ./run_program.sh ../decks/vfl_divide_box.strap StretchVflDivBoxTb \
+    "PC=2146" \
+    "CYCLES=1196+-0" \
+    "max_width_quotient:1166=281474976710657" \
+    "max_width_remainder:1167=0" \
+    "max_width_pf_off:1168=0" \
+    "q96_low64:1169=0xffffffffffffffff" \
+    "q96_high32:1170=0xffffffff" \
+    "q96_remainder:1171=0" \
+    "small_dividend_quotient:1172=0" \
+    "small_dividend_rm:1173=80" \
+    "largest_remainder_quotient:1174=1" \
+    "largest_remainder_rm:1175=4503599627370464" \
+    "neg_by_pos_quotient:1176=776" \
+    "neg_by_pos_rm:1177=24" \
+    "pos_by_neg_quotient:1178=776" \
+    "pos_by_neg_rm:1179=16" \
+    "zero_dividend_quotient:1180=0" \
+    "zero_dividend_rm:1181=0" \
+    "zero_divisor_keeps_acc:1182=9" \
+    "zero_divisor_keeps_rm:1183=80" \
+    "zero_divisor_sets_zd:1184=1"
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
     "req_word0:1030=0x1020001121001222" \
@@ -9245,6 +9285,16 @@ run "bsv smoke test (make run)" make run
 # (Measured: the suite reported "ONE OR MORE TESTS FAILED" with ZERO
 # FAIL lines, which is the run() status check added 2026-10-27
 # working -- before it, a build failure with no FAIL lines passed.)
+#
+# AND mkDivBox, THE BOX THE CORE NOW INSTANTIATES (2026-11-16), is the
+# second testbench in the same script: mkCoreDivBoxTb checks it against
+# the `/` and `%` operators it replaced in execute() and against
+# fpDivFrac, and asserts a LITERAL 4 clocks, the smallest divide budget
+# the core absorbs it into.  Injections, measured: the last quotient bit
+# dropped fails 5 of 8 (the odd quotients); the remainder never
+# restored fails 7 of 8 and mkFpDivBox's 4 of 5 too (they share
+# divRestoringStep); one reduction clock too few fails 8 of 8, two of
+# them as "clocks = 3, want 4".
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.

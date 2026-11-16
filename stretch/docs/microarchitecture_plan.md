@@ -5681,6 +5681,32 @@ Staged, each step green and committed:
      fetches (the arithmetic itself is still one clock: step 2b, the
      serial/parallel unit timing, remains the optional refinement).
      Behavior-neutral: suite green, every CYCLES<= count unchanged.
+   - **5d done (2026-11-16): the first arithmetic box behind the
+     same bail -- the divider.** `execute()` gains a third answer,
+     `NeedBox DivReq`, and an argument `Maybe#(DivRsp) boxResult`;
+     `mkEBox` instantiates `mkDivBox` (StretchDivBox.bsv) once, issues
+     the request on `NeedBox`, holds the instruction exactly as for a
+     read (`boxWait`), and `canResume()` is "read answered OR box
+     answered". VFL `/` is done (the 96-bit combinational `/` and `%`,
+     118,755 LUT4 + 22,896 CCU2C alone); FP `/`, `R/`, `D/` (three
+     inlined copies of `fpDivFrac`) are NEXT, onto the same box and
+     the same bail. Timing is held fixed: the box's
+     clocks are taken off the E-box budget (`ebox.boxClocks()` in
+     `rl_exec_resume`). Call sites: `execute()`'s two callers in
+     `mkEBox` (`start`, `resume`) and `vflIntOp`; for the FP step,
+     `fpArithClass` (and its test harness `StretchFpCommitTest.bsv`)
+     and `fpDiv`/`fpDivDouble`, which will take the quotient and
+     remainder as an argument and report what to divide. Two scheduling facts surfaced and are
+     recorded in the box: its state must be CRegs with the rule on port
+     0 and the methods on port 1 (otherwise bsc G0096, dynamic
+     scheduling, because `resume()` both polls and requests), and no
+     method may carry an implicit condition (one on `response` became
+     the condition of all of `resume()` and stalled every read).
+     Remaining: make the box's count the time (Table 2, R23-9732 figs
+     3.8.15/3.8.19 -- see the box header's open item on two clock
+     periods per pass), then multiply, SRT and the `/ 10` chain of the
+     binary-to-decimal conversion (96 constant divides in the
+     generated Verilog), which are the next combinational giants.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

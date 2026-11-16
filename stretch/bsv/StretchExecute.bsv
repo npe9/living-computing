@@ -92,6 +92,7 @@ import StretchTypes::*;
 import StretchStorage::*;
 import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
+import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -2465,9 +2466,27 @@ typedef struct {
 // each cause.  "Completes immediately" is a real outcome, and it needs
 // a variant of its own before the preparation arm can stop asking
 // execute() to discover it.
+//
+// AND A THIRD ANSWER, 2026-11-15: "I NEED THE DIVIDER".  `NeedBox` is
+// the NeedOperand bail generalised from a storage word to a multi-cycle
+// arithmetic box (the Flute shape: CPU_Stage2 issues `req` to
+// RISCV_MBox once, is BUSY while `!valid`, then takes the word).  The
+// divide arms return it with the dividend and divisor when execute()'s
+// `boxResult` argument is Invalid; mkEBox issues the request to its one
+// mkDivBox, holds the instruction exactly as it does for a read, and
+// re-runs execute() with the quotient and remainder in `boxResult`.
+// THE CONTRACT IS NeedOperand's: nothing is written on the run that
+// bails.  It is enforced the same way, too -- the arm sets `needsRead`
+// alongside `needsBox`, so every one of the `!isValid(needsRead)`
+// guards that already protect a read bail protects this one, and the
+// foot of execute() returns NeedBox rather than NeedOperand when
+// `needsBox` is Valid.  (The address in that `needsRead` is a
+// placeholder and is never used: every consumer between an arm and
+// the foot tests validity only.  Checked by grep when this was added.)
 typedef union tagged {
   ExecDone Complete;
   WordAddr NeedOperand;
+  DivReq   NeedBox;
 } ExecDispatch deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------
@@ -2507,13 +2526,20 @@ typedef struct {
   // vflIntOp shares this type and always returns Invalid here; only
   // the connectives set the counts.
   Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts;
+  // "I need the divider" -- see ExecDispatch's NeedBox.  When Valid,
+  // needsRead is Valid too (a placeholder), so the bail is suppressed
+  // by the same guards a read bail is.  Only vflIntOp's divide arm
+  // sets it.
+  Maybe#(DivReq) needsBox;
 } VflOutcome;
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
-             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+             Maybe#(DivRsp) boxResult);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
+    Maybe#(DivReq) needsBox = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Word64 ind = ind0;
@@ -3314,24 +3340,39 @@ function ActionValue#(VflOutcome)
                 // indicators, which printed p.70 says "describe the
                 // quotient" and there is no quotient.
                 ind = setBit(ind, ind_ZD, 1);
-              end else begin
-                // >>> THE DIVISOR MUST BE MADE SAFE EVEN THOUGH THIS
-                // ARM IS GUARDED, and Bluesim said so with a
-                // FLOATING POINT EXCEPTION on this deck's very first
-                // run. <<<  The `if (dsr == 0)` above is a MUX, not a
-                // branch: Bluespec evaluates both sides, so `dvd /
-                // dsr` is elaborated and executed whatever the guard
-                // decides, and the generated C++ traps on integer
-                // division by zero before the mux ever chooses.
+              end else if (boxResult matches tagged Invalid) begin
+                // >>> THE DIVISION ITSELF IS NOT DONE HERE ANY MORE,
+                // 2026-11-15. <<<  This arm used to compute
+                // `dvd / dsrSafe` and `dvd % dsrSafe` in place: a
+                // 96-bit combinational divide and remainder by a
+                // variable divisor, measured alone at 118,755 LUT4 +
+                // 22,896 CCU2C -- twice the ULX3S this model has to
+                // fit.  It now asks mkEBox's divide box for them
+                // (ExecDispatch's NeedBox) and is re-run when they
+                // arrive.  "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY
+                // PERFORMED BY PAU" (R23-9694 printed p.121): the box
+                // is that unit, and the floating-point divides share
+                // it.
                 //
-                // Dividing by one instead costs nothing -- the result
-                // is discarded on exactly the path where the guard
-                // was going to discard it -- and it keeps the zero
-                // divisor rule where the manual puts it, in the
-                // indicator logic rather than in the arithmetic.
-                Bit#(96) dsrSafe = (dsr == 0) ? 1 : dsr;
-                Bit#(96) q    = dvd / dsrSafe;
-                Bit#(96) rem_ = dvd % dsrSafe;
+                // NOTHING IS WRITTEN ON THIS RUN.  `ind` (PF, the data
+                // flags, MOP) is discarded with the bail and
+                // recomputed on the re-run, exactly as on a read bail;
+                // needsRead is the placeholder that makes every
+                // existing bail guard apply (see ExecDispatch).
+                //
+                // THE ZERO DIVISOR NEVER GETS HERE, which is p.70's
+                // "THE DIVISION IS NOT ATTEMPTED" as structure: no
+                // request is made.  (It is also why the old
+                // `dsrSafe = (dsr == 0) ? 1 : dsr` is gone.  That was
+                // there because both sides of a BSV `if` are
+                // elaborated and Bluesim's wide `/` trapped with a
+                // floating point exception on the discarded side; a
+                // restoring loop has nothing to trap on.)
+                needsBox  = tagged Valid DivReq { dvd: dvd, dvs: dsr[47:0] };
+                needsRead = tagged Valid 0;
+              end else begin
+                Bit#(96) q    = validValue(boxResult).q;
+                Bit#(96) rem_ = zeroExtend(validValue(boxResult).rem);
                 // "the quotient is placed in the cleared accumulator
                 // at the specified offset", and the quotient's sign
                 // "replaces the sign bit in the accumulator sign byte
@@ -4036,7 +4077,7 @@ function ActionValue#(VflOutcome)
              // guard` already uses below.
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
-                      connCounts: connCounts};
+                      connCounts: connCounts, needsBox: needsBox};
   endactionvalue
 endfunction
 
@@ -4402,7 +4443,7 @@ function ActionValue#(VflOutcome)
         end  // DF suppression (mask 1) -- see vflIntOp's matching end
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
-                      connCounts: connCounts};
+                      connCounts: connCounts, needsBox: tagged Invalid};
   endactionvalue
 endfunction
 
@@ -5484,8 +5525,12 @@ endfunction
 function ActionValue#(ExecDispatch)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
-            Maybe#(HWordAddr) intIC, ExSubject ex) =
+            Maybe#(HWordAddr) intIC, ExSubject ex,
+            Maybe#(DivRsp) boxResult) =
   actionvalue
+    // "I need the divider" (ExecDispatch's NeedBox).  Whenever this is
+    // Valid, needsRead is too.
+    Maybe#(DivReq) needsBox = tagged Invalid;
     // An instruction at an effective interruption address carries the
     // interrupted program's instruction counter, which "is not stepped
     // during execution of either interruption instruction" (Reference
@@ -5642,8 +5687,9 @@ function ActionValue#(ExecDispatch)
       tagged VflInt .vi: begin
         VflInstr vi2 = vi;
         vi2.a = vflSecondIndex(st, vi.a);
-        VflOutcome vo <- vflIntOp(st, vi2, prefetch, prefetchCount, ind);
+        VflOutcome vo <- vflIntOp(st, vi2, prefetch, prefetchCount, ind, boxResult);
         needsRead  = vo.needsRead;
+        needsBox   = vo.needsBox;
         vflPending = vo.vflPending;
         ind        = vo.ind;
       end
@@ -6915,7 +6961,12 @@ function ActionValue#(ExecDispatch)
       // ENTRY values here (not whatever partial computation produced)
       // is correct by construction -- see this function's own header
       // comment.
-      return tagged NeedOperand validValue(needsRead);
+      // ... and the same holds for a box bail, which is why it rides
+      // on needsRead (ExecDispatch's NeedBox has the argument).
+      if (needsBox matches tagged Valid .rq)
+        return tagged NeedBox rq;
+      else
+        return tagged NeedOperand validValue(needsRead);
     end
   endactionvalue;
 
@@ -6976,7 +7027,14 @@ interface EBox;
   method Bool busy();                 // holding an instruction that waits on a read
   method Bool busyFor(ExecOwner o);   // ... dispatched by o
   method Bool canResume();            // busy and the read has answered
-                                      // (or an EXIC subject is ready to run)
+                                      // (or an EXIC subject is ready to run,
+                                      //  or the divide box has its result)
+  // Clocks the held instruction has spent waiting on the divide box
+  // since the request (0 if it is not waiting on it).  The instruction
+  // unit reads this in the clock it calls resume() and takes it off
+  // the E-box budget it then charges, so the box's time is INSIDE the
+  // instruction's time rather than added to it.
+  method Bit#(16) boxClocks();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -7020,6 +7078,29 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // as they are blocked while a read is outstanding.
   Reg#(Bool)               subjReady     <- mkReg(False);
 
+  // THE DIVIDE BOX, INSTANTIATED ONCE (the mkFBox/mkRISCV_MBox shape),
+  // and the third thing a held instruction can be waiting for.
+  // execute() returns NeedBox with a dividend and a divisor; start()
+  // or resume() hands them to the box and holds the instruction
+  // exactly as for a read; canResume() answers when the box has
+  // finished; resume() takes the quotient and remainder and re-runs
+  // execute() with them.
+  //
+  // `boxWait` SAYS WHICH HANDSHAKE THE HELD INSTRUCTION IS IN.  While
+  // it is set there is no read outstanding (the operand word, if any,
+  // was collected before execute() could ask for the box and is still
+  // in `prefetch`), so resume() must NOT call st.readWordResp().
+  //
+  // THE RESULT IS GOOD FOR ONE RUN ONLY, deliberately.  If the re-run
+  // bails again for a read (a progressive-index refill after the
+  // divide) and comes back a third time, it gets `Invalid` and asks
+  // the box again with whatever the operands then are -- which is
+  // precisely what the combinational arm did on every run, so the
+  // behaviour is unchanged in that corner too.
+  DivBox                   divBox        <- mkDivBox;
+  Reg#(Bool)               boxWait       <- mkReg(False);
+  Reg#(Bit#(32))           boxT0         <- mkReg(0);
+
   // A FREE-RUNNING CLOCK, for the one rule in the machine that is
   // stated in TIME: printed p.29's one-millisecond bound on a LOAD
   // VALUE EFFECTIVE chain.  1 ms is lveLimit clocks of this model's
@@ -7040,10 +7121,25 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // program.  An EX dispatched here bails immediately for its subject
     // word and becomes the held instruction; resume() takes it from
     // there.
-    let r <- execute(st, io, pc, len, di, pf, cnt, intIC, notSubject);
+    let r <- execute(st, io, pc, len, di, pf, cnt, intIC, notSubject,
+                     tagged Invalid);
     case (r) matches
       tagged NeedOperand .a: begin
         st.readWordReq(a);
+        held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
+                                    intIC: intIC, ex: notSubject,
+                                    exic: tagged Invalid, t0: clock};
+        prefetch <= pf;
+        prefetchCount <= cnt;
+        owner <= o;
+        return tagged Invalid;
+      end
+      tagged NeedBox .rq: begin
+        // The look-ahead supplied the operand (or it was immediate),
+        // so the first thing this instruction waits for is the box.
+        divBox.request(rq);
+        boxWait <= True;
+        boxT0   <= clock;
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
                                     intIC: intIC, ex: notSubject,
                                     exic: tagged Invalid, t0: clock};
@@ -7062,7 +7158,13 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // is an alternative to the read handshake, not an addition to it --
   // when it is set there is no outstanding read, because the subject
   // word was consumed on the clock the step was written.
-  method Bool canResume() = isValid(held) && (subjReady || st.responseReady());
+  // ... and `boxWait` is a third alternative, likewise exclusive of the
+  // read: see its declaration.
+  method Bool canResume() = isValid(held)
+                            && (subjReady
+                                || (boxWait ? divBox.responseReady()
+                                            : st.responseReady()));
+  method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
     // `pc` and `len` are the EXECUTE's while a subject is held, which
@@ -7124,7 +7226,21 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // header note on the single writeWord site.
     Maybe#(Tuple2#(WordAddr, Word64)) stepWrite = tagged Invalid;
 
-    if (subjReady) begin
+    // SHAPE 0, 2026-11-15: THE DIVIDE BOX HAS ANSWERED.  No word
+    // arrived and none is outstanding; the held instruction is re-run
+    // exactly as it stands -- same `di`, same `ex`, same prefetch --
+    // with the quotient and remainder.  It comes FIRST and bypasses
+    // every `h.di`-keyed shape below: those interpret an arriving
+    // storage word, and here there is none.  (It cannot coincide with
+    // `subjReady`: that is set only on the clock an EXIC's subject is
+    // installed, and the subject has not run yet, so it has not asked
+    // for the box.)
+    Maybe#(DivRsp)     rbox = tagged Invalid;
+
+    if (boxWait) begin
+      rbox = tagged Valid divBox.response();
+      boxWait <= False;
+    end else if (subjReady) begin
       // SHAPE 1.  Nothing arrived and nothing is outstanding: `held`
       // already IS the subject, with an empty prefetch, and the step
       // was written last clock.  Fall straight through to execute().
@@ -7324,8 +7440,22 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       prefetchCount <= rcnt;
       return tagged Invalid;
     end else begin
-      let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.intIC, rex);
+      let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.intIC, rex, rbox);
       case (r) matches
+      tagged NeedBox .rq: begin
+        // The operand word has just arrived (or a subject has just
+        // been installed) and the instruction now needs the divider:
+        // read first, then the box.  The word stays in `prefetch`.
+        divBox.request(rq);
+        boxWait <= True;
+        boxT0   <= clock;
+        held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
+                                    intIC: h.intIC, ex: rex,
+                                    exic: rexic, t0: h.t0};
+        prefetch <= rpf;
+        prefetchCount <= rcnt;
+        return tagged Invalid;
+      end
       tagged NeedOperand .a: begin
         st.readWordReq(a);
         // Rewritten rather than left alone: on a subject swap `rdi` and

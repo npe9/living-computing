@@ -55,6 +55,7 @@ pulled from bitsavers.org):
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
+| `StretchDivBox.bsv` | The divide boxes. `mkDivBox`, the one the core instantiates (once, inside `mkEBox`): a 96-by-48 iterative restoring divider behind `request`/`responseReady`/`response`, 24 quotient bits a clock, four clocks, reached by `execute()`'s `NeedBox` bail -- see "The divide box" below. `mkFpDivBox`, the standalone sourced-structure FSM (trial/intermediate/last reduction, the normalisation loop) that the later timing step is to grow it into. Each has its own testbench (`mkCoreDivBoxTb`, `mkDivBoxTb`; `../tests/run_divbox_test.sh`). |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
 | `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../tests/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
@@ -684,6 +685,37 @@ Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle
 count. Its header records the measured injections: the E-box re-indexing fails
 the V+I cases and the overtaken floating store, the missing wait fails the
 E-box sibling, and the old stall put back fails only the cycle count.
+
+### The divide box (2026-11-16)
+
+The VFL divide arm of `execute()` computed `dvd / dsrSafe` and
+`dvd % dsrSafe` on 96 bits with a variable divisor. Synthesised alone that
+was 118,755 LUT4 + 22,896 CCU2C, about twice the ULX3S. The division now
+runs in `mkDivBox` (`StretchDivBox.bsv`). `execute()` takes a
+`Maybe#(DivRsp) boxResult` and has a third answer, `NeedBox DivReq`,
+beside `Complete` and `NeedOperand`. The arm returns `NeedBox` with the
+dividend and divisor when it has no result, and uses the quotient and
+remainder when it does. `mkEBox` issues the request, holds the
+instruction exactly as it does for an operand read (`boxWait`), and
+`canResume()` becomes "the read answered, OR the box has its answer".
+`resume()` then re-runs `execute()` with the answer. An instruction that
+needs an operand word and then the box does both in turn. A box bail
+also sets `needsRead` (to a placeholder), so every existing
+`!isValid(needsRead)` guard keeps the bail free of writes. A zero divisor
+never sends a request (p.70: "the division is not attempted").
+
+**Time is unchanged by construction.** `rl_exec_resume` subtracts the
+clocks the box took (`ebox.boxClocks()`) from the E-box budget it then
+charges. The I-box-dispatched path is charged `budget - elapsed` already.
+The box takes 4 clocks, and the smallest divide budget is 4 (FP `/`). An
+overrun would print `DIVIDE BOX OVERRAN THE E-BOX BUDGET`. The 24 bits a
+clock is invented, to fit that budget, and the box header says so. Whether
+the box's own count should *be* the time is the later, sourced step.
+
+Test: `../decks/vfl_divide_box.strap` (full width, a 96-bit quotient,
+the largest remainder, the four sign cases with `vfl_divide.strap`, zero
+dividend and divisor). It passed unchanged on the model before the box,
+`CYCLES=1196+-0` included.
 
 ### Documented simplifications (deliberate, not oversights)
 
