@@ -145,7 +145,9 @@ QUOTED_109 = {
 # OPERAND with no indexing.  PDF 102 puts every instruction of the test on
 # the same external operand; that it is unindexed is an ASSUMPTION (the
 # ix_ext figure is the same as ni_ext on all six sheets except DL, 1.41
-# against 1.40).  The quoted figures sit within 0.02 of the sheets: the
+# against 1.40).  That it is the no-forwarding sheet is supported by the
+# ink: L(U) 1.34 and DL(U) 1.41 fit PDF 64/66 (1.33, 1.40), not the
+# forwarding PDF 95/97 (2.41).  The quoted figures sit within 0.02 of the sheets: the
 # environment run is a different measurement, so this rule's far pairs
 # are expected and its counts are what is checked.
 QUOTED_FP = {

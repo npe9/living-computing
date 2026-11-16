@@ -271,6 +271,8 @@
 
 
 
+
+
 # ---- floating-point sheets, PDF 42-101 (read 2026-11-16) ----
 
 PAGE	pdf=42	printed=35	class=FP
@@ -2897,7 +2899,7 @@ INSTR	LFT
 COND	forwarding=yes
 COLS	ni_int	ni_ext	ni_ibox	ix_int	ix_ext	ix_ibox
 SHOWN	ni_int	ni_ext	ni_ibox	ix_int	ix_ext	ix_ibox
-NOTE	NEG (N) EXTERNAL OPERAND (no indexing) in MEMORY OPERAND HAS XPFP has a blotted middle digit (4.?6); read 4.36 from the digit's lower bowl and the column.
+NOTE	NEG (N) EXTERNAL OPERAND (no indexing) in MEMORY OPERAND HAS XPFP has a blotted middle digit (4.?6).  It is read as 4.36 and not marked uncertain: the digit's lower bowl is a 3's.  The last digit, the only one that varies in these columns (4.36/4.37), is clear.
 BLOCK	NORMALIZED 1.
 (N)	6.76	4.36	4.06	6.76	4.37	4.07
 NEG (N)	6.76	4.36	4.06	6.76	4.36	4.07
@@ -3045,6 +3047,7 @@ NOTE	A different kind of table (PDF 102-103, printed 95-96): each figure is the 
 NOTE	The column 'quoted' is the figure each row prints in its caption, e.g. "LX (5.73 IN A LX ENVIRONMENT)": the instruction's time in a sequence of itself, quoted from the instruction's own page.  check_atlas_data.py compares the index-arithmetic ones with PDF 109.
 NOTE	The two block captions are printed with a gap where the environment's time belongs and the figure is written in by hand: "FOLLOWED BY +(U) OPS AT 2.41 EACH" and "FOLLOWED BY *(U) OPS AT 2.71 [mu]s EACH".  PDF 102 prints the same two figures in type ("2.41 us for +(u) (according to p. 66) and close to 2.71 for *(u) (according to p. 76)").  The block captions below carry the handwritten figures.
 NOTE	Every cell was re-read on a full-resolution crop of the eight figure columns.
+NOTE	The FP captions ST(U) 4.82 and LFT(U) 4.35, in both blocks, were re-read on a 300 dpi crop on 2026-11-16, as were PDF 48's and PDF 68's (U) EXTERNAL figures (4.80, 4.37).  The 0.02 differences that 'quotefp' counts as far are printed.  PDF 104 is a separate measurement.
 BLOCK	FOLLOWED BY +(U) OPS AT 2.41 EACH
 ST(U)	4.82	2.51	2.01	1.73	2.21	2.21	2.28	2.26	2.31
 SRD(U)	5.10	2.56	2.04	1.81	1.93	2.20	2.28	2.25	2.31
