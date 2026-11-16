@@ -1,0 +1,208 @@
+! C22-6578 PROBLEM 4.7, "TRANSPOSITION OF A 64 x 64 BIT MATRIX", printed
+! pp.40-41 (PDF 41-42), Method 2, read in the ink at 300 dpi.
+!
+!   "Given a 64x64 matrix whose elements are bits stored consecutively
+!   and row-wise starting at BMX64.  Create the transpose and store it in
+!   the same area."
+!   "Method 2.  Use logical connectives.  The matrix is partitioned into
+!   8x8 submatrices or blocks and each is transposed separately."
+!   Comments: "(a) ... The (I, J)-block of the transposed matrix is the
+!   transpose of the (J, I)-block of the original matrix.  (b) XW1, XW2,
+!   XW3, and XW4 are not destroyed in the program. ..."
+!
+! THE PRINTED STATEMENTS, BMX64T TO "LOC SYN,BMX64", ARE AS PRINTED
+! with one punctuation mark supplied (1 below).  BMX64 is the deck's.
+! Assembled by the host STRAP II (ASM=strap2).
+!
+! WHAT IS READ IN THE INK AND IS WRONG AS PRINTED, two things:
+!
+!  1. The second line is printed "LX,$2,XW2;SX,$2,XW22,SX,$2,XW222": a
+!     comma where the semicolon between two statements belongs (the
+!     first line, "LX,$1,XW1;SX,$1,XW11;SX,$1,XW111", has both).  STRAP II
+!     refuses the card as printed ("message 40: EXTRA FIELDS").  The
+!     semicolon is supplied, and the deck runs with it.
+!
+!  2. >>> "XW2 XW,LOC,7,XW222" GIVES $2 A COUNT OF 7, AND $2 IS STEPPED
+!     EIGHT TIMES A BLOCK. <<<  Read clearly at 300 dpi; XW1 beside it
+!     prints 8.  $2 walks the eight rows of the (J, I) block by
+!     progressive indexing with refill, "(V+ICR)", eight times in OFDIA1
+!     and eight more in OFDIA2, exactly as $1 walks the (I, J) block with
+!     its count of 8.  With 7 the count reaches zero on the seventh row
+!     and $2 is refilled to the block's first row (Reference Manual
+!     printed p.21 and p.26: refill "if the count reached zero"), so the
+!     eighth row connected is row 0 again and the stores into the column
+!     block land a row out of step.  The page's statement is not met.
+!     THE DECK RUNS AS PRINTED, and with 8 ("--corrected": the one card
+!     replaced in a copy, tests/verify_problem_4_matrix.py CORRECTIONS),
+!     which gives the transpose.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (printed page = PDF - 3).
+!   $1 walks the row block (I, J), $2 the column block (J, I), each
+!   0.64 a row by "(V+ICR)" (printed p.21) and refilled from XW111/XW222
+!   to the block's first row; $3 is the offset index, in half words (an
+!   integer in V-ICR's 19-bit field counts half words, C28-6129 Section I
+!   printed pp.8-9), so V-ICR,$3,1 is one offset and V-ICR,$3,8 eight; $4
+!   counts blocks.
+!   DIAG1: "C0111(BU,8,1)(V+ICR),0.64($1),7($3)" ORs row r of the
+!   diagonal block into the cleared accumulator at offset 7-r, which
+!   lays A[r][c] at right-half bit 8c+r (problem_4_6_method2.strap has
+!   the derivation, CONNECT printed pp.75-76).  DIAG2 stores the right
+!   half's bytes, offset 56-8k, to rows k.
+!   OFDIA1 does the same for the row block into the right half and the
+!   column block at offset 71-r into the left half; the column block's
+!   operand reaches 7-r bits past the accumulator's left end, where only
+!   high-order zeros fall: "the storage operand is combined with the
+!   accumulator operand up to the left end ...; higher-order bits in the
+!   storage operand are dropped" (partial field, printed p.76).  OFDIA2
+!   stores the right half (the row block transposed) into the column
+!   block and the left half into the row block: the exchange.
+!   $4: XW4 count 8, CBZR counts one at each diagonal, CBR one per pair,
+!   refilled from XW44 at zero; NEWROW takes one more off XW44 (C-I), so
+!   row I does 7 - I pairs and the eighth diagonal branches to BEW.
+!
+! THE DATA: problem_4_7_method1.strap's 64 words (Python
+! random.Random(4707)).  THE EXPECTED VALUES are worked by
+! tests/verify_problem_4_matrix.py, not taken from the model: the
+! corrected run against the statement (the transpose), and both runs
+! against a trace of the printed statements by the rules above, which is
+! asserted to give the transpose when the count is 8 before it is used
+! for the count of 7.  Checked: all 64 rows, $1-$4, XW11, XW22, XW44,
+! XW111, XW222, the accumulator, the guards and the halt PC.
+!   As printed (count 7): 1500 of the 4096 bits differ from the
+!   transpose, in every one of the 64 rows; $2, XW22 and XW222 end with
+!   count 7, where the corrected run ends them with 8.  The halt, $1,
+!   $3, $4 and the accumulator are the same in both.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD, BOTH RUNS: as printed the model
+! stores exactly the trace's 64 wrong words, and corrected the transpose
+! (77 exact checks and the PC each).  The column-block connect at
+! offset 71-r runs past the accumulator's left end 28 x 7 times without
+! disturbing anything.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   the first word of BMX64 (16)09C4D5B1949524CB -> (16)01C4D5B1949524CB
+!   (A[0][4] turned off), by --sub on the copy that runs; the expected words
+!   are worked from the deck as it stands.  PREDICTED: row 4's bit 0.
+!   OBSERVED, corrected: FAIL row04 only, (16)7A1A56121855F9EA for
+!   (16)FA1A56121855F9EA.  OBSERVED, as printed: FAIL row04 only,
+!   (16)7A1A5A99CCAACC55 for (16)FA1A5A99CCAACC55 (the printed program
+!   happens to leave A[0][4] where the transpose puts it).  Everything
+!   else passes in both.
+
+! --- printed pp.40-41, Method 2 ----------------------------------------
+BMX64T  LX,$1,XW1;SX,$1,XW11;SX,$1,XW111   !'row block index
+        LX,$2,XW2;SX,$2,XW22;SX,$2,XW222   !'column block index
+!                printed: LX,$2,XW2;SX,$2,XW22,SX,$2,XW222
+        LX,$3,XW3                          !'offset index
+        LX,$4,XW4;SX,$4,XW44               !'block counter
+DIAG    LI(BU,1),0                      !'clear accumulator
+DIAG1   C0111(BU,8,1)(V+ICR),0.64($1),7($3)     !'loop for diagonal block
+        V-ICR,$3,1                      !'lower offset by 1
+        BZXCZ,DIAG1                     !'until block completed
+DIAG2   ST(BU,8,8)(V+ICR),0.64($1),64-8($3)     !'store diagonal block row-wise
+        V-ICR,$3,8
+        BZXCZ,DIAG2                     !'until block stored
+        CBZR,$4,BEW                     !'branch if last diagonal block complete
+OFDIAG  V+,$1,VFP8;SX,$1,XW111          !'loop for off diagonal block pair
+        V+,$2,VF8P;SX,$2,XW222
+        LI(BU,1),0
+OFDIA1  C0111(BU,8,1)(V+ICR),0.64($1),7($3)     !'row block treatment
+        C0111(BU,8,1)(V+ICR),0.64($2),64+7($3)  !'column block treatment
+        V-ICR,$3,1                      !'lower offset
+        BZXCZ,OFDIA1                    !'until block pair complete
+OFDIA2  ST(BU,8,8)(V+ICR),0.64($2),64-8($3)     !'store into column block area
+        ST(BU,8,8)(V+ICR),0.64($1),128-8($3)    !'store into row block area
+        V-ICR,$3,8
+        BZXCZ,OFDIA2                    !'until block pair stored
+        CBR,$4,OFDIAG                   !'until one row, one column complete
+NEWROW  LX,$1,XW11                      !'procedure for new row
+        V+,$1,VF8P8
+        SX,$1,XW11;SX,$1,XW111
+        LX,$2,XW22
+        V+, $2, VF8P8
+        SX,$2,XW22;SX,$2,XW222
+        C-I,$4,1;SX,$4,XW44
+        B,DIAG
+BEW     BEW,$
+VFP8    VF,0.8
+VF8P    VF,8.0
+VF8P8   VF,8.8
+XW1     XW,LOC,8,XW111
+XW2     XW,LOC,7,XW222
+XW3     XW,0,8,$
+XW4     XW,0,8,XW44
+XW11    XW,0                            !'to contain row information
+XW22    XW,0                            !'to contain column information
+XW44    XW,0                            !'to contain block counter
+XW111   XW,0                            !'to contain row block information
+XW222   XW,0                            !'to contain column block information
+LOC     SYN,BMX64
+! --- the deck's data ---------------------------------------------------
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BMX64   DD(BU,64),(16)09C4D5B1949524CB
+        DD(BU,64),(16)3E7CC7063D99F6DC
+        DD(BU,64),(16)3C94FE7009B7D6BC
+        DD(BU,64),(16)9AA9D0810044A572
+        DD(BU,64),(16)8B0203191EDE42BD
+        DD(BU,64),(16)673AB9B2FD6A3FB2
+        DD(BU,64),(16)1BFCDD8277E81C1F
+        DD(BU,64),(16)340FD17DC7D9B984
+        DD(BU,64),(16)050D707C7222BF40
+        DD(BU,64),(16)70E175C9BCB65970
+        DD(BU,64),(16)36575FF92D6C2FCC
+        DD(BU,64),(16)BE23BBF9328801F7
+        DD(BU,64),(16)4857F5D89FF91B9A
+        DD(BU,64),(16)8722862F994B92F5
+        DD(BU,64),(16)BF09DE737B26E413
+        DD(BU,64),(16)02BE7C9C77129CA5
+        DD(BU,64),(16)37E2E88AD3107D27
+        DD(BU,64),(16)99D0E0B16ABCC3AB
+        DD(BU,64),(16)F27FD3C20B479E5F
+        DD(BU,64),(16)DD3D7B9300342B51
+        DD(BU,64),(16)920147972430FECC
+        DD(BU,64),(16)FE8C69B3CF6409D9
+        DD(BU,64),(16)ED56DF29970CFF42
+        DD(BU,64),(16)E041D1F1244A682C
+        DD(BU,64),(16)F4BFD992B8B81306
+        DD(BU,64),(16)C2162A09733D8C3A
+        DD(BU,64),(16)25B43C9675BEA7C7
+        DD(BU,64),(16)ADA7BE61AA20D7AD
+        DD(BU,64),(16)91AC94FC84D3D342
+        DD(BU,64),(16)57561395DC895D0D
+        DD(BU,64),(16)F80887C91866488D
+        DD(BU,64),(16)809D579D9DE97BD6
+        DD(BU,64),(16)B66D8B15F39FAB93
+        DD(BU,64),(16)A73BDF186F6B7E7B
+        DD(BU,64),(16)B1EE8D9535A6862D
+        DD(BU,64),(16)8B4939F81A1DBAC2
+        DD(BU,64),(16)4CB5A9823F2013D4
+        DD(BU,64),(16)80DACC0D7AC9E650
+        DD(BU,64),(16)C2A00EDF6D9BD82F
+        DD(BU,64),(16)331833758C5852FD
+        DD(BU,64),(16)34FE1C1C4256F814
+        DD(BU,64),(16)089D0B26B64C692D
+        DD(BU,64),(16)64B4C18602805C91
+        DD(BU,64),(16)3DA29A9A8FDACD49
+        DD(BU,64),(16)80E82FAA48CD2C23
+        DD(BU,64),(16)5AB4EA7443A66998
+        DD(BU,64),(16)02E639EF9C6924DA
+        DD(BU,64),(16)EE60C3745345506E
+        DD(BU,64),(16)FE6F136D17E962EB
+        DD(BU,64),(16)BABA0BE50CC8B219
+        DD(BU,64),(16)4BFE78E100EEDF5B
+        DD(BU,64),(16)2E22AD4E57AF313A
+        DD(BU,64),(16)ECF26099537B976C
+        DD(BU,64),(16)A1E5609F90330263
+        DD(BU,64),(16)9628DD51ADBC159F
+        DD(BU,64),(16)AE9E7B5A80708F10
+        DD(BU,64),(16)38F9FDD2A03D40F8
+        DD(BU,64),(16)A86C55404298544F
+        DD(BU,64),(16)3B792D79FDC13D6E
+        DD(BU,64),(16)E1F48024D3072B12
+        DD(BU,64),(16)6DBBCB15B6E8B1A1
+        DD(BU,64),(16)E21A1CE8FB1E305C
+        DD(BU,64),(16)BE5178FDCB632187
+        DD(BU,64),(16)91B0DA687F898A6C
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, BMX64T

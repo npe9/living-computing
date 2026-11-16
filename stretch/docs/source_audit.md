@@ -2238,13 +2238,29 @@ blank to the same word), and Method 1's `N($3)` is right as printed (an
 integer in a 24-bit VFL address counts bits, C28-6129 Section I printed
 pp.8-9).
 
+### 4.7 64 x 64 bit transpose, printed pp.40-41 -- `decks/problem_4_7_method{1,2}.strap` -- PASSES as the model stood; Method 2 is wrong AS PRINTED
+
+`tests/verify_problem_4_matrix.py`, three runs, each the 64 rows, the
+index words and saved index cells, the accumulator, guards and the PC,
+worked from the data and the statement, not the model.  Method 1 is 4.6
+Method 1 with N = 64, as the page says (2016 bit exchanges).  Method 2
+transposes 8 x 8 blocks in the accumulator; the column block's connect
+at offset 71-r runs past the accumulator's left end, which the model
+handles as the partial-field rule says (printed p.76).  **Two printed
+errata in Method 2**: a comma for a semicolon (STRAP II refuses the card;
+supplied), and **`XW2 XW,LOC,7,XW222`: `$2` counts 7 and is stepped 8
+times a block**, so it is refilled a row early and 1500 of the 4096 bits
+come out wrong.  Run as printed (checked against a trace of the printed
+statements, which the verifier asserts gives the transpose with 8; the
+model matches it word for word) and corrected (the transpose).  **No
+model finding.**  `docs/NEXT.md`, "PROBLEMS 4.6-4.8".
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods).  **Two model bugs,
+methods), 4.7 (two).  **Two model bugs,
 one cause (location 8 as a floating-point operand and as a store),
-four assembler refusals, six printed errata.**  Not reached: 4.9
-Method 2, 4.8 (`N*N` in an address, which strap2 assembles), 4.7 (64 x
-64 bit transposes), 4.5 (the `i2`
+four assembler refusals, eight printed errata.**  Not reached: 4.9
+Method 2, 4.8 (`N*N` in an address, which strap2 assembles), 4.5 (the `i2`
 field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
 4.1 (VFL square root).

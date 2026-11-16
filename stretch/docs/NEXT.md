@@ -17515,6 +17515,29 @@ assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
 * 4.12's typeset formula, printed p.46, has an e with a bar over it for
   the inner exponent; read e**-x from the program.
 
+## G2.1 CHAPTER 4: PROBLEMS 4.6-4.8, PRINTED ERRATA, NO MODEL FINDING -- 2026-11-16
+
+Run on the host STRAP II (`ASM=strap2`), which assembles the pages'
+`N*N` as printed, so these decks carry no substitute.  Every run passed
+against the model as it stood; what was found is in the ink.
+
+### Problem 4.7 Method 2, printed pp.40-41: two errata, run as printed and corrected
+
+`decks/problem_4_7_method2.strap`, `tests/verify_problem_4_matrix.py
+4.7m2` (with and without `--corrected`).
+
+1. `LX,$2,XW2;SX,$2,XW22,SX,$2,XW222`: a comma for the second
+   semicolon.  STRAP II refuses it ("EXTRA FIELDS"); supplied.
+2. **`XW2 XW,LOC,7,XW222` gives `$2` a count of 7, and `$2` is stepped
+   eight times a block** by `(V+ICR)` in OFDIA1 and again in OFDIA2, as
+   `$1` is with its count of 8.  At the seventh row `$2` is refilled to
+   the block's first row (Reference Manual printed pp.21, 26), so the
+   column block is read and written a row out of step: 1500 of 4096 bits
+   come out wrong, in every row.  The model reproduces the printed
+   program's 64 wrong words exactly (a trace of the printed statements
+   in the verifier, which gives the transpose with count 8), and with 8
+   gives the transpose.
+
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
 
 **A model bug, found by C22-6578 Problem 4.10 (printed p.44, "*(N), $L

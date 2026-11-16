@@ -14136,6 +14136,19 @@ run "C22-6578 Problem 4.6 Method 3 -- N = 5, SF into 5-bit bytes" ./run_program.
     "BMATX8_5x5_transposed:200=0x4169DBA7D2604B8F" "acc_right:9=0x0000000805141D17" "acc_left:8=0" \
     "x1:17=0x0032190000000026" "x2:18=0" "guard1:199=0xA5A5A5A5A5A5A5A5" "guard2:201=0x5A5A5A5A5A5A5A5A"
 
+# 4.7, printed pp.40-41: a 64 x 64 bit matrix transposed in place.  Method 1
+# is 4.6 Method 1 with N = 64 (2016 exchanges); Method 2 transposes 8 x 8
+# blocks in the accumulator by C0111, the column block's operand running
+# past the accumulator's left end (partial field, printed p.76).  64 rows
+# and the index words, worked by verify_problem_4_matrix.py from the data
+# and the statement, not the model.  Method 2 AS PRINTED gives $2 a count
+# of 7 for eight rows a block and does not transpose (1500 bits wrong);
+# its run checks the trace of the printed statements, the corrected run
+# (count 8) the transpose.  All passed as the model stood.
+run "C22-6578 Problem 4.7 Method 1 -- 64 x 64 bit transpose, bit by bit" python3 verify_problem_4_matrix.py 4.7m1 ../decks/problem_4_7_method1.strap ASM=strap2
+run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, as printed (XW2 count 7: not a transpose)" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2
+run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, XW2 count 8: the transpose" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2 --corrected
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

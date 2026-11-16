@@ -35,7 +35,8 @@ SKIP = {"verify_mcp_page.py",           # takes a page number, run below
         "verify_problem_1_9.py",        # takes a method and runs the model
         "verify_buchholz_b2.py",        # takes a mode and runs the model
         "verify_buchholz_b6.py",        # takes a mode and runs the model
-        "verify_problem_4_fp.py"}       # takes a deck and runs the model
+        "verify_problem_4_fp.py",       # takes a deck and runs the model
+        "verify_problem_4_matrix.py"}   # takes a deck and runs the model
 PIN_VERIFY = 273
 PIN_PAGES = 351
 # p.33 makes only a CNOP a NOP.  strap_asm also puts a NOP in the half word it
