@@ -13978,12 +13978,12 @@ run "C22-6578 Problem 3.7 -- cube root" ./run_program.sh ../decks/problem_3_7.st
 #     CLAIM; the Reference Manual's p.87 text predicts zeros instead,
 #     and which is right is unsettled (docs/NEXT.md C22-6578 CHAPTER 3
 #     item 5, decks/problem_3_fp_add_low_half_zero.strap).
-#   (signed): the page's program on signed data.  The model takes a
+#   (signed): the page's program on signed data.  Its 27 arithmetic
+#     checks were held back until 2026-11-16, while the model took a
 #     floating-point operand at address 8 with the sign of accumulator
-#     bit 60, not of the sign byte (Reference Manual p.80; NEXT.md item
-#     4, decks/problem_3_fp_address_8_sign.strap), so the 27 arithmetic
-#     checks fail today; they are carried as comments below and should
-#     be restored when the model is mended.
+#     bit 60 instead of the sign byte's bits 4-7 (Reference Manual
+#     printed p.80; NEXT.md "C22-6578 CHAPTER 3" item 4,
+#     decks/problem_3_fp_address_8_sign.strap); restored with the fix.
 run "C22-6578 Problem 3.8 -- VFL to normalized FP, positive data" ./run_program.sh ../decks/problem_3_8_positive.strap StretchP38PTb ASM=strap2 "PC=80" STEPS=400000 \
     "SUM:43=0x0328000000000000" "ROOT:44=0x01A8000000000000" "F0_1:64=0x0178000000000000" \
     "F1_2:65=0x0158000000000000" "F2_3:66=0x015C000000000000" "F3_1024:67=0x0038000000000000" \
@@ -14006,18 +14006,17 @@ run "C22-6578 Problem 3.8 comment (b) -- EPLUS removed, the page's claim" ./run_
     "F19_8:82=0x0118000000000000" "F20_129:83=0x0098100000000000" "F21_1000:84=0x005FA00000000000" \
     "F22_1511:85=0x003BCE0000000000" "F23_2132:86=0x0008540000000000" "F24_2179:87=0x0008830000000000" \
     "x1_after:17=0x000FB00000640028" "x2_after:18=0x0016000000000029"
-run "C22-6578 Problem 3.8 -- signed data (27 checks held back: address-8 sign fault)" ./run_program.sh ../decks/problem_3_8.strap StretchP38Tb ASM=strap2 "PC=80" STEPS=400000 \
+run "C22-6578 Problem 3.8 -- signed data" ./run_program.sh ../decks/problem_3_8.strap StretchP38Tb ASM=strap2 "PC=80" STEPS=400000 \
+    "SUM:43=0x0328000000000000" "ROOT:44=0x01A8000000000000" "F0_1:64=0x0178000000000000" \
+    "F1_m2:65=0x0158000000000008" "F2_3:66=0x015C000000000000" "F3_1024:67=0x0038000000000000" \
+    "F4_m512:68=0x0058000000000008" "F5_768:69=0x005C000000000000" "F6_100:70=0x00BC800000000000" \
+    "F7_m99:71=0x00BC600000000008" "F8_7:72=0x013E000000000000" "F9_1234:73=0x0039A40000000000" \
+    "F10_m321:74=0x007A080000000008" "F11_5:75=0x013A000000000000" "F12_64:76=0x00B8000000000000" \
+    "F13_m640:77=0x005A000000000008" "F14_17:78=0x00F8800000000000" "F15_250:79=0x009FA00000000000" \
+    "F16_m33:80=0x00D8400000000008" "F17_11:81=0x011B000000000000" "F18_400:82=0x007C800000000000" \
+    "F19_m8:83=0x0118000000000008" "F20_129:84=0x0098100000000000" "F21_1000:85=0x005FA00000000000" \
+    "F22_1511:86=0x003BCE0000000000" "F23_m2132:87=0x0008540000000008" "F24_2179:88=0x0008830000000000" \
     "x1_after:17=0x000FF00000640029" "x2_after:18=0x001640000000002A"
-# Held back until the address-8 sign fault is mended:
-#     "SUM:43=0x0328000000000000" "ROOT:44=0x01A8000000000000" "F0_1:64=0x0178000000000000"
-#     "F1_m2:65=0x0158000000000008" "F2_3:66=0x015C000000000000" "F3_1024:67=0x0038000000000000"
-#     "F4_m512:68=0x0058000000000008" "F5_768:69=0x005C000000000000" "F6_100:70=0x00BC800000000000"
-#     "F7_m99:71=0x00BC600000000008" "F8_7:72=0x013E000000000000" "F9_1234:73=0x0039A40000000000"
-#     "F10_m321:74=0x007A080000000008" "F11_5:75=0x013A000000000000" "F12_64:76=0x00B8000000000000"
-#     "F13_m640:77=0x005A000000000008" "F14_17:78=0x00F8800000000000" "F15_250:79=0x009FA00000000000"
-#     "F16_m33:80=0x00D8400000000008" "F17_11:81=0x011B000000000000" "F18_400:82=0x007C800000000000"
-#     "F19_m8:83=0x0118000000000008" "F20_129:84=0x0098100000000000" "F21_1000:85=0x005FA00000000000"
-#     "F22_1511:86=0x003BCE0000000000" "F23_m2132:87=0x0008540000000008" "F24_2179:88=0x0008830000000000"
 
 # C22-6578 Problem 3.9, printed pp.32-34: double-precision compare, both
 # methods (ST/SLO, D-/D+ in Figure 28's order, K, indicators fetched
@@ -14069,38 +14068,53 @@ run "C22-6578 Chapter 4 -- the DD(N) forms and N*N strap_asm refuses, as refusal
 # as it stood.  Three printed errata in the deck's header.
 run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_problem_4_fp.py 4.11
 
-# 4.10, LNX, printed pp.44-45, one argument per run.  Fraction >= 1/sqrt2:
-# passes.  Fraction < 1/sqrt2: KNOWN WRONG -- the model reads location 8 as
-# an FP operand with word 8's bits 60-63 as its sign, where Reference Manual
-# printed p.37 says the sign byte's bits 4-7, so "*(N), $L" gives -Z**2.
-# These three runs pass only while exactly the three series checks fail;
-# when the model is fixed they fail, and --known-wrong comes off.
+# 4.10, LNX, printed pp.44-45, one argument per run.  A fraction below
+# 1/sqrt2 squares a negative Z with "*(N), $L": location 8 as a floating-
+# point operand, accumulator bits 0-59 and the sign byte's bits 4-7
+# (Reference Manual printed pp.37, 80).  Those three runs were KNOWN WRONG
+# (-Z**2) until the model was fixed, 2026-11-16; --known-wrong came off.
 run "C22-6578 Problem 4.10 -- LNX, ln .75" python3 verify_problem_4_fp.py 4.10:.75
 run "C22-6578 Problem 4.10 -- LNX, ln 3" python3 verify_problem_4_fp.py 4.10:3.0
 run "C22-6578 Problem 4.10 -- LNX, ln 1E6" python3 verify_problem_4_fp.py 4.10:1.0E6
-run "C22-6578 Problem 4.10 -- LNX, ln 2.5, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:2.5 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
-run "C22-6578 Problem 4.10 -- LNX, ln .001, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:.001 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
-run "C22-6578 Problem 4.10 -- LNX, ln 1E-300, KNOWN WRONG (location 8, p.37)" python3 verify_problem_4_fp.py 4.10:1.0E-300 --known-wrong TEMP2_ln_F_over_q,ACC_as_programmed,ACC_page_as_printed
-# The reproducer, pinned at the model's WRONG word so it cannot drift: p.37
-# wants PROD = 0x0038000000000000 (+1/4).  Flip the check when it is fixed.
+run "C22-6578 Problem 4.10 -- LNX, ln 2.5" python3 verify_problem_4_fp.py 4.10:2.5
+run "C22-6578 Problem 4.10 -- LNX, ln .001" python3 verify_problem_4_fp.py 4.10:.001
+run "C22-6578 Problem 4.10 -- LNX, ln 1E-300" python3 verify_problem_4_fp.py 4.10:1.0E-300
 # x = 1/8 is written 1X-2, which is exactly 1/8: STRAP II assembles ".125" as
-# 125 x (1/1000 truncated), one unit low (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48"),
-# and that x meets the location-8 store fault as .1 does (second line).
+# 125 x (1/1000 truncated), one unit low (docs/NEXT.md "DD(N) 1.0 IS 1 - 2^-48").
+# THE W8 CHECKS STILL FAIL, AND NOT FOR THE REASON FIRST GIVEN.  The printed
+# "SRDN,$L" has no dds, and both assemblers compile it as the VFL STORE
+# ROUNDED (code 101101) by C22-6578 printed p.30's rule ("An operation which
+# could be either VFL or floating-point is assumed VFL"); the model does not
+# implement that operation and turns OP on, so word 8 keeps the unrounded
+# accumulator.  It was recorded as "a store to location 8 is lost"; the FP
+# store to 8 is fixed and pinned by repro_fp_store_location8.strap, and this
+# is OPEN in docs/NEXT.md.  -.1's TEMP_A_squared ("D*(N), $L") passes since
+# the location-8 operand fix, 2026-11-16.
 run "C22-6578 Problem 4.9 Method 1 -- COSF, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m1:1X-2
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .125 as STRAP II assembles it, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.125 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (store to location 8, p.96)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
-run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (location 8, pp.37 and 96)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong TEMP_A_squared,W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
-# The store reproducer, pinned at the model's WRONG words: after SRDN,$L of
-# .6 squared, p.96 wants word 8 = 0x003B851EB851EB78 (rounding carries into
-# bit 59, so a store that only redirected its sign byte would still differ),
-# and $SB not left untouched.  Flip both checks when it is fixed.
-run "store to location 8: SRDN,\$L is lost, KNOWN WRONG (p.96)" ./run_program.sh ../decks/repro_fp_store_location8.strap StretchReproSt8Tb "PC=68" \
-    "W8_KNOWN_WRONG_p96_wants_003B851EB851EB78:8=0x003B851EB851EB6E" \
-    "SB_KNOWN_unchanged_by_the_lost_store:10=0"
-run "location 8 as an FP operand: -1/2 squared, KNOWN WRONG (p.37 says +1/4)" ./run_program.sh ../decks/repro_fp_operand_location8.strap StretchReproLoc8Tb "PC=70" \
-    "PROD_KNOWN_WRONG_p37_wants_0038000000000000:38=0x0038000000000008" \
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .125 as STRAP II assembles it, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.125 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+# Location 8 as a floating-point address, both directions (Reference
+# Manual printed p.80: accumulator bits 0-59 plus sign byte bits 4-7, "both
+# fetch and store type"; fixed 2026-11-16, docs/NEXT.md).  The store:
+# "SRDN(N), $L" of .6 squared rounds into bit 59 (p.96), so bits 0-59 end
+# ...EB7; its sign (minus, N) and flags go to $SB bits 4-7, and accumulator
+# bits 60-63 keep their E.  Word 9 is untouched.  Injections in the decks'
+# headers.
+run "store to location 8: SRDN(N),\$L rounds into accumulator 0-59 and \$SB 4-7 (p.80, p.96)" ./run_program.sh ../decks/repro_fp_store_location8.strap StretchReproSt8Tb "PC=67" \
+    "W8_rounded_bits_60_63_kept:8=0x003B851EB851EB7E" "W9_untouched:9=0x147AE147AE200000" \
+    "SB_minus_no_flags:10=0x0800000000000000"
+run "location 8 as an FP operand: -1/2 squared is +1/4 (p.37)" ./run_program.sh ../decks/repro_fp_operand_location8.strap StretchReproLoc8Tb "PC=70" \
+    "PROD_plus_quarter:38=0x0038000000000000" \
     "CTRL_plus_quarter:39=0x0038000000000000"
+# C22-6578 Problem 3.8's address-8 reproducer: both fetch cases (the sign
+# byte's sign, and accumulator bit 60 ignored), the control, and the store
+# side, STN(U), 8.0, whose sign goes to $SB and not to bit 60.
+run "C22-6578 ch.3 item 4 -- an FP operand and an FP store at address 8 (p.80)" ./run_program.sh ../decks/problem_3_fp_address_8_sign.strap StretchP3A8Tb ASM=strap2 "PC=77" \
+    "R1_minus3_squared:43=0x0089000000000000" "R2_bit60_ignored:44=0x0089000000000000" \
+    "R3_control:45=0x0089000000000000" "R4_minus5:46=0x006A000000000008" \
+    "W8_bits_60_63_untouched:8=0x006A000000000000" "SB_minus:10=0x0800000000000000"
 
 # 4.12, printed pp.46-47: f(pi) = 2x e**(e**-x) / sqrt(1 - e**-x), two calls
 # of EXP, "SRT(N), $L" into the accumulator itself and R/.  The answer is

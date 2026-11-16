@@ -118,9 +118,11 @@
 ! model reads accumulator bit 60 for the sign.  The four-statement
 ! reproducer is decks/problem_3_fp_address_8_sign.strap, and
 ! docs/NEXT.md "C22-6578 CHAPTER 3" item 4 describes it.
-! tests/run_tests.sh registers this deck with the three checks that
-! pass and carries the twenty-seven that do not, as comments, to be
-! restored when the model is mended.
+! tests/run_tests.sh registered this deck with the three checks that
+! passed and carried the twenty-seven that did not as comments.  FIXED
+! 2026-11-16 (bsv/StretchExecute.bsv fpLoc8Operand): all thirty are
+! registered and pass, and removing the fix fails exactly the 27
+! (decks/problem_3_fp_address_8_sign.strap's header, injection 1).
 ! problem_3_8_positive.strap is this deck with absolute values, which
 ! the fault does not touch: all 29 of its checks pass, and the data-side
 ! injection was made there.

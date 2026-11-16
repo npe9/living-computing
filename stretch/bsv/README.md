@@ -773,6 +773,24 @@ dividend and divisor). It passed unchanged on the model before the box,
   VFL sign sat in bit 0 of word 8 over a 127-bit magnitude and word 10
   kept its LOW byte; the diagnostic's full-64-bit checks of the left
   half and its CM1111/CT1100 on `10.0` exposed both.
+- ~~**Location 8 as a floating-point address is an ordinary word.**~~
+  **FIXED 2026-11-16.** Reference Manual printed p.80: "in
+  floating-point instructions when address 8 is used as the effective
+  operand address, accumulator bit positions 0-59 and sign byte register
+  bit positions 4-7 are used as the operand. ... Bits 60-63 of the
+  accumulator do not serve as operand bits. For all floating-point
+  single-precision operations, they remain unchanged. ... This rule
+  applies to operations of both fetch and store type." The fetch is
+  `fpLoc8Operand` (the word still makes its storage round trip, so no
+  timing moved). The store is `fpStoreToLoc8`, a rewrite of the
+  `FpCommit` record into `accLeft`/`accSign` fields, so each register
+  still takes one write. A store to 8 therefore sets `$SB` bits 4-7.
+  Reproducers: `decks/problem_3_fp_address_8_sign.strap`,
+  `repro_fp_operand_location8.strap` and `repro_fp_store_location8.strap`.
+  The witnesses are C22-6578 Problems 3.8 and 4.10. VFL operations on 8
+  are untouched: p.80, "In operations other than floating point, the
+  contents of the left half of the accumulator, bit positions 0-63,
+  participate".
 - **Word 11 (Indicators): the index half-word stores now write it; the
   general STORE path still does not.** Real hardware allows writing
   bits 20-63 directly (Reference Card footnote c). The execute stage

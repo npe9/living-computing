@@ -52,7 +52,24 @@
 ! 0089000000000000; a negative result would end in 8.  5 = 101 binary,
 ! exponent 3 (006), fraction .101 = A.
 !
-! OBSERVED ON THE MODEL 2026-11-15, ASM=strap2, PC=77 (reached):
+! FIXED 2026-11-16 (bsv/StretchExecute.bsv fpLoc8Operand and
+! fpStoreToLoc8).  Registered in tests/run_tests.sh with the values above,
+! and $SB = 0800000000000000 after case 4 (sign 1, flags 000, zone 0000:
+! p.80, the stored word's bits 60-63 go to sign byte bits 4-7).  All pass.
+! INJECTION 1, measured 2026-11-16 (fpLoc8Operand returning the word
+! unchanged, the old fetch), over the 28 location-8/indicator suite lines:
+! FAILED R1 and R2 here (0089000000000008 each); the operand repro's PROD
+! (0038000000000008); Problem 3.8 signed, all 27 arithmetic checks; 4.10
+! at 2.5, .001 and 1E-300, the three series checks each; 4.9m1 at -.1,
+! TEMP_A_squared (its known-wrong set changed).  Nothing else.
+! INJECTION 2, measured 2026-11-16 (fpStoreToLoc8 disabled, so word 8 is
+! written whole, the old store), over the same 28 lines: FAILED the store
+! repro's W8 (003B851EB851EB78) and $SB (0); problem_3_fp_address_8_sign's
+! R4 (+5, 006A000000000000), word 8 (006A000000000008) and $SB (0).
+! Nothing else -- in particular 4.12/4.13's "SRT(N), $L" and Problem 3.3
+! Method 3's "SRD(N), 8.0" pass either way, so they do not witness this.
+!
+! OBSERVED ON THE MODEL BEFORE THE FIX, 2026-11-15, ASM=strap2, PC=77:
 !     R1 = 0089000000000008   FAIL  (-9)
 !     R2 = 0089000000000008   FAIL  (-9)
 !     R3 = 0089000000000000   PASS

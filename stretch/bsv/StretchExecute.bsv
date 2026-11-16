@@ -1326,7 +1326,11 @@ endfunction
 // fpStoreClass's six arms are mutually exclusive, and each one either
 // writes the computed address `ea` (ST, SRT, SRD, SLO) or the
 // accumulator trio (SHF, E+I) -- never both.  So no two fields can
-// name the same word and the commit order cannot matter.
+// name the same word and the commit order cannot matter.  ONE
+// EXCEPTION, AND IT IS HANDLED BEFORE THE COMMIT: `ea` may be 8, the
+// accumulator's left half.  fpStoreToLoc8 (below) turns such a store
+// into accLeft/accSign fields first (Reference Manual printed p.80), so
+// commitFp still never writes a word twice.
 //
 // SUPPRESSION DID NOT MOVE.  All four `ea` writes were the `else` of
 // the DS protection test (see protViolates and the p.31-32 discussion
@@ -1354,6 +1358,42 @@ typedef struct {
   // structure: nothing is sent.
   Maybe#(DivReq) divReq;
 } FpCommit deriving (Bits, Eq, FShow);
+
+// THE FLOATING-POINT VIEW OF LOCATION 8, both directions (Reference
+// Manual printed p.80, quoted at fpArithClass; "This rule applies to
+// operations of both fetch and store type").  A floating-point word
+// at address 8 is accumulator bits 0-59 followed by sign byte bits
+// 4-7.  The sign byte is IBM bits 0-7 of word 10, model bits 63:56,
+// so its bits 4-7 are model bits 59:56.
+function Word64 fpLoc8Operand(WordAddr ea, Word64 w, Word64 accS) =
+  (ea == addrAccLeft) ? {w[63:4], accS[59:56]} : w;
+
+// THE STORE SIDE.  A floating-point store whose effective address is 8
+// puts the stored word's bits 0-59 into accumulator bits 0-59 and its
+// bits 60-63 (sign and flags) into sign byte bits 4-7; accumulator bits
+// 60-63 "remain unchanged" (p.80: "For all floating-point
+// single-precision operations, they remain unchanged"), and so do the
+// sign byte's zone bits 0-3.  p.96's "unless used as the effective
+// address" (SRD) is this case.  Settled from p.80, 2026-11-16: such a
+// store DOES set $SB.
+//
+// A pure rewrite of the commit record, so the accumulator and sign
+// byte each still take ONE write (writeAccFlags' note on why that
+// matters).  Where an arm also fills accLeft/accSign (none does today
+// together with a store; fpStoreClass's arms never do both), the store
+// lands on top of those values -- it is the instruction's last word.
+function FpCommit fpStoreToLoc8(FpCommit f, Word64 accL, Word64 accS);
+  FpCommit r = f;
+  if (f.store matches tagged Valid .t &&& tpl_1(t) == addrAccLeft) begin
+    Word64 v  = tpl_2(t);
+    Word64 l0 = fromMaybe(accL, f.accLeft);
+    Word64 s0 = fromMaybe(accS, f.accSign);
+    r.accLeft = tagged Valid ({v[63:4], l0[3:0]});
+    r.accSign = tagged Valid ({s0[63:60], v[3:0], s0[55:0]});
+    r.store   = tagged Invalid;
+  end
+  return r;
+endfunction
 
 function Action commitFp(StretchStorage st, FpCommit fpc);
   action
@@ -1738,9 +1778,20 @@ function Tuple2#(Word64, FpCommit)
                  WordAddr ea, FpNum acc, Word64 accL,
                  Word64 accS, Word64 accR0, Word64 factor0,
                  Bool normalized, Bool noisy,
-                 Bool protViol, Word64 operand, Word64 ind0,
+                 Bool protViol, Word64 operandW, Word64 ind0,
                  Tuple2#(Bit#(49), Bit#(49)) divQR);
     Word64 ind = ind0;
+    // LOCATION 8 AS THE OPERAND.  Reference Manual printed p.80: "in
+    // floating-point instructions when address 8 is used as the
+    // effective operand address, accumulator bit positions 0-59 and
+    // sign byte register bit positions 4-7 are used as the operand.
+    // The four sign byte bits replace the four low-order bits of the
+    // accumulator operand.  Bits 60-63 of the accumulator do not serve
+    // as operand bits."  Printed p.37 says the same.  The word still
+    // makes its round trip through storage (lookupSpecial(8)), so the
+    // timing is untouched; only its low four bits are swapped here.
+    // Store-side half: fpStoreToLoc8, below commitFp.
+    Word64 operand = fpLoc8Operand(ea, operandW, accS);
     FpCommit fpc = FpCommit { accLeft: tagged Invalid,
                               accRight: tagged Invalid,
                               accSign: tagged Invalid,
@@ -6649,7 +6700,7 @@ function ActionValue#(ExecDispatch)
                                           normalized, noisy,
                                           protViolates(st, ea), ind);
           ind = indSt;
-          commitFp(st, fpc);
+          commitFp(st, fpStoreToLoc8(fpc, accL, accS));
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin
@@ -6679,7 +6730,7 @@ function ActionValue#(ExecDispatch)
             needsRead = tagged Valid 0;
           end else begin
             ind = indAr;
-            commitFp(st, fpcA);
+            commitFp(st, fpStoreToLoc8(fpcA, accL, accS));
           end
         end
         end  // AD guard

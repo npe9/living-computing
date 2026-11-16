@@ -79,6 +79,14 @@
 ! Reproducer: decks/repro_fp_operand_location8.strap.  docs/NEXT.md,
 ! "G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND".
 !
+! FIXED 2026-11-16 (bsv/StretchExecute.bsv fpLoc8Operand, Reference
+! Manual printed p.80): x = 2.5, .001 and 1.0E-300 now PASS every check,
+! the three series checks at .17/.17/.08, .06/1.00/1.63 and .00/.84/1.31
+! units, and are registered without --known-wrong.  Removing the fix
+! fails exactly the three series checks at each of them again
+! (decks/problem_3_fp_address_8_sign.strap's header, injection 1).  The
+! record below is of the model before the fix.
+!
 ! MEASURED, 2026-11-16, tests/verify_problem_4_fp.py 4.10:<x>:
 !   x = .75, 3.0, 1.0E6 (fraction >= q)   ALL CHECKS PASSED: 2 exact and
 !       the PC, 4 within, at most .62 units from the program's number

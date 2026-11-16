@@ -42,6 +42,24 @@
 ! the minus of -cos unless the store changes it.  NOT CHECKED: OPEN, in
 ! docs/NEXT.md.
 !
+! CORRECTED 2026-11-16.  Item 1 below is FIXED (bsv/StretchExecute.bsv
+! fpLoc8Operand): x = -.1's TEMP_A_squared passes, 1.00 unit off.  ITEM 2
+! WAS MISREAD.  Nothing stores into location 8 here.  "SRDN,$L" carries no
+! dds, so both assemblers compile it as the VFL STORE ROUNDED, a full
+! word with code 101101.  That follows C22-6578 printed p.30, Problem 3.5
+! comment (c): "An operation which could be either VFL or floating-point
+! is assumed VFL."  The model does not implement the VFL SRD.  It turns
+! OP on and changes nothing, so word 8 is the unrounded accumulator.  The
+! FP form, "SRDN(N), $L", stores into 8 correctly since the same day's
+! store fix (decks/repro_fp_store_location8.strap).  Whether STRAP II
+! really compiled the printed card as VFL -- so that the book's COSF is
+! wrong -- or gave "$L" a floating-point dds is OPEN (docs/NEXT.md).  The
+! W8 checks stay --known-wrong in tests/run_tests.sh, relabelled.  The
+! sign byte check here reads word 8's bits 60-63, which is p.96's reading
+! of an ordinary word.  It is NOT p.80's reading for an FP store to 8,
+! which leaves bits 60-63 alone and sends the sign to $SB, so it has to
+! be re-derived once the open question is settled.
+!
 ! THE MODEL BUG FOUND BY 4.10 REACHES THIS PROGRAM, AND A SECOND ONE.
 !
 ! 1. "D*(N), $L" (the operand fetch, printed p.37).  PREDICTED BY HAND
