@@ -1,0 +1,111 @@
+! index_after_index_store.strap -- an I-box index instruction on register
+! j behind a pending look-ahead level that STORES into index word 16+j.
+!
+! The sequential model reads the stored value.  The model let the I-box
+! instruction run ahead of the store's level and read the OLD $3: found
+! 2026-11-15 by a probe written while carrying the I-box's indexing in the
+! level (bsv/README.md), and flagged independently by a reading of the
+! 7101 I-unit flow diagrams.  It failed the same way on commit 3204601, so
+! it predates that work.
+!
+! THE FIX IS THE 7101'S STORE WAIT (R23-9732 Fig. 3.1.20, PDF 84, "ZOAR EQ
+! 11 + 12 + 16 - 31" -> "TON STORE WAIT TGR"; Fig. 3.1.24, PDF 88, for
+! VFL): while a pending level stores into word 11, 12 or 16-31, nothing is
+! prepared (StretchIBox's storeWait, rl_prepare).
+!
+! WEAKER STANDARD, STATED: hand-written from the sequential programming
+! model, not transcribed.  Each case puts a slow level ahead (a store,
+! then a load of the same word, which waits for it) so the store into
+! $X3 is still pending when the index instruction is prepared, and is
+! repeated with 0, 1 and 2 extra pending loads.  P: V+I (the immediate-
+! index arm).  Q: SV of $3 (a direct-index read of register J).
+!
+! OBSERVED, 2026-11-16 (bsv/StretchCore.bsv restored from a copy checked
+! with cmp; run with this deck's run_tests.sh line):
+!   Before the fix (the model at the carried-indexing commit, without PN):
+!     FAIL RP0 only (0x400000000000: V+I read $3 = 0).
+!   storeWait never holds: FAIL RPN (0x1000000000000: the V+I's add was
+!     overwritten by the late store) and RP0 (0x400000000000) only.
+! NOT SHOWN TO DISCRIMINATE: P1, P2 and Q0-Q2 pass without the wait.  With
+! a longer slow prefix the four levels are full and the I unit, which
+! prepares in order, cannot reach the V+I before the store retires; why an
+! SV of $3 at Q0 does not overtake was not traced.  They stay as guards.
+!
+        SLC, (8)2000.0
+START   NOP
+! ---- PN: no slow level ahead: only the load of XW1 delays the store
+        LVI, $3, 0
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        V+I, $3, 1.0
+        SV, $3, RPN
+! ---- P0: 0 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        V+I, $3, 1.0
+        SV, $3, RP0
+! ---- P1: 1 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        V+I, $3, 1.0
+        SV, $3, RP1
+! ---- P2: 2 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        V+I, $3, 1.0
+        SV, $3, RP2
+! ---- Q0: 0 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        SV, $3, RQ0
+! ---- Q1: 1 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        SV, $3, RQ1
+! ---- Q2: 2 extra pending load(s)
+        LVI, $3, 0
+        L(BU,64), SRC
+        ST(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), TMP
+        L(BU,64), XW1
+        ST(BU,64), $X3
+        SV, $3, RQ2
+DONE    B, DONE
+        CNOP
+SRC     DD(BU,64), (16)5A5A5A5A5A5A5A5A
+TMP     DD(BU,64), 0
+XW1     DD(BU,64), (16)0001000000000000
+RPN      DD(BU,64), 0
+RP0      DD(BU,64), 0
+RP1      DD(BU,64), 0
+RP2      DD(BU,64), 0
+RQ0      DD(BU,64), 0
+RQ1      DD(BU,64), 0
+RQ2      DD(BU,64), 0
+        END, START

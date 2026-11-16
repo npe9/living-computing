@@ -351,67 +351,63 @@ function Bool progressiveWord(Vector#(4, LaLevel) lv, WordAddr w);
   return (w >> 4) == 1 && progressiveWrites(lv, w[3:0]);
 endfunction
 
-// >>> AN INDEX REGISTER A LEVEL IS INDEXED BY, AND WHO MAY WRITE IT. <<<
-// (2026-11-15, twice.)  A look-ahead level's operand and store
-// addresses (`da`, `storeAddr`) are derived at LOAD time, and the
-// store-close-to-fetch waits and levelHolds above compare against them.
-// The E-box used to re-derive the effective address from the decoded
-// instruction and the CURRENT index registers when the level was
-// dispatched, and nothing kept the two in step: an I-box instruction
-// writing the register ran ahead of the level and moved its operand.
-// Found by the 7030 STRAP II MAIN test's driver (step 4b-i):
-// "ST(BU,64),9.0($9)" loaded as a level with da = word 0x42f, then
-// "V+I,$9,11.0" ran ahead of it, and the store landed at 0x43a, the
-// NEXT record's word.
+// >>> NO INDEX WAIT FOR A LEVEL; A STORE WAIT FOR AN INDEX STORE. <<<
+// (2026-11-15/16.)  A look-ahead level's operand and store addresses
+// (`da`, `storeAddr`) are derived at LOAD time, and the store-close-to-
+// fetch waits and levelHolds above compare against them.  The E-box used
+// to re-derive the effective address from the CURRENT index registers
+// when the level was dispatched, and nothing kept the two in step: an
+// I-box instruction writing the register ran ahead of the level and
+// moved its operand.  Found by the 7030 STRAP II MAIN test's driver
+// (step 4b-i): "ST(BU,64),9.0($9)" loaded as a level with da = word
+// 0x42f, then "V+I,$9,11.0" ran ahead of it, and the store landed at
+// 0x43a, the NEXT record's word.
 //
-// THE FIRST FIX WAS A STALL (levelIndexedBy, in iboxHazard): an index
-// write waited while a pending level was indexed by that register.
-// THE STALL IS GONE.  The level now carries the I-box's indexing
-// (carryIndex / carriedInstr above; LaCarry in StretchTypes) and the
-// E-box indexes nothing, which is the machine's arrangement: a level
-// has no address or index field at all (Buchholz §15.3, printed
-// pp.238-240; 7101 CE manual R23-9732 Fig. 3.2.2, PDF 93, where the
-// load pulses gate tag bits, op code, indicators, instruction counter
-// and DATA into a level and nothing else).  So an I-box index write
-// behind a level is free to run, as it is there.
+// THE FIRST FIX WAS A STALL (commit 3204601, levelIndexedBy in
+// iboxHazard): an index write waited while a pending level was indexed
+// by that register.  IT IS GONE.  The level now carries the I-box's
+// indexing (carryIndex / carriedInstr above; LaCarry in StretchTypes)
+// and the E-box indexes nothing, which is the machine's arrangement: a
+// level has no address or index field (Buchholz §15.3, printed
+// pp.238-240; R23-9732 Fig. 3.2.2, PDF 93), and the I unit forms the
+// effective address in its MOD Z sequencers before the level-load steps
+// send it to memory (R23-9732 Figs 3.1.10, 3.1.15, 3.1.20, PDF 72, 79,
+// 84).  So an I-box index write behind a level runs without waiting.
 //
-// WHAT REMAINS IS A REAL DEPENDENCE, not a stall of convenience: a
-// level that STORES into index word 16+j, followed by a level indexed
-// by j.  The later level's address does not exist until the earlier
-// one has executed.  rl_prepare holds the later level
-// (`indexStorePending`, through levelStoresIndex below).  With the
-// address read once, at load, this wait is now the ONLY thing that
-// makes that read see the stored value -- for a storing level as much
-// as a fetching one.
+// >>> THE STORE WAIT. <<<  What remains is the other direction: a level
+// that STORES into an index register (or the indicator or mask word).
+// R23-9732, I UNIT FLOW DIAGRAMS, draws it at the store step of
+// preparation, on the store's OWN address and nothing else: Fig. 3.1.20
+// (PDF 84), "ZOAR EQ 11 + 12 + 16 - 31" -> "TON STORE WAIT TGR",
+// "TON I RCY REQ TGR"; the same hexagon in Fig. 3.1.13 sheet 3 (PDF 77)
+// for the right half-word floating store, and for VFL, Fig. 3.1.24
+// (PDF 88), "W EQ 11 + 12 + 16 - 31" -> "VFL CL 2 . VFL 5E" ->
+// "VFL 5 CL 2 COND STORE WAIT".  No box compares it with a later
+// instruction's index field.  So `storeWait` is True while ANY pending
+// level stores into word 11, 12 or 16-31, and rl_prepare then prepares
+// nothing -- no I-box instruction, no new level -- until that level has
+// retired.
 //
-// A ZERO INDEX FIELD MEANS NO INDEXING, so register 0 never matches.
-// Test: decks/index_after_level.strap.
-function Bool usesIndex(DecodedInstr d, Bit#(4) j);
-  Bool r = False;
-  if (j != 0)
-    case (d) matches
-      tagged VflInt .v:     r = v.a.i1 == j || v.a.i2 == j;
-      tagged Connective .c: r = c.a.i1 == j || c.a.i2 == j;
-      tagged Fp .f:         r = f.idx == j;
-      default:              r = False;
-    endcase
-  return r;
-endfunction
+// TWO THINGS ARE NOT ON THOSE PAGES AND ARE THE MODEL'S CHOICE: what
+// releases STORE WAIT (here, the storing level's retirement, when its
+// value is in the register), and how long the "I RCY" recovery takes
+// (not charged).  A conservative wait, not a measured time.
+//
+// It replaces two narrower things.  `indexStorePending` (a new level
+// indexed by j waited for a level storing word 16+j) is subsumed.  And it
+// closes a hole neither stall covered: an I-box instruction on register j
+// did not wait for a pending level storing word 16+j, so "ST(BU,64),$X3"
+// then "V+I,$3,1.0" read the old $3 (decks/index_after_index_store.strap).
+//
+// A field crossing INTO word 16-31 from word 15 is refused (OP) by
+// execute() -- its "(stW0 + 1) < 32" test -- so `storeAddr`, the first
+// word, is enough.  If that refusal is ever lifted, test the second word.
+function Bool storeWaitWord(WordAddr w) = (w == 11 || w == 12 || (w >= 16 && w <= 31));
 
-// Does a pending level store into an index word the instruction `d` is
-// indexed by?  `storeAddr` is the FIRST word of the store, and that is
-// enough here: a VFL field may cross into the next word, but execute()
-// refuses (OP) an ST or a CM whose second word is below 32 -- its
-// "(stW0 + 1) < 32" and "CM MAY CROSS" tests -- so on this model no
-// crossing store reaches an index word.  MEASURED 2026-11-15, not
-// assumed: "ST(BU,64),18.32" ahead of "L(BU,64),0($3)" left $X3 as it
-// was, with or without a second-word test here.  If that refusal is
-// ever lifted this must test the second word too.
-function Bool levelStoresIndex(Vector#(4, LaLevel) lv, DecodedInstr d);
+function Bool storeWait(Vector#(4, LaLevel) lv);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1)
-    if (lv[k].valid &&& lv[k].storeAddr matches tagged Valid .sa
-        &&& (sa >> 4) == 1 &&& usesIndex(d, sa[3:0]))
+    if (lv[k].valid &&& lv[k].storeAddr matches tagged Valid .sa &&& storeWaitWord(sa))
       r = True;
   return r;
 endfunction

@@ -641,23 +641,40 @@ Three things are left as they were, each for a stated reason:
   timing functions read it, and `eboxClocks` must not see a length the second
   index has changed; that would move times for a reason no table gives.
 
-One wait remains, and it is a real dependence: a level that stores into index
-word 16+j, followed by a level indexed by j. The later address does not exist
-until the earlier level has executed, so `rl_prepare` holds the later level
-(`indexStorePending`, `levelStoresIndex`). It is not a measured time. A store
-whose field crosses into an index word needs no second test, because
-`execute()` refuses a crossing store below word 32 (measured, see
-`levelStoresIndex`).
+**The store wait (2026-11-16).** The other direction is a level that stores into
+an index register, and the model handled it badly. A new level indexed by j
+waited for a pending level storing word 16+j (`indexStorePending`), but an I-box
+index instruction did not wait at all: `ST(BU,64),$X3` then `V+I,$3,1.0` read
+the old $3. This failed the same way on commit 3204601, so it predates this
+work. A probe written for this change found it, and so did a reading of the 7101
+I-unit flow diagrams (finding M2).
 
-**Found while proving this, and NOT fixed here (open):** an I-box index
-instruction does not wait for a pending level that stores into that index
-register. `LVI,$3,0` / `L(BU,64),XW1` / `ST(BU,64),$X3` / `V+I,$3,1.0` /
-`SV,$3,R1` (with a slow level ahead) leaves R1 = 64 where the sequential model
-gives 0x100 + 64: the V+I and SV run ahead of the store. It fails identically on
-commit 3204601, so it predates this change; `iboxHazard` compares a direct-index
-instruction's operand word with the levels' store words, but not the register
-J it reads or writes. The likely fix is `levelHolds(lv, 16 + j)` on those arms,
-the I-box sibling of `indexStorePending`.
+Those diagrams draw the 7030's mechanism, keyed on the store's own address and
+nothing else (R23-9732; PDF 84 read in the page image for this change, PDF 77
+and 88 as transcribed in `../docs/reading_notes/` and checked by the
+coordinator):
+
+- Fig. 3.1.20, "ZL FP3 TRIGGER" (PDF 84, printed 1-41/1-42), under "FPL 4 E TGR
+  ON": "ZOAR EQ 11 + 12 + 16 - 31 (28.42.51.1)" -> "TON STORE WAIT TGR", "BLOCK
+  STORE WAIT TGR TOF", "TON I RCY REQ TGR (28.42.72.1)".
+- Fig. 3.1.13 sheet 3 (PDF 77): the same, for the right half-word.
+- Fig. 3.1.24 (PDF 88), for VFL: "W EQ 11 + 12 + 16 - 31" -> "VFL 5 CL 2 COND
+  STORE WAIT".
+
+So `storeWait` (`StretchIBox.bsv`) is True while any pending level stores into
+word 11, 12 or 16-31, and `rl_prepare` then prepares nothing until that level
+retires: no I-box instruction and no new level. It replaces `indexStorePending`.
+The pages do not show what releases STORE WAIT or how long the I-unit recovery
+takes. The model releases it at the store's retirement and charges no recovery
+time. It is a conservative wait, not a measured time. A field crossing into word
+16-31 from word 15 is refused by `execute()`, so the store's first word is
+enough.
+
+Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
+pending `ST(BU,64),$X3`). Its header records the measured injection. Words 11
+and 12 are in the rule because the page prints them, but no test case shows
+that their wait is needed (a direct-index read of either word already waits
+through `levelHolds`).
 
 Test: `../decks/index_after_level.strap`, 43 words, the halt PC and a cycle
 count. Its header records the measured injections: the E-box re-indexing fails

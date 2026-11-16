@@ -1428,6 +1428,11 @@ module mkStretchCore(StretchCore);
       ibusy <= ibusy - 1;   // previous instruction's time budget still running
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
+    else if (storeWait(nl))
+      // STORE WAIT (R23-9732 Figs 3.1.13, 3.1.20, 3.1.24; StretchIBox's
+      // storeWait): a pending level stores into an index register, the
+      // indicators or the mask, and nothing is prepared until it has.
+      noAction;
     else if (prepared matches tagged Valid {.len, .di}
              &&& isEboxClass(di) &&& isValid(intPC)) begin
       // NOT IMPLEMENTED, and loud about it.  An interruption
@@ -1444,19 +1449,7 @@ module mkStretchCore(StretchCore);
       commitNext(pc, len, pc + ((len == Full) ? 2 : 1));
     end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
-      // >>> AND A LEVEL STORING INTO AN INDEX REGISTER THIS ONE IS
-      // INDEXED BY, 2026-11-15. <<<  carryIndex below reads the index
-      // registers NOW and the level carries the result, so a pending
-      // level that will store into word 16+j (a VFL ST to $Xj) must
-      // retire first: until it has
-      // executed, this instruction's address does not exist.  A real
-      // dependence, unlike the I-box index-write stall that used to sit
-      // beside it in iboxHazard and is gone (StretchIBox, above
-      // usesIndex).  NOT A MEASURED TIME: how the 7030 sequences an
-      // arithmetic store into index storage against the instruction
-      // unit has not been read from a primary source here.
-      Bool indexStorePending = levelStoresIndex(nl, di);
-      if (la.count() < 4 && !progressivePending && !indexStorePending) begin
+      if (la.count() < 4 && !progressivePending) begin
         // ONE derivation of this instruction's addresses, used for both
         // the operand read below and the level's storeAddr further
         // down -- see StretchIBox's prepareExec.

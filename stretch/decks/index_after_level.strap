@@ -20,7 +20,9 @@
 ! gone, and the CYCLES window on this deck's run_tests.sh line is what
 ! says so: 2721 clocks with it, 2407 without.  The E-box sibling -- a
 ! level storing into $X3 ahead of a level indexed by $3 -- is a real
-! dependence and still waits (rl_prepare's indexStorePending).
+! dependence and still waits: first through rl_prepare's
+! indexStorePending, since 2026-11-16 through the broader STORE WAIT
+! (StretchIBox's storeWait; decks/index_after_index_store.strap).
 !
 ! WEAKER STANDARD, STATED: hand-written from the sequential programming
 ! model, not transcribed.  Expected values are worked out by hand from it.
@@ -34,10 +36,16 @@
 !     instruction; the stall already gone): FAIL DV0a DV0b DV1a DV1b DV2a
 !     AE0 and cycles (2406) only -- the same value set the stall's removal
 !     failed under the first form.
-!   indexStorePending always False: FAIL GE0 and DCa only.  GE1 and GE2
-!     pass: with the V+I stall gone, those levels are no longer still
-!     pending when the next level is prepared.  DCa is C's ST(BU,64),0($3)
-!     missing its word; why the missing wait reaches case C was not traced.
+!   indexStorePending always False (before the store wait replaced it):
+!     FAIL GE0 and DCa only.  So the wait
+!     discriminates on one E case of three.  Why GE1 and GE2 pass without
+!     it, and why C's ST(BU,64),0($3) then misses DC, was NOT TRACED.  One
+!     untested reading: the next case's LVI,$3 overtakes E's pending
+!     ST(BU,64),$X3 (the open I-box hazard in bsv/README.md), the late
+!     store leaves $3 = AB, and E1/E2 read AB by coincidence.  If so, this
+!     wait is also shielding that hazard in this deck.
+!   storeWait never holds (2026-11-16, the store wait in place of
+!     indexStorePending): FAIL GE0 and DCa only, the same set.
 !   The old stall put back (levelIndexedBy on the immediate-index arm):
 !     FAIL cycles = 2552 only -- every value right, the clocks wrong.
 ! OBSERVED, 2026-11-15, the first form (stall), for the record:
