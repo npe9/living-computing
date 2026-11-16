@@ -1897,3 +1897,43 @@ highest-value item (the interruption mechanism is manual-derived only).
 Its comment (d) states a corner no deck exercises: *"The SIC action is
 not performed unless the ensuing branch is successful, and even then it
 is performed AFTER the execution of the branch."*
+
+# >>>>>> G2.1, CHAPTER 4, 2026-11-15: THE LAST CHAPTER, FROM ITS LAST PROBLEM BACKWARDS <<<<<<
+
+`C22-6578`'s contents page (PDF 4) lists four chapters and eight
+appendices: 1 Instruction Arithmetic Unit Instructions (1.1-1.9),
+2 Variable Field Length Instructions (2.1-2.12), 3 Floating-Point
+Arithmetic (3.1-3.10), 4 Special Problems (4.1-4.13).  There is no
+Chapter 5, so this batch is Chapter 4 taken from 4.13 towards 4.1.
+The counts above are not edited; this section adds to them.
+
+**4.11 was built first because 4.12 and 4.13 both call it** ("Assume
+the existence of the previous exp (x) program", printed p.46).
+
+**How a floating result is checked here, and what that does not pin.**
+There is no independent bit-exact model of the 7030's double-length
+arithmetic in the project, so a result word is compared with the real
+number the page defines, within a bound derived from the printed
+program, not with a word (`tests/verify_problem_4_fp.py`).  The
+measured floor is in each deck: 4.11 catches a coefficient wrong by one
+part in 1E10 and passes one wrong by one part in 1E13.
+
+**Assembler refusals the chapter runs into**, each with a reproducer and
+held by `tests/check_problem_4_dd_refusals.py` (8 checks): arithmetic in
+a DD(N) entry, `$N`/`$PI`, a zero DD(N), and `*` in an address (the last
+is G3.1).  `docs/NEXT.md`, "G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES
+IN A DD(N)".  The decks run on marked substitutes.
+
+## The problems, in the order run
+
+### 4.11 EXP, printed pp.45-46 -- `decks/problem_4_11.strap` -- PASSES as the model stood
+
+11 exact checks and the PC, 12 within-bound checks
+(`tests/verify_problem_4_fp.py 4.11`).  Exercises `KMG`, `D*`, `D+`
+normalized and unnormalized, a signed VFL `ST` out of a floating
+accumulator, `SHFL`, `*`, `E+`, `LA(U)` on `$L`, and two connectives on
+the accumulator's exponent bits, in one printed subroutine.  **No wrong
+result.**  Three printed errata (a factorial with a zero too many, a
+missing comma, an offset one short of the bit its comment names) and one
+unstated loss of accuracy (1.39 |x| units, 847 measured at x = 709), all
+in the deck's header and in `NEXT.md`.

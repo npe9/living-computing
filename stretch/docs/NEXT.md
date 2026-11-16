@@ -16968,3 +16968,54 @@ IBM's per-line error flag, seen on all eight at 300 dpi.
     the listed one.
   OPEN: the rules for 123 and 92 are what the listing shows, not text
     from the manual; 92 has a single witness.
+
+## G2.1 CHAPTER 4: WHAT THE ASSEMBLER REFUSES IN A DD(N) -- 2026-11-15
+
+`C22-6578` Chapter 4 ("Special Problems", printed pp.35-51) was worked
+from its last problem backwards.  Every floating-point problem in it
+writes constants `strap_asm.py` refuses.  None is a wrong word: each is
+refused out loud, and `_dd_normalized`'s docstring already lists three
+of the four as unbuilt.  What is new is that there are now PRINTED
+PROGRAMS that need them, a reproducer for each, and a check holding the
+refusals (`tests/check_problem_4_dd_refusals.py`, 8 checks, registered).
+
+| refused | reproducer | printed in Chapter 4 | authority |
+|---|---|---|---|
+| arithmetic in a DD(N) entry, `1/720` | `decks/repro_dd_n_expression.strap` | 4.9 `1/16*1/15`; 4.10 `1/1.41421356205080`, `1/17`; 4.11 `1/3628800` (pp.43-46) | C28-6129 printed pp.27-28: "Arithmetic expressions ... are permitted in all DD statements regardless of the use mode" |
+| `$N`, `$PI` | `decks/repro_dd_n_math_constant.strap` | `2*$PI` p.43, `$NX47` p.45, `1024*$N`, `1/$N`, `$NX-11` p.46, `$PI` p.47 | C28-6129 printed p.11, "Symbols For Mathematical Constants" |
+| a zero DD(N), `0X11` | `decks/repro_dd_n_zero.strap` | `0X11` p.46; `0.0` pp.49-50; `0` p.42 | p.46's use of it as `D+(U), E11` fixes the word: zero fraction, exponent +11 |
+| `*` in an address, `N*N-1.0` | `decks/repro_address_multiply.strap` | 4.8 `V-ICR,$3,N*N-1.0` p.42; 4.6 Method 3 `SF(BU,N*N,N)` p.40 | already G3.1; the page says "STRAP II will do it properly" |
+
+**What building them needs that the pages do not give:** to how many
+bits STRAP carries DD arithmetic, and whether the result is truncated or
+rounded.  `$PI` can tell: its 48-bit fraction is `C90FDAA22168` and the
+next byte is `C2`, so a rounding STRAP prints `...1690` where a
+truncating one prints `...1680`.  `$N` cannot (next byte `79`).  No
+listing in the corpus prints either.
+
+**The problem decks run anyway**, on substitutes: each printed card is
+kept as a `! printed:` comment above a decimal literal of the same
+number, truncated to 48 bits.  When an entry here is built, replace the
+substitute with the printed card and delete the reproducer's row from
+the check.
+
+### Problem 4.11 (EXP), printed p.46: passes, and three things are wrong in the ink
+
+`decks/problem_4_11.strap`, `tests/verify_problem_4_fp.py 4.11`.  The
+model computes what the printed program computes to within 1.75 units
+of the 48-bit fraction over six arguments from -709.5 to 709, and both
+error returns are bit-exact against words worked by hand.
+
+1. `CONST`'s first entry is printed `1/13076743680000`; 15! is
+   `1307674368000`.  One zero too many.  Run as printed; the term is
+   under one unit either way.
+2. `C1111(BU,1) $L, 127` has no comma after the data description.
+3. `C0011(BU,1),10.4,128-11`, commented "exponent sign", sets
+   accumulator bit 10, the low bit of the exponent magnitude; the sign
+   is bit 11 (offset 128-12).  Run as printed; `x = -800` returns
+   exponent 11 where `x = +800` returns 10, and the check pins both.
+
+And one thing the page does not say: **`RLN2` is one word, so the
+result is wrong by up to 1.39 |x| units** -- 847 measured at x = 709,
+the low ten bits.  It is the program's arithmetic, not the model's: the
+same result is within 1.75 units of `2**(x * RLN2)`.

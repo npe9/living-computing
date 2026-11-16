@@ -1,0 +1,23 @@
+! REPRODUCER, an ASSEMBLER finding (docs/NEXT.md, "G2.1 CHAPTER 4: WHAT
+! THE ASSEMBLER REFUSES IN A DD(N)").  strap_asm.py refuses this deck:
+!
+!   cannot parse DD(N) literal '1/720'
+!
+! The statement is C22-6578 printed p.46 (Problem 4.11), CONST's third
+! card: "DD(N), 1/3628800, 1/362880, 1/40320, 1/5040, 1/720".
+! C28-6129 printed p.27-28 (PDF 31-32): "Arithmetic expressions, that
+! is, combination of two or more numbers by means of addition,
+! subtraction, multiplication and division to form one data entry, are
+! permitted in all DD statements regardless of the use mode specified";
+! its example e is "DD(N), 1/3, 472*351, 4-7*5/21 S 4".
+!
+! When it assembles, RECIP must hold 1/720 as a normalized word,
+! exponent -9, fraction 512/720 = .7111...: 013B 60B6 0B60 B600 if
+! STRAP truncates.  The manual does not say whether it truncates or to
+! how many bits it carries the division (strap_asm.py _dd_normalized).
+! tests/check_problem_4_dd_refusals.py asserts the refusal and will
+! fail, on purpose, the day this is built.
+
+START   BEW, $
+RECIP   DD(N), 1/720
+        END, START

@@ -13437,6 +13437,23 @@ run "Problem 2.2 Method 2" ./run_program.sh ../decks/problem_2_2_method2.strap S
 run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh ../decks/problem_2_2_method3.strap StretchProblem22M3Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# >>> C22-6578 CHAPTER 4, "SPECIAL PROBLEMS", WORKED FROM THE LAST PROBLEM
+# BACKWARDS (G2.1).  The book has four chapters, so this is its last. <<<
+# The floating-point problems are checked against the number the page asks
+# for, within a bound each deck derives, by verify_problem_4_fp.py; exact
+# words (error returns, index registers, the halt PC) go through gen_tb.
+# docs/source_audit.md "G2.1, CHAPTER 4" has the status of each.
+
+# What the chapter prints and strap_asm refuses, held as refusals: DD(N)
+# arithmetic, $N/$PI, a zero DD(N), and "*" in an address.  The problem
+# decks carry marked substitutes; this fails on purpose when one is built.
+run "C22-6578 Chapter 4 -- the DD(N) forms and N*N strap_asm refuses, as refusals" python3 check_problem_4_dd_refusals.py
+
+# 4.11, EXP, printed p.46: twenty instructions as printed, six arguments on
+# the normal return and two on the error return.  Passed against the model
+# as it stood.  Three printed errata in the deck's header.
+run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_problem_4_fp.py 4.11
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

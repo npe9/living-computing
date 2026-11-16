@@ -1,0 +1,25 @@
+! REPRODUCER, an ASSEMBLER finding (docs/NEXT.md, "G2.1 CHAPTER 4: WHAT
+! THE ASSEMBLER REFUSES IN A DD(N)").  strap_asm.py refuses this deck:
+!
+!   DD(N) literal '0X11' is zero, which is not implemented (no listed
+!   example)
+!
+! THERE IS A PRINTED EXAMPLE NOW, though not a listed one.  C22-6578
+! printed p.46 (Problem 4.11) has "E11 DD(N), 0X11" and uses it as the
+! operand of "D+(U), E11" to force the accumulator's exponent to 11, so
+! the word must be a ZERO FRACTION WITH EXPONENT +11: X "overrules and
+! replaces the exponent computed by STRAP" (C28-6129 printed p.27).
+! That is 0160 0000 0000 0000 (Reference Manual printed p.78: exponent
+! magnitude in bits 1-10).  The same book has "DD(N), 0.0" (printed
+! p.49, the lower limit of Problem 4.13's integral, and LEGQ8Z p.50)
+! and "DD(N), 0" (ZERO, Problem 4.8 printed p.42).
+!
+! WHAT A ZERO WITHOUT AN X COMPILES TO IS NOT SETTLED BY THESE PAGES.
+! The program at p.49 only needs 0.0 to be a zero fraction; exponent 0
+! and the machine's own "normal order of magnitude zero" would both
+! run.  No listing in the corpus prints one.
+! tests/check_problem_4_dd_refusals.py asserts the refusal.
+
+START   BEW, $
+E11     DD(N), 0X11
+        END, START
