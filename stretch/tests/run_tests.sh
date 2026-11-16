@@ -13483,6 +13483,18 @@ run "Buchholz B.2 -- cube root AS PRINTED, up to the unbuilt VFL SRD" ./run_prog
 # E+I, F+, R/, VFL /I and the signed VFL load with a one-bit sign byte.
 run "Buchholz B.2 -- cube root, SRD substituted, eight N to 48 bits" python3 verify_buchholz_b2.py substituted
 
+# B.3, printed p.298.  Three nested index loops over LFT(N), *+(N) and
+# SRD(N), with DL(U) of XFNZERO to clear the double accumulator; x4 and x5
+# are loaded FROM x1 and x2 (LX, $4, 17.0) and x4 refills from x1.  Passed
+# against the model as it stood.  c11 is an odd 49-bit sum, so it checks that
+# floating STORE ROUNDED rounds (Reference Manual printed p.96); the five
+# final index words are worked in the deck's header.
+run "Buchholz B.3 -- matrix multiplication, 2x3 by 3x2" ./run_program.sh ../decks/buchholz_b3_matrix_multiply.strap StretchBuchB3Tb "PC=215" \
+    "c00:320=0x00AB000000000000" "c01:321=0x0328000088000000" "c10:322=0x036E0000EC000000" "c11_rounded:323=0x06280000100003E0" \
+    "guard_lo:319=99" "guard_hi:324=99" \
+    "x1:17=0x004C8000000C0011" "x2:18=0x004D8000000800CA" "x3:19=0x00500000000800CB" \
+    "x4:20=0x004BC000000C0011" "x5:21=0x004F4000000400CA" "ft:14=0x006C000000000000"
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
