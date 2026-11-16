@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""verify_problem_4_fp.py PROBLEM [--sub OLD NEW]... -- the floating-point
-problems of C22-6578 Chapter 4, checked against the NUMBER THE PAGE ASKS
-FOR instead of against a word copied from the model.
+"""verify_problem_4_fp.py PROBLEM [DECK ASM=strap2] [--sub OLD NEW]... -- the
+floating-point problems of C22-6578 Chapter 4, checked against the NUMBER
+THE PAGE ASKS FOR instead of against a word copied from the model.
+
+A deck named on the run line with ASM=strap2 (4.9m2) is assembled by the
+host STRAP II and run so; the others by strap_asm.
 
 A deck in ../decks/problem_4_*.strap is run on the model through
 run_program.sh with a DUMP of its data words.  Two kinds of check:
@@ -336,6 +339,74 @@ def p4_9m1(sym, fp_store=False):
                     else "does not bite"))
 
 
+def p4_9m2(sym):
+    """COSF2, printed p.43, Method 2: cos pi x by the series to K = 12 in
+    x**2, then cos 2A = 2 cos**2 A - 1.  The argument is XARG, one per run.
+    Assembled by strap2: KONST is printed as $PI arithmetic in DD(N)."""
+    def trunc48(v):
+        f, e = _frac_exp(v)
+        return D(int(f * 2 ** 48)) / D(2) ** 48 * D(2) ** e
+
+    def round48(v):
+        f, e = _frac_exp(v)
+        m = int(abs(f) * 2 ** 49) + 1
+        r = D(m >> 1) / D(2) ** 48 * D(2) ** e
+        return r if v >= 0 else -r
+
+    def series(img, konst, won, cut):
+        """cut: the $L operand of D*(N) is the accumulator's high 48 bits
+        (location 8, Reference Manual printed p.80); False for the page's
+        own real-number series."""
+        t = trunc48 if cut else (lambda v: v)
+        x = img('XARG')
+        y_full = x * t(x)                      # D*(N),$L
+        yt = round48(y_full) if cut else y_full  # SRD(N),TEMP
+        acc = y_full
+        for i in range(5):                     # DMULT ... CB+,$2,DMULT
+            acc = (won - acc * konst[i]) * yt
+        acc = won - acc * konst[5]             # cos pi x, K = 12
+        c2 = acc * t(acc)                      # D*(N),$L
+        return 2 * c2 - won                    # E+I(U),1; D-(N),WON
+
+    def prog(img):
+        return series(img, [img('KONST+%d' % i) for i in range(6)], img('WON'), True)
+
+    def page(img):
+        konst = [PI * PI / (k * (k - 1)) for k in (12, 10, 8, 6, 4, 2)]
+        return series(img, konst, D(1), False)
+
+    def true(img):
+        return _cos(2 * PI * img('XARG'))
+
+    def b_page(img):        # the assembled constants and WON, worked out
+        return int(units(prog(img), page(img))) + 1 + 4
+
+    def b_true(img):        # plus the series cut at K = 12
+        return int(units(page(img), true(img))) + 1 + b_page(img)
+
+    exact = [('x2_value5_count0', 'addrIndex(2)', (5 << 46) | (sym['XW22'] // 64))]
+    # SRD(N), $L is a floating-point store INTO location 8: bits 0-59 of
+    # word 8 take the rounded result, bits 60-63 are left alone, and the
+    # sign and flags go to $SB bits 4-7 (printed p.80, "of both fetch and
+    # store type"; decks/repro_fp_store_location8.strap).  So the answer
+    # is read as 'ACC', word 8 with word 10's sign, and $SB is exact:
+    # the sign of cos 2 pi x, flags 000, zone bits 0-3 zero.
+    exact += [('SB_sign_of_cos_no_flags', 10,
+               lambda img: (1 << 59) if true(img) < 0 else 0)]
+    within = [('TEMP_x_squared', 'TEMP',
+               lambda img: round48(img('XARG') * img('XARG')), 1),
+              ('ACC_as_programmed', 'ACC', prog, 4),
+              ('ACC_page_series_K12', 'ACC', page, b_page),
+              ('ACC_cos_2_pi_x', 'ACC', true, b_true)]
+    return dict(module='StretchP49M2Tb', halt='HALT', dump=(8, 'XARG'),
+                exact=exact, within=within,
+                pre=lambda img: "x = %s; the program's real number %.17E, the "
+                "page's series %.17E (%.2f units apart), cos 2 pi x %.17E (%.2f "
+                "units from the page's series)" % (
+                    img('XARG'), prog(img), page(img), units(prog(img), page(img)),
+                    true(img), units(page(img), true(img))))
+
+
 def _cos(v):
     """cos by its series, sixty digits; |v| < 1."""
     term = D(1)
@@ -349,6 +420,7 @@ def _cos(v):
 PROBLEMS = {'4.9m1': ('problem_4_9_method1.strap', p4_9m1),
             '4.9m1fp': ('problem_4_9_method1.strap',
                         lambda sym: p4_9m1(sym, fp_store=True)),
+            '4.9m2': ('problem_4_9_method2.strap', p4_9m2),
             '4.10': ('problem_4_10.strap', p4_10),
             '4.11': ('problem_4_11.strap', p4_11),
             '4.13': ('problem_4_13.strap', p4_13),
@@ -367,29 +439,54 @@ def main():
         i = args.index('--sub')
         subs.append((args[i + 1], args[i + 2]))
         del args[i:i + 3]
+    # ASM=strap2 DECK: the deck is assembled by the host STRAP II, and the
+    # run line names it, as run_program.sh's do, so check_strap2_oracles.py
+    # knows which assembler it is for (4.9m2: $PI arithmetic in DD(N)).
+    strap2_deck = None
+    if 'ASM=strap2' in args:
+        args.remove('ASM=strap2')
+        strap2_deck = args.pop(1) if len(args) == 2 else ''
     xarg = None
     if len(args) == 1 and ':' in args[0]:
         args[0], xarg = args[0].split(':', 1)
     if len(args) != 1 or args[0] not in PROBLEMS:
-        raise SystemExit("usage: verify_problem_4_fp.py %s [--sub OLD NEW]..."
-                         % '|'.join(sorted(PROBLEMS)))
+        raise SystemExit("usage: verify_problem_4_fp.py %s [DECK ASM=strap2] "
+                         "[--sub OLD NEW]..." % '|'.join(sorted(PROBLEMS)))
     from strap_asm import assemble
     deck_name, spec_fn = PROBLEMS[args[0]]
+    if strap2_deck is not None:
+        if os.path.basename(strap2_deck) != deck_name:
+            raise SystemExit("%s is deck %s, not %r" % (args[0], deck_name, strap2_deck))
+        import strap_asm
+        import strap2
+
+        def assemble(src):          # noqa: F811
+            return strap2.assemble(src, strap_asm.DEFAULT_ORIGIN_BITS)
     with open(os.path.join(HERE, '..', 'decks', deck_name)) as f:
         src = f.read()
     if xarg is not None:
         m = re.search(r"^XARG    DD\(N\), .*$", src, re.M)
         subs.insert(0, (m.group(0), "XARG    DD(N), " + xarg))
     if args[0] == '4.9m1fp':
-        # the floating-point dds written into the printed "SRDN,$L"
-        subs.append(("        SRDN,$L\n", "        SRDN(N),$L\n"))
-    for old, new in subs:
+        # the floating-point dds written into the printed "SRDN,$L".  Part
+        # of the problem, not an injection, so it is in `clean` too.
+        old, new = "        SRDN,$L\n", "        SRDN(N),$L\n"
+        assert src.count(old) == 1
+        src = src.replace(old, new)
+    clean = src
+    for i, (old, new) in enumerate(subs):
         if src.count(old) != 1:
             raise SystemExit("--sub: %r occurs %d times, need exactly 1"
                              % (old, src.count(old)))
         src = src.replace(old, new)
         print("INJECTED: %r -> %r" % (old, new))
+        if i == 0 and xarg is not None:
+            clean = src
     prog = assemble(src)
+    # A bound worked from the words (callable) is worked from the deck as
+    # it stands, the argument substituted but no injection: an injected
+    # constant must not widen its own bound.
+    prog0 = assemble(clean) if clean != src else prog
     sym = prog.symtab
     spec = spec_fn(sym, src) if args[0] == '4.13' else spec_fn(sym)
 
@@ -404,6 +501,9 @@ def main():
     def img(s):
         return fp_value(prog.words[word_of(s)])
 
+    def img0(s):
+        return fp_value(prog0.words[word_of(s)])
+
     if 'pre' in spec:
         print(spec['pre'](img))
     first, last = word_of(spec['dump'][0]), word_of(spec['dump'][1])
@@ -414,12 +514,17 @@ def main():
     for label, where, word in spec['exact']:
         if word is None:
             word = prog.words[sym['XARG'] // 64]
-        addr = where if where.startswith('addrIndex') else str(word_of(where))
+        elif callable(word):
+            word = word(img)
+        addr = str(where) if isinstance(where, int) else \
+            where if where.startswith('addrIndex') else str(word_of(where))
         checks.append("%s:%s=0x%X" % (label, addr, word))
     with tempfile.TemporaryDirectory() as tmp:
         deck = os.path.join(tmp, deck_name)
         with open(deck, 'w') as f:
             f.write(src)
+        if strap2_deck is not None:
+            checks.insert(0, "ASM=strap2")
         r = subprocess.run(["./run_program.sh", deck, spec['module']] + checks,
                            cwd=HERE, capture_output=True, text=True)
     shown = [ln for ln in r.stdout.splitlines()
@@ -471,7 +576,7 @@ def main():
         u = units(got, want) if scale is None else (
             abs(got - want) / _unit_of(scale(img)))
         if callable(bound):
-            bound = bound(img)
+            bound = bound(img0)
         ok = u <= bound
         print("%s %s = %016x = %.17E, want %.17E, off %.2f units (bound %.0f)"
               % ("PASS" if ok else "FAIL", label, dump[a], got, want, u, bound))
@@ -518,6 +623,8 @@ def main():
             fails += 1
             continue
         got4 = dump[a] & 0xF
+        if callable(want4):
+            want4 = want4(img)
         ok = got4 == want4
         print("%s %s = %X, want %X" % ("PASS" if ok else "FAIL", label, got4, want4))
         if not ok:

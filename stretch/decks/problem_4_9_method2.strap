@@ -1,0 +1,117 @@
+! C22-6578 PROBLEM 4.9, "COSINE OF 2 PI X", printed pp.42-43 (PDF
+! 43-44), Method 2, read in the ink at 300 dpi.
+!
+!   The statement (printed p.42): "Given a number -1/8 <= x <= 1/8 in the
+!   accumulator.  Create [cos] 2 pi x in the accumulator" -- "cos" is
+!   missing in the ink (decks/problem_4_9_method1.strap).
+!   "Method 2.  Since cos 2A = 2cos**2 A - 1, it is possible to reduce the
+!   number of terms in the series by evaluating cos pi x first.
+!   Examination shows that terms up to K = 12 would be adequate."
+!
+! >>> THE LAST STORE IS PRINTED "SRD(N), $L", WITH A DDS. <<<  Method 1
+! prints "SRDN,$L", no dds, which both assemblers compile as the VFL STORE
+! ROUNDED (C22-6578 printed p.30, "assumed VFL"; NEXT.md).  Method 2's is
+! the floating-point SRD into location 8, which the model has done right
+! since 2026-11-16 (decks/repro_fp_store_location8.strap).  So Method 2
+! does NOT wait on the VFL SRD.  docs/source_audit.md said Method 2 had
+! "the same SRDN, $L"; it does not, read at 300 dpi.
+!
+! THE TWENTY PRINTED CARDS FROM COSF2 TO "TEMP DR(N), (1)" ARE AS
+! PRINTED but one, assembled by the host STRAP II (ASM=strap2), KONST's
+! "$PI/12*$PI/11" ... arithmetic and "WON DD(N), 1.0" included (strap_asm
+! refuses $PI in a DD(N): decks/repro_dd_n_math_constant.strap).
+!   PRINTED ERRATUM: "E+I, (U), 1".  STRAP II refuses the card, message
+!   40, EXTRA FIELDS: the dds is a field of its own after the comma.
+!   Supplied "E+I(U), 1", the card the comment names ("create cos 2A":
+!   EXPONENT ADD IMMEDIATE, unnormalized, plus one, doubles cos**2 A;
+!   printed p.102).  Method 1's "E-I, 1" has no dds and no comma.
+!   Reading: "KONST($ 2)" has a blank in the ink on the first D*N; strap2
+!   assembles it to the same word as "KONST($2)" (00FC4DA2 both times).
+! The deck adds START, which loads the argument and falls into COSF2,
+! as for Method 1, and XARG, replaced per run by the verifier.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2, printed
+! page = PDF - 3):
+!   D*(N),$L          x**2: location 8 as the operand is accumulator bits
+!                     0-59 with $SB's sign (p.80), x's own 48-bit fraction.
+!   SRD(N),TEMP       y = x**2 rounded (p.96).
+!   the loop          five passes ($2 by CB+, XW22 count 5): acc = (WON -
+!                     acc c) y, c = KONST+0..4 = pi**2/(12 11), pi**2/(10
+!                     9), pi**2/(8 7), pi**2/(6 5), pi**2/(4 3); D*N is the
+!                     negative multiply.
+!   D*N(N),KONST($2); D+(N),WON   $2 is 5.0 after the loop: c = pi**2/2,
+!                     and acc = cos pi x, the series to (pi x)**12/12!.
+!   D*(N),$L          cos**2 pi x (the operand the accumulator's high 48
+!                     bits); E+I(U),1 doubles it; D-(N),WON: cos 2 pi x.
+!   SRD(N),$L         rounded into location 8: bits 0-59, the sign and
+!                     flags to $SB bits 4-7, word 8's bits 60-63 left alone
+!                     (p.80, "of both fetch and store type").
+!
+! THE ASSEMBLED CONSTANTS (strap2), against pi**2/(k(k-1)): every KONST
+! word is truncated, 0.34, 0.90, 0.80, 0.68, 0.60, 0.95 units low; WON is
+! 1 - 2**-48 ("DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II", NEXT.md).
+!
+! EXPECTED RESULTS ARE WORKED FROM THE PAGE, NOT THE MODEL, by
+! tests/verify_problem_4_fp.py 4.9m2:<x>, sixty-digit decimal from the
+! words as strap2 assembles them:
+!   exact   $2 = value 5.0, count 0, refill XW22; $SB = plus, no flags
+!           (cos 2 pi x > 0 on the statement's range, so this pins the
+!           flags and the sign's destination, not a minus); the halt.
+!   within  TEMP = round(x**2), 1 unit.
+!           ACC (word 8 with $SB's sign) = the program's real number --
+!           the steps above with KONST and WON as assembled and each $L
+!           operand cut to 48 bits -- 4 units.
+!           ACC = the page's series, K = 12, exact constants and 1, in
+!           exact arithmetic: 4 units plus the distance the assembled
+!           constants put between the two, worked from the deck AS IT
+!           STANDS (an injected constant does not widen its own bound).
+!           ACC = cos 2 pi x: that bound plus the series' own cut.
+!
+! MEASURED 2026-11-16, five arguments, ALL CHECKS PASSED each (2 exact
+! checks and the PC, 4 within):
+!   x        program-to-page  model-to-program  model-to-cos   series cut
+!   1X-2        2.71 units        0.71              3.39          0.02
+!   -1X-2       2.71              0.71              3.39          0.02
+!   .1          2.78              0.17              2.61          0.00
+!   -.1         2.78              0.17              2.61          0.00
+!   .03         4.72              2.26              6.99          0.00
+!   "terms up to K = 12 would be adequate" holds: the cut is .02 units at
+!   the end of the range.  The few units the answer misses by are the
+!   assembled constants and WON, not the series.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16 at x = 1X-2:
+!   KONST+5 "$PI/2*$PI" -> "$PI/2*3.1416" (by --sub; the as-programmed
+!   number follows the injected word, the page's does not).  PREDICTED:
+!   the page and cos checks only.  OBSERVED: FAIL ACC_page_series_K12 and
+!   ACC_cos_2_pi_x (185157727 units each), nothing else.
+!
+! THE HARNESS IS NOT PRINTED: START loads XARG and falls into COSF2.
+!
+        SLC, 1000.0
+START   DL(N), XARG
+! --- printed p.43, Method 2 -------------------------------------------
+COSF2   D*(N),$L
+        SRD(N),TEMP
+        LX, $2, XW22
+DMULT   D*N(N), KONST($ 2)
+        D+(N), WON
+        D*(N), TEMP
+        CB+, $2, DMULT
+        D*N(N), KONST($2)
+        D+(N), WON
+        D*(N), $L                       !'create cos 2A
+        E+I(U), 1                       !printed: E+I, (U), 1
+        D-(N), WON
+        SRD(N), $L
+HALT    BEW, $
+XW22    XW, 0, 5, $
+KONST   DD(N), $PI/12*$PI/11,$PI/10*$PI/9
+        DD(N), $PI/8*$PI/7, $PI/6*$PI/5
+        DD(N),$PI/4*$PI/3,$PI/2*$PI
+WON     DD(N), 1.0
+TEMP    DR(N), (1)
+! --- the deck's: the argument, which the verifier replaces per run ----
+        SLC, 1100.0
+XARG    DD(N), .1
+
+        END, START

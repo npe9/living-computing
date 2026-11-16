@@ -17619,6 +17619,43 @@ corrected.  strap_asm still refuses the card (G3.1, held by
 31.0, not 63.0.  The 4.6-4.8 decks are assembled by strap2 and carry
 the printed `N*N` and `DD(N),0` with no substitute.
 
+## G2.1 CHAPTER 4: PROBLEMS 4.3-4.5 AND 4.9 METHOD 2, NO MODEL FINDING -- 2026-11-16
+
+Assembled by the host STRAP II (`ASM=strap2`); every run passed against
+the model as it stood.  Recorded here for what the pages leave open.
+
+### Problem 4.5, printed pp.38-39: wrong when x_1 y_1 is non-zero
+
+`decks/problem_4_5.strap`, `tests/verify_problem_4_matrix.py 4.5k0`.
+The first printed program to index a field length takes `$LZC` as the
+length of `CT0011(BU,0),...,0($1)` and `CM0000(BU,0),KEYVEC+0.1,0($1)`.
+When the first common non-zero component is the first one, `$LZC` is 0
+and the length is 64 (Reference Manual printed p.56): the counts run
+over the whole image words, the clear runs 64 bits from KEYVEC+0.1 into
+the next word (SAVEX, $1's saved value) and never clears KEYVEC bit 0,
+so the loop repeats one wrong product.  Nothing to build: the model
+does what the page's instructions say, and the trace and the model
+agree.  A program using this method needs x_1 y_1 = 0, or a first pass
+of its own.
+
+### Problem 4.4, printed pp.37-38: a dense vector is not handled
+
+`decks/problem_4_4.strap`.  With every image bit one, `$3`'s count is 0
+when END is reached: `Z, SVEC($3)` stores past the vector and `CB+`
+counts 0 to 2**18 - 1 (Reference Manual printed p.43) and goes on
+zeroing storage.  Not run; the verifier asserts the data is not dense.
+Nothing to build.
+
+### Problem 4.9 Method 2, printed p.43: not blocked by the VFL SRD
+
+`decks/problem_4_9_method2.strap`, `tests/verify_problem_4_fp.py 4.9m2`.
+The last store is printed `SRD(N), $L` -- with a dds, unlike Method 1's
+`SRDN,$L` -- so it is the floating store into location 8, already right;
+the VFL SRD work does not touch it.  Printed erratum `E+I, (U), 1`
+(STRAP II: EXTRA FIELDS), run as `E+I(U), 1`.  The deck is the first
+4.9-4.13 deck assembled by strap2 (KONST's `$PI` arithmetic);
+verify_problem_4_fp.py takes `DECK ASM=strap2` on the run line for it.
+
 ## G2.1 CHAPTER 4: LOCATION 8 AS A FLOATING-POINT OPERAND TAKES THE WRONG SIGN -- 2026-11-16
 
 **FIXED 2026-11-16, both directions; ONE PART WAS MISDIAGNOSED.**
@@ -17662,13 +17699,15 @@ the printed `N*N` and `DD(N),0` with no substitute.
   `tests/check_srdn_dollar_l.py` pins both.  4.9 Method 1 is registered
   both ways (`4.9m1`: word 8 = word 9; `4.9m1fp`: the card with
   `SRDN(N)`, the cosine), no `--known-wrong`.  Method 2 (printed p.43)
-  ends the same way and is still not run.  Not settled: strap2 prints no
+  does NOT end the same way: it prints `SRD(N), $L`, the floating form
+  with its dds (the item below), which is the page's own evidence that
+  Method 1's dds-less card is the slip.  Not settled: strap2 prints no
   message for p.7's no-dds cases ("an error message is printed on the
   output listing"), and gives every special register (BU,64,8) rather
   than its own length (a CHOSEN in `strap2/optable.py`).
   The question as it was written:
   Did STRAP II really compile C22-6578 printed p.43's `SRDN,$L` (4.9 Methods
-  1 and 2) as VFL?  If it did, the printed COSF is wrong in the ink.
+  1 and 2 -- Method 2 was misread then; it prints `SRD(N), $L`) as VFL?  If it did, the printed COSF is wrong in the ink.
   The alternative is that `$L` carries a floating-point dds in STRAP II.
   C28-6129's table of `$` symbols would decide it, and so might C22-6531
   Appendix A p.56, the source of `strap/opcodes.py` SYSTEM_SYMBOLS, which
@@ -17725,7 +17764,9 @@ sign modifiers, is placed in storage bit 60.  The accumulator flag bits
 are placed in storage bits 61-63.  The entire accumulator and its sign
 byte register remain unchanged throughout the operation unless used as
 the effective address."  C22-6578 printed p.43 (4.9) ends COSF with
-`SRDN,$L` and printed p.43 Method 2 the same; 4.12/4.13 use `SRT(N), $L`.
+`SRDN,$L`; printed p.43 Method 2 does NOT -- it prints `SRD(N), $L`, the
+floating store (read at 300 dpi 2026-11-16; this line said "the same");
+4.12/4.13 use `SRT(N), $L`.
 
 * **Reproducer:** `decks/repro_fp_store_location8.strap`.  s*s double
   length (s = .6 as assembled), `SRDN, $L`.  Accumulator bits 60-63 are

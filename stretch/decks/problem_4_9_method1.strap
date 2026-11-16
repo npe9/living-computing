@@ -30,7 +30,9 @@
 ! and the accumulator is otherwise unchanged.  The cosine's high-order
 ! fraction is overwritten by its low-order bits.  tests/verify_problem_4_fp.py
 ! "4.9m1" checks exactly that (word 8 = word 9 at the halt, with TEMP and
-! x2); "4.9m1fp" runs the card the analysis meant, "SRDN(N),$L", and checks
+! x2); "4.9m1fp" runs the card the analysis meant, "SRDN(N),$L" (Method 2
+! on the same page prints its store "SRD(N), $L", with the floating dds --
+! decks/problem_4_9_method2.strap), and checks
 ! the cosine read as the accumulator (word 8 bits 0-59 and $SB bits 4-7,
 ! p.80) and $SB 4-7 = 0000.  OBSERVED 2026-11-16, x = 1X-2, .125, .03, .1,
 ! -.1: ALL CHECKS PASSED in both, 4.9m1fp's cosine 0.01 to 1.39 units from

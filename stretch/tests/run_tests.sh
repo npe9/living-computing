@@ -14112,7 +14112,9 @@ run "C22-6578 Problem 4.10 -- LNX, ln 1E-300" python3 verify_problem_4_fp.py 4.1
 # checks what the card does (word 8 = word 9 exactly, with TEMP and x2),
 # and "4.9m1fp" runs the card the analysis meant, "SRDN(N),$L", and checks
 # the cosine read as the accumulator (words 8 and 10, p.80) and $SB 4-7.
-# These were --known-wrong while the VFL SRD was unbuilt; 1X-2 passed then
+# Method 2 on the same page prints "SRD(N), $L", WITH the floating dds, so
+# the printed text itself shows the floating form the author meant; Method 1
+# omits it.  These were --known-wrong while the VFL SRD was unbuilt; 1X-2 passed then
 # only because the refused store left word 8 alone.
 run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, SRDN,\$L is the VFL SRD: word 8 = word 9, x = 1/8" python3 verify_problem_4_fp.py 4.9m1:1X-2
 run "C22-6578 Problem 4.9 Method 1 -- COSF as printed, word 8 = word 9, x = .125 as STRAP II assembles it" python3 verify_problem_4_fp.py 4.9m1:.125
@@ -14125,6 +14127,18 @@ run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = .03" python3 ve
 run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = .1" python3 verify_problem_4_fp.py 4.9m1fp:.1
 run "C22-6578 Problem 4.9 Method 1 -- COSF with SRDN(N),\$L, x = -.1" python3 verify_problem_4_fp.py 4.9m1fp:-.1
 run "SRDN,\$L is the VFL SRD (BU,64,8) in both assemblers: \$L's dds, C28-6129 printed pp.6, 10" python3 check_srdn_dollar_l.py
+# 4.9 Method 2, printed p.43: cos pi x by the series to K = 12, then
+# 2 cos**2 - 1.  ITS LAST STORE IS PRINTED "SRD(N), $L", WITH A DDS: the
+# floating store into location 8, not Method 1's VFL SRDN, so it does not
+# wait on the VFL SRD.  Assembled by strap2 (KONST is "$PI/12*$PI/11" ...
+# in DD(N)); "E+I, (U), 1" is refused by STRAP II (EXTRA FIELDS) and
+# supplied as "E+I(U), 1".  The answer is word 8 with $SB's sign (p.80).
+# Five arguments in the statement's -1/8..1/8, all passed as the model stood.
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m2:1X-2 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, cos(2 pi -1/8)" python3 verify_problem_4_fp.py 4.9m2:-1X-2 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = .1" python3 verify_problem_4_fp.py 4.9m2:.1 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = -.1" python3 verify_problem_4_fp.py 4.9m2:-.1 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = .03" python3 verify_problem_4_fp.py 4.9m2:.03 ../decks/problem_4_9_method2.strap ASM=strap2
 # Location 8 as a floating-point address, both directions (Reference
 # Manual printed p.80: accumulator bits 0-59 plus sign byte bits 4-7, "both
 # fetch and store type"; fixed 2026-11-16, docs/NEXT.md).  The store:
@@ -14209,6 +14223,33 @@ run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, XW2 count 8: the tr
 # is exact.  Both passed as the model stood.
 run "C22-6578 Problem 4.8 -- product of square matrices, as printed (N half words: not L * R)" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2
 run "C22-6578 Problem 4.8 -- product of square matrices, corrected: L * R" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2 --corrected
+
+# 4.5, printed pp.38-39: the scalar product of two compressed sparse vectors,
+# the first printed program to index a FIELD LENGTH -- $LZC loaded into $1's
+# value at bits 2-8, which the second I field adds to instruction bits 35-40
+# (Reference Manual printed p.56), and $AOC, at the half-word bit, doubled
+# into a word index.  The double sum keeps its low half in the accumulator
+# across L(U) (p.88), and words 8 and 9 are checked.  Worked by a trace of
+# the printed statements, asserted equal to the exact sum of x_k y_k.  N = 40
+# and N = 37 pass.  The third run is the case the page does not exclude:
+# x_1 y_1 non-zero makes the indexed length 0, which is 64 (p.56), and the
+# program sums one wrong product m times and clears bit 0 of $1's saved value;
+# the model matches that trace.  All passed as the model stood.
+run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N = 40" python3 verify_problem_4_matrix.py 4.5 ../decks/problem_4_5.strap ASM=strap2
+run "C22-6578 Problem 4.5 -- sparse scalar product by field-length indexing, N = 37" python3 verify_problem_4_matrix.py 4.5n37 ../decks/problem_4_5.strap ASM=strap2
+run "C22-6578 Problem 4.5 -- x_1 y_1 non-zero: length 0 is 64, as printed (not the scalar product)" python3 verify_problem_4_matrix.py 4.5k0 ../decks/problem_4_5.strap ASM=strap2
+
+# 4.4, printed pp.37-38: a sparse vector compressed in place by its bit image,
+# one bit at a time by C0011(BU,1)(V+IC) and RZ, LWF(U)/ST(U) moving each
+# kept word whole (flags and unnormalized fractions in the data), STORE ZERO
+# over the rest.  Worked from the statement.  Passed as the model stood.
+run "C22-6578 Problem 4.4 -- compression of a sparse vector by its bit image" python3 verify_problem_4_matrix.py 4.4 ../decks/problem_4_4.strap ASM=strap2
+
+# 4.3, printed p.37: the bit image of 64 numbers, L(U) and RZ deciding zero --
+# a zero FRACTION (printed p.85), whatever the exponent, sign or flags, seven
+# such words in the data -- and CM1111(BU,1)(V+I) setting the bit.  Worked
+# from that definition.  Passed as the model stood.
+run "C22-6578 Problem 4.3 -- bit image of 64 numbers, a zero fraction is zero" python3 verify_problem_4_matrix.py 4.3 ../decks/problem_4_3.strap ASM=strap2
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is

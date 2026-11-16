@@ -3,7 +3,8 @@
 offset 0, in both assemblers, because $L carries a VFL dds.
 
 THE QUESTION (docs/NEXT.md, the location-8 items): C22-6578 printed p.43
-ends COSF, Problem 4.9 Methods 1 and 2, with "SRDN,$L".  SRDN is both a VFL
+ends COSF, Problem 4.9 Method 1, with "SRDN,$L" (Method 2, the same page,
+prints "SRD(N), $L", with the floating dds).  SRDN is both a VFL
 and a floating-point mnemonic (C22-6531 Appendix A printed p.57: "V SRD 5"
 and "F SRD 7"; footnote 5 gives the VFL form an N suffix, footnote 7 the
 floating form N, A and NA).  If STRAP gave $L a floating-point dds the

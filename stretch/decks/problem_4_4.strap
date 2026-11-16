@@ -1,0 +1,132 @@
+! C22-6578 PROBLEM 4.4, "COMPRESSION OF SPARSE VECTOR", printed pp.37-38
+! (PDF 38-39), Method 1, read in the ink at 300 dpi.
+!
+!   "Given a sparse vector of N components stored in consecutive
+!   floating-point words beginning at SVEC.  It has a bit image stored in
+!   consecutive bits beginning at the full word beginning at BIMAGE.
+!   Compress the vector into the smallest possible storage space on the
+!   basis of this bit image, and put the result in consecutive words
+!   beginning at SVEC also."
+!
+! THE SEVENTEEN PRINTED STATEMENTS FROM "LX, $1, XW1; LX, $3, XW3" TO "XW3
+! XW, 0.0, N, $" ARE AS PRINTED, assembled by the host STRAP II
+! (ASM=strap2), the label END on "Z, SVEC($3)" included (strap2 takes a
+! location-field END as a label; the deck's own "END, START" is the
+! pseudo-op).  The deck adds: START on the first line, for END; N, which
+! the page never defines (N SYN,24); the data, between two guards.
+! Readings: "SVEC ($2)" is printed with a blank, squeezed out; "0.01($1)"
+! is bit 1, the one-bit step, as strap2 assembles it (the CONN word,
+! at 35.32, holds address 000001).
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2, printed
+! page = PDF - 3):
+!   $1 = BIMAGE, count N+1; $3 = 0.0, count N, refill itself; LVNI,$2,1.0
+!   gives $2 the value -1.0, count and refill untouched (p.25).
+!   CONN  C0011(BU,1)(V+IC),0.01($1)   image bit i into accumulator bit
+!         127 (connective 0011 is m, Figure 20, p.76; offset 0); RZ is
+!         on if the result is zero (p.76); progressive indexing adds 0.01
+!         to $1 and counts it down (p.21), setting XCZ (p.23).
+!   BXCZ, END   after the (N+1)th test: N bits are tested, then bit N,
+!         past the image, is read once more and END is taken.
+!   V+I,$2,1.0  $2 = i words (V+I sets index indicators, not RZ).
+!   BZRZ, LOWF  bit one: LWF(U), SVEC($2) -- "the same as LOAD except
+!         that the data flag bits T, U, and V of the addressed operand
+!         sign byte set the flag bits in positions 5-7 of the accumulator
+!         sign byte register" (p.89) -- and ST(U), SVEC($3), which stores
+!         bits 0-59, the sign and the flag bits 5-7 into 60-63 (p.89, Store),
+!         so a word moves whole, flags and an unnormalized fraction
+!         included; V+IC,$3,1.0 steps the output and counts it.
+!   END   Z, SVEC($3); CB+,$3,END   STORE ZERO (p.31) over the N - m words
+!         left, $3 counting from N - m to 0 (p.43).
+!
+! >>> A DENSE VECTOR (ALL N BITS ONE) IS NOT HANDLED: NOT AN ERRATUM IN
+! THE INK, A CASE THE PAGE DOES NOT EXCLUDE.  $3's count is then 0 at
+! END: Z stores into SVEC+N, past the vector, and CB+ counts 0 down to
+! 2**18 - 1 (an 18-bit field, p.43) and branches, zeroing storage upward
+! until it reaches something it cannot store.  NOT RUN; the verifier
+! asserts the data is not dense.
+!
+! THE DATA AND THE EXPECTED VALUES, worked by
+! tests/verify_problem_4_matrix.py from the words as strap2 assembles them
+! and the statement, not by the model:
+!   BIMAGE (16)9871498200400001: bits 0, 3, 4, 9, 10, 11, 15, 17, 20, 23
+!   one among bits 0-23 (m = 10), and bits 24, 30, 41, 63 past N.
+!   SVEC, 24 words: ten non-zero words where the image is one, written
+!   in hex: 1.5; -5 with flag T; .5 with V; an unnormalized fraction;
+!   -.140625 with U; all three flags; 2.75; a negative unnormalized
+!   fraction; -1 with U and V; and, last, a negative word with T and U.
+!   Where the image is zero: zero words, and two order-of-magnitude
+!   zeros with flags (words 5 and 13), which the image calls zero.
+!   Expected:
+!     SVEC+0..9      the ten words, in order, flags and all
+!     SVEC+10..23    0, by Z
+!     $1             BIMAGE + 25 bits, count 0, refill XW1:
+!                    (16)0032190000000028
+!     $2             value 23.0, count 0, refill 0: (16)0005C00000000000
+!     $3             value 24.0, count 0, refill XW3: (16)0006000000000029
+!     location 7     the last connect, image bit 24 = 1: ones 1, left
+!                    zeros 0: (16)0000000000002000
+!     word 8         SVEC[23]'s bits 0-59, bits 60-63 still 0 (p.88):
+!                    (16)00C9C00000000000
+!     word 9         1: image bit 24 at accumulator bit 127
+!     word 10, $SB   sign 1, flags T U from SVEC[23]: (16)0E00000000000000
+!     the guards and the halt at the printed BEW.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD, 2026-11-16 (33 checks and the PC).
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   image bit 1 set, a zero word marked non-zero ("(16)9871498200400001"
+!   -> "(16)D871498200400001", by --sub on the copy that runs; the
+!   expected words are worked from the deck as it stands).  PREDICTED: the
+!   zero SVEC[1] is kept second and the rest shift one place: SVEC+1..10.
+!   OBSERVED: FAIL SVEC01-SVEC10 and nothing else ($3 ends at 24.0 either
+!   way, and the last word loaded is the same).
+!
+! --- printed pp.37-38, Method 1 ---------------------------------------
+START   LX, $1, XW1; LX, $3, XW3
+        LVNI, $2, 1.0
+        B, CONN
+LOWF    LWF(U), SVEC ($2)
+        ST(U), SVEC($3)
+        V+IC, $3, 1.0
+CONN    C0011(BU, 1) (V+IC), 0.01($1)
+        BXCZ, END
+        V+I, $2, 1.0
+        BZRZ, LOWF
+        B, CONN
+END     Z, SVEC($3)                     !'zero unused region
+        CB+, $3, END
+        BEW, $
+XW1     XW, BIMAGE, N+1, $
+XW3     XW, 0.0, N, $
+! --- the deck's: N, which the page does not define, and the data ------
+N       SYN,24
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BIMAGE  DD(BU,64),(16)9871498200400001
+SVEC    DD(BU,64),(16)002C000000000000  !0
+        DD(BU,64),(16)0000000000000000  !1
+        DD(BU,64),(16)0000000000000000  !2
+        DD(BU,64),(16)006A00000000000C  !3
+        DD(BU,64),(16)0008000000000001  !4
+        DD(BU,64),(16)0120000000000008  !5
+        DD(BU,64),(16)0000000000000000  !6
+        DD(BU,64),(16)0000000000000000  !7
+        DD(BU,64),(16)0000000000000000  !8
+        DD(BU,64),(16)00A0000C00000000  !9
+        DD(BU,64),(16)005900000000000A  !10
+        DD(BU,64),(16)014FFFFFFFFFFFF7  !11
+        DD(BU,64),(16)0000000000000000  !12
+        DD(BU,64),(16)0070000000000005  !13
+        DD(BU,64),(16)0000000000000000  !14
+        DD(BU,64),(16)004B000000000000  !15
+        DD(BU,64),(16)0000000000000000  !16
+        DD(BU,64),(16)00F0D55555555558  !17
+        DD(BU,64),(16)0000000000000000  !18
+        DD(BU,64),(16)0000000000000000  !19
+        DD(BU,64),(16)002800000000000B  !20
+        DD(BU,64),(16)0000000000000000  !21
+        DD(BU,64),(16)0000000000000000  !22
+        DD(BU,64),(16)00C9C0000000000E  !23
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START

@@ -2224,7 +2224,9 @@ equivalent to a STORE" (Reference Manual printed p.64), so word 8 gets
 word 9.  With the VFL SRD built, `4.9m1` checks that (word 8 = word 9,
 TEMP, x2) and `4.9m1fp` the card with `SRDN(N)` (the cosine, read as the
 accumulator, and `$SB` 4-7): five arguments each, all pass, no
-`--known-wrong`.
+`--known-wrong`.  Method 2 on the same page prints `SRD(N), $L`, with the
+floating dds (its section below), which is the page's own evidence that
+Method 1's dds-less card is the slip.
 
 **CORRECTED 2026-11-16.**  The operand bug is fixed, and x = -.1's
 `TEMP_A_squared` passes.  The "lost store" was not a store into location
@@ -2245,10 +2247,9 @@ reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
 passes, and by luck -- and since 2026-11-16 only when written `1X-2`,
 exactly 1/8: `.125` as STRAP II assembles it is one unit low and fails
 like .1 (registered --known-wrong; NEXT.md "DD(N) 1.0 IS 1 - 2^-48").  Erratum: the statement says "Create 2 pi x" for
-"cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
-`D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
-those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
-("undefined symbol U") -- read in the ink but not decided.
+"cos 2 pi x".  Method 2 (printed p.43) was set aside here as having
+"the same `D*(N), $L` and `SRDN, $L`"; **read at 300 dpi 2026-11-16 its
+last store is `SRD(N), $L`, with a dds** -- the floating store, run below.
 
 ### 4.6 8 x 8 bit transpose, printed pp.39-40 -- `decks/problem_4_6_method{1,2,3}.strap`, `problem_4_6_method3_n5.strap` -- PASSES as the model stood
 
@@ -2301,17 +2302,95 @@ Run as printed (the model matches the trace) and corrected (L * R).
 **No model finding.**  Assembler side: `repro_address_multiply.strap`'s
 header said `N*N-1.0` assembles to 63.0; it is 31.0, and strap2 agrees.
 
+### 4.5 scalar product of compressed sparse vectors, printed pp.38-39 -- `decks/problem_4_5.strap` -- PASSES as the model stood; wrong as printed when x_1 y_1 is non-zero
+
+**The first printed program to index a field LENGTH.**  `LF(BU,25),
+$LZC-0.2,128-25; LV,$1,8.0` puts the left-zeros count at `$1`'s value
+bits 2-8, and the second I field adds index bits 3-18 to instruction
+bits 35-50 (Reference Manual printed p.56), so `CT0011(BU,0),XBMAGE,
+0($1)` takes the count as its length; `LV,$2,7.32; V+,$2,18.0` turns the
+all-ones count, at the half-word bit, into a word index.  The double sum
+keeps its low half in the accumulator across `L(U),PRODT` (p.88, bits
+60-127 not changed), and the data makes that low half carry ~32 bits, so
+words 8 and 9 are checked as well as PRODT.  `tests/verify_problem_4_matrix.py
+4.5`, `4.5n37`, `4.5k0`: 13 checks and the PC each, worked by a trace of
+the printed statements asserted equal to the exact sum of x_k y_k, all
+assembled by strap2 as printed.  **No model finding**: N = 40 and N = 37
+pass, KEYVEC left with the last common bit, location 7, $1-$3 restored
+from sentinels.
+
+* **Wrong as printed when x_1 and y_1 are both non-zero** -- a case the
+  page does not exclude, not a misprint.  `$LZC` = 0 makes the indexed
+  length 0, which is 64 (p.56): both CT0011 count the whole image words,
+  and `CM0000` at `KEYVEC+0.1` clears 64 bits, bit 0 of SAVEX ($1's saved
+  value) included and KEYVEC's bit 0 not, so every pass finds k = 0
+  again.  Run as `4.5k0`: the program forms one wrong product ten times
+  (-1006433504772300 for the statement's 1185029187485492); the model
+  matches the trace word for word, the crossing CONNECT TO MEMORY
+  included.  No correction supplied.
+
+### 4.4 compression of a sparse vector, printed pp.37-38 -- `decks/problem_4_4.strap` -- PASSES as the model stood
+
+`tests/verify_problem_4_matrix.py 4.4`, 33 checks and the PC: the 24
+SVEC words, $1-$3, location 7, words 8-10, guards, worked from the
+statement.  One image bit at a time by `C0011(BU,1)(V+IC),0.01($1)` and
+RZ; `LWF(U)`/`ST(U)` move each kept word whole -- the data has the three
+flags in several combinations and two unnormalized fractions, so a
+plain `L` (flags to zero, p.88) would show; `STORE ZERO` (p.31) and `CB+`
+over the rest.  `END` as a location-field label assembles under strap2.
+**No model finding, no printed erratum.**  Unexcluded case, not run: a
+dense vector leaves `$3`'s count 0 at END, so `CB+` counts it to 2**18-1
+and Z stores past the vector.
+
+### 4.3 bit image of a sequence of numbers, printed p.37 -- `decks/problem_4_3.strap` -- PASSES as the model stood
+
+`tests/verify_problem_4_matrix.py 4.3`, 9 checks and the PC: BIMAGE,
+$1, $2, location 7, words 8-10, guards.  `L(U)` and `BZRZ` decide what is
+zero, and the Reference Manual says a zero FRACTION (printed p.85, "RZ
+is turned on for all zero result fractions"; p.88, LOAD's indicators "as
+in ADD"): the data has seven zero fractions that are not zero words
+(an exponent, a minus, flags, all three) and twelve non-zero words
+including a fraction of 1 and exponents of +-1000.  `CM1111(BU,1)(V+I)`
+sets the bit; BIMAGE starts all ones so `Z, BIMAGE` is seen; word 10
+shows `L` (not `LWF`) zeroing the flag bits.  **No model finding, no
+printed erratum.**
+
+### 4.9 cosine, Method 2, printed p.43 -- `decks/problem_4_9_method2.strap` -- PASSES as the model stood; one printed erratum
+
+cos pi x by the series to K = 12 in x**2, then `D*(N),$L; E+I(U),1;
+D-(N),WON`: 2 cos**2 - 1.  **Its last store is printed `SRD(N), $L`,
+with a dds** (Method 1 prints `SRDN,$L`, the VFL form): the floating
+store into location 8, so Method 2 does not wait on the VFL SRD.
+Assembled by strap2 with KONST's `$PI/12*$PI/11` ... and `WON DD(N),
+1.0` as printed (every KONST word truncated, under one unit; WON is
+1 - 2**-48).  `tests/verify_problem_4_fp.py 4.9m2:<x> DECK ASM=strap2`,
+five arguments in the statement's -1/8..1/8 (1X-2, -1X-2, .1, -.1, .03):
+2 exact checks ($2, $SB plus with no flags) and the PC, 4 within --
+TEMP 1 unit, the answer (word 8 with $SB's sign, p.80) 4 units from the
+program's own number, and from the page's exact series and from cos 2 pi
+x by a bound worked from the deck as it stands.  Model 0.17-2.26 units
+from the program, 2.61-6.99 from cos; the series cut is .02 units at
+x = 1/8, so "terms up to K = 12 would be adequate" holds.  **No model
+finding.**
+
+* **Printed erratum: `E+I, (U), 1`.**  STRAP II refuses it (message 40,
+  EXTRA FIELDS: the dds stands as a field after the comma); supplied
+  `E+I(U), 1`.  The earlier "refused by strap_asm (undefined symbol U)"
+  is the same card.
+* Reading: `KONST($ 2)` has a blank in the ink; strap2 makes the same
+  word as `KONST($2)`.
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two), 4.8.  **Two model bugs, one cause (location 8 as a
+methods), 4.7 (two), 4.8, 4.5, 4.4, 4.3, 4.9 Method 2.  **Two model bugs, one cause (location 8 as a
 floating-point operand and as a store), both FIXED 2026-11-16; the
 "lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
-nine printed errata.**  Not reached: 4.9 Method 2, 4.5 (field-length
-indexing through the second I field and `$LZC`/`$AOC`), 4.4, 4.3, 4.2
-(decimal VFL, refused), 4.1 (VFL square root).  The note that the second
+ten printed errata, and two unexcluded cases (4.5 with k1 = 0, 4.4
+with a dense vector).**  Not reached: 4.2 (decimal VFL, refused), 4.1
+(VFL square root).  The note that the second
 I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
 `vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
 offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it
-(offset indexing by half words, `0($2)`, `7($3)`, `64-8($3)`); 4.5 is
-the first printed program to index the field LENGTH.
+(offset indexing by half words, `0($2)`, `7($3)`, `64-8($3)`); 4.5, the
+first printed program to index the field LENGTH, ran on it too.
