@@ -587,6 +587,21 @@ def decks(which):
         exact = sum(F(2 * i + 1, 20) ** 4 for i in range(20))
         print(f"  in exact arithmetic: sum f = {float(exact):.15f}, times 1/10 = {float(exact / 10):.15f}, "
               f"last f times h = {float(F(39, 20) ** 4 / 10):.15f}")
+    if which in ('35', 'all'):
+        print("problem_3_5  X = $PI/4, NUM = 39.0, TWO = 2.0 as the host STRAP II makes them")
+        for name, c in (('printed', (D_PI_4, D_39_0, D_2_0)), ('exact 39, 2', (D_PI_4, fl(39), fl(2)))):
+            f, num, temp, temp1, a = p35(*c)
+            print(f"  {name}:")
+            print(f"    TEMP2 {h(f)} = {float(value(f)):.16f}   NUM {h(num)} = {float(value(num)):.16f}")
+            print(f"    TEMP {h(temp)} = {float(value(temp)):.16f}   TEMP1 {h(temp1)} = {float(value(temp1)):.16f}")
+            print(f"    word 8 {h(a.word8())}")
+    if which in ('37', 'all'):
+        print("problem_3_7  EN = 8.0, GUESS = 2.5, HALF = 0.5 as the host STRAP II makes them")
+        for name, c in (('printed', (D_8_0, D_2_5, D_0_5)), ('exact', (fl(8), fl(F(5, 2)), fl(F(1, 2))))):
+            ans, temp, xk, a = p37(*c)
+            print(f"  {name}:")
+            print(f"    ANS {h(ans)} = {float(value(ans)):.16f}   TEMP {h(temp)} = {float(value(temp)):.16f}")
+            print(f"    XK {h(xk)} = {float(value(xk)):.16f}   word 8 {h(a.word8())}")
 
 
 if __name__ == '__main__':

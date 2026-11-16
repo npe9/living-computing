@@ -13494,6 +13494,19 @@ run "C22-6578 Problem 3.4 Method 2 -- the function evaluator apart, as printed" 
     "acc_left_last_f_times_h:8=0x002B913458CD1EC0" \
     "B_as_assembled:47=0x002FFFFFFFFFFFF0" "N_as_assembled:48=0x00A9FFFFFFFFFFF0"
 
+# 3.5, tan(pi/4) as a continued fraction, nineteen R/N -- RECIPROCAL
+# DIVIDE with the negative sign modifier -- and the statements written
+# with no dds at all ("*, X"), which the page's comment (c) explains.
+# Block A has exact 39 and 2 and F comes out two units below 1; the
+# page's own "39.0" and "2.0" are one unit short each and F comes out
+# 3 x 10**-13 above.  Both are pinned; STEPS for the twenty divides each.
+run "C22-6578 Problem 3.5 -- continued fraction, R/N and bare operations" ./run_program.sh ../decks/problem_3_5.strap StretchP35Tb ASM=strap2 "PC=92" STEPS=200000 \
+    "A_F:59=0x000FFFFFFFFFFFE0" "A_NUM_is_1:54=0x0028000000000000" \
+    "A_TEMP_x_squared:57=0x0009DE9E64DF22D0" "A_TEMP1:58=0x005DBC095777A5B8" \
+    "F:53=0x00280000000002A0" "NUM:48=0x000FFFFFFFFFFC20" \
+    "TEMP_x_squared:51=0x0009DE9E64DF22D0" "TEMP1:52=0x005DBC095777A6E8" \
+    "X_as_assembled:47=0x000C90FDAA221680" "TWO_as_assembled:49=0x002FFFFFFFFFFFF0"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
