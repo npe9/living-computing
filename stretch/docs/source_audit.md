@@ -2255,12 +2255,27 @@ statements, which the verifier asserts gives the transpose with 8; the
 model matches it word for word) and corrected (the transpose).  **No
 model finding.**  `docs/NEXT.md`, "PROBLEMS 4.6-4.8".
 
+### 4.8 product of square matrices, printed p.42 -- `decks/problem_4_8.strap` -- PASSES as the model stood; wrong AS PRINTED
+
+`tests/verify_problem_4_matrix.py 4.8`, two runs, 64 elements, `$2`-`$4`,
+XW22, guards and the PC each.  `LFT(U)`, `*+(N)`, `SRD(N)`, `DL(U)`,
+`CBR+`, `CB`, and `V-ICR,$3,N*N-1.0` and `DD(N),0` assembled as printed
+by strap2 (strap_asm refuses both; the earlier Chapter 4 decks
+substituted).  L and R are small integers, so every element is an exact
+word.  **Printed erratum: `V+I,$3,N` and `V+I,$2,N` advance N half
+words, not N words** (C28-6129 Section I printed pp.8-9), so the printed
+program forms sum Lw[4i+k] Rw[j+4k] and 63 of 64 elements are wrong; it
+is self-consistent because `N*N-1.0` is also counted in half words (31.0).
+Run as printed (the model matches the trace) and corrected (L * R).
+**No model finding.**  Assembler side: `repro_address_multiply.strap`'s
+header said `N*N-1.0` assembles to 63.0; it is 31.0, and strap2 agrees.
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two).  **Two model bugs,
+methods), 4.7 (two), 4.8.  **Two model bugs,
 one cause (location 8 as a floating-point operand and as a store),
-four assembler refusals, eight printed errata.**  Not reached: 4.9
-Method 2, 4.8 (`N*N` in an address, which strap2 assembles), 4.5 (the `i2`
+four assembler refusals, nine printed errata.**  Not reached: 4.9
+Method 2, 4.5 (the `i2`
 field, decoded and read nowhere), 4.4, 4.3, 4.2 (decimal VFL, refused),
 4.1 (VFL square root).

@@ -1,0 +1,182 @@
+! C22-6578 PROBLEM 4.8, "PRODUCT OF SQUARE MATRICES", printed p.42 (PDF
+! 43), Method 1, read in the ink at 300 dpi.
+!
+!   "NxN full-word floating-point matrices L,R are stored row-wise
+!   beginning at LMTRIX and RMTRIX respectively.  Create P=L*R and store
+!   it row-wise beginning at PMTRIX."
+!   "Method 1.  Use $2 for left matrix elements, $3 for right matrix
+!   elements and $4 for product matrix elements.  Program generates
+!   successive rows of the product matrix."
+!   Comments: "(a) STRAP I does not perform multiplication of addresses,
+!   but STRAP II will do it properly.  (b) XW2, XW3, and XW4 are not
+!   destroyed and the program can be used repeatedly without
+!   re-assembly or reloading into the machine."
+!
+! THE EIGHTEEN PRINTED STATEMENTS FROM "TI,3,XW2,$2" TO "ZERO DD(N),0"
+! ARE AS PRINTED, "V-ICR,$3,N*N-1.0" and "DD(N),0" included: this deck is
+! assembled by the host STRAP II (ASM=strap2), which multiplies addresses
+! as comment (a) says STRAP II will, and builds a zero DD(N).  strap_asm
+! refuses both (decks/repro_address_multiply.strap, repro_dd_n_zero.strap)
+! and the earlier Chapter 4 decks substituted for them; this one need
+! not.  The deck adds: "START CNOP" to name the unlabelled first
+! statement for END; N, which the page uses and never defines (N SYN,8,
+! an integer, as 4.6 defines it: "N SYN,8"); and the data.
+!
+! >>> AS PRINTED THE PROGRAM DOES NOT FORM L * R: "V+I,$3,N" AND
+! "V+I,$2,N" ADVANCE N HALF WORDS, NOT N WORDS. <<<
+!   An integer in a 19-bit address field counts half words: C28-6129
+!   Section I printed pp.8-9, "INTEGER ADDRESSES" ("A 19-bit field
+!   specifies half words so an integer here counts half words ... V+I,
+!   $3, 13 ... is equivalent to 13 half words or location 6, bit position
+!   32"); C22-6531 has the same table; V+I adds to value bits 0-18
+!   (Reference Manual printed p.25).  The page knows the rule: 4.6
+!   Method 2 comments "LVI,$2,8-1" with "'7 half-words", and this
+!   program writes "V+I,$4,1.0" for one word.  So with N = 8 each
+!   "advance $3 to next row" is 4 words, and "V-ICR,$3,N*N-1.0" is 64 half
+!   words less 1.0, 31 words -- which brings $3 back to the next column
+!   exactly, since 8 steps of 4 words are 32: the program is consistent
+!   with itself and computes, for row i and column j,
+!       P'[i][j] = sum over k of Lw[4i + k] * Rw[j + 4k]
+!   with Lw, Rw the 64 words of L and R in storage order.  Every read
+!   stays inside the two matrices (the largest index is 35).
+!   No one definition of N repairs it: with "N SYN,8.0" (a bit address)
+!   the two V+I advance 8 words, and the count fields still take 8, but
+!   N*N is then a product of bit addresses and V-ICR assembles 8190 half
+!   words (checked on strap2).
+!   THE DECK RUNS AS PRINTED, and corrected ("--corrected", three cards
+!   replaced in a copy, tests/verify_problem_4_matrix.py CORRECTIONS):
+!       V+I,$3,N          ->  V+I,$3,N+N          (N words)
+!       V-ICR,$3,N*N-1.0  ->  V-ICR,$3,2*N*N-1.0  (N*N - 1 words)
+!       V+I,$2,N          ->  V+I,$2,N+N
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (printed page = PDF - 3).
+!   TI,3,XW2,$2       XW2, XW3, XW4 into $2, $3, $4.
+!   SIX  SX,$2,XW22   $2's refill word is the row of L in hand.
+!   LU   DL(U),ZERO   the double accumulator cleared (p.96).
+!   LIFT LFT(U),0($2) L[i][k] to the factor register (p.98).
+!        *+(N),0($3)  plus FT x R[k][j], 96 bits, unnormalized in the
+!                     addition (p.98).
+!        V+I,$3,N     $3 down a row of R (but see above).
+!        CBR+,$2,LIFT $2 one word on ("Add one to value", bit 17,
+!                     p.26), counted; branch while the count is not
+!                     zero; refilled to the row's start at zero.
+!        SRD(N),0($4) P[i][j], rounded and normalized (p.96); V+I,$4,1.0.
+!        V-ICR,$3,... $3 back to the top of the next column, counted;
+!                     BZXCZ while $3's count (8 a row) is not zero, and
+!                     $3 refilled to RMTRIX at zero (XW3's refill is $).
+!        V+I,$2,N     next row of L; CB,$4,SIX counts the rows.
+!
+! THE DATA: L and R are 8 x 8 integers in -3..3, none zero, drawn once
+! from Python's random.Random(4824) (L's 64, then R's), chosen so that no
+! element of either product is zero.  Every product and sum is an exact
+! small integer, so the rounding in SRD(N) and the order of the
+! additions cannot change a word, and each expected element is the
+! normalized word of an integer (p.78).  THE EXPECTED VALUES are worked by
+! tests/verify_problem_4_matrix.py from the words as assembled, with
+! problem_3_expected.py's arithmetic, not by the model, and checked
+! there against the integer sums; the printed program's by a trace of its
+! statements, asserted to give L * R when corrected.
+!
+!   L
+!        1   -1    1   -2    3    2   -2   -2
+!        1    3   -2    3    2   -2    1    2
+!       -2    3    2   -3   -3   -2   -3    1
+!        1    3   -2   -3    3    2   -3   -1
+!       -3   -1    1   -3    2    2    2   -2
+!        2   -3    3   -3   -2   -2    2    2
+!        3    2   -3    1    2   -2    2   -1
+!       -3   -1   -1   -1    1   -2   -2   -3
+!   R
+!        3   -2    1   -1    1   -3    3   -2
+!       -3    2    3    2   -2   -3   -1   -3
+!        2    1    1    3    2    2   -1   -2
+!        2   -3    1    1    3    2   -1    3
+!       -2    1    2   -1   -2   -1   -3    3
+!        2   -3    3    3    3    2   -1    1
+!        2   -1    3   -3   -1    2   -1    1
+!        3    2    1    1   -2    1    1   -2
+!   P = L * R, the statement (the corrected program)
+!       -8   -2    1    5    5   -7   -6    6
+!       -4    4   14   -7  -15  -12   -4    3
+!      -18   29  -14   18  -12  -11    7  -34
+!      -27    9    7    7  -13  -28   -4   -6
+!      -12    4    6   -3   -4   12  -18   12
+!       25    8   -9  -10   -3    7   17  -20
+!       -8   -4   10  -22  -14  -22    2    5
+!      -29    9  -21   -7   -6   -4   -8   13
+!   P', what the printed program stores (63 of 64 elements differ)
+!        3   18    4    6    6  -16   -6  -21
+!       34    9   -2   -1   -7   -9   25  -10
+!       14  -25    4   -3    1   26   16   14
+!       -6  -10   -3  -21   24  -23   -2   11
+!      -16   12   11    4  -42   -2    4  -11
+!       -9   10  -20  -16   19    1  -13   12
+!       19    8    6   -3   -7   -1   11  -11
+!        7  -29    3  -25    2   -1   12   15
+!
+!   Also checked: $2, $3, $4 and XW22 at the end, from the same trace, the
+!   guards, and the halt PC.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD, BOTH RUNS (64 elements, three
+! index words, XW22, the guards and the PC): as printed the model stores
+! exactly P' (63 of the 64 differ from L * R), and corrected, L * R.
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   L[0][0] 1 -> 2 ("LMTRIX  DD(N),1;" -> "DD(N),2;", by --sub on the copy
+!   that runs; the expected words are worked from the deck as it
+!   stands).  PREDICTED: P[0][j] += R[0][j] corrected, and P'[0][j] +=
+!   Rw[j] as printed: row 0, eight elements, either way.
+!   OBSERVED, both runs: FAIL P00-P07 and nothing else (as printed P00
+!   6 for 3, (16)006C000000000000 for (16)004C000000000000; corrected P00
+!   -5 for -8).
+
+! --- printed p.42, Method 1 -------------------------------------------
+START   CNOP
+        TI,3,XW2,$2                     !'load three index registers
+SIX     SX,$2,XW22
+LU      DL(U),ZERO
+LIFT    LFT(U),0($2)                    !'main loop
+        *+(N),0($3)
+VPI     V+I,$3,N                        !'advance $3 to next row
+        CBR+,$2,LIFT                    !'advance $2 to next element
+        SRD(N),0($4)                    !'new product matrix element
+        V+I,$4,1.0
+        V-ICR,$3,N*N-1.0
+        BZXCZ,LU                        !'towards new product element of same row
+        V+I,$2,N                        !'procedure for new row
+        CB,$4,SIX;BEW,$
+XW2     XW,LMTRIX,N,XW22
+XW3     XW,RMTRIX,N,$
+XW4     XW,PMTRIX,N,$
+XW22    XW,0
+ZERO    DD(N),0
+! --- the deck's: N, which the page does not define, and the data ------
+N       SYN,8
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+LMTRIX  DD(N),1;DD(N),-1;DD(N),1;DD(N),-2;DD(N),3;DD(N),2;DD(N),-2;DD(N),-2
+        DD(N),1;DD(N),3;DD(N),-2;DD(N),3;DD(N),2;DD(N),-2;DD(N),1;DD(N),2
+        DD(N),-2;DD(N),3;DD(N),2;DD(N),-3;DD(N),-3;DD(N),-2;DD(N),-3;DD(N),1
+        DD(N),1;DD(N),3;DD(N),-2;DD(N),-3;DD(N),3;DD(N),2;DD(N),-3;DD(N),-1
+        DD(N),-3;DD(N),-1;DD(N),1;DD(N),-3;DD(N),2;DD(N),2;DD(N),2;DD(N),-2
+        DD(N),2;DD(N),-3;DD(N),3;DD(N),-3;DD(N),-2;DD(N),-2;DD(N),2;DD(N),2
+        DD(N),3;DD(N),2;DD(N),-3;DD(N),1;DD(N),2;DD(N),-2;DD(N),2;DD(N),-1
+        DD(N),-3;DD(N),-1;DD(N),-1;DD(N),-1;DD(N),1;DD(N),-2;DD(N),-2;DD(N),-3
+RMTRIX  DD(N),3;DD(N),-2;DD(N),1;DD(N),-1;DD(N),1;DD(N),-3;DD(N),3;DD(N),-2
+        DD(N),-3;DD(N),2;DD(N),3;DD(N),2;DD(N),-2;DD(N),-3;DD(N),-1;DD(N),-3
+        DD(N),2;DD(N),1;DD(N),1;DD(N),3;DD(N),2;DD(N),2;DD(N),-1;DD(N),-2
+        DD(N),2;DD(N),-3;DD(N),1;DD(N),1;DD(N),3;DD(N),2;DD(N),-1;DD(N),3
+        DD(N),-2;DD(N),1;DD(N),2;DD(N),-1;DD(N),-2;DD(N),-1;DD(N),-3;DD(N),3
+        DD(N),2;DD(N),-3;DD(N),3;DD(N),3;DD(N),3;DD(N),2;DD(N),-1;DD(N),1
+        DD(N),2;DD(N),-1;DD(N),3;DD(N),-3;DD(N),-1;DD(N),2;DD(N),-1;DD(N),1
+        DD(N),3;DD(N),2;DD(N),1;DD(N),1;DD(N),-2;DD(N),1;DD(N),1;DD(N),-2
+PMTRIX  DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+        DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7;DD(BU,64,8),7
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START

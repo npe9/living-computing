@@ -14149,6 +14149,16 @@ run "C22-6578 Problem 4.7 Method 1 -- 64 x 64 bit transpose, bit by bit" python3
 run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, as printed (XW2 count 7: not a transpose)" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2
 run "C22-6578 Problem 4.7 Method 2 -- 8 x 8 blocks by C0111, XW2 count 8: the transpose" python3 verify_problem_4_matrix.py 4.7m2 ../decks/problem_4_7_method2.strap ASM=strap2 --corrected
 
+# 4.8, printed p.42: P = L * R for 8 x 8 floating matrices, LFT / *+ / SRD,
+# CBR+, and "V-ICR,$3,N*N-1.0" assembled as printed by strap2.  AS PRINTED
+# "V+I,$3,N" and "V+I,$2,N" advance N HALF words (an integer in a 19-bit
+# field, C28-6129 printed pp.8-9), so the program forms sum Lw[4i+k] Rw[j+4k]
+# and 63 of 64 elements differ from L * R; the run checks that, the
+# corrected run (N+N, 2*N*N-1.0) checks L * R.  Small integers: every word
+# is exact.  Both passed as the model stood.
+run "C22-6578 Problem 4.8 -- product of square matrices, as printed (N half words: not L * R)" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2
+run "C22-6578 Problem 4.8 -- product of square matrices, corrected: L * R" python3 verify_problem_4_matrix.py 4.8 ../decks/problem_4_8.strap ASM=strap2 --corrected
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run
