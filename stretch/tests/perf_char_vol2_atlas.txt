@@ -2,7 +2,7 @@
 # per-instruction timing atlas, transcribed.
 #
 #   docs/7030_Performance_Characteristics_Vol2_Mar61.pdf, PDF pages 37-189.
-#   33 of the 139 table pages are transcribed here; the #KIND lines below say
+#   93 of the 139 table pages are transcribed here; the #KIND lines below say
 #   which, and which remain.
 #   Reader: tests/atlas_oracle.py (load_atlas).  Self-check:
 #   tests/check_atlas_data.py.  Prose: docs/atlas_oracle.md.
@@ -10,7 +10,11 @@
 # EVERY CELL BELOW WAS READ FROM THE PAGE IMAGE (pdftoppm -r 300 -gray,
 # viewed at half size, doubtful cells re-viewed as a full-resolution crop),
 # on 2026-11-15.  Nothing was taken from docs/ocr/ or from the PDF's text
-# layer.  The sheets mirror the printed pages: one line per printed row,
+# layer.  The floating-point sheets, PDF 42-101, were read the same way on
+# 2026-11-16 (300 dpi table crops; every column whose last digit alternates
+# -- 3.60/3.61, 2.70/2.71, 4.36/4.37 -- re-read as a zoomed column strip;
+# each page's instruction name checked against its printed title).
+# The sheets mirror the printed pages: one line per printed row,
 # cells in printed column order, so a re-reader can lay a sheet beside its
 # page.
 #
@@ -69,6 +73,13 @@
 #  class=FP   (group NO INDEXING then group INDEXING, three columns each)
 #    ni_int ni_ext ni_ibox ix_int ix_ext ix_ibox
 #      = INTERNAL OPERAND | EXTERNAL OPERAND | I-BOX OPERAND
+#    Pages without forwarding (PDF 42-70) print INTERNAL blank, so SHOWN
+#    omits ni_int/ix_int; pages with forwarding (PDF 73-101) print all six.
+#    COND forwarding=no|yes|unstated; KR/KMGR pages add ah_indicator=off|on.
+#    Rows: (N) NEG (N) A(N) NEG A(N) (U) NEG (U) A(U) NEG A(U), as printed.
+#    PDF 71 (E+I): ea_one ea_2040 = EFFECTIVE ADDRESSES over ONE | 2040
+#    (its NOTE quotes the headings).
+#    PDF 72 (SHF): shift_1 shift_3 shift_6 shift_9 shift_12 shift_95.
 #  class=IBOX (PDF 109)
 #    ext_direct ext_effective int_direct int_effective idx_direct
 #    idx_effective immediate

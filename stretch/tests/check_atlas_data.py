@@ -25,6 +25,11 @@ WHAT IT CHECKS
       neg      FP: a NEG row against the row above it with the same
                modifiers, same block and column
       ibox     FP: I-BOX OPERAND against EXTERNAL OPERAND
+      fwd      FP: a page with forwarding (PDF 73-101) against the page
+               31 earlier without it, same instruction, block, row and
+               column (EXTERNAL and I-BOX; INTERNAL is blank without)
+      quotefp  PDF 104's FP subject rows (ST(U) ... LFT(U)) against the
+               instruction's no-forwarding sheet; see QUOTED_FP
       noncon   BRANCH: a NONCON column against its CONSEC twin
       quoted   PDF 104's row captions quote the instruction's own figure
                ("5.73 IN A LX ENVIRONMENT"); the index-arithmetic ones are
@@ -74,6 +79,22 @@ The failure sets are the OBSERVED ones.
    failure, PDF 107's SUM, and that only because the SUM line was written
    after the reading.  Had 312.68 been the original mis-reading, nothing
    here would know.  That is what the REACH line counts.
+
+MEASURED INJECTIONS, 2026-11-16, on the floating-point pages (PDF 42-101).
+Each was made to a COPY of the file and the check run with --file=; the
+original was never written and `cmp` against HEAD was clean after.
+
+ * A record three rules reach -- PDF 88 (*+), NORMALIZED 1., (U) ni_ext
+   6.60 -> 6.90: four failures: 'fwd' (127, 0, 1) against (128, 0, 0);
+   'ibox' (63, 0, 1) against (64, 0, 0); 'neg' (87, 0, 9) against
+   (88, 0, 8); PDF 88's SUM.
+ * A record only 'neg' reaches -- PDF 72 (SHF), ADDRESS FIELD NOT
+   INDEXED, (U) shift_95 8.70 -> 8.40: two failures: 'neg' (47, 0, 1)
+   against (48, 0, 0); PDF 72's SUM.  (The INTERNAL columns and PDF 71
+   are reached the same way.  'neg' compares within a column, so a
+   misread repeated down a whole column would pass it.)
+ * A record only 'quotefp' reaches -- PDF 104 ST(U) quoted 4.82 -> 4.80:
+   two failures: 'quotefp' (3, 6, 3) against (2, 6, 4); PDF 104's SUM.
 
     python3 tests/check_atlas_data.py          # the check
     python3 tests/check_atlas_data.py -v       # plus per-column grid census
