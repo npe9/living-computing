@@ -512,24 +512,21 @@ class Pass1:
         I/O op has the SEOP code when the Reference Manual gives it a SEOP
         form (opcodes.IO_OP's xSEOP), and a CTL function op has CTL's -- MCP
         prints REW(SEOP), UNLOAD(SEOP), SPFL(SEOP) and GONG(SEOP), and
-        printed p.165 line 11's machine-code column is CTL(SEOP)'s.  The class
-        is that of the entry with the mode written, so L(N)(V+I) is a
-        floating op's: none."""
-        if base.kind in ("vfl", "conn"):
-            # An immediate op has no field P for one (Reference Manual
-            # printed p.21), so its op index has abc 000, and LI(V+IC) is
-            # message 2 as on the 7030, not message 1 (optab7030).
-            if optab7030.secondary_code(op) != optab7030.ABC["VFL"]:
-                return set()
-            return set(optable._a.PROGRESSIVE_SECONDARY_OP)
-        if base.kind == "io":
-            op = optable._a.IBM_SPELLING.get(op, op)    # SU is LOC (C28-6129 p.53)
-            under = "CTL" if op in optable._a.IO_FUNCTION_OPS else op
-            if under in optable._a.IO_BASE_OPS and under + "SEOP" in optable.IO_OP:
-                return {"SEOP"}
-        if op == "CW":
-            return set(optable._a.CW_SECONDARY)
-        return set()
+        printed p.165 line 11's machine-code column is CTL(SEOP)'s.
+
+        The class is the abc of the op's index (optab7030.secondary_code), as
+        on the 7030: an immediate op's is 000 (no field P, Reference Manual
+        printed p.21), so LI(V+IC) is message 2; an ambiguous op's is the VFL
+        half's 001, and p.23 (read in the ink 2026-11-15): "the presence of
+        a secondary op establishes the op as a variable field type op", so
+        +N(V+I) with no dds is VFL.  CHOSEN: with a floating mode written,
+        L(N)(V+I), the class is the floating entry's: none."""
+        if base.kind == "fp" and self.mode in MODES:
+            return set()
+        code = optab7030.secondary_code(op)
+        return {optab7030.ABC["VFL"]: set(optable._a.PROGRESSIVE_SECONDARY_OP),
+                optab7030.ABC["SEOP"]: {"SEOP"},
+                optab7030.ABC["CW"]: set(optable._a.CW_SECONDARY)}.get(code, set())
 
     def _illegal(self, unit, op, number=1, text=None):
         """Boxes 19-22: the unit becomes SIC,$15; BE,0 and the error is given.

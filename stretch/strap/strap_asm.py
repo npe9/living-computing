@@ -1960,6 +1960,23 @@ def _classify_vfl_or_fp(stmt):
         else:
             dds_mods.append(m)
 
+    # A PROGRESSIVE SECONDARY WITH NO DDS MAKES THE OP VFL.  C22-6729
+    # printed p.23, read in the ink 2026-11-15: "If the op is an
+    # ambiguous-type op, the presence of a secondary op establishes the
+    # op as a variable field type op; the variable field length skeleton
+    # bit pattern is set up in the unit now".  Before, "+N(V+I)",
+    # "M+N(V+I)" and "M+NMG(V+I)" took the no-dds floating reading and
+    # were refused.
+    if p_progressive is not None and not dds_mods:
+        _sec = [m for m in stmt.mods if m.strip().upper() in PROGRESSIVE_SECONDARY_OP]
+        try:
+            _v = _classify_vfl_or_fp(type('S', (), {
+                'op': stmt.op, 'mods': ['BU'] + _sec, 'lineno': stmt.lineno})())
+        except AssemblerError:
+            _v = (None,)
+        if _v[0] == 'VFL':
+            return ('VFL', _v[1], _v[2], _v[3], p_progressive, dds_mods, None)
+
     conn = classify_connective(base_op)
     if conn is not None:
         return 'CONN', base_op, invert, immediate, p_progressive, dds_mods, conn

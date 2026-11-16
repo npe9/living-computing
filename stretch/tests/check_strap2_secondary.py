@@ -43,6 +43,13 @@ and check_strap2_7030_optab.py):
   SU not respelled in pass1                  only the sweep
   secondary_error not respelling              the sweep, and the op-table
                                              test's block_fresh and decode
+CORRECTED THE SAME DAY from p.23 (read in the ink): a secondary makes an
+ambiguous op VFL, so +N(V+I) with no dds is (BU,64,8)'s word, not message 2;
+the class is now the abc in pass1 too.  MEASURED INJECTIONS, 2026-11-15,
+same method:
+  strap_asm's p.23 rule removed              the +N(V+I) check and the sweep
+  pass1's floating-mode guard removed        only L(N)(V+I)
+  pass1's class by kind, not the abc         only the sweep
 """
 import os
 import sys
@@ -77,6 +84,11 @@ check("+(BU,3)(V+I)(V-I): message 4", one("+(BU,3)(V+I)(V-I),100.0")[0], [4])
 got, plain = one("+(BU,3)(V+I),100.0"), one("+(BU,3),100.0")
 check("+(BU,3)(V+I): legal, and the word differs from plain +",
       (got[0], got[1] != plain[1]), ([], True))
+check("L(N)(V+I): a floating mode written makes the class floating's (CHOSEN), message 2",
+      one("L(N)(V+I),100.0")[0], [2])
+check("+N(V+I): p.23, the secondary makes an ambiguous op VFL; the word is (BU,64,8)'s",
+      (one("+N(V+I),100.0")[0], one("+N(V+I),100.0")[1] == one("+N(V+I)(BU,64,8),100.0")[1]),
+      ([], True))
 check("RD(SEOP): legal", one("RD(SEOP),$X2,200")[0], [])
 check("CW(CR): legal", one("CW(CR),100.0")[0], [])
 check("REW(SEOP): a CTL function op takes CTL's SEOP (MCP p.165 line 11)",
@@ -86,15 +98,15 @@ check("REW(SEOP): a CTL function op takes CTL's SEOP (MCP p.165 line 11)",
 # with one secondary of each family, against the abc its op index carries
 # (strap2/optab7030.secondary_code, Fig. 24 p.192): message 2 exactly when
 # the family is not the op's.  EXT is left out: its parentheses are its
-# parameters (C28-6129 printed p.19), not a secondary.  CHOSEN: an
-# ambiguous op written with no dds takes p.7's floating half, which has no
-# field P, so +N(V+I), M+N(V+I) and M+NMG(V+I) are message 2 although the
-# table's one entry for the name carries the VFL half's 001.
+# parameters (C28-6129 printed p.19), not a secondary.  A legal pair must
+# give no message at all.  An ambiguous op with no dds takes the secondary
+# as VFL: p.23, read in the ink, "the presence of a secondary op
+# establishes the op as a variable field type op" (+N(V+I), M+N(V+I) and
+# M+NMG(V+I) were message 2 before).
 sys.path.insert(0, HERE)
 import printed_ops                                  # noqa: E402
 from strap2 import optab7030 as O                   # noqa: E402
 
-AMBIG_NO_DDS = {"+N", "M+N", "M+NMG"}
 REP = {O.ABC["VFL"]: "V+I", O.ABC["SEOP"]: "SEOP", O.ABC["CW"]: "CR"}
 bad, n = [], 0
 for name in printed_ops.optab_names():
@@ -103,9 +115,9 @@ for name in printed_ops.optab_names():
     code = O.secondary_code(name)
     for fam, sec in REP.items():
         msgs = one(f"{name}({sec}),100.0")[0]
-        want2 = fam != code or (sec == "V+I" and name in AMBIG_NO_DDS)
+        want2 = fam != code
         n += 1
-        if (msgs == [2]) != want2 or (not want2 and 2 in msgs):
+        if msgs != ([2] if want2 else []):
             bad.append((name, sec, msgs, code))
 check(f"sweep: message 2 exactly when the op index's abc refuses the family ({n} statements)",
       bad[:12], [])
