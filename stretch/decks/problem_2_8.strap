@@ -1,12 +1,30 @@
 ! C22-6578 PROBLEM 2.8, "PURCHASING LIST ARITHMETIC", printed pp.20-21
 ! (PDF 21-22), read in the ink (and at 170 dpi).
 !
-! >>> TRANSCRIBED AND ASSEMBLED.  NOT REGISTERED AS A RUN: the program is
-! >>> decimal throughout and the model refuses the decimal add (OP at
-! >>> "+(D, 48, 8)", half-word 2006), docs/source_audit.md G2.3's known
-! >>> gap.  With the add refused the scan for the next field never
-! >>> finds its end mark and the program does not halt (OBSERVED: step
-! >>> cap reached, PC 2020, inside KOMF).  <<<
+! >>> TRANSCRIBED AND ASSEMBLED.  NOT REGISTERED AS A RUN.  Until
+! >>> 2026-11-16 the model refused the decimal add (OP at "+(D, 48, 8)",
+! >>> half-word 2006) and the program did not halt (step cap, PC 2020,
+! >>> inside KOMF).  <<<
+!
+! 2026-11-16, G2.3 stage 1 (decimal +, L, ST, M+ built): RUN WITH ASM=strap2
+! (strap_asm gets the decimal DDs wrong, below), STEPS=3000.  OBSERVED:
+!  * product 1's F field (word 1203's low 32 bits) is (16)03064941 where
+!    it was (16)00004941: digits 3 and 6 in zone-0 bytes, "36" -- the
+!    total the program AS PRINTED computes from this data, traced by hand
+!    before the run: "+(D,48,8)" is signed, so E's last byte is a sign
+!    byte, E is read as +00012 and added three times.  Not 375: see the
+!    signed/unsigned reading below.
+!  * product 2's F field is never written: the run is still at the step
+!    cap, PC 2022, in the KOMF loop.  NOT TRACED: whether KOMF's
+!    KF(BU,24)(V+I) against the TESTW accumulator can find this deck's
+!    field boundary at all is the open question (docs/NEXT.md G2.3).
+! So the decimal arithmetic the program reaches runs, and the run is not
+! registered: there is no halt to pin and the loop is not understood.
+!
+! THE TWO BLANK F SUBFIELDS were one "(IQSQ)DD(BU,96,8)" each until
+! 2026-11-16; STRAP II refuses it ("FIELD LENGTH GREATER THAN 64",
+! C22-6531's limit), so each is two 48-bit DDs.  Same bits; the data are
+! the deck's, not the page's.
 !
 !   "A purchasing list consists of a string of fields, each of which
 !   has the following structure:  | A | B | C | D | E | F | G |
@@ -92,7 +110,8 @@ LIST    DD(BU, 8, 8), (2)11111111
         (IQSQ)DD(BU,48,8),BOLTS Q
         DD(DU,24,8), 003
         DD(DU,48,8), 000125
-        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
         (IQSQ)DD(BU,16,8),OKQ
 ! product 2: item 12, "NUTS  ", 2 units at 000040 cents, remarks "END"
         DD(BU, 8, 8), (2)11111111
@@ -100,6 +119,7 @@ LIST    DD(BU, 8, 8), (2)11111111
         (IQSQ)DD(BU,48,8),NUTS  Q
         DD(DU,24,8), 002
         DD(DU,48,8), 000040
-        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
         (IQSQ)DD(DU,24,8),ENDQ
         END, START

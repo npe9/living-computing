@@ -15,11 +15,13 @@
 ! One printed character is uncertain: the first comma of "LWF(D, 60, 5)"
 ! is damaged in the scan and reads as a comma by position only.
 !
-! >>> THE MODEL REFUSES THE DECIMAL LOAD, OUT LOUD (OP), AND THIS DECK
-! >>> PINS THE REFUSAL.  It is docs/source_audit.md G2.3's known gap,
-! >>> "the decimal VFL set", not a new finding.  <<<
+! >>> SINCE 2026-11-16 (G2.3 stage 1) THE MODEL PERFORMS THE DECIMAL LOAD,
+! >>> as an add to zero through the decimal box (bsv/StretchDecBox.bsv),
+! >>> which is this page's own description; the checks are now the
+! >>> hand-derived values below.  Until then it refused it (OP) and the
+! >>> deck pinned the refusal: <<<
 !
-! WHAT THE CHECKS PIN TODAY, AS OBSERVED: the model reports one OP, at
+! WHAT THE CHECKS PINNED THEN, AS OBSERVED: the model reports one OP, at
 ! half-word 2000 (the first L(DU)); all three FIEL words end
 ! 000000000000A5A5, i.e. each ST stored 48 zero bits; the halt PC is
 ! reached.  Whether the LWF(D) and the second L(DU) also set OP was not

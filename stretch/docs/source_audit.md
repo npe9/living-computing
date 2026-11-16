@@ -591,9 +591,15 @@ CHAPTER 2" below.*
 **G2.2 Buchholz Appendix B** adds six more worked programs, independent
 of `C22-6578`.
 
-**G2.3 The arms still refused.** The decimal VFL set (decimal `SRD`
-among them; binary VFL `SRD` is built since 2026-11-16), `SWAP`'s
-remaining variants. `storeTarget`'s invariant names the ones that will
+**G2.3 The arms still refused.** The decimal VFL set, `SWAP`'s
+remaining variants.  **Decimal stage 1 is built (2026-11-16):** decimal
+`L`, `LWF`, `+`/`-`, `+MG`, `M+`, `M+1`/`M-1`, `M+MG`, signed `ST` and
+`SRD`, the sums through the decimal box `mkDecBox`
+(`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  Remaining:
+the decimal compares (stage 2), and decimal `*`/`*+`/`/`, which printed
+pp.68-70 define as LOAD TRANSIT AND SET's action with DTR, not as
+arithmetic -- so they wait for `LTRS`, not for a multiplier box
+(`docs/NEXT.md`, "DECIMAL VFL ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
 need a case when they land.
 
 ## G3 — Assembler completeness, from `C22-6729`'s grammar
@@ -1844,6 +1850,15 @@ pinned refusal whose labels carry the hand-derived values; 2.8 does not
 halt once its add is refused and is not registered.  The first OP that run
 reported was the add's, at half-word 2006, not the `LCV(DU)` before it --
 not examined further.
+
+*2026-11-16, G2.3 stage 1 built (decimal `+`, `L`, `LWF`, `ST`, `SRD`, the
+`M+` family, through `mkDecBox`):* 2.3 Method 4's refusal is flipped -- its
+three words now carry the hand-derived values, and pass.  2.8, run with
+`ASM=strap2`, computes product 1's total as the program as printed does on
+this data (`36`: the printed `+(D,48,8)` is signed, so E's last byte is a
+sign byte -- traced before the run) and then loops in `KOMF` without
+writing product 2; the loop is not traced and 2.8 stays unregistered
+(`docs/NEXT.md` G2.3).
 
 **The assembler (`strap_asm`): two findings, both with reproducers and a
 section in `docs/NEXT.md`, neither fixed.**  The host STRAP II

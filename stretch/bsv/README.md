@@ -419,15 +419,36 @@ nonzero offset (Perf. Char. Vol. 1 Table 3, `StretchTiming.bsv`).
 `decks/vfl_srd.strap` (eleven cases and a CYCLES pin, injections in its header),
 `decks/repro_vfl_srd.strap` and Buchholz B.2 as printed
 (`tests/verify_buchholz_b2.py printed`) are the checks.  Decimal `SRD`
-stays refused with the rest of decimal arithmetic.
+is built since 2026-11-16 with the decimal set below.
+
+**DECIMAL VFL ADD, LOAD AND STORE execute since 2026-11-16 (G2.3 stage
+1): `L`, `LWF`, `+`/`-`, `+MG`/`-MG`, `M+`, `M+1`/`M-1`, `M+MG`, `ST`
+signed and unsigned, `SRD`.**  The decimal sum is a SECOND BOX,
+`mkDecBox` (`StretchDecBox.bsv`): 32 BCD digits, eight a clock, a pass
+for the add and a second pass to recomplement when the signs are unlike
+and the operand is the larger (printed p.60's "complementation and
+recomplementation").  It is instantiated once in `mkEBox` beside
+`mkDivBox`; `NeedBox` carries a `BoxReq` union and the answer comes back
+as a `BoxRsp`.  A decimal `L` is an add to zero through the box, which
+is C22-6578 printed p.14-15's own description and gives its "(1111)2
+... will become (0101)2 with a carry".  Byte placement (any byte size to
+four-bit digits and back, zones kept or taken from the sign byte
+register) is wiring: `decCompact`, `decMergeField`, `decStoreField` in
+`StretchALU.bsv`.  Which codes accept the decimal modifier is ONE
+function, `vflDecimalBuilt` (`StretchVFL.bsv`), read by execute() and
+by `prepareExec`.  `tests/run_decbox_test.sh` tests the box alone
+(literal answers and clock counts, p.60's five examples among them);
+`decks/vfl_decimal_add.strap` is the deck.  Open items: `docs/NEXT.md`,
+"DECIMAL VFL ARITHMETIC (G2.3)".
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`, decimal `SRD` included) except the unsigned
-store (`ST(DU)`, built
-2026-11-08 for MCP's `$TIME`, `decks/vfl_st_decimal.strap`), radix
-conversion (`CV`, `DCV`, `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Decimal-mode VFL (`c=1`) except what `vflDecimalBuilt` lists (the
+radix conversions, and since 2026-11-16 the decimal loads, adds and
+stores above) -- the decimal compares, `LTRS`, `LFT`, and `*`/`*+`/`/`,
+whose decimal form is LOAD TRANSIT AND SET's action (printed pp.68-70);
+radix conversion `DCV`; the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).

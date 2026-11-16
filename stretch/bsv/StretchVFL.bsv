@@ -37,6 +37,35 @@ package StretchVFL;
 import StretchTypes::*;
 import StretchStorage::*;
 
+// >>> WHICH VFL INTEGER OPERATIONS ACCEPT THE DECIMAL MODIFIER. <<<
+// One statement, read by BOTH places that need it -- execute()'s
+// refusal in vflIntOp and the I-box's prepareExec (`completesWithout
+// Fetch`) -- so the two cannot drift; they were two hand-kept copies of
+// an exemption list until 2026-11-16.  An operation NOT listed sets OP
+// when bit 53 is one (the model's scope rule: decode completely, refuse
+// what is not built, loudly).
+//
+//   LCV, CV, LTRCV  the radix conversions: for them bit 53 picks the
+//                   direction (printed p.72), not decimal arithmetic.
+//   L, LWF          decimal byte placement (printed pp.58, 61).
+//   ST, SRD         decimal store, signed and unsigned (printed pp.63-64);
+//                   SRD's rounding is a decimal add (mkDecBox).
+//   +, +MG, M+, M+1, M+MG
+//                   decimal addition (printed pp.60-63), through
+//                   mkDecBox (StretchDecBox.bsv).
+//
+// STILL REFUSED: the comparisons (K, KF, KE, KFE, KR, KFR), LTRS, LFT,
+// and *, *+ and / -- whose decimal form is NOT arithmetic at all but
+// LOAD TRANSIT AND SET's action with DTR (printed pp.68-70), so they
+// wait for LTRS -- and DCV (unused by MCP).
+function Bool vflDecimalBuilt(Bit#(6) code);
+  return code == 6'b000011 || code == 6'b011011 || code == 6'b100011   // LCV CV LTRCV
+      || code == 6'b000101 || code == 6'b100101                        // L LWF
+      || code == 6'b001101 || code == 6'b101101                        // ST SRD
+      || code == 6'b000001 || code == 6'b100001                        // + +MG
+      || code == 6'b001001 || code == 6'b101011 || code == 6'b101001;  // M+ M+1 M+MG
+endfunction
+
 function Bit#(7) effLength(Bit#(6) length) =
   (length == 0) ? 64 : zeroExtend(length);
 

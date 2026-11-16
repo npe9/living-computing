@@ -134,17 +134,14 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // word boundary -- see protViolates' note -- and refuse with OP.
       Bool mPlus = (v.code == 6'b001001) || (v.code == 6'b101001)
                 || (v.code == 6'b101011);
-      // The three radix conversions are let past the decimal refusal;
-      // anything else with the decimal modifier sets OP.
-      Bool radixConv = (v.code == 6'b000011) || (v.code == 6'b011011)
-                    || (v.code == 6'b100011);
-      // So is a decimal UNSIGNED store, since 2026-11-08 (execute()'s
-      // decimalStoreU; RefMan printed p.63).
-      Bool decimalStoreU = (v.code == 6'b001101) && (v.m.unsign == 1);
+      // The decimal refusal: anything with the decimal modifier that
+      // StretchVFL's vflDecimalBuilt does not list sets OP -- the SAME
+      // function execute()'s vflIntOp asks, so the two agree by
+      // construction.
       // The length as the second index leaves it (vflSecondIndex,
       // RefMan printed p.21), as execute() sees it.
       Bit#(7) len_ = effLength(vflSecondIndex(st, v.a).length);
-      Bool done = (v.m.decimal == 1 && !radixConv && !decimalStoreU) // decimal refusal
+      Bool done = (v.m.decimal == 1 && !vflDecimalBuilt(v.code))  // decimal refusal
                || (prog && v.a.i1 == 0)                  // progressive, no index
                || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
                || dfSuppresses(st, w)                    // DF, mask-dependent

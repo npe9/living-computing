@@ -24,6 +24,82 @@ accumulate.
 
 
 
+## DECIMAL VFL ARITHMETIC (G2.3) -- stage 1 built 2026-11-16; what it found
+
+**Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,
+`M+MG`, signed and unsigned `ST`, and `SRD`.  The sums -- including
+`L`'s, which C22-6578 printed p.14 calls "a decimal 'add to zero'" -- go
+through `mkDecBox` (`bsv/StretchDecBox.bsv`), a multi-cycle box reached
+by execute()'s `NeedBox` bail, which is now a union of two boxes.  The
+list of decimal-capable codes is `vflDecimalBuilt` (`StretchVFL.bsv`),
+read by both execute() and the I-box's `prepareExec`.  Oracle deck:
+`decks/vfl_decimal_add.strap` (printed p.60's five ADD examples and 35
+hand-derived cases).
+
+**Still refused:** the comparisons (stage 2), `LTRS`, `LFT`, `DCV`, and
+decimal `*`, `*+`, `/`.
+
+### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong
+
+Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is
+specified, this operation has the same action as LOAD TRANSIT AND SET,
+except that the two high-order bits of the left zeros counter are set to
+zeros", and its Programming Note: "A decimal MULTIPLY instruction can be
+used to produce an automatic entry to a subroutine, where the desired
+decimal multiplication may be performed".  Printed p.69 says the same of
+`*+` ("the two high-order bits of the left zeros counter are set to
+10") and printed p.68's table gives DIVIDE 01.  So there is no decimal
+multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
+`LTRS`'s action plus DTR, and they wait for `LTRS` (unbuilt in either
+radix).  `docs/spec_decimal.md` section 2, Class C, had this already.
+
+### Findings about the BINARY arms, recorded and not changed
+
+* **RN on a negative zero.**  Printed p.60's example 4, "00000- Result
+  zero Result negative", turns RN on for a zero with a minus sign.  The
+  decimal arms do (`setResultIndicatorsDec`); the binary arms'
+  `setResultIndicatorsF` turns RN off for any zero.  The example is
+  decimal (offset 8 bits is two digits), and p.59 defines the
+  indicators once for both radices, so binary probably should too; not
+  changed, because binary decks pin the current reading.
+* **Binary `+` sets neither LC nor PF**, which printed p.60 defines for
+  ADD in both radices.  The decimal arm sets both.
+* **A progressive `+`/`L` whose refill read comes after the operand
+  read may write the accumulator twice** -- the arm writes on the run
+  that then bails for the refill.  Idempotent for `L`; for `+` it would
+  add twice.  NOT MEASURED; noticed while making the decimal arms ask
+  for the box only once every read is in hand.
+
+### Open, decimal
+
+* **Byte size below four with unlike signs** (printed p.58: "normal
+  decimal results may not be produced ... owing to the complementing
+  procedure used"): the model produces the normal result; the abnormal
+  one is not described in any source here.
+* **An invalid digit met by a subtraction** has no source (an add to
+  zero does: C22-6578 printed p.15).  See `StretchDecBox.bsv`'s header.
+* **A field of more than 32 digits** (byte size 1, unsigned, length
+  over 32): digits above the accumulator's 32 set PF on a load or add;
+  an `M+` keeps their old bits and a carry into them is taken as LC.
+* **The box's rate is CHOSEN** (8 digits a clock, a pass 4 clocks, a
+  recomplemented subtraction 8) to fit inside the smallest Table 3
+  budget, which `eboxClocks` already charges by byte; no source for the
+  SAU's decimal cycle was read.
+* **Problem 2.8 runs part of the way and is not registered.**  With
+  `ASM=strap2` (and its two `DD(BU,96,8)` blanks split in two, since
+  STRAP II refuses a field over 64), product 1's F field gets `36` --
+  the total the program as printed computes, because the printed
+  `+(D,48,8)` is SIGNED and so reads E's last byte as a sign (traced by
+  hand before the run).  Then it loops in `KOMF` (PC 2022) and never
+  writes product 2.  NOT TRACED: whether `KOMF`'s `KF(BU,24)(V+I)`
+  against the `TESTW` accumulator can find this deck's next field.  A
+  compare question, binary; stage 2 does not change it.
+* **Two deck-writing errors, mine, found by runs:** `T, 1, $IND, Ik`
+  names INDEX REGISTER 1 as TRANSMIT's count -- the immediate count of
+  one is `TI, 1, ...`.  The first `vfl_decimal_add` and the revised
+  `vfl_decimal_refused` both hung on it (a multi-word transmit from the
+  register onward, not examined further).  Not a model bug.
+
 ## DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL -- settled, 2026-11-16
 
 Two differences between strap2 and strap_asm, found when the C22-6578
@@ -206,9 +282,12 @@ printed p.118 (offset 0) equals ST's page (`StretchTiming.bsv`).
 
 What is still open about it:
 
-* **Decimal `SRD` is refused with OP** (`decks/vfl_srd.strap` case 9),
-  like every decimal arithmetic operation; its "four-bit byte with value
-  five" is a decimal addition.  Build it with decimal `+`.
+* **Decimal `SRD` is BUILT, 2026-11-16** (G2.3 stage 1): the five is
+  added by `mkDecBox` (`bsv/StretchDecBox.bsv`); `decks/vfl_srd.strap`
+  case 9 now loads a decimal accumulator and checks the rounded field
+  (it pinned the OP refusal until then), and `decks/vfl_decimal_add.strap`
+  cases R1-R4 cover rounding, the carry out (LC), a signed field and
+  offset 2 (digit offset 0, "equivalent to a STORE").
 * **Two indicator readings are CHOSEN** (p.64 does not settle them):
   PF from the accumulator as it stands, not the rounded sum; LC as the
   carry out of the numeric width, not the whole field with its sign byte

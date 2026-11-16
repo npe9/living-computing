@@ -93,10 +93,20 @@
 !                    according to the modified accumulator sign" (p.63): T11
 !                    = (16)ACFFFFFFFFFFFFFF, I11 = (16)190.  This is what the
 !                    printed "SRDN,$L" of C22-6578 4.9 does, at offset 0.
-!   9 decimal        (run last) SRD(DU,8,4): refused, Operation Code Invalid, as the
-!                    model refuses decimal arithmetic (the five added is a
-!                    decimal addition; only the decimal UNSIGNED STORE is
-!                    built).  T9 stays all ones; I9 = OP = (16)1000000000000.
+!   9 decimal        (run last) L(DU,16,4) of 1234, then SRD(DU,8,4) at
+!                    offset 4.  BUILT 2026-11-16 (G2.3 stage 1, mkDecBox);
+!                    until then this case pinned the refusal, OP.  p.64,
+!                    Radix: "a four-bit byte with value five is added to the
+!                    four-bit byte immediately to the right of the offset
+!                    ... Carries are propagated as in any decimal addition":
+!                    1234 + 5 at digit 0 = 1239, the field from digit 1 is
+!                    123, two digits stored: T9 = (16)23FFFFFFFFFFFFFF; PF
+!                    from the digit 1 left of them (p.63, "a non-zero byte
+!                    to the left of the high-order byte stored"); no carry
+!                    left the field, so no LC.  I9 = PF MOP RGZ =
+!                    (16)10000000120.  (The accumulator is loaded first
+!                    because the cases before leave BINARY bits in it, (16)
+!                    AB80 -- not decimal digits.)
 !
 ! RUN (registered in tests/run_tests.sh):
 !   cd stretch/tests && ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb \
@@ -114,6 +124,10 @@
 ! FAIL cycles = 934, 40 fewer = ten SRDs at a nonzero offset times 4 --
 ! cases 1-4, 6-8, 10, 11 and the refused decimal case 9, which is charged
 ! too; case 5 (offset 0) is not.
+! 2026-11-16, decimal SRD built (G2.3 stage 1): CYCLES=997, PC 2096.
+! Case 9 gained an L(DU,16,4).  MEASURED: the deck without that L counts
+! 974 still, so the 23 are the L's and the decimal SRD is charged what
+! the refusal was (mkDecBox's 4-clock pass fits inside the E-box budget).
 !
 ! MEASURED INJECTIONS in bsv/StretchExecute.bsv's ST arm, each on a copy,
 ! the arm restored from a saved copy and checked with cmp:
@@ -134,8 +148,9 @@
 !   SRD unbuilt (the model before 2026-11-16)     FAIL 15: T1-T7, I1-I7
 !                                                 (OP), T8 (12C0); T9, I9
 !                                                 and the PC pass, since
-!                                                 decimal SRD is OP either
-!                                                 way
+!                                                 decimal SRD was OP either
+!                                                 way (measured before case
+!                                                 9 was built; not re-run)
 
         SLC, 1000.0
 ! -- 1. round up ---------------------------------------------------
@@ -196,8 +211,10 @@ START   L(BU,64,8), V1
         SRDN(BU,8,8), T11, 8
         L(BU,64,8), $IND, 0
         ST(BU,64,8), I11, 0
-! -- 9. decimal: refused.  Run LAST: OP (bit 15) set here was still on
-!    in case 10's word after Z,$IND when this case ran ninth (observed).
+! -- 9. decimal.  Run LAST: while it was a refusal, the OP (bit 15) it
+!    set was still on in case 10's word after Z,$IND when it ran ninth
+!    (observed).  Built since 2026-11-16 and kept last.
+        L(DU,16,4), V9
         Z, $IND
         SRD(DU,8,4), T9, 4
         L(BU,64,8), $IND, 0
@@ -211,6 +228,7 @@ V3      DD(BU,64,8), (16)01AB00
 V6      DD(BU,64,8), (16)000FF8
 V7      DD(BU,64,8), (16)00A7F8
 V8      DD(BU,64,8), (16)12C0
+V9      DD(BU,64,8), (16)1234000000000000
 
         SLC, 1110.0
 T1      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF

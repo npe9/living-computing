@@ -387,6 +387,111 @@ function Bool decStorePF(Bit#(128) acc, Bit#(4) byteSize, Bit#(7) len_);
   return pf;
 endfunction
 
+// =====================================================================
+// DECIMAL VFL ARITHMETIC'S BYTE PLACEMENT (2026-11-16, G2.3).  Wiring
+// only: the decimal SUM is mkDecBox's (StretchDecBox.bsv), and these
+// four functions move bytes between a storage field of any byte size and
+// the accumulator's four-bit digits, which is all p.58 asks of them.
+// Each is a per-byte-size case whose arms elaborate to wires, the shape
+// decStoreField above already has.
+// =====================================================================
+
+// A STORAGE FIELD'S NUMERIC BYTES AS FOUR-BIT DIGITS.  Reference Manual
+// printed p.58 (PDF 61), Radix and Byte Size: "If the byte size is
+// greater than four, only the four low-order bits of each byte take part
+// in the operation.  The remaining bits of each byte are ignored. ...
+// When complementation is not involved, each byte of the storage operand
+// is converted to a four-bit byte for processing by the addition of
+// high-order zeros."  And: "the high-order byte of the memory operand
+// may have an effective byte size less than that specified ... The
+// high-order byte is processed according to its effective byte size" --
+// which right-justified bits with zeros above the field give for free.
+//
+// `num` is the NUMERIC part, right-justified (a signed field's sign byte
+// already stripped, as fieldToSM does).  Byte k becomes digit k.  The
+// accumulator has 32 digit positions (printed p.57); a byte size of one
+// can describe 64 digits, and the second result says whether any digit
+// beyond the 32nd is non-zero -- the caller's Partial Field.
+function Tuple2#(Bit#(128), Bool) decCompactOf(Integer b, Bit#(64) num);
+  Bit#(128) out = 0;
+  Bool      hi  = False;
+  Integer   wb  = (b < 4) ? b : 4;
+  for (Integer k = 0; k * b < 64; k = k + 1)
+    for (Integer j = 0; j < wb; j = j + 1) begin
+      Integer i = k * b + j;
+      if (i < 64) begin
+        if (k < 32) out[4*k+j] = num[i];
+        else if (num[i] == 1) hi = True;
+      end
+    end
+  return tuple2(out, hi);
+endfunction
+
+function Tuple2#(Bit#(128), Bool) decCompact(Bit#(64) num, Bit#(4) byteSize);
+  case (byteSize)
+    1: return decCompactOf(1, num);
+    2: return decCompactOf(2, num);
+    3: return decCompactOf(3, num);
+    4: return decCompactOf(4, num);
+    5: return decCompactOf(5, num);
+    6: return decCompactOf(6, num);
+    7: return decCompactOf(7, num);
+    default: return decCompactOf(8, num);
+  endcase
+endfunction
+
+// THE INVERSE FOR A TO-MEMORY ADD, which keeps every bit it does not
+// replace.  Printed p.61, ADD TO MEMORY, Radix: "If the byte size of a
+// decimal storage field participating in ADD TO MEMORY is greater than
+// four, only the four low-order bits of each byte participate in the
+// addition.  The high-order bits of each byte are not changed by the
+// operation.  If a byte size less than four is specified ... Only the
+// low-order bits of each sum byte replace the byte from storage ... the
+// high-order positions that are dropped from each sum byte may contain
+// one bits.  These are lost and no indication of the loss is given."
+// So bit j of byte k is digit k's bit j while j < 4, and the old bit
+// otherwise.  (STORE's version, decStoreField, takes the zone bits from
+// the sign byte register instead; p.58: "they remain unchanged in all
+// other arithmetic operations to storage".)
+function Bit#(64) decMergeFieldOf(Integer b, Bit#(128) digits, Bit#(64) old);
+  Bit#(64) out = old;
+  for (Integer i = 0; i < 64; i = i + 1) begin
+    Integer k = div(i, b);
+    Integer j = mod(i, b);
+    if (j < 4 && 4*k+j < 128) out[i] = digits[4*k+j];
+  end
+  return out;
+endfunction
+
+function Bit#(64) decMergeField(Bit#(128) digits, Bit#(64) old, Bit#(4) byteSize);
+  case (byteSize)
+    1: return decMergeFieldOf(1, digits, old);
+    2: return decMergeFieldOf(2, digits, old);
+    3: return decMergeFieldOf(3, digits, old);
+    4: return decMergeFieldOf(4, digits, old);
+    5: return decMergeFieldOf(5, digits, old);
+    6: return decMergeFieldOf(6, digits, old);
+    7: return decMergeFieldOf(7, digits, old);
+    default: return decMergeFieldOf(8, digits, old);
+  endcase
+endfunction
+
+// The number of digit positions a numeric part of `numBits` bits holds
+// at this byte size, counting a short high-order byte as a digit
+// (printed p.58: it "is processed according to its effective byte
+// size").  At most 64 (byte size one).
+function Bit#(7) decDigitCount(Bit#(7) numBits, Bit#(4) byteSize);
+  Bit#(8) n = zeroExtend(numBits);
+  Bit#(8) b = zeroExtend(byteSize);
+  return truncate((n + b - 1) / b);
+endfunction
+
+// A mask of the low `nd` digit positions of the 32.
+function Bit#(128) decDigitMask(Bit#(7) nd);
+  Bit#(9) sh = 4 * zeroExtend(nd);
+  return (nd >= 32) ? '1 : ((128'd1 << sh) - 1);
+endfunction
+
 // Pack a sign-magnitude value back into a right-justified `len_`-bit
 // field with the given byte size (signed) or none (unsigned).
 //

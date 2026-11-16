@@ -2345,12 +2345,18 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
 # negative accumulator into a signed field, offset 0 ("equivalent to a
 # STORE"), a signed field whose carry crosses the numeric width, a carry
 # through the field, rounding the accumulator in place through $R, SRDN
-# signed and unsigned, and decimal SRD refused with OP; CYCLES pins the
-# Table 3 SRD term.  MEASURED INJECTIONS in vfl_srd's header.
+# signed and unsigned, and decimal SRD (refused with OP until G2.3 stage 1,
+# 2026-11-16; now performed through mkDecBox); CYCLES pins the Table 3 SRD
+# term.  CYCLES 974 -> 997 and PC 2094 -> 2096 on 2026-11-16: case 9 gained
+# one L(DU,16,4) to give the decimal SRD something to round.  MEASURED:
+# the same deck without that L still counts 974, so the decimal SRD costs
+# what the refused one was charged (its box's 4 clocks fit inside the
+# E-box budget) and the 23 are the added L's.  MEASURED INJECTIONS in
+# vfl_srd's header.
 run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
-run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal OP; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2094" "CYCLES=974+-0" \
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=997+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2359,7 +2365,7 @@ run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0,
     "T6_signed_carry:1115=0x000FFFFFFFFFFFFF" "I6_LC:1125=0x20000000140" \
     "T7_carry_through:1116=0xA80FFFFFFFFFFFFF" "I7:1126=0x120" \
     "T8_acc_rounded_in_place:1117=0x13C0" \
-    "T9_decimal_untouched:1118=0xFFFFFFFFFFFFFFFF" "I9_OP:1127=0x1000000000000" \
+    "T9_decimal_rounded:1118=0x23FFFFFFFFFFFFFF" "I9_PF:1127=0x10000000120" \
     "T10_srdn_signed:1130=0xAC08FFFFFFFFFFFF" "I10_srdn_minus:1132=0x190" \
     "T11_srdn_unsigned:1131=0xACFFFFFFFFFFFFFF" "I11_srdn_minus:1133=0x190"
 
@@ -2607,22 +2613,67 @@ run "binary VFL sign byte: position, flags, zones, ST's indicators, LWF, M+" ./r
     "TFP:547=0" \
     "UFP:548=0" \
     "VFP:549=0"
+# >>> DECIMAL VFL ADD, LOAD AND STORE (G2.3 stage 1), 2026-11-16. <<<  The
+# sums are mkDecBox's (bsv/StretchDecBox.bsv), reached through execute()'s
+# NeedBox bail.  A1-A5 are Reference Manual printed p.60's five ADD examples
+# (A4 is "00000- Result zero Result negative"); A14 is C22-6578 printed
+# p.15's "(1 1 1 1)2 ... will become (0101)2 with a carry"; the rest are
+# hand-derived in the deck's header from printed pp.58-64.  MEASURED
+# INJECTIONS: see the deck's header.
+run "DECIMAL ADD/LOAD/STORE: p.60's examples, LC, PF, zones, +MG, M+ family, signed ST, SRD (G2.3)" ./run_program.sh ../decks/vfl_decimal_add.strap StretchVflDecAddTb \
+    "PC=2311" \
+    "A1_ind:1700=0x20" "A1_acc:1801=0x113279" "A1_sb:1802=0" \
+    "A2_ind:1701=0x90" "A2_acc:1804=0x7577" "A2_sb:1805=0x0800000000000000" \
+    "A3_ind:1702=0x40" "A3_acc:1807=0" "A3_sb:1808=0" \
+    "A4_ind_RZ_RN:1703=0x50" "A4_acc:1810=0" "A4_sb:1811=0x0800000000000000" \
+    "A5_ind:1704=0x20" "A5_acc:1813=1" "A5_sb:1814=0" \
+    "A6_ind_LC:1705=0x20000000040" "A6_accL:1815=0" "A6_accR:1816=0" \
+    "A7_ind_PF:1706=0x10000000020" "A7_accL:1818=0x7600000000000000" "A7_accR:1819=0x12" \
+    "A8_ind:1707=0x20" "A8_acc:1822=0x3412" \
+    "A9_ind:1708=0x20" "A9_acc:1825=0x123" \
+    "A10_ind:1709=0x50" "A10_acc:1828=0" "A10_sb:1829=0x0800000000000000" \
+    "A11_ind:1710=0x90" "A11_acc:1831=0x22479" "A11_sb:1832=0x0800000000000000" \
+    "A12_ind:1711=0x20" "A12_acc:1834=0x8023" "A12_sb:1835=0" \
+    "A13_ind_TF:1712=0x10000020" "A13_acc:1837=0x113279" \
+    "A14_ind:1713=0x20" "A14_acc_assimilated:1840=0x45" \
+    "A15_ind_PF:1714=0x10000000020" "A15_accL:1842=0x7600000000000000" "A15_accR:1843=0" \
+    "M1_ind:1715=0x120" "M1_field:1600=0x760550FFFFFFFFFF" \
+    "M2_ind_LC:1716=0x20000000120" "M2_field:1601=0x3750FFFFFFFFFFFF" \
+    "M3_ind_LC_neg:1717=0x20000000190" "M3_field:1602=0x253FFFFFFFFFFFFF" \
+    "M4_ind_PF:1718=0x10000000120" "M4_field:1603=0x56FFFFFFFFFFFFFF" \
+    "M5_ind:1719=0x120" "M5_field_zones_kept:1604=0xF4F6FFFFFFFFFFFF" \
+    "M6_ind_LC:1720=0x20000000140" "M6_field:1605=0x00FFFFFFFFFFFFFF" \
+    "M7_ind:1721=0x190" "M7_field:1606=0x018FFFFFFFFFFFFF" \
+    "M8_ind:1722=0x150" "M8_field:1607=0x0008FFFFFFFFFFFF" \
+    "S1_ind:1723=0x190" "S1_field:1608=0x756798FFFFFFFFFF" \
+    "S2_ind_PF:1724=0x10000000190" "S2_field_bs6:1609=0x187248FFFFFFFFFF" \
+    "R1_ind_PF:1725=0x10000000120" "R1_field:1610=0x235FFFFFFFFFFFFF" \
+    "R2_ind_LC:1726=0x20000000140" "R2_field:1611=0x000FFFFFFFFFFFFF" \
+    "R3_ind_PF:1727=0x10000000190" "R3_field:1612=0x588FFFFFFFFFFFFF" \
+    "R4_ind_PF:1728=0x10000000190" "R4_field_off2:1613=0x77FFFFFFFFFFFFFF"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).
+# 2026-11-16 (G2.3 stage 1): decimal ST is built, so the refused operation
+# is now LFT(D,32,8), with a TI copying $FT out.  CYCLES 140 -> 161, PC
+# 393 -> 395.  MEASURED: without the TI the deck still counts 161, so the
+# 21 are LFT's against the refused ST's (the TI overlaps).  A model pin.
 run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
-    "PC=393" \
-    "CYCLES=140+-0" \
+    "PC=395" \
+    "CYCLES=161+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \
-    "refused_tail:273=18446744073709551615"
+    "refused_tail:273=18446744073709551615" \
+    "FT_unchanged:280=0"
 # >>> A SCOPE TEST, AND LABELLED AS ONE. <<<  The real 7030 performs
 # decimal VFL arithmetic; this model does not, and refuses it with OP so
 # that an unbuilt operation is a visible refusal rather than a silent
 # wrong answer.  The three radix conversions are exempt and tested
 # elsewhere: for LCV/CV/LTRCV the decimal bit selects a DIRECTION
-# (printed p.72) rather than asking for decimal arithmetic.
+# (printed p.72) rather than asking for decimal arithmetic.  Since
+# G2.3 stage 1 (2026-11-16) the decimal +, L, ST, SRD, M+ family are built
+# too; StretchVFL's vflDecimalBuilt replaces the old !radixConv exemption.
 #
 # INJECTION (measured): replace the arm's
 # `vi.m.decimal == 1 && !radixConv` test with `False` and all four
@@ -9325,6 +9376,11 @@ run "bsv smoke test (make run)" make run
 # divRestoringStep); one reduction clock too few fails 8 of 8, two of
 # them as "clocks = 3, want 4".
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
+# G2.3 stage 1, 2026-11-16: mkDecBox, the decimal adder/subtracter, on 9
+# vectors with literal answers (0-4 are Reference Manual printed p.60's
+# five examples).  Injection (no recomplement pass) fails vectors 1 and 7
+# only -- the two subtractions without an end carry.
+run "DECIMAL ADD/SUBTRACT BOX (p.60's examples, literal answers)" "$TESTS_DIR/run_decbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -13562,13 +13618,14 @@ run "C22-6578 Problem 2.3 -- every fifth bit deleted, five methods" ./run_progra
     "M3_pair2:1206=0xF1A509C3E786A5A5" "M3_pair3_VIC_corrected:1207=0xF1A509C3E786A5A5" \
     "M5:1208=0xF1A509C3E786A5A5" "M6:1209=0xF1A509C3E786A5A5" \
     "FIELD_unchanged:1201=0xF8AAB04F06EBE0DF"
-# 2.3 Method 4 is DECIMAL and the model refuses it out loud (OP): G2.3's
-# known gap.  These pin the refusal; the label carries the hand-derived
-# value each must become when the decimal arm lands.
-run "C22-6578 Problem 2.3 Method 4 -- decimal load REFUSED (pinned)" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
-    "M4a_REFUSED_want_907254361805A5A5:1203=0xA5A5" \
-    "M4b_REFUSED_want_907254361805A5A5:1204=0xA5A5" \
-    "M4c_REFUSED_want_907254361455A5A5:1205=0xA5A5"
+# 2.3 Method 4 is DECIMAL.  Until 2026-11-16 the model refused it (OP) and
+# these pinned the refusal with the hand-derived values in their labels;
+# since G2.3 stage 1 they ARE the values.  M4c is IBM's own claim, printed
+# p.15 comment (b): "(1 1 1 1)2 ... will become (0101)2 with a carry".
+run "C22-6578 Problem 2.3 Method 4 -- decimal load as an add to zero" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
+    "M4a:1203=0x907254361805A5A5" \
+    "M4b_LWF_signed:1204=0x907254361805A5A5" \
+    "M4c_F_assimilated:1205=0x907254361455A5A5"
 # 2.4: bit reversal, both methods; Method 2 depends on CONNECT leaving the
 # rest of the accumulator alone (RefMan printed pp.74-75).
 run "C22-6578 Problem 2.4 -- bit reversal, two methods" ./run_program.sh ../decks/problem_2_4.strap StretchP24Tb "PC=2014" \
