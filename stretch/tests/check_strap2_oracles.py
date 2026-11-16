@@ -32,7 +32,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 SKIP = {"verify_mcp_page.py",           # takes a page number, run below
-        "verify_problem_1_9.py"}        # takes a method and runs the model
+        "verify_problem_1_9.py",        # takes a method and runs the model
+        "verify_buchholz_b2.py",        # takes a mode and runs the model
+        "verify_buchholz_b6.py"}        # takes a mode and runs the model
 PIN_VERIFY = 273
 PIN_PAGES = 351
 # p.33 makes only a CNOP a NOP.  strap_asm also puts a NOP in the half word it
@@ -41,7 +43,14 @@ PIN_PAGES = 351
 KNOWN = {"mcp_bootstrap_p131.strap", "mcp_bootstrap_p210.strap",
          "mcp_bootstrap_p268.strap", "mcp_bootstrap_p274.strap",
          "mcp_bootstrap_p358.strap", "mcp_bootstrap_p363.strap",
-         "mcp_bootstrap_p371.strap"}
+         "mcp_bootstrap_p371.strap",
+         # strap_asm assembles a mode D/DU DD as a binary integer; C22-6531
+         # pp.28-29 says decimal digits, and strap2 gives them (NEXT.md,
+         # "DD in decimal mode").  The difference is strap_asm's bug.
+         "problem_2_8.strap", "repro_dd_decimal_mode.strap"}
+# strap_asm refuses what strap2 accepts: a blank after a radix specifier,
+# "(2) 10", printed in C22-6578 p.21 (NEXT.md, the radix-blank entry).
+KNOWN_REFUSE = {"repro_radix_blank.strap"}
 
 
 def run(args):
@@ -86,7 +95,8 @@ def main():
     same = 0
     for ln in r.stdout.splitlines():
         m = re.match(r"(\S+)\s+(\S+\.strap): (.*)", ln)
-        if m and not (m.group(1) == "words" and m.group(2) in KNOWN):
+        if m and not (m.group(1) == "words" and m.group(2) in KNOWN) \
+              and not (m.group(1) == "strap_asm-refuses" and m.group(2) in KNOWN_REFUSE):
             print(f"FAIL image: {ln[:170]}")
             fails += 1
     print(r.stdout.splitlines()[-1] if r.stdout else r.stderr[-300:])
