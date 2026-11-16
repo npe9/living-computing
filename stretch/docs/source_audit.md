@@ -2234,10 +2234,9 @@ reproducer `decks/repro_fp_store_location8.strap`).  Only x = .125
 passes, and by luck -- and since 2026-11-16 only when written `1X-2`,
 exactly 1/8: `.125` as STRAP II assembles it is one unit low and fails
 like .1 (registered --known-wrong; NEXT.md "DD(N) 1.0 IS 1 - 2^-48").  Erratum: the statement says "Create 2 pi x" for
-"cos 2 pi x".  Method 2 (printed p.43) is NOT run: it has the same
-`D*(N), $L` and `SRDN, $L`, so it adds no independent evidence until
-those are fixed, and its `E+I, (U), 1` is refused by strap_asm as printed
-("undefined symbol U") -- read in the ink but not decided.
+"cos 2 pi x".  Method 2 (printed p.43) was set aside here as having
+"the same `D*(N), $L` and `SRDN, $L`"; **read at 300 dpi 2026-11-16 its
+last store is `SRD(N), $L`, with a dds** -- the floating store, run below.
 
 ### 4.6 8 x 8 bit transpose, printed pp.39-40 -- `decks/problem_4_6_method{1,2,3}.strap`, `problem_4_6_method3_n5.strap` -- PASSES as the model stood
 
@@ -2343,15 +2342,40 @@ sets the bit; BIMAGE starts all ones so `Z, BIMAGE` is seen; word 10
 shows `L` (not `LWF`) zeroing the flag bits.  **No model finding, no
 printed erratum.**
 
+### 4.9 cosine, Method 2, printed p.43 -- `decks/problem_4_9_method2.strap` -- PASSES as the model stood; one printed erratum
+
+cos pi x by the series to K = 12 in x**2, then `D*(N),$L; E+I(U),1;
+D-(N),WON`: 2 cos**2 - 1.  **Its last store is printed `SRD(N), $L`,
+with a dds** (Method 1 prints `SRDN,$L`, the VFL form): the floating
+store into location 8, so Method 2 does not wait on the VFL SRD.
+Assembled by strap2 with KONST's `$PI/12*$PI/11` ... and `WON DD(N),
+1.0` as printed (every KONST word truncated, under one unit; WON is
+1 - 2**-48).  `tests/verify_problem_4_fp.py 4.9m2:<x> DECK ASM=strap2`,
+five arguments in the statement's -1/8..1/8 (1X-2, -1X-2, .1, -.1, .03):
+2 exact checks ($2, $SB plus with no flags) and the PC, 4 within --
+TEMP 1 unit, the answer (word 8 with $SB's sign, p.80) 4 units from the
+program's own number, and from the page's exact series and from cos 2 pi
+x by a bound worked from the deck as it stands.  Model 0.17-2.26 units
+from the program, 2.61-6.99 from cos; the series cut is .02 units at
+x = 1/8, so "terms up to K = 12 would be adequate" holds.  **No model
+finding.**
+
+* **Printed erratum: `E+I, (U), 1`.**  STRAP II refuses it (message 40,
+  EXTRA FIELDS: the dds stands as a field after the comma); supplied
+  `E+I(U), 1`.  The earlier "refused by strap_asm (undefined symbol U)"
+  is the same card.
+* Reading: `KONST($ 2)` has a blank in the ink; strap2 makes the same
+  word as `KONST($2)`.
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two), 4.8, 4.5, 4.4, 4.3.  **Two model bugs, one cause (location 8 as a
+methods), 4.7 (two), 4.8, 4.5, 4.4, 4.3, 4.9 Method 2.  **Two model bugs, one cause (location 8 as a
 floating-point operand and as a store), both FIXED 2026-11-16; the
 "lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
-nine printed errata, and two unexcluded cases (4.5 with k1 = 0, 4.4
-with a dense vector).**  Not reached: 4.9 Method 2, 4.2 (decimal VFL,
-refused), 4.1 (VFL square root).  The note that the second
+ten printed errata, and two unexcluded cases (4.5 with k1 = 0, 4.4
+with a dense vector).**  Not reached: 4.2 (decimal VFL, refused), 4.1
+(VFL square root).  The note that the second
 I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
 `vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
 offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it

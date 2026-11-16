@@ -14096,6 +14096,18 @@ run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .125 as STRAP II assembles it, K
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .03, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.03 --known-wrong W8_sign_byte_plus_no_flags
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = .1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
 run "C22-6578 Problem 4.9 Method 1 -- COSF, x = -.1, KNOWN WRONG (SRDN,\$L is the VFL SRD, unimplemented)" python3 verify_problem_4_fp.py 4.9m1:-.1 --known-wrong W8_series_as_programmed,W8_cos_2_pi_x,W8_sign_byte_plus_no_flags
+# 4.9 Method 2, printed p.43: cos pi x by the series to K = 12, then
+# 2 cos**2 - 1.  ITS LAST STORE IS PRINTED "SRD(N), $L", WITH A DDS: the
+# floating store into location 8, not Method 1's VFL SRDN, so it does not
+# wait on the VFL SRD.  Assembled by strap2 (KONST is "$PI/12*$PI/11" ...
+# in DD(N)); "E+I, (U), 1" is refused by STRAP II (EXTRA FIELDS) and
+# supplied as "E+I(U), 1".  The answer is word 8 with $SB's sign (p.80).
+# Five arguments in the statement's -1/8..1/8, all passed as the model stood.
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, cos(2 pi 1/8)" python3 verify_problem_4_fp.py 4.9m2:1X-2 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, cos(2 pi -1/8)" python3 verify_problem_4_fp.py 4.9m2:-1X-2 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = .1" python3 verify_problem_4_fp.py 4.9m2:.1 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = -.1" python3 verify_problem_4_fp.py 4.9m2:-.1 ../decks/problem_4_9_method2.strap ASM=strap2
+run "C22-6578 Problem 4.9 Method 2 -- COSF2, x = .03" python3 verify_problem_4_fp.py 4.9m2:.03 ../decks/problem_4_9_method2.strap ASM=strap2
 # Location 8 as a floating-point address, both directions (Reference
 # Manual printed p.80: accumulator bits 0-59 plus sign byte bits 4-7, "both
 # fetch and store type"; fixed 2026-11-16, docs/NEXT.md).  The store:
