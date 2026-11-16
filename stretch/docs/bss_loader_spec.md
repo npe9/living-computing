@@ -10,7 +10,9 @@ marks what they do not say as **UNSPECIFIED**, and does not fill it in.
 **What MCP's listing holds.** The March 1963 listing holds the MCP
 *loader* and the *resume load* program that drives it: type area
 22LOADER, printed pp.320-334, with its data block on p.291. It takes
-**15** card classes, not 18. Printed p.329 is missing from the scan.
+**15** card classes, not 18. Printed p.329 is missing from the scan;
+a labelled RECONSTRUCTION of it (`decks/mcp_p329_reconstruction.strap`,
+2026-11-16, section 7.2) runs C, P and D cards, but it is not IBM's code.
 
 **What it does not hold.** It holds no BSS processor, no link program,
 no node table, and no code for K, A or Z cards. Its only BSS content
@@ -300,7 +302,9 @@ C28 p.21. Hollerith, not column binary.
   0-9 for hex (`CT0011(BU,10)`), the value being the leading-zero
   count; blank is zero (L p.327 l.49; L p.328 ll.26-27, 41-44).
 - A 12 punch on a hex digit goes to `AOCTH1` (L p.328 l.29), which is on
-  p.329. A-F decoding is lost with that page.
+  p.329. A-F decoding is lost with that page. The reconstruction
+  (section 7.2) CHOOSES row + 9 (12-1 = A .. 12-6 = F), with 12-0 to
+  AERR6.
 
 Dump formats (C28 p.21): 0.0 / 0.40 octal-hex with / without panel;
 1.0 / 1.40 floating point; 2.0 / 2.40 index word; 17.0 / 17.40 octal-hex
@@ -792,8 +796,8 @@ reduced by the in-arc card number. For the library, `YRLDTA` was set to
 load. A library routine's card count is 0, and a card never ends it. Its
 end comes through DFETCH's end return, `YLERR` → `YAERR1` "-LIBRARY ROUTINE
 WAS READ" (L p.334 ll.7-16), which sets the count to 1 and enters
-`ARNORM`. Run that way, its vector is sent and the job ends. Not yet run: C, P
-and D cards (§7.2).
+`ARNORM`. Run that way, its vector is sent and the job ends. C, P and D
+cards run through the RECONSTRUCTED p.329 (§7.2, mode `octal`).
 
 ### 7.2 Printed p.329: lost, inside the loader
 
@@ -813,6 +817,24 @@ by references from transcribed pages:
 Also on it: the end of `AOIGN2` (p.328 ends mid-routine at `V+I,$3,.32`),
 and whatever else fills the span. Text: 6728-0 p.85, chart p.86; C28
 pp.4-5. Reconstruct, labelled, against those addresses.
+
+**RECONSTRUCTED, 2026-11-16** (no second copy found; search record in the
+deck header and `reading_notes/fortran_bss_plan.md` R0.3):
+`decks/mcp_p329_reconstruction.strap`, NOT IBM's code. Every label above
+lands at its address and every landed word is unchanged
+(`tests/check_p329_reconstruction.py`); `APCRD4+1.` (L p.330 l.37) is a
+full word after `APCRD4`. The page also names `AOCT4A`, `AOCTH2`,
+`APCRD5`, `ADCRD1`, `ADCRD2`, `AERR6`, `AERR7` and `APT168`, which no
+landed card names. Every instruction is CHOSEN, each with its reason in
+the deck. It is used only where asked (`mcp_image.pages(..., p329=True)`);
+`MISSING_PAGES` still holds 329, so the transcription checks, the
+never-used-symbols list and `prosa_dict`'s gap tag are unaffected.
+What the landed pages force on it, as read: P and D cards skip the
+decimal-point test (L p.327 ll.44-47), so `AOCTL6` makes it; a P or D
+continuation reaches `APCRD2` only with `ALOWWD` = 0 (L p.328 ll.9-12);
+nothing landed turns `ADCRDI` off, so the reconstruction turns it and
+`APCRDI` off at `APCRD4`. Run: `tests/gen_loader_deck_tb.py` mode
+`octal`, against absolute assembly.
 
 **Paths that touch p.329:** P, D (via `APCRD4+1.`), hex A-F, ignored
 corrections, and any C card reaching a decimal-point column that holds no
@@ -995,7 +1017,7 @@ calls by `SIC,$X15 ; B,name` (6751 p.31).
   or the 1964 manuals (18). An owner's decision, not the documents'.
 - **G3.** The check-sum algorithm in any document (section 5.3).
 - **G4.** Printed p.329's code (section 7.2). Hex A-F's card code in
-  particular.
+  particular. RECONSTRUCTED (CHOSEN code, cited addresses), not found.
 - **G5.** BSS's code, its size, its memory layout, its own limits ("exceeded
   available storage" is the only statement on table capacity).
 - **G6.** How BSS writes subprograms to TWS: the arc header's 2 words, what

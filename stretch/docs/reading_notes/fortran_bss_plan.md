@@ -122,7 +122,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 
 ### 1.2 What the repo already implements (read from the code and NEXT.md)
 
-**MCP's loader** (L pp.320-334) is transcribed bit-exact, except printed **p.329**, which is missing from the scan.
+**MCP's loader** (L pp.320-334) is transcribed bit-exact, except printed **p.329**, which is missing from the scan. Since R0.3 (2026-11-16) a **RECONSTRUCTION** of it, `decks/mcp_p329_reconstruction.strap`, fills the 34 words; it is used only where a caller asks (`mcp_image.pages(..., p329=True)`).
 
 **Run on the model** (`tests/gen_loader_deck_tb.py`; NEXT.md "BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12"):
 
@@ -137,8 +137,9 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 
 **Run since (R1, 2026-11-16):** modes `bss2` and `bsslib`. A second subprogram with `SRNXAD` ≠ 0, both from TWS (`AREADS`, p.327 ll.11-22) and as a library entry, with the loader handing the next read to resume load. See R1's status below.
 
+**Run through the reconstructed p.329 (R0.3, 2026-11-16):** mode `octal`, C, P and D cards. The results test the reconstruction, not IBM's page.
+
 **Not run:**
-- C, P and D cards, which go through p.329.
 - K, A and Z cards, which are absent from the 1963 loader.
 
 ### 1.3 What is missing for BSS
@@ -161,7 +162,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 - The listing reads a library entry by a 36-bit `LB`-prefixed type-area name (spec G7).
 - No such type areas are in `strap/prosa.py` or `prosa_dict.py`. I checked by grep: no FORTRAN, BSS, LPC or LFORTRAN.
 
-**(c) Printed p.329**, needed for P and D cards, hex A-F, and short C cards. Reconstruct it at the addresses the spec fixes (§7.2), or find a second copy of the listing.
+**(c) Printed p.329**, needed for P and D cards, hex A-F, and short C cards. **RECONSTRUCTED (R0.3, 2026-11-16)**; a second copy (F3) is still the way to replace it with IBM's code.
 
 **(d) The MCP choice** (spec G2): the 1963 listing (15 classes) or the 1964 manuals (18 classes, plus "set blank common to +∞"). This is the owner's decision.
 
@@ -457,6 +458,18 @@ All are under `http://www.bitsavers.org/pdf/ibm/7090/` unless another location i
 - **R0.2** The MCP version decision, 1963 or 1964 (spec G2). It fixes K/A/Z, +∞ blank common and message texts. Owner's call.
 - **R0.3** Printed p.329, reconstructed (34 words at fixed addresses, spec §7.2), or found (F3).
   - Oracle: 6728-0 p.85 chart and C28 pp.4-5, with existing labels fixing the entry addresses.
+  - **STATUS 2026-11-16: NOT FOUND; RECONSTRUCTED.** The record follows.
+#### R0.3, the record (2026-11-16)
+
+- **Searched, not found.** The volume-1 PDF and both OCR texts (no TA00044x-49x serial, no `22LOADER` p.329 card); C22-6728 and -1 (prose and charts, no code); C28-6379-0 (card formats); `docs/chm/README.md` and `archival_inventory.md` (no other edition held). F3 (IBM Archives, NARA RG 457) is outside the repository.
+- **Reconstructed**, labelled RECONSTRUCTION: `decks/mcp_p329_reconstruction.strap`, 49 statements, 68 half words, 235112.00-235153.40. Its header lists the pages read in the ink (L pp.327 ll.32-50, 328, 330, 331 ll.1-23; 6728 p.85 and Figure 42; C28 pp.4-5, 21; 6728-1 p.94 as an analogue) and says, line by line, what is CITED and what CHOSEN.
+  - CITED: the span and its fall-through ends; the eight addresses AOIGN3, AOIGN1, AOCTH1, AOCTL6, APCARD, APCRD2, APCRD4 and APCRD4+1.; that the page names AOCT4A, AOCTH2, APCRD5, ADCRD1, ADCRD2, AERR6, AERR7 and APT168 (`check_never_used_symbols.py`'s ABSENT list).
+  - CHOSEN: every instruction. Each has its reason in the deck.
+- **What the landed pages force** (the deck's (a)-(c)): P and D cards skip the decimal-point test, so AOCTL6 must do it; a P or D continuation reaches APCRD2 only with ALOWWD = 0 (p.328 ll.9-12, as read); nothing landed turns ADCRDI off, so the page turns both ADCRDI and APCRDI off at APCRD4.
+- **Two first-run findings, fixed in the deck:** a connective resets the counts (Ref. Manual p.76), so AOCTH1 cannot read the digit row from $LZC after it; and a continuation C card needs $2 reset to AOXW3.
+- **Checks.** `tests/check_p329_reconstruction.py` (placement, landed words unchanged, the names; injections in its header). `gen_loader_deck_tb.py` mode `octal`: C cards with hex, a short card, a continuation, an ignored half word and an ignored card, two P cards (half and full word) and a D card, against absolute assembly, ALL TESTS PASSED, three measured injections in its header.
+- **Open:** P/D continuations (need ALOWWD = 0); 12-0 and 12-7..12-9 in a hex column (only 12-0 is rejected); C28's "last half word not stepped" exception (a later loader); a 1 punch in a P card's origin point turns AOIGNI on but the patch is still inserted.
+
 - **R0.4** The disk path for TWS and library reads (`AREADS`, p.327 ll.11-22) under the loader.
   - Oracle: the existing loader `bss` mode, extended to `SRNXAD` ≠ 0.
 
@@ -560,7 +573,7 @@ Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC
     - ARNRM1 then counts 1 to 0. Both vector words are sent and the job ends through the branch return.
     - Injection: p.334 l.14 as `LI(BU,18),2.` fails exactly the two vector words, the branch address and the PC.
   - Control: a card count planted in a library table changes nothing (p.324 l.24).
-  - **C, P, D: stopped.** R0.3 is not done. Printed p.329 is missing and not reconstructed, and P, D, hex digits and every short C card go through it (spec §7.2). The one C form that avoids p.329 (an origin and four half-words of 0-9) is not tested.
+  - **C, P, D: run through the reconstructed p.329** (R0.3 below, mode `octal`).
 
 ### R2. RECONSTRUCT the BSS processor as a 7030 program (medium; about 2-4K words, a guess; basis: 9F07's BSS Control of about 870 FAP lines plus Library Search of about 1,200, scaled up for the 7030's segmentation phases and three tables)
 
