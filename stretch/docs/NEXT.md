@@ -17019,3 +17019,14 @@ And one thing the page does not say: **`RLN2` is one word, so the
 result is wrong by up to 1.39 |x| units** -- 847 measured at x = 709,
 the low ten bits.  It is the program's arithmetic, not the model's: the
 same result is within 1.75 units of `2**(x * RLN2)`.
+
+### Problem 4.12, printed p.47, and 4.13, printed pp.49-50: both pass; one misprinted constant
+
+`decks/problem_4_12.strap`, `decks/problem_4_13.strap`.  No model or
+assembler finding beyond the DD(N) refusals above (4.12's `DD(N), $PI`,
+4.13's two `DD(N), 0.0`).  In the ink:
+
+* 4.13 `LEGQ8X`, printed p.50: the fourth abscissa `.18343 46434 95650`
+  should be `.18343 46424 95650`.  Run as printed.
+* 4.12's typeset formula, printed p.46, has an e with a bar over it for
+  the inner exponent; read e**-x from the program.

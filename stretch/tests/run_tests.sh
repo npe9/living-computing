@@ -13459,6 +13459,13 @@ run "C22-6578 Problem 4.11 -- EXP, the exponential subroutine" python3 verify_pr
 # read from $L and $SB, where the printed BEW leaves it.  Passed as stood.
 run "C22-6578 Problem 4.12 -- f(pi) through EXP twice, SRT into \$L, R/" python3 verify_problem_4_fp.py 4.12
 
+# 4.13, printed pp.49-50, the last problem in the book: MAIN, the 8-point
+# Legendre-Gauss subroutine LEGQ8, the integrand SUBR and EXP, assembled
+# together as the page says.  LEGQ8 patches its own two branches by LVE/SVA
+# from a SIC word used as data; LFT, *N+, *+, SRD, SLO.  Passed as stood.
+# One abscissa is misprinted in its ninth digit and is run as printed.
+run "C22-6578 Problem 4.13 -- LEGQ8, numerical integration, four printed pieces" python3 verify_problem_4_fp.py 4.13
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

@@ -143,7 +143,55 @@ def p4_12(sym):
                 exact=exact, within=within)
 
 
+def p4_13(sym, src=None):
+    from strap_asm import assemble
+    main = sym['MAIN'] // 64
+    x15 = (sym['MAIN'] + 64) << 40        # LVI, $15, $+1.0 at MAIN
+
+    def f(img, x, e):
+        t = e(img, -x)
+        return 2 * x * e(img, t) / (1 - t).sqrt()
+
+    def rule(e):
+        # s * sum of w (f(t + s z) + f(t - s z)), a = 0 and b = 1 so s = t
+        # = 1/2 exactly; the nodes and weights are the words AS ASSEMBLED
+        # from the page's fifteen-digit decimals, erratum and all.
+        def g(img):
+            h = D('0.5')
+            tot = D(0)
+            for i in range(4):
+                z, w = img('LEGQ8X+%d' % i), img('LEGQ8W+%d' % i)
+                tot += w * (f(img, h + h * z, e) + f(img, h - h * z, e))
+            return h * tot
+        return g
+
+    exact = [('P_minus_half_b_minus_a', 'LEGQ8P', 0x0008000000000008),
+             ('Q_half_b_plus_a', 'LEGQ8Q', 0x0008000000000000),
+             ('x2_restored', 'addrIndex(2)', 0),
+             ('x15_restored', 'addrIndex(15)', x15),
+             ('LEGQ82_saved_x2', 'LEGQ82', 0),
+             ('LEGQ8F_saved_x15', 'LEGQ8F', x15),
+             ('x14_value14_count0', 'addrIndex(14)',
+              (14 << 46) | (sym['XW14'] // 64))]
+    # SVA, $2, LEGQ8A / LEGQ8B: the two "B, $" become "B, SUBR".  The
+    # expected words are the same deck assembled with that written out.
+    if src is not None:
+        patched = src.replace("LEGQ8A  B, $", "LEGQ8A  B, SUBR").replace(
+            "LEGQ8B  B, $", "LEGQ8B  B, SUBR")
+        assert src.count("LEGQ8A  B, $") == 1 and src.count("LEGQ8B  B, $") == 1
+        pw = assemble(patched).words
+        for lab in ('LEGQ8A', 'LEGQ8B'):
+            exact.append(('%s_branch_is_SUBR' % lab, lab, pw[sym[lab] // 64]))
+    within = [('ANS_rule_as_programmed', 'ANS', rule(exp_as_programmed), 8),
+              ('ANS_eight_point_rule', 'ANS',
+               rule(lambda img, x: x.exp()), 16)]
+    return dict(module='StretchP413Tb', halt=2 * (main + 5) + 1,
+                dump=('MAIN', 'TEMP'), exact=exact, within=within,
+                steps=4000000)
+
+
 PROBLEMS = {'4.11': ('problem_4_11.strap', p4_11),
+            '4.13': ('problem_4_13.strap', p4_13),
             '4.12': ('problem_4_12.strap', p4_12)}
 
 
@@ -169,7 +217,7 @@ def main():
         print("INJECTED: %r -> %r" % (old, new))
     prog = assemble(src)
     sym = prog.symtab
-    spec = spec_fn(sym)
+    spec = spec_fn(sym, src) if args[0] == '4.13' else spec_fn(sym)
 
     def word_of(s):
         if isinstance(s, int):

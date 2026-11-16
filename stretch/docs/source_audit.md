@@ -1950,3 +1950,27 @@ and `R/`.  **No wrong result.**  The page's comment (d), that it and EXP
 assemble together with "no multiply defined symbol", holds.  One
 uncertain reading, in the typeset formula only (an e with a bar over
 it, read e**-x from the program and from 4.13).
+
+### 4.13 numerical integration, printed pp.47-51 -- `decks/problem_4_13.strap` -- PASSES as the model stood
+
+9 exact checks and the PC, 2 within-bound checks
+(`tests/verify_problem_4_fp.py 4.13`).  The book's last and largest
+program: MAIN, the 8-point Legendre-Gauss subroutine LEGQ8, the
+integrand SUBR and EXP, about a hundred printed statements, assembled
+together.  ANS = 2.72454650263143, 2.11 units from the rule worked from
+the page.  Adds: **a `SIC, SUBR; NOP` word used as data, read by `LVE`
+and stored by `SVA` into two branches (self-modification, both words
+read back)**, `LFT` with `*N+` and `*+`, `SRD`, `SLO` with a sum kept in
+two words, `D-`, `E-I(U)`, `*N`, and three levels of `$15` linkage.
+**No wrong result.**
+
+* **A misprint in the ink**: `LEGQ8X`'s fourth abscissa is printed
+  `.18343 46434 95650`; the Legendre-Gauss node is `.18343 46424 95650`.
+  Run as printed.  It is worth 5.3E-11 in the answer and the check
+  follows it (the expected value is computed from the nodes as
+  assembled); correcting it moves the model's ANS and the expected value
+  together.
+* **`SRD` is built.**  "G2.3 The arms still refused" above lists it; it
+  ran here.  `bsv/README.md` already says so.
+* What is checked is the 8-point RULE, 2.724546, not the integral,
+  2.723620: the integrand goes as sqrt(x) at 0.
