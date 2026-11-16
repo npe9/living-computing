@@ -126,7 +126,10 @@ def _program(setup, body, data, loop):
     s.append("        SLC, (8)%o.0" % BODY_ADDR)
     lines = list(body)
     if loop:
-        lines.append("CB, $X14, BODY")
+        # The count register is $X15: PDF 105 puts transmit's I-box
+        # operands in "$2 through $14", and a 13-word TRANSMIT into 18.0
+        # overwrote the $X14 this once used -- two cases never halted.
+        lines.append("CB, $X15, BODY")
     lines.append("B, $")
     first = True
     for line in lines:
@@ -194,7 +197,7 @@ def _read(p):
 
 def _tb_text():
     import gen_tb
-    src = _program(["LX, $X14, ATLCNT"], [], [], loop=False)
+    src = _program(["LX, $X15, ATLCNT"], [], [], loop=False)
     prog = _assemble(src)
     prog.words = dict(_image(src))
     # gen_tb writes the FASTLOAD image as a side effect, to the relative
@@ -262,7 +265,7 @@ class Case:
 
     def __init__(self, rec, setup, instr_lines, data=(), xor_body=0, note=""):
         self.rec = rec
-        self.setup = ["LX, $X14, ATLCNT"] + list(setup)
+        self.setup = ["LX, $X15, ATLCNT"] + list(setup)
         self.instr_lines = list(instr_lines)      # rotated to fill the body
         self.data = list(data)
         self.xor_body = xor_body

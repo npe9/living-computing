@@ -606,8 +606,18 @@ specific errors.
 
 **G4.1 Write the atlas oracle.** `run_tests.sh:3057` has said Perf.
 Char. Vol. 2's per-instruction atlas is the real timing oracle and that
-`perf_char_timing.py` is "shaped for" it. It is still not written, and
-**M2's correctness is defined as how much of that residual it closes**.
+`perf_char_timing.py` is "shaped for" it. **M2's correctness is defined
+as how much of that residual it closes**.
+
+*Status 2026-11-16: written, first measurement taken.* The oracle is in
+`docs/atlas_oracle.md`. 33 of the 139 atlas pages are transcribed
+(`tests/perf_char_vol2_atlas.txt`; the fast self-check
+`tests/check_atlas_data.py` is in `run_tests.sh`). `tests/atlas_oracle.py`
+runs 6,265 cases in about an hour. Today's residual has mean −18.9
+clocks and median −7.1, with 7% exact. The largest single cause is that
+the model's VFL time does not depend on the operation. Remaining: FP
+pages 42-101 and VFL forwarding/immediate (106 pages), plus the
+generators listed in that doc.
 
 **G4.2 Keep the probe guard honest.** `verify_no_probes.py` caught three
 real accidents in one day; add a check for anything else that looks
