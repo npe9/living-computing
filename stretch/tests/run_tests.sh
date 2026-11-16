@@ -14202,6 +14202,12 @@ run "C22-6578 Problem 4.5 -- x_1 y_1 non-zero: length 0 is 64, as printed (not t
 # over the rest.  Worked from the statement.  Passed as the model stood.
 run "C22-6578 Problem 4.4 -- compression of a sparse vector by its bit image" python3 verify_problem_4_matrix.py 4.4 ../decks/problem_4_4.strap ASM=strap2
 
+# 4.3, printed p.37: the bit image of 64 numbers, L(U) and RZ deciding zero --
+# a zero FRACTION (printed p.85), whatever the exponent, sign or flags, seven
+# such words in the data -- and CM1111(BU,1)(V+I) setting the bit.  Worked
+# from that definition.  Passed as the model stood.
+run "C22-6578 Problem 4.3 -- bit image of 64 numbers, a zero fraction is zero" python3 verify_problem_4_matrix.py 4.3 ../decks/problem_4_3.strap ASM=strap2
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

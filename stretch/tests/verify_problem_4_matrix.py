@@ -12,6 +12,7 @@ defines, worked here and not by the model.
     4.5n37  decks/problem_4_5.strap           the same deck, N = 37
     4.5k0   decks/problem_4_5.strap           x_1 y_1 non-zero, as printed
     4.4     decks/problem_4_4.strap           compression of a sparse vector
+    4.3     decks/problem_4_3.strap           bit image of 64 numbers
 
 THE DECK AND ITS ASSEMBLER ARE NAMED ON THE RUN LINE, as run_program.sh's
 are: the decks are assembled by the host STRAP II (they hold "N*N", which
@@ -425,6 +426,30 @@ def spec_4_4(sym, words, corrected, N=24):
     return exact, note
 
 
+def spec_4_3(sym, words, corrected):
+    w = lambda s: s // 64                       # noqa: E731
+    NB = w(sym['NUMB'])
+    # the statement, and the test the program makes: L(U) sets RZ "for all
+    # zero result fractions" (Reference Manual printed p.85; p.88, LOAD's
+    # indicators "set as in ADD"): exponent, sign and flags do not count
+    nz = [((words[NB + i] >> 4) & ((1 << 48) - 1)) != 0 for i in range(64)]
+    image = sum(1 << (63 - i) for i in range(64) if nz[i])
+    exact = [("BIMAGE", w(sym['BIMAGE']), image)]
+    # $1: CB+ 64 times from 0.0, count 64 to 0, no refill (p.43)
+    exact += [("x1", 17, xword(64 * 64, 0, w(sym['XW1'])))]
+    # $2: one bit a number, by V+ (BIT is VF,0.1) or by CM1111's (V+I)
+    exact += [("x2", 18, xword(sym['BIMAGE'] + 64, 0, w(sym['XW2'])))]
+    # location 7: the last CONNECT TO MEMORY stored one 1 bit (p.76)
+    exact += [("w7_lzc_aoc", 7, 1 << (63 - 50))]
+    last = words[NB + 63]
+    # L(U): bits 0-59 replaced, 60-127 unchanged (zero from reset), the
+    # sign to sign-byte bit 4 and the flag bits set to ZERO (p.88)
+    exact += [("acc_left", 8, last & ~0xF), ("acc_right", 9, 0),
+              ("sign_byte", 10, ((last >> 3) & 1) << 59)]
+    note = "statement: %d of 64 non-zero, image %016X" % (sum(nz), image)
+    return exact, note
+
+
 # ---------------------------------------------------------------------------
 
 CORRECTIONS = {
@@ -443,7 +468,8 @@ DECKS = {'4.7m1': ('problem_4_7_method1.strap', 'StretchP47M1Tb'),
          '4.5': ('problem_4_5.strap', 'StretchP45Tb'),
          '4.5n37': ('problem_4_5.strap', 'StretchP45N37Tb'),
          '4.5k0': ('problem_4_5.strap', 'StretchP45K0Tb'),
-         '4.4': ('problem_4_4.strap', 'StretchP44Tb')}
+         '4.4': ('problem_4_4.strap', 'StretchP44Tb'),
+         '4.3': ('problem_4_3.strap', 'StretchP43Tb')}
 # A run of a deck under a different N, or other data, the page allows:
 # applied BEFORE the expected words are worked, so they follow it (unlike
 # --sub, which is an injection the expectation does not follow).
@@ -539,7 +565,7 @@ SPECS = {'4.7m1': spec_4_7m1, '4.7m2': spec_4_7m2, '4.8': spec_4_8,
          '4.5': lambda s, w, c: spec_4_5(s, w, c, 40),
          '4.5n37': lambda s, w, c: spec_4_5(s, w, c, 37),
          '4.5k0': lambda s, w, c: spec_4_5(s, w, c, 40),
-         '4.4': spec_4_4}
+         '4.4': spec_4_4, '4.3': spec_4_3}
 
 
 def main():

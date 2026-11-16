@@ -1,0 +1,152 @@
+! C22-6578 PROBLEM 4.3, "BIT IMAGE OF A SEQUENCE OF NUMBERS", printed
+! p.37 (PDF 38), Method 1, read in the ink at 300 dpi.
+!
+!   "Given 64 numbers in successive full words beginning at NUMB.  Many
+!   of these are floating-point zeros, but some are not.  Create a full
+!   word beginning at BIMAGE in which successive bits reflect the
+!   condition of the successive words, such that a zero number will be
+!   represented by a zero bit image and a nonzero will have a 1 bit as
+!   image."  Comment (a): the image serves sparse matrix multiplication,
+!   "tested via the logical connective 'and,' and the subsequent
+!   querying of $AOC and $LZC" -- Problem 4.5.
+!
+! THE THIRTEEN PRINTED STATEMENTS FROM "LX, $1, XW1" TO "XW2 XW, BIMAGE, 0,
+! $" ARE AS PRINTED, assembled by the host STRAP II (ASM=strap2).  The
+! deck adds START on the first line, for END, and the data between two
+! guards.  BIMAGE starts as all ones, so "Z, BIMAGE" is seen.  Reading:
+! "(V+I)" is printed with the I's serif touching the parenthesis; it is
+! (V+I), as the assembled word shows.  A speck after XW2's "$" is a mark
+! in the paper.
+!
+! WHAT THE PROGRAM DOES, by the Reference Manual (22-6530-2, printed
+! page = PDF - 3):
+!   Z, BIMAGE          STORE ZERO (p.31).
+!   LU  L(U), NUMB($1) a floating LOAD, unnormalized; it sets the
+!                      arithmetic result indicators "as in ADD" (p.88),
+!                      and "the indicator RZ is turned on for all zero
+!                      result fractions" (p.85): A ZERO HERE IS A ZERO
+!                      FRACTION, whatever the exponent, sign or flags.
+!   BZRZ, FIX          non-zero: CM1111(BU,1)(V+I),0.1($2), CONNECT TO
+!                      MEMORY with connective 1111 (Figure 20, p.76): a
+!                      one at $2's bit, and $2 one bit on (p.21).
+!   V+, $2, BIT        zero: $2 one bit on by the value field of
+!                      "BIT VF, 0.1" (p.24).
+!   CAB CB+, $1, LU    $1 one word on, count 64 down (p.43).
+!
+! THE DATA AND THE EXPECTED VALUES, worked by
+! tests/verify_problem_4_matrix.py from the words as strap2 assembles them
+! and the definition above, not by the model.  NUMB, 64 words in hex:
+!   non-zero (12): words 0, 3, 7, 12, 18, 25, 31, 40, 47, 55, 62, 63 --
+!   among them a fraction of 1 at exponent 48 (word 7), a negative
+!   unnormalized fraction 1 with all three flags (word 12), exponents
+!   -1000 and 1000, and, last, a negative word with flags T and V.
+!   zero (52): zero words, and seven zero fractions that are not zero
+!   words: exponent 5 (word 1), sign minus (2), flags only (4), exponent
+!   -300 with sign and flags (9), exponent 1023 (20), exponent -1023 with
+!   sign and a flag (33), and sign minus alone (50).
+!   Expected:
+!     BIMAGE         (16)9108204100810103
+!     $1             value 64.0, count 0, refill XW1: (16)0010000000000026
+!     $2             BIMAGE + 64 bits, count 0, refill XW2:
+!                    (16)0032400000000027
+!     location 7     the last CONNECT TO MEMORY stored one 1 bit: ones 1,
+!                    left zeros 0 (p.76): (16)0000000000002000
+!     word 8         word 63's bits 0-59, bits 60-63 still 0 (p.88)
+!     word 9         0
+!     word 10, $SB   sign 1, flags ZERO -- L, not LWF, sets the flag bits
+!                    to zero (p.88): (16)0800000000000000
+!     the guards and the halt at the printed BEW.
+!
+! PASSED AGAINST THE MODEL AS IT STOOD, 2026-11-16 (9 checks and the PC).
+!
+! INJECTION, DATA SIDE, OBSERVED 2026-11-16:
+!   word 5 made non-zero, fraction 1 ("(16)0000000000000000  !5" ->
+!   "(16)0000000000000010  !5", by --sub on the copy that runs; the
+!   expected words are worked from the deck as it stands).  PREDICTED:
+!   BIMAGE bit 5 alone; $2 steps one bit either way.  OBSERVED: FAIL BIMAGE
+!   ((16)9508204100810103) and nothing else.
+!
+! --- printed p.37, Method 1 -------------------------------------------
+START   LX, $1, XW1
+        LX, $2, XW2
+        Z, BIMAGE                       !'assume most are zeros
+LU      L(U), NUMB($1)
+        BZRZ, FIX                       !'usually unsuccessful
+        V+, $2, BIT                     !'increase by one bit
+CAB     CB+, $1, LU
+        BEW, $
+FIX     CM1111(BU, 1) (V+I), 0.1($2)
+        B, CAB
+BIT     VF, 0.1
+XW1     XW, 0.0, 64, $
+XW2     XW, BIMAGE, 0, $
+! --- the deck's: the data, between guards; BIMAGE starts as all ones --
+        SLC, 199.0
+GUARD1  DD(BU,64),(16)A5A5A5A5A5A5A5A5
+BIMAGE  DD(BU,64),(16)FFFFFFFFFFFFFFFF
+NUMB    DD(BU,64),(16)0028000000000000  !0
+        DD(BU,64),(16)00A0000000000000  !1
+        DD(BU,64),(16)0000000000000008  !2
+        DD(BU,64),(16)029ABCDEF0123458  !3
+        DD(BU,64),(16)0000000000000007  !4
+        DD(BU,64),(16)0000000000000000  !5
+        DD(BU,64),(16)0000000000000000  !6
+        DD(BU,64),(16)0600000000000010  !7
+        DD(BU,64),(16)0000000000000000  !8
+        DD(BU,64),(16)259000000000000B  !9
+        DD(BU,64),(16)0000000000000000  !10
+        DD(BU,64),(16)0000000000000000  !11
+        DD(BU,64),(16)000000000000001F  !12
+        DD(BU,64),(16)0000000000000000  !13
+        DD(BU,64),(16)0000000000000000  !14
+        DD(BU,64),(16)0000000000000000  !15
+        DD(BU,64),(16)0000000000000000  !16
+        DD(BU,64),(16)0000000000000000  !17
+        DD(BU,64),(16)00AFFFFFFFFFFFF2  !18
+        DD(BU,64),(16)0000000000000000  !19
+        DD(BU,64),(16)7FE0000000000000  !20
+        DD(BU,64),(16)0000000000000000  !21
+        DD(BU,64),(16)0000000000000000  !22
+        DD(BU,64),(16)0000000000000000  !23
+        DD(BU,64),(16)0000000000000000  !24
+        DD(BU,64),(16)7D18000000000000  !25
+        DD(BU,64),(16)0000000000000000  !26
+        DD(BU,64),(16)0000000000000000  !27
+        DD(BU,64),(16)0000000000000000  !28
+        DD(BU,64),(16)0000000000000000  !29
+        DD(BU,64),(16)0000000000000000  !30
+        DD(BU,64),(16)7D0123456789ABC9  !31
+        DD(BU,64),(16)0000000000000000  !32
+        DD(BU,64),(16)7FF0000000000009  !33
+        DD(BU,64),(16)0000000000000000  !34
+        DD(BU,64),(16)0000000000000000  !35
+        DD(BU,64),(16)0000000000000000  !36
+        DD(BU,64),(16)0000000000000000  !37
+        DD(BU,64),(16)0000000000000000  !38
+        DD(BU,64),(16)0000000000000000  !39
+        DD(BU,64),(16)0044000000000000  !40
+        DD(BU,64),(16)0000000000000000  !41
+        DD(BU,64),(16)0000000000000000  !42
+        DD(BU,64),(16)0000000000000000  !43
+        DD(BU,64),(16)0000000000000000  !44
+        DD(BU,64),(16)0000000000000000  !45
+        DD(BU,64),(16)0000000000000000  !46
+        DD(BU,64),(16)000800000000000C  !47
+        DD(BU,64),(16)0000000000000000  !48
+        DD(BU,64),(16)0000000000000000  !49
+        DD(BU,64),(16)0000000000000008  !50
+        DD(BU,64),(16)0000000000000000  !51
+        DD(BU,64),(16)0000000000000000  !52
+        DD(BU,64),(16)0000000000000000  !53
+        DD(BU,64),(16)0000000000000000  !54
+        DD(BU,64),(16)0140001000000000  !55
+        DD(BU,64),(16)0000000000000000  !56
+        DD(BU,64),(16)0000000000000000  !57
+        DD(BU,64),(16)0000000000000000  !58
+        DD(BU,64),(16)0000000000000000  !59
+        DD(BU,64),(16)0000000000000000  !60
+        DD(BU,64),(16)0000000000000000  !61
+        DD(BU,64),(16)006C000000000000  !62
+        DD(BU,64),(16)00EE00000000000D  !63
+GUARD2  DD(BU,64),(16)5A5A5A5A5A5A5A5A
+        END, START

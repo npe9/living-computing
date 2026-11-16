@@ -2330,15 +2330,28 @@ over the rest.  `END` as a location-field label assembles under strap2.
 dense vector leaves `$3`'s count 0 at END, so `CB+` counts it to 2**18-1
 and Z stores past the vector.
 
+### 4.3 bit image of a sequence of numbers, printed p.37 -- `decks/problem_4_3.strap` -- PASSES as the model stood
+
+`tests/verify_problem_4_matrix.py 4.3`, 9 checks and the PC: BIMAGE,
+$1, $2, location 7, words 8-10, guards.  `L(U)` and `BZRZ` decide what is
+zero, and the Reference Manual says a zero FRACTION (printed p.85, "RZ
+is turned on for all zero result fractions"; p.88, LOAD's indicators "as
+in ADD"): the data has seven zero fractions that are not zero words
+(an exponent, a minus, flags, all three) and twelve non-zero words
+including a fraction of 1 and exponents of +-1000.  `CM1111(BU,1)(V+I)`
+sets the bit; BIMAGE starts all ones so `Z, BIMAGE` is seen; word 10
+shows `L` (not `LWF`) zeroing the flag bits.  **No model finding, no
+printed erratum.**
+
 ## Where Chapter 4 stands, 2026-11-16
 
 Run, newest last: 4.11, 4.12, 4.13, 4.10, 4.9 Method 1, 4.6 (three
-methods), 4.7 (two), 4.8, 4.5, 4.4.  **Two model bugs, one cause (location 8 as a
+methods), 4.7 (two), 4.8, 4.5, 4.4, 4.3.  **Two model bugs, one cause (location 8 as a
 floating-point operand and as a store), both FIXED 2026-11-16; the
 "lost" 4.9 store was the VFL SRD, see above; four assembler refusals,
 nine printed errata, and two unexcluded cases (4.5 with k1 = 0, 4.4
-with a dense vector).**  Not reached: 4.9 Method 2, 4.3, 4.2 (decimal
-VFL, refused), 4.1 (VFL square root).  The note that the second
+with a dense vector).**  Not reached: 4.9 Method 2, 4.2 (decimal VFL,
+refused), 4.1 (VFL square root).  The note that the second
 I field is "decoded and read NOWHERE" (above, "(b)") is out of date:
 `vflSecondIndex` (`StretchExecute.bsv`) indexes length, byte size and
 offset as one field, and 4.6 Methods 2-3 and 4.7 Method 2 ran on it
