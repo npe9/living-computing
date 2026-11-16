@@ -49,8 +49,8 @@
 !      or a vle for a table whose ADDL cannot hold its address (p.44: 25 bits)
 !  100+n STRAP II message n, until the error routine is written (p.176-178):
 !      149 a symbol over 128 characters, 156 a system symbol not found
-!      (MBSPEC's 129 is a note: NOTEC, NOTEL), 163 a digit too large for the
-!      radix (p.71: the digit is still used; here it halts), 166 SYNTAX
+!      (MBSPEC's 129 and CPLTNM's 63, a digit too large for the radix, are
+!      notes: NOTEC, NOTEL; p.71: the digit is still used), 166 SYNTAX
 !      ERROR, 167 INAPPROPRIATE CHARACTER, 168 a number over 24 bits
 !
 ! STEP 2, sub-slice a (docs/strap2_7030.md): GETFLD (Charts BI-BK
@@ -2801,8 +2801,14 @@ CPN3    SV, $3, GFC
         BZAL, CPN9
         K(BU,8), CPRADF+.52
         BAL, CPN6
-        LI(BU,24), 163
-        B, ERROR
+! p.71, Boxes 3-8: "If the digit equals or exceeds the radix, an error
+! message is executed, but the digit is still used in the computation of
+! the numeric datum."  Message 63 (p.177), a note as MBSPEC's 129 is, once
+! for each such digit (CHOSEN, as the loop is drawn); the digit reloaded.
+        M+1(BU,24), NOTEC
+        LI(BU,24), 63
+        ST(BU,24), NOTEL
+        L(BU,8), CHVAL($9)
 CPN6    ST(BU,8), CPDIGF+.52
         ST(BU,8), CPDD+.16
         L(BU,24), CPDEC

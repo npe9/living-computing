@@ -157,8 +157,8 @@ strict shim. Before this the host refused the field. CHOSEN where the pages
 are silent: the message once for each such digit; a letter past F used as
 G = 16 up; a radix or a g.p.'s n written with a letter read in decimal with
 the letter's value (`(1A)` is radix 20). A numeric DD's own number is DNUM's
-and still refuses with 47. The 7030 deck's CPLTNM still halts (163): see
-`docs/strap2_7030.md`. `tests/check_strap2_coded.py`.
+and still refuses with 47. The 7030 deck's CPLTNM does the same (it halted, 163, until
+2026-11-15). `tests/check_strap2_coded.py`.
 
 A symbolic field length or byte size is tested by DECODE's KAMMS (C22-6729
 p.137 boxes 20, 29): message 87 (FL over 64 or bit style, truncated as 36 is)

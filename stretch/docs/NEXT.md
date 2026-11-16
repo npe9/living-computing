@@ -55,7 +55,7 @@ Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
 
-## A DIGIT TOO LARGE FOR ITS RADIX -- host closed 2026-11-15; the 7030 deck still halts
+## A DIGIT TOO LARGE FOR ITS RADIX -- closed 2026-11-15, host and 7030 deck
 
 C22-6729 p.71, CPLTNM Boxes 3-8, read in the ink: "If the digit equals or
 exceeds the radix, an error message is executed, but the digit is still used
@@ -88,17 +88,13 @@ characters in the statement field of a numeric DD") and still refuses, 47.
 Checks: `tests/check_strap2_coded.py`, 16 new (22 before), 38 in all; nine measured
 injections in its header (the old refusal fails 12).
 
-**OPEN: the 7030 deck (`decks/strap2_7030.strap`, CPLTNM) still halts, ERRC
-163** -- its own comment says "p.71: still used; here a halt".  Measured
-2026-11-15 on the model: `check_strap2_7030_getfld.py` as it stood, against
-the changed host, fails exactly its three "and the host refuses it, 63" rows
-(19A, A(.3,8)9, (8)19; 46 pass); those rows now check the deck's halt and
-the host's note separately (50 pass), with the divergence in the test's
-header.  `check_strap2_7030.py` is unaffected (9 pass).  What the deck needs
-is written out in `docs/strap2_7030.md` (step 2, sub-slice d): in place of
-`LI(BU,24), 163 / B, ERROR`, count the note as GFMB3 does for 129, reload
-the digit from CHVAL($9), fall into CPN6; then move the three rows into
-CARDS and raise the NOTEC count.
+**The 7030 deck does it too, the same day.**  Its CPLTNM halted, ERRC 163
+(its own comment: "p.71: still used; here a halt").  It now counts the note
+as GFMB3 does for 129 (NOTEC, 63 to NOTEL), reloads the digit and goes on.
+`check_strap2_7030_getfld.py`'s three rows (19A, A(.3,8)9, (8)19) compare
+the deck's field and NOTEC with the host's (50 pass).  Measured on the deck:
+the digit not reloaded, and the note not counted, each fail exactly those
+three rows.
 
 ## AN INTEGER IN PARENTHESES ON A PLAIN SYMBOL -- open; researched 2026-11-15, no code changed
 
