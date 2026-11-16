@@ -13456,6 +13456,33 @@ run "Buchholz B.1 -- polynomial evaluation" ./run_program.sh ../decks/buchholz_b
     "p_result:202=0x00EC200000000000" "x1:17=0x00004080000000C8" "guard:203=99" \
     "x_unchanged:201=0x004C000000000000" "a0_unchanged:300=0x006E000000000000" "a3_unchanged:303=0x0048000000000000"
 
+# B.2, printed pp.296-297.  THE TABLE AS PRINTED DOES NOT REACH THE BOOK'S
+# ANSWER, AND THE CAUSE IS ONE UNBUILT OPERATION: VFL STORE ROUNDED, the
+# "STORE ROUNDED (VB, 12, 1), 8.0, 117" at 105.32, which the model refuses
+# with OP (vflIntOp/unimplemented-code, code=101101).  docs/NEXT.md has the
+# item; decks/repro_vfl_srd.strap is the reproducer and its header has the
+# command (three cases, 3 of 5 fail today).
+#
+# So the printed deck is registered with the six checks that hold whether or
+# not SRD is built -- everything before 105.32, the loop count and the halt.
+# THE FAILING CHECK, DOCUMENTED AND NOT RUN HERE, is the root itself:
+#
+#     python3 verify_buchholz_b2.py printed
+#
+# which fails today for all eight N (the refusal) and is SRD's acceptance
+# test.  When SRD is built, replace the line below with that one.
+run "Buchholz B.2 -- cube root AS PRINTED, up to the unbuilt VFL SRD" ./run_program.sh ../decks/buchholz_b2_cube_root.strap StretchBuchB2PTb "PC=224" \
+    "three_halves_n:203=0x0109600000000000" "x1:17=0xC8" "n_unchanged:204=0x00EC800000000000" \
+    "half_unchanged:201=0x0008000000000000" "f0_unchanged:202=0x000B600000000000"
+
+# The same program with the SRD replaced by the pair the Reference Manual
+# calls equivalent (printed p.64, Programming Notes): +MGI at the rounding
+# position, then ST.  Eight N, each checked against the book's claim of
+# "full 48-bit accuracy ... except for a possible rounding error in the last
+# iteration", in exact rational arithmetic; 32 checks.  This is what runs
+# E+I, F+, R/, VFL /I and the signed VFL load with a one-bit sign byte.
+run "Buchholz B.2 -- cube root, SRD substituted, eight N to 48 bits" python3 verify_buchholz_b2.py substituted
+
 # ============== end of the Buchholz Appendix B group ==================
 
 # -- 4. Reference Manual Figure 7: Progressive Indexing --

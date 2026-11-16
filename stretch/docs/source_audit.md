@@ -1918,4 +1918,4 @@ APPENDIX B" group in `tests/run_tests.sh`.
 | Table | Printed | Deck | Exercises | Status |
 |---|---|---|---|---|
 | B.1 Polynomial evaluation | p.295 | `buchholz_b1_polynomial` | `LX`, `L(N)`, `*(N)`, `+(N)`, `CB-`, `ST(U)` | **passes 7 of 7** against the model as it stood; two data injections observed |
-
+| B.2 Cube-root extraction | pp.296-297 | `buchholz_b2_cube_root` (as printed), `buchholz_b2_cube_root_srd_substituted` | `E+I`, `F+`, `R/`, VFL `L(B,12,1)`, `+I`, `/I`, **VFL `SRD`**, `CB` | **FINDING: VFL `SRD` is unbuilt** and refused at 105.32 (`decks/repro_vfl_srd.strap`, `NEXT.md`). As printed: 6 of 6 on the checks that do not depend on it; the root is wrong and `verify_buchholz_b2.py printed` fails for all eight N. With `SRD` replaced by the Reference Manual's equivalent (`+MGI`, `ST`; printed p.64): **32 of 32 over eight N**, each root inside the book's "48-bit accuracy, except for a possible rounding error" |
