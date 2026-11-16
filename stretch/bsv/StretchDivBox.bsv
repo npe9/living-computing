@@ -183,9 +183,27 @@ endfunction
 //   The other eight FP-divide decks, the three VFL-divide decks, MCP's
 //   bootstrap and all thirteen CYCLES-checked suite entries are unchanged.
 // The per-box-clock rows are that hold window, since they shrink with
-// the box.  The two constant rows are something else and are not yet
-// explained.  Getting the overlap back needs the I-box to run during a
-// box wait, which is rl_prepare's business.  Making the box's own
+// the box.  The two constant rows are something else; they are not
+// explained, but a measurement (below) shows they come from the same
+// I-box/E-box interleave.  Re-measured on batch3 (the look-ahead
+// carry work) at 4 box clocks: every number above is unchanged.
+// >>> WHY "PARK THE DIVIDE AND LET THE I-BOX RUN" DOES NOT GET THE
+// OLD CLOCKS BACK, MEASURED 2026-11-16. <<<  A version that retired
+// the level at once and wrote the results when the box answered
+// gave the old clocks on the decks with no early consumer: f217a 475
+// and f217c 180, so those residues go with the hold.  But six decks
+// failed their own checks (f217b, f217d, f217wb, f217xb, f217xd,
+// fp_zm_cleared): the I-box read the result before it was written.
+// Traced on F217B, with clocks counted from reset: the divide's
+// operand arrives at clock 56, and the `BB $SB` that tests the
+// quotient's sign runs at clock 57 in BOTH runs.  The old combinational
+// divide wrote the quotient at 56, but a 4-clock box answers at 60.  The
+// old halt clocks therefore depend on the quotient being there one clock
+// after the operand.  No multi-clock box gives that, parked or held,
+// unless the I-box is made to wait for it (an iboxHazard term), and
+// that wait is the slowdown above.  Getting the overlap back needs the
+// I-box to run during a box wait, which is rl_prepare's business.
+// Making the box's own
 // count BE the time is a later, sourced step, and when
 // it comes this constant goes and mkFpDivBox's structure -- trial,
 // intermediate and last reduction cycles, the normalisation loop --
