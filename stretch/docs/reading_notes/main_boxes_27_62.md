@@ -2,6 +2,9 @@
 > from page images. Nothing here may be cited as a source: every quote must be
 > re-read in the ink (the page image) before it is relied on, as AGENTS.md
 > requires. Passages the agent could not read confidently are listed at the end.
+> A second reader (main_boxes_27_62_second_reader.md) checked 110 rows: the four
+> corrections it found (F1OD, the 36A lines, the AE trunk, `REM,SEM:`) and the
+> MQM settlement are applied below, marked "second reader".
 
 # MAIN (Pass 1), Boxes 27-67: reading notes from C22-6729
 
@@ -73,7 +76,7 @@ Chart (p.15):
 - 30A decision `AN MCP OP`: YES -> Box 31; NO -> 30B.
 - 31 subroutine box `MIOD` / `MAIN'S IOD,ETC. PROCESSING` -> connector **AC 23** (= Box 38).
 - 30B decision `A COMMENT`: YES -> bypasses Box 32, rejoining just above Box 33; NO -> 32.
-- 32 `SET FIOD SWITCH TO SHOW THAT SUBSEQUENT MCP INSTR. WILL BE OUT OF ORDER` -> 33.
+- 32 `SET F1OD SWITCH TO SHOW THAT SUBSEQUENT MCP INSTR. WILL BE OUT OF ORDER` -> 33.
 
 Text, p.23 R, heading "Boxes 30A, 30B, 31, 32" (whole paragraph):
 > "Tests are made for a master control program op or a pseudo-op now because the processing of the address fields of each is handled by specialized subroutines. If it is not a master control op and not a comment, then the `Fiod` switch is set so any subsequent master control op will receive an error message because any later MCP instruction will be out of order. (MCP instructions that are out of order will be printed on the listing, but not punched.) Therefore, comments excepted, the initial instructions of the program being assembled by STRAP II must be master control ops if all the master control ops specified in the program being assembled are to be punched. `MIOD` handles the MCP ops, REEL and IOD, during Pass 1."
@@ -81,7 +84,7 @@ Text, p.23 R, heading "Boxes 30A, 30B, 31, 32" (whole paragraph):
 Related, p.21 L, heading "Boxes 9-9H" (200 dpi), for the `;` that becomes DRZ(N),1:
 > "However, three things must be done before the transfer to box 38: First, $5 is set up with the location of the appropriate op index. Second, since the usual encoding of `GETFLD` will not take place for this DR, index word `Bcfldx` must be adjusted so that later redefinition of `Ibuffw` by `Bcfldx` will be correct. Third, `Fiod` is turned on to indicate a non-MCP instruction has occurred."
 
-Names: `Fiod` (p.21 L, p.23 R; chart spells it "FIOD" [the I could be a 1: "F1OD"/"FIOD",
+Names: `Fiod` (p.21 L, p.23 R; chart spells it "F1OD", digit one, per the second reader at 400 dpi [first reading: the I could be a 1: "F1OD"/"FIOD",
 glyph uncertain]), MIOD (chart p.96 OCR locator; text p.97).
 
 ### Box 33
@@ -115,7 +118,7 @@ Chart:
   the loop back from Box 37 YES.
 - 36A (label MEDAD) subroutine box `GETFLD` / `GET A FIELD ENCODED`, with two lines to the right:
   to 36B `CPLTSY` / `COMPLETE A SYMBOL` and to 36C `CPLTNM` / `COMPLETE A NUMBER`
-  (GETFLD's own subroutines; 36B and 36C have no exits drawn).
+  (GETFLD's own subroutines; second reader: each line 36A-36B and 36A-36C has an X at both ends, call and return on the one line, not "no exits drawn").
 - 37 decision `IS THERE ANOTHER STATE-MENT FIELD`: YES -> back to 35; NO -> 38.
 
 Text, p.23 R bottom to p.24 L, heading "Boxes 35-37":
@@ -368,12 +371,12 @@ margin with one labelled branch per group, in this order:
 | `SYN` | box `MQS` / `MAIN'S SYN PROCESSING` -> AC 23 |
 | `DR,DRZ` | box `MQR` / `MAIN'S DR,DRZ PROCESSING` -> box `MDIMRF` / `MAIN'S DIMENSION PROCESSING` -> AC 23 |
 | `PUNSYM` | box `MQP` / `MAIN'S PUNSYM PROCESSING` -> AC 23 |
-| `SEM,REM` | box `MQM` [third letter uncertain: M/N/H] / `MAIN'S SEM,REM PROCESSING` -> AC 23 |
+| `SEM,REM` | box `MQM` [third letter not decidable in the chart ink; p.83 names `MQM` among GETFLD's callers, per the second reader] / `MAIN'S SEM,REM PROCESSING` -> AC 23 |
 | `TAIL,UNTAIL` | box `MQTAIL` / `MAIN'S TAIL, UNTAIL PROCESSING` -> AC 23 |
 | `LINK` | box `MQLINK` / `MAIN'S LINK PROCESSING` -> AC 23 |
 
-The trunk line **continues below the LINK branch and runs off the bottom of p.18** although the page
-is headed "PAGE 5 OF 5"; no further branch is printed.
+The trunk line continues below the LINK branch and, per the second reader, **stops about five rows below
+LINK**; it does not run off the page (the first reading said it did). The page is headed "PAGE 5 OF 5"; no further branch is printed.
 Every route ends at AC 23 = Box 38 (MEDAF), so the address fields of a pseudo-op never pass
 through Boxes 34-37.
 **Chart/text disagreement:** the chart puts DUPLI among the ops that go straight to AC 23; the
@@ -410,8 +413,8 @@ Against the Box 67 text: p.27 L says CNOP is **not** in the pseudo-op branch tab
 lists CNOP under Pseudo-Ops with footnote 3 ("in each of ... three digit select pseudo-op tables").
 DD is a "General Instruction" here although Chart AE reaches it through the pseudo-op connector
 (Box 63, before the branch table). Chart AE has no branch for COMBLOCK, ENTER, FEND, ORIGIN,
-PUNCDC, PUNFPC, PUNREL, SLCRCOM (the relocation set, p.183 ff.) -- the trunk running off the
-bottom of p.18 may be where they would hang.
+PUNCDC, PUNFPC, PUNREL, SLCRCOM (the relocation set, p.183 ff.) -- the stub of trunk below LINK
+(second reader: it stops, it does not run off p.18) may be where they would hang.
 
 ### DUPLI (text only: MDUP)
 p.27 L:
@@ -476,9 +479,9 @@ p.32 L:
 
 Names: MQP p.115 (chart p.114 OCR locator); CPLTSY p.74; NQBTP p.169; NPNSYM (Chart FD p.31).
 
-### REM, SEM (chart box "MQM" [uncertain])
+### REM,SEM (chart box "MQM"; p.83)
 p.32 L:
-> "REM, SEM: For REM and SEM processing, a four word intermediate error message mask is set up in the unit of the REM or SEM; each bit in the mask will correspond to the status of the corresponding numbered error message (0=restore, 1=suppress). As a result of the current instruction, the major error mask used by the error message routine is updated by the current intermediate mask whenever each SEM or REM unit is being processed. The location of the intermediate message mask in the variable part of the unit is in the value field at `Ziotpt`. The SEM-REM subroutine in Pass 1 uses `GETFLD` and `VALUE` to establish the number of each message in absolute form. There will be no decoding necessary for this unit in Pass 2."
+> "REM,SEM: For REM and SEM processing, a four word intermediate error message mask is set up in the unit of the REM or SEM; each bit in the mask will correspond to the status of the corresponding numbered error message (0=restore, 1=suppress). As a result of the current instruction, the major error mask used by the error message routine is updated by the current intermediate mask whenever each SEM or REM unit is being processed. The location of the intermediate message mask in the variable part of the unit is in the value field at `Ziotpt`. The SEM-REM subroutine in Pass 1 uses `GETFLD` and `VALUE` to establish the number of each message in absolute form. There will be no decoding necessary for this unit in Pass 2."
 
   The text never names the subroutine; only the chart does, and its third letter is doubtful.
 
@@ -743,10 +746,11 @@ Line numbers are of the working tree as read on 2026-11-15. Three lists.
   doubtful.
 - Box 46's side legend "TURN / (OFF)": what it turns off is not stated.
 - Chart box names with a doubtful glyph: "NPUNID" (N or M), the SEM/REM box "MQM" (third letter),
-  "ME+" at Box 63, "FIOD" in Box 32 (I or 1), "MQDNUM" in 66B (printed like "MCDNUM").
+  "ME+" at Box 63 (second reader: clear), "F1OD" in Box 32 (second reader: digit one), "MQDNUM" in 66B (printed like "MCDNUM").
 - `Xrepl` / `Xrep1` (p.27 L): final character l or 1.
 - "`ZINPUT`" (p.27 L): printed with Z; presumably XINPUT.
-- "`Bcfxtx`" on p.24 L (Boxes 35-37 ¶1): clearly printed, but possibly the print's slip for `Bcfldx`.
+- "`Bcfxtx`" on p.24 L (Boxes 35-37 ¶1): clearly printed, but possibly the print's slip for `Bcfldx`. Second reader (400 dpi): the print is `Bcfxtx`, and it disagrees with p.83, where GETFLD updates `Bcfldx`;
+  p.84 Box 1 has GETFLD round `Bcfxtx` down to a full word. Both readings stay open; p.24's ink is `Bcfxtx`.
 - "$6 and $7" (p.24 L and R) against p.175's $6 and $4.
 - "`Zifall`" turned *on* for LINK (p.32 R): clearly printed; sense doubtful.
 - `Zstcnt` / "Zstent" on p.173 R: whole-page resolution only.
@@ -785,7 +789,7 @@ New here (not in its section 8):
 - Boxes 47/49: the arrow from 49 into 47.
 - `Xrepl`/`Xrep1`, "`ZINPUT`", "an `MAIN`", "PRINID", "exits" for exists.
 - CNOP: p.27 L against Appendix B p.195; Appendix B gives no pseudo-op numbers.
-- The trunk of Chart AE running off the bottom of p.18.
+- The trunk of Chart AE below LINK (second reader: it stops about five rows down).
 - Host list (a) items 1, 3, 5, 7, 9, 12, 13 and (b) items 1-4, 7-10, and the Fn point in (c)3, as
   far as its section 8 and README.md's "Not yet written" list go. (a)2 is the host's declared
   CHOSEN; (b)5 and (b)11 are declared in README.md.
