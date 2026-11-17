@@ -16,7 +16,7 @@ The oracle has three parts:
 |---|---|---|
 | `tests/perf_char_vol2_atlas.txt` | The transcription, read from the page images. Its header gives the format. | no (data) |
 | `tests/check_atlas_data.py` | A fast self-check of the transcription: parse, coverage, redundancy tallies, second reading, sums. | **yes**, well under a second |
-| `tests/atlas_oracle.py` | The oracle. It builds GENER's program for each expressible cell, runs it on `mkStretchCore` and reports the **residual = model − printed, in clocks of 0.3 µs**. It is a measurement and never fails on a residual. | **no**, it takes an hour |
+| `tests/atlas_oracle.py` | The oracle. It builds GENER's program for each expressible cell, runs it on `mkStretchCore` and reports the **residual = model − printed, in clocks of 0.3 µs**. It is a measurement and never fails on a residual. | **no**, it takes hours (an hour for the 6,265 cases of the first run; the 27,655 now generated were measured page-set by page-set) |
 
 M2's correctness is defined as how much of this residual it closes
 (source_audit.md G4.1).
@@ -180,7 +180,7 @@ to 189:
 
 ```
 cd stretch
-python3 tests/atlas_oracle.py --selftest          # the harness's own four checks
+python3 tests/atlas_oracle.py --selftest          # the harness's own eight checks
 python3 tests/atlas_oracle.py --list              # what is / is not expressible
 python3 tests/atlas_oracle.py --pdf 120 --rows    # one page, every case
 python3 tests/atlas_oracle.py --jobs 12 --tsv out.tsv   # everything
@@ -198,8 +198,9 @@ sets `BLUESPECDIR` and `PATH` itself.
 - **Per-instruction clocks are measured by subtraction.** The figure is
   (cycles of the full program − cycles of a baseline with an empty body
   and no count branch) / 10,000.
-- **Run time.** *Measured before PDF 143-189 were added.* With them,
-  `--list` reports **12,353 cases with a generator** (2026-11-16). The
+- **Run time.** *Measured before PDF 143-189 were added.* With them
+  and the four new generators, `--list` reports **27,655 cases with a
+  generator** (2026-11-16; 12,353 before the generators). The
   forwarding pages alone (PDF 143-169) took 6,088 cases in 5,646 s at
   `--jobs 6`; the whole set is not timed. Their WB XOVR cases now use
   PDF 114's (150000.74)₈. The pre-forwarding full
@@ -208,7 +209,21 @@ sets `BLUESPECDIR` and `PATH` itself.
   simulations a case, about 0.58 s a case in aggregate. The longest
   bodies (T 100WD, the conversions) dominate.
 
-### Self-test (`--selftest`, all four pass; suspect the probe first)
+### Self-test (`--selftest`, all eight pass; suspect the probe first)
+
+Check 0 runs first and is static (no simulation).
+
+0. **FP encoding.** All 9,406 FP cases are assembled and every copy of
+   the body is decoded: op code, (N)/(U) bit, the NEG and A sign
+   modifiers, operand address and index field must be the ones the
+   row, block and column name. Proven discriminating on an in-memory
+   copy of the module (the file was never written): NEG and A swapped
+   in the suffix map, 4,702 cases fail; the forwarding run rotated over
+   four addresses, 1,856 fail. It also caught a wrong expectation of
+   its own before it was committed: E+I and SHF carry their operand in
+   effective-address bits 0-10, seven places up the 18-bit field
+   (Ref. Manual p.102, as quoted in `StretchExecute.bsv`'s SHF and E+I
+   arms), which STRAP assembles correctly.
 
 1. **Linearity.** L(BU,8,8) costs 14.0000 clocks a copy between 250 and
    500 copies and again between 500 and 1,000. The ten count branches
@@ -222,6 +237,29 @@ sets `BLUESPECDIR` and `PATH` itself.
    both body lengths. This check was proven discriminating: with the
    first generator's bug re-injected, it fails (0.0068 against 152.38
    clocks a copy).
+5. **INTERNL / IMMED. / ACCUM. encoding** (static, 5,896 cases). The
+   address field is 8.0 or (10.74)₈ for INTERNL (written as the literal
+   PDF 114 prints, not the generator's constant), (444444)₁₆ with P = 4
+   for IMMED., and for CV/DCV offset 0, op code 27 / 59, and a set-up
+   load `L(BU,64,8)` at offset 20 (decoded at every half-word, since a
+   full-word instruction may start on one). The index field and the
+   invert-sign flip are checked too; the flip is checked against the
+   assembled word, because a connective's own code uses that bit.
+   Injections, made in memory: immediate XOR placed four bits low, 1,604
+   fail; invert not applied on the immediate pages, 732 fail; INTERNL
+   crossover at .73, 1,796 fail; INTERNL at 9.0, 2,112 fail; the CV
+   set-up at offset 0, 384 fail; DCV assembled as CV, 192 fail. The
+   set-up decode first failed all 384 clean cases, because it read only
+   whole words; it was fixed before the injections.
+6. **FP linearity**, on ST(N) to $X9-$X12, which writes index
+   registers: 6.0000 clocks a copy at both body lengths. Injected in memory: with the I-box operands moved to
+   $X12-$X15 the stores overwrite the loop count ($X15), the run does
+   not halt, and the check fails.
+7. **Immediate linearity**, LI(BU,64,8): 28.0000 clocks a copy at both
+   body lengths, so the XORed word runs. Injected in memory: with the XOR placed four
+   bits low the body is still linear, at 0.0000 clocks a copy, so the
+   check also requires a copy to cost more than one clock; with that
+   clause it fails, as check 5 does statically.
 
 ### Three probe bugs found and fixed before any figure was believed
 
@@ -264,13 +302,64 @@ The report echoes this list in its header:
   $X1.
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
+- **VFL INTERNL** (forwarding pages only; the no-forwarding pages print
+  the columns blank). The operand is at 8.0 ($L) and, with crossover, at
+  (10.74)₈ = bit 60 of $L, as PDF 114 gives. CHOSEN: its value is
+  whatever the page's accumulator set-up left there; PDF 113 names
+  none.
+- **VFL IMMED.** (PDF 171-189). Each copy is assembled with a zero
+  immediate and its 24-bit address field is then set to (444444)₁₆ by
+  XOR, so the field holds PDF 114's "equivalent of the standard operand"
+  whatever the field length. The accumulator is set as on the direct
+  page. CHOSEN: for `*I`, `*I+` and `/I` PDF 113's "memory operand was
+  +1" is overruled by PDF 114's address contents, which describe this
+  run.
+- **CV / DCV** (ACCUM. OPERAND). The accumulator is +1 at offset 20
+  (PDF 113), loaded once by `L(BU,64,8), ATLONE, 20`; the instruction's
+  offset is the heading's OFFSET 0. CHOSEN: the address field, which
+  the Reference Manual (printed p.72) says is "not normally used", names
+  150000.0.
+- **FP addresses.** External operands rotate over 100011-100014₈ (PDF
+  40). CHOSEN: with forwarding, 100011₈. PDF 40 prints "1000011₈"
+  (seven digits, re-read at 300 dpi), which an 18-bit FP address cannot
+  hold.
+- **FP I-box operands** are $X9-$X12, or $X9 with forwarding (PDF 40).
+  CHOSEN: the whole memory word is put there by a VFL
+  `ST(BU,64,8), $X9` in the set-up.
+- **FP internal operand** is $R (PDF 40). CHOSEN: it holds the memory
+  word, put there by `TI, 1, ATLFM0, 9.0` after the accumulator load.
+- **FP data.** CHOSEN, since the volume prints only the captions:
+  - the "normalized floating point one" is exponent +1, fraction .1₂;
+  - XPFN is that word with the exponent flag on and the exponent sign
+    negative; XPFP is the same with the sign positive ("flagged
+    exponents superimposed");
+  - U,V FLAGS is the one with data flags U and V (bits 62, 63) on;
+  - "the initial operand" is read as both the accumulator and the
+    memory operand: NORMALIZED 1. puts the one in both;
+  - "AC EXPNT N." is read as an accumulator exponent with no flag (the
+    plain normalized one);
+  - on the load pages, whose captions name only the memory operand, the
+    accumulator holds the normalized one;
+  - the accumulator is loaded with `L(U)` so a flagged word lands as
+    written, and the factor register (for `*+`) gets the same word by
+    `LFT(U)`.
+- **FP rows.** NEG and A are the sign modifiers, STRAP's N, A and NA
+  suffixes (pocket card "L(N,A,NA)"); (N)/(U) is the normalization
+  modifier. Self-check 0 decodes every copy.
+- **FP KR / KMGR, AH INDICATOR ON / OFF.** CHOSEN: set once in the
+  set-up by a compare of 2 against 1 (AH on) or of 1 against 2 (AL on,
+  AH off), before the accumulator is loaded.
+- **E+I and SHF** (PDF 71, 72). The column's number is the address
+  operand, written as a STRAP literal: decimal, in effective-address
+  bits 0-10 (Ref. Manual p.102, as quoted in `StretchExecute.bsv`).
+  CHOSEN: 2040 is read as decimal, which
+  sets the immediate's exponent-flag bit; SHF shifts left (bit 11 = 0).
+- **Indexing** is by $X5 = 0 on every new page, as on the old ones.
 
-### Not generated (917 transcribed cells as of the 93-page run; with all 139 pages `--list` reports 16,291: 9,406 FP cells (no FP generator), 3,908 INTERNL cells of PDF 143-169, the marks, CV/DCV, and the immediate pages, reported as "no generator for VFL instruction LI" and so on)
+### Not generated (989 transcribed cells with all 139 pages, 2026-11-16, after the INTERNL, FP, IMMED. and CV/DCV generators; `--list` reports 27,655 cases with a generator)
 
 - 450 ENV cells (PDF 104), which are environment averages.
-- 192 CV and DCV cells, whose accumulator addressing the page does not
-  give.
-- 108 marks (`*01*`, `*24*`).
+- 372 marks (`*01*`, `*24*`).
 - 45 cells on PDF 110.
 - 40 NONCON branch cells. GENER's count when a branch skips part of
   the thousand is not printed.
@@ -282,12 +371,95 @@ The report echoes this list in its header:
   - R;
   - RNX, which the model does not implement.
 
+## The new generators (2026-11-16): INTERNL, FP, IMMED., CV/DCV
+
+Four generators were added in one change, in the order that measures
+the most cells per hour of work: the VFL INTERNL columns (one branch,
+3,908 cells), floating point (9,406 cells), the VFL immediate pages
+(1,604) and CV/DCV with the accumulator operand (384). With them
+`--list` reports **27,655 cases with a generator** and 989 transcribed
+cells without one (ENV, the marks, PDF 110, NONCON, CBR, the internal
+transmit operands and the I-box refill rows, all as before).
+
+### What the volume says, read on the page images
+
+Every quotation below was read on the page image (pdftoppm, 110-300
+dpi), not from the text layer.
+
+- **PDF 40 (printed 34C), FLOATING POINT TIMING.**
+  - "Sequences of operations were generated and timed by GENER."
+  - External Operands: "Consecutive memory boxes were used where
+    possible. Cases without forwarding used a repetition of four
+    consecutive addresses 100011₈ to 100014₈. Cases with forwarding
+    used 1000011₈."
+  - I-Box Operands: "Index registers nine to twelve were used in the
+    cases without forwarding and index nine in the cases with
+    forwarding."
+  - Internal Operands: "The right half of the accumulator, $R, was used
+    for all cases. As $R was changed during the execution of successive
+    double length operations a large factor of time was introduced by
+    large exponent differences. This effort is illustrated in double
+    add."
+  - Data: "A normalized floating point one (1) was the initial operand
+    unless otherwise specified. (Cases were run with flagged exponents
+    superimposed.) The execution of large numbers of consectuve
+    operations caused a time increase due to shifting in some cases
+    (normalized add is one example). The addition of 10 thousand ones
+    involves preshifting and post normalization time."
+- **PDF 41 (printed 34D).** "The present measurements for /, D/, and R/
+  do not give a realistic timing, since the latter is strongly data
+  dependent." "Repeated 'to memory' operations lead to queuing for the
+  LAAR, and the present measurements on these instructions actually
+  refer to the worst possible situations". "Forwarding merely means
+  using the same operand address. For fetch-type instructions,
+  'forwarding on consecutive fetch' actually occurs, and only one true
+  memory fetch is made for the entire sequence of 10,000 instructions."
+- **The FP page headings** (PDF 42-101) name only the operation and
+  "WITHOUT / WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS"; the blocks
+  are captioned NORMALIZED 1., BOTH OPERANDS WITH XPFN, AC EXPNT N. MEM
+  EXPNT XPFN, AC WITH XPFP. MEM WITH XPFN (the load pages: MEMORY
+  OPERAND HAS XPFN / U,V FLAGS / XPFP); KR and KMGR are printed twice,
+  "AH INDICATOR OFF" and "AH INDICATOR ON" (PDF 58-61, 89-92; 58 and 59
+  viewed for this, the rest as transcribed); PDF 71 heads its columns
+  "EFFECTIVE ADDRESSES" over ONE and 2040 (viewed), PDF 72 "SHIFT 1
+  ... SHIFT 95"; the rows are (N), NEG (N), A(N), NEG A(N), (U), ... .
+- **PDF 113 (printed 106).** "Each column of figures represents a
+  variation of operand placement; external memory, external with word
+  boundary crossover, I-box, internal (accumulator), and internal with
+  word boundary crossover." "Finally, for convert (CV) and convert double
+  (DCV) the accumulator was originally +1 at offset 20. This was done
+  mainly for the case of double convert decimal to binary so that the
+  result would always be accepted as legitimate decimal data for the
+  next execution."
+- **PDF 114 (printed 107).** FORWARDING / DIRECT ADDRESSING: "The
+  operand locations used were: external (150000.0)₈ external with word
+  boundary crossover (150000.74)₈, I-box $X0 (20.0)₈, internal (10.0)₈,
+  internal with word boundary crossover (10.74)₈." IMMEDIATE ADDRESSING:
+  "The 24 bit address of the instruction contained the equivalent of the
+  standard operand (444 ...4)₁₆. There is, of course, no case of
+  forwarding with immediate operands. The to-memory type instructions
+  were deleted since they are undefined for immediate addressing."
+- **PDF 115 (printed 108)**, item 5: "Actual fetch-type forwarding
+  action is possible only for consecutive fetch-type VFL instructions
+  with no word boundary crossover."
+- **PDF 165 (printed 158)**, the typed box: "The result of a decimal to
+  binary CV operation is placed in the accumulator at an offset of 68.
+  For subsequent execution of identical CV instructions the operand
+  appears to be a very large number."
+- **Reference Manual printed p.72** (second hand: as quoted in
+  StretchExecute.bsv's CV arm; the manual page was not re-read here): "In the accumulator conversion operations, CONVERT and
+  CONVERT DOUBLE, no storage operand is required, and the word address,
+  bit address, length, and byte size fields of the instruction are not
+  normally used."
+
+The residual tables are in "The new generators: residuals" below.
+
 ## The first full residual (2026-11-16; the model as of `77ed952`, before the per-operation VFL times)
 
-**This table predates PDF 143-189.** When the oracle is next run, it will
-pick up the forwarding pages on its own. `vfl_case` already has a
-`forwarding=yes` branch with one operand address. The INTERNL columns and
-all the immediate pages will report "not generated" (see What remains).
+**This table predates PDF 143-189.** The forwarding pages were measured
+later ("The forwarding pages"), and the INTERNL columns, the immediate
+pages, CV/DCV and the FP pages later still ("The new generators:
+residuals").
 
 There are 6,265 cases, and all of them halt. Exact means |residual| ≤
 0.1 clock. Negative means **the model is faster than the 7030**.
@@ -483,7 +655,9 @@ the 7030 does is **open**, and it matters only for mixed sequences.
   (B,64,1) is 94 clocks against 144 without crossover. The model adds
   to it, so the residual is +61. The page is disowned as a divide timing
   (PDF 41), and it is left as printed.
-- **CV / DCV** have no generated cells, so the oracle cannot measure them.
+- **CV / DCV** had no generated cells when this was written; they now
+  do (see "The new generators: residuals"), and the residual is within
+  0.2 clocks because the charge was fitted to the same pages.
   They are charged their pages' flat figures, read off PDF 138-139 at
   that page's accumulator (+1 at offset 20, PDF 113):
   - CV: 20 clocks binary, 74 decimal.
@@ -544,6 +718,299 @@ How each column fares:
     by where in the word the field starts.
   - The fix makes the cases faithful to the page, but it does not
     explain any residual.
+
+## The new generators: residuals (2026-11-16/17)
+
+Each generator was run on its own pages only, with `--pdf` and, for the
+INTERNL and ACCUM. columns, `--col` / `--instr` (the full run was not
+made). The model is this branch's: `batch13` merged, no `bsv/` change.
+Residual = model − printed, in clocks; exact means |r| ≤ 0.1.
+
+### VFL INTERNL, PDF 143-169 (3,908 cases, 4,991 s at `--jobs 7`)
+
+All 3,908 halt. Exact 116 (3%), median −7.10, mean −8.97, range −64.47
+… +45.95, mean |r| 10.95 clocks.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 143 | + | 176 | 0 | −5.00 | −8.22 | −14.07 … −0.98 |
+| 144 | M+ | 176 | 0 | −20.02 | −17.80 | −64.47 … −2.10 |
+| 145 | +MG | 176 | 0 | −5.50 | −8.82 | −20.30 … −0.98 |
+| 146 | M+MG | 176 | 0 | −24.12 | −21.39 | −64.47 … −2.10 |
+| 147 | L | 176 | 0 | −4.00 | −7.88 | −13.08 … −0.98 |
+| 148 | LWF | 176 | 0 | −4.00 | −7.88 | −13.08 … −0.98 |
+| 149 | LFT | 160 | 0 | −8.04 | −12.33 | −18.04 … −8.00 |
+| 150 | LTRS | 160 | 0 | −8.04 | −12.08 | −17.04 … −8.00 |
+| 151 | ST | 176 | 0 | −5.05 | −14.44 | −30.34 … −2.10 |
+| 152 | SRD | 176 | 0 | −5.05 | −14.44 | −30.34 … −2.10 |
+| 153 | M+1 | 174 | 0 | −22.00 | −17.74 | −55.30 … −2.10 |
+| 154 | K | 176 | 7 | −4.00 | −3.06 | −15.00 … +24.00 |
+| 155 | KR | 176 | 7 | −4.00 | −3.06 | −15.04 … +24.00 |
+| 156 | KE | 176 | 11 | −4.00 | −3.19 | −15.04 … +24.00 |
+| 157 | KF | 176 | 21 | −4.00 | −3.00 | −13.08 … +23.96 |
+| 158 | KFR | 176 | 21 | −4.00 | −3.00 | −13.08 … +23.96 |
+| 159 | KFE | 176 | 34 | −4.00 | −3.18 | −13.08 … +23.96 |
+| 160 | * | 88 | 0 | −4.04 | −8.11 | −13.04 … −4.00 |
+| 161 | / | 40 | 0 | −13.04 | −12.44 | −55.04 … +32.95 |
+| 162 | *+ | 66 | 0 | +7.96 | −1.53 | −27.04 … +10.00 |
+| 163 | LCV | 160 | 8 | +2.47 | +5.45 | −14.88 … +45.95 |
+| 164 | LTRCV | 176 | 0 | −9.58 | −12.32 | −19.08 … −7.07 |
+| 167 | C0011 | 140 | 0 | −7.56 | −8.49 | −13.08 … −1.98 |
+| 168 | CM0101 | 140 | 0 | −14.15 | −15.31 | −28.44 … −2.10 |
+| 169 | CT0111 | 140 | 7 | −6.54 | −7.89 | −13.08 … −0.05 |
+
+| column | n | exact | median | mean | range |
+|---|---|---|---|---|---|
+| ix_int | 1056 | 77 | −4.00 | −2.72 | −39.04 … +45.95 |
+| ix_int_wbx | 898 | 0 | −13.07 | −16.39 | −64.47 … +32.95 |
+| ni_int | 1056 | 39 | −4.00 | −2.86 | −39.04 … +45.95 |
+| ni_int_wbx | 898 | 0 | −13.07 | −16.06 | −62.47 … +32.95 |
+
+
+**The largest systematic residual: the model charges an accumulator
+operand as if it were in memory.** Measured on PDF 144 (M+) and 147
+(L), no-indexing columns, by re-running their EXTERNL columns beside
+this run: the model's INTERNL figure equals its EXTERNL one on 91 of 96
+rows (the other 5, all M+, within 2 clocks). Its INTERNL WB XOVR equals
+its EXTERNL WB XOVR on M+, and on L is 8 clocks *below* it (the model
+charges an internal crossover 1 clock, an external one 9). The other
+pages were not re-run beside it. The 7030 does not behave this way. On the same pages, row for row, the printed INTERNL
+time exceeds the printed EXTERNL one by a median of:
+
+| instructions | INTERNL − EXTERNL | INTERNL WB XOVR − EXTERNL WB XOVR |
+|---|---:|---:|
+| +, +MG, L, LWF, K, KR, KE, `*`, C0011, CT0111 | +4 clocks | +10 |
+| M+, M+MG, ST, SRD, M+1, CM0101 (to memory) | +4 (M+1 +3) | −4 |
+| KF, KFR, KFE | +2 | +10 |
+| LFT, LTRS, LTRCV | +8 | +14 |
+| `*+`, LCV | −8 | +23 / +1 |
+
+So an operand in the accumulator costs the 7030 about 1.2 µs more than
+the same operand forwarded from memory, and a crossing accumulator
+field (bit 60 of $L into $R) about 3 µs more, against the model's 1
+clock on L (on M+ the model's internal and external crossover are the
+same). The to-memory instructions store their crossing internal result
+faster than their crossing external one, the reverse of the fetches.
+`/` keeps the WB XOVR anomaly of the other columns (+33), and LCV's
++22 … +46 are its decimal rows of 32-64 bits.
+
+### CV / DCV, ACCUM. OPERAND, PDF 138, 139, 165, 166 (384 cases, 1,734 s at `--jobs 2`)
+
+All 384 halt. Exact 288 (75%); every residual is within +0.19 clocks.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 138 | CV | 96 | 48 | +0.10 | +0.10 | −0.00 … +0.19 |
+| 139 | DCV | 96 | 96 | −0.00 | −0.00 | −0.00 … −0.00 |
+| 165 | CV | 96 | 48 | +0.10 | +0.10 | −0.00 … +0.19 |
+| 166 | DCV | 96 | 96 | −0.00 | −0.00 | −0.00 … −0.00 |
+
+| column | n | exact | median | mean | range |
+
+**This is not an independent measurement.** `bsv/StretchTiming.bsv`'s
+CV and DCV charges (20/74 and 20/18 clocks) were read off these same
+pages at this same accumulator, so the oracle confirms only that the
+generator reproduces the conditions the charge was fitted under. The
+CV +0.19 is the decimal rows: 22.14 µs is 73.8 clocks and the charge is
+a whole 74. The comment there that "atlas_oracle.py has no CV/DCV
+generator" is now stale; it is left for the model's owner (no `bsv/`
+change in a measurement-only task). DCV, which `StretchExecute.bsv`'s
+header still lists as "not built", ran and halted on all 192 cases.
+
+### Floating point, PDF 42-101 (9,406 cases, 6,431 s at `--jobs 7`)
+
+All 9,406 halt. Exact 436 (5%), median −1.02, mean −3.10, range −43.02
+… +10.50, mean |r| 7.64 clocks (2.29 µs). The two `*01*` cells of PDF
+45 are marks and are not generated.
+
+**The probe holds.** The model's FP time depends only on the operation
+(`eboxClocks`'s `Fp` arm has no data term), so within each (page,
+column) its figure must be one number whatever the block and row. It is,
+in all 298 groups. That alone would not exclude a rejection uniform
+across rows, so the figures were also checked against `eboxClocks`: the
+I-box figures rise and fall with its per-operation charges (charge →
+measured: SRT 108 → 109, SLO 19 → 20, `*+` 20 → 22, `*` 9 → 11, D/ 10 →
+12, R/ 8 → 10, the add class 5 → 7, `/` 4 → 8), so the operations
+execute.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 42 | + | 128 | 0 | +4.46 | +4.79 | −1.02 … +10.50 |
+| 43 | D+ | 128 | 16 | +3.96 | +4.11 | −1.58 … +9.50 |
+| 44 | K | 128 | 0 | +5.24 | +4.99 | −1.02 … +10.50 |
+| 45 | KMG | 126 | 0 | +5.24 | +4.97 | −1.02 … +10.50 |
+| 46 | +MG | 128 | 4 | +4.46 | +4.73 | −1.02 … +10.50 |
+| 47 | D+MG | 128 | 16 | +0.98 | +3.12 | −15.98 … +9.50 |
+| 48 | ST | 128 | 0 | −13.88 | −14.13 | −19.15 … −9.61 |
+| 49 | SLO | 128 | 0 | −18.15 | −16.90 | −25.33 … −12.00 |
+| 50 | SRD | 128 | 0 | −15.40 | −15.65 | −21.18 … −10.61 |
+| 51 | SRT | 128 | 0 | −16.49 | −16.74 | −22.94 … −11.04 |
+| 52 | * | 128 | 0 | +6.00 | +6.00 | +2.00 … +10.00 |
+| 53 | D* | 128 | 0 | +5.00 | +5.00 | +1.00 … +9.00 |
+| 54 | / | 128 | 0 | −13.98 | −13.98 | −16.98 … −10.98 |
+| 55 | D/ | 128 | 0 | −15.83 | −15.83 | −20.00 … −11.66 |
+| 56 | R/ | 128 | 0 | −14.69 | −14.69 | −19.00 … −10.38 |
+| 57 | *+ | 128 | 40 | +2.93 | +3.48 | −2.14 … +8.00 |
+| 58 | KR | 128 | 0 | +5.24 | +4.99 | −1.02 … +10.50 |
+| 59 | KR | 128 | 0 | +5.24 | +4.99 | −1.02 … +10.50 |
+| 60 | KMGR | 128 | 0 | +5.24 | +4.99 | −1.02 … +10.50 |
+| 61 | KMGR | 128 | 0 | +5.24 | +4.99 | −1.02 … +10.50 |
+| 62 | F+ | 128 | 0 | +5.24 | +4.74 | −1.02 … +9.50 |
+| 63 | E+ | 128 | 64 | +4.19 | +4.18 | −0.03 … +8.37 |
+| 64 | L | 128 | 32 | +0.97 | +0.47 | −2.02 … +1.99 |
+| 65 | LWF | 128 | 0 | +5.15 | +4.65 | −1.02 … +9.35 |
+| 66 | DL | 128 | 0 | +5.02 | +4.52 | −1.02 … +9.08 |
+| 67 | DLWF | 128 | 0 | +5.02 | +4.52 | −1.02 … +9.08 |
+| 68 | LFT | 128 | 0 | −3.67 | −3.67 | −6.55 … −0.78 |
+| 69 | M+ | 128 | 31 | −10.06 | −11.20 | −25.95 … +0.43 |
+| 70 | M+MG | 128 | 29 | −10.06 | −11.29 | −25.95 … +0.43 |
+| 71 | E+I | 32 | 0 | −1.00 | −1.00 | −1.00 … −1.00 |
+| 72 | SHF | 96 | 32 | −1.48 | −4.73 | −22.98 … +0.02 |
+| 73 | + | 192 | 0 | −0.78 | +0.52 | −7.55 … +7.47 |
+| 74 | D+ | 192 | 16 | −1.02 | −0.67 | −43.02 … +7.47 |
+| 75 | K | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 76 | KMG | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 77 | +MG | 192 | 4 | −0.78 | +0.48 | −7.55 … +7.47 |
+| 78 | D+MG | 192 | 16 | −1.02 | −1.27 | −43.02 … +7.47 |
+| 79 | ST | 192 | 0 | −6.30 | −10.32 | −19.15 … −5.98 |
+| 80 | SLO | 192 | 0 | −12.00 | −14.10 | −25.33 … −8.00 |
+| 81 | SRD | 192 | 0 | −7.30 | −11.33 | −21.18 … −5.98 |
+| 82 | SRT | 192 | 0 | −11.04 | −13.51 | −22.94 … −7.04 |
+| 83 | * | 192 | 0 | +2.00 | +2.32 | −5.00 … +10.00 |
+| 84 | D* | 192 | 0 | +1.00 | +1.25 | −8.00 … +9.00 |
+| 85 | / | 192 | 0 | −16.98 | −17.23 | −23.98 … −10.73 |
+| 86 | D/ | 192 | 0 | −11.66 | −11.91 | −20.00 … −4.07 |
+| 87 | R/ | 192 | 0 | −19.00 | −18.46 | −26.00 … −10.37 |
+| 88 | *+ | 192 | 40 | −0.00 | −0.39 | −34.00 … +8.00 |
+| 89 | KR | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 90 | KR | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 91 | KMGR | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 92 | KMGR | 192 | 0 | −0.02 | +0.65 | −5.98 … +7.47 |
+| 93 | F+ | 192 | 0 | −0.02 | +0.49 | −5.98 … +7.47 |
+| 94 | E+ | 192 | 64 | −0.02 | +0.77 | −6.00 … +8.34 |
+| 95 | L | 192 | 32 | −1.02 | −1.35 | −4.02 … +0.98 |
+| 96 | LWF | 192 | 0 | −0.02 | +0.90 | −3.02 … +5.72 |
+| 97 | DL | 192 | 0 | −0.02 | +0.23 | −5.98 … +5.72 |
+| 98 | DLWF | 192 | 0 | −0.02 | +0.23 | −5.98 … +5.72 |
+| 99 | LFT | 192 | 0 | −6.53 | −7.61 | −15.52 … −0.78 |
+| 100 | M+ | 192 | 0 | −11.05 | −9.40 | −27.22 … +6.56 |
+| 101 | M+MG | 192 | 0 | −11.05 | −9.54 | −27.22 … +6.56 |
+
+| column | n | exact | median | mean | range |
+|---|---|---|---|---|---|
+| ea_2040 | 16 | 0 | −1.00 | −1.00 | −1.00 … −1.00 |
+
+The model's figure against the page's median, per column, in clocks
+(`ni` columns; the `ix` columns are the same in the model):
+
+| instructions | EXTERNAL model / 7030 | I-BOX model / 7030 | INTERNAL ($R, fwd) model / 7030 |
+|---|---|---|---|
+| +, +MG, K, KMG, KR, KMGR, F+ (no fwd) | 15.5 / 5.5-6 | 7.0 / 6.0 (indexed 8.0) | — |
+| the same, with forwarding | 15.5 / 8.0 | 7.0 / 6.0 (8.0) | 7.0 / 12.5-13 |
+| L | 6.4 / 4.4 (fwd 9.0 / 8.0) | 6.0 / 6.0 (8.0) | 6.0 / 10.0 |
+| LWF, DL, DLWF | 13.7 / 4.4-4.7 (fwd 13.8 / 8.0) | 7.0 / 6.0 (8.0) | 7.0 / 10-12 |
+| `*`, D* | 19.0 / 9-10 | 11.0 / 9-10 | 11.0 / 16-17 |
+| ST, SRD (to memory) | 6.4 / 16-17 (fwd 9.7) | 6.0 / 24-26 (25-27) | 6.0 / 12.0 |
+| SLO, SRT | 20 / 32, 109 / 120 | 20 / 40, 109 / 131 | 20 / 28, 109 / 116 |
+| M+, M+MG (to memory) | 15.5 / 15.4 (fwd 18.6 / 13.1) | 7.0 / 28.2 (32.2) | 7.0 / 18.1 |
+| /, D/, R/ | 14-20 / 25-32 | 8-12 / 25-32 | 8-12 / 16-36 |
+| LFT | 13.7 / 14.5 | 7.0 / 13.5 | 7.0 / 22.5 |
+| SHF 1, 3, 6, 9, 12, 95 | 6 flat / 6, 6, 7, 8, 9 (8 indexed), 29 | | |
+
+**The largest systematic residuals, in order of cells:**
+
+1. **A fetch-type FP operation from memory runs at half the 7030's
+   rate.** +, K, F+, E+, `*`, LWF, DL and the rest of the fetch class
+   measure 13.7-19 clocks with an external operand against the page's
+   4.4-10. The I-box operand of the same operation is within a clock
+   (+1 on the no-indexing columns). It is the model's FP memory fetch,
+   not its E-box: with forwarding (one address) the 7030 prints 8.0 and
+   the model still 15.5. A likely cause, not yet traced:
+   `bsv/StretchIBox.bsv`'s `fetchesOperand` returns True for one FP
+   operation only (`tagged Fp .f: return f.code == fpop_L;`), and L is
+   the one fetch whose external figure is near the page (6.4 against
+   4.4). PDF 41: "For fetch-type instructions,
+   'forwarding on consecutive fetch' actually occurs, and only one true
+   memory fetch is made for the entire sequence of 10,000
+   instructions." The model shows no such saving. 2,403 EXTERNAL cells are
+   more than +5 clocks over the page (up to +10.5).
+2. **Stores to an index register or to memory are far too cheap.** ST,
+   SRD, SLO, SRT, M+ and M+MG into $X9-$X12 are 17-25 clocks short; to
+   memory, ST and SRD are 10 short (PDF 41: "Repeated 'to memory'
+   operations lead to queuing for the LAAR ... the worst possible
+   situations"). It is the same gap as the VFL I-box stores ("What
+   remains (VFL pages)"), so one store-path model would close both.
+3. **An accumulator ($R) operand costs the 7030 more, and the model
+   less.** The INTERNAL column is 3-6 clocks short on fetches (13 against
+   7 on +), 5 on `*` (6 on D*), 15 on LFT, 26 on R/. PDF 40 itself warns that
+   "$R was changed during the execution of successive double length
+   operations" so D+ / D+MG's internal column (−43) is data, not
+   timing. Same direction as the VFL INTERNL finding.
+4. **Divide is short by 11-24 clocks** on /, D/ and R/, every column:
+   `eboxClocks` charges Table 2's minimum, before the reduction loops.
+   PDF 41 disowns these pages as a divide timing ("strongly data
+   dependent"), so this residual says how far the minimum is from the
+   GENER data, not that the model is wrong.
+5. **Indexing an I-box operand costs the 7030 two clocks** (6.0 → 8.0 on
+   every fetch page; 1.81 → 2.41 µs) and the model none.
+6. **SHF has no shift-amount term.** The model is flat at 6 clocks; the
+   7030 grows with the amount, to 29 at SHIFT 95 (−23).
+7. **E+I** is −1 at both effective addresses; **`*+`** is the closest
+   arithmetic page (median +2.93 without forwarding, −0.00 with).
+
+### VFL IMMED., PDF 171-189 (1,604 cases, 5,769 s at `--jobs 3`)
+
+All 1,604 halt. Exact 656 (41%), median −0.00, mean +3.03, range −14.04
+… +61.95, mean |r| 3.73 clocks. The `*24*` marks of `/I` (24 cells)
+are not generated.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 171 | +I | 96 | 6 | −0.54 | −0.33 | −1.00 … +3.02 |
+| 172 | +MGI | 96 | 6 | −1.00 | −0.88 | −2.04 … +3.02 |
+| 173 | LI | 96 | 78 | −0.00 | +0.34 | −0.00 … +3.02 |
+| 174 | LWFI | 96 | 78 | −0.00 | +0.34 | −0.00 … +3.02 |
+| 175 | LFTI | 88 | 88 | −0.04 | −0.02 | −0.04 … −0.00 |
+| 176 | LTRSI | 88 | 88 | −0.04 | −0.02 | −0.04 … −0.00 |
+| 177 | KI | 96 | 2 | +4.93 | +7.33 | +0.02 … +28.00 |
+| 178 | KRI | 96 | 2 | +4.93 | +7.33 | +0.02 … +28.00 |
+| 179 | KEI | 96 | 5 | +4.93 | +7.16 | +0.02 … +28.00 |
+| 180 | KFI | 96 | 1 | +3.96 | +6.48 | +0.02 … +27.96 |
+| 181 | KFRI | 96 | 1 | +3.96 | +6.48 | +0.02 … +27.96 |
+| 182 | KFEI | 96 | 1 | +3.46 | +6.27 | +0.02 … +27.96 |
+| 183 | *I | 48 | 48 | −0.00 | −0.01 | −0.04 … −0.00 |
+| 184 | /I | 40 | 0 | +31.96 | +31.36 | +1.96 … +61.95 |
+| 185 | *I+ | 48 | 8 | −7.04 | −6.70 | −14.04 … −0.00 |
+| 186 | LCVI | 96 | 36 | −0.04 | +0.21 | −2.08 … +8.00 |
+| 187 | LTRCVI | 96 | 84 | −0.04 | −0.13 | −2.08 … +1.93 |
+| 188 | CI0011 | 70 | 69 | −0.00 | +0.03 | −0.04 … +2.02 |
+| 189 | CTI0111 | 70 | 55 | −0.00 | +0.51 | −0.04 … +2.95 |
+
+| column | n | exact | median | mean | range |
+|---|---|---|---|---|---|
+
+The loads, the conversions, `*I` and the connectives are exact or
+within a clock on most rows: the per-operation VFL times fitted to the
+direct pages carry over. **The systematic residuals:**
+
+1. **The immediate compares (KI … KFEI) run +2 to +12 clocks over the
+   page, +28 in the INVERT block.** The 7030 prints 3.61 µs (12 clocks)
+   on most rows to 48 bits, and 3.61-4.20 at every field length in the
+   INVERT block. The model charges by field length (KI (DU,48,4): 34
+   against 22). An immediate operand longer than 24 bits is the 24-bit
+   address followed by zeros (Ref. Manual p.56, as quoted in
+   `strap_asm.py`'s `encode_vfl_immediate`), and the 7030 appears to
+   end the compare early on it, as it does with an inverted sign on the
+   direct pages ("The K family's +28").
+2. **`/I` is +2 to +62 over the page**: the 7030 prints 20-25 µs at
+   every field length, the model 70-138 clocks. The operand is not the
+   direct page's: PDF 114 puts (444444)₁₆ in the address, so the divisor
+   is large and the quotient small, where PDF 113's direct page divides
+   by +1. The model's divide time does not depend on the data, so it
+   cannot follow. Divide is disowned as a timing (PDF 41); this residual
+   is a data effect.
+3. **`*I+` is short by 2-14 clocks above 8 bits**: the 7030 grows with
+   the field (13.80 → 22.21 µs), the model flattens at 60-62 clocks.
 
 ## Where the model is furthest off
 
@@ -611,50 +1078,40 @@ How each column fares:
 
 ## What remains
 
-- **Generators for the new VFL pages.** The transcription is complete,
-  but `tests/atlas_oracle.py` was not changed with it. Another agent
-  owns the VFL generator. Three things are needed:
-  - **Forwarding, PDF 143-169.** PDF 114 gives the locations: external
-    (150000.0)₈, external with WB crossover (150000.74)₈, I-box $X0
-    (20.0)₈, internal (10.0)₈, internal with WB crossover (10.74)₈. The
-    generator's forwarding branch uses ATLE0 and $X0. It starts the WB
-    crossover at .74, as PDF 114 gives (DONE 2026-11-16; residuals in
-    "The forwarding pages"). The INTERNL columns (`ni_int`, `ni_int_wbx`, `ix_int`,
-    `ix_int_wbx`) need an internal-operand placement it does not have.
-  - **Immediate, PDF 171-189 (`addressing=immediate`, columns
-    `ni_imm`/`ix_imm`).** PDF 114: "The 24 bit address of the
-    instruction contained the equivalent of the standard operand
-    (444...4)₁₆." The mnemonic map is `IMM_BASE` in
-    `check_atlas_data.py`.
-  - **CV/DCV with forwarding (PDF 165, 166).** These have the same
-    accumulator gap as 138/139. PDF 165's typed box: "The result of a
-    decimal to binary CV operation is placed in the accumulator at an
-    offset of 68. For subsequent execution of identical CV instructions
-    the operand appears to be a very large number."
-- **FP residuals are unmeasured.** `atlas_oracle.py --list --pdf 42`
-  (or any page 42-101) reports "no generator for class FP" for every
-  cell, 9,406 times in all. A generator needs the following, from PDF
-  40-41 and PDF 113-115:
-  - the normalized-1 operand, added ten thousand times;
-  - the external operands at 100011-100014₈ without forwarding, and
-    at 1000011₈ with it;
-  - the I-box operands in index registers 9-12, or 9 alone with
-    forwarding;
-  - the internal operand `$R`;
-  - the setup for each block caption (XPFN, XPFP, U,V flags, AH
-    indicator).
-
-  Some of these PDF 40-41 does not print. They should be read from the
-  commentary or the Reference Manual, not guessed.
-- **Generators still missing:**
-  - CV/DCV accumulator addressing;
-  - the NONCON branch columns and CBR refills;
-  - internal transmit operands;
-  - PDF 110 (LVS/LVE/SVA);
-  - the I-box refill rows.
-
-  Each needs a fact the pages do not print, and should come from the
-  commentary pages or the Reference Manual, not from guessing.
+- **Open items for the model** (measured 2026-11-17; nothing in `bsv/`
+  was changed by the measurement). In order of cells:
+  1. FP fetch from memory runs at half the 7030's rate (2,403 EXTERNAL
+     cells more than +5 clocks), with and without forwarding.
+  2. Stores to an index register, and repeated stores to memory, are
+     17-25 and about 10 clocks too cheap, in FP (ST, SRD, SLO, SRT, M+,
+     M+MG) and in VFL (M+, M+MG, ST, SRD, M+1, CM0101) alike.
+  3. An accumulator operand is charged as if it were external: the 7030
+     adds about 4 clocks (VFL INTERNL), 10 with crossover, and 3-15 on
+     the FP $R column.
+  4. Immediate compares (KI … KFEI) are charged by field length; the
+     7030 ends early, at 12 clocks.
+  5. Indexing an FP I-box operand costs the 7030 2 clocks and the
+     model none.
+  6. SHF has no shift-amount term (−23 at SHIFT 95).
+  7. Divide (FP /, D/, R/ short by 11-24; `/I` long by up to 62) is
+     data-dependent in the 7030 and not in the model; the volume
+     disowns these pages as a timing.
+  8. `bsv/StretchTiming.bsv`'s CV/DCV comment says the oracle has no
+     CV/DCV generator; it now has one, and the charge reproduces the
+     pages it was fitted to.
+- **Generators still missing** (989 cells): the NONCON branch columns
+  and CBR refills; internal transmit operands; PDF 110 (LVS/LVE/SVA);
+  the I-box refill rows; PDF 104's environment averages. Each needs a
+  fact the pages do not print, and should come from the commentary
+  pages or the Reference Manual, not from guessing.
+- **CHOSEN facts the new generators rest on** ("What is assumed"). The
+  FP model figure does not depend on the data, so the FP block choices
+  (XPFN, XPFP, U,V, AH) cannot move an FP residual today; they will
+  once `eboxClocks` gains Table 2's data terms. The immediate divisor
+  (PDF 114 over PDF 113) does move `/I`.
+- **A full run with everything.** The four new generators were run on
+  their own pages only (4,991 + 6,431 + 5,769 + 1,734 s, run
+  concurrently, about 1.8 hours wall); the whole set has not been run in one pass.
 - **A shorter run.** About an hour is too long for the inner loop of
   M2. A `--sample` mode with one row per column per page would run in
   minutes.
