@@ -620,11 +620,23 @@ class Pass2:
         word = self._fill(unit, e, word, fields, dds, final)
         for v in fields:
             for bit, value in v.gps:
+                # DECODE evaluates a g.p. and inserts it (p.140 Boxes 14-15),
+                # and p.177 gives DECODE two g.p. messages: "94 ERROR IN GP"
+                # and "95 NEGATIVE GP HAS BEEN COMPLEMENTED".  DERIVED: that
+                # the two refusals below are 94 (the page gives no condition
+                # for it; these are C28-6129 printed p.25's limits).
                 # C28-6129 printed p.25: counted from the statement's bit zero.
                 if final and bit + 1 > e.length:
-                    raise _a.AssemblerError(f"parenthetical integer entry (.{bit}) needs {bit + 1} bits but this statement compiles only {e.length} (C28-6129 printed p.25)")
+                    self.msg.add(94, f"ERROR IN GP: parenthetical integer entry (.{bit}) needs {bit + 1} bits but this statement compiles only {e.length} (C28-6129 printed p.25)", unit)
+                    continue
                 if final and abs(value) >= 1 << 24:
-                    raise _a.AssemblerError(f"parenthetical integer entry (.{bit}) evaluates to {value}, more than the 24 significant bits the entry converts (C28-6129 printed p.25)")
+                    self.msg.add(94, f"ERROR IN GP: parenthetical integer entry (.{bit}) evaluates to {value}, more than the 24 significant bits the entry converts (C28-6129 printed p.25)", unit)
+                    continue
+                if final and value < 0:
+                    # C28-6129 printed p.25: "a negative number is compiled as
+                    # the complement, re 2**(n+1), of the magnitude"; and so
+                    # p.177's 95 says it was.  A note: the word is made.
+                    self.msg.add(95, f"NEGATIVE GP HAS BEEN COMPLEMENTED: (.{bit}){value}", unit, fatal=False)
                 word = _orbits(word, 0, bit + 1, value)
         u.put(unit, ZIOPX, e.index)
         u.put(unit, ZILBO, e.length if e.length < 128 else 0)

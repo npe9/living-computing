@@ -116,8 +116,30 @@ class Getfld:
         self.pending = None
         if g.ch == "(" and self._peek_gp():
             self.radix = self.gp_radix
-            self.pending = self._gp_of(self._paren_items())
+            gp = self._gp_of(self._paren_items())
+            self.pending = None if gp is None else self._checked_gp(gp)
         self._gp_values(x, nogp)
+
+    def _checked_gp(self, gp):
+        """GETFLD's two g.p. messages on p.177 that concern n itself.
+
+        68 GP ERROR: n is "6 bits ... Value of n, binary" (Appendix C,
+        printed p.198, item 4B), so an n over 63 cannot be coded.  Until
+        2026-11-16 it was coded modulo 64, silently: (.70)1 set bit 6.
+        DERIVED: that this is 68 (p.85 Boxes 64, 73 give 68's one stated
+        condition, a lone datum after a g.p. or radix, which is not this).
+
+        82 (.0) HAS BEEN INTERPRETED AS PAREN INTEGER: the message says what
+        it does, so a note, and the g.p. is made with n = 0."""
+        n, r = gp
+        if n > 63:
+            raise FieldError(68, f"GP ERROR: (.{n}) -- n is 6 bits, 0-63 (C22-6729 printed p.198, item 4B)")
+        if n == 0:
+            item = (82, "(.0) HAS BEEN INTERPRETED AS PAREN INTEGER")
+            self.notes.append(item)
+            if self.note:
+                self.note(*item)
+        return gp
 
     def _peek_gp(self):
         """MQDD only: is '(' here the start of (.n), or of C28-6129 p.30's
@@ -191,7 +213,7 @@ class Getfld:
         items = self._paren_items()
         gp = self._gp_of(items)
         if gp is not None:
-            self.pending = gp
+            self.pending = self._checked_gp(gp)
             return "gp"
         if after == "point" and len(items) == 1 and _lone(items[0]):
             # Box 79: no subscript after a point, so a radix; the datum the

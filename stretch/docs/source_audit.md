@@ -612,20 +612,28 @@ need a case when they land.
 has no free code for `**`, which is unresolved). STRAP-1 forbade
 parentheses, so scope the change to what the project targets.
 
-*Status 2026-11-16: DONE, and `**` is resolved.* The target, the host
+*Status 2026-11-16: DONE; `**` read as a numeric DD's operator, one page against.* The target, the host
 STRAP II (`strap/strap2`), already parsed `*`, `/` and arithmetic
 parentheses (`getfld.py`) and evaluated them (`value.py`). Only
 strap_asm refused them. It now takes them on a separate path
 (`_arith_bi`), reached only by a field with `*`, `/` or a non-radix
 parenthesis. That path copies `value.py`'s arithmetic, which is CHOSEN
-there because no page gives `*` or `/` on a bit address. **`**` is not
-a field operator.** Printed p.107 (MQDNUM) lists it among "the current
+there because no page gives `*` or `/` on a bit address. **Appendix C cannot code
+`**`.** Printed p.107 (MQDNUM) lists it among "the current
 arithmetic operations which may be specified on a numeric DD":
 "Third order operations **(powering)", with "the exponent ... an
 integer in the range 2^-18 < n < 2^+18". A numeric DD is evaluated at
 once to a floating word and never coded, so Appendix C needs no code
 for it. `dnum.py` has it. In an address field both assemblers refuse
-it. Printed p.207 adds that "Implied multiplication is not allowed in
+it. **One page reads the other way, and this is not settled.** The
+glossary, printed p.204, says: "Priority of Operations -- When
+arithmetic operations are specified in an instruction field, there is
+a definite order by which they are combined ... 1st order operation +
+and -. 2nd order operation * and /. 3rd order operation **." Its
+"orders" are p.107's words for MQDNUM, and p.207 calls a numeric DD's
+operands its "'address' field". So it is read here as the numeric
+DD's. A printed listing with `**` outside a DD would overturn that
+reading. Printed p.207 adds that "Implied multiplication is not allowed in
 field arithmetic". Three decks strap_asm refused now assemble to
 strap2's image: `repro_address_multiply` (0007C70F 00083000) and the
 two Problem 4.6 Method 3 decks. No deck that assembled before changed
@@ -661,6 +669,28 @@ error flag is not implemented.
 **G3.3** The numbered error-message list (printed p.177) is a rule book
 with a column `C28-6129` lacks; it fences `(.n)` behaviour with six
 specific errors.
+
+*Status 2026-11-16: DONE for the six, in the host STRAP II.* The six
+are 65 (MQDD), 68, 82 and 108 (GETFLD), and 94 and 95 (DECODE). They
+are on printed pp.177-178, whose column is the logic area. The page
+gives the number, area and text but not the condition, so each
+condition has its own source:
+- **65:** printed p.100 Boxes 27-29, "another radix at this point would
+  be an error".
+- **82, 78:** the message's own words.
+- **95:** C28-6129 printed p.25's complement rule.
+- **108:** printed p.204's "SYN, DR, DDI, and DRZ cannot have a gp".
+- **68:** DERIVED. Appendix C's 6-bit n gives n > 63; before, that n
+  was silently coded modulo 64.
+- **94:** DERIVED. The two refusals were already there, unnumbered.
+
+Added: 65 (it was 67), 68 for n > 63, the notes 82, 95 and 78, and 94.
+`tests/check_strap2_gp_messages.py` has 29 checks. Its expected text is
+typed from the page, not imported from `errtab`. Seven injections were
+measured. No deck's image changed. The other messages on the list were
+already wired or remain open (see `errtab.py` and `docs/strap2/formats.md`
+§9). The open items, among them 68's own stated condition, are in
+`docs/NEXT.md`, "ASSEMBLER COMPLETENESS (G3)".
 
 ## G4 — Verification infrastructure
 

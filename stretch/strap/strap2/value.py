@@ -552,7 +552,11 @@ class Value:
                     else:
                         b_, i_ = (a[2] + a[3]) * (c[2] + c[3]), 0
                 else:
-                    d = (c[2] + c[3]) or 1
+                    d = c[2] + c[3]
+                    if d == 0:
+                        # p.177: "78 VALUE DIVISION BY ZERO, DIVISOR IGNORED".
+                        self.notes.append((78, "DIVISION BY ZERO, DIVISOR IGNORED"))
+                        d = 1
                     if c[2]:
                         b_, i_ = 0, _trunc(a[2] + a[3], d)
                     else:

@@ -24,6 +24,36 @@ accumulate.
 
 
 
+## ASSEMBLER COMPLETENESS (G3) -- G3.1-G3.3 built 2026-11-16; what is open
+
+Built: field arithmetic in strap_asm (G3.1), the function rule of
+C22-6729 printed p.144 (G3.2), and the g.p. messages of printed
+pp.177-178 (G3.3). See `docs/source_audit.md` G3 for each item's
+status. The checks are `tests/check_field_arithmetic.py`,
+`check_address_function.py` and `check_strap2_gp_messages.py`.
+Open:
+
+* **`SSIC24`, `S24CW`, `S1918A`** (p.144): "error-flagged if more than
+  19 [18] bits are specified". That probably means a function narrower
+  than the field, as `STTI` has. The page does not say so, and the
+  error flag is not built. strap_asm compiles SIC's address through
+  `eval_expr`.
+* **68 GP ERROR's stated condition** (p.85 Boxes 64, 73: "only one
+  absolute datum, and a GP or radix has already been processed") is not
+  built. The host's 68 is n > 63 (DERIVED). The host also uses 68 for a
+  datum over 24 bits in CPLTNM, which is not a g.p. condition and has
+  no page for its number.
+* **A radix after a g.p. value in a numeric DD** (`DD(N), 2(.3)5(8)1`)
+  gives 67. p.100 Boxes 27-29 suggest 65.
+* **A DD's g.p.s** (OUTPUT, printed p.158 Boxes 2-8) never give 95.
+  Only DECODE's instruction path does. Nobody has measured what a
+  negative g.p. does there.
+* **strap_asm reads `(N+1)` alone in a field as an index** on a null
+  address. strap2 reads it as arithmetic (CHOSEN, Box 76).
+* **The 7030 deck's GETFLD** (`decks/strap2_7030.strap`) does not yet
+  give 82 or the new 68. `check_strap2_7030_getfld.py` has no case that
+  reaches either.
+
 ## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 
 **Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,

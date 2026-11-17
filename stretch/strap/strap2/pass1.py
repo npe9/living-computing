@@ -825,6 +825,14 @@ class Pass1:
             p = self._numeric_field(p, op_fn, op_radix, g.ch == ",")
             if g.ch == ",":
                 self.mem.put(p - 1, 1, 1)       # e: the format repeats
+            elif g.ch == "(":
+                # p.100 Boxes 27-29: "Additional GP's, exponents, or sign
+                # bytes if any, return to the proper section of MQDD;
+                # another radix at this point would be an error, and is
+                # error flagged" -- p.177's "65 MQDD MORE THAN 1 RADIX OR
+                # PAREN. ENTRY".  (The g.p.s were taken by the field
+                # already, so a parenthesis here is a second entry.)
+                raise FieldError(65, "MORE THAN 1 RADIX OR PAREN. ENTRY")
             elif g.ch is not None and g.ch not in ";'":
                 raise FieldError(67, f"INAPPROPRIATE CHARACTER {g.ch!r} IN A DD")
             else:
