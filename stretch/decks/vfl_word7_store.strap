@@ -56,7 +56,12 @@
 !      countsOverTail).
 !   JC countsOverTail dropped: this deck passes; vfl_cross_special_words
 !      FAILS K3 = (16)8000 ONLY.
-! W4 is the control for JA; W1-W3 for JB.
+!   JE word 7's unassigned bits KEPT as stored (a register ORed into the
+!      read, the old model's p.34 deviation): FAIL W2 =
+!      (16)FFFFFFFFFFFFFFFF, W3 = (16)150000FFFFFF, W4 = (16)800000F11FFF;
+!      W1 passes (its store wrote zeros there).  Measured after the first
+!      commit, on the committed file.
+! W4 is the control for JA; W1-W3 for JB; W1 for JE.
 ! CYCLES 276 (PC 2029).
 !
         SLC, 1000.0

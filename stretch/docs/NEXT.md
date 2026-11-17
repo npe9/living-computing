@@ -364,7 +364,13 @@ The three model bugs "CROSSING STORES" left open.
    restored, cmp-verified; run on vfl_word7_store and
    vfl_cross_special_words): commitCounts ignores the store -> W1, W2, W3
    ONLY; the store applied after the counts -> W4 ONLY; countsOverTail
-   dropped -> K3 = (16)8000 ONLY (vfl_cross_special_words).
+   dropped -> K3 = (16)8000 ONLY (vfl_cross_special_words); the
+   unassigned bits kept as stored (p.34 undone) -> W2, W3, W4 (W1 passes).
+   Swept the decks for other writers of word 7: the fp_arith decks'
+   `CM0000(BU,7), $LZC` (a connective, the counts win as before) and reads
+   only (vfl_ltrs' TI, problem_4_5's LV, buchholz B.5's V+, MCP SYNs);
+   the five marker decks below were the only programs relying on word 7's
+   unassigned bits.
 2. **The refill's DF under DS** -- FIXED, `decks/vfl_refill_df.strap`.
    printed p.22: an exception in the VFL portion suppresses "the entire
    operation"; printed p.32, Addresses Monitored: "All storage addresses

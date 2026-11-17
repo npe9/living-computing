@@ -4468,7 +4468,9 @@ run "VFL crossing into the indicators and the connective counts (printed pp.37, 
 # INJECTIONS, observed (with vfl_cross_special_words alongside):
 # commitCounts ignores the store -> W1, W2, W3 = (16)10000, nothing else;
 # the store applied after the counts -> W4 = (16)7F00000FE000 only;
-# countsOverTail dropped -> vfl_cross_special_words K3 = (16)8000 only.
+# countsOverTail dropped -> vfl_cross_special_words K3 = (16)8000 only;
+# the unassigned bits kept as stored (p.34 undone) -> W2, W3, W4 fail, W1
+# passes (values in the deck header).
 # CYCLES 276 a model pin.
 run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=276+-0" \
     "W1:1700=0x30000010000" "W2:1701=0x7F00000FE000" "W3:1702=0x1500000FE000" "W4:1703=0x10000"
