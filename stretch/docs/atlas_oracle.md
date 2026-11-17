@@ -444,10 +444,10 @@ The residual tables are in "The new generators: residuals" below.
 
 ## The first full residual (2026-11-16; the model as of `77ed952`, before the per-operation VFL times)
 
-**This table predates PDF 143-189.** When the oracle is next run, it will
-pick up the forwarding pages on its own. `vfl_case` already has a
-`forwarding=yes` branch with one operand address. The INTERNL columns and
-all the immediate pages will report "not generated" (see What remains).
+**This table predates PDF 143-189.** The forwarding pages were measured
+later ("The forwarding pages"), and the INTERNL columns, the immediate
+pages, CV/DCV and the FP pages later still ("The new generators:
+residuals").
 
 There are 6,265 cases, and all of them halt. Exact means |residual| ≤
 0.1 clock. Negative means **the model is faster than the 7030**.
@@ -643,7 +643,9 @@ the 7030 does is **open**, and it matters only for mixed sequences.
   (B,64,1) is 94 clocks against 144 without crossover. The model adds
   to it, so the residual is +61. The page is disowned as a divide timing
   (PDF 41), and it is left as printed.
-- **CV / DCV** have no generated cells, so the oracle cannot measure them.
+- **CV / DCV** had no generated cells when this was written; they now
+  do (see "The new generators: residuals"), and the residual is within
+  0.2 clocks because the charge was fitted to the same pages.
   They are charged their pages' flat figures, read off PDF 138-139 at
   that page's accumulator (+1 at offset 20, PDF 113):
   - CV: 20 clocks binary, 74 decimal.
@@ -704,6 +706,100 @@ How each column fares:
     by where in the word the field starts.
   - The fix makes the cases faithful to the page, but it does not
     explain any residual.
+
+## The new generators: residuals (2026-11-16/17)
+
+Each generator was run on its own pages only, with `--pdf` and, for the
+INTERNL and ACCUM. columns, `--col` / `--instr` (the full run was not
+made). The model is this branch's: `batch13` merged, no `bsv/` change.
+Residual = model − printed, in clocks; exact means |r| ≤ 0.1.
+
+### VFL INTERNL, PDF 143-169 (3,908 cases, 4,991 s at `--jobs 7`)
+
+All 3,908 halt. Exact 116 (3%), median −7.10, mean −8.97, range −64.47
+… +45.95, mean |r| 10.95 clocks.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 143 | + | 176 | 0 | −5.00 | −8.22 | −14.07 … −0.98 |
+| 144 | M+ | 176 | 0 | −20.02 | −17.80 | −64.47 … −2.10 |
+| 145 | +MG | 176 | 0 | −5.50 | −8.82 | −20.30 … −0.98 |
+| 146 | M+MG | 176 | 0 | −24.12 | −21.39 | −64.47 … −2.10 |
+| 147 | L | 176 | 0 | −4.00 | −7.88 | −13.08 … −0.98 |
+| 148 | LWF | 176 | 0 | −4.00 | −7.88 | −13.08 … −0.98 |
+| 149 | LFT | 160 | 0 | −8.04 | −12.33 | −18.04 … −8.00 |
+| 150 | LTRS | 160 | 0 | −8.04 | −12.08 | −17.04 … −8.00 |
+| 151 | ST | 176 | 0 | −5.05 | −14.44 | −30.34 … −2.10 |
+| 152 | SRD | 176 | 0 | −5.05 | −14.44 | −30.34 … −2.10 |
+| 153 | M+1 | 174 | 0 | −22.00 | −17.74 | −55.30 … −2.10 |
+| 154 | K | 176 | 7 | −4.00 | −3.06 | −15.00 … +24.00 |
+| 155 | KR | 176 | 7 | −4.00 | −3.06 | −15.04 … +24.00 |
+| 156 | KE | 176 | 11 | −4.00 | −3.19 | −15.04 … +24.00 |
+| 157 | KF | 176 | 21 | −4.00 | −3.00 | −13.08 … +23.96 |
+| 158 | KFR | 176 | 21 | −4.00 | −3.00 | −13.08 … +23.96 |
+| 159 | KFE | 176 | 34 | −4.00 | −3.18 | −13.08 … +23.96 |
+| 160 | * | 88 | 0 | −4.04 | −8.11 | −13.04 … −4.00 |
+| 161 | / | 40 | 0 | −13.04 | −12.44 | −55.04 … +32.95 |
+| 162 | *+ | 66 | 0 | +7.96 | −1.53 | −27.04 … +10.00 |
+| 163 | LCV | 160 | 8 | +2.47 | +5.45 | −14.88 … +45.95 |
+| 164 | LTRCV | 176 | 0 | −9.58 | −12.32 | −19.08 … −7.07 |
+| 167 | C0011 | 140 | 0 | −7.56 | −8.49 | −13.08 … −1.98 |
+| 168 | CM0101 | 140 | 0 | −14.15 | −15.31 | −28.44 … −2.10 |
+| 169 | CT0111 | 140 | 7 | −6.54 | −7.89 | −13.08 … −0.05 |
+
+| column | n | exact | median | mean | range |
+|---|---|---|---|---|---|
+| ix_int | 1056 | 77 | −4.00 | −2.72 | −39.04 … +45.95 |
+| ix_int_wbx | 898 | 0 | −13.07 | −16.39 | −64.47 … +32.95 |
+| ni_int | 1056 | 39 | −4.00 | −2.86 | −39.04 … +45.95 |
+| ni_int_wbx | 898 | 0 | −13.07 | −16.06 | −62.47 … +32.95 |
+
+model figure varies within (pdf, instr, column) in 98 of 98 groups
+
+**The largest systematic residual: the model charges an accumulator
+operand as if it were in memory.** The model's INTERNL figure equals
+its EXTERNL figure on every page (L (BU,8,8): 14.02 in both). The
+7030's does not. On the same pages, row for row, the printed INTERNL
+time exceeds the printed EXTERNL one by a median of:
+
+| instructions | INTERNL − EXTERNL | INTERNL WB XOVR − EXTERNL WB XOVR |
+|---|---:|---:|
+| +, +MG, L, LWF, K, KR, KE, `*`, C0011, CT0111 | +4 clocks | +10 |
+| M+, M+MG, ST, SRD, M+1, CM0101 (to memory) | +4 (M+1 +3) | −4 |
+| KF, KFR, KFE | +2 | +10 |
+| LFT, LTRS, LTRCV | +8 | +14 |
+| `*+`, LCV | −8 | +23 / +1 |
+
+So an operand in the accumulator costs the 7030 about 1.2 µs more than
+the same operand forwarded from memory, and a crossing accumulator
+field (bit 60 of $L into $R) about 3 µs more, against the model's 1
+clock. The to-memory instructions store their crossing internal result
+faster than their crossing external one, the reverse of the fetches.
+`/` keeps the WB XOVR anomaly of the other columns (+33), and LCV's
++22 … +46 are its decimal rows of 32-64 bits.
+
+### CV / DCV, ACCUM. OPERAND, PDF 138, 139, 165, 166 (384 cases)
+
+All 384 halt. Exact 288 (75%); every residual is within +0.19 clocks.
+
+| PDF | instr | n | exact | median | mean | range |
+|---|---|---|---|---|---|---|
+| 138 | CV | 96 | 48 | +0.10 | +0.10 | −0.00 … +0.19 |
+| 139 | DCV | 96 | 96 | −0.00 | −0.00 | −0.00 … −0.00 |
+| 165 | CV | 96 | 48 | +0.10 | +0.10 | −0.00 … +0.19 |
+| 166 | DCV | 96 | 96 | −0.00 | −0.00 | −0.00 … −0.00 |
+
+| column | n | exact | median | mean | range |
+
+**This is not an independent measurement.** `bsv/StretchTiming.bsv`'s
+CV and DCV charges (20/74 and 20/18 clocks) were read off these same
+pages at this same accumulator, so the oracle confirms only that the
+generator reproduces the conditions the charge was fitted under. The
+CV +0.19 is the decimal rows: 22.14 µs is 73.8 clocks and the charge is
+a whole 74. The comment there that "atlas_oracle.py has no CV/DCV
+generator" is now stale; it is left for the model's owner (no `bsv/`
+change in a measurement-only task). DCV, which `StretchExecute.bsv`'s
+header still lists as "not built", ran and halted on all 192 cases.
 
 ## Where the model is furthest off
 
@@ -780,14 +876,15 @@ How each column fares:
     generator's forwarding branch uses ATLE0 and $X0. It starts the WB
     crossover at .74, as PDF 114 gives (DONE 2026-11-16; residuals in
     "The forwarding pages"). The INTERNL columns (`ni_int`, `ni_int_wbx`, `ix_int`,
-    `ix_int_wbx`) need an internal-operand placement it does not have.
+    `ix_int_wbx`) are generated at 8.0 / 8.60 (DONE 2026-11-17; see
+    "The new generators: residuals").
   - **Immediate, PDF 171-189 (`addressing=immediate`, columns
     `ni_imm`/`ix_imm`).** PDF 114: "The 24 bit address of the
     instruction contained the equivalent of the standard operand
     (444...4)₁₆." The mnemonic map is `IMM_BASE` in
     `check_atlas_data.py`.
-  - **CV/DCV with forwarding (PDF 165, 166).** These have the same
-    accumulator gap as 138/139. PDF 165's typed box: "The result of a
+  - **CV/DCV with forwarding (PDF 165, 166)** (DONE 2026-11-17, with
+    138/139; see "The new generators: residuals"). PDF 165's typed box: "The result of a
     decimal to binary CV operation is placed in the accumulator at an
     offset of 68. For subsequent execution of identical CV instructions
     the operand appears to be a very large number."
@@ -807,7 +904,6 @@ How each column fares:
   Some of these PDF 40-41 does not print. They should be read from the
   commentary or the Reference Manual, not guessed.
 - **Generators still missing:**
-  - CV/DCV accumulator addressing;
   - the NONCON branch columns and CBR refills;
   - internal transmit operands;
   - PDF 110 (LVS/LVE/SVA);
