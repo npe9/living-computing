@@ -727,11 +727,35 @@ in about an hour; with the new pages `--list` reports 12,353 cases with
 a generator (run time unmeasured). Its residual predates PDF 143-189: mean −18.9 clocks,
 median −7.1, 7% exact. The largest single cause is that the model's VFL
 time does not depend on the operation. FP residuals are unmeasured:
-the oracle has no FP generator. Remaining:
-- generator support for the forwarding INTERNL columns and the immediate
-  pages (the facts from PDF 114 are in that doc);
-- an FP generator;
-- the other generators listed in that doc.
+the oracle had no FP generator.
+
+*Status 2026-11-17: all but 989 transcribed cells now have a
+generator, and each new generator has been measured on its own pages.*
+`tests/atlas_oracle.py` gained generators for the VFL INTERNL columns,
+the floating-point pages (PDF 42-101), the VFL immediate pages (PDF
+171-189) and CV/DCV, each built from the volume's own method pages (PDF
+40-41, 113-115, quoted in `docs/atlas_oracle.md`), with the facts the
+volume does not print marked CHOSEN. `--list` now reports 27,655 cases
+with a generator and 989 without; `--selftest` has eight checks, four
+new, each proven discriminating by injection. Measured (residual =
+model − printed, clocks):
+- FP, 9,406 cases: 5% exact, median −1.02, mean −3.10. Fetch from
+  memory at half the 7030's rate; I-box and to-memory stores 10-25 too
+  cheap; $R operands short; divide short; SHF has no amount term.
+- VFL INTERNL, 3,908: 3% exact, median −7.10. The model charges an
+  accumulator operand as an external one; the 7030 adds about 4 clocks
+  (10 with crossover).
+- VFL IMMED., 1,604: 41% exact, median −0.00. Immediate compares and
+  `/I` (a data effect) are long.
+- CV/DCV, 384: within 0.2 clocks, but fitted to these pages, so not
+  independent.
+Remaining:
+- the open items for the model listed in that doc's "What remains";
+- generators for NONCON/CBR, internal transmit operands, PDF 110, the
+  I-box refill rows and PDF 104 (989 cells), each needing a fact the
+  pages do not print;
+- one full run of all 27,655 cases (the generators were run page-set by
+  page-set), and a `--sample` mode short enough for M2's inner loop.
 
 **G4.2 Keep the probe guard honest.** `verify_no_probes.py` caught three
 real accidents in one day; add a check for anything else that looks
