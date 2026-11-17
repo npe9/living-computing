@@ -4548,8 +4548,9 @@ run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./
 # area with the protected refill: DF on, the refill done.
 # INJECTION, observed: the four up-front DF calls put back -> I1-I4 =
 # (16)80000000000 (DF) only; Q5 and vfl_cross_protect pass.  CYCLES 1119
-# a model pin.
-run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1119+-0" \
+# a model pin; 1115 from 2026-11-17, the preparation floor (MEASURED with
+# it removed: 1119).
+run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1115+-0" \
     "I1:1700=0" "I2:1701=0" "I3:1702=0" "I4:1703=0" "I5:1704=0x80000009120" \
     "D1:1705=0x8000000000000000" "D2:1706=0x8000000000000000" "D3:1707=0x8000000000000000" "D4:1708=0x8000000000000000" "D5:1709=0" \
     "X7A:1710=0x0190580000040642" "X6A:1711=0x0190680000040642" "X5A:1712=0x0190480000040642" "X4A:1713=0x0190380000040642" "X3A:1714=0x01348000013405dc"

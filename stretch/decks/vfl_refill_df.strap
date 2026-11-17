@@ -71,7 +71,7 @@
 !   JD the four up-front dfSignal calls put back (the model before this
 !      deck): FAIL I1, I2, I3, I4 = (16)80000000000 (DF) ONLY -- each case
 !      its own site (CM, ST one word, M+, ST crossing).  Q5 passes.
-! Q5 is the control.  CYCLES 1119 (PC 2117).
+! Q5 is the control.  CYCLES 1115 (PC 2117); 1119 before the 2026-11-17 preparation floor (measured).
 !
         SLC, 1000.0
 START   BD,  $+.32
