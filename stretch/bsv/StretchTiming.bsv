@@ -393,10 +393,15 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         // double (DCV) the accumulator was originally +1 at offset 20"
         // (PDF 113).  CV 6.00 us = 20 binary, 22.14 = 73.8 decimal; DCV
         // 6.00 = 20 binary, 5.40 = 18 decimal, at every row.  FITTED TO
-        // THE PAGE AND NOT MEASURABLE BY THE ORACLE (atlas_oracle.py has
-        // no CV/DCV generator), and a measurement at that one
-        // accumulator: Table 3's s is "the accumulator field specified by
-        // the offset minus all leading zeros" (printed p.3-9, p.3-10).
+        // THE PAGE, and a measurement at that one accumulator: Table 3's
+        // s is "the accumulator field specified by the offset minus all
+        // leading zeros" (printed p.3-9, p.3-10).  atlas_oracle.py has had
+        // a CV/DCV generator since 2026-11-16 (docs/atlas_oracle.md, "CV /
+        // DCV, ACCUM. OPERAND"): on PDF 138, 139, 165 and 166 all 384 cases
+        // are within +0.19 clocks (the decimal CV rows: 73.8 printed, a
+        // whole 74 charged).  That confirms the generator reproduces the
+        // conditions this was fitted under; it is not an independent
+        // measurement.
         6'b011011: e = dec ? 74 : 20;
         6'b111011: e = dec ? 18 : 20;
         // (DCV executes since 2026-11-16 -- G2.3, mkCvtBox, whose 6 and 4
