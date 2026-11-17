@@ -862,6 +862,9 @@ To add them means choosing a later MCP than the listing. See G2.
 | Link program | prose only |
 | FIOD subprogram, FORTRAN library | not read here; not in L (grep of decks for `FIOD`: none) |
 
+**RECONSTRUCTED 2026-11-17, single segment** (plan R2a): `decks/bss_7030.strap`,
+NOT IBM's code; it reproduces C28 p.17's map (`tests/check_bss_example4.py`).
+
 Sweep behind this table. `grep` over `decks/*.strap` for `SRORG`,
 `SRNXAD`, `SRTVL`, `SRCOMB`, `SRCCT`, `SRDKAD`, `NODE TBL`, `LINK TABLE`,
 `INTERMEDIATE`, `*MAIN*`, `FIOD` finds none. `NAMED COMMONS` and `T.V.`

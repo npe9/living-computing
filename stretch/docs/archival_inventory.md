@@ -280,6 +280,11 @@ symbols `$MCP`/`$RESLD`/`$ABEOJ`/`$ABSUB`, pseudo-ops `SYN`/`SLC`/`SEM`/
 `ENTER`/`XW`) -- compact enough to use as a hand-checkable syntax test
 for this project's own assembler.
 
+**p.17 Example 4's storage map: TRANSCRIBED 2026-11-17** (read at 400 dpi,
+every row) into `tests/check_bss_example4.py`, the oracle for the
+RECONSTRUCTED BSS processor `decks/bss_7030.strap` (plan R2a), which
+reproduces it row for row.
+
 ## 5. System Test Programs overview (`diag/7030_SystemTestPrograms_Aug61.pdf`)
 
 46 pages, read in full. "STRETCH SYSTEM CERTIFICATION" -- an
