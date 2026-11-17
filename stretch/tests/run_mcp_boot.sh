@@ -27,7 +27,12 @@ MODULE="${1:-StretchMcpBootTb}"
 export BLUESPECDIR=/opt/homebrew/Cellar/bsc/2026.01/libexec/lib
 export PATH=/opt/homebrew/Cellar/bsc/2026.01/bin:$PATH
 BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
-: "${STRETCH_TAPE:=/tmp/mcp.tape}"
+# The default tape lives in THIS tree's gitignored bsv/build-hosttape/
+# (2026-11-17).  It was a fixed /tmp path, shared by every worktree and
+# agent; a concurrent run regenerated it mid-run and PAST T MOVE failed
+# with XERR26 and a wrong S DK MCP, passing when re-run alone.
+mkdir -p "$TESTS_DIR/../bsv/build-hosttape"
+: "${STRETCH_TAPE:=$TESTS_DIR/../bsv/build-hosttape/mcp.tape}"
 export STRETCH_TAPE
 cd "$TESTS_DIR"
 python3 gen_mcp_boot_tb.py "$MODULE" > "$BSV_DIR/$MODULE.bsv"

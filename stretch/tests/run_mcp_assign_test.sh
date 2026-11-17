@@ -39,7 +39,12 @@ MODULE="${1:-StretchMcpAssignTb}"
 # building, so sharing one path would work sequentially and break the
 # moment anything ran out of order or in parallel.  A separate path
 # makes the difference impossible to get wrong.
-: "${STRETCH_TAPE:=/tmp/mcp.assign.tape}"
+# The default tape lives in THIS tree's gitignored bsv/build-hosttape/
+# (2026-11-17).  It was a fixed /tmp path, shared by every worktree and
+# agent; a concurrent run regenerated it mid-run and PAST T MOVE failed
+# with XERR26 and a wrong S DK MCP, passing when re-run alone.
+mkdir -p "$TESTS_DIR/../bsv/build-hosttape"
+: "${STRETCH_TAPE:=$TESTS_DIR/../bsv/build-hosttape/mcp.assign.tape}"
 export STRETCH_TAPE
 cd "$TESTS_DIR"
 python3 gen_mcp_boot_tb.py "$MODULE" > "$BSV_DIR/$MODULE.bsv"

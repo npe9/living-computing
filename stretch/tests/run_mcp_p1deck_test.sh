@@ -9,7 +9,12 @@
 set -e
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG="${TMPDIR:-/tmp}/mcp_p1deck.$$.log"
-PROSA_IOD_DECK=P1 STRETCH_TAPE="${TMPDIR:-/tmp}/mcp.p1deck.tape" \
+# The default tape lives in THIS tree's gitignored bsv/build-hosttape/
+# (2026-11-17).  It was a fixed /tmp path, shared by every worktree and
+# agent; a concurrent run regenerated it mid-run and PAST T MOVE failed
+# with XERR26 and a wrong S DK MCP, passing when re-run alone.
+mkdir -p "$TESTS_DIR/../bsv/build-hosttape"
+PROSA_IOD_DECK=P1 STRETCH_TAPE="$TESTS_DIR/../bsv/build-hosttape/mcp.p1deck.tape" \
   "$TESTS_DIR/run_mcp_assign_test.sh" StretchMcpP1DeckTb > "$LOG" 2>&1 \
   || { cat "$LOG"; rm -f "$LOG"; exit 1; }
 grep -v '^CONSOLE ' "$LOG" | tail -12
