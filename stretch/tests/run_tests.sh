@@ -15209,6 +15209,14 @@ run "\$EOJ names the processor-control area PCFORTRA / PCBSS (p.395)" ./run_load
 # against absolute assembly.  Injections in both files' headers.
 run "Reconstructed p.329 fits the hole: 34 words, cited labels, landed pages unchanged" python3 check_p329_reconstruction.py
 run "MCP's loader loads C, P and D cards through the RECONSTRUCTED p.329" ./run_loader_deck.sh StretchLoaderOctalTb octal
+# R2a (docs/reading_notes/fortran_bss_plan.md): the BSS processor, lost,
+# RECONSTRUCTED as a 7030 program (decks/bss_7030.strap, NOT IBM's code), run
+# on Example 4's subprograms built to C28-6379-0 p.17's sizes: the storage map
+# against the printed page row by row, the relocation table and KSILO 8-11
+# against the deck's own CHOSEN rules, messages 2, 3 and 10 (pp.22-23).
+# MEASURED (the test's header): "the largest wins" dropped moves A, STE and
+# POL; the secondary count dropped moves RANDM's size and rows 4-10.
+run "Reconstructed BSS prints C28-6379 p.17's storage map (Example 4)" python3 check_bss_example4.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

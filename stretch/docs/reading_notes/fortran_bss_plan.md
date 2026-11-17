@@ -145,6 +145,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 ### 1.3 What is missing for BSS
 
 **(a) The BSS processor itself** (spec §6, §7.4).
+- **R2a BUILT 2026-11-17** (single segment): `decks/bss_7030.strap`, RECONSTRUCTION; the record is under R2 below.
 - No code survives in any deck. The repo grep is in spec §7.4, and I agree with it.
 - It must be RECONSTRUCTED from C28 pp.7-14:
   - the card scan;
@@ -584,6 +585,7 @@ Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC
    - Oracle: **C28 p.17 Example 4's map**. Every origin, size and common address is given in octal, and the arithmetic is already checked in the spec.
    - Build Example 4's subprograms as STRAP-punched stubs of the printed sizes, run BSS, and compare the map line for line.
    - Inject: drop the "largest common wins" merge and watch the common origins move.
+   - **STATUS 2026-11-17: BUILT, single segment, staged; the map reproduces p.17.** The record follows.
 2. **R2b**, under MCP: `B TYPE,GO,FORTRAN` invoking BSS through the p.271 rewrite, with output on the printer.
    - Oracle: C22-6751 p.30's Example 4 deck shape and C28 p.22 messages.
 3. **R2c**, segmentation and the link program.
@@ -593,6 +595,70 @@ Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC
    - Size: comparable to R2a.
 
 **Labels.** Every guess is CHOSEN, citing spec G-numbers. The header is RECONSTRUCTION.
+
+#### R2a, the record (2026-11-17)
+
+**Pages read in the ink** (C28-6379-0, PDF = printed): pp.7, 8, 9, 10, 12, 13, 15, 16, 17 (at 400 dpi for the map), 22, 23.
+
+**The oracle, transcribed** from p.17 into `tests/check_bss_example4.py` (`MAP_SUB`, `MAP_COM`): ten subprogram rows and five common rows. The spec's octal sums (§6.5) agree with it.
+
+**Built:** `decks/bss_7030.strap`, labelled RECONSTRUCTION, 759 words of code at 200000-201366 (octal). It does the following:
+- scans the subprogram decks: the program card with its continuations, common definition cards, the first instruction card's index word, the vector's data cards, and size from instruction and base-0 data cards;
+- ignores T, super T, B, absolute, C, P and D cards (p.9 items 7, 10, 11);
+- builds the three tables of Figs. 1-3;
+- matches names and fetches from the library, repeating until every third-table entry is linked;
+- allocates storage: subprograms from 33.0, the library above them in fetch order, blank common at the top, named commons below it in second-table order;
+- merges duplicate commons, the largest winning (p.8 item 2, p.9 step 4, p.12 Phases 2-3), and checks for overlap;
+- builds the relocation table in the loader's layout, with the library entries in disk order;
+- sets KSILO words 8-11;
+- prints the storage map;
+- prints messages 2, 3 (T.V. INCOMPLETE, TOO MANY NAMED COMMONS, TOO MANY TRANSFER VECTORS, ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER, RELOCATION TABLES ARE TOO LARGE, and the console line) and 10.
+
+Every convention is CITED or CHOSEN in the header (C1-C15). The deck's I/O is labelled SCAFFOLD: a TWS core image in the loader's arc geometry, a library directory standing in for the `LB` areas, and a print buffer.
+
+**The comparison, row by row.** On the model, every row matched at the first run, and the control passes 32 checks in 305,759 steps.
+
+| row | printed and got |
+|---|---|
+| `*MAIN*` | 000041 000010.0 000745 NO |
+| `STEP` | 001006 000022.0 000441 NO |
+| `RANDM` | 001447 000000.0 000007 NO (its card says all 1's, so the 7 is the scan's) |
+| `POLY` | 001456 000022.0 000346 NO |
+| `DERIV` | 002024 000022.0 000271 NO |
+| `VALUE` | 002315 000022.0 000134 NO |
+| `FISIP*` | 002451 000001.0 000007 YES |
+| `IOCS*` | 002460 000002.0 003037 YES |
+| `SPTXT*` | 002460 001124.0 E. P. YES |
+| `UST*` | 005517 000001.0 000002 YES |
+| blank | 213713 000014 (the origin is by construction: the test plants U = 213766 for T = 43 words, rule C7) |
+| `DIFF` | 213703 000010 |
+| `A` | 213535 000146 |
+| `STE` | 213527 000006 |
+| `POL` | 213363 000144 |
+
+Two halves of the test check different things:
+- The calls, the common declarations and the library's disk order are CHOSEN by the test so that the rows discriminate.
+- The relocation table (43 words) and KSILO 8-11 are compared with the test's own reckoning of rules C3-C14. That half tests the deck against its own rules, not against a page.
+
+**Injections**, measured and restored by copy and cmp. Observed sets are in the test's header.
+- **Largest-wins dropped for named commons:** A becomes 213603 000100, STE 213575 and POL 213431, plus 5 table words.
+- **Largest-wins dropped for blank common:** blank's amount reads 000000.
+- **The data card's secondary count dropped from the extent:** RANDM's size reads 000002, and rows 4-10 and 17 table words move.
+- **The library sorted by fetch order, not disk order:** 4 table words fail.
+
+**Not built.** Each item fails loudly or is listed:
+- the O card (ERRC 20);
+- a data or block-data subprogram (ERRC 22);
+- message 1's sequence and check-sum checks;
+- DEFINE and DEFI with messages 8-9;
+- K, A and Z cards;
+- the storage taken by B IOD and REEL cards;
+- messages 4-7;
+- the print and console through MCP.
+
+**Not yet run:** BSS's table fed to MCP's loader. That is R2b, which must also settle:
+- the 36-bit library name (rule C10, spec C8/G7);
+- whether the card count should include the FORTRAN branch card (rule C11).
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 

@@ -1,0 +1,1401 @@
+! bss_7030.strap -- RECONSTRUCTION of the BSS processor, single segment.
+!
+! >>> A RECONSTRUCTION.  NOT IBM'S CODE.  No line of IBM's BSS processor
+! >>> survives in any deck or document held (docs/bss_loader_spec.md 7.4,
+! >>> its grep).  This program is written to C28-6379-0 pp.7-10, 12-13 and
+! >>> 22-23, read in the ink, and to the MCP loader's reading side, which is
+! >>> IBM's (printed pp.324-327, transcribed).  Every convention below is
+! >>> CITED to a page or marked CHOSEN; G-numbers are docs/bss_loader_spec.md
+! >>> section 10's gaps.  Plan step R2a, docs/reading_notes/fortran_bss_plan.md.
+!
+! PAGES READ IN THE INK FOR THIS (C28-6379-0, PDF page = printed page,
+! 130-400 dpi images, 2026-11-17):
+!   p.7   "subprograms are assigned consecutive blocks starting from address
+!         33.0, in the order in which they are encountered", "Library
+!         subprograms are assigned higher locations ... in the order in which
+!         calls to the library routines are encountered", "blank common
+!         occupies the highest block of storage and named commons, the next
+!         highest blocks"; card order A-G; the FORTRAN program card: the size
+!         "either (a) the size computed at assembly time ... or (b) all 1's",
+!         "The BSS processor computes the amount of space occupied".
+!   p.8   Figs. 1-3, the three intermediate tables, every field used below;
+!         "the largest blank common size declared by any subprogram"; "If two
+!         or more subprograms declare the same named common, the largest size
+!         declared is assigned"; card types 2-4.
+!   p.9   card types 5-11; matching, "tries to fetch that subprogram from the
+!         FORTRAN library on disk ... until all entries in the third
+!         intermediate table are linked"; storage allocation steps 1-6; the
+!         relocation table's contents (1)-(8); "leaves the relocation table in
+!         storage, beginning at the base address of blank common"; "sorting
+!         the relocation table entries so that library subprograms are loaded
+!         in the order in which they appear on the disk, and printing".
+!   p.10  Fig. 4, the relocation table (where it and the listing differ the
+!         listing wins: the loader reads this table, spec C8, 5.4).
+!   p.12  Fig. 7, the communication region (KSILO words 8-11); Phase 2 (a
+!         duplicate named common: the larger size substituted, the duplicate
+!         eliminated) and Phase 3 ("subtracting the amount of common from the
+!         origin of the common previously computed, starting from the base
+!         address of blank common"; "A second scan ... The origin of the
+!         duplicate common is obtained from the entry of the same name").
+!         Phases 2-3 are written for segmented jobs; used here for one
+!         segment, CHOSEN, since pp.7-9 give no other order.
+!   p.13  Phase 7 (the table's base not blank's base only when segmented).
+!   p.17  Example 4, the storage map: the oracle, tests/check_bss_example4.py.
+!   pp.22-23  Appendix B, the BSS messages, texts as printed.
+! The loader's side (from the transcriptions, checked against the print by
+! the suite; the lines named were re-read in the ink for R1, 2026-11-16):
+! p.324 ll.12-29 (KSILO+9.32, the card count at .28, the library bit .63),
+! p.325 l.23 (KSILO+9. the blank common origin), p.326 l.24 and p.327 ll.1-4
+! (the common origins one half word apart from table + 2.32; the vector at
+! table + 3.0 + n.32), p.327 ll.10-27 (the next table, the 36-bit library
+! name, the disk address), p.327 l.28 (KSILO+10. the branch address), p.331
+! ll.24-38 (ATBL: the column-1 codes), p.333 ll.22-26 (KSILO+8. and +9.).
+!
+! WHAT IS BUILT (R2a, staged): the scan of the subprogram decks (card
+! classes 1, 2, 5, 6, 7, 9, 10, 11 of pp.8-9), the three intermediate
+! tables, matching and library fetch (repeated until every third-table entry
+! is linked, so a library routine's own calls are fetched), allocation, the
+! relocation table, KSILO words 8-11, the storage map, and the messages
+! JOB REJECTED - COMMON AND PROGRAM OVERLAP (2), BSS TERMINATED JOB -
+! PROGRAMMER ERROR with T.V. XX INCOMPLETE, TOO MANY NAMED COMMONS, TOO
+! MANY TRANSFER VECTORS, ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER and
+! RELOCATION TABLES ARE TOO LARGE (3), and NO ENTRY POINT WITH NAME *MAIN*
+! (10).
+! NOT BUILT (each halts with a code in ERRC, never silently): the O card
+! (ERRC 20), a data (block data) subprogram (22), the first table full
+! (21); not written at all: sequence and check-sum checks (message 1), DEFINE
+! and DEFI cards (8, 9), K, A and Z cards (not in the 1963 loader's ATBL),
+! B IOD and REEL cards' storage (ignored, as other B cards), NODE cards and
+! segmentation (R2c), messages 4-7, and the print through MCP.
+!
+! RUN (tests/check_bss_example4.py, 2026-11-17): on Example 4's subprograms
+! built to p.17's sizes, the map equals the printed one row for row (ten
+! subprogram rows, five common rows; the blank common origin by the test's
+! chosen U), the relocation table and KSILO 8-11 equal the test's own
+! reckoning of C3-C14, and messages 2, 3 and 10 print as C28 pp.22-23 word
+! them.  Four measured injections in the test's header.  NOT YET RUN: this
+! table fed to MCP's loader (R2b).
+!
+! SCAFFOLDING, NOT PART OF THE RECONSTRUCTION'S CLAIMS (R2b replaces them):
+!   * the input: the subprogram cards are already on TWS (C28 p.7, BSS as
+!     the chain's last link), here a core image at TWSA laid out as the
+!     loader reads TWS -- 15 words a card, 34 cards an arc of 512 words
+!     (p.332 ll.27-30) -- read by setting $4 to a card (NEXTC);
+!   * the library: decks of contiguous 15-word cards and a directory at
+!     LIBA (two words an entry name: the name's 48 bits; an XW whose value
+!     is the deck and whose count is its cards), standing for the library's
+!     LB type areas (p.327 ll.23-27, spec G7);
+!   * the print: PRINT copies a 120-character A8 line to OUTB, standing for
+!     MCP's print; CONB holds the console line.
+!
+! CHOSEN, each where it is used below, and gathered here:
+!   C1 a FORTRAN program card that follows a program card is a
+!      continuation: its entries only (p.7 does not say how BSS tells them).
+!   C2 an entry with a zero name field ends a card's entries.
+!   C3 the first table has one entry per entry point (Fig. 1's "Entry Point
+!      Name"); the subprogram's first entry carries its size and card count,
+!      a further entry point of the same subprogram has size 0, printed
+!      "E. P." (as the map prints SPTXT*).  Every entry carries the
+!      subprogram's table pointers, disk address and library bit.
+!   C4 the size is the card's, or, when the card's is all 1's, the scanned
+!      extent; and never less than the scanned extent: the highest bit of a
+!      relocatable instruction card (origin + count) or of a loading-base-0
+!      data card (origin + count + secondary count), in words, rounded up.
+!   C5 the second table has one entry per common definition, in deck order;
+!      blank common's entry is the first, name zero.  Duplicates are found
+!      after the scan (p.9 step 4, p.12 Phase 2): the earlier entry
+!      survives, takes the larger amount, and the duplicate is marked in
+!      Fig. 2 word 2 bit 24 (unused there) -- "a pointer" (p.12) is not
+!      kept; the second scan finds the survivor by name, as Phase 3 says.
+!   C6 named commons are given origins downward from blank common's base in
+!      second-table order (p.12 Phase 3's subtraction, for one segment).
+!   C7 blank common's base B = U - max(blank amount, relocation table size),
+!      U the problem program's upper limit in KSILO+8.32 as found.  p.9 step
+!      1 computes "the upper limit ..., the size of the relocation table,
+!      and the origin of blank common" together; the table starts at B
+!      (p.9) and must fit under U.  Not printed anywhere (G5).
+!   C8 a third-table entry's word 1 is the calling subprogram's name (its
+!      first entry point's), for message 3's YY; word 3 the matched name.
+!   C9 the library is searched by every entry name (SPTXT* finds IOCS*'s
+!      deck); a library routine's deck address is kept in Fig. 1 word 3 bits
+!      46-63 (unused for a library entry) and orders the relocation table's
+!      library entries ("in the order in which they appear on the disk").
+!   C10 a library entry's relocation word 0 holds the 36-bit name the loader
+!      reads (p.327 l.24, LF(BU,36,6)): the first six A8 characters with
+!      their two high bits dropped (A6 = A8 without them, strap2/a8.py).  C28
+!      Fig. 4's note says 48 bits; the listing wins (spec C8, G7).
+!   C11 the disk address is the subprogram's first card's word offset on TWS
+!      in the loader's geometry (p.327 ll.12-19 as run in R1), 18 bits; the
+!      card count is its cards from the program card up to the next program
+!      card or the FORTRAN branch card, which is counted in none.
+!   C12 KSILO+8.0 gets 33.0's word, 41 octal (the problem program's lower
+!      limit, p.7's first subprogram address); 8.32 is read, not written;
+!      9.0 and 9.32 get B's word address, 10.0 and 10.32 *MAIN*'s absolute
+!      entry, a half-word address (19 bits), 11.0 zero (no node table).
+!   C13 the map's columns and header lines (p.17 prints the names, not
+!      the spacing); octal as six digits, an entry as ".0" or ".4".
+!   C14 a transfer-vector word is B,entry;NOP (p.8 Fig. 3 note), the
+!      entry the absolute half-word address.
+!   C15 table capacities (64 entry points, 63 common definitions, 128
+!      transfer vectors, 60 printed lines): the guide gives none (G5).
+!
+! REGISTERS: $4 the card, $5-$8 and $10-$14 table walkers, $9 the print
+! position, $15 linkage (LVI,$15,$+1.0 / B,routine / B,0($15)); a routine
+! that calls another saves $15 with SX and restores it with LX.
+!
+! ERRC (a test reads it): 0 the map printed, the tables and KSILO set;
+! 2 message 2; 3 message 3 (one of its reasons); 10 message 10; 20-22 not
+! built (above); 255 still running.
+!
+KSILO   SYN, (8)220451.0         ! L p.171 ll.42-43, K SILO DR(BU,64),(K QUANT)
+!
+        SLC, (8)200000.0
+! ======== THE MAIN FLOW =================================================
+BSS     LVI, $15, $+1.0
+        B, INIT
+! The scan of the input deck, to the FORTRAN branch card (p.7, p.9 item 9).
+        LV, $4, TWSA
+        LI(BU,1), 0
+        ST(BU,1), SCLIB
+        LVI, $15, $+1.0
+        B, SCAN
+! Matching (p.9): every third-table name against the first table's entry
+! points; a name not found is fetched from the library and scanned, which
+! may add third-table entries, until every entry is linked.
+        LVI, $7, T3
+MLOOP   KV, $7, T3P
+        BXL, MBODY
+        B, MDONE
+MBODY   L(BU,48), 1.0($7)
+        ST(BU,48), SNAME
+        LVI, $15, $+1.0
+        B, FIND1
+        L(BU,1), FOUND
+        KI(BU,1), 1
+        BZAE, MLIB
+        L(BU,48), SNAME
+        ST(BU,48), 2.0($7)       ! Fig. 3 word 3: the entry point name (C8)
+        V+I, $7, 3.0
+        B, MLOOP
+MLIB    LVI, $15, $+1.0
+        B, FINDL
+        L(BU,1), FOUND
+        KI(BU,1), 1
+        BAE, MFETCH
+        B, ETV                   ! not in the library either: message 3
+MFETCH  LV, $4, 1.0($10)         ! the library deck (SCAFFOLD)
+        L(BU,18), 1.28($10)
+        ST(BU,18), SCLEFT
+        LI(BU,1), 1
+        ST(BU,1), SCLIB
+        LVI, $15, $+1.0
+        B, SCAN
+        B, MLOOP                 ! the same entry again: now found
+! Message 10 (p.23): no *MAIN*.
+MDONE   L(BU,48), TXMAIN
+        ST(BU,48), SNAME
+        LVI, $15, $+1.0
+        B, FIND1
+        L(BU,1), FOUND
+        KI(BU,1), 1
+        BZAE, ENOMN
+        SV, $8, MAINE
+! Allocation (p.7, p.9 step 3): subprograms from 33.0 in the order met,
+! the library's after the others, in the order fetched.  Each entry point's
+! absolute address (Fig. 1 word 2 bits 0-18) is its subprogram's origin,
+! as a half-word address, plus its relative entry point.
+        LI(BU,18), (8)41
+        ST(BU,18), ORGW
+        ST(BU,18), LASTO
+        LI(BU,1), 0
+        ST(BU,1), LIBSEL
+AL0     LVI, $5, T1
+AL1     KV, $5, T1P
+        BXL, AL2
+        B, AL5
+AL2     L(BU,1), 2.25($5)
+        K(BU,1), LIBSEL
+        BZAE, AL4
+        L(BU,18), 1.28($5)
+        KI(BU,18), 0
+        BAE, AL3                 ! a further entry point (C3)
+        L(BU,18), ORGW
+        ST(BU,18), LASTO
+        +(BU,18), 1.28($5)
+        ST(BU,18), ORGW
+AL3     L(BU,18), LASTO
+        ST(BU,18), TMPH
+        LI(BU,1), 0
+        ST(BU,1), TMPH+.18
+        L(BU,19), TMPH
+        +(BU,19), 2.0($5)
+        ST(BU,19), 1.0($5)
+AL4     V+I, $5, 3.0
+        B, AL1
+AL5     L(BU,1), LIBSEL
+        KI(BU,1), 1
+        BAE, AL6
+        LI(BU,1), 1
+        ST(BU,1), LIBSEL
+        B, AL0
+AL6     L(BU,18), ORGW
+        ST(BU,18), PEND
+! The relocation table's order (p.9): the subprograms as met, then the
+! library's by deck address (C9).  ORDT: one first-entry pointer a word.
+        LVI, $11, ORDT
+        LVI, $5, T1
+OB1     KV, $5, T1P
+        BXL, OB2
+        B, OB4
+OB2     L(BU,1), 2.25($5)
+        KI(BU,1), 0
+        BZAE, OB3
+        L(BU,18), 1.28($5)
+        KI(BU,18), 0
+        BAE, OB3
+        SV, $5, 0($11)
+        V+I, $11, 1.0
+OB3     V+I, $5, 3.0
+        B, OB1
+OB4     LI(BU,18), 0
+        ST(BU,18), LASTK
+OB5     LI(BU,18), (8)777777
+        ST(BU,18), MINK
+        LI(BU,1), 0
+        ST(BU,1), FOUND
+        LVI, $5, T1
+OB6     KV, $5, T1P
+        BXL, OB7
+        B, OB9
+OB7     L(BU,1), 2.25($5)
+        KI(BU,1), 1
+        BZAE, OB8
+        L(BU,18), 1.28($5)
+        KI(BU,18), 0
+        BAE, OB8
+        L(BU,18), 2.46($5)
+        K(BU,18), LASTK
+        BZAH, OB8
+        K(BU,18), MINK
+        BZAL, OB8
+        ST(BU,18), MINK
+        SV, $5, MINE
+        LI(BU,1), 1
+        ST(BU,1), FOUND
+OB8     V+I, $5, 3.0
+        B, OB6
+OB9     L(BU,1), FOUND
+        KI(BU,1), 1
+        BZAE, OB10
+        LV, $5, MINE
+        SV, $5, 0($11)
+        V+I, $11, 1.0
+        L(BU,18), MINK
+        ST(BU,18), LASTK
+        B, OB5
+OB10    SV, $11, ORDE
+! The relocation table's size (p.9 step 1): per subprogram 3 words, the
+! named commons' half words from 2.32, the vector from 3.0 + n.32's word
+! (p.327 ll.1-4), one word a transfer.
+        LI(BU,18), 0
+        ST(BU,18), TT
+        LVI, $11, ORDT
+TS1     KV, $11, ORDE
+        BXL, TS2
+        B, TS3
+TS2     LV, $5, 0($11)
+        LVI, $15, $+1.0
+        B, SPRNG
+        L(BU,18), TT
+        +(BU,18), EW
+        ST(BU,18), TT
+        V+I, $11, 1.0
+        B, TS1
+! Blank common's base (C7), and RELOCATION TABLES ARE TOO LARGE when the
+! table or blank common is larger than the storage under U.
+TS3     L(BU,18), T2+1.28
+        K(BU,18), TT
+        BAH, TS4
+        L(BU,18), TT
+TS4     ST(BU,18), TMPB
+        L(BU,18), KSILO+8.32
+        K(BU,18), TMPB
+        BAL, ERTL
+        -(BU,18), TMPB
+        ST(BU,18), BLKB
+! Duplicate named commons (p.8 item 2, p.9 step 4, p.12 Phase 2): the
+! earlier entry survives with the LARGEST amount (C5).
+        LVI, $5, T2+2.0
+DD1     KV, $5, T2P
+        BXL, DD2
+        B, DD6
+DD2     SV, $5, CUR5
+        LVI, $8, T2+2.0
+DD3     KV, $8, CUR5
+        BXL, DD4
+        B, DD5
+DD4     L(BU,1), 1.24($8)
+        KI(BU,1), 1
+        BAE, DD4N
+        L(BU,48), 0($8)
+        K(BU,48), 0($5)
+        BZAE, DD4N
+        LI(BU,1), 1
+        ST(BU,1), 1.24($5)
+        L(BU,18), 1.28($5)
+        K(BU,18), 1.28($8)
+        BZAH, DD5
+        ST(BU,18), 1.28($8)      ! the largest wins
+        B, DD5
+DD4N    V+I, $8, 2.0
+        B, DD3
+DD5     V+I, $5, 2.0
+        B, DD1
+! Origins (p.12 Phase 3): blank at B, the named ones below it in turn.
+DD6     L(BU,18), BLKB
+        ST(BU,18), T2+1.0
+        ST(BU,18), TOP
+        LVI, $5, T2+2.0
+DO1     KV, $5, T2P
+        BXL, DO2
+        B, DO4
+DO2     L(BU,1), 1.24($5)
+        KI(BU,1), 1
+        BAE, DO3
+        L(BU,18), TOP
+        -(BU,18), 1.28($5)
+        ST(BU,18), TOP
+        ST(BU,18), 1.0($5)
+DO3     V+I, $5, 2.0
+        B, DO1
+! The second scan: a duplicate takes the origin of the entry of its name.
+DO4     LVI, $5, T2+2.0
+DO5     KV, $5, T2P
+        BXL, DO6
+        B, DO9
+DO6     L(BU,1), 1.24($5)
+        KI(BU,1), 1
+        BZAE, DO8
+        LVI, $8, T2+2.0
+DO7     L(BU,1), 1.24($8)
+        KI(BU,1), 1
+        BAE, DO7N
+        L(BU,48), 0($8)
+        K(BU,48), 0($5)
+        BZAE, DO7N
+        L(BU,18), 1.0($8)
+        ST(BU,18), 1.0($5)
+        B, DO8
+DO7N    V+I, $8, 2.0
+        B, DO7
+DO8     V+I, $5, 2.0
+        B, DO5
+! p.9 step 6: common and program overlap, message 2.
+DO9     L(BU,18), TOP
+        K(BU,18), PEND
+        BAL, EOVL
+! The communication region (Fig. 7, C12).
+        LI(BU,18), (8)41
+        ST(BU,18), KSILO+8.0
+        L(BU,18), BLKB
+        ST(BU,18), KSILO+9.0
+        ST(BU,18), KSILO+9.32
+        LI(BU,6), 0
+        ST(BU,6), KSILO+9.18
+        ST(BU,6), KSILO+9.50
+        LV, $8, MAINE
+        L(BU,19), 1.0($8)
+        ST(BU,19), KSILO+10.0
+        ST(BU,19), KSILO+10.32
+        LI(BU,5), 0
+        ST(BU,5), KSILO+10.19
+        ST(BU,5), KSILO+10.51
+        LI(BU,24), 0
+        ST(BU,24), KSILO+11.0
+! The relocation table at B (p.9), zeroed first.
+        L(BU,18), BLKB
+        ST(BU,18), WA
+        LV, $12, WA
+        L(BU,18), TT
+        ST(BU,18), TMPB
+RZ1     L(BU,18), TMPB
+        KI(BU,18), 0
+        BAE, RZ2
+        -I(BU,18), 1
+        ST(BU,18), TMPB
+        LI(BU,64), 0
+        ST(BU,64), 0($12)
+        V+I, $12, 1.0
+        B, RZ1
+RZ2     LV, $12, WA
+        LVI, $11, ORDT
+RT1     KV, $11, ORDE
+        BXL, RT2
+        B, MAP
+RT2     LV, $5, 0($11)
+        LVI, $15, $+1.0
+        B, SPRNG
+        SV, $12, TMPA
+        L(BU,18), TMPA
+        +(BU,18), EW
+        ST(BU,18), RNXT
+! Word 0 (p.324 ll.24-28, p.327 ll.11-25): the disk address and card count,
+! or the library name and bit 63.
+        L(BU,1), 2.25($5)
+        KI(BU,1), 1
+        BAE, RT3
+        L(BU,18), 2.46($5)
+        ST(BU,18), 0($12)
+        L(BU,16), .48($5)
+        ST(BU,18), .28($12)
+        B, RT4
+RT3     L(BU,48), 0($5)
+        SF(BU,36,6), 0($12)      ! A8 to A6 (C10)
+        LI(BU,1), 1
+        ST(BU,1), .63($12)
+! Word 1: the origin, the vector's length, the next table (p.326 l.47).
+RT4     L(BU,19), 1.0($5)
+        -(BU,19), 2.0($5)
+        ST(BU,19), TMPH
+        L(BU,18), TMPH
+        ST(BU,18), 1.0($12)
+        L(BU,18), NTV
+        ST(BU,18), 1.28($12)
+        V+I, $11, 1.0
+        KV, $11, ORDE
+        BXL, RT4N
+        B, RT5
+RT4N    L(BU,18), RNXT
+        ST(BU,18), 1.46($12)
+! Word 2: the number of named commons (p.324 l.20), then each common's
+! origin a half word on from 2.32 (p.326 l.24), in the subprogram's order.
+RT5     L(BU,18), NCOM
+        ST(BU,19), 2.0($12)
+        L(BU,18), P2S
+        ST(BU,18), WB
+        LV, $14, WB
+        L(BU,18), P2E
+        ST(BU,18), WB
+        SV, $12, TMPA
+        LV, $13, TMPA
+        V+I, $13, 2.32
+RT6     KV, $14, WB
+        BXL, RT6B
+        B, RT7
+RT6B    L(BU,18), 1.0($14)
+        ST(BU,18), 0($13)
+        V+I, $13, .32
+        V+I, $14, 2.0
+        B, RT6
+! The vector (p.9 (5); Fig. 3 note), from 3.0 + n.32's word.
+RT7     SV, $12, TMPA
+        L(BU,18), TMPA
+        +(BU,18), TVOFF
+        ST(BU,18), WB
+        LV, $13, WB
+        L(BU,18), P3S
+        ST(BU,18), WB
+        LV, $14, WB
+        L(BU,18), P3E
+        ST(BU,18), WB
+RT8     KV, $14, WB
+        BXL, RT9
+        B, RT10
+RT9     L(BU,48), 2.0($14)
+        ST(BU,48), SNAME
+        LVI, $15, $+1.0
+        B, FIND1
+        L(BU,64), TVSKL
+        ST(BU,64), 0($13)
+        L(BU,19), 1.0($8)
+        ST(BU,19), 0($13)
+        L(BU,64), 0($13)
+        ST(BU,64), 1.0($14)      ! Fig. 3 note: "replaced by a branch; NOP"
+        V+I, $13, 1.0
+        V+I, $14, 3.0
+        B, RT8
+RT10    L(BU,18), RNXT
+        ST(BU,18), WA
+        LV, $12, WA
+        B, RT1
+! ======== THE STORAGE MAP (p.17; columns C13) ===========================
+MAP     LVI, $10, HDR1
+        LVI, $15, $+1.0
+        B, PLINE
+        LVI, $10, HDR2
+        LVI, $15, $+1.0
+        B, PLINE
+        LVI, $5, T1
+        LVI, $13, T2
+MP1     KV, $13, T2P
+        BXL, MP1A
+        B, MP1C
+MP1A    L(BU,1), 1.24($13)
+        KI(BU,1), 1
+        BZAE, MP1C
+        V+I, $13, 2.0
+        B, MP1
+MP1C    KV, $5, T1P
+        BXL, MP3
+        KV, $13, T2P
+        BXL, MP6
+        B, MPX
+MP3     L(BU,48), 0($5)
+        ST(BU,48), LINE
+        L(BU,19), 1.0($5)
+        -(BU,19), 2.0($5)
+        ST(BU,19), TMPH
+        L(BU,18), TMPH
+        ST(BU,18), OCTV
+        LVI, $9, LINE+1.32
+        LVI, $15, $+1.0
+        B, OCT6
+        L(BU,19), 2.0($5)
+        ST(BU,19), TMPH
+        L(BU,18), TMPH
+        ST(BU,18), OCTV
+        LVI, $9, LINE+3.0
+        LVI, $15, $+1.0
+        B, OCT6
+        LI(BU,8), (8)73
+        ST(BU,8), 0($9)
+        V+, $9, K8
+        L(BU,1), TMPH+.18
+        KI(BU,1), 1
+        BAE, MP3H
+        LI(BU,8), (8)12
+        B, MP3D
+MP3H    LI(BU,8), 4
+MP3D    ST(BU,8), 0($9)
+        L(BU,18), 1.28($5)
+        KI(BU,18), 0
+        BZAE, MP4
+        LVI, $10, TXEP
+        LVI, $9, LINE+4.32
+        LI(BU,8), 5
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        B, MP5
+MP4     ST(BU,18), OCTV
+        LVI, $9, LINE+4.32
+        LVI, $15, $+1.0
+        B, OCT6
+MP5     LVI, $9, LINE+6.0
+        L(BU,1), 2.25($5)
+        KI(BU,1), 1
+        BAE, MP5Y
+        LVI, $10, TXNO
+        LI(BU,8), 2
+        B, MP5Z
+MP5Y    LVI, $10, TXYES
+        LI(BU,8), 3
+MP5Z    ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        V+I, $5, 3.0
+MP6     L(BU,16), TXSEP
+        ST(BU,16), LINE+8.0
+        KV, $13, T2P
+        BXL, MP8
+        B, MP9
+MP8     L(BU,48), 0($13)
+        K(BU,48), ZEROW
+        BAE, MP8A
+        ST(BU,48), LINE+9.0
+MP8A    L(BU,18), 1.0($13)
+        ST(BU,18), OCTV
+        LVI, $9, LINE+10.32
+        LVI, $15, $+1.0
+        B, OCT6
+        L(BU,18), 1.28($13)
+        ST(BU,18), OCTV
+        LVI, $9, LINE+12.0
+        LVI, $15, $+1.0
+        B, OCT6
+        V+I, $13, 2.0
+MP9     LVI, $15, $+1.0
+        B, PRINT
+        B, MP1
+MPX     LI(BU,8), 0
+        B, HALT
+! ======== THE SCAN (pp.7-9) =============================================
+! Cards from $4: the input to the FORTRAN branch card (SCLIB 0), or a
+! library deck of SCLEFT cards (SCLIB 1).  SCST: 0 before a program card,
+! 1 after program and common definition cards, 2 after the first
+! relocatable instruction card (the vector's data cards follow, p.9 item
+! 6), 3 in the body.
+SCAN    SX, $15, SCSV
+        LI(BU,8), 0
+        ST(BU,8), SCST
+        ST(BU,1), PREVP
+        ST(BU,1), CUROPEN
+SCLOOP  L(BU,1), SCLIB
+        KI(BU,1), 1
+        BZAE, SCL2
+        L(BU,18), SCLEFT
+        KI(BU,18), 0
+        BAE, SCEND
+SCL2    L(BU,1), PREVP
+        ST(BU,1), WASP
+        LI(BU,1), 0
+        ST(BU,1), PREVP
+! Column 1 (ATBL, L p.331 ll.24-38; C28 pp.18-19).
+        L(BU,12), 0($4)
+        KI(BU,12), (8)35
+        BAE, SCPROG              ! FORTRAN program 5,6,7,9
+        KI(BU,12), (8)27
+        BAE, SCCOM               ! common definition 5,7,8,9
+        KI(BU,12), (8)25
+        BAE, SCINS               ! relocatable instruction 5,7,9
+        KI(BU,12), (8)17
+        BAE, SCDAT               ! relocatable data 6,7,8,9
+        KI(BU,12), (8)37
+        BAE, SCFB                ! FORTRAN branch 5,6,7,8,9
+        KI(BU,12), (8)2010
+        BAE, SCORG               ! loader adjustment (O): not built
+        KI(BU,12), (8)7
+        BAE, SCNEXT              ! p.9 item 7: absolute binary ignored
+        KI(BU,12), (8)5
+        BAE, SCNEXT
+        KI(BU,12), (8)15
+        BAE, SCNEXT
+        KI(BU,12), (8)4100
+        BAE, SCNEXT              ! C, P, D (p.9 item 7)
+        KI(BU,12), (8)2004
+        BAE, SCNEXT
+        KI(BU,12), (8)4040
+        BAE, SCNEXT
+        KI(BU,12), (8)1100
+        BAE, SCNEXT              ! T (p.8 item 4): the sequence counter only
+        KI(BU,12), (8)1300
+        BAE, SCNEXT              ! super T (p.9 item 11)
+        KI(BU,12), (8)4200
+        BAE, SCNEXT              ! B (p.9 item 10; IOD and REEL not built)
+        B, SCILL
+SCNEXT  L(BU,18), CCNT
+        +I(BU,18), 1
+        ST(BU,18), CCNT
+        LVI, $15, $+1.0
+        B, NEXTC
+        L(BU,1), SCLIB
+        KI(BU,1), 1
+        BZAE, SCLOOP
+        L(BU,18), SCLEFT
+        -I(BU,18), 1
+        ST(BU,18), SCLEFT
+        B, SCLOOP
+SCEND   LVI, $15, $+1.0
+        B, CLOSE
+        LX, $15, SCSV
+        B, 0($15)
+SCFB    LVI, $15, $+1.0
+        B, CLOSE
+        LX, $15, SCSV
+        B, 0($15)
+SCORG   LI(BU,8), 20
+        B, HALT
+! The FORTRAN program card (p.7, p.8 item 1; format C28 p.18: size 6.0-7.5,
+! blank common 7.6-8.11, entries of 84 bits from 9.0, name 64 bits, the
+! entry point 19 bits at 14.4).
+SCPROG  L(BU,1), WASP
+        KI(BU,1), 1
+        BAE, SCPRC               ! a continuation (C1)
+        LVI, $15, $+1.0
+        B, CLOSE                 ! the previous subprogram's size (p.7)
+        L(BU,24), T1P
+        ST(BU,24), CURSP
+        LI(BU,1), 1
+        ST(BU,1), CUROPEN
+        ST(BU,1), FIRSTE
+        LI(BU,24), 0
+        ST(BU,24), CCNT
+        ST(BU,24), EXT
+        L(BU,18), .60($4)
+        ST(BU,18), CSIZE
+        L(BU,18), 1.14($4)
+        K(BU,18), T2+1.28
+        BZAH, SCPR1
+        ST(BU,18), T2+1.28       ! blank common: the largest declared (p.8)
+SCPR1   SV, $4, TMPA
+        L(BU,1), SCLIB
+        KI(BU,1), 1
+        BAE, SCPR1L
+        L(BU,24), TMPA
+        -(BU,24), TWSA
+        ST(BU,24), TMPA
+SCPR1L  L(BU,18), TMPA
+        ST(BU,18), DADR          ! C11, C9
+        LI(BU,8), 1
+        ST(BU,8), SCST
+        L(BU,18), T2P
+        ST(BU,18), CP2
+        L(BU,18), T3P
+        ST(BU,18), CP3
+SCPRC   L(BU,8), SCST
+        KI(BU,8), 1
+        BZAE, SCORD
+        SV, $4, TMPA
+        LV, $6, TMPA
+        LI(BU,8), 9
+        ST(BU,8), SLOTN
+SCPRL   L(BU,64), 1.32($6)
+        K(BU,64), ZEROW
+        BAE, SCPR9               ! C2
+        LV, $5, T1P
+        KV, $5, T1E
+        BXL, SCPR2
+        LI(BU,8), 21
+        B, HALT
+SCPR2   LI(BU,64), 0
+        ST(BU,64), 0($5)
+        ST(BU,64), 1.0($5)
+        ST(BU,64), 2.0($5)
+        L(BU,48), 1.32($6)
+        ST(BU,48), 0($5)         ! Fig. 1 word 1: the entry point name
+        L(BU,19), 2.32($6)
+        ST(BU,19), 2.0($5)       ! word 3: the relative entry point
+        L(BU,1), SCLIB
+        ST(BU,1), 2.25($5)       ! word 3 bit 25: library
+        L(BU,18), CP3
+        ST(BU,18), 1.46($5)      ! word 2: the third table pointer
+        L(BU,18), CP2
+        ST(BU,18), 2.28($5)      ! word 3: the second table pointer
+        L(BU,18), DADR
+        ST(BU,18), 2.46($5)      ! word 3: the disk address
+        V+I, $5, 3.0
+        SV, $5, T1P
+        LI(BU,1), 0
+        ST(BU,1), FIRSTE
+        V+, $6, K84
+        L(BU,8), SLOTN
+        -I(BU,8), 1
+        ST(BU,8), SLOTN
+        KI(BU,8), 0
+        BZAE, SCPRL
+SCPR9   L(BU,1), FIRSTE
+        KI(BU,1), 1
+        BZAE, SCPRX
+        LI(BU,8), 22             ! no entry point: a data subprogram
+        B, HALT
+SCPRX   LI(BU,1), 1
+        ST(BU,1), PREVP
+        B, SCNEXT
+! The common definition card (p.8 item 2; C28 p.19: names of 64 bits from
+! 9.0, the size 18 bits at 14.4, 84 bits an entry).
+SCCOM   L(BU,8), SCST
+        KI(BU,8), 1
+        BZAE, SCORD
+        SV, $4, TMPA
+        LV, $6, TMPA
+        LI(BU,8), 9
+        ST(BU,8), SLOTN
+SCCL    L(BU,64), 1.32($6)
+        K(BU,64), ZEROW
+        BAE, SCNEXT
+        LV, $5, T2P
+        KV, $5, T2E
+        BXL, SCC2
+        B, ETMC
+SCC2    LI(BU,64), 0
+        ST(BU,64), 0($5)
+        ST(BU,64), 1.0($5)
+        L(BU,48), 1.32($6)
+        ST(BU,48), 0($5)
+        L(BU,18), 2.32($6)
+        ST(BU,18), 1.28($5)
+        V+I, $5, 2.0
+        SV, $5, T2P
+        V+, $6, K84
+        L(BU,8), SLOTN
+        -I(BU,8), 1
+        ST(BU,8), SLOTN
+        KI(BU,8), 0
+        BZAE, SCCL
+        B, SCNEXT
+! The relocatable instruction card (p.9 item 5; C28 p.19: count 5 low 10
+! bits, origin 6-7, data from 9.0).  The first one's first 64 bits are an
+! index word, its count the vector's length (count bits 28-45: card 1.60).
+SCINS   L(BU,8), SCST
+        KI(BU,8), 0
+        BAE, SCORD
+        KI(BU,8), 1
+        BZAE, SCI2
+        L(BU,18), 1.60($4)
+        ST(BU,18), TVN
+        LI(BU,18), 0
+        ST(BU,18), TVK
+        LI(BU,8), 2
+        ST(BU,8), SCST
+        B, SCI3
+SCI2    LI(BU,8), 3
+        ST(BU,8), SCST
+SCI3    L(BU,24), .60($4)
+        +(BU,10), .50($4)
+        K(BU,24), EXT
+        BZAH, SCNEXT
+        ST(BU,24), EXT
+        B, SCNEXT
+! The relocatable data card (p.9 item 6; C28 p.19: count 5.2-5.11, origin
+! 6-7, secondary count 8-9, loading base 10, data from 11.0).  Those right
+! after the first instruction card hold the vector's A8 names.
+SCDAT   L(BU,8), SCST
+        KI(BU,8), 2
+        BAL, SCORD
+        L(BU,12), 1.44($4)
+        KI(BU,12), 0
+        BZAE, SCNEXT             ! a common's data: not the subprogram's
+        L(BU,24), .60($4)
+        +(BU,10), .50($4)
+        +(BU,24), 1.20($4)
+        K(BU,24), EXT
+        BZAH, SCD1
+        ST(BU,24), EXT
+SCD1    L(BU,8), SCST
+        KI(BU,8), 2
+        BZAE, SCNEXT
+        L(BU,10), .50($4)
+        ST(BU,24), RB
+        SV, $4, TMPA
+        LV, $6, TMPA
+SCDL    L(BU,24), RB
+        KI(BU,24), 64
+        BAL, SCNEXT
+        -I(BU,24), 64
+        ST(BU,24), RB
+        L(BU,18), TVK
+        K(BU,18), TVN
+        BZAL, SCNEXT
+        +I(BU,18), 1
+        ST(BU,18), TVK
+        LV, $5, T3P
+        KV, $5, T3E
+        BXL, SCD2
+        B, ETMT
+SCD2    LI(BU,64), 0
+        ST(BU,64), 0($5)
+        ST(BU,64), 1.0($5)
+        ST(BU,64), 2.0($5)
+        LV, $8, CURSP
+        L(BU,48), 0($8)
+        ST(BU,48), 0($5)         ! Fig. 3 word 1: the subprogram (C8)
+        L(BU,48), 1.56($6)
+        ST(BU,48), 1.0($5)       ! word 2: the transfer vector entry
+        V+I, $5, 3.0
+        SV, $5, T3P
+        V+I, $6, 1.0
+        B, SCDL
+! A subprogram ends at the next program card or the branch card (p.7): its
+! card count, and its size (C4), into its first entry.
+CLOSE   L(BU,1), CUROPEN
+        KI(BU,1), 1
+        BZAE, CLX
+        LV, $8, CURSP
+        L(BU,18), CCNT
+        ST(BU,16), .48($8)
+        L(BU,24), EXT
+        +I(BU,24), 63
+        ST(BU,24), TMPW
+        L(BU,18), TMPW
+        ST(BU,18), CWDS
+        L(BU,18), CSIZE
+        KI(BU,18), (8)777777
+        BAE, CL2
+        K(BU,18), CWDS
+        BAH, CL3
+CL2     L(BU,18), CWDS
+CL3     ST(BU,18), 1.28($8)
+        LI(BU,1), 0
+        ST(BU,1), CUROPEN
+CLX     B, 0($15)
+! SCAFFOLD: the next card.  TWS: 15 words a card, 34 cards an arc of 512
+! (p.332 ll.27-30); a library deck: contiguous.
+NEXTC   V+I, $4, 15.0
+        L(BU,1), SCLIB
+        KI(BU,1), 1
+        BAE, NCX
+        L(BU,8), ARCJ
+        +I(BU,8), 1
+        ST(BU,8), ARCJ
+        KI(BU,8), 34
+        BZAE, NCX
+        V+I, $4, 2.0
+        LI(BU,8), 0
+        ST(BU,8), ARCJ
+NCX     B, 0($15)
+! ======== SUBROUTINES ===================================================
+! FIND1: SNAME's 48 bits among the first table's entry points; $8, FOUND.
+FIND1   LVI, $8, T1
+F1LP    KV, $8, T1P
+        BXL, F1B
+        LI(BU,1), 0
+        ST(BU,1), FOUND
+        B, 0($15)
+F1B     L(BU,48), 0($8)
+        K(BU,48), SNAME
+        BAE, F1HIT
+        V+I, $8, 3.0
+        B, F1LP
+F1HIT   LI(BU,1), 1
+        ST(BU,1), FOUND
+        B, 0($15)
+! FINDL (SCAFFOLD): SNAME in the library directory; $10, FOUND.
+FINDL   LV, $10, LIBA
+FLLP    L(BU,64), 0($10)
+        K(BU,64), ZEROW
+        BAE, FLNO
+        L(BU,48), 0($10)
+        K(BU,48), SNAME
+        BAE, FLHIT
+        V+I, $10, 2.0
+        B, FLLP
+FLNO    LI(BU,1), 0
+        ST(BU,1), FOUND
+        B, 0($15)
+FLHIT   LI(BU,1), 1
+        ST(BU,1), FOUND
+        B, 0($15)
+! SPRNG: for the subprogram whose first entry is $5, its second- and
+! third-table ranges (to the next subprogram's pointers, or the tables'
+! ends), NCOM, NTV, TVOFF = 3 + NCOM/2 (the vector's word, p.327 ll.1-4)
+! and EW, its relocation entry's words.
+SPRNG   L(BU,18), 1.46($5)
+        ST(BU,18), P3S
+        L(BU,18), 2.28($5)
+        ST(BU,18), P2S
+        SV, $5, TMPA
+        LV, $8, TMPA
+        V+I, $8, 3.0
+SPR1    KV, $8, T1P
+        BXL, SPR2
+        L(BU,18), T2P
+        ST(BU,18), P2E
+        L(BU,18), T3P
+        ST(BU,18), P3E
+        B, SPR4
+SPR2    L(BU,18), 1.28($8)
+        KI(BU,18), 0
+        BZAE, SPR3
+        V+I, $8, 3.0
+        B, SPR1
+SPR3    L(BU,18), 1.46($8)
+        ST(BU,18), P3E
+        L(BU,18), 2.28($8)
+        ST(BU,18), P2E
+SPR4    L(BU,18), P2E
+        -(BU,18), P2S
+        ST(BU,19), TMPH
+        L(BU,18), TMPH
+        ST(BU,18), NCOM
+        L(BU,18), P3E
+        -(BU,18), P3S
+        ST(BU,18), TMPB
+        LI(BU,18), 0
+        ST(BU,18), NTV
+SPR5    L(BU,18), TMPB
+        KI(BU,18), 0
+        BAE, SPRX
+        -I(BU,18), 3
+        ST(BU,18), TMPB
+        L(BU,18), NTV
+        +I(BU,18), 1
+        ST(BU,18), NTV
+        B, SPR5
+SPRX    L(BU,18), NCOM
+        +I(BU,18), 6
+        ST(BU,19), TMPH
+        L(BU,18), TMPH
+        ST(BU,18), TVOFF
+        +(BU,18), NTV
+        ST(BU,18), EW
+        B, 0($15)
+! OCT6: OCTV's 18 bits as six octal digits in A8 at $9 (A8 zero is 0o12).
+OCT6    LVI, $10, 0
+        LI(BU,8), 6
+        ST(BU,8), OCN
+OC1     L(BU,3), OCTV($10)
+        KI(BU,3), 0
+        BZAE, OC2
+        LI(BU,8), (8)12
+OC2     ST(BU,8), 0($9)
+        V+, $9, K8
+        V+, $10, K3
+        L(BU,8), OCN
+        -I(BU,8), 1
+        ST(BU,8), OCN
+        KI(BU,8), 0
+        BZAE, OC1
+        B, 0($15)
+! PUTX: PXN characters from $10 to $9.
+PUTX    L(BU,8), 0($10)
+        ST(BU,8), 0($9)
+        V+, $10, K8
+        V+, $9, K8
+        L(BU,8), PXN
+        -I(BU,8), 1
+        ST(BU,8), PXN
+        KI(BU,8), 0
+        BZAE, PUTX
+        B, 0($15)
+! PRINT (SCAFFOLD for MCP's print): LINE to the next 15 words of OUTB.
+PRINT   LV, $9, OUTP
+        LVI, $10, LINE
+        LI(BU,8), 15
+        ST(BU,8), PXN
+PR1     L(BU,64), 0($10)
+        ST(BU,64), 0($9)
+        L(BU,64), BLANKW
+        ST(BU,64), 0($10)
+        V+I, $9, 1.0
+        V+I, $10, 1.0
+        L(BU,8), PXN
+        -I(BU,8), 1
+        ST(BU,8), PXN
+        KI(BU,8), 0
+        BZAE, PR1
+        SV, $9, OUTP
+        L(BU,18), OUTN
+        +I(BU,18), 1
+        ST(BU,18), OUTN
+        B, 0($15)
+! PLINE: the 15-word constant line at $10, printed.
+PLINE   SX, $15, PLSV
+        LVI, $9, LINE
+        LI(BU,8), 120
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $15, $+1.0
+        B, PRINT
+        LX, $15, PLSV
+        B, 0($15)
+! INIT: the tables empty, blank common's second-table entry (C5), LINE
+! blank, the print at OUTB.
+INIT    SX, $15, INSV
+        LVI, $5, T1
+        SV, $5, T1P
+        LVI, $5, T2+2.0
+        SV, $5, T2P
+        LVI, $5, T3
+        SV, $5, T3P
+        LVI, $5, OUTB
+        SV, $5, OUTP
+        LI(BU,64), 0
+        ST(BU,64), T2
+        ST(BU,64), T2+1.0
+        LI(BU,8), 0
+        ST(BU,8), ARCJ
+        LVI, $10, BLANKL
+        LVI, $9, LINE
+        LI(BU,8), 120
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LX, $15, INSV
+        B, 0($15)
+! ======== MESSAGES (C28 pp.22-23) =======================================
+! Message 3: the console line (CONB, SCAFFOLD) and "JOB TERMINATED - "
+! begun in LINE, $9 after it.
+MSGBEG  SX, $15, MBSV
+        LVI, $10, TXCON
+        LVI, $9, CONB
+        LI(BU,8), 40
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $10, TXJT
+        LVI, $9, LINE
+        LI(BU,8), 17
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LX, $15, MBSV
+        B, 0($15)
+! YY: the subprogram being scanned, or blanks.
+EYY     L(BU,1), CUROPEN
+        KI(BU,1), 1
+        BAE, EYY1
+        L(BU,48), BLANKW
+        B, EYY2
+EYY1    LV, $8, CURSP
+        L(BU,48), 0($8)
+EYY2    ST(BU,48), YYN
+        B, 0($15)
+ETMC    LVI, $12, TXTMC
+        LI(BU,8), 26
+        B, ERSN
+ETMT    LVI, $12, TXTMT
+        LI(BU,8), 29
+        B, ERSN
+SCILL   LVI, $12, TXILL
+        LI(BU,8), 24
+        B, ERSN
+SCORD   LVI, $12, TXORD
+        LI(BU,8), 24
+ERSN    ST(BU,8), RSNN
+        LVI, $15, $+1.0
+        B, EYY
+        LVI, $15, $+1.0
+        B, MSGBEG
+        SV, $12, TMPA
+        LV, $10, TMPA
+        L(BU,8), RSNN
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+ERYY    L(BU,48), YYN
+        ST(BU,48), 0($9)
+        V+, $9, K48
+        LVI, $10, TXSP
+        LI(BU,8), 11
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $15, $+1.0
+        B, PRINT
+        LI(BU,8), 3
+        B, HALT
+! T.V. XX INCOMPLETE IN YY SUBPROGRAM: XX the name, YY its subprogram.
+ETV     L(BU,48), 0($7)
+        ST(BU,48), YYN
+        LVI, $15, $+1.0
+        B, MSGBEG
+        LVI, $10, TXTV
+        LI(BU,8), 5
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        L(BU,48), SNAME
+        ST(BU,48), 0($9)
+        V+, $9, K48
+        LVI, $10, TXINC
+        LI(BU,8), 15
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        B, ERYY
+ERTL    LVI, $15, $+1.0
+        B, MSGBEG
+        LVI, $10, TXRTL
+        LI(BU,8), 31
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $15, $+1.0
+        B, PRINT
+        LI(BU,8), 3
+        B, HALT
+EOVL    LVI, $10, TXOVL
+        LVI, $9, LINE
+        LI(BU,8), 42
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $15, $+1.0
+        B, PRINT
+        LI(BU,8), 2
+        B, HALT
+ENOMN   LVI, $10, TXNOM
+        LVI, $9, LINE
+        LI(BU,8), 53
+        ST(BU,8), PXN
+        LVI, $15, $+1.0
+        B, PUTX
+        LVI, $15, $+1.0
+        B, PRINT
+        LI(BU,8), 10
+HALT    ST(BU,8), ERRC
+        BEW, $
+!
+! ======== DATA ==========================================================
+        SLC, (8)204000.0
+ERRC    DD(BU,64), (8)377
+TWSA    XW, INPUT                ! SCAFFOLD: the TWS image (a test sets it)
+LIBA    XW, INPUT                ! SCAFFOLD: the library directory
+T1P     XW, T1
+T2P     XW, T2
+T3P     XW, T3
+T1E     XW, T1+192.0             ! C15: 64 entry points
+T2E     XW, T2+128.0             ! 63 common definitions and blank
+T3E     XW, T3+384.0             ! 128 transfer vectors
+OUTP    XW, OUTB
+OUTN    DD(BU,64), 0
+CURSP   DD(BU,64), 0
+CUROPEN DD(BU,64), 0
+PREVP   DD(BU,64), 0
+WASP    DD(BU,64), 0
+FIRSTE  DD(BU,64), 0
+SCST    DD(BU,64), 0
+SCLIB   DD(BU,64), 0
+SCLEFT  DD(BU,64), 0
+ARCJ    DD(BU,64), 0
+CCNT    DD(BU,64), 0
+EXT     DD(BU,64), 0
+CSIZE   DD(BU,64), 0
+CWDS    DD(BU,64), 0
+TVN     DD(BU,64), 0
+TVK     DD(BU,64), 0
+RB      DD(BU,64), 0
+SLOTN   DD(BU,64), 0
+DADR    DD(BU,64), 0
+CP2     DD(BU,64), 0
+CP3     DD(BU,64), 0
+TMPA    DD(BU,64), 0
+TMPB    DD(BU,64), 0
+TMPH    DD(BU,64), 0
+TMPW    DD(BU,64), 0
+WA      DD(BU,64), 0             ! written only (BU,18): its value a word
+WB      DD(BU,64), 0             ! the same
+CUR5    DD(BU,64), 0
+ORGW    DD(BU,64), 0
+LASTO   DD(BU,64), 0
+PEND    DD(BU,64), 0
+LIBSEL  DD(BU,64), 0
+SNAME   DD(BU,64), 0
+YYN     DD(BU,64), 0
+FOUND   DD(BU,64), 0
+MAINE   DD(BU,64), 0
+BLKB    DD(BU,64), 0
+TT      DD(BU,64), 0
+TOP     DD(BU,64), 0
+ORDE    DD(BU,64), 0
+LASTK   DD(BU,64), 0
+MINK    DD(BU,64), 0
+MINE    DD(BU,64), 0
+P2S     DD(BU,64), 0
+P2E     DD(BU,64), 0
+P3S     DD(BU,64), 0
+P3E     DD(BU,64), 0
+NCOM    DD(BU,64), 0
+NTV     DD(BU,64), 0
+TVOFF   DD(BU,64), 0
+EW      DD(BU,64), 0
+RNXT    DD(BU,64), 0
+OCTV    DD(BU,64), 0
+OCN     DD(BU,64), 0
+PXN     DD(BU,64), 0
+RSNN    DD(BU,64), 0
+SCSV    DD(BU,64), 0
+PLSV    DD(BU,64), 0
+INSV    DD(BU,64), 0
+MBSV    DD(BU,64), 0
+ZEROW   DD(BU,64), 0
+BLANKW  DD(BU,64), (16)1010101010101010
+K3      XW, .3
+K8      XW, .8
+K48     XW, .48
+K84     XW, 1.20                 ! a program or common card's entry, 84 bits
+TVSKL   B, 0                     ! C14: a transfer, B,entry;NOP
+        NOP
+! Texts, A8 (strap2/a8.py): C28 pp.22-23 as printed; the map's own.
+TXMAIN  DD(BU,64), (16)2C243139252C1010   ! *MAIN*
+TXSEP   DD(BU,64), (16)2C2C101010101010   ! **
+TXEP    DD(BU,64), (16)353B10273B101010   ! E. P.
+TXYES   DD(BU,64), (16)1835121010101010   ! YES
+TXNO    DD(BU,64), (16)2526101010101010   ! NO
+TXTV    DD(BU,64), (16)133B153B10101010   ! T.V.
+TXINC   DD(BU,64), (16)1039253326242723   !  INCOMPLETE IN
+        DD(BU,64), (16)3513351039251010
+TXSP    DD(BU,64), (16)1012143227292637   !  SUBPROGRAM
+        DD(BU,64), (16)2931241010101010
+TXJT    DD(BU,64), (16)2126321013352924   ! JOB TERMINATED -
+        DD(BU,64), (16)3925311335341020
+        DD(BU,64), (16)1010101010101010
+TXCON   DD(BU,64), (16)3212121013352924   ! BSS TERMINATED JOB - PROGRAMMER ERROR
+        DD(BU,64), (16)3925311335341021
+        DD(BU,64), (16)2632102010272926
+        DD(BU,64), (16)3729312424352910
+        DD(BU,64), (16)3529292629101010
+TXOVL   DD(BU,64), (16)2126321029352135   ! JOB REJECTED - COMMON AND PROGRAM OVERLAP.
+        DD(BU,64), (16)3313353410201033
+        DD(BU,64), (16)2624242625103125
+        DD(BU,64), (16)3410272926372931
+        DD(BU,64), (16)2410261535292331
+        DD(BU,64), (16)273B101010101010
+TXNOM   DD(BU,64), (16)2526103525132918   ! NO ENTRY POINT WITH NAME *MAIN* - JOB WILL NOT BE RUN
+        DD(BU,64), (16)1027263925131016
+        DD(BU,64), (16)3913381025312435
+        DD(BU,64), (16)102C243139252C10
+        DD(BU,64), (16)2010212632101639
+        DD(BU,64), (16)2323102526131032
+        DD(BU,64), (16)3510291425101010
+TXTMC   DD(BU,64), (16)1326261024312518   ! TOO MANY NAMED COMMONS IN
+        DD(BU,64), (16)1025312435341033
+        DD(BU,64), (16)2624242625121039
+        DD(BU,64), (16)2510101010101010
+TXTMT   DD(BU,64), (16)1326261024312518   ! TOO MANY TRANSFER VECTORS IN
+        DD(BU,64), (16)1013293125123635
+        DD(BU,64), (16)2910153533132629
+        DD(BU,64), (16)1210392510101010
+TXILL   DD(BU,64), (16)3923233537312310   ! ILLEGAL TYPE OF CARD IN
+        DD(BU,64), (16)1318273510263610
+        DD(BU,64), (16)3331293410392510
+TXORD   DD(BU,64), (16)3925332629293533   ! INCORRECT CARD ORDER IN
+        DD(BU,64), (16)1310333129341026
+        DD(BU,64), (16)2934352910392510
+TXRTL   DD(BU,64), (16)2935232633311339   ! RELOCATION TABLES ARE TOO LARGE
+        DD(BU,64), (16)2625101331322335
+        DD(BU,64), (16)1210312935101326
+        DD(BU,64), (16)2610233129373510
+! The map's two header lines (C13), 120 characters each.
+HDR1    DD(BU,64), (16)1010101010101010   ! **SUBPROGRAMS** ... **COMMONS**
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)101010102C2C1214
+        DD(BU,64), (16)3227292637293124
+        DD(BU,64), (16)122C2C1010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)101010102C2C3326
+        DD(BU,64), (16)24242625122C2C10
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+HDR2    DD(BU,64), (16)2531243510101010   ! NAME ORIGIN REL. E. P. SIZE LIB. SEG. NO.
+        DD(BU,64), (16)1010101026293937   !   NAME ORIGIN AMOUNT SEG. NO.
+        DD(BU,64), (16)3925101010101010
+        DD(BU,64), (16)2935233B10353B10
+        DD(BU,64), (16)273B101012391935
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)2339323B10101010
+        DD(BU,64), (16)1235373B1025263B
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)2531243510101010
+        DD(BU,64), (16)1010101026293937
+        DD(BU,64), (16)3925101010101010
+        DD(BU,64), (16)3124261425131010
+        DD(BU,64), (16)101010101235373B
+        DD(BU,64), (16)1025263B10101010
+BLANKL  DD(BU,64), (16)1010101010101010   ! a blank line
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+LINE    DR(BU,64), 15
+CONB    DR(BU,64), 5
+!
+! The tables (C15).  T1: Fig. 1, 3 words an entry point.  T2: Fig. 2, 2
+! words a common.  T3: Fig. 3, 3 words a transfer.  ORDT: the relocation
+! table's order.  OUTB: the printed lines, 15 words each.
+T1      SYN, (8)205000.0
+T2      SYN, (8)205400.0
+T3      SYN, (8)205600.0
+ORDT    SYN, (8)206400.0
+OUTB    SYN, (8)206500.0
+! The input (SCAFFOLD): a test puts the TWS image, the library decks and
+! their directory after INPUT and points TWSA and LIBA at them.
+        SLC, (8)210400.0
+INPUT   SYN, $
+        END, BSS

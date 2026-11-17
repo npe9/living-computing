@@ -893,6 +893,22 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
+## THE BSS PROCESSOR, RECONSTRUCTED -- R2a single segment built, 2026-11-17
+
+`decks/bss_7030.strap` is a 7030 program labelled RECONSTRUCTION; IBM's BSS
+code is lost. It reproduces C28-6379-0 p.17's Example 4 storage map row for
+row on stubs of the printed sizes (`tests/check_bss_example4.py`). The record
+and the row-by-row result are in the plan's R2a.
+
+**Next, R2b.** Feed BSS's relocation table and KSILO to MCP's loader:
+`gen_loader_deck_tb.py`'s BSS modes, with the table built by the deck instead
+of the driver. Then `B TYPE,GO,FORTRAN` through p.271's rewrite.
+
+Open questions R2b must settle:
+- the library name's 36 bits (deck rule C10);
+- whether the FORTRAN branch card counts (C11);
+- the O card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL storage, all not built.
+
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
