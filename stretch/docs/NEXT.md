@@ -18400,3 +18400,15 @@ floating store (read at 300 dpi 2026-11-16; this line said "the same");
   the u/sqrt(1 - t) = 6.7072 that passed within 2.3 units.  So SRT's
   store to word 8 takes effect in the model and SRD's does not.  Whether
   SRT then leaves bits 60-63 as p.95 stores them was not checked.
+
+## IS WORD 11 OR 12 "INDEX STORAGE" FOR THE DECODE HOLD? -- open, 2026-11-17
+
+Batch18's index-store decode hold (StretchCore `laarRetire`,
+`xstoreFreeAt`; Perf. Char. Vol. 1 printed p.3-20, "a store into index
+storage" stops decoding) tests `storeWaitWord`, the STORE WAIT set of
+Fig. 3.1.24: words 11, 12 and 16-31.  So a VFL ST into the indicator
+register (word 11) holds decoding too.  Measured on
+`decks/vfl_cross_special_words.strap`: 404 clocks with the hold as built,
+389 with it narrowed to X16-31.  Re-pinned at 404.  Read whether the
+machine's index storage (the fast core holding X0-X15) also holds words 11
+and 12, or whether only STORE WAIT covers them, and settle the set.

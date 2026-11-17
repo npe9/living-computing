@@ -4451,7 +4451,9 @@ run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole op
 # out of word 11 (head and tail), K1-K3 the counts (K2 the CM refill path,
 # which set no counts until 2026-11-17; K3 a CM crossing into word 7).
 # INJECTIONS, observed: the deck's header.  CYCLES 389 a model pin.
-run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=389+-0" \
+# 404, not 389 as first pinned: batch18's index-store decode hold fires on
+# C3's ST into word 11 (storeWaitWord); narrowed to X16-31 it runs 389.
+run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=404+-0" \
     "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
     "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"
 
