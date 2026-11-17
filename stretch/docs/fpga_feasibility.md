@@ -2605,7 +2605,7 @@ oracle, one box per commit.
 1. **VFL divide** -> an iterative divider box (restoring, a few quotient
    bits a clock). Removes ~165k COMB. Reuse `mkFpDivBox`'s datapath for
    the 96-bit case, and wire the FP divide to the box in the same step.
-2. **`binaryToBcd` / `bcdToBinary`** -> one decimal box, a digit a clock
+2. **DONE 2026-11-17 (§10.6).** **`binaryToBcd` / `bcdToBinary`** -> one decimal box, a digit a clock
    (double-dabble one way, multiply-by-ten-and-add the other). Removes
    the 335 constant multiplies, 96 constant divides and the 33 + 33
    multiplier blocks at three sites each. The real SAU was serial by
@@ -2625,3 +2625,44 @@ oracle, one box per commit.
 After step 1 alone the whole-core synthesis should terminate in
 reasonable time, which makes every later step measurable; that is the
 first acceptance test.
+
+### 10.6 Step 2 done: every radix conversion through `mkCvtBox` (2026-11-17)
+
+`CV`, `LCV` and `LTRCV` now convert through `mkCvtBox` (StretchCvtBox.bsv,
+built for `DCV` on 2026-11-16) by the same `NeedBox` bail, and
+`bcdToBinary` and `binaryToBcd` are deleted from `StretchALU.bsv`. No
+combinational converter is left in `execute()`. What stays at the call
+sites is wiring: a decimal field of any byte size is laid out as four-bit
+digits for the box (`decFieldDigits`: `decCompact` plus a sixteen-step
+adder chain for the byte count), and a 24-digit significant-digit count
+for Partial Field (`cvtSigDigits`).
+
+Measured the §10.2 way: one instance between registers, `yosys
+synth_ecp5 -noabc9`, scratch wrappers (each run under a minute).
+
+| function, one instance | LUT4 | CCU2C | MULT18X18D | TRELLIS_FF | sites |
+|---|---|---|---|---|---|
+| removed: `bcdToBinary` (§10.2) | 2,570 | 336 | 33 | | 3 |
+| removed: `binaryToBcd` (§10.2) | did not finish in 25 min | | | | 3 |
+| `mkCvtBox` (already instantiated once for `DCV`; unchanged) | 6,003 | 504 | 0 | 269 | 1 |
+| `decFieldDigits`, first form (byte position `k * size`), rejected | 556 | 77 | **11** | 146* | |
+| added: `decFieldDigits`, as committed (adder chain) | 394 | 99 | 0 | 146* | 2 |
+
+\* the wrapper's own registers.
+
+So the change removes three instances of a 2,570-LUT4, 33-DSP function
+and three of one that did not synthesise, and adds two 394-LUT4 layout
+functions; the box was already paid for. The first form of the byte
+count was rejected for its eleven DSP blocks.
+
+**Not measured: the whole core before and after.** §9's whole-core runs
+take hours (§9.1, §9.2), far past this step's 20-minute bound, and the
+`bsc -verilog` operator census of §10.1 was not repeated (the machine's
+load average was 25-170 during this work). The census predicts that the
+335 constant multiplies, 96 divides by ten and 619 remainder adders of
+§10.1 are gone. That prediction is not verified.
+
+`mkCvtBox` is now the largest thing this step leaves. Its 6,003 LUT4 are
+sixteen double-dabble steps a clock (`cvtBitsPerCycle`), 512 digit
+adjusters. Fewer bits a clock is the obvious trade, bounded by the
+callers' budgets (DCV's decimal 18 clocks is the smallest).

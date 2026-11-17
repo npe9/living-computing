@@ -4215,6 +4215,8 @@ run "CV and LTRCV -- MCP's own time conversion, end to end" ./run_program.sh ../
 # values into the same positions produces 0x0C2238, differing in all
 # three digit pairs, and the injection that makes binaryToBcd divide
 # by sixteen produces exactly that shape (0xC2E3A).
+# (binaryToBcd is deleted since 2026-11-17; mkCvtBox's double dabble
+# without its add-three gives 0xC2238 here -- the deck header.)
 #
 # AND IT PROVES THE CLEARING SEMANTICS VIA A LINE THAT LOOKS
 # REDUNDANT.  p.24 line 23 saves the binary seconds to memory one

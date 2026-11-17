@@ -491,7 +491,11 @@ decimal `LFT`.**  CONVERT DOUBLE (printed p.74) is CV's arm with 20/96 for
 (`StretchCvtBox.bsv`): double dabble sixteen bits a clock to decimal,
 Horner eight digits a clock to binary, reached by the same `NeedBox` bail
 (`BoxReq` is now a three-way union and `mkEBox`'s `boxKind` says which box
-is held).  `tests/run_cvtbox_test.sh` tests it alone;
+is held).  **Since 2026-11-17 `CV`, `LCV` and `LTRCV` use it too**, and
+the inline `binaryToBcd`/`bcdToBinary` are deleted: no combinational
+converter is left in `execute()` (a decimal field of another byte size
+reaches the box as four-bit digits, `decFieldDigits`; LUT4 figures in
+`docs/fpga_feasibility.md` §10.6).  `tests/run_cvtbox_test.sh` tests it alone;
 `decks/vfl_dcv.strap` runs the Reference Manual's Figure 19 end to end
 (LCV, LTRCV, `*`, DCV, decimal ST).  Timing: `eboxClocks`'s DCV row, the Vol. 2 atlas
 PDF 139 point (20 binary, 18 decimal), Table 3's dependence on S unmodelled since its terms

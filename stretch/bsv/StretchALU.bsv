@@ -108,109 +108,15 @@ function Bit#(7) connLeftZeros(Bit#(128) v, Bit#(8) width);
   return truncate((hi == 0) ? width : (width - hi));
 endfunction
 
-// LOAD CONVERTED's decimal-to-binary conversion, Reference Manual
-// printed pp.71-73.
-//
-// p.72, "Load Converted (LCV)": "The addressed storage field is
-// converted as an integer from decimal to binary or from binary to
-// decimal depending on the setting of the radix modifier.  The
-// accumulator is cleared and the converted field is placed into it at
-// the specified offset."
-//
-// p.72 again, under Radix: "Bit 53 of the instruction, the radix
-// modifier, specifies the radix of the OPERAND TO BE CONVERTED ...
-// If this bit is zero, the original field is binary; if this bit is
-// one, the original field is decimal.  This modifier also specifies
-// the interpretation of the byte size field in the same manner as in
-// integer arithmetic operations."
-//
-// and p.73's top completes it: the decimal field is converted "to
-// byte size four" BEFORE the decimal-to-binary conversion -- so a
-// byte wider than four contributes its four low-order bits and a
-// narrower one is zero-extended, exactly as p.63 says of decimal
-// STORE.
-//
-// `numBits` is the NUMERIC part only: a signed decimal field carries
-// its sign byte as the rightmost byte and inside `len_` (p.56, "the
-// field length specifies the total length in bits of the storage
-// operand, INCLUDING THE SIGN BYTE when present"), so the caller
-// shifts it off and passes what remains.
-//
-// Returns the binary value and the DIGIT COUNT, which the caller
-// needs for Partial Field: p.73, "In a decimal-to-binary conversion,
-// this indicator is also actuated if the storage field exceeds 15
-// decimal digits (as could be specified using a byte size of less
-// than four).  Meaningless results are then obtained."  Fifteen
-// digits is under 2^50, so sixteen positions of accumulation cannot
-// overflow the 128-bit magnitude and the count is the only thing
-// standing between a caller and a meaningless answer.
-function Integer pow10i(Integer k);
-  Integer r = 1;
-  for (Integer i = 0; i < k; i = i + 1) r = r * 10;
-  return r;
-endfunction
-
-function Tuple2#(Bit#(128), Bit#(7))
-         bcdToBinary(Bit#(64) digitsRaw, Bit#(7) numBits, Bit#(4) bsEff);
-  Bit#(128) val = 0;
-  Bit#(7)   nd  = 0;
-  for (Integer k = 0; k < 16; k = k + 1) begin
-    Bit#(7) lo = fromInteger(k) * zeroExtend(bsEff);
-    if (lo < numBits) begin
-      Bit#(7) rem = numBits - lo;
-      Bit#(4) w   = (rem >= zeroExtend(bsEff)) ? bsEff : truncate(rem);
-      Bit#(8) wmask = (w >= 8) ? 8'hFF : ((8'b1 << w) - 1);
-      Bit#(8) byteVal = truncate(digitsRaw >> lo) & wmask;
-      // "converted to byte size four": the four low-order bits.  A
-      // byte narrower than four was already zeroed above it by
-      // wmask, so truncation serves both cases.
-      Bit#(4) digit = truncate(byteVal);
-      val = val + (zeroExtend(digit) * fromInteger(pow10i(k)));
-      nd  = fromInteger(k) + 1;
-    end
-  end
-  return tuple2(val, nd);
-endfunction
-
-// THE OTHER DIRECTION, and the one that stands in front of MCP's
-// boot.  bcdToBinary above has existed since LCV was built; every
-// MCP site that reaches it converts DECIMAL TO BINARY.  Printed
-// p.24's time conversion goes the other way -- line 25's CV and
-// lines 26 and 28's LTRCV all produce decimal -- so this function
-// is the whole of what was missing.
-//
-// DIVIDE BY TEN, TWENTY-FOUR TIMES, and the choice was measured
-// rather than argued.  The alternative is double dabble, which is
-// the cheaper circuit; the worry was that twenty-four 96-bit
-// dividers would be ruinous to ELABORATE, since elaboration is this
-// model's real build cost.  Built standalone, this version
-// elaborates and links in two seconds and converts
-// 281474976710655 to fifteen digits correctly.  Two seconds is not
-// worth an argument.
-//
-// >>> THAT IS AN ELABORATION MEASUREMENT AND NOT A GATE COUNT. <<<
-// Twenty-four 96-bit dividers is a large circuit and nothing here
-// has synthesised it.  bsv/README.md item 9 already says the
-// datapath must go multi-cycle before the ULX3S; this function
-// belongs on that list, and the honest state today is that its cost
-// in LUTs is UNMEASURED.
-//
-// Returns the packed digits and the count of significant ones --
-// the caller needs the count for Partial Field, exactly as it does
-// for bcdToBinary.
-function Tuple2#(Bit#(128), Bit#(7)) binaryToBcd(Bit#(96) v);
-  Bit#(128) out  = 0;
-  Bit#(7)   nd   = 0;
-  Bit#(96)  rest = v;
-  for (Integer k = 0; k < 24; k = k + 1) begin
-    Bit#(96) q = rest / 10;
-    Bit#(4)  d = truncate(rest - (q * 10));
-    out = out | (zeroExtend(d) << (4 * k));
-    if (rest != 0) nd = fromInteger(k) + 1;
-    rest = q;
-  end
-  return tuple2(out, nd);
-endfunction
+// THE RADIX CONVERSIONS ARE mkCvtBox's (StretchCvtBox.bsv), 2026-11-17.
+// bcdToBinary (sixteen constant multiply-adds) and binaryToBcd (twenty-
+// four 96-bit divides by ten) used to be here and were called inline
+// from execute()'s CV, LCV and LTRCV arms; docs/fpga_feasibility.md
+// section 10.2 measured the first at 2,570 LUT4 a site and the second
+// did not finish synthesis.  Every conversion now goes through the box
+// by execute()'s NeedBox bail.  What the caller still does itself is
+// below (decFieldDigits): lay a decimal field of any byte size out as
+// four-bit digits, which is wiring, not arithmetic.
 
 // ADD MAGNITUDE TO MEMORY's store rule, Reference Manual printed
 // p.62, which is two sentences and both of them are about SIGNS:
@@ -545,6 +451,42 @@ function Tuple2#(Bit#(128), Bool) decCompact(Bit#(64) num, Bit#(4) byteSize);
     7: return decCompactOf(7, num);
     default: return decCompactOf(8, num);
   endcase
+endfunction
+
+// A DECIMAL STORAGE FIELD AS FOUR-BIT DIGITS, for the radix converter
+// (LCV and LTRCV, decimal to binary).  Reference Manual printed p.72,
+// LOAD CONVERTED, Radix: the radix modifier "also specifies the
+// interpretation of the byte size field in the same manner as in integer
+// arithmetic operations", and the field is converted "to byte size four"
+// before the conversion -- a byte wider than four gives its four low-
+// order bits, a narrower one is zero-extended (decCompact does both).
+//
+// `numBits` is the numeric part only (a signed field's sign byte is
+// shifted off by the caller, p.56).  At most SIXTEEN bytes are taken,
+// which is what the inline bcdToBinary took (its loop ran to sixteen):
+// p.73's "if the storage field exceeds 15 decimal digits ... Meaningless
+// results are then obtained" makes the sixteenth the PF case and any
+// further one meaningless anyway, and keeping the bound keeps every
+// result the model gave.  The count is POSITIONAL -- the bytes the field
+// has, ceil(numBits / byte size) capped at sixteen, zero bytes included
+// -- because Partial Field is judged on the field's size, not its value.
+//
+// `digits` must be zero above `numBits` (both callers mask it already).
+// Byte k starts at bit k * byte size; the positions are an adder chain
+// (sixteen 7-bit adds), not sixteen products -- the first version wrote
+// k * byte size and yosys gave the products eleven MULT18X18D blocks
+// (docs/fpga_feasibility.md 10.6).  At most 15 * 8 = 120, so seven bits
+// hold every position compared.
+function Tuple2#(Bit#(64), Bit#(7))
+         decFieldDigits(Bit#(64) digits, Bit#(7) numBits, Bit#(4) bsEff);
+  match {.dg, .hi} = decCompact(digits, bsEff);
+  Bit#(7) nd = 0;
+  Bit#(7) lo = 0;
+  for (Integer k = 0; k < 16; k = k + 1) begin
+    if (lo < numBits) nd = fromInteger(k + 1);
+    lo = lo + zeroExtend(bsEff);
+  end
+  return tuple2(dg[63:0], nd);
 endfunction
 
 // THE INVERSE FOR A TO-MEMORY ADD, which keeps every bit it does not

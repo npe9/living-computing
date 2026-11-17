@@ -170,9 +170,10 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
   decimal) at the page's one accumulator (+1 at offset 20); Table 3's
   dependence on S is not modelled, and `tests/atlas_oracle.py` has no
   CV/DCV generator, so the row is fitted, not measured.
-* `CV`, `LCV` and `LTRCV` still convert with the inline `binaryToBcd`
-  rather than through `mkCvtBox`; moving them is the idiomatic-box
-  rewrite's, and would change their timing structure.
+* ~~`CV`, `LCV` and `LTRCV` still convert with the inline `binaryToBcd`
+  rather than through `mkCvtBox`.~~ **DONE 2026-11-17**: all four
+  conversions go through `mkCvtBox`; `bcdToBinary` and `binaryToBcd` are
+  deleted.  LUT4 figures in `docs/fpga_feasibility.md` §10.6.
 * `decks/ibox4_rnx_run.strap` (routine 1244 TEST 4) passes on a model
   that refuses `RNX` too; only its injections discriminate.
 * Printed p.74's "no more than 80 significant bits can be converted
@@ -180,8 +181,8 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
   an 80-bit number, so 2^80 - 10^24 values of 80 bits overflow 24
   digits.  The model sets PF from the digits (the page's first PF
   sentence); `decks/vfl_dcv.strap` D2's note.
-* `isDecReq` in `StretchExecute.bsv` is dead since `boxKind` replaced
-  `boxIsDec`.
+* ~~`isDecReq` in `StretchExecute.bsv` is dead since `boxKind` replaced
+  `boxIsDec`.~~ Deleted 2026-11-17.
 
 ### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 

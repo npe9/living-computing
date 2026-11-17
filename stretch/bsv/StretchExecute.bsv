@@ -2637,6 +2637,20 @@ function Maybe#(CvtRsp) cvtOf(Maybe#(BoxRsp) r);
   else return tagged Invalid;
 endfunction
 
+// The converter's binary-to-decimal answer is 32 digits; every arm keeps
+// the low twenty-four (96 bits) -- DCV's "maximum of 24 significant
+// digits" (printed p.74), and more than CV's 48 bits or LCV's and
+// LTRCV's 64 can make -- and counts the significant ones for Partial
+// Field: the position of the highest non-zero digit, as the inline
+// binaryToBcd counted them.
+Bit#(128) cvtMask96 = (128'd1 << 96) - 1;
+function Bit#(7) cvtSigDigits(Bit#(128) dig);
+  Bit#(7) nd = 0;
+  for (Integer k = 0; k < 24; k = k + 1)
+    if (dig[4*k+3:4*k] != 4'd0) nd = fromInteger(k) + 1;
+  return nd;
+endfunction
+
 // Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
 // radix converter.
 function Bit#(2) boxKindOf(BoxReq r);
@@ -2655,13 +2669,6 @@ endfunction
 function Maybe#(DecRsp) decOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspDec .d)) return tagged Valid d;
   else return tagged Invalid;
-endfunction
-
-function Bool isDecReq(BoxReq r);
-  case (r) matches
-    tagged BoxDec .*: return True;
-    default:          return False;
-  endcase
 endfunction
 
 typedef union tagged {
@@ -4373,7 +4380,7 @@ function ActionValue#(VflOutcome)
             // digits.
             //
             // BOTH DIRECTIONS ARE BUILT: decimal-to-binary here, and
-            // binary-to-decimal (binaryToBcd) in the arm below, which
+            // binary-to-decimal in the arm below (both now mkCvtBox), which
             // printed p.32 line 6's "LCV(BU,18),$13 -CONVERT CHANNEL
             // TO DECIMAL" uses.
             Bit#(64) raw = 0;
@@ -4399,6 +4406,31 @@ function ActionValue#(VflOutcome)
               end
             end
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              // THE CONVERSION IS mkCvtBox's (StretchCvtBox.bsv), 2026-11-17,
+              // as DCV's is: asked for once every word this instruction
+              // reads is in hand, by the NeedBox bail, and NOTHING is
+              // written or set on the run that bails -- the data flags
+              // included, which is why they are set inside the branch
+              // that has the answer.  The field is the same either way;
+              // what the box is given depends on the radix.  A binary
+              // field goes as its value; a decimal one as four-bit digits
+              // (decFieldDigits: the bytes "converted to byte size four",
+              // p.73), with its digit count kept here for PF.
+              Bool    lcvSigned = (vi.m.unsign == 0);
+              Bit#(7) lcvNum    = !lcvSigned ? len_
+                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(64) lcvMask  = (lcvNum >= 64) ? 64'hFFFFFFFFFFFFFFFF
+                                                 : ((64'b1 << lcvNum) - 1);
+              Bit#(64) lcvNumeric = !lcvSigned ? raw : (raw >> bsz);
+              match {.lcvDg, .lcvNd} = decFieldDigits(lcvNumeric & lcvMask, lcvNum, bsz);
+              Bool lcvToDec = (vi.m.decimal == 0);
+              Bit#(128) lcvIn = lcvToDec ? zeroExtend(lcvNumeric & lcvMask)
+                                         : zeroExtend(lcvDg);
+              if (cvtOf(boxResult) matches tagged Invalid) begin
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn });
+                needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+              end else begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               // DATA FLAGS, 2026-11-16 (this arm never set them).
               // printed p.73 (PDF 76), LOAD CONVERTED, read in the page
               // image: "Data Flags (TF, UF, VF); To-Memory Operation
@@ -4414,18 +4446,15 @@ function ActionValue#(VflOutcome)
                 // BINARY TO DECIMAL, printed p.72's Radix: "If binary
                 // is specified, the storage operand is converted from
                 // binary to decimal, with the decimal result in byte
-                // size four."  This direction was refused until
-                // binaryToBcd existed; it is the direction MCP needs.
-                Bool    signed_ = (vi.m.unsign == 0);
-                Bit#(7) sbBits  = zeroExtend(bsz);
-                Bit#(7) numBits = !signed_ ? len_
-                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
-                Bit#(64) mask   = (numBits >= 64) ? 64'hFFFFFFFFFFFFFFFF
-                                                  : ((64'b1 << numBits) - 1);
-                Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
+                // size four."  This direction was refused until the
+                // inline binaryToBcd existed (now mkCvtBox); it is the
+                // direction MCP needs.  At most 64 bits is at most twenty
+                // digits, inside the box's twenty-four kept.
+                Bool    signed_ = lcvSigned;
                 Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
                 Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
-                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
+                Bit#(128) dig = cr.r & cvtMask96;
+                Bit#(7)   nd  = cvtSigDigits(dig);
                 SM128 conv = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
                 // p.72: LCV clears the sign byte's four low-order
                 // bits, unlike CV and DCV -- one write, see
@@ -4443,12 +4472,8 @@ function ActionValue#(VflOutcome)
               end else begin
                 // A signed decimal field's sign byte is its RIGHTMOST
                 // byte and is inside `len_` (p.56), so shift it off
-                // and convert what remains.
-                Bit#(7) sbBits  = zeroExtend(bsz);
-                Bool    signed_ = (vi.m.unsign == 0);
-                Bit#(7) numBits = !signed_ ? len_
-                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
-                Bit#(64) digitsRaw = !signed_ ? raw : (raw >> bsz);
+                // and convert what remains (lcvNumeric/lcvNum above).
+                Bool    signed_ = lcvSigned;
                 // "The sign bit in the sign byte register is set
                 // according to the sign of the data as affected by
                 // the sign modifiers" (p.72).  Unsigned fields are
@@ -4472,7 +4497,8 @@ function ActionValue#(VflOutcome)
                 Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
                 Bit#(1) rawSign = !signed_ ? 0 : raw[signIdx];
                 Bit#(1) sgn     = rawSign ^ vi.m.invert;
-                match {.cvVal, .cvDigits} = bcdToBinary(digitsRaw, numBits, bsz);
+                Bit#(128) cvVal    = cr.r;
+                Bit#(7)   cvDigits = lcvNd;
                 // "The accumulator is cleared and the converted field
                 // is placed into it at the specified offset."
                 SM128 conv = SM128 { sign: sgn, mag: cvVal << offSh };
@@ -4508,6 +4534,7 @@ function ActionValue#(VflOutcome)
                 ind = setBit(ind, ind_MOP, 0);
                 ind = setResultIndicatorsF(ind, conv);
               end
+              end   // the box's answer
             end
           end
           6'b011011: begin // CV (Convert)
@@ -4549,19 +4576,32 @@ function ActionValue#(VflOutcome)
             // where this reads.
             // No storage operand, but a progressive CV still refills:
             // held until the refill word is in hand, as every arm here.
+            //
+            // THE CONVERSION IS mkCvtBox's, 2026-11-17 (DCV's arm below
+            // has the shape): the bail asks it, the re-run takes the
+            // answer, nothing is written on the run that bails.
             if (!vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // "the accumulator sign is taken as-is ... as positive
             // ... inverted" (p.73's Modifiers)
             Bit#(1) sgn = (vi.m.unsign == 1 ? 0 : acc.sign) ^ vi.m.invert;
-            if (vi.m.decimal == 0) begin
+            Bit#(48) cvSrc    = acc.mag[115:68];
+            Bit#(64) cvDigits = truncate(acc.mag >> offSh);
+            Bit#(128) cvIn = (vi.m.decimal == 0) ? zeroExtend(cvSrc)
+                           : zeroExtend(cvDigits & 64'h0FFFFFFFFFFFFFFF);
+            if (cvtOf(boxResult) matches tagged Invalid) begin
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn });
+              needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+            end else if (vi.m.decimal == 0) begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               // Binary to decimal.  "Higher-order bits (positions
               // 0-11 of the accumulator) are ignored and lost.  NO
               // INDICATION OF THIS LOSS IS RETAINED" -- a silent
               // truncation, unusual enough in this manual to be
               // worth doing deliberately.
-              Bit#(48) src = acc.mag[115:68];
-              match {.dig, .nd} = binaryToBcd(zeroExtend(src));
+              // 48 bits is at most fifteen digits.
+              Bit#(128) dig = cr.r & cvtMask96;
+              Bit#(7)   nd  = cvtSigDigits(dig);
               SM128 res = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
               writeAcc(st, res);
               if ((zeroExtend(nd) * 4) + offSh > 128)
@@ -4575,9 +4615,10 @@ function ActionValue#(VflOutcome)
               // and no digit count is stated -- so fifteen digits is
               // taken, which is the most that can yield the stated
               // maximum of 48 significant bits.  Recorded as a
-              // reading, not a quotation.
-              Bit#(64) digits = truncate(acc.mag >> offSh);
-              match {.val, .nd} = bcdToBinary(digits & 64'h0FFFFFFFFFFFFFFF, 60, 4);
+              // reading, not a quotation.  (cvIn above: the fifteen
+              // low digits at the offset, the box converts them.)
+              CvtRsp cr = validValue(cvtOf(boxResult));
+              Bit#(128) val = cr.r;
               SM128 res = SM128 { sign: sgn, mag: (val & 128'hFFFFFFFFFFFF) << 68 };
               writeAcc(st, res);
               if ((val >> 48) != 0) ind = setBit(ind, ind_PF, 1);
@@ -4648,14 +4689,22 @@ function ActionValue#(VflOutcome)
               Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
               Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
               Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
+              // THE CONVERSION IS mkCvtBox's, 2026-11-17 (LCV's arm has
+              // the note): binary goes as its value, decimal as four-bit
+              // digits with the field's digit count kept here.
+              match {.ltDg, .ltNd} = decFieldDigits(valRaw, numBits, bsz);
+              Bit#(128) ltIn = (vi.m.decimal == 0) ? zeroExtend(valRaw) : zeroExtend(ltDg);
+              if (cvtOf(boxResult) matches tagged Invalid) begin
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn });
+                needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+              end else begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               Bit#(128) payload = 0;
               Bit#(7)   ndig    = 0;
               if (vi.m.decimal == 0) begin
-                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
-                payload = dig; ndig = nd;
+                payload = cr.r & cvtMask96; ndig = cvtSigDigits(payload);
               end else begin
-                match {.val, .nd} = bcdToBinary(valRaw, numBits, bsz);
-                payload = val; ndig = nd;
+                payload = cr.r; ndig = ltNd;
               end
               // WHAT THE TRANSIT REGISTER HOLDS, printed p.73 (PDF 76),
               // read in the page image: "In the former case [a binary-
@@ -4690,6 +4739,7 @@ function ActionValue#(VflOutcome)
               // accumulator, which this operation never touches.
               ind = setResultIndicatorsF(ind,
                       SM128 { sign: sgn, mag: trMag });
+              end   // the box's answer
             end
           end
           6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
@@ -4845,11 +4895,7 @@ function ActionValue#(VflOutcome)
                 // The low 24 digits are the result; any digit above them
                 // is "the converted field exceeds 96 significant bits".
                 Bit#(128) dig = cr.r & mask96;
-                Bit#(7) nd = 0;
-                for (Integer k = 0; k < 24; k = k + 1) begin
-                  Bit#(4) dk = dig[4*k+3:4*k];
-                  if (dk != 0) nd = fromInteger(k) + 1;
-                end
+                Bit#(7) nd = cvtSigDigits(dig);
                 Bit#(9) top = (zeroExtend(nd) * 4) + zeroExtend(offSh);
                 SM128 res = SM128 { sign: sgn, mag: dig << offSh };
                 writeAcc(st, res);
