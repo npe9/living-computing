@@ -130,7 +130,8 @@ class Getfld:
         condition, a lone datum after a g.p. or radix, which is not this).
 
         82 (.0) HAS BEEN INTERPRETED AS PAREN INTEGER: the message says what
-        it does, so a note, and the g.p. is made with n = 0."""
+        it does, so a note, and the g.p. is made with n = 0.  DERIVED: the
+        condition (every (.0) g.p.); the page gives only the action."""
         n, r = gp
         if n > 63:
             raise FieldError(68, f"GP ERROR: (.{n}) -- n is 6 bits, 0-63 (C22-6729 printed p.198, item 4B)")

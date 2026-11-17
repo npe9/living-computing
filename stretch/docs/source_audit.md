@@ -632,8 +632,12 @@ a definite order by which they are combined ... 1st order operation +
 and -. 2nd order operation * and /. 3rd order operation **." Its
 "orders" are p.107's words for MQDNUM, and p.207 calls a numeric DD's
 operands its "'address' field". So it is read here as the numeric
-DD's. A printed listing with `**` outside a DD would overturn that
-reading. Printed p.207 adds that "Implied multiplication is not allowed in
+DD's. C28-6129 names no `**` anywhere. Its "Address Arithmetic"
+(printed p.31, PDF p.35, OCR) offers "addition, subtraction,
+multiplication and division". Its numeric DD (printed pp.27-28, OCR)
+lists "addition (+), subtraction (-), multiplication (*) and division
+(/)". So C28-6129 does not settle where `**` belongs. A printed listing
+with `**` outside a DD would overturn this reading. Printed p.207 adds that "Implied multiplication is not allowed in
 field arithmetic". Three decks strap_asm refused now assemble to
 strap2's image: `repro_address_multiply` (0007C70F 00083000) and the
 two Problem 4.6 Method 3 decks. No deck that assembled before changed
@@ -656,8 +660,12 @@ the addresses in the instruction TI, 7, SAM + 10, PAT + 10, the routine
 adds 10 full words to both addresses". strap_asm added 10 bits to A1
 and 10 half words to A2. strap2's `STTI`/`STT19A` did the same. Both
 now add words. C28-6129 printed p.4 writes the format `OP, J, A18(I),
-A'18(I')`. No listing row in the corpus writes an integer in a transmit
-address, so p.144 is the only witness. strap_asm also left an integer
+A'18(I')`. Its printed p.33 (PDF p.37) says "An integer in an 18-bit
+field counts full words", which is a second manual's rule agreeing with
+p.144. No listing row in the corpus writes an integer in a transmit
+address. The listing oracle does pin LX/SX's function:
+`verify_ibox4_refill_listing.py` fails on "SX, $X0, 8" if `S18X` is
+set to the field's units. strap_asm also left an integer
 `SYN` symbol unscaled in LX/SX, where strap2 counted words; it now
 counts words too. Every deck's image is unchanged under both assemblers
 (hashed before and after). `tests/check_address_function.py` (27
@@ -677,7 +685,9 @@ gives the number, area and text but not the condition, so each
 condition has its own source:
 - **65:** printed p.100 Boxes 27-29, "another radix at this point would
   be an error".
-- **82, 78:** the message's own words.
+- **78:** the message's own words (a zero divisor, ignored).
+- **82:** DERIVED. The message gives the action, not the condition. It
+  is given here for every `(.0)` g.p.
 - **95:** C28-6129 printed p.25's complement rule.
 - **108:** printed p.204's "SYN, DR, DDI, and DRZ cannot have a gp".
 - **68:** DERIVED. Appendix C's 6-bit n gives n > 63; before, that n
@@ -688,8 +698,11 @@ Added: 65 (it was 67), 68 for n > 63, the notes 82, 95 and 78, and 94.
 `tests/check_strap2_gp_messages.py` has 29 checks. Its expected text is
 typed from the page, not imported from `errtab`. Seven injections were
 measured. No deck's image changed. The other messages on the list were
-already wired or remain open (see `errtab.py` and `docs/strap2/formats.md`
-§9). The open items, among them 68's own stated condition, are in
+sorted by a grep of `strap/strap2` for each number on p.177 (46-95).
+Given: 47-50, 54-56, 59, 61, 63, 65-68, 75-79, 82, 84, 85, 87, 88, 91,
+94, 95. Not given: 46, 51-53, 57, 58, 60, 62, 64, 69-74, 80, 81, 83, 86,
+89, 90, 92, 93. Message 71 (SUBSCRIPT WRITTEN AS BIT) is detected but
+refused unnumbered (`value.py`), as 94 was. The open items, among them 68's own stated condition, are in
 `docs/NEXT.md`, "ASSEMBLER COMPLETENESS (G3)".
 
 ## G4 — Verification infrastructure

@@ -29,8 +29,9 @@ the condition, so each condition below has its own source or is marked:
       a lone datum after a g.p. or radix, which this check does not reach.
   78  the message's own words: the divisor is ignored.  (Was ignored with no
       message.)
-  82  the message's own words: "(.0)" is taken as a g.p. with n = 0, and the
-      word is made.  (Was made with no message.)
+  82  DERIVED: the message gives the action ("(.0)" taken as a g.p., n = 0,
+      the word made), not the condition; given here for every (.0) g.p.
+      (Was made with no message.)
   94  DERIVED.  DECODE evaluates and inserts a g.p. (p.140 Boxes 14-15); its
       two limits are C28-6129 printed p.25's (the entry's n+1 bits within the
       statement; "the integer ... converted" to 24 bits).  (Were refused,

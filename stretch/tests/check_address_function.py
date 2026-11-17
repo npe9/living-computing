@@ -18,8 +18,14 @@ C22-6729 printed p.144 (INSERT), read in the page image 2026-11-16:
 C28-6129 printed p.4 (PDF p.8) writes the transmit format "OP, J, A18(I),
 A'18(I')" for the same reason.  No listing row in the corpus writes an
 integer in a transmit address (every T/TI/SWAP row in the decks and in the
-MCP, C22-6578, C22-6531 and C28-6129 OCR writes "+1.0" or "+14."), so p.144
-is the only witness for that row, and both assemblers follow it.
+MCP, C22-6578, C22-6531 and C28-6129 OCR writes "+1.0" or "+14."), so no
+listing witnesses that row.  C28-6129's own rule agrees with p.144: printed
+p.33 (PDF p.37), "3. A18 Full-Word Address ... Note: An integer in an 18-bit
+field counts full words", and p.4 gives both transmit addresses the A18
+notation.  Its printed p.32 sentence "Some operations do not use all of the
+space available in their address fields (transmit, input-output select),
+and in these cases bits may be placed in the unused portions" is about
+TRUNCATION (bits kept, not discarded), not about what an integer counts.
 
 Each case is a pair of cards that must assemble to the same words: the
 integer form and the bit-address form p.144 says it means.  Each assembler
@@ -47,8 +53,9 @@ a literal integer) counted words.  No deck's image changed (every deck,
 both assemblers, hashed before and after).
 
 The controls are the existing listing oracles: verify_ax5b_16087_listing.py
-holds IBM's printed "TI,1,BIT0($X1),$IND" and verify_ibox4_listing.py's
-I-Box 4 p.58 rows hold "SX,$X0,8"; both stay green under this rule.
+holds IBM's printed "TI,1,BIT0($X1),$IND", and verify_ibox4_refill_listing.py
+holds I-Box 4's printed "SX,$X0,8" (word 8, 000010.01 10); both stay green.
+(verify_ibox4_listing.py does NOT: the S18X injection below leaves it green.)
 
 MEASURED INJECTIONS, 2026-11-16, each reverted from a saved copy and checked
 with cmp (FAIL lines observed):
@@ -62,6 +69,13 @@ with cmp (FAIL lines observed):
       both-agree rows (8)
   strap_asm eval_addr_field: an integer SYN symbol not shifted (raw)
       SYN integer SX, SYN integer TI -- strap_asm and both-agree rows (4)
+  strap2 pass2.i_STT19A back to S19IA's (v.B >> 5) + v.I
+      the same four transmit cases, strap2 and both-agree rows (8)
+  strap_asm ADDRESS_FUNCTION["S18X"] (5, 6) -> (5, 5)
+      RM p.24 SX, SYN integer SX -- strap_asm and agree rows (4); and the
+      LISTING ORACLE: verify_ibox4_refill_listing.py "SX, $X0, 8: assembled
+      '000004.01 10', listing '000010.01 10'", test_fields.py's SX and LX
+      (8)40 rows (2); verify_ibox4_listing.py stays green
   control, none of the above: PASS 27
 """
 import os

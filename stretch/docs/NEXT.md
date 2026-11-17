@@ -48,11 +48,19 @@ Open:
 * **A DD's g.p.s** (OUTPUT, printed p.158 Boxes 2-8) never give 95.
   Only DECODE's instruction path does. Nobody has measured what a
   negative g.p. does there.
+* **Where strap_asm's field arithmetic reaches, as probed.** It works in
+  instruction address fields, `XW`, `VF`, `LVI`, dds lengths, offsets
+  and `LI`. It does not work in `SYN` (`Q SYN, N*2`), `CW`
+  (`CW, SAM*2, N*2`) or transmit's J (`T, N/4, ...`), which still say
+  "cannot parse expression"; strap2 takes all three. A `SYN` needs a
+  rule for classifying a mixed bit and integer result into strap_asm's
+  single value and `sym_int`.
 * **strap_asm reads `(N+1)` alone in a field as an index** on a null
   address. strap2 reads it as arithmetic (CHOSEN, Box 76).
 * **The 7030 deck's GETFLD** (`decks/strap2_7030.strap`) does not yet
-  give 82 or the new 68. `check_strap2_7030_getfld.py` has no case that
-  reaches either.
+  give 82 or the new 68. `check_strap2_7030_getfld.py` still passes
+  after G3.3 (run 2026-11-16, 50 PASS), but none of its cases reaches
+  either message.
 
 ## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 
