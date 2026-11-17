@@ -9,6 +9,10 @@
 ! same sequence would take about 4*(12 + 7 + 24) = 172. The bound in
 ! run_tests.sh (140) sits between the two, so it fails if the overlap
 ! is lost.
+!
+! RE-MEASURED 2026-11-16: 122 clocks.  Each full-word load is now
+! charged PDF 120's 8.40 us = 28 clocks (the atlas, docs/atlas_oracle.md),
+! not 24.  The bound of 140 is unchanged.
 START   L(BU,64,8), A
         L(BU,64,8), B
         L(BU,64,8), C

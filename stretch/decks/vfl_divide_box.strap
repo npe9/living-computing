@@ -100,6 +100,16 @@
 ! every instruction after a divide here is look-ahead class, so
 ! nothing overlapped in the first place.  The FP decks that DID move
 ! are tabled in bsv/StretchDivBox.bsv's header.
+!
+! TIMING RE-PINNED 2026-11-16, 1196 -> 2148 clocks, every value check unchanged.
+! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
+! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
+! atlas prints for it (docs/atlas_oracle.md).  VFL `/` is now charged PDF
+! 134's figure, 66 + 4 bytes (+44 signed) -- (BU,64,8) 28.81 us = 96 --
+! instead of 8 + 2 bytes; rl_exec_resume still takes the box's own clocks
+! out of it, so the box is INSIDE that figure, and no DIVIDE BOX OVERRAN
+! line is printed.  What is said above about 1196 is the old budget:
+! CYCLES here still guards that the box is absorbed, at the new figure.
 
         SLC, (8)2000.0
 

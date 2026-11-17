@@ -1057,6 +1057,11 @@ byte and increasingly slow as the field grows**, which is what you expect from
 charging the SAU's per-byte time *serially* when the real machine overlaps the
 tail of one instruction's execution with the next one's preparation. That gap
 is the look-ahead, and it is the §5 item the Stage-3 work has to close.
+(**2026-11-16:** the serial budget above is not what the model runs: on the
+look-ahead path preparation and E-box time are concurrent, and M+ measured
+14 clocks in sequence, not 22.  `eboxClocks` now carries the atlas's per-
+operation occupancy; `docs/atlas_oracle.md`, "After per-operation VFL
+times".)
 Indexing costs the real machine **0.29–0.30 µs**, i.e. one *clock*, not the
 0.6 µs (one I-box cycle) the model charges — but p.3-18 says plainly "each
 indexing operation requires 0.6 µs", so the throughput figure and the decode
@@ -1265,7 +1270,7 @@ equation". Here is every number in it, checked.
 | `BranchOrMisc default` (B/BE/BEW) | 7 = 4.2 µs | 3.6 + dec | Table 7 |
 | `Fp` preparation | 2 cycles = 1.2 µs | FP decode rate | printed p.3-17, PDF 35 — **better sourced than the file's "Blosk fig.6"** |
 | `VflInt` / `Connective` | 6 + (indexed ? 1 : 0) cycles = 3.6 + 0.6 µs | VFL decode minimum + per indexing operation | printed **p.3-18**, PDF 36 — the file and the plan both cite p.3-17; the sentence is on p.3-18 |
-| `eboxClocks VflInt` shape | 8 + 2·bytes clocks = 2.4 + 0.6·bytes µs | pre 1.8 + .6(x/y) + term .6 | Table 3, PDF 25 |
+| `eboxClocks VflInt` shape | **superseded 2026-11-16**: was 8 + 2·bytes clocks for every operation; now a per-operation law fitted to the Vol. 2 atlas (PDF 116-142), e.g. L 12 + 2·bytes, ST 18 + 2·bytes | pre 1.8 + .6(x/y) + term .6 | Table 3, PDF 25; `docs/atlas_oracle.md` |
 | `x` and `y` in `eboxClocks` | field length (or minus byte size if signed); 8 in binary, byte size in decimal | | **confirmed verbatim** against the Glossary of Terms, printed p.3-10, PDF 28 |
 | `dec` = 0.6 µs everywhere | 0.6 µs | | printed **p.3-18**, PDF 36, "The decoding time of I-box instructions is 0.6 microsecond". Tables 4-8 themselves only say `dec = decade` |
 

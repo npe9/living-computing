@@ -99,6 +99,8 @@ in parentheses); **open** = no stage assigned yet.
 | Exchange as a bus requester with real overlap; disk synchronizer | Buchholz ch.16 | open (I/O is a synchronous FSM today) |
 | Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
 | Measured benchmark timings (GERB2 etc.) | Perf. Char. vol.2 | planned (5) |
+| VFL time depends on the operation; "All VFL stores are fetch-and-stores"; VFL decoding minimum 3.6 us, two LA levels | Perf. Char. Vol. 1 printed p.2-3 item 6 (PDF 10), p.3-18 (PDF 36); Vol. 2 atlas PDF 116-142 | E-box per-operation times DONE 2026-11-16 (`StretchTiming.bsv` eboxClocks, `docs/atlas_oracle.md`); store-to-I-box and word-boundary store time open |
+| Progressive indexing is executed in two parts and the second sets the index result indicators, so an index-indicator branch, and an index instruction that sets those indicators, must wait for a pending progressive level | Reference Manual printed p.21 (as `execute()` implements it) | DONE 2026-11-16 as a conservative wait (`StretchIBox.bsv` iboxHazard, anyProgressive/setsIndexInd; `decks/vfl_pack_cross.strap`, `decks/vfl_index_ind_order.strap`) |
 
 ### 1b. Execution roadmap (prioritized)
 
@@ -6605,6 +6607,26 @@ own module), so this is naturally satisfied.
   warm), the instruction buffers / look-ahead / timing tables as their
   own packages, and the E-box as a start/busy/resume box owning its
   operand reads. Details and the measured numbers are in §1c.
+- **G1, VFL time by operation -- done** (2026-11-16): `eboxClocks` gives
+  every VFL operation and connective the E-box occupancy its Perf. Char.
+  Vol. 2 atlas page measures (PDF 116-142, each number cited in
+  `StretchTiming.bsv`), and the "lost M+ budget" is diagnosed as the
+  look-ahead's concurrent `ibusy`/`ebusy` (throughput max(prep + 2,
+  E-box + 1)), not a lost charge. The atlas residual on those pages
+  went from mean -18.93 clocks (423 exact of 6,098) to -3.46 (2,225
+  exact); `docs/atlas_oracle.md` has the per-page table and what
+  remains: store-to-I-box and word-boundary store time, the
+  data-dependent unlike-sign terms, the K/CT preparation floor. Open:
+  whether VFL decode is concurrent with the E-box in MIXED sequences
+  (homogeneous GENER runs cannot tell). The new times exposed two latent
+  look-ahead hazards, fixed in the same change. A progressive level sets
+  the index indicators when it executes, and I-box instructions ran
+  ahead of it: a branch on an index indicator (BZXCZ) read XCZ too early,
+  and an index instruction (V-ICR) set XCZ only to have the level
+  overwrite it. Both now wait while a progressive level is pending
+  (`anyProgressive`/`setsIndexInd` in `iboxHazard`;
+  `decks/vfl_pack_cross.strap`, `decks/vfl_index_ind_order.strap`;
+  C22-6578 Problems 2.6 Method 3 and 4.7 Method 2 had lost results).
 
 ## 8. Immediate next steps
 

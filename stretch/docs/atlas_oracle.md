@@ -149,8 +149,9 @@ sets `BLUESPECDIR` and `PATH` itself.
 1. **Linearity.** L(BU,8,8) costs 14.0000 clocks a copy between 250 and
    500 copies and again between 500 and 1,000. The ten count branches
    cost 168 clocks in all, 0.017 a copy.
-2. **The image is live.** L(BU,64,8) gives 24.999 against 14.017
-   through the same binary.
+2. **The image is live.** L(BU,64,8) gives 27.998 against 14.017
+   through the same binary (24.999 before the per-operation VFL times
+   of 2026-11-16).
 3. **Baseline.** Set-up and halt take 109 clocks, against 140,277 for
    the sequence.
 4. **Branch chain.** A successful CB costs 15.0000 clocks a copy at
@@ -215,7 +216,7 @@ The report echoes this list in its header:
   - R;
   - RNX, which the model does not implement.
 
-## Today's residual (2026-11-16; the model as of `77ed952`, since `bsv/` is untouched on this branch)
+## The first full residual (2026-11-16; the model as of `77ed952`, before the per-operation VFL times)
 
 There are 6,265 cases, and all of them halt. Exact means |residual| ≤
 0.1 clock. Negative means **the model is faster than the 7030**.
@@ -271,9 +272,157 @@ VFL pages 116-142, by column:
 | ni_ext_wbx | 901 | 21 | −23.29 | −9.04 |
 | ix_ext_wbx | 901 | 13 | −23.38 | −9.00 |
 
+## After per-operation VFL times (2026-11-16)
+
+`bsv/StretchTiming.bsv`'s `eboxClocks` now gives each VFL operation and
+each connective its own E-box time. Each number is fitted to the
+operation's own atlas page and cited there. PDF 116-142 were then re-run
+with `--pdf 116 ... --pdf 142`: 6,098 cases, all of which halt, taking
+about 4,000 s at `--jobs 10`, alongside a test run. The "before" figures are the table above, from
+the run on `77ed952`.
+
+That base and this one differ in StretchTiming only by SRD's
+nonzero-offset term, and every atlas page is OFFSET 0. As a spot check,
+PDF 117 ni_ext was re-measured on this branch's base before the change,
+and its 48 cases fit max(14.02, 8 + 2·bytes + 1) row for row.
+
+The other 167 cases (PDF 106, 107, 109 and 112) contain no VFL operation
+and were not re-run.
+
+**PDF 116-142, 6,098 cases.**
+
+| | exact | within 1 clock | mean | median | mean \|r\| |
+|---|---:|---:|---:|---:|---:|
+| before | 423 (7%) | | **−18.93** | | |
+| after | 2,225 (36%) | 43% | **−3.46** | −0.04 | 6.51 clocks |
+
+The after range is −67.50 … +60.95.
+
+**The other four pages, re-run after the change** (167 cases, PDF 106,
+107, 109 and 112): every page matches the first full run exactly, in
+count, exact, mean, median and range. The VFL change did not leak into
+the I-box pages. Neither did the two look-ahead fixes made with it
+(`bsv/README.md`, "VFL time depends on the operation"). Measured, all
+6,265 cases have a mean of −3.87.
+
+| PDF | instr | n | exact | mean | median |
+|---|---|---:|---:|---:|---:|
+| 106 | TI | 28 | 0 | −30.92 | −29.35 |
+| 107 | T | 30 | 0 | −61.31 | −48.35 |
+| 109 | I-box | 85 | 15 | −3.27 | −2.55 |
+| 112 | branch | 24 | 4 | −5.89 | −2.05 |
+
+PDF 116-142 were measured before those two fixes. As a spot check,
+PDF 120 (L) and PDF 141 (CM), 482 cases, were re-run after them. Every
+case's model time is identical to the earlier run.
+
+| PDF | instr | n | exact before | exact after | mean before | mean after | median before | median after | worst after |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 116 | + | 272 | 26 | 62 | -5.65 | -2.73 | -4.00 | -0.54 | -34.04 |
+| 117 | M+ | 272 | 0 | 30 | -27.37 | -18.46 | -26.28 | -17.30 | -59.44 |
+| 118 | +MG | 270 | 24 | 22 | -3.57 | -0.66 | -3.54 | -0.54 | -6.78 |
+| 119 | M+MG | 272 | 0 | 20 | -31.48 | -22.57 | -28.64 | -18.44 | -67.50 |
+| 120 | L | 272 | 60 | 182 | -2.87 | +0.04 | -3.00 | -0.00 | -6.55 |
+| 121 | LWF | 272 | 60 | 182 | -2.87 | +0.04 | -3.00 | -0.00 | -6.55 |
+| 122 | LFT | 248 | 0 | 176 | -36.99 | -0.03 | -35.04 | -0.04 | +4.96 |
+| 123 | LTRS | 248 | 0 | 176 | -37.96 | -1.19 | -35.04 | -0.04 | -4.04 |
+| 124 | ST | 272 | 0 | 40 | -22.62 | -13.50 | -24.79 | -16.33 | -33.34 |
+| 125 | SRD | 272 | 0 | 40 | -24.61 | -14.23 | -24.79 | -16.33 | -33.34 |
+| 126 | M+1 | 268 | 0 | 0 | -19.00 | -18.85 | -20.25 | -16.27 | -60.34 |
+| 127 | K | 272 | 42 | 97 | +2.46 | +3.65 | +0.93 | +1.94 | +28.00 |
+| 128 | KR | 272 | 43 | 97 | +1.32 | +2.40 | +0.02 | -0.00 | +28.00 |
+| 129 | KE | 272 | 43 | 97 | +1.32 | +2.40 | +0.02 | -0.00 | +28.00 |
+| 130 | KF | 272 | 27 | 83 | +3.12 | +3.11 | +1.95 | +1.95 | +27.96 |
+| 131 | KFR | 272 | 28 | 83 | +1.97 | +1.95 | +1.00 | -0.00 | +27.96 |
+| 132 | KFE | 272 | 28 | 83 | +1.97 | +1.95 | +1.00 | -0.00 | +27.96 |
+| 133 | `*` | 136 | 0 | 96 | -18.06 | +1.46 | -19.49 | -0.00 | +5.00 |
+| 134 | / | 92 | 0 | 32 | -84.39 | +8.95 | -71.04 | -0.04 | +60.95 |
+| 135 | `*+` | 126 | 0 | 96 | -40.16 | +0.38 | -41.04 | -0.04 | +16.96 |
+| 136 | LCV | 272 | 6 | 72 | -69.41 | +1.52 | -71.03 | +0.96 | +8.00 |
+| 137 | LTRCV | 272 | 0 | 164 | -73.84 | +1.22 | -77.04 | -0.04 | +5.00 |
+| 140 | C0011 | 210 | 13 | 139 | -6.90 | +1.53 | -6.00 | -0.00 | +5.00 |
+| 141 | CM0101 | 210 | 0 | 37 | -27.13 | -13.31 | -31.33 | -16.42 | -23.47 |
+| 142 | CT0111 | 210 | 23 | 119 | -3.52 | +1.35 | -2.59 | -0.00 | +5.00 |
+
+By column, after (compare with the by-column table above):
+
+| column | n | exact | mean | median |
+|---|---:|---:|---:|---:|
+| ni_ext | 1,074 | 596 | +0.39 | −0.00 |
+| ni_ibox | 1,074 | 506 | −3.58 | −0.00 |
+| ix_ext | 1,074 | 686 | −0.14 | −0.05 |
+| ix_ibox | 1,074 | 437 | −4.04 | −0.00 |
+| ni_ext_wbx | 901 | 0 | −7.16 | −4.00 |
+| ix_ext_wbx | 901 | 0 | −7.49 | −4.04 |
+
+The fit was made to the EXTERNL OPERAND columns, and those are now
+centred on zero: means of +0.39 and −0.14, with 60% exact.
+
+### Why the "0.28 µs" M+ budget did not survive in sequence
+
+This is the diagnosis, and it is structural. Nothing was lost.
+
+- `budgetClocks` is the serial sum `2·iboxCycles + eboxClocks` that the
+  0.28 µs claim was computed from. It is charged only on the I-box
+  dispatch path, and a VFL instruction never takes that path.
+- A VFL instruction is E-box class, so it goes through a look-ahead
+  level. There `rl_prepare` charges `ibusy = 2·iboxCycles` (12 clocks)
+  when the level is loaded, and `rl_au_remove` charges
+  `ebusy = eboxClocks` when it is removed. The two counters run
+  concurrently.
+- A homogeneous sequence therefore runs at max(preparation + 2, E-box + 1):
+  - The +1 is the removal clock: `rl_au_remove` fires on `ebusy == 0`,
+    so a charge of N occupies N + 1 clocks.
+  - The +2 over the 12-clock preparation was measured and not traced.
+- PDF 117's ni_ext column fits max(14.02, 8 + 2·bytes + 1) on all 48
+  rows.
+
+The overlap itself is real, and the pages show it. On PDF 120, L's
+INDEXING columns equal its NO INDEXING ones from (BU,32,8) on. The
+indexed preparation's extra time is hidden once the E-box is the longer
+of the two.
+
+What was wrong is that the E-box charge was too small ever to be the
+longer. So each new number is the occupancy the page measures, less
+the removal clock. GENER's homogeneous sequences cannot tell this apart
+from a VFL decode that runs *in series* with the E-box. Which of the two
+the 7030 does is **open**, and it matters only for mixed sequences.
+
+### What remains (VFL pages)
+
+- **Stores to the I-box and stores across a word boundary.** These are
+  M+, M+MG, ST, SRD, M+1 and CM. ni_ext is now within about 1 clock.
+  ni_ibox / ix_ibox print 13-16 clocks more, and the WB XOVR columns
+  about 30 more: M+1 (BU,8,8) is 34.2 and 51.2 against the model's 21.0.
+  These are not E-box time. They are the fetch-and-store's path to an
+  index register or to two words (Vol. 1 printed p.2-3 item 6, and
+  p.3-18: "VFL data with word boundary crossover represent inefficient
+  use of LA levels"). `eboxClocks` sees no address, so they belong in
+  the store path. Not modelled.
+- **WB XOVR in general.** No column is exact; the median is −4.
+- **The INVERT SIGN blocks** are Table 3's unlike-sign terms, such as
+  "add .6(x/y + 1)" for M+. They depend on the data, and `eboxClocks`
+  sees no data. M+ (DU,48,4) INVERT is still −35.
+- **Small fields of K, KF and CT.** These are prep-bound. The 7030 floor
+  is 12 clocks (3.61 µs), and the model's is 14, so the residual is +2.
+  This is the I-box preparation, not the E-box.
+- **The K family's +28.** The 7030 ends a compare with an inverted sign
+  early. This was item 3 above, and it is unchanged.
+- **`/` under WB XOVR.** The page prints the crossover column *faster*:
+  (B,64,1) is 94 clocks against 144 without crossover. The model adds
+  to it, so the residual is +61. The page is disowned as a divide timing
+  (PDF 41), and it is left as printed.
+- **CV / DCV** have no generated cells, so the oracle cannot measure them.
+  They are charged their pages' flat figures, read off PDF 138-139 at
+  that page's accumulator (+1 at offset 20, PDF 113):
+  - CV: 20 clocks binary, 74 decimal.
+  - DCV: 20 clocks binary, 18 decimal.
+
 ## Where the model is furthest off
 
-1. **The model's VFL time does not depend on the operation.** Take the
+1. **The model's VFL time did not depend on the operation** (as of
+   `77ed952`; ADDRESSED 2026-11-16, see "After per-operation VFL times"
+   below, which re-measures PDF 116-142). Take the
    192 (field, column, block) groups on PDF 116-139, outside WB XOVR.
    Every instruction in a group, from L and + to M+, ST, `*`, `/`, LFT,
    LCV and LTRCV, gets the *same* model figure. That figure is set by

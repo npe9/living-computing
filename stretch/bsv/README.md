@@ -748,6 +748,123 @@ the largest remainder, the four sign cases with `vfl_divide.strap`, zero
 dividend and divisor). It passed unchanged on the model before the box,
 `CYCLES=1196+-0` included.
 
+### VFL time depends on the operation (2026-11-16)
+
+**What changed.** `eboxClocks` (`StretchTiming.bsv`) used to charge every
+VFL operation `8 + 2·bytes`, so L, `/` and LCV cost the same. It now
+charges each operation the E-box occupancy that Perf. Char. Vol. 2's atlas
+measures for it, on its own page in PDF 116-142, less the one removal
+clock. The connectives are treated the same way: C is PDF 140, CM is
+PDF 141 and CT is PDF 142. The arm cites a page and a cell for every
+number. Each law is a fit to a printed page, not a mechanism. Where
+Table 3 makes the time data-dependent, the fit holds at the atlas's
+operands:
+
+- `/` was measured dividing by one, and the atlas's authors disown that
+  page as a divide timing (PDF 41).
+- LCV and LTRCV were measured on the standard operand.
+
+**Byte count.** It is Table 3's x/y, with one byte added for a sign
+(Table 3's preamble, Vol. 1 printed p.3-6). A signed field no longer
+than its sign byte has no data bytes.
+
+**Why the old M+ "0.28 µs" did not hold in sequence.** That figure was
+the serial budget `2·iboxCycles + eboxClocks`, which only the I-box
+dispatch path charges. On the look-ahead path the 12-clock preparation
+and the E-box charge run concurrently, so the throughput is
+max(prep + 2, E-box + 1). An E-box charge below the preparation is
+invisible in sequence. `docs/atlas_oracle.md` has the measurement and
+the open question: in a homogeneous sequence the two run concurrently,
+but a mixed one might run decode and E-box in series.
+
+**Atlas residual, PDF 116-142** (6,098 cases):
+
+| | mean | exact |
+|---|---:|---:|
+| before | −18.93 clocks | 423 |
+| after | −3.46 clocks | 2,225 |
+
+`docs/atlas_oracle.md` has the per-page table.
+
+**Behaviour is unchanged, after two look-ahead fixes the new times
+exposed.** The first subset run (139 sections) had the same 478 result
+lines before and after. A wider one (218 sections, adding every deck that
+uses a VFL or connective instruction and every `STEPS=` run) found two
+that changed results: C22-6578 Problem 2.6 Method 3 (twelve of sixteen
+packed fields missing) and Problem 4.7 Method 2 as printed. Both pass on
+the old times. The cause was latent ordering hazards, not the times.
+Progressive indexing sets the index indicators (XCZ and the rest) when
+its level executes, and `iboxHazard` let I-box instructions that read or
+set those indicators run ahead of a pending progressive level. Longer
+VFL times moved the levels' execution past them.
+
+1. **A branch on an index indicator read it too early.** In 2.6
+   Method 3, `BZXCZ` read XCZ before a progressive ST had counted.
+   - Fix: such a branch waits while any pending level is progressive
+     (`anyProgressive`).
+   - Test: `decks/vfl_pack_cross.strap`. Without the fix it halts at
+     214 clocks with five failed fields. With it, `CYCLES=889+-0`.
+2. **An index instruction's indicators were overwritten.** In 4.7
+   Method 2, `V-ICR,$3` set XCZ ahead of a pending progressive
+   connective, which then overwrote it with `$1`'s.
+   - Fix: index arithmetic, load/store-index and count branches wait
+     too (`setsIndexInd`).
+   - Test: `decks/vfl_index_ind_order.strap`. Without the fix the loop
+     runs 16 passes instead of 4 (2099 clocks). With it,
+     `CYCLES=687+-0`.
+
+Both fixes are conservative waits, not a model of the I-box's indicator
+timing. No source tells when the real machine sets them.
+
+After both fixes, the 220-section subset passes with 0 FAIL lines:
+every CYCLES and STEPS run, every deck using a VFL or connective
+instruction, the MCP sections and the smoke test. Neither fix moved a
+pin. The atlas's I-box pages, PDF 106, 107, 109 and 112 (167 cases),
+are unchanged to the hundredth of a clock.
+
+**Pins moved to measured values**, each deck's header saying why:
+
+| deck | clocks before | clocks after |
+|---|---:|---:|
+| `index_after_level` | 2407 | 2828 |
+| `index_after_index_store` | 1132 | 1248 |
+| `vfl_srd` | 974 | 1223 |
+| `vfl_progressive_index0` | 145 | 164 |
+| `vfl_decimal_refused` | 140 | 163 |
+| `vfl_divide_box` | 1196 | 2148 |
+| `la_timing_loop` | 807 | 918 |
+
+`la_timing_loop`'s bound moved from 900 to 1000.
+
+The divide box's clocks are still taken out of the E-box charge, and no
+DIVIDE BOX OVERRAN line appears.
+
+MCP's own bootstrap now completes in 6,424,243 steps, against
+6,423,052 before.
+
+**New pin.** `decks/vfl_op_timing.strap` runs eight each of L, M+, K,
+`*` and `/` at (BU,64,8):
+
+- 1193 clocks before, 1979 after.
+- Injection: forcing every code to L's arm gives FAIL cycles = 1331 and
+  nothing else.
+
+CV and DCV have pages (PDF 138-139) but no oracle generator, so the
+model charges them those pages' flat figures without measuring them.
+
+**Not modelled, or open.**
+
+- The connective arm (C, CM, CT) has no suite pin or injection. Only the
+  atlas run checks it: C0011 is 139 of 210 exact.
+- Not checked: whether an EX subject that is E-box class is charged its
+  own `eboxClocks`. EX is not E-box class, so it is charged on the I-box
+  dispatch path's `budgetClocks`.
+- The VFL store's extra time to an I-box operand (+13 to +16 clocks)
+  and across a word boundary (about +30). These are a store-path
+  matter, and `eboxClocks` sees no address.
+- The INVERT SIGN blocks' unlike-sign terms, which depend on the data.
+- The 12-clock preparation floor of K and CT. The model's floor is 14.
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED

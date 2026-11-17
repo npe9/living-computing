@@ -30,6 +30,16 @@
 ! THE POSITIVE CONTROL IS THE POINT: the legal BINARY store runs first
 ! and its target is checked for the value it must have, so the deck
 ! cannot pass by doing nothing at all.
+!
+! TIMING RE-PINNED 2026-11-16, 140 -> 163 clocks, every value check unchanged.
+! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
+! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
+! atlas prints for it (docs/atlas_oracle.md).  A refused decimal operation
+! is charged like a run one.  The signed decimal ST(D,32,8) is now ST's
+! law (PDF 124, 18 + 2 bytes): x = 32 - 8, y = 8, three bytes and the
+! sign's one, 26 clocks (PDF 124 prints no 8-bit decimal byte; its
+! (D,32,4) row is 10.21 us = 34 clocks at eight bytes).
+!
         SLC, (8)300.0
 START   L(BU,32,8), DATA1
         ST(BU,32,8), TA+.48          ! legal: binary unsigned

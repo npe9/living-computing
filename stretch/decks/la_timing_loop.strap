@@ -11,6 +11,13 @@
 ! Serialized (I-box waiting for the levels to drain) they add ~32 per
 ! iteration: ~1120. Measured 807. The bound of 900 in run_tests.sh
 ! separates them. SUM is CNOP-aligned so the check reads one word.
+!
+! RE-MEASURED 2026-11-16: 918 clocks (91.8 a pass).  The E-box work per
+! pass is now the atlas's full-word times, L 28 (PDF 120, 8.40 us), +
+! 28 (PDF 116, 8.56 us) and ST 32 (PDF 124, 9.61 us) = 88, not 72; the
+! bound is now 1000, chosen (9% over 918, as 900 was over 807).  The V+
+! and CB are still hidden; the ~32 a pass they would add serialized is
+! the estimate above, not re-measured.
 START   LCI, $1, 10
         LVI, $2, 0
 LOOP    L(BU,64,8), SUM
