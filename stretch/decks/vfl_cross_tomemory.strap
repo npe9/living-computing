@@ -1,0 +1,284 @@
+! vfl_cross_tomemory.strap -- the three VFL model limits of docs/NEXT.md
+! "EVERY OP THE MODEL STILL SETS" group B, built 2026-11-17:
+!
+!   1. M+, M+1, M+MG with a field that crosses a word boundary (blocks X);
+!   2. a to-memory field whose SECOND word is below 32 -- ST, M+1, CM
+!      into the index registers (blocks T);
+!   3. a crossing field that also needs a progressive refill: three reads
+!      (blocks R).
+!
+! Each was refused with OP; none is a documented restriction.
+!
+! WHAT THE MACHINE DOES, FROM THE PAGES (Reference Manual 22-6530-2, PDF =
+! printed + 3, read in the page images):
+!
+!   printed p.55: a VFL data field "may start at any bit position in
+!   storage".  printed p.56, Field Definition: "The storage word or word
+!   pair which contains the addressed memory field is brought from storage
+!   to the arithmetic section of the computer ... In integer arithmetic
+!   operations that affect storage, such as STORE and ADD TO MEMORY, the
+!   result replaces the storage operand in the bit positions specified by
+!   the address and field length.  Data to the right or left of the
+!   specified field in storage are never affected."
+!
+!   printed p.34, Special Registers: "Except as noted in connection with
+!   the individual registers, addresses 1-15 are valid word addresses in
+!   all but the following cases" -- seven cases (instructions, refill
+!   addresses, I/O control words, I/O data, the instruction counter, EXIC's
+!   pseudo-counter, RENAME), none a data store.  The index registers
+!   (16-31) are not in that list at all.
+!
+!   printed p.21: "For code 3, addition and counting take place and also
+!   the index specified by I is refilled if the count reaches zero";
+!   printed p.21-22, Programming Notes: "An operation in which progressive
+!   indexing is specified is executed in two parts.  The variable field
+!   length part of the operation is prepared and then the index
+!   modification portion of the operation is performed"; "If the index
+!   register specified by the I field of an operation using progressive
+!   indexing is an operand in the variable field length portion of the
+!   operation, the original value of this index register will be used."
+!
+! So: a crossing field is the same operation with its bits in two words;
+! a second word below 32 is stored as any store to that register is; a
+! crossing field with a refill reads both words, does the VFL part, then
+! the index part with its refill.  Block T4 is the last sentence's case:
+! the store's second word IS the progressive index register, the VFL part
+! writes it, and the index part then replaces it with the ORIGINAL value
+! advanced -- which is what an ordering that wrote the index first would
+! get wrong.
+!
+! HOW THE EXPECTATIONS WERE DERIVED.  By hand, BEFORE the arms were built,
+! from the field arithmetic: a field at bit address A of length L in the
+! pair (W, W+1) is IBM bits A..A+L-1 of the 128-bit pair.  The arithmetic
+! and indicators of each X case are those of the ONE-WORD case of the same
+! name in decks/vfl_binary_memadd_indicators.strap (M1 ... M11, hand-
+! derived there from printed pp.59, 62-63 and Figure 13): a crossing
+! changes where the bits are, nothing else, so the indicator word must be
+! the same number.  Every target word is filled with A5/5A outside the
+! field, so a store that wrote a whole word, or the wrong half, shows.
+!
+!   X1  M+(BU,8,8)  acc 1, field FF at W+.60 (W low nibble F, W+1 top
+!       nibble F): 256, the carry leaves the field: 00.  LC MOP RZ
+!       0x20000000140 (= M1).
+!   X2  M+(BU,8,8)  acc 1, field FE: FF.  MOP RGZ 0x120 (= M2).  CONTROL.
+!   X3  M+(BU,8,8)  acc -5, field 03: 3 + -5 = -2, unsigned, magnitude
+!       stored: 02.  LC MOP RLZ RN 0x20000000190 (= M3).
+!   X4  M+MG(BU,8,8) acc -1, field FF: 00.  LC MOP RZ (= M4).
+!   X5  M+1(BU,8) acc (16)102 (PF "not affected", p.63), field FF: 00.
+!       LC MOP RZ (= M7).
+!   X6  M-1(BU,8)  field 00: -1, unsigned, magnitude stored: 01.  LC MOP
+!       RLZ RN (= M8).
+!   X7  M+(B,16,8) at W+.56: acc +5, field -3 (numeric 03 in W's low
+!       byte, sign byte 08 in W+1's top byte): +2, sign byte 00.  MOP RGZ
+!       0x120 (= M9).
+!   X8  M+(DU,8,4) decimal: acc 27, field 15 at W+.60: 42.  MOP RGZ
+!       0x120 (printed p.61's decimal ADD TO MEMORY; no carry, no digit of
+!       the accumulator above the field).
+!
+!   T1  ST(BU,32,8), $X3+.48 (word 19 bit 48): acc (16)12345678.  X3
+!       bits 48-63 := 1234, X4 bits 0-15 := 5678.  Read back by SX.
+!   T2  M+1(BU,8), $X5+.60: X5 low nibble F, X6 top nibble F: 00, LC MOP
+!       RZ 0x20000000140.
+!   T3  CM0101(BU,16,8), $X8+.56: acc (16)BEEF (connective 0101 stores
+!       the accumulator field, MCP's SF).  X8 low byte := BE, X9 top byte
+!       := EF.
+!   T4  ST(V+I)(BU,16,8), .16($X7) with X7 = 22.56 (X6's bit 56), count 5:
+!       X6 low byte := BE; word 23 (X7 itself) top byte := EF, and then the
+!       index part puts X7's ORIGINAL word back advanced by the address
+!       part, 16 bits (printed p.21: "the address part ... is added to the
+!       value field"):
+!       value 22.56 + 16 bits = 23.08 = bit 1480 = (16)5C8, count 5,
+!       refill 1500: X7 = (16)0005C800001405DC.
+!
+!   R1  M+(V+ICR)(BU,8,8) at W+.60 with count 1: X1's arithmetic and the
+!       refill.  LC MOP RZ, and the index result indicators from the
+!       pre-refill state (p.21: count zero XCZ, value > 0 XVGZ):
+!       0x20000009140 (= M11).  X7 := RFW, (16)01348000013405DC.
+!   R2  ST(V+ICR)(BU,16,8) at T+.56, count 1: acc (16)BEEF.  T low byte
+!       := BE, T+1 top byte := EF.  MOP RGZ XCZ XVGZ 0x9120.  X7 := RFW.
+!   R3  CM0101(V+ICR)(BU,16,8) at T+.56, count 1: as R2.  The connective
+!       indicators (MOP, RGZ for a non-zero result) and XCZ XVGZ: 0x9120.
+!
+! The read-arm case (a crossing + with a refill) is
+! decks/vfl_progressive_refill_once.strap's P10, flipped from "refused"
+! to "done once" in the same change.
+!
+! MEASURED INJECTIONS, 2026-11-17, observed failures (each in a scratch
+! copy of the tree, never in the worktree; this deck's line and
+! vfl_progressive_refill_once's):
+!   I1 rl_tail_write drops its write (the special tail never lands):
+!      FAILS T1_X4, T2_X6, T3_X9 -- the three tails into an index
+!      register -- and nothing else.  T4's tail is X7 itself, which the
+!      index part overwrites anyway.
+!   I2 the index part's write before the tail (armIdx no longer waits
+!      for pendingTailWrite; armTail waits for pendingIdxWrite instead):
+!      FAILS T4_X7_index_part_last ONLY, = (16)EF05B800001405DC: the
+!      tail's EF over the advanced index.  p.22's order is pinned by
+!      this one check.
+!   I3 the M+ arm's crossing tail not written: FAILS X1_W1 .. X8_W1 (all
+!      eight), T2_X6 and R1_W1 -- every M+ crossing's second word -- and
+!      no indicator check.
+!   I4 a crossing ST with a refill taking the index from prefetch[1]
+!      (the field's second word) instead of prefetch[2]: FAILS R2_X7
+!      ONLY, = (16)5A5A5A5A5A5A5A5A, the field word.
+!   I5 the read arms' refill slot truncated to one bit (the old two-word
+!      prefetch's index): this deck all green; FAILS R10_refilled = (16)AB
+!      in vfl_progressive_refill_once, nothing else.
+! X2 is the CONTROL: the one case with no Lost Carry (MOP RGZ, 0x120) --
+! it passes on every injection that leaves the crossing's second word
+! alone, and its X2_W1 fails with the others under I3.
+! The first run of the finished model failed T4 alone, (16)0005B8...: the
+! derivation was wrong, not the model.  Progressive indexing adds the
+! instruction's address part (p.21), and the draft's 0($X7) adds nothing;
+! the deck now has .16($X7).
+        SLC, 1000.0
+START   L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), W1+.60
+        TI, 1, $IND, I1
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), W2+.60
+        TI, 1, $IND, I2
+        L(B,16,8), N5
+        Z, $IND
+        M+(BU,8,8), W3+.60
+        TI, 1, $IND, I3
+        L(B,16,8), N1
+        Z, $IND
+        M+MG(BU,8,8), W4+.60
+        TI, 1, $IND, I4
+        L(BU,16,8), H0102
+        Z, $IND
+        M+1(BU,8), W5+.60
+        TI, 1, $IND, I5
+        Z, $IND
+        M-1(BU,8), W6+.60
+        TI, 1, $IND, I6
+        L(BU,8,8), FIVE
+        Z, $IND
+        M+(B,16,8), W7+.56
+        TI, 1, $IND, I7
+        L(DU,8,4), D27
+        Z, $IND
+        M+(DU,8,4), W8+.60
+        TI, 1, $IND, I8
+! ---- T: the second word below 32 ----------------------------------
+        LX, $X3, IX3
+        LX, $X4, IX4
+        L(BU,32,8), D32
+        ST(BU,32,8), $X3+.48
+        SX, $X3, S3
+        SX, $X4, S4
+        LX, $X5, IX5
+        LX, $X6, IX6
+        Z, $IND
+        M+1(BU,8), $X5+.60
+        TI, 1, $IND, I9
+        SX, $X5, S5
+        SX, $X6, S6
+        LX, $X8, IX8
+        LX, $X9, IX9
+        L(BU,16,8), HBEEF
+        CM0101(BU,16,8), $X8+.56
+        SX, $X8, S8
+        SX, $X9, S9
+        LX, $X6, IX6B
+        LX, $X7, XPT
+        L(BU,16,8), HBEEF
+        ST(V+I)(BU,16,8), .16($X7)
+        SX, $X6, S6B
+        SX, $X7, S7
+! ---- R: a crossing field and a refill ---------------------------
+        L(BU,8,8), ONE
+        LX, $X7, XPM
+        Z, $IND
+        M+(V+ICR)(BU,8,8), 0($X7), 0
+        TI, 1, $IND, I10
+        SX, $X7, R1
+        L(BU,16,8), HBEEF
+        LX, $X7, XPS
+        Z, $IND
+        ST(V+ICR)(BU,16,8), 0($X7), 0
+        TI, 1, $IND, I11
+        SX, $X7, R2
+        L(BU,16,8), HBEEF
+        LX, $X7, XPC
+        Z, $IND
+        CM0101(V+ICR)(BU,16,8), 0($X7), 0
+        TI, 1, $IND, I12
+        SX, $X7, R3
+        BOP, $                       ! hang if anything was refused
+PASS    BEW, $
+
+        SLC, 1500.0
+XPM     XW, W11+.60, 1, RFW      ! count 1: the refill fires
+XPS     XW, T1+.56, 1, RFW
+XPC     XW, T2+.56, 1, RFW
+XPT     XW, 22.56, 5, 1500.0     ! X6's bit 56; V+I does not count
+RFW     XW, 1234.0, 77, 1500.0   ! the refilled index word
+N5      DD(BU,64), (16)0508000000000000
+N1      DD(BU,64), (16)0108000000000000
+ONE     DD(BU,64), (16)0100000000000000
+FIVE    DD(BU,64), (16)0500000000000000
+H0102   DD(BU,64), (16)0102000000000000
+HBEEF   DD(BU,64), (16)BEEF000000000000
+D27     DD(BU,64), (16)2700000000000000
+D32     DD(BU,64), (16)1234567800000000
+IX3     DD(BU,64), (16)A5A5A505A5A5A5A5
+IX4     DD(BU,64), (16)5A5A5A0A5A5A5A5A
+IX5     DD(BU,64), (16)A5A5A505A5A5A5AF
+IX6     DD(BU,64), (16)F5A5A505A5A5A5A5
+IX8     DD(BU,64), (16)A5A5A505A5A5A5A5
+IX9     DD(BU,64), (16)5A5A5A0A5A5A5A5A
+IX6B    DD(BU,64), (16)A5A5A505A5A5A5A5
+
+        SLC, 1600.0
+W1      DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)F5A5A5A5A5A5A5A5
+W2      DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)E5A5A5A5A5A5A5A5
+W3      DD(BU,64), (16)A5A5A5A5A5A5A5A0
+        DD(BU,64), (16)35A5A5A5A5A5A5A5
+W4      DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)F5A5A5A5A5A5A5A5
+W5      DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)F5A5A5A5A5A5A5A5
+W6      DD(BU,64), (16)A5A5A5A5A5A5A5A0
+        DD(BU,64), (16)05A5A5A5A5A5A5A5
+W7      DD(BU,64), (16)A5A5A5A5A5A5A503
+        DD(BU,64), (16)08A5A5A5A5A5A5A5
+W8      DD(BU,64), (16)A5A5A5A5A5A5A5A1
+        DD(BU,64), (16)55A5A5A5A5A5A5A5
+W11     DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)F5A5A5A5A5A5A5A5
+T1      DD(BU,64), (16)A5A5A5A5A5A5A5A5
+        DD(BU,64), (16)5A5A5A5A5A5A5A5A
+T2      DD(BU,64), (16)A5A5A5A5A5A5A5A5
+        DD(BU,64), (16)5A5A5A5A5A5A5A5A
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+I4      DD(BU,64), 0
+I5      DD(BU,64), 0
+I6      DD(BU,64), 0
+I7      DD(BU,64), 0
+I8      DD(BU,64), 0
+I9      DD(BU,64), 0
+I10     DD(BU,64), 0
+I11     DD(BU,64), 0
+I12     DD(BU,64), 0
+S3      DD(BU,64), 0
+S4      DD(BU,64), 0
+S5      DD(BU,64), 0
+S6      DD(BU,64), 0
+S8      DD(BU,64), 0
+S9      DD(BU,64), 0
+S6B     DD(BU,64), 0
+S7      DD(BU,64), 0
+R1      DD(BU,64), 0
+R2      DD(BU,64), 0
+R3      DD(BU,64), 0
+        END, START

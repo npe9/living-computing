@@ -782,9 +782,10 @@ retires: no I-box instruction and no new level. It replaces `indexStorePending`.
 The pages draw only the trigger's turn-on. Three things are the model's
 choice: that STORE WAIT holds all preparation (no box takes it as a
 condition), that the store's retirement releases it, and that the I-unit
-recovery costs nothing. It is a conservative wait, not a measured time. A field crossing into word
-16-31 from word 15 is refused by `execute()`, so the store's first word is
-enough.
+recovery costs nothing. It is a conservative wait, not a measured time. Since
+2026-11-17 a field crossing into word 16-31 from word 15 is built, and the
+test also checks a crossing store's second word (`storeAddr2`, CHOSEN: the
+figure's hexagon tests W only).
 
 Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
 pending `ST(BU,64),$X3`). Its header records the measured injection. Two parts of
@@ -1060,9 +1061,10 @@ measured. Re-pinned after the merge, every result check unchanged:
   `ST(BU, 3), $AL`, `decks/problem_3_vfl_store_to_indicators.strap`),
   the `CM` connective (MCP printed p.356 line 33,
   `CM1111(BU,1),$IND.63`, `decks/repro_cm_indicator_bit.strap`), FP
-  stores. A VFL field CROSSING into or out of word 11 is still
-  refused (a crossing tail below word 32 is; see the crossing-field `ST` entry below), and
-  so is loud, not lost.
+  stores. Since 2026-11-17 a VFL field crossing into a word below 32
+  is built too: its second word goes through `writeWord` one clock
+  later (`StretchCore`'s `rl_tail_write`; see the crossing-field `ST`
+  entry below). No deck crosses into or out of word 11 itself.
 
   The four index half-word stores -- `SV`, `SC`, `SR` and `SVA` --
   and `BB` and `Z` keep their older shape: they FOLD the store into
@@ -1112,18 +1114,26 @@ measured. Re-pinned after the merge, every result check unchanged:
   the semantics (twelve checks, every expectation derived before the
   arm existed) and `tests/gen_mcp_boot_tb.py`'s `mcp_ucbf1_*` pin the
   effect on MCP itself.
-  **WHAT IS STILL REFUSED**, each for a stated reason:
-  `M+` keeps the old guard (nothing measured needs it). The `CM`
+  **WHAT WAS STILL REFUSED until 2026-11-17**, each for a stated reason:
+  `M+` kept the old guard (nothing measured needed it). The `CM`
   connective crosses since 2026-11-06, the same way and for the same
   kind of reason: MCP printed p.78 line 42, `SF(BU,40,8),TREELX`, is a
   forty-bit CONNECT TO MEMORY at bit 40, refused it left OP set, and
   MCP's body reported an OP interrupt
-  (`decks/cm_crossing_field.strap`). Still refused: a crossing field whose SECOND word is below 32 — the
-  machine's registers — because the tail drains to the core-storage
-  queue and does not run `writeWord`'s special-address dispatch; and a
-  crossing field that ALSO needs a progressive refill, which wants
-  three reads of a two-slot prefetch. The paragraph below is kept
-  because the *reasoning* still applies to those three.
+  (`decks/cm_crossing_field.strap`). The other three were refused
+  until 2026-11-17: a crossing field whose SECOND word is below 32 --
+  the machine's registers -- because the tail drained to the
+  core-storage queue and did not run `writeWord`'s special-address
+  dispatch; a crossing `M+`/`M+1`/`M+MG`; and a crossing field that ALSO
+  needs a progressive refill, which wanted three reads of a two-slot
+  prefetch. **All three are built** (`docs/NEXT.md` "GROUP B BUILT"):
+  `ExecDone.tailWrite` and the off-pipe rule `rl_tail_write` (through
+  `writeWord`, inside `busyXfer`, so the index part's write comes after
+  it, p.22's order), the `M+` arm's `mCross`, and a three-word
+  `prefetch` (`NPrefetch`). Oracle `decks/vfl_cross_tomemory.strap`.
+  The second word's time is CHOSEN (one read, one tail clock), not the
+  atlas's WB XOVR column (about 30 clocks more; NEXT.md). The paragraph
+  below is kept for its reasoning about the refusals that remain.
   This falls directly out of
   the crossing-field simplification above combined with the manual's
   own rule (p.22 PROGRAMMING NOTES: "If an exception condition is

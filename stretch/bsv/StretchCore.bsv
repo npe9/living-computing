@@ -121,6 +121,9 @@ module mkStretchCore(StretchCore);
   Reg#(Bool) haltedReg <- mkReg(False);
   Reg#(HWordAddr) pcReg <- mkReg(0);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
+  // A crossing VFL store's second word below 32 (ExecDone.tailWrite),
+  // written by rl_tail_write before anything else is armed.
+  Reg#(Maybe#(Tuple2#(WordAddr, Word64))) pendingTailWrite <- mkReg(tagged Invalid);
   // A ConfigReg so that rl_io_report's read of it is not ordered against
   // iplStart, which writes it: the read is the start-of-clock value
   // either way, which is all the report asks ("has the operation
@@ -340,6 +343,7 @@ module mkStretchCore(StretchCore);
       if (r matches tagged Valid .o) begin
         commitNext(pc, len, o.next);
         pendingIdxWrite <= o.idxWrite;
+        pendingTailWrite <= o.tailWrite;
         ioPending <= o.ioStart;
         xmitPending <= o.xmitStart;
         // >>> A SWAP THAT RUNS SAYS SO. <<<  The question "does any
@@ -424,8 +428,13 @@ module mkStretchCore(StretchCore);
   // crossing ST nothing can be armed either -- so xmitPending cannot
   // become Valid while a tail is pending.  Written down rather than
   // assumed, as with rl_io's ordering above.
+  //
+  // AND A FOURTH, 2026-11-17: a crossing store's second word below 32,
+  // which rl_tail_write makes through writeWord (ExecDone.tailWrite).
+  // Being in busyXfer is what puts it before rl_idx_write: the VFL part
+  // of a progressive operation first, its index after (printed p.22).
   Bool busyXfer    = isValid(ioPending) || isValid(xmitPending)
-                     || st.storeTailPending();
+                     || st.storeTailPending() || isValid(pendingTailWrite);
   // A REPORT IS STILL OWED on some channel: a control word holds a
   // status bit the exchange has not yet promoted (printed p.118).
   // Read by idle() only.
@@ -461,6 +470,8 @@ module mkStretchCore(StretchCore);
   // `!core.halted()` guard goes false.
 
   Bool armIdx      = !armRecover && !busyXfer && isValid(pendingIdxWrite);
+  Bool armTail     = !armRecover && !isValid(ioPending) && !isValid(xmitPending)
+                     && isValid(pendingTailWrite);
   Bool resumeReady = ebox.canResume();
   Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
@@ -605,7 +616,7 @@ module mkStretchCore(StretchCore);
     end
   endrule
 
-  (* mutually_exclusive = "rl_recover, rl_io, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare" *)
+  (* mutually_exclusive = "rl_recover, rl_io, rl_tail_write, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare" *)
   rule rl_recover (running && armRecover);
     // Wrong-way recovery (Perf. Char. p.3-23): undo the index
     // registers and index indicators the I-box changed ahead, take the
@@ -1187,6 +1198,18 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
+  rule rl_tail_write (running && armTail);
+    // The second word of a crossing VFL store whose second word is a
+    // special or index register (ExecDone.tailWrite): the one-clock
+    // stall core storage's tail gets (writeWordTail), through writeWord
+    // so that the register's own store rules apply.
+    let t = validValue(pendingTailWrite);
+    st.writeWord(tpl_1(t), tpl_2(t));
+    pendingTailWrite <= tagged Invalid;
+    ebusy <= eb;
+    haltedReg <= False;
+  endrule
+
   rule rl_idx_write (running && armIdx);
     // Part 2 of a progressive-indexing instruction: nothing was
     // fetched this call, and PC already advanced on part 1.
@@ -1216,6 +1239,7 @@ module mkStretchCore(StretchCore);
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
+      pendingTailWrite <= o.tailWrite;
       ioPending <= o.ioStart;
       xmitPending <= o.xmitStart;
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
@@ -1274,7 +1298,7 @@ module mkStretchCore(StretchCore);
     // any further read it needs, the box holds it for (resume arm).
     Bit#(16) ebn = eb;
     LaLevel h = la.headLevel();
-    Vector#(2, Word64) pf = replicate(0);
+    Vector#(NPrefetch, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
     // THE INSTRUCTION AS THE LEVEL CARRIES IT: the indexing the I-box
@@ -1306,6 +1330,7 @@ module mkStretchCore(StretchCore);
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles
     end else if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
+      pendingTailWrite <= o.tailWrite;
       ioPending <= o.ioStart;
       xmitPending <= o.xmitStart;
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
@@ -1565,7 +1590,7 @@ module mkStretchCore(StretchCore);
           la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: prep.storeAddr,
-                          carry: carry});
+                          storeAddr2: prep.storeAddr2, carry: carry});
           pcReg <= pc + ((len == Full) ? 2 : 1);
           ibusy <= 2 * iboxCycles(di, False);   // its preparation time
         end
@@ -1580,7 +1605,8 @@ module mkStretchCore(StretchCore);
         la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: tagged Invalid,
                         data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
-                        storeAddr: tagged Invalid, carry: LaCarry{addr: 0, lbo: 0}});
+                        storeAddr: tagged Invalid, storeAddr2: tagged Invalid,
+                        carry: LaCarry{addr: 0, lbo: 0}});
         xSnap <= st.snapshotIndex();
         indSnap <= st.readIndicators();
         guessPending <= True;

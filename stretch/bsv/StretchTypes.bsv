@@ -777,6 +777,8 @@ typedef struct {
   Maybe#(WordAddr) storeAddr;   // the word this E-box level stores to (ST/M+),
                                 // so a younger load of that word waits for it
                                 // (store-close-to-fetch, plan stage 3a note)
+  Maybe#(WordAddr) storeAddr2;  // a crossing store's SECOND word, read by
+                                // storeWait only (StretchIBox, 2026-11-17)
   LaCarry          carry;       // what the I-box's indexing produced for
                                 // this instruction -- see LaCarry
 } LaLevel deriving (Bits, Eq, FShow);

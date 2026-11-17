@@ -78,15 +78,19 @@
 ! mechanism and not yet from a measurement.  Recorded here rather than
 ! left to be assumed; block 2 is the attempt to make it load-bearing.
 !
-! WHAT IS STILL REFUSED, and block 5 is the scope check for it:
-!   * M+ with a crossing field.  Nothing measured needs it;
-!     bsv/README.md carries it with the date.  (The CM connective
-!     crosses since 2026-11-06: decks/cm_crossing_field.strap.)
+! WHAT WAS STILL REFUSED until 2026-11-17, and block 5 was the scope
+! check for the first of them:
+!   * M+ with a crossing field.
 !   * A crossing field whose SECOND word is below 32 (the machine's
-!     registers): the tail is drained to the core-storage queue and
-!     does not run writeWord's special-address dispatch.
+!     registers): the tail was drained to the core-storage queue and
+!     did not run writeWord's special-address dispatch.
 !   * A crossing field that ALSO needs a progressive refill: that
-!     wants three reads of a two-slot prefetch.
+!     wanted three reads of a two-slot prefetch.
+! All three are built (docs/NEXT.md, "GROUP B BUILT"); their cases are
+! decks/vfl_cross_tomemory.strap.  Block 5 now checks that M+ crosses:
+! acc (8)46 = (16)26 (block 4's load), field (16)FFFFFFFF at TF+.48,
+! unsigned: (16)100000025, the carry leaves the field -- TF bits 48-63
+! := 0000, TF+1 bits 0-15 := 0025, every other bit still one.
 
         SLC, (8)300.0
 START   LVI, $X1, 0
@@ -146,11 +150,10 @@ START   LVI, $X1, 0
 ! ---- nothing so far may have been refused ------------------------
         BOP, $                       ! hang if OP came on: all legal
 
-! ---- 5. M+ ACROSS A BOUNDARY IS STILL REFUSED --------------------
-! The scope check, and it is LAST because OP is sticky: every block
-! above has already been tested for a clear OP.
+! ---- 5. M+ ACROSS A BOUNDARY (refused until 2026-11-17) -----------
+! Last, as it was when it checked the refusal; OP must stay off.
         M+(BU,32,8), TF+.48
-        BZOP, $                      ! hang if OP did NOT come on
+        BOP, $                       ! hang if OP came on
         B, PASS
 PASS    BEW, $
         CNOP
