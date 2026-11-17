@@ -27,7 +27,8 @@ print, and is CHOSEN here so that the map's rows discriminate:
   * the commons: first declared in the order DIFF, A (*MAIN*), STE (STEP),
     POL (POLY); A redeclared larger (100 then 146 by STEP) and smaller (30 by
     VALUE), DIFF smaller (4 by DERIV); blank common 6 (*MAIN*) then 14
-    (STEP).  So "first wins" and "last wins" each move a predicted set.
+    (STEP).  Designed so that "first wins" and "last wins" would each move
+    a set; only the dropped largest-wins (first wins) is measured below.
   * RANDM's program card carries the size all 1's (C28 p.7, a FORTRAN-made
     card), so its 7 words must come from the scan of its cards; every other
     card carries its assembled size.
@@ -46,14 +47,20 @@ table is NOT yet fed to MCP's loader (that is R2b).
 
 FURTHER RUNS, the messages (C28 pp.22-23): UST* removed from the library
 (T.V. UST* INCOMPLETE IN IOCS* SUBPROGRAM, with the console line), *MAIN*
-renamed (message 10), and U lowered (message 2).
+renamed (message 10), U lowered (message 2), and message 3's ILLEGAL TYPE
+OF CARD (a column-1 code 77 card in STEP), INCORRECT CARD ORDER (STEP's
+common card moved after its instruction card) and RELOCATION TABLES ARE TOO
+LARGE (U = 30 words).
 
 FIRST RUN, 2026-11-17: every map row, the table and KSILO+8 matched at the
 first run (305,752 model steps); KSILO+9..+11 failed only on Bluesim's
 0xAA... in bits the deck does not write, so the test now plants KSILO 8-11
 as MCP leaves them (zero but U).  The console line first failed on three
 unwritten characters of CONB (the deck now copies the 40-character padded
-text).  CONTROL, as committed: ALL CHECKS PASSED, 32 checks, 305,759 steps.
+text).  CONTROL, first commit: 32 checks.  2026-11-17 second pass: KSILO
+9-11 planted with a 0xAA sentinel, ERRC's sentinel moved to the byte read,
+three more message-3 runs; CONTROL now ALL CHECKS PASSED, 35 checks,
+305,759 steps.
 
 MEASURED INJECTIONS into decks/bss_7030.strap, scripted, each restored from
 a saved copy verified with cmp (OBSERVED sets; the message runs passed in
@@ -70,6 +77,9 @@ each):
   - the library sorted by storage address (fetch order) instead of disk
     address: 1 fails, the relocation table (213754, 213755, 213763, 213764:
     UST*'s and FISIP*'s words 0 and 1 swap places; IOCS*'s stay).
+  - KSILO+11.0 never written (its ST a NOP): 1 fails, KSILO+11 (the
+    sentinel aaaaaaaaaaaaaaaa survives).
+  (Re-measured after the second pass: the first four sets unchanged.)
 """
 import os
 import re
@@ -186,9 +196,11 @@ def tws_offset(k):
     return (k // 34) * 512 + (k % 34) * 15
 
 
-def build(subs=SUBS, lib=LIB, upper=None):
+def build(subs=SUBS, lib=LIB, upper=None, mangle=None):
     """The deck's source with the input after INPUT, and what to expect."""
     decks = [punch(stub_source(*s)) for s in subs]
+    if mangle:
+        mangle(decks)
     fb = punch(["        PUNREL", "        FEND"])
     tws, firsts = [], []
     for d in decks:
@@ -221,9 +233,10 @@ def build(subs=SUBS, lib=LIB, upper=None):
     rows.append("        DD(BU,64), 0")
     exp = expect(subs, lib, decks, firsts, lib_addr)
     u = exp["U"] if upper is None else upper
-    # KSILO words 8-11 as MCP leaves them (CHOSEN: zero but the upper limit).
+    # KSILO word 8 holds the upper limit; 9-11 a sentinel, so a field the
+    # deck never writes shows (the bits outside C12's fields must survive).
     rows += ["        SLC, (8)%o.0" % (KSILO + 8), "        DD(BU,64), (16)%016X" % (u << 14)]
-    rows += ["        DD(BU,64), 0"] * 3
+    rows += ["        DD(BU,64), (16)%016X" % SENT] * 3
     src = open(DECK).read()
     for old, new in (("TWSA    XW, INPUT", "TWSA    XW, TWS"), ("LIBA    XW, INPUT", "LIBA    XW, LIBDIR")):
         assert src.count(old) == 1
@@ -311,12 +324,17 @@ def expect(subs, lib, decks, firsts, lib_addr):
             table[r + w] = v
         r += sizes[k]
     main = ep.get("*MAIN*", 0)
-    ks = {KSILO + 8: (0o41 << 46) | (u << 14), KSILO + 9: (b << 46) | (b << 14),
-          KSILO + 10: (main << 45) | (main << 13), KSILO + 11: 0}
+    f24 = ((1 << 24) - 1)
+    two = (f24 << 40) | (f24 << 8)          # 24-bit fields at .0 and .32
+    ks = {KSILO + 8: (0o41 << 46) | (u << 14),
+          KSILO + 9: (SENT & ~two) | (b << 46) | (b << 14),
+          KSILO + 10: (SENT & ~two) | (main << 45) | (main << 13),
+          KSILO + 11: SENT & ~(f24 << 40)}
     return {"U": u, "B": b, "T": t, "table": table, "ksilo": ks,
             "table_span": (b, b + t)}
 
 
+SENT = 0xAAAAAAAAAAAAAAAA
 A8INV = {v: k for k, v in A8.items()}
 
 
@@ -419,6 +437,32 @@ def main():
         check("U too low for the commons: ERRC 2, JOB REJECTED - COMMON AND PROGRAM OVERLAP.",
               got and (got["errc"], [" ".join(x.split()) for x in got["lines"]]),
               (2, ["JOB REJECTED - COMMON AND PROGRAM OVERLAP."]))
+        # message 3's other reasons: a card of no class, a common definition
+        # card after the first instruction card, and U under the table.
+        def bad_card(decks):
+            decks[1].insert(1, [0o77] + [0] * 79)
+        src, _e = build(upper=exp["U"], mangle=bad_card)
+        got, out = run(src, tmp, "Il")
+        check("a card of no class in STEP: ERRC 3, ILLEGAL TYPE OF CARD IN STEP SUBPROGRAM",
+              got and (got["errc"], [" ".join(x.split()) for x in got["lines"]], got["console"]),
+              (3, ["JOB TERMINATED - ILLEGAL TYPE OF CARD IN STEP SUBPROGRAM"],
+               "BSS TERMINATED JOB - PROGRAMMER ERROR"))
+
+        def late_common(decks):
+            d = decks[1]
+            k = [c[0] for c in d].index(0o27)
+            i = [c[0] for c in d].index(0o25)
+            d.insert(i, d.pop(k))
+        src, _e = build(upper=exp["U"], mangle=late_common)
+        got, out = run(src, tmp, "Or")
+        check("STEP's common card after its instruction card: ERRC 3, INCORRECT CARD ORDER IN STEP SUBPROGRAM",
+              got and (got["errc"], [" ".join(x.split()) for x in got["lines"]]),
+              (3, ["JOB TERMINATED - INCORRECT CARD ORDER IN STEP SUBPROGRAM"]))
+        src, _e = build(upper=30)
+        got, out = run(src, tmp, "Tl")
+        check("U = 30 words, under the 43-word table: ERRC 3, RELOCATION TABLES ARE TOO LARGE",
+              got and (got["errc"], [" ".join(x.split()) for x in got["lines"]]),
+              (3, ["JOB TERMINATED - RELOCATION TABLES ARE TOO LARGE"]))
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
     return 1 if fails else 0
 

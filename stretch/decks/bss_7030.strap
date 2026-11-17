@@ -2,8 +2,8 @@
 !
 ! >>> A RECONSTRUCTION.  NOT IBM'S CODE.  No line of IBM's BSS processor
 ! >>> survives in any deck or document held (docs/bss_loader_spec.md 7.4,
-! >>> its grep).  This program is written to C28-6379-0 pp.7-10, 12-13 and
-! >>> 22-23, read in the ink, and to the MCP loader's reading side, which is
+! >>> its grep).  This program is written to C28-6379-0 pp.7-10, 12-13,
+! >>> 18-19 and 22-23, read in the ink, and to the MCP loader's reading side, which is
 ! >>> IBM's (printed pp.324-327, transcribed).  Every convention below is
 ! >>> CITED to a page or marked CHOSEN; G-numbers are docs/bss_loader_spec.md
 ! >>> section 10's gaps.  Plan step R2a, docs/reading_notes/fortran_bss_plan.md.
@@ -41,9 +41,19 @@
 !         segment, CHOSEN, since pp.7-9 give no other order.
 !   p.13  Phase 7 (the table's base not blank's base only when segmented).
 !   p.17  Example 4, the storage map: the oracle, tests/check_bss_example4.py.
+!   pp.18-19  Appendix A, the card formats.  The diagrams label COLUMNS and
+!         print some widths (names "A8 - 64 BITS", the entry address "19
+!         BITS", program size / blank common "18 BITS", common size "18
+!         BITS"), and print the 5.0/5.1 flags of the data card (so its count
+!         is 5.2-5.11).  The bit offsets within a column cited below (6.0-7.5,
+!         7.6-8.11, 14.4, the instruction card's 10-bit count) are DERIVED
+!         from those widths and the column boundaries; where a field's start
+!         inside a column is not drawn, the offset is the loader's
+!         (transcription) or strap2's, CHOSEN.
 !   pp.22-23  Appendix B, the BSS messages, texts as printed.
-! The loader's side (from the transcriptions, checked against the print by
-! the suite; the lines named were re-read in the ink for R1, 2026-11-16):
+! The loader's side, CITED FROM THE TRANSCRIPTIONS in decks/ (which the suite
+! checks against IBM's printed machine-code column), NOT re-read in the ink
+! for R2a; this header does not claim any of these lines was re-read:
 ! p.324 ll.12-29 (KSILO+9.32, the card count at .28, the library bit .63),
 ! p.325 l.23 (KSILO+9. the blank common origin), p.326 l.24 and p.327 ll.1-4
 ! (the common origins one half word apart from table + 2.32; the vector at
@@ -55,12 +65,13 @@
 ! classes 1, 2, 5, 6, 7, 9, 10, 11 of pp.8-9), the three intermediate
 ! tables, matching and library fetch (repeated until every third-table entry
 ! is linked, so a library routine's own calls are fetched), allocation, the
-! relocation table, KSILO words 8-11, the storage map, and the messages
-! JOB REJECTED - COMMON AND PROGRAM OVERLAP (2), BSS TERMINATED JOB -
-! PROGRAMMER ERROR with T.V. XX INCOMPLETE, TOO MANY NAMED COMMONS, TOO
-! MANY TRANSFER VECTORS, ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER and
-! RELOCATION TABLES ARE TOO LARGE (3), and NO ENTRY POINT WITH NAME *MAIN*
-! (10).
+! relocation table, KSILO words 8-11, the storage map, and messages.  RUN
+! on the model: JOB REJECTED - COMMON AND PROGRAM OVERLAP (2), BSS
+! TERMINATED JOB - PROGRAMMER ERROR with T.V. XX INCOMPLETE, ILLEGAL TYPE
+! OF CARD, INCORRECT CARD ORDER and RELOCATION TABLES ARE TOO LARGE (3),
+! and NO ENTRY POINT WITH NAME *MAIN* (10).  WRITTEN, NOT RUN: TOO MANY
+! NAMED COMMONS, TOO MANY TRANSFER VECTORS (3), continuation program
+! cards (C1), and the ERRC 20/21/22 halts below.
 ! NOT BUILT (each halts with a code in ERRC, never silently): the O card
 ! (ERRC 20), a data (block data) subprogram (22), the first table full
 ! (21); not written at all: sequence and check-sum checks (message 1), DEFINE
@@ -73,7 +84,9 @@
 ! subprogram rows, five common rows; the blank common origin by the test's
 ! chosen U), the relocation table and KSILO 8-11 equal the test's own
 ! reckoning of C3-C14, and messages 2, 3 and 10 print as C28 pp.22-23 word
-! them.  Four measured injections in the test's header.  NOT YET RUN: this
+! them, and so do message 3's ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER
+! and RELOCATION TABLES ARE TOO LARGE.  Measured injections in the test's
+! header.  NOT YET RUN: this
 ! table fed to MCP's loader (R2b).
 !
 ! SCAFFOLDING, NOT PART OF THE RECONSTRUCTION'S CLAIMS (R2b replaces them):
@@ -90,7 +103,9 @@
 !
 ! CHOSEN, each where it is used below, and gathered here:
 !   C1 a FORTRAN program card that follows a program card is a
-!      continuation: its entries only (p.7 does not say how BSS tells them).
+!      continuation: its entries only.  p.18 marks one ("Columns 6, 7, and
+!      8 are blank on any subsequent continuation program cards"); the deck
+!      tells it by position instead, CHOSEN.  Written, NOT RUN.
 !   C2 an entry with a zero name field ends a card's entries.
 !   C3 the first table has one entry per entry point (Fig. 1's "Entry Point
 !      Name"); the subprogram's first entry carries its size and card count,
@@ -124,7 +139,7 @@
 !      reads (p.327 l.24, LF(BU,36,6)): the first six A8 characters with
 !      their two high bits dropped (A6 = A8 without them, strap2/a8.py).  C28
 !      Fig. 4's note says 48 bits; the listing wins (spec C8, G7).
-!   C11 the disk address is the subprogram's first card's word offset on TWS
+!   C11 (G6) the disk address is the subprogram's first card's word offset on TWS
 !      in the loader's geometry (p.327 ll.12-19 as run in R1), 18 bits; the
 !      card count is its cards from the program card up to the next program
 !      card or the FORTRAN branch card, which is counted in none.
@@ -132,7 +147,7 @@
 !      limit, p.7's first subprogram address); 8.32 is read, not written;
 !      9.0 and 9.32 get B's word address, 10.0 and 10.32 *MAIN*'s absolute
 !      entry, a half-word address (19 bits), 11.0 zero (no node table).
-!   C13 the map's columns and header lines (p.17 prints the names, not
+!   C13 (G16) the map's columns and header lines (p.17 prints the names, not
 !      the spacing); octal as six digits, an entry as ".0" or ".4".
 !   C14 a transfer-vector word is B,entry;NOP (p.8 Fig. 3 note), the
 !      entry the absolute half-word address.
@@ -143,7 +158,7 @@
 ! position, $15 linkage (LVI,$15,$+1.0 / B,routine / B,0($15)); a routine
 ! that calls another saves $15 with SX and restores it with LX.
 !
-! ERRC (a test reads it): 0 the map printed, the tables and KSILO set;
+! ERRC (a test reads its bits 0-7): 0 the map printed, the tables and KSILO set;
 ! 2 message 2; 3 message 3 (one of its reasons); 10 message 10; 20-22 not
 ! built (above); 255 still running.
 !
@@ -815,7 +830,8 @@ SCC2    LI(BU,64), 0
         B, SCNEXT
 ! The relocatable instruction card (p.9 item 5; C28 p.19: count 5 low 10
 ! bits, origin 6-7, data from 9.0).  The first one's first 64 bits are an
-! index word, its count the vector's length (count bits 28-45: card 1.60).
+! index word, its count the vector's length (count bits 28-45: card 1.60;
+! its meaning is G13, CHOSEN).
 SCINS   L(BU,8), SCST
         KI(BU,8), 0
         BAE, SCORD
@@ -1209,7 +1225,7 @@ HALT    ST(BU,8), ERRC
 !
 ! ======== DATA ==========================================================
         SLC, (8)204000.0
-ERRC    DD(BU,64), (8)377
+ERRC    DD(BU,64), (16)FF00000000000000   ! 255: never halted
 TWSA    XW, INPUT                ! SCAFFOLD: the TWS image (a test sets it)
 LIBA    XW, INPUT                ! SCAFFOLD: the library directory
 T1P     XW, T1

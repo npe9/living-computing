@@ -598,7 +598,7 @@ Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC
 
 #### R2a, the record (2026-11-17)
 
-**Pages read in the ink** (C28-6379-0, PDF = printed): pp.7, 8, 9, 10, 12, 13, 15, 16, 17 (at 400 dpi for the map), 22, 23.
+**Pages read in the ink** (C28-6379-0, PDF = printed): pp.7, 8, 9, 10, 12, 13, 15, 16, 17 (at 400 dpi for the map), 18, 19, 22, 23. Pp.18-19 (Appendix A) label card columns and print some field widths; the bit offsets within a column in the deck are derived from those widths, and are CHOSEN where a page does not draw them. The loader lines the deck cites (L pp.171, 324-327, 331, 333) come from the transcriptions in `decks/` and were not re-read for R2a.
 
 **The oracle, transcribed** from p.17 into `tests/check_bss_example4.py` (`MAP_SUB`, `MAP_COM`): ten subprogram rows and five common rows. The spec's octal sums (§6.5) agree with it.
 
@@ -612,11 +612,12 @@ Cited from the transcription only, and not re-read: p.103 (`SJCTWS`), p.384 (`YC
 - builds the relocation table in the loader's layout, with the library entries in disk order;
 - sets KSILO words 8-11;
 - prints the storage map;
-- prints messages 2, 3 (T.V. INCOMPLETE, TOO MANY NAMED COMMONS, TOO MANY TRANSFER VECTORS, ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER, RELOCATION TABLES ARE TOO LARGE, and the console line) and 10.
+- prints messages, RUN on the model: 2; 3 (T.V. INCOMPLETE, ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER, RELOCATION TABLES ARE TOO LARGE, and the console line); and 10;
+- has code WRITTEN but NOT RUN for: TOO MANY NAMED COMMONS, TOO MANY TRANSFER VECTORS, continuation program cards (C1; p.18's blank-columns-6-8 mark is not tested), and the ERRC 20/21/22 halts.
 
 Every convention is CITED or CHOSEN in the header (C1-C15). The deck's I/O is labelled SCAFFOLD: a TWS core image in the loader's arc geometry, a library directory standing in for the `LB` areas, and a print buffer.
 
-**The comparison, row by row.** On the model, every row matched at the first run, and the control passes 32 checks in 305,759 steps.
+**The comparison, row by row.** On the model, every row matched at the first run, and the control passes 35 checks in 305,759 steps.
 
 | row | printed and got |
 |---|---|
@@ -638,13 +639,14 @@ Every convention is CITED or CHOSEN in the header (C1-C15). The deck's I/O is la
 
 Two halves of the test check different things:
 - The calls, the common declarations and the library's disk order are CHOSEN by the test so that the rows discriminate.
-- The relocation table (43 words) and KSILO 8-11 are compared with the test's own reckoning of rules C3-C14. That half tests the deck against its own rules, not against a page.
+- The relocation table (43 words) and KSILO 8-11 are compared with the test's own reckoning of rules C3-C14. KSILO 9-11 are planted with a 0xAA sentinel, so a field the deck never writes shows; ERRC starts at 255 in the byte the test reads. That half tests the deck against its own rules, not against a page.
 
 **Injections**, measured and restored by copy and cmp. Observed sets are in the test's header.
 - **Largest-wins dropped for named commons:** A becomes 213603 000100, STE 213575 and POL 213431, plus 5 table words.
 - **Largest-wins dropped for blank common:** blank's amount reads 000000.
 - **The data card's secondary count dropped from the extent:** RANDM's size reads 000002, and rows 4-10 and 17 table words move.
 - **The library sorted by fetch order, not disk order:** 4 table words fail.
+- **KSILO+11.0 never written:** KSILO+11 fails (the sentinel survives).
 
 **Not built.** Each item fails loudly or is listed:
 - the O card (ERRC 20);
