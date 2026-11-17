@@ -81,7 +81,7 @@ multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
 stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
 already.
 
-### Findings about the BINARY arms -- all three SETTLED 2026-11-16, model fixed
+### Findings about the BINARY arms -- the three findings settled 2026-11-16, model fixed (two neighbours still open, below)
 
 * **RN on a negative zero: the model was wrong.**  Reference Manual
   printed p.47 (PDF 50), indicator 59, read in the page image: "Result
@@ -120,7 +120,17 @@ already.
   block (L, +, *, LFT/*+, /, LCV, CV, LTRCV, LTRS, and C/CT/CM) until
   the refill word is in hand.  The crossing-field-plus-refill OP case
   now writes nothing before it refuses, as p.22's "the entire operation
-  will be suppressed" requires.
+  will be suppressed" requires (deck case P10); a progressive CV no
+  longer converts twice (P9).
+* **Open, found while doing the above, NOT changed:** (a) the binary
+  `M+`/`M+MG` arms set neither LC nor PF, while printed p.59 defines both
+  for binary to-memory operations ("actuated by a carry beyond the
+  leftmost bit of the addressed field"; PF "if there is any one-bit in
+  the accumulator to the left of the participating field") and the
+  decimal M+ arm (`decMInd`) sets them.  (b) binary `*+` adds its product
+  with `smAdd` and sets no LC; its page (printed p.69) was not read for
+  LC.  Both want the same treatment as `+`: page images, a deck, an
+  injection.
 
 ### Open, decimal
 

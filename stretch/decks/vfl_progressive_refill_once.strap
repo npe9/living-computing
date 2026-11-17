@@ -53,20 +53,38 @@
 !             (twice: 14 / 7 = 2)
 !   P8  C0110 (exclusive or, CONNECT, printed p.76: "The result replaces
 !             the accumulator field"): acc 5, operand 3 -> 6 (twice: 5)
+!   P9  CV (binary to decimal, printed p.73: the 48-bit field "at an
+!             implied offset of 68" converted, "loaded into the cleared
+!             accumulator at the specified offset"): acc 123 at offset 68
+!             -> (16)123 (twice: the second CV finds 0 at offset 68 -> 0).
+!             CV has no storage operand, but a progressive CV still counts
+!             and refills (printed p.21).
+!   P10 + with a CROSSING field and a refill: three words for a two-slot
+!             prefetch, which this model refuses with OP (bsv/README.md;
+!             p.22: "If an exception condition is detected during the
+!             variable field length portion of the operation, the entire
+!             operation will be suppressed, and the appropriate indicator
+!             will be turned on").  acc stays 5, the index is not stepped
+!             (R10 = XPX), OP on (I10 has bit 15).  The OP refusal itself is
+!             a model limit, not a 7030 rule; the case pins that nothing is
+!             written before it.
 !   Rk  the index word after Pk: RFW's contents for P1-P5, P7, P8; for P6, the
 !       count down to 4, value and refill unchanged.
 !
 ! MEASURED 2026-11-16 ON THE UNMODIFIED MODEL (batch9 + this deck), the
 ! finding confirmed: FAILS P1_add 11, P2_addmg 11, P3_mul (16)4B0000000000,
 ! P4_muladd 170, P7_div 2, P8_xor 5 -- exactly the "twice" values above;
-! P5, P6 and every Rk pass (the refill happened, once).  Fixed by
+! P5, P6 and every Rk pass (the refill happened, once).  P9 and P10 were
+! added the same day and measured on the same unmodified model: FAILS
+! P9_cv 0 (converted twice) and P10 (16)ABD2 with I10 (16)1000000000020 --
+! the + was done (5 + (16)ABCD, RGZ) before the OP refusal; R10 passes.  Fixed by
 ! vflRefillOutstanding (StretchExecute.bsv).
 !
 ! INJECTION, observed: the guard removed from the binary + / +MG arm only
 ! (the "end else if (!isValid(needsRead) && !vflRefillOutstanding(...))"
 ! line back to "!isValid(needsRead)"): FAILS P1_add 11 and P2_addmg 11,
 ! nothing else here; vfl_decimal_add and vfl_binary_add_indicators stay
-! green.  Reverted from the saved copy, checked with cmp.
+! green.  Run in a scratch copy of the tree; the worktree never held it.
 
         SLC, 1000.0
 START   L(BU,64,8), FIVE
@@ -110,6 +128,18 @@ START   L(BU,64,8), FIVE
         C0110(V+ICR)(BU,64,8), 0($X7), 0
         ST(BU,64,8), P8
         SX,  $X7, R8
+        L(BU,16,8), D123, 68
+        LX,  $X7, XP1
+        CV(BU)(V+ICR), 0($X7), 0
+        ST(BU,64,8), P9
+        SX,  $X7, R9
+        L(BU,64,8), FIVE
+        LX,  $X7, XPX
+        Z,   $IND
+        +(V+ICR)(BU,16,8), 0($X7), 0
+        TI,  1, $IND, I10
+        ST(BU,64,8), P10
+        SX,  $X7, R10
 PASS    BEW, $
 
         SLC, 1500.0
@@ -117,6 +147,7 @@ XP1     XW, OPND, 1, RFW         ! count 1: the refill fires
 XP1F    XW, OPNDF, 1, RFW
 XP5     XW, OPND, 5, RFW         ! count 5: no refill
 XP1S    XW, SEVEN, 1, RFW
+XPX     XW, CROSS+.56, 1, RFW    ! a crossing field and a refill
 RFW     XW, 1234.0, 77, 1500.0   ! the refilled index word
 OPND    DD(BU,64,8), 3
 OPNDF   DD(BU,64,8), 5
@@ -124,6 +155,9 @@ THREE   DD(BU,64,8), 3
 FIVE    DD(BU,64,8), 5
 SEVEN   DD(BU,64,8), 7
 HUND    DD(BU,64,8), 100
+D123    DD(BU,64), (16)007B000000000000
+CROSS   DD(BU,64), (16)00000000000000AB
+        DD(BU,64), (16)CD00000000000000
 
         SLC, 1700.0
 P1      DD(BU,64), 0
@@ -142,4 +176,9 @@ P7      DD(BU,64), 0
 R7      DD(BU,64), 0
 P8      DD(BU,64), 0
 R8      DD(BU,64), 0
+P9      DD(BU,64), 0
+R9      DD(BU,64), 0
+P10     DD(BU,64), 0
+R10     DD(BU,64), 0
+I10     DD(BU,64), 0
         END, START

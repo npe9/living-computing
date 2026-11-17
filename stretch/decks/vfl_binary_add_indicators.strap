@@ -80,7 +80,7 @@
 ! -- exactly the bracketed values -- and passes B2, B10, B12 and every
 ! accumulator and sign byte check.  INJECTIONS into the fixed model, each
 ! run on this deck, vfl_decimal_add and vfl_progressive_refill_once, each
-! reverted from the saved copy (cmp):
+! in its own scratch copy of the tree (the worktree never held one):
 !   i1 RN back to "sign && !zero" in setResultIndicatorsF: FAILS B1, B3, B4
 !      (0x40), B9 (0x20000000040), and vfl_decimal_add's A4_ind_RZ_RN,
 !      A10_ind, M8_ind -- the decimal and binary arms share the rule.

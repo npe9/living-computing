@@ -2692,14 +2692,15 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # (docs/NEXT.md G2.3 finding 3), 2026-11-16. <<<  Reference Manual printed
 # pp.21-22: "executed in two parts.  The variable field length part of the
 # operation is prepared and then the index modification portion of the
-# operation is performed."  Binary +, +MG, *, *+, /, C0110 and L with V+ICR, count 1
+# operation is performed."  Binary +, +MG, *, *+, /, C0110, CV and L with V+ICR, count 1
 # (the refill fires; Rk shows it did), against + with count 5.  Expected
 # values hand-derived in the deck's header.  MEASURED: see the deck's header.
-run "PROGRESSIVE REFILL: binary + +MG * *+ / C and L do their arithmetic once (printed pp.21-22)" ./run_program.sh ../decks/vfl_progressive_refill_once.strap StretchVflRefillOnceTb PC=2066 \
+run "PROGRESSIVE REFILL: binary + +MG * *+ / C CV and L do their arithmetic once (printed pp.21-22)" ./run_program.sh ../decks/vfl_progressive_refill_once.strap StretchVflRefillOnceTb PC=2085 \
     "P1_add:1700=8" "P2_addmg:1701=8" "P3_mul:1702=0xF00000" "P4_muladd:1703=0x87" "P5_load:1704=3" "P6_add_norefill:1705=8" \
     "R1_refilled:1706=0x01348000013405dc" "R2_refilled:1707=0x01348000013405dc" "R3_refilled:1708=0x01348000013405dc" \
-    "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01784000001005e0" \
-    "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc"
+    "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01788000001005e1" \
+    "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc" \
+    "P9_cv:1716=0x123" "R9_refilled:1717=0x01348000013405dc" "P10_cross_refill_acc_untouched:1718=5" "R10_not_stepped:1719=0x017a7800000405e1" "I10_OP:1720=0x0001000000000000"
 # >>> BINARY ADD AND LOAD: RN ON A NEGATIVE ZERO, LOST CARRY, PARTIAL FIELD
 # (docs/NEXT.md G2.3 findings 1 and 2), 2026-11-16. <<<  RN: Reference Manual
 # printed p.47, indicator 59, "negative whether zero or not" (p.60's example
