@@ -20,13 +20,18 @@
 ! So a crossing field whose SECOND word is protected is not stored, and
 ! a CM (store-type: it writes its field back) is monitored like ST.
 !
-! WHAT "TERMINATED" IS TAKEN TO MEAN HERE, and what it is not: no store,
-! and none of the operation's result indicators (MOP, LC, PF, the result
-! indicators) or connective counts -- as ST's arm has done since
-! 2026-10-24.  The PROGRESSIVE INDEX part still runs on this model (P4's
-! XCZ XVGZ, (16)9000, are the index part's pre-refill indicators); whether
-! p.32's termination also stops it is OPEN (docs/NEXT.md), and P4 pins the
-! model's present answer, not a derived one.
+! WHAT "TERMINATED" MEANS HERE: no store, none of the operation's result
+! indicators (MOP, LC, PF, the result indicators) or connective counts --
+! as ST's arm has done since 2026-10-24 -- AND NO PROGRESSIVE INDEX PART.
+! printed p.22, Programming Notes: "If an exception condition is detected
+! during the variable field length portion of the operation, the entire
+! operation will be suppressed, and the appropriate indicator will be
+! turned on.  However, if an exception condition is detected during the
+! index modification portion of the operation, only this portion will be
+! suppressed."  The protected store is in the VFL portion, so the index is
+! neither advanced, counted nor refilled, and the index result indicators
+! are not set (P4, P6; built 2026-11-17 -- before, ST, M+ and CM all ran
+! their index part after DS).
 !
 ! SET-UP, ds_terminates_branch.strap's shape: boundaries and the
 ! interruption address planted DISABLED; lower boundary PW1, upper PEND
@@ -47,24 +52,34 @@
 !   P3  CM0101(BU,8,8) at PW1+.8, one word, protected: PW1 unchanged,
 !       I3 = 0, D3 set.  (Stored with DS off until 2026-11-17.)
 !   P4  CM0101(V+ICR)(BU,8,8) at PW1+.24 through X7, count 1 (the refill
-!       path): PW1 unchanged, I4 = XCZ XVGZ (16)9000, D4 set.
+!       path): PW1 unchanged, I4 = 0, D4 set, and X7 NOT refilled: still
+!       XPP, (16)01905800000405DD.
 !   P5  CM0101(BU,16,8) at PW0+.56, crossing into PW1: unchanged, I5 = 0,
 !       D5 set.
-! CYCLES 1013 is a model pin.
+!   P6  ST(V+IC)(BU,8,8) at PW1+.40 through X6, count 5, no refill (the
+!       shared trailing index block): PW1 unchanged, I6 = 0, D6 set, X6 NOT
+!       counted: still XPQ, (16)01906800001405DD.
+! CYCLES 1209 is a model pin.
 !
-! MEASURED INJECTIONS, 2026-11-17 (each in the worktree from a saved copy,
-! restored and compared with cmp; observed on this deck and the other two
-! new decks, vfl_cross_storewait and vfl_cross_special_words, which pass
-! under all three):
-!   J2 vflFieldStore compares the first word only: FAIL P1_PW0 = ..A5BE,
-!      P1_PW1 = (16)EFA5A5A5A5A5A5A5 (P5's store), I1 = (16)20000000140,
-!      D1 = 0, I5 = (16)120, D5 = 0, cycles = 957.  P2, P3, P4 pass.
+! MEASURED INJECTIONS, 2026-11-17, on the final model (each in the
+! worktree from a saved copy, restored and compared with cmp; observed on
+! this deck and the other two new decks, vfl_cross_storewait and
+! vfl_cross_special_words, which pass under all four; the rest of the
+! suite was not run under them):
+!   J2 vflFieldStore compares the first word only: FAIL P1_PW0 =
+!      (16)A5A5A5A5A5A5A5BE, P1_PW1 = (16)EFA5A5A5A5A5A5A5 (P5's store),
+!      I1 = (16)20000000140, D1 = 0, I5 = (16)120, D5 = 0, cycles = 1153.
+!      P2, P3, P4, P6 pass.
 !   J3 vflFieldStore compares a crossing field only (the old one-word CM):
 !      FAIL P1_PW1 = (16)F501A501A5A5A5A5 (P3's and P4's bytes), I3 =
-!      (16)120, D3 = 0, I4 = (16)9120, D4 = 0, cycles = 955.  I1, D1,
-!      P2 and P5 pass (P1_PW1 fails on P3's and P4's bytes, not P1's).
+!      (16)120, D3 = 0, I4 = (16)9120, D4 = 0, X7_P4 =
+!      (16)01348000013405DC (refilled), cycles = 1152.  I1, D1, P2, P5 and
+!      P6 pass.
 !   J4 the M+ arm sets its indicators over the suppressed store (the old
 !      M+): FAIL I1 = (16)20000000140 ONLY.
+!   J8 the index part runs after DS (StretchExecute.bsv as it was before
+!      the p.22 change): FAIL I4 = (16)9000, X7_P4 = (16)01348000013405DC,
+!      I6 = (16)1000, X6_P6 = (16)01906800001005DD, cycles = 1211.
 ! P2 is the control: it passes under every injection.
 !
         SLC, 1000.0
@@ -77,6 +92,7 @@ START   BD,  $+.32
         SV,  $X13, $UB               ! upper boundary := PEND
         BBZ, 3.57, $+1.0             ! control bit 0: signal INSIDE
         LX,  $X7, XPP
+        LX,  $X6, XPQ
         BE,  $+.32
 ! ---- P1: crossing M+, second word protected -----------------------
         L(BU,8,8), ONE
@@ -138,6 +154,7 @@ START   BD,  $+.32
         TI, 1, $IND, I4
         TI, 1, 6, D4
         BBZ, 6.0, $+1.0
+        SX,  $X7, X7A                ! X7 not advanced, not refilled
 ! ---- P5: crossing CM, second word protected -----------------------
         L(BU,16,8), HBEEF
         Z, $IND
@@ -153,12 +170,29 @@ START   BD,  $+.32
         TI, 1, $IND, I5
         TI, 1, 6, D5
         BBZ, 6.0, $+1.0
+! ---- P6: one-word progressive ST, no refill, protected word -------
+        L(BU,8,8), ONE
+        Z, $IND
+        ST(V+IC)(BU,8,8), 0($X6), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I6
+        TI, 1, 6, D6
+        BBZ, 6.0, $+1.0
+        SX,  $X6, X6A                ! X6 not advanced, not counted
         BD,  $+.32
 PASS    BEW, $
 
         SLC, 1500.0
 XPP     XW, PW1+.24, 1, RFW      ! count 1: the refill fires
 RFW     XW, 1234.0, 77, 1500.0
+XPQ     XW, PW1+.40, 5, RFW      ! count 5: no refill
 ONE     DD(BU,64), (16)0100000000000000
 HBEEF   DD(BU,64), (16)BEEF000000000000
 UW0     DD(BU,64), (16)A5A5A5A5A5A5A5AF
@@ -180,6 +214,10 @@ D2      DD(BU,64), 0
 D3      DD(BU,64), 0
 D4      DD(BU,64), 0
 D5      DD(BU,64), 0
+I6      DD(BU,64), 0
+D6      DD(BU,64), 0
+X7A     DD(BU,64), 0
+X6A     DD(BU,64), 0
 
         SLC, 1800.0
 TBL     DD, 0

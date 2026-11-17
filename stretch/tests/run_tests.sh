@@ -4421,7 +4421,9 @@ run "VFL crossing store: a level fetching its second word waits for it" ./run_pr
     "W2_control:1103=0x0000000000000003" "W3_control:1104=0xFFE1800000000000"
 
 # CROSSING STORES: THE COVERAGE GAPS CLOSED (docs/NEXT.md, 2026-11-17).
-# Three decks, expectations hand-derived in each header.
+# Three decks, expectations hand-derived in each header.  EVERY injection
+# below was observed on these three decks only (not the rest of the
+# suite); "only" means only among their checks.
 # (1) STORE WAIT on a crossing store's SECOND word: ST from word 15 into
 # word 16 ($X0), then SX,$X0 (R23-9732 Fig. 3.1.24; the second word
 # CHOSEN, StretchIBox's storeWait).  INJECTION, observed: storeWait
@@ -4431,28 +4433,24 @@ run "VFL crossing store: STORE WAIT on its second word, an index register" ./run
     "S1:1103=0xEF5A5A0A5A5A5A5A" "S2_control:1104=0xEF5A5A0A5A5A5A5A"
 # (2) PROTECTION (printed p.31, the straddling rule; p.32, DS: "storing in
 # core storage is always suppressed, and the operation is always
-# terminated"; Data Store item 1, "all store-type operations").  P1 a
-# crossing M+ whose SECOND word is protected, P2 its unprotected control,
-# P3/P4 a ONE-WORD CM without and with a refill (stored with no test
-# until 2026-11-17), P5 a crossing CM.  INJECTIONS, observed (the deck's
-# header has the values): second word not compared -> P1 and P5 only
-# (PW0, PW1, I1, D1, I5, D5, cycles 957); one-word store not compared ->
-# P3 and P4 only (PW1, I3, D3, I4, D4, cycles 955); M+'s indicators set
-# over the suppressed store -> I1 ONLY.  CYCLES 1013 a model pin.
-run "VFL protection: crossing M+ and CM, one-word CM, DS terminates (printed pp.31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2107" "CYCLES=1013+-0" \
+# terminated"; Data Store item 1, "all store-type operations"; p.22, an
+# exception in the VFL part suppresses "the entire operation", the index
+# part too).  P1 a crossing M+ whose SECOND word is protected, P2 its
+# unprotected control, P3/P4 a ONE-WORD CM without and with a refill
+# (stored with no test until 2026-11-17), P5 a crossing CM, P6 a one-word
+# progressive ST.  INJECTIONS, observed: the deck's header.  CYCLES 1209
+# a model pin.
+run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1209+-0" \
     "P1_PW0:1600=0xA5A5A5A5A5A5A5AF" "P1_PW1:1601=0xF5A5A5A5A5A5A5A5" "I1:1700=0" "D1:1705=0x8000000000000000" \
-    "P2_UW0:1504=0xA5A5A5A5A5A5A5A0" "P2_UW1:1505=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
-    "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0x9000" "D4:1708=0x8000000000000000" \
-    "I5:1704=0" "D5:1709=0x8000000000000000"
+    "P2_UW0:1505=0xA5A5A5A5A5A5A5A0" "P2_UW1:1506=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
+    "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0" "D4:1708=0x8000000000000000" "X7_P4:1712=0x01905800000405DD" \
+    "I5:1704=0" "D5:1709=0x8000000000000000" "I6:1710=0" "D6:1711=0x8000000000000000" "X6_P6:1713=0x01906800001405DD"
 # (3) WORDS 11 AND 7.  printed p.37: a store into the indicator register
 # wins in bits 20-63 over the operation's own indicator settings; printed
 # p.76: the connective counts "are set at the end".  C1-C3 cross into or
 # out of word 11 (head and tail), K1-K3 the counts (K2 the CM refill path,
 # which set no counts until 2026-11-17; K3 a CM crossing into word 7).
-# INJECTIONS, observed: the CM refill path's counts dropped -> K2 ONLY;
-# the operation's indicators OR-ed over the store (commitIndicators) ->
-# I1, I2 and I3 (0x10000000120, 0x120, 0x1BE), nothing else.  CYCLES 389 a
-# model pin.
+# INJECTIONS, observed: the deck's header.  CYCLES 389 a model pin.
 run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=389+-0" \
     "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
     "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"

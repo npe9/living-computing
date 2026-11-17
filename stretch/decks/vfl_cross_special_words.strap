@@ -66,7 +66,8 @@
 !
 ! MEASURED INJECTIONS, 2026-11-17 (in the worktree from a saved copy,
 ! restored and compared with cmp; observed on this deck and the other two
-! new decks, which pass under both):
+! new decks, which pass under all three; the rest of the suite was not
+! run under them):
 !   J5 CM's refill path does not hand back its counts (the old path):
 !      FAIL K2 = (16)10000 (K1's counts) ONLY.
 !   J6 commitIndicators ORs the operation's own indicators over the store
@@ -74,7 +75,13 @@
 !      (16)10000000120, I2 = (16)120, I3 = (16)1BE -- the tail case and the
 !      head case both; K1-K3 pass.  (The rest of the suite was not run
 !      under J6.)
-! K1 and K3 are the controls for J5; K1-K3 for J6.
+!   J7 rl_tail_write also loads the counters from a tail into word 7
+!      (the tail's stored bits winning over the counts, p.76's order
+!      reversed): FAIL K3 = (16)8000 ONLY.  bsc accepted it (a separate
+!      rule from execute()).
+! K1 and K3 are the controls for J5; K1-K3 for J6; K1, K2 for J7.
+! (J5 and J6 were measured before the p.22 index-part change to
+! StretchExecute.bsv, which no case of this deck reaches; J7 after it.)
 !
         SLC, 1000.0
 ! ---- C: the indicator register (word 11) ----------------------

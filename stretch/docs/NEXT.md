@@ -244,7 +244,10 @@ observed on all three new decks).
    MOP, LC, PF and the result indicators over a suppressed store, CM its
    connective indicators and counts).  Injections: second word not
    compared -> P1 and P5; one-word store not compared -> P3 and P4; M+'s
-   indicators over the suppressed store -> I1 only.
+   indicators over the suppressed store -> I1 only (all three re-measured
+   on the final model).  And, from printed
+   p.22 ("the entire operation will be suppressed"), DS now suppresses
+   the progressive index part of ST, M+ and CM too (below).
 3. **Word 11 and word 7** -- `decks/vfl_cross_special_words.strap`.  The
    pages are NOT silent.  printed p.37: a store into the indicator
    register gives bits 20-63 "the same as if this operation had acted upon
@@ -256,15 +259,18 @@ observed on all three new decks).
    indStW; writeWord never writes the counter fields, StretchStorage),
    for a head and for a tail (rl_tail_write writes word 11 the clock
    after the operation's indicators, so the store still wins).  No model
-   change.  Injection: the operation's indicators OR-ed over the store ->
-   I1, I2, I3 (tail, read-only-bits-only tail, and head cases).
+   change.  Injections: the operation's indicators OR-ed over the store ->
+   I1, I2, I3 (tail, read-only-bits-only tail, and head cases); a tail
+   into word 7 loading the counters (p.76's order reversed) -> K3 only.
 4. **CM's refill path set no connective counts** -- FIXED, printed p.76
    ("In CONNECT TO MEMORY, the counts are made on the result field after
    it is converted to the byte size of the storage operand"): `cmFinish`,
    shared by the refill and main paths, sets MOP/RZ/RGZ and the counts
    (or, on DS, neither).  Injection (counts dropped) -> K2 only.
 
-Cycle changes on existing pinned decks: NONE.  The full suite, run with
+Cycle changes on existing pinned decks: NONE (two full-suite runs, before
+and after the p.22 index-part change, each with the same single failure
+below and nothing else).  The full suite, run with
 these changes, failed ONE section, "OP and AD indicators (both
 polarities)" (decks/op_ad_indicators.strap: PC 2443, expected 2462), and
 it fails identically with the base 64f7947 StretchExecute/StretchVFL
@@ -274,11 +280,21 @@ different out-of-scope operation; NOT fixed here.
 
 STILL OPEN, found on the way:
 
-* **Is a terminated operation's progressive index part also
-  suppressed?**  p.32's "terminated" vs p.21-22's two-part execution.
-  ST, M+ and CM all still advance (and refill) the index and set the
-  index result indicators after DS (vfl_cross_protect P4 pins the model's
-  answer, (16)9000, not a derived one).
+* ~~**Is a terminated operation's progressive index part also
+  suppressed?**~~ ANSWERED and BUILT the same day: printed p.22,
+  Programming Notes, "If an exception condition is detected during the
+  variable field length portion of the operation, the entire operation
+  will be suppressed, and the appropriate indicator will be turned on.
+  However, if an exception condition is detected during the index
+  modification portion of the operation, only this portion will be
+  suppressed."  DS on the field's store is detected in the VFL portion,
+  so ST, M+ and CM no longer advance, count or refill the index, nor set
+  the index result indicators, on DS (vflOk = False, and the inline
+  refill paths' vflPending guarded).  vfl_cross_protect P4 (refill CM)
+  and P6 (one-word ST(V+IC), no refill) check it; injection (the pre-fix
+  StretchExecute.bsv) -> I4, X7_P4, I6, X6_P6 and cycles 1211, nothing
+  else among the three decks.  OPEN: the refill's DF signal (p.32 class
+  3) is still raised for a refill that DS now suppresses.
 * **A store into word 7 by ST or M+ drops the count bits.** writeWord(7)
   never writes the counter fields (StretchStorage's documented
   simplification); p.76 says non-connective operations do not change the

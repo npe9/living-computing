@@ -3319,8 +3319,15 @@ function ActionValue#(VflOutcome)
                 end else if (prefetchCount >= stNeed) begin
                   Bool dsHi = protViolates(st, w0);
                   Bool dsLo = protViolates(st, w0 + 1);
-                  if (dsHi || dsLo) ind = setBit(ind, ind_DS, 1);
-                  else begin
+                  // DS suppresses the ENTIRE operation, its index part too
+                  // (printed p.22: "If an exception condition is detected
+                  // during the variable field length portion of the
+                  // operation, the entire operation will be suppressed";
+                  // p.32: "the operation is always terminated").
+                  if (dsHi || dsLo) begin
+                    ind = setBit(ind, ind_DS, 1);
+                    vflOk = False;
+                  end else begin
                     Tuple2#(Word64, Word64) np =
                       insertFieldBitsPair(prefetch[0], prefetch[1], off,
                                           len_, packedField);
@@ -3330,7 +3337,7 @@ function ActionValue#(VflOutcome)
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 2;
-                  if (vflNeedsRefill) begin
+                  if (vflNeedsRefill && !(dsHi || dsLo)) begin   // p.22: an exception in the VFL part suppresses the entire operation
                     vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[2]));
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                   end
@@ -3346,8 +3353,10 @@ function ActionValue#(VflOutcome)
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
                 end else if (prefetchCount >= 1) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else begin
+                  if (protViolates(st, w0)) begin
+                    ind = setBit(ind, ind_DS, 1);
+                    vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
+                  end else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
@@ -3372,13 +3381,13 @@ function ActionValue#(VflOutcome)
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
                 end else if (prefetchCount >= 2) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);   // p.22: an exception in the VFL part suppresses the entire operation
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
+                    vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
+                    ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                   end
-                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end else if (prefetchCount == 1)
                   needsRead = tagged Valid zeroExtend(vflPx1.refill);
                 else
@@ -4230,8 +4239,10 @@ function ActionValue#(VflOutcome)
                 match {.mDs, .mTail} <- vflFieldStore(st, ea, len_, mField,
                                                       prefetch[0], prefetch[1]);
                 tailWrite = mTail;
-                if (mDs) ind = setBit(ind, ind_DS, 1);
-                else if (dDec) ind = decMInd(ind);
+                if (mDs) begin
+                  ind = setBit(ind, ind_DS, 1);
+                  vflOk = False;            // p.22: an exception in the VFL part suppresses the entire operation
+                end else if (dDec) ind = decMInd(ind);
                 else begin
                   ind = setDataFlagsF(ind, fieldFlags(mRaw, bsz, vi.m.unsign));
                   ind = setBit(ind, ind_MOP, 1);
@@ -4243,7 +4254,7 @@ function ActionValue#(VflOutcome)
                   ind = setResultIndicatorsF(ind, bStored);
                 end
                 vflReadsUsed = mReads;
-                if (vflNeedsRefill) begin
+                if (vflNeedsRefill && !mDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end
@@ -5317,8 +5328,10 @@ function ActionValue#(VflOutcome)
             match {.cmInd, .cmCounts} = cmFinish(ind, cmDs, result, len_);
             ind = cmInd;
             connCounts = cmCounts;
-            vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
-            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            if (!cmDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
+              vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
+              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            end
           end else if (prefetchCount == 0)
             needsRead = tagged Valid w0;
           else if (prefetchCount == 1 && cmCross)
@@ -5402,6 +5415,7 @@ function ActionValue#(VflOutcome)
                 match {.ds, .tw} <- vflFieldStore(st, ea, len_, result,
                                                   mHiWord, mLoWord);
                 cmDs = ds;
+                if (ds) vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
                 tailWrite = tw;
               end
               conn_CT: begin end // CT: result discarded, indicators only

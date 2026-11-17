@@ -1163,8 +1163,9 @@ measured. Re-pinned after the merge, every result check unchanged:
   (`writeFieldWithHi`, now deleted) had made none: a CM into a protected
   word was stored and DS stayed off.  On DS, M+ and CM now set neither
   their result indicators nor CM's counts (p.32, "the operation is always
-  terminated"), as ST's arm already did; the progressive index part still
-  runs (open, NEXT.md).  CM's refill path now sets the counts (p.76;
+  terminated"), as ST's arm already did; and ST, M+ and CM no longer run
+  their progressive index part on DS (printed p.22: an exception in the
+  variable field length portion suppresses "the entire operation").  CM's refill path now sets the counts (p.76;
   `cmFinish`, shared with the main path).  Oracles
   `decks/vfl_cross_protect.strap`, `decks/vfl_cross_special_words.strap`.
   The second word's time is CHOSEN (one read, one tail clock), not the
