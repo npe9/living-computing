@@ -27,8 +27,8 @@
 //   decimal ARITHMETIC   -- still refused, and deliberately: see the
 //                           `radixConv` guard, which exists to let the
 //                           three conversions past the blanket refusal.
-//   DCV (code 59)        -- not built; nothing in MCP uses it, and
-//                           docs/spec_decimal.md says so.
+//   DCV (code 59)        -- BUILT 2026-11-16 (mkCvtBox; decks/
+//                           vfl_dcv.strap).  It said "not built".
 //   RNX                  -- decoded (`isValidDirIndexOp` admits
 //                           `dixop_RNX`) but there is NO arm for it in
 //                           this file, so it reaches the DirIndex

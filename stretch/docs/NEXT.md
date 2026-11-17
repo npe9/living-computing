@@ -141,7 +141,7 @@ What was built:
   `mCross`): both words read, the field extracted from the pair, the sum
   inserted across it, head through `writeWord`, tail through
   `writeWordTail` (core) or `tailWrite` (below 32).  Both words compared
-  for protection (p.31's straddling rule, as ST's crossing store).
+  for protection, as ST's crossing store is (`protViolates`).
   `StretchIBox.prepareExec` no longer calls a crossing M+ (or a CM into a
   register word) "completes without fetch".
 * **A second word below 32** (ST, SRD, the M+ family, CM): `ExecDone`
@@ -203,6 +203,12 @@ write is unread); the CM refill path writes no connective counts (as
 before this change) and its one-word store makes no protection check
 (`writeFieldWithHi`); the level-to-level store/fetch interlock
 (`levelHolds`) still compares a crossing store's first word only.
+BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
+them): the STORE WAIT test of a crossing store's second word
+(`storeAddr2`; no deck puts an index use behind a pending crossing store
+into X16-31), the two `prepareExec` "completes without fetch" clauses
+removed with the refusals, and the both-word protection check on a
+crossing `M+` (no deck runs with a protected second word).
 
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 
@@ -260,6 +266,13 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
   2026-11-17 ("GROUP B BUILT" below), against hand-derived cases.
 * `LCV`'s decimal digit count (`decFieldDigits`' second result) is
   checked by no deck: zeroing it fails only LTRCV's PF (C5), not LCV's.
+* **A timing deviation from the mkCvtBox move (2026-11-17), unpinned.**
+  `decks/vfl_binary_memadd_indicators.strap` (no CYCLES pin) ran 2280
+  clocks before the move and 2286 after: +6.  The box wait blocks I-box
+  overlap, as on the divide decks.  Unchanged: `vfl_convert` 598,
+  `load_converted` 873 (neither pinned), `vfl_dcv` 1049 (pinned), and
+  the one tolerance pin, `lve_chain_usa` 3571.  Not re-pinned and not
+  fitted: no atlas row prices the overlap.
 * `RNX`'s protection clauses (old name protected -> AD+DS, new name
   -> AD+DF, nothing done) are a CHOSEN reading of printed p.27's "both
   out of bounds and invalid" (read as `protViolates`; "invalid" not
