@@ -100,6 +100,7 @@ in parentheses); **open** = no stage assigned yet.
 | Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
 | Measured benchmark timings (GERB2 etc.) | Perf. Char. vol.2 | planned (5) |
 | VFL time depends on the operation; "All VFL stores are fetch-and-stores"; VFL decoding minimum 3.6 us, two LA levels | Perf. Char. Vol. 1 printed p.2-3 item 6 (PDF 10), p.3-18 (PDF 36); Vol. 2 atlas PDF 116-142 | E-box per-operation times DONE 2026-11-16 (`StretchTiming.bsv` eboxClocks, `docs/atlas_oracle.md`); store-to-I-box and word-boundary store time open |
+| Floating-point sequences are E-box limited: decoding (1.2 us an instruction) and operand fetch are overlapped by the look-ahead | Perf. Char. Vol. 1 printed p.3-17 (PDF 35); Vol. 2 atlas PDF 42-101 | DONE 2026-11-17 for the fetch: every fetching FP operation now gets its operand from its level (`StretchIBox.bsv` fpFetches; before, only L did, and the rest read memory in series at removal). `docs/atlas_oracle.md` "Closing the residuals" item 1 |
 | Progressive indexing is executed in two parts and the second sets the index result indicators, so an index-indicator branch, and an index instruction that sets those indicators, must wait for a pending progressive level | Reference Manual printed p.21 (as `execute()` implements it) | DONE 2026-11-16 as a conservative wait (`StretchIBox.bsv` iboxHazard, anyProgressive/setsIndexInd; `decks/vfl_pack_cross.strap`, `decks/vfl_index_ind_order.strap`) |
 
 ### 1b. Execution roadmap (prioritized)

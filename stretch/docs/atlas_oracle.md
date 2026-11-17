@@ -1012,6 +1012,60 @@ direct pages carry over. **The systematic residuals:**
 3. **`*I+` is short by 2-14 clocks above 8 bits**: the 7030 grows with
    the field (13.80 → 22.21 µs), the model flattens at 60-62 clocks.
 
+## Closing the residuals (2026-11-17)
+
+The open items of "The new generators: residuals" were taken in order of
+cells. Each change is measured with `--pdf` on the pages it affects, against
+a baseline of this branch with `batch14` merged and no `bsv/` change. The
+baseline was re-measured on the same pages, not copied from the tables
+above. Each row gives n, exact (|r| ≤ 0.1), median and mean of the residual
+in clocks. Result checks (every PASS/FAIL line of the CYCLES sections, the
+VFL/FP sections, the look-ahead decks, the MCP bootstrap and P1 deck, the
+smoke test and `la_levels.py`, 165 sections) were compared line by line
+against the same baseline after each change.
+
+### 1. FP operands are fetched by the look-ahead
+
+**Diagnosis.** `StretchIBox.bsv`'s `fetchesOperand` returned True for one
+FP operation, L. That was right when the look-ahead was first built
+(stage 3a, 2026-09-03, commit `67140c1`): L was then the only FP operation
+the E-box executed, and the other 22 fetching operations were built later
+without being added. So an FP +, K, `*`, LWF, DL, M+ and so on was loaded
+into a level with no operand address. At removal the E-box found no
+operand, bailed, issued the read itself and waited for it
+(`rl_exec_resume`). The memory access ran in series with execution. On the
+7030 the look-ahead fetches the operand while earlier levels execute
+(Perf. Char. Vol. 1 printed p.3-17: "floating point instructions are E-box
+limited"). The I-BOX column was serial too, which is why its +1 also went.
+
+**Fix.** `fpFetches` lists the operations `execute()`'s Fp arm reads a word
+for: everything except the store class (ST, SRD, SLO, SRT) and the two
+immediates (SHF, E+I). `fetchesOperand` and `prepareExec` now use it.
+
+| PDF | instr | before n / exact / median / mean | after |
+|---|---|---|---|
+| 42 | + | 128 / 0 / +4.46 / +4.79 | 128 / 28 / −0.02 / −0.27 |
+| 65 | LWF | 128 / 0 / +5.15 / +4.65 | 128 / 32 / +0.97 / +0.47 |
+| 64 | L (control: L already fetched ahead) | 128 / 32 / +0.97 / +0.47 | unchanged, 0 cases moved |
+| 73 | + (forwarding) | 192 / 0 / −0.78 / +0.52 | 192 / 28 / −1.78 / −2.31 |
+| 95 | L (forwarding, control) | 192 / 32 / −1.02 / −1.35 | unchanged |
+| 48, 79 | ST (stores nothing ahead, control) | 128 / 0 / −13.88 / −14.13; 192 / 0 / −6.30 / −10.32 | unchanged |
+| 69 | M+ | 128 / 31 / −10.06 / −11.20 | 128 / 0 / −14.80 / −15.94 |
+| 100 | M+ (forwarding) | 192 / 0 / −11.05 / −9.40 | 192 / 0 / −12.05 / −10.07 |
+
+- PDF 42's EXTERNAL column goes from +9.70 to +0.59 (mean), and its I-BOX
+  column from +0.79 to −0.21 (28 of 32 exact). PDF 73's EXTERNAL column with
+  forwarding goes from +7.47 to +0.98.
+- **M+ got worse, and that is the next item.** Its memory read had been
+  hiding the store's cost: with the read overlapped, M+ (EXTERNAL) is now
+  8.4 clocks short instead of exact.
+- The forwarding pages' INTERNAL column moves by one clock the wrong way
+  (+ −5.98 → −6.98). Item 3 is about that column.
+- Result checks: no PASS/FAIL line changed and no CYCLES pin moved. Two
+  bounded figures fell: "Floating point: L / * / + / ST" 84 → 69 and
+  "Floating point: E+ / E+I / SHF" 88 → 85 clocks, both under bounds of
+  100,000.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -1081,7 +1135,9 @@ direct pages carry over. **The systematic residuals:**
 - **Open items for the model** (measured 2026-11-17; nothing in `bsv/`
   was changed by the measurement). In order of cells:
   1. FP fetch from memory runs at half the 7030's rate (2,403 EXTERNAL
-     cells more than +5 clocks), with and without forwarding.
+     cells more than +5 clocks), with and without forwarding. **DONE
+     2026-11-17** ("Closing the residuals", item 1): the FP operand was
+     not fetched by the look-ahead.
   2. Stores to an index register, and repeated stores to memory, are
      17-25 and about 10 clocks too cheap, in FP (ST, SRD, SLO, SRT, M+,
      M+MG) and in VFL (M+, M+MG, ST, SRD, M+1, CM0101) alike.

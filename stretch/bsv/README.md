@@ -982,6 +982,19 @@ measured. Re-pinned after the merge, every result check unchanged:
 - The INVERT SIGN blocks' unlike-sign terms, which depend on the data.
 - The 12-clock preparation floor of K and CT. The model's floor is 14.
 
+### FP operands are fetched by the look-ahead (2026-11-17)
+
+`StretchIBox.bsv`'s `fetchesOperand` was True for FP L only, from the
+look-ahead's first cut (stage 3a), when L was the one FP operation built.
+Every other fetching FP operation was loaded into a level with no operand
+address, and the E-box read its operand at removal, in series with
+execution. `fpFetches` now names them all: every operation `execute()`'s
+Fp arm reads a word for, which is all but ST, SRD, SLO, SRT, SHF and E+I.
+`prepareExec` uses the same list. Measured by `tests/atlas_oracle.py`
+(`docs/atlas_oracle.md`, "Closing the residuals", item 1): PDF 42 (+) from
+mean +4.79 to −0.27 clocks, PDF 65 (LWF) from +4.65 to +0.47. No result
+check changed and no CYCLES pin moved.
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED

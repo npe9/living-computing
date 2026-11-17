@@ -57,10 +57,39 @@ function Bool fetchesOperand(DecodedInstr d);
     // of 8 -- the accumulator's own word. See docs/ebox_roadmap.md.
     tagged VflInt .v: return v.a.p != 4 && v.code != 6'b011011;
     tagged Connective .c: return c.a.p != 4;
-    tagged Fp .f: return f.code == fpop_L;   // FP L; ST fetches nothing
+    // >>> EVERY FLOATING-POINT OPERATION BUT THE STORE CLASS FETCHES,
+    // 2026-11-17. <<<  This said `f.code == fpop_L` from the first cut
+    // of the look-ahead (stage 3a, 2026-09-03), when L was the one FP
+    // operation the E-box executed; the other 22 fetching operations
+    // were built later and never added.  So an FP +, K, `*`, LWF, DL ...
+    // was loaded into a level with NO operand address, and the E-box,
+    // finding none at removal, bailed, issued the read itself and waited
+    // for it (rl_exec_resume): a memory access in SERIES with execution,
+    // where the machine's look-ahead fetches the operand while earlier
+    // levels execute.  Perf. Char. Vol. 1 printed p.3-17's preparation
+    // and the look-ahead's purpose (Buchholz ch.15) are the same for FP
+    // as for VFL.  Measured by tests/atlas_oracle.py (docs/atlas_
+    // oracle.md, "Floating point", item 1): + from memory 15.5 clocks a
+    // copy against PDF 42's 5.5-6, L (which did fetch ahead) 6.4.
+    // fpFetches is execute()'s own split -- every known FP operation but
+    // fpStoreClass's six reads its storage word first (StretchExecute's
+    // Fp arm, `isStoreClass`).
+    tagged Fp .f: return fpFetches(f.code);
     default: return False;
   endcase
 endfunction
+
+// The floating-point operations that read their storage operand: every
+// one execute() knows except the store class (ST, SRD, SLO, SRT) and the
+// two whose "address" is an immediate (SHF, E+I; Ref. Manual pp.101-102).
+function Bool fpFetches(Bit#(7) c) =
+     c == fpop_PLUS || c == fpop_PLUS_MG || c == fpop_L || c == fpop_LWF
+  || c == fpop_M_PLUS || c == fpop_M_PLUS_MG
+  || c == fpop_K || c == fpop_KMG || c == fpop_KR || c == fpop_KMGR
+  || c == fpop_STAR || c == fpop_D_STAR || c == fpop_LFT || c == fpop_STAR_PLUS
+  || c == fpop_SLASH || c == fpop_D_SLASH || c == fpop_R_SLASH
+  || c == fpop_E_PLUS || c == fpop_DL || c == fpop_DLWF
+  || c == fpop_D_PLUS || c == fpop_D_PLUS_MG || c == fpop_F_PLUS;
 // >>> ONE PURE DERIVATION OF AN INSTRUCTION'S ADDRESSES. <<<
 //
 // `prepareExec` is the beginning of the prepared bundle
@@ -177,8 +206,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
                  || (f.code == fpop_M_PLUS_MG) || (f.code == fpop_SRD)
                  || (f.code == fpop_SLO) || (f.code == fpop_SRT);
       return PreparedExec {
-        // FP L only; ST fetches nothing.
-        operandAddr: (f.code == fpop_L) ? tagged Valid w : tagged Invalid,
+        // Every fetching operation (fpFetches above); the store class
+        // and the two immediates fetch nothing.
+        operandAddr: fpFetches(f.code) ? tagged Valid w : tagged Invalid,
         storeAddr:   stores             ? tagged Valid w : tagged Invalid,
         completesWithoutFetch: dfSuppresses(st, w) || !installed(w) };
     end
