@@ -154,21 +154,11 @@ endfunction
 // see docs/phase2_arm_inventory.md step 9 and git history (this
 // package's own log, commit removing them) for what they looked like
 // and why they became dead code. extractFieldBits/insertFieldBits
-// above (the pure logic they were built on) and writeFieldWithHi
-// below remain live.
-
-// Write a field back into a word the caller already has on hand (via
-// StretchExecute.bsv's own prefetch mechanism) -- no internal read.
-// Precondition: `hi` is the word most recently read at `ba`'s word
-// address (non-crossing -- the caller must have already confirmed
-// this, same as the removed writeField's own precondition), and
-// nothing else has written that word in between.
-function Action writeFieldWithHi(StretchStorage st, BitAddr ba, Bit#(7) len_, Bit#(64) val, Word64 hi) =
-  action
-    WordAddr w0 = baWord(ba);
-    Bit#(6)  off = baBit(ba);
-    st.writeWord(w0, insertFieldBits(hi, off, len_, val));
-  endaction;
+// above (the pure logic they were built on) remain live.  So did
+// writeFieldWithHi, a one-word field write with no protection test,
+// until 2026-11-17: its last callers (CONNECT TO MEMORY's two one-word
+// stores) now go through StretchExecute's vflFieldStore, which makes
+// p.32's DS test, and it was removed so no new store can skip that test.
 
 // ---------------------------------------------------------------------
 // CONNECTIVE BYTE-SIZE CONVERSION -- Reference Manual printed p.75

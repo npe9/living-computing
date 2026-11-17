@@ -1440,17 +1440,64 @@ documented events only. No new number: the index remainder (17) is item
 
 | PDF, column | base (n / exact / median / mean) | after |
 |---|---|---|
-| 69 M+, ni_ibox | 32 / 0 / −18.18 / −17.48 | 32 / 0 / −0.48 / −1.18 |
-| 69 M+, ix_ibox | 32 / 0 / −22.22 / −21.51 | 32 / 0 / −4.51 / −5.22 |
-| 70 M+MG, ni_ibox (held out) | see the full run | 32 / 0 / −0.60 / −1.18 |
-| 100 M+, ni_ibox (forwarding, held out) | | 32 / 0 / −0.64 / −1.18 |
-| 101 M+MG, ni_ibox (held out) | | 32 / 0 / −0.76 / −1.18 |
+| 69 M+, ni_ibox | 32 / 0 / −18.18 / −17.48 | 32 / 0 / −1.18 / −0.48 |
+| 69 M+, ix_ibox | 32 / 0 / −22.22 / −21.51 | 32 / 0 / −5.22 / −4.51 |
+| 70 M+MG, ni_ibox (held out) | 32 / 0 / −18.18 / −17.60 | 32 / 0 / −1.18 / −0.60 |
+| 100 M+, ni_ibox (forwarding, held out) | 32 / 0 / −18.18 / −17.64 | 32 / 0 / −1.18 / −0.64 |
+| 101 M+MG, ni_ibox (held out) | 32 / 0 / −18.18 / −17.76 | 32 / 0 / −1.18 / −0.76 |
 | 69 M+, ni_ext / ix_ext | +2.59 / +2.61 | unchanged |
 | 48 ST, 79 ST (controls) | | unchanged |
 
 The indexed columns stay 4 short: the page prints M+ indexed 4 clocks
 over unindexed, and the model 0, because the store's decode hold
 (`xstoreFreeAt`) hides the indexed preparation's extra clocks. Open.
+
+### The full run on the final tree (items 7-9 and the instruction-store gate)
+
+The tables in items 7-9 were measured on intermediate trees, each on its
+own pages. This is the whole atlas, 27,655 cases, base `2cee08a` against
+`4c8464a` (`tests/atlas_oracle.py --jobs 6 --tsv`, each in its own
+worktree). The base TSV agrees with the 13-page base subset to the case.
+
+| | base | final |
+|---|---|---|
+| exact | 8,225 (30%) | 9,677 (35%) |
+| mean / median | −3.08 / −0.02 | −2.74 / −0.02 |
+| mean abs residual | 5.81 clocks | 5.32 clocks |
+| pages better / worse / same (mean abs) | | 61 / 17 / 59 |
+
+Per page and column, n / exact / median / mean:
+
+| PDF, column | base | final |
+|---|---|---|
+| 177 KI, ni_imm | 48 / 13 / +1.98 / +2.70 | 48 / 31 / −0.02 / +1.28 |
+| 177 KI, ix_imm | 48 / 8 / +2.95 / +3.54 | 48 / 21 / +0.95 / +1.87 |
+| 182 KFEI, ni_imm | 48 / 16 / +1.98 / +2.57 | 48 / 36 / −0.02 / +1.49 |
+| 127 K, ni_ext | 48 / 20 / +1.50 / +4.58 | 48 / 28 / −0.00 / +3.99 |
+| 127 K, ix_ext | 48 / 26 / −0.00 / +3.25 | 48 / 16 / −0.00 / +2.50 |
+| 42 +, ni_ext | 32 / 0 / +0.39 / +0.59 | 32 / 15 / +0.00 / +0.20 |
+| 64 L, ni_ext / ix_ext | 32 / 0 / +1.96 | 32 / 0 / +1.33 (open) |
+| 73 +, ni_int | 32 / 0 / −6.98 / −6.80 | 32 / 16 / −0.00 / +0.18 |
+| 75 K, ni_int | 32 / 0 / −6.50 / −6.48 | 32 / 16 / +0.48 / +0.50 |
+| 83 *, ni_int | 32 / 0 / −6.00 | 32 / 0 / +1.00 |
+| 95 L, ni_int | 32 / 0 / −4.02 | 32 / 0 / +0.97 |
+| 95 L, ni_ext | 32 / 0 / +0.98 | 32 / 0 / +1.28 |
+| 99 LFT, ni_int | 32 / 0 / −16.52 | 32 / 0 / −11.53 |
+| 69 M+, ni_ibox / ix_ibox | −18.18 / −22.22 (median) | −1.18 / −5.22 |
+| 70, 100, 101 M+/M+MG ni_ibox (held out) | −18.18 | −1.18 |
+| 100, 101 M+/M+MG ni_int | −8.05 | −5.06 |
+| 109 I-box instructions, 48 / 79 ST | | unchanged |
+
+WORSE, recorded rather than hidden. Each was already too fast, and the
+faster I-box widens it:
+- PDF 54 / (memory): −17.98 → −19.60. PDF 85 / ix_ibox: −15.98 → −16.98.
+  Divide is open ("What remains" item 7).
+- PDF 68 LFT ext: −8.17 → −8.80.
+- PDF 112 BAL/BZAL: one clock further off on all four rows (−51.92 →
+  −52.92 on succ_consec).
+- PDF 143-169, the VFL pages with a crossing field: mean abs +0.05 to
+  +0.2. Exact cases on 156 KE fall 117 → 102 and on 159 KFE 135 → 107,
+  while their medians stay at −0.00.
 
 ## Where the model is furthest off
 
@@ -1528,7 +1575,8 @@ over unindexed, and the model 0, because the store's decode hold
      17-25 and about 10 clocks too cheap. **DONE for FP ST/SRD/SLO/SRT
      2026-11-17** ("Closing the residuals", item 2: the LAAR, with a
      fitted store path). FP M+/M+MG to an index register **DONE
-     2026-11-17** (item 9; unindexed −18 → −0.5, indexed still −4.5).
+     2026-11-17** (item 9; unindexed median −18.18 → −1.18, indexed
+     −22.22 → −5.22).
      Still open: the VFL I-box stores (about −12) and WB XOVR stores.
   3. An accumulator operand is charged as if it were external: the 7030
      adds about 4 clocks (VFL INTERNL), 10 with crossover, and 3-15 on

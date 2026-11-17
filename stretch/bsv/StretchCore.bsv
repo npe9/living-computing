@@ -209,7 +209,7 @@ module mkStretchCore(StretchCore);
   // conversion" (printed p.3-19, items 5 and 3) -- and "accepted by the
   // MBCU" (st.storesPending()).  laarFreeAt is the clock the first two
   // are done.  xstoreFreeAt is the same instant for a store into index
-  // storage (or the indicators or the mask, storeWaitWord), which in
+  // storage (words 1, 2, 16-31: indexStorageWord below), which in
   // addition stops ALL decoding: "A store into index storage is a time-
   // consuming operation. Whenever such an instruction is decoded, since
   // the next instruction may make use of the new index contents, the
@@ -367,6 +367,16 @@ module mkStretchCore(StretchCore);
   // are).  A store into index storage also holds all decoding until then,
   // for every class.  Only FP levels take the LAAR (StretchIBox's
   // laarInternal note says why).
+  // INDEX STORAGE, for the decode hold below: "$IT, $TC and $0 through $15
+  // are in index storage", while "an internal operand address is ...
+  // address 3, or an address between 5 and 12 inclusive" (Perf. Char.
+  // Vol. 1 printed p.3-20).  So words 1, 2 and 16-31 -- NOT the indicators
+  // (11) or the mask (12), which STORE WAIT (storeWaitWord, Fig. 3.1.24)
+  // covers but which are internal registers.  Until 2026-11-17 the hold
+  // tested storeWaitWord (decks/vfl_cross_special_words.strap: 404 with
+  // it, 389 with this set).
+  function Bool indexStorageWord(WordAddr w) = (w == 1 || w == 2 || (w >= 16 && w <= 31));
+
   function Action laarRetire(LaLevel h, Bit#(16) e) =
     action
       if (h.storeAddr matches tagged Valid .sa) begin
@@ -382,7 +392,7 @@ module mkStretchCore(StretchCore);
         Bit#(32) t = clk + zeroExtend(e) + 1 + fromInteger(laarCheckClocks)
                    + ((fp && (!isValid(h.da) || indexDest)) ? zeroExtend(laarStorePost(sa)) : 0);
         if (fp) laarFreeAt <= t;
-        if (storeWaitWord(sa)) xstoreFreeAt <= t;
+        if (indexStorageWord(sa)) xstoreFreeAt <= t;
       end
     endaction;
 

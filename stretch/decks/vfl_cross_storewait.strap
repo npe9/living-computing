@@ -1,0 +1,59 @@
+! vfl_cross_storewait.strap -- STORE WAIT on a crossing store's SECOND
+! word: a VFL store from word 15 (the transit register) across into
+! word 16 ($X0), then an index instruction that reads $X0.
+!
+! WHY THIS GEOMETRY AND NO OTHER.  StretchIBox's storeWait holds all
+! preparation while a pending level stores into word 11, 12 or 16-31
+! (R23-9732 Figs 3.1.13, 3.1.20, 3.1.24: "ZOAR EQ 11 + 12 + 16 - 31" ->
+! STORE WAIT).  A crossing store's FIRST word already trips it whenever
+! that word is one of those, so the second-word clause (storeAddr2,
+! 2026-11-17) is the only thing that stalls when the first word is NOT
+! and the second IS: 10 -> 11 or 15 -> 16.  This deck takes 15 -> 16,
+! the index-register case.  CHOSEN (StretchIBox's note): the figure's
+! hexagon tests "W", the word address; a crossing store's second word is
+! not drawn, and the model stalls for it rather than let a younger
+! instruction read the register before the store's tail lands.  $X0 is a
+! register an index instruction can name as an operand (I-Box 4 p.58
+! prints "SX,$X0,8"); the store addresses word 16 directly.
+!
+! CASE 1, the hazard: LTRS(BU,64,8), 60 clocks in the E-box (Perf. Char.
+! Vol. 2 PDF 123), keeps the levels behind it pending.  L then
+! ST(BU,16,8) at 15.56 puts (16)BE in word 15 bits 56-63 and (16)EF in
+! word 16 ($X0) bits 0-7 (printed p.56: "the result replaces the storage
+! operand in the bit positions specified").  SX,$X0,S1 must see the EF:
+!   S1 = (16)EF5A5A0A5A5A5A5A   ($X0 was (16)5A5A5A0A5A5A5A5A)
+! CASE 2, the control: the same with an unconditional branch between the
+! store and the SX.  The branch drains the look-ahead (iboxHazard), so
+! the value holds with or without the wait.  S2 = S1.
+! Values hand-derived from the field positions.  CYCLES 283 is a model
+! pin.
+!
+! INJECTION, measured 2026-11-17 (StretchIBox.storeWait without its
+! storeAddr2 clause, in the worktree from a saved copy, restored and
+! compared with cmp): FAIL S1 = (16)5A5A5A0A5A5A5A5A (the old $X0) and
+! cycles = 268; S2_control and the PC pass.  The other two new decks
+! (vfl_cross_protect, vfl_cross_special_words) pass under it.
+! vfl_cross_special_words' 10 -> 11 store (second word the indicators) is
+! followed by TI,$IND and passes too; that some other wait covers it
+! (StretchIBox's eboxRegister rule is the likely one) was NOT measured.
+!
+        SLC, 1000.0
+START   LX, $X0, IX0
+        LTRS(BU,64,8), SLOW
+        L(BU,16,8), HBEEF
+        ST(BU,16,8), 15.56
+        SX, $X0, S1
+        LX, $X0, IX0
+        LTRS(BU,64,8), SLOW
+        L(BU,16,8), HBEEF
+        ST(BU,16,8), 15.56
+        B, NEXT
+NEXT    SX, $X0, S2
+DONE    BEW, $
+        SLC, 1100.0
+SLOW    DD(BU,64), 0
+HBEEF   DD(BU,64), (16)BEEF000000000000
+IX0     DD(BU,64), (16)5A5A5A0A5A5A5A5A
+S1      DD(BU,64), 0
+S2      DD(BU,64), 0
+        END, START

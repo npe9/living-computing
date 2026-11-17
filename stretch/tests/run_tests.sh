@@ -1695,7 +1695,7 @@ run "STRAP II step 4a-ii: every op-table entry is its primary entry under one ru
 run "No dds anywhere: C28-6129 printed p.7's three cases over the printed op set (and no immediate I on an FP op)" python3 check_no_dds_cases.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 run "An integer address counts its FUNCTION's units, both assemblers (C22-6729 printed p.144's TI example; G3.2)" python3 check_address_function.py
-run "Field arithmetic: *, / and parentheses as STRAP II does them, both assemblers; ** refused (C22-6729 printed pp.107, 198; G3.1)" python3 check_field_arithmetic.py
+run "Field arithmetic: *, / and parentheses as STRAP II does them, both assemblers, in SYN, CW and transmit J too; a mixed SYN keeps its two parts; (N+1) alone is arithmetic; ** refused (C22-6729 printed pp.59, 85, 107, 144, 198; G3)" python3 check_field_arithmetic.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #
@@ -4478,6 +4478,48 @@ run "Store into an instruction a pending level will store: not prepared until th
 
 run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
     "RES:1153=0x28000000000000"
+
+# CROSSING STORES: THE COVERAGE GAPS CLOSED (docs/NEXT.md, 2026-11-17).
+# Three decks, expectations hand-derived in each header.  EVERY injection
+# below was observed on these three decks only (not the rest of the
+# suite); "only" means only among their checks.
+# (1) STORE WAIT on a crossing store's SECOND word: ST from word 15 into
+# word 16 ($X0), then SX,$X0 (R23-9732 Fig. 3.1.24; the second word
+# CHOSEN, StretchIBox's storeWait).  INJECTION, observed: storeWait
+# without its storeAddr2 clause -> FAIL S1 = 0x5A5A5A0A5A5A5A5A and
+# cycles = 268, nothing else; S2 is the control.  CYCLES 283 a model pin.
+run "VFL crossing store: STORE WAIT on its second word, an index register" ./run_program.sh ../decks/vfl_cross_storewait.strap StretchVflCrossStoreWaitTb "PC=2017" "CYCLES=283+-0" \
+    "S1:1103=0xEF5A5A0A5A5A5A5A" "S2_control:1104=0xEF5A5A0A5A5A5A5A"
+# (2) PROTECTION (printed p.31, the straddling rule; p.32, DS: "storing in
+# core storage is always suppressed, and the operation is always
+# terminated"; Data Store item 1, "all store-type operations"; p.22, an
+# exception in the VFL part suppresses "the entire operation", the index
+# part too).  P1 a crossing M+ whose SECOND word is protected, P2 its
+# unprotected control, P3/P4 a ONE-WORD CM without and with a refill
+# (stored with no test until 2026-11-17), P5 a crossing CM, P6 a one-word
+# progressive ST.  INJECTIONS, observed: the deck's header.  CYCLES 1209
+# a model pin; 1196 from 2026-11-17, the preparation floor (MEASURED with
+# it removed: 1209).
+run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1196+-0" \
+    "P1_PW0:1600=0xA5A5A5A5A5A5A5AF" "P1_PW1:1601=0xF5A5A5A5A5A5A5A5" "I1:1700=0" "D1:1705=0x8000000000000000" \
+    "P2_UW0:1505=0xA5A5A5A5A5A5A5A0" "P2_UW1:1506=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
+    "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0" "D4:1708=0x8000000000000000" "X7_P4:1712=0x01905800000405DD" \
+    "I5:1704=0" "D5:1709=0x8000000000000000" "I6:1710=0" "D6:1711=0x8000000000000000" "X6_P6:1713=0x01906800001405DD"
+# (3) WORDS 11 AND 7.  printed p.37: a store into the indicator register
+# wins in bits 20-63 over the operation's own indicator settings; printed
+# p.76: the connective counts "are set at the end".  C1-C3 cross into or
+# out of word 11 (head and tail), K1-K3 the counts (K2 the CM refill path,
+# which set no counts until 2026-11-17; K3 a CM crossing into word 7).
+# INJECTIONS, observed: the deck's header.  CYCLES 389 a model pin.
+# 404, not 389 as first pinned: batch18's index-store decode hold fired on
+# C3's ST into word 11 (storeWaitWord).  372, 2026-11-17: Perf. Char.
+# Vol. 1 printed p.3-20 puts words 1, 2 and 16-31 in index storage and 11
+# in the internal registers (StretchCore indexStorageWord), and the
+# preparation floor.  MEASURED: old set without the floor 404, new set
+# without it 389, old set with it 392, new set with it 372.
+run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=372+-0" \
+    "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
+    "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"
 
 # AN INDEX INSTRUCTION DOES NOT OVERTAKE A PENDING PROGRESSIVE LEVEL
 # (2026-11-16, iboxHazard's setsIndexInd).  Both set the index

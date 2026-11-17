@@ -51,7 +51,9 @@
 !      149 a symbol over 128 characters, 156 a system symbol not found
 !      (MBSPEC's 129 and CPLTNM's 63, a digit too large for the radix, are
 !      notes: NOTEC, NOTEL; p.71: the digit is still used), 166 SYNTAX
-!      ERROR, 167 INAPPROPRIATE CHARACTER, 168 a number over 24 bits
+!      ERROR, 167 INAPPROPRIATE CHARACTER, 168 a number over 24 bits or
+!      a g.p.'s n over 63 (68 GP ERROR, as strap2 since G3.3; the (.0) g.p.'s
+!      82 is a note)
 !
 ! STEP 2, sub-slice a (docs/strap2_7030.md): GETFLD (Charts BI-BK
 ! pp.80-82) over numbers (CPLTNM, Chart BD p.70, in floating point as Box 1
@@ -1872,7 +1874,7 @@ GFZ3    LI(BU,1), 0
         ST(BU,1)(V+I), .1($2)
 GFGPT   LI(BU,1), 1
         ST(BU,1)(V+I), .1($2)
-        L(BU,8), GFGPN
+        L(BU,24), GFGPN
         ST(BU,6)(V+I), .6($2)
         L(BU,8), GFGPR
         ST(BU,8), GFSRAD
@@ -2166,7 +2168,7 @@ GFCLOS  L(BU,8), GFKND
         KI(BU,1), 1
         BZAE, GFCR0
         L(BU,24), 3.24($9)
-        ST(BU,8), GFGPN
+        ST(BU,24), GFGPN
         LI(BU,8), 0
         ST(BU,8), GFGPR
         B, GFCGP
@@ -2186,7 +2188,7 @@ GFCG2   KI(BU,8), 2
         KI(BU,1), 1
         BZAE, GFCG3
         L(BU,24), 3.24($9)
-        ST(BU,8), GFGPN
+        ST(BU,24), GFGPN
         M+1(BU,8), GFCI
         SIC, GFILK
         B, GFIADR
@@ -2208,11 +2210,27 @@ GFCG3   L(BU,1), 3.16($9)
         KI(BU,1), 1
         BZAE, GFCL2
         L(BU,24), 3.24($9)
-        ST(BU,8), GFGPN
+        ST(BU,24), GFGPN
+! a g.p.: n first, as strap2's getfld.py _checked_gp (G3.3, p.177):
+! n over 63 is 68 GP ERROR, n is 6 bits (Appendix C p.198 item 4B;
+! DERIVED there), a halt here, 168; n zero is 82 (.0) HAS BEEN
+! INTERPRETED AS PAREN INTEGER, a note (DERIVED there: the message says
+! what it does), and the g.p. is made with n 0.
+GFCGP   L(BU,24), GFGPN
+        KI(BU,24), 63
+        BAH, GFCG68
+        KI(BU,24), 0
+        BZAE, GFCGQ
+        M+1(BU,24), NOTEC
+        LI(BU,24), 82
+        ST(BU,24), NOTEL
+        B, GFCGQ
+GFCG68  LI(BU,24), 168
+        B, ERROR
 ! a g.p.: its items' operators spent (GFOPS back to the first item's
 ! start), the outer context back, at depth 0 only; the field's operators
 ! are put and its value read (GFEND, GFZA); after a point the .L stays
-GFCGP   LI(BU,8), 0
+GFCGQ   LI(BU,8), 0
         ST(BU,8), GFCI
         SIC, GFILK
         B, GFIADR

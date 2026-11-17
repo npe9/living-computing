@@ -785,7 +785,8 @@ condition), that the store's retirement releases it, and that the I-unit
 recovery costs nothing. It is a conservative wait, not a measured time. Since
 2026-11-17 a field crossing into word 16-31 from word 15 is built, and the
 test also checks a crossing store's second word (`storeAddr2`, CHOSEN: the
-figure's hexagon tests W only).
+figure's hexagon tests W only); `../decks/vfl_cross_storewait.strap` is
+that case (ST from word 15 into $X0, then SX,$X0; injection measured).
 
 Test: `../decks/index_after_index_store.strap` (V+I and SV of $3 behind a
 pending `ST(BU,64),$X3`). Its header records the measured injection. Two parts of
@@ -1142,6 +1143,18 @@ TABMAN (call 24 ADDORD 3 11: TBEN2's "ST(BU,6),TBEN4+.35" sets TBEN4's own
 length) and C22-6578 Problem 2.9 ("ST(BU,4),SV+0.19" into the next
 instruction) both ran the unmodified instruction.
 
+### Index storage, for the decode hold (2026-11-17)
+
+The index-store decode hold (StretchCore `laarRetire`, `xstoreFreeAt`;
+"the I-box does no further decoding until the new index contents
+arrives", printed p.3-21) tested STORE WAIT's word set (11, 12, 16-31).
+Printed p.3-20 says which words are index storage: "$IT, $TC and $0
+through $15 are in index storage", while "an internal operand address
+is ... address 3, or an address between 5 and 12 inclusive". The hold now
+tests `indexStorageWord` (1, 2, 16-31); STORE WAIT's `storeWaitWord`
+(Fig. 3.1.24) is unchanged. decks/vfl_cross_special_words.strap: 404 ->
+372 (389 from this alone, the rest the preparation floor).
+
 ### Immediate compares (2026-11-17)
 
 `eboxClocks` now charges the six immediate compares (KI ... KFEI)
@@ -1304,6 +1317,17 @@ seen (`eboxClocks` gets the decoded instruction).
   `writeWord`, inside `busyXfer`, so the index part's write comes after
   it, p.22's order), the `M+` arm's `mCross`, and a three-word
   `prefetch` (`NPrefetch`). Oracle `decks/vfl_cross_tomemory.strap`.
+  **ONE STORE PATH FOR M+ AND CM, 2026-11-17**: `vflFieldStore`
+  (StretchExecute.bsv) writes one word or two and makes p.32's DS test on
+  every word the field touches.  CONNECT TO MEMORY's two ONE-WORD stores
+  (`writeFieldWithHi`, now deleted) had made none: a CM into a protected
+  word was stored and DS stayed off.  On DS, M+ and CM now set neither
+  their result indicators nor CM's counts (p.32, "the operation is always
+  terminated"), as ST's arm already did; and ST, M+ and CM no longer run
+  their progressive index part on DS (printed p.22: an exception in the
+  variable field length portion suppresses "the entire operation").  CM's refill path now sets the counts (p.76;
+  `cmFinish`, shared with the main path).  Oracles
+  `decks/vfl_cross_protect.strap`, `decks/vfl_cross_special_words.strap`.
   The second word's time is CHOSEN (one read, one tail clock), not the
   atlas's WB XOVR column (about 30 clocks more; NEXT.md). The paragraph
   below is kept for its reasoning about the refusals that remain.

@@ -37,7 +37,19 @@ Open:
   19 [18] bits are specified". That probably means a function narrower
   than the field, as `STTI` has. The page does not say so, and the
   error flag is not built. strap_asm compiles SIC's address through
-  `eval_expr`.
+  `eval_expr`. **The likely message number (read 2026-11-17).**
+  Printed p.178's logic-area column gives INSERT nine messages,
+  114-121 and 123. One fits "more than 18 bits are specified":
+  **118 ADDR INCLUDES BITS NOT NORMAL IN OP**. 116 ADDRESS FIELD HAS
+  BEEN TRUNCATED fits p.144's other sentence, "Bits are truncated where
+  necessary to fit the field, and the appropriate error messages are
+  executed." Nothing is built on this yet, for two reasons:
+  - Reading "more than n bits" as bits below the function's unit (STTI
+    and STT19A below a word, SSIC24 below a half word) implies a
+    function for SSIC24.
+  - That function would also make SSIC24's integer count half words.
+    strap2 now counts bits there (`i_SSIC24 = i_S24A`).
+  S1918A and S24CW have no op in either assembler's table.
 * **68 GP ERROR's stated condition** (p.85 Boxes 64, 73: "only one
   absolute datum, and a GP or radix has already been processed") is not
   built. The host's 68 is n > 63 (DERIVED). The host also uses 68 for a
@@ -48,19 +60,44 @@ Open:
 * **A DD's g.p.s** (OUTPUT, printed p.158 Boxes 2-8) never give 95.
   Only DECODE's instruction path does. Nobody has measured what a
   negative g.p. does there.
-* **Where strap_asm's field arithmetic reaches, as probed.** It works in
-  instruction address fields, `XW`, `VF`, `LVI`, dds lengths, offsets
-  and `LI`. It does not work in `SYN` (`Q SYN, N*2`), `CW`
-  (`CW, SAM*2, N*2`) or transmit's J (`T, N/4, ...`), which still say
-  "cannot parse expression"; strap2 takes all three. A `SYN` needs a
-  rule for classifying a mixed bit and integer result into strap_asm's
-  single value and `sym_int`.
-* **strap_asm reads `(N+1)` alone in a field as an index** on a null
-  address. strap2 reads it as arithmetic (CHOSEN, Box 76).
-* **The 7030 deck's GETFLD** (`decks/strap2_7030.strap`) does not yet
-  give 82 or the new 68. `check_strap2_7030_getfld.py` still passes
-  after G3.3 (run 2026-11-16, 50 PASS), but none of its cases reaches
-  either message.
+* **DONE 2026-11-17: `SYN`, `CW`, transmit's J and `(N+1)` alone.**
+  strap_asm now takes `Q SYN, N*2`, `CW, SAM*2, N*2` and `T, N/4, ...`,
+  and reads `(N+1)` alone as arithmetic. It agrees with strap2 on every
+  row of `check_field_arithmetic.py` (113 checks).
+  - **A SYN keeps a bit part and an integer part.** This is DERIVED
+    from C22-6729 printed pp.13, 54, 57, 59 (Box 6) and 144; see
+    `source_audit.md` G3.1's follow-up. A mixed SYN's parts are kept
+    apart in `SymTab.sym_ipart`.
+  - **Two strap_asm bugs without arithmetic are fixed.** A mixed
+    `QM SYN, SAM+N` used in `B` gave 800 half words, where strap2
+    gives 808. `CW, SAM+1` gave word 400, where strap2 gives 401.
+  - **Register and index fields.** A register field (`LV`, `LX`, J)
+    with arithmetic or a mixed SYN goes in as `(B >> 6) + I`, through
+    `eval_reg`. `LV, N/4, SAM` was refused, and `LV, QS, SAM` with
+    `QS SYN, 1.0+2` gave 1 where strap2 gives 3. An index field
+    (`eval_index`) uses strap2's S/X rule: the bit part's word if
+    there is a bit part, otherwise the integer part.
+  - **Probed and agreeing with strap2 with a mixed SYN:** XW, VF, CF,
+    LVI, LI, SIC, a 24-bit L, a dds length, B and LX.
+  - No deck's image moved under either assembler (825 hashed).
+  - **Reach.** No deck in the corpus uses a mixed SYN in an 18- or
+    19-bit field, or a lone `(expr)`, so strap2 is the only witness
+    for either.
+  - **Open:**
+    - `B, SAM($1+1)`, with no arithmetic, is index 2 in strap_asm and 1
+      in strap2. That difference was there before; strap2's S/X rule,
+      which drops the integer part, is CHOSEN.
+    - A `CW` field whose symbol is written with blanks keeps the old
+      text rule.
+    - J values over 15 are masked, as in strap2.
+* **DONE 2026-11-17: the 7030 deck's GETFLD gives 82 and the new 68.**
+  - **Before:** the deck did not reach either message. Measured on the
+    model, `A(.70)1` was coded with n = 6 and no message (the host's old
+    modulo-64 bug), and `A(.0)5` gave no note.
+  - **Now:** GFCGP checks n as the host's `_checked_gp` does. Over 63
+    halts with ERRC 168; 0 is note 82. GFGPN holds 24 bits.
+  - **Checks:** `check_strap2_7030_getfld.py` has four new cases and
+    57 PASS. See `docs/strap2_7030.md`.
 
 ## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 
@@ -196,19 +233,119 @@ MEASURED INJECTIONS (each in a scratch copy of the tree, observed failures):
 * X2 is the control (no Lost Carry, 0x120): it passes under I1, I2, I4
   and I5.
 
-Still open: no word-11 or word-7 crossing case (word 11 is the indicator
+Still open: ~~no word-11 or word-7 crossing case (word 11 is the indicator
 register, which the instruction also sets, and word 7's counters are
 written by the connectives at the end -- the order of those against a tail
-write is unread); the CM refill path writes no connective counts (as
-before this change) and its one-word store makes no protection check
-(`writeFieldWithHi`); the level-to-level store/fetch interlock
-(`levelHolds`) still compares a crossing store's first word only.
-BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
+write is unread)~~ CLOSED 2026-11-17, the pages are not silent (printed
+pp.37, 76; "CROSSING STORES: THE COVERAGE GAPS CLOSED" below); ~~the CM
+refill path writes no connective counts (as before this change) and its
+one-word store makes no protection check (`writeFieldWithHi`)~~ FIXED
+2026-11-17, and the MAIN CM path's one-word store made no protection check
+either (below); ~~the level-to-level store/fetch interlock (`levelHolds`)
+still compares a crossing store's first word only~~ closed by 6de1371
+(`levelStores`, decks/vfl_store_cross_fetch.strap).
+~~BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
 them): the STORE WAIT test of a crossing store's second word
 (`storeAddr2`; no deck puts an index use behind a pending crossing store
-into X16-31), the two `prepareExec` "completes without fetch" clauses
-removed with the refusals, and the both-word protection check on a
-crossing `M+` (no deck runs with a protected second word).
+into X16-31)~~ CHECKED 2026-11-17 (decks/vfl_cross_storewait.strap), ~~and
+the both-word protection check on a crossing `M+` (no deck runs with a
+protected second word)~~ CHECKED 2026-11-17 (decks/vfl_cross_protect.strap).
+Still unchecked: the two `prepareExec` "completes without fetch" clauses
+removed with the refusals.
+
+### CROSSING STORES: THE COVERAGE GAPS CLOSED, 2026-11-17
+
+The four gaps "GROUP B BUILT" left, each now a deck case with measured
+injections (the deck headers have the values; every injection was made in
+the worktree from a saved copy, restored, and compared with cmp, and was
+observed on all three new decks).
+
+1. **STORE WAIT on a crossing store's second word** --
+   `decks/vfl_cross_storewait.strap`.  Only a store whose FIRST word is
+   not 11, 12 or 16-31 and whose second is reaches the `storeAddr2`
+   clause: 10 -> 11 or 15 -> 16.  The deck takes 15 -> 16: ST(BU,16,8) at
+   15.56 behind an LTRS, then SX,$X0.  Injection (clause dropped): S1 reads
+   the old $X0 and the run is 268 clocks against 283; the control (a
+   branch between) passes.  No model change.
+2. **Protection on a crossing M+ (and CM)** -- `decks/vfl_cross_protect.strap`,
+   printed p.31 ("An instruction or data field which straddles a boundary
+   always gives an address monitoring signal"), p.32 (DS: "storing in
+   core storage is always suppressed, and the operation is always
+   terminated"; Data Store item 1, "all store-type operations").
+   **MODEL BUG FOUND AND FIXED: a ONE-WORD CONNECT TO MEMORY made no
+   protection test at all**, on its main path as well as the refill path
+   this list named -- both called `writeFieldWithHi`.  Now M+ and every CM
+   shape store through one function, `vflFieldStore` (StretchExecute.bsv),
+   and `writeFieldWithHi` is deleted.  **And M+ and CM now terminate on DS
+   as ST already did**: no result indicators, no counts (before, M+ set
+   MOP, LC, PF and the result indicators over a suppressed store, CM its
+   connective indicators and counts).  Injections: second word not
+   compared -> P1 and P5; one-word store not compared -> P3 and P4; M+'s
+   indicators over the suppressed store -> I1 only (all three re-measured
+   on the final model).  And, from printed
+   p.22 ("the entire operation will be suppressed"), DS now suppresses
+   the progressive index part of ST, M+ and CM too (below).
+3. **Word 11 and word 7** -- `decks/vfl_cross_special_words.strap`.  The
+   pages are NOT silent.  printed p.37: a store into the indicator
+   register gives bits 20-63 "the same as if this operation had acted upon
+   any other storage location whose initial contents were the same ...
+   The setting of any of the indicators 20-63 that would normally occur
+   as part of the store operation is overridden by this result."  printed
+   p.76: the connective counts "are set at the end of the connective
+   operations".  The model already gave both orders (commitIndicators'
+   indStW; writeWord never writes the counter fields, StretchStorage),
+   for a head and for a tail (rl_tail_write writes word 11 the clock
+   after the operation's indicators, so the store still wins).  No model
+   change.  Injections: the operation's indicators OR-ed over the store ->
+   I1, I2, I3 (tail, read-only-bits-only tail, and head cases); a tail
+   into word 7 loading the counters (p.76's order reversed) -> K3 only.
+4. **CM's refill path set no connective counts** -- FIXED, printed p.76
+   ("In CONNECT TO MEMORY, the counts are made on the result field after
+   it is converted to the byte size of the storage operand"): `cmFinish`,
+   shared by the refill and main paths, sets MOP/RZ/RGZ and the counts
+   (or, on DS, neither).  Injection (counts dropped) -> K2 only.
+
+Cycle changes on existing pinned decks: NONE (two full-suite runs, before
+and after the p.22 index-part change, each with the same single failure
+below and nothing else).  The full suite, run with
+these changes, failed ONE section, "OP and AD indicators (both
+polarities)" (decks/op_ad_indicators.strap: PC 2443, expected 2462), and
+it fails identically with the base 64f7947 StretchExecute/StretchVFL
+swapped back in: the deck still expects RNX to set OP ("out of scope ->
+OP"), and RNX was built in c72fb6e (2026-11-16).  The deck needs a
+different out-of-scope operation; NOT fixed here.
+
+STILL OPEN, found on the way:
+
+* ~~**Is a terminated operation's progressive index part also
+  suppressed?**~~ ANSWERED and BUILT the same day: printed p.22,
+  Programming Notes, "If an exception condition is detected during the
+  variable field length portion of the operation, the entire operation
+  will be suppressed, and the appropriate indicator will be turned on.
+  However, if an exception condition is detected during the index
+  modification portion of the operation, only this portion will be
+  suppressed."  DS on the field's store is detected in the VFL portion,
+  so ST, M+ and CM no longer advance, count or refill the index, nor set
+  the index result indicators, on DS (vflOk = False, and the inline
+  refill paths' vflPending guarded).  vfl_cross_protect P4 (refill CM)
+  and P6 (one-word ST(V+IC), no refill) check it; injection (the pre-fix
+  StretchExecute.bsv) -> I4, X7_P4, I6, X6_P6 and cycles 1211, nothing
+  else among the three decks.  OPEN: the refill's DF signal (p.32 class
+  3) is still raised for a refill that DS now suppresses.
+* **A store into word 7 by ST or M+ drops the count bits.** writeWord(7)
+  never writes the counter fields (StretchStorage's documented
+  simplification); p.76 says non-connective operations do not change the
+  counts "as an inherent part", and location 7 is addressable, so such a
+  store should land.  The fix would be word 11's shape (a store wire and
+  one commit rule).  And p.34: "Not all bit positions in locations 0-15
+  are assigned ... Those bit positions that are not so assigned are always
+  zero" -- the model keeps word 7's other fifty bits as stored.
+* **The one clock a crossing tail into word 11 leaves the operation's own
+  indicators in the register** (rl_tail_write runs the clock after);
+  with the interruption system enabled and a mask bit on, an interruption
+  could be taken on an indicator p.37 says is overridden.  Not exercised.
+* The two `prepareExec` "completes without fetch" clauses removed with
+  the refusals are still checked by no deck.
 
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 
@@ -18263,3 +18400,24 @@ floating store (read at 300 dpi 2026-11-16; this line said "the same");
   the u/sqrt(1 - t) = 6.7072 that passed within 2.3 units.  So SRT's
   store to word 8 takes effect in the model and SRD's does not.  Whether
   SRT then leaves bits 60-63 as p.95 stores them was not checked.
+
+## IS WORD 11 OR 12 "INDEX STORAGE" FOR THE DECODE HOLD? -- DONE, 2026-11-17
+
+Batch18's index-store decode hold (StretchCore `laarRetire`,
+`xstoreFreeAt`; Perf. Char. Vol. 1 printed p.3-20, "a store into index
+storage" stops decoding) tests `storeWaitWord`, the STORE WAIT set of
+Fig. 3.1.24: words 11, 12 and 16-31.  So a VFL ST into the indicator
+register (word 11) holds decoding too.  Measured on
+`decks/vfl_cross_special_words.strap`: 404 clocks with the hold as built,
+389 with it narrowed to X16-31.  Re-pinned at 404.  Read whether the
+machine's index storage (the fast core holding X0-X15) also holds words 11
+and 12, or whether only STORE WAIT covers them, and settle the set.
+
+SETTLED: Perf. Char. Vol. 1 printed p.3-20 (PDF 38, read in the image):
+"By an internal operand address is meant address 3, or an address between
+5 and 12 inclusive. ... $IT, $TC and $0 through $15 are in index
+storage."  Words 11 and 12 are internal registers; words 1 and 2 are index
+storage.  The hold now tests StretchCore's `indexStorageWord` (1, 2,
+16-31); STORE WAIT keeps `storeWaitWord` (Fig. 3.1.24) unchanged.
+vfl_cross_special_words: 389 with the new set alone (404 with the old);
+with the preparation floor of the same day, 372 (pinned).
