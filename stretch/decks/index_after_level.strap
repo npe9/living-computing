@@ -74,7 +74,8 @@
 ! plus the 0.6 us check, StretchTiming's laarCheckClocks).  The model
 ! commits a level's result at removal and charges its E-box time after,
 ! so the old release came that E-box time early.
-! The SV and ST into $X3 of its cases.
+! The SV and ST into $X3 of its cases.  MEASURED: with that hold removed
+! (and nothing else) the deck runs in 2828 clocks again.
         SLC, (8)2000.0
 START   NOP
 ! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)

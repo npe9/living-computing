@@ -1117,7 +1117,7 @@ was pending.
   register (words 7-15).** The model commits a result at removal and only
   charges its time afterwards, so the fetch of, say, $IND can be made
   while the 7030 would still be executing. The gate gained about a clock
-  on one column. It moved six VFL CYCLES pins by 1-13 clocks, and its only
+  on one column. It moved five VFL CYCLES pins by 1-13 clocks, and its only
   source is an inference from p.3-20. So it was left out.
   - It was first withdrawn because a parallel run failed PAST T MOVE
     (XERR26 instead of XERR29). Re-run on its own with a private
@@ -1265,11 +1265,16 @@ indexed on PDF 48, which is a different path.
 | 73 + (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
 | 65 LWF | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
 | 95 L (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
-| 54 / | 32 / 0 / −17.98 | 32 / 0 / −15.98 (divide, item 7) |
+| 54 / | 32 / 0 / −17.98 | 32 / 0 / −15.98 (see below) |
 | 52 * | 32 / 0 / +1.00 | unchanged |
 
 Every non-indexed column and every EXTERNAL column is unchanged. On *, the
 E-box time hides the extra cycle, as it does on the page.
+
+**Divide is not a gain.** PDF 54's indexed and non-indexed I-BOX residuals
+were equal before the change, so the page prints no indexing cost for /.
+The model now shows a 2-clock gap there that the page does not. The
+divide pages are open in any case (item 7).
 
 ### 6. SHF's shift amount
 
