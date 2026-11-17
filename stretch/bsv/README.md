@@ -463,6 +463,19 @@ loaded as four-bit digits ("Radix ... as in ADD"); the full seven-bit
 offset is loaded.  Timing: Table 3's LTRS row, 16 + 2 x/y clocks
 (`StretchTiming.bsv`).  `decks/vfl_ltrs.strap`.
 
+**THE BINARY ARMS MADE TO AGREE, 2026-11-16 (the decimal work's three
+findings).**  (1) RN is the sign bit in both radices -- printed p.47's
+"negative whether zero or not" -- so `setResultIndicatorsDec` is folded
+into `setResultIndicatorsF`.  (2) Binary `+`/`+MG` set LC (carry out of a
+like-signed sum) and PF (operand bits past the accumulator's left end),
+and binary `L`/`LWF` set PF, "as in ADD" (printed pp.60-61).
+`decks/vfl_binary_add_indicators.strap`.  (3) A progressive operation
+whose index refills no longer applies itself twice:
+`vflRefillOutstanding` holds every arm that uses a shared trailing block
+until the refill word is in hand (printed pp.21-22, "the variable field
+length part ... and then the index modification portion").
+`decks/vfl_progressive_refill_once.strap`.
+
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 

@@ -39,7 +39,9 @@
 !    decimal too (p.60's "two low-order bits ... ignored" is ADD's).  W6
 !    uses offset 12, where the two readings agree; open.
 !  * Decimal result indicators as the decimal arms set them (RN is the
-!    sign, so a negative zero would set it), binary as the binary arms.
+!    sign, so a negative zero would set it), binary as the binary arms
+!    (the same rule since 2026-11-16: printed p.47, RN "negative whether
+!    zero or not").
 !
 ! Word 7 here is the model's: IBM 17-23 the left zeros count, 44-50 the
 ! all-ones count, so W = (lzc << 40) | (aoc << 13).  Indicator masks: BTR

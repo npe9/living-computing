@@ -94,6 +94,8 @@
 !      and, in run_decbox_test.sh, vectors 1 and 7; Problem 2.3 Method 4
 !      stays green (it never subtracts).  67 pass, 3 fail here.
 !   2. decimal RN off on a zero result (setResultIndicatorsDec's RN made
+!      -- that function is setResultIndicatorsF since 2026-11-16, shared
+!      with the binary arms; the injection is the same line there --
 !      "sign && !zero", the binary rule): FAILS A4_ind_RZ_RN (0x40),
 !      A10_ind (0x40), M8_ind (0x140) -- the three negative zeros.
 !   3. decMergeField starts from zero (zones not kept): FAILS
