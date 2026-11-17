@@ -104,6 +104,54 @@ harness runs with the interruption system off).
 
 **Still refused:** `LFT` (decimal) and `DCV`.
 
+### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
+
+Taken from the code, not from the docs: every `setOpInvalid` in `bsv/`
+(25 sites; `ind_OP` is set nowhere else), and the decoder's
+`tagged Invalid` paths.  `tests/audit_opcode_coverage.py` lists ONE
+unimplemented mnemonic (RNX) because it asks which mnemonics are
+encoded by a transcription; DCV is not on its list only because no
+program uses it (its own count: "unused 1").  It is not an enumerator of
+refusals, so this list is.
+
+**A. The machine's own OP -- printed, kept:**
+* progressive indexing with X0 (VFL `vflIntOp`, connectives), printed
+  p.21 (PDF 24): "IF PROGRESSIVE INDEXING WITH INDEX REGISTER X0 IS
+  SPECIFIED, INDICATOR OP ... IS SET";
+* immediate addressing on a to-memory operation (VFL `ST`/`SRD`, the
+  `M+` family, `CM`), printed p.56: "the operation is not performed and
+  the OP indicator is turned on";
+* an undefined operation code (decoder `tagged Invalid`).  The valid
+  sets (`isValidDirIndexOp`, `isValidMiscOp`, `isValidUncondBranchOp`,
+  `isValidFpCode`, `isVflIntCode`, `isConnSuffix`) were read against the
+  pocket card: no defined code is outside them.  `tagged Unimplemented`
+  is produced by nothing.
+
+**B. Operations the manual defines and the model refuses:**
+
+| refusal | page | defined? | oracle | status |
+|---|---|---|---|---|
+| `RNX` (no arm; DirIndex default) | printed p.27 (PDF 30) | yes, in full | jb_ax4b routine 1244 TEST 4 (`decks/ibox4_rnx_nop.strap`), C22-6578 Problem 1.8 (`decks/problem_1_8.strap`), RefMan Fig. 9 | built below |
+| `DCV`, both radices (no arm; VflInt default) | printed p.74 (PDF 77) | yes, in full | RefMan Figure 19, Vol. 2 atlas PDF 139 | built below |
+| decimal `LFT` (gate `vflDecimalBuilt`) | printed p.69 (PDF 72): "Unsigned; Negative Sign; Radix.  These modifiers operate as in ADD" | yes | none beyond the page | built below |
+| `M+`/`M+1`/`M+MG` with a field crossing a word boundary | p.55-56's VFL addressing (any bit address, any length) | yes | none in the corpus | open: a model limit ("keeps the old refusal", `StretchExecute.bsv` M+ arm) |
+| `ST`/`SRD`/`CM` whose second word is below word 32 | as above | yes | none | open: `writeWordTail` drains to core storage only |
+| a crossing field that also needs a progressive refill (three reads) | p.21-22 | yes | none | open: `prefetch` holds two words |
+
+**C. Defensive defaults, unreachable by construction:** the half-word
+branch default (`BranchOrMisc`), the FP store-class default, the
+connective suffix default, the immediate-index default, the LVE chained
+target before its time-out (mkEBox follows the chain), the FP
+`!known` case.  Each names its reason at the site.
+
+**`SWAP` IS NOT ON THE LIST.**  "`SWAP`'s remaining variants" in
+`docs/source_audit.md` G2.3 is stale: forward `SWAP`/`SWAPI` were built
+2026-10-23 and backward `SWAPB`/`SWAPBI` 2026-11-08
+(`decks/swap_scope.strap` blocks 1-5, `decks/problem_1_2.strap`,
+`problem_1_3.strap`); the direct count and its zero case ("A count field
+of zero is ...", rl_xmit) are built.  The Transmit arm has no
+`setOpInvalid` left.
+
 ### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 
 Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is
