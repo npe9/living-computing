@@ -476,6 +476,20 @@ until the refill word is in hand (printed pp.21-22, "the variable field
 length part ... and then the index modification portion").
 `decks/vfl_progressive_refill_once.strap`.
 
+**THE BINARY INDICATOR SWEEP, 2026-11-16.**  Every indicator sentence of
+the VFL arithmetic chapter (printed pp.58-74) read in the page images, op
+by op; the table is in `docs/NEXT.md` G2.3.  Fixed: binary `M+`, `M+MG`,
+`M+1`, `M-1` set LC (carry beyond the field, or an unsigned field whose
+result is negative) and PF (an accumulator one-bit left of the
+participating field; not for `M+1`), and add only the field-wide
+accumulator operand -- `binMemAdd` in `StretchALU.bsv` (printed pp.59,
+62-63, Figure 13); binary `*+` sets LC "as in ADD" (printed p.69) through
+`binAccAdd`, the rule `+`/`+MG` now share; `LCV` and `LTRCV` set the data
+flags (printed pp.72-73); decimal `LCV` sets PF past the accumulator's
+left end; decimal `LTRCV` sets PF for a field over 15 digits and puts
+only 48 bits in $TR (printed p.73).
+`decks/vfl_binary_memadd_indicators.strap`.
+
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 

@@ -1,0 +1,330 @@
+! BINARY VFL INDICATOR SWEEP: M+ / M+MG / M+1 / M-1 LOST CARRY AND
+! PARTIAL FIELD, *+ LOST CARRY, LCV AND LTRCV DATA FLAGS, PARTIAL FIELD AND
+! TRANSIT WIDTH -- docs/NEXT.md G2.3, the sweep of 2026-11-16.
+!
+! Every expected value below is HAND-DERIVED from the Reference Manual
+! 22-6530-2 (printed N = PDF N+3), read in the page images; none was taken
+! from a run.  The capture is vfl_binary_add_indicators.strap's: Z, $IND
+! before the operation, the indicator register copied with TI (count one)
+! after it; a to-memory case is read back in place, a to-accumulator case
+! stores $L and $R, a transit case copies $TR.  Indicator word bits (bit n
+! is 1 << (63-n)): LC 0x20000000000, PF 0x10000000000, TF 0x10000000, UF
+! 0x8000000, VF 0x4000000, XCZ 0x8000, XVGZ 0x1000, MOP 0x100, RLZ 0x80,
+! RZ 0x40, RGZ 0x20, RN 0x10.  A signed binary field at byte size 8 ends in
+! an eight-bit sign byte: sign bit 0x08, data flags T U V 0x04 0x02 0x01.
+! LC and PF are permanent indicators (printed p.58: "The general result
+! exception and the transit indicators are permanent.  If they are turned
+! on by any operation, they will remain on until they are turned off either
+! by causing an interruption or by being explicitly made zero"), hence the
+! Z before every case.
+!
+! THE RULES:
+!  M+ family, LC, printed p.59 (PDF 62): "In binary to-memory operations,
+!      this indicator is actuated by a carry beyond the leftmost bit of the
+!      addressed field ... This indicator is also actuated when a to-memory
+!      operation with an unsigned storage operand produces a negative
+!      result.  In all cases, the operation is completed normally except
+!      for the loss of the carry."  printed p.62 (M+): "This indicator is
+!      also turned on if the result of an unsigned operation is negative.
+!      In such a case, the magnitude of the result is stored in storage."
+!  M+ family, PF, printed p.59: "In binary operations to storage, this
+!      indicator is turned on if there is any one-bit in the accumulator to
+!      the left of the participating field."  p.62's Programming Note: the
+!      accumulator field is the storage operand's length ("lengthened for
+!      the operation by the addition of high-order zeros"), so the bits to
+!      its left do not take part in the sum.
+!  M+MG: "Lost Carry (LC); Partial Field (PF) ... set as in ADD TO MEMORY"
+!      (p.62); "Arithmetic Result ... according to the final result stored".
+!  M+1: "Lost Carry (LC) ... These indicators operate as in ADD TO MEMORY"
+!      and "identical to an ADD TO MEMORY in which the accumulator operand
+!      is +1, except that the partial field indicator is not affected"
+!      (p.63); negative sign modifier "a minus one is added" (M-1).
+!  Figure 13 (p.62), "Add to Memory, U": storage 3+, accumulator 5- gives
+!      "2+*", the star being "The Lost Carry indicator is turned on".
+!  *+, printed p.69: "Lost Carry (LC).  In a binary operation, this
+!      indicator is set as in ADD"; PF "if the offset is such that
+!      significant bits of the product attempt to combine with accumulator
+!      positions to the left of the left end of the accumulator".  ADD
+!      (p.60): "A partial field condition will not cause a lost carry
+!      indication.  However, both conditions may arise".
+!  LCV, printed p.73: "Data Flags (TF, UF, VF); To-Memory Operation (MOP);
+!      Arithmetic Result (RLZ, RZ, RGZ, RN).  These indicators are set as in
+!      ADD"; p.72: "these indicators are set according to the data flag
+!      bits, if any, of the storage operand.  Any operation that normally
+!      affects these indicators will turn them off if the unsigned modifier
+!      is designated."  PF (p.73): "actuated when significant bits of the
+!      converted field extend beyond the left end of the accumulator" --
+!      no radix in that sentence.
+!  LTRCV, printed p.73: data flags "set as in ADD"; PF "if the result of a
+!      decimal to binary conversion exceeds 48 significant bits ... only the
+!      48 low-order bits of the result are placed in the transit register.
+!      This indicator is also actuated if the storage field specified in a
+!      decimal-to-binary conversion exceeds 15 decimal digits"; Arithmetic
+!      Result "according to the final result in the transit register".
+!
+! THE CASES (the batch10 model's value, where it differs, in brackets):
+!  M1  M+(BU,8,8): acc 1, field FF: 256, the carry leaves the field: 00.
+!      LC MOP RZ 0x20000000140.  RZ is the field's sum, CHOSEN (StretchALU's
+!      binMemAdd header).                                        [0x120]
+!  M2  M+(BU,8,8): acc 1, field FE: FF.  MOP RGZ 0x120.  CONTROL.
+!  M3  Figure 13, Add to Memory U, storage 3+ acc 5-: 3 + -5 = -2, the
+!      magnitude stored: 02.  LC MOP RLZ RN 0x20000000190.        [0x190]
+!  M4  M+MG(BU,8,8): acc -1 (magnitude 1), field FF: 00.  LC MOP RZ
+!      0x20000000140.                                             [0x120]
+!  M5  M+(BU,8,8): acc (16)102, field 03: the participating 8 bits are 02,
+!      bit 8 is a one to their left: 05.  PF MOP RGZ 0x10000000120. [0x120]
+!  M6  M+(BU,8,8): acc -(16)102, field 05: 5 + -2 = 3: 03.  PF MOP RGZ
+!      0x10000000120.  The batch10 model subtracted all of (16)102: 5 - 258
+!      = -253, field FD, 0x190.                          [FD, 0x190]
+!  M7  M+1(BU,8): acc (16)102 (PF "not affected"), field FF: 00.  LC MOP RZ
+!      0x20000000140, PF off.                                     [0x120]
+!  M8  M-1(BU,8): field 00: -1, unsigned, magnitude stored: 01.  LC MOP RLZ
+!      RN 0x20000000190.                                          [0x190]
+!  M9  M+(B,16,8): acc +5, field -3 (0308): +2, sign byte 00: 0200.  MOP
+!      RGZ 0x120.  CONTROL: unlike signs, no LC.
+!  M10 M+(B,16,8): acc +1, field +255 (FF00): 256, numeric part 00, sign
+!      byte 00: 0000.  LC MOP RZ 0x20000000140.                   [0x120]
+!  M11 M+(V+ICR)(BU,8,8) with a refill (count 1): the second write site.
+!      acc 1, field FF: 00.  LC MOP RZ, and the index result indicators of
+!      the pre-refill word (count 0: XCZ; value W11, positive: XVGZ):
+!      0x20000009140.                                          [0x9120]
+!  P1  *+(BU,8,8): FT 1, multiplier 1, acc 2^128 - 1 (all ones): the carry
+!      leaves the left end; acc 0.  LC RZ 0x20000000040.            [0x40]
+!  P2  *+: FT -1, multiplier 1, acc all ones: unlike signs, 2^128 - 2.  RGZ
+!      0x20.  CONTROL.
+!  P3  *+ at offset 120: FT (16)0101, multiplier 1, acc all ones: (16)01
+!      past the left end (PF), (16)01 at bit 120 carries out (LC); acc
+!      2^120 - 1.  LC PF RGZ 0x30000000020.               [0x10000000020]
+!  P4  *+ at offset 120: FT (16)0100, multiplier 1, acc 0: the 1 dropped,
+!      0 lands; acc 0.  PF RZ 0x10000000040, LC off.  CONTROL ("will not
+!      cause a lost carry indication").
+!  C1  LCV(B,16,8) of 050F (5, minus, T U V): acc 5 (BCD), sign byte minus
+!      with its flags cleared (p.72).  TF UF VF RLZ RN 0x1C000090.  [0x90]
+!  C2  L(B,16,8) of 050F (sets T U V), then LCV(BU,16,8) of it: 1295, BCD
+!      (16)1295.  The flags OFF: RGZ 0x20.                   [0x1C000020]
+!  C3  LCV(DU,8,4) of 99 at offset 125: 99 = (16)63, bits 125-127 hold 011,
+!      the rest past the left end: accL (16)6000000000000000.  PF RGZ
+!      0x10000000020.                                              [0x20]
+!  C4  the same at offset 120: accL (16)6300000000000000.  RGZ 0x20.
+!      CONTROL.
+!  C5  LTRCV(DU,64,4) of sixteen digits 000...01: value 1, but the field
+!      exceeds 15 digits.  $TR (16)10.  PF RGZ 0x10000000020.      [0x20]
+!  C6  LTRCV(DU,60,4) of fifteen nines: 10^15 - 1 = (16)38D7EA4C67FFF, 50
+!      bits; the low 48 go to $TR above its four-bit sign byte: $TR
+!      (16)8D7EA4C67FFF0.  PF RGZ 0x10000000020.  [$TR (16)38D7EA4C67FFF0]
+!  C7  LTRCV(B,16,8) of 050F: $TR (16)58 (5, sign bit 0x08).  TF UF VF RLZ
+!      RN 0x1C000090.                                              [0x90]
+!
+! MEASURED 2026-11-16.  The UNMODIFIED model (batch10) FAILS M1, M3, M4,
+! M5, M6 (field and indicators), M7, M8, M10, M11, P1, P3, C1, C2, C3, C5,
+! C6 ($TR), C7 -- exactly the bracketed values -- and passes every control
+! and every other check.  The fixed model passes all 59 checks.
+! INJECTIONS into the fixed model, each in its own scratch copy of the tree
+! (the worktree never held one), each run on this deck,
+! vfl_binary_add_indicators, vfl_progressive_refill_once and
+! vfl_load_factor; the other three decks stayed green unless named:
+!   j1 binMemAdd's LC without the field carry (unsigned-negative only):
+!      FAILS M1, M4, M7, M10 (0x140), M11 (0x9140).
+!   j2 binMemAdd's LC without the unsigned-negative term: FAILS M3, M8
+!      (0x190).
+!   j3 binMemAdd never sets PF: FAILS M5, M6 (0x120).
+!   j4 the accumulator operand NOT masked to the field: FAILS M5
+!      (0x30000000120 -- the bit above the field is taken as a carry), M6
+!      (field FD, 0x30000000190).
+!   j5 M+1 allowed PF (the !addOne guard dropped): NOTHING FAILS.  M+1's
+!      addend is the constant 1, so it can never have a bit above the
+!      field; the guard is redundant and M7 shows it, not the guard.
+!   j6 *+ ignores binAccAdd's LC: FAILS P1 (0x40), P3 (0x10000000020).
+!   j7 LCV sets no data flags: FAILS C1 (0x90), C2 (0x1C000020).
+!   j8 LTRCV without the fifteen-digit PF: FAILS C5 (0x20).
+!   j9 LTRCV keeps sixty bits: FAILS C6 ($TR (16)38D7EA4C67FFF0).
+!   j10 decimal LCV without the left-end PF: FAILS C3 (0x20).
+! (LTRCV's data flag line was not injected separately; C7 is its check.)
+
+        SLC, 1000.0
+START   L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), W1
+        TI, 1, $IND, I1
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), W2
+        TI, 1, $IND, I2
+        L(B,16,8), N5
+        Z, $IND
+        M+(BU,8,8), W3
+        TI, 1, $IND, I3
+        L(B,16,8), N1
+        Z, $IND
+        M+MG(BU,8,8), W4
+        TI, 1, $IND, I4
+        L(BU,16,8), H0102
+        Z, $IND
+        M+(BU,8,8), W5
+        TI, 1, $IND, I5
+        L(B,24,8), N258
+        Z, $IND
+        M+(BU,8,8), W6
+        TI, 1, $IND, I6
+        L(BU,16,8), H0102
+        Z, $IND
+        M+1(BU,8), W7
+        TI, 1, $IND, I7
+        Z, $IND
+        M-1(BU,8), W8
+        TI, 1, $IND, I8
+        L(BU,8,8), FIVE
+        Z, $IND
+        M+(B,16,8), W9
+        TI, 1, $IND, I9
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(B,16,8), W10
+        TI, 1, $IND, I10
+        L(BU,8,8), ONE
+        LX,  $X7, XPM
+        Z, $IND
+        M+(V+ICR)(BU,8,8), 0($X7), 0
+        TI, 1, $IND, I11
+        L(BU,64,8), ONES, 64
+        +(BU,64,8), ONES, 0
+        LFT(BU,8,8), ONE
+        Z, $IND
+        *+(BU,8,8), ONE
+        TI, 1, $IND, J1
+        ST(BU,64,8), A1, 64
+        ST(BU,64,8), A1+1.0
+        L(BU,64,8), ONES, 64
+        +(BU,64,8), ONES, 0
+        LFT(B,16,8), N1
+        Z, $IND
+        *+(BU,8,8), ONE
+        TI, 1, $IND, J2
+        ST(BU,64,8), A2, 64
+        ST(BU,64,8), A2+1.0
+        L(BU,64,8), ONES, 64
+        +(BU,64,8), ONES, 0
+        LFT(BU,16,8), H0101
+        Z, $IND
+        *+(BU,8,8), ONE, 120
+        TI, 1, $IND, J3
+        ST(BU,64,8), A3, 64
+        ST(BU,64,8), A3+1.0
+        L(BU,8,8), ZERO
+        LFT(BU,16,8), H0100
+        Z, $IND
+        *+(BU,8,8), ONE, 120
+        TI, 1, $IND, J4
+        ST(BU,64,8), A4, 64
+        ST(BU,64,8), A4+1.0
+        Z, $IND
+        LCV(B,16,8), FL5
+        TI, 1, $IND, K1
+        ST(BU,64,8), C1+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), C1+2.0
+        Z, $IND
+        L(B,16,8), FL5
+        LCV(BU,16,8), FL5
+        TI, 1, $IND, K2
+        ST(BU,64,8), C2+1.0
+        Z, $IND
+        LCV(DU,8,4), D99, 125
+        TI, 1, $IND, K3
+        ST(BU,64,8), C3, 64
+        ST(BU,64,8), C3+1.0
+        Z, $IND
+        LCV(DU,8,4), D99, 120
+        TI, 1, $IND, K4
+        ST(BU,64,8), C4, 64
+        Z, $IND
+        LTRCV(DU,64,4), D16
+        TI, 1, $IND, K5
+        TI, 1, $TR, T5
+        Z, $IND
+        LTRCV(DU,60,4), D15N
+        TI, 1, $IND, K6
+        TI, 1, $TR, T6
+        Z, $IND
+        LTRCV(B,16,8), FL5
+        TI, 1, $IND, K7
+        TI, 1, $TR, T7
+PASS    BEW, $
+
+
+        SLC, 1500.0
+XPM     XW, W11, 1, RFW          ! count 1: the refill fires
+RFW     XW, 1234.0, 77, 1500.0   ! the refilled index word
+N5      DD(BU,64), (16)0508000000000000
+N1      DD(BU,64), (16)0108000000000000
+N258    DD(BU,64), (16)0102080000000000
+ONE     DD(BU,64), (16)0100000000000000
+FIVE    DD(BU,64), (16)0500000000000000
+ZERO    DD(BU,64), (16)0000000000000000
+H0102   DD(BU,64), (16)0102000000000000
+H0101   DD(BU,64), (16)0101000000000000
+H0100   DD(BU,64), (16)0100000000000000
+ONES    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+FL5     DD(BU,64), (16)050F000000000000
+D99     DD(BU,64), (16)9900000000000000
+D16     DD(BU,64), (16)0000000000000001
+D15N    DD(BU,64), (16)9999999999999990
+
+        SLC, 1600.0
+W1      DD(BU,64), (16)FF00000000000000
+W2      DD(BU,64), (16)FE00000000000000
+W3      DD(BU,64), (16)0300000000000000
+W4      DD(BU,64), (16)FF00000000000000
+W5      DD(BU,64), (16)0300000000000000
+W6      DD(BU,64), (16)0500000000000000
+W7      DD(BU,64), (16)FF00000000000000
+W8      DD(BU,64), (16)0000000000000000
+W9      DD(BU,64), (16)0308000000000000
+W10     DD(BU,64), (16)FF00000000000000
+W11     DD(BU,64), (16)FF00000000000000
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+I4      DD(BU,64), 0
+I5      DD(BU,64), 0
+I6      DD(BU,64), 0
+I7      DD(BU,64), 0
+I8      DD(BU,64), 0
+I9      DD(BU,64), 0
+I10     DD(BU,64), 0
+I11     DD(BU,64), 0
+J1      DD(BU,64), 0
+J2      DD(BU,64), 0
+J3      DD(BU,64), 0
+J4      DD(BU,64), 0
+K1      DD(BU,64), 0
+K2      DD(BU,64), 0
+K3      DD(BU,64), 0
+K4      DD(BU,64), 0
+K5      DD(BU,64), 0
+K6      DD(BU,64), 0
+K7      DD(BU,64), 0
+T5      DD(BU,64), 0
+T6      DD(BU,64), 0
+T7      DD(BU,64), 0
+
+        SLC, 1800.0
+A1      DD(BU,64), 0
+        DD(BU,64), 0
+A2      DD(BU,64), 0
+        DD(BU,64), 0
+A3      DD(BU,64), 0
+        DD(BU,64), 0
+A4      DD(BU,64), 0
+        DD(BU,64), 0
+C1      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+C2      DD(BU,64), 0
+        DD(BU,64), 0
+C3      DD(BU,64), 0
+        DD(BU,64), 0
+C4      DD(BU,64), 0
+        END, START

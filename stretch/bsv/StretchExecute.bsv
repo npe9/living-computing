@@ -3418,15 +3418,14 @@ function ActionValue#(VflOutcome)
               // add, since an unlike-signed one is a subtraction and
               // cannot carry out (decks/vfl_binary_add_indicators.strap
               // B5-B10).
-              Bit#(256) opndWide = zeroExtend(opnd.mag) << offSh;
-              Bool bPf = (opndWide >> 128) != 0;
-              SM128 opndSh = SM128 { sign: opnd.sign, mag: truncate(opndWide) };
+              // The rule is binAccAdd (StretchALU.bsv), shared with *+.
               SM128 acc = readAcc(st);
               // "assumed positive for purposes of the addition itself"
               SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
-              SM128 sum = smAdd(accUsed, opndSh);
-              Bit#(129) carrySum = zeroExtend(accUsed.mag) + zeroExtend(opndSh.mag);
-              Bool bLc = (accUsed.sign == opndSh.sign) && carrySum[128] == 1;
+              BinAccAdd ba = binAccAdd(accUsed, opnd, offSh);
+              SM128 sum = ba.sum;
+              Bool bLc = ba.lc;
+              Bool bPf = ba.pf;
               // "If the result is positive, the sum is placed into
               // the accumulator.  If the result is negative, the
               // entire accumulator is cleared to zero.  In either
@@ -3590,8 +3589,8 @@ function ActionValue#(VflOutcome)
             // -NUMBER OF IODS TO FACTOR REG" then "*I+,TFLLGN,46 -ADD
             // FILE AREA TABLE LENGHT".  Both set OP until 2026-11-06.
             //
-            // Lost Carry "as in ADD" is not modelled, as in this
-            // model's ADD.  Same prefetch/bail-out shape as + above.
+            // Lost Carry "as in ADD": binAccAdd, ADD's own rule, since
+            // 2026-11-16.  Same prefetch/bail-out shape as + above.
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -3634,13 +3633,21 @@ function ActionValue#(VflOutcome)
                 Bit#(96) a = zeroExtend(mcand[47:0]);
                 Bit#(96) b = zeroExtend(opnd.mag[47:0]);
                 Bit#(96) prod = a * b;
-                Bit#(256) wide = zeroExtend(prod) << offSh;
-                if ((wide >> 128) != 0) ind = setBit(ind, ind_PF, 1);
-                SM128 prodSh = SM128 { sign: ftSign ^ opnd.sign,
-                                       mag: truncate(wide) };
-                SM128 sum = smAdd(readAcc(st), prodSh);
-                writeAcc(st, sum);
-                ind = setResultIndicatorsF(ind, sum);
+                // "Lost Carry (LC).  In a binary operation, this
+                // indicator is set as in ADD" (printed p.69, read in the
+                // page image), and the product's PF "if the offset is
+                // such that significant bits of the product attempt to
+                // combine with accumulator positions to the left of the
+                // left end of the accumulator" -- ADD's PF, the product
+                // being the addend.  So the add is ADD's own rule,
+                // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
+                BinAccAdd ba = binAccAdd(readAcc(st),
+                                 SM128 { sign: ftSign ^ opnd.sign,
+                                         mag: zeroExtend(prod) }, offSh);
+                writeAcc(st, ba.sum);
+                ind = setResultIndicatorsF(ind, ba.sum);
+                if (ba.lc) ind = setBit(ind, ind_LC, 1);
+                if (ba.pf) ind = setBit(ind, ind_PF, 1);
               end
               // "To-Memory Operation (MOP) ... set as in ADD", and ADD
               // turns it off (p.60).
@@ -4035,11 +4042,15 @@ function ActionValue#(VflOutcome)
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
                   ind = setBit(ind, ind_MOP, 1);
-                  SM128 sum = smAdd(opnd, accSh);
-                  SM128 stored = magToMemory(magnitude, sum, opnd);
+                  // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
+                  BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
+                                           opnd, accSh, dNumBits);
+                  SM128 stored = bm.stored;
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
                                                     smToField(stored, len_, bsz, vi.m.unsign, raw)));
+                  if (bm.lc) ind = setBit(ind, ind_LC, 1);
+                  if (bm.pf) ind = setBit(ind, ind_PF, 1);
                   // "set according to the FINAL RESULT STORED"
                   // (p.62's Arithmetic Result line), which for M+MG
                   // is not always the sum.
@@ -4071,11 +4082,15 @@ function ActionValue#(VflOutcome)
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
                   ind = setBit(ind, ind_MOP, 1);
-                  SM128 sum = smAdd(opnd, accSh);
-                  SM128 stored = magToMemory(magnitude, sum, opnd);
+                  // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
+                  BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
+                                           opnd, accSh, dNumBits);
+                  SM128 stored = bm.stored;
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
                                                     smToField(stored, len_, bsz, vi.m.unsign, raw)));
+                  if (bm.lc) ind = setBit(ind, ind_LC, 1);
+                  if (bm.pf) ind = setBit(ind, ind_PF, 1);
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setResultIndicatorsF(ind, stored);
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -4337,6 +4352,17 @@ function ActionValue#(VflOutcome)
               end
             end
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              // DATA FLAGS, 2026-11-16 (this arm never set them).
+              // printed p.73 (PDF 76), LOAD CONVERTED, read in the page
+              // image: "Data Flags (TF, UF, VF); To-Memory Operation
+              // (MOP); Arithmetic Result (RLZ, RZ, RGZ, RN).  These
+              // indicators are set as in ADD"; printed p.72: "In a radix
+              // conversion operation using a storage operand, these
+              // indicators are set according to the data flag bits, if
+              // any, of the storage operand.  Any operation that
+              // normally affects these indicators will turn them off if
+              // the unsigned modifier is designated" -- fieldFlags.
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               if (vi.m.decimal == 0) begin
                 // BINARY TO DECIMAL, printed p.72's Radix: "If binary
                 // is specified, the storage operand is converted from
@@ -4421,6 +4447,15 @@ function ActionValue#(VflOutcome)
                 // exceeds 15 decimal digits ... Meaningless results
                 // are then obtained."
                 if (cvDigits > 15) ind = setBit(ind, ind_PF, 1);
+                // and p.73's FIRST PF sentence, which has no radix in it:
+                // "This indicator is actuated when significant bits of
+                // the converted field extend beyond the left end of the
+                // accumulator.  In such a case, the accumulator is filled
+                // up to its left end, and higher-order bits are lost."
+                // Until 2026-11-16 the decimal-to-binary direction tested
+                // only the fifteen digits.
+                if (((zeroExtend(cvVal) << offSh) >> 128) != Bit#(256)'(0))
+                  ind = setBit(ind, ind_PF, 1);
                 // "To-Memory Operation (MOP) ... set as in ADD", and
                 // ADD turns it off (p.60).
                 ind = setBit(ind, ind_MOP, 0);
@@ -4575,21 +4610,39 @@ function ActionValue#(VflOutcome)
                 match {.val, .nd} = bcdToBinary(valRaw, numBits, bsz);
                 payload = val; ndig = nd;
               end
-              Bit#(64) trDig  = truncate(payload);
+              // WHAT THE TRANSIT REGISTER HOLDS, printed p.73 (PDF 76),
+              // read in the page image: "If this occurs [a binary-to-
+              // decimal result over 15 digits] the result is placed in
+              // the transit register up to its left end.  In the latter
+              // case [a decimal-to-binary result over 48 bits], only the
+              // 48 low-order bits of the result are placed in the
+              // transit register."  Until 2026-11-16 the decimal-to-
+              // binary direction kept sixty bits and the result
+              // indicators read the untruncated value.
+              Bit#(128) trMag = payload & ((vi.m.decimal == 0)
+                                  ? 128'hFFFFFFFFFFFFFFF : 128'hFFFFFFFFFFFF);
+              Bit#(64) trDig  = truncate(trMag);
               Bit#(64) trSign = zeroExtend(sgn);
               st.writeWord(addrTransit, (trDig << 4) | (trSign << 3));
               // p.73: PF if a binary-to-decimal result exceeds 15
               // significant decimal digits, or a decimal-to-binary
-              // result exceeds 48 significant bits.
+              // result exceeds 48 significant bits -- "This indicator is
+              // also actuated if the storage field specified in a
+              // decimal-to-binary conversion exceeds 15 decimal digits.
+              // Meaningless results are then obtained" (that sentence
+              // was not tested until 2026-11-16; LCV's arm tested it).
               Bool pfTr = (vi.m.decimal == 0) ? (ndig > 15)
-                                              : ((payload >> 48) != 0);
+                                              : ((payload >> 48) != 0 || ndig > 15);
               if (pfTr) ind = setBit(ind, ind_PF, 1);
+              // Data flags "set as in ADD" (p.73), which this arm did
+              // not set until 2026-11-16 -- see LCV's arm.
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
               // "Arithmetic Result ... set according to the final
               // result in the TRANSIT REGISTER" -- not the
               // accumulator, which this operation never touches.
               ind = setResultIndicatorsF(ind,
-                      SM128 { sign: sgn, mag: payload });
+                      SM128 { sign: sgn, mag: trMag });
             end
           end
           6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /

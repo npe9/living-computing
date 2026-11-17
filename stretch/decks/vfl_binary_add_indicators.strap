@@ -93,6 +93,13 @@
 !      B7 (0x30000000040, LC from a dropped bit) and B8 (0x10000000020).
 !   i6 binary L never sets PF: FAILS B11 (0x20) only.
 ! The other two decks stayed green under i2-i6.
+! RE-MEASURED 2026-11-16 after the rule moved into binAccAdd
+! (StretchALU.bsv), which binary *+ now shares (decks/
+! vfl_binary_memadd_indicators.strap): i2 FAILS B5, B8, B9 as above AND
+! that deck's P1 (0x40), P3 (0x10000000020); i3 FAILS B6, B7, B8 as above
+! AND P3 (0x20000000020), P4 (0x40); i4 FAILS B10 AND P2 (0x20000000020);
+! i5 (now: carrySum's addend the WIDE operand's low 129 bits) FAILS B7, B8
+! as above AND P3 (0x10000000020), P4 (0x30000000040).  i6 is L's, unmoved.
 
         SLC, 1000.0
 START   L(B,16,8), N5
