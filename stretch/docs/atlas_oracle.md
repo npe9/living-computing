@@ -535,7 +535,11 @@ How each column fares:
   put it: "external with WB crossover (150000.74)8", bit 60. Before,
   the field started FL//2 bits before the boundary.
   - The 1,792 WB XOVR cases were re-run with the old placement.
-  - Every case gives the same model time to within 0.0004 clocks.
+  - Every case gives the same model time to within 0.0004 clocks. The
+    runs were joined row by row on (pdf, instr, block, row, column).
+  - The generated body does carry the new offset. For example, PDF 151
+    ST (D,64,4) is `ST(D,64,4), ATLE0+.60`; on PDF 124 it is
+    `ATLE0+.32`.
   - The reason: the model charges a crossover by the second word, not
     by where in the word the field starts.
   - The fix makes the cases faithful to the page, but it does not

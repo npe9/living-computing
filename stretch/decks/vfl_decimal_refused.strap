@@ -40,17 +40,19 @@
 ! and its target is checked for the value it must have, so the deck
 ! cannot pass by doing nothing at all.
 !
-! TIMING RE-PINNED 2026-11-16, every value check unchanged: 140 -> 163
-! clocks on the ST(D,32,8) form, and, merged with batch10's LFT(D,32,8)
-! form (161 under the old times), 161 -> 224.  LFT is charged PDF 122's
-! decimal figure, 66 clocks (19.81 us), against the refused ST's law below.
-! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
-! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
-! atlas prints for it (docs/atlas_oracle.md).  A refused decimal operation
-! is charged like a run one.  The signed decimal ST(D,32,8) is now ST's
-! law (PDF 124, 18 + 2 bytes): x = 32 - 8, y = 8, three bytes and the
-! sign's one, 26 clocks (PDF 124 prints no 8-bit decimal byte; its
-! (D,32,4) row is 10.21 us = 34 clocks at eight bytes).
+! TIMING RE-PINNED 2026-11-16, every value check unchanged. VFL E-box
+! time now depends on the operation: bsv/StretchTiming.bsv's eboxClocks
+! charges each operation the throughput Perf. Char. Vol. 2's atlas prints
+! for it (docs/atlas_oracle.md). A refused decimal operation is charged
+! like a run one.
+!   - While the refused form was ST(D,32,8), the pin went 140 -> 163.
+!     ST's law is PDF 124, 18 + 2 bytes: 26 clocks here.
+!   - On the LFT(D,32,8) form this deck now refuses, the pin was 161
+!     under the old generic times and is 224 now. The decimal LFT is
+!     charged PDF 122's decimal figure, 66 clocks (19.81 us). L(BU,32,8)
+!     is charged PDF 120 and the binary ST PDF 124.
+! The 224 is the measured count. The 63-clock rise was not taken apart
+! by operation.
 !
         SLC, (8)300.0
 START   L(BU,32,8), DATA1

@@ -164,7 +164,8 @@
 ! -> 1223 (new times); batch10's decimal case took the old-times figure
 ! to 997.  The srdRound injection below was re-run at 1223 (before the
 ! merge): FAIL cycles = 1183, 40 fewer -- ten SRDs at a nonzero offset
-! times 4 -- and nothing else; not re-run at 1246.
+! times 4 -- and nothing else.  Re-run at 1246 (2026-11-16, in a scratch
+! copy of the tree): FAIL cycles = 1206, again 40 fewer, and nothing else.
 
         SLC, 1000.0
 ! -- 1. round up ---------------------------------------------------

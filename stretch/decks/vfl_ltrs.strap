@@ -101,6 +101,9 @@
 !    (seven of the eight back-to-back LTRS, 8 clocks each; the first
 !    overlaps the transmits before it).  Measured BEFORE case 11 was added;
 !    not re-measured at 974 or at 1214.
+!  E (at 1214, 2026-11-16, in a scratch copy of the tree) binary LFT/LTRS
+!    charged 36 for PDF 123's 44: only CYCLES fails, 1143 for 1214, 71
+!    fewer.  Every other check passes.
 !
         SLC, 1000.0
 START   L(BU,64), ACCV
