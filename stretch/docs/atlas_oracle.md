@@ -1190,6 +1190,54 @@ fitted to the VFL pages, which would mean re-fitting the VFL E-box laws
 without the queuing, or the crossing-field arms, which belong to the
 G2.3 work.
 
+### 4. Immediate compares: the operand's own bytes cost nothing
+
+**Diagnosis.** `eboxClocks` charged KI, KRI, KEI, KFI, KFRI and KFEI like
+K, by the whole field length. PDF 177-182, plain block, read row by row:
+
+| Field | Printed |
+|---|---|
+| (BU,48,8) | 4.80 µs = 16 clocks |
+| (BU,64,8) | 6.00 µs = 20 |
+| (DU,48,4) | 6.60 µs = 22 |
+| (DU,64,4) | 9.00 µs = 30 |
+| (B,64,1) | 22 |
+| (D,64,4) | 30 |
+| any field up to 32 bits | 12, the preparation floor |
+
+That is 10 + 2(b − 24/y) clocks, the same for all six compares. It is K's
+law with the 24-bit address field's bytes taken out (three bytes in
+binary, six in decimal) and without K's full-word allowance.
+
+The immediate operand is the address field (Ref. Manual p.56), already in
+the level when the E-box starts. So only the accumulator bytes beyond it
+are stepped through. Nothing on the pages names this mechanism. The law
+is a measurement at the atlas's operands.
+
+**Not modelled: the INVERT SIGN blocks.** These are PDF 127-132 and
+177-182, which print 12 clocks unsigned and 14 signed at every length.
+Against the standard operand an inverted sign makes the signs unlike, and
+that decides the compare at once. `eboxClocks` sees no data, so charging
+every inverted compare that way would be a choice, not a measurement.
+
+| PDF | instr | before (n / exact / median / mean) | after |
+|---|---|---|---|
+| 177 | KI | 96 / 2 / +4.93 / +7.33 | 96 / 21 / +2.95 / +3.12 |
+| 178 | KRI | 96 / 2 / +4.93 / +7.33 | 96 / 21 / +2.95 / +3.12 |
+| 180 | KFI | 96 / 1 / +3.96 / +6.48 | 96 / 19 / +2.95 / +3.27 |
+| 182 | KFEI | 96 / 1 / +3.46 / +6.27 | 96 / 24 / +2.00 / +2.94 |
+| 127 | K (control) | 272 / 81 / +1.99 / +5.09 | unchanged |
+
+**What remains, about +2 to +3.** On these pages the remainder is the
+preparation floor: the 7030 prints 12, and the model cannot go below 14,
+which is `iboxCycles`' VFL decode. The cause is that `ibusy` counts down
+only in `rl_prepare`'s first arm, so a 3.6 µs decode becomes 2 + 12
+clocks. That one cause also gives L's +2 on the FP EXTERNAL columns
+(item 1). It is open.
+
+No CYCLES pin and no result moved. The subsets were run together with
+item 6.
+
 ### 6. SHF's shift amount
 
 **Diagnosis.** Table 2 (Vol. 1 printed p.3-4, PDF 22) charges SHF "4

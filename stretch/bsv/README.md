@@ -1031,6 +1031,16 @@ gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
 get the documented events only, because PDF 69 prints M+ below ST.
 `docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
 
+### Immediate compares (2026-11-17)
+
+`eboxClocks` now charges the six immediate compares (KI ... KFEI)
+10 + 2(b − 24/y). That is K's law without the bytes of the 24-bit
+immediate field, which is already in the level, and without the full-word
+allowance. The law is read off PDF 177-182, and the mean residual went
+from +7 to +3. The inverted-sign blocks (12/14 clocks at any length) are
+not modelled, because `eboxClocks` sees no data. `docs/atlas_oracle.md`
+"Closing the residuals", item 4.
+
 ### SHF's shift amount (2026-11-17)
 
 `eboxClocks` charges SHF Table 2's 4 cycles plus 1 for each further shift

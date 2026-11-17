@@ -409,6 +409,31 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         // Anything else (no other code is a VflInt operation): L's law.
         default: e = 12 + 2 * b;
       endcase
+      // >>> AN IMMEDIATE COMPARE'S OWN BYTES COST NOTHING, 2026-11-17. <<<
+      // Measured by tests/atlas_oracle.py (docs/atlas_oracle.md, "Closing
+      // the residuals", item 4); the law is read row by row off the pages
+      // and is a measurement at the atlas's operands.  PDF 177-182 (KI KRI
+      // KEI KFI KFRI KFEI), plain block: (BU,48,8) 4.80 us = 16, (BU,64,8)
+      // 6.00 = 20, (DU,48,4) 6.60 = 22, (DU,64,4) 9.00 = 30, (B,64,1) 22,
+      // (D,64,4) 30, every field to 32 bits at the preparation floor (12
+      // printed; the model's floor is 14, iboxCycles' VFL decode).  Row for
+      // row that is 10 + 2 (b - 24 / y): K's law with the bytes of the
+      // 24-bit address field taken out -- three bytes binary, six decimal
+      // -- and without K's full-word allowance, for all six compares alike.
+      // The operand is "the address field" (Ref. Manual p.56, as quoted in
+      // strap_asm.py's encode_vfl_immediate), already in the level when
+      // the E-box starts, so only the accumulator bytes beyond it are
+      // stepped through.  The INVERT SIGN blocks (PDF 127-132, 177-182:
+      // 12 clocks unsigned, 14 signed, at every length) are NOT modelled
+      // here: eboxClocks sees no data, and charging every inverted compare
+      // as decided at the sign would be a choice, not a measurement.
+      Bool kFamily = (v.code == 6'b010001 || v.code == 6'b010011 || v.code == 6'b010101
+                   || v.code == 6'b110001 || v.code == 6'b110011 || v.code == 6'b110101);
+      if (kFamily && v.a.p == 4) begin
+        Bit#(16) imm = dec ? 24 / zeroExtend(bsz) : 3;
+        e = 10 + 2 * ((b > imm) ? b - imm : 0);
+      end
+
       // SRD (VFL STORE ROUNDED, code 101101).  Table 3 (Vol. 1 printed
       // p.3-7, PDF 25, read in the image) gives it ST's execution and
       // termination, .6(x/y) and .6, and a pre-execution time of 3.0 us
