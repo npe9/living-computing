@@ -1012,6 +1012,81 @@ measured. Re-pinned after the merge, every result check unchanged:
 - The INVERT SIGN blocks' unlike-sign terms, which depend on the data.
 - The 12-clock preparation floor of K and CT. The model's floor is 14.
 
+### FP operands are fetched by the look-ahead (2026-11-17)
+
+`StretchIBox.bsv`'s `fetchesOperand` was True for FP L only, from the
+look-ahead's first cut (stage 3a), when L was the one FP operation built.
+Every other fetching FP operation was loaded into a level with no operand
+address, and the E-box read its operand at removal, in series with
+execution. `fpFetches` now names them all: every operation `execute()`'s
+Fp arm reads a word for, which is all but ST, SRD, SLO, SRT, SHF and E+I.
+`prepareExec` uses the same list. Measured by `tests/atlas_oracle.py`
+(`docs/atlas_oracle.md`, "Closing the residuals", item 1): PDF 42 (+) from
+mean +4.79 to −0.27 clocks, PDF 65 (LWF) from +4.65 to +0.47. No result
+check changed and no CYCLES pin moved.
+
+### The LAAR, for floating point (2026-11-17)
+
+Perf. Char. Vol. 1 printed pp.3-20/3-21 give the 7030 one look-ahead
+address register. It is busy from the loading of a store level until the
+store operand "is available, is fetched, checked, and accepted by the
+MBCU". An internal-operand fetch (address 3 or 5-12) also takes it. A
+second instruction that needs it waits at decoding. A store into index
+storage stops all decoding until the new contents arrive. Vol. 2 PDF 41
+names this queuing as the reason the FP "to memory" pages are the worst
+case. PDF 104's environmental test shows that a ST with three adds between
+costs nothing extra.
+
+What the model now does:
+
+- `StretchCore.bsv` gates the loading of an FP level that stores, or
+  fetches an internal register, on `laarHeldByLevel`, `laarFreeAt` and
+  `st.storesPending()`.
+- `laarRetire` sets the release: E-box time, plus the I-Checker's 0.6 µs
+  (`laarCheckClocks`, printed p.3-19).
+- For ST, SRD, SLO and SRT it adds `laarStorePost`. That is a fit on PDF
+  48 alone, one number per destination: memory 9, index 17, $R 5. It was
+  held out on PDF 49-51 and lands within 1 clock (EXTERNAL) and 3 (I-BOX).
+- `xstoreFreeAt` extends `storeWait` to the same instant for a store into
+  index storage, in every class.
+- A wait for the E-box before a look-ahead fetch of words 7-15 was tried
+  and not kept: it is weakly sourced and gained about a clock. The PAST T
+  MOVE failure once blamed on it came from the shared `/tmp` tape file
+  that concurrent MCP runs overwrite. With a private `STRETCH_TAPE` the
+  same tree passes.
+
+The VFL and connective levels do not take the LAAR. Their E-box charges
+are fits to back-to-back pages that already contain the queuing, and
+gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
+get the documented events only, because PDF 69 prints M+ below ST.
+`docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
+
+### An indexed FP I-box operand (2026-11-17)
+
+An FP fetch from index storage (words 16-31) with an index now costs 2
+more preparation clocks (`fpIndexedIboxClocks`). The index register and
+the operand are two reads of index storage in turn, at 0.6 µs each
+(printed p.3-18). The I-BOX indexed columns of PDF 42, 64, 65, 73 and 95
+went from −2.02 to −0.02.
+
+### Immediate compares (2026-11-17)
+
+`eboxClocks` now charges the six immediate compares (KI ... KFEI)
+10 + 2(b − 24/y). That is K's law without the bytes of the 24-bit
+immediate field, which is already in the level, and without the full-word
+allowance. The law is read off PDF 177-182, and the mean residual went
+from +7 to +3. The inverted-sign blocks (12/14 clocks at any length) are
+not modelled, because `eboxClocks` sees no data. `docs/atlas_oracle.md`
+"Closing the residuals", item 4.
+
+### SHF's shift amount (2026-11-17)
+
+`eboxClocks` charges SHF Table 2's 4 cycles plus 1 for each further shift
+of 4, plus 1 for execution: 5 + n/4 for an amount n. It used to charge
+the add class's flat 5. PDF 72 is now exact at shifts of 1, 3, 6, 9 and
+95, and +0.5 at 12, where the page prints 8.5. An indexed amount is not
+seen (`eboxClocks` gets the decoded instruction).
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED

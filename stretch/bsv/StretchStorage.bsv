@@ -130,6 +130,11 @@ interface StretchStorage;
   // waits -- the same stall rl_xmit's multi-word transfer uses, for
   // the same reason: one more writer would have nowhere to go.
   method Bool storeTailPending();
+  // A store the MBCU has not yet accepted: queued, or a crossing
+  // field's tail still held.  The LAAR stays busy until "the proper
+  // operand ... is fetched, checked, and accepted by the MBCU" (Perf.
+  // Char. Vol. 1 printed p.3-20); StretchCore's laarBusy reads this.
+  method Bool storesPending();
 
   // Indicators: read the current 64-bit indicator word, or replace it
   // wholesale. An instruction that changes several indicator bits must
@@ -901,6 +906,10 @@ module mkStretchStorage(StretchStorage);
 
   method Bool storeTailPending();
     return isValid(storeTail);
+  endmethod
+
+  method Bool storesPending();
+    return storeQ.notEmpty || isValid(storeTail);
   endmethod
 
   method Action writeWord(WordAddr a, Word64 v);

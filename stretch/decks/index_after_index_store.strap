@@ -41,6 +41,17 @@
 ! atlas prints for it (docs/atlas_oracle.md).  Its VFL loads and stores went
 ! from 24 E-box clocks each to L 28 (PDF 120) and ST 32 (PDF 124) at
 ! (BU,64).
+!
+! TIMING RE-PINNED 2026-11-17, 1248 -> 1479 clocks, every value check unchanged.
+! A store into index storage now holds decoding until the store is done,
+! not until its level is removed: Perf. Char. Vol. 1 printed p.3-21, "the
+! I-box does no further decoding until the new index contents arrives"
+! (bsv/StretchCore.bsv xstoreFreeAt, set by laarRetire to the E-box time
+! plus the 0.6 us check, StretchTiming's laarCheckClocks).  The model
+! commits a level's result at removal and charges its E-box time after,
+! so the old release came that E-box time early.
+! Seven VFL ST(BU,64) into $X3, 33 clocks each (ST's 32 E-box clocks
+! plus the removal clock): 7 x 33 = 231.
         SLC, (8)2000.0
 START   NOP
 ! ---- PN: no slow level ahead: only the load of XW1 delays the store

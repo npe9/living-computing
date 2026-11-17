@@ -57,10 +57,39 @@ function Bool fetchesOperand(DecodedInstr d);
     // of 8 -- the accumulator's own word. See docs/ebox_roadmap.md.
     tagged VflInt .v: return v.a.p != 4 && v.code != 6'b011011;
     tagged Connective .c: return c.a.p != 4;
-    tagged Fp .f: return f.code == fpop_L;   // FP L; ST fetches nothing
+    // >>> EVERY FLOATING-POINT OPERATION BUT THE STORE CLASS FETCHES,
+    // 2026-11-17. <<<  This said `f.code == fpop_L` from the first cut
+    // of the look-ahead (stage 3a, 2026-09-03), when L was the one FP
+    // operation the E-box executed; the other 22 fetching operations
+    // were built later and never added.  So an FP +, K, `*`, LWF, DL ...
+    // was loaded into a level with NO operand address, and the E-box,
+    // finding none at removal, bailed, issued the read itself and waited
+    // for it (rl_exec_resume): a memory access in SERIES with execution,
+    // where the machine's look-ahead fetches the operand while earlier
+    // levels execute.  Perf. Char. Vol. 1 printed p.3-17's preparation
+    // and the look-ahead's purpose (Buchholz ch.15) are the same for FP
+    // as for VFL.  Measured by tests/atlas_oracle.py (docs/atlas_
+    // oracle.md, "Floating point", item 1): + from memory 15.5 clocks a
+    // copy against PDF 42's 5.5-6, L (which did fetch ahead) 6.4.
+    // fpFetches is execute()'s own split -- every known FP operation but
+    // fpStoreClass's six reads its storage word first (StretchExecute's
+    // Fp arm, `isStoreClass`).
+    tagged Fp .f: return fpFetches(f.code);
     default: return False;
   endcase
 endfunction
+
+// The floating-point operations that read their storage operand: every
+// one execute() knows except the store class (ST, SRD, SLO, SRT) and the
+// two whose "address" is an immediate (SHF, E+I; Ref. Manual pp.101-102).
+function Bool fpFetches(Bit#(7) c) =
+     c == fpop_PLUS || c == fpop_PLUS_MG || c == fpop_L || c == fpop_LWF
+  || c == fpop_M_PLUS || c == fpop_M_PLUS_MG
+  || c == fpop_K || c == fpop_KMG || c == fpop_KR || c == fpop_KMGR
+  || c == fpop_STAR || c == fpop_D_STAR || c == fpop_LFT || c == fpop_STAR_PLUS
+  || c == fpop_SLASH || c == fpop_D_SLASH || c == fpop_R_SLASH
+  || c == fpop_E_PLUS || c == fpop_DL || c == fpop_DLWF
+  || c == fpop_D_PLUS || c == fpop_D_PLUS_MG || c == fpop_F_PLUS;
 // >>> ONE PURE DERIVATION OF AN INSTRUCTION'S ADDRESSES. <<<
 //
 // `prepareExec` is the beginning of the prepared bundle
@@ -179,8 +208,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
                  || (f.code == fpop_M_PLUS_MG) || (f.code == fpop_SRD)
                  || (f.code == fpop_SLO) || (f.code == fpop_SRT);
       return PreparedExec {
-        // FP L only; ST fetches nothing.
-        operandAddr: (f.code == fpop_L) ? tagged Valid w : tagged Invalid,
+        // Every fetching operation (fpFetches above); the store class
+        // and the two immediates fetch nothing.
+        operandAddr: fpFetches(f.code) ? tagged Valid w : tagged Invalid,
         storeAddr:   stores             ? tagged Valid w : tagged Invalid,
         storeAddr2:  tagged Invalid,
         completesWithoutFetch: dfSuppresses(st, w) || !installed(w) };
@@ -448,6 +478,66 @@ endfunction
 // hexagon tests "W", the word address; the pages do not draw a crossing
 // store's second word, and the model stalls for it rather than let a
 // younger instruction read the register before the store's tail lands.
+// >>> THE LOOK-AHEAD ADDRESS REGISTER, 2026-11-17. <<<  Perf. Char.
+// Vol. 1 printed pp.3-20/3-21 (PDF 38-39, read in the page images),
+// "The LAAR, Stores and Internal Operand Fetches":
+//   "The look-ahead address register (LAAR) is created for the purpose
+//   of containing the store address." ... "the LAAR will remain 'busy'
+//   from the time of look-ahead loading until the proper operand is
+//   available, is fetched, checked, and accepted by the MBCU."
+//   "The I-box, upon decoding an instruction whose fetch operand is an
+//   internal register, uses the LAAR to store the internal operand
+//   address. ... Unlike a standard store, no memory bus request is
+//   needed, and the LAAR is freed sooner."  "(By an internal operand
+//   address is meant address 3, or an address between 5 and 12
+//   inclusive.)"
+//   "Since there is only one LAAR, if the latter is busy whenever the
+//   I-box decodes an instruction requiring LAAR, a wait must occur until
+//   the LAAR is free for reloading."
+// So two kinds of level hold it: a STORE level (any storeAddr -- memory,
+// index storage or an internal register) until its operand has been
+// produced, checked and accepted (StretchCore's laarFreeAt and
+// st.storesPending()), and an INTERNAL-FETCH level until its operand
+// has arrived (`data` Valid).  A branch level holds nothing.
+//
+// >>> MODELLED FOR FLOATING POINT ONLY, and why. <<<  The VFL and
+// connective E-box charges (StretchTiming's eboxClocks, VflInt and
+// Connective arms) are FITS to the atlas's back-to-back occupancy, the
+// NO FORWARDING EXTERNL column of each page; a homogeneous run of VFL
+// stores already queues for the LAAR (Vol. 2 PDF 41: "Repeated 'to
+// memory' operations lead to queuing for the LAAR"), so its queuing is
+// inside those fits.  Gating VFL levels as well counted it twice:
+// measured, VFL ST (PDF 124) EXTERNL went from -0.07 to +11.93 clocks.
+// The FP charges are Table 2's pre-execution + execution and contain no
+// store path, so for FP the LAAR is modelled.
+function Bool laarInternal(WordAddr a) = (a == 3 || (a >= 5 && a <= 12));
+
+function Bool isFpInstr(DecodedInstr d);
+  case (d) matches
+    tagged Fp .*: return True;
+    default: return False;
+  endcase
+endfunction
+
+function Bool laarHeldByLevel(Vector#(4, LaLevel) lv);
+  Bool r = False;
+  for (Integer k = 0; k < 4; k = k + 1)
+    if (lv[k].valid && !lv[k].branch && isFpInstr(lv[k].di)) begin
+      if (isValid(lv[k].storeAddr)) r = True;
+      if (lv[k].da matches tagged Valid .a &&& laarInternal(a) &&& !isValid(lv[k].data))
+        r = True;
+    end
+  return r;
+endfunction
+
+// Does preparing this level need the LAAR?  (Its own derivation: the
+// store address prepareExec gives, or the operand address it fetches.)
+function Bool needsLaar(Maybe#(WordAddr) storeAddr, Maybe#(WordAddr) da);
+  Bool r = isValid(storeAddr);
+  if (da matches tagged Valid .a &&& laarInternal(a)) r = True;
+  return r;
+endfunction
+
 function Bool storeWaitWord(WordAddr w) = (w == 11 || w == 12 || (w >= 16 && w <= 31));
 
 function Bool storeWait(Vector#(4, LaLevel) lv);

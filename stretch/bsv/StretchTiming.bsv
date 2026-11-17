@@ -76,6 +76,46 @@ import StretchVFL::*;      // effLength/effByteSize for the VFL time budget
 Integer oscPulseNumer = 24;      // ticks        -- exactly, per p.34/p.35
 Integer oscPulseDenom = 78125;   // model clocks -- and Perf. Char. p.3-2
 
+// THE I-CHECKER'S TIME, the one documented number in the LAAR's release
+// (StretchCore's laarRetire).  Perf. Char. Vol. 1 printed p.3-19 (PDF
+// 37): "The I-Checker is shared between the I-box and LA. It processes
+// in- formation in 0.6 us and is used for ... 5. Store operand error
+// check and check code conversion."  0.6 us = 2 clocks.
+Integer laarCheckClocks = 2;
+
+// >>> THE FP STORE PATH AFTER THE CHECK: A FIT, ONE NUMBER PER
+// DESTINATION, 2026-11-17. <<<  The LAAR stays busy "until the proper
+// operand is available, is fetched, checked, and accepted by the MBCU"
+// (Vol. 1 printed p.3-20), and repeated stores queue for it (Vol. 2 PDF
+// 41, printed 34D: "Repeated 'to memory' operations lead to queuing for
+// the LAAR, and the present measurements on these instructions actually
+// refer to the worst possible situations").  PDF 104's environmental
+// test confirms it is queuing and not the store's own cost: ST(U) prints
+// 4.82 us alone, 2.51 us averaged with ONE + between stores (5.02 us a
+// pair, the same LAAR period), and 1.73 with three, where the effective
+// store time goes negative -- p.3-21's "three or more time consuming
+// instructions in between".
+//
+// The model's events (E-box done, the 0.6 us check, the MBCU taking the
+// word: laarRetire) put FP ST at 7 clocks a copy where PDF 48 prints 16;
+// the remainder is not on any page, so it is FITTED, on PDF 48 alone
+// (FP ST, no forwarding), one number per destination, at the model as of
+// this change: memory 9 (EXTERNAL, 16.00 printed), index storage 17
+// (I-BOX, 24.17), internal register 5 (PDF 79's $R column, 12.03).
+// The held-out pages are SRD, SLO and SRT (PDF 49-51) and SLO with
+// forwarding (PDF 80, its $R column too; 81-82 not run).  Table 2's
+// charge differs by up to 105 clocks across them, while the measured
+// residual stays within a clock (EXTERNAL, $R) and three (I-BOX)
+// (docs/atlas_oracle.md, "Closing the residuals", item 2).
+// Applied to the non-fetching FP stores only: a fetch-and-store (M+,
+// M+MG) prints LESS than ST (PDF 69: 15.42 against 16.00) with two more
+// E-box cycles, so its store path is not this one, and it gets the
+// documented events alone.
+function Bit#(8) laarStorePost(WordAddr a) =
+  (a >= 16 && a <= 31) ? 17
+  : (a == 3 || (a >= 5 && a <= 12)) ? 5
+  : 9;
+
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
     tagged DirIndex .x: return case (x.code)
@@ -104,6 +144,30 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
     tagged IoOp .*: return 6;
     default: return 3;
   endcase
+endfunction
+
+// >>> AN INDEXED FP OPERAND IN INDEX STORAGE COSTS ONE MORE I-BOX CYCLE,
+// 2026-11-17. <<<  Every fetching FP page of the atlas (PDF 42-101)
+// prints its I-BOX column 0.6 us higher with indexing than without --
+// + (PDF 42) 1.81 against 2.41 us, L (PDF 64) the same -- while its
+// EXTERNAL column does not move: "Address indexing has no measurable
+// effect on the timing of floating point instructions" (Vol. 1 printed
+// p.3-17) is a statement about memory operands.  An I-box operand is in
+// index storage, the same store the index register is read from, so the
+// indexed address and the operand are two reads of it in turn, and the
+// operand read is made at decoding ("I-box operand fetches are made
+// when the instruction is decoded", printed p.3-23 item 4).  The 0.6 us
+// is p.3-18's: "each indexing operation requires 0.6 us" (written of
+// VFL decoding, which iboxCycles charges as +1 cycle).  A memory
+// operand's fetch is made by the look-ahead after decoding and its
+// latency hides the cycle, which is why the EXTERNAL columns show none.
+// Charged on a fetch only (a store into index storage indexed prints
+// +0.3 us, PDF 48, a different path).
+function Bit#(16) fpIndexedIboxClocks(DecodedInstr d, Maybe#(WordAddr) da);
+  Bit#(16) r = 0;
+  if (d matches tagged Fp .f &&& f.idx != 0 &&& da matches tagged Valid .a &&& a >= 16 &&& a <= 31)
+    r = 2;
+  return r;
 endfunction
 
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
@@ -178,9 +242,26 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       (f.code == 7'd78) ? 19 :
       // SRT(110): 2 + 106
       (f.code == 7'd110) ? 108 :
+      // SHF(114): Table 2 (printed p.3-4, PDF 22) "4 cycles (shift
+      // <= 3) / 1 cycle for each additional shift of 4" pre-execution,
+      // "1 cycle" execution -- 5 + ceil((n - 3) / 4) for n > 3, which is
+      // 5 + n / 4 for every n.  2026-11-17: SHF used to take the add
+      // class's flat 5, and the atlas's PDF 72 (SHIFT 1 ... SHIFT 95)
+      // measured the missing term: 6, 6, 7, 8, 8.5, 29 clocks printed
+      // against a flat 6 (docs/atlas_oracle.md).  With the term the
+      // model gives 6, 6, 7, 8, 9, 29 (the charge plus the removal
+      // clock).  The amount is effective-address bits 0-10 (Ref. Manual
+      // p.102, as execute()'s SHF arm reads it, ea[17:7]); this reads it
+      // off the address AS DECODED, because eboxClocks is handed the
+      // level's instruction before its indexing is carried in
+      // (rl_au_remove's `h.di`), so an INDEXED shift amount is not seen
+      // here -- every atlas SHF is indexed by $X5 = 0 or not at all.  No
+      // cap: Table 2 states none, and a shift past 96 bits is charged
+      // as the table's law gives it.
+      (f.code == fpop_SHF) ? 5 + zeroExtend(f.addr[17:7]) / 4 :
       // The ADD class and everything sharing its shape: + (2),
       // +MG(34), M+(10), M+MG(42), K(18), KMG(50), KR(22),
-      // KMGR(54), D+(66), D+MG(98), F+(82), SHF(114).  4 + 1.
+      // KMGR(54), D+(66), D+MG(98), F+(82).  4 + 1.
       5;
     tagged VflInt .v: begin
       // >>> THE E-BOX TIME OF A VFL OPERATION DEPENDS ON THE OPERATION,
@@ -336,10 +417,15 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         // double (DCV) the accumulator was originally +1 at offset 20"
         // (PDF 113).  CV 6.00 us = 20 binary, 22.14 = 73.8 decimal; DCV
         // 6.00 = 20 binary, 5.40 = 18 decimal, at every row.  FITTED TO
-        // THE PAGE AND NOT MEASURABLE BY THE ORACLE (atlas_oracle.py has
-        // no CV/DCV generator), and a measurement at that one
-        // accumulator: Table 3's s is "the accumulator field specified by
-        // the offset minus all leading zeros" (printed p.3-9, p.3-10).
+        // THE PAGE, and a measurement at that one accumulator: Table 3's
+        // s is "the accumulator field specified by the offset minus all
+        // leading zeros" (printed p.3-9, p.3-10).  atlas_oracle.py has had
+        // a CV/DCV generator since 2026-11-16 (docs/atlas_oracle.md, "CV /
+        // DCV, ACCUM. OPERAND"): on PDF 138, 139, 165 and 166 all 384 cases
+        // are within +0.19 clocks (the decimal CV rows: 73.8 printed, a
+        // whole 74 charged).  That confirms the generator reproduces the
+        // conditions this was fitted under; it is not an independent
+        // measurement.
         6'b011011: e = dec ? 74 : 20;
         6'b111011: e = dec ? 18 : 20;
         // (DCV executes since 2026-11-16 -- G2.3, mkCvtBox, whose 6 and 4
@@ -349,6 +435,31 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         // Anything else (no other code is a VflInt operation): L's law.
         default: e = 12 + 2 * b;
       endcase
+      // >>> AN IMMEDIATE COMPARE'S OWN BYTES COST NOTHING, 2026-11-17. <<<
+      // Measured by tests/atlas_oracle.py (docs/atlas_oracle.md, "Closing
+      // the residuals", item 4); the law is read row by row off the pages
+      // and is a measurement at the atlas's operands.  PDF 177-182 (KI KRI
+      // KEI KFI KFRI KFEI), plain block: (BU,48,8) 4.80 us = 16, (BU,64,8)
+      // 6.00 = 20, (DU,48,4) 6.60 = 22, (DU,64,4) 9.00 = 30, (B,64,1) 22,
+      // (D,64,4) 30, every field to 32 bits at the preparation floor (12
+      // printed; the model's floor is 14, iboxCycles' VFL decode).  Row for
+      // row that is 10 + 2 (b - 24 / y): K's law with the bytes of the
+      // 24-bit address field taken out -- three bytes binary, six decimal
+      // -- and without K's full-word allowance, for all six compares alike.
+      // The operand is "the address field" (Ref. Manual p.56, as quoted in
+      // strap_asm.py's encode_vfl_immediate), already in the level when
+      // the E-box starts, so only the accumulator bytes beyond it are
+      // stepped through.  The INVERT SIGN blocks (PDF 127-132, 177-182:
+      // 12 clocks unsigned, 14 signed, at every length) are NOT modelled
+      // here: eboxClocks sees no data, and charging every inverted compare
+      // as decided at the sign would be a choice, not a measurement.
+      Bool kFamily = (v.code == 6'b010001 || v.code == 6'b010011 || v.code == 6'b010101
+                   || v.code == 6'b110001 || v.code == 6'b110011 || v.code == 6'b110101);
+      if (kFamily && v.a.p == 4) begin
+        Bit#(16) imm = dec ? 24 / zeroExtend(bsz) : 3;
+        e = 10 + 2 * ((b > imm) ? b - imm : 0);
+      end
+
       // SRD (VFL STORE ROUNDED, code 101101).  Table 3 (Vol. 1 printed
       // p.3-7, PDF 25, read in the image) gives it ST's execution and
       // termination, .6(x/y) and .6, and a pre-execution time of 3.0 us

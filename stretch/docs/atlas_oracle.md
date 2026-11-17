@@ -1012,6 +1012,299 @@ direct pages carry over. **The systematic residuals:**
 3. **`*I+` is short by 2-14 clocks above 8 bits**: the 7030 grows with
    the field (13.80 → 22.21 µs), the model flattens at 60-62 clocks.
 
+## Closing the residuals (2026-11-17)
+
+The open items of "The new generators: residuals" were taken in order of
+cells. Each change is measured with `--pdf` on the pages it affects, against
+a baseline of this branch with `batch14` merged and no `bsv/` change. The
+baseline was re-measured on the same pages, not copied from the tables
+above. Each row gives n, exact (|r| ≤ 0.1), median and mean of the residual
+in clocks. Result checks (every PASS/FAIL line of the CYCLES sections, the
+VFL/FP sections, the look-ahead decks, the MCP bootstrap and P1 deck, the
+smoke test and `la_levels.py`, 165 sections) were compared line by line
+against the same baseline after each change.
+
+### 1. FP operands are fetched by the look-ahead
+
+**Diagnosis.** `StretchIBox.bsv`'s `fetchesOperand` returned True for one
+FP operation, L. That was right when the look-ahead was first built
+(stage 3a, 2026-09-03, commit `67140c1`): L was then the only FP operation
+the E-box executed, and the other 22 fetching operations were built later
+without being added. So an FP +, K, `*`, LWF, DL, M+ and so on was loaded
+into a level with no operand address. At removal the E-box found no
+operand, bailed, issued the read itself and waited for it
+(`rl_exec_resume`). The memory access ran in series with execution. On the
+7030 the look-ahead fetches the operand while earlier levels execute
+(Perf. Char. Vol. 1 printed p.3-17: "floating point instructions are E-box
+limited"). The I-BOX column was serial too, which is why its +1 also went.
+
+**Fix.** `fpFetches` lists the operations `execute()`'s Fp arm reads a word
+for: everything except the store class (ST, SRD, SLO, SRT) and the two
+immediates (SHF, E+I). `fetchesOperand` and `prepareExec` now use it.
+
+| PDF | instr | before n / exact / median / mean | after |
+|---|---|---|---|
+| 42 | + | 128 / 0 / +4.46 / +4.79 | 128 / 28 / −0.02 / −0.27 |
+| 65 | LWF | 128 / 0 / +5.15 / +4.65 | 128 / 32 / +0.97 / +0.47 |
+| 64 | L (control: L already fetched ahead) | 128 / 32 / +0.97 / +0.47 | unchanged, 0 cases moved |
+| 73 | + (forwarding) | 192 / 0 / −0.78 / +0.52 | 192 / 28 / −1.78 / −2.31 |
+| 95 | L (forwarding, control) | 192 / 32 / −1.02 / −1.35 | unchanged |
+| 48, 79 | ST (stores nothing ahead, control) | 128 / 0 / −13.88 / −14.13; 192 / 0 / −6.30 / −10.32 | unchanged |
+| 69 | M+ | 128 / 31 / −10.06 / −11.20 | 128 / 0 / −14.80 / −15.94 |
+| 100 | M+ (forwarding) | 192 / 0 / −11.05 / −9.40 | 192 / 0 / −12.05 / −10.07 |
+
+- PDF 42's EXTERNAL column goes from +9.70 to +0.59 (mean), and its I-BOX
+  column from +0.79 to −0.21 (28 of 32 exact). PDF 73's EXTERNAL column with
+  forwarding goes from +7.47 to +0.98.
+- **M+ got worse, and that is the next item.** Its memory read had been
+  hiding the store's cost: with the read overlapped, M+ (EXTERNAL) is now
+  8.4 clocks short instead of exact.
+- The forwarding pages' INTERNAL column moves by one clock the wrong way
+  (+ −5.98 → −6.98). Item 3 is about that column.
+- Result checks: no PASS/FAIL line changed and no CYCLES pin moved. Two
+  bounded figures fell: "Floating point: L / * / + / ST" 84 → 69 and
+  "Floating point: E+ / E+I / SHF" 88 → 85 clocks, both under bounds of
+  100,000.
+
+### 2. The look-ahead address register (LAAR), for floating point
+
+**What the sources say** (read in the page images):
+
+- Vol. 1 printed pp.3-20/3-21 (PDF 38-39), "The LAAR, Stores and Internal
+  Operand Fetches":
+  - "the LAAR will remain 'busy' from the time of look-ahead loading until
+    the proper operand is available, is fetched, checked, and accepted by
+    the MBCU."
+  - An internal operand (address 3 or 5-12) also takes the LAAR, "and the
+    LAAR is freed sooner."
+  - "Since there is only one LAAR, if the latter is busy whenever the I-box
+    decodes an instruction requiring LAAR, a wait must occur."
+  - "A store into index storage is a time-consuming operation. ... the
+    I-box does no further decoding until the new index contents arrives."
+- Vol. 2 PDF 41 (printed 34D): "Repeated 'to memory' operations lead to
+  queuing for the LAAR, and the present measurements on these instructions
+  actually refer to the worst possible situations."
+- Vol. 2 PDF 104, the environmental test, shows that this is queuing and
+  not the store's own cost:
+  - ST(U) prints 4.82 µs (16 clocks) alone.
+  - With one + between stores it prints 2.51 µs averaged, which is still
+    one 16-clock LAAR period per store.
+  - With three + between, it prints 1.73 µs, and the effective store time
+    is negative. That is p.3-21's "three or more time consuming
+    instructions in between".
+- Vol. 1 printed p.3-19: the I-Checker "processes information in 0.6 µs"
+  and does the "store operand error check".
+
+**The model before.** It had no LAAR. A store level retired at removal,
+and the next store was loaded as soon as the I-box had prepared it.
+`storeWait` held preparation only while a level storing into index storage
+was pending.
+
+**The change** (`StretchCore.bsv` `laarRetire` and the gate in
+`rl_prepare`, `StretchIBox.bsv` `laarHeldByLevel` / `needsLaar`,
+`StretchTiming.bsv` `laarCheckClocks` / `laarStorePost`,
+`StretchStorage.bsv` `storesPending`):
+
+- An FP level that stores, or that fetches an internal register, is not
+  loaded while another level holds the LAAR or a store is still queued for
+  the MBCU.
+- A store releases the LAAR when its E-box time is over, after the 0.6 µs
+  check (documented) and, for the FP stores that fetch nothing (ST, SRD,
+  SLO, SRT), after a fitted remainder per destination.
+- A store into index storage holds all decoding until the same instant,
+  for every class.
+- **Tried and not kept: a wait for the E-box before fetching an E-box
+  register (words 7-15).** The model commits a result at removal and only
+  charges its time afterwards, so the fetch of, say, $IND can be made
+  while the 7030 would still be executing. The gate gained about a clock
+  on one column. It moved five VFL CYCLES pins by 1-13 clocks, and its only
+  source is an inference from p.3-20. So it was left out.
+  - It was first withdrawn because a parallel run failed PAST T MOVE
+    (XERR26 instead of XERR29). Re-run on its own with a private
+    `STRETCH_TAPE`, the same tree passes: XERR29, 6,442,397 steps.
+  - The failure came from the test harness: `run_mcp_assign_test.sh`
+    defaults to `/tmp/mcp.assign.tape` and the other MCP runners to
+    `/tmp/mcp.tape`. Those are shared by every concurrent run on the
+    machine, in every worktree, and a run that regenerates the tape under
+    another one corrupts it.
+
+**The fit, and what is not on any page.**
+
+- With the documented events alone (E-box done, the 0.6 µs check, MBCU
+  acceptance), FP ST measured 7 clocks a copy against PDF 48's 16. That
+  run moved PDF 48 EXTERNAL by only 0.6.
+- The remainder is fitted on PDF 48 alone, one number per destination:
+  memory 9, index storage 17, internal register 5. The internal value is
+  from PDF 79's $R column, the only page with one.
+- Held out: SRD (PDF 50), SLO (49) and SRT (51). Their Table 2 charges
+  span 4 to 108 clocks, so a mechanism that belonged to the E-box would
+  not carry over. These pages land within a clock (EXTERNAL) and three
+  (I-BOX; SRT indexed is −2.92).
+- **Not applied to the fetch-and-stores, M+ and M+MG.** PDF 69 prints M+
+  at 15.42 clocks, *less* than ST's 16.00, with two more E-box cycles, so
+  M+'s store path is not ST's. It takes the documented events only.
+- **Not applied to VFL or the connectives.** Their E-box charges are fits
+  to the back-to-back EXTERNL column, which already contains the queuing.
+  Gating them too was measured: VFL ST (PDF 124) EXTERNL went from −0.07
+  to +11.93, counting the queuing twice.
+
+| PDF | instr | before (n / exact / median / mean) | after |
+|---|---|---|---|
+| 48 | ST (the fit) | 128 / 0 / −13.88 / −14.13 | 128 / 64 / −0.07 / −0.32 |
+| 49 | SLO (held out) | 128 / 0 / −18.15 / −16.90 | 128 / 56 / −0.28 / −0.89 |
+| 50 | SRD (held out) | 128 / 0 / −15.40 / −15.65 | 128 / 64 / −0.59 / −0.84 |
+| 51 | SRT (held out) | 128 / 0 / −16.49 / −16.74 | 128 / 0 / −0.48 / −0.73 |
+| 79 | ST, forwarding | 192 / 0 / −6.30 / −10.32 | 192 / 128 / −0.02 / −0.22 |
+| 80 | SLO, forwarding (held out, $R too) | 192 / 0 / −12.00 / −14.10 | 192 / 104 / −0.00 / −0.76 |
+| 69 | M+ | 128 / 31 / −10.06 / −11.20 | 128 / 0 / −7.30 / −8.44 |
+
+By column, before → after (median):
+
+| PDF | EXTERNAL | I-BOX (no indexing) | I-BOX (indexed) |
+|---|---|---|---|
+| 48 ST | −9.61 → +0.01 (32/32 exact) | −18.15 → −0.15 | −19.15 → −1.15 |
+| 49 SLO | −12.00 → −0.00 (28/32) | −20.30 → −0.28 | −21.30 → −1.28 |
+| 50 SRD | −10.61 → +0.01 (32/32) | −20.18 → −1.18 | −21.18 → −2.18 |
+| 51 SRT | −11.04 → +0.96 | −21.94 → −1.92 | −22.94 → −2.92 |
+| 79 ST, forwarding | −6.30 → +0.01 (32/32) | −18.15 → −0.15 | −19.15 → −1.15 |
+| 79 ST, $R (the fit) | −6.02 → −0.02 (32/32) | | |
+| 80 SLO, forwarding | −12.00 → −0.00 (28/32) | −20.30 → −0.28 | −21.30 → −1.28 |
+| 80 SLO, $R (held out) | −8.00 → −0.00 (24/32) | | |
+| 69 M+ | +0.08 → +2.59 (after item 1: −8.40) | −21.18 → −18.18 | −25.22 → −22.22 |
+
+**CYCLES pins moved** (every value check unchanged; the reason is in each
+deck's header):
+
+- The index-store decode hold: `index_after_index_store` 1248 → 1479
+  (seven VFL ST into $X3, 33 clocks each) and `index_after_level`
+  2828 → 2864.
+- `vfl_second_index` 434 → 447, from the SF(BU,18) into $3. With the
+  hold removed and nothing else changed, it runs in 434 again.
+- Bounded figures: "Floating point: L / * / + / ST" 84 → 79, "E+ / E+I /
+  SHF" 88 → 92 and "FP sign modifiers" 68 → 79.
+
+M+ to an index register (−18) is open. So are the VFL I-box stores: the
+index-store hold moved PDF 124's I-BOX column by 4 clocks (−16.30 →
+−12.28), and −12 remains. The WB XOVR stores are unchanged. Those need either a store path
+fitted to the VFL pages, which would mean re-fitting the VFL E-box laws
+without the queuing, or the crossing-field arms, which belong to the
+G2.3 work.
+
+### 4. Immediate compares: the operand's own bytes cost nothing
+
+**Diagnosis.** `eboxClocks` charged KI, KRI, KEI, KFI, KFRI and KFEI like
+K, by the whole field length. PDF 177-182, plain block, read row by row:
+
+| Field | Printed |
+|---|---|
+| (BU,48,8) | 4.80 µs = 16 clocks |
+| (BU,64,8) | 6.00 µs = 20 |
+| (DU,48,4) | 6.60 µs = 22 |
+| (DU,64,4) | 9.00 µs = 30 |
+| (B,64,1) | 22 |
+| (D,64,4) | 30 |
+| any field up to 32 bits | 12, the preparation floor |
+
+That is 10 + 2(b − 24/y) clocks, the same for all six compares. It is K's
+law with the 24-bit address field's bytes taken out (three bytes in
+binary, six in decimal) and without K's full-word allowance.
+
+The immediate operand is the address field (Ref. Manual p.56), already in
+the level when the E-box starts. So only the accumulator bytes beyond it
+are stepped through. Nothing on the pages names this mechanism. The law
+is a measurement at the atlas's operands.
+
+**Not modelled: the INVERT SIGN blocks.** These are PDF 127-132 and
+177-182, which print 12 clocks unsigned and 14 signed at every length.
+Against the standard operand an inverted sign makes the signs unlike, and
+that decides the compare at once. `eboxClocks` sees no data, so charging
+every inverted compare that way would be a choice, not a measurement.
+
+| PDF | instr | before (n / exact / median / mean) | after |
+|---|---|---|---|
+| 177 | KI | 96 / 2 / +4.93 / +7.33 | 96 / 21 / +2.95 / +3.12 |
+| 178 | KRI | 96 / 2 / +4.93 / +7.33 | 96 / 21 / +2.95 / +3.12 |
+| 180 | KFI | 96 / 1 / +3.96 / +6.48 | 96 / 19 / +2.95 / +3.27 |
+| 182 | KFEI | 96 / 1 / +3.46 / +6.27 | 96 / 24 / +2.00 / +2.94 |
+| 127 | K (control) | 272 / 81 / +1.99 / +5.09 | unchanged |
+
+**What remains, about +2 to +3.** On these pages the remainder is the
+preparation floor: the 7030 prints 12, and the model cannot go below 14,
+which is `iboxCycles`' VFL decode. The cause is that `ibusy` counts down
+only in `rl_prepare`'s first arm, so a 3.6 µs decode becomes 2 + 12
+clocks. That one cause also gives L's +2 on the FP EXTERNAL columns
+(item 1). It is open.
+
+No CYCLES pin and no result moved. The subsets were run together with
+item 6.
+
+### 5. An indexed FP operand in index storage: one more I-box cycle
+
+**Diagnosis.** Every fetching FP page prints its I-BOX column 0.6 µs
+higher with indexing than without, while EXTERNAL does not move. For
+example, + on PDF 42 and L on PDF 64 both print 8.03 indexed against 6.03.
+Vol. 1 printed p.3-17's "Address indexing has no measurable effect on the
+timing of floating point instructions" is about memory operands.
+
+An I-box operand is in index storage, the store the index register is read
+from. So the indexed address and the operand are two reads of that store
+in turn. The operand read is made at decoding (printed p.3-23 item 4).
+The 0.6 µs is p.3-18's "each indexing operation requires 0.6 µs". A
+memory operand's look-ahead fetch hides the cycle, which is why the
+EXTERNAL columns show none.
+
+**Fix.** `StretchTiming.bsv` `fpIndexedIboxClocks` adds 2 clocks to
+`rl_prepare`'s preparation budget for an FP fetch from words 16-31 with an
+index. Stores are excluded: a store into index storage prints +0.3 µs
+indexed on PDF 48, which is a different path.
+
+| PDF, I-BOX indexed | before (after item 1) | after |
+|---|---|---|
+| 42 + | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 64 L | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 73 + (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 65 LWF | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 95 L (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 54 / | 32 / 0 / −17.98 | 32 / 0 / −15.98 (see below) |
+| 52 * | 32 / 0 / +1.00 | unchanged |
+
+Every non-indexed column and every EXTERNAL column is unchanged. On *, the
+E-box time hides the extra cycle, as it does on the page.
+
+**Divide is not a gain.** PDF 54's indexed and non-indexed I-BOX residuals
+were equal before the change, so the page prints no indexing cost for /.
+The model now shows a 2-clock gap there that the page does not. The
+divide pages are open in any case (item 7).
+
+### 6. SHF's shift amount
+
+**Diagnosis.** Table 2 (Vol. 1 printed p.3-4, PDF 22) charges SHF "4
+cycles (shift ≤ 3)" plus "1 cycle for each additional shift of 4" before
+execution, and 1 cycle of execution. `eboxClocks` charged it the add
+class's flat 5 cycles. PDF 72 prints 6, 6, 7, 8, 8.5 and 29 clocks for
+shifts of 1, 3, 6, 9, 12 and 95.
+
+**Fix.** The charge is now 5 + n/4, where n is the effective-address bits
+0-10 as decoded. Together with the removal clock, that gives 6, 6, 7, 8,
+9 and 29.
+
+**Limit.** An indexed shift amount is not seen, because `eboxClocks` gets
+the level's instruction before its indexing is applied. Every atlas SHF
+is unindexed, or indexed by an $X5 that holds 0.
+
+| PDF 72, by column | before (n / exact / median) | after |
+|---|---|---|
+| SHIFT 1 | 16 / 16 / +0.02 | unchanged |
+| SHIFT 3 | 16 / 16 / +0.02 | unchanged |
+| SHIFT 6 | 16 / 0 / −0.98 | 16 / 16 / −0.00 |
+| SHIFT 9 | 16 / 0 / −1.98 | 16 / 16 / −0.00 |
+| SHIFT 12 | 16 / 0 / −2.48 | 16 / 8 / +0.50 (8.5 printed) |
+| SHIFT 95 | 16 / 0 / −22.98 | 16 / 16 / −0.00 |
+| page | 96 / 32 / −1.48, mean −4.73 | 96 / 88 / −0.00, mean +0.09 |
+
+No CYCLES pin and no result moved. The main and extra subsets were run
+together with item 4's change, and compared against item 2's tree.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -1081,24 +1374,34 @@ direct pages carry over. **The systematic residuals:**
 - **Open items for the model** (measured 2026-11-17; nothing in `bsv/`
   was changed by the measurement). In order of cells:
   1. FP fetch from memory runs at half the 7030's rate (2,403 EXTERNAL
-     cells more than +5 clocks), with and without forwarding.
+     cells more than +5 clocks), with and without forwarding. **DONE
+     2026-11-17** ("Closing the residuals", item 1): the FP operand was
+     not fetched by the look-ahead.
   2. Stores to an index register, and repeated stores to memory, are
-     17-25 and about 10 clocks too cheap, in FP (ST, SRD, SLO, SRT, M+,
-     M+MG) and in VFL (M+, M+MG, ST, SRD, M+1, CM0101) alike.
+     17-25 and about 10 clocks too cheap. **DONE for FP ST/SRD/SLO/SRT
+     2026-11-17** ("Closing the residuals", item 2: the LAAR, with a
+     fitted store path). Still open: FP M+/M+MG to an index register
+     (about −18), the VFL I-box stores (about −12) and WB XOVR stores.
   3. An accumulator operand is charged as if it were external: the 7030
      adds about 4 clocks (VFL INTERNL), 10 with crossover, and 3-15 on
-     the FP $R column.
-  4. Immediate compares (KI … KFEI) are charged by field length; the
-     7030 ends early, at 12 clocks.
-  5. Indexing an FP I-box operand costs the 7030 2 clocks and the
-     model none.
-  6. SHF has no shift-amount term (−23 at SHIFT 95).
+     the FP $R column. **OPEN.** The FP $R stores now match (item 2).
+     The FP $R fetches are still short: + on PDF 73 by −6.98, L on PDF
+     95 by −4.02. The candidate is the I-Checker's 0.6 µs on an internal
+     operand (printed p.3-19 items 4 and 8) in series with the E-box.
+     It is not built.
+  4. Immediate compares (KI … KFEI) are charged by field length.
+     **DONE 2026-11-17** (item 4). Mean +7 → +3; the rest is the
+     preparation floor.
+  5. Indexing an FP I-box operand costs the 7030 2 clocks. **DONE
+     2026-11-17** (item 5): + L LWF are exact on the I-BOX indexed columns.
+  6. SHF has no shift-amount term. **DONE 2026-11-17** (item 6).
   7. Divide (FP /, D/, R/ short by 11-24; `/I` long by up to 62) is
      data-dependent in the 7030 and not in the model; the volume
      disowns these pages as a timing.
-  8. `bsv/StretchTiming.bsv`'s CV/DCV comment says the oracle has no
-     CV/DCV generator; it now has one, and the charge reproduces the
-     pages it was fitted to.
+  8. The CV/DCV comment in `bsv/StretchTiming.bsv`. **DONE 2026-11-17.**
+  9. The preparation floor: a VFL decode costs 14 clocks where the 7030
+     prints 12, and FP L EXTERNAL pays +2. `ibusy` counts down only in
+     `rl_prepare`'s first arm. OPEN.
 - **Generators still missing** (989 cells): the NONCON branch columns
   and CBR refills; internal transmit operands; PDF 110 (LVS/LVE/SVA);
   the I-box refill rows; PDF 104's environment averages. Each needs a
