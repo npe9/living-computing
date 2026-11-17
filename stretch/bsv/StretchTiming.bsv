@@ -79,6 +79,7 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
         5'b00001: 9;   // LX     4.8 + dec
         5'b10001: 3;   // SX     1.2 + dec (+ LAAR)
         5'b01111: 15;  // V+CR   8.4 + dec
+        5'b11111: 16;  // RNX    9.0 + dec (Table 4, EM column; LAdr, LAAR not charged)
         default:  8;   // LV/LC/LR/SV/SC/SR/V+/V+C/KV/KC  4.2 + dec
       endcase;
     tagged ImmIndex .x: return case (x.code)

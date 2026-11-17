@@ -108,8 +108,14 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   indicators per p.24 (loads from the loaded word, stores from the
   unchanged one; `KV`/`KC` set the comparison indicators instead) —
   the load/store ops only gained this when I-Box 1's SIC-B,ZIND group
-  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`
-  (`decks/problem_1_8.strap` runs IBM's own simulation of it, C22-6578 p.10).
+  tested them, see `strap/README.md` "Gotchas" item 17. **`RNX` IS
+  IMPLEMENTED since 2026-11-16** (printed p.27): the old XJ stored at X0's
+  old refill (through `writeWordTail`), X0's refill replaced (`writeWord`
+  at word 16), XJ loaded from the new name (the deferred index write);
+  old or new name in 0-31 is a no-op with AD.  `decks/rnx.strap` runs it on
+  C22-6578 Problem 1.8's set-up and checks Problem 1.8's own expected words;
+  `decks/ibox4_rnx_run.strap` runs jb_ax4b routine 1244 TEST 4's walk over
+  names 1-31.
   `SVA` is implemented.  **`LVE` WAS IMPLEMENTED 2026-10-17** and the
   reason it had been open is worth keeping: this note used to say
   "p.20 describes it only as enabling indirect addressing... and this

@@ -156,7 +156,7 @@ UNIMPLEMENTED = {
 # pins its ENCODING.  It says nothing whatever about execution, and the
 # two are separately earned -- which is exactly why a name leaving the
 # set, as EX and EXIC have now both done, is the move that means
-# something.  RNX is recorded in docs/NEXT.md as out of scope.
+# something.  RNX left it on 2026-11-16, built.
 #
 #   LOCSEOP ARRIVED 2026-10-17, from MCP printed p.5 line 36, and it
 #         arrived for a reason worth reading twice.  The ERROR
@@ -204,7 +204,10 @@ UNIMPLEMENTED = {
 #         past that one guard was most of the work.  Decimal
 #         arithmetic remains unimplemented and still refused.
 ENCODING_ONLY = {
-    "RNX",
+    # RNX left on 2026-11-16: built (printed p.27), and executed by
+    # decks/rnx.strap (C22-6578 Problem 1.8's words) and
+    # decks/ibox4_rnx_run.strap (jb_ax4b routine 1244 TEST 4, run).  The
+    # set is now EMPTY.
     # KFR ARRIVED 2026-11-02 from MCP printed p.181 line 50,
     # "KFR(BU,19),S UPPB,38  -RANGE", which with line 49's KF is the
     # control-word range test on that page's CONTROL WORD CHECK.  It
@@ -293,6 +296,9 @@ ENCODING_ONLY = {
 # EXACTLY.  Recorded here rather than in a commit message because the
 # next person to trust this PASS should see it.
 UNEXERCISED = set()
+# Both literals above are now empty braces, which Python reads as a
+# DICT; set() them so the arithmetic below stays set arithmetic.
+UNIMPLEMENTED, ENCODING_ONLY = set(UNIMPLEMENTED), set(ENCODING_ONLY)
 KNOWN_GAP = UNIMPLEMENTED | UNEXERCISED
 
 

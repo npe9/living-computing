@@ -422,7 +422,7 @@ IBOX_UNEXPRESSED = {
     "V-ICR#2": "two unlabelled V-ICR rows",
     "R": "refill: the refill word chain is not described",
     "RCZ#1": "two unlabelled RCZ rows", "RCZ#2": "two unlabelled RCZ rows",
-    "RNX": "RNX is not implemented by the model",
+    "RNX": "the old name (X0's refill) the experiment used is not described",
 }
 
 

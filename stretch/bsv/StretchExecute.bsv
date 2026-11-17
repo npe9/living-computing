@@ -5566,7 +5566,76 @@ function ActionValue#(IndexOutcome)
           end else
             needsRead = tagged Valid ea[18:1];
         end
-        default: ind = setOpInvalid(ind); // RNX, LVE: out of scope
+        dixop_RNX: begin // RNX (Rename), BUILT 2026-11-16 (G2.3 list).
+          // Reference Manual printed p.27 (PDF 30), read in the page
+          // image:
+          //
+          //   "The index word in the index register specified by the
+          //   field J is stored in the location addressed by the refill
+          //   field of X0.  The refill field of X0 is then replaced by
+          //   bits 0-17 of the effective address.  The remaining bits
+          //   of X0 remain unchanged.  Next, the index word specified
+          //   by J is replaced by the word in core storage addressed by
+          //   the new refill field of X0.  When either the old or the
+          //   new name of the index refers to one of the locations
+          //   0-31, the instruction is executed as no-operation and
+          //   indicator AD is set.  If the interrupt system is enabled
+          //   and if the old name is both out of bounds and invalid,
+          //   the AD and DS indicators are set.  If the new name is
+          //   both out of bounds and invalid, the AD and DF indicators
+          //   are set.  The index flag and index result indicators are
+          //   set according to the new contents of the index register
+          //   specified by J."
+          //
+          // THREE WRITES AND A READ, through three channels so that no
+          // state is written twice in one rule:
+          //   * the store of the old XJ at the OLD name goes through
+          //     writeWordTail.  The old name is >= 32 here (0-31 is
+          //     the no-op), so it is core storage, which is the only
+          //     place the tail register drains to;
+          //   * X0's new refill goes through writeWord at word 16 (the
+          //     storage dispatch's index arm, StretchStorage);
+          //   * XJ's new word goes through the shared deferred index
+          //     write, applied by the core in a LATER rule, so when
+          //     J = 0 it lands after, and replaces, the refill write --
+          //     which is the page's order ("Next, the index word ...").
+          // The read (the word at the NEW name) is made first, before
+          // either store.  When the two names are one word the page's
+          // order has XJ reload what it just stored, so that case
+          // takes the old XJ, not the fetched word.
+          //
+          // CHOSEN, and unexercised by any deck: "out of bounds" is
+          // read as the storage-protection test (protViolates, which
+          // is already gated on the interrupt system being enabled)
+          // and the instruction is then a no-op as for 0-31.  The page
+          // names the indicators only.  "Invalid" is not separately
+          // tested.
+          //
+          // ORACLES: jb_ax4b routine 1244 TEST 4 (the 1-31 no-op walk,
+          // decks/ibox4_rnx_run.strap) and C22-6578 Problem 1.8, whose
+          // nine-statement simulation must agree with the real thing
+          // word for word (decks/rnx.strap).
+          IndexWord x0 = st.readIndex(0);
+          WordAddr oldName = zeroExtend(x0.refill);
+          WordAddr newName = ea[18:1];
+          if (oldName < 32 || newName < 32)
+            ind = setBit(ind, ind_AD, 1);
+          else if (protViolates(st, oldName))
+            ind = setBit(setBit(ind, ind_AD, 1), ind_DS, 1);
+          else if (protViolates(st, newName))
+            ind = setBit(setBit(ind, ind_AD, 1), ind_DF, 1);
+          else if (prefetchCount >= 1) begin
+            st.writeWordTail(oldName, packIndexWord(x));
+            IndexWord nx0 = x0;
+            nx0.refill = truncate(newName);
+            if (di_.j != 0) st.writeWord(addrIndexBase, packIndexWord(nx0));
+            idxWriteReg = di_.j; doIdxWrite = True;
+            idxWriteVal = (newName == oldName) ? x : unpackIndexWord(prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+          end else
+            needsRead = tagged Valid newName;
+        end
+        default: ind = setOpInvalid(ind); // unreachable: isValidDirIndexOp
       endcase
       end  // DF suppression (mask 1) -- see vflIntOp's matching end
     return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,

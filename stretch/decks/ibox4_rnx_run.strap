@@ -1,0 +1,392 @@
+! ibox4_rnx_run.strap -- jb_ax4b routine 1244 TEST 4, RUN.  RNX's
+! refill-address no-op gate, executed on the model since RNX was built
+! (2026-11-16).
+!
+! THE DRIVER AND THE CONSTANTS ARE decks/ibox4_rnx_nop.strap's, copied
+! byte for byte (that file is the transcription, checked bit-exact
+! against the printed machine code by verify_ibox4_rnx_nop_listing.py;
+! read its header for how the test works and for the routine's text).
+! What this file adds is what that one could not have: an environment
+! to run in.
+!
+!   * SSIP's entry points are halts.  SERS (the error report, 001304.00)
+!     and both error tables halt at their own address, so any branch to
+!     an error stops the run there; SSW (001301.00, the return to SSIP,
+!     reached only after all 31 addresses x 10 passes x 2 halves) is
+!     PASS.  SEN/SENO are data words the SIC instructions store into.
+!   * BOTH ERROR TABLES ARE FILLED: 32 entries of four halts each, so a
+!     failure at ANY trial address stops on the entry IBM's table names
+!     for it -- entry n is at table + 2n words.  The transcription stubs
+!     only entries 0 and 1.
+!   * I00VO and BIT3, which the transcription SYNs to p.190/p.191's
+!     addresses, are defined there as ibox2_load_index.strap and
+!     ax5b_bit_table.strap read them: "XW,-(8)777777.77,0,0" and
+!     "XW,(8)40000.00,0,0".
+!
+! WHAT IT CHECKS, in IBM's words (routine header item 4, PDF p.85):
+! "CHECK THAT THE INSTRUCTION IS NO OPPED WHEN EITHER THE OLD OR THE NEW
+! REFILL FIELD OF IX REG 0 LIES IN THE RANGE OF 1 TO 37 OCTAL."  The
+! deck as shipped starts at 1.0 (I44XW3), so location 0 is not tried
+! (see the transcription's header on the spare triple).
+!
+! THE PASSING RUN IS THE ACCEPTANCE ORACLE: the walk ends at SSW.
+
+        SLC, (8)1301.0
+SSW     BEW, $                        ! PASS: the walk finished
+        SLC, (8)1304.0
+SERS    BEW, $                        ! the error report: FAIL
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+SENO    DD(BU,64,8), 0
+        SLC, (8)13036.0
+I00VO   XW, -(8)777777.77, 0, 0      ! indx wd. of ones, p.190
+        SLC, (8)13057.0
+BIT3    XW, (8)40000.0, 0, 0         ! p.191
+I46     SYN, (8)6736.0
+
+! -- TEST 4, the driver.  PDF p.90, 006470.00-006521.40. -------------
+        SLC, (8)6470.0
+I4412  LX,  $X15, I44XW1            ! -SETUP
+        LX,  $X14, I44XW2
+        LX,  $X12, I44XW3
+I4413  SVA, $X15, I4416             ! aim error table 1's branch
+        SVA, $X14, I4419             ! aim error table 2's branch
+        SVA, $X12, I4415             ! plant the trial OLD refill
+        SVA, $X12, I4418             ! plant the trial EFFECTIVE address
+        LCI, $X11, 10                 ! decimal ten -- prints 12.27 02
+        Z,   $X10                     ! the error counter
+
+I4414  Z,   $X1                      ! -START TEST.
+        LCI, $X1, (8)777777
+        Z,   I44D1
+        LX,  $X2, I00VO
+        SX,  $X2, I44D2
+I4415  LRI, $X0, 0.0                 ! address field patched by I4413
+        RNX, $X1, I44D2              ! old refill in range -> must no-op
+        LX,  $X1, $X1
+        BXVZ, $+1.0
+I4416  B,   0                        ! listing "$B,0" -BRANCH TO ERROR TABLE 1.
+        BXCZ, I4416
+
+I4417  Z,   $X1
+        LCI, $X1, (8)777777
+        Z,   I44D1
+        LX,  $X2, I00VO
+        SX,  $X2, I44D2
+        LRI, $X0, I44D2              ! a LEGAL old refill this time
+I4418  RNX, $X1, I4418              ! its own address field, patched
+        LX,  $X1, I44D2
+        BXVZ, I4419
+        BXCZ, I4420
+I4419  B,   0                        ! listing "$B,0" -BRANCH TO ERROR TABLE 2.
+
+I4420  LX,  $X10, $X10
+        BZXVZ, I4421                 ! -TO NEXT ADDRESS
+
+        C-I, $X11, 1                  ! -NO ERROR, CONTINUE.
+        BXCZ, $+1.0
+        BD,  I4414
+
+I4421  C-I, $X12, 1
+        BXCZ, I4422
+        V+I, $X12, 1.0                ! next trial address
+        V+I, $X14, 2.0                ! next table 2 entry (two words)
+        V+I, $X15, 2.0                ! next table 1 entry
+        B,   I4413
+
+I4422  B,   $+1.0
+        BD,  I4412
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+
+        LX,  $X13, IC244              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT3
+        SX,  $X13, IC244
+
+        LX,  $X13, IC244              ! -UPDATE CONTINUITY CHECK.
+        KV,  $X13, ICK244
+! -- PDF p.91, 006522.00-006525.00 -----------------------------------
+        SIC, SEN
+        BZXE, SERS                    ! -CONTINUITY ERROR.
+        B,   I46
+        CNOP                          ! prints 0.30 00 at 006523.40
+IC244   XW, 0, 0, 0                   ! -CONTINUITY REG 1244.
+ICK244  XW, (8)740000.0, 0, 0
+
+! -- ERROR BRANCH TABLE 1, all 32 entries (PDF pp.92-94) --
+        SLC, (8)6526.0
+I44B1A BEW, $                        ! -ADDRESS IS 0.
+        BEW, $
+        BEW, $
+        BEW, $
+I44B1  BEW, $                        ! -ADDRESS IS 1.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 2.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 3.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 4.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 5.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 6.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 7.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 8.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 9.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 10.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 11.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 12.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 13.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 14.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 15.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 16.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 17.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 18.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 19.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 20.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 21.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 22.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 23.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 24.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 25.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 26.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 27.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 28.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 29.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 30.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 31.
+        BEW, $
+        BEW, $
+        BEW, $
+
+! -- ERROR BRANCH TABLE 2, all 32 entries (PDF pp.95-97) --
+        SLC, (8)6626.0
+I44B2A BEW, $                        ! -ADDRESS IS 0.
+        BEW, $
+        BEW, $
+        BEW, $
+I44B2  BEW, $                        ! -ADDRESS IS 1.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 2.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 3.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 4.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 5.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 6.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 7.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 8.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 9.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 10.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 11.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 12.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 13.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 14.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 15.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 16.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 17.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 18.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 19.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 20.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 21.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 22.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 23.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 24.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 25.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 26.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 27.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 28.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 29.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 30.
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $                        ! -ADDRESS IS 31.
+        BEW, $
+        BEW, $
+        BEW, $
+
+! -- "-CONSTANTS FOR 1244.", PDF p.98, 006726.00-006735.00 -----------
+        SLC, (8)6726.0
+I44D1  XW, 0, 0, 0
+I44D2  XW, 0, 0, 0
+I44XW1 XW, I44B1,  0, 0             ! -> error table 1, entry "1"
+I44XW2 XW, I44B2,  0, 0             ! -> error table 2, entry "1"
+I44XW3 XW, 1.0, 31, 0                ! start at 1.0, walk 31 addresses
+!       -IF 0 BECOMES ILLEGAL FOR RNX, USE THE
+!       -FOLLOWING THREE INDEX WORDS TO REPLACE
+!       -THOSE DIRECTLY ABOVE.
+I44XWA XW, I44B1A, 0, 0             ! -> error table 1, entry "0"
+I44XWB XW, I44B2A, 0, 0             ! -> error table 2, entry "0"
+I44XWC XW, 0.0, 32, 0                ! start at 0.0, walk 32 addresses
+        END, I4412

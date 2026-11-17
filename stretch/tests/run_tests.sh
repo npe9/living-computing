@@ -10779,6 +10779,20 @@ run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh ../d
 
 run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill_nop_listing.py
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
+# >>> AND RUN, since RNX was built (2026-11-16). <<<  The transcription's
+# driver and constants byte for byte, with SSIP's entry points as halts and
+# both error tables filled (entry n at table + 2n words): the walk over old
+# and new names 1-31, ten passes each, must reach SSW (001301.00).  CYCLES
+# 116210 is a MODEL PIN.  NOTE: a model that REFUSES RNX with OP also passes
+# this walk -- a no-op is a no-op -- so it is the injections below, not the
+# pass, that show the gate is the manual's.  decks/rnx.strap is where the
+# operation itself is checked.
+# INJECTIONS, measured 2026-11-16 (rnx arm's range test):
+#   names < 16 instead of < 32  -> halts at PC 6892 = 006566.00, error table 1's
+#                                  entry for name 16 (CYCLES 56506)
+#   no no-op at all (False)     -> halts at PC 6832 = 006530.00, the table's
+#                                  first entry (CYCLES 316)
+run "IBOX-4 routine 1244 TEST 4, RUN: RNX no-ops for old and new names 1-31" ./run_program.sh ../decks/ibox4_rnx_run.strap StretchIbox4RnxRunTb PC=1410 STEPS=2000000 CYCLES=116210+-0
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
 run "EXIC: the pseudo-instruction counter, and the step sized by the subject's length" ./run_program.sh ../decks/exic_subject.strap StretchExicSubjTb \
@@ -13669,12 +13683,34 @@ run "C22-6578 Problem 1.7 -- SIC / BR,0 in the interruption table" ./run_program
     "ts_off:1202=7" "sic_not_taken:1203=5" \
     "sic_self:1107=0x0114E08001150800" "anywh:1204=0"
 
-# 1.8, RENAME simulated in nine printed statements.  RNX itself is still
-# refused.  x2_during is the page's comment (a), SR right-appending zeros.
+# 1.8, RENAME simulated in nine printed statements.  x2_during is the page's
+# comment (a), SR right-appending zeros.  RNX ITSELF IS BUILT since
+# 2026-11-16, and the next line runs it on the same set-up and checks the
+# same five words against the same values.
 run "C22-6578 Problem 1.8 -- RNX simulated" ./run_program.sh ../decks/problem_1_8.strap StretchP18Tb "PC=2012" \
     "old_name:1105=0x00014000002C04D2" "x0:16=0x0000C000001C0454" "x1:17=0x00024000004C11D7" \
     "x2:18=0x0001C00000340929" "x3:19=0x0000800000440D80" \
     "x2_saved:1007=0x0001C00000340929" "x2_during:1104=0x0114400000340929"
+# >>> RNX EXECUTED, 2026-11-16 (Reference Manual printed p.27). <<<  Block 1 is
+# Problem 1.8's "RNX, $1, DOG ($3)" itself: old_name and p1_x0..p1_x3 are the
+# Problem 1.8 line's own expected values, so the page's simulation and the
+# instruction agree word for word.  Blocks 2-5 hand-derived: old name 20 and
+# new name 9.0 no-op with AD; old name = new name (XJ reloads what it
+# stored); J = 0 (X0 replaced by the new word).  CYCLES 585 is a MODEL PIN
+# (RNX's I-box time, Table 4: 9.0 + dec).
+# INJECTIONS, measured 2026-11-16, observed failures only (control passes):
+#   X0's refill not replaced            -> p1_x0 only
+#   no AD on a 0-31 name                -> step cap: blocks 2-5 all fail, PC 2013
+#   range < 16 instead of < 32          -> step cap: blocks 2-5 all fail, PC 2014
+#   old XJ stored at the NEW name       -> old_name, b5_old_holds_x0
+#   same-word case reads the stale word -> b4_x6_same only
+run "RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0 (printed p.27)" ./run_program.sh ../decks/rnx.strap StretchRnxTb PC=2034 CYCLES=585+-0 \
+    "old_name:1105=0x00014000002C04D2" "p1_x0:1250=0x0000C000001C0454" "p1_x1:1251=0x00024000004C11D7" \
+    "p1_x2:1252=0x0001C00000340929" "p1_x3:1253=0x0000800000440D80" \
+    "b2_x4_kept:1254=0x1000000140514" "b2_x0_kept:1255=0x4000000c0014" "b2_word_kept:1202=0x18000001c0515" \
+    "b3_x5_kept:1256=0x1400000240516" "b3_x0_kept:1257=0x4000000c04b5" "b3_old_unstored:1205=0" \
+    "b4_x6_same:1258=0x1800000540517" "b4_word_is_x6:1208=0x1800000540517" "b4_x0:1259=0x4000000c04b8" \
+    "b5_old_holds_x0:1210=0x8000006404ba" "b5_x0_is_new:1260=0x28000006c0519"
 
 # 1.9, both methods, the page's own N = 100 and LOC = 32768.0.  EVERY element
 # is compared: the verifier takes a DUMP and prints how many words it read.

@@ -438,7 +438,11 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       // their stores, V+ ...) now do too.
       h = levelHolds(lv, ea[18:1]) || refillWord || eboxRegister(ea[18:1])
           || progressiveWrites(lv, x.j) || progressiveWrites(lv, x.idx)
-          || progressiveWord(lv, ea[18:1]);
+          || progressiveWord(lv, ea[18:1])
+          // RNX (2026-11-16) stores at X0's OLD refill and writes X0 and
+          // XJ: three places the levels might name.  Drain first, as
+          // for EX -- the old name is a refill field, not the operand.
+          || x.code == dixop_RNX;
     end
     tagged ImmIndex .x:
       h = ((x.code == 4'b0111 || x.code == 4'b1111)                         // V+ICR / V-ICR

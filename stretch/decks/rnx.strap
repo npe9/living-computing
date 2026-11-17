@@ -1,0 +1,124 @@
+! rnx.strap -- RENAME (RNX), built 2026-11-16.  Reference Manual
+! 22-6530-2 printed p.27 (PDF 30), read in the page image:
+!
+!   "The index word in the index register specified by the field J is
+!   stored in the location addressed by the refill field of X0.  The
+!   refill field of X0 is then replaced by bits 0-17 of the effective
+!   address.  The remaining bits of X0 remain unchanged.  Next, the
+!   index word specified by J is replaced by the word in core storage
+!   addressed by the new refill field of X0.  When either the old or
+!   the new name of the index refers to one of the locations 0-31, the
+!   instruction is executed as no-operation and indicator AD is set.
+!   ...  The index flag and index result indicators are set according
+!   to the new contents of the index register specified by J."
+!
+! BLOCK 1 IS THE ACCEPTANCE ORACLE.  C22-6578 Problem 1.8 (printed p.10)
+! asks for "the effect of the instruction RNX, $1, DOG ($3)" in nine
+! printed statements, and decks/problem_1_8.strap runs them.  This
+! block runs the instruction itself on the SAME set-up and the SAME
+! data at the SAME addresses (SLC 1000/1100 as there), and run_tests.sh
+! checks the SAME five words with the SAME expected values as the
+! Problem 1.8 line: old name, X0, X1, X2, X3.  The page's simulation
+! and the machine's instruction agree word for word, or this fails.
+! ($2 is the page's scratch register; the real RNX does not touch it,
+! and the simulation restores it, so both leave X2INIT.)
+!
+! BLOCKS 2-5 ARE HAND-DERIVED from the paragraph above:
+!   2  old name in 0-31 (X0's refill = 20, X4's own location): no-op,
+!      AD on; X4 and the effective-address word unchanged.
+!   3  new name in 0-31 (effective address 9.0, the accumulator's right
+!      word): no-op, AD on; X0's refill not replaced.
+!   4  old name = new name: XJ is stored there, then reloaded from
+!      there -- it keeps its old contents (the model reads the word
+!      before it stores, so this is the case that catches a model
+!      taking the pre-store word).
+!   5  J = 0: X0 is stored at its own old refill, its refill replaced,
+!      then X0 itself is replaced by the word at the new name -- the
+!      refill write is overwritten.
+!   Each legal block hangs on BAD,$ if AD came on; each no-op block
+!   hangs on BZAD,$ if it did not.
+!
+! INJECTIONS, measured (tests/run_tests.sh "RNX" line):  see there.
+
+        SLC, 1000.0
+START   LX, $0, X0INIT
+        LX, $1, X1INIT
+        LX, $2, X2INIT
+        LX, $3, X3INIT
+! ---- 1. Problem 1.8's instruction, executed -------------------------
+        RNX, $1, DOG($3)
+        BAD, $                       ! hang if AD came on: legal names
+        SX, $0, P1X0
+        SX, $1, P1X1
+        SX, $2, P1X2
+        SX, $3, P1X3
+! ---- 2. old name 20 (X4's location): no-op, AD ---------------------
+        LX, $0, X0LOW
+        LX, $4, X4INIT
+        RNX, $4, B2W
+        BZAD, $                      ! hang if AD did NOT come on
+        BADZ, $+.32                  ! turn AD off
+        SX, $4, B2X4
+        SX, $0, B2X0
+! ---- 3. new name 9.0 (the accumulator's right word): no-op, AD ------
+        LX, $0, X0B3
+        LX, $5, X5INIT
+        RNX, $5, 9.0
+        BZAD, $
+        BADZ, $+.32
+        SX, $5, B3X5
+        SX, $0, B3X0
+! ---- 4. old name = new name ----------------------------------------
+        LX, $0, X0B4
+        LX, $6, X6INIT
+        RNX, $6, B4W
+        BAD, $
+        SX, $6, B4X6
+        SX, $0, B4X0
+! ---- 5. J = 0 -------------------------------------------------------
+        LX, $0, X0B5
+        RNX, $0, B5NEW
+        BAD, $
+        SX, $0, B5X0
+HALT    BEW, $
+
+        SLC, 1100.0
+X0INIT  XW, 3.0, 7, OLDNAM
+X1INIT  XW, 5.0, 11, 1234
+X2INIT  XW, 7.0, 13, 2345
+X3INIT  XW, 2.0, 17, 3456
+DURING  DD(BU,64,8), 0
+OLDNAM  DD(BU,64,8), 0
+DOG     DD(BU,64,8), 1
+        DD(BU,64,8), 2
+NEW     XW, 9.0, 19, 4567
+        DD(BU,64,8), 4
+
+        SLC, 1200.0
+X0LOW   XW, 1.0, 3, 20
+X4INIT  XW, 4.0, 5, 1300
+B2W     XW, 6.0, 7, 1301
+X0B3    XW, 1.0, 3, B3OLD
+X5INIT  XW, 5.0, 9, 1302
+B3OLD   DD(BU,64,8), 0
+X0B4    XW, 1.0, 3, B4W
+X6INIT  XW, 6.0, 21, 1303
+B4W     XW, 8.0, 23, 1304
+X0B5    XW, 2.0, 25, B5OLD
+B5OLD   DD(BU,64,8), 0
+B5NEW   XW, 10.0, 27, 1305
+
+        SLC, 1250.0
+P1X0    DD(BU,64,8), 0
+P1X1    DD(BU,64,8), 0
+P1X2    DD(BU,64,8), 0
+P1X3    DD(BU,64,8), 0
+B2X4    DD(BU,64,8), 0
+B2X0    DD(BU,64,8), 0
+B3X5    DD(BU,64,8), 0
+B3X0    DD(BU,64,8), 0
+B4X6    DD(BU,64,8), 0
+B4X0    DD(BU,64,8), 0
+B5X0    DD(BU,64,8), 0
+
+        END, START

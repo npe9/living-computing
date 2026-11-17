@@ -14,8 +14,10 @@
 // program (no STRAP assembler yet -- see bsv/README.md "Next steps")
 // exercising: VFL binary L/+/ST (unsigned, direct addressing),
 // immediate VFL add, index arithmetic (LCI), a Count-and-Branch loop,
-// and the decode/execute fallback for an unimplemented-but-
-// structurally-valid opcode (RNX).
+// and the decode/execute fallback for an UNDEFINED opcode (a misc
+// half-word with code 101, which isValidMiscOp does not admit).  Until
+// 2026-11-16 this was RNX, decoded but unbuilt; RNX is built now (and
+// would set AD, not OP, from a zero refill field).
 //
 // Sequenced with an explicit phase register, one storage write per
 // phase: mkRegFileWCF only relaxes read/write conflicts against a
@@ -177,10 +179,11 @@ module mkStretchTb(Empty);
       // one, which is the discipline this file's header describes.  A
       // phase of its own would collide with setStart at phase 20.
       18: action
-            putHWReq(89, encBD(90));     // disable, then fall into RNX
-            // Word 45 in one write: RNX in half 0, a branch to itself
-            // in half 1, so the machine stops rather than running on.
-            putFull(90, { 32'hFFFF_FFFF, encB(91) });
+            putHWReq(89, encBD(90));     // disable, then fall into it
+            // Word 45 in one write: the undefined misc code 101 in half
+            // 0, a branch to itself in half 1, so the machine stops
+            // rather than running on.
+            putFull(90, { 19'h0, 3'b101, 6'b100000, 4'b0, encB(91) });
           endaction
       19: putHWResp();
     endcase
@@ -323,7 +326,7 @@ module mkStretchTb(Empty);
 
   rule checkRnxResp (phase == 30 && core.mem.responseReady());
     let v <- core.mem.readWordResp();
-    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+    check("indicator OP after an undefined misc code", (v >> 48) & 1, 1);
     phase <= 31;
   endrule
 
