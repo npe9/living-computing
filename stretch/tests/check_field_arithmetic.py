@@ -74,10 +74,64 @@ checked with cmp (FAIL lines observed):
       in an operator"
   control: PASS 38
 
-NOT COVERED: a field that STARTS with an arithmetic parenthesis and ends
-with it, "(N+1)" alone, is still read by strap_asm as an index on a null
-address (MCP printed p.126's "KV,2,($1)" is the form that rule is for);
-strap2 classifies it at its ')' (check_strap2_getfld_paren.py).
+SYN, CW, TRANSMIT'S J AND "(N+1)" ALONE (G3 follow-up, 2026-11-17).  strap_asm
+refused "Q SYN, N*2", "CW, SAM*2, N*2" and "T, N/4, ..." ("cannot parse
+expression"), and read "(N+1)" alone as an index on a null address; strap2
+took all four.  The rows after "radix operand" hold them, with strap2 the
+oracle on every row (the "agree" checks).  The pages:
+  A SYN KEEPS ITS TWO PARTS (DERIVED).  C22-6729 printed p.13: the vle holds
+  "its value or the coded expression of the value of the symbol"; Chart RD,
+  printed p.54, looks a symbol up and puts its info, or the VALUE of its
+  sub-expression, in the list; printed p.57's workspace data are "I-value and
+  B-value"; printed p.59 Box 6: "If the result is not to be made an integer,
+  i.e., Vvint is off, then exit; otherwise combine integer and bit values, and
+  set bit value to zero ... Put integer and bit values into VALUE's output
+  words, Sini and Sinb."  INSERT adds them by the address's function (printed
+  p.144).  No page tabulates the vle's function (Fig. 22, printed p.191), so
+  where the two parts are stored is not printed.  So a SYN is an integer when its bit part is zero
+  ("N*2", and "SAM/1.0", a quotient of two bit addresses), a bit address when
+  its integer part is zero, and otherwise MIXED, its parts kept apart
+  (strap_asm SymTab.sym_ipart).  The mixed case was wrong WITHOUT arithmetic
+  too: "QM SYN, SAM+N" then "B, QM" gave 800 half words, strap2 808.
+  CW's fields are SCW, S18CF and S18RF and J's is STJFLD (printed p.144),
+  which strap2 fills with (bit part >> 6) + integer part; "CW, SAM+1" gave
+  word 400 where strap2 gives 401.
+  "(N+1)" ALONE: printed p.85, Boxes 43, 44, 49, "If there was no operator to
+  make the parentheses arithmetic, the coded expression is set to indicate a
+  sub-expression"; Boxes 76-78, "If the parenthesis could not be arithmetic,
+  Gfsfxb (processing-subscript indicator) is turned on".  CHOSEN, as strap2's
+  getfld.py chooses it (Box 76 draws no test): an operator inside, including
+  a unary minus and a point, makes it arithmetic; without one it is an index
+  on a zero datum, MCP printed p.126's "KV,2,($1)" (000000.04 91), the
+  control rows.
+No deck's image changed under either assembler (all 825 decks hashed,
+words and symbol table, before and after).
+
+MEASURED INJECTIONS, 2026-11-17, each reverted from a saved copy and checked
+with cmp (FAIL lines observed; each "row" is the row's strap_asm check and its
+agree check):
+  sym_parts ignores sym_ipart (a mixed SYN is a bit address again)
+      rows mixed SYN SAM+N (19-bit), (LX, 18), through a bare SYN,
+      SAM*2+N/4, before a point, CW mixed SYN (12).  The 24-bit control
+      row did not fail, as it should not.
+  SYN by parts never makes an integer
+      rows SYN N*2 (19-bit), (LX, 18), SYN SAM/1.0 (6)
+  CW back to the text rule (total, shifted when written as an address)
+      rows CW mixed field SAM+1, CW mixed SYN (4)
+  transmit J without the arithmetic path
+      rows transmit J N/4, (N+4)/4, 1.0*2: refused (6)
+  transmit J as the total, bit part unshifted
+      row transmit J 1.0*2 (2).  It was added for this injection, which
+      failed nothing with N/4 and (N+4)/4 alone (their bit part is zero).
+  "(N+1)" alone read as an index again
+      rows (N+1), (-N), (N.), ($1+1) alone is arithmetic (8)
+  every lone parenthesis arithmetic (no operator test)
+      rows ($1) and (N) alone is an index (4): the controls
+  a mixed symbol's integer part before a point counting bits
+      rows mixed SYN before a point, (N.) alone is arithmetic (4)
+  referenced_symbols without the arithmetic path
+      every row (66): HEAD's "QI SYN, N*2" is refused
+  control: PASS 101
 """
 import os
 import sys
@@ -89,6 +143,11 @@ import strap2     # noqa: E402
 
 HEAD = """N       SYN, 8
 SAM     SYN, 400.0
+QI      SYN, N*2
+QM      SYN, SAM+N
+QA      SYN, SAM*2+N/4
+QR      SYN, QM
+QD      SYN, SAM/1.0
 START   NOP
 """
 TAIL = """        BEW, $
@@ -108,6 +167,28 @@ CASES = [
     ("unary minus (U-)", "B, -(N+1)+SAM", "B, 395.32"),
     ("zero divisor ignored", "B, SAM/0", "B, SAM"),
     ("radix operand", "B, (8)17*2", "B, 15.0"),
+    # SYN, CW and transmit's J (G3, 2026-11-17).
+    ("SYN N*2 is an integer (19-bit)", "B, QI", "B, 8.0"),
+    ("SYN N*2 is an integer (LX, 18)", "LX, $1, QI", "LX, $1, 16.0"),
+    ("SYN SAM/1.0 is an integer", "B, QD", "B, 200.0"),
+    ("mixed SYN SAM+N (19-bit)", "B, QM", "B, 404.0"),
+    ("mixed SYN SAM+N (LX, 18)", "LX, $1, QM", "LX, $1, 408.0"),
+    ("mixed SYN SAM+N (24-bit, control)", "L(BU,8), QM", "L(BU,8), 400.8"),
+    ("mixed SYN through a bare SYN", "B, QR", "B, 404.0"),
+    ("mixed SYN SAM*2+N/4", "B, QA", "B, 801.0"),
+    ("mixed SYN before a point", "B, QM.", "B, 408.0"),
+    ("CW, SAM*2, N*2", "CW, SAM*2, N*2", "CW, 800.0, 16"),
+    ("CW mixed field SAM+1", "CW, SAM+1, N+1, SAM", "CW, 401.0, 9, 400.0"),
+    ("CW mixed SYN", "CW, QM, QM", "CW, 408.0, 408"),
+    ("transmit J N/4", "T, N/4, SAM, SAM", "T, 2, SAM, SAM"),
+    ("transmit J (N+4)/4", "T, (N+4)/4, SAM, SAM", "T, 3, SAM, SAM"),
+    ("transmit J 1.0*2 (a bit part)", "T, 1.0*2, SAM, SAM", "T, 2, SAM, SAM"),
+    ("(N+1) alone is arithmetic", "B, (N+1)", "B, 4.32"),
+    ("(-N) alone is arithmetic", "B, (-N)", "B, -N"),
+    ("(N.) alone is arithmetic", "B, (N.)", "B, 8.0"),
+    ("($1+1) alone is arithmetic", "B, ($1+1)", "B, 17.32"),
+    ("($1) alone is an index (p.126, control)", "KV,2,($1)", "KV,2,0($1)"),
+    ("(N) alone is an index (control)", "B, (N)", "B, 0(N)"),
 ]
 
 fails = 0

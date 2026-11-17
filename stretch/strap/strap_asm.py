@@ -730,13 +730,46 @@ class SymTab(dict):
     prints count 000120, eighty -- and T IOC is "SYN,80", an
     integer.  Shifted, eighty became one.  The same page writes
     "32-2" as a literal two rows later and gets it right, which
-    is what made the shape visible."""
+    is what made the shape visible.
+
+    `sym_ipart` holds what neither of those two classes can: a SYN
+    whose value has BOTH a bit part and an integer part, as
+    "Q SYN, SAM+N" or "Q SYN, SAM+N*2" has (G3, docs/source_audit.md).
+    STRAP II does not classify such a value; it keeps the two parts.
+    C22-6729 printed p.13: the vle holds "its value or the coded
+    expression of the value of the symbol"; Chart RD (printed p.54)
+    looks a symbol up and puts its info, or the VALUE of its
+    expression, in the list; the workspace data are "I-value and
+    B-value" (printed p.57); and printed p.59 Box 6 combines them only
+    when "the result is ... to be made an integer, i.e., Vvint" is on,
+    "otherwise" putting "integer and bit values into VALUE's output
+    words, Sini and Sinb".  INSERT then adds them "according to the
+    function of the address" (printed p.144).  So the symbol's two
+    parts reach the using field apart.  (DERIVED: no page tabulates
+    the vle's function, Fig. 22 p.191; strap2 keeps ZVALB and ZVALI.)
+    The table keeps the TOTAL, bit part plus integer part, as
+    eval_expr counts it; `sym_ipart` keeps the integer part of a mixed
+    one, and sym_parts() gives the pair."""
 
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.sys_alias = {}
         self.sym_dds = {}
         self.sym_int = set()
+        self.sym_ipart = {}
+
+
+def sym_parts(symtab, up):
+    """(bit part, integer part) of a defined symbol's value: an integer
+    SYN is all integer, a mixed SYN is split as `sym_ipart` records, and
+    anything else is all bit address.  See SymTab."""
+    v = symtab[up]
+    if up in getattr(symtab, 'sym_int', ()):
+        return 0, v
+    ip = getattr(symtab, 'sym_ipart', {}).get(up)
+    if ip is not None:
+        return v - ip, ip
+    return v, 0
 
 
 def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
@@ -834,8 +867,8 @@ def _word_part(name, symtab, loc_bits, lineno):
     alias = getattr(symtab, 'sys_alias', {}).get(up)
     if alias is not None:
         return eval_system_symbol(alias, loc_bits, False, lineno)
-    v = symtab[up]
-    return v * 64 if up in getattr(symtab, 'sym_int', ()) else v
+    b, i = sym_parts(symtab, up)
+    return b + i * 64     # value.py's .L: the integer part counts words
 
 
 # >>> FIELD ARITHMETIC: *, / AND PARENTHESES, AS STRAP II DOES THEM. <<<
@@ -926,10 +959,10 @@ def _operand_bi(text, symtab, loc_bits, lineno):
             alias = getattr(symtab, 'sys_alias', {}).get(up)
             if alias is not None:
                 b += sign * eval_system_symbol(alias, loc_bits, False, lineno)
-            elif up in getattr(symtab, 'sym_int', ()):
-                i += sign * symtab[up]
             else:
-                b += sign * symtab[up]
+                sb, si = sym_parts(symtab, up)
+                b += sign * sb
+                i += sign * si
         elif kind == 'sys':
             b += sign * eval_system_symbol(val, loc_bits, False, lineno)
         else:
@@ -1172,8 +1205,14 @@ def eval_addr_field(expr, symtab, loc_bits, function, lineno=None):
             # through a SYN by p.31's "its bit address or INTEGER
             # CLASSIFICATION are transferred".  See SymTab.sym_int.
             # It counts the FUNCTION's units, as a literal does (p.144).
-            term = (raw << int_shift if up in getattr(symtab, 'sym_int', ())
-                    else raw >> unit_shift)
+            # A MIXED SYN's two parts go in apart, as a mixed field's
+            # do (SymTab.sym_ipart; printed p.59 Box 6, p.144).
+            if alias is None and up in getattr(symtab, 'sym_ipart', {}):
+                sb, si = sym_parts(symtab, up)
+                term = (sb >> unit_shift) + (si << int_shift)
+            else:
+                term = (raw << int_shift if up in getattr(symtab, 'sym_int', ())
+                        else raw >> unit_shift)
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, False, lineno) >> unit_shift
         else:
@@ -1280,6 +1319,11 @@ def referenced_symbols(expr, lineno=None):
     fixpoint resolution (see assemble()) to test "would this expression
     evaluate cleanly right now" without triggering eval_expr's
     undefined-symbol error itself."""
+    if _is_arith_field(expr):
+        # A field with *, / or arithmetic parentheses (G3.1): the names in
+        # each operand, which tokenize_expr reads as it does any field.
+        return {name for t in _arith_tokens(expr, lineno) if isinstance(t, tuple)
+                for name in referenced_symbols(t[1], lineno)}
     return {val.upper() for sign, kind, val in tokenize_expr(expr, lineno)
             if kind in ('sym', 'bitsym', 'wordsym')}
 
@@ -1325,6 +1369,29 @@ def split_field_trailing_paren(field):
                     # p.85 Boxes 43-49); an index "must be the last
                     # entry in the field" and follows a datum (p.207).
                     if base and base[-1] in '+-*/':
+                        return field, None
+                    # >>> SO IS A WHOLE FIELD IN PARENTHESES WITH AN
+                    # OPERATOR INSIDE, "(N+1)". <<<  C22-6729 printed
+                    # p.85, Boxes 43, 44, 49: "If there was no operator
+                    # to make the parentheses arithmetic, the coded
+                    # expression is set to indicate a sub-expression";
+                    # Boxes 76-78: "If the parenthesis could not be
+                    # arithmetic, Gfsfxb (processing-subscript
+                    # indicator) is turned on".  So an operator inside
+                    # is what makes them arithmetic, and without one
+                    # the parenthesis is S/X on a zero datum -- MCP
+                    # printed p.126's "KV,2,($1)", 000000.04 91, below.
+                    # CHOSEN, as strap2's getfld.py _paren chooses it:
+                    # Box 76 draws no test, and "an operator" is any of
+                    # Appendix C's (printed p.198): + - * /, a unary
+                    # minus, and the point (".+ .L .R"), so "(N.)" and
+                    # "(17.0)" are arithmetic too.  A g.p. "(.n)" is
+                    # not this (Boxes 64-66).  Measured against strap2
+                    # (tests/check_field_arithmetic.py).
+                    inner = field[k + 1:-1]
+                    if (not base and re.search(r'[-+*/.]', inner)
+                            and ',' not in inner
+                            and not re.fullmatch(r'\s*\.\s*\d+\s*', inner)):
                         return field, None
                     # >>> AN OMITTED ADDRESS IN FRONT OF AN INDEX IS A
                     # ZERO. <<<  MCP printed p.126 line 11 is
@@ -3477,12 +3544,44 @@ def resolve_syns(syn_stmts, symtab, final):
             # dot, a "$" or an unclassified symbol makes it an
             # address, which is the assembler's prior behaviour and
             # stays the default.
+            #
+            # A FIELD WITH ARITHMETIC (*, /, parentheses; G3.1) is
+            # classified by its two computed parts, which is what STRAP
+            # II keeps (SymTab.sym_ipart): no bit part, an integer;
+            # no integer part, a bit address; both, a MIXED symbol
+            # whose parts stay apart.  "N*2" is an integer and
+            # "SAM/1.0" too (value.py: a quotient of two bit addresses
+            # is one).  So is a field without arithmetic whose terms
+            # mix the two, "SAM+N": strap2 gives B, Q 808 half words
+            # where the total, 400.8 bits, gave 800.
             if hasattr(symtab, 'sym_int'):
-                kinds = [k for _, k, _ in tokenize_expr(body, stmt.lineno)]
-                names = referenced_symbols(body, stmt.lineno)
-                if (all(k == 'int' or k == 'sym' for k in kinds)
-                        and all(n in symtab.sym_int for n in names)):
-                    symtab.sym_int.add(up)
+                arith = _is_arith_field(body)
+                if not arith:
+                    kinds = [k for _, k, _ in tokenize_expr(body, stmt.lineno)]
+                    names = referenced_symbols(body, stmt.lineno)
+                    if (all(k == 'int' or k == 'sym' for k in kinds)
+                            and all(n in symtab.sym_int for n in names)):
+                        symtab.sym_int.add(up)
+                if up in symtab.sym_int:
+                    pass
+                elif _BLANKED_SYMBOL.match(body) and (
+                        ' ' not in body or body.replace(' ', '').upper() in symtab):
+                    # A SYN to a bare symbol: exact substitution (p.31)
+                    # carries a mixed symbol's split too.
+                    _same = body.replace(' ', '').upper()
+                    if _same in symtab.sym_ipart:
+                        symtab.sym_ipart[up] = symtab.sym_ipart[_same]
+                else:
+                    try:
+                        pb, pi = _arith_bi(body, symtab, stmt.addr, stmt.lineno)
+                    except AssemblerError:
+                        if arith:
+                            raise
+                        pb = pi = 0     # a form the parts path does not read
+                    if arith and pb == 0 and pi != 0:
+                        symtab.sym_int.add(up)
+                    elif pb != 0 and pi != 0:
+                        symtab.sym_ipart[up] = pi
             symtab[up] = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             progressed = True
         if not progressed:
@@ -4188,6 +4287,19 @@ def emit_statement(stmt, symtab, image):
             return bool(re.search(r'[A-Za-z$]', body))
 
         def _word_field(text):
+            # >>> THE TWO PARTS, as strap2's SCW, S18CF and S18RF insert
+            # them: (bit part >> 6) + integer part (C22-6729 printed
+            # p.144; p.59 Box 6 keeps the parts apart).  For a field
+            # that is all one kind this is the rule below it; it differs
+            # only where a field MIXES them -- "SAM+1", "SAM*2+N/4", a
+            # mixed SYN -- where the total shifted lost the integer
+            # (G3, docs/source_audit.md; strap2 gives SAM+1 word 401,
+            # the total gave 400).  A field the parts path cannot read
+            # (a blanked symbol) keeps the text rule.
+            _t = text.strip()
+            if not (' ' in _t and _BLANKED_SYMBOL.match(_t)):
+                b, i = _arith_bi(text, symtab, loc, stmt.lineno)
+                return (b >> 6) + i
             v = eval_expr(text, symtab, loc, lineno=stmt.lineno)
             return (v >> 6) if _is_bit_address(text) else v
 
@@ -4511,7 +4623,16 @@ def emit_statement(stmt, symtab, image):
         # takes a bare number too, so "T,12,..." still works.  The
         # page is the witness: both spellings compile to
         # 215266.00 80 215230.30 20, which is what line 40 prints.
-        j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
+        # >>> AND J MAY CARRY FIELD ARITHMETIC, "T, N/4, ...". <<<  Its
+        # INSERT routine is STJFLD, "J field for transmit and swap
+        # instructions" (C22-6729 printed p.144), which strap2 fills
+        # with (bit part >> 6) + integer part; a field with *, / or
+        # arithmetic parentheses takes that path (G3, source_audit.md).
+        if _is_arith_field(stmt.fields[0]):
+            _b, _i = _arith_bi(stmt.fields[0], symtab, loc, stmt.lineno)
+            j = (_b >> 6) + _i
+        else:
+            j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         # J is FOUR bits (51-54).  With the immediate-count modifier it
         # IS the count, so a count that does not fit has to be refused
         # rather than truncated -- every numeric field this project has
