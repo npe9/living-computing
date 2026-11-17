@@ -218,9 +218,26 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       (f.code == 7'd78) ? 19 :
       // SRT(110): 2 + 106
       (f.code == 7'd110) ? 108 :
+      // SHF(114): Table 2 (printed p.3-4, PDF 22) "4 cycles (shift
+      // <= 3) / 1 cycle for each additional shift of 4" pre-execution,
+      // "1 cycle" execution -- 5 + ceil((n - 3) / 4) for n > 3, which is
+      // 5 + n / 4 for every n.  2026-11-17: SHF used to take the add
+      // class's flat 5, and the atlas's PDF 72 (SHIFT 1 ... SHIFT 95)
+      // measured the missing term: 6, 6, 7, 8, 8.5, 29 clocks printed
+      // against a flat 6 (docs/atlas_oracle.md).  With the term the
+      // model gives 6, 6, 7, 8, 9, 29 (the charge plus the removal
+      // clock).  The amount is effective-address bits 0-10 (Ref. Manual
+      // p.102, as execute()'s SHF arm reads it, ea[17:7]); this reads it
+      // off the address AS DECODED, because eboxClocks is handed the
+      // level's instruction before its indexing is carried in
+      // (rl_au_remove's `h.di`), so an INDEXED shift amount is not seen
+      // here -- every atlas SHF is indexed by $X5 = 0 or not at all.  No
+      // cap: Table 2 states none, and a shift past 96 bits is charged
+      // as the table's law gives it.
+      (f.code == fpop_SHF) ? 5 + zeroExtend(f.addr[17:7]) / 4 :
       // The ADD class and everything sharing its shape: + (2),
       // +MG(34), M+(10), M+MG(42), K(18), KMG(50), KR(22),
-      // KMGR(54), D+(66), D+MG(98), F+(82), SHF(114).  4 + 1.
+      // KMGR(54), D+(66), D+MG(98), F+(82).  4 + 1.
       5;
     tagged VflInt .v: begin
       // >>> THE E-BOX TIME OF A VFL OPERATION DEPENDS ON THE OPERATION,

@@ -1031,6 +1031,14 @@ gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
 get the documented events only, because PDF 69 prints M+ below ST.
 `docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
 
+### SHF's shift amount (2026-11-17)
+
+`eboxClocks` charges SHF Table 2's 4 cycles plus 1 for each further shift
+of 4, plus 1 for execution: 5 + n/4 for an amount n. It used to charge
+the add class's flat 5. PDF 72 is now exact at shifts of 1, 3, 6, 9 and
+95, and +0.5 at 12, where the page prints 8.5. An indexed amount is not
+seen (`eboxClocks` gets the decoded instruction).
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED

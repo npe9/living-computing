@@ -1190,6 +1190,35 @@ fitted to the VFL pages, which would mean re-fitting the VFL E-box laws
 without the queuing, or the crossing-field arms, which belong to the
 G2.3 work.
 
+### 6. SHF's shift amount
+
+**Diagnosis.** Table 2 (Vol. 1 printed p.3-4, PDF 22) charges SHF "4
+cycles (shift ≤ 3)" plus "1 cycle for each additional shift of 4" before
+execution, and 1 cycle of execution. `eboxClocks` charged it the add
+class's flat 5 cycles. PDF 72 prints 6, 6, 7, 8, 8.5 and 29 clocks for
+shifts of 1, 3, 6, 9, 12 and 95.
+
+**Fix.** The charge is now 5 + n/4, where n is the effective-address bits
+0-10 as decoded. Together with the removal clock, that gives 6, 6, 7, 8,
+9 and 29.
+
+**Limit.** An indexed shift amount is not seen, because `eboxClocks` gets
+the level's instruction before its indexing is applied. Every atlas SHF
+is unindexed, or indexed by an $X5 that holds 0.
+
+| PDF 72, by column | before (n / exact / median) | after |
+|---|---|---|
+| SHIFT 1 | 16 / 16 / +0.02 | unchanged |
+| SHIFT 3 | 16 / 16 / +0.02 | unchanged |
+| SHIFT 6 | 16 / 0 / −0.98 | 16 / 16 / −0.00 |
+| SHIFT 9 | 16 / 0 / −1.98 | 16 / 16 / −0.00 |
+| SHIFT 12 | 16 / 0 / −2.48 | 16 / 8 / +0.50 (8.5 printed) |
+| SHIFT 95 | 16 / 0 / −22.98 | 16 / 16 / −0.00 |
+| page | 96 / 32 / −1.48, mean −4.73 | 96 / 88 / −0.00, mean +0.09 |
+
+No CYCLES pin and no result moved. The main and extra subsets were run
+together with item 4's change, and compared against item 2's tree.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
