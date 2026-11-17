@@ -158,6 +158,31 @@ target before its time-out (mkEBox follows the chain), the FP
 of zero is ...", rl_xmit) are built.  The Transmit arm has no
 `setOpInvalid` left.
 
+**OPEN after B's first three rows were built (2026-11-16):**
+* B's last three rows -- crossing `M+`/`M+1`/`M+MG`, a to-memory tail
+  below word 32, a crossing field that also refills (three reads) --
+  are model limits, unbuilt, with no oracle in the corpus.
+* `RNX`'s protection clauses (old name protected -> AD+DS, new name
+  -> AD+DF, nothing done) are a CHOSEN reading of printed p.27's "both
+  out of bounds and invalid" (read as `protViolates`; "invalid" not
+  tested separately) and are exercised by no deck.
+* `DCV`'s time is `eboxClocks`' row from atlas PDF 139 (20 binary, 18
+  decimal) at the page's one accumulator (+1 at offset 20); Table 3's
+  dependence on S is not modelled, and `tests/atlas_oracle.py` has no
+  CV/DCV generator, so the row is fitted, not measured.
+* `CV`, `LCV` and `LTRCV` still convert with the inline `binaryToBcd`
+  rather than through `mkCvtBox`; moving them is the idiomatic-box
+  rewrite's, and would change their timing structure.
+* `decks/ibox4_rnx_run.strap` (routine 1244 TEST 4) passes on a model
+  that refuses `RNX` too; only its injections discriminate.
+* Printed p.74's "no more than 80 significant bits can be converted
+  without causing a partial field condition" is loose: 10^24 is itself
+  an 80-bit number, so 2^80 - 10^24 values of 80 bits overflow 24
+  digits.  The model sets PF from the digits (the page's first PF
+  sentence); `decks/vfl_dcv.strap` D2's note.
+* `isDecReq` in `StretchExecute.bsv` is dead since `boxKind` replaced
+  `boxIsDec`.
+
 ### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 
 Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is

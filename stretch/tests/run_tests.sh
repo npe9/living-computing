@@ -2716,7 +2716,7 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # register's other positions.  The conversion is mkCvtBox's.  CYCLES 1049 is a
 # MODEL PIN: eboxClocks' DCV row (StretchTiming.bsv), atlas PDF 139.
 # INJECTIONS, measured 2026-11-16 in a scratch copy, observed failures only
-# (PC and CYCLES held in every one, at the pre-batch13 pin 880):
+# (PC and CYCLES 1049 held in every one; re-measured on the merged tree):
 #   drop the offset clause of B-D's PF ("top > 128")   -> D4_ind_PF only
 #   drop the 24-digit clause ((cr.r >> 96) != 0)        -> D2_ind_PF only
 #   D-B result placed at 68 instead of 20               -> D5_left/right,
@@ -2758,7 +2758,8 @@ run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_p
 # oracle exists): digits, zones dropped at byte size 6, sixteen digits PF,
 # minus zero, the negative sign modifier.  CYCLES 360 is a MODEL PIN
 # (eboxClocks' LFT row, decimal 66 + 16 above 48 bits, PDF 122).
-# INJECTIONS, measured 2026-11-16, observed failures only:
+# INJECTIONS, measured 2026-11-16 and again on the batch13-merged tree
+# (CYCLES 360 held), observed failures only:
 #   no decimal compaction (the binary path)  -> L2_FT_zones_dropped only
 #   PF threshold 64 bits instead of 60       -> L3_ind_PF only
 run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=360+-0 \

@@ -2,6 +2,10 @@
 ! refill-address no-op gate, executed on the model since RNX was built
 ! (2026-11-16).
 !
+! INJECTIONS, measured: tests/run_tests.sh, this deck's line.  A model that
+! REFUSES RNX also passes this walk, so it is the injections, not the pass,
+! that show the 0-31 gate is the manual's.
+!
 ! THE DRIVER AND THE CONSTANTS ARE decks/ibox4_rnx_nop.strap's, copied
 ! byte for byte (that file is the transcription, checked bit-exact
 ! against the printed machine code by verify_ibox4_rnx_nop_listing.py;

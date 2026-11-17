@@ -66,6 +66,10 @@
 !     is charged PDF 120 and the binary ST PDF 124.
 ! The 224 is the measured count. The 63-clock rise was not taken apart
 ! by operation.
+!   - Since the refusal went (paragraph at the top) the decimal LFT
+!     EXECUTES, from TD (one word) instead of TB+.48 (a crossing field):
+!     223, measured on the merged tree 2026-11-16.  (The "161 -> 160" of
+!     the same change was on the old generic times.)
 !
         SLC, (8)300.0
 START   L(BU,32,8), DATA1
