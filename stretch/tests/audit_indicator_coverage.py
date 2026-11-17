@@ -76,12 +76,35 @@ def written_by_model():
     return out
 
 
+RE_LABEL = re.compile(r'"([A-Za-z0-9_]+):[0-9]+=0x[0-9A-Fa-f]+"')   # "I1_BTR_RGZ:1202=0x..."
+
+
 def value_checked():
-    """Indicators compared as part of a whole expected word by a testbench
-    generator, e.g. gen_io_tb.py's UNRJ check."""
+    """Indicators compared as part of a whole expected word: by a testbench
+    generator, e.g. gen_io_tb.py's UNRJ check; or by a run_tests.sh check
+    whose label names the indicator, e.g. vfl_ltrs.strap stores $IND
+    (TI, 1, $IND, I1) and its run line checks "I1_BTR_RGZ:1202=0x...".
+
+    Correction 4 (2026-11-16): that second mechanism was invisible here,
+    so BTR and DTR -- written by LTRS and pinned bit-for-bit in
+    vfl_ltrs's I1-I10 words -- came back "named by no program".  A label
+    token is counted only if it is exactly an indicator name, so it stays
+    a REFERENCE audit: the label is the test author's claim that the word
+    holds that indicator, not proof that a wrong value would be noticed.
+
+    Measured 2026-11-16 on copies of run_tests.sh (the real file unchanged):
+      control, as is                       -> PASS (43 written, all named)
+      every "_BTR_" label token removed    -> FAIL: BTR only
+      the five I6-I10 "_DTR_" tokens gone  -> FAIL: DTR only
+      only I1's BTR token altered          -> PASS (I2-I4 still name it)
+    Before this correction the same tree FAILed with "BTR, DTR"."""
     out = set()
     for f in glob.glob(os.path.join(HERE, '*.py')):
         out |= set(re.findall(r'_ind\("([A-Z0-9]+)"\)', open(f).read()))
+    suite = os.path.join(HERE, 'run_tests.sh')
+    if os.path.exists(suite):
+        for label in RE_LABEL.findall(open(suite).read()):
+            out |= {t for t in label.split('_') if t in INDICATOR_BITS}
     return out
 
 
