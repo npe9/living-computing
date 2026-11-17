@@ -109,6 +109,107 @@ harness runs with the interruption system off).
 2026-11-16 (below), and with them `vflDecimalBuilt` -- true of every
 code -- was removed, with execute()'s gate and `prepareExec`'s clause.
 
+### GROUP B BUILT, 2026-11-17: crossing M+ family, a tail below word 32, a crossing field with a refill
+
+The last three rows of "EVERY OP THE MODEL STILL SETS" B were model limits
+(one write per rule, a core-storage-only tail, a two-word prefetch), never
+documented restrictions.  What the pages say, read in the images
+(Reference Manual 22-6530-2, PDF = printed + 3):
+
+* printed p.56, Field Definition: "The storage word or word pair which
+  contains the addressed memory field is brought from storage to the
+  arithmetic section of the computer ... In integer arithmetic operations
+  that affect storage, such as STORE and ADD TO MEMORY, the result replaces
+  the storage operand in the bit positions specified by the address and
+  field length.  Data to the right or left of the specified field in
+  storage are never affected."  printed p.55: a field "may start at any
+  bit position in storage".
+* printed p.34, Special Registers: "Except as noted in connection with the
+  individual registers, addresses 1-15 are valid word addresses in all but
+  the following cases" -- seven cases, none a data store.
+* printed p.21: "For code 3, addition and counting take place and also the
+  index specified by I is refilled if the count reaches zero"; printed
+  p.21-22, Programming Notes: "The variable field length part of the
+  operation is prepared and then the index modification portion of the
+  operation is performed"; "If the index register specified by the I
+  field ... is an operand in the variable field length portion of the
+  operation, the original value of this index register will be used."
+
+What was built:
+
+* **M+, M+1, M+MG across a word boundary** (`StretchExecute.bsv` M+ arm,
+  `mCross`): both words read, the field extracted from the pair, the sum
+  inserted across it, head through `writeWord`, tail through
+  `writeWordTail` (core) or `tailWrite` (below 32).  Both words compared
+  for protection, as ST's crossing store is (`protViolates`).
+  `StretchIBox.prepareExec` no longer calls a crossing M+ (or a CM into a
+  register word) "completes without fetch".
+* **A second word below 32** (ST, SRD, the M+ family, CM): `ExecDone`
+  carries `tailWrite`; `StretchCore`'s off-pipe rule `rl_tail_write` writes
+  it the next clock through `writeWord` and its special-address dispatch.
+  It is in `busyXfer`, so nothing is armed meanwhile and the progressive
+  index write (`rl_idx_write`) comes after it -- p.22's order.  The STORE
+  WAIT test (`StretchIBox.storeWait`) now also tests a crossing store's
+  second word (`storeAddr2`).  CHOSEN: R23-9732 Fig. 3.1.24's hexagon
+  tests "W", the word address; a crossing store's second word is not drawn.
+* **A crossing field with a refill**: `prefetch` is three words
+  (`NPrefetch`).  The read arms' shared trailing block reads the refill
+  word into slot 2; ST, the M+ family and CM read field, field, refill and
+  write only once all three are in hand (the write-then-read rule of
+  `vflWriteArmHandled`).  `vflRefillOutstanding` no longer treats a
+  crossing field as never complete.
+
+Timing of the second word: **CHOSEN, and not the atlas's.**  The model
+charges what ST's crossing store has charged since 2026-10-24 -- one more
+operand read, and one clock for the tail (`writeWordTail`'s drain, or
+`rl_tail_write`) -- and nothing else.  Vol. 2's atlas measures much more:
+ST (BU,8,8) 6.63 us external against 15.95 us EXTERNL WB XOVR (PDF 124),
+M+1 (BU,8,8) 6.33 against 15.35 (PDF 126) -- about 30 clocks for the
+crossover.  `docs/atlas_oracle.md` "What remains" already names this
+residual for "M+, M+MG, ST, SRD, M+1 and CM": "the WB XOVR columns about
+30 more ... they belong in the store path.  Not modelled."  It stays
+unmodelled; `tests/atlas_oracle.py` (not in run_tests.sh) was not re-run
+after this change.
+
+Oracle: `decks/vfl_cross_tomemory.strap` (15 cases, 46 checks: X1-X8
+are the one-word M1-M9 of `vfl_binary_memadd_indicators.strap` with the
+field across a pair, same indicator words; T1-T4 the index registers; R1-R3
+three reads), `decks/vfl_crossing_store.strap` block 5 (was the M+
+refusal), `decks/vfl_progressive_refill_once.strap` P10 (was the
+read-arm refusal).  The first run failed one check, T4, and the derivation
+was wrong, not the model: progressive indexing adds the instruction's
+ADDRESS PART (p.21), and the draft's `0($X7)` adds nothing; the deck now
+uses `.16($X7)`.
+
+MEASURED INJECTIONS (each in a scratch copy of the tree, observed failures):
+
+* I1 `rl_tail_write` drops its write: FAILS T1_X4, T2_X6, T3_X9 (the three
+  tails into an index register), nothing else.
+* I2 the index part's write before the tail: FAILS T4_X7_index_part_last
+  ONLY, (16)EF05B800001405DC.  p.22's order is pinned by that one check.
+* I3 the `M+` arm's crossing tail not written: FAILS X1_W1 .. X8_W1, T2_X6,
+  R1_W1, and no indicator check.
+* I4 a crossing ST with a refill taking the index from `prefetch[1]`: FAILS
+  R2_X7 ONLY, (16)5A5A5A5A5A5A5A5A (the field's second word).
+* I5 the read arms' refill slot truncated to one bit: the new deck green;
+  FAILS R10_refilled = (16)AB in `vfl_progressive_refill_once` ONLY.
+* X2 is the control (no Lost Carry, 0x120): it passes under I1, I2, I4
+  and I5.
+
+Still open: no word-11 or word-7 crossing case (word 11 is the indicator
+register, which the instruction also sets, and word 7's counters are
+written by the connectives at the end -- the order of those against a tail
+write is unread); the CM refill path writes no connective counts (as
+before this change) and its one-word store makes no protection check
+(`writeFieldWithHi`); the level-to-level store/fetch interlock
+(`levelHolds`) still compares a crossing store's first word only.
+BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
+them): the STORE WAIT test of a crossing store's second word
+(`storeAddr2`; no deck puts an index use behind a pending crossing store
+into X16-31), the two `prepareExec` "completes without fetch" clauses
+removed with the refusals, and the both-word protection check on a
+crossing `M+` (no deck runs with a protected second word).
+
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 
 Taken from the code, not from the docs: every `setOpInvalid` in `bsv/`
@@ -140,9 +241,9 @@ refusals, so this list is.
 | `RNX` (no arm; DirIndex default) | printed p.27 (PDF 30) | yes, in full | jb_ax4b routine 1244 TEST 4 (`decks/ibox4_rnx_nop.strap`), C22-6578 Problem 1.8 (`decks/problem_1_8.strap`), RefMan Fig. 9 | **BUILT 2026-11-16**: `decks/rnx.strap` (Problem 1.8's own words), `decks/ibox4_rnx_run.strap` (TEST 4 run) |
 | `DCV`, both radices (no arm; VflInt default) | printed p.74 (PDF 77) | yes, in full | RefMan Figure 19, Vol. 2 atlas PDF 139 | **BUILT 2026-11-16**: `mkCvtBox`; `decks/vfl_dcv.strap` runs Figure 19 whole |
 | decimal `LFT` (gate `vflDecimalBuilt`) | printed p.69 (PDF 72): "Unsigned; Negative Sign; Radix.  These modifiers operate as in ADD" | yes | none beyond the page | **BUILT 2026-11-16**: `decks/vfl_lft_decimal.strap`; `decks/vfl_decimal_refused.strap` flipped |
-| `M+`/`M+1`/`M+MG` with a field crossing a word boundary | p.55-56's VFL addressing (any bit address, any length) | yes | none in the corpus | open: a model limit ("keeps the old refusal", `StretchExecute.bsv` M+ arm) |
-| `ST`/`SRD`/`CM` whose second word is below word 32 | as above | yes | none | open: `writeWordTail` drains to core storage only |
-| a crossing field that also needs a progressive refill (three reads) | p.21-22 | yes | none | open: `prefetch` holds two words |
+| `M+`/`M+1`/`M+MG` with a field crossing a word boundary | p.55-56's VFL addressing (any bit address, any length) | yes | none in the corpus | **BUILT 2026-11-17** ("GROUP B BUILT" below): `decks/vfl_cross_tomemory.strap` X1-X8, R1; `decks/vfl_crossing_store.strap` block 5 |
+| `ST`/`SRD`/`CM` whose second word is below word 32 | as above | yes | none | **BUILT 2026-11-17**: `rl_tail_write`; `decks/vfl_cross_tomemory.strap` T1-T4 (no SRD case: SRD shares ST's arm) |
+| a crossing field that also needs a progressive refill (three reads) | p.21-22 | yes | none | **BUILT 2026-11-17**: `NPrefetch` = 3; `decks/vfl_cross_tomemory.strap` R1-R3, `decks/vfl_progressive_refill_once.strap` P10 |
 
 **C. Defensive defaults, unreachable by construction:** the half-word
 branch default (`BranchOrMisc`), the FP store-class default, the
@@ -159,9 +260,19 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
 `setOpInvalid` left.
 
 **OPEN after B's first three rows were built (2026-11-16):**
-* B's last three rows -- crossing `M+`/`M+1`/`M+MG`, a to-memory tail
+* ~~B's last three rows -- crossing `M+`/`M+1`/`M+MG`, a to-memory tail
   below word 32, a crossing field that also refills (three reads) --
-  are model limits, unbuilt, with no oracle in the corpus.
+  are model limits, unbuilt, with no oracle in the corpus.~~ Built
+  2026-11-17 ("GROUP B BUILT" below), against hand-derived cases.
+* `LCV`'s decimal digit count (`decFieldDigits`' second result) is
+  checked by no deck: zeroing it fails only LTRCV's PF (C5), not LCV's.
+* **A timing deviation from the mkCvtBox move (2026-11-17), unpinned.**
+  `decks/vfl_binary_memadd_indicators.strap` (no CYCLES pin) ran 2280
+  clocks before the move and 2286 after: +6.  The box wait blocks I-box
+  overlap, as on the divide decks.  Unchanged: `vfl_convert` 598,
+  `load_converted` 873 (neither pinned), `vfl_dcv` 1049 (pinned), and
+  the one tolerance pin, `lve_chain_usa` 3571.  Not re-pinned and not
+  fitted: no atlas row prices the overlap.
 * `RNX`'s protection clauses (old name protected -> AD+DS, new name
   -> AD+DF, nothing done) are a CHOSEN reading of printed p.27's "both
   out of bounds and invalid" (read as `protViolates`; "invalid" not
@@ -170,9 +281,10 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
   decimal) at the page's one accumulator (+1 at offset 20); Table 3's
   dependence on S is not modelled, and `tests/atlas_oracle.py` has no
   CV/DCV generator, so the row is fitted, not measured.
-* `CV`, `LCV` and `LTRCV` still convert with the inline `binaryToBcd`
-  rather than through `mkCvtBox`; moving them is the idiomatic-box
-  rewrite's, and would change their timing structure.
+* ~~`CV`, `LCV` and `LTRCV` still convert with the inline `binaryToBcd`
+  rather than through `mkCvtBox`.~~ **DONE 2026-11-17**: all four
+  conversions go through `mkCvtBox`; `bcdToBinary` and `binaryToBcd` are
+  deleted.  LUT4 figures in `docs/fpga_feasibility.md` §10.6.
 * `decks/ibox4_rnx_run.strap` (routine 1244 TEST 4) passes on a model
   that refuses `RNX` too; only its injections discriminate.
 * Printed p.74's "no more than 80 significant bits can be converted
@@ -180,8 +292,8 @@ of zero is ...", rl_xmit) are built.  The Transmit arm has no
   an 80-bit number, so 2^80 - 10^24 values of 80 bits overflow 24
   digits.  The model sets PF from the digits (the page's first PF
   sentence); `decks/vfl_dcv.strap` D2's note.
-* `isDecReq` in `StretchExecute.bsv` is dead since `boxKind` replaced
-  `boxIsDec`.
+* ~~`isDecReq` in `StretchExecute.bsv` is dead since `boxKind` replaced
+  `boxIsDec`.~~ Deleted 2026-11-17.
 
 ### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
 

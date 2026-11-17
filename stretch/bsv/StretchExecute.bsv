@@ -27,8 +27,8 @@
 //   decimal ARITHMETIC   -- still refused, and deliberately: see the
 //                           `radixConv` guard, which exists to let the
 //                           three conversions past the blanket refusal.
-//   DCV (code 59)        -- not built; nothing in MCP uses it, and
-//                           docs/spec_decimal.md says so.
+//   DCV (code 59)        -- BUILT 2026-11-16 (mkCvtBox; decks/
+//                           vfl_dcv.strap).  It said "not built".
 //   RNX                  -- decoded (`isValidDirIndexOp` admits
 //                           `dixop_RNX`) but there is NO arm for it in
 //                           this file, so it reaches the DirIndex
@@ -102,6 +102,14 @@ import StretchALU::*;
 import StretchDecode::*; // decodeHalfWord, for SIC's embedded branch
 import StretchFP::*;     // single-precision floating-point arithmetic
 
+// THE OPERAND WORDS ONE INSTRUCTION MAY COLLECT BEFORE IT EXECUTES: THREE,
+// 2026-11-17.  A VFL field may cross a word boundary (two words, printed
+// p.56: "The storage word OR WORD PAIR which contains the addressed memory
+// field is brought from storage") and a progressive operation may also
+// refill its index (a third word, printed pp.21-22).  With two slots the
+// model refused the combination with OP; nothing in the manual does.
+typedef 3 NPrefetch;
+
 // ---------------------------------------------------------------------
 // Half-word branch evaluation, shared by the CountBranch / BranchInd /
 // BranchOrMisc case arms of execute() and by SIC (Store Instruction
@@ -138,7 +146,7 @@ typedef struct {
 } BranchOutcome deriving (Bits, Eq);
 
 function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0,
-                                  Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
+                                  Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount,
                                   Bit#(2) slot);
   BranchOutcome o = BranchOutcome {
     needsRead: tagged Invalid, readsUsed: 0, doIdxWrite: False, idxWriteReg: 0,
@@ -1108,14 +1116,18 @@ endfunction
 // first result as the accumulator operand (decks/
 // vfl_progressive_refill_once.strap, measured: 5+3 gave 11, 100/7 gave
 // 2).  Every arm that reaches the shared trailing block now does nothing
-// while this is true; the trailing block asks for the refill word (or,
-// with a crossing field, refuses the operation with OP before anything
-// is written -- p.22's "the entire operation will be suppressed").  The
+// while this is true; the trailing block asks for the refill word (the
+// third word, after a crossing field's two).  The
 // decimal arms had this test already, written out in place; it is
 // shared now.
+//
+// (Until 2026-11-17 this was also true whenever readsUsed was 2 -- a
+// crossing field -- and the trailing block then refused the operation:
+// the prefetch held two words.  It holds three now (NPrefetch), so a
+// crossing field's refill word is the third.)
 function Bool vflRefillOutstanding(Bool needsRefill, Bit#(2) prefetchCount,
                                    Bit#(2) readsUsed) =
-  needsRefill && (prefetchCount < readsUsed + 1 || readsUsed >= 2);
+  needsRefill && prefetchCount < readsUsed + 1;
 
 // Data flags, printed p.59: "set according to the data flag bits, if any,
 // of the storage operand", and off if none were obtained from storage.
@@ -2559,6 +2571,16 @@ typedef struct {
   Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
   Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
   Maybe#(XmitXfer) xmitStart;                  // a multi-word TRANSMIT
+  // A CROSSING VFL FIELD'S SECOND WORD WHEN THAT WORD IS BELOW 32 (a
+  // special register or an index register), 2026-11-17.  The first word
+  // went through writeWord in the instruction's own clock; a second
+  // writeWord in the same rule is the one-write-per-rule conflict, and
+  // writeWordTail drains to core storage only.  So the instruction unit
+  // makes this write in an off-pipe rule of its own (rl_tail_write) the
+  // next clock, through writeWord and its special-address dispatch,
+  // before anything else is armed -- the progressive index write
+  // included, which p.22 puts after the VFL part.
+  Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
 } ExecDone deriving (Bits, Eq, FShow);
 
 // >>> WHAT execute() HANDS BACK IS A SUM, AND IT USED TO BE SPELLED AS
@@ -2637,6 +2659,20 @@ function Maybe#(CvtRsp) cvtOf(Maybe#(BoxRsp) r);
   else return tagged Invalid;
 endfunction
 
+// The converter's binary-to-decimal answer is 32 digits; every arm keeps
+// the low twenty-four (96 bits) -- DCV's "maximum of 24 significant
+// digits" (printed p.74), and more than CV's 48 bits or LCV's and
+// LTRCV's 64 can make -- and counts the significant ones for Partial
+// Field: the position of the highest non-zero digit, as the inline
+// binaryToBcd counted them.
+Bit#(128) cvtMask96 = (128'd1 << 96) - 1;
+function Bit#(7) cvtSigDigits(Bit#(128) dig);
+  Bit#(7) nd = 0;
+  for (Integer k = 0; k < 24; k = k + 1)
+    if (dig[4*k+3:4*k] != 4'd0) nd = fromInteger(k) + 1;
+  return nd;
+endfunction
+
 // Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
 // radix converter.
 function Bit#(2) boxKindOf(BoxReq r);
@@ -2655,13 +2691,6 @@ endfunction
 function Maybe#(DecRsp) decOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspDec .d)) return tagged Valid d;
   else return tagged Invalid;
-endfunction
-
-function Bool isDecReq(BoxReq r);
-  case (r) matches
-    tagged BoxDec .*: return True;
-    default:          return False;
-  endcase
 endfunction
 
 typedef union tagged {
@@ -2714,17 +2743,20 @@ typedef struct {
   // by the same guards a read bail is.  Only vflIntOp's divide arm
   // sets it.
   Maybe#(BoxReq) needsBox;
+  // A crossing store's second word when it is below 32: see ExecDone.
+  Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
 } VflOutcome;
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
-             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+             Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
              Maybe#(BoxRsp) boxResult);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(BoxReq) needsBox = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
     Word64 ind = ind0;
 
       Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
@@ -3083,7 +3115,20 @@ function ActionValue#(VflOutcome)
             // one execute() is not the G0004 conflict a second
             // writeWord would be.
             //
-            // TWO THINGS STAY REFUSED, each for a stated reason:
+            // >>> NEITHER OF THE TWO REFUSALS BELOW IS LEFT, 2026-11-17. <<<
+            // A tail below word 32 goes out through ExecDone.tailWrite
+            // (written by the instruction unit's rl_tail_write the next
+            // clock, through writeWord's special-address dispatch), and a
+            // crossing field with a refill reads its third word into the
+            // third prefetch slot (NPrefetch).  Printed p.56: "The storage
+            // word or word pair which contains the addressed memory field
+            // is brought from storage ... the result replaces the storage
+            // operand in the bit positions specified by the address and
+            // field length.  Data to the right or left of the specified
+            // field in storage are never affected"; printed p.34 lists
+            // every case in which addresses 1-15 are not valid word
+            // addresses, and a data store is not among them.  What the
+            // two used to say, kept for the record:
             //
             //   * A TAIL BELOW WORD 32.  The tail is drained to the
             //     store queue, which is the core-storage path, and
@@ -3091,24 +3136,17 @@ function ActionValue#(VflOutcome)
             //     Words 0-31 are the machine's registers.
             //   * A CROSSING FIELD THAT ALSO NEEDS A REFILL.  That
             //     wants THREE reads -- both words of the field and the
-            //     refill word -- and `prefetch` holds two.  The
-            //     trailing progressive block already refuses this
-            //     combination after the fact (vflNeedsRefill &&
-            //     vflReadsUsed >= 2); refusing it HERE, before the
-            //     write, is the difference between a suppressed
-            //     operation and a half-done one.  Nothing in MCP's
-            //     converter hits it: the three checks above go green,
-            //     and line 49's own index has no refill.
+            //     refill word.  (Until 2026-11-17 `prefetch` held two
+            //     and this was refused here, before the write; it holds
+            //     three now, NPrefetch.)
             //
-            // M+ (code 010001 below) keeps the old refusal.  Nothing
-            // measured needs it yet, and bsv/README.md's scope list
-            // carries it with the date.  The CM connective crosses
+            // (Until 2026-11-17 M+, code 010001 below, kept the old
+            // refusal, since nothing measured needed it; bsv/README.md's
+            // scope list carries it with the date.)  The CM connective crosses
             // since 2026-11-06 (connectiveOp's "CM MAY CROSS" note).
             Bool stCrosses = fieldCrosses(ea, len_);
             WordAddr stW0 = baWord(ea);
-            if (immediate
-                || (stCrosses && (stW0 + 1) < 32)
-                || (stCrosses && vflNeedsRefill)) begin
+            if (immediate) begin
               ind = setOpInvalid(ind);
               vflOk = False;
             end else begin
@@ -3217,10 +3255,22 @@ function ActionValue#(VflOutcome)
                 // signal" -- and is why the comment beside
                 // protViolates no longer says "the store sites still
                 // compare one word each".
-                if (prefetchCount >= 2 && decAsk) begin
+                //
+                // WITH A REFILL (2026-11-17) the refill word is the third
+                // read, and the write waits for it, as the one-word
+                // refill path below does (vflWriteArmHandled's reason).
+                // Without one, vflWriteArmHandled stays False: the shared
+                // trailing block's progressive advance writes no storage
+                // (it hands the index back through vflPending).
+                if (vflNeedsRefill) begin
+                  vflWriteArmHandled = True;
+                  ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3
+                end
+                Bit#(2) stNeed = vflNeedsRefill ? 3 : 2;
+                if (prefetchCount >= stNeed && decAsk) begin
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
-                end else if (prefetchCount >= 2) begin
+                end else if (prefetchCount >= stNeed) begin
                   Bool dsHi = protViolates(st, w0);
                   Bool dsLo = protViolates(st, w0 + 1);
                   if (dsHi || dsLo) ind = setBit(ind, ind_DS, 1);
@@ -3229,19 +3279,21 @@ function ActionValue#(VflOutcome)
                       insertFieldBitsPair(prefetch[0], prefetch[1], off,
                                           len_, packedField);
                     st.writeWord(w0, tpl_1(np));
-                    st.writeWordTail(w0 + 1, tpl_2(np));
+                    if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
+                    else st.writeWordTail(w0 + 1, tpl_2(np));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
+                  if (vflNeedsRefill) begin
+                    vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[2]));
+                    ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                  end
+                end else if (prefetchCount == 2)
+                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
+                else if (prefetchCount == 1)
                   needsRead = tagged Valid (w0 + 1);
                 else
                   needsRead = tagged Valid w0;
-                // vflWriteArmHandled stays False: with a refill
-                // refused above, the shared trailing block's
-                // progressive advance writes no storage (it hands the
-                // index back through vflPending), so it is safe here
-                // in a way it is not on the refill path below.
               end
               else if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1 && decAsk) begin
@@ -3936,12 +3988,23 @@ function ActionValue#(VflOutcome)
             // its console message, and with the operation refused the
             // message printed its own placeholder, "000000.0".
             Bool magnitude = (vi.code == 6'b101001);
-            if (immediate || fieldCrosses(ea, len_)) begin
+            // >>> A CROSSING FIELD IS NOT REFUSED, 2026-11-17. <<<  This
+            // was `immediate || fieldCrosses(ea, len_)`, a model limit
+            // (one write per rule) and never a documented one: printed
+            // p.56 brings "the storage word or word pair which contains
+            // the addressed memory field" from storage, and "In integer
+            // arithmetic operations that affect storage, such as STORE
+            // and ADD TO MEMORY, the result replaces the storage operand
+            // in the bit positions specified by the address and field
+            // length."  The pair is read and written as ST's crossing
+            // store does it (mCross below).
+            if (immediate) begin
               ind = setOpInvalid(ind);
               vflOk = False;
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
+              Bool mCross = fieldCrosses(ea, len_);
               SM128 acc = readAcc(st);
               // M+1's addend is +1 or -1: Reference Manual printed
               // p.62-63, read in the ink, "A plus or minus one is
@@ -4036,7 +4099,7 @@ function ActionValue#(VflOutcome)
               // The sum is mkDecBox's, asked for at the write site below
               // -- after every read, the refill included -- so nothing
               // is written on the run that bails.
-              Bit#(64) mRaw = extractFieldBits(prefetch[0], 0, off, len_);
+              Bit#(64) mRaw = extractFieldBits(prefetch[0], mCross ? prefetch[1] : 0, off, len_);
               SM128 dOpnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
               Bit#(7) dNumBits = (vi.m.unsign == 1) ? len_
                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
@@ -4075,76 +4138,72 @@ function ActionValue#(VflOutcome)
                 Word64 i4 = dLc ? setBit(i3, ind_LC, 1) : i3;
                 return dPf ? setBit(i4, ind_PF, 1) : i4;
               endfunction
-              if (!vflNeedsRefill) begin
-                if (prefetchCount >= 1 && dAsk) begin
-                  needsBox  = dReq;
-                  needsRead = tagged Valid 0;
-                end else if (prefetchCount >= 1 && dDec) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, dField));
-                  ind = decMInd(ind);
-                  vflReadsUsed = 1;
-                end else if (prefetchCount >= 1) begin
-                  Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
-                  ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
-                  ind = setBit(ind, ind_MOP, 1);
+              // THE READS, THE BOX AND THE WRITE, for a field in one word
+              // or two, with or without a refill (2026-11-17; it was one
+              // word only).  The words come in order -- the field's
+              // first word, its second if it crosses, then the refill
+              // word -- and the write waits for all of them, so no run
+              // of execute() both writes and asks for a read
+              // (vflWriteArmHandled's reason).  The decimal sum is
+              // mkDecBox's, asked for after the last read.
+              Bit#(2) mReads = mCross ? 2 : 1;
+              Bit#(2) mNeed  = mReads + (vflNeedsRefill ? 1 : 0);
+              if (vflNeedsRefill) begin
+                vflWriteArmHandled = True;
+                // DF, p.32 class 3: the refill genuinely happens here.
+                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
+              end
+              if (prefetchCount < mNeed) begin
+                needsRead = tagged Valid ((prefetchCount == 0) ? w0
+                              : (prefetchCount == 1 && mCross) ? (w0 + 1)
+                              : zeroExtend(vflPx1.refill));
+              end else if (dAsk) begin
+                needsBox  = dReq;
+                needsRead = tagged Valid 0;
+              end else begin
+                Bit#(64) mField = dField;
+                Bool bLc = False;
+                Bool bPf = False;
+                SM128 bStored = dStored;
+                if (!dDec) begin
+                  SM128 opnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
                   // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
                   BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
                                            opnd, accSh, dNumBits);
-                  SM128 stored = bm.stored;
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(stored, len_, bsz, vi.m.unsign, raw)));
-                  if (bm.lc) ind = setBit(ind, ind_LC, 1);
-                  if (bm.pf) ind = setBit(ind, ind_PF, 1);
+                  bStored = bm.stored;
+                  bLc = bm.lc;
+                  bPf = bm.pf;
+                  mField = smToField(bm.stored, len_, bsz, vi.m.unsign, mRaw);
+                end
+                // Both words compared when the field crosses, p.31's
+                // straddling rule, as ST's crossing store does.
+                Bool mDs = protViolates(st, w0) || (mCross && protViolates(st, w0 + 1));
+                if (mDs) ind = setBit(ind, ind_DS, 1);
+                else if (!mCross)
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, mField));
+                else begin
+                  Tuple2#(Word64, Word64) np =
+                    insertFieldBitsPair(prefetch[0], prefetch[1], off, len_, mField);
+                  st.writeWord(w0, tpl_1(np));
+                  if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
+                  else st.writeWordTail(w0 + 1, tpl_2(np));
+                end
+                if (dDec) ind = decMInd(ind);
+                else begin
+                  ind = setDataFlagsF(ind, fieldFlags(mRaw, bsz, vi.m.unsign));
+                  ind = setBit(ind, ind_MOP, 1);
+                  if (bLc) ind = setBit(ind, ind_LC, 1);
+                  if (bPf) ind = setBit(ind, ind_PF, 1);
                   // "set according to the FINAL RESULT STORED"
                   // (p.62's Arithmetic Result line), which for M+MG
                   // is not always the sum.
-                  ind = setResultIndicatorsF(ind, stored);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                // Same deferred-write shape as ST above.
-                vflWriteArmHandled = True;
-                // DF, p.32 class 3.  Reached only when the operation
-                // is valid (the outer test rejects immediate and
-                // crossing) AND vflNeedsRefill, so the refill
-                // genuinely happens -- the gate every other class-3
-                // site states explicitly, this one gets from its
-                // position.
-                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
-                if (prefetchCount >= 2 && dAsk) begin
-                  needsBox  = dReq;
-                  needsRead = tagged Valid 0;
-                end else if (prefetchCount >= 2 && dDec) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, dField));
-                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                  ind = decMInd(ind);
+                  ind = setResultIndicatorsF(ind, bStored);
+                end
+                vflReadsUsed = mReads;
+                if (vflNeedsRefill) begin
+                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-                end else if (prefetchCount >= 2) begin
-                  Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
-                  ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
-                  ind = setBit(ind, ind_MOP, 1);
-                  // binMemAdd (StretchALU.bsv): the p.59/p.62 LC and PF.
-                  BinMemAdd bm = binMemAdd(magnitude, addOne, vi.m.unsign,
-                                           opnd, accSh, dNumBits);
-                  SM128 stored = bm.stored;
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(stored, len_, bsz, vi.m.unsign, raw)));
-                  if (bm.lc) ind = setBit(ind, ind_LC, 1);
-                  if (bm.pf) ind = setBit(ind, ind_PF, 1);
-                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                  ind = setResultIndicatorsF(ind, stored);
-                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                else
-                  needsRead = tagged Valid w0;
+                end
               end
             end
           end
@@ -4373,7 +4432,7 @@ function ActionValue#(VflOutcome)
             // digits.
             //
             // BOTH DIRECTIONS ARE BUILT: decimal-to-binary here, and
-            // binary-to-decimal (binaryToBcd) in the arm below, which
+            // binary-to-decimal in the arm below (both now mkCvtBox), which
             // printed p.32 line 6's "LCV(BU,18),$13 -CONVERT CHANNEL
             // TO DECIMAL" uses.
             Bit#(64) raw = 0;
@@ -4399,6 +4458,31 @@ function ActionValue#(VflOutcome)
               end
             end
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              // THE CONVERSION IS mkCvtBox's (StretchCvtBox.bsv), 2026-11-17,
+              // as DCV's is: asked for once every word this instruction
+              // reads is in hand, by the NeedBox bail, and NOTHING is
+              // written or set on the run that bails -- the data flags
+              // included, which is why they are set inside the branch
+              // that has the answer.  The field is the same either way;
+              // what the box is given depends on the radix.  A binary
+              // field goes as its value; a decimal one as four-bit digits
+              // (decFieldDigits: the bytes "converted to byte size four",
+              // p.73), with its digit count kept here for PF.
+              Bool    lcvSigned = (vi.m.unsign == 0);
+              Bit#(7) lcvNum    = !lcvSigned ? len_
+                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(64) lcvMask  = (lcvNum >= 64) ? 64'hFFFFFFFFFFFFFFFF
+                                                 : ((64'b1 << lcvNum) - 1);
+              Bit#(64) lcvNumeric = !lcvSigned ? raw : (raw >> bsz);
+              match {.lcvDg, .lcvNd} = decFieldDigits(lcvNumeric & lcvMask, lcvNum, bsz);
+              Bool lcvToDec = (vi.m.decimal == 0);
+              Bit#(128) lcvIn = lcvToDec ? zeroExtend(lcvNumeric & lcvMask)
+                                         : zeroExtend(lcvDg);
+              if (cvtOf(boxResult) matches tagged Invalid) begin
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: lcvToDec, v: lcvIn });
+                needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+              end else begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               // DATA FLAGS, 2026-11-16 (this arm never set them).
               // printed p.73 (PDF 76), LOAD CONVERTED, read in the page
               // image: "Data Flags (TF, UF, VF); To-Memory Operation
@@ -4414,18 +4498,15 @@ function ActionValue#(VflOutcome)
                 // BINARY TO DECIMAL, printed p.72's Radix: "If binary
                 // is specified, the storage operand is converted from
                 // binary to decimal, with the decimal result in byte
-                // size four."  This direction was refused until
-                // binaryToBcd existed; it is the direction MCP needs.
-                Bool    signed_ = (vi.m.unsign == 0);
-                Bit#(7) sbBits  = zeroExtend(bsz);
-                Bit#(7) numBits = !signed_ ? len_
-                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
-                Bit#(64) mask   = (numBits >= 64) ? 64'hFFFFFFFFFFFFFFFF
-                                                  : ((64'b1 << numBits) - 1);
-                Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
+                // size four."  This direction was refused until the
+                // inline binaryToBcd existed (now mkCvtBox); it is the
+                // direction MCP needs.  At most 64 bits is at most twenty
+                // digits, inside the box's twenty-four kept.
+                Bool    signed_ = lcvSigned;
                 Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
                 Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
-                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
+                Bit#(128) dig = cr.r & cvtMask96;
+                Bit#(7)   nd  = cvtSigDigits(dig);
                 SM128 conv = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
                 // p.72: LCV clears the sign byte's four low-order
                 // bits, unlike CV and DCV -- one write, see
@@ -4443,12 +4524,8 @@ function ActionValue#(VflOutcome)
               end else begin
                 // A signed decimal field's sign byte is its RIGHTMOST
                 // byte and is inside `len_` (p.56), so shift it off
-                // and convert what remains.
-                Bit#(7) sbBits  = zeroExtend(bsz);
-                Bool    signed_ = (vi.m.unsign == 0);
-                Bit#(7) numBits = !signed_ ? len_
-                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
-                Bit#(64) digitsRaw = !signed_ ? raw : (raw >> bsz);
+                // and convert what remains (lcvNumeric/lcvNum above).
+                Bool    signed_ = lcvSigned;
                 // "The sign bit in the sign byte register is set
                 // according to the sign of the data as affected by
                 // the sign modifiers" (p.72).  Unsigned fields are
@@ -4472,7 +4549,8 @@ function ActionValue#(VflOutcome)
                 Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
                 Bit#(1) rawSign = !signed_ ? 0 : raw[signIdx];
                 Bit#(1) sgn     = rawSign ^ vi.m.invert;
-                match {.cvVal, .cvDigits} = bcdToBinary(digitsRaw, numBits, bsz);
+                Bit#(128) cvVal    = cr.r;
+                Bit#(7)   cvDigits = lcvNd;
                 // "The accumulator is cleared and the converted field
                 // is placed into it at the specified offset."
                 SM128 conv = SM128 { sign: sgn, mag: cvVal << offSh };
@@ -4508,6 +4586,7 @@ function ActionValue#(VflOutcome)
                 ind = setBit(ind, ind_MOP, 0);
                 ind = setResultIndicatorsF(ind, conv);
               end
+              end   // the box's answer
             end
           end
           6'b011011: begin // CV (Convert)
@@ -4549,19 +4628,32 @@ function ActionValue#(VflOutcome)
             // where this reads.
             // No storage operand, but a progressive CV still refills:
             // held until the refill word is in hand, as every arm here.
+            //
+            // THE CONVERSION IS mkCvtBox's, 2026-11-17 (DCV's arm below
+            // has the shape): the bail asks it, the re-run takes the
+            // answer, nothing is written on the run that bails.
             if (!vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // "the accumulator sign is taken as-is ... as positive
             // ... inverted" (p.73's Modifiers)
             Bit#(1) sgn = (vi.m.unsign == 1 ? 0 : acc.sign) ^ vi.m.invert;
-            if (vi.m.decimal == 0) begin
+            Bit#(48) cvSrc    = acc.mag[115:68];
+            Bit#(64) cvDigits = truncate(acc.mag >> offSh);
+            Bit#(128) cvIn = (vi.m.decimal == 0) ? zeroExtend(cvSrc)
+                           : zeroExtend(cvDigits & 64'h0FFFFFFFFFFFFFFF);
+            if (cvtOf(boxResult) matches tagged Invalid) begin
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: cvIn });
+              needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+            end else if (vi.m.decimal == 0) begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               // Binary to decimal.  "Higher-order bits (positions
               // 0-11 of the accumulator) are ignored and lost.  NO
               // INDICATION OF THIS LOSS IS RETAINED" -- a silent
               // truncation, unusual enough in this manual to be
               // worth doing deliberately.
-              Bit#(48) src = acc.mag[115:68];
-              match {.dig, .nd} = binaryToBcd(zeroExtend(src));
+              // 48 bits is at most fifteen digits.
+              Bit#(128) dig = cr.r & cvtMask96;
+              Bit#(7)   nd  = cvtSigDigits(dig);
               SM128 res = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
               writeAcc(st, res);
               if ((zeroExtend(nd) * 4) + offSh > 128)
@@ -4575,9 +4667,10 @@ function ActionValue#(VflOutcome)
               // and no digit count is stated -- so fifteen digits is
               // taken, which is the most that can yield the stated
               // maximum of 48 significant bits.  Recorded as a
-              // reading, not a quotation.
-              Bit#(64) digits = truncate(acc.mag >> offSh);
-              match {.val, .nd} = bcdToBinary(digits & 64'h0FFFFFFFFFFFFFFF, 60, 4);
+              // reading, not a quotation.  (cvIn above: the fifteen
+              // low digits at the offset, the box converts them.)
+              CvtRsp cr = validValue(cvtOf(boxResult));
+              Bit#(128) val = cr.r;
               SM128 res = SM128 { sign: sgn, mag: (val & 128'hFFFFFFFFFFFF) << 68 };
               writeAcc(st, res);
               if ((val >> 48) != 0) ind = setBit(ind, ind_PF, 1);
@@ -4648,14 +4741,22 @@ function ActionValue#(VflOutcome)
               Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
               Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
               Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
+              // THE CONVERSION IS mkCvtBox's, 2026-11-17 (LCV's arm has
+              // the note): binary goes as its value, decimal as four-bit
+              // digits with the field's digit count kept here.
+              match {.ltDg, .ltNd} = decFieldDigits(valRaw, numBits, bsz);
+              Bit#(128) ltIn = (vi.m.decimal == 0) ? zeroExtend(valRaw) : zeroExtend(ltDg);
+              if (cvtOf(boxResult) matches tagged Invalid) begin
+                needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: vi.m.decimal == 0, v: ltIn });
+                needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+              end else begin
+              CvtRsp cr = validValue(cvtOf(boxResult));
               Bit#(128) payload = 0;
               Bit#(7)   ndig    = 0;
               if (vi.m.decimal == 0) begin
-                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
-                payload = dig; ndig = nd;
+                payload = cr.r & cvtMask96; ndig = cvtSigDigits(payload);
               end else begin
-                match {.val, .nd} = bcdToBinary(valRaw, numBits, bsz);
-                payload = val; ndig = nd;
+                payload = cr.r; ndig = ltNd;
               end
               // WHAT THE TRANSIT REGISTER HOLDS, printed p.73 (PDF 76),
               // read in the page image: "In the former case [a binary-
@@ -4690,6 +4791,7 @@ function ActionValue#(VflOutcome)
               // accumulator, which this operation never touches.
               ind = setResultIndicatorsF(ind,
                       SM128 { sign: sgn, mag: trMag });
+              end   // the box's answer
             end
           end
           6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
@@ -4845,11 +4947,7 @@ function ActionValue#(VflOutcome)
                 // The low 24 digits are the result; any digit above them
                 // is "the converted field exceeds 96 significant bits".
                 Bit#(128) dig = cr.r & mask96;
-                Bit#(7) nd = 0;
-                for (Integer k = 0; k < 24; k = k + 1) begin
-                  Bit#(4) dk = dig[4*k+3:4*k];
-                  if (dk != 0) nd = fromInteger(k) + 1;
-                end
+                Bit#(7) nd = cvtSigDigits(dig);
                 Bit#(9) top = (zeroExtend(nd) * 4) + zeroExtend(offSh);
                 SM128 res = SM128 { sign: sgn, mag: dig << offSh };
                 writeAcc(st, res);
@@ -4916,17 +5014,10 @@ function ActionValue#(VflOutcome)
           // share an execute() call with a new read request -- see
           // vflWriteArmHandled's own comment. vflPx1/vflNeedsRefill
           // computed once, up front, before the case (see there).
-          if (vflNeedsRefill && vflReadsUsed >= 2) begin
-            // The arm above already used both prefetch slots (a
-            // crossing-field read); a refill on top of that would
-            // need a 3rd slot, beyond this design's 2-slot bound.
-            // Not reachable by any current test (see
-            // docs/phase2_arm_inventory.md, "V+/V+C/V+CR" note) --
-            // flagged explicitly rather than silently misreading
-            // stale prefetch data, the same class of bug this fix
-            // corrects for the (own-read + refill) case below.
-            ind = setOpInvalid(ind);
-          end else begin
+          begin
+            // (A crossing field plus a refill was refused here with OP
+            // until 2026-11-17: it needed a third prefetch slot, which
+            // NPrefetch now provides.)
             // DF, p.32 class 3.  INSIDE this else, not beside the
             // test above it: that arm suppresses the whole operation
             // (a crossing-field read plus a refill would need a third
@@ -4938,7 +5029,7 @@ function ActionValue#(VflOutcome)
             if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
               needsRead = tagged Valid zeroExtend(vflPx1.refill);
             end else begin
-              Bit#(1) slot = truncate(vflReadsUsed);
+              Bit#(2) slot = vflReadsUsed;
               IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
               vflPending = tagged Valid tuple2(vi.a.i1, px2);
               ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -4952,7 +5043,8 @@ function ActionValue#(VflOutcome)
              // guard` already uses below.
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
-                      connCounts: connCounts, needsBox: needsBox};
+                      connCounts: connCounts, needsBox: needsBox,
+                      tailWrite: tailWrite};
   endactionvalue
 endfunction
 
@@ -4974,12 +5066,13 @@ endfunction
 // ---------------------------------------------------------------------
 function ActionValue#(VflOutcome)
     connectiveOp(StretchStorage st, ConnInstr cn,
-                 Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+                 Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
                  HWordAddr pc);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
     Word64 ind = ind0;
 
       Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
@@ -5111,23 +5204,11 @@ function ActionValue#(VflOutcome)
         // ABOVE LOCATION".  It is now written the way ST's crossing
         // store is (vflIntOp's ST arm): both words read, the field
         // inserted across the pair, the head through writeWord and the
-        // tail through writeWordTail.  The two refusals ST keeps are
-        // kept here for ST's two reasons -- a tail below word 32 (the
-        // registers) and a crossing field that also needs a refill
-        // (three reads of a two-slot prefetch).
-        if (cn.suffix == conn_CM && fieldCrosses(ea, len_)
-            && ((baWord(ea) + 1) < 32 || vflNeedsRefill)) begin
-          // CM writing a crossing field ST also refuses.
-          // The length and offset are printed because THAT IS WHAT
-          // CAUGHT THE 2026-10-25 IMAGE BUG: three CM1111 rows came
-          // through with rawlen=0 (which effLength reads as 64) where
-          // the assembled word has 1, and the numbers are what showed
-          // the fault was in the MERGED IMAGE and not in this guard.
-          $display("StretchCore:   OP site = conn/CM-crossing-field  len=%0d off=%0d  at half-word %0d",
-                   len_, baBit(ea), pc);
-          ind = setOpInvalid(ind);
-          vflOk = False;
-        end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
+        // tail through writeWordTail (or, below word 32, tailWrite).
+        // (A CM crossing field whose second word is below 32, or which
+        // also needs a refill, was refused here with OP until 2026-11-17,
+        // for ST's two reasons; both are built, as in ST's arm.)
+        if (cn.suffix == conn_CM && vflNeedsRefill) begin
           // CM with a refill also pending: deferred-write shape, same
           // as VflInt's ST -- own field word first, refill second,
           // write only once both are in hand (see vflWriteArmHandled's
@@ -5146,9 +5227,13 @@ function ActionValue#(VflOutcome)
           ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
           WordAddr w0 = baWord(ea);
           Bit#(6) off = baBit(ea);
-          if (prefetchCount >= 2) begin
+          // A crossing field reads both its words before the refill word
+          // (2026-11-17; the third prefetch slot).
+          Bool cmCross = fieldCrosses(ea, len_);
+          Bit#(2) cmReads = cmCross ? 2 : 1;
+          if (prefetchCount >= cmReads + 1) begin
             Word64 mHiWord = prefetch[0];
-            Bit#(64) m = extractFieldBits(prefetch[0], 0, off, len_);
+            Bit#(64) m = extractFieldBits(prefetch[0], cmCross ? prefetch[1] : 0, off, len_);
             SM128 acc = readAcc(st);
             // Byte-expanded, p.75 -- same three lines as the main
             // C/CT/CM site below.  CM's result is then contracted
@@ -5160,14 +5245,26 @@ function ActionValue#(VflOutcome)
             Bit#(128) aVec = (acc.mag >> offSh) & maskVec;
             Bit#(128) rVec = applyConnective(cn.conn, mVec, aVec) & maskVec;
             Bit#(64) result = connContract(rVec, len_, bsEff);
-            writeFieldWithHi(st, ea, len_, result, mHiWord);
+            if (!cmCross)
+              writeFieldWithHi(st, ea, len_, result, mHiWord);
+            else if (protViolates(st, w0) || protViolates(st, w0 + 1))
+              ind = setBit(ind, ind_DS, 1);    // p.31, as the crossing CM below
+            else begin
+              Tuple2#(Word64, Word64) np =
+                insertFieldBitsPair(prefetch[0], prefetch[1], off, len_, result);
+              st.writeWord(w0, tpl_1(np));
+              if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
+              else st.writeWordTail(w0 + 1, tpl_2(np));
+            end
             ind = setConnectiveIndicatorsF(ind, True, result == 0);
-            vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[1]));
+            vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
             ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-          end else if (prefetchCount == 1)
-            needsRead = tagged Valid zeroExtend(vflPx1.refill);
-          else
+          end else if (prefetchCount == 0)
             needsRead = tagged Valid w0;
+          else if (prefetchCount == 1 && cmCross)
+            needsRead = tagged Valid (w0 + 1);
+          else
+            needsRead = tagged Valid zeroExtend(vflPx1.refill);
         end else begin
           Bit#(64) m = 0;
           Word64 mHiWord = 0; // valid only for CM (the only suffix
@@ -5251,7 +5348,8 @@ function ActionValue#(VflOutcome)
                       insertFieldBitsPair(mHiWord, mLoWord, baBit(ea),
                                           len_, result);
                     st.writeWord(cw0, tpl_1(np));
-                    st.writeWordTail(cw0 + 1, tpl_2(np));
+                    if ((cw0 + 1) < 32) tailWrite = tagged Valid tuple2(cw0 + 1, tpl_2(np));
+                    else st.writeWordTail(cw0 + 1, tpl_2(np));
                   end
                 end
               end
@@ -5293,13 +5391,10 @@ function ActionValue#(VflOutcome)
           // its own inline above -- see vflWriteArmHandled). Reuses
           // vflPx1/vflNeedsRefill computed up front; same shape as
           // VflInt's identical trailing block.
-          if (vflNeedsRefill && vflReadsUsed >= 2) begin
-            // See VflInt's identical comment above: a crossing-field
-            // read (CM's own crossing-with-refill is forced
-            // invalid above) plus a refill would need a 3rd prefetch
-            // slot. Not reachable by any current test.
-            ind = setOpInvalid(ind);
-          end else begin
+          begin
+            // (A crossing field plus a refill was refused here with OP
+            // until 2026-11-17: it needed a third prefetch slot, which
+            // NPrefetch now provides.)
             // DF, p.32 class 3 -- the same reshape vflIntOp's
             // identical block carries, and for the same reason: the
             // arm above suppresses the whole operation, so no refill
@@ -5308,7 +5403,7 @@ function ActionValue#(VflOutcome)
             if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
               needsRead = tagged Valid zeroExtend(vflPx1.refill);
             end else begin
-              Bit#(1) slot = truncate(vflReadsUsed);
+              Bit#(2) slot = vflReadsUsed;
               IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
               vflPending = tagged Valid tuple2(cn.a.i1, px2);
               ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
@@ -5318,7 +5413,8 @@ function ActionValue#(VflOutcome)
         end  // DF suppression (mask 1) -- see vflIntOp's matching end
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
-                      connCounts: connCounts, needsBox: tagged Invalid};
+                      connCounts: connCounts, needsBox: tagged Invalid,
+                      tailWrite: tailWrite};
   endactionvalue
 endfunction
 
@@ -5350,7 +5446,7 @@ typedef struct {
 
 function ActionValue#(IndexOutcome)
     dirIndexOp(StretchStorage st, DixInstr di_,
-               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
+               Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
                Bool lveTimedOut);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
@@ -5793,7 +5889,7 @@ endfunction
 // ---------------------------------------------------------------------
 function ActionValue#(IndexOutcome)
     immIndexOp(StretchStorage st, ImmInstr ii,
-               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+               Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Bool doIdxWrite = False;
@@ -6033,7 +6129,7 @@ typedef struct {
 
 function ActionValue#(IoOutcome)
     ioOpExec(StretchStorage st, StretchIO io, IoInstr io_,
-             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+             Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(IoXfer) ioStart = tagged Invalid;
@@ -6468,13 +6564,15 @@ endfunction
 
 function ActionValue#(ExecDispatch)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
+            Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount,
             Maybe#(HWordAddr) intIC, ExSubject ex,
             Maybe#(BoxRsp) boxResult) =
   actionvalue
     // "I need a box" (ExecDispatch's NeedBox).  Whenever this is
     // Valid, needsRead is too.
     Maybe#(BoxReq) needsBox = tagged Invalid;
+    // A crossing VFL store's second word below 32 (ExecDone.tailWrite).
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
     // An instruction at an effective interruption address carries the
     // interrupted program's instruction counter, which "is not stepped
     // during execution of either interruption instruction" (Reference
@@ -6636,6 +6734,7 @@ function ActionValue#(ExecDispatch)
         needsBox   = vo.needsBox;
         vflPending = vo.vflPending;
         ind        = vo.ind;
+        tailWrite  = vo.tailWrite;
         // LTRS's counts (location 7), after vflIntOp's own writes: see
         // VflOutcome's connCounts comment and the Connective case below.
         if (vo.connCounts matches tagged Valid {.lzcv, .aocv})
@@ -7477,6 +7576,7 @@ function ActionValue#(ExecDispatch)
         needsRead  = co.needsRead;
         vflPending = co.vflPending;
         ind        = co.ind;
+        tailWrite  = co.tailWrite;
         // The counts, written HERE rather than inside connectiveOp --
         // see VflOutcome's own comment.  After the function has done
         // every write of its own, which is both what the scheduler
@@ -7928,7 +8028,8 @@ function ActionValue#(ExecDispatch)
         $display("StretchCore: OP SET by the instruction at half-word %0d", pc);
       st.setIndicatorBits(ind);
       return tagged Complete ExecDone{ next: next, idxWrite: vflPending,
-                                       ioStart: ioStart, xmitStart: xmitStart };
+                                       ioStart: ioStart, xmitStart: xmitStart,
+                                       tailWrite: tailWrite };
     end else begin
       // Bailed out partway through: the arm that set `needsRead` did
       // so before touching any of these, so returning the function-
@@ -7996,7 +8097,7 @@ typedef struct {
 interface EBox;
   method ActionValue#(Maybe#(ExecDone))
     start(HWordAddr pc, InstrLen len, DecodedInstr di,
-          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner,
+          Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner,
           Maybe#(HWordAddr) intIC);
   method Bool busy();                 // holding an instruction that waits on a read
   method Bool busyFor(ExecOwner o);   // ... dispatched by o
@@ -8029,7 +8130,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // that the instruction counter steps past the EXECUTE and nothing
   // else (p.49; execute()'s `fallthrough` comment has the sentence).
   Reg#(Maybe#(HeldOp)) held <- mkReg(tagged Invalid);
-  Reg#(Vector#(2, Word64)) prefetch      <- mkReg(replicate(0));
+  Reg#(Vector#(NPrefetch, Word64)) prefetch      <- mkReg(replicate(0));
   Reg#(Bit#(2))            prefetchCount <- mkReg(0);
   Reg#(ExecOwner)          owner         <- mkReg(OwnerIbox);
 
@@ -8097,7 +8198,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
 
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Maybe#(HWordAddr) intIC);
+            Vector#(NPrefetch, Word64) pf, Bit#(2) cnt, ExecOwner o, Maybe#(HWordAddr) intIC);
     // A freshly dispatched instruction is never itself a subject: the
     // instruction unit only ever hands over instructions of the main
     // program.  An EX dispatched here bails immediately for its subject
@@ -8192,7 +8293,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     DecodedInstr       rdi  = h.di;
     ExSubject          rex  = h.ex;
     Maybe#(ExicCtx)    rexic = h.exic;
-    Vector#(2, Word64) rpf  = prefetch;
+    Vector#(NPrefetch, Word64) rpf  = prefetch;
     Bit#(2)            rcnt = prefetchCount;
     // AND THESE TWO ARE NEVER REASSIGNED, which is the point of naming
     // them.  Even when `rdi` below becomes the subject instruction,
@@ -8243,7 +8344,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       subjReady <= False;
     end else begin
       Word64 v <- st.readWordResp();
-      Vector#(2, Word64) pf = prefetch;
+      Vector#(NPrefetch, Word64) pf = prefetch;
       pf[prefetchCount] = v;
       Bit#(2) cnt = prefetchCount + 1;
       rpf = pf;

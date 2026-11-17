@@ -90,6 +90,7 @@ endfunction
 typedef struct {
   Maybe#(WordAddr) operandAddr;   // the word a storage operand read wants
   Maybe#(WordAddr) storeAddr;     // the word the instruction writes back
+  Maybe#(WordAddr) storeAddr2;    // and its second word, when the field crosses
   // >>> DOES THIS INSTRUCTION FINISH WITHOUT READING ANYTHING? <<<
   // The preparation arm's probe used to answer this by RUNNING
   // execute() and seeing whether it asked for a word, which is why
@@ -130,10 +131,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       Bool stores = (v.code == 6'b001101) || (v.code == 6'b101101)
                  || (v.code == 6'b001001)
                  || (v.code == 6'b101001) || (v.code == 6'b101011);
-      // M+/M+1/M+MG, unlike ST since 2026-10-24, still cannot cross a
-      // word boundary -- see protViolates' note -- and refuse with OP.
-      Bool mPlus = (v.code == 6'b001001) || (v.code == 6'b101001)
-                || (v.code == 6'b101011);
+      // (M+/M+1/M+MG crossing a word boundary were refused with OP, so
+      // completed without a fetch, until 2026-11-17; they read both words
+      // now, as ST does.)
       // The decimal refusal that stood here (vflDecimalBuilt) is gone
       // since 2026-11-16: decimal LFT and DCV were the last two, and
       // execute()'s gate went in the same change.
@@ -141,12 +141,13 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // RefMan printed p.21), as execute() sees it.
       Bit#(7) len_ = effLength(vflSecondIndex(st, v.a).length);
       Bool done = (prog && v.a.i1 == 0)                  // progressive, no index
-               || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
                || dfSuppresses(st, w)                    // DF, mask-dependent
                || !installed(w);                         // AD
       return PreparedExec {
         operandAddr: (v.a.p == 4) ? tagged Invalid : tagged Valid w,
         storeAddr:   stores       ? tagged Valid w : tagged Invalid,
+        storeAddr2:  (stores && fieldCrosses(ea, len_)) ? tagged Valid (w + 1)
+                                                        : tagged Invalid,
         completesWithoutFetch: done };
     end
     tagged Connective .c: begin
@@ -155,10 +156,9 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
                         : effAddr24(st, c.a.addr, c.a.i1);
       WordAddr w = ea[23:6];
       Bit#(7) len_ = effLength(vflSecondIndex(st, c.a).length);
+      // (CM crossing into a register word was refused with OP until
+      // 2026-11-17 and completed without a fetch; it reads both words now.)
       Bool done = (prog && c.a.i1 == 0)
-               // CM crossing into a register word, which execute()
-               // still refuses (its "CM MAY CROSS" note).
-               || (c.suffix == conn_CM && fieldCrosses(ea, len_) && (w + 1) < 32)
                || dfSuppresses(st, w)
                || !installed(w);
       return PreparedExec {
@@ -167,6 +167,8 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         // nothing, so neither is a store.  See storeTarget's note on
         // how CM's absence here was found.
         storeAddr: (c.suffix == conn_CM) ? tagged Valid w : tagged Invalid,
+        storeAddr2: (c.suffix == conn_CM && fieldCrosses(ea, len_)) ? tagged Valid (w + 1)
+                                                                    : tagged Invalid,
         completesWithoutFetch: done };
     end
     tagged Fp .f: begin
@@ -180,10 +182,12 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         // FP L only; ST fetches nothing.
         operandAddr: (f.code == fpop_L) ? tagged Valid w : tagged Invalid,
         storeAddr:   stores             ? tagged Valid w : tagged Invalid,
+        storeAddr2:  tagged Invalid,
         completesWithoutFetch: dfSuppresses(st, w) || !installed(w) };
     end
     default: return PreparedExec { operandAddr: tagged Invalid,
                                    storeAddr:   tagged Invalid,
+                                   storeAddr2:  tagged Invalid,
                                    completesWithoutFetch: False };
   endcase
 endfunction
@@ -408,16 +412,24 @@ endfunction
 // did not wait for a pending level storing word 16+j, so "ST(BU,64),$X3"
 // then "V+I,$3,1.0" read the old $3 (decks/index_after_index_store.strap).
 //
-// A field crossing INTO word 16-31 from word 15 is refused (OP) by
-// execute() -- its "(stW0 + 1) < 32" test -- so `storeAddr`, the first
-// word, is enough.  If that refusal is ever lifted, test the second word.
+// A field crossing INTO word 11, 12 or 16-31 (from word 10 or 15) was
+// refused (OP) by execute() until 2026-11-17, so `storeAddr`, the first
+// word, was enough.  That refusal is lifted (a tail below word 32 is
+// written by rl_tail_write), so the SECOND word is tested too
+// (`storeAddr2`, Valid only for a crossing store).  CHOSEN: Fig. 3.1.24's
+// hexagon tests "W", the word address; the pages do not draw a crossing
+// store's second word, and the model stalls for it rather than let a
+// younger instruction read the register before the store's tail lands.
 function Bool storeWaitWord(WordAddr w) = (w == 11 || w == 12 || (w >= 16 && w <= 31));
 
 function Bool storeWait(Vector#(4, LaLevel) lv);
   Bool r = False;
-  for (Integer k = 0; k < 4; k = k + 1)
+  for (Integer k = 0; k < 4; k = k + 1) begin
     if (lv[k].valid &&& lv[k].storeAddr matches tagged Valid .sa &&& storeWaitWord(sa))
       r = True;
+    if (lv[k].valid &&& lv[k].storeAddr2 matches tagged Valid .sb &&& storeWaitWord(sb))
+      r = True;
+  end
   return r;
 endfunction
 

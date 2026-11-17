@@ -343,7 +343,9 @@ function Bit#(16) eboxClocks(DecodedInstr d);
         6'b011011: e = dec ? 74 : 20;
         6'b111011: e = dec ? 18 : 20;
         // (DCV executes since 2026-11-16 -- G2.3, mkCvtBox, whose 6 and 4
-        // clocks fit inside these -- and this row is its time.)
+        // clocks fit inside these -- and this row is its time.  CV, LCV
+        // and LTRCV use the same box since 2026-11-17; their rows here
+        // are unchanged, and the box's clocks come off them.)
         // Anything else (no other code is a VflInt operation): L's law.
         default: e = 12 + 2 * b;
       endcase

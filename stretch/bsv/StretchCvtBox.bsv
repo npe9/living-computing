@@ -1,16 +1,24 @@
-// StretchCvtBox.bsv -- the RADIX CONVERTER for CONVERT DOUBLE, as a
-// multi-cycle box.
+// StretchCvtBox.bsv -- the RADIX CONVERTER for every radix conversion
+// (CV, LCV, LTRCV, DCV), as a multi-cycle box.
 //
 // >>> WHY A BOX (AGENTS.md, "Idiomatic Bluespec") <<<  CONVERT DOUBLE
 // (DCV, code 59) converts a 96-bit binary field to as many as 29 decimal
 // digits, or up to 32 decimal digits to binary.  StretchALU's
-// binaryToBcd already does the first inline -- twenty-four 96-bit
-// dividers in one combinational function, which its own note says
-// "belongs on that list" of datapaths that must go multi-cycle.  DCV is
-// not added to that list: it is the third box, beside mkDivBox and
-// mkDecBox, with the same shape -- instantiated once in mkEBox, reached
-// through execute()'s `NeedBox` bail, a request method, a responseReady
-// poll and a response value, and execute() re-run with the answer.
+// binaryToBcd did the first inline -- twenty-four 96-bit dividers in one
+// combinational function, which its own note said "belongs on that
+// list" of datapaths that must go multi-cycle.  DCV was not added to
+// that list: it is the third box, beside mkDivBox and mkDecBox, with the
+// same shape -- instantiated once in mkEBox, reached through execute()'s
+// `NeedBox` bail, a request method, a responseReady poll and a response
+// value, and execute() re-run with the answer.
+//
+// SINCE 2026-11-17 CV, LCV AND LTRCV USE IT TOO, and the inline
+// binaryToBcd and bcdToBinary are deleted (docs/fpga_feasibility.md
+// 10.6).  CV's 48 bits and LCV's and LTRCV's 64 are at most twenty
+// digits; a decimal field of another byte size reaches the box as
+// four-bit digits (StretchALU's decFieldDigits).  Every caller's budget
+// in eboxClocks (DCV's decimal 18 clocks is the smallest of the four)
+// holds the box's 6 and 4 clocks.
 //
 // ---------------------------------------------------------------------
 // WHAT IT COMPUTES

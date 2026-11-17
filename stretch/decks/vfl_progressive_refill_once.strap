@@ -59,15 +59,15 @@
 !             -> (16)123 (twice: the second CV finds 0 at offset 68 -> 0).
 !             CV has no storage operand, but a progressive CV still counts
 !             and refills (printed p.21).
-!   P10 + with a CROSSING field and a refill: three words for a two-slot
-!             prefetch, which this model refuses with OP (bsv/README.md;
-!             p.22: "If an exception condition is detected during the
-!             variable field length portion of the operation, the entire
-!             operation will be suppressed, and the appropriate indicator
-!             will be turned on").  acc stays 5, the index is not stepped
-!             (R10 = XPX), OP on (I10 has bit 15).  The OP refusal itself is
-!             a model limit, not a 7030 rule; the case pins that nothing is
-!             written before it.
+!   P10 + with a CROSSING field and a refill: three words (the field's two
+!             and the refill word).  REFUSED WITH OP UNTIL 2026-11-17, when
+!             the prefetch held two words (a model limit, never a 7030
+!             rule); built then (NPrefetch, StretchExecute.bsv).  acc 5 +
+!             field (16)ABCD (CROSS's low byte AB, CROSS+1's top byte CD) =
+!             (16)ABD2, once; the index refilled (R10 = RFW's contents);
+!             I10 = RGZ (16)20 plus the pre-refill index indicators of
+!             p.21, XCZ (count zero) and XVGZ (value above zero), (16)9000:
+!             (16)9020.  Was: acc 5, R10 = XPX not stepped, I10 = OP.
 !   Rk  the index word after Pk: RFW's contents for P1-P5, P7, P8; for P6, the
 !       count down to 4, value and refill unchanged.
 !
@@ -85,6 +85,11 @@
 ! line back to "!isValid(needsRead)"): FAILS P1_add 11 and P2_addmg 11,
 ! nothing else here; vfl_decimal_add and vfl_binary_add_indicators stay
 ! green.  Run in a scratch copy of the tree; the worktree never held it.
+!
+! INJECTION 2026-11-17, observed: the trailing block's refill slot
+! truncated to one bit (Bit#(2) slot = zeroExtend(vflReadsUsed[0]), the
+! two-word prefetch's index): FAILS R10_refilled = (16)AB (the index
+! refilled from the field's first word) ONLY; P10's sum and I10 pass.
 
         SLC, 1000.0
 START   L(BU,64,8), FIVE

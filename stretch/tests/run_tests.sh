@@ -2342,8 +2342,8 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
     "mcp_width_tail:289=13835058055282163711" \
     "progressive_head:296=18446744073709551609" \
     "progressive_tail:297=12033618204333965311" \
-    "mplus_refused_head:304=18446744073709551615" \
-    "mplus_refused_tail:305=18446744073709551615"
+    "mplus_cross_head:304=18446744073709486080" \
+    "mplus_cross_tail:305=10696049115004927"
 
 # >>> VFL STORE ROUNDED (SRD, code 101101), BUILT 2026-11-16: the ST arm with
 # one add in front (Reference Manual printed p.64).  <<<  Two decks.  The
@@ -2778,7 +2778,33 @@ run "PROGRESSIVE REFILL: binary + +MG * *+ / C CV and L do their arithmetic once
     "R1_refilled:1706=0x01348000013405dc" "R2_refilled:1707=0x01348000013405dc" "R3_refilled:1708=0x01348000013405dc" \
     "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01788000001005e1" \
     "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc" \
-    "P9_cv:1716=0x123" "R9_refilled:1717=0x01348000013405dc" "P10_cross_refill_acc_untouched:1718=5" "R10_not_stepped:1719=0x017a7800000405e1" "I10_OP:1720=0x0001000000000000"
+    "P9_cv:1716=0x123" "R9_refilled:1717=0x01348000013405dc" "P10_cross_refill_add_once:1718=0xABD2" "R10_refilled:1719=0x01348000013405dc" "I10_RGZ_XCZ_XVGZ:1720=0x9020"
+# >>> GROUP B BUILT: M+ FAMILY ACROSS A WORD BOUNDARY, A TO-MEMORY TAIL BELOW
+# WORD 32, A CROSSING FIELD WITH A REFILL (docs/NEXT.md "EVERY OP THE MODEL
+# STILL SETS" B), 2026-11-17. <<<  Reference Manual printed p.56 ("the storage
+# word or word pair ... the result replaces the storage operand in the bit
+# positions specified"), p.34 (addresses 1-15 valid for data), pp.21-22 (the
+# VFL part, then the index part).  X1-X8: the one-word cases M1-M9 of
+# vfl_binary_memadd_indicators.strap with the field across W/W+1 (same
+# indicator words); T1-T4: second word an index register; R1-R3: three reads.
+# X2 is the control.  Expected values hand-derived in the deck's header.
+# MEASURED INJECTIONS: docs/NEXT.md "GROUP B BUILT".
+run "VFL to-memory across a word boundary: M+ family, a tail below word 32, a crossing field with a refill (printed pp.21-22, 34, 56)" ./run_program.sh ../decks/vfl_cross_tomemory.strap StretchVflCrossMemTb PC=2115 \
+    "X1_W:1600=0xA5A5A5A5A5A5A5A0" "X1_W1:1601=0x05A5A5A5A5A5A5A5" "X1_ind_LC_MOP_RZ:1700=0x20000000140" \
+    "X2_W:1602=0xA5A5A5A5A5A5A5AF" "X2_W1:1603=0xF5A5A5A5A5A5A5A5" "X2_ind_MOP_RGZ:1701=0x120" \
+    "X3_W:1604=0xA5A5A5A5A5A5A5A0" "X3_W1:1605=0x25A5A5A5A5A5A5A5" "X3_ind_LC_MOP_RLZ_RN:1702=0x20000000190" \
+    "X4_W:1606=0xA5A5A5A5A5A5A5A0" "X4_W1:1607=0x05A5A5A5A5A5A5A5" "X4_ind_LC_MOP_RZ:1703=0x20000000140" \
+    "X5_W:1608=0xA5A5A5A5A5A5A5A0" "X5_W1:1609=0x05A5A5A5A5A5A5A5" "X5_ind_LC_MOP_RZ:1704=0x20000000140" \
+    "X6_W:1610=0xA5A5A5A5A5A5A5A0" "X6_W1:1611=0x15A5A5A5A5A5A5A5" "X6_ind_LC_MOP_RLZ_RN:1705=0x20000000190" \
+    "X7_W:1612=0xA5A5A5A5A5A5A502" "X7_W1:1613=0x00A5A5A5A5A5A5A5" "X7_ind_MOP_RGZ:1706=0x120" \
+    "X8_W:1614=0xA5A5A5A5A5A5A5A4" "X8_W1:1615=0x25A5A5A5A5A5A5A5" "X8_ind_MOP_RGZ:1707=0x120" \
+    "T1_X3:1712=0xA5A5A505A5A51234" "T1_X4:1713=0x56785A0A5A5A5A5A" \
+    "T2_X5:1714=0xA5A5A505A5A5A5A0" "T2_X6:1715=0x05A5A505A5A5A5A5" "T2_ind_LC_MOP_RZ:1708=0x20000000140" \
+    "T3_X8:1716=0xA5A5A505A5A5A5BE" "T3_X9:1717=0xEF5A5A0A5A5A5A5A" \
+    "T4_X6:1718=0xA5A5A505A5A5A5BE" "T4_X7_index_part_last:1719=0x0005C800001405DC" \
+    "R1_W:1616=0xA5A5A5A5A5A5A5A0" "R1_W1:1617=0x05A5A5A5A5A5A5A5" "R1_ind_LC_MOP_RZ_XCZ_XVGZ:1709=0x20000009140" "R1_X7:1720=0x01348000013405dc" \
+    "R2_T:1618=0xA5A5A5A5A5A5A5BE" "R2_T1:1619=0xEF5A5A5A5A5A5A5A" "R2_ind_MOP_RGZ_XCZ_XVGZ:1710=0x9120" "R2_X7:1721=0x01348000013405dc" \
+    "R3_T:1620=0xA5A5A5A5A5A5A5BE" "R3_T1:1621=0xEF5A5A5A5A5A5A5A" "R3_ind_MOP_RGZ_XCZ_XVGZ:1711=0x9120" "R3_X7:1722=0x01348000013405dc"
 # >>> BINARY ADD AND LOAD: RN ON A NEGATIVE ZERO, LOST CARRY, PARTIAL FIELD
 # (docs/NEXT.md G2.3 findings 1 and 2), 2026-11-16. <<<  RN: Reference Manual
 # printed p.47, indicator 59, "negative whether zero or not" (p.60's example
@@ -4215,6 +4241,8 @@ run "CV and LTRCV -- MCP's own time conversion, end to end" ./run_program.sh ../
 # values into the same positions produces 0x0C2238, differing in all
 # three digit pairs, and the injection that makes binaryToBcd divide
 # by sixteen produces exactly that shape (0xC2E3A).
+# (binaryToBcd is deleted since 2026-11-17; mkCvtBox's double dabble
+# without its add-three gives 0xC2238 here -- the deck header.)
 #
 # AND IT PROVES THE CLEARING SEMANTICS VIA A LINE THAT LOOKS
 # REDUNDANT.  p.24 line 23 saves the binary seconds to memory one
