@@ -616,6 +616,25 @@ parentheses, so scope the change to what the project targets.
 printed p.144's rule -- scaling by the operand's **function** -- and
 test it against the listing oracle.
 
+*Status 2026-11-16: DONE.* `strap_asm.eval_addr_field` takes the
+address's function by p.144's INSERT routine name (`ADDRESS_FUNCTION`:
+a field shift and a function shift each), and every call site names
+its routine. The host already had this rule in `pass2.py`'s inserters.
+**Both assemblers broke p.144's own example.** The page says "To fill
+the addresses in the instruction TI, 7, SAM + 10, PAT + 10, the routine
+adds 10 full words to both addresses". strap_asm added 10 bits to A1
+and 10 half words to A2. strap2's `STTI`/`STT19A` did the same. Both
+now add words. C28-6129 printed p.4 writes the format `OP, J, A18(I),
+A'18(I')`. No listing row in the corpus writes an integer in a transmit
+address, so p.144 is the only witness. strap_asm also left an integer
+`SYN` symbol unscaled in LX/SX, where strap2 counted words; it now
+counts words too. Every deck's image is unchanged under both assemblers
+(hashed before and after). `tests/check_address_function.py` (27
+checks) records its injections. **Open:** `SSIC24`, `S24CW` and
+`S1918A`. p.144 says only "error-flagged if more than 19 [18] bits are
+specified". That suggests a function the page does not state, and the
+error flag is not implemented.
+
 **G3.3** The numbered error-message list (printed p.177) is a rule book
 with a column `C28-6129` lacks; it fences `(.n)` behaviour with six
 specific errors.

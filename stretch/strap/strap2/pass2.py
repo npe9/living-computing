@@ -791,10 +791,18 @@ class Pass2:
     def i_STJFLD(self, word, v, e, dds):
         return put(word, 51, 4, (v.B >> 6) + v.I)
 
-    i_STTI = i_S24A
+    # Transmit's two addresses FUNCTION as 18-bit addresses, so an integer
+    # counts full words in both: p.144, "To fill the addresses in the
+    # instruction TI, 7, SAM + 10, PAT + 10, the routine adds 10 full words
+    # to both addresses.  Although SAM + 10 is a 24-bit field and PAT + 10
+    # is a 19-bit field, both function as 18-bit addresses."  (This was
+    # S24A's and S19IA's arithmetic, 10 bits and 10 half words, until G3.2;
+    # no listing row in the corpus writes an integer in a transmit address.)
+    def i_STTI(self, word, v, e, dds):
+        return self._idx(put(word, 0, 24, v.B + (v.I << 6)), v)
 
     def i_STT19A(self, word, v, e, dds):
-        word = put(word, 32, 19, self._a19(v))
+        word = put(word, 32, 19, (v.B >> 5) + (v.I << 1))
         return self._idx(word, v, 60)
 
     def i_SIM19(self, word, v, e, dds):

@@ -877,7 +877,66 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
     return total
 
 
-def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0):
+# >>> THE FUNCTION OF AN ADDRESS, C22-6729 printed p.144 (INSERT). <<<
+# "Algebraic addition of bit and integer addresses is performed according
+# to the type of field into which the sum is to be inserted.  For example,
+# if the address SAM + 10 is to be inserted into an 18-bit address, the
+# routine adds 10 full words to the address of SAM; if a 19-bit address,
+# it adds 10 half words; if a 24-bit address, it adds 10 bits.  Note that
+# the addition is determined by the function of the address, not the size
+# of the field.  To fill the addresses in the instruction TI, 7, SAM + 10,
+# PAT + 10, the routine adds 10 full words to both addresses.  Although
+# SAM + 10 is a 24-bit field and PAT + 10 is a 19-bit field, both function
+# as 18-bit addresses."  C28-6129 printed p.4 writes the transmit format
+# "OP, J, A18(I), A'18(I')".
+#
+# So an address field has two units, and they are not always the same:
+# the FIELD's (a bit-address term is converted to it) and the FUNCTION's
+# (an integer counts it).  Each entry is (field shift, function shift),
+# 2**shift bits a unit, keyed by p.144's own INSERT routine names, the
+# names strap/strap2/pass2.py's inserters carry.  S18X, SIM19 and SIMC
+# are not on p.144's list; they are strap2's names for functions the list
+# leaves unnamed (strap2/optable.py).  This table replaced a per-call-site
+# unit_shift/int_shift pair (G3.2, docs/source_audit.md).
+#
+# WHERE THE FUNCTION DIFFERS FROM THE FIELD: transmit's two addresses
+# (p.144's own example) and LX/SX's (Reference Manual p.24, "bits 0-17
+# of the effective address").  NOT HERE: SSIC24, S24CW and S1918A, whose
+# p.144 lines say only "error-flagged if more than 19 [18] bits are
+# specified".  That reads like a function too, but the page does not say
+# so, and strap_asm compiles SIC through eval_expr (open, G3.2).  SIMAD
+# (immediate VFL) is p.144's NOTE: "the immediate address is filled into
+# the word according to the given field length", so its shift is per
+# statement: pass ("SIMAD", length).
+ADDRESS_FUNCTION = {
+    "S18A": (6, 6),     # 18-bit address and I field (floating point)
+    "S18CF": (6, 6),    # 18-bit count field (XW, CF)
+    "S18RF": (6, 6),    # 18-bit refill field (XW, RF)
+    "SIMC": (6, 6),     # an immediate count or refill (LCI ..., bits 0-17)
+    "S19IA": (5, 5),    # 19-bit address and I field
+    "S19KF": (5, 5),    # 19-bit address, K field (CB, indicator branch)
+    "S19BBK": (5, 5),   # 19-bit branch address and K field (branch on bit)
+    "SIM19": (5, 5),    # an immediate value (LVI, V+I ...)
+    "S18X": (5, 6),     # LX, SX: a 19-bit field that functions as 18
+    "STT19A": (5, 6),   # transmit's second address: 19-bit, functions as 18
+    "STTI": (0, 6),     # transmit's first address: 24-bit, functions as 18
+    "S24A": (0, 0),     # 24-bit address and I field
+}
+
+
+def address_function(function):
+    """(field shift, function shift) for a p.144 routine name, or for
+    ("SIMAD", field length): an immediate VFL address of that length
+    (at most 24), whose field and function are both its length."""
+    if isinstance(function, tuple):
+        name, length = function
+        if name != "SIMAD" or not 0 < length <= 24:
+            raise ValueError(f"internal: bad address function {function!r}")
+        return 24 - length, 24 - length
+    return ADDRESS_FUNCTION[function]
+
+
+def eval_addr_field(expr, symtab, loc_bits, function, lineno=None):
     # A BLANKED SYMBOL REACHES AN ADDRESS FIELD TOO.  eval_expr grew
     # this rule when printed p.121 printed "VF,S ASPUT"; every branch,
     # B, LV, LVI, SIC and SVA address comes down HERE instead, so
@@ -890,18 +949,19 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
         _t = expr.strip()
         if _BLANKED_SYMBOL.match(_t) and _t.replace(' ', '') in symtab:
             expr = _t.replace(' ', '')
-    """Evaluate an expression destined for an ADDRESS field whose unit
-    is 2**unit_shift bits (5 for a 19-bit half-word-address field, 6
-    for an 18-bit word-address field), applying C22-6531 p.11's rule
-    term by term: bit-address terms (W.B, symbols, system symbols) are
-    converted to the field's units, while plain integers "add into all
-    fields as integers; that is, the units digit adds into the low-
-    order position of the field". int_shift: for an operation whose
-    19-bit field only uses "bits 0-17 of the effective address" (LX/SX,
-    Reference Manual p.24), an integer counts full words, so it lands
-    one bit up (I-Box 4 p.58: "SX,$X0,8" prints as word 8, "SV,$X0,2"
-    as half-word 2 = 1.0). eval_expr(), by contrast, returns a pure
-    bit count."""
+    """Evaluate an expression destined for an ADDRESS field by the
+    FUNCTION of the address (ADDRESS_FUNCTION above, C22-6729 printed
+    p.144), term by term: bit-address terms (W.B, symbols, system
+    symbols) are converted to the FIELD's units, and an integer counts
+    the FUNCTION's units.  Where the two agree this is C22-6531 p.11's
+    rule, integers "add into all fields as integers; that is, the units
+    digit adds into the low-order position of the field".  Where they
+    differ (LX/SX: I-Box 4 p.58 prints "SX,$X0,8" as word 8 and
+    "SV,$X0,2" as half-word 2 = 1.0; transmit: p.144's TI example) the
+    integer lands (function - field) bits up.  eval_expr(), by contrast,
+    returns a pure bit count."""
+    unit_shift, fn_shift = address_function(function)
+    int_shift = fn_shift - unit_shift
     if expr is None or not expr.strip():
         return 0              # a null field: see eval_expr
     total = 0
@@ -928,7 +988,8 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
             # "integers add into all fields as integers" -- carried
             # through a SYN by p.31's "its bit address or INTEGER
             # CLASSIFICATION are transferred".  See SymTab.sym_int.
-            term = (raw if up in getattr(symtab, 'sym_int', ())
+            # It counts the FUNCTION's units, as a literal does (p.144).
+            term = (raw << int_shift if up in getattr(symtab, 'sym_int', ())
                     else raw >> unit_shift)
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, False, lineno) >> unit_shift
@@ -3839,7 +3900,8 @@ def emit_statement(stmt, symtab, image):
         if len(stmt.fields) != 1:
             raise AssemblerError(
                 f"{op} takes exactly one field", stmt.lineno)
-        val = eval_addr_field(stmt.fields[0], symtab, loc, 6,
+        val = eval_addr_field(stmt.fields[0], symtab, loc,
+                              'S18CF' if op == 'CF' else 'S18RF',
                               lineno=stmt.lineno)
         image.deposit(loc, 18, val & 0x3FFFF)
         return
@@ -4069,13 +4131,13 @@ def emit_statement(stmt, symtab, image):
         # bits.  Without the conversion that row came out 0002400,
         # sixty-four times too large, in the same shape as the CW
         # count bug of 2026-10-17.
-        count = eval_addr_field(stmt.fields[1], symtab, loc, 6,
+        count = eval_addr_field(stmt.fields[1], symtab, loc, 'S18CF',
                                 lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 2 and stmt.fields[1].strip() else 0
         # REFILL is an 18-bit WORD-address field: a label's bit count
         # scales >>6, a bare integer counts words (I-Box 4 p.192's
         # "BIT59 XW,0,0,16" prints refill 000000.00 10 = word 16).
-        refill = eval_addr_field(stmt.fields[2], symtab, loc, 6, lineno=stmt.lineno) & 0x3FFFF \
+        refill = eval_addr_field(stmt.fields[2], symtab, loc, 'S18RF', lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 3 and stmt.fields[2].strip() else 0
         # XW's FOURTH OPERAND IS THREE BITS, IBM 25-27 -- the index
         # flag plus the two spare bits -- not one.  This read `& 0x1`
@@ -4127,7 +4189,7 @@ def emit_statement(stmt, symtab, image):
         # 19-bit half-word-address field: bit-address terms >>5, bare
         # integers as half-words (C22-6531 p.11) -- see eval_addr_field.
         addr19 = 0 if not base.strip() else \
-            eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+            eval_addr_field(base, symtab, loc, 'S19IA', lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
         if op in UNCOND_BRANCH_CODES:
             image.deposit_half(loc // 32, enc_branch_or_misc(addr19, UNCOND_BRANCH_CODES[op], False, idx))
@@ -4143,8 +4205,9 @@ def emit_statement(stmt, symtab, image):
         # LX/SX address full words ("bits 0-17 of the effective
         # address", p.24), so a bare integer counts words; every other
         # direct index op addresses a half-word (bits 0-18).
-        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno,
-                                 int_shift=1 if op in ('LX', 'SX') else 0) & 0x7FFFF
+        addr19 = eval_addr_field(base, symtab, loc,
+                                 'S18X' if op in ('LX', 'SX') else 'S19IA',
+                                 lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
         image.deposit_half(loc // 32, enc_dir_index(addr19, j, DIR_INDEX_CODES[op], idx))
         return
@@ -4198,7 +4261,7 @@ def emit_statement(stmt, symtab, image):
             # already uses for the same reason: "a label's bit count
             # scales >>6, a bare integer counts words", so LCI,$X1,18
             # is unchanged.
-            n = eval_addr_field(stmt.fields[1], symtab, loc, 6,
+            n = eval_addr_field(stmt.fields[1], symtab, loc, 'SIMC',
                                 lineno=stmt.lineno)
             imm19 = (n & 0x3FFFF) << 1
         else:
@@ -4209,7 +4272,7 @@ def emit_statement(stmt, symtab, image):
             # an integer into the field (C22-6531 p.11), i.e. "LVI,$1,100"
             # yields value 100<<5 = 50.0. The DCP listing's
             # "V-I,$X15,1.0" -> 1.37 0D (1.0 = field 2) is the check.
-            imm19 = eval_addr_field(stmt.fields[1], symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+            imm19 = eval_addr_field(stmt.fields[1], symtab, loc, 'SIM19', lineno=stmt.lineno) & 0x7FFFF
         image.deposit_half(loc // 32, enc_imm_index(imm19, j, IMM_INDEX_CODES[op]))
         return
 
@@ -4220,7 +4283,7 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(f"{op} takes J and branch-address fields", stmt.lineno)
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[1])
-        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        addr19 = eval_addr_field(base, symtab, loc, 'S19KF', lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         v, refill, bz = CB_CODES[op]
         image.deposit_half(loc // 32, enc_count_branch(addr19, j, v, refill, bz, idx))
@@ -4232,7 +4295,7 @@ def emit_statement(stmt, symtab, image):
         if len(stmt.fields) != 1:
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        addr19 = eval_addr_field(base, symtab, loc, 'S19KF', lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
         return
@@ -4268,9 +4331,9 @@ def emit_statement(stmt, symtab, image):
                 f"{j} does not fit", stmt.lineno)
         a1base, a1paren = split_field_trailing_paren(stmt.fields[1])
         a2base, a2paren = split_field_trailing_paren(stmt.fields[2])
-        bitaddr24 = eval_expr(a1base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
+        bitaddr24 = eval_addr_field(a1base, symtab, loc, 'STTI', lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(a1paren, symtab, stmt.lineno) & 0xF
-        addr19 = eval_addr_field(a2base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        addr19 = eval_addr_field(a2base, symtab, loc, 'STT19A', lineno=stmt.lineno) & 0x7FFFF
         i2 = eval_reg(a2paren, symtab, stmt.lineno) & 0xF
         backward, immCount, swap = TRANSMIT_CODES[op]
         image.deposit_word_instr(loc, enc_transmit(bitaddr24, i1, addr19, j,
@@ -4291,7 +4354,7 @@ def emit_statement(stmt, symtab, image):
         abase, aparen = split_field_trailing_paren(stmt.fields[1])
         bitaddr24 = eval_expr(bbase, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(bparen, symtab, stmt.lineno) & 0xF
-        addr19 = eval_addr_field(abase, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        addr19 = eval_addr_field(abase, symtab, loc, 'S19BBK', lineno=stmt.lineno) & 0x7FFFF
         idx1 = eval_reg(aparen, symtab, stmt.lineno) & 0x1
         mod2, cond1 = BB_CODES[op]
         image.deposit_word_instr(loc, enc_branch_on_bit(bitaddr24, i1, addr19,
@@ -4518,7 +4581,7 @@ def emit_statement(stmt, symtab, image):
             else:
                 if actual_len <= 24:
                     raw_val = eval_addr_field(base, symtab, loc,
-                                              24 - actual_len,
+                                              ('SIMAD', actual_len),
                                               lineno=stmt.lineno)
                 else:
                     raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
@@ -4626,7 +4689,7 @@ def emit_statement(stmt, symtab, image):
             else:
                 if actual_len <= 24:
                     raw_val = eval_addr_field(base, symtab, loc,
-                                              24 - actual_len,
+                                              ('SIMAD', actual_len),
                                               lineno=stmt.lineno)
                 else:
                     raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
@@ -4755,7 +4818,7 @@ def emit_statement(stmt, symtab, image):
             # dotted addresses or bare labels, and all 271 assemble
             # byte-identically across this change; checked, not
             # assumed.
-            addr18 = eval_addr_field(base, symtab, loc, 6,
+            addr18 = eval_addr_field(base, symtab, loc, 'S18A',
                                      lineno=stmt.lineno) & 0x3FFFF
         image.deposit_half(loc // 32, enc_fp(addr18, unnorm, absSign, invSign, FP_CODES[fp_base], idx))
         return
