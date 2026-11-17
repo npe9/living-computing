@@ -1113,21 +1113,20 @@ was pending.
   SLO, SRT), after a fitted remainder per destination.
 - A store into index storage holds all decoding until the same instant,
   for every class.
-- **Tried and withdrawn: a wait for the E-box before fetching an E-box
+- **Tried and not kept: a wait for the E-box before fetching an E-box
   register (words 7-15).** The model commits a result at removal and only
   charges its time afterwards, so the fetch of, say, $IND can be made
-  while the 7030 would still be executing. Gating that fetch on an idle
-  E-box, together with the index-store hold, changed a RESULT:
-  - PAST T MOVE stopped in XERR26 ("PROSA ARC COUNT INCORRECT") instead
-    of XERR29.
-  - Its S DK MCP word (002157) read a different arc count.
-  - The run was 200,000 steps longer before T MOVE.
-  Either mechanism alone leaves that run as it was. Each was measured
-  with the other removed: XERR29, about 6,442,200 steps against base's
-  6,442,189. The interaction was not traced. The likeliest path is that
-  `rl_io_report` writes the I/O status into $IND/$CA asynchronously, so a
-  later fetch of word 11 sees a different indicator state. It is reported
-  as a hazard and not pinned, and the wait is not in the model.
+  while the 7030 would still be executing. The gate gained about a clock
+  on one column. It moved six VFL CYCLES pins by 1-13 clocks, and its only
+  source is an inference from p.3-20. So it was left out.
+  - It was first withdrawn because a parallel run failed PAST T MOVE
+    (XERR26 instead of XERR29). Re-run on its own with a private
+    `STRETCH_TAPE`, the same tree passes: XERR29, 6,442,397 steps.
+  - The failure came from the test harness: `run_mcp_assign_test.sh`
+    defaults to `/tmp/mcp.assign.tape` and the other MCP runners to
+    `/tmp/mcp.tape`. Those are shared by every concurrent run on the
+    machine, in every worktree, and a run that regenerates the tape under
+    another one corrupts it.
 
 **The fit, and what is not on any page.**
 

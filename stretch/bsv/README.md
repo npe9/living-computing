@@ -1020,9 +1020,10 @@ What the model now does:
 - `xstoreFreeAt` extends `storeWait` to the same instant for a store into
   index storage, in every class.
 - A wait for the E-box before a look-ahead fetch of words 7-15 was tried
-  and withdrawn. Together with the index-store hold, it changed MCP's
-  PAST T MOVE result (XERR26 instead of XERR29). That interaction is
-  untraced and is reported as a hazard.
+  and not kept: it is weakly sourced and gained about a clock. The PAST T
+  MOVE failure once blamed on it came from the shared `/tmp` tape file
+  that concurrent MCP runs overwrite. With a private `STRETCH_TAPE` the
+  same tree passes.
 
 The VFL and connective levels do not take the LAAR. Their E-box charges
 are fits to back-to-back pages that already contain the queuing, and
