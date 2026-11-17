@@ -465,7 +465,8 @@ whole corpus before it was removed:
 every one found by measurement rather than by reading the arms and
 hoping:
 
-* the decimal refusal, `m.decimal == 1 && !radixConv`
+* the decimal refusal, `m.decimal == 1 && !radixConv` (GONE 2026-11-16:
+  every VFL code executes in decimal, and the clause was removed)
 * progressive indexing with index 0
 * M+/M+1/M+MG, and the CM connective, crossing a word boundary —
   `fieldCrosses(ea, len_)`; a plain ST may cross as of 2026-10-24, these

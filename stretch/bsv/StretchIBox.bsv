@@ -134,15 +134,13 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // word boundary -- see protViolates' note -- and refuse with OP.
       Bool mPlus = (v.code == 6'b001001) || (v.code == 6'b101001)
                 || (v.code == 6'b101011);
-      // The decimal refusal: anything with the decimal modifier that
-      // StretchVFL's vflDecimalBuilt does not list sets OP -- the SAME
-      // function execute()'s vflIntOp asks, so the two agree by
-      // construction.
+      // The decimal refusal that stood here (vflDecimalBuilt) is gone
+      // since 2026-11-16: decimal LFT and DCV were the last two, and
+      // execute()'s gate went in the same change.
       // The length as the second index leaves it (vflSecondIndex,
       // RefMan printed p.21), as execute() sees it.
       Bit#(7) len_ = effLength(vflSecondIndex(st, v.a).length);
-      Bool done = (v.m.decimal == 1 && !vflDecimalBuilt(v.code))  // decimal refusal
-               || (prog && v.a.i1 == 0)                  // progressive, no index
+      Bool done = (prog && v.a.i1 == 0)                  // progressive, no index
                || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
                || dfSuppresses(st, w)                    // DF, mask-dependent
                || !installed(w);                         // AD

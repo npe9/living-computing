@@ -102,13 +102,16 @@ whether the BTR/DTR interruption (lower priority than every other, p.68)
 reaches a program on this model is not exercised by the deck (the
 harness runs with the interruption system off).
 
-**Still refused:** `LFT` (decimal) and `DCV`.
+**Still refused:** nothing.  Decimal `LFT` and `DCV` were built on
+2026-11-16 (below), and with them `vflDecimalBuilt` -- true of every
+code -- was removed, with execute()'s gate and `prepareExec`'s clause.
 
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 
 Taken from the code, not from the docs: every `setOpInvalid` in `bsv/`
 (25 sites; `ind_OP` is set nowhere else), and the decoder's
-`tagged Invalid` paths.  `tests/audit_opcode_coverage.py` lists ONE
+`tagged Invalid` paths.  (Written before B's first three rows were
+built; the audit now lists NONE.)  `tests/audit_opcode_coverage.py` listed ONE
 unimplemented mnemonic (RNX) because it asks which mnemonics are
 encoded by a transcription; DCV is not on its list only because no
 program uses it (its own count: "unused 1").  It is not an enumerator of
@@ -131,9 +134,9 @@ refusals, so this list is.
 
 | refusal | page | defined? | oracle | status |
 |---|---|---|---|---|
-| `RNX` (no arm; DirIndex default) | printed p.27 (PDF 30) | yes, in full | jb_ax4b routine 1244 TEST 4 (`decks/ibox4_rnx_nop.strap`), C22-6578 Problem 1.8 (`decks/problem_1_8.strap`), RefMan Fig. 9 | built below |
-| `DCV`, both radices (no arm; VflInt default) | printed p.74 (PDF 77) | yes, in full | RefMan Figure 19, Vol. 2 atlas PDF 139 | built below |
-| decimal `LFT` (gate `vflDecimalBuilt`) | printed p.69 (PDF 72): "Unsigned; Negative Sign; Radix.  These modifiers operate as in ADD" | yes | none beyond the page | built below |
+| `RNX` (no arm; DirIndex default) | printed p.27 (PDF 30) | yes, in full | jb_ax4b routine 1244 TEST 4 (`decks/ibox4_rnx_nop.strap`), C22-6578 Problem 1.8 (`decks/problem_1_8.strap`), RefMan Fig. 9 | **BUILT 2026-11-16**: `decks/rnx.strap` (Problem 1.8's own words), `decks/ibox4_rnx_run.strap` (TEST 4 run) |
+| `DCV`, both radices (no arm; VflInt default) | printed p.74 (PDF 77) | yes, in full | RefMan Figure 19, Vol. 2 atlas PDF 139 | **BUILT 2026-11-16**: `mkCvtBox`; `decks/vfl_dcv.strap` runs Figure 19 whole |
+| decimal `LFT` (gate `vflDecimalBuilt`) | printed p.69 (PDF 72): "Unsigned; Negative Sign; Radix.  These modifiers operate as in ADD" | yes | none beyond the page | **BUILT 2026-11-16**: `decks/vfl_lft_decimal.strap`; `decks/vfl_decimal_refused.strap` flipped |
 | `M+`/`M+1`/`M+MG` with a field crossing a word boundary | p.55-56's VFL addressing (any bit address, any length) | yes | none in the corpus | open: a model limit ("keeps the old refusal", `StretchExecute.bsv` M+ arm) |
 | `ST`/`SRD`/`CM` whose second word is below word 32 | as above | yes | none | open: `writeWordTail` drains to core storage only |
 | a crossing field that also needs a progressive refill (three reads) | p.21-22 | yes | none | open: `prefetch` holds two words |

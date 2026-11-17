@@ -482,6 +482,21 @@ until the refill word is in hand (printed pp.21-22, "the variable field
 length part ... and then the index modification portion").
 `decks/vfl_progressive_refill_once.strap`.
 
+**THE LAST TWO DECIMAL REFUSALS, 2026-11-16: `DCV` in both radices and
+decimal `LFT`.**  CONVERT DOUBLE (printed p.74) is CV's arm with 20/96 for
+68/48; its conversion runs in a THIRD BOX, `mkCvtBox`
+(`StretchCvtBox.bsv`): double dabble sixteen bits a clock to decimal,
+Horner eight digits a clock to binary, reached by the same `NeedBox` bail
+(`BoxReq` is now a three-way union and `mkEBox`'s `boxKind` says which box
+is held).  `tests/run_cvtbox_test.sh` tests it alone;
+`decks/vfl_dcv.strap` runs the Reference Manual's Figure 19 end to end
+(LCV, LTRCV, `*`, DCV, decimal ST).  Timing: `dcvClocks`, the Vol. 2 atlas
+PDF 139 point (8 and 6 E-box clocks), CHOSEN because Table 3's DCV terms
+depend on the operand.  Decimal `LFT` puts four-bit digits in FT (printed
+p.69, "Radix ... as in ADD"); `decks/vfl_lft_decimal.strap`.  With both
+built, `vflDecimalBuilt` was true of every code and is GONE, with the
+decimal refusal in execute() and in `prepareExec`.
+
 **THE BINARY INDICATOR SWEEP, 2026-11-16.**  Every indicator sentence of
 the VFL arithmetic chapter (printed pp.58-74) read in the page images, op
 by op; the table is in `docs/NEXT.md` G2.3.  Fixed: binary `M+`, `M+MG`,
@@ -499,11 +514,9 @@ only 48 bits in $TR (printed p.73).
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`) except what `vflDecimalBuilt` lists (the
-radix conversions, and since 2026-11-16 the decimal loads, adds and
-stores above, the compares below, and since 2026-11-16 `LTRS` and
-decimal `*`/`*+`/`/`, which are its action) -- decimal `LFT`;
-radix conversion `DCV`; `RNX`,
+~~Decimal-mode VFL (`c=1`)~~ -- **gone from this list 2026-11-16: every
+VFL integer code executes in both radices** (decimal `LFT` and `DCV` were
+the last); ~~`RNX`~~ -- **built 2026-11-16** (above).  What remains:
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).
@@ -521,7 +534,8 @@ NOT        LFT(11) KE(19) KR(21) CV(27) /(29) LTRCV(35)
 ```
 
 (A census of that date. `LWF` executes since 2026-11-09, binary `SRD`
-since 2026-11-16, and later entries in this file record others.)
+since 2026-11-16, and later entries in this file record others.  As of
+2026-11-16 all twenty-four execute, `DCV` last.)
 
 **`*` MOVED ACROSS ON 2026-10-25** and the census above already
 reflects it: eleven of twenty-four. `decks/vfl_multiply.strap` is the

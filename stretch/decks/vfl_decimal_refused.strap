@@ -1,3 +1,16 @@
+! >>> THE REFUSAL IS GONE, 2026-11-16, AND THIS DECK NOW PINS ITS
+! ABSENCE. <<<  Decimal LFT and DCV were the last two decimal VFL
+! operations the model refused; both are built (decks/vfl_lft_decimal.
+! strap, decks/vfl_dcv.strap), and the gate (StretchVFL's
+! vflDecimalBuilt, asked by execute() and by the I-box's prepareExec) was
+! removed in the same change, because it was true of every code.  The
+! "BZOP, $" below is now "BOP, $": the decimal LFT must NOT set OP, and
+! FT must hold what printed p.69 puts there -- LFT(D,32,8) of the bytes
+! 01 02 03 08 is -123, FT = (16)1238 (numeric 123 above a four-bit sign
+! byte whose leftmost bit is the sign).  The file keeps its name because
+! run_tests.sh and docs/ebox_roadmap.md cite it; everything below this
+! paragraph is the history it pinned.
+!
 ! THE DECIMAL REFUSAL IS A MODEL SCOPE BOUNDARY, NOT IBM SEMANTICS, and
 ! this deck is labelled that way on purpose.
 !
@@ -43,9 +56,9 @@
 START   L(BU,32,8), DATA1
         ST(BU,32,8), TA+.48          ! legal: binary unsigned
         BOP, $                       ! hang if OP came on: that one is legal
-        LFT(D,32,8), TB+.48          ! DECIMAL LOAD FACTOR: not built
-        BZOP, $                      ! hang if OP did NOT come on
-        TI, 1, $FT, FTS              ! the factor register, unloaded
+        LFT(D,32,8), TD              ! DECIMAL LOAD FACTOR: built 2026-11-16
+        BOP, $                       ! hang if OP came on: it is legal now
+        TI, 1, $FT, FTS              ! the factor register, loaded
         B, PASS
 PASS    BEW, $
         CNOP
@@ -59,4 +72,5 @@ TB      DD(BU,64), (8)1777777777777777777777
         DD(BU,64), (8)1777777777777777777777
         SLC, (8)430.0
 FTS     DD(BU,64), (16)5555555555555555
+TD      DD(BU,64), (16)0102030800000000  ! 1 2 3, sign byte 00001000: -123
         END, START

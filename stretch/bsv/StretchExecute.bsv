@@ -94,6 +94,7 @@ import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
 import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
 import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
+import StretchCvtBox::*;       // CvtReq/CvtRsp/mkCvtBox: the radix converter (DCV)
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -2614,16 +2615,37 @@ typedef struct {
 // and the answer comes back tagged the same way; an arm that asked the
 // divider takes `divOf(boxResult)` and one that asked the decimal adder
 // `decOf(boxResult)`.  mkEBox remembers which box the held instruction
-// waits on (`boxIsDec`).
+// waits on (`boxKind`).
+//
+// THREE SINCE 2026-11-16: the RADIX CONVERTER (StretchCvtBox.bsv,
+// mkCvtBox), for CONVERT DOUBLE; an arm that asked it takes
+// `cvtOf(boxResult)`.
 typedef union tagged {
   DivReq BoxDiv;
   DecReq BoxDec;
+  CvtReq BoxCvt;
 } BoxReq deriving (Bits, Eq, FShow);
 
 typedef union tagged {
   DivRsp RspDiv;
   DecRsp RspDec;
+  CvtRsp RspCvt;
 } BoxRsp deriving (Bits, Eq, FShow);
+
+function Maybe#(CvtRsp) cvtOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspCvt .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
+
+// Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
+// radix converter.
+function Bit#(2) boxKindOf(BoxReq r);
+  case (r) matches
+    tagged BoxDec .*: return 1;
+    tagged BoxCvt .*: return 2;
+    default:          return 0;
+  endcase
+endfunction
 
 function Maybe#(DivRsp) divOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspDiv .d)) return tagged Valid d;
@@ -2726,8 +2748,8 @@ function ActionValue#(VflOutcome)
       // LCV, CV and LTRCV are the radix conversion operations:
       // the decimal modifier SELECTS A DIRECTION for them rather
       // than asking for decimal arithmetic, so the blanket refusal
-      // below must let all three past.  (DCV, code 59, is not built:
-      // nothing in MCP uses it -- see docs/spec_decimal.md.)
+      // below must let all three past.  (DCV, code 59, the fourth, is
+      // built since 2026-11-16; the refusal itself is gone, below.)
       Bool radixConv = (vi.code == 6'b000011)     // LCV
                     || (vi.code == 6'b011011)     // CV
                     || (vi.code == 6'b100011);    // LTRCV
@@ -2741,8 +2763,14 @@ function ActionValue#(VflOutcome)
       // too; `radixConv` above is kept for the arms that test it.  The
       // decimal sums go through mkDecBox (StretchDecBox.bsv) by the
       // NeedBox bail; see each arm's DECIMAL note.
-      if (vi.m.decimal == 1 && !vflDecimalBuilt(vi.code))
-        ind = setOpInvalid(ind);
+      //
+      // >>> AND THE GATE IS GONE, 2026-11-16: with decimal LFT and DCV
+      // built, every one of the twenty-four VFL integer codes executes
+      // in both radices, so `vflDecimalBuilt` was true of every code
+      // StretchDecode admits and the refusal it guarded could not fire.
+      // It was removed here and in the I-box's prepareExec in one
+      // change (decks/vfl_decimal_refused.strap now pins decimal LFT
+      // executing, where it pinned the refusal). <<<
       // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
       // not inferred -- cited 2026-10-29, having been an uncited
       // refusal in both VFL arms until then. <<<  Reference Manual
@@ -2757,7 +2785,7 @@ function ActionValue#(VflOutcome)
       // see effAddr24's `if (idx == 0) return raw` -- and progressive
       // indexing has no register to advance, so the machine refuses it.
       // Pinned by decks/vfl_progressive_index0.strap.
-      else if (isProgressive && vi.a.i1 == 0)
+      if (isProgressive && vi.a.i1 == 0)
         ind = setOpInvalid(ind);
       else begin
         Bit#(7) len_ = effLength(vi.a.length);
@@ -3618,8 +3646,27 @@ function ActionValue#(VflOutcome)
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
               if (vi.code == 6'b001011) begin
-                if ((opnd.mag >> 60) != 0) ind = setBit(ind, ind_PF, 1);
-                Bit#(60) num = truncate(opnd.mag);
+                // >>> DECIMAL LFT, BUILT 2026-11-16 (G2.3). <<<  printed
+                // p.69, LOAD FACTOR's Modifiers: "Unsigned; Negative
+                // Sign; Radix.  These modifiers operate as in ADD."  So
+                // a decimal operand's bytes become four-bit digits (ADD's
+                // Radix, printed p.60, and p.58: "each byte of the storage
+                // operand is converted to a four-bit byte ... by the
+                // addition of high-order zeros" -- the zones dropped), and
+                // the numeric part placed left of the sign byte is those
+                // digits: LTRS's arm does the same for the transit
+                // register (decCompact).  PF's "more than 60 significant
+                // bits" is then more than fifteen digits.  No DTR: p.69
+                // names none for LFT.  CHOSEN, as LTRS's: a digit that is
+                // not a digit goes in as its four bits.
+                Bit#(128) numSrc = opnd.mag;
+                Bool numHi = False;
+                if (vi.m.decimal == 1) begin
+                  match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
+                  numSrc = dg; numHi = dhi;
+                end
+                if (numHi || (numSrc >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+                Bit#(60) num = truncate(numSrc);
                 st.writeWord(addrFactor, (zeroExtend(num) << 4)
                                          | (zeroExtend(opnd.sign) << 3));
                 ind = setResultIndicatorsF(ind,
@@ -4736,6 +4783,91 @@ function ActionValue#(VflOutcome)
                 ind = setBit(ind, ind_BTR, 1);
                 ind = setResultIndicatorsF(ind, trv);
               end
+            end
+          end
+          6'b111011: begin // DCV (Convert Double), BUILT 2026-11-16 (G2.3)
+            // CONVERT DOUBLE, Reference Manual printed p.74 (PDF 77), read
+            // in the page image:
+            //
+            //   "A field from the accumulator is converted as an integer
+            //   from binary to decimal or from decimal to binary depending
+            //   on the setting of the radix modifier.  If the original
+            //   field is binary, it is obtained at an implied offset of 20
+            //   and its length is 96 numeric bits.  However, no more than
+            //   80 significant bits can be converted without causing a
+            //   partial field condition.  The decimal result, which can be
+            //   a maximum of 24 significant digits, is loaded into the
+            //   cleared accumulator at the specified offset.  If the
+            //   original field is decimal, it is obtained at the specified
+            //   offset.  The binary result, which can be a maximum of 96
+            //   significant bits, is loaded into the cleared accumulator
+            //   at offset 20.  The sign modifiers operate on the sign bit
+            //   in the sign byte register; all other positions of the sign
+            //   byte register remain unchanged."
+            //
+            // Modifiers "as in CONVERT"; Radix: "Higher-order bits
+            // (positions 0-11 of the accumulator) are ignored and lost.
+            // No indication of this loss is retained. ... The original
+            // decimal field is assumed to be byte size four."
+            // PF: "actuated if the converted field exceeds 96 significant
+            // bits in either type of conversion.  The 96 low-order bits of
+            // the result are obtained, and higher-order bits are lost.
+            // The indicator is also actuated in a binary-to-decimal
+            // conversion if significant bits of the decimal result extend
+            // beyond the left end of the accumulator when this field is
+            // loaded into the accumulator at the specified offset."
+            // MOP, RLZ/RZ/RGZ/RN "set as in ADD"; the data flags "are not
+            // affected by CONVERT or CONVERT DOUBLE" (printed p.72).
+            //
+            // SO IT IS CV's ARM (above) WITH 20/96 FOR 68/48, and the
+            // conversion itself in mkCvtBox (StretchCvtBox.bsv): asked for
+            // by the NeedBox bail, nothing written on the run that bails.
+            //
+            // CHOSEN: the decimal field is every digit from the offset to
+            // the accumulator's left end ((128 - offset)/4 of them, at most
+            // 32).  The page does not give its length (the length field
+            // is "ignored"), and Perf. Char. Vol. 1's glossary (printed
+            // p.3-10) defines Table 3's DCV D-B term S as "Accumulator
+            // field specified by the offset minus all leading zero's" --
+            // a field the offset bounds on one side only.  CV's arm took
+            // fifteen digits for its own reason; this is not that.
+            //
+            // ORACLE: Reference Manual Figure 19 (printed p.74), the
+            // radix-conversion example, run whole in decks/vfl_dcv.strap.
+            if (!vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+            SM128 acc = readAcc(st);
+            Bit#(1) sgn = (vi.m.unsign == 1 ? 0 : acc.sign) ^ vi.m.invert;
+            Bool toDec = (vi.m.decimal == 0);
+            Bit#(128) cvtIn = toDec ? zeroExtend(acc.mag[115:20]) : (acc.mag >> offSh);
+            if (cvtOf(boxResult) matches tagged Valid .cr) begin
+              Bit#(128) mask96 = (128'd1 << 96) - 1;
+              if (toDec) begin
+                // The low 24 digits are the result; any digit above them
+                // is "the converted field exceeds 96 significant bits".
+                Bit#(128) dig = cr.r & mask96;
+                Bit#(7) nd = 0;
+                for (Integer k = 0; k < 24; k = k + 1) begin
+                  Bit#(4) dk = dig[4*k+3:4*k];
+                  if (dk != 0) nd = fromInteger(k) + 1;
+                end
+                Bit#(9) top = (zeroExtend(nd) * 4) + zeroExtend(offSh);
+                SM128 res = SM128 { sign: sgn, mag: dig << offSh };
+                writeAcc(st, res);
+                if ((cr.r >> 96) != 0 || top > 128)
+                  ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, res);
+              end else begin
+                SM128 res = SM128 { sign: sgn, mag: (cr.r & mask96) << 20 };
+                writeAcc(st, res);
+                if ((cr.r >> 96) != 0) ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, res);
+              end
+            end else begin
+              needsBox  = tagged Valid (tagged BoxCvt CvtReq { toDec: toDec, v: cvtIn });
+              needsRead = tagged Valid 0;   // the bail's placeholder (see NeedBox)
+            end
             end
           end
           default: begin
@@ -7941,10 +8073,13 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // behaviour is unchanged in that corner too.
   DivBox                   divBox        <- mkDivBox;
   // THE DECIMAL ADDER (StretchDecBox.bsv), the second box, 2026-11-16,
-  // and `boxIsDec` says which of the two the held instruction is
-  // waiting on.  It is meaningful only while `boxWait` is set.
+  // and the RADIX CONVERTER (StretchCvtBox.bsv, for DCV), the third, the
+  // same day.  `boxKind` (boxKindOf: 0 divider, 1 decimal adder, 2
+  // converter) says which the held instruction is waiting on.  It is
+  // meaningful only while `boxWait` is set.
   DecBox                   decBox        <- mkDecBox;
-  Reg#(Bool)               boxIsDec      <- mkReg(False);
+  CvtBox                   cvtBox        <- mkCvtBox;
+  Reg#(Bit#(2))            boxKind       <- mkReg(0);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
 
@@ -7987,8 +8122,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         case (rq) matches
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
+          tagged BoxCvt .d: cvtBox.request(d);
         endcase
-        boxIsDec <= isDecReq(rq);
+        boxKind <= boxKindOf(rq);
         boxWait <= True;
         boxT0   <= clock;
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
@@ -8013,8 +8149,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // read: see its declaration.
   method Bool canResume() = isValid(held)
                             && (subjReady
-                                || (boxWait ? (boxIsDec ? decBox.responseReady()
-                                                        : divBox.responseReady())
+                                || (boxWait ? (boxKind == 1 ? decBox.responseReady()
+                                               : boxKind == 2 ? cvtBox.responseReady()
+                                                              : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
@@ -8090,8 +8227,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     Maybe#(BoxRsp)     rbox = tagged Invalid;
 
     if (boxWait) begin
-      rbox = tagged Valid (boxIsDec ? tagged RspDec decBox.response()
-                                    : tagged RspDiv divBox.response());
+      rbox = tagged Valid (boxKind == 1 ? tagged RspDec decBox.response()
+                         : boxKind == 2 ? tagged RspCvt cvtBox.response()
+                                        : tagged RspDiv divBox.response());
       // `boxWait` is cleared below, in the arms of the dispatch that do
       // not ask for a box again -- ONE write per arm.  Clearing it here
       // and setting it again in the NeedBox arm was two writes bsc
@@ -8307,8 +8445,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         case (rq) matches
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
+          tagged BoxCvt .d: cvtBox.request(d);
         endcase
-        boxIsDec <= isDecReq(rq);
+        boxKind <= boxKindOf(rq);
         boxWait <= True;
         boxT0   <= clock;
         held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,

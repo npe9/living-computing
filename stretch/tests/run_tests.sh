@@ -2691,6 +2691,63 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
     "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
     "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
     "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
+# >>> CONVERT DOUBLE (DCV), 2026-11-16 (G2.3). <<<  Reference Manual printed
+# p.74.  Block F is the manual's own Figure 19, its five statements as printed
+# (LCV, LTRCV, *, DCV, decimal ST): +1234 x -5678 stored as the eight digits
+# 07006652 with the sign, by hand.  D1-D8 are hand-derived: 24 nines, 10^24
+# (PF), positions 0-11 lost silently, offset PF, 32 nines to binary (PF),
+# bits below the offset ignored, the sign modifiers and the sign byte
+# register's other positions.  The conversion is mkCvtBox's.  CYCLES 880 is a
+# MODEL PIN: dcvClocks (StretchTiming.bsv), the atlas PDF 139 point.
+# INJECTIONS, measured 2026-11-16 in a scratch copy, observed failures only
+# (PC and CYCLES held in every one):
+#   drop the offset clause of B-D's PF ("top > 128")   -> D4_ind_PF only
+#   drop the 24-digit clause ((cr.r >> 96) != 0)        -> D2_ind_PF only
+#   D-B result placed at 68 instead of 20               -> D5_left/right,
+#                                                         D6_left/right, D8_right
+#   B-D sign without the sign modifier (acc.sign)       -> D7_sign_byte, D7_ind
+#   D-B field cut to 15 digits                          -> D5_left/right, D5_ind_PF
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=880+-0 \
+    "F19_store:2000=0x0070001861422000" \
+    "F19_acc_left:2200=0" \
+    "F19_acc_right:2201=0x7006652" \
+    "F19_sign_byte:2202=0x0800000000000000" \
+    "D1_left:2203=0x99999999" \
+    "D1_right:2204=0x9999999999999999" \
+    "D1_ind:2227=0x20" \
+    "D2_left:2206=0" \
+    "D2_right:2207=0" \
+    "D2_ind_PF:2228=0x10000000040" \
+    "D3_left:2209=0" \
+    "D3_right:2210=5" \
+    "D3_ind:2229=0x20" \
+    "D4_left:2212=0x2300000000000000" \
+    "D4_right:2213=0" \
+    "D4_ind_PF:2230=0x10000000020" \
+    "D5_left:2215=0x2d6d415b85ace" \
+    "D5_right:2216=0xf80ffffffff00000" \
+    "D5_ind_PF:2231=0x10000000020" \
+    "D6_left:2218=0" \
+    "D6_right:2219=0x4d200000" \
+    "D6_ind:2232=0x20" \
+    "D7_right:2222=7" \
+    "D7_sign_byte:2223=0xFF00000000000000" \
+    "D7_ind:2233=0x90" \
+    "D8_right:2225=0x2a00000" \
+    "D8_sign_byte:2226=0" \
+    "D8_ind:2234=0x20"
+# >>> DECIMAL LOAD FACTOR, 2026-11-16 (G2.3): the last decimal VFL refusal. <<<
+# printed p.69: LFT's modifiers "operate as in ADD", so a decimal operand's
+# bytes go into FT as four-bit digits.  Five hand-derived cases (no IBM
+# oracle exists): digits, zones dropped at byte size 6, sixteen digits PF,
+# minus zero, the negative sign modifier.  CYCLES 300 is a MODEL PIN.
+# INJECTIONS, measured 2026-11-16, observed failures only:
+#   no decimal compaction (the binary path)  -> L2_FT_zones_dropped only
+#   PF threshold 64 bits instead of 60       -> L3_ind_PF only
+run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=300+-0 \
+    "L1_FT:1200=0x1234560" "L2_FT_zones_dropped:1201=0x1230" "L3_FT_low15:1202=0x2345678901234560" \
+    "L4_FT_minus0:1203=0x8" "L5_FT_inverted:1204=0x428" "L1_ind:1205=0x20" "L2_ind:1206=0x20" \
+    "L3_ind_PF:1207=0x10000000020" "L4_ind_RZ_RN:1208=0x50" "L5_ind_RLZ_RN:1209=0x90"
 # >>> A PROGRESSIVE VFL OPERATION THAT REFILLS DOES ITS ARITHMETIC ONCE
 # (docs/NEXT.md G2.3 finding 3), 2026-11-16. <<<  Reference Manual printed
 # pp.21-22: "executed in two parts.  The variable field length part of the
@@ -2763,14 +2820,20 @@ run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit widt
 # is now LFT(D,32,8), with a TI copying $FT out.  CYCLES 140 -> 161, PC
 # 393 -> 395.  MEASURED: without the TI the deck still counts 161, so the
 # 21 are LFT's against the refused ST's (the TI overlaps).  A model pin.
-run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
+# 2026-11-16: THE REFUSAL IS GONE.  Decimal LFT and DCV were the last two;
+# vflDecimalBuilt was true of every code and was removed with execute()'s
+# gate and prepareExec's clause.  The deck now pins decimal LFT EXECUTING
+# (BOP,$ hangs if OP comes on; FT_loaded is -123's (16)1238).  CYCLES 161 ->
+# 160: the decimal operand moved from TB+.48 (a crossing field, two reads)
+# to TD (one word).
+run "DECIMAL VFL: the model's refusal is gone; decimal LFT executes (was: refused)" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
     "PC=395" \
-    "CYCLES=161+-0" \
+    "CYCLES=160+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \
     "refused_tail:273=18446744073709551615" \
-    "FT_unchanged:280=0"
+    "FT_loaded:280=0x1238"
 # >>> A SCOPE TEST, AND LABELLED AS ONE. <<<  The real 7030 performs
 # decimal VFL arithmetic; this model does not, and refuses it with OP so
 # that an unbuilt operation is a visible refusal rather than a silent
@@ -9486,6 +9549,10 @@ run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_D
 # five examples).  Injection (no recomplement pass) fails vectors 1 and 7
 # only -- the two subtractions without an end carry.
 run "DECIMAL ADD/SUBTRACT BOX (p.60's examples, literal answers)" "$TESTS_DIR/run_decbox_test.sh"
+# G2.3, 2026-11-16: mkCvtBox, DCV's radix converter, on 8 vectors with
+# literal answers (2^96 - 1, 10^24 and 10^24 - 1, 32 nines to binary) and
+# literal clock counts (6 and 4).
+run "RADIX CONVERTER BOX (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

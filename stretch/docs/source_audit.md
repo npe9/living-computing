@@ -592,7 +592,9 @@ CHAPTER 2" below.*
 of `C22-6578`.
 
 **G2.3 The arms still refused.** The decimal VFL set, `SWAP`'s
-remaining variants.  **Decimal stage 1 is built (2026-11-16):** decimal
+remaining variants.  (`SWAP` was STALE here: all four forms and the
+zero count were already built, 2026-10-23 and 2026-11-08 -- `docs/NEXT.md`
+"EVERY OP THE MODEL STILL SETS".)  **Decimal stage 1 is built (2026-11-16):** decimal
 `L`, `LWF`, `+`/`-`, `+MG`, `M+`, `M+1`/`M-1`, `M+MG`, signed `ST` and
 `SRD`, the sums through the decimal box `mkDecBox`
 (`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  **Stage 2,
@@ -601,8 +603,14 @@ radices (printed pp.65-67; `decks/vfl_decimal_compare.strap`, Figure 15
 as printed).  **Stage 3, the same day:** `LTRS` in both radices, and
 decimal `*`/`*+`/`/`, which printed pp.68-70 define as LOAD TRANSIT AND
 SET's action with DTR, not as arithmetic (`decks/vfl_ltrs.strap`).
-Remaining: decimal `LFT` and `DCV` (`docs/NEXT.md`, "DECIMAL VFL
-ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
+**Then, the same day, the last three:** `RNX` (printed p.27;
+`decks/rnx.strap`, `decks/ibox4_rnx_run.strap`), `DCV` in both radices
+(printed p.74, the converter box `mkCvtBox`; `decks/vfl_dcv.strap` runs
+Figure 19 whole) and decimal `LFT` (printed p.69;
+`decks/vfl_lft_decimal.strap`).  **No operation the manual defines is
+refused for want of an arm.**  What still sets OP besides the machine's
+own cases is three open model limits (crossing `M+`, a tail below word
+32, three reads) -- `docs/NEXT.md` "EVERY OP THE MODEL STILL SETS". `storeTarget`'s invariant names the ones that will
 need a case when they land.
 
 ## G3 — Assembler completeness, from `C22-6729`'s grammar

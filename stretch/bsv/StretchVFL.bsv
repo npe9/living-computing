@@ -37,8 +37,10 @@ package StretchVFL;
 import StretchTypes::*;
 import StretchStorage::*;
 
-// >>> WHICH VFL INTEGER OPERATIONS ACCEPT THE DECIMAL MODIFIER. <<<
-// One statement, read by BOTH places that need it -- execute()'s
+// >>> WHICH VFL INTEGER OPERATIONS ACCEPT THE DECIMAL MODIFIER: ALL OF
+// THEM, SINCE 2026-11-16.  The list below is the history of how they
+// arrived; the function it introduced is gone (see its foot). <<<
+// It was one statement, read by BOTH places that need it -- execute()'s
 // refusal in vflIntOp and the I-box's prepareExec (`completesWithout
 // Fetch`) -- so the two cannot drift; they were two hand-kept copies of
 // an exemption list until 2026-11-16.  An operation NOT listed sets OP
@@ -64,19 +66,12 @@ import StretchStorage::*;
 //                   LTRS's action with DTR and their own two left-zeros
 //                   bits (printed pp.68-70) -- built 2026-11-16.
 //
-// STILL REFUSED: LFT (decimal) and DCV (unused by MCP).
-function Bool vflDecimalBuilt(Bit#(6) code);
-  return code == 6'b000011 || code == 6'b011011 || code == 6'b100011   // LCV CV LTRCV
-      || code == 6'b000101 || code == 6'b100101                        // L LWF
-      || code == 6'b001101 || code == 6'b101101                        // ST SRD
-      || code == 6'b000001 || code == 6'b100001                        // + +MG
-      || code == 6'b001001 || code == 6'b101011 || code == 6'b101001   // M+ M+1 M+MG
-      || code == 6'b010001 || code == 6'b110001                        // K KF
-      || code == 6'b010011 || code == 6'b110011                        // KE KFE
-      || code == 6'b010101 || code == 6'b110101                        // KR KFR
-      || code == 6'b111101                                             // LTRS
-      || code == 6'b011001 || code == 6'b111001 || code == 6'b011101;  // * *+ /
-endfunction
+//   DCV          CONVERT DOUBLE (printed p.74), both radices, built
+//                   2026-11-16; the conversion is mkCvtBox's.
+//   LFT          LOAD FACTOR (printed p.69), decimal, built 2026-11-16.
+// (vflDecimalBuilt, the list this comment introduced, was removed
+// 2026-11-16 with the last two entries, LFT and DCV: every VFL integer
+// code now executes in both radices, so nothing asks.)
 
 function Bit#(7) effLength(Bit#(6) length) =
   (length == 0) ? 64 : zeroExtend(length);

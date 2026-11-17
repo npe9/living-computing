@@ -64,7 +64,10 @@ OP_TABLES = ["BB_CODES", "CB_CODES", "DIR_INDEX_CODES", "FP_CODES",
 # VFL integer arms exist (L, ST, +, M+, K), which accounts for the ten
 # compare/convert codes here.
 UNIMPLEMENTED = {
-    "DCV",                                # radix conversion
+    # DCV left on 2026-11-16: built in both radices (G2.3, the radix
+    # converter box mkCvtBox) and exercised by decks/vfl_dcv.strap, which
+    # runs the Reference Manual's Figure 19 whole.  The set is now EMPTY:
+    # no mnemonic STRAP can emit is unbuilt.
     # LCV moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     # CV and LTRCV moved there on 2026-10-21 (MCP printed p.24).
     # KE and KFE left on 2026-11-16: built (G2.3 stage 2, with KR/KFR, both

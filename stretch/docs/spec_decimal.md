@@ -1035,6 +1035,11 @@ direction would be a future refusal, exactly as `LCV` is today.
 
 ### 5d. And the Reference Manual ships an oracle for most of it
 
+> **2026-11-16: Figure 19 RUNS, all five statements.**  Decimal signed
+> `ST` (G2.3 stage 1) and `DCV` (G2.3, `mkCvtBox`) are built;
+> `decks/vfl_dcv.strap` block F stores 07006652 with its sign at 2000.
+> The "out of scope" notes below are history.
+
 Printed p.74, Figure 19, "Radix Conversion" — a complete worked
 program with IBM's own notes:
 

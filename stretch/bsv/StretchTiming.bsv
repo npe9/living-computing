@@ -103,6 +103,22 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   endcase
 endfunction
 
+// >>> CONVERT DOUBLE (DCV, code 59), 2026-11-16 -- kept apart from the
+// VflInt arm below so that arm's own edits do not meet it. <<<
+// CHOSEN from the Vol. 2 atlas, printed p.132 (PDF 139, "VFL INSTRUCTION
+// DCV, NO FORWARDING, DIRECT ADDRESSING, OFFSET 0"): every row is 6.00 us
+// binary-to-decimal and 5.40 us decimal-to-binary, whatever the field
+// description -- the page's own witness that DCV ignores length and byte
+// size -- with "the accumulator originally +1 at offset 20" (PDF 113).
+// The model's VFL I-box term is 2 x 6 = 12 clocks = 3.6 us, so the E-box
+// term that reproduces the page is 8 clocks (2.4 us) and 6 (1.8 us).
+// Table 3 (Vol. 1 printed p.3-9, PDF 27) gives .6(s + u/8 + 1) and
+// .6(s/4 + 2), data-dependent through S ("accumulator field specified by
+// the offset minus all leading zero's"); eboxClocks sees the instruction,
+// not the accumulator, so that dependence is NOT modelled and the atlas
+// point stands for every operand.  mkCvtBox (6 and 4 clocks) fits inside.
+function Bit#(16) dcvClocks(VflInstr v) = (v.m.decimal == 1) ? 6 : 8;
+
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
 function Bit#(16) eboxClocks(DecodedInstr d);
@@ -179,6 +195,7 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // +MG(34), M+(10), M+MG(42), K(18), KMG(50), KR(22),
       // KMGR(54), D+(66), D+MG(98), F+(82), SHF(114).  4 + 1.
       5;
+    tagged VflInt .v &&& (v.code == 6'b111011): return dcvClocks(v);   // DCV, above
     tagged VflInt .v: begin
       // Table 3's SAU byte count is .6(x/y), and Perf. Char. Vol. 1
       // printed p.3-10 (PDF 28) defines x and y -- NEITHER is the

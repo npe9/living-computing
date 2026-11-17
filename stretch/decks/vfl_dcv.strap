@@ -1,0 +1,183 @@
+! vfl_dcv.strap -- CONVERT DOUBLE (DCV, code 59), built 2026-11-16.
+! Reference Manual 22-6530-2 printed p.74 (PDF 77), read in the page
+! image; the arm's comment in bsv/StretchExecute.bsv quotes it whole.
+! The conversion is mkCvtBox's (bsv/StretchCvtBox.bsv).
+!
+! BLOCK F IS IBM's OWN PROGRAM: Figure 19, "Radix Conversion", printed
+! p.74, its five statements as printed.  "Given two four-digit signed
+! decimal integers (byte size six) in locations 1900 and 1900.30, form
+! the eight-digit product and store it in location 2000."  Its notes:
+! "1. Converts multiplier and places it in transit register.  2. The
+! offset of the LCV and the * instruction should be the same. ...  3.
+! DCV is used instead of CV because of the offset of 20 produced by the
+! * instruction."  docs/spec_decimal.md 5d said the fifth line (a
+! decimal ST) could not run; decimal ST is built since G2.3 stage 1, so
+! the whole figure runs.  The operands are CHOSEN: +1234 and -5678, as
+! six-bit bytes 00dddd with the sign byte ZZSTUV of printed p.58 (S2 in
+! decks/vfl_decimal_add.strap is the same layout): word 1900 is
+!   000001 000010 000011 000100 000000 | 000101 000110 000111 001000
+!   001000 | 0000 = (16)0420C40051872080.
+! The answer, by hand: 1234 x -5678 = -7006652, eight digits 07006652:
+! ST(D,54,6) stores eight 00dddd bytes and the sign byte 001000 (zones
+! from the sign byte register, zero), the low ten bits of the word kept
+! (zero):  000000 000111 000000 000000 000110 000110 000101 000010
+! 001000 0000000000 = (16)0070001861422000.  Also checked: the
+! accumulator right after the DCV, (16)7006652 at offset 0, and RLZ+RN.
+!
+! BLOCKS D1-D8 ARE HAND-DERIVED from p.74's paragraph.  Each clears the
+! indicators, puts three words in the accumulator (left, right, sign
+! byte register) with TI, converts, and copies the three words and the
+! indicators out.
+!   D1 B-D, 10^24 - 1 at offset 20: twenty-four nines, no PF.
+!   D2 B-D, 10^24: 25 digits, the low 24 (zero) kept, PF ("the 96
+!      low-order bits of the result are obtained").  NOTE: 10^24 is an
+!      80-bit number, so p.74's "no more than 80 significant bits can be
+!      converted without causing a partial field condition" is loose by
+!      the 2^80 - 10^24 values between them; the model reads PF from the
+!      digits, which is what the page's first PF sentence states.
+!   D3 B-D, a one in accumulator position 0 and 5 at offset 20: "Higher-
+!      order bits (positions 0-11 of the accumulator) are ignored and
+!      lost.  No indication of this loss is retained" -- result 5, no PF.
+!   D4 B-D, 123 to offset 120: the result's top digit falls off the left
+!      end -- PF, and (16)23 at offset 120 is what is left.
+!   D5 D-B, 32 nines at offset 0: 10^32 - 1 needs 107 bits, PF, the low
+!      96 bits at offset 20.  CHOSEN: the decimal field runs from the
+!      offset to the left end (the arm's note; Perf. Char. Vol. 1 p.3-10's
+!      S).
+!   D6 D-B, 1234 at offset 8 with ones below the offset: 1234 at offset
+!      20; the bits below the offset are not read.
+!   D7 B-D with the negative sign modifier, sign byte register (16)F7:
+!      the sign inverts and "all other positions of the sign byte
+!      register remain unchanged" -- (16)FF, RLZ and RN.
+!   D8 D-B unsigned on a negative accumulator: "taken as positive" --
+!      sign byte register (16)00 from (16)08, 42 at offset 20.
+!
+! INJECTIONS, measured: tests/run_tests.sh, the DCV line.
+
+        SLC, 1000.0
+! ---- F. Figure 19, the five statements as printed ------------------
+START   LCV(D,30,6), 1900.0, 8
+        LTRCV(D,30,6), 1900.30, 0
+        *(B,64,4), $TR, 8
+        DCV(B,0,8), 0, 0
+        TI, 3, 8.0, F19ACC
+        ST(D,54,6), 2000.0, 0
+! ---- D1 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D1IN, 8.0
+        DCV(B,0,8), 0, 0
+        TI, 3, 8.0, D1ACC
+        TI, 1, $IND, D1IND
+! ---- D2 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D2IN, 8.0
+        DCV(B,0,8), 0, 0
+        TI, 3, 8.0, D2ACC
+        TI, 1, $IND, D2IND
+! ---- D3 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D3IN, 8.0
+        DCV(B,0,8), 0, 0
+        TI, 3, 8.0, D3ACC
+        TI, 1, $IND, D3IND
+! ---- D4 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D4IN, 8.0
+        DCV(B,0,8), 0, 120
+        TI, 3, 8.0, D4ACC
+        TI, 1, $IND, D4IND
+! ---- D5 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D5IN, 8.0
+        DCV(D,0,8), 0, 0
+        TI, 3, 8.0, D5ACC
+        TI, 1, $IND, D5IND
+! ---- D6 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D6IN, 8.0
+        DCV(D,0,8), 0, 8
+        TI, 3, 8.0, D6ACC
+        TI, 1, $IND, D6IND
+! ---- D7 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D7IN, 8.0
+        DCVN(B,0,8), 0, 0
+        TI, 3, 8.0, D7ACC
+        TI, 1, $IND, D7IND
+! ---- D8 ----------------------------------------------------------
+        Z, $IND
+        TI, 3, D8IN, 8.0
+        DCV(DU,0,8), 0, 0
+        TI, 3, 8.0, D8ACC
+        TI, 1, $IND, D8IND
+HALT    BEW, $
+
+        SLC, 1900.0
+        DD(BU,64), (16)0420C40051872080
+        SLC, 2000.0
+        DD(BU,64), 0
+
+        SLC, 2100.0
+D1IN    DD(BU,64), (16)0000000D3C21BCEC
+        DD(BU,64), (16)CEDA0FFFFFF00000
+        DD(BU,64), 0
+D2IN    DD(BU,64), (16)0000000D3C21BCEC
+        DD(BU,64), (16)CEDA100000000000
+        DD(BU,64), 0
+D3IN    DD(BU,64), (16)8000000000000000
+        DD(BU,64), (16)0000000000500000
+        DD(BU,64), 0
+D4IN    DD(BU,64), 0
+        DD(BU,64), (16)0000000007B00000
+        DD(BU,64), 0
+D5IN    DD(BU,64), (16)9999999999999999
+        DD(BU,64), (16)9999999999999999
+        DD(BU,64), 0
+D6IN    DD(BU,64), 0
+        DD(BU,64), (16)00000000001234FF
+        DD(BU,64), 0
+D7IN    DD(BU,64), 0
+        DD(BU,64), (16)0000000000700000
+        DD(BU,64), (16)F700000000000000
+D8IN    DD(BU,64), 0
+        DD(BU,64), (16)0000000000000042
+        DD(BU,64), (16)0800000000000000
+
+        SLC, 2200.0
+F19ACC  DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D1ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D2ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D3ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D4ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D5ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D6ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D7ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D8ACC   DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+D1IND   DD(BU,64), 0
+D2IND   DD(BU,64), 0
+D3IND   DD(BU,64), 0
+D4IND   DD(BU,64), 0
+D5IND   DD(BU,64), 0
+D6IND   DD(BU,64), 0
+D7IND   DD(BU,64), 0
+D8IND   DD(BU,64), 0
+
+        END, START

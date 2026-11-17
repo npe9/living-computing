@@ -1,0 +1,87 @@
+! vfl_lft_decimal.strap -- decimal LOAD FACTOR, built 2026-11-16 (G2.3,
+! the last decimal VFL refusal).  Reference Manual printed p.69 (PDF 72),
+! read in the page image:
+!
+!   "The factor register (FT) is cleared.  A four-bit sign byte, in which
+!   the leftmost bit is the sign of the addressed storage operand as
+!   modified by the negative sign modifier, is placed in the four
+!   low-order bits of FT.  The remaining three bits of this sign byte are
+!   zero.  The numeric part of the addressed operand is positioned to the
+!   left of this sign byte in FT."
+!   MODIFIERS: "Unsigned; Negative Sign; Radix.  These modifiers operate
+!   as in ADD."
+!   PF: "Since the four low-order bits of FT are used as a sign byte,
+!   only 60 numeric bits can be loaded into FT.  This indicator is turned
+!   on if the numeric part of the field loaded contains more than 60
+!   significant bits.  If this occurs, FT is loaded up to its left end.
+!   Higher-order bits are lost."
+!   Arithmetic result: "set according to the contents of the factor
+!   register when the operation is complete."
+!
+! "Radix ... as in ADD" is printed p.60's and p.58's: in decimal "each
+! byte of the storage operand is converted to a four-bit byte ... by the
+! addition of high-order zeros" -- so the numeric part that goes into FT
+! is four-bit digits, whatever the byte size; sixty bits is fifteen of
+! them.  HAND-DERIVED cases, no IBM oracle exists for this one:
+!
+!   L1 LFT(DU,24,4) of 123456: FT = (16)1234560, RGZ.
+!   L2 LFT(DU,18,6) of three six-bit bytes with zones 11 (110001 110010
+!      110011, as decks/vfl_decimal_add.strap's Z123): the zones are
+!      dropped, FT = (16)1230.  A binary LFT of the same field would
+!      load (16)31CB3 shifted -- this is the case that tells the radices
+!      apart.
+!   L3 LFT(DU,64,4) of sixteen digits 1234567890123456: sixteen digits
+!      are 64 bits, more than 60, PF; FT keeps the low fifteen,
+!      (16)2345678901234560.
+!   L4 LFT(D,16,4) of 000- (three zero digits, sign byte 1000): FT =
+!      (16)8 -- the sign bit at FT bit 60 and a zero numeric part -- and
+!      RZ with RN ("negative whether zero or not", printed p.47).
+!   L5 LFTN(DU,8,4) of 42: unsigned is positive, the negative sign
+!      modifier inverts it: FT = (16)428, RLZ and RN.
+! Each clears the indicators first and copies FT and the indicators out.
+!
+! INJECTIONS, measured: tests/run_tests.sh, this deck's line.
+
+        SLC, 1000.0
+START   Z, $IND
+        LFT(DU,24,4), L1D
+        TI, 1, $FT, L1FT
+        TI, 1, $IND, L1IND
+        Z, $IND
+        LFT(DU,18,6), L2D
+        TI, 1, $FT, L2FT
+        TI, 1, $IND, L2IND
+        Z, $IND
+        LFT(DU,64,4), L3D
+        TI, 1, $FT, L3FT
+        TI, 1, $IND, L3IND
+        Z, $IND
+        LFT(D,16,4), L4D
+        TI, 1, $FT, L4FT
+        TI, 1, $IND, L4IND
+        Z, $IND
+        LFTN(DU,8,4), L5D
+        TI, 1, $FT, L5FT
+        TI, 1, $IND, L5IND
+HALT    BEW, $
+
+        SLC, 1100.0
+L1D     DD(BU,64), (16)1234560000000000
+L2D     DD(BU,64), (16)C72CC00000000000
+L3D     DD(BU,64), (16)1234567890123456
+L4D     DD(BU,64), (16)0008000000000000
+L5D     DD(BU,64), (16)4200000000000000
+
+        SLC, 1200.0
+L1FT    DD(BU,64), 0
+L2FT    DD(BU,64), 0
+L3FT    DD(BU,64), 0
+L4FT    DD(BU,64), 0
+L5FT    DD(BU,64), 0
+L1IND   DD(BU,64), 0
+L2IND   DD(BU,64), 0
+L3IND   DD(BU,64), 0
+L4IND   DD(BU,64), 0
+L5IND   DD(BU,64), 0
+
+        END, START
