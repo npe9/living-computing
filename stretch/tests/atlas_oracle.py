@@ -967,7 +967,23 @@ def vfl_new_encoding_errors(cases):
         elif place == "imm":
             want.update(addr=IMM_ADDR, p=4)
         else:
-            want.update(p=0, offset=0)
+            # CV is VFL code 27, DCV 59 (opcodes; StretchExecute's arms)
+            want.update(p=0, offset=0, code={"CV": 27, "DCV": 59}[r.instr])
+            # and the set-up must leave PDF 113's "+1 at offset 20": a
+            # 64-bit VFL load (code 5) at offset 20 before the body.  A
+            # full-word instruction may start on a half-word, so every
+            # pair of consecutive half-words of the set-up is decoded.
+            words = dict(full)
+            halves = []
+            for a in range(START_ADDR, BODY_ADDR):
+                if a in words:
+                    halves += [words[a] >> 32, words[a] & 0xFFFFFFFF]
+            if not any(dd["code"] == 5 and dd["offset"] == 20 and dd["fl"] == 0
+                       and dd["p"] == 0
+                       for dd in (_decode_vfl((halves[i] << 32) | halves[i + 1])
+                                  for i in range(len(halves) - 1))):
+                errs.append((c, "no L(BU,64,8) at offset 20 in the set-up"))
+                continue
         got = {k: d[k] for k in want}
         if got != want:
             errs.append((c, "decodes %r, wants %r" % (got, want)))

@@ -16,7 +16,7 @@ The oracle has three parts:
 |---|---|---|
 | `tests/perf_char_vol2_atlas.txt` | The transcription, read from the page images. Its header gives the format. | no (data) |
 | `tests/check_atlas_data.py` | A fast self-check of the transcription: parse, coverage, redundancy tallies, second reading, sums. | **yes**, well under a second |
-| `tests/atlas_oracle.py` | The oracle. It builds GENER's program for each expressible cell, runs it on `mkStretchCore` and reports the **residual = model − printed, in clocks of 0.3 µs**. It is a measurement and never fails on a residual. | **no**, it takes an hour |
+| `tests/atlas_oracle.py` | The oracle. It builds GENER's program for each expressible cell, runs it on `mkStretchCore` and reports the **residual = model − printed, in clocks of 0.3 µs**. It is a measurement and never fails on a residual. | **no**, it takes hours (an hour for the 6,265 cases of the first run; the 27,655 now generated were measured page-set by page-set) |
 
 M2's correctness is defined as how much of this residual it closes
 (source_audit.md G4.1).
@@ -222,7 +222,8 @@ Check 0 runs first and is static (no simulation).
    four addresses, 1,856 fail. It also caught a wrong expectation of
    its own before it was committed: E+I and SHF carry their operand in
    effective-address bits 0-10, seven places up the 18-bit field
-   (Ref. Manual p.102), which STRAP assembles correctly.
+   (Ref. Manual p.102, as quoted in `StretchExecute.bsv`'s SHF and E+I
+   arms), which STRAP assembles correctly.
 
 1. **Linearity.** L(BU,8,8) costs 14.0000 clocks a copy between 250 and
    500 copies and again between 500 and 1,000. The ten count branches
@@ -239,12 +240,17 @@ Check 0 runs first and is static (no simulation).
 5. **INTERNL / IMMED. / ACCUM. encoding** (static, 5,896 cases). The
    address field is 8.0 or (10.74)₈ for INTERNL (written as the literal
    PDF 114 prints, not the generator's constant), (444444)₁₆ with P = 4
-   for IMMED., and offset 0 for CV/DCV. The index field and the
+   for IMMED., and for CV/DCV offset 0, op code 27 / 59, and a set-up
+   load `L(BU,64,8)` at offset 20 (decoded at every half-word, since a
+   full-word instruction may start on one). The index field and the
    invert-sign flip are checked too; the flip is checked against the
    assembled word, because a connective's own code uses that bit.
    Injections, made in memory: immediate XOR placed four bits low, 1,604
    fail; invert not applied on the immediate pages, 732 fail; INTERNL
-   crossover at .73, 1,796 fail.
+   crossover at .73, 1,796 fail; INTERNL at 9.0, 2,112 fail; the CV
+   set-up at offset 0, 384 fail; DCV assembled as CV, 192 fail. The
+   set-up decode first failed all 384 clean cases, because it read only
+   whole words; it was fixed before the injections.
 6. **FP linearity**, on ST(N) to $X9-$X12, which writes index
    registers: 6.0000 clocks a copy at both body lengths. Injected in memory: with the I-box operands moved to
    $X12-$X15 the stores overwrite the loop count ($X15), the run does
@@ -328,6 +334,10 @@ The report echoes this list in its header:
     negative; XPFP is the same with the sign positive ("flagged
     exponents superimposed");
   - U,V FLAGS is the one with data flags U and V (bits 62, 63) on;
+  - "the initial operand" is read as both the accumulator and the
+    memory operand: NORMALIZED 1. puts the one in both;
+  - "AC EXPNT N." is read as an accumulator exponent with no flag (the
+    plain normalized one);
   - on the load pages, whose captions name only the memory operand, the
     accumulator holds the normalized one;
   - the accumulator is loaded with `L(U)` so a flagged word lands as
@@ -341,7 +351,8 @@ The report echoes this list in its header:
   AH off), before the accumulator is loaded.
 - **E+I and SHF** (PDF 71, 72). The column's number is the address
   operand, written as a STRAP literal: decimal, in effective-address
-  bits 0-10 (Ref. Manual p.102). CHOSEN: 2040 is read as decimal, which
+  bits 0-10 (Ref. Manual p.102, as quoted in `StretchExecute.bsv`).
+  CHOSEN: 2040 is read as decimal, which
   sets the immediate's exponent-flag bit; SHF shifts left (bit 11 = 0).
 - **Indexing** is by $X5 = 0 on every new page, as on the old ones.
 
@@ -408,8 +419,9 @@ dpi), not from the text layer.
   are captioned NORMALIZED 1., BOTH OPERANDS WITH XPFN, AC EXPNT N. MEM
   EXPNT XPFN, AC WITH XPFP. MEM WITH XPFN (the load pages: MEMORY
   OPERAND HAS XPFN / U,V FLAGS / XPFP); KR and KMGR are printed twice,
-  "AH INDICATOR OFF" and "AH INDICATOR ON" (PDF 58-61, 89-92); PDF 71
-  heads its columns "EFFECTIVE ADDRESSES" ONE and 2040, PDF 72 "SHIFT 1
+  "AH INDICATOR OFF" and "AH INDICATOR ON" (PDF 58-61, 89-92; 58 and 59
+  viewed for this, the rest as transcribed); PDF 71 heads its columns
+  "EFFECTIVE ADDRESSES" over ONE and 2040 (viewed), PDF 72 "SHIFT 1
   ... SHIFT 95"; the rows are (N), NEG (N), A(N), NEG A(N), (U), ... .
 - **PDF 113 (printed 106).** "Each column of figures represents a
   variation of operand placement; external memory, external with word
@@ -434,8 +446,8 @@ dpi), not from the text layer.
   binary CV operation is placed in the accumulator at an offset of 68.
   For subsequent execution of identical CV instructions the operand
   appears to be a very large number."
-- **Reference Manual printed p.72** (as quoted in StretchExecute.bsv's
-  CV arm): "In the accumulator conversion operations, CONVERT and
+- **Reference Manual printed p.72** (second hand: as quoted in
+  StretchExecute.bsv's CV arm; the manual page was not re-read here): "In the accumulator conversion operations, CONVERT and
   CONVERT DOUBLE, no storage operand is required, and the word address,
   bit address, length, and byte size fields of the instruction are not
   normally used."
@@ -754,12 +766,15 @@ All 3,908 halt. Exact 116 (3%), median −7.10, mean −8.97, range −64.47
 | ni_int | 1056 | 39 | −4.00 | −2.86 | −39.04 … +45.95 |
 | ni_int_wbx | 898 | 0 | −13.07 | −16.06 | −62.47 … +32.95 |
 
-model figure varies within (pdf, instr, column) in 98 of 98 groups
 
 **The largest systematic residual: the model charges an accumulator
-operand as if it were in memory.** The model's INTERNL figure equals
-its EXTERNL figure on every page (L (BU,8,8): 14.02 in both). The
-7030's does not. On the same pages, row for row, the printed INTERNL
+operand as if it were in memory.** Measured on PDF 144 (M+) and 147
+(L), no-indexing columns, by re-running their EXTERNL columns beside
+this run: the model's INTERNL figure equals its EXTERNL one on 91 of 96
+rows (the other 5, all M+, within 2 clocks). Its INTERNL WB XOVR equals
+its EXTERNL WB XOVR on M+, and on L is 8 clocks *below* it (the model
+charges an internal crossover 1 clock, an external one 9). The other
+pages were not re-run beside it. The 7030 does not behave this way. On the same pages, row for row, the printed INTERNL
 time exceeds the printed EXTERNL one by a median of:
 
 | instructions | INTERNL − EXTERNL | INTERNL WB XOVR − EXTERNL WB XOVR |
@@ -773,7 +788,8 @@ time exceeds the printed EXTERNL one by a median of:
 So an operand in the accumulator costs the 7030 about 1.2 µs more than
 the same operand forwarded from memory, and a crossing accumulator
 field (bit 60 of $L into $R) about 3 µs more, against the model's 1
-clock. The to-memory instructions store their crossing internal result
+clock on L (on M+ the model's internal and external crossover are the
+same). The to-memory instructions store their crossing internal result
 faster than their crossing external one, the reverse of the fetches.
 `/` keeps the WB XOVR anomaly of the other columns (+33), and LCV's
 +22 … +46 are its decimal rows of 32-64 bits.
@@ -810,8 +826,12 @@ All 9,406 halt. Exact 436 (5%), median −1.02, mean −3.10, range −43.02
 **The probe holds.** The model's FP time depends only on the operation
 (`eboxClocks`'s `Fp` arm has no data term), so within each (page,
 column) its figure must be one number whatever the block and row. It is,
-in all 298 groups. No case changed control flow (an interruption or an
-instruction check would show as an outlier there).
+in all 298 groups. That alone would not exclude a rejection uniform
+across rows, so the figures were also checked against `eboxClocks`: the
+I-box figures rise and fall with its per-operation charges (charge →
+measured: SRT 108 → 109, SLO 19 → 20, `*+` 20 → 22, `*` 9 → 11, D/ 10 →
+12, R/ 8 → 10, the add class 5 → 7, `/` 4 → 8), so the operations
+execute.
 
 | PDF | instr | n | exact | median | mean | range |
 |---|---|---|---|---|---|---|
@@ -905,7 +925,11 @@ The model's figure against the page's median, per column, in clocks
    4.4-10. The I-box operand of the same operation is within a clock
    (+1 on the no-indexing columns). It is the model's FP memory fetch,
    not its E-box: with forwarding (one address) the 7030 prints 8.0 and
-   the model still 15.5. PDF 41: "For fetch-type instructions,
+   the model still 15.5. A likely cause, not yet traced:
+   `bsv/StretchIBox.bsv`'s `fetchesOperand` returns True for one FP
+   operation only (`tagged Fp .f: return f.code == fpop_L;`), and L is
+   the one fetch whose external figure is near the page (6.4 against
+   4.4). PDF 41: "For fetch-type instructions,
    'forwarding on consecutive fetch' actually occurs, and only one true
    memory fetch is made for the entire sequence of 10,000
    instructions." The model shows no such saving. 2,403 EXTERNAL cells are
@@ -918,7 +942,7 @@ The model's figure against the page's median, per column, in clocks
    remains (VFL pages)"), so one store-path model would close both.
 3. **An accumulator ($R) operand costs the 7030 more, and the model
    less.** The INTERNAL column is 3-6 clocks short on fetches (13 against
-   7 on +), 6 on `*`, 15 on LFT, 24 on R/. PDF 40 itself warns that
+   7 on +), 5 on `*` (6 on D*), 15 on LFT, 26 on R/. PDF 40 itself warns that
    "$R was changed during the execution of successive double length
    operations" so D+ / D+MG's internal column (−43) is data, not
    timing. Same direction as the VFL INTERNL finding.
@@ -974,7 +998,8 @@ direct pages carry over. **The systematic residuals:**
    on most rows to 48 bits, and 3.61-4.20 at every field length in the
    INVERT block. The model charges by field length (KI (DU,48,4): 34
    against 22). An immediate operand longer than 24 bits is the 24-bit
-   address followed by zeros (Ref. Manual p.56), and the 7030 appears to
+   address followed by zeros (Ref. Manual p.56, as quoted in
+   `strap_asm.py`'s `encode_vfl_immediate`), and the 7030 appears to
    end the compare early on it, as it does with an inverted sign on the
    direct pages ("The K family's +28").
 2. **`/I` is +2 to +62 over the page**: the 7030 prints 20-25 µs at

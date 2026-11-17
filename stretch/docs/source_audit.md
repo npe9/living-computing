@@ -726,8 +726,8 @@ uncertain, each with a NOTE. `tests/atlas_oracle.py` ran 6,265 cases
 in about an hour; with the new pages `--list` reports 12,353 cases with
 a generator (run time unmeasured). Its residual predates PDF 143-189: mean −18.9 clocks,
 median −7.1, 7% exact. The largest single cause is that the model's VFL
-time does not depend on the operation. FP residuals are unmeasured:
-the oracle had no FP generator.
+time does not depend on the operation. FP residuals were then
+unmeasured: the oracle had no FP generator.
 
 *Status 2026-11-17: all but 989 transcribed cells now have a
 generator, and each new generator has been measured on its own pages.*
