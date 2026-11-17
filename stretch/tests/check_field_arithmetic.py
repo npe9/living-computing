@@ -15,6 +15,14 @@ THE PAGES, read in the page images 2026-11-16:
   never coded, which is why Appendix C has no code for it.  (strap2's dnum.py
   has it; tests/check_strap2_dd.py.)  In an address field both assemblers
   refuse it, which is the last row below.
+  ONE PAGE READS THE OTHER WAY, recorded and not settled: the glossary,
+  C22-6729 printed p.204, "Priority of Operations -- When arithmetic
+  operations are specified in an instruction field, there is a definite
+  order by which they are combined ... 1st order operation + and -.  2nd
+  order operation * and /.  3rd order operation **."  Its "orders" are
+  p.107's words for MQDNUM, so this check reads it as the numeric DD's
+  (p.207 calls a numeric DD's operands its "'address' field"); Appendix C
+  could not code "**" in any other field.
   C22-6729 printed p.207: "Implied multiplication is not allowed in field
   arithmetic."
   C22-6578 printed p.42, comment (a) on Problem 4.8's "V-ICR,$3,N*N-1.0":

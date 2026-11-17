@@ -280,6 +280,27 @@ output, not as a Python-side unit test passing in isolation. See
 
 ## Units: the one subtlety worth internalizing before editing this code
 
+**An address field has two units, decided by the address's FUNCTION
+(G3.2, 2026-11-16).** C22-6729 printed p.144 (STRAP II's INSERT): "the
+addition is determined by the function of the address, not the size
+of the field." A bit-address term is converted to the field's units.
+An integer counts the function's units. `eval_addr_field` now takes
+p.144's routine name (`ADDRESS_FUNCTION` in `strap_asm.py`), not a
+shift. Transmit is p.144's own example: both addresses function as
+18-bit, so `TI, 7, SAM+10, PAT+10` adds ten WORDS to each. LX/SX work
+the same way. `tests/check_address_function.py` has the cases.
+
+**Field arithmetic is STRAP II's (G3.1, 2026-11-16).** A field with
+`*`, `/` or an arithmetic parenthesis is evaluated by `_arith_bi`.
+That function carries strap2's bit and integer parts and uses
+`value.py`'s CHOSEN `*` and `/` rules. Every other field uses the old
+flat tokenizer. Appendix C has no code for `**`. Printed p.107 makes
+it a numeric DD's operation (MQDNUM). strap_asm refuses it in a field
+and does not build it in a DD. The glossary, printed p.204, says
+otherwise, listing `**` among the "Priority of Operations" for "an
+instruction field". `docs/source_audit.md` G3.1 records that conflict.
+`tests/check_field_arithmetic.py` has the cases.
+
 The assembler's location counter and every symbol value are a **bit
 count** (`word*64 + bit`), matching the 7030's own `BitAddr` type. Two
 different 19-bit instruction fields both look like "half-word

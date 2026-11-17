@@ -845,10 +845,16 @@ def _word_part(name, symtab, loc_bits, lineno):
 # II's operators are Appendix C's eight 3-bit codes, C22-6729 printed
 # p.198: ".+ .L .R U- * / + -" -- the point forms, unary minus, and four
 # arithmetic operators, parentheses highest (p.199 note 4).  There is no
-# "**" among them: "**" (powering) is MQDNUM's, a NUMERIC DD's third-order
-# operation (printed p.107), evaluated to a floating word at once and
-# never coded; "Implied multiplication is not allowed in field arithmetic"
-# (p.207).
+# "**" among them, so a coded field cannot carry it.  "**" (powering) is
+# MQDNUM's, a NUMERIC DD's third-order operation (printed p.107), evaluated
+# to a floating word at once and never coded.  ONE PAGE READS THE OTHER
+# WAY: the glossary, printed p.204, "Priority of Operations -- When
+# arithmetic operations are specified in an instruction field ... 1st order
+# operation + and -.  2nd order operation * and /.  3rd order operation
+# **."  Its three "orders" are p.107's words, so this reads it as MQDNUM's
+# (a numeric DD's operands are its "'address' field", p.207); a field
+# with "**" is refused here, the only thing Appendix C leaves possible.
+# "Implied multiplication is not allowed in field arithmetic" (p.207).
 #
 # The arithmetic itself is strap/strap2/value.py's, which carries a bit
 # part B and an integer part I apart because INSERT adds them "according
