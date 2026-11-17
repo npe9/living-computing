@@ -135,6 +135,20 @@ Bcfxtx (Box 55 GFLONG), MEASURED 2026-11-13; the driver gives each field
 >>> MEASURED on the deck, restored by copy and cmp, control 50 passing:
 >>>   the digit not reloaded after the note   FAIL those three rows only
 >>>   63 not counted in NOTEC                 FAIL those three rows only <<<
+
+>>> MESSAGES 82 AND 68 ON A G.P.'S n, 2026-11-17 (G3.3's, the host's
+>>> getfld.py _checked_gp; C22-6729 p.177, both conditions DERIVED there).
+>>> Before, measured on the model: A(.70)1 coded with n = 6 and no halt (the
+>>> host's old modulo-64 bug), A(.0)5 no note.  Now GFCGP halts ERRC 168 for
+>>> n over 63 and notes 82 for n of 0, and GFGPN holds 24 bits.  Rows
+>>> A(.0)5, A(.70)1, A(.300)1 and the control A(.63)1.  MEASURED on the deck,
+>>> restored by copy and cmp, control 57 passing:
+>>>   no n-over-63 test (BAH a NOP)    FAIL the two 168 rows (n 70, n 300)
+>>>   GFGPN back to 8 bits             FAIL the n 300 row only (300 is 44)
+>>>   82 not counted in NOTEC          FAIL the A(.0)5 note row only
+>>>   82 on every g.p.                 FAIL A(.3,8)9's note row, the A(.63)1
+>>>                                    control, "message 129 three times"
+>>>                                    (the 94 fields' g.p.s add notes) <<<
 """
 import os
 import re
@@ -359,6 +373,10 @@ def main():
              ("166, a g.p. inside parentheses (the host's 66)", "(A(.3)5)", 166, 66),
              ("a g.p.'s value in its radix r", "A(.3,8)9", 0, "note 63"),
              ("a digit too large for a radix prefix", "(8)19", 0, "note 63"),
+             ("82, a (.0) g.p. (p.177)", "A(.0)5", 0, "note 82"),
+             ("168, a g.p.'s n over 63 (the host's 68)", "A(.70)1", 168, 68),
+             ("168, a g.p.'s n over 255 (the host's 68)", "A(.300)1", 168, 68),
+             ("0, control: a g.p.'s n of 63", "A(.63)1", 0, "same"),
              ("10, parentheses deeper than 7", "((((((((A))))))))", 10, None),
              ("156, a system symbol not found (the host's 56)", "$QQQ", 156, 56),
              ("156, a system symbol of 9 characters (the host's 56)", "$ABCDEFGHI", 156, 56),
@@ -375,14 +393,22 @@ def main():
             else:
                 cs = [card(" ", "", stmt)]
             h, _ = run(cs, tmp)
-            if msg == "note 63":
-                # p.71: 63 is a note and the digit is used, on both
+            if msg in ("note 63", "note 82"):
+                # p.71: 63 is a note and the digit is used, on both; 82 is a
+                # note and the g.p. is made with n 0 (G3.3, p.177)
+                number = int(msg[5:])
                 del NOTES[:]
                 w = host(cs)
-                check(f"63 as a note, the field coded as the host's: {label}",
+                check(f"{number} as a note, the field coded as the host's: {label}",
                       h and (h["errc"], h["notes"], h["fields"]), (0, len(NOTES), w))
-                check("  and the host gives 63 once and does not refuse",
-                      (list(NOTES), w[-1][:7] == "refused"), ([63], False))
+                check(f"  and the host gives {number} once and does not refuse",
+                      (list(NOTES), w[-1][:7] == "refused"), ([number], False))
+                continue
+            if msg == "same":
+                del NOTES[:]
+                w = host(cs)
+                check(f"ERRC {label}, no note, the field coded as the host's",
+                      h and (h["errc"], h["notes"], h["fields"]), (0, 0, w))
                 continue
             check(f"ERRC {label}", h and h["errc"], errc)
             if msg is not None:

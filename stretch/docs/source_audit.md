@@ -651,9 +651,39 @@ strap2's image: `repro_address_multiply` (0007C70F 00083000) and the
 two Problem 4.6 Method 3 decks. No deck that assembled before changed
 (hashed). Checks: `tests/check_field_arithmetic.py` (38 checks, five
 injections); `check_problem_4_dd_refusals.py` now asserts the word.
-**Open:** a field that is one arithmetic parenthesis, `(N+1)`, is still
-an index on a null address in strap_asm. strap_asm's DD(N) arithmetic
-(`1/720`, `$N`) is refused, as before.
+strap_asm's DD(N) arithmetic (`1/720`, `$N`) is refused, as before.
+
+*Follow-up 2026-11-17: SYN, CW, transmit's J and `(N+1)` alone.*
+strap_asm refused `Q SYN, N*2`, `CW, SAM*2, N*2` and `T, N/4, ...`, and
+read `(N+1)` alone as an index on a null address. strap2 takes all
+four, and strap_asm now agrees with it on each.
+
+- **A SYN keeps its two parts.** This is DERIVED. Printed p.13 says the
+  vle holds "its value or the coded expression of the value". Chart RD
+  (p.54) puts a symbol's info, or the VALUE of its expression, in the
+  list. p.57's workspace data are "I-value and B-value". p.59 Box 6
+  combines the two only "if the result is ... to be made an integer,
+  i.e., Vvint". INSERT adds them by function (p.144). Fig. 22 (p.191)
+  does not tabulate the function, so where the parts are stored is not
+  printed.
+- **strap_asm classifies by the computed parts.** No bit part is an
+  integer (`N*2`, `SAM/1.0`). No integer part is a bit address. Both is
+  mixed, kept in `SymTab.sym_ipart`.
+- **The mixed case was wrong without arithmetic too.** `QM SYN, SAM+N`
+  then `B, QM` gave 800 half words; strap2 gives 808.
+- **CW (SCW, S18CF, S18RF) and transmit's J (STJFLD)** take
+  `(B >> 6) + I`, as strap2's inserters do. `CW, SAM+1` gave word 400;
+  strap2 gives 401.
+- **`(N+1)` alone.** Printed p.85, Boxes 43, 44 and 49: "If there was no
+  operator to make the parentheses arithmetic, the coded expression is
+  set to indicate a sub-expression". strap_asm now treats an operator
+  inside (including a unary minus or a point) as making it arithmetic.
+  This is CHOSEN, as in strap2, because Box 76 draws no test. `($1)`
+  stays an index (MCP printed p.126).
+
+All 825 decks hash the same under both assemblers before and after.
+`check_field_arithmetic.py` is at 101 checks, with nine injections
+measured.
 
 **G3.2** Replace `eval_addr_field`'s per-call-site `unit_shift` with
 printed p.144's rule -- scaling by the operand's **function** -- and
@@ -712,6 +742,12 @@ Given: 47-50, 54-56, 59, 61, 63, 65-68, 75-79, 82, 84, 85, 87, 88, 91,
 89, 90, 92, 93. Message 71 (SUBSCRIPT WRITTEN AS BIT) is detected but
 refused unnumbered (`value.py`), as 94 was. The open items, among them 68's own stated condition, are in
 `docs/NEXT.md`, "ASSEMBLER COMPLETENESS (G3)".
+*2026-11-17:* the 7030 deck's GETFLD now gives the same two g.p.
+messages. Before, measured on the model, it coded `A(.70)1` with n = 6
+and gave `A(.0)5` no note. Now it halts with ERRC 168 for n > 63 and
+notes 82 for n = 0. The four new cases are in
+`check_strap2_7030_getfld.py`, and `docs/strap2_7030.md` describes the
+change.
 
 ## G4 — Verification infrastructure
 
