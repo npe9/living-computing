@@ -4450,12 +4450,45 @@ run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole op
 # p.76: the connective counts "are set at the end".  C1-C3 cross into or
 # out of word 11 (head and tail), K1-K3 the counts (K2 the CM refill path,
 # which set no counts until 2026-11-17; K3 a CM crossing into word 7).
-# INJECTIONS, observed: the deck's header.  CYCLES 389 a model pin.
+# INJECTIONS, observed: the deck's header.  CYCLES 404 a model pin.
 # 404, not 389 as first pinned: batch18's index-store decode hold fires on
 # C3's ST into word 11 (storeWaitWord); narrowed to X16-31 it runs 389.
 run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=404+-0" \
     "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
     "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"
+# STORES INTO LOCATION 7 (2026-11-17).  printed p.36: the counters are bits
+# 17-23 and 44-50 of location 7; p.34: unassigned bits "are always zero";
+# p.76: non-connective operations do not change the counts "as an inherent
+# part", and the connectives set them "at the end".  writeWord(7) did not
+# write the counter fields until now (an ST or M+ into word 7 lost its
+# count bits); StretchStorage's commitCounts is now the counters' one
+# writer, the counts winning in the same clock.  W1 M+ into 7.17, W2 ST of
+# all ones into word 7, W3 a crossing ST whose tail is word 7, W4 (the
+# control) a CM head into word 7, its counts over its stored bits.
+# INJECTIONS, observed (with vfl_cross_special_words alongside):
+# commitCounts ignores the store -> W1, W2, W3 = (16)10000, nothing else;
+# the store applied after the counts -> W4 = (16)7F00000FE000 only;
+# countsOverTail dropped -> vfl_cross_special_words K3 = (16)8000 only;
+# the unassigned bits kept as stored (p.34 undone) -> W2, W3, W4 fail, W1
+# passes (values in the deck header).
+# CYCLES 276 a model pin.
+run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=276+-0" \
+    "W1:1700=0x30000010000" "W2:1701=0x7F00000FE000" "W3:1702=0x1500000FE000" "W4:1703=0x10000"
+# A DS-SUPPRESSED VFL STORE RAISES NO DF FOR ITS REFILL (2026-11-17).
+# printed p.22: an exception in the VFL portion suppresses "the entire
+# operation" (the index part with its refill); p.32: "If an address which
+# is associated with an operation is not actually used, it will not be
+# monitored"; Data Fetch item 3 is the refill address.  Q1-Q4 are CM, ST,
+# M+ and crossing ST with a protected store AND a protected refill word:
+# DS, no DF, the index untouched.  Q5, the control, stores outside the
+# area with the protected refill: DF on, the refill done.
+# INJECTION, observed: the four up-front DF calls put back -> I1-I4 =
+# (16)80000000000 (DF) only; Q5 and vfl_cross_protect pass.  CYCLES 1119
+# a model pin.
+run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1119+-0" \
+    "I1:1700=0" "I2:1701=0" "I3:1702=0" "I4:1703=0" "I5:1704=0x80000009120" \
+    "D1:1705=0x8000000000000000" "D2:1706=0x8000000000000000" "D3:1707=0x8000000000000000" "D4:1708=0x8000000000000000" "D5:1709=0" \
+    "X7A:1710=0x0190580000040642" "X6A:1711=0x0190680000040642" "X5A:1712=0x0190480000040642" "X4A:1713=0x0190380000040642" "X3A:1714=0x01348000013405dc"
 
 # AN INDEX INSTRUCTION DOES NOT OVERTAKE A PENDING PROGRESSIVE LEVEL
 # (2026-11-16, iboxHazard's setsIndexInd).  Both set the index

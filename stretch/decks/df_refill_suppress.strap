@@ -1,4 +1,8 @@
 ! DF'S MASK-DEPENDENT HALF AT p.32'S CLASS 3 -- the refill does not
+! (2026-11-17: the markers this deck kept in word 7 bits 0-2 moved to
+! word 6 -- 7.0 -> 6.1, 7.1 -> 6.3, 7.2 -> 6.2.  Word 7's bits other
+! than its two counters are unassigned and "always zero" (printed
+! p.34), and the model now keeps them so; see vfl_word7_store.strap.)
 ! happen and the whole operation is SUPPRESSED.  The companion to
 ! df_refill_alarm.strap and df_refill_index_alarm.strap, which run the
 ! mask-ZERO case for the same six sites and scoped this one out because
@@ -98,7 +102,7 @@
 ! reason df_fetch_suppress.strap gives: DF is masked ON in block C, so
 ! the violation is reported by INTERRUPTING, and this model takes an
 ! interruption at a QUIESCENT boundary rather than at the instruction
-! boundary p.48 names.  The marker is word 7, which is in p.31's 0-31
+! boundary p.48 names.  The marker is word 6, which is in p.31's 0-31
 ! carve-out and so can never itself signal.
 !
 ! STANDARD: MANUAL-DERIVED, hand-written.  Routine 1260 TEST 8C is the
@@ -141,7 +145,7 @@
 !     dfSuppresses (suppress                -- the mask-ZERO case, which is
 !     whenever protViolates fires)             why block B exists at all;
 !                                              a suppressed CBRZ cannot branch
-!   dfSignal skipped when            -> 004165.40  BZB, 7.0, $   (C1)
+!   dfSignal skipped when            -> 004165.40  BZB, 6.1, $   (C1)
 !     suppressing (p.52 item 1)           -- no indicator, so no interruption,
 !                                            so the routine never ran
 !
@@ -282,7 +286,7 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
 !   because the mask bit is one.  rl_interrupt turns the causing
 !   indicator off on its way into the routine (p.48), so after each
 !   block DF reads OFF and the witness is the routine's own marker,
-!   word 7.
+!   word 6.
         BBZ, $DF,  $+1.0             ! clear DF before arming its mask
         BB1, 12.20, $+1.0            ! DF's mask bit := ONE
 !
@@ -301,8 +305,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB,  7.0, $                 ! hang if DF's routine did not run
-        BBZ,  7.0, $+1.0
+        BZB,  6.1, $                 ! hang if DF's routine did not run
+        BBZ,  6.1, $+1.0
         KV,   $X1, PRECOPY
         BZB,  $XE, $                 ! hang if the refill landed after all
 !
@@ -320,8 +324,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB,  7.0, $
-        BBZ,  7.0, $+1.0
+        BZB,  6.1, $
+        BBZ,  6.1, $+1.0
         KV,   $X2, PRECOPY
         BZB,  $XE, $
 !
@@ -336,8 +340,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB,   7.0, $
-        BBZ,   7.0, $+1.0
+        BZB,   6.1, $
+        BBZ,   6.1, $+1.0
         KV,    $X3, PRECOPY
         BZB,   $XE, $
 !
@@ -352,8 +356,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB,   7.0, $
-        BBZ,   7.0, $+1.0
+        BZB,   6.1, $
+        BBZ,   6.1, $+1.0
         KV,    $X4, PRECOPY
         BZB,   $XE, $
 !
@@ -368,8 +372,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         KV,  $X5,  PRECOPY
         BZB, $XE,  $
 !
@@ -384,8 +388,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         KV,  $X6,  PRECOPY
         BZB, $XE,  $
 !
@@ -404,8 +408,8 @@ BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         LX,  $X7,  EXIDX             ! read the DESTINATION back
         KV,  $X7,  PRECOPY
         BZB, $XE,  $                 ! hang if EXIDX was rewritten
@@ -439,5 +443,5 @@ TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
         SLC, (8)4524.0
-DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
         END, START

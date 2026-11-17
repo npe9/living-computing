@@ -330,22 +330,96 @@ STILL OPEN, found on the way:
   refill paths' vflPending guarded).  vfl_cross_protect P4 (refill CM)
   and P6 (one-word ST(V+IC), no refill) check it; injection (the pre-fix
   StretchExecute.bsv) -> I4, X7_P4, I6, X6_P6 and cycles 1211, nothing
-  else among the three decks.  OPEN: the refill's DF signal (p.32 class
-  3) is still raised for a refill that DS now suppresses.
-* **A store into word 7 by ST or M+ drops the count bits.** writeWord(7)
-  never writes the counter fields (StretchStorage's documented
-  simplification); p.76 says non-connective operations do not change the
-  counts "as an inherent part", and location 7 is addressable, so such a
-  store should land.  The fix would be word 11's shape (a store wire and
-  one commit rule).  And p.34: "Not all bit positions in locations 0-15
-  are assigned ... Those bit positions that are not so assigned are always
-  zero" -- the model keeps word 7's other fifty bits as stored.
+  else among the three decks.  ~~OPEN: the refill's DF signal (p.32 class
+  3) is still raised for a refill that DS now suppresses.~~ FIXED
+  2026-11-17 (below).
+* ~~**A store into word 7 by ST or M+ drops the count bits.**~~ FIXED
+  2026-11-17 ("WORD 7, THE REFILL'S DF, THE WORD-11 WINDOW" below).
 * **The one clock a crossing tail into word 11 leaves the operation's own
-  indicators in the register** (rl_tail_write runs the clock after);
-  with the interruption system enabled and a mask bit on, an interruption
-  could be taken on an indicator p.37 says is overridden.  Not exercised.
+  indicators in the register**: a case was built and does NOT reach it on
+  the model (below); still open as a model property, not observed.
 * The two `prepareExec` "completes without fetch" clauses removed with
   the refusals are still checked by no deck.
+
+### WORD 7, THE REFILL'S DF, THE WORD-11 WINDOW, 2026-11-17
+
+The three model bugs "CROSSING STORES" left open.
+
+1. **Stores into location 7** -- FIXED, `decks/vfl_word7_store.strap`.
+   printed p.36: the left-zeros counter is bits 17-23 of location 7, the
+   all-ones counter bits 44-50; printed p.34: addresses 1-15 are valid
+   word addresses (seven listed exceptions, none a data store) and "Those
+   bit positions that are not so assigned are always zero.  Information
+   stored in these positions is not recoverable"; printed p.76: the counts
+   "are not changed as an inherent part of any other non-connective
+   operations.  The counts are set at the end of the connective
+   operations".  writeWord(7) wrote the fifty unassigned bits and never
+   the counters.  Now word 7 is the two counters only (the rest reads 0),
+   and StretchStorage's `commitCounts` is their one writer, word 11's
+   shape: a store (writeWord), the connective counts and the FP-divide /
+   LTRS left-zeros count arrive on wires, the counts winning in the same
+   clock.  A CM whose crossing tail is word 7 is written the next clock
+   (rl_tail_write), so the CM puts its counts into the tail word
+   (`countsOverTail`, StretchExecute).  Injections (each from a saved copy,
+   restored, cmp-verified; run on vfl_word7_store and
+   vfl_cross_special_words): commitCounts ignores the store -> W1, W2, W3
+   ONLY; the store applied after the counts -> W4 ONLY; countsOverTail
+   dropped -> K3 = (16)8000 ONLY (vfl_cross_special_words); the
+   unassigned bits kept as stored (p.34 undone) -> W2, W3, W4 (W1 passes).
+   Swept the decks for other writers of word 7: the fp_arith decks'
+   `CM0000(BU,7), $LZC` (a connective, the counts win as before) and reads
+   only (vfl_ltrs' TI, problem_4_5's LV, buchholz B.5's V+, MCP SYNs);
+   the five marker decks below were the only programs relying on word 7's
+   unassigned bits.
+2. **The refill's DF under DS** -- FIXED, `decks/vfl_refill_df.strap`.
+   printed p.22: an exception in the VFL portion suppresses "the entire
+   operation"; printed p.32, Addresses Monitored: "All storage addresses
+   actually used by the CPU in the course of an operation are subject to
+   address monitoring.  If an address which is associated with an
+   operation is not actually used, it will not be monitored"; Data Fetch
+   item 3, "The refill address used in index refill operations".  The
+   source supports the fix, so it is not CHOSEN: the four inline refill
+   shapes (ST one word, ST crossing, M+, CM) now raise DF beside the
+   index hand-back under the store's !DS guard (`refillDfNote`), not up
+   front.  Injection (the four up-front calls put back) -> I1, I2, I3, I4 =
+   (16)80000000000 (DF) ONLY, one per site; Q5, the control, and all of
+   vfl_cross_protect pass.
+   OPEN (cycle accuracy): the model still READS the refill word before
+   it knows the store's DS (the prefetch order), so a DS-suppressed
+   operation still spends that read's clocks; the real machine's index
+   portion follows the VFL portion (p.22), so it would not.
+3. **The word-11 window** -- NOT REACHED, documented.  A crossing tail
+   into word 11 is written by rl_tail_write the clock after the
+   operation, so for one clock the register holds the operation's own
+   20-63 indicators, which p.37 says the store overrides.  A deck was
+   built for it (vfl_cross_ind_window: PF's mask bit on, interruption
+   system enabled, `M+(BU,8,8), 10.60` with an accumulator one-bit left
+   of the field, so the operation sets PF and the tail restores 0) and
+   run on the UNFIXED model: no interruption was taken (I1 = 0, D1 = 0,
+   481 clocks), so the case does not discriminate and was not kept.  Why
+   the window is not reached was not measured; StretchCore's
+   armInterrupt needs `ibusy == 0`, `la.count() == 0` and the E-box idle,
+   and intDueCalc latches the indicators a clock behind, so the stale
+   value would have to be latched and acted on in the one clock between
+   the operation and rl_tail_write.  The candidate fix (fold the tail's
+   20-63 into the indicators execute() commits, as countsOverTail does
+   for word 7) was not made, there being no case it changes.
+
+Cycle pins: vfl_cross_special_words' 389 was already stale on master
+batch20 (eb27dc9 with its own StretchStorage/StretchExecute gives 404,
+measured in a copy of the tree); the pin is now 404.  No other pin
+moved.  The full suite with these changes failed exactly four sections,
+all for one reason: if_branch_alarm, df_bb_readonly, df_refill_suppress
+and df_fetch_suppress kept their interruption markers in word 7 bits 0-2,
+which p.34 makes "always zero" and the model now reads so (the routine's
+marker never stuck, and the program hung at its BZB).  df_bb_if_ds used
+the same marker and PASSED -- its "hang if DF's routine ran" test had
+become vacuous.  All five decks now mark word 6 bits 1-3 (7.0 -> 6.1, 7.1
+-> 6.3, 7.2 -> 6.2; word 6 is the other-CPU register, which the deck
+family already uses for DS's marker, 6.0) and pass, with their pins
+unchanged.  Their headers' injection lists were measured with the word-7
+markers and were not re-measured; the halt addresses are unchanged (the
+instructions are the same length).
 
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 

@@ -1,4 +1,8 @@
 ! DF'S MASK-DEPENDENT HALF -- the fetch does not happen and the whole
+! (2026-11-17: the markers this deck kept in word 7 bits 0-2 moved to
+! word 6 -- 7.0 -> 6.1, 7.1 -> 6.3, 7.2 -> 6.2.  Word 7's bits other
+! than its two counters are unassigned and "always zero" (printed
+! p.34), and the model now keeps them so; see vfl_word7_store.strap.)
 ! operation is SUPPRESSED.  The companion to df_data_fetch_alarm.strap,
 ! which runs the mask-ZERO case and scoped this one out because the
 ! model had no suppression at all.
@@ -87,7 +91,7 @@
 ! df_data_fetch_alarm.strap and if_branch_alarm.strap give: DF is
 ! masked ON in block C, so the violation is reported by INTERRUPTING,
 ! and this model takes an interruption at a QUIESCENT boundary rather
-! than at the instruction boundary p.48 names.  The marker is word 7,
+! than at the instruction boundary p.48 names.  The marker is word 6,
 ! which is in p.31's 0-31 carve-out and so can never itself signal.
 !
 ! EXPECTED NOISE, and a real interaction worth knowing about.  This
@@ -123,7 +127,7 @@
 !     installed alone)                            which therefore does
 !                                                 discriminate, against
 !                                                 expectation
-!   dfSignal skipped when suppressing     -> 004170.40  BZB, 7.0, $ (C2)
+!   dfSignal skipped when suppressing     -> 004170.40  BZB, 6.1, $ (C2)
 !     (p.52 item 1 violated)                   -- no indicator, so no
 !                                                 interruption, so the
 !                                                 routine never ran
@@ -239,7 +243,7 @@ START   BD,  $+.32                   ! disable: words 3 and 12 come next
 !   instruction, of Class S" -- and then INTERRUPTS, because the mask
 !   bit is one.  rl_interrupt turns the causing indicator off on its
 !   way into the routine (p.48), so after each block below DF reads
-!   OFF and the witness is the routine's own marker, word 7.
+!   OFF and the witness is the routine's own marker, word 6.
         BBZ, $DF,  $+1.0             ! clear DF before arming its mask
         BB1, 12.20, $+1.0            ! DF's mask bit := ONE
 !
@@ -255,8 +259,8 @@ START   BD,  $+.32                   ! disable: words 3 and 12 come next
         NOP
         NOP
         NOP
-        BZB, 7.0,  $                 ! hang if DF's routine did not run
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $                 ! hang if DF's routine did not run
+        BBZ, 6.1,  $+1.0
         KVI, $X14, (8)7777
         BZXE, $                      ! hang if the fetch landed after all
 !
@@ -272,8 +276,8 @@ START   BD,  $+.32                   ! disable: words 3 and 12 come next
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         K(BU,64,8), PAT2W            ! the accumulator must still hold it
         BZB, $AE,  $
 !
@@ -289,8 +293,8 @@ START   BD,  $+.32                   ! disable: words 3 and 12 come next
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         K(BU,64,8), PAT2W
         BZB, $AE,  $
 !
@@ -306,8 +310,8 @@ START   BD,  $+.32                   ! disable: words 3 and 12 come next
         NOP
         NOP
         NOP
-        BZB, 7.0,  $
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $
+        BBZ, 6.1,  $+1.0
         K(U), PAT2W
         BZB, $AE,  $
         B,   PASS
@@ -338,5 +342,5 @@ TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
         SLC, (8)4524.0
-DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
         END, START

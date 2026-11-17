@@ -945,6 +945,21 @@ function Bool maskedOn(StretchStorage st, Bit#(6) n) =
 // that same path, and p.32 puts those on the DS side -- their contents
 // ARE "subject to change".  So the call sites below are gated by
 // operation, one per instruction format.
+// refillDfNote: A VFL STORE'S PROGRESSIVE REFILL RAISES DF ONLY WHEN THE
+// REFILL HAPPENS, AND A DS ALARM ON THE FIELD'S STORE MEANS IT DOES NOT
+// (2026-11-17).  printed p.22: "If an exception condition is detected
+// during the variable field length portion of the operation, the entire
+// operation will be suppressed" -- the index part, refill and all.
+// printed p.32, "Addresses Monitored": "All storage addresses actually
+// used by the CPU in the course of an operation are subject to address
+// monitoring.  If an address which is associated with an operation is not
+// actually used, it will not be monitored"; Data Fetch item 3 is "the
+// refill address used in index refill operations".  So the four inline
+// refill shapes of ST (one word, crossing), M+ and CM raise DF beside the
+// index hand-back, under the same !DS guard, and not up front as they did
+// until 2026-11-17.  (The model reads the refill word before it knows the
+// store's DS -- the prefetch order -- but a word read and never used is
+// not "actually used"; the read itself is a model artifact of that order.)
 function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
   protViolates(st, a) ? setBit(ind, ind_DF, 1) : ind;
 
@@ -3308,10 +3323,9 @@ function ActionValue#(VflOutcome)
                 // Without one, vflWriteArmHandled stays False: the shared
                 // trailing block's progressive advance writes no storage
                 // (it hands the index back through vflPending).
-                if (vflNeedsRefill) begin
-                  vflWriteArmHandled = True;
-                  ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3
-                end
+                // DF, p.32 class 3, is raised below with the refill, and
+                // only when the store was not suppressed (refillDfNote).
+                if (vflNeedsRefill) vflWriteArmHandled = True;
                 Bit#(2) stNeed = vflNeedsRefill ? 3 : 2;
                 if (prefetchCount >= stNeed && decAsk) begin
                   needsBox  = decReq;
@@ -3340,6 +3354,7 @@ function ActionValue#(VflOutcome)
                   if (vflNeedsRefill && !(dsHi || dsLo)) begin   // p.22: an exception in the VFL part suppresses the entire operation
                     vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[2]));
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                    ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
                 end else if (prefetchCount == 2)
                   needsRead = tagged Valid zeroExtend(vflPx1.refill);
@@ -3370,13 +3385,8 @@ function ActionValue#(VflOutcome)
                 // write and a new read request at once. See
                 // vflWriteArmHandled's own comment above.
                 vflWriteArmHandled = True;
-                // DF, p.32 class 3.  Reached only when the operation
-                // is valid (the outer test rejects immediate and
-                // crossing) AND vflNeedsRefill, so the refill
-                // genuinely happens -- the gate every other class-3
-                // site states explicitly, this one gets from its
-                // position.
-                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
+                // DF, p.32 class 3: raised below with the refill, and
+                // only when the store was not suppressed (refillDfNote).
                 if (prefetchCount >= 2 && decAsk) begin
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
@@ -3387,6 +3397,7 @@ function ActionValue#(VflOutcome)
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                     vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                    ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
                 end else if (prefetchCount == 1)
                   needsRead = tagged Valid zeroExtend(vflPx1.refill);
@@ -4203,11 +4214,9 @@ function ActionValue#(VflOutcome)
               // mkDecBox's, asked for after the last read.
               Bit#(2) mReads = mCross ? 2 : 1;
               Bit#(2) mNeed  = mReads + (vflNeedsRefill ? 1 : 0);
-              if (vflNeedsRefill) begin
-                vflWriteArmHandled = True;
-                // DF, p.32 class 3: the refill genuinely happens here.
-                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
-              end
+              // DF, p.32 class 3: raised below with the refill, and only
+              // when the store was not suppressed (refillDfNote).
+              if (vflNeedsRefill) vflWriteArmHandled = True;
               if (prefetchCount < mNeed) begin
                 needsRead = tagged Valid ((prefetchCount == 0) ? w0
                               : (prefetchCount == 1 && mCross) ? (w0 + 1)
@@ -4257,6 +4266,7 @@ function ActionValue#(VflOutcome)
                 if (vflNeedsRefill && !mDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                  ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                 end
               end
             end
@@ -5135,6 +5145,20 @@ function Tuple2#(Word64, Maybe#(Tuple2#(Bit#(7), Bit#(7))))
                      tagged Valid tuple2(connLeftZeros(v, w), connAllOnes(v)));
 endfunction
 
+// A connective's counts put over its crossing tail when the tail is word
+// 7 (printed p.76, the counts "are set at the end of the connective
+// operations"; p.36, bits 17-23 and 44-50 of location 7).  See the
+// Connective arm in execute() and StretchStorage's commitCounts.
+function Maybe#(Tuple2#(WordAddr, Word64))
+    countsOverTail(Maybe#(Tuple2#(WordAddr, Word64)) tw,
+                   Maybe#(Tuple2#(Bit#(7), Bit#(7))) counts);
+  Maybe#(Tuple2#(WordAddr, Word64)) r = tw;
+  if (tw matches tagged Valid {.a, .v} &&& a == addrLeftZerosCount)
+    if (counts matches tagged Valid {.l, .o})
+      r = tagged Valid tuple2(a, { v[63:47], l, v[39:20], o, v[12:0] });
+  return r;
+endfunction
+
 function ActionValue#(VflOutcome)
     connectiveOp(StretchStorage st, ConnInstr cn,
                  Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
@@ -5289,13 +5313,10 @@ function ActionValue#(VflOutcome)
           // and immediate are forced invalid above), so its own read is
           // always exactly 1 slot.
           vflWriteArmHandled = True;
-          // DF, p.32 class 3.  This branch is entered only on
-          // "CM && vflNeedsRefill", so the refill genuinely happens --
-          // the gate the other class-3 sites state explicitly, this
-          // one gets from its position, exactly as vflIntOp's two
-          // inline shapes do.  CM's own field word gets no DF: it is
-          // read and written back, so p.32 puts it on the DS side.
-          ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
+          // DF, p.32 class 3: raised below with the refill, and only
+          // when the store was not suppressed (refillDfNote).  CM's own
+          // field word gets no DF: it is read and written back, so p.32
+          // puts it on the DS side.
           WordAddr w0 = baWord(ea);
           Bit#(6) off = baBit(ea);
           // A crossing field reads both its words before the refill word
@@ -5331,6 +5352,7 @@ function ActionValue#(VflOutcome)
             if (!cmDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
               vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
               ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+              ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
             end
           end else if (prefetchCount == 0)
             needsRead = tagged Valid w0;
@@ -5435,11 +5457,10 @@ function ActionValue#(VflOutcome)
             // SET AT THE END, which is both what printed p.76 says
             // -- "the counts are set at the end of the connective
             // operations, so their previous values may be used as
-            // operands in the operation" -- and what the schedule
-            // requires: setConnectiveCounts takes the counter CRegs'
-            // LATER port, so it has to follow any CONNECT TO MEMORY
-            // field store, which can reach word 7 through
-            // writeWord's port 0.
+            // operands in the operation" -- and what the model does:
+            // StretchStorage's commitCounts takes the counts over a
+            // CONNECT TO MEMORY field store into word 7 in the same
+            // clock, and countsOverTail puts them into a word-7 tail.
             if (cn.suffix == conn_CM) begin
               // CM's end is cmFinish's, shared with the refill path above.
               match {.cmInd, .cmCounts} = cmFinish(ind, cmDs, result, len_);
@@ -7645,7 +7666,13 @@ function ActionValue#(ExecDispatch)
         needsRead  = co.needsRead;
         vflPending = co.vflPending;
         ind        = co.ind;
-        tailWrite  = co.tailWrite;
+        // A CONNECT TO MEMORY whose crossing tail is word 7: the tail is
+        // written the next clock (rl_tail_write), through writeWord, which
+        // since 2026-11-17 loads the counters (StretchStorage's
+        // commitCounts).  printed p.76, "The counts are set at the end of
+        // the connective operations": so the counts go into the tail word
+        // here and win over the stored bits there.
+        tailWrite  = countsOverTail(co.tailWrite, co.connCounts);
         // The counts, written HERE rather than inside connectiveOp --
         // see VflOutcome's own comment.  After the function has done
         // every write of its own, which is both what the scheduler

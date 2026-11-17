@@ -1,4 +1,8 @@
 ! IF on a BRANCH TARGET -- Reference Manual p.32, class 2 of the three
+! (2026-11-17: the markers this deck kept in word 7 bits 0-2 moved to
+! word 6 -- 7.0 -> 6.1, 7.1 -> 6.3, 7.2 -> 6.2.  Word 7's bits other
+! than its two counters are unassigned and "always zero" (printed
+! p.34), and the model now keeps them so; see vfl_word7_store.strap.)
 ! the page lists for Instruction Fetch: "The branch address of all
 ! successful branch operations."
 !
@@ -124,13 +128,13 @@ BACK    BZB, $IF,  $                 ! arrived -- and IF must be on
 !   must also gate its bit change.  Those are two separate mask tests
 !   in two places, and the injection that drops the arm's one SURVIVED
 !   until this block existed.
-        BB1, 7.2,  $+1.0             ! set a carve-out bit to one
-        BB,  7.2,  INOK2             ! BB branches on it, no change;
+        BB1, 6.2,  $+1.0             ! set a carve-out bit to one
+        BB,  6.2,  INOK2             ! BB branches on it, no change;
                                      !   mask 0, so control MUST arrive
         B,   $                       ! hang: wrongly suppressed
 BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
         BBZ, $IF,  $+1.0
-        BBZ, 7.2,  $+1.0             ! tidy the marker bit
+        BBZ, 6.2,  $+1.0             ! tidy the marker bit
 !
 ! ---- 5. MASK ONE: the branch itself is SUPPRESSED ---------------
 !   p.32: "If the branch address of a successful branch operation is
@@ -143,7 +147,7 @@ BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
 !   AND THE INTERRUPTION IS PART OF THE CONTRACT.  With the mask bit
 !   one and the indicator set, p.32's general rule is "the operation is
 !   terminated and an interruption occurs", so entry 21 of the table
-!   must run.  It marks word 7 -- in p.31's 0-31 carve-out, so the
+!   must run.  It marks word 6 -- in p.31's 0-31 carve-out, so the
 !   marker store can never itself signal.
         BBZ, $IF,  $+1.0             ! clear IF before arming its mask
         BB1, 12.21, $+1.0            ! IF's mask bit := ONE
@@ -161,8 +165,8 @@ BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
         NOP
         NOP
         NOP
-        BZB, 7.0,  $                 ! hang if IF's routine did not run
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $                 ! hang if IF's routine did not run
+        BBZ, 6.1,  $+1.0
 !
 ! ---- 6. MASK ONE: the BIT CHANGE is suppressed too --------------
 !   p.32's clause names three things a protected branch target kills:
@@ -172,7 +176,7 @@ BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
 !   MARKER IS WORD 7's BIT 1, not a word in the area: the bit whose
 !   change must be suppressed has to be one this program can read back
 !   afterwards, and reading a word inside the monitored area would
-!   raise DF as well and muddy the check.  Word 7 is in p.31's 0-31
+!   raise DF as well and muddy the check.  Word 6 is in p.31's 0-31
 !   carve-out, so it never signals either way.
 !   AND IT HAS TO BE A BBZ, NOT A BB1.  The instruction must BOTH
 !   branch and change the bit, and BB1 branches only when the bit is
@@ -182,8 +186,8 @@ BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
 !   not apply and the change went through.  The model was right and
 !   the test could not set up its own case.  BBZ branches when the bit
 !   is one and CLEARS it, so both effects are visible.
-        BB1, 7.1,  $+1.0             ! marker bit := 1
-        BBZ, 7.1,  WRONG2            ! would clear 7.1 AND branch into
+        BB1, 6.3,  $+1.0             ! marker bit := 1
+        BBZ, 6.3,  WRONG2            ! would clear 6.3 AND branch into
                                      !   the area; BOTH must be suppressed
         NOP
         NOP
@@ -193,10 +197,10 @@ BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
         NOP
         NOP
         NOP
-        BZB, 7.1,  $                 ! hang if the BIT CHANGE survived
+        BZB, 6.3,  $                 ! hang if the BIT CHANGE survived
                                      !   (the bit was cleared)
-        BZB, 7.0,  $                 ! and IF's routine ran again
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $                 ! and IF's routine ran again
+        BBZ, 6.1,  $+1.0
         B,   PASS
 PASS    BEW, $
 !
@@ -230,5 +234,5 @@ TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
         SLC, (8)4525.0
-IFRTN   BB1, 7.0, $+1.0              ! entry 21 = IF (0o4500 + 0o25)
+IFRTN   BB1, 6.1, $+1.0              ! entry 21 = IF (0o4500 + 0o25)
         END, START
