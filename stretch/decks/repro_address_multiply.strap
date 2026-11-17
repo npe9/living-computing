@@ -1,9 +1,12 @@
 ! REPRODUCER, an ASSEMBLER finding already on the list as G3.1
 ! (docs/source_audit.md, "G3 -- Assembler completeness"), cut here
 ! because C22-6578 Chapter 4 prints it three times and says so itself.
-! strap_asm.py refuses this deck:
+! strap_asm.py refused this deck until 2026-11-16:
 !
 !   cannot parse expression 'N*N-1.0' at '*N-1.0'
+!
+! It now assembles it as STRAP II does (G3.1, strap_asm._arith_bi), to the
+! word below; tests/check_field_arithmetic.py holds the arithmetic.
 !
 ! The statement is C22-6578 printed p.42, Problem 4.8 (product of
 ! square matrices): "V-ICR,$3,N*N-1.0".  The page's comment (a):
@@ -23,7 +26,8 @@
 ! is wrong for that reason (decks/problem_4_8.strap; docs/NEXT.md
 ! "PROBLEMS 4.6-4.8").  The control below, 63.0, is only a card that
 ! assembles.
-! tests/check_problem_4_dd_refusals.py asserts the refusal.
+! tests/check_problem_4_dd_refusals.py asserted the refusal; it now asserts
+! the word, 0007C70F 00083000, under strap_asm.
 
 N       SYN, 8
 START   V-ICR,$3,N*N-1.0

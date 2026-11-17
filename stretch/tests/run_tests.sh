@@ -1684,6 +1684,7 @@ run "STRAP II step 4a-ii: every op-table entry is its primary entry under one ru
 run "No dds anywhere: C28-6129 printed p.7's three cases over the printed op set (and no immediate I on an FP op)" python3 check_no_dds_cases.py
 run "STRAP II against the listing oracles and strap_asm's images" python3 check_strap2_oracles.py
 run "An integer address counts its FUNCTION's units, both assemblers (C22-6729 printed p.144's TI example; G3.2)" python3 check_address_function.py
+run "Field arithmetic: *, / and parentheses as STRAP II does them, both assemblers; ** refused (C22-6729 printed pp.107, 198; G3.1)" python3 check_field_arithmetic.py
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

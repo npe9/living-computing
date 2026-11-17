@@ -63,7 +63,7 @@ KNOWN_REFUSE = {"repro_radix_blank.strap",
                 # C22-6578 ch.3/ch.4 reproducers of strap_asm's refusals
                 # (NEXT.md "C22-6578 CHAPTER 3" and the ch.4 refusal entries)
                 "problem_3_bare_op_symbol_dds.strap", "problem_3_dd_zero_fraction.strap",
-                "problem_3_fp_add_low_half_zero.strap", "repro_address_multiply.strap",
+                "problem_3_fp_add_low_half_zero.strap",
                 "repro_dd_n_expression.strap", "repro_dd_n_math_constant.strap",
                 "repro_dd_n_zero.strap"}
 

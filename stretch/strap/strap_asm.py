@@ -838,6 +838,175 @@ def _word_part(name, symtab, loc_bits, lineno):
     return v * 64 if up in getattr(symtab, 'sym_int', ()) else v
 
 
+# >>> FIELD ARITHMETIC: *, / AND PARENTHESES, AS STRAP II DOES THEM. <<<
+# (G3.1, docs/source_audit.md.)  STRAP I refused them: C22-6578 printed
+# p.42's comment (a) on "V-ICR,$3,N*N-1.0" is "STRAP I does not perform
+# multiplication of addresses, but STRAP II will do it properly".  STRAP
+# II's operators are Appendix C's eight 3-bit codes, C22-6729 printed
+# p.198: ".+ .L .R U- * / + -" -- the point forms, unary minus, and four
+# arithmetic operators, parentheses highest (p.199 note 4).  There is no
+# "**" among them: "**" (powering) is MQDNUM's, a NUMERIC DD's third-order
+# operation (printed p.107), evaluated to a floating word at once and
+# never coded; "Implied multiplication is not allowed in field arithmetic"
+# (p.207).
+#
+# The arithmetic itself is strap/strap2/value.py's, which carries a bit
+# part B and an integer part I apart because INSERT adds them "according
+# to the function of the address" (p.144).  Its rules for * and / are
+# CHOSEN there (no page gives them); this path copies them so the two
+# assemblers cannot disagree (tests/check_field_arithmetic.py):
+#   a + c, a - c   part by part
+#   a * c          an integer times anything scales both parts; two bit
+#                  addresses multiply as totals into a bit part
+#   a / c          by an integer: part by part, truncated toward zero; by
+#                  a bit address: the totals, into an integer
+#   - a            both parts
+# Only a field with *, / or a parenthesis that is not a radix prefix comes
+# here, so every field that assembled before reads exactly as it did.
+_ARITH_FIELD = re.compile(r'[*/]|\((?!\s*\d+\s*\))')
+_RADIX_PREFIX = re.compile(r'\(\s*\d+\s*\)')
+
+
+def _is_arith_field(expr):
+    return bool(expr) and _ARITH_FIELD.search(expr) is not None
+
+
+def _arith_tokens(expr, lineno):
+    """Operators, parentheses and operand texts.  A radix prefix "(8)"
+    stays inside its operand, as tokenize_expr reads it."""
+    out, i, n = [], 0, len(expr)
+    while i < n:
+        c = expr[i]
+        if c in ' \t':
+            i += 1
+            continue
+        if c in '+-*/)':
+            out.append(c)
+            i += 1
+            continue
+        if c == '(' and not _RADIX_PREFIX.match(expr, i):
+            out.append(c)
+            i += 1
+            continue
+        j = i
+        if c == '(':
+            j = _RADIX_PREFIX.match(expr, i).end()
+        while j < n and expr[j] not in '+-*/()':
+            j += 1
+        text = expr[i:j].strip()
+        if not text:
+            raise AssemblerError(f"cannot parse expression {expr!r} at {expr[i:]!r}", lineno)
+        out.append(('opnd', text))
+        i = j
+    return out
+
+
+def _operand_bi(text, symtab, loc_bits, lineno):
+    """One operand as (bit part, integer part), value.py's B and I."""
+    b = i = 0
+    for sign, kind, val in tokenize_expr(text, lineno):
+        if kind == 'int':
+            i += sign * val
+        elif kind == 'bitaddr':
+            b += sign * (val[0] * 64 + val[1])
+        elif kind == 'bitsym':
+            b += sign * _bit_part(val, symtab, lineno)
+        elif kind == 'wordsym':
+            b += sign * _word_part(val, symtab, loc_bits, lineno)
+        elif kind == 'sym':
+            up = val.upper()
+            if up not in symtab:
+                raise AssemblerError(f"undefined symbol {val!r}", lineno)
+            alias = getattr(symtab, 'sys_alias', {}).get(up)
+            if alias is not None:
+                b += sign * eval_system_symbol(alias, loc_bits, False, lineno)
+            elif up in getattr(symtab, 'sym_int', ()):
+                i += sign * symtab[up]
+            else:
+                b += sign * symtab[up]
+        elif kind == 'sys':
+            b += sign * eval_system_symbol(val, loc_bits, False, lineno)
+        else:
+            raise AssemblerError(f"internal: bad token kind {kind}", lineno)
+    return b, i
+
+
+def _trunc_div(a, d):
+    q = abs(a) // abs(d)
+    return q if (a < 0) == (d < 0) else -q
+
+
+def _arith_bi(expr, symtab, loc_bits, lineno):
+    """The field as (bit part, integer part): + - below * /, unary minus,
+    parentheses highest -- strap2/getfld.py's priorities, value.py's
+    arithmetic."""
+    toks = _arith_tokens(expr, lineno)
+    pos = [0]
+
+    def peek():
+        return toks[pos[0]] if pos[0] < len(toks) else None
+
+    def take():
+        t = peek()
+        pos[0] += 1
+        return t
+
+    def primary():
+        t = take()
+        if t == '(':
+            v = total()
+            if take() != ')':
+                raise AssemblerError(f"parenthesis not closed in {expr!r}", lineno)
+            return v
+        if isinstance(t, tuple):
+            return _operand_bi(t[1], symtab, loc_bits, lineno)
+        raise AssemblerError(f"cannot parse expression {expr!r}", lineno)
+
+    def unary():
+        if peek() == '-':
+            take()
+            b, i = primary()
+            return -b, -i
+        return primary()
+
+    def term():
+        a = unary()
+        while peek() in ('*', '/'):
+            op = take()
+            c = unary()
+            if op == '*':
+                if c[0] == 0:
+                    a = (a[0] * c[1], a[1] * c[1])
+                elif a[0] == 0:
+                    a = (c[0] * a[1], c[1] * a[1])
+                else:
+                    a = ((a[0] + a[1]) * (c[0] + c[1]), 0)
+            else:
+                # A zero divisor is ignored, as the message says
+                # (C22-6729 printed p.177: "78 DIVISION BY ZERO, DIVISOR
+                # IGNORED"); strap2 gives the message, strap_asm has no
+                # channel for one and gives the same word.
+                d = (c[0] + c[1]) or 1
+                a =((0, _trunc_div(a[0] + a[1], d)) if c[0]
+                     else (_trunc_div(a[0], d), _trunc_div(a[1], d)))
+        return a
+
+    def total():
+        if peek() == '+':
+            take()
+        a = term()
+        while peek() in ('+', '-'):
+            op = take()
+            c = term()
+            a = (a[0] + c[0], a[1] + c[1]) if op == '+' else (a[0] - c[0], a[1] - c[1])
+        return a
+
+    v = total()
+    if peek() is not None:
+        raise AssemblerError(f"cannot parse expression {expr!r} at {peek()!r}", lineno)
+    return v
+
+
 def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
     # A NULL FIELD IS ALWAYS COMPILED AS A ZERO (C22-6531 printed p.7);
     # "missing fields are compiled by STRAP-II as if they contained
@@ -851,6 +1020,9 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
             _closed = _t.replace(' ', '')
             if _closed in symtab:
                 return symtab[_closed]
+    if not reg_context and _is_arith_field(expr):
+        b, i = _arith_bi(expr, symtab, loc_bits, lineno)
+        return b + i          # a bit count: an integer counts bits here
     total = 0
     for sign, kind, val in tokenize_expr(expr, lineno):
         if kind == 'int':
@@ -964,6 +1136,11 @@ def eval_addr_field(expr, symtab, loc_bits, function, lineno=None):
     int_shift = fn_shift - unit_shift
     if expr is None or not expr.strip():
         return 0              # a null field: see eval_expr
+    if _is_arith_field(expr):
+        # The parts are summed first and then converted, as strap2's
+        # inserters do ((v.B >> 5) + v.I for a 19-bit address).
+        b, i = _arith_bi(expr, symtab, loc_bits, lineno)
+        return (b >> unit_shift) + (i << int_shift)
     total = 0
     for sign, kind, val in tokenize_expr(expr, lineno):
         if kind == 'int':
@@ -1134,6 +1311,15 @@ def split_field_trailing_paren(field):
                 depth -= 1
                 if depth == 0:
                     base = field[:k].strip()
+                    # A PARENTHESIS AFTER AN OPERATOR IS ARITHMETIC, NOT
+                    # AN INDEX (G3.1): "SAM-(N+1)".  STRAP II classifies
+                    # a parenthesis by what came before it, and one at
+                    # the start of a datum, after an operator, is
+                    # arithmetic (strap2/getfld.py _paren; C22-6729
+                    # p.85 Boxes 43-49); an index "must be the last
+                    # entry in the field" and follows a datum (p.207).
+                    if base and base[-1] in '+-*/':
+                        return field, None
                     # >>> AN OMITTED ADDRESS IN FRONT OF AN INDEX IS A
                     # ZERO. <<<  MCP printed p.126 line 11 is
                     # "KV,2,($1)" and the listing compiles it to

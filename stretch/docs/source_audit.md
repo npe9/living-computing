@@ -612,6 +612,29 @@ need a case when they land.
 has no free code for `**`, which is unresolved). STRAP-1 forbade
 parentheses, so scope the change to what the project targets.
 
+*Status 2026-11-16: DONE, and `**` is resolved.* The target, the host
+STRAP II (`strap/strap2`), already parsed `*`, `/` and arithmetic
+parentheses (`getfld.py`) and evaluated them (`value.py`). Only
+strap_asm refused them. It now takes them on a separate path
+(`_arith_bi`), reached only by a field with `*`, `/` or a non-radix
+parenthesis. That path copies `value.py`'s arithmetic, which is CHOSEN
+there because no page gives `*` or `/` on a bit address. **`**` is not
+a field operator.** Printed p.107 (MQDNUM) lists it among "the current
+arithmetic operations which may be specified on a numeric DD":
+"Third order operations **(powering)", with "the exponent ... an
+integer in the range 2^-18 < n < 2^+18". A numeric DD is evaluated at
+once to a floating word and never coded, so Appendix C needs no code
+for it. `dnum.py` has it. In an address field both assemblers refuse
+it. Printed p.207 adds that "Implied multiplication is not allowed in
+field arithmetic". Three decks strap_asm refused now assemble to
+strap2's image: `repro_address_multiply` (0007C70F 00083000) and the
+two Problem 4.6 Method 3 decks. No deck that assembled before changed
+(hashed). Checks: `tests/check_field_arithmetic.py` (38 checks, five
+injections); `check_problem_4_dd_refusals.py` now asserts the word.
+**Open:** a field that is one arithmetic parenthesis, `(N+1)`, is still
+an index on a null address in strap_asm. strap_asm's DD(N) arithmetic
+(`1/720`, `$N`) is refused, as before.
+
 **G3.2** Replace `eval_addr_field`'s per-call-site `unit_shift` with
 printed p.144's rule -- scaling by the operand's **function** -- and
 test it against the listing oracle.

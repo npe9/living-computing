@@ -16,13 +16,22 @@ THE ASSEMBLER REFUSES IN A DD(N)").
   decks/repro_dd_n_expression.strap   DD(N), 1/720        "cannot parse DD(N) literal '1/720'"
   decks/repro_dd_n_math_constant.strap DD(N), $N          "cannot parse DD(N) literal '$N'"
   decks/repro_dd_n_zero.strap         DD(N), 0X11         "is zero"
-  decks/repro_address_multiply.strap  V-ICR,$3,N*N-1.0    "cannot parse expression"
+
+THE FOURTH REPRODUCER LEFT THIS LIST ON 2026-11-16 (G3.1):
+decks/repro_address_multiply.strap, "V-ICR,$3,N*N-1.0", printed p.42, now
+ASSEMBLES under strap_asm, to the word strap2 gives, 0007C70F 00083000
+(62 half words: N*N is 64 half words, an integer in a 19-bit field, less
+the bit address 1.0).  This check holds that end instead
+(address_multiply_assembles), and tests/check_field_arithmetic.py holds
+the arithmetic.
 
 MEASURED INJECTIONS (python3 check_problem_4_dd_refusals.py --inject):
 each reproducer's offending card replaced by its control, in memory.
-    control, decks as they are            PASS, 8 checks
-    every offending card replaced         FAIL the four *_refused checks,
+    control, decks as they are            PASS, 7 checks
+    every offending card replaced         FAIL the three *_refused checks,
                                           and only those
+  and, 2026-11-16, strap_asm._is_arith_field made always False (the old
+  tokenizer): FAIL address_multiply_assembles, and only that.
 """
 import os
 import sys
@@ -40,9 +49,11 @@ CASES = [
      "cannot parse DD(N) literal '$N'"),
     ("dd_n_zero", "repro_dd_n_zero.strap",
      "DD(N), 0X11", "DD(N), 1X11", "is zero"),
-    ("address_multiply", "repro_address_multiply.strap",
-     "N*N-1.0", "63.0", "cannot parse expression"),
 ]
+
+# printed p.42's card, assembled: the V-ICR half word and the BEW after it.
+MULTIPLY_DECK = "repro_address_multiply.strap"
+MULTIPLY_WORD = 0x0007C70F00083000
 
 
 def outcome(src):
@@ -76,6 +87,15 @@ def main():
         ok = got == "assembles"
         print("%s %s_control_assembles = %s" % ("PASS" if ok else "FAIL", name, got[:110]))
         fails += not ok
+    with open(os.path.join(HERE, "..", "decks", MULTIPLY_DECK)) as f:
+        src = f.read()
+    try:
+        got = "%016X" % assemble(src).words.get(32, 0)
+    except Exception as e:      # noqa: BLE001  the refusal is the failure
+        got = "refused: " + str(e)
+    ok = got == "%016X" % MULTIPLY_WORD
+    print("%s address_multiply_assembles = %s" % ("PASS" if ok else "FAIL", got[:110]))
+    fails += not ok
     print("ALL TESTS PASSED" if not fails else "FAILED")
     return 1 if fails else 0
 
