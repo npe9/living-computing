@@ -1614,7 +1614,8 @@ module mkStretchCore(StretchCore);
                           branch: False, target: 0, storeAddr: prep.storeAddr,
                           carry: carry});
           pcReg <= pc + ((len == Full) ? 2 : 1);
-          ibusy <= 2 * iboxCycles(di, False);   // its preparation time
+          ibusy <= 2 * iboxCycles(di, False)    // its preparation time
+                   + fpIndexedIboxClocks(di, da);
         end
       end
     end else if (prepared matches tagged Valid {.len, .di} &&& di matches tagged BranchInd .bi

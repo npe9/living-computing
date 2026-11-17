@@ -1238,6 +1238,39 @@ clocks. That one cause also gives L's +2 on the FP EXTERNAL columns
 No CYCLES pin and no result moved. The subsets were run together with
 item 6.
 
+### 5. An indexed FP operand in index storage: one more I-box cycle
+
+**Diagnosis.** Every fetching FP page prints its I-BOX column 0.6 µs
+higher with indexing than without, while EXTERNAL does not move. For
+example, + on PDF 42 and L on PDF 64 both print 8.03 indexed against 6.03.
+Vol. 1 printed p.3-17's "Address indexing has no measurable effect on the
+timing of floating point instructions" is about memory operands.
+
+An I-box operand is in index storage, the store the index register is read
+from. So the indexed address and the operand are two reads of that store
+in turn. The operand read is made at decoding (printed p.3-23 item 4).
+The 0.6 µs is p.3-18's "each indexing operation requires 0.6 µs". A
+memory operand's look-ahead fetch hides the cycle, which is why the
+EXTERNAL columns show none.
+
+**Fix.** `StretchTiming.bsv` `fpIndexedIboxClocks` adds 2 clocks to
+`rl_prepare`'s preparation budget for an FP fetch from words 16-31 with an
+index. Stores are excluded: a store into index storage prints +0.3 µs
+indexed on PDF 48, which is a different path.
+
+| PDF, I-BOX indexed | before (after item 1) | after |
+|---|---|---|
+| 42 + | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 64 L | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 73 + (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 65 LWF | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 95 L (forwarding) | 32 / 0 / −2.02 | 32 / 32 / −0.02 |
+| 54 / | 32 / 0 / −17.98 | 32 / 0 / −15.98 (divide, item 7) |
+| 52 * | 32 / 0 / +1.00 | unchanged |
+
+Every non-indexed column and every EXTERNAL column is unchanged. On *, the
+E-box time hides the extra cycle, as it does on the page.
+
 ### 6. SHF's shift amount
 
 **Diagnosis.** Table 2 (Vol. 1 printed p.3-4, PDF 22) charges SHF "4
@@ -1340,22 +1373,30 @@ together with item 4's change, and compared against item 2's tree.
      2026-11-17** ("Closing the residuals", item 1): the FP operand was
      not fetched by the look-ahead.
   2. Stores to an index register, and repeated stores to memory, are
-     17-25 and about 10 clocks too cheap, in FP (ST, SRD, SLO, SRT, M+,
-     M+MG) and in VFL (M+, M+MG, ST, SRD, M+1, CM0101) alike.
+     17-25 and about 10 clocks too cheap. **DONE for FP ST/SRD/SLO/SRT
+     2026-11-17** ("Closing the residuals", item 2: the LAAR, with a
+     fitted store path). Still open: FP M+/M+MG to an index register
+     (about −18), the VFL I-box stores (about −12) and WB XOVR stores.
   3. An accumulator operand is charged as if it were external: the 7030
      adds about 4 clocks (VFL INTERNL), 10 with crossover, and 3-15 on
-     the FP $R column.
-  4. Immediate compares (KI … KFEI) are charged by field length; the
-     7030 ends early, at 12 clocks.
-  5. Indexing an FP I-box operand costs the 7030 2 clocks and the
-     model none.
-  6. SHF has no shift-amount term (−23 at SHIFT 95).
+     the FP $R column. **OPEN.** The FP $R stores now match (item 2).
+     The FP $R fetches are still short: + on PDF 73 by −6.98, L on PDF
+     95 by −4.02. The candidate is the I-Checker's 0.6 µs on an internal
+     operand (printed p.3-19 items 4 and 8) in series with the E-box.
+     It is not built.
+  4. Immediate compares (KI … KFEI) are charged by field length.
+     **DONE 2026-11-17** (item 4). Mean +7 → +3; the rest is the
+     preparation floor.
+  5. Indexing an FP I-box operand costs the 7030 2 clocks. **DONE
+     2026-11-17** (item 5): + L LWF are exact on the I-BOX indexed columns.
+  6. SHF has no shift-amount term. **DONE 2026-11-17** (item 6).
   7. Divide (FP /, D/, R/ short by 11-24; `/I` long by up to 62) is
      data-dependent in the 7030 and not in the model; the volume
      disowns these pages as a timing.
-  8. `bsv/StretchTiming.bsv`'s CV/DCV comment says the oracle has no
-     CV/DCV generator; it now has one, and the charge reproduces the
-     pages it was fitted to.
+  8. The CV/DCV comment in `bsv/StretchTiming.bsv`. **DONE 2026-11-17.**
+  9. The preparation floor: a VFL decode costs 14 clocks where the 7030
+     prints 12, and FP L EXTERNAL pays +2. `ibusy` counts down only in
+     `rl_prepare`'s first arm. OPEN.
 - **Generators still missing** (989 cells): the NONCON branch columns
   and CBR refills; internal transmit operands; PDF 110 (LVS/LVE/SVA);
   the I-box refill rows; PDF 104's environment averages. Each needs a

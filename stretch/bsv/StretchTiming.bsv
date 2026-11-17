@@ -146,6 +146,30 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   endcase
 endfunction
 
+// >>> AN INDEXED FP OPERAND IN INDEX STORAGE COSTS ONE MORE I-BOX CYCLE,
+// 2026-11-17. <<<  Every fetching FP page of the atlas (PDF 42-101)
+// prints its I-BOX column 0.6 us higher with indexing than without --
+// + (PDF 42) 1.81 against 2.41 us, L (PDF 64) the same -- while its
+// EXTERNAL column does not move: "Address indexing has no measurable
+// effect on the timing of floating point instructions" (Vol. 1 printed
+// p.3-17) is a statement about memory operands.  An I-box operand is in
+// index storage, the same store the index register is read from, so the
+// indexed address and the operand are two reads of it in turn, and the
+// operand read is made at decoding ("I-box operand fetches are made
+// when the instruction is decoded", printed p.3-23 item 4).  The 0.6 us
+// is p.3-18's: "each indexing operation requires 0.6 us" (written of
+// VFL decoding, which iboxCycles charges as +1 cycle).  A memory
+// operand's fetch is made by the look-ahead after decoding and its
+// latency hides the cycle, which is why the EXTERNAL columns show none.
+// Charged on a fetch only (a store into index storage indexed prints
+// +0.3 us, PDF 48, a different path).
+function Bit#(16) fpIndexedIboxClocks(DecodedInstr d, Maybe#(WordAddr) da);
+  Bit#(16) r = 0;
+  if (d matches tagged Fp .f &&& f.idx != 0 &&& da matches tagged Valid .a &&& a >= 16 &&& a <= 31)
+    r = 2;
+  return r;
+endfunction
+
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
 function Bit#(16) eboxClocks(DecodedInstr d);

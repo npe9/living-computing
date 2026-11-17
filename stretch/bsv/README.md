@@ -1031,6 +1031,14 @@ gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
 get the documented events only, because PDF 69 prints M+ below ST.
 `docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
 
+### An indexed FP I-box operand (2026-11-17)
+
+An FP fetch from index storage (words 16-31) with an index now costs 2
+more preparation clocks (`fpIndexedIboxClocks`). The index register and
+the operand are two reads of index storage in turn, at 0.6 µs each
+(printed p.3-18). The I-BOX indexed columns of PDF 42, 64, 65, 73 and 95
+went from −2.02 to −0.02.
+
 ### Immediate compares (2026-11-17)
 
 `eboxClocks` now charges the six immediate compares (KI ... KFEI)
