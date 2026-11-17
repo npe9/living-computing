@@ -4407,6 +4407,19 @@ run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ"
     "ANS_w0:1210=0xB07F0B12F1B2DF2B" "ANS_w1:1211=0x30F3B49F4B5FF5B6" "ANS_w2:1212=0x4F6B7BF7B81F8B9E" \
     "ANS_w3:1213=0xF9BA6FABB3FBBCCF" "ANS_w4:1214=0xCBD8FDBE5FEBFAFF"
 
+# A LEVEL FETCHING THE SECOND WORD OF A PENDING CROSSING STORE WAITS FOR IT
+# (2026-11-17, StretchIBox's levelStores).  "ST(BU,13),W0+.62" writes W0
+# and W1; a following "ST(BU,6),W1+.12" fetched W1 at load, before the
+# crossing store had written it, and stored the stale word back.  Found by
+# the 7030 STRAP II TABMAN test (TBEN3, the vle's length field) when the
+# VFL E-box times became per-operation.  Case 2 is the control (a branch
+# drains the levels between the stores).  INJECTION, observed: without
+# the storeCross term W1 = 0x0001800000000000 and nothing else fails.
+# CYCLES 262 is a model pin (the same with and without the fix).
+run "VFL crossing store: a level fetching its second word waits for it" ./run_program.sh ../decks/vfl_store_cross_fetch.strap StretchVflStoreCrossFetchTb "PC=2019" "CYCLES=262+-0" \
+    "W0:1101=0x0000000000000003" "W1_second_word:1102=0xFFE1800000000000" \
+    "W2_control:1103=0x0000000000000003" "W3_control:1104=0xFFE1800000000000"
+
 # AN INDEX INSTRUCTION DOES NOT OVERTAKE A PENDING PROGRESSIVE LEVEL
 # (2026-11-16, iboxHazard's setsIndexInd).  Both set the index
 # indicators; "ST(BU,8)(V+IC),0.8($1)", "V-ICR,$3,1", "BZXCZ" must branch

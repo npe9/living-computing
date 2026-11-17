@@ -914,6 +914,31 @@ VFL times moved the levels' execution past them.
 Both fixes are conservative waits, not a model of the I-box's indicator
 timing. No source tells when the real machine sets them.
 
+3. **A level fetched the second word of a crossing store too early**
+   (2026-11-17). The full suite on batch13 found this one: the 7030 STRAP
+   II TABMAN test lost the vle's 6-bit length field (46, in bits 6-11 of
+   the vle area's word 13).
+   - What went wrong: TBEN3's `ST(BU,13),.1($4)`, with $4 at bit 62,
+     writes two words. A later `ST(BU,6),.14($4)` fetched the second
+     word at load. The store-close-to-fetch wait compared only the
+     crossing store's first word, so the later ST merged its field into
+     the old word and stored it back over the crossing store's tail.
+   - How it was found: by diffing a write trace of the run against one
+     made on batch12's times.
+   - Fix: `levelStores` in StretchIBox. A level whose stored field crosses
+     a word boundary (`storeCross`, set for VFL ST/SRD and CM) is
+     compared on both words, in rl_prepare's wait, in `levelHolds` and in
+     `storeWait`.
+   - Basis: Perf. Char. Vol. 1 printed p.3-18, "VFL data with word
+     boundary crossover represent inefficient use of LA levels". On the
+     machine a crossing field takes a level per word. One level comparing
+     two words is CHOSEN; the second level's cost is not modelled.
+   - Test: `decks/vfl_store_cross_fetch.strap`, `CYCLES=262+-0`. Without
+     the storeCross term W1 = 0x0001800000000000, and nothing else fails.
+     Case 2, a branch between the stores, is the control.
+   - This case was not in the 236-section subset, because the strap2_7030
+     checks run outside it.
+
 After both fixes, the 220-section subset passes with 0 FAIL lines:
 every CYCLES and STEPS run, every deck using a VFL or connective
 instruction, the MCP sections and the smoke test. Neither fix moved a

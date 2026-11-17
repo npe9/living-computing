@@ -1582,7 +1582,7 @@ module mkStretchCore(StretchCore);
             for (Integer i = 0; i < 4; i = i + 1) begin
               Bit#(2) pos = la.tail() - 1 - fromInteger(i);
               Bool hz = nl[pos].valid
-                        && ((isValid(nl[pos].storeAddr) && validValue(nl[pos].storeAddr) == a)
+                        && (levelStores(nl[pos], a)
                             || eboxRegister(a));
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end

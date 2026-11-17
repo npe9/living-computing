@@ -307,11 +307,39 @@ endfunction
 // hazard checks above, not by this.)
 function Bool eboxRegister(WordAddr w) = (w >= 7 && w <= 15);
 
+// >>> A LEVEL STORES ONE WORD, OR TWO WHEN ITS FIELD CROSSES, 2026-11-17. <<<
+// A VFL store (ST, SRD, M+) or CM whose field crosses a word boundary
+// writes storeAddr AND storeAddr2 (= storeAddr + 1) -- execute() reads the
+// second word itself and writes it through writeWordTail.  (The fix was
+// written with a Bool `storeCross`; merged onto batch15's `storeAddr2`,
+// which also covers a crossing M+.)  The store-close-to-fetch wait and
+// levelHolds compared storeAddr alone, so a later level FETCHING the
+// second word took it before the crossing store had written it, and its
+// own store then put the stale word back.  Found by the 7030 STRAP II
+// TABMAN test (step 3b): TBEN3's "ST(BU,13),.1($4)" with $4 at bit 62
+// of a word, then "ST(BU,6),.14($4)" into the next word -- the vle's
+// length field (bits 6-11 of the second word, 46) was lost, once the
+// per-operation VFL times kept the first store pending long enough
+// (decks/vfl_store_cross_fetch.strap).
+//
+// The machine's arrangement, Perf. Char. Vol. 1 printed p.3-18: "VFL data
+// with word boundary crossover represent inefficient use of LA levels" --
+// a crossing field takes a look-ahead level for each word, so each word
+// has its own store address to be compared.  This model keeps one level
+// and compares both words; when the second word's level would be loaded
+// (and what that costs) is not modelled.
+function Bool levelStores(LaLevel l, WordAddr w);
+  Bool r = False;
+  if (l.valid &&& l.storeAddr matches tagged Valid .sa &&& sa == w) r = True;
+  if (l.valid &&& l.storeAddr2 matches tagged Valid .sb &&& sb == w) r = True;
+  return r;
+endfunction
+
 function Bool levelHolds(Vector#(4, LaLevel) lv, WordAddr w);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1) begin
     if (lv[k].da matches tagged Valid .a &&& lv[k].valid &&& a == w) r = True;
-    if (lv[k].storeAddr matches tagged Valid .sa &&& lv[k].valid &&& sa == w) r = True;
+    if (levelStores(lv[k], w)) r = True;
   end
   return r;
 endfunction

@@ -1,0 +1,58 @@
+! vfl_store_cross_fetch.strap -- a look-ahead level that FETCHES the second
+! word of an earlier level's word-crossing VFL store waits for that store.
+!
+! FOUND 2026-11-17 by the 7030 STRAP II TABMAN test (tests/
+! check_strap2_7030_tabman.py, step 3b). The sequence was TBEN3's
+! "ST(BU,13),.1($4)" with $4 at bit 62 of a word, followed by
+! "ST(BU,6),.14($4)" into the next word. The vle's 6-bit length field
+! (46, bits 6-11 of the second word) came back 0. The per-operation VFL
+! E-box times (StretchTiming.bsv) kept the crossing store pending while the
+! second ST's level was loaded. That level fetched the second word, which
+! the crossing store had not yet written, merged its field into it, and
+! stored the stale word back.
+!
+! THE FIX (StretchIBox's levelStores): a level whose stored field crosses
+! a word boundary stores storeAddr AND storeAddr + 1. The store-close-to-
+! fetch wait (rl_prepare) and levelHolds now compare both words. Basis:
+! Perf. Char. Vol. 1 printed p.3-18, "VFL data with word boundary
+! crossover represent inefficient use of LA levels". On the machine a
+! crossing field takes a look-ahead level per word, each with its own
+! store address. One level comparing two words is this model's CHOSEN
+! stand-in; what the second level costs is not modelled.
+!
+! CASE 1, the hazard: LTRS(BU,64,8), 60 clocks in the E-box (PDF 123),
+! keeps the four levels behind it pending. LI then ST(BU,13) at W0+.62
+! puts 13 one-bits in W0 bits 62-63 and W1 bits 0-10. LI then
+! ST(BU,6) at W1+.12 puts 6 in W1 bits 12-17.
+!   W0 = (16)0000000000000003
+!   W1 = (16)FFE1800000000000   (stale: (16)0001800000000000)
+! CASE 2, the control: the same two stores into W2/W3 with an
+! unconditional branch between them. The branch drains the look-ahead
+! (StretchIBox's iboxHazard), so the hazard cannot arise and the values
+! hold with or without the fix.
+!   W2 = (16)0000000000000003, W3 = (16)FFE1800000000000
+! Values hand-derived from the field positions (RefMan printed pp.21, 58).
+!
+! INJECTION, measured 2026-11-17: levelStores without the storeCross
+! term. FAIL W1 = 0x0001800000000000 (the TABMAN symptom), and nothing
+! else: W0, W2, W3 and the PC pass. The cycle count is in the run line.
+!
+        SLC, 1000.0
+START   LTRS(BU,64,8), SLOW
+        LI(BU,13), 8191
+        ST(BU,13), W0+.62
+        LI(BU,6), 6
+        ST(BU,6), W1+.12
+        LI(BU,13), 8191
+        ST(BU,13), W2+.62
+        B, NEXT
+NEXT    LI(BU,6), 6
+        ST(BU,6), W3+.12
+DONE    BEW, $
+        SLC, 1100.0
+SLOW    DD(BU,64), 0
+W0      DD(BU,64), 0
+W1      DD(BU,64), 0
+W2      DD(BU,64), 0
+W3      DD(BU,64), 0
+        END, START
