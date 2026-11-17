@@ -839,8 +839,13 @@ are unchanged to the hundredth of a clock.
 The divide box's clocks are still taken out of the E-box charge, and no
 DIVIDE BOX OVERRAN line appears.
 
-MCP's own bootstrap now completes in 6,424,243 steps, against
-6,423,052 before.
+MCP's own bootstrap now completes in 6,424,235 steps, against
+6,423,052 before. The new VFL times account for 6,424,243 of that, and
+the two hazard fixes take it down by 8. The fixes changed no cycle count
+in the 220 sections. Three other MCP step counts moved by 4 to 8 steps:
+- the decode stop: 6,406,963 to 6,406,955
+- ASSIGN: 6,425,638 to 6,425,634
+- past T MOVE: 6,442,193 to 6,442,189
 
 **New pin.** `decks/vfl_op_timing.strap` runs eight each of L, M+, K,
 `*` and `/` at (BU,64,8):
@@ -851,6 +856,9 @@ MCP's own bootstrap now completes in 6,424,243 steps, against
 
 CV and DCV have pages (PDF 138-139) but no oracle generator, so the
 model charges them those pages' flat figures without measuring them.
+CV runs in `vfl_convert.strap` and in MCP decks, but no pin is on its
+time. DCV (code 59) is not built in `execute()` and fails loud, so its
+arm is not run yet.
 
 **Not modelled, or open.**
 

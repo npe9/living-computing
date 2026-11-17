@@ -4147,8 +4147,8 @@ run "VFL time by operation: L, M+, K, *, / at (BU,64,8) (Perf. Char. Vol. 2 atla
 # executes; "ST(BU,20)(V+IC)" then "BZXCZ,PACK" let the branch read XCZ
 # first.  Reduced from C22-6578 Problem 2.6 Method 3's PACK loops, which
 # lost twelve of sixteen fields when the VFL E-box times became
-# per-operation.  INJECTION, observed: without the anyProgressive term
-# the run halts at 214 clocks with ANS_w0 = 0x...DF20 and ANS_w1..w4 = 0
+# per-operation.  INJECTION, observed (before setsIndexInd existed, so
+# with neither wait): the run halts at 214 clocks with ANS_w0 = 0x...DF20 and ANS_w1..w4 = 0
 # (five FAILs and the cycle count); with it, 889.
 run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=889+-0" \
     "ANS_w0:1210=0xB07F0B12F1B2DF2B" "ANS_w1:1211=0x30F3B49F4B5FF5B6" "ANS_w2:1212=0x4F6B7BF7B81F8B9E" \

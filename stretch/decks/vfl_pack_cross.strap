@@ -22,7 +22,10 @@
 ! its ST was removed before the branch was reached.
 ! FIX: an index-indicator branch waits while any pending level is
 ! progressive (StretchIBox's anyProgressive).
-! INJECTION, observed 2026-11-16: without that term the run halts at 214
+! INJECTION, observed 2026-11-16, with NEITHER of iboxHazard's two
+! progressive-level waits present (this one and setsIndexInd, added
+! after it; the later one cannot affect this loop, whose only index
+! instruction is the branch): the run halts at 214
 ! clocks, ANS_w0 = 0xB07F0B12F1B2DF20 (three fields and four bits of
 ! zeros) and ANS_w1..w4 = 0 -- five FAILs and the cycle count, nothing
 ! else.  With it: all five PASS, 889 clocks.
