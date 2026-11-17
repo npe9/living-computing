@@ -1,0 +1,75 @@
+! store_into_prepared_instr.strap -- an instruction whose word a pending
+! look-ahead level is going to store into is not prepared until that
+! store has been made.
+!
+! FOUND 2026-11-17 by the 7030 STRAP II TABMAN test (tests/
+! check_strap2_7030_tabman.py, step 3b, call 24 ADDORD 3 11), when the
+! preparation floor was fixed (StretchCore's `ib` and the level load's
+! "- 1") and the I-box ran further ahead.  TBEN2's tail sets the length of
+! its own store, "ST(BU,6),TBEN4+.35", then "LV,$4,TBQ", "L(BU,24),TBK",
+! and TBEN4 "ST(BU,64),0($4)" stores the vle's address with the length
+! just written.  TBEN4 was prepared into a level from 1Y/2Y while the
+! ST(BU,6) level was still pending behind a slow E-box, so it ran with
+! the length the deck was assembled with (64), and the entry's function
+! field lost the address: table 3's second word came back
+! (16)40000002C0000000 for (16)40000002C49D9800.
+!
+! THE MODEL HAD HALF OF IT.  The program store compare (StretchIBox's
+! mkInstrBuffers, Blosk p.21) invalidates a Y word when a store to it is
+! MADE.  An instruction already prepared out of that word is past the Y
+! buffers by then.  Perf. Char. Vol. 1 printed p.3-21 (PDF 39, read in the
+! page image), "Store Close to Fetch": "One such conflict is a store into a
+! location corresponding to a prefetched instruction ... The second
+! instruction, having been previously fetched into 1Y or 2Y, clearly
+! cannot have the correct information until the store is complete. When
+! such a store is decoded, I-box invalidates the prefetched instructions
+! and waits until the correct information is available."  The fix
+! (rl_prepare, `instrStored`) does not prepare an instruction whose word
+! (either word, for a full-word instruction) a pending level stores.
+! CHOSEN: the 7030 waits at the decoding of the STORE when its address is
+! a prefetched word; the model waits at the preparation of the instruction
+! in that word, which holds the same instructions back and lets the ones
+! between the store and the stored word run.
+!
+! CASE 1, the hazard: LTRS(BU,64,8), 60 clocks in the E-box (PDF 123),
+! keeps the levels behind it pending.  LI 24 and ST(BU,6) into MOD's
+! length field; LVI $4 = W0; LI (8)12345670; MOD "ST(BU,64),0($4)", which
+! runs as ST(BU,24).  W0 starts all ones.
+!   W0 = (16)29CBB8FFFFFFFFFF   (stale: (16)000000000029CBB8)
+! CASE 2, the control: the same into MOD2 and W1 with an unconditional
+! branch between the length store and MOD2.  The branch drains the
+! look-ahead (StretchIBox's iboxHazard), so the store is made before MOD2
+! is prepared, with or without the fix.
+!   W1 = (16)29CBB8FFFFFFFFFF
+! Values hand-derived from the field positions (RefMan printed pp.21, 58).
+!
+! INJECTIONS, measured 2026-11-17, restored from a saved copy checked with
+! cmp:
+!   - the gate removed (`else if (False && instrStored)`): FAIL W0 =
+!     (16)29CBB8, cycles 252 against 244; W1 (the control) passes.
+!   - the gate without its recentStore() term (the first version):
+!     the same FAIL W0, cycles 252.
+!   - the preparation floor removed: W0 and W1 pass, cycles 246.
+! The base model (2cee08a) fails case 1 the same way (W0 = (16)29CBB8,
+! 254 clocks): the hazard predates the floor fix.
+! CYCLES 244 is the model as of this change.
+
+        SLC, 1000.0
+START   LTRS(BU,64,8), SLOW
+        LI(BU,6), 24
+        ST(BU,6), MOD+.35
+        LVI, $4, W0
+        LI(BU,24), (8)12345670
+MOD     ST(BU,64), 0($4)
+        LI(BU,6), 24
+        ST(BU,6), MOD2+.35
+        LVI, $4, W1
+        LI(BU,24), (8)12345670
+        B, MOD2
+MOD2    ST(BU,64), 0($4)
+DONE    BEW, $
+        SLC, 1100.0
+SLOW    DD(BU,64), 0
+W0      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+W1      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        END, START

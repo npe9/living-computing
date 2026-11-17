@@ -60,6 +60,10 @@
 !       shared trailing index block): PW1 unchanged, I6 = 0, D6 set, X6 NOT
 !       counted: still XPQ, (16)01906800001405DD.
 ! CYCLES 1209 is a model pin.
+! CYCLES 1209 -> 1196, 2026-11-17: the preparation floor (StretchCore's
+! `ib` and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  MEASURED with it removed: 1209 again; with the
+! decode hold's old word set (storeWaitWord) instead: 1196, no effect.
 !
 ! MEASURED INJECTIONS, 2026-11-17, on the final model (each in the
 ! worktree from a saved copy, restored and compared with cmp; observed on

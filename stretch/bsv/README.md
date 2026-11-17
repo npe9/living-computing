@@ -1018,7 +1018,8 @@ measured. Re-pinned after the merge, every result check unchanged:
   and across a word boundary (about +30). These are a store-path
   matter, and `eboxClocks` sees no address.
 - The INVERT SIGN blocks' unlike-sign terms, which depend on the data.
-- The 12-clock preparation floor of K and CT. The model's floor is 14.
+- The 12-clock preparation floor of K and CT. The model's floor was 14.
+  FIXED 2026-11-17: see "The preparation floor" below.
 
 ### FP operands are fetched by the look-ahead (2026-11-17)
 
@@ -1066,7 +1067,13 @@ What the model now does:
 The VFL and connective levels do not take the LAAR. Their E-box charges
 are fits to back-to-back pages that already contain the queuing, and
 gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
-get the documented events only, because PDF 69 prints M+ below ST.
+get the documented events only, because PDF 69 prints M+ below ST --
+except, since 2026-11-17, into index storage: "A store into index storage
+is a time-consuming operation" (printed p.3-21) is said of the
+destination, so every FP store into words 16-31 takes the index
+remainder (17). PDF 69's I-BOX unindexed column went from median −18.18
+to −1.18 (mean −0.48; M+MG, PDF 70, held out: median −1.18, mean −0.60);
+the indexed column from −22.22 to −5.22.
 `docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
 
 ### An indexed FP I-box operand (2026-11-17)
@@ -1076,6 +1083,86 @@ more preparation clocks (`fpIndexedIboxClocks`). The index register and
 the operand are two reads of index storage in turn, at 0.6 µs each
 (printed p.3-18). The I-BOX indexed columns of PDF 42, 64, 65, 73 and 95
 went from −2.02 to −0.02.
+
+### The preparation floor (2026-11-17)
+
+A decode of N clocks cost the model N + 2 in a homogeneous run: a VFL
+decode of 3.6 µs (12 clocks, Vol. 1 printed p.3-18) took 14, and the
+immediate compares of PDF 177-182, which print 12, sat at +2. Two clocks,
+two causes, both in `StretchCore.bsv`:
+
+- `ibusy` counted down only in `rl_prepare`'s own arm. The decision arms
+  are mutually exclusive, so the clock in which `rl_au_remove` removed
+  the level (or `rl_exec_resume` finished a level's read, or
+  `rl_idx_write` wrote a progressive level's index) stopped the I-box's
+  clock as well. Now `ib` counts it down in those arms too, as `eb`
+  counts `ebusy` down in every arm. Not in `rl_io`, `rl_xmit` or
+  `rl_tail_write`: a transfer or a transmit is the instruction still in
+  progress, and T is already short.
+- The level-load clock came on top of the decode. `rl_prepare` now loads
+  `2 * iboxCycles - 1`: the load clock is the first clock of the decode.
+  Only the E-box-class load; the I-box dispatch path (`budgetClocks`,
+  PDF 109) is unchanged and unmoved.
+
+With both clocks given back, the FP I-BOX columns (6.0 clocks printed
+for L and + from $X9, where the FP decode rate is 1.2 µs = 4) were 1
+short: the model had matched them as 4 + the two lost clocks. The
+remainder is the I-Checker's "I-box data error check" (printed p.3-19,
+0.6 µs): `fpIboxCheckClocks` adds 2 for an FP operand in index storage.
+
+`decks/prep_floor.strap` pins it (sixteen KI, eight L from $X9).
+`docs/atlas_oracle.md` "Closing the residuals" item 7 has the tables.
+
+### An FP internal operand (2026-11-17)
+
+Vol. 1 printed p.3-20: an internal operand (address 3 or 5-12) "is not
+available during the decoding stage, and the mechanism for internal
+operand fetch already exists for the handling of store instructions". The
+model commits a level at removal and charges its E-box time after, so an
+FP fetch of $R had its value at once and cost nothing; the $R columns of
+PDF 73-101 were 4-7 clocks short. `headReady` (`intWait`) now holds an FP
+head level with an internal operand until `fpInternalOperandClocks` after
+the E-box finishes the level before it (`eboxDoneAt`): the I-Checker's
+0.6 µs plus `laarStorePost`'s internal-register remainder, the store
+path's number, fitted on PDF 79's ST $R column and reused here without
+refitting. The fetch pages are its held-out test: F+ and E+ exact, + and
+K within half a clock, L +1. FP only, as the LAAR. VFL INTERNL (+4 on the
+7030) is not changed. `decks/fp_internal_operand.strap`;
+`docs/atlas_oracle.md` "Closing the residuals" item 8.
+
+### Store close to fetch, for an instruction word (2026-11-17)
+
+Perf. Char. Vol. 1 printed p.3-21: a store into "a location corresponding
+to a prefetched instruction" -- "When such a store is decoded, I-box
+invalidates the prefetched instructions and waits until the correct
+information is available." The model invalidated a Y word only when the
+store was MADE (mkInstrBuffers' program store compare), at the storing
+level's removal; an instruction prepared out of 1Y/2Y before that ran as
+assembled. `rl_prepare` now does not prepare an instruction whose word
+(either word of a full-word one) a pending level stores (`levelStores`),
+nor in the clock `st.recentStore()` reports a store to it (the level has
+retired but the Y word is not yet dropped). CHOSEN: the model waits at
+the stored instruction, the 7030 at the store's decoding.
+
+The bug was latent: the base model (`2cee08a`) fails
+`decks/store_into_prepared_instr.strap` case 1. The suite exposed it when
+the preparation floor was fixed and the I-box ran further ahead: the 7030
+TABMAN (call 24 ADDORD 3 11: TBEN2's "ST(BU,6),TBEN4+.35" sets TBEN4's own
+length) and C22-6578 Problem 2.9 ("ST(BU,4),SV+0.19" into the next
+instruction) both ran the unmodified instruction.
+
+### Index storage, for the decode hold (2026-11-17)
+
+The index-store decode hold (StretchCore `laarRetire`, `xstoreFreeAt`;
+"the I-box does no further decoding until the new index contents
+arrives", printed p.3-21) tested STORE WAIT's word set (11, 12, 16-31).
+Printed p.3-20 says which words are index storage: "$IT, $TC and $0
+through $15 are in index storage", while "an internal operand address
+is ... address 3, or an address between 5 and 12 inclusive". The hold now
+tests `indexStorageWord` (1, 2, 16-31); STORE WAIT's `storeWaitWord`
+(Fig. 3.1.24) is unchanged. Words 1 and 2 moved no pin; no deck is known
+to exercise them (untested). decks/vfl_cross_special_words.strap: 404 ->
+372 (389 from this alone, the rest the preparation floor).
 
 ### Immediate compares (2026-11-17)
 

@@ -519,6 +519,15 @@ function Bool isFpInstr(DecodedInstr d);
   endcase
 endfunction
 
+// An FP level whose operand is an internal register (StretchCore's
+// headReady, intWait, has the source).
+function Bool fpInternalFetch(LaLevel l);
+  Bool r = False;
+  if (l.valid && !l.branch && isFpInstr(l.di) &&& l.da matches tagged Valid .a &&& laarInternal(a))
+    r = True;
+  return r;
+endfunction
+
 function Bool laarHeldByLevel(Vector#(4, LaLevel) lv);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1)

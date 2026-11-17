@@ -116,6 +116,20 @@ function Bit#(8) laarStorePost(WordAddr a) =
   : (a == 3 || (a >= 5 && a <= 12)) ? 5
   : 9;
 
+// >>> AN FP INTERNAL OPERAND: THE CHECK PLUS THE STORE PATH INTO AN
+// INTERNAL REGISTER, 2026-11-17. <<<  StretchCore's headReady (intWait)
+// holds an FP level whose operand is address 3 or 5-12 until this many
+// clocks after the E-box has finished the instruction before it.  Vol. 1
+// printed p.3-20: the internal operand "is not available during the
+// decoding stage, and the mechanism for internal operand fetch already
+// exists for the handling of store instructions".  So it is the store
+// mechanism's time: the I-Checker's 0.6 us (laarCheckClocks, printed
+// p.3-19) and laarStorePost's internal-register remainder, which is a
+// FIT on PDF 79's ST $R column.  Reused here, not fitted again: the
+// fetch pages (PDF 73-101, $R columns) are its held-out test
+// (docs/atlas_oracle.md, "Closing the residuals" item 8).
+Bit#(16) fpInternalOperandClocks = fromInteger(laarCheckClocks) + zeroExtend(laarStorePost(9));
+
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
     tagged DirIndex .x: return case (x.code)
@@ -144,6 +158,28 @@ function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
     tagged IoOp .*: return 6;
     default: return 3;
   endcase
+endfunction
+
+// >>> AN FP OPERAND IN INDEX STORAGE PASSES THE I-CHECKER, 0.6 US,
+// 2026-11-17. <<<  Perf. Char. Vol. 1 printed p.3-19 (PDF 37): the
+// I-Checker "processes information in 0.6 us and is used for ... 2. I-box
+// data error check with concurrent ECC to I-parity conversion".  An
+// operand in index storage (words 16-31) is fetched by the I-box at
+// decoding (printed p.3-23 item 4), so the check is in the preparation.
+// Every fetching FP page's I-BOX column prints 6.0 clocks (1.8 us)
+// unindexed -- L on PDF 64, + on PDF 42 -- where the floating-point
+// decoding rate is "one instruction per 1.2 us" (printed p.3-17), 4
+// clocks: 4 + 2.  Until the preparation floor was fixed (StretchCore's
+// `ib` and rl_prepare's load) the model reached the same 6 as 4 + the
+// load clock + the removal clock; with those two clocks given back, the
+// check is what is left.  Applied to FP only, as fpIndexedIboxClocks
+// below: the VFL charges are fits that already contain their I-box
+// columns.
+function Bit#(16) fpIboxCheckClocks(DecodedInstr d, Maybe#(WordAddr) da);
+  Bit#(16) r = 0;
+  if (d matches tagged Fp .* &&& da matches tagged Valid .a &&& a >= 16 &&& a <= 31)
+    r = fromInteger(laarCheckClocks);
+  return r;
 endfunction
 
 // >>> AN INDEXED FP OPERAND IN INDEX STORAGE COSTS ONE MORE I-BOX CYCLE,

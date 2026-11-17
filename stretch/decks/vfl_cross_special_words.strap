@@ -69,8 +69,18 @@
 ! batch18 it is 404: the index-store decode hold (StretchCore laarRetire,
 ! xstoreFreeAt) fires on any store passing storeWaitWord -- 11, 12, 16-31 --
 ! so C3's ST into word 11 holds decoding.  MEASURED: with the hold narrowed
-! to X16-31 the deck runs 389.  Whether Perf. Char. Vol. 1 p.3-20's "index
-! storage" takes in words 11 and 12 is not settled (docs/NEXT.md).
+! to X16-31 the deck runs 389.
+! CYCLES 404 -> 372, 2026-11-17, two causes, each measured with the other
+! held (saved copy, restored and checked with cmp):
+!   - the hold's word set, SETTLED by Perf. Char. Vol. 1 printed p.3-20
+!     (PDF 38): "an internal operand address is ... address 3, or an
+!     address between 5 and 12 inclusive ... $IT, $TC and $0 through $15
+!     are in index storage."  Word 11 is an internal register, so the
+!     hold tests StretchCore's indexStorageWord (1, 2, 16-31).
+!   - the preparation floor (StretchCore's `ib` and rl_prepare's load
+!     clock; docs/atlas_oracle.md "Closing the residuals" item 7).
+!   old set, no floor 404; new set, no floor 389; old set with the floor
+!   392; new set with the floor 372.
 !
 ! MEASURED INJECTIONS, 2026-11-17 (in the worktree from a saved copy,
 ! restored and compared with cmp; observed on this deck and the other two

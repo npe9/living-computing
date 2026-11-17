@@ -41,6 +41,10 @@
 ! so the old release came that E-box time early.  Here: the SF(BU,18)
 ! into $3.  MEASURED: with that hold removed (and nothing else) the deck
 ! runs in 434 clocks again.
+! CYCLES 447 -> 420, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 447 again;
+! no value moved.
         SLC, (8)300.0
 START   LX,$1,DXW
         LVI,$2,30.32

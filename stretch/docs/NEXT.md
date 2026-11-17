@@ -18475,7 +18475,7 @@ floating store (read at 300 dpi 2026-11-16; this line said "the same");
   store to word 8 takes effect in the model and SRD's does not.  Whether
   SRT then leaves bits 60-63 as p.95 stores them was not checked.
 
-## IS WORD 11 OR 12 "INDEX STORAGE" FOR THE DECODE HOLD? -- open, 2026-11-17
+## IS WORD 11 OR 12 "INDEX STORAGE" FOR THE DECODE HOLD? -- DONE, 2026-11-17
 
 Batch18's index-store decode hold (StretchCore `laarRetire`,
 `xstoreFreeAt`; Perf. Char. Vol. 1 printed p.3-20, "a store into index
@@ -18486,3 +18486,15 @@ register (word 11) holds decoding too.  Measured on
 389 with it narrowed to X16-31.  Re-pinned at 404.  Read whether the
 machine's index storage (the fast core holding X0-X15) also holds words 11
 and 12, or whether only STORE WAIT covers them, and settle the set.
+
+SETTLED: Perf. Char. Vol. 1 printed p.3-20 (PDF 38, read in the image):
+"By an internal operand address is meant address 3, or an address between
+5 and 12 inclusive. ... $IT, $TC and $0 through $15 are in index
+storage."  Words 11 and 12 are internal registers; words 1 and 2 are index
+storage.  The hold now tests StretchCore's `indexStorageWord` (1, 2,
+16-31); STORE WAIT keeps `storeWaitWord` (Fig. 3.1.24) unchanged.
+Words 1 and 2 ($IT, $TC) joined the set from the same sentence; no pin
+moved and no deck is known to store into them through a level, so that
+half is UNTESTED.
+vfl_cross_special_words: 389 with the new set alone (404 with the old);
+with the preparation floor of the same day, 372 (pinned).

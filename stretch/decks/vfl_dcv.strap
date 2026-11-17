@@ -53,6 +53,10 @@
 !      sign byte register (16)00 from (16)08, 42 at offset 20.
 !
 ! INJECTIONS, measured: tests/run_tests.sh, the DCV line.
+! CYCLES 1049 -> 1027, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 1049 again;
+! no value moved.
 
         SLC, 1000.0
 ! ---- F. Figure 19, the five statements as printed ------------------
