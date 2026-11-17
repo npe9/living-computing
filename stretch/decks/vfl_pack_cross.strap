@@ -1,0 +1,50 @@
+! VFL PACK LOOP ACROSS WORD BOUNDARIES -- reduction of C22-6578 Problem
+! 2.6 Method 3's PACK1 loop (decks/problem_2_6_method3.strap), which
+! returned only three fields of its answer when bsv/StretchTiming.bsv's
+! VFL E-box times were made per-operation on 2026-11-16.  Sixteen 20-bit
+! B fields are taken from 24-bit records (4-bit A field skipped) by a
+! progressive L and packed by a progressive ST, both of which cross word
+! boundaries.
+!
+! RESULT, hand-derived: ANS is the sixteen B fields end to end,
+! 0xB07F0B12F1B2DF2B 30F3B49F4B5FF5B6 4F6B7BF7B81F8B9E F9BA6FABB3FBBCCF
+! CBD8FDBE5FEBFAFF.
+!
+! THE BUG IT PINS.  Progressive indexing's second part sets the index
+! result indicators, XCZ among them, when the LEVEL executes (execute()'s
+! setIndexResultIndicatorsF(ind, vflPx1), Reference Manual printed p.21).
+! iboxHazard treated a branch on an index indicator as I-box-local, so
+! BZXCZ ran ahead of the pending ST, read XCZ before the ST had counted,
+! and fell through.  An instruction trace of the failing run (temporary $displays): the ST at 2004 was
+! loaded at clock 183, BZXCZ at 2006 executed at 198, and the ST was
+! removed at 199 -- after the third pass, which is where the answer
+! stopped.  Under the old flat VFL times Problem 2.6 Method 3 passed:
+! its ST was removed before the branch was reached.
+! FIX: an index-indicator branch waits while any pending level is
+! progressive (StretchIBox's anyProgressive).
+! INJECTION, observed 2026-11-16, with NEITHER of iboxHazard's two
+! progressive-level waits present (this one and setsIndexInd, added
+! after it; the later one cannot affect this loop, whose only index
+! instruction is the branch): the run halts at 214
+! clocks, ANS_w0 = 0xB07F0B12F1B2DF20 (three fields and four bits of
+! zeros) and ANS_w1..w4 = 0 -- five FAILs and the cycle count, nothing
+! else.  With it: all five PASS, 889 clocks.
+
+        SLC, 1000.0
+START   LX, $1, XWA; LV, $2, VFD
+PACK    L(BU,20)(V+I), 0.24($2)         ! skip A field
+        ST(BU,20) (V+IC), 0.20 ($1)     ! store B field
+        BZXCZ, PACK
+PASS    BEW, $
+XWA     XW, ANS, 16, $
+VFD     VF, DATA +0.04
+        SLC, 1200.0
+DATA    DD(BU,64,8), (16)7B07F02B12F1DB2D
+        DD(BU,64,8), (16)F20B30F39B49F4FB
+        DD(BU,64,8), (16)5FF54B64F6BB7BF7
+        DD(BU,64,8), (16)1B81F8EB9EF96BA6
+        DD(BU,64,8), (16)FA3BB3FBCBCCFC8B
+        DD(BU,64,8), (16)D8FD5BE5FEABFAFF
+        SLC, 1210.0
+ANS     DRZ(BU, 20), (16)
+        END, START

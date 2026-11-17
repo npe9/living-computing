@@ -57,6 +57,14 @@
 ! off: on this model those instructions do not get ahead of the level here.
 ! They stay as guards, since the sequential model requires the same result.
 !
+!
+! TIMING RE-PINNED 2026-11-16, 2407 -> 2828 clocks, every value check unchanged.
+! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
+! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
+! atlas prints for it (docs/atlas_oracle.md).  This deck's VFL loads and
+! stores, full-word (BU,64), went from 24 E-box clocks each to L 28 (PDF
+! 120, 8.40 us) and ST 32 (PDF 124, 9.61 us).  The 2721 / 2552 figures
+! above were measured under the old timing and were not re-measured.
         SLC, (8)2000.0
 START   NOP
 ! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)

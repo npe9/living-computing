@@ -1,0 +1,99 @@
+! VFL TIME DEPENDS ON THE OPERATION -- five runs of eight copies of one
+! VFL operation each, all at (BU,64,8), the way Perf. Char. Vol. 2's
+! GENER times an instruction (PDF 37-39: one instruction replicated, so
+! the E-box, not the preparation, sets the pace).  Built 2026-11-16 with
+! bsv/StretchTiming.bsv's per-operation eboxClocks (its VflInt arm cites
+! the atlas page behind each number; docs/atlas_oracle.md has the
+! residual table).
+!
+! THE PRINTED FIGURES AT (BU,64,8), NO INDEXING, EXTERNL OPERAND:
+!   L   PDF 120  8.40 us = 28 clocks
+!   M+  PDF 117  9.61 us = 32 clocks   (a storing operation)
+!   K   PDF 127  7.20 us = 24 clocks
+!   *   PDF 133 11.40 us = 38 clocks
+!   /   PDF 134 28.81 us = 96 clocks   (by one; the authors disown it
+!                                       as a divide timing, PDF 41)
+! Before this change every one of them was charged 8 + 2 * 8 = 24 E-box
+! clocks (25 in sequence), so the five runs cost the same.
+!
+! RESULTS, hand-derived.  L leaves 1 in the accumulator; M+ adds it to
+! CNT and leaves the accumulator, so CNT, from 0, is 8; K changes only
+! indicators.  The multiplies run on a ZERO accumulator: binary * puts
+! the product "into the cleared accumulator at offset 20" (printed
+! p.68), so from 1 the field at offset 0 would grow 2**20 a copy and
+! pass p.68's 48-significant-bit limit at the fourth; 0 x 1 = 0 every
+! time, R0 = 0.  The divides then run on 1: 1 / 1 = 1 remainder 0 each
+! time, R1 = 1, R2 ($RM) = 0.
+!
+! MEASURED, 2026-11-16: 1193 clocks with the old flat 8 + 2 bytes, 1979
+! with the per-operation times (CYCLES=1979+-0 in run_tests.sh).  The
+! printed sum, 8 x (28 + 32 + 24 + 38 + 96) = 1744, plus set-up, the
+! register loads between blocks and the stores, is of that size; the
+! model is not asked to match it to the clock, because the run is short
+! and its block boundaries are not GENER's.
+! INJECTION, observed: the VflInt case forced to L's arm for every code
+! (`case (6'b000101)` in StretchTiming.bsv) gives FAIL cycles = 1331 and
+! nothing else; reverted, `git diff` clean of it.
+
+        SLC, (8)2000.0
+
+START   L(BU,64), ONE, 0
+        L(BU,64), ONE, 0           ! L: load 1
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        L(BU,64), ONE, 0
+        M+(BU,64), CNT, 0          ! M+: CNT = CNT + 1
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        M+(BU,64), CNT, 0
+        K(BU,64), ONE, 0           ! K: compare with 1
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        K(BU,64), ONE, 0
+        L(BU,64), ZERO, 0
+        *(BU,64), ONE, 0           ! *: 0 x 1
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        *(BU,64), ONE, 0
+        ST(BU,64), R0, 0
+        L(BU,64), ONE, 0
+        /(BU,64), ONE, 0           ! /: 1 / 1
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        /(BU,64), ONE, 0
+        ST(BU,64), R1, 0
+        L(BU,64), $RM, 0
+        ST(BU,64), R2, 0
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+ONE     DD(BU,64,8), 1
+ZERO    DD(BU,64,8), 0
+R0      DD(BU,64,8), (16)FFFFFFFFFFFFFFFF
+CNT     DD(BU,64,8), 0
+R1      DD(BU,64,8), 0
+R2      DD(BU,64,8), 0
+
+        END, START

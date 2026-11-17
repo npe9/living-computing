@@ -24,6 +24,13 @@
 ! runs first and its target is checked for the value it must have.  X0
 ! is loaded with TB's address, so the refused store names a real word:
 ! if the refusal ever stops happening, TB changes and the check says so.
+!
+! TIMING RE-PINNED 2026-11-16, 145 -> 164 clocks, every value check unchanged.
+! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
+! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
+! atlas prints for it (docs/atlas_oracle.md).  The refused operations are
+! still charged, and the loads and stores now cost L's and ST's pages
+! (PDF 120, 124) instead of a flat 8 + 2 bytes.
         SLC, (8)300.0
 START   LV, $X0, TBADDR
         L(BU,6,6), DATA2

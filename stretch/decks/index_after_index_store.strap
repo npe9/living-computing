@@ -34,6 +34,13 @@
 ! register j would pass every case here, and words 11 and 12 are in the
 ! rule because the pages print them, not because a case needs them.
 !
+!
+! TIMING RE-PINNED 2026-11-16, 1132 -> 1248 clocks, every value check unchanged.
+! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
+! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
+! atlas prints for it (docs/atlas_oracle.md).  Its VFL loads and stores went
+! from 24 E-box clocks each to L 28 (PDF 120) and ST 32 (PDF 124) at
+! (BU,64).
         SLC, (8)2000.0
 START   NOP
 ! ---- PN: no slow level ahead: only the load of XW1 delays the store

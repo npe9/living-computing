@@ -88,7 +88,8 @@ EXACT = 0.1                   # clocks.  A printed figure is good to +-0.01 us
                               # the same whole number of clocks.
 
 ASSUMPTIONS = [
-    "WB XOVR columns: field starts FL//2 bits before a word boundary",
+    "WB XOVR columns, no forwarding: field starts FL//2 bits before a word "
+    "boundary (with forwarding, PDF 114's bit 60, .74 octal)",
     "INDEXING columns: indexed by $X5, which holds zero (a half-word "
     "branch by $X1, its one-bit K field's only choice)",
     "TRANSMIT: the I-box block is 18.0 for source and destination "
@@ -388,7 +389,11 @@ def vfl_case(rec):
     elif place == "ext_wbx":
         if fl < 2:
             return "a one-bit field cannot cross a word boundary"
-        start = 64 - fl // 2
+        # PDF 114 (printed 107) gives the FORWARDING run's location:
+        # "external with WB crossover (150000.74)8" -- bit 60 whatever the
+        # field length.  The no-forwarding pages state none, so they keep
+        # the FL//2 assumption (ASSUMPTIONS above).
+        start = 0o74 if fwd else 64 - fl // 2
         addrs = ["ATLE%d+.%d" % (i, start) for i in range(n_addr)]
     elif place == "ibox":
         setup += ["LX, $X%d, ATLE0" % i for i in range(n_addr)]

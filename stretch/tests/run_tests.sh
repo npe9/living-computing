@@ -1583,13 +1583,19 @@ run "SMAC on C22-6678-1 p.47, assembled against p.48's code" python3 check_smac_
 # Hand-written from RefMan printed p.21.  Injections and the cases they do
 # not reach are in the deck's header.
 run "An index read after a pending progressive write" ./run_program.sh ../decks/index_after_progressive.strap StretchIdxProgTb D1a:1088=0x1111111111111111 D1b:1089=0x1111111111111111 D1end:1090=0xeeee D2:1091=0x1111111111111111 R2:1121=0x111000000000000 D3:1092=0x1111111111111111 R3:1122=0x111800000000000 M4:1116=0x0 D5:1093=0x1111111111111111 R5:1123=0x7777 D6a:1095=0x1111111111111111 D6b:1096=0x0 D7a:1097=0x1111111111111111 D7b:1098=0x10740000000bbbb M8:1117=0x0 M9:1118=0x0 R10:1119=0x117000000000000 D10:1114=0x1111111111111111 R11:1120=0x116800000000000 D11:1115=0x1111111111111111 R12:1111=0x111000000000000 R13:1112=0x115800000000000 D13:1109=0x1111111111111111 R14:1113=0x0 D14:1110=0x1111111111111111 PC=2168
+# RE-PINNED 2026-11-16 (2407 -> 2828): VFL E-box time now depends on the
+# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
+# atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
 # CYCLES pins that the index write does NOT wait: 2721 with the stall of
 # 3204601 (levelIndexedBy), 2407 with the level carrying the I-box's indexing.
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2407+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2828+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
 # The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
 # instruction behind a pending level storing into its index word.  Injections
 # in the deck's header.
-run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1132+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
+# RE-PINNED 2026-11-16 (1132 -> 1248): VFL E-box time now depends on the
+# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
+# atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
+run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1248+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
 # THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
 # docs/smac_7030.md), against strap/smac.py card for card and against the
 # bulletin's printed cards.  Injections in the shell, observed 2026-11-08
@@ -2356,10 +2362,14 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
 # what the refused one was charged (its box's 4 clocks fit inside the
 # E-box budget) and the 23 are the added L's.  MEASURED INJECTIONS in
 # vfl_srd's header.
+# RE-PINNED 2026-11-16 (997 -> 1246): VFL E-box time now depends on the
+# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
+# atlas, ST/SRD PDF 124-125, L PDF 120); every result check unchanged.  The
+# deck's header says why.
 run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
-run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=997+-0" \
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1246+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2478,9 +2488,12 @@ run "LFT and *+ (VFL) -- MCP's MOVE lays out its tables with them" ./run_program
 # request an operand for an operation it has already refused -- and
 # StretchIBox says, at the field, that no test distinguishes it and what
 # would be needed to.
+# RE-PINNED 2026-11-16 (145 -> 164): VFL E-box time now depends on the
+# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
+# atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
 run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh ../decks/vfl_progressive_index0.strap StretchVflProgX0Tb \
     "PC=394" \
-    "CYCLES=145+-0" \
+    "CYCLES=164+-0" \
     "control_head:264=18446744073709551609" \
     "control_tail:265=13835058055282163711" \
     "refused_head:272=18446744073709551615" \
@@ -2676,10 +2689,13 @@ run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offs
 # LOAD TRANSIT AND SET in both radices, and decimal *, / and *+, which printed
 # pp.68-70 define as LTRS's action with their own two left-zeros-counter bits
 # (* 00, / 01, *+ 10, LTRS 11).  Ten cases, every value hand-derived from
-# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES 974 is a
-# MODEL PIN: Table 3's LTRS row (Vol. 1 printed p.3-8), 16 + 2 x/y clocks,
-# StretchTiming.bsv.  INJECTIONS: in the deck's header.
-run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=974+-0 \
+# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES was
+# 974 under Table 3's LTRS row (Vol. 1 printed p.3-8), 16 + 2 x/y clocks.
+# RE-PINNED 2026-11-16 (974 -> 1214): LTRS is now charged its measured
+# page, PDF 123 (44 binary, 66 decimal, +16 above 48 bits), and decimal *,
+# *+, / that page's decimal figure (CHOSEN: PDF 133-135 print binary rows
+# only).  Every result check unchanged.  INJECTIONS: in the deck's header.
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=1214+-0 \
     "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
     "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
     "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
@@ -2697,17 +2713,17 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 # 07006652 with the sign, by hand.  D1-D8 are hand-derived: 24 nines, 10^24
 # (PF), positions 0-11 lost silently, offset PF, 32 nines to binary (PF),
 # bits below the offset ignored, the sign modifiers and the sign byte
-# register's other positions.  The conversion is mkCvtBox's.  CYCLES 880 is a
-# MODEL PIN: dcvClocks (StretchTiming.bsv), the atlas PDF 139 point.
+# register's other positions.  The conversion is mkCvtBox's.  CYCLES 1049 is a
+# MODEL PIN: eboxClocks' DCV row (StretchTiming.bsv), atlas PDF 139.
 # INJECTIONS, measured 2026-11-16 in a scratch copy, observed failures only
-# (PC and CYCLES held in every one):
+# (PC and CYCLES held in every one, at the pre-batch13 pin 880):
 #   drop the offset clause of B-D's PF ("top > 128")   -> D4_ind_PF only
 #   drop the 24-digit clause ((cr.r >> 96) != 0)        -> D2_ind_PF only
 #   D-B result placed at 68 instead of 20               -> D5_left/right,
 #                                                         D6_left/right, D8_right
 #   B-D sign without the sign modifier (acc.sign)       -> D7_sign_byte, D7_ind
 #   D-B field cut to 15 digits                          -> D5_left/right, D5_ind_PF
-run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=880+-0 \
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1049+-0 \
     "F19_store:2000=0x0070001861422000" \
     "F19_acc_left:2200=0" \
     "F19_acc_right:2201=0x7006652" \
@@ -2740,11 +2756,12 @@ run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_p
 # printed p.69: LFT's modifiers "operate as in ADD", so a decimal operand's
 # bytes go into FT as four-bit digits.  Five hand-derived cases (no IBM
 # oracle exists): digits, zones dropped at byte size 6, sixteen digits PF,
-# minus zero, the negative sign modifier.  CYCLES 300 is a MODEL PIN.
+# minus zero, the negative sign modifier.  CYCLES 360 is a MODEL PIN
+# (eboxClocks' LFT row, decimal 66 + 16 above 48 bits, PDF 122).
 # INJECTIONS, measured 2026-11-16, observed failures only:
 #   no decimal compaction (the binary path)  -> L2_FT_zones_dropped only
 #   PF threshold 64 bits instead of 60       -> L3_ind_PF only
-run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=300+-0 \
+run "decimal LFT: digits, zones, PF, -0, LFTN (printed p.69, G2.3)" ./run_program.sh ../decks/vfl_lft_decimal.strap StretchVflLftDecTb PC=2035 CYCLES=360+-0 \
     "L1_FT:1200=0x1234560" "L2_FT_zones_dropped:1201=0x1230" "L3_FT_low15:1202=0x2345678901234560" \
     "L4_FT_minus0:1203=0x8" "L5_FT_inverted:1204=0x428" "L1_ind:1205=0x20" "L2_ind:1206=0x20" \
     "L3_ind_PF:1207=0x10000000020" "L4_ind_RZ_RN:1208=0x50" "L5_ind_RLZ_RN:1209=0x90"
@@ -2820,15 +2837,18 @@ run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit widt
 # is now LFT(D,32,8), with a TI copying $FT out.  CYCLES 140 -> 161, PC
 # 393 -> 395.  MEASURED: without the TI the deck still counts 161, so the
 # 21 are LFT's against the refused ST's (the TI overlaps).  A model pin.
+# RE-PINNED 2026-11-16 (161 -> 224, batch13): VFL E-box time depends on
+# the operation (bsv/StretchTiming.bsv eboxClocks; LFT PDF 122's decimal
+# rows, L PDF 120).
 # 2026-11-16: THE REFUSAL IS GONE.  Decimal LFT and DCV were the last two;
 # vflDecimalBuilt was true of every code and was removed with execute()'s
 # gate and prepareExec's clause.  The deck now pins decimal LFT EXECUTING
-# (BOP,$ hangs if OP comes on; FT_loaded is -123's (16)1238).  CYCLES 161 ->
-# 160: the decimal operand moved from TB+.48 (a crossing field, two reads)
-# to TD (one word).
+# (BOP,$ hangs if OP comes on; FT_loaded is -123's (16)1238).  CYCLES 224 ->
+# 223 (measured after the batch13 merge): the decimal operand moved from
+# TB+.48 (a crossing field, two reads) to TD (one word).
 run "DECIMAL VFL: the model's refusal is gone; decimal LFT executes (was: refused)" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
     "PC=395" \
-    "CYCLES=160+-0" \
+    "CYCLES=223+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \
@@ -4303,9 +4323,12 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # costs (nothing here overlaps); eight FP decks do show it, +1 to +16
 # clocks, tabled in bsv/StretchDivBox.bsv.  The injections and their observed
 # failures are in the deck header.
+# RE-PINNED 2026-11-16 (1196 -> 2148): VFL E-box time now depends on the
+# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
+# atlas, / PDF 134: the divide box's clocks are now inside the printed / time, not a 24-clock flat one; no DIVIDE BOX OVERRAN line); every result check unchanged.  The deck's header says why.
 run "/, VFL Divide at the edges of the divide box (full width, last bit, remainder signs)" ./run_program.sh ../decks/vfl_divide_box.strap StretchVflDivBoxTb \
     "PC=2146" \
-    "CYCLES=1196+-0" \
+    "CYCLES=2148+-0" \
     "max_width_quotient:1166=281474976710657" \
     "max_width_remainder:1167=0" \
     "max_width_pf_off:1168=0" \
@@ -4325,6 +4348,45 @@ run "/, VFL Divide at the edges of the divide box (full width, last bit, remaind
     "zero_divisor_keeps_acc:1182=9" \
     "zero_divisor_keeps_rm:1183=80" \
     "zero_divisor_sets_zd:1184=1"
+
+# >>> VFL TIME DEPENDS ON THE OPERATION, 2026-11-16. <<<  Eight copies
+# each of L, M+, K, * and / at (BU,64,8), GENER's shape (Perf. Char.
+# Vol. 2 PDF 37-39).  The atlas prints 28, 32, 24, 38 and 96 clocks a copy
+# for them (PDF 120, 117, 127, 133, 134); before bsv/StretchTiming.bsv's
+# per-operation eboxClocks every one cost 25 in sequence.  MEASURED: 1193
+# clocks on the old model, 1979 now.  INJECTION, observed: the VflInt
+# case forced to L's arm for every code (`case (6'b000101)`) gives FAIL
+# cycles = 1331 and nothing else; reverted, the diff clean.
+run "VFL time by operation: L, M+, K, *, / at (BU,64,8) (Perf. Char. Vol. 2 atlas)" ./run_program.sh ../decks/vfl_op_timing.strap StretchVflOpTimingTb \
+    "PC=2142" \
+    "CYCLES=1979+-0" \
+    "product_zero:1154=0" \
+    "cnt_eight:1155=8" \
+    "quotient_one:1156=1" \
+    "remainder_zero:1157=0"
+
+# AN INDEX-INDICATOR BRANCH WAITS FOR A PENDING PROGRESSIVE LEVEL
+# (2026-11-16, StretchIBox's iboxHazard BranchInd arm).  Progressive
+# indexing sets XCZ and the other index indicators when the level
+# executes; "ST(BU,20)(V+IC)" then "BZXCZ,PACK" let the branch read XCZ
+# first.  Reduced from C22-6578 Problem 2.6 Method 3's PACK loops, which
+# lost twelve of sixteen fields when the VFL E-box times became
+# per-operation.  INJECTION, observed (before setsIndexInd existed, so
+# with neither wait): the run halts at 214 clocks with ANS_w0 = 0x...DF20 and ANS_w1..w4 = 0
+# (five FAILs and the cycle count); with it, 889.
+run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=889+-0" \
+    "ANS_w0:1210=0xB07F0B12F1B2DF2B" "ANS_w1:1211=0x30F3B49F4B5FF5B6" "ANS_w2:1212=0x4F6B7BF7B81F8B9E" \
+    "ANS_w3:1213=0xF9BA6FABB3FBBCCF" "ANS_w4:1214=0xCBD8FDBE5FEBFAFF"
+
+# AN INDEX INSTRUCTION DOES NOT OVERTAKE A PENDING PROGRESSIVE LEVEL
+# (2026-11-16, iboxHazard's setsIndexInd).  Both set the index
+# indicators; "ST(BU,8)(V+IC),0.8($1)", "V-ICR,$3,1", "BZXCZ" must branch
+# on $3's count.  Reduced from C22-6578 Problem 4.7 Method 2 as printed,
+# which lost its matrix to it under the per-operation VFL times.
+# INJECTION, observed: without the line, sixteen passes on $1's count,
+# ANS_w0 and ANS_w1 all ones, 2099 clocks; with it, 687.  Deck header.
+run "Index indicators in program order: V-ICR after a pending progressive ST" ./run_program.sh ../decks/vfl_index_ind_order.strap StretchVflIndexIndOrderTb "PC=2010" "CYCLES=687+-0" \
+    "ANS_w0:1210=0xFFFFFFFF00000000" "ANS_w1:1211=0" "ANS_w2:1212=0"
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
     "req_word0:1030=0x1020001121001222" \
@@ -9647,6 +9709,8 @@ run "I-box timing: CB loop" ./run_program.sh ../decks/ibox_timing_cb.strap Stret
 # PRE-fix model also gives 113) vs ~172
 # executed serially; the bound of 140 fails if the overlap is lost
 # (as it was when the E-box busy wait preempted preparation).
+# 2026-11-16: 122, the four loads now charged PDF 120's full-word L
+# (8.40 us = 28 clocks) rather than 24.  Bound unchanged.
 run "Look-ahead timing: four loads" ./run_program.sh ../decks/la_timing_loads.strap StretchTimingLaTb \
     "ACC_right:9=4" \
     "CYCLES<=140"
@@ -9655,10 +9719,16 @@ run "Look-ahead timing: four loads" ./run_program.sh ../decks/la_timing_loads.st
 # by V+ and CB. E-box-bound with the I-box instructions hidden (~800
 # clocks, measured 807) vs ~1120 if the I-box waited for the levels to
 # drain each time; bound 900.
+# RE-MEASURED 2026-11-16: 918 (91.8 a pass, against 80.7), the bound
+# now 1000.  The three VFL operations are now charged the atlas's
+# full-word times, L 28 (PDF 120), + 28 (PDF 116), ST 32 (PDF 124) = 88
+# a pass, against 3 x 24 = 72.  1000 is a CHOSEN bound (9% over the
+# measured 918, the old bound's slack); the ~32 a pass a serialized V+/CB
+# would add is the old header's estimate, not re-measured.  Deck header.
 run "Look-ahead timing: L/+/ST/V+/CB loop" ./run_program.sh ../decks/la_timing_loop.strap StretchTimingLoopTb \
     "SUM:38=10" \
     "X2_value:addrIndex(2)=0x2800000000000" \
-    "CYCLES<=900"
+    "CYCLES<=1000"
 
 # -- 1e. Branch guess and wrong-way recovery (plan §6d): one branch on
 # RZ taken against the not-taken guess (the index arithmetic run ahead
@@ -10854,7 +10924,8 @@ run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" 
 # this walk -- a no-op is a no-op -- so it is the injections below, not the
 # pass, that show the gate is the manual's.  decks/rnx.strap is where the
 # operation itself is checked.
-# INJECTIONS, measured 2026-11-16 (rnx arm's range test):
+# INJECTIONS, measured 2026-11-16 before the batch13 merge (rnx arm's range
+# test; the deck's own pin was unchanged by that merge):
 #   names < 16 instead of < 32  -> halts at PC 6892 = 006566.00, error table 1's
 #                                  entry for name 16 (CYCLES 56506)
 #   no no-op at all (False)     -> halts at PC 6832 = 006530.00, the table's

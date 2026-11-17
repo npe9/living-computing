@@ -81,8 +81,13 @@
 ! OBSERVED 2026-11-16: all 27 checks of cases 1-10 pass as hand-derived,
 ! first run.
 !
-! TIMING, a MODEL PIN (CYCLES 974; 926 before case 11 was added): LTRS is charged Table 3's row, 16 + 2 x/y
-! clocks (StretchTiming.bsv).  In the ten cases above each LTRS is followed
+! TIMING RE-PINNED 2026-11-16, 974 -> 1214 clocks, every value check
+! unchanged: LTRS is now charged its measured Perf. Char. Vol. 2 page, PDF
+! 123 -- 44 clocks binary (13.20 us), 66 decimal (19.81), 82 decimal above
+! 48 bits (24.60) -- and decimal *, *+ and / that page's decimal figure,
+! CHOSEN because their own pages (PDF 133-135) print binary rows only
+! (StretchTiming.bsv).  Before: a MODEL PIN (CYCLES 974; 926 before case
+! 11 was added), Table 3's row, 16 + 2 x/y clocks.  In the ten cases above each LTRS is followed
 ! by I-box transmits that hide the E-box's time -- with the old generic
 ! charge the deck counted the same 684 clocks then -- so eight LTRS are run
 ! back to back at the end, where the E-box is the critical path.
@@ -95,7 +100,10 @@
 !  D LTRS charged the generic 8 + 2 x/y: only CYCLES fails, 870 for 926
 !    (seven of the eight back-to-back LTRS, 8 clocks each; the first
 !    overlaps the transmits before it).  Measured BEFORE case 11 was added;
-!    not re-measured at 974.
+!    not re-measured at 974 or at 1214.
+!  E (at 1214, 2026-11-16, in a scratch copy of the tree) binary LFT/LTRS
+!    charged 36 for PDF 123's 44: only CYCLES fails, 1143 for 1214, 71
+!    fewer.  Every other check passes.
 !
         SLC, 1000.0
 START   L(BU,64), ACCV

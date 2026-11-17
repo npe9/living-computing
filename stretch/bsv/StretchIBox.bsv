@@ -342,6 +342,14 @@ function Bool progressiveWrites(Vector#(4, LaLevel) lv, Bit#(4) j);
   return r;
 endfunction
 
+// Is any pending level progressive (so will set the index indicators)?
+function Bool anyProgressive(Vector#(4, LaLevel) lv);
+  Bool r = False;
+  for (Integer k = 0; k < 4; k = k + 1)
+    if (lv[k].valid && hasProgressive(lv[k].di)) r = True;
+  return r;
+endfunction
+
 // The same, for an operand addressed as storage: index registers are words
 // 16-31 (jb_ax4b p.58: "R,$X15" assembles to address 037, word 31).
 function Bool progressiveWord(Vector#(4, LaLevel) lv, WordAddr w);
@@ -449,7 +457,18 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     tagged CountBranch .x:
       h = ((x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)))
           || progressiveWrites(lv, x.j) || (x.idx == 1 && progressiveWrites(lv, 1));
-    tagged BranchInd .x: h = !indexIndicator(x.indNum) || (x.idx == 1 && progressiveWrites(lv, 1));
+    // >>> AN INDEX-INDICATOR BRANCH WAITS FOR A PENDING PROGRESSIVE
+    // LEVEL, 2026-11-16. <<<  Progressive indexing's second part sets the
+    // index result indicators (XF, XCZ, XVLZ, XVZ, XVGZ: execute()'s
+    // setIndexResultIndicatorsF(ind, vflPx1), "per p.21"), and it does so
+    // when the LEVEL executes, not when it is loaded.  So an index-
+    // indicator branch is not I-box-local while such a level is pending:
+    // "ST(BU,20)(V+IC),0.20($1)" then "BZXCZ,PACK" read XCZ before the
+    // store had counted, fell through after four of sixteen fields and
+    // halted (C22-6578 Problem 2.6 Method 3's PACK loops, exposed when the
+    // VFL E-box times became per-operation; decks/vfl_pack_cross.strap).
+    tagged BranchInd .x: h = !indexIndicator(x.indNum) || (x.idx == 1 && progressiveWrites(lv, 1))
+                             || anyProgressive(lv);
     tagged BranchOrMisc .x: begin
       // Unconditional branches drain the levels first: a halt (a
       // branch to itself) must not be reported while E-box work is
@@ -496,6 +515,22 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
     end
     default: h = True;
   endcase
+  // >>> AND AN INDEX INSTRUCTION DOES NOT OVERTAKE ONE, 2026-11-16. <<<
+  // The same indicators, the other way round: the index-arithmetic,
+  // load/store-index and count-branch instructions all end in
+  // setIndexResultIndicatorsF (execute(), "per p.23"), so one that runs
+  // ahead of a pending progressive level has its XCZ overwritten when
+  // the level executes.  C22-6578 Problem 4.7 Method 2 as printed:
+  // "C0111(BU,8,1)(V+ICR),0.64($1),7($3)", "V-ICR,$3,1", "BZXCZ,DIAG1"
+  // -- the branch must see $3's count, and saw $1's.
+  Bool setsIndexInd = False;
+  case (d) matches
+    tagged DirIndex .*: setsIndexInd = True;
+    tagged ImmIndex .*: setsIndexInd = True;
+    tagged CountBranch .*: setsIndexInd = True;
+    default: setsIndexInd = False;
+  endcase
+  if (setsIndexInd && anyProgressive(lv)) h = True;
   return (pending && h) || (guessPending && isIboxStore(d));
 endfunction
 
