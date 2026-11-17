@@ -2688,6 +2688,38 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
     "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
     "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
     "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
+# >>> A PROGRESSIVE VFL OPERATION THAT REFILLS DOES ITS ARITHMETIC ONCE
+# (docs/NEXT.md G2.3 finding 3), 2026-11-16. <<<  Reference Manual printed
+# pp.21-22: "executed in two parts.  The variable field length part of the
+# operation is prepared and then the index modification portion of the
+# operation is performed."  Binary +, +MG, *, *+, /, C0110, CV and L with V+ICR, count 1
+# (the refill fires; Rk shows it did), against + with count 5.  Expected
+# values hand-derived in the deck's header.  MEASURED: see the deck's header.
+run "PROGRESSIVE REFILL: binary + +MG * *+ / C CV and L do their arithmetic once (printed pp.21-22)" ./run_program.sh ../decks/vfl_progressive_refill_once.strap StretchVflRefillOnceTb PC=2085 \
+    "P1_add:1700=8" "P2_addmg:1701=8" "P3_mul:1702=0xF00000" "P4_muladd:1703=0x87" "P5_load:1704=3" "P6_add_norefill:1705=8" \
+    "R1_refilled:1706=0x01348000013405dc" "R2_refilled:1707=0x01348000013405dc" "R3_refilled:1708=0x01348000013405dc" \
+    "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01788000001005e1" \
+    "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc" \
+    "P9_cv:1716=0x123" "R9_refilled:1717=0x01348000013405dc" "P10_cross_refill_acc_untouched:1718=5" "R10_not_stepped:1719=0x017a7800000405e1" "I10_OP:1720=0x0001000000000000"
+# >>> BINARY ADD AND LOAD: RN ON A NEGATIVE ZERO, LOST CARRY, PARTIAL FIELD
+# (docs/NEXT.md G2.3 findings 1 and 2), 2026-11-16. <<<  RN: Reference Manual
+# printed p.47, indicator 59, "negative whether zero or not" (p.60's example
+# 4 shows it).  LC and PF: printed p.60 under ADD; +MG and L "set as in ADD"
+# (printed p.61).  B2, B10, B12 are controls.  Expected values hand-derived in
+# the deck's header.  MEASURED INJECTIONS: see the deck's header.
+run "BINARY + +MG L: RN on a negative zero, LC, PF (printed pp.47, 60-61)" ./run_program.sh ../decks/vfl_binary_add_indicators.strap StretchVflBinAddIndTb PC=2184 \
+    "B1_ind_RZ_RN:1700=0x50" "B1_accL:1800=0" "B1_accR:1801=0" "B1_sb:1802=0x0800000000000000" \
+    "B2_ind_RZ:1701=0x40" "B2_accL:1803=0" "B2_accR:1804=0" "B2_sb:1805=0" \
+    "B3_ind_RZ_RN:1702=0x50" "B3_accL:1806=0" "B3_accR:1807=0" "B3_sb:1808=0x0800000000000000" \
+    "B4_ind_RZ_RN:1703=0x50" "B4_accL:1809=0" "B4_accR:1810=0" "B4_sb:1811=0x0800000000000000" \
+    "B5_ind_LC_RZ:1704=0x20000000040" "B5_accL:1812=0" "B5_accR:1813=0" "B5_sb:1814=0" \
+    "B6_ind_PF_RGZ:1705=0x10000000020" "B6_accL:1815=0x7600000000000000" "B6_accR:1816=0x12" "B6_sb:1817=0" \
+    "B7_ind_PF_RZ_noLC:1706=0x10000000040" "B7_accL:1818=0" "B7_accR:1819=0" "B7_sb:1820=0" \
+    "B8_ind_LC_PF_RGZ:1707=0x30000000020" "B8_accL:1821=0x00FFFFFFFFFFFFFF" "B8_accR:1822=0xFFFFFFFFFFFFFFFF" "B8_sb:1823=0" \
+    "B9_ind_LC_RZ_RN:1708=0x20000000050" "B9_accL:1824=0" "B9_accR:1825=0" "B9_sb:1826=0x0800000000000000" \
+    "B10_ind_RGZ:1709=0x20" "B10_accL:1827=0xFFFFFFFFFFFFFFFF" "B10_accR:1828=0xFFFFFFFFFFFFFFFE" "B10_sb:1829=0" \
+    "B11_ind_PF_RGZ:1710=0x10000000020" "B11_accL:1830=0x7600000000000000" "B11_accR:1831=0" "B11_sb:1832=0" \
+    "B12_ind_RGZ:1711=0x20" "B12_accL:1833=0x9876000000000000" "B12_accR:1834=0" "B12_sb:1835=0"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

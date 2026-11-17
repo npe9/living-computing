@@ -81,22 +81,56 @@ multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
 stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
 already.
 
-### Findings about the BINARY arms, recorded and not changed
+### Findings about the BINARY arms -- the three findings settled 2026-11-16, model fixed (two neighbours still open, below)
 
-* **RN on a negative zero.**  Printed p.60's example 4, "00000- Result
-  zero Result negative", turns RN on for a zero with a minus sign.  The
-  decimal arms do (`setResultIndicatorsDec`); the binary arms'
-  `setResultIndicatorsF` turns RN off for any zero.  The example is
-  decimal (offset 8 bits is two digits), and p.59 defines the
-  indicators once for both radices, so binary probably should too; not
-  changed, because binary decks pin the current reading.
-* **Binary `+` sets neither LC nor PF**, which printed p.60 defines for
-  ADD in both radices.  The decimal arm sets both.
-* **A progressive `+`/`L` whose refill read comes after the operand
-  read may write the accumulator twice** -- the arm writes on the run
-  that then bails for the refill.  Idempotent for `L`; for `+` it would
-  add twice.  NOT MEASURED; noticed while making the decimal arms ask
-  for the box only once every read is in hand.
+* **RN on a negative zero: the model was wrong.**  Reference Manual
+  printed p.47 (PDF 50), indicator 59, read in the page image: "Result
+  Negative (RN).  The result of the non-comparative arithmetic operation
+  just executed was negative whether zero or not.  This indicator is
+  turned off by a non-comparative arithmetic operation whose result is
+  positive, whether zero or not".  No radix in it; p.60's example 4
+  ("00000- Result zero Result negative") illustrates it, and the
+  floating-point side already had it, verified against IBM's F212D D3.
+  `setResultIndicatorsDec` and `setResultIndicatorsF` are now ONE
+  function (RN = the sign bit), so every binary integer arm -- L, LWF,
+  +, +MG, *, *+, LFT, /, ST, SRD, M+ family, CV, LCV, LTRS -- reads RN
+  as the decimal arms did.  The +MG comment that argued "the sign
+  remains as it was" meant RN off was rewritten (that sentence is about
+  the sign kept, not the indicator).
+* **Binary `+`/`+MG` LC and PF, binary `L`/`LWF` PF: the model was
+  wrong.**  printed p.60 (ADD) defines LC ("a carry attempts to
+  propagate beyond the left end of the accumulator") and PF
+  ("significant bits of the data field from storage overlap the left
+  end ... A partial field condition will not cause a lost carry
+  indication.  However, both conditions may arise"); printed p.61 sets
+  them "as in ADD" for +MG and PF for L/LWF.  Built: PF from the
+  operand shifted wide, LC from the carry out of a like-signed 129-bit
+  sum of the truncated operand.  Oracle deck:
+  `decks/vfl_binary_add_indicators.strap` (12 cases, 3 controls).
+* **A progressive operation with a refill applied itself twice: MEASURED
+  and fixed.**  Not just `+`: `decks/vfl_progressive_refill_once.strap`
+  on the unmodified model gave 5+3 = 11 (+ and +MG), 3*5 squared into
+  (16)4B0000000000, *+ 170 for 135, / 100/7 = 2 for 14, and C0110 back
+  to 5 for 6 -- the arm committed its accumulator write, bailed for the
+  refill word, and ran again on its own result.  printed pp.21-22: "The
+  variable field length part of the operation is prepared and then the
+  index modification portion of the operation is performed".
+  `vflRefillOutstanding` (StretchExecute.bsv), the decimal arms' old
+  in-place test, now holds every arm that reaches a shared trailing
+  block (L, +, *, LFT/*+, /, LCV, CV, LTRCV, LTRS, and C/CT/CM) until
+  the refill word is in hand.  The crossing-field-plus-refill OP case
+  now writes nothing before it refuses, as p.22's "the entire operation
+  will be suppressed" requires (deck case P10); a progressive CV no
+  longer converts twice (P9).
+* **Open, found while doing the above, NOT changed:** (a) the binary
+  `M+`/`M+MG` arms set neither LC nor PF, while printed p.59 defines both
+  for binary to-memory operations ("actuated by a carry beyond the
+  leftmost bit of the addressed field"; PF "if there is any one-bit in
+  the accumulator to the left of the participating field") and the
+  decimal M+ arm (`decMInd`) sets them.  (b) binary `*+` adds its product
+  with `smAdd` and sets no LC; its page (printed p.69) was not read for
+  LC.  Both want the same treatment as `+`: page images, a deck, an
+  injection.
 
 ### Open, decimal
 
