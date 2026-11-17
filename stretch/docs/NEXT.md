@@ -81,7 +81,7 @@ multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
 stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
 already.
 
-### Findings about the BINARY arms -- the three findings settled 2026-11-16, model fixed (two neighbours still open, below)
+### Findings about the BINARY arms -- the three findings settled 2026-11-16, model fixed; then the whole chapter swept (six more fixed, four open, below)
 
 * **RN on a negative zero: the model was wrong.**  Reference Manual
   printed p.47 (PDF 50), indicator 59, read in the page image: "Result
@@ -122,15 +122,66 @@ already.
   now writes nothing before it refuses, as p.22's "the entire operation
   will be suppressed" requires (deck case P10); a progressive CV no
   longer converts twice (P9).
-* **Open, found while doing the above, NOT changed:** (a) the binary
-  `M+`/`M+MG` arms set neither LC nor PF, while printed p.59 defines both
-  for binary to-memory operations ("actuated by a carry beyond the
-  leftmost bit of the addressed field"; PF "if there is any one-bit in
-  the accumulator to the left of the participating field") and the
-  decimal M+ arm (`decMInd`) sets them.  (b) binary `*+` adds its product
-  with `smAdd` and sets no LC; its page (printed p.69) was not read for
-  LC.  Both want the same treatment as `+`: page images, a deck, an
-  injection.
+* **The binary indicator sweep, 2026-11-16: the model was wrong in six
+  places, fixed.**  Every indicator sentence of printed pp.58-74 (PDF
+  61-77) read in the page images, op by op.  (a) Binary `M+`/`M+MG`/
+  `M+1`/`M-1` set neither LC nor PF: printed p.59 "In binary to-memory
+  operations, this indicator is actuated by a carry beyond the leftmost
+  bit of the addressed field ... also actuated when a to-memory operation
+  with an unsigned storage operand produces a negative result"; PF "if
+  there is any one-bit in the accumulator to the left of the
+  participating field"; p.62 the same for M+ (and Figure 13's starred
+  cells), M+MG "as in ADD TO MEMORY", p.63 M+1 likewise "except that the
+  partial field indicator is not affected".  Built as `binMemAdd`
+  (`StretchALU.bsv`), used by both binary write sites.  It also MASKS the
+  accumulator operand to the field's numeric width (p.62's Programming
+  Note; p.59's "to the left of the participating field"): the arm used to
+  add every accumulator bit above the offset, which let a high bit win an
+  unlike-signed sum (deck case M6: 5 + -(16)102 stored FD, now 03 with
+  PF).  CHOSEN: the result indicators read the field's sum, the carry
+  dropped (as `decMInd` did).  (b) Binary `*+` set no LC: printed p.69
+  "In a binary operation, this indicator is set as in ADD".  `+`, `+MG`
+  and `*+` now share `binAccAdd`.  (c) `LCV` and `LTRCV` never set the data
+  flags: p.73 "set as in ADD", p.72 "according to the data flag bits ...
+  turn them off if the unsigned modifier is designated".  (d) Decimal
+  `LCV` gave no PF for a result past the accumulator's left end (p.73's
+  first PF sentence has no radix).  (e) Decimal `LTRCV` gave no PF for a
+  storage field over 15 digits (p.73; LCV's arm had it).  (f) Decimal
+  `LTRCV` put sixty bits in $TR where p.73 says "only the 48 low-order
+  bits", and its result indicators read the untruncated value (in both
+  directions: "according to the final result in the transit register").  Oracle
+  deck: `decks/vfl_binary_memadd_indicators.strap` (23 cases, 5
+  controls); the sweep's table follows.
+* **The sweep, op by op** (A = agrees with its page, F = fixed above):
+  `L`/`LWF` p.61 PF, flags, MOP, AR as in ADD -- A (fixed earlier the same
+  day).  `+`, `+MG` p.60-61 -- A (same).  `M+`, `M+MG`, `M+1`, `M-1`
+  pp.59, 62-63 -- F(a).  `ST` p.63 PF "any one-bit in the accumulator to
+  the left of the last bit position stored", AR by the field stored and
+  the modified sign, p.64 "The lost carry indicator cannot be turned on by
+  a STORE" -- A.  `SRD` p.64 LC "when the rounding process causes a carry
+  to be propagated beyond the left end of the field stored", PF/MOP/AR as
+  in STORE -- A.  `K`, `KF`, `KE`, `KFE`, `KR`, `KFR` pp.65-67 "Neither
+  the lost carry nor the partial field indicator can be turned on by a
+  comparison operation", AR not affected -- A.  `LTRS` p.67-68 PF over 60
+  bits, AR by the transit register, BTR/DTR -- A.  `*` p.68 PF (either
+  operand over 48 bits), no LC named, AR as in ADD -- A.  `LFT` p.69 PF
+  over 60 bits, AR by FT, "The lost-carry indicator cannot be turned on"
+  -- A.  `*+` p.69 -- F(b).  `/` p.70 PF (dividend over 96, divisor over
+  48), ZD, no LC named, AR "describe the quotient" -- A.  `LCV` p.73 --
+  F(c)(d).  `LTRCV` p.73 -- F(c)(e)(f).  `CV` p.73 PF both directions,
+  data flags "not affected by CONVERT", MOP/AR as in ADD -- A.  `DCV`
+  p.74 -- refused by the model, not swept.
+* **Open from the sweep, NOT changed:** (1) a zero divisor leaves the
+  arithmetic result indicators as they were; p.70 says they "describe the
+  quotient" and there is none, while p.59 says temporary indicators "will
+  be on if the necessary condition arose during the operation; otherwise,
+  they will be off".  (2) The sign of a zero product (`*`, `*+`) or
+  quotient, and so RN, is the XOR of the signs; no page states it.  (3)
+  Decimal `CV` reads fifteen digits at the offset; p.73 does not give the
+  decimal field's length, so a sixteenth digit is neither converted nor
+  flagged.  (4) The negative sign modifier's to-memory cases (Figure 13's
+  N rows) are still unspellable for `M+`/`M+MG` in strap_asm (C22-6531
+  Appendix A footnote 4); `M-1` is the one spelled.
 
 ### Open, decimal
 

@@ -2736,6 +2736,39 @@ run "BINARY + +MG L: RN on a negative zero, LC, PF (printed pp.47, 60-61)" ./run
     "B10_ind_RGZ:1709=0x20" "B10_accL:1827=0xFFFFFFFFFFFFFFFF" "B10_accR:1828=0xFFFFFFFFFFFFFFFE" "B10_sb:1829=0" \
     "B11_ind_PF_RGZ:1710=0x10000000020" "B11_accL:1830=0x7600000000000000" "B11_accR:1831=0" "B11_sb:1832=0" \
     "B12_ind_RGZ:1711=0x20" "B12_accL:1833=0x9876000000000000" "B12_accR:1834=0" "B12_sb:1835=0"
+# >>> BINARY VFL INDICATOR SWEEP (docs/NEXT.md G2.3), 2026-11-16. <<<  M+, M+MG,
+# M+1, M-1: LC "a carry beyond the leftmost bit of the addressed field" and
+# for "an unsigned storage operand [that] produces a negative result", PF "any
+# one-bit in the accumulator to the left of the participating field" (printed
+# p.59; p.62 and Figure 13; M+1 PF "not affected", p.63).  *+: LC "set as in
+# ADD" (printed p.69).  LCV, LTRCV: data flags "set as in ADD", PF and the
+# 48-bit transit (printed pp.72-73).  M2, M9, P2, P4, C4 are controls.
+# Expected values hand-derived in the deck's header.  MEASURED INJECTIONS: see
+# the deck's header.
+run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit width (printed pp.59, 62-63, 69, 72-73)" ./run_program.sh ../decks/vfl_binary_memadd_indicators.strap StretchVflBinMemIndTb PC=2198 \
+    "M1_W:1600=0" "M1_ind_LC_MOP_RZ:1700=0x20000000140" \
+    "M2_W:1601=0xFF00000000000000" "M2_ind_MOP_RGZ:1701=0x120" \
+    "M3_W:1602=0x0200000000000000" "M3_ind_LC_MOP_RLZ_RN:1702=0x20000000190" \
+    "M4_W:1603=0" "M4_ind_LC_MOP_RZ:1703=0x20000000140" \
+    "M5_W:1604=0x0500000000000000" "M5_ind_PF_MOP_RGZ:1704=0x10000000120" \
+    "M6_W:1605=0x0300000000000000" "M6_ind_PF_MOP_RGZ:1705=0x10000000120" \
+    "M7_W:1606=0" "M7_ind_LC_MOP_RZ_noPF:1706=0x20000000140" \
+    "M8_W:1607=0x0100000000000000" "M8_ind_LC_MOP_RLZ_RN:1707=0x20000000190" \
+    "M9_W:1608=0x0200000000000000" "M9_ind_MOP_RGZ:1708=0x120" \
+    "M10_W:1609=0" "M10_ind_LC_MOP_RZ:1709=0x20000000140" \
+    "M11_W:1610=0" "M11_ind_LC_MOP_RZ_XCZ_XVGZ:1710=0x20000009140" \
+    "P1_ind_LC_RZ:1711=0x20000000040" "P1_accL:1800=0" "P1_accR:1801=0" \
+    "P2_ind_RGZ:1712=0x20" "P2_accL:1802=0xFFFFFFFFFFFFFFFF" "P2_accR:1803=0xFFFFFFFFFFFFFFFE" \
+    "P3_ind_LC_PF_RGZ:1713=0x30000000020" "P3_accL:1804=0x00FFFFFFFFFFFFFF" "P3_accR:1805=0xFFFFFFFFFFFFFFFF" \
+    "P4_ind_PF_RZ_noLC:1714=0x10000000040" "P4_accL:1806=0" "P4_accR:1807=0" \
+    "C1_ind_TF_UF_VF_RLZ_RN:1715=0x1C000090" "C1_accR:1809=5" "C1_sb:1810=0x0800000000000000" \
+    "C2_ind_RGZ_flags_off:1716=0x20" "C2_accR:1812=0x1295" \
+    "C3_ind_PF_RGZ:1717=0x10000000020" "C3_accL:1813=0x6000000000000000" "C3_accR:1814=0" \
+    "C4_ind_RGZ:1718=0x20" "C4_accL:1815=0x6300000000000000" \
+    "C5_ind_PF_RGZ:1719=0x10000000020" "C5_TR:1722=0x10" \
+    "C6_ind_PF_RGZ:1720=0x10000000020" "C6_TR:1723=0x8D7EA4C67FFF0" \
+    "C7_ind_TF_UF_VF_RLZ_RN:1721=0x1C000090" "C7_TR:1724=0x58" \
+    "C8_ind_PF_RZ:1725=0x10000000040" "C8_TR:1726=0"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

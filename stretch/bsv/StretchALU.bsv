@@ -238,6 +238,113 @@ function SM128 magToMemory(Bool mag, SM128 sum, SM128 opnd);
                         mag: (sum.sign == opnd.sign) ? sum.mag : 0 };
 endfunction
 
+// >>> THE BINARY ADD'S LOST CARRY AND PARTIAL FIELD, ONE RULE FOR EVERY
+// ARM THE MANUAL SENDS TO "AS IN ADD", 2026-11-16. <<<  Reference Manual
+// 22-6530-2 printed p.60 (PDF 63), ADD, read in the page image: "Lost
+// Carry (LC).  This indicator is actuated if information is lost because
+// a carry attempts to propagate beyond the left end of the accumulator.
+// Partial Field (PF).  This indicator is turned on if significant bits of
+// the data field from storage overlap the left end of the accumulator.
+// The accumulator operand is extended with high-order zeros to combine
+// with the storage operand, but the high-order bits of the result are
+// dropped.  A partial field condition will not cause a lost carry
+// indication.  However, both conditions may arise during the execution of
+// a single instruction."  printed p.61 sends +MG there ("set as in ADD"),
+// and printed p.69 sends binary MULTIPLY AND ADD there: "Lost Carry (LC).
+// In a binary operation, this indicator is set as in ADD", its PF "also
+// turned on in a binary operation if the offset is such that significant
+// bits of the product attempt to combine with accumulator positions to the
+// left of the left end of the accumulator.  Such high-order bits of the
+// product are lost."
+//
+// So: PF is judged on the addend shifted WIDE; LC on the carry out of the
+// 128-bit sum of what is left (the dropped bits cannot carry: "will not
+// cause a lost carry indication"), and only for like effective signs --
+// unlike signs are a subtraction, which cannot carry out.  `accUsed` is
+// the accumulator operand as the arm uses it (+MG passes it positive);
+// `addend` is right-justified, the offset not yet applied.  The sum's
+// magnitude wraps modulo 2^128, which is the carry being lost.
+// Measured by decks/vfl_binary_add_indicators.strap (B5-B10 for +, B13-B16
+// for *+).
+typedef struct { SM128 sum; Bool lc; Bool pf; } BinAccAdd deriving (Bits, Eq);
+
+function BinAccAdd binAccAdd(SM128 accUsed, SM128 addend, Bit#(8) offSh);
+  Bit#(256) wide = zeroExtend(addend.mag) << offSh;
+  SM128 addSh = SM128 { sign: addend.sign, mag: truncate(wide) };
+  Bit#(129) carrySum = zeroExtend(accUsed.mag) + zeroExtend(addSh.mag);
+  return BinAccAdd { sum: smAdd(accUsed, addSh),
+                     lc:  (accUsed.sign == addSh.sign) && carrySum[128] == 1,
+                     pf:  (wide >> 128) != 0 };
+endfunction
+
+// >>> THE BINARY TO-MEMORY ADD -- M+, M+MG and M+1 -- AND ITS LOST CARRY
+// AND PARTIAL FIELD, 2026-11-16. <<<  (The arms set neither until then;
+// the decimal arm, decMInd in StretchExecute, did.)  Read in the page
+// images, Reference Manual printed p.59 (PDF 62), the class rule: "In
+// binary to-memory operations, this indicator [LC] is actuated by a carry
+// beyond the leftmost bit of the addressed field ... This indicator is
+// also actuated when a to-memory operation with an unsigned storage
+// operand produces a negative result.  In all cases, the operation is
+// completed normally except for the loss of the carry."  PF: "In
+// to-memory operations, the indicator is turned on when there are non-zero
+// accumulator positions to the left of the accumulator field that is
+// participating in the operation.  In binary operations to storage, this
+// indicator is turned on if there is any one-bit in the accumulator to the
+// left of the participating field."  printed p.62 (PDF 65), ADD TO MEMORY,
+// the same two: "Lost Carry (LC).  This indicator is actuated by a carry
+// beyond the leftmost digit, either binary or decimal, of the addressed
+// field.  This indicator is also turned on if the result of an unsigned
+// operation is negative.  In such a case, the magnitude of the result is
+// stored in storage.  Partial Field (PF).  This indicator is turned on if
+// there are non-zero digits, either binary or decimal, in the accumulator
+// to the left of the highest order digit that is participating in the
+// operation"; M+MG "set as in ADD TO MEMORY" (p.62); M+1 (p.63): "Lost
+// Carry (LC) ... These indicators operate as in ADD TO MEMORY", and "ADD
+// ONE TO MEMORY is identical to an ADD TO MEMORY in which the accumulator
+// operand is +1, except that the partial field indicator is not
+// affected."
+//
+// THE PARTICIPATING FIELD IS THE STORAGE FIELD'S NUMERIC WIDTH.  p.62's
+// Programming Note: "In operations to storage, the length of the
+// accumulator field between the specified offset and the left end of the
+// accumulator can be less than the number of bits from the storage operand
+// which are to take part in the operation.  In this event the accumulator
+// operand is lengthened for the operation by the addition of high-order
+// zeros."  So the accumulator operand is `numBits` wide and its bits above
+// are NOT part of the sum -- p.59's "to the left of the participating
+// field" says they are outside it.  Until 2026-11-16 the arm added the
+// whole accumulator from the offset up, which made no difference to a
+// like-signed sum (the field write drops the excess) but let a high
+// accumulator bit win an unlike-signed one.
+//
+// "UNSIGNED ... NEGATIVE" is the STORED sign: Figure 13 (p.62) stars the
+// unsigned ADD TO MEMORY cells whose sum is negative (3+ with 5-: 2+*) and
+// none of ADD MAGNITUDE TO MEMORY's, whose negative sum stores zero bytes
+// under the storage sign (3+ with 5-, U: 8+; the U rows have no star).
+//
+// THE RESULT INDICATORS GET THE FIELD'S SUM, the carry dropped: CHOSEN.
+// p.62 says "set according to the algebraic sum of the two operands,
+// whether the sign is stored or not" (M+) and "according to the final
+// result stored" (M+MG); p.59's "completed normally except for the loss of
+// the carry" reads the sum as the field holds it, which is what the
+// decimal arm (dStored) already did.  The two readings differ only when
+// LC is on.
+typedef struct { SM128 stored; Bool lc; Bool pf; } BinMemAdd deriving (Bits, Eq);
+
+function BinMemAdd binMemAdd(Bool magnitude, Bool addOne, Bit#(1) unsign,
+                             SM128 opnd, SM128 accSh, Bit#(7) numBits);
+  Bit#(128) fmask = (numBits >= 64) ? 128'hFFFFFFFFFFFFFFFF
+                                    : ((128'd1 << numBits) - 1);
+  SM128 accUsed = SM128 { sign: accSh.sign, mag: accSh.mag & fmask };
+  SM128 sum = smAdd(opnd, accUsed);
+  Bool carry = (opnd.sign == accUsed.sign) && ((sum.mag & ~fmask) != 0);
+  SM128 stored = magToMemory(magnitude,
+                   SM128 { sign: sum.sign, mag: sum.mag & fmask }, opnd);
+  return BinMemAdd { stored: stored,
+                     lc: carry || (unsign == 1 && stored.sign == 1),
+                     pf: !addOne && ((accSh.mag & ~fmask) != 0) };
+endfunction
+
 // Three-way compare of two sign-magnitude values. Returns -1/0/+1 in a
 // signed 2-bit-ish encoding via Ordering-like tags.
 typedef enum { CmpLow, CmpEqual, CmpHigh } Cmp3 deriving (Bits, Eq, FShow);
