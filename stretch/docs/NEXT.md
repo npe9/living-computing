@@ -37,7 +37,19 @@ Open:
   19 [18] bits are specified". That probably means a function narrower
   than the field, as `STTI` has. The page does not say so, and the
   error flag is not built. strap_asm compiles SIC's address through
-  `eval_expr`.
+  `eval_expr`. **The likely message number (read 2026-11-17).**
+  Printed p.178's logic-area column gives INSERT nine messages,
+  114-121 and 123. One fits "more than 18 bits are specified":
+  **118 ADDR INCLUDES BITS NOT NORMAL IN OP**. 116 ADDRESS FIELD HAS
+  BEEN TRUNCATED fits p.144's other sentence, "Bits are truncated where
+  necessary to fit the field, and the appropriate error messages are
+  executed." Nothing is built on this yet, for two reasons:
+  - Reading "more than n bits" as bits below the function's unit (STTI
+    and STT19A below a word, SSIC24 below a half word) implies a
+    function for SSIC24.
+  - That function would also make SSIC24's integer count half words.
+    strap2 now counts bits there (`i_SSIC24 = i_S24A`).
+  S1918A and S24CW have no op in either assembler's table.
 * **68 GP ERROR's stated condition** (p.85 Boxes 64, 73: "only one
   absolute datum, and a GP or radix has already been processed") is not
   built. The host's 68 is n > 63 (DERIVED). The host also uses 68 for a
@@ -48,19 +60,44 @@ Open:
 * **A DD's g.p.s** (OUTPUT, printed p.158 Boxes 2-8) never give 95.
   Only DECODE's instruction path does. Nobody has measured what a
   negative g.p. does there.
-* **Where strap_asm's field arithmetic reaches, as probed.** It works in
-  instruction address fields, `XW`, `VF`, `LVI`, dds lengths, offsets
-  and `LI`. It does not work in `SYN` (`Q SYN, N*2`), `CW`
-  (`CW, SAM*2, N*2`) or transmit's J (`T, N/4, ...`), which still say
-  "cannot parse expression"; strap2 takes all three. A `SYN` needs a
-  rule for classifying a mixed bit and integer result into strap_asm's
-  single value and `sym_int`.
-* **strap_asm reads `(N+1)` alone in a field as an index** on a null
-  address. strap2 reads it as arithmetic (CHOSEN, Box 76).
-* **The 7030 deck's GETFLD** (`decks/strap2_7030.strap`) does not yet
-  give 82 or the new 68. `check_strap2_7030_getfld.py` still passes
-  after G3.3 (run 2026-11-16, 50 PASS), but none of its cases reaches
-  either message.
+* **DONE 2026-11-17: `SYN`, `CW`, transmit's J and `(N+1)` alone.**
+  strap_asm now takes `Q SYN, N*2`, `CW, SAM*2, N*2` and `T, N/4, ...`,
+  and reads `(N+1)` alone as arithmetic. It agrees with strap2 on every
+  row of `check_field_arithmetic.py` (113 checks).
+  - **A SYN keeps a bit part and an integer part.** This is DERIVED
+    from C22-6729 printed pp.13, 54, 57, 59 (Box 6) and 144; see
+    `source_audit.md` G3.1's follow-up. A mixed SYN's parts are kept
+    apart in `SymTab.sym_ipart`.
+  - **Two strap_asm bugs without arithmetic are fixed.** A mixed
+    `QM SYN, SAM+N` used in `B` gave 800 half words, where strap2
+    gives 808. `CW, SAM+1` gave word 400, where strap2 gives 401.
+  - **Register and index fields.** A register field (`LV`, `LX`, J)
+    with arithmetic or a mixed SYN goes in as `(B >> 6) + I`, through
+    `eval_reg`. `LV, N/4, SAM` was refused, and `LV, QS, SAM` with
+    `QS SYN, 1.0+2` gave 1 where strap2 gives 3. An index field
+    (`eval_index`) uses strap2's S/X rule: the bit part's word if
+    there is a bit part, otherwise the integer part.
+  - **Probed and agreeing with strap2 with a mixed SYN:** XW, VF, CF,
+    LVI, LI, SIC, a 24-bit L, a dds length, B and LX.
+  - No deck's image moved under either assembler (825 hashed).
+  - **Reach.** No deck in the corpus uses a mixed SYN in an 18- or
+    19-bit field, or a lone `(expr)`, so strap2 is the only witness
+    for either.
+  - **Open:**
+    - `B, SAM($1+1)`, with no arithmetic, is index 2 in strap_asm and 1
+      in strap2. That difference was there before; strap2's S/X rule,
+      which drops the integer part, is CHOSEN.
+    - A `CW` field whose symbol is written with blanks keeps the old
+      text rule.
+    - J values over 15 are masked, as in strap2.
+* **DONE 2026-11-17: the 7030 deck's GETFLD gives 82 and the new 68.**
+  - **Before:** the deck did not reach either message. Measured on the
+    model, `A(.70)1` was coded with n = 6 and no message (the host's old
+    modulo-64 bug), and `A(.0)5` gave no note.
+  - **Now:** GFCGP checks n as the host's `_checked_gp` does. Over 63
+    halts with ERRC 168; 0 is note 82. GFGPN holds 24 bits.
+  - **Checks:** `check_strap2_7030_getfld.py` has four new cases and
+    57 PASS. See `docs/strap2_7030.md`.
 
 ## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
 

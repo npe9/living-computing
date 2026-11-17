@@ -301,6 +301,31 @@ otherwise, listing `**` among the "Priority of Operations" for "an
 instruction field". `docs/source_audit.md` G3.1 records that conflict.
 `tests/check_field_arithmetic.py` has the cases.
 
+**A SYN keeps a bit part and an integer part (G3, 2026-11-17).**
+STRAP II does not reduce a value to one number. VALUE puts the two
+parts in `Sinb` and `Sini` and combines them only when the result "is
+... to be made an integer" (C22-6729 printed p.59, Box 6). A symbol
+carries both parts into the field that uses it, and INSERT adds them
+by the function (p.144). Where they are stored is DERIVED, since no
+page tabulates the vle. So a SYN in strap_asm is one of three things:
+- an integer (`sym_int`): no bit part, as `N*2` or `SAM/1.0`;
+- a bit address: no integer part;
+- **mixed** (`SymTab.sym_ipart` holds its integer part): both parts,
+  as `SAM+N`. The table holds the total.
+
+`sym_parts()` gives the pair. The address fields, CW, the register
+fields and the index fields read a mixed symbol through it; this was
+probed against strap2 for B, LX, LV, J, CW, XW, VF, CF, LVI, LI, SIC, a
+24-bit L and an index. Before this, `QM SYN, SAM+N` then `B, QM` gave 800 half
+words where strap2 gives 808. That was wrong even without any field
+arithmetic. CW's three fields (strap2's SCW, S18CF and S18RF) take
+`(bit part >> 6) + integer part`. So does a register field such as J
+(STJFLD) or LV's, when it has arithmetic or a mixed SYN. An index
+takes strap2's S/X rule. A whole field in parentheses with an operator
+inside, such as `(N+1)`, is arithmetic. Without an operator, as in
+`($1)`, it is an index on zero (printed p.85, Boxes 43-49 and 76-78;
+the operator test is CHOSEN, as strap2 chooses it).
+
 The assembler's location counter and every symbol value are a **bit
 count** (`word*64 + bit`), matching the 7030's own `BitAddr` type. Two
 different 19-bit instruction fields both look like "half-word
