@@ -468,8 +468,10 @@ endfunction
 // 2026-10-24 -- it compares w0 and w0+1 and signals DS if either
 // objects.  This comment used to end "the store sites still compare
 // one word each", which was true only while a crossing store was
-// refused outright.  The remaining one-word-each sites are the ones
-// that still cannot cross: M+ and the CM connective.
+// refused outright.  M+ and CM cross too, since 2026-11-06/11-17, and
+// store through vflFieldStore (below), which compares both words of a
+// crossing field and -- the CM gap closed 2026-11-17 -- the one word of
+// a one-word CM, which had been stored with no test at all.
 function Bool protViolates(StretchStorage st, WordAddr a) =
   protViolatesEn(st, a, st.irqEnabled());
 
@@ -485,6 +487,50 @@ function Bool protViolatesEn(StretchStorage st, WordAddr a, Bool enabled);
   Bool signalled = (a < 32) ? (a >= 1 && a <= 3)
                             : ((ctl == 1) ? !inArea : inArea);
   return enabled && installed(a) && signalled;
+endfunction
+
+// >>> ONE VFL FIELD STORE, ONE WORD OR TWO, WITH ITS PROTECTION TEST,
+// 2026-11-17. <<<  Shared by the M+ family and CONNECT TO MEMORY (all
+// four of CM's shapes: one word or crossing, with or without a refill).
+// Before it, the M+ arm and the two CM paths each wrote their own copy,
+// and CM's two ONE-WORD copies (writeFieldWithHi) made no protection
+// test at all -- a CM into a protected word was stored and DS stayed off.
+//
+// Reference Manual printed p.32, "Address monitoring for Data Store
+// includes: 1. The effective address of all store-type operations", and
+// "A store-type operation is one in which the contents of an addressed
+// storage location are subject to change" -- CM is one.  Same page: DS
+// "is permanently masked on, storing in core storage is always
+// suppressed, and the operation is always terminated."  printed p.31: "An
+// instruction or data field which straddles a boundary always gives an
+// address monitoring signal" -- so a crossing field compares both words.
+//
+// Returns True when the store was suppressed (the caller sets DS and,
+// as ST's arm has since 2026-10-24, leaves the operation's result
+// indicators and counts unset: p.32's "terminated").  A second word below
+// 32 is handed back as the tail for rl_tail_write (ExecDone.tailWrite).
+// `hi`/`lo` are the field's word(s) as read (lo unused for one word).
+function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
+    vflFieldStore(StretchStorage st, BitAddr ea, Bit#(7) len_, Bit#(64) val,
+                  Word64 hi, Word64 lo);
+  actionvalue
+    WordAddr w0 = baWord(ea);
+    Bit#(6)  off = baBit(ea);
+    Bool fcross = fieldCrosses(ea, len_);
+    Bool ds = protViolates(st, w0) || (fcross && protViolates(st, w0 + 1));
+    Maybe#(Tuple2#(WordAddr, Word64)) tail = tagged Invalid;
+    if (!ds) begin
+      if (!fcross)
+        st.writeWord(w0, insertFieldBits(hi, off, len_, val));
+      else begin
+        Tuple2#(Word64, Word64) np = insertFieldBitsPair(hi, lo, off, len_, val);
+        st.writeWord(w0, tpl_1(np));
+        if ((w0 + 1) < 32) tail = tagged Valid tuple2(w0 + 1, tpl_2(np));
+        else st.writeWordTail(w0 + 1, tpl_2(np));
+      end
+    end
+    return tuple2(ds, tail);
+  endactionvalue
 endfunction
 
 function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
@@ -3273,8 +3319,15 @@ function ActionValue#(VflOutcome)
                 end else if (prefetchCount >= stNeed) begin
                   Bool dsHi = protViolates(st, w0);
                   Bool dsLo = protViolates(st, w0 + 1);
-                  if (dsHi || dsLo) ind = setBit(ind, ind_DS, 1);
-                  else begin
+                  // DS suppresses the ENTIRE operation, its index part too
+                  // (printed p.22: "If an exception condition is detected
+                  // during the variable field length portion of the
+                  // operation, the entire operation will be suppressed";
+                  // p.32: "the operation is always terminated").
+                  if (dsHi || dsLo) begin
+                    ind = setBit(ind, ind_DS, 1);
+                    vflOk = False;
+                  end else begin
                     Tuple2#(Word64, Word64) np =
                       insertFieldBitsPair(prefetch[0], prefetch[1], off,
                                           len_, packedField);
@@ -3284,7 +3337,7 @@ function ActionValue#(VflOutcome)
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
                   vflReadsUsed = 2;
-                  if (vflNeedsRefill) begin
+                  if (vflNeedsRefill && !(dsHi || dsLo)) begin   // p.22: an exception in the VFL part suppresses the entire operation
                     vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[2]));
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                   end
@@ -3300,8 +3353,10 @@ function ActionValue#(VflOutcome)
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
                 end else if (prefetchCount >= 1) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
-                  else begin
+                  if (protViolates(st, w0)) begin
+                    ind = setBit(ind, ind_DS, 1);
+                    vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
+                  end else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
                   end
@@ -3326,13 +3381,13 @@ function ActionValue#(VflOutcome)
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
                 end else if (prefetchCount >= 2) begin
-                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);   // p.22: an exception in the VFL part suppresses the entire operation
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                     ind = decStore ? decStoreInd(ind) : binStoreInd(ind);
+                    vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
+                    ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                   end
-                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end else if (prefetchCount == 1)
                   needsRead = tagged Valid zeroExtend(vflPx1.refill);
                 else
@@ -4176,19 +4231,18 @@ function ActionValue#(VflOutcome)
                   mField = smToField(bm.stored, len_, bsz, vi.m.unsign, mRaw);
                 end
                 // Both words compared when the field crosses, p.31's
-                // straddling rule, as ST's crossing store does.
-                Bool mDs = protViolates(st, w0) || (mCross && protViolates(st, w0 + 1));
-                if (mDs) ind = setBit(ind, ind_DS, 1);
-                else if (!mCross)
-                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, mField));
-                else begin
-                  Tuple2#(Word64, Word64) np =
-                    insertFieldBitsPair(prefetch[0], prefetch[1], off, len_, mField);
-                  st.writeWord(w0, tpl_1(np));
-                  if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
-                  else st.writeWordTail(w0 + 1, tpl_2(np));
-                end
-                if (dDec) ind = decMInd(ind);
+                // straddling rule (vflFieldStore).  On DS the store is
+                // suppressed and, as in ST's arm, the result indicators
+                // are not set -- p.32, "the operation is always
+                // terminated" (2026-11-17; until then M+ set MOP, LC, PF
+                // and the result indicators over a suppressed store).
+                match {.mDs, .mTail} <- vflFieldStore(st, ea, len_, mField,
+                                                      prefetch[0], prefetch[1]);
+                tailWrite = mTail;
+                if (mDs) begin
+                  ind = setBit(ind, ind_DS, 1);
+                  vflOk = False;            // p.22: an exception in the VFL part suppresses the entire operation
+                end else if (dDec) ind = decMInd(ind);
                 else begin
                   ind = setDataFlagsF(ind, fieldFlags(mRaw, bsz, vi.m.unsign));
                   ind = setBit(ind, ind_MOP, 1);
@@ -4200,7 +4254,7 @@ function ActionValue#(VflOutcome)
                   ind = setResultIndicatorsF(ind, bStored);
                 end
                 vflReadsUsed = mReads;
-                if (vflNeedsRefill) begin
+                if (vflNeedsRefill && !mDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[mReads]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end
@@ -5064,6 +5118,23 @@ endfunction
 // needsRead is threaded rather than returned for the same reason it is
 // in vflIntOp: the trailing progressive-index block reads it.
 // ---------------------------------------------------------------------
+
+// CONNECT TO MEMORY'S END, shared by its refill path and its main path
+// (2026-11-17).  printed p.76: "In CONNECT TO MEMORY, the counts are made
+// on the result field after it is converted to the byte size of the
+// storage operand" and "The counts are set at the end of the connective
+// operations"; MOP on, RZ / RGZ from the stored field (p.76).  When the
+// store was suppressed for DS (vflFieldStore) the operation is
+// terminated (p.32): DS on, and neither the counts nor the indicators.
+function Tuple2#(Word64, Maybe#(Tuple2#(Bit#(7), Bit#(7))))
+    cmFinish(Word64 ind, Bool ds, Bit#(64) result, Bit#(7) len_);
+  Bit#(8)   w = zeroExtend(len_);
+  Bit#(128) v = zeroExtend(result) & ((128'b1 << w) - 1);
+  return ds ? tuple2(setBit(ind, ind_DS, 1), tagged Invalid)
+            : tuple2(setConnectiveIndicatorsF(ind, True, result == 0),
+                     tagged Valid tuple2(connLeftZeros(v, w), connAllOnes(v)));
+endfunction
+
 function ActionValue#(VflOutcome)
     connectiveOp(StretchStorage st, ConnInstr cn,
                  Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
@@ -5245,20 +5316,22 @@ function ActionValue#(VflOutcome)
             Bit#(128) aVec = (acc.mag >> offSh) & maskVec;
             Bit#(128) rVec = applyConnective(cn.conn, mVec, aVec) & maskVec;
             Bit#(64) result = connContract(rVec, len_, bsEff);
-            if (!cmCross)
-              writeFieldWithHi(st, ea, len_, result, mHiWord);
-            else if (protViolates(st, w0) || protViolates(st, w0 + 1))
-              ind = setBit(ind, ind_DS, 1);    // p.31, as the crossing CM below
-            else begin
-              Tuple2#(Word64, Word64) np =
-                insertFieldBitsPair(prefetch[0], prefetch[1], off, len_, result);
-              st.writeWord(w0, tpl_1(np));
-              if ((w0 + 1) < 32) tailWrite = tagged Valid tuple2(w0 + 1, tpl_2(np));
-              else st.writeWordTail(w0 + 1, tpl_2(np));
+            // The store, one word or two, with p.32's protection test
+            // (vflFieldStore; the one-word store had none until
+            // 2026-11-17), and the counts and indicators as the main path
+            // below sets them (cmFinish) -- this path set no counts at
+            // all until 2026-11-17, though p.76 makes them part of every
+            // connective.
+            match {.cmDs, .cmTail} <- vflFieldStore(st, ea, len_, result,
+                                                    mHiWord, prefetch[1]);
+            tailWrite = cmTail;
+            match {.cmInd, .cmCounts} = cmFinish(ind, cmDs, result, len_);
+            ind = cmInd;
+            connCounts = cmCounts;
+            if (!cmDs) begin   // p.22: an exception in the VFL part suppresses the entire operation
+              vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
+              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
             end
-            ind = setConnectiveIndicatorsF(ind, True, result == 0);
-            vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[cmReads]));
-            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
           end else if (prefetchCount == 0)
             needsRead = tagged Valid w0;
           else if (prefetchCount == 1 && cmCross)
@@ -5318,6 +5391,7 @@ function ActionValue#(VflOutcome)
             // contraction (p.76, "Counts and Indicators").
             Bit#(64) result = connContract(rVec, len_, bsEff);
             Bool resultZero = (cn.suffix == conn_CM) ? (result == 0) : (rVec == 0);
+            Bool cmDs = False;   // CM's store suppressed for DS (vflFieldStore)
 
 
             case (cn.suffix)
@@ -5335,23 +5409,14 @@ function ActionValue#(VflOutcome)
                 writeAcc(st, merged);
               end
               conn_CM: begin
-                if (!fieldCrosses(ea, len_))
-                  writeFieldWithHi(st, ea, len_, result, mHiWord);
-                else begin
-                  // Both words compared, p.31's straddling rule, as
-                  // ST's crossing store does.
-                  WordAddr cw0 = baWord(ea);
-                  if (protViolates(st, cw0) || protViolates(st, cw0 + 1))
-                    ind = setBit(ind, ind_DS, 1);
-                  else begin
-                    Tuple2#(Word64, Word64) np =
-                      insertFieldBitsPair(mHiWord, mLoWord, baBit(ea),
-                                          len_, result);
-                    st.writeWord(cw0, tpl_1(np));
-                    if ((cw0 + 1) < 32) tailWrite = tagged Valid tuple2(cw0 + 1, tpl_2(np));
-                    else st.writeWordTail(cw0 + 1, tpl_2(np));
-                  end
-                end
+                // One word or two, both compared when the field crosses
+                // (p.31), and -- since 2026-11-17 -- the one-word store
+                // compared too (p.32); see vflFieldStore.
+                match {.ds, .tw} <- vflFieldStore(st, ea, len_, result,
+                                                  mHiWord, mLoWord);
+                cmDs = ds;
+                if (ds) vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
+                tailWrite = tw;
               end
               conn_CT: begin end // CT: result discarded, indicators only
               default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
@@ -5375,14 +5440,18 @@ function ActionValue#(VflOutcome)
             // LATER port, so it has to follow any CONNECT TO MEMORY
             // field store, which can reach word 7 through
             // writeWord's port 0.
-            Bool    cntIsMem = (cn.suffix == conn_CM);
-            Bit#(128) cntRaw = cntIsMem ? zeroExtend(result) : rVec;
-            Bit#(8) cntWidth = cntIsMem ? zeroExtend(len_)
-                                        : topBitPlus1(maskVec);
-            Bit#(128) cntVal = cntRaw & ((128'b1 << cntWidth) - 1);
-            connCounts = tagged Valid tuple2(connLeftZeros(cntVal, cntWidth),
-                                             connAllOnes(cntVal));
-            ind = setConnectiveIndicatorsF(ind, cn.suffix == conn_CM, resultZero);
+            if (cn.suffix == conn_CM) begin
+              // CM's end is cmFinish's, shared with the refill path above.
+              match {.cmInd, .cmCounts} = cmFinish(ind, cmDs, result, len_);
+              ind = cmInd;
+              connCounts = cmCounts;
+            end else begin
+              Bit#(8) cntWidth = topBitPlus1(maskVec);
+              Bit#(128) cntVal = rVec & ((128'b1 << cntWidth) - 1);
+              connCounts = tagged Valid tuple2(connLeftZeros(cntVal, cntWidth),
+                                               connAllOnes(cntVal));
+              ind = setConnectiveIndicatorsF(ind, False, resultZero);
+            end
           end
         end
 

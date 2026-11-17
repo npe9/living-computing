@@ -233,19 +233,119 @@ MEASURED INJECTIONS (each in a scratch copy of the tree, observed failures):
 * X2 is the control (no Lost Carry, 0x120): it passes under I1, I2, I4
   and I5.
 
-Still open: no word-11 or word-7 crossing case (word 11 is the indicator
+Still open: ~~no word-11 or word-7 crossing case (word 11 is the indicator
 register, which the instruction also sets, and word 7's counters are
 written by the connectives at the end -- the order of those against a tail
-write is unread); the CM refill path writes no connective counts (as
-before this change) and its one-word store makes no protection check
-(`writeFieldWithHi`); the level-to-level store/fetch interlock
-(`levelHolds`) still compares a crossing store's first word only.
-BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
+write is unread)~~ CLOSED 2026-11-17, the pages are not silent (printed
+pp.37, 76; "CROSSING STORES: THE COVERAGE GAPS CLOSED" below); ~~the CM
+refill path writes no connective counts (as before this change) and its
+one-word store makes no protection check (`writeFieldWithHi`)~~ FIXED
+2026-11-17, and the MAIN CM path's one-word store made no protection check
+either (below); ~~the level-to-level store/fetch interlock (`levelHolds`)
+still compares a crossing store's first word only~~ closed by 6de1371
+(`levelStores`, decks/vfl_store_cross_fetch.strap).
+~~BUILT BUT CHECKED BY NO DECK (not injected: no deck case reaches
 them): the STORE WAIT test of a crossing store's second word
 (`storeAddr2`; no deck puts an index use behind a pending crossing store
-into X16-31), the two `prepareExec` "completes without fetch" clauses
-removed with the refusals, and the both-word protection check on a
-crossing `M+` (no deck runs with a protected second word).
+into X16-31)~~ CHECKED 2026-11-17 (decks/vfl_cross_storewait.strap), ~~and
+the both-word protection check on a crossing `M+` (no deck runs with a
+protected second word)~~ CHECKED 2026-11-17 (decks/vfl_cross_protect.strap).
+Still unchecked: the two `prepareExec` "completes without fetch" clauses
+removed with the refusals.
+
+### CROSSING STORES: THE COVERAGE GAPS CLOSED, 2026-11-17
+
+The four gaps "GROUP B BUILT" left, each now a deck case with measured
+injections (the deck headers have the values; every injection was made in
+the worktree from a saved copy, restored, and compared with cmp, and was
+observed on all three new decks).
+
+1. **STORE WAIT on a crossing store's second word** --
+   `decks/vfl_cross_storewait.strap`.  Only a store whose FIRST word is
+   not 11, 12 or 16-31 and whose second is reaches the `storeAddr2`
+   clause: 10 -> 11 or 15 -> 16.  The deck takes 15 -> 16: ST(BU,16,8) at
+   15.56 behind an LTRS, then SX,$X0.  Injection (clause dropped): S1 reads
+   the old $X0 and the run is 268 clocks against 283; the control (a
+   branch between) passes.  No model change.
+2. **Protection on a crossing M+ (and CM)** -- `decks/vfl_cross_protect.strap`,
+   printed p.31 ("An instruction or data field which straddles a boundary
+   always gives an address monitoring signal"), p.32 (DS: "storing in
+   core storage is always suppressed, and the operation is always
+   terminated"; Data Store item 1, "all store-type operations").
+   **MODEL BUG FOUND AND FIXED: a ONE-WORD CONNECT TO MEMORY made no
+   protection test at all**, on its main path as well as the refill path
+   this list named -- both called `writeFieldWithHi`.  Now M+ and every CM
+   shape store through one function, `vflFieldStore` (StretchExecute.bsv),
+   and `writeFieldWithHi` is deleted.  **And M+ and CM now terminate on DS
+   as ST already did**: no result indicators, no counts (before, M+ set
+   MOP, LC, PF and the result indicators over a suppressed store, CM its
+   connective indicators and counts).  Injections: second word not
+   compared -> P1 and P5; one-word store not compared -> P3 and P4; M+'s
+   indicators over the suppressed store -> I1 only (all three re-measured
+   on the final model).  And, from printed
+   p.22 ("the entire operation will be suppressed"), DS now suppresses
+   the progressive index part of ST, M+ and CM too (below).
+3. **Word 11 and word 7** -- `decks/vfl_cross_special_words.strap`.  The
+   pages are NOT silent.  printed p.37: a store into the indicator
+   register gives bits 20-63 "the same as if this operation had acted upon
+   any other storage location whose initial contents were the same ...
+   The setting of any of the indicators 20-63 that would normally occur
+   as part of the store operation is overridden by this result."  printed
+   p.76: the connective counts "are set at the end of the connective
+   operations".  The model already gave both orders (commitIndicators'
+   indStW; writeWord never writes the counter fields, StretchStorage),
+   for a head and for a tail (rl_tail_write writes word 11 the clock
+   after the operation's indicators, so the store still wins).  No model
+   change.  Injections: the operation's indicators OR-ed over the store ->
+   I1, I2, I3 (tail, read-only-bits-only tail, and head cases); a tail
+   into word 7 loading the counters (p.76's order reversed) -> K3 only.
+4. **CM's refill path set no connective counts** -- FIXED, printed p.76
+   ("In CONNECT TO MEMORY, the counts are made on the result field after
+   it is converted to the byte size of the storage operand"): `cmFinish`,
+   shared by the refill and main paths, sets MOP/RZ/RGZ and the counts
+   (or, on DS, neither).  Injection (counts dropped) -> K2 only.
+
+Cycle changes on existing pinned decks: NONE (two full-suite runs, before
+and after the p.22 index-part change, each with the same single failure
+below and nothing else).  The full suite, run with
+these changes, failed ONE section, "OP and AD indicators (both
+polarities)" (decks/op_ad_indicators.strap: PC 2443, expected 2462), and
+it fails identically with the base 64f7947 StretchExecute/StretchVFL
+swapped back in: the deck still expects RNX to set OP ("out of scope ->
+OP"), and RNX was built in c72fb6e (2026-11-16).  The deck needs a
+different out-of-scope operation; NOT fixed here.
+
+STILL OPEN, found on the way:
+
+* ~~**Is a terminated operation's progressive index part also
+  suppressed?**~~ ANSWERED and BUILT the same day: printed p.22,
+  Programming Notes, "If an exception condition is detected during the
+  variable field length portion of the operation, the entire operation
+  will be suppressed, and the appropriate indicator will be turned on.
+  However, if an exception condition is detected during the index
+  modification portion of the operation, only this portion will be
+  suppressed."  DS on the field's store is detected in the VFL portion,
+  so ST, M+ and CM no longer advance, count or refill the index, nor set
+  the index result indicators, on DS (vflOk = False, and the inline
+  refill paths' vflPending guarded).  vfl_cross_protect P4 (refill CM)
+  and P6 (one-word ST(V+IC), no refill) check it; injection (the pre-fix
+  StretchExecute.bsv) -> I4, X7_P4, I6, X6_P6 and cycles 1211, nothing
+  else among the three decks.  OPEN: the refill's DF signal (p.32 class
+  3) is still raised for a refill that DS now suppresses.
+* **A store into word 7 by ST or M+ drops the count bits.** writeWord(7)
+  never writes the counter fields (StretchStorage's documented
+  simplification); p.76 says non-connective operations do not change the
+  counts "as an inherent part", and location 7 is addressable, so such a
+  store should land.  The fix would be word 11's shape (a store wire and
+  one commit rule).  And p.34: "Not all bit positions in locations 0-15
+  are assigned ... Those bit positions that are not so assigned are always
+  zero" -- the model keeps word 7's other fifty bits as stored.
+* **The one clock a crossing tail into word 11 leaves the operation's own
+  indicators in the register** (rl_tail_write runs the clock after);
+  with the interruption system enabled and a mask bit on, an interruption
+  could be taken on an indicator p.37 says is overridden.  Not exercised.
+* The two `prepareExec` "completes without fetch" clauses removed with
+  the refusals are still checked by no deck.
 
 ### EVERY OP THE MODEL STILL SETS, 2026-11-16 -- the complete list
 

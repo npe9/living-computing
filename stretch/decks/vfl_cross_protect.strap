@@ -1,0 +1,226 @@
+! vfl_cross_protect.strap -- address protection (DS) on VFL stores
+! that cross a word boundary, and on CONNECT TO MEMORY's one-word store.
+!
+! THE RULES, Reference Manual 22-6530-2, read in the page images (PDF =
+! printed + 3):
+!   printed p.31, Definition of Monitored Area: the area is the word at
+!   the lower boundary (location 3 bits 32-49) up to, not including, the
+!   upper (bits 0-17); "When the boundary control bit is zero, a signal is
+!   obtained for a comparand inside the specified area ... An instruction
+!   or data field which straddles a boundary always gives an address
+!   monitoring signal."
+!   printed p.32: "When the interruption system is disabled, address
+!   monitoring is ineffective"; "When an address alarm is caused by a
+!   data address used in a store-type operation, indicator DS is turned
+!   on.  Since this indicator is permanently masked on, storing in core
+!   storage is always suppressed, and the operation is always terminated.
+!   A store-type operation is one in which the contents of an addressed
+!   storage location are subject to change."  Addresses Monitored, Data
+!   Store: "1. The effective address of all store-type operations."
+! So a crossing field whose SECOND word is protected is not stored, and
+! a CM (store-type: it writes its field back) is monitored like ST.
+!
+! WHAT "TERMINATED" MEANS HERE: no store, none of the operation's result
+! indicators (MOP, LC, PF, the result indicators) or connective counts --
+! as ST's arm has done since 2026-10-24 -- AND NO PROGRESSIVE INDEX PART.
+! printed p.22, Programming Notes: "If an exception condition is detected
+! during the variable field length portion of the operation, the entire
+! operation will be suppressed, and the appropriate indicator will be
+! turned on.  However, if an exception condition is detected during the
+! index modification portion of the operation, only this portion will be
+! suppressed."  The protected store is in the VFL portion, so the index is
+! neither advanced, counted nor refilled, and the index result indicators
+! are not set (P4, P6; built 2026-11-17 -- before, ST, M+ and CM all ran
+! their index part after DS).
+!
+! SET-UP, ds_terminates_branch.strap's shape: boundaries and the
+! interruption address planted DISABLED; lower boundary PW1, upper PEND
+! (so the area is PW1 alone), control bit 0 (signal inside); then BE.
+! DS's interruption runs entry 19, "BB1, 6.0" -- word 6 bit 0 is the
+! marker (in p.31's 0-31 carve-out, it cannot itself signal).  After each
+! case eight NOPs give the interruption its boundary, TI copies the
+! indicators and word 6, and BBZ clears the marker.  DS stays on "until
+! [it causes] an interruption" (p.32), so the indicator words below show the operation's
+! own settings only.
+!
+!   P1  M+(BU,8,8) acc 1, field FF at PW0+.60 (PW0 low nibble, PW1 top
+!       nibble): PW1 is protected.  DS: PW0 = ..AF, PW1 = F5.. unchanged;
+!       I1 = 0 (terminated); D1 = (16)8000000000000000.
+!   P2  CONTROL: the same M+ at UW0+.60, outside the area: UW0 = ..A0,
+!       UW1 = 05.., LC MOP RZ (16)20000000140 (= vfl_cross_tomemory's X1);
+!       D2 = 0, no interruption.
+!   P3  CM0101(BU,8,8) at PW1+.8, one word, protected: PW1 unchanged,
+!       I3 = 0, D3 set.  (Stored with DS off until 2026-11-17.)
+!   P4  CM0101(V+ICR)(BU,8,8) at PW1+.24 through X7, count 1 (the refill
+!       path): PW1 unchanged, I4 = 0, D4 set, and X7 NOT refilled: still
+!       XPP, (16)01905800000405DD.
+!   P5  CM0101(BU,16,8) at PW0+.56, crossing into PW1: unchanged, I5 = 0,
+!       D5 set.
+!   P6  ST(V+IC)(BU,8,8) at PW1+.40 through X6, count 5, no refill (the
+!       shared trailing index block): PW1 unchanged, I6 = 0, D6 set, X6 NOT
+!       counted: still XPQ, (16)01906800001405DD.
+! CYCLES 1209 is a model pin.
+!
+! MEASURED INJECTIONS, 2026-11-17, on the final model (each in the
+! worktree from a saved copy, restored and compared with cmp; observed on
+! this deck and the other two new decks, vfl_cross_storewait and
+! vfl_cross_special_words, which pass under all four; the rest of the
+! suite was not run under them):
+!   J2 vflFieldStore compares the first word only: FAIL P1_PW0 =
+!      (16)A5A5A5A5A5A5A5BE, P1_PW1 = (16)EFA5A5A5A5A5A5A5 (P5's store),
+!      I1 = (16)20000000140, D1 = 0, I5 = (16)120, D5 = 0, cycles = 1153.
+!      P2, P3, P4, P6 pass.
+!   J3 vflFieldStore compares a crossing field only (the old one-word CM):
+!      FAIL P1_PW1 = (16)F501A501A5A5A5A5 (P3's and P4's bytes), I3 =
+!      (16)120, D3 = 0, I4 = (16)9120, D4 = 0, X7_P4 =
+!      (16)01348000013405DC (refilled), cycles = 1152.  I1, D1, P2, P5 and
+!      P6 pass.
+!   J4 the M+ arm sets its indicators over the suppressed store (the old
+!      M+): FAIL I1 = (16)20000000140 ONLY.
+!   J8 the index part runs after DS (StretchExecute.bsv as it was before
+!      the p.22 change): FAIL I4 = (16)9000, X7_P4 = (16)01348000013405DC,
+!      I6 = (16)1000, X6_P6 = (16)01906800001005DD, cycles = 1211.
+! P2 is the control: it passes under every injection.
+!
+        SLC, 1000.0
+START   BD,  $+.32
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, PW1
+        SV,  $X13, $LB               ! lower boundary := PW1
+        LVI, $X13, PEND
+        SV,  $X13, $UB               ! upper boundary := PEND
+        BBZ, 3.57, $+1.0             ! control bit 0: signal INSIDE
+        LX,  $X7, XPP
+        LX,  $X6, XPQ
+        BE,  $+.32
+! ---- P1: crossing M+, second word protected -----------------------
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), PW0+.60
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I1
+        TI, 1, 6, D1
+        BBZ, 6.0, $+1.0
+! ---- P2: the control, the same M+ into unprotected words ---------
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,8,8), UW0+.60
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I2
+        TI, 1, 6, D2
+        BBZ, 6.0, $+1.0
+! ---- P3: one-word CM into a protected word ------------------------
+        L(BU,8,8), ONE
+        Z, $IND
+        CM0101(BU,8,8), PW1+.8
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I3
+        TI, 1, 6, D3
+        BBZ, 6.0, $+1.0
+! ---- P4: one-word CM with a refill, into a protected word ---------
+        L(BU,8,8), ONE
+        Z, $IND
+        CM0101(V+ICR)(BU,8,8), 0($X7), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I4
+        TI, 1, 6, D4
+        BBZ, 6.0, $+1.0
+        SX,  $X7, X7A                ! X7 not advanced, not refilled
+! ---- P5: crossing CM, second word protected -----------------------
+        L(BU,16,8), HBEEF
+        Z, $IND
+        CM0101(BU,16,8), PW0+.56
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I5
+        TI, 1, 6, D5
+        BBZ, 6.0, $+1.0
+! ---- P6: one-word progressive ST, no refill, protected word -------
+        L(BU,8,8), ONE
+        Z, $IND
+        ST(V+IC)(BU,8,8), 0($X6), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I6
+        TI, 1, 6, D6
+        BBZ, 6.0, $+1.0
+        SX,  $X6, X6A                ! X6 not advanced, not counted
+        BD,  $+.32
+PASS    BEW, $
+
+        SLC, 1500.0
+XPP     XW, PW1+.24, 1, RFW      ! count 1: the refill fires
+RFW     XW, 1234.0, 77, 1500.0
+XPQ     XW, PW1+.40, 5, RFW      ! count 5: no refill
+ONE     DD(BU,64), (16)0100000000000000
+HBEEF   DD(BU,64), (16)BEEF000000000000
+UW0     DD(BU,64), (16)A5A5A5A5A5A5A5AF
+        DD(BU,64), (16)F5A5A5A5A5A5A5A5
+
+        SLC, 1600.0
+PW0     DD(BU,64), (16)A5A5A5A5A5A5A5AF
+PW1     DD(BU,64), (16)F5A5A5A5A5A5A5A5
+PEND    DD(BU,64), 0
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+I4      DD(BU,64), 0
+I5      DD(BU,64), 0
+D1      DD(BU,64), 0
+D2      DD(BU,64), 0
+D3      DD(BU,64), 0
+D4      DD(BU,64), 0
+D5      DD(BU,64), 0
+I6      DD(BU,64), 0
+D6      DD(BU,64), 0
+X7A     DD(BU,64), 0
+X6A     DD(BU,64), 0
+
+        SLC, 1800.0
+TBL     DD, 0
+        SLC, 1819.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START
