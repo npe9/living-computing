@@ -1,0 +1,40 @@
+! INDEX INDICATORS IN PROGRAM ORDER -- reduction of C22-6578 Problem 4.7
+! Method 2's DIAG1/DIAG2 loops (decks/problem_4_7_method2.strap): a
+! progressive VFL instruction counting one index register, then an
+! immediate index instruction counting another, then BZXCZ.  The branch
+! must see the SECOND count's XCZ.  Both instructions set the index
+! result indicators (execute()'s setIndexResultIndicatorsF), the
+! progressive one when its look-ahead level executes, so the V-ICR must
+! not run ahead of that level (StretchIBox's iboxHazard, setsIndexInd).
+!
+! The divide by one (which leaves the accumulator's 255 as it is) keeps
+! the E-box busy, so the ST's level is still pending when the V-ICR is
+! prepared -- the shape of 4.7's loops, where the previous pass's
+! connective is still running.
+!
+! RESULT, hand-derived: $3 counts 4 to 0, so the loop runs four times and
+! stores four bytes of ones into ANS from bit 0; $1, counting 16, never
+! reaches zero.  ANS w0 = 0xFFFFFFFF00000000, w1 = 0.
+!
+! INJECTION, observed 2026-11-16: with the setsIndexInd/anyProgressive
+! line of iboxHazard removed, the loop runs on $1's count -- sixteen
+! passes, ANS w0 = w1 = 0xFFFFFFFFFFFFFFFF, 2099 clocks: FAIL ANS_w0,
+! ANS_w1 and the cycle count, nothing else (ANS_w2 and the PC pass).  With
+! it: all pass, 687 clocks.
+
+        SLC, 1000.0
+START   LX, $1, XWA; LX, $3, XW3
+        LI(BU,8), 255
+LOOP    /(BU,64), ONE                   ! keep the E-box busy: 255 / 1
+        ST(BU,8)(V+IC), 0.8($1)         ! count $1
+        V-ICR, $3, 1                    ! count $3
+        BZXCZ, LOOP                     ! until $3's count is zero
+PASS    BEW, $
+XWA     XW, ANS, 16, $
+XW3     XW, 0, 4, XW3
+ONE     DD(BU,64,8), 1
+        SLC, 1210.0
+ANS     DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        END, START

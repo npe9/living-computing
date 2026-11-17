@@ -95,7 +95,10 @@ as FOUR-BIT digits ("Radix ... as in ADD", p.68; p.58); the full
 seven-bit effective offset goes to the counter in decimal too; Table 3's
 LTRS `v` is read as `x` (Vol. 1 printed p.3-8 gives a 9.6 us full word,
 which only `x` reproduces; the glossary's V = 96/92 does not), and its
-">48 bits" term is not charged.  `docs/spec_decimal.md` Class E had read the decimal
+">48 bits" term is not charged. (SUPERSEDED 2026-11-16 by the per-operation
+merge: LTRS is now charged PDF 123's measured page, 44 clocks binary, 66
+decimal, +16 above 48 bits, and decimal `*`, `*+` and `/` the decimal
+figure, CHOSEN; `vfl_ltrs` re-pinned 974 -> 1214.)  `docs/spec_decimal.md` Class E had read the decimal
 transit register as "a bit pattern either way"; annotated there.  **Open:** what the SAU does with a
 decimal field whose bytes are not digits, here as for every decimal arm;
 whether the BTR/DTR interruption (lower priority than every other, p.68)

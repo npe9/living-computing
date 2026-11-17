@@ -21,7 +21,10 @@ import StretchVFL::*;      // effLength/effByteSize for the VFL time budget
 // 2-cycle preparation of Blosk fig.6 plus table 2's E-box cycles,
 // for VFL the 6-cycle minimum preparation (+1 per indexing op, Perf.
 // Char. p.3-17) plus table 3's SAU equation (1.8 us pre-execution,
-// 0.6 us per byte, 0.6 us termination). The budget covers the
+// 0.6 us per byte, 0.6 us termination) -- REPLACED for VFL and the
+// connectives on 2026-11-16 by the per-operation throughput Perf. Char.
+// Vol. 2's atlas measures (eboxClocks' VflInt and Connective arms say
+// why and cite the page for each number). The budget covers the
 // instruction's own memory waits when memory is free: it is started
 // at dispatch and whatever is left when the semantics complete
 // (execute() and its operand reads) holds the next preparation, so
@@ -179,32 +182,168 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // KMGR(54), D+(66), D+MG(98), F+(82), SHF(114).  4 + 1.
       5;
     tagged VflInt .v: begin
-      // Table 3's SAU byte count is .6(x/y), and Perf. Char. Vol. 1
-      // printed p.3-10 (PDF 28) defines x and y -- NEITHER is the
-      // declared field:
-      //   x   Field length in unsigned operations - field length minus
-      //       the byte size in signed operations
-      //   y   8 in binary operations and byte size in decimal operations
-      // So the SAU runs 8 bits wide in binary mode whatever byte size
-      // the instruction declares, and a signed operation does not pay
-      // for its sign byte.  effLength/effByteSize give the DECLARED
-      // field, which is what readField/writeField need and what timing
-      // must not use -- hence the local x and y rather than a change
-      // to those two functions.  Measured against Vol. 2 printed p.110
-      // (M+, no forwarding, direct addressing, offset 0, instruction at
-      // full word address, NO INDEXING / EXTERNL OPERAND): over its 24
-      // rows this takes mean |error| from 4.02 to 0.28 us and worst-case
-      // from 33.60 to 1.20, changing 10 rows and leaving 14 identical.
-      // The deck suite cannot see it: every one of the 1,106 field specs
-      // in decks is (BU,n,8), where both corrections are the
-      // identity.  The evidence is the Vol. 2 table, not a passing run.
+      // >>> THE E-BOX TIME OF A VFL OPERATION DEPENDS ON THE OPERATION,
+      // 2026-11-16. <<<  It used to be `8 + 2 * bytes` for every one of
+      // them, L and `/` and LCV alike, and Perf. Char. Vol. 2's atlas
+      // (docs/atlas_oracle.md, "Where the model is furthest off" item 1)
+      // measured the result: `/` (BU,64,8) 25 clocks against a printed
+      // 96, LCV 25 against 168.
+      //
+      // WHY THE OLD "0.28 us" AGAINST THE M+ PAGE DID NOT SURVIVE IN
+      // SEQUENCE -- the diagnosis, and it is structural, not a lost
+      // charge.  budgetClocks (`2 * iboxCycles + eboxClocks`, the serial
+      // sum the 0.28 us was computed from) is charged ONLY on the I-box
+      // dispatch path (StretchCore's startExecute / rl_exec_resume's
+      // OwnerIbox arm).  A VFL instruction never takes that path: it is
+      // E-box class and goes through a look-ahead level, where
+      // rl_prepare charges `ibusy = 2 * iboxCycles` (12 clocks) at load
+      // and rl_au_remove charges `ebusy = eboxClocks` at removal, and
+      // the two counters run CONCURRENTLY.  So a homogeneous sequence
+      // runs at max(prep, E-box) and not prep + E-box.  Measured on the
+      // atlas's own M+ page (PDF 117 ni_ext, 48 cases, 2026-11-16): every
+      // row is max(14.02, 8 + 2 * bytes + 1) -- 14 = the 12-clock
+      // preparation plus 2, and +1 = the removal clock (`ebusy` reaches
+      // 0 one clock after the charge runs out: rl_au_remove fires on
+      // `ebusy == 0`, so an E-box time of N occupies N + 1 clocks; the
+      // self-test's L(BU,64,8) measured 24.999 against a charge of 24
+      // before this change, and 27.998 against 27 after it).  The
+      // overlap itself is RIGHT, and the 7030's pages show it: on PDF
+      // 120 L's INDEXING columns equal its NO INDEXING ones from
+      // (BU,32,8) on, i.e. the extra 0.6 us of indexed preparation is
+      // hidden behind the E-box once the E-box is the longer.  What was
+      // wrong is that the E-box charge was too small to be the longer.
+      //
+      // SO EACH NUMBER BELOW IS THE E-BOX OCCUPANCY THE ATLAS MEASURES:
+      // the printed throughput, in clocks, of the page's NO INDEXING /
+      // EXTERNL OPERAND column (no forwarding, direct addressing, offset
+      // 0, full-word instruction address), less the one removal clock.
+      // They are FITS TO PRINTED PAGES, each cited, not mechanisms; where
+      // the time depends on the data (Table 3's z, w, c, s, u, the divide
+      // quotient) the fit is a measurement AT THE ATLAS'S OPERANDS --
+      // the standard operand (444...4)16 in the accumulator, a memory
+      // operand of +1 for divide (PDF 113) -- and says so.  The fit's
+      // residual on PDF 116-142 (6,098 cases, every column) is
+      // tabulated in docs/atlas_oracle.md.
+      //
+      // BYTES.  Table 3's .6(x/y) (Vol. 1 printed p.3-7, PDF 25), with
+      // printed p.3-10's (PDF 28) x and y: x = the field length unsigned,
+      // the field less the byte size signed; y = 8 binary, the byte size
+      // decimal.  Plus ONE byte when signed: Table 3's preamble (printed
+      // p.3-6, PDF 24) "Signed operations can be computed by adding .6
+      // microseconds to the pre-execution time", and the pages agree --
+      // L (B,8,1) 4.80 against (BU,8,8) 4.20 (PDF 120).  A signed field
+      // no longer than its sign byte has x = 0: L (B,1,1) and (D,4,4)
+      // print 4.20, one byte, not two.  (The preamble's list of
+      // operations that pay nothing for a sign is honoured where a page
+      // agrees and overruled where one does not: SRD at offset 0 prints
+      // ST's signed rows cell for cell, PDF 125 against 124.)
       Bit#(7) len_ = effLength(v.a.length);
       Bit#(4) bsz  = effByteSize(v.a.bs);
-      Bit#(8) x = (v.m.unsign == 1 || len_ <= zeroExtend(bsz))
-                    ? zeroExtend(len_)
-                    : zeroExtend(len_) - zeroExtend(bsz);
-      Bit#(8) y = (v.m.decimal == 1) ? zeroExtend(bsz) : 8;
-      Bit#(8) bytes = (x + y - 1) / y;
+      Bool    sgn  = (v.m.unsign == 0);
+      Bool    dec  = (v.m.decimal == 1);
+      Bit#(8) x = !sgn ? zeroExtend(len_)
+                : (len_ > zeroExtend(bsz)) ? zeroExtend(len_) - zeroExtend(bsz) : 0;
+      Bit#(8) y = dec ? zeroExtend(bsz) : 8;
+      Bit#(8) b0 = (x + y - 1) / y;              // data bytes
+      Bit#(16) s = sgn ? 1 : 0;
+      Bit#(16) b = zeroExtend(b0) + s;           // bytes, sign byte included
+      Bit#(16) fl = zeroExtend(len_);
+      Bool fullU = !sgn && len_ == 64;           // a whole unsigned word
+      // Decimal digits of an FL-bit binary field, ceil(FL * log10 2),
+      // as ceil(FL * 77 / 256) -- exact for every FL from 1 to 64.
+      Bit#(16) dig = (fl * 77 + 255) / 256;
+      Bit#(16) e = 0;
+      case (v.code)
+        // L, LWF, +, +MG: 12 + 2 bytes.  PDF 120 (L), 121 (LWF), 116 (+),
+        // 118 (+MG): L (BU,8,8) 4.20 = 14, (BU,64,8) 8.40 = 28, (DU,64,4)
+        // 13.20 = 44.  Table 3 prints 1.8 + .6(x/y) + .6 for all four, a
+        // full word of 7.2 us; the measured full word is 8.40, so the
+        // E-box's fixed part is 3.6 us, not 2.4.  (+'s unsigned decimal
+        // rows sit about one clock higher and its binary rows from 8 bits
+        // on about half a clock; the signed decimal rows are exact.  Not
+        // charged.)
+        6'b000101, 6'b100101, 6'b000001, 6'b100001: e = 12 + 2 * b;
+        // M+, M+MG, ST, SRD -- the STORING operations.  "All VFL stores
+        // are fetch-and-stores" (Vol. 1 printed p.2-3, PDF 10, item 6).
+        // PDF 117 (M+), 119 (M+MG), 124 (ST), 125 (SRD, offset 0) print
+        // the same column: 22.1 clocks at one or two bytes (6.63 / 6.93
+        // us), then 18 + 2 bytes (ST (DU,32,4) 10.21 = 34.0), less 2
+        // for a whole unsigned 64-bit field (ST (BU,64,8) 9.61 = 32.0
+        // against 34) -- a FIT: K, which stores nothing, shows the same
+        // -2, and the signed (D,64,4) does not.  SRD's rounding
+        // pre-execution is added below as before.
+        6'b001001, 6'b101001, 6'b001101, 6'b101101:
+          e = ((b < 3) ? 21 + b : 18 + 2 * b) - (fullU ? 2 : 0);
+        // M+1: flat.  PDF 126: 6.33 us = 21.1 at every unsigned field,
+        // 6.63 = 22.1 signed beyond the sign byte.  Table 3's .6(c + 1)
+        // counts carries, and +1 into 444...4 carries out of no byte.
+        6'b101011: e = (sgn && len_ > zeroExtend(bsz)) ? 22 : 21;
+        // K, KE, KR: 10 + 2 bytes, 8 + 2 for a whole unsigned word.
+        // PDF 127-129: K (BU,32,8) 5.40 = 18, (BU,64,8) 7.20 = 24.  A
+        // FIT, one byte over KF: it is not Table 3's w/r term, which
+        // against the 64-bit standard operand would be seven bytes at
+        // (BU,8,8) and is flat one on the page.
+        6'b010001, 6'b010011, 6'b010101: e = 10 + 2 * b - (fullU ? 2 : 0);
+        // KF, KFE, KFR: 8 + 2 bytes -- Table 3's own equation exactly,
+        // 1.8 + .6(x/y) + .6.  PDF 130-132: KF (BU,64,8) 7.20 = 24.
+        6'b110001, 6'b110011, 6'b110101: e = 8 + 2 * b;
+        // *: 36 clocks, +2 signed, +2 at 64 bits.  PDF 133: (BU,8,8)
+        // 10.80, (B,8,1) 11.40, (BU,64,8) 11.40, (B,64,1) 12.01.  Table 3:
+        // 6.0 + 3.9 + .6 = 10.5 us, 35 clocks.
+        6'b011001: e = 36 + 2 * s + ((len_ == 64) ? 2 : 0);
+        // /: 66 + 4 bytes, +44 signed.  PDF 134: (BU,16,8) 22.21 = 74,
+        // (BU,32,8) 24.61 = 82, (B,8,1) 35.42 = 118, (B,16,1) 36.61 = 122.
+        // A MEASUREMENT AT ONE DIVIDEND AND A DIVISOR OF ONE: the page
+        // says so, and PDF 41 says "The present measurements for /, D/
+        // and R/ do not give a realistic timing".  Table 3's Q (printed
+        // p.3-9) is the data-dependent law; this is not it.  The divide
+        // box's own clocks are INSIDE this figure (rl_exec_resume
+        // subtracts boxClocks from it).
+        6'b011101: e = 66 + 4 * b + 44 * s;
+        // *+: PDF 135.  46 clocks (13.80 us) while the field is at most
+        // a byte (unsigned) or shorter than one (signed: (B,1,1) 14.41 =
+        // 48), else max(60, 50 + 2 ceil(x/8)) -- (BU,16,8) 18.01 = 60,
+        // (BU,64,8) 19.81 = 66.  Table 3: 7.8 + (3.0 + Add) + .6.
+        6'b111001: e = (len_ < 8 || (!sgn && len_ == 8)) ? 46 + 2 * s
+                   : max(60, 50 + 2 * zeroExtend((x + 7) / 8));
+        // LFT, LTRS: 44 binary, 66 decimal, +16 above 48 bits.  PDF 122
+        // and 123 print the same page: (BU,8,8) 13.20 = 44, (DU,8,4)
+        // 19.81 = 66, (DU,64,4) 24.60 = 82.  Table 3 (printed p.3-8):
+        // 2.4 + .6(v/y + 3) + .6, v = 96 binary, 92 decimal, "if the
+        // effective FL is greater than 48 bits, add .6(t/8 - 1)" -- 40
+        // and 62 clocks, 4 under the pages.
+        6'b001011, 6'b111101: e = (dec ? 66 : 44) + ((len_ > 48) ? 16 : 0);
+        // LCV.  Binary to decimal, PDF 136: 18 + 2 FL + 2 ceil(u/8), u
+        // the decimal result of ceil(FL log10 2) digits -- Table 3's B-D
+        // LCV, 2.4 + .6(x + u/8 + 1) + .6 (printed p.3-8), plus 6 clocks:
+        // (BU,8,8) 11.40 = 38, (BU,48,8) 39.02 = 130.  Decimal to binary:
+        // 76 + 3 digits, 74 + 3 digits signed -- (DU,32,4) 30.01 = 100,
+        // (D,32,4) 28.21 = 94; Table 3's D-B LCV (14.7 us at a full
+        // word) is far below every row of the page.
+        6'b000011: e = dec ? (sgn ? 74 : 76) + 3 * zeroExtend(b0)
+                       : 18 + 2 * fl + 2 * ((dig + 1) / 2);
+        // LTRCV.  Binary to decimal, PDF 137: 22 + 2 FL, plus Table 3's
+        // ".6(FLc/8 - 1)" once the converted field passes 48 bits --
+        // Table 3's B-D LTRCV, 2.4 + .6(x + 3) + .6, plus 6 clocks:
+        // (BU,32,8) 25.81 = 86, (BU,48,8) 39.62 = 132, (BU,64,8) 51.02 =
+        // 170.  Decimal to binary: flat 102 (30.61 us), 118 above 48
+        // bits (35.41).
+        6'b100011: e = dec ? ((len_ > 48) ? 118 : 102)
+                       : 22 + 2 * fl + ((4 * dig > 48) ? 2 * ((4 * dig + 7) / 8 - 1) : 0);
+        // CV and DCV, PDF 138 and 139: flat in the field, because the
+        // operand is the accumulator -- "for convert (CV) and convert
+        // double (DCV) the accumulator was originally +1 at offset 20"
+        // (PDF 113).  CV 6.00 us = 20 binary, 22.14 = 73.8 decimal; DCV
+        // 6.00 = 20 binary, 5.40 = 18 decimal, at every row.  FITTED TO
+        // THE PAGE AND NOT MEASURABLE BY THE ORACLE (atlas_oracle.py has
+        // no CV/DCV generator), and a measurement at that one
+        // accumulator: Table 3's s is "the accumulator field specified by
+        // the offset minus all leading zeros" (printed p.3-9, p.3-10).
+        6'b011011: e = dec ? 74 : 20;
+        6'b111011: e = dec ? 18 : 20;
+        // Anything else (no other code is a VflInt operation): L's law.
+        default: e = 12 + 2 * b;
+      endcase
       // SRD (VFL STORE ROUNDED, code 101101).  Table 3 (Vol. 1 printed
       // p.3-7, PDF 25, read in the image) gives it ST's execution and
       // termination, .6(x/y) and .6, and a pre-execution time of 3.0 us
@@ -225,22 +364,21 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // (decimal) is charged too, like every refused operation here.
       // Pinned by decks/vfl_srd.strap's CYCLES check (header).
       Bit#(16) srdRound = (v.code == 6'b101101 && v.a.offset != 0) ? 4 : 0;
-      // LOAD TRANSIT AND SET, and decimal *, *+, / (which are its action,
-      // Reference Manual printed pp.68-70).  Table 3 (Vol. 1 printed p.3-8,
-      // PDF 26, read in the image): pre-execution 2.4 us, execution
-      // .6(v/y + 3), termination .6, Full Word Total 9.6 us -- 8 + (2*v/y
-      // + 6) + 2 clocks.  CHOSEN: v read as x.  The glossary (printed
-      // p.3-10, PDF 28) defines V as "96 in binary - 92 in decimal", which
-      // gives 12.0 us at a 64-bit binary field, not the printed 9.6; x/y = 8
-      // (a 64-bit unsigned binary field) gives 9.6 exactly.  The comment
-      // "If the effective FL is greater than 48 bits, add .6(t/8 - 1)" is
-      // NOT charged: at FL 64 it too would contradict the 9.6.
-      Bool ltrsAction = (v.code == 6'b111101)
-                     || (v.m.decimal == 1 && (v.code == 6'b011001
-                                           || v.code == 6'b111001
-                                           || v.code == 6'b011101));
-      return ltrsAction ? 16 + 2 * zeroExtend(bytes)
-                        : 8 + 2 * zeroExtend(bytes) + srdRound;
+      // DECIMAL *, *+ AND / ARE LTRS'S ACTION (Reference Manual printed
+      // pp.68-70; batch10's mkDecBox), and are charged as LTRS -- now
+      // PDF 123's measured decimal LTRS figure, 66 clocks (19.81 us), 82
+      // above 48 bits (24.60), rather than Table 3's formula (printed
+      // p.3-8), which batch10 charged as 16 + 2 bytes and which sits 4
+      // clocks under the page at its own full word.  CHOSEN for the three
+      // arithmetic codes: their own pages (PDF 133 *, 134 /, 135 *+)
+      // print binary rows only, so no measurement of decimal * / *+
+      // exists; LTRS's is the nearest.
+      Bool decLtrsAction = dec && (v.code == 6'b011001 || v.code == 6'b111001
+                                   || v.code == 6'b011101);
+      if (decLtrsAction) e = 66 + ((len_ > 48) ? 16 : 0);
+      // Less the removal clock (see above): the atlas figure is the
+      // occupancy, and rl_au_remove adds the one clock itself.
+      return e - 1 + srdRound;
     end
     // NOT GIVEN THE SAME TREATMENT, deliberately.  The connectives have
     // no VflMod -- no sign and no radix bit -- so p.3-10's x and y have
@@ -283,17 +421,46 @@ function Bit#(16) eboxClocks(DecodedInstr d);
     //    sixteen-byte time.  It is the 35th row, the one that did not
     //    fit the law, and it is why the law holds on the other 34.
     //
-    // NOT APPLIED TO VflInt ABOVE, deliberately: that arm's constant
-    // was itself measured, against Vol. 2 printed p.110's M+ page, to
-    // a mean error of 0.28 us.  Two instruction classes, two
-    // measurements, and they disagree about the constant -- which is
-    // what a measurement is for.
+    // (THE TWO CLASSES AGREE NOW.  This paragraph used to say the VflInt
+    // arm's constant had been measured against the M+ page "to a mean
+    // error of 0.28 us" and so disagreed with this one; that figure was
+    // the serial budget, not a measurement, and in sequence the M+ page
+    // sat 7-11 clocks low.  Measured in sequence, L and C0011 have the
+    // same law, 12 + 2 * bytes: PDF 120 against PDF 140.)
+    //
+    // POINT 1 ABOVE IS SUPERSEDED IN ITS CONCLUSION, 2026-11-16: the
+    // constant is not "overlapped with the I-box preparation" in
+    // sequence; it is the E-box's.  Point 1 was right that the SERIAL
+    // budget carried 2.40 us too much.
     tagged Connective .c: begin
       Bit#(7) len_ = effLength(c.a.length);
       Bit#(4) bsz  = effByteSize(c.a.bs);
       Bit#(8) raw  = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
       Bit#(8) bytes = (raw > 16) ? 16 : raw;
-      return 2 * zeroExtend(bytes);
+      Bit#(16) cb  = zeroExtend(raw);     // CM: no cap (below)
+      Bit#(16) cap = zeroExtend(bytes);
+      // >>> 2026-11-16: THE PAGE'S LAW IS NOW THE E-BOX TIME, AND CT AND
+      // CM HAVE THEIR OWN. <<<  `2 * bytes` relied on the 12-clock
+      // preparation being charged IN SERIES with it, and on the look-
+      // ahead path it is not (the VflInt arm above has the diagnosis):
+      // C0011 measured max(14, 2 * bytes + 1) in sequence, mean -6.90
+      // clocks against PDF 140.  So the whole measured time is the
+      // E-box's, less rl_au_remove's removal clock:
+      //   C   (PDF 140)  12 + 2 * bytes, sixteen-byte cap -- the law above.
+      //   CT  (PDF 142)  8 + 2 * bytes, cap 16, never under 12: (BU,64,8)
+      //                  7.20 us = 24, (BU,16,1) 12.00 = 40, (BU,8,8) 3.61
+      //                  = 12.  The test-only connective, K's shape.
+      //   CM  (PDF 141)  16 + 2 * bytes with NO cap -- (BU,32,1) 24.01 us =
+      //                  80, thirty-two bytes -- and 20 + bytes below four
+      //                  bytes ((BU,8,8) 6.33 = 21.1, (BU,8,4) 6.63 =
+      //                  22.1).  The storing connective: "All VFL stores
+      //                  are fetch-and-stores" (Vol. 1 printed p.2-3).
+      // Other suffixes (the immediate forms) have no transcribed page and
+      // are charged as C.
+      Bit#(16) e = (c.suffix == conn_CM) ? ((cb < 4) ? 20 + cb : 16 + 2 * cb)
+                 : (c.suffix == conn_CT) ? max(12, 8 + 2 * cap)
+                 : 12 + 2 * cap;
+      return e - 1;
     end
     default: return 0;
   endcase
