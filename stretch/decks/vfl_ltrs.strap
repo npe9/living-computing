@@ -105,6 +105,10 @@
 !    charged 36 for PDF 123's 44: only CYCLES fails, 1143 for 1214, 71
 !    fewer.  Every other check passes.
 !
+! CYCLES 1214 -> 1206, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 1214 again;
+! no value moved.
         SLC, 1000.0
 START   L(BU,64), ACCV
         LVI, $3, 0.96

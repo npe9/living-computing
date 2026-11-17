@@ -1588,7 +1588,11 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 # atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
 # CYCLES pins that the index write does NOT wait: 2721 with the stall of
 # 3204601 (levelIndexedBy), 2407 with the level carrying the I-box's indexing.
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2864+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+# CYCLES 2864 -> 2854, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 2864 again,
+# every value check unchanged.
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2854+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
 # The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
 # instruction behind a pending level storing into its index word.  Injections
 # in the deck's header.
@@ -2520,9 +2524,13 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # and the deck runs that loop.  MEASURED 2026-11-11, vflSecondIndex made
 # to return the instruction unchanged: x3 fails (0, the zero origin the
 # loader saw), x2, cycles and PC pass.
+# CYCLES 447 -> 420, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 447 again,
+# every value check unchanged.
 run "THE SECOND INDEX modifies a VFL offset: MCP's octal conversion (RefMan p.21)" ./run_program.sh ../decks/vfl_second_index.strap StretchVflSecondIdxTb \
     "PC=395" \
-    "CYCLES=447+-0" \
+    "CYCLES=420+-0" \
     "x3:19=2898558941422157824" \
     "x2:18=1512927999819776"
 
@@ -2695,7 +2703,11 @@ run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offs
 # page, PDF 123 (44 binary, 66 decimal, +16 above 48 bits), and decimal *,
 # *+, / that page's decimal figure (CHOSEN: PDF 133-135 print binary rows
 # only).  Every result check unchanged.  INJECTIONS: in the deck's header.
-run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=1214+-0 \
+# CYCLES 1214 -> 1206, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 1214 again,
+# every value check unchanged.
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=1206+-0 \
     "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
     "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
     "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
@@ -2723,7 +2735,11 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
 #                                                         D6_left/right, D8_right
 #   B-D sign without the sign modifier (acc.sign)       -> D7_sign_byte, D7_ind
 #   D-B field cut to 15 digits                          -> D5_left/right, D5_ind_PF
-run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1049+-0 \
+# CYCLES 1049 -> 1027, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 1049 again,
+# every value check unchanged.
+run "DCV both radices; RefMan Figure 19 end to end (printed p.74, G2.3)" ./run_program.sh ../decks/vfl_dcv.strap StretchVflDcvTb PC=2084 CYCLES=1027+-0 \
     "F19_store:2000=0x0070001861422000" \
     "F19_acc_left:2200=0" \
     "F19_acc_right:2201=0x7006652" \
@@ -4403,7 +4419,11 @@ run "VFL time by operation: L, M+, K, *, / at (BU,64,8) (Perf. Char. Vol. 2 atla
 # per-operation.  INJECTION, observed (before setsIndexInd existed, so
 # with neither wait): the run halts at 214 clocks with ANS_w0 = 0x...DF20 and ANS_w1..w4 = 0
 # (five FAILs and the cycle count); with it, 889.
-run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=889+-0" \
+# CYCLES 889 -> 861, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 889 again,
+# every value check unchanged.
+run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ" ./run_program.sh ../decks/vfl_pack_cross.strap StretchVflPackCrossTb "PC=2007" "CYCLES=861+-0" \
     "ANS_w0:1210=0xB07F0B12F1B2DF2B" "ANS_w1:1211=0x30F3B49F4B5FF5B6" "ANS_w2:1212=0x4F6B7BF7B81F8B9E" \
     "ANS_w3:1213=0xF9BA6FABB3FBBCCF" "ANS_w4:1214=0xCBD8FDBE5FEBFAFF"
 
@@ -4416,9 +4436,48 @@ run "VFL pack loop across words: BZXCZ after a progressive ST waits for its XCZ"
 # drains the levels between the stores).  INJECTION, observed: without
 # the storeCross term W1 = 0x0001800000000000 and nothing else fails.
 # CYCLES 262 is a model pin (the same with and without the fix).
-run "VFL crossing store: a level fetching its second word waits for it" ./run_program.sh ../decks/vfl_store_cross_fetch.strap StretchVflStoreCrossFetchTb "PC=2019" "CYCLES=262+-0" \
+# CYCLES 262 -> 259, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 262 again,
+# every value check unchanged.
+run "VFL crossing store: a level fetching its second word waits for it" ./run_program.sh ../decks/vfl_store_cross_fetch.strap StretchVflStoreCrossFetchTb "PC=2019" "CYCLES=259+-0" \
     "W0:1101=0x0000000000000003" "W1_second_word:1102=0xFFE1800000000000" \
     "W2_control:1103=0x0000000000000003" "W3_control:1104=0xFFE1800000000000"
+
+# THE PREPARATION FLOOR (2026-11-17, StretchCore's `ib` and rl_prepare's
+# level load; StretchTiming's fpIboxCheckClocks).  A decode of N clocks
+# took N + 2: the removal clock stopped `ibusy`, and the load clock came on
+# top.  Sixteen KI(BU,24) (12-clock VFL decode, Vol. 1 printed p.3-18;
+# PDF 177 prints 12) and eight FP L from $X9 (4-clock FP decode, p.3-17,
+# + the I-Checker's 0.6 us, p.3-19; PDF 64 prints 6).  INJECTIONS,
+# observed: no `ibusy <= ib` in rl_au_remove 374; no "- 1" at the load
+# 374; fpIboxCheckClocks = 0 335; nothing else fails.  CYCLES 349 is the
+# model as of the change.
+run "The preparation floor: a 12-clock decode takes 12 (KI) and an FP I-box operand 6 (L from \$X9)" ./run_program.sh ../decks/prep_floor.strap StretchPrepFloorTb ASM=strap2 "PC=2093" "CYCLES=349+-0" \
+    "RES:1153=0x28000000000000"
+
+# AN FP INTERNAL OPERAND WAITS FOR THE E-BOX AND TAKES THE STORE PATH
+# (2026-11-17, StretchCore's headReady intWait; StretchTiming's
+# fpInternalOperandClocks = the I-Checker + laarStorePost's $R remainder).
+# Vol. 1 printed p.3-20: the internal operand "is not available during the
+# decoding stage".  Eight L(U) from $R, eight from memory.  INJECTION,
+# observed: intWait forced False 181, nothing else fails; prep_floor's 349
+# does not move under it.  CYCLES 208 is the model as of the change.
+# STORE CLOSE TO FETCH FOR AN INSTRUCTION WORD (2026-11-17, rl_prepare's
+# instrStored; Perf. Char. Vol. 1 printed p.3-21).  An instruction whose
+# word a pending level stores into is not prepared until the store is
+# made and 1Y/2Y have dropped the word.  Latent before this change (the
+# base model, 2cee08a, fails case 1: W0 = 0x29cbb8); exposed in the suite
+# when the preparation floor was fixed, by the 7030 TABMAN (call 24 ADDORD
+# 3 11, TBEN4's own length) and C22-6578 Problem 2.9 ("ST(BU,4),SV+0.19").
+# INJECTIONS, observed: the gate removed -> FAIL W0 = 0x29cbb8, W1 passes;
+# the gate without its recentStore() term -> the same.  CYCLES 244 is the
+# model as of the change.
+run "Store into an instruction a pending level will store: not prepared until the store is made (printed p.3-21)" ./run_program.sh ../decks/store_into_prepared_instr.strap StretchStoreIntoInstrTb ASM=strap2 "PC=2021" "CYCLES=244+-0" \
+    "W0:1101=0x29CBB8FFFFFFFFFF" "W1_control:1102=0x29CBB8FFFFFFFFFF"
+
+run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
+    "RES:1153=0x28000000000000"
 
 # AN INDEX INSTRUCTION DOES NOT OVERTAKE A PENDING PROGRESSIVE LEVEL
 # (2026-11-16, iboxHazard's setsIndexInd).  Both set the index
@@ -4427,7 +4486,11 @@ run "VFL crossing store: a level fetching its second word waits for it" ./run_pr
 # which lost its matrix to it under the per-operation VFL times.
 # INJECTION, observed: without the line, sixteen passes on $1's count,
 # ANS_w0 and ANS_w1 all ones, 2099 clocks; with it, 687.  Deck header.
-run "Index indicators in program order: V-ICR after a pending progressive ST" ./run_program.sh ../decks/vfl_index_ind_order.strap StretchVflIndexIndOrderTb "PC=2010" "CYCLES=687+-0" \
+# CYCLES 687 -> 685, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 687 again,
+# every value check unchanged.
+run "Index indicators in program order: V-ICR after a pending progressive ST" ./run_program.sh ../decks/vfl_index_ind_order.strap StretchVflIndexIndOrderTb "PC=2010" "CYCLES=685+-0" \
     "ANS_w0:1210=0xFFFFFFFF00000000" "ANS_w1:1211=0" "ANS_w2:1212=0"
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
@@ -4458,9 +4521,13 @@ run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ..
 # INJECTION (measured): change RCAD's SYN from 0.16 to 0.8 and the
 # loop clears the MACH CONF bytes instead, failing req_word0 at word
 # 1030 with 0x1000301100311200.
+# CYCLES 421 -> 405, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 421 again,
+# every value check unchanged.
 run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
     "PC=2053" \
-    "CYCLES=421+-0" \
+    "CYCLES=405+-0" \
     "clear_word0:1029=0x1000301100311200" \
     "clear_word1:1030=0x3213003314003415" \
     "clear_word2:1031=0x0035160036170037"
@@ -13888,7 +13955,11 @@ run "C22-6578 Problem 1.8 -- RNX simulated" ./run_program.sh ../decks/problem_1_
 #   range < 16 instead of < 32          -> step cap: blocks 2-5 all fail, PC 2014
 #   old XJ stored at the NEW name       -> old_name, b5_old_holds_x0
 #   same-word case reads the stale word -> b4_x6_same only
-run "RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0 (printed p.27)" ./run_program.sh ../decks/rnx.strap StretchRnxTb PC=2034 CYCLES=585+-0 \
+# CYCLES 585 -> 578, 2026-11-17: THE PREPARATION FLOOR (StretchCore's `ib` and
+# rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
+# item 7).  MEASURED with that mechanism removed (both halves): 585 again,
+# every value check unchanged.
+run "RNX executed: Problem 1.8's words, the 0-31 no-op, same word, J = 0 (printed p.27)" ./run_program.sh ../decks/rnx.strap StretchRnxTb PC=2034 CYCLES=578+-0 \
     "old_name:1105=0x00014000002C04D2" "p1_x0:1250=0x0000C000001C0454" "p1_x1:1251=0x00024000004C11D7" \
     "p1_x2:1252=0x0001C00000340929" "p1_x3:1253=0x0000800000440D80" \
     "b2_x4_kept:1254=0x1000000140514" "b2_x0_kept:1255=0x4000000c0014" "b2_word_kept:1202=0x18000001c0515" \

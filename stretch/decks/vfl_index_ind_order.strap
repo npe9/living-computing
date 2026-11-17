@@ -21,6 +21,10 @@
 ! passes, ANS w0 = w1 = 0xFFFFFFFFFFFFFFFF, 2099 clocks: FAIL ANS_w0,
 ! ANS_w1 and the cycle count, nothing else (ANS_w2 and the PC pass).  With
 ! it: all pass, 687 clocks.
+! CYCLES 687 -> 685, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 687 again;
+! no value moved.
 
         SLC, 1000.0
 START   LX, $1, XWA; LX, $3, XW3

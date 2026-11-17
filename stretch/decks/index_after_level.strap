@@ -76,6 +76,10 @@
 ! so the old release came that E-box time early.
 ! The SV and ST into $X3 of its cases.  MEASURED: with that hold removed
 ! (and nothing else) the deck runs in 2828 clocks again.
+! CYCLES 2864 -> 2854, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 2864 again;
+! no value moved.
         SLC, (8)2000.0
 START   NOP
 ! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)

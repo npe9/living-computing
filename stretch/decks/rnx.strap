@@ -39,6 +39,10 @@
 !   hangs on BZAD,$ if it did not.
 !
 ! INJECTIONS, measured (tests/run_tests.sh "RNX" line):  see there.
+! CYCLES 585 -> 578, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 585 again;
+! no value moved.
 
         SLC, 1000.0
 START   LX, $0, X0INIT

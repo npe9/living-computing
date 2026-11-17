@@ -1,0 +1,73 @@
+! fp_internal_operand.strap -- AN FP OPERAND IN AN INTERNAL REGISTER
+! ($R) WAITS FOR THE E-BOX AND THEN TAKES THE STORE PATH.  Built
+! 2026-11-17 with StretchCore's headReady (intWait) and StretchTiming's
+! fpInternalOperandClocks (docs/atlas_oracle.md, "Closing the residuals"
+! item 8).
+!
+! THE SOURCE.  Perf. Char. Vol. 1 printed p.3-20 (PDF 38): "The I-box,
+! upon decoding an instruction whose fetch operand is an internal
+! register, uses the LAAR to store the internal operand address. This is
+! because the needed operand is not available during the decoding stage,
+! and the mechanism for internal operand fetch already exists for the
+! handling of store instructions."  "(By an internal operand address is
+! meant address 3, or an address between 5 and 12 inclusive.)"  The
+! atlas prints L from $R at 10 clocks a copy and from memory, forwarded,
+! at 8 (PDF 95).
+!
+! THE BODY.  $R gets the FP one by a one-word TI (a load clears $R), as
+! the atlas's generator sets it; then eight L(U) from $R, then eight from
+! memory (the external control inside the deck: the wait does not apply
+! to them).  RES gets the one.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).  The single
+! injections below were run before the M+ index-store and instruction-
+! store changes of the same day; both leave this deck's CYCLES where it
+! was (re-measured on the final tree), and with the whole preparation
+! floor removed (`ib` and the "- 1" together) prep_floor runs in 399,
+! fp_internal_operand in 205.
+!   the model as of this deck .......................... 208
+!   OBSERVED INJECTION, reverted from a saved copy checked with cmp:
+!   - intWait forced False (the operand free as soon as the level
+!     before it is removed) ............................... FAIL cycles 181
+!   Nothing else failed (PC and RES pass).  208 - 181 = 27 over eight
+!   copies: the wait is 7 clocks a copy, partly hidden behind the 4-clock
+!   decode of the next L.
+! The control is decks/prep_floor.strap, which has no internal operand
+! and whose CYCLES (349) did not move under this injection.
+! prep_floor's injections, run on this deck too: rl_au_remove without
+! `ibusy <= ib` and fpIboxCheckClocks = 0 leave it at 208 (it is E-box
+! and wait bound, and it has no $X operand); rl_prepare's load without
+! the "- 1" gives 205, three clocks FASTER -- observed, not explained
+! here; the later decode shifts when the internal level reaches the
+! head relative to the E-box.
+
+        SLC, (8)2000.0
+
+START   L(U), FONE
+        TI, 1, FONE, 9.0           ! $R = the FP one
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), $R
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        L(U), FONE
+        ST(U), RES
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+FONE    DD(BU,64,8), (16)0028000000000000
+RES     DD(BU,64,8), 0
+
+        END, START

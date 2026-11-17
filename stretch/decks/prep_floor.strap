@@ -1,0 +1,78 @@
+! prep_floor.strap -- THE PREPARATION FLOOR: a decode the I-box can do
+! in 12 clocks takes 12, not 14.  Built 2026-11-17 with StretchCore's `ib`
+! and rl_prepare's level load (docs/atlas_oracle.md, "Closing the
+! residuals" item 7).
+!
+! THE SOURCES.  Perf. Char. Vol. 1 printed p.3-18 (PDF 36): "VFL
+! instruction decoding ... The minimum time is 3.6 us which includes the
+! loading of two LA levels" -- 12 clocks.  Printed p.3-17: "For a
+! sequence of floating point instructions the decoding rate is one
+! instruction per 1.2 us" -- 4 clocks.  Printed p.3-19: the I-Checker
+! "processes information in 0.6 us and is used for ... 2. I-box data
+! error check", for an FP operand in index storage, 2 more.  The atlas
+! (Vol. 2) prints the immediate compares at 12 clocks for every field
+! up to 32 bits (PDF 177-182), and L from $X9 at 6.0 (PDF 64, I-BOX).
+!
+! THE BODY.  Sixteen KI(BU,24) (E-box 10 + 1 clocks, under the 12-clock
+! decode, so the decode sets the pace) and eight L(U) from $X9 (E-box 3 +
+! 1, under the 4 + 2 decode).  RES gets the FP one L loaded.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).  The single
+! injections below were run before the M+ index-store and instruction-
+! store changes of the same day; both leave this deck's CYCLES where it
+! was (re-measured on the final tree), and with the whole preparation
+! floor removed (`ib` and the "- 1" together) prep_floor runs in 399,
+! fp_internal_operand in 205.
+!   the model as of this deck .......................... 349
+!   OBSERVED INJECTIONS, each alone, each reverted from a saved copy
+!   checked with cmp:
+!   - rl_au_remove without `ibusy <= ib` (the removal clock stops the
+!     I-box's clock again) ................................ FAIL cycles 374
+!   - rl_prepare's load without the "- 1" (the load clock on top of
+!     the decode) ......................................... FAIL cycles 374
+!   - fpIboxCheckClocks returning 0 ....................... FAIL cycles 335
+!   - intWait forced False (fp_internal_operand's mechanism) PASS, 349
+!   Nothing else failed in any of them (PC and RES pass).  374 - 349 =
+!   25 clocks over the 24 decode-bound copies and the closing ST.
+! The control is decks/fp_internal_operand.strap: under the first and
+! third injections its CYCLES (208) did not move; under the second it
+! moved to 205 (see its header).
+
+        SLC, (8)2000.0
+
+START   L(BU,64,8), FONE           ! the FP one, as a VFL word
+        ST(BU,64,8), $X9           ! into $X9's word in index storage
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        KI(BU,24), 5
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        L(U), $X9
+        ST(U), RES
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+FONE    DD(BU,64,8), (16)0028000000000000
+RES     DD(BU,64,8), 0
+
+        END, START

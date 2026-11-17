@@ -37,6 +37,10 @@
 ! term. FAIL W1 = 0x0001800000000000 (the TABMAN symptom), and nothing
 ! else: W0, W2, W3 and the PC pass. The cycle count is in the run line.
 !
+! CYCLES 262 -> 259, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 262 again;
+! no value moved.
         SLC, 1000.0
 START   LTRS(BU,64,8), SLOW
         LI(BU,13), 8191

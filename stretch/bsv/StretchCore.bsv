@@ -217,6 +217,11 @@ module mkStretchCore(StretchCore);
   // (printed p.3-21).
   Reg#(Bit#(32)) laarFreeAt   <- mkReg(0);
   Reg#(Bit#(32)) xstoreFreeAt <- mkReg(0);
+  // THE CLOCK THE E-BOX FINISHES ITS CURRENT INSTRUCTION: the removal
+  // clock + the charge + 1 (an E-box time of N occupies N + 1 clocks,
+  // StretchTiming's removal-clock note).  Read by headReady for an FP
+  // level whose operand is an internal register (fpInternalFetch).
+  Reg#(Bit#(32)) eboxDoneAt   <- mkReg(0);
 
   // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
   // conversion order, step 3): only a W-direction (memory->device)
@@ -366,8 +371,16 @@ module mkStretchCore(StretchCore);
     action
       if (h.storeAddr matches tagged Valid .sa) begin
         Bool fp = isFpInstr(h.di);
+        // The fitted store path: for a store that fetched nothing (ST,
+        // SRD, SLO, SRT), and -- 2026-11-17 -- for ANY FP store into index
+        // storage.  "A store into index storage is a time-consuming
+        // operation" (printed p.3-21) is said of the destination, not of
+        // the operation, so M+ and M+MG into $X9-$X12 take it too.  Their
+        // memory and internal stores still do not: PDF 69 prints M+ to
+        // memory BELOW ST (StretchTiming's laarStorePost note).
+        Bool indexDest = (sa >= 16 && sa <= 31);
         Bit#(32) t = clk + zeroExtend(e) + 1 + fromInteger(laarCheckClocks)
-                   + ((fp && !isValid(h.da)) ? zeroExtend(laarStorePost(sa)) : 0);
+                   + ((fp && (!isValid(h.da) || indexDest)) ? zeroExtend(laarStorePost(sa)) : 0);
         if (fp) laarFreeAt <= t;
         if (storeWaitWord(sa)) xstoreFreeAt <= t;
       end
@@ -441,6 +454,30 @@ module mkStretchCore(StretchCore);
   // every arm that does not set it; every other register is read in its
   // pre-clock state by every rule, as before.
   Bit#(16) eb = (ebusy != 0) ? ebusy - 1 : 0;   // E-box busy time, counting down
+  // >>> THE I-BOX'S PREPARATION TIME RUNS WHILE THE E-BOX WORKS,
+  // 2026-11-17. <<<  `ibusy` used to count down only in rl_prepare's own
+  // `ibusy != 0` arm.  The arms are mutually exclusive, so every clock
+  // in which the E-box side took the decision -- rl_au_remove removing
+  // a level, rl_exec_resume finishing a level's operand read,
+  // rl_idx_write writing a progressive level's index -- stopped the
+  // I-box's clock as well.  On a homogeneous stream that is one clock
+  // per instruction, the removal of the level just prepared: a VFL
+  // decode of 3.6 us (iboxCycles 6, 12 clocks) measured 14 clocks a
+  // copy (docs/atlas_oracle.md, "Closing the residuals" items 4 and 7),
+  // where the immediate compares of PDF 177-182 print 12.  The I-box
+  // and the E-box are separate units (Vol. 1 printed p.3-17: the I-box
+  // decodes ahead "while" the E-box executes), so the preparation time
+  // now counts down in those three arms too, as `ebusy` counts down in
+  // every arm.
+  //
+  // NOT in rl_io, rl_xmit or rl_tail_write, deliberately.  A transfer or
+  // a multi-word transmit holds the storage port and is the instruction
+  // still in progress (a transmit's per-word time is its own, Blosk
+  // fig.9), so letting its budget run under the drain would shorten T,
+  // which is already ~30 clocks short (atlas_oracle.md "Where the model
+  // is furthest off" item 2).  rl_tail_write is the crossing-store path
+  // (WB XOVR), left as it was.  rl_recover sets its own.
+  Bit#(16) ib = (ibusy != 0) ? ibusy - 1 : 0;   // I-box preparation time, counting down
 
   Bool armRecover  = isValid(recover);
   Bool armIo       = !armRecover && isValid(ioPending);
@@ -529,7 +566,28 @@ module mkStretchCore(StretchCore);
   // (tests/check_strap2_7030_tabman.py, found by a memory trace).  A
   // held I-box instruction also cannot share the box with a level that
   // needs an operand: start() would overwrite `held`.
-  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy()
+  // >>> AN FP INTERNAL OPERAND IS THE E-BOX'S RESULT, FETCHED AND
+  // CHECKED THROUGH THE STORE MECHANISM, 2026-11-17. <<<  Perf. Char.
+  // Vol. 1 printed p.3-20 (PDF 38, read in the page image): "The I-box,
+  // upon decoding an instruction whose fetch operand is an internal
+  // register, uses the LAAR to store the internal operand address. This
+  // is because the needed operand is not available during the decoding
+  // stage, and the mechanism for internal operand fetch already exists
+  // for the handling of store instructions."  So the operand is there
+  // only when the instruction before it has finished in the E-box, and
+  // it then takes the store path: checked by the I-Checker (0.6 us,
+  // printed p.3-19 items 4 and 8) and moved as a store into an internal
+  // register is.  The model commits a level's result at its removal and
+  // charges the E-box time after, so the level's fetch had the value
+  // long before the 7030 would, and its operand cost nothing.  Now the
+  // head is not removed until fpInternalOperandClocks after the E-box
+  // finishes (StretchTiming, where the number is: the check plus the
+  // store path into an internal register that PDF 79's $R column fitted
+  // for ST -- the same mechanism, and no new fitted number).  FP only,
+  // as the LAAR (StretchIBox's laarInternal note says why).
+  Bool intWait     = fpInternalFetch(la.headLevel())
+                     && clk < eboxDoneAt + zeroExtend(fpInternalOperandClocks);
+  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
@@ -1255,6 +1313,7 @@ module mkStretchCore(StretchCore);
     st.writeIndex(tpl_1(p), tpl_2(p));
     pendingIdxWrite <= tagged Invalid;
     ebusy <= eb;
+    ibusy <= ib;   // the I-box's clock runs on (see `ib`)
     haltedReg <= False;
   endrule
 
@@ -1328,6 +1387,10 @@ module mkStretchCore(StretchCore);
       end
     end
     ebusy <= ebn;
+    if (fromLA) begin
+      ibusy <= ib;   // a level's read: the I-box's clock runs on (see `ib`)
+      eboxDoneAt <= clk + zeroExtend(ebn) + 1;
+    end
     haltedReg <= done;
   endrule
 
@@ -1380,6 +1443,8 @@ module mkStretchCore(StretchCore);
     end
     // else: the E-box holds the level's instruction for its operand read.
     ebusy <= ebn;
+    eboxDoneAt <= clk + zeroExtend(ebn) + 1;
+    ibusy <= ib;   // the I-box's clock runs on (see `ib`)
     haltedReg <= False;
   endrule
 
@@ -1519,10 +1584,47 @@ module mkStretchCore(StretchCore);
     Bool progressivePending = False;
     for (Integer k = 0; k < 4; k = k + 1)
       if (nl[k].valid && hasProgressive(nl[k].di)) progressivePending = True;
+    // >>> STORE CLOSE TO FETCH, FOR AN INSTRUCTION WORD, 2026-11-17. <<<
+    // Perf. Char. Vol. 1 printed p.3-21 (PDF 39): "One such conflict is a
+    // store into a location corresponding to a prefetched instruction ...
+    // When such a store is decoded, I-box invalidates the prefetched
+    // instructions and waits until the correct information is available."
+    // The model had the invalidation (mkInstrBuffers' program store
+    // compare) but only when the store is MADE, at the level's removal; an
+    // instruction prepared out of 1Y/2Y before that ran as it was
+    // assembled.  So: do not prepare an instruction whose word (either
+    // word, for a full-word one) a pending level stores.  CHOSEN: the 7030
+    // waits at the decoding of the store; the model waits at the
+    // instruction in the stored word, which holds back the same
+    // instructions.  Exposed when the preparation floor was fixed (`ib`):
+    // the 7030 STRAP II TABMAN's "ST(BU,6),TBEN4+.35" three instructions
+    // before TBEN4, and C22-6578 Problem 2.9's "ST(BU,4),SV+0.19" into the
+    // very next instruction, both ran the unmodified instruction
+    // (decks/store_into_prepared_instr.strap).
+    //
+    // AND FOR THE CLOCK AFTER THE STORE IS MADE.  The level retires in the
+    // clock its store enters the store queue; StretchStorage reports it
+    // through recentStore() on the next clock, and only then does
+    // rl_ic_controls invalidate the Y word (a ConfigReg, seen the clock
+    // after).  In between, the level is gone and the stale word is still
+    // in 1Y/2Y, so a store to the word reported this clock holds the
+    // preparation too.  Measured: without this term the deck's W0 still
+    // came back stale.
+    function Bool storesInto(WordAddr w);
+      Bool r = False;
+      for (Integer k = 0; k < 4; k = k + 1)
+        if (levelStores(nl[k], w)) r = True;
+      if (st.recentStore() matches tagged Valid .rs &&& rs == w) r = True;
+      return r;
+    endfunction
+    HWordAddr pcNext = pc + 1;
+    Bool instrStored = storesInto(pc[18:1]);
+    if (prepared matches tagged Valid {.plen, .*} &&& plen == Full &&& storesInto(pcNext[18:1]))
+      instrStored = True;
     if (ebox.busyFor(OwnerIbox))
       noAction;             // an I-box instruction is waiting on its operand read
     else if (ibusy != 0)
-      ibusy <= ibusy - 1;   // previous instruction's time budget still running
+      ibusy <= ib;          // previous instruction's time budget still running
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
     else if (storeWait(nl) || clk < xstoreFreeAt)
@@ -1530,6 +1632,8 @@ module mkStretchCore(StretchCore);
       // storeWait): a pending level stores into an index register, the
       // indicators or the mask, and nothing is prepared until it has.
       noAction;
+    else if (instrStored)
+      noAction;   // a pending level stores into this instruction (above)
     else if (prepared matches tagged Valid {.len, .di}
              &&& isEboxClass(di) &&& isValid(intPC)) begin
       // NOT IMPLEMENTED, and loud about it.  An interruption
@@ -1639,7 +1743,14 @@ module mkStretchCore(StretchCore);
                           branch: False, target: 0, storeAddr: prep.storeAddr,
                           storeAddr2: prep.storeAddr2, carry: carry});
           pcReg <= pc + ((len == Full) ? 2 : 1);
-          ibusy <= 2 * iboxCycles(di, False)    // its preparation time
+          // Its preparation time, OF WHICH THIS CLOCK IS THE FIRST
+          // (2026-11-17): `ibusy` clocks follow the load, so a
+          // decode of N clocks is N - 1 here.  Before, the load clock
+          // came on top and a VFL decode of 3.6 us (12 clocks) took 13,
+          // 14 with the removal clock `ib` now gives back.  An I-box
+          // operand also passes the I-Checker (fpIboxCheckClocks).
+          ibusy <= 2 * iboxCycles(di, False) - 1
+                   + fpIboxCheckClocks(di, da)
                    + fpIndexedIboxClocks(di, da);
         end
       end

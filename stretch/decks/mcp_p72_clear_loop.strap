@@ -26,6 +26,10 @@
 ! EVERY BYTE HERE IS DISTINCT so a stray write names itself: row r is
 ! (16+r, 32+r, 48+r), and after a correct loop only the middle byte of
 ! each row -- the conf byte -- is zero.
+! CYCLES 421 -> 405, 2026-11-17: the preparation floor (StretchCore's `ib`
+! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
+! residuals" item 7).  With that mechanism removed the run is 421 again;
+! no value moved.
 
         SLC, (8)2000.0
 
