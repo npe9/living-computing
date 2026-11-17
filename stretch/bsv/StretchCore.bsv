@@ -1557,7 +1557,7 @@ module mkStretchCore(StretchCore);
             for (Integer i = 0; i < 4; i = i + 1) begin
               Bit#(2) pos = la.tail() - 1 - fromInteger(i);
               Bool hz = nl[pos].valid
-                        && ((isValid(nl[pos].storeAddr) && validValue(nl[pos].storeAddr) == a)
+                        && (levelStores(nl[pos], a)
                             || eboxRegister(a));
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
@@ -1565,6 +1565,7 @@ module mkStretchCore(StretchCore);
           la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: prep.storeAddr,
+                          storeCross: prep.storeCross,
                           carry: carry});
           pcReg <= pc + ((len == Full) ? 2 : 1);
           ibusy <= 2 * iboxCycles(di, False);   // its preparation time
@@ -1580,7 +1581,8 @@ module mkStretchCore(StretchCore);
         la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: tagged Invalid,
                         data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
-                        storeAddr: tagged Invalid, carry: LaCarry{addr: 0, lbo: 0}});
+                        storeAddr: tagged Invalid, storeCross: False,
+                        carry: LaCarry{addr: 0, lbo: 0}});
         xSnap <= st.snapshotIndex();
         indSnap <= st.readIndicators();
         guessPending <= True;
