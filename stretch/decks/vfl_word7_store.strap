@@ -1,0 +1,92 @@
+! vfl_word7_store.strap -- stores INTO location 7 (the left-zeros and
+! all-ones counters) by operations that are not connectives.
+!
+! THE RULES, Reference Manual 22-6530-2, read in the page images (PDF =
+! printed + 3):
+!   printed p.36, Left Zeros Counter: "This count is placed in the left
+!   zeros counter, bits 17-23 of location 7.  It remains there until
+!   changed by another connective operation or by one of the operations
+!   described below."  All-Ones Counter: "bits 44-50 of location 7".
+!   printed p.34, Special Registers: addresses 1-15 are valid word
+!   addresses except in the seven listed cases (none is a data store);
+!   "Not all bit positions in locations 0-15 are assigned to specific
+!   functions.  Those bit positions that are not so assigned are always
+!   zero.  Information stored in these positions is not recoverable."
+!   printed p.76, Counts: "These counts are not changed as an inherent
+!   part of any other non-connective operations.  The counts are set at
+!   the end of the connective operations, so their previous values may
+!   be used as operands in the operation."
+! So an ST or M+ into word 7 lands in bits 17-23 and 44-50; every other
+! bit of word 7 reads 0; and a CONNECT TO MEMORY into word 7 leaves its
+! COUNTS there, set at the end, over its own stored bits.
+!
+! THE MODEL BUG THIS DECK CLOSES (2026-11-17): writeWord(7) never wrote
+! the counter fields (a documented simplification in StretchStorage), so
+! W1-W4 lost their count bits, and it kept the fifty unassigned bits as
+! stored.  Now the counters have one writer, StretchStorage's commitCounts,
+! taking a store (writeWord) and the counts (setConnectiveCounts /
+! setLeftZerosCount) off wires, the counts winning in the same clock; and a
+! CM whose crossing tail is word 7 carries its counts in the tail word
+! (StretchExecute's countsOverTail).
+!
+! CASES (hand-derived):
+!   W1  CM0101(BU,8,8) acc FF at KW (an ordinary word): counts 0 and 8,
+!       then M+(BU,7,8) acc 3 at 7.17, the left-zeros field: 0 + 3 = 3.
+!       Word 7 = (3 << 40) | (8 << 13) = (16)30000010000.
+!   W2  ST(BU,64,8) acc all ones at 7.0: both counters 127, the other
+!       fifty bits read 0.  Word 7 = (16)7F00000FE000.
+!   W3  ST(BU,64,8) acc (16)0000000000150000 at 6.40: crosses, the tail
+!       is word 7 bits 0-39 (rl_tail_write, the next clock), field bits
+!       41-47 = 21 land in the left-zeros count; the all-ones count is the
+!       read-modify-write's 127.  Word 7 = (16)1500000FE000.
+!   W4  CONTROL.  CM0101(BU,8,8) acc FF at 7.16, the head INTO word 7:
+!       the stored FF would put 127 in bits 17-23, but the counts of FF
+!       (0 and 8) are set at the end and win.  Word 7 = (16)10000.
+! CYCLES is a model pin.
+!
+! MEASURED INJECTIONS, 2026-11-17 (each in the worktree from a saved copy
+! of the final file, restored and compared with cmp; run on this deck and
+! vfl_cross_special_words; the rest of the suite was not run under them):
+!   JA commitCounts ignores the store (writeWord(7) loads nothing, the
+!      old model's counters): FAIL W1, W2, W3 = (16)10000 (W1's CM counts,
+!      never replaced) ONLY.  vfl_cross_special_words passes.
+!   JB the store applied AFTER the counts in commitCounts: FAIL W4 =
+!      (16)7F00000FE000 (the stored FF's 127, and W3's all-ones count)
+!      ONLY.  vfl_cross_special_words passes (K3's tail is patched by
+!      countsOverTail).
+!   JC countsOverTail dropped: this deck passes; vfl_cross_special_words
+!      FAILS K3 = (16)8000 ONLY.
+! W4 is the control for JA; W1-W3 for JB.
+! CYCLES 276 (PC 2029).
+!
+        SLC, 1000.0
+START   L(BU,8,8), HFF
+        CM0101(BU,8,8), KW
+        L(BU,8,8), THREE
+        M+(BU,7,8), 7.17
+        TI, 1, 7, W1
+        L(BU,64,8), ONES
+        ST(BU,64,8), 7.0
+        TI, 1, 7, W2
+        L(BU,64,8), F21
+        ST(BU,64,8), 6.40
+        TI, 1, 7, W3
+        L(BU,8,8), HFF
+        CM0101(BU,8,8), 7.16
+        TI, 1, 7, W4
+        Z, $IND
+PASS    BEW, $
+
+        SLC, 1500.0
+HFF     DD(BU,64), (16)FF00000000000000
+THREE   DD(BU,64), (16)0300000000000000
+ONES    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+F21     DD(BU,64), (16)0000000000150000
+KW      DD(BU,64), (16)A5A5A5A5A5A5A5A5
+
+        SLC, 1700.0
+W1      DD(BU,64), 0
+W2      DD(BU,64), 0
+W3      DD(BU,64), 0
+W4      DD(BU,64), 0
+        END, START

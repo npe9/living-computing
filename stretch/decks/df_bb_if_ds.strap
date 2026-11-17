@@ -1,4 +1,8 @@
 ! CLAUSE 1's DS SURVIVES A PROTECTED BRANCH TARGET: the one
+! (2026-11-17: the markers this deck kept in word 7 bits 0-2 moved to
+! word 6 -- 7.0 -> 6.1, 7.1 -> 6.3, 7.2 -> 6.2.  Word 7's bits other
+! than its two counters are unassigned and "always zero" (printed
+! p.34), and the model now keeps them so; see vfl_word7_store.strap.)
 ! consequence of the "suppressed without a test" correction that
 ! df_bb_readonly.strap names in its header and cannot witness.
 !
@@ -69,7 +73,7 @@
 ! addresses recorded in its header.  ds_terminates_branch.strap runs
 ! the same instruction with an UNPROTECTED target; if_branch_alarm's
 ! block 6 runs a modifying BB into a protected target with the mask at
-! one, but its DATA word is word 7, which p.31 says never signals --
+! one, but its DATA word is word 6, which p.31 says never signals --
 ! so in that block `takeBranch` and `wouldBranch` are equal and
 ! nothing discriminates.  No program in the suite sets all three.
 !
@@ -190,7 +194,7 @@
 ! it in A first, and A comes first.  Their evidence is in the CLEAN
 ! run -- they show DS is actuated in both neighbouring configurations,
 ! so A's pass cannot be an accident of the mask bit or of the target's
-! protection alone.  The `BB, 7.0, $` and `BB, $DF, $` rows in A are
+! protection alone.  The `BB, 6.1, $` and `BB, $DF, $` rows in A are
 ! belt-and-braces for the same reason: the 19/20 swap is caught one row
 ! earlier, at the marker, because DF's mask is zero and a DF actuation
 ! cannot interrupt.
@@ -243,7 +247,7 @@ START   BD,  $+.32                   ! disable: monitoring is ineffective
         BB,  $IF,  $                 ! hang if IF's indicator is on at all
         BB,  $DF,  $                 ! hang if a MODIFYING BB lit DF:
                                      !   clause 1 names DS
-        BB,  7.0,  $                 ! hang if DF's routine ran
+        BB,  6.1,  $                 ! hang if DF's routine ran
 !
 ! ---- B. the same, with IF's mask ZERO ----------------------------
 !   The control that attributes A's behaviour to the MASK rather than
@@ -325,7 +329,7 @@ TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS  (0o4500 + 0o23)
         SLC, (8)4524.0
-DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF  (0o4500 + 0o24)
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF  (0o4500 + 0o24)
         SLC, (8)4525.0
 IFRTN   BB1, 8.0, $+1.0              ! entry 21 = IF  (0o4500 + 0o25)
         END, START

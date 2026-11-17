@@ -1,4 +1,8 @@
 ! DF'S FIFTH CLASS-1 SITE: a READ-ONLY BRANCH ON BIT against a
+! (2026-11-17: the markers this deck kept in word 7 bits 0-2 moved to
+! word 6 -- 7.0 -> 6.1, 7.1 -> 6.3, 7.2 -> 6.2.  Word 7's bits other
+! than its two counters are unassigned and "always zero" (printed
+! p.34), and the model now keeps them so; see vfl_word7_store.strap.)
 ! protected word.  The four DF programs beside this one cover p.32's
 ! class 1 "effective address of all fetch-type operations with a direct
 ! address" for the four instruction FORMATS; this is the site the
@@ -85,7 +89,7 @@
 ! `python3 line_addresses.py programs/df_bb_readonly.strap`.
 !
 !   the dfSignal call removed from the    -> 4266  004125.00
-!     arm (clause 3's indicator)               BZB, 7.0, $ (C)
+!     arm (clause 3's indicator)               BZB, 6.1, $ (C)
 !                                              -- no indicator, so no
 !                                                 interruption, so DF's
 !                                                 routine never ran:
@@ -108,10 +112,10 @@
 !     dfSignal call (DF for a modifying        BB, $DF, $ (E)
 !     BB as well)
 !   dfSignal -> a direct ind_DS setBit    -> 4266  004125.00
-!     at the new site (the 19/20 swap)         BZB, 7.0, $ (C)
+!     at the new site (the 19/20 swap)         BZB, 6.1, $ (C)
 !                                              -- DS ran DS's routine
 !                                                 and marked word 6, so
-!                                                 word 7 stayed clear
+!                                                 word 6 stayed clear
 !   takeBranch -> wouldBranch at the      -> 4305  004150.40
 !     ifSignal call (finding 2)                BB, $IF, $ (E)
 !   takeBranch -> wouldBranch at the      -> 4591  004367.40
@@ -172,14 +176,14 @@ OKA     BB,  $DF,  $                 ! hang if DF lit while disabled
 !
 ! ---- B. ENABLED, MASK ONE, UNPROTECTED: still nothing ------------
 !   The mask bit alone must not suppress anything; the address has to
-!   signal too.  Word 7 is in p.31's 0-31 carve-out and can never be
+!   signal too.  Word 6 is in p.31's 0-31 carve-out and can never be
 !   monitored, so this is the read-only BB that must behave exactly as
 !   it always did.
-        BB1, 7.2,  $+1.0             ! a carve-out bit, set to one
-        BB,  7.2,  OKB               ! read-only, unmonitored word
+        BB1, 6.2,  $+1.0             ! a carve-out bit, set to one
+        BB,  6.2,  OKB               ! read-only, unmonitored word
         B,   $                       ! hang: wrongly suppressed
 OKB     BB,  $DF,  $                 ! hang if an unmonitored BB lit DF
-        BBZ, 7.2,  $+1.0             ! tidy the marker bit
+        BBZ, 6.2,  $+1.0             ! tidy the marker bit
 !
 ! ---- C. ENABLED, MASK ONE: clause 2, SUPPRESSED ------------------
 !   "The addressed bit is specified to remain unconditionally
@@ -198,8 +202,8 @@ OKB     BB,  $DF,  $                 ! hang if an unmonitored BB lit DF
         NOP
         NOP
         NOP
-        BZB, 7.0,  $                 ! hang if DF's routine did not run
-        BBZ, 7.0,  $+1.0
+        BZB, 6.1,  $                 ! hang if DF's routine did not run
+        BBZ, 6.1,  $+1.0
         BB,  6.0,  $                 ! hang if DS's routine ran: clause 2
                                      !   names DF, and DS is the neighbour
                                      !   at 19 that a swapped constant
@@ -260,7 +264,7 @@ OKD     BZB, $DF,  $                 ! hang if the reference did not light DF
         BB,  $IF,  $                 ! hang if a suppressed instruction
                                      !   signalled IF from a branch it was
                                      !   never allowed to decide
-        BB,  7.0,  $                 ! hang if DF's routine ran
+        BB,  6.1,  $                 ! hang if DF's routine ran
 !
 !   ... and the bit change was suppressed too.  Read it back with the
 !   system DISABLED, so this check cannot itself signal.
@@ -290,5 +294,5 @@ TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
         SLC, (8)4524.0
-DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
         END, START

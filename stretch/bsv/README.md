@@ -161,14 +161,21 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   **The left-zeros and all-ones counts ARE implemented** as of
   2026-10-20 (printed pp.75-76, `decks/connective_counts.strap`):
   both counters, over the byte-size-eight result field for `C`/`CT`
-  and over the contracted field for `CM`. One documented
-  simplification comes with them — `writeWord` does not write word
-  7's counter fields, so a program storing there leaves the counts
-  alone. That is what gives each counter a single writer, without
-  which a `CM` in the same arm makes the whole connective a
-  scheduling conflict; it is the same simplification this model
-  made for the indicator register at word 11 until 2026-11-16 (that
-  one is lifted: see "Word 11" below).
+  and over the contracted field for `CM`. Until 2026-11-17 a
+  documented simplification came with them -- `writeWord` did not
+  write word 7's counter fields, so an `ST` or `M+` into word 7 lost
+  its count bits, and the fifty unassigned bits were kept as stored.
+  **Lifted 2026-11-17**, word 11's shape: a store into word 7, the
+  connective counts and the FP-divide left-zeros count all arrive on
+  wires, and `StretchStorage`'s `commitCounts` is the counters' one
+  writer, the counts winning in the same clock (printed p.76, "set at
+  the end of the connective operations"); word 7 keeps ONLY bits 17-23
+  and 44-50 (printed p.36), the rest reads 0 (printed p.34, "Those bit
+  positions that are not so assigned are always zero"); and a `CM`
+  whose crossing tail is word 7 carries its counts in the tail word
+  (`StretchExecute`'s `countsOverTail`), since the tail is written the
+  next clock. `decks/vfl_word7_store.strap` W1-W4,
+  `decks/vfl_cross_special_words.strap` K3.
   Verified against C22-6578 Problem 2.2 Method 3's own `CT0110`
   (byte-equality test via XOR) — see `strap/README.md`.
 - **Immediate index arithmetic** — all pocket-card ops except `LVS`,
@@ -1165,7 +1172,8 @@ seen (`eboxClocks` gets the decoded instruction).
   stores. Since 2026-11-17 a VFL field crossing into a word below 32
   is built too: its second word goes through `writeWord` one clock
   later (`StretchCore`'s `rl_tail_write`; see the crossing-field `ST`
-  entry below). No deck crosses into or out of word 11 itself.
+  entry below). `decks/vfl_cross_special_words.strap` crosses into and
+  out of word 11 (C1-C3, 2026-11-17).
 
   The four index half-word stores -- `SV`, `SC`, `SR` and `SVA` --
   and `BB` and `Z` keep their older shape: they FOLD the store into
@@ -1243,6 +1251,14 @@ seen (`eboxClocks` gets the decoded instruction).
   variable field length portion suppresses "the entire operation").  CM's refill path now sets the counts (p.76;
   `cmFinish`, shared with the main path).  Oracles
   `decks/vfl_cross_protect.strap`, `decks/vfl_cross_special_words.strap`.
+  **And since 2026-11-17 the refill raises DF only when it happens**:
+  the four inline refill shapes (ST one word and crossing, M+, CM) raise
+  p.32's class-3 DF beside the index hand-back, under the store's !DS
+  guard, not up front (`refillDfNote`; printed p.32, "If an address which
+  is associated with an operation is not actually used, it will not be
+  monitored"); `decks/vfl_refill_df.strap`.  The refill WORD is still
+  read before the store's DS is known (the prefetch order), so its clocks
+  are still spent: open, docs/NEXT.md.
   The second word's time is CHOSEN (one read, one tail clock), not the
   atlas's WB XOVR column (about 30 clocks more; NEXT.md). The paragraph
   below is kept for its reasoning about the refusals that remain.

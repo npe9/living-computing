@@ -1,0 +1,212 @@
+! vfl_refill_df.strap -- a VFL store's progressive refill raises DF
+! (data fetch) only when the refill happens; a DS alarm on the store
+! suppresses the whole operation, the refill and its DF with it.
+!
+! THE RULES, Reference Manual 22-6530-2, read in the page images (PDF =
+! printed + 3):
+!   printed p.22, Programming Notes: "If an exception condition is
+!   detected during the variable field length portion of the operation,
+!   the entire operation will be suppressed, and the appropriate
+!   indicator will be turned on.  However, if an exception condition is
+!   detected during the index modification portion of the operation, only
+!   this portion will be suppressed, the variable field length portion
+!   having been executed already."
+!   printed p.32: "When an address alarm is caused by a data address used
+!   in a store-type operation, indicator DS is turned on.  Since this
+!   indicator is permanently masked on, storing in core storage is always
+!   suppressed, and the operation is always terminated."  "When an address
+!   alarm is caused by a data address used in a fetch-type operation,
+!   indicator DF is turned on ... If the DF mask bit is zero, the
+!   operation proceeds normally."  Addresses Monitored: "All storage
+!   addresses actually used by the CPU in the course of an operation are
+!   subject to address monitoring.  If an address which is associated with
+!   an operation is not actually used, it will not be monitored"; Data
+!   Fetch item 3, "The refill address used in index refill operations".
+! So when the field's store is protected (DS), the refill -- the index
+! modification portion, after the VFL portion -- is not done, its address
+! is not used, and DF is NOT turned on even when the refill word is
+! protected too.  When the store is not protected the refill is done and a
+! protected refill address turns DF on (the DF mask bit is zero here, so
+! the operation proceeds).
+!
+! THE MODEL BUG THIS DECK CLOSES (2026-11-17): the four inline refill
+! shapes (ST one word, ST crossing, M+, CM) raised DF up front, before the
+! store's DS was known, so a DS-suppressed operation still turned DF on.
+! Now DF is raised beside the index hand-back, under the store's !DS guard
+! (StretchExecute.bsv, refillDfNote).
+!
+! SET-UP, vfl_cross_protect's shape: boundaries and the interruption
+! address planted DISABLED; lower boundary PW1, upper PEND, control bit 0
+! (signal inside), so the area is PW1 and RFP (the protected refill word);
+! then BE.  DS's interruption runs entry 19, "BB1, 6.0" (the marker).  The
+! DF mask bit (indicator 20) is zero, so DF interrupts nothing.  After each
+! case eight NOPs, TI copies the indicators and word 6, BBZ clears the
+! marker, SX saves the index register.  Each X is "XW target, 1, RFP":
+! count 1, so V+ICR refills.
+!
+! (D = (16)8000000000000000 is the DS interruption's marker.  The XQ
+! words are value = bit address << 40, count << 18, refill: XQ1 =
+! (16)0190580000040642, XQ2 = (16)0190680000040642, XQ3 =
+! (16)0190480000040642, XQ4 = (16)0190380000040642.)
+!   Q1  CM0101(V+ICR)(BU,8,8) at PW1+.24 through X7: DS.  I1 = 0 (no DF;
+!       DS itself is turned off by its interruption), D1 set, X7 = XQ1.
+!   Q2  ST(V+ICR)(BU,8,8) at PW1+.40 through X6 (one word): DS.  I2 = 0,
+!       D2 set, X6 = XQ2.
+!   Q3  M+(V+ICR)(BU,8,8) at PW1+.8 through X5: DS.  I3 = 0, D3 set,
+!       X5 = XQ3.
+!   Q4  ST(V+ICR)(BU,16,8) at PW0+.56 through X4 (crossing into PW1): DS.
+!       I4 = 0, D4 set, X4 = XQ4.
+!   Q5  CONTROL.  ST(V+ICR)(BU,8,8) at UW+.8 through X3: the store is NOT
+!       protected, the refill word is.  The store lands, X3 is refilled
+!       from RFP, (16)01348000013405DC, and DF is ON: I5 = DF (16)80000000000
+!       | XCZ, XVGZ of the pre-refill state (16)9000 | ST's own MOP and RGZ
+!       (p.63; the stored 01 is non-zero) (16)120 = (16)80000009120.  (The
+!       hand derivation left out ST's MOP and RGZ; the first run showed
+!       them, and they are p.63's, as binStoreInd sets them.)  D5 = 0.
+! CYCLES is a model pin.
+!
+! MEASURED INJECTION, 2026-11-17 (in the worktree from a saved copy of the
+! final file, restored and compared with cmp; run on this deck and
+! vfl_cross_protect, which passes under it):
+!   JD the four up-front dfSignal calls put back (the model before this
+!      deck): FAIL I1, I2, I3, I4 = (16)80000000000 (DF) ONLY -- each case
+!      its own site (CM, ST one word, M+, ST crossing).  Q5 passes.
+! Q5 is the control.  CYCLES 1119 (PC 2117).
+!
+        SLC, 1000.0
+START   BD,  $+.32
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, PW1
+        SV,  $X13, $LB               ! lower boundary := PW1
+        LVI, $X13, PEND
+        SV,  $X13, $UB               ! upper boundary := PEND
+        BBZ, 3.57, $+1.0             ! control bit 0: signal INSIDE
+        LX,  $X7, XQ1
+        LX,  $X6, XQ2
+        LX,  $X5, XQ3
+        LX,  $X4, XQ4
+        LX,  $X3, XQ5
+        BE,  $+.32
+! ---- Q1: CM with a refill, protected store and refill -------------
+        L(BU,8,8), ONE
+        Z, $IND
+        CM0101(V+ICR)(BU,8,8), 0($X7), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I1
+        TI, 1, 6, D1
+        BBZ, 6.0, $+1.0
+        SX,  $X7, X7A
+! ---- Q2: one-word ST with a refill ---------------------------------
+        L(BU,8,8), ONE
+        Z, $IND
+        ST(V+ICR)(BU,8,8), 0($X6), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I2
+        TI, 1, 6, D2
+        BBZ, 6.0, $+1.0
+        SX,  $X6, X6A
+! ---- Q3: M+ with a refill -------------------------------------------
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(V+ICR)(BU,8,8), 0($X5), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I3
+        TI, 1, 6, D3
+        BBZ, 6.0, $+1.0
+        SX,  $X5, X5A
+! ---- Q4: crossing ST with a refill ---------------------------------
+        L(BU,16,8), HBEEF
+        Z, $IND
+        ST(V+ICR)(BU,16,8), 0($X4), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I4
+        TI, 1, 6, D4
+        BBZ, 6.0, $+1.0
+        SX,  $X4, X4A
+! ---- Q5: CONTROL, unprotected store, protected refill ---------------
+        L(BU,8,8), ONE
+        Z, $IND
+        ST(V+ICR)(BU,8,8), 0($X3), 0
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        TI, 1, $IND, I5
+        TI, 1, 6, D5
+        BBZ, 6.0, $+1.0
+        SX,  $X3, X3A
+        Z, $IND
+        BD,  $+.32
+PASS    BEW, $
+
+        SLC, 1500.0
+XQ1     XW, PW1+.24, 1, RFP
+XQ2     XW, PW1+.40, 1, RFP
+XQ3     XW, PW1+.8, 1, RFP
+XQ4     XW, PW0+.56, 1, RFP
+XQ5     XW, UW+.8, 1, RFP
+ONE     DD(BU,64), (16)0100000000000000
+HBEEF   DD(BU,64), (16)BEEF000000000000
+UW      DD(BU,64), (16)A5A5A5A5A5A5A5A5
+
+        SLC, 1600.0
+PW0     DD(BU,64), (16)A5A5A5A5A5A5A5AF
+PW1     DD(BU,64), (16)F5A5A5A5A5A5A5A5
+RFP     XW, 1234.0, 77, 1500.0
+PEND    DD(BU,64), 0
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+I4      DD(BU,64), 0
+I5      DD(BU,64), 0
+D1      DD(BU,64), 0
+D2      DD(BU,64), 0
+D3      DD(BU,64), 0
+D4      DD(BU,64), 0
+D5      DD(BU,64), 0
+X7A     DD(BU,64), 0
+X6A     DD(BU,64), 0
+X5A     DD(BU,64), 0
+X4A     DD(BU,64), 0
+X3A     DD(BU,64), 0
+
+        SLC, 1800.0
+TBL     DD, 0
+        SLC, 1819.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START

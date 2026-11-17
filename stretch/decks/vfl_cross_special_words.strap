@@ -31,13 +31,16 @@
 ! operation's indicators, so it overrides them too.  (For that one clock
 ! the operation's own indicators are in the register; with the
 ! interruption system enabled an indicator set there could in principle be
-! seen -- not exercised, OPEN.)  Word 7: writeWord does not write the
-! counter fields at all (StretchStorage's note, a documented
-! simplification), so the counts always win -- which is p.76's order for a
-! connective.  For ST or M+ into word 7 (p.76: the counts "are not
-! changed as an inherent part of any other non-connective operations", so
-! the store should land) the model DROPS the stored count bits -- a
-! deviation, not an order, recorded OPEN in docs/NEXT.md and not tested.
+! seen -- see docs/NEXT.md: a case built for it, vfl_cross_ind_window,
+! did NOT reach it on the model, and was dropped.)  Word 7 (since
+! 2026-11-17): writeWord(7) loads the counters, through StretchStorage's
+! commitCounts, which lets the counts win in the same clock (p.76's
+! order); a CM's crossing tail into word 7 is written the NEXT clock, so
+! the CM puts its counts into the tail word itself (StretchExecute's
+! countsOverTail) and they win there too -- K3.  (Until 2026-11-17
+! writeWord did not write the counter fields at all, so the counts won by
+! construction, and an ST or M+ into word 7 lost its count bits:
+! decks/vfl_word7_store.strap.)
 !
 ! CASES (hand-derived; Z,$IND first in each C case, so word 11 starts 0):
 !   C1  M+(BU,48,8) acc 1 at 10.40: the field is word 10 bits 40-63 (not
@@ -62,7 +65,10 @@
 !       left zeros 8, ones 4.  p.76: the counts win in bits 17-23 over the
 !       tail's 0.  Word 7 = (16)80000008000 (the rest of word 7 is 0
 !       either way, so the full word is checked).
-! CYCLES 389 is a model pin.
+! CYCLES 404 is a model pin.  (389 when written; 404 measured on master
+! batch20 itself, eb27dc9, with its own StretchStorage and StretchExecute,
+! 2026-11-17 -- the deck's branch was merged over batch19's timing items,
+! and the pin was not re-run.  Not a change made with this deck's fixes.)
 !
 ! MEASURED INJECTIONS, 2026-11-17 (in the worktree from a saved copy,
 ! restored and compared with cmp; observed on this deck and the other two
@@ -78,7 +84,12 @@
 !   J7 rl_tail_write also loads the counters from a tail into word 7
 !      (the tail's stored bits winning over the counts, p.76's order
 !      reversed): FAIL K3 = (16)8000 ONLY.  bsc accepted it (a separate
-!      rule from execute()).
+!      rule from execute()).  Since 2026-11-17 that IS the model's
+!      rl_tail_write (writeWord(7) loads the counters), and the order is
+!      kept by countsOverTail; J9 below is J7's successor.
+!   J9 (2026-11-17) countsOverTail dropped (the CM's tail word carries
+!      its stored bits, not the counts): FAIL K3 = (16)8000 ONLY;
+!      vfl_word7_store passes under it.
 ! K1 and K3 are the controls for J5; K1-K3 for J6; K1, K2 for J7.
 ! (J5 and J6 were measured before the p.22 index-part change to
 ! StretchExecute.bsv, which no case of this deck reaches; J7 after it.)
