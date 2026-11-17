@@ -47,22 +47,22 @@ START   LX, $X1, WSEED               ! a perfectly ordinary index load
         BB, $OP, $                   ! hang up if OP on
         BB, $AD, $                   ! hang up if AD on
 !
-! ---- OP: a decoded-but-unexecuted operation ------------------------
-! RNX is out of scope in this model (StretchExecute's dixop default),
-! so it must set OP and change nothing.
+! ---- OP: an operation the machine refuses --------------------------
+! CM with immediate addressing.  Reference Manual p.56: "Immediate
+! addressing is not possible in operations whose result is placed in
+! storage ... the operation is not performed and the OP indicator is
+! turned on."  StretchExecute's conn/CM-immediate site.
 !
-! THIS USED TO BE LVE, and the swap is worth recording because the
-! test failing was the right outcome.  LVE was implemented on
-! 2026-10-17 for MCP's bootstrap (printed p.3 line 10), so it stopped
-! setting OP and this program hung at the BZB below -- a test whose
-! PREMISE had been "LVE is unimplemented" rather than "OP works".
-! RNX is the same instruction class reaching the same default arm, so
-! the shape of the check is unchanged; what changed is which
-! instruction happens to be out of scope.  Expect to swap it again.
-        RNX, $X1, WOTHER             ! out of scope -> OP, and a no-op
+! THIS WAS LVE, THEN RNX, and each swap was forced by the same mistake:
+! the premise was "this instruction is not implemented YET".  LVE was
+! built 2026-10-17 for MCP's bootstrap and RNX 2026-11-17 (batch14), and
+! each time this program hung at the BZB below.  The OP case is now one
+! IBM defines, so implementing more of the machine cannot remove it.
+        CMI0000(BU,8), 5             ! refused -> OP, not performed
         BZB, $OP, $                  ! hang up if OP off
         BB, $AD, $                   ! hang up if AD on -- OP must not imply AD
-! and the suppressed instruction must not have touched the index:
+! and the refused instruction must not have touched the index register
+! named nowhere in it (a cheap check that nothing ran wild):
         KV, $X1, WSEED               ! $X1 still equals the seed?
         BZXE, $                      ! hang up if not equal
 !
@@ -76,7 +76,6 @@ START   LX, $X1, WSEED               ! a perfectly ordinary index load
         B, PASS
 !
 WSEED   XW, 1, 1, 0, 0
-WOTHER  XW, -1, 0, 0, 4              ! 4 = the flag, IBM bit 25
 FKONE   DD(BU,64,8), (8)0400000000000000000000
 PASS    BEW, $
         END, START

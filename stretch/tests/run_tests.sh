@@ -9233,6 +9233,10 @@ run "LVE chains, and p.29's one-millisecond end with USA -- MCP waits on it" ./r
 # a chain of two or more is the location last read or the address last
 # formed.  A one-word loop gives the same answer either way.
 
+# 2026-11-17: the OP case is now CMI0000 (CM immediate, refused by
+# RefMan p.56), not RNX, which batch14 implemented (the deck hung at
+# 2443).  INJECTION, observed: conn/CM-immediate not setting OP ->
+# FAIL PC = 2444 (the BZB $OP hang), nothing else; control PASS 2462.
 run "OP and AD indicators (both polarities)" ./run_program.sh ../decks/op_ad_indicators.strap StretchOpAdIndTb \
     "PC=2462"          # 002317.00; hand-written, not a listing fact
 # The two indicators the audit found written-but-unwatched.  HAND-WRITTEN
