@@ -199,10 +199,10 @@ sets `BLUESPECDIR` and `PATH` itself.
   (cycles of the full program − cycles of a baseline with an empty body
   and no count branch) / 10,000.
 - **Run time.** *Measured before PDF 143-189 were added.* With them,
-  `--list` reports **12,353 cases with a generator** (2026-11-16). The run
-  time of that set is unmeasured, and by the per-case rate below it is
-  about two hours. The forwarding pages' WB XOVR cases will run with the
-  generator's FL//2 field placement, not PDF 114's (150000.74)₈. The full
+  `--list` reports **12,353 cases with a generator** (2026-11-16). The
+  forwarding pages alone (PDF 143-169) took 6,088 cases in 5,646 s at
+  `--jobs 6`; the whole set is not timed. Their WB XOVR cases now use
+  PDF 114's (150000.74)₈. The pre-forwarding full
   run was **6,265 cases in 3,618 s (about one
   hour) wall** at `--jobs 12` on a 16-CPU machine. That is two
   simulations a case, about 0.58 s a case in aggregate. The longest
@@ -245,7 +245,9 @@ sets `BLUESPECDIR` and `PATH` itself.
 
 The report echoes this list in its header:
 
-- **WB XOVR.** The field starts FL//2 bits before a word boundary.
+- **WB XOVR.** Without forwarding, the field starts FL//2 bits before a
+  word boundary. With forwarding it starts at bit 60, which is PDF 114's
+  (150000.74)₈.
 - **Indexing.** The index register is $X5 = 0. Half-word branches use
   $X1, their only choice.
 - **Invert sign.** The VFL invert-sign modifier bit (0x800 in the word)
@@ -487,6 +489,58 @@ the 7030 does is **open**, and it matters only for mixed sequences.
   - CV: 20 clocks binary, 74 decimal.
   - DCV: 20 clocks binary, 18 decimal.
 
+### The forwarding pages, PDF 143-169 (first run, 2026-11-16)
+
+This is the first run on the forwarding pages. It measures the model
+after the per-operation VFL times and the batch10/batch11 merges.
+
+- **Size and time.** 6,088 cases in 5,646 s at `--jobs 6`.
+- **Not generated: 4,338 cells.** These are:
+  - 3,908 INTERNL (accumulator-operand) cells;
+  - 238 cells printed `*01*` or `*24*`;
+  - 192 CV/DCV ACCUM. cells.
+- **Overall.** 2,223 cases (37%) are exact. The median residual is
+  −0.00 and the mean |residual| is 6.50 clocks.
+
+Per column (residual = model − printed, in clocks):
+
+| column | n | exact | mean | median | min | max |
+|---|---:|---:|---:|---:|---:|---:|
+| ni_ext | 1,074 | 662 | +0.30 | −0.00 | −34.04 | +27.96 |
+| ix_ext | 1,074 | 666 | −0.04 | −0.04 | −34.04 | +25.93 |
+| ni_ibox | 1,074 | 476 | −3.41 | −0.00 | −50.74 | +28.00 |
+| ix_ibox | 1,074 | 419 | −3.84 | −0.00 | −52.74 | +27.93 |
+| ni_ext_wbx | 896 | 0 | −2.24 | +4.96 | −64.40 | +60.95 |
+| ix_ext_wbx | 896 | 0 | −2.26 | +4.96 | −64.47 | +60.95 |
+
+How each column fares:
+
+- **EXTERNL is about as close as on the no-forwarding pages.** The
+  following are exact or within 0.05 clocks on every row: L, LWF, LFT,
+  LTRS, `*`, `*+`, C0011 and CT0111.
+- **I-BOX stores are short by 14-18 clocks, as without forwarding.**
+  This covers M+, M+MG, ST, SRD, M+1 and CM0101. ST (BU,8,8) is −16.3,
+  for example. PDF 114 says the I-box operand times do not change with
+  forwarding, and they do not.
+- **WB XOVR has no exact column.**
+  - The fetch-only instructions run +5 clocks over the page. These are
+    L, LWF, LTRS, `*`, LCV, LTRCV, C0011 and CT0111, and K at its
+    median. So with forwarding the 7030 hides most of the second word's
+    fetch, and the model does not.
+  - The stores run 20-34 clocks short, as they do without forwarding.
+    These are ST, SRD, CM0101, M+, M+MG and M+1.
+  - `/` runs +42 over the page, on the page the volume disowns.
+- **PDF 114's crossover location changes nothing.** The generator now
+  places the forwarding runs' WB XOVR field where PDF 114 says the run
+  put it: "external with WB crossover (150000.74)8", bit 60. Before,
+  the field started FL//2 bits before the boundary.
+  - The 1,792 WB XOVR cases were re-run with the old placement.
+  - Every case gives the same model time to within 0.0004 clocks.
+  - The reason: the model charges a crossover by the second word, not
+    by where in the word the field starts.
+  - The fix makes the cases faithful to the page, but it does not
+    explain any residual.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -559,9 +613,9 @@ the 7030 does is **open**, and it matters only for mixed sequences.
   - **Forwarding, PDF 143-169.** PDF 114 gives the locations: external
     (150000.0)₈, external with WB crossover (150000.74)₈, I-box $X0
     (20.0)₈, internal (10.0)₈, internal with WB crossover (10.74)₈. The
-    generator's forwarding branch uses ATLE0 and $X0 and starts the WB
-    crossover at FL//2. PDF 114's .74 offsets are what the page used,
-    and the INTERNL columns (`ni_int`, `ni_int_wbx`, `ix_int`,
+    generator's forwarding branch uses ATLE0 and $X0. It starts the WB
+    crossover at .74, as PDF 114 gives (DONE 2026-11-16; residuals in
+    "The forwarding pages"). The INTERNL columns (`ni_int`, `ni_int_wbx`, `ix_int`,
     `ix_int_wbx`) need an internal-operand placement it does not have.
   - **Immediate, PDF 171-189 (`addressing=immediate`, columns
     `ni_imm`/`ix_imm`).** PDF 114: "The 24 bit address of the
