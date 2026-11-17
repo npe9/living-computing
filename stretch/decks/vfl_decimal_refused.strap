@@ -19,7 +19,16 @@
 !
 ! A DECIMAL UNSIGNED STORE IS NOT REFUSED since 2026-11-08: MCP's $TIME
 ! needs it (decks/vfl_st_decimal.strap).  This deck stored ST(DU,32,8)
-! until then, and now stores the signed form.
+! until then, and then the signed form.
+!
+! AND SINCE 2026-11-16 (G2.3 stage 1) NO DECIMAL STORE, LOAD OR ADD IS
+! REFUSED (decks/vfl_decimal_add.strap), so the refused operation is now
+! LFT(D,32,8), LOAD FACTOR with the decimal modifier: binary LFT is
+! built, decimal LFT is not (StretchVFL's vflDecimalBuilt lists what is).
+! It fetches, so it is still the "decimal refusal" cause of
+! completesWithoutFetch.  The refused_* checks now say only that nothing
+! was stored at TB, which an LFT would not do anyway; FT_unchanged says
+! the factor register was not loaded.
 !
 ! WHY IT NEEDED A DECK: it is one of the six causes of
 ! StretchIBox's prepareExec.completesWithoutFetch, and a census of which
@@ -31,7 +40,10 @@
 ! and its target is checked for the value it must have, so the deck
 ! cannot pass by doing nothing at all.
 !
-! TIMING RE-PINNED 2026-11-16, 140 -> 163 clocks, every value check unchanged.
+! TIMING RE-PINNED 2026-11-16, every value check unchanged: 140 -> 163
+! clocks on the ST(D,32,8) form, and, merged with batch10's LFT(D,32,8)
+! form (161 under the old times), 161 -> 224.  LFT is charged PDF 122's
+! decimal figure, 66 clocks (19.81 us), against the refused ST's law below.
 ! VFL E-box time now depends on the operation: bsv/StretchTiming.bsv's
 ! eboxClocks charges each operation the throughput Perf. Char. Vol. 2's
 ! atlas prints for it (docs/atlas_oracle.md).  A refused decimal operation
@@ -44,8 +56,9 @@
 START   L(BU,32,8), DATA1
         ST(BU,32,8), TA+.48          ! legal: binary unsigned
         BOP, $                       ! hang if OP came on: that one is legal
-        ST(D,32,8), TB+.48           ! DECIMAL, SIGNED, not a radix conversion
+        LFT(D,32,8), TB+.48          ! DECIMAL LOAD FACTOR: not built
         BZOP, $                      ! hang if OP did NOT come on
+        TI, 1, $FT, FTS              ! the factor register, unloaded
         B, PASS
 PASS    BEW, $
         CNOP
@@ -57,4 +70,6 @@ TA      DD(BU,64), (8)1777777777777777777777
         SLC, (8)420.0
 TB      DD(BU,64), (8)1777777777777777777777
         DD(BU,64), (8)1777777777777777777777
+        SLC, (8)430.0
+FTS     DD(BU,64), (16)5555555555555555
         END, START

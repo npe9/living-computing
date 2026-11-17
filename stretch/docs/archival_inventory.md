@@ -1558,7 +1558,7 @@ reverse index (source -> transcription/implementation).
 
 | File | What | Kind |
 |---|---|---|
-| `MCP_Mar63_001-249.pdf` + `MCP_Mar63_250-445.pdf` (451pp) | **IBM 7030 Master Control Program source listing**, "new version 03-15-63" -- the OS source the System Analysis Guide's companion reference pointed to, now LOCATED (previously flagged missing above) | Source |
+| `MCP_Mar63_001-249.pdf` + `MCP_Mar63_250-445.pdf` (451pp) | **IBM 7030 Master Control Program source listing**, "new version 03-15-63" -- the OS source the System Analysis Guide's companion reference pointed to, now LOCATED (previously flagged missing above). **One printed page is not in the scan: p.329** (the LOADER's 235112.00-235153.40, serials TA000449-499; `MCP_Mar63_250-445.pdf` goes from PDF p.79, printed 328, to PDF p.80, printed 330). No second copy found (2026-11-16; NARA/IBM Archives not searched). RECONSTRUCTED, labelled, NOT a transcription: `decks/mcp_p329_reconstruction.strap` (`bss_loader_spec.md` 7.2) | Source |
 | `C22-6728_/-1_7030_MCP_Sys_Analysis_Guide.pdf` | MCP System Analysis Guide (calling sequences, flowcharts) | Doc |
 | `C22-6678-1_7030_MCP_Reference_Jun64.pdf` | MCP Reference Manual | Doc |
 | `J22-6559_MCP_UsersGuide_Dec60.pdf` | MCP User's Guide | Doc |

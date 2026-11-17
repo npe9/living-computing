@@ -364,6 +364,18 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // (decimal) is charged too, like every refused operation here.
       // Pinned by decks/vfl_srd.strap's CYCLES check (header).
       Bit#(16) srdRound = (v.code == 6'b101101 && v.a.offset != 0) ? 4 : 0;
+      // DECIMAL *, *+ AND / ARE LTRS'S ACTION (Reference Manual printed
+      // pp.68-70; batch10's mkDecBox), and are charged as LTRS -- now
+      // PDF 123's measured decimal LTRS figure, 66 clocks (19.81 us), 82
+      // above 48 bits (24.60), rather than Table 3's formula (printed
+      // p.3-8), which batch10 charged as 16 + 2 bytes and which sits 4
+      // clocks under the page at its own full word.  CHOSEN for the three
+      // arithmetic codes: their own pages (PDF 133 *, 134 /, 135 *+)
+      // print binary rows only, so no measurement of decimal * / *+
+      // exists; LTRS's is the nearest.
+      Bool decLtrsAction = dec && (v.code == 6'b011001 || v.code == 6'b111001
+                                   || v.code == 6'b011101);
+      if (decLtrsAction) e = 66 + ((len_ > 48) ? 16 : 0);
       // Less the removal clock (see above): the atlas figure is the
       // occupancy, and rl_au_remove adds the one clock itself.
       return e - 1 + srdRound;

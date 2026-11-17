@@ -1,0 +1,399 @@
+! DECIMAL VFL ADD, LOAD AND STORE -- G2.3 stage 1, built 2026-11-16.
+!
+! Every expected value below is HAND-DERIVED from the Reference Manual
+! 22-6530-2 (printed N = PDF N+3), read in the page images, and from
+! C22-6578 printed p.15; none was taken from a run.  After each operation
+! the indicator register is copied with TI (TRANSMIT IMMEDIATE, count
+! one; it sets no arithmetic indicator) to Ik, and THEN the accumulator
+! words 8, 9, 10 ($L, $R, $SB) are stored to Xk, Xk+1, Xk+2 with binary
+! ST and L (which change the indicators, already saved).  (The first
+! version wrote "T, 1, ..." -- whose 1 names INDEX REGISTER 1 as the
+! count, not a count of one -- and transmitted the mask register and
+! onward over Ik+1 until the step cap.  A deck error, not a model one.)  Indicator word bits (bit n of the register
+! is 1 << (63-n)): LC 0x20000000000, PF 0x10000000000, TF 0x10000000,
+! MOP 0x100, RLZ 0x80, RZ 0x40, RGZ 0x20, RN 0x10.  The sign byte
+! register's sign bit is IBM bit 4 of word 10: 0x0800000000000000.
+!
+! A1-A5 ARE printed p.60's five ADD examples, IBM's own, exactly as
+! printed: "ADD, L (376+) offset 8 bits (2 bytes) where acc. contains
+! 75679+" -> 113279+ RGZ; (532-) on 45623+ -> 7577- RLZ RN; (532-) on
+! 53200+ -> 00000+ RZ; (532+) on 53200- -> "00000-  Result zero  Result
+! negative"; (532-) on 53201+ -> 00001+ RGZ.  Signed fields at byte size
+! four: digits, then the sign byte S T U V (S = 8 for minus).
+!
+! A6  LC: 32 nines plus one.  p.60, Lost Carry: "if information is lost
+!     because a carry attempts to propagate beyond the left end of the
+!     accumulator."  The sum is zero, positive: RZ.
+! A7  PF: 9876 at offset 120 -- digits 30-33, two of them past the left
+!     end.  p.60, PF: "significant bits of the data field from storage
+!     overlap the left end ... the high-order bits of the result are
+!     dropped.  A partial field condition will not cause a lost carry
+!     indication."  76 lands in digits 30-31 over the 12 already there.
+! A8  offset 9 is offset 8: p.60, "the two low-order bits of the
+!     effective offset are ignored and considered zero".
+! A9  byte size 6, zones 11 on every byte: p.58, "only the four low-order
+!     bits of each byte take part in the operation."
+! A10 +MG, negative result: p.60, "If the result is negative, the entire
+!     accumulator is cleared to zero.  In either case, the content of the
+!     accumulator sign byte register is not changed."  |45623| - 53200 <
+!     0: zero, sign still minus -> RZ RN (as A4).
+! A11 +MG, positive: |75679| - 53200 = 22479, the sign byte still minus.
+! A12 "-" is + with the negative sign modifier (p.60's Programming
+!     Notes): 45623 - 37600 = 8023.
+! A13 a storage sign byte 0100 (S=0, T=1): TF on (p.60, "set according to
+!     the flag bits of the storage operand").
+! A14 C22-6578 printed p.15, Problem 2.3 Method 4 comment (b): "The byte
+!     (1 1 1 1)2, for instance, will become (0101)2 with a carry to the
+!     higher byte."  L(DU) of 3F -> 45.
+! A15 decimal L, PF: the digits of A7 loaded at offset 120.
+!
+! M1  M+, p.61: "The accumulator field specified by the offset is
+!     algebraically added to the addressed operand"; acc 37600+, offset 8
+!     -> 376 + 75679 = 76055+, MOP RGZ.
+! M2  LC, p.62: "actuated by a carry beyond the leftmost digit ... of the
+!     addressed field": 999 + 376 = 1375 -> 375 stored.
+! M3  p.62: "This indicator is also turned on if the result of an
+!     unsigned operation is negative.  In such a case, the magnitude of
+!     the result is stored": 123 - 376 = -253, 253 stored, LC, RLZ RN.
+! M4  PF, p.62: "non-zero digits ... in the accumulator to the left of the
+!     highest order digit that is participating": acc 12345, a two-digit
+!     field takes 45; 11 + 45 = 56.
+! M5  byte size 8: p.61, "The high-order bits of each byte are not changed
+!     by the operation" -- zones F kept, 12 + 34 = 46 -> F4F6.
+! M6  M+1, p.63 ("identical to an ADD TO MEMORY in which the accumulator
+!     operand is +1"): 99 + 1 = 100 -> 00, LC, RZ.
+! M7  M-1, p.63: "if it is one, a minus one is added": 0+ - 1 = 1-, the
+!     sign bit stored, digits 01, sign byte 1000.
+! M8  M+MG, p.62: "If the sum is of opposite sign, zero bytes replace the
+!     numeric part of the storage field.  In either case the sign byte ...
+!     is not changed"; storage 375-, acc 500+: sum 125+ -> 000-.  (Figure
+!     13: storage 3-, accumulator 5+, Add Magnitude to Memory -> 0-.)
+!     Indicators "according to the final result stored": RZ RN.
+!
+! S1  signed ST, byte size 4, p.63: the sign byte from the register, S=1.
+! S2  signed ST, byte size 6: three numeric bytes 00dddd and the sign byte
+!     Z Z S T U V = 00 1000 (zones from the register, which are zero):
+!     000110 000111 001001 001000 = 187248; PF, digits 7 and 5 are left
+!     of the high-order byte stored.
+! R1  decimal SRD, p.64: "a four-bit byte with value five is added to the
+!     four-bit byte immediately to the right of the offset": 12345 + 5 at
+!     digit 0, field from digit 1 -> 1235, three digits stored, 235; PF
+!     from the digit 1 left of them.
+! R2  9995 + 5 = 10000 -> 000 stored, LC (p.64: "the rounding process
+!     causes a carry to be propagated beyond the left end of the field
+!     stored"), and no PF: unrounded, 999 fits.
+! R3  signed: 7577- rounds to 758, two digits 58 and the sign byte 1000.
+! R4  offset 2 is digit offset 0, "equivalent to a STORE" (p.64): 77, PF.
+!
+! MEASURED INJECTIONS, 2026-11-16, each in a separate copy of bsv/ (the
+! worktree's source was never touched; the copies were diffed against it
+! first, one file differing in each), rebuilt and run on this deck:
+!   1. mkDecBox never recomplements (rl_add's "if (rg_sub[0] && c == 0)"
+!      made "if (False)"): FAILS A2_acc (0x9999999999992423), M3_field,
+!      M7_field -- exactly the three subtractions with no end carry --
+!      and, in run_decbox_test.sh, vectors 1 and 7; Problem 2.3 Method 4
+!      stays green (it never subtracts).  67 pass, 3 fail here.
+!   2. decimal RN off on a zero result (setResultIndicatorsDec's RN made
+!      -- that function is setResultIndicatorsF since 2026-11-16, shared
+!      with the binary arms; the injection is the same line there --
+!      "sign && !zero", the binary rule): FAILS A4_ind_RZ_RN (0x40),
+!      A10_ind (0x40), M8_ind (0x140) -- the three negative zeros.
+!   3. decMergeField starts from zero (zones not kept): FAILS
+!      M5_field_zones_kept only (0x0406FF..., zones 1111 lost) -- the only
+!      M+ case whose field has byte size over four.
+
+        SLC, 1000.0
+START   L(D,24,4), P75679
+        Z, $IND
+        +(D,16,4), P376, 8
+        TI, 1, $IND, I1
+        ST(BU,64,8), X1, 64
+        ST(BU,64,8), X1+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X1+2.0
+        L(D,24,4), P45623
+        Z, $IND
+        +(D,16,4), N532, 8
+        TI, 1, $IND, I2
+        ST(BU,64,8), X2, 64
+        ST(BU,64,8), X2+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X2+2.0
+        L(D,24,4), P53200
+        Z, $IND
+        +(D,16,4), N532, 8
+        TI, 1, $IND, I3
+        ST(BU,64,8), X3, 64
+        ST(BU,64,8), X3+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X3+2.0
+        L(D,24,4), N53200
+        Z, $IND
+        +(D,16,4), P532, 8
+        TI, 1, $IND, I4
+        ST(BU,64,8), X4, 64
+        ST(BU,64,8), X4+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X4+2.0
+        L(D,24,4), P53201
+        Z, $IND
+        +(D,16,4), N532, 8
+        TI, 1, $IND, I5
+        ST(BU,64,8), X5, 64
+        ST(BU,64,8), X5+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X5+2.0
+        L(DU,64,4), NINES, 64
+        +(DU,64,4), NINES, 0
+        Z, $IND
+        +(DU,4,4), ONE, 0
+        TI, 1, $IND, I6
+        ST(BU,64,8), X6, 64
+        ST(BU,64,8), X6+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X6+2.0
+        L(DU,8,4), D12
+        Z, $IND
+        +(DU,16,4), D9876, 120
+        TI, 1, $IND, I7
+        ST(BU,64,8), X7, 64
+        ST(BU,64,8), X7+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X7+2.0
+        L(DU,8,4), D12
+        Z, $IND
+        +(DU,8,4), D34, 9
+        TI, 1, $IND, I8
+        ST(BU,64,8), X8, 64
+        ST(BU,64,8), X8+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X8+2.0
+        L(DU,4,4), D0
+        Z, $IND
+        +(DU,18,6), Z123
+        TI, 1, $IND, I9
+        ST(BU,64,8), X9, 64
+        ST(BU,64,8), X9+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X9+2.0
+        L(D,24,4), N45623
+        Z, $IND
+        +MG(D,16,4), N532, 8
+        TI, 1, $IND, I10
+        ST(BU,64,8), X10, 64
+        ST(BU,64,8), X10+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X10+2.0
+        L(D,24,4), N75679
+        Z, $IND
+        +MG(D,16,4), N532, 8
+        TI, 1, $IND, I11
+        ST(BU,64,8), X11, 64
+        ST(BU,64,8), X11+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X11+2.0
+        L(D,24,4), P45623
+        Z, $IND
+        -(D,16,4), P376, 8
+        TI, 1, $IND, I12
+        ST(BU,64,8), X12, 64
+        ST(BU,64,8), X12+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X12+2.0
+        L(D,24,4), P75679
+        Z, $IND
+        +(D,16,4), P376T, 8
+        TI, 1, $IND, I13
+        ST(BU,64,8), X13, 64
+        ST(BU,64,8), X13+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X13+2.0
+        Z, $IND
+        L(DU,8,4), D3F
+        TI, 1, $IND, I14
+        ST(BU,64,8), X14, 64
+        ST(BU,64,8), X14+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X14+2.0
+        Z, $IND
+        L(DU,16,4), D9876, 120
+        TI, 1, $IND, I15
+        ST(BU,64,8), X15, 64
+        ST(BU,64,8), X15+1.0
+        L(BU,64,8), $SB
+        ST(BU,64,8), X15+2.0
+! --- to memory
+        L(D,16,4), P376, 8
+        Z, $IND
+        M+(D,24,4), M1, 8
+        TI, 1, $IND, J1
+        Z, $IND
+        M+(D,16,4), M2, 8
+        TI, 1, $IND, J2
+        L(D,16,4), N376, 8
+        Z, $IND
+        M+(DU,12,4), M3, 8
+        TI, 1, $IND, J3
+        L(DU,20,4), D12345
+        Z, $IND
+        M+(DU,8,4), M4
+        TI, 1, $IND, J4
+        L(DU,8,4), D34
+        Z, $IND
+        M+(DU,16,8), M5
+        TI, 1, $IND, J5
+        Z, $IND
+        M+1(DU,8,4), M6
+        TI, 1, $IND, J6
+        Z, $IND
+        M-1(D,12,4), M7
+        TI, 1, $IND, J7
+        L(DU,12,4), D500
+        Z, $IND
+        M+MG(D,16,4), M8
+        TI, 1, $IND, J8
+! --- store and store rounded
+        L(D,24,4), N75679
+        Z, $IND
+        ST(D,24,4), S1
+        TI, 1, $IND, K1
+        Z, $IND
+        ST(D,24,6), S2
+        TI, 1, $IND, K2
+        L(DU,20,4), D12345
+        Z, $IND
+        SRD(DU,12,4), S3, 4
+        TI, 1, $IND, K3
+        L(DU,16,4), D9995
+        Z, $IND
+        SRD(DU,12,4), S4, 4
+        TI, 1, $IND, K4
+        L(D,20,4), N7577
+        Z, $IND
+        SRD(D,12,4), S5, 4
+        TI, 1, $IND, K5
+        Z, $IND
+        SRD(DU,8,4), S6, 2
+        TI, 1, $IND, K6
+HALT    BEW, $
+
+        SLC, 1500.0
+P75679  DD(BU,64), (16)7567900000000000
+P45623  DD(BU,64), (16)4562300000000000
+P53200  DD(BU,64), (16)5320000000000000
+N53200  DD(BU,64), (16)5320080000000000
+P53201  DD(BU,64), (16)5320100000000000
+N45623  DD(BU,64), (16)4562380000000000
+N75679  DD(BU,64), (16)7567980000000000
+P376    DD(BU,64), (16)3760000000000000
+P376T   DD(BU,64), (16)3764000000000000
+N376    DD(BU,64), (16)3768000000000000
+N532    DD(BU,64), (16)5328000000000000
+P532    DD(BU,64), (16)5320000000000000
+NINES   DD(BU,64), (16)9999999999999999
+ONE     DD(BU,64), (16)1000000000000000
+D0      DD(BU,64), (16)0000000000000000
+D12     DD(BU,64), (16)1200000000000000
+D34     DD(BU,64), (16)3400000000000000
+D3F     DD(BU,64), (16)3F00000000000000
+D500    DD(BU,64), (16)5000000000000000
+D9876   DD(BU,64), (16)9876000000000000
+D9995   DD(BU,64), (16)9995000000000000
+D12345  DD(BU,64), (16)1234500000000000
+N7577   DD(BU,64), (16)7577800000000000
+Z123    DD(BU,64), (16)C72CC00000000000
+
+        SLC, 1600.0
+M1      DD(BU,64), (16)756790FFFFFFFFFF
+M2      DD(BU,64), (16)9990FFFFFFFFFFFF
+M3      DD(BU,64), (16)123FFFFFFFFFFFFF
+M4      DD(BU,64), (16)11FFFFFFFFFFFFFF
+M5      DD(BU,64), (16)F1F2FFFFFFFFFFFF
+M6      DD(BU,64), (16)99FFFFFFFFFFFFFF
+M7      DD(BU,64), (16)000FFFFFFFFFFFFF
+M8      DD(BU,64), (16)3758FFFFFFFFFFFF
+S1      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+S2      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+S3      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+S4      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+S5      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+S6      DD(BU,64), (16)FFFFFFFFFFFFFFFF
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+I4      DD(BU,64), 0
+I5      DD(BU,64), 0
+I6      DD(BU,64), 0
+I7      DD(BU,64), 0
+I8      DD(BU,64), 0
+I9      DD(BU,64), 0
+I10     DD(BU,64), 0
+I11     DD(BU,64), 0
+I12     DD(BU,64), 0
+I13     DD(BU,64), 0
+I14     DD(BU,64), 0
+I15     DD(BU,64), 0
+J1      DD(BU,64), 0
+J2      DD(BU,64), 0
+J3      DD(BU,64), 0
+J4      DD(BU,64), 0
+J5      DD(BU,64), 0
+J6      DD(BU,64), 0
+J7      DD(BU,64), 0
+J8      DD(BU,64), 0
+K1      DD(BU,64), 0
+K2      DD(BU,64), 0
+K3      DD(BU,64), 0
+K4      DD(BU,64), 0
+K5      DD(BU,64), 0
+K6      DD(BU,64), 0
+
+        SLC, 1800.0
+X1      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X2      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X3      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X4      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X5      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X6      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X7      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X8      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X9      DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X10     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X11     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X12     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X13     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X14     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+X15     DD(BU,64), 0
+        DD(BU,64), 0
+        DD(BU,64), 0
+        END, START

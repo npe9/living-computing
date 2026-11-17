@@ -419,15 +419,74 @@ nonzero offset (Perf. Char. Vol. 1 Table 3, `StretchTiming.bsv`).
 `decks/vfl_srd.strap` (eleven cases and a CYCLES pin, injections in its header),
 `decks/repro_vfl_srd.strap` and Buchholz B.2 as printed
 (`tests/verify_buchholz_b2.py printed`) are the checks.  Decimal `SRD`
-stays refused with the rest of decimal arithmetic.
+is built since 2026-11-16 with the decimal set below.
+
+**DECIMAL VFL ADD, LOAD AND STORE execute since 2026-11-16 (G2.3 stage
+1): `L`, `LWF`, `+`/`-`, `+MG`/`-MG`, `M+`, `M+1`/`M-1`, `M+MG`, `ST`
+signed and unsigned, `SRD`.**  The decimal sum is a SECOND BOX,
+`mkDecBox` (`StretchDecBox.bsv`): 32 BCD digits, eight a clock, a pass
+for the add and a second pass to recomplement when the signs are unlike
+and the operand is the larger (printed p.60's "complementation and
+recomplementation").  It is instantiated once in `mkEBox` beside
+`mkDivBox`; `NeedBox` carries a `BoxReq` union and the answer comes back
+as a `BoxRsp`.  A decimal `L` is an add to zero through the box, which
+is C22-6578 printed p.14-15's own description and gives its "(1111)2
+... will become (0101)2 with a carry".  Byte placement (any byte size to
+four-bit digits and back, zones kept or taken from the sign byte
+register) is wiring: `decCompact`, `decMergeField`, `decStoreField` in
+`StretchALU.bsv`.  Which codes accept the decimal modifier is ONE
+function, `vflDecimalBuilt` (`StretchVFL.bsv`), read by execute() and
+by `prepareExec`.  `tests/run_decbox_test.sh` tests the box alone
+(literal answers and clock counts, p.60's five examples among them);
+`decks/vfl_decimal_add.strap` is the deck.  Open items: `docs/NEXT.md`,
+"DECIMAL VFL ARITHMETIC (G2.3)".
+
+**THE COMPARES, stage 2 (2026-11-16): decimal `K`/`KF`, and `KE`, `KFE`,
+`KR`, `KFR` in both radices (printed pp.65-67).**  One arm.  A decimal
+compare is a subtraction through `mkDecBox` (p.65's Programming Note,
+item 4); the sign rule is the binary one ("-0 = +0").  `KE`/`KFE` leave
+the comparison indicators alone when AE is off; `KR`/`KFR` when AH is
+off, and otherwise turn AE on and AH off for a low accumulator.  The
+data flags are set in every case (a reading, marked CHOSEN in the arm).
+`decks/vfl_decimal_compare.strap` runs printed p.66's Figure 15 as
+printed.
+
+**LOAD TRANSIT AND SET is built in both radices, 2026-11-16**, and with
+it decimal `*`, `*+` and `/`, which printed pp.68-70 define as LTRS's
+action, not arithmetic: the transit register (word 15) gets the operand's
+numeric part above a four-bit sign byte, the all-ones counter the
+effective offset, the left zeros counter's two high-order bits the
+operation's discriminator (LTRS 11, `*` 00, `/` 01, `*+` 10), and BTR or
+DTR comes on (printed pp.67-68).  The counts go to location 7 through
+`connCounts`, the connectives' route.  CHOSEN: a decimal operand is
+loaded as four-bit digits ("Radix ... as in ADD"); the full seven-bit
+offset is loaded.  Timing: since the per-operation merge, PDF 123's
+measured LTRS page (44 clocks binary, 66 decimal, +16 above 48 bits),
+not Table 3's row, which sits 4 clocks under it; decimal `*`, `*+`, `/`
+are charged the decimal LTRS figure, CHOSEN because their own pages
+(PDF 133-135) print binary rows only (`StretchTiming.bsv`).  `decks/vfl_ltrs.strap`.
+
+**THE BINARY ARMS MADE TO AGREE, 2026-11-16 (the decimal work's three
+findings).**  (1) RN is the sign bit in both radices -- printed p.47's
+"negative whether zero or not" -- so `setResultIndicatorsDec` is folded
+into `setResultIndicatorsF`.  (2) Binary `+`/`+MG` set LC (carry out of a
+like-signed sum) and PF (operand bits past the accumulator's left end),
+and binary `L`/`LWF` set PF, "as in ADD" (printed pp.60-61).
+`decks/vfl_binary_add_indicators.strap`.  (3) A progressive operation
+whose index refills no longer applies itself twice:
+`vflRefillOutstanding` holds every arm that uses a shared trailing block
+until the refill word is in hand (printed pp.21-22, "the variable field
+length part ... and then the index modification portion").
+`decks/vfl_progressive_refill_once.strap`.
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`, decimal `SRD` included) except the unsigned
-store (`ST(DU)`, built
-2026-11-08 for MCP's `$TIME`, `decks/vfl_st_decimal.strap`), radix
-conversion (`CV`, `DCV`, `LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Decimal-mode VFL (`c=1`) except what `vflDecimalBuilt` lists (the
+radix conversions, and since 2026-11-16 the decimal loads, adds and
+stores above, the compares below, and since 2026-11-16 `LTRS` and
+decimal `*`/`*+`/`/`, which are its action) -- decimal `LFT`;
+radix conversion `DCV`; `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`. **Transmit's BACKWARD `SWAP`
 LEFT THIS LIST ON 2026-11-08** (see below).
@@ -859,6 +918,22 @@ model charges them those pages' flat figures without measuring them.
 CV runs in `vfl_convert.strap` and in MCP decks, but no pin is on its
 time. DCV (code 59) is not built in `execute()` and fails loud, so its
 arm is not run yet.
+
+**Merged with batch10 (decimal VFL, 2026-11-16).** Most decimal arms
+were already fitted to the pages' decimal rows: PDF 116-132 and 136-139
+print DU/D rows, so decimal `+`, `M+`, L, ST, SRD, K and the rest keep
+their laws. PDF 133-135 (`*`, `/`, `*+`) print binary rows only. Decimal
+`*`, `*+` and `/` are LTRS's action, so they are charged PDF 123's decimal
+LTRS figure, 66 clocks, or 82 above 48 bits. That choice is CHOSEN, not
+measured. Re-pinned after the merge, every result check unchanged:
+
+| deck | clocks before | clocks after |
+|---|---:|---:|
+| `vfl_srd` | 997 | 1246 |
+| `vfl_ltrs` | 974 | 1214 |
+| `vfl_decimal_refused` | 161 | 224 |
+
+`vfl_ltrs` was pinned to Table 3's row (16 + 2 x/y); it now has PDF 123.
 
 **Not modelled, or open.**
 

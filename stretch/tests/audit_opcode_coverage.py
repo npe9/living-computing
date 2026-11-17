@@ -67,10 +67,14 @@ UNIMPLEMENTED = {
     "DCV",                                # radix conversion
     # LCV moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     # CV and LTRCV moved there on 2026-10-21 (MCP printed p.24).
-    "KE", "KFE",                          # compare variants
+    # KE and KFE left on 2026-11-16: built (G2.3 stage 2, with KR/KFR, both
+    # radices, printed pp.65-67) and exercised by vfl_decimal_compare.strap,
+    # which runs printed p.66's Figure 15.
     # KFR moved to ENCODING_ONLY on 2026-11-02 (MCP printed p.181).
     # KF moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
-    "LTRS",                               # load transit and set
+    # LTRS left on 2026-11-16: built in both radices (G2.3 stage 3,
+    # printed pp.67-68), with decimal *, *+, / as its action (pp.68-70),
+    # and exercised by vfl_ltrs.strap.
     # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
     # but MCP's bootstrap uses it, so it is no longer UNUSED.
     #

@@ -37,6 +37,47 @@ package StretchVFL;
 import StretchTypes::*;
 import StretchStorage::*;
 
+// >>> WHICH VFL INTEGER OPERATIONS ACCEPT THE DECIMAL MODIFIER. <<<
+// One statement, read by BOTH places that need it -- execute()'s
+// refusal in vflIntOp and the I-box's prepareExec (`completesWithout
+// Fetch`) -- so the two cannot drift; they were two hand-kept copies of
+// an exemption list until 2026-11-16.  An operation NOT listed sets OP
+// when bit 53 is one (the model's scope rule: decode completely, refuse
+// what is not built, loudly).
+//
+//   LCV, CV, LTRCV  the radix conversions: for them bit 53 picks the
+//                   direction (printed p.72), not decimal arithmetic.
+//   L, LWF          decimal byte placement (printed pp.58, 61).
+//   ST, SRD         decimal store, signed and unsigned (printed pp.63-64);
+//                   SRD's rounding is a decimal add (mkDecBox).
+//   +, +MG, M+, M+1, M+MG
+//                   decimal addition (printed pp.60-63), through
+//                   mkDecBox (StretchDecBox.bsv).
+//
+//   K, KF, KE, KFE, KR, KFR
+//                   decimal comparison (printed pp.65-67), a subtraction
+//                   through mkDecBox (stage 2, 2026-11-16).
+//
+//   LTRS, and *, *+, /
+//                   LOAD TRANSIT AND SET (printed pp.67-68), and the
+//                   three whose decimal form is NOT arithmetic at all but
+//                   LTRS's action with DTR and their own two left-zeros
+//                   bits (printed pp.68-70) -- built 2026-11-16.
+//
+// STILL REFUSED: LFT (decimal) and DCV (unused by MCP).
+function Bool vflDecimalBuilt(Bit#(6) code);
+  return code == 6'b000011 || code == 6'b011011 || code == 6'b100011   // LCV CV LTRCV
+      || code == 6'b000101 || code == 6'b100101                        // L LWF
+      || code == 6'b001101 || code == 6'b101101                        // ST SRD
+      || code == 6'b000001 || code == 6'b100001                        // + +MG
+      || code == 6'b001001 || code == 6'b101011 || code == 6'b101001   // M+ M+1 M+MG
+      || code == 6'b010001 || code == 6'b110001                        // K KF
+      || code == 6'b010011 || code == 6'b110011                        // KE KFE
+      || code == 6'b010101 || code == 6'b110101                        // KR KFR
+      || code == 6'b111101                                             // LTRS
+      || code == 6'b011001 || code == 6'b111001 || code == 6'b011101;  // * *+ /
+endfunction
+
 function Bit#(7) effLength(Bit#(6) length) =
   (length == 0) ? 64 : zeroExtend(length);
 

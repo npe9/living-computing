@@ -139,6 +139,20 @@ E1-E5. Running the processors under MCP does.
 assembling a source deck into the binary E4 loads. Then E4's
 scaffolding deck is replaced by STRAP II's own output.
 
+**How a processor is reached under MCP (read 2026-11-16, plan R0.5 in
+`reading_notes/fortran_bss_plan.md`).** The TYPE card's third field
+names a processor-control type area, "PC" plus its first six characters
+(PCFORTRA; a GO,FORTRAN job becomes PCBSS, printed p.271 ll.43-50). The
+$EOJ overlay fetches that area, breaks its first card into compiler
+type-area names at KSILO+2.0 on, and loads each name in turn through
+resume load as a binary deck (printed pp.395-397). After the chain comes
+"))))))))", the compiled program on TWS. So E6 and E7 each need a PC area
+and a type area per processor. The listing fixes the PC names and the
+TWS name (`prosa_dict.PC_TYPE`, `TWS_AREA`), but not the processors'
+names or the PC card. Those are reconstruction choices, still open. The
+loader's half of BSS (a second subprogram from TWS, a library entry) ran
+on the model the same day (plan R1).
+
 **E7. FORTRAN IV**, the same way, after STRAP II.
 
 **E8. On the ULX3S.** The same jobs, with the disk in SDRAM (disk plan

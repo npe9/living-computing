@@ -591,9 +591,18 @@ CHAPTER 2" below.*
 **G2.2 Buchholz Appendix B** adds six more worked programs, independent
 of `C22-6578`.
 
-**G2.3 The arms still refused.** The decimal VFL set (decimal `SRD`
-among them; binary VFL `SRD` is built since 2026-11-16), `SWAP`'s
-remaining variants. `storeTarget`'s invariant names the ones that will
+**G2.3 The arms still refused.** The decimal VFL set, `SWAP`'s
+remaining variants.  **Decimal stage 1 is built (2026-11-16):** decimal
+`L`, `LWF`, `+`/`-`, `+MG`, `M+`, `M+1`/`M-1`, `M+MG`, signed `ST` and
+`SRD`, the sums through the decimal box `mkDecBox`
+(`bsv/StretchDecBox.bsv`); `decks/vfl_decimal_add.strap`.  **Stage 2,
+the same day:** decimal `K`/`KF` and `KE`/`KFE`/`KR`/`KFR` in both
+radices (printed pp.65-67; `decks/vfl_decimal_compare.strap`, Figure 15
+as printed).  **Stage 3, the same day:** `LTRS` in both radices, and
+decimal `*`/`*+`/`/`, which printed pp.68-70 define as LOAD TRANSIT AND
+SET's action with DTR, not as arithmetic (`decks/vfl_ltrs.strap`).
+Remaining: decimal `LFT` and `DCV` (`docs/NEXT.md`, "DECIMAL VFL
+ARITHMETIC (G2.3)"). `storeTarget`'s invariant names the ones that will
 need a case when they land.
 
 ## G3 — Assembler completeness, from `C22-6729`'s grammar
@@ -618,18 +627,24 @@ Char. Vol. 2's per-instruction atlas is the real timing oracle and that
 `perf_char_timing.py` is "shaped for" it. **M2's correctness is defined
 as how much of that residual it closes**.
 
-*Status 2026-11-16: written, first measurement taken.* The oracle is in
-`docs/atlas_oracle.md`. 93 of the 139 atlas pages are transcribed
-(`tests/perf_char_vol2_atlas.txt`; the fast self-check
-`tests/check_atlas_data.py` is in `run_tests.sh`). The 93 include all
-60 floating-point pages, PDF 42-101, which were added later on
-2026-11-16. With them came two new cross-check rules: forwarding twins
-and the PDF 104 FP quotations. `tests/atlas_oracle.py` runs 6,265 cases
-in about an hour. Today's residual has mean −18.9 clocks and median
-−7.1, with 7% exact. The largest single cause is that the model's VFL
+*Status 2026-11-16: written, first measurement taken, transcription complete.* The oracle is in
+`docs/atlas_oracle.md`. **All 139 atlas pages are transcribed**
+(`tests/perf_char_vol2_atlas.txt`, 28,272 times; the fast self-check
+`tests/check_atlas_data.py` is in `run_tests.sh`). The 60 floating-point
+pages, PDF 42-101, came with two cross-check rules: forwarding twins and
+the PDF 104 FP quotations. The last 46 pages also came on 2026-11-16:
+VFL with forwarding, PDF 143-169, and VFL immediate, PDF 171-189. With
+them came five more rules: `vfwd`, `vfwdib`, `index`, `immf` and `immn`.
+PDF 114 says the I-box operand should not change with forwarding;
+`vfwdib` finds 2,007 exact pairs and 94 near of 2,148. Eight cells are
+uncertain, each with a NOTE. `tests/atlas_oracle.py` ran 6,265 cases
+in about an hour; with the new pages `--list` reports 12,353 cases with
+a generator (run time unmeasured). Its residual predates PDF 143-189: mean −18.9 clocks,
+median −7.1, 7% exact. The largest single cause is that the model's VFL
 time does not depend on the operation. FP residuals are unmeasured:
 the oracle has no FP generator. Remaining:
-- VFL forwarding and immediate (46 pages);
+- generator support for the forwarding INTERNL columns and the immediate
+  pages (the facts from PDF 114 are in that doc);
 - an FP generator;
 - the other generators listed in that doc.
 
@@ -1845,6 +1860,23 @@ halt once its add is refused and is not registered.  The first OP that run
 reported was the add's, at half-word 2006, not the `LCV(DU)` before it --
 not examined further.
 
+*2026-11-16, G2.3 stage 1 built (decimal `+`, `L`, `LWF`, `ST`, `SRD`, the
+`M+` family, through `mkDecBox`):* 2.3 Method 4's refusal is flipped -- its
+three words now carry the hand-derived values, and pass.  2.8, run with
+`ASM=strap2`, computes product 1's total as the program as printed does on
+this data (`36`: the printed `+(D,48,8)` is signed, so E's last byte is a
+sign byte -- traced before the run) and then loops in `KOMF` without
+writing product 2; the loop is not traced and 2.8 stays unregistered
+(`docs/NEXT.md` G2.3).
+
+*2026-11-16, later: 2.8 traced and registered.*  The loop is the printed
+program's, not the model's: `KOMF`'s `KF(BU,24)` compares three bytes with
+the accumulator's N D (11111111) (printed pp.56, 65), never the one-byte
+mark the following `V+I, $2, 1.0` assumes.  Registered as printed (a
+deliberate stop in the loop), with `KF(BU,8)` (halts, 36/8/44: the pre-run
+trace's values), and with the signed ADD made `DU` too (the statement's
+375/80/455).  Two new rows in the defect table below; `docs/NEXT.md` G2.3.
+
 **The assembler (`strap_asm`): two findings, both with reproducers and a
 section in `docs/NEXT.md`, neither fixed.**  The host STRAP II
 (`strap/strap2`) is right on both.
@@ -1860,7 +1892,7 @@ comments are written `!'`; a symbol in a `DD` data field (2.10's
 `DD(BU, 18), N`) is refused by STRAP II too.
 
 **The printed programs: nine defects in seven methods, each worked by hand
-from the Reference Manual.**  Seven of the nine were then run AS PRINTED and
+from the Reference Manual** (eleven in eight since 2.8 was traced, below).  Seven of the nine were then run AS PRINTED and
 the model agreed with the hand trace; 2.3 Method 3's is not run (it does not
 terminate) and 2.12's is pinned only as far as what TEMP is left holding.
 Each deck's header has the argument.
@@ -1876,6 +1908,8 @@ Each deck's header has the argument.
 | 2.9 | last `B, MPLUS` | bits 19-23 left in the sum | `B, KMINUS` |
 | 2.9 | K-type, K = 1 | `$1` overwritten before it is read | -- |
 | 2.12 | mask saved in `INST+1.0` | that word is TEMP, reused | -- |
+| 2.8 | `KOMF KF(BU,24)(V+I)` | never matches: loops past the list | `KF(BU,8)` |
+| 2.8 | `+(D, 48, 8)` | E's last digit read as a sign: 36, 8, 44 | `+(DU, 48, 8)` |
 
 Also recorded, without a run: 2.6 Method 4 does not assemble as
 printed (`BZXCZ, $3, TEST`) and has three more visible defects -- it is
@@ -1884,8 +1918,9 @@ transcribed in `problem_2_6_method3.strap`'s header; 2.8 prints the label
 
 **Open, and not decided here:**
 
-1. **2.8 and 2.3 Method 4 wait on the decimal arm.**  2.8's expected byte
-   forms (zone bits of a decimal store) were not derived.
+1. ~~**2.8 and 2.3 Method 4 wait on the decimal arm.**~~  Both run since
+   G2.3 stage 1; 2.8 registered 2026-11-16 (its stored digits carry zone
+   0000 -- observed on the model, not derived by hand).
 2. **2.6 Method 4 was not run.**  Running it means choosing four
    corrections; that would test the deck's rewrite, not IBM's program.
 3. **2.9's K = 1 defect and 2.6 Method 3's last-compare defect have no

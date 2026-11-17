@@ -28,6 +28,18 @@ WHAT IT CHECKS
       fwd      FP: a page with forwarding (PDF 73-101) against the page
                31 earlier without it, same instruction, block, row and
                column (EXTERNAL and I-BOX; INTERNAL is blank without)
+      vfwd     VFL: a page with forwarding (PDF 143-169) against the page
+               27 earlier without it, same instruction, block, row and
+               column: EXTERNL OPERAND, EXTERNL WB XOVR, ACCUM. OPERAND
+      vfwdib   the same pairing on the I-BOX OPERAND column, kept apart
+               because PDF 114 says of it "there should be no difference in
+               times between no forwarding vs. forwarding"
+      index    VFL forwarding and immediate pages: an INTERNL or IMMED.
+               column under NO INDEXING against the same under INDEXING
+      immf     VFL immediate (PDF 171-189): IMMED. OPERAND against the same
+               instruction's EXTERNL OPERAND with forwarding (an OBSERVED
+               relation; the volume does not state one -- see IMM_BASE)
+      immn     the same against the page without forwarding
       quotefp  PDF 104's FP subject rows (ST(U) ... LFT(U)) against the
                instruction's no-forwarding sheet; see QUOTED_FP
       noncon   BRANCH: a NONCON column against its CONSEC twin
@@ -96,6 +108,34 @@ original was never written and `cmp` against HEAD was clean after.
  * A record only 'quotefp' reaches -- PDF 104 ST(U) quoted 4.82 -> 4.80:
    two failures: 'quotefp' (3, 6, 3) against (2, 6, 4); PDF 104's SUM.
 
+MEASURED INJECTIONS, 2026-11-16, on the VFL forwarding pages (PDF 143-169),
+made to a COPY with --file=; the original was `cmp`-clean after.
+
+ * A record 'vfwdib' reaches -- PDF 147 (L), first block, (B,32,1) ni_ibox
+   6.60 -> 6.90: four failures: 'ibox' (67, 10, 19) against (68, 10, 18);
+   'invert' (212, 11, 1) against (213, 11, 0); 'vfwdib' (95, 0, 1)
+   against (96, 0, 0); PDF 147's SUM.
+ * A record 'index' reaches -- PDF 143 (+), first block, (BU,32,8) ni_int
+   7.36 -> 7.66: three failures: 'index' (67, 20, 1) against (68, 20, 0);
+   'invert' (210, 7, 7) against (211, 7, 6); PDF 143's SUM.
+ * A record 'vfwd' reaches on an ACCUM. column -- PDF 165 (CV), first
+   block, (B,8,1) ni_accum 6.00 -> 6.60: three failures: 'invert' (47, 0,
+   1) against (48, 0, 0); 'vfwd' (95, 0, 1) against (96, 0, 0); PDF 165's
+   SUM.
+
+MEASURED INJECTIONS, 2026-11-16, on the VFL immediate pages (PDF 171-189),
+same method.
+
+ * PDF 171 (+I), first block, (B,32,1) ni_imm 6.76 -> 6.16: four failures:
+   'immf' (78, 7, 11) against (79, 7, 10); 'index' (47, 0, 1) against
+   (48, 0, 0); 'invert' (45, 2, 1) against (46, 2, 0); PDF 171's SUM.
+   'immn' does NOT fail: the pair (PDF 116's 6.60) was already far, and
+   stays far -- a far-to-far change is invisible to a count.
+ * PDF 188 (CI0011, one block, no invert), (BU,16,4) ix_imm 6.00 -> 6.60:
+   four failures: 'immf' (61, 2, 7) against (62, 2, 6); 'immn' (62, 1, 7)
+   against (63, 1, 6); 'index' (33, 1, 1) against (34, 1, 0); PDF 188's
+   SUM.
+
     python3 tests/check_atlas_data.py          # the check
     python3 tests/check_atlas_data.py -v       # plus per-column grid census
     python3 tests/check_atlas_data.py --tally  # print TALLY and SUM lines
@@ -162,6 +202,56 @@ QUOTED_FP = {
 # and I-BOX columns, the only ones both print.
 FWD_OFFSET = 31
 
+# VFL pages with forwarding (PDF 143-169) repeat, page for page, the VFL
+# pages without it (PDF 116-142): same instruction, blocks and rows.  PDF
+# 114 (printed 107), of the no-forwarding run: "For I-box operands, the
+# locations were $X0, $X1, $X2, $X3, $X0, etc.  Here there should be no
+# difference in times between no forwarding vs. forwarding, and this was
+# indeed the case."  So the I-BOX OPERAND pair is its own rule, 'vfwdib',
+# the one the volume itself predicts equal; 'vfwd' pairs the other columns
+# both pages print (EXTERNL OPERAND, EXTERNL WB XOVR, ACCUM. OPERAND),
+# where forwarding may help.  The INTERNL columns are printed only with
+# forwarding.
+VFL_FWD_OFFSET = 27
+
+# The immediate pages (PDF 171-189) print one figure per group, IMMED.
+# OPERAND.  PDF 114: "The 24 bit address of the instruction contained the
+# equivalent of the standard operand (444...4)16.  There is, of course, no
+# case of forwarding with immediate operands."  The volume does NOT say how
+# these figures relate to the memory-operand pages, so the immediate column
+# is paired with the same instruction's EXTERNL OPERAND column on BOTH
+# runs: 'immf' against the forwarding page, 'immn' against the no-forwarding
+# page.  Both are counted, neither is required to agree, and neither fits
+# throughout: on +I the forwarding page fits better (PDF 171 (B,8,1) 4.96 =
+# PDF 143's, not PDF 116's 4.80); over all 19 pages 'immn' has more exact
+# pairs (929 of 1,600 against 731), and on the compares KI..KFEI neither fits
+# (the immediate figure is lower, e.g. 3.61 against 4.20).
+IMM_BASE = {
+    "+I": "+", "+MGI": "+MG", "LI": "L", "LWFI": "LWF", "LFTI": "LFT",
+    "LTRSI": "LTRS", "KI": "K", "KRI": "KR", "KEI": "KE", "KFI": "KF",
+    "KFRI": "KFR", "KFEI": "KFE", "*I": "*", "/I": "/", "*I+": "*+",
+    "LCVI": "LCV", "LTRCVI": "LTRCV", "CI0011": "C0011",
+    "CTI0111": "CT0111",
+}
+
+# On the forwarding and immediate pages the INTERNL and IMMED. columns are
+# printed under both NO INDEXING and INDEXING; 'index' pairs ni_X with ix_X
+# for those columns (PDF 113: the indexing columns index by a register
+# containing zero).  The older columns are not paired this way, so the
+# TALLY lines of PDF 116-142 are unchanged.
+INDEX_PAIRED = ("int", "int_wbx", "imm")
+
+
+def vfl_page(by_pdf, instr, forwarding, addressing="direct"):
+    """The VFL sheet timing instr under the given conditions, or None."""
+    for p in (by_pdf or {}).values():
+        if p.cls == "VFL" and instr in p.instrs and p.records and \
+                p.records[0].cond.get("forwarding") == forwarding and \
+                p.records[0].cond.get("addressing") == addressing:
+            return p
+    return None
+
+
 # (pdf, instr, block, row, col): (this file, perf_char_timing.py, verdict)
 ADJUDICATED = {}
 
@@ -200,6 +290,38 @@ def twin_pairs(page, by_pdf=None):
                 t = idx.get((ins, blk, row, col[:-3] + "ibox"))
                 if t:
                     yield "ibox", r, t
+            if col.startswith("ni_") and col[3:] in INDEX_PAIRED:
+                t = idx.get((ins, blk, row, "ix_" + col[3:]))
+                if t:
+                    yield "index", r, t
+        cond = page.records[0].cond if page.records else {}
+        if cond.get("forwarding") == "yes" and \
+                cond.get("addressing") == "direct" and by_pdf:
+            base = by_pdf.get(page.pdf - VFL_FWD_OFFSET)
+            if base is not None and base.cls == "VFL" and base.records and \
+                    base.records[0].cond.get("forwarding") == "no" and \
+                    base.instrs == page.instrs:
+                bidx = {(r.instr, r.block, r.row, r.col): r
+                        for r in base.records if r.kind == "time"}
+                for key, r in idx.items():
+                    t = bidx.get(key)
+                    if t is not None:
+                        yield ("vfwdib" if key[3].endswith("_ibox")
+                               else "vfwd"), r, t
+        if cond.get("addressing") == "immediate" and by_pdf:
+            for rule, fwd in (("immf", "yes"), ("immn", "no")):
+                for ins in dict.fromkeys(page.instrs):
+                    base = vfl_page(by_pdf, IMM_BASE.get(ins), fwd)
+                    if base is None:
+                        continue
+                    bidx = {(r.instr, r.block, r.row, r.col): r
+                            for r in base.records if r.kind == "time"}
+                    for (i2, blk, row, col), r in idx.items():
+                        if i2 == ins and col.endswith("_imm"):
+                            t = bidx.get((IMM_BASE[ins], blk, row,
+                                          col[:-3] + "ext"))
+                            if t is not None:
+                                yield rule, r, t
     elif page.cls == "FP":
         base = by_pdf.get(page.pdf - FWD_OFFSET) if by_pdf else None
         if base is not None and base.cls == "FP" and page.records and \

@@ -431,7 +431,12 @@ section 4 below. These need `binaryToBcd` and nothing else.
 
 `LTRS` (printed p.68) needs only the BTR/DTR distinction — the radix
 bit picks which indicator is turned on, and the transit register
-itself is a bit pattern either way. `LFT` (Load Factor, printed p.69)
+itself is a bit pattern either way. **(Not the reading built, 2026-11-16:** `LTRS` as built,
+`decks/vfl_ltrs.strap`, loads a decimal operand's numeric part as
+four-bit digits, zones dropped, because p.68 says "Radix.  This modifier
+operates as in ADD" and p.58 says a decimal operand "is converted to a
+four-bit byte for processing".  CHOSEN, not printed; `docs/NEXT.md`
+G2.3 stage 3.) `LFT` (Load Factor, printed p.69)
 is "as in ADD" and clears the factor register with a four-bit sign
 byte.
 

@@ -30,7 +30,7 @@ These come from the volume itself (PDF 37-39, 102, 105, 111, 113-115):
   latency. The oracle reproduces the same sequence, so the comparison
   is like with like.
 - **±0.01 µs.** That is a thirtieth of a clock. Only 5,840 of the
-  16,480 printed times (35%) fall on the 0.3 µs grid. Whole-clock
+  28,272 printed times (37%) fall on the 0.3 µs grid. Whole-clock
   behaviour is therefore a column property, not a page property. The
   STORE pages are averages.
 - **The conditions are named on each page.** Indexing uses an index
@@ -47,13 +47,14 @@ to 189:
 
 | | pages | |
 |---|---|---|
-| transcribed | **93** | FP PDF 42-101 (all 60 floating-point pages, without and with forwarding, read 2026-11-16), PDF 104 (environment averages), 106 TI, 107 T, 109 I-box, 110 LVS/LVE/SVA, 112 branch, 116-142 (all 27 VFL pages, NO FORWARDING / DIRECT) |
-| other (text, flow charts) | 14 | |
-| remaining | **46** | VFL with forwarding 143-169, VFL immediate 171-189 |
+| transcribed | **139 (all)** | FP PDF 42-101 (all 60 floating-point pages, without and with forwarding), PDF 104 (environment averages), 106 TI, 107 T, 109 I-box, 110 LVS/LVE/SVA, 112 branch, 116-142 (27 VFL pages, NO FORWARDING / DIRECT), 143-169 (27 VFL pages, FORWARDING / DIRECT), 171-189 (19 VFL pages, IMMEDIATE) |
+| other (text, flow charts, a dump) | 14 | |
+| remaining | **0** | |
 
-- **Records.** There are 16,590: 16,480 times and 110 marks. A further
-  7,443 cells are printed blank. The FP pages hold 9,406 of the times and 2 of
-  the marks (`*01*`, PDF 45).
+- **Records.** There are 28,644: 28,272 times and 372 marks. A further
+  15,379 cells are printed blank. The FP pages hold 9,406 of the times and 2 of
+  the marks (`*01*`, PDF 45). The VFL forwarding and immediate pages (PDF
+  143-189, read 2026-11-16) hold 11,792 times and 262 marks.
 - **Cross-checks** (`check_atlas_data.py`, all green). The atlas prints
   much of itself twice, and every such pair is counted as exact, near
   (1 in the last place) or far. The counts are pinned by a TALLY line
@@ -61,9 +62,14 @@ to 189:
 
   | pair rule | pairs | exact | near | far |
   |---|---:|---:|---:|---:|
-  | ibox (VFL) | 2,148 | 1,245 | 55 | 848 |
+  | ibox (VFL) | 4,296 | 2,234 | 237 | 1,825 |
   | ibox (FP) | 3,711 | 1,191 | 438 | 2,082 |
-  | invert (VFL) | 2,822 | 1,823 | 81 | 918 |
+  | invert (VFL) | 8,106 | 5,287 | 257 | 2,562 |
+  | vfwd, PDF 143-169 against 116-142 (EXTERNL, WB XOVR, ACCUM.) | 4,132 | 2,232 | 418 | 1,482 |
+  | vfwdib, the same on I-BOX OPERAND | 2,148 | 2,007 | 94 | 47 |
+  | index, INTERNL / IMMED. under NO INDEXING against INDEXING | 2,756 | 1,722 | 488 | 546 |
+  | immf, IMMED. (171-189) against EXTERNL with forwarding | 1,600 | 731 | 157 | 712 |
+  | immn, IMMED. against EXTERNL without forwarding | 1,600 | 929 | 48 | 623 |
   | neg (FP), NEG row against its unnegated row | 4,702 | 4,422 | 144 | 136 |
   | fwd (FP), PDF 73-101 against PDF 42-70 | 3,710 | 2,461 | 166 | 1,083 |
   | branch noncon | 40 | 40 | 0 | 0 |
@@ -79,7 +85,25 @@ to 189:
   DL(U) 1.41, LFT(U) 4.35) lie within 0.02 µs of the no-forwarding
   sheets' NORMALIZED (U) external, no-indexing figure. Which column the
   environment test used is an assumption, stated in the checker.
-  The ibox rule on the forwarding pages mostly differs for real: with
+  `vfwd`, `vfwdib`, `index`, `immf` and `immn` were added with the VFL
+  forwarding and immediate pages. PDF 114 says of the I-box operand,
+  "there should be no difference in times between no forwarding vs.
+  forwarding, and this was indeed the case"; `vfwdib` bears that out
+  (2,007 exact and 94 near of 2,148). 40 of its 47 far pairs are on
+  PDF 143 (+), on the signed rows (B and D) of both blocks:
+  - With forwarding, the signed rows print the times of the unsigned rows:
+    (B,8,1) is 4.96 against PDF 116's 4.80, and (D,8,4) is 5.07, close to
+    (DU,8,4)'s 5.09.
+  - The INVERT block shows none of PDF 116's recomplement cost:
+    INVERT (B,8,1) is 4.96 against 7.20, and (D,64,4) 13.50 against
+    23.41.
+  The same pattern runs through every column of PDF 143, so it is the
+  page and not a misread. The other 7 are M+1 INVERT cells on PDF 153. PDF 114 says the immediate run used
+  the standard operand in the address field and states no relation to
+  the memory pages, so both pairings are counted. Neither fits
+  throughout: +I follows the forwarding page, and the compares KI..KFEI
+  run below both (3.61 against 4.20).
+  The FP ibox rule on the forwarding pages mostly differs for real: with
   forwarding the no-indexing I-box operand runs faster than the
   external one (1.81 against 2.41 on KR through F+ and on L through
   DLWF).
@@ -87,8 +111,8 @@ to 189:
 - **Second reading.** The 726 cells shared with the earlier
   independent transcription in `perf_char_timing.py` show 0
   disagreements.
-- **Reach.** The reading checks touch 16,114 of the 16,480 times. The
-  other 366 are guarded only by the per-page SUM. Every FP time is
+- **Reach.** The reading checks touch 28,058 of the 28,272 times. The
+  other 214 are guarded only by the per-page SUM. Every FP time is
   reached, by `neg` at least; the INTERNAL columns and PDF 71-72 are
   reached by `neg` alone. Reach counts rows, not depth: a misread
   repeated down a whole column passes `neg`, which compares within a
@@ -108,7 +132,15 @@ to 189:
       `neg` reaches, makes 2 checks fail: `neg` and SUM.
     - PDF 104 ST(U) quoted 4.82→4.80 makes 2 checks fail: `quotefp`
       (3, 6, 3 against 2, 6, 4) and SUM.
-- **Six uncertain cells**, each with a NOTE:
+  - VFL forwarding and immediate, 2026-11-16, made the same way:
+    - PDF 147 L (B,32,1) ni_ibox 6.60→6.90: `ibox`, `invert`, `vfwdib`, SUM.
+    - PDF 143 + (BU,32,8) ni_int 7.36→7.66: `index`, `invert`, SUM.
+    - PDF 165 CV (B,8,1) ni_accum 6.00→6.60: `invert`, `vfwd`, SUM.
+    - PDF 171 +I (B,32,1) ni_imm 6.76→6.16: `immf`, `index`, `invert`,
+      SUM. `immn` does not fail: its pair was far and stays far.
+    - PDF 188 CI0011 (BU,16,4) ix_imm 6.00→6.60: `immf`, `immn`, `index`,
+      SUM.
+- **Eight uncertain cells**, each with a NOTE:
   - PDF 95 L, U,V FLAGS A(N) ni_ibox `1.81?`. At 6x the last digit is
     a hollow stroke as narrow as a 1, so it is read as 1.81. The ink
     alone cannot exclude 1.80.
@@ -116,6 +148,33 @@ to 189:
     stroke.
   - PDF 135 `*+` INVERT ix_ext at (B,32,1), (B,48,1) and (B,64,1),
     which are faded.
+  - PDF 146 M+MG INVERT (D,16,4) ni_ext_wbx `19.87?`, where the 19 is
+    broken ink.
+  - PDF 168 CM0101 (BU,32,1) ni_int_wbx `31.93?`, where the first decimal
+    is a fragment.
+- **Headings read by glyph or by order, each NOTEd.**
+  - PDF 145's mnemonic is illegible. Its INSTR is +MG because of where
+    it falls in the run. The ink then tests it: its I-BOX column agrees
+    with PDF 118 (+MG) in all 96 pairs, and with PDF 116 (+) in only 52.
+  - PDF 153 prints M+ followed by a glyph this printer uses for both I and
+    1. It is read as M+1.
+  - PDF 169's faint C is read as CT0111.
+- **How PDF 143-189 were read.** Seven independent readers worked from
+  300 dpi tiles of the page images, with no other sheet open.
+  - Most pages were re-read column by column on a second cut. On PDF
+    143-148 the second pass compared against the tiles already viewed,
+    not a new cut. On PDF 171-174 it was a spot check.
+  - A detector then listed every far pair whose difference was unique in
+    a column that otherwise agrees. Those on PDF 145, 148, 153, 154, 156,
+    162, 164, 168 and 169 were re-read on new crops, and all stand as
+    printed.
+  - The detector's hits on the M+ invert block (PDF 144) and on the
+    to-memory INTERNL tails (143) repeat across rows and pages. They were
+    judged real from that repetition, not re-read cell by cell.
+  - Where the volume repeats a page, the data rows diff identical:
+    KI/KRI/KEI (177-179), and KFI/KFRI/KFEI (180-182, where 182 had a
+    different reader).
+  - The 262 indicator marks on these pages are in no TALLY and no SUM.
 
 ## How to run
 
@@ -139,7 +198,12 @@ sets `BLUESPECDIR` and `PATH` itself.
 - **Per-instruction clocks are measured by subtraction.** The figure is
   (cycles of the full program − cycles of a baseline with an empty body
   and no count branch) / 10,000.
-- **Run time.** The full run is **6,265 cases in 3,618 s (about one
+- **Run time.** *Measured before PDF 143-189 were added.* With them,
+  `--list` reports **12,353 cases with a generator** (2026-11-16). The run
+  time of that set is unmeasured, and by the per-case rate below it is
+  about two hours. The forwarding pages' WB XOVR cases will run with the
+  generator's FL//2 field placement, not PDF 114's (150000.74)₈. The full
+  run was **6,265 cases in 3,618 s (about one
   hour) wall** at `--jobs 12` on a 16-CPU machine. That is two
   simulations a case, about 0.58 s a case in aggregate. The longest
   bodies (T 100WD, the conversions) dominate.
@@ -199,7 +263,7 @@ The report echoes this list in its header:
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
 
-### Not generated (917 transcribed cells, each listed with its reason by `--list`)
+### Not generated (917 transcribed cells as of the 93-page run; with all 139 pages `--list` reports 16,291: 9,406 FP cells (no FP generator), 3,908 INTERNL cells of PDF 143-169, the marks, CV/DCV, and the immediate pages, reported as "no generator for VFL instruction LI" and so on)
 
 - 450 ENV cells (PDF 104), which are environment averages.
 - 192 CV and DCV cells, whose accumulator addressing the page does not
@@ -217,6 +281,11 @@ The report echoes this list in its header:
   - RNX, which the model does not implement.
 
 ## The first full residual (2026-11-16; the model as of `77ed952`, before the per-operation VFL times)
+
+**This table predates PDF 143-189.** When the oracle is next run, it will
+pick up the forwarding pages on its own. `vfl_case` already has a
+`forwarding=yes` branch with one operand address. The INTERNL columns and
+all the immediate pages will report "not generated" (see What remains).
 
 There are 6,265 cases, and all of them halt. Exact means |residual| ≤
 0.1 clock. Negative means **the model is faster than the 7030**.
@@ -484,9 +553,26 @@ the 7030 does is **open**, and it matters only for mixed sequences.
 
 ## What remains
 
-- **Transcribe the other 46 pages:** VFL forwarding (143-169) and
-  immediate (171-189). The VFL generator should reach them with an
-  addressing switch.
+- **Generators for the new VFL pages.** The transcription is complete,
+  but `tests/atlas_oracle.py` was not changed with it. Another agent
+  owns the VFL generator. Three things are needed:
+  - **Forwarding, PDF 143-169.** PDF 114 gives the locations: external
+    (150000.0)₈, external with WB crossover (150000.74)₈, I-box $X0
+    (20.0)₈, internal (10.0)₈, internal with WB crossover (10.74)₈. The
+    generator's forwarding branch uses ATLE0 and $X0 and starts the WB
+    crossover at FL//2. PDF 114's .74 offsets are what the page used,
+    and the INTERNL columns (`ni_int`, `ni_int_wbx`, `ix_int`,
+    `ix_int_wbx`) need an internal-operand placement it does not have.
+  - **Immediate, PDF 171-189 (`addressing=immediate`, columns
+    `ni_imm`/`ix_imm`).** PDF 114: "The 24 bit address of the
+    instruction contained the equivalent of the standard operand
+    (444...4)₁₆." The mnemonic map is `IMM_BASE` in
+    `check_atlas_data.py`.
+  - **CV/DCV with forwarding (PDF 165, 166).** These have the same
+    accumulator gap as 138/139. PDF 165's typed box: "The result of a
+    decimal to binary CV operation is placed in the accumulator at an
+    offset of 68. For subsequent execution of identical CV instructions
+    the operand appears to be a very large number."
 - **FP residuals are unmeasured.** `atlas_oracle.py --list --pdf 42`
   (or any page 42-101) reports "no generator for class FP" for every
   cell, 9,406 times in all. A generator needs the following, from PDF

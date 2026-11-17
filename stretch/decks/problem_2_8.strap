@@ -1,12 +1,75 @@
 ! C22-6578 PROBLEM 2.8, "PURCHASING LIST ARITHMETIC", printed pp.20-21
 ! (PDF 21-22), read in the ink (and at 170 dpi).
 !
-! >>> TRANSCRIBED AND ASSEMBLED.  NOT REGISTERED AS A RUN: the program is
-! >>> decimal throughout and the model refuses the decimal add (OP at
-! >>> "+(D, 48, 8)", half-word 2006), docs/source_audit.md G2.3's known
-! >>> gap.  With the add refused the scan for the next field never
-! >>> finds its end mark and the program does not halt (OBSERVED: step
-! >>> cap reached, PC 2020, inside KOMF).  <<<
+! >>> REGISTERED 2026-11-16 AS PRINTED, AND THE PRINTED PROGRAM IS WRONG:
+! >>> IT CANNOT LEAVE THE KOMF LOOP.  The model is right; the card is not.
+! >>> Run with ASM=strap2, stopped deliberately at the 40th arrival at KOMF
+! >>> (half-word 2020).  The card the program meant: problem_2_8_komf8.strap;
+! >>> with the signed ADD corrected too: problem_2_8_corrected.strap.  <<<
+!
+! WHERE IT ERRS: "KOMF  KF(BU,24)(V+I), 0.8($2)" -- the field length.
+! TRACED INSTRUCTION BY INSTRUCTION ON THE MODEL 2026-11-16 (a per-clock
+! display of the counter, X1, X2, the accumulator and word 11):
+!  * LCV leaves count 3 in $L; three decimal adds of E; the two (V+I)
+!    stores leave X2's value at 1203.48, product 1's G; M+ makes $FT 36.
+!  * "L(BU, 32), TESTW" leaves the accumulator's low 32 bits E N D
+!    (11111111) = (16)354733FF (IQS E=35, N=47, D=33).
+!  * "KF(BU,24),0($2),8" compares G's first three bytes, 49 41 FF ("OK"
+!    and product 2's A mark), with the accumulator field ending 8 bits from
+!    its right end, E N D: AL, not AE, so no branch to LAST.  Right.
+!  * KOMF compares three bytes at X2 with the three-byte accumulator field
+!    at offset 0, which is N D (11111111) = 4733FF, then adds 0.8 to X2.
+!    Observed: 49 41 FF -> AL; 41 FF 01 -> AH; FF 01 02 -> AL; ... every
+!    pass AL or AH (word 11 bits 60, 62), never AE (61), each the unsigned
+!    24-bit order of the bytes; X2 walks on past product 2's END
+!    (1208.40 at the 40th arrival) and the loop never ends.
+! The reading is the Reference Manual's: KF compares "a field in the
+! accumulator ... the same length in bytes as the field from storage
+! exclusive of the sign byte, and its location is specified by the offset
+! in the usual manner" (printed p.65, PDF 68); the offset "specifies the
+! number of bits by which the right end of the accumulator operand is
+! offset from the right end of the accumulator" (printed p.56, PDF 59); in
+! progressive indexing "the value field ... is used as the effective
+! address ... Subsequent to this use ... the address part ... is added to
+! the value field" (printed p.21, PDF 24).
+! WHY NO DATA RESCUES THE PRINTED CARD: KOMF then MORE ("V+I, $2, 1.0") must
+! leave X2 on the next D field, 72 bits past that product's all-ones mark A
+! (A 8 + B 16 + C 48).  A one-byte compare matching at A does: X2 = A+8,
+! +64 = A+72 -- the printed comment "bypass 64 more bits to new D field".
+! The printed three-byte field can match only a window N D (11111111),
+! i.e. one starting at A-16, which leaves X2 at A-8 and MORE at A+56,
+! sixteen bits short of D; and even that needs a G ending in "ND".  No
+! window within this list matches (TESTW itself holds 4733FF, outside it).
+! So the printed (BU,24) should be (BU,8), and the test of comment (b),
+! "Note the KF's cannot be replaced by simple K operations", fits that: a
+! K would bring E N D into a one-byte compare.
+!
+! THE PRE-RUN HAND TRACE (docs/NEXT.md, G2.3) predicted a halt with F2 = 8
+! and $FT = (16)404.  It was wrong about THIS card -- it took KOMF to stop at
+! the mark -- and right about everything else: problem_2_8_komf8.strap,
+! which changes only this card, halts with exactly F2 = 8, $FT = (16)404.
+!
+! WHAT THE STOPPED RUN PINS (words the loop cannot move): F1 = 36 (word
+! 1203 = (16)0000000003064941: "+(D,48,8)" is signed, so E's last byte is
+! read as a sign byte and E is +00012, added three times); product 2's F
+! never written (word 1207 as loaded); $FT = (16)36 packed; $RM 0.
+!
+! DISCRIMINATING: with the decimal ADD reading its field unsigned (injected
+! 2026-11-16), this run FAILS F1 (03 07 05) and $FT ((16)375); with KF's
+! accumulator field taken at offset 0 whatever the offset, it still passes
+! -- that injection is caught by problem_2_8_komf8 and _corrected
+! (tests/run_tests.sh has the failure sets).
+!
+! A SIDE OBSERVATION, NOT PINNED: the decimal "+" adds E to the whole
+! accumulator, and LCV left the BINARY count 3 in $L's bits 0-17 (16)C in a
+! digit position.  The add rewrites it ($L (16)0000C000... becomes
+! (16)00012000...) -- the open "invalid digit met by an add" item of
+! docs/NEXT.md G2.3.  F and $FT do not depend on it.
+!
+! THE TWO BLANK F SUBFIELDS were one "(IQSQ)DD(BU,96,8)" each until
+! 2026-11-16; STRAP II refuses it ("FIELD LENGTH GREATER THAN 64",
+! C22-6531's limit), so each is two 48-bit DDs.  Same bits; the data are
+! the deck's, not the page's.
 !
 !   "A purchasing list consists of a string of fields, each of which
 !   has the following structure:  | A | B | C | D | E | F | G |
@@ -52,8 +115,8 @@
 !
 ! THE DATA is the deck's: two products, 3 at 125 cents and 2 at 40.
 ! FROM THE PROBLEM STATEMENT the totals are 375 and 80 cents and the
-! grand total 455; the stored byte forms (zone bits) are not derived
-! here, because nothing can be run against them yet.
+! grand total 455 -- which problem_2_8_corrected.strap gets, digits one a
+! byte with zone 0000.
 !
 ! A SECOND REASON IT CANNOT RUN ON THIS ASSEMBLER: strap_asm assembles
 ! "DD(DU,48,8), 000125" as the BINARY integer 125, not as six decimal
@@ -92,7 +155,8 @@ LIST    DD(BU, 8, 8), (2)11111111
         (IQSQ)DD(BU,48,8),BOLTS Q
         DD(DU,24,8), 003
         DD(DU,48,8), 000125
-        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
         (IQSQ)DD(BU,16,8),OKQ
 ! product 2: item 12, "NUTS  ", 2 units at 000040 cents, remarks "END"
         DD(BU, 8, 8), (2)11111111
@@ -100,6 +164,7 @@ LIST    DD(BU, 8, 8), (2)11111111
         (IQSQ)DD(BU,48,8),NUTS  Q
         DD(DU,24,8), 002
         DD(DU,48,8), 000040
-        (IQSQ)DD(BU,96,8),            Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
         (IQSQ)DD(DU,24,8),ENDQ
         END, START

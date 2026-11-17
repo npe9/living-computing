@@ -1678,7 +1678,7 @@ run "An op and a dds that disagree are refused, not guessed (C28-6129 printed p.
 run "Secondary ops only on their own family, field P one code (C22-6729 printed p.22; Reference Manual printed p.21)" python3 check_secondary_ops.py
 # THE ATLAS'S DATA FILE, NOT THE ATLAS ORACLE.  Perf. Char. Vol. 2's
 # per-instruction timing atlas is transcribed in perf_char_vol2_atlas.txt
-# (93 of its 139 table pages so far).  This is the fast self-check of that
+# (all 139 of its table pages).  This is the fast self-check of that
 # file: it parses, its coverage list is total, the page's own redundancy
 # counts are the recorded ones, and the five pages perf_char_timing.py had
 # already transcribed agree cell for cell.  The slow thing -- running the
@@ -2351,15 +2351,22 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
 # negative accumulator into a signed field, offset 0 ("equivalent to a
 # STORE"), a signed field whose carry crosses the numeric width, a carry
 # through the field, rounding the accumulator in place through $R, SRDN
-# signed and unsigned, and decimal SRD refused with OP; CYCLES pins the
-# Table 3 SRD term.  MEASURED INJECTIONS in vfl_srd's header.
-# RE-PINNED 2026-11-16 (974 -> 1223): VFL E-box time now depends on the
+# signed and unsigned, and decimal SRD (refused with OP until G2.3 stage 1,
+# 2026-11-16; now performed through mkDecBox); CYCLES pins the Table 3 SRD
+# term.  CYCLES 974 -> 997 and PC 2094 -> 2096 on 2026-11-16: case 9 gained
+# one L(DU,16,4) to give the decimal SRD something to round.  MEASURED:
+# the same deck without that L still counts 974, so the decimal SRD costs
+# what the refused one was charged (its box's 4 clocks fit inside the
+# E-box budget) and the 23 are the added L's.  MEASURED INJECTIONS in
+# vfl_srd's header.
+# RE-PINNED 2026-11-16 (997 -> 1246): VFL E-box time now depends on the
 # operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
-# atlas, ST/SRD PDF 124-125, L PDF 120); every result check unchanged.  The deck's header says why.
+# atlas, ST/SRD PDF 124-125, L PDF 120); every result check unchanged.  The
+# deck's header says why.
 run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
-run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal OP; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2094" "CYCLES=1223+-0" \
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1246+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2368,7 +2375,7 @@ run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0,
     "T6_signed_carry:1115=0x000FFFFFFFFFFFFF" "I6_LC:1125=0x20000000140" \
     "T7_carry_through:1116=0xA80FFFFFFFFFFFFF" "I7:1126=0x120" \
     "T8_acc_rounded_in_place:1117=0x13C0" \
-    "T9_decimal_untouched:1118=0xFFFFFFFFFFFFFFFF" "I9_OP:1127=0x1000000000000" \
+    "T9_decimal_rounded:1118=0x23FFFFFFFFFFFFFF" "I9_PF:1127=0x10000000120" \
     "T10_srdn_signed:1130=0xAC08FFFFFFFFFFFF" "I10_srdn_minus:1132=0x190" \
     "T11_srdn_unsigned:1131=0xACFFFFFFFFFFFFFF" "I11_srdn_minus:1133=0x190"
 
@@ -2619,25 +2626,142 @@ run "binary VFL sign byte: position, flags, zones, ST's indicators, LWF, M+" ./r
     "TFP:547=0" \
     "UFP:548=0" \
     "VFP:549=0"
+# >>> DECIMAL VFL ADD, LOAD AND STORE (G2.3 stage 1), 2026-11-16. <<<  The
+# sums are mkDecBox's (bsv/StretchDecBox.bsv), reached through execute()'s
+# NeedBox bail.  A1-A5 are Reference Manual printed p.60's five ADD examples
+# (A4 is "00000- Result zero Result negative"); A14 is C22-6578 printed
+# p.15's "(1 1 1 1)2 ... will become (0101)2 with a carry"; the rest are
+# hand-derived in the deck's header from printed pp.58-64.  MEASURED
+# INJECTIONS: see the deck's header.
+run "DECIMAL ADD/LOAD/STORE: p.60's examples, LC, PF, zones, +MG, M+ family, signed ST, SRD (G2.3)" ./run_program.sh ../decks/vfl_decimal_add.strap StretchVflDecAddTb \
+    "PC=2311" \
+    "A1_ind:1700=0x20" "A1_acc:1801=0x113279" "A1_sb:1802=0" \
+    "A2_ind:1701=0x90" "A2_acc:1804=0x7577" "A2_sb:1805=0x0800000000000000" \
+    "A3_ind:1702=0x40" "A3_acc:1807=0" "A3_sb:1808=0" \
+    "A4_ind_RZ_RN:1703=0x50" "A4_acc:1810=0" "A4_sb:1811=0x0800000000000000" \
+    "A5_ind:1704=0x20" "A5_acc:1813=1" "A5_sb:1814=0" \
+    "A6_ind_LC:1705=0x20000000040" "A6_accL:1815=0" "A6_accR:1816=0" \
+    "A7_ind_PF:1706=0x10000000020" "A7_accL:1818=0x7600000000000000" "A7_accR:1819=0x12" \
+    "A8_ind:1707=0x20" "A8_acc:1822=0x3412" \
+    "A9_ind:1708=0x20" "A9_acc:1825=0x123" \
+    "A10_ind:1709=0x50" "A10_acc:1828=0" "A10_sb:1829=0x0800000000000000" \
+    "A11_ind:1710=0x90" "A11_acc:1831=0x22479" "A11_sb:1832=0x0800000000000000" \
+    "A12_ind:1711=0x20" "A12_acc:1834=0x8023" "A12_sb:1835=0" \
+    "A13_ind_TF:1712=0x10000020" "A13_acc:1837=0x113279" \
+    "A14_ind:1713=0x20" "A14_acc_assimilated:1840=0x45" \
+    "A15_ind_PF:1714=0x10000000020" "A15_accL:1842=0x7600000000000000" "A15_accR:1843=0" \
+    "M1_ind:1715=0x120" "M1_field:1600=0x760550FFFFFFFFFF" \
+    "M2_ind_LC:1716=0x20000000120" "M2_field:1601=0x3750FFFFFFFFFFFF" \
+    "M3_ind_LC_neg:1717=0x20000000190" "M3_field:1602=0x253FFFFFFFFFFFFF" \
+    "M4_ind_PF:1718=0x10000000120" "M4_field:1603=0x56FFFFFFFFFFFFFF" \
+    "M5_ind:1719=0x120" "M5_field_zones_kept:1604=0xF4F6FFFFFFFFFFFF" \
+    "M6_ind_LC:1720=0x20000000140" "M6_field:1605=0x00FFFFFFFFFFFFFF" \
+    "M7_ind:1721=0x190" "M7_field:1606=0x018FFFFFFFFFFFFF" \
+    "M8_ind:1722=0x150" "M8_field:1607=0x0008FFFFFFFFFFFF" \
+    "S1_ind:1723=0x190" "S1_field:1608=0x756798FFFFFFFFFF" \
+    "S2_ind_PF:1724=0x10000000190" "S2_field_bs6:1609=0x187248FFFFFFFFFF" \
+    "R1_ind_PF:1725=0x10000000120" "R1_field:1610=0x235FFFFFFFFFFFFF" \
+    "R2_ind_LC:1726=0x20000000140" "R2_field:1611=0x000FFFFFFFFFFFFF" \
+    "R3_ind_PF:1727=0x10000000190" "R3_field:1612=0x588FFFFFFFFFFFFF" \
+    "R4_ind_PF:1728=0x10000000190" "R4_field_off2:1613=0x77FFFFFFFFFFFFFF"
+# >>> DECIMAL COMPARE, AND KE/KFE/KR/KFR IN BOTH RADICES (G2.3 stage 2),
+# 2026-11-16. <<<  Decimal K/KF are a subtraction through mkDecBox (printed
+# p.65's Programming Note item 4: "The comparison is performed by making a
+# subtraction and testing the result").  C1-C4 are printed p.66's FIGURE 15,
+# both programs as printed; the rest hand-derived in the deck's header from
+# pp.65-67.  Every expectation was written before the first run, which
+# passed all 18 (C18, C19 added after, below).  MEASURED INJECTIONS (deck header): decimal compare given
+# the binary answer fails C2, C4, C9, C18, C19; KR's AH-off guard removed fails C15;
+# KE/KFE's AE-off guard removed fails C2, C12.
+run "DECIMAL COMPARE + KE/KFE/KR/KFR: Figure 15 as printed, signs, -0 = +0, offset, range (pp.65-67, G2.3)" ./run_program.sh ../decks/vfl_decimal_compare.strap StretchVflDecCmpTb \
+    "PC=2161" \
+    "C1_fig15_KE_AL:1700=0x28" "C2_fig15_KE_skipped:1701=0x22" \
+    "C3_fig15_BZAE_AL:1702=0x28" "C4_fig15_BZAE_AH:1703=0x22" \
+    "C5_K_offset:1704=0x4" "C6_K_unlike:1705=0x2" "C7_K_both_neg:1706=0x2" \
+    "C8_K_neg_zero:1707=0x4" "C9_K_off9:1708=0x4" \
+    "C10_KF_pos_assumed:1709=0x4" "C11_KFE_done:1710=0x8" "C12_KFE_skipped:1711=0x8" \
+    "C13_KR_in_range:1712=0x4" "C14_KR_high:1713=0x2" "C15_KR_AH_off:1714=0x8" \
+    "C16_bin_KR:1715=0x4" "C17_bin_KE:1716=0x8" \
+    "C18_KE_performed_zoned:1717=0x22" "C19_KR_performed_zoned:1718=0x2"
+# LOAD TRANSIT AND SET in both radices, and decimal *, / and *+, which printed
+# pp.68-70 define as LTRS's action with their own two left-zeros-counter bits
+# (* 00, / 01, *+ 10, LTRS 11).  Ten cases, every value hand-derived from
+# printed pp.21, 67-70 (the deck's header); none from a run.  CYCLES was
+# 974 under Table 3's LTRS row (Vol. 1 printed p.3-8), 16 + 2 x/y clocks.
+# RE-PINNED 2026-11-16 (974 -> 1214): LTRS is now charged its measured
+# page, PDF 123 (44 binary, 66 decimal, +16 above 48 bits), and decimal *,
+# *+, / that page's decimal figure (CHOSEN: PDF 133-135 print binary rows
+# only).  Every result check unchanged.  INJECTIONS: in the deck's header.
+run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3 stage 3)" ./run_program.sh ../decks/vfl_ltrs.strap StretchVflLtrsTb PC=2107 CYCLES=1214+-0 \
+    "T1_bin_unsigned:1200=0x0000000001234560" "W1_lzc11_aoc37:1201=0x000060000004A000" "I1_BTR_RGZ:1202=0x0000000001000020" \
+    "T2_bin_minus:1203=0x00000000000ABCD8" "W2_lzc11_aoc0:1204=0x0000600000000000" "I2_BTR_RLZ_RN:1205=0x0000000001000090" \
+    "T3_flags_not_loaded:1206=0x770" "I3_BTR_TF_VF_RGZ:1207=0x0000000015000020" \
+    "T4_PF_low60_kept:1208=0x10" "I4_BTR_PF_RGZ:1209=0x0000010001000020" \
+    "W5_offset_second_indexed_8:1210=0x0000600000010000" \
+    "T6_dec_digits:1211=0x12340" "W6_dec_lzc11_aoc12:1212=0x0000600000018000" "I6_DTR_RGZ:1213=0x0000000000800020" \
+    "T7_dec_mul_minus:1214=0x123458" "W7_mul_lzc00_aoc20:1215=0x0000000000028000" "I7_DTR_RLZ_RN_noOP:1216=0x0000000000800090" \
+    "T8_dec_div:1217=0x970" "W8_div_lzc01_aoc4:1218=0x0000200000008000" "I8_DTR_RGZ:1219=0x0000000000800020" \
+    "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
+    "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
+    "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
+# >>> A PROGRESSIVE VFL OPERATION THAT REFILLS DOES ITS ARITHMETIC ONCE
+# (docs/NEXT.md G2.3 finding 3), 2026-11-16. <<<  Reference Manual printed
+# pp.21-22: "executed in two parts.  The variable field length part of the
+# operation is prepared and then the index modification portion of the
+# operation is performed."  Binary +, +MG, *, *+, /, C0110, CV and L with V+ICR, count 1
+# (the refill fires; Rk shows it did), against + with count 5.  Expected
+# values hand-derived in the deck's header.  MEASURED: see the deck's header.
+run "PROGRESSIVE REFILL: binary + +MG * *+ / C CV and L do their arithmetic once (printed pp.21-22)" ./run_program.sh ../decks/vfl_progressive_refill_once.strap StretchVflRefillOnceTb PC=2085 \
+    "P1_add:1700=8" "P2_addmg:1701=8" "P3_mul:1702=0xF00000" "P4_muladd:1703=0x87" "P5_load:1704=3" "P6_add_norefill:1705=8" \
+    "R1_refilled:1706=0x01348000013405dc" "R2_refilled:1707=0x01348000013405dc" "R3_refilled:1708=0x01348000013405dc" \
+    "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01788000001005e1" \
+    "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc" \
+    "P9_cv:1716=0x123" "R9_refilled:1717=0x01348000013405dc" "P10_cross_refill_acc_untouched:1718=5" "R10_not_stepped:1719=0x017a7800000405e1" "I10_OP:1720=0x0001000000000000"
+# >>> BINARY ADD AND LOAD: RN ON A NEGATIVE ZERO, LOST CARRY, PARTIAL FIELD
+# (docs/NEXT.md G2.3 findings 1 and 2), 2026-11-16. <<<  RN: Reference Manual
+# printed p.47, indicator 59, "negative whether zero or not" (p.60's example
+# 4 shows it).  LC and PF: printed p.60 under ADD; +MG and L "set as in ADD"
+# (printed p.61).  B2, B10, B12 are controls.  Expected values hand-derived in
+# the deck's header.  MEASURED INJECTIONS: see the deck's header.
+run "BINARY + +MG L: RN on a negative zero, LC, PF (printed pp.47, 60-61)" ./run_program.sh ../decks/vfl_binary_add_indicators.strap StretchVflBinAddIndTb PC=2184 \
+    "B1_ind_RZ_RN:1700=0x50" "B1_accL:1800=0" "B1_accR:1801=0" "B1_sb:1802=0x0800000000000000" \
+    "B2_ind_RZ:1701=0x40" "B2_accL:1803=0" "B2_accR:1804=0" "B2_sb:1805=0" \
+    "B3_ind_RZ_RN:1702=0x50" "B3_accL:1806=0" "B3_accR:1807=0" "B3_sb:1808=0x0800000000000000" \
+    "B4_ind_RZ_RN:1703=0x50" "B4_accL:1809=0" "B4_accR:1810=0" "B4_sb:1811=0x0800000000000000" \
+    "B5_ind_LC_RZ:1704=0x20000000040" "B5_accL:1812=0" "B5_accR:1813=0" "B5_sb:1814=0" \
+    "B6_ind_PF_RGZ:1705=0x10000000020" "B6_accL:1815=0x7600000000000000" "B6_accR:1816=0x12" "B6_sb:1817=0" \
+    "B7_ind_PF_RZ_noLC:1706=0x10000000040" "B7_accL:1818=0" "B7_accR:1819=0" "B7_sb:1820=0" \
+    "B8_ind_LC_PF_RGZ:1707=0x30000000020" "B8_accL:1821=0x00FFFFFFFFFFFFFF" "B8_accR:1822=0xFFFFFFFFFFFFFFFF" "B8_sb:1823=0" \
+    "B9_ind_LC_RZ_RN:1708=0x20000000050" "B9_accL:1824=0" "B9_accR:1825=0" "B9_sb:1826=0x0800000000000000" \
+    "B10_ind_RGZ:1709=0x20" "B10_accL:1827=0xFFFFFFFFFFFFFFFF" "B10_accR:1828=0xFFFFFFFFFFFFFFFE" "B10_sb:1829=0" \
+    "B11_ind_PF_RGZ:1710=0x10000000020" "B11_accL:1830=0x7600000000000000" "B11_accR:1831=0" "B11_sb:1832=0" \
+    "B12_ind_RGZ:1711=0x20" "B12_accL:1833=0x9876000000000000" "B12_accR:1834=0" "B12_sb:1835=0"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).
-# RE-PINNED 2026-11-16 (140 -> 163): VFL E-box time now depends on the
-# operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
-# atlas, the decimal rows of L PDF 120 and ST PDF 124; a refused operation is charged like a run one); every result check unchanged.  The deck's header says why.
+# 2026-11-16 (G2.3 stage 1): decimal ST is built, so the refused operation
+# is now LFT(D,32,8), with a TI copying $FT out.  CYCLES 140 -> 161, PC
+# 393 -> 395.  MEASURED: without the TI the deck still counts 161, so the
+# 21 are LFT's against the refused ST's (the TI overlaps).  A model pin.
+# RE-PINNED 2026-11-16 (161 -> 224): VFL E-box time now depends on
+# the operation (bsv/StretchTiming.bsv eboxClocks; LFT PDF 122's decimal
+# rows, L PDF 120); every result check unchanged.  Deck header.
 run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
-    "PC=393" \
-    "CYCLES=163+-0" \
+    "PC=395" \
+    "CYCLES=224+-0" \
     "control_head:264=18446744073709490740" \
     "control_tail:265=6231011559443791871" \
     "refused_head:272=18446744073709551615" \
-    "refused_tail:273=18446744073709551615"
+    "refused_tail:273=18446744073709551615" \
+    "FT_unchanged:280=0"
 # >>> A SCOPE TEST, AND LABELLED AS ONE. <<<  The real 7030 performs
 # decimal VFL arithmetic; this model does not, and refuses it with OP so
 # that an unbuilt operation is a visible refusal rather than a silent
 # wrong answer.  The three radix conversions are exempt and tested
 # elsewhere: for LCV/CV/LTRCV the decimal bit selects a DIRECTION
-# (printed p.72) rather than asking for decimal arithmetic.
+# (printed p.72) rather than asking for decimal arithmetic.  Since
+# G2.3 stage 1 (2026-11-16) the decimal +, L, ST, SRD, M+ family are built
+# too; StretchVFL's vflDecimalBuilt replaces the old !radixConv exemption.
 #
 # INJECTION (measured): replace the arm's
 # `vi.m.decimal == 1 && !radixConv` test with `False` and all four
@@ -9382,6 +9506,11 @@ run "bsv smoke test (make run)" make run
 # divRestoringStep); one reduction clock too few fails 8 of 8, two of
 # them as "clocks = 3, want 4".
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
+# G2.3 stage 1, 2026-11-16: mkDecBox, the decimal adder/subtracter, on 9
+# vectors with literal answers (0-4 are Reference Manual printed p.60's
+# five examples).  Injection (no recomplement pass) fails vectors 1 and 7
+# only -- the two subtractions without an end carry.
+run "DECIMAL ADD/SUBTRACT BOX (p.60's examples, literal answers)" "$TESTS_DIR/run_decbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -13627,13 +13756,14 @@ run "C22-6578 Problem 2.3 -- every fifth bit deleted, five methods" ./run_progra
     "M3_pair2:1206=0xF1A509C3E786A5A5" "M3_pair3_VIC_corrected:1207=0xF1A509C3E786A5A5" \
     "M5:1208=0xF1A509C3E786A5A5" "M6:1209=0xF1A509C3E786A5A5" \
     "FIELD_unchanged:1201=0xF8AAB04F06EBE0DF"
-# 2.3 Method 4 is DECIMAL and the model refuses it out loud (OP): G2.3's
-# known gap.  These pin the refusal; the label carries the hand-derived
-# value each must become when the decimal arm lands.
-run "C22-6578 Problem 2.3 Method 4 -- decimal load REFUSED (pinned)" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
-    "M4a_REFUSED_want_907254361805A5A5:1203=0xA5A5" \
-    "M4b_REFUSED_want_907254361805A5A5:1204=0xA5A5" \
-    "M4c_REFUSED_want_907254361455A5A5:1205=0xA5A5"
+# 2.3 Method 4 is DECIMAL.  Until 2026-11-16 the model refused it (OP) and
+# these pinned the refusal with the hand-derived values in their labels;
+# since G2.3 stage 1 they ARE the values.  M4c is IBM's own claim, printed
+# p.15 comment (b): "(1 1 1 1)2 ... will become (0101)2 with a carry".
+run "C22-6578 Problem 2.3 Method 4 -- decimal load as an add to zero" ./run_program.sh ../decks/problem_2_3_method4.strap StretchP23M4Tb "PC=2012" \
+    "M4a:1203=0x907254361805A5A5" \
+    "M4b_LWF_signed:1204=0x907254361805A5A5" \
+    "M4c_F_assimilated:1205=0x907254361455A5A5"
 # 2.4: bit reversal, both methods; Method 2 depends on CONNECT leaving the
 # rest of the accumulator alone (RefMan printed pp.74-75).
 run "C22-6578 Problem 2.4 -- bit reversal, two methods" ./run_program.sh ../decks/problem_2_4.strap StretchP24Tb "PC=2014" \
@@ -13734,11 +13864,41 @@ run "C22-6578 Problem 2.7 -- sorting into tables via LVE/SVA on SIC entries" ./r
     "m19_T13_w0:1426=0x5555555555555555" "m19_T13_w1:1427=0x5555555555555555" \
     "m19_T14_w0:1428=0xBDEFD55555555555" "m19_T14_w1:1429=0x5555555555555555" \
     "m19_T15_w0:1430=0xB3FF3B9FF9555555" "m19_T15_w1:1431=0x5555555555555555"
-# 2.8 is decimal throughout and is NOT run (its deck says why).  Transcribing
-# it found that strap_asm assembles a DD in a decimal mode as a BINARY
-# integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two runs of
-# the one reproducer: strap_asm, pinning the wrong words, and the host STRAP
-# II, which is right.  docs/NEXT.md has the section.
+# 2.8, decimal throughout, assembled by the host STRAP II (strap_asm gets
+# decimal DDs wrong, below).  THE PRINTED PROGRAM IS WRONG AT KOMF and cannot
+# leave its loop: "KF(BU,24)(V+I), 0.8($2)" compares three bytes with the
+# accumulator's N D (11111111), never the one-byte all-ones mark the
+# following "V+I, $2, 1.0" assumes (traced on the model 2026-11-16 against
+# Reference Manual printed pp.21, 56, 65; the deck's header has the trace).
+# As in 2.9 and 4.9m1: the cards as printed, pinned to what they do (here a
+# DELIBERATE STOP at the 40th arrival at KOMF, past the list's end, checking
+# only words the loop cannot move), and the cards that were meant.  The
+# printed "+(D,48,8)" is signed, so the KOMF-only run gets 36/8/44, NOT the
+# statement's 375/80/455; correcting the ADD too gets the statement's.
+# INJECTIONS, measured 2026-11-16 in StretchExecute.bsv, each reverted from a
+# saved copy and compared with cmp:
+#  (1) KF's accumulator field taken at offset 0 whatever the offset
+#      ("(acc.mag >> offSh) & nmask" -> "acc.mag & nmask"): the as-printed
+#      run still PASSES (it never reaches the end test's match); komf8 and
+#      corrected FAIL the step cap, PC (2022, in KOMF on product 2: the end
+#      test cannot see END) and FT (0x44 / 0x455, the packed total never
+#      expanded), 3 failures each.
+#  (2) the decimal ADD reading its field unsigned (fieldToSM's unsign forced
+#      to 1 in the + arm): as-printed FAILS F1 (0x307054941) and FT (0x375);
+#      komf8 FAILS F1, F2, FT (it now gets 375/80/455); corrected PASSES.
+run "C22-6578 Problem 2.8 -- as printed: KF(BU,24) at KOMF never matches, a deliberate stop in the loop" ./run_program.sh ../decks/problem_2_8.strap StretchP28Tb ASM=strap2 STOPAT=2020,40 STEPS=6000 \
+    "F1_36_signed_add:1203=0x0000000003064941" "F2_never_written:1207=0x0000000000003547" \
+    "FT_packed_36:14=0x36" "RM_untouched:13=0"
+run "C22-6578 Problem 2.8 -- KOMF as meant, KF(BU,8): halts, 36/8/44 by the printed signed ADD" ./run_program.sh ../decks/problem_2_8_komf8.strap StretchP28K8Tb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_36_NOT_375:1203=0x0000000003064941" "F2_8_NOT_80:1207=0x0000000000083547" \
+    "FT_44_NOT_455:14=0x404" "RM:13=0"
+run "C22-6578 Problem 2.8 -- KOMF and ADD as meant: the statement's 375, 80, 455" ./run_program.sh ../decks/problem_2_8_corrected.strap StretchP28CTb ASM=strap2 STEPS=6000 PC=2031 \
+    "F1_375:1203=0x0000000307054941" "F2_80:1207=0x0000000008003547" \
+    "FT_455:14=0x40505" "RM:13=0"
+# Transcribing 2.8 found that strap_asm assembles a DD in a decimal mode as a
+# BINARY integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two
+# runs of the one reproducer: strap_asm, pinning the wrong words, and the
+# host STRAP II, which is right.  docs/NEXT.md has the section.
 run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
     "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
     "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \
@@ -14776,10 +14936,26 @@ run "MCP's binary loader takes STRAP II's FORTRAN cards as BSS-only (code 4)" ./
 # A FORTRAN subprogram with named and blank commons, as a BSS job (the BSS
 # processor's table reconstructed).  Injections in gen_loader_deck_tb.py's header.
 run "MCP's binary loader loads a STRAP II FORTRAN deck, commons relocated" ./run_loader_deck.sh StretchLoaderBssTb bss
+# R1 (docs/reading_notes/fortran_bss_plan.md): a second subprogram through
+# SRNXAD, from TWS (ATWSTA, $13 from the disk address) and as a library
+# entry (LB + 36 bits), ended by DFETCH's end return (YLERR -> YAERR1,
+# p.334).  Injections in gen_loader_deck_tb.py's header.
+run "MCP's binary loader chains to a second subprogram on TWS (SRNXAD)" ./run_loader_deck.sh StretchLoaderBss2Tb bss2
+run "MCP's binary loader chains to a library entry, LB + 36-bit name" ./run_loader_deck.sh StretchLoaderBssLibTb bsslib
+# R0.5: $EOJ's naming of the processor-control type area, printed p.395
+# ll.47-49 run as printed: "PC" + the TYPE card's third field's first six
+# characters (PCFORTRA, PCBSS).  Injection in gen_loader_deck_tb.py pcname().
+run "\$EOJ names the processor-control area PCFORTRA / PCBSS (p.395)" ./run_loader_deck.sh StretchLoaderPcNameTb pcname
+# R0.3: printed p.329 is missing from the scan; decks/mcp_p329_reconstruction.
+# strap is a RECONSTRUCTION (not IBM's code) fixed to the addresses and labels
+# the landed pages cite.  First its fit, then C, P and D cards through it,
+# against absolute assembly.  Injections in both files' headers.
+run "Reconstructed p.329 fits the hole: 34 words, cited labels, landed pages unchanged" python3 check_p329_reconstruction.py
+run "MCP's loader loads C, P and D cards through the RECONSTRUCTED p.329" ./run_loader_deck.sh StretchLoaderOctalTb octal
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

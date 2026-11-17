@@ -55,7 +55,8 @@ KNOWN = {"mcp_bootstrap_p131.strap", "mcp_bootstrap_p210.strap",
          # strap_asm assembles a mode D/DU DD as a binary integer; C22-6531
          # pp.28-29 says decimal digits, and strap2 gives them (NEXT.md,
          # "DD in decimal mode").  The difference is strap_asm's bug.
-         "problem_2_8.strap", "repro_dd_decimal_mode.strap"}
+         "problem_2_8.strap", "problem_2_8_komf8.strap",
+         "problem_2_8_corrected.strap", "repro_dd_decimal_mode.strap"}
 # strap_asm refuses what strap2 accepts: a blank after a radix specifier,
 # "(2) 10", printed in C22-6578 p.21 (NEXT.md, the radix-blank entry).
 KNOWN_REFUSE = {"repro_radix_blank.strap",

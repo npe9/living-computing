@@ -24,6 +24,171 @@ accumulate.
 
 
 
+## DECIMAL VFL ARITHMETIC (G2.3) -- stages 1-3 built 2026-11-16; what they found
+
+**Built:** decimal `L`, `LWF`, `+`, `-`, `+MG`, `-MG`, `M+`, `M+1`, `M-1`,
+`M+MG`, signed and unsigned `ST`, and `SRD`.  The sums -- including
+`L`'s, which C22-6578 printed p.14 calls "a decimal 'add to zero'" -- go
+through `mkDecBox` (`bsv/StretchDecBox.bsv`), a multi-cycle box reached
+by execute()'s `NeedBox` bail, which is now a union of two boxes.  The
+list of decimal-capable codes is `vflDecimalBuilt` (`StretchVFL.bsv`),
+read by both execute() and the I-box's `prepareExec`.  Oracle deck:
+`decks/vfl_decimal_add.strap` (printed p.60's five ADD examples and 35
+hand-derived cases).
+
+**Stage 2, built the same day:** decimal `K`, `KF`, and `KE`, `KFE`,
+`KR`, `KFR` in both radices (printed pp.65-67), one arm, the decimal
+magnitude order from a `mkDecBox` subtraction.  Oracle deck:
+`decks/vfl_decimal_compare.strap`, whose C1-C4 are printed p.66's
+Figure 15 as printed.  Readings CHOSEN: a `KE` with AE off still
+fetches and sets the data flags; a decimal compare's "byte size less
+than four ... as in any other subtraction" inherits stage 1's open item.
+
+**Stage 3, the same day: `LTRS` in both radices, and decimal `*`, `*+`,
+`/` as its action** (printed pp.67-70, read in the page images; the
+section below).  One arm in `vflIntOp`, dispatched for all four; the
+transit register gets the numeric part above a four-bit sign byte, the
+all-ones counter the effective offset, the left zeros counter's two
+high-order bits the discriminator (p.68's table: `*` 00, `/` 01, `*+` 10,
+LTRS 11), BTR or DTR by radix; location 7 written through `connCounts`.
+Oracle deck: `decks/vfl_ltrs.strap` (ten hand-derived cases).  Readings
+CHOSEN, each named in the deck: a decimal operand's numeric part goes in
+as FOUR-BIT digits ("Radix ... as in ADD", p.68; p.58); the full
+seven-bit effective offset goes to the counter in decimal too; Table 3's
+LTRS `v` is read as `x` (Vol. 1 printed p.3-8 gives a 9.6 us full word,
+which only `x` reproduces; the glossary's V = 96/92 does not), and its
+">48 bits" term is not charged.  `docs/spec_decimal.md` Class E had read the decimal
+transit register as "a bit pattern either way"; annotated there.  **Open:** what the SAU does with a
+decimal field whose bytes are not digits, here as for every decimal arm;
+whether the BTR/DTR interruption (lower priority than every other, p.68)
+reaches a program on this model is not exercised by the deck (the
+harness runs with the interruption system off).
+
+**Still refused:** `LFT` (decimal) and `DCV`.
+
+### Decimal `*`, `*+` and `/` are NOT arithmetic -- the task's stage 3 premise is wrong (built as LTRS, stage 3)
+
+Reference Manual printed p.68 (PDF 71), MULTIPLY: "If decimal is
+specified, this operation has the same action as LOAD TRANSIT AND SET,
+except that the two high-order bits of the left zeros counter are set to
+zeros", and its Programming Note: "A decimal MULTIPLY instruction can be
+used to produce an automatic entry to a subroutine, where the desired
+decimal multiplication may be performed".  Printed p.69 says the same of
+`*+` ("the two high-order bits of the left zeros counter are set to
+10") and printed p.68's table gives DIVIDE 01.  So there is no decimal
+multiplier or divider to put in a box: decimal `*`, `*+`, `/` are
+`LTRS`'s action plus DTR, and they waited for `LTRS` (built 2026-11-16,
+stage 3 above).  `docs/spec_decimal.md` section 2, Class C, had this
+already.
+
+### Findings about the BINARY arms -- the three findings settled 2026-11-16, model fixed (two neighbours still open, below)
+
+* **RN on a negative zero: the model was wrong.**  Reference Manual
+  printed p.47 (PDF 50), indicator 59, read in the page image: "Result
+  Negative (RN).  The result of the non-comparative arithmetic operation
+  just executed was negative whether zero or not.  This indicator is
+  turned off by a non-comparative arithmetic operation whose result is
+  positive, whether zero or not".  No radix in it; p.60's example 4
+  ("00000- Result zero Result negative") illustrates it, and the
+  floating-point side already had it, verified against IBM's F212D D3.
+  `setResultIndicatorsDec` and `setResultIndicatorsF` are now ONE
+  function (RN = the sign bit), so every binary integer arm -- L, LWF,
+  +, +MG, *, *+, LFT, /, ST, SRD, M+ family, CV, LCV, LTRS -- reads RN
+  as the decimal arms did.  The +MG comment that argued "the sign
+  remains as it was" meant RN off was rewritten (that sentence is about
+  the sign kept, not the indicator).
+* **Binary `+`/`+MG` LC and PF, binary `L`/`LWF` PF: the model was
+  wrong.**  printed p.60 (ADD) defines LC ("a carry attempts to
+  propagate beyond the left end of the accumulator") and PF
+  ("significant bits of the data field from storage overlap the left
+  end ... A partial field condition will not cause a lost carry
+  indication.  However, both conditions may arise"); printed p.61 sets
+  them "as in ADD" for +MG and PF for L/LWF.  Built: PF from the
+  operand shifted wide, LC from the carry out of a like-signed 129-bit
+  sum of the truncated operand.  Oracle deck:
+  `decks/vfl_binary_add_indicators.strap` (12 cases, 3 controls).
+* **A progressive operation with a refill applied itself twice: MEASURED
+  and fixed.**  Not just `+`: `decks/vfl_progressive_refill_once.strap`
+  on the unmodified model gave 5+3 = 11 (+ and +MG), 3*5 squared into
+  (16)4B0000000000, *+ 170 for 135, / 100/7 = 2 for 14, and C0110 back
+  to 5 for 6 -- the arm committed its accumulator write, bailed for the
+  refill word, and ran again on its own result.  printed pp.21-22: "The
+  variable field length part of the operation is prepared and then the
+  index modification portion of the operation is performed".
+  `vflRefillOutstanding` (StretchExecute.bsv), the decimal arms' old
+  in-place test, now holds every arm that reaches a shared trailing
+  block (L, +, *, LFT/*+, /, LCV, CV, LTRCV, LTRS, and C/CT/CM) until
+  the refill word is in hand.  The crossing-field-plus-refill OP case
+  now writes nothing before it refuses, as p.22's "the entire operation
+  will be suppressed" requires (deck case P10); a progressive CV no
+  longer converts twice (P9).
+* **Open, found while doing the above, NOT changed:** (a) the binary
+  `M+`/`M+MG` arms set neither LC nor PF, while printed p.59 defines both
+  for binary to-memory operations ("actuated by a carry beyond the
+  leftmost bit of the addressed field"; PF "if there is any one-bit in
+  the accumulator to the left of the participating field") and the
+  decimal M+ arm (`decMInd`) sets them.  (b) binary `*+` adds its product
+  with `smAdd` and sets no LC; its page (printed p.69) was not read for
+  LC.  Both want the same treatment as `+`: page images, a deck, an
+  injection.
+
+### Open, decimal
+
+* **Byte size below four with unlike signs** (printed p.58: "normal
+  decimal results may not be produced ... owing to the complementing
+  procedure used"): the model produces the normal result; the abnormal
+  one is not described in any source here.
+* **An invalid digit met by a subtraction** has no source (an add to
+  zero does: C22-6578 printed p.15).  See `StretchDecBox.bsv`'s header.
+* **A field of more than 32 digits** (byte size 1, unsigned, length
+  over 32): digits above the accumulator's 32 set PF on a load or add;
+  an `M+` keeps their old bits and a carry into them is taken as LC.
+* **The box's rate is CHOSEN** (8 digits a clock, a pass 4 clocks, a
+  recomplemented subtraction 8) to fit inside the smallest Table 3
+  budget, which `eboxClocks` already charges by byte; no source for the
+  SAU's decimal cycle was read.
+* **Problem 2.8: SETTLED 2026-11-16 -- the printed program is wrong, the
+  model is right, and the pre-run hand trace was wrong about one card.**
+  Traced on the model clock by clock (counter, X1, X2, accumulator, word
+  11).  `L(BU,32),TESTW` leaves E N D (11111111) = (16)354733FF in the
+  accumulator's low 32 bits; the end test `KF(BU,24),0($2),8` compares
+  E N D (offset 8) and is right; `KOMF  KF(BU,24)(V+I),0.8($2)` compares
+  three storage bytes with the THREE-byte accumulator field at offset 0,
+  N D (11111111) -- printed p.65: "the same length in bytes as the field
+  from storage exclusive of the sign byte, and its location is specified
+  by the offset in the usual manner"; p.56: the offset "specifies the
+  number of bits by which the right end of the accumulator operand is
+  offset from the right end of the accumulator".  Every pass gives AL or
+  AH (the unsigned 24-bit order), never AE, and X2 walks off the list.
+  Of the two readings this entry used to carry -- (a) the progressive
+  increment is the absent offset, so X2 never advances; (b) an offset-0
+  three-byte field compare can match nothing in this list -- (a) is
+  refuted (X2 advances 0.8 a pass: p.21, the address part "is added to
+  the value field" after use) and (b) is the cause.  **Where the ink errs:** MORE's `V+I, $2, 1.0` ("bypass 64 more
+  bits to new D field") puts X2 on D only if KOMF matched at the field's
+  all-ones mark A with a ONE-byte compare (A+8+64 = A+72 = D); the
+  printed three-byte field can only match a window N D (11111111)
+  starting at A-16, which would land 16 bits short of D.  So `(BU,24)`
+  should be `(BU,8)`.  Registered the 2.9/4.9m1 way: the cards as printed
+  (a deliberate stop at the 40th arrival at KOMF, new gen_tb `STOPAT=`,
+  pinning F1 = 36, F2 unwritten, $FT 36), `problem_2_8_komf8.strap` (only
+  KOMF changed: halts with F2 = 8, $FT = (16)404 -- exactly what the
+  pre-run trace predicted, which had taken KOMF to stop at the mark), and
+  `problem_2_8_corrected.strap` (the signed `+(D,48,8)` made `DU` too:
+  the statement's 375, 80, 455).  Two measured injections in the deck
+  header and run_tests.sh.
+* **An invalid digit met by a decimal ADD, live in Problem 2.8.**  LCV
+  leaves the BINARY count 3 in $L bits 0-17, a (16)C in a digit position;
+  the following decimal `+` adds E to the whole accumulator and turns
+  $L's (16)0000C000... into (16)00012000... (mkDecBox's digit step).  No
+  source says what the SAU does with it (StretchDecBox.bsv's header).
+  Not pinned; F and $FT do not depend on it.
+* **Two deck-writing errors, mine, found by runs:** `T, 1, $IND, Ik`
+  names INDEX REGISTER 1 as TRANSMIT's count -- the immediate count of
+  one is `TI, 1, ...`.  The first `vfl_decimal_add` and the revised
+  `vfl_decimal_refused` both hung on it (a multi-word transmit from the
+  register onward, not examined further).  Not a model bug.
+
 ## DD(N) 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL -- settled, 2026-11-16
 
 Two differences between strap2 and strap_asm, found when the C22-6578
@@ -206,9 +371,12 @@ printed p.118 (offset 0) equals ST's page (`StretchTiming.bsv`).
 
 What is still open about it:
 
-* **Decimal `SRD` is refused with OP** (`decks/vfl_srd.strap` case 9),
-  like every decimal arithmetic operation; its "four-bit byte with value
-  five" is a decimal addition.  Build it with decimal `+`.
+* **Decimal `SRD` is BUILT, 2026-11-16** (G2.3 stage 1): the five is
+  added by `mkDecBox` (`bsv/StretchDecBox.bsv`); `decks/vfl_srd.strap`
+  case 9 now loads a decimal accumulator and checks the rounded field
+  (it pinned the OP refusal until then), and `decks/vfl_decimal_add.strap`
+  cases R1-R4 cover rounding, the carry out (LC), a signed field and
+  offset 2 (digit offset 0, "equivalent to a STORE").
 * **Two indicator readings are CHOSEN** (p.64 does not settle them):
   PF from the accumulator as it stands, not the rounded sum; LC as the
   carry out of the numeric width, not the whole field with its sign byte
@@ -234,14 +402,24 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## BSS ON MCP'S LOADER -- done to the subprogram end, 2026-11-12
+## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
 table, through ARNRM2's transfer vector and branch return
-(tests/gen_loader_deck_tb.py bss). Not run: a second subprogram
-(SRNXAD nonzero: the TWS read, AREADS, printed p.327 lines 11-22, and
-the library read) -- that needs the disk and the lost BSS processor's
-TWS layout. Earlier note, kept: a loader run needs what the lost BSS
+(tests/gen_loader_deck_tb.py bss).  R1 of
+docs/reading_notes/fortran_bss_plan.md, 2026-11-16: modes bss2 and bsslib
+chain through SRNXAD to a second subprogram, from TWS (YRLDTA = ATWSTA,
+$13 = AREADS + the disk address, p.327 ll.12-19 run) and as a library
+entry (YRLDTA = "LB" + 36 bits), which a card count never ends (0,
+p.324 l.28): DFETCH's end return, YLERR -> YAERR1 "LIBRARY ROUTINE WAS
+READ" (p.334 ll.7-16), ends it, sends its vector and ends the job.  The
+driver plays that end return (CHOSEN).  R0.3, 2026-11-16: printed p.329 not
+found (search in the deck header), RECONSTRUCTED and labelled so
+(decks/mcp_p329_reconstruction.strap, every instruction CHOSEN, the eight
+entry addresses CITED; tests/check_p329_reconstruction.py), and mode octal
+runs C, P and D cards through it against absolute assembly.  Open: P/D
+continuations (need ALOWWD = 0), hex 12-7..12-9 unchecked, a 1 punch in a P
+card's origin point.  Earlier note, kept: a loader run needs what the lost BSS
 processor leaves: KSILO+2 holding BSS and the relocation table at KSILO+9.32
 (bss_loader_spec.md 5.4); build that as labelled scaffolding. Open from
 p.184's example: its `DD(BU), 1.0` (length of the transfer vector) draws
@@ -265,6 +443,18 @@ control card is still `B TYPE,GO`; BSS's type card is not settled.
 Open alongside: the LIM card under PUNREL is punched as computed and means
 nothing to a relocated load -- the guide does not say whether PUNREL
 punches one; and PUNREL after absolute output, refused.
+
+## HOW MCP REACHES THE PROCESSOR CHAIN -- read, 2026-11-16 (plan R0.5)
+
+Not on pp.266-274 (those decode the TYPE card; GO,FORTRAN is rewritten
+COMPILGO,BSS, p.271 ll.43-50) but in $EOJ, pp.395-397: the job's
+processor-control type area "PC" + the third field's first six
+characters (PCFORTRA; PCBSS for GO) is fetched, its first card broken into
+compiler type-area names at KSILO+2.0 on, each loaded by resume load as a
+binary deck (YDFCS), then "))))))))", the compiled program.  The names
+of the LPC, FORTRAN, STRAP II and BSS processors are the PC card's
+content, which no listing prints: not invented, not in prosa_dict.  The
+record is in the plan's R0.5.
 
 ## A DIGIT TOO LARGE FOR ITS RADIX -- closed 2026-11-15, host and 7030 deck
 

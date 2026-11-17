@@ -93,6 +93,7 @@ import StretchStorage::*;
 import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
 import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
+import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -1059,14 +1060,61 @@ function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
 function Bool ifViolatesAfter(StretchStorage st, WordAddr a, Bool enabled) =
   (a >= 32) && protViolatesEn(st, a, enabled);
 
+// THE ARITHMETIC RESULT INDICATORS OF AN INTEGER OPERATION, BOTH RADICES
+// (one function since 2026-11-16).  Reference Manual printed p.47 (PDF
+// 50), read in the page image, defines them once for every
+// non-comparative arithmetic operation:
+//
+//   "56. Result Less than Zero (RLZ).  The result of the integer or
+//    floating-point arithmetic operation just executed was non-zero and
+//    negative."
+//   "57. Result Zero (RZ).  The result ... was zero."
+//   "58. Result Greater than Zero (RGZ).  ... was non-zero and positive"
+//   "59. Result Negative (RN).  The result of the non-comparative
+//    arithmetic operation just executed was negative WHETHER ZERO OR
+//    NOT.  This indicator is turned off by a non-comparative arithmetic
+//    operation whose result is positive, whether zero or not"
+//
+// So RN is the sign bit.  printed p.60 (PDF 63), ADD's example 4, shows it
+// -- "4. ADD, L (532+) offset 8 bits ... 00000-  Result zero  Result
+// negative" -- and p.60 fixes when a zero is negative: "On any operation
+// in which the result in the accumulator is all zero, the sign remains as
+// it was before the operation began."  The decimal arms had this since
+// G2.3 stage 1 as `setResultIndicatorsDec`; the BINARY arms turned RN off
+// for every zero, which p.47 does not allow -- found by the decimal work,
+// recorded in docs/NEXT.md, and changed here with the two folded into one
+// (decks/vfl_binary_add_indicators.strap B1, B3, B4, B9).
+// setResultIndicatorsFp above already read RN as the sign.
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
   Word64 i1 = setBit(ind, ind_RLZ, pack(v.sign == 1 && !z));
   Word64 i2 = setBit(i1,  ind_RZ,  pack(z));
   Word64 i3 = setBit(i2,  ind_RGZ, pack(v.sign == 0 && !z));
-  Word64 i4 = setBit(i3,  ind_RN,  pack(v.sign == 1 && !z));
-  return i4;
+  return setBit(i3, ind_RN, v.sign);
 endfunction
+
+// >>> A REFILL STILL TO COME HOLDS THE OPERATION, 2026-11-16. <<<
+// Reference Manual printed pp.21-22, Progressive Indexing: "An operation
+// in which progressive indexing is specified is executed in two parts.
+// The variable field length part of the operation is prepared and then
+// the index modification portion of the operation is performed."  The
+// VFL part happens ONCE.  In this model an arm that writes the
+// accumulator (or the factor or transit register) commits that write on
+// the execute() run that makes it, and a progressive operation whose
+// index must be refilled then bails from the shared trailing block for
+// the refill word and is run AGAIN -- so before this guard binary +,
+// +MG, *, *+, / and C0110 applied themselves twice, reading their own
+// first result as the accumulator operand (decks/
+// vfl_progressive_refill_once.strap, measured: 5+3 gave 11, 100/7 gave
+// 2).  Every arm that reaches the shared trailing block now does nothing
+// while this is true; the trailing block asks for the refill word (or,
+// with a crossing field, refuses the operation with OP before anything
+// is written -- p.22's "the entire operation will be suppressed").  The
+// decimal arms had this test already, written out in place; it is
+// shared now.
+function Bool vflRefillOutstanding(Bool needsRefill, Bit#(2) prefetchCount,
+                                   Bit#(2) readsUsed) =
+  needsRefill && (prefetchCount < readsUsed + 1 || readsUsed >= 2);
 
 // Data flags, printed p.59: "set according to the data flag bits, if any,
 // of the storage operand", and off if none were obtained from storage.
@@ -2560,10 +2608,44 @@ typedef struct {
 // `needsBox` is Valid.  (The address in that `needsRead` is a
 // placeholder and is never used: every consumer between an arm and
 // the foot tests validity only.  Checked by grep when this was added.)
+//
+// TWO BOXES SINCE 2026-11-16: the divider and the DECIMAL ADDER
+// (StretchDecBox.bsv, mkDecBox).  A request names which box it is for
+// and the answer comes back tagged the same way; an arm that asked the
+// divider takes `divOf(boxResult)` and one that asked the decimal adder
+// `decOf(boxResult)`.  mkEBox remembers which box the held instruction
+// waits on (`boxIsDec`).
+typedef union tagged {
+  DivReq BoxDiv;
+  DecReq BoxDec;
+} BoxReq deriving (Bits, Eq, FShow);
+
+typedef union tagged {
+  DivRsp RspDiv;
+  DecRsp RspDec;
+} BoxRsp deriving (Bits, Eq, FShow);
+
+function Maybe#(DivRsp) divOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspDiv .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
+
+function Maybe#(DecRsp) decOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspDec .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
+
+function Bool isDecReq(BoxReq r);
+  case (r) matches
+    tagged BoxDec .*: return True;
+    default:          return False;
+  endcase
+endfunction
+
 typedef union tagged {
   ExecDone Complete;
   WordAddr NeedOperand;
-  DivReq   NeedBox;
+  BoxReq   NeedBox;
 } ExecDispatch deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------
@@ -2600,23 +2682,25 @@ typedef struct {
   // connective operations, so their previous values may be used as
   // operands in the operation."
   //
-  // vflIntOp shares this type and always returns Invalid here; only
-  // the connectives set the counts.
+  // vflIntOp shares this type; of its arms only LOAD TRANSIT AND SET
+  // (and decimal *, *+, /, which are its action) sets the counts --
+  // printed p.67, the effective offset to the all-ones counter and two
+  // bits of the left zeros counter.
   Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts;
   // "I need the divider" -- see ExecDispatch's NeedBox.  When Valid,
   // needsRead is Valid too (a placeholder), so the bail is suppressed
   // by the same guards a read bail is.  Only vflIntOp's divide arm
   // sets it.
-  Maybe#(DivReq) needsBox;
+  Maybe#(BoxReq) needsBox;
 } VflOutcome;
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
              Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
-             Maybe#(DivRsp) boxResult);
+             Maybe#(BoxRsp) boxResult);
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
-    Maybe#(DivReq) needsBox = tagged Invalid;
+    Maybe#(BoxReq) needsBox = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Word64 ind = ind0;
@@ -2647,12 +2731,17 @@ function ActionValue#(VflOutcome)
       Bool radixConv = (vi.code == 6'b000011)     // LCV
                     || (vi.code == 6'b011011)     // CV
                     || (vi.code == 6'b100011);    // LTRCV
-      // A DECIMAL UNSIGNED STORE IS BUILT, since 2026-11-08, because MCP's
+      // A DECIMAL UNSIGNED STORE WAS BUILT on 2026-11-08, because MCP's
       // $TIME needs it (printed p.300 line 33, "ST(DU,63,8),0.0($1)",
-      // reached from the CLOCK command).  It is the one piece of decimal
-      // with no arithmetic in it.  A signed decimal store stays refused.
-      Bool decimalStoreU = (vi.code == 6'b001101) && (vi.m.unsign == 1);
-      if (vi.m.decimal == 1 && !radixConv && !decimalStoreU)
+      // reached from the CLOCK command).
+      //
+      // >>> DECIMAL ADDITION, LOAD AND STORE ARE BUILT SINCE 2026-11-16
+      // (G2.3 stage 1). <<<  The list of what this gate lets past is
+      // StretchVFL's vflDecimalBuilt, which the I-box's prepareExec asks
+      // too; `radixConv` above is kept for the arms that test it.  The
+      // decimal sums go through mkDecBox (StretchDecBox.bsv) by the
+      // NeedBox bail; see each arm's DECIMAL note.
+      if (vi.m.decimal == 1 && !vflDecimalBuilt(vi.code))
         ind = setOpInvalid(ind);
       // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
       // not inferred -- cited 2026-10-29, having been an uncited
@@ -2746,6 +2835,7 @@ function ActionValue#(VflOutcome)
                          || (vi.code == 6'b000001)    // + , -
                          || (vi.code == 6'b010001)    // K
                          || (vi.code == 6'b001011)    // LFT
+                         || (vi.code == 6'b111101)    // LTRS
                          || (vi.code == 6'b111001);   // *+
         Bool dfSupp = False;
         if (vflFetchType && !immediate) begin
@@ -2780,7 +2870,17 @@ function ActionValue#(VflOutcome)
         if (dfSupp) begin
           // suppressed: deliberately nothing at all
         end else begin
-        case (vi.code)
+        // DECIMAL *, *+ AND / ARE LOAD TRANSIT AND SET (printed p.68:
+        // "If decimal is specified, this operation has the same action
+        // as LOAD TRANSIT AND SET, except that the two high-order bits
+        // of the left zeros counter are set to zeros"; p.69 *+ "10";
+        // p.70 DIVIDE "01"), so they are dispatched to LTRS's arm, which
+        // reads vi.code for those two bits.
+        Bool ltrsAction = (vi.code == 6'b111101)
+                       || (vi.m.decimal == 1 && (vi.code == 6'b011001     // *
+                                              || vi.code == 6'b111001     // *+
+                                              || vi.code == 6'b011101));  // /
+        case (ltrsAction ? 6'b111101 : vi.code)
           6'b000101, 6'b100101: begin // L (Load), LWF -- first arm converted to the
             // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
             // Every other arm below still calls readField/readHW/
@@ -2809,9 +2909,56 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            // >>> DECIMAL LOAD AND LOAD WITH FLAG, 2026-11-16: AN ADD TO
+            // ZERO, THROUGH mkDecBox. <<<  Reference Manual printed p.61:
+            // "The numeric part of the addressed operand is placed in the
+            // accumulator as specified by the offset", modifiers "as in
+            // ADD"; printed p.58: only each byte's four low-order bits,
+            // "the accumulator is always composed of integral 4-bit
+            // bytes"; printed p.57: the offset is "a multiple of four by
+            // ignoring the two low-order bits".  PF "as in ADD" (p.60):
+            // digits overlapping the left end are dropped and PF comes on.
+            //
+            // WHY THE ADDER, AND NOT WIRES: C22-6578 printed p.14's
+            // Method 4 says "The decimal load operation behaves like a
+            // decimal 'add to zero' operation", and printed p.15, comment
+            // (b), says what that does to a byte that is not a digit: "In
+            // the decimal load the 4-bit bytes will not be altered if they
+            // contain what appears to be decimal information.  Otherwise,
+            // carry propagation and assimilation will occur.  The byte
+            // (1 1 1 1)2, for instance, will become (0101)2 with a carry
+            // to the higher byte."  So the operand goes to the box with a
+            // zero accumulator, and mkDecBox's digit step (15 -> 5, carry
+            // one) is that sentence.  The box is asked once every read,
+            // the refill included, is in hand: the accumulator write
+            // commits on the run that makes it (see + below).
+            if (!isValid(needsRead) && vi.m.decimal == 1) begin
               SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.ldDig, .ldHi} = decCompact(sm.mag[63:0], bsz);
+              Bool ldPf = ldHi || (offDec != 0 && (ldDig >> (8'd128 - offDec)) != 0);
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+                // the trailing block asks for the refill word (or refuses)
+              end else if (decOf(boxResult) matches tagged Valid .dr) begin
+                SM128 shifted = SM128 { sign: sm.sign, mag: dr.r };
+                Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
+                writeAccFlags(st, shifted, (vi.code == 6'b100101) ? flags : 0);
+                ind = setDataFlagsF(ind, flags);
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, shifted);
+                if (ldPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False });
+                needsRead = tagged Valid 0;
+              end
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              // PF "as in ADD" (printed p.61; p.60's rule), 2026-11-16:
+              // the operand shifted wide, any bit past the left end
+              // dropped and reported (decks/vfl_binary_add_indicators.strap
+              // B11, B12).  Until then the shift dropped them silently.
+              Bit#(256) ldWide = zeroExtend(sm.mag) << offSh;
+              SM128 shifted = SM128 { sign: sm.sign, mag: truncate(ldWide) };
               // Printed p.57: LOAD WITH FLAG places the flag bits in the
               // three rightmost bits of the sign byte register, and LOAD
               // sets those three positions to zero.
@@ -2820,6 +2967,7 @@ function ActionValue#(VflOutcome)
               ind = setDataFlagsF(ind, flags);
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsF(ind, shifted);
+              if ((ldWide >> 128) != 0) ind = setBit(ind, ind_PF, 1);
             end
           end
           6'b001101, 6'b101101: begin // ST (Store) and SRD (Store
@@ -2948,9 +3096,53 @@ function ActionValue#(VflOutcome)
               Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
               // A decimal offset is limited to digit positions by ignoring
               // its two low-order bits (printed p.57).
-              Bit#(128) decAcc = truncate(acc.mag >> (offSh & 8'hFC));
-              Bit#(64) decField = decStoreField(decAcc, bsz, st.readAccSign()[63:56]);
+              //
+              // >>> DECIMAL SIGNED STORE AND DECIMAL STORE ROUNDED,
+              // 2026-11-16. <<<  Printed p.63, STORE, Radix: "In a decimal
+              // STORE, the byte size refers to the size of each byte in
+              // the storage field, including the sign byte if the
+              // operation is signed.  Each 4-bit byte of the accumulator
+              // replaces the four low-order bits of each byte of the
+              // storage field except the sign byte."  The sign byte is
+              // binary STORE's ("a sign byte of proper size is obtained
+              // from the accumulator sign byte register and, after
+              // modification by the negative sign modifier, ... replaces
+              // the rightmost byte"), so the signed field is the numeric
+              // bytes above smToField's sign byte.  PF, same page: "a
+              // non-zero byte to the left of the high-order byte
+              // stored" -- of the NUMERIC part, so decStorePF is given
+              // the numeric length.
+              //
+              // SRD, printed p.64, Radix: "If a decimal operation is
+              // specified, a four-bit byte with value five is added to
+              // the four-bit byte immediately to the right of the offset
+              // in the field from the accumulator.  Carries are
+              // propagated as in any decimal addition."  That addition is
+              // mkDecBox's: asked for at the write sites below, after
+              // every read (nothing is written on the run that bails).
+              // "A STORE ROUNDED with zero offset specified is equivalent
+              // to a STORE": a decimal offset below four is digit offset
+              // zero, so no box.  PF from the unrounded accumulator and LC
+              // from the round's carry past the stored field, as binary
+              // SRD reads them (its note above).
+              Bit#(8) offDec = offSh & 8'hFC;
               Bool decStore = (vi.m.decimal == 1);
+              Bool decRound = decStore && isSrd && offDec != 0;
+              Bool decAsk = decRound && !isValid(decOf(boxResult));
+              DecRsp decRsp = validValue(decOf(boxResult));
+              Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False });
+              Bit#(128) decAccU = acc.mag >> offDec;
+              Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
+              Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_
+                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) decAbove = ~decDigitMask(decDigitCount(decNumLen, bsz));
+              Bool decLc = decRound && (decRsp.carry
+                                        || ((decAcc & decAbove) != (decAccU & decAbove)));
+              Bit#(64) decDigitsF = decStoreField(decAcc, bsz, st.readAccSign()[63:56]);
+              Bit#(64) decField = (vi.m.unsign == 1) ? decDigitsF
+                : smToField(SM128{sign: fsign, mag: zeroExtend(decDigitsF)}, len_, bsz, 0,
+                            storeSignByte(st.readAccSign()[63:56], bsz));
               Bit#(64) packedField = decStore ? decField
                 : smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign,
                             storeSignByte(st.readAccSign()[63:56], bsz));
@@ -2978,11 +3170,12 @@ function ActionValue#(VflOutcome)
                 return (above != aboveAcc) ? setBit(i3, ind_LC, 1) : i3;
               endfunction
               function Word64 decStoreInd(Word64 i0);
-                Bit#(64) lenMask = (len_ == 64) ? '1 : ((64'd1 << len_) - 1);
-                Bit#(64) stored = decField & decStoreNumeric(bsz) & lenMask;
+                Bit#(64) lenMask = (decNumLen == 64) ? '1 : ((64'd1 << decNumLen) - 1);
+                Bit#(64) stored = decDigitsF & decStoreNumeric(bsz) & lenMask;
                 Word64 i1 = setResultIndicatorsF(i0, SM128{sign:fsign, mag:zeroExtend(stored)});
                 Word64 i2 = setBit(i1, ind_MOP, 1);
-                return decStorePF(decAcc, bsz, len_) ? setBit(i2, ind_PF, 1) : i2;
+                Word64 i3 = decStorePF(decAccU, bsz, decNumLen) ? setBit(i2, ind_PF, 1) : i2;
+                return decLc ? setBit(i3, ind_LC, 1) : i3;
               endfunction
               WordAddr w0 = stW0;
               Bit#(6) off = baBit(ea);
@@ -2996,7 +3189,10 @@ function ActionValue#(VflOutcome)
                 // signal" -- and is why the comment beside
                 // protViolates no longer says "the store sites still
                 // compare one word each".
-                if (prefetchCount >= 2) begin
+                if (prefetchCount >= 2 && decAsk) begin
+                  needsBox  = decReq;
+                  needsRead = tagged Valid 0;
+                end else if (prefetchCount >= 2) begin
                   Bool dsHi = protViolates(st, w0);
                   Bool dsLo = protViolates(st, w0 + 1);
                   if (dsHi || dsLo) ind = setBit(ind, ind_DS, 1);
@@ -3020,7 +3216,10 @@ function ActionValue#(VflOutcome)
                 // in a way it is not on the refill path below.
               end
               else if (!vflNeedsRefill) begin
-                if (prefetchCount >= 1) begin
+                if (prefetchCount >= 1 && decAsk) begin
+                  needsBox  = decReq;
+                  needsRead = tagged Valid 0;
+                end else if (prefetchCount >= 1) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
@@ -3043,7 +3242,10 @@ function ActionValue#(VflOutcome)
                 // site states explicitly, this one gets from its
                 // position.
                 ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
-                if (prefetchCount >= 2) begin
+                if (prefetchCount >= 2 && decAsk) begin
+                  needsBox  = decReq;
+                  needsRead = tagged Valid 0;
+                end else if (prefetchCount >= 2) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else begin
                     st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
@@ -3136,15 +3338,95 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && vi.m.decimal == 1) begin
+              // >>> DECIMAL ADD AND ADD TO MAGNITUDE, 2026-11-16. <<<
+              // Reference Manual printed p.60 (PDF 63), ADD, Radix: "In
+              // decimal arithmetic, four-bit bytes are used, only the four
+              // low-order bits of each byte in the addressed operand
+              // participate in the operation, and a carry occurs from one
+              // byte to the next when a sum byte exceeds 9.  In decimal
+              // operations, the two low-order bits of the effective
+              // offset are ignored and considered zero."  Indicators,
+              // same page: "Lost Carry (LC).  This indicator is actuated
+              // if information is lost because a carry attempts to
+              // propagate beyond the left end of the accumulator.
+              // Partial Field (PF).  This indicator is turned on if
+              // significant bits of the data field from storage overlap
+              // the left end of the accumulator ... the high-order bits
+              // of the result are dropped.  A partial field condition
+              // will not cause a lost carry indication."  (The BINARY
+              // arm below sets both by the same rule since 2026-11-16.)
+              //
+              // THE SUM IS mkDecBox's (StretchDecBox.bsv), asked for by
+              // the NeedBox bail once every word this instruction reads
+              // is in hand -- INCLUDING a progressive refill: the
+              // accumulator write below commits on the run that makes
+              // it, so the box is asked only on a run that cannot bail
+              // again afterwards.  (With a refill still to come this run
+              // does nothing and the trailing block asks for the word;
+              // with a crossing field AND a refill the trailing block
+              // refuses the operation with OP, before anything is
+              // written.)
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.dDig, .dHi} = decCompact(opnd.mag[63:0], bsz);
+              Bit#(128) dSh = dDig << offDec;
+              Bool dPf = dHi || (offDec != 0 && (dDig >> (8'd128 - offDec)) != 0);
+              SM128 acc = readAcc(st);
+              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
+              Bool dSub = (accUsed.sign != opnd.sign);
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+                // the trailing block asks for the refill word (or refuses)
+              end else if (decOf(boxResult) matches tagged Valid .dr) begin
+                // smAdd's sign rule, in the box's terms (StretchDecBox's
+                // header): like signs keep the accumulator's; unlike signs
+                // keep it when |acc| >= |operand| -- so an all-zero sum
+                // keeps it, p.60's "the sign remains as it was" -- and
+                // take the operand's otherwise.
+                SM128 sum = SM128 { sign: (!dSub || dr.carry) ? accUsed.sign : opnd.sign,
+                                    mag: dr.r };
+                SM128 stored = magnitude
+                  ? SM128 { sign: acc.sign, mag: (sum.sign == 0) ? sum.mag : 0 }
+                  : sum;
+                writeAcc(st, stored);
+                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, stored);
+                if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
+                if (dPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub });
+                needsRead = tagged Valid 0;
+              end
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
-              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+              // PARTIAL FIELD AND LOST CARRY, 2026-11-16 (this arm set
+              // neither until then; the decimal arm above did).  printed
+              // p.60, ADD: PF "is turned on if significant bits of the
+              // data field from storage overlap the left end of the
+              // accumulator ... the high-order bits of the result are
+              // dropped.  A partial field condition will not cause a lost
+              // carry indication.  However, both conditions may arise
+              // during the execution of a single instruction"; LC "is
+              // actuated if information is lost because a carry attempts
+              // to propagate beyond the left end of the accumulator".
+              // printed p.61 sets both for +MG "as in ADD".  So PF is
+              // judged on the operand shifted WIDE, and LC on the carry
+              // out of the 128-bit sum of what is left -- a like-signed
+              // add, since an unlike-signed one is a subtraction and
+              // cannot carry out (decks/vfl_binary_add_indicators.strap
+              // B5-B10).
+              Bit#(256) opndWide = zeroExtend(opnd.mag) << offSh;
+              Bool bPf = (opndWide >> 128) != 0;
+              SM128 opndSh = SM128 { sign: opnd.sign, mag: truncate(opndWide) };
               SM128 acc = readAcc(st);
               // "assumed positive for purposes of the addition itself"
               SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
               SM128 sum = smAdd(accUsed, opndSh);
+              Bit#(129) carrySum = zeroExtend(accUsed.mag) + zeroExtend(opndSh.mag);
+              Bool bLc = (accUsed.sign == opndSh.sign) && carrySum[128] == 1;
               // "If the result is positive, the sum is placed into
               // the accumulator.  If the result is negative, the
               // entire accumulator is cleared to zero.  In either
@@ -3161,12 +3443,16 @@ function ActionValue#(VflOutcome)
               writeAcc(st, stored);
               // "set according to the contents of the ENTIRE
               // accumulator when the operation is complete" (p.60,
-              // Arithmetic Result).  setResultIndicatorsF reports RZ
-              // for a zero magnitude whatever the sign, so a cleared
-              // accumulator with a negative sign byte reads RZ and
-              // not RN -- which is what "the sign remains as it was"
-              // requires.
+              // Arithmetic Result).  A cleared accumulator whose sign
+              // byte stays minus reads RZ AND RN: printed p.47's RN is
+              // "negative whether zero or not".  (Until 2026-11-16 this
+              // comment argued the opposite, that "the sign remains as
+              // it was" required RN off; that sentence is about the
+              // sign kept, not the indicator, and the decimal arm's
+              // A10 already pinned RZ RN for the same case.)
               ind = setResultIndicatorsF(ind, stored);
+              if (bLc) ind = setBit(ind, ind_LC, 1);
+              if (bPf) ind = setBit(ind, ind_PF, 1);
             end
           end
           6'b011001: begin // * (Multiply)
@@ -3249,7 +3535,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3296,8 +3582,8 @@ function ActionValue#(VflOutcome)
             // specified by the offset."  PF if either factor exceeds
             // 48 bits (the 48 low-order bits are used), or if product
             // bits pass the accumulator's left end; FT is unchanged.
-            // Decimal *+ (LOAD TRANSIT AND SET's action) is refused
-            // above with the rest of the decimal VFL set.
+            // Decimal *+ never reaches this arm: it is LOAD TRANSIT AND
+            // SET's action (p.69) and is dispatched to the LTRS arm.
             //
             // ARRIVED VIA MCP: printed p.95 lines 49 and 55 and p.96
             // lines 1-2, MOVE's table layout -- "LFT,TIODCT(TMXA)
@@ -3328,7 +3614,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3451,7 +3737,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3477,7 +3763,7 @@ function ActionValue#(VflOutcome)
                 // indicators, which printed p.70 says "describe the
                 // quotient" and there is no quotient.
                 ind = setBit(ind, ind_ZD, 1);
-              end else if (boxResult matches tagged Invalid) begin
+              end else if (divOf(boxResult) matches tagged Invalid) begin
                 // >>> THE DIVISION ITSELF IS NOT DONE HERE ANY MORE,
                 // 2026-11-15. <<<  This arm used to compute
                 // `dvd / dsrSafe` and `dvd % dsrSafe` in place: a
@@ -3505,11 +3791,11 @@ function ActionValue#(VflOutcome)
                 // elaborated and Bluesim's wide `/` trapped with a
                 // floating point exception on the discarded side; a
                 // restoring loop has nothing to trap on.)
-                needsBox  = tagged Valid DivReq { dvd: dvd, dvs: dsr[47:0] };
+                needsBox  = tagged Valid (tagged BoxDiv DivReq { dvd: dvd, dvs: dsr[47:0] });
                 needsRead = tagged Valid 0;
               end else begin
-                Bit#(96) q    = validValue(boxResult).q;
-                Bit#(96) rem_ = zeroExtend(validValue(boxResult).rem);
+                Bit#(96) q    = validValue(divOf(boxResult)).q;
+                Bit#(96) rem_ = zeroExtend(validValue(divOf(boxResult)).rem);
                 // "the quotient is placed in the cleared accumulator
                 // at the specified offset", and the quotient's sign
                 // "replaces the sign bit in the accumulator sign byte
@@ -3664,8 +3950,87 @@ function ActionValue#(VflOutcome)
               // open.  The STORAGE operand follows the class rule below,
               // as for every to-memory operation.
               Bit#(1) opndInvert = 0;
+              // >>> DECIMAL M+, M+1 AND M+MG, 2026-11-16. <<<  Computed
+              // here once, for both write sites below (each uses
+              // prefetch[0] as the field's word).  Reference Manual
+              // printed p.61, ADD TO MEMORY, Radix: "In a decimal
+              // operation, the field is processed in four-bit bytes.  If
+              // the byte size ... is greater than four, only the four
+              // low-order bits of each byte participate ... The
+              // high-order bits of each byte are not changed by the
+              // operation" (decMergeField).  Indicators, printed p.62:
+              // "Lost Carry (LC).  This indicator is actuated by a carry
+              // beyond the leftmost digit, either binary or decimal, of
+              // the addressed field.  This indicator is also turned on if
+              // the result of an unsigned operation is negative.  In such
+              // a case, the magnitude of the result is stored in storage.
+              // Partial Field (PF).  This indicator is turned on if there
+              // are non-zero digits ... in the accumulator to the left of
+              // the highest order digit that is participating"; and the
+              // Programming Note: "the length of the accumulator field
+              // between the specified offset and the left end of the
+              // accumulator can be less than the number of bits from the
+              // storage operand ... the accumulator operand is lengthened
+              // ... by the addition of high-order zeros."  Printed p.59
+              // adds, for a short high-order byte, that LC comes on "only
+              // if the corresponding result byte from the processing unit
+              // is greater than nine" -- the carry out of the top DIGIT,
+              // which is what dCarryOut tests.  M+1 has no accumulator
+              // operand and "the partial field indicator is not affected"
+              // (printed p.63).
+              //
+              // The sum is mkDecBox's, asked for at the write site below
+              // -- after every read, the refill included -- so nothing
+              // is written on the run that bails.
+              Bit#(64) mRaw = extractFieldBits(prefetch[0], 0, off, len_);
+              SM128 dOpnd = fieldToSM(mRaw, len_, bsz, vi.m.unsign, opndInvert);
+              Bit#(7) dNumBits = (vi.m.unsign == 1) ? len_
+                               : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) dMask = decDigitMask(decDigitCount(dNumBits, bsz));
+              Bool dWide = (decDigitCount(dNumBits, bsz) >= 32);
+              match {.mDig, .mHi} = decCompact(dOpnd.mag[63:0], bsz);
+              Bit#(128) dAccF = acc.mag >> (offSh & 8'hFC);
+              SM128 dAccSh = addOne
+                ? SM128 { sign: vi.m.invert, mag: 1 }
+                : magnitude
+                ? SM128 { sign: vi.m.invert, mag: dAccF & dMask }
+                : SM128 { sign: acc.sign ^ vi.m.invert, mag: dAccF & dMask };
+              Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
+              Bool dSub = (dOpnd.sign != dAccSh.sign);
+              Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub });
+              Bool dDec = (vi.m.decimal == 1);
+              Bool dAsk = dDec && !isValid(decOf(boxResult));
+              DecRsp dr = validValue(decOf(boxResult));
+              SM128 dSum = SM128 { sign: (!dSub || dr.carry) ? dOpnd.sign : dAccSh.sign,
+                                   mag: dr.r & dMask };
+              Bool dCarryOut = !dSub && (dWide ? dr.carry : ((dr.r & ~dMask) != 0));
+              SM128 dStored = magToMemory(magnitude, dSum, dOpnd);
+              Bool dLc = dCarryOut || (vi.m.unsign == 1 && dStored.sign == 1);
+              Bit#(64) dOldNum = (vi.m.unsign == 1) ? mRaw : (mRaw >> bsz);
+              Bit#(64) dNewNum = decMergeField(dStored.mag, dOldNum, bsz);
+              Bit#(64) dField = (vi.m.unsign == 1) ? dNewNum
+                : smToField(SM128 { sign: dStored.sign, mag: zeroExtend(dNewNum) },
+                            len_, bsz, 0, mRaw);
+              function Word64 decMInd(Word64 i0);
+                Word64 i1 = setDataFlagsF(i0, fieldFlags(mRaw, bsz, vi.m.unsign));
+                Word64 i2 = setBit(i1, ind_MOP, 1);
+                // "set according to the algebraic sum" (M+, p.62) / "the
+                // final result stored" (M+MG, p.62): dStored is both.
+                Word64 i3 = setResultIndicatorsF(i2, dStored);
+                Word64 i4 = dLc ? setBit(i3, ind_LC, 1) : i3;
+                return dPf ? setBit(i4, ind_PF, 1) : i4;
+              endfunction
               if (!vflNeedsRefill) begin
-                if (prefetchCount >= 1) begin
+                if (prefetchCount >= 1 && dAsk) begin
+                  needsBox  = dReq;
+                  needsRead = tagged Valid 0;
+                end else if (prefetchCount >= 1 && dDec) begin
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, dField));
+                  ind = decMInd(ind);
+                  vflReadsUsed = 1;
+                end else if (prefetchCount >= 1) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
@@ -3692,7 +4057,16 @@ function ActionValue#(VflOutcome)
                 // site states explicitly, this one gets from its
                 // position.
                 ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
-                if (prefetchCount >= 2) begin
+                if (prefetchCount >= 2 && dAsk) begin
+                  needsBox  = dReq;
+                  needsRead = tagged Valid 0;
+                end else if (prefetchCount >= 2 && dDec) begin
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, dField));
+                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
+                  ind = decMInd(ind);
+                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                end else if (prefetchCount >= 2) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   ind = setDataFlagsF(ind, fieldFlags(raw, bsz, vi.m.unsign));
@@ -3712,7 +4086,37 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b010001, 6'b110001: begin // K (Compare), KF (Compare Field)
+          6'b010001, 6'b110001,  // K (Compare), KF (Compare Field)
+          6'b010011, 6'b110011,  // KE, KFE (Compare [Field] if Equal)
+          6'b010101, 6'b110101: begin // KR, KFR (Compare [Field] for Range)
+            // >>> KE, KFE, KR AND KFR SHARE THIS ARM, 2026-11-16 (G2.3
+            // stage 2), BOTH RADICES. <<<  Reference Manual printed
+            // pp.65-67, read in the page images.  COMPARE IF EQUAL (p.65):
+            // "If the accumulator-equal indicator is off when this
+            // operation is interpreted, the comparison is not performed
+            // and the comparison result indicators are not changed.
+            // Otherwise, the operation is executed exactly as is
+            // COMPARE."  COMPARE FOR RANGE (p.66): "If the
+            // accumulator-high indicator is off when this operation is
+            // interpreted, the comparison is performed and the comparison
+            // result indicators are not changed.  Otherwise, the
+            // operation is identical to COMPARE except for the setting of
+            // the comparison result indicators.  If the accumulator
+            // operand is equal to or higher than the storage operand, the
+            // accumulator-high indicator is left on.  If the accumulator
+            // operand is less than the storage operand, the AE indicator
+            // is turned on, and AH is turned off."  KFE and KFR are the
+            // same on COMPARE FIELD (pp.66-67).  The data flags and MOP
+            // are "set as in COMPARE" in every case -- the condition
+            // guards only the comparison result indicators -- which is
+            // how KE's "comparison is not performed" is read here: the
+            // operand is still fetched (its flags are reported) and the
+            // result is not used.  CHOSEN; no page says whether a KE with
+            // AE off sets the data flags.
+            //
+            // The codes' low bits: bit 1 (code 0100x1x) marks the
+            // conditional ones, and KE/KR differ in bit 2 -- 010011 KE,
+            // 010101 KR (strap/opcodes.py, from the pocket card).
             // -> AL/AE/AH.  Same prefetch/bail-out shape as L above.
             //
             // COMPARE FIELD, Reference Manual printed p.65, verbatim:
@@ -3750,7 +4154,9 @@ function ActionValue#(VflOutcome)
             // image IS an IOCD card, and so the first of the two
             // operations standing between MCP and knowing what
             // devices it has (docs/boot_plan.md A2).
-            Bool fieldCmp = (vi.code == 6'b110001);
+            Bool fieldCmp = (vi.code[5] == 1);
+            Bool condEq    = (vi.code[4:0] == 5'b10011);   // KE, KFE
+            Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -3834,7 +4240,57 @@ function ActionValue#(VflOutcome)
                 SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 c = smCompare(accSh, opnd);
               end
-              ind = setAccCmpIndicatorsF(ind, c);
+              // >>> DECIMAL K, KF, KE, KFE, KR, KFR, 2026-11-16. <<<
+              // "Radix.  These modifiers operate as in ADD" (p.65): four-
+              // bit bytes, the offset's two low-order bits ignored.  And
+              // the Programming Note, item 4: "The comparison is performed
+              // by making a subtraction and testing the result.  A decimal
+              // digit with byte size less than four is handled as in any
+              // other subtraction."  So the decimal magnitudes go to
+              // mkDecBox as a subtraction: no end carry means the
+              // accumulator's is the smaller, an all-zero difference means
+              // equal.  Signs as smCompare's (p.65 item 1: "+x > +y > +0 =
+              // -0 > -y > -x").  Compare writes no storage and no
+              // accumulator, so the box may be asked on any run that has
+              // the operand; a later refill bail just asks it again.
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.kDig, .kHi} = decCompact(opnd.mag[63:0], bsz);
+              Bit#(7) kNum = (vi.m.unsign == 1) ? len_
+                           : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) kAccMag = fieldCmp
+                ? ((acc.mag >> offDec) & decDigitMask(decDigitCount(kNum, bsz)))
+                : (acc.mag >> offDec);
+              Bit#(1) kAccSign = fieldCmp ? 0 : acc.sign;
+              Bool ah0 = (ind[63 - ind_AH] == 1);
+              Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
+              if (vi.m.decimal == 1 && !skipCmp) begin
+                if (decOf(boxResult) matches tagged Valid .kr) begin
+                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
+                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
+                  // magnitude order from the subtraction (a digit beyond
+                  // the 32nd makes the storage operand the larger)
+                  Cmp3 m = kHi ? CmpLow
+                         : (kr.r == 0) ? CmpEqual
+                         : kr.carry ? CmpHigh : CmpLow;
+                  c = (as_ != bs_) ? ((as_ == 1) ? CmpLow : CmpHigh)
+                    : (as_ == 0) ? m
+                    : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True });
+                  needsRead = tagged Valid 0;
+                end
+              end
+              if (skipCmp) begin
+                // KE/KFE with AE off: comparison indicators unchanged
+              end else if (condRange && !ah0) begin
+                // KR/KFR with AH off: comparison indicators unchanged
+              end else if (condRange) begin
+                if (c == CmpLow) begin
+                  ind = setBit(ind, ind_AE, 1);
+                  ind = setBit(ind, ind_AH, 0);
+                end
+              end else
+                ind = setAccCmpIndicatorsF(ind, c);
             end
           end
           6'b000011: begin // LCV (Load Converted)
@@ -3880,7 +4336,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               if (vi.m.decimal == 0) begin
                 // BINARY TO DECIMAL, printed p.72's Radix: "If binary
                 // is specified, the storage operand is converted from
@@ -4009,6 +4465,9 @@ function ActionValue#(VflOutcome)
             // the divide, at 001217.00.  Lines 19-24 put the hours at
             // offset 68 with three instructions, which is exactly
             // where this reads.
+            // No storage operand, but a progressive CV still refills:
+            // held until the refill word is in hand, as every arm here.
+            if (!vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // "the accumulator sign is taken as-is ... as positive
             // ... inverted" (p.73's Modifiers)
@@ -4042,6 +4501,7 @@ function ActionValue#(VflOutcome)
               if ((val >> 48) != 0) ind = setBit(ind, ind_PF, 1);
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsF(ind, res);
+            end
             end
           end
           6'b100011: begin // LTRCV (Load Transit Converted)
@@ -4096,7 +4556,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               Bool    signed_ = (vi.m.unsign == 0);
               Bit#(7) sbBits  = zeroExtend(bsz);
               Bit#(7) numBits = !signed_ ? len_
@@ -4130,6 +4590,99 @@ function ActionValue#(VflOutcome)
               // accumulator, which this operation never touches.
               ind = setResultIndicatorsF(ind,
                       SM128 { sign: sgn, mag: payload });
+            end
+          end
+          6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
+            // LOAD TRANSIT AND SET, Reference Manual printed p.67 (PDF 70),
+            // read in the page image:
+            //
+            //   "The transit register (location 15), the left zeros
+            //   counter, and the all-ones counter are cleared.  A four-bit
+            //   sign byte, in which the leftmost bit is set to the sign of
+            //   the addressed storage operand as modified by the negative
+            //   sign modifier, is placed in the four low-order bits of the
+            //   transit register.  The remaining three bits of this sign
+            //   byte are zero.  The numeric part of the addressed operand
+            //   is positioned immediately to the left of this sign byte in
+            //   the transit register.  The effective offset specified by
+            //   the instruction is placed in the all-ones counter (bits
+            //   44-50 of location 7).  The two high-order bits of the left
+            //   zeros counter (bits 17-18 of location 7) are set to ones."
+            //
+            // and p.68 (PDF 71): BTR or DTR "depending on the value of the
+            // radix modifier"; PF if the numeric part "contains more than
+            // 60 significant bits ... the transit register is loaded up to
+            // its left end.  Higher-order bits are lost"; data flags and
+            // MOP "as in ADD"; RLZ/RZ/RGZ/RN "according to the contents of
+            // the transit register".  The same page's table gives the two
+            // left-zeros bits: MULTIPLY 00, DIVIDE 01, MULTIPLY AND ADD
+            // 10, LOAD TRANSIT AND SET 11.  The accumulator is not touched.
+            //
+            // THE EFFECTIVE OFFSET is vi.a.offset as vflSecondIndex left
+            // it (the second half's I field, printed p.21).  All seven
+            // bits, in decimal too: p.60's "two low-order bits ... ignored"
+            // is ADD's (CHOSEN; decks/vfl_ltrs.strap).
+            //
+            // A DECIMAL OPERAND'S NUMERIC PART IS LOADED AS FOUR-BIT
+            // DIGITS, zones dropped (decCompact): "Radix.  This modifier
+            // operates as in ADD" (p.68), and ADD's decimal operand "is
+            // converted to a four-bit byte for processing" (p.58).  CHOSEN;
+            // the page does not show a decimal transit register.
+            //
+            // THE COUNTS go back through connCounts and are written by the
+            // caller after this function's own writes -- the connectives'
+            // route to location 7 (VflOutcome's comment).
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(128) num = opnd.mag;
+              Bool numHi = False;
+              if (vi.m.decimal == 1) begin
+                match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
+                num = dg; numHi = dhi;
+              end
+              Bit#(60) n60 = truncate(num);
+              st.writeWord(addrTransit, (zeroExtend(n60) << 4)
+                                        | (zeroExtend(opnd.sign) << 3));
+              Bit#(2) lzHigh = case (vi.code)
+                                 6'b011001: 2'b00;   // *
+                                 6'b011101: 2'b01;   // /
+                                 6'b111001: 2'b10;   // *+
+                                 default:   2'b11;   // LTRS
+                               endcase;
+              connCounts = tagged Valid tuple2({lzHigh, 5'b0}, vi.a.offset);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              if (numHi || (num >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+              SM128 trv = SM128 { sign: opnd.sign, mag: zeroExtend(n60) };
+              if (vi.m.decimal == 1) begin
+                ind = setBit(ind, ind_DTR, 1);
+                ind = setResultIndicatorsF(ind, trv);
+              end else begin
+                ind = setBit(ind, ind_BTR, 1);
+                ind = setResultIndicatorsF(ind, trv);
+              end
             end
           end
           default: begin
@@ -4467,7 +5020,7 @@ function ActionValue#(VflOutcome)
                 needsRead = tagged Valid w0;
             end
           end
-          if (!isValid(needsRead)) begin
+          if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // p.75's byte expansion.  `maskVec` marks exactly which
             // bits take part: every bit of every full byte, and only
@@ -5663,11 +6216,11 @@ function ActionValue#(ExecDispatch)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
             Maybe#(HWordAddr) intIC, ExSubject ex,
-            Maybe#(DivRsp) boxResult) =
+            Maybe#(BoxRsp) boxResult) =
   actionvalue
-    // "I need the divider" (ExecDispatch's NeedBox).  Whenever this is
+    // "I need a box" (ExecDispatch's NeedBox).  Whenever this is
     // Valid, needsRead is too.
-    Maybe#(DivReq) needsBox = tagged Invalid;
+    Maybe#(BoxReq) needsBox = tagged Invalid;
     // An instruction at an effective interruption address carries the
     // interrupted program's instruction counter, which "is not stepped
     // during execution of either interruption instruction" (Reference
@@ -5829,6 +6382,10 @@ function ActionValue#(ExecDispatch)
         needsBox   = vo.needsBox;
         vflPending = vo.vflPending;
         ind        = vo.ind;
+        // LTRS's counts (location 7), after vflIntOp's own writes: see
+        // VflOutcome's connCounts comment and the Connective case below.
+        if (vo.connCounts matches tagged Valid {.lzcv, .aocv})
+          st.setConnectiveCounts(lzcv, aocv);
       end
 
       // -----------------------------------------------------------
@@ -6780,7 +7337,7 @@ function ActionValue#(ExecDispatch)
           // divisor makes no request (p.93: "further processing of
           // the division is suspended") and completes at once.
           Tuple2#(Bit#(49), Bit#(49)) divQR = tuple2(0, 0);
-          if (boxResult matches tagged Valid .b)
+          if (divOf(boxResult) matches tagged Valid .b)
             divQR = tuple2(b.q[48:0], {1'b0, b.rem});
           let {indAr, fpcA} = fpArithClass(c, fp.absSign, fp.invSign, ea, acc,
                                            accL, accS, st.readAccRight(),
@@ -6788,8 +7345,8 @@ function ActionValue#(ExecDispatch)
                                            normalized, noisy,
                                            protViolates(st, ea),
                                            prefetch[0], ind, divQR);
-          if (fpcA.divReq matches tagged Valid .rq &&& !isValid(boxResult)) begin
-            needsBox  = tagged Valid rq;
+          if (fpcA.divReq matches tagged Valid .rq &&& !isValid(divOf(boxResult))) begin
+            needsBox  = tagged Valid (tagged BoxDiv rq);
             needsRead = tagged Valid 0;
           end else begin
             ind = indAr;
@@ -7261,6 +7818,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // precisely what the combinational arm did on every run, so the
   // behaviour is unchanged in that corner too.
   DivBox                   divBox        <- mkDivBox;
+  // THE DECIMAL ADDER (StretchDecBox.bsv), the second box, 2026-11-16,
+  // and `boxIsDec` says which of the two the held instruction is
+  // waiting on.  It is meaningful only while `boxWait` is set.
+  DecBox                   decBox        <- mkDecBox;
+  Reg#(Bool)               boxIsDec      <- mkReg(False);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
 
@@ -7300,7 +7862,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       tagged NeedBox .rq: begin
         // The look-ahead supplied the operand (or it was immediate),
         // so the first thing this instruction waits for is the box.
-        divBox.request(rq);
+        case (rq) matches
+          tagged BoxDiv .d: divBox.request(d);
+          tagged BoxDec .d: decBox.request(d);
+        endcase
+        boxIsDec <= isDecReq(rq);
         boxWait <= True;
         boxT0   <= clock;
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
@@ -7325,7 +7891,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // read: see its declaration.
   method Bool canResume() = isValid(held)
                             && (subjReady
-                                || (boxWait ? divBox.responseReady()
+                                || (boxWait ? (boxIsDec ? decBox.responseReady()
+                                                        : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
@@ -7398,11 +7965,17 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // `subjReady`: that is set only on the clock an EXIC's subject is
     // installed, and the subject has not run yet, so it has not asked
     // for the box.)
-    Maybe#(DivRsp)     rbox = tagged Invalid;
+    Maybe#(BoxRsp)     rbox = tagged Invalid;
 
     if (boxWait) begin
-      rbox = tagged Valid divBox.response();
-      boxWait <= False;
+      rbox = tagged Valid (boxIsDec ? tagged RspDec decBox.response()
+                                    : tagged RspDiv divBox.response());
+      // `boxWait` is cleared below, in the arms of the dispatch that do
+      // not ask for a box again -- ONE write per arm.  Clearing it here
+      // and setting it again in the NeedBox arm was two writes bsc
+      // could no longer prove exclusive once there were two boxes: a
+      // decimal answer leaves divOf(rbox) Invalid, so a divide request
+      // looked reachable on the same run.
     end else if (subjReady) begin
       // SHAPE 1.  Nothing arrived and nothing is outstanding: `held`
       // already IS the subject, with an empty prefetch, and the step
@@ -7609,7 +8182,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // The operand word has just arrived (or a subject has just
         // been installed) and the instruction now needs the divider:
         // read first, then the box.  The word stays in `prefetch`.
-        divBox.request(rq);
+        case (rq) matches
+          tagged BoxDiv .d: divBox.request(d);
+          tagged BoxDec .d: decBox.request(d);
+        endcase
+        boxIsDec <= isDecReq(rq);
         boxWait <= True;
         boxT0   <= clock;
         held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
@@ -7621,6 +8198,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       end
       tagged NeedOperand .a: begin
         st.readWordReq(a);
+        boxWait <= False;
         // Rewritten rather than left alone: on a subject swap `rdi` and
         // `rex` are new, and on an ordinary operand arrival they are
         // exactly what was already there.
@@ -7633,6 +8211,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       end
       tagged Complete .d: begin
         held <= tagged Invalid;
+        boxWait <= False;
         return tagged Valid d;
       end
       endcase

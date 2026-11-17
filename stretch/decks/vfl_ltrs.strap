@@ -1,0 +1,218 @@
+! LOAD TRANSIT AND SET, both radices, and decimal MULTIPLY, DIVIDE and
+! MULTIPLY AND ADD, which are LTRS's action -- G2.3, built 2026-11-16.
+!
+! Expected values HAND-DERIVED from the Reference Manual 22-6530-2, read in
+! the page images; none from a run.
+!   printed p.67 (PDF 70), LTRS: "The transit register (location 15), the
+!     left zeros counter, and the all-ones counter are cleared.  A four-bit
+!     sign byte, in which the leftmost bit is set to the sign of the
+!     addressed storage operand as modified by the negative sign modifier,
+!     is placed in the four low-order bits of the transit register.  The
+!     remaining three bits of this sign byte are zero.  The numeric part of
+!     the addressed operand is positioned immediately to the left of this
+!     sign byte in the transit register.  The effective offset specified by
+!     the instruction is placed in the all-ones counter (bits 44-50 of
+!     location 7).  The two high-order bits of the left zeros counter (bits
+!     17-18 of location 7) are set to ones."
+!   printed p.68 (PDF 71): "either the binary-transit or decimal-transit
+!     indicator is turned on, depending on the value of the radix
+!     modifier"; PF "if the numeric part of the field loaded contains more
+!     than 60 significant bits ... the transit register is loaded up to its
+!     left end.  Higher-order bits are lost"; TF/UF/VF and MOP "as in ADD";
+!     RLZ/RZ/RGZ/RN "according to the contents of the transit register";
+!     the table MULTIPLY 00, DIVIDE 01, MULTIPLY AND ADD 10, LOAD TRANSIT
+!     AND SET 11.  MULTIPLY, same page: "If decimal is specified, this
+!     operation has the same action as LOAD TRANSIT AND SET, except that
+!     the two high-order bits of the left zeros counter are set to zeros."
+!   printed p.69 (PDF 72), *+: "... set to 10"; printed p.70 (PDF 73),
+!     DIVIDE: "... set to 01".
+!   printed p.21 (PDF 24): the second half's I field modifies bits 35-50,
+!     "bit position 3 of the index word is aligned with bit position 35".
+!
+! READINGS CHOSEN (no page decides them):
+!  * A DECIMAL operand's numeric part goes into the transit register as
+!    FOUR-BIT digits, each byte's zone dropped -- "Radix.  This modifier
+!    operates as in ADD" (p.68), and ADD's decimal operand is "converted
+!    to a four-bit byte for processing" (p.58).  The other reading, the
+!    bytes as they stand, would make T6 (16)F1F2F3F40.
+!  * The full seven-bit effective offset goes to the all-ones counter, in
+!    decimal too (p.60's "two low-order bits ... ignored" is ADD's).  W6
+!    uses offset 12, where the two readings agree; open.
+!  * Decimal result indicators as the decimal arms set them (RN is the
+!    sign, so a negative zero would set it), binary as the binary arms
+!    (the same rule since 2026-11-16: printed p.47, RN "negative whether
+!    zero or not").
+!
+! Word 7 here is the model's: IBM 17-23 the left zeros count, 44-50 the
+! all-ones count, so W = (lzc << 40) | (aoc << 13).  Indicator masks: BTR
+! (16)1000000, DTR 800000, PF 10000000000, TF 10000000, VF 4000000, RLZ
+! 80, RZ 40, RGZ 20, RN 10.  Sign byte 8 bits wide: the sign is its bit 3
+! from the right, the flags T U V its bits 2-0 (fieldToSM's reading).
+!
+!  1 LTRS(BU,24,8) 123456, offset 37: T1 1234560, W1 lzc 1100000 aoc 37 =
+!    000060000004A000, I1 BTR RGZ.
+!  2 LTRS(B,32,8) 00ABCD 08 (sign byte 08: minus, no flags), offset 0:
+!    T2 ABCD8, W2 0000600000000000, I2 BTR RLZ RN.
+!  3 LTRS(B,16,8) 77 05 (plus, flags T and V): T3 770 (the flags are NOT
+!    loaded: "the remaining three bits ... are zero"), I3 BTR TF VF RGZ.
+!  4 LTRS(BU,64,8) F000000000000001: 64 significant bits > 60, PF; TR
+!    keeps the low 60, T4 10, I4 BTR PF RGZ.
+!  5 LTRS(BU,8,8) offset 5 indexed by $3 = 0.96 (index bit 18 is the
+!    offset's units bit: +3): W5 lzc 1100000 aoc 8 = 0000600000010000.
+!  6 LTRS(DU,32,8) F1 F2 F3 F4, offset 12: T6 12340, W6 0000600000018000,
+!    I6 DTR RGZ.
+!  7 *(D,24,4) 12345 8 (minus), offset 20: lzc 00, T7 123458,
+!    W7 0000000000028000, I7 DTR RLZ RN -- not OP.
+!  8 /(DU,16,8) 09 07, offset 4: lzc 01, T8 970, W8 0000200000008000,
+!    I8 DTR RGZ.
+!  9 *+(DU,8,8) F0, offset 0: lzc 10, T9 0, W9 0000400000000000, I9 DTR RZ.
+! 10 LTRS(DU,64,4) 1000000000000002: sixteen digits, 61 significant bits,
+!    PF; T10 20, I10 DTR PF RGZ.
+! ACC: the accumulator, loaded (16)0123456789ABCDEF at offset 0 first, is
+!    "not affected" by any of the ten (LTRS's page is silent; LFT's p.69
+!    says it of LOAD FACTOR, and the decimal * page's programming note
+!    has the factors "available in the accumulator and the transit
+!    register"): $L 0, $R 0123456789ABCDEF.
+!
+! 11 L(BU,64),$TR right after an LTRS: R11 (16)1234560 (added after the
+!    review; the I-box waits on E-box registers 7-15, StretchIBox's
+!    eboxRegister, but a VFL fetch goes through the E-box itself).
+!
+! OBSERVED 2026-11-16: all 27 checks of cases 1-10 pass as hand-derived,
+! first run.
+!
+! TIMING RE-PINNED 2026-11-16, 974 -> 1214 clocks, every value check
+! unchanged: LTRS is now charged its measured Perf. Char. Vol. 2 page, PDF
+! 123 -- 44 clocks binary (13.20 us), 66 decimal (19.81), 82 decimal above
+! 48 bits (24.60) -- and decimal *, *+ and / that page's decimal figure,
+! CHOSEN because their own pages (PDF 133-135) print binary rows only
+! (StretchTiming.bsv).  Before: a MODEL PIN (CYCLES 974; 926 before case
+! 11 was added), Table 3's row, 16 + 2 x/y clocks.  In the ten cases above each LTRS is followed
+! by I-box transmits that hide the E-box's time -- with the old generic
+! charge the deck counted the same 684 clocks then -- so eight LTRS are run
+! back to back at the end, where the E-box is the critical path.
+!
+! INJECTIONS, measured 2026-11-16, each reverted from a saved copy (cmp):
+!  A the left-zeros bits always 11 (lzHigh's case on LTRS's own code):
+!    W7, W8, W9 fail -- (16)600000028000, 600000008000, 600000000000.
+!  B a decimal operand's bytes loaded as they stand (no decCompact): T6
+!    (16)F1F2F3F40, T8 9070, T9 F00 and I9 (RGZ for RZ) fail.
+!  D LTRS charged the generic 8 + 2 x/y: only CYCLES fails, 870 for 926
+!    (seven of the eight back-to-back LTRS, 8 clocks each; the first
+!    overlaps the transmits before it).  Measured BEFORE case 11 was added;
+!    not re-measured at 974 or at 1214.
+!
+        SLC, 1000.0
+START   L(BU,64), ACCV
+        LVI, $3, 0.96
+        Z, $IND
+        LTRS(BU,24,8), DA, 37
+        TI, 1, $TR, T1
+        TI, 1, 7.0, W1
+        TI, 1, $IND, I1
+        Z, $IND
+        LTRS(B,32,8), DB, 0
+        TI, 1, $TR, T2
+        TI, 1, 7.0, W2
+        TI, 1, $IND, I2
+        Z, $IND
+        LTRS(B,16,8), DC
+        TI, 1, $TR, T3
+        TI, 1, $IND, I3
+        Z, $IND
+        LTRS(BU,64,8), DPF
+        TI, 1, $TR, T4
+        TI, 1, $IND, I4
+        Z, $IND
+        LTRS(BU,8,8), DA, 5($3)
+        TI, 1, 7.0, W5
+        Z, $IND
+        LTRS(DU,32,8), DE, 12
+        TI, 1, $TR, T6
+        TI, 1, 7.0, W6
+        TI, 1, $IND, I6
+        Z, $IND
+        *(D,24,4), DF, 20
+        TI, 1, $TR, T7
+        TI, 1, 7.0, W7
+        TI, 1, $IND, I7
+        Z, $IND
+        /(DU,16,8), DG, 4
+        TI, 1, $TR, T8
+        TI, 1, 7.0, W8
+        TI, 1, $IND, I8
+        Z, $IND
+        *+(DU,8,8), DH
+        TI, 1, $TR, T9
+        TI, 1, 7.0, W9
+        TI, 1, $IND, I9
+        Z, $IND
+        LTRS(DU,64,4), DPD
+        TI, 1, $TR, T10
+        TI, 1, $IND, I10
+        TI, 2, $L, ACC
+! 11: a VFL fetch of $TR straight after an LTRS, no transmit between: the
+! load must see the new transit register.  LTRS(BU,24,8) DA gives
+! (16)1234560 (case 1), so L(BU,64),$TR leaves $R (16)1234560.
+        LTRS(BU,24,8), DA
+        L(BU,64), $TR
+        TI, 1, $R, R11
+! TIMING: eight LTRS back to back, so the E-box is the critical path (above,
+! each LTRS is followed by I-box transmits that hide its time).
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+        LTRS(BU,64,8), ACCV
+HALT    BEW, $
+        SLC, 1100.0
+ACCV    DD(BU,64), (16)0123456789ABCDEF
+DA      DD(BU,24), (16)123456
+        DD(BU,40), 0
+DB      DD(BU,32), (16)00ABCD08
+        DD(BU,32), 0
+DC      DD(BU,16), (16)7705
+        DD(BU,48), 0
+DPF     DD(BU,64), (16)F000000000000001
+DE      DD(BU,32), (16)F1F2F3F4
+        DD(BU,32), 0
+DF      DD(BU,24), (16)123458
+        DD(BU,40), 0
+DG      DD(BU,16), (16)0907
+        DD(BU,48), 0
+DH      DD(BU,8), (16)F0
+        DD(BU,56), 0
+DPD     DD(BU,64), (16)1000000000000002
+        SLC, 1200.0
+T1      DD(BU,64), 0
+W1      DD(BU,64), 0
+I1      DD(BU,64), 0
+T2      DD(BU,64), 0
+W2      DD(BU,64), 0
+I2      DD(BU,64), 0
+T3      DD(BU,64), 0
+I3      DD(BU,64), 0
+T4      DD(BU,64), 0
+I4      DD(BU,64), 0
+W5      DD(BU,64), 0
+T6      DD(BU,64), 0
+W6      DD(BU,64), 0
+I6      DD(BU,64), 0
+T7      DD(BU,64), 0
+W7      DD(BU,64), 0
+I7      DD(BU,64), 0
+T8      DD(BU,64), 0
+W8      DD(BU,64), 0
+I8      DD(BU,64), 0
+T9      DD(BU,64), 0
+W9      DD(BU,64), 0
+I9      DD(BU,64), 0
+T10     DD(BU,64), 0
+I10     DD(BU,64), 0
+ACC     DD(BU,64), 0
+        DD(BU,64), 0
+R11     DD(BU,64), 0
+        END, START

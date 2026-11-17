@@ -1,0 +1,75 @@
+! C22-6578 PROBLEM 2.8, "PURCHASING LIST ARITHMETIC", printed pp.20-21,
+! THE CARD THE PROGRAM MEANT AT KOMF.  Everything else is problem_2_8.strap
+! as printed (its header has the transcription, the readings and the data);
+! ONE card differs:
+!
+!   printed   KOMF  KF(BU,24)(V+I), 0.8($2)
+!   here      KOMF  KF(BU,8)(V+I), 0.8($2)
+!
+! WHY (problem_2_8.strap's header has the trace): after "L(BU,32),TESTW"
+! the accumulator's low 32 bits are E N D (11111111).  KF compares "a field
+! in the accumulator ... the same length in bytes as the field from storage
+! exclusive of the sign byte, and its location is specified by the offset"
+! (Reference Manual printed p.65), whose right end is "offset from the right
+! end of the accumulator" (p.56).  At offset 0 a one-byte field is the
+! all-ones mark, and a match at mark A leaves $2 at A+8 (p.21: the address
+! part is added to the value field after its use), so MORE's "V+I, $2, 1.0"
+! lands on A+72 -- subfield D, as the printed comment "bypass 64 more bits
+! to new D field" says (B 16 + C 48 = 64).  The printed three-byte field is
+! N D (11111111), which no list of this layout can supply at the right place.
+!
+! THIS IS NOT THE PROBLEM'S ANSWER: "+(D, 48, 8)" is still printed SIGNED,
+! so E's last digit byte is read as a sign and E is +00012 and +00004.
+! OBSERVED 2026-11-16 (ASM=strap2), the run HALTS at HALT and gives what the
+! hand trace made before the first run predicted for these two products:
+! F1 = 36 (word 1203 bytes 3-5 = 00 03 06), F2 = 8 (word 1207 bytes 3-5 = 00 00 08),
+! $FT = (16)404 (the packed grand total 44 stored one digit a byte), $RM 0.
+! problem_2_8_corrected.strap also corrects the ADD and gets 375, 80, 455.
+!
+! THE TWO BLANK F SUBFIELDS are two 48-bit DDs each, as in problem_2_8.strap.
+
+        SLC, 1000.0
+START   Z, $FT
+LCON    LX, $2, XW2
+LCON2   LCV(DU, 24, 8)(V+I), 0.24+0.48($2),128-18    !'$R cleared too
+        LC, $1, $L; BXCZ, NEXT                       !'binary count field
+ADD     +(D, 48, 8),-0.48($2)
+        CB, $1, ADD
+NEXT    ST(DU, 64, 8) (V+I), 0.64($2), 16            !'store total into F
+        ST(DU, 32, 8) (V+I), 0.32($2)
+        M+(DU, 64, 4), $FT                           !'update grand total
+        L(BU, 32), TESTW
+        KF(BU, 24), 0($2),8                          !'test for end of string
+        BAE, LAST
+KOMF    KF(BU,8)(V+I), 0.8($2)                       !'MEANT: (BU,8) -- printed (BU,24)
+        BZAE, KOMF
+MORE    V+I, $2, 1.0                                 !'bypass 64 more bits to new D field
+        B, LCON2
+LAST    L(DU, 64, 4), $FT
+        ST(DU, 64, 8), $FT
+        ST(DU, 64, 8), $RM, 64
+HALT    BEW, $
+TESTW   (IQSQ)DD(DU,24,8),ENDQ                       !'end mark for string
+        DD(BU, 8, 8), (2)11111111                    !'beginning mark for field
+XW2     XW, LIST+0.72, 0, $
+
+        SLC, 1200.0
+! product 1: item 07, "BOLTS ", 3 units at 000125 cents, remarks "OK"
+LIST    DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 07
+        (IQSQ)DD(BU,48,8),BOLTS Q
+        DD(DU,24,8), 003
+        DD(DU,48,8), 000125
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,16,8),OKQ
+! product 2: item 12, "NUTS  ", 2 units at 000040 cents, remarks "END"
+        DD(BU, 8, 8), (2)11111111
+        DD(DU,16,8), 12
+        (IQSQ)DD(BU,48,8),NUTS  Q
+        DD(DU,24,8), 002
+        DD(DU,48,8), 000040
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(BU,48,8),      Q
+        (IQSQ)DD(DU,24,8),ENDQ
+        END, START
