@@ -671,8 +671,9 @@ four, and strap_asm now agrees with it on each.
   mixed, kept in `SymTab.sym_ipart`.
 - **The mixed case was wrong without arithmetic too.** `QM SYN, SAM+N`
   then `B, QM` gave 800 half words; strap2 gives 808.
-- **CW (SCW, S18CF, S18RF) and transmit's J (STJFLD)** take
-  `(B >> 6) + I`, as strap2's inserters do. `CW, SAM+1` gave word 400;
+- **CW (SCW, S18CF, S18RF) and the register fields (J's STJFLD, LV's)**
+  take `(B >> 6) + I`, as strap2's inserters do. An index takes
+  strap2's S/X rule (the bit part's word, otherwise the integer part). `CW, SAM+1` gave word 400;
   strap2 gives 401.
 - **`(N+1)` alone.** Printed p.85, Boxes 43, 44 and 49: "If there was no
   operator to make the parentheses arithmetic, the coded expression is
@@ -682,7 +683,7 @@ four, and strap_asm now agrees with it on each.
   stays an index (MCP printed p.126).
 
 All 825 decks hash the same under both assemblers before and after.
-`check_field_arithmetic.py` is at 101 checks, with nine injections
+`check_field_arithmetic.py` is at 113 checks, with eleven injections
 measured.
 
 **G3.2** Replace `eval_addr_field`'s per-call-site `unit_shift` with

@@ -1306,10 +1306,37 @@ def eval_reg(expr, symtab, lineno=None):
     # prints "LVE,,AMR" on pp.204-208 and compiles 224032.01 B0: J = 0.
     if expr is None or not expr.strip():
         return 0
+    # >>> A FIELD WITH ARITHMETIC, OR A MIXED SYN, GOES IN BY ITS TWO
+    # PARTS (G3, 2026-11-17): (bit part >> 6) + integer part, as strap2's
+    # register-field inserters (SJFLD, STJFLD, the index) do; a "$N"
+    # counts word 16+N there, and 16 is 0 in four bits.  "LV, N/4, SAM"
+    # was refused, and "LV, QS, SAM" with QS SYN, 1.0+2 gave 1 where
+    # strap2 gives 3.  See SymTab.sym_ipart.
+    if _is_arith_field(expr) or (
+            getattr(symtab, 'sym_ipart', None)
+            and referenced_symbols(expr, lineno) & set(symtab.sym_ipart)):
+        b, i = _arith_bi(expr, symtab, 0, lineno)
+        return ((b >> 6) + i) & 0xF
     v = eval_expr(expr, symtab, 0, reg_context=True, lineno=lineno)
     if _names_an_address(expr, symtab, lineno):
         v //= 64
     return v & 0xF
+
+
+def eval_index(expr, symtab, lineno=None):
+    """An index (S/X) field.  As eval_reg, except that a field with
+    arithmetic or a mixed SYN takes strap2's index rule (value.py, its
+    S/X entries): the bit part's word if there is a bit part, else the
+    integer part -- not their sum.  That rule is strap2's CHOSEN one; no
+    page gives the S/X of a mixed value.  "B, SAM($1+1)" is index 1 in
+    strap2, and strap_asm gave 2."""
+    if expr is not None and expr.strip() and (
+            _is_arith_field(expr) or (
+                getattr(symtab, 'sym_ipart', None)
+                and referenced_symbols(expr, lineno) & set(symtab.sym_ipart))):
+        b, i = _arith_bi(expr, symtab, 0, lineno)
+        return ((b >> 6) if b else i) & 0xF
+    return eval_reg(expr, symtab, lineno)
 
 
 def referenced_symbols(expr, lineno=None):
@@ -4052,7 +4079,7 @@ def emit_statement(stmt, symtab, image):
                 f"{len(stmt.fields)}", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
         ea = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        idx = eval_reg(paren, symtab, stmt.lineno)
+        idx = eval_index(paren, symtab, stmt.lineno)
         image.deposit_half(loc // 32,
                            ((ea & 0xFFFFFF) << 8) | (0b1000 << 4) | (idx & 0xF))
         return
@@ -4476,7 +4503,7 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError("SIC takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
         target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        idx = eval_reg(paren, symtab, stmt.lineno)
+        idx = eval_index(paren, symtab, stmt.lineno)
         image.deposit_half(loc // 32, enc_sic(target_bits, idx))
         return
 
@@ -4494,7 +4521,7 @@ def emit_statement(stmt, symtab, image):
         # integers as half-words (C22-6531 p.11) -- see eval_addr_field.
         addr19 = 0 if not base.strip() else \
             eval_addr_field(base, symtab, loc, 'S19IA', lineno=stmt.lineno) & 0x7FFFF
-        idx = eval_reg(paren, symtab, stmt.lineno)
+        idx = eval_index(paren, symtab, stmt.lineno)
         if op in UNCOND_BRANCH_CODES:
             image.deposit_half(loc // 32, enc_branch_or_misc(addr19, UNCOND_BRANCH_CODES[op], False, idx))
         else:
@@ -4512,7 +4539,7 @@ def emit_statement(stmt, symtab, image):
         addr19 = eval_addr_field(base, symtab, loc,
                                  'S18X' if op in ('LX', 'SX') else 'S19IA',
                                  lineno=stmt.lineno) & 0x7FFFF
-        idx = eval_reg(paren, symtab, stmt.lineno)
+        idx = eval_index(paren, symtab, stmt.lineno)
         image.deposit_half(loc // 32, enc_dir_index(addr19, j, DIR_INDEX_CODES[op], idx))
         return
 
@@ -4588,7 +4615,7 @@ def emit_statement(stmt, symtab, image):
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[1])
         addr19 = eval_addr_field(base, symtab, loc, 'S19KF', lineno=stmt.lineno) & 0x7FFFF
-        idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
+        idx = eval_index(paren, symtab, stmt.lineno) & 0x1
         v, refill, bz = CB_CODES[op]
         image.deposit_half(loc // 32, enc_count_branch(addr19, j, v, refill, bz, idx))
         return
@@ -4600,7 +4627,7 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
         addr19 = eval_addr_field(base, symtab, loc, 'S19KF', lineno=stmt.lineno) & 0x7FFFF
-        idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
+        idx = eval_index(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
         return
 
@@ -4623,16 +4650,12 @@ def emit_statement(stmt, symtab, image):
         # takes a bare number too, so "T,12,..." still works.  The
         # page is the witness: both spellings compile to
         # 215266.00 80 215230.30 20, which is what line 40 prints.
-        # >>> AND J MAY CARRY FIELD ARITHMETIC, "T, N/4, ...". <<<  Its
-        # INSERT routine is STJFLD, "J field for transmit and swap
-        # instructions" (C22-6729 printed p.144), which strap2 fills
-        # with (bit part >> 6) + integer part; a field with *, / or
-        # arithmetic parentheses takes that path (G3, source_audit.md).
-        if _is_arith_field(stmt.fields[0]):
-            _b, _i = _arith_bi(stmt.fields[0], symtab, loc, stmt.lineno)
-            j = (_b >> 6) + _i
-        else:
-            j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
+        # J MAY CARRY FIELD ARITHMETIC, "T, N/4, ...": its INSERT routine
+        # is STJFLD, "J field for transmit and swap instructions"
+        # (C22-6729 printed p.144), which strap2 fills with (bit part
+        # >> 6) + integer part, and so does eval_reg for a field with
+        # arithmetic or a mixed SYN (G3, docs/source_audit.md).
+        j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         # J is FOUR bits (51-54).  With the immediate-count modifier it
         # IS the count, so a count that does not fit has to be refused
         # rather than truncated -- every numeric field this project has
@@ -4645,9 +4668,9 @@ def emit_statement(stmt, symtab, image):
         a1base, a1paren = split_field_trailing_paren(stmt.fields[1])
         a2base, a2paren = split_field_trailing_paren(stmt.fields[2])
         bitaddr24 = eval_addr_field(a1base, symtab, loc, 'STTI', lineno=stmt.lineno) & 0xFFFFFF
-        i1 = eval_reg(a1paren, symtab, stmt.lineno) & 0xF
+        i1 = eval_index(a1paren, symtab, stmt.lineno) & 0xF
         addr19 = eval_addr_field(a2base, symtab, loc, 'STT19A', lineno=stmt.lineno) & 0x7FFFF
-        i2 = eval_reg(a2paren, symtab, stmt.lineno) & 0xF
+        i2 = eval_index(a2paren, symtab, stmt.lineno) & 0xF
         backward, immCount, swap = TRANSMIT_CODES[op]
         image.deposit_word_instr(loc, enc_transmit(bitaddr24, i1, addr19, j,
                                                    backward, immCount, swap, i2))
@@ -4666,9 +4689,9 @@ def emit_statement(stmt, symtab, image):
         bbase, bparen = split_field_trailing_paren(stmt.fields[0])
         abase, aparen = split_field_trailing_paren(stmt.fields[1])
         bitaddr24 = eval_expr(bbase, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
-        i1 = eval_reg(bparen, symtab, stmt.lineno) & 0xF
+        i1 = eval_index(bparen, symtab, stmt.lineno) & 0xF
         addr19 = eval_addr_field(abase, symtab, loc, 'S19BBK', lineno=stmt.lineno) & 0x7FFFF
-        idx1 = eval_reg(aparen, symtab, stmt.lineno) & 0x1
+        idx1 = eval_index(aparen, symtab, stmt.lineno) & 0x1
         mod2, cond1 = BB_CODES[op]
         image.deposit_word_instr(loc, enc_branch_on_bit(bitaddr24, i1, addr19,
                                                   mod2, cond1, idx1))
@@ -4740,10 +4763,10 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(f"{op} takes channel and address fields", stmt.lineno)
         base1, paren1 = split_field_trailing_paren(fields[0])
         chan_bits = eval_expr(base1, symtab, loc, lineno=stmt.lineno)
-        i1 = eval_reg(paren1, symtab, stmt.lineno)
+        i1 = eval_index(paren1, symtab, stmt.lineno)
         base2, paren2 = split_field_trailing_paren(fields[1])
         addr2_bits = eval_expr(base2, symtab, loc, lineno=stmt.lineno) if base2.strip() else 0
-        i2 = eval_reg(paren2, symtab, stmt.lineno)
+        i2 = eval_index(paren2, symtab, stmt.lineno)
         addr24 = chan_bits & 0xFFFFFF
         is_code_field = lookup in ('CTL', 'CTLSEOP', 'LOC', 'LOCSEOP')
         # A CONTROL CODE WRITTEN AS AN ADDRESS IS STILL WORD-GRANULAR.
@@ -4902,13 +4925,13 @@ def emit_statement(stmt, symtab, image):
                                               stmt.lineno)
         else:
             addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
-        i1 = eval_reg(paren, symtab, stmt.lineno)
+        i1 = eval_index(paren, symtab, stmt.lineno)
 
         offset, i2 = 0, 0
         if len(stmt.fields) >= 2 and stmt.fields[1].strip():
             base2, paren2 = split_field_trailing_paren(stmt.fields[1])
             offset = eval_expr(base2, symtab, loc, lineno=stmt.lineno) & 0x7F
-            i2 = eval_reg(paren2, symtab, stmt.lineno)
+            i2 = eval_index(paren2, symtab, stmt.lineno)
 
         p = p_progressive if p_progressive is not None else (4 if immediate else 0)
         suffix = CONNECTIVE_SUFFIX[suffix_name]
@@ -5010,13 +5033,13 @@ def emit_statement(stmt, symtab, image):
                                               stmt.lineno)
         else:
             addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
-        i1 = eval_reg(paren, symtab, stmt.lineno)
+        i1 = eval_index(paren, symtab, stmt.lineno)
 
         offset, i2 = 0, 0
         if len(stmt.fields) >= 2 and stmt.fields[1].strip():
             base2, paren2 = split_field_trailing_paren(stmt.fields[1])
             offset = eval_expr(base2, symtab, loc, lineno=stmt.lineno) & 0x7F
-            i2 = eval_reg(paren2, symtab, stmt.lineno)
+            i2 = eval_index(paren2, symtab, stmt.lineno)
 
         p = p_progressive if p_progressive is not None else (4 if immediate else 0)
         code = VFL_INT_CODES[base_op]
@@ -5062,7 +5085,7 @@ def emit_statement(stmt, symtab, image):
         # Found by tests/check_ibm_spellings.py's controls.
         invSign |= invert
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        idx = eval_reg(paren, symtab, stmt.lineno)
+        idx = eval_index(paren, symtab, stmt.lineno)
         if fp_base in ("E+I", "SHF") and (base.strip()[:1] in "+-"
                                           or base.strip().isdigit()):
             # ADD IMMEDIATE TO EXPONENT takes its addend as a SIGNED

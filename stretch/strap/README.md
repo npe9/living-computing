@@ -313,12 +313,15 @@ page tabulates the vle. So a SYN in strap_asm is one of three things:
 - **mixed** (`SymTab.sym_ipart` holds its integer part): both parts,
   as `SAM+N`. The table holds the total.
 
-`sym_parts()` gives the pair, and every field reads a mixed symbol
-through it. Before this, `QM SYN, SAM+N` then `B, QM` gave 800 half
+`sym_parts()` gives the pair. The address fields, CW, the register
+fields and the index fields read a mixed symbol through it; this was
+probed against strap2 for B, LX, LV, J, CW, XW, VF, CF, LVI, LI, SIC, a
+24-bit L and an index. Before this, `QM SYN, SAM+N` then `B, QM` gave 800 half
 words where strap2 gives 808. That was wrong even without any field
 arithmetic. CW's three fields (strap2's SCW, S18CF and S18RF) take
-`(bit part >> 6) + integer part`, and so does transmit's J (STJFLD)
-when it has arithmetic. A whole field in parentheses with an operator
+`(bit part >> 6) + integer part`. So does a register field such as J
+(STJFLD) or LV's, when it has arithmetic or a mixed SYN. An index
+takes strap2's S/X rule. A whole field in parentheses with an operator
 inside, such as `(N+1)`, is arithmetic. Without an operator, as in
 `($1)`, it is an index on zero (printed p.85, Boxes 43-49 and 76-78;
 the operator test is CHOSEN, as strap2 chooses it).

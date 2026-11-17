@@ -95,7 +95,12 @@ oracle on every row (the "agree" checks).  The pages:
   too: "QM SYN, SAM+N" then "B, QM" gave 800 half words, strap2 808.
   CW's fields are SCW, S18CF and S18RF and J's is STJFLD (printed p.144),
   which strap2 fills with (bit part >> 6) + integer part; "CW, SAM+1" gave
-  word 400 where strap2 gives 401.
+  word 400 where strap2 gives 401.  Every register field (J, LV's, LX's)
+  takes the same through eval_reg when it has arithmetic or a mixed SYN:
+  "LV, N/4, SAM" was refused, and "LV, QS, SAM" (QS SYN, 1.0+2) gave 1
+  where strap2 gives 3.  An index field (eval_index) takes strap2's own S/X
+  rule, value.py's, CHOSEN there: the bit part's word if there is one, else
+  the integer part, so SAM(QS) is index 1.
   "(N+1)" ALONE: printed p.85, Boxes 43, 44, 49, "If there was no operator to
   make the parentheses arithmetic, the coded expression is set to indicate a
   sub-expression"; Boxes 76-78, "If the parenthesis could not be arithmetic,
@@ -112,17 +117,21 @@ with cmp (FAIL lines observed; each "row" is the row's strap_asm check and its
 agree check):
   sym_parts ignores sym_ipart (a mixed SYN is a bit address again)
       rows mixed SYN SAM+N (19-bit), (LX, 18), through a bare SYN,
-      SAM*2+N/4, before a point, CW mixed SYN (12).  The 24-bit control
-      row did not fail, as it should not.
+      SAM*2+N/4, before a point, CW mixed SYN, register field mixed SYN
+      (14).  The 24-bit control row did not fail, as it should not.
   SYN by parts never makes an integer
       rows SYN N*2 (19-bit), (LX, 18), SYN SAM/1.0 (6)
   CW back to the text rule (total, shifted when written as an address)
       rows CW mixed field SAM+1, CW mixed SYN (4)
-  transmit J without the arithmetic path
-      rows transmit J N/4, (N+4)/4, 1.0*2: refused (6)
-  transmit J as the total, bit part unshifted
-      row transmit J 1.0*2 (2).  It was added for this injection, which
-      failed nothing with N/4 and (N+4)/4 alone (their bit part is zero).
+  eval_reg without the parts path
+      rows transmit J N/4, (N+4)/4, 1.0*2, register field N/4 (refused),
+      register field mixed SYN (10)
+  eval_reg's parts path as the total, bit part unshifted
+      rows transmit J 1.0*2, register field mixed SYN (4).  The J 1.0*2
+      row was added for this: N/4 and (N+4)/4 have no bit part.
+  eval_index summing the parts / eval_index as eval_reg
+      row index mixed SYN (2) each; "index N/4" fails neither, since
+      eval_reg's parts path gives it 2 as well
   "(N+1)" alone read as an index again
       rows (N+1), (-N), (N.), ($1+1) alone is arithmetic (8)
   every lone parenthesis arithmetic (no operator test)
@@ -130,8 +139,12 @@ agree check):
   a mixed symbol's integer part before a point counting bits
       rows mixed SYN before a point, (N.) alone is arithmetic (4)
   referenced_symbols without the arithmetic path
-      every row (66): HEAD's "QI SYN, N*2" is refused
-  control: PASS 101
+      every row (74): HEAD's "QI SYN, N*2" is refused
+  control: PASS 113
+
+NOT ALIGNED, probed: an index written with a bit and an integer part and no
+arithmetic, "B, SAM($1+1)", is index 2 in strap_asm and 1 in strap2 (its
+S/X rule drops the integer part).  This difference was there before G3.
 """
 import os
 import sys
@@ -148,6 +161,7 @@ QM      SYN, SAM+N
 QA      SYN, SAM*2+N/4
 QR      SYN, QM
 QD      SYN, SAM/1.0
+QS      SYN, 1.0+2
 START   NOP
 """
 TAIL = """        BEW, $
@@ -183,6 +197,10 @@ CASES = [
     ("transmit J N/4", "T, N/4, SAM, SAM", "T, 2, SAM, SAM"),
     ("transmit J (N+4)/4", "T, (N+4)/4, SAM, SAM", "T, 3, SAM, SAM"),
     ("transmit J 1.0*2 (a bit part)", "T, 1.0*2, SAM, SAM", "T, 2, SAM, SAM"),
+    ("register field N/4", "LV, N/4, SAM", "LV, 2, SAM"),
+    ("register field, mixed SYN 1.0+2", "LV, QS, SAM", "LV, 3, SAM"),
+    ("index N/4", "B, SAM(N/4)", "B, SAM(2)"),
+    ("index, mixed SYN 1.0+2 (strap2: B's word)", "B, SAM(QS)", "B, SAM(1)"),
     ("(N+1) alone is arithmetic", "B, (N+1)", "B, 4.32"),
     ("(-N) alone is arithmetic", "B, (-N)", "B, -N"),
     ("(N.) alone is arithmetic", "B, (N.)", "B, 8.0"),
