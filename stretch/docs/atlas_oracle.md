@@ -1458,6 +1458,8 @@ The tables in items 7-9 were measured on intermediate trees, each on its
 own pages. This is the whole atlas, 27,655 cases, base `2cee08a` against
 `4c8464a` (`tests/atlas_oracle.py --jobs 6 --tsv`, each in its own
 worktree). The base TSV agrees with the 13-page base subset to the case.
+`4c8464a` is before the merge of master `a169131` and the decode hold's
+word-set change (`9f3108d`); see the spot check below the tables.
 
 | | base | final |
 |---|---|---|
@@ -1487,6 +1489,10 @@ Per page and column, n / exact / median / mean:
 | 70, 100, 101 M+/M+MG ni_ibox (held out) | −18.18 | −1.18 |
 | 100, 101 M+/M+MG ni_int | −8.05 | −5.06 |
 | 109 I-box instructions, 48 / 79 ST | | unchanged |
+
+SPOT CHECK of `9f3108d` (the merge and the word-set change) against
+`4c8464a`: PDF 69 (`--rebuild`), 124 and 141 run again, every case
+unmoved (`moved 0` on 128, 272 and 210 cases).
 
 WORSE, recorded rather than hidden. Each was already too fast, and the
 faster I-box widens it:
@@ -1584,8 +1590,8 @@ faster I-box widens it:
      The FP $R fetches: **DONE 2026-11-17** (item 8): the operand waits
      for the E-box and takes the store path (check, 2 documented, + the
      ST $R remainder, 5 FIT, reused; equating the two paths is CHOSEN).
-     + is exact at the median, K +0.5, and L, LWF, `*`, SRD, SRT are +1
-     on every row. VFL INTERNL (+4 on the 7030) is still open.
+     + is exact at the median, K +0.5, and L, LWF and `*` are +1 on every
+     row (SRD and SRT were +1 before and did not move). VFL INTERNL (+4 on the 7030) is still open.
   4. Immediate compares (KI … KFEI) are charged by field length.
      **DONE 2026-11-17** (item 4). Mean +7 → +3; the rest is the
      preparation floor.

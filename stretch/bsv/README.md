@@ -1064,8 +1064,9 @@ get the documented events only, because PDF 69 prints M+ below ST --
 except, since 2026-11-17, into index storage: "A store into index storage
 is a time-consuming operation" (printed p.3-21) is said of the
 destination, so every FP store into words 16-31 takes the index
-remainder (17). PDF 69's I-BOX unindexed column went from −18.18 to
-−0.48 (M+MG, PDF 70, held out: −0.60).
+remainder (17). PDF 69's I-BOX unindexed column went from median −18.18
+to −1.18 (mean −0.48; M+MG, PDF 70, held out: median −1.18, mean −0.60);
+the indexed column from −22.22 to −5.22.
 `docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
 
 ### An indexed FP I-box operand (2026-11-17)
@@ -1152,7 +1153,8 @@ Printed p.3-20 says which words are index storage: "$IT, $TC and $0
 through $15 are in index storage", while "an internal operand address
 is ... address 3, or an address between 5 and 12 inclusive". The hold now
 tests `indexStorageWord` (1, 2, 16-31); STORE WAIT's `storeWaitWord`
-(Fig. 3.1.24) is unchanged. decks/vfl_cross_special_words.strap: 404 ->
+(Fig. 3.1.24) is unchanged. Words 1 and 2 moved no pin; no deck is known
+to exercise them (untested). decks/vfl_cross_special_words.strap: 404 ->
 372 (389 from this alone, the rest the preparation floor).
 
 ### Immediate compares (2026-11-17)

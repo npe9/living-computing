@@ -18419,5 +18419,8 @@ SETTLED: Perf. Char. Vol. 1 printed p.3-20 (PDF 38, read in the image):
 storage."  Words 11 and 12 are internal registers; words 1 and 2 are index
 storage.  The hold now tests StretchCore's `indexStorageWord` (1, 2,
 16-31); STORE WAIT keeps `storeWaitWord` (Fig. 3.1.24) unchanged.
+Words 1 and 2 ($IT, $TC) joined the set from the same sentence; no pin
+moved and no deck is known to store into them through a level, so that
+half is UNTESTED.
 vfl_cross_special_words: 389 with the new set alone (404 with the old);
 with the preparation floor of the same day, 372 (pinned).
