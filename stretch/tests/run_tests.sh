@@ -2688,6 +2688,18 @@ run "LTRS both radices; decimal * / *+ are LTRS's action (printed pp.67-70, G2.3
     "T9_dec_muladd_zero:1220=0" "W9_muladd_lzc10:1221=0x0000400000000000" "I9_DTR_RZ:1222=0x0000000000800040" \
     "T10_dec_PF:1223=0x20" "I10_DTR_PF_RGZ:1224=0x0000010000800020" \
     "ACC_L_untouched:1225=0" "ACC_R_untouched:1226=0x0123456789ABCDEF" "R11_load_of_TR_after_LTRS:1227=0x1234560"
+# >>> A PROGRESSIVE VFL OPERATION THAT REFILLS DOES ITS ARITHMETIC ONCE
+# (docs/NEXT.md G2.3 finding 3), 2026-11-16. <<<  Reference Manual printed
+# pp.21-22: "executed in two parts.  The variable field length part of the
+# operation is prepared and then the index modification portion of the
+# operation is performed."  Binary +, +MG, *, *+, /, C0110 and L with V+ICR, count 1
+# (the refill fires; Rk shows it did), against + with count 5.  Expected
+# values hand-derived in the deck's header.  MEASURED: see the deck's header.
+run "PROGRESSIVE REFILL: binary + +MG * *+ / C and L do their arithmetic once (printed pp.21-22)" ./run_program.sh ../decks/vfl_progressive_refill_once.strap StretchVflRefillOnceTb PC=2066 \
+    "P1_add:1700=8" "P2_addmg:1701=8" "P3_mul:1702=0xF00000" "P4_muladd:1703=0x87" "P5_load:1704=3" "P6_add_norefill:1705=8" \
+    "R1_refilled:1706=0x01348000013405dc" "R2_refilled:1707=0x01348000013405dc" "R3_refilled:1708=0x01348000013405dc" \
+    "R4_refilled:1709=0x01348000013405dc" "R5_refilled:1710=0x01348000013405dc" "R6_count4:1711=0x01784000001005e0" \
+    "P7_div:1712=14" "R7_refilled:1713=0x01348000013405dc" "P8_xor:1714=6" "R8_refilled:1715=0x01348000013405dc"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

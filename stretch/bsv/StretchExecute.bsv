@@ -1095,6 +1095,29 @@ function Word64 setResultIndicatorsDec(Word64 ind, SM128 v);
   return setBit(i3, ind_RN, v.sign);
 endfunction
 
+// >>> A REFILL STILL TO COME HOLDS THE OPERATION, 2026-11-16. <<<
+// Reference Manual printed pp.21-22, Progressive Indexing: "An operation
+// in which progressive indexing is specified is executed in two parts.
+// The variable field length part of the operation is prepared and then
+// the index modification portion of the operation is performed."  The
+// VFL part happens ONCE.  In this model an arm that writes the
+// accumulator (or the factor or transit register) commits that write on
+// the execute() run that makes it, and a progressive operation whose
+// index must be refilled then bails from the shared trailing block for
+// the refill word and is run AGAIN -- so before this guard binary +,
+// +MG, *, *+, / and C0110 applied themselves twice, reading their own
+// first result as the accumulator operand (decks/
+// vfl_progressive_refill_once.strap, measured: 5+3 gave 11, 100/7 gave
+// 2).  Every arm that reaches the shared trailing block now does nothing
+// while this is true; the trailing block asks for the refill word (or,
+// with a crossing field, refuses the operation with OP before anything
+// is written -- p.22's "the entire operation will be suppressed").  The
+// decimal arms had this test already, written out in place; it is
+// shared now.
+function Bool vflRefillOutstanding(Bool needsRefill, Bit#(2) prefetchCount,
+                                   Bit#(2) readsUsed) =
+  needsRefill && (prefetchCount < readsUsed + 1 || readsUsed >= 2);
+
 // Data flags, printed p.59: "set according to the data flag bits, if any,
 // of the storage operand", and off if none were obtained from storage.
 function Word64 setDataFlagsF(Word64 ind, Bit#(3) f);
@@ -2916,8 +2939,7 @@ function ActionValue#(VflOutcome)
               Bit#(8) offDec = offSh & 8'hFC;
               match {.ldDig, .ldHi} = decCompact(sm.mag[63:0], bsz);
               Bool ldPf = ldHi || (offDec != 0 && (ldDig >> (8'd128 - offDec)) != 0);
-              Bool refillFirst = vflNeedsRefill && prefetchCount < vflReadsUsed + 1;
-              if (refillFirst || (vflNeedsRefill && vflReadsUsed >= 2)) begin
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
                 // the trailing block asks for the refill word (or refuses)
               end else if (decOf(boxResult) matches tagged Valid .dr) begin
                 SM128 shifted = SM128 { sign: sm.sign, mag: dr.r };
@@ -2931,7 +2953,7 @@ function ActionValue#(VflOutcome)
                 needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False });
                 needsRead = tagged Valid 0;
               end
-            end else if (!isValid(needsRead)) begin
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
               // Printed p.57: LOAD WITH FLAG places the flag bits in the
@@ -3350,8 +3372,7 @@ function ActionValue#(VflOutcome)
               SM128 acc = readAcc(st);
               SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
               Bool dSub = (accUsed.sign != opnd.sign);
-              Bool refillFirst = vflNeedsRefill && prefetchCount < vflReadsUsed + 1;
-              if (refillFirst || (vflNeedsRefill && vflReadsUsed >= 2)) begin
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
                 // the trailing block asks for the refill word (or refuses)
               end else if (decOf(boxResult) matches tagged Valid .dr) begin
                 // smAdd's sign rule, in the box's terms (StretchDecBox's
@@ -3374,7 +3395,7 @@ function ActionValue#(VflOutcome)
                 needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub });
                 needsRead = tagged Valid 0;
               end
-            end else if (!isValid(needsRead)) begin
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3487,7 +3508,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3566,7 +3587,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -3689,7 +3710,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
               ind = setBit(ind, ind_MOP, 0);
@@ -4288,7 +4309,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               if (vi.m.decimal == 0) begin
                 // BINARY TO DECIMAL, printed p.72's Radix: "If binary
                 // is specified, the storage operand is converted from
@@ -4417,6 +4438,9 @@ function ActionValue#(VflOutcome)
             // the divide, at 001217.00.  Lines 19-24 put the hours at
             // offset 68 with three instructions, which is exactly
             // where this reads.
+            // No storage operand, but a progressive CV still refills:
+            // held until the refill word is in hand, as every arm here.
+            if (!vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // "the accumulator sign is taken as-is ... as positive
             // ... inverted" (p.73's Modifiers)
@@ -4450,6 +4474,7 @@ function ActionValue#(VflOutcome)
               if ((val >> 48) != 0) ind = setBit(ind, ind_PF, 1);
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsF(ind, res);
+            end
             end
           end
           6'b100011: begin // LTRCV (Load Transit Converted)
@@ -4504,7 +4529,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               Bool    signed_ = (vi.m.unsign == 0);
               Bit#(7) sbBits  = zeroExtend(bsz);
               Bit#(7) numBits = !signed_ ? len_
@@ -4602,7 +4627,7 @@ function ActionValue#(VflOutcome)
                   needsRead = tagged Valid w0;
               end
             end
-            if (!isValid(needsRead)) begin
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               Bit#(128) num = opnd.mag;
               Bool numHi = False;
@@ -4968,7 +4993,7 @@ function ActionValue#(VflOutcome)
                 needsRead = tagged Valid w0;
             end
           end
-          if (!isValid(needsRead)) begin
+          if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // p.75's byte expansion.  `maskVec` marks exactly which
             // bits take part: every bit of every full byte, and only
