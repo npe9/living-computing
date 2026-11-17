@@ -180,7 +180,7 @@ to 189:
 
 ```
 cd stretch
-python3 tests/atlas_oracle.py --selftest          # the harness's own four checks
+python3 tests/atlas_oracle.py --selftest          # the harness's own eight checks
 python3 tests/atlas_oracle.py --list              # what is / is not expressible
 python3 tests/atlas_oracle.py --pdf 120 --rows    # one page, every case
 python3 tests/atlas_oracle.py --jobs 12 --tsv out.tsv   # everything
@@ -198,8 +198,9 @@ sets `BLUESPECDIR` and `PATH` itself.
 - **Per-instruction clocks are measured by subtraction.** The figure is
   (cycles of the full program − cycles of a baseline with an empty body
   and no count branch) / 10,000.
-- **Run time.** *Measured before PDF 143-189 were added.* With them,
-  `--list` reports **12,353 cases with a generator** (2026-11-16). The
+- **Run time.** *Measured before PDF 143-189 were added.* With them
+  and the four new generators, `--list` reports **27,655 cases with a
+  generator** (2026-11-16; 12,353 before the generators). The
   forwarding pages alone (PDF 143-169) took 6,088 cases in 5,646 s at
   `--jobs 6`; the whole set is not timed. Their WB XOVR cases now use
   PDF 114's (150000.74)₈. The pre-forwarding full
@@ -208,7 +209,20 @@ sets `BLUESPECDIR` and `PATH` itself.
   simulations a case, about 0.58 s a case in aggregate. The longest
   bodies (T 100WD, the conversions) dominate.
 
-### Self-test (`--selftest`, all four pass; suspect the probe first)
+### Self-test (`--selftest`, all eight pass; suspect the probe first)
+
+Check 0 runs first and is static (no simulation).
+
+0. **FP encoding.** All 9,406 FP cases are assembled and every copy of
+   the body is decoded: op code, (N)/(U) bit, the NEG and A sign
+   modifiers, operand address and index field must be the ones the
+   row, block and column name. Proven discriminating on an in-memory
+   copy of the module (the file was never written): NEG and A swapped
+   in the suffix map, 4,702 cases fail; the forwarding run rotated over
+   four addresses, 1,856 fail. It also caught a wrong expectation of
+   its own before it was committed: E+I and SHF carry their operand in
+   effective-address bits 0-10, seven places up the 18-bit field
+   (Ref. Manual p.102), which STRAP assembles correctly.
 
 1. **Linearity.** L(BU,8,8) costs 14.0000 clocks a copy between 250 and
    500 copies and again between 500 and 1,000. The ten count branches
@@ -222,6 +236,24 @@ sets `BLUESPECDIR` and `PATH` itself.
    both body lengths. This check was proven discriminating: with the
    first generator's bug re-injected, it fails (0.0068 against 152.38
    clocks a copy).
+5. **INTERNL / IMMED. / ACCUM. encoding** (static, 5,896 cases). The
+   address field is 8.0 or (10.74)₈ for INTERNL (written as the literal
+   PDF 114 prints, not the generator's constant), (444444)₁₆ with P = 4
+   for IMMED., and offset 0 for CV/DCV. The index field and the
+   invert-sign flip are checked too; the flip is checked against the
+   assembled word, because a connective's own code uses that bit.
+   Injections, made in memory: immediate XOR placed four bits low, 1,604
+   fail; invert not applied on the immediate pages, 732 fail; INTERNL
+   crossover at .73, 1,796 fail.
+6. **FP linearity**, on ST(N) to $X9-$X12, which writes index
+   registers: 6.0000 clocks a copy at both body lengths. Injected in memory: with the I-box operands moved to
+   $X12-$X15 the stores overwrite the loop count ($X15), the run does
+   not halt, and the check fails.
+7. **Immediate linearity**, LI(BU,64,8): 28.0000 clocks a copy at both
+   body lengths, so the XORed word runs. Injected in memory: with the XOR placed four
+   bits low the body is still linear, at 0.0000 clocks a copy, so the
+   check also requires a copy to cost more than one clock; with that
+   clause it fails, as check 5 does statically.
 
 ### Three probe bugs found and fixed before any figure was believed
 
@@ -264,13 +296,59 @@ The report echoes this list in its header:
   $X1.
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
+- **VFL INTERNL** (forwarding pages only; the no-forwarding pages print
+  the columns blank). The operand is at 8.0 ($L) and, with crossover, at
+  (10.74)₈ = bit 60 of $L, as PDF 114 gives. CHOSEN: its value is
+  whatever the page's accumulator set-up left there; PDF 113 names
+  none.
+- **VFL IMMED.** (PDF 171-189). Each copy is assembled with a zero
+  immediate and its 24-bit address field is then set to (444444)₁₆ by
+  XOR, so the field holds PDF 114's "equivalent of the standard operand"
+  whatever the field length. The accumulator is set as on the direct
+  page. CHOSEN: for `*I`, `*I+` and `/I` PDF 113's "memory operand was
+  +1" is overruled by PDF 114's address contents, which describe this
+  run.
+- **CV / DCV** (ACCUM. OPERAND). The accumulator is +1 at offset 20
+  (PDF 113), loaded once by `L(BU,64,8), ATLONE, 20`; the instruction's
+  offset is the heading's OFFSET 0. CHOSEN: the address field, which
+  the Reference Manual (printed p.72) says is "not normally used", names
+  150000.0.
+- **FP addresses.** External operands rotate over 100011-100014₈ (PDF
+  40). CHOSEN: with forwarding, 100011₈. PDF 40 prints "1000011₈"
+  (seven digits, re-read at 300 dpi), which an 18-bit FP address cannot
+  hold.
+- **FP I-box operands** are $X9-$X12, or $X9 with forwarding (PDF 40).
+  CHOSEN: the whole memory word is put there by a VFL
+  `ST(BU,64,8), $X9` in the set-up.
+- **FP internal operand** is $R (PDF 40). CHOSEN: it holds the memory
+  word, put there by `TI, 1, ATLFM0, 9.0` after the accumulator load.
+- **FP data.** CHOSEN, since the volume prints only the captions:
+  - the "normalized floating point one" is exponent +1, fraction .1₂;
+  - XPFN is that word with the exponent flag on and the exponent sign
+    negative; XPFP is the same with the sign positive ("flagged
+    exponents superimposed");
+  - U,V FLAGS is the one with data flags U and V (bits 62, 63) on;
+  - on the load pages, whose captions name only the memory operand, the
+    accumulator holds the normalized one;
+  - the accumulator is loaded with `L(U)` so a flagged word lands as
+    written, and the factor register (for `*+`) gets the same word by
+    `LFT(U)`.
+- **FP rows.** NEG and A are the sign modifiers, STRAP's N, A and NA
+  suffixes (pocket card "L(N,A,NA)"); (N)/(U) is the normalization
+  modifier. Self-check 0 decodes every copy.
+- **FP KR / KMGR, AH INDICATOR ON / OFF.** CHOSEN: set once in the
+  set-up by a compare of 2 against 1 (AH on) or of 1 against 2 (AL on,
+  AH off), before the accumulator is loaded.
+- **E+I and SHF** (PDF 71, 72). The column's number is the address
+  operand, written as a STRAP literal: decimal, in effective-address
+  bits 0-10 (Ref. Manual p.102). CHOSEN: 2040 is read as decimal, which
+  sets the immediate's exponent-flag bit; SHF shifts left (bit 11 = 0).
+- **Indexing** is by $X5 = 0 on every new page, as on the old ones.
 
-### Not generated (917 transcribed cells as of the 93-page run; with all 139 pages `--list` reports 16,291: 9,406 FP cells (no FP generator), 3,908 INTERNL cells of PDF 143-169, the marks, CV/DCV, and the immediate pages, reported as "no generator for VFL instruction LI" and so on)
+### Not generated (989 transcribed cells with all 139 pages, 2026-11-16, after the INTERNL, FP, IMMED. and CV/DCV generators; `--list` reports 27,655 cases with a generator)
 
 - 450 ENV cells (PDF 104), which are environment averages.
-- 192 CV and DCV cells, whose accumulator addressing the page does not
-  give.
-- 108 marks (`*01*`, `*24*`).
+- 372 marks (`*01*`, `*24*`).
 - 45 cells on PDF 110.
 - 40 NONCON branch cells. GENER's count when a branch skips part of
   the thousand is not printed.
@@ -281,6 +359,88 @@ The report echoes this list in its header:
     which twin is the refill case;
   - R;
   - RNX, which the model does not implement.
+
+## The new generators (2026-11-16): INTERNL, FP, IMMED., CV/DCV
+
+Four generators were added in one change, in the order that measures
+the most cells per hour of work: the VFL INTERNL columns (one branch,
+3,908 cells), floating point (9,406 cells), the VFL immediate pages
+(1,604) and CV/DCV with the accumulator operand (384). With them
+`--list` reports **27,655 cases with a generator** and 989 transcribed
+cells without one (ENV, the marks, PDF 110, NONCON, CBR, the internal
+transmit operands and the I-box refill rows, all as before).
+
+### What the volume says, read on the page images
+
+Every quotation below was read on the page image (pdftoppm, 110-300
+dpi), not from the text layer.
+
+- **PDF 40 (printed 34C), FLOATING POINT TIMING.**
+  - "Sequences of operations were generated and timed by GENER."
+  - External Operands: "Consecutive memory boxes were used where
+    possible. Cases without forwarding used a repetition of four
+    consecutive addresses 100011₈ to 100014₈. Cases with forwarding
+    used 1000011₈."
+  - I-Box Operands: "Index registers nine to twelve were used in the
+    cases without forwarding and index nine in the cases with
+    forwarding."
+  - Internal Operands: "The right half of the accumulator, $R, was used
+    for all cases. As $R was changed during the execution of successive
+    double length operations a large factor of time was introduced by
+    large exponent differences. This effort is illustrated in double
+    add."
+  - Data: "A normalized floating point one (1) was the initial operand
+    unless otherwise specified. (Cases were run with flagged exponents
+    superimposed.) The execution of large numbers of consectuve
+    operations caused a time increase due to shifting in some cases
+    (normalized add is one example). The addition of 10 thousand ones
+    involves preshifting and post normalization time."
+- **PDF 41 (printed 34D).** "The present measurements for /, D/, and R/
+  do not give a realistic timing, since the latter is strongly data
+  dependent." "Repeated 'to memory' operations lead to queuing for the
+  LAAR, and the present measurements on these instructions actually
+  refer to the worst possible situations". "Forwarding merely means
+  using the same operand address. For fetch-type instructions,
+  'forwarding on consecutive fetch' actually occurs, and only one true
+  memory fetch is made for the entire sequence of 10,000 instructions."
+- **The FP page headings** (PDF 42-101) name only the operation and
+  "WITHOUT / WITH FORWARDING OF EXTERNAL AND I-BOX OPERANDS"; the blocks
+  are captioned NORMALIZED 1., BOTH OPERANDS WITH XPFN, AC EXPNT N. MEM
+  EXPNT XPFN, AC WITH XPFP. MEM WITH XPFN (the load pages: MEMORY
+  OPERAND HAS XPFN / U,V FLAGS / XPFP); KR and KMGR are printed twice,
+  "AH INDICATOR OFF" and "AH INDICATOR ON" (PDF 58-61, 89-92); PDF 71
+  heads its columns "EFFECTIVE ADDRESSES" ONE and 2040, PDF 72 "SHIFT 1
+  ... SHIFT 95"; the rows are (N), NEG (N), A(N), NEG A(N), (U), ... .
+- **PDF 113 (printed 106).** "Each column of figures represents a
+  variation of operand placement; external memory, external with word
+  boundary crossover, I-box, internal (accumulator), and internal with
+  word boundary crossover." "Finally, for convert (CV) and convert double
+  (DCV) the accumulator was originally +1 at offset 20. This was done
+  mainly for the case of double convert decimal to binary so that the
+  result would always be accepted as legitimate decimal data for the
+  next execution."
+- **PDF 114 (printed 107).** FORWARDING / DIRECT ADDRESSING: "The
+  operand locations used were: external (150000.0)₈ external with word
+  boundary crossover (150000.74)₈, I-box $X0 (20.0)₈, internal (10.0)₈,
+  internal with word boundary crossover (10.74)₈." IMMEDIATE ADDRESSING:
+  "The 24 bit address of the instruction contained the equivalent of the
+  standard operand (444 ...4)₁₆. There is, of course, no case of
+  forwarding with immediate operands. The to-memory type instructions
+  were deleted since they are undefined for immediate addressing."
+- **PDF 115 (printed 108)**, item 5: "Actual fetch-type forwarding
+  action is possible only for consecutive fetch-type VFL instructions
+  with no word boundary crossover."
+- **PDF 165 (printed 158)**, the typed box: "The result of a decimal to
+  binary CV operation is placed in the accumulator at an offset of 68.
+  For subsequent execution of identical CV instructions the operand
+  appears to be a very large number."
+- **Reference Manual printed p.72** (as quoted in StretchExecute.bsv's
+  CV arm): "In the accumulator conversion operations, CONVERT and
+  CONVERT DOUBLE, no storage operand is required, and the word address,
+  bit address, length, and byte size fields of the instruction are not
+  normally used."
+
+The residual tables are in "The new generators: residuals" below.
 
 ## The first full residual (2026-11-16; the model as of `77ed952`, before the per-operation VFL times)
 

@@ -49,6 +49,10 @@ the report's header so a residual is never read without it):
     "-" from "+").
   * The accumulator's initial contents where PDF 113 names none: the
     standard operand (444...4)16.
+  * The VFL INTERNL, IMMED. and ACCUM. (CV/DCV) columns and the FP pages
+    (PDF 42-101) have generators of their own (vfl_case's internal branch,
+    _imm_case, _cv_case, fp_case); what each takes from PDF 40 and PDF
+    113-114, and what each CHOOSES, is in their comments and ASSUMPTIONS.
 """
 import argparse
 import concurrent.futures
@@ -100,6 +104,22 @@ ASSUMPTIONS = [
     "accumulator starts as the standard operand unless PDF 113 says otherwise",
     "no-forwarding external operands rotate over 150000.0-150003.0 (octal), "
     "I-box operands over $X0-$X3 (PDF 114)",
+    "VFL INTERNL columns (forwarding only): 8.0 and 8.60 (PDF 114's (10.0)8 "
+    "and (10.74)8); the operand is what the accumulator set-up left there",
+    "VFL IMMED. pages: address field forced to (444444)16 (PDF 114) by XOR "
+    "over a zero immediate; accumulator as on the direct page (PDF 113)",
+    "CV/DCV: accumulator +1 at offset 20 (PDF 113); the unused address names "
+    "150000.0 (Ref. Manual p.72: not used)",
+    "FP: external 100011-100014 (octal) rotated, or 100011 alone with "
+    "forwarding (PDF 40 prints 1000011, which an 18-bit address cannot hold)",
+    "FP: I-box operands are the whole word stored into $X9-$X12 ($X9 with "
+    "forwarding); internal operand $R, set to the memory word by TI",
+    "FP blocks: XPFN = the one with exponent flag on and exponent sign "
+    "negative, XPFP the same positive, U,V FLAGS = data flags U and V on; a "
+    "load page's accumulator is the normalized one; FT = accumulator word",
+    "FP KR/KMGR AH ON/OFF: set once by K of 2 against 1 / 1 against 2",
+    "FP E+I / SHF: the column's number is the address operand as STRAP "
+    "assembles a literal (bits 0-10, decimal; SHF left)",
 ]
 
 
@@ -326,6 +346,8 @@ class Case:
 _DDS = re.compile(r"^\((BU|B|DU|D),(\d+),(\d+)\)$")
 
 EXT_BASE = 0o150000       # PDF 114: "(150000.0)8 ... (150003.0)8"
+INT_WBX_BIT = 0o74        # PDF 114: "internal with word boundary crossover
+                          # (10.74)8" -- word 8 ($L), bit 60
 
 # How PDF 113 (printed 106) says the accumulator and the memory operand were
 # set for the VFL pages.  mem: what the external/I-box operand words hold.
@@ -349,11 +371,25 @@ VFL_OPERANDS = {
 # operand in both places -- the literal reading, and an assumption.
 VFL_STANDARD = ["+MG", "M+MG", "L", "LWF", "LFT", "LTRS", "ST", "SRD", "M+1",
                 "K", "KR", "KE", "KF", "KFR", "KFE", "LCV", "LTRCV"]
-VFL_UNEXPRESSED = {
-    "CV": "ACCUM. OPERAND: the page does not say how the accumulator is "
-          "addressed, and +1 at offset 20 is not reconstructed",
-    "DCV": "ACCUM. OPERAND: as CV",
+# PDF 171-189, IMMEDIATE ADDRESSING: each page's instruction is the direct
+# one's immediate form (check_atlas_data.IMM_BASE, the same map).
+VFL_IMM_BASE = {
+    "+I": "+", "+MGI": "+MG", "LI": "L", "LWFI": "LWF", "LFTI": "LFT",
+    "LTRSI": "LTRS", "KI": "K", "KRI": "KR", "KEI": "KE", "KFI": "KF",
+    "KFRI": "KFR", "KFEI": "KFE", "*I": "*", "/I": "/", "*I+": "*+",
+    "LCVI": "LCV", "LTRCVI": "LTRCV", "CI0011": "C0011",
+    "CTI0111": "CT0111",
 }
+# PDF 114: "The 24 bit address of the instruction contained the equivalent
+# of the standard operand (444 ...4)16."
+IMM_ADDR = 0x444444
+# CV and DCV (PDF 138-139, 165-166) head the column ACCUM. OPERAND.  PDF 113:
+# "for convert (CV) and convert double (DCV) the accumulator was originally
+# +1 at offset 20."  Reference Manual printed p.72: "In the accumulator
+# conversion operations, CONVERT and CONVERT DOUBLE, no storage operand is
+# required, and the word address, bit address, length, and byte size fields
+# of the instruction are not normally used."
+_ACC_CV = ["L(BU,64,8), ATLONE, 20"]
 
 
 def vfl_case(rec):
@@ -362,8 +398,13 @@ def vfl_case(rec):
         return "row label %r is not a data description" % rec.row
     mode, fl, bs = m.group(1), int(m.group(2)), int(m.group(3))
     instr = rec.instr
-    if instr in VFL_UNEXPRESSED:
-        return "VFL %s: %s" % (instr, VFL_UNEXPRESSED[instr])
+    imm = rec.cond.get("addressing") == "immediate"
+    if imm:
+        if instr not in VFL_IMM_BASE:
+            return "no generator for VFL immediate instruction %s" % instr
+        instr = VFL_IMM_BASE[instr]
+    if instr in ("CV", "DCV"):
+        return _cv_case(rec, mode, fl, bs)
     if re.match(r"^C[MT]?[01]{4}$", instr):
         mem, acc = STD, _ACC_STD
     elif instr in VFL_OPERANDS:
@@ -372,7 +413,9 @@ def vfl_case(rec):
         mem, acc = STD, _ACC_STD
     else:
         return "no generator for VFL instruction %s" % instr
-    op = instr
+    op = rec.instr
+    if imm:
+        return _imm_case(rec, op, mode, fl, bs, acc)
     if rec.cond.get("addressing") != "direct":
         return "addressing=%s not generated" % rec.cond.get("addressing")
     fwd = rec.cond.get("forwarding") == "yes"
@@ -398,16 +441,197 @@ def vfl_case(rec):
     elif place == "ibox":
         setup += ["LX, $X%d, ATLE0" % i for i in range(n_addr)]
         addrs = ["$X%d" % i for i in range(n_addr)]
+    elif place in ("int", "int_wbx"):
+        # PDF 114 (printed 107), FORWARDING / DIRECT ADDRESSING: "internal
+        # (10.0)8, internal with word boundary crossover (10.74)8" -- the
+        # accumulator's left word $L (8.0), and bit 60 of it, so a field of
+        # more than 4 bits runs on into $R.  Only the forwarding pages print
+        # these columns.  The operand is whatever the accumulator set-up
+        # left there (PDF 113 names no internal-operand value): CHOSEN.
+        if not fwd:
+            return "INTERNL columns are printed only with forwarding"
+        if place == "int_wbx" and fl < 2:
+            return "a one-bit field cannot cross a word boundary"
+        addrs = ["8.0" if place == "int" else "8.%d" % INT_WBX_BIT]
     else:
-        return "internal (accumulator) operand placement not generated"
+        return "operand placement %r not generated" % place
     lines = ["%s(%s,%d,%d), %s%s" % (op, mode, fl, bs, a, ix) for a in addrs]
-    if rec.block == "-":
-        xor = 0
-    elif rec.block == "INVERT SIGN OF INSTRUCTION":
-        xor = VFL_INVERT_BIT
-    else:
+    xor = _vfl_xor(rec)
+    if xor is None:
         return "block %r not generated" % rec.block
     return Case(rec, setup, lines, data, xor)
+
+
+def _vfl_xor(rec):
+    if rec.block == "-":
+        return 0
+    if rec.block == "INVERT SIGN OF INSTRUCTION":
+        return VFL_INVERT_BIT
+    return None
+
+
+def _imm_case(rec, op, mode, fl, bs, acc):
+    """PDF 171-189.  The instruction is assembled with a zero immediate and
+    its 24-bit address field is then set to (444444)16 by XOR, so the field
+    holds the standard operand whatever the field length -- PDF 114's words
+    -- and not the operand's left-justified leading bits alone, which is
+    what STRAP would assemble from a literal (encode_vfl_immediate).  The
+    accumulator is set up as for the direct page (PDF 113).  CHOSEN: PDF
+    113's "memory operand +1" for *, *+ and / is overruled by PDF 114's
+    address contents, which describe this run."""
+    xor = _vfl_xor(rec)
+    if xor is None:
+        return "block %r not generated" % rec.block
+    if not rec.col.endswith("_imm"):
+        return "immediate page column %r not generated" % rec.col
+    ix = "($X5)" if rec.col.startswith("ix_") else ""
+    setup = list(acc) + ["LX, $X5, ATLZERO"]
+    line = "%s(%s,%d,%d), 0%s" % (op, mode, fl, bs, ix)
+    return Case(rec, setup, [line], [], xor | (IMM_ADDR << 40))
+
+
+def _cv_case(rec, mode, fl, bs):
+    """CV / DCV: the operand is the accumulator, +1 at offset 20 (PDF 113);
+    the instruction's own offset is the page heading's OFFSET 0.  CHOSEN:
+    the unused address field names ATLE0, the first external word, which
+    the instruction never reads (Ref. Manual p.72)."""
+    xor = _vfl_xor(rec)
+    if xor is None:
+        return "block %r not generated" % rec.block
+    if not rec.col.endswith("_accum"):
+        return "CV/DCV column %r not generated" % rec.col
+    ix = "($X5)" if rec.col.startswith("ix_") else ""
+    setup = list(_ACC_CV) + ["LX, $X5, ATLZERO"]
+    data = ["        SLC, (8)%o.0" % EXT_BASE, "ATLE0   DD(BU,64,8), %d" % STD]
+    line = "%s(%s,%d,%d), ATLE0%s" % (rec.instr, mode, fl, bs, ix)
+    return Case(rec, setup, [line], data, xor)
+
+
+# --- floating point, PDF 42-101 ----------------------------------------------
+# PDF 40 (printed 34C), FLOATING POINT TIMING, read on the page image:
+#   "Sequences of operations were generated and timed by GENER."
+#   External Operands: "Consecutive memory boxes were used where possible.
+#     Cases without forwarding used a repetition of four consecutive
+#     addresses 100011_8 to 100014_8.  Cases with forwarding used 1000011_8."
+#   I-Box Operands: "Index registers nine to twelve were used in the cases
+#     without forwarding and index nine in the cases with forwarding."
+#   Internal Operands: "The right half of the accumulator, $R, was used for
+#     all cases."
+#   Data: "A normalized floating point one (1) was the initial operand
+#     unless otherwise specified.  (Cases were run with flagged exponents
+#     superimposed.)"
+# PDF 41 (printed 34D): "Forwarding merely means using the same operand
+# address."
+#
+# "1000011_8" is seven octal digits (re-read at 300 dpi: it is printed so);
+# an FP instruction's address is 18 bits (enc_fp), and 1000011_8 = 262153
+# does not fit.  CHOSEN: the forwarding run uses 100011_8, the first of the
+# four the no-forwarding run rotates over.
+FP_EXT_BASE = 0o100011
+FP_IBOX_FIRST = 9             # $X9 .. $X12; $X9 alone with forwarding
+
+# The FP word (Reference Manual, Floating-Point Data Format; StretchFP.bsv's
+# fpFromWord): bit 0 exponent flag, 1-10 exponent, 11 exponent sign, 12-59
+# fraction, 60 fraction sign, 61-63 data flags T, U, V.
+def _fpword(exp=1, frac=1 << 47, ef=0, es=0, flags=0):
+    return (ef << 63) | (exp << 53) | (es << 52) | (frac << 4) | flags
+
+FP_ONE = _fpword()                   # +.1 (binary) x 2^+1 = 1, normalized
+FP_TWO = _fpword(exp=2)
+# The block captions.  CHOSEN (the volume prints only the captions): XPFN is
+# the normalized one with the exponent flag on and the exponent sign
+# negative ("flagged exponents superimposed"); XPFP the same with the sign
+# positive; U,V FLAGS the one with data flags U and V (bits 62, 63) on.
+FP_XPFN = _fpword(ef=1, es=1)
+FP_XPFP = _fpword(ef=1)
+FP_UV = _fpword(flags=0b011)
+FP_BLOCKS = {                        # caption: (accumulator, memory operand)
+    "NORMALIZED 1.": (FP_ONE, FP_ONE),
+    "BOTH OPERANDS WITH XPFN": (FP_XPFN, FP_XPFN),
+    "AC EXPNT N. MEM EXPNT XPFN": (FP_ONE, FP_XPFN),
+    "AC WITH XPFP. MEM WITH XPFN": (FP_XPFP, FP_XPFN),
+    # the load pages (PDF 64-70, 95-101) caption the memory operand alone;
+    # the accumulator is the normalized one (CHOSEN)
+    "MEMORY OPERAND HAS XPFN": (FP_ONE, FP_XPFN),
+    "MEMORY OPERAND HAS U,V FLAGS": (FP_ONE, FP_UV),
+    "MEMORY OPERAND HAS XPFP": (FP_ONE, FP_XPFP),
+    # E+I (PDF 71) and SHF (PDF 72): no memory operand
+    "ADDRESS FIELD NOT INDEXED": (FP_ONE, None),
+    "ADDRESS FIELD IS INDEXED": (FP_ONE, None),
+}
+# Row labels: the normalization modifier (N)/(U) and the sign modifiers,
+# NEG = negative (invert) sign and A = absolute sign, STRAP's N / A / NA
+# mnemonic suffixes (strip_fp_sign; pocket card "L(N,A,NA)").
+_FP_ROW = re.compile(r"^(NEG )?(A)?\((N|U)\)$")
+FP_SUFFIX = {(False, False): "", (True, False): "N", (False, True): "A",
+             (True, True): "NA"}
+
+
+def fp_parts(rec):
+    """(mnemonic, mode, absSign, invSign) for an FP row, or None."""
+    m = _FP_ROW.match(rec.row)
+    if not m:
+        return None
+    neg, ab, mode = bool(m.group(1)), bool(m.group(2)), m.group(3)
+    return rec.instr + FP_SUFFIX[(neg, ab)], mode, int(ab), int(neg)
+
+
+def fp_case(rec):
+    parts = fp_parts(rec)
+    if parts is None:
+        return "FP row label %r is not a modifier set" % rec.row
+    op, mode, _, _ = parts
+    if rec.block not in FP_BLOCKS:
+        return "FP block %r not generated" % rec.block
+    acc, mem = FP_BLOCKS[rec.block]
+    col = rec.col
+    setup = ["LX, $X5, ATLZERO"]
+    data = ["ATLFA   DD(BU,64,8), %d" % acc, "ATLFONE DD(BU,64,8), %d" % FP_ONE,
+            "ATLFTWO DD(BU,64,8), %d" % FP_TWO]
+    if rec.instr in ("E+I", "SHF"):
+        # PDF 71 heads its columns EFFECTIVE ADDRESSES / ONE / 2040, PDF 72
+        # SHIFT 1 ... SHIFT 95: the address field IS the operand.  The
+        # blocks say whether it is indexed (by $X5 = 0, as elsewhere).
+        n = int(col.split("_")[1].replace("one", "1"))
+        ix = "($X5)" if rec.block == "ADDRESS FIELD IS INDEXED" else ""
+        setup += ["LFT(U), ATLFA", "L(U), ATLFA"]
+        return Case(rec, setup, ["%s(%s), %d%s" % (op, mode, n, ix)], data)
+    fwd = rec.cond.get("forwarding") == "yes"
+    indexed, place = col.startswith("ix_"), col[3:]
+    ix = "($X5)" if indexed else ""
+    data += ["        SLC, (8)%o.0" % FP_EXT_BASE]
+    data += ["ATLFM%d  DD(BU,64,8), %d" % (i, mem) for i in range(4)]
+    pre = []
+    if place == "ext":
+        addrs = ["ATLFM%d" % i for i in range(1 if fwd else 4)]
+    elif place == "ibox":
+        regs = range(FP_IBOX_FIRST, FP_IBOX_FIRST + (1 if fwd else 4))
+        # the whole word into the index register's storage location
+        pre += ["L(BU,64,8), ATLFM0"] + ["ST(BU,64,8), $X%d" % r for r in regs]
+        addrs = ["$X%d" % r for r in regs]
+    elif place == "int":
+        if not fwd:
+            return "INTERNAL is printed blank without forwarding"
+        addrs = ["$R"]
+    else:
+        return "FP column %r not generated" % col
+    # KR / KMGR pages are printed twice, AH INDICATOR OFF and ON.  CHOSEN:
+    # set it once in the set-up by a compare, 2 against 1 (AH on) or 1
+    # against 2 (AL on, AH off), before the accumulator is loaded.
+    ah = rec.cond.get("ah_indicator")
+    if ah == "on":
+        pre += ["L(U), ATLFTWO", "K(U), ATLFONE"]
+    elif ah == "off":
+        pre += ["L(U), ATLFONE", "K(U), ATLFTWO"]
+    # The accumulator.  CHOSEN: the factor register (for *+) holds the same
+    # word as the accumulator; the load is unnormalized so the flagged word
+    # lands as written; $R (the internal operand) then gets the memory
+    # operand by a one-word TRANSMIT, since a load clears it.
+    setup += pre + ["LFT(U), ATLFA", "L(U), ATLFA"]
+    if place == "int":
+        setup += ["TI, 1, ATLFM0, 9.0"]
+    lines = ["%s(%s), %s%s" % (op, mode, a, ix) for a in addrs]
+    return Case(rec, setup, lines, data)
 
 
 # --- index arithmetic, PDF 109 ---------------------------------------------
@@ -529,7 +753,7 @@ def transmit_case(rec):
     return Case(rec, setup, [line], data)
 
 
-BUILDERS = {"VFL": vfl_case, "IBOX": ibox_case, "IBOX2": ibox_case,
+BUILDERS = {"VFL": vfl_case, "FP": fp_case, "IBOX": ibox_case, "IBOX2": ibox_case,
             "BRANCH": branch_case, "TRANSMIT": transmit_case}
 
 
@@ -663,11 +887,123 @@ def write_tsv(cases, path):
 # The harness's own checks: suspect the probe first
 # ---------------------------------------------------------------------------
 
+def _decode_fp_half(v):
+    """An FP half-word's fields (enc_fp's layout)."""
+    return dict(addr=v >> 14, unnorm=(v >> 13) & 1, abs=(v >> 12) & 1,
+                inv=(v >> 11) & 1, code=(v >> 4) & 0x7F, idx=v & 0xF)
+
+
+def fp_encoding_errors(cases, copies=8):
+    """Assemble each FP case's body and decode every copy: the operation
+    code, the (N)/(U) bit, the two sign-modifier bits, the operand address
+    and the index field must be the ones the page's row and column name.
+    Returns a list of (case, message)."""
+    from opcodes import FP_CODES
+    errs = []
+    for c in cases:
+        if c.rec.cls != "FP":
+            continue
+        _, mode, ab, inv = fp_parts(c.rec)
+        col, blk = c.rec.col, c.rec.block
+        fwd = c.rec.cond.get("forwarding") == "yes"
+        if c.rec.instr in ("E+I", "SHF"):
+            # the operand is effective-address bits 0-11 (Ref. Manual
+            # p.102; StretchExecute's SHF / E+I arms read ea[17:6]), so a
+            # literal n sits 7 places up the 18-bit address field
+            want_addr = [int(col.split("_")[1].replace("one", "1")) << 7]
+            want_idx = 5 if blk == "ADDRESS FIELD IS INDEXED" else 0
+        else:
+            place = col[3:]
+            n = 1 if fwd else 4
+            want_addr = {"ext": [FP_EXT_BASE + i for i in range(n)],
+                         "ibox": [16 + FP_IBOX_FIRST + i for i in range(n)],
+                         "int": [9]}[place]
+            want_idx = 5 if col.startswith("ix_") else 0
+        full, _ = c.images(copies)
+        words = dict(full)
+        for i in range(copies):
+            w = words[BODY_ADDR + i // 2]
+            d = _decode_fp_half((w >> 32) if i % 2 == 0 else (w & 0xFFFFFFFF))
+            want = dict(addr=want_addr[i % len(want_addr)],
+                        unnorm=int(mode == "U"), abs=ab, inv=inv,
+                        code=FP_CODES[c.rec.instr], idx=want_idx)
+            if d != want:
+                errs.append((c, "copy %d decodes %r, wants %r" % (i, d, want)))
+                break
+    return errs
+
+
+def _decode_vfl(w):
+    return dict(addr=w >> 40, i1=(w >> 32) & 0xF, p=(w >> 29) & 7,
+                fl=(w >> 23) & 0x3F, offset=(w >> 13) & 0x7F,
+                code=(w >> 4) & 0x3F, inv=int(bool(w & VFL_INVERT_BIT)))
+
+
+def vfl_new_encoding_errors(cases):
+    """The INTERNL, IMMED. and ACCUM. cases, statically: the address field,
+    the addressing mode P, the index and the invert-sign bit are the ones
+    PDF 113-114 and the page's row and column name."""
+    errs = []
+    for c in cases:
+        r = c.rec
+        if r.cls != "VFL":
+            continue
+        col = r.col
+        place = col[3:]
+        if place not in ("int", "int_wbx", "imm", "accum"):
+            continue
+        full, _ = c.images(2)
+        d = _decode_vfl(dict(full)[BODY_ADDR])
+        # the bit as assembled, before any XOR: a connective's own code
+        # uses it, so the INVERT block is judged by the flip, not the value
+        bare = _decode_vfl(_assemble(_program(
+            c.setup, c.body(1), c.data, loop=False)).words[BODY_ADDR])
+        want = dict(i1=5 if col.startswith("ix_") else 0,
+                    inv=bare["inv"] ^ int(r.block == "INVERT SIGN OF INSTRUCTION"))
+        if place == "int":
+            want.update(addr=8 * 64, p=0)
+        elif place == "int_wbx":
+            want.update(addr=0o10 * 64 + 0o74, p=0)   # PDF 114: (10.74)8
+        elif place == "imm":
+            want.update(addr=IMM_ADDR, p=4)
+        else:
+            want.update(p=0, offset=0)
+        got = {k: d[k] for k in want}
+        if got != want:
+            errs.append((c, "decodes %r, wants %r" % (got, want)))
+    return errs
+
+
+def _linearity(case):
+    tot = {}
+    for copies in (250, 500, 1000):
+        full, base = case.images(copies)
+        a, b = run_image(full), run_image(base)
+        if a is None or b is None:
+            return None, None
+        tot[copies] = a - b
+    return (tot[500] - tot[250]) / 2500.0, (tot[1000] - tot[500]) / 5000.0
+
+
 def selftest(pages):
-    """Four things that must hold before any residual is believed.
+    """The things that must hold before any residual is believed.
     Returns the number of failures."""
     fails = 0
     recs = {r.key(): r for p in pages for r in p.records}
+    # 0. THE GENERATED FP INSTRUCTIONS ARE THE ONES THE PAGES NAME (static,
+    #    no simulation): every one of the 9,406 FP cases, decoded copy by
+    #    copy.  The sign modifiers ride on irregular mnemonic suffixes.
+    fpc, _ = build_cases(pages, pdf=list(range(42, 102)))
+    errs = fp_encoding_errors(fpc)
+    ok = not errs and len(fpc) > 9000
+    print("%s FP encoding: %d FP cases decoded (op code, N/U, NEG, A, "
+          "address, index)%s" % ("ok  " if ok else "FAIL", len(fpc),
+                                  "" if ok else "; first: PDF %d %s %s %s %s: %s"
+                                  % ((errs[0][0].rec.pdf, errs[0][0].rec.instr,
+                                      errs[0][0].rec.block, errs[0][0].rec.row,
+                                      errs[0][0].rec.col, errs[0][1])
+                                     if errs else (0, "", "", "", "", "too few"))))
+    fails += not ok
     r = recs.get((120, "L", "-", "(BU,8,8)", "ni_ext"))
     if r is None:
         print("selftest: PDF 120 L (BU,8,8) ni_ext is not transcribed")
@@ -727,6 +1063,49 @@ def selftest(pages):
     print("%s branch chain: a successful CB costs %.4f clocks a copy between "
           "250 and 500 copies, %.4f between 500 and 1000"
           % ("ok  " if ok else "FAIL", s1, s2))
+    fails += not ok
+    # 5. THE NEW VFL COLUMNS ARE ENCODED AS PDF 113-114 SAY (static):
+    #    INTERNL at 8.0 / 8.60, IMMED. with (444444)16 in the address field
+    #    and P = 4, ACCUM. (CV, DCV) at offset 0; index and invert bits.
+    vc, _ = build_cases(pages, pdf=list(range(116, 190)))
+    vc = [c for c in vc
+          if c.rec.col[3:] in ("int", "int_wbx", "imm", "accum")]
+    errs = vfl_new_encoding_errors(vc)
+    ok = not errs and len(vc) > 5000
+    print("%s VFL INTERNL / IMMED. / ACCUM. encoding: %d cases decoded%s"
+          % ("ok  " if ok else "FAIL", len(vc),
+             "" if ok else "; first: %r: %s" % ((errs[0][0].rec, errs[0][1])
+                                                 if errs else (None, "too few"))))
+    fails += not ok
+    # 6. FP LINEARITY, on a STORE to the I-box: four FP copies share two
+    #    words and write index registers, so the loop counter ($X15) must
+    #    survive and each half-word copy must cost the same at every body
+    #    length.  (Proven discriminating: with the I-box operands moved to
+    #    $X12-$X15, the stores overwrite the count, the 250-copy run
+    #    never halts, and this fails.)
+    r4 = recs.get((48, "ST", "NORMALIZED 1.", "(N)", "ni_ibox"))
+    s1, s2 = _linearity(fp_case(r4))
+    ok = s1 is not None and abs(s1 - s2) < 1e-9 and s1 > 1
+    print("%s FP linearity: ST(N) to $X9-$X12 costs %s clocks a copy between "
+          "250 and 500 copies, %s between 500 and 1000"
+          % ("ok  " if ok else "FAIL",
+             "?" if s1 is None else "%.4f" % s1,
+             "?" if s2 is None else "%.4f" % s2))
+    fails += not ok
+    # 7. AN IMMEDIATE CASE RUNS AND IS LINEAR: the XORed address field
+    #    must leave a word the model executes, at every body length, and
+    #    a copy must cost something.  (Proven discriminating: with the XOR
+    #    four bits low, (444444)16 << 36, the body is linear at 0.0000
+    #    clocks a copy -- the words do not execute as LI -- and only the
+    #    "costs something" clause fails it; it was added for that.)
+    r5 = recs.get((173, "LI", "-", "(BU,64,8)", "ni_imm"))
+    s1, s2 = _linearity(vfl_case(r5))
+    ok = s1 is not None and abs(s1 - s2) < 1e-9 and s1 > 1
+    print("%s immediate linearity: LI(BU,64,8) costs %s clocks a copy between "
+          "250 and 500 copies, %s between 500 and 1000"
+          % ("ok  " if ok else "FAIL",
+             "?" if s1 is None else "%.4f" % s1,
+             "?" if s2 is None else "%.4f" % s2))
     fails += not ok
     return fails
 
