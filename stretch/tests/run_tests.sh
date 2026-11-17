@@ -1588,14 +1588,14 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 # atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
 # CYCLES pins that the index write does NOT wait: 2721 with the stall of
 # 3204601 (levelIndexedBy), 2407 with the level carrying the I-box's indexing.
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2828+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2864+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
 # The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
 # instruction behind a pending level storing into its index word.  Injections
 # in the deck's header.
 # RE-PINNED 2026-11-16 (1132 -> 1248): VFL E-box time now depends on the
 # operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
 # atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
-run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1248+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
+run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1479+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
 # THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
 # docs/smac_7030.md), against strap/smac.py card for card and against the
 # bulletin's printed cards.  Injections in the shell, observed 2026-11-08
@@ -2522,7 +2522,7 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # loader saw), x2, cycles and PC pass.
 run "THE SECOND INDEX modifies a VFL offset: MCP's octal conversion (RefMan p.21)" ./run_program.sh ../decks/vfl_second_index.strap StretchVflSecondIdxTb \
     "PC=395" \
-    "CYCLES=434+-0" \
+    "CYCLES=447+-0" \
     "x3:19=2898558941422157824" \
     "x2:18=1512927999819776"
 

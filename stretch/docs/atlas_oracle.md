@@ -1066,6 +1066,131 @@ immediates (SHF, E+I). `fetchesOperand` and `prepareExec` now use it.
   "Floating point: E+ / E+I / SHF" 88 → 85 clocks, both under bounds of
   100,000.
 
+### 2. The look-ahead address register (LAAR), for floating point
+
+**What the sources say** (read in the page images):
+
+- Vol. 1 printed pp.3-20/3-21 (PDF 38-39), "The LAAR, Stores and Internal
+  Operand Fetches":
+  - "the LAAR will remain 'busy' from the time of look-ahead loading until
+    the proper operand is available, is fetched, checked, and accepted by
+    the MBCU."
+  - An internal operand (address 3 or 5-12) also takes the LAAR, "and the
+    LAAR is freed sooner."
+  - "Since there is only one LAAR, if the latter is busy whenever the I-box
+    decodes an instruction requiring LAAR, a wait must occur."
+  - "A store into index storage is a time-consuming operation. ... the
+    I-box does no further decoding until the new index contents arrives."
+- Vol. 2 PDF 41 (printed 34D): "Repeated 'to memory' operations lead to
+  queuing for the LAAR, and the present measurements on these instructions
+  actually refer to the worst possible situations."
+- Vol. 2 PDF 104, the environmental test, shows that this is queuing and
+  not the store's own cost:
+  - ST(U) prints 4.82 µs (16 clocks) alone.
+  - With one + between stores it prints 2.51 µs averaged, which is still
+    one 16-clock LAAR period per store.
+  - With three + between, it prints 1.73 µs, and the effective store time
+    is negative. That is p.3-21's "three or more time consuming
+    instructions in between".
+- Vol. 1 printed p.3-19: the I-Checker "processes information in 0.6 µs"
+  and does the "store operand error check".
+
+**The model before.** It had no LAAR. A store level retired at removal,
+and the next store was loaded as soon as the I-box had prepared it.
+`storeWait` held preparation only while a level storing into index storage
+was pending.
+
+**The change** (`StretchCore.bsv` `laarRetire` and the gate in
+`rl_prepare`, `StretchIBox.bsv` `laarHeldByLevel` / `needsLaar`,
+`StretchTiming.bsv` `laarCheckClocks` / `laarStorePost`,
+`StretchStorage.bsv` `storesPending`):
+
+- An FP level that stores, or that fetches an internal register, is not
+  loaded while another level holds the LAAR or a store is still queued for
+  the MBCU.
+- A store releases the LAAR when its E-box time is over, after the 0.6 µs
+  check (documented) and, for the FP stores that fetch nothing (ST, SRD,
+  SLO, SRT), after a fitted remainder per destination.
+- A store into index storage holds all decoding until the same instant,
+  for every class.
+- **Tried and withdrawn: a wait for the E-box before fetching an E-box
+  register (words 7-15).** The model commits a result at removal and only
+  charges its time afterwards, so the fetch of, say, $IND can be made
+  while the 7030 would still be executing. Gating that fetch on an idle
+  E-box, together with the index-store hold, changed a RESULT:
+  - PAST T MOVE stopped in XERR26 ("PROSA ARC COUNT INCORRECT") instead
+    of XERR29.
+  - Its S DK MCP word (002157) read a different arc count.
+  - The run was 200,000 steps longer before T MOVE.
+  Either mechanism alone leaves that run as it was. Each was measured
+  with the other removed: XERR29, about 6,442,200 steps against base's
+  6,442,189. The interaction was not traced. The likeliest path is that
+  `rl_io_report` writes the I/O status into $IND/$CA asynchronously, so a
+  later fetch of word 11 sees a different indicator state. It is reported
+  as a hazard and not pinned, and the wait is not in the model.
+
+**The fit, and what is not on any page.**
+
+- With the documented events alone (E-box done, the 0.6 µs check, MBCU
+  acceptance), FP ST measured 7 clocks a copy against PDF 48's 16. That
+  run moved PDF 48 EXTERNAL by only 0.6.
+- The remainder is fitted on PDF 48 alone, one number per destination:
+  memory 9, index storage 17, internal register 5. The internal value is
+  from PDF 79's $R column, the only page with one.
+- Held out: SRD (PDF 50), SLO (49) and SRT (51). Their Table 2 charges
+  span 4 to 108 clocks, so a mechanism that belonged to the E-box would
+  not carry over. These pages land within a clock (EXTERNAL) and three
+  (I-BOX; SRT indexed is −2.92).
+- **Not applied to the fetch-and-stores, M+ and M+MG.** PDF 69 prints M+
+  at 15.42 clocks, *less* than ST's 16.00, with two more E-box cycles, so
+  M+'s store path is not ST's. It takes the documented events only.
+- **Not applied to VFL or the connectives.** Their E-box charges are fits
+  to the back-to-back EXTERNL column, which already contains the queuing.
+  Gating them too was measured: VFL ST (PDF 124) EXTERNL went from −0.07
+  to +11.93, counting the queuing twice.
+
+| PDF | instr | before (n / exact / median / mean) | after |
+|---|---|---|---|
+| 48 | ST (the fit) | 128 / 0 / −13.88 / −14.13 | 128 / 64 / −0.07 / −0.32 |
+| 49 | SLO (held out) | 128 / 0 / −18.15 / −16.90 | 128 / 56 / −0.28 / −0.89 |
+| 50 | SRD (held out) | 128 / 0 / −15.40 / −15.65 | 128 / 64 / −0.59 / −0.84 |
+| 51 | SRT (held out) | 128 / 0 / −16.49 / −16.74 | 128 / 0 / −0.48 / −0.73 |
+| 79 | ST, forwarding | 192 / 0 / −6.30 / −10.32 | 192 / 128 / −0.02 / −0.22 |
+| 80 | SLO, forwarding (held out, $R too) | 192 / 0 / −12.00 / −14.10 | 192 / 104 / −0.00 / −0.76 |
+| 69 | M+ | 128 / 31 / −10.06 / −11.20 | 128 / 0 / −7.30 / −8.44 |
+
+By column, before → after (median):
+
+| PDF | EXTERNAL | I-BOX (no indexing) | I-BOX (indexed) |
+|---|---|---|---|
+| 48 ST | −9.61 → +0.01 (32/32 exact) | −18.15 → −0.15 | −19.15 → −1.15 |
+| 49 SLO | −12.00 → −0.00 (28/32) | −20.30 → −0.28 | −21.30 → −1.28 |
+| 50 SRD | −10.61 → +0.01 (32/32) | −20.18 → −1.18 | −21.18 → −2.18 |
+| 51 SRT | −11.04 → +0.96 | −21.94 → −1.92 | −22.94 → −2.92 |
+| 79 ST, forwarding | −6.30 → +0.01 (32/32) | −18.15 → −0.15 | −19.15 → −1.15 |
+| 79 ST, $R (the fit) | −6.02 → −0.02 (32/32) | | |
+| 80 SLO, forwarding | −12.00 → −0.00 (28/32) | −20.30 → −0.28 | −21.30 → −1.28 |
+| 80 SLO, $R (held out) | −8.00 → −0.00 (24/32) | | |
+| 69 M+ | +0.08 → +2.59 (after item 1: −8.40) | −21.18 → −18.18 | −25.22 → −22.22 |
+
+**CYCLES pins moved** (every value check unchanged; the reason is in each
+deck's header):
+
+- The index-store decode hold: `index_after_index_store` 1248 → 1479
+  (seven VFL ST into $X3, 33 clocks each) and `index_after_level`
+  2828 → 2864.
+- `vfl_second_index` 434 → 447, from the SF(BU,18) into $3. With the
+  hold removed and nothing else changed, it runs in 434 again.
+- Bounded figures: "Floating point: L / * / + / ST" 84 → 79, "E+ / E+I /
+  SHF" 88 → 92 and "FP sign modifiers" 68 → 79.
+
+M+ to an index register (−18) is open. So are the VFL I-box stores: the
+index-store hold moved PDF 124's I-BOX column by 4 clocks (−16.30 →
+−12.28), and −12 remains. The WB XOVR stores are unchanged. Those need either a store path
+fitted to the VFL pages, which would mean re-fitting the VFL E-box laws
+without the queuing, or the crossing-field arms, which belong to the
+G2.3 work.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of

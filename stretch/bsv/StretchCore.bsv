@@ -196,6 +196,24 @@ module mkStretchCore(StretchCore);
   Reg#(Bit#(17)) oscAcc   <- mkReg(0);
   Reg#(Bit#(32)) startClk <- mkReg(0);   // dispatch clock of the current instruction
   Reg#(Bit#(16)) ibusy    <- mkReg(0);   // clocks the next preparation must still wait
+  // THE LAAR AFTER ITS STORE LEVEL HAS RETIRED (StretchIBox's
+  // laarInternal note has the source, Perf. Char. Vol. 1 printed
+  // pp.3-20/3-21).  A store level holds the LAAR while it is pending
+  // (laarHeldByLevel); at its removal the model commits the store at
+  // once and only CHARGES the E-box time, so the "proper operand is
+  // available" only `ebusy` clocks later, and is then "checked" -- the
+  // I-checker's 0.6 us "store operand error check and check code
+  // conversion" (printed p.3-19, items 5 and 3) -- and "accepted by the
+  // MBCU" (st.storesPending()).  laarFreeAt is the clock the first two
+  // are done.  xstoreFreeAt is the same instant for a store into index
+  // storage (or the indicators or the mask, storeWaitWord), which in
+  // addition stops ALL decoding: "A store into index storage is a time-
+  // consuming operation. Whenever such an instruction is decoded, since
+  // the next instruction may make use of the new index contents, the
+  // I-box does no further decoding until the new index contents arrives"
+  // (printed p.3-21).
+  Reg#(Bit#(32)) laarFreeAt   <- mkReg(0);
+  Reg#(Bit#(32)) xstoreFreeAt <- mkReg(0);
 
   // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
   // conversion order, step 3): only a W-direction (memory->device)
@@ -331,6 +349,26 @@ module mkStretchCore(StretchCore);
                      endcase);
     return selfBranch && !counting;
   endfunction
+
+  // A retiring store level releases the LAAR once its operand has been
+  // produced (the E-box charge `e`, which occupies e + 1 clocks: see
+  // StretchTiming's removal-clock note) and checked (laarCheckClocks),
+  // and -- for a floating-point store that fetched nothing (ST, SRD, SLO,
+  // SRT) -- once the store path's fitted remainder has run
+  // (StretchTiming's laarStorePost, where the fit and its held-out pages
+  // are).  A store into index storage also holds all decoding until then,
+  // for every class.  Only FP levels take the LAAR (StretchIBox's
+  // laarInternal note says why).
+  function Action laarRetire(LaLevel h, Bit#(16) e) =
+    action
+      if (h.storeAddr matches tagged Valid .sa) begin
+        Bool fp = isFpInstr(h.di);
+        Bit#(32) t = clk + zeroExtend(e) + 1 + fromInteger(laarCheckClocks)
+                   + ((fp && !isValid(h.da)) ? zeroExtend(laarStorePost(sa)) : 0);
+        if (fp) laarFreeAt <= t;
+        if (storeWaitWord(sa)) xstoreFreeAt <= t;
+      end
+    endaction;
 
   function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
                                            Maybe#(HWordAddr) intIC) =
@@ -1254,6 +1292,7 @@ module mkStretchCore(StretchCore);
           $display("StretchCore: A BOX (DIVIDE OR DECIMAL) OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
                    pc, boxK, ebudget);
         ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
+        laarRetire(la.headLevel(), ebn);
         la.retireHead();
       end else begin
         commitNext(pc, len, o.next);
@@ -1311,6 +1350,7 @@ module mkStretchCore(StretchCore);
       if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
         $display("StretchCore: SWAP started at half-word %0d, %0d words", h.pc, xs.remaining);
       ebn = eboxClocks(h.di);
+      laarRetire(h, ebn);
       la.retireHead();
     end
     // else: the E-box holds the level's instruction for its operand read.
@@ -1460,7 +1500,7 @@ module mkStretchCore(StretchCore);
       ibusy <= ibusy - 1;   // previous instruction's time budget still running
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
-    else if (storeWait(nl))
+    else if (storeWait(nl) || clk < xstoreFreeAt)
       // STORE WAIT (R23-9732 Figs 3.1.13, 3.1.20, 3.1.24; StretchIBox's
       // storeWait): a pending level stores into an index register, the
       // indicators or the mask, and nothing is prepared until it has.
@@ -1497,6 +1537,13 @@ module mkStretchCore(StretchCore);
         Maybe#(WordAddr) da = tagged Invalid;
         if (fetchesOperand(di) && !prep.completesWithoutFetch)
           da = prep.operandAddr;
+        // THE ONE LAAR (StretchIBox's laarInternal note): a level that
+        // stores, or fetches an internal register, is not loaded while
+        // another holds it or its last store is not yet accepted.
+        Bool laarBusy = laarHeldByLevel(nl) || clk < laarFreeAt || st.storesPending();
+        if (isFpInstr(di) && needsLaar(prep.storeAddr, da) && laarBusy)
+          noAction;
+        else
         // >>> THE PROBE IS GONE, 2026-10-29. <<<  This used to call
         // `ebox.exec` with no operands so that `execute()` would bail
         // out with the address it wanted, and then treat a non-bail as

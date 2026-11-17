@@ -65,6 +65,16 @@
 ! stores, full-word (BU,64), went from 24 E-box clocks each to L 28 (PDF
 ! 120, 8.40 us) and ST 32 (PDF 124, 9.61 us).  The 2721 / 2552 figures
 ! above were measured under the old timing and were not re-measured.
+!
+! TIMING RE-PINNED 2026-11-17, 2828 -> 2864 clocks, every value check unchanged.
+! A store into index storage now holds decoding until the store is done,
+! not until its level is removed: Perf. Char. Vol. 1 printed p.3-21, "the
+! I-box does no further decoding until the new index contents arrives"
+! (bsv/StretchCore.bsv xstoreFreeAt, set by laarRetire to the E-box time
+! plus the 0.6 us check, StretchTiming's laarCheckClocks).  The model
+! commits a level's result at removal and charges its E-box time after,
+! so the old release came that E-box time early.
+! The SV and ST into $X3 of its cases.
         SLC, (8)2000.0
 START   NOP
 ! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)

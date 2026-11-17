@@ -30,6 +30,17 @@
 ! ends at 21.32.  Not exercised: a carry across the length, byte-size
 ! and offset parts, and a negative index (the sign rule is CHOSEN in
 ! StretchExecute.bsv's vflSecondIndex).
+!
+! TIMING RE-PINNED 2026-11-17, 434 -> 447 clocks, every value check unchanged.
+! A store into index storage now holds decoding until the store is done,
+! not until its level is removed: Perf. Char. Vol. 1 printed p.3-21, "the
+! I-box does no further decoding until the new index contents arrives"
+! (bsv/StretchCore.bsv xstoreFreeAt, set by laarRetire to the E-box time
+! plus the 0.6 us check, StretchTiming's laarCheckClocks).  The model
+! commits a level's result at removal and charges its E-box time after,
+! so the old release came that E-box time early.  Here: the SF(BU,18)
+! into $3.  MEASURED: with that hold removed (and nothing else) the deck
+! runs in 434 clocks again.
         SLC, (8)300.0
 START   LX,$1,DXW
         LVI,$2,30.32

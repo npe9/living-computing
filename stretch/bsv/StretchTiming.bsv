@@ -76,6 +76,46 @@ import StretchVFL::*;      // effLength/effByteSize for the VFL time budget
 Integer oscPulseNumer = 24;      // ticks        -- exactly, per p.34/p.35
 Integer oscPulseDenom = 78125;   // model clocks -- and Perf. Char. p.3-2
 
+// THE I-CHECKER'S TIME, the one documented number in the LAAR's release
+// (StretchCore's laarRetire).  Perf. Char. Vol. 1 printed p.3-19 (PDF
+// 37): "The I-Checker is shared between the I-box and LA. It processes
+// in- formation in 0.6 us and is used for ... 5. Store operand error
+// check and check code conversion."  0.6 us = 2 clocks.
+Integer laarCheckClocks = 2;
+
+// >>> THE FP STORE PATH AFTER THE CHECK: A FIT, ONE NUMBER PER
+// DESTINATION, 2026-11-17. <<<  The LAAR stays busy "until the proper
+// operand is available, is fetched, checked, and accepted by the MBCU"
+// (Vol. 1 printed p.3-20), and repeated stores queue for it (Vol. 2 PDF
+// 41, printed 34D: "Repeated 'to memory' operations lead to queuing for
+// the LAAR, and the present measurements on these instructions actually
+// refer to the worst possible situations").  PDF 104's environmental
+// test confirms it is queuing and not the store's own cost: ST(U) prints
+// 4.82 us alone, 2.51 us averaged with ONE + between stores (5.02 us a
+// pair, the same LAAR period), and 1.73 with three, where the effective
+// store time goes negative -- p.3-21's "three or more time consuming
+// instructions in between".
+//
+// The model's events (E-box done, the 0.6 us check, the MBCU taking the
+// word: laarRetire) put FP ST at 7 clocks a copy where PDF 48 prints 16;
+// the remainder is not on any page, so it is FITTED, on PDF 48 alone
+// (FP ST, no forwarding), one number per destination, at the model as of
+// this change: memory 9 (EXTERNAL, 16.00 printed), index storage 17
+// (I-BOX, 24.17), internal register 5 (PDF 79's $R column, 12.03).
+// The held-out pages are SRD, SLO and SRT (PDF 49-51) and SLO with
+// forwarding (PDF 80, its $R column too; 81-82 not run).  Table 2's
+// charge differs by up to 105 clocks across them, while the measured
+// residual stays within a clock (EXTERNAL, $R) and three (I-BOX)
+// (docs/atlas_oracle.md, "Closing the residuals", item 2).
+// Applied to the non-fetching FP stores only: a fetch-and-store (M+,
+// M+MG) prints LESS than ST (PDF 69: 15.42 against 16.00) with two more
+// E-box cycles, so its store path is not this one, and it gets the
+// documented events alone.
+function Bit#(8) laarStorePost(WordAddr a) =
+  (a >= 16 && a <= 31) ? 17
+  : (a == 3 || (a >= 5 && a <= 12)) ? 5
+  : 9;
+
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
     tagged DirIndex .x: return case (x.code)

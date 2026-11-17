@@ -995,6 +995,41 @@ Fp arm reads a word for, which is all but ST, SRD, SLO, SRT, SHF and E+I.
 mean +4.79 to −0.27 clocks, PDF 65 (LWF) from +4.65 to +0.47. No result
 check changed and no CYCLES pin moved.
 
+### The LAAR, for floating point (2026-11-17)
+
+Perf. Char. Vol. 1 printed pp.3-20/3-21 give the 7030 one look-ahead
+address register. It is busy from the loading of a store level until the
+store operand "is available, is fetched, checked, and accepted by the
+MBCU". An internal-operand fetch (address 3 or 5-12) also takes it. A
+second instruction that needs it waits at decoding. A store into index
+storage stops all decoding until the new contents arrive. Vol. 2 PDF 41
+names this queuing as the reason the FP "to memory" pages are the worst
+case. PDF 104's environmental test shows that a ST with three adds between
+costs nothing extra.
+
+What the model now does:
+
+- `StretchCore.bsv` gates the loading of an FP level that stores, or
+  fetches an internal register, on `laarHeldByLevel`, `laarFreeAt` and
+  `st.storesPending()`.
+- `laarRetire` sets the release: E-box time, plus the I-Checker's 0.6 µs
+  (`laarCheckClocks`, printed p.3-19).
+- For ST, SRD, SLO and SRT it adds `laarStorePost`. That is a fit on PDF
+  48 alone, one number per destination: memory 9, index 17, $R 5. It was
+  held out on PDF 49-51 and lands within 1 clock (EXTERNAL) and 3 (I-BOX).
+- `xstoreFreeAt` extends `storeWait` to the same instant for a store into
+  index storage, in every class.
+- A wait for the E-box before a look-ahead fetch of words 7-15 was tried
+  and withdrawn. Together with the index-store hold, it changed MCP's
+  PAST T MOVE result (XERR26 instead of XERR29). That interaction is
+  untraced and is reported as a hazard.
+
+The VFL and connective levels do not take the LAAR. Their E-box charges
+are fits to back-to-back pages that already contain the queuing, and
+gating them as well put VFL ST (PDF 124) at +11.93 clocks. M+ and M+MG
+get the documented events only, because PDF 69 prints M+ below ST.
+`docs/atlas_oracle.md` "Closing the residuals", item 2, has the tables.
+
 ### Documented simplifications (deliberate, not oversights)
 
 - ~~**Sign-magnitude sign-bit position within a byte**~~ **FIXED
