@@ -2729,7 +2729,7 @@ run "BINARY + +MG L: RN on a negative zero, LC, PF (printed pp.47, 60-61)" ./run
 # 48-bit transit (printed pp.72-73).  M2, M9, P2, P4, C4 are controls.
 # Expected values hand-derived in the deck's header.  MEASURED INJECTIONS: see
 # the deck's header.
-run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit width (printed pp.59, 62-63, 69, 72-73)" ./run_program.sh ../decks/vfl_binary_memadd_indicators.strap StretchVflBinMemIndTb PC=2191 \
+run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit width (printed pp.59, 62-63, 69, 72-73)" ./run_program.sh ../decks/vfl_binary_memadd_indicators.strap StretchVflBinMemIndTb PC=2198 \
     "M1_W:1600=0" "M1_ind_LC_MOP_RZ:1700=0x20000000140" \
     "M2_W:1601=0xFF00000000000000" "M2_ind_MOP_RGZ:1701=0x120" \
     "M3_W:1602=0x0200000000000000" "M3_ind_LC_MOP_RLZ_RN:1702=0x20000000190" \
@@ -2751,7 +2751,8 @@ run "BINARY M+ M+MG M+1 M-1 LC PF; *+ LC; LCV LTRCV data flags, PF, transit widt
     "C4_ind_RGZ:1718=0x20" "C4_accL:1815=0x6300000000000000" \
     "C5_ind_PF_RGZ:1719=0x10000000020" "C5_TR:1722=0x10" \
     "C6_ind_PF_RGZ:1720=0x10000000020" "C6_TR:1723=0x8D7EA4C67FFF0" \
-    "C7_ind_TF_UF_VF_RLZ_RN:1721=0x1C000090" "C7_TR:1724=0x58"
+    "C7_ind_TF_UF_VF_RLZ_RN:1721=0x1C000090" "C7_TR:1724=0x58" \
+    "C8_ind_PF_RZ:1725=0x10000000040" "C8_TR:1726=0"
 # CYCLES was 142 while this deck stored ST(DU,32,8).  The signed store it now
 # stores charges two fewer: x is the field length less the byte size in a
 # signed operation (StretchTiming.bsv, Perf. Char. Vol. 1 printed p.3-10).

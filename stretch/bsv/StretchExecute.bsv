@@ -4611,8 +4611,8 @@ function ActionValue#(VflOutcome)
                 payload = val; ndig = nd;
               end
               // WHAT THE TRANSIT REGISTER HOLDS, printed p.73 (PDF 76),
-              // read in the page image: "If this occurs [a binary-to-
-              // decimal result over 15 digits] the result is placed in
+              // read in the page image: "In the former case [a binary-
+              // to-decimal result over 15 digits] the result is placed in
               // the transit register up to its left end.  In the latter
               // case [a decimal-to-binary result over 48 bits], only the
               // 48 low-order bits of the result are placed in the

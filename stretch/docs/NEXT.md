@@ -148,8 +148,9 @@ already.
   first PF sentence has no radix).  (e) Decimal `LTRCV` gave no PF for a
   storage field over 15 digits (p.73; LCV's arm had it).  (f) Decimal
   `LTRCV` put sixty bits in $TR where p.73 says "only the 48 low-order
-  bits", and its result indicators read the untruncated value.  Oracle
-  deck: `decks/vfl_binary_memadd_indicators.strap` (22 cases, 5
+  bits", and its result indicators read the untruncated value (in both
+  directions: "according to the final result in the transit register").  Oracle
+  deck: `decks/vfl_binary_memadd_indicators.strap` (23 cases, 5
   controls); the sweep's table follows.
 * **The sweep, op by op** (A = agrees with its page, F = fixed above):
   `L`/`LWF` p.61 PF, flags, MOP, AR as in ADD -- A (fixed earlier the same

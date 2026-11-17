@@ -87,7 +87,12 @@
 !  M11 M+(V+ICR)(BU,8,8) with a refill (count 1): the second write site.
 !      acc 1, field FF: 00.  LC MOP RZ, and the index result indicators of
 !      the pre-refill word (count 0: XCZ; value W11, positive: XVGZ):
-!      0x20000009140.                                          [0x9120]
+!      0x20000009140.  printed p.21 (PDF 24), read in the page image: "The
+!      index flag and index result indicators are set following each
+!      progressive index operation.  They are set according to the new
+!      contents of the index register specified by I.  The setting occurs
+!      prior to the refill operation which may be specified."  The address
+!      part, 0, is added to the value: W11 stays.                                          [0x9120]
 !  P1  *+(BU,8,8): FT 1, multiplier 1, acc 2^128 - 1 (all ones): the carry
 !      leaves the left end; acc 0.  LC RZ 0x20000000040.            [0x40]
 !  P2  *+: FT -1, multiplier 1, acc all ones: unlike signs, 2^128 - 2.  RGZ
@@ -114,11 +119,18 @@
 !      (16)8D7EA4C67FFF0.  PF RGZ 0x10000000020.  [$TR (16)38D7EA4C67FFF0]
 !  C7  LTRCV(B,16,8) of 050F: $TR (16)58 (5, sign bit 0x08).  TF UF VF RLZ
 !      RN 0x1C000090.                                              [0x90]
+!  C8  LTRCV(BU,64,8) of 10^15 = (16)38D7EA4C68000: sixteen digits, "In the
+!      former case the result is placed in the transit register up to its
+!      left end" -- fifteen digits, all zero: $TR 0.  PF, and RZ: the result
+!      indicators read "the final result in the transit register".  PF RZ
+!      0x10000000040.                                   [0x10000000020]
 !
 ! MEASURED 2026-11-16.  The UNMODIFIED model (batch10) FAILS M1, M3, M4,
 ! M5, M6 (field and indicators), M7, M8, M10, M11, P1, P3, C1, C2, C3, C5,
 ! C6 ($TR), C7 -- exactly the bracketed values -- and passes every control
-! and every other check.  The fixed model passes all 59 checks.
+! and every other check.  The fixed model passes all 52 checks and the PC.
+! C8, added after the first measurement: batch10 FAILS C8's indicators
+! (0x10000000020) and passes its $TR (0), as bracketed.
 ! INJECTIONS into the fixed model, each in its own scratch copy of the tree
 ! (the worktree never held one), each run on this deck,
 ! vfl_binary_add_indicators, vfl_progressive_refill_once and
@@ -140,6 +152,8 @@
 !   j9 LTRCV keeps sixty bits: FAILS C6 ($TR (16)38D7EA4C67FFF0).
 !   j10 decimal LCV without the left-end PF: FAILS C3 (0x20).
 ! (LTRCV's data flag line was not injected separately; C7 is its check.)
+!   j11 binary-to-decimal LTRCV's result indicators read the unmasked
+!      result: FAILS C8 (0x10000000020) only.
 
         SLC, 1000.0
 START   L(BU,8,8), ONE
@@ -249,6 +263,10 @@ START   L(BU,8,8), ONE
         LTRCV(B,16,8), FL5
         TI, 1, $IND, K7
         TI, 1, $TR, T7
+        Z, $IND
+        LTRCV(BU,64,8), B15
+        TI, 1, $IND, K8
+        TI, 1, $TR, T8
 PASS    BEW, $
 
 
@@ -269,6 +287,7 @@ FL5     DD(BU,64), (16)050F000000000000
 D99     DD(BU,64), (16)9900000000000000
 D16     DD(BU,64), (16)0000000000000001
 D15N    DD(BU,64), (16)9999999999999990
+B15     DD(BU,64), (16)00038D7EA4C68000
 
         SLC, 1600.0
 W1      DD(BU,64), (16)FF00000000000000
@@ -309,6 +328,8 @@ K7      DD(BU,64), 0
 T5      DD(BU,64), 0
 T6      DD(BU,64), 0
 T7      DD(BU,64), 0
+K8      DD(BU,64), 0
+T8      DD(BU,64), 0
 
         SLC, 1800.0
 A1      DD(BU,64), 0
