@@ -1,0 +1,128 @@
+! vfl_cross_special_words.strap -- VFL stores crossing into or out of
+! word 11 (the indicator register), CONNECT TO MEMORY crossing into word
+! 7 (the connective counters), and CM's refill path's counts.
+!
+! THE ORDER QUESTION, AND THE PAGES ARE NOT SILENT ON IT (Reference
+! Manual 22-6530-2, read in the page images):
+!   printed p.37, Indicator Register: "Bit positions 0-19 ... can be read,
+!   but not loaded.  Any attempt to store into these positions has no
+!   effect. ... When an instruction calls for storing into any part of the
+!   indicator register, the result in bits 20-63 of the indicator register
+!   will be the same as if this operation had acted upon any other storage
+!   location whose initial contents were the same as those of the indicator
+!   register at the start of execution of the instruction.  The setting of
+!   any of the indicators 20-63 that would normally occur as part of the
+!   store operation is overridden by this result."
+!   printed p.76, Counts: "The counts are set at the end of the
+!   connective operations, so their previous values may be used as
+!   operands in the operation"; "In CONNECT TO MEMORY, the counts are made
+!   on the result field after it is converted to the byte size of the
+!   storage operand."  printed p.36: the left-zeros counter is bits 17-23
+!   of location 7, the all-ones counter bits 44-50.
+! So in word 11 the STORED WORD wins in 20-63, over every indicator the
+! operation itself sets, whether word 11 is the field's first word or its
+! second, and even when the field reaches only the read-only bits 0-19.
+! In word 7 the COUNTS win in their two fields, being set at the end.
+!
+! HOW THE MODEL GETS THERE.  Word 11: writeWord(11) goes through
+! StretchStorage's indStW and commitIndicators takes 20-63 from it over the
+! instruction's setIndicatorBits (2026-11-16).  A crossing store's second
+! word below 32 is written the NEXT clock by rl_tail_write, after the
+! operation's indicators, so it overrides them too.  (For that one clock
+! the operation's own indicators are in the register; with the
+! interruption system enabled an indicator set there could in principle be
+! seen -- not exercised, OPEN.)  Word 7: writeWord does not write the
+! counter fields at all (StretchStorage's note, a documented
+! simplification), so the counts always win -- which is p.76's order for a
+! connective.  For ST or M+ into word 7 (p.76: the counts "are not
+! changed as an inherent part of any other non-connective operations", so
+! the store should land) the model DROPS the stored count bits -- a
+! deviation, not an order, recorded OPEN in docs/NEXT.md and not tested.
+!
+! CASES (hand-derived; Z,$IND first in each C case, so word 11 starts 0):
+!   C1  M+(BU,48,8) acc 1 at 10.40: the field is word 10 bits 40-63 (not
+!       assigned, read 0) and word 11 bits 0-23.  0 + 1 = 1, its low bit
+!       is word 11 bit 23 (PF).  The tail into 11 wins in 20-63: PF ON
+!       (stored, not an overflow), and the operation's own MOP and RGZ
+!       OFF.  I1 = (16)10000000000.
+!   C2  M+(BU,16,8) acc 1 at 10.56: the 1 lands in word 11 bit 7,
+!       read-only, no effect; the store still overrides 20-63 with the
+!       initial 0.  I2 = 0 (no MOP, no RGZ).
+!   C3  ST(BU,16,8) acc (16)BEEF at 11.56: HEAD in word 11 (bits 56-63 :=
+!       BE), tail in word 12 bits 0-7 (the mask's permanent ones, p.37).
+!       ST's MOP is overridden.  I3 = (16)BE.
+!   K1  CM0101(BU,8,8) acc FF at KW1 (one word, no refill): counts of FF
+!       in 8 bits, left zeros 0, ones 8.  Word 7 = 8<<13 = (16)10000.
+!   K2  CM0101(V+ICR)(BU,8,8) acc 0F through X7, count 1 (the REFILL
+!       path): left zeros 4, ones 4.  Word 7 = (16)40000008000.  X7 :=
+!       the refill word, (16)01348000013405DC.  (Before 2026-11-17 this
+!       path set no counts and word 7 stayed K1's.)
+!   K3  CM0101(BU,64,8) acc (16)00F0000000000000 at 6.32: word 6 bits
+!       32-63 := 00F00000, word 7 bits 0-31 := 0 (the tail).  Counts:
+!       left zeros 8, ones 4.  p.76: the counts win in bits 17-23 over the
+!       tail's 0.  Word 7 = (16)80000008000 (the rest of word 7 is 0
+!       either way, so the full word is checked).
+! CYCLES 389 is a model pin.
+!
+! MEASURED INJECTIONS, 2026-11-17 (in the worktree from a saved copy,
+! restored and compared with cmp; observed on this deck and the other two
+! new decks, which pass under both):
+!   J5 CM's refill path does not hand back its counts (the old path):
+!      FAIL K2 = (16)10000 (K1's counts) ONLY.
+!   J6 commitIndicators ORs the operation's own indicators over the store
+!      (`sv[43:0] | ind[43:0]`, the store not winning): FAIL I1 =
+!      (16)10000000120, I2 = (16)120, I3 = (16)1BE -- the tail case and the
+!      head case both; K1-K3 pass.  (The rest of the suite was not run
+!      under J6.)
+! K1 and K3 are the controls for J5; K1-K3 for J6.
+!
+        SLC, 1000.0
+! ---- C: the indicator register (word 11) ----------------------
+START   L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,48,8), 10.40
+        TI, 1, $IND, I1
+        L(BU,8,8), ONE
+        Z, $IND
+        M+(BU,16,8), 10.56
+        TI, 1, $IND, I2
+        L(BU,16,8), HBEEF
+        Z, $IND
+        ST(BU,16,8), 11.56
+        TI, 1, $IND, I3
+        Z, $IND
+! ---- K: the connective counts (word 7) --------------------------
+        L(BU,8,8), HFF
+        CM0101(BU,8,8), KW1
+        TI, 1, 7, K1
+        L(BU,8,8), H0F
+        LX, $X7, XPK
+        CM0101(V+ICR)(BU,8,8), 0($X7), 0
+        TI, 1, 7, K2
+        SX, $X7, K2X
+        L(BU,64,8), XF0
+        CM0101(BU,64,8), 6.32
+        TI, 1, 7, K3
+        Z, $IND
+PASS    BEW, $
+
+        SLC, 1500.0
+XPK     XW, KW2, 1, RFW          ! count 1: the refill fires
+RFW     XW, 1234.0, 77, 1500.0
+ONE     DD(BU,64), (16)0100000000000000
+HBEEF   DD(BU,64), (16)BEEF000000000000
+HFF     DD(BU,64), (16)FF00000000000000
+H0F     DD(BU,64), (16)0F00000000000000
+XF0     DD(BU,64), (16)00F0000000000000
+KW1     DD(BU,64), (16)A5A5A5A5A5A5A5A5
+KW2     DD(BU,64), (16)A5A5A5A5A5A5A5A5
+
+        SLC, 1700.0
+I1      DD(BU,64), 0
+I2      DD(BU,64), 0
+I3      DD(BU,64), 0
+K1      DD(BU,64), 0
+K2      DD(BU,64), 0
+K2X     DD(BU,64), 0
+K3      DD(BU,64), 0
+        END, START
