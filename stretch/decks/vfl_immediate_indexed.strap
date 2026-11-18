@@ -73,6 +73,9 @@
 ! NOT exercised: p.20 says it is ignored and p.21 that "its magnitude is
 ! used", and effAddr24 wraps instead -- found, not fixed (docs/NEXT.md).
 !
+! CYCLES PIN 711 since the batch29 merge onto vflImmIndexedSaving (713
+! with that saving forced to 0; the injection clocks below are from the
+! branch before that merge).
 ! MEASURED INJECTIONS (2026-11-18; each reverted from a saved copy and
 ! checked with cmp; control: every check passes, 713 clocks, PC 443):
 !   1. the whole fix removed (carryIndex unindexed for P = 4 and

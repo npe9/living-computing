@@ -2538,11 +2538,13 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 #   2 execute() half only (EX):     RI fails (5); 713
 #   3 I-box half only (late read):  RJ fails (8); 713
 #   4 indexed twice:                RA-RH and RJ fail, RI passes; 684
-# The 713 pin predates e996f2c's vflImmIndexedSaving, which charges an
-# indexed immediate differently: expect this pin to move at that merge.
+# CYCLES 713 -> 711 at the batch29 merge onto e996f2c's
+# vflImmIndexedSaving (an indexed immediate's indexing costs 1 clock, not
+# 2).  MEASURED on the merged tree with the saving forced to 0: 713;
+# with it: 711.  Every value check unchanged.
 run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program.sh ../decks/vfl_immediate_indexed.strap StretchVflImmIdxTb \
     "PC=443" \
-    "CYCLES=713+-0" \
+    "CYCLES=711+-0" \
     "RA:272=8" "RB:273=16" "RC:274=3" "RD:275=6" "RE:276=1024" \
     "RF:277=8" "RG:278=7" "RH:279=15" "RI:280=15" "RJ:281=15"
 
