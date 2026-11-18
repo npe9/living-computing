@@ -2,7 +2,8 @@
 ! CHECKS", p.154 (octal 020632.40-020664.40, the block's own exit
 ! "BD,$+1.0").  F217B and F217C follow.
 !
-! CYCLES PIN, 2026-11-17: 549 clocks to halt (tests/run_tests.sh).
+! CYCLES PIN, 2026-11-17: 546 clocks to halt (tests/run_tests.sh);
+! 549 before the preparation floor (measured with it removed).
 ! Before the FP divide was charged Table 2's divide row with its
 ! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
 ! 7030'S REDUCTION LOOP"), the same deck took 466; with the box's
@@ -62,9 +63,6 @@
 ! its first step.  So F217A pins the exponent table thoroughly and the
 ! quotient FRACTION hardly at all; nothing here develops a
 ! non-trivial 48-bit quotient.  Nor does anything read LZC or PF.
-!
-! RE-PINNED 2026-11-18: CYCLES 549 -> 546.  Measured at HEAD; the preparation-floor cause is inferred:
-! STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 546 at HEAD with this change removed, and 546 with it.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

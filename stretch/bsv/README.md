@@ -1149,6 +1149,47 @@ K within half a clock, L +1. FP only, as the LAAR. VFL INTERNL (+4 on the
 7030) was not changed then; see the next section. `decks/fp_internal_operand.strap`;
 `docs/atlas_oracle.md` "Closing the residuals" item 8.
 
+### LFT to memory, $R behind the LAAR, indexed M+ after the hold (2026-11-17)
+
+Three changes, sourced in `docs/atlas_oracle.md` "Closing the residuals"
+item 10 and pinned by `decks/fp_to_memory_laar.strap`.
+
+- **LFT takes the LAAR** (`StretchIBox.fpLaarStore`: word 14). This is
+  timing only; its `storeAddr` stays Invalid. The sources:
+  - Vol. 1 printed p.3-20 says $FT is "bona fide main memory".
+  - Printed p.3-21 names LFT among the "floating-point-to-memory
+    operations".
+  - Vol. 2 printed 34D (PDF 41) lists the LFT pages as "to memory".
+
+  It takes ST's memory remainder (9, not refitted). An LFT from memory or
+  $X waits for the LAAR at the head (`lftWait`), not at its load
+  (`lftDeferredLaar`). That choice is a RECONSTRUCTION: the pages print
+  memory and $X9 a clock apart, so the fetch is hidden. It is in tension
+  with p.3-21, which puts the wait at decoding.
+- **An FP internal operand's fetch waits for the LAAR as well as the
+  E-box** (`StretchCore.intFrom`). The address needs the one LAAR
+  (p.3-20, p.3-21). In homogeneous runs this moves only LFT and M+ from
+  $R. After any FP store it delays a following $R fetch, which no atlas
+  page measures.
+- **An indexed FP operand in index storage, prepared out of the
+  index-store decode hold, spends its index read and its I-Checker pass
+  (2 + 2) before the load** (`fpHoldSerialClocks`, `xholdPc`,
+  `serialPaid`). This is a RECONSTRUCTION fitted to the one difference
+  the pages print: M+ prints 4 clocks more indexed than unindexed.
+
+Atlas medians, before → after:
+
+| Column | Before | After |
+|---|---|---|
+| LFT $R (PDF 99) | −11.53 | −0.53 |
+| LFT EXTERNAL | −8.80 / −5.22 | +0.47 |
+| LFT I-BOX | −7.52 | +1.47 |
+| M+ I-BOX indexed (PDF 69; 70, 100, 101 held out) | −5.22 | −1.22 |
+| M+ $R | −5.06 | −3.07 |
+
+The control columns did not move: ST, L, +, M+ unindexed and M+
+EXTERNAL.
+
 ### A VFL internal operand (2026-11-17)
 
 The same sentence of p.3-20 is not limited to floating point, and the
@@ -1160,7 +1201,7 @@ or 5-12 (StretchIBox `vflInternalFetch`) until `vflInternalOperandClocks`
 FP figure (7) is not reused because its remainder is the FP store path,
 which the VFL E-box fits already contain. No LAAR gate is added for VFL
 (the queuing is inside those fits). `decks/vfl_internal_operand.strap`;
-`docs/atlas_oracle.md` "Closing the residuals" item 10.
+`docs/atlas_oracle.md` "Closing the residuals" item 11.
 
 ### After a VFL store into index storage, the next decode waits (2026-11-17)
 
@@ -1180,7 +1221,7 @@ follows the hold. The charge is made only for an E-box-class successor:
 an I-box instruction's budget already serializes its own decode from
 dispatch, so charging it here would count it twice.
 `decks/vfl_index_store_decode.strap`; `docs/atlas_oracle.md` "Closing the
-residuals" item 11.
+residuals" item 12.
 
 ### An interruption is due: start nothing new (2026-11-18)
 

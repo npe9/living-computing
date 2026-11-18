@@ -53,8 +53,12 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
              max_steps_check=None, stop_at_pc=None, wait_for_io=False,
-             stop_at_pc_hits=1):
-    """checks: list of (label:str, word_addr_expr:str, expected:int).
+             stop_at_pc_hits=1, pc_log=None):
+    """pc_log: optional list of (first, last) half-word ranges; every
+    change of the PC into one is displayed as "PCLOG <hw> <step>", for a
+    diagnosis of which path a run took (off by default).
+
+    checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
     simulated card reader (StretchIO.chanReader) before the program
@@ -173,6 +177,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  Reg#(Bool) opTrailWas <- mkReg(False);")
         lines.append("  Reg#(HWordAddr) opTrailLastPc <- mkReg(0);")
         lines.append("  Reg#(Bit#(32)) opTrailCount <- mkReg(0);")
+    if pc_log:
+        lines.append("  Reg#(HWordAddr) pcLogLast <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     if mem_dump:
         lines.append("  Reg#(Bit#(32)) dumpI <- mkReg(0);")
@@ -311,6 +317,11 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("      stopHits <= stopHits + 1;")
         lines.append(f"      if (stopHits + 1 == {stop_at_pc_hits}) stoppedAtPc <= True;")
         lines.append("    end")
+    if pc_log:
+        cond = " || ".join(f"(core.getPC() >= {a} && core.getPC() <= {b})" for a, b in pc_log)
+        lines.append("    pcLogLast <= core.getPC();")
+        lines.append(f"    if (core.getPC() != pcLogLast && ({cond})) "
+                     '$display("PCLOG %0d %0d", core.getPC(), stepCount);')
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
         lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")

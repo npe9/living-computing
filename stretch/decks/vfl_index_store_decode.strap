@@ -1,7 +1,7 @@
 ! vfl_index_store_decode.strap -- AFTER A VFL STORE INTO INDEX STORAGE,
 ! THE NEXT INSTRUCTION IS DECODED ONLY WHEN THE NEW INDEX CONTENTS HAS
 ! ARRIVED.  Built 2026-11-17 with StretchCore's redecodeAfterHold
-! (docs/atlas_oracle.md, "Closing the residuals" item 11).
+! (docs/atlas_oracle.md, "Closing the residuals" item 12).
 !
 ! THE SOURCE.  Perf. Char. Vol. 1 printed p.3-21 (PDF 39, read in the
 ! image): "A store into index storage is a time-consuming operation.

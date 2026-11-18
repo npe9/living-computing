@@ -4485,6 +4485,22 @@ run "Store into an instruction a pending level will store: not prepared until th
 run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
     "RES:1153=0x28000000000000"
 
+# LFT IS A "TO MEMORY" OPERATION; ITS $R OPERAND WAITS FOR THE ONE LAAR;
+# AN INDEXED M+ INTO INDEX STORAGE PREPARES IN SERIES AFTER THE DECODE
+# HOLD (2026-11-17; StretchIBox's fpLaarStore / lftDeferredLaar,
+# StretchCore's intFrom / lftWait / xholdPc, StretchTiming's
+# fpHoldSerialClocks; docs/atlas_oracle.md "Closing the residuals" item
+# 10).  Six M+ into $X9, six indexed, eight LFT from memory, eight from $R.
+# CYCLES 776 is the model as of the change; no other pin moved.  OBSERVED
+# INJECTIONS (each reverted from a saved copy, checked with cmp; FT and PC
+# pass in every one; the control fp_internal_operand stays at 208 in all):
+# fpLaarStore without LFT 656; intFrom = eboxDoneAt 738; serialNow = 0 752
+# (24 = 4 a copy over the six indexed M+); lftDeferredLaar False (LFT
+# gated at its load) 846.
+# RE-PINNED 2026-11-18 (merge of batch26 with the VFL INTERNL branch): CYCLES 776 -> 780.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold) -- the deck's "ST(BU,64,8), \$X9" is a VFL store into index storage and the L(U) after it is E-box class; with the redecode arm disabled the merged tree gives 776.
+run "FP to memory: LFT takes the LAAR (p.3-21, PDF 41), \$R waits for it (p.3-20), indexed M+ after the index-store hold" ./run_program.sh ../decks/fp_to_memory_laar.strap StretchFpToMemLaarTb ASM=strap2 "PC=2084" "CYCLES=780+-0" \
+    "FT:14=0x0028000000000000"
+
 # A VFL OPERAND IN AN INTERNAL REGISTER WAITS FOR THE E-BOX (2026-11-17,
 # StretchCore's headReady intWait; StretchIBox's vflInternalFetch;
 # StretchTiming's vflInternalOperandClocks = 4, FITTED on the atlas's PDF
@@ -10807,8 +10823,10 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 # all three pins (and prints "OVERRAN THE E-BOX BUDGET" on F217A and
 # F217WA, where the box's walk is longer than the 5-clock floor); the
 # VFL divide pins (vfl_divide_box 2148, vfl_divide 1979) are the control.
+# MERGED onto the 2026-11-17 preparation floor (batch22): F217A takes
+# 546, F217WA 1005 and F217XA 522 (MEASURED with the floor removed: 549,
+# 1011, 527 as above).
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
-# RE-PINNED 2026-11-18: CYCLES 549 -> 546.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 546 at HEAD with this change removed, and 546 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -10830,7 +10848,6 @@ run "FP divide indicators (jb_af1c F217D on the model)" ./run_program.sh ../deck
     "SEN:712=0"
 
 run "FP divide double arithmetic (jb_af1c F217WA, encoding)" python3 verify_fp_arith_f217wa_listing.py
-# RE-PINNED 2026-11-18: CYCLES 1011 -> 1005.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 1005 at HEAD with this change removed, and 1005 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP divide double arithmetic (jb_af1c F217WA on the model)" ./run_program.sh ../decks/fp_arith_f217wa.strap StretchFpDivDblATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217wa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -10857,7 +10874,6 @@ run "FP divide double remainder underflow (jb_af1c F217WE on the model)" ./run_p
     "SEN:712=0"
 
 run "FP reciprocal divide arithmetic (jb_af1c F217XA, encoding)" python3 verify_fp_arith_f217xa_listing.py
-# RE-PINNED 2026-11-18: CYCLES 527 -> 522.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 522 at HEAD with this change removed, and 522 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_program.sh ../decks/fp_arith_f217xa.strap StretchFpRecipDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -15378,6 +15394,20 @@ run "MCP's loader loads C, P and D cards through the RECONSTRUCTED p.329" ./run_
 # MEASURED (the test's header): "the largest wins" dropped moves A, STE and
 # POL; the secondary count dropped moves RANDM's size and rows 4-10.
 run "Reconstructed BSS prints C28-6379 p.17's storage map (Example 4)" python3 check_bss_example4.py
+# R2b (docs/reading_notes/fortran_bss_plan.md): the table that reconstructed
+# BSS builds, read by MCP's OWN resume load and loader (pp.320-334, from
+# YRESL1), $FETCH a labelled stub over core images of TWS and the LB areas:
+# Example 4 must load as p.17 lays it out, with and without library calls.
+# MEASURED (the test's header): count one high on the last entry fails only
+# the fetch count (C11); the deck's disk address one card late, its library
+# name left in A8, and its common origins a half word late each break it.
+run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 check_bss_mcp_load.py
+# R2b, the job half: B TYPE,GO,FORTRAN through MCP's own UNCODE, p.271's
+# rewrite and pp.384/395-396 into KSILO; then YC4INT, WJC4G and resume load
+# load the reconstructed BSS processor from its type area, and BSS prints
+# p.17's map.  MEASURED (the test's header): ABSSID spelled BSX fails the
+# eight 1a checks; two type-area cards swapped stop the loader at card 41.
+run "MCP runs GO,FORTRAN: job control, resume load, BSS prints p.17's map" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

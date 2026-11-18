@@ -2,7 +2,7 @@
 ! ($L) WAITS FOR THE E-BOX.  Built 2026-11-17 with StretchCore's
 ! headReady (intWait), StretchIBox's vflInternalFetch and StretchTiming's
 ! vflInternalOperandClocks (docs/atlas_oracle.md, "Closing the
-! residuals" item 10).
+! residuals" item 11).
 !
 ! THE SOURCE.  Perf. Char. Vol. 1 printed p.3-20 (PDF 38, read in the
 ! image): "The I-box, upon decoding an instruction whose fetch operand is

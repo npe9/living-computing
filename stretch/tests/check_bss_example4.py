@@ -43,7 +43,8 @@ The relocation table (the loader's layout, docs/bss_loader_spec.md 5.4) and
 KSILO words 8-11 are checked word for word against expect(), computed
 here from the stubs; that half tests the deck against its own CHOSEN rules
 (the deck's header, C3-C14), not against a printed page.  The relocation
-table is NOT yet fed to MCP's loader (that is R2b).
+table is fed to MCP's own loader by check_bss_mcp_load.py (R2b), which
+loads the job as p.17 lays it out.
 
 FURTHER RUNS, the messages (C28 pp.22-23): UST* removed from the library
 (T.V. UST* INCOMPLETE IN IOCS* SUBPROGRAM, with the console line), *MAIN*

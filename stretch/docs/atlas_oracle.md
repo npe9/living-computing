@@ -1451,9 +1451,138 @@ documented events only. No new number: the index remainder (17) is item
 
 The indexed columns stay 4 short: the page prints M+ indexed 4 clocks
 over unindexed, and the model 0, because the store's decode hold
-(`xstoreFreeAt`) hides the indexed preparation's extra clocks. Open.
+(`xstoreFreeAt`) hides the indexed preparation's extra clocks. Closed by
+item 10's serial preparation (−5.22 → −1.22).
 
-### 10. A VFL internal operand waits for the E-box too
+### 10. LFT is a "to memory" operation; an indexed M+ into index storage
+
+The base is master `b18e74c` (items 1-9), re-measured on the pages below
+(`--rebuild`). It reproduces item 9's and the full run's medians: LFT $R
+−11.53, M+ indexed I-BOX −5.22.
+
+**What the sources say** (page images):
+
+- Vol. 1 printed p.3-20 (PDF 38): "$Z, $IA, $MB, and $RM, $FT and $TR are
+  *bona fide* main memory locations." So LFT, which writes $FT, is a store
+  into memory. The same page: the I-box "uses the LAAR to store the
+  internal operand address".
+- Vol. 1 printed p.3-21 (PDF 39): "Since there is only one LAAR, if the
+  latter is busy whenever the I-box decodes an instruction requiring LAAR,
+  a wait must occur until the LAAR is free for reloading. ...
+  Measurements on consecutive floating-point-to-memory operations (*ST*,
+  *MT*, *LFT*, etc.) do not therefore yield realistic timing information."
+- Vol. 2 printed 34D (PDF 41): "The following pages refer to 'to memory'
+  operations: ... pp. 61, 92 (LFT)". Those are PDF 68 and 99.
+- Vol. 1 Table 2 (printed p.3-3, PDF 21) gives LFT the same 2 + 1 cycles
+  as L. That is only the E-box. PDF 68/99 print LFT at 14.5 clocks from
+  memory, 13.5 from $X9 (with and without indexing) and 22.5 from $R,
+  where L prints 4.4, 6 and 10.
+- No page says which clocks make up M+'s indexing cost. PDF 69 prints M+
+  into $X9-$X12 at 7.86 µs unindexed and 9.07 µs indexed. That is 4.0
+  clocks. PDF 70 (M+MG) and PDF 100-101 (with forwarding) print the same.
+  The fetch pages show 2 clocks (item 5), and ST into $X shows 1 (PDF 48).
+
+**Diagnosis.**
+
+- LFT. The model gave LFT no LAAR, so it ran like L. Every LFT column was
+  short: EXTERNAL −8.80 (PDF 68) / −5.22 (PDF 99), I-BOX −7.52, $R −11.53.
+- M+ indexed. Item 9's decode hold (`xstoreFreeAt`) absorbed the indexed
+  preparation that `ibusy` charges after the load. So M+ indexed cost the
+  same as unindexed.
+
+**Changes.**
+
+1. `StretchIBox.fpLaarStore`. LFT takes the LAAR for word 14. This is
+   timing only: its `storeAddr` stays Invalid, so the hazards and the
+   commit path are unchanged. `laarRetire` gives LFT `laarStorePost`'s
+   memory remainder, 9, which is ST's fit reused without refitting.
+2. `StretchIBox.lftDeferredLaar` and `StretchCore.lftWait`. An LFT whose
+   operand is not internal is loaded, and its operand fetched, without
+   the LAAR gate. It waits for the LAAR at the head instead.
+   **RECONSTRUCTION.**
+   - The pages print memory and $X9 a clock apart, so the operand fetch
+     is hidden under the store path.
+   - Gating at the load would put the fetch in series. Measured with the
+     gate at the load and no remainder: EXTERNAL +1.45, I-BOX −5.52.
+     Adding the remainder there would put EXTERNAL at about +10.
+   - This is in tension with p.3-21, which places the wait at decoding.
+3. `StretchCore.intFrom`. An FP internal operand's fetch starts when the
+   E-box is done *and* the LAAR is free (`laarFreeAt`), not at E-box done
+   alone. The operand address needs the one LAAR (p.3-20, p.3-21).
+   - In a homogeneous run this moves only LFT and M+/M+MG from $R, the
+     operations that leave a store behind them.
+   - It also applies after *any* FP store. For example, an ST followed
+     by + from $R now waits the ST's remainder too. No atlas page measures
+     that mixed sequence.
+4. `StretchTiming.fpHoldSerialClocks` and `StretchCore.xholdPc` /
+   `serialPaid`. Take an FP instruction that rl_prepare held behind a
+   store into index storage (words 1, 2, 16-31; not STORE WAIT's 11/12),
+   that is indexed, and that fetches from index storage. It spends
+   `fpIndexedIboxClocks` + `fpIboxCheckClocks` (2 + 2) before it is
+   loaded, and the same is taken off its `ibusy` after the load.
+   **RECONSTRUCTION**, fitted to the one difference the pages print:
+   - The two clocks are the index read (p.3-18) and the operand's
+     I-Checker pass (p.3-19 item 2). They are two reads of index storage
+     in turn, which cannot start before the new index contents arrive.
+   - Unindexed, the read is hidden (that column was already −1.18).
+   - The state is tagged by the instruction's address. It is cleared by
+     every preparation and by rl_recover and rl_interrupt.
+
+**Measured** (`tests/atlas_oracle.py`, n = 32 per column; median, mean):
+
+| PDF, column | base | after |
+|---|---|---|
+| 68 LFT, ni_ext / ix_ext | −8.80 / −8.77 | +0.43 / +0.47 |
+| 68 LFT, ni_ibox / ix_ibox | −7.52 / −5.55 | +1.47 / +1.43 |
+| 99 LFT, ni_ext / ix_ext | −5.22 / −5.22 | +0.47 / +0.47 |
+| 99 LFT, ni_ibox / ix_ibox | −7.52 / −5.55 | +1.47 / +1.43 |
+| **99 LFT, ni_int / ix_int ($R)** | **−11.53** | **−0.53** |
+| **69 M+, ix_ibox** | **−5.22 / −4.51** | **−1.22 / −0.52** |
+| 70 M+MG, ix_ibox (held out) | −5.22 / −4.64 | −1.22 / −0.64 |
+| 100, 101 M+/M+MG, ix_ibox (held out) | −5.22 | −1.22 |
+| 69, 70, 100, 101 ni_ibox (control) | −1.18 | unchanged |
+| 69 M+ ni_ext / ix_ext (control) | +2.59 / +2.61 | unchanged |
+| 100 M+, ni_int / ix_int ($R) | −5.06 | −3.07 (`intFrom`) |
+| 101 M+MG, ni_int / ix_int ($R) | −5.06 | −3.07 |
+| 48 ST, 79 ST (all columns), 64 L, 95 L (controls) | | unchanged, case for case against the base TSV |
+| 42 +, 73 + (controls; not in the base run) | | summary figures equal items 7-8's tables (73 ni_int −0.00 / +0.18, 42 ni_ext +0.00 / +0.20) |
+
+Each step was measured on its own tree:
+
+- LFT LAAR alone, with the gate at the load and no remainder: EXTERNAL
+  +1.45, I-BOX ni −5.52, $R −11.53 unchanged. `intWait` bound it, not
+  the LAAR.
+- Adding `intFrom`: $R −9.53, M+ $R −3.07.
+- Adding the head gate and the remainder: the table above.
+- The serial preparation was measured on its own (M+ ix_ibox −1.22). It
+  was re-measured with the address-tagged state on the final tree.
+
+**What is left.**
+
+- LFT I-BOX is +1.45.
+- M+ from memory is still +2.6 (PDF 69) and +5.8 (PDF 100). M+ gets the
+  documented events alone, while LFT and ST take the memory remainder.
+  That inconsistency is open.
+- ST indexed into $X prints 1 clock over unindexed (PDF 48), and the
+  model gives 0. The serial step is not applied to ST, which fetches
+  nothing.
+- D/ is named by the same sources, and is not built here. PDF 41 lists
+  D/ (pp. 48, 79) as "to memory". p.3-20 names $RM, the remainder D/
+  writes, beside $FT as a memory location. So D/ should take the LAAR as
+  LFT now does. The divide pages are disowned as a timing (PDF 41), so
+  there is no clean oracle for it.
+- **UNTESTED** by any deck or injection:
+  - the narrowing of `xholdPc` to index storage, as against STORE WAIT's
+    words 11 and 12;
+  - the clears in `rl_recover` and `rl_interrupt`;
+  - LFT's memory remainder, separately from its LAAR hold (the injections
+    remove the hold or move the gate);
+  - `intFrom` after an ST or another non-LFT FP store. No deck has a $R
+    fetch behind an FP store.
+- Bounded (`CYCLES<=`) figures in run_tests.sh were not compared against a
+  base log. Only the exact pins are known not to have moved.
+
+### 11. A VFL internal operand waits for the E-box too
 
 **Diagnosis.** On the forwarding pages the model gave every INTERNL cell
 (operand at 8.0, $L; PDF 114, printed 107) its EXTERNL figure, and the
@@ -1481,7 +1610,7 @@ look-ahead step it is consistent with p.3-19, but that split is
 RECONSTRUCTION. It revives, with a measured number, the "wait for the
 E-box before fetching an E-box register" draft dropped in item 2.
 
-### 11. After a VFL store into index storage, the next decode starts when the hold ends
+### 12. After a VFL store into index storage, the next decode starts when the hold ends
 
 **Diagnosis.** VFL stores into $X0-$X3 (PDF 117 M+, 124 ST, 144 M+, 151
 ST, I-BOX columns) were 12.3 clocks short unindexed and 14.3 indexed,
@@ -1718,9 +1847,11 @@ faster I-box widens it:
      2026-11-17** ("Closing the residuals", item 2: the LAAR, with a
      fitted store path). FP M+/M+MG to an index register **DONE
      2026-11-17** (item 9; unindexed median −18.18 → −1.18, indexed
-     −22.22 → −5.22).
-     VFL I-box stores **DONE 2026-11-17** (item 11: −12.28 → −0.28,
-     indexed −14.30 → −0.30). Still open: the WB XOVR stores.
+     −22.22 → −5.22; indexed → −1.22 by item 10's serial preparation).
+     LFT, a "to memory" operation (PDF 41), **DONE 2026-11-17** (item
+     10: EXTERNAL +0.47, I-BOX +1.47, $R −11.53 → −0.53).
+     VFL I-box stores **DONE 2026-11-17** (item 12: −12.28 → −0.29,
+     indexed −14.30 → −0.31). Still open: the WB XOVR stores.
   3. An accumulator operand is charged as if it were external: the 7030
      adds about 4 clocks (VFL INTERNL), 10 with crossover, and 3-15 on
      the FP $R column. **OPEN.** The FP $R stores now match (item 2).
@@ -1728,7 +1859,9 @@ faster I-box widens it:
      for the E-box and takes the store path (check, 2 documented, + the
      ST $R remainder, 5 FIT, reused; equating the two paths is CHOSEN).
      + is exact at the median, K +0.5, and L, LWF and `*` are +1 on every
-     row (SRD and SRT were +1 before and did not move). VFL INTERNL **DONE 2026-11-17** (item 10: −4 → −0.00 on +, L, `*`, ST,
+     row (SRD and SRT were +1 before and did not move). M+/M+MG $R
+     −5.06 → −3.07 (item 10: the fetch also waits for the LAAR). VFL
+     INTERNL **DONE 2026-11-17** (item 11: −4 → −0.00 on +, L, `*`, ST,
      the connectives; LFT −8 → −4; the internal crossover, −9 / −21, open).
   4. Immediate compares (KI … KFEI) are charged by field length.
      **DONE 2026-11-17** (item 4). Mean +7 → +3; the rest is the

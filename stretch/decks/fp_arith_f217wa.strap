@@ -2,7 +2,8 @@
 ! CHECKS", pp.158-159 (octal 020772.40-021062.40, the block's own exit
 ! "BD,$+1.0").
 !
-! CYCLES PIN, 2026-11-17: 1011 clocks to halt (tests/run_tests.sh).
+! CYCLES PIN, 2026-11-17: 1005 clocks to halt (tests/run_tests.sh);
+! 1011 before the preparation floor (measured with it removed).
 ! Before the FP divide was charged Table 2's divide row with its
 ! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
 ! 7030'S REDUCTION LOOP"), the same deck took 902; with the box's
@@ -40,9 +41,6 @@
 ! quotient bits.  WA4 and WA5 pin that half: both have dividends at +2
 ! and want -46 and -47.  All seven remainder FRACTIONS are zero, so
 ! nothing here develops a non-trivial remainder.
-!
-! RE-PINNED 2026-11-18: CYCLES 1011 -> 1005.  Measured at HEAD; the preparation-floor cause is inferred:
-! STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 1005 at HEAD with this change removed, and 1005 with it.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.
