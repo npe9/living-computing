@@ -24,6 +24,36 @@ accumulate.
 
 
 
+## D/ AND THE LAAR -- EXAMINED, NOT BUILT, 2026-11-18
+
+This was the open item "D/ should take the LAAR". **The sources say D/
+does take it, the atlas leaves no room for it, and the model is
+unchanged.** `docs/atlas_oracle.md` "Closing the residuals" item 14 has
+the pages and the table.
+
+**The sources.**
+- Vol. 2 PDF 41 lists D/ (pp. 48, 79) as "to memory". It is the only op
+  on that list the model did not already route through the LAAR.
+- $RM is memory (Vol. 1 p.3-20).
+- R23-9732 Fig. 3.2.21 (PDF 113) routes the remainder through the FP
+  store ABC and inhibits it on a zero divisor.
+- R23-9732 Fig. 3.8.16 (PDF 242) latches the ACOB at END OP.
+
+**Measured on a scratch copy, then reverted and checked with `cmp`.**
+D/ given LFT's head gate and ST's memory remainder moves every D/
+memory and I-box column from −0.03 / −0.00 to +10.96 / +11.00. With
+the documented events only (the 0.6 µs check), they go to +1.97 / +2.00.
+- PDF 54 `/` is +1 in both, which is the control.
+- `$R` goes −3.07 → +7.93 / −1.06.
+- Table 2 already accounts for six of the seven clocks between D/ and
+  `/` (PDF 55 against PDF 54), and the seventh is the +1 that D* and D+
+  show too.
+
+**Open.**
+- What hides D/'s store path on the 7030. No page found says.
+- A D/ followed by an FP store or a $R fetch, which no page measures.
+- p.3-21's "MT", which matches no FP op code.
+
 ## ATLAS: I-BOX SUPPLY -- two residuals reduced, what is left, 2026-11-17
 
 `docs/atlas_oracle.md` "Closing the residuals" item 13 has the tables.
@@ -245,7 +275,9 @@ same 3 + 2 = 5 (Table 2; R23-9732 fig. 3.8.15 sheet 3, PDF 241, printed
 8-19, Part E note 1: "FLOATING POINT DIVIDE OR DIVIDE DOUBLE RECIPROCAL
 DIVIDE IS TERMINATED IN THE SAME MANNER AFTER 2"); `R/` is 4 + 5.
 
-**Still open, measured:** the INTERNAL ($R) columns.  `/` and `R/`
+**Still open, measured:** the INTERNAL ($R) columns. (2026-11-18: on the
+merged tree D/ $R is −3.07, not −10; the merge added the FP internal-operand
+wait. See atlas_oracle.md item 14.)  `/` and `R/`
 went from -25 / -27 to -6; `D/` went from -5 to **-10**.  The model's
 D/ internal is now 6 clocks, which equals the 5-clock zero-divisor
 charge plus the removal clock.  The INFERENCE (not confirmed with the
@@ -18844,7 +18876,8 @@ Still open on these pages:
 - ST indexed into $X is 1 clock short (PDF 48).
 - D/ is not built. PDF 41 lists it (pp. 48, 79) as "to memory" beside
   LFT, and $RM is memory (p.3-20), so it should take the LAAR too. The
-  divide pages are disowned as a timing.
+  divide pages are disowned as a timing. **Examined 2026-11-18, not
+  built**: see "D/ AND THE LAAR" at the top.
 - UNTESTED: `xholdPc`'s narrowing to index storage, its clears in
   rl_recover and rl_interrupt, LFT's remainder apart from its hold, and
   `intFrom` after a non-LFT FP store (atlas_oracle.md item 10).

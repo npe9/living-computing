@@ -1244,6 +1244,16 @@ Atlas medians, before → after:
 The control columns did not move: ST, L, +, M+ unindexed and M+
 EXTERNAL.
 
+**D/, the other FP divide on PDF 41's "to memory" list, does not take
+the LAAR (2026-11-18). This was examined and is not built.**
+- The sources say it should:
+  - $RM is memory (p.3-20).
+  - R23-9732 Fig. 3.2.21 stores the remainder through the FP store ABC.
+- The atlas has no room for it. Given LFT's mechanism, PDF 55/86 D/ moves
+  from exact to +11. With the check alone it moves to +2.
+- `docs/atlas_oracle.md` "Closing the residuals" item 14 has the pages and
+  the measurements.
+
 ### A VFL internal operand (2026-11-17)
 
 The same sentence of p.3-20 is not limited to floating point, and the

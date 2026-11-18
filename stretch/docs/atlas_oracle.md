@@ -1417,7 +1417,7 @@ others did not move in item 7:
 | 97, 98 | DL, DLWF | 32 / 16 / −1.02 / −1.02 | |
 | 74, 78 | D+, D+MG | 32 / 10-12 / −1.00 / −3.0 | PDF 40: "$R was changed during ... double length operations", data |
 | 85, 87 | /, R/ | 32 / 0 / −20.00 | divide, item 7 of "What remains" |
-| 86 | D/ | 32 / 0 / +1.93 | |
+| 86 | D/ | 32 / 0 / +1.93 | −3.07 on 2026-11-18, after the divide box (item 14) |
 | 88 | *+ | 32 / 18 / −0.00 / −2.13 | |
 | 99 | LFT | 32 / 0 / −11.53 | |
 | 100, 101 | M+, M+MG | 32 / 0 / −5.06 / −5.27 | |
@@ -1571,7 +1571,9 @@ Each step was measured on its own tree:
   D/ (pp. 48, 79) as "to memory". p.3-20 names $RM, the remainder D/
   writes, beside $FT as a memory location. So D/ should take the LAAR as
   LFT now does. The divide pages are disowned as a timing (PDF 41), so
-  there is no clean oracle for it.
+  there is no clean oracle for it. **Examined 2026-11-18 (item 14), not
+  built.** Every variant that holds the LAAR as p.3-20 says moves
+  PDF 55/86 D/ from exact to between +2 and +11.
 - **UNTESTED** by any deck or injection:
   - the narrowing of `xholdPc` to index storage, as against STORE WAIT's
     words 11 and 12;
@@ -1949,6 +1951,120 @@ batch27's LFT/LAAR and index-store-hold work as well: FP LFT (PDF 68)
 +0.43/+0.47 and LFT $R (PDF 99) +0.47 EXTERNAL; FP M+ (PDF 69) EXTERNAL
 +3.97/+3.99 and M+ $R (PDF 100) +6.31, the same as on this branch alone.
 
+### 14. D/ and the LAAR: the sources say it takes it, but the atlas has no room for it (2026-11-18)
+
+**Not built. A finding, with the model unchanged.** This is item 10's
+open entry, "D/ should take the LAAR as LFT now does". The base is
+master `7360598`.
+
+**What the sources say** (every page read in its image):
+
+- **Vol. 2 printed 34D (PDF 41).** The pages that "refer to 'to memory'
+  operations" are pp. 41/72 (ST), 42/73 (SLO), 43/74 (SRD), 44/75 (SRT),
+  **48/79 (D/)**, 61/92 (LFT), 62/93 (M+) and 63/94 (M+MG).
+  - `/` and `R/` are not on the list. D/ is the only divide on it.
+  - Every other operation on the list already takes the LAAR in the
+    model, so this list adds no other FP instruction. p.3-21's "(ST, MT,
+    LFT, etc.)" names an "MT" that matches no FP op code (`fpop_*`,
+    StretchTypes.bsv). It is not equated with M+ here.
+  - The same page: "The present measurements for /, D/, and R/ do not
+    give a realistic timing, since the latter is strongly data
+    dependent."
+- **Vol. 1 printed p.3-20 (PDF 38).** "$Z, $IA, $MB, and $RM, $FT and
+  $TR are *bona fide* main memory locations." D/ writes its remainder
+  into $RM, address 13 (Ref. Manual p.94, quoted at StretchExecute's D/
+  arm). Printed p.3-21 (PDF 39): "Since there is only one LAAR ... a wait
+  must occur until the LAAR is free for reloading."
+- **R23-9732 Fig. 3.2.21, "Store ABC actions -- arithmetic bus timer"
+  (PDF 113, printed 2-29/2-30, stamped 2/1/62).** On the ACOB store
+  branch (LAOP X2 and 13, "FP STORE") is the test "HAS A ZERO DIVISOR
+  CANCELLED ANY REMAINDER THAT WAS TO BE STORED?". If YES, "STORE INHIBIT
+  MEM" TRIG ON. So D/'s remainder goes to memory by the look-ahead's FP
+  store path, the one that holds the LAAR, and a zero divisor cancels the
+  memory write without leaving that path. The page is from the two-LAAR
+  build (NEXT.md, "THE SHIPPED MACHINE HAS TWO LAARs"), while every atlas
+  timing is 3/8/61.
+- **R23-9732 Fig. 3.8.16, "Floating-point divide double (timing)" (PDF
+  242, printed 8-20).** The remainder normalization loops come last.
+  "LOOP 2 FRACTION TO A CHECKER" and "EXP TO CHECKER" are followed by
+  "ACOB LATCH / SAMPLE REMAINDER INDICATORS" at END OP. So the store
+  operand reaches the ACOB only when the E-box finishes. It is then
+  checked, as ST's operand is (p.3-19). Nothing in the figure starts the
+  store before END OP.
+- **Vol. 1 Table 2 (printed p.3-5, PDF 23).** D/ is "Same as *Divide*
+  plus 6 cycles (remainder norm <= 6) 2 cycles for each additional
+  remainder norm. of 6". The row has no store term.
+
+**What the atlas leaves room for.**
+
+- PDF 54 (`/`) prints 7.50 µs and PDF 55 (D/) 9.60 µs, for the same
+  operands. The difference is 7.0 clocks.
+- Table 2's D/ row accounts for 6 of them. The seventh is the clock the
+  atlas shows D* and D+ over Table 2 as well (FP DIVIDE TIME, NEXT.md).
+- That leaves no clock for a store path in a homogeneous D/ run. Yet
+  PDF 41 says these to-memory pages "actually refer to the worst possible
+  situations" of LAAR queuing.
+
+**Measured** (`tests/atlas_oracle.py`, n = 32 per column, medians). Two
+variants were built and run on a scratch copy and then reverted; every
+file was checked with `cmp` against the saved originals.
+
+| PDF, column | base | V1: as LFT (head gate + ST's memory remainder 9) | V2: head gate, documented events only (E-box + 0.6 µs check) |
+|---|---|---|---|
+| 55 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 |
+| 55 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 |
+| 86 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 |
+| 86 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 |
+| 86 D/ ni_int / ix_int ($R) | **−3.07** | +7.93 | −1.06 |
+| 54 / (control, all columns) | +1.00 | +1.00 | not run |
+
+- **V1** is `fpLaarStore` giving D/ word 13, `lftDeferredLaar` true for
+  D/, and `isFpLft` true for D/ (that gives it the remainder).
+- **V2** is the same without the `isFpLft` term, so D/ gets
+  `laarCheckClocks` and no remainder.
+- Gating at the load, as p.3-21 places the wait, would be at least as
+  long as V1 (item 10 measured this for LFT).
+
+**Why nothing is built.**
+
+- Every variant that keeps p.3-20's "busy from the time of look-ahead
+  loading until the proper operand is ... checked, and accepted" pushes
+  the D/ memory and I-box columns from exact to +2 (V2) or +11 (V1).
+- The only column V2 improves is $R. There, `D/ $R` divides by a zero
+  divisor after the first copy, as DERIVED below, and Fig. 3.2.21 says
+  that store is cancelled.
+- A variant that frees the LAAR at E-box done, with no check, would leave
+  every page where it is. It would also drop the documented 0.6 µs check
+  and the MBCU's acceptance, and no page would measure it. That would be
+  a mechanism fitted to show nothing, so it is not built either.
+- Nor is the divide time refitted to make room. `/` and `R/` are not
+  on PDF 41's list and are already +1 with the same box.
+
+**What this leaves.** The documents say D/ holds the LAAR, and the
+atlas, which PDF 41 disowns as a divide timing, shows no cost for it. The
+two are reconciled only if the D/ remainder's store path is hidden under
+something the model does not overlap. No page found says what that is. A
+D/ followed by an FP store or a $R fetch would wait for the LAAR on the
+7030 (p.3-21), and does not in the model. No atlas page measures that
+mixed sequence.
+
+**DERIVED, not run: why D/ $R divides by zero.** D/ zeroes accumulator
+bits 61-107 (Ref. Manual p.94). After the first copy, $R (the right word,
+bits 64-127) has exponent bits 64-75 and fraction bits 76-107 zero. Its
+fraction bits 108-123 still hold what the oracle's set-up left there:
+the low fraction bits of the FP one, which are zero. So every later
+divisor is zero. The model's 12.9 clocks a copy are the 5-clock
+zero-divisor charge, plus the removal clock, plus `intWait`'s 7.
+
+**Corrections to this file.** The D/ $R column has been −3.07 at the
+median on this base (measured above). Item 8's table (+1.93) and NEXT.md's
+FP DIVIDE TIME (−10) are older readings.
+- Item 8's reading predates the divide box. D/ was then a flat 10, so
+  10 + 1 + 7 = 18 clocks against 16.
+- FP DIVIDE TIME's reading has the model's D/ internal at 6 clocks, 5 + 1
+  with no `intWait`. It was measured on a branch without item 8 (an
+  inference from the arithmetic). The merged tree adds item 8's 7 clocks.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -2058,7 +2174,7 @@ batch27's LFT/LAAR and index-store-hold work as well: FP LFT (PDF 68)
      column (the same +1 as `*`, PDF 52); PDF 55/86 `D/` −21.0 →
      **−0.03..0.00**.  Internal columns: `/`, `R/` −25/−27 → −6, `D/`
      −5 → −10 (a zero-divisor sequence in the model; docs/NEXT.md "FP
-     DIVIDE TIME").  The 1/1 the pages measure is the FASTEST divide
+     DIVIDE TIME"; it is −3.07 on the merged tree, item 14).  The 1/1 the pages measure is the FASTEST divide
      under the law (every cycle shifts six), which is what PDF 41's
      "do not give a realistic timing" means.  The VFL `/I` half is
      open.
