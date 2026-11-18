@@ -1225,6 +1225,29 @@ function VflRef vflRef(Bit#(6) code);
   endcase
 endfunction
 
+// >>> AND THE FLOATING-POINT OPERATIONS, 2026-11-18. <<<  The same
+// printed p.32 (PDF 35) definitions, and printed p.51 item a (PDF 54)
+// names the case outright: "In ADD TO MEMORY, when the operand in
+// storage is protected, only indicator DS will be actuated.  Indicator
+// DF will remain unchanged."  FP M+ (printed p.88, PDF 91): "The
+// exponent and fraction of the sum replace bits 0-59 of the storage
+// word"; M+MG (printed p.89, PDF 92): "Same operation as ADD TO MEMORY
+// except ...", "the sum replaces the addressed storage operand".  So
+// both are STORE-type although they read their word.  Every other FP
+// operation that reads its word leaves it alone (fetch-type); ST, SRD,
+// SLO and SRT store without reading; SHF and E+I address nothing
+// (pp.101-102).  Until this, execute() signalled and suppressed DF for
+// M+ and M+MG (`known && !isStoreClass`) and StretchIBox.prepareExec made
+// EVERY FP code complete without fetch when dfSuppresses held.  Both now
+// ask this one function (decks/fp_mplus_ds_not_df.strap).
+function Bool fpFetchType(Bit#(7) c) =
+     c == fpop_PLUS || c == fpop_PLUS_MG || c == fpop_L || c == fpop_LWF
+  || c == fpop_K || c == fpop_KMG || c == fpop_KR || c == fpop_KMGR
+  || c == fpop_STAR || c == fpop_D_STAR || c == fpop_LFT || c == fpop_STAR_PLUS
+  || c == fpop_SLASH || c == fpop_D_SLASH || c == fpop_R_SLASH
+  || c == fpop_E_PLUS || c == fpop_DL || c == fpop_DLWF
+  || c == fpop_D_PLUS || c == fpop_D_PLUS_MG || c == fpop_F_PLUS;
+
 // The connectives: CM replaces the storage field (store-type); C and CT
 // read it and leave it alone (printed p.76: CT's result "is not placed
 // anywhere"), so both are fetch-type.
@@ -8039,8 +8062,10 @@ function ActionValue#(ExecDispatch)
         // fetches an operand word; the store class (ST/SRT/SRD/SLO/
         // SHF/E+I) reads none, which is why it was lifted out into
         // fpStoreClass in the first place.
+        // M+ and M+MG are NOT in it since 2026-11-18: store-type, DS at
+        // their write (the note above fpFetchType).
         Bool dfSupp = False;
-        if (known && !isStoreClass) begin
+        if (fpFetchType(c)) begin
           ind = dfSignal(st, ea, ind);
           dfSupp = dfSuppresses(st, ea);
         end
@@ -8048,7 +8073,7 @@ function ActionValue#(ExecDispatch)
         // DF'S MASK-DEPENDENT HALF -- see dfSuppresses.  Only the
         // arithmetic class can reach it (the store class fetches
         // nothing, and an unknown code has already been decided), so
-        // this rides on the same `known && !isStoreClass` the signal
+        // this rides on the same fpFetchType(c) the signal
         // does.  Suppressed means: no readWordReq for the operand, no
         // fpArithClass call, so the accumulator, the result
         // indicators, MOP and the exponent-range indicators are all

@@ -2653,6 +2653,23 @@ run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p
     "RX4:3140=0x800000000000" "RX5:3141=0x400000040c04" "RSIC:3142=0" \
     "BITW:3143=0xc000000000000000" "MARK:3144=0xc000000000000000"
 
+# >>> FLOATING-POINT M+ AND M+MG ARE STORE-TYPE: DS, NEVER DF, 2026-11-18. <<<
+# RefMan printed p.51 item a (PDF 54): "In ADD TO MEMORY, when the operand in
+# storage is protected, only indicator DS will be actuated.  Indicator DF
+# will remain unchanged."  p.32's definitions; p.88-89 M+/M+MG replace the
+# storage word.  StretchExecute.fpFetchType, asked by execute() and
+# StretchIBox.prepareExec.  OBSERVED injections (scratch tree, restored,
+# cmp IDENTICAL):
+#   both sides back to the old class   resdf, resds (cases 0,1,3,4), CYCLES 990
+#   execute() only                     resdf, resds, CYCLES 991, MEMREADS 105
+#   prepareExec only                   CYCLES 998 only
+# CYCLES and MEMREADS are MODEL behaviour.
+run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_program.sh ../decks/fp_mplus_ds_not_df.strap StretchFpMpDsTb \
+    "PC=4352" \
+    "CYCLES=981+-0" \
+    "MEMREADS=103" \
+    "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
+    "fw:3264=0x0028000000000000"
 
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
