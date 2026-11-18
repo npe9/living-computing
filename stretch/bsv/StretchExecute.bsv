@@ -332,15 +332,14 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
         // the stepped counter; absolute, it would branch to 0.0, which
         // p.39 calls an invalid branching address.
         //
-        // KNOWN LIMIT, deliberate.  p.40 says ABSOLUTE VALUE, and an
-        // effective address can only go negative through index
-        // modification (p.20: the instruction's address part is "a
-        // positive unsigned field").  effAddr19 returns an unsigned
-        // 19-bit result with no sign carried alongside, so an
-        // index-modified BR whose effective address goes negative uses
-        // the wrapped value, not the magnitude.  Nothing transcribed
-        // exercises it and inventing a representation would be
-        // guessing.
+        // p.40 says ABSOLUTE VALUE, and an effective address can only
+        // go negative through index modification (p.20: the
+        // instruction's address part is "a positive unsigned field").
+        // Until 2026-11-18 effAddr19 wrapped a negative sum, so an
+        // index-modified BR whose effective address went negative used
+        // the wrapped value; it now returns the magnitude (effAddrSigned,
+        // p.21), which is exactly p.40's absolute value.
+        // decks/negative_effective_address.strap runs one.
         o.relative = (bm.code == 3'b011);
       end
     end
@@ -533,14 +532,72 @@ function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
   endactionvalue
 endfunction
 
-function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
+// A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE.  Fixed
+// 2026-11-18; until then all three helpers (this, effAddr19, effAddr18)
+// wrapped `raw - value` modulo 2**24, so an index whose magnitude
+// exceeded the address part gave an address near the top of storage
+// instead of the magnitude.  Reference Manual 22-6530-2, read in the
+// page images:
+//
+//   printed p.21 (PDF 24): "The effective address which results from
+//   an indexing operation always has 24 numeric bits and a sign. ...
+//   only the applicable part of the effective address is used. ...
+//   The effective address sign is not used in storage addressing or
+//   immediate data fields. ... A negative effective address is not
+//   considered to be invalid; its magnitude is used."
+//   printed p.45 (PDF 48), indicator AD: "A negative effective address
+//   is not invalid; the magnitude of such an address is used in the
+//   operation."
+//   printed p.20 (PDF 23), immediate addressing: "The sign of the
+//   effective address is ignored."  printed p.56 (PDF 59), VFL
+//   immediate: "The sign bit of the effective address is not used."
+//   printed p.40 (PDF 43), BR: "the absolute value of the effective
+//   address" is added to the instruction counter.
+//   printed p.14 (PDF 17): "The entire signed 24-bit address, with
+//   zeros inserted where instructions have fewer address bits,
+//   participates in the algebraic addition ... Where less than 24
+//   bits are needed in the effective address, the low-order bits are
+//   dropped" -- so the magnitude is taken IN THE 24-BIT DOMAIN and the
+//   word / half-word part is cut from it afterwards (effAddr18/19).
+//   printed pp.20-21 (PDF 23-24): a carry out of the high-order bit
+//   (positive index; "complement notation is used to obtain the
+//   equivalent of negative instruction addresses") "is ignored" -- the
+//   POSITIVE path still wraps, and must.
+//
+// The hardware agrees: TR00.722 (Stretch I-Unit Design, Mar 1960) PDF
+// 17 -- the 24-bit index adder has "a controlled complementer on one
+// input, with automatic recomplementing ability on the output" and
+// detects "end around carries": a ones'-complement adder whose negative
+// sums come out recomplemented, i.e. as sign and magnitude.
+//
+// ONE CLASS KEEPS THE SIGN: LOAD VALUE EFFECTIVE, printed p.28 (PDF
+// 31): "Bits 0-24 of the index word specified by J are replaced by the
+// effective value plus sign" -- so the LVE arm calls effAddrSigned and
+// stores `.sign`.  Everything else takes `.mag` through effAddr24/19/18.
+//
+// CHOSEN, not read: the sign of a ZERO sum (index -k on address k).
+// The pages do not say.  The end-around-carry adder above gives
+// a + ~a = all ones with no end-around carry, i.e. a negative zero that
+// is recomplemented, so a zero sum of a negative index is NEGATIVE
+// here.  Only LVE can see it, and no deck pins it.
+typedef struct { Bit#(1) sign; BitAddr mag; } SignedEA deriving (Bits, Eq, FShow);
+
+function SignedEA effAddrSigned(StretchStorage st, BitAddr raw, Bit#(4) idx);
   if (idx == 0)
-    return raw;
+    return SignedEA { sign: 0, mag: raw };
   else begin
     IndexWord x = st.readIndex(idx);
-    return (x.sign == 1) ? (raw - x.addr) : (raw + x.addr);
+    if (x.sign == 0)
+      return SignedEA { sign: 0, mag: raw + x.addr };   // carry ignored
+    else if (raw > x.addr)
+      return SignedEA { sign: 0, mag: raw - x.addr };
+    else
+      return SignedEA { sign: 1, mag: x.addr - raw };   // recomplemented
   end
 endfunction
+
+function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx) =
+  effAddrSigned(st, raw, idx).mag;
 
 // THE SECOND INDEX OF A VFL INSTRUCTION (IBM bits 60-63) MODIFIES ITS
 // LENGTH, BYTE SIZE AND OFFSET.  Reference Manual printed p.21 (PDF 24),
@@ -610,16 +667,18 @@ endfunction
 // Nothing caught it because no transcribed deck indexes a
 // floating-point or branch address at all -- the same fact that let
 // mutation_score.py's branch-target-unmodified survive until
-// branch_index_modified.strap existed.  effAddr24 was always right,
-// because for it the instruction address is already a bit address and
-// there is nothing to align.
+// branch_index_modified.strap existed.  effAddr24 had the ALIGNMENT
+// right, because for it the instruction address is already a bit
+// address and there is nothing to align -- but all three wrapped a
+// negative sum instead of taking its magnitude until 2026-11-18 (see
+// effAddrSigned); these two now take effAddr24's magnitude and cut
+// the applicable part from it.
 function HWordAddr effAddr19(StretchStorage st, HWordAddr raw, Bit#(4) idx);
   if (idx == 0)
     return raw;
   else begin
-    IndexWord x = st.readIndex(idx);
     BitAddr base = {raw, 5'b0};        // 19-bit half-word address -> bits 0-18
-    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);
+    BitAddr ea   = effAddr24(st, base, idx);   // the MAGNITUDE (see effAddrSigned)
     return ea[23:5];                   // only the applicable part
   end
 endfunction
@@ -644,9 +703,8 @@ function WordAddr effAddr18(StretchStorage st, WordAddr raw, Bit#(4) idx);
   if (idx == 0)
     return raw;
   else begin
-    IndexWord x = st.readIndex(idx);
     BitAddr base = {raw, 6'b0};        // 18-bit word address -> bits 0-17
-    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);
+    BitAddr ea   = effAddr24(st, base, idx);   // the MAGNITUDE (see effAddrSigned)
     return ea[23:6];                   // only the applicable part
   end
 endfunction
@@ -5843,29 +5901,29 @@ function ActionValue#(IndexOutcome)
               BitAddr a = (instrLen(h) == Full) ? h[31:8]
                         : (h[5:4] == 2'b10)     ? {h[31:14], 6'b0}
                         :                         {h[31:13], 5'b0};
-              BitAddr fea = effAddr24(st, a, h[3:0]);
+              SignedEA sfea = effAddrSigned(st, a, h[3:0]);
+              BitAddr fea = sfea.mag;
               idxWriteReg = di_.j; doIdxWrite = True;
-              // The VALUE field only, like LV: p.29 says the final
-              // effective address "is placed in the index register",
-              // and names only the index flag and index result
-              // indicators as the other things that change.
+              // The VALUE field only (bits 0-24), like LV: p.29 says
+              // the final effective address "is placed in the index
+              // register", and names only the index flag and index
+              // result indicators as the other things that change.
               //
-              // THE SIGN IS ZERO, AND THAT IS A BOUNDED ASSUMPTION
-              // rather than a reading.  p.21 says the effective
-              // address "always has 24 numeric bits and a sign", so
-              // in principle a signed value belongs here -- but the
-              // same page says "the effective address sign is not
-              // used in storage addressing", and "a negative
-              // effective address is not considered to be invalid;
-              // its magnitude is used".  effAddr24 above is written
-              // to that rule and returns a 24-bit magnitude with no
-              // sign to pass on, so this arm has none to store.  The
-              // difference is observable only for an LVE whose
-              // computed address is negative; nothing in this corpus
-              // does that, and LV beside it takes its sign from the
-              // loaded half-word because it is loading a VALUE, not
-              // an address.
-              idxWriteVal = IndexWord{addr:fea, sign:0, flag:x.flag,
+              // THE SIGN IS THE EFFECTIVE ADDRESS'S OWN, read 2026-11-18
+              // in the page image, printed p.28 (PDF 31): "Bits 0-24 of
+              // the index word specified by J are replaced by the
+              // effective value PLUS SIGN of the instruction found at
+              // the location specified by the effective address", and
+              // again "The final effective value plus sign is placed in
+              // the index register".  p.21's "the effective address
+              // sign is not used in storage addressing or immediate
+              // data fields" is about USING an address; LVE stores one
+              // as a value, sign and all.  Until 2026-11-18 this arm
+              // stored sign 0 on the belief -- wrong, see effAddrSigned
+              // -- that effAddr24 returned a magnitude it did not.  So
+              // an LVE whose target indexes negative now loads the
+              // magnitude with sign 1 (and XVLZ follows it).
+              idxWriteVal = IndexWord{addr:fea, sign:sfea.sign, flag:x.flag,
                                               spare:x.spare,
                                               count:x.count, refill:x.refill};
               ind = setIndexResultIndicatorsF(ind, idxWriteVal);

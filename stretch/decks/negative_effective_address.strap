@@ -1,0 +1,250 @@
+! A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE -- and LOAD
+! VALUE EFFECTIVE keeps its sign.
+!
+! An effective address goes negative only through indexing: the address
+! part is "a positive unsigned field" and the index value "a signed
+! 24-bit field" (Reference Manual 22-6530-2 printed p.20, PDF 23).  What
+! the machine then does with it, read in the page images 2026-11-18:
+!
+!   printed p.21 (PDF 24): "The effective address which results from an
+!     indexing operation always has 24 numeric bits and a sign.  ... only
+!     the applicable part of the effective address is used.  ... The
+!     effective address sign is not used in storage addressing or
+!     immediate data fields. ... A negative effective address is not
+!     considered to be invalid; its magnitude is used."
+!   printed p.45 (PDF 48), indicator AD: "A negative effective address is
+!     not invalid; the magnitude of such an address is used in the
+!     operation."
+!   printed p.14 (PDF 17): "The entire signed 24-bit address, with zeros
+!     inserted where instructions have fewer address bits, participates
+!     in the algebraic addition ... Where less than 24 bits are needed in
+!     the effective address, the low-order bits are dropped."  So the
+!     magnitude is formed on 24 bits FIRST and the word / half-word part
+!     cut from it after (checks D, E, F, G tell the two orders apart).
+!
+! PER CLASS (every class that indexes goes through the same 24-bit sum):
+!   VFL direct, fetch and store (A, A2, B): magnitude, p.21.
+!   VFL immediate (C): p.20 (PDF 23) "The sign of the effective address
+!     is ignored"; p.56 (PDF 59) "The sign bit of the effective address
+!     is not used."
+!   Floating point, 18-bit word address (D): magnitude, word part, p.21.
+!   Direct index arithmetic, 19-bit half-word (E: LV): p.23 (PDF 26)
+!     "19 bits of the effective address are used"; magnitude, p.21.
+!   Immediate index arithmetic (LVI, V+I ...): NOT INDEXED -- p.24 (PDF
+!     27) "the index field I is not available and no address modification
+!     by indexing takes place" -- so no case here.
+!   Branch (F: B): "bits 0-18 of the effective address", p.39 (PDF 42).
+!   Branch relative (G: BR): p.40 (PDF 43) "the ABSOLUTE VALUE of the
+!     effective address" is added to the instruction counter.
+!   LVE (H): THE ONE CLASS THAT KEEPS THE SIGN -- p.28 (PDF 31): "Bits
+!     0-24 of the index word specified by J are replaced by the effective
+!     value plus sign"; XVLZ follows the stored value.
+!   FP immediate shift (I: SHFL): amount and direction are "effective
+!     address bits 0-11", p.102 (PDF 105) -- cut from the magnitude.
+!   Transmit (J: TI): "Only 18 bits of each effective address are
+!     used", p.30 (PDF 33); left half bit-addressed, right half 19 bits.
+!   Indicator branch (L: BXVZ), I field one bit (X1 or none), p.40 (PDF
+!     43); the same effAddr19 as B.  (An ARITHMETIC-indicator branch is
+!     also targeted at StretchCore's look-ahead load -- not given a case.)
+!   I/O (left bits 12-18, right 32-49, p.111 PDF 114: "index arithmetic
+!     extends over ... the whole value field of the index word, including
+!     its sign"), EX/EXIC, R/RCZ: the same helpers; NO case here.
+!   Progressive indexing uses the index VALUE as the address (p.21) --
+!     a stored magnitude -- and was never affected.
+!   The positive path still WRAPS: a carry out of the high-order bit "is
+!     ignored", pp.20-21 (K, the control).
+! Hardware: TR00.722 (I-Unit Design, Mar 1960) PDF 17 -- the index adder
+! has "a controlled complementer on one input, with automatic
+! recomplementing ability on the output" and "end around carries": a
+! negative sum comes out recomplemented, as sign and magnitude.
+!
+! NO IBM LISTING WE HOLD WAS FOUND TO DO IT.  Dynamic census 2026-11-18:
+! the whole suite was run with the fix in place and nothing changed -- no
+! CHECKED result of any deck it runs depends on a negative effective
+! address.  Limits: it sees only checked results, only paths the decks
+! run, and many MCP page transcriptions only assemble.  Static leads
+! traced, none of them a negative register used as an I field:
+!   MCP's negative queue entries ("a negative address indicates ... the
+!     location to which the program should branch", C22-6728-1), the
+!     LVNI,VT5,<label> sites on printed pp.216-258: stored by SV and made
+!     a branch address by SVA (p.228 line 7, "SVA,VT2,1.(VP)"), which
+!     takes value bits and no sign.
+!   p.244 lines 41-43 "LVNI,$12,$ / V+I,$12,4.0 / B,RYSET.32": the
+!     .32 entry skips p.245 line 28's LVI and reaches line 29
+!     "SVA,$12,RBSP3X" -- SVA again; $12 is reloaded before any use as I.
+!   ax5b test 160's I60K9 (-1.0) and I60K11 (-3.0): loaded into X0 only.
+!   I00VO (all ones, negative): X0, or X2 in ibox4_rnx_run, which is not
+!     then used as an I field.
+! NOT traced: the zero-address dispatches (BR,0($14) p.265, BR,0.0($4)
+! pp.151/153, B,0.0($1/$3/$8) ...) for the sign their registers carry;
+! the untranscribed diagnostic PDFs.  So this deck is the oracle.
+!
+! EACH VALUE SEPARATES WRAP, MAGNITUDE, AND WORD-PART-THEN-NEGATE:
+!   X1 = -(8)2000.0, X2 = -(8)2000.10, X4 = -.12, X6 = +.20,
+!   X7 = -(8)2000.05, X8 = -(8)2010.41, X10 = -(8)2000.01
+!   A  L(BU,64),(8)1200.0($X1)  EA -(8)600.0  -> DA        (wrap: AD)
+!   A2 L(BU,8),(8)1200.0($X2)   EA -(8)600.10 -> byte 1 = 2
+!   B  ST(BU,64),(8)377.0($X1)  EA -(8)1401.0 -> RB = 55
+!   C  LI(BU,24),5($X4)         -7            -> 7  (wrap 16777209)
+!   K  LI(BU,24),(8)777777.70($X6)  2**24-8+20 -> 12 (both)
+!   D  L(U),(8)200.0($X7)       -(8)1600.05   -> word (8)1600 (FPD0);
+!        word part first, then negated: (8)1601 (FPD1)
+!   E  LV,$X9,(8)200.0($X8)     -(8)1610.41   -> half-word (8)1610.32
+!        (22); word part first: (8)1611.0 (33)
+!   H  LVE of "L(BU,8),(8)100.0($X1)"  -> value (8)1700.0, SIGN 1, XVLZ
+!   I  SHFL(U),768.0($X1)       -256 words    -> left 2 (wrap: left 2046)
+!   J  TI,1,(8)200.0($X1),(8)373.0($X8)  FPD0 -> RT (8)1415; receiver
+!        half-word first: (8)1416 (RTF, must stay 0)
+!   F  B,(8)600.0($X10)         -(8)1200.01   -> (8)1200.0, the LVI there
+!        (value 32); half-word first: (8)1200.40, X11 stays 0
+!   G  BR,0($X10) at (8)1300.0  +2048 half-words -> (8)3300.40 (value
+!        32); half-word first: (8)3301.0, X13 stays 0
+!   L  BXVZ,(8)540.0($X1)       -(8)1240.0    -> the LVI there (32)
+!   RAD: no AD from the data classes.  The branches run LAST: an
+!   injected wrap sends one to an uninstalled word, which ends the run.
+!
+! CYCLES 811, PC 455 (the control).  The injections' clock differences
+! are the program's own path (AD no-ops, skipped stores, a run ended
+! early); the fix moved no existing deck's pin (full suite, 2026-11-18).
+! MEASURED INJECTIONS (2026-11-18; StretchExecute.bsv restored from a
+! saved copy and checked with cmp after each):
+!   1. the whole fix removed (the batch29 file): RA 0, RA2 0, RB 0,
+!      RC 16777209, RD 0, RE 0, RH 0xff10000000000000 (wrapped value,
+!      sign 0), RHX 0, RI 0, RT 0, RAD 1, RF 0, RG 0, RL 0; the run
+!      ends at PC 0 after F's B; 645 clocks.
+!   2. effAddr19 alone wraps: RE, RT, RF, RG, RL fail (0); PC 0; 631.
+!   3. effAddr18 alone wraps: RD 0, RI 0, RAD 1; 827 clocks.
+!   4. LVE stores sign 0: RH (sign bit clear, value right), RHX 0; 783.
+!   5. effAddr18/19 take the word / half-word part of the wrapped sum
+!      and negate THAT: RD = FPD1, RE = 33 (0x21...), RT 0 and RTF =
+!      FPD0, RF 0, RG 0; 789.  (L passes: X1 has no low-order bits.)
+!   6. only the indicator-branch arm (execute()'s BranchInd target)
+!      wraps: ONLY RL fails (0), the run ending at PC 0; 777 clocks.
+! OBSERVED, NOT INVESTIGATED (docs/NEXT.md): under 1, 2 and 6 a branch
+! to an uninstalled half-word did not execute as a NO OPERATION (p.21:
+! "A branch instruction with an invalid address is also executed as a
+! NO OPERATION"); the run ended and the PC read 0.
+!
+        SLC, (8)300.0
+START   LX,  $X1, XM1                ! -(8)2000.0     (1024 words)
+        LX,  $X2, XM2                ! -(8)2000.10    (1024 words + 8 bits)
+        LX,  $X4, XM4                ! -.12           (12 bits)
+        LX,  $X6, XP6                ! +.20           (20 bits)
+        LX,  $X7, XM7                ! -(8)2000.05    (1024 words + 5 bits)
+        LX,  $X8, XM8                ! -(8)2010.41    (1032 words + 33 bits)
+        LX,  $X10, XM10              ! -(8)2000.01    (1024 words + 1 bit)
+! ---- A. VFL direct fetch, word level
+        LI(BU,24), 0
+        L(BU,64), (8)1200.0($X1)
+        ST(BU,64), RA
+! ---- A2. VFL direct fetch, bit level
+        LI(BU,24), 0
+        L(BU,8), (8)1200.0($X2)
+        ST(BU,64), RA2
+! ---- B. VFL store
+        LI(BU,24), 55
+        ST(BU,64), (8)377.0($X1)
+! ---- C. VFL immediate
+        LI(BU,24), 5($X4)
+        ST(BU,64), RC
+! ---- K. control: positive index, carry out of the top ignored
+        LI(BU,24), (8)777777.70($X6)
+        ST(BU,64), RK
+! ---- D. floating point, 18-bit word address
+        L(U), FPZ
+        L(U), (8)200.0($X7)
+        ST(U), RD
+! ---- E. direct index, 19-bit half-word address
+        LVI, $X9, 0
+        LV,  $X9, (8)200.0($X8)
+        SV,  $X9, RE
+! ---- H. LVE stores the effective value plus sign
+        LVE, $X14, TL
+        BZB, $XVLZ, H1
+        LI(BU,24), 1
+        ST(BU,64), RHX
+H1      SX,  $X14, RH
+! ---- I. floating shift, amount from effective address bits 0-11
+        L(U), FPSH
+        SHFL(U), 768.0($X1)
+        ST(U), RI
+! ---- J. transmit, one word: 24-bit source (word part), 19-bit receiver
+        TI,  1, (8)200.0($X1), (8)373.0($X8)
+! ---- no AD from any data class above (the branches below would
+!      no-op on an invalid address, and are last for that reason)
+        BZB, $AD, F0
+        LI(BU,24), 1
+        ST(BU,64), RAD
+! ---- F. unconditional branch
+F0      LVI, $X11, 0
+        B,   (8)600.0($X10)
+        LVI, $X11, 3                 ! fell through: the branch was a no-op
+        B,   FDONE
+FDONE   SX,  $X11, RF
+! ---- G. branch relative
+        LVI, $X13, 0
+        B,   GSITE
+GDONE   SX,  $X13, RG
+! ---- L. an indicator branch, whose I field is one bit (X1 or none)
+        LVI, $X15, 0                 ! XVZ on
+        LVI, $X5, 0
+        BXVZ, (8)540.0($X1)
+        LVI, $X5, 3                  ! fell through: the branch was a no-op
+        B,   LDONE
+LDONE   SX,  $X5, RL
+        B,   PASS
+PASS    BEW, $
+        CNOP
+! ---- data
+        SLC, (8)600.0
+DA      DD(BU,64), 72623859790382856  ! 0x0102030405060708
+        SLC, (8)1200.0
+TB      LVI, $X11, 1                 ! the magnitude, cut to a half-word
+        B,   FDONE                   ! (8)1200.40: entered here = floored
+        SLC, (8)1240.0
+        LVI, $X5, 1                  ! the magnitude: -(8)1240.0
+        B,   LDONE
+        SLC, (8)1300.0
+GSITE   BR,  0($X10)
+        LVI, $X13, 3                 ! fell through: the branch was a no-op
+        B,   GDONE
+        SLC, (8)3300.40
+        LVI, $X13, 1                 ! the magnitude, cut to a half-word
+        B,   GDONE                   ! (8)3301.0: entered here = floored
+        SLC, (8)1400.0
+RA      DD(BU,64), 0
+RB      DD(BU,64), 0
+RC      DD(BU,64), 0
+RK      DD(BU,64), 0
+RD      DD(BU,64), 0
+RE      DD(BU,64), 0
+RF      DD(BU,64), 0
+RG      DD(BU,64), 0
+RH      DD(BU,64), 0
+RHX     DD(BU,64), 0
+RI      DD(BU,64), 0
+RAD     DD(BU,64), 0
+RA2     DD(BU,64), 0
+RT      DD(BU,64), 0             ! (8)1415.0: the magnitude's word
+RTF     DD(BU,64), 0             ! (8)1416.0: word part first: must stay 0
+RL      DD(BU,64), 0
+        SLC, (8)1600.0
+FPD0    DD(BU,64), 2251799813685248  ! the magnitude's word
+FPD1    DD(BU,64), 1125899906842624  ! floored word: must not be read
+        SLC, (8)1610.0
+        VF,  11
+        VF,  22                      ! (8)1610.32: the magnitude's half-word
+        VF,  33                      ! (8)1611.0: floored half-word
+        VF,  44
+        SLC, (8)2400.0
+XM1     XW,  -(8)2000.0, 0, 0
+XM2     XW,  -(8)2000.10, 0, 0
+XM4     XW,  -.12, 0, 0
+XP6     XW,  .20, 0, 0
+XM7     XW,  -(8)2000.05, 0, 0
+XM8     XW,  -(8)2010.41, 0, 0
+XM10    XW,  -(8)2000.01, 0, 0
+TL      L(BU,8), (8)100.0($X1)       ! LVE target: EA -(8)1700.0
+FPZ     DD(BU,64), 0
+FPSH    DD(BU,64), 1099511627776     ! fraction bit IBM 23
+        END, START

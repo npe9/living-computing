@@ -201,16 +201,34 @@ The EX path's injection reaches only the `L` site of the ten
 will move the pin -- re-measure at the merge (a timing move, not a
 semantic one: the injections above all ran at the control's clocks).
 
-**Found, not fixed: a NEGATIVE effective address should give its
-magnitude.** p.20: "The sign of the effective address is ignored"; p.21:
-"A negative effective address is not considered to be invalid; its
-magnitude is used." `effAddr24` returns `raw - x.addr` wrapped to 24
-bits, so `LI(BU,24),5($X)` with X = -7 would load 2^24 - 2, not 2. The
-comment at StretchExecute's LVE arm says effAddr24 "returns a 24-bit
-magnitude" -- it does not. It is shared by every addressed operand, so
-the fix is its own change (and needs a deck for the direct case too: the
-magnitude of a negative DATA address, not just an immediate). No deck in
-the corpus produces a negative effective address that we know of.
+**A negative effective address now gives its magnitude -- fixed
+2026-11-18.** `effAddrSigned` in StretchExecute.bsv; effAddr24/19/18
+take its magnitude in the 24-bit domain and cut the applicable part
+after (printed p.14 PDF 17, p.21 PDF 24, p.45 PDF 48; BR's "absolute
+value", p.40 PDF 43), and LVE stores it WITH its sign (p.28 PDF 31,
+"the effective value plus sign"; it stored sign 0 on the belief that
+effAddr24 returned a magnitude). The positive path still wraps (pp.20-21,
+the carry "is ignored"). CHOSEN: a zero sum of a negative index is -0
+(TR00.722 PDF 17's end-around-carry adder); only LVE can see it,
+unpinned. `decks/negative_effective_address.strap` covers VFL fetch /
+store / immediate, FP, LV, transmit, B, BR, an indicator branch, LVE,
+SHFL with injections; the full suite with the fix changed nothing, so
+no CHECKED result of a deck we run depends on it. No IBM listing was
+found doing it; the leads traced (MCP's LVNI queue entries and p.244's
+LVNI,$12,$, both reaching SVA, not an I field; ax5b I60K9/K11 and
+I00VO, loaded into X0 / unindexed X2) are in the deck header. NOT
+traced: the zero-address dispatches (BR,0($14), B,0.0($1) ...) for the
+sign of their registers, the untranscribed diagnostic PDFs. Not given
+cases: I/O, EX/EXIC, R/RCZ (same helpers).
+
+**Observed, not investigated: a branch to an uninstalled address may
+not be a NO OPERATION.** p.21 (PDF 24): "A branch instruction with an invalid
+address is also executed as a NO OPERATION" (and AD, p.45). Under the
+wrap injections of negative_effective_address.strap, `B,(8)600.0($X10)`
+to half-word ~2**19-1281 ended the run (the PC read 0) instead of
+falling through. A grep found no branch-target `installed()` test in
+StretchExecute / StretchCore / StretchIBox (the data paths have one);
+not looked at further. Its own change, with a deck.
 
 ## COMPLETES WITHOUT FETCH -- 2026-11-18; six of eight clauses pinned, one model bug fixed
 
