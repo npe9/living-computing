@@ -4479,6 +4479,21 @@ run "Store into an instruction a pending level will store: not prepared until th
 run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
     "RES:1153=0x28000000000000"
 
+# LFT IS A "TO MEMORY" OPERATION; ITS $R OPERAND WAITS FOR THE ONE LAAR;
+# AN INDEXED M+ INTO INDEX STORAGE PREPARES IN SERIES AFTER THE DECODE
+# HOLD (2026-11-17; StretchIBox's fpLaarStore / lftDeferredLaar,
+# StretchCore's intFrom / lftWait / xholdPc, StretchTiming's
+# fpHoldSerialClocks; docs/atlas_oracle.md "Closing the residuals" item
+# 10).  Six M+ into $X9, six indexed, eight LFT from memory, eight from $R.
+# CYCLES 776 is the model as of the change; no other pin moved.  OBSERVED
+# INJECTIONS (each reverted from a saved copy, checked with cmp; FT and PC
+# pass in every one; the control fp_internal_operand stays at 208 in all):
+# fpLaarStore without LFT 656; intFrom = eboxDoneAt 738; serialNow = 0 752
+# (24 = 4 a copy over the six indexed M+); lftDeferredLaar False (LFT
+# gated at its load) 846.
+run "FP to memory: LFT takes the LAAR (p.3-21, PDF 41), \$R waits for it (p.3-20), indexed M+ after the index-store hold" ./run_program.sh ../decks/fp_to_memory_laar.strap StretchFpToMemLaarTb ASM=strap2 "PC=2084" "CYCLES=776+-0" \
+    "FT:14=0x0028000000000000"
+
 # CROSSING STORES: THE COVERAGE GAPS CLOSED (docs/NEXT.md, 2026-11-17).
 # Three decks, expectations hand-derived in each header.  EVERY injection
 # below was observed on these three decks only (not the rest of the
