@@ -101,7 +101,8 @@
 !        32); half-word first: (8)3301.0, X13 stays 0
 !   L  BXVZ,(8)540.0($X1)       -(8)1240.0    -> the LVI there (32)
 !   RAD: no AD from the data classes.  The branches run LAST: an
-!   injected wrap sends one to an uninstalled word, which ends the run.
+!   injected wrap sends one to an uninstalled word (which ended the run
+!   before 2026-11-18, and now sets AD and falls through).
 !
 ! CYCLES 811, PC 455 (the control).  The injections' clock differences
 ! are the program's own path (AD no-ops, skipped stores, a run ended
@@ -120,10 +121,16 @@
 !      FPD0, RF 0, RG 0; 789.  (L passes: X1 has no low-order bits.)
 !   6. only the indicator-branch arm (execute()'s BranchInd target)
 !      wraps: ONLY RL fails (0), the run ending at PC 0; 777 clocks.
-! OBSERVED, NOT INVESTIGATED (docs/NEXT.md): under 1, 2 and 6 a branch
-! to an uninstalled half-word did not execute as a NO OPERATION (p.21:
-! "A branch instruction with an invalid address is also executed as a
-! NO OPERATION"); the run ended and the PC read 0.
+! OBSERVED THEN (docs/NEXT.md): under 1, 2 and 6 a branch to an
+! uninstalled half-word did not execute as a NO OPERATION (p.21: "A
+! branch instruction with an invalid address is also executed as a NO
+! OPERATION"); the run ended and the PC read 0.  FIXED 2026-11-18
+! (StretchExecute branchAddrInvalid, decks/branch_invalid_address.strap):
+! the table above was measured BEFORE that fix and was not re-measured.
+! Under it, injections 1, 2 and 6 would no longer end the run at a
+! wrapped branch target -- the branch sets AD and falls through to the
+! "fell through" path (RF/RG/RL = 3) and the later checks run; the
+! failure SETS stay non-empty, the clock counts would differ.
 !
         SLC, (8)300.0
 START   LX,  $X1, XM1                ! -(8)2000.0     (1024 words)

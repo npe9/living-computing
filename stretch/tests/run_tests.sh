@@ -2624,6 +2624,36 @@ run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" 
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
 
+# >>> A BRANCH TO AN INVALID ADDRESS IS SUPPRESSED AND SETS AD, 2026-11-18. <<<
+# RefMan printed p.21 (PDF 24) "A branch instruction with an invalid address
+# is also executed as a NO OPERATION"; p.39 (PDF 42) "The addresses between
+# 0.0 and 31.32 are invalid branching addresses"; p.45 item 16; p.52 (PDF
+# 55): Class S suppression, BE/BD/BEW's enable change excepted.  Before:
+# a taken branch to uninstalled core ended the run, one below 32 ran the
+# register words.  StretchExecute.branchAddrInvalid, every branch arm.
+# CHOSEN (deck header): successful branches only; AD beside EXE under EX.
+# OBSERVED injections (scratch tree, restored, cmp IDENTICAL):
+#   whole fix off / B arm off      run ends at case 0, PC 0, CYCLES 175
+#   below-32 half off              hangs at LOWHIT (PC 4388)
+#   installed half off             step cap, every result 0
+#   gate ignores "taken"           RESAD, RESX, RX4, CYCLES 1586, MEMREADS 139
+#                                  (and fp_mplus_ds_not_df CYCLES/MEMREADS)
+#   CB / BranchInd / SIC / BB arm off   lost at case 7 / 4 / 14 / 13
+#   BE enable suppressed too       MARK, RESAD, CYCLES 1513, MEMREADS 130
+#   indicator clear not suppressed RESX (cases 5 and 6), CYCLES 1550, MEMREADS 136
+#   count not suppressed           RX3, RX5
+#   no AD beside EXE               RESAD, CYCLES 1564
+# CYCLES and MEMREADS are MODEL behaviour: no printed time for the no-op.
+run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p.52)" ./run_program.sh ../decks/branch_invalid_address.strap StretchBrInvTb \
+    "PC=4387" \
+    "CYCLES=1567+-0" \
+    "MEMREADS=138" \
+    "RESAD:3136=0xef87000000000000" "RESFT:3137=0xffff800000000000" \
+    "RESX:3138=0x0601000000000000" "RX3:3139=0x400000140000" \
+    "RX4:3140=0x800000000000" "RX5:3141=0x400000040c04" "RSIC:3142=0" \
+    "BITW:3143=0xc000000000000000" "MARK:3144=0xc000000000000000"
+
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and

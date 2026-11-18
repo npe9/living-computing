@@ -1279,9 +1279,9 @@ endfunction
 // address alarm indicators."  So the `a >= 32` guard is not an
 // optimisation of protViolates' carve-out -- it is a different rule,
 // and without it a branch to the permanently protected words 1-3
-// would raise IF where the machine raises AD.  NOTE: this model does
-// not yet raise AD for a branch below 32 either, so such a branch
-// currently raises NEITHER.  Stated here rather than left silent.
+// would raise IF where the machine raises AD.  (Until 2026-11-18 this
+// model raised AD for such a branch nowhere, so it raised NEITHER; the
+// branch arms now ask branchAddrInvalid, below, and set AD.)
 function Bool ifViolates(StretchStorage st, WordAddr a) =
   (a >= 32) && protViolates(st, a);
 
@@ -1307,6 +1307,74 @@ function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
 // of the instruction counter -.32 is not a B,$MCP".
 function Bool ifViolatesAfter(StretchStorage st, WordAddr a, Bool enabled) =
   (a >= 32) && protViolatesEn(st, a, enabled);
+
+// >>> A BRANCH TO AN INVALID ADDRESS IS SUPPRESSED AND SETS AD,
+// 2026-11-18. <<<  Reference Manual 22-6530-2, read in the page images:
+//
+//   printed p.21 (PDF 24): "When an effective word address is obtained
+//   which does not correspond to a core storage location that is
+//   physically available in a particular installation, indicator AD,
+//   address invalid, is turned on.  An instruction with an invalid data
+//   address is executed as a NO OPERATION instruction.  A branch
+//   instruction with an invalid address is also executed as a NO
+//   OPERATION."
+//   printed p.39 (PDF 42): "The addresses between 0.0 and 31.32 are
+//   invalid branching addresses.  All other available 19-bit addresses
+//   are valid."
+//   printed p.45 item 16 (PDF 48): "The affected instruction is executed
+//   as a NO OPERATION.  Branching to an address below 32 also actuates
+//   the indicator."
+//   printed p.51 item c (PDF 54): "An effective branch address that is
+//   both invalid and protected will cause only the actuation of
+//   indicator AD.  Indicator IF will remain unchanged because an
+//   instruction has not been fetched."
+//   printed p.52 (PDF 55): AD is a Class S alert -- "the execution of an
+//   instruction in progress will be suppressed" -- and "the suppression
+//   of an instruction must necessarily exclude ... 1. The actuation of
+//   those indicators, associated with the instruction, of Class S ...
+//   4. The changing of the state of the interruption system which
+//   occurred as specification of BRANCH ENABLED, BRANCH DISABLED, or
+//   BRANCH ENABLED AND WAIT."
+//
+// So the TWO HALVES of "invalid" are this one predicate: a word below 32
+// (p.39) or a word not installed (p.21).  Every branch arm asks it of
+// the FINAL target (BR's is fall-through + displacement, p.40) and, if
+// it holds, does nothing but set AD: no branch, no count or refill (CB,
+// CBR), no indicator clear (the B..Z forms), no bit change (BB), no
+// counter store (SIC).  BE/BD/BEW STILL change the enable state, by
+// p.52 item 4 -- that is what "suppressed" excludes.
+//
+// ONLY A SUCCESSFUL BRANCH IS ASKED, and that is a reading, stated: p.21
+// says "a branch instruction with an invalid address" without a
+// condition.  p.45 says "BRANCHING to an address below 32", and p.52's
+// worked example (SIC + CBR under EXECUTE) says the invalid SIC address
+// and the protected branch address "are encountered because the
+// condition for branching is met.  When, however, ... the condition for
+// branching is not met, ... only indicator DF is actuated."  So an
+// untaken conditional branch (and NOP) with an invalid address field
+// runs as it always did -- counts, clears, changes its bit -- and sets
+// no AD.  decks/branch_invalid_address.strap pins both sides.
+//
+// UNDER EXECUTE the same example has the subject's condition met
+// actuate "EXE, AD, IF, and DF" together, so a subject branch whose
+// target is invalid sets AD beside EXE (the arms' EXE paths below).
+// (IF beside EXE is the same example's and is NOT done here; recorded
+// in docs/NEXT.md.)
+//
+// NOT HERE: EX/EXIC subject locations (p.50 lets EX's subject sit
+// anywhere, EXIC's has its own 32 rule in its arm), and p.52's "third
+// example", the instruction counter stepped past the end of storage,
+// which is sequential fetch, not a branch -- unbuilt, docs/NEXT.md.
+function Bool branchAddrInvalid(HWordAddr t) =
+  (t[18:1] < 32) || !installed(t[18:1]);
+
+// The target a taken BranchOutcome names: BR's is relative (p.40).
+function HWordAddr branchTarget(BranchOutcome o, HWordAddr fallthrough) =
+  o.relative ? (fallthrough + o.target) : o.target;
+
+// A taken branch whose final target is invalid.
+function Bool branchAdSuppressed(BranchOutcome o, HWordAddr fallthrough) =
+  o.taken && branchAddrInvalid(branchTarget(o, fallthrough));
 
 // THE ARITHMETIC RESULT INDICATORS OF AN INTEGER OPERATION, BOTH RADICES
 // (one function since 2026-11-16).  Reference Manual printed p.47 (PDF
@@ -6975,10 +7043,9 @@ function ActionValue#(ExecDispatch)
     // raises NEITHER: p.50 says the subject "may occupy any addressable
     // location", so there is no invalid address to report.  The two
     // rules happen to agree on the numeric test and disagree on what
-    // else happens, and the model gets both right today only because
-    // it does not raise AD for a branch below 32 either (ifViolates'
-    // own note says so).  Stated so that a later AD implementation does
-    // not reach for this call site.
+    // else happens.  The branch arms raise AD for a branch below 32
+    // since 2026-11-18 (branchAddrInvalid) -- and deliberately NOT
+    // here: this call site must never ask that predicate.
     if (ex.ifSig) ind = setBit(ind, ind_IF, 1);
 
     // INDEX-REGISTER WRITES ARE DEFERRED TO ONE CALL, EXACTLY LIKE
@@ -7082,12 +7149,15 @@ function ActionValue#(ExecDispatch)
           // and neither is `o.ind`, which carries the index result
           // indicators of a count that p.45 item 18 says never
           // happened ("The subject operation was suppressed").
+          // AD (branchAddrInvalid): suppressed, so no count or refill.
+          Bool adSupp = branchAdSuppressed(o, fallthrough);
+          if (adSupp) ind = setBit(ind, ind_AD, 1);
           if (ex.under && o.taken)
             ind = setBit(ind, ind_EXE, 1);
-          else begin
+          else if (!adSupp) begin
             ind = o.ind; doIdxWrite = o.doIdxWrite;
             idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
-            if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+            if (o.taken) next = branchTarget(o, fallthrough);
           end
         end
       end
@@ -7106,11 +7176,15 @@ function ActionValue#(ExecDispatch)
         // but it sits on PDF p.92, which the transcription
         // (decks/ax5b_162_test1cc.strap) cuts away at I6225 --
         // its header says so in as many words.
+        // AD (branchAddrInvalid): suppressed, so a B..Z form's clear
+        // does not happen either.
+        Bool adSupp = branchAdSuppressed(o, fallthrough);
+        if (adSupp) ind = setBit(ind, ind_AD, 1);
         if (ex.under && o.taken)
           ind = setBit(ind, ind_EXE, 1);
-        else begin
+        else if (!adSupp) begin
           ind = o.ind;
-          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+          if (o.taken) next = branchTarget(o, fallthrough);
         end
       end
 
@@ -7154,6 +7228,10 @@ function ActionValue#(ExecDispatch)
           // Routine 1262 TEST 1CC's I6227 and I6232 probes are the
           // deck's own test of exactly this pair of suppressions.
           BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+          // AD (branchAddrInvalid): suppressed -- but the enable change
+          // still happens, p.52 item 4, so only the branch is skipped.
+          Bool adSupp = branchAdSuppressed(o, fallthrough);
+          if (adSupp) ind = setBit(ind, ind_AD, 1);
           if (ex.under && o.taken)
             ind = setBit(ind, ind_EXE, 1);
           else begin
@@ -7162,7 +7240,7 @@ function ActionValue#(ExecDispatch)
               3'b001:         begin st.setIrqEnabled(False); enAfter = False; end // BD
               default:        noAction;
             endcase
-            if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+            if (o.taken && !adSupp) next = branchTarget(o, fallthrough);
           end
         end else begin
           case (bm.code)
@@ -7599,6 +7677,19 @@ function ActionValue#(ExecDispatch)
           // arm says so: there the condition cannot be known until the
           // bit word has been read, so its EXE test comes after.)
           ind = setBit(ind, ind_EXE, 1);
+          if (branchAdSuppressed(o, fallthrough)) ind = setBit(ind, ind_AD, 1);
+        end else if (branchAdSuppressed(o, fallthrough)) begin
+          // AD (branchAddrInvalid): the whole SIC is suppressed -- no
+          // counter store (its word is not even read), no inner count
+          // or refill -- but an inner BE/BD/BEW still changes the
+          // enable state, p.52 item 4, as in the BranchOrMisc arm.
+          ind = setBit(ind, ind_AD, 1);
+          if (inner matches tagged BranchOrMisc .ib &&& !ib.misc)
+            case (ib.code)
+              3'b000, 3'b100: begin st.setIrqEnabled(True);  enAfter = True;  end // BE, BEW
+              3'b001:         begin st.setIrqEnabled(False); enAfter = False; end // BD
+              default:        noAction;
+            endcase
         end else begin
           BitAddr ea = effAddr24(st, s.addr, s.idx);
           HWordAddr ha = ea[23:5];
@@ -7617,7 +7708,7 @@ function ActionValue#(ExecDispatch)
             // step() call, before the next instruction fetches.
             if (o.doIdxWrite) vflPending = tagged Valid tuple2(o.idxWriteReg, o.idxWriteVal);
             if (o.taken) begin
-              next = o.relative ? (fallthrough + o.target) : o.target;
+              next = branchTarget(o, fallthrough);
               // >>> AN INNER BE/BD/BEW CHANGES THE ENABLE STATE HERE
               // TOO, 2026-11-06. <<<  The Reference Manual's
               // interruption-table scheme is "an unconditional STORE
@@ -8219,7 +8310,13 @@ function ActionValue#(ExecDispatch)
           // control to the instruction after the EX).
           Bool exeHit = ex.under && wouldBranch && !noTest;
           if (exeHit) ind = setBit(ind, ind_EXE, 1);
-          Bool takeBranch = wouldBranch && !noTest && !exeHit;
+          // AD (branchAddrInvalid), on the same "the machine looked and
+          // the bit said branch" pair: the whole BB is suppressed, so
+          // neither the branch nor the bit change happens.  Beside EXE
+          // under EXECUTE (p.52's example), as in the other arms.
+          Bool adSupp = wouldBranch && !noTest && branchAddrInvalid(tgt);
+          if (adSupp) ind = setBit(ind, ind_AD, 1);
+          Bool takeBranch = wouldBranch && !noTest && !exeHit && !adSupp;
           // IF, p.32's BIT CHANGING -- the third of the three things a
           // protected branch target suppresses, and the one
           // execute()'s shared commit point cannot reach: "the entire
@@ -8249,7 +8346,7 @@ function ActionValue#(ExecDispatch)
           // condition is NOT met is not suppressed at all and still
           // changes its bit, which is why this is `exeHit` and not
           // `ex.under`.
-          if (changes && !ifSuppress && !exeHit) begin
+          if (changes && !ifSuppress && !exeHit && !adSupp) begin
             Bit#(1) nb = case (mod)
                            2'b01: 1'b0;      // set to zero
                            2'b10: ~tested;   // invert (negate)
