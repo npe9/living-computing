@@ -86,8 +86,9 @@
 ! reckoning of C3-C14, and messages 2, 3 and 10 print as C28 pp.22-23 word
 ! them, and so do message 3's ILLEGAL TYPE OF CARD, INCORRECT CARD ORDER
 ! and RELOCATION TABLES ARE TOO LARGE.  Measured injections in the test's
-! header.  NOT YET RUN: this
-! table fed to MCP's loader (R2b).
+! header.  R2b (2026-11-17): this table and KSILO 8-11, fed to MCP's own
+! resume load and loader, load the job as p.17 lays it out
+! (tests/check_bss_mcp_load.py).
 !
 ! SCAFFOLDING, NOT PART OF THE RECONSTRUCTION'S CLAIMS (R2b replaces them):
 !   * the input: the subprogram cards are already on TWS (C28 p.7, BSS as
@@ -138,15 +139,27 @@
 !   C10 a library entry's relocation word 0 holds the 36-bit name the loader
 !      reads (p.327 l.24, LF(BU,36,6)): the first six A8 characters with
 !      their two high bits dropped (A6 = A8 without them, strap2/a8.py).  C28
-!      Fig. 4's note says 48 bits; the listing wins (spec C8, G7).
+!      Fig. 4's note says 48 bits; the listing wins (spec C8, G7).  SETTLED
+!      in R2b, read in the ink: L p.327 l.24 LF(BU,36,6); C22-6728 p.82
+!      Fig. 39 "SRDKAD SYN(BU, 36, 6) ... a 36-bit field containing a
+!      type-area name"; ALB (A*)DD(BU,12,6),LB, L p.291 l.29.  Which name
+!      (the first entry point) and the LB area's naming stay CHOSEN (G7).
 !   C11 (G6) the disk address is the subprogram's first card's word offset on TWS
 !      in the loader's geometry (p.327 ll.12-19 as run in R1), 18 bits; the
 !      card count is its cards from the program card up to the next program
-!      card or the FORTRAN branch card, which is counted in none.
+!      card or the FORTRAN branch card, which is counted in none.  SETTLED
+!      in R2b: C28 p.7 (the branch card follows the last subprogram), p.9
+!      item 9 (it ends the deck), p.10 Fig. 4 and C22-6728 p.82 ("cards in
+!      subprogram").  The loader cannot tell (count+1 loads the same,
+!      measured); check_bss_mcp_load.py's fetch count pins it.
 !   C12 KSILO+8.0 gets 33.0's word, 41 octal (the problem program's lower
 !      limit, p.7's first subprogram address); 8.32 is read, not written;
 !      9.0 and 9.32 get B's word address, 10.0 and 10.32 *MAIN*'s absolute
 !      entry, a half-word address (19 bits), 11.0 zero (no node table).
+!      Only these fields are written; bits 24-31 of each half word stay as
+!      found.  R2b checked that against the loader's LV, which takes bit 24
+!      as a sign: harmless on this path (LR, then SV, before the LV), and
+!      clearing them measured identical.
 !   C13 (G16) the map's columns and header lines (p.17 prints the names, not
 !      the spacing); octal as six digits, an entry as ".0" or ".4".
 !   C14 a transfer-vector word is B,entry;NOP (p.8 Fig. 3 note), the

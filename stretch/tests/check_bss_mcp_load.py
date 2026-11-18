@@ -100,7 +100,9 @@ cycles), 341,736 cycles; run 4, 202 (200 + 2), 280,355 cycles.  The
 library routines were read in disk order, UST*, IOCS*, FISIP*.
 
 MEASURED, each OBSERVED (deck injections scripted, the deck restored from
-a saved copy and verified with cmp; run 1 fresh each time):
+a saved copy and verified with cmp; run 1 fresh each time; the three deck
+injections below were first run on a variant clearing the KSILO half words
+whole, then rerun on the committed deck with the same failure sets):
   - C11 CONTROL, the last table entry's count one HIGH (R2B_TAMPER=count+1,
     no-library run): only fetches_53_no_branch_card fails (the loader read
     the branch card and ended there, 282,079 cycles); every loaded word
@@ -116,8 +118,9 @@ a saved copy and verified with cmp; run 1 fresh each time):
     5517, 5520 (FISIP*, IOCS*, UST*) stay unloaded.
   - deck, the common origins a half word late (RT5 V+I,$13,3.0 for 2.32):
     the step cap is reached, 52 fail, read mid-run.
-  - NOT DISCRIMINATING, measured: the deck clearing KSILO+9 and +10 as
-    whole half words (bits 24-31 too) loads identically, 341,736 cycles:
+  - NOT DISCRIMINATING, measured: the variant deck clearing KSILO+9 and
+    +10 as whole half words (bits 24-31 too) and the committed deck (only
+    the 24-bit fields) both load correctly in 341,736 cycles:
     YARSL takes KSILO+9.32 with LR (p.333 l.26) and ARNRM5 rewrites it with
     SV (p.327 l.10) before AFPCRD's LV reads it, and ARNRM4 passes only
     KSILO+10's address on (SVA).  The deck is unchanged.

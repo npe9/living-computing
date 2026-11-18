@@ -906,9 +906,11 @@ loader, entered at YRESL1 (p.332), with `$FETCH` a labelled stub over core
 images of TWS and the LB areas. Example 4 loads as p.17 lays it out, in a
 library run and a no-library run. C10 settled: 36 bits of A6 (p.327 l.24,
 6728-0 p.82, read in the ink). C11 settled: the FORTRAN branch card is not
-counted (C28 pp.7, 9, 10; the loader itself cannot tell, measured). Found
-and fixed: BSS must write KSILO+9 and +10 as whole half words, since the
-loader's LV takes bit 24 as a sign. Record: the plan's R2b.
+counted (C28 pp.7, 9, 10; the loader itself cannot tell, measured).
+Checked and harmless: BSS leaves bits 24-31 of KSILO+9 and +10 as found,
+though the loader's LV takes bit 24 as a sign (LR and SV come first on this
+path; clearing them loads identically); the deck is unchanged. Record: the
+plan's R2b.
 
 **Next:** `B TYPE,GO,FORTRAN` through p.271's rewrite, BSS loaded and
 entered by MCP, and the map on MCP's printer (R2b's other half). Still not
