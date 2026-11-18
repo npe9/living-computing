@@ -2,7 +2,8 @@
 ! CHECKS", pp.158-159 (octal 020772.40-021062.40, the block's own exit
 ! "BD,$+1.0").
 !
-! CYCLES PIN, 2026-11-17: 1011 clocks to halt (tests/run_tests.sh).
+! CYCLES PIN, 2026-11-17: 1005 clocks to halt (tests/run_tests.sh);
+! 1011 before the preparation floor (measured with it removed).
 ! Before the FP divide was charged Table 2's divide row with its
 ! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
 ! 7030'S REDUCTION LOOP"), the same deck took 902; with the box's
