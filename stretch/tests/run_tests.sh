@@ -2548,6 +2548,22 @@ run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program
     "RA:272=8" "RB:273=16" "RC:274=3" "RD:275=6" "RE:276=1024" \
     "RF:277=8" "RG:278=7" "RH:279=15" "RI:280=15" "RJ:281=15"
 
+# A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE (RefMan printed
+# p.21 PDF 24, p.45 PDF 48; BR "absolute value" p.40 PDF 43), and LVE
+# stores it with its sign (p.28 PDF 31).  Fixed 2026-11-18 in
+# StretchExecute's effAddrSigned: effAddr24/19/18 wrapped modulo 2**24.
+# One deck, one negative index per class: VFL fetch (word and bit),
+# VFL store, VFL immediate, FP, direct index (LV), B, BR, LVE (value,
+# sign, XVLZ), SHFL; a positive-carry control (RK).  Injections and
+# their observed failures are in the deck's header.
+run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./run_program.sh ../decks/negative_effective_address.strap StretchNegEaTb \
+    "PC=447" \
+    "CYCLES=727+-0" \
+    "RA:768=72623859790382856" "RA2:780=2" "RB:769=55" "RC:770=7" "RK:771=12" \
+    "RD:772=2251799813685248" "RE:773=24189255811072" \
+    "RF:774=35184372088832" "RG:775=35184372088832" \
+    "RH:776=67554544166371328" "RHX:777=1" "RI:778=4398046511104" "RAD:779=0"
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and

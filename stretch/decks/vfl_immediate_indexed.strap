@@ -70,8 +70,10 @@
 !        be the E-box re-reading the register late)
 !
 ! The sign of a NEGATIVE effective address (|index| > address field) is
-! NOT exercised: p.20 says it is ignored and p.21 that "its magnitude is
-! used", and effAddr24 wraps instead -- found, not fixed (docs/NEXT.md).
+! NOT exercised here: p.20 says it is ignored and p.21 that "its magnitude
+! is used".  effAddr24 wrapped it until 2026-11-18; fixed then, and
+! decks/negative_effective_address.strap is its test (C above gives 3
+! either way: its sum is positive).
 !
 ! CYCLES PIN 711 since the batch29 merge onto vflImmIndexedSaving (713
 ! with that saving forced to 0; the injection clocks below are from the

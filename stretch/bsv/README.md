@@ -774,8 +774,26 @@ because the timing functions read the uncarried `di`. No IBM listing we searched
 writes an indexed immediate: 936 immediates were assembled across 812 decks and
 none had a nonzero first index; the untranscribed diagnostic PDFs were not
 searched. `decks/vfl_immediate_indexed.strap` is the
-oracle and records its injections. Still open: a negative effective address
-should give its magnitude (p.20, p.21), but `effAddr24` wraps it (NEXT.md).
+oracle and records its injections.
+
+**A negative effective address is used by its magnitude (fixed 2026-11-18).**
+`effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an
+index larger than the address part gave an address near the top of storage
+(AD, a no-op) or a huge immediate. Reference Manual printed p.21 (PDF 24): the
+effective address "always has 24 numeric bits and a sign ... The effective
+address sign is not used in storage addressing or immediate data fields ... A
+negative effective address is not considered to be invalid; its magnitude is
+used"; p.45 (PDF 48) says it again under AD, and BR adds "the absolute value of
+the effective address" (p.40, PDF 43). The new `effAddrSigned` returns sign and
+24-bit magnitude (a positive carry out of the top is still dropped, pp.20-21);
+the three helpers take the magnitude and cut the word or half-word part from it
+afterwards (p.14, PDF 17, "the low-order bits are dropped"). LVE is the one
+class that keeps the sign: p.28 (PDF 31), "the effective value plus sign", so it
+now stores `.sign` and XVLZ follows. TR00.722 PDF 17's index adder, with its
+complementer and "automatic recomplementing ability on the output", is the
+hardware for it. No existing deck changed with the fix (full suite);
+`decks/negative_effective_address.strap` is the oracle and records five
+injections.
 
 **The store wait (2026-11-16).** The other direction is a level that stores into
 an index register, and the model handled it badly. A new level indexed by j
