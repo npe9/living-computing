@@ -1592,14 +1592,16 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 2864 again,
 # every value check unchanged.
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2854+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+# RE-PINNED 2026-11-17: CYCLES 2854 -> 2896.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17); injection C (arm disabled) restores 2854, injection B (internal wait off) leaves 2896.
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2896+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
 # The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
 # instruction behind a pending level storing into its index word.  Injections
 # in the deck's header.
 # RE-PINNED 2026-11-16 (1132 -> 1248): VFL E-box time now depends on the
 # operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
 # atlas, L PDF 120, ST PDF 124); every result check unchanged.  The deck's header says why.
-run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1479+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
+# RE-PINNED 2026-11-17: CYCLES 1479 -> 1486.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17); injection C restores 1479.
+run "An I-box index instruction behind a pending store into its index word" ./run_program.sh ../decks/index_after_index_store.strap StretchIdxStoreTb ASM=strap2 CYCLES=1486+-0 RPN:1075=0x1400000000000 RP0:1076=0x1400000000000 RP1:1077=0x1400000000000 RP2:1078=0x1400000000000 RQ0:1079=0x1000000000000 RQ1:1080=0x1000000000000 RQ2:1081=0x1000000000000 PC=2143
 # THE 7030 SMAC, ON THE MODEL (decks/smac7030_shell.strap,
 # docs/smac_7030.md), against strap/smac.py card for card and against the
 # bulletin's printed cards.  Injections in the shell, observed 2026-11-08
@@ -2373,7 +2375,8 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
 run "VFL SRD reproducer from Buchholz B.2 -- round up, round down, accumulator kept, one-bit sign byte (p.64)" ./run_program.sh ../decks/repro_vfl_srd.strap StretchReproVflSrdTb "PC=2014" \
     "round_up:1010=0xACFFFFFFFFFFFFFF" "acc_kept:1011=0x00AB800000000000" \
     "round_down:1012=0xABFFFFFFFFFFFFFF" "signed_1bit:1013=0x007FFFFFFFFFFFFF"
-run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1246+-0" \
+# RE-PINNED 2026-11-17: CYCLES 1246 -> 1290.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 1246, injection C leaves 1290.
+run "VFL SRD -- eleven cases and their indicators: LC, PF, sign, SRDN, offset 0, \$R, decimal; and its time (p.64; Vol. 1 Table 3)" ./run_program.sh ../decks/vfl_srd.strap StretchVflSrdTb "PC=2096" "CYCLES=1290+-0" \
     "T1_round_up:1110=0xACFFFFFFFFFFFFFF" "I1:1120=0x120" \
     "T2_carry_out:1111=0x00FFFFFFFFFFFFFF" "I2_LC_not_PF:1121=0x20000000140" \
     "T3_no_round:1112=0xABFFFFFFFFFFFFFF" "I3_PF:1122=0x10000000120" \
@@ -2528,9 +2531,10 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # rl_prepare's load clock; docs/atlas_oracle.md "Closing the residuals"
 # item 7).  MEASURED with that mechanism removed (both halves): 447 again,
 # every value check unchanged.
+# RE-PINNED 2026-11-17: CYCLES 420 -> 426.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17) +5 and the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17) +1; injection C gives 425.
 run "THE SECOND INDEX modifies a VFL offset: MCP's octal conversion (RefMan p.21)" ./run_program.sh ../decks/vfl_second_index.strap StretchVflSecondIdxTb \
     "PC=395" \
-    "CYCLES=420+-0" \
+    "CYCLES=426+-0" \
     "x3:19=2898558941422157824" \
     "x2:18=1512927999819776"
 
@@ -4371,9 +4375,10 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # RE-PINNED 2026-11-16 (1196 -> 2148): VFL E-box time now depends on the
 # operation (bsv/StretchTiming.bsv eboxClocks, from the Perf. Char. Vol. 2
 # atlas, / PDF 134: the divide box's clocks are now inside the printed / time, not a 24-clock flat one; no DIVIDE BOX OVERRAN line); every result check unchanged.  The deck's header says why.
+# RE-PINNED 2026-11-17: CYCLES 2148 -> 2156.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 2148, injection C leaves 2156.
 run "/, VFL Divide at the edges of the divide box (full width, last bit, remainder signs)" ./run_program.sh ../decks/vfl_divide_box.strap StretchVflDivBoxTb \
     "PC=2146" \
-    "CYCLES=2148+-0" \
+    "CYCLES=2156+-0" \
     "max_width_quotient:1166=281474976710657" \
     "max_width_remainder:1167=0" \
     "max_width_pf_off:1168=0" \
@@ -4453,7 +4458,8 @@ run "VFL crossing store: a level fetching its second word waits for it" ./run_pr
 # observed: no `ibusy <= ib` in rl_au_remove 374; no "- 1" at the load
 # 374; fpIboxCheckClocks = 0 335; nothing else fails.  CYCLES 349 is the
 # model as of the change.
-run "The preparation floor: a 12-clock decode takes 12 (KI) and an FP I-box operand 6 (L from \$X9)" ./run_program.sh ../decks/prep_floor.strap StretchPrepFloorTb ASM=strap2 "PC=2093" "CYCLES=349+-0" \
+# RE-PINNED 2026-11-17: CYCLES 349 -> 361.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17) after ST \$X9; injection C restores 349, injection B leaves 361.
+run "The preparation floor: a 12-clock decode takes 12 (KI) and an FP I-box operand 6 (L from \$X9)" ./run_program.sh ../decks/prep_floor.strap StretchPrepFloorTb ASM=strap2 "PC=2093" "CYCLES=361+-0" \
     "RES:1153=0x28000000000000"
 
 # AN FP INTERNAL OPERAND WAITS FOR THE E-BOX AND TAKES THE STORE PATH
@@ -4478,6 +4484,33 @@ run "Store into an instruction a pending level will store: not prepared until th
 
 run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
     "RES:1153=0x28000000000000"
+
+# A VFL OPERAND IN AN INTERNAL REGISTER WAITS FOR THE E-BOX (2026-11-17,
+# StretchCore's headReady intWait; StretchIBox's vflInternalFetch;
+# StretchTiming's vflInternalOperandClocks = 4, FITTED on the atlas's PDF
+# 147 INTERNL column).  Vol. 1 printed p.3-20: the internal operand "is
+# not available during the decoding stage".  Eight L(BU,64,8) from 8.0
+# ($L), eight from memory.  INJECTION, observed: vflInternalFetch forced
+# False 520 (= 552 - 8 x 4), nothing else fails; fp_internal_operand
+# (208) and vfl_index_store_decode (550) do not move under it.  CYCLES 552
+# is the model as of the change.
+run "VFL internal operand: L from \$L waits for the E-box (printed p.3-20; Vol. 2 PDF 147)" ./run_program.sh ../decks/vfl_internal_operand.strap StretchVflIntOpTb "PC=2084" "CYCLES=552+-0" \
+    "RES:1153=0x0123456789ABCDEF"
+
+# AFTER A VFL STORE INTO INDEX STORAGE THE NEXT INSTRUCTION IS DECODED
+# ONLY WHEN THE HOLD ENDS (2026-11-17, StretchCore's redecodeAfterHold).
+# Vol. 1 printed p.3-21: "the I-box does no further decoding until the
+# new index contents arrives".  Four ST(BU,64,8) into $X1, four indexed.
+# INJECTION, observed: the rl_prepare redecode arm disabled 446 (= 550 -
+# 4 x 12 - 4 x 14: the VFL decode, 2 x 6 unindexed, 2 x 7 indexed), nothing
+# else fails among this deck's checks; vfl_internal_operand (552) does not
+# move under it.  (prep_floor is NOT a control: its ST $X9 is a VFL store
+# into index storage, and it measures 349 with the arm disabled, 361 with
+# it.)  The arm charges the decode only for an E-box-class successor (an
+# I-box instruction's budget already holds its own decode).  CYCLES 550 is
+# the model as of the change.
+run "VFL store into \$X1: the next decode waits for the index store (printed p.3-21; Vol. 2 PDF 124)" ./run_program.sh ../decks/vfl_index_store_decode.strap StretchVflIdxStDecTb "PC=2073" "CYCLES=550+-0" \
+    "RES:1154=0x0123456789ABCDEF"
 
 # CROSSING STORES: THE COVERAGE GAPS CLOSED (docs/NEXT.md, 2026-11-17).
 # Three decks, expectations hand-derived in each header.  EVERY injection
@@ -4517,7 +4550,8 @@ run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole op
 # in the internal registers (StretchCore indexStorageWord), and the
 # preparation floor.  MEASURED: old set without the floor 404, new set
 # without it 389, old set with it 392, new set with it 372.
-run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=372+-0" \
+# RE-PINNED 2026-11-17: CYCLES 372 -> 377.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 372, injection C leaves 377.
+run "VFL crossing into the indicators and the connective counts (printed pp.37, 76)" ./run_program.sh ../decks/vfl_cross_special_words.strap StretchVflCrossSpecialTb "PC=2043" "CYCLES=377+-0" \
     "I1:1700=0x10000000000" "I2:1701=0" "I3:1702=0xBE" \
     "K1:1703=0x10000" "K2:1704=0x40000008000" "K2X:1705=0x01348000013405dc" "K3:1706=0x80000008000"
 # STORES INTO LOCATION 7 (2026-11-17).  printed p.36: the counters are bits
@@ -4536,7 +4570,8 @@ run "VFL crossing into the indicators and the connective counts (printed pp.37, 
 # the unassigned bits kept as stored (p.34 undone) -> W2, W3, W4 fail, W1
 # passes (values in the deck header).
 # CYCLES 276 a model pin.
-run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=276+-0" \
+# RE-PINNED 2026-11-17: CYCLES 276 -> 292.  Cause, measured: the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 276, injection C leaves 292.
+run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./run_program.sh ../decks/vfl_word7_store.strap StretchVflWord7StoreTb "PC=2029" "CYCLES=292+-0" \
     "W1:1700=0x30000010000" "W2:1701=0x7F00000FE000" "W3:1702=0x1500000FE000" "W4:1703=0x10000"
 # A DS-SUPPRESSED VFL STORE RAISES NO DF FOR ITS REFILL (2026-11-17).
 # printed p.22: an exception in the VFL portion suppresses "the entire
@@ -10773,10 +10808,11 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 # F217WA, where the box's walk is longer than the 5-clock floor); the
 # VFL divide pins (vfl_divide_box 2148, vfl_divide 1979) are the control.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
+# RE-PINNED 2026-11-17: CYCLES 549 -> 546.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 546 at HEAD with this change removed, and 546 with it.
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
-    "CYCLES=549+-0"
+    "CYCLES=546+-0"
 
 run "FP divide sign and modifiers (jb_af1c F217B, encoding)" python3 verify_fp_arith_f217b_listing.py
 run "FP divide sign and modifiers (jb_af1c F217B on the model)" ./run_program.sh ../decks/fp_arith_f217b.strap StretchFpDivBTb \
@@ -10794,10 +10830,11 @@ run "FP divide indicators (jb_af1c F217D on the model)" ./run_program.sh ../deck
     "SEN:712=0"
 
 run "FP divide double arithmetic (jb_af1c F217WA, encoding)" python3 verify_fp_arith_f217wa_listing.py
+# RE-PINNED 2026-11-17: CYCLES 1011 -> 1005.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 1005 at HEAD with this change removed, and 1005 with it.
 run "FP divide double arithmetic (jb_af1c F217WA on the model)" ./run_program.sh ../decks/fp_arith_f217wa.strap StretchFpDivDblATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217wa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
-    "CYCLES=1011+-0"
+    "CYCLES=1005+-0"
 
 run "FP divide double sign and modifiers (jb_af1c F217WB, encoding)" python3 verify_fp_arith_f217wb_listing.py
 run "FP divide double sign and modifiers (jb_af1c F217WB on the model)" ./run_program.sh ../decks/fp_arith_f217wb.strap StretchFpDivDblBTb \
@@ -10820,10 +10857,11 @@ run "FP divide double remainder underflow (jb_af1c F217WE on the model)" ./run_p
     "SEN:712=0"
 
 run "FP reciprocal divide arithmetic (jb_af1c F217XA, encoding)" python3 verify_fp_arith_f217xa_listing.py
+# RE-PINNED 2026-11-17: CYCLES 527 -> 522.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 522 at HEAD with this change removed, and 522 with it.
 run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_program.sh ../decks/fp_arith_f217xa.strap StretchFpRecipDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
-    "CYCLES=527+-0"
+    "CYCLES=522+-0"
 
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB, encoding)" python3 verify_fp_arith_f217xb_listing.py
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB on the model)" ./run_program.sh ../decks/fp_arith_f217xb.strap StretchFpRecipDivBTb \
@@ -14327,6 +14365,12 @@ run "C22-6578 Problem 2.11 -- two-bit addition by connectives, 16 pairs" ./run_p
 # program swaps in.  All hundred words are checked against the transpose.
 # TEMP is where the program also saved the old mask: the last check pins
 # that printed clash.  Any other interruption halts at STRAY and fails PC.
+# IT ALSO GUARDS "AN INTERRUPTION IS DUE: START NOTHING NEW" (StretchCore's
+# rl_prepare, 2026-11-17).  With the VFL internal-operand wait in and that
+# gate removed, "CM1111(BU,1), $SB+0.7" is held four clocks, "LX, $2, 19.0"
+# runs before the $VF interruption its LWF raised, ENDCYC stores through
+# the new $2, and 16 of the hundred T_ words fail (e.g. T_r1_c2 =
+# 0x108000000102000); PC still passes.  With the gate, all pass.
 run "C22-6578 Problem 2.12 -- 20 x 5 transpose in place, the \$VF interruption as the loop exit" ./run_program.sh ../decks/problem_2_12.strap StretchP212Tb "PC=4053" "STEPS=2000000" \
     "T_r1_c1:1000=0x0108000000101000" "T_r1_c2:1001=0x0108000000201000" \
     "T_r1_c3:1002=0x0108000000301000" "T_r1_c4:1003=0x0108000000401000" \

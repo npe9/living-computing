@@ -166,6 +166,9 @@
 ! merge): FAIL cycles = 1183, 40 fewer -- ten SRDs at a nonzero offset
 ! times 4 -- and nothing else.  Re-run at 1246 (2026-11-16, in a scratch
 ! copy of the tree): FAIL cycles = 1206, again 40 fewer, and nothing else.
+!
+! RE-PINNED 2026-11-17: CYCLES 1246 -> 1290.  Cause, measured:
+! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 1246, injection C leaves 1290.
 
         SLC, 1000.0
 ! -- 1. round up ---------------------------------------------------

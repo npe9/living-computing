@@ -18566,3 +18566,63 @@ moved and no deck is known to store into them through a level, so that
 half is UNTESTED.
 vfl_cross_special_words: 389 with the new set alone (404 with the old);
 with the preparation floor of the same day, 372 (pinned).
+
+## VFL INTERNL AND THE VFL I-BOX STORES -- DONE, 2026-11-17
+
+The two VFL timing residuals the atlas oracle left open
+(`docs/atlas_oracle.md`, "What remains" items 2 and 3; "Closing the
+residuals" items 10 and 11 have the tables):
+
+* **VFL INTERNL, about 4 clocks short.**  Perf. Char. Vol. 1 printed
+  p.3-20 (PDF 38): an internal operand "is not available during the
+  decoding stage".  `intWait` now holds a VFL or connective level whose
+  operand is address 3 or 5-12 for `vflInternalOperandClocks` (4, FITTED
+  on PDF 147 L INTERNL; RECONSTRUCTION: no page splits it) after the
+  E-box finishes the level before it.  PDF 147 L -4.00 -> -0.00 on all 96
+  rows; held out, PDF 151 ST -4.00 -> -0.00, PDF 144 M+ -4.04 -> -0.04.
+* **VFL I-box stores, about 12 clocks short.**  Printed p.3-21 (PDF 39):
+  after a store into index storage "the I-box does no further decoding
+  until the new index contents arrives".  The model held the preparation
+  but let the next decode run under the hold.  `redecodeAfterHold` now
+  charges the next instruction's decode after the hold (VFL and
+  connective stores only; the FP index-store remainder is a fit that
+  contains it).  No fitted number.  PDF 124 ST I-BOX -12.28 -> -0.28,
+  indexed -14.30 -> -0.30 (the indexed decode's extra cycle gives the
+  page's +2).
+
+Still open from the same pages: the internal crossover (`_int_wbx`, the
+7030 +10 over its external crossover), the WB XOVR stores, and the
+held-out misses listed in atlas_oracle.md item 10.
+
+**Two follow-ons, found by the full suite before the commit:**
+
+* **An interruption is due: start nothing new.**  With the INTERNL wait in,
+  C22-6578 Problem 2.12 transposed 16 of its hundred words wrongly: the
+  wait held "CM1111(BU,1), $SB+0.7" long enough for "LX, $2, 19.0"
+  behind it to run before the $VF interruption its LWF had raised, and
+  ENDCYC stored through the new $2.  rl_prepare now starts no new
+  instruction while `intDue` is valid and no interruption instruction
+  is in flight (Ref. Manual p.48, "before execution of the next
+  instruction").  This closes the "WHAT IS STILL NOT MODELLED" case at
+  armInterrupt for instructions not yet started; an I-box instruction
+  that had already run ahead of a pending level is still committed.
+  The interruption decks (int_timing_bracket, the df_*_alarm decks,
+  interrupt_pg0, be_sic_interrupt_entry, if_branch_alarm,
+  interval_timer_steps, problem_3_vfl_store_to_indicators) all pass
+  with the gate.
+* **The redecode charge is for an E-box-class successor only.**  An I-box
+  instruction's budget already serializes its own decode from dispatch,
+  so charging it again counted it twice (index_after_index_store 1567
+  with the double charge, 1486 without).
+* **Pins moved.**  Each was measured under injection B (internal wait
+  off) and injection C (redecode arm off), and the result is recorded at
+  its run line and in its deck header.
+  * INTERNL: vfl_srd 1246 -> 1290, vfl_divide_box 2148 -> 2156,
+    vfl_cross_special_words 372 -> 377, vfl_word7_store 276 -> 292.
+  * Redecode: index_after_level 2854 -> 2896, index_after_index_store
+    1479 -> 1486, prep_floor 349 -> 361.
+  * Both: vfl_second_index 420 -> 426 (+5 INTERNL, +1 redecode).
+  * Stale at HEAD 7cddae9, with the same numbers when this change is
+    removed: the FP divide pins F217A 549 -> 546, F217WA 1011 -> 1005,
+    F217XA 527 -> 522.  65c5ebc pinned them on a base without 4c8464a's
+    preparation floor of 12.

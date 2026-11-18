@@ -217,6 +217,24 @@ module mkStretchCore(StretchCore);
   // (printed p.3-21).
   Reg#(Bit#(32)) laarFreeAt   <- mkReg(0);
   Reg#(Bit#(32)) xstoreFreeAt <- mkReg(0);
+  // >>> AFTER THE INDEX-STORE HOLD, THE NEXT INSTRUCTION IS DECODED,
+  // 2026-11-17. <<<  "the I-box does no further decoding until the new
+  // index contents arrives" (printed p.3-21): the decode of the
+  // instruction after the store BEGINS when the hold ends; it does not
+  // run under it.  The model charges a decode as `ibusy` after the
+  // level it gates is loaded (rl_prepare), so by the time a store level
+  // reaches removal that countdown has long run out and the next
+  // instruction was loaded the clock the hold ended -- a VFL ST into
+  // $X0-$X3 came out 12.3 clocks under PDF 124's I-BOX column (14.3
+  // indexed).  laarRetire sets this for a VFL or connective store into
+  // index storage; rl_prepare then charges the prepared instruction's
+  // own decode (2 * iboxCycles - 1, as at a load) before loading it.
+  // NOT FOR FLOATING POINT: the FP store path into index storage is
+  // StretchTiming's laarStorePost(16..31) = 17, a FIT on PDF 48's I-BOX
+  // column that already contains whatever followed the hold there, so
+  // charging the decode too would count it twice (and move PDF 48 and
+  // 69, whose M+ indexed column another change owns).
+  Reg#(Bool)     redecodeAfterHold <- mkReg(False);
   // THE CLOCK THE E-BOX FINISHES ITS CURRENT INSTRUCTION: the removal
   // clock + the charge + 1 (an E-box time of N occupies N + 1 clocks,
   // StretchTiming's removal-clock note).  Read by headReady for an FP
@@ -393,6 +411,7 @@ module mkStretchCore(StretchCore);
                    + ((fp && (!isValid(h.da) || indexDest)) ? zeroExtend(laarStorePost(sa)) : 0);
         if (fp) laarFreeAt <= t;
         if (indexStorageWord(sa)) xstoreFreeAt <= t;
+        if (indexStorageWord(sa) && !fp) redecodeAfterHold <= True;
       end
     endaction;
 
@@ -595,8 +614,13 @@ module mkStretchCore(StretchCore);
   // store path into an internal register that PDF 79's $R column fitted
   // for ST -- the same mechanism, and no new fitted number).  FP only,
   // as the LAAR (StretchIBox's laarInternal note says why).
-  Bool intWait     = fpInternalFetch(la.headLevel())
-                     && clk < eboxDoneAt + zeroExtend(fpInternalOperandClocks);
+  // And, 2026-11-17, a VFL or connective head level whose operand is an
+  // internal register, by vflInternalOperandClocks (StretchTiming, where
+  // the atlas's INTERNL columns give the number).
+  Bool intWait     = (fpInternalFetch(la.headLevel())
+                      && clk < eboxDoneAt + zeroExtend(fpInternalOperandClocks))
+                  || (vflInternalFetch(la.headLevel())
+                      && clk < eboxDoneAt + zeroExtend(vflInternalOperandClocks));
   Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
@@ -1642,6 +1666,26 @@ module mkStretchCore(StretchCore);
       noAction;             // an I-box instruction is waiting on its operand read
     else if (ibusy != 0)
       ibusy <= ib;          // previous instruction's time budget still running
+    else if (isValid(intDue) && !isValid(intPC))
+      // >>> AN INTERRUPTION IS DUE: START NOTHING NEW, 2026-11-17. <<<
+      // Ref. Manual p.48: interruption comes "AT THE END OF THE OPERATION
+      // DURING WHICH THE INDICATOR IS TURNED ON" and "before execution of
+      // the next instruction".  rl_interrupt waits for the levels to
+      // drain (armInterrupt); until now rl_prepare went on starting
+      // instructions while they drained, and an I-box instruction so
+      // started was committed for good -- the model has no index-
+      // recovery unwind (the "WHAT IS STILL NOT MODELLED" note at
+      // armInterrupt).  The 7030 undoes such an instruction's index
+      // change from its IX Rec. level (Perf. Char. Vol. 1 Table A-2,
+      // printed A-10, PDF 69, LX: "IX Rec."; App. A printed A-4, PDF 63, "Recovery information
+      // is shipped back to the I-box").  Not starting it has the same
+      // architectural effect.  FOUND 2026-11-17: the VFL internal-operand
+      // wait (intWait) held C22-6578 Problem 2.12's "CM1111(BU,1),
+      // $SB+0.7" four clocks, long enough for "LX, $2, 19.0" behind it to
+      // run before the $VF interruption its LWF had raised, and ENDCYC
+      // then stored through the new $2 (16 of the hundred transposed words wrong).
+      // Levels ALREADY loaded still execute, as before.
+      noAction;
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
     else if (storeWait(nl) || clk < xstoreFreeAt)
@@ -1649,6 +1693,17 @@ module mkStretchCore(StretchCore);
       // storeWait): a pending level stores into an index register, the
       // indicators or the mask, and nothing is prepared until it has.
       noAction;
+    else if (redecodeAfterHold &&& prepared matches tagged Valid {.rlen, .rdi}) begin
+      // The decode p.3-21 says waits for the index store (the note at
+      // redecodeAfterHold): this clock is its first, as at a load.  Only
+      // for an E-box-class instruction: an I-box instruction's budget
+      // (budgetClocks, charged from its dispatch) already serializes its
+      // own decode, so its dispatch at the hold's end IS its decode's
+      // start, and charging the decode here would count it twice.
+      if (isEboxClass(rdi))
+        ibusy <= 2 * iboxCycles(rdi, False) - 1;
+      redecodeAfterHold <= False;
+    end
     else if (instrStored)
       noAction;   // a pending level stores into this instruction (above)
     else if (prepared matches tagged Valid {.len, .di}

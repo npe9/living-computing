@@ -110,6 +110,9 @@
 ! out of it, so the box is INSIDE that figure, and no DIVIDE BOX OVERRAN
 ! line is printed.  What is said above about 1196 is the old budget:
 ! CYCLES here still guards that the box is absorbed, at the new figure.
+!
+! RE-PINNED 2026-11-17: CYCLES 2148 -> 2156.  Cause, measured:
+! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 2148, injection C leaves 2156.
 
         SLC, (8)2000.0
 

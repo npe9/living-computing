@@ -64,6 +64,9 @@
 ! W4 is the control for JA; W1-W3 for JB; W1 for JE.
 ! CYCLES 276 (PC 2029).
 !
+!
+! RE-PINNED 2026-11-17: CYCLES 276 -> 292.  Cause, measured:
+! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 276, injection C leaves 292.
         SLC, 1000.0
 START   L(BU,8,8), HFF
         CM0101(BU,8,8), KW

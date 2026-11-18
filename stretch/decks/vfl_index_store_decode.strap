@@ -1,0 +1,49 @@
+! vfl_index_store_decode.strap -- AFTER A VFL STORE INTO INDEX STORAGE,
+! THE NEXT INSTRUCTION IS DECODED ONLY WHEN THE NEW INDEX CONTENTS HAS
+! ARRIVED.  Built 2026-11-17 with StretchCore's redecodeAfterHold
+! (docs/atlas_oracle.md, "Closing the residuals" item 11).
+!
+! THE SOURCE.  Perf. Char. Vol. 1 printed p.3-21 (PDF 39, read in the
+! image): "A store into index storage is a time-consuming operation.
+! Whenever such an instruction is decoded, since the next instruction
+! may make use of the new index contents, the I-box does no further
+! decoding until the new index contents arrives."  Perf. Char. Vol. 2 PDF
+! 124 (ST, no forwarding) prints the I-BOX column ($X0-$X3) 16.2 clocks
+! over EXTERNL, and 2 more indexed.
+!
+! THE BODY.  Four ST(BU,64,8) into $X1, four more indexed by $X5 (= 0),
+! then the value is read back from $X1 by a VFL L and stored in RES.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).
+!   the model as of this deck .......................... CYCLES 550
+!   OBSERVED INJECTION, reverted from a saved copy checked with cmp:
+!   - the redecode arm in rl_prepare removed ............ CYCLES 446
+!   Nothing else failed (PC and RES pass).
+! The control is decks/vfl_internal_operand.strap (no store into index
+! storage), whose CYCLES (552) did not move under the injection.
+
+        SLC, (8)2000.0
+
+START   LX, $X5, ZERO
+        L(BU,64,8), VAL
+        ST(BU,64,8), $X1
+        ST(BU,64,8), $X1
+        ST(BU,64,8), $X1
+        ST(BU,64,8), $X1
+        ST(BU,64,8), $X1($X5)
+        ST(BU,64,8), $X1($X5)
+        ST(BU,64,8), $X1($X5)
+        ST(BU,64,8), $X1($X5)
+        L(BU,64,8), ZERO
+        L(BU,64,8), $X1
+        ST(BU,64,8), RES
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+VAL     DD(BU,64,8), (16)0123456789ABCDEF
+ZERO    DD(BU,64,8), 0
+RES     DD(BU,64,8), 0
+
+        END, START

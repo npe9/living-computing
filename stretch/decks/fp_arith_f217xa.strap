@@ -44,6 +44,9 @@
 ! As in F217A, every quotient is exactly 800000000000, so the block
 ! pins the exponent table and the operand interchange and says nothing
 ! about the development of the quotient fraction.
+!
+! RE-PINNED 2026-11-17: CYCLES 527 -> 522.  Cause, measured:
+! STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 522 at HEAD with this change removed, and 522 with it.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

@@ -528,6 +528,24 @@ function Bool fpInternalFetch(LaLevel l);
   return r;
 endfunction
 
+// A VFL or connective level whose operand is an internal register
+// (StretchCore's headReady, intWait, and StretchTiming's
+// vflInternalOperandClocks have the source).  Not an LAAR gate: the VFL
+// and connective charges are fits that contain their queuing (the note
+// above); this is the operand's own lateness, which the EXTERNL fit
+// cannot contain because an external operand has none.
+function Bool vflInternalFetch(LaLevel l);
+  Bool cls = case (l.di) matches
+               tagged VflInt .*:     True;
+               tagged Connective .*: True;
+               default:              False;
+             endcase;
+  Bool r = False;
+  if (l.valid && !l.branch && cls &&& l.da matches tagged Valid .a &&& laarInternal(a))
+    r = True;
+  return r;
+endfunction
+
 function Bool laarHeldByLevel(Vector#(4, LaLevel) lv);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1)

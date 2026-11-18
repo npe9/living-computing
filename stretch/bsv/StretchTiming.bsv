@@ -130,6 +130,41 @@ function Bit#(8) laarStorePost(WordAddr a) =
 // (docs/atlas_oracle.md, "Closing the residuals" item 8).
 Bit#(16) fpInternalOperandClocks = fromInteger(laarCheckClocks) + zeroExtend(laarStorePost(9));
 
+// >>> A VFL OR CONNECTIVE INTERNAL OPERAND: THE SAME LATENESS, 1.2 US,
+// 2026-11-17. <<<  StretchCore's headReady (intWait) holds a VFL or
+// connective level whose operand is address 3 or 5-12 (StretchIBox's
+// vflInternalFetch) until this many clocks after the E-box has finished
+// the instruction before it -- the same mechanism as the FP one above,
+// from the same sentence of Vol. 1 printed p.3-20 (PDF 38), which is not
+// limited to floating point: the internal operand "is not available
+// during the decoding stage".  Vol. 1 Table A-2 (printed A-12, PDF 71)
+// gives CV and DCV, the VFL operations whose operand is always the
+// accumulator, an "INT" level, and Vol. 1's list of look-ahead
+// registers (printed A-8, PDF 67, read in the image) gives "internal opnd
+// fetch" to the ABC (arithmetic bus counter).  R23-9732 Fig. 3.1.24 (PDF
+// 88, printed 1-49/1-50) shows the I-unit's VFL preparation testing "W EQ
+// INT" (28.22.20.1); like every CE flow chart it prints no durations.
+//
+// THE NUMBER, A FIT.  Perf. Char. Vol. 2's forwarding pages (PDF
+// 143-169) print the INTERNL column (operand at 8.0, $L; PDF 114,
+// printed 107) above the EXTERNL one by a median of 4 clocks (1.2 us) on
+// +, +MG, L, LWF, K, KR, KE, `*`, C0011, CT0111 and on the to-memory M+,
+// M+MG, ST, SRD (docs/atlas_oracle.md, "VFL INTERNL").  The model's
+// EXTERNL figure there is the E-box occupancy, fitted (eboxClocks), and
+// its INTERNL figure was the same, so the whole difference is the
+// operand's lateness.  The 4 is FITTED on PDF 147 (L) INTERNL alone,
+// where all 96 no-crossing rows were -4.00 / -4.04 before; every other
+// page is held out.  No page splits it.  (Read as the I-Checker's 0.6 us,
+// laarCheckClocks, "E-box fetch operand error check", printed p.3-19 item
+// 4, plus one 0.6 us look-ahead step, it is consistent with the sources,
+// but that split is RECONSTRUCTION.)  The FP figure (7) is not reused:
+// its remainder, laarStorePost's 5, is the FP store path fitted on PDF
+// 79, which the VFL charges already contain.  This revives, with a
+// measured number, the "wait for the E-box before fetching an E-box
+// register" draft that docs/atlas_oracle.md "Closing the residuals" item
+// 2 dropped for having no number of its own.
+Bit#(16) vflInternalOperandClocks = 4;
+
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
     tagged DirIndex .x: return case (x.code)

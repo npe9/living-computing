@@ -1146,8 +1146,55 @@ the E-box finishes the level before it (`eboxDoneAt`): the I-Checker's
 path's number, fitted on PDF 79's ST $R column and reused here without
 refitting. The fetch pages are its held-out test: F+ and E+ exact, + and
 K within half a clock, L +1. FP only, as the LAAR. VFL INTERNL (+4 on the
-7030) is not changed. `decks/fp_internal_operand.strap`;
+7030) was not changed then; see the next section. `decks/fp_internal_operand.strap`;
 `docs/atlas_oracle.md` "Closing the residuals" item 8.
+
+### A VFL internal operand (2026-11-17)
+
+The same sentence of p.3-20 is not limited to floating point, and the
+atlas's VFL INTERNL columns (operand at 8.0, $L; PDF 143-169) print 4
+clocks over EXTERNL where the model printed the same figure. `intWait`
+now also holds a VFL or connective head level whose operand is address 3
+or 5-12 (StretchIBox `vflInternalFetch`) until `vflInternalOperandClocks`
+(4) after `eboxDoneAt`. The 4 is a FIT on PDF 147 (L) INTERNL alone; the
+FP figure (7) is not reused because its remainder is the FP store path,
+which the VFL E-box fits already contain. No LAAR gate is added for VFL
+(the queuing is inside those fits). `decks/vfl_internal_operand.strap`;
+`docs/atlas_oracle.md` "Closing the residuals" item 10.
+
+### After a VFL store into index storage, the next decode waits (2026-11-17)
+
+"A store into index storage is a time-consuming operation. Whenever such
+an instruction is decoded, ... the I-box does no further decoding until
+the new index contents arrives" (printed p.3-21). The model charges a
+decode as `ibusy` after the level it gates is loaded, so the next
+instruction's decode had run out long before the hold ended, and a VFL ST
+into $X0-$X3 was 12.3 clocks under PDF 124's I-BOX column (14.3 indexed).
+`laarRetire` now sets `redecodeAfterHold` for a VFL or connective store
+into index storage, and `rl_prepare` charges the prepared instruction's
+own decode (`2 * iboxCycles - 1`, as at a load) when the hold ends. No
+fitted number: the decode is `iboxCycles`', and its indexed +1 cycle gives
+the page's indexed +2 clocks. NOT for FP: the FP index-store remainder
+(`laarStorePost`, 17) is a fit on PDF 48 that already contains what
+follows the hold. The charge is made only for an E-box-class successor:
+an I-box instruction's budget already serializes its own decode from
+dispatch, so charging it here would count it twice.
+`decks/vfl_index_store_decode.strap`; `docs/atlas_oracle.md` "Closing the
+residuals" item 11.
+
+### An interruption is due: start nothing new (2026-11-17)
+
+Ref. Manual p.48: interruption comes "before execution of the next
+instruction". `rl_interrupt` waits for the look-ahead to drain, and
+`rl_prepare` used to go on starting instructions meanwhile. An I-box
+instruction started that way was committed, because the model has no
+index-recovery unwind. The VFL internal-operand wait exposed this. C22-6578
+Problem 2.12's `CM1111(BU,1), $SB+0.7` was held four clocks, so `LX, $2,
+19.0` ran before the $VF interruption its LWF had raised, and 16 of the
+hundred transposed words came out wrong. `rl_prepare` now starts nothing
+while `intDue` is valid and no interruption instruction is in flight.
+Levels already loaded still execute. An I-box instruction that had already
+run ahead of a pending level is still not unwound (the armInterrupt note).
 
 ### Store close to fetch, for an instruction word (2026-11-17)
 
