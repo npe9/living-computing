@@ -9690,7 +9690,9 @@ run "bsv smoke test (make run)" make run
 # 2 (PDF 240), which names the trial/intermediate/last phases.
 #
 # ONE NUMBER IS INVENTED and says so at its declaration: how many
-# quotient bits a cycle develops.  Figure 3.8.15 attributes that to the
+# quotient bits a cycle develops.  [2026-11-17: the rule is in Buchholz
+# Figs. 14.11-14.12, and mkDivBox walks it for the FP divide's time --
+# see the FLOATING-POINT DIVIDE TIME note below.  mkFpDivBox keeps 6.]  Figure 3.8.15 attributes that to the
 # "Multiple Selection Circuits", ALDs the volume does not reproduce.
 #
 # TWO ASSERTIONS, DIFFERENT IN KIND.  The ANSWER is checked
@@ -9721,6 +9723,23 @@ run "bsv smoke test (make run)" make run
 # restored fails 7 of 8 and mkFpDivBox's 4 of 5 too (they share
 # divRestoringStep); one reduction clock too few fails 8 of 8, two of
 # them as "clocks = 3, want 4".
+# FLOATING-POINT DIVIDE TIME (2026-11-17): mkDivBox also walks the 7030's
+# reduction loop for an FP request (Buchholz Fig. 14.11/14.12, R23-9732
+# fig. 3.8.15; StretchDivBox.bsv "THE 7030'S REDUCTION LOOP"), and
+# mkCoreDivBoxTb's vectors 8-11 check its clocks and fpExtra against
+# LITERALS from a separately written Python mirror (8 = 1/1: 8 clocks,
+# fpExtra 20, so `/` is 25 clocks = the atlas's 7.50 us).  Injections,
+# OBSERVED (each reverted from a saved copy, verified with cmp):
+#   the SDC not counted as a loop (rg_wAdd[1] <= 0): vectors 8-11 fail,
+#     "fpExtra = 18, want 20" and the like, 4 of 12; 0-7 (VFL) pass;
+#   Fig. 14.11's r = 111 column never choosing 3/2: ONLY vector 10 fails,
+#     "clocks = 45, want 24" -- the other three vectors never reach that
+#     cell, so the table is pinned by one vector per cell, not wholly;
+#   fpDivFixedClocks' per-six term dropped (StretchFP, `per6` = 0): ONLY
+#     its cases 1-3 fail ("case 1 = 7, want 9", 2 and 3 "= 7, want 11");
+#     the zero-dividend and leading-zero cases and every vector pass;
+#   D/'s remainder-normalization term dropped (rn = 6): ONLY vector 12
+#     fails, "fpExtra = 26, want 40".
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
 # G2.3 stage 1, 2026-11-16: mkDecBox, the decimal adder/subtracter, on 9
 # vectors with literal answers (0-4 are Reference Manual printed p.60's
@@ -10664,10 +10683,27 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 #     R23-9694 p.82 self-check (PC 2057, want 2056).  F217B/C, WB-WE and
 #     XB/XC pass: they check signs, registers left alone and indicators
 #     that a doubled quotient does not disturb.
+#
+# >>> AND THREE OF THEM NOW PIN THE FP DIVIDE'S TIME (2026-11-17). <<<
+# F217A (/ and R/), F217WA (D/) and F217XA (R/) carry CYCLES pins, the
+# suite's only check that boxCharge reaches the budget on the core.
+# MEASURED, halt clocks:      before   after   boxCharge forced to 0
+#   F217A                       466     549     467
+#   F217WA                      902    1011     901
+#   F217XA                      385     527     385
+# "before" is the tree with the whole change reversed (git apply -R of
+# the saved bsv diff, re-applied and compared with cmp): the flat 4/10/8
+# charges.  The cause of the move is Table 2's divide row with the
+# reduction loops walked by mkDivBox (StretchDivBox.bsv "THE 7030'S
+# REDUCTION LOOP"; docs/NEXT.md "FP DIVIDE TIME").  The injection fails
+# all three pins (and prints "OVERRAN THE E-BOX BUDGET" on F217A and
+# F217WA, where the box's walk is longer than the 5-clock floor); the
+# VFL divide pins (vfl_divide_box 2148, vfl_divide 1979) are the control.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \
-    "SEN:712=0"
+    "SEN:712=0" \
+    "CYCLES=549+-0"
 
 run "FP divide sign and modifiers (jb_af1c F217B, encoding)" python3 verify_fp_arith_f217b_listing.py
 run "FP divide sign and modifiers (jb_af1c F217B on the model)" ./run_program.sh ../decks/fp_arith_f217b.strap StretchFpDivBTb \
@@ -10687,7 +10723,8 @@ run "FP divide indicators (jb_af1c F217D on the model)" ./run_program.sh ../deck
 run "FP divide double arithmetic (jb_af1c F217WA, encoding)" python3 verify_fp_arith_f217wa_listing.py
 run "FP divide double arithmetic (jb_af1c F217WA on the model)" ./run_program.sh ../decks/fp_arith_f217wa.strap StretchFpDivDblATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217wa.strap").read()).symtab["PASS"]//32)')" \
-    "SEN:712=0"
+    "SEN:712=0" \
+    "CYCLES=1011+-0"
 
 run "FP divide double sign and modifiers (jb_af1c F217WB, encoding)" python3 verify_fp_arith_f217wb_listing.py
 run "FP divide double sign and modifiers (jb_af1c F217WB on the model)" ./run_program.sh ../decks/fp_arith_f217wb.strap StretchFpDivDblBTb \
@@ -10712,7 +10749,8 @@ run "FP divide double remainder underflow (jb_af1c F217WE on the model)" ./run_p
 run "FP reciprocal divide arithmetic (jb_af1c F217XA, encoding)" python3 verify_fp_arith_f217xa_listing.py
 run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_program.sh ../decks/fp_arith_f217xa.strap StretchFpRecipDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
-    "SEN:712=0"
+    "SEN:712=0" \
+    "CYCLES=527+-0"
 
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB, encoding)" python3 verify_fp_arith_f217xb_listing.py
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB on the model)" ./run_program.sh ../decks/fp_arith_f217xb.strap StretchFpRecipDivBTb \

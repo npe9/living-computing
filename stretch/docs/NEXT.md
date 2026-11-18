@@ -24,6 +24,55 @@ accumulate.
 
 
 
+## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
+
+**Done.** The atlas (Perf. Char. Vol. 2 PDF 54-56, 85-87) had FP `/`,
+`D/`, `R/` 16-21 clocks short.  The model now charges Vol. 1 Table 2's
+divide row (printed p.3-5, PDF 23, read at the page image) with its
+data-dependent terms, and the reduction-loop count comes from walking
+the 7030's own divide algorithm -- Buchholz, *Planning a Computer
+System*, Figs. 14.11-14.13 and pp.213-216 (PDF 238-241) -- inside
+`mkDivBox`, one loop a clock.  The cycle structure is from R23-9732
+fig. 3.8.15 (PDF 239-241).  `bsv/StretchDivBox.bsv` "THE 7030'S
+REDUCTION LOOP" has the citations.  The atlas before/after, with
+residual = model - printed in clocks, on every non-internal column:
+
+| page | op | before | after |
+|---|---|---|---|
+| 54, 85 | `/` | -15.7 to -18.0 | **+1.00** |
+| 55, 86 | `D/` | -21.0 | **-0.03 to 0.00** |
+| 56, 87 | `R/` | -20.0 | **+1.00** |
+
+The +1 on `/` and `R/` is the same +1 that `*` shows (PDF 52; the
+removal clock).  `D/` comes out exact because the atlas's D/ is one
+clock over Table 2, as D* and D+ are ("1 cycle if immediate next
+instruction is floating point", not printed on D/'s row), and the
+removal clock happens to stand in for it.  The VFL `/` (PDF 134) uses
+the same box and is unchanged by construction (`fpFixed` = 0).
+
+**RECONSTRUCTION, open to a better source:**
+* Whether the second divide cycle (which loads the shift counter with
+  47 or 48) is a reduction loop of its own.  Counted, 1/1 is 25 clocks,
+  the atlas's 7.50 us exactly; not counted, 23.  Counting it gives a
+  mean over random operands of 38 clocks (11.4 us) against PDF 41's
+  "about 10 us"; not counting it gives 10.8 us.
+* Remainder magnitude in two's complement, where the 7030 uses ones'.
+
+**Sourced, not reconstructed:** a zero divisor costs `/` and `D/` the
+same 3 + 2 = 5 (Table 2; R23-9732 fig. 3.8.15 sheet 3, PDF 241, printed
+8-19, Part E note 1: "FLOATING POINT DIVIDE OR DIVIDE DOUBLE RECIPROCAL
+DIVIDE IS TERMINATED IN THE SAME MANNER AFTER 2"); `R/` is 4 + 5.
+
+**Still open, measured:** the INTERNAL ($R) columns.  `/` and `R/`
+went from -25 / -27 to -6; `D/` went from -5 to **-10**.  The model's
+D/ internal is now 6 clocks, which equals the 5-clock zero-divisor
+charge plus the removal clock.  The INFERENCE (not confirmed with the
+ZD indicator) is that in the model that sequence divides by a zero $R
+fraction after the first D/ (D/ zeroes accumulator bits 61-107), and
+that the zero divisor used to be charged D/'s flat 10.  The printed 4.82 us
+(16 clocks) fits neither; PDF 40 warns that $R changes under
+double-length operations.  Not investigated further.
+
 ## ASSEMBLER COMPLETENESS (G3) -- G3.1-G3.3 built 2026-11-16; what is open
 
 Built: field arithmetic in strap_asm (G3.1), the function rule of
@@ -2206,6 +2255,9 @@ bug.
    necessary", and for DIVIDE "number of cycles is data dependent".
    `StretchFP.bsv` already derives the shift and normalize counts to
    produce the ANSWERS, so the inputs exist.
+   **DIVIDE DONE 2026-11-17** -- see "FP DIVIDE TIME" at the top of
+   this file.  The add class, loads, stores, multiplies and SRT are
+   still at their minima.
 3. **`*+`'s interlock**, "cannot enter execution cycles until Factor
    is available", is not a duration and belongs with the look-ahead.
 
