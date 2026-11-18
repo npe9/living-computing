@@ -55,7 +55,7 @@ pulled from bitsavers.org):
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
-| `StretchDivBox.bsv` | The divide boxes. `mkDivBox`, the one the core instantiates (once, inside `mkEBox`): a 96-by-48 iterative restoring divider behind `request`/`responseReady`/`response`, 24 quotient bits a clock, four clocks, reached by `execute()`'s `NeedBox` bail -- see "The divide box" below. `mkFpDivBox`, the standalone sourced-structure FSM (trial/intermediate/last reduction, the normalisation loop) that the later timing step is to grow it into. Each has its own testbench (`mkCoreDivBoxTb`, `mkDivBoxTb`; `../tests/run_divbox_test.sh`). |
+| `StretchDivBox.bsv` | The divide boxes. `mkDivBox`, the one the core instantiates (once, inside `mkEBox`): a 96-by-48 iterative restoring divider behind `request`/`responseReady`/`response`, 24 quotient bits a clock, four clocks, reached by `execute()`'s `NeedBox` bail; for a floating-point divide it also walks the 7030's reduction loop for its length (`fpExtra`) -- see "The divide box" below. `mkFpDivBox`, the standalone sourced-structure FSM (trial/intermediate/last reduction, the normalisation loop) that the later timing step is to grow it into. Each has its own testbench (`mkCoreDivBoxTb`, `mkDivBoxTb`; `../tests/run_divbox_test.sh`). |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
 | `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../tests/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
@@ -843,11 +843,30 @@ by 1. The first five shrink in proportion when the box is made faster
 (the hold window). f217d's +4 goes away at 2 box clocks. f217a's and
 f217c's are constant and not yet explained. No suite CYCLES check moved,
 because none of those decks has one. The box header has the table.
+(These figures are for the 4-clock box; since the FP divide's time
+became Table 2's, 2026-11-17, they are stale for the FP decks.)
 Getting the overlap back is an `rl_prepare` change.
-The box takes 4 clocks, and the smallest divide budget is 4 (FP `/`). An
+The box takes 4 clocks for the VFL divide. An
 overrun would print `DIVIDE BOX OVERRAN THE E-BOX BUDGET`. The 24 bits a
-clock is invented, to fit that budget, and the box header says so. Whether
-the box's own count should *be* the time is the later, sourced step.
+clock is invented, and the box header says so.
+
+**The floating-point divide's time (2026-11-17).** For `/`, `D/` and `R/`
+the box also walks the 7030's own divide algorithm for its LENGTH: one of
+the multiples 1, 3/4 and 3/2 of the divisor per add cycle, chosen by
+Buchholz Fig. 14.11, at most six shifts per cycle, and dummy shift cycles
+beyond six (Buchholz pp.213-216). The walk runs one reduction loop a
+clock beside the restoring steps, and does not touch the answer. It
+reports `fpExtra`, which is Perf. Char. Vol. 1 Table 2's divide row
+(printed p.3-5): the pre-shift terms (`fpDivFixedClocks`, StretchFP),
+2 per additional reduction loop, 2 for a complemented final remainder,
+and D/'s remainder normalization. `mkEBox.boxCharge()` hands `fpExtra`
+to `rl_exec_resume`, which adds it to `eboxClocks`' zero-divisor floor of
+5 (`R/` 9). A normalized 1 divided by a normalized 1 costs 25 clocks, the
+atlas's 7.50 µs. The atlas residual for `/` and `R/` went from −16..−20
+to +1, and for `D/` from −21 to 0. One point is RECONSTRUCTION: whether
+the counter-loading second divide cycle counts as a loop. The box header
+and `docs/NEXT.md` "FP DIVIDE TIME" give the reasoning. The budget is
+always more than twice the walk's clocks, so it cannot overrun.
 
 Test: `../decks/vfl_divide_box.strap` (full width, a 96-bit quotient,
 the largest remainder, the four sign cases with `vfl_divide.strap`, zero

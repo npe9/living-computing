@@ -946,7 +946,8 @@ The model's figure against the page's median, per column, in clocks
    "$R was changed during the execution of successive double length
    operations" so D+ / D+MG's internal column (−43) is data, not
    timing. Same direction as the VFL INTERNL finding.
-4. **Divide is short by 11-24 clocks** on /, D/ and R/, every column:
+4. **Divide is short by 11-24 clocks** on /, D/ and R/, every column
+   (closed 2026-11-17 except the internal columns: "What remains" item 7):
    `eboxClocks` charges Table 2's minimum, before the reduction loops.
    PDF 41 disowns these pages as a divide timing ("strongly data
    dependent"), so this residual says how far the minimum is from the
@@ -1600,7 +1601,18 @@ faster I-box widens it:
   6. SHF has no shift-amount term. **DONE 2026-11-17** (item 6).
   7. Divide (FP /, D/, R/ short by 11-24; `/I` long by up to 62) is
      data-dependent in the 7030 and not in the model; the volume
-     disowns these pages as a timing.
+     disowns these pages as a timing.  **FP half DONE 2026-11-17**:
+     Table 2's divide row with its data terms, the reduction loops
+     walked by Buchholz Fig. 14.11's algorithm in `mkDivBox`
+     (`bsv/StretchDivBox.bsv`, "THE 7030'S REDUCTION LOOP").  PDF 54/85
+     `/` and 56/87 `R/` −15.7..−20.0 → **+1.00** on every non-internal
+     column (the same +1 as `*`, PDF 52); PDF 55/86 `D/` −21.0 →
+     **−0.03..0.00**.  Internal columns: `/`, `R/` −25/−27 → −6, `D/`
+     −5 → −10 (a zero-divisor sequence in the model; docs/NEXT.md "FP
+     DIVIDE TIME").  The 1/1 the pages measure is the FASTEST divide
+     under the law (every cycle shifts six), which is what PDF 41's
+     "do not give a realistic timing" means.  The VFL `/I` half is
+     open.
   8. The CV/DCV comment in `bsv/StretchTiming.bsv`. **DONE 2026-11-17.**
   9. The preparation floor: a VFL decode costs 14 clocks where the 7030
      prints 12. **DONE 2026-11-17** (item 7): two clocks, the removal

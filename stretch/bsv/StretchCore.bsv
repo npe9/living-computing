@@ -1343,6 +1343,10 @@ module mkStretchCore(StretchCore);
     // instruction that did not use it), read BEFORE resume() clears the
     // wait.  See the charge below.
     Bit#(16) boxK = ebox.boxClocks();
+    // ... and the data-dependent part of a floating-point divide's
+    // time, which only the box knows (mkEBox.boxCharge; 0 for every
+    // other instruction).  Added to the budget on both paths below.
+    Bit#(16) boxX = ebox.boxCharge();
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
@@ -1374,13 +1378,16 @@ module mkStretchCore(StretchCore);
         // cannot be absorbed and the instruction really is longer;
         // that is reported, not hidden.  It can only happen when this
         // rule lost clocks to rl_recover, rl_io or rl_idx_write while
-        // the result waited: the smallest divide budget is 4 (FP `/`)
-        // and the box takes exactly 4.
+        // the result waited.  The VFL divide's budget (66 clocks up)
+        // dwarfs the box's 4; a floating-point divide's budget is
+        // 5 + fpExtra = Table 2's fixed terms + 2 per reduction loop,
+        // and the box walks ONE loop a clock, so the budget is always
+        // more than twice the box's clocks (2026-11-17).
         //
         // The OTHER branch needs no such term: an I-box-dispatched
         // instruction is charged `budget - elapsed` from its own start
         // clock, which already contains the box's time.
-        Bit#(16) ebudget = eboxClocks(la.headLevel().di);
+        Bit#(16) ebudget = eboxClocks(la.headLevel().di) + boxX;
         if (boxK > ebudget)
           $display("StretchCore: A BOX (DIVIDE OR DECIMAL) OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
                    pc, boxK, ebudget);
@@ -1391,7 +1398,7 @@ module mkStretchCore(StretchCore);
         commitNext(pc, len, o.next);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         Bit#(32) elapsed = clk - startClk;
-        Bit#(16) budget = budgetClocks(di, taken);
+        Bit#(16) budget = budgetClocks(di, taken) + boxX;
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
         done = isHalt(di, o.next, pc);
       end

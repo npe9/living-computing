@@ -2305,7 +2305,8 @@ function Tuple2#(Word64, FpCommit)
         FpDivResult r = fpDiv(acc, opnd, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
         if (!r.zd)
-          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs,
+                                              fpFixed: r.boxFixed, fpDbl: False };
         if (r.zd) begin
           // p.93: "When division is suppressed because of a zero
           // divisor, the accumulator and the sign byte register
@@ -2351,7 +2352,8 @@ function Tuple2#(Word64, FpCommit)
         FpDivResult r = fpDiv(opnd, acc, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
         if (!r.zd)
-          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs,
+                                              fpFixed: r.boxFixed, fpDbl: False };
         if (r.zd) begin
           // The zero divisor is now the ACCUMULATOR's fraction.
           // Nothing is written, as in DIVIDE; jb_af1c F217XA8
@@ -2394,7 +2396,8 @@ function Tuple2#(Word64, FpCommit)
         FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy, divQR);
         ind = setBit(ind, ind_MOP, 0);
         if (!r.zd)
-          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs };
+          fpc.divReq = tagged Valid DivReq { dvd: r.boxDvd, dvs: r.boxDvs,
+                                              fpFixed: r.boxFixed, fpDbl: True };
         if (r.zd) begin
           // As in DIVIDE: nothing is written and the result and
           // range indicators are left alone.
@@ -3963,7 +3966,8 @@ function ActionValue#(VflOutcome)
                 // elaborated and Bluesim's wide `/` trapped with a
                 // floating point exception on the discarded side; a
                 // restoring loop has nothing to trap on.)
-                needsBox  = tagged Valid (tagged BoxDiv DivReq { dvd: dvd, dvs: dsr[47:0] });
+                needsBox  = tagged Valid (tagged BoxDiv DivReq { dvd: dvd, dvs: dsr[47:0],
+                                                                     fpFixed: 0, fpDbl: False });
                 needsRead = tagged Valid 0;
               end else begin
                 Bit#(96) q    = validValue(divOf(boxResult)).q;
@@ -8206,6 +8210,14 @@ interface EBox;
   // the E-box budget it then charges, so the box's time is INSIDE the
   // instruction's time rather than added to it.
   method Bit#(16) boxClocks();
+  // THE DATA-DEPENDENT PART OF A FLOATING-POINT DIVIDE'S TIME, read in
+  // the same clock as boxClocks (2026-11-17): Table 2's terms that
+  // depend on the operands (pre-shifts, reduction loops, remainder
+  // complement, D/'s remainder normalization), over and above
+  // eboxClocks' zero-divisor floor.  The divide box computes it
+  // (StretchDivBox's walk); 0 for every other instruction, including
+  // the VFL divide, whose time is eboxClocks' fit.
+  method Bit#(16) boxCharge();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -8351,6 +8363,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                                               : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
+  method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
+                                ? divBox.response().fpExtra : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
     // `pc` and `len` are the EXECUTE's while a subject is held, which

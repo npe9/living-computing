@@ -2,6 +2,12 @@
 ! CHECKS", p.162 (octal 021133.00-021163.00, the block's own exit
 ! "B,$+1.").
 !
+! CYCLES PIN, 2026-11-17: 527 clocks to halt (tests/run_tests.sh).
+! Before the FP divide was charged Table 2's divide row with its
+! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
+! 7030'S REDUCTION LOOP"), the same deck took 385; with the box's
+! charge forced to 0 it takes 385 and the pin fails.
+!
 ! THIS BLOCK ADDS R/ (RECIPROCAL DIVIDE, opcode 0111110).  Reference
 ! Manual p.94: "The operand specified by the effective address, the
 ! dividend, is divided by the operand in the left half of the

@@ -239,7 +239,9 @@ function Bit#(16) eboxClocks(DecodedInstr d);
     // operands -- StretchFP.bsv already derives the shift and
     // normalize counts to produce the ANSWERS, so the data is in
     // hand -- and this does not yet do it.  Recorded as the next
-    // step rather than hidden: these numbers are a floor.
+    // step rather than hidden: these numbers are a floor.  EXCEPT THE
+    // DIVIDES, since 2026-11-17: their data-dependent part comes from
+    // the divide box (see the `/` arm below).
     //
     // ALSO NOT MODELLED: *+'s "cannot enter execution cycles until
     // Factor is available" (Table 2, printed p.3-4).  That is an
@@ -266,13 +268,29 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       (f.code == 7'd26 || f.code == 7'd90) ? 9 :
       // *+(58): 3 + 17
       (f.code == 7'd58) ? 20 :
-      // /(30): 2 + 2, before the data-dependent reduction loops
-      (f.code == 7'd30) ? 4 :
-      // D/(94): Divide plus 6 for the remainder normalization
-      (f.code == 7'd94) ? 10 :
+      // >>> THE THREE DIVIDES: THE ZERO-DIVISOR TIME HERE, THE REST
+      // FROM THE DIVIDE BOX (2026-11-17). <<<  Table 2 (printed p.3-5,
+      // PDF 23): "If zero divisor 3 cycles pre-execution and 2 cycles
+      // execution instead of previous" -- 5, and that is all a zero
+      // divisor costs, because it makes no box request (p.93: "further
+      // processing of the division is suspended").  Every other divide
+      // is charged this PLUS the box's `fpExtra` (mkEBox.boxCharge,
+      // added in StretchCore's rl_exec_resume): the operand-dependent
+      // pre-shifts, the reduction loops, the remainder complement and
+      // D/'s remainder normalization, walked from the operands by
+      // StretchDivBox ("THE 7030'S REDUCTION LOOP").  A normalized 1 by
+      // a normalized 1 comes to 25 (/), 31 (D/), 29 (R/), the atlas's
+      // 7.50, 9.60 (less D/'s unprinted 1), 8.70 us.  These used to be
+      // 4, 10 and 8, "before the data-dependent reduction loops", and
+      // the atlas measured them 16-21 clocks short.
+      // /(30) and D/(94): 3 + 2.  The same for D/: R23-9732 fig.
+      // 3.8.15 sheet 3 (PDF 241, printed 8-19), Part E ZERO DIVISOR,
+      // note 1: "FLOATING POINT DIVIDE OR DIVIDE DOUBLE RECIPROCAL
+      // DIVIDE IS TERMINATED IN THE SAME MANNER AFTER 2".
+      (f.code == 7'd30 || f.code == 7'd94) ? 5 :
       // R/(62): 2 + 2 "plus all pre-execution and execution cycles
-      // of Divide", so 4 + 4
-      (f.code == 7'd62) ? 8 :
+      // of Divide" (printed p.3-4, PDF 22), so 4 + 5
+      (f.code == 7'd62) ? 9 :
       // SLO(78): 2 + 17 unnormalized (15 if normalized with no
       // leading zeros -- the unnormalized figure is the floor)
       (f.code == 7'd78) ? 19 :
