@@ -1,0 +1,133 @@
+! DF SUPPRESSION FETCHES NOTHING -- prepareExec's dfSuppresses clause,
+! for VflInt, Connective and Fp.  ONLY THE FP CLAUSE IS PINNED; the VFL
+! and connective clauses are NOT, and this header says so rather than
+! leaving it to be found.
+!
+! THE RULE.  Reference Manual printed p.45 item 20 (PDF 48): "Data Fetch
+! (DF).  A computer operation has attempted to fetch data from a location
+! in the protected area of storage while the interruption system was
+! enabled.  If the corresponding mask bit was one, THE FETCH DID NOT TAKE
+! PLACE, and the entire operation was suppressed."  That sentence IS the
+! clause.  The shipped machine sets the level's NOOP tag on a boundary
+! alarm (CE Fig 3.2.2, docs/spec_lookahead.md section 2.7: "BOUNDARY
+! ALARM? -> SET DF OR DS IND + SET NOOP TAG").
+!
+! SHAPE.  The setup is df_fetch_suppress's (boundaries WLOW..WABOVE,
+! control bit 0, DF's mask bit one, enabled; the DF routine marks word
+! 6 bit 1).  Each suppressed operation follows six I-box-only LVIs, with
+! K(BU) right behind it; the accumulator must still hold PAT2W, the
+! routine must have run, and the protected word must be unchanged.
+!
+! INJECTIONS, each clause deleted alone in StretchIBox.bsv from a saved
+! copy, run across all three cwf_ decks, restored and compared with cmp
+! -- OBSERVED:
+!   Fp dfSuppresses clause dropped         -> CYCLES 822, nothing else
+!   VflInt dfSuppresses clause dropped     -> NOTHING FAILS (824)
+!   Connective dfSuppresses clause dropped -> NOTHING FAILS (824)
+! THE FP MOVE IS TWO CLOCKS FASTER, NOT SLOWER.  A pointless fetch does
+! not make this run quicker by itself, so what the pin sees is almost
+! certainly the interruption's drain (StretchCore armInterrupt waits for
+! empty levels) shifting with the level's wait, not the fetch's latency.
+! It is a regression pin on the clause, not a timing claim.
+!
+! THREE SHAPES WERE TRIED for the VFL and connective clauses, all
+! measured: this one; the refused operation followed by eight NOPs
+! (V, C and Fp all survived); and an earlier ST to the same protected
+! word ahead of it, so the fetch would wait on that store (V moved 882
+! -> 869, FASTER, C and Fp survived -- the DS interruption ahead was
+! being measured, so it was dropped).  What would pin them is a count
+! of memory requests the testbench can read (StretchIBox's note at
+! completesWithoutFetch).  OPEN in docs/NEXT.md.
+!
+! CYCLES 824 IS MODEL BEHAVIOUR; no documented time exists.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while words 3 and 12 are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, $DF,  $+1.0
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+!
+        L(BU,64,8), PAT2W            ! the PRELOAD
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(BU,64,8), WHIGH            ! VFL L, protected: SUPPRESSED
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        BZB, $AE,  $                 ! hang if the operand landed
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $                 ! hang if DF's routine did not run
+        BBZ, 6.1,  $+1.0
+!
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        C0011(BU,64), WHIGH          ! connective C, protected: SUPPRESSED
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        BZB, $AE,  $                 ! hang if the operand landed
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $                 ! hang if DF's routine did not run
+        BBZ, 6.1,  $+1.0
+!
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(U), WHIGH                  ! floating point L, protected: SUPPRESSED
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        BZB, $AE,  $                 ! hang if the operand landed
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $                 ! hang if DF's routine did not run
+        BBZ, 6.1,  $+1.0
+!
+        B,   PASS
+PASS    BEW, $
+!
+        SLC, (8)4276.0
+PAT2W   DD(BU,64,8), (8)0000125252525212525240
+        SLC, (8)4300.0
+WLOW    DD(BU,64,8), 0
+WHIGH   DD(BU,64,8), (8)0000125252525252525240   ! inside the area
+WABOVE  DD(BU,64,8), 0
+!
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)4524.0
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF
+        END, START

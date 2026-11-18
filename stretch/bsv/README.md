@@ -1536,6 +1536,19 @@ seen (`eboxClocks` gets the decoded instruction).
   exempts it -- p.32: "An address which actuates indicator AD, address
   invalid, is not compared with the contents of the boundary registers
   and cannot actuate any of the address alarm indicators.")
+  (2026-11-18: AD IS NOW RAISED for a VFL or connective operand too.
+  Before, only the floating-point arm asked `installed()`; a VFL `L` or
+  a connective at an uninstalled word read zero and set nothing, while
+  `StretchIBox.prepareExec` already called it "completes without fetch".
+  `vflIntOp` and `connectiveOp` now set AD and skip the whole operation,
+  printed p.21 / p.45 item 16 "executed as a NO OPERATION" -- first word
+  only; immediate and CV excluded.  `decks/cwf_address_invalid.strap`.
+  Of `prepareExec`'s eight "completes without fetch" clauses --
+  progressive with X0, DF and AD for VflInt and Connective, DF and AD for
+  Fp -- six are now pinned by a `decks/cwf_*.strap` deck whose CYCLES
+  move when that clause alone is deleted; the VflInt and Connective DF
+  clauses are NOT (no shape tried moves them; docs/NEXT.md).  See the
+  deck headers for the measured tables.)
 
 ### Not modeled at all
 

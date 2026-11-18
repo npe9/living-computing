@@ -120,6 +120,39 @@ the fix is its own change (and needs a deck for the direct case too: the
 magnitude of a negative DATA address, not just an immediate). No deck in
 the corpus produces a negative effective address that we know of.
 
+## COMPLETES WITHOUT FETCH -- 2026-11-18; six of eight clauses pinned, one model bug fixed
+
+`StretchIBox.prepareExec` gives a level no operand address for three causes
+(VflInt, Connective: progressive with X0, DF suppression, address invalid;
+Fp: DF, AD).  These are the eight that remain; the two the CROSSING items
+above name (crossing M+ family, CM crossing into a register word) were
+REMOVED with their refusals; re-adding either is caught by the crossing
+decks' CYCLES (the CROSSING STORES item above).  Sources: printed p.21 (PDF 24) and p.45 items 15, 16, 20
+(PDF 48) -- "executed as a NO OPERATION", and for DF "the fetch did not take
+place"; the level's NOOP tag, Perf. Char. Vol. 1 printed A-8 (PDF 67).  No
+documented time exists for a no-op'd level, so every pin is model behaviour.
+
+* `decks/cwf_progressive_x0.strap` -- X0 = 8.0, so a fetch would wait on the
+  preceding level (`eboxRegister`).  V and C clause deleted: CYCLES 283 -> 287.
+* `decks/cwf_address_invalid.strap` -- refused operation on an idle E-box.
+  V clause deleted: 562 -> 563, C: -> 565, Fp: -> 563.
+* `decks/cwf_data_fetch_suppress.strap` -- Fp DF: 824 -> 822 (FASTER: the
+  interruption's drain, not a fetch latency).  **OPEN: the VflInt and
+  Connective DF clauses survive deletion** in all three shapes tried (header).
+  What would pin them is a memory-request count the testbench can read.
+* **MODEL BUG FIXED:** execute() raised AD for an Fp operand only; a VFL or
+  connective operand past installed core read zero and set nothing (and a
+  progressive store still advanced its index).  `vflIntOp`/`connectiveOp`
+  now set AD and skip the operation (first word only; immediate and CV
+  excluded).  Each guard removed alone hangs the deck (V at 396, C at 412).
+* **NOT CHECKED, from reading the code only:** prepareExec's DF clause
+  applies to EVERY non-immediate VflInt code, but execute()'s DF signal and
+  suppression cover only the fetch types (`vflFetchType`: L, LWF, +, K, LFT,
+  LTRS, *+).  So for a protected binary `*` or `/` with DF's mask on,
+  prepareExec says "no fetch" while execute() neither signals DF nor
+  suppresses, and reads the word itself.  (Stores -- ST, M+, CM -- go
+  through the DS path, which suppresses them; not examined further.)
+
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 
 **Done.** The atlas (Perf. Char. Vol. 2 PDF 54-56, 85-87) had FP `/`,
@@ -395,8 +428,15 @@ them): the STORE WAIT test of a crossing store's second word
 into X16-31)~~ CHECKED 2026-11-17 (decks/vfl_cross_storewait.strap), ~~and
 the both-word protection check on a crossing `M+` (no deck runs with a
 protected second word)~~ CHECKED 2026-11-17 (decks/vfl_cross_protect.strap).
-Still unchecked: the two `prepareExec` "completes without fetch" clauses
-removed with the refusals.
+~~Still unchecked: the two `prepareExec` "completes without fetch" clauses
+removed with the refusals.~~ CHECKED 2026-11-18, by existing decks: each
+clause re-added alone as an injection (crossing M+/M+1/M+MG; CM crossing
+into a register word, second word below 32) -- crossing M+ -> 
+`vfl_cross_protect` CYCLES 1196 -> 1204 (and `vfl_cross_tomemory`, which
+pins no CYCLES, 1193 -> 1224 unobserved); CM -> `vfl_cross_special_words`
+CYCLES 377 -> 374.  Nothing else failed in the three crossing decks.  No
+model change.  (The eight clauses that REMAIN: "COMPLETES WITHOUT FETCH"
+below.)
 
 ### CROSSING STORES: THE COVERAGE GAPS CLOSED, 2026-11-17
 
@@ -483,8 +523,10 @@ STILL OPEN, found on the way:
 * **The one clock a crossing tail into word 11 leaves the operation's own
   indicators in the register**: a case was built and does NOT reach it on
   the model (below); still open as a model property, not observed.
-* The two `prepareExec` "completes without fetch" clauses removed with
-  the refusals are still checked by no deck.
+* ~~The two `prepareExec` "completes without fetch" clauses removed with
+  the refusals are still checked by no deck.~~ CHECKED 2026-11-18 by
+  `vfl_cross_protect` and `vfl_cross_special_words` CYCLES (above).  (The
+  eight that REMAIN, six of eight: "COMPLETES WITHOUT FETCH" below.)
 
 ### WORD 7, THE REFILL'S DF, THE WORD-11 WINDOW, 2026-11-17
 

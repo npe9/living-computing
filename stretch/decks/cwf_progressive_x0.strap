@@ -1,0 +1,55 @@
+! PROGRESSIVE INDEXING WITH X0 FETCHES NOTHING -- prepareExec's
+! (prog && i1 == 0) clause, VflInt and Connective.
+!
+! THE RULE.  Reference Manual printed p.21 (PDF 24): "In progressive
+! indexing, the value field, bits 0-24 of the index specified by I, is
+! used as the effective address.  If progressive indexing with index
+! register X0 is specified, indicator OP (operation code invalid) is
+! set."  printed p.45 item 15 (PDF 48): "An instruction with invalid
+! operation code is executed as NO OPERATION."  decks/
+! vfl_progressive_index0.strap pins the refusal's RESULT; this deck pins
+! that the refused level asks for no operand.
+!
+! WHY X0 = 8.0.  vfl_progressive_index0 reports the same clocks with the
+! clause deleted (StretchIBox's note, re-measured here: 240 = 240 on a
+! plain layout).  The lever is rl_prepare's wait: a level FETCHING word
+! 7-15 (eboxRegister) waits for the newest earlier level.  X0's value
+! field is the would-be operand address, so pointing it at word 8, the
+! accumulator, makes a pointless fetch wait behind the preceding L.
+!
+! CHECKS: OP on after the first case (OP is set-only, so once), the
+! accumulator still PAT after each, X0 unchanged after each.  CYCLES 283
+! IS MODEL BEHAVIOUR; no documented time exists for a no-op'd level.
+! WHAT THE VALUE CHECKS DO NOT DO, said rather than left to be found: the
+! increment is 0, so the X0 check would pass even if the operation ran
+! and advanced X0, and none of the accumulator checks was injected.  The
+! refusal's RESULT is pinned by vfl_progressive_index0 (VflInt only);
+! this deck pins the no-fetch clause, by its CYCLES.
+!
+! INJECTIONS, each alone, saved copy, restored and compared with cmp --
+! OBSERVED across all three cwf_ decks:
+!   VflInt (prog && v.a.i1 == 0) -> False   -> CYCLES 287, nothing else
+!   Connective (prog && c.a.i1 == 0) -> False -> CYCLES 287, nothing else
+! (the six DF and AD clause injections, and both execute() AD guard removals, leave it at 283.)
+        SLC, (8)300.0
+START   LV, $X0, A8                  ! X0's value field := 8.0
+        L(BU,64,8), PAT              ! the accumulator PRELOAD
+        L(V+I)(BU,64,8), 0($X0)      ! PROGRESSIVE WITH X0: OP, no-op
+        BZOP, $                      ! hang if OP did not come on
+        K(BU,64,8), PAT
+        BZB, $AE, $                  ! hang if the load landed
+        KV, $X0, A8
+        BZXE, $                      ! (cannot fail: the increment is 0)
+        L(BU,64,8), PAT
+        C0011(V+I)(BU,64), 0($X0)    ! the connective, same refusal
+        K(BU,64,8), PAT
+        BZB, $AE, $
+        KV, $X0, A8
+        BZXE, $
+        B, PASS
+PASS    BEW, $
+        CNOP
+        SLC, (8)400.0
+PAT     DD(BU,64,8), (8)0000125252525212525240
+A8      VF, 8.0
+        END, START

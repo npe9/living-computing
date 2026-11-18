@@ -2548,6 +2548,34 @@ run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program
     "RA:272=8" "RB:273=16" "RC:274=3" "RD:275=6" "RE:276=1024" \
     "RF:277=8" "RG:278=7" "RH:279=15" "RI:280=15" "RJ:281=15"
 
+# >>> prepareExec's "COMPLETES WITHOUT FETCH" CLAUSES, ONE DECK EACH,
+# 2026-11-18. <<<  StretchIBox.prepareExec names three causes for a VFL or
+# connective level (progressive with X0, DF suppression, address invalid)
+# and two for a floating-point one (DF, AD); until now no check in the
+# suite moved when any of them was deleted (NEXT.md).  Each deck below
+# puts its refused operations where a pointless operand fetch COSTS
+# CLOCKS -- behind an E-box register wait (X0 = 8.0, the accumulator), or
+# after six I-box-only instructions so the E-box is idle -- and pins the
+# total.  Each of the eight clauses was deleted alone (and each of the two
+# new execute() AD guards); SIX clauses are caught by their own deck's
+# CYCLES and nothing else, both AD guards by a hang -- but the VflInt and
+# Connective DF clauses SURVIVE (no shape tried moves them), and the Fp DF
+# pin moves two clocks FASTER.  The measured tables are in each deck's
+# header.  The CYCLES are MODEL behaviour, not a documented time:
+# the manual says only that these instructions are "executed as a NO
+# OPERATION" (printed p.21, p.45), and Perf. Char. prints no time for a
+# no-op'd level (its NOOP tag bit, Vol. 1 printed A-8, PDF 67).
+run "COMPLETES WITHOUT FETCH: address invalid, VFL/connective/FP (printed p.21, p.45 item 16)" ./run_program.sh ../decks/cwf_address_invalid.strap StretchCwfAdTb \
+    "PC=443" \
+    "CYCLES=562+-0"
+run "COMPLETES WITHOUT FETCH: progressive with X0, VFL and connective (printed p.21)" ./run_program.sh ../decks/cwf_progressive_x0.strap StretchCwfProgX0Tb \
+    "PC=407" \
+    "CYCLES=283+-0"
+run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 item 20)" ./run_program.sh ../decks/cwf_data_fetch_suppress.strap StretchCwfDfTb \
+    "PC=4312" \
+    "CYCLES=824+-0" \
+    "whigh:2241=3002399751580320"
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and

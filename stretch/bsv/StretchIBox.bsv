@@ -143,6 +143,24 @@ typedef struct {
   // either a count of memory requests the testbench can read, or the
   // look-ahead overlap of roadmap M2 -- at which point a pointless
   // fetch would cost a clock and those two decks' windows would move.
+  //
+  // >>> SUPERSEDED IN PART, 2026-11-18: SIX OF THE EIGHT CLAUSES ARE
+  // NOW PINNED BY CYCLES. <<<  A pointless fetch DOES cost clocks where
+  // something waits on it, and three decks put the refused operations
+  // there: decks/cwf_progressive_x0.strap (X0 = 8.0, so the fetch would
+  // wait on the preceding level as any fetch of words 7-15 does), and
+  // decks/cwf_address_invalid.strap and cwf_data_fetch_suppress.strap
+  // (the refused operation on an idle E-box with E-box work right behind
+  // it).  Each clause below was deleted alone; the measured results are
+  // in those headers.  THE VflInt AND Connective dfSuppresses CLAUSES ARE
+  // NOT PINNED: deleting either moves nothing in any shape tried, so for
+  // those two the paragraph above still stands.  The CYCLES are model
+  // behaviour -- the manual says only "executed as a NO OPERATION"
+  // (printed p.21, p.45) -- but the machine's level carries a NOOP tag
+  // for exactly this (Perf. Char. Vol. 1 printed A-8, PDF 67), so "no
+  // fetch" is the target.  The address-invalid deck also found execute()
+  // raising AD for an Fp operand only; vflIntOp and connectiveOp raise it
+  // now.
   Bool completesWithoutFetch;
 } PreparedExec deriving (Bits, Eq, FShow);
 
