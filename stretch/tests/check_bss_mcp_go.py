@@ -68,10 +68,11 @@ STAGE 4: the deck with SPRSW = 1 (its PRINT goes to PRSPR, one 17-word
   $SPR line a call: byte 0 single space, LINE in bytes 1-120, blanks to
   135; C22-6678-1 p.20).  The stub enters BSS (SCAFFOLD for MCP's $RET to
   the PP) with SL = 0, the interruption address at the stub's table ITAB,
-  the boundaries IPL's XBOUND sets (p.33 ll.51-52: only 32.0 protected),
+  the boundaries IPL's XBOUND sets (p.33 ll.51-52, PDF 40: only 32.0
+  protected),
   MCP's mask SLRMCP+9.0 (the IF bit) and BE.  So each B,$MCP / ,$SPR is
-  suppressed and traps IF (RefMan printed p.32) into ITAB+21 (SIC,STIC /
-  BD,STUBIF, MCP's own p.111 ll.1-3 shape).  STUBIF, SCAFFOLD for SIFAE
+  suppressed and traps IF (RefMan printed p.32, from the OCR) into ITAB+21 (SIC,STIC /
+  BD,STUBIF, MCP's own p.111 ll.1-3 shape, PDF 118).  STUBIF, SCAFFOLD for SIFAE
   (p.117): ll.5-6 and 9-10 as printed (save the low registers in STLR,
   $2 = STIC, $3 = the op), then NOT ll.20-28 (MCP bounds and mask; l.28's
   STLR -> SLRBU would overwrite SLRBU's planted PP limits with this bench's
@@ -86,16 +87,19 @@ STAGE 4: the deck with SPRSW = 1 (its PRINT goes to PRSPR, one 17-word
   without its two high bits.  CSTART's ARET (p.201 ll.51-54) $RET traps IF
   again; STUBIF's IRET (SCAFFOLD for MCP's return routine) sets SL = 0,
   restores registers 8-31 from PPSAV and BE's to the normal return p.118
-  l.6 left in SCSPRT+1.32.  MEASURED: without a BD at ENTER the system was
-  still enabled from MCP's stage 3, and the boundary store sent the run
-  into YBCBU (OP); ENTER now disables first.
+  l.6 left in SCSPRT+1.32.  ENTER begins with a BD: MCP's stage 3 may
+  leave the system enabled.  MEASURED (R2G_TAMPER=nobd, the BD a NOP):
+  BSS is never entered (ENTRYX unwritten), no ITAB entry is taken, and
+  38 checks fail; the cause is NOT isolated.  (The first run, before ITAB
+  was word-aligned, went into YBCBU with OP.)
   Checks: 12 $SPR traps and 12 $RET traps, no other op or interrupt; OUTB
   unwritten; the tentacle's linkage, return, FWA and user bit; after the
   12th line (CNUM = 12, p.209 l.49; C22-6728-1 PDF 170: "Each physical
   printer record contains twelve full lines") CBTA = 1, CWA refilled to
   buffer Y (CY+.6, count 12), CBWA = 0, so no $W was issued: the record
-  waits for the next $SPR or the output EOJ (p.202-204 CEOJ), which are not
-  run.  Buffer X decoded 6 bits a character: byte 0 '-' on every line,
+  waits for the next $SPR (CAOS3A) or the output EOJ (CEOJ; pp.202-204,
+  from the transcriptions), which are not run; the $W path was not
+  examined beyond them.  Buffer X decoded 6 bits a character: byte 0 '-' on every line,
   bytes 121-132 blank, and every p.17 row, header and '**' as
   check_bss_example4 judges OUTB; the 43-word table and KSILO 8-11 too.
   The call's ,$SPR and ,1. half words equal MCP's own p.203 ll.13, 15
@@ -113,16 +117,19 @@ STAGE 0 (no bench): p.20's five carriage-control characters (Restore 1,
   print program keeps) tells every A8 character apart.  The A8 48-set
   codes are all below 0o100, so the six bits are the code itself: '1' =
   000001, '-' = 100000, 'J' = 100001 are BCD's B-A-8-4-2-1 rows.  What the
-  1401 does with the tape is not read here (the peripheral output
-  program, C22-6728-1 pp.250ff, is not landed).
+  1401 does with the tape is not read here (the 1401 peripheral output
+  program is not landed).
 
 PAGES READ IN THE INK for this test (MCP listing printed page / PDF page;
 MCP_Mar63_250-445 unless noted).  For stages 4-5, 2026-11-18: MCP_Mar63_
-001-249 p.117/PDF 124 (ll.1-48, SIFAE, SIFAD, MIF6), p.118/PDF 125 (ll.1-50,
-the tentacle setup, MTC1-MTC4A), p.201/PDF 208 (ll.1-11, SCSPRT), p.203/PDF
+001-249 p.33/PDF 40 (ll.35-53, X377's $IA, LWF(U),XBOUND / ST(BU),$UB,64),
+p.111/PDF 118 (ll.1-8, SIT+21's SIC,STIC / BD,SIFAE), p.116/PDF 123 (ll.12-
+31, STLR, SLRBU, SPPUB/SPPLB, SLRMCP, l.28 INDMK,$IF), p.121/PDF 128 (ll.1-
+13, MIFTTT: 65.0 YJC4TT, 67.32 SCSPRT, 68.0 YJC4TT), p.117/PDF 124 (ll.1-48, SIFAE, SIFAD, MIF6), p.118/PDF 125 (ll.1-50,
+the tentacle setup, MTC1-MTC4A), p.201/PDF 208 (ll.1-11 SCSPRT, ll.44-56 ARET, ARET1), p.203/PDF
 210 (ll.1-56: ACHK, ACHERR, $SPR's ,$SPR / ,1., CSTART..CAOS3B),
-p.209/PDF 216 (ll.42-55: CNUM SYN,12., CWX, CWY, CWA, CWT, CWW), p.210/PDF
-217 (ll.1-28: CY, the record control characters, "X=(133*6*CNUM+5)/64",
+p.209/PDF 216 (ll.42-56: CNUM SYN,12., CWX, CWY, CWA, CWT, CWW, CX), p.210/
+PDF 217 (ll.1-28 and 39-54: CY, CXR7, ASERR, the record control characters, "X=(133*6*CNUM+5)/64",
 CBTA, CFILL, CBWA, APPERR, CATUB); MCP_Mar63_250-445 p.274/PDF 25 (ll.21-
 52, YEOJS, YC4NO..YC4B3); C22-6678-1 p.20 (the $SPR line and its control
 table) and p.22 ($EOJ).  Earlier: p.250/PDF 1 (l.45 RTONRJ, ll.29-33 MCP's
@@ -158,6 +165,10 @@ all re-run 2026-11-18 on the $SPR/$EOJ bench, control run all pass):
     byte 0, bytes 121-132, header 2, every row; header 1 passes.
   bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 20 fail: every buffer-line
     check (byte 0, padding, both headers, all rows).
+  nobd -- ENTER's BD a NOP: 38 fail (see STAGE 4): the entry and every
+    stage-4 check but five (OUTB unwritten, the call's half words, the user
+    bit, CBWA, P); stage 5's trap count, linkage, stop and $14 (YLLSAV,
+    SMAXRN and YEOJS pass).
   abeoj -- BSS leaves by $ABEOJ (68.0): MCP takes p.274 ll.46-48 (YEOJS =
     1, B,DMCP / BE,DDUMP), whose $DUMP (64.0) the stub does not serve: 4
     fail: the "no other op" check (BADOPX = 64.0), the stop at YC4B3, $14
@@ -169,8 +180,8 @@ all re-run 2026-11-18 on the $SPR/$EOJ bench, control run all pass):
   R2G_TAMPER=order -- type-area cards 41 and 42 swapped: the loader reads
     41 cards and stops (p.322 l.42, sequence error); the fetch count, last
     address, call count, SICBU and entry checks fail, and so does every
-    stage-4 and stage-5 check but five (OUTB unwritten, the call's half
-    words, CBWA, P, YEOJS): 43 in all; YRLDTA's check passes.
+    stage-4 and stage-5 check but six (OUTB unwritten, the call's half
+    words, CBWA, P, SMAXRN, YEOJS): 44 in all; YRLDTA's check passes.
   Controls: 1b and 1c above.
 
 Run with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../strap:. from tests/.
@@ -453,7 +464,7 @@ def tamper_image(words, S):
         for b in range(a, a + nbits):
             w, m = b // 64, 1 << (63 - b % 64)
             words[w] = (words[w] & ~m) | (p.words.get(w, 0) & m)
-    elif t and t not in ("order", "nocc", "fwa", "abeoj"):
+    elif t and t not in ("order", "nocc", "fwa", "abeoj", "nobd"):
         raise SystemExit("R2G_TAMPER: abssid, order, nocc, fwa, abeoj or %s, not %r"
                          % (", ".join(IMAGE_TAMPERS), t))
 
@@ -712,9 +723,10 @@ def stage34_prog(state, deck_imgs, kwords):
             # stub's table (ITAB), word 32.0 the only protected address
             # (the boundaries MCP's IPL sets, p.33 ll.51-52: XBOUND VF,33.0 /
             # VF,32.0, upper 33, lower 32, control bit 0), MCP's mask
-            # (SLRMCP+9.0: the IF bit, p.116 l.28), and entered enabled, so
-            # B,$MCP is suppressed and traps IF (RefMan printed p.32).
-            "ENTER   BD,$+.32",
+            # (SLRMCP+9.0: the image's word, the IF bit; p.116 l.28 INDMK,$IF),
+            # and entered enabled, so B,$MCP is suppressed and traps IF
+            # (RefMan printed p.32, from the OCR).
+            "ENTER   BD,$+.32" if os.environ.get("R2G_TAMPER") != "nobd" else "ENTER   NOP",
             "        CM0000(BU,1),SL",
             "        LVI,$1,ITAB",
             "        SV,$1,$IA",
@@ -835,7 +847,8 @@ def stage34(tmp, state):
     reads += [("x13", 29), ("sreads", at("SREADS")), ("yrltt2", at("YRLTT", 2)),
               ("ydfrda", at("YDFRDA"))]
     reads += [(nm.lower(), d.symtab[nm] // 64) for nm in ("NSPR", "NRET", "BADOPX", "NEOJ")]
-    reads += [("x14", 16 + 14), ("yeojs", at("YEOJS"))]
+    reads += [("x14", 16 + 14), ("yeojs", at("YEOJS")), ("yllsav", at("YLLSAV")),
+              ("smaxrn", at("SMAXRN"))]
     reads += [("jc4t%d" % i, at("YJC4TT", i)) for i in range(3)]
     reads += [("badic%d" % k, d.symtab["BADIC"] // 64 + k) for k in range(64)]
     reads += [("tent%d" % i, at("SCSPRT", i)) for i in range(4)]
@@ -982,8 +995,14 @@ def judge34(res, p2, imgs, exp, d, sym2):
     check("5: one IF trap of $EOJ (65.0), from EOJC", field(g["neoj"], 0, 18), 1)
     check("5: tentacle YJC4TT+2.0 = the linkage, EOJC's B,$MCP (p.118 l.1)",
           field(g["jc4t2"], 0, 19), eojc // 32)
-    check("5: stopped at YC4B3 (p.274 ll.25, 29-30, 44-45: YC4NO, no PP I/O to"
-          " wait for, not $ABEOJ)", g["_stopped"], S["YC4B3"] // 32)
+    check("5: YLLSAV.25 = 0, so the $EOJ is not 'spurious' (p.274 l.26)",
+          field(g["yllsav"], 25, 1), 0)
+    # SMAXRN is VF,0 at 215005.32 (p.103 l.36); bits 28-63 hold any count
+    # field LC,1,SMAXRN can read (bits 0-27 hold the word's first half).
+    check("5: SMAXRN's count 0, so LC,1,SMAXRN / BXCZ skip the PP I/O wait (p.274"
+          " ll.29-30)", field(g["smaxrn"], 28, 36), 0)
+    check("5: stopped at YC4B3 (p.274 ll.25-30, 44-45: YC4NO, not $ABEOJ)",
+          g["_stopped"], S["YC4B3"] // 32)
     check("5: $14 = $EOJ's op 65.0 (p.274 l.25 LVE,$14,YJC4TT+2.32)",
           field(g["x14"], 0, 24), 65 * 64)
     check("5: YEOJS still 0: a normal end (p.274 l.46 sets it only past l.45)",

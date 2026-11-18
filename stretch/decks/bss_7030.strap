@@ -78,7 +78,7 @@
 ! and DEFI cards (8, 9), K, A and Z cards (not in the 1963 loader's ATBL),
 ! B IOD and REEL cards' storage (ignored, as other B cards), NODE cards and
 ! segmentation (R2c), messages 4-7.  The print through MCP is built behind
-! SPRSW (PRSPR, $SPR), not the default.
+! SPRSW (PRSPR, $SPR; the exit by $EOJ), not the default.
 !
 ! RUN (tests/check_bss_example4.py, 2026-11-17): on Example 4's subprograms
 ! built to p.17's sizes, the map equals the printed one row for row (ten
@@ -104,7 +104,9 @@
 !     MCP's print; CONB holds the console line.  SPRSW bit 0 = 1 (set by
 !     tests/check_bss_mcp_go.py, R2b printer path) sends each line through
 !     MCP's $SPR instead (PRSPR: C22-6678-1 p.20's 17-word line, byte 0
-!     the carriage control, one line a call); assembled 0, the print is OUTB.
+!     the carriage control, one line a call), and the normal end leaves by
+!     $EOJ instead of halting (MPX); assembled 0, the print is OUTB and the
+!     end the BEW halt.
 !
 ! CHOSEN, each where it is used below, and gathered here:
 !   C1 a FORTRAN program card that follows a program card is a
@@ -1469,8 +1471,8 @@ BLANKL  DD(BU,64), (16)1010101010101010   ! a blank line
         DD(BU,64), (16)1010101010101010
 LINE    DR(BU,64), 15
 CONB    DR(BU,64), 5
-! SPRSW bit 0: 0 print to OUTB, 1 print through $SPR (PRINT); SPRL: one
-! $SPR line, 17 words of A8 blanks (C22-6678-1 p.20).
+! SPRSW bit 0: 0 print to OUTB and halt; 1 print through $SPR (PRINT)
+! and end by $EOJ (MPX).  SPRL: one $SPR line, 17 words of A8 blanks (C22-6678-1 p.20).
 SPRSW   DD(BU,64), 0
 SPRL    DD(BU,64), (16)1010101010101010
         DD(BU,64), (16)1010101010101010
