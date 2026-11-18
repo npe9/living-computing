@@ -48,30 +48,52 @@ accumulate.
     that after the load: "Having successfully loaded the instruction,
     the next half-word FP instruction can be transferred from 2YR to ZL".
     The figure has no conflict to resolve, so it is silent.
-  - R23-9732 Fig. 3.1.24, WBC trigger (PDF 88, printed 1-49/1-50). The
-    VFL operand request is "VFL 4 E ON (28.11.42.1)" -> "W 0-17 TO MAB
-    (28.21.61.1)", and no IC FETCH PRIORITY test is drawn on that path.
-    The FP request has one (Fig. 3.1.21, "NOT IC FETCH PRIORITY", ALD
-    28.20.23.1). Figs 3.1.23 (PDF 87), 3.1.25-3.1.27 (PDF 89-91) and the
-    block/suspend triggers 3.1.11 and 3.1.16 (PDF 73, 80) have no VFL priority test
-    either. An OCR sweep of PDF 63-140 found "PRIORITY" only on I-fetch,
-    block/suspend, FP and checker pages; OCR was a finding aid only.
+  - R23-9732 Fig. 3.1.24, WBC trigger (PDF 88, printed 1-49/1-50). Its
+    VFL request "VFL 4 E ON (28.11.42.1)" -> "W 0-17 TO MAB (28.21.61.1)"
+    has no IC FETCH PRIORITY test. But that box is on the word-boundary-
+    crossover figure and sends W, the SECOND word's address (Blosk
+    printed p.31: "The first 18 bits of the result are gated into the
+    WR, and this is actually the operand address for the second memory
+    word"). The ordinary first-word VFL operand fetch was NOT located in
+    the flow diagrams. The FP request has its test (Fig. 3.1.21, "NOT IC
+    FETCH PRIORITY", ALD 28.20.23.1). These pages have no VFL priority
+    test either: Figs 3.1.23 (PDF 87), 3.1.25-3.1.27 (PDF 89-91), the
+    block/suspend triggers 3.1.11 and 3.1.16 (PDF 73, 80), the look-ahead
+    load pulses Fig. 3.2.2 (PDF 93-94), and the LA-side VFL figures 3.2.8
+    and 3.2.9 (PDF 100-101, the transfer to the SAU, not the fetch). An OCR
+    sweep of PDF 63-140 (of 297) found "PRIORITY" only on I-fetch,
+    block/suspend, FP and checker pages. OCR was a finding aid only.
   - **The lead.** Fig. 3.1.1, IF 1Y sequencer (PDF 63, printed 1-1/1-2),
     and Fig. 3.1.3, IF 2Y sequencer (PDF 65, printed 1-5/1-6), send
     "IF1Y E.M LTH + IF2Y E.M LTH (28.41.21.1)" (3.1.3: "IF2Y E LTH",
-    28.41.32.1, E.M branch) "TO LA LD SEQ VFL2 (28.11.21.1)", VFL3
-    (28.11.31.1), VFL4 (28.11.41.1), VFL5 (28.11.51.1), and in the same
-    list FPL4, FPL3 (28.13.31.1, which Fig. 3.1.21 shows as "COND FPL 3E
-    TON"), FPR4, FPR3 and FPDD. VFL1 is absent from the list. It is the
-    level that carries the instruction and makes no operand fetch (Blosk
-    printed p.31). So the instruction-fetch latch reaches every VFL
-    operand-loading sequencer, as it reaches the FP ones. **What it does
-    there is not drawn:** those ALD pages (28.11.x) are not in the manual.
-    It could block the fetch, or it could enable it. It is also not the
-    signal behind `fpYields`, because FPL2, the step gated by NOT IC FETCH
-    PRIORITY, is not in the list. Not implemented, because nothing printed
-    says it is a yield. The ALD pages 28.11.21.1-28.11.51.1, if found,
-    would settle it.
+    28.41.32.1, E.M branch) to a list of destinations: "TO FLLI TON CKT
+    (28.79.32.1)", "TO LA LD SEQ VFL2 (28.11.21.1)", VFL3 (28.11.31.1),
+    VFL4 (28.11.41.1), VFL5 (28.11.51.1), then FPL4, FPL3 (28.13.31.1,
+    which Fig. 3.1.21 shows as "COND FPL 3E TON"), FPR4, FPR3 and FPDD.
+    VFL1 is absent from the list. It is the level that carries the
+    instruction and makes no operand fetch (Blosk printed p.31). So the
+    instruction-fetch latch reaches every VFL operand-loading sequencer,
+    as it reaches the FP ones.
+  - **Polarity is printed for one destination, FLLI.** On the same Fig.
+    3.1.1, under "IF1Y M TGR OFF", E.M branch, the boxes read "BLOCK
+    FLLI TURN ON (28.79.32.1)" and "BLOCK SLLI TURN ON (28.79.42.1)". That
+    is the same ALD page as the fan-out's "TO FLLI TON CKT". Fig. 3.1.27
+    (FW trigger, PDF 91) shows that FLLI is a full-word look-ahead load
+    that puts its operand address on the MAB: "FLLI E TGR ON (28.79.33.1)"
+    -> "GT Z 0-17 TO MAB (28.79.64.1)", and with SBC "LA LD E.M". So for
+    FLLI the manual prints it: an instruction fetch in progress BLOCKS
+    the turn-on of a look-ahead load that would use the MAB. This is the
+    strongest evidence found. It is still not VFL2-5. Which instructions
+    take the FLLI path was not identified. What the same wire does inside
+    the VFL2-5 sequencers is not drawn: their ALD pages are cited by
+    number (28.11.x) but are not reproduced in the flow diagrams surveyed.
+    It is also not the signal behind `fpYields`, because FPL2, the step
+    gated by NOT IC FETCH PRIORITY, is not in the list.
+  - **Not implemented**, because no printed page says a VFL level yields.
+    The analogy with FLLI is strong, and the ALD pages 28.11.21.1-
+    28.11.51.1 would settle it. A RECONSTRUCTION built on the FLLI
+    analogy would have to pass `decks/int_timing_bracket.strap`, which the
+    global reorder broke.
   A GLOBAL reorder (every level behind 1Y/2Y) was measured earlier and
   dropped: it moved twenty VFL CYCLES pins (pack loop 861 -> 905, V-ICR
   685 -> 717, refill DF 1115 -> 1134, ...) and broke the interruption
