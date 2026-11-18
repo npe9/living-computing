@@ -123,7 +123,8 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   the core image of the landed pp.381-439, 020000-023233, unwritten words 0
   (CHOSEN) -- sets M = 1692, restores registers 8-31 from STLR and returns
   enabled to the normal return.  The fetch is needed: word 020000 was 0 at
-  the call (resume load's PP clear).  Then IBM's code: p.381 (PDF 131) l.11
+  the call (resume load's PP clear, "PP memory is cleared from location
+  41.(8) TO SBAPP", C22-6728-1 p.86, PDF 86, read in the ink).  Then IBM's code: p.381 (PDF 131) l.11
   $14 = 65.0, not SJC4; ll.13-14 SIT+20..47 <- FWIT (MARKER: SIT+20..47
   planted with the sentinel, which the image otherwise assembles equal to
   FWIT); l.17 SCORG = 1 -> YC4INT; p.396 ll.32-35 the pointer 2 > count 1
@@ -137,10 +138,12 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   1,677,355 cycles.
   WHAT BLOCKS TASIGN, MEASURED (the stop removed, R2G_PCLOG=1): TA9 (p.406
   l.35) walks the channel status table at SXCHAN, which IPL builds; here it
-  is p.103 l.28's assembled XW,0 (base 0, count 0).  The scan read from
-  address 0 and halted on MCP's own T N BD,$ at 021725.00, "MACH CONF CH.
-  ASSIGN BIT ON - MULTI" (p.410 l.52, PDF 160) -- an artifact of the
-  missing table.  Without a configuration change TASIGN walks JC1's PP
+  is p.103 l.28's assembled XW,0 (base 0, count 0) in the image (not read
+  at the halt).  OBSERVED in the PC trace: TASIGN -> TA9 -> TCM9, TA9A,
+  T9M, TB9, TA9D, TA9E loops -> TA9F -> MCP's own T N BD,$ at 021725.00,
+  "MACH CONF CH. ASSIGN BIT ON - MULTI" (p.410 l.52, PDF 160).  INFERRED,
+  not observed: the scan walked a table based at 0, so the halt is an
+  artifact of the missing table.  Without a configuration change TASIGN walks JC1's PP
   reference table TSAV instead, not built either (stage 2).
   Left as the image assembles them (SCAFFOLD): SCNFCG 1, SYSMOD 00, TMAXRF
   0, SPROGS 0; KSILO+7 is 0 (p.395 l.46 zeroes it; the reconstructed BSS
@@ -235,9 +238,8 @@ are the other ten):
     41 cards and stops (p.322 l.42, sequence error); the fetch count, last
     address, call count, SICBU and entry checks fail, and so does every
     stage-4, -5 and -6 check but eight (OUTB unwritten, the call's half
-    words, CBWA, P, SMAXRN, YEOJS, and stage 6's two consistency checks;
-    unlike the YC4B3 bench, YLLSAV.25 now fails): 54 in all; YRLDTA's
-    check passes.
+    words, CBWA, P, SMAXRN, YEOJS, and stage 6's two consistency checks):
+    54 in all; YRLDTA's check passes.
   Controls: 1b and 1c above.
 
 Run with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../strap:. from tests/.
@@ -747,7 +749,8 @@ def stage34_prog(state, deck_imgs, kwords):
            sy("YPPMEM"), sy("YFHFWA"), sy("YFHFWA", 2 * 64 + 32, "RDFET"),
            "YFHTAW  SYN,(8)%o.0" % (S["YFHTA"] // 64),
            "START   B,YC4INT",
-           # After ENTER every $MCP call is a PP's, and traps (ITAB); one
+           # After ENTER every $MCP call traps IF (ITAB) -- the PP's, and
+           # from stage 6 MCP's own B,DMCP / ,DFETCH (STUBIF's IFETCH); one
            # that reaches 32.0 is not expected: stop.
            "SDMCP   BB,RUNF,LATE",
            "        LX,$1,NCALL",

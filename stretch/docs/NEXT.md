@@ -1234,10 +1234,11 @@ The bench stops at TASIGN (p.398 l.31). Stages 3-6 take 1,677,355 cycles.
 **What blocks TASIGN:** the configuration change walks the channel status
 table at SXCHAN (p.406 l.35 `LX,TIXF,TCHSXW`). IPL builds that table, and
 in this bench SXCHAN is still the assembled `XW,0` (p.103 l.28), with
-base 0 and count 0. MEASURED with the stop removed: TA9 scans addresses
-from 0 and halts on MCP's own `T N BD,$` at 021725.00, "MACH CONF CH.
-ASSIGN BIT ON - MULTI" (p.410 l.52). That halt comes from the missing
-table, not from the job. So the next step needs IPL's channel and unit
+base 0 and count 0 (the image's word, not read at the halt). OBSERVED
+in the PC trace with the stop removed: TA9's scan loops, then MCP's own
+`T N BD,$` at 021725.00, "MACH CONF CH. ASSIGN BIT ON - MULTI" (p.410
+l.52). Inferred: the scan walked a table based at 0, so the halt comes
+from the missing table, not from the job. So the next step needs IPL's channel and unit
 tables, or JC1's PP reference table (TSAV) for the no-change path. KSILO+7
 also stays 0. C22-6728 p.197 makes 7.0-7.17 "Number of arcs occupied by
 compiled program" and 7.25 the "Reject flag", and the reconstructed BSS
@@ -1248,7 +1249,9 @@ need the output tape's IOD/unit; the 1401 side is not landed. (2) TASIGN
 for the GO phase. It needs the channel status table IPL builds (SXCHAN),
 which the IPL boot (volume 1) does not yet hand to this bench. After it
 comes WJ4PE -> YL1 -> WJCV -> YRDFSO -> YPPID4's `$FETCH` of
-`))))))))`, then resume load as BSS postprocessor (C22-6728-1 p.86).
+`))))))))`, then resume load as BSS postprocessor (C22-6728-1 p.86, read in the
+ink: "If it is a BSS postprocessor, resume load obtains the loader limits
+from KSILO").
 (3) SIFAE's PP half, and the PP run under its own limits: BSS writes
 KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not built: the O
 card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL
