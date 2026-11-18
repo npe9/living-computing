@@ -791,9 +791,11 @@ afterwards (p.14, PDF 17, "the low-order bits are dropped"). LVE is the one
 class that keeps the sign: p.28 (PDF 31), "the effective value plus sign", so it
 now stores `.sign` and XVLZ follows. TR00.722 PDF 17's index adder, with its
 complementer and "automatic recomplementing ability on the output", is the
-hardware for it. No existing deck changed with the fix (full suite);
-`decks/negative_effective_address.strap` is the oracle and records five
-injections.
+hardware for it. No checked result of an existing deck changed with the fix
+(full suite), and no IBM listing was found doing it (leads traced in the
+deck header); `decks/negative_effective_address.strap` is the oracle (VFL,
+FP, LV, transmit, B, BR, indicator branch, LVE, SHFL) and records six
+injections. I/O, EX/EXIC and R/RCZ share the helpers and have no case.
 
 **The store wait (2026-11-16).** The other direction is a level that stores into
 an index register, and the model handled it badly. A new level indexed by j

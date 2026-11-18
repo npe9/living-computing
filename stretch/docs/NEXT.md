@@ -119,16 +119,24 @@ effAddr24 returned a magnitude). The positive path still wraps (pp.20-21,
 the carry "is ignored"). CHOSEN: a zero sum of a negative index is -0
 (TR00.722 PDF 17's end-around-carry adder); only LVE can see it,
 unpinned. `decks/negative_effective_address.strap` covers VFL fetch /
-store / immediate, FP, LV, B, BR, LVE, SHFL with injections; the full
-suite with the fix changed nothing, so no listing we run depends on it.
+store / immediate, FP, LV, transmit, B, BR, an indicator branch, LVE,
+SHFL with injections; the full suite with the fix changed nothing, so
+no CHECKED result of a deck we run depends on it. No IBM listing was
+found doing it; the leads traced (MCP's LVNI queue entries and p.244's
+LVNI,$12,$, both reaching SVA, not an I field; ax5b I60K9/K11 and
+I00VO, loaded into X0 / unindexed X2) are in the deck header. NOT
+traced: the zero-address dispatches (BR,0($14), B,0.0($1) ...) for the
+sign of their registers, the untranscribed diagnostic PDFs. Not given
+cases: I/O, EX/EXIC, R/RCZ (same helpers).
 
-**Observed, not fixed: a branch to an uninstalled address is not a NO
-OPERATION.** p.21 (PDF 24): "A branch instruction with an invalid
+**Observed, not investigated: a branch to an uninstalled address may
+not be a NO OPERATION.** p.21 (PDF 24): "A branch instruction with an invalid
 address is also executed as a NO OPERATION" (and AD, p.45). Under the
 wrap injections of negative_effective_address.strap, `B,(8)600.0($X10)`
-to half-word ~2**19-1281 ended the run with PC 0 instead of falling
-through. No branch-target `installed()` check exists in StretchExecute
-or StretchCore (only data paths set AD). Its own change, with a deck.
+to half-word ~2**19-1281 ended the run (the PC read 0) instead of
+falling through. A grep found no branch-target `installed()` test in
+StretchExecute / StretchCore / StretchIBox (the data paths have one);
+not looked at further. Its own change, with a deck.
 
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 
