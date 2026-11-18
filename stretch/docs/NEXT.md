@@ -166,9 +166,12 @@ documented time exists for a no-op'd level, so every pin is model behaviour.
   CHOSEN, unprinted: a PROTECTED VFL store still fetches its word whatever
   DF's mask (Perf. Char. Vol. 1 printed p.2-3 item 6: "All VFL stores are
   fetch-and-stores"); KE/KFE/KR whose condition is false are still
-  fetch-type.  STILL OPEN: floating-point M+/M+MG signal DF on their field
-  (StretchExecute's Fp arm, `known && !isStoreClass`) though p.32 makes a
-  field "subject to change" DS's; not touched here.
+  fetch-type.  `tests/atlas_oracle.py` (not in run_tests.sh) was NOT
+  re-run, though DCV's level no longer fetches; no suite pin moved.
+  STILL OPEN, NOT CHECKED, from reading the code only: floating-point
+  M+/M+MG appear to signal DF on their field (StretchExecute's Fp arm,
+  `known && !isStoreClass`) though p.32 makes a field "subject to change"
+  DS's; no deck run, not touched here.
 
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 
