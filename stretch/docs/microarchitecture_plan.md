@@ -71,6 +71,7 @@ in parentheses); **open** = no stage assigned yet.
 |---|---|---|
 | Six interleaved 16K-word 2.1 µs memory units, MBCU busy handling | Buchholz §14.1/14.3 | done (stage 1); 8-channel priority partial |
 | Bus return tags per requester | Blosk p.19 | done for operand/1Y/2Y; LA levels planned (3) |
+| Instruction fetch beats a look-ahead load for the memory bus. FP: FPL2E only under "NOT IC FETCH PRIORITY". The IF sequencers' E.M latch is wired "TO LA LD SEQ VFL2-VFL5", FPL3/4, FPR3/4, FPDD and "TO FLLI TON CKT", and on the same page it prints "BLOCK FLLI TURN ON" (FLLI is a full-word LA load that puts "Z 0-17 TO MAB") | R23-9732 Fig. 3.1.21 (PDF 85), Figs 3.1.1/3.1.3 (PDF 63/65), Fig. 3.1.27 (PDF 91); Blosk printed p.30 (PDF 32) | partial (2026-11-17): FP levels yield (`fpYields`, StretchStorage `memCtl`). VFL/connective levels do not: their receiving logic is not drawn and no VFL gate is printed (read 2026-11-18, `docs/NEXT.md` "ATLAS: I-BOX SUPPLY"). FLLI is not modeled as such |
 | 1Y/2Y instruction buffers, I-checker cycle, program-store compare | Blosk pp.10, 15, 21 | done (2a); compare is conservative |
 | Successful branch empties the buffers and refetches | Perf. Char. p.3-17, Blosk p.35 | done (2a); overlap of the refetch inside CB's sequence planned (2b/3) |
 | Per-class I-box instruction times (tables 4-8) | Perf. Char. §3 | done as budgets (2b) |

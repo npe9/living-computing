@@ -1163,9 +1163,14 @@ residuals" item 13, pinned by `decks/ibox_supply.strap`:
   priority, the IC fetch is made ..."). `laReq` now carries whether the
   level is FP, and an FP level's fetch is held (`fpYields`) while a 1Y/2Y
   fetch waits for a unit that can take it. VFL and connective levels keep
-  Buchholz's order: no VFL source was read, and a global reorder moved
-  twenty VFL pins and broke `decks/int_timing_bracket.strap`
-  (`docs/NEXT.md`). FP L EXTERNAL (Vol. 2 PDF 64) went from +1.33 to
+  Buchholz's order. The VFL pages were read on 2026-11-18 (Blosk Fig. 7;
+  R23-9732 Figs 3.1.1, 3.1.3, 3.1.24) and none shows a VFL load giving
+  way to the instruction fetch. The IF sequencers do wire their E.M latch
+  to the VFL2-VFL5 load sequencers, but what it does there is not
+  printed. It does print "BLOCK FLLI TURN ON" for FLLI, a full-word
+  look-ahead load in the same list, which is a strong lead but not a VFL
+  source (`docs/NEXT.md`). A global reorder moved twenty VFL pins and
+  broke `decks/int_timing_bracket.strap`. FP L EXTERNAL (Vol. 2 PDF 64) went from +1.33 to
   +0.46 clocks, DL (PDF 66) from +1.10 to D+0.46.
 - **Indexed immediate.** An immediate VFL operand skips the word-boundary
   test (R23-9732 Figure 3.1.23, PDF 87: "IMM-bar . VFL"), so its indexing
