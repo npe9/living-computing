@@ -2519,6 +2519,33 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # the store LANDS, and the machine never halts, hanging on the
 # `BZOP, $` self-branch at half-word 392 until the step cap.
 
+# AN IMMEDIATE VFL OPERAND IS INDEXED (fixed 2026-11-18).  Reference
+# Manual printed p.21 (PDF 24): codes 0 and 4 "both specify standard
+# address modification ... For code 4, the immediate mode is specified
+# and the effective address is used as the operand itself"; printed p.56
+# (PDF 59): bits 0-23 are "indexed by the contents of the index register
+# specified in the I field ... or it may be used as data".  The model
+# carried the address field unindexed (StretchIBox carryIndex) and read
+# the immediate from it (execute()'s immediateOperand), so a nonzero I
+# was ignored.  No IBM listing we searched writes one (936 immediates
+# over 812 assembled decks, all with I = 0; untranscribed diagnostic PDFs
+# not searched); this deck is the oracle.  Each
+# value differs unindexed / indexed / indexed twice; the deck header has
+# the cases.  MEASURED INJECTIONS (each reverted from a saved copy, cmp
+# clean; control 713 clocks):
+#   1 whole fix removed:            all ten value checks fail (684 clocks,
+#                                   RG's not-equal path, not timing)
+#   2 execute() half only (EX):     RI fails (5); 713
+#   3 I-box half only (late read):  RJ fails (8); 713
+#   4 indexed twice:                RA-RH and RJ fail, RI passes; 684
+# The 713 pin predates e996f2c's vflImmIndexedSaving, which charges an
+# indexed immediate differently: expect this pin to move at that merge.
+run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program.sh ../decks/vfl_immediate_indexed.strap StretchVflImmIdxTb \
+    "PC=443" \
+    "CYCLES=713+-0" \
+    "RA:272=8" "RB:273=16" "RC:274=3" "RD:275=6" "RE:276=1024" \
+    "RF:277=8" "RG:278=7" "RH:279=15" "RI:280=15" "RJ:281=15"
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and

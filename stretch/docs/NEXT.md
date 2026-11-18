@@ -24,6 +24,45 @@ accumulate.
 
 
 
+## IMMEDIATE VFL OPERANDS ARE NOT INDEXED -- fixed 2026-11-18
+
+**Done** (the item "Found, not fixed: the model does not index an
+immediate VFL operand", recorded with the atlas I-box supply work).
+Ref. Manual printed p.21 (PDF 24): codes 0 and 4 "both specify standard
+address modification ... For code 4, the immediate mode is specified and
+the effective address is used as the operand itself"; printed p.56 (PDF
+59): bits 0-23 are "indexed by the contents of the index register
+specified in the I field ... or it may be used as data"; printed p.20
+(PDF 23): "the effective address itself constitutes the operand". All
+three read in the page images. `carryIndex` now indexes P = 4 as P = 0
+(and `carriedVflAddr` clears i1 for both); `execute()`'s ten
+`immediateOperand` calls take `ea`, which also covers an EX subject (not
+carried). Timing untouched: the timing functions read the uncarried
+`di`. No IBM listing we searched writes one (936 immediates across 812
+assembled decks, none with a nonzero first index; the OCR texts in
+docs/ocr scanned too). Still open as an oracle hunt: the diagnostic
+PDFs with no text layer or transcription (jb_*/ja_*/ka_*,
+SystemTestPrograms). So
+`decks/vfl_immediate_indexed.strap` is the oracle; its header has the
+injections.
+The EX path's injection reaches only the `L` site of the ten
+`immediateOperand` calls (the other nine are the same one-word edit).
+**Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's
+`vflImmIndexedSaving`; it runs nine indexed immediates, so that change
+will move the pin -- re-measure at the merge (a timing move, not a
+semantic one: the injections above all ran at the control's clocks).
+
+**Found, not fixed: a NEGATIVE effective address should give its
+magnitude.** p.20: "The sign of the effective address is ignored"; p.21:
+"A negative effective address is not considered to be invalid; its
+magnitude is used." `effAddr24` returns `raw - x.addr` wrapped to 24
+bits, so `LI(BU,24),5($X)` with X = -7 would load 2^24 - 2, not 2. The
+comment at StretchExecute's LVE arm says effAddr24 "returns a 24-bit
+magnitude" -- it does not. It is shared by every addressed operand, so
+the fix is its own change (and needs a deck for the direct case too: the
+magnitude of a negative DATA address, not just an immediate). No deck in
+the corpus produces a negative effective address that we know of.
+
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 
 **Done.** The atlas (Perf. Char. Vol. 2 PDF 54-56, 85-87) had FP `/`,

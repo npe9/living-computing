@@ -3013,7 +3013,7 @@ function ActionValue#(VflOutcome)
             // exactly as before.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -3467,7 +3467,7 @@ function ActionValue#(VflOutcome)
             Bool magnitude = (vi.code == 6'b100001);
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -3663,7 +3663,7 @@ function ActionValue#(VflOutcome)
             // Same prefetch/bail-out shape as + above.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -3742,7 +3742,7 @@ function ActionValue#(VflOutcome)
             // 2026-11-16.  Same prefetch/bail-out shape as + above.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -3892,7 +3892,7 @@ function ActionValue#(VflOutcome)
             // Same prefetch/bail-out shape as + and * above.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -4348,7 +4348,7 @@ function ActionValue#(VflOutcome)
             Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -4505,7 +4505,7 @@ function ActionValue#(VflOutcome)
             // TO DECIMAL" uses.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -4779,7 +4779,7 @@ function ActionValue#(VflOutcome)
             // operand is a storage field just as LCV's is.
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -4904,7 +4904,7 @@ function ActionValue#(VflOutcome)
             // route to location 7 (VflOutcome's comment).
             Bit#(64) raw = 0;
             if (immediate) begin
-              raw = immediateOperand(vi.a.addr, len_);
+              raw = immediateOperand(ea, len_);
             end else begin
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
@@ -5371,7 +5371,7 @@ function ActionValue#(VflOutcome)
           Word64 mLoWord = 0;  // and the second word, when CM's field
                                // crosses into it.
           if (immediate) begin
-            m = immediateOperand(cn.a.addr, len_);
+            m = immediateOperand(ea, len_);
           end else begin
             // C/CT/CM all share this prefetch/bail-out shape, and
             // since 2026-11-06 all three may take the 2-read crossing

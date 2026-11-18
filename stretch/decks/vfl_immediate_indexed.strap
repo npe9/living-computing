@@ -1,0 +1,162 @@
+! AN IMMEDIATE VFL OPERAND IS INDEXED: the effective address, not the
+! address field, is the operand.
+!
+! Reference Manual (22-6530-2), read in the page images 2026-11-18:
+!
+!   printed p.21 (PDF 24): "The codes 0 and 4, which both specify
+!   standard address modification, indicate a difference in the mode of
+!   addressing.  For code 0, the direct mode is specified and the
+!   effective address is used to address the operand.  For code 4, the
+!   immediate mode is specified and the effective address is used as
+!   the operand itself.  This mode is applicable to all operations of
+!   the fetch type in the connect and integer class."
+!
+!   printed p.56 (PDF 59), Variable Field Length "Format": "Bits 0-23
+!   may be used as a word and bit address.  This field is indexed by
+!   the contents of the index register specified in the I field of the
+!   first half-word, bits 28 through 31.  The effective address may be
+!   used to designate the leftmost bit of a storage field, or it may be
+!   used as data."  "Field Definition", same page: "If immediate
+!   addressing is specified, the effective address itself is used as
+!   the operand.  The field length specifies the number of bits in the
+!   field starting with the leftmost bit of the effective address ...
+!   If the field length designated is greater than 24, zeros are added
+!   to the right".
+!
+!   printed p.20 (PDF 23): "the effective address itself constitutes
+!   the operand ... The sign of the effective address is ignored."
+!
+! >>> THE MODEL DID NOT INDEX IT, SILENTLY, UNTIL 2026-11-18. <<<
+! StretchIBox's carryIndex carried the address field unchanged for
+! P = 4, and every immediateOperand call in execute() read vi.a.addr /
+! cn.a.addr rather than `ea`, so "LI(BU,24),5($X3)" loaded 5 whatever
+! X3 held.  Found by the atlas work (Perf. Char. Vol. 2 PDF 177-182 time
+! indexed immediates, but with $X5 = 0, so the value never showed).
+!
+! NO IBM LISTING WE SEARCHED WRITES ONE, so this deck is the oracle,
+! built from the pages above.  Searched 2026-11-18: every deck in decks/
+! that assembles (812 of 837 then, the ax*/jb diagnostic and MCP
+! transcriptions among them) was assembled with the VFL and connective
+! encoders instrumented -- 760 VFL and 176 connective immediates, NONE
+! with a nonzero first index (the same instrument finds this deck's ten);
+! a text scan of the other 25 and of every OCR text in docs/ocr (the MCP
+! volume, the Reference Manual, C22-6578, C22-6531, C28-6129, R23-9694/5)
+! found none either (the MCP candidates were all CM1111/CT0011 misread as
+! CMIIII/CTOOLI).  NOT searched: the diagnostic PDFs with no text layer
+! and no transcription (jb_*/ja_*/ka_* pages not yet in decks/,
+! SystemTestPrograms) -- an open oracle hunt.
+!
+! EACH VALUE BELOW IS CHOSEN SO THAT UNINDEXED, INDEXED AND
+! INDEXED-TWICE GIVE THREE DIFFERENT ANSWERS:
+!
+!   A  LI(BU,24),5($X3)   X3 = +3          8   (5 unindexed, 11 twice)
+!   B  +I(BU,24),5($X3)   acc 8           16   (observed 10 and 22: the
+!        accumulator from A is wrong along with the operand)
+!   C  LI(BU,24),5($X4)   X4 = -2          3   (5, 1)  sign: subtract
+!   D  LI(BU,8),5($X5)    X5 = (8)3400.0   6   (5, 8)  index bits below
+!        the 8-bit field are added and then dropped: EA = (8)24000.0 +
+!        (8)3400.0 = (8)33400.0, whose top byte is 6
+!   E  LI(BU,32),(8)400($X3)            1024   (256, 1792)  field > 24:
+!        addr 1, EA 4, zeros to the right
+!   F  CI0111(BU,24),5($X3) on acc 0    8   (5, 11)  a connective (OR)
+!   G  LI 8, then KI(BU,24),5($X3)     AE  -> RG = 7 (0 when not equal)
+!   H  X3 := 10, then LI(BU,24),5($X3) 15   (5, 25; 8 if X3 is stale)
+!   I  EX of "LI(BU,24),5($X3)"        15   the EX subject is decoded
+!        and executed by execute() itself, NOT carried through a level,
+!        so it reaches the execute()-side half of the fix
+!   J  a multiply in flight, LI(BU,24),5($X3) with X3 = 10, then
+!        "LX,$X3,XA" (X3 := 3) BEHIND it before the store:  15  -- the
+!        index as the I-box read it when the level was loaded (8 would
+!        be the E-box re-reading the register late)
+!
+! The sign of a NEGATIVE effective address (|index| > address field) is
+! NOT exercised: p.20 says it is ignored and p.21 that "its magnitude is
+! used", and effAddr24 wraps instead -- found, not fixed (docs/NEXT.md).
+!
+! MEASURED INJECTIONS (2026-11-18; each reverted from a saved copy and
+! checked with cmp; control: every check passes, 713 clocks, PC 443):
+!   1. the whole fix removed (carryIndex unindexed for P = 4 and
+!      immediateOperand back on vi.a.addr / cn.a.addr): ALL TEN value
+!      checks fail -- RA 5, RB 10, RC 5, RD 5, RE 256, RF 5, RG 0,
+!      RH 5, RI 5, RJ 5 -- and cycles 684.
+!   2. only execute()'s half removed (immediateOperand on the field,
+!      the carry still indexed): ONLY RI fails (5) -- the EX subject is
+!      the one path not carried.  Cycles 713.
+!   3. only the I-box half removed (field carried unindexed, i1 kept,
+!      so execute() indexes from the register as it is at EXECUTION):
+!      ONLY RJ fails (8 -- the X3 written behind the level).  713.
+!   4. indexed twice (carryIndex indexes but leaves i1): RA 11, RB 22,
+!      RC 1, RD 8, RE 1792, RF 11, RG 0, RH 25, RJ 18 (= 5 + 10 carried
+!      + 3 live) fail; RI passes (EX is not carried).  Cycles 684.
+! The 684s are the program's own path, not timing: RG's "not equal"
+! branch skips an LI and an ST.  A first version of this deck, whose
+! compare took its accumulator from F (and so passed under 1 and 4,
+! acc and operand being wrong together), ran all four injections at
+! its control's 691 clocks: the fix moves no clock.
+!
+        SLC, (8)300.0
+START   LX,  $X3, XA                 ! X3 value +3
+        LX,  $X4, XB                 ! X4 value -2
+        LX,  $X5, XC                 ! X5 value (8)3400.0
+! ---- A. load immediate, indexed
+        LI(BU,24), 5($X3)
+        ST(BU,64), RA
+! ---- B. add immediate, indexed
+        +I(BU,24), 5($X3)
+        ST(BU,64), RB
+! ---- C. a negative index subtracts
+        LI(BU,24), 5($X4)
+        ST(BU,64), RC
+! ---- D. short field: index carries into it, its low bits fall away
+        LI(BU,8), 5($X5)
+        ST(BU,64), RD
+! ---- E. field over 24 bits: zeros to the right of the indexed address
+        LI(BU,32), (8)400($X3)
+        ST(BU,64), RE
+! ---- F. connective immediate, indexed (0111 = OR)
+        LI(BU,24), 0
+        CI0111(BU,24), 5($X3)
+        ST(BU,64), RF
+! ---- G. compare immediate, indexed: acc set to 8 UNINDEXED first, so
+!      the compare stands on its own (with acc taken from F it passed
+!      under injections 1 and 4: acc and operand were wrong together)
+        LI(BU,24), 8
+        KI(BU,24), 5($X3)
+        BZB, $AE, G1                 ! not equal: leave RG zero
+        LI(BU,24), 7
+        ST(BU,64), RG
+! ---- H. the index changed, then used
+G1      LX,  $X3, XD                 ! X3 value 10
+        LI(BU,24), 5($X3)
+        ST(BU,64), RH
+! ---- I. the same instruction as an EX subject (not a look-ahead level)
+        LI(BU,24), 0
+        EX,  SUBJ
+        ST(BU,64), RI
+! ---- J. the index changed BEHIND the level that used it
+        LI(BU,24), 3
+        *I(BU,24), 7
+        LI(BU,24), 5($X3)            ! X3 = 10 here: 15
+        LX,  $X3, XA                 ! X3 := 3 before the store below
+        ST(BU,64), RJ
+        B,   PASS
+PASS    BEW, $
+        CNOP
+        SLC, (8)400.0
+XA      XW,  .3, 0, 0
+XB      XW,  -.2, 0, 0
+XC      XW,  (8)3400.0, 0, 0
+XD      XW,  .10, 0, 0
+SUBJ    LI(BU,24), 5($X3)
+        SLC, (8)420.0
+RA      DD(BU,64), 0
+RB      DD(BU,64), 0
+RC      DD(BU,64), 0
+RD      DD(BU,64), 0
+RE      DD(BU,64), 0
+RF      DD(BU,64), 0
+RG      DD(BU,64), 0
+RH      DD(BU,64), 0
+RI      DD(BU,64), 0
+RJ      DD(BU,64), 0
+        END, START
