@@ -77,7 +77,8 @@
 ! (21); not written at all: sequence and check-sum checks (message 1), DEFINE
 ! and DEFI cards (8, 9), K, A and Z cards (not in the 1963 loader's ATBL),
 ! B IOD and REEL cards' storage (ignored, as other B cards), NODE cards and
-! segmentation (R2c), messages 4-7, and the print through MCP.
+! segmentation (R2c), messages 4-7.  The print through MCP is built behind
+! SPRSW (PRSPR, $SPR; the exit by $EOJ), not the default.
 !
 ! RUN (tests/check_bss_example4.py, 2026-11-17): on Example 4's subprograms
 ! built to p.17's sizes, the map equals the printed one row for row (ten
@@ -100,7 +101,12 @@
 !     is the deck and whose count is its cards), standing for the library's
 !     LB type areas (p.327 ll.23-27, spec G7);
 !   * the print: PRINT copies a 120-character A8 line to OUTB, standing for
-!     MCP's print; CONB holds the console line.
+!     MCP's print; CONB holds the console line.  SPRSW bit 0 = 1 (set by
+!     tests/check_bss_mcp_go.py, R2b printer path) sends each line through
+!     MCP's $SPR instead (PRSPR: C22-6678-1 p.20's 17-word line, byte 0
+!     the carriage control, one line a call), and the normal end leaves by
+!     $EOJ instead of halting (MPX); assembled 0, the print is OUTB and the
+!     end the BEW halt.
 !
 ! CHOSEN, each where it is used below, and gathered here:
 !   C1 a FORTRAN program card that follows a program card is a
@@ -646,7 +652,21 @@ MP9     LVI, $15, $+1.0
         B, PRINT
         B, MP1
 MPX     LI(BU,8), 0
-        B, HALT
+        ST(BU,8), ERRC
+! The normal end.  SPRSW bit 0 = 1 (under MCP): leave by $EOJ, "the
+! normal method used by the programmer to terminate his job", calling
+! sequence "B,$MCP" / ",$EOJ" (C22-6678-1 printed p.22, PDF 22, read in
+! the ink; control is never returned); MCP's p.274 ll.44-45 take
+! a $EOJ that is not $ABEOJ to YC4B3, the next link of the chain.  The
+! deck's messages (ERRC 2, 3, 10) still halt: what BSS gave MCP after a
+! message is not printed anywhere held (C28 pp.22-23 say only "JOB
+! REJECTED" / "BSS TERMINATED JOB").  Assembled 0: the halt, as before.
+        L(BU,1), SPRSW
+        KI(BU,1), 1
+        BZAE, HALTW
+EOJC    B, $MCP
+        , $EOJ
+        B, HALTW
 ! ======== THE SCAN (pp.7-9) =============================================
 ! Cards from $4: the input to the FORTRAN branch card (SCLIB 0), or a
 ! library deck of SCLEFT cards (SCLIB 1).  SCST: 0 before a program card,
@@ -1066,8 +1086,13 @@ PUTX    L(BU,8), 0($10)
         KI(BU,8), 0
         BZAE, PUTX
         B, 0($15)
-! PRINT (SCAFFOLD for MCP's print): LINE to the next 15 words of OUTB.
-PRINT   LV, $9, OUTP
+! PRINT: LINE printed.  SPRSW bit 0 = 0 (as assembled): LINE to the next
+! 15 words of OUTB (SCAFFOLD for MCP's print).  SPRSW bit 0 = 1 (a test
+! sets it, as it sets TWSA): PRSPR, through MCP's $SPR.
+PRINT   L(BU,1), SPRSW
+        KI(BU,1), 1
+        BAE, PRSPR
+        LV, $9, OUTP
         LVI, $10, LINE
         LI(BU,8), 15
         ST(BU,8), PXN
@@ -1083,10 +1108,42 @@ PR1     L(BU,64), 0($10)
         KI(BU,8), 0
         BZAE, PR1
         SV, $9, OUTP
-        L(BU,18), OUTN
+PRCNT   L(BU,18), OUTN
         +I(BU,18), 1
         ST(BU,18), OUTN
         B, 0($15)
+! PRSPR: LINE as one $SPR line, C22-6678-1 printed p.20 (PDF 20, read in
+! the ink): "Each line consists of 17 full words, 136 eight-bit bytes.  The
+! first byte ... control[s] spacing before printing the line", single
+! space 00100000 "- (Minus)"; "The 132 bytes which follow, must be 8-bit
+! BCD (A8) characters to be printed.  The remaining 3 bytes are used for
+! padding"; the call "B,$MCP / ,$SPR / ,FWA.(I) / ,N.(I)".  SPRL holds
+! A8 blanks; byte 0 gets the control character, bytes 1-120 LINE, bytes
+! 121-135 stay blank.  CHOSEN: single space on every line (MCP's own $SPR
+! line, ASERR p.210 l.50, begins with "-"), one line a call, OUTB left
+! alone, OUTN still counted.
+PRSPR   LI(BU,8), 32             ! 0o40, single space (p.20)
+        ST(BU,8), SPRL
+        LVI, $9, SPRL
+        LVI, $10, LINE
+        LI(BU,8), 15
+        ST(BU,8), PXN
+PS1     L(BU,64), 0($10)
+        ST(BU,64), .8($9)
+        L(BU,64), BLANKW
+        ST(BU,64), 0($10)
+        V+I, $9, 1.0
+        V+I, $10, 1.0
+        L(BU,8), PXN
+        -I(BU,8), 1
+        ST(BU,8), PXN
+        KI(BU,8), 0
+        BZAE, PS1
+SPRC    B, $MCP
+        , $SPR
+        , SPRL
+        , 1.
+        B, PRCNT
 ! PLINE: the 15-word constant line at $10, printed.
 PLINE   SX, $15, PLSV
         LVI, $9, LINE
@@ -1234,7 +1291,7 @@ ENOMN   LVI, $10, TXNOM
         B, PRINT
         LI(BU,8), 10
 HALT    ST(BU,8), ERRC
-        BEW, $
+HALTW   BEW, $
 !
 ! ======== DATA ==========================================================
         SLC, (8)204000.0
@@ -1414,6 +1471,26 @@ BLANKL  DD(BU,64), (16)1010101010101010   ! a blank line
         DD(BU,64), (16)1010101010101010
 LINE    DR(BU,64), 15
 CONB    DR(BU,64), 5
+! SPRSW bit 0: 0 print to OUTB and halt; 1 print through $SPR (PRINT)
+! and end by $EOJ (MPX).  SPRL: one $SPR line, 17 words of A8 blanks (C22-6678-1 p.20).
+SPRSW   DD(BU,64), 0
+SPRL    DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
+        DD(BU,64), (16)1010101010101010
 !
 ! The tables (C15).  T1: Fig. 1, 3 words an entry point.  T2: Fig. 2, 2
 ! words a common.  T3: Fig. 3, 3 words a transfer.  ORDT: the relocation
