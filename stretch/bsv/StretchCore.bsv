@@ -217,11 +217,48 @@ module mkStretchCore(StretchCore);
   // (printed p.3-21).
   Reg#(Bit#(32)) laarFreeAt   <- mkReg(0);
   Reg#(Bit#(32)) xstoreFreeAt <- mkReg(0);
+  // >>> AFTER THE INDEX-STORE HOLD, THE NEXT INSTRUCTION IS DECODED,
+  // 2026-11-17. <<<  "the I-box does no further decoding until the new
+  // index contents arrives" (printed p.3-21): the decode of the
+  // instruction after the store BEGINS when the hold ends; it does not
+  // run under it.  The model charges a decode as `ibusy` after the
+  // level it gates is loaded (rl_prepare), so by the time a store level
+  // reaches removal that countdown has long run out and the next
+  // instruction was loaded the clock the hold ended -- a VFL ST into
+  // $X0-$X3 came out 12.3 clocks under PDF 124's I-BOX column (14.3
+  // indexed).  laarRetire sets this for a VFL or connective store into
+  // index storage; rl_prepare then charges the prepared instruction's
+  // own decode (2 * iboxCycles - 1, as at a load) before loading it.
+  // NOT FOR FLOATING POINT: the FP store path into index storage is
+  // StretchTiming's laarStorePost(16..31) = 17, a FIT on PDF 48's I-BOX
+  // column that already contains whatever followed the hold there, so
+  // charging the decode too would count it twice (and move PDF 48 and
+  // 69, whose M+ indexed column another change owns).
+  Reg#(Bool)     redecodeAfterHold <- mkReg(False);
   // THE CLOCK THE E-BOX FINISHES ITS CURRENT INSTRUCTION: the removal
   // clock + the charge + 1 (an E-box time of N occupies N + 1 clocks,
   // StretchTiming's removal-clock note).  Read by headReady for an FP
   // level whose operand is an internal register (fpInternalFetch).
   Reg#(Bit#(32)) eboxDoneAt   <- mkReg(0);
+  // AFTER THE INDEX-STORE DECODE HOLD, AN INDEXED I-BOX OPERAND'S TWO
+  // READS OF INDEX STORAGE ARE IN SERIES, 2026-11-17.  `xholdPc` names
+  // the instruction rl_prepare held behind a store into INDEX STORAGE
+  // (xstoreFreeAt, or a pending level storing into words 1, 2, 16-31 --
+  // not STORE WAIT's indicator and mask words, which printed p.3-21's
+  // hold does not name).  When that same instruction is prepared out of
+  // the hold, is FP, indexed, and fetches its operand from index storage,
+  // it first spends its index read (fpIndexedIboxClocks, 0.6 us, printed
+  // p.3-18) and its operand's I-Checker pass (fpIboxCheckClocks, 0.6 us,
+  // printed p.3-19 item 2) before its level is loaded -- RECONSTRUCTION,
+  // the reasoning is at fpHoldSerialClocks (StretchTiming).  `serialPaid`
+  // is what was spent that way, for the instruction `serialPc`, taken off
+  // its level's own `ibusy` at the load so the preparation is not charged
+  // twice.  Both are tagged by the instruction's address, and cleared by
+  // every preparation and by rl_recover and rl_interrupt, so a prepared
+  // instruction that is discarded leaves nothing behind for another.
+  Reg#(Maybe#(HWordAddr)) xholdPc    <- mkReg(tagged Invalid);
+  Reg#(Bit#(16))          serialPaid <- mkReg(0);
+  Reg#(Maybe#(HWordAddr)) serialPc   <- mkReg(tagged Invalid);
 
   // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
   // conversion order, step 3): only a W-direction (memory->device)
@@ -379,7 +416,7 @@ module mkStretchCore(StretchCore);
 
   function Action laarRetire(LaLevel h, Bit#(16) e) =
     action
-      if (h.storeAddr matches tagged Valid .sa) begin
+      if (fpLaarStore(h.di, h.storeAddr) matches tagged Valid .sa) begin   // LFT: word 14 (StretchIBox)
         Bool fp = isFpInstr(h.di);
         // The fitted store path: for a store that fetched nothing (ST,
         // SRD, SLO, SRT), and -- 2026-11-17 -- for ANY FP store into index
@@ -387,12 +424,15 @@ module mkStretchCore(StretchCore);
         // operation" (printed p.3-21) is said of the destination, not of
         // the operation, so M+ and M+MG into $X9-$X12 take it too.  Their
         // memory and internal stores still do not: PDF 69 prints M+ to
-        // memory BELOW ST (StretchTiming's laarStorePost note).
+        // memory BELOW ST (StretchTiming's laarStorePost note).  And --
+        // 2026-11-17 -- LFT, whose store is into $FT (word 14, memory;
+        // StretchIBox's fpLaarStore), takes the memory remainder too.
         Bool indexDest = (sa >= 16 && sa <= 31);
         Bit#(32) t = clk + zeroExtend(e) + 1 + fromInteger(laarCheckClocks)
-                   + ((fp && (!isValid(h.da) || indexDest)) ? zeroExtend(laarStorePost(sa)) : 0);
+                   + ((fp && (!isValid(h.da) || indexDest || isFpLft(h.di))) ? zeroExtend(laarStorePost(sa)) : 0);   // LFT: see above
         if (fp) laarFreeAt <= t;
         if (indexStorageWord(sa)) xstoreFreeAt <= t;
+        if (indexStorageWord(sa) && !fp) redecodeAfterHold <= True;
       end
     endaction;
 
@@ -595,9 +635,31 @@ module mkStretchCore(StretchCore);
   // store path into an internal register that PDF 79's $R column fitted
   // for ST -- the same mechanism, and no new fitted number).  FP only,
   // as the LAAR (StretchIBox's laarInternal note says why).
-  Bool intWait     = fpInternalFetch(la.headLevel())
-                     && clk < eboxDoneAt + zeroExtend(fpInternalOperandClocks);
-  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait
+  // THE OPERAND ADDRESS NEEDS THE ONE LAAR, 2026-11-17: the I-box "uses
+  // the LAAR to store the internal operand address" (printed p.3-20), and
+  // "since there is only one LAAR, if the latter is busy ... a wait must
+  // occur until the LAAR is free for reloading" (printed p.3-21).  So the
+  // internal fetch starts when the E-box is done AND the LAAR is free of
+  // the store before it (laarFreeAt).  Only a to-memory operation (LFT,
+  // M+, M+MG) leaves a store behind it in a homogeneous run; + and L
+  // from $R are unchanged.
+  Bit#(32) intFrom = (laarFreeAt > eboxDoneAt) ? laarFreeAt : eboxDoneAt;
+  // And, 2026-11-17, a VFL or connective head level whose operand is an
+  // internal register, by vflInternalOperandClocks (StretchTiming, where
+  // the atlas's INTERNL columns give the number).  That one is timed from
+  // the E-box alone, NOT intFrom: the VFL and connective charges are fits
+  // that already contain their LAAR queuing (StretchIBox's
+  // vflInternalFetch note).
+  Bool intWait     = (fpInternalFetch(la.headLevel())
+                      && clk < intFrom + zeroExtend(fpInternalOperandClocks))
+                  || (vflInternalFetch(la.headLevel())
+                      && clk < eboxDoneAt + zeroExtend(vflInternalOperandClocks));
+  // LFT from memory or index storage waits for the LAAR here, at the head,
+  // not at its load (StretchIBox's lftDeferredLaar).
+  Bool lftWait     = la.count() != 0 && !la.headLevel().branch
+                     && lftDeferredLaar(la.headLevel().di, la.headLevel().da)
+                     && clk < laarFreeAt;
+  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait && !lftWait
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
@@ -737,6 +799,8 @@ module mkStretchCore(StretchCore);
     branchSeq <= branchSeq + 1;
     recover <= tagged Invalid;
     ibusy <= 12;
+    xholdPc <= tagged Invalid;    // the prepared instruction is discarded
+    serialPc <= tagged Invalid;
     ebusy <= eb;
     haltedReg <= False;
   endrule
@@ -1343,6 +1407,10 @@ module mkStretchCore(StretchCore);
     // instruction that did not use it), read BEFORE resume() clears the
     // wait.  See the charge below.
     Bit#(16) boxK = ebox.boxClocks();
+    // ... and the data-dependent part of a floating-point divide's
+    // time, which only the box knows (mkEBox.boxCharge; 0 for every
+    // other instruction).  Added to the budget on both paths below.
+    Bit#(16) boxX = ebox.boxCharge();
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
@@ -1374,13 +1442,16 @@ module mkStretchCore(StretchCore);
         // cannot be absorbed and the instruction really is longer;
         // that is reported, not hidden.  It can only happen when this
         // rule lost clocks to rl_recover, rl_io or rl_idx_write while
-        // the result waited: the smallest divide budget is 4 (FP `/`)
-        // and the box takes exactly 4.
+        // the result waited.  The VFL divide's budget (66 clocks up)
+        // dwarfs the box's 4; a floating-point divide's budget is
+        // 5 + fpExtra = Table 2's fixed terms + 2 per reduction loop,
+        // and the box walks ONE loop a clock, so the budget is always
+        // more than twice the box's clocks (2026-11-17).
         //
         // The OTHER branch needs no such term: an I-box-dispatched
         // instruction is charged `budget - elapsed` from its own start
         // clock, which already contains the box's time.
-        Bit#(16) ebudget = eboxClocks(la.headLevel().di);
+        Bit#(16) ebudget = eboxClocks(la.headLevel().di) + boxX;
         if (boxK > ebudget)
           $display("StretchCore: A BOX (DIVIDE OR DECIMAL) OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
                    pc, boxK, ebudget);
@@ -1391,7 +1462,7 @@ module mkStretchCore(StretchCore);
         commitNext(pc, len, o.next);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         Bit#(32) elapsed = clk - startClk;
-        Bit#(16) budget = budgetClocks(di, taken);
+        Bit#(16) budget = budgetClocks(di, taken) + boxX;
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
         done = isHalt(di, o.next, pc);
       end
@@ -1543,6 +1614,8 @@ module mkStretchCore(StretchCore);
     // interruption is the same discontinuity: nothing else in this
     // model reaches forward to fetch an address of its own.
     branchSeq <= branchSeq + 1;
+    xholdPc <= tagged Invalid;    // see xholdPc: nothing left for another instruction
+    serialPc <= tagged Invalid;
 
     // p.48: the fetch of THIS instruction cannot turn on IF "even
     // though it might lie in the protected area of core storage".
@@ -1635,13 +1708,57 @@ module mkStretchCore(StretchCore);
       noAction;             // an I-box instruction is waiting on its operand read
     else if (ibusy != 0)
       ibusy <= ib;          // previous instruction's time budget still running
+    else if (isValid(intDue) && !isValid(intPC))
+      // >>> AN INTERRUPTION IS DUE: START NOTHING NEW, 2026-11-18. <<<
+      // Ref. Manual p.48: interruption comes "AT THE END OF THE OPERATION
+      // DURING WHICH THE INDICATOR IS TURNED ON" and "before execution of
+      // the next instruction".  rl_interrupt waits for the levels to
+      // drain (armInterrupt); until now rl_prepare went on starting
+      // instructions while they drained, and an I-box instruction so
+      // started was committed for good -- the model has no index-
+      // recovery unwind (the "WHAT IS STILL NOT MODELLED" note at
+      // armInterrupt).  The 7030 undoes such an instruction's index
+      // change from its IX Rec. level (Perf. Char. Vol. 1 Table A-2, PDF
+      // 69-71, the LX row's "IX Rec." level, docs/spec_lookahead.md 1.7;
+      // App. A, PDF 63: "Recovery information is shipped back to the
+      // I-box"; printed page numbers not checked).  Not starting it has the same
+      // architectural effect.  FOUND 2026-11-18: the VFL internal-operand
+      // wait (intWait) held C22-6578 Problem 2.12's "CM1111(BU,1),
+      // $SB+0.7" four clocks, long enough for "LX, $2, 19.0" behind it to
+      // run before the $VF interruption its LWF had raised, and ENDCYC
+      // then stored through the new $2 (16 of the hundred transposed words wrong).
+      // Levels ALREADY loaded still execute, as before.
+      noAction;
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
     else if (storeWait(nl) || clk < xstoreFreeAt)
       // STORE WAIT (R23-9732 Figs 3.1.13, 3.1.20, 3.1.24; StretchIBox's
       // storeWait): a pending level stores into an index register, the
       // indicators or the mask, and nothing is prepared until it has.
-      noAction;
+      // (xholdPc: only the index-storage hold of printed p.3-21.)
+      begin
+        Bool xs = clk < xstoreFreeAt;
+        for (Integer k = 0; k < 4; k = k + 1) begin
+          if (nl[k].valid &&& nl[k].storeAddr matches tagged Valid .sa &&& indexStorageWord(sa)) xs = True;
+          if (nl[k].valid &&& nl[k].storeAddr2 matches tagged Valid .sb &&& indexStorageWord(sb)) xs = True;
+        end
+        if (xs) xholdPc <= tagged Valid pc;
+      end
+    else if (redecodeAfterHold &&& prepared matches tagged Valid {.rlen, .rdi}) begin
+      // The decode p.3-21 says waits for the index store (the note at
+      // redecodeAfterHold): this clock is its first, as at a load.  Only
+      // for an E-box-class instruction: an I-box instruction's budget
+      // (budgetClocks, charged from its dispatch) already serializes its
+      // own decode, so its dispatch at the hold's end IS its decode's
+      // start, and charging the decode here would count it twice.
+      // (Merged with batch26's xholdPc, 2026-11-18: an FP indexed operand
+      // from index storage held behind a VFL store into index storage
+      // would take both this decode and fpHoldSerialClocks.  No deck or
+      // atlas row reaches that combination; stated, not measured.)
+      if (isEboxClass(rdi))
+        ibusy <= 2 * iboxCycles(rdi, False) - 1;
+      redecodeAfterHold <= False;
+    end
     else if (instrStored)
       noAction;   // a pending level stores into this instruction (above)
     else if (prepared matches tagged Valid {.len, .di}
@@ -1680,8 +1797,18 @@ module mkStretchCore(StretchCore);
         // stores, or fetches an internal register, is not loaded while
         // another holds it or its last store is not yet accepted.
         Bool laarBusy = laarHeldByLevel(nl) || clk < laarFreeAt || st.storesPending();
-        if (isFpInstr(di) && needsLaar(prep.storeAddr, da) && laarBusy)
+        Bit#(16) serialNow = (xholdPc == tagged Valid pc) ? fpHoldSerialClocks(di, da) : 0;
+        if (isFpInstr(di) && !lftDeferredLaar(di, da)
+            && needsLaar(fpLaarStore(di, prep.storeAddr), da) && laarBusy)
           noAction;
+        else if (serialNow != 0) begin
+          // Out of the index-store hold: the indexed I-box operand's reads
+          // first (xholdPc above), then the load.
+          ibusy <= serialNow - 1;
+          serialPaid <= serialNow;
+          serialPc <= tagged Valid pc;
+          xholdPc <= tagged Invalid;
+        end
         else
         // >>> THE PROBE IS GONE, 2026-10-29. <<<  This used to call
         // `ebox.exec` with no operands so that `execute()` would bail
@@ -1759,10 +1886,14 @@ module mkStretchCore(StretchCore);
           // came on top and a VFL decode of 3.6 us (12 clocks) took 13,
           // 14 with the removal clock `ib` now gives back.  An I-box
           // operand also passes the I-Checker (fpIboxCheckClocks).
-          ibusy <= 2 * iboxCycles(di, False) - 1
-                   + fpIboxCheckClocks(di, da)
-                   + fpIndexedIboxClocks(di, da)
-                   - vflImmIndexedSaving(di);   // no word-boundary test (StretchTiming)
+          Bit#(16) prepClk = 2 * iboxCycles(di, False) - 1
+                             + fpIboxCheckClocks(di, da)
+                             + fpIndexedIboxClocks(di, da)
+                             - vflImmIndexedSaving(di);   // no word-boundary test (StretchTiming)
+          Bit#(16) paid = (serialPc == tagged Valid pc) ? serialPaid : 0;
+          ibusy <= (prepClk > paid) ? prepClk - paid : 0;
+          serialPc <= tagged Invalid;
+          xholdPc <= tagged Invalid;
         end
       end
     end else if (prepared matches tagged Valid {.len, .di} &&& di matches tagged BranchInd .bi
@@ -1782,6 +1913,8 @@ module mkStretchCore(StretchCore);
         guessPending <= True;
         pcReg <= pc + ((len == Full) ? 2 : 1);
         ibusy <= 2 * 6;   // the branch's four-level load (Blosk p.39)
+        xholdPc <= tagged Invalid;
+        serialPc <= tagged Invalid;
       end
     end else if (prepared matches tagged Valid {.len, .di}) begin
       // I-box class: execute ahead of pending levels unless a hazard
@@ -1791,6 +1924,8 @@ module mkStretchCore(StretchCore);
         let d1 <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;
+        xholdPc <= tagged Invalid;
+        serialPc <= tagged Invalid;
       end
     end
     ebusy <= eb;

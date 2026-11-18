@@ -1146,7 +1146,7 @@ def main():
     # at 100011_8-100014_8, while Vol. 1 printed p.3-17 has instructions in
     # "the two lower memory boxes and data occupying the four upper".
     # --body moves it for a measurement; the default is unchanged
-    # (docs/atlas_oracle.md, "Closing the residuals" item 10).
+    # (docs/atlas_oracle.md, "Closing the residuals" item 13).
     ap.add_argument("--body", help="body address, octal (default %o)" % BODY_ADDR)
     a = ap.parse_args()
     if a.body:

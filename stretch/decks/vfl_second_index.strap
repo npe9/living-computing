@@ -45,6 +45,9 @@
 ! and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
 ! residuals" item 7).  With that mechanism removed the run is 447 again;
 ! no value moved.
+!
+! RE-PINNED 2026-11-17: CYCLES 420 -> 426.  Cause, measured:
+! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17) +5 and the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17) +1; injection C gives 425.
         SLC, (8)300.0
 START   LX,$1,DXW
         LVI,$2,30.32

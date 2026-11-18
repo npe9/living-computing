@@ -50,6 +50,11 @@
 // How many quotient bits a given cycle develops. Figure 3.8.15
 // attributes it to the "Multiple Selection Circuits", which are ALDs
 // this volume does not reproduce, so the rule is [NOT IN THE SOURCES].
+// >>> SUPERSEDED 2026-11-17: the rule IS in the sources, in Buchholz,
+// "Planning a Computer System", Figs. 14.11-14.12 (printed pp.214-215,
+// PDF 239-240).  mkDivBox now walks it for the floating-point divide's
+// time -- see "THE 7030'S REDUCTION LOOP" below.  mkFpDivBox, this
+// standalone sketch, still uses its fixed 6 and is not the core's box. <<<
 //
 // `divBitsPerCycle` below is therefore STILL NOT PROVEN, and says so.
 // But it is no longer a number picked out of the air, and that changed
@@ -95,6 +100,7 @@
 // remainder are bit-identical. The testbench asserts exactly that.
 package StretchDivBox;
 
+import Vector::*;
 import StretchTypes::*;
 import StretchFP::*;
 
@@ -203,6 +209,10 @@ endfunction
 // unless the I-box is made to wait for it (an iboxHazard term), and
 // that wait is the slowdown above.  Getting the overlap back needs the
 // I-box to run during a box wait, which is rl_prepare's business.
+// [The halt-clock table above is from the 4-clock box.  Since
+// 2026-11-17 an FP divide holds the box for its walk, 8-24 clocks on
+// the test vectors, and is charged Table 2's time, so those figures are
+// STALE for the FP decks; they were not re-measured.]
 // Making the box's own
 // count BE the time is a later, sourced step, and when
 // it comes this constant goes and mkFpDivBox's structure -- trial,
@@ -223,7 +233,11 @@ endfunction
 // plus one D4 period -- TWO clock periods per pass -- and that the
 // zero-divisor case is drawn as four periods.  mkFpDivBox below
 // spends ONE clock per pass and its header records that discrepancy
-// against Table 2 as unresolved.  THAT REPORT WAS NOT RE-READ AT THE
+// against Table 2 as unresolved.  [RE-READ AT THE INK 2026-11-17 for
+// "THE 7030'S REDUCTION LOOP": two numbered pulses per reduction cycle,
+// and sheet 3's note 2 makes one pulse 300 ns, i.e. one clock -- so
+// Table 2's "2 cycles for each additional reduction loop" is the chart's
+// two pulses.]  THAT REPORT WAS NOT RE-READ AT THE
 // INK FOR THIS CHANGE and is recorded as a pointer for the timing
 // step, not as a finding: read the three figures before building on
 // it.  Nothing in mkDivBox depends on it.
@@ -231,14 +245,127 @@ endfunction
 typedef struct {
   Bit#(96) dvd;
   Bit#(48) dvs;
+  // A FLOATING-POINT divide's Table-2 fixed terms (fpDivFixedClocks,
+  // StretchFP.bsv), never 0 for one; 0 means "not a floating-point
+  // divide" -- the VFL divide -- and no reduction walk is run, so the
+  // VFL divide's clocks are exactly what they were.
+  Bit#(8)  fpFixed;
+  Bool     fpDbl;  // D/: Table 2 adds the remainder normalization
 } DivReq deriving (Bits, Eq, FShow);
 
 typedef struct {
   Bit#(96) q;      // all 96 quotient bits
   Bit#(48) rem;    // the remainder, which is below the divisor
+  // A floating-point divide's time over eboxClocks' zero-divisor floor
+  // of 5 (see THE 7030'S REDUCTION LOOP below); 0 for the VFL divide.
+  Bit#(16) fpExtra;
 } DivRsp deriving (Bits, Eq, FShow);
 
-// >>> INVENTED, to fit the existing 4-clock budget.  See above. <<<
+// ---------------------------------------------------------------------
+// >>> THE 7030'S REDUCTION LOOP, WALKED FOR ITS LENGTH (2026-11-17). <<<
+//
+// THE PROBLEM IT CLOSES.  eboxClocks charged FP `/` 4 clocks, Table 2's
+// minimum "before the data-dependent reduction loops", and the atlas
+// (Perf. Char. Vol. 2 PDF 54-56, 85-87, a normalized 1 divided by a
+// normalized 1) measured /, D/ and R/ 16-21 clocks LONGER than the
+// model (docs/atlas_oracle.md).  The missing clocks are the loops.
+//
+// WHAT IS SOURCED.
+//  * Perf. Char. Vol. 1 Table 2, printed p.3-5 (PDF 23), the / row:
+//    "2 cycles for initial reduction loop if dividend is normalized",
+//    "2 cycles for each additional reduction loop (number of cycles is
+//    data dependent)", "2 cycles if final remainder has to be
+//    complemented", and "If zero divisor 3 cycles pre-execution and 2
+//    cycles execution instead of previous".  D/ (same page): "Same as
+//    Divide plus 6 cycles (remainder norm <= 6) 2 cycles for each
+//    additional remainder norm. of 6".  R/ (printed p.3-4, PDF 22): "2
+//    cycles" + "2 cycles plus all pre-execution and execution cycles of
+//    Divide".  The fixed terms are fpDivFixedClocks (StretchFP.bsv).
+//  * THE ALGORITHM, Buchholz (ed.), "Planning a Computer System",
+//    printed pp.213-216 (PDF 238-241), read at the page image: one of
+//    three divisor multiples, 1, 3/4 and 3/2, chosen per add cycle from
+//    "3 high-order bits of the normalized previous remainder and 5
+//    high-order bits of the normalized divisor" by Fig. 14.11 (p.214);
+//    the new remainder is normalized, the shifts out are the quotient
+//    bits (Fig. 14.12, p.215); "As many as six shifts can be carried
+//    out in the same cycle as one addition; if more shifts are needed,
+//    extra cycles are used without addition" (p.216).  Fig. 14.11 as
+//    read (r = the remainder's top three bits in true form, d = the
+//    divisor's top five):
+//        r = 100: 3/4 if d >= 10101, else 1
+//        r = 101: 3/4 if d >= 11001, 3/2 if d <= 10001, else 1
+//        r = 110: 3/4 if d >= 11110, 3/2 if d <= 10100, else 1
+//        r = 111: 3/2 if d <= 10111, else 1
+//    A Python prototype of exactly this walk (exact fractions, 4,000
+//    random normalized pairs) develops the right quotient on every
+//    pair, never shifts fewer than two places after an add (p.216:
+//    "The scheme always permits at least two shifts after each add
+//    cycle" -- a check on the reading of Fig. 14.11), and averages
+//    3.4 quotient bits per add-and-shift cycle against p.215's "On the
+//    average, 3.5 quotient bits are generated each cycle".
+//  * THE CYCLE STRUCTURE, R23-9732 figure 3.8.15 sheet 2 (PDF 240,
+//    printed 8-17/8-18): a Trial Reduction Cycle, then Intermediate
+//    Reduction Cycles each two clock periods long, "Any one or more of
+//    these intermediate reduction cycles could be a dummy cycle. That
+//    is if more than 6 quotient bits were developed on the previous
+//    reduction cycle this would be just a shift cycle", and a Last
+//    Reduction Cycle entered on "Ctr = 0"; the second divide cycle
+//    (SDC) gates "47" into the shift counter when the trial result is
+//    true and "48" when it is complement, and every cycle "Subtract[s]
+//    Shift Amount from Counter Register".  Then "Add Back 1x Divisor"
+//    -- "done if the last reduction cycle caused the result to be
+//    complement" -- which is Table 2's +2.  (Sheet 3, PDF 241, note 2:
+//    a shortened termination "shortens the operation by 300
+//    nanoseconds", so one numbered pulse is one 0.3 us clock.)
+//
+// >>> RECONSTRUCTION, AND WHAT DECIDED IT. <<<  Whether the SDC is a
+// reduction loop of its own or shifts in the same cycle is not
+// printed.  Counted as its own additional loop, a normalized 1 divided
+// by a normalized 1 (trial remainder zero, so every later cycle is a
+// six-place dummy: 47 = 6+6+6+6+6+6+6+5, eight cycles) takes
+// 2 + 2 + 2 + 2*(1 + 8) + 1 = 25 clocks, and the atlas prints exactly
+// 25 for it (7.50 us, PDF 54) -- the same Table-2-sum calibration the
+// atlas shows on * (2.70 us = 5 + 4) and D* (3.00 us = 5 + 4 + "1
+// cycle if immediate next instruction is floating point").  Not
+// counted, 23.  The prototype's mean over random operands with the SDC
+// counted is 38 clocks, 11.4 us, against PDF 41's "The average divide
+// time should be about 10 us" (10.8 us without it).  The SDC is
+// counted; the alternative is recorded here and in NEXT.md.  Note
+// that 1/1 is the FASTEST possible divide under this law (every cycle
+// shifts the full six), which is what PDF 41 means by "do not give a
+// realistic timing".
+// Also RECONSTRUCTION: the remainder's magnitude is taken in true
+// (two's-complement) form, where the 7030 normalizes a ones'
+// complement; the dividend bits below the 48-bit window enter as the
+// remainder shifts; D/ uses DIVIDE's counter (47/48) for its 49-bit
+// quotient; a ZERO remainder costs D/ only the base 6 (no sheet shows
+// a zero remainder being normalized).
+//
+// THE ANSWER IS NOT AFFECTED: the quotient and remainder are still the
+// restoring steps above.  The walk is the loop's LENGTH only, run one
+// 7030 reduction cycle per box clock beside the restoring steps; the
+// box answers when both are done.
+// ---------------------------------------------------------------------
+function Bit#(8) divPer6(Bit#(8) sh) =
+  (sh <= 6) ? 0 : 2 * ((sh - 6 + 5) / 6);
+
+// Fig. 14.11.  r3 = 3'b1xx, the normalized remainder's top three bits
+// in true form; d5 = the normalized divisor's top five.  0 = 1x,
+// 1 = 3/4, 2 = 3/2.
+function Bit#(2) divMultiple(Bit#(3) r3, Bit#(5) d5);
+  Bit#(2) m = 0;
+  case (r3)
+    3'b100: m = (d5 >= 5'b10101) ? 1 : 0;
+    3'b101: m = (d5 >= 5'b11001) ? 1 : ((d5 <= 5'b10001) ? 2 : 0);
+    3'b110: m = (d5 >= 5'b11110) ? 1 : ((d5 <= 5'b10100) ? 2 : 0);
+    default: m = (d5 <= 5'b10111) ? 2 : 0;
+  endcase
+  return m;
+endfunction
+
+// >>> INVENTED, to fit the old 4-clock budget of FP `/`.  See above.
+// Since 2026-11-17 the FP divide's TIME no longer depends on this: it
+// is Table 2 plus the walked reduction loop (fpExtra). <<<
 Integer coreDivBitsPerCycle = 24;
 
 interface DivBox;
@@ -293,6 +420,50 @@ module mkDivBox(DivBox);
   if (coreDivClocks * coreDivBitsPerCycle != divTotalBits)
     error("mkDivBox: coreDivBitsPerCycle must divide 96");
 
+  // THE WALK (see THE 7030'S REDUCTION LOOP above).  Fixed point with
+  // 50 fraction bits: the divisor is vf << 2, so 3/4 and 3/2 of it are
+  // exact.  rg_wAdd counts Table 2's "additional reduction loops".
+  Reg#(Bool)         rg_wBusy[2] <- mkCReg(2, False);
+  Reg#(Int#(56))     rg_wR[2]    <- mkCReg(2, 0);
+  Reg#(Bit#(48))     rg_wDl[2]   <- mkCReg(2, 0);
+  Reg#(Bit#(6))      rg_wCtr[2]  <- mkCReg(2, 0);
+  Reg#(Bit#(8))      rg_wAdd[2]  <- mkCReg(2, 0);
+  Reg#(Int#(56))     rg_wD4      <- mkReg(0);
+  Reg#(Bit#(8))      rg_wFixed   <- mkReg(0);
+  Reg#(Bool)         rg_wDbl     <- mkReg(False);
+
+  rule rl_walk (rg_wBusy[0]);
+    Int#(56) r = rg_wR[0];
+    Bit#(56) mag = pack((r < 0) ? -r : r);
+    // Places to shift until |r| >= 1/2 (bit 49): a zero remainder never
+    // gets there and is shifted six a cycle until the counter runs out.
+    UInt#(6) czm = countZerosMSB(mag);
+    Bit#(6) lead = (czm >= 6) ? (pack(czm) - 6) : 0;
+    Bit#(6) ctr = rg_wCtr[0];
+    Bit#(6) sh = (lead < 6) ? lead : 6;
+    if (ctr < sh) sh = ctr;
+    Bit#(48) dl = rg_wDl[0];
+    // The dividend's next `sh` bits enter at the remainder's low end.
+    Bit#(48) inb = (sh == 0) ? 0 : (dl >> (6'd48 - sh));
+    r = (r << sh) + unpack(zeroExtend(inb) << 2);
+    dl = dl << sh;
+    ctr = ctr - sh;
+    if (ctr != 0 && sh == lead) begin
+      Bit#(56) m2 = pack((r < 0) ? -r : r);
+      Bit#(3) r3 = (m2[50] == 1) ? 3'b111 : m2[49:47];
+      Bit#(5) d5 = truncate(pack(rg_wD4) >> 45);
+      Int#(56) dm = case (divMultiple(r3, d5))
+                      1: (rg_wD4 - (rg_wD4 >> 2));
+                      2: (rg_wD4 + (rg_wD4 >> 1));
+                      default: rg_wD4;
+                    endcase;
+      r = (r < 0) ? r + dm : r - dm;
+    end
+    rg_wR[0] <= r; rg_wDl[0] <= dl; rg_wCtr[0] <= ctr;
+    rg_wAdd[0] <= rg_wAdd[0] + 1;
+    if (ctr == 0) rg_wBusy[0] <= False;
+  endrule
+
   rule rl_reduce (rg_state[0] == CDivReduce);
     Bit#(49) rem = rg_rem[0];
     Bit#(96) dq  = rg_dq[0];
@@ -320,11 +491,37 @@ module mkDivBox(DivBox);
     rg_rem[1]   <= 0;
     rg_ctr[1]   <= fromInteger(coreDivClocks);
     rg_state[1] <= CDivReduce;
+    // The trial reduction cycle, here, as the request is taken: subtract
+    // the divisor once.  The second divide cycle loads the counter, 47
+    // on a true result and 48 on a complement (fig. 3.8.15 sheet 2), and
+    // is itself the first additional loop -- see the header.
+    Int#(56) d4 = unpack(zeroExtend(r.dvs) << 2);
+    Int#(56) x4 = unpack(zeroExtend(r.dvd[95:48]) << 2);
+    Int#(56) tr = x4 - d4;
+    rg_wD4      <= d4;
+    rg_wFixed   <= r.fpFixed;
+    rg_wDbl     <= r.fpDbl;
+    rg_wR[1]    <= tr;
+    rg_wDl[1]   <= r.dvd[47:0];
+    rg_wCtr[1]  <= (tr < 0) ? 48 : 47;
+    rg_wAdd[1]  <= 1;
+    rg_wBusy[1] <= (r.fpFixed != 0);
   endmethod
 
-  method Bool responseReady() = (rg_state[1] == CDivDone);
+  method Bool responseReady() = (rg_state[1] == CDivDone) && !rg_wBusy[1];
 
-  method DivRsp response() = DivRsp { q: rg_dq[1], rem: rg_rem[1][47:0] };
+  method DivRsp response();
+    Bit#(48) rem = rg_rem[1][47:0];
+    Bit#(8) rn = 0;
+    if (rg_wDbl) begin
+      UInt#(6) lz = countZerosMSB(rem);
+      rn = 6 + ((rem == 0) ? 0 : divPer6(zeroExtend(pack(lz))));
+    end
+    Bit#(16) t = zeroExtend(rg_wFixed) + 2 * zeroExtend(rg_wAdd[1])
+               + ((rg_wR[1] < 0) ? 2 : 0) + zeroExtend(rn);
+    return DivRsp { q: rg_dq[1], rem: rem,
+                    fpExtra: (rg_wFixed == 0) ? 0 : t - 5 };
+  endmethod
 endmodule
 
 typedef enum { DivIdle, DivNorm, DivTrial, DivReduce, DivLast, DivDone }
@@ -561,17 +758,23 @@ endmodule
 //   AGAINST fpDivFrac.  The low 49 quotient bits and the remainder,
 //   which is what the floating-point arms take.
 //
-//   THE CLOCK COUNT, a LITERAL 4: request at clock T, four reduction
-//   clocks T+1 .. T+4, and the answer is taken at T+4.  4 is eboxClocks' budget for floating-point `/`, the
-//   smallest divide budget there is, and the core relies on the box
-//   fitting it (StretchCore's rl_exec_resume).
+//   THE CLOCK COUNT, a LITERAL 4 for a VFL request: request at clock T,
+//   four reduction clocks T+1 .. T+4, and the answer is taken at T+4.
+//   It used to be 4 for every request, eboxClocks' old budget for
+//   floating-point `/`.  Since 2026-11-17 a FLOATING-POINT request
+//   (vectors 8-11, fpFixed 7) also walks the 7030's reduction loop, one
+//   loop a clock, and answers when both are done: literal clocks and a
+//   literal fpExtra per vector (clocksOf, extraOf).
+//
+//   INJECTIONS, MEASURED 2026-11-17 (each reverted from a saved copy,
+//   verified with cmp): see tests/run_tests.sh at run_divbox_test.sh.
 //
 // The vectors are the cases the VFL arm's manual pages name: dividend
 // below divisor, both at maximum width, a remainder one below the
 // divisor, a one-bit divisor, a quotient needing all 96 bits.  (A zero
 // divisor is never sent: p.70's "THE DIVISION IS NOT ATTEMPTED".)
 // ---------------------------------------------------------------------
-typedef 8 NCoreDivVec;
+typedef 13 NCoreDivVec;
 
 (* synthesize *)
 module mkCoreDivBoxTb(Empty);
@@ -594,7 +797,15 @@ module mkCoreDivBoxTb(Empty);
       4: 96'h123456789abc_def012345678;
       5: 96'h800000000000_000000000000;
       6: 96'h000000000001_fffffffffffd;   // remainder = divisor - 1
-      default: 96'h000000000000_000000000000;   // zero dividend
+      7: 96'h000000000000_000000000000;   // zero dividend
+      // 8-11: FLOATING-POINT divides (fpFixed 7), normalized fractions
+      8: 96'h800000000000_000000000000;   // 1/1, the atlas's case
+      9: 96'h800000000000_000000000000;   // 1/(3/2): 1/2 by 3/4
+      10: 96'hffffffffffff_000000000000;
+      11: 96'haaaaaaaaaaaa_000000000000;
+      // 12: D/ (fpDbl): remainder 1, 47 leading zeros, so Table 2's
+      // "6 cycles (remainder norm <= 6)" + 2 * ceil(41/6) = 20.
+      default: 96'h800000000000_000000000001;
     endcase;
   function Bit#(48) dvsOf(Bit#(4) i) =
     case (i)
@@ -605,13 +816,28 @@ module mkCoreDivBoxTb(Empty);
       4: 48'h00000fedcba9;
       5: 48'h800000000001;
       6: 48'hffffffffffff;
-      default: 48'h000000000003;
+      7: 48'h000000000003;
+      8: 48'h800000000000;
+      9: 48'hc00000000000;
+      10: 48'h800000000001;
+      11: 48'hd55555555555;
+      default: 48'h800000000000;
     endcase;
+  // >>> THE FP VECTORS' TIME, LITERALS (2026-11-17). <<<  fpExtra and the
+  // box's clocks, from an integer mirror of rl_walk written separately in
+  // Python and cross-checked against an exact-fraction prototype of
+  // Buchholz Fig. 14.11/14.12.  Vector 8, 1/1: 9 additional loops, extra
+  // 20, so `/` is 5 + 20 = 25 clocks, the atlas's 7.50 us (PDF 54).
+  // A VFL vector (0-7) has extra 0 and the literal 4 clocks.
+  function Bit#(16) extraOf(Bit#(4) i) =
+    case (i) 8: 20; 9: 40; 10: 54; 11: 30; 12: 40; default: 0; endcase;
+  function Bit#(16) clocksOf(Bit#(4) i) =
+    case (i) 8: 8; 9: 17; 10: 24; 11: 13; 12: 8; default: 4; endcase;
 
-  Integer expClocks = 4;   // a LITERAL: see the header
 
   rule rl_issue (!done && !issued);
-    box.request(DivReq { dvd: dvdOf(idx), dvs: dvsOf(idx) });
+    box.request(DivReq { dvd: dvdOf(idx), dvs: dvsOf(idx),
+                         fpFixed: (idx >= 8) ? 7 : 0, fpDbl: (idx == 12) });
     issued <= True;
     t0 <= clk;
   endrule
@@ -632,17 +858,51 @@ module mkCoreDivBoxTb(Empty);
       $display("FAIL coredivbox[%0d] vs fpDivFrac: q49=%h want %h, rem=%h want %h",
                idx, got.q[48:0], tpl_1(fq), got.rem, tpl_2(fq));
       fails <= fails + 1;
-    end else if (took != fromInteger(expClocks)) begin
-      $display("FAIL coredivbox[%0d] clocks = %0d, want %0d", idx, took, expClocks);
+    end else if (took != clocksOf(idx)) begin
+      $display("FAIL coredivbox[%0d] clocks = %0d, want %0d", idx, took, clocksOf(idx));
+      fails <= fails + 1;
+    end else if (got.fpExtra != extraOf(idx)) begin
+      $display("FAIL coredivbox[%0d] fpExtra = %0d, want %0d", idx, got.fpExtra, extraOf(idx));
       fails <= fails + 1;
     end else
-      $display("PASS coredivbox[%0d] q=%h rem=%h in %0d clocks", idx, got.q, got.rem, took);
+      $display("PASS coredivbox[%0d] q=%h rem=%h in %0d clocks, fpExtra %0d",
+               idx, got.q, got.rem, took, got.fpExtra);
     issued <= False;
     if (idx == fromInteger(valueOf(NCoreDivVec) - 1)) done <= True;
     else idx <= idx + 1;
   endrule
 
-  rule rl_finish (done);
+  // fpDivFixedClocks (StretchFP.bsv), Table 2's divide terms outside
+  // the loop, against LITERALS worked from printed p.3-5 by hand:
+  //   (vs, ds, zero, top)  pre + dividend + initial + 1
+  //   (0, 0, F, 1)         2 + 2 + 2 + 1 =  7   the atlas's 1/1
+  //   (7, 0, F, 1)         4 + 2 + 2 + 1 =  9   divisor shift 7
+  //   (13, 0, F, 1)        6 + 2 + 2 + 1 = 11   divisor shift 13
+  //   (0, 13, F, 1)        2 + 6 + 2 + 1 = 11   dividend shift 13
+  //   (0, 0, T, 0)         2 + 3 + 3 + 1 =  9   zero dividend
+  //   (0, 0, F, 0)         2 + 2 + 3 + 1 =  8   leading zeros left
+  Reg#(Bool) fixedDone <- mkReg(False);
+  rule rl_fixed (!fixedDone);
+    Bit#(8) n = 0;
+    Vector#(6, Bit#(8)) got  = newVector;
+    Vector#(6, Bit#(8)) want = newVector;
+    got[0] = fpDivFixedClocks(0, 0, False, 1);   want[0] = 7;
+    got[1] = fpDivFixedClocks(7, 0, False, 1);   want[1] = 9;
+    got[2] = fpDivFixedClocks(13, 0, False, 1);  want[2] = 11;
+    got[3] = fpDivFixedClocks(0, 13, False, 1);  want[3] = 11;
+    got[4] = fpDivFixedClocks(0, 0, True, 0);    want[4] = 9;
+    got[5] = fpDivFixedClocks(0, 0, False, 0);   want[5] = 8;
+    for (Integer k = 0; k < 6; k = k + 1)
+      if (got[k] != want[k]) begin
+        $display("FAIL fpDivFixedClocks case %0d = %0d, want %0d", k, got[k], want[k]);
+        n = n + 1;
+      end
+    if (n == 0) $display("PASS fpDivFixedClocks, 6 literal cases");
+    fixedDone <= True;
+    fails <= fails + n;
+  endrule
+
+  rule rl_finish (done && fixedDone);
     if (fails == 0) $display("ALL TESTS PASSED");
     else $display("%0d TEST(S) FAILED", fails);
     $finish(0);

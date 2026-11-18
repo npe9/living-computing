@@ -1,5 +1,5 @@
 ! ibox_supply.strap -- TWO I-BOX SUPPLY TIMINGS, 2026-11-17
-! (docs/atlas_oracle.md, "Closing the residuals" item 10).
+! (docs/atlas_oracle.md, "Closing the residuals" item 13).
 !
 ! 1. AN INDEXED IMMEDIATE VFL OPERAND COSTS ONE CLOCK OF INDEXING, NOT
 !    TWO.  Perf. Char. Vol. 2 PDF 177-182 (printed 170-175) print the six
@@ -39,7 +39,7 @@
 !   clock on each indexed KI.
 ! The controls: decks/prep_floor.strap (sixteen UNINDEXED KI, eight L
 ! from $X9, no memory operand) runs 349 under both injections, as
-! without them; decks/fp_internal_operand.strap (no VFL immediate, not
+! without them (361 on batch27, 2026-11-18, also unchanged under both); decks/fp_internal_operand.strap (no VFL immediate, not
 ! run under the first) runs 208 under the second (its pin moved
 ! 208 -> 204 with the yield).
 

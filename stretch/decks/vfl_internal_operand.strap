@@ -1,0 +1,59 @@
+! vfl_internal_operand.strap -- A VFL OPERAND IN AN INTERNAL REGISTER
+! ($L) WAITS FOR THE E-BOX.  Built 2026-11-17 with StretchCore's
+! headReady (intWait), StretchIBox's vflInternalFetch and StretchTiming's
+! vflInternalOperandClocks (docs/atlas_oracle.md, "Closing the
+! residuals" item 11).
+!
+! THE SOURCE.  Perf. Char. Vol. 1 printed p.3-20 (PDF 38, read in the
+! image): "The I-box, upon decoding an instruction whose fetch operand is
+! an internal register, uses the LAAR to store the internal operand
+! address. This is because the needed operand is not available during
+! the decoding stage ..."  "(By an internal operand address is meant
+! address 3, or an address between 5 and 12 inclusive.)"  Perf. Char.
+! Vol. 2's forwarding pages print the INTERNL column (operand at 8.0,
+! PDF 114) 4 clocks over EXTERNL: L (BU,64,8) on PDF 147 is 9.60 us
+! internal against 8.40 forwarded from memory.
+!
+! THE BODY.  The accumulator is loaded with (16)0123456789ABCDEF; eight
+! L(BU,64,8) from 8.0 ($L, the accumulator's left word: each reloads the
+! same value) and then eight from memory (the external control inside
+! the deck: the wait does not apply to them); RES gets the accumulator.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).
+!   the model as of this deck .......................... CYCLES 552
+!   OBSERVED INJECTION, reverted from a saved copy checked with cmp:
+!   - vflInternalFetch forced False ..................... CYCLES 520
+!   Nothing else failed (PC and RES pass).
+! The control is decks/fp_internal_operand.strap (an FP internal
+! operand, intWait's other half), whose CYCLES (208) did not move under the
+! injection.
+
+        SLC, (8)2000.0
+
+START   L(BU,64,8), VAL
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), 8.0
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        L(BU,64,8), VAL
+        ST(BU,64,8), RES
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+VAL     DD(BU,64,8), (16)0123456789ABCDEF
+RES     DD(BU,64,8), 0
+
+        END, START

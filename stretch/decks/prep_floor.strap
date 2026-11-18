@@ -37,6 +37,9 @@
 ! The control is decks/fp_internal_operand.strap: under the first and
 ! third injections its CYCLES (208) did not move; under the second it
 ! moved to 205 (see its header).
+!
+! RE-PINNED 2026-11-17: CYCLES 349 -> 361.  Cause, measured:
+! the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17) after ST $X9; injection C restores 349, injection B leaves 361.
 
         SLC, (8)2000.0
 

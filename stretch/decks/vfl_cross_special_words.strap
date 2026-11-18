@@ -106,6 +106,9 @@
 ! (J5 and J6 were measured before the p.22 index-part change to
 ! StretchExecute.bsv, which no case of this deck reaches; J7 after it.)
 !
+!
+! RE-PINNED 2026-11-17: CYCLES 372 -> 377.  Cause, measured:
+! the VFL internal-operand wait (StretchTiming vflInternalOperandClocks = 4, 2026-11-17); injection B restores 372, injection C leaves 377.
         SLC, 1000.0
 ! ---- C: the indicator register (word 11) ----------------------
 START   L(BU,8,8), ONE

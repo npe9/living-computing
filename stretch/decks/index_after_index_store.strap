@@ -52,6 +52,9 @@
 ! so the old release came that E-box time early.
 ! Seven VFL ST(BU,64) into $X3, 33 clocks each (ST's 32 E-box clocks
 ! plus the removal clock): 7 x 33 = 231.
+!
+! RE-PINNED 2026-11-17: CYCLES 1479 -> 1486.  Cause, measured:
+! the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17); injection C restores 1479.
         SLC, (8)2000.0
 START   NOP
 ! ---- PN: no slow level ahead: only the load of XW1 delays the store

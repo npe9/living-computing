@@ -756,7 +756,7 @@ module mkStretchStorage(StretchStorage);
     // (A global reorder was measured first: it broke
     // decks/int_timing_bracket's interruption and moved twenty VFL pins;
     // docs/NEXT.md.)  MEASURED on the atlas (docs/atlas_oracle.md,
-    // "Closing the residuals" item 10).
+    // "Closing the residuals" item 13).
     Bool yWaiting = False;
     for (Integer y = 1; y <= 2; y = y + 1)
       if (chPending[y] matches tagged Valid .ya &&& !chIssued[y] &&& mbcu.canAccept(ya))

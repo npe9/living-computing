@@ -107,10 +107,38 @@ Integer laarCheckClocks = 2;
 // charge differs by up to 105 clocks across them, while the measured
 // residual stays within a clock (EXTERNAL, $R) and three (I-BOX)
 // (docs/atlas_oracle.md, "Closing the residuals", item 2).
-// Applied to the non-fetching FP stores only: a fetch-and-store (M+,
-// M+MG) prints LESS than ST (PDF 69: 15.42 against 16.00) with two more
-// E-box cycles, so its store path is not this one, and it gets the
-// documented events alone.
+// Applied to the non-fetching FP stores (ST, SRD, SLO, SRT), to every FP
+// store into index storage (item 9), and to LFT (below).  NOT to M+ and
+// M+MG into memory or an internal register: M+ prints LESS than ST to
+// memory (PDF 69: 15.42 against 16.00) with two more E-box cycles, and
+// it gets the documented events alone -- still +2.6 (PDF 69) and +5.8
+// (PDF 100) over the page on EXTERNAL; that inconsistency is open.
+//
+// >>> LFT, 2026-11-17: A STORE INTO MEMORY, WITH ST'S REMAINDER; ITS
+// OPERAND FETCH OVERLAPS THE LAAR WAIT -- RECONSTRUCTION. <<<  LFT
+// writes the factor register, and "$FT ... [is a] bona fide main memory
+// location" (Vol. 1 printed p.3-20); p.3-21 names LFT among the
+// "floating-point-to-memory operations", and Vol. 2 printed 34D (PDF 41)
+// lists pp. 61, 92 (LFT) as "to memory".  So LFT takes the LAAR for word
+// 14 (StretchIBox's fpLaarStore) and, as a store into memory, this
+// memory remainder (9, ST's fit, NOT fitted again).  PDF 68/99 print LFT
+// 14.5 clocks from memory and 13.5 from $X9 -- a clock apart, so its
+// period is the store path's and the operand's fetch is hidden under it.
+// The model therefore loads an LFT whose operand is not internal without
+// the LAAR gate and holds it at the HEAD until the LAAR is free
+// (StretchIBox's lftDeferredLaar, StretchCore's lftWait).  That is in
+// tension with p.3-21, which puts the wait at decoding ("if the latter
+// is busy whenever the I-box decodes an instruction requiring LAAR, a
+// wait must occur"); CHOSEN because the pages show the fetch hidden and
+// the model's load gate would put it in series (measured: with the gate
+// at the load and no remainder, EXTERNAL +1.45, I-BOX -5.52; with the
+// remainder at the load, EXTERNAL would be about +10).  An LFT from $R
+// keeps the load gate: its operand needs the LAAR itself (p.3-20), so it
+// waits for the store before it (StretchCore's intFrom) and the two are
+// in series -- PDF 99 prints 22.5 clocks, 8 over memory.
+// Measured (docs/atlas_oracle.md "Closing the residuals" item 10), PDF
+// 68 and 99, medians: EXTERNAL -8.80/-5.22 -> +0.47, I-BOX -7.52 (ni) /
+// -5.55 (ix) -> +1.47/+1.43, $R -11.53 -> -0.53.
 function Bit#(8) laarStorePost(WordAddr a) =
   (a >= 16 && a <= 31) ? 17
   : (a == 3 || (a >= 5 && a <= 12)) ? 5
@@ -129,6 +157,41 @@ function Bit#(8) laarStorePost(WordAddr a) =
 // fetch pages (PDF 73-101, $R columns) are its held-out test
 // (docs/atlas_oracle.md, "Closing the residuals" item 8).
 Bit#(16) fpInternalOperandClocks = fromInteger(laarCheckClocks) + zeroExtend(laarStorePost(9));
+
+// >>> A VFL OR CONNECTIVE INTERNAL OPERAND: THE SAME LATENESS, 1.2 US,
+// 2026-11-17. <<<  StretchCore's headReady (intWait) holds a VFL or
+// connective level whose operand is address 3 or 5-12 (StretchIBox's
+// vflInternalFetch) until this many clocks after the E-box has finished
+// the instruction before it -- the same mechanism as the FP one above,
+// from the same sentence of Vol. 1 printed p.3-20 (PDF 38), which is not
+// limited to floating point: the internal operand "is not available
+// during the decoding stage".  Vol. 1 Table A-2 (printed A-12, PDF 71)
+// gives CV and DCV, the VFL operations whose operand is always the
+// accumulator, an "INT" level, and Vol. 1's list of look-ahead
+// registers (printed A-8, PDF 67, read in the image) gives "internal opnd
+// fetch" to the ABC (arithmetic bus counter).  R23-9732 Fig. 3.1.24 (PDF
+// 88, printed 1-49/1-50) shows the I-unit's VFL preparation testing "W EQ
+// INT" (28.22.20.1); like every CE flow chart it prints no durations.
+//
+// THE NUMBER, A FIT.  Perf. Char. Vol. 2's forwarding pages (PDF
+// 143-169) print the INTERNL column (operand at 8.0, $L; PDF 114,
+// printed 107) above the EXTERNL one by a median of 4 clocks (1.2 us) on
+// +, +MG, L, LWF, K, KR, KE, `*`, C0011, CT0111 and on the to-memory M+,
+// M+MG, ST, SRD (docs/atlas_oracle.md, "VFL INTERNL").  The model's
+// EXTERNL figure there is the E-box occupancy, fitted (eboxClocks), and
+// its INTERNL figure was the same, so the whole difference is the
+// operand's lateness.  The 4 is FITTED on PDF 147 (L) INTERNL alone,
+// where all 96 no-crossing rows were -4.00 / -4.04 before; every other
+// page is held out.  No page splits it.  (Read as the I-Checker's 0.6 us,
+// laarCheckClocks, "E-box fetch operand error check", printed p.3-19 item
+// 4, plus one 0.6 us look-ahead step, it is consistent with the sources,
+// but that split is RECONSTRUCTION.)  The FP figure (7) is not reused:
+// its remainder, laarStorePost's 5, is the FP store path fitted on PDF
+// 79, which the VFL charges already contain.  This revives, with a
+// measured number, the "wait for the E-box before fetching an E-box
+// register" draft that docs/atlas_oracle.md "Closing the residuals" item
+// 2 dropped for having no number of its own.
+Bit#(16) vflInternalOperandClocks = 4;
 
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
@@ -243,6 +306,30 @@ function Bit#(16) vflImmIndexedSaving(DecodedInstr d);
   return r;
 endfunction
 
+// >>> OUT OF AN INDEX-STORE DECODE HOLD, AN INDEXED I-BOX OPERAND'S
+// PREPARATION IS IN SERIES, 2026-11-17 -- RECONSTRUCTION. <<<
+// StretchCore's rl_prepare spends these clocks before loading an FP level
+// prepared straight out of the decode hold (xholdSeen).  PDF 69 (printed
+// 62) prints M+ into $X9-$X12 at 7.86 us unindexed and 9.07 indexed, 4.0
+// clocks apart (PDF 70 M+MG and 100-101 with forwarding the same); the
+// model gave 0, because the hold (printed p.3-21: "the I-box does no
+// further decoding until the new index contents arrives") swallowed the
+// indexed preparation that `ibusy` charges after the load.
+// The pages say nothing about which clocks these are.  CHOSEN: the two
+// reads of index storage an indexed I-box operand makes in turn (the
+// fpIndexedIboxClocks note) -- the index register, 0.6 us ("each indexing
+// operation requires 0.6 us", printed p.3-18), and the operand with its
+// I-Checker pass, 0.6 us (printed p.3-19 item 2, fpIboxCheckClocks) --
+// which cannot start until the hold ends, since the index register read
+// first may be the one being stored.  Unindexed, the operand's address is
+// in the instruction and the unindexed column (already within 1.2 clocks)
+// shows its read hidden; that asymmetry is the reconstruction, and it is
+// fitted to the one difference the pages print (4 clocks).  Not ST: an ST
+// into index storage fetches nothing, and PDF 48 prints it 1 clock
+// higher indexed, not 2 or 4 (open, docs/atlas_oracle.md "Closing the residuals" item 10).
+function Bit#(16) fpHoldSerialClocks(DecodedInstr d, Maybe#(WordAddr) da) =
+  (fpIndexedIboxClocks(d, da) != 0) ? fpIndexedIboxClocks(d, da) + fpIboxCheckClocks(d, da) : 0;
+
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
 function Bit#(16) eboxClocks(DecodedInstr d);
@@ -276,7 +363,9 @@ function Bit#(16) eboxClocks(DecodedInstr d);
     // operands -- StretchFP.bsv already derives the shift and
     // normalize counts to produce the ANSWERS, so the data is in
     // hand -- and this does not yet do it.  Recorded as the next
-    // step rather than hidden: these numbers are a floor.
+    // step rather than hidden: these numbers are a floor.  EXCEPT THE
+    // DIVIDES, since 2026-11-17: their data-dependent part comes from
+    // the divide box (see the `/` arm below).
     //
     // ALSO NOT MODELLED: *+'s "cannot enter execution cycles until
     // Factor is available" (Table 2, printed p.3-4).  That is an
@@ -303,13 +392,29 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       (f.code == 7'd26 || f.code == 7'd90) ? 9 :
       // *+(58): 3 + 17
       (f.code == 7'd58) ? 20 :
-      // /(30): 2 + 2, before the data-dependent reduction loops
-      (f.code == 7'd30) ? 4 :
-      // D/(94): Divide plus 6 for the remainder normalization
-      (f.code == 7'd94) ? 10 :
+      // >>> THE THREE DIVIDES: THE ZERO-DIVISOR TIME HERE, THE REST
+      // FROM THE DIVIDE BOX (2026-11-17). <<<  Table 2 (printed p.3-5,
+      // PDF 23): "If zero divisor 3 cycles pre-execution and 2 cycles
+      // execution instead of previous" -- 5, and that is all a zero
+      // divisor costs, because it makes no box request (p.93: "further
+      // processing of the division is suspended").  Every other divide
+      // is charged this PLUS the box's `fpExtra` (mkEBox.boxCharge,
+      // added in StretchCore's rl_exec_resume): the operand-dependent
+      // pre-shifts, the reduction loops, the remainder complement and
+      // D/'s remainder normalization, walked from the operands by
+      // StretchDivBox ("THE 7030'S REDUCTION LOOP").  A normalized 1 by
+      // a normalized 1 comes to 25 (/), 31 (D/), 29 (R/), the atlas's
+      // 7.50, 9.60 (less D/'s unprinted 1), 8.70 us.  These used to be
+      // 4, 10 and 8, "before the data-dependent reduction loops", and
+      // the atlas measured them 16-21 clocks short.
+      // /(30) and D/(94): 3 + 2.  The same for D/: R23-9732 fig.
+      // 3.8.15 sheet 3 (PDF 241, printed 8-19), Part E ZERO DIVISOR,
+      // note 1: "FLOATING POINT DIVIDE OR DIVIDE DOUBLE RECIPROCAL
+      // DIVIDE IS TERMINATED IN THE SAME MANNER AFTER 2".
+      (f.code == 7'd30 || f.code == 7'd94) ? 5 :
       // R/(62): 2 + 2 "plus all pre-execution and execution cycles
-      // of Divide", so 4 + 4
-      (f.code == 7'd62) ? 8 :
+      // of Divide" (printed p.3-4, PDF 22), so 4 + 5
+      (f.code == 7'd62) ? 9 :
       // SLO(78): 2 + 17 unnormalized (15 if normalized with no
       // leading zeros -- the unnormalized figure is the floor)
       (f.code == 7'd78) ? 19 :

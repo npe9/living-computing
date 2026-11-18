@@ -803,7 +803,41 @@ typedef struct {
   // answer.  Meaningless (zero) when `zd`: nothing is divided.
   Bit#(96) boxDvd;
   Bit#(48) boxDvs;
+  // Table 2's DATA-DEPENDENT FIXED TERMS for this operand pair, in
+  // clocks (fpDivFixedClocks); the reduction loops are counted by the
+  // divide box.  Meaningless when `zd`.
+  Bit#(8)  boxFixed;
 } FpDivResult deriving (Bits, Eq, FShow);
+
+// >>> FLOATING-POINT DIVIDE TIME, THE PART THAT IS NOT THE REDUCTION
+// LOOP (2026-11-17). <<<  Perf. Char. Vol. 1 Table 2, printed p.3-5
+// (PDF 23), read at the page image:
+//   PRE-EXECUTION  "2 cycles (divisor shift <= 6)"
+//                  "2 cycles for each additional divisor shift of 6"
+//   EXECUTION      "2 cycles (dividend shift <= 6)"
+//                  "2 cycles for each additional dividend shift of 6
+//                   or total of 3 cycles if dividend is all zero"
+//                  "2 cycles for initial reduction loop if dividend is
+//                   normalized"
+//                  "3 cycles for initial dividend pass if dividend has
+//                   leading zeros."
+//                  [2 per additional reduction loop, 2 if the final
+//                   remainder is complemented: StretchDivBox's walk]
+//                  "1 cycle - all"
+// `vs` and `ds` are the divisor's and the dividend's pre-normalization
+// shifts exactly as fpDiv / fpDivDouble perform them (p.93), and
+// `dvdTop` is the dividend's leading bit AFTER its shift: an
+// unnormalized divide may leave the dividend with leading zeros (it is
+// shifted no further than the divisor), which is the "3 cycles for
+// initial dividend pass" case.
+function Bit#(8) fpDivFixedClocks(Int#(14) vs, Int#(14) ds, Bool dvdZero, Bit#(1) dvdTop);
+  function Bit#(8) per6(Int#(14) sh) =
+    (sh <= 6) ? 0 : 2 * truncate(pack((sh - 6 + 5) / 6));
+  Bit#(8) pre  = 2 + per6(vs);
+  Bit#(8) dvdS = dvdZero ? 3 : 2 + per6(ds);
+  Bit#(8) init = (dvdTop == 1) ? 2 : 3;
+  return pre + dvdS + init + 1;
+endfunction
 
 // DIVIDE (/, pp.93-94).  `dvd` is the accumulator operand (the
 // dividend), `dvs` the addressed operand (the divisor), already
@@ -834,7 +868,7 @@ function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy,
                            Tuple2#(Bit#(49), Bit#(49)) qr);
   FpDivResult r = FpDivResult { res: dvd, zd: False, pf: False, lzc: 0,
                                 generated: False, propagated: False,
-                                boxDvd: 0, boxDvs: 0 };
+                                boxDvd: 0, boxDvs: 0, boxFixed: 0 };
   if (dvs.frac == 0) begin
     // "When the indicator ZD is set to one, further processing of the
     // division is suspended and the accumulator contents remain
@@ -874,6 +908,7 @@ function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy,
 
   r.boxDvd = d96;
   r.boxDvs = vf;
+  r.boxFixed = fpDivFixedClocks(vs, ds, dvd.frac == 0, d96[95]);
   let {q, rem} = qr;
   Bool ovf = (q[48] == 1);
   Bit#(48) qf = ovf ? q[48:1] : q[47:0];
@@ -1087,6 +1122,7 @@ typedef struct {
   // The divide box's operands, as in FpDivResult.
   Bit#(96) boxDvd;
   Bit#(48) boxDvs;
+  Bit#(8)  boxFixed;   // as in FpDivResult
 } FpDivDblResult deriving (Bits, Eq, FShow);
 
 // DIVIDE DOUBLE (D/, p.94).  "The operand in the accumulator bits
@@ -1125,7 +1161,8 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   FpNum z = fpdHead(dvd);
   FpDivDblResult r = FpDivDblResult { res: z, q49: 0, rem: z, zd: False, pf: False,
                                       lc: False, ru: False, lzc: 0, generated: False,
-                                      propagated: False, boxDvd: 0, boxDvs: 0 };
+                                      propagated: False, boxDvd: 0, boxDvs: 0,
+                                      boxFixed: 0 };
   if (dvs.frac == 0) begin
     r.zd = True;
     return r;
@@ -1163,6 +1200,7 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
 
   r.boxDvd = d96;
   r.boxDvs = vf;
+  r.boxFixed = fpDivFixedClocks(vs, ds, dvd.frac == 0, d96[95]);
   let {q, rem} = qr;
   Bool ovf = (q[48] == 1);
   Bit#(48) qf = ovf ? q[48:1] : q[47:0];

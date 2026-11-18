@@ -528,11 +528,70 @@ function Bool fpInternalFetch(LaLevel l);
   return r;
 endfunction
 
+// A VFL or connective level whose operand is an internal register
+// (StretchCore's headReady, intWait, and StretchTiming's
+// vflInternalOperandClocks have the source).  Not an LAAR gate: the VFL
+// and connective charges are fits that contain their queuing (the note
+// above); this is the operand's own lateness, which the EXTERNL fit
+// cannot contain because an external operand has none.
+function Bool vflInternalFetch(LaLevel l);
+  Bool cls = case (l.di) matches
+               tagged VflInt .*:     True;
+               tagged Connective .*: True;
+               default:              False;
+             endcase;
+  Bool r = False;
+  if (l.valid && !l.branch && cls &&& l.da matches tagged Valid .a &&& laarInternal(a))
+    r = True;
+  return r;
+endfunction
+
+// >>> LFT IS A "TO MEMORY" OPERATION: IT TAKES THE LAAR, 2026-11-17. <<<
+// The word an FP level stores through the LAAR: its storeAddr, or -- for
+// LFT -- the factor register, word 14.  Perf. Char. Vol. 1 printed p.3-20
+// (PDF 38): "$Z, $IA, $MB, and $RM, $FT and $TR are bona fide main memory
+// locations", so loading $FT is a store into memory; printed p.3-21 (PDF
+// 39): "Measurements on consecutive floating-point-to-memory operations
+// (ST, MT, LFT, etc.) do not therefore yield realistic timing
+// information"; and Vol. 2 printed 34D (PDF 41) lists "pp. 61, 92 (LFT)"
+// among the pages that "refer to 'to memory' operations" that "lead to
+// queuing for the LAAR".  TIMING ONLY: LFT's storeAddr stays Invalid,
+// because storeAddr feeds the store-close-to-fetch and STORE WAIT
+// hazards and the commit path, and FT is written by execute() as the
+// E-box's register (eboxRegister already makes a level fetching word 14
+// wait for every earlier level).
+function Maybe#(WordAddr) fpLaarStore(DecodedInstr d, Maybe#(WordAddr) storeAddr);
+  Maybe#(WordAddr) r = storeAddr;
+  if (d matches tagged Fp .f &&& f.code == fpop_LFT &&& !isValid(storeAddr))
+    r = tagged Valid 14;
+  return r;
+endfunction
+
+function Bool isFpLft(DecodedInstr d);
+  Bool r = False;
+  if (d matches tagged Fp .f &&& f.code == fpop_LFT) r = True;
+  return r;
+endfunction
+
+// An LFT whose operand is not an internal register: its level is loaded
+// (and its operand fetched) without waiting for the LAAR, and it waits for
+// the LAAR at the head instead (StretchCore's headReady, lftWait) --
+// RECONSTRUCTION, 2026-11-17; StretchTiming's laarStorePost note has the
+// pages and the tension with printed p.3-21.
+function Bool lftDeferredLaar(DecodedInstr d, Maybe#(WordAddr) da);
+  Bool r = False;
+  if (d matches tagged Fp .f &&& f.code == fpop_LFT) begin
+    r = True;
+    if (da matches tagged Valid .a &&& laarInternal(a)) r = False;
+  end
+  return r;
+endfunction
+
 function Bool laarHeldByLevel(Vector#(4, LaLevel) lv);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1)
     if (lv[k].valid && !lv[k].branch && isFpInstr(lv[k].di)) begin
-      if (isValid(lv[k].storeAddr)) r = True;
+      if (isValid(fpLaarStore(lv[k].di, lv[k].storeAddr))) r = True;
       if (lv[k].da matches tagged Valid .a &&& laarInternal(a) &&& !isValid(lv[k].data))
         r = True;
     end

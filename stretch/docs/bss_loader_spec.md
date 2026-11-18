@@ -864,6 +864,23 @@ To add them means choosing a later MCP than the listing. See G2.
 
 **RECONSTRUCTED 2026-11-17, single segment** (plan R2a): `decks/bss_7030.strap`,
 NOT IBM's code; it reproduces C28 p.17's map (`tests/check_bss_example4.py`).
+**Loaded and run under MCP from the TYPE card, 2026-11-17** (plan R2b, job
+half, `tests/check_bss_mcp_go.py`): `B TYPE,GO,FORTRAN` through UNCODE and
+p.271's rewrite into KSILO (PCBSS), then YC4INT (p.396), WJC4G (p.386) and
+resume load (p.332, SCORG = 1) load the deck from type area BSS through
+`ALOADR`; BSS, entered at SICBU, prints p.17's map. KSILO+1.19 = 1 comes
+from YTOPCG's 01011 (p.272 l.4 via p.384 ll.19-20). The map is not yet
+printed through `$SPR`.
+**Its table read by MCP's loader, 2026-11-17** (plan R2b,
+`tests/check_bss_mcp_load.py`): the table and KSILO 8-11 the deck leaves are
+read by resume load from `YRESL1` (L p.332) through `YARSL`, `ARNRM5`, the
+read loop, `ALOADR` and, for each library routine, `YLERR`/`YAERR1`, with
+`$FETCH` a labelled stub over core images of TWS and the LB areas. Every
+subprogram, common reference and transfer vector lands where p.17 prints it,
+and `$RET` gets `*MAIN*`'s entry. Settled there: the library name is 36 bits
+of A6 (C8 below; G7's naming of the LB areas stays a CHOSEN reconstruction),
+and the card count leaves the FORTRAN branch card out (the loader cannot
+tell; C28 pp.7, 9, 10 decide).
 
 Sweep behind this table. `grep` over `decks/*.strap` for `SRORG`,
 `SRNXAD`, `SRTVL`, `SRCOMB`, `SRCCT`, `SRDKAD`, `NODE TBL`, `LINK TABLE`,
@@ -1027,8 +1044,12 @@ calls by `SIC,$X15 ; B,name` (6751 p.31).
   fills the end of a deck, and the disk-address field's exact width (18 bits
   in Figure 4 and Figure 39, the last 18 bits of word 3 in Figure 1).
 - **G7.** The library's type-area form: `LB` + 36-bit name is the listing's
-  (L p.327 ll.23-25); how an A8 entry name reduces to a 36-bit name is
-  UNSPECIFIED. Which type areas exist, and their contents: FIOD, IOCS, FISIP,
+  (L p.327 ll.23-25). The 36 bits are six A6 characters: `LF(BU,36,6)` (L
+  p.327 l.24, read in the ink), `SRDKAD SYN(BU, 36, 6)` "a 36-bit field
+  containing a type-area name" (6728-0 p.82, read in the ink), and `ALB`
+  is `(A*)DD(BU,12,6),LB` (L p.291 l.29). Which entry name goes in, and that
+  the LB area is named by it, remain UNSPECIFIED; plan R2b CHOOSES the
+  subprogram's first entry point, six characters, blank-padded. Which type areas exist, and their contents: FIOD, IOCS, FISIP,
   SPTXT, UST are names only.
 - **G8.** Link program: calling sequence, its code, where it lives, how a
   transfer-vector entry is encoded when it goes to the link ("in addition to
@@ -1106,7 +1127,8 @@ calls by `SIC,$X15 ; B,name` (6751 p.31).
     44, and in L (`LF(BU,18),.28($1)`).
   - Library name: "the first 48 bits ... the entry point name" (C28 p.10); "a
     36-bit field containing a type-area name" (6728) and L (36 bits, `LB`
-    prefix).
+    prefix). L wins: it reads bits 0-35 at byte size 6 and never bits 36-47
+    of a library word 0 (plan R2b, run).
   - Common fields: 32-50 in Figure 4; "(BU, 32), 2.32" in the 6728 figures.
 - **C9. Decimal-point test.** 12,3,8 or 12,1,3,8 (C28 p.4; L); "12, 3, 8 or 1, 3,
   8" (6728-0 p.85); "12, 3, 8; 12, 1, 3, 8; or 1" (6728-1 p.90).

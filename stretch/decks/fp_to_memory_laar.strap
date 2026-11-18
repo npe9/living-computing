@@ -1,0 +1,97 @@
+! fp_to_memory_laar.strap -- LFT IS A "TO MEMORY" OPERATION, ITS $R
+! OPERAND WAITS FOR THE ONE LAAR, AND AN INDEXED M+ INTO INDEX STORAGE
+! PREPARES IN SERIES AFTER THE DECODE HOLD.  Built 2026-11-17
+! (docs/atlas_oracle.md, "Closing the residuals" item 10).
+!
+! THE SOURCES (read in the page images).
+!  - Perf. Char. Vol. 1 printed p.3-20 (PDF 38): "$Z, $IA, $MB, and $RM,
+!    $FT and $TR are bona fide main memory locations"; the I-box "uses
+!    the LAAR to store the internal operand address".
+!  - Vol. 1 printed p.3-21 (PDF 39): "Since there is only one LAAR ... a
+!    wait must occur until the LAAR is free for reloading. ...
+!    Measurements on consecutive floating-point-to-memory operations
+!    (ST, MT, LFT, etc.) do not therefore yield realistic timing";
+!    "A store into index storage is a time-consuming operation ... the
+!    I-box does no further decoding until the new index contents
+!    arrives."
+!  - Vol. 2 printed 34D (PDF 41): pp. 61, 92 (LFT) "refer to 'to memory'
+!    operations"; repeated ones "lead to queuing for the LAAR".
+!  - Vol. 2 PDF 69 (printed 62): M+ into $X9-$X12 7.86 us unindexed,
+!    9.07 indexed (4 clocks); PDF 99 (printed 92): LFT 4.36 us from
+!    memory, 4.06 from $X9, 6.76 from $R.
+!
+! THE BODY.  $X5 = 0 and $X9 = the FP one.  Six M+(U) into $X9 unindexed
+! (the CONTROL block for the indexed preparation), six indexed by $X5,
+! eight LFT(U) from memory, $R = the FP one by TI, eight LFT(U) from $R.
+! The value check is FT, word 14: LFT places its operand there with FT
+! bits 61-63 zero (Ref. Manual p.98), so it holds the FP one's word,
+! 0028000000000000 hex.  The M+ sums are not checked: this deck is a
+! timing deck, and the accumulator is the one throughout.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).
+!   the model as of this deck .......................... 776
+!   OBSERVED INJECTIONS, each reverted from a saved copy checked with cmp
+!   (FT and PC pass in every one):
+!   - fpLaarStore without LFT (no LAAR for LFT) ......... FAIL cycles 656
+!   - intFrom = eboxDoneAt ($R not waiting for the LAAR) FAIL cycles 738
+!   - serialNow = 0 (no serial preparation) ............. FAIL cycles 752
+!     (24 clocks = 4 a copy over the six indexed M+)
+!   - lftDeferredLaar False (LFT gated at its load) ..... FAIL cycles 846
+!   Nothing else failed.  The control is decks/fp_internal_operand.strap
+!   (L from $R with no FP store before it), which stays at 208 under all
+!   four.  No existing CYCLES pin in run_tests.sh moved with the change.
+!
+! RE-PINNED 2026-11-18: CYCLES 776 -> 780 on merging with the VFL INTERNL
+! branch.  Measured cause: its ST(BU,64,8),$X9 is a VFL store into index
+! storage, so the L(U) behind it is decoded after the hold
+! (StretchCore's redecodeAfterHold); with that arm disabled, 776.
+! RE-PINNED 2026-11-18: CYCLES 780 -> 786 on merging with the I-box
+! supply branch, by an FP look-ahead level's fetch yielding the bus to a
+! waiting 1Y/2Y fetch (StretchStorage memCtl fpYields;
+! decks/ibox_supply.strap).  MEASURED with the yield removed: 780; with
+! vflImmIndexedSaving = 0 instead: 786.
+
+        SLC, (8)2000.0
+
+START   LX, $X5, ZERO
+        L(BU,64,8), FONE           ! the FP one, as a VFL word
+        ST(BU,64,8), $X9           ! into $X9's word in index storage
+        L(U), FONE                 ! the accumulator = one
+        M+(U), $X9
+        M+(U), $X9
+        M+(U), $X9
+        M+(U), $X9
+        M+(U), $X9
+        M+(U), $X9
+        M+(U), $X9($X5)
+        M+(U), $X9($X5)
+        M+(U), $X9($X5)
+        M+(U), $X9($X5)
+        M+(U), $X9($X5)
+        M+(U), $X9($X5)
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        LFT(U), FONE
+        TI, 1, FONE, 9.0           ! $R = the FP one
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+        LFT(U), $R
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+ZERO    DD(BU,64,8), 0
+FONE    DD(BU,64,8), (16)0028000000000000
+
+        END, START

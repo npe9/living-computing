@@ -26,7 +26,7 @@ accumulate.
 
 ## ATLAS: I-BOX SUPPLY -- two residuals reduced, what is left, 2026-11-17
 
-`docs/atlas_oracle.md` "Closing the residuals" item 10 has the tables.
+`docs/atlas_oracle.md` "Closing the residuals" item 13 has the tables.
 
 * **Reduced.** FP L EXTERNAL (Vol. 2 PDF 64) +1.33 -> +0.46 clocks: an
   FP look-ahead level's operand fetch now yields the bus to a waiting
@@ -80,6 +80,55 @@ accumulate.
   address modification". StretchIBox's `carryIndex` carries the address
   field unindexed for p == 4 ("this model does not index it"). The atlas
   cannot see it ($X5 = 0); a program with a nonzero index would.
+
+## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
+
+**Done.** The atlas (Perf. Char. Vol. 2 PDF 54-56, 85-87) had FP `/`,
+`D/`, `R/` 16-21 clocks short.  The model now charges Vol. 1 Table 2's
+divide row (printed p.3-5, PDF 23, read at the page image) with its
+data-dependent terms, and the reduction-loop count comes from walking
+the 7030's own divide algorithm -- Buchholz, *Planning a Computer
+System*, Figs. 14.11-14.13 and pp.213-216 (PDF 238-241) -- inside
+`mkDivBox`, one loop a clock.  The cycle structure is from R23-9732
+fig. 3.8.15 (PDF 239-241).  `bsv/StretchDivBox.bsv` "THE 7030'S
+REDUCTION LOOP" has the citations.  The atlas before/after, with
+residual = model - printed in clocks, on every non-internal column:
+
+| page | op | before | after |
+|---|---|---|---|
+| 54, 85 | `/` | -15.7 to -18.0 | **+1.00** |
+| 55, 86 | `D/` | -21.0 | **-0.03 to 0.00** |
+| 56, 87 | `R/` | -20.0 | **+1.00** |
+
+The +1 on `/` and `R/` is the same +1 that `*` shows (PDF 52; the
+removal clock).  `D/` comes out exact because the atlas's D/ is one
+clock over Table 2, as D* and D+ are ("1 cycle if immediate next
+instruction is floating point", not printed on D/'s row), and the
+removal clock happens to stand in for it.  The VFL `/` (PDF 134) uses
+the same box and is unchanged by construction (`fpFixed` = 0).
+
+**RECONSTRUCTION, open to a better source:**
+* Whether the second divide cycle (which loads the shift counter with
+  47 or 48) is a reduction loop of its own.  Counted, 1/1 is 25 clocks,
+  the atlas's 7.50 us exactly; not counted, 23.  Counting it gives a
+  mean over random operands of 38 clocks (11.4 us) against PDF 41's
+  "about 10 us"; not counting it gives 10.8 us.
+* Remainder magnitude in two's complement, where the 7030 uses ones'.
+
+**Sourced, not reconstructed:** a zero divisor costs `/` and `D/` the
+same 3 + 2 = 5 (Table 2; R23-9732 fig. 3.8.15 sheet 3, PDF 241, printed
+8-19, Part E note 1: "FLOATING POINT DIVIDE OR DIVIDE DOUBLE RECIPROCAL
+DIVIDE IS TERMINATED IN THE SAME MANNER AFTER 2"); `R/` is 4 + 5.
+
+**Still open, measured:** the INTERNAL ($R) columns.  `/` and `R/`
+went from -25 / -27 to -6; `D/` went from -5 to **-10**.  The model's
+D/ internal is now 6 clocks, which equals the 5-clock zero-divisor
+charge plus the removal clock.  The INFERENCE (not confirmed with the
+ZD indicator) is that in the model that sequence divides by a zero $R
+fraction after the first D/ (D/ zeroes accumulator bits 61-107), and
+that the zero divisor used to be charged D/'s flat 10.  The printed 4.82 us
+(16 clocks) fits neither; PDF 40 warns that $R changes under
+double-length operations.  Not investigated further.
 
 ## ASSEMBLER COMPLETENESS (G3) -- G3.1-G3.3 built 2026-11-16; what is open
 
@@ -950,21 +999,41 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## THE BSS PROCESSOR, RECONSTRUCTED -- R2a single segment built, 2026-11-17
+## THE BSS PROCESSOR, RECONSTRUCTED -- R2a built, R2b run under MCP from the TYPE card, 2026-11-17
 
 `decks/bss_7030.strap` is a 7030 program labelled RECONSTRUCTION; IBM's BSS
 code is lost. It reproduces C28-6379-0 p.17's Example 4 storage map row for
 row on stubs of the printed sizes (`tests/check_bss_example4.py`). The record
 and the row-by-row result are in the plan's R2a.
 
-**Next, R2b.** Feed BSS's relocation table and KSILO to MCP's loader:
-`gen_loader_deck_tb.py`'s BSS modes, with the table built by the deck instead
-of the driver. Then `B TYPE,GO,FORTRAN` through p.271's rewrite.
+**R2b, the table half, RUN 2026-11-17** (`tests/check_bss_mcp_load.py`):
+the table and KSILO 8-11 BSS leaves are read by MCP's own resume load and
+loader, entered at YRESL1 (p.332), with `$FETCH` a labelled stub over core
+images of TWS and the LB areas. Example 4 loads as p.17 lays it out, in a
+library run and a no-library run. C10 settled: 36 bits of A6 (p.327 l.24,
+6728-0 p.82, read in the ink). C11 settled: the FORTRAN branch card is not
+counted (C28 pp.7, 9, 10; the loader itself cannot tell, measured).
+Checked and harmless: BSS leaves bits 24-31 of KSILO+9 and +10 as found,
+though the loader's LV takes bit 24 as a sign (LR and SV come first on this
+path; clearing them loads identically); the deck is unchanged. Record: the
+plan's R2b.
 
-Open questions R2b must settle:
-- the library name's 36 bits (deck rule C10);
-- whether the FORTRAN branch card counts (C11);
-- the O card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL storage, all not built.
+**R2b, the job half, RUN 2026-11-17** (`tests/check_bss_mcp_go.py`):
+`B TYPE,GO,FORTRAN` goes through MCP's own UNCODE, p.271's rewrite and
+p.384/p.395-396 into KSILO (PCBSS fetched; KSILO+1.19 = 1 comes from
+YTOPCG's 01011, now settled). YC4INT, WJC4G and resume load then load the
+BSS processor deck from its type area, and BSS runs under MCP and prints
+p.17's map. The separator is the 0-3-8 punch (measured). PLANTED: YC4B5 to
+WJC4G1 (the PC area's LIM and IOD cards, Assign, Move) and YRLTT+2.50.
+Stubs: the dispatcher, `$RET` into the program, `$SCR`/`$FETCH` over core
+images.
+
+**Next:** (1) the map through `$SPR` (C22-6678-1 p.20) rather than the deck's
+OUTB buffer (not attempted); to the paper would need the output program
+(p.201 CSTART). (2) BSS's exit by `$EOJ` (p.274 ll.44-45 for a normal end,
+p.381 ll.11-17 -> YC4INT -> YLASTC, p.397) into the GO phase. (3) Stage 2's LIM/IOD cards. Still not
+built: the O card, block data, DEFINE/DEFI, sequence and check sums, and
+B IOD/REEL storage.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
@@ -2279,6 +2348,9 @@ bug.
    necessary", and for DIVIDE "number of cycles is data dependent".
    `StretchFP.bsv` already derives the shift and normalize counts to
    produce the ANSWERS, so the inputs exist.
+   **DIVIDE DONE 2026-11-17** -- see "FP DIVIDE TIME" at the top of
+   this file.  The add class, loads, stores, multiplies and SRT are
+   still at their minima.
 3. **`*+`'s interlock**, "cannot enter execution cycles until Factor
    is available", is not a duration and belongs with the look-ahead.
 
@@ -18571,3 +18643,129 @@ moved and no deck is known to store into them through a level, so that
 half is UNTESTED.
 vfl_cross_special_words: 389 with the new set alone (404 with the old);
 with the preparation floor of the same day, 372 (pinned).
+
+## ATLAS RESIDUALS: LFT FROM $R (-11.53) AND INDEXED M+ INTO $X (-5.22) -- DONE, 2026-11-17
+
+These were the two open rows of `docs/atlas_oracle.md`'s full run on
+`4c8464a`:
+
+- PDF 99 LFT ni_int/ix_int, median -11.53.
+- PDF 69 M+ ix_ibox, median -5.22. The page prints M+ 4 clocks higher
+  indexed than unindexed; the model gave 0.
+
+Both are closed:
+
+- LFT $R: -11.53 -> -0.53.
+- M+ ix_ibox: -5.22 -> -1.22. PDF 70, 100 and 101 were held out and give
+  the same.
+
+"Closing the residuals" item 10 has the sources and the tables;
+`bsv/README.md` has the summary.
+
+**LFT is a "to memory" operation.** The sources:
+
+- Vol. 1 printed p.3-20: "$FT ... bona fide main memory".
+- Vol. 1 printed p.3-21: "floating-point-to-memory operations (ST, MT,
+  LFT, etc.)".
+- Vol. 2 printed 34D (PDF 41): LFT's pp. 61, 92 are "to memory".
+
+LFT now takes the LAAR and ST's memory remainder. Making it wait at the
+head rather than at the load is a RECONSTRUCTION, in tension with
+p.3-21's "wait at decoding". Every LFT column moved:
+
+- EXTERNAL: -8.80/-5.22 -> +0.47.
+- I-BOX: -7.52 -> +1.47.
+
+**An FP internal operand's fetch waits for the LAAR** (`intFrom`). M+ $R
+moved -5.06 -> -3.07. After any FP store this also delays a following $R
+fetch, which no atlas page measures.
+
+**An indexed M+ out of the index-store hold prepares in series**, 2 + 2
+clocks. This is a RECONSTRUCTION fitted to the 4-clock difference.
+
+**Not a measurement artifact.** Every LFT column was short, not just $R,
+and the volume's own commentary names LFT as a LAAR-queuing operation.
+
+No existing CYCLES pin moved. The new deck is
+`decks/fp_to_memory_laar.strap`.
+
+Still open on these pages:
+
+- M+ from memory is +2.6 / +5.8. It gets no store remainder, while ST and
+  LFT do.
+- LFT I-BOX is +1.45.
+- ST indexed into $X is 1 clock short (PDF 48).
+- D/ is not built. PDF 41 lists it (pp. 48, 79) as "to memory" beside
+  LFT, and $RM is memory (p.3-20), so it should take the LAAR too. The
+  divide pages are disowned as a timing.
+- UNTESTED: `xholdPc`'s narrowing to index storage, its clears in
+  rl_recover and rl_interrupt, LFT's remainder apart from its hold, and
+  `intFrom` after a non-LFT FP store (atlas_oracle.md item 10).
+
+## VFL INTERNL AND THE VFL I-BOX STORES -- DONE, 2026-11-17
+
+The two VFL timing residuals the atlas oracle left open
+(`docs/atlas_oracle.md`, "What remains" items 2 and 3; "Closing the
+residuals" items 11 and 12 have the tables):
+
+* **VFL INTERNL, about 4 clocks short.**  Perf. Char. Vol. 1 printed
+  p.3-20 (PDF 38): an internal operand "is not available during the
+  decoding stage".  `intWait` now holds a VFL or connective level whose
+  operand is address 3 or 5-12 for `vflInternalOperandClocks` (4, FITTED
+  on PDF 147 L INTERNL; RECONSTRUCTION: no page splits it) after the
+  E-box finishes the level before it.  PDF 147 L -4.00 -> -0.00 on all 96
+  rows; held out, PDF 151 ST -4.00 -> -0.00, PDF 144 M+ -4.04 -> -0.04.
+* **VFL I-box stores, about 12 clocks short.**  Printed p.3-21 (PDF 39):
+  after a store into index storage "the I-box does no further decoding
+  until the new index contents arrives".  The model held the preparation
+  but let the next decode run under the hold.  `redecodeAfterHold` now
+  charges the next instruction's decode after the hold (VFL and
+  connective stores only; the FP index-store remainder is a fit that
+  contains it).  No fitted number.  PDF 124 ST I-BOX -12.28 -> -0.29,
+  indexed -14.30 -> -0.31 (final tree) (the indexed decode's extra cycle gives the
+  page's +2).
+
+Still open from the same pages: the internal crossover (`_int_wbx`, the
+7030 +10 over its external crossover), the WB XOVR stores, and the
+held-out misses listed in atlas_oracle.md item 11.
+
+**Two follow-ons, found by the full suite before the commit:**
+
+* **An interruption is due: start nothing new.**  With the INTERNL wait in,
+  C22-6578 Problem 2.12 transposed 16 of its hundred words wrongly: the
+  wait held "CM1111(BU,1), $SB+0.7" long enough for "LX, $2, 19.0"
+  behind it to run before the $VF interruption its LWF had raised, and
+  ENDCYC stored through the new $2.  rl_prepare now starts no new
+  instruction while `intDue` is valid and no interruption instruction
+  is in flight (Ref. Manual p.48, "before execution of the next
+  instruction").  This closes the "WHAT IS STILL NOT MODELLED" case at
+  armInterrupt for instructions not yet started; an I-box instruction
+  that had already run ahead of a pending level is still committed.
+  The interruption decks (int_timing_bracket, the df_*_alarm decks,
+  interrupt_pg0, be_sic_interrupt_entry, if_branch_alarm,
+  interval_timer_steps, problem_3_vfl_store_to_indicators) all pass
+  with the gate.
+* **The redecode charge is for an E-box-class successor only.**  An I-box
+  instruction's budget already serializes its own decode from dispatch,
+  so charging it again counted it twice (index_after_index_store 1567
+  with the double charge, 1486 without).
+* **Pins moved.**  Each was measured under injection B (internal wait
+  off) and injection C (redecode arm off), and the result is recorded at
+  its run line and in its deck header.
+  * INTERNL: vfl_srd 1246 -> 1290, vfl_divide_box 2148 -> 2156,
+    vfl_cross_special_words 372 -> 377, vfl_word7_store 276 -> 292.
+  * Redecode: index_after_level 2854 -> 2896, index_after_index_store
+    1479 -> 1486, prep_floor 349 -> 361.
+  * Both: vfl_second_index 420 -> 426 (+5 INTERNL, +1 redecode).
+  * The FP divide pins (F217A 546, F217WA 1005, F217XA 522) are not
+    moved by this change; batch26 (b420e20) re-pinned them for the
+    preparation floor, and its run_tests.sh comment is kept.
+  * MERGED WITH batch26 (4051785), 2026-11-18.  Both mechanisms are kept:
+    the VFL internal wait is timed from eboxDoneAt; the FP internal wait
+    from batch26's intFrom (it now also waits for the LAAR); lftWait,
+    fpLaarStore and xholdPc/serialPaid are unchanged.  Every pin above
+    was re-measured on the merged tree and reads the same.  One more
+    moved: fp_to_memory_laar 776 -> 780, measured cause the redecode arm
+    (its ST(BU,64,8),$X9 is a VFL store into index storage; arm disabled
+    on the merged tree: 776).  The interruption gate's injection was
+    re-checked on the merged tree: 16 T_ words fail, PC passes.

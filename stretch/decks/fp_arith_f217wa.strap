@@ -2,6 +2,18 @@
 ! CHECKS", pp.158-159 (octal 020772.40-021062.40, the block's own exit
 ! "BD,$+1.0").
 !
+! CYCLES PIN, 2026-11-18: 1024 clocks to halt (tests/run_tests.sh),
+! RE-PINNED 1005 -> 1024 by an FP look-ahead level's fetch yielding the bus to a waiting
+! 1Y/2Y fetch (StretchStorage memCtl fpYields; decks/ibox_supply.strap).
+! MEASURED with the yield removed (fpYields forced False): 1005 again;
+! with vflImmIndexedSaving = 0 instead, 1024, unchanged.
+! Before that, 2026-11-17: 1005 clocks to halt;
+! 1011 before the preparation floor (measured with it removed).
+! Before the FP divide was charged Table 2's divide row with its
+! reduction loops walked by mkDivBox (bsv/StretchDivBox.bsv "THE
+! 7030'S REDUCTION LOOP"), the same deck took 902; with the box's
+! charge forced to 0 it takes 901 and the pin fails.
+!
 ! THIS BLOCK ADDS D/ (DIVIDE DOUBLE, opcode 1011110), and it is the
 ! only operation that uses the REMAINDER REGISTER.  Reference Manual
 ! p.94: "The operand in the accumulator bits 0-107, the dividend, is
