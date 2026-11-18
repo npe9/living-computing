@@ -107,10 +107,38 @@ Integer laarCheckClocks = 2;
 // charge differs by up to 105 clocks across them, while the measured
 // residual stays within a clock (EXTERNAL, $R) and three (I-BOX)
 // (docs/atlas_oracle.md, "Closing the residuals", item 2).
-// Applied to the non-fetching FP stores only: a fetch-and-store (M+,
-// M+MG) prints LESS than ST (PDF 69: 15.42 against 16.00) with two more
-// E-box cycles, so its store path is not this one, and it gets the
-// documented events alone.
+// Applied to the non-fetching FP stores (ST, SRD, SLO, SRT), to every FP
+// store into index storage (item 9), and to LFT (below).  NOT to M+ and
+// M+MG into memory or an internal register: M+ prints LESS than ST to
+// memory (PDF 69: 15.42 against 16.00) with two more E-box cycles, and
+// it gets the documented events alone -- still +2.6 (PDF 69) and +5.8
+// (PDF 100) over the page on EXTERNAL; that inconsistency is open.
+//
+// >>> LFT, 2026-11-17: A STORE INTO MEMORY, WITH ST'S REMAINDER; ITS
+// OPERAND FETCH OVERLAPS THE LAAR WAIT -- RECONSTRUCTION. <<<  LFT
+// writes the factor register, and "$FT ... [is a] bona fide main memory
+// location" (Vol. 1 printed p.3-20); p.3-21 names LFT among the
+// "floating-point-to-memory operations", and Vol. 2 printed 34D (PDF 41)
+// lists pp. 61, 92 (LFT) as "to memory".  So LFT takes the LAAR for word
+// 14 (StretchIBox's fpLaarStore) and, as a store into memory, this
+// memory remainder (9, ST's fit, NOT fitted again).  PDF 68/99 print LFT
+// 14.5 clocks from memory and 13.5 from $X9 -- a clock apart, so its
+// period is the store path's and the operand's fetch is hidden under it.
+// The model therefore loads an LFT whose operand is not internal without
+// the LAAR gate and holds it at the HEAD until the LAAR is free
+// (StretchIBox's lftDeferredLaar, StretchCore's lftWait).  That is in
+// tension with p.3-21, which puts the wait at decoding ("if the latter
+// is busy whenever the I-box decodes an instruction requiring LAAR, a
+// wait must occur"); CHOSEN because the pages show the fetch hidden and
+// the model's load gate would put it in series (measured: with the gate
+// at the load and no remainder, EXTERNAL +1.45, I-BOX -5.52; with the
+// remainder at the load, EXTERNAL would be about +10).  An LFT from $R
+// keeps the load gate: its operand needs the LAAR itself (p.3-20), so it
+// waits for the store before it (StretchCore's intFrom) and the two are
+// in series -- PDF 99 prints 22.5 clocks, 8 over memory.
+// Measured (docs/atlas_oracle.md "Closing the residuals" item 10), PDF
+// 68 and 99, medians: EXTERNAL -8.80/-5.22 -> +0.47, I-BOX -7.52 (ni) /
+// -5.55 (ix) -> +1.47/+1.43, $R -11.53 -> -0.53.
 function Bit#(8) laarStorePost(WordAddr a) =
   (a >= 16 && a <= 31) ? 17
   : (a == 3 || (a >= 5 && a <= 12)) ? 5
@@ -205,6 +233,30 @@ function Bit#(16) fpIndexedIboxClocks(DecodedInstr d, Maybe#(WordAddr) da);
     r = 2;
   return r;
 endfunction
+
+// >>> OUT OF AN INDEX-STORE DECODE HOLD, AN INDEXED I-BOX OPERAND'S
+// PREPARATION IS IN SERIES, 2026-11-17 -- RECONSTRUCTION. <<<
+// StretchCore's rl_prepare spends these clocks before loading an FP level
+// prepared straight out of the decode hold (xholdSeen).  PDF 69 (printed
+// 62) prints M+ into $X9-$X12 at 7.86 us unindexed and 9.07 indexed, 4.0
+// clocks apart (PDF 70 M+MG and 100-101 with forwarding the same); the
+// model gave 0, because the hold (printed p.3-21: "the I-box does no
+// further decoding until the new index contents arrives") swallowed the
+// indexed preparation that `ibusy` charges after the load.
+// The pages say nothing about which clocks these are.  CHOSEN: the two
+// reads of index storage an indexed I-box operand makes in turn (the
+// fpIndexedIboxClocks note) -- the index register, 0.6 us ("each indexing
+// operation requires 0.6 us", printed p.3-18), and the operand with its
+// I-Checker pass, 0.6 us (printed p.3-19 item 2, fpIboxCheckClocks) --
+// which cannot start until the hold ends, since the index register read
+// first may be the one being stored.  Unindexed, the operand's address is
+// in the instruction and the unindexed column (already within 1.2 clocks)
+// shows its read hidden; that asymmetry is the reconstruction, and it is
+// fitted to the one difference the pages print (4 clocks).  Not ST: an ST
+// into index storage fetches nothing, and PDF 48 prints it 1 clock
+// higher indexed, not 2 or 4 (open, docs/atlas_oracle.md "Closing the residuals" item 10).
+function Bit#(16) fpHoldSerialClocks(DecodedInstr d, Maybe#(WordAddr) da) =
+  (fpIndexedIboxClocks(d, da) != 0) ? fpIndexedIboxClocks(d, da) + fpIboxCheckClocks(d, da) : 0;
 
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).

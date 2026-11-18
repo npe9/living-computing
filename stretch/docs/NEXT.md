@@ -18498,3 +18498,55 @@ moved and no deck is known to store into them through a level, so that
 half is UNTESTED.
 vfl_cross_special_words: 389 with the new set alone (404 with the old);
 with the preparation floor of the same day, 372 (pinned).
+
+## ATLAS RESIDUALS: LFT FROM $R (-11.53) AND INDEXED M+ INTO $X (-5.22) -- DONE, 2026-11-17
+
+These were the two open rows of `docs/atlas_oracle.md`'s full run on
+`4c8464a`:
+
+- PDF 99 LFT ni_int/ix_int, median -11.53.
+- PDF 69 M+ ix_ibox, median -5.22. The page prints M+ 4 clocks higher
+  indexed than unindexed; the model gave 0.
+
+Both are closed:
+
+- LFT $R: -11.53 -> -0.53.
+- M+ ix_ibox: -5.22 -> -1.22. PDF 70, 100 and 101 were held out and give
+  the same.
+
+"Closing the residuals" item 10 has the sources and the tables;
+`bsv/README.md` has the summary.
+
+**LFT is a "to memory" operation.** The sources:
+
+- Vol. 1 printed p.3-20: "$FT ... bona fide main memory".
+- Vol. 1 printed p.3-21: "floating-point-to-memory operations (ST, MT,
+  LFT, etc.)".
+- Vol. 2 printed 34D (PDF 41): LFT's pp. 61, 92 are "to memory".
+
+LFT now takes the LAAR and ST's memory remainder. Making it wait at the
+head rather than at the load is a RECONSTRUCTION, in tension with
+p.3-21's "wait at decoding". Every LFT column moved:
+
+- EXTERNAL: -8.80/-5.22 -> +0.47.
+- I-BOX: -7.52 -> +1.47.
+
+**An FP internal operand's fetch waits for the LAAR** (`intFrom`). M+ $R
+moved -5.06 -> -3.07. After any FP store this also delays a following $R
+fetch, which no atlas page measures.
+
+**An indexed M+ out of the index-store hold prepares in series**, 2 + 2
+clocks. This is a RECONSTRUCTION fitted to the 4-clock difference.
+
+**Not a measurement artifact.** Every LFT column was short, not just $R,
+and the volume's own commentary names LFT as a LAAR-queuing operation.
+
+No existing CYCLES pin moved. The new deck is
+`decks/fp_to_memory_laar.strap`.
+
+Still open on these pages:
+
+- M+ from memory is +2.6 / +5.8. It gets no store remainder, while ST and
+  LFT do.
+- LFT I-BOX is +1.45.
+- ST indexed into $X is 1 clock short (PDF 48).
