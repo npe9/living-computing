@@ -1761,7 +1761,8 @@ module mkStretchCore(StretchCore);
           // operand also passes the I-Checker (fpIboxCheckClocks).
           ibusy <= 2 * iboxCycles(di, False) - 1
                    + fpIboxCheckClocks(di, da)
-                   + fpIndexedIboxClocks(di, da);
+                   + fpIndexedIboxClocks(di, da)
+                   - vflImmIndexedSaving(di);   // no word-boundary test (StretchTiming)
         end
       end
     end else if (prepared matches tagged Valid {.len, .di} &&& di matches tagged BranchInd .bi

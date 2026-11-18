@@ -1,0 +1,105 @@
+! ibox_supply.strap -- TWO I-BOX SUPPLY TIMINGS, 2026-11-17
+! (docs/atlas_oracle.md, "Closing the residuals" item 10).
+!
+! 1. AN INDEXED IMMEDIATE VFL OPERAND COSTS ONE CLOCK OF INDEXING, NOT
+!    TWO.  Perf. Char. Vol. 2 PDF 177-182 (printed 170-175) print the six
+!    immediate compares at 3.61 us unindexed and 3.92 us indexed (12 and
+!    13 clocks) at the preparation floor, where the direct pages pay the
+!    full 0.6 us (K, PDF 127, I-BOX 3.61 against 4.22).  R23-9732 Figure
+!    3.1.23 (PDF 87, printed 1-47/1-48) turns the word-boundary test on
+!    only under "IMM-bar . VFL": an immediate skips it.  StretchTiming's
+!    vflImmIndexedSaving (RECONSTRUCTION: the one clock is the pages'
+!    difference).  Sixteen KI(BU,24) indexed by $X5 = 0 (E-box 10 + 1, under
+!    the 13-clock decode).
+!
+! 2. AN FP LOOK-AHEAD LOAD'S OPERAND FETCH YIELDS TO THE INSTRUCTION
+!    FETCH.  R23-9732 Figure 3.1.21 (PDF 85, printed 1-43/1-44): the FP
+!    look-ahead load FPL2E is turned on under "NOT IC FETCH PRIORITY",
+!    else "BLOCK TYPE 2 LD TO LA"; Blosk, TR00.722 printed p.30 (PDF 32,
+!    read in the page image): "Since IC controls have priority, the IC
+!    fetch is made ... The lookahead load cycle holds up its fetch during
+!    this cycle".  StretchStorage's memCtl, for FP levels only (both
+!    sources describe the FP load; VFL keeps Buchholz §14.3's order).
+!    Twenty-four FP L(U) rotating over four consecutive words at
+!    100011-100014 (octal), as the atlas's PDF 64 (printed 57) does; the
+!    instructions are in the same four interleaved units, so the 1Y/2Y
+!    refills meet the level fetches at the bus.
+!
+! RES gets the FP one the last L loaded.
+!
+! MEASURED, 2026-11-17 (CYCLES in run_tests.sh's run line).
+!   the model as of this deck .......................... 398
+!   OBSERVED INJECTIONS, each alone, each reverted from a saved copy
+!   checked with cmp:
+!   - vflImmIndexedSaving returning 0 (an indexed immediate pays
+!     iboxCycles' full 2 clocks) .......................... FAIL cycles 414
+!   - memCtl's fpYields forced False (an FP level keeps its place ahead
+!     of 1Y/2Y) ........................................... FAIL cycles 413
+!   Nothing else failed in either (PC and RES pass).  414 - 398 = 16, one
+!   clock on each indexed KI.
+! The controls: decks/prep_floor.strap (sixteen UNINDEXED KI, eight L
+! from $X9, no memory operand) runs 349 under both injections, as
+! without them; decks/fp_internal_operand.strap (no VFL immediate, not
+! run under the first) runs 208 under the second (its pin moved
+! 208 -> 204 with the yield).
+
+        SLC, (8)2000.0
+
+START   LX, $X5, ZERO
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        KI(BU,24), 5($X5)
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        L(U), FM0
+        L(U), FM1
+        L(U), FM2
+        L(U), FM3
+        ST(U), RES
+
+PASS    BEW, $
+
+        SLC, (8)2200.0
+
+ZERO    DD(BU,64,8), 0
+RES     DD(BU,64,8), 0
+
+        SLC, (8)100011.0
+
+FM0     DD(BU,64,8), (16)0028000000000000
+FM1     DD(BU,64,8), (16)0028000000000000
+FM2     DD(BU,64,8), (16)0028000000000000
+FM3     DD(BU,64,8), (16)0028000000000000
+
+        END, START

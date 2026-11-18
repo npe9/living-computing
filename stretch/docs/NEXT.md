@@ -24,6 +24,63 @@ accumulate.
 
 
 
+## ATLAS: I-BOX SUPPLY -- two residuals reduced, what is left, 2026-11-17
+
+`docs/atlas_oracle.md` "Closing the residuals" item 10 has the tables.
+
+* **Reduced.** FP L EXTERNAL (Vol. 2 PDF 64) +1.33 -> +0.46 clocks: an
+  FP look-ahead level's operand fetch now yields the bus to a waiting
+  1Y/2Y instruction fetch (R23-9732 Fig. 3.1.21, "NOT IC FETCH
+  PRIORITY"; Blosk printed p.30, PDF 32). The remainder is documented
+  below, not forced. Indexed immediates (PDF 177-182) +0.95 -> -0.05 (median):
+  an immediate skips the word-boundary test (R23-9732 Fig. 3.1.23), so
+  its indexing costs 1 clock (RECONSTRUCTION, the pages' difference).
+* **Open: does a VFL look-ahead load also yield to the instruction
+  fetch?** Both sources describe the FP load (Fig. 3.1.21 is the "ZL
+  FP4/FP6" trigger; Blosk's passage is his Figure 6, FP preparation).
+  No VFL preparation figure was read, so VFL and connective levels keep
+  Buchholz §14.3's order (look-ahead first). A GLOBAL reorder (every
+  level behind 1Y/2Y) was measured first and dropped: it moved twenty
+  VFL CYCLES pins (pack loop 861 -> 905, V-ICR 685 -> 717, refill DF
+  1115 -> 1134, ...) and broke the interruption bracket below. Blosk
+  printed pp.31-32 (VFL preparation, Figure 7) and the R23-9732 VFL
+  load figures are where to look.
+* **Found, not fixed: the interruption bracket depends on fetch
+  timing.** With the global reorder, `decks/int_timing_bracket.strap`
+  halts at CHK, 004110.40 (PC 4241): its VFL ST's DS interruption was
+  not taken before the BD disabled the system -- the failure that deck
+  was written to catch (Ref. Manual printed p.48). Delaying the ST
+  level's fetch behind the instruction fetch was enough to reopen it.
+  So the model's "interrupt at the end of the operation that set the
+  indicator" holds by the relative timing of the ST's store and the
+  BD's preparation, not by an interlock. Reproduce: in StretchStorage
+  `memCtl`, set `order` to {0, 1, 2, 3, 4, 5, 6} and drop `fpYields`.
+* **Open: the last +0.46 on FP L / D+0.46 on DL is instruction supply.**
+  Measured with `tests/atlas_oracle.py --body 220000` (the body in the
+  model's two-way block, apart from the operands): L -0.17, DL -0.40.
+  So most of what is left is the oracle's CHOSEN body address (3000_8
+  shares the four units with 100011_8-100014_8), against Vol. 1 printed
+  p.3-17's "instructions occupying the two lower memory boxes and data
+  occupying the four upper". Not changed: it moves every page, and the
+  measured machine's address map is not settled. 100011_8 is 2 x 16384
+  + 9, just past two 16K boxes, and PDF 108 puts 10000_8 and 50000_8 in
+  "the two lowest memory boxes". Both fit a two-box group at the LOW
+  addresses, the reverse of Buchholz §14.1's map in StretchMemory.bsv.
+  The pages print 4.43 and 4.67, not whole clocks; no per-instruction
+  charge gives those.
+* **Open: a read takes 8 clocks from the bus to the requester.**
+  Buchholz §14.3 gives 1.6 us (5.3 clocks). Traced on the L loop: bus
+  -> YARR 8 clocks, then the 0.6 us check. This is the refill latency
+  behind the supply limit. Changing it moves every memory read, so it
+  is a separate, suite-wide change.
+* **Found, not fixed: the model does not index an immediate VFL
+  operand.** Ref. Manual printed p.21 (PDF 24, read in the image): "For
+  code 4, the immediate mode is specified and the effective address is
+  used as the operand itself" -- codes 0 and 4 "both specify standard
+  address modification". StretchIBox's `carryIndex` carries the address
+  field unindexed for p == 4 ("this model does not index it"). The atlas
+  cannot see it ($X5 = 0); a program with a nonzero index would.
+
 ## ASSEMBLER COMPLETENESS (G3) -- G3.1-G3.3 built 2026-11-16; what is open
 
 Built: field arithmetic in strap_asm (G3.1), the function rule of

@@ -15,7 +15,9 @@
 // priority scheme ... the exchange and disk synchronizer will get
 // highest priority, followed by the CPU. In the CPU the operand-fetch
 // mechanism, the look-ahead unit, has priority over the instruction-
-// fetch mechanism. Altogether the memory bus unit receives requests
+// fetch mechanism [OVERRULED for floating-point levels, 2026-11-17:
+// StretchStorage's memCtl, after R23-9732 Fig. 3.1.21 and Blosk p.30].
+// Altogether the memory bus unit receives requests
 // from and assigns priority to eight different channels. Since access
 // to a memory unit can be independently initiated from several
 // sources, a busy condition can exist. Here again, the memory bus

@@ -1113,6 +1113,39 @@ remainder is the I-Checker's "I-box data error check" (printed p.3-19,
 `decks/prep_floor.strap` pins it (sixteen KI, eight L from $X9).
 `docs/atlas_oracle.md` "Closing the residuals" item 7 has the tables.
 
+### An FP look-ahead fetch yields to the instruction fetch; an indexed immediate (2026-11-17)
+
+Two I-box supply timings, `docs/atlas_oracle.md` "Closing the
+residuals" item 10, pinned by `decks/ibox_supply.strap`:
+
+- **Bus order, FP levels.** StretchStorage's `memCtl` offers the
+  look-ahead levels' operand fetches to the memory bus before the 1Y/2Y
+  instruction fetches (Buchholz §14.3). For floating point the CE
+  manual's logic says the reverse: R23-9732 Figure 3.1.21 (PDF 85,
+  printed 1-43/1-44) turns the FP look-ahead load FPL2E on only under
+  "NOT IC FETCH PRIORITY", and Blosk (TR00.722 printed p.30, PDF 32)
+  describes the same cycle of his FP preparation ("Since IC controls have
+  priority, the IC fetch is made ..."). `laReq` now carries whether the
+  level is FP, and an FP level's fetch is held (`fpYields`) while a 1Y/2Y
+  fetch waits for a unit that can take it. VFL and connective levels keep
+  Buchholz's order: no VFL source was read, and a global reorder moved
+  twenty VFL pins and broke `decks/int_timing_bracket.strap`
+  (`docs/NEXT.md`). FP L EXTERNAL (Vol. 2 PDF 64) went from +1.33 to
+  +0.46 clocks, DL (PDF 66) from +1.10 to D+0.46.
+- **Indexed immediate.** An immediate VFL operand skips the word-boundary
+  test (R23-9732 Figure 3.1.23, PDF 87: "IMM-bar . VFL"), so its indexing
+  costs 1 clock, not iboxCycles' 2: `vflImmIndexedSaving`. PDF 177-182
+  print 12 unindexed and 13 indexed at the floor. The one clock is the
+  pages' difference (RECONSTRUCTION). KI's indexed column went from
+  +0.95 to −0.05 (median).
+
+What is left on FP L EXTERNAL (+0.46) is instruction supply: the body sits
+in the same four interleaved units as the operands (the oracle's CHOSEN
+body address), and the model returns a word 8 clocks after the bus takes
+the request where Buchholz gives 1.6 µs. The 7030's own 4.43 and 4.67
+clocks (L, DL) are not whole clocks, which no per-instruction charge
+reproduces.
+
 ### An FP internal operand (2026-11-17)
 
 Vol. 1 printed p.3-20: an internal operand (address 3 or 5-12) "is not

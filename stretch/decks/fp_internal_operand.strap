@@ -40,6 +40,11 @@
 ! the "- 1" gives 205, three clocks FASTER -- observed, not explained
 ! here; the later decode shifts when the internal level reaches the
 ! head relative to the E-box.
+! RE-PINNED 208 -> 204, 2026-11-17, by an FP look-ahead level's fetch
+! yielding the bus to a waiting 1Y/2Y fetch (StretchStorage memCtl,
+! R23-9732 Fig. 3.1.21; decks/ibox_supply.strap).  MEASURED with the
+! yield removed (fpYields forced False): 208 again, nothing else fails.
+! The eight memory L's instruction words now arrive sooner.
 
         SLC, (8)2000.0
 

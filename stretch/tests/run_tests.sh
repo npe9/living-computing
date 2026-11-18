@@ -4456,6 +4456,22 @@ run "VFL crossing store: a level fetching its second word waits for it" ./run_pr
 run "The preparation floor: a 12-clock decode takes 12 (KI) and an FP I-box operand 6 (L from \$X9)" ./run_program.sh ../decks/prep_floor.strap StretchPrepFloorTb ASM=strap2 "PC=2093" "CYCLES=349+-0" \
     "RES:1153=0x28000000000000"
 
+# I-BOX SUPPLY (2026-11-17; docs/atlas_oracle.md "Closing the residuals"
+# item 10).  (1) An indexed immediate VFL operand skips the word-boundary
+# test (R23-9732 Fig. 3.1.23, "IMM-bar . VFL"), so its indexing costs 1
+# clock: StretchTiming's vflImmIndexedSaving (RECONSTRUCTION; Vol. 2 PDF
+# 177-182 print 12 unindexed, 13 indexed).  (2) An FP look-ahead level's
+# operand fetch yields the bus to a waiting 1Y/2Y instruction fetch
+# (StretchStorage memCtl; R23-9732 Fig. 3.1.21 "NOT IC FETCH PRIORITY",
+# Blosk TR00.722 printed p.30).  VFL levels keep Buchholz's order.
+# Sixteen indexed KI, twenty-four FP L over 100011-100014 (octal).
+# INJECTIONS, observed: saving = 0 414; fpYields forced False 413;
+# nothing else fails.  Control: prep_floor 349 under both;
+# fp_internal_operand (no VFL immediate; not run under the first) 208
+# under the second (its re-pin below).  CYCLES 398 is the model as of the change.
+run "I-box supply: an indexed immediate costs 1 clock of indexing, and an FP look-ahead fetch yields the bus to the instruction fetch" ./run_program.sh ../decks/ibox_supply.strap StretchIboxSupplyTb "PC=2106" "CYCLES=398+-0" \
+    "RES:1153=0x28000000000000"
+
 # AN FP INTERNAL OPERAND WAITS FOR THE E-BOX AND TAKES THE STORE PATH
 # (2026-11-17, StretchCore's headReady intWait; StretchTiming's
 # fpInternalOperandClocks = the I-Checker + laarStorePost's $R remainder).
@@ -4476,7 +4492,10 @@ run "The preparation floor: a 12-clock decode takes 12 (KI) and an FP I-box oper
 run "Store into an instruction a pending level will store: not prepared until the store is made (printed p.3-21)" ./run_program.sh ../decks/store_into_prepared_instr.strap StretchStoreIntoInstrTb ASM=strap2 "PC=2021" "CYCLES=244+-0" \
     "W0:1101=0x29CBB8FFFFFFFFFF" "W1_control:1102=0x29CBB8FFFFFFFFFF"
 
-run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=208+-0" \
+# RE-PINNED 208 -> 204, 2026-11-17, by the FP look-ahead level yielding
+# the bus to a waiting 1Y/2Y fetch (StretchStorage memCtl; the ibox_supply
+# comment above).  With the yield removed it runs 208 again.
+run "FP internal operand: L from \$R waits for the E-box and the store path (printed p.3-20)" ./run_program.sh ../decks/fp_internal_operand.strap StretchFpIntOpTb ASM=strap2 "PC=2068" "CYCLES=204+-0" \
     "RES:1153=0x28000000000000"
 
 # CROSSING STORES: THE COVERAGE GAPS CLOSED (docs/NEXT.md, 2026-11-17).

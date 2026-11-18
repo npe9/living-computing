@@ -206,6 +206,43 @@ function Bit#(16) fpIndexedIboxClocks(DecodedInstr d, Maybe#(WordAddr) da);
   return r;
 endfunction
 
+// >>> AN INDEXED IMMEDIATE VFL OPERAND SKIPS THE WORD-BOUNDARY TEST:
+// ITS INDEXING COSTS ONE CLOCK, NOT TWO, 2026-11-17. <<<  iboxCycles
+// charges VFL indexing p.3-18's "each indexing operation requires 0.6
+// us" (Perf. Char. Vol. 1, PDF 36), 2 clocks, and the direct pages bear
+// it out: K (Vol. 2 PDF 127, printed 120) prints 3.61 us unindexed and
+// 4.22 indexed on the I-BOX column, 12 and 14 clocks.  The six immediate
+// compares do not: KI KRI KEI KFI KFRI KFEI (PDF 177-182, printed
+// 170-175) print 3.61 unindexed and 3.92 indexed, 12 and 13, on every row
+// at the preparation floor, both blocks (rows whose E-box time is longer
+// print the two columns equal, as the overlap predicts).
+//
+// THE SOURCE OF THE DIFFERENCE.  R23-9732 (7101 CPU manual) Figure
+// 3.1.23, "WBC + DEC SEQUENCER AND XF + DEC SEQUENCER" (PDF 87, printed
+// 1-47/1-48, read in the page image): the word-boundary-crossover test
+// is turned on only under "IMM-bar . VFL" (COND WBC TGR TON), and so is
+// "GT AOB 19 TO ZL".  The test is the index adder adding the length to
+// the 24-bit address (Blosk, TR00.722 printed p.31, PDF 33): an immediate has no memory
+// word, so it has no test.  With a 12-clock floor and a decode path of
+// base + 2 (indexing) + w (the test): the direct pages give base + w =
+// 12 (unindexed, at the floor) and base + 2 + w = 14 (indexed, I-BOX);
+// the immediate page gives base + 2 = 13.  So w = 1 clock, and an
+// unindexed immediate (base = 11) stays at the floor, 12, as printed.
+// RECONSTRUCTION: the figure shows that the test is skipped, not what it
+// costs; the one clock is the pages' difference.  Charged as a saving on
+// iboxCycles' indexed VFL decode, for an immediate (p == 4) with an I
+// field; the connectives prepare through the same sequencer and get it
+// too, though no atlas page times an immediate connective.
+function Bit#(16) vflImmIndexedSaving(DecodedInstr d);
+  Bit#(16) r = 0;
+  case (d) matches
+    tagged VflInt .v:     if (v.a.p == 4 && v.a.i1 != 0) r = 1;
+    tagged Connective .c: if (c.a.p == 4 && c.a.i1 != 0) r = 1;
+    default: r = 0;
+  endcase
+  return r;
+endfunction
+
 // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
 function Bit#(16) eboxClocks(DecodedInstr d);

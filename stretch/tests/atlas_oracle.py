@@ -1127,6 +1127,7 @@ def selftest(pages):
 
 
 def main():
+    global BODY_ADDR
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--pdf", type=int, action="append", help="only this PDF page")
     ap.add_argument("--col", action="append", help="only this column key")
@@ -1138,7 +1139,18 @@ def main():
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--jobs", type=int, default=8)
     ap.add_argument("--rebuild", action="store_true")
+    # The body's address is a CHOSEN fact (BODY_ADDR): GENER's own example
+    # stores its sequence "at say (1000)8" (PDF 38).  Where it sits matters
+    # for a supply-bound page: in the model's map (StretchMemory, Buchholz
+    # §14.1) 3000_8 shares the four interleaved units with the FP operands
+    # at 100011_8-100014_8, while Vol. 1 printed p.3-17 has instructions in
+    # "the two lower memory boxes and data occupying the four upper".
+    # --body moves it for a measurement; the default is unchanged
+    # (docs/atlas_oracle.md, "Closing the residuals" item 10).
+    ap.add_argument("--body", help="body address, octal (default %o)" % BODY_ADDR)
     a = ap.parse_args()
+    if a.body:
+        BODY_ADDR = int(a.body, 8)
 
     pages = load_atlas()
     cases, skipped = build_cases(pages, a.pdf, a.col, a.instr)

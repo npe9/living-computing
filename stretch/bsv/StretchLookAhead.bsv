@@ -81,7 +81,11 @@ module mkLookAhead #(StretchStorage st) (LookAhead);
     Bool issuedLa = False;
     for (Integer k = 0; k < 4; k = k + 1)
       if (!issuedLa && nl[k].valid && isValid(nl[k].da) && !nl[k].fetchIssued && !isValid(nl[k].waitFor)) begin
-        st.laReq(fromInteger(k), validValue(nl[k].da));
+        // An FP level yields the bus to a waiting instruction fetch
+        // (StretchStorage memCtl; R23-9732 Fig. 3.1.21).
+        Bool isFp = False;
+        if (nl[k].di matches tagged Fp .*) isFp = True;
+        st.laReq(fromInteger(k), validValue(nl[k].da), isFp);
         nl[k].fetchIssued = True;
         issuedLa = True;
       end

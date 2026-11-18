@@ -1371,7 +1371,8 @@ The 13 pages run (42, 48, 64, 69, 72, 73, 95, 109, 116, 124, 127, 177,
   shows one. Not changed: one page, against the volume's own text.
 - FP L EXTERNAL (PDF 64) prints 4.43 and the model gives 5.77. The decode
   (4) and the E-box (3 + 1) are both under it, so the floor is no longer
-  the cause; not diagnosed.
+  the cause. Diagnosed and mostly closed in item 10 (instruction supply),
+  which also takes the indexed immediates to 13.
 
 ### 8. An FP internal operand waits for the E-box and takes the store path
 
@@ -1505,6 +1506,151 @@ faster I-box widens it:
   +0.2. Exact cases on 156 KE fall 117 → 102 and on 159 KFE 135 → 107,
   while their medians stay at −0.00.
 
+### 10. I-box supply: the instruction fetch, and an indexed immediate
+
+Two residuals item 7 left open: FP L EXTERNAL (PDF 64) at +1.33 and the
+indexed immediates (PDF 177-182) at +0.95.
+
+**FP L EXTERNAL: the diagnosis, from a trace.** The 7030 prints L at 4.43
+clocks (1.33 µs), DL at 4.67 (1.40). Table 2 gives L 2 + 1 cycles and DL
+one more (Vol. 1 printed p.3-3, PDF 21), both under the 4-clock FP decode
+(printed p.3-17, "one instruction per 1.2 µs"). So both pages are
+supply-bound, and the model's 5.77 was not the decode or the E-box. A
+traced run (loads, removals, every bus request, every Y-buffer request and
+arrival) showed the instruction words starving the decode: four levels
+loaded 4 clocks apart, then a gap of 14-19 clocks, every second word. Two
+causes:
+
+- **Bus order.** A 1Y/2Y refill was offered to the bus after the four
+  level fetches (StretchStorage `memCtl`, after Buchholz §14.3: "the
+  look-ahead unit has priority over the instruction-fetch mechanism").
+  With the body at 3000₈ in the same four interleaved units as the
+  operands at 100011₈-100014₈, a refill lost the bus and then found its
+  unit busy for a memory cycle.
+- **Refill latency.** A word is freed when its second half goes to
+  decode (as in Blosk's Figure 6). From the request to the word being
+  usable takes 13 clocks: 2 to reach the bus, 8 from the bus to arrival
+  (Buchholz §14.3 gives 1.6 µs, 5.3 clocks), then the 0.6 µs check.
+  The other word's two instructions cover only 8.
+
+**The source for the bus order.** The built machine's CE manual puts the
+instruction fetch first. R23-9732 Figure 3.1.21, "ZL FP4 TRIGGER AND ZL
+FP6 TRIGGER" (PDF 85, printed 1-43/1-44, read in the page image), turns
+on FPL2E, the floating-point look-ahead load that sends the operand
+request, only under "NOT IC FETCH PRIORITY", and otherwise "BLOCK TYPE 2
+LD TO LA". Blosk (TR00.722 printed p.30, PDF 32, read in the page image)
+describes the same cycle of his Figure 6, FP preparation: the next
+instruction-word fetch "conflicts with the operand fetch of the lookahead
+load cycle. Since IC controls have priority, the IC fetch is made ... The
+lookahead load cycle holds up its fetch during this cycle". **Fix:**
+`memCtl` keeps Buchholz's order (operand channel, levels, 1Y, 2Y), but a
+FLOATING-POINT level's fetch is held while a 1Y/2Y fetch is waiting for a
+unit that can take it (`fpYields`; `laReq` now says whether the level is
+FP). Both sources are about the FP load, so VFL and connective levels are
+not changed. A global reorder (every level behind 1Y/2Y) was measured
+first: it gave the same PDF 64/66 figures but moved twenty VFL CYCLES pins and
+broke `decks/int_timing_bracket.strap`'s interruption (`docs/NEXT.md`),
+with no VFL source behind it.
+
+**Indexed immediates: the source.** The direct pages pay p.3-18's 0.6 µs
+for indexing in full. K (PDF 127) prints I-BOX 3.61 → 4.22 µs, 12 → 14
+clocks. The six immediate compares (PDF 177-182, printed 170-175) print
+3.61 → 3.92, 12 → 13, on every row at the floor, in both blocks. Rows
+whose E-box time is longer print the two columns equal. R23-9732 Figure
+3.1.23, "WBC + DEC SEQUENCER" (PDF 87, printed 1-47/1-48, read in the
+image), turns the word-boundary test on only under "IMM-bar · VFL"
+(COND WBC TGR TON), and "GT AOB 19 TO ZL" likewise. The test is the
+index adder adding the length to the address (Blosk printed p.31, PDF
+33), and an immediate has no word to cross.
+
+Model the decode as max(12, base + 2·indexed + w·direct):
+
+- the direct pages give base + w = 12 (unindexed, at the floor) and
+  base + 2 + w = 14 (indexed, I-BOX);
+- the immediate page gives base + 2 = 13.
+
+So w = 1, and an unindexed immediate (base = 11) stays at 12, as printed.
+**Fix:** `StretchTiming.bsv` `vflImmIndexedSaving` takes 1 clock off
+`rl_prepare`'s indexed VFL decode for p = 4. RECONSTRUCTION: the figure
+shows that the test is skipped, not what it costs; the one clock is the
+pages' difference.
+
+**Result** (base = this branch before the change, re-measured; n / exact
+/ median / mean):
+
+| PDF, column | base | after |
+|---|---|---|
+| 64 L, ni_ext | 32 / 0 / +1.33 / +1.33 | 32 / 0 / +0.46 / +0.46 |
+| 64 L, ix_ext | 32 / 0 / +1.33 | 32 / 0 / +0.46 |
+| 66 DL, ni_ext / ix_ext | +1.10 / +1.07 | +0.22 / +0.19 |
+| 177 KI, ix_imm | 48 / 21 / +0.95 / +1.87 | 48 / 31 / −0.05 / +1.33 |
+| 177 KI, ni_imm (control) | 48 / 31 / −0.02 / +1.28 | unchanged |
+| 64, 66 I-BOX columns (control) | 32 / 32 / −0.02 | unchanged |
+
+**Every page measured, before and after** (`atlas_oracle.py` on PDF 42,
+52, 64-69, 95-100, 109, 112, 120, 124, 127, 143, 155, 167, 171-182: 5483
+cases; `base` is the same tree with both changes removed). Groups that
+moved (n / exact / median / mean); nothing else moved, including all of
+PDF 109, 112, 120, 124, 127 and the VFL INTERNAL spot pages 143, 155,
+167:
+
+| PDF instr, column | base | after |
+|---|---|---|
+| 42 +, ni_ext / ix_ext | +0.00 / +0.20, +0.00 / +0.17 (median / mean) | +0.01 / +0.21, +0.01 / +0.18 |
+| 64 L, 65 LWF, both ext | 32 / 0 / +1.33 / +1.33 | 32 / 0 / +0.46 / +0.46 |
+| 66 DL, 67 DLWF, ni_ext / ix_ext | +1.10 / +1.07 | +0.22 / +0.19 |
+| 68 LFT, both ext | 32 / 0 / −8.80 / −8.79 | 32 / 0 / −9.68 / −9.66 |
+| 69 M+, both ext | 32 / 0 / +2.59 / +2.60 | 32 / 0 / +3.97 / +3.98 |
+| 95-98 L, LWF, DL, DLWF ($R), both ext | 32 / 0 / +1.28 / +1.28 | 32 / 0 / +1.39 / +1.39 |
+| 99 LFT ($R), both ext | 32 / 0 / −5.22 / −5.22 | 32 / 0 / −5.11 / −5.11 |
+| 100 M+ ($R), both ext | 32 / 0 / +5.81 / +5.97 | 32 / 0 / +6.31 / +6.47 |
+| 171 +I, 172 +MGI, 173 LI, 174 LWFI, ix_imm | unchanged | unchanged |
+| 177-179 KI, KRI, KEI, ix_imm | 48 / 21 / +0.95 / +1.87 | 48 / 31 / −0.05 / +1.33 |
+| 180-182 KFI, KFRI, KFEI, ix_imm | 48 / 16 / +0.95 / +1.97 | 48 / 36 / −0.05 / +1.43 |
+| all 5483 cases | 1976 exact, mean abs 3.240 | 2066 exact, mean abs 3.220 |
+
+(171-174: a few cases moved by under a hundredth of a clock; exact
+counts, medians and means are unchanged to two places.) The FP yield
+makes other FP pages worse: FP LFT (PDF 68) 0.9 clocks further below the
+page, FP M+ (PDF 69) 1.4 clocks further above it, and the $R pages
+95-98 and 100 by 0.1-0.5 (99 improves by 0.1). Those are the FP LFT and M+ rows other work is
+already on. Why each moves was not traced; they are recorded here, not
+tuned. With `--body 220000`, FP L (PDF 64) measures −0.17, DL (PDF 66)
+−0.40 / −0.43 and PDF 95 L +0.38, the same as under the global order.
+
+**What is left, and why it is not forced.**
+
+- **Placement.** `--body 220000` (new; the default is unchanged) puts
+  the body in the model's two-way block, apart from the operands. There
+  L measures −0.17 and DL −0.40, against +0.33 and +0.10 with the old
+  bus order. So most of the +0.46 is the oracle's CHOSEN body address,
+  and the rest is refill latency.
+  - Vol. 1 printed p.3-17 has "the instructions occupying the two lower
+    memory boxes and data occupying the four upper". 100011₈ is
+    2 × 16384 + 9, just past two 16K boxes. PDF 108 puts 10000₈ and
+    50000₈ in "the two lowest memory boxes".
+  - So the measured machine may have had its two-box group at the low
+    addresses, the reverse of Buchholz §14.1's map in StretchMemory.bsv.
+    Not changed: it would move every page, and the map is not settled.
+- **Not whole clocks.** The pages print 4.43 and 4.67, and DL above L.
+  The model charges whole clocks per instruction; supply-bound, it gives
+  L and DL the same time (E-box 3 + 1 and 4 + 1, both at most the
+  decode). A periodic stall such as the model's own (4, 4, 4, 7) is the
+  only way to reach a fraction, and the 7030's fraction is such an
+  average. It cannot be matched by a charge.
+- **Read latency.** 8 clocks from bus to requester, against 1.6 µs. That
+  is every memory read, so it is a suite-wide change and is not made
+  here (`docs/NEXT.md`).
+
+**CYCLES pins moved:** `fp_internal_operand` 208 → 204, by the FP yield
+(with `fpYields` forced False it runs 208; its eight memory L's
+instruction words arrive sooner). No other pin moved: the suite's VFL
+decks, `prep_floor` (349) and `int_timing_bracket` are unchanged. New
+deck `decks/ibox_supply.strap`, 398: sixteen indexed KI and twenty-four
+L over 100011₈-100014₈. Injections: saving = 0 gives 414, `fpYields`
+forced False 413, and nothing else fails; `prep_floor` stays 349 under
+both.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -1604,10 +1750,13 @@ faster I-box widens it:
   8. The CV/DCV comment in `bsv/StretchTiming.bsv`. **DONE 2026-11-17.**
   9. The preparation floor: a VFL decode costs 14 clocks where the 7030
      prints 12. **DONE 2026-11-17** (item 7): two clocks, the removal
-     clock stopping `ibusy` and the load clock on top. FP L EXTERNAL is
-     still +1.33 (PDF 64): neither the decode nor the E-box is the cause
-     now; not diagnosed. The indexed immediates print one clock over the
-     unindexed, where p.3-18 says two.
+     clock stopping `ibusy` and the load clock on top. FP L EXTERNAL
+     +1.33 (PDF 64) and the indexed immediates' +1: **DONE 2026-11-17**
+     ("Closing the residuals" item 10): the instruction fetch goes to the
+     bus before the look-ahead (R23-9732 Fig. 3.1.21), and an immediate
+     skips the word-boundary test (Fig. 3.1.23). L is +0.46, which is
+     instruction supply (the oracle's body address and the read latency),
+     against a printed figure that is not a whole clock.
   10. CHOSEN, not measured: the branch level's load (`2 * 6`) and
      rl_recover's `ibusy <= 12` did not get the "− 1" of item 7; `ib`
      does count down under a branch level's removal.

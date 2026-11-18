@@ -66,7 +66,8 @@ interface StretchStorage;
 
   // Instruction-fetch channels for the instruction unit's 1Y/2Y
   // buffers (y = 0 or 1): the same request/ready/response protocol as
-  // the operand channel, independent of it, lower bus priority.
+  // the operand channel, independent of it, lower bus priority (above
+  // a floating-point look-ahead level's fetch: see memCtl).
   method Action fetchReq(Bit#(1) y, WordAddr a);
   method Bool fetchReady(Bit#(1) y);
   method ActionValue#(Word64) fetchResp(Bit#(1) y);
@@ -76,8 +77,9 @@ interface StretchStorage;
   method Maybe#(WordAddr) recentStore();
   // Look-ahead level channels (stage 3): one outstanding operand
   // fetch per level, return tags 3-6, priority above the Y buffers
-  // (Buchholz §14.3: the look-ahead over the instruction fetch).
-  method Action laReq(Bit#(2) lvl, WordAddr a);
+  // (Buchholz §14.3) unless `fp`: a floating-point level's fetch yields
+  // to a waiting Y fetch (R23-9732 Figure 3.1.21; see memCtl).
+  method Action laReq(Bit#(2) lvl, WordAddr a, Bool fp);
   method Bool laReady(Bit#(2) lvl);
   method ActionValue#(Word64) laResp(Bit#(2) lvl);
 
@@ -297,7 +299,9 @@ module mkStretchStorage(StretchStorage);
   // 3-6 = look-ahead levels 1-4. Each channel has at most one read
   // outstanding; the bus is offered requests in the order stores,
   // operand read, look-ahead levels, 1Y, 2Y (Buchholz §14.3: the
-  // look-ahead has priority over the instruction fetch).
+  // look-ahead has priority over the instruction fetch), except that a
+  // floating-point level yields to a waiting 1Y/2Y fetch (R23-9732
+  // Figure 3.1.21, 2026-11-17; see memCtl).
   // A special (register-backed) address answers on the next clock on
   // any channel. Reads on every channel are issued only while the
   // store queue is empty: store->load ordering for operands, and a
@@ -313,6 +317,11 @@ module mkStretchStorage(StretchStorage);
   Vector#(NumTags, Reg#(Maybe#(Word64)))   chResp    <- replicateM(mkReg(tagged Invalid));
   Vector#(NumTags, Reg#(Maybe#(WordAddr))) chSpecial <- replicateM(mkReg(tagged Invalid));
   Vector#(NumTags, RWire#(WordAddr))       reqW      <- replicateM(mkRWire);
+  // Which look-ahead level's pending fetch belongs to a floating-point
+  // instruction (laReq's `fp`): such a fetch yields the bus to a waiting
+  // 1Y/2Y fetch (memCtl).
+  Vector#(4, Reg#(Bool))                   chFpLevel <- replicateM(mkReg(False));
+  Vector#(4, RWire#(Bool))                 fpReqW    <- replicateM(mkRWire);
   Vector#(NumTags, PulseWire)              takeW     <- replicateM(mkPulseWire);
   RWire#(MemReq)   storeW <- mkRWire;   // writeWord (core storage) this clock
   // The crossing-field tail: the wire a writeWordTail call lands on,
@@ -725,7 +734,33 @@ module mkStretchStorage(StretchStorage);
       busUsed = True;
     end
     // Read channels, in bus priority order: the operand channel, the
-    // look-ahead levels, then the instruction buffers.
+    // look-ahead levels, then the instruction buffers (Buchholz §14.3) --
+    // EXCEPT that a floating-point level's fetch yields to a 1Y/2Y fetch.
+    //
+    // >>> AN FP LOOK-AHEAD LOAD WAITS FOR THE INSTRUCTION FETCH,
+    // 2026-11-17. <<<  Buchholz §14.3: "In the CPU the operand-fetch
+    // mechanism, the look-ahead unit, has priority over the instruction-
+    // fetch mechanism."  For floating point the built machine's CE manual
+    // says the other thing, in the logic: R23-9732 (CPU 7101, 2/1/62)
+    // Figure 3.1.21, "ZL FP4 TRIGGER AND ZL FP6 TRIGGER" (PDF 85, printed
+    // 1-43/1-44, read in the page image), turns on FPL2E -- the floating-
+    // point look-ahead load that sends the operand request -- only under
+    // "NOT IC FETCH PRIORITY", and otherwise "BLOCK TYPE 2 LD TO LA".
+    // Blosk, TR00.722 printed p.30 (PDF 32), describes the same cycle of
+    // his Figure 6 (FP preparation): the next instruction-word fetch
+    // "conflicts with the operand fetch of the lookahead load cycle.
+    // Since IC controls have priority, the IC fetch is made ... The
+    // lookahead load cycle holds up its fetch during this cycle".
+    // SCOPED TO FP: both sources describe the FP load; no VFL preparation
+    // figure was read, so VFL and connective levels keep Buchholz's order.
+    // (A global reorder was measured first: it broke
+    // decks/int_timing_bracket's interruption and moved twenty VFL pins;
+    // docs/NEXT.md.)  MEASURED on the atlas (docs/atlas_oracle.md,
+    // "Closing the residuals" item 10).
+    Bool yWaiting = False;
+    for (Integer y = 1; y <= 2; y = y + 1)
+      if (chPending[y] matches tagged Valid .ya &&& !chIssued[y] &&& mbcu.canAccept(ya))
+        yWaiting = True;
     Integer order[7] = {0, 3, 4, 5, 6, 1, 2};
     for (Integer oi = 0; oi < valueOf(NumTags); oi = oi + 1) begin
       Integer c = order[oi];
@@ -773,7 +808,8 @@ module mkStretchStorage(StretchStorage);
       // a crossing field's head goes through `writeWord` and its tail
       // through `writeWordTail` in the SAME clock, so a read must not
       // slip between them either.
-      if (!busUsed && !issued && !storeQ.notEmpty && !isValid(storeTail)
+      Bool fpYields = (c >= 3) && chFpLevel[c - 3] && yWaiting;
+      if (!busUsed && !issued && !fpYields && !storeQ.notEmpty && !isValid(storeTail)
           && !isValid(storeW.wget) && !isValid(storeTailW.wget)) begin
         if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
           mbcu.put(MemReq{ write: False, addr: a, data: 0, tag: fromInteger(c) });
@@ -815,6 +851,7 @@ module mkStretchStorage(StretchStorage);
         rs = tagged Invalid;
         if (!isSpecialAddr(a)) ps = tagged Invalid;
       end
+      if (c >= 3) if (fpReqW[c - 3].wget matches tagged Valid .f) chFpLevel[c - 3] <= f;
       chPending[c] <= pr;
       chIssued[c]  <= issued;
       chResp[c]    <= rs;
@@ -891,9 +928,10 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   // Look-ahead level channels (level 0-3 -> tags 3-6), same protocol.
-  method Action laReq(Bit#(2) lvl, WordAddr a);
+  method Action laReq(Bit#(2) lvl, WordAddr a, Bool fp);
     Bit#(3) c = 3 + zeroExtend(lvl);
     reqW[c].wset(a);
+    fpReqW[lvl].wset(fp);
   endmethod
 
   method Bool laReady(Bit#(2) lvl);
