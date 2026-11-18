@@ -18,8 +18,13 @@
 ! accumulator, makes a pointless fetch wait behind the preceding L.
 !
 ! CHECKS: OP on after the first case (OP is set-only, so once), the
-! accumulator still PAT after each, X0 unadvanced after each.  CYCLES 283
+! accumulator still PAT after each, X0 unchanged after each.  CYCLES 283
 ! IS MODEL BEHAVIOUR; no documented time exists for a no-op'd level.
+! WHAT THE VALUE CHECKS DO NOT DO, said rather than left to be found: the
+! increment is 0, so the X0 check would pass even if the operation ran
+! and advanced X0, and none of the accumulator checks was injected.  The
+! refusal's RESULT is pinned by vfl_progressive_index0 (VflInt only);
+! this deck pins the no-fetch clause, by its CYCLES.
 !
 ! INJECTIONS, each alone, saved copy, restored and compared with cmp --
 ! OBSERVED across all three cwf_ decks:
@@ -34,7 +39,7 @@ START   LV, $X0, A8                  ! X0's value field := 8.0
         K(BU,64,8), PAT
         BZB, $AE, $                  ! hang if the load landed
         KV, $X0, A8
-        BZXE, $                      ! hang if X0 was advanced
+        BZXE, $                      ! (cannot fail: the increment is 0)
         L(BU,64,8), PAT
         C0011(V+I)(BU,64), 0($X0)    ! the connective, same refusal
         K(BU,64,8), PAT

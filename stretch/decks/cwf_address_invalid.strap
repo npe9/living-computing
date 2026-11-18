@@ -51,6 +51,10 @@
 !                                           hang), CYCLES 136
 !   connectiveOp's new AD guard removed  -> PC 412 (the BZB, $AE after
 !                                           C0011: it loaded zero), 262
+! Both guard removals halt BEFORE this deck's progressive ST/CM cases, so
+! those were run alone (a scratch deck holding only the two cases, not
+! kept): without vflIntOp's guard the progressive ST advances X3 (halt at
+! its BZXE); without connectiveOp's the progressive CM does (its BZXE).
 ! (the five X0 and DF clause injections leave this deck at 562.)
         SLC, (8)300.0
 START   BB, $AD, $                   ! hang if AD is on before anything
