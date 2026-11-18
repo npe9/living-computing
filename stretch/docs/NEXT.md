@@ -18586,8 +18586,8 @@ residuals" items 10 and 11 have the tables):
   but let the next decode run under the hold.  `redecodeAfterHold` now
   charges the next instruction's decode after the hold (VFL and
   connective stores only; the FP index-store remainder is a fit that
-  contains it).  No fitted number.  PDF 124 ST I-BOX -12.28 -> -0.28,
-  indexed -14.30 -> -0.30 (the indexed decode's extra cycle gives the
+  contains it).  No fitted number.  PDF 124 ST I-BOX -12.28 -> -0.29,
+  indexed -14.30 -> -0.31 (final tree) (the indexed decode's extra cycle gives the
   page's +2).
 
 Still open from the same pages: the internal crossover (`_int_wbx`, the
@@ -18624,5 +18624,5 @@ held-out misses listed in atlas_oracle.md item 10.
   * Both: vfl_second_index 420 -> 426 (+5 INTERNL, +1 redecode).
   * Stale at HEAD 7cddae9, with the same numbers when this change is
     removed: the FP divide pins F217A 549 -> 546, F217WA 1011 -> 1005,
-    F217XA 527 -> 522.  65c5ebc pinned them on a base without 4c8464a's
+    F217XA 527 -> 522.  Inferred, not measured: 65c5ebc pinned them on a base without 4c8464a's
     preparation floor of 12.

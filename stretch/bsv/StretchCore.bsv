@@ -1667,7 +1667,7 @@ module mkStretchCore(StretchCore);
     else if (ibusy != 0)
       ibusy <= ib;          // previous instruction's time budget still running
     else if (isValid(intDue) && !isValid(intPC))
-      // >>> AN INTERRUPTION IS DUE: START NOTHING NEW, 2026-11-17. <<<
+      // >>> AN INTERRUPTION IS DUE: START NOTHING NEW, 2026-11-18. <<<
       // Ref. Manual p.48: interruption comes "AT THE END OF THE OPERATION
       // DURING WHICH THE INDICATOR IS TURNED ON" and "before execution of
       // the next instruction".  rl_interrupt waits for the levels to
@@ -1676,10 +1676,11 @@ module mkStretchCore(StretchCore);
       // started was committed for good -- the model has no index-
       // recovery unwind (the "WHAT IS STILL NOT MODELLED" note at
       // armInterrupt).  The 7030 undoes such an instruction's index
-      // change from its IX Rec. level (Perf. Char. Vol. 1 Table A-2,
-      // printed A-10, PDF 69, LX: "IX Rec."; App. A printed A-4, PDF 63, "Recovery information
-      // is shipped back to the I-box").  Not starting it has the same
-      // architectural effect.  FOUND 2026-11-17: the VFL internal-operand
+      // change from its IX Rec. level (Perf. Char. Vol. 1 Table A-2, PDF
+      // 69-71, the LX row's "IX Rec." level, docs/spec_lookahead.md 1.7;
+      // App. A, PDF 63: "Recovery information is shipped back to the
+      // I-box"; printed page numbers not checked).  Not starting it has the same
+      // architectural effect.  FOUND 2026-11-18: the VFL internal-operand
       // wait (intWait) held C22-6578 Problem 2.12's "CM1111(BU,1),
       // $SB+0.7" four clocks, long enough for "LX, $2, 19.0" behind it to
       // run before the $VF interruption its LWF had raised, and ENDCYC

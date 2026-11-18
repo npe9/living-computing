@@ -10808,7 +10808,7 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 # F217WA, where the box's walk is longer than the 5-clock floor); the
 # VFL divide pins (vfl_divide_box 2148, vfl_divide 1979) are the control.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
-# RE-PINNED 2026-11-17: CYCLES 549 -> 546.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 546 at HEAD with this change removed, and 546 with it.
+# RE-PINNED 2026-11-18: CYCLES 549 -> 546.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 546 at HEAD with this change removed, and 546 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -10830,7 +10830,7 @@ run "FP divide indicators (jb_af1c F217D on the model)" ./run_program.sh ../deck
     "SEN:712=0"
 
 run "FP divide double arithmetic (jb_af1c F217WA, encoding)" python3 verify_fp_arith_f217wa_listing.py
-# RE-PINNED 2026-11-17: CYCLES 1011 -> 1005.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 1005 at HEAD with this change removed, and 1005 with it.
+# RE-PINNED 2026-11-18: CYCLES 1011 -> 1005.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 1005 at HEAD with this change removed, and 1005 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP divide double arithmetic (jb_af1c F217WA on the model)" ./run_program.sh ../decks/fp_arith_f217wa.strap StretchFpDivDblATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217wa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -10857,7 +10857,7 @@ run "FP divide double remainder underflow (jb_af1c F217WE on the model)" ./run_p
     "SEN:712=0"
 
 run "FP reciprocal divide arithmetic (jb_af1c F217XA, encoding)" python3 verify_fp_arith_f217xa_listing.py
-# RE-PINNED 2026-11-17: CYCLES 527 -> 522.  Cause, measured: STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 522 at HEAD with this change removed, and 522 with it.
+# RE-PINNED 2026-11-18: CYCLES 527 -> 522.  MEASURED: STALE AT HEAD 7cddae9, not this change -- 522 at HEAD with this change removed, and 522 with it.  INFERRED (merge topology, not measured): 65c5ebc took the pin on a base without 4c8464a's preparation floor 12, which the merge brought in.  The "after" column in the table above is the pre-merge number.
 run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_program.sh ../decks/fp_arith_f217xa.strap StretchFpRecipDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
@@ -14366,11 +14366,13 @@ run "C22-6578 Problem 2.11 -- two-bit addition by connectives, 16 pairs" ./run_p
 # TEMP is where the program also saved the old mask: the last check pins
 # that printed clash.  Any other interruption halts at STRAY and fails PC.
 # IT ALSO GUARDS "AN INTERRUPTION IS DUE: START NOTHING NEW" (StretchCore's
-# rl_prepare, 2026-11-17).  With the VFL internal-operand wait in and that
+# rl_prepare, 2026-11-18).  With the VFL internal-operand wait in and that
 # gate removed, "CM1111(BU,1), $SB+0.7" is held four clocks, "LX, $2, 19.0"
 # runs before the $VF interruption its LWF raised, ENDCYC stores through
 # the new $2, and 16 of the hundred T_ words fail (e.g. T_r1_c2 =
-# 0x108000000102000); PC still passes.  With the gate, all pass.
+# 0x108000000102000); PC still passes.  Observed on the final tree (gate
+# alone disabled, restored from a saved copy checked with cmp).  With the
+# gate, all pass.
 run "C22-6578 Problem 2.12 -- 20 x 5 transpose in place, the \$VF interruption as the loop exit" ./run_program.sh ../decks/problem_2_12.strap StretchP212Tb "PC=4053" "STEPS=2000000" \
     "T_r1_c1:1000=0x0108000000101000" "T_r1_c2:1001=0x0108000000201000" \
     "T_r1_c3:1002=0x0108000000301000" "T_r1_c4:1003=0x0108000000401000" \

@@ -1182,7 +1182,7 @@ dispatch, so charging it here would count it twice.
 `decks/vfl_index_store_decode.strap`; `docs/atlas_oracle.md` "Closing the
 residuals" item 11.
 
-### An interruption is due: start nothing new (2026-11-17)
+### An interruption is due: start nothing new (2026-11-18)
 
 Ref. Manual p.48: interruption comes "before execution of the next
 instruction". `rl_interrupt` waits for the look-ahead to drain, and

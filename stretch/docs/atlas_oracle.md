@@ -1583,7 +1583,10 @@ decode twice, so it is now made only for an E-box-class successor. Pages
 117, 120, 124, 144, 147 and 151 were re-run on the final tree. Only the
 eight I-BOX columns moved, by 0.01 clock in the median, for example PDF
 124 ST ni_ibox −0.28 → −0.29 and PDF 117 M+ ni_ibox −0.35 → −0.36. Every
-other column on these pages is unchanged. The tables above stand.
+other column on these pages is unchanged. The tables above stand. The held-out
+pages and the controls (116, 48, 69, 79) were NOT re-run on the final tree;
+their numbers are from the tree before the two follow-ons, and their I-BOX
+rows may show the same 0.01 drift.
 
 ### The full run on the final tree (items 7-9 and the instruction-store gate)
 

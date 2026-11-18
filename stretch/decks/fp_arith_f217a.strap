@@ -63,7 +63,7 @@
 ! quotient FRACTION hardly at all; nothing here develops a
 ! non-trivial 48-bit quotient.  Nor does anything read LZC or PF.
 !
-! RE-PINNED 2026-11-17: CYCLES 549 -> 546.  Cause, measured:
+! RE-PINNED 2026-11-18: CYCLES 549 -> 546.  Measured at HEAD; the preparation-floor cause is inferred:
 ! STALE AT HEAD 7cddae9, not this change: the pin was taken (65c5ebc) on a base without 4c8464a's preparation floor 12, which the merge brought in; measured 546 at HEAD with this change removed, and 546 with it.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
