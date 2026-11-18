@@ -751,8 +751,12 @@ module mkStretchStorage(StretchStorage);
     // "conflicts with the operand fetch of the lookahead load cycle.
     // Since IC controls have priority, the IC fetch is made ... The
     // lookahead load cycle holds up its fetch during this cycle".
-    // SCOPED TO FP: both sources describe the FP load; no VFL preparation
-    // figure was read, so VFL and connective levels keep Buchholz's order.
+    // SCOPED TO FP: both sources describe the FP load. The VFL pages were
+    // read on 2026-11-18 (Blosk Fig. 7, PDF 34; R23-9732 Figs 3.1.1,
+    // 3.1.3 and 3.1.24, PDF 63, 65 and 88) and do not settle it. No VFL
+    // priority test is drawn, and the IF latch's wire "TO LA LD SEQ
+    // VFL2-5" has its effect on undrawn ALD pages (docs/NEXT.md). So VFL
+    // and connective levels keep Buchholz's order.
     // (A global reorder was measured first: it broke
     // decks/int_timing_bracket's interruption and moved twenty VFL pins;
     // docs/NEXT.md.)  MEASURED on the atlas (docs/atlas_oracle.md,

@@ -1817,6 +1817,18 @@ first: it gave the same PDF 64/66 figures but moved twenty VFL CYCLES pins and
 broke `decks/int_timing_bracket.strap`'s interruption (`docs/NEXT.md`),
 with no VFL source behind it.
 
+**VFL levels: read, not settled (2026-11-18).** The VFL pages were read
+in the page images, and they don't say whether a VFL load yields, so
+the model is unchanged and no residual moves. Blosk's Figure 7 (TR00.722
+printed p.32, PDF 34) has no waiting instruction fetch during its VFL
+operand fetches. 2Y is refilled only after 2YR goes to ZL, which waits
+for the VFL load (printed p.33, PDF 35). R23-9732 Fig. 3.1.24 (PDF 88)
+draws the VFL operand request, "VFL 4 E ON" -> "W 0-17 TO MAB", with no
+IC FETCH PRIORITY test. Figs 3.1.1 and 3.1.3 (PDF 63, 65) wire the
+instruction-fetch E.M latch "TO LA LD SEQ VFL2"-"VFL5" alongside FPL3/4,
+FPR3/4 and FPDD. What that wire does is on ALD pages the manual does not
+include. Details and citations: `docs/NEXT.md`, "ATLAS: I-BOX SUPPLY".
+
 **Indexed immediates: the source.** The direct pages pay p.3-18's 0.6 µs
 for indexing in full. K (PDF 127) prints I-BOX 3.61 → 4.22 µs, 12 → 14
 clocks. The six immediate compares (PDF 177-182, printed 170-175) print
