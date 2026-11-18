@@ -1249,8 +1249,12 @@ the LAAR (2026-11-18). This was examined and is not built.**
 - The sources say it should:
   - $RM is memory (p.3-20).
   - R23-9732 Fig. 3.2.21 stores the remainder through the FP store ABC.
-- The atlas has no room for it. Given LFT's mechanism, PDF 55/86 D/ moves
-  from exact to +11. With the check alone it moves to +2.
+- With the divide box as built, the atlas has no room for it. Given
+  LFT's mechanism, PDF 55/86 D/ moves from exact to +11. With the check
+  alone it moves to +2.
+- With the check alone and the second divide cycle not counted (V3), D/
+  stays exact, and `/` and `R/` go +1 → −1. That choice is
+  RECONSTRUCTION, and it is left open.
 - `docs/atlas_oracle.md` "Closing the residuals" item 14 has the pages and
   the measurements.
 

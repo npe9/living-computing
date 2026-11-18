@@ -24,11 +24,11 @@ accumulate.
 
 
 
-## D/ AND THE LAAR -- EXAMINED, NOT BUILT, 2026-11-18
+## D/ AND THE LAAR -- EXAMINED, NOT BUILT, A DECISION LEFT OPEN, 2026-11-18
 
 This was the open item "D/ should take the LAAR". **The sources say D/
-does take it, the atlas leaves no room for it, and the model is
-unchanged.** `docs/atlas_oracle.md` "Closing the residuals" item 14 has
+does take it. With the divide box as built, the atlas leaves no room for
+it. The model is unchanged.** `docs/atlas_oracle.md` "Closing the residuals" item 14 has
 the pages and the table.
 
 **The sources.**
@@ -48,6 +48,15 @@ the documented events only (the 0.6 µs check), they go to +1.97 / +2.00.
 - Table 2 already accounts for six of the seven clocks between D/ and
   `/` (PDF 55 against PDF 54), and the seventh is the +1 that D* and D+
   show too.
+
+**V3, measured: the head gate with the check only, and the second divide
+cycle not counted as a loop.**
+- D/ stays exact, and `$R` goes to −1.06.
+- `/` and `R/` go from +1 to −1 on every column.
+- Whether the SDC is a loop is FP DIVIDE TIME's open RECONSTRUCTION.
+  R23-9732 Fig. 3.8.15 sheet 2 (PDF 240) was re-read and does not settle
+  it.
+- **DECISION OPEN:** build V3 only if a source settles the SDC.
 
 **Open.**
 - What hides D/'s store path on the 7030. No page found says.

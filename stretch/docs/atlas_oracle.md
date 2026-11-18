@@ -1572,8 +1572,10 @@ Each step was measured on its own tree:
   writes, beside $FT as a memory location. So D/ should take the LAAR as
   LFT now does. The divide pages are disowned as a timing (PDF 41), so
   there is no clean oracle for it. **Examined 2026-11-18 (item 14), not
-  built.** Every variant that holds the LAAR as p.3-20 says moves
-  PDF 55/86 D/ from exact to between +2 and +11.
+  built.** With the divide box as it is, the two variants measured move
+  PDF 55/86 D/ from exact to +2 or +11. With the second divide cycle not
+  counted (V3), D/ stays exact, and `/` and `R/` go +1 → −1. That choice
+  is left open.
 - **UNTESTED** by any deck or injection:
   - the narrowing of `xholdPc` to index storage, as against STORE WAIT's
     words 11 and 12;
@@ -1951,11 +1953,12 @@ batch27's LFT/LAAR and index-store-hold work as well: FP LFT (PDF 68)
 +0.43/+0.47 and LFT $R (PDF 99) +0.47 EXTERNAL; FP M+ (PDF 69) EXTERNAL
 +3.97/+3.99 and M+ $R (PDF 100) +6.31, the same as on this branch alone.
 
-### 14. D/ and the LAAR: the sources say it takes it, but the atlas has no room for it (2026-11-18)
+### 14. D/ and the LAAR: the sources say it takes it, and the atlas has room for it only if the divide is 2 clocks shorter (2026-11-18)
 
-**Not built. A finding, with the model unchanged.** This is item 10's
-open entry, "D/ should take the LAAR as LFT now does". The base is
-master `7360598`.
+**The sources say D/ holds the LAAR. Nothing is built: the model is
+unchanged, and the choice is left open.** This is item 10's open entry,
+"D/ should take the LAAR as LFT now does". The base is master
+`7360598`.
 
 **What the sources say** (every page read in its image):
 
@@ -2001,35 +2004,56 @@ master `7360598`.
   operands. The difference is 7.0 clocks.
 - Table 2's D/ row accounts for 6 of them. The seventh is the clock the
   atlas shows D* and D+ over Table 2 as well (FP DIVIDE TIME, NEXT.md).
-- That leaves no clock for a store path in a homogeneous D/ run. Yet
-  PDF 41 says these to-memory pages "actually refer to the worst possible
-  situations" of LAAR queuing.
+- With the divide box as built, that leaves no clock for a store path in
+  a homogeneous D/ run. Yet PDF 41 says these to-memory pages "actually
+  refer to the worst possible situations" of LAAR queuing.
+- The box's total rests on one RECONSTRUCTION, worth 2 clocks: the
+  second divide cycle (SDC) is counted as a reduction loop of its own
+  (NEXT.md "FP DIVIDE TIME"; StretchDivBox.bsv "RECONSTRUCTION, AND WHAT
+  DECIDED IT"). That choice was made by matching PDF 54's 7.50 µs exactly.
+  - Not counting the SDC is nearer PDF 41's "average divide time should
+    be about 10 µs" (10.8 µs against 11.4).
+  - R23-9732 Fig. 3.8.15 sheet 2 (PDF 240, printed 8-17/8-18) was re-read
+    for this. It draws the SDC trigger at pulse 11, where the first
+    Intermediate Reduction Cycle begins, and does not say whether the SDC
+    takes a cycle of its own. It does not settle the choice.
 
-**Measured** (`tests/atlas_oracle.py`, n = 32 per column, medians). Two
-variants were built and run on a scratch copy and then reverted; every
-file was checked with `cmp` against the saved originals.
+**Measured** (`tests/atlas_oracle.py`, n = 32 per column, medians).
+Three variants were built and run on a scratch copy of the .bsv files and
+then reverted, each file checked with `cmp` against the saved originals.
 
-| PDF, column | base | V1: as LFT (head gate + ST's memory remainder 9) | V2: head gate, documented events only (E-box + 0.6 µs check) |
-|---|---|---|---|
-| 55 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 |
-| 55 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 |
-| 86 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 |
-| 86 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 |
-| 86 D/ ni_int / ix_int ($R) | **−3.07** | +7.93 | −1.06 |
-| 54 / (control, all columns) | +1.00 | +1.00 | not run |
+| PDF, column | base | V1: as LFT (head gate + ST's memory remainder 9) | V2: head gate, documented events only (E-box + 0.6 µs check) | V3: V2 with the SDC not counted |
+|---|---|---|---|---|
+| 55 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 | −0.03 |
+| 55 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 | −0.00 |
+| 86 D/ ni_ext / ix_ext | −0.03 | +10.96 | +1.97 | −0.03 |
+| 86 D/ ni_ibox / ix_ibox | −0.00 | +11.00 | +2.00 | −0.00 |
+| 86 D/ ni_int / ix_int ($R) | **−3.07** | +7.93 | −1.06 | −1.06 |
+| 54, 85 / (every column) | +1.00 | +1.00 (54 only) | not run | −1.00 |
+| 56, 87 R/ (every column) | +1.00 | not run | not run | −1.00 |
 
 - **V1** is `fpLaarStore` giving D/ word 13, `lftDeferredLaar` true for
   D/, and `isFpLft` true for D/ (that gives it the remainder).
 - **V2** is the same without the `isFpLft` term, so D/ gets
   `laarCheckClocks` and no remainder.
-- Gating at the load, as p.3-21 places the wait, would be at least as
-  long as V1 (item 10 measured this for LFT).
+- **V3** is V2 with `mkDivBox.request`'s `rg_wAdd` starting at 0 rather
+  than 1. That takes 2 clocks off every FP divide.
+- Gating at the load, as p.3-21 places the wait, was not measured for D/.
+  By analogy with LFT (item 10) it would be at least as long as the head
+  gate, but that is an inference.
 
 **Why nothing is built.**
 
-- Every variant that keeps p.3-20's "busy from the time of look-ahead
-  loading until the proper operand is ... checked, and accepted" pushes
-  the D/ memory and I-box columns from exact to +2 (V2) or +11 (V1).
+- With the divide box as it is, both measured variants that keep p.3-20's
+  "busy from the time of look-ahead loading until the proper operand is
+  ... checked, and accepted" push the D/ memory and I-box columns from
+  exact: to +2 (V2) or +11 (V1).
+- **V3 reconciles the D/ page with the documented LAAR events.** D/ stays
+  exact, and $R improves −3.07 → −1.06. The cost is that `/` and `R/`
+  move +1 → −1, which splits them from the +1 that `*` shows (PDF 52, the
+  removal clock). The SDC choice is the open RECONSTRUCTION above, and no
+  page settles it, so V3 is recorded as the **candidate**. It is an
+  open decision, not a closed finding.
 - The only column V2 improves is $R. There, `D/ $R` divides by a zero
   divisor after the first copy, as DERIVED below, and Fig. 3.2.21 says
   that store is cancelled.
@@ -2040,10 +2064,13 @@ file was checked with `cmp` against the saved originals.
 - Nor is the divide time refitted to make room. `/` and `R/` are not
   on PDF 41's list and are already +1 with the same box.
 
-**What this leaves.** The documents say D/ holds the LAAR, and the
-atlas, which PDF 41 disowns as a divide timing, shows no cost for it. The
-two are reconciled only if the D/ remainder's store path is hidden under
-something the model does not overlap. No page found says what that is. A
+**What this leaves.** The documents say D/ holds the LAAR. The atlas,
+which PDF 41 disowns as a divide timing, shows no cost for it with the
+divide box as built. Two reconciliations remain:
+- V3: the SDC is not a loop of its own, and D/ takes the LAAR with the
+  documented check. To build it, a source must settle the SDC.
+- The D/ remainder's store path is hidden under something the model does
+  not overlap. No page found says what that is. A
 D/ followed by an FP store or a $R fetch would wait for the LAAR on the
 7030 (p.3-21), and does not in the model. No atlas page measures that
 mixed sequence.
