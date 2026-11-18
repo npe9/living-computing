@@ -1549,6 +1549,24 @@ seen (`eboxClocks` gets the decoded instruction).
   move when that clause alone is deleted; the VflInt and Connective DF
   clauses are NOT (no shape tried moves them; docs/NEXT.md).  See the
   deck headers for the measured tables.)
+  (LATER 2026-11-18: those two are now pinned by a READ COUNT, and DF
+  covers every fetch-type VFL operation.  `StretchMemory`'s MBCU counts
+  the read requests it accepts (`readCount`, through
+  `StretchStorage.memReads`), and `tests/gen_tb.py`'s `MEMREADS=N`
+  checks the count a run made, setStart to afterRun.  prepareExec and
+  execute() disagreed on which operations DF applies to (found by
+  reading the code, confirmed by the deck): execute() signalled and suppressed DF for seven VFL
+  codes, prepareExec for every one.  printed p.32 (PDF 35) defines
+  fetch-type as "read out for use but not subject to change", so +MG, KF,
+  KE, KFE, KR, KFR, `*`, `/`, LCV and LTRCV are fetch-type too (each
+  page cited at `StretchExecute.vflRef`); a protected `*` with DF's mask
+  one used to multiply by the protected word and never set DF.  Stores
+  (ST, SRD, M+, M+MG, M+1, CM) are DS's and never DF's, and their level
+  fetches whatever DF's mask is; CV and DCV have no storage operand
+  (DCV fetched a pointless word until now).  ONE classification,
+  `vflRef` / `connFetchType` with `fieldDfSuppresses` (both words of a
+  crossing field), is asked by both sides.
+  `decks/cwf_df_fetch_type.strap` has the cases and the injections.)
 
 ### Not modeled at all
 

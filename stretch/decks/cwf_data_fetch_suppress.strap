@@ -39,7 +39,14 @@
 ! of memory requests the testbench can read (StretchIBox's note at
 ! completesWithoutFetch).  OPEN in docs/NEXT.md.
 !
-! CYCLES 824 IS MODEL BEHAVIOUR; no documented time exists.
+! PINNED SINCE, 2026-11-18, BY A READ COUNT: tests/gen_tb.py's MEMREADS=
+! (the MBCU's count of accepted reads, StretchMemory readCount).  This deck
+! makes 62; OBSERVED with the VflInt DF clause deleted alone: 63, CYCLES
+! still 824; with the Connective one deleted alone: 63, CYCLES 824.  The
+! fuller table, and the fix to WHICH operations DF applies to, are in
+! decks/cwf_df_fetch_type.strap.
+!
+! CYCLES 824 AND MEMREADS 62 ARE MODEL BEHAVIOUR; no documented time exists.
         SLC, (8)4100.0
 START   BD,  $+.32                   ! disable while words 3 and 12 are set
         LVI, $X13, TBL

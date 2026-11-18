@@ -1070,6 +1070,126 @@ function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
 function Bool dfSuppresses(StretchStorage st, WordAddr a) =
   maskedOn(st, ind_DF) && protViolates(st, a);
 
+// >>> WHICH VFL AND CONNECTIVE OPERATIONS DF APPLIES TO: ONE PREDICATE,
+// ASKED BY BOTH StretchIBox.prepareExec AND execute(), 2026-11-18. <<<
+//
+// Until this date the two disagreed.  prepareExec called EVERY
+// non-immediate VflInt and connective operation "completes without
+// fetch" under a masked-on DF, while execute() signalled and suppressed
+// DF only for a seven-code list (L, LWF, +, K, LFT, LTRS, *+) and for
+// C/CT.  So a protected `*` with DF's mask one was loaded with no
+// operand address, and the E-box then read the protected word itself,
+// multiplied by it and never set DF (found by reading the code;
+// decks/cwf_df_fetch_type.strap confirmed it, measured before the fix).
+//
+// THE RULE IS PRINTED p.32's DEFINITION, NOT A LIST OF OPCODES.
+// Reference Manual 22-6530-2 printed p.32 (PDF 35), read in the page
+// image: "When an address alarm is caused by a data address used in a
+// fetch-type operation, indicator DF is turned on ... A fetch-type
+// operation is one in which the contents of an addressed storage
+// location are read out for use but are not subject to change by the
+// operation", and of DS: "A store-type operation is one in which the
+// contents of an addressed storage location are subject to change."
+// "Address monitoring for Data Fetch includes: 1. The effective address
+// of all fetch-type operations with a direct address."  Printed p.45
+// item 20 (PDF 48): "If the corresponding mask bit was one, the fetch
+// did not take place, and the entire operation was suppressed."  So
+// every VFL operation that reads an addressed storage field and leaves
+// it alone is fetch-type, read off each operation's own page:
+//
+//   +, +MG       printed p.60 (PDF 63): "The addressed operand is
+//                algebraically added to the [magnitude of the] contents
+//                of the accumulator"
+//   L, LWF       printed p.61 (PDF 64): "The numeric part of the
+//                addressed operand is placed in the accumulator"
+//   K, KF, KE, KFE, KR, KFR   printed pp.65-67 (PDF 68-70): "compared
+//                with the addressed operand ... Neither operand is
+//                changed by the operation"
+//   *            printed p.68 (PDF 71): "the product of the addressed
+//                operand and the accumulator field"
+//   /            printed p.70 (PDF 73): "divided by the addressed
+//                storage field"
+//   LFT, *+, LTRS   in execute()'s fetch list before this change (their
+//                pages were not re-read for it)
+//   LCV, LTRCV   printed pp.72-73 (PDF 75-76): "the storage operand is
+//                converted", "The addressed storage field is converted"
+//
+// STORE-TYPE, DS AND NEVER DF ON THE FIELD: ST, SRD, M+, M+MG, M+1 and
+// connective CM -- the field is "subject to change".  Their arms read
+// the word for the read-modify-write and signal DS at the write; the
+// DF mask has nothing to say about them, so their level fetches the
+// word whatever DF's mask is.  Perf. Char. Vol. 1 printed p.2-3 item 6
+// (PDF 10), read in the page image: "All VFL stores are fetch-and-stores."
+// Whether a PROTECTED store still fetches is not printed; CHOSEN to match
+// what execute() does (it reads the word, then signals DS at the write).
+// The shipped machine's NOOP tag on a DS alarm (spec_lookahead.md 2.7)
+// may mean it skips that read; the read count cannot say which is right.
+//
+// NO STORAGE OPERAND AT ALL: CV (printed p.73) and DCV (printed p.74,
+// PDF 77): "A field from the accumulator is converted".  Neither is
+// monitored, and neither fetches (fetchesOperand).  p.74's programming
+// note, read in the page image: "The effective address of the first
+// half-word, the byte size field, and the length field are not normally
+// used by either the CONVERT or the CONVERT DOUBLE operations and are
+// ignored" -- so neither raises AD on its address either (vflIntOp's
+// adSupp; DCV's exemption is new 2026-11-18 and NO DECK PINS IT).
+//
+// A CROSSING FIELD asks about both words (p.31: a field which straddles
+// a boundary "always gives an address monitoring signal"); prepareExec
+// used to ask about the first word only.
+//
+// KE, KFE AND KR WITH THEIR CONDITION FALSE are still fetch-type here
+// (p.65: "the comparison is not performed"): p.32 classes the
+// OPERATION, and nothing printed says such a KE does not address its
+// field.  CHOSEN reading.
+typedef enum { VflRefFetch, VflRefStore, VflRefNone } VflRef deriving (Bits, Eq, FShow);
+
+// Every one of the twenty-four codes (strap/opcodes.py VFL_INT_CODES)
+// named; an undecoded code is VflRefNone, so it is never monitored as a
+// fetch by default -- decode refuses it before execute() sees it.
+function VflRef vflRef(Bit#(6) code);
+  case (code)
+    6'b000001, 6'b100001,                      // +, +MG
+    6'b000101, 6'b100101,                      // L, LWF
+    6'b010001, 6'b110001, 6'b010011,           // K, KF, KE
+    6'b110011, 6'b010101, 6'b110101,           // KFE, KR, KFR
+    6'b011001, 6'b011101,                      // *, /
+    6'b001011, 6'b111001, 6'b111101,           // LFT, *+, LTRS
+    6'b000011, 6'b100011:                      // LCV, LTRCV
+      return VflRefFetch;
+    6'b001101, 6'b101101,                      // ST, SRD
+    6'b001001, 6'b101001, 6'b101011:           // M+, M+MG, M+1
+      return VflRefStore;
+    6'b011011, 6'b111011:                      // CV, DCV
+      return VflRefNone;
+    default:
+      return VflRefNone;
+  endcase
+endfunction
+
+// The connectives: CM replaces the storage field (store-type); C and CT
+// read it and leave it alone (printed p.76: CT's result "is not placed
+// anywhere"), so both are fetch-type.
+function Bool connFetchType(Bit#(5) suffix) = (suffix != conn_CM);
+
+// THE SHARED QUESTION.  `fetchType` is vflRef(code) == VflRefFetch or
+// connFetchType(suffix); immediate addressing has no storage operand
+// ("with a direct address", p.32).
+function Bool vflDfApplies(Bool fetchType, Bool immediate) = fetchType && !immediate;
+
+// Does DF's mask-dependent half suppress this field?  Both words of a
+// crossing field.
+function Bool fieldDfSuppresses(StretchStorage st, BitAddr ea, Bit#(7) len_) =
+  dfSuppresses(st, baWord(ea))
+  || (fieldCrosses(ea, len_) && dfSuppresses(st, baWord(ea) + 1));
+
+// And its mask-independent half: the indicator, both words.
+function Word64 fieldDfSignal(StretchStorage st, BitAddr ea, Bit#(7) len_, Word64 ind);
+  Word64 r = dfSignal(st, baWord(ea), ind);
+  if (fieldCrosses(ea, len_)) r = dfSignal(st, baWord(ea) + 1, r);
+  return r;
+endfunction
+
 // IF, THE INSTRUCTION-FETCH ADDRESS ALARM (indicator 21), and so far
 // only p.32's CLASS 2: "Address monitoring for Instruction Fetch
 // includes... 2. The branch address of all successful branch
@@ -2955,20 +3075,17 @@ function ActionValue#(VflOutcome)
         // operand read: that call's `ind` is discarded (execute()
         // returns entry values when needsRead is Valid), and the
         // resuming call reaches this line again with the same `ea`.
-        Bool vflFetchType = (vi.code == 6'b000101 || vi.code == 6'b100101)    // L, LWF
-                         || (vi.code == 6'b000001)    // + , -
-                         || (vi.code == 6'b010001)    // K
-                         || (vi.code == 6'b001011)    // LFT
-                         || (vi.code == 6'b111101)    // LTRS
-                         || (vi.code == 6'b111001);   // *+
+        //
+        // >>> WHICH CODES: vflRef, SHARED WITH StretchIBox.prepareExec,
+        // 2026-11-18. <<<  This was a seven-code list (L, LWF, +, K, LFT,
+        // LTRS, *+) that left out +MG, KF, KE, KFE, KR, KFR, *, /, LCV and
+        // LTRCV, every one of them fetch-type by p.32's definition; see
+        // vflRef's note for the pages.  decks/cwf_df_fetch_type.strap.
+        Bool dfApplies = vflDfApplies(vflRef(vi.code) == VflRefFetch, immediate);
         Bool dfSupp = False;
-        if (vflFetchType && !immediate) begin
-          ind = dfSignal(st, baWord(ea), ind);
-          dfSupp = dfSuppresses(st, baWord(ea));
-          if (fieldCrosses(ea, len_)) begin
-            ind = dfSignal(st, baWord(ea) + 1, ind);
-            dfSupp = dfSupp || dfSuppresses(st, baWord(ea) + 1);
-          end
+        if (dfApplies) begin
+          ind = fieldDfSignal(st, ea, len_, ind);
+          dfSupp = fieldDfSuppresses(st, ea, len_);
         end
 
         // DF'S MASK-DEPENDENT HALF, p.45 item 20: "If the
@@ -3010,7 +3127,9 @@ function ActionValue#(VflOutcome)
         // the accumulator (fetchesOperand's note), so neither is asked.
         // The FIRST word only: a crossing field whose second word alone is
         // uninstalled is not handled here (CHOSEN, no deck reaches it).
-        Bool adSupp = !immediate && vi.code != 6'b011011
+        // (CV and DCV: vflRef's VflRefNone -- DCV, printed p.74, has no
+        // storage operand either, and was asked until 2026-11-18.)
+        Bool adSupp = !immediate && vflRef(vi.code) != VflRefNone
                    && !installed(baWord(ea));
         if (adSupp) ind = setBit(ind, ind_AD, 1);
         if (dfSupp || adSupp) begin
@@ -5296,13 +5415,11 @@ function ActionValue#(VflOutcome)
         // accumulator, so both are fetch-type; CM writes the field
         // back and is not.
         Bool dfSupp = False;
-        if (cn.suffix != conn_CM && !immediate) begin
-          ind = dfSignal(st, baWord(ea), ind);
-          dfSupp = dfSuppresses(st, baWord(ea));
-          if (fieldCrosses(ea, len_)) begin
-            ind = dfSignal(st, baWord(ea) + 1, ind);
-            dfSupp = dfSupp || dfSuppresses(st, baWord(ea) + 1);
-          end
+        // (connFetchType / vflDfApplies / fieldDf*: shared with
+        // StretchIBox.prepareExec since 2026-11-18, see vflRef.)
+        if (vflDfApplies(connFetchType(cn.suffix), immediate)) begin
+          ind = fieldDfSignal(st, ea, len_, ind);
+          dfSupp = fieldDfSuppresses(st, ea, len_);
         end
 
         // DF'S MASK-DEPENDENT HALF -- see dfSuppresses, and vflIntOp's

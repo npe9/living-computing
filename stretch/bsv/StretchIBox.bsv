@@ -55,7 +55,12 @@ function Bool fetchesOperand(DecodedInstr d);
     // the preparation arm's probe disagreed with the pure
     // `prepareExec`, and both CV mismatches reported an operand address
     // of 8 -- the accumulator's own word. See docs/ebox_roadmap.md.
-    tagged VflInt .v: return v.a.p != 4 && v.code != 6'b011011;
+    //
+    // AND DCV, 2026-11-18: printed p.74 (PDF 77), quoted at its arm, "A
+    // field from the accumulator is converted" -- built 2026-11-16 after
+    // this note, and fetching a pointless word until StretchExecute's
+    // vflRef classed it with CV.
+    tagged VflInt .v: return v.a.p != 4 && vflRef(v.code) != VflRefNone;
     tagged Connective .c: return c.a.p != 4;
     // >>> EVERY FLOATING-POINT OPERATION BUT THE STORE CLASS FETCHES,
     // 2026-11-17. <<<  This said `f.code == fpop_L` from the first cut
@@ -161,6 +166,15 @@ typedef struct {
   // fetch" is the target.  The address-invalid deck also found execute()
   // raising AD for an Fp operand only; vflIntOp and connectiveOp raise it
   // now.
+  //
+  // >>> AND THE LAST TWO, 2026-11-18, BY A READ COUNT. <<<  StretchMemory's
+  // MBCU now counts the reads it accepts and gen_tb's MEMREADS= checks a
+  // run's count.  Deleting the VflInt DF clause adds one read to
+  // cwf_data_fetch_suppress (62 -> 63) and eleven to cwf_df_fetch_type
+  // (569 -> 580); deleting the Connective one adds one to each.  The two
+  // halves also disagreed on WHICH operations DF applies to (found by
+  // reading the code, confirmed by that deck); both now ask StretchExecute's vflRef / connFetchType and
+  // fieldDfSuppresses (see vflRef for printed p.32's definition).
   Bool completesWithoutFetch;
 } PreparedExec deriving (Bits, Eq, FShow);
 
@@ -187,8 +201,14 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // The length as the second index leaves it (vflSecondIndex,
       // RefMan printed p.21), as execute() sees it.
       Bit#(7) len_ = effLength(vflSecondIndex(st, v.a).length);
+      // DF, mask-dependent: THE SAME PREDICATE execute() asks
+      // (StretchExecute vflRef, 2026-11-18).  This asked dfSuppresses(w)
+      // for EVERY code until then -- stores and the codes execute()
+      // never suppressed included -- and the first word only.
+      Bool dfDone = vflDfApplies(vflRef(v.code) == VflRefFetch, v.a.p == 4)
+                 && fieldDfSuppresses(st, ea, len_);
       Bool done = (prog && v.a.i1 == 0)                  // progressive, no index
-               || dfSuppresses(st, w)                    // DF, mask-dependent
+               || dfDone                                 // DF, mask-dependent
                || !installed(w);                         // AD
       return PreparedExec {
         operandAddr: (v.a.p == 4) ? tagged Invalid : tagged Valid w,
@@ -205,8 +225,11 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       Bit#(7) len_ = effLength(vflSecondIndex(st, c.a).length);
       // (CM crossing into a register word was refused with OP until
       // 2026-11-17 and completed without a fetch; it reads both words now.)
+      // DF: shared with execute() (connFetchType: CM is a store).
+      Bool dfDone = vflDfApplies(connFetchType(c.suffix), c.a.p == 4)
+                 && fieldDfSuppresses(st, ea, len_);
       Bool done = (prog && c.a.i1 == 0)
-               || dfSuppresses(st, w)
+               || dfDone
                || !installed(w);
       return PreparedExec {
         operandAddr: (c.a.p == 4) ? tagged Invalid : tagged Valid w,

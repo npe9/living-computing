@@ -162,6 +162,17 @@ interface MBCU;
   method Action put(MemReq r);            // only when canAccept(r.addr)
   method Bool respReady(RetTag t);        // a response for tag t is waiting
   method ActionValue#(Word64) takeResp(RetTag t);
+  // >>> HOW MANY READS STORAGE HAS ACCEPTED, 2026-11-18. <<<  A count
+  // of the read requests `put` here since reset -- installed or not,
+  // from every channel memCtl issues (operand, 1Y/2Y instruction fetch,
+  // look-ahead levels).  For the testbench only (gen_tb's MEMREADS=):
+  // a refused or no-op'd operation is "executed as a NO OPERATION"
+  // (Ref. Manual printed p.21, p.45 items 15, 16, 20), and whether the
+  // level fetched its operand anyway is invisible to every check but
+  // this one when nothing waits on the fetch.  Words 0-31 are
+  // register-backed (StretchStorage's lookupSpecial) and never reach
+  // here, so they are not counted.
+  method Bit#(32) readCount();
 endinterface
 
 module mkMBCU(MBCU);
@@ -172,6 +183,7 @@ module mkMBCU(MBCU);
   Vector#(NumTags, Reg#(Maybe#(Word64))) resp <- replicateM(mkReg(tagged Invalid));
   RWire#(MemReq) putW <- mkRWire;
   Vector#(NumTags, PulseWire) takeW <- replicateM(mkPulseWire);
+  Reg#(Bit#(32)) reads <- mkReg(0);   // readCount() below
 
   (* fire_when_enabled, no_implicit_conditions *)
   rule route;
@@ -185,6 +197,7 @@ module mkMBCU(MBCU);
         r[units[i].dataTag()] = tagged Valid d;
       end
     if (putW.wget matches tagged Valid .q) begin
+      if (!q.write) reads <= reads + 1;
       if (installed(q.addr))
         units[unitOf(q.addr)].request(q.write, indexOf(q.addr), q.data, q.tag);
       else if (!q.write)
@@ -204,6 +217,7 @@ module mkMBCU(MBCU);
     takeW[t].send();
     return validValue(resp[t]);
   endmethod
+  method Bit#(32) readCount() = reads;
 endmodule
 
 endpackage
