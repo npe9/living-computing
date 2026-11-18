@@ -864,6 +864,13 @@ To add them means choosing a later MCP than the listing. See G2.
 
 **RECONSTRUCTED 2026-11-17, single segment** (plan R2a): `decks/bss_7030.strap`,
 NOT IBM's code; it reproduces C28 p.17's map (`tests/check_bss_example4.py`).
+**Loaded and run under MCP from the TYPE card, 2026-11-17** (plan R2b, job
+half, `tests/check_bss_mcp_go.py`): `B TYPE,GO,FORTRAN` through UNCODE and
+p.271's rewrite into KSILO (PCBSS), then YC4INT (p.396), WJC4G (p.386) and
+resume load (p.332, SCORG = 1) load the deck from type area BSS through
+`ALOADR`; BSS, entered at SICBU, prints p.17's map. KSILO+1.19 = 1 comes
+from YTOPCG's 01011 (p.272 l.4 via p.384 ll.19-20). The map is not yet
+printed through `$SPR`.
 **Its table read by MCP's loader, 2026-11-17** (plan R2b,
 `tests/check_bss_mcp_load.py`): the table and KSILO 8-11 the deck leaves are
 read by resume load from `YRESL1` (L p.332) through `YARSL`, `ARNRM5`, the

@@ -942,7 +942,7 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## THE BSS PROCESSOR, RECONSTRUCTED -- R2a built, R2b table read by MCP's loader, 2026-11-17
+## THE BSS PROCESSOR, RECONSTRUCTED -- R2a built, R2b run under MCP from the TYPE card, 2026-11-17
 
 `decks/bss_7030.strap` is a 7030 program labelled RECONSTRUCTION; IBM's BSS
 code is lost. It reproduces C28-6379-0 p.17's Example 4 storage map row for
@@ -961,8 +961,20 @@ though the loader's LV takes bit 24 as a sign (LR and SV come first on this
 path; clearing them loads identically); the deck is unchanged. Record: the
 plan's R2b.
 
-**Next:** `B TYPE,GO,FORTRAN` through p.271's rewrite, BSS loaded and
-entered by MCP, and the map on MCP's printer (R2b's other half). Still not
+**R2b, the job half, RUN 2026-11-17** (`tests/check_bss_mcp_go.py`):
+`B TYPE,GO,FORTRAN` goes through MCP's own UNCODE, p.271's rewrite and
+p.384/p.395-396 into KSILO (PCBSS fetched; KSILO+1.19 = 1 comes from
+YTOPCG's 01011, now settled). YC4INT, WJC4G and resume load then load the
+BSS processor deck from its type area, and BSS runs under MCP and prints
+p.17's map. The separator is the 0-3-8 punch (measured). PLANTED: YC4B5 to
+WJC4G1 (the PC area's LIM and IOD cards, Assign, Move) and YRLTT+2.50.
+Stubs: the dispatcher, `$RET` into the program, `$SCR`/`$FETCH` over core
+images.
+
+**Next:** (1) the map through `$SPR` (C22-6678-1 p.20) rather than the deck's
+OUTB buffer (not attempted); to the paper would need the output program
+(p.201 CSTART). (2) BSS's exit by `$EOJ` (p.274 ll.44-45 for a normal end,
+p.381 ll.11-17 -> YC4INT -> YLASTC, p.397) into the GO phase. (3) Stage 2's LIM/IOD cards. Still not
 built: the O card, block data, DEFINE/DEFI, sequence and check sums, and
 B IOD/REEL storage.
 
