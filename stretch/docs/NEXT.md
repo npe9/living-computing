@@ -893,21 +893,27 @@ sources in both cases; `tests/verify_buchholz_b6.py printed` and
 `corrected` are both registered and both pass. Deck:
 `decks/buchholz_b6_bit_matrix_transpose.strap`.
 
-## THE BSS PROCESSOR, RECONSTRUCTED -- R2a single segment built, 2026-11-17
+## THE BSS PROCESSOR, RECONSTRUCTED -- R2a built, R2b table read by MCP's loader, 2026-11-17
 
 `decks/bss_7030.strap` is a 7030 program labelled RECONSTRUCTION; IBM's BSS
 code is lost. It reproduces C28-6379-0 p.17's Example 4 storage map row for
 row on stubs of the printed sizes (`tests/check_bss_example4.py`). The record
 and the row-by-row result are in the plan's R2a.
 
-**Next, R2b.** Feed BSS's relocation table and KSILO to MCP's loader:
-`gen_loader_deck_tb.py`'s BSS modes, with the table built by the deck instead
-of the driver. Then `B TYPE,GO,FORTRAN` through p.271's rewrite.
+**R2b, the table half, RUN 2026-11-17** (`tests/check_bss_mcp_load.py`):
+the table and KSILO 8-11 BSS leaves are read by MCP's own resume load and
+loader, entered at YRESL1 (p.332), with `$FETCH` a labelled stub over core
+images of TWS and the LB areas. Example 4 loads as p.17 lays it out, in a
+library run and a no-library run. C10 settled: 36 bits of A6 (p.327 l.24,
+6728-0 p.82, read in the ink). C11 settled: the FORTRAN branch card is not
+counted (C28 pp.7, 9, 10; the loader itself cannot tell, measured). Found
+and fixed: BSS must write KSILO+9 and +10 as whole half words, since the
+loader's LV takes bit 24 as a sign. Record: the plan's R2b.
 
-Open questions R2b must settle:
-- the library name's 36 bits (deck rule C10);
-- whether the FORTRAN branch card counts (C11);
-- the O card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL storage, all not built.
+**Next:** `B TYPE,GO,FORTRAN` through p.271's rewrite, BSS loaded and
+entered by MCP, and the map on MCP's printer (R2b's other half). Still not
+built: the O card, block data, DEFINE/DEFI, sequence and check sums, and
+B IOD/REEL storage.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 

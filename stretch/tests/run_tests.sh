@@ -15294,6 +15294,14 @@ run "MCP's loader loads C, P and D cards through the RECONSTRUCTED p.329" ./run_
 # MEASURED (the test's header): "the largest wins" dropped moves A, STE and
 # POL; the secondary count dropped moves RANDM's size and rows 4-10.
 run "Reconstructed BSS prints C28-6379 p.17's storage map (Example 4)" python3 check_bss_example4.py
+# R2b (docs/reading_notes/fortran_bss_plan.md): the table that reconstructed
+# BSS builds, read by MCP's OWN resume load and loader (pp.320-334, from
+# YRESL1), $FETCH a labelled stub over core images of TWS and the LB areas:
+# Example 4 must load as p.17 lays it out, with and without library calls.
+# MEASURED (the test's header): count one high on the last entry fails only
+# the fetch count (C11); the deck's disk address one card late, its library
+# name left in A8, and its common origins a half word late each break it.
+run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 check_bss_mcp_load.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
