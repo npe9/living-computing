@@ -872,7 +872,10 @@ resume load (p.332, SCORG = 1) load the deck from type area BSS through
 from YTOPCG's 01011 (p.272 l.4 via p.384 ll.19-20). **Since 2026-11-18**
 the map goes through `$SPR` (deck switch SPRSW): MCP's own tentacle setup
 and print program CSTART (pp.117-118, 203) put all 12 lines in output buffer X
-as six-bit BCD. BSS then leaves by `$EOJ` to MCP's YC4NO -> YC4B3 (p.274).
+as six-bit BCD. BSS then leaves by `$EOJ` to MCP's YC4NO -> YC4B3 (p.274),
+and (2026-11-18) on through YMPFCH's fetch of the `$EOJ` program, p.381,
+YC4INT -> YLASTC, p.397 and TJUNAS to TASIGN (p.398), which needs IPL's
+channel status table.
 The IF analyzer's PP half and the return routine are SCAFFOLD (plan R2b
 record).
 **Its table read by MCP's loader, 2026-11-17** (plan R2b,

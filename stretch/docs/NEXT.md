@@ -1215,13 +1215,44 @@ character code is checked against p.20's control table. SCAFFOLD: SIFAE's
 PP half (p.117 ll.20-28) and the `$RET` return routine. Five new
 injections are measured.
 
+**R2b, `$EOJ` past YC4B3 to TASIGN, RUN 2026-11-18** (same test, stage
+6). YC4B3 (p.274 ll.51-52) loads YXWEJM and enters YMPFCH, "SPECIAL
+PACKAGE TO PULL MCP PROGRAMS FROM THE DISK" (p.269 l.13). Its `B,DMCP /
+,DFETCH` traps IF like the PP's calls. STUBIF now serves `$FETCH` (66.32):
+it copies the type area 22$EOJ, the core image of pp.381-439 (SCAFFOLD,
+planted at 260000), to FWA 020000, sets M = 1692 and returns enabled to
+the normal return. The fetch is needed: resume load's PP clear had left
+word 020000 at 0. From there IBM's code runs:
+- YMPFCH saves `$EOJ` in YMPSAV and branches to YPPMEM.
+- p.381 ll.11-17 restore SIT+20..47 from FWIT, and SCORG = 1 sends it to YC4INT.
+- The link pointer is past the count, so YC4INT goes to YLASTC (p.396 l.35): SCORG = 0, YDFCS = `))))))))`.
+- p.397 sees BSS in KSILO+2 in overlap mode (SYSMOD = 00): YTSP is set, $15 = WJ4PFF, and it goes to TJUNAS.
+- TJUNAS (p.434) has no IODs to free (TMAXRF 0). It goes to TJEND and YC4BZ (pp.436-437), which return to WJ4PFF.
+- SCNFCG is 1 as assembled, so WJ4PFF clears it and sets WJCW's configuration-change flag (p.388 ll.28-31). It then calls TASIGN with $15 = WJCW.
+
+The bench stops at TASIGN (p.398 l.31). Stages 3-6 take 1,677,355 cycles.
+**What blocks TASIGN:** the configuration change walks the channel status
+table at SXCHAN (p.406 l.35 `LX,TIXF,TCHSXW`). IPL builds that table, and
+in this bench SXCHAN is still the assembled `XW,0` (p.103 l.28), with
+base 0 and count 0. MEASURED with the stop removed: TA9 scans addresses
+from 0 and halts on MCP's own `T N BD,$` at 021725.00, "MACH CONF CH.
+ASSIGN BIT ON - MULTI" (p.410 l.52). That halt comes from the missing
+table, not from the job. So the next step needs IPL's channel and unit
+tables, or JC1's PP reference table (TSAV) for the no-change path. KSILO+7
+also stays 0. C22-6728 p.197 makes 7.0-7.17 "Number of arcs occupied by
+compiled program" and 7.25 the "Reject flag", and the reconstructed BSS
+sets neither.
+
 **Next:** (1) the record's `$W` and the output EOJ (CEOJ, p.204), which
-need the output tape's IOD/unit; the 1401 side is not landed. (2) `$EOJ`
-past YC4B3: YMPFCH's overlay fetch, p.381 ll.11-17 -> YC4INT -> YLASTC,
-p.397, into the GO phase. (3) SIFAE's PP half, and the PP run under its
-own limits: BSS writes KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not
-built: the O card, block data, DEFINE/DEFI, sequence and check sums, and
-B IOD/REEL storage.
+need the output tape's IOD/unit; the 1401 side is not landed. (2) TASIGN
+for the GO phase. It needs the channel status table IPL builds (SXCHAN),
+which the IPL boot (volume 1) does not yet hand to this bench. After it
+comes WJ4PE -> YL1 -> WJCV -> YRDFSO -> YPPID4's `$FETCH` of
+`))))))))`, then resume load as BSS postprocessor (C22-6728-1 p.86).
+(3) SIFAE's PP half, and the PP run under its own limits: BSS writes
+KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not built: the O
+card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL
+storage.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
