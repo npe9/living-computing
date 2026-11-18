@@ -149,6 +149,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 - **R2b, table half, RUN 2026-11-17:** its relocation table is read by MCP's own resume load and loader, which load Example 4 as p.17 lays it out (`tests/check_bss_mcp_load.py`); record under R2.
 - **R2b, job half, RUN 2026-11-17:** `B TYPE,GO,FORTRAN` through MCP's own job control into KSILO, then YC4INT, WJC4G and resume load load the BSS processor from its type area, and BSS runs under MCP and prints p.17's map (`tests/check_bss_mcp_go.py`); record under R2.
 - **R2b, printer path and `$EOJ`, RUN 2026-11-18:** behind the deck's switch SPRSW, BSS prints each map line through `$SPR`: the call traps IF, and MCP's own tentacle setup (p.117 ll.36-48, p.118) and print program CSTART (p.203) move all 12 lines into the output buffer X as six-bit BCD, row for row p.17. BSS then leaves by `$EOJ` into MCP's YC4NO and reaches YC4B3 (p.274). The IF analyzer's PP half and MCP's return routine are SCAFFOLD; record under R2.
+- **R2b, `$EOJ` past YC4B3, RUN 2026-11-18:** YMPFCH fetches the `$EOJ` program back. The `$FETCH` is a stub over a core image of pp.381-439. From there IBM's code runs p.381 -> YC4INT -> YLASTC -> p.397 (BSS, overlap) -> TJUNAS -> WJ4PFF and stops at TASIGN. TASIGN needs the IPL-built channel status table; record under R2.
 - No code survives in any deck. The repo grep is in spec §7.4, and I agree with it.
 - It must be RECONSTRUCTED from C28 pp.7-14:
   - the card scan;
@@ -702,15 +703,15 @@ Both are settled, and the table is fed, in R2b's record below.
 - **Stage 1:** the TYPE card read by `$SCR` (stub), then UNCODE, YTOPGO, YBSSGO (p.271 l.45's rewrite FORTRAN -> BSS), YTOPCG (01011), p.384 ll.19-22, YCOJB1 (`$FETCH` PCBSS, stub) and p.396 ll.1-28 lay the chain into KSILO, stopping at YC4B5. 61,347 cycles. **Settled: KSILO+1.19 = 1 is set by a COMPILGO-class TYPE, YTOPCG's 01011, which GO,FORTRAN becomes** (the table half planted it). Controls: `TYPE,GO` gives 00100, SCORG 0, KSILO untouched; `TYPE,COMPILGO,FORTRAN` asks for PCFORTRA.
 - **The separator, measured:** MCP's SCA6/SBRK8 break on the 0-3-8 punch, not Appendix F's 4-8 comma; with the comma UNCODE's compare fails (p.270 l.49) and the job goes to YTCERR and the spool print.
 - **Stage 2, PLANTED:** YC4B5 to WJC4G1 (the PC area's LIM and IOD cards, DECODE, Assign, Move) is not run: those cards are printed nowhere we hold, and Assign/Move need JC1's PP tables. SLRBU is planted as YL1 leaves it for a CHOSEN `LIM,200000,214777`.
-- **Stage 3:** from YC4INT (p.396 l.30): YDFCS <- BSS, $13 <- YDKCRS, WJC4G (p.386) primes `$RESLD` and gives `$RET`; the stub stands in for the dispatcher and enters YRESL1; resume load clears PP memory from 41 for SBAPP's count and reads the absolute BSS deck (137 cards then, 140 since the `$SPR`/`$EOJ` code) (punched by the host STRAP II) from type area BSS with `$FETCH` (stub over a core image), ALOADR loads it, and p.333 returns SICBU = 200000, where the stub enters it. YEOJS stays 0 (C22-6728-1 p.65: YEOJS = 1 is an abnormal EOJ; MEASURED, planted 1 the chain is rejected). YRLTT+2.50 is planted 0: it marks the 74.32 entry that "forces resume load to use $SCR" (C22-6728-1 p.86). RECONSTRUCTION, the dispatcher's setting; MEASURED, left as unwritten memory the loader reads `$SCR`. The type area is contiguous: YDKCRS's count is 0, so the end-of-arc step never fires.
+- **Stage 3:** from YC4INT (p.396 l.30): YDFCS <- BSS, $13 <- YDKCRS, WJC4G (p.386) primes `$RESLD` and gives `$RET`; the stub stands in for the dispatcher and enters YRESL1; resume load clears PP memory from 41 for SBAPP's count and reads the absolute BSS deck (137 cards then, 140 since the `$SPR`/`$EOJ` code) (punched by the host STRAP II) from type area BSS with `$FETCH` (stub over a core image), ALOADR loads it, and p.333 returns SICBU = 200000, where the stub enters it. YEOJS stays 0 (C22-6728-1 p.65: YEOJS = 1 is an abnormal EOJ; MEASURED, planted 1 the chain is rejected). YRLTT+2.50 is planted 0: it marks the 74.32 entry that "forces resume load to use $SCR" (C22-6728-1 p.86, read in the ink 2026-11-18). RECONSTRUCTION, the dispatcher's setting; MEASURED, left as unwritten memory the loader reads `$SCR`. The type area is contiguous: YDKCRS's count is 0, so the end-of-arc step never fires.
 - **Stage 4:** BSS runs to its halt with ERRC 0; all p.17 map rows, the 43-word table and KSILO 8-11 match check_bss_example4. Stages 3-4, 1,459,437 cycles then (stages 3-5 now 1,530,530; the record below).
 - **Measured injections:** ABSSID spelled BSX fails exactly the eight 1a checks; type-area cards 41 and 42 swapped stop the loader at the 41st card (sequence error) and fail 27 checks (all of stage 4, and five of stage 3).
 
 **Open (what blocks the rest):**
 1. **The printer path: RUN 2026-11-18, record below.** Open past it: the record's write (`$W`, p.202-204) and the output EOJ (CEOJ), then the 1401 side.
 2. **Stage 2,** above: the LIM and IOD cards of the PC area, and JC1's PP tables for Assign/Move.
-3. **MCP's dispatcher** (unprime, YMPFCH's overlay fetch) and `$RET` into a loaded program are stubs.
-4. **The chain's end:** BSS leaves by `$EOJ` and MCP's YC4NO takes it to YC4B3 (RUN 2026-11-18, record below). Not run: l.52's YMPFCH (the `$EOJ` overlay fetch) and p.381 ll.11-17 to YC4INT, YLASTC and the GO phase (p.396 l.47, p.397).
+3. **MCP's dispatcher** (unprime, and for resume load YMPFCH's overlay fetch) and `$RET` into a loaded program are stubs. For `$EOJ` (2026-11-18) YMPFCH is IBM's code; only DFETCH, its disk fetch, is a stub.
+4. **The chain's end:** BSS leaves by `$EOJ`, and MCP's YC4NO, YMPFCH, p.381, YC4INT, YLASTC, p.397, TJUNAS and WJ4PFF take it to TASIGN (RUN 2026-11-18, record below). Not run: TASIGN (it needs IPL's channel status table at SXCHAN), then WJ4PE, YL1, WJCV and YPPID4's fetch of the compiled program `))))))))`.
 
 #### R2b, the printer path and `$EOJ` (2026-11-18): the map through `$SPR`
 
@@ -722,13 +723,38 @@ Both are settled, and the table is fed, in R2b's record below.
 
 **The character code.** The print program keeps six bits of each A8 byte (p.203 l.39 `SF(BU,48,6)` of `LF(BU,64,8)`). p.20's five control characters match `strap2/a8.py`'s A8 exactly, and every 48-set code is below 0o100, so the six bits are the A8 code itself: the BCD B-A-8-4-2-1 bits (`-` = 100000, `J` = 100001). How the 1401's peripheral output program prints them is not read (not landed).
 
-**Measured injections** (header of the test): control byte omitted, 18 fail; FWA outside the PP limits, ACHK -> ACHERR, 30 fail; p.203 l.36 16 -> 15, 19 fail; l.39 byte size 6 -> 8, 20 fail; `$ABEOJ` for `$EOJ`, 4 fail (YEOJS = 1 and a `$DUMP` the stub does not serve). ENTER's BD a NOP, 38 fail (BSS never entered; the cause not isolated). The earlier ABSSID and card-order injections were re-run: 8 and 44. Stage 5 also asserts YLLSAV.25 = 0 and SMAXRN's count 0 (p.274 ll.26, 29-30), so the stop at YC4B3 is not the I/O-wait path's.
+**Measured injections on the YC4B3 bench, 2026-11-18** (superseded by the stage-6 re-measurement in the test header: fwa 40, nobd 48, abeoj 14, order 54; the others unchanged): control byte omitted, 18 fail; FWA outside the PP limits, ACHK -> ACHERR, 30 fail; p.203 l.36 16 -> 15, 19 fail; l.39 byte size 6 -> 8, 20 fail; `$ABEOJ` for `$EOJ`, 4 fail (YEOJS = 1 and a `$DUMP` the stub does not serve). ENTER's BD a NOP, 38 fail (BSS never entered; the cause not isolated). The earlier ABSSID and card-order injections were re-run: 8 and 44. Stage 5 also asserts YLLSAV.25 = 0 and SMAXRN's count 0 (p.274 ll.26, 29-30), so the stop at YC4B3 is not the I/O-wait path's.
 
 **SCAFFOLD, and what blocks the rest:**
 - **SIFAE's PP half** (p.117 ll.20-28) is not run. Its l.28 copies STLR into SLRBU, which would replace the PP limits that ACHK reads with this bench's register 3. Running it needs the PP to run under its own limits (bound control bit 1, outside protected). But BSS writes KSILO+8..11 in MCP's area, and a DS there is always masked. How MCP let a processor write KSILO is not read.
 - **The return routine** for a major package's `$RET` (KFRONT and the service-op return; MPP1's `Z,MCR`, p.142 from the transcription, among it) is a stub: IRET restores the PP's registers and SL but leaves MCR as p.117 l.47 set it. It is the same blocker as item 3 above.
 - **The record's write.** The 12-line record in buffer X is written by `$W` only at the next `$SPR` (CAOS3A, p.203 l.54 - p.204 l.12) or at the output EOJ (SAEOJT -> AEOJ, CEOJ p.204 ll.14-39, then `$WEF`). The `$W` path was not run or examined beyond the transcriptions (it names the output tapes CT11/CT21 through AMR). Running the paper side needs the 1401 peripheral output program, which is not landed.
-- **`$EOJ` past YC4B3:** YMPFCH's overlay fetch (`$EOJ` area, PUNID 22$EOJ) and p.381 ll.11-17.
+- **`$EOJ` past YC4B3: RUN 2026-11-18 to TASIGN, record next.**
+
+#### R2b, `$EOJ` past YC4B3 (2026-11-18): back to job control, to TASIGN
+
+**Pages read in the ink** (printed / PDF, MCP_Mar63_250-445): p.269/20 (ll.13-56: YMPFCH, YFDO's `B,DMCP / ,DFETCH`, the name, RELFWA, FWA, N, M, returns; YXWEJM `XW,YEOJTA,YPPMEM` 231170.00+ 020000; YEOJTA's `BE,YPPMEM` and `$EOJ`), p.381/131 (ll.11-37), p.397/147 (ll.1-19), p.388/138 (ll.27-32), p.434/184 (ll.6-12), p.410/160 (ll.47-53, the `BD,$` error stops T H .. T P). Also C22-6728 p.197/197, the communication region: 7.0-7.17 "Number of arcs occupied by compiled program", 7.25 "Reject flag". The `$FETCH` calling sequence is C22-6678-1 p.21 (docs/mcp_macros.md). Pages passed through from their transcriptions only: p.396 ll.30-56 (read for batch 30), pp.398, 406-408, 436-437.
+
+**Run** (`tests/check_bss_mcp_go.py` stage 6). YC4B3's `B,YMPFCH` reaches YFDO, and its `B,DMCP` traps IF. STUBIF serves `$FETCH` (DFETCH SYN,66.32, p.105 l.36) as SCAFFOLD:
+- it checks the name `22$EOJ` and FWA = YPPMEM;
+- it copies the type area, a core image of pp.381-439 planted at 260000 (unwritten words 0, CHOSEN);
+- it sets M = 1692, restores registers 8-31 and returns enabled to the normal return.
+
+IBM's code then runs:
+- YMPFCH stores `$EOJ` in YMPSAV, sets YFHBR to 020000 and enters it.
+- p.381 l.11 sees $14 = 65.0, not SJC4. ll.13-14 restore SIT+20..47 from FWIT (checked against a sentinel). l.17 sees SCORG = 1 and goes to YC4INT.
+- At YC4INT the pointer, 1 + 1, is above the count 1, so YLASTC runs: SCORG = 0, KSILO+7.25 = 0 (not rejected), KSILO+1.19 = 1, and YDFCS = `))))))))`.
+- p.397 sees KSILO+2 = BSS and SYSMOD = 00 (overlap): $14 = KSILO+8, $13 = YPPBSD, $15 = WJ4PFF and YTSP set. It goes to TJUNAS.
+- TJUNAS finds TMAXRF's count 0 ("IF NO IODS FOR LAST JOB"). TJEND finds SPROGS 0 and goes to YC4BZ, which returns to WJ4PFF.
+- SCNFCG is 1 as assembled. So BZBZ clears it, `CM1111(BU,1),WJCW` marks a configuration change, and the run reaches TASIGN with $15 = WJCW, where the bench stops.
+
+1,677,355 cycles for stages 3-6.
+
+**What blocks TASIGN (MEASURED):** with the configuration-change flag set, TA9 (p.406 l.35) walks the channel status table at SXCHAN. IPL builds that table. In the image SXCHAN is p.103 l.28's assembled `XW,0`; it was not read at the halt. Observed in the PC trace with the stop removed: TA9's loops, then TA9F and MCP's own T N `BD,$` (021725.00, p.410 l.52, "MACH CONF CH. ASSIGN BIT ON - MULTI"). Inferred, not observed: the scan walked a table based at 0, so the halt is an artifact of the missing table. With no configuration change, TASIGN would instead walk JC1's PP reference table (TSAV), which is not built either (stage 2's blocker).
+
+**Deciding bits left as the image assembles them (SCAFFOLD):** SCNFCG = 1, SYSMOD = 00 (overlap), TMAXRF = 0 and SPROGS = 0 (no I/O and no queued interrupts for this job, consistent with no IOD cards), and KSILO+7 = 0. p.395 l.46 zeroes KSILO+7, and the reconstructed BSS does not set the arcs of the compiled program (C22-6728 p.197). That is an open item of R2a, since C22-6728 p.197 says "At the end of the chain, MCP expects to find in the communication region the number of arcs occupied by the compiled program."
+
+**Measured injections:** see the test header.
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 
