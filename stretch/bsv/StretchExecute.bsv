@@ -2991,7 +2991,29 @@ function ActionValue#(VflOutcome)
         // address further down.  A progressive L whose data address is
         // protected loses its indexing too, because the whole
         // operation goes, not because of that sentence.
-        if (dfSupp) begin
+        //
+        // >>> ADDRESS INVALID, 2026-11-18: the same "nothing at all". <<<
+        // Reference Manual printed p.21 (PDF 24): "When an effective word
+        // address is obtained which does not correspond to a core storage
+        // location that is physically available in a particular
+        // installation, indicator AD, address invalid, is turned on.  An
+        // instruction with an invalid data address is executed as a NO
+        // OPERATION instruction."  printed p.45 item 16 (PDF 48) says it
+        // of "the effective operand address of the instruction just
+        // attempted".  Only the Fp arm asked installed() before this; a
+        // VFL L at (8)400000.0 read zero (StretchMemory's answer past
+        // installed core) and never set AD, and a progressive store there
+        // still advanced its index (decks/cwf_address_invalid.strap), while
+        // the I-box's prepareExec already called it "completes without
+        // fetch".
+        // Immediate addressing names no storage word, and CV's operand is
+        // the accumulator (fetchesOperand's note), so neither is asked.
+        // The FIRST word only: a crossing field whose second word alone is
+        // uninstalled is not handled here (CHOSEN, no deck reaches it).
+        Bool adSupp = !immediate && vi.code != 6'b011011
+                   && !installed(baWord(ea));
+        if (adSupp) ind = setBit(ind, ind_AD, 1);
+        if (dfSupp || adSupp) begin
           // suppressed: deliberately nothing at all
         end else begin
         // DECIMAL *, *+ AND / ARE LOAD TRANSIT AND SET (printed p.68:
@@ -5289,7 +5311,13 @@ function ActionValue#(VflOutcome)
         // needs its own guard for exactly the reason the class-3 work
         // needed its own signal here: a check on vflIntOp's says
         // nothing about this one.
-        if (dfSupp) begin
+        //
+        // ADDRESS INVALID (printed p.21, p.45 item 16) -- see vflIntOp's
+        // identical guard, 2026-11-18, for the sourcing; this arm needs
+        // its own for the same reason the DF guard does.
+        Bool adSupp = !immediate && !installed(baWord(ea));
+        if (adSupp) ind = setBit(ind, ind_AD, 1);
+        if (dfSupp || adSupp) begin
           // suppressed: deliberately nothing at all
         end else begin
         // >>> CM MAY CROSS A WORD BOUNDARY, 2026-11-06, AND MCP IS

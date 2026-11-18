@@ -1,0 +1,107 @@
+! ADDRESS INVALID IS A NO-OP THAT FETCHES NOTHING -- prepareExec's AD
+! clause, for all three classes it covers, and the VFL/connective AD
+! that the model did not have until this deck found it missing.
+!
+! THE RULE.  Reference Manual printed p.21 (PDF 24), read at the ink:
+!   "When an effective word address is obtained which does not
+!   correspond to a core storage location that is physically available
+!   in a particular installation, indicator AD, address invalid, is
+!   turned on.  An instruction with an invalid data address is executed
+!   as a NO OPERATION instruction."
+! printed p.45 item 16 (PDF 48) repeats it for "the location specified by
+! the effective operand address of the instruction just attempted".
+! The installation here is StretchMemory's InstalledWords, 98,304 words;
+! (8)400000.0 is word 131,072.
+!
+! THE CLAUSE.  StretchIBox.prepareExec calls such an instruction
+! "completes without fetch": its look-ahead level gets no operand
+! address.  The machine's own mechanism is the level's NOOP tag (Perf.
+! Char. Vol. 1 printed A-8, PDF 67, "NOOP no-op bit"), which the TBC
+! tests to suppress the operation (docs/spec_lookahead.md section 2.7).
+!
+! >>> MODEL BUG FOUND AND FIXED, 2026-11-18. <<<  Only the Fp arm of
+! execute() asked installed().  A VFL L or a connective C at (8)400000.0
+! did NOT set AD (this deck hung at its first BZB, $AD) -- prepareExec
+! promised a completion execute() never performed.  vflIntOp and
+! connectiveOp now set AD and skip the whole operation, the same
+! "nothing at all" their DF guard does (immediate and CV excluded).
+!
+! WHERE THE FETCH WOULD COST.  Each refused instruction follows six
+! I-box-only LVIs, so the E-box is idle and a level waiting for an
+! operand word shows in the total.  AD is set-only in the model (bits
+! 0-19 cannot be cleared), so only the FIRST case checks AD; every case
+! checks a value witness: the accumulator still holds PAT, and a
+! PROGRESSIVE store or connect-to-memory leaves its index register
+! unadvanced (a no-op does no indexing).  The stored word itself cannot
+! witness anything: StretchMemory drops a write past installed core and
+! returns zero for a read.
+!
+! CYCLES 562 IS MODEL BEHAVIOUR, not a documented time: the manual says
+! only "executed as a NO OPERATION", and Perf. Char. prints no time for a
+! no-op'd level.  (The fetch is cheap here because StretchMemory answers
+! a read past installed core at once, with zero.)
+!
+! INJECTIONS, each made alone in StretchIBox.bsv (or StretchExecute.bsv)
+! from a saved copy, run across all three cwf_ decks, restored and
+! compared with cmp -- OBSERVED on this final deck:
+!   VflInt !installed clause dropped     -> CYCLES 563, nothing else
+!   Connective !installed clause dropped -> CYCLES 565, nothing else
+!   Fp !installed clause dropped         -> CYCLES 563, nothing else
+!   vflIntOp's new AD guard removed      -> PC 396 (the first BZB, $AD
+!                                           hang), CYCLES 136
+!   connectiveOp's new AD guard removed  -> PC 412 (the BZB, $AE after
+!                                           C0011: it loaded zero), 262
+! (the five X0 and DF clause injections leave this deck at 562.)
+        SLC, (8)300.0
+START   BB, $AD, $                   ! hang if AD is on before anything
+        L(BU,64,8), PAT              ! the accumulator PRELOAD
+        LVI, $X2, 1                  ! I-box only: the E-box drains
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(BU,64,8), (8)400000.0      ! VFL L, word 131072: AD, no-op
+        BZB, $AD, $                  ! hang if AD did not come on
+        K(BU,64,8), PAT
+        BZB, $AE, $                  ! hang if the load landed
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        C0011(BU,64), (8)400000.0    ! connective C: no-op
+        K(BU,64,8), PAT
+        BZB, $AE, $                  ! hang if the connect landed
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        LV, $X3, BAD                 ! X3's value field := (8)400000.0
+        ST(V+I)(BU,6,6), .1($X3)     ! progressive VFL store: no-op, so
+        KV, $X3, BAD                 !   X3 must NOT advance
+        BZXE, $
+        CM0011(V+I)(BU,6), .1($X3)   ! progressive connect to memory: same
+        KV, $X3, BAD
+        BZXE, $
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(U), (8)400000.0            ! floating point L: no-op
+        LVI, $X2, 1
+        LVI, $X2, 2
+        K(BU,64,8), PAT
+        BZB, $AE, $
+        B, PASS
+PASS    BEW, $
+        CNOP
+        SLC, (8)400.0
+PAT     DD(BU,64,8), (8)0000125252525212525240
+BAD     VF, (8)400000.0
+        END, START
