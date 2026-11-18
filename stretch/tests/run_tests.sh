@@ -10772,6 +10772,9 @@ run "FP multiply and add indicators (jb_af1c F216D on the model)" ./run_program.
 # all three pins (and prints "OVERRAN THE E-BOX BUDGET" on F217A and
 # F217WA, where the box's walk is longer than the 5-clock floor); the
 # VFL divide pins (vfl_divide_box 2148, vfl_divide 1979) are the control.
+# MERGED onto the 2026-11-17 preparation floor (batch22), F217XA takes
+# 522, not 527 (MEASURED with the floor removed: 527); F217A and F217WA
+# are unmoved.
 run "FP divide arithmetic (jb_af1c F217A, encoding)" python3 verify_fp_arith_f217a_listing.py
 run "FP divide arithmetic (jb_af1c F217A on the model)" ./run_program.sh ../decks/fp_arith_f217a.strap StretchFpDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217a.strap").read()).symtab["PASS"]//32)')" \
@@ -10823,7 +10826,7 @@ run "FP reciprocal divide arithmetic (jb_af1c F217XA, encoding)" python3 verify_
 run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_program.sh ../decks/fp_arith_f217xa.strap StretchFpRecipDivATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0" \
-    "CYCLES=527+-0"
+    "CYCLES=522+-0"
 
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB, encoding)" python3 verify_fp_arith_f217xb_listing.py
 run "FP reciprocal divide sign and modifiers (jb_af1c F217XB on the model)" ./run_program.sh ../decks/fp_arith_f217xb.strap StretchFpRecipDivBTb \
