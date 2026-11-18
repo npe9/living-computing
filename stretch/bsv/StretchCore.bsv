@@ -406,10 +406,12 @@ module mkStretchCore(StretchCore);
         // operation" (printed p.3-21) is said of the destination, not of
         // the operation, so M+ and M+MG into $X9-$X12 take it too.  Their
         // memory and internal stores still do not: PDF 69 prints M+ to
-        // memory BELOW ST (StretchTiming's laarStorePost note).
+        // memory BELOW ST (StretchTiming's laarStorePost note).  And --
+        // 2026-11-17 -- LFT, whose store is into $FT (word 14, memory;
+        // StretchIBox's fpLaarStore), takes the memory remainder too.
         Bool indexDest = (sa >= 16 && sa <= 31);
         Bit#(32) t = clk + zeroExtend(e) + 1 + fromInteger(laarCheckClocks)
-                   + ((fp && (!isValid(h.da) || indexDest || isFpLft(h.di))) ? zeroExtend(laarStorePost(sa)) : 0);
+                   + ((fp && (!isValid(h.da) || indexDest || isFpLft(h.di))) ? zeroExtend(laarStorePost(sa)) : 0);   // LFT: see above
         if (fp) laarFreeAt <= t;
         if (indexStorageWord(sa)) xstoreFreeAt <= t;
       end

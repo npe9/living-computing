@@ -1450,7 +1450,8 @@ documented events only. No new number: the index remainder (17) is item
 
 The indexed columns stay 4 short: the page prints M+ indexed 4 clocks
 over unindexed, and the model 0, because the store's decode hold
-(`xstoreFreeAt`) hides the indexed preparation's extra clocks. Open.
+(`xstoreFreeAt`) hides the indexed preparation's extra clocks. Closed by
+item 10's serial preparation (−5.22 → −1.22).
 
 ### 10. LFT is a "to memory" operation; an indexed M+ into index storage
 
@@ -1542,7 +1543,8 @@ The base is master `b18e74c` (items 1-9), re-measured on the pages below
 | 69 M+ ni_ext / ix_ext (control) | +2.59 / +2.61 | unchanged |
 | 100 M+, ni_int / ix_int ($R) | −5.06 | −3.07 (`intFrom`) |
 | 101 M+MG, ni_int / ix_int ($R) | −5.06 | −3.07 |
-| 48 ST, 79 ST (all columns), 64 L, 95 L, 42 +, 73 + (controls) | | unchanged, case for case |
+| 48 ST, 79 ST (all columns), 64 L, 95 L (controls) | | unchanged, case for case against the base TSV |
+| 42 +, 73 + (controls; not in the base run) | | summary figures equal items 7-8's tables (73 ni_int −0.00 / +0.18, 42 ni_ext +0.00 / +0.20) |
 
 Each step was measured on its own tree:
 
@@ -1563,6 +1565,21 @@ Each step was measured on its own tree:
 - ST indexed into $X prints 1 clock over unindexed (PDF 48), and the
   model gives 0. The serial step is not applied to ST, which fetches
   nothing.
+- D/ is named by the same sources, and is not built here. PDF 41 lists
+  D/ (pp. 48, 79) as "to memory". p.3-20 names $RM, the remainder D/
+  writes, beside $FT as a memory location. So D/ should take the LAAR as
+  LFT now does. The divide pages are disowned as a timing (PDF 41), so
+  there is no clean oracle for it.
+- **UNTESTED** by any deck or injection:
+  - the narrowing of `xholdPc` to index storage, as against STORE WAIT's
+    words 11 and 12;
+  - the clears in `rl_recover` and `rl_interrupt`;
+  - LFT's memory remainder, separately from its LAAR hold (the injections
+    remove the hold or move the gate);
+  - `intFrom` after an ST or another non-LFT FP store. No deck has a $R
+    fetch behind an FP store.
+- Bounded (`CYCLES<=`) figures in run_tests.sh were not compared against a
+  base log. Only the exact pins are known not to have moved.
 
 ### The full run on the final tree (items 7-9 and the instruction-store gate)
 

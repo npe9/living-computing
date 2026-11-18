@@ -18550,3 +18550,9 @@ Still open on these pages:
   LFT do.
 - LFT I-BOX is +1.45.
 - ST indexed into $X is 1 clock short (PDF 48).
+- D/ is not built. PDF 41 lists it (pp. 48, 79) as "to memory" beside
+  LFT, and $RM is memory (p.3-20), so it should take the LAAR too. The
+  divide pages are disowned as a timing.
+- UNTESTED: `xholdPc`'s narrowing to index storage, its clears in
+  rl_recover and rl_interrupt, LFT's remainder apart from its hold, and
+  `intFrom` after a non-LFT FP store (atlas_oracle.md item 10).
