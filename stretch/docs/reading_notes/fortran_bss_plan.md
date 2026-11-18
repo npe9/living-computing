@@ -147,6 +147,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 **(a) The BSS processor itself** (spec §6, §7.4).
 - **R2a BUILT 2026-11-17** (single segment): `decks/bss_7030.strap`, RECONSTRUCTION; the record is under R2 below.
 - **R2b, table half, RUN 2026-11-17:** its relocation table is read by MCP's own resume load and loader, which load Example 4 as p.17 lays it out (`tests/check_bss_mcp_load.py`); record under R2.
+- **R2b, job half, RUN 2026-11-17:** `B TYPE,GO,FORTRAN` through MCP's own job control into KSILO, then YC4INT, WJC4G and resume load load the BSS processor from its type area, and BSS runs under MCP and prints p.17's map (`tests/check_bss_mcp_go.py`). The map still goes to the deck's SCAFFOLD buffer, not `$SPR`; record under R2.
 - No code survives in any deck. The repo grep is in spec §7.4, and I agree with it.
 - It must be RECONSTRUCTED from C28 pp.7-14:
   - the card scan;
@@ -691,6 +692,24 @@ Both are settled, and the table is fed, in R2b's record below.
 - The disk address one card late (deck, after SCPR1L, `+I(BU,18),15`): 4 fail: `loaded_1006` (STEP's first word), `loaded_1447` and `loaded_1455` (RANDM's), and the fetch count (67 served, not 65); 348,818 cycles.
 - The library name left in A8 bits (deck, RT3 `ST(BU,36)` for `SF(BU,36,6)`): 11 fail: YRLDTA names no LB area, so `$FETCH` stops at NOAREA (the PC check), 53 cards are served (the TWS ones only), SICBU keeps its sentinel, and eight words of FISIP*, IOCS* and UST* (2451-2462, 3604, 5517-5520) stay unloaded.
 - The common origins one half word late in the table (deck, RT5 `V+I,$13,3.0` for `2.32`): the step cap is reached and 52 fail, read mid-run (so not a clean set): words of every subprogram, its vector and its common references among them.
+
+#### R2b, the job half (2026-11-17): GO,FORTRAN to BSS's map, under MCP
+
+**Pages read in the ink** (printed / PDF): MCP listing p.250/1 (l.45 RTONRJ `BZB1,REJJOB.60,RSAM`, binary `230364.74 80 230120.34 0C`; ll.29-33 MCP's own `$SPR`), p.271/22 ll.1-50 (YBSSGO ll.43-50 as transcribed), p.384/134, p.386/136, p.274/25 (ll.44-46: YEOJS is set for `$ABEOJ` only), p.333/83 (ll.1-5; l.26 `LR,$2,KSILO+9.32`, which the table half had from the transcription), p.395/145 (ll.44-56), p.396/146, p.397/147 (l.17 YDKCRS: count 0); MCP_Mar63_001-249 p.108/115 l.5 (`D MCP SYN,32.0` = 000040.00+) and p.201/208 (SCSPRT -> CSTART); C22-6678-1 p.7 (definition card: B in column 1, name 2-9, statement 10-72) and p.20 (`$SPR`); C22-6728-1 pp.65 and 86 (JC4's compiler control; resume load). This closes the three transcription-only lines of the table half's record (p.250 l.45, p.271 ll.43-50, p.108 l.5): all match.
+
+**Built and run:** `tests/check_bss_mcp_go.py`, IBM's words unchanged.
+- **Stage 1:** the TYPE card read by `$SCR` (stub), then UNCODE, YTOPGO, YBSSGO (p.271 l.45's rewrite FORTRAN -> BSS), YTOPCG (01011), p.384 ll.19-22, YCOJB1 (`$FETCH` PCBSS, stub) and p.396 ll.1-28 lay the chain into KSILO, stopping at YC4B5. 61,347 cycles. **Settled: KSILO+1.19 = 1 is set by a COMPILGO-class TYPE, YTOPCG's 01011, which GO,FORTRAN becomes** (the table half planted it). Controls: `TYPE,GO` gives 00100, SCORG 0, KSILO untouched; `TYPE,COMPILGO,FORTRAN` asks for PCFORTRA.
+- **The separator, measured:** MCP's SCA6/SBRK8 break on the 0-3-8 punch, not Appendix F's 4-8 comma; with the comma UNCODE's compare fails (p.270 l.49) and the job goes to YTCERR and the spool print.
+- **Stage 2, PLANTED:** YC4B5 to WJC4G1 (the PC area's LIM and IOD cards, DECODE, Assign, Move) is not run: those cards are printed nowhere we hold, and Assign/Move need JC1's PP tables. SLRBU is planted as YL1 leaves it for a CHOSEN `LIM,200000,214777`.
+- **Stage 3:** from YC4INT (p.396 l.30): YDFCS <- BSS, $13 <- YDKCRS, WJC4G (p.386) primes `$RESLD` and gives `$RET`; the stub stands in for the dispatcher and enters YRESL1; resume load clears PP memory from 41 for SBAPP's count and reads the 137-card absolute BSS deck (punched by the host STRAP II) from type area BSS with `$FETCH` (stub over a core image), ALOADR loads it, and p.333 returns SICBU = 200000, where the stub enters it. YEOJS stays 0 (C22-6728-1 p.65: YEOJS = 1 is an abnormal EOJ; MEASURED, planted 1 the chain is rejected). YRLTT+2.50 is planted 0: it marks the 74.32 entry that "forces resume load to use $SCR" (C22-6728-1 p.86). RECONSTRUCTION, the dispatcher's setting; MEASURED, left as unwritten memory the loader reads `$SCR`. The type area is contiguous: YDKCRS's count is 0, so the end-of-arc step never fires.
+- **Stage 4:** BSS runs to its halt with ERRC 0; all p.17 map rows, the 43-word table and KSILO 8-11 match check_bss_example4. Stages 3-4, 1,459,437 cycles.
+- **Measured injections:** ABSSID spelled BSX fails exactly the eight 1a checks; type-area cards 41 and 42 swapped stop the loader at the 41st card (sequence error) and fail 27 checks (all of stage 4, and five of stage 3).
+
+**Open (what blocks the rest):**
+1. **The printer path, NOT ATTEMPTED.** The map is still printed into the deck's OUTB buffer. The next step is to call `$SPR` from the deck's PRINT (C22-6678-1 p.20: `B,$MCP / ,$SPR / ,FWA / ,N`; 17-word lines, byte 0 carriage control), with the call captured by a stub. Running it through to the paper would need the output program (p.201: tentacle SCSPRT -> CSTART), which buffers lines for the 1401 output tape. Its state has not been examined.
+2. **Stage 2,** above: the LIM and IOD cards of the PC area, and JC1's PP tables for Assign/Move.
+3. **MCP's dispatcher** (unprime, YMPFCH's overlay fetch) and `$RET` into a loaded program are stubs.
+4. **The chain's end:** BSS should leave with `$EOJ`. For a normal end p.274 ll.44-45 skip YEOJS and go to YC4B3 (l.51-52, YMPFCH), and p.381 ll.11-17 (transcription) go to YC4INT, which steps to YLASTC and the GO phase (p.396 l.47, p.397). The deck halts instead, so the job's GO phase does not run from BSS's exit yet.
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 

@@ -286,7 +286,10 @@ RECONSTRUCTED BSS processor `decks/bss_7030.strap` (plan R2a), which
 reproduces it row for row. Since R2b (2026-11-17) the same map is also the
 oracle for MCP's own loader: fed the table BSS builds, it loads every
 subprogram, common reference and transfer vector at p.17's printed
-addresses (`tests/check_bss_mcp_load.py`). Pp.7, 9 and 10 settle the
+addresses (`tests/check_bss_mcp_load.py`). Since R2b's job half the map is
+printed by the BSS processor loaded by MCP itself from `B TYPE,GO,FORTRAN`
+(UNCODE, p.271's rewrite, YC4INT, resume load; `tests/check_bss_mcp_go.py`),
+still into the deck's buffer, not through `$SPR`. Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
 

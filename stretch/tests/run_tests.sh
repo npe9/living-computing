@@ -15340,6 +15340,12 @@ run "Reconstructed BSS prints C28-6379 p.17's storage map (Example 4)" python3 c
 # the fetch count (C11); the deck's disk address one card late, its library
 # name left in A8, and its common origins a half word late each break it.
 run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 check_bss_mcp_load.py
+# R2b, the job half: B TYPE,GO,FORTRAN through MCP's own UNCODE, p.271's
+# rewrite and pp.384/395-396 into KSILO; then YC4INT, WJC4G and resume load
+# load the reconstructed BSS processor from its type area, and BSS prints
+# p.17's map.  MEASURED (the test's header): ABSSID spelled BSX fails the
+# eight 1a checks; two type-area cards swapped stop the loader at card 41.
+run "MCP runs GO,FORTRAN: job control, resume load, BSS prints p.17's map" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
