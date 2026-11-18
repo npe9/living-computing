@@ -7,7 +7,9 @@ KSILO (stage 1).  MCP's OWN chain step, YC4INT, and resume load then load
 the reconstructed BSS processor (decks/bss_7030.strap with R2a's Example 4
 input) from its disk type area "BSS" through MCP's loader, and BSS is
 entered at the entry the loader leaves in SICBU (stage 3).  BSS runs under
-those limits and prints C28-6379 p.17's storage map (stage 4).
+those limits and prints C28-6379 p.17's storage map THROUGH MCP's $SPR,
+whose IF trap, tentacle table and print program CSTART are IBM's code
+(stage 4), and leaves by $EOJ into MCP's own YC4NO (stage 5).
 
 STAGE 1, three TYPE cards on one compiled bench (a fast_load image swap):
   1a  `B TYPE,GO,FORTRAN`: $SCR (stub) -> UNCODE (pp.270-273) -> YTOPGO ->
@@ -39,7 +41,8 @@ STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
   (ll.13-17), then per card YRDISK (ll.27-41) -> $FETCH (stub, reads the
   type-area image at 240000 by YDFRDA) -> YLOAD -> ALOADR (pp.320-331) ->
   ... -> the branch card -> YBCENC (p.332 l.53) -> p.333 -> $RET with
-  SICBU = 200000.  137 cards, 139 $MCP calls.  SCAFFOLD/RECONSTRUCTION:
+  SICBU = 200000.  140 cards since the deck's $SPR/$EOJ code (137 before),
+  142 $MCP calls.  SCAFFOLD/RECONSTRUCTION:
   - YEOJS is left 0, as the image has it.  p.396 l.30 BBZ,YEOJS,YCREJ
     branches on a 1, p.274 ll.44-46 set it only for $ABEOJ (KVI,$14,DABEOJ
     / BZXE,YC4B3 / CM1111,YEOJS), and C22-6728-1 p.65 (PDF 65, in the ink):
@@ -61,22 +64,68 @@ STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
   - The stub serves calls by state: the first is WJC4G's $RET; while SICBU
     holds its sentinel (only p.333 l.2 writes it) a call is a $FETCH of the
     area YRLDTA names; after, it is $RET (p.333 ll.4-5).
-STAGE 4: BSS, entered by the stub at SICBU, runs to its BEW,$ halt with
-  ERRC 0 and prints the p.17 map: all 10 subprogram rows, 5 common rows,
-  the 43-word relocation table and KSILO+8..11 match check_bss_example4's
-  expectations.  1,459,437 cycles for stages 3-4.
-
-NOT DONE -- the map is still printed into the deck's SCAFFOLD print buffer
-(OUTB), not through MCP's printer path.  $SPR (C22-6678-1 p.20, read in
-the ink: B,$MCP / ,$SPR / ,FWA / ,N; 17-word lines, byte 0 carriage
-control) hands lines to the output program (p.201: tentacle SCSPRT ->
-CSTART), which buffers them to a tape "for processing on the IBM 1401";
-NOT ATTEMPTED here: changing the deck's PRINT to call $SPR (gated so
-check_bss_example4 stays as it is) is the next step; running the output
-program's CSTART behind it is unexamined.
+STAGE 4: the deck with SPRSW = 1 (its PRINT goes to PRSPR, one 17-word
+  $SPR line a call: byte 0 single space, LINE in bytes 1-120, blanks to
+  135; C22-6678-1 p.20).  The stub enters BSS (SCAFFOLD for MCP's $RET to
+  the PP) with SL = 0, the interruption address at the stub's table ITAB,
+  the boundaries IPL's XBOUND sets (p.33 ll.51-52: only 32.0 protected),
+  MCP's mask SLRMCP+9.0 (the IF bit) and BE.  So each B,$MCP / ,$SPR is
+  suppressed and traps IF (RefMan printed p.32) into ITAB+21 (SIC,STIC /
+  BD,STUBIF, MCP's own p.111 ll.1-3 shape).  STUBIF, SCAFFOLD for SIFAE
+  (p.117): ll.5-6 and 9-10 as printed (save the low registers in STLR,
+  $2 = STIC, $3 = the op), then NOT ll.20-28 (MCP bounds and mask; l.28's
+  STLR -> SLRBU would overwrite SLRBU's planted PP limits with this bench's
+  32-33 bounds) but the same copy into its own PPSAV, and B,MIF6+.32.
+  From there IBM's code runs: p.117 ll.36-48 (the tentacle SCSPRT from
+  MIFTTT+3.32, user bit = SL = 0, SL set to MCP), p.118 ll.1-24 (linkage
+  FWA, normal return, $OP and the two parameters into SCSPRT+2.32..3.32),
+  MTC1-MTC3A (ll.26-40, enabled entry), and the print program p.203 ll.21-56
+  CSTART: ACHK checks FWA and FWA+17N against SPPLB/SPPUB (SLRBU), and
+  CTRANS moves 16 full words and 5 bytes of each line into buffer X,
+  LF(BU,64,8) -> SF(BU,48,6): 133 six-bit characters a line, each A8 byte
+  without its two high bits.  CSTART's ARET (p.201 ll.51-54) $RET traps IF
+  again; STUBIF's IRET (SCAFFOLD for MCP's return routine) sets SL = 0,
+  restores registers 8-31 from PPSAV and BE's to the normal return p.118
+  l.6 left in SCSPRT+1.32.  MEASURED: without a BD at ENTER the system was
+  still enabled from MCP's stage 3, and the boundary store sent the run
+  into YBCBU (OP); ENTER now disables first.
+  Checks: 12 $SPR traps and 12 $RET traps, no other op or interrupt; OUTB
+  unwritten; the tentacle's linkage, return, FWA and user bit; after the
+  12th line (CNUM = 12, p.209 l.49; C22-6728-1 PDF 170: "Each physical
+  printer record contains twelve full lines") CBTA = 1, CWA refilled to
+  buffer Y (CY+.6, count 12), CBWA = 0, so no $W was issued: the record
+  waits for the next $SPR or the output EOJ (p.202-204 CEOJ), which are not
+  run.  Buffer X decoded 6 bits a character: byte 0 '-' on every line,
+  bytes 121-132 blank, and every p.17 row, header and '**' as
+  check_bss_example4 judges OUTB; the 43-word table and KSILO 8-11 too.
+  The call's ,$SPR and ,1. half words equal MCP's own p.203 ll.13, 15
+  (000103.40 80, 000001.00 80).
+STAGE 5: BSS's normal end, B,$MCP / ,$EOJ (C22-6678-1 p.22), traps the
+  same way; STUBIF takes MCP's path for 65.0 (and 68.0) through MIF6+.32:
+  the tentacle YJC4TT (MIFTTT+1.0, N = 1, enabled entry) and p.274's
+  YC4NO: LVE,$14 (65.0), YLLSAV.25 = 0 (not spurious), SMAXRN count 0 so
+  no PP I/O wait, KVI,$14,DABEOJ not equal -> YC4B3, where the bench stops
+  (l.51 LX,$1,YXWEJM / B,YMPFCH: the overlay fetch and p.381's chain
+  step are NOT run).  YEOJS stays 0.  Stages 3-5: 1,530,530 cycles.
+STAGE 0 (no bench): p.20's five carriage-control characters (Restore 1,
+  Single -, Double J, Triple K, Quadruple L, with their "Binary
+  Representation") are strap2/a8.py's A8 codes; and A6 (the six bits the
+  print program keeps) tells every A8 character apart.  The A8 48-set
+  codes are all below 0o100, so the six bits are the code itself: '1' =
+  000001, '-' = 100000, 'J' = 100001 are BCD's B-A-8-4-2-1 rows.  What the
+  1401 does with the tape is not read here (the peripheral output
+  program, C22-6728-1 pp.250ff, is not landed).
 
 PAGES READ IN THE INK for this test (MCP listing printed page / PDF page;
-MCP_Mar63_250-445 unless noted): p.250/PDF 1 (l.45 RTONRJ, ll.29-33 MCP's
+MCP_Mar63_250-445 unless noted).  For stages 4-5, 2026-11-18: MCP_Mar63_
+001-249 p.117/PDF 124 (ll.1-48, SIFAE, SIFAD, MIF6), p.118/PDF 125 (ll.1-50,
+the tentacle setup, MTC1-MTC4A), p.201/PDF 208 (ll.1-11, SCSPRT), p.203/PDF
+210 (ll.1-56: ACHK, ACHERR, $SPR's ,$SPR / ,1., CSTART..CAOS3B),
+p.209/PDF 216 (ll.42-55: CNUM SYN,12., CWX, CWY, CWA, CWT, CWW), p.210/PDF
+217 (ll.1-28: CY, the record control characters, "X=(133*6*CNUM+5)/64",
+CBTA, CFILL, CBWA, APPERR, CATUB); MCP_Mar63_250-445 p.274/PDF 25 (ll.21-
+52, YEOJS, YC4NO..YC4B3); C22-6678-1 p.20 (the $SPR line and its control
+table) and p.22 ($EOJ).  Earlier: p.250/PDF 1 (l.45 RTONRJ, ll.29-33 MCP's
 own $SPR call), p.271/PDF 22 (ll.1-50, ll.43-50 YBSSGO), p.384/PDF 134,
 p.386/PDF 136, p.274/PDF 25 (ll.44-46: KVI,$14,DABEOJ / BZXE,YC4B3 /
 CM1111,YEOJS -- YEOJS is set for $ABEOJ only), p.333/PDF 83 (ll.1-5, and
@@ -94,15 +143,34 @@ IOD_SUBFIELD_SEPARATOR), not Appendix F's 4-8 comma.  MEASURED: with the
 4-8 comma UNCODE's compare (p.270 l.49) fails and the job goes YJOCER ->
 YTCERR -> YPR -> YPRSPL.
 
-INJECTIONS (MEASURED, observed failure sets):
+INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited;
+all re-run 2026-11-18 on the $SPR/$EOJ bench, control run all pass):
+  nocc -- PRSPR stores LINE at byte 0 (no control byte): 18 fail: byte 0,
+    header 2, all 10 subprogram rows, all 5 common rows, rows 6-10/'**'.
+    Header 1 passes (its words survive a one-column shift).
+  fwa -- the call's FWA outside the PP limits (220000): ACHK -> ACHERR
+    (SPRIME primes the error print and $ABEOJ, p.203 ll.11-18); 8 $SPR and 7
+    $RET traps, BSS never finishes: 30 fail (ERRC, OUTN, the trap counts,
+    FWA, CBTA, CWA, every buffer-line check, four stage-5 checks); the
+    table and KSILO 8-11 (written before the map), the linkage, return
+    and user bit, CBWA, P and YEOJS pass.
+  lci15 -- p.203 l.36 LCI,$9,16 as 15 (15 full words a line): 19 fail:
+    byte 0, bytes 121-132, header 2, every row; header 1 passes.
+  bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 20 fail: every buffer-line
+    check (byte 0, padding, both headers, all rows).
+  abeoj -- BSS leaves by $ABEOJ (68.0): MCP takes p.274 ll.46-48 (YEOJS =
+    1, B,DMCP / BE,DDUMP), whose $DUMP (64.0) the stub does not serve: 4
+    fail: the "no other op" check (BADOPX = 64.0), the stop at YC4B3, $14
+    (68.0), YEOJS.
   R2G_TAMPER=abssid -- ABSSID (p.291 l.8) spelled BSX: exactly the eight
     1a checks fail (PC area name, M, KSILO count, KSILO+1, KSILO+2,
     YCIDBT, $13, the stop at YC4B5); 1b and 1c pass; stages 3-4 are
     skipped.
   R2G_TAMPER=order -- type-area cards 41 and 42 swapped: the loader reads
     41 cards and stops (p.322 l.42, sequence error); the fetch count, last
-    address, call count, SICBU and entry checks fail and all 22 stage-4
-    checks fail (27 in all); YRLDTA's check passes.
+    address, call count, SICBU and entry checks fail, and so does every
+    stage-4 and stage-5 check but five (OUTB unwritten, the call's half
+    words, CBWA, P, YEOJS): 43 in all; YRLDTA's check passes.
   Controls: 1b and 1c above.
 
 Run with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../strap:. from tests/.
@@ -124,6 +192,13 @@ import mcp_image                                    # noqa: E402
 import prosa_dict                                   # noqa: E402
 from strap_asm import assemble                      # noqa: E402
 from gen_tb import generate                         # noqa: E402
+from strap2.a8 import A8, A6                        # noqa: E402
+
+# The six-bit code the print program stores (p.203 l.39 SF(BU,48,6) of
+# LF(BU,64,8) bytes): each A8 byte without its two high bits.
+A6INV = {}
+for _c, _v in A6.items():
+    A6INV.setdefault(_v, _c)
 
 BSV = os.path.join(HERE, "..", "bsv")
 BSC_DIR = "/opt/homebrew/Cellar/bsc/2026.01"
@@ -132,6 +207,10 @@ SENT = 0x5555555555555555
 # R2G_PCLOG (diagnosis only): the PC through $EOJ and job control
 PC_LOG = [(0o20000 * 2, 0o24000 * 2), (0o231000 * 2, 0o231777 * 2 + 1)]
 PC_LOG2 = PC_LOG + [(0o234424 * 2, 0o235264 * 2), (0o235267 * 2, 0o235500 * 2)]
+# R2G_PCLOG=3 (diagnosis only): the stage-3 stub, the IF analyzer and the
+# print program
+PC_LOG3 = [(0o250000 * 2, 0o252000 * 2), (0o215470 * 2, 0o215572 * 2),
+           (0o222104 * 2, 0o222400 * 2)]
 fails = 0
 
 
@@ -185,7 +264,7 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
     hexf = os.path.join(tmp, module + ".hex")
     kw = dict(step_cap=step_cap, cycle_bound=cycle_bound, stop_at_pc=stop_hw,
               fast_load=hexf, mem_dump=mem_dump,
-              pc_log={"1": PC_LOG, "2": PC_LOG2}.get(os.environ.get("R2G_PCLOG", "")))
+              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3}.get(os.environ.get("R2G_PCLOG", "")))
     src = generate(module, progs[0], checks, **kw)
     with open(os.path.join(BSV, module + ".bsv"), "w") as fh:
         fh.write(src)
@@ -368,8 +447,23 @@ def tamper_image(words, S):
     if t == "abssid":       # ABSSID (p.291 l.8) spelled BSX: the GO,FORTRAN
         w = S["ABSSID"] // 64        # rewrite still runs, the name changes
         words[w] = (prosa_dict.a6("BSX     ") << 16) | (words[w] & 0xFFFF)
-    elif t and t != "order":
-        raise SystemExit("R2G_TAMPER: abssid or order, not %r" % t)
+    elif t in IMAGE_TAMPERS:  # one statement of the print program reassembled
+        a, nbits, stmt = IMAGE_TAMPERS[t]
+        p = assemble("        SLC,(8)%o.%02o\n        %s\n" % (a // 64, a % 64, stmt))
+        for b in range(a, a + nbits):
+            w, m = b // 64, 1 << (63 - b % 64)
+            words[w] = (words[w] & ~m) | (p.words.get(w, 0) & m)
+    elif t and t not in ("order", "nocc", "fwa", "abeoj"):
+        raise SystemExit("R2G_TAMPER: abssid, order, nocc, fwa, abeoj or %s, not %r"
+                         % (", ".join(IMAGE_TAMPERS), t))
+
+
+# R2G_TAMPER (measurement only), the print program as p.203 (PDF 210, read
+# in the ink) prints it: l.36 LCI,$9,16 at 222242.00 with 15 full words a
+# line; l.39's six-bit store SF(BU,48,6)(V+I),.48($8) at 222244.40 with
+# eight-bit bytes.
+IMAGE_TAMPERS = {"lci15": (0o222242 * 64, 32, "LCI,$9,15"),
+                 "bs8": (0o222244 * 64 + 32, 64, "SF(BU,48,8)(V+I),.48($8)")}
 
 
 def stage1(tmp):
@@ -478,6 +572,22 @@ def bss_deck():
     assert all(x.startswith("        DD(BU,64), (16)") for x in ks)
     kwords = [int(x.split("(16)")[1], 16) for x in ks]
     src = "\n".join(lines[:k] + lines[k + 5:]) + "\n"
+    # The print through $SPR: the deck's switch, as a test sets TWSA.
+    sw = "SPRSW   DD(BU,64), 0\n"
+    assert src.count(sw) == 1
+    src = src.replace(sw, "SPRSW   DD(BU,64), (16)8000000000000000\n")
+    if os.environ.get("R2G_TAMPER") == "nocc":     # measurement only: the
+        old = "        ST(BU,64), .8($9)\n"        # control byte left out,
+        assert src.count(old) == 1                 # LINE at byte 0
+        src = src.replace(old, "        ST(BU,64), 0($9)\n")
+    elif os.environ.get("R2G_TAMPER") == "fwa":    # FWA outside the limits
+        old = "        , SPRL\n"
+        assert src.count(old) == 1
+        src = src.replace(old, "        , (8)220000.0\n")
+    elif os.environ.get("R2G_TAMPER") == "abeoj":  # BSS leaves by $ABEOJ
+        old = "        , $EOJ\n"
+        assert src.count(old) == 1
+        src = src.replace(old, "        , $ABEOJ\n")
     p2 = compile_cards(deck_cards(src), strap_asm.DEFAULT_ORIGIN_BITS)
     assert not p2.msg.items and not p2.punch.unwritten
     return p2, p2.punch.images(clock=0o1234), kwords, exp
@@ -538,8 +648,13 @@ def stage34_prog(state, deck_imgs, kwords):
            sy("YC4INT"), sy("YRESL1"), sy("YLOAD"), sy("YLOAD", -32, "RYLOAD"),
            sy("YRLDTA"), sy("YDFRDA"), sy("YBCBU"), sy("SICBU"),
            sy("MR4"), sy("MPQR"),
+           sy("STIC"), sy("STLR"), sy("SL"), sy("MIF6"), sy("SCSPRT"),
+           sy("SLRMCP"), sy("MCR"),
            "START   B,YC4INT",
-           "SDMCP   LX,$1,NCALL",
+           # After ENTER every $MCP call is a PP's, and traps (ITAB); one
+           # that reaches 32.0 is not expected: stop.
+           "SDMCP   BB,RUNF,LATE",
+           "        LX,$1,NCALL",
            "        V+I,$1,.32",
            "        SX,$1,NCALL",
            "        KVI,$1,.32",
@@ -591,9 +706,74 @@ def stage34_prog(state, deck_imgs, kwords):
             "BADF    B,BADF",
             # $RET after the load (p.333 ll.4-5): MCP enters the program at
             # SICBU (SCAFFOLD for MCP's $RET to a loaded processor).
-            "ENTER   LV,$1,SICBU",
+            # ... with the PP's state (SCAFFOLD, CHOSEN): level bit SL = 0 (PP;
+            # p.117 l.39 copies it to the user bit, p.203 l.28 checks the
+            # parameters only for PP), the interruption address at this
+            # stub's table (ITAB), word 32.0 the only protected address
+            # (the boundaries MCP's IPL sets, p.33 ll.51-52: XBOUND VF,33.0 /
+            # VF,32.0, upper 33, lower 32, control bit 0), MCP's mask
+            # (SLRMCP+9.0: the IF bit, p.116 l.28), and entered enabled, so
+            # B,$MCP is suppressed and traps IF (RefMan printed p.32).
+            "ENTER   BD,$+.32",
+            "        CM0000(BU,1),SL",
+            "        LVI,$1,ITAB",
+            "        SV,$1,$IA",
+            "        LWF(U),BNDW",
+            "        ST(BU),$UB,64",
+            "        LWF(U),SLRMCP+9.0",
+            "        ST(U),$MASK",
+            "        CM1111(BU,1),RUNF",
+            "        LV,$1,SICBU",
             "        SX,$1,ENTRYX",
-            "        B,0($1)",
+            "        BE,0($1)",
+            # THE IF TRAP (ITAB+21: SIC,STIC / BD,STUBIF, as MCP's own
+            # p.111 ll.1-3 with SIFAE).  SCAFFOLD for SIFAE (p.117 ll.5-29),
+            # IBM's instructions where they are used: ll.5-6 save the low
+            # registers in STLR, ll.9-10 the op.  $SPR from PP: ll.20-28 are
+            # NOT run (MCP's bounds and mask, and l.28's STLR -> SLRBU, which
+            # would overwrite SLRBU's planted PP limits with this bench's
+            # 32-33 boundaries); the PP's registers go to PPSAV instead, and
+            # MCP's own code takes over at MIF6+.32 (p.117 l.36): the tentacle
+            # table (p.117 ll.36-48, p.118 ll.1-24), MTC1-MTC3A (ll.26-40)
+            # and the print program CSTART (pp.203-204), enabled.
+            "STUBIF  TI,14,3.0,STLR",
+            "        TI,15,17.0,STLR+14.0",
+            "        LV,2,STIC",
+            "        LVE,3,0.0($2)",
+            "        KVI,3,67.32",
+            "        BXE,ISPR",
+            "        KVI,3,65.0",
+            "        BXE,IEOJ",
+            "        KVI,3,68.0",
+            "        BXE,IEOJ",
+            "        KVI,3,33.0",
+            "        BXE,IRET",
+            "        SX,$3,BADOPX",
+            "BADOP   B,BADOP",
+            "IEOJ    L(BU,18),NEOJ",
+            "        +I(BU,18),1",
+            "        ST(BU,18),NEOJ",
+            "        B,IPP",
+            "ISPR    L(BU,18),NSPR",
+            "        +I(BU,18),1",
+            "        ST(BU,18),NSPR",
+            "IPP     LCI,15,30",
+            "        T,15,STLR,PPSAV",
+            "        B,MIF6+.32",
+            # $RET from CSTART's ARET (p.201 ll.53-54): SCAFFOLD for MCP's
+            # return routine.  Back to the PP at the normal return p.118 l.6
+            # left in SCSPRT+1.32, the PP's registers 8-31 restored, SL = 0,
+            # enabled.
+            "IRET    L(BU,18),NRET",
+            "        +I(BU,18),1",
+            "        ST(BU,18),NRET",
+            "        CM0000(BU,1),SL",
+            "        LV,$1,SCSPRT+1.32",
+            "        SVA,$1,RETB",
+            "        TI,24,PPSAV+5.0,8.0",
+            "RETB    BE,0",
+            "LATE    B,LATE",
+            "BADI    B,BADI",
             "        CNOP",
             "NCALL   XW,0",
             "SAV1    XW,0",
@@ -606,8 +786,22 @@ def stage34_prog(state, deck_imgs, kwords):
             "SICW    DD(BU,64),(16)%016X" % SICS,
             "BSSNM   DD(BU,64),(16)%016X" % (a6(BSS_PROC) << 16),
             "QSNAP   DRZ(BU,64),8",
+            "RUNF    DRZ(BU,64),1",
+            "NSPR    DRZ(BU,64),1",
+            "NRET    DRZ(BU,64),1",
+            "NEOJ    DRZ(BU,64),1",
+            "BADOPX  DRZ(BU,64),1",
+            "BADIC   DRZ(BU,64),64",
+            "BNDW    VF,33.0",
+            "        VF,32.0",
+            "        CNOP",
+            "PPSAV   DRZ(BU,64),30",
             "LOG     DRZ(BU,64),200",
-            "        END,START"]
+            "ITAB    SYN,$"]
+    for k in range(64):     # the interruption table: IF to STUBIF, else BADI
+        drv += ["        SIC,STIC" if k == 21 else "        SIC,BADIC+%d.0" % k,
+                "        BD,STUBIF" if k == 21 else "        BD,BADI"]
+    drv += ["        END,START"]
     d = assemble("\n".join(drv) + "\n")
     for w2, v in d.words.items():
         if w2 in words:
@@ -634,16 +828,49 @@ def stage34(tmp, state):
              ("errc", sym2("ERRC") // 64), ("outn", sym2("OUTN") // 64)]
     reads += [("q%d" % i, d.symtab["QSNAP"] // 64 + i) for i in range(8)]
     reads += [("ks%d" % i, at("KSILO", i)) for i in range(12)]
-    halt = None                          # the deck's BEW,$ halt (core.halted())
+    # The stop: YC4B3 (p.274 l.51), where MCP's $EOJ (entered at YC4NO
+    # through the tentacle YJC4TT) goes on to the chain's next link by
+    # YMPFCH.  A deck that halts instead (BEW,$) stops on core.halted().
+    halt = S["YC4B3"] // 32
     reads += [("x13", 29), ("sreads", at("SREADS")), ("yrltt2", at("YRLTT", 2)),
               ("ydfrda", at("YDFRDA"))]
+    reads += [(nm.lower(), d.symtab[nm] // 64) for nm in ("NSPR", "NRET", "BADOPX", "NEOJ")]
+    reads += [("x14", 16 + 14), ("yeojs", at("YEOJS"))]
+    reads += [("jc4t%d" % i, at("YJC4TT", i)) for i in range(3)]
+    reads += [("badic%d" % k, d.symtab["BADIC"] // 64 + k) for k in range(64)]
+    reads += [("tent%d" % i, at("SCSPRT", i)) for i in range(4)]
+    reads += [("cwa", at("CWA")), ("cbta", at("CBTA")), ("cbwa", at("CBWA")),
+              ("sl", at("SL"))]
+    # the dump: the deck (200000-214777) and the output program's print
+    # buffers CX and CY (p.209 l.56 - p.210 l.3), up to 223177
     res = run_bench(tmp, "StretchBssGoLoadTb", [prog], reads, stop_hw=halt,
                     step_cap=8000000, cycle_bound=60000000,
-                    mem_dump=(0o200000, 0o14000))
+                    mem_dump=(0o200000, 0o23200))
     return res, p2, imgs, exp, d, sym2
 
 
+# C22-6678-1 printed p.20 (PDF 20, read in the ink): $SPR's carriage control,
+# "Binary Representation" and "8-Bit BCD Code".
+P20_CONTROL = [("Restore", "00000001", "1"), ("Single Space", "00100000", "-"),
+               ("Double Space", "00100001", "J"), ("Triple Space", "00100010", "K"),
+               ("Quadruple Space", "00100011", "L")]
+
+
+def judge0():
+    """The character code, against p.20, before any bench runs."""
+    check("0: p.20's five control characters are A8 as strap2/a8.py has it",
+          [(f, oct(A8[c])) for f, _b, c in P20_CONTROL],
+          [(f, oct(int(b, 2))) for f, b, _c in P20_CONTROL])
+    # p.20: "The 132 bytes which follow, must be 8-bit BCD (A8)"; the print
+    # program keeps six bits of each (p.203 l.39).  So a character survives
+    # only if no two A8 characters share their low six bits.
+    s48 = [c for c, v in A8.items() if c != ";"]
+    clash = sorted({c for c in s48 for e in s48 if c < e and A6[c] == A6[e]})
+    check("0: A6 (A8 without its two high bits) tells every A8 character apart", clash, [])
+
+
 def main():
+    judge0()
     with tempfile.TemporaryDirectory() as tmp:
         res, S, d = stage1(tmp)
         st = judge1(res, S, d)
@@ -678,15 +905,67 @@ def judge34(res, p2, imgs, exp, d, sym2):
     check("3: SICBU = the deck's branch-card entry, BSS at 200000 (p.333 l.2)",
           field(g["sicbu"], 0, 24), sym2("BSS") // 64 << 6)
     check("3: ... entered there", field(g["entryx"], 0, 24), sym2("BSS") // 64 << 6)
-    # Stage 4: the processor's own run, judged as check_bss_example4 judges it.
+    # Stage 4: the processor's own run, its map through $SPR into MCP's
+    # print buffer, judged as check_bss_example4 judges OUTB.
     def text(at, nwords):
         return "".join(ex4.A8INV.get((mem.get(at + i, 0) >> (56 - 8 * k)) & 255, "?")
                        for i in range(nwords) for k in range(8))
+
+    def bits(bit0, n):
+        """n bits from absolute bit address bit0 of the dump."""
+        v = 0
+        for b in range(bit0, bit0 + n):
+            w = mem.get(b // 64)
+            v = (v << 1) | ((w >> (63 - b % 64)) & 1 if w is not None else 0)
+        return v
+
+    def six(bit0, nchars):
+        return "".join(A6INV.get(bits(bit0 + 6 * c, 6), "?") for c in range(nchars))
     check("4: BSS's ERRC = 0 at its halt (map printed, tables and KSILO set)",
           field(g["errc"], 0, 8), 0)
-    n = field(g["outn"], 0, 18)
-    lines = [text(sym2("OUTB") // 64 + 15 * i, 15) for i in range(n or 0)]
-    check("4: 12 lines in OUTB", len(lines), 12)
+    check("4: PRINT counted 12 lines (OUTN)", field(g["outn"], 0, 18), 12)
+    check("4: 12 IF traps of $SPR, 12 of $RET; no other op, no other interrupt",
+          (field(g["nspr"], 0, 18), field(g["nret"], 0, 18), g["badopx"],
+           [k for k in range(64) if g["badic%d" % k]]),
+          (12, 12, 0, []))
+    check("4: OUTB not written (the print went to $SPR)",
+          "SUBPROGRAMS" in text(sym2("OUTB") // 64, 15), False)
+    spl = sym2("SPRC")
+    # The call as assembled, against MCP's own $SPR call printed p.203
+    # ll.13-15 (PDF 210, read in the ink): ,$SPR 000103.40 80; ,1. 000001.00 80.
+    def half(hw):
+        w = p2.image.words[hw // 2]
+        return "%08x" % ((w >> 32) & 0xFFFFFFFF if hw % 2 == 0 else w & 0xFFFFFFFF)
+    check("4: the call's ,$SPR and ,1. half words as p.203 ll.13, 15 print them",
+          (half(spl // 32 + 1), half(spl // 32 + 3)), ("0010e080", "00004080"))
+    check("4: tentacle SCSPRT+2.0 = the linkage FWA, the B,$MCP (p.118 l.1)",
+          field(g["tent2"], 0, 19), spl // 32)
+    check("4: tentacle SCSPRT+1.32 = the normal return, past ,N (p.118 ll.3-6)",
+          field(g["tent1"], 32, 19), spl // 32 + 4)
+    check("4: tentacle SCSPRT+3.0 = FWA SPRL (p.118 ll.12-13, p.203 l.23)",
+          field(g["tent3"], 0, 18), sym2("SPRL") // 64)
+    check("4: tentacle user bit SCSPRT.4 = 0, PP (p.117 l.44): ACHK ran (p.203 l.28)",
+          field(g["tent0"], 4, 1), 0)
+    cx, cy = S["CX"], S["CY"]
+    check("4: CBTA = 1: buffer X full after 12 lines, CNUM (p.203 ll.43-47; p.209 l.49)",
+          field(g["cbta"], S["CBTA"] % 64, 1), 1)
+    check("4: CWA refilled to buffer Y: CY+.6, count 12 (p.203 ll.48, 50; p.209 l.55)",
+          (field(g["cwa"], 0, 24), field(g["cwa"], 28, 18)), (cy + 6, 12))
+    check("4: CBWA = 0: no write buffer in use, so no $W (p.203 l.52)",
+          field(g["cbwa"], S["CBWA"] % 64, 1), 0)
+    check("4: buffer X's record control character P untouched (p.209 l.56)",
+          bits(cx, 6), A6["P"])
+    lines = [six(cx + 6 + 798 * i, 133) for i in range(12)]
+    check("4: every line's byte 0 is the single-space control '-' (C22-6678-1 p.20)",
+          [ln[0] for ln in lines], ["-"] * 12)
+    check("4: bytes 121-132 of every line blank (PRSPR's SPRL)",
+          [ln[121:] for ln in lines], [" " * 12] * 12)
+    lines = [ln[1:121] for ln in lines]
+    check("4: header 1 holds **SUBPROGRAMS** and **COMMONS**",
+          lines[0].split(), ["**SUBPROGRAMS**", "**COMMONS**"])
+    check("4: header 2: NAME ORIGIN REL. E. P. SIZE LIB. SEG. NO. NAME ORIGIN AMOUNT SEG. NO.",
+          " ".join(lines[1].split()),
+          "NAME ORIGIN REL. E. P. SIZE LIB. SEG. NO. NAME ORIGIN AMOUNT SEG. NO.")
     subs, coms, seps = ex4.map_rows(lines)
     for k, want in enumerate(ex4.MAP_SUB):
         check(f"4: p.17 subprogram row {k + 1}: {' '.join(want)}",
@@ -694,6 +973,21 @@ def judge34(res, p2, imgs, exp, d, sym2):
     for k, want in enumerate(ex4.MAP_COM):
         check(f"4: p.17 common row {k + 1}: {' '.join(w for w in want if w)}",
               coms[k] if k < len(coms) else None, want)
+    check("4: rows 6-10 have no common; '**' on all ten data rows",
+          (coms[5:], seps), ([("", "", "")] * 5, ["**"] * 10))
+    for k, ln in enumerate(lines):
+        print("INFO buffer X line %2d: %s" % (k + 1, ln.rstrip()))
+    # Stage 5: BSS leaves by $EOJ (C22-6678-1 p.22), MCP's own $EOJ code.
+    eojc = sym2("EOJC")
+    check("5: one IF trap of $EOJ (65.0), from EOJC", field(g["neoj"], 0, 18), 1)
+    check("5: tentacle YJC4TT+2.0 = the linkage, EOJC's B,$MCP (p.118 l.1)",
+          field(g["jc4t2"], 0, 19), eojc // 32)
+    check("5: stopped at YC4B3 (p.274 ll.25, 29-30, 44-45: YC4NO, no PP I/O to"
+          " wait for, not $ABEOJ)", g["_stopped"], S["YC4B3"] // 32)
+    check("5: $14 = $EOJ's op 65.0 (p.274 l.25 LVE,$14,YJC4TT+2.32)",
+          field(g["x14"], 0, 24), 65 * 64)
+    check("5: YEOJS still 0: a normal end (p.274 l.46 sets it only past l.45)",
+          field(g["yeojs"], S["YEOJS"] % 64, 1), 0)
     b0, b1 = exp["table_span"]
     bad = [f"{a:o}" for a in range(b0, b1) if mem.get(a, 0) != exp["table"].get(a, 0)]
     check(f"4: the relocation table, {b1 - b0} words at {b0:o}", bad, [])

@@ -971,10 +971,23 @@ WJC4G1 (the PC area's LIM and IOD cards, Assign, Move) and YRLTT+2.50.
 Stubs: the dispatcher, `$RET` into the program, `$SCR`/`$FETCH` over core
 images.
 
-**Next:** (1) the map through `$SPR` (C22-6678-1 p.20) rather than the deck's
-OUTB buffer (not attempted); to the paper would need the output program
-(p.201 CSTART). (2) BSS's exit by `$EOJ` (p.274 ll.44-45 for a normal end,
-p.381 ll.11-17 -> YC4INT -> YLASTC, p.397) into the GO phase. (3) Stage 2's LIM/IOD cards. Still not
+**R2b, the printer path and `$EOJ`, RUN 2026-11-18** (same test, stages
+4-5). Behind the deck's switch SPRSW (assembled 0, so
+`check_bss_example4` is unchanged), BSS prints each map line as a 17-word
+`$SPR` line (C22-6678-1 p.20). The call traps IF. MCP's own tentacle setup
+(p.117 l.36 - p.118) and print program CSTART (p.203) move all 12 lines
+into output buffer X as six-bit BCD, and every p.17 row decodes from it.
+After the 12th line (CNUM) CBTA = 1, and no `$W` is issued. BSS then
+leaves by `$EOJ` through YJC4TT into YC4NO and reaches YC4B3 (p.274). The
+character code is checked against p.20's control table. SCAFFOLD: SIFAE's
+PP half (p.117 ll.20-28) and the `$RET` return routine. Five new
+injections are measured.
+
+**Next:** (1) the record's `$W` and the output EOJ (CEOJ, p.204), which
+need the output tape's IOD/unit; the 1401 side is not landed. (2) `$EOJ`
+past YC4B3: YMPFCH's overlay fetch, p.381 ll.11-17 -> YC4INT -> YLASTC,
+p.397, into the GO phase. (3) SIFAE's PP half, and the PP run under its
+own limits: BSS writes KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not
 built: the O card, block data, DEFINE/DEFI, sequence and check sums, and
 B IOD/REEL storage.
 

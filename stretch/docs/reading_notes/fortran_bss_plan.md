@@ -147,7 +147,8 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 **(a) The BSS processor itself** (spec §6, §7.4).
 - **R2a BUILT 2026-11-17** (single segment): `decks/bss_7030.strap`, RECONSTRUCTION; the record is under R2 below.
 - **R2b, table half, RUN 2026-11-17:** its relocation table is read by MCP's own resume load and loader, which load Example 4 as p.17 lays it out (`tests/check_bss_mcp_load.py`); record under R2.
-- **R2b, job half, RUN 2026-11-17:** `B TYPE,GO,FORTRAN` through MCP's own job control into KSILO, then YC4INT, WJC4G and resume load load the BSS processor from its type area, and BSS runs under MCP and prints p.17's map (`tests/check_bss_mcp_go.py`). The map still goes to the deck's SCAFFOLD buffer, not `$SPR`; record under R2.
+- **R2b, job half, RUN 2026-11-17:** `B TYPE,GO,FORTRAN` through MCP's own job control into KSILO, then YC4INT, WJC4G and resume load load the BSS processor from its type area, and BSS runs under MCP and prints p.17's map (`tests/check_bss_mcp_go.py`); record under R2.
+- **R2b, printer path and `$EOJ`, RUN 2026-11-18:** behind the deck's switch SPRSW, BSS prints each map line through `$SPR`: the call traps IF, and MCP's own tentacle setup (p.117 ll.36-48, p.118) and print program CSTART (p.203) move all 12 lines into the output buffer X as six-bit BCD, row for row p.17. BSS then leaves by `$EOJ` into MCP's YC4NO and reaches YC4B3 (p.274). The IF analyzer's PP half and MCP's return routine are SCAFFOLD; record under R2.
 - No code survives in any deck. The repo grep is in spec §7.4, and I agree with it.
 - It must be RECONSTRUCTED from C28 pp.7-14:
   - the card scan;
@@ -706,10 +707,28 @@ Both are settled, and the table is fed, in R2b's record below.
 - **Measured injections:** ABSSID spelled BSX fails exactly the eight 1a checks; type-area cards 41 and 42 swapped stop the loader at the 41st card (sequence error) and fail 27 checks (all of stage 4, and five of stage 3).
 
 **Open (what blocks the rest):**
-1. **The printer path, NOT ATTEMPTED.** The map is still printed into the deck's OUTB buffer. The next step is to call `$SPR` from the deck's PRINT (C22-6678-1 p.20: `B,$MCP / ,$SPR / ,FWA / ,N`; 17-word lines, byte 0 carriage control), with the call captured by a stub. Running it through to the paper would need the output program (p.201: tentacle SCSPRT -> CSTART), which buffers lines for the 1401 output tape. Its state has not been examined.
+1. **The printer path: RUN 2026-11-18, record below.** Open past it: the record's write (`$W`, p.202-204) and the output EOJ (CEOJ), then the 1401 side.
 2. **Stage 2,** above: the LIM and IOD cards of the PC area, and JC1's PP tables for Assign/Move.
 3. **MCP's dispatcher** (unprime, YMPFCH's overlay fetch) and `$RET` into a loaded program are stubs.
-4. **The chain's end:** BSS should leave with `$EOJ`. For a normal end p.274 ll.44-45 skip YEOJS and go to YC4B3 (l.51-52, YMPFCH), and p.381 ll.11-17 (transcription) go to YC4INT, which steps to YLASTC and the GO phase (p.396 l.47, p.397). The deck halts instead, so the job's GO phase does not run from BSS's exit yet.
+4. **The chain's end:** BSS leaves by `$EOJ` and MCP's YC4NO takes it to YC4B3 (RUN 2026-11-18, record below). Not run: l.52's YMPFCH (the `$EOJ` overlay fetch) and p.381 ll.11-17 to YC4INT, YLASTC and the GO phase (p.396 l.47, p.397).
+
+#### R2b, the printer path and `$EOJ` (2026-11-18): the map through `$SPR`
+
+**Pages read in the ink** (printed / PDF): C22-6678-1 p.20/20 (the `$SPR` line: 17 full words, 136 eight-bit bytes; byte 0 carriage control, Restore 00000001 `1`, Single 00100000 `-`, Double 00100001 `J`, Triple 00100010 `K`, Quadruple 00100011 `L`; "The 132 bytes which follow, must be 8-bit BCD (A8)"; 3 padding bytes; `B,$MCP / ,$SPR / ,FWA.(I) / ,N.(I)`) and p.22/22 (`$EOJ`: `B,$MCP / ,$EOJ`, "under no circumstances will control be returned"). MCP_Mar63_001-249 p.117/124 (ll.1-48, SIFAE, SIFAD, MIF6), p.118/125 (ll.1-50), p.201/208 (ll.1-11, SCSPRT), p.203/210 (ll.1-56), p.209/216 (ll.42-55, CNUM SYN,12.), p.210/217 (ll.1-28, "X=(133*6*CNUM+5)/64"); MCP_Mar63_250-445 p.274/25 (ll.21-52). C22-6728-1 PDF 170 and 174 (OCR, checked against the listing): the output tape's printer record "contains twelve full lines"; the print program "begins at CSTART", operates enabled, checks PP parameters with ACHK, exits with `$RET`.
+
+**Built:** `decks/bss_7030.strap` gains SPRSW (assembled 0, so `check_bss_example4` is unchanged and passes as before). With SPRSW = 1, PRINT goes to PRSPR: SPRL (17 words of A8 blanks) gets byte 0 = single space and LINE in bytes 1-120, then `B,$MCP / ,$SPR / ,SPRL / ,1.`; the normal end stores ERRC 0 and calls `B,$MCP / ,$EOJ`. CHOSEN: single space on every line (MCP's own `$SPR` line ASERR, p.210 l.50, starts with `-`), one line a call; the message ends (ERRC 2, 3, 10) still halt. The call's half words assemble to p.203 ll.13, 15's printed `000103.40 80` and `000001.00 80`.
+
+**Run** (`tests/check_bss_mcp_go.py` stages 4-5): the stub enters BSS enabled, with SL = 0, the interruption address at its own table, IPL's bounds (only 32.0 protected, p.33 ll.51-52) and MCP's mask. Each `B,$MCP` traps IF; STUBIF (SCAFFOLD for SIFAE's PP half) saves the low registers as p.117 ll.5-6 do and enters MIF6+.32. IBM's code then fills SCSPRT and enters CSTART enabled; ACHK checks the parameters against SLRBU's limits; CTRANS converts each line to 133 six-bit characters in buffer X. After 12 lines (CNUM) CBTA = 1, CWA is refilled to buffer Y and no `$W` is issued. Every p.17 row decodes from buffer X. ARET's `$RET` traps again, and IRET (SCAFFOLD for the return routine) restores the PP and returns to the normal return SCSPRT+1.32 holds. `$EOJ` goes through the same path to YJC4TT and YC4NO, which with no PP I/O and not `$ABEOJ` reaches YC4B3. 1,530,530 cycles for stages 3-5.
+
+**The character code.** The print program keeps six bits of each A8 byte (p.203 l.39 `SF(BU,48,6)` of `LF(BU,64,8)`). p.20's five control characters match `strap2/a8.py`'s A8 exactly, and every 48-set code is below 0o100, so the six bits are the A8 code itself: the BCD B-A-8-4-2-1 bits (`-` = 100000, `J` = 100001). How the 1401's peripheral output program prints them is not read (C22-6728-1 pp.250ff; not landed).
+
+**Measured injections** (header of the test): control byte omitted, 18 fail; FWA outside the PP limits, ACHK -> ACHERR, 30 fail; p.203 l.36 16 -> 15, 19 fail; l.39 byte size 6 -> 8, 20 fail; `$ABEOJ` for `$EOJ`, 4 fail (YEOJS = 1 and a `$DUMP` the stub does not serve). The earlier ABSSID and card-order injections were re-run: 8 and 43.
+
+**SCAFFOLD, and what blocks the rest:**
+- **SIFAE's PP half** (p.117 ll.20-28) is not run. Its l.28 copies STLR into SLRBU, which would replace the PP limits that ACHK reads with this bench's register 3. Running it needs the PP to run under its own limits (bound control bit 1, outside protected). But BSS writes KSILO+8..11 in MCP's area, and a DS there is always masked. How MCP let a processor write KSILO is not read.
+- **The return routine** for a major package's `$RET` (KFRONT and the service-op return, pp.13x-14x) is a stub. It is the same blocker as item 3 above.
+- **The record's write.** The 12-line record in buffer X is written by `$W` only at the next `$SPR` (CAOS3A, p.203 l.54 - p.204 l.12) or at the output EOJ (SAEOJT -> AEOJ, CEOJ p.204 ll.14-39, then `$WEF`). Running it needs the output tape's IOD and unit (CT11/CT21, AMR) and `$W`'s I/O path. Not attempted. Running the paper side needs the 1401 peripheral output program, which is not landed.
+- **`$EOJ` past YC4B3:** YMPFCH's overlay fetch (`$EOJ` area, PUNID 22$EOJ) and p.381 ll.11-17.
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 

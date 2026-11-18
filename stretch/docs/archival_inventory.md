@@ -289,7 +289,9 @@ subprogram, common reference and transfer vector at p.17's printed
 addresses (`tests/check_bss_mcp_load.py`). Since R2b's job half the map is
 printed by the BSS processor loaded by MCP itself from `B TYPE,GO,FORTRAN`
 (UNCODE, p.271's rewrite, YC4INT, resume load; `tests/check_bss_mcp_go.py`),
-still into the deck's buffer, not through `$SPR`. Pp.7, 9 and 10 settle the
+and since 2026-11-18 through `$SPR`: MCP's print program
+CSTART (MCP printed p.203) puts every map row into its output buffer as
+six-bit BCD, and BSS leaves by `$EOJ`. Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
 
