@@ -230,7 +230,7 @@ falling through. A grep found no branch-target `installed()` test in
 StretchExecute / StretchCore / StretchIBox (the data paths have one);
 not looked at further. Its own change, with a deck.
 
-## COMPLETES WITHOUT FETCH -- 2026-11-18; six of eight clauses pinned, one model bug fixed
+## COMPLETES WITHOUT FETCH -- 2026-11-18; all eight clauses pinned, two model bugs fixed
 
 `StretchIBox.prepareExec` gives a level no operand address for three causes
 (VflInt, Connective: progressive with X0, DF suppression, address invalid;
@@ -247,21 +247,41 @@ documented time exists for a no-op'd level, so every pin is model behaviour.
 * `decks/cwf_address_invalid.strap` -- refused operation on an idle E-box.
   V clause deleted: 562 -> 563, C: -> 565, Fp: -> 563.
 * `decks/cwf_data_fetch_suppress.strap` -- Fp DF: 824 -> 822 (FASTER: the
-  interruption's drain, not a fetch latency).  **OPEN: the VflInt and
-  Connective DF clauses survive deletion** in all three shapes tried (header).
-  What would pin them is a memory-request count the testbench can read.
+  interruption's drain, not a fetch latency).  ~~OPEN: the VflInt and
+  Connective DF clauses survive deletion~~ **PINNED by a read count**: the
+  MBCU counts accepted reads (`StretchMemory` `readCount`), `gen_tb.py`'s
+  `MEMREADS=N` checks a run's count, and each clause deleted alone makes this
+  deck's 62 into 63 (CYCLES 824 either way).
 * **MODEL BUG FIXED:** execute() raised AD for an Fp operand only; a VFL or
   connective operand past installed core read zero and set nothing (and a
   progressive store still advanced its index).  `vflIntOp`/`connectiveOp`
   now set AD and skip the operation (first word only; immediate and CV
   excluded).  Each guard removed alone hangs the deck (V at 396, C at 412).
-* **NOT CHECKED, from reading the code only:** prepareExec's DF clause
-  applies to EVERY non-immediate VflInt code, but execute()'s DF signal and
-  suppression cover only the fetch types (`vflFetchType`: L, LWF, +, K, LFT,
-  LTRS, *+).  So for a protected binary `*` or `/` with DF's mask on,
-  prepareExec says "no fetch" while execute() neither signals DF nor
-  suppresses, and reads the word itself.  (Stores -- ST, M+, CM -- go
-  through the DS path, which suppresses them; not examined further.)
+* **SECOND MODEL BUG FIXED: DF covered seven VFL codes.**  Confirmed as
+  read: execute() signalled and suppressed DF for L, LWF, +, K, LFT, LTRS,
+  *+ only, prepareExec for every non-immediate code (first word only).
+  printed p.32 (PDF 35) defines fetch-type as "read out for use but not
+  subject to change", so +MG (p.60), KF/KE/KFE/KR/KFR (pp.65-67), `*`
+  (p.68), `/` (p.70), LCV and LTRCV (pp.72-73) are fetch-type too; ST, SRD,
+  M+, M+MG, M+1 and CM are store-type (DS); CV and DCV have no storage
+  operand.  MEASURED before the fix: a protected `*`, `/`, +MG or LCV with
+  DF's mask one ran on the protected word and set no DF, and at mask zero
+  `*` and +MG set no DF.  Now ONE classification (`StretchExecute.vflRef`,
+  `connFetchType`, `fieldDfSuppresses` -- both words of a crossing field) is
+  asked by both sides; DCV no longer fetches (`fetchesOperand`) or raises
+  AD (p.74: its address is "ignored"; the AD half is NOT PINNED by any
+  deck -- the fetch half is, MEMREADS).  `decks/cwf_df_fetch_type.strap`, 22 cases, nine injections (header):
+  every one caught -- the I-box halves by MEMREADS (Connective clause, DCV)
+  or CYCLES (old clauses, stores), the execute() halves by the result words.
+  CHOSEN, unprinted: a PROTECTED VFL store still fetches its word whatever
+  DF's mask (Perf. Char. Vol. 1 printed p.2-3 item 6: "All VFL stores are
+  fetch-and-stores"); KE/KFE/KR whose condition is false are still
+  fetch-type.  `tests/atlas_oracle.py` (not in run_tests.sh) was NOT
+  re-run, though DCV's level no longer fetches; no suite pin moved.
+  STILL OPEN, NOT CHECKED, from reading the code only: floating-point
+  M+/M+MG appear to signal DF on their field (StretchExecute's Fp arm,
+  `known && !isStoreClass`) though p.32 makes a field "subject to change"
+  DS's; no deck run, not touched here.
 
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 

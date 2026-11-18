@@ -2559,8 +2559,8 @@ run "VFL IMMEDIATE OPERAND IS INDEXED (RefMan printed p.21, p.56)" ./run_program
 # total.  Each of the eight clauses was deleted alone (and each of the two
 # new execute() AD guards); SIX clauses are caught by their own deck's
 # CYCLES and nothing else, both AD guards by a hang -- but the VflInt and
-# Connective DF clauses SURVIVE (no shape tried moves them), and the Fp DF
-# pin moves two clocks FASTER.  The measured tables are in each deck's
+# Connective DF clauses SURVIVE (no shape tried moves them; SINCE PINNED by
+# MEMREADS, below), and the Fp DF pin moves two clocks FASTER.  The measured tables are in each deck's
 # header.  The CYCLES are MODEL behaviour, not a documented time:
 # the manual says only that these instructions are "executed as a NO
 # OPERATION" (printed p.21, p.45), and Perf. Char. prints no time for a
@@ -2571,9 +2571,13 @@ run "COMPLETES WITHOUT FETCH: address invalid, VFL/connective/FP (printed p.21, 
 run "COMPLETES WITHOUT FETCH: progressive with X0, VFL and connective (printed p.21)" ./run_program.sh ../decks/cwf_progressive_x0.strap StretchCwfProgX0Tb \
     "PC=407" \
     "CYCLES=283+-0"
+# MEMREADS 62 added 2026-11-18 (tests/gen_tb.py, the MBCU's read count):
+# the VflInt and Connective DF clauses, which no CYCLES shape could see,
+# each make it 63 when deleted alone (CYCLES stays 824).  Model behaviour.
 run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 item 20)" ./run_program.sh ../decks/cwf_data_fetch_suppress.strap StretchCwfDfTb \
     "PC=4312" \
     "CYCLES=824+-0" \
+    "MEMREADS=62" \
     "whigh:2241=3002399751580320"
 
 # A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE (RefMan printed
@@ -2593,6 +2597,32 @@ run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./
     "RF:774=35184372088832" "RG:775=35184372088832" \
     "RH:776=67554544166371328" "RHX:777=1" "RI:778=4398046511104" "RAD:779=0" \
     "RT:781=2251799813685248" "RTF:782=0" "RL:783=35184372088832"
+
+# >>> WHICH VFL AND CONNECTIVE OPERATIONS DF APPLIES TO, 2026-11-18. <<<
+# printed p.32 (PDF 35): fetch-type is "read out for use but not subject to
+# change"; p.45 item 20: at mask one "the fetch did not take place, and the
+# entire operation was suppressed".  execute() covered seven VFL codes and
+# prepareExec every one; both now ask StretchExecute.vflRef/connFetchType
+# and fieldDfSuppresses.  Before the fix a protected *, /, +MG, KF-family,
+# LCV or LTRCV ran on the protected word and set no DF (resdf
+# (16)00301000... on this deck).  Cases and pages in the deck header.
+# OBSERVED injections (scratch copies, restored and cmp'd IDENTICAL):
+#   * classed store-type            resae, resdf (cases 6, 16), CYCLES 5974, MEMREADS 563
+#   prepareExec VflInt DF deleted   CYCLES 6049, MEMREADS 580 (and 63 above)
+#   prepareExec Conn DF deleted     MEMREADS 570 only (and 63 above)
+#   prepareExec VflInt old clause   CYCLES 6040, MEMREADS 570
+#   prepareExec Conn old clause     CYCLES 6040 only
+#   word 1 only (both sides)        resae (case 10), CYCLES 6036, MEMREADS 570
+#   DCV fetches again               MEMREADS 570 only
+#   CM classed fetch-type           resdf, resds (cases 13, 21), CYCLES 6036, MEMREADS 567
+#   prepareExec monitors VFL stores CYCLES 6040 only
+# CYCLES and MEMREADS are MODEL behaviour: no documented time or count.
+run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" ./run_program.sh ../decks/cwf_df_fetch_type.strap StretchCwfDfTypeTb \
+    "PC=5043" \
+    "CYCLES=6031+-0" \
+    "MEMREADS=569" \
+    "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
+    "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
 
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50

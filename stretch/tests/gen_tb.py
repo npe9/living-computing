@@ -53,7 +53,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
              max_steps_check=None, stop_at_pc=None, wait_for_io=False,
-             stop_at_pc_hits=1, pc_log=None):
+             stop_at_pc_hits=1, pc_log=None, mem_reads=None):
     """pc_log: optional list of (first, last) half-word ranges; every
     change of the PC into one is displayed as "PCLOG <hw> <step>", for a
     diagnosis of which path a run took (off by default).
@@ -120,6 +120,13 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
+    if mem_reads is not None:
+        # MEMREADS=N: the storage read requests the RUN made -- the
+        # MBCU's count (StretchMemory readCount) at afterRun less its
+        # count at setStart, so neither the loader nor the checks'
+        # own reads after the run are in it.
+        lines.append("  Reg#(Bit#(32)) memReadsAtStart <- mkReg(0);")
+        lines.append("  Reg#(Bit#(32)) memReadsRun <- mkReg(0);")
     if stop_at_pc is not None and stop_at_pc_hits != 1:
         lines.append("  Reg#(Bit#(32)) stopHits <- mkReg(0);")
         lines.append("  Reg#(HWordAddr) stopLastPc <- mkReg(0);")
@@ -294,6 +301,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     # `stepCount` -- which every CYCLES bound and window asserts on --
     # keeps counting core clocks 1:1.
     lines.append("    core.start();")
+    if mem_reads is not None:
+        lines.append("    memReadsAtStart <= core.mem.memReads();")
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")
@@ -377,6 +386,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append('      $display("OP TRAIL: operation invalid raised %0d times; first at half-word address %0d after %0d steps, last at %0d", opTrailCount, opTrailPc, opTrailStep, opTrailLastPc);')
         lines.append("    else")
         lines.append('      $display("OP TRAIL: operation invalid never set");')
+    if mem_reads is not None:
+        lines.append("    memReadsRun <= core.mem.memReads() - memReadsAtStart;")
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")
@@ -530,6 +541,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
         pccheck_phase += 1
+    # MEMORY READ COUNT ("MEMREADS=N"), exact.  What it pins is whether
+    # an operation fetched its operand at all: a level the I-box loads
+    # with no operand address (prepareExec's completesWithoutFetch) makes
+    # one read fewer, and when nothing waits on that read no CYCLES pin
+    # sees it (docs/NEXT.md, COMPLETES WITHOUT FETCH).  Model behaviour,
+    # like every count of this model's own requests: no source prints one.
+    if mem_reads is not None:
+        lines.append(f"  rule memreadscheck (phase == {pccheck_phase});")
+        lines.append(f"    if (memReadsRun == {mem_reads})")
+        lines.append(f'      $display("PASS memory reads = %0d (want {mem_reads})", memReadsRun);')
+        lines.append("    else begin")
+        lines.append(f'      $display("FAIL memory reads = %0d, want {mem_reads}", memReadsRun);')
+        lines.append("      fails <= fails + 1;")
+        lines.append("    end")
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
     if pc_check is not None:
         lines.append(f"  rule pccheck (phase == {pccheck_phase});")
         lines.append(f'    check("PC (half-word address)", zeroExtend(core.getPC()), {pc_check});')
@@ -625,6 +654,10 @@ if __name__ == '__main__':
     #                             "CYCLES=120+-3"; the unicode plus-minus is
     #                             accepted as well.  Use this and not the
     #                             bound for anything judging overlap
+    #   MEMREADS=N             -- check that the run made exactly N
+    #                             storage read requests (the MBCU's
+    #                             count, setStart to afterRun): pins
+    #                             whether an operation fetched at all
     #   WAITIO                 -- stop when the core is IDLE (halted and
     #                             nothing can interrupt it), not merely
     #                             halted: a BEW,$ waiting on I/O runs on
@@ -668,6 +701,7 @@ if __name__ == '__main__':
     pc_check = None
     cycle_bound = None
     cycle_window = None
+    mem_reads = None
     # STEPS=N raises the run rule's step cap.  A deck needs this when
     # it executes instructions the TIMING MODEL charges heavily for:
     # the cap counts core clocks, and an instruction's budget
@@ -706,6 +740,8 @@ if __name__ == '__main__':
                     + repr(spec))
             n, t = body.split('+-', 1)
             cycle_window = (int(n, 0), int(t, 0))
+        elif spec.startswith('MEMREADS='):
+            mem_reads = int(spec[9:], 0)
         elif spec.startswith('FASTLOAD='):
             fast_load = spec[9:]
         elif spec.startswith('DUMP='):
@@ -734,4 +770,5 @@ if __name__ == '__main__':
                     cycle_bound=cycle_bound,
                     cycle_window=cycle_window, wait_for_io=wait_for_io,
                     mem_dump=mem_dump, fast_load=fast_load,
-                    stop_at_pc=stop_at_pc, stop_at_pc_hits=stop_at_pc_hits))
+                    stop_at_pc=stop_at_pc, stop_at_pc_hits=stop_at_pc_hits,
+                    mem_reads=mem_reads))

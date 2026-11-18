@@ -1,0 +1,729 @@
+! WHICH VFL AND CONNECTIVE OPERATIONS DATA FETCH (DF) APPLIES TO, AND
+! WHETHER A SUPPRESSED ONE FETCHES -- one classification, asked by both
+! StretchIBox.prepareExec and execute() (StretchExecute vflRef,
+! connFetchType, fieldDfSuppresses), 2026-11-18.
+!
+! THE RULE.  Reference Manual 22-6530-2 printed p.32 (PDF 35), page image:
+! "When an address alarm is caused by a data address used in a fetch-type
+! operation, indicator DF is turned on.  If the DF mask bit is one, the
+! data fetch is suppressed and the operation terminated.  If the DF mask
+! bit is zero, the operation proceeds normally.  A fetch-type operation is
+! one in which the contents of an addressed storage location are read out
+! for use but are not subject to change by the operation."  And DS: "A
+! store-type operation is one in which the contents of an addressed
+! storage location are subject to change."  Printed p.45 item 20 (PDF 48):
+! "If the corresponding mask bit was one, the fetch did not take place,
+! and the entire operation was suppressed.  If the mask bit was zero, the
+! operation was completed normally."  So +MG (printed p.60), KF, KE, KFE,
+! KR, KFR (pp.65-67), * (p.68), / (p.70), LCV and LTRCV (pp.72-73) are
+! fetch-type; ST, SRD, M+, M+MG, M+1 and CM are store-type (DS, never
+! DF); CV and DCV (pp.73-74) take their field from the accumulator and
+! address no storage.  StretchExecute's vflRef note quotes each page.
+!
+! THE BUG.  execute() signalled and suppressed DF for seven codes only (L,
+! LWF, +, K, LFT, LTRS, *+), prepareExec for every non-immediate code and
+! the first word only.  So a protected * with DF's mask one was loaded with
+! no operand address, and the E-box read the protected word itself,
+! multiplied by it and never set DF.  MEASURED on 9eb7d27 plus the read
+! counter (before the fix) with this deck: resae = (16)7C7C2000..., resdf =
+! (16)00301000..., resds = (16)000C2000... -- DF's routine ran for cases 10 and 11 only, and the mask-zero * and +MG (16,
+! 17) did not set DF; the protected operation changed the accumulator in
+! cases 0 and 6-8.  (That run had 20 cases; 20 and 21 were added after.)
+!
+! SHAPE.  The setup is cwf_data_fetch_suppress's (boundaries WLOW..WABOVE,
+! control bit 0: signal inside; DF's routine sets word 6 bit 1, DS's
+! word 6 bit 0).  Each case reloads the accumulator with PAT2W, runs six
+! I-box-only LVIs, the case's operation, a K against PAT2W and eight NOPs,
+! and records three bits: RESAE.k (AE after that K: the accumulator is
+! unchanged), RESDF.k (DF's routine ran at mask one; the DF indicator is on
+! at mask zero) and RESDS.k (DS's routine ran).
+!   0-9   +MG KF KE KFE KR KFR * / LCV LTRCV on WHIGH, mask one: suppressed
+!   10    L across UNPROT|WLOW, mask one: DF on the SECOND word suppresses
+!   11    CT on WHIGH, mask one (connective, already DF'd)
+!   12-13 ST, CM on WHIGH, mask one: DS, not DF
+!   14-15 CV, DCV naming WHIGH: no storage operand, nothing
+!   16-19 *, +MG, ST, crossing L at mask ZERO: DF on and the operation
+!         completes; ST is DS's as at mask one
+!   20-21 ST, CM behind an unprotected divide, mask one: the store's level
+!         waits in the look-ahead, so whether it fetched shows in CYCLES
+! EXPECTED and observed: resae = (16)FFFC2000..., resdf = (16)FFF0D000...,
+! resds = (16)000C2C00....
+!
+! THE READ COUNT.  MEMREADS (tests/gen_tb.py) is the number of storage
+! reads the run made (StretchMemory MBCU.readCount).  It pins whether a
+! level fetched at all, which no CYCLES pin could see for the VFL and
+! connective DF clauses (cwf_data_fetch_suppress's header).
+!
+! INJECTIONS, each in a scratch copy of the tree, the file restored from a
+! saved copy and compared with cmp against the worktree (IDENTICAL every
+! time), both this deck and cwf_data_fetch_suppress run -- OBSERVED:
+!   CONTROL                                  -> both decks green
+!   I1 * classed store-type (execute and     -> resae (16)FDFC2..., resdf
+!      prepareExec both skip DF for it)         (16)FDF05... (cases 6, 16),
+!                                               CYCLES 5974, MEMREADS 563
+!   I2 prepareExec's VflInt DF clause gone   -> CYCLES 6049, MEMREADS 580;
+!                                               cwf_data_fetch_suppress
+!                                               MEMREADS 63 (CYCLES 824 kept)
+!   I3 prepareExec's Connective DF clause    -> MEMREADS 570 only;
+!      gone                                     cwf_data_fetch_suppress
+!                                               MEMREADS 63 only
+!   I4 prepareExec's VflInt clause back to   -> CYCLES 6040, MEMREADS 570
+!      the old one (every code, word 1)
+!   I5 prepareExec's Connective clause back  -> CYCLES 6040 only (case 21)
+!      to the old one (CM included)
+!   I6 fieldDfSuppresses asks word 1 only    -> resae (16)FFDC2... (case 10
+!                                               not suppressed), CYCLES
+!                                               6036, MEMREADS 570
+!   I7 fetchesOperand counts DCV again       -> MEMREADS 570 only
+!   I8 CM classed fetch-type                 -> resdf (16)FFF4D4..., resds
+!                                               (16)00082800... (cases 13,
+!                                               21: DF in place of DS),
+!                                               CYCLES 6036, MEMREADS 567
+!   I9 prepareExec monitors VFL stores for   -> CYCLES 6040 only (case 20)
+!      DF again, nothing else changed
+! Every other check passes under each.
+!
+! CYCLES 6031 AND MEMREADS 569 ARE MODEL BEHAVIOUR; no documented time or
+! request count exists for a no-op'd level (Perf. Char. Vol. 1 printed
+! A-8, PDF 67, gives only its NOOP tag).  Whether a PROTECTED VFL store
+! fetches is not printed either (Perf. Char. Vol. 1 printed p.2-3 item 6:
+! "All VFL stores are fetch-and-stores"); the model's does, CHOSEN.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while words 3 and 12 are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, $DF,  $+1.0
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+!
+! case 0: +MG    fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        +MG(BU,64,8), WHIGH          ! case 0
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.0, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.0, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.0, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 1: KF     fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        KF(BU,64,8), WHIGH           ! case 1
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.1, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.1, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.1, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 2: KE     fetch-type, newly DF'd (AE on: it compares)
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        KE(BU,64,8), WHIGH           ! case 2
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.2, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.2, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.2, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 3: KFE    fetch-type, newly DF'd (AE on: it compares)
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        KFE(BU,64,8), WHIGH          ! case 3
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.3, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.3, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.3, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 4: KR     fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        KR(BU,64,8), WHIGH           ! case 4
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.4, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.4, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.4, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 5: KFR    fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        KFR(BU,64,8), WHIGH          ! case 5
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.5, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.5, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.5, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 6: *      fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        *(BU,48,8), WHIGH            ! case 6
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.6, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.6, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.6, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 7: /      fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        /(BU,48,8), WHIGH            ! case 7
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.7, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.7, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.7, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 8: LCV    fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        LCV(BU,48,8), WHIGH, 64      ! case 8
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.8, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.8, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.8, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 9: LTRCV  fetch-type, newly DF'd
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        LTRCV(BU,48,8), WHIGH        ! case 9
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.9, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.9, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.9, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 10: L      field CROSSING into WLOW: DF on word 2
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(BU,32,8), UNPROT+.48       ! case 10
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.10, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.10, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.10, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 11: CT     connective fetch-type (already DF'd)
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        CT0011(BU,64,8), WHIGH       ! case 11
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.11, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.11, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.11, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 12: ST     STORE-type: DS, never DF
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        ST(BU,64,8), WHIGH           ! case 12
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.12, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.12, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.12, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 13: CM     STORE-type: DS, never DF
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        CM0011(BU,64,8), WHIGH       ! case 13
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.13, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.13, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.13, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 14: CV     no storage operand: nothing
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        CV(BU), WHIGH, 64            ! case 14
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.14, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.14, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.14, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 15: DCV    no storage operand: nothing
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        DCV(B,0,8), WHIGH, 64        ! case 15
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.15, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.15, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.15, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 16: *      mask ZERO: DF on, completes
+        BD,  $+.32
+        BBZ, 12.20, $+1.0            ! DF's mask bit := ZERO
+        BE,  $+.32
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        *(BU,48,8), WHIGH            ! case 16
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.16, $+1.0        ! accumulator unchanged
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.16, $+1.0        ! DF indicator on
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.16, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 17: +MG    mask ZERO: DF on, completes
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        +MG(BU,64,8), WHIGH          ! case 17
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.17, $+1.0        ! accumulator unchanged
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.17, $+1.0        ! DF indicator on
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.17, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 18: ST     mask ZERO: DS as at mask one
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        ST(BU,64,8), WHIGH           ! case 18
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.18, $+1.0        ! accumulator unchanged
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.18, $+1.0        ! DF indicator on
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.18, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 19: L      mask ZERO crossing: DF on, completes
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        L(BU,32,8), UNPROT+.48       ! case 19
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.19, $+1.0        ! accumulator unchanged
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.19, $+1.0        ! DF indicator on
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.19, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 20: ST     STORE-type behind a divide: its level waits, fetch or not
+        BD,  $+.32
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        BE,  $+.32
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        /(BU,48,8), DIVSR            ! (unprotected: the E-box busy)
+        ST(BU,64,8), WHIGH           ! case 20
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.20, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.20, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.20, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 21: CM     STORE-type behind a divide: its level waits, fetch or not
+        L(BU,64,8), PAT2W            ! accumulator := PAT2W
+        LVI, $X2, 1
+        LVI, $X2, 2
+        LVI, $X2, 3
+        LVI, $X2, 4
+        LVI, $X2, 5
+        LVI, $X2, 6
+        /(BU,48,8), DIVSR            ! (unprotected: the E-box busy)
+        CM0011(BU,64,8), WHIGH       ! case 21
+        K(BU,64,8), PAT2W            ! E-box work right behind it
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $AE,  $+2.0
+        BB1, RESAE+.21, $+1.0        ! accumulator unchanged
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.21, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.21, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+        B,   PASS
+PASS    BEW, $
+!
+        SLC, (8)6275.0
+DIVSR   DD(BU,48,8), 3               ! an unprotected divisor
+        SLC, (8)6276.0
+PAT2W   DD(BU,64,8), (8)0000125252525212525240
+UNPROT  DD(BU,64,8), (8)0000000000000000000017   ! the word BELOW the area
+WLOW    DD(BU,64,8), (8)0000000000000000000052   ! inside the area
+WHIGH   DD(BU,64,8), (8)0000125252525252525240   ! inside the area
+WABOVE  DD(BU,64,8), 0
+!
+        SLC, (8)6400.0
+RESAE   DD, 0                        ! bit k: accumulator unchanged after case k
+RESDF   DD, 0                        ! bit k: DF routine ran (mask one) / DF on (mask zero)
+RESDS   DD, 0                        ! bit k: DS routine ran
+!
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)6524.0
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF
+        END, START

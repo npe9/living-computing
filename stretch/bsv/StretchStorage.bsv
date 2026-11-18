@@ -284,6 +284,11 @@ interface StretchStorage;
   // writeWord to location 7, for the reason the counter registers'
   // own comment gives.
   method Action setLeftZerosCount(Bit#(7) lzc);
+
+  // The memory bus control unit's count of accepted READ requests
+  // (StretchMemory's MBCU.readCount): test observation only, read by
+  // gen_tb's MEMREADS= check.
+  method Bit#(32) memReads();
 endinterface
 
 // mkStretchStorage: the CPU's view of storage. Addresses 0-31 are
@@ -1095,6 +1100,8 @@ module mkStretchStorage(StretchStorage);
   method Action setLeftZerosCount(Bit#(7) lzc);
     lzcW.wset(lzc);
   endmethod
+
+  method Bit#(32) memReads() = mbcu.readCount();
 
 
 
