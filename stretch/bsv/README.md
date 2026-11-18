@@ -748,18 +748,34 @@ operand, indicators and an instruction counter, and no address or index field
 (Buchholz section 15.3, printed pp.238-240; 7101 CE manual R23-9732 Fig. 3.2.2,
 PDF 93). An I-box index write behind a level therefore runs without waiting.
 
-Three things are left as they were, each for a stated reason:
+Two things are left as they were, each for a stated reason:
 
 - **Progressive indexing still reads its register in the E-box.** The
   instruction reads and writes that register in two parts, and
   `progressiveWrites` and `progressivePending` already hold it still. Its
   second index is carried like any other.
-- **An immediate VFL address is carried unindexed**, because `execute()` takes
-  the immediate operand from the address field and never from the effective
-  address. Whether the 7030 indexes an immediate address was not checked here.
 - **The level's decoded instruction is kept beside the carried values.** The
   timing functions read it, and `eboxClocks` must not see a length the second
   index has changed; that would move times for a reason no table gives.
+
+**An immediate VFL operand is indexed (fixed 2026-11-18).** Until this date
+the carry left an immediate (`P` = 4) address field unindexed and every
+`immediateOperand` call in `execute()` read the address field, so
+`LI(BU,24),5($X3)` loaded 5 whatever X3 held. The Reference Manual says
+otherwise: printed p.21 (PDF 24), "The codes 0 and 4, which both specify
+standard address modification ... For code 4, the immediate mode is specified
+and the effective address is used as the operand itself"; printed p.56 (PDF
+59), bits 0-23 are "indexed by the contents of the index register specified in
+the I field ... or it may be used as data". `carryIndex` now indexes `P` = 4 as
+it does `P` = 0 and `carriedVflAddr` clears `i1` for both. `execute()` takes the
+operand from `ea`, which is the carried value for a level and the live indexing
+for an EX subject, since EX subjects are not carried. Timing is unchanged
+because the timing functions read the uncarried `di`. No IBM listing we searched
+writes an indexed immediate: 936 immediates were assembled across 812 decks and
+none had a nonzero first index; the untranscribed diagnostic PDFs were not
+searched. `decks/vfl_immediate_indexed.strap` is the
+oracle and records its injections. Still open: a negative effective address
+should give its magnitude (p.20, p.21), but `effAddr24` wraps it (NEXT.md).
 
 **The store wait (2026-11-16).** The other direction is a level that stores into
 an index register, and the model handled it badly. A new level indexed by j

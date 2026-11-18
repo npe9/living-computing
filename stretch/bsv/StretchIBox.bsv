@@ -238,12 +238,21 @@ endfunction
 // `p` HAS THREE STATES HERE AS EVERYWHERE (see prepareExec):
 //
 //   p == 0  ordinary.  The effective address replaces the address
-//           field and i1 is cleared.
-//   p == 4  IMMEDIATE.  The address field is the operand
-//           (execute()'s immediateOperand reads vi.a.addr / cn.a.addr,
-//           never `ea`), and this model does not index it, so it is
-//           carried unchanged and i1 is left alone: `ea` is dead in
-//           both VFL arms when immediate, whatever i1 says.
+//           field and i1 is cleared.  (p == 4 likewise, below.)
+//   p == 4  IMMEDIATE.  Indexed exactly as p == 0, and the effective
+//           address IS the operand: execute()'s immediateOperand takes
+//           the top `length` bits of `ea`.  Ref. Manual printed p.21
+//           (PDF 24): "The codes 0 and 4, which both specify standard
+//           address modification ... For code 4, the immediate mode is
+//           specified and the effective address is used as the operand
+//           itself"; printed p.56 (PDF 59): bits 0-23 are "indexed by
+//           the contents of the index register specified in the I
+//           field ... The effective address may be used to designate
+//           the leftmost bit of a storage field, or it may be used as
+//           data."  UNTIL 2026-11-18 this model carried the address
+//           field unindexed here and immediateOperand read vi.a.addr,
+//           so an immediate with a nonzero I ran as the unindexed one,
+//           silently (decks/vfl_immediate_indexed.strap).
 //   else    PROGRESSIVE.  The address field is the INCREMENT and i1
 //           names the register execute() reads AND writes in two parts
 //           (Ref. Manual printed p.21).  Both are left alone: that
@@ -260,12 +269,12 @@ function LaCarry carryIndex(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged VflInt .v: begin
       VflAddr b = vflSecondIndex(st, v.a);
-      return LaCarry { addr: (v.a.p == 0) ? effAddr24(st, v.a.addr, v.a.i1) : v.a.addr,
+      return LaCarry { addr: (v.a.p == 0 || v.a.p == 4) ? effAddr24(st, v.a.addr, v.a.i1) : v.a.addr,
                        lbo:  {b.length, b.bs, b.offset} };
     end
     tagged Connective .c: begin
       VflAddr b = vflSecondIndex(st, c.a);
-      return LaCarry { addr: (c.a.p == 0) ? effAddr24(st, c.a.addr, c.a.i1) : c.a.addr,
+      return LaCarry { addr: (c.a.p == 0 || c.a.p == 4) ? effAddr24(st, c.a.addr, c.a.i1) : c.a.addr,
                        lbo:  {b.length, b.bs, b.offset} };
     end
     tagged Fp .f: return LaCarry { addr: {effAddr18(st, f.addr, f.idx), 6'b0}, lbo: 0 };
@@ -276,7 +285,7 @@ endfunction
 function VflAddr carriedVflAddr(VflAddr a, LaCarry c);
   VflAddr b = a;
   b.addr   = c.addr;
-  if (a.p == 0) b.i1 = 0;
+  if (a.p == 0 || a.p == 4) b.i1 = 0;   // indexed above: never twice
   b.length = c.lbo[15:10];
   b.bs     = c.lbo[9:7];
   b.offset = c.lbo[6:0];

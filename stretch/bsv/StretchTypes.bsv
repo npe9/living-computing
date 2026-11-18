@@ -749,9 +749,11 @@ typedef enum {
 // its index fields cleared (StretchIBox's carryIndex / carriedInstr):
 //
 //   addr -- the effective address (24 bits; for floating point the
-//           18-bit word address, low six bits zero).  For an immediate
-//           or progressive VFL instruction it is the instruction's own
-//           address field unchanged -- see carryIndex for why.
+//           18-bit word address, low six bits zero).  An immediate
+//           VFL instruction is indexed the same way and the result is
+//           its operand (Ref. Manual printed p.21); for a progressive
+//           one it is the instruction's own address field (the
+//           increment) unchanged -- see carryIndex for why.
 //   lbo  -- a VFL instruction's length, byte size and offset after the
 //           second index (Ref. Manual printed p.21); zero otherwise.
 //
