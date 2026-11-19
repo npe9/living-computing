@@ -253,6 +253,23 @@ The Plan 9 cross-check is `tools/plan9-1e/sys/src/cmd/zl/optab.c`
 is used only to corroborate the PRM's opcode[5:0] field; it is not
 AT&T's assembler and its mnemonic spellings are not treated as syntax.
 
+## Cross-check against the hand-derived golden images
+
+Every image in `tests/golden/` was written by hand from the PRM without
+using this assembler.  Each one disassembles here, re-encodes, and
+disassembles to the **same instruction stream**, which is an independent
+confirmation of the field layout (the project's canonical form is chosen
+on re-encoding, so the bytes can differ where the tables admit two
+encodings of the same operation).
+
+That duality is real and worth knowing: `MOV $8,R16` exists both as the
+`wai5`/`stk5` one-parcel form `0x2844` (source field 8/4 = 2, p. 1-22:
+one-parcel fields are scaled by four) and as the `imm5`/`stk5` form
+`0x7104` (source field 8, unscaled).  Both are legal; only the tables
+say which classes each opcode accepts, not that one spelling is unique.
+`006.hex` contains `FLUSHD`, which is refused by default (the part
+traps, p. 3-22) and assembles only with `--allow-unimplemented`.
+
 ## Tests
 
 ```

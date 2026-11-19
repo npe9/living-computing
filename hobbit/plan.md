@@ -58,6 +58,20 @@ documented interfaces.
    will not fold into) into an explicit timing table. Where the data
    sheet and the Programmer's Reference Manual give different clock
    and power points, keep both as named operating points.
+5. Verify semantics the way riscv-formal verifies a RISC-V core, not by
+   trusting the model's own tests. The core exposes the HRI (Hobbit
+   Retirement Interface, the Hobbit counterpart of riscv-formal's RVFI)
+   retirement record for every retired instruction — pc, the first two
+   parcels, SP and MSP before and after, the architectural word write
+   (stack-cache-resident writes included), and the trap flag — and an
+   independent one-instruction model, written from the manual and never
+   from the core, computes the same record in one step. The two are
+   diffed field by field, so pipeline depth, folding and cache timing
+   never enter the check; hand-derived golden traces, also written from
+   the manual, break ties when the two disagree. The exact line format
+   and field meanings are fixed in `sem/README.md` and the checker.
+   The one-instruction model is explicitly **not** a second opinion from
+   the same author: it is kept independent of `bsv/` and `asm/`.
 
 ## Staged implementation
 
@@ -73,27 +87,33 @@ documented interfaces.
    own module, connected by a small orchestration rule. Static
    prediction and folding first (behaviour), then the Chapter 4
    timings. Unsupported parcels and niladics stop loudly.
-3. Implement the stack cache and integer accumulator as a stateful box:
+3. Expose the HRI retirement record from step 2's core and add
+   the independent one-instruction model (`sem/`) and the trace differ
+   (`tests/hri_check.py`). Land the hand-derived golden traces with it
+   and require three-way agreement — core, spec, golden — before any
+   further instruction is added. An instruction is "implemented" only
+   when all three agree on its record.
+4. Implement the stack cache and integer accumulator as a stateful box:
    the SP/MSP circular buffer, quad-word flush and refill on ENTER,
    CATCH, RETURN and POPN, the CSP-is-ISP exception, and the
    documented stack-cache precautions (vector table, translation
    tables and text must not lie between SP and MSP).
-4. Implement the MMU: 1,024 segments of 4 MB, paged segments of
+5. Implement the MMU: 1,024 segments of 4 MB, paged segments of
    1,024-word pages, non-paged segments, mixed segment tables, split
    TLBs, FLUSHPTE and the translation faults.
-5. Implement event processing in the documented priority order
+6. Implement event processing in the documented priority order
    (printed p. 1-40): reset, interrupts, trace, instruction fetch
    faults, illegal instructions, unimplemented instructions and
    trapped niladics, unimplemented registers, alignment faults, bus
    errors, privilege violation, divide by zero — with PC and PSW saved
    on the interrupt stack at the documented addresses, and the PSW
    trace bits.
-6. Implement the bus: synchronous one-cycle transactions, byte marks,
+7. Implement the bus: synchronous one-cycle transactions, byte marks,
    double-word/quad-word block transfers, retry and bus-error
    handling, arbitration, the reset start address 0x0, and the
    big-endian/little-endian selection for user and kernel modes. Add
    the two timers.
-7. Only then add board-level models required by an original program:
+8. Only then add board-level models required by an original program:
    the dual-Hobbit BeBox prototypes with their DSP3210s, or the EO
    personal communicator support chips.
 
@@ -104,5 +124,7 @@ parcel form; the assembler round-trips the manual's printed encodings
 bit-exactly and the disassembler reproduces the encoding tables; and a
 one-core Bluesim smoke test starts at 0x0, runs a stack-cache call,
 return and CATCH sequence, executes a folded conditional branch both
-taken and not taken, and traps an unimplemented parcel observably. The
-full repository test suite remains green.
+taken and not taken, and traps an unimplemented parcel observably — and
+the core's HRI retirement records for that run agree, field by field,
+with the independent one-instruction model and with a hand-derived
+golden trace. The full repository test suite remains green.

@@ -13,11 +13,16 @@ code the listing prints next to them.
 **One machine has substance.** `stretch/` (the IBM 7030) is 697 tracked
 files: a STRAP-1 assembler in Python, a Bluespec model of the machine,
 303 card decks, 226 verify scripts, and 55 scanned PDFs of primary
-sources. The other 27 directories are documented stubs: each has a
-sourced README, a staged reproduction plan, a local source inventory,
-and an empty `bsv/`. Their initial corpus currently contains 80 PDFs and
-four captured archive pages. 496 commits since 2026-08-24, almost all of
-them in `stretch/`.
+sources. Twenty-six of the other directories are documented stubs: each
+has a sourced README, a staged reproduction plan, a local source
+inventory, and an empty `bsv/`. Their initial corpus currently contains
+80 PDFs and four captured archive pages. 496 commits since 2026-08-24,
+almost all of them in `stretch/`.
+
+`hobbit/` (the AT&T 92010) is the one stub that has grown code: a parcel
+assembler and disassembler, an independent one-instruction semantics
+model, a Bluespec core, six hand-derived golden programs, and the HRI
+(Hobbit Retirement Interface) records that make the three comparable.
 
 ## Method
 
@@ -83,7 +88,7 @@ recorded as a survival with an expiry date.
 | `cray1/` | Cray-1 (1976) | stub; plan + sources |
 | `edsac/` | EDSAC (1949) | stub; plan + sources |
 | `eniac/` | ENIAC (1945) | stub; plan + sources |
-| `hobbit/` | AT&T 92010 Hobbit (1993) | stub; plan + sources |
+| `hobbit/` | AT&T 92010 Hobbit (1993) | assembler, one-instruction spec, Bluesim core; HRI-checked |
 | `ias/` | IAS Machine (1952) | stub; plan + sources |
 | `ibm1401/` | IBM 1401 (1959) | stub; plan + sources |
 | `ibm701/` | IBM 701 (1952) | stub; plan + sources |

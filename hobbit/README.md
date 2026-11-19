@@ -29,12 +29,36 @@ This directory fixes the ATT92010 as the target; the earlier ATT2100
 hardware specification (March 1991) and the CRISP ancestor are related
 machines whose differences must remain explicit.
 
-Bluespec implementation: `bsv/` (not started).
+## Status
+
+| piece | where | evidence |
+|---|---|---|
+| parcel assembler + disassembler | `asm/` | 18 unittest checks, bit-exact against Tables 1-15…1-20, cross-checked with Plan 9's encoder |
+| architectural inventory | `docs/isa_inventory.md` | all 46 Table 3-1 entries, each with a printed-page cite |
+| Chapter 4 timing table | `docs/timing.csv`, `docs/timing_tables.md` | 46/46 spellings covered; `tools/check_timing.py` |
+| one-instruction semantics model | `sem/` | written from the PRM, independent of `bsv/` and `asm/` |
+| Bluesim core | `bsv/` | 17-check smoke test, `run_smoke.sh`; loud trap on everything unimplemented |
+| hand-derived golden programs | `tests/golden/` | six programs, 42 retirement records, each line justified by a printed page |
+| HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
+
+The core is a partial implementation on purpose: it models the
+memory-to-memory ALU, the stack cache and the control transfers its
+programs use, and traps on the rest. The MMU, event processing, the
+prefetch buffer cache, folding timing and the bus are still ahead of it
+(see `plan.md`).
+
+Every instruction the core claims to implement is checked three ways by
+`tests/run_tests.sh`: the core's HRI record, the independent
+one-instruction model's record, and a hand-derived golden trace must all
+agree field by field.
 
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).
 Plan 9's 1st Edition Hobbit toolchain is vendored, with its checks and
-its limits, under [`tools/`](tools/README.md).
+its limits, under [`tools/`](tools/README.md). The architectural
+inventory — every Table 3-1 mnemonic, every parcel form, the control
+registers, the stack cache, the MMU and the event priority, each with a
+printed-page citation — is [`docs/isa_inventory.md`](docs/isa_inventory.md).
 
 Sources: AT&T Microelectronics, *ATT92010 Hobbit Microprocessor
 Programmer's Reference Manual* (January 1993); *ATT92010 Hobbit

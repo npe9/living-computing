@@ -1,0 +1,1164 @@
+#!/usr/bin/env python3
+"""hobbit_sem.py -- an independent one-instruction model of the ATT92010.
+
+The model is the specification side of the repository's HRI (Hobbit
+Retirement Interface) check: one call to ``step()`` retires (or refuses)
+exactly one parcel-encoded instruction, starting from an architectural
+pre-state and with no pipeline, prefetch, decoded-instruction-cache,
+branch-folding or timing model.  HRI is the Hobbit analogue of
+riscv-formal's RISC-V Formal Interface (RVFI); the check is a
+per-instruction trace comparison against the Bluespec core, not a formal
+proof.  The returned record is the HRI line the core is expected to
+reproduce field by field; see ``hobbit/sem/README.md`` for the exact
+field definitions and the manual page behind every field.
+
+Everything here is written from the printed ATT92010 Programmer's
+Reference Manual (January 1993) and deliberately does not import or read
+``hobbit/bsv`` or ``hobbit/asm``.  That independence is the point: the
+model and the core must agree without sharing an implementation.
+
+Only the standard library is used.
+
+CLI (fixed contract)::
+
+    python3 hobbit/sem/hobbit_sem.py --image IMAGE --sp HEX --msp HEX \
+        [--max-steps N]
+
+IMAGE is text, one 32-bit word per line, eight hex digits, ascending
+addresses from 0.  The parcel at an even address is in bits 31:16 and the
+parcel at the following odd address in bits 15:0.  Entry is at 0.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List, Optional, Tuple
+
+MASK32 = 0xFFFFFFFF
+
+# --- PSW bits used by this model (Table 1-8, printed pp. 1-14..1-16) -----
+# The PSW is kept in the state as a 32-bit word; only these bits matter.
+PSW_F = 1 << 4          # flag (compare / tagged arithmetic / jump condition)
+PSW_C = 1 << 5          # carry
+PSW_V = 1 << 6          # overflow
+PSW_SP = 1 << 9         # 1 = SP is the current stack pointer (CSP)
+PSW_USER = 1 << 10      # 0 = kernel, 1 = user (not used, recorded for clarity)
+PSW_E = 1 << 11         # enter guard
+PSW_USER_LE = 1 << 15   # user little-endian (not modelled)
+PSW_VIRTUAL = 1 << 16   # virtual addressing (not modelled)
+
+SCSIZE = 256            # 64 words, p. 1-5
+
+
+# ---------------------------------------------------------------------------
+# State and record
+# ---------------------------------------------------------------------------
+
+@dataclass
+class State:
+    """Architectural pre-state for one instruction.
+
+    ``pc`` is the address of the instruction; ``sp`` and ``msp`` are the
+    stack-cache bounds of printed p. 1-5 (SP is the inclusive lower bound,
+    MSP the exclusive upper bound); ``psw`` carries only the bits this
+    model uses; ``memory`` is a sparse byte-addressed image represented as
+    a dict of word address -> 32-bit word (big-endian byte order).
+    """
+
+    pc: int = 0
+    sp: int = 0
+    msp: int = 0
+    psw: int = PSW_SP
+    memory: Dict[int, int] = field(default_factory=dict)
+
+
+@dataclass
+class Record:
+    """The HRI (Hobbit Retirement Interface) record for one instruction."""
+
+    pc: int
+    insn0: int
+    insn1: int
+    sp_before: int
+    sp_after: int
+    msp_before: int
+    msp_after: int
+    mem_we: int
+    mem_addr: int
+    mem_wdata: int
+    mem_wmask: int
+    trap: int
+    reason: str = ""
+
+    def line(self) -> str:
+        """Return the fixed one-line HRI form used by the trace differ."""
+        return (
+            "HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x "
+            "we=%d addr=%08x data=%08x mask=%02x trap=%d"
+            % (
+                self.pc & MASK32,
+                self.insn0 & 0xFFFF,
+                self.insn1 & 0xFFFF,
+                self.sp_before & MASK32,
+                self.sp_after & MASK32,
+                self.msp_before & MASK32,
+                self.msp_after & MASK32,
+                self.mem_we,
+                self.mem_addr & MASK32,
+                self.mem_wdata & MASK32,
+                self.mem_wmask & 0xFF,
+                self.trap,
+            )
+        )
+
+
+# ---------------------------------------------------------------------------
+# Traps
+# ---------------------------------------------------------------------------
+
+class Trap(Exception):
+    """An instruction that takes the unimplemented-instruction sequence.
+
+    This is the only exception that produces a ``trap=1`` HRI line: the
+    p. 1-39 sequence stores the opcode's own PC at ``*(CSP)`` and vectors
+    through ``*(VB+12)``.  The one-instruction model reports the store and
+    stops; the handler fetch is outside it.
+    """
+
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = reason
+
+
+class Unimplemented(Trap):
+    """FLUSHD / FLUSHDCE: implemented by the unimplemented sequence."""
+
+
+class Refusal(Exception):
+    """A legal instruction or state outside this one-instruction subset.
+
+    The adjudication's convention C2: a later refusal is *not* an HRI
+    ``trap=1`` line.  The caller must not compare it as a retirement; the
+    CLI reports it on stderr and stops.
+    """
+
+    def __init__(self, reason: str, parcels: Optional[List[int]] = None):
+        super().__init__(reason)
+        self.reason = reason
+        self.parcels = parcels or []
+
+
+class FetchFault(Refusal):
+    """The parcel stream cannot be read (a fetch fault, not a trap)."""
+
+
+class AlignmentFault(Refusal):
+    pass
+
+
+class IllegalInstruction(Refusal):
+    pass
+
+
+class Unsupported(Refusal):
+    pass
+
+
+# ---------------------------------------------------------------------------
+# Small helpers
+# ---------------------------------------------------------------------------
+
+def _sx(value: int, bits: int) -> int:
+    """Sign-extend the low ``bits`` of ``value``."""
+    value &= (1 << bits) - 1
+    sign = 1 << (bits - 1)
+    return (value ^ sign) - sign
+
+
+def _read_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
+               addr: int) -> int:
+    """Read the big-endian word containing ``addr`` from overlay or image.
+
+    Unwritten memory reads as zero.  This is a modelling choice (the PRM
+    does not define a value for uninitialised memory); it is stated in the
+    README so a trace difference cannot hide behind it.
+    """
+    w = addr & ~3
+    if w in state.memory:
+        return state.memory[w] & MASK32
+    if reader is not None:
+        value = reader(w)
+        if value is not None:
+            return value & MASK32
+    return 0
+
+
+def _fetch_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
+                addr: int) -> int:
+    """Read one instruction word, distinguishing absent memory from zero."""
+    w = addr & ~3
+    if w in state.memory:
+        return state.memory[w] & MASK32
+    if reader is not None:
+        value = reader(w)
+        if value is not None:
+            return value & MASK32
+    raise FetchFault("fetch-fault: no instruction word at 0x%08x" % w)
+
+
+def _fetch_parcel(state: State, reader: Optional[Callable[[int], Optional[int]]],
+                  addr: int) -> int:
+    """Fetch the 16-bit parcel at ``addr`` (bit 0 is ignored, p. 1-4)."""
+    addr &= ~1
+    word = _fetch_word(state, reader, addr)
+    return (word >> 16) & 0xFFFF if (addr & 2) == 0 else word & 0xFFFF
+
+
+def _fetch_instruction(state: State,
+                       reader: Optional[Callable[[int], Optional[int]]]
+                       ) -> Tuple[int, List[int], int]:
+    """Fetch and length-decode one instruction (pp. 1-21..1-25)."""
+    pc = state.pc & ~1
+    parcels: List[int] = []
+    try:
+        p0 = _fetch_parcel(state, reader, pc)
+        parcels.append(p0)
+        if (p0 & 0x8000) == 0:
+            length = 1
+        elif (p0 & 0xC000) == 0x8000:
+            length = 3
+        else:                               # (p0 & 0xC000) == 0xC000
+            length = 5
+        for i in range(1, length):
+            parcels.append(_fetch_parcel(state, reader, pc + 2 * i))
+    except FetchFault as exc:
+        raise FetchFault(exc.reason, parcels)
+    return pc, parcels, length
+
+
+# ---------------------------------------------------------------------------
+# Operand addressing (PRM §1.7, Tables 1-21..1-24, pp. 1-25..1-27)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Operand:
+    size: int               # 1, 2 or 4 bytes
+    signed: bool
+    ea: int = 0             # effective byte address (memory operands)
+    imm: int = 0            # immediate value (mode 0xF / 1-parcel imm5/wai5)
+    is_imm: bool = False
+
+
+def _abs_addr(field_value: int, width: int) -> int:
+    """Absolute address from a 16- or 32-bit field.
+
+    The PRM (p. 1-23) makes the upper half come from CONFIG bit 17 (PC
+    extension) when set.  This model fixes CONFIG at its reset value of
+    zero (p. 1-36), so 16-bit absolute addresses are zero-extended.
+    """
+    return (field_value & 0xFFFF) if width == 16 else (field_value & MASK32)
+
+
+def _resolve_general(state: State,
+                     reader: Optional[Callable[[int], Optional[int]]],
+                     field_value: int, mode: int, width: int) -> Operand:
+    """Decode a Table 1-21 general addressing mode.
+
+    ``width`` is 16 for a three-parcel instruction and 32 for a
+    five-parcel instruction; it selects the extension rule of p. 1-23.
+    """
+    if mode == 0xF:                                  # $data, immediate
+        value = _sx(field_value, 16) if width == 16 else (field_value & MASK32)
+        return Operand(4, True, imm=value, is_imm=True)
+
+    if mode == 0xC:                                  # *$addr:W
+        return Operand(4, True, ea=_abs_addr(field_value, width))
+
+    if mode == 0xD:                                  # Roffset:W
+        return Operand(4, True,
+                       ea=(state.sp + _sx(field_value, width)) & MASK32)
+
+    if mode == 0xE:                                  # *Roffset:W
+        off = _sx(field_value, width)
+        if off & 3:
+            raise AlignmentFault(
+                "alignment: stack-offset-indirect offset 0x%x is not "
+                "word-aligned (p. 1-27)" % off)
+        pointer = _read_word(state, reader, (state.sp + off) & MASK32)
+        return Operand(4, True, ea=pointer)
+
+    if 0 <= mode <= 0xB:
+        size = 1 if mode in (0x0, 0x1, 0x4, 0x5, 0x8, 0x9) else 2
+        signed = mode in (0x0, 0x2, 0x4, 0x6, 0x8, 0xA)
+        if mode < 0x4:                               # *$addr:B/UB/H/UH
+            ea = _abs_addr(field_value, width)
+        else:                                        # Roffset or *Roffset
+            off = _sx(field_value, width)
+            ea = (state.sp + off) & MASK32
+            if mode >= 0x8:                          # indirect
+                if off & 3:
+                    raise AlignmentFault(
+                        "alignment: stack-offset-indirect offset 0x%x is "
+                        "not word-aligned (p. 1-27)" % off)
+                ea = _read_word(state, reader, ea)
+        return Operand(size, signed, ea=ea)
+
+    raise Unsupported("unsupported: operand mode 0x%x (Table 1-21, p. 1-25)"
+                      % mode)
+
+
+def _stk5(state: State, field_value: int) -> Operand:
+    """One-parcel stk5: zero-extended then multiplied by four (p. 1-21)."""
+    return Operand(4, True, ea=(state.sp + (field_value << 2)) & MASK32)
+
+
+def _istk5(state: State, reader: Optional[Callable[[int], Optional[int]]],
+           field_value: int) -> Operand:
+    """One-parcel istk5: word stack offset indirect (p. 1-22)."""
+    pointer = _read_word(state, reader,
+                         (state.sp + (field_value << 2)) & MASK32)
+    return Operand(4, True, ea=pointer)
+
+
+def _imm5(field_value: int) -> Operand:
+    """One-parcel imm5: sign-extended (p. 1-21)."""
+    return Operand(4, True, imm=_sx(field_value, 5), is_imm=True)
+
+
+def _wai5(field_value: int) -> Operand:
+    """One-parcel wai5: unsigned, multiplied by four (p. 1-22)."""
+    return Operand(4, True, imm=(field_value << 2) & MASK32, is_imm=True)
+
+
+def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
+          op: Operand) -> int:
+    """Read and extend an operand (p. 1-3, p. 1-4, p. 1-28)."""
+    if op.is_imm:
+        return op.imm
+    if op.size == 4:
+        if op.ea & 3:
+            raise AlignmentFault(
+                "alignment: word access to 0x%08x is not word-aligned "
+                "(p. 1-4)" % op.ea)
+        return _read_word(state, reader, op.ea)
+    word = _read_word(state, reader, op.ea)
+    off = op.ea & 3
+    if op.size == 2:
+        if op.ea & 1:
+            raise AlignmentFault(
+                "alignment: half-word access to 0x%08x is not "
+                "half-word-aligned (p. 1-4)" % op.ea)
+        value = ((word >> 16) & 0xFFFF) if off == 0 else (word & 0xFFFF)
+        if op.signed and (value & 0x8000):
+            value -= 0x10000
+        return value
+    # size == 1: bits 31:24 hold the byte at the lowest address (big-endian,
+    # Figure 1-2, p. 1-4).
+    value = (word >> (8 * (3 - off))) & 0xFF
+    if op.signed and (value & 0x80):
+        value -= 0x100
+    return value
+
+
+def _prepare_store(state: State,
+                   reader: Optional[Callable[[int], Optional[int]]],
+                   op: Operand, value: int) -> Tuple[int, int, int, int]:
+    """Return (word address, new word value, bus data, byte mask).
+
+    The record's byte-mark convention is fixed here and in the README:
+    mask bit 3 is the byte at the word address (bits 31:24), bit 0 the
+    byte at word address + 3 (bits 7:0).  The data word is the big-endian
+    lane placement the bus would carry.  A word write has mask 0xF and
+    data == value.
+    """
+    if op.is_imm:
+        raise IllegalInstruction("illegal: store to an immediate operand")
+
+    if op.size == 4:
+        if op.ea & 3:
+            raise AlignmentFault(
+                "alignment: word access to 0x%08x is not word-aligned "
+                "(p. 1-4)" % op.ea)
+        word_addr = op.ea
+        mask = 0xF
+        data = value & MASK32
+    elif op.size == 2:
+        if op.ea & 1:
+            raise AlignmentFault(
+                "alignment: half-word access to 0x%08x is not "
+                "half-word-aligned (p. 1-4)" % op.ea)
+        word_addr = op.ea & ~3
+        if (op.ea & 3) == 0:
+            mask = 0xC
+            data = (value & 0xFFFF) << 16
+        else:
+            mask = 0x3
+            data = value & 0xFFFF
+    else:  # size == 1
+        word_addr = op.ea & ~3
+        lane = 3 - (op.ea & 3)
+        mask = 1 << lane
+        data = (value & 0xFF) << (8 * lane)
+
+    old = _read_word(state, reader, word_addr)
+    expanded = 0
+    for bit in range(4):
+        if mask & (1 << bit):
+            expanded |= 0xFF << (8 * bit)
+    new_word = (old & (~expanded & MASK32)) | (data & expanded)
+    return word_addr, new_word, data, mask
+
+
+# ---------------------------------------------------------------------------
+# Arithmetic flags (pp. 1-29..1-30)
+# ---------------------------------------------------------------------------
+
+def _add_result(psw: int, dst: int, src: int) -> Tuple[int, int, int]:
+    a, b = dst & MASK32, src & MASK32
+    raw = a + b
+    result = raw & MASK32
+    carry = 1 if raw > MASK32 else 0
+    overflow = 1 if ((a ^ result) & (b ^ result) & 0x80000000) else 0
+    new_psw = ((psw & ~(PSW_C | PSW_V))
+               | (PSW_C if carry else 0)
+               | (PSW_V if overflow else 0))
+    return result, new_psw, carry
+
+
+def _sub_result(psw: int, dst: int, src: int) -> Tuple[int, int, int]:
+    a, b = dst & MASK32, src & MASK32
+    result = (a - b) & MASK32
+    borrow = 1 if a < b else 0
+    overflow = 1 if ((a ^ b) & (a ^ result) & 0x80000000) else 0
+    new_psw = ((psw & ~(PSW_C | PSW_V))
+               | (PSW_C if borrow else 0)
+               | (PSW_V if overflow else 0))
+    return result, new_psw, borrow
+
+
+# ---------------------------------------------------------------------------
+# Stack-cache bookkeeping (pp. 1-5..1-8, 3-10..3-11, 3-19..3-21, 3-38, 3-40)
+# ---------------------------------------------------------------------------
+
+def _check_stack_state(state: State) -> None:
+    if state.sp & 0xF or state.msp & 0xF:
+        raise Unsupported(
+            "unpredictable: SP/MSP are not quad-word aligned "
+            "(SP=0x%08x MSP=0x%08x; p. 1-5, Table 1-10/1-6)"
+            % (state.sp, state.msp))
+    if state.msp < state.sp or (state.msp - state.sp) > SCSIZE:
+        raise Unsupported(
+            "unpredictable: MSP must satisfy SP <= MSP <= SP+256 "
+            "(SP=0x%08x MSP=0x%08x; p. 1-13)"
+            % (state.sp, state.msp))
+    if state.sp > MASK32 - SCSIZE:
+        raise Unsupported(
+            "unsupported: stack cache at SP=0x%08x would cross the 32-bit "
+            "address boundary (p. 1-5)" % state.sp)
+
+
+def _enter_offset(state: State, target: int) -> Tuple[int, int, int]:
+    """ENTER stack-offset form (pp. 3-19..3-21).
+
+    Returns (new_sp, new_msp, new_psw).  The cache is flushed from the
+    top until at most SCSIZE bytes remain; the model keeps the SP/MSP
+    bounds and does not copy cache contents (every cache write is already
+    visible through the ordinary-memory model).
+    """
+    if target > state.sp:
+        raise Unsupported(
+            "unpredictable: ENTER target 0x%08x wrapped above SP 0x%08x "
+            "(p. 3-21)" % (target, state.sp))
+    if target > state.msp:
+        raise Unsupported(
+            "unpredictable: ENTER would leave SP 0x%08x above MSP 0x%08x "
+            "(p. 3-21)" % (target, state.msp))
+    flushed = (state.msp - target) > SCSIZE
+    new_msp = min(state.msp, target + SCSIZE)
+    new_psw = state.psw & ~PSW_E
+    if not flushed:
+        new_psw |= PSW_E
+    return target, new_msp, new_psw
+
+
+def _catch_msp(state: State, target: int) -> int:
+    """CATCH fill bound (pp. 3-10..3-11).
+
+    The cache is filled upward from MSP in 16-byte blocks until MSP is at
+    least ``target`` or the 64-word cache is full.  A target that is not a
+    multiple of 16 is rounded up to the next multiple, as p. 3-11 says.
+    """
+    if state.msp < state.sp:
+        raise Unsupported(
+            "unpredictable: CATCH requires MSP >= SP (p. 3-11)")
+    if target <= state.msp:
+        return state.msp
+    blocks = (target - state.msp + 15) // 16
+    new_msp = state.msp + blocks * 16
+    limit = state.sp + SCSIZE
+    if new_msp > limit:
+        new_msp = limit
+    return new_msp
+
+
+def _popn(state: State, offset: int) -> Tuple[int, int]:
+    """POPN: SHAD = CSP = CSP + src; MSP follows a new SP above it."""
+    if offset < 0:
+        raise IllegalInstruction(
+            "illegal: POPN negative offset -0x%x (p. 3-38)" % (-offset))
+    new_sp = (state.sp + offset) & MASK32
+    if new_sp < state.sp:
+        raise Unsupported(
+            "unpredictable: POPN offset 0x%x wraps the stack pointer "
+            "(p. 3-38)" % offset)
+    new_sp &= ~0xF          # SP bits 3:0 are reserved (Table 1-10, p. 1-17)
+    new_msp = state.msp
+    if new_sp > new_msp:
+        new_msp = new_sp
+    return new_sp, new_msp
+
+
+def _return(state: State, reader: Optional[Callable[[int], Optional[int]]],
+            offset: int) -> Tuple[int, int, int]:
+    """RETURN: fetch PC, then advance SP, ignoring the offset's low 4 bits."""
+    if offset < 0:
+        raise IllegalInstruction(
+            "illegal: RETURN negative offset -0x%x (p. 3-40)" % (-offset))
+    if offset & 3:
+        raise AlignmentFault(
+            "alignment: RETURN PC word offset 0x%x is not word-aligned "
+            "(p. 3-40)" % offset)
+    read_addr = (state.sp + offset) & MASK32
+    if read_addr < state.sp:
+        raise Unsupported(
+            "unpredictable: RETURN offset 0x%x wraps the stack pointer "
+            "(p. 3-40)" % offset)
+    new_pc = _read_word(state, reader, read_addr)
+    delta = offset & ~0xF
+    new_sp = (state.sp + delta) & MASK32
+    new_msp = state.msp
+    if new_sp > new_msp:
+        new_msp = new_sp
+    return new_pc, new_sp, new_msp
+
+
+# ---------------------------------------------------------------------------
+# word32 and flow32 operands
+# ---------------------------------------------------------------------------
+
+def _word32_value(state: State,
+                  reader: Optional[Callable[[int], Optional[int]]],
+                  field_value: int, mode: int, width: int) -> int:
+    """Value of a Table 3-2 ``word32`` operand.
+
+    Modes 0xC and 0xE are memory values; mode 0xD is the stack-offset
+    address itself (CATCH/ENTER interpret it as a new MSP target); mode
+    0xF is the immediate value.
+    """
+    if mode == 0xD:
+        return (state.sp + _sx(field_value, width)) & MASK32
+    if mode == 0xF:
+        return (_sx(field_value, 16) if width == 16
+                else field_value & MASK32) & MASK32
+    if mode == 0xC:
+        addr = _abs_addr(field_value, width)
+        if addr & 3:
+            raise AlignmentFault(
+                "alignment: word32 absolute address 0x%08x is not "
+                "word-aligned (p. 1-4)" % addr)
+        return _read_word(state, reader, addr)
+    if mode == 0xE:
+        off = _sx(field_value, width)
+        if off & 3:
+            raise AlignmentFault(
+                "alignment: stack-offset-indirect offset 0x%x is not "
+                "word-aligned (p. 1-27)" % off)
+        return _read_word(state, reader, (state.sp + off) & MASK32)
+    raise IllegalInstruction(
+        "illegal: CATCH/ENTER operand mode 0x%x is not word32 "
+        "(Tables 1-21, 3-2, pp. 1-25, 3-4)" % mode)
+
+
+def _flow_target(state: State,
+                 reader: Optional[Callable[[int], Optional[int]]],
+                 field_value: int, mode: int, width: int,
+                 name: str) -> int:
+    """Decode a Table 1-23 CALL/JMP flow32 target (p. 1-26, p. 1-27).
+
+    The 10-bit CALL/JMP offsets are multiplied by two (p. 1-21); the
+    16- and 32-bit Label fields are byte offsets used as they stand,
+    because p. 1-21 scales only the 10-bit fields.  That choice is called
+    out in the README.
+    """
+    if mode == 0xC:                                  # **$addr
+        addr = _abs_addr(field_value, width)
+        if addr & 3:
+            raise AlignmentFault(
+                "alignment: %s absolute-indirect address 0x%08x is not "
+                "word-aligned (p. 1-4)" % (name, addr))
+        return _read_word(state, reader, addr)
+    if mode == 0xD:                                  # *Roffset
+        off = _sx(field_value, width)
+        if off & 3:
+            raise AlignmentFault(
+                "alignment: %s stack-offset-indirect offset 0x%x is not "
+                "word-aligned (p. 1-27)" % (name, off))
+        return _read_word(state, reader, (state.sp + off) & MASK32)
+    if mode == 0xE:                                  # Label
+        return ((state.pc & ~1) + _sx(field_value, width)) & MASK32
+    if mode == 0xF:                                  # *$addr
+        return _abs_addr(field_value, width)
+    raise IllegalInstruction(
+        "illegal: %s operand mode 0x%x is not flow32 (Table 1-23, p. 1-26)"
+        % (name, mode))
+
+
+# ---------------------------------------------------------------------------
+# step()
+# ---------------------------------------------------------------------------
+
+def step(state: State,
+         memory_reader: Optional[Callable[[int], Optional[int]]] = None
+         ) -> Tuple[Record, State]:
+    """Execute exactly one instruction.
+
+    ``memory_reader`` is called with a word-aligned address and returns a
+    32-bit word, or ``None`` when the address is not present.  The
+    state's own ``memory`` overlay is consulted first, so writes made by
+    earlier steps are visible.
+
+    On a retired instruction the state is updated and returned.  On the
+    unimplemented-instruction sequence the HRI record carries ``trap=1``
+    and the p. 1-39 PC save at CSP; PC/SP/MSP/PSW remain at their
+    pre-state values.  A ``Refusal`` is raised for a legal instruction or
+    state outside the subset, including a fetch fault; the caller must
+    not compare it as a retirement (adjudication convention C2).
+    """
+    pre_pc = state.pc & ~1
+    pre_sp = state.sp & MASK32
+    pre_msp = state.msp & MASK32
+    insn0 = 0
+    insn1 = 0
+
+    try:
+        # --- state limitations, not instruction semantics -----------------
+        if state.psw & PSW_VIRTUAL:
+            raise Unsupported(
+                "unsupported: virtual addressing (PSW bit 16); this model "
+                "implements the physical address space only (p. 2-1)")
+        if state.psw & PSW_USER_LE:
+            raise Unsupported(
+                "unsupported: little-endian user data (PSW bit 15); this "
+                "model is big-endian only (p. 1-4)")
+        if not (state.psw & PSW_SP):
+            raise Unsupported(
+                "unsupported: CSP is ISP (PSW bit 9 = 0); the interrupt "
+                "stack is outside this model (p. 1-12)")
+        _check_stack_state(state)
+
+        pc, parcels, length = _fetch_instruction(state, memory_reader)
+        insn0 = parcels[0]
+        insn1 = parcels[1] if len(parcels) > 1 else 0
+        next_pc = (pc + 2 * length) & MASK32
+        new_sp = state.sp
+        new_msp = state.msp
+        new_psw = state.psw
+        store: Optional[Tuple[Operand, int]] = None
+
+        # =================================================================
+        # One-parcel instructions (Table 1-15/1-16/1-17, p. 1-22)
+        # =================================================================
+        if length == 1:
+            p0 = parcels[0]
+            op = (p0 >> 10) & 0x1F
+            src5 = (p0 >> 5) & 0x1F
+            dst5 = p0 & 0x1F
+
+            if op == 0x00:                            # KCALL
+                raise Unsupported(
+                    "unsupported: KCALL (1-parcel opcode 0x00, p. 3-29)")
+            elif op == 0x01:                          # CALL pcrel10
+                return_pc = next_pc
+                target = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
+                store = (Operand(4, True, ea=state.sp), return_pc)
+                next_pc = target
+            elif op == 0x02:                          # stack class
+                sub = p0 & 0x3
+                stk8 = (p0 >> 2) & 0xFF
+                if sub == 0x0:                        # ENTER stk8
+                    # One-filled, not sign-extended: field 0 -> -4096,
+                    # field 0xFF -> -16 (p. 1-21, p. 3-20).
+                    offset = _sx(((0xFFFFFF00 | stk8) << 4) & MASK32, 32)
+                    target = (state.sp + offset) & MASK32
+                    new_sp, new_msp, new_psw = _enter_offset(state, target)
+                elif sub == 0x1:                      # CATCH stk8
+                    target = (state.sp + (stk8 << 4)) & MASK32
+                    new_msp = _catch_msp(state, target)
+                elif sub == 0x2:                      # RETURN stk8
+                    new_pc, new_sp, new_msp = _return(
+                        state, memory_reader, stk8 << 4)
+                    next_pc = new_pc
+                else:                                 # POPN stk8
+                    new_sp, new_msp = _popn(state, stk8 << 4)
+            elif op == 0x03:                          # JMP pcrel10
+                next_pc = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
+            elif op in (0x04, 0x05, 0x06, 0x07):      # JMP(F/N)(Y/N)
+                target = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
+                # T jumps when F=1; F jumps when F=0.  Y/N is prediction.
+                jump_if_true = op in (0x06, 0x07)
+                flag = bool(state.psw & PSW_F)
+                if flag == jump_if_true:
+                    next_pc = target
+            elif op == 0x0A:                          # MOV wai5, stk5
+                store = (_stk5(state, dst5),
+                         _load(state, memory_reader, _wai5(src5)))
+            elif op == 0x0B:                          # niladic
+                sub = p0 & 0x3FF
+                if sub == 0x002:
+                    pass                              # NOP
+                elif sub == 0x000:
+                    raise Unsupported(
+                        "unsupported: CPU register escape (niladic "
+                        "0x0B/0x0; p. 3-14); control registers are not "
+                        "modelled")
+                elif 0x200 <= sub <= 0x3FF:
+                    raise Unsupported(
+                        "unsupported: trapped niladic 0x%03x (VB+8; "
+                        "Table 1-17 p. 1-22, p. 1-40)" % sub)
+                elif sub == 0x006:
+                    raise Unimplemented(
+                        "unsupported: FLUSHD (niladic 0x0B/0x6); there is "
+                        "no data cache and the unimplemented-instruction "
+                        "sequence is taken (p. 3-22)")
+                elif sub == 0x001:
+                    raise Unsupported(
+                        "unsupported: KRET (niladic 0x0B/0x1; p. 3-30)")
+                elif sub == 0x003:
+                    raise Unsupported(
+                        "unsupported: FLUSHI (niladic 0x0B/0x3; p. 3-24)")
+                elif sub == 0x004:
+                    raise Unsupported(
+                        "unsupported: FLUSHP (niladic 0x0B/0x4; p. 3-25)")
+                elif sub == 0x005:
+                    raise Unsupported(
+                        "unsupported: CRET (niladic 0x0B/0x5; p. 3-15)")
+                elif sub == 0x008:                      # TESTV
+                    f = bool(state.psw & PSW_V)
+                    new_psw = ((state.psw & ~(PSW_F | PSW_V))
+                               | (PSW_F if f else 0))
+                elif sub == 0x009:                      # TESTC
+                    f = bool(state.psw & PSW_C)
+                    new_psw = ((state.psw & ~(PSW_F | PSW_C))
+                               | (PSW_F if f else 0))
+                elif sub == 0x00A:
+                    raise Unsupported(
+                        "unsupported: CLRE (niladic 0x0B/0xA; p. 3-12)")
+                else:
+                    raise Unsupported(
+                        "unsupported: niladic subcode 0x%03x (Table 1-17, "
+                        "p. 1-22)" % sub)
+            elif op == 0x0D:                          # ADD3 wai5, stk5
+                result, new_psw, _ = _add_result(
+                    state.psw,
+                    _load(state, memory_reader, _stk5(state, dst5)),
+                    _load(state, memory_reader, _wai5(src5)))
+                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                         result)
+            elif op == 0x10:                          # CMPEQ imm5, stk5
+                src1 = _load(state, memory_reader, _imm5(src5))
+                src2 = _load(state, memory_reader, _stk5(state, dst5))
+                f = (src1 & MASK32) == (src2 & MASK32)
+                new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
+            elif op == 0x11:                          # CMPGT stk5, stk5
+                src1 = _load(state, memory_reader, _stk5(state, src5))
+                src2 = _load(state, memory_reader, _stk5(state, dst5))
+                f = _sx(src1 & MASK32, 32) > _sx(src2 & MASK32, 32)
+                new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
+            elif op == 0x12:                          # CMPGT imm5, stk5
+                src1 = _load(state, memory_reader, _imm5(src5))
+                src2 = _load(state, memory_reader, _stk5(state, dst5))
+                f = _sx(src1 & MASK32, 32) > _sx(src2 & MASK32, 32)
+                new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
+            elif op == 0x13:                          # CMPEQ stk5, stk5
+                src1 = _load(state, memory_reader, _stk5(state, src5))
+                src2 = _load(state, memory_reader, _stk5(state, dst5))
+                f = (src1 & MASK32) == (src2 & MASK32)
+                new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
+            elif op == 0x14:                          # ADD imm5, stk5
+                result, new_psw, _ = _add_result(
+                    state.psw,
+                    _load(state, memory_reader, _stk5(state, dst5)),
+                    _load(state, memory_reader, _imm5(src5)))
+                store = (_stk5(state, dst5), result)
+            elif op == 0x15:                          # ADD3 imm5, stk5
+                result, new_psw, _ = _add_result(
+                    state.psw,
+                    _load(state, memory_reader, _stk5(state, dst5)),
+                    _load(state, memory_reader, _imm5(src5)))
+                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                         result)
+            elif op == 0x16:                          # ADD stk5, stk5
+                result, new_psw, _ = _add_result(
+                    state.psw,
+                    _load(state, memory_reader, _stk5(state, dst5)),
+                    _load(state, memory_reader, _stk5(state, src5)))
+                store = (_stk5(state, dst5), result)
+            elif op == 0x17:                          # ADD3 stk5, stk5
+                result, new_psw, _ = _add_result(
+                    state.psw,
+                    _load(state, memory_reader, _stk5(state, dst5)),
+                    _load(state, memory_reader, _stk5(state, src5)))
+                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                         result)
+            elif op == 0x18:                          # MOV stk5, stk5
+                store = (_stk5(state, dst5),
+                         _load(state, memory_reader, _stk5(state, src5)))
+            elif op == 0x19:                          # MOV istk5, stk5
+                store = (_stk5(state, dst5),
+                         _load(state, memory_reader,
+                               _istk5(state, memory_reader, src5)))
+            elif op == 0x1A:                          # MOV stk5, istk5
+                store = (_istk5(state, memory_reader, dst5),
+                         _load(state, memory_reader, _stk5(state, src5)))
+            elif op == 0x1B:                          # MOV istk5, istk5
+                store = (_istk5(state, memory_reader, dst5),
+                         _load(state, memory_reader,
+                               _istk5(state, memory_reader, src5)))
+            elif op == 0x1C:                          # MOV imm5, stk5
+                store = (_stk5(state, dst5),
+                         _load(state, memory_reader, _imm5(src5)))
+            else:
+                raise Unsupported(
+                    "unsupported: 1-parcel opcode 0x%02x (Table 1-15, "
+                    "p. 1-22)" % op)
+
+        # =================================================================
+        # Three- and five-parcel instructions
+        # (Tables 1-18/1-19/1-20, pp. 1-24..1-25)
+        # =================================================================
+        else:
+            p0 = parcels[0]
+            opcode = (p0 >> 8) & 0x3F
+            smode = (p0 >> 4) & 0xF
+            dmode = p0 & 0xF
+            width = 16 if length == 3 else 32
+            if length == 3:
+                field_src = parcels[1]
+                field_dst = parcels[2]
+            else:
+                field_src = (parcels[1] << 16) | parcels[2]
+                field_dst = (parcels[3] << 16) | parcels[4]
+
+            if opcode == 0x00:
+                if length == 5:
+                    raise Unsupported(
+                        "unsupported: five-parcel opcode 0x00 (Table 1-20, "
+                        "p. 1-25)")
+                sub = dmode            # low nibble; Table 1-19, p. 1-24
+                # PRM p. 1-23: a three-parcel monadic operand is 32 bits,
+                # OPERAND-HI in parcel 2 and OPERAND-LO in parcel 3.  The
+                # dyadic forms below keep their 16-bit source/destination.
+                mono = (parcels[1] << 16) | parcels[2]
+                if sub == 0x1:                          # CALL
+                    return_pc = next_pc
+                    target = _flow_target(state, memory_reader, mono,
+                                          smode, 32, "CALL")
+                    store = (Operand(4, True, ea=state.sp), return_pc)
+                    next_pc = target
+                elif sub == 0x2:                        # RETURN
+                    if smode != 0xD:
+                        raise IllegalInstruction(
+                            "illegal: RETURN operand mode 0x%x (only "
+                            "word stack offset, p. 3-40)" % smode)
+                    new_pc, new_sp, new_msp = _return(
+                        state, memory_reader, _sx(mono, 32))
+                    next_pc = new_pc
+                elif sub == 0x3:                        # JMP
+                    next_pc = _flow_target(state, memory_reader, mono,
+                                           smode, 32, "JMP")
+                elif sub in (0x4, 0x5, 0x6, 0x7):       # conditional
+                    if smode not in (0xE, 0xF):
+                        raise IllegalInstruction(
+                            "illegal: conditional jump operand mode 0x%x; "
+                            "indirect modes are not allowed (p. 3-28)"
+                            % smode)
+                    target = _flow_target(state, memory_reader, mono,
+                                          smode, 32, "JMP")
+                    jump_if_true = sub in (0x6, 0x7)
+                    flag = bool(state.psw & PSW_F)
+                    if flag == jump_if_true:
+                        next_pc = target
+                elif sub == 0x8:                        # CATCH
+                    target = _word32_value(state, memory_reader,
+                                            mono, smode, 32)
+                    new_msp = _catch_msp(state, target)
+                elif sub == 0x9:                        # ENTER
+                    if smode == 0xD:
+                        raw = _sx(mono, 32)
+                        if raw >= 0:
+                            raise IllegalInstruction(
+                                "illegal: ENTER stack offset 0x%x is not "
+                                "negative; ENTER R0 included (p. 3-21)"
+                                % raw)
+                        offset = raw & ~0xF
+                        target = (state.sp + offset) & MASK32
+                        new_sp, new_msp, new_psw = _enter_offset(
+                            state, target)
+                    else:
+                        target = _word32_value(state, memory_reader,
+                                                mono, smode, 32)
+                        target &= ~0xF
+                        new_sp = target
+                        new_msp = target
+                        new_psw = state.psw & ~PSW_E  # unconditional flush
+                elif sub == 0xF:                        # POPN
+                    if smode != 0xD:
+                        raise IllegalInstruction(
+                            "illegal: POPN operand mode 0x%x (only "
+                            "word stack offset, p. 3-38)" % smode)
+                    new_sp, new_msp = _popn(
+                        state, _sx(mono, 32))
+                elif sub == 0x0:
+                    raise Unsupported(
+                        "unsupported: KCALL (monadic 0x00/0x0; p. 3-29)")
+                elif sub == 0xA:
+                    raise Unsupported(
+                        "unsupported: LDRAA (monadic 0x00/0xA; p. 3-31)")
+                elif sub == 0xB:
+                    raise Unsupported(
+                        "unsupported: FLUSHPTE (monadic 0x00/0xB; p. 3-27)")
+                elif sub == 0xC:
+                    raise Unsupported(
+                        "unsupported: FLUSHPBE (monadic 0x00/0xC; p. 3-26)")
+                elif sub == 0xD:
+                    raise Unimplemented(
+                        "unsupported: FLUSHDCE (monadic 0x00/0xD); no data "
+                        "cache, unimplemented sequence (p. 3-23)")
+                else:
+                    raise Unsupported(
+                        "unsupported: monadic subcode 0x%x (Table 1-19, "
+                        "p. 1-24)" % sub)
+
+            elif opcode == 0x06:                        # MOV
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                store = (dst_op, _load(state, memory_reader, src_op))
+
+            elif opcode in (0x20, 0x23, 0x30, 0x33):    # SUB/ADD/SUB3/ADD3
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                dst = _load(state, memory_reader, dst_op)
+                to_acc = opcode in (0x30, 0x33)
+                if opcode in (0x23, 0x33):
+                    result, new_psw, _ = _add_result(state.psw, dst, src)
+                else:
+                    result, new_psw, _ = _sub_result(state.psw, dst, src)
+                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                          if to_acc else dst_op), result)
+
+            elif opcode in (0x1D, 0x1E, 0x1F):          # CMPGT/CMPHI/CMPEQ
+                src1_op = _resolve_general(state, memory_reader, field_src,
+                                           smode, width)
+                src2_op = _resolve_general(state, memory_reader, field_dst,
+                                           dmode, width)
+                src1 = _load(state, memory_reader, src1_op)
+                src2 = _load(state, memory_reader, src2_op)
+                if opcode == 0x1D:                      # signed greater
+                    f = _sx(src1 & MASK32, 32) > _sx(src2 & MASK32, 32)
+                elif opcode == 0x1E:                    # unsigned higher
+                    f = (src1 & MASK32) > (src2 & MASK32)
+                else:                                   # equal
+                    f = (src1 & MASK32) == (src2 & MASK32)
+                new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
+
+            else:
+                raise Unsupported(
+                    "unsupported: %s opcode 0x%02x (Table 1-%d, p. 1-%d)"
+                    % ("five-parcel" if length == 5 else "three-parcel",
+                       opcode, 20 if length == 5 else 18,
+                       25 if length == 5 else 24))
+
+        # --- apply the one architectural write, if any -------------------
+        mem_we = 0
+        mem_addr = 0
+        mem_wdata = 0
+        mem_wmask = 0
+        if store is not None:
+            store_op, store_value = store
+            word_addr, new_word, mem_wdata, mem_wmask = _prepare_store(
+                state, memory_reader, store_op, store_value)
+            state.memory[word_addr] = new_word
+            mem_we = 1
+            mem_addr = word_addr
+
+        state.pc = next_pc & ~1
+        state.sp = new_sp & MASK32
+        state.msp = new_msp & MASK32
+        state.psw = new_psw & MASK32
+        record = Record(
+            pc=pc, insn0=insn0, insn1=insn1,
+            sp_before=pre_sp, sp_after=state.sp,
+            msp_before=pre_msp, msp_after=state.msp,
+            mem_we=mem_we, mem_addr=mem_addr,
+            mem_wdata=mem_wdata, mem_wmask=mem_wmask,
+            trap=0,
+        )
+        return record, state
+
+    except Trap as exc:
+        # The unimplemented-instruction sequence (p. 1-39): the opcode's
+        # own PC is stored at *(CSP) and the part then vectors through
+        # *(VB+12).  The one-instruction model reports that one store as
+        # the instruction's one architectural write and stops; the
+        # handler fetch is out of scope (adjudication convention C2).
+        trap_addr = pre_sp & ~3
+        trap_data = pre_pc
+        trap_mask = 0xF
+        try:
+            word_addr, new_word, trap_data, trap_mask = _prepare_store(
+                state, memory_reader,
+                Operand(4, True, ea=pre_sp), pre_pc)
+            state.memory[word_addr] = new_word
+            trap_addr = word_addr
+        except Refusal:
+            # The state cannot represent the save (for example an
+            # unaligned SP); still report the fixed word write.
+            pass
+        record = Record(
+            pc=pre_pc, insn0=insn0, insn1=insn1,
+            sp_before=pre_sp, sp_after=pre_sp,
+            msp_before=pre_msp, msp_after=pre_msp,
+            mem_we=1, mem_addr=trap_addr,
+            mem_wdata=trap_data, mem_wmask=trap_mask,
+            trap=1, reason=exc.reason,
+        )
+        return record, state
+
+    except Refusal as exc:
+        # A fetch fault, an illegal encoding, an alignment fault, a state
+        # limitation, or a legal instruction outside this model's subset.
+        # C2: this is a refusal outside the HRI comparison, not trap=1.
+        if not exc.parcels and insn0:
+            exc.parcels = [insn0, insn1]
+        raise
+
+
+# ---------------------------------------------------------------------------
+# Image loading and CLI
+# ---------------------------------------------------------------------------
+
+class ImageReader:
+    """Sparse image: word address -> 32-bit word; absent addresses return None."""
+
+    def __init__(self, words: Dict[int, int]):
+        self.words = words
+
+    def __call__(self, address: int) -> Optional[int]:
+        return self.words.get(address & ~3)
+
+
+def load_image(path: str) -> Dict[int, int]:
+    """Load the fixed one-word-per-line image format.
+
+    Blank lines and text from a first ``#`` are ignored so that
+    ``demo.s`` can carry the hand-encoded listing beside each word.
+    """
+    words: Dict[int, int] = {}
+    with open(path, "r", encoding="utf-8") as handle:
+        for lineno, raw in enumerate(handle, 1):
+            line = raw.split("#", 1)[0].strip()
+            if not line:
+                continue
+            token = line.split()[0]
+            if len(token) != 8:
+                raise ValueError(
+                    "%s:%d: expected one 8-hex-digit word, got %r"
+                    % (path, lineno, token))
+            try:
+                value = int(token, 16)
+            except ValueError:
+                raise ValueError(
+                    "%s:%d: %r is not a hex word" % (path, lineno, token))
+            words[len(words) * 4] = value & MASK32
+    return words
+
+
+def _parse_hex(text: str) -> int:
+    return int(text, 16) & MASK32
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Independent one-instruction ATT92010 Hobbit model.")
+    parser.add_argument("--image", required=True,
+                        help="text image: one 8-hex-digit 32-bit word per line")
+    parser.add_argument("--sp", required=True, help="initial SP (hex)")
+    parser.add_argument("--msp", required=True, help="initial MSP (hex)")
+    parser.add_argument("--max-steps", type=int, default=10000,
+                        help="maximum instructions to execute (default 10000)")
+    parser.add_argument("--stop-at-image-end",
+                        action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help="stop when the next PC equals the image length "
+                             "in bytes, without executing past the end "
+                             "(default: on)")
+    args = parser.parse_args(argv)
+
+    if args.max_steps < 0:
+        parser.error("--max-steps must be non-negative")
+
+    try:
+        sp = _parse_hex(args.sp)
+        msp = _parse_hex(args.msp)
+    except ValueError:
+        parser.error("--sp and --msp must be hexadecimal numbers")
+
+    if sp & 0xF or msp & 0xF:
+        parser.error("--sp and --msp must be quad-word (16-byte) aligned")
+
+    try:
+        image = load_image(args.image)
+    except (OSError, ValueError) as exc:
+        print("hobbit_sem: %s" % exc, file=sys.stderr)
+        return 2
+
+    reader = ImageReader(image)
+    state = State(pc=0, sp=sp, msp=msp, psw=PSW_SP)
+    image_len = len(image) * 4
+
+    for _ in range(args.max_steps):
+        # C1: no instruction's last parcel lies at or beyond the image
+        # end, so stop before fetching the word at image_len.
+        if args.stop_at_image_end and (state.pc & ~1) == image_len:
+            break
+        try:
+            record, state = step(state, reader)
+        except Refusal as exc:
+            # C2: a fetch fault, an illegal encoding, an alignment fault,
+            # a state limitation, or a legal instruction outside the
+            # subset is a refusal outside the HRI comparison, not trap=1.
+            p0 = exc.parcels[0] if exc.parcels else 0
+            p1 = exc.parcels[1] if len(exc.parcels) > 1 else 0
+            print("REFUSED pc=%04x insn=%04x%04x reason: %s"
+                  % ((state.pc & ~1), p0, p1, exc.reason),
+                  file=sys.stderr)
+            return 0
+        print(record.line())
+        if record.trap:
+            print(record.reason, file=sys.stderr)
+            return 0
+    else:
+        print("hobbit_sem: stopped after %d steps without a trap"
+              % args.max_steps, file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

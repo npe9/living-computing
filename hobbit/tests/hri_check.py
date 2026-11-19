@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Compare an RVFI retirement trace against a reference trace.
+"""Compare an HRI retirement trace against a reference trace.
+
+HRI is the Hobbit Retirement Interface: one record per retired instruction,
+modelled on riscv-formal's RVFI (the RISC-V Formal Interface) but with the
+fields a memory-to-memory stack machine needs. The check here is a
+line-by-line comparison of a Bluesim run against the independent
+one-instruction model; it is not a formal proof.
 
 The only accepted line format is the project-wide fixed format:
 
-    RVFI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d
+    HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d
 
 A line that does not match that format exactly is a malformed line and is
 reported with its 1-based line number; it is never skipped.
@@ -25,8 +31,8 @@ FIELD_ORDER = ("pc", "insn", "sp", "msp", "we", "addr", "data", "mask", "trap")
 
 # Exactly the fixed format.  Hex is lower-case and fixed-width; we/trap are
 # decimal.  Anything else is malformed.
-_RVFI_RE = re.compile(
-    r"^RVFI "
+_HRI_RE = re.compile(
+    r"^HRI "
     r"pc=([0-9a-f]{4}) "
     r"insn=([0-9a-f]{4})([0-9a-f]{4}) "
     r"sp=([0-9a-f]{8})>([0-9a-f]{8}) "
@@ -39,9 +45,9 @@ _RVFI_RE = re.compile(
 )
 
 
-def parse_rvfi_line(line):
+def parse_hri_line(line):
     """Return a dict of parsed fields, or None if the line is malformed."""
-    m = _RVFI_RE.match(line.strip())
+    m = _HRI_RE.match(line.strip())
     if m is None:
         return None
     (
@@ -118,7 +124,7 @@ def _read_command(cmd):
 
 def _malformed(side, line_number, line):
     sys.stderr.write(
-        "Error: malformed RVFI line at line %d in %s: %s\n"
+        "Error: malformed HRI line at line %d in %s: %s\n"
         % (line_number, side, line)
     )
     sys.exit(1)
@@ -141,10 +147,10 @@ def compare(dut_lines, spec_lines, ignore_fields):
     common = min(len(dut_lines), len(spec_lines))
 
     for i in range(common):
-        dut = parse_rvfi_line(dut_lines[i])
+        dut = parse_hri_line(dut_lines[i])
         if dut is None:
             _malformed("DUT", i + 1, dut_lines[i])
-        spec = parse_rvfi_line(spec_lines[i])
+        spec = parse_hri_line(spec_lines[i])
         if spec is None:
             _malformed("SPEC", i + 1, spec_lines[i])
 
@@ -167,12 +173,12 @@ def compare(dut_lines, spec_lines, ignore_fields):
     if len(dut_lines) != len(spec_lines):
         line_number = common + 1
         if len(dut_lines) > len(spec_lines):
-            extra = parse_rvfi_line(dut_lines[common])
+            extra = parse_hri_line(dut_lines[common])
             if extra is None:
                 _malformed("DUT", line_number, dut_lines[common])
             extra_pc = extra["pc"]
         else:
-            extra = parse_rvfi_line(spec_lines[common])
+            extra = parse_hri_line(spec_lines[common])
             if extra is None:
                 _malformed("SPEC", line_number, spec_lines[common])
             extra_pc = extra["pc"]
@@ -187,7 +193,7 @@ def compare(dut_lines, spec_lines, ignore_fields):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="Compare RVFI retirement traces line by line."
+        description="Compare HRI retirement traces line by line."
     )
     parser.add_argument("--dut", help="opaque command producing the DUT trace")
     parser.add_argument("--spec", help="opaque command producing the spec trace")

@@ -1,0 +1,13 @@
+generated/
+SmokeImage.bsv
+GoldenImage_*.bsv
+GoldenTb_*.bsv
+sim_smoke
+sim_smoke.so
+sim_golden_*
+*.bo
+*.ba
+*.o.tmp
+*.cxx
+*.h
+*.o

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Discriminating tests for rvfi_check.py.
+"""Discriminating tests for hri_check.py.
 
 Every test drives the real CLI as a subprocess and asserts the exact exit
 status and the named first divergence.  The suite is deliberately noisy about
@@ -7,7 +7,7 @@ which check catches which bug.
 
 OBSERVED failures:
     Deliberate injection: compare() unconditionally added "mask" to its ignore
-    set.  Running ``python3 tests/test_rvfi_check.py`` then produced 27 tests,
+    set.  Running ``python3 tests/test_hri_check.py`` then produced 27 tests,
     1 failure, exit status 1:
 
         test_mask_change  FAIL
@@ -24,17 +24,17 @@ import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.join(HERE, "rvfi_check.py")
+SCRIPT = os.path.join(HERE, "hri_check.py")
 
 BASE = (
-    "RVFI pc=0000 insn=00000000 sp=00000000>00000000 "
+    "HRI pc=0000 insn=00000000 sp=00000000>00000000 "
     "msp=00000000>00000000 we=0 addr=00000000 data=00000000 "
     "mask=00 trap=0"
 )
 
 
 def line(**overrides):
-    """Build a well-formed RVFI line with optional field overrides."""
+    """Build a well-formed HRI line with optional field overrides."""
     fields = {
         "pc": "0000",
         "insn": "00000000",
@@ -48,7 +48,7 @@ def line(**overrides):
     }
     fields.update(overrides)
     return (
-        "RVFI pc=%(pc)s insn=%(insn)s sp=%(sp)s msp=%(msp)s we=%(we)s "
+        "HRI pc=%(pc)s insn=%(insn)s sp=%(sp)s msp=%(msp)s we=%(we)s "
         "addr=%(addr)s data=%(data)s mask=%(mask)s trap=%(trap)s" % fields
     )
 
@@ -197,28 +197,28 @@ class RvfiCheckTest(unittest.TestCase):
         bad = line(mask="00")[: -len(" trap=0")]
         result = self.run_files([bad], [line()])
         self.assertEqual(result.returncode, 1)
-        self.assertIn("malformed RVFI line at line 1 in DUT", result.stderr)
+        self.assertIn("malformed HRI line at line 1 in DUT", result.stderr)
 
     def test_malformed_spec_line(self):
         """Catches a differ that silently skips a bad spec line."""
         bad = line(mask="00")[: -len(" trap=0")]
         result = self.run_files([line()], [bad])
         self.assertEqual(result.returncode, 1)
-        self.assertIn("malformed RVFI line at line 1 in SPEC", result.stderr)
+        self.assertIn("malformed HRI line at line 1 in SPEC", result.stderr)
 
     def test_malformed_line_2(self):
         """Catches a differ that only validates the first line."""
         bad = line(pc="0004")[: -len(" trap=0")]
         result = self.run_files([line(), bad], [line(), line(pc="0004")])
         self.assertEqual(result.returncode, 1)
-        self.assertIn("malformed RVFI line at line 2 in DUT", result.stderr)
+        self.assertIn("malformed HRI line at line 2 in DUT", result.stderr)
 
     def test_malformed_extra_tail(self):
         """Catches a differ that reports a length mismatch without parsing the extra line."""
         bad = line(pc="0004")[: -len(" trap=0")]
         result = self.run_files([line(), bad], [line()])
         self.assertEqual(result.returncode, 1)
-        self.assertIn("malformed RVFI line at line 2 in DUT", result.stderr)
+        self.assertIn("malformed HRI line at line 2 in DUT", result.stderr)
 
     # -- ignore-fields / max-lines --------------------------------------
     def test_ignore_fields(self):
