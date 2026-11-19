@@ -29,10 +29,12 @@ shasum -a 256 -c SHA256SUMS
 
 ## ICOT archive and GitHub status
 
-Archive base: `https://www.airc.aist.go.jp/aitec-icot/ICOT/`. Technical
+Archive root: `https://www.airc.aist.go.jp/aitec-icot/ICOT/` works as a path
+prefix only; the bare URL returns 404. The browsable entry is
+`https://www.airc.aist.go.jp/aitec-icot/ICOT/HomePage-J.html`. Technical
 reports live under `Museum/TRTM/TR/TRpdf/trNNNN.pdf`; conference papers under
 `Museum/FGCS/...`; free software under `Museum/IFS/abst/` (abstract page) and
-`ifs/symbolic-proc/...` (tarball). All URLs below answered HTTP 200 on
+`ifs/symbolic-proc/...` (tarball). All 17 table URLs answered HTTP 200 on
 2026-11-18. The TR PDFs are scanned images with no text layer; read the page
 image when transcribing.
 
@@ -50,7 +52,7 @@ image when transcribing.
 | Design of the PIM hardware system (FGCS 1988) | `Museum/FGCS/FGCS88en-proc1/88eR&D-2.pdf` | — | — |
 | KLIC: portable KL1 (FGCS 1994) | `Museum/FGCS/FGCS94en-proc/94ePIKL1.pdf` | — | — |
 | PIMOS source (KL1, 502 files) | `Museum/IFS/abst/004.html`; `ifs/symbolic-proc/pim-psi/pimos.tar.Z` | — | `npe9/pimos` (public) |
-| KLIC v2 source (KL1-to-C) | `Museum/IFS/abst/085.html`; `ifs/symbolic-proc/unix/klic/klic-2.002.tgz` | — | `GunterMueller/KLIC` (public mirror) |
+| KLIC source (KL1-to-C); v2.002 tarball | `Museum/IFS/abst/085.html`; `ifs/symbolic-proc/unix/klic/klic-2.002.tgz` | — | `GunterMueller/KLIC` is KLIC 3.011, not v2.002; v2.002 survives only as the ICOT tarball |
 | Portable KL1 experimental (pkl1) | `Museum/IFS/abst/072.html`; `ifs/symbolic-proc/unix/pkl1.tar.Z` | — | — |
 
 Notes:
@@ -62,7 +64,8 @@ Notes:
   sources (`pim/asm/pimasm.py`, `pim/bsv/Pim*.bsv`). The model is work in
   progress: the smoke test currently fails (`FAIL: did not halt within 10000
   steps`, with `a2`, `a4_mrb`, `a5`, `a7_skipped` and `mem100` mismatches).
-  Generated images and simulator binaries are build products and stay untracked.
+  Generated images and simulator binaries are build products and stay
+  untracked; `pim/bsv/run_smoke.sh` is a source script and is tracked.
 - No PIM/m microprogramming manual was found in the archive. TR-659 covers
   architecture and implementations; the FGCS 1992 PIM/m paper covers the
   implementation. Record the microprogramming gap rather than inferring it.
