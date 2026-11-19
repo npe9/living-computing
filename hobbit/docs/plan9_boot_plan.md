@@ -81,6 +81,26 @@ reads a file from a modelled disk image, and `za` assembles a program
 *inside* the boot. That is "1e is running", not "the model can run one
 binary".
 
+## A0 status (2026-11-19)
+
+Two routes to the parcel, both open:
+
+* **Link Bell's own `main9.z`** with the rebuilt `zl` and read `_main`'s
+  parcels from the result.  `zl` currently dies with `EXC_BAD_ACCESS`
+  inside `strlen` (lldb, frame `_platform_strlen`) when given
+  `main9.z` plus a synthetic stub: a bad name pointer in the host port's
+  symbol handling.  Next: feed it real members extracted from
+  `libc.a` (`main`, `exits`, `_clock`) instead of a hand-written stub,
+  and fix the name pointer rather than papering over the crash.
+* **Read a second linked site.** `_main` exists in every shipped
+  binary; `echo`/`zl` have `0xffff` there and `cat` `0x0000`.  A third
+  binary with a *different* filler value would identify it as unfilled
+  output, not an instruction; a binary where the parcel is a valid
+  instruction would identify it the other way.
+
+Until one of those answers, `run_p9.sh cat` stops at 0x12c2 exactly as
+recorded, and the model's refusal is correct behaviour.
+
 ## Goal B: all the devices
 
 Inventory is fixed by the port's own files; each row is a milestone with
