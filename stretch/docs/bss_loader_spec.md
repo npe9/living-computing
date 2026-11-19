@@ -894,12 +894,18 @@ p.17's origins. TASIGN is not on this path: there are no IOD cards.
 (SIFAE, MDRET, CRETBU; MCP pp.117, 140-142) into `*MAIN*` at 000051.0.
 `*MAIN*`'s entry is SCAFFOLD (`B,$MCP / ,$EOJ`; the compiled program is
 lost). MCP's own end of job then runs to the output EOJ's `$W` (MCP
-p.204 l.8), which K NO GO holds (the output unit's MOUNT/REW bit is on;
-MCP p.177 l.41, p.179 l.30). Found there: C22-6728-1 p.88 puts the
-upper limit at KSILO+8.32 (BU,18), but p.397 l.3's LX takes it from the
-index count field (bits 28-45), so the PP's upper bound is 10577, not
-213766. `$FETCH`, ITAB and the BSS processor's own entry are SCAFFOLD
-(plan R2b record).
+p.204 l.8), which K NO GO holds: IPL asked for the OUTPT reel and set
+CT11's MOUNT bit (MCP p.79, p.177 l.41, p.179 l.29). The bench, as the
+operator, mounts a blank reel and readies the unit with a channel signal
+(Reference Manual printed p.116). MCP clears MOUNT (p.126 l.5), labels
+the reel, writes the listing (this map, row for row) and a tape mark, and
+job control reaches ZJOBC1, the wait for the next job card.
+The upper limit lives at KSILO+8.28 (BU,18), not 8.32 as C22-6728-1 p.88
+prints. C22-6728 (-0) p.197 prints 8.28, and p.397 l.3's LX / p.384
+l.39's SC take it from the index count field, bits 28-45. Settled
+2026-11-19, and the deck follows it. Still SCAFFOLD: the `$FETCH` hook
+(SIT+21), the BSS processor's own ITAB, entry and IRET, and `*MAIN*`'s
+body (plan R2b record).
 **Its table read by MCP's loader, 2026-11-17** (plan R2b,
 `tests/check_bss_mcp_load.py`): the table and KSILO 8-11 the deck leaves are
 read by resume load from `YRESL1` (L p.332) through `YARSL`, `ARNRM5`, the

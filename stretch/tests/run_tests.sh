@@ -2451,6 +2451,46 @@ run "I/O STATUS REPORT: control-word status -> indicators, CA, interrupt" ./run_
     "held2:325=0x0000220000000000" "after2:326=0x0000200000000000" "ca2:327=0x0004200000000000" \
     "count:328=0x0000800000000000" "PC=432"
 
+# >>> THE OPERATOR READIES A UNIT: CHANNEL SIGNAL FROM OUTSIDE, 2026-11-19. <<<
+# Reference Manual printed p.116 (PDF 119, read in the ink): CS "comes on
+# when the SIGNAL key on the unit is depressed, and whenever the unit
+# changes from not-ready to ready status ... a means of communication from
+# the operator servicing the external units to the computer".  The bench is
+# the operator (gen_tb.py OPSIG=HW,CH -> StretchIO.operatorSignal).  MCP's
+# output EOJ waits in K NO GO for exactly this on channel 34
+# (tests/check_bss_mcp_go.py, stage 7).  Expected values derived before
+# the run: unit ready bit 18 and CS bit 23 (packControlWord), 34<<45 for CA.
+# MEASURED INJECTIONS: see the deck's header (decks/io_channel_signal.strap).
+run "CHANNEL SIGNAL: the operator readies the tape unit, CS held, reported, taken" ./run_program.sh ../decks/io_channel_signal.strap StretchIoChanSigTb \
+    "OPSIG=392,34" \
+    "before:321=0x0000200000000000" "held:322=0x0000210000000000" "after:323=0x0000200000000000" \
+    "ca:324=0x0004400000000000" "count:325=0x0000400000000000" "PC=410"
+
+# >>> THE 729 IV'S STATE-SETTING CONTROL FUNCTIONS ARE ACCEPTED, 2026-11-19. <<<
+# Reference Manual printed p.132 (PDF 135, read in the ink): 016, 036, 037,
+# 056, 057, 156, 157 each give EOP unless SEOP; the model refused them with
+# EPGK, and MCP's tape write (printed pp.152-154: density, mode, erase long
+# gap) ended in EPGK + EOP on the output EOJ's $W.  Expected values derived
+# before the run: ready 0x0000200000000000, + EOP 0x0000220000000000,
+# + EPGK 0x0000320000000000.  MEASURED INJECTIONS: the deck's header.
+run "TAPE CONTROL: density, mode and erase-long-gap functions accepted with EOP" ./run_program.sh ../decks/io_tape_control_modes.strap StretchTapeModesTb \
+    "c0:320=0x0000200000000000" "c1:321=0x0000200000000000" "c2:322=0x0000220000000000" \
+    "c3:323=0x0000220000000000" "c4:324=0x0000220000000000" "c5:325=0x0000220000000000" \
+    "c6:326=0x0000220000000000" "c7:327=0x0000220000000000" "c8:328=0x0000220000000000" \
+    "c9:329=0x0000320000000000" "PC=424"
+
+# >>> WRITE TAPE MARK (729 IV control code 117), 2026-11-19. <<<
+# Reference Manual printed p.132 (PDF 135, read in the ink): "A standard
+# tape mark (0001111) denoting end of file is written on tape", EOP unless
+# SEOP.  The model refused it with EPGK, and MCP's output EOJ issues it
+# ($WEF, printed p.156 l.14).  The mark is this model's tapeMarkWord, the
+# word SPACE FILE stops on.  Expected values derived before the run.
+# MEASURED INJECTIONS: the deck's header (decks/io_tape_mark.strap).
+run "TAPE CONTROL: WRITE TAPE MARK writes the mark SPACE FILE finds, and advances" ./run_program.sh ../decks/io_tape_mark.strap StretchTapeMarkTb \
+    "c1:323=0x0000200000000000" "c2:324=0x0000220000000000" \
+    "b0:326=0x0f00000000000000" "b1:327=0x0f00000000000000" \
+    "b2:328=0x000000000012d687" "b3:329=0x0f00000000000000" "PC=406"
+
 run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
     "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
 
@@ -15782,7 +15822,13 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # load the reconstructed BSS processor from its type area, and BSS prints
 # p.17's map.  MEASURED (the test's header): ABSSID spelled BSX fails the
 # eight 1a checks; two type-area cards swapped stop the loader at card 41.
-run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program from TWS to its entry" python3 check_bss_mcp_go.py
+# Since 2026-11-19 it runs on to the next job card: the OPERATOR ACTION
+# (a blank OUTPT reel mounted, the unit readied with a channel signal,
+# Reference Manual printed p.116) lets MCP write the listing to the reel,
+# and job control reaches ZJOBC1.  MEASURED: no operator stops at KCHOPN
+# (7 fail); no reel still reaches ZJOBC1 by MCP's end-of-reel path but
+# fails the six reel checks.
+run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
