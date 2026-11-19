@@ -362,6 +362,15 @@ test or an explicit label.
      `HP`, `SSP`, `write_mode`, and the four free-list pointers
      `RQFP`/`CRFP`/`SRFP`/`SSFP` (TR-246 p. 4), plus a tag mask register
      for the macro-call conditions (TR-389 p. 7).
+   - **Memory and tags.** The 40-bit word is 8-bit tag + 32-bit value.
+     Tags in use in the model: `0x23` instruction/code, `0x01` variable
+     (UREF), `0x02` integer. The heap is a flat cell array with `HP` as
+     the next free cell: `write_value` stores a register at `HP` and
+     advances it; `get_bound_value` reads the cell a register points
+     to. Structures are consecutive heap cells with a list/structure
+     tag and a pointer, per TR-246 p. 3. The tag values are the
+     model's, not historical, and are fixed here so later instructions
+     conform rather than inventing per-instruction tags.
    - **Decode.** Opcode = bits 31–24 of the value; operand fields per
      `docs/kl1_encoding.md` (`r`, `r_r`, `r_r_r`, `c8`, `c16`, `c24`,
      `c8_r`, `r_c16`, `atom`, and the address-dependent types).
