@@ -3,11 +3,13 @@
 These six programs and their retirement traces were derived by hand from the
 printed *ATT92010 Hobbit Microprocessor Programmer's Reference Manual*
 (January 1993, `docs/ATT92010_Hobbit_Programmers_Reference_Jan93.pdf`).
-Nothing here was produced, checked or corrected by `bsv/`, `asm/` or `sem/`;
-the only tool used while deriving was the Python 3 standard library, for the
-arithmetic written out in each `.md`. They are the oracle the implementation
-is measured against, so an implementation must never be used to regenerate
-them.
+Nothing here was produced, checked or corrected by `bsv/`, `asm/` or `sem/`,
+and no cycle number in the traces was copied from either directory: every
+`cyc` is derived from the printed Chapter 4 tables and Chapter 3's flush/refill
+pseudocode, as written out in each `.md`. The only tool used while deriving was
+the Python 3 standard library, for the arithmetic written out in each `.md`.
+They are the oracle the implementation is measured against, so an
+implementation must never be used to regenerate them.
 
 Printed-page arithmetic: the PDF page is the printed page plus 8 in
 Chapter 1, plus 48 in Chapter 2, plus 58 in Chapter 3. `T1-15` is the
@@ -32,13 +34,17 @@ in bits 15:0; entry at 0.
 Retirement line, one per retired instruction, program order:
 
 ```
-HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d
+HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%d
 ```
 
 `pc` is the address of the instruction's first parcel, `insn` its first two
 parcels (second `0000` for a one-parcel instruction), `sp`/`msp` before and
 after, `we`/`addr`/`data`/`mask` one architectural word write (stack-cache
-resident writes included), `trap` = 1 for the unimplemented-instruction trap.
+resident writes included), `trap` = 1 for the unimplemented-instruction trap,
+and `cyc` the instruction's occupancy in core clock cycles: cycles between the
+previous retirement and this one, or from the core's start for the first
+record. The `cyc` model, its printed sources and its named parameters are in
+"Cycle model" below.
 
 The record is the **HRI** line, the *Hobbit Retirement Interface*: this
 project's analogue of riscv-formal's RISC-V Formal Interface (RVFI), with the
@@ -46,6 +52,80 @@ fields fixed by the contract above. The prefix is part of the format, not a
 label of convenience: `check_golden.py` reports a line that begins `RVFI `
 (the record's former name) as a format error instead of skipping it, so a
 harness left on the old spelling cannot pass by being ignored.
+
+## Cycle model (the `cyc` field)
+
+`cyc` is the instruction's occupancy in core clock cycles, measured at
+retirement: cycles between the previous retirement and this one, and for the
+first record from the core's start to its retirement. A folded branch retires
+as its own record and contributes 0 (p. 4-3 note; Table 4-35, p. 4-5).
+
+Every base time is the printed Chapter 4 value under the four assumptions of
+p. 4-1: instruction fetch in the instruction cache/prefetch buffer, only the
+stack-offset, immediate, register, absolute (jumps and calls only) and
+program-counter-relative addressing modes, all stack-offset accesses captured
+in the stack cache, and no data hazards. Under those assumptions no delay row
+from Tables 4-37 to 4-40 is added. The images execute with CONFIG = 0 (caches
+disabled) and several contain back-to-back dependent stack words, so the cycle
+contract is a deliberate p. 4-1 abstraction, not a model of those images' cache
+traffic. Section 4.2 admits a data hazard but Chapter 4 prints no hazard
+penalty row, so no number is invented for one.
+
+The first record is measured from the core's start, and the same p. 4-1
+assumption is applied there: the first instruction is available when the core
+starts, so its `cyc` is its base time (1 in all six programs). No Table 4-37
+row—including "EU pipeline empty" = 2 (p. 4-6), a section 4.2 fetch delay—is
+added; the branch refill cost this contract does charge is the printed
+Table 4-35 value.
+
+| mnemonic/form in these images | `cyc` | printed source |
+|---|---|---|
+| `MOV`, `ADD`, `ADD3`, `SUB`, `CMPEQ`, `CMPGT`, `NOP` | 1 | Table 4-32 (p. 4-3); its `CMP` row is the manual's only timing for the compares (timing_tables.md §6 item 3) |
+| `CALL` | 1 | Table 4-32 (p. 4-3) |
+| `RETURN` | 2 | Table 4-32 (p. 4-3); always indirect, no indirection delay (p. 4-3 note) |
+| `POPN` | 2 | Table 4-32 (p. 4-3) |
+| `JMP`, unfolded | 1 | Table 4-32 prints min 0/max 1; the p. 4-3 note gives 0 folded / 1 unfolded |
+| `JMP`, folded | 0 | p. 4-3 note (no `JMP` folds in these images) |
+| conditional jump | 0, 1, 2 or 3 | Table 4-35 (p. 4-5), by prediction, fold and distance from the compare |
+| `ENTER` | 1 + (Q·E) | Table 4-36 (p. 4-5) |
+| unimplemented opcode | 7 + A | Table 4-36 (p. 4-5) |
+
+### Named memory parameters (model choices, not printed values)
+
+p. 4-2 defines `A`, `D` and `Q` as memory access times for single-, double- and
+quad-word accesses but prints no numeric value for any of them. The traces
+therefore adopt, and label as choices:
+
+| parameter | value | why |
+|---|---|---|
+| `A_CYC` | 1 | the model's memory is a single-cycle 32-bit-word BRAM: one core clock per word access |
+| `D_CYC` | 2 | two 32-bit words |
+| `Q_CYC` | 4 | four 32-bit words |
+
+Only `A` (006's trap row) and `Q` (004's flushing `ENTER`) enter these traces;
+`D` is fixed for completeness. `E` in `1 + (Q·E)` is read as the number of
+16-byte blocks the pp. 3-19/3-20 `ENTER` flush loop moves. The loop writes a
+whole block (`memory[MSP-16]` … `memory[MSP-4]`) and does `MSP-=16` once per
+iteration, so a distance that is not a multiple of 16 bytes rounds up to a
+whole block. A stack-offset `ENTER` whose `MSP - target <= SCSIZE` (256 bytes)
+moves no block, so `E = 0` and the row costs 1: that is 003 L03 and 004 L02.
+004 L04 is the immediate `ENTER`, which flushes `MSP = 0x180` down to
+`SHAD = 0x100`; `0x80 = 128` bytes is 8 whole blocks, so `1 + 4·8 = 33`. The
+manual never states the unit of `E` (timing_tables.md §6 item 8); this is the
+reading forced by the printed flush loop, recorded as a choice.
+
+Branch rows: Table 4-35 prices a *correctly predicted folded* conditional jump
+at 0 and a *correctly predicted unfolded* one at 1. For an incorrect
+prediction it prints 3, 2 and 1 for a jump immediately, one instruction and two
+instructions after the compare, and 1 (unfolded) or 0 (folded) at four or
+more. It prints **no folded row for an incorrect prediction 1–3 instructions
+after compare** (timing_tables.md §6 item 9), so a folded mispredict in that
+window cannot be priced from the table. 005 L03 is that case — `JMPTN`
+immediately after `CMPEQ`, predicted N but taken — and carries the table's only
+printed cost for it, 3. That 3 is the flush/refill charged to the branch's
+retirement interval; the folded branch's own execution remains 0 (p. 4-3).
+
+Totals: 001 = 8, 002 = 8, 003 = 7, 004 = 40, 005 = 11, 006 = 11 cycles.
 
 ## Pre-state assumed by every run
 
@@ -187,7 +267,8 @@ catch a named defect:
 | check | the defect it catches |
 |---|---|
 | every `.hex` line is 8 lowercase hex digits | uppercase or short words, a stray separator or a comment inside an image |
-| every `.trace` line begins `HRI ` and matches the fixed field list | a line still on the retired `RVFI ` prefix (reported as a format error, never skipped), a missing or extra field, or a wrong-width field |
+| every `.trace` line begins `HRI ` and matches the fixed field list, including the trailing `cyc=<decimal>` | a line still on the retired `RVFI ` prefix (reported as a format error, never skipped), a missing or extra field, a wrong-width field, or a missing/hex/signed cycle count |
+| `cyc=0` appears only on a branch | a zero-cycle ALU, store, stack or niladic record, which no printed row supports; only a folded branch is free (p. 4-3 note, Table 4-35 p. 4-5) |
 | the first trace line has `pc=0000` | an image that does not start executing at its entry |
 | `insn` bits 31:16 equal the image parcel at `pc` | a trace line that does not describe the instruction actually stored there |
 | parcel count from bit 15 / bits 15:14 matches the `insn` field (1-parcel lines carry `insn` low half `0000`; 3-parcel lines carry the second parcel) | a one-parcel instruction written with a stale second parcel, or a truncated 3-/5-parcel instruction |
@@ -199,3 +280,4 @@ catch a named defect:
 | the next line's `pc` is either `pc+2*parcels` or a documented control transfer | a PC sequence that no instruction in this set can produce |
 | the last line without `trap=1` ends exactly at the image end | an image whose last instruction leaves the model fetching a padding parcel, so "the run ends" would never happen |
 | every `.md` has exactly one `Lnn.` entry per trace line, numbered in order, quoting that line verbatim, and citing a printed page or table | documentation that has drifted from the trace, or a line with no manual justification |
+| every `Lnn.` entry carries `Cycles: N — ...` and N equals the `cyc` in the line it quotes | a cycle figure that drifted from the trace, or a record whose time was never justified in place |

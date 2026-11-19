@@ -27,7 +27,8 @@ import sys
 
 # Field order in the fixed line format.  The first divergence in this order is
 # reported.  "sp" and "msp" each cover the whole before>after pair.
-FIELD_ORDER = ("pc", "insn", "sp", "msp", "we", "addr", "data", "mask", "trap")
+FIELD_ORDER = ("pc", "insn", "sp", "msp", "we", "addr", "data", "mask", "trap",
+               "cyc")
 
 # Exactly the fixed format.  Hex is lower-case and fixed-width; we/trap are
 # decimal.  Anything else is malformed.
@@ -41,7 +42,8 @@ _HRI_RE = re.compile(
     r"addr=([0-9a-f]{8}) "
     r"data=([0-9a-f]{8}) "
     r"mask=([0-9a-f]{2}) "
-    r"trap=(\d+)$"
+    r"trap=(\d+) "
+    r"cyc=(\d+)$"
 )
 
 
@@ -63,6 +65,7 @@ def parse_hri_line(line):
         data,
         mask,
         trap,
+        cyc,
     ) = m.groups()
     return {
         "pc": int(pc, 16),
@@ -74,6 +77,7 @@ def parse_hri_line(line):
         "data": int(data, 16),
         "mask": int(mask, 16),
         "trap": int(trap, 10),
+        "cyc": int(cyc, 10),
     }
 
 
@@ -95,6 +99,8 @@ def _format_field(field, value):
         return "0x%02x" % value
     if field == "trap":
         return "0x%x" % value
+    if field == "cyc":
+        return "%d" % value
     raise ValueError("unknown field %r" % (field,))
 
 

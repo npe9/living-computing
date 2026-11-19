@@ -11,14 +11,20 @@ Standard library only, and deliberately not a simulator.  It checks
 
   * the fixed image format (one 8-digit lowercase word per line, ascending
     from address 0, parcel at even address in bits 31:16),
-  * the fixed HRI line format, field by field, and the HRI prefix itself,
+  * the fixed HRI line format, field by field, including the trailing
+    decimal `cyc` cycle count, and the HRI prefix itself,
   * that each line's `insn` field really is the first two parcels of the
     instruction the image holds at `pc`,
   * that SP and MSP are continuous from line to line and quad-aligned,
   * that the pc sequence is one an instruction of this set can produce,
+  * that `cyc=0` occurs only on a branch: the sole free instruction is a
+    folded branch (p. 4-3 note; Table 4-35, p. 4-5), so a zero on an
+    ALU, load/store, stack or niladic instruction is a claim the manual
+    does not support,
   * that every retirement line is matched, one for one and in order, by an
-    `Lnn.` entry of the sibling `.md`, quoting it verbatim and citing a
-    printed page or table.
+    `Lnn.` entry of the sibling `.md`, quoting it verbatim, carrying an
+    in-place `Cycles: N — ...` justification whose N equals the quoted
+    `cyc`, and citing a printed page or table.
 
 Usage:  python3 check_golden.py [directory]
 Exit status 0 when everything passes, 1 with one message per violation.
@@ -36,7 +42,8 @@ HRI_RE = re.compile(
     r"sp=(?P<spb>[0-9a-f]{8})>(?P<spa>[0-9a-f]{8}) "
     r"msp=(?P<mb>[0-9a-f]{8})>(?P<ma>[0-9a-f]{8}) "
     r"we=(?P<we>[01]) addr=(?P<addr>[0-9a-f]{8}) data=(?P<data>[0-9a-f]{8}) "
-    r"mask=(?P<mask>[0-9a-f]{2}) trap=(?P<trap>[01])$")
+    r"mask=(?P<mask>[0-9a-f]{2}) trap=(?P<trap>[01]) "
+    r"cyc=(?P<cyc>0|[1-9][0-9]*)$")
 LNN_RE = re.compile(r"^L(\d\d)\. `(HRI .*)`$", re.M)
 # The record used to be called RVFI.  A stale prefix must be reported as a
 # format error, not treated as an unknown line.
@@ -131,7 +138,8 @@ def check_trace(stem, parcels, words, errs):
             errs.append("%s: does not match the fixed HRI format: %r"
                         % (where, line))
             continue
-        g = {k: int(v, 16) for k, v in m.groupdict().items()}
+        g = {k: int(v, 16) for k, v in m.groupdict().items() if k != "cyc"}
+        g["cyc"] = int(m.group("cyc"), 10)
         if i == 0 and g["pc"] != 0:
             errs.append("%s: first line is not at the entry, pc=%04x"
                         % (where, g["pc"]))
@@ -152,6 +160,10 @@ def check_trace(stem, parcels, words, errs):
         count = parcel_count(first, where, errs)
         if count is None:
             continue
+        if g["cyc"] == 0 and not is_branch(first, count):
+            errs.append("%s: cyc=0 on a non-branch; only a folded branch takes no "
+                        "time (p. 4-3 note, Table 4-35 p. 4-5)"
+                        % where)
         if g["pc"] + 2 * count > image_end:
             errs.append("%s: %d-parcel instruction at %04x runs past the image "
                         "end %04x" % (where, count, g["pc"], image_end))
@@ -220,9 +232,22 @@ def check_trace(stem, parcels, words, errs):
     starts = [m.start() for m in re.finditer(r"^L\d\d\. ", md, re.M)]
     for i, s in enumerate(starts):
         end = starts[i + 1] if i + 1 < len(starts) else len(md)
-        if not PAGE_RE.search(md[s:end]):
+        block = md[s:end]
+        if not PAGE_RE.search(block):
             errs.append("%s: entry L%02d cites no printed page or table"
                         % (mpath, i + 1))
+        cm = re.search(r"^Cycles: (\d+) — ", block, re.M)
+        if not cm:
+            errs.append("%s: entry L%02d has no in-place `Cycles: N — ...` "
+                        "justification" % (mpath, i + 1))
+            continue
+        qm = HRI_RE.match(hits[i][1]) if i < len(hits) else None
+        if qm is None:
+            errs.append("%s: entry L%02d quotes a line the HRI format rejects"
+                        % (mpath, i + 1))
+        elif int(cm.group(1)) != int(qm.group("cyc")):
+            errs.append("%s: entry L%02d states Cycles: %s but quotes cyc=%s"
+                        % (mpath, i + 1, cm.group(1), qm.group("cyc")))
 
 
 def main(argv):

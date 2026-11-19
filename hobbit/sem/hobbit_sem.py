@@ -4,13 +4,54 @@
 The model is the specification side of the repository's HRI (Hobbit
 Retirement Interface) check: one call to ``step()`` retires (or refuses)
 exactly one parcel-encoded instruction, starting from an architectural
-pre-state and with no pipeline, prefetch, decoded-instruction-cache,
-branch-folding or timing model.  HRI is the Hobbit analogue of
-riscv-formal's RISC-V Formal Interface (RVFI); the check is a
+pre-state and with no pipeline, prefetch buffer, decoded-instruction-cache
+or branch-folding hardware.  It does carry the Chapter 4 cycle account
+that the record's trailing ``cyc`` field reports.  HRI is the Hobbit
+analogue of riscv-formal's RISC-V Formal Interface (RVFI); the check is a
 per-instruction trace comparison against the Bluespec core, not a formal
 proof.  The returned record is the HRI line the core is expected to
 reproduce field by field; see ``hobbit/sem/README.md`` for the exact
 field definitions and the manual page behind every field.
+
+Cycle account
+-------------
+
+``cyc`` is the instruction's occupancy in core clock cycles, measured
+between HRI retirements (for the first record, from the core's start to
+its retirement).  The base values are the printed Chapter 4 tables
+(pp. 4-3..4-5, Tables 4-32..4-36), transcribed in ``CHAPTER4`` below with
+a printed page and table caption on every row.  They are used under the
+four assumptions printed on p. 4-1: the instruction fetches in the
+instruction cache (the prefetch buffer assumption), only stack-offset,
+immediate, register, absolute-for-jumps/calls and PC-relative modes are
+used, stack offsets are captured in the stack cache, and no data hazards
+occur.  Consistently with those assumptions no Table 4-37..4-40 delay is
+added: this model has no instruction fetch, operand access or data type
+delay, and the two delay families the manual duplicates (Tables 4-38 and
+4-40, p. 4-6/p. 4-7) are not applied at all.
+
+The manual defines the memory symbols A (single word), D (double word)
+and Q (quad word) on p. 4-2 but prints no cycle values for them.  The
+model chooses one cycle per 32-bit word, because its backing memory is a
+single-cycle 32-bit word store: ``A_CYC = 1``, ``D_CYC = 2``,
+``Q_CYC = 4``.  These are model choices, not manual facts.  Table 4-36's
+ENTER row is ``1 + (Q.E)``; the model reads E as the number of 16-byte
+blocks the pp. 3-19/3-20 flush loop actually moves, rounded up for a
+partial block.  Table 4-36 prices CATCH at a flat 1 even though CATCH
+refills the cache (p. 3-10); no refill term is invented.  The
+unimplemented-opcode row is ``7 + A`` (p. 4-5, Table 4-36), the sequence
+FLUSHD/FLUSHDCE take (pp. 3-22, 3-23).
+
+Branch timing uses the printed p. 4-7 folding rule and Table 4-35
+(p. 4-5).  A folded one-parcel unconditional JMP takes 0 (p. 4-3 note)
+and an unfolded one takes 1.  For a conditional jump the model compares
+the branch's Y/N prediction bit with the direction it actually took and
+uses Table 4-35's rows; the distance to the compare that last wrote
+PSW.F selects the incorrect-prediction row.  Where the printed table has
+no row at all -- an incorrectly predicted conditional jump whose
+PSW.F was not set by a compare (TESTC/TESTV and the reset value are the
+other flag sources) -- the model raises ``Refusal`` instead of inventing
+a cycle count.
 
 Everything here is written from the printed ATT92010 Programmer's
 Reference Manual (January 1993) and deliberately does not import or read
@@ -51,10 +92,203 @@ PSW_VIRTUAL = 1 << 16   # virtual addressing (not modelled)
 
 SCSIZE = 256            # 64 words, p. 1-5
 
+# --- Chapter 4 memory parameters (printed p. 4-2, no values printed) -----
+# The manual defines A, D and Q (p. 4-2) as the memory access times for a
+# single, double and quad word, but prints no cycle values for them.  These
+# are model choices, not manual facts: one core cycle per 32-bit word of the
+# model's single-cycle word memory, so a double word costs two word cycles
+# and a quad word four.  Every table cell that contains A, D or Q is
+# resolved with these names, never with an inline constant.
+A_CYC = 1               # memory access, single word
+D_CYC = 2               # memory access, double word (two words)
+Q_CYC = 4               # memory access, quad word (four words)
+
+
+@dataclass(frozen=True)
+class CycleRow:
+    """One printed Chapter 4 execution-time cell.
+
+    ``cycles`` is the printed cell with A/D/Q substituted (one of the three
+    named parameters above).  It is ``None`` where the printed cell is not
+    a fixed number: a Min/Max range (MUL), the JMP fold/no-fold pair, the
+    ENTER expression whose E is computed per instruction, or the Table 4-34
+    ``8.S`` cell whose S p. 4-2 never defines.  ``source`` is the printed
+    page and printed caption of the table the row appears in.
+    """
+
+    table: str
+    op: str
+    variant: str
+    cycles: Optional[int]
+    source: str
+    note: str = ""
+
+
+# The printed pages are the manual's own folios; the captions are the ones
+# printed on those pages (Table 4-32..4-40, not the body text's 4-1..4-9;
+# see hobbit/docs/timing_tables.md section 1).  Rows for instructions this
+# model refuses are transcribed too: the table is the chapter's data, and
+# the refusal is made by the instruction decoder, not by rewriting timings.
+CHAPTER4: Tuple[CycleRow, ...] = (
+    # --- Table 4-32, Simple Instruction, printed p. 4-3 -----------------
+    CycleRow("Table 4-32", "ADD", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "ADD3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "ADDI", "", 2, "p. 4-3 Table 4-32",
+             "Printed ADD1 in Table 4-32; Table 3-1 and p. 3-6 print ADDI."),
+    CycleRow("Table 4-32", "AND", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "AND3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "ANDI", "", 2, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "CALL", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "CLRE", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "CMP", "", 1, "p. 4-3 Table 4-32",
+             "CMP is not a Table 3-1 mnemonic; this row covers CMPEQ, "
+             "CMPGT and CMPHI (p. 3-13)."),
+    CycleRow("Table 4-32", "CPU", "", 0, "p. 4-3 Table 4-32",
+             "Prefix only; a CPU-prefix IC miss adds a Table 4-37 penalty."),
+    CycleRow("Table 4-32", "FLUSHI", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "FLUSHP", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "FLUSHPBE", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "FLUSHPTE", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "JMP", "", None, "p. 4-3 Table 4-32",
+             "Printed Min 0, Max 1: 0 folded, 1 unfolded (p. 4-3 note)."),
+    CycleRow("Table 4-32", "LDRAA", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "MOV", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "MOVA", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "NOP", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "OR", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "OR3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "ORI", "", 2, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "RETURN", "", 2, "p. 4-3 Table 4-32",
+             "RETURNs are always indirect; do not add an indirection "
+             "delay (p. 4-3 note)."),
+    CycleRow("Table 4-32", "POPN", "", 2, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SHL", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SHL3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SHR", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SHR3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SUB", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "SUB3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "TADD", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "TESTC", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "TESTV", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "TSUB", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "USHR", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "USHR3", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "XOR", "", 1, "p. 4-3 Table 4-32"),
+    CycleRow("Table 4-32", "XOR3", "", 1, "p. 4-3 Table 4-32"),
+    # --- Table 4-33, Multi-Cycle Arithmetic, printed p. 4-4 -------------
+    CycleRow("Table 4-33", "DIV", "", 38, "p. 4-4 Table 4-33"),
+    CycleRow("Table 4-33", "DIV3", "", 38, "p. 4-4 Table 4-33"),
+    CycleRow("Table 4-33", "MUL", "", None, "p. 4-4 Table 4-33",
+             "Printed Min 3, Max 20; data dependent."),
+    CycleRow("Table 4-33", "MUL3", "", None, "p. 4-4 Table 4-33",
+             "Printed Min 3, Max 20; data dependent."),
+    CycleRow("Table 4-33", "REM", "", 38, "p. 4-4 Table 4-33"),
+    CycleRow("Table 4-33", "REM3", "", 38, "p. 4-4 Table 4-33"),
+    CycleRow("Table 4-33", "UDIV", "", 38, "p. 4-4 Table 4-33"),
+    CycleRow("Table 4-33", "UREM", "", 38, "p. 4-4 Table 4-33"),
+    # --- Table 4-34, DQM Instructions, printed p. 4-4 ------------------
+    CycleRow("Table 4-34", "DQM", "Constant to SC double-word", 3,
+             "p. 4-4 Table 4-34"),
+    CycleRow("Table 4-34", "DQM", "Constant to SC quad-word", 5,
+             "p. 4-4 Table 4-34"),
+    CycleRow("Table 4-34", "DQM", "Constant to M double-word",
+             1 + D_CYC, "p. 4-4 Table 4-34", "Printed 1 + D."),
+    CycleRow("Table 4-34", "DQM", "Constant to M quad-word",
+             1 + Q_CYC, "p. 4-4 Table 4-34", "Printed 1 + Q."),
+    CycleRow("Table 4-34", "DQM", "SC double-word to SC double-word", 4,
+             "p. 4-4 Table 4-34"),
+    CycleRow("Table 4-34", "DQM", "SC quad-word to SC quad-word", 8,
+             "p. 4-4 Table 4-34"),
+    CycleRow("Table 4-34", "DQM", "SC/M double-word to M/SC double-word",
+             2 + D_CYC, "p. 4-4 Table 4-34", "Printed 2 + D."),
+    CycleRow("Table 4-34", "DQM", "SC/M quad-word to M/SC quad-word",
+             4 + D_CYC, "p. 4-4 Table 4-34",
+             "Printed 4 + D: a quad-word transfer priced with D, not Q. "
+             "The manual gives no correction."),
+    CycleRow("Table 4-34", "DQM", "M double-word to M double-word",
+             2 * D_CYC, "p. 4-4 Table 4-34", "Printed 2.D."),
+    CycleRow("Table 4-34", "DQM", "M quad-word to M quad-word", None,
+             "p. 4-4 Table 4-34",
+             "Printed 8.S; S is not in the p. 4-2 abbreviation list and is "
+             "undefined, so no cycle value is encoded."),
+    # --- Table 4-35, Conditional Jump, printed p. 4-5 ------------------
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Correct prediction, folded", 0, "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Correct prediction, unfolded", 1, "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Incorrect prediction, jump after compare", 3,
+             "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Incorrect prediction, jump 2 instructions after compare", 2,
+             "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Incorrect prediction, jump 3 instructions after compare", 1,
+             "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Incorrect prediction, unfolded, 4 or more instructions "
+             "after compare", 1, "p. 4-5 Table 4-35"),
+    CycleRow("Table 4-35", "JMP(F/N)(Y/N)",
+             "Incorrect prediction, folded, 4 or more instructions "
+             "after compare", 0, "p. 4-5 Table 4-35"),
+    # --- Table 4-36, Miscellaneous Instruction, printed p. 4-5 ---------
+    CycleRow("Table 4-36", "CATCH", "", 1, "p. 4-5 Table 4-36",
+             "A flat 1; no refill term is printed even though CATCH fills "
+             "the cache in 16-byte blocks (pp. 3-10..3-11)."),
+    CycleRow("Table 4-36", "CRET", "", 11 + Q_CYC,
+             "p. 4-5 Table 4-36", "Printed 11 + Q."),
+    CycleRow("Table 4-36", "ENTER", "", None, "p. 4-5 Table 4-36",
+             "Printed 1 + (Q.E); E is computed per instruction from the "
+             "pp. 3-19/3-20 flush loop (see _enter_offset)."),
+    CycleRow("Table 4-36", "KCALL", "", 8 + D_CYC + A_CYC,
+             "p. 4-5 Table 4-36", "Printed 8 + D + A."),
+    CycleRow("Table 4-36", "KRET", "", 10 + D_CYC,
+             "p. 4-5 Table 4-36", "Printed 10 + D."),
+    CycleRow("Table 4-36", "Unimplemented opcode", "",
+             7 + A_CYC, "p. 4-5 Table 4-36",
+             "Printed 7 + A; FLUSHD and FLUSHDCE take this sequence "
+             "(pp. 3-22, 3-23)."),
+    CycleRow("Table 4-36", "Exception", "", 9 + D_CYC + A_CYC,
+             "p. 4-5 Table 4-36", "Printed 9 + D + A."),
+)
+
+# Fixed per-mnemonic rows the decoder can look up.  Table 4-32 has one row
+# per mnemonic; Tables 4-33 and 4-36 do too.  Table 4-34 is keyed by DQM
+# form and Table 4-35 by branch condition, so neither is in this map.
+_CYCLE_BY_OP: Dict[str, CycleRow] = {}
+for _row in CHAPTER4:
+    if _row.table in ("Table 4-32", "Table 4-33", "Table 4-36"):
+        if _row.cycles is not None:
+            assert _row.op not in _CYCLE_BY_OP, _row.op
+            _CYCLE_BY_OP[_row.op] = _row
 
 # ---------------------------------------------------------------------------
 # State and record
 # ---------------------------------------------------------------------------
+
+@dataclass
+class Timing:
+    """Cycle-accounting state carried between instructions (not architectural).
+
+    ``retired`` counts HRI records produced before the current instruction,
+    so it is also the index the current record will have.  ``last_compare``
+    is the ``retired`` index of the most recent CMPEQ/CMPGT/CMPHI, or -1.
+    ``last_flag_source`` records what last wrote PSW.F: ``"compare"``,
+    ``"other"`` (TESTC/TESTV), or ``"none"`` (reset).  Table 4-35 is
+    indexed by distance from a compare, so the other sources have no
+    printed incorrect-prediction row.
+
+    ``prev_foldable`` says whether the instruction that retired immediately
+    before could receive a folded one-parcel branch under the printed
+    p. 4-7 rule; ``None`` means no instruction has retired yet.
+    """
+
+    retired: int = 0
+    last_compare: int = -1
+    last_flag_source: str = "none"
+    prev_foldable: Optional[bool] = None
+
 
 @dataclass
 class State:
@@ -64,7 +298,8 @@ class State:
     stack-cache bounds of printed p. 1-5 (SP is the inclusive lower bound,
     MSP the exclusive upper bound); ``psw`` carries only the bits this
     model uses; ``memory`` is a sparse byte-addressed image represented as
-    a dict of word address -> 32-bit word (big-endian byte order).
+    a dict of word address -> 32-bit word (big-endian byte order);
+    ``timing`` carries the non-architectural Chapter 4 account.
     """
 
     pc: int = 0
@@ -72,6 +307,7 @@ class State:
     msp: int = 0
     psw: int = PSW_SP
     memory: Dict[int, int] = field(default_factory=dict)
+    timing: Timing = field(default_factory=Timing)
 
 
 @dataclass
@@ -90,13 +326,14 @@ class Record:
     mem_wdata: int
     mem_wmask: int
     trap: int
+    cyc: int = 0
     reason: str = ""
 
     def line(self) -> str:
         """Return the fixed one-line HRI form used by the trace differ."""
         return (
             "HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x "
-            "we=%d addr=%08x data=%08x mask=%02x trap=%d"
+            "we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%d"
             % (
                 self.pc & MASK32,
                 self.insn0 & 0xFFFF,
@@ -110,6 +347,7 @@ class Record:
                 self.mem_wdata & MASK32,
                 self.mem_wmask & 0xFF,
                 self.trap,
+                self.cyc,
             )
         )
 
@@ -459,13 +697,33 @@ def _check_stack_state(state: State) -> None:
             "address boundary (p. 1-5)" % state.sp)
 
 
-def _enter_offset(state: State, target: int) -> Tuple[int, int, int]:
+def _enter_flush_blocks(state: State, target: int) -> int:
+    """Blocks the ENTER stack-offset flush loop moves (pp. 3-19..3-20).
+
+    The pseudocode runs ``while (MSP > SHAD && MSP - target > SCSIZE)`` and
+    subtracts 16 from MSP per iteration, each iteration writing one 16-byte
+    block from the stack cache to memory.  ``SHAD`` is the cache's lower
+    bound, which this model keeps equal to SP (p. 1-5), so the loop can move
+    at most ``(MSP - SP) / 16`` valid blocks.  A final partial block counts
+    as one iteration (the loop rounds up).  Table 4-36 prices each such
+    block as a quad-word memory access Q (p. 4-5).
+    """
+    desired = state.msp - target - SCSIZE
+    if desired <= 0:
+        return 0
+    blocks = (desired + 15) // 16
+    valid = max(0, (state.msp - state.sp) // 16)
+    return min(blocks, valid)
+
+
+def _enter_offset(state: State, target: int) -> Tuple[int, int, int, int]:
     """ENTER stack-offset form (pp. 3-19..3-21).
 
-    Returns (new_sp, new_msp, new_psw).  The cache is flushed from the
-    top until at most SCSIZE bytes remain; the model keeps the SP/MSP
-    bounds and does not copy cache contents (every cache write is already
-    visible through the ordinary-memory model).
+    Returns (new_sp, new_msp, new_psw, flush_blocks).  The cache is flushed
+    from the top until at most SCSIZE bytes remain; the model keeps the
+    SP/MSP bounds and does not copy cache contents (every cache write is
+    already visible through the ordinary-memory model).  ``flush_blocks``
+    is the Chapter 4 E term for Table 4-36's ``1 + (Q.E)``.
     """
     if target > state.sp:
         raise Unsupported(
@@ -475,12 +733,13 @@ def _enter_offset(state: State, target: int) -> Tuple[int, int, int]:
         raise Unsupported(
             "unpredictable: ENTER would leave SP 0x%08x above MSP 0x%08x "
             "(p. 3-21)" % (target, state.msp))
+    blocks = _enter_flush_blocks(state, target)
     flushed = (state.msp - target) > SCSIZE
     new_msp = min(state.msp, target + SCSIZE)
     new_psw = state.psw & ~PSW_E
     if not flushed:
         new_psw |= PSW_E
-    return target, new_msp, new_psw
+    return target, new_msp, new_psw, blocks
 
 
 def _catch_msp(state: State, target: int) -> int:
@@ -616,6 +875,116 @@ def _flow_target(state: State,
 
 
 # ---------------------------------------------------------------------------
+# Chapter 4 cycle helpers
+# ---------------------------------------------------------------------------
+
+# Table 4-35 rows keyed by their printed row text (p. 4-5).
+_COND_CYCLES: Dict[str, Optional[int]] = {
+    row.variant: row.cycles for row in CHAPTER4
+    if row.table == "Table 4-35"
+}
+
+
+def _fixed_cycles(op: str) -> int:
+    """Resolved cycles for a fixed Table 4-32/4-33/4-36 row."""
+    row = _CYCLE_BY_OP.get(op)
+    if row is None or row.cycles is None:
+        raise RuntimeError("Chapter 4 has no fixed row for %r" % op)
+    return row.cycles
+
+
+def _foldable_target(length: int, p0: int) -> bool:
+    """Can a one-parcel branch fold into this instruction? (p. 4-7)
+
+    The printed rule: a one-parcel branch folds into a previous one- or
+    three-parcel instruction unless that instruction is another jump of any
+    kind, a one-parcel instruction with a five-bit opcode in 0x00..0x07, or
+    any three-parcel monadic instruction.  A five-parcel instruction is not
+    a fold target, because p. 4-7 limits a fold to a previous one- or
+    three-parcel instruction.  The manual does not enumerate "another jump
+    of any kind"; every encoding in this model that changes PC (KCALL,
+    CALL, the stack class, JMP and the four conditional jumps) already falls
+    under the 0x00..0x07 or three-parcel-monadic clause, so those clauses
+    decide every case this model can execute.
+    """
+    if length == 1:
+        return ((p0 >> 10) & 0x1F) >= 0x08
+    if length == 3:
+        return ((p0 >> 8) & 0x3F) != 0x00
+    return False
+
+
+def _conditional_jump_cycles(taken: bool, predicted_taken: bool,
+                             folded: bool, timing: Timing) -> int:
+    """Table 4-35 (printed p. 4-5), under the p. 4-7 folding rule.
+
+    The rows without a folded/unfolded qualifier -- "jump after compare",
+    "2 instructions after compare" and "3 instructions after compare" --
+    apply to both folded and unfolded branches.  Only the "4 or more" rows
+    split: unfolded 1, folded 0.  The manual prints no row for an incorrect
+    prediction whose PSW.F was not set by a compare; this model refuses
+    rather than inventing one.
+    """
+    if taken == predicted_taken:
+        key = ("Correct prediction, folded" if folded
+               else "Correct prediction, unfolded")
+        value = _COND_CYCLES[key]
+    else:
+        if timing.last_flag_source != "compare" or timing.last_compare < 0:
+            raise Refusal(
+                "unsupported: conditional-jump prediction was wrong but "
+                "PSW.F did not come from a compare; Table 4-35 (p. 4-5) "
+                "prints no penalty row for that case")
+        distance = timing.retired - timing.last_compare - 1
+        if distance <= 0:
+            key = "Incorrect prediction, jump after compare"
+        elif distance == 1:
+            key = "Incorrect prediction, jump 2 instructions after compare"
+        elif distance == 2:
+            key = "Incorrect prediction, jump 3 instructions after compare"
+        elif folded:
+            key = ("Incorrect prediction, folded, 4 or more instructions "
+                   "after compare")
+        else:
+            key = ("Incorrect prediction, unfolded, 4 or more instructions "
+                   "after compare")
+        value = _COND_CYCLES[key]
+    assert value is not None, key
+    return value
+
+
+def _retirement_cycles(mnemonic: str, folded: bool,
+                       branch_taken: Optional[bool],
+                       branch_predicted: Optional[bool],
+                       flush_blocks: int, timing: Timing) -> int:
+    """Chapter 4 occupancy of one retiring instruction.
+
+    Base rows come from Tables 4-32, 4-33 and 4-36 (printed pp. 4-3..4-5)
+    under the p. 4-1 assumptions; no Table 4-37..4-40 delay is added.  The
+    ENTER row is 1 + (Q.E), E being the p. 3-19/3-20 flush blocks.  JMP is
+    0 folded and 1 unfolded (Table 4-32 note, p. 4-3); the four conditional
+    jumps use Table 4-35.
+    """
+    if mnemonic == "ENTER":
+        # Table 4-36, p. 4-5: printed 1 + (Q . E), with E = flush blocks.
+        return 1 + Q_CYC * flush_blocks
+    if mnemonic in ("JMPFN", "JMPFY", "JMPTN", "JMPTY"):
+        if branch_taken is None or branch_predicted is None:
+            raise RuntimeError("conditional jump without a prediction")
+        return _conditional_jump_cycles(branch_taken, branch_predicted,
+                                        folded, timing)
+    if mnemonic == "JMP":
+        # Table 4-32, p. 4-3: Min 0 / Max 1, and the p. 4-3 note explains
+        # that a folded unconditional jump takes no time, otherwise one.
+        return 0 if folded else 1
+    if mnemonic in ("CMPEQ", "CMPGT", "CMPHI"):
+        # Table 4-32 prints one "CMP" row (p. 4-3); p. 3-13 gives it to all
+        # three compare mnemonics.
+        return _fixed_cycles("CMP")
+    return _fixed_cycles(mnemonic)
+
+
+# ---------------------------------------------------------------------------
 # step()
 # ---------------------------------------------------------------------------
 
@@ -635,6 +1004,14 @@ def step(state: State,
     pre-state values.  A ``Refusal`` is raised for a legal instruction or
     state outside the subset, including a fetch fault; the caller must
     not compare it as a retirement (adjudication convention C2).
+
+    The record's ``cyc`` is the printed Chapter 4 occupancy under the
+    p. 4-1 assumptions; ``state.timing`` carries the previous
+    instruction's foldability and the compare that last wrote PSW.F so
+    that Table 4-35 and the p. 4-7 folding rule can be applied.  A timing
+    case with no printed row (an incorrectly predicted conditional jump
+    whose flag did not come from a compare) raises ``Refusal`` and emits
+    no HRI line.
     """
     pre_pc = state.pc & ~1
     pre_sp = state.sp & MASK32
@@ -666,6 +1043,18 @@ def step(state: State,
         new_msp = state.msp
         new_psw = state.psw
         store: Optional[Tuple[Operand, int]] = None
+        # Chapter 4 accounting for this instruction (filled in by the decoder).
+        mnemonic = ""
+        folded = False
+        branch_taken: Optional[bool] = None
+        branch_predicted: Optional[bool] = None
+        flush_blocks = 0
+        # A one-parcel branch folds into the instruction immediately before it
+        # (p. 4-7); the previous instruction's class decides whether it can.
+        if (length == 1
+                and ((parcels[0] >> 10) & 0x1F) in (0x03, 0x04, 0x05, 0x06,
+                                                  0x07)):
+            folded = bool(state.timing.prev_foldable)
 
         # =================================================================
         # One-parcel instructions (Table 1-15/1-16/1-17, p. 1-22)
@@ -680,6 +1069,7 @@ def step(state: State,
                 raise Unsupported(
                     "unsupported: KCALL (1-parcel opcode 0x00, p. 3-29)")
             elif op == 0x01:                          # CALL pcrel10
+                mnemonic = "CALL"
                 return_pc = next_pc
                 target = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
                 store = (Operand(4, True, ea=state.sp), return_pc)
@@ -688,35 +1078,48 @@ def step(state: State,
                 sub = p0 & 0x3
                 stk8 = (p0 >> 2) & 0xFF
                 if sub == 0x0:                        # ENTER stk8
+                    mnemonic = "ENTER"
                     # One-filled, not sign-extended: field 0 -> -4096,
                     # field 0xFF -> -16 (p. 1-21, p. 3-20).
                     offset = _sx(((0xFFFFFF00 | stk8) << 4) & MASK32, 32)
                     target = (state.sp + offset) & MASK32
-                    new_sp, new_msp, new_psw = _enter_offset(state, target)
+                    new_sp, new_msp, new_psw, flush_blocks = _enter_offset(
+                        state, target)
                 elif sub == 0x1:                      # CATCH stk8
+                    mnemonic = "CATCH"
                     target = (state.sp + (stk8 << 4)) & MASK32
                     new_msp = _catch_msp(state, target)
                 elif sub == 0x2:                      # RETURN stk8
+                    mnemonic = "RETURN"
                     new_pc, new_sp, new_msp = _return(
                         state, memory_reader, stk8 << 4)
                     next_pc = new_pc
                 else:                                 # POPN stk8
+                    mnemonic = "POPN"
                     new_sp, new_msp = _popn(state, stk8 << 4)
             elif op == 0x03:                          # JMP pcrel10
+                mnemonic = "JMP"
                 next_pc = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
             elif op in (0x04, 0x05, 0x06, 0x07):      # JMP(F/N)(Y/N)
+                mnemonic = ("JMPFN", "JMPFY", "JMPTN", "JMPTY")[op - 4]
                 target = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
-                # T jumps when F=1; F jumps when F=0.  Y/N is prediction.
+                # T jumps when F=1; F jumps when F=0.  The low bit of the
+                # opcode is the static Y (taken) / N (not taken) prediction
+                # (Table 1-15, p. 1-22; p. 3-28).
                 jump_if_true = op in (0x06, 0x07)
+                branch_predicted = op in (0x05, 0x07)
                 flag = bool(state.psw & PSW_F)
-                if flag == jump_if_true:
+                branch_taken = flag == jump_if_true
+                if branch_taken:
                     next_pc = target
             elif op == 0x0A:                          # MOV wai5, stk5
+                mnemonic = "MOV"
                 store = (_stk5(state, dst5),
                          _load(state, memory_reader, _wai5(src5)))
             elif op == 0x0B:                          # niladic
                 sub = p0 & 0x3FF
                 if sub == 0x002:
+                    mnemonic = "NOP"
                     pass                              # NOP
                 elif sub == 0x000:
                     raise Unsupported(
@@ -745,10 +1148,12 @@ def step(state: State,
                     raise Unsupported(
                         "unsupported: CRET (niladic 0x0B/0x5; p. 3-15)")
                 elif sub == 0x008:                      # TESTV
+                    mnemonic = "TESTV"
                     f = bool(state.psw & PSW_V)
                     new_psw = ((state.psw & ~(PSW_F | PSW_V))
                                | (PSW_F if f else 0))
                 elif sub == 0x009:                      # TESTC
+                    mnemonic = "TESTC"
                     f = bool(state.psw & PSW_C)
                     new_psw = ((state.psw & ~(PSW_F | PSW_C))
                                | (PSW_F if f else 0))
@@ -760,6 +1165,7 @@ def step(state: State,
                         "unsupported: niladic subcode 0x%03x (Table 1-17, "
                         "p. 1-22)" % sub)
             elif op == 0x0D:                          # ADD3 wai5, stk5
+                mnemonic = "ADD3"
                 result, new_psw, _ = _add_result(
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
@@ -767,32 +1173,38 @@ def step(state: State,
                 store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
                          result)
             elif op == 0x10:                          # CMPEQ imm5, stk5
+                mnemonic = "CMPEQ"
                 src1 = _load(state, memory_reader, _imm5(src5))
                 src2 = _load(state, memory_reader, _stk5(state, dst5))
                 f = (src1 & MASK32) == (src2 & MASK32)
                 new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
             elif op == 0x11:                          # CMPGT stk5, stk5
+                mnemonic = "CMPGT"
                 src1 = _load(state, memory_reader, _stk5(state, src5))
                 src2 = _load(state, memory_reader, _stk5(state, dst5))
                 f = _sx(src1 & MASK32, 32) > _sx(src2 & MASK32, 32)
                 new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
             elif op == 0x12:                          # CMPGT imm5, stk5
+                mnemonic = "CMPGT"
                 src1 = _load(state, memory_reader, _imm5(src5))
                 src2 = _load(state, memory_reader, _stk5(state, dst5))
                 f = _sx(src1 & MASK32, 32) > _sx(src2 & MASK32, 32)
                 new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
             elif op == 0x13:                          # CMPEQ stk5, stk5
+                mnemonic = "CMPEQ"
                 src1 = _load(state, memory_reader, _stk5(state, src5))
                 src2 = _load(state, memory_reader, _stk5(state, dst5))
                 f = (src1 & MASK32) == (src2 & MASK32)
                 new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
             elif op == 0x14:                          # ADD imm5, stk5
+                mnemonic = "ADD"
                 result, new_psw, _ = _add_result(
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
                     _load(state, memory_reader, _imm5(src5)))
                 store = (_stk5(state, dst5), result)
             elif op == 0x15:                          # ADD3 imm5, stk5
+                mnemonic = "ADD3"
                 result, new_psw, _ = _add_result(
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
@@ -800,12 +1212,14 @@ def step(state: State,
                 store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
                          result)
             elif op == 0x16:                          # ADD stk5, stk5
+                mnemonic = "ADD"
                 result, new_psw, _ = _add_result(
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
                     _load(state, memory_reader, _stk5(state, src5)))
                 store = (_stk5(state, dst5), result)
             elif op == 0x17:                          # ADD3 stk5, stk5
+                mnemonic = "ADD3"
                 result, new_psw, _ = _add_result(
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
@@ -813,20 +1227,25 @@ def step(state: State,
                 store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
                          result)
             elif op == 0x18:                          # MOV stk5, stk5
+                mnemonic = "MOV"
                 store = (_stk5(state, dst5),
                          _load(state, memory_reader, _stk5(state, src5)))
             elif op == 0x19:                          # MOV istk5, stk5
+                mnemonic = "MOV"
                 store = (_stk5(state, dst5),
                          _load(state, memory_reader,
                                _istk5(state, memory_reader, src5)))
             elif op == 0x1A:                          # MOV stk5, istk5
+                mnemonic = "MOV"
                 store = (_istk5(state, memory_reader, dst5),
                          _load(state, memory_reader, _stk5(state, src5)))
             elif op == 0x1B:                          # MOV istk5, istk5
+                mnemonic = "MOV"
                 store = (_istk5(state, memory_reader, dst5),
                          _load(state, memory_reader,
                                _istk5(state, memory_reader, src5)))
             elif op == 0x1C:                          # MOV imm5, stk5
+                mnemonic = "MOV"
                 store = (_stk5(state, dst5),
                          _load(state, memory_reader, _imm5(src5)))
             else:
@@ -862,12 +1281,14 @@ def step(state: State,
                 # dyadic forms below keep their 16-bit source/destination.
                 mono = (parcels[1] << 16) | parcels[2]
                 if sub == 0x1:                          # CALL
+                    mnemonic = "CALL"
                     return_pc = next_pc
                     target = _flow_target(state, memory_reader, mono,
                                           smode, 32, "CALL")
                     store = (Operand(4, True, ea=state.sp), return_pc)
                     next_pc = target
                 elif sub == 0x2:                        # RETURN
+                    mnemonic = "RETURN"
                     if smode != 0xD:
                         raise IllegalInstruction(
                             "illegal: RETURN operand mode 0x%x (only "
@@ -876,9 +1297,11 @@ def step(state: State,
                         state, memory_reader, _sx(mono, 32))
                     next_pc = new_pc
                 elif sub == 0x3:                        # JMP
+                    mnemonic = "JMP"
                     next_pc = _flow_target(state, memory_reader, mono,
                                            smode, 32, "JMP")
                 elif sub in (0x4, 0x5, 0x6, 0x7):       # conditional
+                    mnemonic = ("JMPFN", "JMPFY", "JMPTN", "JMPTY")[sub - 4]
                     if smode not in (0xE, 0xF):
                         raise IllegalInstruction(
                             "illegal: conditional jump operand mode 0x%x; "
@@ -887,14 +1310,18 @@ def step(state: State,
                     target = _flow_target(state, memory_reader, mono,
                                           smode, 32, "JMP")
                     jump_if_true = sub in (0x6, 0x7)
+                    branch_predicted = sub in (0x5, 0x7)
                     flag = bool(state.psw & PSW_F)
-                    if flag == jump_if_true:
+                    branch_taken = flag == jump_if_true
+                    if branch_taken:
                         next_pc = target
                 elif sub == 0x8:                        # CATCH
+                    mnemonic = "CATCH"
                     target = _word32_value(state, memory_reader,
                                             mono, smode, 32)
                     new_msp = _catch_msp(state, target)
                 elif sub == 0x9:                        # ENTER
+                    mnemonic = "ENTER"
                     if smode == 0xD:
                         raw = _sx(mono, 32)
                         if raw >= 0:
@@ -904,8 +1331,8 @@ def step(state: State,
                                 % raw)
                         offset = raw & ~0xF
                         target = (state.sp + offset) & MASK32
-                        new_sp, new_msp, new_psw = _enter_offset(
-                            state, target)
+                        new_sp, new_msp, new_psw, flush_blocks = (
+                            _enter_offset(state, target))
                     else:
                         target = _word32_value(state, memory_reader,
                                                 mono, smode, 32)
@@ -913,7 +1340,11 @@ def step(state: State,
                         new_sp = target
                         new_msp = target
                         new_psw = state.psw & ~PSW_E  # unconditional flush
+                        # p. 3-19 flushes every valid block (while MSP >
+                        # SHAD, and SHAD is the cache's lower bound, SP).
+                        flush_blocks = max(0, (state.msp - state.sp) // 16)
                 elif sub == 0xF:                        # POPN
+                    mnemonic = "POPN"
                     if smode != 0xD:
                         raise IllegalInstruction(
                             "illegal: POPN operand mode 0x%x (only "
@@ -942,6 +1373,7 @@ def step(state: State,
                         "p. 1-24)" % sub)
 
             elif opcode == 0x06:                        # MOV
+                mnemonic = "MOV"
                 src_op = _resolve_general(state, memory_reader, field_src,
                                           smode, width)
                 dst_op = _resolve_general(state, memory_reader, field_dst,
@@ -949,6 +1381,8 @@ def step(state: State,
                 store = (dst_op, _load(state, memory_reader, src_op))
 
             elif opcode in (0x20, 0x23, 0x30, 0x33):    # SUB/ADD/SUB3/ADD3
+                mnemonic = {0x20: "SUB", 0x23: "ADD",
+                            0x30: "SUB3", 0x33: "ADD3"}[opcode]
                 src_op = _resolve_general(state, memory_reader, field_src,
                                           smode, width)
                 dst_op = _resolve_general(state, memory_reader, field_dst,
@@ -964,6 +1398,8 @@ def step(state: State,
                           if to_acc else dst_op), result)
 
             elif opcode in (0x1D, 0x1E, 0x1F):          # CMPGT/CMPHI/CMPEQ
+                mnemonic = {0x1D: "CMPGT", 0x1E: "CMPHI",
+                            0x1F: "CMPEQ"}[opcode]
                 src1_op = _resolve_general(state, memory_reader, field_src,
                                            smode, width)
                 src2_op = _resolve_general(state, memory_reader, field_dst,
@@ -985,7 +1421,11 @@ def step(state: State,
                        opcode, 20 if length == 5 else 18,
                        25 if length == 5 else 24))
 
-        # --- apply the one architectural write, if any -------------------
+        # --- Chapter 4 occupancy, then the one architectural write -------
+        cyc = _retirement_cycles(mnemonic, folded, branch_taken,
+                                 branch_predicted, flush_blocks,
+                                 state.timing)
+
         mem_we = 0
         mem_addr = 0
         mem_wdata = 0
@@ -1008,8 +1448,18 @@ def step(state: State,
             msp_before=pre_msp, msp_after=state.msp,
             mem_we=mem_we, mem_addr=mem_addr,
             mem_wdata=mem_wdata, mem_wmask=mem_wmask,
-            trap=0,
+            trap=0, cyc=cyc,
         )
+        # The record just produced becomes the previous instruction for
+        # folding, and its index is this instruction's compare distance base.
+        timing = state.timing
+        timing.prev_foldable = _foldable_target(length, parcels[0])
+        if mnemonic in ("CMPEQ", "CMPGT", "CMPHI"):
+            timing.last_compare = timing.retired
+            timing.last_flag_source = "compare"
+        elif mnemonic in ("TESTC", "TESTV"):
+            timing.last_flag_source = "other"
+        timing.retired += 1
         return record, state
 
     except Trap as exc:
@@ -1037,7 +1487,8 @@ def step(state: State,
             msp_before=pre_msp, msp_after=pre_msp,
             mem_we=1, mem_addr=trap_addr,
             mem_wdata=trap_data, mem_wmask=trap_mask,
-            trap=1, reason=exc.reason,
+            trap=1, cyc=_fixed_cycles("Unimplemented opcode"),
+            reason=exc.reason,
         )
         return record, state
 

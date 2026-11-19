@@ -29,7 +29,7 @@ SCRIPT = os.path.join(HERE, "hri_check.py")
 BASE = (
     "HRI pc=0000 insn=00000000 sp=00000000>00000000 "
     "msp=00000000>00000000 we=0 addr=00000000 data=00000000 "
-    "mask=00 trap=0"
+    "mask=00 trap=0 cyc=1"
 )
 
 
@@ -45,11 +45,13 @@ def line(**overrides):
         "data": "00000000",
         "mask": "00",
         "trap": "0",
+        "cyc": "1",
     }
     fields.update(overrides)
     return (
         "HRI pc=%(pc)s insn=%(insn)s sp=%(sp)s msp=%(msp)s we=%(we)s "
-        "addr=%(addr)s data=%(data)s mask=%(mask)s trap=%(trap)s" % fields
+        "addr=%(addr)s data=%(data)s mask=%(mask)s trap=%(trap)s "
+        "cyc=%(cyc)s" % fields
     )
 
 
@@ -161,6 +163,13 @@ class RvfiCheckTest(unittest.TestCase):
         self.assert_divergence(
             self.run_files([line(mask="00")], [line(mask="01")]),
             "line 1 field MASK: dut=0x00 spec=0x01 pc=0x0000",
+        )
+
+    def test_cyc_change(self):
+        """Catches a differ that ignores the cycle count."""
+        self.assert_divergence(
+            self.run_files([line(cyc="1")], [line(cyc="2")]),
+            "line 1 field CYC: dut=1 spec=2 pc=0x0000",
         )
 
     def test_trap_change(self):

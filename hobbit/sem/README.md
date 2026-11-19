@@ -9,9 +9,10 @@ against the Bluespec core — the two records are diffed field by field —
 
 One call to `step(state, memory_reader)` computes the architectural
 effect of **exactly one** instruction from an architectural pre-state.
-There is no pipeline, no prefetch buffer, no decoded-instruction cache,
-no branch folding, no cache-fill timing and no cycle count: those belong
-to the core side of the check.  The record the model returns is the
+There is no pipeline, no prefetch buffer and no decoded-instruction
+cache; those belong to the core side of the check.  The model does carry
+the Chapter 4 cycle account, because the record's trailing `cyc` field
+is part of the HRI comparison.  The record the model returns is the
 `HRI ...` line the Bluespec core must reproduce field for field.
 
 The model was written from the printed *ATT92010 Hobbit Microprocessor
@@ -20,7 +21,8 @@ Programmer's Reference Manual* (January 1993) and from nothing in
 statement of the semantics, not a translation of the core.
 
 `p. 1-21` below means the manual's own printed folio, Chapter 1, page 21.
-The scan's PDF page is printed + 8 for Chapter 1, + 58 for Chapter 3.
+The scan's PDF page is printed + 8 for Chapter 1, + 58 for Chapter 3,
++ 110 for Chapter 4.
 
 ## Running it
 
@@ -52,12 +54,13 @@ the PRM does not define the value of uninitialised memory).
 ### Fixed output line
 
 ```
-HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d
+HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%d
 ```
 
 All hex is lowercase.  `%04x` is a minimum width, so a PC beyond 0xFFFF
-prints more than four digits.  One HRI line is printed per retired
-instruction and for the unimplemented-instruction `trap=1` line.  A
+prints more than four digits.  `cyc` is decimal.  One HRI line is printed
+per retired instruction and for the unimplemented-instruction `trap=1`
+line.  A
 `Refusal` (a fetch fault, an illegal encoding, an alignment fault, a
 state limitation, or a legal instruction outside the subset) produces a
 `REFUSED pc=... insn=... reason: ...` diagnostic on stderr and no HRI
@@ -66,7 +69,10 @@ retirement.
 
 ## State
 
-`State` is `pc`, `sp`, `msp`, `psw` and `memory`.
+`State` is `pc`, `sp`, `msp`, `psw`, `memory` and a non-architectural
+`timing` record (`retired`, `last_compare`, `last_flag_source`,
+`prev_foldable`).  The cycle account is the only thing `timing` feeds; no
+architectural result depends on it.
 
 | Field | Meaning | Cite |
 |---|---|---|
@@ -122,13 +128,15 @@ bound and `MSP` the exclusive upper bound (p. 1-5).  The model keeps the
   to the next instruction;
 * the model is therefore write-through.  It does **not** represent
   which words are duplicated in the 64 cache registers, and does not
-  model the 16-byte flush/refill copies.  Those copies are not
+  copy the 16-byte flush/refill blocks.  Those copies are not
   architecturally observable in this abstraction because the
   backing-memory image already has every byte the cache holds.  Flush
-  *timing*, quad-word boundaries and the number of blocks moved are
-  abstracted; the `SP`/`MSP` bounds and the `PSW.E` enter-guard result
-  are not.
-* it does not model memory latency, cache hits or bus cycles.
+  *timing* is still accounted for: ENTER's `cyc` counts the blocks the
+  pp. 3-19/3-20 loop would move (see “Cycle accounting”).  The `SP`/`MSP`
+  bounds and the `PSW.E` enter-guard result are architectural.
+* it does not model cache hits, bus arbitration or bus-error/retry cycles;
+  its A/D/Q parameters price only the accesses the printed Chapter 4 rows
+  name.
 
 The integer accumulator (PRM p. 1-7, Figure 1-4; p. 1-3) is **not a
 register**: it is the word at `CSP + 4`.  The `[3]` forms write that
@@ -221,6 +229,7 @@ returned PC whose bit 0 is set is fetched with bit 0 ignored (p. 1-4).
 | `data` | Big-endian bus word for the write: the stored byte(s) in their byte lanes | p. 1-4, Figure 1-2 |
 | `mask` | Byte marks of the write, bit 3 = byte at `addr` (bits 31:24), bit 0 = byte at `addr+3` (bits 7:0); a word write is `0f` | p. 1-4 (byte stores), p. 1-5 |
 | `trap` | 0 = retired; 1 = the unimplemented-instruction sequence (FLUSHD/FLUSHDCE) with the p. 1-39 store; a `Refusal` produces no line | see below |
+| `cyc` | Occupancy in core clock cycles between this retirement and the previous one (for the first record, from the core's start); the Chapter 4 base under the p. 4-1 assumptions | Tables 4-32..4-36 pp. 4-3..4-5; “Cycle accounting” below |
 
 The mask convention is fixed here so the model and the core can be
 diffed.  It is the big-endian bus convention, not an effective-address
@@ -233,7 +242,152 @@ HRI record must normalise its bus write the same way.  The alternative
 convention — `addr` = the effective byte address and `data` right-aligned
 — is not used.
 
-### Traps and refusals
+## Cycle accounting
+
+`cyc` is the instruction's occupancy in core clock cycles at retirement:
+the cycles between the previous HRI record and this one, and for the
+first record from the core's start to its retirement.  It is the
+Chapter 4 base cost under the four assumptions printed on p. 4-1:
+
+* instruction fetch accesses the instruction cache (the prefetch-buffer
+  cache condition);
+* only the stack-offset, immediate, register, absolute (for jumps and
+  calls only) and PC-relative addressing modes are used;
+* all stack-offset accesses are captured in the stack cache;
+* no data hazards occur between instructions.
+
+Consistently with those assumptions the model adds **no** delay from
+Tables 4-37..4-40 (pp. 4-6..4-7): no IC-miss or empty-EU penalty, no
+operand-access penalty, no data-type penalty and no miscellaneous delay.
+The indirect-operand rows of Tables 4-38 and 4-40 are byte-identical in
+print and the manual never says whether both apply, so neither is applied;
+the model cannot double-count an indirect operand.
+
+### Memory parameters (model choices)
+
+p. 4-2 defines the symbols but prints no cycle values.  The model's
+memory is a single-cycle 32-bit word store, so one word access is one
+core cycle.  These are named parameters in `hobbit_sem.py`, never
+inline constants:
+
+| Parameter | Meaning (p. 4-2) | Value | Why this value |
+|---|---|---|---|
+| `A_CYC` | memory access time, single word | 1 | one 32-bit word per cycle in the model's BRAM; the same unit the HRI counts in |
+| `D_CYC` | memory access time, double word | 2 | two 32-bit words on the single-cycle word store |
+| `Q_CYC` | memory access time, quad word | 4 | four 32-bit words on the single-cycle word store |
+
+These values are choices, not printed manual facts; the manual prints
+only the symbols.  No row used by an implemented instruction contains
+`N`; p. 4-2 defines it, but no Chapter 4 table charges for stack-cache
+occupancy (`docs/timing_tables.md` §6.11).  `E` is not a free parameter:
+it is computed per ENTER (below).
+
+### Rows used by implemented instructions
+
+| Instruction(s) | Printed cell | `cyc` | Source |
+|---|---|---|---|
+| `ADD`, `ADD3` (all forms) | 1 | 1 | Table 4-32, p. 4-3 |
+| `MOV` (all forms) | 1 | 1 | Table 4-32, p. 4-3 |
+| `SUB`, `SUB3` | 1 | 1 | Table 4-32, p. 4-3 |
+| `CMPEQ`, `CMPGT`, `CMPHI` | `CMP` = 1 | 1 | Table 4-32, p. 4-3; the `CMP` row is the only timing the manual gives the three compares (p. 3-13) |
+| `TESTC`, `TESTV` | 1 | 1 | Table 4-32, p. 4-3 |
+| `NOP` | 1 | 1 | Table 4-32, p. 4-3 |
+| `CALL` (1p and 3p) | 1 | 1 | Table 4-32, p. 4-3 |
+| `RETURN` | 2 | 2 | Table 4-32, p. 4-3; always indirect, no indirection delay (p. 4-3 note) |
+| `POPN` | 2 | 2 | Table 4-32, p. 4-3 |
+| `CATCH` | 1 | 1 | Table 4-36, p. 4-5; flat 1, no refill term is printed even though CATCH fills the cache (pp. 3-10..3-11) |
+| `ENTER` | `1 + (Q·E)` | `1 + Q_CYC·E` | Table 4-36, p. 4-5; E per the pp. 3-19/3-20 flush loop |
+| `JMP` folded | Min 0 | 0 | Table 4-32, p. 4-3; folded unconditional jump takes no time (p. 4-3 note) |
+| `JMP` unfolded | Max 1 | 1 | Table 4-32, p. 4-3 |
+| `JMPFN`, `JMPFY`, `JMPTN`, `JMPTY` | Table 4-35 rows | 0..3 | Table 4-35, p. 4-5 (below) |
+| `FLUSHD`, `FLUSHDCE` (trap) | `Unimplemented opcode = 7 + A` | 8 | Table 4-36, p. 4-5; the sequence both take (pp. 3-22, 3-23) |
+
+The code's `CHAPTER4` tuple also transcribes the fixed rows the model
+refuses to execute (`ADDI`/`ANDI`/`ORI` = 2, the multi-cycle arithmetic,
+DQM, `CRET`, `KCALL`, `KRET`, `Exception`).  They carry their own printed
+page and caption, but the instruction decoder refuses those mnemonics
+before any timing is emitted, so the rows are documentation, not a
+second execution path.  DQM's printed `M quad-word to M quad-word = 8·S`
+has no encoded value because `S` is not defined on p. 4-2.
+
+### Conditional jumps (Table 4-35, p. 4-5)
+
+The branch's static Y/N bit is the low bit of the opcode: `JMPFY` and
+`JMPTY` predict taken, `JMPFN` and `JMPTN` predict not taken (Table 1-15,
+p. 1-22; p. 3-28).  The model compares that with the direction the branch
+actually took.
+
+| Case | Printed row | `cyc` |
+|---|---|---|
+| correct prediction, folded | Correct prediction, folded | 0 |
+| correct prediction, unfolded | Correct prediction, unfolded | 1 |
+| wrong, compare is the previous record | Incorrect prediction, jump after compare | 3 |
+| wrong, one record between compare and branch | Incorrect prediction, jump 2 instructions after compare | 2 |
+| wrong, two records between | Incorrect prediction, jump 3 instructions after compare | 1 |
+| wrong, three or more records between, unfolded | Incorrect prediction, unfolded, 4 or more instructions after compare | 1 |
+| wrong, three or more records between, folded | Incorrect prediction, folded, 4 or more instructions after compare | 0 |
+
+The first three wrong-prediction rows carry no folded/unfolded qualifier
+in print, so they apply to both.  The distance is counted in HRI records
+from the compare that last wrote PSW.F: 0 means the compare retired
+immediately before the branch.  A folded branch still retires as its own
+record (the contract), and the model counts it like any other instruction
+when a later branch measures its distance; the manual does not define
+whether a folded branch counts, and this is the reading consistent with
+the retirement record.  In particular golden 005's taken `JMPTN` after
+`CMPEQ` is folded but incorrectly predicted at distance 0, so it is 3,
+not 0.
+
+### Branch folding (p. 4-7)
+
+A one-parcel branch folds into a previous **one- or three-parcel**
+instruction unless the previous instruction is:
+
+1. another jump of any kind;
+2. a one-parcel instruction whose five-bit opcode is in `0x00..0x07`;
+3. any three-parcel monadic instruction (opcode `0x00`).
+
+In the modelled subset classes 1 and 2 overlap (CALL, the stack class,
+JMP and the conditional jumps all have one-parcel opcodes in
+`0x00..0x07`), and every three-/five-parcel control transfer is caught by
+class 3.  A five-parcel previous instruction is not a fold target at all
+because p. 4-7 limits the previous instruction to one or three parcels.
+Only one-parcel branches fold: a three- or five-parcel `JMP` or
+conditional jump is always unfolded and pays 1 (or its Table 4-35
+penalty).  A folded unconditional `JMP` is 0 and an unfolded one is 1
+(p. 4-3 note).
+
+### ENTER's E term
+
+Table 4-36 prints `1 + (Q·E)`.  p. 4-2 calls E “ENTER size” but never
+states its unit, and the same table prices CATCH at a flat 1 even though
+CATCH refills the cache in 16-byte blocks.  The model therefore uses the
+only ENTER work pp. 3-19/3-20 actually describe: the number of 16-byte
+blocks the flush loop moves, one `MSP -= 16` iteration each, rounded up
+for a partial block and capped by the valid cache (SHAD = SP).
+
+* Stack-offset ENTER flushes only the excess over `SCSIZE`: the loop runs
+  while `MSP - target > SCSIZE`, so `E = ceil((MSP - target - 256)/16)`
+  capped at `(MSP - SP)/16`.
+* A non-stack-offset ENTER flushes the cache unconditionally: every valid
+  block, `E = (MSP - SP)/16`.
+
+Worked examples from the goldens: `ENTER R-32` with
+`MSP - target = 0x180 - 0x0e0 = 0xa0 ≤ 256` moves no block, so E = 0 and
+`cyc = 1`; `ENTER $0xC0` at `SP=0x100, MSP=0x180` moves
+`(0x180 - 0x100)/16 = 8` blocks, so `cyc = 1 + 4·8 = 33` (golden 004).
+
+### Where the manual is silent
+
+An incorrectly predicted conditional jump whose PSW.F did not come from a
+compare -- the reset value, `TESTC` and `TESTV` are the other flag
+sources -- has **no** Table 4-35 row.  `step()` raises `Refusal` with
+`unsupported:` and emits no HRI line rather than inventing a penalty.
+A correctly predicted branch needs no compare distance and is priced
+normally.  This is the only timing refusal; every other refusal is an
+instruction, encoding or state the model already refused.
+
+## Traps and refusals
 
 There are two different outcomes, and the adjudication's convention C2
 requires that they not be conflated.
@@ -281,33 +435,53 @@ reason on stderr and exit 0 from the CLI.
 
 ## The demo, line by line
 
-`demo.s` is a straight-line program at 0, with a subroutine at 0x020.
-The reference pre-state is `PC=0, SP=0x100, MSP=0x180, PSW=0x200,
-SHAD=0x100, CONFIG=0`.  The listing comments give the hand encoding;
-`demo.trace` is the model output.
+`demo.s` is a program at 0 with a subroutine at `0x046`.  It exercises
+the simple base rows, `CATCH`/`RETURN`/`POPN`, a zero-flush `ENTER`,
+the trap row, folded and unfolded unconditional jumps, and five of the
+seven Table 4-35 rows (the two “4 or more instructions after compare”
+rows are not reached).  A multi-block ENTER flush is golden 004's
+`ENTER $0xC0`, `cyc=33`.  The reference pre-state
+is `PC=0, SP=0x100, MSP=0x180, PSW=0x200, SHAD=0x100, CONFIG=0`.  The
+listing comments give the hand encoding; `demo.trace` is the model
+output, byte for byte.
 
-| # | PC | Instruction | What the line shows and why | Cite |
-|---|---|---|---|---|
-| 1 | 0000 | `ENTER R-32` | `SP 0x100→0x0e0`; `MSP 0x180→0x180` because `MSP-target = 0xa0 ≤ 256`, so no flush and E=1; no write | pp. 3-19..3-21, p. 1-15 |
-| 2 | 0002 | `MOV $1,R4` | word write `0x0e4 ← 1`, mask `0f`; accumulator slot is CSP+4 | p. 3-32, p. 1-7 |
-| 3 | 0004 | `MOV R4,R8` | word write `0x0e8 ← 1` | p. 3-32 |
-| 4 | 0006 | `ADD $5,R8` | word write `0x0e8 ← 6`; C=V=0 (the flags are state, not in the line) | p. 3-5, pp. 1-29..1-30 |
-| 5 | 0008 | `CALL 0x020` | return PC `0x00a` written at `*(CSP)=0x0e0`, mask `0f`; next PC 0x020 | p. 3-9 |
-| 6 | 0020 | `CATCH R192` | no write; `MSP 0x180→0x1a0` (two 16-byte blocks, target 0x0e0+0xc0) | pp. 3-10, 3-11 |
-| 7 | 0022 | `MOV $7,R12` | word write `0x0ec ← 7` | p. 3-32 |
-| 8 | 0024 | `RETURN R0` | no write; `PC ← *(0x0e0)=0x00a`, SP unchanged (offset 0) | p. 3-40 |
-| 9 | 000a | `MOV R8,R4` | word write `0x0e4 ← 6` | p. 3-32 |
-| 10 | 000c | `SUB R8,R4` | 3-parcel; word write `0x0e4 ← 0`; C=V=0 | p. 3-43 |
-| 11 | 0012 | `POPN R32` | no write; `SP 0x0e0→0x100`; MSP stays 0x1a0 because the new SP is below it | p. 3-38 |
-| 12 | 0014 | `JMPTY 0x01c` | no write; F=0 so the T jump is not taken; next PC 0x016 | p. 3-28 |
-| 13 | 0016 | `JMPFN 0x01c` | no write; F=0 so the F jump is taken; next PC 0x01c | p. 3-28 |
-| 14 | 001c | `NOP` | no write; next PC 0x01e | p. 3-35 |
-| 15 | 001e | `FLUSHD` | `trap=1`; the fixed unimplemented save writes PC `0x01e` at `CSP=0x100`, mask `0f`; the model stops | p. 3-22, p. 1-39 |
+| # | PC | Instruction | `cyc` | What the line shows and why | Cite |
+|---|---|---|---|---|---|
+| 1 | 0000 | `ENTER R-32` | 1 | `SP 0x100→0x0e0`; `MSP-target = 0xa0 ≤ 256`, so the flush loop moves 0 blocks, E=0, `1 + Q·0`; E is set; no write | pp. 3-19..3-21; Table 4-36 p. 4-5 |
+| 2 | 0002 | `MOV $1,R4` | 1 | word write `0x0e4 ← 1`, mask `0f`; accumulator slot is CSP+4 | p. 3-32, p. 1-7; Table 4-32 |
+| 3 | 0004 | `MOV R4,R8` | 1 | word write `0x0e8 ← 1` | p. 3-32; Table 4-32 |
+| 4 | 0006 | `ADD $5,R8` | 1 | word write `0x0e8 ← 6`; C=V=0 (flags are state, not in the line) | p. 3-5; Table 4-32 |
+| 5 | 0008 | `CALL 0x046` | 1 | return PC `0x00a` written at `*(CSP)=0x0e0`, mask `0f`; next PC 0x046 | p. 3-9; Table 4-32 |
+| 6 | 0046 | `CATCH R192` | 1 | no write; `MSP 0x180→0x1a0` (two 16-byte blocks, target 0x0e0+0xc0) | pp. 3-10, 3-11; Table 4-36 (flat 1) |
+| 7 | 0048 | `MOV $7,R12` | 1 | word write `0x0ec ← 7` | p. 3-32; Table 4-32 |
+| 8 | 004a | `RETURN R0` | 2 | no write; `PC ← *(0x0e0)=0x00a`, SP unchanged; no indirection delay | p. 3-40; Table 4-32 note |
+| 9 | 000a | `MOV R8,R4` | 1 | word write `0x0e4 ← 6` | p. 3-32; Table 4-32 |
+| 10 | 000c | `SUB R8,R4` | 1 | 3-parcel; word write `0x0e4 ← 0`; C=V=0 | p. 3-43; Table 4-32 |
+| 11 | 0012 | `POPN R32` | 2 | no write; `SP 0x0e0→0x100`; MSP stays 0x1a0 | p. 3-38; Table 4-32 |
+| 12 | 0014 | `CMPEQ $1,R0` | 1 | 1 == 0 false, so F=0; no write | p. 3-13; Table 4-32 `CMP` row |
+| 13 | 0016 | `JMPTN 0x04c` | 0 | F=0, not taken; prediction N is correct; folded into the previous 1-parcel CMPEQ | Table 4-35 |
+| 14 | 0018 | `CMPEQ $1,R0` | 1 | F=0 again | p. 3-13; Table 4-32 |
+| 15 | 001a | `JMPTY 0x020` | 3 | F=0, not taken; prediction Y is wrong; folded; compare is the previous record | Table 4-35 “jump after compare” |
+| 16 | 001c | `JMPFN 0x020` | 2 | F=0, taken; prediction N is wrong; unfolded because the previous instruction is a jump; one record between compare and branch | Table 4-35 “2 instructions after compare”; p. 4-7 |
+| 17 | 0020 | `NOP` | 1 | no write; the next JMP folds into it | p. 3-35; Table 4-32 |
+| 18 | 0022 | `JMP 0x026` | 0 | folded into the preceding NOP | Table 4-32 note |
+| 19 | 0026 | `POPN R0` | 2 | offset 0: SP unchanged; cannot receive a fold (opcode 0x02) | p. 3-38; p. 4-7 |
+| 20 | 0028 | `JMP 0x02a` | 1 | unfolded: previous POPN is in the p. 4-7 `0x00..0x07` class | Table 4-32; p. 4-7 |
+| 21 | 002a | `POPN R0` | 2 | offset 0: SP unchanged | p. 3-38; Table 4-32 |
+| 22 | 002c | `JMPTN 0x04c` | 1 | F=0, not taken; prediction N correct; unfolded (previous POPN) | Table 4-35 |
+| 23 | 002e | `.5 CMPEQ $0,R0` | 1 | 5-parcel compare, F=1; a five-parcel instruction cannot receive a fold | p. 3-13; Table 4-32; p. 4-7 |
+| 24 | 0038 | `JMPTN 0x03c` | 3 | F=1, taken; prediction N wrong; unfolded; compare is the previous record | Table 4-35 “jump after compare” |
+| 25 | 003c | `POPN R0` | 2 | offset 0: SP unchanged | p. 3-38; Table 4-32 |
+| 26 | 003e | `JMPTN 0x042` | 1 | F=1, taken; prediction N wrong; unfolded; two records (0038, 003c) between compare and branch | Table 4-35 “3 instructions after compare” |
+| 27 | 0042 | `NOP` | 1 | no write | p. 3-35; Table 4-32 |
+| 28 | 0044 | `FLUSHD` | 8 | `trap=1`; the fixed unimplemented save writes PC `0x044` at `CSP=0x100`, mask `0f`; `7 + A = 8`; the model stops | p. 3-22, p. 1-39; Table 4-36 |
 
 The one-parcel forms in the trace are `0bf8`, `7021`, `6022`, `50a2`,
-`040c`, `6041`, `080b`, `1c04`, `1003`, `2c02`, `2c06`, `0831`, `70e3`,
-`0802`; the 3-parcel `SUB` is `a0dd 0008 0004`.  `insn1` is `0000` for
-every one-parcel line and the second parcel for the 3-parcel line.
+`041f`, `6041`, `080b`, `4020`, `181b`, `1c03`, `1002`, `2c02`,
+`0c02`, `0803`, `0c01`, `1810`, `1802`, `2c06`, `0831`, `70e3`, `0802`;
+the 3-parcel `SUB` is `a0dd 0008 0004`, and the 5-parcel `CMPEQ` is
+`dffd 0000 0000 0000 0000`.  `insn1` is `0000` for every one-parcel line
+and the second parcel for the multi-parcel lines.
 
 ## Golden programs 001–006
 
@@ -327,9 +501,16 @@ done
   `CMPEQ`/`CMPGT`/`CMPHI` flag results (signed vs unsigned, no memory
   write), and the `006` FLUSHD trap storing the opcode's own PC
   (`0x0006`).
+* The `cyc` column follows the rows above: 001 and 002 are all simple
+  one-cycle instructions; 003 is `1,1,1,1,2,1`; 004 is `1,1,2,33,2,1`
+  (the 33 is `ENTER $0xC0`, eight flushed blocks, `1 + 4·8`); 006 is
+  `1,1,1,8` (the trap row).
 * `005` runs end to end: `CMPEQ` sets F=1, `JMPTN` at `0x0004` is taken
-  to `0x000a`, `CMPGT $1,R0` leaves F=0 (1 > 10 is false), the second
-  `JMPTN` is not taken, and `ADD $2,R0` / `ADD3 $5,R0` write `0x000c` /
+  to `0x000a` with `cyc=3` — folded into the compare, but the N
+  prediction is wrong and the compare is the immediately previous
+  record (Table 4-35 “jump after compare”); `CMPGT $1,R0` leaves F=0
+  (1 > 10 is false), the second `JMPTN` is correctly not taken and folded
+  (`cyc=0`); and `ADD $2,R0` / `ADD3 $5,R0` write `0x000c` /
   `0x00000011` before the C1 stop at `0x0018`.
 
 ## Refused constructs
@@ -368,6 +549,10 @@ unimplemented-instruction sequence (`FLUSHD`/`FLUSHDCE`).  Refused:
 * **State** the model cannot represent: virtual addressing, user
   little-endian data, CSP = ISP, unaligned or out-of-range SP/MSP, a
   stack cache crossing 2^32.
+* **Timing row absent**: an incorrectly predicted conditional jump whose
+  PSW.F did not come from a compare (reset, `TESTC`, `TESTV`) has no
+  Table 4-35 row; `step()` refuses rather than inventing a penalty (see
+  “Where the manual is silent”).
 * **Events**: reset, interrupts, exceptions, trace, trapped-niladic
   delivery, unimplemented registers, divide-by-zero, privilege
   violations, bus errors, MMU translation and the vector table.  The
@@ -486,11 +671,46 @@ this model ever disagree, the README is the tie-breaker for the checker.
     than guessing an interrupt-stack address.  The manual makes CATCH a
     no-op and ENTER/POPN/RETURN skip MSP updates in that mode
     (pp. 3-10, 3-38, 3-40); none of that is modelled.
+19. **Memory parameters A, D and Q.**  p. 4-2 defines them as the
+    single-, double- and quad-word access times but prints no values.
+    This model chooses `A_CYC = 1`, `D_CYC = 2`, `Q_CYC = 4` because its
+    memory is a single-cycle 32-bit word store.  The alternative (some
+    bus latency from the data sheet or a board model) would change every
+    cell that contains A/D/Q; the chosen values are named parameters,
+    not inline numbers, and are model choices, not manual facts.
+20. **ENTER's E term.**  Table 4-36 prints `1 + (Q·E)` and p. 4-2 calls
+    E “ENTER size” without a unit.  This model reads E as the number of
+    16-byte blocks the pp. 3-19/3-20 flush loop moves, rounded up for a
+    partial block.  The alternative (frame size in quad-words) would
+    charge for allocation that the pseudocode never performs and would
+    price `ENTER R-32` at `1 + Q·2 = 9` instead of 1; the flush reading
+    matches the only memory traffic the pages describe.
+21. **Table 4-35's folded/unfolded qualifiers.**  Three of the seven
+    wrong-prediction rows have no folded/unfolded qualifier.  This model
+    applies them to both folded and unfolded branches, and splits only
+    the “4 or more instructions after compare” row (unfolded 1, folded
+    0).  A folded branch still counts as one retiring instruction when a
+    later branch measures its distance to the compare; the manual does
+    not state whether folding removes it from that count.
+22. **No Chapter 4 delay tables.**  Under p. 4-1's four assumptions the
+    model adds no Table 4-37..4-40 penalty.  The duplicated indirect
+    rows of Tables 4-38 and 4-40 are not applied at all, since the
+    manual does not say whether both apply to one access.  Fetch,
+    operand-access, data-type and miscellaneous delays are therefore
+    outside the model; the core may add them only if the trace contract
+    changes.
+23. **First-record `cyc`.**  The first HRI record reports the whole span
+    from the core's start to its retirement.  With no overlap modelled,
+    that is the instruction's own occupancy (`cyc` is 1 for a first
+    one-cycle instruction, 8 for a first FLUSHD trap).
 
 ## What the model deliberately is not
 
-It is not a timing model, a pipeline model, a cache model, an MMU, an
-event processor, an assembler, a disassembler or a second copy of the
-Bluespec core.  It knows one instruction at a time and only the
-architectural state named above.  That is what makes it useful as the
-independent side of the HRI comparison.
+It is not a pipeline model, a cache/fetch-delay model, a cycle-by-cycle
+simulator, an MMU, an event processor, an assembler, a disassembler or a
+second copy of the Bluespec core.  Its `cyc` is a retirement-spacing
+account from the printed Chapter 4 base tables, not a simulation of the
+EU, the prefetch buffer or the bus.  It knows one instruction at a time
+and only the architectural state named above plus the non-architectural
+`timing` record.  That is what makes it useful as the independent side of
+the HRI comparison.

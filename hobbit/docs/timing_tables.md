@@ -96,7 +96,7 @@ Printed verbatim, in the manual's order:
 | EU | Execution unit |
 
 `A`, `D`, `Q`, `N`, `E` and `S` may appear in the CSV's `time` column.
-`S` is not in this list: see the errata in §6. `N` is defined but never
+`S` is not in this list: see the errata in §7. `N` is defined but never
 used by any table in Chapter 4. The checker's expression grammar is
 exactly this symbol set plus `S`.
 
@@ -139,7 +139,7 @@ Worked citations, using only printed numbers:
 
 * **Simple ALU op.** `ADD` is 1 cycle, min = max = 1 (Table 4-32,
   p. 4-3). `ADD3` is also 1. `ADDI` is 2, and Table 4-32 prints it as
-  `ADD1` (erratum, §6). `AND`, `OR`, `SUB`, `XOR` and their `3` forms
+  `ADD1` (erratum, §7). `AND`, `OR`, `SUB`, `XOR` and their `3` forms
   are 1; `ANDI` and `ORI` are 2.
 * **Folded jump.** A conditional jump or an unconditional jump folded
   into the previous instruction costs **0 cycles** (p. 4-3 note for
@@ -151,7 +151,53 @@ Worked citations, using only printed numbers:
   sequence cost; the store of the return PC at `*(CSP)` (p. 3-9) is
   inside those cycles under the p. 4-1 assumptions.
 
-## 6. Conflicts, errata and silences
+## 6. Parameters chosen by the model
+
+`timing.csv` keeps Chapter 4 symbolic because the manual prints no value
+for its memory-access times: `A` is "memory access time for a single
+word access", `D` for a double word, `Q` for a quad word (p. 4-2).
+Three implementations report a per-instruction count from the same HRI
+field, so the concrete values need exactly one authoritative home.
+**Everything in this section is a model decision, not a manual fact**;
+manual-side inputs are cited individually.
+
+| parameter | chosen value | status and cite |
+|---|---|---|
+| `A_CYC` | 1 core cycle per 32-bit word | model decision; `A` is defined on p. 4-2 with no printed value |
+| `D_CYC` | 2 | model decision; `D` (p. 4-2), one cycle per 32-bit word |
+| `Q_CYC` | 4 | model decision; `Q` (p. 4-2), one cycle per 32-bit word |
+| `E` | 16-byte blocks moved by the ENTER flush loop, rounded up | model decision for the unit; the loop executes `MSP -= 16` per iteration (p. 3-19) and moves quad-words (p. 3-20) |
+
+Substituting those choices:
+
+* **ENTER** = `1 + Q·E` (Table 4-36, p. 4-5; row `t436_enter`) =
+  `1 + 4·E`. With E = 8 blocks, **33 cycles**. The manual never states
+  `E`'s unit, so the block count is the model's reading of the p. 3-19
+  loop; that silence stays recorded in §7 item 8.
+* **Unimplemented instruction** = `7 + A` (Table 4-36, p. 4-5; row
+  `t436_unimplemented`) = **8 cycles**. The sequence it prices is
+  `*(CSP) = PC of unimplemented opcode; PC = *(VB+12)` (p. 1-39).
+  `FLUSHD` and `FLUSHDCE` take this path (pp. 3-22 and 3-23).
+* **Conditional jumps**: correct prediction, folded = **0**; incorrect
+  prediction with the jump immediately after the compare = **3** (both
+  Table 4-35, p. 4-5). The table prints no folded-mispredict row for
+  the 1–3-instruction cases (§7 item 9), so the model reports 0 for a
+  correct folded branch and 3 for a mispredicted compare-adjacent
+  branch. The other printed unfolded cases stay available to the model:
+  1 for a correct unfolded prediction, and 2 or 1 for a misprediction
+  with 2 or 3 instructions after the compare.
+* **No Table 4-37 fetch or Table 4-38 operand delay is added.** Every
+  reported count adopts the p. 4-1 assumptions: instruction fetch hits
+  the IC, only stack-offset/immediate/register/absolute (jumps and
+  calls)/PC-relative modes are used, stack-offset accesses are captured
+  in the stack cache, and no data hazards occur. The Table 4-37
+  penalties stay in the CSV as data; they are not charged to the
+  reported count.
+
+The reported figures are therefore the §5 ones: a simple ALU op 1, a
+folded jump 0, an unfolded jump 1, and `CALL` 1.
+
+## 7. Conflicts, errata and silences
 
 Each item is a printed fact plus what the manual does *not* say. The CSV
 records the printed value and flags the conflict in `note`; nothing here
@@ -218,7 +264,7 @@ is silently reconciled.
     contributes clock rates, not instructions. The March 1991 ATT2100
     specification is an earlier part and is never cited here.
 
-## 7. Branch folding (printed p. 4-7)
+## 8. Branch folding (printed p. 4-7)
 
 Section 4.3 states that each decoded instruction has a *next address*
 field, and that when the PDU detects a non-branching operation followed
@@ -252,7 +298,7 @@ A `JMP` is the unconditional case: 0 cycles folded, 1 unfolded
 (p. 4-3 note). Table 4-32 prices `CALL` at 1 cycle and gives it no
 folded variant; Table 4-35 covers only conditional jumps.
 
-## 8. The CSV
+## 9. The CSV
 
 Header:
 
@@ -288,7 +334,7 @@ once each, over 87 rows (70 instruction/table rows and 17 delay rows).
 The assumptions, the abbreviations and the folding rule are rules, not
 rows, and live in this document.
 
-## 9. What the checker enforces
+## 10. What the checker enforces
 
 `tools/check_timing.py`:
 
