@@ -12,7 +12,12 @@ whose IF trap, tentacle table and print program CSTART are IBM's code
 (stage 4), and leaves by $EOJ into MCP's own YC4NO (stage 5), from where
 MCP's $EOJ program, fetched back from disk by YMPFCH, runs job control, in
 the bypass mode IPL leaves, through YL1 to YPPID4's $FETCH of the compiled
-program '))))))))' (stage 6).
+program '))))))))' (stage 6).  That fetch is served from a core image of TWS
+holding the cards BSS read; job control finds no IOD card and primes resume
+load, which, as the BSS postprocessor, loads the compiled program from TWS
+and the library and gives $RET with SICBU = *MAIN*'s entry (stage 7).
+Every stage runs on THE POST-IPL CORE IMAGE (below): all 98,304 words a
+real IPL leaves, not the assembled listing.
 
 STAGE 1, three TYPE cards on one compiled bench (a fast_load image swap):
   1a  `B TYPE,GO,FORTRAN`: $SCR (stub) -> UNCODE (pp.270-273) -> YTOPGO ->
@@ -31,21 +36,33 @@ STAGE 2 (NOT RUN, PLANTED): YC4B5 -> the PC area's LIM/IOD cards through
   YRDFSO -> DECODE, TASIGN, TMOVE -> WJC4G1.  The PC area's LIM and IOD
   cards are not printed anywhere we hold, and Assign/Move need the PP
   reference tables JC1 builds.  Planted instead (SCAFFOLD): SLRBU as YL1
-  (p.384 ll.36-44) leaves it for a CHOSEN `LIM,200000,214777` (the deck
+  (p.384 ll.36-44) leaves it for a CHOSEN `LIM,200000,214513` (the deck
   assembles at 200000; MCP's resume load clears PP memory from 41 for
   SBAPP's count, capped at YMAX = 30000, so the clear stays below the
-  deck), and KSILO+8..11 as check_bss_example4 plants them.
+  deck), and KSILO+8..11 as check_bss_example4 plants them.  The upper
+  limit was 214777 until 2026-11-18; it is now just below 214514, where the
+  post-IPL image has SBAMCP, "the base address of the I-O location table"
+  for MCP (C22-6728-1 p.274, PDF 274, read in the ink), with IPL's unit
+  tables and channel status table at 214515-214777 (SXCHAN 214724.00).
+  The deck, its tables and BSS's upper limit (KSILO+8, 213766) lie below.
+  MEASURED (R2G_TAMPER=lim, the old 214777): no check fails, so the move
+  rests on the document, not on a failure.
 STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
   YCIDBT words copied in.  YC4INT steps the chain, YDFCS <- KSILO+2 (BSS),
   $13 <- YDKCRS, WJC4G (p.386 ll.8-31) sets YLLSAV from SLRBU, SREADS
   <- $13, primes $RESLD and gives $RET.  The stub (SCAFFOLD for MCP's
-  dispatcher: unprime -> YRLTT -> YRESLD p.291 ll.45-51 -> YMPFCH) enters
-  YRESL1 (p.332 l.2): SCORG = 1 -> YRESL2, YRLDTA <- YDFCS, the PP clear
+  dispatcher: unprime -> YRLTT, p.291 l.45) enters YRESLD (l.50), and from
+  there it is IBM's code: LX,$1,YXWRLD / B,YMPFCH (ll.50-51); YMPFCH
+  (p.269) finds YMPSAV holding $EOJ (the post-IPL image: JC4 was in core),
+  saves LOADER and fetches 22LOADER into YMPBUF -- the overlay area holds
+  22SCOMD after IPL -- through the stub's LFETCH (SCAFFOLD for DFETCH, a
+  core image of the landed pp.320-334 at 264000); YFHBR's BE,YRESL1 (p.269
+  l.56) enters YRESL1 (p.332 l.2): SCORG = 1 -> YRESL2, YRLDTA <- YDFCS, the PP clear
   (ll.13-17), then per card YRDISK (ll.27-41) -> $FETCH (stub, reads the
   type-area image at 240000 by YDFRDA) -> YLOAD -> ALOADR (pp.320-331) ->
   ... -> the branch card -> YBCENC (p.332 l.53) -> p.333 -> $RET with
   SICBU = 200000.  140 cards since the deck's $SPR/$EOJ code (137 before),
-  142 $MCP calls.  SCAFFOLD/RECONSTRUCTION:
+  143 $MCP calls (142 before YMPFCH's fetch was run).  SCAFFOLD/RECONSTRUCTION:
   - YEOJS is left 0, as the image has it.  p.396 l.30 BBZ,YEOJS,YCREJ
     branches on a 1, p.274 ll.44-46 set it only for $ABEOJ (KVI,$14,DABEOJ
     / BZXE,YC4B3 / CM1111,YEOJS), and C22-6728-1 p.65 (PDF 65, in the ink):
@@ -60,6 +77,7 @@ STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
     MEASURED: left as unwritten memory (bit 50 = 1), the loader read
     through $SCR, and the error path's spool print (YPR -> YPRSPL, p.270)
     then called $MCP; the stub stops on a repeated disk address since.
+    SINCE THE POST-IPL IMAGE NOTHING IS PLANTED: IPL leaves YRLTT+2 = 0.
   - The type area is contiguous 15-word records: YDKCRS (p.397 l.17,
     XW,-15.,0,0,7) has count 0, so p.332 l.28's end-of-arc step never
     fires for it (MEASURED: the 137th read is at 240000 + 15*136).
@@ -142,17 +160,87 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   '))))))))', $13 = YPPBSD (XW,-13.,34,0,7) + 15., so RELFWA 2.0, the
   first card past the arc's two header words ("SO JC WILL LOOK AT FIRST
   CARD OF AN ARC", p.397 l.18), and B,DMCP / ,DFETCH (ll.29-30), which
-  traps IF.  STUBIF serves no second $FETCH: the run stops at TWSF.  This
-  is where the path now ends.  Stages 3-6: 1,678,113 cycles.
-  WHAT IS NEXT: '))))))))' is the compiled program's type area, which the
-  reconstructed BSS does not write (spec G6: how BSS writes TWS).  After
-  the fetch, NOT TRACED: p.385 (PDF 135, read in the ink) ll.1-5 send every
-  card to YIO's UNCODE except one KFI pattern, which loops to YIODSO; an
-  UNCODE error goes YIDCER -> YBCERR (p.392, transcription only), whose
-  ll.50-52 go to WJC4G1 if no IOD card was read ("IS NUMBER OF IODS ZERO")
-  or else YC4C9 -> DECODE -> p.385 l.46 B,TASIGN ($15 = YCONCG).  So
-  TASIGN was NOT passed; whether this job reaches it depends on what TWS
-  holds, and if it does, SCNFCG = 1 sends it to TA9 (below).
+  traps IF.  The bench's FIRST run halts there (the stub's HALT2 word,
+  STOPC 8), and stages 3-6 are judged on it: 1,776,198 cycles.  The SECOND
+  run of the same bench goes on (stage 7).
+STAGE 7, THE GO PHASE PAST THE FETCH (2026-11-18, the second run).
+  WHAT TWS HOLDS.  C22-6728-1 printed p.209 (PDF 209, read in the ink):
+  "MCP assumes that the compiled problem program is left in card form and
+  may be loaded from the first arc up to and including the number of arcs
+  occupied in TWS"; the last link must "leave the binary output on the
+  disk" for a Compile and Go run.  For the BSS chain the last link is BSS,
+  and its input is the subprogram decks on TWS (C22-6728-1 p.86, PDF 86:
+  resume load is "the last phase of the Fortran BSS Loader").  So the
+  type area '))))))))' is served (SCAFFOLD for TWS on the disk, the stub's
+  generic $FETCH over a table of disk images) as the very cards the
+  reconstructed BSS read as its input (tws_cards, checked equal to the
+  deck's TWS words): Example 4's six subprogram decks and the FORTRAN
+  branch card, in the loader's arc geometry -- arc n's two header words at
+  512n (CHOSEN 0: spec G6), card k at 2 + check_bss_example4.tws_offset(k)
+  (34 cards of 15 words an arc; p.332 ll.27-30, p.397 l.18).  CHOSEN: no
+  LIM or IOD card ahead of the program (none is printed for this job).
+  The library decks are LB areas, "LB" + the first entry name (CHOSEN,
+  spec G7), as check_bss_mcp_load has them.
+  THE RUN, IBM's code but the fetches and the dispatcher:
+  - p.385 (PDF 135, read in the ink) ll.1-5: the card (*MAIN*'s first
+    binary card) is not the pattern l.4 tests, so YIO (l.6) sends it to
+    UNCODE (l.8), whose error return (l.13) is YIDCER.
+  - p.392 (PDF 142, read in the ink 2026-11-18) ll.27-31 YIDCER -> YBCERR
+    ll.37-51: column 1 is not the T punch (l.38) nor B (l.42); $10 is
+    YICEM (l.44); ll.46-47 the IOD count below SLRBU; l.50 KCI,$12,1.0 "IS
+    NUMBER OF IODS ZERO" -> l.51 BXE,WJC4G1.  (PC trace, R2G_PCLOG=4.)
+  - p.386 (PDF 136, read in the ink) l.7 WJC4G1 BB,SCORG,YC4INT: SCORG 0,
+    so WJC4G (ll.8-31): limits from SLRBU, SREADS, $RESLD primed (ll.23-
+    25), SJ1FUL 0 so no SJC1 (l.26), BE,DMCP / ,SDRET (ll.30-31): MCP's
+    $RET, STIC at 020217.40.
+  - The stub's MRET (SCAFFOLD for the dispatcher, as stage 3's DISP)
+    enters YRESLD enabled; YMPFCH fetches 22LOADER again (YMPSAV held
+    $EOJ); YRESL1 with SCORG 0, KSILO+1.19 = 1 and KSILO+2 = BSS is the
+    BSS postprocessor (C22-6728-1 p.86): limits from KSILO, MRNRM5, and
+    the loader reads all 33 subprogram cards on TWS once, in order, never
+    the branch card, then the three library decks the calls bring in
+    (UST*, IOCS*, FISIP*: 3, 8 and 4 cards, each ended by $FETCH's end
+    return, YLERR), and p.333 ll.4-5 give $RET with SICBU = 000051.0,
+    *MAIN*'s entry on p.17's map.  The stub records SICBU and stops
+    (STOPC 7): the compiled program is not run.  2,266,077 cycles.
+  - The load is judged against p.17's map: at each subprogram's printed
+    origin its first word XW,0,<calls>, every transfer-vector word the
+    skeleton B,entry;NOP with the callee's printed entry, and each entry's
+    B,E;NOP (load_oracle, 32 words).
+  - No other trap: 12 $SPR, 12 PP $RET, 1 $EOJ, no bad op, no interrupt;
+    YLJSLT unchanged.
+  TASIGN is not on this path (no IOD card).  The $RET into *MAIN* and the
+  program's own run are next.
+THE POST-IPL CORE IMAGE (2026-11-18, later).  post_ipl() runs
+  StretchMcpStartTb (tests/run_mcp_start_test.sh's bench: IPL from tape
+  with p.1's IOD deck, CLOCK and BYPASS, JC4 polling at ZJOBC1, p.391
+  l.37) with gen_mcp_boot_tb.py's MCP_START_MEM_DUMP=1 and dumps all
+  98,304 words at its stop; the dump is cached in bsv/build-hosttape/
+  postipl/, keyed by the bench source, the tape and every model source.
+  MEASURED cold (cache moved aside, 2026-11-18): the dump is rebuilt to the
+  same key (the run is deterministic), and the whole test takes 116 s.
+  Every stage starts from it (words 0-31, the registers, left to each
+  bench).  Against the assembled image (MEASURED, 1,225 words differ):
+  - the overlay area 234424-236523 holds 22SCOMD, the command package
+    (563 of its 1088 assembled words equal; the rest its buffers), not
+    the LOADER: stage 3 now runs YMPFCH's fetch of 22LOADER (above);
+  - YMPSAV holds $EOJ, which is why that fetch is needed;
+  - SXCHAN = 214724.00 count 36, SMCP = SBAMCP = 214514.00 (assembled 0,
+    215000.00, 215000.00): IPL's channel and I/O location tables;
+  - SCOMRG = 2c86000000000000, SYSMOD 10 (below);
+  1,028 of the 1,225 differing words are in the overlay area; the other
+  197 resident words (those above among them) are run state and IPL-set
+  pointers, not classified further.
+  Re-checked against it, each SCAFFOLD the bench planted: SYSMOD 10 is
+  the image's own (nothing planted; set_sysmod asserts it); YRLTT+2 is 0
+  (nothing planted); KSILO+0..11 are 0 (stage 1 writes 0-2 and 7 and the
+  bench plants 8-11 as before); SLRBU is 0 (the stage-2 gap's plant
+  stays); SIT+20..47 equal FWIT (the MARKER stays); SICBU holds 1800 (the
+  sentinel stays); SXCHAN and the CST are now IBM's (the overlap path
+  below).  Stub and disk images go only where the dump holds 0 (asserted).
+  MEASURED (R2G_TAMPER=assembled, the assembled image with the old YRLTT
+  plant): only the check on SXCHAN/SMCP/SBAMCP fails; this job's path
+  reads none of the other words that differ.
 SYSMOD = 10 IS REAL (2026-11-18).  The image assembles SCOMRG as
   a800000000000000 (p.103 ll.10-27): SYSMOD 00, overlap.  A whole-core dump
   of StretchMcpStartTb at its stop (IPL from tape with p.1's IOD deck, the
@@ -163,7 +251,8 @@ SYSMOD = 10 IS REAL (2026-11-18).  The image assembles SCOMRG as
   FIRST".  So a machine started the way this model's IPL starts it is in
   bypass mode, and p.397 l.6 (PDF 147, in the ink: "BB,SYSMOD,TJUNAS -IF
   BYPASS", binary 215001.10 80) sends the GO phase to YL1.  The value is
-  planted from that run (POST_IPL_SYSMOD), in stage 1's image too (its
+  planted from that run (POST_IPL_SYSMOD; since the post-IPL image it is
+  the image's own word, and only R2G_TAMPER=assembled plants it), in stage 1's image too (its
   SCOMRG word, with SCORG, is what stages 3-6 copy); stage 1's three runs
   take the same cycles as with 00 (61,465 / 30,032 / 30,998) and pass
   the same checks.  gen_mcp_boot_tb.py pins the
@@ -187,9 +276,21 @@ THE OVERLAP PATH (R2G_TAMPER=overlap, SYSMOD 00 as assembled), as before:
   addresses look like pointers into the moved area).  NOT GRAFTED: the
   tables cannot safely be taken alone while the words that may point into
   them are unclassified; and this bench's CHOSEN limits LIM,200000,214777
-  overlap them (IPL's MCP base, SMCP, is 214514).  Running TASIGN on IBM's tables needs the go bench to start
-  from the post-IPL image, or to take the tables and their pointers
-  together.
+  overlap them (IPL's MCP base, SMCP, is 214514).  [All of the above was
+  observed on the assembled image, before 2026-11-18 (later).]
+  ON THE POST-IPL IMAGE (2026-11-18, later; R2G_TAMPER=overlap now plants
+  SYSMOD 00 into the IPL dump, nothing else changed): the run takes the same
+  path and reaches TASIGN, where the bench's stop_at_pc (TASIGN, half-word
+  17640) ends it -- a bench stop, not a halt -- after 1,775,302 cycles,
+  NFET 1, now with IBM's SXCHAN = 214724.00 count 36 and SMCP = SBAMCP =
+  214514.00 in core and the PP limits below them.  TA9 on those tables is
+  NOT run by this test.  One diagnosis run, R2G_TAMPER=overlap
+  R2G_STOP=18346 R2G_ONLY6=1 (2026-11-18), is NOT a clean measurement and
+  is recorded only as observed: stage 4's linkage/tentacle checks fail as
+  well (7 FAIL, the map itself prints right), so the moved stop disturbs
+  more than stage 6; stage 6 passes TASIGN (SCNFCG 0, WJ4PFF cleared it)
+  and ends not at T N but at the stub's unserved-op stop (STOPC 4, STIC
+  22226600).  Not diagnosed.  TA9 on IBM's tables is still open.
   TMAXRF (215005.32, its count) and SPROGS (215021-215022) are 0 in the
   image AND in the post-IPL dump, so they match a real IPL (at JC4's idle
   poll, before any job; not measured after one).  Left as the image
@@ -235,74 +336,101 @@ IOD_SUBFIELD_SEPARATOR), not Appendix F's 4-8 comma.  MEASURED: with the
 4-8 comma UNCODE's compare (p.270 l.49) fails and the job goes YJOCER ->
 YTCERR -> YPR -> YPRSPL.
 
-INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited;
-all re-run 2026-11-18 on the bypass-mode stage-6 bench (stop at TWSF);
-control run all pass, 91 PASS lines.  abssid and overlap were re-run after SYSMOD was
-planted in stage 1 as well, with the same sets; the others were run just before, with
-stage 1 unchanged by it (see SYSMOD = 10 IS REAL).  judge6 has 15 checks.  Four pass under every injection
-below but `overlap`, so they are consistency checks, not discriminating:
-- "word 020000 was 0 at the fetch": PREW is never written when no fetch
-  comes.
-- "KSILO's link pointer still 1": stage 3 leaves it 1.
-- "YTSP still 0" and "SCNFCG 1, WJCW 0": both are the image's values when
-  p.397 is not reached.
-"The eleven stage-6 checks" below are the other eleven):
-  overlap -- SYSMOD left at the assembled 00: 6 fail: YTSP (1), SCNFCG/WJCW
-    (0, 1), YL1's limits, YI4TA, RELFWA, and the stop (that run stops at
-    TASIGN, half-word 17640, NFET 1).  The other nine stage-6 checks pass.
-  ksilo9 -- p.397 l.3 LX,$14,KSILO+8. as KSILO+9.: 1 fails: YL1's limits.
-  vic13 -- p.387 l.23 V+IC,$13,15. as 13.: 1 fails: RELFWA (got 0).
-  nofetch -- STUBIF's $FETCH copies nothing (its ST a NOP): 8 fail:
-    - the $EOJ program in core, SIT+20..47, SCORG, YDFCS;
-    - YL1's limits, YI4TA, RELFWA, the stop (none).
-    YMPSAV, YFHBR, M and word 020000 = 0 pass (YMPFCH ran).
-  eojl17 -- p.381 l.17 BB,SCORG,YC4INT as BZB (on the disk copy too): 7
-    fail.  l.18 on runs, and its B,DMCP / ,SKOM traps as an unserved op
-    (BADOPX = 79.32).  The failures: "no other op", SCORG, YDFCS, YL1's
-    limits, YI4TA, RELFWA, the stop.  SIT+20..47 and the fetch checks pass.
+INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited).
+All re-run 2026-11-18 on the post-IPL image with stage 7.  The control run
+passes all checks: 103 PASS lines.  Most tampers run as extra program pairs
+on the one compiled bench (R2G_MEASURE=<t>,<t>,...; each pair's lines are
+prefixed "MEASURE <t>").  assembled, overlap, nobd, nofetch and abssid
+change the word set, so each runs as its own R2G_TAMPER build.
+Some checks pass under every injection, so they are consistency checks,
+not discriminating ones:
+- judge6: "word 020000 was 0 at the fetch" (PREW is never written when no
+  fetch comes) and "KSILO's link pointer still 1" (stage 3 leaves it 1).
+- judge6, under every injection except overlap: "YTSP still 0" and
+  "SCNFCG 1, WJCW 0", which are the image's values when p.397 is not
+  reached.
+- judge7: "no fetch of anything else" and "YLJSLT unchanged".
+"The stage-6 eleven" means judge6's other eleven checks.  "Stage 7's
+nine" means judge7's other nine.
+  twsxw -- on the disk only, *MAIN*'s card holding its first word is
+    punched from XW,0,5 instead of XW,0,6: 1 fails, the load check (word
+    41).  Every fetch, count and return passes.  So the program is loaded
+    from TWS's words, not from the deck BSS read.  (Before the load check
+    existed, swapping TWS cards 1 and 2 failed nothing.  That tamper,
+    twsswap, was replaced by this one.)
+  ybc51 -- p.392 l.51 BXE,WJC4G1 made a NOP, so the no-IOD branch is not
+    taken: 7 fail, stage 7's nine minus "the fetch served first" and "no
+    other trap".  Stage 7 stops at no stub (None).  Stages 1-6 pass.
+  vic13 -- p.387 l.23 V+IC,$13,15. as 13.: 2 fail, stage 6's RELFWA
+    (got 0) and stage 7's first fetch (RELFWA 0).  Everything after it
+    passes: the loader re-reads card 0.
+  ksilo9 -- p.397 l.3 LX,$14,KSILO+8. as KSILO+9.: 1 fails, YL1's limits.
+  lim -- the old CHOSEN LIM,200000,214777: 0 fail (see STAGE 2).
+  overlap (own build) -- SYSMOD at the assembled 00, on the post-IPL
+    image: 14 fail.  Six are stage 6's: YTSP (1), SCNFCG/WJCW (0, 1),
+    YL1's limits, YI4TA, RELFWA, and the stop.  The run stops at TASIGN,
+    half-word 17640, NFET 1, as it did on the assembled image.  The other
+    eight are stage 7's nine minus "no other trap", since there is no
+    trap past TASIGN.
+  assembled (own build) -- the assembled image, with the old YRLTT plant
+    and SYSMOD planted: 1 fails, the SXCHAN/SMCP/SBAMCP check (0, 0,
+    215000.00).  So this path reads none of IBM's IPL-set words beyond
+    those planted before.
+  nofetch (own build) -- STUBIF's $FETCH copies nothing (its ST a NOP):
+    18 fail:
+    - stage 4's "no other interrupt", where AD is raised on entering 020000
+      = 0;
+    - eight of the stage-6 eleven: the $EOJ program in core, SIT+20..47,
+      SCORG, YDFCS, YL1's limits, YI4TA, RELFWA, and the stop (STOPC 3,
+      BADI);
+    - stage 7's nine.
+    YMPSAV, YFHBR, M and the 020000 check pass, because YMPFCH ran.
+  eojl17 -- p.381 l.17 BB,SCORG,YC4INT as BZB (on the disk copy too):
+    16 fail.  l.18 runs on, and its B,DMCP / ,SKOM traps as an unserved
+    op (STOPC 4).  The failures: stage 4's "no other op", SCORG, YDFCS,
+    YL1's limits, YI4TA, RELFWA, the stop, and stage 7's nine.
   yxwejm -- p.269 l.40 XW,YEOJTA,YPPMEM as XW,YDBTA,YPPMEM: the fetch asks
-    for $DUMP and the stub stops at BADF2.  11 fail, the eleven stage-6
-    checks (YMPSAV is $DUMP, YFHBR is YDBBEG).  Stage 5's checks pass.
+    for $DUMP, and the stub stops at BADF2 (STOPC 1).  19 fail: the
+    stage-6 eleven, and stage 7's nine minus "no other trap".  Stage 5's
+    checks pass.
+  abeoj -- BSS leaves by $ABEOJ (68.0): MCP takes p.274 ll.46-48 (YEOJS =
+    1, B,DMCP / BE,DDUMP), and the stub does not serve its $DUMP (64.0).
+    24 fail: "no other op" (stage 4), stage 5's fetch, $14 and YEOJS, the
+    stage-6 eleven, and stage 7's nine.
   nocc -- PRSPR stores LINE at byte 0 (no control byte): 18 fail: byte 0,
     header 2, all 10 subprogram rows, all 5 common rows, rows 6-10/'**'.
-    Header 1 passes (its words survive a one-column shift).  Stages 5-6
-    pass.
-  fwa -- the call's FWA outside the PP limits (220000): ACHK -> ACHERR
-    (SPRIME primes the error print and $ABEOJ, p.203 ll.11-18).  8 $SPR and
-    7 $RET traps; BSS never finishes.  41 fail: ERRC, OUTN, the trap counts,
-    FWA, CBTA, CWA, every buffer-line check, four stage-5 checks, and the
-    eleven stage-6 checks.  Pass: the table and KSILO 8-11 (written before
-    the map), the linkage, return and user bit, CBWA, P and YEOJS.
+    Header 1 passes, because its words survive a one-column shift.
+    Stages 5-7 pass.
   lci15 -- p.203 l.36 LCI,$9,16 as 15 (15 full words a line): 19 fail:
-    byte 0, bytes 121-132, header 2, every row; header 1 passes.  Stages
-    5-6 pass.
-  bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 20 fail: every buffer-line
-    check (byte 0, padding, both headers, all rows).  Stages 5-6 pass.
-  nobd -- ENTER's BD a NOP: 49 fail (see STAGE 4):
-    - the entry and every stage-4 check but five (OUTB unwritten, the
-      call's half words, the user bit, CBWA, P);
-    - stage 5's trap count, linkage, fetch and $14 (YLLSAV, SMAXRN and
-      YEOJS pass);
-    - the eleven stage-6 checks.
-  abeoj -- BSS leaves by $ABEOJ (68.0): MCP takes p.274 ll.46-48 (YEOJS =
-    1, B,DMCP / BE,DDUMP), whose $DUMP (64.0) the stub does not serve.  15
-    fail: the "no other op" check (BADOPX = 64.0), stage 5's fetch, $14
-    and YEOJS, and the eleven stage-6 checks.
-  R2G_TAMPER=abssid -- ABSSID (p.291 l.8) spelled BSX: exactly the eight
+    byte 0, bytes 121-132, header 2, every row.  Header 1 passes.  Stages
+    5-7 pass.
+  bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 20 fail, every buffer-line
+    check (byte 0, padding, both headers, all rows).  Stages 5-7 pass.
+  fwa -- the call's FWA outside the PP limits (220000): ACHK -> ACHERR
+    (SPRIME primes the error print and $ABEOJ, p.203 ll.11-18).  There are
+    8 $SPR and 7 $RET traps, and BSS never finishes.  50 fail: ERRC, OUTN,
+    the trap counts, FWA, CBTA, CWA, every buffer-line check, four stage-5
+    checks, the stage-6 eleven, and stage 7's nine.
+  nobd (own build) -- ENTER's BD a NOP: 58 fail (see STAGE 4):
+    - the entry, and every stage-4 check but five;
+    - stage 5's trap count, linkage, fetch and $14;
+    - the stage-6 eleven;
+    - stage 7's nine.  Stage 7 hits the 12M step cap.
+  abssid (own build) -- ABSSID (p.291 l.8) spelled BSX: exactly the eight
     1a checks fail (PC area name, M, KSILO count, KSILO+1, KSILO+2,
-    YCIDBT, $13, the stop at YC4B5); 1b and 1c pass; stages 3-4 are
+    YCIDBT, $13, the stop at YC4B5).  1b and 1c pass, and stages 3-7 are
     skipped.
-  R2G_TAMPER=order -- type-area cards 41 and 42 swapped: 55 fail.  The
-    loader reads 41 cards and stops (p.322 l.42, sequence error).  The
-    fetch count, last address, call count, SICBU and entry checks fail.
-    So does every stage-4, -5 and -6 check but ten: OUTB unwritten, the
-    call's half words, CBWA, P, SMAXRN, YEOJS, and stage 6's four
-    consistency checks.  YRLDTA's check passes.
-  Controls: 1b and 1c above.
+  order -- type-area cards 41 and 42 swapped: 63 fail.  The loader reads
+    41 cards and stops (p.322 l.42, sequence error).  The failures are the
+    fetch count, last address, call count, SICBU and entry checks, and
+    every stage-4, -5, -6 and -7 check but fifteen.  YRLDTA's check passes.
+  Controls: the unmodified pair (103 PASS) and 1b and 1c above.
 
 Run with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../strap:. from tests/.
-R2G_PCLOG=1|2 (a PC log through job control / the loader), R2G_KEEP
-(keep the bench output) and R2G_STOP (stage 3-6's stop, a half-word
+R2G_MEASURE=t1,t2,... runs the listed in-bench tampers beside the control
+(INJECTIONS).  R2G_PCLOG=1|2|3|4 (a PC log through job control / the
+loader / the stage-3 stub / stage 6 on), R2G_ONLY6 (the first run alone),
+R2G_KEEP (keep the bench output) and R2G_STOP (stage 3's stop, a half-word
 address; 18346 is T N): diagnosis only.
 """
 import os
@@ -339,6 +467,9 @@ PC_LOG2 = PC_LOG + [(0o234424 * 2, 0o235264 * 2), (0o235267 * 2, 0o235500 * 2)]
 # print program
 PC_LOG3 = [(0o250000 * 2, 0o252000 * 2), (0o215470 * 2, 0o215572 * 2),
            (0o222104 * 2, 0o222400 * 2)]
+# R2G_PCLOG=4 (diagnosis only): stage 6 on, the $EOJ program, the stub and
+# the LOADER
+PC_LOG4 = [(0o20000 * 2, 0o24000 * 2), (0o250000 * 2, 0o252000 * 2)]
 fails = 0
 
 
@@ -374,6 +505,108 @@ def image():
     return _IMAGE
 
 
+_POST_IPL = None
+POST_IPL_MODULE = "StretchPostIplMcpStartTb"
+
+
+def post_ipl():
+    """THE POST-IPL CORE IMAGE: all 98,304 installed words of
+    StretchMcpStartTb at its stop (tests/run_mcp_start_test.sh's bench:
+    IPL from tape with p.1's IOD deck, the CLOCK and BYPASS commands, JC4
+    polling for a job card at ZJOBC1, p.391 l.37), dumped by gen_tb's
+    mem_dump (gen_mcp_boot_tb.py, MCP_START_MEM_DUMP=1).  It is run once
+    per change of its inputs and cached under bsv/build-hosttape/postipl/,
+    keyed by the bench source, the tape and every model source, so a model
+    change re-runs it.  Returns {word: value}, every word."""
+    global _POST_IPL
+    if _POST_IPL is not None:
+        return _POST_IPL
+    import hashlib
+    import pickle
+    cache = os.path.join(BSV, "build-hosttape", "postipl")
+    os.makedirs(cache, exist_ok=True)
+    tape = os.path.join(cache, "postipl.tape")      # this bench's own tape
+    env = dict(os.environ, PROSA_IOD_DECK="P1", STRETCH_TAPE=tape, MCP_START_MEM_DUMP="1",
+               PYTHONPATH=os.path.join(HERE, "..", "strap") + ":" + HERE,
+               BLUESPECDIR=BSC_DIR + "/libexec/lib",
+               PATH=BSC_DIR + "/bin:" + os.environ.get("PATH", ""))
+    env.pop("STRETCH_DISK_LOAD", None)
+    r = subprocess.run([sys.executable, os.path.join(HERE, "gen_mcp_boot_tb.py"),
+                        POST_IPL_MODULE], env=env, capture_output=True, text=True, cwd=HERE)
+    if r.returncode:
+        raise SystemExit("post-IPL bench: gen_mcp_boot_tb failed\n" + r.stderr[-2000:])
+    src = r.stdout
+    h = hashlib.sha256(src.encode())
+    h.update(open(tape, "rb").read())
+    for name in sorted(os.listdir(BSV)):
+        if name.endswith(".bsv") or name in ("host_tape.c",):
+            if name.endswith("Tb.bsv"):          # generated benches
+                continue
+            h.update(name.encode())
+            h.update(open(os.path.join(BSV, name), "rb").read())
+    key = os.path.join(cache, h.hexdigest()[:24] + ".pkl")
+    if os.path.exists(key):
+        with open(key, "rb") as fh:
+            _POST_IPL = pickle.load(fh)
+        return _POST_IPL
+    bsv = os.path.join(BSV, POST_IPL_MODULE + ".bsv")
+    with open(bsv, "w") as fh:
+        fh.write(src)
+    os.makedirs(os.path.join(BSV, "build-hosttape"), exist_ok=True)
+    os.makedirs(os.path.join(BSV, "simbuild-hosttape"), exist_ok=True)
+    try:
+        for args in (["-g", "mk" + POST_IPL_MODULE, "-u", POST_IPL_MODULE + ".bsv"],
+                     ["-e", "mk" + POST_IPL_MODULE, "-o", POST_IPL_MODULE + "_sim",
+                      "host_tape.c"]):
+            r = subprocess.run([BSC_DIR + "/bin/bsc", "-sim", "-D", "HOST_TAPE",
+                                "-simdir", "simbuild-hosttape", "-bdir", "build-hosttape",
+                                "-info-dir", "build-hosttape"] + args +
+                               ["+RTS", "-K512m", "-RTS"],
+                               cwd=BSV, env=env, capture_output=True, text=True)
+            if r.returncode:
+                raise SystemExit("post-IPL bench: bsc failed\n" + (r.stdout + r.stderr)[-3000:])
+        r = subprocess.run(["./" + POST_IPL_MODULE + "_sim"], cwd=BSV, env=env,
+                           capture_output=True, text=True)
+        out = r.stdout + r.stderr
+    finally:
+        for name in os.listdir(BSV):        # by exact name, never a glob
+            if name in (POST_IPL_MODULE + ".bsv", POST_IPL_MODULE + "_sim",
+                        POST_IPL_MODULE + "_sim.so"):
+                os.remove(os.path.join(BSV, name))
+    if not re.search(r"STOPPED DELIBERATELY at half-word 16925 ", out) or \
+            re.search(r"^FAIL", out, re.M):
+        raise SystemExit("post-IPL bench: did not reach ZJOBC1 cleanly\n" + out[-3000:])
+    mem = {int(a): int(v, 16) for a, v in re.findall(r"MEMDUMP (\d+) ([0-9a-f]+)", out)}
+    if len(mem) != 98304:
+        raise SystemExit("post-IPL bench: %d words dumped" % len(mem))
+    with open(key + ".tmp", "wb") as fh:
+        pickle.dump(mem, fh)
+    os.replace(key + ".tmp", key)
+    _POST_IPL = mem
+    return mem
+
+
+# The 22LOADER type area (p.320 l.10 SLC,YMPBUF: 234424.00 on) is not in
+# core after IPL: the overlay area holds 22SCOMD, the command package the
+# CLOCK and BYPASS commands ran in (MEASURED: 563 of SCOMD's 1088 assembled
+# words there are equal; the rest are its buffers and run state).  Resume
+# load "immediately enters YMPFCH to get itself into memory from disk"
+# (C22-6728-1 p.86, PDF 86, read in the ink): stage 3 now runs that
+# YMPFCH (p.291 ll.50-51, p.269), and the stub serves its $FETCH.
+LOADER_AT = 0o234424
+LDR_AT = 0o264000            # the type area "22LOADER" on disk, a core image (SCAFFOLD)
+
+
+def base_words():
+    """The words a job stage starts from: the post-IPL core image, words
+    0-31 (the registers, which each bench sets itself) left out.  R2G_TAMPER=assembled (measurement
+    only): the assembled image instead, as the bench ran before."""
+    im = image()
+    if os.environ.get("R2G_TAMPER") == "assembled":
+        return dict(im.words)
+    return {w: v for w, v in post_ipl().items() if w >= 32}
+
+
 def sym(S, nm, extra=0, alias=None):
     v = S[nm] + extra
     return "%-8sSYN,(8)%o.%02o" % (alias or nm, v // 64, v % 64)
@@ -392,7 +625,7 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
     hexf = os.path.join(tmp, module + ".hex")
     kw = dict(step_cap=step_cap, cycle_bound=cycle_bound, stop_at_pc=stop_hw,
               fast_load=hexf, mem_dump=mem_dump,
-              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3}.get(os.environ.get("R2G_PCLOG", "")))
+              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4}.get(os.environ.get("R2G_PCLOG", "")))
     src = generate(module, progs[0], checks, **kw)
     with open(os.path.join(BSV, module + ".bsv"), "w") as fh:
         fh.write(src)
@@ -464,7 +697,12 @@ def set_sysmod(words, S):
     """SCOMRG's SYSMOD as IPL leaves it (POST_IPL_SYSMOD), in stage 1 and in
     stages 3-6 alike; R2G_TAMPER=overlap keeps the assembled 00."""
     w, b = S["SYSMOD"] // 64, S["SYSMOD"] % 64
-    sm = 0 if os.environ.get("R2G_TAMPER") == "overlap" else POST_IPL_SYSMOD
+    t = os.environ.get("R2G_TAMPER")
+    if t not in ("overlap", "assembled"):
+        # From the post-IPL image the word is IPL's own: nothing to plant.
+        assert (words[w] >> (62 - b)) & 3 == POST_IPL_SYSMOD, "%016x" % words[w]
+        return
+    sm = 0 if t == "overlap" else POST_IPL_SYSMOD
     words[w] = (words.get(w, 0) & ~(3 << (62 - b))) | (sm << (62 - b))
 
 
@@ -472,7 +710,7 @@ def stage1_prog(card_text, pc_cards):
     """The image, the TYPE card in the $SCR stub, the PC area in $FETCH's."""
     im = image()
     S = im.symtab
-    words = dict(im.words)
+    words = base_words()
     card = cards.card_words(card_text)
     npc = 15 * len(pc_cards)
     drv = ["        SLC,32.0",
@@ -557,12 +795,14 @@ def stage1_prog(card_text, pc_cards):
     drv.append("        END,START")
     d = assemble("\n".join(drv) + "\n")
     for w, v in d.words.items():
-        if w in words:
+        if w in im.words:
             raise SystemExit("the stub overlaps the image at %o" % w)
+        if w >= 33 and os.environ.get("R2G_TAMPER") != "assembled":
+            assert not post_ipl().get(w), "the stub over IPL's word %o" % w
         words[w] = v
     ks = S["KSILO"] // 64
     for w in (ks, ks + 1, ks + 2, ks + 7):     # KSILO is DR(BU,64) (p.171)
-        assert not words.get(w), "KSILO+%d holds a word in the image" % (w - ks)
+        assert not im.words.get(w), "KSILO+%d holds a word in the image" % (w - ks)
         words[w] = SENT
     set_sysmod(words, S)
     im2 = type(im).__new__(type(im))
@@ -596,7 +836,8 @@ def tamper_image(words, S):
             if e0 <= w < 0o40000 and EOJ_AT + w - e0 in words:
                 c = EOJ_AT + w - e0
                 words[c] = (words[c] & ~m) | (p.words.get(w, 0) & m)
-    elif t and t not in ("order", "nocc", "fwa", "abeoj", "nobd", "nofetch", "overlap"):
+    elif t and t not in ("order", "nocc", "fwa", "abeoj", "nobd", "nofetch", "overlap",
+                         "assembled", "lim", "twsxw"):
         raise SystemExit("R2G_TAMPER: abssid, order, nocc, fwa, abeoj, nobd, nofetch,"
                          " overlap or %s, not %r"
                          % (", ".join(IMAGE_TAMPERS), t))
@@ -617,7 +858,10 @@ IMAGE_TAMPERS = {"lci15": (0o222242 * 64, 32, "LCI,$9,15"),
                  # KSILO+9. (printed binary 220461.34 10: KSILO+8 = 220461)
                  "ksilo9": (0o21045 * 64 + 32, 32, "LX,$14,(8)220462.0"),
                  # p.387 l.23 at 020246.40: V+IC,$13,15. as V+IC,$13,13.
-                 "vic13": (0o20246 * 64 + 32, 32, "V+IC,$13,13.")}
+                 "vic13": (0o20246 * 64 + 32, 32, "V+IC,$13,13."),
+                 # p.392 l.51 (PDF 142) at 020470.40: BXE,WJC4G1 ("IS NUMBER OF
+                 # IODS ZERO") as NOP, so YBCERR goes on to l.52 B,YC4C9
+                 "ybc51": (0o20470 * 64 + 32, 32, "NOP")}
 
 
 def stage1(tmp):
@@ -709,8 +953,9 @@ DRV2_AT = 0o250000           # the stub, above PP memory and MCP (installed: 0-2
 EOJ_AT = 0o260000            # the type area "22$EOJ" on disk, a core image (SCAFFOLD)
 EOJ_NAME = "22$EOJ  "        # p.269 ll.24, 52-54: YFDO's "22" and YEOJTA's "$EOJ  "
 TWS_NAME = "))))))))"        # p.397 l.19 YTWSTA, the compiled program's type area
+TWS_AT = 0o270000            # the type area '))))))))' on disk, a core image (SCAFFOLD)
 SICS = 0x3333333333333333    # SICBU's sentinel (written only by p.333 l.2)
-LIM_A, LIM_B = 0o200000, 0o214777    # the processor's limits: CHOSEN (see header)
+LIM_A, LIM_B = 0o200000, 0o214513    # the processor's limits: CHOSEN (see header)
 # SCOMRG's SYSMOD (p.103 l.18, bits 8-9) as IBM's IPL and the BYPASS command
 # leave it: 10.  MEASURED on StretchMcpStartTb (tests/run_mcp_start_test.sh),
 # which pins the whole SCOMRG word at ZJOBC1 (gen_mcp_boot_tb.py).
@@ -754,13 +999,36 @@ def bss_deck():
     return p2, p2.punch.images(clock=0o1234), kwords, exp
 
 
+def tws_cards():
+    """The cards on TWS as the deck reads them (check_bss_example4.build's
+    input: each Example 4 subprogram punched, then the FORTRAN branch
+    card), each as its 15 words.  Checked against the words the deck's
+    source assembles after `TWS SYN, $`, so it is the deck's own input."""
+    import check_bss_example4 as ex4
+    decks = [ex4.punch(ex4.stub_source(*s)) for s in ex4.SUBS]
+    fb = ex4.punch(["        PUNREL", "        FEND"])
+    cards_ = [ex4.card_words(c) for d in decks for c in d] + \
+        [ex4.card_words(c) for c in fb]
+    src, _exp = ex4.build()
+    lines = src.splitlines()
+    k = lines.index("TWS     SYN, $")
+    words = []
+    for k2, cw in enumerate(cards_):
+        while len(words) < ex4.tws_offset(k2):
+            words.append(0)
+        words += cw
+    got = [int(x.split("(16)")[1], 16) for x in lines[k + 1:k + 1 + len(words)]]
+    assert got == words, "TWS: not the deck's own input"
+    return cards_
+
+
 def stage34_prog(state, deck_imgs, kwords):
     """The image as stage 1 left KSILO and SCORG, the gap PLANTED, the type
     area BSS on the disk image, and the stub."""
     import check_bss_example4 as ex4
     im = image()
     S = im.symtab
-    words = dict(im.words)
+    words = base_words()
     at = lambda nm, extra=0: (S[nm] // 64) + extra    # noqa: E731
     if os.environ.get("R2G_TAMPER") == "order":   # measurement only:
         deck_imgs = list(deck_imgs)                # cards 40 and 41 swapped
@@ -772,9 +1040,52 @@ def stage34_prog(state, deck_imgs, kwords):
     # pp.381-439 from YPPMEM (020000) to END (023233), the words the image
     # leaves unwritten as 0 (CHOSEN).  YMPFCH's $FETCH copies it to its FWA.
     e0 = S["YPPMEM"] // 64
-    e1 = max(w for w in words if e0 <= w < 0o40000) + 1
+    e1 = max(w for w in im.words if e0 <= w < 0o40000) + 1
     for i in range(e1 - e0):
-        plant[EOJ_AT + i] = words.get(e0 + i, 0)
+        plant[EOJ_AT + i] = im.words.get(e0 + i, 0)
+    # The LOADER's type area "22LOADER" (SCAFFOLD): the core image of the
+    # landed pp.320-334 from YMPBUF (234424, p.320 l.10) to the end of
+    # the image, the words it leaves unwritten 0 (CHOSEN).  YMPFCH's
+    # $FETCH (stage 3, the stub's LFETCH) copies it to YMPBUF.
+    top = max(w for w in im.words if w >= LOADER_AT)
+    nldr = top + 1 - LOADER_AT
+    for i in range(nldr):
+        plant[LDR_AT + i] = im.words.get(LOADER_AT + i, 0)
+    # The compiled program's type area '))))))))' (SCAFFOLD for TWS on the
+    # disk): the same cards the deck reads as its input (tws_cards), laid
+    # in the loader's arc geometry -- arc n's two header words at 512n,
+    # card k at 2 + ex4.tws_offset(k) (p.332 ll.27-30; p.397 l.18 YPPBSD
+    # -13. with p.387 l.23's +15.: "FIRST CARD OF AN ARC" at word 2).  The
+    # header words are 0 (CHOSEN: spec G6, unprinted).
+    tws = tws_cards()
+    if os.environ.get("R2G_TAMPER") == "twsxw":       # measurement only:
+        # on the disk only, *MAIN*'s card that carries its first word
+        # punched from XW,0,5 for XW,0,6
+        src = ex4.stub_source(*ex4.SUBS[0])
+        k = src.index("        XW,0,6")
+        alt = [ex4.card_words(c) for c in ex4.punch(src[:k] + ["        XW,0,5"] + src[k + 1:])]
+        tws = list(tws)
+        diff = [i for i, cw in enumerate(alt) if cw != tws[i]]
+        assert len(diff) == 1, diff
+        tws[diff[0]] = alt[diff[0]]
+    for k, cw in enumerate(tws):
+        for i, v in enumerate(cw):
+            plant[TWS_AT + 2 + ex4.tws_offset(k) + i] = v
+    tws_len = 2 + ex4.tws_offset(len(tws) - 1) + 15
+    # The library: one type area per library deck, "LB" + its first entry
+    # name, six characters, cards contiguous from word 0 (AREAD1) -- as
+    # check_bss_mcp_load plants them (SCAFFOLD; the naming CHOSEN, spec G7).
+    areas = [(EOJ_NAME, EOJ_AT, e1 - e0), ("22LOADER", LDR_AT, nldr),
+             (TWS_NAME, TWS_AT, tws_len)]
+    a0 = TWS_AT + tws_len + 16
+    for nm in ex4.LIB:
+        ws = [v for cols in ex4.punch(ex4.stub_source(*ex4.LIB[nm]))
+              for v in ex4.card_words(cols)]
+        for i, v in enumerate(ws):
+            plant[a0 + i] = v
+        areas.append(("LB" + nm.ljust(6)[:6], a0, len(ws)))
+        a0 += len(ws) + 16
+    assert a0 < 0o300000
     # What stage 1 left (run 1a's words, copied).
     for lab, w in (("ksilo0", at("KSILO")), ("ksilo1", at("KSILO", 1)),
                    ("ksilo2", at("KSILO", 2)), ("ksilo7", at("KSILO", 7)),
@@ -790,11 +1101,13 @@ def stage34_prog(state, deck_imgs, kwords):
     # SLRBU and SBAPP as p.384 ll.36-44 (YL1) leave them for a LIM card
     # LIM,A,B: SV A at SLRBU+.32, SC B at SLRBU, SBAPP's count B capped at
     # YMAX (ll.41-44).
+    # R2G_TAMPER=lim (measurement only): the old limits, LIM,200000,214777.
+    lim_b = 0o214777 if os.environ.get("R2G_TAMPER") == "lim" else LIM_B
     w = at("SLRBU")
     v = words.get(w, 0) & ~((0o777777 << 46) | (0o777777 << 14))
-    plant[w] = v | (LIM_B << 46) | (LIM_A << 14)
+    plant[w] = v | (lim_b << 46) | (LIM_A << 14)
     w = at("SBAPP")
-    plant[w] = (words.get(w, 0) & ~(0o777777 << 46)) | (min(LIM_B, S["YMAX"] // 64) << 46)
+    plant[w] = (words.get(w, 0) & ~(0o777777 << 46)) | (min(lim_b, S["YMAX"] // 64) << 46)
     # KSILO+8..11 as check_bss_example4 plants them for BSS (U, sentinels).
     for i, v in enumerate(kwords):
         plant[at("KSILO", 8 + i)] = v
@@ -802,10 +1115,16 @@ def stage34_prog(state, deck_imgs, kwords):
     # value) say which pseudo-op entered resume load; 74.32 "forces resume
     # load to use $SCR as a source of cards" (C22-6728-1 PDF 86), and p.332
     # ll.10-11 zero $13 for it.  WJC4G primed $RESLD (66.00), so MCP's
-    # dispatcher (not run) would leave it 0.  SCAFFOLD; MEASURED: left as
-    # unwritten memory (bit 50 = 1), the loader read through $SCR.
+    # dispatcher (not run) would leave it 0.  MEASURED (2026-11-17, on the
+    # assembled image): left as unwritten memory (bit 50 = 1), the loader
+    # read through $SCR.  SINCE 2026-11-18 IT IS IPL'S: the post-IPL image
+    # holds YRLTT+2 = 0, so nothing is planted (the assembled image, under
+    # R2G_TAMPER=assembled, still gets the old SCAFFOLD).
     w = at("YRLTT", 2)
-    plant[w] = words.get(w, 0) & ~(1 << (63 - 50))
+    if os.environ.get("R2G_TAMPER") == "assembled":
+        plant[w] = words.get(w, 0) & ~(1 << (63 - 50))
+    else:
+        assert words[w] == 0, "YRLTT+2 post-IPL: %016x" % words[w]
     plant[at("SICBU")] = SICS
     # MARKER: SIT+20..47 (MCP's own interruption table; this bench's $IA is
     # the stub's ITAB, so nothing else reads them) hold the sentinel, so
@@ -833,6 +1152,8 @@ def stage34_prog(state, deck_imgs, kwords):
            sy("SLRMCP"), sy("MCR"),
            sy("YPPMEM"), sy("YFHFWA"), sy("YFHFWA", 2 * 64 + 32, "RDFET"),
            "YFHTAW  SYN,(8)%o.0" % (S["YFHTA"] // 64),
+           sy("YRESLD"), sy("YMPBUF"),
+           "YLLSAW  SYN,(8)%o.0" % (S["YLLSAV"] // 64),
            "START   B,YC4INT",
            # After ENTER every $MCP call traps IF (ITAB) -- the PP's, and
            # from stage 6 MCP's own B,DMCP / ,DFETCH (STUBIF's IFETCH); one
@@ -843,21 +1164,50 @@ def stage34_prog(state, deck_imgs, kwords):
            "        SX,$1,NCALL",
            "        KVI,$1,.32",
            "        BXE,DISP",
+           "        KVI,$1,1.0",
+           "        BXE,LFETCH",
            "        L(BU,64),SICBU",
            "        K(BU,64),SICW",
            "        BAE,SFETCH",
            "        B,ENTER",
            # MCP's dispatcher (SCAFFOLD): WJC4G primed $RESLD (p.386 ll.23-25)
-           # and gave $RET (ll.30-31); MCP unprimes it -- YRLTT (p.291 l.45),
-           # YRESLD (l.50), YMPFCH fetches the LOADER -- whose entry runs
-           # p.332 l.2.  The prime control and queue are copied for the check.
+           # and gave $RET (ll.30-31); MCP unprimes it through the tentacle
+           # YRLTT (p.291 l.45) to YRESLD (l.50).  From YRESLD it is IBM's
+           # code: LX,$1,YXWRLD / B,YMPFCH (p.291 ll.50-51), and YMPFCH
+           # (p.269 ll.14-36) compares the name LOADER with YMPSAV, saves it
+           # and fetches 22LOADER (the stub's LFETCH, the second call) into
+           # YMPBUF, then YFHBR's BE,YRESL1 (p.269 l.56) runs p.332 l.2.
+           # From the post-IPL image the fetch is needed: YMPSAV holds $EOJ
+           # (JC4 was in core) and the overlay area 22SCOMD.  The prime
+           # control and queue are copied for the check.
            "DISP    L(BU,64),MR4",
            "        ST(BU,64),QSNAP",
            "        L(BU,64),MPQR",
            "        ST(BU,64),QSNAP+1.0"]
     for k in range(6):
         drv += ["        L(BU,64),(8)215646.0+%d.0" % k, "        ST(BU,64),QSNAP+%d.0" % (k + 2)]
-    drv += ["        B,YRESL1",
+    drv += ["        B,YRESLD",
+            # $FETCH of 22LOADER from YMPFCH's YFDO (SCAFFOLD for MCP's
+            # disk fetch, as IFETCH below for 22$EOJ): name and FWA checked,
+            # the type area's core image at LDR_AT copied, N = 0 so M = its
+            # word count (C22-6678-1 p.21), back to the normal return.
+            "LFETCH  L(BU,48),YFHTAW",
+            "        KF(BU,48),LDRNM",
+            "        BZAE,BADF",
+            "        LV,$2,YFHFWA",
+            "        KV,$2,LDRW",
+            "        BXE,$+1.0",
+            "        B,BADF",
+            "        LVI,$1,(8)%o.0" % LDR_AT,
+            "LFL     L(BU,64),0($1)",
+            "        ST(BU,64),0($2)",
+            "        V+I,$1,1.0",
+            "        V+I,$2,1.0",
+            "        KV,$1,LDRE",
+            "        BXL,LFL",
+            "        LI(BU,18),%d" % nldr,
+            "        ST(BU,18),YFHFWA+1.0",
+            "        B,RDFET",
             "SFETCH  SX,$1,SAV1",
             "        L(BU,48),YRLDTA",
             "        KF(BU,48),BSSNM",
@@ -886,8 +1236,10 @@ def stage34_prog(state, deck_imgs, kwords):
             "        B,YLOAD",
             "FEND    LX,$1,SAV1",
             "        B,RYLOAD",
-            "NOAREA  B,NOAREA",
-            "BADF    B,BADF",
+            "NOAREA  LI(BU,18),5",
+            "        B,STOPS",
+            "BADF    LI(BU,18),6",
+            "        B,STOPS",
             # $RET after the load (p.333 ll.4-5): MCP enters the program at
             # SICBU (SCAFFOLD for MCP's $RET to a loaded processor).
             # ... with the PP's state (SCAFFOLD, CHOSEN): level bit SL = 0 (PP;
@@ -936,7 +1288,7 @@ def stage34_prog(state, deck_imgs, kwords):
             "        KVI,3,66.32",
             "        BXE,IFETCH",
             "        SX,$3,BADOPX",
-            "BADOP   B,BADOP",
+            "        B,BADOP",
             "IEOJ    L(BU,18),NEOJ",
             "        +I(BU,18),1",
             "        ST(BU,18),NEOJ",
@@ -951,7 +1303,18 @@ def stage34_prog(state, deck_imgs, kwords):
             # return routine.  Back to the PP at the normal return p.118 l.6
             # left in SCSPRT+1.32, the PP's registers 8-31 restored, SL = 0,
             # enabled.
-            "IRET    L(BU,18),NRET",
+            # A $RET from MCP's own JC4 ($EOJ program, 020000-023777) or
+            # LOADER (234424-236777) is not the print program's: MRET.
+            "IRET    LV,$1,STIC",
+            "        KVI,$1,(8)20000.0",
+            "        BXL,IRETP",
+            "        KVI,$1,(8)24000.0",
+            "        BXL,MRET",
+            "        KVI,$1,(8)%o.0" % LOADER_AT,
+            "        BXL,IRETP",
+            "        KVI,$1,(8)237000.0",
+            "        BXL,MRET",
+            "IRETP   L(BU,18),NRET",
             "        +I(BU,18),1",
             "        ST(BU,18),NRET",
             "        CM0000(BU,1),SL",
@@ -959,6 +1322,31 @@ def stage34_prog(state, deck_imgs, kwords):
             "        SVA,$1,RETB",
             "        TI,24,PPSAV+5.0,8.0",
             "RETB    BE,0",
+            # MCP's $RET (SCAFFOLD for MCP's dispatcher).  The first is
+            # WJC4G's in the GO phase (p.386 ll.23-31: $RESLD primed, then
+            # $RET): MCP unprimes it through YRLTT to YRESLD (p.291 ll.45-
+            # 51), as stage 3's DISP does; here, registers 8-31 back from
+            # STLR, enabled to YRESLD.  The second is resume load's after
+            # the load (p.333 ll.4-5), whose $RET enters the program at
+            # SICBU (C22-6728-1 p.86): the stub records SICBU and stops
+            # there (STOPC 7), the compiled program not run.
+            "MRET    L(BU,18),NMRET",
+            "        +I(BU,18),1",
+            "        ST(BU,18),NMRET",
+            "        LX,$3,MRETP",
+            "        L(BU,64),STIC",
+            "        ST(BU,64),0($3)",
+            "        V+I,$3,1.0",
+            "        SX,$3,MRETP",
+            "        L(BU,18),NMRET",
+            "        KI(BU,18),1",
+            "        BZAE,MRET2",
+            "        TI,24,STLR+5.0,8.0",
+            "        BE,YRESLD",
+            "MRET2   L(BU,64),SICBU",
+            "        ST(BU,64),SICB2",
+            "        LI(BU,18),7",
+            "        B,STOPS",
             # $FETCH (DFETCH SYN,66.32, p.105 l.36) from MCP's own code
             # after the PP has run: B,DMCP traps IF as the PP's calls do.
             # SCAFFOLD for MCP's DFETCH.  The first must be YMPFCH's fetch of
@@ -997,13 +1385,125 @@ def stage34_prog(state, deck_imgs, kwords):
             "        ST(BU,18),YFHFWA+1.0",
             "        TI,24,STLR+5.0,8.0",
             "        BE,RDFET",
-            "FET2    L(BU,64),STIC",
+            # A later $FETCH (SCAFFOLD for MCP's DFETCH, as above): the
+            # calling sequence from ,DFETCH at STIC is name (the next full
+            # word), RELFWA, FWA, N, M, then the error, end and normal
+            # returns (C22-6678-1 p.21; p.387 ll.29-38, p.332 ll.33-41).
+            # Only '))))))))' is served, from its disk image at TWS_AT:
+            # N must be 15. (both callers', p.387 l.34, p.332 l.38); a
+            # RELFWA at or past the image's end takes the end return.
+            # Each fetch's STIC and RELFWA are logged (FLOG).
+            "FET2    KI(BU,18),2",
+            "        BZAE,FET3",
+            "        L(BU,64),STIC",
             "        ST(BU,64),FSTC2",
-            "TWSF    B,TWSF",
-            "BADF2   B,BADF2",
-            "LATE    B,LATE",
-            "BADI    B,BADI",
+            # HALT2 (bit 0): stop here, at the second fetch, STOPC 8 -- the
+            # bench's first run, on which stages 3-6 are judged; the second
+            # run goes on.
+            "        BB,HALT2,STOP8",
+            "FET3    LV,2,STIC",
+            "        L(BU,48),.32($2)",
+            "        LVI,$4,FTAB",
+            "FTL     KF(BU,48),0($4)",
+            "        BAE,FHIT",
+            "        V+I,$4,3.0",
+            "        KVI,$4,FTABE",
+            "        BXL,FTL",
+            "        B,BADF2",
+            # $1 = RELFWA, logged with the caller and the entry
+            "FHIT    L(BU,24),1.32($2)",
+            "        ST(BU,24),TMPV",
+            "        LV,$1,TMPV",
+            "        SX,$3,SAV2",
+            "        LX,$3,FLOGP",
+            "        SX,$2,0($3)",
+            "        SX,$1,1.0($3)",
+            "        SX,$4,2.0($3)",
+            "        V+I,$3,3.0",
+            "        SX,$3,FLOGP",
+            "        LX,$3,SAV2",
+            # past the area's end: the end return
+            "        KV,$1,2.0($4)",
+            "        BXL,$+1.0",
+            "        B,FEND2",
+            # $5 = the words to move: N, or for N = 0 the rest of the area
+            "        L(BU,24),2.32($2)",
+            "        K(BU,24),ZW",
+            "        BAE,FN0",
+            "        ST(BU,24),TMPV",
+            "        B,FN1",
+            "FN0     L(BU,24),2.0($4)",
+            "        -(BU,24),TMPV",
+            "        ST(BU,24),TMPV",
+            "FN1     LV,$5,TMPV",
+            # $1 = the area's word RELFWA, $3 = FWA
+            "        L(BU,24),1.0($4)",
+            "        +(BU,24),1.32($2)",
+            "        ST(BU,24),TMPV",
+            "        LV,$1,TMPV",
+            "        L(BU,24),2.0($2)",
+            "        ST(BU,24),TMPV",
+            "        LV,$3,TMPV",
+            "        LI(BU,18),0",
+            "        ST(BU,18),CNTW",
+            "FCPY    KVI,$5,0",
+            "        BXE,FDONE",
+            "        L(BU,64),0($1)",
+            "        ST(BU,64),0($3)",
+            "        V+I,$1,1.0",
+            "        V+I,$3,1.0",
+            "        V-I,$5,1.0",
+            "        L(BU,18),CNTW",
+            "        +I(BU,18),1",
+            "        ST(BU,18),CNTW",
+            "        B,FCPY",
+            "FDONE   L(BU,18),CNTW",
+            "        ST(BU,18),3.0($2)",
+            "        V+I,$2,4.32",
+            "        SVA,$2,RETF",
+            "        TI,24,STLR+5.0,8.0",
+            "RETF    BE,0",
+            "FEND2   L(BU,18),NEND",
+            "        +I(BU,18),1",
+            "        ST(BU,18),NEND",
+            "        V+I,$2,4.0",
+            "        SVA,$2,RETF",
+            "        TI,24,STLR+5.0,8.0",
+            "        B,RETF",
+            # Every stop of the stub comes here, its reason in STOPC
+            # (bench's stop address): 1 an unserved fetch, 2 LATE, 3 BADI,
+            # 4 BADOP.
+            "BADF2   LI(BU,18),1",
+            "        B,STOPS",
+            "LATE    LI(BU,18),2",
+            "        B,STOPS",
+            "BADI    LI(BU,18),3",
+            "        B,STOPS",
+            "BADOP   LI(BU,18),4",
+            "        B,STOPS",
+            "STOP8   LI(BU,18),8",
+            "STOPS   ST(BU,18),STOPC",
+            "        NOP",
+            "        NOP",
+            "        NOP",
+            "        NOP",
+            "SSTOP   B,SSTOP",
             "        CNOP",
+            "FTAB    SYN,$"]
+    for nm, a0, n in areas:     # the stub's disk: name, first word, length
+        drv += ["        DD(BU,64),(16)%016X" % (a6(nm) << 16),
+                "        XW,(8)%o.0" % a0, "        XW,%d.0" % n]
+    drv += ["FTABE   SYN,$",
+            "NEND    DRZ(BU,64),1",
+            "NMRET   DRZ(BU,64),1",
+            "SICB2   DRZ(BU,64),1",
+            "CNTW    DRZ(BU,64),1",
+            "ZW      XW,0",
+            "MRETP   XW,MRETL",
+            "MRETL   DRZ(BU,64),4",
+            "HALT2   DRZ(BU,64),1",
+            "STOPC   DRZ(BU,64),1",
+            "FLOGP   XW,FLOG",
             "NCALL   XW,0",
             "SAV1    XW,0",
             "SAV2    XW,0",
@@ -1014,6 +1514,9 @@ def stage34_prog(state, deck_imgs, kwords):
             "PPMW    XW,YPPMEM",
             "EOJE    XW,(8)%o.0" % (EOJ_AT + e1 - e0),
             "EOJNM   DD(BU,64),(16)%016X" % (a6(EOJ_NAME) << 16),
+            "LDRNM   DD(BU,64),(16)%016X" % (a6("22LOADER") << 16),
+            "LDRW    XW,YMPBUF",
+            "LDRE    XW,(8)%o.0" % (LDR_AT + nldr),
             "NFET    DRZ(BU,64),1",
             "FSTC1   DRZ(BU,64),1",
             "FSTC2   DRZ(BU,64),1",
@@ -1035,6 +1538,7 @@ def stage34_prog(state, deck_imgs, kwords):
             "        CNOP",
             "PPSAV   DRZ(BU,64),30",
             "LOG     DRZ(BU,64),200",
+            "FLOG    DRZ(BU,64),600",
             "ITAB    SYN,$"]
     for k in range(64):     # the interruption table: IF to STUBIF, else BADI
         drv += ["        SIC,STIC" if k == 21 else "        SIC,BADIC+%d.0" % k,
@@ -1042,21 +1546,60 @@ def stage34_prog(state, deck_imgs, kwords):
     drv += ["        END,START"]
     d = assemble("\n".join(drv) + "\n")
     for w2, v in d.words.items():
-        if w2 in words:
+        if w2 in im.words or w2 in plant:
             raise SystemExit("the stub overlaps at %o" % w2)
         words[w2] = v
+    if os.environ.get("R2G_TAMPER") != "assembled":
+        # the stub and the disk images go where IPL left nothing
+        pi = post_ipl()
+        used = [w2 for w2 in d.words if w2 >= 33] + \
+            [w2 for w2 in plant if w2 >= AREA_AT]
+        bad = ["%o" % w2 for w2 in used if pi.get(w2, 0)]
+        assert not bad, "stub/disk words over IPL's: %s" % bad[:10]
     im2 = type(im).__new__(type(im))
     im2.__dict__.update(im.__dict__)
     im2.words = words
     im2.end_pc = d.end_pc
+    d.areas = areas
     return im2, d, len(area)
 
 
-def stage34(tmp, state):
+def with_tamper(t, fn, *a):
+    """fn(*a) with R2G_TAMPER = t (None: unset), the variable restored."""
+    old = os.environ.get("R2G_TAMPER")
+    if t:
+        os.environ["R2G_TAMPER"] = t
+    else:
+        os.environ.pop("R2G_TAMPER", None)
+    try:
+        return fn(*a)
+    finally:
+        if old is None:
+            os.environ.pop("R2G_TAMPER", None)
+        else:
+            os.environ["R2G_TAMPER"] = old
+
+
+def stage34_progs(state):
     p2, imgs, kwords, exp = bss_deck()
-    sym2 = lambda n: p2.val.symbol_value(p2.st.search(n))[0]   # noqa: E731
     prog, d, nwords = stage34_prog(state, imgs, kwords)
     tamper_image(prog.words, image().symtab)
+    # Two runs on one bench: the first halts at the second $FETCH (HALT2,
+    # STOPC 8), where stages 3-6 are judged; the second goes on (stage 7).
+    progA = type(prog).__new__(type(prog))
+    progA.__dict__.update(prog.__dict__)
+    progA.words = dict(prog.words)
+    progA.words[d.symtab["HALT2"] // 64] = 1 << 63
+    return progA, prog, p2, imgs, exp, d
+
+
+def stage34(tmp, state, measure=()):
+    """Build the stage 3-7 bench and run it.  `measure` (R2G_MEASURE): more
+    R2G_TAMPER names whose programs share the bench (same word set), run
+    after the control's two; their results follow in the list."""
+    progA, prog, p2, imgs, exp, d = stage34_progs(state)
+    sym2 = lambda n: p2.val.symbol_value(p2.st.search(n))[0]   # noqa: E731
+    extra = [with_tamper(t, stage34_progs, state) for t in measure]
     S = image().symtab
     at = lambda nm, extra=0: (S[nm] // 64) + extra    # noqa: E731
     reads = [("sicbu", at("SICBU")), ("entryx", d.symtab["ENTRYX"] // 64),
@@ -1073,7 +1616,7 @@ def stage34(tmp, state):
     # mode, YPPID4's fetch of the compiled program '))))))))' (p.387 l.29).
     # On the overlap path (R2G_TAMPER=overlap) it stops at TASIGN as before.
     halt = S["TASIGN"] // 32 if os.environ.get("R2G_TAMPER") == "overlap" \
-        else d.symtab["TWSF"] // 32
+        else d.symtab["SSTOP"] // 32
     if os.environ.get("R2G_STOP"):     # diagnosis only: a half-word address
         halt = int(os.environ["R2G_STOP"], 0)
     reads += [("x13", 29), ("sreads", at("SREADS")), ("yrltt2", at("YRLTT", 2)),
@@ -1096,15 +1639,31 @@ def stage34(tmp, state):
     reads += [("badic%d" % k, d.symtab["BADIC"] // 64 + k) for k in range(64)]
     reads += [("tent%d" % i, at("SCSPRT", i)) for i in range(4)]
     reads += [("stic", at("STIC"))]
+    reads += [(nm.lower(), d.symtab[nm] // 64) for nm in ("STOPC", "NEND", "FLOGP")]
+    reads += [("flog%d" % k, d.symtab["FLOG"] // 64 + k) for k in range(40)]
     reads += [("cwa", at("CWA")), ("cbta", at("CBTA")), ("cbwa", at("CBWA")),
               ("sl", at("SL"))]
     # the dump: the deck (200000-214777) and the output program's print
     # buffers CX and CY (p.209 l.56 - p.210 l.3), up to 223177
-    res = run_bench(tmp, "StretchBssGoLoadTb", [prog], reads, stop_hw=halt,
-                    step_cap=8000000, cycle_bound=60000000,
+    reads += [(nm.lower(), d.symtab[nm] // 64) for nm in ("NMRET", "SICB2")]
+    reads += [("sxchan", at("SXCHAN")), ("smcp", at("SMCP")), ("sbamcp", at("SBAMCP"))]
+    reads += [("ld_%o" % w, w) for w in sorted(load_oracle())]
+    reads += [("mretl%d" % k, d.symtab["MRETL"] // 64 + k) for k in range(4)]
+    reads += [("flog%d" % k, d.symtab["FLOG"] // 64 + k) for k in range(40, 300)]
+    progs = [progA] if os.environ.get("R2G_ONLY6") else [progA, prog]
+    for x in extra:
+        progs += [x[0], x[1]]
+    res = run_bench(tmp, "StretchBssGoLoadTb", progs, reads, stop_hw=halt,
+                    step_cap=12000000, cycle_bound=60000000,
                     mem_dump=(0o200000, 0o23200))
-    if res[0][0] is not None:
-        res[0][0]["_twsf"] = d.symtab["TWSF"] // 32
+    for r in res:
+        if r[0] is not None:
+            r[0]["_twsf"] = d.symtab["SSTOP"] // 32
+            r[0]["_flog"] = d.symtab["FLOG"] // 64
+            r[0]["_ftab"] = d.symtab["FTAB"] // 64
+            r[0]["_areas"] = d.areas
+    if measure:
+        return res, p2, imgs, exp, d, sym2, extra
     return res, p2, imgs, exp, d, sym2
 
 
@@ -1136,13 +1695,54 @@ def main():
         if st is None or fails:
             print("SKIP stages 3-4: they start from stage 1's KSILO")
         else:
-            judge34(*stage34(tmp, st["GO,FORTRAN"]))
+            ms = [t for t in os.environ.get("R2G_MEASURE", "").split(",") if t]
+            res34 = stage34(tmp, st["GO,FORTRAN"], ms)
+            judge34(*res34[:6])
+            if len(res34[0]) > 1:
+                judge7(res34[0][1][0], res34[0][0][0], image().symtab, res34[3])
+            if ms:
+                measure_report(res34, ms)
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
     return 1 if fails else 0
 
 
+def measure_report(res34, ms):
+    """R2G_MEASURE (measurement only): judge each tamper's two runs from the
+    shared bench, under its R2G_TAMPER, and print its FAIL lines."""
+    import contextlib
+    import io
+    global fails
+    res, extra = res34[0], res34[6]
+    keep = fails
+    for k, t in enumerate(ms):
+        progA, prog, p2, imgs, exp, d = extra[k]
+        sym2 = lambda n, p2=p2: p2.val.symbol_value(p2.st.search(n))[0]   # noqa: E731
+        rr = res[2 + 2 * k: 4 + 2 * k]
+        buf = io.StringIO()
+        fails = 0
+        with contextlib.redirect_stdout(buf):
+            def go():
+                judge34([rr[0]], p2, imgs, exp, d, sym2)
+                if rr[1][0] is not None:
+                    judge7(rr[1][0], rr[0][0], image().symtab, exp)
+            with_tamper(t, go)
+        lines = buf.getvalue().splitlines()
+        bad = [ln for ln in lines if ln.startswith("FAIL")]
+        print("MEASURE %s: %d FAIL, %d PASS" % (t, len(bad),
+                                               sum(ln.startswith("PASS") for ln in lines)))
+        for ln in bad:
+            print("MEASURE %s   %s" % (t, ln[:250]))
+        for ln in lines:
+            if ln.startswith("INFO stage 6") or ln.startswith("INFO stage 7"):
+                print("MEASURE %s   %s" % (t, ln))
+    fails = keep
+
+
 def judge6(g, S):
     """Stage 6: $EOJ past YC4B3, IBM's code from YMPFCH to TASIGN."""
+    print("INFO stage 6: stopped at %s, STOPC %s, NFET %s, STIC %o"
+          % (g["_stopped"], field(g["stopc"], 0, 18), field(g["nfet"], 0, 18),
+             field(g["stic"], 0, 24)))
     eoj = a6(EOJ_NAME)
     n_eoj = max(w for w in image().words if S["YPPMEM"] // 64 <= w < 0o40000) + 1 \
         - S["YPPMEM"] // 64
@@ -1178,10 +1778,125 @@ def judge6(g, S):
           field(g["yi4ta"], 0, 48), a6(TWS_NAME))
     check("6: ... RELFWA 2.0, past the arc's two header words: YPPBSD -13. + 15. (p.397"
           " l.18; p.387 l.23 V+IC, l.27 SV,13,YI4TA+1.)", field(g["yi4ta1"], 0, 24), 2 * 64)
-    check("6: stopped at the stub's TWSF on a second $FETCH, from YPPID4's B,DMCP / ,DFETCH"
-          " (p.387 ll.29-30)",
-          (g["_stopped"], field(g["nfet"], 0, 18), field(g["stic"], 0, 24)),
-          (g["_twsf"], 2, S["YI4TA"] - 32))
+    check("6: on IPL's words: SXCHAN 214724.00 with count 36, SMCP and SBAMCP 214514.00"
+          " (the assembled image: 0, 215000.00, 215000.00; p.103)",
+          (field(g["sxchan"], 0, 24), field(g["sxchan"], 28, 18), field(g["smcp"], 0, 24),
+           field(g["sbamcp"], 0, 24)), (0o214724 * 64, 36, 0o214514 * 64, 0o214514 * 64))
+    check("6: the first run halted at the second $FETCH (HALT2), from YPPID4's B,DMCP /"
+          " ,DFETCH (p.387 ll.29-30)",
+          (g["_stopped"], field(g["stopc"], 0, 18), field(g["nfet"], 0, 18),
+           field(g["fstc2"], 0, 24)),
+          (g["_twsf"], 8, 2, S["YI4TA"] - 32))
+
+
+def lib_used():
+    """The library decks Example 4's calls bring in, in the order
+    check_bss_example4.expect fetches them."""
+    import check_bss_example4 as ex4
+    known = {e for sb in ex4.SUBS for e, _w in sb[0]}
+    queue, used = [c for sb in ex4.SUBS for c in sb[4]], []
+    while queue:
+        c = queue.pop(0)
+        if c in known:
+            continue
+        nm = next(n for n, sb in ex4.LIB.items() if c in [e for e, _w in sb[0]])
+        used.append(nm)
+        known |= {e for e, _w in ex4.LIB[nm][0]}
+        queue += ex4.LIB[nm][4]
+    return used
+
+
+def load_oracle():
+    """What the GO phase's load must leave, from p.17's map (C28-6379 p.17,
+    check_bss_example4.MAP_SUB): for each subprogram and each library deck
+    the calls bring in, at its printed origin, the stub's first word
+    XW,0,<calls>; its transfer vector, each word the skeleton B,entry;NOP
+    with the callee's printed entry (as check_bss_mcp_load's oracle); and at
+    each entry past word 0 its B,E;NOP, the branch relocated to itself."""
+    import check_bss_example4 as ex4
+    org = {r[0]: int(r[1], 8) for r in ex4.MAP_SUB}
+    ep = {r[0]: (int(r[1], 8) + int(r[2].split(".")[0], 8)) * 2 + r[2].endswith(".4")
+          for r in ex4.MAP_SUB}
+    skel = ex4.tvskel()
+    want = {}
+    for sb in list(ex4.SUBS) + [ex4.LIB[n] for n in lib_used()]:
+        entries, _size, _blank, _commons, calls = sb
+        o = org[entries[0][0]]
+        want[o] = assemble("        SLC,(8)%o.0\n        XW,0,%d\n" % (o, len(calls))).words[o]
+        for i, c in enumerate(calls):
+            want[o + 1 + i] = (skel & ~(((1 << 19) - 1) << 45)) | (ep[c] << 45)
+        for _n, w in entries:
+            if w:
+                want[o + w] = assemble("        SLC,(8)%o.0\n        B,(8)%o.0\n        NOP\n"
+                                       % (o + w, o + w)).words[o + w]
+    return want
+
+
+def judge7(g, g6, S, exp):
+    """Stage 7: the GO phase past the fetch of '))))))))' (the second run)."""
+    import check_bss_example4 as ex4
+    if g is None:
+        check("7: the second run ran", g6, None)
+        return
+    names = [nm for nm, _a, _n in g["_areas"]]
+    nlog = (field(g["flogp"], 0, 24) // 64 - g["_flog"]) // 3
+    log = []
+    for k in range(nlog):
+        w = [g.get("flog%d" % (3 * k + i)) for i in range(3)]
+        if None in w:
+            break
+        log.append((field(w[0], 0, 24), field(w[1], 0, 24),
+                    names[(field(w[2], 0, 24) // 64 - g["_ftab"]) // 3]))
+    print("INFO stage 7: stopped at %s, STOPC %s, %d fetches past the $EOJ program's,"
+          " %d end returns, %s cycles" % (g["_stopped"], field(g["stopc"], 0, 18), len(log),
+                                          field(g["nend"], 0, 18), g["_cycles"]))
+    for k, (f, r, nm) in enumerate(log):
+        print("INFO   fetch %2d: %-8s RELFWA %6o.%02o from ,DFETCH at %o.%02o"
+              % (k, nm, r // 64, r % 64, f // 64, f % 64))
+    mr = [field(g["mretl%d" % k], 0, 24) for k in range(4)]
+    check("7: the fetch of '))))))))' at RELFWA 2.0 from YPPID4 (p.387 ll.29-30) is served"
+          " first", log[:1], [(S["YI4TA"] - 32, 128, TWS_NAME)])
+    # p.385 ll.1-13 send the card (the first binary card of *MAIN*) to
+    # UNCODE, whose error return goes YIDCER -> YBCERR (p.392 ll.27-31,
+    # 37-51): no IOD card was read, so WJC4G1 (p.386 l.7; SCORG 0) ->
+    # WJC4G primes $RESLD (ll.23-25) and gives $RET at l.31 (020217.40).
+    check("7: the next MCP call is WJC4G's $RET, ,SDRET at 020217.40 (p.386 l.31): no IOD"
+          " card, so YBCERR took WJC4G1 (p.392 l.51)", mr[0], 0o20217 * 64 + 32)
+    check("7: then YRESLD -> YMPFCH (p.291 ll.50-51) fetched 22LOADER, RELFWA 0",
+          [(r, nm) for _f, r, nm in log[1:2]], [(0, "22LOADER")])
+    sub_cards = sum(len(ex4.punch(ex4.stub_source(*sb))) for sb in ex4.SUBS)
+    want_tws = [(2 + ex4.tws_offset(k)) * 64 for k in range(sub_cards)]
+    got_tws = [r for _f, r, nm in log[2:] if nm == TWS_NAME]
+    check("7: resume load as the BSS postprocessor (C22-6728-1 p.86) read every subprogram"
+          " card on TWS once, in order, and not the branch card (%d cards)" % sub_cards,
+          got_tws, want_tws)
+    used = lib_used()
+    got_lb = []
+    for _f, r, nm in log[2:]:
+        if nm.startswith("LB") and nm not in got_lb:
+            got_lb.append(nm)
+    check("7: ... and the library decks the calls bring in, from their LB areas: %s"
+          % ", ".join(used), sorted(got_lb), sorted("LB" + n.ljust(6)[:6] for n in used))
+    check("7: one end return per library deck (YLERR, p.332 l.41)", field(g["nend"], 0, 18),
+          len(used))
+    check("7: no fetch of anything else", [nm for _f, _r, nm in log[2:]
+                                           if nm != TWS_NAME and not nm.startswith("LB")], [])
+    main = field(exp["ksilo"][ex4.KSILO + 10], 0, 19)
+    check("7: resume load's $RET (p.333 ll.4-5, in the LOADER) with SICBU = *MAIN*'s entry"
+          " %o.%02o (KSILO+10, p.17's map)" % (main // 2, main % 2 * 32),
+          (field(g["nmret"], 0, 18), LOADER_AT * 64 <= mr[1] < 0o237000 * 64,
+           field(g["sicb2"], 0, 24), field(g["stopc"], 0, 18)),
+          (2, True, main * 32, 7))
+    check("7: no other trap: still 12 $SPR, 12 PP $RET, 1 $EOJ; no bad op, no other"
+          " interrupt", (field(g["nspr"], 0, 18), field(g["nret"], 0, 18),
+                         field(g["neoj"], 0, 18), g["badopx"],
+                         [k for k in range(64) if g["badic%d" % k]]), (12, 12, 1, 0, []))
+    check("7: the loader's error word YLJSLT unchanged (p.332 l.49)", g["yljslt"],
+          g6["yljslt"])
+    want = load_oracle()
+    bad = ["%o" % w for w in sorted(want) if g.get("ld_%o" % w) != want[w]]
+    check("7: the program as loaded: each subprogram's first word, transfer vector and"
+          " entries at p.17's origins (%d words)" % len(want), bad, [])
 
 
 def judge34(res, p2, imgs, exp, d, sym2):
@@ -1200,8 +1915,8 @@ def judge34(res, p2, imgs, exp, d, sym2):
           nread, len(imgs))
     check("3: ... the last at the area's last card (15-word records, no gap: YDKCRS count 0)",
           field(g["lastf"], 0, 18), AREA_AT + 15 * (len(imgs) - 1))
-    check("3: $MCP calls: $RET (WJC4G), the fetches, $RET (p.333 l.5)",
-          field(g["ncall"], 0, 19), 1 + len(imgs) + 1)
+    check("3: $MCP calls: $RET (WJC4G), YMPFCH's fetch of 22LOADER, the card fetches,"
+          " $RET (p.333 l.5)", field(g["ncall"], 0, 19), 1 + 1 + len(imgs) + 1)
     check("3: YRLDTA = YDFCS = the area named BSS (p.332 l.8, p.396 l.40)",
           field(g["yrldta"], 0, 48), a6(BSS_PROC))
     check("3: SICBU = the deck's branch-card entry, BSS at 200000 (p.333 l.2)",

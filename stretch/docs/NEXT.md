@@ -1404,6 +1404,44 @@ writes KSILO in MCP's area. (5) Stage 2's LIM/IOD cards. Still not built:
 the O card, block data, DEFINE/DEFI, sequence and check sums, and B
 IOD/REEL storage.
 
+**R2b, the GO phase from the post-IPL image to the program's entry, RUN
+2026-11-18 (later still)** (same test, new stage 7). Items (1) and the
+start-from-IPL half of (2) above are done.
+- **The bench starts from the core a real IPL leaves.** `post_ipl()` dumps
+  all 98,304 words of `StretchMcpStartTb` at JC4's idle poll
+  (`MCP_START_MEM_DUMP=1`) and caches the dump, keyed by the model sources.
+  Re-checked against it: SYSMOD 10 and YRLTT+2 = 0 are the image's own
+  words now, so nothing is planted for them. KSILO and SLRBU are 0, so the
+  stage-2 plants stay. SXCHAN, SMCP and SBAMCP are IPL's. The overlay area
+  holds 22SCOMD, not the LOADER, and YMPSAV holds $EOJ. Resume load
+  therefore now runs IBM's YRESLD -> YMPFCH fetch of 22LOADER (p.291
+  ll.50-51), with DFETCH as a stub.
+- **PP limits are `LIM,200000,214513`**, below SBAMCP = 214514, MCP's I/O
+  location table base (C22-6728-1 p.274). Measured: the old 214777 fails
+  no check, so the move rests on the page, not on a failure.
+- **TWS** is served (SCAFFOLD) as the cards BSS read, in arc geometry,
+  with header words CHOSEN 0. C22-6728-1 p.209 says the program "is left
+  in card form" on TWS from the first arc.
+- **The path, IBM's code** (the dispatcher and DFETCH stay stubs):
+  - p.385 ll.1-13 send the card to UNCODE, whose error return goes to
+    YIDCER -> YBCERR (p.392, read in the ink).
+  - With no IOD card read, l.51 `BXE,WJC4G1` leads to WJC4G (p.386
+    ll.7-31), which primes $RESLD and gives $RET at 020217.40.
+  - Then YRESLD -> YMPFCH -> 22LOADER, and resume load runs as the BSS
+    postprocessor (C22-6728-1 p.86). It reads all 33 subprogram cards
+    once, in order, without the branch card, then LBUST*, LBIOCS* and
+    LBFISIP* (3 end returns).
+  - p.333 gives $RET with SICBU = `*MAIN*`'s entry 000051.0. The first
+    words, transfer vectors and entries match p.17's origins.
+- **The stub stops there (STOPC 7).** The compiled program is not run.
+  TASIGN is not on this path, because there are no IOD cards.
+
+**Next:** (1) The `$RET` into `*MAIN*`: SICBU, SIT and the unprime to the
+PP. Then the compiled program's own run: Example 4's stubs are not real
+FORTRAN, so a real compiled object deck is needed. (2) TASIGN on IBM's
+tables, which needs a job with IOD cards on TWS ahead of the program. Its
+layout is not printed. (3)-(5) as above.
+
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS

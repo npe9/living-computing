@@ -294,7 +294,13 @@ CSTART (MCP printed p.203) puts every map row into its output buffer as
 six-bit BCD, and BSS leaves by `$EOJ`. MCP's `$EOJ` program (pp.381-439),
 fetched back by YMPFCH, then runs YC4INT, YLASTC, TJUNAS, YL1 and YPPID4
 (bypass mode, SYSMOD taken from a real IPL run) to the `$FETCH` of the compiled
-program `))))))))`. Pp.7, 9 and 10 settle the
+program `))))))))`. Since 2026-11-18 (later) the job runs on the core image
+a real IPL leaves (all 98,304 words of `StretchMcpStartTb` at JC4's idle
+poll), and the GO phase goes on: the fetch is served from a core image of
+TWS holding the same cards BSS read, job control finds no IOD card and
+primes resume load, and resume load, as the BSS postprocessor (C22-6728-1
+p.86), loads every subprogram and library deck to p.17's printed origins
+and gives `$RET` with SICBU = `*MAIN*`'s entry 000051.0. Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
 

@@ -15609,7 +15609,7 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # load the reconstructed BSS processor from its type area, and BSS prints
 # p.17's map.  MEASURED (the test's header): ABSSID spelled BSX fails the
 # eight 1a checks; two type-area cards swapped stop the loader at card 41.
-run "MCP runs GO,FORTRAN: job control, resume load, BSS prints p.17's map through the output program, leaves by EOJ" python3 check_bss_mcp_go.py
+run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program from TWS to its entry" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

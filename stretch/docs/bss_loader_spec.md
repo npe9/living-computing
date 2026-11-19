@@ -878,6 +878,18 @@ YC4INT -> YLASTC and p.397. In bypass mode, the SYSMOD a real IPL leaves,
 it goes on through TJUNAS, YL1, YIODSO, YRDFSO and YPPID4 to the `$FETCH` of
 `))))))))` at RELFWA 2.0, 15 words: the first card of the TWS arc past its
 two header words (MCP p.387 ll.22-34). What BSS leaves there is G6.
+**Since 2026-11-18 (later) the GO phase runs past that fetch**, on the
+core image a real IPL leaves. The fetch is served (SCAFFOLD) from a core
+image of TWS holding the cards the reconstructed BSS read, in the
+loader's arc geometry. Job control sends the first card (`*MAIN*`'s first
+binary card) to UNCODE (p.385 ll.1-13); its error return goes YIDCER ->
+YBCERR, and with no IOD card read (p.392 l.51, "IS NUMBER OF IODS ZERO")
+to WJC4G1 -> WJC4G (p.386 ll.7-31), which primes `$RESLD` and gives
+`$RET`. Resume load, as the BSS postprocessor (C22-6728-1 p.86), then
+reads every subprogram card on TWS once and in order, and the three
+library decks the calls bring in, and gives `$RET` with SICBU = `*MAIN*`'s
+entry 000051.0; the program's first words, vectors and entries sit at
+p.17's origins. TASIGN is not on this path: there are no IOD cards.
 The IF analyzer's PP half and the return routine are SCAFFOLD (plan R2b
 record).
 **Its table read by MCP's loader, 2026-11-17** (plan R2b,
@@ -1056,6 +1068,15 @@ calls by `SIC,$X15 ; B,name` (6751 p.31).
   p.387 ll.22-34, PDF 137) fetches 15 words of `))))))))` from RELFWA 2.0
   (YPPBSD -13. + 15.), "SO JC WILL LOOK AT FIRST CARD OF AN ARC" (p.397
   l.18). What that first card is, for a BSS postprocessor, is still open.
+  C22-6728-1 printed p.209 (PDF 209, read in the ink): "MCP assumes that
+  the compiled problem program is left in card form and may be loaded
+  from the first arc up to and including the number of arcs occupied in
+  TWS." The GO-phase run (plan R2b, 2026-11-18) CHOOSES the first card to
+  be the first subprogram's first binary card, with no LIM or IOD cards
+  ahead of it, and the header words 0. On that choice job control's own
+  code (p.392 l.51) takes the no-IOD branch to resume load. A job with
+  IOD cards would need them on TWS ahead of the program, and that layout
+  is not printed either.
 - **G7.** The library's type-area form: `LB` + 36-bit name is the listing's
   (L p.327 ll.23-25). The 36 bits are six A6 characters: `LF(BU,36,6)` (L
   p.327 l.24, read in the ink), `SRDKAD SYN(BU, 36, 6)` "a 36-bit field

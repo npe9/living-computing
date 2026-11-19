@@ -314,7 +314,13 @@ def main():
                        console_dump=128,
                        ipl=True,
                        stop_at_pc=16925,
-                       stop_at_pc_hits=200))
+                       stop_at_pc_hits=200,
+                       # MCP_START_MEM_DUMP=1 (2026-11-18): print every
+                       # installed word at the stop, the post-IPL core
+                       # image tests/check_bss_mcp_go.py starts its job
+                       # stages from.  Off, the bench is unchanged.
+                       mem_dump=(0, 98304) if os.environ.get("MCP_START_MEM_DUMP")
+                       else None))
         return
     if module_name.endswith("P1DeckTb"):
         assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
