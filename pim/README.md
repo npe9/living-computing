@@ -13,7 +13,10 @@ comparative sources until PIM/m is reproduced.
 Bluespec implementation: `bsv/` (in progress; the one-PE Bluesim smoke
 test passes as of 2026-11-19). The model must match the original block
 diagram and descriptions — see the historical-accuracy rule in
-[`plan.md`](plan.md).
+[`plan.md`](plan.md). The KL1-B execution path is a separate module,
+`bsv/PimKL1B.bsv`; the diagnostic ISA stays in `PimPU`. Its implemented
+subset and stand-ins are tabulated in
+[`docs/kl1_model_status.md`](docs/kl1_model_status.md).
 
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).
