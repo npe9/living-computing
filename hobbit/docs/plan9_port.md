@@ -74,6 +74,14 @@ instruction's field `0x0bfc` is `FP-4` with FP = 0xC00 and its
 destination `0x3004`/`0x4008` is `_clock`.  The loader and the core
 therefore need no register file: every operand is a memory word.
 
+The addressing mode in that first parcel is **0xD = `*Roffset` stack
+offset indirect** (Table 1-23, printed p. 1-26), not 0xC (absolute
+indirect) — which is exactly right for `FP-4`.  Our assembler writes
+0xC for `MOV *$0xbfc, *$0x4008` (`86CC 0BFC 4008`) and so cannot yet
+express the stack-offset form; Bell's `86DC 0BFC 4008` differs in that
+one nibble and nothing else, a clean statement of what the assembler
+must add before Plan 9's operands can be hand-written.
+
 That fixes **text at 0x1020 and little-endian 16-bit parcels**.  It does
 *not* fix the placement rule: `zl/span.c`'s `xspan` lays instructions out
 compactly (`c += p->mark`) and pads only `JMP`/`RETURN` (`rnd(c, AMOD)`)
