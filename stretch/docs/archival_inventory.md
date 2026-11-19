@@ -867,7 +867,7 @@ all. **All 19 PASS: IBM's listing and the model agree.**
 
 | deck | test | PDF pages (octal) | rows | segments | what IBM checks |
 |---|---|---|---|---|---|
-| `ax4b_1a_ifield_select` | TEST 1A | pp.114-120 (007441.00-007670.40), 152-154, 190 | 341 | I481, I483, I484, I485 | `SX,$Xn,0($Xn)` with Xn = 148DMP's address: I = n indexes by Xn, for n = 1..15; I = 0 does not index |
+| `ax4b_1a_ifield_select` | TEST 1A (+ prologue) | pp.113-120 (007435.00-007670.40), 152-154, 190, 193 | 348 | I481, I483, I484, I485, I48 | `SX,$Xn,0($Xn)` with Xn = 148DMP's address: I = n indexes by Xn, for n = 1..15; I = 0 does not index |
 | `ax4b_1b_fp_load` | TEST 1B | p.121 (007671.00-007721.00), 154, 190-191 | 53 | I486 | `L(U)`/`L(N)` of I000 (all ones), I00Z, BIT24: unnormalized loads keep bit 24 out of bits 0-23, normalized ones bring it in |
 | `ax4b_1c_vfl_basic` | TEST 1C | pp.122-125 (007721.40-010046.40), 153-154, 190-191 | 172 | I4810, I4814 | `L(BU),BITn,k` with n - k = 23 (accumulator offset 1..64); `L(B,k,k)` sign byte; lengths 16 and 32 |
 | `ax4b_2a_rhw_fullword` | TEST 2A | pp.125-130 (010047.00-010263.00), 153-154, 190-191 | 293 | I4817, I4819, I4820, I4821 | the RIGHT-half I field of a full-word VFL modifies length/BS/offset as one field |
@@ -880,8 +880,40 @@ verifier) and one break in IBM's pattern, transcribed as printed: p.135
 has a second `BD,$+.32` (010476.00, `10476.44 00`) in I4826's exit, so
 I4827's CNOP (010500.00, p.136) is already aligned and prints no code.
 
-Still untranscribed in routine 148: the p.113 prologue
-(007435.00-007440.00, calling IDF1/RET/DPET13 outside this routine).
+**Routine 148's p.113 prologue -- TRANSCRIBED AND RUN, 2026-11-19.**
+`I48  LX,$X1,I48ID / SX,$X1,DPET13 / SIC,RET / B,IDF1 / Z,IC248 /
+BD,I481` (007435.00-007437.40, six rows, now in `ax4b_1a_ifield_select`
+and its verifier: 348 rows, 18 symbols). IDF1, RET and DPET13 are
+SSIP's: PDF p.193, the listing's last page, is its SYN table (`RET
+SYN,%8@1306.40`, `DPET13 SYN,%8@1437.0`, `IDF1 SYN,%8@1443.0`, with SSW,
+ERS, SERS, RET1, RET2, SEN, SENO, INT, IDF2), so the prologue is the
+routine's call to SSIP's "print ID". SSIP is not transcribed: RET is a
+substitute `$B,0` half-word and IDF1 a bare `B,RET` (INFERRED from
+148's own SIC/`$B,0` return idiom). The run from I48 PASSES; RET's word
+holds the link to 007437.00. I48ID prints no code, so DPET13 receives
+Bluesim's unwritten-word pattern; the pin says so. Routine 148 is now
+transcribed in full.
+
+**Routine 1256 ("LVE AND LVS CHECK.") -- TRANSCRIBED AND RUN,
+2026-11-19.** IBM's only test of LOAD VALUE WITH SUM and LOAD VALUE
+EFFECTIVE in this corpus; until now both rested on the Reference Manual
+(printed pp.28-29) alone. Same method; p.193's SYN table gives SSIP's
+addresses.
+
+| deck | test | PDF pages (octal) | rows | segments | what IBM checks |
+|---|---|---|---|---|---|
+| `ax4b_156_test1_lvs` | prologue, TEST 1 | pp.173-181 (012272.00-012531.40), 189-191 | 337 | I56 (END), I562 | 1A: LVS of each single register, X1..X15, into X0 and of X0 into X15; 1B: LVS of all sixteen into each Xk keeps Xk's count and refill, and a mask of X0 alone ($LVS,$X1,0) gives zero |
+| `ax4b_156_test2_lve` | TEST 2 | pp.182-191 (012532.00-013063.00) | 359 | I563 (END), I567, I5611, I5614, I5615, I5616 | LVE to an LV in memory, index storage and $R, through a second LVE; the width by class (VFL 24, index/misc/bind/CB 19, FP 18); the found instruction is index-modified but not executed and not progressively indexed; RH of a word 19 bits, RH "SWAP" 18; only J's register changes |
+
+**All eight runs PASS: IBM's listing and the model agree.** The model
+injections and their OBSERVED results are in each deck's header and in
+`tests/run_tests.sh`. One reading forced: 156K13's digit string is 22
+digits (`1777777772000000000000`, read at 400 dpi in both the source
+and code columns), not the 21 first read at 150 dpi.
+
+Routines 1248 and 1256 are now transcribed in full; for the other nine
+see the per-routine notes above. Next IBM candidate on this line:
+jb_ax5b.
 
 Two readings these pages forced, each checked in the Reference Manual's
 page image: SIC "is executed if and only if the associated branching is
@@ -1675,7 +1707,7 @@ reverse index (source -> transcription/implementation).
 | `ja_ax1a_ibox-1.pdf` (60pp) | I-Box 1 diagnostic | Source | RUN: `ibox1_wen_ven_indicators`, `ibox1_wen_ven_original_addresses`, `ibox1_sic_cb_cbz`, `ibox1_p43_p51_span` (20 groups, pp.43-51); bit-exact vs `verify_ibox1_listing.py` |
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
-| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass; and TESTs 1A, 1B, 1C, 2A, 2B (`ax4b_1a_ifield_select`, `ax4b_1b_fp_load`, `ax4b_1c_vfl_basic`, `ax4b_2a_rhw_fullword`, `ax4b_2b_lhw_fullword`, PDF pp.114-138, 19 segment runs, bit-exact, all pass; only the p.113 prologue of routine 148 is untranscribed); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
+| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass; and TESTs 1A, 1B, 1C, 2A, 2B (`ax4b_1a_ifield_select`, `ax4b_1b_fp_load`, `ax4b_1c_vfl_basic`, `ax4b_2a_rhw_fullword`, `ax4b_2b_lhw_fullword`, PDF pp.113-138, 20 segment runs with the p.113 prologue, bit-exact, all pass); routine 1256, LVE and LVS (`ax4b_156_test1_lvs`, `ax4b_156_test2_lve`, PDF pp.173-191, 8 segment runs, bit-exact, all pass); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |

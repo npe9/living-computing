@@ -11410,6 +11410,17 @@ run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I484: IX 8-11)"
 run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I485: IX 12-15)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI485Tb \
     ENTRY=I485 PC=1410 "SEN:712=0" "ER1:4858=0" "DMP:4859=0x4bedf1000001800" \
     STEPS=2000000 CYCLES=1157+-0
+# The p.113 prologue, run from I48: LX/SX the ident word to SSIP's DPET13,
+# SIC,RET plants the return in the odd half-word 001306.40, B,IDF1 (a
+# substitute "B,RET") returns through it, then BD,I481 runs TEST 1A's
+# first segment.  Pins: RET's word = 0x3c7c800 (B to 007437.00); DPET13 =
+# Bluesim's unwritten-word pattern (I48ID prints no code; SIMULATOR
+# behaviour, not IBM's ident).  Injection: SIC always stores the left
+# half-word -> FAIL, step cap, PC 1425, RET 0x3c7c00000000800.
+run "IBOX-4 routine 148 prologue (jb_ax4b PDF p.113), ON THE MODEL (I48 then I481)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI48Tb \
+    ENTRY=I48 PC=1410 "SEN:712=0" "ER1:4858=0" "RET:710=0x3c7c800" \
+    "DPET13:799=0xaaaaaaaaaaaaaaaa" "DMP:4859=0x4bec71000001800" \
+    STEPS=2000000 CYCLES=1558+-0
 
 run "IBOX-4 routine 148 TEST 1B FP load, bit-exact (jb_ax4b PDF pp.121, 154, 190-191)" python3 verify_ax4b_1b_fp_load_listing.py
 # L(U)/L(N) of I000, I00Z, BIT24.  Pins: 148ER1 0, X1 as the last
@@ -11491,6 +11502,56 @@ run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4829: bits 21-23)" .
     ENTRY=I4829 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba410000000000" \
     "X1:addrIndex(1)=0x29cbbe029cb80000" \
     STEPS=2000000 CYCLES=612+-0
+
+# ---- routine 1256, "LVE AND LVS CHECK." (2026-11-19) ----
+# IBM's only test of LVS and LVE in the corpus (jb_ax4b PDF pp.173-191).
+# Same segment method as routine 148's TESTs 1 and 2; SSIP's hooks at
+# p.193's SYN-table addresses.  CYCLES is MODEL BEHAVIOUR.  The OBSERVED
+# model injections (each in its own scratch copy of bsv/, all eight runs
+# repeated, plus a CONTROL that passes all eight) are in each deck's
+# header; summarized below.
+run "IBOX-4 routine 1256 prologue and TEST 1 (LVS), bit-exact (jb_ax4b PDF pp.173-181, 189-191)" python3 verify_ax4b_156_test1_lvs_listing.py
+# LVS of each single register.  Injections: LVS mask read in reverse ->
+# FAIL SEN 0x531e00000000000; LVS writes the count too -> FAIL X0.
+run "IBOX-4 routine 1256 TEST 1A LVS of single registers, ON THE MODEL (I56 prologue, I561)" ./run_program.sh ../decks/ax4b_156_test1_lvs.strap StretchAx4b156T1ATb \
+    PC=1410 "SEN:712=0" "RET:710=0x52f0800" \
+    "X0:addrIndex(0)=0x1000000000000" "X15:addrIndex(15)=0x1000000000000" \
+    STEPS=2000000 CYCLES=1209+-0
+# LVS of all sixteen keeps each Xk's count and refill; a mask of X0
+# alone gives 0.  Injection: LVS writes the count too -> FAIL SEN
+# 0x53d600000000000.  (Mask reversal does NOT fail it: symmetric masks.)
+run "IBOX-4 routine 1256 TEST 1B LVS of all sixteen, ON THE MODEL (I562)" ./run_program.sh ../decks/ax4b_156_test1_lvs.strap StretchAx4b156T1BTb \
+    ENTRY=I562 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x7fffffffff" \
+    "X1:addrIndex(1)=0x7fffffffff" "X15:addrIndex(15)=0x1000000000000" \
+    STEPS=2000000 CYCLES=2927+-0
+run "IBOX-4 routine 1256 TEST 2 (LVE), bit-exact (jb_ax4b PDF pp.182-191)" python3 verify_ax4b_156_test2_lve_listing.py
+# LVE.  Injections, one run each caught or more: wrong half-word taken
+# -> 2A-2E FAIL; chain not followed -> 2B, 2C FAIL; Full class given 19
+# bits -> 2D FAIL; found instruction not index-modified -> 2E FAIL;
+# result always to X0 -> 2F FAIL.  Details in the deck header.
+run "IBOX-4 routine 1256 TEST 2A LVE to an LV in 3 memories, ON THE MODEL (I563)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I563Tb \
+    PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
+    "X1:addrIndex(1)=0x57fc03000001800" \
+    STEPS=2000000 CYCLES=364+-0
+run "IBOX-4 routine 1256 TEST 2B LVE through a second LVE, ON THE MODEL (I567)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I567Tb \
+    ENTRY=I567 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
+    "X1:addrIndex(1)=0x57fc03000001800" \
+    STEPS=2000000 CYCLES=366+-0
+run "IBOX-4 routine 1256 TEST 2C LVE in IX/ACC to an LV in ACC/IX, ON THE MODEL (I5611)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5611Tb \
+    ENTRY=I5611 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x57fc00000000000" \
+    "X1:addrIndex(1)=0x57fc03000001800" \
+    STEPS=2000000 CYCLES=311+-0
+run "IBOX-4 routine 1256 TEST 2D LVE width by class, ON THE MODEL (I5614)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5614Tb \
+    ENTRY=I5614 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0xffffc00000000000" \
+    STEPS=2000000 CYCLES=442+-0
+run "IBOX-4 routine 1256 TEST 2E LVE index-modifies, does not execute, ON THE MODEL (I5615)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5615Tb \
+    ENTRY=I5615 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0xffffc00000000000" \
+    "X1:addrIndex(1)=0x7fff0000000000" \
+    STEPS=2000000 CYCLES=443+-0
+run "IBOX-4 routine 1256 TEST 2F LVE loads only J's register, ON THE MODEL (I5616)" ./run_program.sh ../decks/ax4b_156_test2_lve.strap StretchAx4b156T2I5616Tb \
+    ENTRY=I5616 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0" "X1:addrIndex(1)=0" \
+    "X15:addrIndex(15)=0xffffe00000000000" \
+    STEPS=2000000 CYCLES=968+-0
 
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no

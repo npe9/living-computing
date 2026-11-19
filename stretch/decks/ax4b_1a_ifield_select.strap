@@ -2,6 +2,8 @@
 ! "INDEX MODIFICATION TEST", banner PDF p.113: "TEST1. BASIC TESTS
 ! INCLUDING I FIELD INDEX SELECTION ..."), TEST 1A "I-FLD IX SELN.":
 !
+!   PDF p.113  007435.00-007440.00  I48: routine 1248's prologue (added
+!                                   2026-11-19, see PROLOGUE below)
 !   PDF p.114  007441.00-007475.00  I481, I482: IX 0, 1, 2
 !   PDF p.115  007475.40-007500.40  IX 2 (end)
 !   PDF p.116  007501.00-007534.40  IX 3, exit, I483: IX 4, 5
@@ -85,6 +87,47 @@
 !   CONTROL: the unmodified model in the same scratch arrangement: all
 !     19 runs PASS with the pins in run_tests.sh.
 !
+! PROLOGUE (PDF p.113, read 2026-11-19).  After the banner "----I248---
+! INDEX MODIFICATION TEST." IBM prints
+!     I48    LX,$X1,I48ID    -UPDATE IDENT.   7440.02 10   007435.00
+!            SX,$X1,DPET13                    1437.03 10   007435.40
+!            SIC,RET                          1306.40 80   007436.00
+!            B,IDF1                           1443.10 00   007436.40
+!            Z,IC248                         11306.22 00   007437.00
+!            BD,I481                          7441.04 00   007437.40
+!            CNOP                             (no location, no code)
+!     I48ID  %IQSZ@DD%BU,64,8@,I248  Z                     007440.00
+! IDF1, RET and DPET13 are SSIP's, not the routine's: PDF p.193, the
+! listing's last page, is its SYN table -- "RET SYN,%8@1306.40",
+! "DPET13 SYN,%8@1437.0", "IDF1 SYN,%8@1443.0", with SSW, ERS, SERS,
+! RET1, RET2, SEN, SENO, INT and IDF2, then "END,%8@34000.0".  So the
+! prologue is
+! the routine's call to SSIP's "print ID": the ident word I48ID goes to
+! DPET13, SIC,RET plants the return in the address field of the
+! half-word at 001306.40 (bits 0-18 of the half-word the bit address
+! names, Reference Manual printed p.41), and B,IDF1 goes to SSIP.
+! The run from I48 (ENTRY=I48) goes prologue -> IDF1's substitute ->
+! RET's "$B" -> Z,IC248 -> BD,I481 -> TEST 1A's first group -> SSW.
+! RESULT, 2026-11-19: PASS, PC 1410, SEN 0, CYCLES 1558; RET's word
+! (001306) = 0x3c7c800, i.e. "B" to half-word 7742 = 007437.00, the
+! row after B,IDF1; DPET13 = 0xaaaaaaaaaaaaaaaa.  That last value is
+! the SIMULATOR's: I48ID prints no code, so word 007440 is not in this
+! image and Bluesim's unwritten RegFile reads 0xAAAA...; LX/SX copy it
+! into DPET13 over the substitute's 0, which is what the pin shows.  It
+! is MODEL (simulator) BEHAVIOUR, not IBM's ident word.  Z,IC248 is NOT
+! observable (IC248 is 0 before and after), so a model that skipped it
+! would still pass; stated, not tested.
+! MODEL INJECTION, OBSERVED (a scratch copy of bsv/, the I48 run only):
+!   SIC stores into the LEFT half-word always (StretchExecute.bsv's Sic
+!     arm, "old"/"w2" ignore ha[0]) -> FAIL: step cap 2000000, PC 1425,
+!     RET's word 0x3c7c00000000800 (the link in the left half), the
+!     right half's "$B,0" sends IDF1's return to 0; DMP 0, CYCLES
+!     2000000.  The I48 run is the only one of the 19 that executes a
+!     SIC whose target is an odd half-word (SIC,SENO+.32 sits after
+!     B,SSW and is never reached; INFERRED from the listing, the other
+!     runs were not repeated under this injection).
+!   CONTROL: the worktree model -> PASS with the pins above.
+!
 ! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
         SLC, (8)1301.0
 SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
@@ -94,12 +137,46 @@ SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
 SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
 SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
 !
+! The prologue's three SSIP hooks (PDF p.113), at the addresses PDF
+! p.193's SYN table prints: RET SYN,%8@1306.40 / DPET13 SYN,%8@1437.0 /
+! IDF1 SYN,%8@1443.0.  The contents are SUBSTITUTES (SSIP is not
+! transcribed): RET is a "$B,0" half-word whose address field SIC,RET
+! fills, and IDF1 ("print ID") is a bare branch to it.  That return
+! path is INFERRED from this routine's own idiom (SIC,I48S2 / B,I48S1
+! returning through I48S2's "$B,0", PDF pp.114, 152); no SSIP page shows
+! IDF1's body.  DPET13 is preset to 0 (SX,$X1,DPET13 is seen because it
+! stores the simulator's 0xAAAA... pattern there; see PROLOGUE above).
+        SLC, (8)1306.40
+RET     $B,  0                        ! SUBSTITUTE: SSIP's return half-word
+        SLC, (8)1437.0
+DPET13  DD(BU,64,8), 0                ! SUBSTITUTE: SSIP's ident cell
+        SLC, (8)1443.0
+IDF1    B,   RET                      ! SUBSTITUTE: SSIP's "print ID"
+!
 ! IC248, BIT0-BIT3: SYN from the printed continuity rows (never run).
 IC248   SYN, (8)11306.0
 BIT0    SYN, (8)13054.0
 BIT1    SYN, (8)13055.0
 BIT2    SYN, (8)13056.0
 BIT3    SYN, (8)13057.0
+!
+! ======================================================================
+! PDF p.113, 007435.00-007440.00: routine 1248's prologue, after the
+! "----I248---INDEX MODIFICATION TEST." banner.  The CNOP prints no
+! location and no code (007440.00 is already word-aligned); I48ID
+! prints its location 007440.00 and NO machine code -- its source is
+! "I48ID  %IQSZ@DD%BU,64,8@,I248     Z" -- so it is SYN'd, and the word
+! there is 0 in this image.
+! ======================================================================
+        SLC, (8)7435.0
+I48     LX,  $X1, I48ID               ! -UPDATE IDENT.
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1
+        Z,   IC248
+        BD,  I481
+        CNOP
+I48ID   SYN, (8)7440.0
 !
 ! ======================================================================
 ! PDF p.114, 007441.00-007475.00 (no printed page number on the sheet)

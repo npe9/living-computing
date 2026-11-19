@@ -1,0 +1,516 @@
+! ax4b_156_test1_lvs.strap -- jb_ax4b "I-BOX 4", routine 1256 ("----I256---
+! LVE AND LVS CHECK.", banner PDF p.173), its prologue and TEST 1, the
+! LOAD VALUE WITH SUM test:
+!
+!   PDF p.173  012272.00-012274.40  I56: the prologue (SSIP's IDF1)
+!   PDF p.173  012275.00            I56ID: location printed, NO code
+!   PDF p.173  012276.00-012313.40  I561: TEST 1A, IX 0-2
+!   PDF p.174  012314.00-012333.40  TEST 1A, IX 3-10
+!   PDF p.175  012334.00-012351.40  TEST 1A, IX 11-15, exit, continuity
+!   PDF p.176  012352.00-012375.40  I562: TEST 1B, IX 00-01
+!   PDF pp.177-181  012376.00-012531.40  TEST 1B, IX 02-15, the zero-mask
+!                                   check, exit, continuity
+!   PDF p.189  012774.00            IC256, "-CONTINUITY REG 1256."
+!   PDF p.190  012776.00, 013035.00 156K1 (CNOP before it prints nothing),
+!                                   1000 ("INDX WD. OF ONES.")
+!   PDF p.191  013054.00-013073.00  BIT0-BIT15
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_156_test1_lvs_listing.py.
+!
+! THE BANNER, verbatim (p.173):
+!         -THIS TEST IS COMPOSED OF TWO MAJOR ROUTINES
+!         -WHICH TEST THE ABOVE AS FOLLOWS,
+!                 -TEST 1 CHECKS THAT LVS WILL
+!                     -LOAD CORRECTLY FROM EACH IX,
+!                     -AND THAT EACH IX REG CAN BE
+!                     -LOADED WITH THE SOME OF ALL
+!                     -THE OTHERS.
+!                 -TEST 2 CHECKS THAT LVE WILL LOAD
+!                     -CORRECTLY WITH 5 LEVELS, AND
+!                     -UNDER ALL CONDITIONS.
+! ("SOME" is IBM's spelling.)  TEST 2 is decks/ax4b_156_test2_lve.strap.
+!
+! WHY IT MATTERS.  Until now LVS rested on the Reference Manual alone
+! (printed p.28, PDF 31; decks/lvs_multiple_indexing.strap).  This is
+! IBM's own test of it:
+!   TEST 1A  Xk = BITk's index word (value bit k), k = 0..15.
+!            LVS,$X15,$X0 then LVS,$X0,$Xk for k = 1..15: a one-bit
+!            mask copies exactly Xk's value ("LVS ADDRESSING OF IX k
+!            FAILS.").  The masks print 400000.37 0B ... 4.01 0B.
+!   TEST 1B  for every k: LVS,$Xk,$0,...,$15 (mask 777774, all sixteen)
+!            must give bits 0-15 = 156K1 (777774.00), the sum of BIT0-
+!            BIT15 -- including Xk's own old value; then
+!            LX,$Xk,$Xk (index storage, address 16+k) and BZXCZ: the
+!            count must still be zero ("LVS DESTROYS COUNT FIELD.");
+!            SR,$Xk,$Xk, LX,$Xk,$Xk and BZXVZ: the refill field, stored
+!            into the value field, must be zero ("LVS DESTROYS REFILL
+!            FIELD."); LX,$Xk,BITk restores Xk.
+!            Last, SVA,$X6,$+.32 zeroes the mask of the NEXT half-word,
+!            "$LVS,$X1,0" (assembled as LVS,$X1,$0: "400000.03 0B"),
+!            and the store-modified LVS must clear X1's value from all
+!            ones (1000) -- "ZEROS IN 0-15 OF LVS FAILS TO CLEAR
+!            SPECIFIED IX REG."  A store into the very next half-word,
+!            which the look-ahead may already hold.
+!
+! TWO SEGMENTS.  TEST 1A ends in its own "B,SSW" (TO SSIP) at
+! 012347.40 and TEST 1B at 012527.40.  With SSW a PASS halt the driver
+! runs this deck twice: from END (I56, the prologue, which falls into
+! I561 through SSIP's IDF1) and with ENTRY=I562.  The continuity rows
+! after each B,SSW are transcribed and verified but never run.
+!
+! RESULT, 2026-11-19: both segments PASS IBM's checks (PC 1410, SEN 0).
+!   I56 (END: prologue, TEST 1A): RET's word (001306) = 0x52f0800, the
+!     return to 012274.00 (half-word 24570 octal); X0 = X15 =
+!     0x1000000000000; CYCLES 1209.
+!   I562 (TEST 1B): X0 = X1 = 0x7fffffffff -- the value field zeroed by
+!     the zero-mask check, count and refill all ones kept from I000;
+!     X15 = 0x1000000000000; CYCLES 2927.
+!   CYCLES is MODEL BEHAVIOUR.
+! MODEL INJECTIONS, OBSERVED (each in its own scratch copy of bsv/, all
+! eight routine-1256 runs and the I48 run repeated):
+!   B1 LVS reads the mask in reverse (ii.imm[3 + n] for ii.imm[18 - n])
+!     -> I56 FAIL: SEN 0x531e00000000000 (a TEST 1A SIC,SEN), X0
+!     0x8000000000000000, X15 0, PC 1416 (SERS), CYCLES 483.  I562
+!     PASSES: TEST 1B's masks are all sixteen registers, symmetric under
+!     the reversal, and its zero-mask check survives too; so I562 does
+!     not discriminate bit order.  No TEST 2 run moves.
+!   B2 LVS writes the sum into the COUNT field too -> I56 FAIL (X0
+!     0x1000004000000, its count no longer 0); I562 FAIL: SEN
+!     0x53d600000000000, X0 0xffff000ffc000000, X1 0x4000000000000000,
+!     PC 1416, CYCLES 429.  No TEST 2 run moves.
+!   The LVE injections (C1-C3, D1, D2; see ax4b_156_test2_lve.strap)
+!     leave both runs passing.
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!     nine runs PASS with the pins in run_tests.sh.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points at the addresses PDF p.193's SYN table prints
+!     (SSW 1301.0, SERS 1304.0, RET 1306.40, SEN 1310.0, SENO 1311.0,
+!     DPET13 1437.0, IDF1 1443.0).  SSW is a PASS halt, SERS a FAIL
+!     halt, SEN/SENO data words SIC stores into.  RET is a "$B,0"
+!     half-word whose address field SIC,RET fills and IDF1 ("print ID")
+!     is a bare branch to it: that return path is INFERRED from routine
+!     148's own idiom (SIC,148S2 / B,148S1 returning through 148S2's
+!     "$B,0", PDF pp.114, 152); no SSIP page shows IDF1's body.  DPET13
+!     is a data word.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the error entry on a failure.
+!   * Notation only: "%" and the box glyph are "(" and ")"; the label
+!     glyph the scan shows as "1" is the letter I (I56.., I000), as for
+!     every ax4b label (docs/listing_typography.md).  The register list
+!     "$0,$1,...,$15" is IBM's own spelling and is kept.
+!   * I56ID prints a location and no code, so it is SYN'd; the word
+!     there is not in this image.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1306.40
+RET     $B, 0                         ! SUBSTITUTE: SSIP's return half-word
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+        SLC, (8)1437.0
+DPET13  DD(BU,64), 0                  ! SUBSTITUTE: SSIP's ident cell
+        SLC, (8)1443.0
+IDF1    B, RET                        ! SUBSTITUTE: SSIP's "print ID"
+!
+! ======================================================================
+! PDF p.173, 012272.00-012274.40: routine 1256's prologue
+! ======================================================================
+        SLC, (8)12272.0
+I56     LX, $X1, I56ID                ! -UPDATE IDENT.
+        SX, $X1, DPET13
+        SIC, RET
+        B, IDF1                       ! -PRINT ID.
+        Z, IC256
+        BD, I561
+        CNOP
+! I56ID  %IQSZ@DD%BU,64,8@,I256     Z        012275.00, no machine code
+I56ID   SYN, (8)12275.0
+!
+! ======================================================================
+! PDF p.173, 012276.00-: TEST 1A (I561); p.174, 012314.00-012333.40;
+! p.175, 012334.00-012351.40
+! ======================================================================
+        SLC, (8)12276.0
+I561    LX, $X0, BIT0                 ! -TEST 1A, CHECK LVS, INDIVIDUAL SELN.
+        LX, $X1, BIT1
+        LX, $X2, BIT2
+        LX, $X3, BIT3
+        LX, $X4, BIT4
+        LX, $X5, BIT5
+        LX, $X6, BIT6
+        LX, $X7, BIT7
+        LX, $X8, BIT8
+        LX, $X9, BIT9
+        LX, $X10, BIT10
+        LX, $X11, BIT11
+        LX, $X12, BIT12
+        LX, $X13, BIT13
+        LX, $X14, BIT14
+        LVS, $X15, $X0
+        KV, $X15, BIT0
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 0 FAILS.
+        LX, $X15, BIT15
+        LVS, $X0, $X1
+        KV, $X0, BIT1
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 1 FAILS.
+        LVS, $X0, $X2
+        KV, $X0, BIT2
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 2 FAILS.
+! ---- PDF p.174 ----
+        LVS, $X0, $X3
+        KV, $X0, BIT3
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 3 FAILS.
+        LVS, $X0, $X4
+        KV, $X0, BIT4
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 4 FAILS.
+        LVS, $X0, $X5
+        KV, $X0, BIT5
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 5 FAILS.
+        LVS, $X0, $X6
+        KV, $X0, BIT6
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 6 FAILS.
+        LVS, $X0, $X7
+        KV, $X0, BIT7
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 7 FAILS.
+        LVS, $X0, $X8
+        KV, $X0, BIT8
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 8 FAILS.
+        LVS, $X0, $X9
+        KV, $X0, BIT9
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 9 FAILS.
+        LVS, $X0, $X10
+        KV, $X0, BIT10
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 10 FAILS.
+! ---- PDF p.175 ----
+        LVS, $X0, $X11
+        KV, $X0, BIT11
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 11 FAILS.
+        LVS, $X0, $X12
+        KV, $X0, BIT12
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 12 FAILS.
+        LVS, $X0, $X13
+        KV, $X0, BIT13
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 13 FAILS.
+        LVS, $X0, $X14
+        KV, $X0, BIT14
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 14 FAILS.
+        LVS, $X0, $X15
+        KV, $X0, BIT15
+        SIC, SEN
+        BZXE, SERS                    ! -LVS ADDRESSING OF IX 15 FAILS
+        B, $+1.0
+        BD, I561
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT0
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.176, 012352.00-012375.40: TEST 1B (I562); p.177, 012376.00-
+! 012417.40; p.178, 012420.00-012441.40; p.179, 012442.00-012463.40;
+! p.180, 012464.00-012505.40; p.181, 012506.00-012531.40
+! ======================================================================
+I562    LX, $X0, BIT0                 ! -TEST 1B, LVS MULTIPLE SELN.
+        LX, $X1, BIT1
+        LX, $X2, BIT2
+        LX, $X3, BIT3
+        LX, $X4, BIT4
+        LX, $X5, BIT5
+        LX, $X6, BIT6
+        LX, $X7, BIT7
+        LX, $X8, BIT8
+        LX, $X9, BIT9
+        LX, $X10, BIT10
+        LX, $X11, BIT11
+        LX, $X12, BIT12
+        LX, $X13, BIT13
+        LX, $X14, BIT14
+        LX, $X15, BIT15
+        LVS, $X0,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X0, I56K1
+        SIC, SEN                      ! -LVS IX 00 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X0, $X0
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X0, $X0
+        LX, $X0, $X0
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X0, BIT0
+        LVS, $X1,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X1, I56K1
+        SIC, SEN                      ! -LVS IX 01 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X1, $X1
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X1, $X1
+        LX, $X1, $X1
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X1, BIT1
+! ---- PDF p.177 ----
+        LVS, $X2,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X2, I56K1
+        SIC, SEN                      ! -LVS IX 02 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X2, $X2
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X2, $X2
+        LX, $X2, $X2
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X2, BIT2
+        LVS, $X3,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X3, I56K1
+        SIC, SEN                      ! -LVS IX 03 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X3, $X3
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X3, $X3
+        LX, $X3, $X3
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X3, BIT3
+        LVS, $X4,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X4, I56K1
+        SIC, SEN                      ! -LVS IX 04 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X4, $X4
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X4, $X4
+        LX, $X4, $X4
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X4, BIT4
+! ---- PDF p.178 ----
+        LVS, $X5,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X5, I56K1
+        SIC, SEN                      ! -LVS IX 05 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X5, $X5
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X5, $X5
+        LX, $X5, $X5
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X5, BIT5
+        LVS, $X6,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X6, I56K1
+        SIC, SEN                      ! -LVS IX 06 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X6, $X6
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X6, $X6
+        LX, $X6, $X6
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X6, BIT6
+        LVS, $X7,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X7, I56K1
+        SIC, SEN                      ! -LVS IX 07 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X7, $X7
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X7, $X7
+        LX, $X7, $X7
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X7, BIT7
+! ---- PDF p.179 ----
+        LVS, $X8,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X8, I56K1
+        SIC, SEN                      ! -LVS IX 08 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X8, $X8
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X8, $X8
+        LX, $X8, $X8
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X8, BIT8
+        LVS, $X9,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X9, I56K1
+        SIC, SEN                      ! -LVS IX 09 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X9, $X9
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X9, $X9
+        LX, $X9, $X9
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X9, BIT9
+        LVS, $X10,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X10, I56K1
+        SIC, SEN                      ! -LVS IX 10 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X10, $X10
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X10, $X10
+        LX, $X10, $X10
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X10, BIT10
+! ---- PDF p.180 ----
+        LVS, $X11,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X11, I56K1
+        SIC, SEN                      ! -LVS IX 11 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X11, $X11
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X11, $X11
+        LX, $X11, $X11
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X11, BIT11
+        LVS, $X12,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X12, I56K1
+        SIC, SEN                      ! -LVS IX 12 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X12, $X12
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X12, $X12
+        LX, $X12, $X12
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X12, BIT12
+        LVS, $X13,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X13, I56K1
+        SIC, SEN                      ! -LVS IX 13 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X13, $X13
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X13, $X13
+        LX, $X13, $X13
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X13, BIT13
+! ---- PDF p.181 ----
+        LVS, $X14,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X14, I56K1
+        SIC, SEN                      ! -LVS IX 14 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X14, $X14
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X14, $X14
+        LX, $X14, $X14
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X14, BIT14
+        LVS, $X15,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        KV, $X15, I56K1
+        SIC, SEN                      ! -LVS IX 15 FRM ALL IX REGS FAILS.,
+        BZXE, SERS                    ! -BITS 0-15 OF IX WHICH ARE 0 ARE
+                                      ! -IX REGS NOT INCLUDED IN SUM.
+        LX, $X15, $X15
+        SIC, SEN
+        BZXCZ, SERS                   ! -LVS DESTROYS COUNT FIELD.
+        SR, $X15, $X15
+        LX, $X15, $X15
+        SIC, SEN
+        BZXVZ, SERS                   ! -LVS DESTROYS REFILL FIELD.
+        LX, $X15, BIT15
+        LX, $X1, I000                 ! -CHK ZEROS IN 0-15 CLRS IX REG.
+        Z, $X6
+        SVA, $X6, $+.32
+        $LVS, $X1, 0
+        LX, $X0, $X1
+        BXVZ, $+1.32
+        SIC, SEN                      ! -ZEROS IN 0-15 OF LVS FAILS TO
+        B, SERS                       ! -CLEAR SPECIFIED IX REG.
+        B, $+1.0
+        BD, I562
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT1
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.189, 012774.00: IC256.  PDF p.190: the CNOP before 156K1 prints
+! nothing (012775.00 holds ICK256, not used here, so 012776.00 is
+! already aligned); 156K1 at 012776.00; 1000 at 013035.00.
+! ======================================================================
+        SLC, (8)12774.0
+IC256   XW, 0, 0, 0                   ! -CONTINUITY REG 1256.
+        SLC, (8)12776.0
+I56K1   XW, (8)777774.00, 0, 0
+        SLC, (8)13035.0
+I000    (8)DD(BU,64,8), 1777777777777777777777  ! -INDX WD. OF ONES.
+!
+! ======================================================================
+! PDF p.191, 013054.00-013073.00: BIT0-BIT15
+! ======================================================================
+        SLC, (8)13054.0
+BIT0    XW, (8)400000.00, 0, 0
+BIT1    XW, (8)200000.00, 0, 0
+BIT2    XW, (8)100000.00, 0, 0
+BIT3    XW, (8)40000.00, 0, 0
+BIT4    XW, (8)20000.00, 0, 0
+BIT5    XW, (8)10000.00, 0, 0
+BIT6    XW, (8)4000.00, 0, 0
+BIT7    XW, (8)2000.00, 0, 0
+BIT8    XW, (8)1000.00, 0, 0
+BIT9    XW, (8)400.00, 0, 0
+BIT10   XW, (8)200.00, 0, 0
+BIT11   XW, (8)100.00, 0, 0
+BIT12   XW, (8)40.00, 0, 0
+BIT13   XW, (8)20.00, 0, 0
+BIT14   XW, (8)10.00, 0, 0
+BIT15   XW, (8)4.00, 0, 0
+        END, I56

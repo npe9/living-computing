@@ -2,7 +2,8 @@
 """verify_ax4b_1a_ifield_select_listing.py -- jb_ax4b "I-Box 4",
 routine 148's TEST 1A ("I-FLD IX SELN.", ../decks/ax4b_1a_ifield_select.strap)
 against the machine code the listing prints beside each source line:
-PDF pp.114-120, octal 007441.00-007670.40; 148S1/148S2 on PDF p.152
+the routine's prologue on PDF p.113 (007435.00-007437.40, added
+2026-11-19); PDF pp.114-120, octal 007441.00-007670.40; 148S1/148S2 on PDF p.152
 (011310.00-011320.00); the CNOP and 148K0-148K15 on PDF p.153
 (011320.40-011340.40); 148ER1 (p.153, 011372.00), 148DMP (p.154,
 011373.00) and 100VO (p.190, 013036.00).  The sheets carry no printed
@@ -17,7 +18,11 @@ and the I = 0 case, where the same store must NOT be indexed:
 
     SX,$X0,0($X0)          0.01 10          (007454.00)
 
-WHAT IT CHECKS: 341 rows and 10 symbols.  I481 and the IX 0 block (31
+WHAT IT CHECKS: 348 rows and 18 symbols (342 rows and 10 symbols
+before the prologue; the "341" this line used to say was one short of
+what the script checked).  The prologue (6 rows, p.113; IDF1, RET and
+DPET13 checked against PDF p.193's SYN table, as are SSW, SERS, SEN and
+SENO: 7 of the 8 new symbols, I48 the eighth).  I481 and the IX 0 block (31
 rows, p.114), the fifteen IX 1-15 blocks (15 rows each, 225 rows), the
 four exits and continuity updates (8 rows each, 32 rows), 148S1/148S2
 (17 rows), the CNOP fill and 148K0-148K15 (33 rows), 148ER1, 148DMP,
@@ -44,6 +49,9 @@ copy (cmp IDENTICAL), no __pycache__ written.  OBSERVED failure sets:
     "SX,$Xn,0($Xn)" rows, n = 1..15 (007464.00 ... 007660.00), each
     assembled with I = 0 where the listing prints n (e.g. '000000.03 10'
     vs '000000.03 11').  n = 0 is not caught: its I is 0 either way.
+  enc_sic drops the half-word select ("addr24 & 0xFFFFC0") -> 5 FAIL,
+    exactly the prologue's SIC,RET (007436.00, '001306.00 80' vs
+    '001306.40 80') and the four SIC,SENO+.32 exit rows.  (2026-11-19.)
 """
 from strap_asm import assemble
 from listing_oracle import check_rows, finish
@@ -56,6 +64,13 @@ def o(w, h=0):
 
 
 ROWS = [
+    # ---- PDF p.113, routine 1248's prologue (I48), read 2026-11-19 ----
+    ('007435.00', '7440.02 10', 'I48 LX,$X1,148ID  -UPDATE IDENT. p.113'),
+    ('007435.40', '1437.03 10', 'SX,$X1,DPET13 (ext)'),
+    ('007436.00', '1306.40 80', 'SIC,RET (ext) bits 0-18 of half-word 1306.1'),
+    ('007436.40', '1443.10 00', 'B,IDF1 (ext)'),
+    ('007437.00', '11306.22 00', 'Z,IC248 (ext)'),
+    ('007437.40', '7441.04 00', 'BD,I481'),
     # ---- PDF p.114, I481 and the IX 0 block ----
     ('007441.00', '11372.22 00', 'I481 Z,148ER1'),
     ('007441.40', '11320.00 80', 'I482 SIC,148S2'),
@@ -141,6 +156,16 @@ ROWS += [
 ]
 
 SYMBOLS = {
+    'I48':    '007435.00',
+    # PDF p.193's SYN table (the listing's last page): the addresses of
+    # SSIP's entry points, which this deck's substitutes must occupy.
+    'SSW':    '001301.00',
+    'SERS':   '001304.00',
+    'RET':    '001306.40',
+    'SEN':    '001310.00',
+    'SENO':   '001311.00',
+    'DPET13': '001437.00',
+    'IDF1':   '001443.00',
     'I481':   '007441.00',
     'I482':   '007441.40',
     'I483':   '007515.00',

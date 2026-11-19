@@ -794,7 +794,15 @@ index bits 0-2 ignored), and a negative first-half index borrowing back through
 an SVA'd address. Each TEST is a chain of segments that each end in `B,SSW`, so
 `tests/gen_tb.py` gained `ENTRY=SYMBOL`, which starts the run at SYMBOL instead
 of the END entry; the suite runs the five decks 19 times, one per segment, and
-the model passes all 19.
+the model passes all 19. The routine's p.113 prologue (a call to SSIP's "print
+ID" through SIC,RET into an odd half-word) is a twentieth run, and passes.
+Routine 1256 (PDF pp.173-191, `decks/ax4b_156_test1_lvs.strap`,
+`decks/ax4b_156_test2_lve.strap`) is IBM's own test of LVS and LVE, which
+until then had only the Reference Manual behind them: LVS's register mask, bit
+by bit, keeping count and refill; LVE to an LV in memory, index storage and $R,
+through a second LVE, the final address's width by the class of the instruction
+found (24/19/18), index modification without execution or progressive stepping,
+and only J's register written. Eight segment runs; the model passes all eight.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

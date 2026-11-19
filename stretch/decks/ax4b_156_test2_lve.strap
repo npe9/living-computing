@@ -1,0 +1,542 @@
+! ax4b_156_test2_lve.strap -- jb_ax4b "I-BOX 4", routine 1256 ("----I256---
+! LVE AND LVS CHECK.", banner PDF p.173), TEST 2, the LOAD VALUE
+! EFFECTIVE test ("-TEST 2 CHECKS THAT LVE WILL LOAD CORRECTLY WITH 5
+! LEVELS, AND UNDER ALL CONDITIONS."), and the routine's end:
+!
+!   PDF p.182  012532.00-012556.00  I563-I566: TEST 2A
+!   PDF p.183  012556.40-012602.40  I567-I5610: TEST 2B
+!   PDF p.184  012603.00-012623.40  I5611-I5613: TEST 2C
+!   PDF p.185  012624.00-012651.00  I5614: TEST 2D
+!   PDF p.186  012651.40-012676.00  I5615: TEST 2E
+!   PDF p.187  012676.40-012731.40  I5616: TEST 2F
+!   PDF p.188  012732.00-012767.40  TEST 2F (end), exit, the routine's
+!                                   continuity check, end-of-program rows
+!   PDF p.189  012770.00-012775.00  end-of-program rows, IC256, ICK256
+!   PDF p.190  012776.00-013033.00  156K1-156K22, 100LC; 013035.00 1000
+!   PDF p.191  013054.00-013063.00  BIT0-BIT7
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_156_test2_lve_listing.py.  The prologue and TEST 1
+! are decks/ax4b_156_test1_lvs.strap.
+!
+! WHY IT MATTERS.  LVE (Reference Manual printed pp.28-29, PDF 31-32) had
+! only the manual and MCP's one-level bootstrap use behind it.  This is
+! IBM's own test of it, and it checks rules the manual states but no
+! deck had exercised from an IBM listing:
+!   2A  LVE to an LV (156K3, "LV,$X0,156K2") found in external memory,
+!       in index storage (LX,$X1,156K3 puts the instruction word in X1;
+!       LVE,$X0,$X1 reads it there) and in the accumulator ($R, after
+!       L(BU),156K3).  X0 must get 156K2's ADDRESS (KVI,$X0,156K2), not
+!       156K2's contents (162543.34): the LV is not executed.
+!   2B  as 2A, the first one through a second LVE (156K4 -> 156K3); the
+!       IX-storage and $R cases load 156K3 itself, as printed (see
+!       ODDITIES).
+!   2C  LVE in $X1 (156K5 = LVE,$X0,$R) to an LV in $R, and LVE in $R
+!       (156K6 = LVE,$X0,$X1) to an LV in X1.
+!   2D  the width of the final address by the class of the instruction
+!       found: VFL 24 bits (156K7, 013004.77); direct index, immediate
+!       index, misc (EXIC), BRANCH ON INDICATOR and CB 19 bits; FP 18.
+!   2E  the found instruction is not executed (L(BU),1000 must leave $R
+!       zero); it IS index-modified (156K16 "L(BU),0($X1)" with X1 =
+!       777777.77 gives 777777.77); a progressive VFL (156K18) is
+!       index-modified but X1 is NOT stepped; the right half-word of a
+!       word that is a VFL at the left (156K19+.32) gives 19 bits, and
+!       the right half of 156K20 gives 18 ("RHW OF SWAP").
+!   2F  LVE to LVI,$Xk (156K21+k half-words): only X0, the first LVE's
+!       J, changes, never Xk ("ILLEGAL SELN OF IX k"); LVE,$X15,156K22
+!       (LVI,$X0) must leave X0 zero.
+!
+! SIX SEGMENTS, each ending in its own "B,SSW" (TO SSIP): I563, I567,
+! I5611, I5614, I5615, I5616.  With SSW a PASS halt the driver runs
+! this deck six times: from END (I563) and with ENTRY= the other five.
+! The continuity rows after each B,SSW, the routine's continuity check
+! and the end-of-program rows (LX,$X1,(8)103.0 ... B,(8)45000.0, which
+! leave the program) are transcribed and verified but never run.
+!
+! ODDITIES, transcribed as printed:
+!   * TEST 2B's IX-storage and accumulator cases (I568, I569) load
+!     156K3, the LV, exactly as 2A's do, though their comments say "LVE
+!     TO AN LVE IN IX STG/RACC TO AN LV" ("13000.02 10", "13000.00
+!     80 ..." -- 156K3 is 013000.00, 156K4 is 013001.00).
+!   * I567's first failure exit is "SIC,SEN / BZXE,SERS" ("1304.32
+!     C0"), where every other first exit is "B,SERS".
+!   * TEST 2F checks X1 and X2 after the first LVE only, then does two
+!     LVEs (156K21+.32 and +1.0) before checking X3.
+!   * Comment punctuation is the page's ("IX9.", "IX 15" with no period,
+!     "-TO SSIP" without one on p.184, "VALUE BITS" without one on
+!     p.182).
+!
+! RESULT, 2026-11-19: all six segments PASS IBM's checks (PC 1410 =
+! SSW, SEN 0).  Final index registers pinned (MODEL BEHAVIOUR, as is
+! CYCLES):
+!   I563  X0 0x57fc00000000000 (value 012777.00 = 156K2's address, not
+!         its contents), X1 0x57fc03000001800 (156K3's word, by LX),
+!         CYCLES 364
+!   I567  the same X0 and X1, CYCLES 366
+!   I5611 the same X0 and X1, CYCLES 311
+!   I5614 X0 0xffffc00000000000 (156K13's last check), CYCLES 442
+!   I5615 X0 0xffffc00000000000, X1 0x7fff0000000000 (156K17, not
+!         stepped by 156K18's progressive mode), CYCLES 443
+!   I5616 X0 0, X1 0, X15 0xffffe00000000000 (LVE,$X15,156K22 writes
+!         J = 15 only), CYCLES 968
+! MODEL INJECTIONS, OBSERVED (each in its own scratch copy of bsv/, all
+! six runs, the two TEST 1 runs and the I48 run repeated; every failure
+! below halts at SERS, PC 1416, with SEN naming the SIC,SEN taken):
+!   C1 the 24-bit (Full) width gives 19 bits ({h[31:13],5'b0}) -> I5614
+!      FAIL (SEN 0x565a00000000000, X0 0x581200000000000, CYCLES 98:
+!      the VFL case, 156K7).  Nothing else moves.
+!   C2 the found instruction is not index-modified (effAddrSigned(st,
+!      a, 0)) -> I5615 FAIL (SEN 0x56c000000000000, X0 0, X1
+!      0xffffff0000000000, CYCLES 183: the 156K16 case).  Nothing else.
+!   C3 the result is written to X0 whatever J says -> I5616 FAIL (SEN
+!      0x57c400000000000, X0 0xffffe00000000000, X15 0, CYCLES 936:
+!      LVE,$X15,156K22).  Nothing else.
+!   D1 the chain is not followed (lveChainTarget never Valid, so a found
+!      LVE is refused) -> I567 FAIL (SEN 0x55c600000000000, X0 0) and
+!      I5611 FAIL (SEN 0x561e00000000000, X0 0); I563 and the rest PASS,
+!      as they reach no second LVE.
+!   D2 the found half-word is taken from the wrong half (ea[0] == 1 for
+!      ea[0] == 0) -> I563, I567, I5611, I5614, I5615 FAIL (first
+!      SEN 0x557400000000000, 0x55c600000000000, 0x561e00000000000,
+!      0x565a00000000000, 0x56c000000000000); I5616 PASSES: 156K21's
+!      neighbouring half-words are LVIs of the same address too, so the
+!      wrong half still gives 777777.40, and no register but X0 is
+!      written by LVE,$X0 (C3 is what catches I5616).
+!   The LVS injections (B1, B2; see ax4b_156_test1_lvs.strap) leave all
+!   six passing.
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!   nine runs PASS with the pins in run_tests.sh.
+! Every run is failed by at least one injection: I563 (D2), I567 (D1,
+! D2), I5611 (D1, D2), I5614 (C1, D2), I5615 (C2, D2), I5616 (C3).
+! NOT discriminated by any injection here: TEST 2E's "not executed"
+! check (156K14) and 2D's per-class 19-bit cases individually.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points SSW (PASS halt), SERS (FAIL halt), SEN/SENO
+!     (data words SIC stores into), at the addresses PDF p.193's SYN
+!     table prints.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41), so SEN
+!     stays 0 on a pass and names the error entry on a failure.
+!   * Notation only: "%" and the box glyph are "(" and ")"; the label
+!     glyph the scan shows as "1" is the letter I (I56.., I000, I00LC);
+!     100LC's printed digit groups "0 000 011 770 025 700 000 000" are
+!     written without the spaces.
+!   * SENO SYN,SENO on p.190 (printed value "1311.00+") is not a
+!     statement here: SENO is the substitute at 001311.00.
+!   * 100Z (013034.00) and BIT8 up are not used and not transcribed.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! ======================================================================
+! PDF p.182, 012532.00-012556.00: TEST 2A (I563-I566)
+! ======================================================================
+        SLC, (8)12532.0
+I563    Z, $X0                        ! -TEST 2A, LVE SECOND LEVEL INST
+        LVE, $X0, I56K3               ! -IS NOT LVE, LOCATED IN 3 MEMS.
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO A LV IN EXT MEM FAILS TO
+        B, SERS                       ! -LOAD ANY VALUE BITS.
+        B, I564
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO A LV IN EXT MEM FAILS TO
+        BZXE, SERS                    ! -LOAD CORRECT VALUE BITS.
+I564    Z, $X0
+        LX, $X1, I56K3
+        LVE, $X0, $X1
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO A LV IN IX STG FAILS TO
+        B, SERS                       ! -LOAD ANY VALUE BITS.
+        B, I565
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO A LV IN IX STG FAILS TO
+        BZXE, SERS                    ! -LOAD CORRECT VALUE BITS.
+I565    Z, $X0
+        L(BU), I56K3
+        LVE, $X0, $R
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO A LV IN RACC FAILS TO
+        B, SERS                       ! -LOAD ANY VALUE BITS.
+        B, I566
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO A LV IN RACC FAILS TO
+        BZXE, SERS                    ! -LOAD CORRECT VALUE BITS
+I566    B, $+1.0
+        BD, I563
+        SIC, SENO+.32
+        B, SSW
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT2
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.183, 012556.40-012602.40: TEST 2B (I567-I5610)
+! ======================================================================
+I567    Z, $X0                        ! -TEST 2B, LVE SECOND LEVEL INST IS
+        LVE, $X0, I56K4               ! -ANOTHER LVE REFERENCING EXT MEM.
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO AN LVE IN EXT MEM TO AN LV
+        BZXE, SERS                    ! -IN EXT MEM LOADS INCORRECTLY.
+        B, I568
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO AN LVE IN EXT MEM TO AN LV
+        BZXE, SERS                    ! -IN EXT MEM LOADS INCORRECTLY.
+I568    Z, $X0
+        LX, $X1, I56K3
+        LVE, $X0, $X1
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO AN LVE IN IX STG TO AN LV
+        B, SERS                       ! -IN EXT MEM LOADS NO BITS
+        B, I569
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO AN LVE IN IX STG TO AN LV
+        BZXE, SERS                    ! -IN EXT MEM LOADS INCORRECTLY.
+I569    Z, $X0
+        L(BU), I56K3
+        LVE, $X0, $R
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO AN LVE IN RACC TO AN LV
+        B, SERS                       ! -IN EXT MEM LOADS NO BITS.
+        B, I5610
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO AN LVE IN RACC TO AN LV
+        BZXE, SERS                    ! -IN EXT MEM LOADS INCORRECTLY.
+I5610   B, $+1.0
+        BD, I567
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT3
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.184, 012603.00-012623.40: TEST 2C (I5611-I5613)
+! ======================================================================
+I5611   Z, $X0                        ! -TEST 2C, LVE IN EXT TO LVE IN
+        LX, $X1, I56K5                ! -IX TO LV IN ACC, AND VICE VERSA.
+        L(BU), I56K3
+        LVE, $X0, $X1
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO AN LVE IN IX STG TO AN LV IN
+        B, SERS                       ! -ACC LOADS NO BITS.
+        B, I5612
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO AN LVE IN IX STG TO AN LV IN
+        BZXE, SERS                    ! -ACC LOADS INCORRECTLY.
+I5612   Z, $X0
+        L(BU), I56K6
+        LX, $X1, I56K3
+        LVE, $X0, $R
+        LX, $X0, $X0
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -LVE TO AN LVE IN ACC TO AN LV IN
+        B, SERS                       ! -IX STG LOADS NO BITS.
+        B, I5613
+        KVI, $X0, I56K2
+        SIC, SEN                      ! -LVE TO AN LVE IN ACC TO AN LV IN
+        BZXE, SERS                    ! -IX STG LOADS INCORRECTLY.
+I5613   B, $+1.0
+        BD, I5611
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT4
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.185, 012624.00-012651.00: TEST 2D (I5614)
+! ======================================================================
+I5614   Z, $X0                        ! -TEST 2D, CHECK LVE LOADS CORRECT
+        LVE, $X0, I56K7               ! -NUMBER OF BITS ACCORDING TO CLASS
+        KV, $X0, I56K7A               ! -OF SUBJECT INST, FULL WD VFL FIRST.
+        SIC, SEN
+        BZXE, SERS                    ! -SUBJ INST OF LVE WAS VFL, NOT ALL
+!                                     ! -BITS LOADED CORRECTLY.
+        Z, $X0                        ! -DIR IX, LOAD 19 BITS.
+        LVE, $X0, I56K8
+        KVI, $X0, I56K8+.32
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS DIR IX, NOT ALL
+        BZXE, SERS                    ! -19 BITS LOADED CORRECTLY, OR EXTRAS.
+        Z, $X0                        ! -SUBJ INST IS IMMED IX.
+        LVE, $X0, I56K9
+        KVI, $X0, I56K9+.32
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS IM IX, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, 19 BITS LOADED OK.
+        Z, $X0                        ! -SUBJ INST IS MISC.
+        LVE, $X0, I56K10
+        KVI, $X0, I56K9+.32
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS MISC, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, 19 BITS LOADED.
+        Z, $X0                        ! -SUBJ INST IS BIND.
+        LVE, $X0, I56K11
+        KVI, $X0, I56K11+.32
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS MISC, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, 19 BITS LOADED.
+        Z, $X0                        ! -SUBJ INST IS CB.
+        LVE, $X0, I56K12
+        KVI, $X0, I56K12+.32
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS MISC, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, 19 BITS LOADED.
+        Z, $X0                        ! -SUBJ INST IS FP.
+        LVE, $X0, I56K13
+        KVI, $X0, (8)777777.00
+        SIC, SEN                      ! -SUBJ INST OF LVE WAS FP, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, 19 BITS LOADED.
+        B, $+1.0
+        BD, I5614
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT5
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.186, 012651.40-012676.00: TEST 2E (I5615)
+! ======================================================================
+I5615   Z, $X0                        ! -TEST 2E, CHK SUBJ INST OF LVE
+        Z, $R                         ! -IS NOT EXECUTED, SUBJ INST IX MOD
+        LVE, $X0, I56K14              ! -OCCURS BUT NOT PROG IX.
+        L(BU), $R
+        SIC, SEN
+        BZRZ, SERS                    ! -SUBJ INST OF LVE GETS EXECUTED.
+        Z, $X0                        ! -CHK INDEX MOD.
+        LX, $X1, I56K15
+        LVE, $X0, I56K16
+        KV, $X0, I56K15
+        SIC, SEN                      ! -SUBJ INST OF LVE DOES NOT IX
+        BZXE, SERS                    ! -MODIFY OK PRIOR TO LOADING.
+        Z, $X0                        ! -CHK PROG IX IGNORED.
+        LX, $X1, I56K17
+        LVE, $X0, I56K18
+        KV, $X1, I56K17
+        SIC, SEN                      ! -WHEN SUBJ INST OF LVE IS PROG IX
+        BZXE, SERS                    ! -VFL,PROG IX MODIFICATION OCCURS.
+        KV, $X0, I56K15
+        SIC, SEN                      ! -SUBJ INST OF LVE IS PROG IX VFL, NOT
+        BZXE, SERS                    ! -ALL OF BITS 0-23 LOADED.
+        Z, $X0                        ! -CHK RH OF VFL FOR 19 BITS.
+        Z, $X15
+        LVE, $X0, I56K19+.32
+        KVI, $X0, (8)777777.40
+        SIC, SEN                      ! -SUBJ INST OF LVE IS RH VFL, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, BITS 0-18 LOADED.
+        Z, $X0                        ! -CHK RHW OF SWAP FOR 18 BITS ONLY.
+        Z, $X15
+        LVE, $X0, I56K20+.32
+        KVI, $X0, (8)777777.00
+        SIC, SEN                      ! -SUBJ INST OF LVE IS RH TRANS, NOT ALL
+        BZXE, SERS                    ! -OF, OR MORE THAN, BITS 0-17 LOADED.
+        B, $+1.0
+        BD, I5615
+        SIC, SENO+.32
+        B, SSW
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT6
+        SX, $X13, IC256
+!
+! ======================================================================
+! PDF p.187, 012676.40-012731.40: TEST 2F (I5616)
+! ======================================================================
+I5616   Z, $X0                        ! -TEST 2F, CHK SUCCESSIVE LVE LOADS
+        Z, $X1                        ! -ONLY IX SPECIFIED BY FIRST LVE.
+        Z, $X2
+        Z, $X3
+        Z, $X4
+        Z, $X5
+        Z, $X6
+        Z, $X7
+        Z, $X8
+        Z, $X9
+        Z, $X10
+        Z, $X11
+        Z, $X12
+        Z, $X13
+        Z, $X14
+        Z, $X15
+        LVE, $X0, I56K21              ! -CONSECUTIVE LVES TO LVI INST.
+        L(BU), $X0
+        SIC, SEN
+        BRZ, SERS                     ! -NO BITS IN IX 0.
+        L(BU), $X1
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 1.
+        L(BU), $X2
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 2.
+        LVE, $X0, I56K21+.32
+        LVE, $X0, I56K21+1.0
+        L(BU), $X3
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 3.
+        LVE, $X0, I56K21+1.32
+        L(BU), $X4
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 4.
+        LVE, $X0, I56K21+2.0
+        L(BU), $X5
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 5.
+        LVE, $X0, I56K21+2.32
+        L(BU), $X6
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 6.
+        LVE, $X0, I56K21+3.0
+        L(BU), $X7
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 7.
+! ======================================================================
+! PDF p.188, 012732.00-012767.40: TEST 2F (end), the exit, the routine's
+! continuity check, and the first end-of-program rows
+! ======================================================================
+        LVE, $X0, I56K21+3.32
+        L(BU), $X8
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 8.
+        LVE, $X0, I56K21+4.0
+        L(BU), $X9
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX9.
+        LVE, $X0, I56K21+4.32
+        L(BU), $X10
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 10.
+        LVE, $X0, I56K21+5.0
+        L(BU), $X11
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 11.
+        LVE, $X0, I56K21+5.32
+        L(BU), $X12
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 12.
+        LVE, $X0, I56K21+6.0
+        L(BU), $X13
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 13.
+        LVE, $X0, I56K21+6.32
+        L(BU), $X14
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 14.
+        LVE, $X0, I56K21+7.0
+        L(BU), $X15
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 15
+        Z, $X0
+        LVE, $X15, I56K22
+        L(BU), $X0
+        SIC, SEN
+        BZRZ, SERS                    ! -ILLEGAL SELN OF IX 0.
+        B, $+1.0
+        BD, I5616
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT7
+        SX, $X13, IC256
+        LX, $X13, IC256               ! -UPDATE CONTINUITY CHECK.
+        KV, $X13, ICK256
+        SIC, SEN
+        BZXE, SERS                    ! -CONTINUITY ERROR.
+        LX, $X1, (8)103.0
+        KV, $X1, I00LC
+! ---- PDF p.189, 012770.00-012775.00 ----
+        BZXE, (8)34000.0              ! -LOOP
+        KC, $X1, I00LC
+        BZXE, (8)34000.0              ! -LOOP
+        SR, $X1, 17.0
+        KV, $X1, I00LC+.32
+        BZXE, (8)34000.0              ! -LOOP
+        B, (8)45000.0                 ! -CONTINUE
+IC256   XW, 0, 0, 0                   ! -CONTINUITY REG 1256.
+ICK256  XW, (8)776000.00, 0, 0
+!
+! ======================================================================
+! PDF p.190, 012776.00-013033.00: "CNOP -CONSTANTS FOR 1256" (prints
+! nothing: 012776.00 is aligned), 156K1-156K22, a second CNOP (prints
+! nothing), 100LC; then 1000 at 013035.00
+! ======================================================================
+        CNOP                          ! -CONSTANTS FOR 1256
+I56K1   XW, (8)777774.00, 0, 0
+I56K2   XW, (8)162543.34, 0, 0
+I56K3   LV, $X0, I56K2
+        NOP
+I56K4   LVE, $X0, I56K3
+        NOP
+I56K5   LVE, $X0, $R
+        NOP
+I56K6   LVE, $X0, $X1
+        NOP
+I56K7   L(BU), I56K7+.63              ! -VFL
+I56K7A  XW, I56K7+.63, 0, 0
+I56K8   SV, $X15, $+.32               ! -DIR IX.
+        NOP
+I56K9   LVI, $X15, $+.32              ! -IMMED IX.
+        NOP
+I56K10  EXIC, I56K9+.32               ! -MISC.
+        NOP
+I56K11  BZNM, $+.32                   ! -BIND
+        NOP
+I56K12  CB, $X15, $+.32
+        NOP
+I56K13  (8)DD(BU,64,8), 1777777772000000000000
+I56K14  L(BU), I000
+I56K15  XW, (8)777777.77, 0, 0
+I56K16  L(BU), 0($X1)
+I56K17  XW, (8)000777.77, 0, 0
+I56K18  L(V+I)(BU), (8)777000.00($X1)
+I56K19  XW, -0.0, (8)037777, (8)777777
+I56K20  (8)DD(BU,64,8), 10037777767040
+I56K21  LVI, $X1, (8)777777.40
+        LVI, $X2, (8)777777.40
+        LVI, $X3, (8)777777.40
+        LVI, $X4, (8)777777.40
+        LVI, $X5, (8)777777.40
+        LVI, $X6, (8)777777.40
+        LVI, $X7, (8)777777.40
+        LVI, $X8, (8)777777.40
+        LVI, $X9, (8)777777.40
+        LVI, $X10, (8)777777.40
+        LVI, $X11, (8)777777.40
+        LVI, $X12, (8)777777.40
+        LVI, $X13, (8)777777.40
+        LVI, $X14, (8)777777.40
+        LVI, $X15, (8)777777.40
+I56K22  LVI, $X0, (8)777777.40
+        CNOP                          ! -COMMON CONSTANTS FOR FETCH ONLY
+I00LC   (8)DD(BU,64,8), 0000011770025700000000
+        SLC, (8)13035.0
+I000    (8)DD(BU,64,8), 1777777777777777777777  ! -INDX WD. OF ONES.
+!
+! ======================================================================
+! PDF p.191, 013054.00-013063.00: BIT0-BIT7 (the continuity bits)
+! ======================================================================
+        SLC, (8)13054.0
+BIT0    XW, (8)400000.00, 0, 0
+BIT1    XW, (8)200000.00, 0, 0
+BIT2    XW, (8)100000.00, 0, 0
+BIT3    XW, (8)40000.00, 0, 0
+BIT4    XW, (8)20000.00, 0, 0
+BIT5    XW, (8)10000.00, 0, 0
+BIT6    XW, (8)4000.00, 0, 0
+BIT7    XW, (8)2000.00, 0, 0
+        END, I563
