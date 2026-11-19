@@ -23,8 +23,8 @@ The status labels are:
 | `set_value` | 0x14 | `R[b] = INT(a)`; TR-246's `set_value Xj, Gi` writes the goal-record argument slot | stand-in | `PimKL1BTb` |
 | `set_variable` | 0x13 | `R[b] = UREF(a)`; same goal-slot stand-in | stand-in | `PimKL1BTb` |
 | `put_value` | 0x34 | `R[b] = R[a]` | documented (TR-246 p. 7) | `PimKL1BTb` |
-| `put_variable` | 0x33 | `R[b] = UREF(a)` | stand-in | — |
-| `get_value` | 0xbc | `R[b] = R[a]` | stand-in | — |
+| `put_variable` | 0x33 | `R[b] = UREF(a)` | stand-in | `PimKL1BMiscTb` |
+| `get_value` | 0xbc | `R[b] = R[a]` | stand-in | `PimKL1BMiscTb` |
 | `get_bound_value` | 0xbd | `R[b] = heap[R[a][11:0]]` | stand-in | `PimKL1BTb` |
 | `write_value` | 0x25 | `heap[HP] = R[a]; HP++` | documented (TR-246 p. 7) | `PimKL1BTb` |
 | `write_variable` | 0x24 | `heap[HP] = UREF(a); HP++` | documented (TR-246 p. 7) | `PimKL1BTb` |
@@ -40,12 +40,12 @@ The status labels are:
 | `set_constant` | 0x10 | `args[Gi] = c40` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `set_integer` | 0x11 | `args[Gi] = INT(c16)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `set_nil` | 0x12 | `args[Gi] = NIL` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
-| `set_atom` | 0x00 | `args[Gi] = ATOM` | documented (TR-246 p. 7) | — |
+| `set_atom` | 0x00 | `args[Gi] = ATOM` (placeholder value; atom table not modelled) | documented (TR-246 p. 7) | `PimKL1BMiscTb` |
 | `set_list` | 0x18 | `args[Gi] = LIST(HP)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `read_constant` | 0xb0 | halt if `args[argPtr] != c40`, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
 | `read_integer` | 0xb1 | halt if `args[argPtr] != INT c24`, advance | inferred (PIMOS c24 variant) | `PimKL1BSetTb` |
 | `read_nil` | 0xb2 | halt if `args[argPtr]` is not NIL, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
-| `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | — |
+| `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | `PimKL1BMiscTb` |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
 | `get_constant` | 0xb8 | compare `deref(R[a])` with c40; bind an unbound REF cell | documented (TR-246 p. 6) | `PimKL1BGetTb` |
 | `get_integer` | 0xb9 | halt unless `deref(R[a])` is INT c16 | inferred (PIMOS c16 variant) | `PimKL1BGetTb` |
@@ -76,7 +76,6 @@ encoding table but not executed, with the blocking reason:
 
 | family | examples | reason |
 |---|---|---|
-| goal-record argument setup | `set_atom` | implemented with a placeholder atom; the atom table is not modelled |
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | active unification | `get_structured_constant`, `get_list`, `get_vector` | the structure reads; the constant/integer/nil/atom reads are implemented |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
