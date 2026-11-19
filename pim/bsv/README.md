@@ -4,6 +4,13 @@ The model is `PimTypes`, `PimStages`, `PimALU`, `PimE`, `PimPU`; see
 `../plan.md` and `../docs/pim_architecture.md`. The assembler and the
 model ISA table are `../asm/pimasm.py` and `../docs/isa.md`.
 
+The network model is `PimNU.bsv` (one NU's per-port FIFOs),
+`PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`
+(the routed 5 × 5 crossbar with the route table and CPU-port arrival)
+and `PimMesh.bsv` (a parameterized `w × h` mesh with deterministic XY
+route tables). Their testbenches are `PimNUTb.bsv`, `PimLinkTb.bsv`,
+`PimNURoutedTb.bsv` and `PimMeshTb.bsv`.
+
 ## FPGA flow (ULX3S / ECP5)
 
 `PimUlx3s.bsv` and `Top.v` are a downstream check, not the architecture.
@@ -37,6 +44,8 @@ tools or a failed synthesis/place/route/bitstream step exits nonzero.
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
 the Bluesim smoke test (`run_smoke.sh`), the network-unit testbench
-(`run_nu_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and the
-formal BMC (`formal/run_formal.sh`). The board build check is
+(`run_nu_tb.sh`), the link testbench (`run_link_tb.sh`), the routed
+crossbar testbench (`run_nu_routed_tb.sh`), the mesh testbench
+(`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and
+the formal BMC (`formal/run_formal.sh`). The board build check is
 `run_fpga_build.sh`.

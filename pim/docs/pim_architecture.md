@@ -282,6 +282,48 @@ The current model is in `bsv/PimTypes.bsv`, `bsv/PimStages.bsv`,
 already label most invented fields as `MODEL`. The following separates what
 the sources confirm from what they contradict.
 
+### Model-defined routing, packet format and arbitration
+
+`M92` p. 427 documents the mechanism: a 9-bit packet byte (8 data bits
+plus a mark bit), a RAM path table indexed by destination PE whose entry
+is a 2-bit direction code (straight, left, right, arrived), a 5 × 5
+crossbar, and one byte per four machine cycles. It prints no encoding or
+frame format. The Bluespec model therefore defines the following, all
+labelled `MODEL` in `bsv/PimNU.bsv`, `bsv/PimNURouted.bsv` and
+`bsv/PimMesh.bsv`:
+
+- **Port numbering.** 0 = North, 1 = East, 2 = South, 3 = West,
+  4 = CPU. The source says "four adjacent-PE channel pairs plus the CPU
+  pair" and shows a 5 × 5 crossbar but does not number the ports.
+- **Direction code.** An absolute output-port selector, 0 = North,
+  1 = East, 2 = South, 3 = West. "Arrived" is not a table code: a
+  packet whose destination PE equals the NU's own PE is sent to the CPU
+  port (4) instead.
+- **Route table.** `Vector#(256, Direction)`, indexed by destination PE
+  (0..255). The mesh builder fills it with deterministic XY routing: if
+  `destX > x` then East, if `destX < x` then West, else if `destY > y`
+  then South, if `destY < y` then North. The own-PE entry is a
+  don't-care because the own-PE comparison wins.
+- **Packet format.** The first byte is the header: mark bit 8 = 1,
+  bits [7:0] = destination PE. Payload bytes have mark bit 8 = 0. The
+  last byte is the tail: mark bit 8 = 1, bits [7:0] = the last payload
+  byte. Per input port, a marked byte while idle is a header (it sets
+  the stored destination and enters the packet); a marked byte while
+  in-packet is the tail. The header is routed by its own destination,
+  the tail by the stored destination, and `packetTail()` pulses when a
+  tail is delivered to the CPU port (4).
+- **Arbitration.** When several input ports target one output port the
+  lowest input-port index wins (fixed priority). A header locks its
+  output port to its input until that packet's tail moves into the port,
+  so byte-level arbitration cannot split a packet across two packets'
+  bytes on one output link. Releasing the lock when the header is
+  dequeued is wrong: on a mesh link the next packet's header then
+  interleaves with the first packet's tail and the destination NU
+  misclassifies it as a tail. `M92` p. 427 gives the
+  one-byte-per-four-cycles rate but no arbitration order and no lock.
+
+Everything above is a model choice, not a documented PIM/m encoding.
+
 ### Confirmed
 
 1. **40-bit word, 8-bit tag.** `PimTypes` uses `Word = Bit#(40)` and

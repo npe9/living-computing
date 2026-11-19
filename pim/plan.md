@@ -255,6 +255,29 @@ test or an explicit label.
 2. **Stage 5:** mesh link and packet flow control. Prove two PEs, then a
    parameterized mesh with deterministic arbitration and
    deadlock-directed tests.
+   Status (2026-11-19): done. `PimLink.bsv` bridges one NU output port
+   to one NU input port; `PimLinkTb.bsv` connects two `mkPimNU`
+   instances and checks arrival, the tail latch, and the
+   one-byte-per-four-cycles rate (commit 086426c). The routed crossbar
+   (`PimNURouted.bsv`, the 5 × 5 switch with the route table and
+   CPU-port arrival) passes `bsv/run_nu_routed_tb.sh`; the
+   parameterized mesh (`PimMesh.bsv`, deterministic XY route tables for
+   a `w × h` mesh) passes `bsv/run_mesh_tb.sh` with the four named
+   checks (own packet, reverse packet, deadlock-directed all-to-
+   opposite traffic, and the 4-cycle rate into an adjacent PE).
+   The mesh fix: the output lock must hold until the tail byte moves,
+   not release on `deq` — releasing on `deq` let a second header
+   interleave with the first packet's tail on the link. The observed
+   injected failure set (lock released on `deq`) is recorded in
+   `PimMeshTb.bsv`'s header: PE 3/4/12/15 receive another packet's
+   header byte, PEs 0/1/2/7 receive nothing, and the watchdog times
+   out at cycle 5001, phase 5, mode 3. Reverting the injection restores
+   PASS. The route-table encoding, the packet header/tail
+   interpretation, the port numbering and the arbitration order are
+   model-defined: `M92` p. 427 gives the mechanism (a 9-bit byte with a
+   mark bit, a RAM path table indexed by destination PE, a 2-bit
+   direction code, a 5 × 5 crossbar) but prints no encoding for any of
+   them.
 3. **Stage 6:** KL1. Evidence gate: no KL1-B encoding table or
    documented compiler/runtime path is in the corpus. Acquire or cite
    one before adding a KL1 workload; label anything manual-derived.

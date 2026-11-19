@@ -20,6 +20,12 @@ bsv/run_nu_tb.sh
 echo "=== Bluesim link testbench ==="
 bsv/run_link_tb.sh
 
+echo "=== Bluesim routed NU testbench ==="
+bsv/run_nu_routed_tb.sh
+
+echo "=== Bluesim mesh testbench ==="
+bsv/run_mesh_tb.sh
+
 echo "=== Bluesim SDRAM store testbench ==="
 bsv/run_sdram_tb.sh
 
