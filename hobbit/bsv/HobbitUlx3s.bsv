@@ -63,6 +63,7 @@ import FIFOF::*;
 import BRAMFIFO::*;
 import HobbitTypes::*;
 import HobbitCore::*;
+import HobbitBus::*;
 import HobbitUart::*;
 import SmokeImage::*;
 
@@ -74,9 +75,10 @@ endinterface
 (* synthesize *)
 module mkHobbitUlx3s#(Bit#(1) rst_n)(HobbitUlx3sIfc);
 
-  HobbitMem mem <- mkHobbitMem;
+  HobbitBusMem mem <- mkHobbitBusMem;
+  HobbitMem phys <- mkHobbitMemBus(mem);
   MemCycles mcyc = defaultMemCycles();
-  HobbitCore core <- mkHobbitCore(mem, 32'hFFFFFFFF, mcyc);
+  HobbitCore core <- mkHobbitCore(phys, 32'hFFFFFFFF, mcyc);
   // Caller-supplied clocks per bit: 25 MHz / 115200 = 217.01, truncated.
   HriWriter uart <- mkHriWriter(217);
 
@@ -94,7 +96,7 @@ module mkHobbitUlx3s#(Bit#(1) rst_n)(HobbitUlx3sIfc);
   // smoke.hex is 160 words, so the 8-bit index cannot wrap.
   rule load (!loaded);
     if (zeroExtend(li) < imageLength()) begin
-      mem.write(zeroExtend(li) << 2, imageWord(zeroExtend(li)));
+      phys.write(zeroExtend(li) << 2, imageWord(zeroExtend(li)));
       li <= li + 1;
     end else
       loaded <= True;

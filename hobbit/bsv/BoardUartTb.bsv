@@ -22,14 +22,16 @@ import BRAMFIFO::*;
 import HobbitTypes::*;
 import HobbitCore::*;
 import HobbitUart::*;
+import HobbitBus::*;
 import SmokeImage::*;
 
 (* synthesize *)
 module mkBoardTb(Empty);
 
-  HobbitMem mem <- mkHobbitMem;
+  HobbitBusMem mem <- mkHobbitBusMem;
+  HobbitMem phys <- mkHobbitMemBus(mem);
   MemCycles mcyc = defaultMemCycles();
-  HobbitCore core <- mkHobbitCore(mem, 32'hFFFFFFFF, mcyc);
+  HobbitCore core <- mkHobbitCore(phys, 32'hFFFFFFFF, mcyc);
   HriWriter uart <- mkHriWriter(217);
 
   Word sp0  = 32'h00000100;
@@ -44,7 +46,7 @@ module mkBoardTb(Empty);
 
   rule load (!loaded);
     if (zeroExtend(li) < imageLength()) begin
-      mem.write(zeroExtend(li) << 2, imageWord(zeroExtend(li)));
+      phys.write(zeroExtend(li) << 2, imageWord(zeroExtend(li)));
       li <= li + 1;
     end else
       loaded <= True;

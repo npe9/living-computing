@@ -32,6 +32,9 @@ python3 "$here/golden/check_golden.py"
 "$hobbit/bsv/run_mmu.sh"
 "$hobbit/bsv/run_event.sh"
 "$hobbit/bsv/run_core_mmu.sh"
+# The bus face and the timers behind it.
+"$hobbit/bsv/run_bus.sh"
+"$hobbit/bsv/run_timer.sh"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"

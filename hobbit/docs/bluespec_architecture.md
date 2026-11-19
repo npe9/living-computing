@@ -50,8 +50,8 @@ expensive datapath lives in multi-cycle, stateful box sub-modules").
 | Stack cache, `64×32×2 bits` | `RegFiles/` (multi-port register file) | `mkHobbitStackCache`, one read + one write per clock |
 | Execution unit, 3-stage pipeline | `CPU/CPU_StageD.bsv`, `CPU_Stage3.bsv` | `mkHobbitExec` split into `EU_S1..S3` |
 | MMU, `2×32 page TLB`, `2×1 seg NPSR` | `Near_Mem_VM_WB_L1/D_MMU_Cache.bsv`, `I_MMU_Cache.bsv` | not modelled yet (gate: plan.md step 5) |
-| Bus face (HA/HD/BE/IOC/START/…) | `AXI4_Master_IFC`, `AXI4_Lite_Slave_IFC`, `src_Testbench/Fabrics/mkFabric_*.bsv` | not modelled yet (plan.md step 7) |
-| Interrupts, timers | `PLIC/PLIC*.bsv` | not modelled yet (plan.md step 6) |
+| Bus face (HA/HD/BE/IOC/START/…) | `AXI4_Master_IFC`, `AXI4_Lite_Slave_IFC`, `src_Testbench/Fabrics/mkFabric_*.bsv` | `mkHobbitBusMaster` / `mkHobbitBusMemStub` / `mkHobbitBusMem` (`HobbitBus.bsv`); PRM Appendix A signals and protocol; `mkHobbitMemBus` is the core's existing word port over the bus |
+| Interrupts, timers | `PLIC/PLIC*.bsv` | `mkHobbitTimers` (`HobbitTimers.bsv`): TIMER1/TIMER2 and their level-one requests; the event/interrupt sequence is still plan.md step 6 |
 | JTAG | `src/JtagTap.bsv`, `JtaggDtm.bsv` | not modelled |
 | Board clock/reset | `src/ClockHacks.bsv`, `src/ULX3S_Top.bsv` | `hobbit/fpga/HobbitUlx3sTop.v` + `mkHobbitUlx3s(rst_n)` |
 | UART | `src/Uart_Pins.bsv`, `Uart_DMI_Bridge.bsv` | `mkUartTx`/`mkHriWriter` (self-contained, same boundary: a fabric-side device, not core logic) |

@@ -68,21 +68,24 @@ import HobbitTypes::*;
 import HobbitDecode::*;
 import HobbitCore::*;
 import HobbitStackCache::*;
+import HobbitBus::*;
 import SmokeImage::*;
 
 (* synthesize *)
 module mkHobbitSmoke(Empty);
 
-  HobbitMem mem <- mkHobbitMem;
+  HobbitBusMem mem <- mkHobbitBusMem;
+  HobbitMem phys <- mkHobbitMemBus(mem);
   MemCycles mcyc = defaultMemCycles();
-  HobbitCore core <- mkHobbitCore(mem, 32'hFFFFFFFF, mcyc);
+  HobbitCore core <- mkHobbitCore(phys, 32'hFFFFFFFF, mcyc);
   HobbitDecode chkdec <- mkHobbitDecode;
 
   // A second, independent stack-cache box and memory, used only after the
   // program has retired.  It measures the write-back time of an
   // eight-block ENTER directly (the same Q = 4 engine the core uses).
-  HobbitMem boxMem <- mkHobbitMem;
-  HobbitStackCache box <- mkHobbitStackCache(boxMem, mcyc);
+  HobbitBusMem boxMem <- mkHobbitBusMem;
+  HobbitMem boxPhys <- mkHobbitMemBus(boxMem);
+  HobbitStackCache box <- mkHobbitStackCache(boxPhys, mcyc);
 
   Reg#(Bit#(16)) li <- mkReg(0);
   Reg#(Bool) loaded <- mkReg(False);
@@ -123,7 +126,7 @@ module mkHobbitSmoke(Empty);
   // ------------------------------------------------------------------
   rule load (!loaded);
     if (zeroExtend(li) < imageLength()) begin
-      mem.write(zeroExtend(li) << 2, imageWord(li));
+      phys.write(zeroExtend(li) << 2, imageWord(li));
       li <= li + 1;
     end else
       loaded <= True;

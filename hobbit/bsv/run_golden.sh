@@ -55,12 +55,14 @@ package $tb;
 
 import HobbitTypes::*;
 import HobbitCore::*;
+import HobbitBus::*;
 import $pkg::*;
 
 (* synthesize *)
 module mkGoldenTb_$stem(Empty);
-  HobbitMem mem <- mkHobbitMem;
-  HobbitCore core <- mkHobbitCore(mem, imageLength() << 2,
+  HobbitBusMem mem <- mkHobbitBusMem;
+  HobbitMem phys <- mkHobbitMemBus(mem);
+  HobbitCore core <- mkHobbitCore(phys, imageLength() << 2,
                                   defaultMemCycles());
 
   Reg#(Bit#(16)) li <- mkReg(0);
@@ -71,7 +73,7 @@ module mkGoldenTb_$stem(Empty);
 
   rule load (!loaded);
     if (zeroExtend(li) < imageLength()) begin
-      mem.write(zeroExtend(li) << 2, imageWord(li));
+      phys.write(zeroExtend(li) << 2, imageWord(li));
       li <= li + 1;
     end else
       loaded <= True;

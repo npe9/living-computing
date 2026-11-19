@@ -143,6 +143,13 @@ documented interfaces.
    handling, arbitration, the reset start address 0x0, and the
    big-endian/little-endian selection for user and kernel modes. Add
    the two timers.
+   **Achieved 2026-11-19** (`bsv/HobbitBus.bsv`, `run_bus.sh` 76 PASS;
+   `bsv/HobbitTimers.bsv`, `run_timer.sh` 31 PASS): the printed Appendix A
+   pins and protocol, byte/half/word and block transfers with `BE`/`IOC`,
+   `RETRY`, `BERR`, `HOLD`, the `BREQ`/`BGRANT`/`BGACK` handshake and
+   both byte orders, with memory behind the bus through the existing
+   `HobbitMem` word port. The manual prints `BGRANT`, not `RC`. Not
+   modelled: automatic retry/resume, the RMW dead cycle, and loopback.
 8. Only then add board-level models required by an original program:
    the dual-Hobbit BeBox prototypes with their DSP3210s, or the EO
    personal communicator support chips.

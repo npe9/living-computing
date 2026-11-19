@@ -14,3 +14,13 @@ sim_golden_*
 *.dot
 sim_board
 sim_board.so
+sim_bus
+sim_bus.so
+sim_timer
+sim_timer.so
+sim_mmu
+sim_mmu.so
+sim_event
+sim_event.so
+sim_core_mmu
+sim_core_mmu.so
