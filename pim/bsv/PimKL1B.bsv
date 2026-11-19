@@ -192,6 +192,7 @@ module mkPimKL1B(PimKL1B);
         8'hc0: if (deref(regs.sub(a))[39:32] != tagAtom)              // get_atom A, Ai
                  haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
+        8'h67: narg <= narg;                       // jump: pc set in the PC block
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label
           goals.upd(rqt, zeroExtend((b << 8) | c));
@@ -209,6 +210,8 @@ module mkPimKL1B(PimKL1B);
       haltR <= True;
     end
     if (tag == 8'h23 && op == 8'h61) begin
+      pcR <= zeroExtend((b << 8) | c);
+    end else if (tag == 8'h23 && op == 8'h67) begin
       pcR <= zeroExtend((b << 8) | c);
     end else if (tag == 8'h23 && op == 8'h60 && rqfp != rqt) begin
       pcR <= goals.sub(rqfp);

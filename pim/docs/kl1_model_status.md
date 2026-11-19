@@ -63,6 +63,7 @@ The status labels are:
 | `suspend` | 0x69 | append label; jump to it when the queue was empty, else the head | stand-in | `PimKL1BSuspendTb` |
 | `proceed` | 0x60 | pop the FIFO head; halt when empty | stand-in | `PimKL1BTb`, `PimKL1BControlTb` |
 | `halt` | 0x71 | halt | — | — |
+| `jump` | 0x67 | `pc = label` (c16) | inferred (mnemonic and c16_exe packing) | `PimKL1BJumpTb` |
 
 `deref` resolves one REF level: `deref(w) = (w[39:32] == REF) ?
 heap[w[11:0]] : w`. A REF whose heap cell is itself a REF does not
@@ -80,7 +81,7 @@ encoding table but not executed, with the blocking reason:
 | active unification | `get_structured_constant`, `get_list`, `get_vector` | the structure reads; the constant/integer/nil/atom reads are implemented |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `switch_*`, `jump`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
+| control beyond the queue | `switch_*`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same

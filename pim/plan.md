@@ -422,10 +422,15 @@ test or an explicit label.
      and a loud halt on a non-INT operand or a zero divisor.  The
      active-unification reads `get_constant`/`get_integer`/`get_nil`/
      `get_atom` (TR-246 p. 6) are in as well; `get_constant` binds an
-     unbound REF cell.
-     `get_constant` and `set_structured_constant` still halt loudly
-     because they need the argument area in memory / the constant
-     stream. `set_value`/`set_variable` are a documented stand-in: they
+     unbound REF cell.  The goal-queue control path has tests too:
+     `PimKL1BControlTb` (FIFO order; a LIFO pop halts at the wrong PC),
+     `PimKL1BSuspendTb` (the empty-queue jump; the model used to read
+     the stale cell, landing at 0xaaa), `PimKL1BMiscTb`
+     (put_variable/get_value and the placeholder set_atom/read_atom)
+     and `PimKL1BJumpTb` (the unconditional jump, 0x67).
+     `set_structured_constant` still halts loudly because it needs the
+     constant stream. `set_value`/`set_variable` are a documented
+     stand-in: they
      reuse the assembler's `c8_r` fields but write a general register,
      not TR-246's goal-record argument slot `Gi`.
 
