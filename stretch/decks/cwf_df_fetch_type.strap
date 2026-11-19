@@ -88,6 +88,21 @@
 ! A-8, PDF 67, gives only its NOOP tag).  Whether a PROTECTED VFL store
 ! fetches is not printed either (Perf. Char. Vol. 1 printed p.2-3 item 6:
 ! "All VFL stores are fetch-and-stores"); the model's does, CHOSEN.
+!
+! IBM ORACLE HUNT, 2026-11-18 -- NOTHING FOUND FOR THIS RULE.  Every page
+! of the diagnostic PDFs (ja_ax1a, jb_ax2a..jb_ax5b, jb_af1c,
+! ja_ua1, ja_uc1a, ka_ex1/1b, ka_ua1, ka_ul1, ja_bb6b/bm6a/bp6a and
+! 7030_SystemTestPrograms) was grepped in OCR text kept as a finding aid
+! (not committed); the hits were triaged from their OCR lines and the
+! existing decks, not read in the page image.
+! Searched: BDF/BDFZ, FETCH, PROTECT, BOUND.  jb_ax5b pp.71-82 (TEST 7/8)
+! fetch protected words through LX and the instruction fetch only; no
+! VFL or connective operation on a protected word was found.
+! The OCR drops digits, so this is not proof of absence.  The one hunt
+! that DID find its feature is the indexed immediate (jb_ax4b PDF p.146,
+! decks/ax4b_148_immediate_indexed.strap).  docs/archival_inventory.md
+! "The oracle hunt of 2026-11-18" has the table.
+!
         SLC, (8)4100.0
 START   BD,  $+.32                   ! disable while words 3 and 12 are set
         LVI, $X13, TBL

@@ -813,6 +813,59 @@ by direct bit-extraction, not by listing occurrence), but have neither
 been observed in this document's sampled pages nor executed -- a
 smaller, well-scoped remaining gap, not a rejected candidate.
 
+**Routine 148's "CHECK INDEXING IMMEDIATE LOAD" -- TRANSCRIBED AND RUN,
+2026-11-18.** PDF pp.146-148 (011067.00-011165.40) and the bit table
+BIT0-BIT23 on PDF p.191 (013054.00-013103.00); no printed page numbers
+on these sheets. `decks/ax4b_148_immediate_indexed.strap`, bit-exact
+(149 rows, 8 symbols) by `tests/verify_ax4b_148_immediate_indexed_listing.py`,
+and run on the model: PASSES. Its row `LI(BU,64,8),0($X3)` (`0.00 83
+400000.20 50`) is the first IBM listing row found with a nonzero I on an
+immediate VFL operation, the IBM oracle `decks/vfl_immediate_indexed.strap`
+lacked. Not transcribed, recorded for a later pass: its unindexed
+sibling TEST 5B ("CHKS P FIELD OF 100" / "IMMEDIATE MODE, Z TO LA TEST",
+PDF pp.143-145, I4836A at 010767.40), which SVAs each BITk value into
+the LI's ADDRESS field instead -- the same 24-bit walk with I = 0.
+
+### The oracle hunt of 2026-11-18: five features with only the Reference Manual behind them
+
+Five rules fixed 2026-11-18 rested on the Reference Manual alone:
+indexed VFL immediates, negative effective addresses, branches to an
+invalid address, DF on fetch-type VFL operations, and FP M+ as
+store-type. The untranscribed diagnostic pages were searched for IBM
+code exercising them.
+
+**How.** The search used OCR as a finding aid. A tesseract text of every page
+of `ja_ax1a`, `jb_ax2a`, `jb_ax3a`, `jb_ax4b`, `jb_ax5b`, `jb_af1c`,
+`ja_ua1`, `ja_uc1a`, `ka_ex1`, `ka_ex1b`, `ka_ua1` and `ka_ul1` (1,458
+pages) already existed from an earlier session, and its settings are not
+recorded. `ja_bb6b`, `ja_bm6a`, `ja_bp6a` and
+`7030_SystemTestPrograms_Aug61` (83 pages) were OCR'd for this search at
+300 dpi with `--psm 6`. None of the OCR text is committed. The greps
+below ran over all 1,541 pages. Each hit was triaged from its OCR line
+and the existing decks.
+
+**Read in the page image** were:
+- `jb_ax4b` pp.142, 143, 146, 147, 148 and 191;
+- `jb_ax5b` p.42.
+
+The OCR drops digits and misreads `(` as `%`, so **a miss is not proof of
+absence**. Routine indexes, read in OCR only, are no stronger: `jb_ax4b`
+p.2 lists 1248 as "Checks index modification for all classes of
+instructions", and `jb_ax5b` p.2 lists 1260's "address monitoring". These
+are the routines a negative-EA case or a protected VFL case would sit in,
+and they were not read page by page.
+
+| Feature | What was searched | Found |
+|---|---|---|
+| Indexed VFL immediate | A code column whose first half ends in hex `81`-`8F` (I ≠ 0 under the 1000 tag) and whose second half starts with octal 4-7 (P ≥ 4) | **`jb_ax4b` PDF p.146, transcribed and run (above).** The other hits were progressive modes (P = 5-7: `ja_ax1a` p.55; `jb_ax4b` pp.150-151, `ibox4_prog_ix_v`'s pages) or OCR noise. |
+| Negative effective address | `LVNI`, NEGATIVE, MINUS, SIGN | Nothing addresses through a negative index. `ja_ax1a` p.30 has LVNI chains, and `jb_ax2a` pp.119-121 have KV sign compares (index arithmetic, not an address). Finding one by OCR would need the index values traced; not done. |
+| Branch to an invalid address | `BAD`/`BADZ`, INVALID, "LESS THAN 32", BELOW | No branch case. AD is provoked by a DATA address in `jb_ax5b` pp.41-42 (I6083, transcribed) and by an EXIC subject below 32 in `jb_ax5b` p.108 (I62104, transcribed as `ax5b_162_test3b`). Neither is a branch. |
+| DF on a fetch-type VFL operation | `BDF`/`BDFZ`, FETCH, PROTECT, BOUND | `jb_ax5b` pp.71-82 (TEST 7 and TEST 8, "FETCH FROM UB-1", "CHECKS DF + IF UNDER 4 CONDS") fetch through LX and the instruction fetch only. Their blocks are in `ax5b_160_test7_*` and `ax5b_160_test8*`. No protected VFL operation was found. |
+| FP M+ store-type | `M+`/`M+MG` in `jb_af1c`, with DS/DF/boundary set-up | `jb_af1c`'s M+ and M+MG (pp.53-86) all target the work word ROS, which is unprotected. No `$UB`/`$LB` or boundary set-up turned up in `jb_af1c`'s OCR. |
+
+So four of the five remain backed by the Reference Manual alone, and
+their decks say so.
+
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
 
 **THE ROUTINE INDEX, transcribed from the write-up at PDF p.2 (printed
@@ -1558,7 +1611,7 @@ reverse index (source -> transcription/implementation).
 | `ja_ax1a_ibox-1.pdf` (60pp) | I-Box 1 diagnostic | Source | RUN: `ibox1_wen_ven_indicators`, `ibox1_wen_ven_original_addresses`, `ibox1_sic_cb_cbz`, `ibox1_p43_p51_span` (20 groups, pp.43-51); bit-exact vs `verify_ibox1_listing.py` |
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
-| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
+| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |

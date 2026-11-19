@@ -65,6 +65,21 @@
 !   F3  prepareExec back on dfSuppresses   -> CYCLES 998 only (execute()
 !       for every code, execute() fixed       reads the word itself: MEMREADS
 !                                             unchanged)
+!
+! IBM ORACLE HUNT, 2026-11-18 -- NOTHING FOUND FOR THIS RULE.  Every page
+! of the diagnostic PDFs (ja_ax1a, jb_ax2a..jb_ax5b, jb_af1c,
+! ja_ua1, ja_uc1a, ka_ex1/1b, ka_ua1, ka_ul1, ja_bb6b/bm6a/bp6a and
+! 7030_SystemTestPrograms) was grepped in OCR text kept as a finding aid
+! (not committed); the hits were triaged from their OCR lines and the
+! existing decks, not read in the page image.
+! Searched: M+ and M+MG in jb_af1c with DS/DF/boundary set-up.  All of
+! jb_af1c's M+/M+MG (pp.53-86) add to the work word ROS, unprotected;
+! no boundary set-up turned up in its OCR.
+! The OCR drops digits, so this is not proof of absence.  The one hunt
+! that DID find its feature is the indexed immediate (jb_ax4b PDF p.146,
+! decks/ax4b_148_immediate_indexed.strap).  docs/archival_inventory.md
+! "The oracle hunt of 2026-11-18" has the table.
+!
         SLC, (8)4100.0
 START   BD,  $+.32                   ! disable while words 3 and 12 are set
         LVI, $X13, TBL

@@ -128,6 +128,21 @@
 ! (StretchExecute branchAddrInvalid, decks/branch_invalid_address.strap):
 ! the table above was measured BEFORE that fix and was not re-measured.
 !
+!
+! IBM ORACLE HUNT, 2026-11-18 -- NOTHING FOUND FOR THIS RULE.  Every page
+! of the diagnostic PDFs (ja_ax1a, jb_ax2a..jb_ax5b, jb_af1c,
+! ja_ua1, ja_uc1a, ka_ex1/1b, ka_ua1, ka_ul1, ja_bb6b/bm6a/bp6a and
+! 7030_SystemTestPrograms) was grepped in OCR text kept as a finding aid
+! (not committed); the hits were triaged from their OCR lines and the
+! existing decks, not read in the page image.
+! Searched: LVNI, NEGATIVE, MINUS, SIGN.  ja_ax1a p.30's LVNI chains and
+! jb_ax2a pp.119-121's signed KV compares are index ARITHMETIC; no
+! address was found formed from a negative index.
+! The OCR drops digits, so this is not proof of absence.  The one hunt
+! that DID find its feature is the indexed immediate (jb_ax4b PDF p.146,
+! decks/ax4b_148_immediate_indexed.strap).  docs/archival_inventory.md
+! "The oracle hunt of 2026-11-18" has the table.
+!
         SLC, (8)300.0
 START   LX,  $X1, XM1                ! -(8)2000.0     (1024 words)
         LX,  $X2, XM2                ! -(8)2000.10    (1024 words + 8 bits)

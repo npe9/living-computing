@@ -2530,8 +2530,9 @@ run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh 
 # carried the address field unindexed (StretchIBox carryIndex) and read
 # the immediate from it (execute()'s immediateOperand), so a nonzero I
 # was ignored.  No IBM listing we searched writes one (936 immediates
-# over 812 assembled decks, all with I = 0; untranscribed diagnostic PDFs
-# not searched); this deck is the oracle.  Each
+# over 812 assembled decks, all with I = 0).  A later OCR search found
+# IBM's own: jb_ax4b PDF p.146, ax4b_148_immediate_indexed (below), which
+# passes; this deck keeps the cases that page lacks.  Each
 # value differs unindexed / indexed / indexed twice; the deck header has
 # the cases.  MEASURED INJECTIONS (each reverted from a saved copy, cmp
 # clean; control 713 clocks):
@@ -11185,6 +11186,27 @@ run "IBOX-4 progressive index V+ICR / V-I (jb_ax4b, encoding)" python3 verify_ib
 # asserts EQUAL, so "always equal" cannot fail it.
 run "IBOX-4 progressive index V+ICR / V-I (KC, SR, progressive value)" ./run_program.sh ../decks/ibox4_prog_ix_v.strap StretchIbox4ProgIxVTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/ibox4_prog_ix_v.strap").read()).symtab["PASS"]//32)')"
+
+run "IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, bit-exact (jb_ax4b PDF pp.146-148, 191)" python3 verify_ax4b_148_immediate_indexed_listing.py
+# IBM'S OWN TEST OF AN INDEXED VFL IMMEDIATE -- the first one found
+# (2026-11-18): "LI(BU,64,8),0($X3)" prints "0.00 83 400000.20 50",
+# I = 3, P = 4.  Until it, decks/vfl_immediate_indexed.strap had only
+# the Reference Manual.  The block walks $X3 through BIT0..BIT23 and
+# requires the 64-bit immediate (EA then zeros) read back through $R
+# to equal $X3.  SSW (001301.00) is the PASS halt, SERS (001304.00) the
+# FAIL halt; on a failure SEN names the error-table entry, i.e. the bit.
+# PASSES as the model stands.  X1 = BIT23's address 013103.00, count 0;
+# X2 = entry 23 (011160.00); X3's value = BIT23's (.01).  CYCLES is
+# MODEL BEHAVIOUR (no printed time).  Injections, each in a scratch
+# copy, OBSERVED (the deck's header has them):
+#   carryIndex leaves P = 4 unindexed     -> SERS, SEN 011103.00 (bit 0)
+#   immediateOperand drops EA bits 18-23  -> SERS, SEN 011147.00 (bit 18)
+run "IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, ON THE MODEL (24 index bits)" ./run_program.sh ../decks/ax4b_148_immediate_indexed.strap StretchAx4b148ImmIdxTb \
+    PC=1410 "SEN:712=0" \
+    "X1:addrIndex(1)=0x590c00000000000" \
+    "X2:addrIndex(2)=0x49c000000000000" \
+    "X3:addrIndex(3)=0x10000000000" \
+    STEPS=2000000 CYCLES=5946+-0
 
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no

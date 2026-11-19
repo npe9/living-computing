@@ -46,6 +46,23 @@
 ! and no transcription (jb_*/ja_*/ka_* pages not yet in decks/,
 ! SystemTestPrograms) -- an open oracle hunt.
 !
+! >>> THE HUNT FOUND ONE, 2026-11-18: jb_ax4b PDF p.146, 011072.00,
+! "LI(BU,64,8),0($X3)" printed "0.00 83 400000.20 50" -- I = 3, P = 4 --
+! inside routine 148's "CHECK INDEXING IMMEDIATE LOAD", which walks $X3
+! through BIT0..BIT23 and requires the loaded operand to equal $X3's
+! value.  Transcribed bit-exact as decks/ax4b_148_immediate_indexed.strap
+! (tests/verify_ax4b_148_immediate_indexed_listing.py) and RUN on the
+! model: it passes.  So the paragraph above ("no IBM listing ... writes
+! one") was true of the TRANSCRIBED corpus only.  How it was found: the
+! OCR finding aid over every page of the jb_/ja_/ka_ diagnostics
+! (tesseract text, not committed), grepped for a code column whose first half ends in
+! hex 81-8F (I nonzero under the 1000 tag) followed by a second half
+! whose octal word starts 4-7 (P >= 4).  Hits other than this one were
+! progressive modes (P = 5-7: ja_ax1a p.55, jb_ax4b pp.150-151) or OCR
+! noise.  The OCR drops digits, so a miss there is not proof of absence.
+! This deck still carries what p.146 does not: a NEGATIVE index (case
+! C), index bits below a short field (D), and the other operations.
+!
 ! EACH VALUE BELOW IS CHOSEN SO THAT UNINDEXED, INDEXED AND
 ! INDEXED-TWICE GIVE THREE DIFFERENT ANSWERS:
 !
