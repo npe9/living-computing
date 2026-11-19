@@ -1,0 +1,23 @@
+# pim_multiway.sby -- bounded check of the full 8-bit multi-way tag jump.
+# Paths in [files] resolve against the sby process cwd, the repository
+# root (pim/); run `sby -f bsv/formal/pim_multiway.sby` from there.
+[options]
+mode bmc
+depth 80
+vcd on
+
+[engines]
+smtbmc yices
+
+[script]
+read_verilog -formal -sv pim_multiway_formal.v mkPimPUFormal.v RegFileLoad.v
+prep -top pim_multiway_formal
+
+[files]
+pim_multiway_formal.v bsv/formal/pim_multiway_formal.v
+mkPimPUFormal.v bsv/formal/build/multiway/mkPimPUFormal.v
+RegFileLoad.v bsv/RegFileLoad.v
+generated/decode.hex bsv/formal/formal_images/multiway_decode.hex
+generated/jump.hex bsv/formal/formal_images/multiway_jump.hex
+generated/program.hex bsv/formal/formal_images/multiway_program.hex
+generated/wcs.hex bsv/formal/formal_images/multiway_wcs.hex

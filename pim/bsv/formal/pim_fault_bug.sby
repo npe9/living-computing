@@ -1,0 +1,25 @@
+# pim_fault_bug.sby -- same check with regs.badWrite() removed from the
+# top-level fault rule, so an unwritable-register write is dropped
+# silently.  Expected: FAIL with a VCD witness.
+# Paths in [files] resolve against the sby process cwd, the repository
+# root (pim/); run `sby -f bsv/formal/pim_fault_bug.sby` from there.
+[options]
+mode bmc
+depth 80
+vcd on
+
+[engines]
+smtbmc yices
+
+[script]
+read_verilog -formal -sv pim_fault_formal.v mkPimPUFormal.v RegFileLoad.v
+prep -top pim_fault_formal
+
+[files]
+pim_fault_formal.v bsv/formal/pim_fault_formal.v
+mkPimPUFormal.v bsv/formal/build/fault_bug/mkPimPUFormal.v
+RegFileLoad.v bsv/RegFileLoad.v
+generated/decode.hex bsv/formal/formal_images/fault_decode.hex
+generated/jump.hex bsv/formal/formal_images/fault_jump.hex
+generated/program.hex bsv/formal/formal_images/fault_program.hex
+generated/wcs.hex bsv/formal/formal_images/fault_wcs.hex

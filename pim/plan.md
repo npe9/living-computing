@@ -88,16 +88,17 @@ recorded in `docs/isa.md` "Gaps" and `docs/pim_architecture.md`
 
 ## Remaining work (2026-11-19)
 
-Status against the milestone (2026-11-19, after WP1): the source
+Status against the milestone (2026-11-19, after WP4): the source
 inventory is in; the one-PE smoke test passes (48 steps, PC 17); the
 assembler selftest passes; the formal BMC passes on the fixed tree and
-fails as expected on the reverted build; `docs/isa.md` is generated and
+each injected twin fails with a VCD; `docs/isa.md` is generated and
 checked; `run_tests.sh` is green. The primary-source round-trip is
-recorded as substituted (no KL1-B listing in the corpus). The network,
-SDRAM store and FPGA top are committed but not exercised end to end.
-WP1 is done; WP2 is decided as not hardware-ready; WP3 is done with the
-policy and label choices recorded in `docs/pim_architecture.md`; WP4
-(verification gaps) is next.
+recorded as substituted (no KL1-B listing in the corpus). The network
+and SDRAM store have Bluesim testbenches, and the FPGA top has a
+reproducible build check (28.32 MHz, WP2 gate unchanged).
+WP1, WP3 and WP4 are done; WP2 stays "not hardware-ready" pending a
+re-decision on the fresh measurements; WP5.1 (interrupts, faults and
+PIMOS evidence) is next.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
@@ -131,12 +132,15 @@ and citation fixes are in place; `run_tests.sh` passes.
 
 #### WP2 — FPGA timing: decide and execute
 
-Status: not hardware-ready (2026-11-19). The build closes at 10.22 MHz
-against 25 MHz; `bsv/README.md` records the ceiling and forbids resting
-a claim on the bitstream. WP2.1 (retime) is not attempted because the
-historical-accuracy rule forbids reordering the documented pipeline for
-FPGA convenience; a future retime must be shown not to change that
-structure.
+Status (2026-11-19, corrected by WP4.3): the recorded 10.22 MHz does
+not reproduce. `bsv/run_fpga_build.sh` on the current tree measures
+28.32 MHz (PASS at 25 MHz); a pristine `git archive HEAD` build measured
+55.35 MHz. The earlier figure came from the 07:33 netlist, before the
+WP3.1 `PimE` change. The decision stays "not hardware-ready" until the
+owner re-decides on the committed tree; the build script prints the gate
+and treats a timing miss as a warning, not a failure. WP2.1 (retime) is
+not attempted because the historical-accuracy rule forbids reordering
+the documented pipeline for FPGA convenience.
 
 The failing clock-domain path is not a divide-by-40 logic.
 `nextpnr.log` has no such logic; the path is the store
@@ -145,7 +149,8 @@ read-data mux and cache-valid comparison gated by the E-stage valid
 routing, from `pim.pu_astage_outR[120]` through `store_cacheValid`
 carry chains and the
 `_0_CONCAT_IF_NOT_pu_estage_eValid_42_59_AND_NOT_ETC___d1143` LUT mux
-to `store_reads.data0_reg[184]`. Final clock: 10.22 MHz against 25 MHz.
+to `store_reads.data0_reg[184]`. That path was the earlier limit; the
+fresh 28.32 MHz build no longer reports it as the critical path.
 
 1. **Retime.** Split the store read-data select and the `estage_eValid`
    gating into a registered stage, or precompute `cacheValid` one cycle
@@ -191,29 +196,48 @@ test or an explicit label.
 
 #### WP4 — Verification gaps
 
-1. **`PimNUTb.bsv` (referenced but missing).** Two PEs, route one
-   packet, assert the one-byte-per-four-cycles rate, back-pressure and
-   the read-buffer tail interrupt. Done when Bluesim passes and the
-   test fails when the rate or the interrupt is broken.
-   Status (2026-11-19): blocked on the module interface. `PimNUPort`
-   has one `put`/`get`/`ready` shape for both sides; the output side's
-   `put` writes `outBuf` and conflicts with the `move` rule, and there
-   is no `deq` to consume a byte. `in.get` returns `outBuf`, not
-   `inBuf`. `routeFor` is dead: the `move` rule is per-port and does
-   not use the route table. `tailPulse` is set by `move` and cleared by
-   a separate rule, so both can write it in the same cycle. The
-   testbench cannot pass until these are fixed: split in/out ports, add
-   `deq`, remove `out.put`, fix `in.get`, make `tailPulse` a
-   `RWire`/`PulseWire`, and decide whether the crossbar routes by
-   destination or stays per-port.
+1. **`PimNUTb.bsv`.** Two PEs, route one packet, assert the
+   one-byte-per-four-cycles rate, back-pressure and the read-buffer
+   tail interrupt. Done when Bluesim passes and the test fails when
+   the rate or the interrupt is broken.
+   Status (2026-11-19): done. `PimNU` now has separate `in`/`out` port
+   types (`in_.ready`, `out.get`/`out.deq`); the crossbar stays
+   per-port, and the route table is accepted but unused (stated in
+   `PimNU.bsv`). `bsv/run_nu_tb.sh` prints `PimNUTb: PASS`. The
+   discriminating power is observed in a scratch copy: changing
+   `rate[i] <= 3` to `<= 0` prints `FAIL: move gap = 2, want 4` and
+   `PimNUTb: FAIL`; deleting the `b[8]` `tailPulse.send()` prints
+   `FAIL: tail interrupt not seen for 9'h101` and `PimNUTb: FAIL`.
 2. **`PimSdramStore` test**: hit/miss and granule refill. Done when
    Bluesim passes and a deliberately broken refill fails.
+   Status (2026-11-19): done. `bsv/PimSdramStoreTb.bsv` +
+   `bsv/run_sdram_tb.sh` print `PimSdramTb: PASS`. The test exposed
+   three adapter bugs, now fixed: `miss` had an inverted read-queue
+   term, the decode packed four words although the header/byteen layout
+   specifies six (now `a/6`, `40*(a%6)`, reciprocal-multiply divide),
+   and `drainWrite` waited on `pending`, making the documented
+   in-flight-response discard unreachable. The injected epoch-guard
+   removal prints `FAIL: stale read response filled the cache (t2)`,
+   `FAIL: miss(15) after the stale response`, and
+   `FAIL: timeout at cycle 3001, phase 4`.
 3. **Board-level build check**: script the ECP5 build and gate on the
    WP2 decision. Done when the check is reproducible from a clean tree.
+   Status (2026-11-19): done. `bsv/run_fpga_build.sh` runs the clean-tree
+   ECP5 flow and gates on WP2: a timing miss prints the
+   not-hardware-ready note and does not fail; tool/flow errors exit
+   nonzero. Verified from a pristine `git archive HEAD` tree: Fmax
+   55.35 MHz, bitstream written, exit 0; the current tree measures
+   28.32 MHz.
 4. **Formal properties**: add tag-jump table, decode error path and
    fault path properties; keep the negative-control discipline (a
    deliberately broken copy must fail with a VCD). Done when the fixed
    tree passes and each injected bug fails.
+   Status (2026-11-19): done. `bsv/formal/run_formal.sh` runs four
+   fixed/buggy pairs (smoke, multi-way, decode-error, fault). The fixed
+   tree passes all four; each injected twin fails with a VCD, e.g.
+   `pim_smoke_formal.v:94.25-94.61` at step 53. All checks are bounded
+   BMC at depth 80, not inductive proofs; the unprovable multi-way
+   read-address property is labelled in the formal README.
 
 #### WP5 — Staged plan items
 

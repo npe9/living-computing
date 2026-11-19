@@ -7,23 +7,36 @@ model ISA table are `../asm/pimasm.py` and `../docs/isa.md`.
 ## FPGA flow (ULX3S / ECP5)
 
 `PimUlx3s.bsv` and `Top.v` are a downstream check, not the architecture.
-The current build synthesizes and places/routes but does **not** close
-timing: `nextpnr` reports 10.22 MHz against the 25 MHz target
-(`fpga_build/nextpnr.log`). The failing clock-domain path is the store
-read-data mux and cache-valid comparison gated by the E-stage valid:
-97.8 ns total (36.0 ns logic, 61.8 ns routing), from
-`pim.pu_astage_outR[120]` through `store_cacheValid` carry chains and
-the `_0_CONCAT_IF_NOT_pu_estage_eValid_42_59_AND_NOT_ETC___d1143` LUT
-mux to `store_reads.data0_reg[184]`.
+The recorded 10.22 MHz figure came from the 07:33 `nextpnr.log`, before
+the WP3.1 `PimE` change, and does not reproduce. A fresh
+`run_fpga_build.sh` run on the current tree reports **28.32 MHz**
+(PASS at 25 MHz); a pristine `git archive HEAD` build measured
+**55.35 MHz**. The earlier failing path was the store read-data mux and
+cache-valid comparison gated by the E-stage valid (97.8 ns total in
+that log); the fresh build no longer reports it as the limit.
 
-Status: **not hardware-ready**. Do not present the bitstream as a
-working PIM/m, and do not rest any cycle-accuracy claim on it. The
-historical-accuracy rule in `../plan.md` forbids reordering the
-documented pipeline for FPGA convenience; a future retime must be shown
-not to change the documented structure.
+Status: **not hardware-ready** until the owner re-decides WP2 on the
+committed tree. Do not present the bitstream as a working PIM/m, and do
+not rest any cycle-accuracy claim on it. The historical-accuracy rule in
+`../plan.md` forbids reordering the documented pipeline for FPGA
+convenience; a future retime must be shown not to change the documented
+structure.
+
+## Build check
+
+`run_fpga_build.sh` reproduces the downstream ECP5 flow from a clean
+tree: it regenerates `generated/*.hex`, recompiles `PimUlx3s.bsv` to
+Verilog, runs Yosys, `nextpnr-ecp5 --85k --package CABGA381 --speed 6`
+with `--timing-allow-fail`, and `ecppack --compress`, all in a fresh
+`fpga_build/`. Required tools: `bsc` 2026.01, Yosys 0.51,
+`nextpnr-ecp5` 0.6, `ecppack` (Trellis) 1.4. It prints the measured
+Fmax and the WP2 gate; a timing miss is not a build failure, but missing
+tools or a failed synthesis/place/route/bitstream step exits nonzero.
 
 ## Regression
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
-the Bluesim smoke test (`run_smoke.sh`) and the formal BMC
-(`formal/run_formal.sh`).
+the Bluesim smoke test (`run_smoke.sh`), the network-unit testbench
+(`run_nu_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and the
+formal BMC (`formal/run_formal.sh`). The board build check is
+`run_fpga_build.sh`.

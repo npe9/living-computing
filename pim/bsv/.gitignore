@@ -11,5 +11,6 @@ model_*.cxx
 model_*.h
 model_*.o
 sim_*
+*.sched
 generated/
 fpga_build/

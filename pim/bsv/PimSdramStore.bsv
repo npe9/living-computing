@@ -10,7 +10,13 @@
 // rule never enqueues to the SDRAM request port twice.  Two drain rules
 // forward one request per cycle, writes first and reads only when no read
 // is outstanding.  A write invalidates the cache and bumps the epoch, so
-// a read response that was already in flight is discarded.
+// a read response that was already in flight is discarded: the cached
+// granule is valid only while `cacheEpoch == epoch`, which also lets a
+// write drain while an earlier read's response is still in flight.
+//
+// Granule mapping: word a lives in granule a/6 at offset 40*(a%6).  The
+// division is a reciprocal multiply rather than `/` so the address path
+// stays a multiplier, not a divider (verified exact for every 16-bit a).
 
 package PimSdramStore;
 
@@ -27,6 +33,7 @@ module mkPimSdramStore#(MemoryServer#(64, 256) server)
   Reg#(Bit#(256)) cacheData  <- mkReg(0);
   Reg#(Bit#(64))  cacheTag   <- mkReg(0);
   Reg#(Bool)      cacheValid <- mkReg(False);
+  Reg#(Bit#(8))   cacheEpoch <- mkReg(0);
   Reg#(Bool)      pending    <- mkReg(False);
   Reg#(Bit#(64))  pendingTag <- mkReg(0);
   Reg#(Bit#(8))   epoch      <- mkReg(0);
@@ -35,8 +42,13 @@ module mkPimSdramStore#(MemoryServer#(64, 256) server)
   FIFOF#(MemoryRequest#(64, 256)) writes <- mkFIFOF;
   FIFOF#(MemoryRequest#(64, 256)) reads  <- mkFIFOF;
 
-  function Bit#(64) granuleOf(Addr a) = zeroExtend(a >> 2);
-  function Bit#(3)  wordOf(Addr a)    = truncate(a & 3);
+  function Bit#(32) granule32(Addr a) = (zeroExtend(a) * 32'd43691) >> 18;
+  function Bit#(64) granuleOf(Addr a) = zeroExtend(granule32(a));
+  function Bit#(3)  wordOf(Addr a)    =
+    truncate(zeroExtend(a) - granule32(a) * 6);
+
+  function Bool hit(Addr a) =
+    cacheValid && cacheEpoch == epoch && cacheTag == granuleOf(a);
 
   function Bit#(8) shift40(Bit#(3) w) = zeroExtend(w) * 40;
   function Bit#(5) shift5(Bit#(3) w) = zeroExtend(w) * 5;
@@ -48,16 +60,14 @@ module mkPimSdramStore#(MemoryServer#(64, 256) server)
   function Bit#(256) placeWord(Word w, Bit#(3) idx) =
     zeroExtend(w) << shift40(idx);
 
-  function Bit#(256) maskWord(Bit#(3) idx) =
-    zeroExtend(40'hFFFFFFFFFF) << shift40(idx);
-
   // Writes first: a store must not be overtaken by a younger load.  A
-  // read is sent only when no read is outstanding and no write is queued.
-  rule drainWrite (!pending && writes.notEmpty);
+  // read is sent only when no read is outstanding and no write is queued,
+  // but a write may drain while a read response is still in flight; the
+  // epoch bump then makes that response stale.
+  rule drainWrite (writes.notEmpty);
     server.request.put(writes.first);
     writes.deq;
-    cacheValid <= False;
-    epoch      <= epoch + 1;
+    epoch <= epoch + 1;
   endrule
 
   rule drainRead (!pending && !writes.notEmpty && reads.notEmpty);
@@ -75,20 +85,22 @@ module mkPimSdramStore#(MemoryServer#(64, 256) server)
     if (readEpoch == epoch) begin
       cacheData  <= r.data;
       cacheTag   <= pendingTag;
+      cacheEpoch <= readEpoch;
       cacheValid <= True;
     end
   endrule
 
   method Word read(Addr a) =
-    cacheValid && cacheTag == granuleOf(a)
-      ? truncate(wordField(cacheData, wordOf(a)))
-      : 0;
+    hit(a) ? truncate(wordField(cacheData, wordOf(a))) : 0;
 
+  // A queued write must also make the load wait: the epoch bump that
+  // invalidates the cache happens in the drain cycle, so a load in that
+  // cycle would otherwise hit the stale granule.
   method Bool miss(Addr a) =
-    !(cacheValid && cacheTag == granuleOf(a)) || pending || !reads.notEmpty;
+    !hit(a) || pending || reads.notEmpty || writes.notEmpty;
 
   method Action fetch(Addr a);
-    if (!pending && !reads.notEmpty && !(cacheValid && cacheTag == granuleOf(a))) begin
+    if (!pending && !reads.notEmpty && !hit(a)) begin
       reads.enq(MemoryRequest {
         write:   False,
         address: granuleOf(a),
