@@ -95,8 +95,9 @@ fails as expected on the reverted build; `docs/isa.md` is generated and
 checked; `run_tests.sh` is green. The primary-source round-trip is
 recorded as substituted (no KL1-B listing in the corpus). The network,
 SDRAM store and FPGA top are committed but not exercised end to end.
-WP1 is done; WP2 is decided as not hardware-ready; WP3 (architecture
-accuracy) and WP4 (verification gaps) are next.
+WP1 is done; WP2 is decided as not hardware-ready; WP3 is done with the
+policy and label choices recorded in `docs/pim_architecture.md`; WP4
+(verification gaps) is next.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
@@ -155,6 +156,11 @@ to `store_reads.data0_reg[184]`. Final clock: 10.22 MHz against 25 MHz.
    no claim rests on the bitstream.
 
 #### WP3 — Architecture accuracy fixes
+
+Status: done (2026-11-19). Item 1 has a code change and a policy note;
+items 2–8 have explicit "Model status" labels in
+`docs/pim_architecture.md`. The regression test for item 1 is blocked
+and recorded.
 
 For each item in `docs/pim_architecture.md` "Contradicted or
 incomplete — change these", choose *implement* or *label* and record the
