@@ -43,7 +43,12 @@ module mkPimKL1B(PimKL1B);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
+  Bit#(8) tagRef = 8'h03;
   Bit#(8) tagVar = 8'h01;
+
+  function Word deref(Word w);
+    return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
+  endfunction
 
   method Action load(Bit#(12) a, Word w) = mem.upd(a, w);
 
@@ -70,6 +75,8 @@ module mkPimKL1B(PimKL1B);
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
+        8'ha4: if (deref(regs.sub(a)) != deref(regs.sub(b)))        // wait_value
+                 haltR <= True;
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label
           gcode.upd(gp, zeroExtend((b << 8) | c));
