@@ -408,8 +408,11 @@ test or an explicit label.
      Bluesim, with the same injection discipline as the existing
      testbenches. The implemented subset now also includes
      `put_constant` (`Ai = C`), `write_constant` (`(HP) = C`, `HP`
-     advanced), `put_list` (`Ai = list HP`) and `read_variable`
-     (deref in place), all from the TR-246 p. 7 images; see
+     advanced), `put_list` (`Ai = list HP`), `put_integer` (`Ai = INT
+     c16`), `write_integer` (`(HP) = INT c24`, `HP` advanced) and
+     `read_variable` (deref in place); the put_/write_/read_ semantics
+     come from the TR-246 p. 7 images and the integer pair is inferred
+     from its mnemonic and operand type; see
      `bsv/PimKL1B.bsv`. The c40 instructions that need a goal-record
      argument area (`set_constant`, `read_constant`, `get_constant`)
      halt loudly instead of being skipped. `set_value`/`set_variable`

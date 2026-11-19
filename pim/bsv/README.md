@@ -8,9 +8,10 @@ The KL1-B execution path is `PimKL1B.bsv` (40-bit tagged word, 8-bit
 register file, flat heap with `HP`, `step()` clock enable), separate
 from the diagnostic ISA. Its testbenches are `PimKL1BTb.bsv` (REF-chain
 deref through `read_variable`), `PimKL1BFailTb.bsv`,
-`PimKL1BConstFailTb.bsv` and `PimKL1BStructTb.bsv` (`put_list`,
-`put_constant`, `write_constant`); `run_kl1b_tb.sh` builds and runs
-all four. The implemented subset and the loud-failure rule for the
+`PimKL1BConstFailTb.bsv`, `PimKL1BStructTb.bsv` (`put_list`,
+`put_constant`, `write_constant`) and `PimKL1BIntTb.bsv`
+(`put_integer`, `write_integer`); `run_kl1b_tb.sh` builds and runs
+all five. The implemented subset and the loud-failure rule for the
 rest are in the module header.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),

@@ -8,8 +8,9 @@
 //
 // Implemented so far: set_value, set_variable, put_value, put_variable,
 // get_value, get_bound_value, write_value, write_variable,
-// write_constant, put_constant, put_list, read_variable, wait_value,
-// wait_constant, execute, enqueue_goal, suspend, proceed, halt.
+// write_constant, put_constant, put_list, put_integer, write_integer,
+// read_variable, wait_value, wait_constant, execute, enqueue_goal,
+// suspend, proceed, halt.
 // Anything else -- including the c40 instructions that need a goal-record
 // argument area (set_constant, read_constant, get_constant) -- halts
 // loudly rather than being skipped (AGENTS.md, "execute partially,
@@ -100,9 +101,11 @@ module mkPimKL1B(PimKL1B);
       case (op)
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
         8'h13: regs.upd(b, {tagVar, 24'h0, a});   // set_variable c8, r
+        8'h31: regs.upd(a, {tagInt, 16'h0, val[15:0]});  // put_integer Ai, c16
         8'h34: regs.upd(b, regs.sub(a));          // put_value r, r
         8'h33: regs.upd(b, {tagVar, 24'h0, a});   // put_variable r, r
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
+        8'h21: begin heap.upd(hp, {tagInt, 8'h0, val[23:0]}); hp <= hp + 1; end  // write_integer c24
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'h24: begin heap.upd(hp, {tagVar, 24'h0, a}); hp <= hp + 1; end  // write_variable
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
