@@ -255,9 +255,12 @@ passes (`decks/ax4b_5b_immediate_unindexed.strap`), with routine 148's
 TESTs 3, 4, 5A, 5C/5D, 5G/5H and 5I (inventory, "The rest of routine
 148's TESTs 3-5"). 148's TEST 1 (pp.114-125) and TEST 2 (pp.125-138)
 followed 2026-11-19: five decks, 19 segment runs via gen_tb.py's
-`ENTRY=`, all pass (inventory, "Routine 148's TESTs 1 and 2"). Left in
-routine 148: the p.113 prologue (calls IDF1/RET/DPET13). Next IBM
-candidate on this line: jb_ax5b.
+`ENTRY=`, all pass (inventory, "Routine 148's TESTs 1 and 2"). The
+p.113 prologue followed (IDF1/RET/DPET13 are SSIP's, from p.193's SYN
+table; run from I48, passes), and so did routine 1256, IBM's LVS and LVE
+test (pp.173-191: `decks/ax4b_156_test1_lvs.strap`,
+`decks/ax4b_156_test2_lve.strap`, eight segment runs, all pass;
+inventory, "Routine 1256"). Next IBM candidate on this line: jb_ax5b.
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's
