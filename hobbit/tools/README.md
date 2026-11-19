@@ -146,3 +146,27 @@ This also corrects the first bullet under **Limits**: the *sources* of
 `za` cannot be built in this release (`outcode` is missing), but the
 release ships working `za` and `zl` **executables**, and they are the
 machine's encoder oracle as binaries as well as in source.
+
+## Building the linker on this host (Inferno64)
+
+`python3 tools/build_zl_inferno.py` builds the 1st Edition `zl` from
+`sources with the owner's Inferno64 tree (its `lib9`/`libbio` headers and
+libraries, built by `makemk.sh`) — **not** plan9port, whose renamed libc
+(`p9malloc`, new `Fmt`) does not fit 1993 code.  Measured 2026-11-19:
+
+```
+$ python3 tools/build_zl_inferno.py
+/tmp/zl-inferno/zl/zl
+$ /tmp/zl-inferno/zl/zl
+??none??: usage: zl [-options] objects
+```
+
+The script copies the vendored sources into a build directory and
+patches the copies (never the repository): `<u.h>`/`<libc.h>` shims to
+Inferno's `<lib9.h>`; `Ieee` taken from `zc/z.out.h`; BSD `ar_hdr`
+members; the linker's own allocator renamed past Inferno's `k*` macros;
+`strconv`, `doprint`, `argv0` and a `cputime` supplied; `fmtinstall`
+hooks cast to Inferno's `Fmt*`.  Every edit is listed in the script.
+
+Next: hand-assemble a `z` object and link it with this `zl`, so the
+executable the model runs is produced by Bell Labs' own linker.
