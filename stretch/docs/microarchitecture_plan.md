@@ -5889,21 +5889,29 @@ Staged, each step green and committed:
      | C22-6578 Problem 3.4 Method 1 | 1449 | 1533 | +84 |
      | C22-6578 Problem 3.4 Method 2 | 2378 | 2462 | +84 |
 
-     CAUSE, MEASURED: it is the hold's length, i.e. the box's latency, and
-     it is the divide box's mechanism (StretchDivBox.bsv header). The
-     old combinational arm wrote the product and the indicators in the
-     clock the instruction left the look-ahead, so an I-box consumer
-     right behind it (a `BZB,$ZM`, the next level's load) ran during the
-     9-clock countdown; now they wait for the box's answer. The three ZM
-     decks are exactly +4 per multiply (3, 10 and 6 multiplies, each
-     followed by its indicator test). With the box at 24 bits a pass (2
-     clocks, a scratch edit of `FpMulGroup`, since reverted with cmp)
-     ZM went 146 -> 152 and Problem 3.4 Method 1 1449 -> 1509; at 48 bits
-     (1 clock) 149 and 1450. So the cost shrinks with the box, and is
-     not a double charge. THE ATLAS DID NOT MOVE: Perf. Char. Vol. 2's
+     CAUSE: THE SCALING IS MEASURED, THE MECHANISM IS NOT TRACED. With
+     the box at 24 bits a pass (2 clocks, a scratch edit of
+     `FpMulGroup`, since reverted and confirmed with cmp) ZM's normalized
+     term went 146 -> 152 and Problem 3.4 Method 1 1449 -> 1509; at 48
+     bits (1 clock) 149 and 1450. So the cost comes from the hold's
+     length, the box's latency, and is not a double charge. The likely
+     mechanism is the divide box's, traced there on F217B
+     (StretchDivBox.bsv header): the old combinational arm wrote the
+     product and the indicators in the clock the instruction left the
+     look-ahead, so an I-box consumer right behind it (`fp_zm_terms`'s
+     `BZB,$ZM` / `BB,$ZM` after each multiply) ran during the 9-clock
+     countdown, and now it waits for the box's answer. Five decks are
+     exactly +4 per multiply in the source (source lines, not executed
+     counts): `fp_zm_terms` and `fp_zm_terms_double` 3 each, `fp_zm_cleared`
+     10, F214D 6, F216D 7. Only `fp_zm_terms` was read for its
+     consumers. Problem 3.4 Method 1 is not linear in the box's clocks
+     (+84, +60, +1 at 4, 2 and 1), so a consumer's wait alone does not
+     explain it; F216B (+63, four `*+`) was not run at the other
+     rates. Both are open. THE ATLAS DID NOT MOVE: Perf. Char. Vol. 2's
      FP `*`, `D*` and `*+` pages (PDF 52, 53, 57, 83, 84, 88; 960 cases,
-     a thousand back-to-back copies each) give the same per-page means,
-     every cell within 0.01 clock of the baseline. These moves are a
+     a thousand back-to-back copies each), compared case by case from
+     `atlas_oracle.py --tsv`: every case's model time within 0.004 clock
+     of the baseline's. These moves are a
      model artifact in both directions: the old numbers let a consumer
      see a result before Table 2's four execution cycles were over, and
      the new ones let it see the result after 4 of the instruction's 9.

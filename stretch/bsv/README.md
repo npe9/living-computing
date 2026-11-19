@@ -519,10 +519,12 @@ four execution cycles) and returns the whole FpResult / FpdResult through
 (eboxClocks' 9 and 20, the box's clocks taken off). **Timing:** no pin and
 no value moved; read counts identical in all 366 halt reports; eleven
 unpinned halt clocks got later, +4 to +84 (the table is in the plan, §1c
-5f). The cause was measured: a consumer right behind a multiply now waits
-for the box's answer, +4 per such multiply on the ZM decks, shrinking to
-+2 and +1 with the box at 2 and 1 clocks. The atlas's FP multiply pages
-(PDF 52, 53, 57, 83, 84, 88) did not move (every cell within 0.01 clock).
+5f). The likely cause: a consumer right behind a multiply now waits for the
+box's answer, +4 per such multiply on the ZM decks, shrinking to
++2 and +1 with the box at 2 and 1 clocks (the scaling is measured; the
+mechanism, the divide box's, was not traced on a multiply). The atlas's FP
+multiply pages (PDF 52, 53, 57, 83, 84, 88; 960 cases) did not move: every
+case within 0.004 clock.
 
 **THE COMPARES, stage 2 (2026-11-16): decimal `K`/`KF`, and `KE`, `KFE`,
 `KR`, `KFR` in both radices (printed pp.65-67).**  One arm.  A decimal

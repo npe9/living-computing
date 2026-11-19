@@ -40,7 +40,10 @@ unit by p.208 too; decide the three together.
 The FP box's HOLD COST (eleven unpinned halt clocks later by +4 to +84,
 the table in plan §1c step 5f) is the overlap item (2) of the next
 section: a consumer right behind a multiply now waits for the box's
-answer. It shrinks with the box (measured at 2 and 1 clocks).
+answer. It shrinks with the box (measured at 2 and 1 clocks); the
+mechanism was not traced on a multiply, and Problem 3.4 Method 1's
+non-linear scaling (+84 / +60 / +1 at 4 / 2 / 1 box clocks) and F216B
+(+63, not run at other rates) are unexplained.
 
 ## THE BINARY ADD'S BOX HOLD -- a known residual, 2026-11-19
 

@@ -233,6 +233,9 @@ endmodule
 //   D  one extra, idle pass (the counter started at five, the register
 //      not written on the first): every vector's answer right, all 11
 //      FAIL on "clocks = 5, want 4".
+//   A was also applied to the REAL file once, to show the core reaches
+//   the box: jb_af1c F214A (`*`), F214D and F216B (`*+`) each FAIL on SEN
+//   and PC (the error stop, half-word 1416).  Reversed; cmp clean.
 // ---------------------------------------------------------------------
 typedef 11 NFpVec;
 
