@@ -1,0 +1,99 @@
+! io_tape_unit_ready.strap -- LOCATE SELECTS A TAPE UNIT, AND THE
+! CONTROL WORD'S UNIT-READY BIT IS THE SELECTED UNIT'S.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did (2026-11-19).  IPL types
+! "MOUNT - REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0" and "... UNIT 1" and
+! sets both units' MOUNT bits (printed p.79 ll.3-4).  When the operator
+! readies a unit, the channel signal enters MCP's receptor, and KHUNT /
+! KSTAB (printed p.125 ll.5-7, 41-56, PDF 132, read in the ink) walk
+! every unit of the channel whose MOUNT or REWIND bit is on: each is
+! LOCATEd (l.44 LOC(SEOP),0.0($14),0.($2)), its control word copied
+! (l.53 CCW), and printed p.126 l.2 (PDF 133, read in the ink),
+! "BZB,KRECEP.18,KHEX -IF UNIT IS NOT READY, SKIP", passes over a unit
+! that is not ready.  Before this deck the model had no unit select and
+! every unit read ready, so ONE operator action on unit 0 cleared the
+! MOUNT bits of BOTH units and ran both spool tapes' signal fix-ups
+! (tests/check_bss_mcp_go.py, stage 7: the trap from 222572.40, CT21's
+! ATPBCS, printed p.209 l.44, was the unit-1 one).
+!
+! WHAT THE MANUAL SAYS.  Reference Manual printed p.120 (PDF 123, read
+! in the ink), LOCATE: "This instruction is used to select one of
+! several devices accommodated by a single channel address.  Once a
+! device is so selected, all operations giving this channel address
+! refer to the same device until a LOCATE is given to select another
+! device on that control unit.  ...  The selection address is three
+! bits long and appears in bit positions 47 through 49 of the
+! instruction. ...  the LOCATE is accepted regardless of the state of
+! the unit-ready status bit in the control word."  Printed p.107 (PDF
+! 110, read in the ink), control word bit 18, Unit Ready: "on whenever
+! the unit is in condition to accept an instruction from the computer
+! or is executing an operation.  When the bit is off, the unit is in
+! the not-ready status".  Printed p.116 (PDF 119): CS comes on
+! "whenever the unit changes from not-ready to ready status".
+!
+! THE BENCH.  gen_tb.py TAPEREADY=1: only unit 0 is ready at the start
+! (StretchIO.setTapeUnitsReady).  OPSIG=HW,34,1: at WAIT1 the operator
+! readies unit 1 (StretchIO.operatorReadyTape: ready, and CS).  The
+! LOCATEs are SEOP, so no EOP enters the control word; the system stays
+! disabled, so the CS stays in it (p.118).  The unit address is formed
+! as MCP forms it, an index of n.0 on a right address of 0.
+!
+! WHAT EACH CHECK ESTABLISHES (CCW of channel 34 after each step)
+!   c0   unit 0 selected: ready (bit 18).
+!   c1   unit 1 selected: NOT ready.
+!   c2   unit 1 still selected, the operator has readied it: ready + CS.
+!   c3   unit 2 selected: not ready (CS stays: it is the channel's).
+!   c4   unit 0 again: ready + CS.
+!   c5   unit 9 selected: unit 1 again (only bits 47-49 are sent): ready.
+!   PC=PASS.
+!
+! INJECTIONS (MEASURED 2026-11-19 in a scratch copy of the tree, each
+! reverted from a saved copy and confirmed with cmp; observed failure sets):
+!   nosel     (StretchExecute: LOC does not select, unit stays 0):
+!             c1, c3 fail (both read unit 0's ready).
+!   nomask    (StretchIO: unitReady from the one tape's control word, the
+!             old every-unit-ready model): c1, c3 fail.
+!   noready   (StretchIO: operatorReadyTape gives the CS but readies
+!             nothing): c2, c5 fail (unit 1 never ready; CS alone).
+!   wrongbits (StretchExecute: the unit taken one bit off, effA2[3:1]):
+!             c1, c3, c5 fail.
+!   control   all 7 checks pass.
+!   nosel re-measured 2026-11-19 on the tree merged with batch48, in place
+!   (StretchExecute: selectTapeUnit(0)), reverted by reversing the exact
+!   patch: c1, c3 fail, as above.
+
+        SLC, (8)300.0
+START   BD,  $+.32                   ! disabled throughout
+        LVI, $X1,  34                ! the tape's channel
+        LVI, $X2,  0.0
+        LOC(SEOP), 0($X1), 0.0($X2)  ! unit 0
+        CCW, 0($X1), C0
+        LVI, $X2,  1.0
+        LOC(SEOP), 0($X1), 0.0($X2)  ! unit 1
+        CCW, 0($X1), C1
+        LVI, $X4,  0
+WAIT1   V+I, $X4,  1.0               ! the operator readies unit 1 here
+        KVI, $X4,  20.0
+        BXL, WAIT1
+        CCW, 0($X1), C2
+        LVI, $X2,  2.0
+        LOC(SEOP), 0($X1), 0.0($X2)  ! unit 2
+        CCW, 0($X1), C3
+        LVI, $X2,  0.0
+        LOC(SEOP), 0($X1), 0.0($X2)  ! unit 0
+        CCW, 0($X1), C4
+        LVI, $X2,  9.0
+        LOC(SEOP), 0($X1), 0.0($X2)  ! 9 = 001 001: unit 1
+        CCW, 0($X1), C5
+        B,   PASS
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)500.0
+C0      DD(BU,64), 0
+C1      DD(BU,64), 0
+C2      DD(BU,64), 0
+C3      DD(BU,64), 0
+C4      DD(BU,64), 0
+C5      DD(BU,64), 0
+        END, START

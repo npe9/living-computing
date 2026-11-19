@@ -308,6 +308,11 @@ entry is SCAFFOLD (`$EOJ`), and MCP's end of job runs to the output
 blank OUTPT reel and readies it with a channel signal. MCP's print
 program then writes this map, row for row, to that reel as the job's
 listing, and job control reaches ZJOBC1, the wait for the next job card.
+There (stage 8, 2026-11-19) the bench loads a second job's cards and
+readies the reader; MCP's own job control reads the JOB card, types
+"SECOND 00:00:01" as p.7 describes, reads the TYPE card through UNCODE,
+and asks the operator to "SERVICE THE CARD READER" when the model's
+reader image runs out.
 Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).

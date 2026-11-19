@@ -278,7 +278,17 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   A unit's not-ready -> ready change, the operator's channel signal
   (printed p.116), can be given from outside by a testbench
   (`StretchIO.operatorSignal`, gen_tb.py `OPSIG=HW,CH`,
-  `decks/io_channel_signal.strap`).]*
+  `decks/io_channel_signal.strap`).  Since 2026-11-19 a tape channel has
+  UNIT SELECT: LOCATE's selection address, bits 47-49 (printed p.120, PDF
+  123), picks the unit, and a CCW's Unit Ready bit, control word bit 18
+  (printed p.107, PDF 110), is that unit's.  The operator readies one
+  unit (`StretchIO.operatorReadyTape`, gen_tb.py `OPSIG=HW,CH,UNIT`), and
+  a bench may start with units not ready (`setTapeUnitsReady`, gen_tb.py
+  `TAPEREADY=MASK`; the default is every unit ready, as before).  Found
+  by naming the traps MCP took after its held $W: one CS readied every
+  unit, so MCP's KSTAB (MCP printed p.126 l.2) cleared CT21's MOUNT too.
+  One reel still serves every unit, and a not-ready unit gives no Unit
+  Not Ready Reject (NOT MODELLED); `decks/io_tape_unit_ready.strap`.]*
 - **The operator's console, IBM 7152 + 7623, channel 35** —
   Reference Manual printed p.150, which is its whole specification in
   one page. A **WRITE** prints and keeps its place across
@@ -2195,7 +2205,9 @@ of these).
    `LOC` and real multi-unit selection (would mean modeling several
    tape units behind one shared control, replacing the current
    one-tape-unit-per-channel simplification — a bigger step than
-   anything else in this list, see `StretchIO.bsv` "INSTRUCTIONS");
+   anything else in this list, see `StretchIO.bsv` "INSTRUCTIONS";
+   *partly overtaken 2026-11-19: LOC selects a unit and each unit has
+   its own ready bit, but the units still share one reel*);
    chaining and multiple-block operation (currently decoded into the
    control word but ignored by the transfer FSM — every RD/W is a
    single block against a device's one fixed image); CBJ for an

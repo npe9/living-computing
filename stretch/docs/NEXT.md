@@ -1565,8 +1565,8 @@ the sources allow.
     one 150-word record, and a mark. The record is buffer X: control
     character P, then 12 lines that are C28-6379 p.17's storage map, row
     for row. The run stops at **ZJOBC1** (020416.40, p.391 l.37), where
-    job control waits for the next job card, after 2,561,915 cycles and
-    17 traps.
+    job control waits for the next job card, after 2,559,405 cycles and
+    16 traps (2,561,915 and 17 before unit select, below).
   - Two model gaps were found and fixed on the way, each with its own deck:
     - the 729 IV's state-setting CONTROL codes 016/036/037/056/057/156/157
       (printed p.132) were refused with EPGK
@@ -1575,10 +1575,41 @@ the sources allow.
 
     Channel signal from outside has its own deck too,
     `decks/io_channel_signal.strap`.
-  - **Not modelled:**
-    - Unit select. LOC is accepted, but there is one tape unit, so the
-      single CS also clears CT21's MOUNT bit.
-    - A real not-ready state. `unitReady` is always 1.
+  - **The traps after the held `$W`, named (2026-11-19), and a model
+    defect they found.** Every one is an IF trap (indicator 21,
+    Reference Manual printed p.45, PDF 48): a `B,$MCP`/`B,DMCP` into the
+    protected area, STIC the call's `,op` half-word. Read in the ink:
+
+    | STIC | page, line (in the ink) | what |
+    |---|---|---|
+    | 222572.40 | p.209 l.44 | ATPBCS's `$RET`, entered from AXITB+4: **CT21's** signal fix-up -- the defect, gone since the fix |
+    | 222574.40 | p.209 l.48 | `,DRET` at RATPCS, from AXITA+4: CT11's signal fix-up |
+    | 222266.00 | p.204 l.9 | the held `$W`, re-executed now MOUNT is off |
+    | 222320.40 | p.204 l.47 | `$RET` at CRET: the `$W`'s EOP (AXITA+5 -> CEOPN) |
+    | 222311.00 | p.204 l.36 | `,$WEF`: CEOJ4 writes the end of file |
+    | 222320.40 | p.204 l.47 | the `$WEF`'s EOP (CEOPEF, p.206 ll.17-18) |
+    | 222146.40 | p.201 l.54 | `$RET` at ARET1: the output EOJ returns to `$EOJ` |
+    | 020031.40 | p.382 l.1 | `,SSCR4`, MIFTTT 79.0 "1ST CARD REQUEST" (p.121 l.44) |
+    | 224451.00 | p.222 l.31 | `,DRET` at VRTN: no card; job control goes to ZJOBC1 (p.391 ll.29-31) |
+
+    (The full table, with each trap's routine, is in
+    `tests/check_bss_mcp_go.py`'s header, "THE EIGHT TRAPS AFTER THE HELD
+    $W, NAMED".) The first is the finding: CT21 (IOD 12, AXITB 222553,
+    channel 34 unit 1) was never readied, yet its exit ran. The model had
+    no unit select and every unit read ready, so the operator's one CS on
+    unit 0 also passed KSTAB's `BZB,KRECEP.18,KHEX` ("IF UNIT IS NOT
+    READY, SKIP", p.126 l.2, PDF 133) for unit 1 and cleared CT21's
+    MOUNT. MEASURED: CT21's UST word 214773 lost .51. **Fixed**: LOCATE's
+    selection address (bits 47-49, printed p.120, PDF 123) selects the
+    unit, and the CCW's Unit Ready bit (control word bit 18, printed
+    p.107, PDF 110) is that unit's; the bench starts every tape unit not
+    ready (`TAPEREADY=0`) and the operator readies unit 0 only
+    (`OPSIG=148546,34,0`). Now CT21's MOUNT and initial-mount bits stay
+    on, the run takes 16 traps, and the trap list is pinned
+    (`judge7_units`). Deck: `decks/io_tape_unit_ready.strap`.
+    `R2G_TAMPER=allready` is the model before the fix.
+  - **Not modelled:** the units share one reel, and a CCW or I/O to a
+    not-ready unit gives no Unit Not Ready Reject.
   - **Why KCHOPN, measured:** l.30 is printed `BB1,SRMIND($12),KCHOPN`,
     "BR. IF REMINDER SENT, SET SWTCH", assembled 000001.77 8C 221041.34 0E.
     So it sets SRMIND whenever it runs, branch or not. A probe of the same
@@ -1615,10 +1646,58 @@ the sources allow.
   regression tests passed."; the only FAIL lines are the 4 expected
   UNREPRODUCED ones (p359 l41/l42 literals).
 
-**Next:** (1) MCP's own DISK FETCH in place of the `$FETCH` hook, which
-needs the type areas on an IPL-made disk. (2) A second job card at ZJOBC1:
-the job stream goes on from there. (3) The nine traps after the `$W`,
-named by page and line. (4) The other items above.
+- **A SECOND JOB CARD (stage 8, 2026-11-19).** A bench of its own
+  (`StretchBssGoJob2Tb`) runs stage 7's program again with two cards in
+  the reader, `JOB,SECOND` and `TYPE,GO` (CHOSEN). At job control's first
+  arrival at ZJOBC1 the operator loads the deck and readies the reader
+  (channel 32, the input reader IPL named): a CS (printed p.116). MCP's
+  own job path then runs, each trap named in the ink:
+  p.215 l.40 DCCW (the spooler takes the CS) -> p.216 l.51 DRD (READ)
+  -> p.222 l.31 DRET -> p.226 l.42 DCCW at VEE (the READ's end
+  exception) -> DRET -> p.391 l.42 SDRET (ZJOBC1's `$RET`) -> p.382 l.1
+  SSCR4 -> DRET (the JOB card) -> ARET1 -> p.382 l.34 `,67.0` ($SPU)
+  -> ARET1 -> l.38 DTIME -> l.41 DCOMM, which types
+  **"SECOND 00:00:01"** -> ARET1 -> p.383 l.4 SLOG4 -> JUNDEF's `$RET`
+  -> p.384 l.7 DSCR, GET 1 CARD (the TYPE card; UNCODE leaves
+  KSILO+1.18-22 = 00100, TYPE,GO's count) -> DRET -> p.387 l.9 DSCR
+  (YRDFSO's next card) -> p.216 l.24 DCOMM, **"SERVICE THE CARD
+  READER"** -> p.224 ll.16-17 B,DMCP / ,DRIO, the spooler's wait for the
+  reader, where the bench stops (2,683,602 cycles). The reader's second
+  report is EE with EOP: the model's 32-word reader image runs out
+  (FIXTURE: a real empty hopper is simply not ready). Pinned by
+  `judge8`; injections `job2nocs` and `job2nojob` in the test header.
+  Next on this path: a third card (an IOD or the end-of-file card) so the
+  job runs to its chain, which is where DISK FETCH comes in.
+- **MCP's own DISK FETCH: scoped, NOT built (2026-11-19).** The `$FETCH`
+  hook (SIT+21's and FWIT+1's BD to STUBIF) is still SCAFFOLD. Replacing
+  it with MCP's DFETCH (pp.311-318, landed, the XTENTB tentacle at 66.32)
+  is three pieces, each blocked as stated:
+  1. **The disk must be IPL's and must persist.** `bsv/host_tape.c`'s
+     disk is `calloc`'d at first use and never saved or loaded, so what
+     IPL writes is gone when the post-IPL bench ends and every later bench
+     starts with an empty disk. Needed: save the disk beside the post-IPL
+     core image (the same cache key) and load it in every bench that
+     starts from that image. Then the fetches that already have IPL-made
+     type areas (22$EOJ, 22LOADER) can go through DFETCH first, as the
+     smallest proof.
+  2. **The type areas the job needs are not on that disk.** PROSA
+     (`strap/prosa.py`, with `strap/prosa_dict.py`'s RECONSTRUCTION of the
+     dictionary) writes only 11A11DIC, 11B11IND, 11C11IPL and 11D11MCP and
+     the overlay areas. BSS, the PC areas (PCBSS) and the library (LB)
+     would have to be added as type areas, each labelled RECONSTRUCTION
+     (no listing of them exists), so that IPL writes them.
+  3. **'))))))))' (TWS) is written at run time,** by the BSS chain, not
+     by IPL. Stage 6 serves it from a core image. With DFETCH in place the
+     reconstructed BSS would have to write TWS through MCP (`$WRITE` to
+     the disk), which it does not do today.
+  Piece 1 is the next step and is self-contained; 2 and 3 follow.
+- Remaining SCAFFOLD on this path: the `$FETCH` hook; every `$FETCH`,
+  ENTER and IRET for the BSS processor; DISP's planted STIC; `*MAIN*`'s
+  one-word body; the reader's 32-word image (FIXTURE).
+
+**Next:** (1) Piece 1 of DISK FETCH above (persist IPL's disk). (2) A
+third card for the second job, so it reaches its chain. (3) The other
+items above.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 

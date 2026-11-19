@@ -586,10 +586,42 @@ interface StretchIO;
   // identifying the unit which sends the channel signal" -- so the
   // method names a channel, not a unit.
   //
-  // NOT MODELLED: the not-ready state that precedes the ready.  Every
-  // unit here is ready from power-on (cwReset's unitReady), so "the
-  // operator mounts a reel and readies the unit" is only its CS.
+  // NOT MODELLED here: the not-ready state that precedes the ready.
+  // operatorSignal is only the CS; operatorReadyTape below is the
+  // operator readying one TAPE unit, which has both.
   method Action operatorSignal(WordAddr ch);
+
+  // THE TAPE CONTROL'S UNITS (2026-11-19).  Reference Manual printed
+  // p.120 (PDF 123, read in the ink), LOCATE: "This instruction is used
+  // to select one of several devices accommodated by a single channel
+  // address.  Once a device is so selected, all operations giving this
+  // channel address refer to the same device until a LOCATE is given to
+  // select another device on that control unit. ... The selection
+  // address is three bits long and appears in bit positions 47 through
+  // 49 of the instruction" -- the low three bits of the right effective
+  // word address.  "the LOCATE is accepted regardless of the state of
+  // the unit-ready status bit".  And printed p.107 (PDF 110, read in the
+  // ink), control word bit 18, Unit Ready: "on whenever the unit is in
+  // condition to accept an instruction from the computer ... When the
+  // bit is off, the unit is in the not-ready status".  So the tape
+  // channel keeps the selected unit, and the unit-ready bit COPY CONTROL
+  // WORD reads is the SELECTED unit's.
+  //   selectTapeUnit   -- LOCATE on the tape channel (StretchExecute).
+  //   setTapeUnitsReady -- testbench: which of the eight units have a
+  //                       reel mounted and are ready.  Power-on is all
+  //                       eight ready, the model's behaviour before this
+  //                       change, so every bench that does not call it
+  //                       is unchanged.
+  //   operatorReadyTape -- testbench: the operator readies one unit; it
+  //                       turns ready and, p.116, CS comes on ("whenever
+  //                       the unit changes from not-ready to ready").
+  // NOT MODELLED: the units' DATA.  There is one reel (one tape source);
+  // every unit reads and writes it.  And no instruction but LOCATE and
+  // RELEASE is rejected for a not-ready unit (Unit Not Ready Reject,
+  // p.113, is not built).  Only the status bit follows the unit.
+  method Action selectTapeUnit(Bit#(3) unit);
+  method Action setTapeUnitsReady(Bit#(8) mask);
+  method Action operatorReadyTape(WordAddr ch, Bit#(3) unit);
 endinterface
 
 module mkStretchIO(StretchIO);
@@ -673,6 +705,20 @@ module mkStretchIO(StretchIO);
   RWire#(Tuple2#(WordAddr, ControlWord)) cwW  <- mkRWire;
   RWire#(WordAddr)                       clrW <- mkRWire;
   RWire#(WordAddr)                       sigW <- mkRWire;   // operatorSignal
+  // The tape control's selected unit and its units' ready bits (see the
+  // interface).  All ready at power-on: the model as it was.
+  Reg#(Bit#(3)) tapeUnit  <- mkReg(0);
+  Reg#(Bit#(8)) tapeReady <- mkReg('1);
+  RWire#(Bit#(8)) readyMaskW <- mkRWire;   // setTapeUnitsReady
+  RWire#(Bit#(3)) readyUnitW <- mkRWire;   // operatorReadyTape
+
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule commitTapeReady;
+    if (readyMaskW.wget matches tagged Valid .m)
+      tapeReady <= m;
+    else if (readyUnitW.wget matches tagged Valid .u)
+      tapeReady <= tapeReady | (1 << u);
+  endrule
 
   (* fire_when_enabled, no_implicit_conditions *)
   rule commitCW;
@@ -778,7 +824,12 @@ module mkStretchIO(StretchIO);
     case (kindOf(ch))
       DevReader:  return readerCW;
       DevPrinter: return printerCW;
-      DevTape:    return tapeCW;
+      DevTape:    begin
+                    // bit 18 is the SELECTED unit's (p.107, p.120)
+                    ControlWord c = tapeCW;
+                    c.unitReady = tapeReady[tapeUnit];
+                    return c;
+                  end
       DevDisk:    return diskCW;
       DevConsole: return consoleCW;
       default:    return printerCW; // fallback for any uninstalled
@@ -794,6 +845,16 @@ module mkStretchIO(StretchIO);
     clrW.wset(ch);
   endmethod
   method Action operatorSignal(WordAddr ch);
+    sigW.wset(ch);
+  endmethod
+  method Action selectTapeUnit(Bit#(3) unit);
+    tapeUnit <= unit;
+  endmethod
+  method Action setTapeUnitsReady(Bit#(8) mask);
+    readyMaskW.wset(mask);
+  endmethod
+  method Action operatorReadyTape(WordAddr ch, Bit#(3) unit);
+    readyUnitW.wset(unit);
     sigW.wset(ch);
   endmethod
 endmodule
