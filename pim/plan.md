@@ -95,7 +95,8 @@ fails as expected on the reverted build; `docs/isa.md` is generated and
 checked; `run_tests.sh` is green. The primary-source round-trip is
 recorded as substituted (no KL1-B listing in the corpus). The network,
 SDRAM store and FPGA top are committed but not exercised end to end.
-WP1 is done; WP2 (FPGA timing) and WP3 (architecture accuracy) are next.
+WP1 is done; WP2 is decided as not hardware-ready; WP3 (architecture
+accuracy) and WP4 (verification gaps) are next.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
@@ -128,6 +129,13 @@ and citation fixes are in place; `run_tests.sh` passes.
    file is `docs/pim_architecture.md`. Fix the citation.
 
 #### WP2 — FPGA timing: decide and execute
+
+Status: not hardware-ready (2026-11-19). The build closes at 10.22 MHz
+against 25 MHz; `bsv/README.md` records the ceiling and forbids resting
+a claim on the bitstream. WP2.1 (retime) is not attempted because the
+historical-accuracy rule forbids reordering the documented pipeline for
+FPGA convenience; a future retime must be shown not to change that
+structure.
 
 The failing clock-domain path is not a divide-by-40 logic.
 `nextpnr.log` has no such logic; the path is the store
