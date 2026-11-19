@@ -3118,7 +3118,7 @@ typedef struct {
 // connectiveOp's C/CT/CM main path uses it too (2026-11-19): its ladder
 // was the same one, written a tenth time.
 // ST and M+ do not use it: their RMW reads are interleaved with the store
-// (their arms say why).
+// (their arms say why), in the one order vflRmwNextRead states.
 // ---------------------------------------------------------------------
 typedef struct {
   Bit#(64)         raw;
@@ -3153,6 +3153,25 @@ function VflFetch vflFetchOperand(Bool immediate, BitAddr ea, Bit#(7) len_,
   end
   return f;
 endfunction
+
+// ---------------------------------------------------------------------
+// THE READ-MODIFY-WRITE ORDER OF READS, ONCE (2026-11-19, plan §1c step
+// 5e).  The arms that write their field back -- ST and SRD (three
+// ladders, by crossing and refill), M+/M+MG/M+1, and the CM connective's
+// refill path -- read their words in one order: the field's first word,
+// its second if the field crosses, then the progressive refill word, and
+// write only when all are in hand (vflWriteArmHandled's reason).  Each
+// wrote the same choice of the next word to read; this is it.  `have` is
+// prefetchCount, and the caller asks only while `have` is below
+// vflRmwNeed's count, so the refill address is never chosen for a field
+// word.  Pure, like vflFetchOperand: a function, not a box.
+// ---------------------------------------------------------------------
+function Bit#(2) vflRmwNeed(Bool crosses, Bool refill) =
+  (crosses ? 2 : 1) + (refill ? 1 : 0);
+
+function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
+                                 WordAddr refill) =
+  (have == 0) ? w0 : (have == 1 && crosses) ? (w0 + 1) : refill;
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
@@ -3675,7 +3694,7 @@ function ActionValue#(VflOutcome)
                 // DF, p.32 class 3, is raised below with the refill, and
                 // only when the store was not suppressed (refillDfNote).
                 if (vflNeedsRefill) vflWriteArmHandled = True;
-                Bit#(2) stNeed = vflNeedsRefill ? 3 : 2;
+                Bit#(2) stNeed = vflRmwNeed(True, vflNeedsRefill);
                 if (prefetchCount >= stNeed && decAsk) begin
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
@@ -3705,12 +3724,9 @@ function ActionValue#(VflOutcome)
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                     ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
-                end else if (prefetchCount == 2)
-                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
+                end else
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, True,
+                                                          zeroExtend(vflPx1.refill));
               end
               else if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1 && decAsk) begin
@@ -3726,7 +3742,7 @@ function ActionValue#(VflOutcome)
                   end
                   vflReadsUsed = 1;
                 end else
-                  needsRead = tagged Valid w0;
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, False, 0);
               end else begin
                 // A refill is also needed: defer the write until
                 // BOTH reads (this field's word and the refill word)
@@ -3748,10 +3764,9 @@ function ActionValue#(VflOutcome)
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                     ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                else
-                  needsRead = tagged Valid w0;
+                end else
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, False,
+                                                          zeroExtend(vflPx1.refill));
               end
             end
           end
@@ -4509,14 +4524,13 @@ function ActionValue#(VflOutcome)
               // (vflWriteArmHandled's reason).  The decimal sum is
               // mkDecBox's, asked for after the last read.
               Bit#(2) mReads = mCross ? 2 : 1;
-              Bit#(2) mNeed  = mReads + (vflNeedsRefill ? 1 : 0);
+              Bit#(2) mNeed  = vflRmwNeed(mCross, vflNeedsRefill);
               // DF, p.32 class 3: raised below with the refill, and only
               // when the store was not suppressed (refillDfNote).
               if (vflNeedsRefill) vflWriteArmHandled = True;
               if (prefetchCount < mNeed) begin
-                needsRead = tagged Valid ((prefetchCount == 0) ? w0
-                              : (prefetchCount == 1 && mCross) ? (w0 + 1)
-                              : zeroExtend(vflPx1.refill));
+                needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, mCross,
+                                                        zeroExtend(vflPx1.refill));
               end else if (dAsk) begin
                 needsBox  = dReq;
                 needsRead = tagged Valid 0;
@@ -5551,7 +5565,7 @@ function ActionValue#(VflOutcome)
           // (2026-11-17; the third prefetch slot).
           Bool cmCross = fieldCrosses(ea, len_);
           Bit#(2) cmReads = cmCross ? 2 : 1;
-          if (prefetchCount >= cmReads + 1) begin
+          if (prefetchCount >= vflRmwNeed(cmCross, True)) begin
             Word64 mHiWord = prefetch[0];
             Bit#(64) m = extractFieldBits(prefetch[0], cmCross ? prefetch[1] : 0, off, len_);
             SM128 acc = readAcc(st);
@@ -5582,12 +5596,9 @@ function ActionValue#(VflOutcome)
               ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
               ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
             end
-          end else if (prefetchCount == 0)
-            needsRead = tagged Valid w0;
-          else if (prefetchCount == 1 && cmCross)
-            needsRead = tagged Valid (w0 + 1);
-          else
-            needsRead = tagged Valid zeroExtend(vflPx1.refill);
+          end else
+            needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, cmCross,
+                                                    zeroExtend(vflPx1.refill));
         end else begin
           Bit#(64) m = 0;
           Word64 mHiWord = 0; // valid only for CM (the only suffix
