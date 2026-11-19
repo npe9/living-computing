@@ -24,6 +24,42 @@ accumulate.
 
 
 
+## FP M+ EXTERNAL -- DIAGNOSED, NOT BUILT, 2026-11-18
+
+The two largest open M+ residuals are M+ EXTERNAL at +3.97 (PDF 69) and
++6.31 (PDF 100). PDF 100 is the page *with forwarding*. Its $R
+(INTERNAL) column is −3.07, so the "+6.31" is not a $R figure. Vol. 1
+p.3-20 lists $RM, not $R, as memory. `docs/atlas_oracle.md` "Closing
+the residuals" item 15 has the trace and the tables. **`bsv/` is
+unchanged.**
+
+* **The store path is not the surplus.** A trace gives removal -> next
+  load = 8 clocks, which is E-box 5 + 1 + the 0.6 µs check (the
+  documented events). Load -> removal is 10: 2 to the bus, 7 for the
+  read, 1. The printed (U) rows leave 7.07 clocks for that leg on PDF 69
+  and 4.07 on PDF 100. The old "M+'s store path" framing (item 10, plan
+  row 87) is corrected.
+* **Fetch leg, PDF 69.** The body address (`--body 220000`) is worth
+  0.88. The read latency (above, "a read takes 8 clocks") is worth 1.00
+  a clock. They add (+2.09 with both). The rest is the 1Y/2Y fetch
+  winning the bus every second M+.
+* **Forwarding, PDF 100.** Read in the images: ST (PDF 48/79, 4.80 µs)
+  and LFT (PDF 68/99, 4.36 µs) print the same with and without
+  forwarding. M+ saves 0.9 µs (3 clocks, (U) rows). The mechanism is
+  Vol. 1 printed p.3-22 and Blosk printed p.21: the store operand is
+  forwarded to the fetch level "without first requiring a store to
+  memory". No page gives a time. It is in tension with p.3-21's wait at
+  decoding, since n+1's fetch must compare against n's store before
+  that store leaves the look-ahead. Not built.
+* **Next, if pursued:** the read-latency item, as a suite-wide change
+  with every pin re-measured; then forwarding, with a source for its
+  time. R23-9732 Fig. 3.2.2 sheet 2 (PDF 94): a "MOD TYPE 3" load sets
+  LAAR BUSY after "FETCH ACCEPTED". Reading that as the fetch-and-store
+  load is an INFERENCE (two-LAAR build, 2/1/62).
+* Stale comment: `StretchTiming.bsv`'s `laarStorePost` note says "+2.6
+  (PDF 69) and +5.8 (PDF 100)". It is +3.97 / +6.31 since item 13's
+  `fpYields`. Fix it with the next `bsv/` change.
+
 ## D/ AND THE LAAR -- EXAMINED, NOT BUILT, A DECISION LEFT OPEN, 2026-11-18
 
 This was the open item "D/ should take the LAAR". **The sources say D/
@@ -165,6 +201,20 @@ cycle not counted as a loop.**
   -> YARR 8 clocks, then the 0.6 us check. This is the refill latency
   behind the supply limit. Changing it moves every memory read, so it
   is a separate, suite-wide change.
+  **First data, 2026-11-18** (`docs/atlas_oracle.md` "Closing the
+  residuals" item 15, scratch copies, discarded). Buchholz printed
+  p.206 (PDF 231): "the time to return the word to the requesting unit
+  is 1.6 usec". The model's operand read is bus put -> response 7
+  clocks, level load -> usable 10. `memReadClocks` 5 -> 4, medians:
+  FP M+ PDF 69 +3.97 -> +2.97, PDF 100 +6.31 -> +5.31, L PDF 64 +0.46
+  -> +0.08; +, ST, LFT (42, 48, 68) unchanged. **Worse:** VFL M+ and ST
+  WB XOVR (PDF 117, 124) -23.2 -> -24.2, I-box SC/SR/SV to memory (PDF
+  109) -7.5 -> -9.0, SX -2.0 -> -2.1. Better: K WB XOVR (127) +5 -> +4.
+  At 5 -> 3: M+ +1.97 / +4.32, L -0.04 (VFL and I-box pages not run).
+  The page does not say which of the model's stages the 1.6 us spans
+  (level load, request, two register stages, the 0.6 us operand check),
+  and 3 and 4 both leave L near exact, so choosing by the atlas would be
+  a fit. Not built. The suite's CYCLES pins were not measured under it.
 * **Found, not fixed: the model does not index an immediate VFL
   operand.** Ref. Manual printed p.21 (PDF 24, read in the image): "For
   code 4, the immediate mode is specified and the effective address is

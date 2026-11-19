@@ -1563,7 +1563,10 @@ Each step was measured on its own tree:
 - LFT I-BOX is +1.45.
 - M+ from memory is still +2.6 (PDF 69) and +5.8 (PDF 100). M+ gets the
   documented events alone, while LFT and ST take the memory remainder.
-  That inconsistency is open.
+  That inconsistency is open. (2026-11-18, item 15: +3.97 / +6.31 since
+  item 13's yield. A trace puts M+'s store path at exactly the
+  documented 8 clocks; the surplus is in the fetch leg, plus the
+  forwarding that PDF 100 shows and the model lacks.)
 - ST indexed into $X prints 1 clock over unindexed (PDF 48), and the
   model gives 0. The serial step is not applied to ST, which fetches
   nothing.
@@ -2092,6 +2095,158 @@ FP DIVIDE TIME (−10) are older readings.
   with no `intWait`. It was measured on a branch without item 8 (an
   inference from the arithmetic). The merged tree adds item 8's 7 clocks.
 
+### 15. FP M+ EXTERNAL: the surplus is in the fetch leg, not the store path (2026-11-18; measured, nothing built)
+
+**The model is unchanged; `bsv/` is byte-identical to master `dc5331e`.**
+The two largest open M+ residuals were taken apart on a trace. Two
+mechanisms were measured on scratch copies. Neither is built, for the
+reasons below.
+
+**The residuals, re-measured on `dc5331e`** (n = 32 per column, median /
+mean, clocks):
+
+| PDF, column | residual | model / printed, (U) rows |
+|---|---|---|
+| 69 M+ ni_ext / ix_ext (no forwarding) | +3.97 / +3.98, +3.99 / +3.99 | 19.4 / 15.07 (4.52 µs) |
+| 70 M+MG ni_ext / ix_ext | +3.97 / +3.95 | |
+| 100 M+ ni_ext / ix_ext (forwarding: one address) | +6.31 / +6.47 | 19.4 / 12.07 (3.62 µs) |
+| 101 M+MG ni_ext / ix_ext | +6.31 / +6.34 | |
+| 100 M+ ni_int / ix_int ($R) | −3.07 / −3.28 | (untouched here) |
+| 69, 100 ni_ibox / ix_ibox | −1.18 / −1.22 | (untouched here) |
+
+The "+6.31" that has been called "M+ $R" in item 13's table is PDF
+100's EXTERNAL column. It is the page *with forwarding*, which also has
+the $R column. The $R (INTERNAL) column is −3.07. Vol. 1 printed p.3-20
+(PDF 38, read in the image) lists "$Z, $IA, $MB, and $RM, $FT and $TR"
+as *bona fide* main-memory locations. That list names $RM, not $R. $R is
+address 9, an internal register, so it has no bearing on these columns.
+
+**What the pages say** (each read in its image):
+
+- Vol. 2 PDF 69 (printed 62) and PDF 100 (printed 93). On the (U) rows,
+  M+ prints EXTERNAL 4.52 µs without forwarding and 3.62 µs with it.
+  The flagged rows print 4.61-4.67 against 3.92, and the (N) rows of
+  NORMALIZED 1. print 4.79-4.93 against 4.39-4.52. The I-BOX columns
+  print the same on both pages (7.86 / 9.07 µs on the (U) rows).
+- **Only M+ saves when the address repeats.** ST prints 4.80 EXTERNAL
+  on both PDF 48 (printed 41) and PDF 79 (printed 72). LFT prints
+  4.36-4.37 on both PDF 68 (printed 61) and PDF 99 (printed 92). So the
+  0.9 µs (3.0 clocks) saving on the (U) rows belongs to the one
+  operation of the three whose memory fetch lies on its critical path.
+- Vol. 1 printed p.3-22 (PDF 40): a store into a nearby E-box operand
+  address activates "a forwarding mechanism ... to make the store
+  operand available to the fetch level". Blosk (TR00.722 printed p.21,
+  PDF 23): an operand fetch for look-ahead that "compares equal with the
+  store address" initiates "a 'forwarding' operation of the store
+  operand to the designated fetch level, without first requiring a store
+  to memory". Neither page gives a time for it.
+- Vol. 1 printed p.3-21 (PDF 39): a LAAR-requiring instruction waits at
+  decoding until the LAAR is free. Vol. 1 printed p.2-3 item 6 (PDF 10):
+  "All VFL stores are fetch-and-stores". That item is about VFL, and no
+  page found says the same of FP M+ in words. The FP M+ flow chart,
+  R23-9732 Fig. 3.3.6 (PDF 125, printed 3-6), ends "ACOB to Store Reg
+  Under Store Reg Ctrl / End of Operation". It draws no E-box store
+  cycles beyond Table 2's add class (Vol. 1 printed p.3-3, PDF 21: 4
+  cycles pre-execution plus 1 execution, which is the model's 5).
+- R23-9732 Fig. 3.2.2 sheet 2 (PDF 94, printed 2-4, read at 300 dpi).
+  On LLP 3, the store-type load, a "MOD TYPE 3" load sets "FROM n &
+  LAAR n BUSY" only after "FETCH ACCEPTED". **INFERENCE, not on the
+  page:** "modified type 3" is the fetch-and-store load. If so, the
+  fetch is issued at the load and the LAAR is taken with it, so the
+  fetch lies inside the LAAR period. The page does not define MOD TYPE
+  3, and it is from the two-LAAR build (2/1/62).
+
+**The model's period, from a trace** (scratch copy with `$display` at
+load, removal, `laarRetire`, and every bus put and response; PDF 69 (U)
+row, 40 copies). In steady state each M+:
+
+| leg | clocks | what it is |
+|---|---|---|
+| removal of n → load of n+1 | 8 | E-box 5 + the removal clock 1 + `laarCheckClocks` 2. These are the documented events only (`laarFreeAt`); n+1 waits at decode, as p.3-21 says |
+| load → bus put | 2 | the level is loaded, then `collect` issues `laReq` and memCtl puts it |
+| bus put → response | 7 | `memReadClocks` 5 and two register stages (StretchMemory, StretchStorage) |
+| response → removal | 1 | |
+| **period** | **18** | plus a 1Y/2Y instruction fetch that wins the bus (`fpYields`) or holds the unit, every second M+: periods of 19 and 26 occur. The average is 19.4 |
+
+PDF 100's trace is the same, with every read to 100011₈. The model has
+no forwarding. Every operand read waits for the store queue to empty
+(StretchStorage memCtl: "the look-ahead's LAAR forwarding replaces this
+in stage 3"), so a repeated address costs exactly what a rotating one
+does.
+
+So the store path, removal → LAAR free, is the documented 8 clocks.
+Take the (U) rows: 15.07 − 8 leaves 7.07 clocks for load → removal on
+PDF 69, and 4.07 on PDF 100. The model spends 10 on both. **The surplus
+is in the fetch leg.** Item 10's "What is left" and the plan's LAAR row
+called it "M+'s store path"; that framing is corrected here.
+
+**Measured, on scratch copies, then discarded** (medians; base =
+`dc5331e`):
+
+| PDF, column | base | `--body 220000` | read latency −1 (`memReadClocks` 4) | −1 and `--body 220000` | read latency −2 (`memReadClocks` 3) |
+|---|---|---|---|---|---|
+| 69 M+ ni_ext | +3.97 | +3.09 | +2.97 | +2.09 | +1.97 |
+| 100 M+ ni_ext | +6.31 | +5.44 | +5.31 | +4.44 | +4.32 |
+| 64 L ni_ext | +0.46 | −0.17 (item 13) | +0.08 | −0.42 | −0.04 |
+| 42 + ni_ext | +0.01 | | +0.01 | | +0.01 |
+| 48 ST ni_ext | +0.00 | | +0.00 | | +0.00 |
+| 68 LFT ni_ext | +0.43 | | +0.43 | | +0.43 |
+| 69, 100 ibox and int columns | | unchanged | unchanged | | unchanged |
+| 117 M+ (VFL) ni_ext_wbx | −23.23 | | −24.24 | | not run |
+| 124 ST (VFL) ni_ext_wbx | −23.23 | | −24.23 | | not run |
+| 127 K (VFL) ni_ext_wbx | +5.00 | | +4.00 | | not run |
+| 109 SC, SR, SV ext_direct / ext_effective | −7.52 / −7.55 | | −9.02 / −9.05 | | not run |
+| 109 SX ext_direct / ext_effective | −2.02 / −2.52 | | −2.14 / −2.64 | | not run |
+| 117, 124, 127 every other column; 109 every other cell | | | unchanged | | not run |
+
+The two parts add: on PDF 69, 3.97 − 0.88 (body) − 1.00 (latency) =
+2.09, as measured. Both columns of each page move together (ix_ext the
+same to ±0.02).
+
+**Why nothing is built.**
+
+- **Read latency.** Buchholz §14.3 (printed p.206, PDF 231, read in the
+  image): "If no busy or priority conditions exist, the time to return
+  the word to the requesting unit is 1.6 µsec". That is 5.33 clocks.
+  The model's put → response is 7, and level load → usable is 10.
+  NEXT.md has recorded this as an open, suite-wide item. Measured here:
+  - It is the larger part of the PDF 69 surplus.
+  - It is not a free choice. Both 3 and 4 leave L near exact. The page
+    does not say which of the model's stages the 1.6 µs spans: the
+    level load, the request, the two register stages, or the 0.6 µs
+    operand check (Vol. 1 printed p.3-19). Choosing among them by the
+    atlas would be a fit.
+  - At 4 it moves other pages the wrong way: the VFL store WB XOVR
+    columns (PDF 117, 124) by −1, and the I-box stores to memory (PDF
+    109 SC/SR/SV) by −1.5. It also moves every memory read in every deck
+    and the MCP boot.
+  - Even at 3 it leaves PDF 69 at +1.97 and PDF 100 at +4.32.
+  So it stays the separate, suite-wide item NEXT.md already names. The
+  measurements above are its first data.
+- **Forwarding.** The pages show it, on M+ alone (3.0 clocks on the (U)
+  rows). The sources name the mechanism (p.3-22, Blosk p.21) and give no
+  time for it. To reach the measured saving, the fetch of M+ n+1 must
+  compare against M+ n's store while that store is still in the
+  look-ahead. That is in tension with p.3-21's wait at decoding, the
+  same tension item 10 met for LFT. A forward answered from a
+  last-store register is a functional change (stale data from the
+  other write paths: I/O, the crossing-field tail, index storage). So
+  it is not built, and is recorded as open.
+- **LFT's treatment (load early, wait for the LAAR at the head, ST's
+  memory remainder 9) was not tried.** It overlaps the fetch and then
+  needs a fitted remainder to put the time back. That remainder is
+  ST's, and PDF 69 prints M+ below ST.
+
+**What this leaves.** On PDF 69, about 0.9 clock is the oracle's CHOSEN
+body address (item 13), about 1.4 is the instruction fetch winning the
+bus (`fpYields`, item 13's +1.4 on this page), and the remaining ~2-3
+clocks are the fetch leg's latency. On PDF 100, the same plus the
+forwarding saving, about 3 clocks, that the model does not have.
+`StretchTiming.bsv`'s `laarStorePost` note still quotes "+2.6 (PDF 69)
+and +5.8 (PDF 100)". Those were the figures before item 13's yield; it
+is +3.97 / +6.31 now. The comment was not edited, so that `bsv/` stays
+untouched.
+
 ## Where the model is furthest off
 
 1. **The model's VFL time did not depend on the operation** (as of
@@ -2218,6 +2373,13 @@ FP DIVIDE TIME (−10) are older readings.
   10. CHOSEN, not measured: the branch level's load (`2 * 6`) and
      rl_recover's `ibusy <= 12` did not get the "− 1" of item 7; `ib`
      does count down under a branch level's removal.
+  11. FP M+/M+MG EXTERNAL, +3.97 (PDF 69-70) and +6.31 (PDF 100-101,
+     forwarding). **OPEN, diagnosed 2026-11-18** ("Closing the
+     residuals" item 15). The store path is the documented 8 clocks; the
+     surplus is the fetch leg (the read latency, NEXT.md's suite-wide
+     item, worth 1-2 clocks; the body address, 0.9; the instruction
+     fetch's priority) plus, on PDF 100, LAAR forwarding (Vol. 1 p.3-22,
+     Blosk p.21), about 3 clocks, which no page times.
 - **Generators still missing** (989 cells): the NONCON branch columns
   and CBR refills; internal transmit operands; PDF 110 (LVS/LVE/SVA);
   the I-box refill rows; PDF 104's environment averages. Each needs a
