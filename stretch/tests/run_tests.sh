@@ -11593,6 +11593,28 @@ run "IBOX-4 routine 1256 TEST 2F LVE loads only J's register, ON THE MODEL (I561
     "X15:addrIndex(15)=0xffffe00000000000" \
     STEPS=2000000 CYCLES=968+-0
 
+# ---- jb_ax5b routine 1260, prologue and TESTs 1A/1B (2026-11-19) ----
+# IBM's own test of the mask register's fixed bits (jb_ax5b PDF pp.8-13):
+# 1A, bits 0-19 always one; 1B, bits 48-63 always zero.  Same segment
+# method as routine 1256; SSIP's hooks at the same addresses.  CYCLES is
+# MODEL BEHAVIOUR.  The OBSERVED model injections (scratch copy of bsv/,
+# both runs repeated each time, plus a CONTROL that passes both) are in
+# the deck header; summarized below.
+run "IBOX-5 routine 1260 prologue and TESTs 1A/1B (mask register), bit-exact (jb_ax5b PDF pp.8-13, 114)" python3 verify_ax5b_160_test1ab_mask_listing.py
+# Mask bits 0-19 are ones.  Injection M1 (bit 7 not forced to one) ->
+# FAIL SEN 0x616800000000000 (the BIT 07 entry); M2 does not move this run.
+run "IBOX-5 routine 1260 TEST 1A mask bits 0-19 always one, ON THE MODEL (I60 prologue, I601)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1ATb \
+    PC=1410 "SEN:712=0" "RET:710=0x60d8800" \
+    "X0:addrIndex(0)=0x61c400000000000" "X1:addrIndex(1)=0x100000000000" \
+    "X2:addrIndex(2)=0xa59428000000000" STEPS=2000000 CYCLES=4107+-0
+# Mask bits 48-63 are zeros.  Injection M2 (bit 55 writable) -> FAIL SEN
+# 0x625200000000000 (the entry printed "BIT 54": IBM's k-1 label); M1
+# does not move this run.
+run "IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL (I607)" ./run_program.sh ../decks/ax5b_160_test1ab_mask.strap StretchAx5b160T1BTb \
+    ENTRY=I607 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x629600000000000" \
+    "X1:addrIndex(1)=0" "X2:addrIndex(2)=0x7fffff0000" \
+    "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=5426+-0
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the
