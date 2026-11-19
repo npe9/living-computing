@@ -300,7 +300,11 @@ poll), and the GO phase goes on: the fetch is served from a core image of
 TWS holding the same cards BSS read, job control finds no IOD card and
 primes resume load, and resume load, as the BSS postprocessor (C22-6728-1
 p.86), loads every subprogram and library deck to p.17's printed origins
-and gives `$RET` with SICBU = `*MAIN*`'s entry 000051.0. Pp.7, 9 and 10 settle the
+and gives `$RET` with SICBU = `*MAIN*`'s entry 000051.0. Since 2026-11-19
+MCP's own dispatcher (MCP printed pp.117, 140-142) enters `*MAIN*` there.
+No compiled FORTRAN object deck or library code is held, so `*MAIN*`'s
+entry is SCAFFOLD (`$EOJ`), and MCP's end of job runs to the output
+`$W` (p.204). Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
 

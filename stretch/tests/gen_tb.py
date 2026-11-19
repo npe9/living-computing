@@ -315,7 +315,13 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     run_phase += 1
     stop_guard = " && !stoppedAtPc" if stop_at_pc is not None else ""
     lines.append(f"  rule run (phase == {run_phase} && !{halt_pred} && stepCount < {step_cap}{stop_guard});")
-    if stop_at_pc is not None and stop_at_pc_hits == 1:
+    if isinstance(stop_at_pc, (tuple, list)):
+        # ANY OF SEVERAL half-words (one bench whose runs end in different
+        # places); the STOPPED line then names the one reached.
+        assert stop_at_pc_hits == 1
+        cond = " || ".join(f"core.getPC() == {a}" for a in stop_at_pc)
+        lines.append(f"    if ({cond}) stoppedAtPc <= True;")
+    elif stop_at_pc is not None and stop_at_pc_hits == 1:
         lines.append(f"    if (core.getPC() == {stop_at_pc}) stoppedAtPc <= True;")
     elif stop_at_pc is not None:
         # The Nth ARRIVAL at the half-word, for a place a polling loop
@@ -372,7 +378,10 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         # itself: every check below reads MID-EXECUTION state, and a
         # reader who does not know that will misread all of them.
         lines.append("    if (stoppedAtPc)")
-        lines.append(f'      $display("STOPPED DELIBERATELY at half-word {stop_at_pc} after %0d steps -- the checks below read MID-EXECUTION state", stepCount);')
+        if isinstance(stop_at_pc, (tuple, list)):
+            lines.append('      $display("STOPPED DELIBERATELY at half-word %0d after %0d steps -- the checks below read MID-EXECUTION state", core.getPC(), stepCount);')
+        else:
+            lines.append(f'      $display("STOPPED DELIBERATELY at half-word {stop_at_pc} after %0d steps -- the checks below read MID-EXECUTION state", stepCount);')
         lines.append(f"    else if (!{halt_pred}) begin")
     else:
         lines.append(f"    if (!{halt_pred}) begin")
