@@ -37,20 +37,23 @@ machines whose differences must remain explicit.
 | architectural inventory | `docs/isa_inventory.md` | all 46 Table 3-1 entries, each with a printed-page cite |
 | Chapter 4 timing table | `docs/timing.csv`, `docs/timing_tables.md` | 46/46 spellings covered; `tools/check_timing.py` |
 | one-instruction semantics model | `sem/` | written from the PRM, independent of `bsv/` and `asm/` |
-| Bluesim core | `bsv/` | 17-check smoke test, `run_smoke.sh`; loud trap on everything unimplemented |
-| hand-derived golden programs | `tests/golden/` | six programs, 42 retirement records, each line justified by a printed page |
+| Bluesim core | `bsv/` | 30-check smoke test (behaviour + cycles), `run_smoke.sh`; PDU → decoded-instruction store → EU, stack cache as a stateful box |
+| cycle accuracy | `cyc` in every HRI record | Tables 4-32…4-36 under the p. 4-1 assumptions; A/D/Q are named model choices, not printed values |
+| hand-derived golden programs | `tests/golden/` | six programs, 42 retirement records, each line and each cycle figure justified by a printed page |
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
+| UART HRI stream | `bsv/HobbitUart.bsv` | 9-check testbench, byte-exact variable-length lines at 115200 |
 
 The core is a partial implementation on purpose: it models the
 memory-to-memory ALU, the stack cache and the control transfers its
 programs use, and traps on the rest. The MMU, event processing, the
-prefetch buffer cache, folding timing and the bus are still ahead of it
-(see `plan.md`).
+3 Kbyte three-way prefetch buffer (a 64-word direct-mapped window stands
+in), and the bus are still ahead of it (see `plan.md`).
 
 Every instruction the core claims to implement is checked three ways by
 `tests/run_tests.sh`: the core's HRI record, the independent
 one-instruction model's record, and a hand-derived golden trace must all
-agree field by field.
+agree field by field — and the `cyc` field makes the documented cycle
+count part of that agreement.
 
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).

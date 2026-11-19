@@ -5,7 +5,7 @@ The machine-instruction and microinstruction encodings are the model's
 own, not historical PIM/m encodings.  The 1992 sources acquired in
 docs/ give the 40-bit word, the 8-bit tag, the 32K x 64-bit WCS and the
 five-stage pipeline, but not the bit assignments; see
-docs/architecture.md "Evidence status".  This file is the single place
+docs/pim_architecture.md "Evidence status".  This file is the single place
 those model encodings are defined, and bsv/PimTypes.bsv mirrors it.
 
 Usage:

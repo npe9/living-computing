@@ -65,13 +65,30 @@ documented interfaces.
    parcels, SP and MSP before and after, the architectural word write
    (stack-cache-resident writes included), and the trap flag — and an
    independent one-instruction model, written from the manual and never
-   from the core, computes the same record in one step. The two are
-   diffed field by field, so pipeline depth, folding and cache timing
-   never enter the check; hand-derived golden traces, also written from
-   the manual, break ties when the two disagree. The exact line format
-   and field meanings are fixed in `sem/README.md` and the checker.
+   computes the same record in one step. The two are diffed field by
+   field, so the *architectural state* comparison never depends on
+   pipeline depth; the one timing field, `cyc`, is checked separately by
+   gate 6. Hand-derived golden traces, also written from the manual,
+   break ties when the two disagree. The exact line format and field
+   meanings are fixed in `sem/README.md` and the checker.
    The one-instruction model is explicitly **not** a second opinion from
    the same author: it is kept independent of `bsv/` and `asm/`.
+
+6. Be cycle-accurate, not fast. The owner's priority is the original's
+   structure and cycle counts; wall-clock speed and FPGA Fmax are not
+   goals. Every HRI record therefore carries `cyc`, the instruction's
+   occupancy measured at retirement (a *correctly predicted* folded
+   branch costs 0, p. 4-3; a compare-adjacent mispredicted one costs 3,
+   Table 4-35 p. 4-5, and retires as its own record after the compare),
+   and the core's cycle counts must equal what the printed Chapter 4
+   tables state under their own p. 4-1 assumptions. The document prints
+   no values for the memory terms A, D and Q (p. 4-2), so the model
+   chooses A=1, D=2, Q=4 (one cycle per 32-bit word) and labels these as
+   choices, never as manual facts; ENTER is 1 + Q·E with E the number of
+   16-byte blocks the pp. 3-19/3-20 flush loop moves. Where the present
+   structure cannot retire an instruction in the documented number of
+   cycles, the structure is what gets fixed — the counter is never
+   adjusted to make a test agree.
 
 ## Staged implementation
 
@@ -116,6 +133,15 @@ documented interfaces.
 8. Only then add board-level models required by an original program:
    the dual-Hobbit BeBox prototypes with their DSP3210s, or the EO
    personal communicator support chips.
+9. Run the core on real silicon. The ULX3S (Lattice ECP5 85F) is a
+   modern host, not a replica of any historical machine: it exists to
+   show that the same image, the same parcels and the same HRI records
+   work outside Bluesim. `fpga/build.sh` runs bsc → yosys → nextpnr →
+   ecppack; the program is `bsv/smoke.hex` embedded through the same
+   generator the simulator uses; the eight LEDs show state and the FTDI
+   UART streams the HRI lines at 115200 so a captured log can be diffed
+   with `tests/hri_check.py`. Timing closure at 25 MHz is a number the
+   report quotes from nextpnr, never an assumption.
 
 ## Definition of the first milestone
 
@@ -125,6 +151,9 @@ bit-exactly and the disassembler reproduces the encoding tables; and a
 one-core Bluesim smoke test starts at 0x0, runs a stack-cache call,
 return and CATCH sequence, executes a folded conditional branch both
 taken and not taken, and traps an unimplemented parcel observably — and
-the core's HRI retirement records for that run agree, field by field,
-with the independent one-instruction model and with a hand-derived
-golden trace. The full repository test suite remains green.
+the core's HRI retirement records for that run agree, field by field —
+including `cyc`, so the state and the documented cycle counts agree
+separately — with the independent one-instruction model and with a
+hand-derived golden trace, and the same image runs on the ULX3S with its
+HRI lines streamed over the UART. The full repository test suite remains
+green.

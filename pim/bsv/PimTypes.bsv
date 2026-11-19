@@ -21,7 +21,7 @@
 // register counts, the instruction word layout, the 64-bit
 // microinstruction layout, the decode-table entry layout, and the
 // jump-table offset encoding.  The 1992 paper gives the word width and
-// the mechanism, not the bit assignments.  See docs/architecture.md
+// the mechanism, not the bit assignments.  See docs/pim_architecture.md
 // "Evidence status" for the gap list.
 //
 // The model's local store is 64K words, not the documented 16M words
@@ -128,7 +128,7 @@ function Word packInstr(Instr i) = { i.op, i.rd, i.rs, i.rt, i.imm };
 // MODEL opcodes.  KL1-B's actual encoding is not in the acquired
 // corpus (the paper names the instruction set and cites Kimura and
 // Chikayama 1987, which is not in docs/); this table is the model's
-// own, and docs/architecture.md records the gap.
+// own, and docs/pim_architecture.md records the gap.
 Opcode opNop     = 8'h00;
 Opcode opHalt    = 8'h01;
 Opcode opPutImm = 8'h02;

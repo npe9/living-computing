@@ -325,7 +325,11 @@ the sources confirm from what they contradict.
    silently discards it. Either index and compare the full 8-bit `Tag`, or
    add an explicit, documented mask policy (e.g. compare type only for
    type tests, full tag where MRB matters). Do not leave the choice
-   implicit.
+   implicit. **Resolved (2026-11-19):** the multi-way jump indexes the
+   full 8-bit `Tag`; `condTagEq`/`condTagNe` compare the 7-bit type
+   because the assembler's `jmp_tag` immediate is a tag type; and
+   `condTagRef`/`condTagNotRef` are type tests. The policy is stated in
+   `PimE.bsv` as well.
 2. **The decode table has no nano-code.** `DecodeEntry` contains a
    microprogram base plus `valid/needsEA/isLoad/isStore/deref`. `M92`
    p. 428 says an entry contains the routine start address **and the
@@ -333,13 +337,17 @@ the sources confirm from what they contradict.
    fixed-flag simplification, not the documented decoder. Add a nano-code
    field (its width is model-defined because the source gives none) or
    explicitly label the flags as the model's entire nano-code subset.
+   **Model status:** labelled — the flags are the model's entire
+   nano-code subset; no field is added.
 3. **E is not modelled as two pipelined phases.** `PimE` executes one
    microinstruction per cycle and writes its destination once. `M92`
    p. 428 describes two pipelined E phases: phase 1 holds An/Xn, WR, PC and
    SP; phase 2 holds XR/YR, MAR1/2 and MDR1/2; two of those feed the ALU,
    and ALU plus MRB/tag manipulation run in parallel. Either split E into
    phase 1/phase 2 or state that the model collapses them and therefore
-   cannot claim PIM/m's E-stage timing.
+   cannot claim PIM/m's E-stage timing. **Model status:** labelled — the
+   model collapses the two phases into one microinstruction per cycle and
+   therefore cannot claim PIM/m's E-stage timing.
 4. **No memory-dereference provenance in S.** `PimPU` calls
    `sstage.start(r2s.rsVal)` for every dereference, and the model's current
    `deref` instruction is register-only (`pimasm.py` sets `needs_ea=False`).
@@ -349,7 +357,8 @@ the sources confirm from what they contradict.
    Add a provenance bit and pass `r2s.fetched` for a memory dereference and
    `r2s.rsVal` for a register dereference before adding memory-deref
    instructions; otherwise S would walk from the address word rather than
-   the memory operand.
+   the memory operand. **Model status:** labelled — no memory-deref
+   instruction exists; the provenance bit must be added before one is.
 5. **The ISA is model-defined, not KL1-B.** `PimTypes`/`pimasm.py` define
    an 8-bit opcode, 5-bit register fields, a 17-bit immediate and their own
    opcode table. The sources say the PIM/m instruction set is KL1-B, binary
@@ -357,29 +366,36 @@ the sources confirm from what they contradict.
    encoding table is given by `M92` or `OV92`. Keep calling the current
    images a model-defined diagnostic ISA; do not call them PIM/m machine
    code or claim binary compatibility until a KL1-B encoding is obtained.
+   **Model status:** labelled — the model ISA is a diagnostic stand-in; no
+   KL1-B encoding or binary-compatibility claim is made.
 6. **No instruction or data caches in the model.** The model uses one flat
    `RegFile` for memory (`PimPU`) and therefore cannot exhibit the documented
    1 K/4 K-word direct-mapped caches or the cache-miss penalty (`M92`
    p. 426; p. 433). If the model is meant to be cycle-accounted, add
    parameterized I/D caches or explicitly exclude cache timing from every
-   claim.
+   claim. **Model status:** labelled — no caches; cache timing is excluded
+   from every claim.
 7. **Front-end stall is a model choice, not documented timing.** `PimPU`
    holds D/A/R while E has any microprogram active, and while S walks a
    dereference chain. `M92` p. 428 documents a five-stage pipeline and an S
    stage that precomputes for E, but publishes no per-instruction stall or
    branch penalty. Keep the conservative interlock if it makes the model
    simple, but label it as a model choice and do not report its cycle counts
-   as PIM/m's.
+   as PIM/m's. **Model status:** labelled — the interlock is a model choice;
+   its cycle counts are not PIM/m's.
 8. **Multi-way jump base is unconfirmed.** `PimE` computes
    `eUPC + jumpTable[tag]`, i.e. an offset from the current micro-PC.
    `M92` pp. 428–429 says the table contains jump offsets and that S "sets
    up the offset", but does not state the base. This is a model assumption.
    Consider a jump table of absolute micro-PCs or an explicit base field;
-   either way record the choice as unconfirmed.
+   either way record the choice as unconfirmed. **Model status:** labelled —
+   the offset-from-current-micro-PC base is a model assumption; no
+   multi-way instruction exists to exercise it.
 9. **Local memory is scaled.** `PimPU` uses 16-bit addresses and 64 K words,
    while `M92` p. 426 documents 16 M words. This is acceptable for Bluesim,
    but address-width behaviour (wrap, aliasing, page effects) must never be
-   presented as architectural.
+   presented as architectural. **Model status:** labelled — 16-bit
+   addresses and 64 K words; address-width behaviour is not architectural.
 
 ### Not stated — keep these out of "confirmed architecture"
 
