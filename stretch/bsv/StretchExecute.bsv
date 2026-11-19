@@ -3115,6 +3115,8 @@ typedef struct {
 //     hand: the first word, or the second of a crossing field once the
 //     first is in prefetch[0].  The caller sets needsRead only then, so a
 //     needsRead an earlier step set is never cleared.
+// connectiveOp's C/CT/CM main path uses it too (2026-11-19): its ladder
+// was the same one, written a tenth time.
 // ST and M+ do not use it: their RMW reads are interleaved with the store
 // (their arms say why).
 // ---------------------------------------------------------------------
@@ -5592,37 +5594,20 @@ function ActionValue#(VflOutcome)
                                // that writes back); see below.
           Word64 mLoWord = 0;  // and the second word, when CM's field
                                // crosses into it.
-          if (immediate) begin
-            m = immediateOperand(ea, len_);
-          end else begin
-            // C/CT/CM all share this prefetch/bail-out shape, and
-            // since 2026-11-06 all three may take the 2-read crossing
-            // path (CM's "MAY CROSS" note above).  CM is still
-            // guaranteed !immediate by the check further above, and
-            // keeps both words it read for the write back.
-            WordAddr w0 = baWord(ea);
-            Bit#(6) off = baBit(ea);
-            if (!fieldCrosses(ea, len_)) begin
-              if (prefetchCount >= 1) begin
-                m = extractFieldBits(prefetch[0], 0, off, len_);
-                if (cn.suffix == conn_CM) mHiWord = prefetch[0]; // CM's writeback needs the raw word
-                vflReadsUsed = 1;
-              end else
-                needsRead = tagged Valid w0;
-            end else begin
-              if (prefetchCount >= 2) begin
-                m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                if (cn.suffix == conn_CM) begin
-                  mHiWord = prefetch[0];
-                  mLoWord = prefetch[1];
-                end
-                vflReadsUsed = 2;
-              end else if (prefetchCount == 1)
-                needsRead = tagged Valid (w0 + 1);
-              else
-                needsRead = tagged Valid w0;
-            end
-          end
+          // THE OPERAND FETCH IS vflFetchOperand's (2026-11-19, plan §1c
+          // step 5e): C/CT/CM all share it, and since 2026-11-06 all
+          // three may take the two-read crossing path (CM's "MAY CROSS"
+          // note above).  CM is still guaranteed !immediate by the check
+          // further above, and keeps the words it read for the write
+          // back: the first whenever the field is in hand, the second
+          // when it crosses.  (The CM read-modify-write path above has
+          // its own ladder: its refill word is read with the field's.)
+          VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+          m = vf.raw;
+          vflReadsUsed = vf.used;
+          if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+          if (cn.suffix == conn_CM && vf.used >= 1) mHiWord = prefetch[0];
+          if (cn.suffix == conn_CM && vf.used == 2) mLoWord = prefetch[1];
           if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // p.75's byte expansion.  `maskVec` marks exactly which
