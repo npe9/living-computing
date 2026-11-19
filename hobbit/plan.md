@@ -176,6 +176,17 @@ documented interfaces.
    capture from physical hardware (no board attached here), and the
    historical BeBox/EO board models.
 
+## Formal verification (owner's question, 2026-11-19)
+
+The functional plan above does **not** lead to formal proof by itself:
+verification here is HRI trace comparison and hand-derived goldens, and
+no proof harness exists in the tree. The formal track — instruction
+equivalence against a mechanised sem contract, structural invariants,
+MMU/event order, device contracts, and bounded boot reachability, with
+bounds and artefacts recorded — is
+[`docs/plan9_formal_plan.md`](docs/plan9_formal_plan.md), and every
+boot-plan milestone must ship its formal harness with it.
+
 ## Booting Plan 9 1e (owner's direction, 2026-11-19)
 
 **Get 1e booting and printing on the UART, then support every device the
