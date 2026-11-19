@@ -101,6 +101,26 @@ Two routes to the parcel, both open:
 Until one of those answers, `run_p9.sh cat` stops at 0x12c2 exactly as
 recorded, and the model's refusal is correct behaviour.
 
+**New evidence, all five shipped binaries** (parcels from `_main`, low
+byte first):
+
+```
+echo  _main=02ad0  86dc 0bfc 4008 | 0000 | 60c2 60a1 | ffff 80e1
+cat   _main=012bc  86dc 0bfc 3004 | 0000 | 60c2 60a1 | 0805 06ac
+zl    _main=0995c  86dc 0bfc b084 | 0000 | 60c2 60a1 | ffff 80e1
+rc    _main=0b9c6  0806 | 0000 | 86dc 60a1 | e098 80e1 60c2 7740
+za    _main=07282  0ffa | 0000 | 86dc 60a1 | 8050 80e1 60c2 af0a
+```
+
+So `0x0000` is *at* the `_main` boundary in every binary — immediately
+before the `86dc` MOV in `rc`/`za` (whose symbols point two bytes
+earlier), immediately after the MOV's three parcels in `echo`/`cat`/`zl`.
+It is not a varying leftover after all; it is a parcel the linker places
+next to the first MOV, and the two groups differ only in whether the
+symbol points at it. That makes it an instruction the assembler emits
+for `_main` (or the linker for `TEXT`) and the next question is *which*,
+which the `main9.z` link will answer.
+
 ## Goal B: all the devices
 
 Inventory is fixed by the port's own files; each row is a milestone with
