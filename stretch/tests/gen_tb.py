@@ -388,6 +388,14 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append('      $display("OP TRAIL: operation invalid never set");')
     if mem_reads is not None:
         lines.append("    memReadsRun <= core.mem.memReads() - memReadsAtStart;")
+    # STRETCH_HALT_REPORT=1: print every program's halt clock and total
+    # read count, pinned or not, so that a behaviour-preserving change can
+    # be diffed against a baseline suite log on the clocks NO check pins
+    # (added 2026-11-18 for the mkVflBox stage, plan §1c step 5e).  Off
+    # by default; it changes no check.
+    import os as _os
+    if _os.environ.get('STRETCH_HALT_REPORT'):
+        lines.append('    $display("HALTREPORT cycles=%0d memreads=%0d", stepCount, core.mem.memReads());')
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")

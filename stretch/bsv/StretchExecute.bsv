@@ -95,6 +95,7 @@ import StretchIO::*;
 import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
 import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
 import StretchCvtBox::*;       // CvtReq/CvtRsp/mkCvtBox: the radix converter (DCV)
+import StretchVflBox::*;       // VflReq/VflRsp/mkVflBox: the VFL arithmetic box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -2975,17 +2976,30 @@ typedef struct {
 // THREE SINCE 2026-11-16: the RADIX CONVERTER (StretchCvtBox.bsv,
 // mkCvtBox), for CONVERT DOUBLE; an arm that asked it takes
 // `cvtOf(boxResult)`.
+//
+// FOUR SINCE 2026-11-18: the VFL ARITHMETIC BOX (StretchVflBox.bsv,
+// mkVflBox), vflIntOp's datapath moved out class by class; stage 1 is
+// the binary multiply of `*` and `*+`.  An arm that asked it takes
+// `vflOf(boxResult)`.  boxKindOf's Bit#(2) is now full: a fifth box
+// needs it widened, in mkEBox's `boxKind` too.
 typedef union tagged {
   DivReq BoxDiv;
   DecReq BoxDec;
   CvtReq BoxCvt;
+  VflReq BoxVfl;
 } BoxReq deriving (Bits, Eq, FShow);
 
 typedef union tagged {
   DivRsp RspDiv;
   DecRsp RspDec;
   CvtRsp RspCvt;
+  VflRsp RspVfl;
 } BoxRsp deriving (Bits, Eq, FShow);
+
+function Maybe#(VflRsp) vflOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspVfl .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
 
 function Maybe#(CvtRsp) cvtOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspCvt .d)) return tagged Valid d;
@@ -3007,11 +3021,12 @@ function Bit#(7) cvtSigDigits(Bit#(128) dig);
 endfunction
 
 // Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
-// radix converter.
+// radix converter, 3 the VFL arithmetic box.
 function Bit#(2) boxKindOf(BoxReq r);
   case (r) matches
     tagged BoxDec .*: return 1;
     tagged BoxCvt .*: return 2;
+    tagged BoxVfl .*: return 3;
     default:          return 0;
   endcase
 endfunction
@@ -3079,6 +3094,63 @@ typedef struct {
   // A crossing store's second word when it is below 32: see ExecDone.
   Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
 } VflOutcome;
+
+// ---------------------------------------------------------------------
+// THE VFL OPERAND FETCH, ONCE (2026-11-18, plan §1c step 5e stage 2).
+// Nine of vflIntOp's arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV,
+// LTRCV, and LTRS (which also serves decimal *, *+ and /) -- began with the same 22-line ladder, verbatim: an immediate
+// operand is the address field itself; otherwise the field is taken from
+// the words the look-ahead or earlier bails have collected, one word if
+// it does not cross a word boundary and two if it does, and a field not
+// yet in hand names the word to read next.  It is pure (no storage, no
+// Action), so it is a function and not a box; lifting it out changes no
+// hardware, only how often it is written down.
+//
+// THE CONTRACT EACH CALL SITE KEEPS, which is what the inlined ladder did:
+//   * `raw` is the field when it is in hand and 0 when it is not;
+//   * `used` is how many prefetch slots the field took (1 or 2), and 0
+//     for an immediate operand or a field not yet in hand -- vflReadsUsed's
+//     initial value, so the caller may assign it unconditionally;
+//   * `read` is Valid with the word to read when the field is not in
+//     hand: the first word, or the second of a crossing field once the
+//     first is in prefetch[0].  The caller sets needsRead only then, so a
+//     needsRead an earlier step set is never cleared.
+// ST and M+ do not use it: their RMW reads are interleaved with the store
+// (their arms say why).
+// ---------------------------------------------------------------------
+typedef struct {
+  Bit#(64)         raw;
+  Bit#(2)          used;
+  Maybe#(WordAddr) read;
+} VflFetch;
+
+function VflFetch vflFetchOperand(Bool immediate, BitAddr ea, Bit#(7) len_,
+                                  Vector#(NPrefetch, Word64) prefetch,
+                                  Bit#(2) prefetchCount);
+  VflFetch f = VflFetch { raw: 0, used: 0, read: tagged Invalid };
+  if (immediate)
+    f.raw = immediateOperand(ea, len_);
+  else begin
+    WordAddr w0  = baWord(ea);
+    Bit#(6)  off = baBit(ea);
+    if (!fieldCrosses(ea, len_)) begin
+      if (prefetchCount >= 1) begin
+        f.raw  = extractFieldBits(prefetch[0], 0, off, len_);
+        f.used = 1;
+      end else
+        f.read = tagged Valid w0;
+    end else begin
+      if (prefetchCount >= 2) begin
+        f.raw  = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+        f.used = 2;
+      end else if (prefetchCount == 1)
+        f.read = tagged Valid (w0 + 1);
+      else
+        f.read = tagged Valid w0;
+    end
+  end
+  return f;
+endfunction
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
@@ -3301,28 +3373,10 @@ function ActionValue#(VflOutcome)
             // maybeRefill directly (the OLD, still-synchronous
             // st.readWord path) -- unconverted, unaffected, working
             // exactly as before.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             // >>> DECIMAL LOAD AND LOAD WITH FLAG, 2026-11-16: AN ADD TO
             // ZERO, THROUGH mkDecBox. <<<  Reference Manual printed p.61:
             // "The numeric part of the addressed operand is placed in the
@@ -3755,28 +3809,10 @@ function ActionValue#(VflOutcome)
             // contents of the accumulator may be changed, including
             // the part below the offset."
             Bool magnitude = (vi.code == 6'b100001);
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && vi.m.decimal == 1) begin
               // >>> DECIMAL ADD AND ADD TO MAGNITUDE, 2026-11-16. <<<
               // Reference Manual printed p.60 (PDF 63), ADD, Radix: "In
@@ -3951,51 +3987,42 @@ function ActionValue#(VflOutcome)
             // ADD" and is marked here as the one unverified detail.
             //
             // Same prefetch/bail-out shape as + above.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
               SM128 acc = readAcc(st);
               // "the accumulator field specified by the offset"
               Bit#(128) accOp = acc.mag >> offSh;
-              // "either operand exceeds 48 significant bits in length"
-              if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
-                ind = setBit(ind, ind_PF, 1);
-              Bit#(96) a = zeroExtend(accOp[47:0]);
-              Bit#(96) b = zeroExtend(opnd.mag[47:0]);
-              Bit#(96) prod = a * b;
-              // "placed into the CLEARED accumulator at offset 20" --
-              // cleared means cleared, so every other accumulator bit
-              // goes to zero, including the bits below 20 and the ones
-              // the accumulator operand itself came from.
-              SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
-                                  mag: zeroExtend(prod) << 20 };
-              writeAcc(st, res);
-              // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
-              // operation, these indicators are set as in ADD."
-              ind = setResultIndicatorsF(ind, res);
+              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchVflBox.bsv,
+              // 2026-11-18): the PAU's multiplier, twelve multiplier bits
+              // a clock, reached by the NeedBox bail exactly as decimal
+              // + reaches mkDecBox.  Every write and every indicator is
+              // on the answered run; the run that asks writes nothing.
+              if (vflOf(boxResult) matches tagged Valid .mr) begin
+                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+                ind = setBit(ind, ind_MOP, 0);
+                // "either operand exceeds 48 significant bits in length"
+                if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
+                  ind = setBit(ind, ind_PF, 1);
+                Bit#(96) prod = mr.prod;
+                // "placed into the CLEARED accumulator at offset 20" --
+                // cleared means cleared, so every other accumulator bit
+                // goes to zero, including the bits below 20 and the ones
+                // the accumulator operand itself came from.
+                SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
+                                    mag: zeroExtend(prod) << 20 };
+                writeAcc(st, res);
+                // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
+                // operation, these indicators are set as in ADD."
+                ind = setResultIndicatorsF(ind, res);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                              VflMulReq { mcand: accOp[47:0], mpr: opnd.mag[47:0] }));
+                needsRead = tagged Valid 0;
+              end
             end
           end
           6'b001011, 6'b111001: begin // LFT (Load Factor), *+ (Multiply and Add)
@@ -4030,28 +4057,10 @@ function ActionValue#(VflOutcome)
             //
             // Lost Carry "as in ADD": binAccAdd, ADD's own rule, since
             // 2026-11-16.  Same prefetch/bail-out shape as + above.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
@@ -4088,24 +4097,33 @@ function ActionValue#(VflOutcome)
                 Bit#(1)  ftSign = ft[3];
                 if ((mcand >> 48) != 0 || (opnd.mag >> 48) != 0)
                   ind = setBit(ind, ind_PF, 1);
-                Bit#(96) a = zeroExtend(mcand[47:0]);
-                Bit#(96) b = zeroExtend(opnd.mag[47:0]);
-                Bit#(96) prod = a * b;
-                // "Lost Carry (LC).  In a binary operation, this
-                // indicator is set as in ADD" (printed p.69, read in the
-                // page image), and the product's PF "if the offset is
-                // such that significant bits of the product attempt to
-                // combine with accumulator positions to the left of the
-                // left end of the accumulator" -- ADD's PF, the product
-                // being the addend.  So the add is ADD's own rule,
-                // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
-                BinAccAdd ba = binAccAdd(readAcc(st),
-                                 SM128 { sign: ftSign ^ opnd.sign,
-                                         mag: zeroExtend(prod) }, offSh);
-                writeAcc(st, ba.sum);
-                ind = setResultIndicatorsF(ind, ba.sum);
-                if (ba.lc) ind = setBit(ind, ind_LC, 1);
-                if (ba.pf) ind = setBit(ind, ind_PF, 1);
+                // THE PRODUCT IS mkVflBox's, as for `*` (that arm's note):
+                // the run that asks writes nothing -- the accumulator write
+                // below is on the answered run only, and the indicators
+                // set above are discarded with the bail (execute()'s foot
+                // returns before setIndicatorBits).
+                if (vflOf(boxResult) matches tagged Valid .mr) begin
+                  Bit#(96) prod = mr.prod;
+                  // "Lost Carry (LC).  In a binary operation, this
+                  // indicator is set as in ADD" (printed p.69, read in the
+                  // page image), and the product's PF "if the offset is
+                  // such that significant bits of the product attempt to
+                  // combine with accumulator positions to the left of the
+                  // left end of the accumulator" -- ADD's PF, the product
+                  // being the addend.  So the add is ADD's own rule,
+                  // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
+                  BinAccAdd ba = binAccAdd(readAcc(st),
+                                   SM128 { sign: ftSign ^ opnd.sign,
+                                           mag: zeroExtend(prod) }, offSh);
+                  writeAcc(st, ba.sum);
+                  ind = setResultIndicatorsF(ind, ba.sum);
+                  if (ba.lc) ind = setBit(ind, ind_LC, 1);
+                  if (ba.pf) ind = setBit(ind, ind_PF, 1);
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                                VflMulReq { mcand: mcand[47:0], mpr: opnd.mag[47:0] }));
+                  needsRead = tagged Valid 0;
+                end
               end
               // "To-Memory Operation (MOP) ... set as in ADD", and ADD
               // turns it off (p.60).
@@ -4180,28 +4198,10 @@ function ActionValue#(VflOutcome)
             // and line 19's "L(BU,26), $TC, -60" put the clock there.
             //
             // Same prefetch/bail-out shape as + and * above.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
@@ -4636,28 +4636,10 @@ function ActionValue#(VflOutcome)
             Bool fieldCmp = (vi.code[5] == 1);
             Bool condEq    = (vi.code[4:0] == 5'b10011);   // KE, KFE
             Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
@@ -4793,28 +4775,10 @@ function ActionValue#(VflOutcome)
             // binary-to-decimal in the arm below (both now mkCvtBox), which
             // printed p.32 line 6's "LCV(BU,18),$13 -CONVERT CHANNEL
             // TO DECIMAL" uses.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               // THE CONVERSION IS mkCvtBox's (StretchCvtBox.bsv), 2026-11-17,
               // as DCV's is: asked for once every word this instruction
@@ -5067,28 +5031,10 @@ function ActionValue#(VflOutcome)
             //
             // Same prefetch/bail-out shape as LCV, because the
             // operand is a storage field just as LCV's is.
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               Bool    signed_ = (vi.m.unsign == 0);
               Bit#(7) sbBits  = zeroExtend(bsz);
@@ -5192,28 +5138,10 @@ function ActionValue#(VflOutcome)
             // THE COUNTS go back through connCounts and are written by the
             // caller after this function's own writes -- the connectives'
             // route to location 7 (VflOutcome's comment).
-            Bit#(64) raw = 0;
-            if (immediate) begin
-              raw = immediateOperand(ea, len_);
-            end else begin
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               Bit#(128) num = opnd.mag;
@@ -8613,6 +8541,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // meaningful only while `boxWait` is set.
   DecBox                   decBox        <- mkDecBox;
   CvtBox                   cvtBox        <- mkCvtBox;
+  // THE VFL ARITHMETIC BOX (StretchVflBox.bsv), the fourth, 2026-11-18:
+  // boxKind 3.
+  VflBox                   vflBox        <- mkVflBox;
   Reg#(Bit#(2))            boxKind       <- mkReg(0);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
@@ -8657,6 +8588,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
+          tagged BoxVfl .d: vflBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
@@ -8685,6 +8617,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                             && (subjReady
                                 || (boxWait ? (boxKind == 1 ? decBox.responseReady()
                                                : boxKind == 2 ? cvtBox.responseReady()
+                                               : boxKind == 3 ? vflBox.responseReady()
                                                               : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
@@ -8765,6 +8698,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     if (boxWait) begin
       rbox = tagged Valid (boxKind == 1 ? tagged RspDec decBox.response()
                          : boxKind == 2 ? tagged RspCvt cvtBox.response()
+                         : boxKind == 3 ? tagged RspVfl vflBox.response()
                                         : tagged RspDiv divBox.response());
       // `boxWait` is cleared below, in the arms of the dispatch that do
       // not ask for a box again -- ONE write per arm.  Clearing it here
@@ -8982,6 +8916,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
+          tagged BoxVfl .d: vflBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
