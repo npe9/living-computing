@@ -39,17 +39,22 @@ The symbol table fixes the load rule: `sys/src/9/hobbit/mem.h` has
 file — 32-byte `Exec` header included — at 0x1000, which puts the text
 section at 0x1020 and data at 0x4000.
 
-**The text byte order is settled, by the oracle it needed.** The
-release stores each parcel **low byte first** (little-endian 16-bit
-halves), not in `SPUT`'s write order, and pads an instruction to a
-4-byte boundary. At `_main` (0x2ad0) the first parcel reads `0x86dc`: a
-3-parcel MOV — opcode 0x06, the `AMOV` genop in `zl/optab.c` — with
-`smode 0xd`, `dmode 0xc` and destination field **0x4008**, which is the
-symbol-table address of `_clock`; that is exactly main9.s's first
-instruction, `MOV R0, _clock(SB)`. `tools/p9exec.py` performs that
-check and fails if it stops holding. What is still open is the rest of
-the stream (the padding rule for 1-parcel instructions, and the full
-`_main` prologue), which the loader needs before it runs.
+**The text layout is not settled, and is written down as open.** Two
+candidate layouts survive scrutiny, and they disagree:
+
+| layout | `main` (0x1020) first parcel | `_main` (0x2ad0) first parcel |
+|---|---|---|
+| A: code at file offset 32, parcels low byte first | 0xffff (invalid) | **0x86dc**: 3-parcel MOV, `smode 0xd`, `dmode 0xc`, destination 0x4008 = `_clock`, i.e. main9.s's `MOV R0, _clock(SB)` |
+| B: code at file offset 64, parcels low byte first | 0x86fd: 3-parcel MOV | 0xe930 (1-parcel, not a prologue) |
+
+The etext arithmetic (0x3278 = 0x1020 + 0x2258) says the text is based
+at 0x1020, which neither layout explains on its own; and `zl/asm.c`'s
+`SPUT` writes parcels high byte first, which neither matches. So the
+byte order and the code offset are two unknowns with one equation, and
+`tools/p9exec.py` reports both candidates and **claims neither**. The
+arbiters are the linker's own decoder (`libmach/z.c`, vendored) and the
+kernel's exec path (not vendored); reading those is the next step, not
+guesswork. There is no loader until this is answered.
 
 ## Definition of the proof of concept
 

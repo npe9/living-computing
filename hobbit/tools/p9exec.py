@@ -12,15 +12,21 @@ Everything here is stated by a file in tools/plan9-1e/:
 Two facts about the text were established from the shipped `echo` and
 are checked here rather than assumed:
 
-* **Parcels are little-endian 16-bit halves.** `zl/asm.c`'s SPUT writes
-  a parcel as two bytes, high byte first, but the linked image in the
-  release stores each parcel low byte first: at `_main` the first parcel
-  reads `0x86dc`, which is a 3-parcel MOV (opcode 0x06, the AMOV genop
-  in `zl/optab.c`) whose destination field is 0x4008 -- the address of
-  `_clock` in the symbol table, which is exactly main9.s's first
-  instruction, `MOV R0, _clock(SB)`.
-* **Instructions are padded to 4-byte boundaries**, which is why a
-  3-parcel (6-byte) instruction is followed by one 0x0000 parcel.
+**The text layout is not settled yet, and this tool does not pretend
+otherwise.** Two candidate layouts are tested instead:
+
+  A  code at file offset 32, parcels little-endian 16-bit halves
+  B  code at file offset 64, parcels little-endian 16-bit halves
+
+Under A, `_main` (0x2ad0) begins with parcel 0x86dc: a 3-parcel MOV
+(opcode 0x06, the AMOV genop in zl/optab.c) whose destination field is
+0x4008, the symbol-table address of `_clock` -- exactly main9.s's first
+instruction, `MOV R0, _clock(SB)`.  Under A, `main` (0x1020) begins with
+an invalid 0xffff parcel.  Under B it is the other way round.  The
+etext arithmetic (0x3278 = 0x1020 + 0x2258) says the text is based at
+0x1020, which neither layout alone explains.  The linker's own decoder
+(`libmach/z.c`) and the kernel's exec path are the arbiters; until one
+of them is read, this is a lead, not a rule.
 
 The model's image format is big-endian parcels (even parcel in bits
 31:16), so the conversion here is the inverse of the file's order.
@@ -152,17 +158,35 @@ def main(argv):
     for addr, p, *rest in decode(parcels, base, exe["entry"], args.decode):
         print("  %08x  %04x  %s" % (addr, p, " ".join(map(str, rest))))
 
-    if "_main" in syms:
-        # main9.s: `TEXT _main(SB), 1, $12` / `MOV R0, _clock(SB)`; the
-        # symbol table puts _clock at 0x4008, the first data word.
-        first = decode(parcels, base, syms["_main"][0], 1)[0]
-        p = first[1]
-        fields = first[5] if len(first) > 5 else []
-        if (p >> 8) & 0x3F != 0x06 or "0x4008" not in fields:
-            print("  CHECK FAILED: `_main` does not begin with MOV ...,0x4008",
-                  file=sys.stderr)
-            return 1
-        print("  check: `_main` begins with MOV to 0x4008 (_clock), as main9.s says")
+    # Two candidate layouts; report both and claim neither.
+    for code_off, label in ((32, "A: code at file offset 32"),
+                            (64, "B: code at file offset 64")):
+        code = exe["blob"][code_off:code_off + exe["text"]]
+        parcels = [code[i] | (code[i + 1] << 8)
+                   for i in range(0, len(code) - 1, 2)]
+        row = []
+        for name in ("main", "_main"):
+            if name not in syms:
+                continue
+            inst = decode(parcels, base, syms[name][0], 1)[0]
+            row.append("%s@%06x=%s" % (name, syms[name][0], inst[1:]))
+        print("  %-24s %s" % (label, "; ".join(row)))
+    print("  LAYOUT: unresolved -- see the module docstring")
+
+    # Invariants that follow from the header and the symbol table alone.
+    problems = []
+    if "main" in syms and "etext" in syms:
+        if syms["etext"][0] != syms["main"][0] + exe["text"]:
+            problems.append("etext != main + text size")
+    if "_main" in syms and syms["_main"][0] != exe["entry"]:
+        problems.append("entry != _main")
+    if "bdata" in syms and syms["bdata"][0] != UTZERO + 0x3000:
+        problems.append("bdata != 0x%x" % (UTZERO + 0x3000))
+    if problems:
+        print("  CHECK FAILED: " + "; ".join(problems), file=sys.stderr)
+        return 1
+    print("  check: etext = main + text, entry = _main, bdata = 0x%x" %
+          (UTZERO + 0x3000))
 
     if args.image:
         words, entry_parcel = to_model_image(exe)
