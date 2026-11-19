@@ -1,0 +1,88 @@
+id,kind,group,op,variant,min,max,time,covers,source,note
+t432_add,instruction,Simple,ADD,,1,1,,ADD,p. 4-3 Table 4-32,
+t432_add3,instruction,Simple,ADD3,,1,1,,ADD3,p. 4-3 Table 4-32,
+t432_addi,instruction,Simple,ADDI,,2,2,,ADDI,p. 4-3 Table 4-32,Printed ADD1 in Table 4-32; Table 3-1 and p. 3-6 print ADDI.
+t432_and,instruction,Simple,AND,,1,1,,AND,p. 4-3 Table 4-32,
+t432_and3,instruction,Simple,AND3,,1,1,,AND3,p. 4-3 Table 4-32,
+t432_andi,instruction,Simple,ANDI,,2,2,,ANDI,p. 4-3 Table 4-32,
+t432_call,instruction,Simple,CALL,,1,1,,CALL,p. 4-3 Table 4-32,
+t432_clre,instruction,Simple,CLRE,,1,1,,CLRE,p. 4-3 Table 4-32,
+t432_cmp,instruction,Simple,CMP,,1,1,,CMPEQ;CMPGT;CMPHI,p. 4-3 Table 4-32,CMP is not a Table 3-1 mnemonic; mapped to the three compare instructions (p. 3-13).
+t432_cpu,instruction,Simple,CPU,,0,0,,CPU,p. 4-3 Table 4-32,Prefix only. A CPU-prefix IC miss adds @t437_cpu_prefix.
+t432_flushi,instruction,Simple,FLUSHI,,1,1,,FLUSHI,p. 4-3 Table 4-32,
+t432_flushp,instruction,Simple,FLUSHP,,1,1,,FLUSHP,p. 4-3 Table 4-32,
+t432_flushpbe,instruction,Simple,FLUSHPBE,,1,1,,FLUSHPBE,p. 4-3 Table 4-32,
+t432_flushpte,instruction,Simple,FLUSHPTE,,1,1,,FLUSHPTE,p. 4-3 Table 4-32,
+t432_jmp,instruction,Simple,JMP,,0,1,,JMP,p. 4-3 Table 4-32,Folded into the previous instruction: 0. Not folded: 1 (p. 4-3 note).
+t432_ldraa,instruction,Simple,LDRAA,,1,1,,LDRAA,p. 4-3 Table 4-32,
+t432_mov,instruction,Simple,MOV,,1,1,,MOV,p. 4-3 Table 4-32,
+t432_mova,instruction,Simple,MOVA,,1,1,,MOVA,p. 4-3 Table 4-32,
+t432_nop,instruction,Simple,NOP,,1,1,,NOP,p. 4-3 Table 4-32,
+t432_or,instruction,Simple,OR,,1,1,,OR,p. 4-3 Table 4-32,
+t432_or3,instruction,Simple,OR3,,1,1,,OR3,p. 4-3 Table 4-32,
+t432_ori,instruction,Simple,ORI,,2,2,,ORI,p. 4-3 Table 4-32,
+t432_return,instruction,Simple,RETURN,,2,2,,RETURN,p. 4-3 Table 4-32,Always indirect; do not add an indirection delay (p. 4-3 note).
+t432_popn,instruction,Simple,POPN,,2,2,,POPN,p. 4-3 Table 4-32,
+t432_shl,instruction,Simple,SHL,,1,1,,SHL,p. 4-3 Table 4-32,
+t432_shl3,instruction,Simple,SHL3,,1,1,,SHL3,p. 4-3 Table 4-32,
+t432_shr,instruction,Simple,SHR,,1,1,,SHR,p. 4-3 Table 4-32,
+t432_shr3,instruction,Simple,SHR3,,1,1,,SHR3,p. 4-3 Table 4-32,
+t432_sub,instruction,Simple,SUB,,1,1,,SUB,p. 4-3 Table 4-32,
+t432_sub3,instruction,Simple,SUB3,,1,1,,SUB3,p. 4-3 Table 4-32,
+t432_tadd,instruction,Simple,TADD,,1,1,,TADD,p. 4-3 Table 4-32,
+t432_testc,instruction,Simple,TESTC,,1,1,,TESTC,p. 4-3 Table 4-32,
+t432_testv,instruction,Simple,TESTV,,1,1,,TESTV,p. 4-3 Table 4-32,
+t432_tsub,instruction,Simple,TSUB,,1,1,,TSUB,p. 4-3 Table 4-32,
+t432_ushr,instruction,Simple,USHR,,1,1,,USHR,p. 4-3 Table 4-32,
+t432_ushr3,instruction,Simple,USHR3,,1,1,,USHR3,p. 4-3 Table 4-32,
+t432_xor,instruction,Simple,XOR,,1,1,,XOR,p. 4-3 Table 4-32,
+t432_xor3,instruction,Simple,XOR3,,1,1,,XOR3,p. 4-3 Table 4-32,
+t433_div,instruction,Multi-Cycle Arithmetic,DIV,,38,38,,DIV,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_div3,instruction,Multi-Cycle Arithmetic,DIV3,,38,38,,DIV3,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_mul,instruction,Multi-Cycle Arithmetic,MUL,,3,20,,MUL,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_mul3,instruction,Multi-Cycle Arithmetic,MUL3,,3,20,,MUL3,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_rem,instruction,Multi-Cycle Arithmetic,REM,,38,38,,REM,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_rem3,instruction,Multi-Cycle Arithmetic,REM3,,38,38,,REM3,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_udiv,instruction,Multi-Cycle Arithmetic,UDIV,,38,38,,UDIV,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t433_urem,instruction,Multi-Cycle Arithmetic,UREM,,38,38,,UREM,p. 4-4 Table 4-33,Data dependent. Fetch @t437_ic_pfb and operand-access @t438_op_mem1 and data-type @t439_dt1 delays are possible (p. 4-3).
+t434_const_sc_dw,dqm,DQM,DQM,Constant to SC double-word,,,3,DQM,p. 4-4 Table 4-34,Anchor row for Table 3-1 DQM. Instruction fetch delays are possible (p. 4-4) e.g. @t437_ic_pfb.
+t434_const_sc_qw,dqm,DQM,DQM,Constant to SC quad-word,,,5,,p. 4-4 Table 4-34,
+t434_const_m_dw,dqm,DQM,DQM,Constant to M double-word,,,1 + D,,p. 4-4 Table 4-34,
+t434_const_m_qw,dqm,DQM,DQM,Constant to M quad-word,,,1 + Q,,p. 4-4 Table 4-34,
+t434_sc_dw_sc_dw,dqm,DQM,DQM,SC double-word to SC double-word,,,4,,p. 4-4 Table 4-34,
+t434_sc_qw_sc_qw,dqm,DQM,DQM,SC quad-word to SC quad-word,,,8,,p. 4-4 Table 4-34,
+t434_scm_dw_msc_dw,dqm,DQM,DQM,SC/M double-word to M/SC double-word,,,2 + D,,p. 4-4 Table 4-34,
+t434_scm_qw_msc_qw,dqm,DQM,DQM,SC/M quad-word to M/SC quad-word,,,4 + D,,p. 4-4 Table 4-34,Printed 4 + D; a quad-word transfer priced with D rather than Q. Compare Constant to M quad-word 1 + Q. Unresolved.
+t434_m_dw_m_dw,dqm,DQM,DQM,M double-word to M double-word,,,2·D,,p. 4-4 Table 4-34,
+t434_m_qw_m_qw,dqm,DQM,DQM,M quad-word to M quad-word,,,8·S,,p. 4-4 Table 4-34,Printed 8·S; S is not in the p. 4-2 abbreviation list. Presumably 8·Q. Unresolved.
+t435_correct_folded,condjump,Conditional Jump,,"Correct prediction, folded",,,0,JMPFY;JMPFN;JMPTY;JMPTN,p. 4-5 Table 4-35,Anchor row for Table 3-1 JMP(F/N)(Y/N). Fetch delays are possible if the branch is not folded (p. 4-4) e.g. @t437_ic_pfb.
+t435_correct_unfolded,condjump,Conditional Jump,,"Correct prediction, unfolded",,,1,,p. 4-5 Table 4-35,
+t435_incorrect_after,condjump,Conditional Jump,,"Incorrect prediction, jump after compare",,,3,,p. 4-5 Table 4-35,
+t435_incorrect_2,condjump,Conditional Jump,,"Incorrect prediction, jump 2 instructions after compare",,,2,,p. 4-5 Table 4-35,
+t435_incorrect_3,condjump,Conditional Jump,,"Incorrect prediction, jump 3 instructions after compare",,,1,,p. 4-5 Table 4-35,
+t435_incorrect_unfolded_4,condjump,Conditional Jump,,"Incorrect prediction, unfolded, 4 or more instructions after compare",,,1,,p. 4-5 Table 4-35,Table 4-35 prints no folded incorrect-prediction row for 1 to 3 instructions after compare; see the p. 4-7 fold restrictions.
+t435_incorrect_folded_4,condjump,Conditional Jump,,"Incorrect prediction, folded, 4 or more instructions after compare",,,0,,p. 4-5 Table 4-35,
+t436_catch,misc,Miscellaneous,CATCH,,,,1,CATCH,p. 4-5 Table 4-36,Instruction fetch and miscellaneous delays are possible (p. 4-5) e.g. @t437_ic_pfb @t440_ind_sc.
+t436_cret,misc,Miscellaneous,CRET,,,,11 + Q,CRET,p. 4-5 Table 4-36,
+t436_enter,misc,Miscellaneous,ENTER,,,,1 + (Q·E),ENTER,p. 4-5 Table 4-36,E is ENTER size (p. 4-2). The manual never states the unit of E.
+t436_kcall,misc,Miscellaneous,KCALL,,,,8 + D + A,KCALL,p. 4-5 Table 4-36,
+t436_kret,misc,Miscellaneous,KRET,,,,10 + D,KRET,p. 4-5 Table 4-36,
+t436_unimplemented,misc,Miscellaneous,Unimplemented opcode,,,,7 + A,FLUSHD;FLUSHDCE,p. 4-5 Table 4-36,FLUSHD and FLUSHDCE take the unimplemented-instruction sequence (pp. 3-22 and 3-23); this is their only timing row.
+t436_exception,misc,Miscellaneous,Exception,,,,9 + D + A,,p. 4-5 Table 4-36,No Table 3-1 mnemonic maps to this row.
+t437_ic_pfb,delay,Fetch and Empty Pipeline,,"IC miss, instruction contained in prefetch buffer",,,3,,p. 4-6 Table 4-37,
+t437_ic_dw,delay,Fetch and Empty Pipeline,,"IC miss, instruction contained in single double-word in memory",,,"5 + D",,p. 4-6 Table 4-37,
+t437_ic_qw,delay,Fetch and Empty Pipeline,,"IC miss, instruction contained in single quad-word memory",,,"5 + 2D",,p. 4-6 Table 4-37,Printed 5 + 2D; the quad-word fetch is priced with D rather than Q. Unresolved.
+t437_ic_2qw,delay,Fetch and Empty Pipeline,,"IC miss, instruction contained in 2 quad-words in memory",,,"8 + 2D",,p. 4-6 Table 4-37,Same 2D memory term as the single quad-word row despite twice the data.
+t437_cpu_prefix,delay,Fetch and Empty Pipeline,,"IC miss and instruction is a CPU-prefix operation",,,1,,p. 4-6 Table 4-37,
+t437_eu_empty,delay,Fetch and Empty Pipeline,,"EU pipeline empty",,,2,,p. 4-6 Table 4-37,
+t438_op_mem1,delay,Operand Access,,"One operand in memory",,,"1 + A",,p. 4-6 Table 4-38,
+t438_op_mem2,delay,Operand Access,,"Two operands in memory",,,"1 + 2A",,p. 4-6 Table 4-38,
+t438_op_ind_sc,delay,Operand Access,,"One or two operands indirect, both pointers in stack cache",,,1,,p. 4-6 Table 4-38,
+t438_op_ind_1m,delay,Operand Access,,"One or two operands indirect, one pointer in memory",,,"1 + A",,p. 4-6 Table 4-38,
+t438_op_ind_2m,delay,Operand Access,,"Two operands indirect, both pointers in memory",,,"1 + 2A",,p. 4-6 Table 4-38,
+t438_dst_mem,delay,Operand Access,,Destination in memory,,,A,,p. 4-6 Table 4-38,RETURN is always indirect and must not add an indirection delay (p. 4-3).
+t439_dt1,delay,Data Type,,One operand not word type,,,1,,p. 4-7 Table 4-39,
+t439_dt2,delay,Data Type,,Two operands not word type,,,2,,p. 4-7 Table 4-39,
+t440_ind_sc,delay,Miscellaneous,,"One or two operands indirect, both pointers in stack cache",,,1,,p. 4-7 Table 4-40,
+t440_ind_1m,delay,Miscellaneous,,"One or two operands indirect, one pointer in memory",,,"1 + A",,p. 4-7 Table 4-40,
+t440_ind_2m,delay,Miscellaneous,,"Two operands indirect, both pointers in memory",,,"1 + 2A",,p. 4-7 Table 4-40,Byte-identical to the three indirect rows of Table 4-38; the manual does not say whether both tables apply to one access.

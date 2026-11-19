@@ -84,14 +84,20 @@ Observed on 2026-11-19, first run:
 * **check 1** — the `genop` byte of every mnemonic in Tables 1-18/1-20
   equals the manual's opcode[5:0]: **35 checked, 0 mismatches**
   (ADD `0x23`, ADD3 `0x33`, MOV `0x06`, CMPEQ `0x1f`, DQM `0x07`, …).
+* **check 3** — the one-parcel opcodes Plan 9 folds to, parsed out of the
+  `decod` strings exactly as `asm.c` parses them, against the Table 1-15
+  entries on p. 1-22: **10 mnemonics checked, 0 mismatches** (ADD, ADD3,
+  AND, AND3, CMPEQ, CMPGT, MOV, MOVA, SHL3, SHR3 — including `MOV.WS`
+  `0x0a` and `ADD3.WS` `0x0d`, which are easy to miss).
 * **check 2** — Table 3-1's 46 mnemonic entries expand to 60 spellings,
   and **45 of 46 entries** have a Plan 9 mnemonic spelled as the manual
   spells it. The missing one is `CLRE` ("clear PSW enter guard bit",
   manual p. 1-22, a niladic): the string `clre` appears nowhere in the
   vendored tree. That is a statement about Plan 9's coverage, not about
   the chip, and the script pins the gap: any other absence fails.
-* 50 `optab.c` entries lie outside the Tables 1-18/1-20 grid and are not
-  checked: the Table 1-19 monadics (`CALL`, `CATCH`, `ENTER`, `RETURN`,
+* 50 `optab.c` entries lie outside the Tables 1-18/1-20 grid. Ten of them
+  are the folded one-parcel forms that check 3 covers; the rest are
+  unchecked: the Table 1-19 monadics (`CALL`, `CATCH`, `ENTER`, `RETURN`,
   `POPN`, `LDRAA`, `KCALL`, `KRET`, `FLUSH*`, the four conditional
   `JMP`s), the Table 1-17 niladics (`CPU`, `KRET`, `NOP`, `CRET`,
   `TESTV`, `TESTC`), and 26 floating-point mnemonics (`FADD`, `FMUL3`,
