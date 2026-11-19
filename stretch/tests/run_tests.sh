@@ -2656,6 +2656,21 @@ run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p
     "RX4:3140=0x800000000000" "RX5:3141=0x400000040c04" "RSIC:3142=0" \
     "BITW:3143=0xc000000000000000" "MARK:3144=0xc000000000000000"
 
+# >>> SIC PREFIXED TO BD STORES INTO A PROTECTED WORD, 2026-11-19. <<<
+# RefMan printed p.31 (disabled: no storage protection), p.41 (SIC runs iff
+# the branch succeeds), p.49 (the table's SIC,X / BD,routine); MCP printed
+# p.111 ll.2-3 (SIT+21 SIC,STIC / BD,SIFAE).  The store is tested against
+# the enable state the inner branch leaves (RECONSTRUCTION).  Found by
+# check_bss_mcp_go.py stage 7.  Injections (observed):
+#   pre-BD state (the old bug)  RES 0xc000..., PROTA 0, CYCLES 292, MEMREADS 23
+#   store never tested          RES 0, PROTB stored, CYCLES 269, MEMREADS 17
+# CYCLES and MEMREADS are MODEL behaviour.
+run "SIC PREFIXED TO BD STORES INTO A PROTECTED WORD (printed p.31, p.49; MCP p.111)" ./run_program.sh ../decks/sic_bd_protected_store.strap StretchSicBdTb \
+    "PC=4247" \
+    "CYCLES=299+-0" \
+    "MEMREADS=24" \
+    "RES:3136=0x4000000000000000" "PROTA:3137=0x0211200000000000" "PROTB:3138=0"
+
 # >>> FLOATING-POINT M+ AND M+MG ARE STORE-TYPE: DS, NEVER DF, 2026-11-18. <<<
 # RefMan printed p.51 item a (PDF 54): "In ADD TO MEMORY, when the operand in
 # storage is protected, only indicator DS will be actuated.  Indicator DF

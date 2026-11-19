@@ -152,7 +152,9 @@ def a8_word(name):
     return int.from_bytes(bytes(a8(c) for c in name.ljust(8)), "big")
 
 
-def stub_source(entries, size, blank, commons, calls):
+def stub_source(entries, size, blank, commons, calls, body=None):
+    """body (optional): {entry index: [two half-word statements]} in place
+    of that entry's B,E;NOP (check_bss_mcp_go's SCAFFOLD *MAIN*)."""
     src = ["        PUNFPC,%s,%d" % ("(8)777777" if size is None else "LAST", blank)]
     src += ["%-8sENTER,E%d" % (n, k) for k, (n, _w) in enumerate(entries)]
     if commons:
@@ -169,7 +171,10 @@ def stub_source(entries, size, blank, commons, calls):
         assert w >= pos
         if w > pos:
             src.append("        DR(BU,64),%d" % (w - pos))
-        src += ["E%d      B,E%d" % (k, k), "        NOP"]
+        if body and k in body:
+            src += ["E%d      %s" % (k, body[k][0]), "        %s" % body[k][1]]
+        else:
+            src += ["E%d      B,E%d" % (k, k), "        NOP"]
         pos = w + 1
     if size is None:            # RANDM: its extent is 7 words, a DD at word 6
         src += ["        DR(BU,64),5", "        DD(BU,64),0"]
@@ -283,7 +288,7 @@ def expect(subs, lib, decks, firsts, lib_addr):
     # commons: second-table order, largest wins, downward from blank's base
     blank = max(s[2] for s, _l in allsubs)
     amount, order = {}, []
-    for (_e, _s, _b, commons, _c), _l in allsubs:
+    for (_e, _s, _b, commons, _c, *_r), _l in allsubs:
         for c, w in commons:
             if c not in amount:
                 order.append(c)
@@ -302,7 +307,7 @@ def expect(subs, lib, decks, firsts, lib_addr):
     skel = tvskel()
     table, r = {}, b
     for k, s in enumerate(entries_order):
-        entries, _size, _blank, commons, calls = s
+        entries, _size, _blank, commons, calls = s[:5]
         name = entries[0][0]
         is_lib = name in lib
         if is_lib:

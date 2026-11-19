@@ -7767,7 +7767,17 @@ function ActionValue#(ExecDispatch)
                 // 215051.00 made it type TYPE 1.
                 HalfWord32 hwv = {fromMaybe(fallthrough, intIC), old[12:0]};
                 Word64 w2 = (ha[0] == 0) ? {hwv, w[31:0]} : {w[63:32], hwv};
-                if (protViolates(st, ha[18:1])) ind = setBit(ind, ind_DS, 1);
+                // >>> TESTED AGAINST THE ENABLE STATE THE INNER BRANCH
+                // LEAVES, 2026-11-19. <<<  After an inner BD the system
+                // is disabled and "core storage protection ... does not
+                // take place" (printed p.31), so the store is made: the
+                // RECONSTRUCTION that lets MCP's SIT+21 (SIC,STIC /
+                // BD,SIFAE, printed p.111) trap a PP whose boundaries
+                // protect STIC.  protViolates (the state before the BD)
+                // suppressed it and raised DS.  ifViolatesAfter is the
+                // same reading for the branch target.
+                // decks/sic_bd_protected_store.strap.
+                if (protViolatesEn(st, ha[18:1], enAfter)) ind = setBit(ind, ind_DS, 1);
                 else st.writeWord(ha[18:1], w2);
               end
             end

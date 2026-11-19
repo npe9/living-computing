@@ -786,6 +786,8 @@ Not grafted:
 
 Running TASIGN on IBM's tables needs the go bench started from the post-IPL image, or the tables taken together with their pointers.
 
+**Run 2026-11-19** (`tests/check_bss_mcp_go.py` stage 7): the `$RET` into `*MAIN*` goes through MCP's own dispatcher. SIFAE (p.117 l.19) -> KFRONT -> CRETN -> MDRET (p.141) unprimes `$RESLD` (p.142 ll.1-15). Resume load's `$RET` reaches CRETBU (p.142 ll.41-51), which enters 000051.0 with SL = 0 and the PP's limits as boundaries. The compiled program is lost: no 7030 FORTRAN object deck or library code is held. So `*MAIN*`'s one-word entry is SCAFFOLD, `B,$MCP / ,$EOJ` (C22-6751 p.23's "good stop"). MCP's `$EOJ` then runs YJC4TT, YC4NO, YMPFCH and p.381's `,SKOM`, `,SLOG2` and `,SSPEOJ`. The output EOJ's `$W` (p.204 l.8) is held by K NO GO (p.179), where the run stops. A model bug was fixed on the way: SIC + BD stored the counter against the pre-BD enable state (`decks/sic_bd_protected_store.strap`). Found, not fixed: the PP's upper limit is 10577, not 213766, because p.397 l.3's LX takes KSILO+8's count field (bits 28-45), while C22-6728-1 p.88 prints 8.32.
+
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 
 **R3a. ABI ruling** (repo D-2): SIC vs LVI. Read AD0642331 pp.58-59 and LA-3629 in ink.

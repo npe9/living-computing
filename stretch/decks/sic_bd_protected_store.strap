@@ -1,0 +1,93 @@
+! SIC PREFIXED TO BD STORES THE COUNTER INTO A PROTECTED WORD -- the
+! interruption-table entry "SIC,STIC / BD,SIFAE", taken while a problem
+! program runs under its own boundaries.  StretchExecute's Sic arm,
+! 2026-11-19.
+!
+! THE PAGES (Reference Manual 22-6530-2, read in the page images):
+!   printed p.31 (PDF 35): "When the interruption system is disabled,
+!   address monitoring is ineffective.  In the disabled mode, core
+!   storage protection as specified by the address boundary registers
+!   in conjunction with the boundary control bit does not take place".
+!   printed p.41 (PDF 44): SIC "is executed if and only if the
+!   associated branching is successful".
+!   printed p.49 (PDF 52): the table entry for a short correction routine
+!   is "an unconditional STORE INSTRUCTION COUNTER IF BRANCH DISABLED
+!   instruction to the subroutine ... storing the counter in a suitable
+!   address".
+!   MCP's own table, MCP_Mar63_001-249 printed p.111 ll.2-3 (PDF 118):
+!   SIT+21 is SIC,STIC / BD,SIFAE, STIC at 215265 in MCP's area.  A PP
+!   runs with boundaries that protect everything outside its limits
+!   (CRETBU, printed p.142 ll.41-51, loads them from SLRBU), so every
+!   IF trap from a PP stores into a protected word.
+!
+! THE BUG.  The Sic arm tested the store with protViolates, i.e. against
+! the enable state BEFORE the inner BD, and so suppressed the store and
+! raised DS.  Found by tests/check_bss_mcp_go.py stage 7 (2026-11-19):
+! *MAIN*'s B,$MCP / ,$EOJ trapped IF, STIC kept the previous trap's
+! counter (resume load's ,SDRET), DS came on, and MCP's SIFAE analyzed
+! the old $RET again.
+!
+! RECONSTRUCTION (the pages do not say it in one sentence): the SIC store
+! is tested against the enable state the inner branch LEAVES -- after
+! BD, disabled, so not monitored; after BE/BEW, enabled; after any other
+! branch, unchanged.  It is the reading the model already uses for the
+! branch target itself (ifViolatesAfter, the BE/BD/BEW arm), and the only
+! one under which MCP's printed table works for a PP.
+!
+! CASES (bit k of RES = the event in case k):
+!   0  enabled, SIC,PROTA / BD,TA, PROTA protected:
+!      DS stays off (RES.0 = 0), PROTA.0-18 = the counter (CASEA+1.0)
+!   1  enabled, SIC,PROTB / B,TB, PROTB protected, stays enabled
+!      (CONTROL): DS interrupts (table entry 19 sets RES.1 = 1) and
+!      PROTB stays 0.
+!
+! INJECTIONS (MEASURED 2026-11-19, StretchExecute's Sic arm, observed):
+!   the bug restored (protViolates, the pre-BD state): 4 fail -- RES
+!     0xc000000000000000 (case 0 raised DS), PROTA 0, CYCLES 292,
+!     MEMREADS 23.  PROTB and PC pass.
+!   the store never tested (no DS from SIC at all): 4 fail -- RES 0 and
+!     PROTB 0x0212800000000000 (the control case stored), CYCLES 269,
+!     MEMREADS 17.  PROTA and PC pass.
+!   Control: the fixed model, all 6 pass.  CYCLES and MEMREADS are MODEL
+!   behaviour, not printed times.
+!
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! run disabled
+        LVI, $X13, TBL
+        SV,  $X13, $IA               ! interruption address := TBL
+        LWF(U), BNDA
+        ST(BU), $UB, 64              ! protect PROTA only
+        BE,  $+.32                   ! enable
+CASEA   SIC, PROTA
+        BD,  TA
+        NOP
+TA      BZB, $DS, TA1
+        BB1, RES+.0, $+1.0           ! case 0 raised DS (must not)
+TA1     LWF(U), BNDB
+        ST(BU), $UB, 64              ! protect PROTB only
+        BE,  $+.32                   ! enable
+CASEB   SIC, PROTB
+        B,   TB
+TB      NOP
+        BD,  $+.32
+        B,   PASS
+PASS    BEW, $
+        SLC, (8)6000.0
+BNDA    VF,  PROTA+1.0               ! upper (bits 0-17)
+        VF,  PROTA                   ! lower (bits 32-49), control bit 0:
+                                     !   the area inside is protected
+BNDB    VF,  PROTB+1.0
+        VF,  PROTB
+        SLC, (8)6100.0
+RES     DD, 0
+PROTA   DD, 0
+PROTB   DD, 0
+        SLC, (8)6200.0
+TBL     DD, 0
+        SLC, (8)6223.0
+DSRTN   BD,  DSR                     ! entry 19 = DS
+        SLC, (8)6300.0
+DSR     BB1, RES+.1, $+1.0
+        BDSZ, $+.32                  ! DS off
+        B,   PASS
+        END, START

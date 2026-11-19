@@ -1442,6 +1442,60 @@ FORTRAN, so a real compiled object deck is needed. (2) TASIGN on IBM's
 tables, which needs a job with IOD cards on TWS ahead of the program. Its
 layout is not printed. (3)-(5) as above.
 
+**R2b, `$RET` into `*MAIN*` and the job's `$EOJ` through MCP's own code,
+RUN 2026-11-19** (same test, stage 7). Item (1) above is done, as far as
+the sources allow.
+- **MCP's own dispatcher replaces the stubs DISP and MRET.** Each
+  MCP-level `$RET` now enters SIFAE (p.117) disabled, as the IF trap
+  would. From there it is IBM's code: l.19 -> KFRONT (p.177) -> KPLUG1
+  (p.178) -> CRETN (p.140) -> MDRET (p.141, PDF 148, read in the ink) ->
+  MUP1.
+  - WJC4G's `$RET`: MUP1 takes `$RESLD` off the prime queue (p.142 ll.1-15,
+    PDF 149, read in the ink) and enters YRLTT -> YRESLD.
+  - Resume load's `$RET`: MPP1 -> JMPP1 -> CRETBU (p.142 ll.41-51) sets
+    SL = 0, loads registers 3-31 from SLRBU (the PP's limits become the
+    boundaries) and BE's to SICBU = 000051.0.
+  - MEASURED on the way: with stage 3 still bypassing the dispatcher, its
+    `$RESLD` prime stayed queued and resume load ran twice (`R2G_TAMPER=
+    dispbypass`). Entered enabled, SIFAE hangs at p.117 l.8.
+- **The compiled program is lost.** No 7030 FORTRAN object deck and no
+  library code is held. `*MAIN*`'s one-word entry is therefore SCAFFOLD:
+  `B,$MCP / ,$EOJ` (C22-6751 p.23, "good stop" returns to MCP; C22-6678-1
+  p.22). The map and the TWS input are unchanged.
+- **A model bug, fixed:** SIC prefixed to BD tested its store against the
+  enable state before the BD. So ITAB's `SIC,STIC` could not store into
+  MCP's area while a PP ran under its own limits, STIC kept the old
+  counter, and SIFAE re-analyzed resume load's `$RET`. Now the store is
+  tested against the state the inner branch leaves (RECONSTRUCTION; Ref.
+  Manual printed p.31, disabled means no protection; p.49's table scheme;
+  MCP p.111). `decks/sic_bd_protected_store.strap`.
+- **The job's end, IBM's code but `$FETCH`:** the program's `$EOJ` ->
+  SIFAE's PP half (ll.20-28, now as printed) -> YJC4TT -> YC4NO -> YC4B3 ->
+  YMPFCH's `$FETCH` of 22$EOJ -> p.381 ll.19-37: `,SKOM` (input commands,
+  the spooler's VSSKOM gives `$RET`), `,SLOG2` (UNDEF; JUNDEF gives
+  `$RET`), `,SSPEOJ` (output EOJ). The print program's output subroutine
+  then gives `B,$MCP / ,$W` at 222265.40 (p.204 ll.8-9, PDF 211, read in
+  the ink).
+- **Where it stops:** the `$W` goes KFRONT -> KMCP (p.179) -> KSOAR ->
+  KNOGO -> KCHOPN, where the bench stops (half-word 148546, 2,524,753
+  cycles). Without the stop, KCHOPN -> KSUPP suppresses the `$W` and it
+  traps again, forever. The output unit or its channel is not available
+  (which test, MOUNT/REW at p.177 l.41 or CH AVL/CH OP at l.45, not
+  isolated). MCP never reaches the next job card or ZJOBC1.
+- **Found, not fixed: the PP's upper limit.** C22-6728-1 printed p.88 (in
+  the ink) puts the upper limit at KSILO+8.32 (BU,18). p.397 l.3 and p.384
+  ll.37-39 take it from the index COUNT field, bits 28-45. So the PP runs
+  with upper bound 10577 (213766 >> 4), and blank common and the
+  relocation table (213363-213766) lie outside it. The stub touches
+  neither.
+- Still SCAFFOLD: ITAB/STUBIF (`$IA` is not SIT), every `$FETCH`, ENTER and
+  IRET for the BSS processor (stage 4), and DISP's planted STIC.
+
+**Next:** (1) Why K NO GO holds the output `$W`: the output tape's unit
+and channel entries in IPL's tables, and the I/O interrupt that would
+free them. (2) The upper-limit field of KSILO+8. (3) The other items
+above.
+
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
 A FORTRAN deck with commons loads as a BSS job on a reconstructed BSS
