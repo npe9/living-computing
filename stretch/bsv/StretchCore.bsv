@@ -907,7 +907,10 @@ module mkStretchCore(StretchCore);
       // ABOVE the request arms, so the flag is False whenever a word
       // begins, and a word that reaches here has not been requested.
       ControlWord cw = ioDev.readChanCW(x.ch);
-      if (x.isWrite) cw.dataAddr = cw.dataAddr + writeEndLead;
+      // (Not for a WRITE TAPE MARK: its control word is the channel's
+      // own and it moves no data, so there is no lead to add.)
+      if (x.isWrite && !(kind == DevTape && x.zeroFill))
+        cw.dataAddr = cw.dataAddr + writeEndLead;
       cw.ee = 1;
       if (!x.suppressEop) cw.eop = 1;
       cw.seop = 0;   // completion: see rl_io's other terminal arm
@@ -1002,7 +1005,13 @@ module mkStretchCore(StretchCore);
         end
       end else if (kind == DevTape) begin
         TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
-        if (x.isWrite) begin
+        if (x.isWrite && x.zeroFill) begin
+          // WRITE TAPE MARK (StretchExecute, CTL 117, printed p.132):
+          // no core read was issued -- the W-direction arms above skip
+          // themselves under zeroFill -- and the word written is the
+          // mark SPACE FILE stops on.
+          ioDev.writeTapeWord(ti, tapeMarkWord);
+        end else if (x.isWrite) begin
           Word64 v <- st.readWordResp();
           ioDev.writeTapeWord(ti, v);
         end else if (!x.skip) begin
@@ -1143,7 +1152,11 @@ module mkStretchCore(StretchCore);
           remaining: 19'd512 - zeroExtend(arcOff),
           suppressEop: x.suppressEop, skip: False,
           untilMark: False, zeroFill: True };
-      end else if (rem1 == 0 && cw.chain == 1) begin
+      end else if (rem1 == 0 && cw.chain == 1
+                   && !(kind == DevTape && x.zeroFill)) begin
+        // (A WRITE TAPE MARK never chains: its control word is the
+        // channel's own, not one it fetched, so its chain flag is
+        // whatever the last transfer left there.)
         // FIGURE 36, printed p.109, row (multiple 0, chain 1, count
         // zero, end of block NO): "Chain and continue".  This model
         // has no record structure yet, so it never reports end of

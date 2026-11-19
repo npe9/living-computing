@@ -6582,6 +6582,58 @@ function ActionValue#(IoOutcome)
                   if (!seop) cw.eop = 1;
                   io.writeChanCW(chAddr, cw);
                 end
+                // THE TAPE CONTROL'S STATE-SETTING FUNCTIONS, Reference
+                // Manual printed p.132 (PDF 135, read in the ink): 016
+                // Remove End of Tape Condition, 036 High Density Mode, 037
+                // Low Density Mode, 056 Erase Long Gap ("the tape control
+                // is set so that the next WRS or WTM ... places on tape a
+                // blank gap"), 057 ECC Mode and Odd Parity, 156 No-ECC Mode
+                // and Even Parity, 157 No-ECC Mode and Odd Parity.  "An
+                // end-of-operation is given upon the completion of every
+                // instruction unless the instruction is of the SEOP type."
+                // They set modes this model's word-level tape does not
+                // keep (no density, no parity track, no gaps, no end-of-tape
+                // strip), so each is ACCEPTED with its EOP and nothing
+                // else; the state itself is NOT MODELLED.  Until 2026-11-19
+                // they program-checked (EPGK), and MCP's write routine
+                // (printed pp.152-154, KMODE / KDENST) sets the density and
+                // mode before every tape WRITE: the output EOJ's $W on CT11
+                // ended in EPGK (tests/check_bss_mcp_go.py, stage 7;
+                // decks/io_tape_control_modes.strap).
+                18'o16, 18'o36, 18'o37, 18'o56, 18'o57, 18'o156, 18'o157:
+                  acceptControl();
+                18'o117: begin // WRITE TAPE MARK (p.132, PDF 135, read in
+                  // the ink): "A standard tape mark (0001111) denoting
+                  // end of file is written on tape."  Under the page's
+                  // general rule it ends with EOP unless it is SEOP.
+                  //
+                  // A ONE-WORD TRANSFER WITH NO CORE SIDE.  The mark is
+                  // the one word this model's tape already recognises as
+                  // a mark (tapeMarkWord, which SPACE FILE stops on), and
+                  // it is written through the same IoXfer machinery a W
+                  // uses, at the persistent tape position, which then
+                  // advances by one.  zeroFill is the existing "this
+                  // phase reads nothing from core" flag (the disk's
+                  // p.160 tail); on a tape StretchCore's rl_io writes the
+                  // mark word in its place.  The control word is the
+                  // channel's own, as for SPACE FILE: CONTROL's right
+                  // address is a function code (p.111).
+                  //
+                  // MCP asked for it: the output EOJ's $WEF (printed
+                  // p.156 l.14, "CTL,0.0($14),(8)117.  -WEF COMMAND")
+                  // was program-checked until 2026-11-19
+                  // (decks/io_tape_mark.strap).
+                  ControlWord cw = io.readChanCW(chAddr);
+                  cw.seop = 1;
+                  io.writeChanCW(chAddr, cw);
+                  ioStart = tagged Valid IoXfer {
+                    ch: chAddr, isWrite: True,
+                    memAddr: 0,              // nothing is read
+                    devIdx: io.tapePos(),
+                    remaining: 1,
+                    suppressEop: seop, skip: False, untilMark: False,
+                    zeroFill: True };
+                end
                 18'o176: begin // BACKSPACE BLOCK (p.132)
                   ControlWord cw = io.readChanCW(chAddr);
                   if (io.tapePos() == 0) begin
@@ -6634,7 +6686,6 @@ function ActionValue#(IoOutcome)
                     zeroFill: False };
                 end
                 default: programCheck();          // SPACE BLOCK,
-                                                     // WRITE TAPE MARK,
                                                      // BACKSPACE FILE,
                                                      // density/ECC/
                                                      // parity/light

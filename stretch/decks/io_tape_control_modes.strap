@@ -1,0 +1,91 @@
+! io_tape_control_modes.strap -- the 729 IV tape control's STATE-SETTING
+! CONTROL functions are accepted with EOP, not refused with EPGK.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  Its write routine sets
+! the channel's density (printed p.154 ll.37-48, KDENST / ZCHDEN: CTL 036
+! high density, 037 low) and mode (printed p.152 ll.35-51, KMODE: CTL 057,
+! 156 or 157) before a tape WRITE, and erases a long gap (p.154 l.8, CTL
+! 056).  The model program-checked every tape CONTROL code but REWIND,
+! REWIND AND UNLOAD, BACKSPACE BLOCK and SPACE FILE, so the output EOJ's
+! $W on CT11 (channel 34) ended in EPGK + EOP at KDENOP, 217707.00
+! (tests/check_bss_mcp_go.py, stage 7, 2026-11-19, PC log R2G_PCLOG=7).
+!
+! WHAT THE MANUAL SAYS, Reference Manual printed p.132 (PDF 135, read in
+! the ink), the 729 IV's control functions: "An end-of-operation is given
+! upon the completion of every instruction unless the instruction is of
+! the SEOP type."  016 Remove End of Tape Condition, 036 High Density
+! Mode, 037 Low Density Mode, 056 Erase Long Gap, 057 ECC Mode and Odd
+! Parity, 156 No-ECC Mode and Even Parity, 157 No-ECC Mode and Odd Parity.
+! Printed p.113: EPGK is for "an instruction ... that the selected unit is
+! not designed to perform" -- and a 729 IV is designed to perform these.
+! The modes themselves are NOT MODELLED (no density, parity track, gap or
+! end-of-tape strip in a word-level tape); only the acceptance is.
+!
+! WHAT EACH CHECK ESTABLISHES (the tape, channel 34, DISABLED throughout,
+! so the status bits stay in the control word; each CCW copies it)
+!   c0       before anything: unit ready (bit 18) only.
+!   c1       CTL(SEOP) 036: accepted -- no EPGK -- and no EOP (SEOP).
+!   c2       CTL 036: unit ready + EOP (bit 22), no EPGK (bit 19).
+!   c3..c8   CTL 016, 037, 056, 057, 156, 157 in turn: still ready + EOP
+!            and no EPGK.  EPGK, once on, stays on in this disabled run,
+!            so the first refused code is the first failing check.
+!   c9       CONTROL: CTL 076 (SPACE BLOCK, still not implemented) is
+!            refused -- ready + EPGK + EOP -- so the checks above can see
+!            an EPGK.
+!   PC=PASS
+!
+! CTL function codes are written in decimal (decks/io_tape.strap's note):
+! 036 = 30, 016 = 14, 037 = 31, 056 = 46, 057 = 47, 156 = 110, 157 = 111,
+! 076 = 62.
+!
+! INJECTIONS (MEASURED 2026-11-19, observed failure sets):
+! Each injection is a bsv/ edit, reverted by its exact patch and checked by
+! hash, run on all three new decks (io_channel_signal, io_tape_control_modes,
+! io_tape_mark) and, for the first three, on tests/check_bss_mcp_go.py.
+!   no036   -- 036 dropped from the accepted codes (program-checked again):
+!              c1..c8 fail (8): c1 gets EPGK without EOP (SEOP), and EPGK
+!              stays on through c8.  c0, c9 and PC pass.  The other decks
+!              pass.  check_bss_mcp_go.py: 6 fail -- the density CONTROL at
+!              KDENOP is reported EPGK + EOP (10010), MCP types six garbage
+!              words, nothing reaches the reel, and no ZJOBC1.
+!   nosig, sigeop, nowtm, markzero (the other decks' injections): this deck
+!              passes under all four.
+!   Control: the unmodified model, all 11 checks pass.
+
+        SLC, (8)300.0
+START   BD,  $+.32                   ! disabled: no report clears the word
+        LVI, $1, 34                  ! the tape's channel (value 34<<5)
+        CCW, 0($1), C0
+        CTL(SEOP), 0($1), 30         ! 036 high density, SEOP
+        CCW, 0($1), C1
+        CTL, 0($1), 30               ! 036 high density
+        CCW, 0($1), C2
+        CTL, 0($1), 14               ! 016 remove end of tape condition
+        CCW, 0($1), C3
+        CTL, 0($1), 31               ! 037 low density
+        CCW, 0($1), C4
+        CTL, 0($1), 46               ! 056 erase long gap
+        CCW, 0($1), C5
+        CTL, 0($1), 47               ! 057 ECC mode and odd parity
+        CCW, 0($1), C6
+        CTL, 0($1), 110              ! 156 no-ECC mode and even parity
+        CCW, 0($1), C7
+        CTL, 0($1), 111              ! 157 no-ECC mode and odd parity
+        CCW, 0($1), C8
+        CTL, 0($1), 62               ! 076 space block: not implemented
+        CCW, 0($1), C9
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)500.0
+C0      DD(BU,64), 0
+C1      DD(BU,64), 0
+C2      DD(BU,64), 0
+C3      DD(BU,64), 0
+C4      DD(BU,64), 0
+C5      DD(BU,64), 0
+C6      DD(BU,64), 0
+C7      DD(BU,64), 0
+C8      DD(BU,64), 0
+C9      DD(BU,64), 0
+        END, START

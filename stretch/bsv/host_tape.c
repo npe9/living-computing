@@ -51,6 +51,12 @@ void     host_tape_write_word(uint32_t i, uint64_t d)
     if (i < g_words) g_img[i] = d;   /* write-back to the file is a
                                         separate commit, as in
                                         host_disk_commit() */
+    /* STRETCH_TAPE_TRACE: report every word written, so a bench can read
+       back what a program put on the reel (tests/check_bss_mcp_go.py,
+       stage 7: MCP's label, records and tape marks on the OUTPT reel). */
+    static int trace = -1;
+    if (trace < 0) trace = getenv("STRETCH_TAPE_TRACE") != NULL;
+    if (trace) fprintf(stderr, "TAPE_WRITE %u %016llx\n", i, (unsigned long long)d);
 }
 
 /* THE DISK, for mkDiskSourceFile (StretchDiskSourceFile.bsv).  It lives

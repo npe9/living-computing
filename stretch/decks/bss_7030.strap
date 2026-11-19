@@ -132,7 +132,7 @@
 !   C6 named commons are given origins downward from blank common's base in
 !      second-table order (p.12 Phase 3's subtraction, for one segment).
 !   C7 blank common's base B = U - max(blank amount, relocation table size),
-!      U the problem program's upper limit in KSILO+8.32 as found.  p.9 step
+!      U the problem program's upper limit in KSILO+8.28 as found.  p.9 step
 !      1 computes "the upper limit ..., the size of the relocation table,
 !      and the origin of blank common" together; the table starts at B
 !      (p.9) and must fit under U.  Not printed anywhere (G5).
@@ -159,7 +159,7 @@
 !      subprogram").  The loader cannot tell (count+1 loads the same,
 !      measured); check_bss_mcp_load.py's fetch count pins it.
 !   C12 KSILO+8.0 gets 33.0's word, 41 octal (the problem program's lower
-!      limit, p.7's first subprogram address); 8.32 is read, not written;
+!      limit, p.7's first subprogram address); 8.28 is read, not written;
 !      9.0 and 9.32 get B's word address, 10.0 and 10.32 *MAIN*'s absolute
 !      entry, a half-word address (19 bits), 11.0 zero (no node table).
 !      Only these fields are written; bits 24-31 of each half word stay as
@@ -352,7 +352,7 @@ TS3     L(BU,18), T2+1.28
         BAH, TS4
         L(BU,18), TT
 TS4     ST(BU,18), TMPB
-        L(BU,18), KSILO+8.32
+        L(BU,18), KSILO+8.28
         K(BU,18), TMPB
         BAL, ERTL
         -(BU,18), TMPB

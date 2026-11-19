@@ -304,7 +304,11 @@ and gives `$RET` with SICBU = `*MAIN*`'s entry 000051.0. Since 2026-11-19
 MCP's own dispatcher (MCP printed pp.117, 140-142) enters `*MAIN*` there.
 No compiled FORTRAN object deck or library code is held, so `*MAIN*`'s
 entry is SCAFFOLD (`$EOJ`), and MCP's end of job runs to the output
-`$W` (p.204). Pp.7, 9 and 10 settle the
+`$W` (p.204). Since 2026-11-19 the bench, as the operator, mounts a
+blank OUTPT reel and readies it with a channel signal. MCP's print
+program then writes this map, row for row, to that reel as the job's
+listing, and job control reaches ZJOBC1, the wait for the next job card.
+Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
 

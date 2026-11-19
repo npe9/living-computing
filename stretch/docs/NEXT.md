@@ -1486,35 +1486,92 @@ the sources allow.
   `$RET`), `,SSPEOJ` (output EOJ). The print program's output subroutine
   then gives `B,$MCP / ,$W` at 222265.40 (p.204 ll.8-9, PDF 211, read in
   the ink).
-- **Where it stops:** the `$W` goes KFRONT -> KMCP (p.179 l.4) -> KSOAR
-  (p.177 l.27). There p.177 l.41 `BZRZ,KNOGO` ("LOOP IF MOUNT OR REW BIT
-  ON") is taken, and in KNOGO p.179 l.30 `BB1,SRMIND($12),KCHOPN` ("BR. IF
-  REMINDER SENT") is taken too. The bench stops at KCHOPN, p.180 l.2
-  (221041.00, half-word 148546), after 2,524,753 cycles. So MCP is waiting
-  for the operator to mount the output unit: IPL's tables have its
-  MOUNT/REW bit on and the reminder marked sent. Without the stop, KSUPP
-  sends it back to the same `$W`, 5,320 times up to the step cap.
-  **Scaffold caveat:** `$IA` is the stub's ITAB, which sends every
-  interrupt except IF to a stop. So no I/O interrupt could reach MCP to
-  clear the bit, and none came. MCP never reaches the next job card or
-  ZJOBC1.
-- **Found, not fixed: the PP's upper limit.** C22-6728-1 printed p.88 (in
-  the ink) puts the upper limit at KSILO+8.32 (BU,18). p.397 l.3 and p.384
-  ll.37-39 take it from the index COUNT field, bits 28-45. So the PP runs
-  with upper bound 10577 (213766 >> 4), and blank common and the
-  relocation table (213363-213766) lie outside it. The stub touches
-  neither.
-- Still SCAFFOLD: ITAB/STUBIF (`$IA` is not SIT), every `$FETCH`, ENTER and
-  IRET for the BSS processor (stage 4), and DISP's planted STIC.
-- Verified: the full suite (check_strap2_punch, check_strap2_vletable,
-  run_tests.sh) passed in one uninterrupted run at 48f3770, "All regression
-  tests passed."; the only FAIL lines are the 4 expected UNREPRODUCED ones
-  (p359 l41/l42 literals).
+- **K NO GO, and the operator (2026-11-19).** The `$W` goes KFRONT ->
+  KMCP (p.179 l.4) -> KSOAR (p.177 l.27). There p.177 l.41 `BZRZ,KNOGO`
+  ("LOOP IF MOUNT OR REW BIT ON") is taken. KNOGO (p.179 l.13) goes to
+  KCHOPN, p.180 l.2 (221041.00, half-word 148546), after 2,524,928
+  cycles (the nooper run). The branch is l.29 `BZAH,KCHOPN` ("BRANCH IF TIME NOT
+  ELAPSED"), not l.30's `BB1,SRMIND` as the earlier record said.
+  - The unit is real, not a bench artifact. The `$W`'s IOD parameter (AMR,
+    224032) is 11, CT11; `$11` is its UST entry 214772 (channel 34, unit
+    0). IPL sets its MOUNT (.51) and initial-mount (.53) bits at p.79
+    ll.3-4 (TP4) and types "MOUNT - REEL NUMBER OUTPT ON CHANNEL 34 UNIT
+    0" (`docs/boot_plan.md`). MCP is waiting for the operator.
+  - **OPERATOR ACTION** (the test's default): the bench mounts a blank
+    reel, 2^18 zero words (CHOSEN), as the tape. At KCHOPN it gives
+    channel 34 the channel signal, Reference Manual printed p.116 (PDF
+    119): CS "whenever the unit changes from not-ready to ready status".
+    MCP's tables are not touched. `StretchIO.operatorSignal` is the
+    testbench control (gen_tb.py `OPSIG=HW,CH`).
+  - MCP's receptor runs: KSTORE (p.122) -> KSIGNL (p.124 l.53) ->
+    KHUNT/KSTAB (p.125) -> p.126 l.5 clears MOUNT. The `$W` then goes
+    through, and MCP prepares the new reel with seven operations, each
+    ending EOP alone:
+    1. density (p.155 l.5);
+    2. label read (p.183 l.25);
+    3. backspace (p.155 l.18);
+    4. label write (p.155 l.45);
+    5. tape mark (p.156 l.14);
+    6. the record (EWR311, p.154 l.18);
+    7. the output EOJ's tape mark (p.164 l.33).
+  - **The reel holds the job's listing.** It has a one-word label, a mark,
+    one 150-word record, and a mark. The record is buffer X: control
+    character P, then 12 lines that are C28-6379 p.17's storage map, row
+    for row. The run stops at **ZJOBC1** (020416.40, p.391 l.37), where
+    job control waits for the next job card, after 2,561,915 cycles and
+    17 traps.
+  - Two model gaps were found and fixed on the way, each with its own deck:
+    - the 729 IV's state-setting CONTROL codes 016/036/037/056/057/156/157
+      (printed p.132) were refused with EPGK
+      (`decks/io_tape_control_modes.strap`);
+    - WRITE TAPE MARK, 117, was not implemented (`decks/io_tape_mark.strap`).
 
-**Next:** (1) The output unit K NO GO waits on: which unit `$11` names
-in IPL's tables, why its MOUNT/REW bit is on, and the interrupt path
-(SIT, not ITAB) that would clear it. (2) The upper-limit field of KSILO+8. (3) The other items
-above.
+    Channel signal from outside has its own deck too,
+    `decks/io_channel_signal.strap`.
+  - **Not modelled:**
+    - Unit select. LOC is accepted, but there is one tape unit, so the
+      single CS also clears CT21's MOUNT bit.
+    - A real not-ready state. `unitReady` is always 1.
+  - **Why KCHOPN, measured:** l.30 is printed `BB1,SRMIND($12),KCHOPN`,
+    "BR. IF REMINDER SENT, SET SWTCH", assembled 000001.77 8C 221041.34 0E.
+    So it sets SRMIND whenever it runs, branch or not. A probe of the same
+    shape confirms the model writes the bit without branching. In the
+    nooper run, uat1 at KCHOPN is still 0000400000000000, with bit 63
+    clear. So l.30 did not complete on the way to KCHOPN, and the branch
+    is l.29's `BZAH,KCHOPN`, "BRANCH IF TIME NOT ELAPSED": the reminder
+    interval (l.28's KI against ZRMTCC) has not elapsed, and no reminder
+    is typed.
+  - R2G_STOP=148512 (l.30, 221020.00) fires at 2,524,920 cycles, 8
+    before KCHOPN at 2,524,928. That is the instruction counter reaching
+    l.30's address ahead of l.29's indicator branch resolving (inferred).
+    The SRMTC and $TC values themselves were not read.
+    So MCP holds the `$W` because the unit is not mounted, and it has
+    not yet sent its reminder.
+- **Settled: the PP's upper limit is KSILO+8.28.** C22-6728 (-0) printed
+  p.197 (PDF 197, in the ink) prints "PP UPPER LIMIT 8.28". MCP's code
+  agrees: p.397 l.3's LX loads the index word, and p.384 l.39's SC stores
+  its count field, bits 28-45 (Reference Manual printed p.24). C22-6728-1
+  p.88 and -0 p.80 print 8.32. The deck and `check_bss_example4.py` now
+  use 8.28.
+- **SIT, not ITAB.** `$IA` is MCP's own SIT (215023, as IPL leaves word
+  2), except while the reconstructed BSS processor runs (stage 4, ENTER
+  to IEOJ). Still SCAFFOLD:
+  - the `$FETCH` hook, SIT+21's and FWIT+1's BD to STUBIF instead of
+    SIFAE. MCP's own DISK FETCH (pp.311-318) is landed but not run: the
+    bench's disk is not IPL's, and the BSS, '))))))))' and LB type areas
+    are not in PROSA;
+  - every `$FETCH`, ENTER and IRET for the BSS processor;
+  - DISP's planted STIC;
+  - `*MAIN*`'s one-word body.
+- Verified: the full suite (check_strap2_punch, check_strap2_vletable,
+  run_tests.sh) passed in one uninterrupted run at 2ab6d0d, "All
+  regression tests passed."; the only FAIL lines are the 4 expected
+  UNREPRODUCED ones (p359 l41/l42 literals).
+
+**Next:** (1) MCP's own DISK FETCH in place of the `$FETCH` hook, which
+needs the type areas on an IPL-made disk. (2) A second job card at ZJOBC1:
+the job stream goes on from there. (3) The nine traps after the `$W`,
+named by page and line. (4) The other items above.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 
