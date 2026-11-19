@@ -191,10 +191,21 @@ test or an explicit label.
 
 #### WP4 — Verification gaps
 
-1. **`PimNUTb.bsv`** (referenced but missing): two PEs, route one
+1. **`PimNUTb.bsv` (referenced but missing).** Two PEs, route one
    packet, assert the one-byte-per-four-cycles rate, back-pressure and
    the read-buffer tail interrupt. Done when Bluesim passes and the
    test fails when the rate or the interrupt is broken.
+   Status (2026-11-19): blocked on the module interface. `PimNUPort`
+   has one `put`/`get`/`ready` shape for both sides; the output side's
+   `put` writes `outBuf` and conflicts with the `move` rule, and there
+   is no `deq` to consume a byte. `in.get` returns `outBuf`, not
+   `inBuf`. `routeFor` is dead: the `move` rule is per-port and does
+   not use the route table. `tailPulse` is set by `move` and cleared by
+   a separate rule, so both can write it in the same cycle. The
+   testbench cannot pass until these are fixed: split in/out ports, add
+   `deq`, remove `out.put`, fix `in.get`, make `tailPulse` a
+   `RWire`/`PulseWire`, and decide whether the crossbar routes by
+   destination or stays per-port.
 2. **`PimSdramStore` test**: hit/miss and granule refill. Done when
    Bluesim passes and a deliberately broken refill fails.
 3. **Board-level build check**: script the ECP5 build and gate on the
