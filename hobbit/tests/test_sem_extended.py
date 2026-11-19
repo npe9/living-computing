@@ -14,6 +14,12 @@ fail 2 of its 27 tests, and ``tests/hri_check.py`` on golden 008 reported
 the predicted signed-quotient failure and nothing else in that trace.
 The injection was reverted by the reverse edit; the suite was green
 before and after.
+
+Second injection, same day: moving KCALL's source-word store from
+``ISP-12`` to ``ISP-16`` (both forms) made exactly one test fail --
+``test_kcall_frame_and_isp`` with ``KeyError: 52`` on ``memory[0x34]``,
+the printed ``*(ISP-12) = src`` of p. 3-29 -- and nothing else.  Also
+reverted by the reverse edit.
 """
 
 import os
