@@ -58,6 +58,8 @@ module mkPimKL1B(PimKL1B);
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
         8'h13: regs.upd(b, {tagVar, 24'h0, a});   // set_variable c8, r
         8'h34: regs.upd(b, regs.sub(a));          // put_value r, r
+        8'h33: regs.upd(b, {tagVar, 24'h0, a});   // put_variable r, r
+        8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
         8'h60: haltR <= True;                     // proceed
         8'h71: haltR <= True;                     // halt
         default: haltR <= True;                   // unimplemented: stop loud
