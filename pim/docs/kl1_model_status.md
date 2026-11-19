@@ -47,6 +47,13 @@ The status labels are:
 | `read_nil` | 0xb2 | halt if `args[argPtr]` is not NIL, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
 | `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | — |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
+| `add` | 0xf4 | `R[c] = INT(R[a] + R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `subtract` | 0xf5 | `R[c] = INT(R[a] - R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `multiply` | 0xf6 | `R[c] = INT(R[a] * R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `divide` | 0xf7 | `R[c] = INT(R[a] / R[b])`, halt on zero | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `modulo` | 0xf8 | `R[c] = INT(R[a] % R[b])`, halt on zero | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `equal` | 0xf2 | halt unless both INT and equal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `not_equal` | 0xf3 | halt unless both INT and unequal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `execute` | 0x61 | `narg = a; pc = label(b:c)` | stand-in | — |
 | `enqueue_goal` | 0x63 | append label to an 8-entry queue | stand-in | — |
 | `suspend` | 0x69 | append label to the same queue | stand-in | — |
@@ -69,7 +76,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | active unification | `get_constant`, `get_integer`, `get_nil`, `get_atom` | the PIMOS active-unification reads; `get_value`/`get_bound_value` are implemented, these four are not |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
-| arithmetic and comparison | `add`, `subtract`, `multiply`, `divide`, `modulo`, `equal`, `not_equal`, `integer`; extended `add_extended` and friends | named as guard built-ins in TR-246 p. 5; operand and result conventions not yet extracted |
+| extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
 | control beyond the queue | `switch_*`, `jump`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 

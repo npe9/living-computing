@@ -11,6 +11,7 @@
 // get_value, get_bound_value, write_value, write_variable,
 // write_constant, put_constant, put_list, put_integer, write_integer,
 // read_variable, read_constant, read_integer, read_nil, read_atom,
+// add, subtract, multiply, divide, modulo, equal, not_equal,
 // wait_value, wait_constant, wait_list, wait_integer, execute,
 // enqueue_goal, suspend, proceed, halt.
 // Anything else -- including get_constant, which needs the goal-record
@@ -143,6 +144,36 @@ module mkPimKL1B(PimKL1B);
         8'hb3: begin                               // read_atom A
           if (args.sub(argPtr)[39:32] != tagAtom) haltR <= True;
           argPtr <= argPtr + 1;
+        end
+        8'hf2: begin                               // equal Ai, Aj (guard)
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
+              || regs.sub(a)[31:0] != regs.sub(b)[31:0]) haltR <= True;
+        end
+        8'hf3: begin                               // not_equal Ai, Aj
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
+              || regs.sub(a)[31:0] == regs.sub(b)[31:0]) haltR <= True;
+        end
+        8'hf4: begin                               // add Ai, Aj, Ak
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt) haltR <= True;
+          else regs.upd(c, {tagInt, regs.sub(a)[31:0] + regs.sub(b)[31:0]});
+        end
+        8'hf5: begin                               // subtract Ai, Aj, Ak
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt) haltR <= True;
+          else regs.upd(c, {tagInt, regs.sub(a)[31:0] - regs.sub(b)[31:0]});
+        end
+        8'hf6: begin                               // multiply Ai, Aj, Ak
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt) haltR <= True;
+          else regs.upd(c, {tagInt, regs.sub(a)[31:0] * regs.sub(b)[31:0]});
+        end
+        8'hf7: begin                               // divide Ai, Aj, Ak
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
+              || regs.sub(b)[31:0] == 0) haltR <= True;
+          else regs.upd(c, {tagInt, regs.sub(a)[31:0] / regs.sub(b)[31:0]});
+        end
+        8'hf8: begin                               // modulo Ai, Aj, Ak
+          if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
+              || regs.sub(b)[31:0] == 0) haltR <= True;
+          else regs.upd(c, {tagInt, regs.sub(a)[31:0] % regs.sub(b)[31:0]});
         end
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'h61: narg <= a;                          // execute: jump to label (b:c)

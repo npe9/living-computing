@@ -417,6 +417,9 @@ test or an explicit label.
      `set_constant`, `set_integer`, `set_nil`, `set_list`, `set_atom`
      write the model's argument save area, and `read_constant`,
      `read_integer`, `read_nil`, `read_atom` compare it sequentially.
+     The guard built-ins `add`/`subtract`/`multiply`/`divide`/`modulo`/
+     `equal`/`not_equal` (TR-246 p. 5) are also in, with INT-tag checks
+     and a loud halt on a non-INT operand or a zero divisor.
      `get_constant` and `set_structured_constant` still halt loudly
      because they need the argument area in memory / the constant
      stream. `set_value`/`set_variable` are a documented stand-in: they
