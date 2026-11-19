@@ -176,16 +176,37 @@ documented interfaces.
    capture from physical hardware (no board attached here), and the
    historical BeBox/EO board models.
 
-## Formal verification (owner's question, 2026-11-19)
+## Formal verification and 1:1 conformance (owner, 2026-11-19)
 
-The functional plan above does **not** lead to formal proof by itself:
-verification here is HRI trace comparison and hand-derived goldens, and
-no proof harness exists in the tree. The formal track — instruction
-equivalence against a mechanised sem contract, structural invariants,
-MMU/event order, device contracts, and bounded boot reachability, with
-bounds and artefacts recorded — is
-[`docs/plan9_formal_plan.md`](docs/plan9_formal_plan.md), and every
-boot-plan milestone must ship its formal harness with it.
+Three requirements, in this order:
+
+1. **Plan 9 1e must boot and print on the UART first** — that is the work
+   now ([`docs/plan9_boot_plan.md`](docs/plan9_boot_plan.md), A0…A5), and
+   nothing is delayed to build a proof harness. Each boot milestone is
+   written so its harness can be added later without redesign.
+2. **Then full functional completeness and correctness**
+   ([`docs/plan9_formal_plan.md`](docs/plan9_formal_plan.md)): every
+   documented instruction, mode and device implemented with no refusal
+   reachable from 1e software, and every claim proved for all executions
+   — not for examples and not up to a bound. The old "decode completely,
+   execute partially" stance is retired; a refusal is a defect unless the
+   hardware itself takes the unimplemented sequence.
+3. **The model must be 1:1 with what is documented** — the printed block
+   diagram and the printed cycle tables, not an approximation of them:
+   every block of Figure 1-1 (printed p. 1-2) exists as its own module
+   at its printed size — prefetch buffer cache 1024 × 3 bytes as three
+   1,024-byte ways, 32 × 192 decoded instruction cache, 64 × 32 × 2
+   stack cache, 3-stage PDU and EU, MMU with 2 × 32 page TLBs and the
+   2 × 1 segment NPSR, event unit, bus interface — and every row of
+   Tables 4-32…4-36 is reproduced, with the fetch/empty-pipeline,
+   operand-access and data-type delays of Tables 4-6…4-9 charged where
+   the manual prints them. The only named choices are the ones the
+   manual leaves open (the memory terms A, D and Q of p. 4-2, the TLB
+   replacement policy), and each is recorded as a choice.
+
+Verification today is HRI trace comparison and hand-derived goldens; the
+formal track turns those into the evidence for a mechanised contract and
+then proves the refinement, with tool versions and hashes recorded.
 
 ## Booting Plan 9 1e (owner's direction, 2026-11-19)
 
