@@ -11646,6 +11646,19 @@ run "IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL (I6041)" .
     "X1:addrIndex(1)=0x4800000000000" "X2:addrIndex(2)=0x6c00000000000" \
     "X3:addrIndex(3)=0x400000000000" STEPS=2000000 CYCLES=2057+-0
 
+# ---- THE IA REGISTER IS 18 BITS (2026-11-19) ----
+# Reference Manual printed p.35 (PDF p.38): "Bits 0-17 of location 2 form
+# the interruption address register"; printed p.34 (PDF p.37): bit
+# positions of locations 0-15 not assigned "are always zero.  Information
+# stored in these positions is not recoverable."  Ones stored into word 2
+# by ST (all 64 bits), SV (bits 0-24) and SX (all 64) must read back as
+# bits 0-17 only.  Injection (the unfixed 64-bit arm) -> all five pins
+# FAIL: RB1/RB2/RB4/IA all ones, RB3 0xffffff8000000000.
+run "IA register: a store of ones into word 2 reads back 18 bits (printed pp.34-35, 48)" ./run_program.sh ../decks/ia_width_18bit.strap StretchIaWidthTb \
+    PC=4253 "RB1:3073=0xffffc00000000000" "RB2:3074=0xffffc00000000000" \
+    "RB3:3075=0xffffc00000000000" "RB4:3076=0xffffc00000000000" \
+    "IA:2=0xffffc00000000000" STEPS=200000
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the

@@ -993,7 +993,21 @@ module mkStretchStorage(StretchStorage);
       // IT IS A WIRE AND NOT AN ASSIGNMENT because the oscillator steps
       // the same register; oscillatorStep is its one writer.
       addrIntervalTimer: timerW.wset(v[63:36]);
-      addrInterruptAddr: interruptionAddress <= v;   // permanently protected on real HW; not enforced
+      // WORD 2 HOLDS IA IN BITS 0-17 AND NOTHING ELSE.  Reference Manual
+      // printed p.35 (PDF p.38): "Bits 0-17 of location 2 form the
+      // interruption address register"; printed p.48 (PDF p.51): it
+      // "contains 18 bits and has address 2.0"; pocket card X22-6533-1
+      // (pcard-1.png), "2,P Interruption Address 18 0-17".  And printed
+      // p.34 (PDF p.37): "Not all bit positions in locations 0-15 are
+      // assigned to specific functions.  Those bit positions that are not
+      // so assigned are always zero.  Information stored in these
+      // positions is not recoverable" -- its one exception, the
+      // programming note, is location 1's bits 19-27.  So bits 18-63 of
+      // a store are dropped (decks/ia_width_18bit.strap).  Until
+      // 2026-11-19 this arm kept all 64 bits.  The permanent protection
+      // (printed p.31) is checked on the execute side, protViolates in
+      // StretchExecute.bsv, not here.
+      addrInterruptAddr: interruptionAddress <= {v[63:46], 46'b0};
       addrUpperBoundary: boundaryReg <= v;           // permanently protected on real HW; not enforced
       addrMaintenanceBits: maintenanceBits <= v;
       addrChannelAddress: noAction; // read-only ("b" footnote)

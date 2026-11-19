@@ -304,6 +304,14 @@ inventory, "Routine 1260's prologue and TESTs 1A/1B"), then TEST 1C,
 the settable mask bits 20-47 (pp.14-21,
 `decks/ax5b_160_test1c_mask.strap`, one segment run, passes), and TEST
 2, the IA register (pp.22-23, `decks/ax5b_160_test2_ia.strap`, passes).
+IA's width followed (2026-11-19, `decks/ia_width_18bit.strap`): word 2
+now keeps bits 0-17 of a store, by printed p.34's rule that unassigned
+bits of locations 0-15 "are always zero" and p.35's "Bits 0-17 of
+location 2". **Open, same rule, not yet applied:** word 3 (UB 0-17, LB
+32-49, control bit 57; `boundaryReg <= v` keeps all 64 bits) and word 6
+(other-CPU bits 0-18; `otherCpuBits <= v`). Each wants its own
+store-ones-read-back deck and a check that no deck relies on the extra
+bits.
 Next on this line: 1260 TEST 3 (`16033`, p.24 on, "CHECK THE ABILITY
 TO INTERRUPT"; it fills `I60IT` from `I60XW1`/`I60K5`, runs enabled, and
 calls `I60S1` through `I60SX1` -- see `decks/ax5b_160s1_clr_inds.strap`),
