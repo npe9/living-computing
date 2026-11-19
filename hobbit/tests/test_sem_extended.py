@@ -20,6 +20,12 @@ Second injection, same day: moving KCALL's source-word store from
 ``test_kcall_frame_and_isp`` with ``KeyError: 52`` on ``memory[0x34]``,
 the printed ``*(ISP-12) = src`` of p. 3-29 -- and nothing else.  Also
 reverted by the reverse edit.
+
+Third injection, same day: setting ``PSW.F`` from carry instead of
+overflow in TADD/TSUB made exactly
+``test_tadd_sets_carry_and_overflow_then_flag_from_overflow`` and
+``test_tsub_borrow_and_overflow`` fail (2 of 30), and nothing else.
+Reverted; ``sem/hobbit_sem.py`` is byte-identical to HEAD.
 """
 
 import os
@@ -165,6 +171,52 @@ class InterlockedAndTaggedTest(unittest.TestCase):
         record, state = run({0: 0x8DFD0004, 4: 0x00080000},
                             {0x108: 4})
         self.assertEqual(state.memory[0x108], 0)
+
+    def test_tadd_sets_carry_and_overflow_then_flag_from_overflow(self):
+        # p. 3-44 operation block: C on unsigned overflow, V on signed
+        # overflow, then PSW.F = PSW.V, and the store happens only when
+        # F = 0.
+        # src and dst both have low 2 bits 0, so neither is tagged.
+        record, state = run({0: 0x8CFD0004, 4: 0x00080000},
+                            {0x108: 0xFFFFFFFC})
+        self.assertEqual(state.memory[0x108], 0)
+        self.assertTrue(state.psw & h.PSW_C)
+        self.assertFalse(state.psw & h.PSW_V)
+        self.assertFalse(state.psw & h.PSW_F)
+
+        record, state = run({0: 0x8CFD0004, 4: 0x00080000},
+                            {0x108: 0x7FFFFFFC})
+        self.assertEqual(record.mem_we, 0)
+        self.assertEqual(state.memory[0x108], 0x7FFFFFFC)
+        self.assertFalse(state.psw & h.PSW_C)
+        self.assertTrue(state.psw & h.PSW_V)
+        self.assertTrue(state.psw & h.PSW_F)
+
+    def test_tagged_tadd_leaves_carry_and_overflow(self):
+        # Tagged operand: F = 1 and C/V as they were (p. 3-44).
+        record, state = run({0: 0x8CFD0002, 4: 0x00080000},
+                            {0x108: 4},
+                            psw=h.PSW_SP | h.PSW_C | h.PSW_V)
+        self.assertTrue(state.psw & h.PSW_F)
+        self.assertTrue(state.psw & h.PSW_C)
+        self.assertTrue(state.psw & h.PSW_V)
+        self.assertEqual(state.memory[0x108], 4)
+        self.assertEqual(record.mem_we, 0)
+
+    def test_tsub_borrow_and_overflow(self):
+        # p. 3-47: C on unsigned borrow, V on signed overflow.
+        record, state = run({0: 0x8DFD0004, 4: 0x00080000},
+                            {0x108: 0})
+        self.assertEqual(state.memory[0x108], 0xFFFFFFFC)
+        self.assertTrue(state.psw & h.PSW_C)
+        self.assertFalse(state.psw & h.PSW_V)
+        self.assertFalse(state.psw & h.PSW_F)
+
+        record, state = run({0: 0x8DFD0004, 4: 0x00080000},
+                            {0x108: 0x80000000})
+        self.assertEqual(record.mem_we, 0)
+        self.assertTrue(state.psw & h.PSW_V)
+        self.assertTrue(state.psw & h.PSW_F)
 
 
 class MoveAndOtherTest(unittest.TestCase):
