@@ -43,7 +43,8 @@ tools or a failed synthesis/place/route/bitstream step exits nonzero.
 ## Regression
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
-the Bluesim smoke test (`run_smoke.sh`), the network-unit testbench
+the Bluesim smoke test (`run_smoke.sh`), the negative-opcode testbench
+(`run_neg_tb.sh`), the network-unit testbench
 (`run_nu_tb.sh`), the link testbench (`run_link_tb.sh`), the routed
 crossbar testbench (`run_nu_routed_tb.sh`), the mesh testbench
 (`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and

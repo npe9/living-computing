@@ -206,8 +206,13 @@ documented NU tail signal and the model's fault paths.
 2. **Undefined opcode**: `error()` latches and `halted()` stays false; the
    `running` register clears (`PimPU.bsv:196-197`). The model's smoke test
    prints "FAIL: undefined opcode" only if the program is malformed, so a
-   dedicated negative test is needed.
+   dedicated negative test is needed. Status (2026-11-19): written in
+   `bsv/PimNegativeTests.bsv`, run by `bsv/run_neg_tb.sh`; the injection
+   that comments out `errorSeen <= True;` in `PimE.bsv` produces "FAIL:
+   undefined opcode did not latch error()" and "PimNegTb: FAIL".
 3. **Legal opcode**: `error()` stays false for every opcode in `docs/isa.md`.
+   Status (2026-11-19): the same testbench loads a one-word `halt` program
+   and asserts `error()` stays false while `halted()` rises.
 4. **NU tail**: `packetTail()` pulses exactly once for a packet byte whose
    bit 8 is set, and not for a byte whose bit 8 is clear; `PimNUTb` already
    asserts this (header lines 1-20; `watchTail` at line 63).

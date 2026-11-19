@@ -99,7 +99,10 @@ reproducible build check (28.32 MHz, WP2 gate unchanged).
 WP1, WP3 and WP4 are done; WP2 stays "not hardware-ready" pending a
 re-decision on the fresh measurements; WP5.1 is done: `docs/wp5_evidence.md`
 records the documented sources, the single-PE diagnostic definition and the
-named blockers. WP5.2 (mesh link and packet flow control) is next.
+named blockers. WP5.2 (mesh link and packet flow control) is next. The
+diagnostic's negative tests (undefined opcode, legal opcode) are now written
+and wired into `run_tests.sh` (`bsv/PimNegativeTests.bsv`,
+`bsv/run_neg_tb.sh`).
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
@@ -251,7 +254,10 @@ test or an explicit label.
    interrupt vector, priority, mask or acknowledge path is documented,
    and `PimPU` has no interrupt input; the NU tail is a standalone
    pulse. The diagnostic's negative tests (undefined opcode, legal
-   opcode) are specified in §4.2 but not yet written.
+   opcode) are written in `bsv/PimNegativeTests.bsv`, run by
+   `bsv/run_neg_tb.sh`, and wired into `run_tests.sh`. The injection
+   that removes the `errorSeen` latch produces "FAIL: undefined opcode
+   did not latch error()" and "PimNegTb: FAIL".
 2. **Stage 5:** mesh link and packet flow control. Prove two PEs, then a
    parameterized mesh with deterministic arbitration and
    deadlock-directed tests.
