@@ -48,14 +48,21 @@ which is exactly the symbol `main` and exactly the `etext` arithmetic.
 Every shipped binary's entry falls inside that window (`echo` 0x2ad0,
 `cat` 0x12bc, `rc` 0xb9c6, `za` 0x7282, `zl` 0x995c).
 
-**What is still open is the text's own byte order.** With that mapping,
-parcels read low byte first make `_main` in `echo` start with parcel
-0x86dc: a 3-parcel MOV (opcode 0x06 = `AMOV` in `zl/optab.c`) whose
-destination is 0x4008, the symbol-table address of `_clock` — main9.s's
-`MOV R0, _clock(SB)`, the oracle this step needed. But `main` at 0x1020
-then begins with 0xffff, which is not an instruction, and no order tried
-fixes both. So one of the two is an artefact not yet explained; the
-loader must not be written until it is. `tools/p9exec.py` reports both
+**The text's byte order is now pinned by two programs, with one
+anomaly left.** With that mapping and parcels read low byte first,
+`_main` starts with parcel 0x86dc in *both* `echo` and `cat`: a 3-parcel
+MOV (opcode 0x06 = `AMOV` in `zl/optab.c`), fields `0x0bfc` and the
+program's own `_clock` address (0x4008 in `echo`, 0x3004 in `cat`),
+followed by the same two 1-parcel parcels `0x60c2` and `0x60a1` — that
+is main9.s's `MOV R0, _clock(SB)` and the two frame-relative MOVs,
+linked identically into both programs. Two independent binaries agreeing
+is the oracle this step needed, and no other byte order reproduces it.
+
+Left open: `echo`'s `main` at 0x1020 begins with parcel 0xffff, which is
+not an opcode in `zl/optab.c` (its highest is 0x3e), while `cat`'s
+`main` at the same address begins with a plausible 1-parcel. The loader
+can be written against the `_main` rule and must then explain that
+difference; it is recorded here rather than smoothed over. `tools/p9exec.py` reports both
 orders and claims neither, and gates only what the header proves:
 `etext = main + text`, `entry = _main`, `bdata = 0x4000`.
 
