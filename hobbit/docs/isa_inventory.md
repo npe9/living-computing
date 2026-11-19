@@ -158,6 +158,53 @@ stated on p. 1-27, the `0xD`–`0xF` case in T1-24).
 | 16-bit source/destination | 16 | sign-extended in immediate/offset modes; absolute upper half via CONFIG PC-extension bit | p. 1-23 |
 | 32-bit source/destination | 32 | full 32-bit value | p. 1-24 |
 
+#### 1.6.1 Stack-offset-indirect resolution and the two read ports
+
+All sixteen general codes of Table 1-21 are modelled. A
+stack-offset-indirect operand (`0x8`-`0xB`, `0xE`) is two accesses
+(p. 1-27): the pointer word at `CSP + offset`, fetched with the other
+operand in the execution unit's first stage on the stack cache's two
+printed read ports (Figure 1-1, p. 1-2, prints `64x32x2`), and then the
+one word the pointer names, fetched in the second stage on one port.
+The two stages never read in the same clock — the hand-off into EU_S2
+needs an empty input slot and EU_S2's step needs a full one — so the
+box keeps exactly two read ports and the instruction keeps its
+Table 4-32 occupancy (1 cycle for `MOV`, p. 4-3). The offset's
+word-alignment rule and the pointed-to address's width-alignment rule
+(pp. 1-27, 1-4) are the exception `0x4` alignment fault (Table 1-26,
+p. 1-38).
+
+One form cannot be served by two ports: an instruction that needs a
+pointed-to word for *both* operands (both fields indirect and both read
+as values, e.g. `ADD *R4,*R8`, or an indirect byte/half store with an
+indirect source). The decoder refuses it loudly as the unimplemented
+sequence (`TR_UNIMP`, the model's existing loud-refusal path) rather
+than inventing a third port; `sem/hobbit_sem.py` still executes it, so
+this is a core limitation, recorded here rather than approximated.
+`MOV` with a word destination (including the one-parcel `MOV.II`) needs
+only the source's word — a word store has no old word to merge (p. 1-4)
+— and `MOVA` uses its source as an address (p. 3-33), so both fit the
+printed ports.
+
+`mkHobbitStackCache` keeps the printed `64x32x2` as a declared shape,
+not a `RegFile`: bsc's `mkRegFile*` caps statically reachable read
+ports at five and counts call sites, so the two EU stages plus the
+testbench probe exceed it even though they never read in the same
+clock. The array is a `Vector#(64, Reg#(Word))`; reads are
+combinational muxes and the one write per retirement is unchanged. The
+cost is LUTs (`docs/area_analysis.md` measured 12,107 LUT4 for this
+shape against 132 LUT4 for a `RegFile`), not ports.
+
+The model's operand path is the stack cache, so a word outside
+`[SP, MSP)` reads as zero (the box's defined miss). p. 1-27 sends a
+negative stack offset off-chip and p. 1-5 says such addresses are
+"normal memory"; that off-chip operand path is not modelled, and the
+absolute modes `0x0`-`0x3`/`0xC` have the same limitation. A pointer
+whose target is unwritten memory therefore agrees with the reference
+model's zero fill, which is the BSS case the Plan 9 `exits` scan
+exercises; a pointer to a non-zero off-chip word is a known gap, not a
+silent approximation of a different rule.
+
 ### 1.7 Width suffixes
 
 The PRM prints the operand suffixes on p. 1-28:

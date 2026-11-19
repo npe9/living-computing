@@ -38,6 +38,35 @@ trace has ``0xfffffff0``) and ``test_shift_count_is_low_five_bits``
 DATA: dut=0xffffffff spec=0xfffffff0 pc=0x0002`` (2 instructions
 compared, FAIL); the core was untouched and still matched.  Reverted by
 the reverse edit.
+
+Indirect-mode injections, 2026-11-19, each reverted by the reverse edit
+and each run through this file and the golden 014/015 traces:
+(a) dropping the three/five-parcel 0xE indirection (using the slot as
+the address) failed exactly the four 0xE tests
+(``test_word_indirect_source``,
+``test_word_indirect_destination_address_is_pointer_value``,
+``test_indirect_target_must_meet_its_width_alignment``,
+``test_indirect_pointer_word_is_read_from_the_stack_slot``, the last as
+an error) and both goldens;
+(b) dropping the one-parcel ``_istk5`` indirection failed exactly
+``test_mov_is_one_parcel`` (fail) and ``test_mov_ii_one_parcel`` /
+``test_mov_si_one_parcel`` (errors), and golden 014 only;
+(c) making mode 0x8 unsigned failed exactly
+``test_indirect_byte_signed_and_unsigned`` and golden 014 only;
+(d) making mode 0xA unsigned failed exactly
+``test_indirect_half_signed_and_unsigned`` and golden 014 only;
+(e) removing the 0xE offset's ``off & 3`` check (p. 1-27) failed exactly
+``test_indirect_offset_must_be_word_aligned`` and neither golden;
+(f) removing ``_load``'s word ``ea & 3`` check (p. 1-4) failed exactly
+``test_indirect_target_must_meet_its_width_alignment`` and neither
+golden;
+(g) forcing a byte store's mask to 0xF failed exactly
+``test_indirect_byte_store_marks_and_merge`` and golden 015 only;
+(h) in the core, replacing EU_S2's pointed-to read with zero failed
+exactly the load lines of both goldens (014 L07/L08/L13/L15, 015
+L09/L10/L11) and nothing else; the stores' own records were unchanged
+because a word store has no merge and a byte/half store's merge is not a
+field of the record.
 """
 
 import os
@@ -381,6 +410,122 @@ class KernelTransferTest(unittest.TestCase):
     def test_kret_is_privileged(self):
         with self.assertRaises(h.Refusal):
             run({0: 0x2C010000}, psw=h.PSW_SP | h.PSW_USER)
+
+
+class IndirectOperandTest(unittest.TestCase):
+    """Table 1-21's stack-offset-indirect modes 0x8-0xB and 0xE (p. 1-25).
+
+    p. 1-27: "Stack Offset Indirect - addressing adds a constant offset in
+    the instruction to the address of the current stack pointer (CSP). The
+    word at this address is fetched and then used as an address to obtain
+    the data operand. The offset must be word aligned. An alignment fault
+    (0x4) is executed if the offset is not word aligned."  The width,
+    sign and byte-mark rules are p. 1-4's; the offset is a byte offset,
+    unscaled (sem/README.md, "Stack fields are measured in two units").
+    """
+
+    def test_word_indirect_source(self):
+        # MOV *R8,R12 (mode 0xE, three parcels): pointer at SP+8 = 0x108.
+        record, state = run({0: 0x86ED0008, 4: 0x000C0000},
+                            {0x108: 0x110, 0x110: 0xCAFEBABE})
+        self.assertEqual(state.memory[0x10C], 0xCAFEBABE)
+        self.assertEqual(record.mem_addr, 0x10C)
+        self.assertEqual(record.mem_wdata, 0xCAFEBABE)
+        self.assertEqual(record.mem_wmask, 0x0F)
+        self.assertEqual(record.cyc, 1)          # Table 4-32, p. 4-3
+
+    def test_word_indirect_destination_address_is_pointer_value(self):
+        # MOV $0x1234,*R8: the write's address is the pointer's value
+        # (p. 1-27), not the stack slot that holds the pointer.
+        record, state = run({0: 0x86FE1234, 4: 0x00080000},
+                            {0x108: 0x114})
+        self.assertEqual(state.memory[0x114], 0x1234)
+        self.assertEqual(record.mem_addr, 0x114)
+        self.assertEqual(record.mem_wdata, 0x1234)
+        self.assertEqual(record.mem_wmask, 0x0F)
+        self.assertEqual(record.cyc, 1)
+
+    def test_mov_is_one_parcel(self):
+        # MOV.IS R4,R8 = 0x6422 (opcode 0x19): istk5 1 -> *0x104, stk5 2
+        # -> 0x108; the one-parcel field is scaled by four (p. 1-21).
+        record, state = run({0: 0x64220000},
+                            {0x104: 0x114, 0x114: 0x11223344})
+        self.assertEqual(state.memory[0x108], 0x11223344)
+        self.assertEqual(record.mem_addr, 0x108)
+        self.assertEqual(record.cyc, 1)
+
+    def test_mov_si_one_parcel(self):
+        # MOV.SI R4,R8 = 0x6822 (opcode 0x1A): source 0x104, pointer 0x108.
+        record, state = run({0: 0x68220000},
+                            {0x104: 0x000000AA, 0x108: 0x114})
+        self.assertEqual(state.memory[0x114], 0xAA)
+        self.assertEqual(record.mem_addr, 0x114)
+        self.assertEqual(record.mem_wmask, 0x0F)
+
+    def test_mov_ii_one_parcel(self):
+        # MOV.II R4,R8 = 0x6C22 (opcode 0x1B): both slots hold pointers.
+        record, state = run({0: 0x6C220000},
+                            {0x104: 0x114, 0x108: 0x118,
+                             0x114: 0x00000055})
+        self.assertEqual(state.memory[0x118], 0x55)
+        self.assertEqual(record.mem_addr, 0x118)
+        self.assertEqual(record.cyc, 1)
+
+    def test_indirect_byte_signed_and_unsigned(self):
+        # MOV *R4:B,R8 = 0x868D / *R4:UB = 0x869D.  The byte at 0x111 is
+        # bits 23:16 of the word at 0x110 (big-endian, p. 1-4).
+        record, state = run({0: 0x868D0004, 4: 0x00080000},
+                            {0x104: 0x111, 0x110: 0x00AB0000})
+        self.assertEqual(state.memory[0x108], 0xFFFFFFAB)
+        self.assertEqual(record.mem_wdata, 0xFFFFFFAB)
+
+        record, state = run({0: 0x869D0004, 4: 0x00080000},
+                            {0x104: 0x111, 0x110: 0x00AB0000})
+        self.assertEqual(state.memory[0x108], 0x000000AB)
+
+    def test_indirect_half_signed_and_unsigned(self):
+        # MOV *R4:H,R8 = 0x86AD / *R4:UH = 0x86BD at 0x112.
+        record, state = run({0: 0x86AD0004, 4: 0x00080000},
+                            {0x104: 0x112, 0x110: 0x00008000})
+        self.assertEqual(state.memory[0x108], 0xFFFF8000)
+
+        record, state = run({0: 0x86BD0004, 4: 0x00080000},
+                            {0x104: 0x112, 0x110: 0x00008000})
+        self.assertEqual(state.memory[0x108], 0x00008000)
+
+    def test_indirect_byte_store_marks_and_merge(self):
+        # MOV R16:B,*R8 = 0x86D8: a byte store at 0x121 keeps the other
+        # three bytes of the word at 0x120 (p. 1-4's byte marks).
+        record, state = run({0: 0x86D80010, 4: 0x00080000},
+                            {0x110: 0x000000AB, 0x108: 0x121,
+                             0x120: 0x11223344})
+        self.assertEqual(state.memory[0x120], 0x11AB3344)
+        self.assertEqual(record.mem_addr, 0x120)
+        self.assertEqual(record.mem_wdata, 0x00AB0000)
+        self.assertEqual(record.mem_wmask, 0x04)
+
+    def test_indirect_offset_must_be_word_aligned(self):
+        # p. 1-27: the *offset* must be word-aligned; offset 0x6 is not.
+        for first in (0x86ED, 0x868D, 0x86AD):
+            with self.assertRaises(h.AlignmentFault):
+                run({0: first << 16 | 0x0006, 4: 0x00080000},
+                    {0x106: 0x110, 0x110: 0x0})
+
+    def test_indirect_target_must_meet_its_width_alignment(self):
+        # p. 1-4: the pointed-to address obeys the width's rule.  A word
+        # at 0x111 and a half-word at 0x111 are both misaligned; a byte
+        # there is not (test_indirect_byte_signed_and_unsigned).
+        for first in (0x86ED, 0x86AD):
+            with self.assertRaises(h.AlignmentFault):
+                run({0: first << 16 | 0x0004, 4: 0x00080000},
+                    {0x104: 0x111, 0x110: 0x0})
+
+    def test_indirect_pointer_word_is_read_from_the_stack_slot(self):
+        # The pointer word comes from CSP+offset; a byte offset is not
+        # scaled (p. 1-21 scales only the five- and ten-bit fields).
+        record, state = run({0: 0x86ED0008, 4: 0x000C0000},
+                            {0x108: 0x120, 0x120: 0x77})
+        self.assertEqual(state.memory[0x10C], 0x77)
 
 
 class FiveParcelTest(unittest.TestCase):

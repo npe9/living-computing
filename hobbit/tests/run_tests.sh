@@ -61,9 +61,12 @@ for n in 007 008 009 010 011 012; do
 done
 
 # 013 exercises the one-parcel Table 1-15 row 11 forms MOV.CS, SHL3.CS,
-# SHR3.CS and MOVA.SS.  Both the core and the spec model must reproduce
-# the hand-derived trace (the core implements all four).
-for n in 013; do
+# SHR3.CS and MOVA.SS.  014 exercises the stack-offset-indirect word modes
+# 0xE (MOV.IS, MOV.II, MOV.SI and the three/five-parcel *Roffset:W forms);
+# 015 exercises the indirect byte/half modes 0x8-0xB as stores and loads.
+# Both the core and the spec model must reproduce each hand-derived trace
+# (the core implements all of these forms).
+for n in 013 014 015; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
     grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \

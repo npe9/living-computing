@@ -71,8 +71,6 @@ interface HobbitCore;
 
   method Word sp();
   method Word msp();
-  method Word acc();
-  method Word readMem(Word addr);
   method Word cacheWord(Word addr);
   method Bool cached(Word addr);
 
@@ -362,7 +360,9 @@ interface HobbitEuS1;
   interface Server#(Token, Token) server_reset;
   method Action start(Word pc);
   method Action stop();
-  method Action deq;
+  // The orchestrator evaluates the slot once (`out`) and hands the same
+  // value here, so the operand reads are one set of stack-cache ports.
+  method Action deq(EuS1Out o);
   method EuS1Out out;
   method Bool notEmpty;
   method Word pc();
@@ -437,9 +437,22 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // width-extended value.  `bad` reports a misaligned half-word or word
   // access (p. 1-4).  One call site, one port: the destination uses
   // operandB() and the second port.
+  //
+  // A stack-offset-indirect mode (0x8-0xB, 0xE) is resolved in two steps
+  // (p. 1-27): "The word at this address is fetched and then used as an
+  // address to obtain the data operand."  This function fetches the
+  // pointer word from CSP+offset and returns the pointer's value as the
+  // operand's effective address; EU_S2 fetches the word it names.  The
+  // offset must be word-aligned and a misaligned one is an alignment
+  // fault (p. 1-27), reported through `bad`; the pointed-to address is
+  // checked against the operand's width in EU_S2 (p. 1-4).
   function OpRead operandA(Operand o, Word spb, Word mspb);
     if (modeIsImm(o.mode)) begin
       return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+    end else if (modeIsIndirect(o.mode)) begin
+      match { .w, .h } = readWord((spb + o.val) & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: 0, ea: w, word: 0, ok: h,
+                      bad: ((o.val & 3) != 0) };
     end else begin
       Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
       Word sz = modeSize(o.mode);
@@ -454,6 +467,10 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   function OpRead operandB(Operand o, Word spb, Word mspb);
     if (modeIsImm(o.mode)) begin
       return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+    end else if (modeIsIndirect(o.mode)) begin
+      match { .w, .h } = readWord2((spb + o.val) & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: 0, ea: w, word: 0, ok: h,
+                      bad: ((o.val & 3) != 0) };
     end else begin
       Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
       Word sz = modeSize(o.mode);
@@ -515,23 +532,24 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
         Operand so = d.src;
         if ((d.op == OP_KCALL) && (so.mode == 4'hD))
           so = Operand { mode: 4'hF, val: spb + so.val };
-        if (opReadsSrc(d.op) || (d.op == OP_KCALL) || (d.op == OP_RETURN)) begin
-          let r = operandA(so, spb, mspb);
-          srcV = r.val; srcEa = r.ea; bad = bad || r.bad;
-          if (d.op == OP_RETURN) retPc = r.val;
-        end else if (opNeedsSrcEa(d.op)) begin
-          // MOVA/LDRAA need the source *address* (p. 3-31, p. 3-33).
+        // One operandA and one operandB call site per instruction: the
+        // two read ports are the printed 64x32x2, and the branchy form
+        // (a call per consumer) duplicated the ports bsc counts.  MOVA
+        // and LDRAA want the source *address*, not its value (p. 3-31,
+        // p. 3-33); every other consumer wants the value.
+        if (opReadsSrc(d.op) || (d.op == OP_KCALL) ||
+            (d.op == OP_RETURN) || opNeedsSrcEa(d.op)) begin
           let r = operandA(so, spb, mspb);
           srcEa = r.ea; bad = bad || r.bad;
+          if (!opNeedsSrcEa(d.op)) begin
+            srcV = r.val;
+            if (d.op == OP_RETURN) retPc = r.val;
+          end
         end
-        if (opReadsDst(d.op)) begin
-          let r = operandB(d.dst, spb, mspb);
-          dstV = r.val; dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
-        end else if (opWritesDst(d.op)) begin
-          // A store needs the containing word to merge byte and half-word
-          // lanes (p. 1-4); the loaded value is unused.
+        if (opReadsDst(d.op) || opWritesDst(d.op)) begin
           let r = operandB(d.dst, spb, mspb);
           dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
+          if (opReadsDst(d.op)) dstV = r.val;
         end
       end
       return mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
@@ -595,9 +613,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // slot.  It writes every register `present` can write, so the two must
   // never need to fire together -- and they cannot: `present` requires
   // an empty slot and this method is called on a full one.
-  method Action deq();
+  method Action deq(EuS1Out o);
     fullR <= False;
-    let o = curOut();
     pcR      <= o.nextPc;
     block    <= o.extra;
     sinceCmp <= isCompareOp(o.e.d.op) ? 0
@@ -667,6 +684,7 @@ interface HobbitEuS2;
 endinterface
 
 module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
+                     HobbitStackCache sc, EuBypass byS3,
                      HobbitEvents events)(HobbitEuS2);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.
@@ -695,6 +713,26 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
   // The width of the destination operand's access (p. 1-28); an immediate
   // destination has no width of its own.
   function Word dstBytes(Operand o) = modeIsImm(o.mode) ? 4 : modeSize(o.mode);
+
+  // The pointed-to operand's address must meet the width's alignment
+  // rule: a word is word-aligned, a half-word half-word-aligned, a byte
+  // has no constraint (p. 1-4, p. 1-27).
+  function Bool widthBad(Word a, Word sz);
+    return ((sz == 4) && ((a & 3) != 0)) || ((sz == 2) && ((a & 1) != 0));
+  endfunction
+
+  // The word a stack-offset-indirect pointer names (p. 1-27).  EU_S3 is
+  // the only older instruction still in flight, so its write bypasses the
+  // array exactly as it does for EU_S1's operand read; otherwise the
+  // committed stack cache supplies the word.  The two stages never read
+  // in the same clock (`deliver` needs an empty input slot, `step` a full
+  // one), so this second-stage read shares the box's two printed ports
+  // (Figure 1-1, p. 1-2) without a third.
+  function Word readPointed(Word ea, Word spb, Word mspb);
+    Word wa = ea & 32'hFFFFFFFC;
+    if (byS3.valid && byS3.we && (byS3.addr == wa)) return byS3.data;
+    else return sc.read(wa, spb, mspb);
+  endfunction
 
   // Two's-complement division truncating toward zero, remainder carrying
   // the dividend's sign (pp. 3-17, 3-39).  A zero divisor is the
@@ -745,12 +783,12 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
   // A store to the destination operand: the record's data is the value in
   // its byte lanes with the byte marks of the access, and the word the
   // stack cache keeps merges those lanes into the containing word.
-  function WrInfo memWr(EuS1Out i, Word res);
+  function WrInfo memWr(EuS1Out i, Word old, Word res);
     Word sz = dstBytes(i.e.d.dst);
     Word a  = i.dstEa;
     return WrInfo { we: True, addr: a & 32'hFFFFFFFC,
                     data: laneData(res, a, sz), mask: storeMask(a, sz),
-                    wdata: mergeStore(i.dstWord, res, a, sz) };
+                    wdata: mergeStore(old, res, a, sz) };
   endfunction
 
   function BoxOp boxOpOf(HobbitOp op);
@@ -789,19 +827,62 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
     let e = i.e;
     let d = e.d;
     Bool trap = (d.tr != TR_NONE);
+
+    // ---- indirect operands: the word the pointer names (p. 1-27) ------
+    // EU_S1 read the pointer word and left its value in srcEa/dstEa; the
+    // one word that pointer names is fetched here, one stage later, on
+    // one printed read port.  The instruction's own before-SP is the
+    // address base, so an older POPN/RETURN in flight cannot move this
+    // operand.  `bad` is the offset's alignment fault from EU_S1
+    // (p. 1-27) plus the pointed-to address's width rule (p. 1-4); either
+    // one is the p. 1-26 exception 0x4 and stops the run without a
+    // retirement record, as the sem's Refusal does.
+    //
+    // At most one operand needs a pointed-to word: two would need a
+    // second read in this stage, i.e. a third stack-cache port, and
+    // Figure 1-1 prints the cache as 64x32x2 (p. 1-2).  The decoder
+    // refuses the two-word forms loudly (HobbitDecode.bsv).
+    Word src = i.srcVal;
+    Word dst = i.dstVal;
+    Word dstW = i.dstWord;
+    Bool bad = i.bad;
+    if (!trap) begin
+      Bool srcInd = modeIsIndirect(d.src.mode) &&
+                    (opReadsSrc(d.op) || (d.op == OP_KCALL) ||
+                     (d.op == OP_RETURN));
+      // A word store needs no old word for a merge (mergeStore ignores
+      // it at width 4); a byte or half store does, and so does any
+      // destination the instruction reads as a value.
+      Bool dstInd = modeIsIndirect(d.dst.mode) &&
+                    (opReadsDst(d.op) ||
+                     (opWritesDst(d.op) && (dstBytes(d.dst) < 4)));
+      if (srcInd || dstInd) begin
+        Word ea = srcInd ? i.srcEa : i.dstEa;
+        let w = readPointed(ea, i.spBefore, i.mspBefore);
+        if (srcInd) begin
+          src = extendLoad(w, i.srcEa, modeSize(d.src.mode),
+                           modeSigned(d.src.mode));
+          bad = bad || widthBad(i.srcEa, modeSize(d.src.mode));
+        end else begin
+          dstW = w;
+          dst = extendLoad(w, i.dstEa, dstBytes(d.dst),
+                           modeSigned(d.dst.mode));
+          bad = bad || widthBad(i.dstEa, dstBytes(d.dst));
+        end
+      end
+    end
+
     Bool cmp = isCompareOp(d.op) && !trap;
-    Bool flagNew = flagAfterOp(d.op, i.srcVal, i.dstVal, (psw[4] == 1'b1));
+    Bool flagNew = flagAfterOp(d.op, src, dst, (psw[4] == 1'b1));
     SpMsp after = trap ? SpMsp { sp: i.spBefore, msp: i.mspBefore }
                        : archAfterSpMsp(d, i.spBefore, i.mspBefore);
 
     // ---- the result and the PSW write (pp. 3-5..3-51) ----------------
-    Word src = i.srcVal;
-    Word dst = i.dstVal;
     Word sz  = dstBytes(d.dst);
     Word res = 0;
     PswUpdate pu = noPswUpd();
     Bool store = True;
-    Bool fatal = i.bad;
+    Bool fatal = bad;
     Bool divZero = False;
     Bool hasTag = False;
 
@@ -886,7 +967,7 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
       if (modeIsImm(d.dst.mode))
         fatal = True;                        // store to an immediate: illegal
       else
-        wr = memWr(i, res);
+        wr = memWr(i, dstW, res);
     end
 
     // Branch resolution in this stage: RETURN's indirect target and a
@@ -1399,7 +1480,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   // Instantiate the stages downstream-first so the bypass and flag
   // expressions can be passed as Flute passes stage2.out.bypass.
   HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn);
-  HobbitEuS2 s2 <- mkHobbitEuS2(pswR, vbR, events);
+  HobbitEuS2 s2 <- mkHobbitEuS2(pswR, vbR, sc, s3.bypass, events);
 
   // EU_S3 resolves the youngest misprediction (a jump right after its
   // compare); otherwise EU_S2's.
@@ -1467,8 +1548,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   // drains, so the vector handler cannot read a half-written frame.
   rule deliver (!eventWanted() && !squash && !s3.framePending() &&
                 s1.notEmpty && s2.canAccept);
-    s2.enq(s1.out);
-    s1.deq;
+    let o = s1.out;
+    s2.enq(o);
+    s1.deq(o);
   endrule
 
   rule redirect (eventWanted() == False && squash);
@@ -1611,8 +1693,6 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   method Word sp() = sc.sp;
   method Word msp() = sc.msp;
-  method Word acc() = sc.read(sc.sp + 4, sc.sp, sc.msp);
-  method Word readMem(Word addr) = sc.read(addr, sc.sp, sc.msp);
   method Word cacheWord(Word addr) = sc.cacheWord(addr);
   method Bool cached(Word addr) = sc.cached(addr);
 

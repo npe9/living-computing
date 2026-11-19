@@ -17,10 +17,13 @@
 //   5 parcels  bits 15:14 = 11, same first parcel; source-hi,
 //              source-lo, destination-hi, destination-lo.  Table 1-20, p. 1-25
 //
-// Addressing modes: smode/dmode 0xF immediate, 0xD word stack offset,
-// 0xC word absolute (Tables 1-21/1-22, p. 1-25/1-26).  Byte and half-word
-// modes and indirect modes are decoded as TR_BAD_MODE: the source
-// documents them, this milestone does not model them, and the core traps.
+// Addressing modes: all sixteen general codes of Table 1-21 (p. 1-25) are
+// decoded and carried through unchanged.  The stack-offset-indirect codes
+// 0x8-0xB and 0xE resolve to the pointer's value as the operand's address;
+// the pointed-to word is read by the execution unit's second stage
+// (HobbitCore.bsv, "indirect operands"), not here.  Tables 1-22 and 1-23
+// are separate tables: the CPU-prefix register mode is not modelled
+// (TR_CPU) and the CALL/JMP indirect targets still trap (TR_BAD_MODE).
 //
 // The 16-bit immediate and offset fields are sign extended (p. 1-23);
 // absolute 16-bit addresses are zero extended because CONFIG's PC
@@ -197,14 +200,18 @@ module mkHobbitDecode(HobbitDecode);
 
   function Operand gen32(Bit#(4) m, Word v) = Operand { mode: m, val: v };
 
-  // The modes the core executes: every Table 1-21 mode that needs at most
-  // one stack-cache read.  The five indirect modes (0x8-0xB, 0xE) need the
-  // pointer word and then the operand word in the same occupancy, i.e. a
-  // third read port; Figure 1-1 prints the stack cache as 64x32x2 (p. 1-2)
-  // and the model's box exposes exactly two reads, so those modes are
-  // refused loudly here and recorded in docs/isa_inventory.md.
-  function Bool modeModelled(Bit#(4) m);
-    return (m <= 4'h7) || (m == 4'hC) || (m == 4'hD) || (m == 4'hF);
+  // Two pointed-to words in one instruction would need a second read in
+  // the execution unit's second stage, i.e. a third stack-cache port;
+  // Figure 1-1 prints the cache as 64x32x2 (p. 1-2).  Two forms fit the
+  // printed ports: MOVA, whose source is used as an address and not read
+  // as a value (p. 3-33), and MOV with a word destination, which needs
+  // no old word for its merge (p. 1-4).  Every other both-indirect form
+  // is refused loudly as the unimplemented sequence rather than given a
+  // port the printed diagram does not have.
+  function Bool twoIndirectWords(HobbitOp op, Bit#(4) sm, Bit#(4) dm);
+    return modeIsIndirect(sm) && modeIsIndirect(dm) &&
+           (op != OP_MOVA) &&
+           !((op == OP_MOV) && (modeSize(dm) == 4));
   endfunction
 
   // Table 1-23, p. 1-26: CALL/JMP may be PC relative (0xE) or absolute
@@ -335,12 +342,13 @@ module mkHobbitDecode(HobbitDecode);
         5'h17: return maybeFold(dyad1ss(pc, OP_ADD3, p0), p);
         5'h18: return maybeFold(dyad1ss(pc, OP_MOV, p0), p);
         // Table 1-15 row 11 (p. 1-22): MOV.IS 0x19 (istk5,stk5),
-        // MOV.SI 0x1A (stk5,istk5), MOV.II 0x1B (istk5,istk5).
-        // MOV.IS/SI/II use the indirect stack-offset mode 0xE, which the
-        // core refuses for the port reason stated at modeModelled().
-        5'h19: return trapAt(pc, 1, TR_BAD_MODE);
-        5'h1A: return trapAt(pc, 1, TR_BAD_MODE);
-        5'h1B: return trapAt(pc, 1, TR_BAD_MODE);
+        // MOV.SI 0x1A (stk5,istk5), MOV.II 0x1B (istk5,istk5).  The "I"
+        // field is Table 1-21's stack-offset-indirect word mode 0xE with
+        // the one-parcel field zero-extended and multiplied by four
+        // (p. 1-21, p. 1-22); the pointed-to word is read in EU_S2.
+        5'h19: return maybeFold(mov1(pc, 4'hE, 4'hD, p0), p);
+        5'h1A: return maybeFold(mov1(pc, 4'hD, 4'hE, p0), p);
+        5'h1B: return maybeFold(mov1(pc, 4'hE, 4'hE, p0), p);
         5'h1C: return maybeFold(dyad1(pc, OP_MOV, p0), p);
         // Table 1-15 row 11 (p. 1-22): MOV.CS 0x1C (above), MOVA.SS 0x1D,
         // SHL3.CS 0x1E, SHR3.CS 0x1F.  MOVA's both fields are word stack
@@ -419,8 +427,8 @@ module mkHobbitDecode(HobbitDecode);
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
           return trapAt(pc, 3, TR_UNIMP);
-        else if (!modeModelled(sm) || !modeModelled(dm))
-          return trapAt(pc, 3, TR_BAD_MODE);
+        else if (twoIndirectWords(op, sm, dm))
+          return trapAt(pc, 3, TR_UNIMP);
         else
           return maybeFold(mkInstr(pc, 3, op, gen16(sm, p[1]), gen16(dm, p[2]),
                                    TR_NONE), p);
@@ -437,8 +445,8 @@ module mkHobbitDecode(HobbitDecode);
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
           return trapAt(pc, 5, TR_UNIMP);
-        else if (!modeModelled(sm) || !modeModelled(dm))
-          return trapAt(pc, 5, TR_BAD_MODE);
+        else if (twoIndirectWords(op, sm, dm))
+          return trapAt(pc, 5, TR_UNIMP);
         else
           return maybeFold(mkInstr(pc, 5, op,
                                    gen32(sm, { p[1], p[2] }),

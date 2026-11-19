@@ -34,7 +34,7 @@ mkdir -p "$GEN"
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|013) ;;
+    001|002|003|004|005|006|013|014|015) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -149,7 +149,7 @@ self_check() {
 }
 
 if [ $# -eq 0 ]; then
-  for s in 001 002 003 004 005 006; do
+  for s in 001 002 003 004 005 006 013 014 015; do
     run_one "$s"
   done
 else

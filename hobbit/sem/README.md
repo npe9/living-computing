@@ -246,6 +246,22 @@ immediate.  A missing suffix in the manual's syntax means a signed word
 half-word loads and zero extension for unsigned ones, exactly as p. 1-3
 and p. 1-28 describe.
 
+A stack-offset-indirect operand (`0x8`-`0xB`, `0xE`) is the two-access
+form of p. 1-27: "The word at this address is fetched and then used as
+an address to obtain the data operand."  The word at `CSP + offset` is
+the operand's address and the access is at that address with the mode's
+width and sign; the record's `addr` is therefore the pointer's value,
+never the stack slot that holds it.  The offset is an unscaled byte
+offset and must be word-aligned (alignment fault `0x4`, p. 1-27), while
+the pointed-to address must meet its own width's alignment (p. 1-4).
+The core models the same two steps across EU_S1 (pointer word and the
+other operand) and EU_S2 (the word the pointer names) on the stack
+cache's two printed read ports; `docs/isa_inventory.md` §1.6.1 records
+the sequencing and the off-chip operand-path gap.  One core limitation
+is recorded there too: an instruction that needs a pointed-to word for
+*both* operands is refused by the core (the second word would need a
+third read port), while this model still executes it.
+
 A three-parcel **monadic** instruction (KCALL, CALL, RETURN, JMP,
 LDRAA, the four conditional jumps, CATCH, ENTER, POPN) carries one
 32-bit operand in parcels 2 and 3, `((parcel2 << 16) | parcel3)`

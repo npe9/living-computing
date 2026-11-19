@@ -1,16 +1,18 @@
 // HobbitStackCache.bsv -- the 64-register stack cache and integer
-// accumulator as a request/response box with one read and one write
-// port per clock.
+// accumulator as a request/response box with two read ports and one
+// write port per clock.
 //
 // Figure 1-1 (printed p. 1-2) prints "STACK CACHE 64x32x2 bits" and a
 // 32-bit path to the execution unit; p. 1-1 calls it a "256 byte stack
-// cache that holds top of user stack".  The trailing x2 is the two
-// ports modelled here: one combinational read port and one registered
-// write port.  The EU reads an operand (EU_S1) and writes its
-// destination (EU_S3) in the same clock, and a CATCH refill can write a
-// word while the EU reads one -- the two cases the single-writer
-// sequencer could not express.  A flush reads the array and writes
-// memory, so the EU's write and the flush's read also overlap.
+// cache that holds top of user stack".  The box exposes two
+// combinational read ports (read/read2) and one registered write port.
+// The EU reads its two operands (EU_S1) and writes its destination
+// (EU_S3) in the same clock, and a CATCH refill can write a word while
+// the EU reads one -- the cases the single-writer sequencer could not
+// express.  An indirect operand's pointed-to word is read in EU_S2; the
+// two stages' reads never fall in the same clock.  A flush reads the
+// array and writes memory, so the EU's write and the flush's read also
+// overlap.
 //
 // Documented behaviour modelled here (printed pages of the January 1993
 // Programmer's Reference Manual):
@@ -115,6 +117,9 @@ interface HobbitStackCache;
   method Bit#(32) refills();
   method Word minSpSeen();
   method Word maxSpSeen();
+  // The testbench probe reads the array through the box's read path; the
+  // two printed ports are shared with the EU stages, whose reads and this
+  // probe never fall in the same clock (the probe is used after the run).
   method Word cacheWord(Word addr);
   method Bool cached(Word addr);
   method Word fillWatermark();
@@ -130,18 +135,24 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   // at or above it the access goes to memory.
   Reg#(Word) fillR <- mkReg(0);
   // One write port and a combinational 64:1 read (the EU reads an
-  // operand every clock).  A RegFile emits the plain array shape that
-  // maps to LUT RAM: docs/area_analysis.md's reg_64x32 is 132 LUT4,
-  // against 12,107 LUT4 for a Vector written by update.  The array has
-  // no architectural reset value: only [SP, MSP) is valid, and the
-  // flush/refill rules write every word before it can be read.
-  RegFile#(Bit#(6), Word) cache <- mkRegFileFull;
-  // mkRegFileFull has no reset value, so Bluesim leaves the array
-  // undetermined until a word is stored.  The flush/refill engines and
-  // the EU all write through the one `upd` call site below, so one
-  // written bit per word (64 bits) defines every read the machine or a
-  // harness can make: a word never stored reads as zero, not 0xaa...,
-  // which is the only value the model's memory contract allows.
+  // operand every clock).  The printed shape is 64x32x2 (Figure 1-1,
+  // p. 1-2): two read ports and one write.  bsc's mkRegFile* caps
+  // *statically reachable* read ports at five and counts call sites, so
+  // the two EU stages plus the probe exceed it even though the stages
+  // never read in the same clock; a Vector of Regs makes the reads
+  // combinational muxes with no structural cap.  The cost is LUTs, not
+  // ports: docs/area_analysis.md measured 12,107 LUT4 for this shape
+  // against 132 LUT4 for a RegFile.  That is the declared shape kept
+  // architecturally, not a netlist claim.  The array has no reset value:
+  // only [SP, MSP) is valid, and the flush/refill rules write every word
+  // before it can be read.
+  Vector#(64, Reg#(Word)) cache <- replicateM(mkRegU);
+  // mkRegU has no reset value, so Bluesim leaves the array undetermined
+  // until a word is stored.  The flush/refill engines and the EU all
+  // write through the one vector-write site below, so one written bit
+  // per word (64 bits) defines every read the machine or a harness can
+  // make: a word never stored reads as zero, not 0xaa..., which is the
+  // only value the model's memory contract allows.
   Reg#(Bit#(64)) written <- mkReg(0);
 
   Reg#(ScState) state <- mkReg(SC_IDLE);
@@ -175,12 +186,12 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
     return (a >= lo) && (a < hi);
   endfunction
 
-  // The array read: one `sub` call site, shared by the EU's operand
-  // read, the testbench probe and the flush engine, with the written
+  // The array read: a combinational mux, shared by the EU's operand
+  // reads, the testbench probe and the flush engine, with the written
   // mask supplying the zero for a word never stored.
   function Word cacheAt(Word addr);
     let i = cidx(addr);
-    return (written[i] == 1'b1) ? cache.sub(i) : 32'd0;
+    return (written[i] == 1'b1) ? cache[i] : 32'd0;
   endfunction
 
   function Word readWord(Word addr, Word lo, Word hi);
@@ -320,7 +331,7 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
     Word cacheWrAddr = euCacheWr ? euWrAddr : refCap;
     Word cacheWrData = euCacheWr ? euWrData : mem.readData();
     if (cacheWr) begin
-      cache.upd(cidx(cacheWrAddr), cacheWrData);
+      cache[cidx(cacheWrAddr)] <= cacheWrData;
       written <= written | (64'd1 << cidx(cacheWrAddr));
     end
 
@@ -392,7 +403,6 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   method Bit#(32) refills() = refillCnt;
   method Word minSpSeen() = minSpR;
   method Word maxSpSeen() = maxSpR;
-  // The testbench probe reuses the one read port; it adds no port.
   method Word cacheWord(Word addr) = readWord(addr, spR, fillR);
   method Bool cached(Word addr) = inRange(addr, spR, fillR);
   method Word fillWatermark() = fillR;
