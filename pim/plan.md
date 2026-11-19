@@ -339,6 +339,32 @@ test or an explicit label.
       "Link Modules ... / PIMOS booting ... / V 3.000 ... / SCSI UNITS
       FOUND". A Bluesim boot that reproduces it is the acceptance test.
 
+   **KL1-B execution design (milestone 2).** The model's current ISA is
+   the diagnostic stand-in; KL1-B is a separate execution path. The
+   design, recorded before code:
+
+   - **Module.** A new `PimKL1B` module with a request/response memory
+     interface and a `step()` clock enable, alongside `PimPU`; do not
+     overwrite the diagnostic ISA, which the smoke and negative tests
+     depend on.
+   - **Word.** 40-bit tagged word: 8-bit tag + 32-bit data, matching
+     TR-389 p. 9 and the `.kbn` heap image. The tag values are the
+     model's, not historical.
+   - **Registers.** `PC`, the argument registers `Carg`/`argregN`, `SR`,
+     `HP`, `SSP`, `write_mode`, and the four free-list pointers
+     `RQFP`/`CRFP`/`SRFP`/`SSFP` (TR-246 p. 4), plus a tag mask register
+     for the macro-call conditions (TR-389 p. 7).
+   - **Decode.** Opcode = bits 31–24 of the value; operand fields per
+     `docs/kl1_encoding.md` (`r`, `r_r`, `r_r_r`, `c8`, `c16`, `c24`,
+     `c8_r`, `r_c16`, `atom`, and the address-dependent types).
+   - **Stages.** Fetch/decode from memory, execute one instruction per
+     rule, with the atom special cases (`0x23xx` + atom name) handled in
+     decode. No pipeline claim until the model is tested.
+   - **First test.** A hand-assembled KL1-B program exercising
+     `set_value`/`get_bound_value`/`write_value` and `proceed`, run in
+     Bluesim, with the same injection discipline as the existing
+     testbenches.
+
 ### Dependencies
 
 WP1 and WP2 are independent. WP3.4 blocks memory-deref instructions in
