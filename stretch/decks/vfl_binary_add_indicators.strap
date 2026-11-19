@@ -100,6 +100,16 @@
 ! AND P3 (0x20000000020), P4 (0x40); i4 FAILS B10 AND P2 (0x20000000020);
 ! i5 (now: carrySum's addend the WIDE operand's low 129 bits) FAILS B7, B8
 ! as above AND P3 (0x10000000020), P4 (0x30000000040).  i6 is L's, unmoved.
+! RE-MEASURED 2026-11-19 when the binary + / +MG sum moved into mkDecBox's
+! binary mode (plan §1c step 5e stage 3): the arm now derives LC from the
+! box's carry, which for UNLIKE signs means "acc >= operand" (no
+! recomplement), not a carry out.  i7, the arm's `!bSub &&` dropped (LC =
+! the box's carry whatever the signs), run on this deck alone, FAILS B1
+! (0x20000000050), B2 (0x20000000040), B10 (0x20000000020) -- the three
+! unlike-sign adds with |acc| >= |operand| -- and the run's other 46 PASS
+! lines stay PASS (the 45 other checks and the halt); the unmodified model
+! passes them all in the suite (the control).  Reverted from
+! a saved copy, compared with cmp.
 
         SLC, 1000.0
 START   L(B,16,8), N5

@@ -10044,7 +10044,7 @@ run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_D
 # vectors with literal answers (0-4 are Reference Manual printed p.60's
 # five examples).  Injection (no recomplement pass) fails vectors 1 and 7
 # only -- the two subtractions without an end carry.
-run "DECIMAL ADD/SUBTRACT BOX (p.60's examples, literal answers)" "$TESTS_DIR/run_decbox_test.sh"
+run "SERIAL ADDER BOX, decimal and binary (p.60 examples; Buchholz p.209; literal answers)" "$TESTS_DIR/run_decbox_test.sh"
 # G2.3, 2026-11-16: mkCvtBox, DCV's radix converter, on 8 vectors with
 # literal answers (2^96 - 1, 10^24 and 10^24 - 1, 32 nines to binary) and
 # literal clock counts (6 and 4).

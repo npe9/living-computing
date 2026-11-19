@@ -3437,7 +3437,7 @@ function ActionValue#(VflOutcome)
                 ind = setResultIndicatorsF(ind, shifted);
                 if (ldPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3626,7 +3626,7 @@ function ActionValue#(VflOutcome)
               Bool decAsk = decRound && !isValid(decOf(boxResult));
               DecRsp decRsp = validValue(decOf(boxResult));
               Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
-                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False });
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False });
               Bit#(128) decAccU = acc.mag >> offDec;
               Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
               Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_
@@ -3887,7 +3887,7 @@ function ActionValue#(VflOutcome)
                 if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
                 if (dPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3910,40 +3910,64 @@ function ActionValue#(VflOutcome)
               // add, since an unlike-signed one is a subtraction and
               // cannot carry out (decks/vfl_binary_add_indicators.strap
               // B5-B10).
-              // The rule is binAccAdd (StretchALU.bsv), shared with *+.
+              // The rule is binAccAdd's (StretchALU.bsv), shared with *+;
+              // the sum itself is now mkDecBox's (below).
               SM128 acc = readAcc(st);
               // "assumed positive for purposes of the addition itself"
               SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
-              BinAccAdd ba = binAccAdd(accUsed, opnd, offSh);
-              SM128 sum = ba.sum;
-              Bool bLc = ba.lc;
-              Bool bPf = ba.pf;
-              // "If the result is positive, the sum is placed into
-              // the accumulator.  If the result is negative, the
-              // entire accumulator is cleared to zero.  In either
-              // case the content of the accumulator sign byte
-              // register is not changed."  The sign kept is the
-              // accumulator's own, both ways -- which also satisfies
-              // p.60's closing rule, "on any operation in which the
-              // result in the accumulator is all zero, the sign
-              // remains as it was before the operation began".
-              SM128 stored = magnitude
-                ? SM128 { sign: acc.sign,
-                          mag: (sum.sign == 0) ? sum.mag : 0 }
-                : sum;
-              writeAcc(st, stored);
-              // "set according to the contents of the ENTIRE
-              // accumulator when the operation is complete" (p.60,
-              // Arithmetic Result).  A cleared accumulator whose sign
-              // byte stays minus reads RZ AND RN: printed p.47's RN is
-              // "negative whether zero or not".  (Until 2026-11-16 this
-              // comment argued the opposite, that "the sign remains as
-              // it was" required RN off; that sentence is about the
-              // sign kept, not the indicator, and the decimal arm's
-              // A10 already pinned RZ RN for the same case.)
-              ind = setResultIndicatorsF(ind, stored);
-              if (bLc) ind = setBit(ind, ind_LC, 1);
-              if (bPf) ind = setBit(ind, ind_PF, 1);
+              // THE SUM IS THE SERIAL ADDER'S, mkDecBox in BINARY mode
+              // (2026-11-19, plan §1c step 5e stage 3).  Buchholz printed
+              // p.208: "variable-field-length (binary or decimal) add
+              // operations ... are executed by the serial unit", and
+              // p.209: "A decimal-correction circuit is switched into the
+              // data path when decimal addition or subtraction is
+              // specified" -- one adder, so the binary add asks the box
+              // the decimal arm above asks, with the correction off.  The
+              // alignment and PF stay here (binAlign, binAccAdd's first
+              // half); the box adds magnitudes, complementing for unlike
+              // signs, and its carry gives smAdd's sign rule and the LC:
+              // like signs, the carry out of bit 127; unlike, True iff
+              // acc >= operand, which keeps the accumulator's sign.
+              // binAccAdd itself stays for *+ (its sum follows the
+              // multiply box's answer, and a second box trip would lose
+              // the product the PF is judged on).
+              match {.addSh, .bPf} = binAlign(opnd, offSh);
+              Bool bSub = accUsed.sign != addSh.sign;
+              if (decOf(boxResult) matches tagged Valid .br) begin
+                SM128 sum = SM128 { sign: (!bSub || br.carry) ? accUsed.sign : addSh.sign,
+                                    mag: br.r };
+                Bool bLc = !bSub && br.carry;
+                // "If the result is positive, the sum is placed into
+                // the accumulator.  If the result is negative, the
+                // entire accumulator is cleared to zero.  In either
+                // case the content of the accumulator sign byte
+                // register is not changed."  The sign kept is the
+                // accumulator's own, both ways -- which also satisfies
+                // p.60's closing rule, "on any operation in which the
+                // result in the accumulator is all zero, the sign
+                // remains as it was before the operation began".
+                SM128 stored = magnitude
+                  ? SM128 { sign: acc.sign,
+                            mag: (sum.sign == 0) ? sum.mag : 0 }
+                  : sum;
+                writeAcc(st, stored);
+                // "set according to the contents of the ENTIRE
+                // accumulator when the operation is complete" (p.60,
+                // Arithmetic Result).  A cleared accumulator whose sign
+                // byte stays minus reads RZ AND RN: printed p.47's RN is
+                // "negative whether zero or not".  (Until 2026-11-16 this
+                // comment argued the opposite, that "the sign remains as
+                // it was" required RN off; that sentence is about the
+                // sign kept, not the indicator, and the decimal arm's
+                // A10 already pinned RZ RN for the same case.)
+                ind = setResultIndicatorsF(ind, stored);
+                if (bLc) ind = setBit(ind, ind_LC, 1);
+                if (bPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: addSh.mag,
+                                                                 sub: bSub, binary: True });
+                needsRead = tagged Valid 0;
+              end
             end
           end
           6'b011001: begin // * (Multiply)
@@ -4492,7 +4516,7 @@ function ActionValue#(VflOutcome)
               Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
               Bool dSub = (dOpnd.sign != dAccSh.sign);
               Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub });
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False });
               Bool dDec = (vi.m.decimal == 1);
               Bool dAsk = dDec && !isValid(decOf(boxResult));
               DecRsp dr = validValue(decOf(boxResult));
@@ -4753,7 +4777,7 @@ function ActionValue#(VflOutcome)
                     : (as_ == 0) ? m
                     : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
                 end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True });
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False });
                   needsRead = tagged Valid 0;
                 end
               end
