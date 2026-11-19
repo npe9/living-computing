@@ -15,11 +15,13 @@
 package PimSmoke;
 
 import PimTypes::*;
+import PimStages::*;
 import PimPU::*;
 
 (* synthesize *)
 module mkPimSmoke(Empty);
-  PimPU pu <- mkPimPU;
+  LocalStore store <- mkLocalStore("generated/program.hex");
+  PimPU pu <- mkPimPU(store);
 
   Reg#(Bit#(32)) step <- mkReg(0);
   Reg#(Bool) started <- mkReg(False);
@@ -41,7 +43,6 @@ module mkPimSmoke(Empty);
   endrule
 
   rule run (started && !pu.halted() && !pu.error() && step < 10000);
-    pu.step();
     step <= step + 1;
   endrule
 

@@ -25,6 +25,7 @@ After retrieval, run:
 pdfinfo FGCS92_Volume_1.pdf
 pdfinfo ICOT_TR-324_Parallel_Inference_Machine_Research.pdf
 shasum -a 256 -c SHA256SUMS
+shasum -a 256 -c nonlocal/SHA256SUMS
 ```
 
 ## ICOT archive and GitHub status
@@ -45,27 +46,35 @@ image when transcribing.
 | PIM overview (FGCS 1992) | `Museum/FGCS/FGCS92en-proc1/92eRERR-1.pdf` | `FGCS92_Volume_1.pdf` | same |
 | PIMOS/KL1 operating system (FGCS 1992) | `Museum/FGCS/FGCS92en-proc1/92eRERR-2.pdf` | `FGCS92_Volume_1.pdf` | same |
 | PIM research (TR-324) | `Museum/TRTM/TR/TRpdf/tr0324.pdf` | `ICOT_TR-324_...pdf` | same |
-| An Abstract KL1 Machine and Its Instruction Set (TR-246) | `Museum/TRTM/TR/TRpdf/tr0246.pdf` | — | — |
-| Macro-call Instruction for Efficient KL1 on PIM (TR-389) | `Museum/TRTM/TR/TRpdf/tr0389.pdf` | — | — |
-| The FGCS Computing Architecture (TR-460) | `Museum/TRTM/TR/TRpdf/tr0460.pdf` | — | — |
-| PIM Architecture and Implementations (TR-659) | `Museum/TRTM/TR/TRpdf/tr0659.pdf` | — | — |
+| An Abstract KL1 Machine and Its Instruction Set (TR-246) | `Museum/TRTM/TR/TRpdf/tr0246.pdf` | `nonlocal/tr0246.pdf` | — |
+| Macro-call Instruction for Efficient KL1 on PIM (TR-389) | `Museum/TRTM/TR/TRpdf/tr0389.pdf` | `nonlocal/tr0389.pdf` | — |
+| The FGCS Computing Architecture (TR-460) | `Museum/TRTM/TR/TRpdf/tr0460.pdf` | `nonlocal/tr0460.pdf` | — |
+| PIM Architecture and Implementations (TR-659) | `Museum/TRTM/TR/TRpdf/tr0659.pdf` | `nonlocal/tr0659.pdf` | — |
+| PIM/m element-processor architecture (TR-564) | `Museum/TRTM/TR/TRpdf/tr0564.pdf` | `nonlocal/tr/TR-0564.pdf` | — |
+| Architecture and Implementation of PIM/m (TR-742) | `Museum/TRTM/TR/TRpdf/tr0742.pdf` | `nonlocal/tr/TR-0742.pdf` | — |
+| VLSI chip set for PIM/m (TR-799) | `Museum/TRTM/TR/TRpdf/tr0799.pdf` | `nonlocal/tr/TR-0799.pdf` | — |
+| PIM/m VLSI (TM-1074) | `Museum/TRTM/TM/TMpdf/tm1074.pdf` | `nonlocal/tm/TM-1074.pdf` | — |
+| VLSI chip set for PIM/m (TM-1159) | `Museum/TRTM/TM/TMpdf/tm1159.pdf` | `nonlocal/tm/TM-1159.pdf` | — |
+| PIM/m photo exhibition | `Museum/MACHINE/pim-m-E.html` | `nonlocal/pim-m/` | — |
 | Design of the PIM hardware system (FGCS 1988) | `Museum/FGCS/FGCS88en-proc1/88eR&D-2.pdf` | — | — |
 | KLIC: portable KL1 (FGCS 1994) | `Museum/FGCS/FGCS94en-proc/94ePIKL1.pdf` | — | — |
-| PIMOS source (KL1, 502 files) | `Museum/IFS/abst/004.html`; `ifs/symbolic-proc/pim-psi/pimos.tar.Z` | — | `npe9/pimos` (public) |
-| KLIC source (KL1-to-C); v2.002 tarball | `Museum/IFS/abst/085.html`; `ifs/symbolic-proc/unix/klic/klic-2.002.tgz` | — | `GunterMueller/KLIC` is KLIC 3.011, not v2.002; v2.002 survives only as the ICOT tarball |
-| Portable KL1 experimental (pkl1) | `Museum/IFS/abst/072.html`; `ifs/symbolic-proc/unix/pkl1.tar.Z` | — | — |
+| PIMOS source (KL1, 502 files) | `Museum/IFS/abst/004.html`; `ifs/symbolic-proc/pim-psi/pimos.tar.Z` | `nonlocal/pimos.tar.Z`, `nonlocal/pimosobj.tar.Z`, `nonlocal/pimosman.tar.Z` | `npe9/pimos` (public) |
+| KLIC source (KL1-to-C); v2.002 tarball | `Museum/IFS/abst/085.html`; `ifs/symbolic-proc/unix/klic/klic-2.002.tgz` | `nonlocal/klic-2.002.tgz` | `GunterMueller/KLIC` is KLIC 3.011, not v2.002; v2.002 survives only as the ICOT tarball |
+| Portable KL1 experimental (pkl1) | `Museum/IFS/abst/072.html`; `ifs/symbolic-proc/unix/pkl1.tar.Z` | `nonlocal/pkl1.tar.Z` | — |
 
 Notes:
 
+- The nonlocal TRs, TMs, PIM/m photos, and the PIMOS/KLIC/pkl1 tarballs are
+  in `docs/nonlocal/`; `nonlocal/SHA256SUMS` covers them and
+  `nonlocal/MANIFEST.md` records each archive's URL, size, and contents.
 - The PIMOS tarball also has `pimosobj.tar.Z` and `pimosman.tar.Z` variants.
 - `ifs/symbolic-proc/unix/pkl/pkl.tar.Z` returns 500; the abstract page's
   `unix/pkl1.tar.Z` path is the working one.
 - `npe9/living-computing` carries the PIM docs PDFs and the Bluespec model
-  sources (`pim/asm/pimasm.py`, `pim/bsv/Pim*.bsv`). The model is work in
-  progress: the smoke test currently fails (`FAIL: did not halt within 10000
-  steps`, with `a2`, `a4_mrb`, `a5`, `a7_skipped` and `mem100` mismatches).
-  Generated images and simulator binaries are build products and stay
-  untracked; `pim/bsv/run_smoke.sh` is a source script and is tracked.
+  sources (`pim/asm/pimasm.py`, `pim/bsv/Pim*.bsv`). The one-PE Bluesim smoke
+  test passes as of 2026-11-19 (48 steps, PC 17); the assembler self-test
+  passes. Generated images and simulator binaries are build products and stay
+  untracked; `pim/bsv/run_smoke.sh` is a source script.
 - No PIM/m microprogramming manual was found in the archive. TR-659 covers
   architecture and implementations; the FGCS 1992 PIM/m paper covers the
   implementation. Record the microprogramming gap rather than inferring it.

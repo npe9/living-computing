@@ -1,0 +1,15 @@
+# bsc and Bluesim build products.  The source files are *.bsv, run_smoke.sh,
+# the Verilog wrappers (Top.v, RegFileLoad*.v), and the FPGA constraint file
+# (ulx3s_85f.lpf); everything below is regenerated.
+*.bo
+*.ba
+mk*.v
+mk*.cxx
+mk*.h
+mk*.o
+model_*.cxx
+model_*.h
+model_*.o
+sim_*
+generated/
+fpga_build/

@@ -1,4 +1,4 @@
-// PimE.bsv -- the PIM/m E stage as a microcoded, multi-cycle module.
+// PimE.bsv -- the PIM/m E stage as a microcoded, multi-cycle box.
 //
 // Documented basis:
 //   * E has two pipelined phases controlled by microinstructions; the
@@ -17,76 +17,65 @@
 // the branch target convention (a taken branch writes PC from the
 // instruction's rt operand).
 //
+// Interface: the box is driven by a single `cycle` request.  Given the
+// S-stage result it either loads a new instruction or executes exactly
+// one microinstruction, so no caller-side if/else decides which of two
+// actions owns the microprogram counter.  The PC belongs to the fetch
+// stage; a taken branch is returned as a redirect.
+//
 // Timing scope: an instruction's microprogram occupies E for its
-// length; the front end is held while E is not retiring.  This is the
+// length; the front end is held while E is not empty.  This is the
 // conservative interlock for a multi-cycle E, not a claim about the
 // real PU's exact stage overlap.
 
 package PimE;
 
 import RegFile::*;
-import Vector::*;
 import PimTypes::*;
 import PimALU::*;
+import PimStages::*;
 
 interface StageE;
-  method ActionValue#(Maybe#(Addr)) run(Bool doLoad, Bool advancePC, S2E s2e);
-  method Action setPC(Maybe#(Addr) pc);
-  method Bool canAccept();
-  method Bool retired();
-  method Bool valid();
-  method Bool halted();
-  method Bool error();
-  method Maybe#(Addr) branchTarget();
-  method Word readReg(RegSel r);
-  method Addr pc();
+  // One pipeline cycle.  With an empty E and a valid instruction the
+  // box loads it; with a loaded instruction it executes one
+  // microinstruction.  Returns a PC redirect when a branch is taken.
+  method ActionValue#(Maybe#(Addr)) cycle(Maybe#(S2E) in);
+  method Bool busy();
+  method Bool haltReq();        // the microinstruction in E halts the PU
+  method Bool errorReq();       // an undefined opcode reached E
+  method Bool stopped();        // E has halted or faulted; stop loading
+  method Bool isStore();        // a store occupies E (memory ordering)
+  // Register hazard queries for the pipeline interlock: the register an
+  // instruction will write, and whether an instruction reads a register.
+  method RegSel dstOf(DecodedInstr d);
+  method Bool reads(DecodedInstr d, RegSel r);
 endinterface
 
-module mkStageE#(RegFile#(UPc, Bit#(64)) wcs,
-                 RegFile#(Bit#(8), UPc) jumpTable,
-                 RegFile#(Addr, Word) mem)(StageE);
-
-  // Architectural state: An/Xn, WR control registers, SP and the
-  // E-stage temporaries (p.427-428).
-  Vector#(16, Reg#(Word)) aRegs <- replicateM(mkRegU);
-  Vector#(16, Reg#(Word)) xRegs <- replicateM(mkRegU);
-  Vector#(8,  Reg#(Word)) ctrl  <- replicateM(mkRegU);  // AP..FGP
-  Reg#(Word) sp   <- mkRegU;
-  Reg#(Word) mar1 <- mkRegU;
-  Reg#(Word) mar2 <- mkRegU;
-  Reg#(Word) mdr1 <- mkRegU;
-  Reg#(Word) mdr2 <- mkRegU;
-  Reg#(Word) xr   <- mkRegU;
-  Reg#(Word) yr   <- mkRegU;
-  Reg#(Addr) pcR  <- mkReg(0);
+module mkStageE#(PimRegFile regs, LocalStore mem,
+                 RegFile#(UPc, Bit#(64)) wcs,
+                 RegFile#(Bit#(8), UPc) jumpTable)(StageE);
 
   // Microprogram state.
   Reg#(Bool) eValid <- mkReg(False);
-  Reg#(DecodedInstr) eInstr <- mkRegU;
+  Reg#(DecodedInstr) eInstr <- mkReg(noDecodedInstr());
   Reg#(UPc) eUPC <- mkReg(0);
   Reg#(Bit#(2)) ePhase <- mkReg(0);
-  Reg#(Word) eRs <- mkRegU;
-  Reg#(Word) eRt <- mkRegU;
-  Reg#(Word) eRd <- mkRegU;
-  Reg#(Word) eFetched <- mkRegU;
-  Reg#(Word) eDeref <- mkRegU;
-  Reg#(Addr) eEA <- mkRegU;
-  Reg#(Bool) eSRP <- mkReg(False);
-  Reg#(Bool) eCOL <- mkReg(False);
+  Reg#(Word) eRs <- mkReg(0);
+  Reg#(Word) eRt <- mkReg(0);
+  Reg#(Word) eRd <- mkReg(0);
+  Reg#(Maybe#(Word)) eFetched <- mkReg(Invalid);
+  Reg#(Word) eDeref <- mkReg(0);
+  Reg#(Addr) eEA <- mkReg(0);
 
-  // Tag-jump second-cycle state.
+  // Second cycle of a tag jump.
   Reg#(Bool) ePendingTaken <- mkReg(False);
   Reg#(UPc)  ePendingTarget <- mkReg(0);
   Reg#(Bool) ePendingBranch <- mkReg(False);
-  Reg#(Addr) ePendingBranchTarget <- mkRegU;
+  Reg#(Addr) ePendingBranchTarget <- mkReg(0);
 
-  // Bypass from the previous E microinstruction.
-  Reg#(Bool) eLastWriteEn <- mkReg(False);
-  Reg#(RegSel) eLastWriteDst <- mkReg(rselNone);
-  Reg#(Word) eLastWriteVal <- mkRegU;
-
-  Reg#(Bool) haltedR <- mkReg(False);
-  Reg#(Bool) errorR  <- mkReg(False);
+  // Run-ending requests, latched for the top-level rules.
+  Reg#(Bool) haltSeen <- mkReg(False);
+  Reg#(Bool) errorSeen <- mkReg(False);
 
   function MicroInstr microNow() = unpackMicro(wcs.sub(eUPC));
 
@@ -97,119 +86,60 @@ module mkStageE#(RegFile#(UPc, Bit#(64)) wcs,
     else return d;
   endfunction
 
-  function Word readRegFile(RegSel r);
-    if (r < 16) return aRegs[r[3:0]];
-    else if (r < 32) return xRegs[r[3:0]];
-    else if (r < 40) return ctrl[r[2:0]];
-    else if (r == rselSp)   return sp;
-    else if (r == rselPc)   return mkWord(tagInt, False, zeroExtend(pcR));
-    else if (r == rselMar1) return mar1;
-    else if (r == rselMar2) return mar2;
-    else if (r == rselMdr1) return mdr1;
-    else if (r == rselMdr2) return mdr2;
-    else if (r == rselXr)   return xr;
-    else if (r == rselYr)   return yr;
-    else return mkWord(tagInt, False, 0);
-  endfunction
-
-  function Word readRegForE(RegSel r);
-    if (eLastWriteEn && (eLastWriteDst == r)) return eLastWriteVal;
-    else return readRegFile(r);
-  endfunction
-
   function Word srcValue(RegSel s);
-    if (s == rselImm)   return mkWord(tagInt, False, zeroExtend(microNow().imm));
+    if (s == rselImm)        return mkWord(tagInt, False, zeroExtend(eInstr.instr.imm));
     else if (s == rselRs)    return eRs;
     else if (s == rselRt)    return eRt;
     else if (s == rselRd)    return eRd;
-    else if (s == rselFetch) return eFetched;
+    else if (s == rselFetch) return fromMaybe(wordInt(0), eFetched);
     else if (s == rselDeref) return eDeref;
-    else return readRegForE(s);
+    else return regs.read(s);
   endfunction
 
-  function Word aluNow();
+  // ALU result with the microinstruction's MRB manipulation (p.429).
+  function Word resultNow(Word av);
     let mi = microNow();
-    return alu(mi.aluOp, srcValue(mi.srcA), srcValue(mi.srcB));
-  endfunction
-
-  function Word resultNow();
-    let mi = microNow();
-    let r0 = aluNow();
+    let r0 = alu(mi.aluOp, av, srcValue(mi.srcB));
     let r1 = mi.mrbSet ? mkWord(tagType(wordTag(r0)), True,  wordData(r0)) : r0;
     let r2 = mi.mrbClr ? mkWord(tagType(wordTag(r1)), False, wordData(r1)) : r1;
     return r2;
-  endfunction
-
-  // readReg is the value the A and S stages see.  It forwards the
-  // instruction currently in E, so a dependent instruction behind a
-  // one-microinstruction E does not read the old register.
-  function Word readRegBypassed(RegSel r);
-    let mi = microNow();
-    let dst = resolveDst(mi.dst, eInstr.instr);
-    if (eValid && (mi.dst != rselNone) && (dst == r))
-      return resultNow();
-    else
-      return readRegFile(r);
-  endfunction
-
-  function Action writeReg(RegSel r, Word v);
-    action
-      if (r < 16) aRegs[r[3:0]] <= v;
-      else if (r < 32) xRegs[r[3:0]] <= v;
-      else if (r < 40) ctrl[r[2:0]] <= v;
-      else if (r == rselSp)   sp <= v;
-      else if (r == rselMar1) mar1 <= v;
-      else if (r == rselMar2) mar2 <= v;
-      else if (r == rselMdr1) mdr1 <= v;
-      else if (r == rselMdr2) mdr2 <= v;
-      else if (r == rselXr)   xr <= v;
-      else if (r == rselYr)   yr <= v;
-    endaction
   endfunction
 
   function Bool evalCond(Cond c, Word av);
     case (c)
       condAlways:     return True;
       condNever:      return False;
-      condTagEq:     return tagType(wordTag(av)) == eInstr.instr.imm[6:0];
-      condTagNe:     return tagType(wordTag(av)) != eInstr.instr.imm[6:0];
-      condTagRef:    return tagType(wordTag(av)) == tagRef;
-      condTagNotRef: return tagType(wordTag(av)) != tagRef;
+      condTagEq:      return tagType(wordTag(av)) == eInstr.instr.imm[6:0];
+      condTagNe:      return tagType(wordTag(av)) != eInstr.instr.imm[6:0];
+      condTagRef:     return tagType(wordTag(av)) == tagRef;
+      condTagNotRef:  return tagType(wordTag(av)) != tagRef;
       condMultiway:   return True;
       condZero:       return av == mkWord(tagInt, False, 0);
     endcase
   endfunction
 
-  function Bool retireNow();
-    if (!eValid) return False;
-    else if (ePhase == 0) return microNow().last && !isTagCond(microNow().cond);
-    else return microNow().last;
-  endfunction
-
-  method ActionValue#(Maybe#(Addr)) run(Bool doLoad, Bool advancePC, S2E s2e);
+  method ActionValue#(Maybe#(Addr)) cycle(Maybe#(S2E) in);
     if (eValid) begin
       let mi = microNow();
-      let av = srcValue(mi.srcA);
-      let dst = resolveDst(mi.dst, eInstr.instr);
-      let r = resultNow();
-
-      if (dst != rselNone) begin
-        writeReg(dst, r);
-        eLastWriteEn  <= True;
-        eLastWriteDst <= dst;
-        eLastWriteVal <= r;
+      if (ePhase == 1) begin
+        // Second cycle of a tag jump: form the address and the PC
+        // redirect only; the first cycle already did the data effects.
+        ePhase <= 0;
+        eUPC <= ePendingTaken ? ePendingTarget : eUPC + 1;
+        if (mi.last) eValid <= False;
+        return ePendingBranch ? Valid(ePendingBranchTarget) : Invalid;
       end else begin
-        eLastWriteEn <= False;
-      end
-
-      if (mi.memOp == memWrite) mem.upd(eEA, av);
-      if (mi.halt) haltedR <= True;
-
-      if (ePhase == 0) begin
+        // First cycle: the data effects happen here and only here.
+        let av    = srcValue(mi.srcA);
+        let dst   = resolveDst(mi.dst, eInstr.instr);
         let taken = evalCond(mi.cond, av);
+        if (dst != rselNone) regs.write(dst, resultNow(av));
+        if (mi.memOp == memWrite) mem.write(eEA, av);
+        if (mi.halt) haltSeen <= True;
         if (isTagCond(mi.cond)) begin
+          // A tag jump spends its first cycle on the condition or offset.
           ePhase <= 1;
-          ePendingTaken  <= taken;
+          ePendingTaken <= taken;
           ePendingTarget <= (mi.cond == condMultiway)
                               ? eUPC + jumpTable.sub(zeroExtend(tagType(wordTag(av))))
                               : mi.next;
@@ -219,71 +149,59 @@ module mkStageE#(RegFile#(UPc, Bit#(64)) wcs,
         end else begin
           eUPC <= taken ? mi.next : eUPC + 1;
           if (mi.last) eValid <= False;
-          if (mi.branch && taken) return Valid(truncate(wordData(eRt)));
-          else return Invalid;
+          return (mi.branch && taken) ? Valid(truncate(wordData(eRt))) : Invalid;
         end
-      end else begin
-        ePhase <= 0;
-        eUPC <= ePendingTaken ? ePendingTarget : eUPC + 1;
-        if (mi.last) eValid <= False;
-        if (ePendingBranch) return Valid(ePendingBranchTarget);
-        else return Invalid;
       end
-    end else if (doLoad) begin
-      if (!s2e.dec.valid) begin
-        // Fail loud: an undefined opcode stops the model with error set.
-        errorR  <= True;
-        haltedR <= True;
-        eValid  <= False;
-      end else begin
-        eValid   <= True;
-        eInstr   <= DecodedInstr { instr: s2e.instr, dec: s2e.dec };
-        eUPC     <= s2e.dec.uBase;
-        ePhase   <= 0;
-        eRs      <= s2e.rsVal;
-        eRt      <= s2e.rtVal;
-        eRd      <= s2e.rdVal;
-        eFetched <= s2e.fetched;
-        eDeref   <= s2e.derefVal;
-        eEA      <= s2e.ea;
-        eSRP     <= s2e.srp;
-        eCOL     <= s2e.col;
-      end
-      return Valid(pcR + 1);
-    end else if (advancePC) begin
-      return Valid(pcR + 1);
-    end else begin
-      return Invalid;
-    end
+    end else case (in) matches
+      tagged Valid .x:
+        if (!x.d.dec.valid) begin
+          // Fail loud: an undefined opcode stops the model with error set.
+          errorSeen <= True;
+          return Invalid;
+        end else begin
+          eValid <= True;
+          eInstr <= x.d;
+          eUPC   <= x.d.dec.uBase;
+          ePhase <= 0;
+          eRs    <= x.rsVal;
+          eRt    <= x.rtVal;
+          eRd    <= x.rdVal;
+          eFetched <= x.fetched;
+          eDeref <= x.derefVal;
+          eEA    <= x.ea;
+          return Invalid;
+        end
+      tagged Invalid: return Invalid;
+    endcase
   endmethod
 
-  method Action setPC(Maybe#(Addr) pc);
-    if (isValid(pc)) pcR <= validValue(pc);
+  method Bool busy() = eValid;
+  method Bool haltReq() = eValid && microNow().halt;
+  method Bool errorReq() = errorSeen;
+  // E has executed a halt microinstruction or seen an undefined opcode;
+  // the pipeline stops loading from this point on.
+  method Bool stopped() = haltSeen || errorSeen;
+  method Bool isStore() = eValid && eInstr.dec.isStore;
+
+  method RegSel dstOf(DecodedInstr d);
+    if (d.dec.valid) begin
+      let mi = unpackMicro(wcs.sub(d.dec.uBase));
+      return resolveDst(mi.dst, d.instr);
+    end else return rselNone;
   endmethod
 
-  method Bool canAccept() = (!eValid) || retireNow();
-  method Bool retired() = retireNow();
-  method Bool valid() = eValid;
-  method Bool halted() = haltedR;
-  method Bool error() = errorR;
-
-  method Maybe#(Addr) branchTarget();
-    if (!eValid) return Invalid;
-    else if (ePhase == 0) begin
-      let mi = microNow();
-      if (mi.branch && !isTagCond(mi.cond)) begin
-        let av = srcValue(mi.srcA);
-        if (evalCond(mi.cond, av)) return Valid(truncate(wordData(eRt)));
-        else return Invalid;
-      end else return Invalid;
-    end else begin
-      if (ePendingBranch) return Valid(ePendingBranchTarget);
-      else return Invalid;
-    end
+  method Bool reads(DecodedInstr d, RegSel r);
+    if (d.dec.valid) begin
+      let mi = unpackMicro(wcs.sub(d.dec.uBase));
+      let sA = resolveDst(mi.srcA, d.instr);
+      let sB = resolveDst(mi.srcB, d.instr);
+      Bool baseRead = d.dec.needsEA && (regFieldToSel(d.instr.rs) == r);
+      Bool derefRead = d.dec.deref && (regFieldToSel(d.instr.rs) == r);
+      Bool branchRead = mi.branch && (regFieldToSel(d.instr.rt) == r);
+      return (sA == r) || (sB == r) || baseRead || derefRead || branchRead;
+    end else return False;
   endmethod
 
-  method Word readReg(RegSel r) = readRegBypassed(r);
-  method Addr pc() = pcR;
 endmodule
 
 endpackage

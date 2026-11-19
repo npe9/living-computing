@@ -1,0 +1,30 @@
+{
+  "format": "omp-proof-artifact-v1",
+  "claim": "Reverted fetched-operand build violates the post-halt state: a4=0x0100000000 and a5=0x0100000000 instead of 0x010000002a; a2, mem[100], pc=17, halted and error=0 are correct",
+  "result": "fail",
+  "engine": "sby bmc depth 80 / smtbmc yices",
+  "trustLevel": "reported",
+  "design": {
+    "path": "bsv/formal/build/buggy/mkPimPU.v",
+    "sha256": "dc5f5dbb3fd64c5f6a1d2654d179237842fbfbc9ec8dcb0affa374567b87aacf"
+  },
+  "evidence": [
+    {
+      "path": "bsv/formal/pim_smoke_bug.sby",
+      "sha256": "fb9fd419b866b5f1826281495b8baa5bd87f645c452f4540332d706ddf2d4a0d"
+    },
+    {
+      "path": "bsv/formal/pim_smoke_formal.v",
+      "sha256": "5caee14d83fbdde8d056d7dfd9f926f27e05ae589291a6d345aad448c4f5b04e"
+    },
+    {
+      "path": "bsv/formal/pim_smoke_bug/engine_0/trace.vcd",
+      "sha256": "f438aee607dc3d78f47dc95e7797b9ef90a0d6be3e32100f3650ef0667a0ef77"
+    },
+    {
+      "path": "bsv/formal/last_run.log",
+      "sha256": "6a1b615fbc964c110e6e9365dc99350699034dda93b49e1340fa5e059581b9dd"
+    }
+  ],
+  "createdAt": "2026-11-19T12:03:03.247Z"
+}

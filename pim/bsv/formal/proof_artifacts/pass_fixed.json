@@ -1,0 +1,30 @@
+{
+  "format": "omp-proof-artifact-v1",
+  "claim": "PIM/m PU (current bsv tree) reaches halt with the diagnostic program's architectural state: a2=0x000000002a, a4=a5=0x010000002a, a7=0, mem[100]=0x000000002a, pc=17, error=0; bounded BMC depth 80",
+  "result": "pass",
+  "engine": "sby bmc depth 80 / smtbmc yices",
+  "trustLevel": "reported",
+  "design": {
+    "path": "bsv/formal/build/fixed/mkPimPU.v",
+    "sha256": "8953afc3f521e73cf53ce70fd9da760d537ed9e0b2cec3a41b9bd19554d59ae8"
+  },
+  "evidence": [
+    {
+      "path": "bsv/formal/pim_smoke.sby",
+      "sha256": "f69b087aa0b15617abfd19b238ddbe2f1f8ea011e2985766a6a90790bee156bf"
+    },
+    {
+      "path": "bsv/formal/pim_smoke_formal.v",
+      "sha256": "c9455fb5227e5698dfeee5ba9760ff0ef6284809e44598449e25a7b92145e7f8"
+    },
+    {
+      "path": "bsv/formal/gen_verilog.sh",
+      "sha256": "f1e354f622474fe167fedcb83c493716884e6f025840d58e7c7a0431000a3adb"
+    },
+    {
+      "path": "bsv/formal/last_run.log",
+      "sha256": "d8b8504c0d6156cdd2d874ccf91652a2f1850917db8ead3a44fc122665a2990e"
+    }
+  ],
+  "createdAt": "2026-11-19T12:07:26.269Z"
+}

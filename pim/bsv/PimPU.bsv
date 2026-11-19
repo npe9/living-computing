@@ -1,4 +1,4 @@
-// PimPU.bsv -- one PIM/m processing unit: D, A, R, S, E stages, the
+// PimPU.bsv -- one PIM/m processing unit: D, A, R, S and E stages, the
 // 32K x 64-bit control store, the decode RAM and the tag-jump table.
 //
 // Documented structure:
@@ -12,9 +12,14 @@
 // that file and docs/architecture.md.  The local store is 64K words
 // (scaled from the documented 16M) so Bluesim images stay small.
 //
-// Interlock: the front end is held while E is executing a
-// microprogram that has not reached its last microinstruction, and
-// while S is walking a dereference chain.  This is a conservative
+// Structure: every stage owns its result register and its own state
+// (PimStages, PimE); this module only moves bundles between them in one
+// orchestration rule.  Two off-pipe events are separate rules: a halt
+// microinstruction and a run-ending fault.
+//
+// Interlock: the front end is held while E is not empty and while S is
+// walking a reference chain, and a load is held in A while an older
+// store has not reached the local store.  This is a conservative
 // multi-cycle-E model; it does not claim the real PU's exact overlap.
 
 package PimPU;
@@ -26,7 +31,6 @@ import PimE::*;
 
 interface PimPU;
   method Action start();
-  method Action step();
   method Bool halted();
   method Bool error();
   method Word readReg(RegSel r);
@@ -34,115 +38,179 @@ interface PimPU;
   method Addr pc();
 endinterface
 
-function D2A invalidD2A() = D2A {
-  instr: unpackInstr(0), dec: unpackDecode(0), valid: False };
-function A2R invalidA2R() = A2R {
-  instr: unpackInstr(0), dec: unpackDecode(0), ea: 0,
-  rsVal: 0, rtVal: 0, rdVal: 0, valid: False };
-function R2S invalidR2S() = R2S {
-  instr: unpackInstr(0), dec: unpackDecode(0), ea: 0,
-  rsVal: 0, rtVal: 0, rdVal: 0, fetched: 0, valid: False };
-function S2E invalidS2E() = S2E {
-  instr: unpackInstr(0), dec: unpackDecode(0), ea: 0,
-  rsVal: 0, rtVal: 0, rdVal: 0, fetched: 0, derefVal: 0,
-  srp: True, col: True, valid: False };
+module mkPimPU#(LocalStore store)(PimPU);
 
-module mkPimPU(PimPU);
-
-  RegFile#(Addr, Word) mem <- mkRegFileLoadHex("generated/program.hex", 0, 65535);
   RegFile#(UPc, Bit#(64)) wcs <- mkRegFileLoadHex("generated/wcs.hex", 0, 32767);
   RegFile#(Bit#(8), Bit#(20)) decTbl <- mkRegFileLoadHex("generated/decode.hex", 0, 255);
   RegFile#(Bit#(8), UPc) jumpTbl <- mkRegFileLoadHex("generated/jump.hex", 0, 255);
 
-  StageD dstage <- mkStageD(decTbl);
-  StageA astage <- mkStageA;
-  StageR rstage <- mkStageR(mem);
-  StageS sstage <- mkStageS(mem);
-  StageE estage <- mkStageE(wcs, jumpTbl, mem);
+  PimRegFile regs <- mkPimRegFile;
+  StageD dstage <- mkStageD(regs, store, decTbl);
+  StageA astage <- mkStageA(regs);
+  StageR rstage <- mkStageR(store);
+  StageS sstage <- mkStageS(store);
+  StageE estage <- mkStageE(regs, store, wcs, jumpTbl);
 
   Reg#(Bool) running <- mkReg(False);
-  Reg#(Bit#(32)) dbg <- mkReg(0);
-  Reg#(D2A) d2a <- mkReg(invalidD2A());
-  Reg#(A2R) a2r <- mkReg(invalidA2R());
-  Reg#(R2S) r2s <- mkReg(invalidR2S());
-  Reg#(S2E) s2e <- mkReg(invalidS2E());
-  Reg#(Bool) sStarted <- mkReg(False);
+  Reg#(Bool) haltedR <- mkReg(False);
+  Reg#(Bool) errorR  <- mkReg(False);
 
-  rule run (running && !estage.halted() && !estage.error());
-    dbg <= dbg + 1;
-    if (dbg % 50 == 0) $display("DBG pc=%0d eValid=%0d halted=%0d err=%0d sBusy=%0d d2a=%0d a2r=%0d r2s=%0d s2e=%0d sStarted=%0d", estage.pc(), estage.valid(), estage.halted(), estage.error(), sstage.busy(), d2a.valid, a2r.valid, r2s.valid, s2e.valid, sStarted);
-    // D: fetch at PC and decode through the RAM table.
-    let iw = mem.sub(estage.pc());
-    let d  = dstage.decode(iw);
+  // -------------------------------------------------------------------
+  // Interlock queries
+  // -------------------------------------------------------------------
 
-    // A: operand address and the three register operands.
-    let aRs = estage.readReg(regFieldToSel(d2a.instr.rs));
-    let aRt = estage.readReg(regFieldToSel(d2a.instr.rt));
-    let aRd = estage.readReg(regFieldToSel(d2a.instr.rd));
-    let aEA = astage.calc(DecodedInstr { instr: d2a.instr, dec: d2a.dec }, aRs, aRt, aRd);
+  function Maybe#(DecodedInstr) decOfA(Maybe#(A2R) m);
+    case (m) matches
+      tagged Valid .x: return Valid(x.d);
+      tagged Invalid: return Invalid;
+    endcase
+  endfunction
 
-    // R: fetch a memory operand if the decoded instruction needs one.
-    let rFetched = rstage.fetch(a2r.dec.isLoad, a2r.ea);
+  function Maybe#(DecodedInstr) decOfR(Maybe#(R2S) m);
+    case (m) matches
+      tagged Valid .x: return Valid(x.d);
+      tagged Invalid: return Invalid;
+    endcase
+  endfunction
 
-    // S: start/run the dereference walk.  The two actions write the
-    // same state, so they are mutually exclusive.
-    let sInDeref  = r2s.valid && r2s.dec.deref;
-    let sNeedStart = sInDeref && !sStarted;
-    if (sNeedStart) begin
-      sstage.start(r2s.rsVal);
-    end else begin
-      sstage.run();
+  function Maybe#(DecodedInstr) decOfS(Maybe#(S2E) m);
+    case (m) matches
+      tagged Valid .x: return Valid(x.d);
+      tagged Invalid: return Invalid;
+    endcase
+  endfunction
+
+  function Bool isStoreIn(Maybe#(DecodedInstr) m);
+    case (m) matches
+      tagged Valid .x: return x.dec.isStore;
+      tagged Invalid: return False;
+    endcase
+  endfunction
+
+  // True when an instruction still in the pipeline writes a register the
+  // instruction in D reads.
+  function Bool olderWrites(DecodedInstr consumer, Maybe#(DecodedInstr) older);
+    case (older) matches
+      tagged Valid .x: begin
+        let dst = estage.dstOf(x);
+        return dst != rselNone && estage.reads(consumer, dst);
+      end
+      tagged Invalid: return False;
+    endcase
+  endfunction
+
+  function Bool depStall();
+    case (dstage.out()) matches
+      tagged Valid .c:
+        return olderWrites(c, decOfA(astage.out())) ||
+               olderWrites(c, decOfR(rstage.out())) ||
+               olderWrites(c, decOfS(sstage.out()));
+      tagged Invalid: return False;
+    endcase
+  endfunction
+
+  // A store that has not reached the local store yet.  The load's R-stage
+  // read must not overtake it, so the read is held in A until the store
+  // has executed in E.
+  function Bool memStall();
+    return isStoreIn(decOfR(rstage.out())) ||
+           isStoreIn(decOfS(sstage.out())) ||
+           estage.isStore();
+  endfunction
+
+  // A load in A needs its granule resident before R reads it.  `eaOf`
+  // returns a harmless address when the bundle is invalid, so the two
+  // helpers are always safe to call.
+  function Bool isLoadIn(Maybe#(A2R) m);
+    case (m) matches
+      tagged Valid .a: return a.d.dec.isLoad;
+      tagged Invalid: return False;
+    endcase
+  endfunction
+
+  function Addr eaOf(Maybe#(A2R) m);
+    case (m) matches
+      tagged Valid .a: return a.ea;
+      tagged Invalid: return 0;
+    endcase
+  endfunction
+
+  // -------------------------------------------------------------------
+  // The pipeline
+  // -------------------------------------------------------------------
+
+  rule pipe (running && !estage.stopped());
+    // A load in A or the instruction fetch in D may miss in the SDRAM
+    // cache.  Hold the whole front end and request the granule; the S
+    // stage's own walk checks its address inside `step`.
+    let rIn    = astage.out();
+    let rMiss  = isLoadIn(rIn) && store.miss(eaOf(rIn));
+    let dMiss  = store.miss(regs.pc());
+    let memHold = rMiss || dMiss;
+
+    // E: load the instruction in S2E, or execute one microinstruction.
+    let redirect <- estage.cycle(sstage.out());
+    // S: consume the R-stage result, walk one link, publish the next bundle.
+    let sRes <- sstage.step(rstage.out(), !estage.busy() && !memHold);
+    let midOk = sRes.consumed;
+
+    if (isValid(redirect)) begin
+      // A taken branch squashes everything younger than E.
+      dstage.advance(redirect);
+      astage.advance(Invalid);
+      rstage.advance(Invalid);
+      sstage.clear();
+    end else if (memHold || isValid(sRes.fetchAddr)) begin
+      // Hold A and D; R was held by `midOk` being false.  Request the
+      // granule that is missing.  One call, so the rule has one writer.
+      let fetchAddr = case (sRes.fetchAddr) matches
+        tagged Valid .a: a;
+        tagged Invalid: rMiss ? eaOf(rIn) : regs.pc();
+      endcase;
+      store.fetch(fetchAddr);
+    end else if (midOk) begin
+      if (memStall()) begin
+        // Hold the load in A; the store drains in E.
+        rstage.advance(Invalid);
+      end else begin
+        rstage.advance(rIn);
+        if (depStall()) begin
+          // Let the producer go; the consumer stays in A.
+          astage.advance(Invalid);
+        end else begin
+          astage.advance(dstage.out());
+          dstage.advance(Invalid);
+        end
+      end
     end
-    let sBusy  = sstage.busy();
-    let sStall = sInDeref && (!sStarted || sBusy);
-
-    // E: one call drives run, load and PC advance.  The E stage owns
-    // the internal priority, so no two actions write the same state.
-    let bt     = estage.branchTarget();
-    let flush  = isValid(bt);
-    let stall  = sStall || estage.valid();
-    let doLoad = !stall && s2e.valid && !flush;
-
-    let pcNext <- estage.run(doLoad, !stall, s2e);
-    estage.setPC(pcNext);
-
-    let sStartedNext = flush ? False
-                     : sNeedStart ? True
-                     : stall ? sStarted
-                     : False;
-
-    if (flush) begin
-      d2a <= invalidD2A();
-      a2r <= invalidA2R();
-      r2s <= invalidR2S();
-      s2e <= invalidS2E();
-    end else if (!stall) begin
-      a2r <= A2R { instr: d2a.instr, dec: d2a.dec, ea: aEA,
-                   rsVal: aRs, rtVal: aRt, rdVal: aRd, valid: d2a.valid };
-      r2s <= R2S { instr: a2r.instr, dec: a2r.dec, ea: a2r.ea,
-                   rsVal: a2r.rsVal, rtVal: a2r.rtVal, rdVal: a2r.rdVal,
-                   fetched: rFetched, valid: a2r.valid };
-      s2e <= S2E { instr: r2s.instr, dec: r2s.dec, ea: r2s.ea,
-                   rsVal: r2s.rsVal, rtVal: r2s.rtVal, rdVal: r2s.rdVal,
-                   fetched: r2s.fetched,
-                   derefVal: sInDeref ? sstage.value() : r2s.rsVal,
-                   srp: sInDeref ? sstage.srp() : True,
-                   col: sInDeref ? sstage.col() : True,
-                   valid: r2s.valid && (!sInDeref || (sStarted && !sBusy)) };
-      d2a <= D2A { instr: d.instr, dec: d.dec, valid: True };
-    end
-    sStarted <= sStartedNext;
   endrule
+
+  // -------------------------------------------------------------------
+  // Off-pipe events
+  // -------------------------------------------------------------------
+
+  rule halt (running && !haltedR && estage.haltReq());
+    haltedR <= True;
+  endrule
+
+  rule fault (running && !errorR && (estage.errorReq() || regs.badWrite()));
+    errorR <= True;
+  endrule
+
+  // -------------------------------------------------------------------
+  // Interface
+  // -------------------------------------------------------------------
 
   method Action start();
     running <= True;
   endmethod
-  method Action step() = noAction;
-  method Bool halted() = estage.halted();
-  method Bool error() = estage.error();
-  method Word readReg(RegSel r) = estage.readReg(r);
-  method Word readMem(Addr a) = mem.sub(a);
-  method Addr pc() = estage.pc();
+
+  method Bool halted() = haltedR;
+  method Bool error() = errorR;
+  method Word readReg(RegSel r) = regs.read(r);
+  method Word readMem(Addr a) = store.read(a);
+  method Addr pc() = regs.pc();
+
 endmodule
 
 endpackage

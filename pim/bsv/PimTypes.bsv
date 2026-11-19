@@ -178,6 +178,10 @@ typedef struct {
   DecodeEntry dec;
 } DecodedInstr deriving (Bits, Eq);
 
+// Defined reset value for state that has not been loaded yet.
+function DecodedInstr noDecodedInstr() =
+  DecodedInstr { instr: unpackInstr(0), dec: unpackDecode(0) };
+
 // ---------------------------------------------------------------------
 // Microinstruction (MODEL encoding, see header).
 //   [63:49] next   [48:33] imm   [32:29] aluOp   [28:23] srcA
@@ -259,48 +263,38 @@ function Bit#(64) packMicro(MicroInstr m) =
     pack(m.last), pack(m.branch) };
 
 // ---------------------------------------------------------------------
-// Pipeline bundles
+// Pipeline bundles.  Each stage owns the register that carries its
+// result, so a bundle is present exactly when that register holds a
+// Valid value; there is no separate valid bit to keep in step.
 // ---------------------------------------------------------------------
 
 typedef struct {
-  Instr       instr;
-  DecodeEntry dec;
-  Bool        valid;
-} D2A deriving (Bits, Eq);
-
-typedef struct {
-  Instr       instr;
-  DecodeEntry dec;
-  Addr        ea;
-  Word        rsVal;
-  Word        rtVal;
-  Word        rdVal;
-  Bool        valid;
+  DecodedInstr d;
+  Addr         ea;
+  Word         rsVal;
+  Word         rtVal;
+  Word         rdVal;
 } A2R deriving (Bits, Eq);
 
 typedef struct {
-  Instr       instr;
-  DecodeEntry dec;
-  Addr        ea;
-  Word        rsVal;
-  Word        rtVal;
-  Word        rdVal;
-  Word        fetched;
-  Bool        valid;
+  DecodedInstr d;
+  Addr         ea;
+  Word         rsVal;
+  Word         rtVal;
+  Word         rdVal;
+  Maybe#(Word) fetched;      // Valid only for a load (R stage, p.428)
 } R2S deriving (Bits, Eq);
 
 typedef struct {
-  Instr       instr;
-  DecodeEntry dec;
-  Addr        ea;
-  Word        rsVal;
-  Word        rtVal;
-  Word        rdVal;
-  Word        fetched;
-  Word        derefVal;
-  Bool        srp;
-  Bool        col;
-  Bool        valid;
+  DecodedInstr d;
+  Addr         ea;
+  Word         rsVal;
+  Word         rtVal;
+  Word         rdVal;
+  Maybe#(Word) fetched;
+  Word         derefVal;     // S-stage result: the resolved word (p.429)
+  Bool         srp;          // MRBs of all pointers on the chain are off
+  Bool         col;          // MRBs of the first two pointers are off
 } S2E deriving (Bits, Eq);
 
 endpackage

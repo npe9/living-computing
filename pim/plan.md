@@ -14,6 +14,18 @@ documented KL1 workload. If no bit-exact executable survives, the first
 software oracle will be a manually assembled diagnostic derived from a
 primary manual and explicitly labelled manual-derived.
 
+## Historical accuracy rule
+
+The Bluespec model must reproduce the original PIM/m hardware block
+diagram and the descriptions in the primary sources. It is a
+historically accurate architectural reproduction, not an FPGA emulator:
+do not invent, simplify, or reorder structure for FPGA convenience.
+Every module, pipeline stage, bus, and control signal must trace to a
+block diagram, manual page, or technical report. Where the evidence is
+silent, mark the structure unknown rather than filling it with a
+plausible FPGA design. FPGA synthesis is a downstream check, not the
+definition of the architecture.
+
 ## Evidence gates
 
 1. Acquire local, checksummed copies of the 1992 ICOT proceedings,

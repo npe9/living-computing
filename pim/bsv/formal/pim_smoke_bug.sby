@@ -1,0 +1,26 @@
+# pim_smoke_bug.sby -- the same bounded check against the known-bad
+# PimE rselFetch path (returns eFetched instead of recomputing
+# mem.sub(eEA), the PimE.bsv:131 regression).  Expected result: FAIL
+# with a VCD witness under pim_smoke_bug/engine_0/trace.vcd.
+# Paths in [files] resolve against the sby process cwd, which is the
+# repository root (pim/); run `sby -f bsv/formal/pim_smoke.sby` from there.
+[options]
+mode bmc
+depth 80
+vcd on
+
+[engines]
+smtbmc yices
+
+[script]
+read_verilog -formal -sv pim_smoke_formal.v mkPimPU.v RegFileLoad.v
+prep -top pim_smoke_formal
+
+[files]
+pim_smoke_formal.v bsv/formal/pim_smoke_formal.v
+mkPimPU.v bsv/formal/build/buggy/mkPimPU.v
+RegFileLoad.v bsv/RegFileLoad.v
+generated/decode.hex bsv/formal/formal_images/decode.hex
+generated/jump.hex bsv/formal/formal_images/jump.hex
+generated/program.hex bsv/formal/formal_images/program.hex
+generated/wcs.hex bsv/formal/formal_images/wcs.hex

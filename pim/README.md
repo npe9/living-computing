@@ -10,7 +10,10 @@ element compatible with Multi-PSI, connected as a two-dimensional mesh
 of as many as 256 processing elements. The other four variants remain
 comparative sources until PIM/m is reproduced.
 
-Bluespec implementation: `bsv/` (not started).
+Bluespec implementation: `bsv/` (in progress; the one-PE Bluesim smoke
+test passes as of 2026-11-19). The model must match the original block
+diagram and descriptions — see the historical-accuracy rule in
+[`plan.md`](plan.md).
 
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).
