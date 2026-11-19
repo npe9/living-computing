@@ -47,7 +47,7 @@ endinterface
 module mkHobbitDecode(HobbitDecode);
 
   function Operand noOpnd();
-    return Operand { kind: OK_NONE, val: 0 };
+    return Operand { mode: 4'h0, val: 0 };
   endfunction
 
   function DecodedInstr mkInstr(Word pc, Bit#(8) len, HobbitOp op,
@@ -64,8 +64,8 @@ module mkHobbitDecode(HobbitDecode);
   endfunction
 
   function DecodedInstr unary(Word pc, Bit#(8) len, HobbitOp op,
-                              OperandKind k, Word v, TrapReason r);
-    return mkInstr(pc, len, op, Operand { kind: k, val: v }, noOpnd(), r);
+                              OpMode k, Word v, TrapReason r);
+    return mkInstr(pc, len, op, Operand { mode: k, val: v }, noOpnd(), r);
   endfunction
 
   // A 10-bit PC-relative field is signed and multiplied by two
@@ -77,6 +77,14 @@ module mkHobbitDecode(HobbitDecode);
 
   function Word imm5(Bit#(5) v) = signExtend(v);
   function Word stk5(Bit#(5) v) = zeroExtend(v) << 2;
+
+  // Operand constructors for the one-parcel forms, which name their modes
+  // in the mnemonic: C = 5-bit immediate (0xF), S = word stack offset
+  // (0xD), I = word stack-offset indirect (0xE) (Table 1-21, p. 1-25;
+  // Table 1-15's legend, p. 1-22).
+  function Operand immOp(Word v)  = Operand { mode: 4'hF, val: v };
+  function Operand stkOp(Word v)  = Operand { mode: 4'hD, val: v };
+  function Operand istkOp(Word v) = Operand { mode: 4'hE, val: v };
 
   function HobbitOp branchOp5(Bit#(5) o);
     case (o)
@@ -90,7 +98,7 @@ module mkHobbitDecode(HobbitDecode);
 
   function DecodedInstr branch1(Word pc, HobbitOp op, Parcel q);
     return mkInstr(pc, 1, op,
-                   Operand { kind: OK_ABS, val: pcrel10(pc, q[9:0]) },
+                   Operand { mode: 4'hF, val: pcrel10(pc, q[9:0]) },
                    noOpnd(), TR_NONE);
   endfunction
 
@@ -101,13 +109,13 @@ module mkHobbitDecode(HobbitDecode);
     Bit#(2) sub = q[1:0];
     Bit#(8) off = q[9:2];
     case (sub)
-      2'd0: return unary(pc, 1, OP_ENTER,  OK_STACK,
+      2'd0: return unary(pc, 1, OP_ENTER,  4'hD,
                          signExtend(off) << 4, TR_NONE);
-      2'd1: return unary(pc, 1, OP_CATCH,  OK_STACK,
+      2'd1: return unary(pc, 1, OP_CATCH,  4'hD,
                          zeroExtend(off) << 4, TR_NONE);
-      2'd2: return unary(pc, 1, OP_RETURN, OK_STACK,
+      2'd2: return unary(pc, 1, OP_RETURN, 4'hD,
                          zeroExtend(off) << 4, TR_NONE);
-      default: return unary(pc, 1, OP_POPN, OK_STACK,
+      default: return unary(pc, 1, OP_POPN, 4'hD,
                             zeroExtend(off) << 4, TR_NONE);
     endcase
   endfunction
@@ -117,24 +125,39 @@ module mkHobbitDecode(HobbitDecode);
   function DecodedInstr niladic1(Word pc, Parcel q);
     Bit#(10) sub = q[9:0];
     if (sub == 10'h002)
-      return unary(pc, 1, OP_NOP, OK_NONE, 0, TR_NONE);
+      return unary(pc, 1, OP_NOP, 4'h0, 0, TR_NONE);
     else if (sub == 10'h000)
       return trapAt(pc, 1, TR_CPU);
     else
       return trapAt(pc, 1, TR_UNIMP);
   endfunction
 
+  // imm5 (signed) or wai5 (unsigned, x4) source with a stk5 destination.
   function DecodedInstr dyad1(Word pc, HobbitOp op, Parcel q);
     return mkInstr(pc, 1, op,
-                   Operand { kind: OK_IMM,   val: imm5(q[9:5]) },
-                   Operand { kind: OK_STACK, val: stk5(q[4:0]) },
-                   TR_NONE);
+                   immOp(imm5(q[9:5])),
+                   stkOp(stk5(q[4:0])), TR_NONE);
+  endfunction
+
+  function DecodedInstr dyad1wai(Word pc, HobbitOp op, Parcel q);
+    return mkInstr(pc, 1, op,
+                   immOp(zeroExtend(q[9:5]) << 2),
+                   stkOp(stk5(q[4:0])), TR_NONE);
   endfunction
 
   function DecodedInstr dyad1ss(Word pc, HobbitOp op, Parcel q);
     return mkInstr(pc, 1, op,
-                   Operand { kind: OK_STACK, val: stk5(q[9:5]) },
-                   Operand { kind: OK_STACK, val: stk5(q[4:0]) },
+                   stkOp(stk5(q[9:5])),
+                   stkOp(stk5(q[4:0])), TR_NONE);
+  endfunction
+
+  // MOV.IS / MOV.SI / MOV.II (opcodes 0x19/0x1A/0x1B, Table 1-15 row 11):
+  // the "I" field is the 5-bit indirect stack offset, i.e. Table 1-21's
+  // 0xE mode with the zero-extended, x4-scaled offset (p. 1-22, p. 3-32).
+  function DecodedInstr mov1(Word pc, Bit#(4) smode, Bit#(4) dmode, Parcel q);
+    return mkInstr(pc, 1, OP_MOV,
+                   Operand { mode: smode, val: stk5(q[9:5]) },
+                   Operand { mode: dmode, val: stk5(q[4:0]) },
                    TR_NONE);
   endfunction
 
@@ -146,9 +169,8 @@ module mkHobbitDecode(HobbitDecode);
   // its value is the shift count itself.
   function DecodedInstr shift1(Word pc, HobbitOp op, Parcel q);
     return mkInstr(pc, 1, op,
-                   Operand { kind: OK_IMM, val: zeroExtend(q[9:5]) },
-                   Operand { kind: OK_STACK, val: stk5(q[4:0]) },
-                   TR_NONE);
+                   immOp(zeroExtend(q[9:5])),
+                   stkOp(stk5(q[4:0])), TR_NONE);
   endfunction
 
   // MOV.WS (opcode 0x0A, Table 1-15 p. 1-22; p. 3-32): the source is the
@@ -156,30 +178,33 @@ module mkHobbitDecode(HobbitDecode);
   // 5-bit stack offset is zero-extended and multiplied by four (p. 1-22).
   function DecodedInstr movws1(Word pc, Parcel q);
     return mkInstr(pc, 1, OP_MOV,
-                   Operand { kind: OK_IMM, val: zeroExtend(q[9:5]) << 2 },
-                   Operand { kind: OK_STACK, val: stk5(q[4:0]) },
-                   TR_NONE);
+                   immOp(zeroExtend(q[9:5]) << 2),
+                   stkOp(stk5(q[4:0])), TR_NONE);
   endfunction
 
-  // Three-parcel gen16 / five-parcel gen32 operand modes.
-  function Bool modeOK(Bit#(4) m);
-    return m == 4'hF || m == 4'hD || m == 4'hC;
-  endfunction
-
+  // Three-parcel gen16 / five-parcel gen32 operands.  The mode nibble is
+  // carried verbatim (Table 1-21, p. 1-25); p. 1-23 fixes the extension:
+  // a 16-bit field is sign-extended in immediate and offset modes, and an
+  // absolute address is zero-extended because CONFIG's PC-extension bit is
+  // 0 (p. 1-23, p. 1-35).  A 32-bit field is used as it stands.
   function Operand gen16(Bit#(4) m, Parcel v);
-    case (m)
-      4'hF: return Operand { kind: OK_IMM,   val: signExtend(v) };
-      4'hD: return Operand { kind: OK_STACK, val: signExtend(v) };
-      default: return Operand { kind: OK_ABS, val: zeroExtend(v) };
-    endcase
+    if (modeIsImm(m) || modeIsStack(m) || modeIsIndirect(m)) begin
+      return Operand { mode: m, val: signExtend(v) };
+    end else begin
+      return Operand { mode: m, val: zeroExtend(v) };
+    end
   endfunction
 
-  function Operand gen32(Bit#(4) m, Word v);
-    case (m)
-      4'hF: return Operand { kind: OK_IMM,   val: v };
-      4'hD: return Operand { kind: OK_STACK, val: v };
-      default: return Operand { kind: OK_ABS, val: v };
-    endcase
+  function Operand gen32(Bit#(4) m, Word v) = Operand { mode: m, val: v };
+
+  // The modes the core executes: every Table 1-21 mode that needs at most
+  // one stack-cache read.  The five indirect modes (0x8-0xB, 0xE) need the
+  // pointer word and then the operand word in the same occupancy, i.e. a
+  // third read port; Figure 1-1 prints the stack cache as 64x32x2 (p. 1-2)
+  // and the model's box exposes exactly two reads, so those modes are
+  // refused loudly here and recorded in docs/isa_inventory.md.
+  function Bool modeModelled(Bit#(4) m);
+    return (m <= 4'h7) || (m == 4'hC) || (m == 4'hD) || (m == 4'hF);
   endfunction
 
   // Table 1-23, p. 1-26: CALL/JMP may be PC relative (0xE) or absolute
@@ -187,21 +212,65 @@ module mkHobbitDecode(HobbitDecode);
   function DecodedInstr branch3(Word pc, HobbitOp op, Bit#(4) m, Word v, Bit#(8) len);
     case (m)
       4'hE: return mkInstr(pc, len, op,
-                           Operand { kind: OK_ABS, val: pc + v },
+                           Operand { mode: 4'hF, val: pc + v },
                            noOpnd(), TR_NONE);
       4'hF: return mkInstr(pc, len, op,
-                           Operand { kind: OK_ABS, val: v },
+                           Operand { mode: 4'hF, val: v },
                            noOpnd(), TR_NONE);
       default: return trapAt(pc, len, TR_BAD_MODE);
     endcase
   endfunction
 
+  // Tables 1-18 (p. 1-24) and 1-20 (p. 1-25): the three- and five-parcel
+  // dyadic grids are identical.  Every opcode the tables mark "unimp"
+  // returns OP_NONE and the caller traps.  Rows 010 and 111 are entirely
+  // unimp; row 011 has only 1D/1E/1F; row 101 has only 2C-2F; row 001 has
+  // only 0C/0D; row 000 is the monadic row plus 01-07.
   function HobbitOp dyadicOp(Bit#(6) o);
     case (o)
+      // row 000
+      6'h00: return OP_NONE;   // monadic (Table 1-19), handled separately
+      6'h01: return OP_NONE;   // ORI   -- two architectural writes, unmodelled
+      6'h02: return OP_NONE;   // ANDI  -- two architectural writes, unmodelled
+      6'h03: return OP_NONE;   // ADDI  -- two architectural writes, unmodelled
+      6'h04: return OP_MOVA;
+      6'h05: return OP_UREM;
       6'h06: return OP_MOV;
-      6'h23: return OP_ADD;
-      6'h20: return OP_SUB;
+      6'h07: return OP_NONE;   // DQM   -- block move, unmodelled
+      // row 001
+      6'h0C: return OP_TADD;
+      6'h0D: return OP_TSUB;
+      // row 011
+      6'h1D: return OP_CMPGT;
+      6'h1E: return OP_CMPHI;
       6'h1F: return OP_CMPEQ;
+      // row 100
+      6'h20: return OP_SUB;
+      6'h21: return OP_OR;
+      6'h22: return OP_AND;
+      6'h23: return OP_ADD;
+      6'h24: return OP_XOR;
+      6'h25: return OP_REM;
+      6'h26: return OP_MUL;
+      6'h27: return OP_DIV;
+      // row 101
+      6'h2C: return OP_SHR;
+      6'h2D: return OP_USHR;
+      6'h2E: return OP_SHL;
+      6'h2F: return OP_UDIV;
+      // row 110
+      6'h30: return OP_SUB3;
+      6'h31: return OP_OR3;
+      6'h32: return OP_AND3;
+      6'h33: return OP_ADD3;
+      6'h34: return OP_XOR3;
+      6'h35: return OP_REM3;
+      6'h36: return OP_MUL3;
+      6'h37: return OP_DIV3;
+      // row 111
+      6'h3C: return OP_SHR3;
+      6'h3D: return OP_USHR3;
+      6'h3E: return OP_SHL3;
       default: return OP_NONE;
     endcase
   endfunction
@@ -237,6 +306,10 @@ module mkHobbitDecode(HobbitDecode);
       // p. 1-7 and p. 3-5); 0x0A MOV.WS (p. 3-32).
       Bit#(5) opc = p0[14:10];
       case (opc)
+        // KCALL imm10 (Table 1-15 p. 1-22, Table 3-1 #24): the ten-bit
+        // field is zero-extended and multiplied by four (p. 3-29).
+        5'h00: return maybeFold(unary(pc, 1, OP_KCALL, 4'hF,
+                                      zeroExtend(p0[9:0]) << 2, TR_NONE), p);
         5'h01: return branch1(pc, OP_CALL, p0);
         5'h02: return maybeFold(stack1(pc, p0), p);
         5'h03: return branch1(pc, OP_JMP, p0);
@@ -246,6 +319,12 @@ module mkHobbitDecode(HobbitDecode);
         5'h07: return branch1(pc, OP_JMPTY, p0);
         5'h0A: return maybeFold(movws1(pc, p0), p);
         5'h0B: return maybeFold(niladic1(pc, p0), p);
+        // Table 1-15 row 01 (p. 1-22): ADD3.WS 0x0D uses the word-aligned
+        // immediate wai5 as its source (p. 1-22, p. 3-5); AND3.CS 0x0E and
+        // AND.SS 0x0F complete the AND rows of p. 3-7.
+        5'h0D: return maybeFold(dyad1wai(pc, OP_ADD3, p0), p);
+        5'h0E: return maybeFold(dyad1(pc, OP_AND3, p0), p);
+        5'h0F: return maybeFold(dyad1ss(pc, OP_AND, p0), p);
         5'h10: return maybeFold(dyad1(pc, OP_CMPEQ, p0), p);
         5'h11: return maybeFold(dyad1ss(pc, OP_CMPGT, p0), p);
         5'h12: return maybeFold(dyad1(pc, OP_CMPGT, p0), p);
@@ -255,6 +334,13 @@ module mkHobbitDecode(HobbitDecode);
         5'h16: return maybeFold(dyad1ss(pc, OP_ADD, p0), p);
         5'h17: return maybeFold(dyad1ss(pc, OP_ADD3, p0), p);
         5'h18: return maybeFold(dyad1ss(pc, OP_MOV, p0), p);
+        // Table 1-15 row 11 (p. 1-22): MOV.IS 0x19 (istk5,stk5),
+        // MOV.SI 0x1A (stk5,istk5), MOV.II 0x1B (istk5,istk5).
+        // MOV.IS/SI/II use the indirect stack-offset mode 0xE, which the
+        // core refuses for the port reason stated at modeModelled().
+        5'h19: return trapAt(pc, 1, TR_BAD_MODE);
+        5'h1A: return trapAt(pc, 1, TR_BAD_MODE);
+        5'h1B: return trapAt(pc, 1, TR_BAD_MODE);
         5'h1C: return maybeFold(dyad1(pc, OP_MOV, p0), p);
         // Table 1-15 row 11 (p. 1-22): MOV.CS 0x1C (above), MOVA.SS 0x1D,
         // SHL3.CS 0x1E, SHR3.CS 0x1F.  MOVA's both fields are word stack
@@ -280,7 +366,7 @@ module mkHobbitDecode(HobbitDecode);
           4'h1: return maybeFold(branch3(pc, OP_CALL, sm, v32, 3), p);
           4'h2: if (sm == 4'hD)
                   return mkInstr(pc, 3, OP_RETURN,
-                                 Operand { kind: OK_STACK, val: v32 },
+                                 Operand { mode: 4'hD, val: v32 },
                                  noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_RETURN_MODE);
@@ -291,38 +377,49 @@ module mkHobbitDecode(HobbitDecode);
           4'h7: return maybeFold(branch3(pc, OP_JMPTY, sm, v32, 3), p);
           4'h8: if (sm == 4'hD)
                   return mkInstr(pc, 3, OP_CATCH,
-                                 Operand { kind: OK_STACK, val: v32 },
+                                 Operand { mode: 4'hD, val: v32 },
                                  noOpnd(), TR_NONE);
                 else if (sm == 4'hF)
                   return mkInstr(pc, 3, OP_CATCH,
-                                 Operand { kind: OK_IMM, val: v32 },
+                                 Operand { mode: 4'hF, val: v32 },
                                  noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_BAD_MODE);
           4'h9: if (sm == 4'hD)
                   return mkInstr(pc, 3, OP_ENTER,
-                                 Operand { kind: OK_STACK, val: v32 },
+                                 Operand { mode: 4'hD, val: v32 },
                                  noOpnd(), TR_NONE);
                 else if (sm == 4'hF)
                   return mkInstr(pc, 3, OP_ENTER,
-                                 Operand { kind: OK_IMM, val: v32 },
+                                 Operand { mode: 4'hF, val: v32 },
                                  noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_BAD_MODE);
           4'hF: if (sm == 4'hD)
                   return mkInstr(pc, 3, OP_POPN,
-                                 Operand { kind: OK_STACK, val: v32 },
+                                 Operand { mode: 4'hD, val: v32 },
                                  noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_BAD_MODE);
-          4'h0: return trapAt(pc, 3, TR_UNIMP);  // KCALL, unmodelled
+          // KCALL word32 (Table 1-19 row 1 col 0, p. 1-24; p. 3-29):
+          // the source is a Table 3-2 word32 operand pushed onto the
+          // interrupt stack.  The EU resolves modes C/D/E/F.
+          4'h0: return mkInstr(pc, 3, OP_KCALL,
+                               Operand { mode: sm, val: v32 },
+                               noOpnd(), TR_NONE);
+          // LDRAA flow32 (Table 1-19 row 1 col 2, p. 1-24; p. 3-31):
+          // Acc = &dst, the address computed exactly as a JMP target
+          // (Table 1-23, p. 1-26).
+          4'hA: return mkInstr(pc, 3, OP_LDRAA,
+                               branch3(pc, OP_NOP, sm, v32, 3).src,
+                               noOpnd(), branch3(pc, OP_NOP, sm, v32, 3).tr);
           default: return trapAt(pc, 3, TR_UNIMP);
         endcase
       end else begin
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
           return trapAt(pc, 3, TR_UNIMP);
-        else if (!modeOK(sm) || !modeOK(dm))
+        else if (!modeModelled(sm) || !modeModelled(dm))
           return trapAt(pc, 3, TR_BAD_MODE);
         else
           return maybeFold(mkInstr(pc, 3, op, gen16(sm, p[1]), gen16(dm, p[2]),
@@ -340,7 +437,7 @@ module mkHobbitDecode(HobbitDecode);
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
           return trapAt(pc, 5, TR_UNIMP);
-        else if (!modeOK(sm) || !modeOK(dm))
+        else if (!modeModelled(sm) || !modeModelled(dm))
           return trapAt(pc, 5, TR_BAD_MODE);
         else
           return maybeFold(mkInstr(pc, 5, op,
@@ -578,8 +675,8 @@ endfunction
 
 function DecodedInstr fetchFaultInstr(Word pc);
   return DecodedInstr { pc: pc, plen: 1, op: OP_NONE,
-                        src: Operand { kind: OK_NONE, val: 0 },
-                        dst: Operand { kind: OK_NONE, val: 0 },
+                        src: Operand { mode: 4'h0, val: 0 },
+                        dst: Operand { mode: 4'h0, val: 0 },
                         insn0: 0, insn1: 0,
                         fold: False, foldOp: OP_NONE, foldPc: 0,
                         foldInsn0: 0, foldTarget: 0, foldAfter: 0,
@@ -588,8 +685,8 @@ endfunction
 
 function DecodedInstr fetchMissInstr(Word pc);
   return DecodedInstr { pc: pc, plen: 1, op: OP_NONE,
-                        src: Operand { kind: OK_NONE, val: 0 },
-                        dst: Operand { kind: OK_NONE, val: 0 },
+                        src: Operand { mode: 4'h0, val: 0 },
+                        dst: Operand { mode: 4'h0, val: 0 },
                         insn0: 0, insn1: 0,
                         fold: False, foldOp: OP_NONE, foldPc: 0,
                         foldInsn0: 0, foldTarget: 0, foldAfter: 0,
@@ -859,7 +956,7 @@ module mkHobbitDecodeStore#(HobbitPdu pdu)(HobbitDecodeStore);
 
   method Maybe#(DecInstEntry) lookup(Word pc);
     let e = ic.sub(idx(pc));
-    if ((icValid[idx(pc)] == 1'b1) && (e[191:166] == pc[31:6]))
+    if ((icValid[idx(pc)] == 1'b1) && (e[188:163] == pc[31:6]))
       return tagged Valid (decEntryToInst(e, pc));
     else
       return tagged Invalid;

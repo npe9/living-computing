@@ -96,6 +96,10 @@ interface HobbitStackCache;
   // its refill watermark.  A miss returns 0 and the EU reports it
   // loudly (a p. 4-1 operand-capture violation).
   method Word read(Word addr, Word lo, Word hi);
+  // Second read port: the printed stack cache is "64x32x2" (Figure 1-1,
+  // p. 1-2), and an instruction's two memory operands are read in the
+  // same cycle.
+  method Word read2(Word addr, Word lo, Word hi);
 
   // The write port and the pointer op, one command per retired
   // instruction.  The command reaches the box's single state rule
@@ -372,6 +376,7 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   method Word shad() = shadR;
 
   method Word read(Word addr, Word lo, Word hi) = readWord(addr, lo, hi);
+  method Word read2(Word addr, Word lo, Word hi) = readWord(addr, lo, hi);
 
   method Action commit(ScCmd c);
     cmdW <= tagged Valid c;

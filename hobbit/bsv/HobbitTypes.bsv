@@ -30,12 +30,25 @@ typedef Bit#(32) Word;
 typedef Bit#(0) Token;
 
 // Table 3-1 (printed pp. 3-1 to 3-2) plus the four conditional jumps.
+// The data operations and their `[3]` accumulator forms are one entry each,
+// exactly as Table 3-1 prints them; the dyadic grid of Tables 1-18/1-20
+// (pp. 1-24, 1-25) supplies the opcodes.
 typedef enum {
   OP_NONE,
-  OP_MOV, OP_ADD, OP_SUB, OP_ADD3, OP_CMPEQ, OP_CMPGT,
-  OP_SHL3, OP_SHR3, OP_MOVA,
-  OP_CALL, OP_RETURN, OP_ENTER, OP_CATCH, OP_POPN, OP_NOP,
-  OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN
+  // --- dyadic data operations, destination form and `[3]` form --------
+  OP_MOV,
+  OP_ADD, OP_ADD3, OP_SUB, OP_SUB3,
+  OP_AND, OP_AND3, OP_OR, OP_OR3, OP_XOR, OP_XOR3,
+  OP_CMPEQ, OP_CMPGT, OP_CMPHI,
+  OP_SHL, OP_SHL3, OP_SHR, OP_SHR3, OP_USHR, OP_USHR3,
+  OP_MUL, OP_MUL3, OP_DIV, OP_DIV3, OP_REM, OP_REM3,
+  OP_UDIV, OP_UREM,
+  OP_TADD, OP_TSUB,
+  OP_MOVA, OP_LDRAA,
+  // --- stack class, niladic and kernel call ---------------------------
+  OP_ENTER, OP_CATCH, OP_POPN, OP_RETURN, OP_NOP, OP_KCALL,
+  // --- control flow ---------------------------------------------------
+  OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN
 } HobbitOp deriving (Eq, Bits);
 
 typedef enum {
@@ -50,14 +63,94 @@ typedef enum {
   TR_FETCH_FAULT    // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
 } TrapReason deriving (Eq, Bits);
 
-// Operand kind after decode.  OK_ABS is also used for a branch's already
-// computed target address (PC-relative or absolute, p. 1-27).
-typedef enum { OK_NONE, OK_IMM, OK_STACK, OK_ABS } OperandKind deriving (Eq, Bits);
+// Operand addressing mode after decode: the four-bit code of Table 1-21
+// (printed p. 1-25), carried through unchanged so the decoder states the
+// printed encoding and the execution unit applies the printed width rule.
+//
+//   0x0 *$addr:B   0x1 *$addr:UB  0x2 *$addr:H   0x3 *$addr:UH
+//   0x4 Roffset:B  0x5 Roffset:UB 0x6 Roffset:H  0x7 Roffset:UH
+//   0x8 *Roffset:B 0x9 *Roffset:UB 0xA *Roffset:H 0xB *Roffset:UH
+//   0xC *$addr:W   0xD Roffset:W  0xE *Roffset:W  0xF $data
+//
+// A branch operand (Table 1-23, p. 1-26) is already resolved to its target
+// address and carries 0xF; RETURN and POPN carry 0xD because their operand
+// is a word stack offset (p. 3-38, p. 3-40).
+typedef Bit#(4) OpMode;
 
 typedef struct {
-  OperandKind kind;
-  Word        val;   // immediate, signed byte offset, or absolute address
+  OpMode mode;
+  Word   val;   // immediate, sign-extended field, or effective address
 } Operand deriving (Bits);
+
+// Table 1-21 classes (printed p. 1-25).
+function Bool modeIsImm(OpMode m) = (m == 4'hF);
+function Bool modeIsStack(OpMode m) =
+  ((m >= 4'h4) && (m <= 4'h7)) || (m == 4'hD);
+function Bool modeIsIndirect(OpMode m) =
+  ((m >= 4'h8) && (m <= 4'hB)) || (m == 4'hE);
+function Bool modeIsAbs(OpMode m) = (m <= 4'h3) || (m == 4'hC);
+function Bool modeIsMem(OpMode m) = (m != 4'hF);
+
+// Width rule, p. 1-3/p. 1-28: byte modes 0/1, 4/5, 8/9; half-word modes
+// 2/3, 6/7, A/B; word modes C/D/E; F is the immediate.
+function Word modeSize(OpMode m);
+  if ((m == 4'h0) || (m == 4'h1) || (m == 4'h4) || (m == 4'h5) ||
+      (m == 4'h8) || (m == 4'h9)) return 1;
+  else if ((m == 4'h2) || (m == 4'h3) || (m == 4'h6) || (m == 4'h7) ||
+           (m == 4'hA) || (m == 4'hB)) return 2;
+  else return 4;
+endfunction
+
+// Signed and unsigned byte/half-word modes (Table 1-21's B/UB/H/UH, p. 1-25).
+function Bool modeSigned(OpMode m) =
+  (m == 4'h0) || (m == 4'h2) || (m == 4'h4) || (m == 4'h6) ||
+  (m == 4'h8) || (m == 4'hA) || (m == 4'hC) || (m == 4'hD) ||
+  (m == 4'hE) || (m == 4'hF);
+
+// Big-endian byte lane for a byte address (Figure 1-2, p. 1-4): the byte at
+// the word address is bits 31:24, so lane 3 - addr[1:0].
+function Bit#(2) byteLane(Word addr) = truncate(~addr);
+
+// Byte marks for a store of `size` bytes at `addr`: bit 3 is the byte at the
+// word address, bit 0 the byte at word+3 (the HRI mask convention).
+function Bit#(8) storeMask(Word addr, Word size);
+  if (size == 4) return 8'h0F;
+  else if (size == 2) return ((addr[1:0] == 0) ? 8'h0C : 8'h03);
+  else return (8'd1 << byteLane(addr));
+endfunction
+
+// Sign- or zero-extend a loaded byte/half-word (p. 1-3, p. 1-28).
+function Word extendLoad(Word word, Word addr, Word size, Bool sgn);
+  if (size == 4) return word;
+  else if (size == 2) begin
+    Word v = ((addr[1] == 1'b0) ? (word >> 16) : word) & 32'h0000FFFF;
+    return (sgn && (v[15] == 1'b1)) ? (v | 32'hFFFF0000) : v;
+  end else begin
+    Bit#(2) lane = byteLane(addr);
+    Word v = (word >> ({30'd0, lane} << 3)) & 32'h000000FF;
+    return (sgn && (v[7] == 1'b1)) ? (v | 32'hFFFFFF00) : v;
+  end
+endfunction
+
+// Place a stored value in its byte lanes, other lanes zero: the HRI record's
+// `data` field (sem/README.md's fixed mask convention, p. 1-4).
+function Word laneData(Word value, Word addr, Word size);
+  if (size == 4) return value;
+  else if (size == 2) return ((addr[1:0] == 0) ? ((value & 32'hFFFF) << 16)
+                                                : (value & 32'hFFFF));
+  else return ((value & 32'hFF) << ({30'd0, byteLane(addr)} << 3));
+endfunction
+
+// Merge the addressed bytes of `value` into `old` (read-modify-write of the
+// surrounding word).  `storeMask` is the byte-mark set.
+function Word mergeStore(Word old, Word value, Word addr, Word size);
+  let laneBits = laneData(value, addr, size);
+  let m = storeMask(addr, size);
+  Word expanded = 0;
+  for (Integer i = 0; i < 4; i = i + 1)
+    if ((m[i] == 1'b1)) expanded = expanded | (32'hFF << (8 * i));
+  return (old & ~expanded) | (laneBits & expanded);
+endfunction
 
 // A decoded instruction, including the folded branch that the PDU has
 // merged into it (PRM section 4.3, printed p. 4-7).
@@ -159,33 +252,31 @@ endfunction
 // bit with which to widen a field.
 //
 //   field        bits   slice
-//   pc[31:6]       26   [191:166]  tag; the index is pc[5:1]
-//   op              5   [165:161]  HobbitOp
-//   plen code       2   [160:159]  1/3/5 -> 0/1/2
-//   trap reason     3   [158:156]  TrapReason[2:0]
-//   src kind        2   [155:154]  OperandKind
-//   dst kind        2   [153:152]  OperandKind
-//   fold            1   [151]      a folded one-parcel branch (p. 4-7)
-//   fold op code    3   [150:148]  JMP/JMPTY/JMPTN/JMPFY/JMPFN -> 1..5
-//   src value      32   [147:116]
-//   dst value      32   [115:84]
-//   fold target    32   [83:52]    the folded branch's taken target
-//   insn0          16   [51:36]    HRI parcel 0
-//   insn1          16   [35:20]    HRI parcel 1
-//   fold insn0     16   [19:4]     HRI parcel of the folded branch
-//   full            1   [3]        1 = a complete decoded entry
-//   trap reason hi  1   [2]        TrapReason[3] (4 bits total with [158:156])
-//   reserved        2   [1:0]      zero
+//   reserved        3   [191:189]  zero
+//   pc[31:6]       26   [188:163]  tag; the index is pc[5:1]
+//   op              6   [162:157]  HobbitOp
+//   plen code       2   [156:155]  1/3/5 -> 0/1/2
+//   trap reason     4   [154:151]  TrapReason
+//   src mode        4   [150:147]  Table 1-21 mode, p. 1-25
+//   dst mode        4   [146:143]  Table 1-21 mode
+//   fold op code    3   [142:140]  JMP/JMPTY/JMPTN/JMPFY/JMPFN -> 1..5, 0 = none
+//   src value      32   [139:108]
+//   dst value      32   [107:76]
+//   insn0          16   [75:60]    HRI parcel 0
+//   insn1          16   [59:44]    HRI parcel 1
+//   fold insn0     16   [43:28]    HRI parcel of the folded branch
+//   full            1   [27]       1 = a complete decoded entry
 //
-// The printed p. 1-32 sentence "the PDU assigns a next-PC and
-// alternate-next-PC field for each decoded instruction" cannot be
-// honoured inside 192 bits: the two fields are 64 bits, and the entry
-// already spends 188 on the PC tag, the opcode/mode/flag field, both
-// operand values, the folded-branch target and the three parcels the
-// HRI record needs.  That 64-bit pair is therefore the documented
-// overflow: it is not stored, and the same mkDecInstEntry() function the
-// PDU used recomputes it from the stored fields when the entry is read.
-// No field is silently widened and no second array is added.
+// Two fields the entry does not store are recomputed exactly, not
+// approximated:
+//
+//   * the folded branch's taken target, because it is the same
+//     pcrel10() the decoder applied to the stored fold parcel:
+//     foldPc + signExtend(foldInsn0[9:0]) << 1 (p. 1-22, p. 1-27);
+//   * the next-PC / alternate-next-PC pair of p. 1-32, by the same
+//     mkDecInstEntry() function the PDU used, as before.
+//
+// 162 bits of the printed 192 are used; the rest is zero.
 typedef Bit#(192) DecEntry;
 
 function Bit#(2) encPlen(Bit#(8) n);
@@ -221,47 +312,39 @@ function HobbitOp decFoldOp(Bit#(3) c);
 endfunction
 
 function DecEntry packDecEntry(DecodedInstr d);
-  return { d.pc[31:6],
-           pack(d.op),
-           encPlen(d.plen),
-           pack(d.tr)[2:0],
-           pack(d.src.kind),
-           pack(d.dst.kind),
-           pack(d.fold),
-           encFoldOp(d.foldOp),
-           d.src.val,
-           d.dst.val,
-           d.foldTarget,
-           d.insn0,
-           d.insn1,
-           d.foldInsn0,
-           1'b1,
-           pack(d.tr)[3],
-           2'b0 };
+  Bit#(52) hi = { 3'b0, d.pc[31:6], pack(d.op), encPlen(d.plen),
+                  pack(d.tr), d.src.mode, d.dst.mode,
+                  encFoldOp(d.foldOp) };
+  Bit#(112) body = { d.src.val, d.dst.val, d.insn0, d.insn1, d.foldInsn0 };
+  // The 165 fields sit at [191:27]; the 27 low bits are unused, so the
+  // documented slices above are the ones unpackDecEntry reads.
+  return { hi, body, 1'b1, 27'b0 };
 endfunction
 
-function Bool decEntryFull(DecEntry e) = (e[3] == 1'b1);
+function Bool decEntryFull(DecEntry e) = (e[27] == 1'b1);
 
 function Word decEntryPc(DecEntry e, Word indexPc);
-  return { e[191:166], indexPc[5:1], 1'b0 };
+  return { e[188:163], indexPc[5:1], 1'b0 };
 endfunction
 
 function DecodedInstr unpackDecEntry(DecEntry e, Word pc);
+  Bit#(8) plen = decPlen(e[156:155]);
+  Word fpc = pc + plenBytes(plen);
   return DecodedInstr {
     pc: pc,
-    plen: decPlen(e[160:159]),
-    op: unpack(e[165:161]),
-    src: Operand { kind: unpack(e[155:154]), val: e[147:116] },
-    dst: Operand { kind: unpack(e[153:152]), val: e[115:84] },
-    insn0: e[51:36],
-    insn1: e[35:20],
-    fold: unpack(e[151]),
-    foldOp: decFoldOp(e[150:148]),
-    foldPc: pc + plenBytes(decPlen(e[160:159])),
-    foldInsn0: e[19:4],
-    foldTarget: e[83:52],
-    foldAfter: pc + plenBytes(decPlen(e[160:159])) + 2,
-    tr: unpack({ e[2], e[158:156] })
+    plen: plen,
+    op: unpack(e[162:157]),
+    src: Operand { mode: e[150:147], val: e[139:108] },
+    dst: Operand { mode: e[146:143], val: e[107:76] },
+    insn0: e[75:60],
+    insn1: e[59:44],
+    fold: (decFoldOp(e[142:140]) != OP_NONE),
+    foldOp: decFoldOp(e[142:140]),
+    foldPc: fpc,
+    foldInsn0: e[43:28],
+    foldTarget: fpc + (signExtend(e[43:28][9:0]) << 1),
+    foldAfter: fpc + 2,
+    tr: unpack(e[154:151])
   };
 endfunction
 
@@ -292,10 +375,18 @@ endfunction
 // or a three-parcel monadic.  The non-branching data operations and NOP
 // are the foldable class modelled here.
 function Bool isFoldable(HobbitOp op);
-  return op == OP_MOV || op == OP_ADD || op == OP_SUB ||
-         op == OP_ADD3 || op == OP_CMPEQ || op == OP_CMPGT ||
-         op == OP_SHL3 || op == OP_SHR3 || op == OP_MOVA ||
-         op == OP_NOP;
+  case (op)
+    OP_NONE:  return False;
+    // "another jump" (p. 4-7)
+    OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN: return False;
+    // a three-parcel monadic (p. 4-7): CALL/JMP are above; KCALL, RETURN,
+    // CATCH, ENTER, LDRAA and POPN are the rest of Table 1-19's row 1.
+    OP_KCALL, OP_RETURN, OP_CATCH, OP_ENTER, OP_LDRAA, OP_POPN:
+      return False;
+    // everything else is a dyadic data operation or a niladic, which the
+    // printed rule admits.
+    default:  return True;
+  endcase
 endfunction
 
 // Conditional-jump sense, p. 3-28: JMPT(Y/N) jumps iff PSW.F = 1, and
@@ -380,7 +471,7 @@ endfunction
 // ENTER's stack-offset target (the decode already sign-extended the
 // offset, p. 3-20); otherwise the immediate operand is the target.
 function Word enterTarget(DecodedInstr d, Word sp);
-  return (d.src.kind == OK_STACK) ? sp + d.src.val : d.src.val;
+  return modeIsStack(d.src.mode) ? sp + d.src.val : d.src.val;
 endfunction
 
 // MSP after an ENTER: unchanged for a stack-offset frame that fits in
@@ -422,10 +513,10 @@ function SpMsp archAfterSpMsp(DecodedInstr d, Word sp, Word msp);
       Word t = enterTarget(d, sp);
       return SpMsp { sp: t,
                      msp: enterNewMsp(sp, msp, t,
-                                      d.src.kind == OK_STACK) };
+                                      modeIsStack(d.src.mode)) };
     end
     OP_CATCH: begin
-      Word t = (d.src.kind == OK_STACK) ? sp + d.src.val : d.src.val;
+      Word t = modeIsStack(d.src.mode) ? sp + d.src.val : d.src.val;
       return SpMsp { sp: sp, msp: catchNewMsp(sp, msp, t) };
     end
     OP_POPN, OP_RETURN: begin
@@ -484,20 +575,53 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
                             Bool taken, Bit#(4) sinceCmp);
   let d = e.d;
   case (d.op)
-    // Table 4-32 (printed p. 4-3), Simple Instruction.  MOV, SUB, ADD3,
-    // CMP, NOP, CALL and unfolded JMP are one slot and no extra.
+    // Table 4-32 (printed p. 4-3), Simple Instruction.  One slot and no
+    // extra: ADD, ADD3, AND, AND3, CALL, CMP, LDRAA, MOV, MOVA, NOP, OR,
+    // OR3, SHL, SHL3, SHR, SHR3, SUB, SUB3, TADD, TSUB, USHR, USHR3, XOR,
+    // XOR3.  The one-, three- and five-parcel forms of a mnemonic all take
+    // the printed 1 (the table prices the mnemonic, not the parcel count).
     OP_MOV:   return 0;
     OP_SUB:   return 0;
+    OP_SUB3:  return 0;
     OP_ADD3:  return 0;
+    OP_AND:   return 0;
+    OP_AND3:  return 0;
+    OP_OR:    return 0;
+    OP_OR3:   return 0;
+    OP_XOR:   return 0;
+    OP_XOR3:  return 0;
     OP_CMPEQ: return 0;                         // CMP row, 1 (p. 3-13)
     OP_CMPGT: return 0;                         // CMP row, 1
-    // Table 4-32 (printed p. 4-3): SHL3 and SHR3 are 1, in the one-parcel
-    // uimm5,stk5 form as well as the three- and five-parcel forms.
+    OP_CMPHI: return 0;                         // CMP row, 1
+    // Table 4-32 (printed p. 4-3): SHL/SHL3, SHR/SHR3 and USHR/USHR3 are
+    // 1, in the one-parcel uimm5,stk5 form as well as the wider forms.
+    OP_SHL:   return 0;
     OP_SHL3:  return 0;
+    OP_SHR:   return 0;
     OP_SHR3:  return 0;
+    OP_USHR:  return 0;
+    OP_USHR3: return 0;
     OP_MOVA:  return 0;                         // MOVA row, 1 (Table 4-32)
+    OP_LDRAA: return 0;                         // LDRAA row, 1
+    OP_TADD:  return 0;                         // TADD row, 1
+    OP_TSUB:  return 0;                         // TSUB row, 1
+    // Table 4-33 (printed p. 4-4), Multi-Cycle Arithmetic.  MUL/MUL3 print
+    // only a range, "Min 3, Max 20", and the page calls the time data
+    // dependent without printing the dependence.  The model takes the
+    // printed maximum, the same named choice sem/README.md records
+    // (choice 24), so core and spec agree; the split is documented, not
+    // invented.
+    OP_MUL:   return 19;                        // 3..20, max taken
+    OP_MUL3:  return 19;
+    OP_DIV:   return 37;                        // DIV 38
+    OP_DIV3:  return 37;
+    OP_REM:   return 37;                        // REM 38
+    OP_REM3:  return 37;
+    OP_UDIV:  return 37;                        // UDIV 38
+    OP_UREM:  return 37;                        // UREM 38
     OP_NOP:   return 0;
     OP_CALL:  return 0;
+    OP_KCALL: return 10;                        // KCALL 8 + D + A (p. 4-5)
     OP_RETURN:return 1;                         // RETURN 2, always indirect
     OP_POPN:  return 1;                         // POPN 2
     OP_JMP:   return 0;                         // JMP unfolded 1; folded
@@ -515,7 +639,7 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     // that many clocks and blocks the next issue.
     OP_ENTER: return m.q * enterFlushBlocks(sp, msp,
                                             enterTarget(d, sp),
-                                            d.src.kind == OK_STACK);
+                                            modeIsStack(d.src.mode));
     // Table 4-36 (printed p. 4-5), CATCH = 1.  The quad-word refill of
     // pp. 3-10/3-11 is a stack-cache fill, not an architectural value,
     // and the p. 4-1 assumptions charge no fetch or operand delay for

@@ -297,11 +297,31 @@ class OneParcelRow11Test(unittest.TestCase):
         self.assertEqual(record.mem_wdata, 0xFFFFFFFF)
         self.assertEqual(record.cyc, 1)
 
-    def test_three_parcel_shl_still_refused(self):
-        # 0x2E SHL gen16,gen16 is a legal Table 1-18 row but outside this
-        # model's subset; it must refuse, not decode as a 1p shift.
-        with self.assertRaises(h.Unsupported):
-            run({0: 0xAEFD0002, 4: 0x00080000})
+    def test_three_parcel_shifts_write_their_destination(self):
+        # Table 1-18 (p. 1-24) three-parcel shifts: source in parcel 1,
+        # destination in parcel 2.  A 16-bit Roffset field is a byte
+        # offset -- p. 1-21 scales only five-bit and ten-bit values, and
+        # one-parcel stk5 is a word index scaled by four, so `SHL R12,R8`
+        # encodes 0x000C/0x0008 against SP=0x100 and names 0x10C/0x108.
+        # p. 3-41 SHL: "dst <<= Unsigned(src)"; p. 3-42 SHR copies the
+        # sign bit into the vacated bits; p. 3-50 USHR fills with zeros.
+        # Unlike the `[3]` forms, the plain forms write the destination
+        # and leave the accumulator alone; all three take one cycle
+        # (Table 4-32, p. 4-3).
+        record, state = run({0: 0xAEDD000C, 4: 0x00082C02},
+                            {0x10C: 3, 0x108: 0x0F})
+        self.assertEqual(state.memory[0x108], 0x78)
+        self.assertEqual(record.mem_addr, 0x108)
+        self.assertEqual(record.cyc, 1)
+        self.assertNotIn(0x104, state.memory)
+
+        _, state = run({0: 0xACDD000C, 4: 0x00082C02},
+                       {0x10C: 4, 0x108: 0xFFFFFF00})
+        self.assertEqual(state.memory[0x108], 0xFFFFFFF0)
+
+        _, state = run({0: 0xADDD000C, 4: 0x00082C02},
+                       {0x10C: 4, 0x108: 0xFFFFFF00})
+        self.assertEqual(state.memory[0x108], 0x0FFFFFF0)
 
 
 class DqmTest(unittest.TestCase):

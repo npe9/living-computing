@@ -120,17 +120,60 @@ interface HobbitCore;
   method Bit#(64) dbgState();
 endinterface
 
+// One architectural write.  `addr` is the word address and `mask` the byte
+// marks the HRI record carries; `data` is the value placed in its byte
+// lanes (other lanes zero, sem/README.md's convention, p. 1-4), and `wdata`
+// is the merge-complete word the stack cache stores and the bypass network
+// forwards, so a byte write never clobbers the neighbouring bytes.
 typedef struct {
-  Bool we;
-  Word addr;
-  Word data;
+  Bool    we;
+  Word    addr;
+  Word    data;
+  Bit#(8) mask;
+  Word    wdata;
 } WrInfo deriving (Bits);
+
+function WrInfo noWr() =
+  WrInfo { we: False, addr: 0, data: 0, mask: 0, wdata: 0 };
+
+// One PSW update: the bits in `mask` are replaced by `value`.  PSW bit 4
+// is F, bit 5 C and bit 6 V (Table 1-8, pp. 1-14..1-16).
+typedef struct {
+  Bool     we;
+  Bit#(32) mask;
+  Bit#(32) value;
+} PswUpdate deriving (Bits);
+
+function PswUpdate noPswUpd() = PswUpdate { we: False, mask: 0, value: 0 };
+function PswUpdate pswF(Bool f) =
+  PswUpdate { we: True, mask: 32'h10, value: f ? 32'h10 : 32'd0 };
+function PswUpdate pswCV(Bool c, Bool v) =
+  PswUpdate { we: True, mask: 32'h60,
+              value: (c ? 32'h20 : 32'd0) | (v ? 32'h40 : 32'd0) };
+function PswUpdate pswCVKeepC(Bool v) =      // C unchanged, V replaced
+  PswUpdate { we: True, mask: 32'h40, value: v ? 32'h40 : 32'd0 };
+function PswUpdate pswCKeepV(Bool c) =       // V unchanged, C replaced
+  PswUpdate { we: True, mask: 32'h20, value: c ? 32'h20 : 32'd0 };
 
 function Bool isCondJumpOp(HobbitOp op) =
   op == OP_JMPTY || op == OP_JMPTN || op == OP_JMPFY || op == OP_JMPFN;
 
 function Bool isCompareOp(HobbitOp op) =
-  op == OP_CMPEQ || op == OP_CMPGT;
+  op == OP_CMPEQ || op == OP_CMPGT || op == OP_CMPHI;
+
+// A `[3]` form writes the accumulator at CSP+4 (p. 1-7, Figure 1-4).
+function Bool isAccOp(HobbitOp op);
+  case (op)
+    OP_ADD3, OP_SUB3, OP_AND3, OP_OR3, OP_XOR3, OP_SHL3, OP_SHR3,
+    OP_USHR3, OP_MUL3, OP_DIV3, OP_REM3, OP_LDRAA: return True;
+    default: return False;
+  endcase
+endfunction
+
+// A conditional store: TADD/TSUB store only when the result is untagged
+// and did not overflow (pp. 3-44, 3-47).
+function Bool isCondStoreOp(HobbitOp op) =
+  op == OP_TADD || op == OP_TSUB;
 
 function Bool isSpOp(HobbitOp op) =
   op == OP_ENTER || op == OP_CATCH || op == OP_POPN || op == OP_RETURN;
@@ -150,6 +193,109 @@ function Word sarWord(Word v, Word n);
   Int#(32) s = unpack(v);
   return pack(s >> n[4:0]);
 endfunction
+function Word ushrWord(Word v, Word n) = v >> n[4:0];
+
+// Arithmetic results and flags.  pp. 1-29..1-30 (C on unsigned carry or
+// borrow, V on signed overflow), p. 3-5 (ADD/ADD3), p. 3-43 (SUB/SUB3).
+typedef struct { Word r; Bool c; Bool v; } Arith deriving (Bits);
+
+function Arith addArith(Word a, Word b);
+  Bit#(33) raw = zeroExtend(a) + zeroExtend(b);
+  Word r = truncate(raw);
+  Bool c = raw[32] == 1'b1;
+  Bool v = ((a ^ r) & (b ^ r) & 32'h80000000) != 0;
+  return Arith { r: r, c: c, v: v };
+endfunction
+
+function Arith subArith(Word a, Word b);
+  Word r = a - b;
+  Bool c = a < b;                                  // borrow
+  Bool v = ((a ^ b) & (a ^ r) & 32'h80000000) != 0;
+  return Arith { r: r, c: c, v: v };
+endfunction
+
+// p. 3-34: C is set when the unsigned product overflows the destination's
+// width, V when the signed product does; the stored product is the low
+// 32 bits, truncated again by the store.
+function Arith mulArith(Word a, Word b, Word sizeBytes);
+  Bit#(64) up = zeroExtend(a) * zeroExtend(b);
+  Int#(64) sa = unpack(signExtend(a));
+  Int#(64) sb = unpack(signExtend(b));
+  Int#(64) sp = sa * sb;
+  Bit#(6) bits = truncate(sizeBytes << 3);
+  Bit#(64) umax = (64'd1 << bits) - 1;
+  Int#(64) smax = unpack((64'd1 << (bits - 1)) - 1);
+  Int#(64) smin = -unpack(64'd1 << (bits - 1));
+  return Arith { r: truncate(up),
+                 c: up > umax,
+                 v: (sp > smax) || (sp < smin) };
+endfunction
+
+// Two's-complement division truncating toward zero, remainder carrying the
+// dividend's sign (p. 3-17, p. 3-39; the rounding rule is a named choice in
+// sem/README.md).  `ovf` is the 0x80000000 / -1 case (p. 3-17).
+function Tuple3#(Word, Word, Bool) divSigned(Word a, Word b);
+  Int#(64) x = unpack(signExtend(a));
+  Int#(64) y = unpack(signExtend(b));
+  Int#(64) ax = (x < 0) ? -x : x;
+  Int#(64) ay = (y < 0) ? -y : y;
+  Int#(64) q = ax / ay;
+  if ((x < 0) != (y < 0)) q = -q;
+  Int#(64) r = x - q * y;
+  Bool ovf = (a == 32'h80000000) && (b == 32'hFFFFFFFF);
+  return tuple3(truncate(pack(q)), truncate(pack(r)), ovf);
+endfunction
+
+// --- operand classes -------------------------------------------------
+
+// True for every mode whose instruction field is a stack offset: 0x4-0x7
+// and 0x8-0xB (direct and indirect byte/half), 0xD and 0xE (word).
+function Bool modeIsSpRel(OpMode m) =
+  ((m >= 4'h4) && (m <= 4'hB)) || (m == 4'hD) || (m == 4'hE);
+
+function Bool signedGt(Word a, Word b);
+  Int#(32) x = unpack(a);
+  Int#(32) y = unpack(b);
+  return x > y;
+endfunction
+
+// The source operand is read as a value (everything but the flow
+// instructions, the stack class, and MOVA/LDRAA, which want an address).
+function Bool opReadsSrc(HobbitOp op);
+  case (op)
+    OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN,
+    OP_RETURN, OP_ENTER, OP_CATCH, OP_POPN, OP_NOP,
+    OP_MOVA, OP_LDRAA, OP_KCALL: return False;
+    default: return True;
+  endcase
+endfunction
+
+// The destination-field operand is read as a value (the second operand of
+// a compare, or the addend/minuend of a two-operand arithmetic form).
+function Bool opReadsDst(HobbitOp op);
+  case (op)
+    OP_ADD, OP_ADD3, OP_SUB, OP_SUB3, OP_AND, OP_AND3, OP_OR, OP_OR3,
+    OP_XOR, OP_XOR3, OP_CMPEQ, OP_CMPGT, OP_CMPHI, OP_SHL, OP_SHL3,
+    OP_SHR, OP_SHR3, OP_USHR, OP_USHR3, OP_MUL, OP_MUL3, OP_DIV, OP_DIV3,
+    OP_REM, OP_REM3, OP_UDIV, OP_UREM, OP_TADD, OP_TSUB: return True;
+    default: return False;
+  endcase
+endfunction
+
+// The instruction leaves a value in the destination-field operand's
+// location (its own operand, not the accumulator).
+function Bool opWritesDst(HobbitOp op);
+  case (op)
+    OP_MOV, OP_ADD, OP_SUB, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_SHR,
+    OP_USHR, OP_MUL, OP_DIV, OP_REM, OP_UDIV, OP_UREM,
+    OP_TADD, OP_TSUB, OP_MOVA: return True;
+    default: return False;
+  endcase
+endfunction
+
+// The address of the source operand (MOVA/LDRAA), not its value.
+function Bool opNeedsSrcEa(HobbitOp op) =
+  (op == OP_MOVA) || (op == OP_LDRAA);
 
 // The flag a folded branch must test.  A compare folded together with
 // its branch produces the new PSW.F in the same instruction, so the
@@ -159,6 +305,7 @@ function Bool flagAfterOp(HobbitOp op, Word srcV, Word dstV, Bool oldFlag);
   case (op)
     OP_CMPEQ: return srcV == dstV;
     OP_CMPGT: return signedGtW(srcV, dstV);
+    OP_CMPHI: return srcV > dstV;                // unsigned (p. 3-13)
     default:  return oldFlag;
   endcase
 endfunction
@@ -166,19 +313,32 @@ endfunction
 // ---------------------------------------------------------------------
 // EU_S1: fetch, operand read and the bypass network.
 // ---------------------------------------------------------------------
+// One resolved operand: value, effective address, containing word, and
+// whether the read was captured (stack-cache hit) or faulted.
+typedef struct {
+  Word val;
+  Word ea;
+  Word word;
+  Bool ok;
+  Bool bad;
+} OpRead deriving (Bits);
+
 typedef struct {
   DecInstEntry e;
   Word   pc;
   Word   spBefore;
   Word   mspBefore;
   Word   srcVal;
+  Word   srcEa;
   Word   dstVal;
+  Word   dstEa;
+  Word   dstWord;      // the word the destination operand lives in
   Word   retPc;
   Word   base;
   Word   nextPc;       // predicted next PC
   Bit#(4) sinceCmp;    // issue distance from the last compare
   Word   extra;        // table extras beyond the pipeline slot
-  Bool   operandMiss;
+  Bool   bad;          // operand resolution found an alignment fault
 } EuS1Out deriving (Bits);
 
 // One bypass source: the instruction in EU_S2 or EU_S3.
@@ -249,36 +409,66 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     return (a >= spb) && (a < mspb) && (a < sc.fillWatermark());
   endfunction
 
-  // Operand read with the p. 1-1 "operand bypass mechanism": the
-  // youngest in-flight writer wins, then the committed stack cache.
-  function Tuple2#(Word, Bool) readOp(Operand o, Word spb, Word mspb);
-    if (o.kind == OK_IMM)
-      return tuple2(o.val, True);
-    else begin
-      Word a = (o.kind == OK_STACK) ? spb + o.val : o.val;
-      if (byS2.we && (byS2.addr == a))
-        return tuple2(byS2.data, True);
-      else if (byS3.we && (byS3.addr == a))
-        return tuple2(byS3.data, True);
-      else
-        return tuple2(sc.read(a, spb, mspb), inCache(a, spb, mspb));
+  // A word read with the p. 1-1 "operand bypass mechanism": the youngest
+  // in-flight writer wins, then the committed stack cache.  `wa` is a word
+  // address, so a byte store and a later byte load of the same word meet.
+  function Tuple2#(Word, Bool) readWord(Word wa, Word spb, Word mspb);
+    if (byS2.we && (byS2.addr == wa))
+      return tuple2(byS2.data, True);
+    else if (byS3.we && (byS3.addr == wa))
+      return tuple2(byS3.data, True);
+    else
+      return tuple2(sc.read(wa, spb, mspb), inCache(wa, spb, mspb));
+  endfunction
+
+  // The second read port ("64x32x2", Figure 1-1, p. 1-2): the destination
+  // operand's word, read in the same cycle as the source's.
+  function Tuple2#(Word, Bool) readWord2(Word wa, Word spb, Word mspb);
+    if (byS2.we && (byS2.addr == wa))
+      return tuple2(byS2.data, True);
+    else if (byS3.we && (byS3.addr == wa))
+      return tuple2(byS3.data, True);
+    else
+      return tuple2(sc.read2(wa, spb, mspb), inCache(wa, spb, mspb));
+  endfunction
+
+  // Resolve one Table 1-21 operand (p. 1-25) on the first stack-cache read
+  // port: the effective address, the containing word and the
+  // width-extended value.  `bad` reports a misaligned half-word or word
+  // access (p. 1-4).  One call site, one port: the destination uses
+  // operandB() and the second port.
+  function OpRead operandA(Operand o, Word spb, Word mspb);
+    if (modeIsImm(o.mode)) begin
+      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+    end else begin
+      Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
+      Word sz = modeSize(o.mode);
+      Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
+                 ((sz == 2) && ((a & 1) != 0));
+      match { .w, .h } = readWord(a & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: extendLoad(w, a, sz, modeSigned(o.mode)),
+                      ea: a, word: w, ok: h, bad: bad };
     end
   endfunction
 
-  function Word opAddr(Operand o, Word spb) =
-    (o.kind == OK_STACK) ? spb + o.val : o.val;
+  function OpRead operandB(Operand o, Word spb, Word mspb);
+    if (modeIsImm(o.mode)) begin
+      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+    end else begin
+      Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
+      Word sz = modeSize(o.mode);
+      Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
+                 ((sz == 2) && ((a & 1) != 0));
+      match { .w, .h } = readWord2(a & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: extendLoad(w, a, sz, modeSigned(o.mode)),
+                      ea: a, word: w, ok: h, bad: bad };
+    end
+  endfunction
 
-  function Bool needsSrc(HobbitOp op) =
-    op == OP_MOV || op == OP_ADD || op == OP_SUB || op == OP_ADD3 ||
-    op == OP_CMPEQ || op == OP_CMPGT || op == OP_SHL3 || op == OP_SHR3;
-
-  function Bool needsDst(HobbitOp op) =
-    op == OP_ADD || op == OP_SUB || op == OP_ADD3 ||
-    op == OP_CMPEQ || op == OP_CMPGT || op == OP_SHL3 || op == OP_SHR3;
 
   function EuS1Out mkOut(DecInstEntry e, Word pc, Word spb, Word mspb,
-                         Word srcV, Word dstV, Word retPc,
-                         Bool miss, Bit#(4) dcmp);
+                         Word srcV, Word srcEa, Word dstV, Word dstEa,
+                         Word dstW, Word retPc, Bool bad, Bit#(4) dcmp);
     let d = e.d;
     Word base = pc + plenBytes(d.plen);
     // A conditional jump issued three or more instructions after its
@@ -292,9 +482,11 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     Bool takenGuess = isCondJumpOp(d.op) ? predictedTaken(d.op) : False;
     Word extra = extraCycles(e, spb, mspb, mcyc, takenGuess, dcmp);
     return EuS1Out { e: e, pc: pc, spBefore: spb, mspBefore: mspb,
-                     srcVal: srcV, dstVal: dstV, retPc: retPc,
+                     srcVal: srcV, srcEa: srcEa,
+                     dstVal: dstV, dstEa: dstEa, dstWord: dstW,
+                     retPc: retPc,
                      base: base, nextPc: npc, sinceCmp: dcmp,
-                     extra: extra, operandMiss: miss };
+                     extra: extra, bad: bad };
   endfunction
 
   function EuS1Out curOut();
@@ -307,31 +499,43 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Word spb = fwdSp();
       Word mspb = fwdMsp();
       Word srcV = 0;
+      Word srcEa = 0;
       Word dstV = 0;
+      Word dstEa = 0;
+      Word dstW = 0;
       Word retPc = 0;
-      Bool miss = False;
+      Bool bad = False;
       if (d.tr == TR_NONE) begin
-        if (needsSrc(d.op)) begin
-          match { .v, .h } = readOp(d.src, spb, mspb);
-          srcV = v; miss = miss || !h;
+        // The first read port carries the source operand.  KCALL's Table
+        // 3-2 word32 operand (p. 3-4) is the same operand: mode 0xD means
+        // "the stack-offset address itself", so it is presented as an
+        // immediate, which needs no read.  RETURN's new PC is its word
+        // stack offset read as a word, so it is the source value too
+        // (p. 3-40).
+        Operand so = d.src;
+        if ((d.op == OP_KCALL) && (so.mode == 4'hD))
+          so = Operand { mode: 4'hF, val: spb + so.val };
+        if (opReadsSrc(d.op) || (d.op == OP_KCALL) || (d.op == OP_RETURN)) begin
+          let r = operandA(so, spb, mspb);
+          srcV = r.val; srcEa = r.ea; bad = bad || r.bad;
+          if (d.op == OP_RETURN) retPc = r.val;
+        end else if (opNeedsSrcEa(d.op)) begin
+          // MOVA/LDRAA need the source *address* (p. 3-31, p. 3-33).
+          let r = operandA(so, spb, mspb);
+          srcEa = r.ea; bad = bad || r.bad;
         end
-        if (needsDst(d.op)) begin
-          match { .v, .h } = readOp(d.dst, spb, mspb);
-          dstV = v; miss = miss || !h;
-        end
-        if (d.op == OP_RETURN) begin
-          Word a = spb + d.src.val;
-          if (byS2.we && (byS2.addr == a)) begin
-            retPc = byS2.data;
-          end else if (byS3.we && (byS3.addr == a)) begin
-            retPc = byS3.data;
-          end else begin
-            retPc = sc.read(a, spb, mspb);
-            miss = miss || !inCache(a, spb, mspb);
-          end
+        if (opReadsDst(d.op)) begin
+          let r = operandB(d.dst, spb, mspb);
+          dstV = r.val; dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
+        end else if (opWritesDst(d.op)) begin
+          // A store needs the containing word to merge byte and half-word
+          // lanes (p. 1-4); the loaded value is unused.
+          let r = operandB(d.dst, spb, mspb);
+          dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
         end
       end
-      return mkOut(e, pcR, spb, mspb, srcV, dstV, retPc, miss, sinceCmp);
+      return mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
+                   retPc, bad, sinceCmp);
     end
   endfunction
 
@@ -434,11 +638,16 @@ typedef struct {
   Word   redirectPc;
   Word   occ;
   Bit#(4) sinceCmp;
-  Bool   flagValid;
+  Bool   flagValid;    // the instruction writes PSW.F itself
   Bool   flagValue;
+  PswUpdate pswUpd;    // the instruction's C/V/F write (Table 1-8)
   Bool   foldMis;      // compare-host folded branch mispredicted
   Word   foldRedirect;
   ScCmd  cmd;
+  Bool   fatal;        // alignment fault or divide by zero: no record
+  Bool   divZero;      // the fatal case is the p. 3-17 zero divide
+  Bool   kcall;        // KCALL: frame tail and ISP at commit
+  Word   kframe;       // KCALL's frame base (ISP before)
 } EuS2Out deriving (Bits);
 
 interface HobbitEuS2;
@@ -457,7 +666,8 @@ interface HobbitEuS2;
   method Action flush();
 endinterface
 
-module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
+module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
+                     HobbitEvents events)(HobbitEuS2);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.
   //
@@ -480,35 +690,67 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
   FIFOF#(Token) f_reset_rsps <- mkFIFOF;
 
   function Word opAddr2(Operand o, Word spb) =
-    (o.kind == OK_STACK) ? spb + o.val : o.val;
+    modeIsSpRel(o.mode) ? spb + o.val : o.val;
 
-  function WrInfo writeInfoOf(EuS1Out i);
-    let d = i.e.d;
-    if (d.tr != TR_NONE)
-      return WrInfo { we: True, addr: i.spBefore, data: d.pc };
-    else case (d.op)
-      OP_MOV:  return WrInfo { we: True, addr: opAddr2(d.dst, i.spBefore),
-                               data: i.srcVal };
-      OP_ADD:  return WrInfo { we: True, addr: opAddr2(d.dst, i.spBefore),
-                               data: i.dstVal + i.srcVal };
-      OP_SUB:  return WrInfo { we: True, addr: opAddr2(d.dst, i.spBefore),
-                               data: i.dstVal - i.srcVal };
-      OP_ADD3: return WrInfo { we: True, addr: i.spBefore + 4,
-                               data: i.dstVal + i.srcVal };
-      // pp. 3-41, 3-42: SHL3/SHR3 leave the destination unchanged and
-      // place the result in the accumulator, the word at CSP+4 (p. 1-7,
-      // Figure 1-4).  Only the low five bits of the source are the count.
-      OP_SHL3: return WrInfo { we: True, addr: i.spBefore + 4,
-                               data: shlWord(i.dstVal, i.srcVal) };
-      OP_SHR3: return WrInfo { we: True, addr: i.spBefore + 4,
-                               data: sarWord(i.dstVal, i.srcVal) };
-      // p. 3-33: MOVA stores the address of the source operand, computed
-      // as a stack offset for the one-parcel stk5,stk5 form.
-      OP_MOVA: return WrInfo { we: True, addr: opAddr2(d.dst, i.spBefore),
-                               data: opAddr2(d.src, i.spBefore) };
-      OP_CALL: return WrInfo { we: True, addr: i.spBefore, data: i.base };
-      default: return WrInfo { we: False, addr: 0, data: 0 };
+  // The width of the destination operand's access (p. 1-28); an immediate
+  // destination has no width of its own.
+  function Word dstBytes(Operand o) = modeIsImm(o.mode) ? 4 : modeSize(o.mode);
+
+  // Two's-complement division truncating toward zero, remainder carrying
+  // the dividend's sign (pp. 3-17, 3-39).  A zero divisor is the
+  // divide-by-zero exception and never reaches here (the caller sets
+  // `fatal`); the guard keeps the division out of the datapath.
+  function Word divQ(Word a, Word b);
+    if (b == 0) begin
+      return 0;
+    end else begin
+      match { .q, .r, .o } = divSigned(a, b);
+      return q;
+    end
+  endfunction
+  function Word divR(Word a, Word b);
+    if (b == 0) begin
+      return 0;
+    end else begin
+      match { .q, .r, .o } = divSigned(a, b);
+      return r;
+    end
+  endfunction
+
+  // The value an instruction leaves in its destination location.
+  function Word aluWord(HobbitOp op, Word src, Word dst);
+    case (op)
+      OP_MOV:  return src;
+      OP_ADD, OP_ADD3, OP_TADD: return dst + src;
+      OP_SUB, OP_SUB3, OP_TSUB: return dst - src;
+      OP_AND, OP_AND3: return dst & src;
+      OP_OR,  OP_OR3:  return dst | src;
+      OP_XOR, OP_XOR3: return dst ^ src;
+      OP_SHL, OP_SHL3: return shlWord(dst, src);
+      OP_SHR, OP_SHR3: return sarWord(dst, src);
+      OP_USHR, OP_USHR3: return ushrWord(dst, src);
+      OP_MUL, OP_MUL3: return dst * src;
+      OP_DIV, OP_DIV3: return divQ(dst, src);
+      OP_REM, OP_REM3: return divR(dst, src);
+      OP_UDIV: return (src == 0) ? 0 : (dst / src);
+      OP_UREM: return (src == 0) ? 0 : (dst % src);
+      default: return 0;
     endcase
+  endfunction
+
+  function WrInfo accWr(Word spb, Word res) =
+    WrInfo { we: True, addr: (spb + 4) & 32'hFFFFFFFC, data: res,
+             mask: 8'h0F, wdata: res };
+
+  // A store to the destination operand: the record's data is the value in
+  // its byte lanes with the byte marks of the access, and the word the
+  // stack cache keeps merges those lanes into the containing word.
+  function WrInfo memWr(EuS1Out i, Word res);
+    Word sz = dstBytes(i.e.d.dst);
+    Word a  = i.dstEa;
+    return WrInfo { we: True, addr: a & 32'hFFFFFFFC,
+                    data: laneData(res, a, sz), mask: storeMask(a, sz),
+                    wdata: mergeStore(i.dstWord, res, a, sz) };
   endfunction
 
   function BoxOp boxOpOf(HobbitOp op);
@@ -525,8 +767,8 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
     let d = i.e.d;
     case (d.op)
       OP_ENTER:  return enterTarget(d, i.spBefore);
-      OP_CATCH:  return (d.src.kind == OK_STACK) ? i.spBefore + d.src.val
-                                                 : d.src.val;
+      OP_CATCH:  return modeIsStack(d.src.mode) ? i.spBefore + d.src.val
+                                                : d.src.val;
       OP_POPN:   return d.src.val;
       OP_RETURN: return d.src.val;
       default:   return 0;
@@ -551,7 +793,101 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
     Bool flagNew = flagAfterOp(d.op, i.srcVal, i.dstVal, (psw[4] == 1'b1));
     SpMsp after = trap ? SpMsp { sp: i.spBefore, msp: i.mspBefore }
                        : archAfterSpMsp(d, i.spBefore, i.mspBefore);
-    WrInfo wr = writeInfoOf(i);
+
+    // ---- the result and the PSW write (pp. 3-5..3-51) ----------------
+    Word src = i.srcVal;
+    Word dst = i.dstVal;
+    Word sz  = dstBytes(d.dst);
+    Word res = 0;
+    PswUpdate pu = noPswUpd();
+    Bool store = True;
+    Bool fatal = i.bad;
+    Bool divZero = False;
+    Bool hasTag = False;
+
+    case (d.op)
+      OP_MOV: res = src;
+      OP_ADD, OP_ADD3: begin
+        let a = addArith(dst, src); res = a.r; pu = pswCV(a.c, a.v);
+      end
+      OP_SUB, OP_SUB3: begin
+        let a = subArith(dst, src); res = a.r; pu = pswCV(a.c, a.v);
+      end
+      OP_AND, OP_AND3: res = dst & src;
+      OP_OR,  OP_OR3:  res = dst | src;
+      OP_XOR, OP_XOR3: res = dst ^ src;
+      OP_CMPEQ: begin pu = pswF(src == dst); store = False; end
+      OP_CMPGT: begin pu = pswF(signedGt(src, dst)); store = False; end
+      OP_CMPHI: begin pu = pswF(src > dst); store = False; end
+      OP_SHL, OP_SHL3:   res = shlWord(dst, src);
+      OP_SHR, OP_SHR3:   res = sarWord(dst, src);
+      OP_USHR, OP_USHR3: res = ushrWord(dst, src);
+      OP_MUL, OP_MUL3: begin
+        let a = mulArith(dst, src, (d.op == OP_MUL3) ? 4 : sz);
+        res = a.r; pu = pswCV(a.c, a.v);
+      end
+      OP_DIV, OP_DIV3: begin
+        if (src == 0) begin fatal = True; divZero = True; end
+        res = divQ(dst, src);
+        pu = pswCVKeepC((dst == 32'h80000000) && (src == 32'hFFFFFFFF));
+      end
+      OP_REM, OP_REM3: begin
+        if (src == 0) begin fatal = True; divZero = True; end
+        res = divR(dst, src);
+        pu = pswCVKeepC(False);              // V always cleared, C unchanged
+      end
+      OP_UDIV: begin
+        if (src == 0) begin fatal = True; divZero = True; end
+        res = (src == 0) ? 0 : (dst / src);
+        pu = pswCKeepV(False);               // C cleared, V unchanged
+      end
+      OP_UREM: begin
+        if (src == 0) begin fatal = True; divZero = True; end
+        res = (src == 0) ? 0 : (dst % src);
+        pu = pswCKeepV(False);
+      end
+      OP_TADD, OP_TSUB: begin
+        hasTag = ((src | dst) & 3) != 0;
+        let a = (d.op == OP_TADD) ? addArith(dst, src) : subArith(dst, src);
+        res = a.r;
+        if (hasTag) begin
+          pu = pswF(True);                   // tagged: F=1, no store, C/V kept
+          store = False;
+        end else begin
+          pu = pswF(a.v);
+          store = !a.v;                      // store only when F = 0
+        end
+      end
+      OP_MOVA:  res = i.srcEa;
+      OP_LDRAA: res = i.srcEa;               // Acc = &dst (p. 3-31)
+      OP_KCALL: begin
+        res = src;
+        // PSW = PSW & 0xFFFF0000 (p. 3-29): kernel level, ISP as CSP,
+        // tracing and interrupts inhibited.
+        pu = PswUpdate { we: True, mask: 32'h0000FFFF, value: 0 };
+      end
+      default: store = False;
+    endcase
+
+    // ---- the one architectural write --------------------------------
+    WrInfo wr = noWr();
+    if (trap)
+      wr = WrInfo { we: True, addr: i.spBefore & 32'hFFFFFFFC, data: d.pc,
+                    mask: 8'h0F, wdata: d.pc };
+    else if (d.op == OP_KCALL)
+      wr = WrInfo { we: True, addr: (events.isp() - 12) & 32'hFFFFFFFC,
+                    data: src, mask: 8'h0F, wdata: src };
+    else if (isAccOp(d.op))
+      wr = accWr(i.spBefore, res);
+    else if (d.op == OP_CALL)
+      wr = WrInfo { we: True, addr: i.spBefore & 32'hFFFFFFFC, data: i.base,
+                    mask: 8'h0F, wdata: i.base };
+    else if (opWritesDst(d.op) && store) begin
+      if (modeIsImm(d.dst.mode))
+        fatal = True;                        // store to an immediate: illegal
+      else
+        wr = memWr(i, res);
+    end
 
     // Branch resolution in this stage: RETURN's indirect target and a
     // conditional jump two instructions after its compare.
@@ -562,7 +898,11 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
     Word foldRedirR = 0;
 
     if (!trap) begin
-      if (d.op == OP_RETURN) begin
+      if (d.op == OP_KCALL) begin
+        // PC = *(VB+0) (p. 3-29); the frame and ISP are handled at commit.
+        squashR   = True;
+        redirectR = events.memRead(vb);
+      end else if (d.op == OP_RETURN) begin
         squashR   = True;
         redirectR = i.retPc;
       end else if (isCondJumpOp(d.op) && !d.fold) begin
@@ -587,12 +927,12 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
       end
     end
 
-    ScCmd cmd = ScCmd { op: trap ? BX_NONE : boxOpOf(d.op),
-                        we: wr.we, waddr: wr.addr, wdata: wr.data,
+    ScCmd cmd = ScCmd { op: (trap || fatal) ? BX_NONE : boxOpOf(d.op),
+                        we: wr.we, waddr: wr.addr, wdata: wr.wdata,
                         spBefore: i.spBefore, mspBefore: i.mspBefore,
                         spAfter: after.sp, mspAfter: after.msp,
                         target: stackTarget(i),
-                        stackMode: (d.src.kind == OK_STACK) };
+                        stackMode: modeIsStack(d.src.mode) };
 
     outD <= EuS2Out { e: e, pc: i.pc,
                       spBefore: i.spBefore, mspBefore: i.mspBefore,
@@ -600,9 +940,13 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
                       base: i.base, wr: wr, nextPc: i.nextPc,
                       squash: squashR, redirectPc: redirectR,
                       occ: occ, sinceCmp: i.sinceCmp,
-                      flagValid: cmp, flagValue: flagNew,
+                      flagValid: cmp, flagValue: flagNew, pswUpd: pu,
                       foldMis: foldMisR, foldRedirect: foldRedirR,
-                      cmd: cmd };
+                      cmd: cmd,
+                      fatal: fatal && !trap,
+                      divZero: divZero,
+                      kcall: (d.op == OP_KCALL) && !trap && !fatal,
+                      kframe: events.isp() };
     outFull <= True;
     inFull  <= False;
    end
@@ -635,7 +979,7 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
     else begin
       let o = outD;
       return EuBypass { valid: True, we: o.wr.we,
-                        addr: o.wr.addr, data: o.wr.data,
+                        addr: o.wr.addr, data: o.wr.wdata,
                         changesSp: isSpOp(o.e.d.op),
                         spAfter: o.spAfter,
                         changesMsp: isSpOp(o.e.d.op),
@@ -668,7 +1012,11 @@ interface HobbitEuS3;
   method Action deq();
   method Bool occupied();
   method Bool pswF();
-  method Maybe#(Bool) flagWrite();
+  method Maybe#(PswUpdate) pswWrite();
+  // True while a KCALL frame word is still to be written; the orchestrator
+  // holds the pipeline until it drains, so younger instructions cannot read
+  // a half-written frame.
+  method Bool framePending();
   method Bool trapPending();
   method TrapReason trapReason();
   method Word trapPc();
@@ -687,7 +1035,7 @@ interface HobbitEuS3;
 endinterface
 
 module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
-                     Bool eventsOn)(HobbitEuS3);
+                     HobbitEvents events, Bool eventsOn)(HobbitEuS3);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.  The HRI record is the trace port
   // (Flute's g_pc_trace analogue), not datapath.
@@ -712,14 +1060,24 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   Reg#(Parcel) trapInsn0R <- mkReg(0);
   Reg#(Bool) trapNiladicR <- mkReg(False);
 
-  // The compare's flag write and an event's pipeline flush are one-cycle
+  // The instruction's PSW write and an event's pipeline flush are one-cycle
   // wires so the core's PSW rule sees them in the commit cycle, and the
   // commit rule can be blocked in the flush cycle.
-  Wire#(Maybe#(Bool)) flagWW <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(PswUpdate)) flagWW <- mkDWire(tagged Invalid);
   Wire#(Bool) flushW <- mkDWire(False);
 
   // A folded branch record follows its host in the trace.
   Reg#(Maybe#(Hri)) pendFold <- mkReg(tagged Invalid);
+
+  // KCALL's frame tail (return PC at ISP-8, PSW at ISP-4; p. 3-29).  The
+  // box has one command per cycle, so the two words leave in the two
+  // following cycles; `framePending` holds the pipeline until they do.
+  Reg#(Bool) fq0v <- mkReg(False);
+  Reg#(Word) fq0a <- mkReg(0);
+  Reg#(Word) fq0d <- mkReg(0);
+  Reg#(Bool) fq1v <- mkReg(False);
+  Reg#(Word) fq1a <- mkReg(0);
+  Reg#(Word) fq1d <- mkReg(0);
 
   FIFOF#(Token) f_reset_reqs <- mkFIFOF;
   FIFOF#(Token) f_reset_rsps <- mkFIFOF;
@@ -776,7 +1134,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                  msp_before: o.mspBefore, msp_after: o.mspAfter,
                  mem_we: o.wr.we, mem_addr: o.wr.addr,
                  mem_wdata: o.wr.data,
-                 mem_wmask: o.wr.we ? 8'h0F : 8'h00,
+                 mem_wmask: o.wr.we ? o.wr.mask : 8'h00,
                  trap: (d.tr != TR_NONE), cyc: cyc };
   endfunction
 
@@ -796,6 +1154,22 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end else if (inFull) begin
       let o = inD;
       let d = o.e.d;
+      if (o.fatal) begin
+        // A fault the printed architecture raises as an exception (a
+        // misaligned operand, pp. 1-4/1-27, or a zero divide, p. 3-17)
+        // has no retirement record in this model: like the sem's Refusal
+        // it stops the run loudly, and no architectural write happens.
+        inFull   <= False;
+        haltR    <= True;
+        faultedR <= True;
+        faultPcR <= d.pc;
+        if (o.divZero)
+          $fwrite(stderr, "TRAP pc=0x%08x: divide by zero (p. 3-17)\n", d.pc);
+        else
+          $fwrite(stderr,
+                  "TRAP pc=0x%08x: misaligned operand (p. 1-4, p. 1-27)\n",
+                  d.pc);
+      end else begin
       // A jump resolved in this stage pays the two squashed slots
       // (Table 4-35's 3) on its own record.  A folded branch's cost is
       // the branch record's, which foldRecord carries; the host keeps its
@@ -806,10 +1180,21 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
       traceQ.enq(hostRecord(o, occ));
       if (d.fold)
         pendFold <= tagged Valid (foldRecord(o, foldMispredicted(o) ? 3 : 0));
-      if (o.flagValid) flagWW <= tagged Valid o.flagValue;
+      if (o.pswUpd.we) flagWW <= tagged Valid o.pswUpd;
       ninstr <= ninstr + 1;
       if (d.fold) nfold <= nfold + 1;
       lastPcR <= d.pc;
+      if (o.kcall) begin
+        // The frame's remaining two words (p. 3-29) and ISP -= 16.  The
+        // orchestrator holds the pipeline while they drain.
+        fq0v <= True;
+        fq0a <= (o.kframe - 8) & 32'hFFFFFFFC;
+        fq0d <= o.nextPc;                       // return PC
+        fq1v <= True;
+        fq1a <= (o.kframe - 4) & 32'hFFFFFFFC;
+        fq1d <= psw;                            // PSW before the call
+        events.setIsp((o.kframe - 16) & 32'hFFFFFFF0);
+      end
       if (d.tr != TR_NONE && eventsOn) begin
         // A trap has no architectural write and must not move SP/MSP;
         // noScCmd() carries zero pointers, so keep the before values.
@@ -837,6 +1222,42 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
           $fwrite(stderr, "TRAP pc=0x%08x: %s\n", d.pc, trapText(d.tr));
         end
       end
+      end
+    end
+  endrule
+
+  // One KCALL frame word per clock through the box's single command port.
+  // The guard requires the commit slot to be empty, so a retiring
+  // instruction's own command and a frame word never race for the port.
+  rule drainFrame (!inFull && !flushW && !haltR &&
+                   (fq0v || fq1v) && !isValid(pendFold));
+    if (fq0v) begin
+      ScCmd k = noScCmd();
+      k.op     = BX_WRITE;
+      k.we     = True;
+      k.waddr  = fq0a;
+      k.wdata  = fq0d;
+      k.spBefore  = sc.sp;
+      k.mspBefore = sc.msp;
+      k.spAfter   = sc.sp;
+      k.mspAfter  = sc.msp;
+      sc.commit(k);
+      fq0v <= fq1v;
+      fq0a <= fq1a;
+      fq0d <= fq1d;
+      fq1v <= False;
+    end else begin
+      ScCmd k = noScCmd();
+      k.op     = BX_WRITE;
+      k.we     = True;
+      k.waddr  = fq1a;
+      k.wdata  = fq1d;
+      k.spBefore  = sc.sp;
+      k.mspBefore = sc.msp;
+      k.spAfter   = sc.sp;
+      k.mspAfter  = sc.msp;
+      sc.commit(k);
+      fq1v <= False;
     end
   endrule
 
@@ -849,6 +1270,8 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     haltR    <= False;
     pendFold <= tagged Invalid;
     inFull   <= False;
+    fq0v <= False;
+    fq1v <= False;
     trapPendR <= False;
     trapReasonR <= TR_NONE;
     trapPcR <= 0;
@@ -889,7 +1312,8 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   method Hri out() = traceQ.first;
   method Action deq() = traceQ.deq;
   method Bool pswF() = (psw[4] == 1'b1);
-  method Maybe#(Bool) flagWrite() = flagWW;
+  method Maybe#(PswUpdate) pswWrite() = flagWW;
+  method Bool framePending() = fq0v || fq1v;
   method Bool trapPending() = trapPendR;
   method TrapReason trapReason() = trapReasonR;
   method Word trapPc() = trapPcR;
@@ -908,7 +1332,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     else begin
       let o = inD;
       return EuBypass { valid: True, we: o.wr.we,
-                        addr: o.wr.addr, data: o.wr.data,
+                        addr: o.wr.addr, data: o.wr.wdata,
                         changesSp: isSpOp(o.e.d.op),
                         spAfter: o.spAfter,
                         changesMsp: isSpOp(o.e.d.op),
@@ -974,8 +1398,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   // Instantiate the stages downstream-first so the bypass and flag
   // expressions can be passed as Flute passes stage2.out.bypass.
-  HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, eventsOn);
-  HobbitEuS2 s2 <- mkHobbitEuS2(pswR);
+  HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn);
+  HobbitEuS2 s2 <- mkHobbitEuS2(pswR, vbR, events);
 
   // EU_S3 resolves the youngest misprediction (a jump right after its
   // compare); otherwise EU_S2's.
@@ -998,9 +1422,10 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
       pswR <= validValue(setPswW);
     else if (isValid(eventPswW))
       pswR <= validValue(eventPswW);
-    else if (isValid(s3.flagWrite()))
-      pswR <= (pswR & 32'hFFFFFFEF) |
-              (validValue(s3.flagWrite()) ? 32'h10 : 32'd0);
+    else if (isValid(s3.pswWrite())) begin
+      let u = validValue(s3.pswWrite());
+      pswR <= (pswR & ~u.mask) | (u.value & u.mask);
+    end
   endrule
 
   // ---- S1 -> S2, the squash redirect, and S2 -> S3 -------------------
@@ -1038,7 +1463,10 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     eventsOn && !eventActiveR &&
     (s3.trapPending() || dataFace.fault() || intWanted() || traceWanted());
 
-  rule deliver (!eventWanted() && !squash && s1.notEmpty && s2.canAccept);
+  // `!s3.framePending()` holds the pipeline while a KCALL's frame tail
+  // drains, so the vector handler cannot read a half-written frame.
+  rule deliver (!eventWanted() && !squash && !s3.framePending() &&
+                s1.notEmpty && s2.canAccept);
     s2.enq(s1.out);
     s1.deq;
   endrule

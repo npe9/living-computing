@@ -160,6 +160,23 @@ address, and the model records that write like any other.  `R4` in the
 manual's examples is stack offset 4 (the word above the PC-save slot at
 `CSP`), not a fifth register.
 
+**Stack fields are measured in two different units, and mixing them up
+silently addresses the wrong word.**  Printed p. 1-21 scales "five-bit
+offset values … by four" and the ten-bit PC-relative jump/call values by
+two; it scales nothing else.
+
+| field | unit | example |
+|---|---|---|
+| one-parcel `stk5`, `istk5`, `wai5` | word index, `× 4` (p. 1-21) | `SHL3 $4,R12` → field 3 → `SP+12` |
+| 3-parcel 16-bit `Roffset` (modes 0x4…0x7, 0x8…0xB, 0xD, 0xE) | **byte offset, unscaled** | `SHL R12,R8` → fields `0x000C`/`0x0008` → `SP+12`/`SP+8` |
+| 5-parcel 32-bit field | byte offset | — |
+| absolute (0x0…0x3, 0xC) | byte address | — |
+
+Register names are byte offsets: `R12` is `SP+12`, `R8` is `SP+8`, which
+is also why the 5-bit form of `R12` is 3.  Table 1-21's byte and
+half-word stack-offset modes exist precisely because the 16-bit fields
+address bytes; a word index there would make them unencodable.
+
 ## Instructions modelled
 
 The model covers exactly these mnemonics and forms.  Anything else is a

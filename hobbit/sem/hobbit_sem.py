@@ -1399,6 +1399,20 @@ def step(state: State,
                     _load(state, memory_reader, _wai5(src5)))
                 store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
                          result)
+            elif op == 0x0E:                          # AND3 imm5, stk5
+                # p. 3-7: the one-parcel encodings are 0x0E AND3 imm5,stk5
+                # and 0x0F AND stk5,stk5; "Acc = dst & src" and
+                # "dst &= src" with C, V and F unchanged.
+                mnemonic = "AND3"
+                result = (_load(state, memory_reader, _stk5(state, dst5))
+                          & _load(state, memory_reader, _imm5(src5)))
+                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                         result & MASK32)
+            elif op == 0x0F:                          # AND stk5, stk5
+                mnemonic = "AND"
+                result = (_load(state, memory_reader, _stk5(state, dst5))
+                          & _load(state, memory_reader, _stk5(state, src5)))
+                store = (_stk5(state, dst5), result & MASK32)
             elif op == 0x10:                          # CMPEQ imm5, stk5
                 mnemonic = "CMPEQ"
                 src1 = _load(state, memory_reader, _imm5(src5))
@@ -1783,6 +1797,57 @@ def step(state: State,
                     new_psw = ((new_psw & ~PSW_F) | (PSW_F if f else 0))
                     if not f:
                         store = (dst_op, result)
+
+            elif opcode in (0x21, 0x22, 0x24, 0x31, 0x32, 0x34):
+                # Bitwise OR/AND/XOR and their `[3]` forms: Tables 1-18 and
+                # 1-20 print 0x21 OR, 0x22 AND, 0x24 XOR, 0x31 OR3,
+                # 0x32 AND3, 0x34 XOR3; the pages print "dst |= src",
+                # "dst &= src", "dst ^= src" (p. 3-36 OR, p. 3-7 AND,
+                # p. 3-51 XOR) and the `[3]` forms write the accumulator
+                # instead (p. 3-1, p. 1-7).  C, V and F are unchanged.
+                mnemonic = {0x21: "OR", 0x22: "AND", 0x24: "XOR",
+                            0x31: "OR3", 0x32: "AND3", 0x34: "XOR3"}[opcode]
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                dst = _load(state, memory_reader, dst_op)
+                if opcode == 0x21 or opcode == 0x31:
+                    result = dst | src
+                elif opcode == 0x22 or opcode == 0x32:
+                    result = dst & src
+                else:
+                    result = dst ^ src
+                to_acc = opcode in (0x31, 0x32, 0x34)
+                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                          if to_acc else dst_op), result & MASK32)
+
+            elif opcode in (0x2C, 0x2D, 0x2E, 0x3C, 0x3D, 0x3E):
+                # Shifts: 0x2C SHR, 0x2D USHR, 0x2E SHL and their `[3]`
+                # forms 0x3C/0x3D/0x3E (Tables 1-18/1-20).  p. 3-41 SHL:
+                # "dst <<= Unsigned(src)", zeros fill; p. 3-42 SHR: the
+                # sign bit is copied into the vacated bits; p. 3-50 USHR:
+                # zeros fill.  Only the low-order five bits of the source
+                # select the count, and the `[3]` forms leave the
+                # destination unchanged and write the accumulator.
+                mnemonic = {0x2C: "SHR", 0x2D: "USHR", 0x2E: "SHL",
+                            0x3C: "SHR3", 0x3D: "USHR3", 0x3E: "SHL3"}[opcode]
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                count = _load(state, memory_reader, src_op) & 0x1F
+                value = _load(state, memory_reader, dst_op)
+                if opcode in (0x2E, 0x3E):              # SHL[3]
+                    result = (value << count) & MASK32
+                elif opcode in (0x2C, 0x3C):            # SHR[3], arithmetic
+                    result = (_sx(value & MASK32, 32) >> count) & MASK32
+                else:                                   # USHR[3], logical
+                    result = (value & MASK32) >> count
+                to_acc = opcode in (0x3C, 0x3D, 0x3E)
+                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                          if to_acc else dst_op), result & MASK32)
 
             elif opcode == 0x04:                        # MOVA
                 mnemonic = "MOVA"
