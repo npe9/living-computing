@@ -12,10 +12,10 @@ VCD counterexample, so the harness itself is not vacuous.
 
 | file | meaning |
 | --- | --- |
-| `gen_verilog.sh` | builds `build/fixed/mkPimPU.v` from the current BSV tree and `build/buggy/mkPimPU.v` with the fetched-operand regression; writes `formal_images/` |
+| `gen_verilog.sh` | builds `build/fixed/mkPimPUFormal.v` from the current BSV tree and `build/buggy/mkPimPUFormal.v` with the fetched-operand regression; writes `formal_images/` |
 | `pim_smoke_formal.v` | wrapper: reset/start, post-halt register scan, assertions |
-| `pim_smoke.sby` | BMC of `build/fixed/mkPimPU.v` |
-| `pim_smoke_bug.sby` | BMC of `build/buggy/mkPimPU.v` (expected FAIL) |
+| `pim_smoke.sby` | BMC of `build/fixed/mkPimPUFormal.v` |
+| `pim_smoke_bug.sby` | BMC of `build/buggy/mkPimPUFormal.v` (expected FAIL) |
 | `run_formal.sh` | regenerate and run both jobs, checking the expected outcomes |
 | `formal_images/` | truncated assembler images used by the capped memories |
 | `build/`, `pim_smoke/`, `pim_smoke_bug/` | generated; safe to delete |

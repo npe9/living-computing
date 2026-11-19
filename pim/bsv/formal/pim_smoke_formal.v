@@ -1,7 +1,7 @@
 // pim_smoke_formal.v -- riscv-formal style post-state check for the PIM/m PU.
 //
 // The DUT is the Verilog produced by
-//   bsc -verilog -g mkPimPU -p .:$BLUESPECDIR/Libraries -u PimPU.bsv
+//   bsc -verilog -g mkPimPUFormal -p .:$BLUESPECDIR/Libraries -u PimPUFormal.bsv
 // and is the same machine the Bluesim smoke test drives.  The wrapper
 // supplies reset and start, runs the machine freely, and once the E
 // stage reports halted/error it checks the architectural post-state
@@ -46,7 +46,7 @@ module pim_smoke_formal (input wire CLK);
   wire [5:0]  readReg_r;
   wire [15:0] readMem_a;
 
-  mkPimPU dut (
+  mkPimPUFormal dut (
     .CLK(CLK),
     .RST_N(RST_N),
     .EN_start(1'b1),

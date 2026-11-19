@@ -13,12 +13,12 @@ vcd on
 smtbmc yices
 
 [script]
-read_verilog -formal -sv pim_smoke_formal.v mkPimPU.v RegFileLoad.v
+read_verilog -formal -sv pim_smoke_formal.v mkPimPUFormal.v RegFileLoad.v
 prep -top pim_smoke_formal
 
 [files]
 pim_smoke_formal.v bsv/formal/pim_smoke_formal.v
-mkPimPU.v bsv/formal/build/buggy/mkPimPU.v
+mkPimPUFormal.v bsv/formal/build/buggy/mkPimPUFormal.v
 RegFileLoad.v bsv/RegFileLoad.v
 generated/decode.hex bsv/formal/formal_images/decode.hex
 generated/jump.hex bsv/formal/formal_images/jump.hex

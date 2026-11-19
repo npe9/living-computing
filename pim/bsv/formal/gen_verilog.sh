@@ -2,8 +2,8 @@
 # gen_verilog.sh -- build the two Verilog snapshots used by the formal
 # smoke check, from the current BSV tree in pim/bsv.
 #
-#   build/fixed/mkPimPU.v   current tree
-#   build/buggy/mkPimPU.v   same tree with the E-stage fetched-operand
+#   build/fixed/mkPimPUFormal.v   current tree
+#   build/buggy/mkPimPUFormal.v   same tree with the E-stage fetched-operand
 #                           regression reintroduced (see patch below)
 #
 # The formal wrapper (pim_smoke_formal.v) needs a small amount of
@@ -50,7 +50,7 @@ build_variant () {
   dir="build/$variant"
   rm -rf "$dir"
   mkdir -p "$dir"
-  for f in PimTypes PimStages PimALU PimE PimPU; do
+  for f in PimTypes PimStages PimALU PimE PimPU PimPUFormal; do
     cp "$SRC/$f.bsv" "$dir/"
   done
 
@@ -72,12 +72,12 @@ open(p, "w").write(s.replace(old, new))
 PY
   fi
 
-  ( cd "$dir" && "$BSC" -verilog -g mkPimPU \
-        -p ".:$BLUESPECDIR/Libraries" -u PimPU.bsv ) >/dev/null
+  ( cd "$dir" && "$BSC" -verilog -g mkPimPUFormal \
+        -p ".:$BLUESPECDIR/Libraries" -u PimPUFormal.bsv ) >/dev/null
 
   # Formal-only adaptation of the generated netlist.  Assert every
   # rewrite so a bsc output change cannot silently skip one.
-  python3 - "$dir/mkPimPU.v" <<'PY'
+  python3 - "$dir/mkPimPUFormal.v" <<'PY'
 import sys
 p = sys.argv[1]
 s = open(p).read()
@@ -109,4 +109,4 @@ for n in wcs decode jump; do
   head -16 "build/images/$n.hex" > formal_images/$n.hex
 done
 
-echo "built build/fixed/mkPimPU.v and build/buggy/mkPimPU.v"
+echo "built build/fixed/mkPimPUFormal.v and build/buggy/mkPimPUFormal.v"
