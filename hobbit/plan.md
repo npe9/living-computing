@@ -35,14 +35,22 @@ documented interfaces.
    Table 3-1 (printed pp. 3-1 to 3-2) lists 46 mnemonic entries,
    counting the accumulator (`[3]`) forms and the four conditional
    jumps as one entry each; that count is the coverage measure.
-3. Obtain a bit-exact oracle. The strongest available one is the
-   manual's own printed encoding tables (Tables 1-15 to 1-20, printed
-   pp. 1-22 to 1-25) plus the assembler syntax printed with each
-   instruction description and every control register; the assembler
-   must reproduce those bit patterns, and the disassembler must
-   reproduce the tables. An original AT&T toolchain or a Hobbit object
-   file from the BeOS DR4 disk images preserved by the BeBox community
-   would outrank the manual and is an acquisition target.
+3. Obtain a bit-exact oracle, in three tiers that must stay
+   distinguished. First, the manual's printed encoding tables
+   (Tables 1-15 to 1-20, printed pp. 1-22 to 1-25) plus the assembler
+   syntax printed with each instruction description and every control
+   register; the assembler must reproduce those bit patterns and the
+   disassembler the tables. Second, Bell Labs' own Plan 9 1st Edition
+   Hobbit toolchain, vendored in `tools/plan9-1e` with the provenance
+   and checksums in `tools/README.md`: `zl/optab.c` and `zl/asm.c` state
+   the encodings in code, and `tools/check_optab.py` already checks
+   them against Tables 1-18/1-20 (35 mnemonics, 0 mismatches) and the
+   mnemonics against Table 3-1 (45 of 46 entries; `CLRE` absent). It is
+   not AT&T Microelectronics' assembler, and the release ships no
+   `outcode`, so it constrains encoding, not syntax. Third, an original
+   AT&T toolchain or a Hobbit object file from the BeOS DR4 disk
+   images preserved by the BeBox community, which would outrank both and
+   remains the top acquisition target.
 4. Turn Chapter 4's execution times (Tables 4-1 to 4-5, printed
    pp. 4-3 to 4-5), its delay tables (Tables 4-6 to 4-9, printed
    pp. 4-6 to 4-7), and the branch-folding rules
@@ -57,7 +65,8 @@ documented interfaces.
    and five-parcel forms, smode/dmode, the `[3]` accumulator forms,
    `%SHAD` and the control-register `CPU` escape, and all addressing
    modes. Test round-trip and bit-exact agreement with the printed
-   encoding tables, plus malformed and truncated parcel streams.
+   encoding tables and with `tools/plan9-1e/sys/src/cmd/zl/optab.c`,
+   plus malformed and truncated parcel streams.
 2. Model the instruction supply as separate Bluespec modules — prefetch
    buffer cache, prefetch/decode unit, decoded instruction cache with
    next-PC and alternate-next-PC fields — and the execution unit as its

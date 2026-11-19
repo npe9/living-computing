@@ -35,10 +35,12 @@ mangles opcode tables (`5` for `S`, `0` for `O`).
 Each of these would outrank the vendor manuals for a claim the corpus
 cannot currently make, and each is an acquisition target:
 
-* the AT&T Hobbit assembler and linker documentation, and any surviving
-  object file (the BeOS DR4 disk images preserved by the BeBox
-  community are the likeliest source) — for a bit-exact toolchain
-  oracle;
+* AT&T Microelectronics' own assembler and linker documentation, and any
+  surviving object file (the BeOS DR4 disk images preserved by the BeBox
+  community are the likeliest source) — Plan 9's 1st Edition Hobbit
+  toolchain is now vendored in [`../tools/`](../tools/README.md), but it
+  is Bell Labs' Plan 9 tool, not AT&T's, the release ships no assembler
+  backend, and it has no `CLRE`;
 * EO's product documentation for the 440 and 880 — for the shipped
   board's clock, memory and part numbers, which no local document
   states;

@@ -33,6 +33,8 @@ Bluespec implementation: `bsv/` (not started).
 
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).
+Plan 9's 1st Edition Hobbit toolchain is vendored, with its checks and
+its limits, under [`tools/`](tools/README.md).
 
 Sources: AT&T Microelectronics, *ATT92010 Hobbit Microprocessor
 Programmer's Reference Manual* (January 1993); *ATT92010 Hobbit
