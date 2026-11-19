@@ -308,6 +308,11 @@ entry is SCAFFOLD (`$EOJ`), and MCP's end of job runs to the output
 blank OUTPT reel and readies it with a channel signal. MCP's print
 program then writes this map, row for row, to that reel as the job's
 listing, and job control reaches ZJOBC1, the wait for the next job card.
+There (stage 8, 2026-11-19) the bench loads a second job's cards and
+readies the reader; MCP's own job control reads the JOB card, types
+"SECOND 00:00:01" as p.7 describes, reads the TYPE card through UNCODE,
+and asks the operator to "SERVICE THE CARD READER" when the model's
+reader image runs out.
 Pp.7, 9 and 10 settle the
 card count (no FORTRAN branch card) and, with C22-6728 p.82, the library
 name (36 bits of A6).
@@ -1047,8 +1052,10 @@ interruption address register with SV and compared back with KV
 (Reference Manual printed p.48: IA "contains 18 bits and has address
 2.0"). One segment run from END; the model passes. Injection, observed:
 IA bit 9 dropped on a store fails in the "IA DATA FAILURE, BIT 9."
-entry; the control passes. Observation, not a finding: the model keeps
-64 bits in word 2, where p.48 gives 18; TEST 2 cannot see it. **TEST 3**
+entry; the control passes. The model kept 64 bits in word 2, where
+p.48 gives 18; TEST 2 cannot see it, and `decks/ia_width_18bit.strap`
+(2026-11-19, Reference Manual printed pp.34-35, 48) now does: word 2
+keeps bits 0-17 only. **TEST 3**
 (`16033`, p.24 on, the ability to interrupt; needs `I60XW1`, `I60K5`,
 `I60IT`, `I60SX1`/`I60S1`) is the next block and is not transcribed.
 

@@ -2491,6 +2491,21 @@ run "TAPE CONTROL: WRITE TAPE MARK writes the mark SPACE FILE finds, and advance
     "b0:326=0x0f00000000000000" "b1:327=0x0f00000000000000" \
     "b2:328=0x000000000012d687" "b3:329=0x0f00000000000000" "PC=406"
 
+# >>> LOCATE SELECTS A TAPE UNIT; UNIT READY IS THE SELECTED UNIT'S, 2026-11-19. <<<
+# Reference Manual printed p.120 (PDF 123, read in the ink): LOCATE selects
+# "one of several devices accommodated by a single channel address"; "The
+# selection address is three bits long and appears in bit positions 47
+# through 49".  Printed p.107 (PDF 110): control word bit 18, Unit Ready.
+# MCP's receptor skips a unit that is not ready (printed p.126 l.2); without
+# unit select one operator action on unit 0 cleared unit 1's MOUNT too
+# (tests/check_bss_mcp_go.py, stage 7).  TAPEREADY=1: only unit 0 ready at
+# the start; OPSIG=397,34,1: the operator readies unit 1 at WAIT1.  Expected
+# values derived before the run.  MEASURED INJECTIONS: the deck's header.
+run "TAPE CONTROL: LOCATE selects a unit, and CCW's unit-ready bit is that unit's" ./run_program.sh ../decks/io_tape_unit_ready.strap StretchTapeUnitReadyTb \
+    "TAPEREADY=1" "OPSIG=397,34,1" \
+    "c0:320=0x0000200000000000" "c1:321=0x0" "c2:322=0x0000210000000000" \
+    "c3:323=0x0000010000000000" "c4:324=0x0000210000000000" "c5:325=0x0000210000000000" "PC=418"
+
 run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
     "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
 
@@ -10114,6 +10129,13 @@ run "RADIX CONVERTER BOX (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtb
 # count 4.  Injection (each group's top bit dropped) fails vectors 2 and
 # 4-8 and passes 0, 1 and 3, the control; the box file's header has it.
 run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_DIR/run_vflbox_test.sh"
+# 2026-11-19: mkFpBox, the floating-point box (plan §1c step 5f, stage 1:
+# MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
+# printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution
+# cycles), on 11 vectors checked bit for bit against the one-step fpMul /
+# fpMulDouble, two literal fractions and the literal clock count 4.  The
+# injections and their observed failure sets are in the box file's header.
+run "FLOATING-POINT BOX (multiply; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
@@ -11645,6 +11667,19 @@ run "IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL (I6041)" .
     PC=1410 "SEN:712=0" "IA:2=0x400000000000" \
     "X1:addrIndex(1)=0x4800000000000" "X2:addrIndex(2)=0x6c00000000000" \
     "X3:addrIndex(3)=0x400000000000" STEPS=2000000 CYCLES=2057+-0
+
+# ---- THE IA REGISTER IS 18 BITS (2026-11-19) ----
+# Reference Manual printed p.35 (PDF p.38): "Bits 0-17 of location 2 form
+# the interruption address register"; printed p.34 (PDF p.37): bit
+# positions of locations 0-15 not assigned "are always zero.  Information
+# stored in these positions is not recoverable."  Ones stored into word 2
+# by ST (all 64 bits), SV (bits 0-24) and SX (all 64) must read back as
+# bits 0-17 only.  Injection (the unfixed 64-bit arm) -> all five pins
+# FAIL: RB1/RB2/RB4/IA all ones, RB3 0xffffff8000000000.
+run "IA register: a store of ones into word 2 reads back 18 bits (printed pp.34-35, 48)" ./run_program.sh ../decks/ia_width_18bit.strap StretchIaWidthTb \
+    PC=4253 "RB1:3073=0xffffc00000000000" "RB2:3074=0xffffc00000000000" \
+    "RB3:3075=0xffffc00000000000" "RB4:3076=0xffffc00000000000" \
+    "IA:2=0xffffc00000000000" STEPS=200000
 
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
@@ -16053,7 +16088,7 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # and job control reaches ZJOBC1.  MEASURED: no operator stops at KCHOPN
 # (7 fail); no reel still reaches ZJOBC1 by MCP's end-of-reel path but
 # fails the six reel checks.
-run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card" python3 check_bss_mcp_go.py
+run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card; a second job card is read, announced and its TYPE card decoded" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

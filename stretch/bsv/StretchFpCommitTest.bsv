@@ -88,7 +88,7 @@ module mkFpCommitTb(Empty);
     // divide arm fills the same fields whatever quotient it is handed,
     // so zeros will do; the box has its own testbench.
     return fpArithClass(c, 0, 0, ea, acc, accL, accS, accR0, factor0,
-                        False, False, pv, operand, 0, tuple2(0, 0));
+                        False, False, pv, operand, 0, tuple2(0, 0), unpack(0));
   endfunction
 
   // ---- phase 1: sweep every opcode, both protection senses --------

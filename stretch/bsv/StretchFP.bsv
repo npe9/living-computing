@@ -711,21 +711,27 @@ function FpNum fpExpRangeWinner(FpNum a, FpNum b) =
 // ---- MULTIPLY (p.92): 96-bit product, exponent sum, post-normalization
 // up to 96 places, ZM for a normalized order-of-magnitude zero above
 // -1024.
-function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy);
+//
+// THE PRODUCT IS AN ARGUMENT SINCE 2026-11-19 (plan §1c step 5f): the
+// 48 x 48 fraction product is mkFpBox's (StretchFpBox.bsv), formed twelve
+// multiplier bits a clock, and the box hands it to fpMulProd for the
+// exponent, the normalization and the indicators.  `p` must be
+// a.frac * b.frac; fpMul, below, is exactly that and is now only the
+// REFERENCE mkFpBoxTb checks the box against.
+function FpResult fpMulProd(FpNum a, FpNum b, Bool normalized, Bool noisy,
+                            Bit#(96) p);
   FpResult r = fpNoResult(a);
   Bit#(1) sign = a.sign ^ b.sign;
   if (a.ef == 1 || b.ef == 1) begin
     // Fig.32 multiplication table: XFP dominates; XFN otherwise;
     // result fraction = unnormalized product, EF propagated.
     FpNum res = fpExpRangeWinner(a, b);
-    Bit#(96) p = zeroExtend(a.frac) * zeroExtend(b.frac);
     res.frac = p[95:48];
     res.sign = sign;
     res.flags = a.flags;
     r.res = res; r.propagated = True;
     return r;
   end else begin
-    Bit#(96) p = zeroExtend(a.frac) * zeroExtend(b.frac);
     Int#(14) e = signExtend(fpExp(a)) + signExtend(fpExp(b));
     let {frac48, adj, lc} = fpNormalize96(0, p, normalized, noisy);
     Bool zero = (p == 0);
@@ -741,6 +747,10 @@ function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy);
     return r;
   end
 endfunction
+
+// The combinational reference: the product formed in one step.
+function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy) =
+  fpMulProd(a, b, normalized, noisy, zeroExtend(a.frac) * zeroExtend(b.frac));
 
 // Restoring division of a 96-bit dividend fraction by a 48-bit divisor
 // fraction (Ref. Manual pp.93-94).  The caller pre-normalizes both, so
@@ -962,13 +972,16 @@ endfunction
 // Everything else -- Fig.32's exponent table on a flagged operand, the
 // summed exponent otherwise, the order-of-magnitude-zero rule, ZM --
 // is MULTIPLY's, so the two arms below mirror fpMul line for line.
-function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
+//
+// The product is an argument, as for fpMulProd above (mkFpBox forms it);
+// fpMulDouble, below, is the one-step reference.
+function FpdResult fpMulDoubleProd(FpNum a, FpNum b, Bool normalized, Bool noisy,
+                                   Bit#(96) p);
   FpDouble z = FpDouble { ef: a.ef, em: a.em, es: a.es, frac: 0,
                           sign: a.sign, flags: a.flags };
   FpdResult r = FpdResult { res: z, lc: False, ls: False, psh: False,
                             generated: False, propagated: False, zm: False };
   Bit#(1) sign = a.sign ^ b.sign;
-  Bit#(96) p = zeroExtend(a.frac) * zeroExtend(b.frac);
   if (a.ef == 1 || b.ef == 1) begin
     // Fig.32: XFP dominates; XFN otherwise; ties to the accumulator.
     // The product fraction is unnormalized and EF is propagated.
@@ -999,6 +1012,9 @@ function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
     return r;
   end
 endfunction
+
+function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy) =
+  fpMulDoubleProd(a, b, normalized, noisy, zeroExtend(a.frac) * zeroExtend(b.frac));
 
 // Square root of a 48-bit FRACTION, to 48 bits (Ref. Manual p.93).
 // The radicand is the fraction extended with 48 low-order zeros --

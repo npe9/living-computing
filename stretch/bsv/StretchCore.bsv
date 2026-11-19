@@ -1466,7 +1466,7 @@ module mkStretchCore(StretchCore);
         // clock, which already contains the box's time.
         Bit#(16) ebudget = eboxClocks(la.headLevel().di) + boxX;
         if (boxK > ebudget)
-          $display("StretchCore: A BOX (DIVIDE OR DECIMAL) OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
+          $display("StretchCore: A BOX OVERRAN THE E-BOX BUDGET at half-word %0d: %0d clocks against %0d",
                    pc, boxK, ebudget);
         ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
         laarRetire(la.headLevel(), ebn);

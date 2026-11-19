@@ -25,8 +25,8 @@
 ! protected area of storage."  (The reference card's special-storage
 ! table agrees, word 2 bits 0-17: docs/microarchitecture_plan.md A.10,
 ! and STRAP's $IA in docs/c22_6531_appendix_a.md.)  The model holds it
-! as interruptionAddress in bsv/StretchStorage.bsv, which keeps all 64
-! bits of a store (see OBSERVATION below).
+! as interruptionAddress in bsv/StretchStorage.bsv, which keeps bits
+! 0-17 of a store and drops 18-63 (see OBSERVATION below).
 !
 ! ENTRY STATE.  IBM reaches I6041 by TEST 1C's "BD,$+.32" (014554.00),
 ! so TEST 2 runs with the interruption system DISABLED; the model resets
@@ -63,11 +63,14 @@
 ! 1.00 = BIT17's.  CYCLES 2057.  X values print the model's
 ! packIndexWord layout (value in bits 63-40); CYCLES is MODEL BEHAVIOUR.
 !
-! OBSERVATION, not a finding: p.48 gives IA 18 bits, but the model keeps
-! all 64 bits of a store into word 2.  TEST 2 cannot see it (SV writes
-! bits 0-24 and BIT0-BIT17 have nothing in 18-24), so the model is left
-! as it is; a test that stores a one into bits 18-24 of word 2 and reads
-! it back would be the evidence to change it.
+! OBSERVATION, settled 2026-11-19: p.48 gives IA 18 bits, but the model
+! kept all 64 bits of a store into word 2.  TEST 2 cannot see it (SV
+! writes bits 0-24 and BIT0-BIT17 have nothing in 18-24).  The evidence
+! is now decks/ia_width_18bit.strap, which stores ones into word 2 three
+! ways and reads them back; with printed p.34's rule ("Those bit
+! positions that are not so assigned are always zero") and p.35's "Bits
+! 0-17 of location 2" the model now drops bits 18-63.  TEST 2's run is
+! unchanged by the fix (same pins, same CYCLES).
 !
 ! MODEL INJECTION, OBSERVED (a scratch copy of bsv/; the tracked bsv/
 ! never touched):

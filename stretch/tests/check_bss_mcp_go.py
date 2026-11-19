@@ -21,7 +21,10 @@ its SCAFFOLD body gives $EOJ, and MCP's own end of job runs to the output
 EOJ's $W, which K NO GO holds until the operator readies the OUTPT unit
 (OPERATOR ACTION, below); MCP then writes the job's listing to that reel
 and job control reaches ZJOBC1, the wait for the next job card (stage 7,
-the end).
+the end).  On a bench of its own the operator then loads a second job's
+cards and readies the reader, and MCP's own job control reads the JOB
+card, types the job's name and time, reads the TYPE card through UNCODE
+and asks for more cards (stage 8).
 Every stage runs on THE POST-IPL CORE IMAGE (below): all 98,304 words a
 real IPL leaves, not the assembled listing.
 
@@ -293,9 +296,12 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     gives channel 34 the channel signal: Reference Manual printed p.116
     (PDF 119, read in the ink), CS "comes on ... whenever the unit changes
     from not-ready to ready status", "a means of communication from the
-    operator".  gen_tb.py OPSIG -> StretchIO.operatorSignal; nothing in
-    MCP's tables is touched.  NOT MODELLED: unit select (one tape unit,
-    so the same CS clears CT21's MOUNT too) and a not-ready state.
+    operator".  gen_tb.py OPSIG -> StretchIO.operatorReadyTape (unit 0
+    turns ready, and CS); nothing in MCP's tables is touched.  Since
+    2026-11-19 the tape control's units are selected (UNIT SELECT, below):
+    the bench starts with no tape unit ready (TAPEREADY 0; IPL asked for a
+    reel on units 0 and 1) and the operator readies unit 0 only.  NOT
+    MODELLED: the units' data (one reel serves every unit).
   - Then IBM's code: the CS report (00001) -> KSTORE (p.122) -> KSIGNL
     (p.124 l.53) -> KHUNT/KSTAB (p.125) -> p.126 l.5 BZBZ,SMOUNT($11),
     ZRCPFC clears MOUNT.  The $W, retried from KSUPP, goes through, and
@@ -312,14 +318,80 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     buffer X (p.209 l.56): control character P and 12 lines, which are
     p.17's map, every subprogram and common row.
   - WHERE IT STOPS: ZJOBC1 (020416.40, half-word 16925, p.391 l.37), job
-    control's wait for the next job card, at 2,561,915 cycles, with 17
-    traps after the entry and nothing typed on the console.
-  - Traps after the entry are logged (PTRL: STIC, word 3, SCOMRG): the
-    first *MAIN*'s ,$EOJ at 51.40 with SL 0 and word 3 = SLRBU; then
-    231147.40, 20007.40, 224147.40, 20013.00, 233147.40, 20021.00,
-    222266.00 (pinned), and nine more at MCP level after the $W (222572.40,
-    222574.40, 222266.00, 222320.40, 222311.00, 222320.40, 222146.40,
-    20031.40, 224451.00; printed, not pinned: not yet identified by line).
+    control's wait for the next job card, at 2,559,405 cycles (2,561,915
+    before unit select), with 16 traps after the entry and nothing typed
+    on the console.
+  - Traps after the entry are logged (PTRL: STIC, word 3, SCOMRG; 64
+    entries since 2026-11-19, 32 before): the first *MAIN*'s ,$EOJ at
+    51.40 with SL 0 and word 3 = SLRBU; then 231147.40, 20007.40,
+    224147.40, 20013.00, 233147.40, 20021.00, 222266.00, and eight at MCP
+    level after the $W is held (AFTER_W, pinned, judge7_units).
+  - UNIT SELECT, A MODEL DEFECT FOUND BY NAMING THE TRAPS (2026-11-19).
+    Before, NINE traps followed the held $W; the first, from 222572.40, is
+    p.209 l.44 (PDF 216, read in the ink) ,$RET of ATPBCS (ll.41-44),
+    entered from AXITB+4 (l.28 B,ATPBCS).  AXITB is CT21's I/O table of
+    exits (IOD 12, AXITB, CH34, UN1: tests/mcp_iod_deck_p1.tsv), and word
+    4 is its SIGNAL INTERRUPT INSTRUCTION, taken "when CS (.13) is on
+    alone" (C22-6678-1 printed pp.15-16, PDF 15-16).  So one operator
+    action on unit 0 ran unit 1's signal fix-up too: the model had no
+    unit select and every unit read ready, so the receptor's walk of the
+    channel's MOUNT units (p.125 KHUNT ll.5-7, KSTAB ll.41-56, PDF 132:
+    LOCATE the unit, CCW its control word) found unit 1 ready, and p.126
+    (PDF 133) l.2 "BZB,KRECEP.18,KHEX -IF UNIT IS NOT READY, SKIP" did not
+    skip it; l.5 cleared CT21's MOUNT (MEASURED: UST 214773 = 4671c020
+    81801400 in the post-IPL image, MOUNT .51 and initial mount .53 on;
+    81800000 at the old stop).  The Reference Manual settles the unit:
+    printed p.120 (PDF 123, read in the ink), LOCATE "is used to select
+    one of several devices accommodated by a single channel address
+    ... The selection address is three bits long and appears in bit
+    positions 47 through 49"; printed p.107 (PDF 110, read in the ink),
+    control word bit 18, Unit Ready, "When the bit is off, the unit is in
+    the not-ready status".  Fixed in StretchIO/StretchExecute (LOCATE
+    selects the unit; CCW's bit 18 is the selected unit's) with
+    decks/io_tape_unit_ready.strap.  MEASURED after (R2G_PCLOG=8): KHUNT
+    reaches KSTAB twice, unit 1 first, and p.126 l.2 sends unit 1 to KHEX;
+    unit 0 goes on through ll.3-12 to RMCPCS.  CT21's MOUNT and initial
+    mount stay on.
+  - THE EIGHT TRAPS AFTER THE HELD $W, NAMED (pages read in the ink; the
+    path confirmed by R2G_PCLOG=8).  Each is an IF trap (Reference Manual
+    printed p.45, PDF 48, indicator 21: a branch to the protected area
+    while enabled) of a B,$MCP or B,DMCP (DMCP SYN,32.0, p.108 l.5);
+    STIC is the call's ,op half-word.  SIFAE (p.117 l.19) sends ops below
+    64.0 to KFRONT (p.177), the rest through MIFTTT (p.121).
+      222574.40  p.209 l.48 ,DRET (DRET SYN,33.0, $RET): RATPCS (ll.45-48,
+                 PDF 216), entered from AXITA+4 (l.13 B,RATPCS), CT11's
+                 SIGNAL fix-up.  The first CS on CT11 is consumed: l.46
+                 SVA,14,AXITA+4.0 points the entry at ATPACS and ATARI is
+                 not set.
+      222266.00  p.204 l.9 ,$W (PDF 211) again: the $W KSUPP had
+                 suppressed, re-executed now that MOUNT is off.
+      222320.40  p.204 l.47 ,$RET at CRET: the $W's END OF OPERATION.
+                 AXITA+5, the NORMAL INTERRUPT word (p.209 ll.15-17: LV,
+                 14,AOP / TI,2,AXITA,0($14) / B,5.($14)), copies the
+                 interrupt words to CEXN, the table AOP names (p.204 ll.6-
+                 7, l.41 "TABLE OF EXITS FOR PRINT BUFFER"), and enters
+                 CEXN+5 = CEOPN (l.49 "MAKE TAPE AVAILABLE", l.50, l.51
+                 BZB,CBTA,CRET), whose CRET gives $RET.  (PC log:
+                 222546.00, 222547.40, 222321.00-222323.00, 222320.00.)
+      222311.00  p.204 l.36 ,$WEF: CEOJ4 (l.31 BB,CATUB,$ "WAIT IF TAPE
+                 IS BUSY") waited out that EOP; ll.32-36 set AOP = CEXEF
+                 and write the end of file (the tape mark, p.164 l.33).
+      222320.40  p.204 l.47 again: the $WEF's EOP.  AXITA+5 -> CEXEF+5 =
+                 CEOPEF (p.206 l.17 CM0000,CATUB "RELEASE TAPE", l.18
+                 B,CRET).  (PC log: 222376.00, 222377.00.)
+      222146.40  p.201 l.54 ,$RET at ARET1 (PDF 208): p.204 l.39 B,ARET
+                 "GO TO RESTORE AND EXIT", ARET (p.201 l.51) -> ARET1, the
+                 output EOJ (p.381 l.37 ,SSPEOJ) returning to $EOJ.
+      020031.40  p.382 l.1 ,SSCR4 (PDF 132, binary 000117.00 = 79.0) after
+                 p.381 l.56 RNOREJ B,$MCP (PDF 131): MIFTTT 79.0 VF,VVSCR
+                 "1ST CARD REQUEST" (p.121 l.44, PDF 128), on the page that
+                 "READ[S] THE JOB CARD" (p.381 ll.39-43).
+      224451.00  p.222 l.31 ,DRET at VRTN (PDF 229; ll.27-31 VSCRA): the
+                 spooler returns with no card.  Job control resumes at
+                 p.382 l.3 B,WSYSCA+.32 (PDF 132) -> p.391 (PDF 141) ll.29-
+                 31, BZB,SJ1FUL,ZJOBC1 -> ZJOBC1.  (PC log: 020032.40,
+                 020412.00-020413.00, 020416.40.)
+    None of the eight is a model defect.
   - THE UPPER LIMIT, SETTLED (2026-11-19): KSILO+8.28.  C22-6728-1 printed
     p.88 says "upper limit of PP 8.32 (BU,18)", but C22-6728 (-0) printed
     p.197 (PDF 197, read in the ink) prints "PP UPPER LIMIT 8.28", and
@@ -327,6 +399,47 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     field, bits 28-45.  BSS now writes 213766 there (decks/bss_7030.strap,
     check_bss_example4), so SLRBU's upper boundary is 213766.
   TASIGN is not on this path (no IOD card).
+STAGE 8, A SECOND JOB CARD (2026-11-19).  Its own bench,
+  StretchBssGoJob2Tb: stage 7's program, a fresh blank reel, the reader
+  image JOB2_CARDS (`JOB,SECOND` and `TYPE,GO`, CHOSEN; 15 words a card,
+  so the two fill 30 of the model's 32 reader words).  OPERATOR ACTIONS:
+  unit 0 of channel 34 readied at KCHOPN as in stage 7, then, at job
+  control's first arrival at ZJOBC1, the deck is loaded and the reader
+  (channel 32, "READER IS INPUT SOURCE ON CHANNEL 32" at IPL) readied: a
+  CS (printed p.116).  The CS comes at step 2,559,374.  Then MCP's own
+  job path, every trap named in the ink (JOB2_TRAPS; MCP printed page,
+  PDF = printed+7 in volume 1, printed-250 in volume 2):
+    p.215 l.40 ,DCCW (the spooler takes the reader's CS); p.216 l.51
+    ,DRD (the READ); p.222 l.31 ,DRET at VRTN; p.226 l.42 ,DCCW at VEE
+    (the READ's end exception); DRET; p.391 l.42 ,SDRET (ZJOBC1's $RET;
+    JC4, primed, runs again); p.382 l.1 ,SSCR4 (the 1ST CARD REQUEST
+    again); DRET (the JOB card in hand); p.201 l.54 ARET1 (the card on
+    the spool listing); p.382 l.34 ,67.0 ($SPU with the JOB card, l.36);
+    ARET1; l.38 ,DTIME; l.41 ,DCOMM, typing "SECOND     00:00:01"; ARET1;
+    p.383 l.4 ,SLOG4 (logger 4, the beginning of the job); JUNDEF's $RET
+    (MIFTTT 80.32 UNDEF, p.121 l.47); p.384 l.7 ,DSCR (YTCSR, GET 1
+    CARD: the TYPE card); DRET; p.387 l.9 ,DSCR (YRDFSO's next card);
+    p.216 l.24 ,DCOMM: "SERVICE THE CARD READER".
+  The TYPE card goes through IBM's UNCODE normally: KSILO+1.18-22 =
+  00100, TYPE,GO's count, as stage 1b.  The reader reports 00001 (the CS)
+  and 00110 (EE with EOP): the model's 32-word reader image runs out
+  (FIXTURE: a real empty hopper is simply not ready).
+  WHERE IT STOPS: the spooler's wait for the reader, p.224 ll.16-17
+  (PDF 231) B,DMCP / ,DRIO: the bench halts on the step that executes the
+  B at 224526.00, the IF pending and the PC at the ,DRIO (half-word
+  152237), at 2,683,602 cycles, 36 traps after the entry.  (Run to its
+  step cap the DRIO trap is logged as the 37th, MEASURED.)
+  INJECTIONS (R2G_ONLY8=1, so only the stage-8 bench runs; MEASURED):
+    control -- all 6 stage-8 checks pass.
+    job2nocs -- the reader is never readied (no second OPERATOR ACTION):
+      all 6 fail.  Job control keeps cycling SDRET / SSCR4 / DRET at
+      ZJOBC1 (64 traps logged), nothing is typed, KSILO+1.18-22 keeps
+      stage 7's 01011, and the run hits the step cap.
+    job2nojob -- the first card punched JOX,SECOND: 4 fail (the console
+      text, the trap list, KSILO+1.18-22 = 01011, the stop); the two
+      operator and reader-report checks pass.  The reader is read, but
+      no JOB card is found, nothing is typed, and job control cycles to
+      the step cap.
 THE POST-IPL CORE IMAGE (2026-11-18, later).  post_ipl() runs
   StretchMcpStartTb (tests/run_mcp_start_test.sh's bench: IPL from tape
   with p.1's IOD deck, CLOCK and BYPASS, JC4 polling at ZJOBC1, p.391
@@ -453,6 +566,21 @@ IOD_SUBFIELD_SEPARATOR), not Appendix F's 4-8 comma.  MEASURED: with the
 YTCERR -> YPR -> YPRSPL.
 
 INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited).
+UNIT SELECT (2026-11-19, later): the control now passes 121 PASS lines
+(the 113 below, judge7_units' two, and stage 8's six); stage 7 stops at
+ZJOBC1 at 2,559,405 cycles, stage 8 at 224526.40 at 2,683,602.
+  allready (own build) -- every tape unit ready from the start and the
+    operator's CS readying none in particular, the model before unit
+    select: 2 fail, both judge7_units': CT21's MOUNT and initial mount
+    (got 0, 0) and the trap list (the extra ATPBCS $RET from 222572.40
+    first).  Stage 7 still reaches ZJOBC1, at 2,561,915 cycles.
+  nooper -- re-measured: 7 fail, the same seven as below.
+  vtape -- re-measured: 7 fail, the six below plus judge7_units' trap
+    list (the REPLACE TAPE path takes other traps); ZJOBC1 at 2,579,016.
+  Stage 8's own (job2nocs, job2nojob): see STAGE 8.
+The in-bench and other own-build injections below were measured before
+unit select (every unit ready); they were not re-run, and judge7_units'
+two checks are not in their counts.
 Re-run 2026-11-19 with stage 7's operator end (SIT, the channel signal,
 the reel, the stop at ZJOBC1): the control run passes all checks, 113
 PASS lines.  The in-bench tampers ran as extra program pairs on the one
@@ -602,7 +730,11 @@ R2G_MEASURE=t1,t2,... runs the listed in-bench tampers beside the control
 (INJECTIONS).  R2G_PCLOG=1|2|3|4|5|6|7 (a PC log through job control / the
 loader / the stage-3 stub / stage 6 on / resident MCP and low core / all /
 the channel-signal receptor, the tape write and K NO GO),
+R2G_PCLOG=8 (after the $W: exit tables, the unit walk, job control), =9 (job
+control's overlay and the spooler),
 R2G_STEPS (stage 7's step cap, 12M), R2G_ONLY6 (the first run alone),
+R2G_ONLY8 (stage 8's bench alone), R2G_NOJOB2 (skip stage 8), R2G_STEPS8
+(stage 8's step cap, 3.2M), R2G_STOP8 (stage 8's stop, a half-word),
 R2G_KEEP (keep the bench output) and R2G_STOP (stage 3's stop, a half-word
 address; 18346 is T N): diagnosis only.
 """
@@ -660,6 +792,14 @@ PC_LOG6 = [(0, 0o300000 * 2)]     # R2G_PCLOG=6: everywhere (with R2G_STEPS)
 # R2G_PCLOG=7 (diagnosis only): the receptor (pp.122-128), K NO GO's pages
 # (pp.177-180) and low core
 PC_LOG7 = [(0o215700 * 2, 0o216400 * 2), (0o217500 * 2, 0o221400 * 2), (0, 0o100 * 2)]
+# R2G_PCLOG=8 (diagnosis only): after the $W -- the print program's exit
+# tables and fix-ups (pp.204-206, 209), the receptor's unit walk (pp.125-126)
+# and job control from p.381 l.44 to ZJOBC1 and on (pp.381-382, 391)
+PC_LOG8 = [(0o222256 * 2, 0o222400 * 2), (0o222541 * 2, 0o222575 * 2),
+           (0o216056 * 2, 0o216140 * 2), (0o20021 * 2, 0o20060 * 2),
+           (0o20372 * 2, 0o20432 * 2), (0o222144 * 2, 0o222147 * 2)]
+# R2G_PCLOG=9 (diagnosis only): job control's overlay and the spooler
+PC_LOG9 = [(0o20000 * 2, 0o24000 * 2), (0o224000 * 2, 0o226000 * 2)]
 fails = 0
 
 
@@ -803,7 +943,8 @@ def sym(S, nm, extra=0, alias=None):
 
 
 def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000,
-              mem_dump=None, operator_signal=None, reel=None):
+              mem_dump=None, operator_signal=None, reel=None, tape_ready=None,
+              reader_image=None):
     """Build ONE bench and run it on each of `progs` in turn.  The image is
     read at simulation start from a hex file (gen_tb's fast_load, a
     mkRegFileLoad), so programs that load the same set of words differ only
@@ -818,7 +959,8 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
     hexf = os.path.join(tmp, module + ".hex")
     kw = dict(step_cap=step_cap, cycle_bound=cycle_bound, stop_at_pc=stop_hw,
               fast_load=hexf, mem_dump=mem_dump, operator_signal=operator_signal,
-              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4, "5": PC_LOG5, "6": PC_LOG6, "7": PC_LOG7}.get(os.environ.get("R2G_PCLOG", "")))
+              tape_ready=tape_ready, reader_image=reader_image,
+              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4, "5": PC_LOG5, "6": PC_LOG6, "7": PC_LOG7, "8": PC_LOG8, "9": PC_LOG9}.get(os.environ.get("R2G_PCLOG", "")))
     src = generate(module, progs[0], checks, **kw)
     with open(os.path.join(BSV, module + ".bsv"), "w") as fh:
         fh.write(src)
@@ -864,6 +1006,9 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
             got["_tape"] = [(int(a), int(v, 16))
                             for a, v in re.findall(r"^TAPE_WRITE (\d+) ([0-9a-f]+)", out, re.M)]
             got["_oper"] = len(re.findall(r"^OPERATOR ACTION:", out, re.M))
+            got["_operat"] = [(int(c), int(h), int(st)) for c, h, st in re.findall(
+                r"^OPERATOR ACTION: channel signal on channel (\d+).* at half-word (\d+),"
+                r" step (\d+)", out, re.M)]
             got["_reports"] = re.findall(r"I/O status report, channel (\d+), "
                                          r"EPGK UK EE EOP CS = ([01]{5})", out)
             got["_typed"] = re.findall(r"^CONSOLE_TYPED ([0-9a-f]{16})", out, re.M)
@@ -1043,9 +1188,9 @@ def tamper_image(words, S):
                 words[c] = (words[c] & ~m) | (p.words.get(w, 0) & m)
     elif t and t not in ("order", "nocc", "fwa", "abeoj", "nobd", "nofetch", "overlap",
                          "assembled", "lim", "twsxw", "dispbypass", "itab", "nooper",
-                         "vtape"):
+                         "vtape", "allready", "job2nocs", "job2nojob"):
         raise SystemExit("R2G_TAMPER: abssid, order, nocc, fwa, abeoj, nobd, nofetch,"
-                         " overlap, itab, nooper, vtape or %s, not %r"
+                         " overlap, itab, nooper, vtape, allready, job2nocs, job2nojob or %s, not %r"
                          % (", ".join(IMAGE_TAMPERS), t))
 
 
@@ -1517,7 +1662,7 @@ def stage34_prog(state, deck_imgs, kwords):
             "        KVI,$4,2.0",
             "        BXL,STUB1",
             "        LX,$4,PTRP",
-            "        KVI,$4,PTRL+96.0",
+            "        KVI,$4,PTRL+192.0",
             "        BXE,PTR1",
             "        L(BU,64),STIC",
             "        ST(BU,64),0($4)",
@@ -1750,7 +1895,7 @@ def stage34_prog(state, deck_imgs, kwords):
             "ZW      XW,0",
             "MRETP   XW,MRETL",
             "PTRP    XW,PTRL",
-            "PTRL    DRZ(BU,64),96",
+            "PTRL    DRZ(BU,64),192",
             "MRETL   DRZ(BU,64),4",
             "HALT2   DRZ(BU,64),1",
             "STOPC   DRZ(BU,64),1",
@@ -1892,7 +2037,20 @@ def stage34(tmp, state, measure=()):
     # run then stops where job control waits for the next job card, ZJOBC1.
     # R2G_TAMPER=nooper: no operator (the old stop at KCHOPN); =vtape: the
     # operator signals but no reel is mounted (the 16-word register tape).
-    oper, reel = (S["KCHOPN"] // 32, 34), os.path.join(tmp, "outpt.tape")
+    # THE TWO UNITS (2026-11-19).  IPL asked for a reel on channel 34 unit 0
+    # AND unit 1 (CT11, CT21) and set both MOUNT bits.  The operator mounts
+    # ONE reel, on unit 0, and readies that unit: no tape unit is ready at
+    # the start (tape_ready 0, StretchIO.setTapeUnitsReady) and the action
+    # at KCHOPN readies unit 0 (operatorReadyTape: ready, and CS).  So when
+    # MCP's receptor walks the channel's units (p.125 KHUNT/KSTAB, LOCATE
+    # then CCW), p.126 l.2 "IF UNIT IS NOT READY, SKIP" passes over unit 1
+    # (Reference Manual printed p.120 LOCATE, p.107 bit 18).
+    # R2G_TAMPER=allready: the model before unit select (every unit ready,
+    # the CS alone), which cleared BOTH MOUNT bits.
+    oper, reel = (S["KCHOPN"] // 32, 34, 0), os.path.join(tmp, "outpt.tape")
+    tape_ready = 0
+    if os.environ.get("R2G_TAMPER") == "allready":
+        oper, tape_ready = (S["KCHOPN"] // 32, 34), None
     if os.environ.get("R2G_TAMPER") != "overlap":
         halt = (d.symtab["SSTOP"] // 32, S["ZJOBC1"] // 32)
     if os.environ.get("R2G_TAMPER") == "nooper":
@@ -1943,16 +2101,23 @@ def stage34(tmp, state, measure=()):
     reads += [("ld_%o" % w, w) for w in sorted(load_oracle())]
     reads += [("mretl%d" % k, d.symtab["MRETL"] // 64 + k) for k in range(4)]
     reads += [("ptrp", d.symtab["PTRP"] // 64)]
-    reads += [("ptrl%d" % k, d.symtab["PTRL"] // 64 + k) for k in range(96)]
+    reads += [("ptrl%d" % k, d.symtab["PTRL"] // 64 + k) for k in range(192)]
     reads += [("flog%d" % k, d.symtab["FLOG"] // 64 + k) for k in range(40, 300)]
     reads += [("lw%d" % k, k) for k in range(16)]     # words 0-15 at the stop
     progs = [progA] if os.environ.get("R2G_ONLY6") else [progA, prog]
     for x in extra:
         progs += [x[0], x[1]]
-    res = run_bench(tmp, "StretchBssGoLoadTb", progs, reads, stop_hw=halt,
+    # R2G_ONLY8 (measurement only): stage 8's bench alone
+    res = [] if os.environ.get("R2G_ONLY8") else run_bench(tmp, "StretchBssGoLoadTb", progs, reads, stop_hw=halt,
                     step_cap=int(os.environ.get("R2G_STEPS", 12000000)), cycle_bound=60000000,
-                    mem_dump=(0o200000, 0o23200), operator_signal=oper, reel=reel)
-    for r in res:
+                    mem_dump=(0o200000, 0o23200), operator_signal=oper, reel=reel,
+                    tape_ready=tape_ready)
+    global JOB2
+    JOB2 = None
+    if not measure and not os.environ.get("R2G_ONLY6") and not os.environ.get("R2G_NOJOB2") \
+            and os.environ.get("R2G_TAMPER", "") in ("", "job2nocs", "job2nojob"):
+        JOB2 = stage8(tmp, prog, reads, S, d)
+    for r in res + (JOB2 or []):
         if r[0] is not None:
             r[0]["_twsf"] = d.symtab["SSTOP"] // 32
             r[0]["_flog"] = d.symtab["FLOG"] // 64
@@ -1962,6 +2127,114 @@ def stage34(tmp, state, measure=()):
     if measure:
         return res, p2, imgs, exp, d, sym2, extra
     return res, p2, imgs, exp, d, sym2
+
+
+# ---- stage 8: the next job card at ZJOBC1 ----------------------------------
+# C22-6678-1 printed p.7 (PDF 7, read in the ink): "One JOB card and one TYPE
+# card must be at the beginning of every problem program in that order";
+# the JOB card is "B JOB, any identification", JOB in columns 10-13.  The
+# second job is CHOSEN: a JOB card and a TYPE,GO card, the two cards the
+# model's 32-word reader holds (15 words a card).
+JOB2_CARDS = [type_card("JOB,SECOND"), type_card("TYPE,GO")]
+# Where stage 8 stops: the spooler's B,DMCP / ,DRIO at p.224 ll.16-17 (PDF
+# 231), 224526.00, its wait for reader I/O after "SERVICE THE CARD READER".
+JOB2_STOP = 0o224526 * 2
+# Stage 8's traps after the stage-7 ones (STIC; every page named here is
+# read in the ink, 2026-11-19).
+JOB2_TRAPS = [
+    (0o224172 * 64 + 32, "p.215 l.40 ,DCCW: the spooler takes the reader's CS"),
+    (0o224237 * 64, "p.216 l.51 ,DRD: the spooler READs the reader"),
+    (0o224451 * 64, "p.222 l.31 ,DRET at VRTN"),
+    (0o224634 * 64, "p.226 l.42 ,DCCW at VEE: the READ's end exception"),
+    (0o224451 * 64, "p.222 l.31 ,DRET at VRTN"),
+    (0o20421 * 64, "p.391 l.42 ,SDRET: ZJOBC1's $RET; JC4, primed, runs again"),
+    (0o20031 * 64 + 32, "p.382 l.1 ,SSCR4: the 1ST CARD REQUEST again"),
+    (0o224451 * 64, "p.222 l.31 ,DRET: the JOB card in hand"),
+    (0o222146 * 64 + 32, "p.201 l.54 ,$RET at ARET1: the JOB card on the spool listing"),
+    (0o20054 * 64 + 32, "p.382 l.34 ,67.0: to $SPU with the JOB card (l.36)"),
+    (0o222146 * 64 + 32, "p.201 l.54 ,$RET at ARET1"),
+    (0o20056 * 64 + 32, "p.382 l.38 ,DTIME"),
+    (0o20060 * 64, "p.382 l.41 ,DCOMM: the job's name and time to the operator"),
+    (0o222146 * 64 + 32, "p.201 l.54 ,$RET at ARET1"),
+    (0o20074 * 64, "p.383 l.4 ,SLOG4: logger 4, the beginning of the job"),
+    (0o233147 * 64 + 32, "JUNDEF's $RET (MIFTTT 80.32 UNDEF, p.121 l.47)"),
+    (0o20076 * 64, "p.384 l.7 ,DSCR: YTCSR, GET 1 CARD -- the TYPE card"),
+    (0o224451 * 64, "p.222 l.31 ,DRET: the TYPE card in hand"),
+    (0o20235 * 64 + 32, "p.387 l.9 ,DSCR: YRDFSO reads the next card"),
+    (0o224217 * 64 + 32, "p.216 l.24 ,DCOMM: SERVICE THE CARD READER")]
+# The next trap would be p.224 l.17's ,DRIO (STIC 224526.40), but the bench
+# stops on the step that executes l.16's B,DMCP: the branch is suppressed,
+# the IF is pending and the PC reads the ,DRIO half-word (224526.40) -- so
+# that trap is not yet logged.  (A run to the step cap logs it as the 21st,
+# measured 2026-11-19, 37 traps after the entry.)
+JOB2 = None
+
+
+def stage8(tmp, prog, reads, S, d):
+    """Stage 7's program on a bench whose reader holds JOB2_CARDS: the
+    operator readies the tape at KCHOPN as in stage 7, then, when job
+    control first waits at ZJOBC1, loads the deck and readies the reader
+    (channel 32, the system input reader IPL named: "READER IS INPUT SOURCE
+    ON CHANNEL 32"): a CS (Reference Manual printed p.116)."""
+    reel = os.path.join(tmp, "outpt2.tape")
+    with open(reel, "wb") as fh:
+        fh.write(bytes(8 * REEL_WORDS))
+    oper = [(S["KCHOPN"] // 32, 34, 0), (S["ZJOBC1"] // 32, 32)]
+    if os.environ.get("R2G_TAMPER") == "job2nocs":
+        oper = oper[:1]
+    deck = JOB2_CARDS
+    if os.environ.get("R2G_TAMPER") == "job2nojob":
+        deck = [type_card("JOX,SECOND")] + deck[1:]
+    words = [w for c in deck for w in cards.card_words(c)]
+    halt = int(os.environ.get("R2G_STOP8", 0)) or (d.symtab["SSTOP"] // 32, JOB2_STOP)
+    return run_bench(tmp, "StretchBssGoJob2Tb", [prog], reads, stop_hw=halt,
+                     step_cap=int(os.environ.get("R2G_STEPS8", 3200000)),
+                     cycle_bound=60000000, mem_dump=(0o200000, 0o23200),
+                     operator_signal=oper, reel=reel, tape_ready=0, reader_image=words)
+
+
+def judge8(res, S):
+    """Stage 8: how far the second job gets."""
+    g, out = res[0]
+    if g is None:
+        check("8: the job-2 bench ran", out[-2000:], "")
+        return
+    nt = (field(g["ptrp"], 0, 24) // 64 - g["_ptrl"]) // 3
+    traps = [(field(g["ptrl%d" % (3 * k)], 0, 24), g["ptrl%d" % (3 * k + 1)])
+             for k in range(min(nt, 64))]
+    print("INFO stage 8: stopped at %s, STOPC %s, STIC %o, %s cycles, %d traps after the"
+          " entry" % (g["_stopped"], field(g["stopc"], 0, 18), field(g["stic"], 0, 24),
+                      g["_cycles"], nt))
+    for k, (a, b) in enumerate(traps):
+        print("INFO   8 trap %2d: STIC %o.%02o" % (k, a // 64, a % 64))
+    print("INFO stage 8: operator %s; reports %s" % (g["_operat"], " ".join(
+        "%s:%s" % r for r in g["_reports"])))
+    for k, w in enumerate(g["_typed"]):
+        print("INFO   8 typed %2d: %s %r" % (k, w, a8_text(int(w, 16))))
+    print("INFO stage 8: %d tape words written" % len(g["_tape"]))
+    for nm in ("ust0", "ust1"):
+        print("INFO   8 %s at the stop: %016x" % (nm, g[nm] or 0))
+    import check_console_text
+    text = " ".join(check_console_text.console_text(out).split())
+    print("INFO stage 8: console %r" % text)
+    ops = g["_operat"]
+    check("8: OPERATOR ACTIONS: tape unit 0 readied at KCHOPN, then the deck loaded and the"
+          " reader readied (channel 32, CS) at job control's first arrival at ZJOBC1",
+          [(c, h) for c, h, _st in ops], [(34, S["KCHOPN"] // 32), (32, S["ZJOBC1"] // 32)])
+    check("8: the reader's reports: its CS, then the READ's end -- EE with EOP, the model's"
+          " reader running out of its 32-word image (FIXTURE: a real empty hopper is not"
+          " ready)", [r for r in g["_reports"] if r[0] == "32"], [("32", "00001"), ("32", "00110")])
+    check("8: the job is announced as C22-6678-1 p.7 says (the JOB card's first eight"
+          " characters typed), and then the spooler asks for cards (p.216 l.24)", text,
+          "SECOND 00:00:01 SERVICE THE CARD READER")
+    check("8: the traps from the reader's CS on, each named (pp.215-226, 382-391, 201)",
+          [a for a, _b in traps[16:]], [a for a, _n in JOB2_TRAPS])
+    check("8: the TYPE card went through IBM's UNCODE normally (p.384 ll.12-20, not l.18's"
+          " error return): KSILO+1.18-22 = 00100, TYPE,GO's count (as stage 1b)",
+          field(g["ks1"], 18, 5), 0b00100)
+    check("8: and the run stops at the spooler's wait: p.224 l.16's B,DMCP (224526.00)"
+          " executed, its IF pending, the PC at l.17's ,DRIO (224526.40)",
+          g["_stopped"], JOB2_STOP + 1)
 
 
 # C22-6678-1 printed p.20 (PDF 20, read in the ink): $SPR's carriage control,
@@ -1994,9 +2267,12 @@ def main():
         else:
             ms = [t for t in os.environ.get("R2G_MEASURE", "").split(",") if t]
             res34 = stage34(tmp, st["GO,FORTRAN"], ms)
-            judge34(*res34[:6])
+            if not os.environ.get("R2G_ONLY8"):
+                judge34(*res34[:6])
             if len(res34[0]) > 1:
                 judge7(res34[0][1][0], res34[0][0][0], image().symtab, res34[3])
+            if JOB2:
+                judge8(JOB2, image().symtab)
             if ms:
                 measure_report(res34, ms)
     print("ALL CHECKS PASSED" if not fails else f"{fails} FAILED")
@@ -2225,7 +2501,7 @@ def judge7(g, g6, S, exp):
     nt = (field(g["ptrp"], 0, 24) // 64 - g["_ptrl"]) // 3
     traps = [(field(g["ptrl%d" % (3 * k)], 0, 24), g["ptrl%d" % (3 * k + 1)],
               field(g["ptrl%d" % (3 * k + 2)], S["SL"] % 64, 1))
-             for k in range(min(nt, 32))]
+             for k in range(min(nt, 64))]
     for k, (a, b, sl) in enumerate(traps):
         print("INFO   trap %d after the entry: STIC %o.%02o, word 3 %016x, SL %d"
               % (k, a // 64, a % 64, b or 0, sl))
@@ -2264,6 +2540,7 @@ def judge7(g, g6, S, exp):
         check("7: ... and the $W goes to K NO GO (p.179 ll.13-25): the run stops at KCHOPN, the"
               " eighth trap the last", (g["_stopped"], nt), (S["KCHOPN"] // 32, 8))
     judge7_operator(g, S, traps, nt)
+    judge7_units(g, S, traps)
     check("7: no other trap: still 12 $SPR, 12 PP $RET, 1 $EOJ; no bad op, no other"
           " interrupt", (field(g["nspr"], 0, 18), field(g["nret"], 0, 18),
                          field(g["neoj"], 0, 18), g["badopx"],
@@ -2274,6 +2551,36 @@ def judge7(g, g6, S, exp):
     bad = ["%o" % w for w in sorted(want) if g.get("ld_%o" % w) != want[w]]
     check("7: the program as loaded: each subprogram's first word, transfer vector and"
           " entries at p.17's origins (%d words)" % len(want), bad, [])
+
+
+# THE TRAPS AFTER THE $W, NAMED (2026-11-19; every page read in the ink).
+# Each is an IF trap of a B,$MCP / B,DMCP (STIC = the call's ,op half-word).
+AFTER_W = [
+    (0o222574 * 64 + 32, "p.209 l.48 ,DRET: RATPCS, CT11's SIGNAL fix-up (AXITA+4)"),
+    (0o222266 * 64, "p.204 l.9 ,$W again, past K NO GO"),
+    (0o222320 * 64 + 32, "p.204 l.47 ,$RET at CRET: the $W's EOP (AXITA+5 -> CEOPN)"),
+    (0o222311 * 64, "p.204 l.36 ,$WEF: the output EOJ's end of file"),
+    (0o222320 * 64 + 32, "p.204 l.47 again: the $WEF's EOP (AXITA+5 -> CEOPEF, p.206 l.18)"),
+    (0o222146 * 64 + 32, "p.201 l.54 ,$RET at ARET1: output EOJ returns to $EOJ"),
+    (0o20031 * 64 + 32, "p.382 l.1 ,SSCR4 (79.0): job control's 1ST CARD REQUEST"),
+    (0o224451 * 64, "p.222 l.31 ,DRET at VRTN: the spooler returns, no card")]
+
+
+def judge7_units(g, S, traps):
+    """Stage 7: unit select.  The operator readied channel 34 UNIT 0 only."""
+    if os.environ.get("R2G_TAMPER") in ("nooper",):
+        return
+    # CT21 (IOD 12, channel 34 unit 1) has UST entry 214773; IPL set its MOUNT
+    # (.51) and initial-mount (.53) bits (printed p.79 ll.3-4), as CT11's.
+    # p.126 l.2 (PDF 133) "BZB,KRECEP.18,KHEX -IF UNIT IS NOT READY, SKIP"
+    # passes over it, so the receptor leaves both on.
+    check("7u: CT21's MOUNT and initial-mount bits still on (UST 214773 .51, .53): its unit,"
+          " channel 34 unit 1, was never readied, so p.126 l.2 skipped it",
+          (field(g["ust1"], 51, 1), field(g["ust1"], 53, 1)), (1, 1))
+    check("7u: after the $W held at K NO GO, eight traps, each named (p.209 l.48, p.204"
+          " ll.9, 47, 36, 47, p.201 l.54, p.382 l.1, p.222 l.31); no signal fix-up for CT21"
+          " (ATPBCS's ,$RET from 222572.40, p.209 l.44)",
+          [a for a, _b, _s in traps[8:]], [a for a, _n in AFTER_W])
 
 
 def judge7_operator(g, S, traps, nt):
