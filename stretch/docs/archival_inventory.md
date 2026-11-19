@@ -1162,7 +1162,12 @@ rule read off p.114 holds at bit 57 as well as at 0, 17 and 18.
 because the upper boundary is word 3 bits 0-17. It catches a dropped
 boundary bit and **names it** -- injecting
 `boundaryReg <= (v & ~(64'b1 << 46))` halts at 022263.00, the table's
-"UPPER BOUNDARY DATA FAILURE, BIT 17" entry.
+"UPPER BOUNDARY DATA FAILURE, BIT 17" entry. TEST 7 and 7b
+(`ax5b_160102_lb_ctl`) walk a one through the bits word 3 has; neither
+can see bits it should NOT keep. The model kept all 64 until
+2026-11-19; `decks/boundary_width.strap` (Reference Manual printed
+pp.34-35) now stores ones and reads back bits 0-17, 32-49 and 57 only,
+and `decks/other_cpu_width.strap` does the same for word 6's bits 0-18.
 
 **ROUTINE 1262 -- "TEST EX AND EXIC", read first-hand 2026-09-23.**
 It begins at PDF p.87 and runs to ~p.110. Its purpose block, read at

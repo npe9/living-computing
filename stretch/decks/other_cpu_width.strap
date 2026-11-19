@@ -1,0 +1,96 @@
+! other_cpu_width.strap -- WORD 6 HOLDS THE OTHER-CPU REGISTER IN BITS
+! 0-18: a store of ones into word 6 reads back as ones in bits 0-18 and
+! zeros in bits 19-63.
+!
+! THE RULE, read from the page images (2026-11-19):
+!   * Reference Manual printed p.35 (PDF p.38), "Other CPU Bits": "In
+!     order to permit a program in one computer to signal others, the
+!     other CPU register, bits 0-18 of location 6, and the CPU signal
+!     indicator, CPUS, have been provided."
+!   * pocket card X22-6533-1 (docs/pcard-1.png), SPECIAL STORAGE
+!     ASSIGNMENT: "6  Other CPU Bits  19  0-18".
+!   * printed p.34 (PDF p.37), "Special Registers": bit positions of
+!     locations 0-15 not assigned "are always zero.  Information stored
+!     in these positions is not recoverable."
+!   So bits 19-63 of word 6 always read zero.  Ones in 0-18 =
+!   0xffffe00000000000.
+!
+! A MODELLING CHOICE THIS DECK PINS.  printed p.36 (PDF p.39): the other
+! CPU register "is provided only in computers which are to be used in
+! multi-computer systems.  When not present, these bit positions behave
+! like the bit positions of address 0" -- that is, a 7030 without the
+! feature reads all of word 6 as zero.  The model keeps the register
+! PRESENT (bits 0-18 settable; no other computer is signalled), which
+! decks/exic_addr.strap also relies on (bit 0 of word 6 as a flag).  If
+! the model ever adopts the not-present machine, every pin below
+! becomes 0.  Word 6 is not in the protected area (the pocket card
+! gives it no P), so no BD is needed; the deck starts with one anyway,
+! like ia_width_18bit.
+!
+! WHY "W6 SYN, 6.0" AND NOT $CPU.  C22-6531 Appendix A (printed p.56)
+! lists "6.0 $CPU Other CPU", but its indicator table names indicator
+! 11.5 "CPU" too, and this assembler's eval_system_symbol looks the
+! indicator names up first: "$CPU" assembles to 11.5, the CPUS bit of
+! the indicator register (first draft of this deck, observed).  Recorded
+! in docs/NEXT.md; this deck spells word 6 by number.
+!
+! FOUR STORE PATHS, each read back by an instruction into ordinary
+! storage, after Z,W6 clears the word.  SV stores a HALF WORD's bits
+! 0-24 (printed p.24), so it is aimed at 6.0 and at 6.32:
+!   1. ST(BU,64,8),W6 of 64 ones -- every bit (RB1 at once, RB2 after
+!      two NOPs).  Expect 0xffffe00000000000; bit 19 is covered.
+!   2. SV,$X1,W6, value all ones -- bits 0-24, so ones land in 19-24
+!      (RB3).  Expect 0xffffe00000000000.
+!   3. SV,$X1,W6+.32, value all ones -- bits 32-56, wholly unassigned
+!      (RB4).  Expect 0.
+!   4. SX,$X2,W6 of an index word of all ones -- 64 bits (RB5).
+!      Expect 0xffffe00000000000.
+!
+! RESULT, 2026-11-19: PASS on the fixed model (StretchStorage.bsv's
+! addrOtherCpuBits arm keeps {v[63:45], 45'b0}): RB1-RB5 and W6 as
+! above, PC 4259.
+!
+! PROVEN DISCRIMINATING, OBSERVED (a scratch copy of the tree):
+!   INJECTION = THE UNFIXED ARM ("addrOtherCpuBits: otherCpuBits <= v;")
+!     -> FAIL on 6 pins: RB1 0xffffffffffffffff, RB2 0xffffffffffffffff,
+!     RB3 0xffffff8000000000 (bits 0-24), RB4 0x00000000ffffff80 (bits
+!     32-56), RB5 0xffffffffffffffff, W6 0xffffffffffffffff (the last
+!     store, SX).  PC 4259 passes.
+!   The same injection leaves decks/boundary_width.strap passing, and
+!   the word-3 injection leaves this deck passing.  Reverted by the
+!   inverse substitution; cmp identical to the tracked file.
+!
+W6      SYN, 6.0                     ! word 6, the other-CPU register
+        SLC, (8)4100.0
+START   BD,  $+.32
+        L(BU,64,8), ONES             ! accumulator := 64 ones
+        ST(BU,64,8), W6              ! 1. all of word 6
+        L(BU,64,8), W6               !    read back at once
+        ST(BU,64,8), RB1
+        NOP
+        NOP
+        L(BU,64,8), W6               !    and again, later
+        ST(BU,64,8), RB2
+        Z,   W6
+        LV,  $X1, ONES               ! value field all ones
+        SV,  $X1, W6                 ! 2. STORE VALUE: bits 0-24
+        L(BU,64,8), W6
+        ST(BU,64,8), RB3
+        Z,   W6
+        SV,  $X1, W6+.32             ! 3. STORE VALUE at 6.32: bits 32-56
+        L(BU,64,8), W6
+        ST(BU,64,8), RB4
+        Z,   W6
+        LX,  $X2, ONES               ! index word all ones
+        SX,  $X2, W6                 ! 4. STORE INDEX: all 64 bits
+        L(BU,64,8), W6
+        ST(BU,64,8), RB5
+PASS    BEW, $
+        SLC, (8)6000.0
+ONES    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+RB1     DD(BU,64), 0
+RB2     DD(BU,64), 0
+RB3     DD(BU,64), 0
+RB4     DD(BU,64), 0
+RB5     DD(BU,64), 0
+        END, START

@@ -11681,6 +11681,30 @@ run "IA register: a store of ones into word 2 reads back 18 bits (printed pp.34-
     "RB3:3075=0xffffc00000000000" "RB4:3076=0xffffc00000000000" \
     "IA:2=0xffffc00000000000" STEPS=200000
 
+# ---- WORD 3 KEEPS UB 0-17, LB 32-49 AND THE CONTROL BIT 57 (2026-11-19) ----
+# Reference Manual printed p.35 (PDF p.38), "Address Boundaries"; pocket
+# card X22-6533-1 "3,P Upper Boundary 18 0-17 / Lower Boundary 18 32-49 /
+# Boundary Control Bit 1 57"; printed p.34's unassigned-bits-are-zero
+# rule.  Ones stored by ST (64 bits), SV at 3.0 and 3.32 (bits 0-24 of a
+# half word), a 13-bit VFL field at 3.51 and SX (64) must read back as
+# those 37 bits only.  Injection (the unfixed 64-bit arm), observed: RB1-RB6
+# FAIL (all ones, 0xffffff8000000000, 0xffffff80, 0x1fff, all ones), W3/PC pass.
+run "Boundary register: a store of ones into word 3 reads back bits 0-17, 32-49, 57 (printed pp.34-35)" ./run_program.sh ../decks/boundary_width.strap StretchBoundaryWidthTb \
+    PC=4269 "RB1:3073=0xffffc000ffffc040" "RB2:3074=0xffffc000ffffc040" \
+    "RB3:3075=0xffffc00000000000" "RB4:3076=0xffffc000" "RB5:3077=0x40" \
+    "RB6:3078=0xffffc000ffffc040" "W3:3=0" STEPS=200000
+
+# ---- WORD 6 KEEPS THE OTHER-CPU BITS 0-18 (2026-11-19) ----
+# Reference Manual printed p.35 (PDF p.38), "Other CPU Bits": "bits 0-18
+# of location 6"; pocket card "6 Other CPU Bits 19 0-18"; p.34's rule.
+# The register is modelled PRESENT (printed p.36: when not present the
+# bits "behave like the bit positions of address 0"); see the deck.
+# Injection (the unfixed 64-bit arm), observed: RB1-RB5 and W6 FAIL, PC passes.
+run "Other-CPU register: a store of ones into word 6 reads back bits 0-18 (printed pp.34-35)" ./run_program.sh ../decks/other_cpu_width.strap StretchOtherCpuWidthTb \
+    PC=4259 "RB1:3073=0xffffe00000000000" "RB2:3074=0xffffe00000000000" \
+    "RB3:3075=0xffffe00000000000" "RB4:3076=0" "RB5:3077=0xffffe00000000000" \
+    "W6:6=0xffffe00000000000" STEPS=200000
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the

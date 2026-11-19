@@ -1,0 +1,105 @@
+! boundary_width.strap -- WORD 3 HOLDS THE BOUNDARY REGISTERS IN BITS
+! 0-17, 32-49 AND 57: a store of ones into word 3 reads back as ones in
+! those 37 bits and zeros in the other 27.
+!
+! THE RULE, read from the page images (2026-11-19):
+!   * Reference Manual printed p.35 (PDF p.38), "Address Boundaries":
+!     "The upper boundary register occupies bit positions 0-17 of
+!     location 3.  The lower boundary register occupies bit positions
+!     32-49 of location 3.  The boundary control bit, which determines
+!     whether addresses inside or outside of the defined area are to be
+!     protected, is located in bit 57 of location 3.  All bits of
+!     location 3 are in the permanently protected area of storage."
+!   * pocket card X22-6533-1 (docs/pcard-1.png), SPECIAL STORAGE
+!     ASSIGNMENT: "3,P Upper Boundary 18 0-17", "3,P Lower Boundary 18
+!     32-49", "3,P Boundary Control Bit 1 57".
+!   * printed p.34 (PDF p.37), "Special Registers": "Not all bit
+!     positions in locations 0-15 are assigned to specific functions.
+!     Those bit positions that are not so assigned are always zero.
+!     Information stored in these positions is not recoverable."  Its
+!     one exception (the programming note) is location 1's bits 19-27.
+!   So bits 18-31, 50-56 and 58-63 of word 3 always read zero.
+!   Ones in 0-17, 32-49 and 57 = 0xffffc000ffffc040.
+!
+! ENTRY STATE.  The model resets with the interruption system disabled,
+! and printed p.31 (PDF p.35) suspends protection while disabled, so the
+! stores into the permanently protected word 3 take.  The deck starts
+! with BD,$+.32 so it says so itself, and zeroes word 3 before the
+! closing BEW (which enables): with word 3 all ones the control bit
+! would be 1 and UB = LB, so every address >= 32 would be monitored.
+!
+! FIVE STORE PATHS, each read back by an instruction into ordinary
+! storage, after Z,$UB clears the word (Z stores a full zero word).  SV
+! stores a HALF WORD's bits 0-24 (printed p.24), so it reaches the
+! unassigned bits after UB only at 3.0 and after LB only at 3.32; the
+! bits around the control bit are reached by a VFL field store.
+!   1. ST(BU,64,8),$UB of 64 ones -- every bit of word 3.  Read back at
+!      once (RB1) and again after two NOPs (RB2).  Expect
+!      0xffffc000ffffc040.
+!   2. SV,$X1,$UB, value all ones -- bits 0-24, so ones land in 18-24,
+!      just past UB (RB3).  Expect 0xffffc00000000000.
+!   3. SV,$X1,$LB, value all ones -- bits 32-56, so ones land in 50-56,
+!      just past LB (RB4).  Expect 0x00000000ffffc000.
+!   4. ST(BU,13),W3B51 -- a 13-bit field of ones at 3.51, bits 51-63:
+!      the control bit 57 and six unassigned bits either side of it
+!      (RB5).  Expect 0x0000000000000040.
+!   5. SX,$X2,$UB of an index word of all ones -- 64 bits (RB6).
+!      Expect 0xffffc000ffffc040.
+!
+! RESULT, 2026-11-19: PASS on the fixed model (StretchStorage.bsv's
+! addrUpperBoundary arm keeps {v[63:46], v[31:14], v[6]}): RB1-RB6 as
+! above, W3 0 (word 3 cleared before the BEW), PC 4269.
+!
+! PROVEN DISCRIMINATING, OBSERVED (a scratch copy of the tree; the
+! tracked bsv/ not touched):
+!   INJECTION = THE UNFIXED ARM ("addrUpperBoundary: boundaryReg <= v;")
+!     -> FAIL on 6 pins: RB1 0xffffffffffffffff, RB2 0xffffffffffffffff,
+!     RB3 0xffffff8000000000 (bits 0-24), RB4 0x00000000ffffff80 (bits
+!     32-56), RB5 0x0000000000001fff (bits 51-63), RB6
+!     0xffffffffffffffff.  W3 0 and PC 4269 pass.
+!   The same injection leaves decks/other_cpu_width.strap passing, and
+!   the word-6 injection leaves this deck passing: each deck sees only
+!   its own word.  Reverted by the inverse substitution; the file
+!   compared identical (cmp) to the tracked one.
+!
+W3B51   SYN, 3.51                    ! word 3, bit 51 (decimal)
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disabled: word 3 is protected
+        L(BU,64,8), ONES             ! accumulator := 64 ones
+        ST(BU,64,8), $UB             ! 1. all of word 3
+        L(BU,64,8), $UB              !    read back at once
+        ST(BU,64,8), RB1
+        NOP
+        NOP
+        L(BU,64,8), $UB              !    and again, later
+        ST(BU,64,8), RB2
+        Z,   $UB
+        LV,  $X1, ONES               ! value field all ones
+        SV,  $X1, $UB                ! 2. STORE VALUE: bits 0-24
+        L(BU,64,8), $UB
+        ST(BU,64,8), RB3
+        Z,   $UB
+        SV,  $X1, $LB                ! 3. STORE VALUE at 3.32: bits 32-56
+        L(BU,64,8), $UB
+        ST(BU,64,8), RB4
+        Z,   $UB
+        L(BU,64,8), ONES
+        ST(BU,13), W3B51             ! 4. VFL field 51-63, around bit 57
+        L(BU,64,8), $UB
+        ST(BU,64,8), RB5
+        Z,   $UB
+        LX,  $X2, ONES               ! index word all ones
+        SX,  $X2, $UB                ! 5. STORE INDEX: all 64 bits
+        L(BU,64,8), $UB
+        ST(BU,64,8), RB6
+        Z,   $UB                     ! no live boundary at the BEW
+PASS    BEW, $
+        SLC, (8)6000.0
+ONES    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+RB1     DD(BU,64), 0
+RB2     DD(BU,64), 0
+RB3     DD(BU,64), 0
+RB4     DD(BU,64), 0
+RB5     DD(BU,64), 0
+RB6     DD(BU,64), 0
+        END, START
