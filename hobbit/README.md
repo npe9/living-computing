@@ -42,6 +42,7 @@ machines whose differences must remain explicit.
 | hand-derived golden programs | `tests/golden/` | six programs, 42 retirement records, each line and each cycle figure justified by a printed page |
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
 | UART HRI stream | `bsv/HobbitUart.bsv` | 9-check testbench, byte-exact variable-length lines at 115200 |
+| ULX3S target (ECP5 85F) | `fpga/` | bitstream produced: 18,041/83,640 LUT4 (21%), 5,066 FF (6%), 18/208 DP16KD, 25.66 MHz (PASS at 25 MHz); same `smoke.hex`, HRI lines over the UART |
 
 The core is a partial implementation on purpose: it models the
 memory-to-memory ALU, the stack cache and the control transfers its
@@ -62,6 +63,12 @@ its limits, under [`tools/`](tools/README.md). The architectural
 inventory — every Table 3-1 mnemonic, every parcel form, the control
 registers, the stack cache, the MMU and the event priority, each with a
 printed-page citation — is [`docs/isa_inventory.md`](docs/isa_inventory.md).
+
+Architecture conventions follow **Flute**, Bluespec Inc.'s RISC-V SoC
+(© 2021 Rishiyur S. Nikhil and Bluespec, Inc., Apache-2.0) — structure and
+interface shape only, no Flute code; see
+[`docs/bluespec_architecture.md`](docs/bluespec_architecture.md) for the
+mapping, the credits and the reference-tree commit.
 
 Sources: AT&T Microelectronics, *ATT92010 Hobbit Microprocessor
 Programmer's Reference Manual* (January 1993); *ATT92010 Hobbit

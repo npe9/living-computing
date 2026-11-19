@@ -160,50 +160,56 @@ openFPGALoader -b ulx3s build/hobbit_ulx3s.bit         # volatile SRAM
 openFPGALoader -b ulx3s -f build/hobbit_ulx3s.bit      # SPI flash
 ```
 
-## Results of the rebuilt design
+## Results of the final design (2026-11-19)
 
-Run on 2026-11-19 with the rebuilt core (`cyc`, 1R1W synchronous memory) and
-the retirement queue in block RAM (`mkSizedBRAMFIFOF(48)`, bsc emits
-`BRAM2`). `./build.sh`:
-
-* bsc 2026.01 emitted `build/mkHobbitUlx3s.v` (662,746 bytes). The generated
-  Verilog instantiates `BRAM2` and `SizedFIFO`; `build.sh` discovers both and
-  reads their bsc library models (`$BLUESPECDIR/Verilog/BRAM2.v`,
-  `SizedFIFO.v` — neither uses `$readmemh`).
-* yosys 0.51 `synth_ecp5 -top ulx3s_top` finished.
-* nextpnr-ecp5 accepted the LPF and packed:
+`./build.sh`, after the array conversion (every storage array is a `RegFile`,
+one write port each; see `docs/area_analysis.md`) and the single-rule stage
+fix. bsc emits Verilog that instantiates `RegFile`, `BRAM2`, `SizedFIFO` and
+`FIFO2`; `build.sh` discovers each and reads its bsc library model.
 
 ```
-Info: 	              DP16KD:    26/  208    12%
-Info: 	          TRELLIS_FF: 24642/83640    29%
-Info: 	        TRELLIS_COMB: 83272/83640    99%
-Info: 	          TRELLIS_IO:    13/  365     3%
+yosys:   Number of cells: 19776
+           LUT4 11367   PFUMX 1407   CCU2C 1094
+           TRELLIS_FF 5066   TRELLIS_DPR16X4 654   DP16KD 18
+
+nextpnr: TRELLIS_COMB: 18041/83640    21%
+         TRELLIS_FF:    5066/83640     6%
+         DP16KD:          18/  208     8%
+         TRELLIS_IO:      13/  365     3%
+         Max frequency for clock '$glbnet$CLK$TRELLIS_IO_IN':
+             25.66 MHz (PASS at 25.00 MHz)   [an earlier placement: 37.66 MHz]
+
+ecppack: build/hobbit_ulx3s.bit   593,803 bytes
 ```
 
-It then stopped:
+So the design **places and closes timing on the LFE5U-85F**: 21% of the
+combinational cells, 6% of the flip-flops, 18 of 208 block RAMs, and the
+25 MHz board clock met. The whole flow takes about 108 s on this machine.
+Attribution of the 11,367 LUT4 (`tools/area_netlist.py`):
 
-```
-ERROR: Unable to find legal placement for all cells, design is probably at utilisation limit.
-```
+| block | LUT4 | PFUMX | FF | BRAM |
+|---|---:|---:|---:|---:|
+| prefetch (3-way, 3 x 1 KB) | 1875 | 289 | 178 | 0 |
+| PDU | 312 | 44 | 346 | 0 |
+| decoded store (32 x 192) | 1264 | 57 | 38 | 0 |
+| stack cache (64 x 32) | 2508 | 340 | 341 | 1 |
+| program memory (256 x 32) | 1040 | 184 | 297 | 1 |
+| HRI queue (48 deep) | 313 | 4 | 882 | 8 |
+| HRI presentation | 1008 | 2 | 459 | 0 |
+| UART writer | 1292 | 87 | 397 | 0 |
+| board glue | 111 | 31 | 12 | 0 |
 
-So the design **still does not place on the LFE5U-85F**: 83,272 of 83,640
-LUT4s (99.6%) leaves 368 combinational cells of headroom, and nextpnr cannot
-legalize 83,234 cells at that occupancy. There is no Fmax, no critical path
-and no bitstream: `build.sh` exits nonzero and leaves
-`build/ulx3s_top.json` but no `build/hobbit_ulx3s.bit` and no
-`build/ulx3s_top.config`.
+For comparison, the same design with `Reg#(Vector#(...))` storage needed
+83,272 LUT4 (99.6%) and did not place; the memory alone was 35,247 LUT4
+there. The array idiom was the area problem.
 
-The block-RAM queue did what it was for: it removed the register file's
-48-way push mux and 48:1 pop mux, cutting **TRELLIS_COMB from 93,046 to
-83,272 (−9,774)** and **TRELLIS_FF from 37,070 to 24,642 (−12,428)**, at the
-cost of **8 more DP16KD (18 → 26)**. What remains is almost entirely the
-core (prefetch buffer, decode store, execution unit, stack cache and the
-256×32 memory) plus the UART line writer; the board glue is the two relay
-rules and the LED. Getting under the limit now needs either a smaller core
-datapath or a narrower HRI line writer, and both are outside this directory.
-
-The behaviour is not in question: the same design, simulated, emits all 41
-records byte-identically (see below).
+**Superseded runs, kept as flow evidence.** Before the array conversion the
+BRAM-queue build reached `TRELLIS_COMB 83272/83640 (99%)`, `TRELLIS_FF
+24642 (29%)`, `DP16KD 26` and failed placement
+(`ERROR: Unable to find legal placement for all cells`); `--placer heap`
+failed identically and `--placer sa` seed 1 hit an 1800 s timeout still
+placing. The pre-`cyc` build reached 126,259 LUT4 (150%). Neither produced a
+bitstream.
 
 ## Pre-`cyc` baseline (superseded, kept as flow evidence)
 
