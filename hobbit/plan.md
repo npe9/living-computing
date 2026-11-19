@@ -176,6 +176,16 @@ documented interfaces.
    capture from physical hardware (no board attached here), and the
    historical BeBox/EO board models.
 
+## Booting Plan 9 1e (owner's direction, 2026-11-19)
+
+**Get 1e booting and printing on the UART, then support every device the
+1e Hobbit port drives.** The staged plan, its gates and the device
+inventory are in [`docs/plan9_boot_plan.md`](docs/plan9_boot_plan.md);
+the immediate work is A0 (run 1e user code to its first syscall), A1
+(the syscall shim) and A2 (bootstrap `za`/`zl` on the model), after
+which the kernel is assembled and linked from `sys/src/9/hobbit` and
+booted (A3, A4).
+
 ## Definition of the first milestone
 
 The architectural inventory covers Table 3-1 completely and every
