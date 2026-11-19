@@ -70,8 +70,11 @@ the stack cache "appears as normal memory"), and the 5-bit `R` fields of
 Tables 1-15/1-18 are **stack offsets scaled by 4** (p. 1-22). That is
 why `0x60c2` (src 6, dst 2) is `MOV argv+4(FP), R8` — 2x4 = R8 — and
 `0x60a1` (src 5, dst 1) is `MOV argc+0(FP), R4`, and why the first
-instruction's field `0x0bfc` is `FP-4` with FP = 0xC00 and its
-destination `0x3004`/`0x4008` is `_clock`.  The loader and the core
+instruction's field `0x0bfc` is `FP-4` and its
+destination `0x3004`/`0x4008` is `_clock`.  (That `FP` is 0xC00 is an
+inference from `0xbfc + 4`; the vendored tree defines no `FP` constant —
+it lives in the missing `cc` front end — so it is labelled an inference,
+not a citation.)  The loader and the core
 therefore need no register file: every operand is a memory word.
 
 The addressing mode in that first parcel is **0xD = `*Roffset` stack
