@@ -5733,6 +5733,58 @@ Staged, each step green and committed:
      periods per pass), then multiply, SRT and the `/ 10` chain of the
      binary-to-decimal conversion (96 constant divides in the
      generated Verilog), which are the next combinational giants.
+   - **5e (2026-11-18): `vflIntOp`'s datapath into a box, stage 1 --
+     the binary multiply.** AGENTS.md's mandatory rewrite applied to the
+     largest remaining function. `mkVflBox` (StretchVflBox.bsv) is the
+     fourth box behind the same `NeedBox` bail (`BoxReq.BoxVfl`,
+     `boxKind` 3, `vflOf(boxResult)`), instantiated once in `mkEBox`.
+     Stage 1 moves the two inlined 48 x 48 -> 96 multipliers, VFL `*`
+     and `*+`, into it. THE RATE IS SOURCED: Buchholz printed p.210
+     (PDF 235), VFL binary multiply "performed by the parallel unit",
+     "12 bits of the multiplier are handled in one cycle", and p.211
+     (PDF 236), "the four cycles when multiplicand multiples are added"
+     with the carry-propagate add "during the last cycle" -- so four
+     clocks, request at T, answer at T+4. Behaviour-preserving by the
+     NeedOperand contract: the asking run writes nothing (every
+     accumulator write is on the answered run; the indicators of the
+     asking run are discarded at execute()'s foot), and the box is asked
+     only after every operand and refill read, so no read moves.
+     Timing: the box's clocks come off the E-box budget as for the other
+     boxes (binary `*` is charged 36 + 2s or more, `*+` 46 + 2s or more,
+     against the box's 4). The hold cost the divider measured -- a held
+     level stops I-box instructions overlapping the countdown -- was
+     MEASURED here against a baseline suite run with
+     `STRETCH_HALT_REPORT=1` (gen_tb.py; every program's halt clock and
+     read count, pinned or not). **RESULT: NOTHING MOVED.** Of the 48
+     suite programs whose source contains `*(` or `*+(` (33 print a halt
+     report; the other 15 are FP decks whose testbenches have their own
+     output), and the 15 MCP and binary-loader runs (MCP's own bootstrap,
+     ASSIGN, past T MOVE, pp.17-19, the eight loader decks), every halt
+     clock and every read count is identical before and after -- 48 of
+     48. Why the hold costs no clock here was NOT traced; the likely
+     reason is that none of these programs has an I-box instruction
+     ready to overlap the first four clocks of a multiply's countdown
+     (36 + 2s or more), where the FP divides the divider moved did. The
+     full suite is green with every pin as it was. This is NOT a proof
+     for programs the suite does not have: a `*` followed at once by
+     I-box work that used to fit inside the first four clocks of its
+     countdown would now wait for them.
+     **Line counts** (`StretchExecute.bsv`, raw / non-comment):
+     `vflIntOp` 2325 / 906 before, 2343 / 914 after. It is LONGER: the
+     arms are operand-fetch boilerplate and citations around one
+     multiply line each, and the bail adds a branch. What left is the
+     hardware (two 96-bit combinational multipliers), which is the
+     "expensive datapath" row of the 1c-audit, not the "stage body"
+     row. The others are unchanged: `execute()` 1535, `fpArithClass`
+     730, `ioOpExec` 434, `dirIndexOp` 427, `connectiveOp` 352,
+     `fpStoreClass` 348. **Next stages:** (i) structure only, no
+     behaviour: the operand-fetch block repeated nearly verbatim across
+     the L, ST, +, *, LFT/*+, /, M+, K arms (the `prefetchCount` /
+     `fieldCrosses` / `needsRead` ladder) as one function, which is
+     what actually shortens `vflIntOp`; (ii) the next datapath class
+     into `mkVflBox`: the binary add (`binAccAdd`, the SAU's adder),
+     which is in nearly every deck, so its hold cost must be measured
+     the same way before it is accepted.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
@@ -5822,8 +5874,8 @@ the boundary plan does not close this row.) Piccolo numbers are from
 | FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
 | stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
 | rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
-| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412) | **differs, 5.4x** |
-| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets | **differs, by prior decision** |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2343** (914 non-comment), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.6x on `vflIntOp`) |
+| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox`, `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
 
 **What this changes.** The plan and README item 9 both said the target
 was "stage modules communicating through FIFOs". Piccolo does not do

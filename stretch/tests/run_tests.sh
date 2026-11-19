@@ -10048,6 +10048,12 @@ run "DECIMAL ADD/SUBTRACT BOX (p.60's examples, literal answers)" "$TESTS_DIR/ru
 # literal answers (2^96 - 1, 10^24 and 10^24 - 1, 32 nines to binary) and
 # literal clock counts (6 and 4).
 run "RADIX CONVERTER BOX (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtbox_test.sh"
+# 2026-11-18: mkVflBox, the VFL arithmetic box (stage 1: the binary
+# multiply of * and *+, twelve multiplier bits a clock, Buchholz printed
+# pp.210-211), on 9 vectors with literal products and the literal clock
+# count 4.  Injection (each group's top bit dropped) fails vectors 2 and
+# 4-8 and passes 0, 1 and 3, the control; the box file's header has it.
+run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_DIR/run_vflbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

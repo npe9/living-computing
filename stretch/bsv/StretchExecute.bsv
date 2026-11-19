@@ -95,6 +95,7 @@ import StretchIO::*;
 import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
 import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
 import StretchCvtBox::*;       // CvtReq/CvtRsp/mkCvtBox: the radix converter (DCV)
+import StretchVflBox::*;       // VflReq/VflRsp/mkVflBox: the VFL arithmetic box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -2975,17 +2976,30 @@ typedef struct {
 // THREE SINCE 2026-11-16: the RADIX CONVERTER (StretchCvtBox.bsv,
 // mkCvtBox), for CONVERT DOUBLE; an arm that asked it takes
 // `cvtOf(boxResult)`.
+//
+// FOUR SINCE 2026-11-18: the VFL ARITHMETIC BOX (StretchVflBox.bsv,
+// mkVflBox), vflIntOp's datapath moved out class by class; stage 1 is
+// the binary multiply of `*` and `*+`.  An arm that asked it takes
+// `vflOf(boxResult)`.  boxKindOf's Bit#(2) is now full: a fifth box
+// needs it widened, in mkEBox's `boxKind` too.
 typedef union tagged {
   DivReq BoxDiv;
   DecReq BoxDec;
   CvtReq BoxCvt;
+  VflReq BoxVfl;
 } BoxReq deriving (Bits, Eq, FShow);
 
 typedef union tagged {
   DivRsp RspDiv;
   DecRsp RspDec;
   CvtRsp RspCvt;
+  VflRsp RspVfl;
 } BoxRsp deriving (Bits, Eq, FShow);
+
+function Maybe#(VflRsp) vflOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspVfl .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
 
 function Maybe#(CvtRsp) cvtOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspCvt .d)) return tagged Valid d;
@@ -3007,11 +3021,12 @@ function Bit#(7) cvtSigDigits(Bit#(128) dig);
 endfunction
 
 // Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
-// radix converter.
+// radix converter, 3 the VFL arithmetic box.
 function Bit#(2) boxKindOf(BoxReq r);
   case (r) matches
     tagged BoxDec .*: return 1;
     tagged BoxCvt .*: return 2;
+    tagged BoxVfl .*: return 3;
     default:          return 0;
   endcase
 endfunction
@@ -3975,27 +3990,36 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
               SM128 acc = readAcc(st);
               // "the accumulator field specified by the offset"
               Bit#(128) accOp = acc.mag >> offSh;
-              // "either operand exceeds 48 significant bits in length"
-              if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
-                ind = setBit(ind, ind_PF, 1);
-              Bit#(96) a = zeroExtend(accOp[47:0]);
-              Bit#(96) b = zeroExtend(opnd.mag[47:0]);
-              Bit#(96) prod = a * b;
-              // "placed into the CLEARED accumulator at offset 20" --
-              // cleared means cleared, so every other accumulator bit
-              // goes to zero, including the bits below 20 and the ones
-              // the accumulator operand itself came from.
-              SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
-                                  mag: zeroExtend(prod) << 20 };
-              writeAcc(st, res);
-              // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
-              // operation, these indicators are set as in ADD."
-              ind = setResultIndicatorsF(ind, res);
+              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchVflBox.bsv,
+              // 2026-11-18): the PAU's multiplier, twelve multiplier bits
+              // a clock, reached by the NeedBox bail exactly as decimal
+              // + reaches mkDecBox.  Every write and every indicator is
+              // on the answered run; the run that asks writes nothing.
+              if (vflOf(boxResult) matches tagged Valid .mr) begin
+                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+                ind = setBit(ind, ind_MOP, 0);
+                // "either operand exceeds 48 significant bits in length"
+                if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
+                  ind = setBit(ind, ind_PF, 1);
+                Bit#(96) prod = mr.prod;
+                // "placed into the CLEARED accumulator at offset 20" --
+                // cleared means cleared, so every other accumulator bit
+                // goes to zero, including the bits below 20 and the ones
+                // the accumulator operand itself came from.
+                SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
+                                    mag: zeroExtend(prod) << 20 };
+                writeAcc(st, res);
+                // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
+                // operation, these indicators are set as in ADD."
+                ind = setResultIndicatorsF(ind, res);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                              VflMulReq { mcand: accOp[47:0], mpr: opnd.mag[47:0] }));
+                needsRead = tagged Valid 0;
+              end
             end
           end
           6'b001011, 6'b111001: begin // LFT (Load Factor), *+ (Multiply and Add)
@@ -4088,24 +4112,33 @@ function ActionValue#(VflOutcome)
                 Bit#(1)  ftSign = ft[3];
                 if ((mcand >> 48) != 0 || (opnd.mag >> 48) != 0)
                   ind = setBit(ind, ind_PF, 1);
-                Bit#(96) a = zeroExtend(mcand[47:0]);
-                Bit#(96) b = zeroExtend(opnd.mag[47:0]);
-                Bit#(96) prod = a * b;
-                // "Lost Carry (LC).  In a binary operation, this
-                // indicator is set as in ADD" (printed p.69, read in the
-                // page image), and the product's PF "if the offset is
-                // such that significant bits of the product attempt to
-                // combine with accumulator positions to the left of the
-                // left end of the accumulator" -- ADD's PF, the product
-                // being the addend.  So the add is ADD's own rule,
-                // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
-                BinAccAdd ba = binAccAdd(readAcc(st),
-                                 SM128 { sign: ftSign ^ opnd.sign,
-                                         mag: zeroExtend(prod) }, offSh);
-                writeAcc(st, ba.sum);
-                ind = setResultIndicatorsF(ind, ba.sum);
-                if (ba.lc) ind = setBit(ind, ind_LC, 1);
-                if (ba.pf) ind = setBit(ind, ind_PF, 1);
+                // THE PRODUCT IS mkVflBox's, as for `*` (that arm's note):
+                // the run that asks writes nothing -- the accumulator write
+                // below is on the answered run only, and the indicators
+                // set above are discarded with the bail (execute()'s foot
+                // returns before setIndicatorBits).
+                if (vflOf(boxResult) matches tagged Valid .mr) begin
+                  Bit#(96) prod = mr.prod;
+                  // "Lost Carry (LC).  In a binary operation, this
+                  // indicator is set as in ADD" (printed p.69, read in the
+                  // page image), and the product's PF "if the offset is
+                  // such that significant bits of the product attempt to
+                  // combine with accumulator positions to the left of the
+                  // left end of the accumulator" -- ADD's PF, the product
+                  // being the addend.  So the add is ADD's own rule,
+                  // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
+                  BinAccAdd ba = binAccAdd(readAcc(st),
+                                   SM128 { sign: ftSign ^ opnd.sign,
+                                           mag: zeroExtend(prod) }, offSh);
+                  writeAcc(st, ba.sum);
+                  ind = setResultIndicatorsF(ind, ba.sum);
+                  if (ba.lc) ind = setBit(ind, ind_LC, 1);
+                  if (ba.pf) ind = setBit(ind, ind_PF, 1);
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                                VflMulReq { mcand: mcand[47:0], mpr: opnd.mag[47:0] }));
+                  needsRead = tagged Valid 0;
+                end
               end
               // "To-Memory Operation (MOP) ... set as in ADD", and ADD
               // turns it off (p.60).
@@ -8613,6 +8646,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // meaningful only while `boxWait` is set.
   DecBox                   decBox        <- mkDecBox;
   CvtBox                   cvtBox        <- mkCvtBox;
+  // THE VFL ARITHMETIC BOX (StretchVflBox.bsv), the fourth, 2026-11-18:
+  // boxKind 3.
+  VflBox                   vflBox        <- mkVflBox;
   Reg#(Bit#(2))            boxKind       <- mkReg(0);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
@@ -8657,6 +8693,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
+          tagged BoxVfl .d: vflBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
@@ -8685,6 +8722,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                             && (subjReady
                                 || (boxWait ? (boxKind == 1 ? decBox.responseReady()
                                                : boxKind == 2 ? cvtBox.responseReady()
+                                               : boxKind == 3 ? vflBox.responseReady()
                                                               : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
@@ -8765,6 +8803,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     if (boxWait) begin
       rbox = tagged Valid (boxKind == 1 ? tagged RspDec decBox.response()
                          : boxKind == 2 ? tagged RspCvt cvtBox.response()
+                         : boxKind == 3 ? tagged RspVfl vflBox.response()
                                         : tagged RspDiv divBox.response());
       // `boxWait` is cleared below, in the arms of the dispatch that do
       // not ask for a box again -- ONE write per arm.  Clearing it here
@@ -8982,6 +9021,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDiv .d: divBox.request(d);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
+          tagged BoxVfl .d: vflBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
