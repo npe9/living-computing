@@ -6,7 +6,8 @@ Programmer's Reference Manual*, January 1993
 "Performance", printed pp. 4-1 to 4-7. Printed page 4-N is PDF page
 N + 110. Every number in `timing.csv` was read from the rendered page
 image, not from the scan's OCR layer: `pdftotext` renders `1 + D` as
-`1+0`, `5 + 2D` as `5+20`, `2·D` as `2.0` and `8·S` as `9.s`, so the
+`1+0`, `5 + 2D` as `5+20`, `2·D` as `2.0`, `8·S` as `9.s` and
+`8 + D + A` (KCALL) as `S+D+A`, so the
 letters and digits of this chapter's cycle cells cannot be trusted
 without the image. The images are authoritative.
 
