@@ -69,8 +69,11 @@ That fixes **text at 0x1020 and little-endian 16-bit parcels**.  It does
 compactly (`c += p->mark`) and pads only `JMP`/`RETURN` (`rnd(c, AMOD)`)
 and the text end (`rnd(c, 4)`), yet `cat` and `echo` both carry one
 `0x0000` parcel after `_main`'s first MOV, which decodes as `KCALL $0x0`
-and is in neither `main9.s` nor `main9p.s`.  That parcel, and `za`'s
-`_main` starting at an odd parcel boundary (entry 0x7282), are open.
+and is in neither `main9.s` nor `main9p.s`.  That parcel, and `rc`/`za`'s
+`_main` starting at an odd parcel boundary (entries 0xb9c6 and 0x7282,
+checked across all five shipped binaries), are open — an
+"even-parcel-start" rule explains `cat`/`echo` but is refuted by `rc`
+and `za`, so no simple alignment rule has been adopted.
 Until they are explained, the loader will decode at run time and trap
 on an unimplemented parcel rather than assume a size rule.
 
