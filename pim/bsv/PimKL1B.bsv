@@ -196,6 +196,7 @@ module mkPimKL1B(PimKL1B);
         8'hc0: if (deref(regs.sub(a))[39:32] != tagAtom)              // get_atom A, Ai
                  haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
+        8'ha7: noAction;                          // read_variable_without_deref: stand-in (no deref)
         8'h28: noAction;                          // switch_on_non_integer: PC block
         8'h29: noAction;                          // switch_on_non_atom: PC block
         8'h2a: noAction;                          // switch_on_non_list: PC block
@@ -211,6 +212,8 @@ module mkPimKL1B(PimKL1B);
         end
         8'h60: if (rqfp == rqt) haltR <= True;      // proceed: empty queue halts
         8'h71: haltR <= True;                     // halt
+        8'h1d: noAction;                          // collect_value: stand-in
+        8'he0: noAction;                          // wait: stand-in (no suspension)
         default: haltR <= True;                   // unimplemented: stop loud
       endcase
     end else begin
