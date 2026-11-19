@@ -269,7 +269,16 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   BACKSPACE BLOCK, p.132); every other tape function code (SPACE
   BLOCK/FILE, WRITE TAPE MARK, BACKSPACE FILE, density/ECC/parity/
   light functions) and `CTL` on the reader/printer still fall through
-  to Operation Code Invalid.
+  to Operation Code Invalid.  *[Since overtaken: SPACE FILE (077) runs,
+  and since 2026-11-19 WRITE TAPE MARK (117) writes the mark SPACE FILE
+  finds (`decks/io_tape_mark.strap`) and the state-setting codes 016,
+  036, 037, 056, 057, 156, 157 are accepted with EOP, their state not
+  modelled (`decks/io_tape_control_modes.strap`). MCP's tape write
+  issues all of them. Unrecognised codes give EPGK, not OP (p.113).
+  A unit's not-ready -> ready change, the operator's channel signal
+  (printed p.116), can be given from outside by a testbench
+  (`StretchIO.operatorSignal`, gen_tb.py `OPSIG=HW,CH`,
+  `decks/io_channel_signal.strap`).]*
 - **The operator's console, IBM 7152 + 7623, channel 35** —
   Reference Manual printed p.150, which is its whole specification in
   one page. A **WRITE** prints and keeps its place across

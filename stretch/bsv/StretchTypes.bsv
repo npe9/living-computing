@@ -280,6 +280,11 @@ typedef struct {
                           // the control word is left exactly as the
                           // data phase left it -- the fill is not
                           // data and must not show in the count.
+                          //
+                          // ON A TAPE it is WRITE TAPE MARK (CTL 117,
+                          // printed p.132): one word, nothing read
+                          // from core, and the word written is
+                          // tapeMarkWord rather than zero.
 } IoXfer deriving (Bits, Eq, FShow);
 
 // A started-but-not-yet-drained MULTI-WORD TRANSMIT, threaded out of

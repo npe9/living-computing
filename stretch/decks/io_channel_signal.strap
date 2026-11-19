@@ -1,0 +1,112 @@
+! io_channel_signal.strap -- THE OPERATOR READIES A UNIT: a channel
+! signal (CS) put into a control word from OUTSIDE the program, held
+! while the system is disabled, then reported as indicator 13 with the
+! channel's address, and taken through the interruption table's CS entry.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  At IPL MCP types
+! "MOUNT - REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0" (and UNIT 1) and sets
+! the units' MOUNT and initial-mount bits (printed p.79 ll.3-4, TP4).  The
+! print program's output EOJ then gives $W on IOD 11 (CT11, channel 34
+! unit 0), and K NO GO (printed p.179) holds it while the MOUNT bit is on.
+! Only MCP's channel-signal receptor clears that bit (printed p.125
+! KHUNT / p.126 l.5 BZBZ,SMOUNT($11),ZRCPFC), and only a CS from the unit
+! reaches it -- which on a real 7030 is the operator mounting the reel
+! and pressing READY.  tests/check_bss_mcp_go.py (stage 7) runs that.
+!
+! WHAT THE MANUAL SAYS, Reference Manual printed p.116 (PDF 119, read in
+! the ink), "Channel Signal (CS)": "This bit comes on when the SIGNAL key
+! on the unit is depressed, and whenever the unit changes from not-ready
+! to ready status. ... The main purpose of channel signal is to provide
+! a means of communication from the operator servicing the external
+! units to the computer. ... It can originate at any time regardless of
+! whether or not the unit is operating and has been previously selected
+! by a LOCATE instruction."  Printed p.118: a status bit becomes its
+! indicator only when the five I/O indicators are zero and the system
+! is enabled; otherwise "the status bits remain set in the control
+! word".  Printed p.119: the channel address register is word 5, bits
+! 12-18.
+!
+! THE OPERATOR IS THE BENCH.  gen_tb.py's OPSIG=HW,CH calls
+! core.io.operatorSignal(CH) once, at the first arrival of the
+! instruction counter at half-word HW (here WAIT1, the disabled loop).
+! The model has no not-ready state, so readying a unit is only its CS
+! (StretchIO.bsv, operatorSignal).
+!
+! WHAT EACH CHECK ESTABLISHES (the tape, channel 34)
+!   before   CCW before the signal: unit ready (bit 18), no CS (bit 23).
+!   held     CCW after the signal, still DISABLED: unit ready and CS --
+!            the signal waits in the control word (p.118).
+!   ca       in the CS handler (table entry 13): word 5 holds 34 in
+!            bits 12-18.
+!   after    in the handler: CS is gone from the control word (the
+!            report clears it, p.118); unit ready is left.
+!   count    the handler ran once.
+!   PC=PASS  reached only through the handler.
+!
+! INJECTIONS (MEASURED 2026-11-19, observed failure sets):
+! Each injection is a bsv/ edit, reverted by its exact patch and checked by
+! hash, run on all three new decks (io_channel_signal, io_tape_control_modes,
+! io_tape_mark) and, for the first three, on tests/check_bss_mcp_go.py.
+!   nosig   -- operatorSignal sets nothing (StretchIO commitCW, r.cs = 0):
+!              this deck fails held, after, ca, count and PC (5), with the
+!              bench's step-cap line: no CS, so the handler never runs and
+!              WAIT1's loop runs on.  before passes.  The other two decks
+!              pass.  check_bss_mcp_go.py: 7 fail, the operator path
+!              (MOUNT stays on, nothing is written, the step cap).
+!   sigeop  -- the signal sets EOP instead of CS: held (EOP, not CS), after,
+!              ca, count and PC (409, not 410) fail (5).  The other decks
+!              pass.
+!   Control: the unmodified model, all 6 checks pass.
+
+        SLC, (8)300.0
+START   BD,  $+.32                   ! disabled, as after a reset
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X1,  34                ! the tape's channel (value 34<<5)
+        LVI, $X5,  0
+        CCW, 0($X1), BEFORE
+        LVI, $X4,  0
+WAIT1   V+I, $X4,  1.0               ! the operator signals here, once
+        KVI, $X4,  20.0
+        BXL, WAIT1
+        CCW, 0($X1), HELD            ! disabled: still in the control word
+        BE,  $+.32                   ! enabled: the report arrives
+WAIT2   KVI, $X5,  1.0
+        BXL, WAIT2                   ! until the handler has run
+        BD,  $+.32
+        SX,  $X5,  CNT
+        B,   PASS
+
+HANDLER V+I, $X5,  1.0               ! count the entries
+        LX,  $X6,  5.0               ! the channel address register
+        SX,  $X6,  CA
+        CCW, 0($X1), AFTER
+        BE,  SAVE
+BAD     B,   $                       ! hang: a report for the wrong reason
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)500.0
+SAVE    B,   0                       ! SIC stores the counter here
+        CNOP
+BEFORE  DD(BU,64), 0
+HELD    DD(BU,64), 0
+AFTER   DD(BU,64), 0
+CA      DD(BU,64), 0
+CNT     DD(BU,64), 0
+
+! The interruption table.  EPGK, UK, EE, EOP, CS are indicators 9-13.
+        SLC, (8)600.0
+TBL     DD(BU,64), 0
+        SLC, (8)611.0
+        B,   BAD                     ! 9  EPGK
+        CNOP
+        B,   BAD                     ! 10 UK
+        CNOP
+        B,   BAD                     ! 11 EE
+        CNOP
+        B,   BAD                     ! 12 EOP
+        CNOP
+        SIC, SAVE                    ! 13 CS
+        BD,  HANDLER
+        END, START
