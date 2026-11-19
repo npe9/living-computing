@@ -44,6 +44,7 @@ class Reader:
     def __init__(self, words):
         self.w = words
         self.i = 0
+        self.atoms = {}
 
     def rd(self):
         v = self.w[self.i]
@@ -58,19 +59,31 @@ def read_atom_name(r):
     """Atom: ID, L1, L2, then one char word each (decoder.kl1 get_atom_name).
 
     ID >= 0x8000 defines a new atom (ID & 0x7FFF); ID < 0x8000 is a
-    reference to an atom already defined earlier in the stream.
+    reference to an atom already defined earlier in the stream.  The
+    reference resolves through the reader's atom table.
     """
     aid = r.rd()
     if aid < 0x8000:
-        return aid, ''
+        return aid, r.atoms.get(aid, '')
     ln = (r.rd() << 16) | r.rd()
     chars = bytes(r.rd() & 0xff for _ in range(ln))
-    return aid & 0x7fff, chars.decode('latin1')
+    name = chars.decode('latin1')
+    r.atoms[aid & 0x7fff] = name
+    return aid & 0x7fff, name
 
 
 def parse_term(r):
     t = r.peek()
-    if 0x8000 <= t <= 0x80ff:
+    # decode_atomic(16#"00",16#"00",...) is an atom: a 0x0000 prefix
+    # followed by the atom name (decoder.kl1 get_atom_name).
+    if t == 0x0000:
+        r.rd()
+        aid, name = read_atom_name(r)
+        return ('atom', aid, name)
+    # A bare atom name is an AtomID >= 0x8000 (module/package name,
+    # decode_module_name -> get_atom_name).  Atom IDs are 16-bit, not
+    # confined to 0x8000-0x80ff.
+    if t >= 0x8000:
         aid, name = read_atom_name(r)
         return ('atom', aid, name)
     if (t & 0xff00) == 0x0100:
@@ -86,7 +99,10 @@ def parse_term(r):
         r.rd()
         size = t & 0xff
         ln = (r.rd() << 16) | r.rd()
-        nwords = (ln * size + 31) // 32
+        # decode_string reads two 16-bit words per iteration and
+        # extracts 32/size characters from the 32-bit word, so the
+        # encoded string is 2 * ceil(ln*size/32) 16-bit words.
+        nwords = 2 * ((ln * size + 31) // 32)
         chars = bytes(r.rd() & 0xff for _ in range(nwords))
         return ('string', ln)
     if t == 0x0700:
@@ -135,9 +151,10 @@ def parse_module(r):
     mlen = (r.rd() << 16) | r.rd()
     module_end = mod_start + mlen
     gc = r.rd()
-    # decode_module_name: module atom, package atom
-    mod_name = parse_term(r)
-    pkg_name = parse_term(r)
+    # decode_module_name: module atom, package atom (decoder.kl1
+    # decode_module_name -> get_atom_name, not decode).
+    mod_name = read_atom_name(r)
+    pkg_name = read_atom_name(r)
     # decode_module_info: MagicNum (integer), InfoVec (vector)
     magic = parse_term(r)
     info = parse_term(r)
@@ -155,24 +172,19 @@ def parse_module(r):
         arity = r.rd()
         loc = (r.rd() << 16) | r.rd()
         preds.append((name, arity, loc))
-    # decode_code_area: [S1,S2] size, then code until 0xFFFF.  The
-    # stream starts with atom-table words; find the first aligned
-    # [0x0023, V1, V2] instruction tag.
+    # decode_code_area: [S1,S2] = SizeOfCodeArea, then the code words
+    # until 0xFFFF (decoder.kl1 decode_code_area -> decode_code).
+    # The code starts immediately after the size field; no search.
     code_size = (r.rd() << 16) | r.rd()
     w = r.w
-    start = None
-    for p in range(r.i, len(w) - 6):
-        if w[p] == 0x0023 and w[p + 3] == 0x0023 and w[p + 6] == 0x0023:
-            start = p
-            break
-    if start is not None:
-        r.i = start
     code = []
+    terminated = False
     while r.i + 2 < len(w):
         tag = r.rd()
         t = tag >> 8
         o = tag & 0xff
         if tag == 0xffff:
+            terminated = True
             break
         elif t == 0x23:
             aid, name = read_atom_name(r)
@@ -194,7 +206,8 @@ def parse_module(r):
             code.append(('int', (hi << 16) | lo))
         elif t == 0x06:
             ln = (r.rd() << 16) | r.rd()
-            chars = bytes(r.rd() & 0xff for _ in range(ln))
+            nwords = 2 * ((ln * o + 31) // 32)
+            chars = bytes(r.rd() & 0xff for _ in range(nwords))
             code.append(('string', chars.decode('latin1')))
         elif tag == 0x1100:
             size = r.rd()
@@ -216,6 +229,9 @@ def parse_module(r):
             code.append(('table', size, ent))
         else:
             break
+    if not terminated:
+        raise ValueError('module at %d: code area not terminated by 0xFFFF'
+                         % mod_start)
     return mlen, (mod_name, pkg_name, magic, info), gc_terms, hs, preds, code
 
 
@@ -284,8 +300,8 @@ def main():
             print('\nmodule %d: stopped at word %d (%s)' % (m, r.i, e))
             break
         mod_name, pkg_name, magic, info = names
-        mn = mod_name[2] if mod_name[0] == 'atom' else str(mod_name)
-        pn = pkg_name[2] if pkg_name[0] == 'atom' else str(pkg_name)
+        mn = mod_name[1] if mod_name[1] else '#%d' % mod_name[0]
+        pn = pkg_name[1] if pkg_name[1] else '#%d' % pkg_name[0]
         print('\nmodule %d: %s/%s length=%d hash=%d preds=%d code=%d'
               % (m, pn, mn, mlen, hs, len(preds), len(code)))
         for t in gc_terms[:4]:
