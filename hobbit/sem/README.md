@@ -81,31 +81,47 @@ architectural result depends on it.
 | `msp` | Maximum Stack Pointer; exclusive upper bound of the stack cache | p. 1-5, Table 1-6 p. 1-13 |
 | `psw` | Only bits 6 (V), 5 (C), 4 (F), 11 (E) and 9 (CSP selector) are used | Table 1-8 pp. 1-14..1-16 |
 | `memory` | Sparse architectural memory, a dict of word address to 32-bit word | p. 1-4 |
+| `isp` | Interrupt-stack pointer; quad-aligned, not associated with the stack cache | p. 1-12, Table 1-6 p. 1-13 |
+| `vb` | Vector-table base; quad-aligned | Table 1-14 p. 1-20 |
+
+`isp` and `vb` are architectural but have **no field in the fixed HRI
+line**, which carries only `SP`/`MSP` and one word write.  They exist in
+`State` because KCALL, KRET and CRET read or write them (pp. 3-15..3-16,
+3-29, 3-30); the CLI defaults (`--isp 0x40`, `--vb 0x0`) are harness
+values, since the PRM prints no reset ISP or VB.  For those three
+instructions the state effect on ISP/PSW is real but not diffable; the
+records still carry the observable `SP`/`MSP`/PC and primary write.
 
 The CLI initialises `psw` to `0x00000200` (CSP = SP, bit 9 set).  The
 manual's reset value `PSW = 0` selects the ISP as the current stack
-pointer (p. 1-35), which this model cannot represent — it has no
-interrupt stack.  The reference pre-state for the demo, and the state
-the checker should use, is therefore the explicit `PSW = 0x00000200`.
+pointer (p. 1-35), and this model does not execute instructions with
+ISP as CSP (it can call and return through ISP, but not run on it).
+The reference pre-state for the demo, and the state the checker should
+use, is therefore the explicit `PSW = 0x00000200`.
 
 The model raises `Refusal` (no HRI line) for a state with:
 
 * `psw` bit 16 set (virtual addressing; there is no MMU here, p. 2-1);
 * `psw` bit 15 set (user little-endian data; this model is big-endian
   only, p. 1-4);
-* `psw` bit 9 clear (CSP is ISP; the interrupt stack is out of scope,
-  p. 1-12);
+* `psw` bit 9 clear at instruction entry (CSP is ISP).  KCALL, KRET and
+  CRET themselves are modelled from a CSP = SP state; the manual's
+  ISP-as-CSP execution mode for the other instructions is still outside
+  the model (p. 1-12);
 * `SP` or `MSP` not quad-word aligned, `MSP < SP`, or `MSP > SP+256`
   (p. 1-13);
 * a stack whose 256-byte cache would cross the 32-bit address boundary.
 
-`psw` bit 10 (execution level) is recorded but not used: every
-instruction in the modelled subset is unprivileged.  `SHAD` is not in
-the state.  The manual updates it on ENTER/RETURN/CRET/KCALL/KRET/popn
-(pp. 1-16, 1-17, 3-19, 3-38, 3-40), but no modelled instruction *reads*
-it; it is a restart optimisation, not part of the one-instruction record.
-`CONFIG` is fixed at its reset value 0 (p. 1-36): big-endian, no PC
-extension, and the cache-enable bits are irrelevant to this subset.
+`psw` bit 10 (execution level) is recorded and checked for KRET/CRET,
+which are privileged (pp. 3-15, 3-30); every other modelled instruction
+is available at either level.  `SHAD` is not in the state.  The manual
+updates it on ENTER/RETURN/CRET/KCALL/KRET/popn (pp. 1-16, 1-17, 3-19,
+3-38, 3-40), but no modelled instruction *reads* it; it is a restart
+optimisation, not part of the one-instruction record.  `CONFIG` is fixed
+at its reset value 0 (p. 1-36): big-endian, no PC extension, and the
+cache-enable bits are irrelevant to this subset.  `ISP` and `VB` are
+present (see the state table); KCALL/KRET/CRET maintain ISP exactly as
+printed, but the HRI line has no ISP or PSW field to show it.
 
 ## Memory, byte order and the stack cache
 
@@ -161,6 +177,23 @@ line.
 | `CMPEQ` | 1p `imm5,stk5` (`0x10`), 1p `stk5,stk5` (`0x13`); 3p/5p `gen16/gen32` (`0x1F`) | `PSW.F = (src1 == src2)`; src1 is the source field, src2 the destination field; no memory write | p. 3-13 |
 | `CMPGT` | 1p `stk5,stk5` (`0x11`), 1p `imm5,stk5` (`0x12`); 3p/5p `gen16/gen32` (`0x1D`) | `PSW.F = signed(src1 > src2)`; no memory write | p. 3-13 |
 | `CMPHI` | 3p/5p `gen16/gen32` (`0x1E`) | `PSW.F = unsigned(src1 > src2)`; no memory write | p. 3-13 |
+| `ADDI` | 3p/5p `gen16/gen16`, `gen32/gen32` (`0x03`) | `hidden=dst; dst+=src; Acc=hidden`; C and V unchanged; two architectural stores (dst is the record's primary write) | p. 3-6 |
+| `ANDI` | 3p/5p (`0x02`) | `hidden=dst; dst&=src; Acc=hidden`; C and V unchanged; two stores | p. 3-8 |
+| `ORI` | 3p/5p (`0x01`) | `hidden=dst; dst|=src; Acc=hidden`; C and V unchanged; two stores | p. 3-37 |
+| `MUL`, `MUL3` | 3p/5p (`0x26`, `0x36`) | `dst *= src` or `Acc = dst*src`; C on unsigned overflow, V on signed overflow of the destination | p. 3-34 |
+| `DIV`, `DIV3` | 3p/5p (`0x27`, `0x37`) | `dst = dst/src` or `Acc = dst/src`, two's-complement truncation toward zero; V set only for `0x80000000/-1`, C unchanged; divide-by-zero is a refusal | p. 3-17 |
+| `REM`, `REM3` | 3p/5p (`0x25`, `0x35`) | `dst = dst%src` or `Acc = dst%src`; remainder follows the dividend's sign; V always cleared, C unchanged; divide-by-zero is a refusal | p. 3-39 |
+| `UDIV` | 3p/5p (`0x2F`) | `dst = dst/src` unsigned; C always cleared, V unchanged; divide-by-zero is a refusal | p. 3-48 |
+| `UREM` | 3p/5p (`0x05`) | `dst = dst%src` unsigned; C always cleared, V unchanged; divide-by-zero is a refusal | p. 3-49 |
+| `DQM` | 3p/5p (`0x07`), source word modes or constant, destination mode selects 2 or 4 words | copy two or four contiguous words; alignment 8 (double) or 16 (quad); the record's one write is the lowest-addressed destination word | p. 3-18 |
+| `MOVA` | 1p `stk5,stk5` (`0x1D`); 3p/5p (`0x04`), source only `0xC/0xD/0xE`, destination any general mode | `dst = &src`; immediate source and register source/destination are illegal | p. 3-33 |
+| `LDRAA` | 3p monadic `0x00/0xA`, `flow32` | `Acc = &dst`, the address calculated exactly as a JMP target | p. 3-31 |
+| `TADD` | 3p/5p (`0x0C`) | tagged add: a nonzero tag sets F=1, leaves C/V and memory alone; otherwise C/V and F=V, and the sum is stored only when F=0 | p. 3-44 |
+| `TSUB` | 3p/5p (`0x0D`) | tagged subtract with the same tag/overflow/store rules | p. 3-47 |
+| `CLRE` | 1p niladic `0x0B/0x00A` | clear `PSW.E`; no memory write | p. 3-12 |
+| `KCALL` | 1p `imm10`; 3p monadic `0x00/0x0`, `word32` | save src, return PC and PSW at `ISP-12/-8/-4`, `ISP-=16`, `PC=*(VB+0)`, `PSW &= 0xFFFF0000`; the record shows the first frame word | p. 3-29 |
+| `KRET` | 1p niladic `0x0B/0x001` | `PC=*(ISP+8)`, `PSW=*(ISP+12)`, `ISP+=16`; privileged; no memory write | p. 3-30 |
+| `CRET` | 1p niladic `0x0B/0x005` | `SP=*(ISP+0)`, CATCH to `*(ISP+4)`, restore MSP/PC/PSW, `ISP+=16`; privileged; no memory write | pp. 3-15, 3-16 |
 | `TESTC` | 1p niladic `0x0B/0x009` | `PSW.F = PSW.C`, then `PSW.C = 0`; no memory write | p. 3-45 |
 | `TESTV` | 1p niladic `0x0B/0x008` | `PSW.F = PSW.V`, then `PSW.V = 0`; no memory write | p. 3-46 |
 | `CALL` | 1p `pcrel10`; 3p `flow32` | `*(CSP) = next PC; PC = target` | p. 3-9 |
@@ -179,9 +212,13 @@ Operand modes implemented (Tables 1-21..1-24, pp. 1-25..1-27):
   half-word/unsigned half-word/word, stack-offset byte/UB/H/UH/word,
   stack-offset-indirect byte/UB/H/UH/word, and immediate;
 * the one-parcel forms `imm5`, `wai5`, `stk5`, `istk5`, `stk8`;
-* `flow32` (Table 1-23) for CALL/JMP: absolute indirect `**$addr`,
-  stack-offset indirect `*Roffset`, PC-relative label, absolute `*$addr`;
-* `word32` (Table 3-2, p. 3-4) for CATCH/ENTER.
+* `flow32` (Table 1-23) for CALL/JMP/LDRAA and KCALL: absolute indirect
+  `**$addr`, stack-offset indirect `*Roffset`, PC-relative label,
+  absolute `*$addr`;
+* `word32` (Table 3-2, p. 3-4) for CATCH/ENTER and KCALL;
+* the DQM source restricted to the word modes `0xC/0xD/0xE` plus the
+  immediate `0xF`, and the DQM destination modes `0x0/0x4/0x8`
+  (double-word) or `0xC/0xD/0xE` (quad-word), as p. 3-18 requires.
 
 The width of an operand comes from its mode: `0x0/1/4/5/8/9` are bytes,
 `0x2/3/6/7/A/B` are half-words, `0xC/0xD/0xE` are words, and `0xF` is an
@@ -190,10 +227,11 @@ immediate.  A missing suffix in the manual's syntax means a signed word
 half-word loads and zero extension for unsigned ones, exactly as p. 1-3
 and p. 1-28 describe.
 
-A three-parcel **monadic** instruction (CALL, RETURN, JMP, the four
-conditional jumps, CATCH, ENTER, POPN) carries one 32-bit operand in
-parcels 2 and 3, `((parcel2 << 16) | parcel3)` (p. 1-23, and `stk32` /
-`word32` in Table 3-2, p. 3-4); a three-parcel **dyadic** instruction
+A three-parcel **monadic** instruction (KCALL, CALL, RETURN, JMP,
+LDRAA, the four conditional jumps, CATCH, ENTER, POPN) carries one
+32-bit operand in parcels 2 and 3, `((parcel2 << 16) | parcel3)`
+(p. 1-23, and `stk32`/`word32` in Table 3-2, p. 3-4); a three-parcel
+**dyadic** instruction
 carries a 16-bit source in parcel 2 and a 16-bit destination in parcel 3
 (p. 1-23).  This model follows the monadic 32-bit rule (the earlier
 16-bit reading was the 003/004 defect); the fixed HRI line still shows
@@ -224,7 +262,7 @@ returned PC whose bit 0 is set is fetched with bit 0 ignored (p. 1-4).
 | `sp_after` | `SP` after the instruction (equal before/after for non-stack instructions) | pp. 3-19..3-21, 3-38, 3-40 |
 | `msp_before` | `MSP` before the instruction | p. 1-5, Table 1-6 p. 1-13 |
 | `msp_after` | `MSP` after the instruction (CATCH/ENTER/POPN/RETURN change it) | pp. 3-10, 3-19, 3-38, 3-40 |
-| `we` | 1 if this instruction performs the one architectural write in the record, else 0 | p. 1-5 (cache appears as normal memory), p. 1-7 (accumulator) |
+| `we` | 1 if this instruction performs the record's one architectural write, else 0.  For the multi-write instructions (ADDI/ANDI/ORI, DQM, KCALL) the line carries the **primary** write only; see choice 26 | p. 1-5 (cache appears as normal memory), p. 1-7 (accumulator) |
 | `addr` | Word address of that write (`effective address & ~3`) | p. 1-4 |
 | `data` | Big-endian bus word for the write: the stored byte(s) in their byte lanes | p. 1-4, Figure 1-2 |
 | `mask` | Byte marks of the write, bit 3 = byte at `addr` (bits 31:24), bit 0 = byte at `addr+3` (bits 7:0); a word write is `0f` | p. 1-4 (byte stores), p. 1-5 |
@@ -291,6 +329,23 @@ it is computed per ENTER (below).
 | `SUB`, `SUB3` | 1 | 1 | Table 4-32, p. 4-3 |
 | `CMPEQ`, `CMPGT`, `CMPHI` | `CMP` = 1 | 1 | Table 4-32, p. 4-3; the `CMP` row is the only timing the manual gives the three compares (p. 3-13) |
 | `TESTC`, `TESTV` | 1 | 1 | Table 4-32, p. 4-3 |
+| `ADDI`, `ANDI`, `ORI` | 2 | 2 | Table 4-32, p. 4-3 |
+| `CLRE` | 1 | 1 | Table 4-32, p. 4-3 |
+| `LDRAA` | 1 | 1 | Table 4-32, p. 4-3 |
+| `MOVA` | 1 | 1 | Table 4-32, p. 4-3 |
+| `TADD`, `TSUB` | 1 | 1 | Table 4-32, p. 4-3 |
+| `MUL`, `MUL3` | `Min 3`, `Max 20` | 20 | Table 4-33, p. 4-4; data dependent and no formula is printed, so the model takes the printed maximum (`MUL_CYC`, choice 24) |
+| `DIV`, `DIV3`, `REM`, `REM3`, `UDIV`, `UREM` | 38 | 38 | Table 4-33, p. 4-4 |
+| `DQM` constant → SC double/quad | 3 / 5 | 3 / 5 | Table 4-34, p. 4-4 |
+| `DQM` constant → M double/quad | `1 + D` / `1 + Q` | 3 / 5 | Table 4-34, p. 4-4 |
+| `DQM` SC → SC double/quad | 4 / 8 | 4 / 8 | Table 4-34, p. 4-4 |
+| `DQM` SC/M ↔ M/SC double | `2 + D` | 4 | Table 4-34, p. 4-4 |
+| `DQM` SC/M ↔ M/SC quad | `4 + D` | 6 | Table 4-34, p. 4-4; a quad transfer printed with D, not Q |
+| `DQM` M → M double | `2·D` | 4 | Table 4-34, p. 4-4 |
+| `DQM` M → M quad | `8·S` | **refused** | Table 4-34, p. 4-4; `S` is not defined on p. 4-2 |
+| `KCALL` | `8 + D + A` | 11 | Table 4-36, p. 4-5 |
+| `KRET` | `10 + D` | 12 | Table 4-36, p. 4-5 |
+| `CRET` | `11 + Q` | 15 | Table 4-36, p. 4-5 |
 | `NOP` | 1 | 1 | Table 4-32, p. 4-3 |
 | `CALL` (1p and 3p) | 1 | 1 | Table 4-32, p. 4-3 |
 | `RETURN` | 2 | 2 | Table 4-32, p. 4-3; always indirect, no indirection delay (p. 4-3 note) |
@@ -302,13 +357,12 @@ it is computed per ENTER (below).
 | `JMPFN`, `JMPFY`, `JMPTN`, `JMPTY` | Table 4-35 rows | 0..3 | Table 4-35, p. 4-5 (below) |
 | `FLUSHD`, `FLUSHDCE` (trap) | `Unimplemented opcode = 7 + A` | 8 | Table 4-36, p. 4-5; the sequence both take (pp. 3-22, 3-23) |
 
-The code's `CHAPTER4` tuple also transcribes the fixed rows the model
-refuses to execute (`ADDI`/`ANDI`/`ORI` = 2, the multi-cycle arithmetic,
-DQM, `CRET`, `KCALL`, `KRET`, `Exception`).  They carry their own printed
-page and caption, but the instruction decoder refuses those mnemonics
-before any timing is emitted, so the rows are documentation, not a
-second execution path.  DQM's printed `M quad-word to M quad-word = 8·S`
-has no encoded value because `S` is not defined on p. 4-2.
+The code's `CHAPTER4` tuple still transcribes the `Exception` row
+(`9 + D + A`, p. 4-5), which the model refuses because event processing
+is outside it, and the `DQM M quad-word to M quad-word = 8·S` cell, which
+has no encoded value because `S` is not defined on p. 4-2.  The one
+MUL row keeps its printed `Min 3/Max 20` range in the tuple; the named
+`MUL_CYC` choice supplies the single number the record needs.
 
 ### Conditional jumps (Table 4-35, p. 4-5)
 
@@ -483,13 +537,12 @@ the 3-parcel `SUB` is `a0dd 0008 0004`, and the 5-parcel `CMPEQ` is
 `dffd 0000 0000 0000 0000`.  `insn1` is `0000` for every one-parcel line
 and the second parcel for the multi-parcel lines.
 
-## Golden programs 001–006
+## Golden programs 001–012
 
-The model was run on the six images with `--sp 0x100 --msp 0x180`
-after the adjudicated fixes:
+The model was run on all twelve images with `--sp 0x100 --msp 0x180`:
 
 ```sh
-for n in 001 002 003 004 005 006; do
+for n in 001 002 003 004 005 006 007 008 009 010 011 012; do
   python3 sem/hobbit_sem.py --image tests/golden/$n.hex --sp 0x100 --msp 0x180
 done
 ```
@@ -513,6 +566,25 @@ done
   (`cyc=0`); and `ADD $2,R0` / `ADD3 $5,R0` write `0x000c` /
   `0x00000011` before the C1 stop at `0x0018`.
 
+The six new programs hand-derive instructions added in this milestone.
+They have no core comparison yet (the Bluespec core does not implement
+these mnemonics), but `tests/run_tests.sh` runs the model against each
+trace with `hri_check.py`, and `tests/golden/check_golden.py` checks
+their format, state continuity and per-line citation.
+
+* **007 `MUL`**: `MOV $7,R8; MUL $6,R8` gives `0x2a` with `cyc=20`
+  (Table 4-33's printed maximum), C=V=0.
+* **008 `DIV`**: `MOV $-7,R8; DIV $2,R8` gives `0xfffffffd` with
+  `cyc=38`, the truncation-toward-zero reading of p. 3-17.
+* **009 `ADDI`**: `MOV $5,R8; ADDI $3,R8` writes 8 to `0x108` and 5 to
+  the accumulator `0x104`; the record carries the destination store
+  (choice 26), `cyc=2`.
+* **010 `TADD`**: an untagged `4+4` stores 8; a tagged `TADD $2,R8`
+  sets F and performs no store.
+* **011 `MOVA`**: `MOVA R16,R8` stores the address `SP+16 = 0x110`.
+* **012 `LDRAA`**: `LDRAA *$0x100` puts `0x100` in the accumulator at
+  `0x104`.
+
 ## Refused constructs
 
 The model has no plausible-guess fallback.  A **`Refusal`** is a legal
@@ -522,14 +594,37 @@ alignment fault, a fetch fault or a state limitation: `step()` raises
 emits no HRI line and stops.  `trap=1` is reserved for the
 unimplemented-instruction sequence (`FLUSHD`/`FLUSHDCE`).  Refused:
 
-* **Opcodes not in the table above.**  In one-parcel form: KCALL
-  (`0x00`), KRET, CRET, FLUSHI, FLUSHP, CLRE, CPU, AND/AND3,
-  MOVA, SHL3/SHR3, and the unimp rows.  In 3-/5-parcel form: ORI,
-  ANDI, ADDI, MOVA, UREM, DQM, TADD, TSUB,
-  OR/AND/XOR/REM/MUL/DIV (and their `3` forms), SHR/USHR/SHL/UDIV,
-  all `3` shift forms, KCALL, LDRAA, FLUSHPTE, FLUSHPBE, and every
-  unimp opcode.  These are real instructions in the manual; the model
-  simply states only the listed subset.
+* **Opcodes not in the table above.**  In one-parcel form: FLUSHI,
+  FLUSHP, CPU, AND/AND3, SHL3/SHR3, and the unimp rows.  In 3-/5-parcel
+  form: AND/AND3, OR/OR3, XOR/XOR3, SHL/SHL3, SHR/SHR3, USHR/USHR3,
+  FLUSHPTE, FLUSHPBE, the five-parcel monadic opcode 0x00 (Table 1-20
+  p. 1-25 makes it unimp), and every unimp opcode.  These are real
+  instructions in the manual; the model simply states only the listed
+  subset.  The shifts and the logical AND/OR/XOR remain outside the
+  subset; the arithmetic, interlocked, tagged, move, DQM, kernel-call
+  and five-parcel forms are implemented.
+* **Divide by zero** (`DIV`, `DIV3`, `REM`, `REM3`, `UDIV`, `UREM`).
+  pp. 3-17, 3-39, 3-48, 3-49 say it takes the zero-divide exception;
+  the event sequence is outside a one-instruction architectural model,
+  so `step()` raises `unsupported:` rather than inventing a trap line.
+* **DQM's printed `8·S` cell.**  A quad-word memory-to-memory transfer
+  selects Table 4-34's `8·S` row (p. 4-4), and `S` is not among the
+  p. 4-2 abbreviations.  The model refuses that cell rather than
+  substituting `Q`; every other DQM cell resolves.
+* **DQM mode misuse.**  p. 3-18's description calls non-permitted
+  addressing modes an alignment fault while its Notes call them an
+  illegal instruction sequence.  The model follows the specific Notes
+  (`illegal:`) and says so in choice 28.
+* **MOVA's immediate source.**  p. 3-33's footnote allows "immediate as
+  already noted" while its Notes make an immediate source (and a
+  register source or destination) an illegal instruction.  The model
+  follows the Notes (choice 29).
+* **Privilege and interrupt-stack state.**  KRET and CRET at user level
+  are a privilege violation (pp. 3-15, 3-30) and are refused.  KCALL,
+  KRET and CRET also refuse an unaligned or too-low ISP (p. 1-12,
+  Table 1-6 p. 1-13), and KCALL refuses an unaligned VB (Table 1-14
+  p. 1-20).  CRET refuses a restored SP/MSP outside the p. 1-13
+  `SP <= MSP <= SP+256` relation.
 * **Hardware-unimplemented instructions**: FLUSHD (`0x0B/0x006`) and
   FLUSHDCE (monadic `0x00/0xD`) are the only `trap=1` lines (p. 3-22,
   p. 3-23, p. 1-39); they are not refusals in the sense above.
@@ -554,10 +649,19 @@ unimplemented-instruction sequence (`FLUSHD`/`FLUSHDCE`).  Refused:
   Table 4-35 row; `step()` refuses rather than inventing a penalty (see
   “Where the manual is silent”).
 * **Events**: reset, interrupts, exceptions, trace, trapped-niladic
-  delivery, unimplemented registers, divide-by-zero, privilege
-  violations, bus errors, MMU translation and the vector table.  The
-  p. 1-39 store is only for FLUSHD/FLUSHDCE; the other events are
-  refusals, not HRI records.
+  delivery, unimplemented registers, bus errors, MMU translation and
+  the vector table.  A divide-by-zero is refused at the dividing
+  instruction (see above).  The p. 1-39 store is only for
+  FLUSHD/FLUSHDCE; the other events are refusals, not HRI records.
+* **The one-write record limit.**  ADDI/ANDI/ORI write both the
+  destination and the accumulator (p. 3-6), DQM writes two or four
+  words (p. 3-18) and KCALL writes a three-word frame (p. 3-29).  The
+  fixed HRI line has one `we`/`addr`/`data`/`mask` slot, so it reports
+  the primary write (destination, lowest destination word, or the
+  `ISP-12` source word) and the remaining stores are applied to
+  `state.memory` but not shown (choice 26).  Those instructions are
+  therefore **not** comparable against a core until the record grows a
+  block/multi-write form; the implemented core does not execute them.
 
 An illegal encoding (e.g. a destination immediate, or an unaligned word
 access) is a `Refusal` with `illegal:`/`alignment:` rather than being
@@ -703,6 +807,60 @@ this model ever disagree, the README is the tie-breaker for the checker.
     from the core's start to its retirement.  With no overlap modelled,
     that is the instruction's own occupancy (`cyc` is 1 for a first
     one-cycle instruction, 8 for a first FLUSHD trap).
+24. **MUL/MUL3's single `cyc`.**  Table 4-33 (p. 4-4) prints only
+    `Min 3 / Max 20` and calls the time data dependent; no page prints
+    the dependence.  The record must carry one number, so the model
+    takes the printed maximum, `MUL_CYC = 20`.  This is a model choice
+    like A/D/Q; the alternative (the minimum, or an invented
+    operand-dependence formula) would change every MUL record.
+25. **Two's-complement division rounding.**  p. 3-17 says only "Two's
+    complement division is performed", p. 3-39 says REM is defined in
+    terms of DIV, and p. 1-28 repeats that definition.  No page prints
+    the rounding direction or the remainder sign.  This model uses the
+    standard truncation toward zero (quotient sign = sign of the
+    dividend XOR divisor; remainder sign = dividend sign): `-7/2 = -3`
+    with remainder `-1`.  Floor division would give `-4` and `+1`.
+26. **Instructions with more than one architectural write.**  ADDI,
+    ANDI and ORI store the destination and the old destination in the
+    accumulator (p. 3-6); DQM moves two or four words (p. 3-18); KCALL
+    writes the `ISP-12/-8/-4` frame (p. 3-29).  The fixed HRI line has
+    one write slot (adjudication C3), so the model reports the primary
+    write (the destination for the interlocked forms, the
+    lowest-addressed destination word for DQM, the `ISP-12` source word
+    for KCALL) and applies every other store to `state.memory`.  A DQM
+    block is read into a temporary before any destination word is
+    written; the PRM does not define overlapping source and destination
+    blocks, so that order is a model choice.  Extending the line to a
+    block write is a contract change, not a semantic choice; until then
+    those instructions are not core-diffable.
+27. **ISP and VB defaults.**  ISP (pp. 1-12, 1-13) and VB (p. 1-20) are
+    architectural but absent from the HRI line.  `State` carries them
+    and the CLI defaults them to `0x40` and `0x0`; the PRM prints no
+    reset values for either.  KRET/CRET/KCALL therefore change state
+    the trace cannot show, and the records remain valid only for their
+    observable `SP`/`MSP`/PC/write fields.
+28. **DQM's wrong-mode fault.**  p. 3-18's description assigns an
+    alignment fault (exception `0x4`) to non-permitted modes while its
+    Notes assign an illegal instruction sequence (`0x3`) to the same
+    misuse.  This model follows the more specific Notes and raises
+    `illegal:`.  The alternative reading would make the same program an
+    `alignment:` refusal.
+29. **MOVA's immediate source.**  p. 3-33's footnote says the source
+    must be a word mode "except for immediate as already noted", while
+    its Notes say an immediate source — and a register source or
+    destination — is an illegal instruction.  This model follows the
+    Notes: only modes `0xC/0xD/0xE` are accepted for the source, and
+    mode `0x7` is illegal on either side.
+30. **UREM's note copy.**  p. 3-49's note reads "The PSW carry bit is
+    always cleared by UDIY" on the UREM page; `UDIY` is a scan/typo for
+    `UDIV` copied from p. 3-48.  This model applies the sentence to
+    UREM: C cleared, V unchanged.  The alternative — treating the note
+    as not applying to UREM — would leave C unchanged.
+31. **LDRAA's encoding table.**  The printed table on p. 3-31 is present
+    on the page image but dropped by `pdftotext`; OCR of the rendered
+    page gives `length 6 | opcode 0x00 | subcode 0xA | LDRAA | flow32`,
+    matching Table 1-19 (p. 1-24) and Plan 9 `zl/optab.c`.  This is a
+    text-layer limitation, not a semantic ambiguity.
 
 ## What the model deliberately is not
 

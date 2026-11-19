@@ -36,10 +36,10 @@ machines whose differences must remain explicit.
 | parcel assembler + disassembler | `asm/` | 18 unittest checks, bit-exact against Tables 1-15…1-20, cross-checked with Plan 9's encoder |
 | architectural inventory | `docs/isa_inventory.md` | all 46 Table 3-1 entries, each with a printed-page cite |
 | Chapter 4 timing table | `docs/timing.csv`, `docs/timing_tables.md` | 46/46 spellings covered; `tools/check_timing.py` |
-| one-instruction semantics model | `sem/` | written from the PRM, independent of `bsv/` and `asm/` |
+| one-instruction semantics model | `sem/` | written from the PRM, independent of `bsv/` and `asm/`; now also MUL/MUL3, DIV/DIV3, REM/REM3, UDIV, UREM, ADDI/ANDI/ORI, TADD/TSUB, DQM, MOVA, LDRAA, CLRE, KCALL/KRET/CRET and the five-parcel forms, with 27 unit tests (`tests/test_sem_extended.py`) and explicit refusals where the manual is silent (divide by zero, DQM's `8·S` cell) |
 | Bluesim core | `bsv/` | 30-check smoke test (behaviour + cycles), `run_smoke.sh`; PDU → decoded-instruction store → EU, stack cache as a stateful box |
 | cycle accuracy | `cyc` in every HRI record | Tables 4-32…4-36 under the p. 4-1 assumptions; A/D/Q are named model choices, not printed values |
-| hand-derived golden programs | `tests/golden/` | six programs, 42 retirement records, each line and each cycle figure justified by a printed page |
+| hand-derived golden programs | `tests/golden/` | twelve programs, 56 retirement records, each line and each cycle figure justified by a printed page; 001–006 run on the core and the model, 007–012 on the model only (the core does not yet implement those instructions) |
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
 | UART HRI stream | `bsv/HobbitUart.bsv` | 9-check testbench, byte-exact variable-length lines at 115200 |
 | ULX3S target (ECP5 85F) | `fpga/` | bitstream produced: 18,041/83,640 LUT4 (21%), 5,066 FF (6%), 18/208 DP16KD, 25.66 MHz (PASS at 25 MHz); same `smoke.hex`, HRI lines over the UART |

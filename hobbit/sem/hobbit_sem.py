@@ -53,6 +53,20 @@ PSW.F was not set by a compare (TESTC/TESTV and the reset value are the
 other flag sources) -- the model raises ``Refusal`` instead of inventing
 a cycle count.
 
+The modelled subset includes the multi-cycle arithmetic
+(MUL/MUL3, DIV/DIV3, REM/REM3, UDIV, UREM), the interlocked
+ADDI/ANDI/ORI, tagged TADD/TSUB, DQM, MOVA, LDRAA, CLRE, TESTC/TESTV,
+the kernel transfers KCALL/KRET/CRET, and the three- and five-parcel
+forms of the dyadic instructions.  Arithmetic flags follow the printed
+operation lines; the two places the PRM does not pin down -- a MUL
+cycle count inside its printed Min 3/Max 20 range and the rounding
+direction of "two's complement division" -- are named model choices in
+``hobbit/sem/README.md``.  The fixed HRI line has one write slot, so an
+instruction with several architectural stores (the interlocked forms'
+accumulator save, a DQM block, KCALL's frame) reports its primary
+destination and applies the rest to ``state.memory``; that record
+limitation is also stated in the README.
+
 Everything here is written from the printed ATT92010 Programmer's
 Reference Manual (January 1993) and deliberately does not import or read
 ``hobbit/bsv`` or ``hobbit/asm``.  That independence is the point: the
@@ -102,6 +116,13 @@ SCSIZE = 256            # 64 words, p. 1-5
 A_CYC = 1               # memory access, single word
 D_CYC = 2               # memory access, double word (two words)
 Q_CYC = 4               # memory access, quad word (four words)
+
+# Table 4-33 (printed p. 4-4) prints MUL and MUL3 only as a range,
+# "Min 3 / Max 20", and calls them data dependent; no page prints the
+# dependence.  The one-instruction model must report one number, so it
+# takes the printed maximum and names the choice here.  This is a model
+# decision, not a manual fact (README, choice 24).
+MUL_CYC = 20
 
 
 @dataclass(frozen=True)
@@ -308,6 +329,13 @@ class State:
     psw: int = PSW_SP
     memory: Dict[int, int] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
+    # Interrupt-stack pointer and vector base (Table 1-6 p. 1-13, p. 1-20).
+    # They are architectural but have no field in the fixed HRI line; only
+    # KCALL, KRET and CRET read or write them, and those instructions are
+    # outside the core's implemented subset.  The CLI defaults are harness
+    # values, not reset values (the manual does not print a reset ISP or VB).
+    isp: int = 0x40
+    vb: int = 0
 
 
 @dataclass
@@ -676,6 +704,68 @@ def _sub_result(psw: int, dst: int, src: int) -> Tuple[int, int, int]:
     return result, new_psw, borrow
 
 
+def _mul_result(psw: int, dst: int, src: int, width: int
+                ) -> Tuple[int, int, int]:
+    """MUL/MUL3 product and flags (p. 3-34).
+
+    "The PSW carry bit is set to 1 if the product of the operands as
+    unsigned values overflows the destination (or accumulator);
+    similarly, the PSW overflow bit is set to 1 if the product of the
+    operands as signed values overflows the destination (or
+    accumulator)."  ``width`` is the destination operand's byte width
+    (four for MUL3's accumulator).  The product is computed at 32 bits
+    and the destination store truncates it, as p. 3-3 shows the
+    untruncated result surviving a byte destination.
+    """
+    a, b = dst & MASK32, src & MASK32
+    unsigned = a * b
+    signed = _sx(a, 32) * _sx(b, 32)
+    bits = 8 * width
+    carry = 1 if unsigned > (1 << bits) - 1 else 0
+    overflow = 1 if (signed < -(1 << (bits - 1))
+                     or signed > (1 << (bits - 1)) - 1) else 0
+    new_psw = ((psw & ~(PSW_C | PSW_V))
+               | (PSW_C if carry else 0)
+               | (PSW_V if overflow else 0))
+    return unsigned & MASK32, new_psw, carry
+
+
+def _divide(dst: int, src: int) -> Tuple[int, int, int]:
+    """One signed/unsigned division (pp. 3-17, 3-39).
+
+    Returns (quotient, remainder, overflow).  The PRM says only "Two's
+    complement division is performed" (p. 3-17) and that REM is defined
+    in terms of DIV (p. 1-28); it does not print a rounding rule.  This
+    model takes the standard two's-complement truncation: the quotient
+    truncates toward zero and the remainder has the dividend's sign.
+    That reading is named in the README, not presented as a printed
+    fact.  Division by zero is the zero-divide exception (p. 3-17),
+    which is an event outside this one-instruction model.
+    """
+    a = _sx(dst & MASK32, 32)
+    b = _sx(src & MASK32, 32)
+    if b == 0:
+        raise Unsupported(
+            "unsupported: divide-by-zero exception (p. 3-17); the event "
+            "sequence is outside this model")
+    quotient = abs(a) // abs(b)
+    if (a < 0) != (b < 0):
+        quotient = -quotient
+    remainder = a - quotient * b
+    overflow = 1 if (a == -0x80000000 and b == -1) else 0
+    return quotient & MASK32, remainder & MASK32, overflow
+
+
+def _udivide(dst: int, src: int) -> Tuple[int, int]:
+    """Unsigned division and remainder (pp. 3-48, 3-49)."""
+    a, b = dst & MASK32, src & MASK32
+    if b == 0:
+        raise Unsupported(
+            "unsupported: divide-by-zero exception (p. 3-48); the event "
+            "sequence is outside this model")
+    return a // b, a % b
+
+
 # ---------------------------------------------------------------------------
 # Stack-cache bookkeeping (pp. 1-5..1-8, 3-10..3-11, 3-19..3-21, 3-38, 3-40)
 # ---------------------------------------------------------------------------
@@ -695,6 +785,27 @@ def _check_stack_state(state: State) -> None:
         raise Unsupported(
             "unsupported: stack cache at SP=0x%08x would cross the 32-bit "
             "address boundary (p. 1-5)" % state.sp)
+
+
+def _check_interrupt_stack(state: State, need_vb: bool = False) -> None:
+    """ISP (and, for KCALL, VB) are quad-aligned; low bits are reserved.
+
+    ISP: Table 1-6 (p. 1-13) and p. 1-12; VB: Table 1-14 (p. 1-20).
+    The manual does not print either reset value, so the State defaults
+    are harness choices (README).
+    """
+    if state.isp & 0xF:
+        raise Unsupported(
+            "unpredictable: ISP 0x%08x is not quad-word aligned "
+            "(p. 1-12, Table 1-6 p. 1-13)" % state.isp)
+    if state.isp < 16:
+        raise Unsupported(
+            "unpredictable: ISP 0x%08x cannot hold the 16-byte event "
+            "frame (p. 1-12, p. 3-29)" % state.isp)
+    if need_vb and state.vb & 0xF:
+        raise Unsupported(
+            "unpredictable: VB 0x%08x is not quad-word aligned "
+            "(Table 1-14, p. 1-20)" % state.vb)
 
 
 def _enter_flush_blocks(state: State, target: int) -> int:
@@ -953,10 +1064,52 @@ def _conditional_jump_cycles(taken: bool, predicted_taken: bool,
     return value
 
 
+_DQM_BY_VARIANT: Dict[str, Optional[int]] = {
+    row.variant: row.cycles for row in CHAPTER4 if row.table == "Table 4-34"
+}
+
+
+def _sc_contains(state: State, addr: int) -> bool:
+    """Is ``addr`` in the stack cache? (p. 1-5: SP <= ADDR < MSP.)"""
+    return state.sp <= (addr & MASK32) < state.msp
+
+
+def _dqm_cycles(state: State, constant: bool, src_addr: int,
+                dst_addr: int, quad: bool) -> int:
+    """Table 4-34 (printed p. 4-4) cell for one DQM transfer.
+
+    The rows are selected by where the source and destination live: the
+    stack cache (``SC``) when the address is inside ``[SP, MSP)``
+    (p. 1-5), memory (``M``) otherwise, and ``Constant`` for source mode
+    0xF.  The quad-word ``M`` to ``M`` row is the printed ``8.S``, and
+    ``S`` is not defined on p. 4-2, so that cell is refused rather than
+    guessed (README refusal).
+    """
+    size = "quad-word" if quad else "double-word"
+    dst_sc = _sc_contains(state, dst_addr)
+    if constant:
+        variant = ("Constant to SC " if dst_sc else "Constant to M ") + size
+    else:
+        src_sc = _sc_contains(state, src_addr)
+        if src_sc and dst_sc:
+            variant = "SC %s to SC %s" % (size, size)
+        elif src_sc or dst_sc:
+            variant = "SC/M %s to M/SC %s" % (size, size)
+        else:
+            variant = "M %s to M %s" % (size, size)
+    value = _DQM_BY_VARIANT[variant]
+    if value is None:
+        raise Refusal(
+            "unsupported: DQM %s is the printed cell 8.S, and S is not "
+            "defined on p. 4-2 (Table 4-34, p. 4-4)" % variant)
+    return value
+
+
 def _retirement_cycles(mnemonic: str, folded: bool,
                        branch_taken: Optional[bool],
                        branch_predicted: Optional[bool],
-                       flush_blocks: int, timing: Timing) -> int:
+                       flush_blocks: int, timing: Timing,
+                       dqm_cycles: Optional[int] = None) -> int:
     """Chapter 4 occupancy of one retiring instruction.
 
     Base rows come from Tables 4-32, 4-33 and 4-36 (printed pp. 4-3..4-5)
@@ -968,6 +1121,16 @@ def _retirement_cycles(mnemonic: str, folded: bool,
     if mnemonic == "ENTER":
         # Table 4-36, p. 4-5: printed 1 + (Q . E), with E = flush blocks.
         return 1 + Q_CYC * flush_blocks
+    if mnemonic == "DQM":
+        # Table 4-34, p. 4-4: the cell is selected by operand location
+        # and size; the caller resolved it with _dqm_cycles.
+        if dqm_cycles is None:
+            raise RuntimeError("DQM without a resolved Table 4-34 cell")
+        return dqm_cycles
+    if mnemonic in ("MUL", "MUL3"):
+        # Table 4-33, p. 4-4: printed Min 3 / Max 20, data dependent.
+        # MUL_CYC is the named model choice (printed maximum).
+        return MUL_CYC
     if mnemonic in ("JMPFN", "JMPFY", "JMPTN", "JMPTY"):
         if branch_taken is None or branch_predicted is None:
             raise RuntimeError("conditional jump without a prediction")
@@ -1042,13 +1205,22 @@ def step(state: State,
         new_sp = state.sp
         new_msp = state.msp
         new_psw = state.psw
+        new_isp = state.isp
         store: Optional[Tuple[Operand, int]] = None
+        # Additional architectural stores the fixed one-write HRI line cannot
+        # carry: the accumulator save of the interlocked instructions
+        # (p. 3-6), the remaining words of a DQM block (p. 3-18) and the
+        # PC/PSW words of KCALL's event frame (p. 3-29).  The record's one
+        # write is the instruction's primary destination; these are applied
+        # to memory as well and named in the README.
+        extra_stores: List[Tuple[Operand, int]] = []
         # Chapter 4 accounting for this instruction (filled in by the decoder).
         mnemonic = ""
         folded = False
         branch_taken: Optional[bool] = None
         branch_predicted: Optional[bool] = None
         flush_blocks = 0
+        dqm_cycles: Optional[int] = None
         # A one-parcel branch folds into the instruction immediately before it
         # (p. 4-7); the previous instruction's class decides whether it can.
         if (length == 1
@@ -1065,9 +1237,25 @@ def step(state: State,
             src5 = (p0 >> 5) & 0x1F
             dst5 = p0 & 0x1F
 
-            if op == 0x00:                            # KCALL
-                raise Unsupported(
-                    "unsupported: KCALL (1-parcel opcode 0x00, p. 3-29)")
+            if op == 0x00:                            # KCALL imm10
+                # p. 3-29: the 10-bit immediate is zero-extended and
+                # multiplied by four; the source value, the return PC and
+                # the PSW go to ISP-12/-8/-4 and ISP -= 16.
+                mnemonic = "KCALL"
+                _check_interrupt_stack(state, need_vb=True)
+                src_value = ((p0 & 0x3FF) << 2) & MASK32
+                frame = state.isp
+                store = (Operand(4, True, ea=(frame - 12) & MASK32),
+                         src_value)
+                extra_stores = [
+                    (Operand(4, True, ea=(frame - 8) & MASK32), next_pc),
+                    (Operand(4, True, ea=(frame - 4) & MASK32), state.psw),
+                ]
+                new_isp = (frame - 16) & MASK32
+                next_pc = _read_word(state, memory_reader, state.vb)
+                # "PSW = PSW & 0xFFFF0000": kernel level, ISP selected
+                # as CSP, tracing/interrupts inhibited (p. 3-29).
+                new_psw = state.psw & 0xFFFF0000
             elif op == 0x01:                          # CALL pcrel10
                 mnemonic = "CALL"
                 return_pc = next_pc
@@ -1135,18 +1323,57 @@ def step(state: State,
                         "unsupported: FLUSHD (niladic 0x0B/0x6); there is "
                         "no data cache and the unimplemented-instruction "
                         "sequence is taken (p. 3-22)")
-                elif sub == 0x001:
-                    raise Unsupported(
-                        "unsupported: KRET (niladic 0x0B/0x1; p. 3-30)")
+                elif sub == 0x001:                      # KRET
+                    mnemonic = "KRET"
+                    if state.psw & PSW_USER:
+                        raise Unsupported(
+                            "unsupported: privilege violation; KRET is "
+                            "privileged (p. 3-30)")
+                    _check_interrupt_stack(state)
+                    next_pc = _read_word(state, memory_reader,
+                                         (state.isp + 8) & MASK32)
+                    new_psw = _read_word(state, memory_reader,
+                                         (state.isp + 12) & MASK32)
+                    new_isp = (state.isp + 16) & MASK32
                 elif sub == 0x003:
                     raise Unsupported(
                         "unsupported: FLUSHI (niladic 0x0B/0x3; p. 3-24)")
                 elif sub == 0x004:
                     raise Unsupported(
                         "unsupported: FLUSHP (niladic 0x0B/0x4; p. 3-25)")
-                elif sub == 0x005:
-                    raise Unsupported(
-                        "unsupported: CRET (niladic 0x0B/0x5; p. 3-15)")
+                elif sub == 0x005:                      # CRET
+                    mnemonic = "CRET"
+                    if state.psw & PSW_USER:
+                        raise Unsupported(
+                            "unsupported: privilege violation; CRET is "
+                            "privileged (pp. 3-15, 3-16)")
+                    _check_interrupt_stack(state)
+                    # SP = *(ISP+0); unconditional CATCH to *(ISP+4);
+                    # MSP = *(ISP+4); PC = *(ISP+8); PSW = *(ISP+12);
+                    # ISP += 16 (p. 3-15).  The cache is refilled, not
+                    # written to memory, so the record has no store.
+                    fetched_sp = _read_word(state, memory_reader,
+                                            state.isp) & ~0xF
+                    fetched_msp = _read_word(state, memory_reader,
+                                             (state.isp + 4) & MASK32) & ~0xF
+                    if (fetched_msp < fetched_sp
+                            or fetched_msp - fetched_sp > SCSIZE):
+                        raise Unsupported(
+                            "unpredictable: CRET restores SP=0x%08x "
+                            "MSP=0x%08x, outside SP <= MSP <= SP+256 "
+                            "(p. 1-13)" % (fetched_sp, fetched_msp))
+                    if fetched_sp > MASK32 - SCSIZE:
+                        raise Unsupported(
+                            "unsupported: CRET restores SP=0x%08x whose "
+                            "stack cache would cross the 32-bit address "
+                            "boundary (p. 1-5)" % fetched_sp)
+                    new_sp = fetched_sp
+                    new_msp = fetched_msp
+                    next_pc = _read_word(state, memory_reader,
+                                         (state.isp + 8) & MASK32)
+                    new_psw = _read_word(state, memory_reader,
+                                         (state.isp + 12) & MASK32)
+                    new_isp = (state.isp + 16) & MASK32
                 elif sub == 0x008:                      # TESTV
                     mnemonic = "TESTV"
                     f = bool(state.psw & PSW_V)
@@ -1157,9 +1384,9 @@ def step(state: State,
                     f = bool(state.psw & PSW_C)
                     new_psw = ((state.psw & ~(PSW_F | PSW_C))
                                | (PSW_F if f else 0))
-                elif sub == 0x00A:
-                    raise Unsupported(
-                        "unsupported: CLRE (niladic 0x0B/0xA; p. 3-12)")
+                elif sub == 0x00A:                      # CLRE
+                    mnemonic = "CLRE"
+                    new_psw = state.psw & ~PSW_E
                 else:
                     raise Unsupported(
                         "unsupported: niladic subcode 0x%03x (Table 1-17, "
@@ -1248,6 +1475,12 @@ def step(state: State,
                 mnemonic = "MOV"
                 store = (_stk5(state, dst5),
                          _load(state, memory_reader, _imm5(src5)))
+            elif op == 0x1D:                          # MOVA stk5, stk5
+                mnemonic = "MOVA"
+                # "The address of the source operand is calculated and
+                # stored in the destination" (p. 3-33); both fields are
+                # word stack offsets here.
+                store = (_stk5(state, dst5), _stk5(state, src5).ea)
             else:
                 raise Unsupported(
                     "unsupported: 1-parcel opcode 0x%02x (Table 1-15, "
@@ -1351,12 +1584,31 @@ def step(state: State,
                             "word stack offset, p. 3-38)" % smode)
                     new_sp, new_msp = _popn(
                         state, _sx(mono, 32))
-                elif sub == 0x0:
-                    raise Unsupported(
-                        "unsupported: KCALL (monadic 0x00/0x0; p. 3-29)")
-                elif sub == 0xA:
-                    raise Unsupported(
-                        "unsupported: LDRAA (monadic 0x00/0xA; p. 3-31)")
+                elif sub == 0x0:                        # KCALL
+                    mnemonic = "KCALL"
+                    _check_interrupt_stack(state, need_vb=True)
+                    src_value = _word32_value(state, memory_reader,
+                                              mono, smode, 32)
+                    frame = state.isp
+                    store = (Operand(4, True, ea=(frame - 12) & MASK32),
+                             src_value)
+                    extra_stores = [
+                        (Operand(4, True, ea=(frame - 8) & MASK32),
+                         next_pc),
+                        (Operand(4, True, ea=(frame - 4) & MASK32),
+                         state.psw),
+                    ]
+                    new_isp = (frame - 16) & MASK32
+                    next_pc = _read_word(state, memory_reader, state.vb)
+                    new_psw = state.psw & 0xFFFF0000
+                elif sub == 0xA:                        # LDRAA
+                    mnemonic = "LDRAA"
+                    # p. 3-31: the destination address is calculated as
+                    # for a JMP and stored in the accumulator.
+                    target = _flow_target(state, memory_reader, mono,
+                                          smode, 32, "LDRAA")
+                    store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                             target)
                 elif sub == 0xB:
                     raise Unsupported(
                         "unsupported: FLUSHPTE (monadic 0x00/0xB; p. 3-27)")
@@ -1414,6 +1666,187 @@ def step(state: State,
                     f = (src1 & MASK32) == (src2 & MASK32)
                 new_psw = (state.psw & ~PSW_F) | (PSW_F if f else 0)
 
+            elif opcode in (0x01, 0x02, 0x03):          # ORI/ANDI/ADDI
+                mnemonic = {0x01: "ORI", 0x02: "ANDI", 0x03: "ADDI"}[opcode]
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                old = _load(state, memory_reader, dst_op)
+                if opcode == 0x01:
+                    result = old | src
+                elif opcode == 0x02:
+                    result = old & src
+                else:
+                    result = (old + src) & MASK32
+                # pp. 3-6, 3-8, 3-37: the original destination goes to
+                # the accumulator, and carry/overflow are not affected.
+                acc = Operand(4, True, ea=(state.sp + 4) & MASK32)
+                if (dst_op.size == 4 and not dst_op.is_imm
+                        and dst_op.ea == acc.ea):
+                    # p. 3-6 note: "If R4 is the destination, after the
+                    # interlocked instruction completes, R4 is the
+                    # previous value of R4; hence, no operation."
+                    store = (dst_op, old)
+                else:
+                    store = (dst_op, result)
+                    extra_stores = [(acc, old)]
+
+            elif opcode in (0x25, 0x35, 0x27, 0x37, 0x2F, 0x05):
+                mnemonic = {0x25: "REM", 0x35: "REM3", 0x27: "DIV",
+                            0x37: "DIV3", 0x2F: "UDIV",
+                            0x05: "UREM"}[opcode]
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                dst = _load(state, memory_reader, dst_op)
+                to_acc = opcode in (0x35, 0x37)
+                if opcode in (0x27, 0x37, 0x25, 0x35):
+                    quotient, remainder, overflow = _divide(dst, src)
+                    if opcode in (0x27, 0x37):
+                        result = quotient
+                        # p. 3-17: V is set only for 0x80000000 / -1 and
+                        # cleared otherwise; C is unchanged.
+                        new_psw = ((state.psw & ~PSW_V)
+                                   | (PSW_V if overflow else 0))
+                    else:
+                        result = remainder
+                        # p. 3-39: V is always cleared; C is unchanged.
+                        new_psw = state.psw & ~PSW_V
+                else:
+                    quotient, remainder = _udivide(dst, src)
+                    result = quotient if opcode == 0x2F else remainder
+                    # pp. 3-48, 3-49: C is always cleared; V unchanged.
+                    new_psw = state.psw & ~PSW_C
+                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                          if to_acc else dst_op), result)
+
+            elif opcode in (0x26, 0x36):                # MUL/MUL3
+                mnemonic = "MUL3" if opcode == 0x36 else "MUL"
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                dst = _load(state, memory_reader, dst_op)
+                to_acc = opcode == 0x36
+                width_bytes = 4 if to_acc else dst_op.size
+                result, new_psw, _ = _mul_result(state.psw, dst, src,
+                                                 width_bytes)
+                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                          if to_acc else dst_op), result)
+
+            elif opcode in (0x0C, 0x0D):                # TADD/TSUB
+                mnemonic = "TADD" if opcode == 0x0C else "TSUB"
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                src = _load(state, memory_reader, src_op)
+                dst = _load(state, memory_reader, dst_op)
+                if (src & 3) or (dst & 3):
+                    # p. 3-44 / p. 3-47: a tagged operand sets F and
+                    # leaves C and V as they were; nothing is stored.
+                    new_psw = (state.psw & ~PSW_F) | PSW_F
+                else:
+                    if opcode == 0x0C:
+                        result, new_psw, _ = _add_result(state.psw, dst, src)
+                    else:
+                        result, new_psw, _ = _sub_result(state.psw, dst, src)
+                    f = bool(new_psw & PSW_V)
+                    new_psw = ((new_psw & ~PSW_F) | (PSW_F if f else 0))
+                    if not f:
+                        store = (dst_op, result)
+
+            elif opcode == 0x04:                        # MOVA
+                mnemonic = "MOVA"
+                # p. 3-33: source must be a word addressing mode
+                # (0xC/0xD/0xE); the Notes make an immediate, register
+                # or register destination illegal.  The printed
+                # footnote and Notes conflict on the immediate source;
+                # the more specific Notes are followed (README).
+                if smode not in (0xC, 0xD, 0xE):
+                    raise IllegalInstruction(
+                        "illegal: MOVA source mode 0x%x is not a word "
+                        "mode (p. 3-33)" % smode)
+                if dmode == 0x7:
+                    raise IllegalInstruction(
+                        "illegal: MOVA register destination (p. 3-33)")
+                src_op = _resolve_general(state, memory_reader, field_src,
+                                          smode, width)
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                store = (dst_op, src_op.ea)
+
+            elif opcode == 0x07:                        # DQM
+                mnemonic = "DQM"
+                if dmode == 0xF:
+                    raise IllegalInstruction(
+                        "illegal: DQM immediate destination (p. 3-18)")
+                if dmode in (0x0, 0x4, 0x8):
+                    quad = False
+                elif dmode in (0xC, 0xD, 0xE):
+                    quad = True
+                else:
+                    # p. 3-18's description says alignment fault and its
+                    # Notes say illegal sequence; the Notes are followed.
+                    raise IllegalInstruction(
+                        "illegal: DQM destination mode 0x%x (p. 3-18)"
+                        % dmode)
+                if smode not in (0xC, 0xD, 0xE, 0xF):
+                    raise IllegalInstruction(
+                        "illegal: DQM source mode 0x%x is not a word "
+                        "mode (p. 3-18)" % smode)
+                constant = smode == 0xF
+                if constant:
+                    src_value = _word32_value(state, memory_reader,
+                                              field_src, smode, width)
+                    src_addr = 0
+                else:
+                    src_op = _resolve_general(state, memory_reader,
+                                              field_src, smode, width)
+                    src_addr = src_op.ea
+                    src_value = 0
+                dst_op = _resolve_general(state, memory_reader, field_dst,
+                                          dmode, width)
+                dst_addr = dst_op.ea
+                bound = 0x10 if quad else 0x8
+                if src_addr & (bound - 1):
+                    raise AlignmentFault(
+                        "alignment: DQM source 0x%08x is not %d-byte "
+                        "aligned (p. 3-18)" % (src_addr, bound))
+                if dst_addr & (bound - 1):
+                    raise AlignmentFault(
+                        "alignment: DQM destination 0x%08x is not "
+                        "%d-byte aligned (p. 3-18)" % (dst_addr, bound))
+                words = 4 if quad else 2
+                if constant:
+                    values = [src_value] * words
+                else:
+                    if src_addr > MASK32 - 4 * (words - 1):
+                        raise Unsupported(
+                            "unpredictable: DQM source block at 0x%08x "
+                            "wraps the 32-bit address space" % src_addr)
+                    values = [_read_word(state, memory_reader,
+                                         (src_addr + 4 * i) & MASK32)
+                              for i in range(words)]
+                if dst_addr > MASK32 - 4 * (words - 1):
+                    raise Unsupported(
+                        "unpredictable: DQM destination block at 0x%08x "
+                        "wraps the 32-bit address space" % dst_addr)
+                dqm_cycles = _dqm_cycles(state, constant, src_addr,
+                                         dst_addr, quad)
+                # The fixed one-write line carries the lowest-addressed
+                # word; the remaining words are applied to memory too.
+                store = (Operand(4, True, ea=dst_addr), values[0])
+                extra_stores = [
+                    (Operand(4, True, ea=(dst_addr + 4 * i) & MASK32),
+                     values[i]) for i in range(1, words)
+                ]
+
             else:
                 raise Unsupported(
                     "unsupported: %s opcode 0x%02x (Table 1-%d, p. 1-%d)"
@@ -1424,7 +1857,7 @@ def step(state: State,
         # --- Chapter 4 occupancy, then the one architectural write -------
         cyc = _retirement_cycles(mnemonic, folded, branch_taken,
                                  branch_predicted, flush_blocks,
-                                 state.timing)
+                                 state.timing, dqm_cycles)
 
         mem_we = 0
         mem_addr = 0
@@ -1437,11 +1870,16 @@ def step(state: State,
             state.memory[word_addr] = new_word
             mem_we = 1
             mem_addr = word_addr
+        for extra_op, extra_value in extra_stores:
+            extra_addr, extra_word, _, _ = _prepare_store(
+                state, memory_reader, extra_op, extra_value)
+            state.memory[extra_addr] = extra_word
 
         state.pc = next_pc & ~1
         state.sp = new_sp & MASK32
         state.msp = new_msp & MASK32
         state.psw = new_psw & MASK32
+        state.isp = new_isp & MASK32
         record = Record(
             pc=pc, insn0=insn0, insn1=insn1,
             sp_before=pre_sp, sp_after=state.sp,
@@ -1552,6 +1990,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="text image: one 8-hex-digit 32-bit word per line")
     parser.add_argument("--sp", required=True, help="initial SP (hex)")
     parser.add_argument("--msp", required=True, help="initial MSP (hex)")
+    parser.add_argument("--isp", default="0x40",
+                        help="initial ISP (hex; default 0x40)")
+    parser.add_argument("--vb", default="0x0",
+                        help="initial VB (hex; default 0x0)")
     parser.add_argument("--max-steps", type=int, default=10000,
                         help="maximum instructions to execute (default 10000)")
     parser.add_argument("--stop-at-image-end",
@@ -1568,11 +2010,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         sp = _parse_hex(args.sp)
         msp = _parse_hex(args.msp)
+        isp = _parse_hex(args.isp)
+        vb = _parse_hex(args.vb)
     except ValueError:
-        parser.error("--sp and --msp must be hexadecimal numbers")
+        parser.error("--sp, --msp, --isp and --vb must be hexadecimal "
+                     "numbers")
 
-    if sp & 0xF or msp & 0xF:
-        parser.error("--sp and --msp must be quad-word (16-byte) aligned")
+    if sp & 0xF or msp & 0xF or isp & 0xF or vb & 0xF:
+        parser.error("--sp, --msp, --isp and --vb must be quad-word "
+                     "(16-byte) aligned")
 
     try:
         image = load_image(args.image)
@@ -1581,7 +2027,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     reader = ImageReader(image)
-    state = State(pc=0, sp=sp, msp=msp, psw=PSW_SP)
+    state = State(pc=0, sp=sp, msp=msp, psw=PSW_SP, isp=isp, vb=vb)
     image_len = len(image) * 4
 
     for _ in range(args.max_steps):

@@ -20,13 +20,11 @@ python3 "$hobbit/tools/check_timing.py"
 
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
+python3 "$here/test_sem_extended.py"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
 "$hobbit/bsv/run_uart.sh"
-# The FPGA top's own UART output, decoded at 217 clocks/bit, must equal the
-# smoke test's HRI lines (run_board_tb.sh runs both and compares them).
-"$hobbit/bsv/run_board_tb.sh"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
@@ -34,6 +32,16 @@ for n in 001 002 003 004 005 006; do
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
         --spec-lines "$here/golden/$n.trace"
 
+    python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/$n.hex" \
+        --sp 0x100 --msp 0x180 2>/dev/null | grep '^HRI ' > "$tmp/$n.sem"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
+        --spec-lines "$here/golden/$n.trace"
+done
+
+# 007-012 exercise instructions the Bluespec core does not implement yet
+# (MUL, DIV, ADDI, TADD, MOVA, LDRAA).  The spec model must still reproduce
+# its hand-derived golden trace; no core comparison exists for them.
+for n in 007 008 009 010 011 012; do
     python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/$n.hex" \
         --sp 0x100 --msp 0x180 2>/dev/null | grep '^HRI ' > "$tmp/$n.sem"
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \

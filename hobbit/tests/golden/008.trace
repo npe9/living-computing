@@ -1,0 +1,2 @@
+HRI pc=0000 insn=73220000 sp=00000100>00000100 msp=00000180>00000180 we=1 addr=00000108 data=fffffff9 mask=0f trap=0 cyc=1
+HRI pc=0002 insn=a7fd0002 sp=00000100>00000100 msp=00000180>00000180 we=1 addr=00000108 data=fffffffd mask=0f trap=0 cyc=38
