@@ -18,7 +18,10 @@ load, which, as the BSS postprocessor, loads the compiled program from TWS
 and the library and gives $RET with SICBU = *MAIN*'s entry (stage 7).
 MCP's own return path (SIFAE -> CRETN -> MDRET -> CRETBU) enters *MAIN*;
 its SCAFFOLD body gives $EOJ, and MCP's own end of job runs to the output
-EOJ's $W, which K NO GO holds (stage 7, the end).
+EOJ's $W, which K NO GO holds until the operator readies the OUTPT unit
+(OPERATOR ACTION, below); MCP then writes the job's listing to that reel
+and job control reaches ZJOBC1, the wait for the next job card (stage 7,
+the end).
 Every stage runs on THE POST-IPL CORE IMAGE (below): all 98,304 words a
 real IPL leaves, not the assembled listing.
 
@@ -261,36 +264,68 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     l.41); the print program's output subroutine CAOS3A then gives B,$MCP
     / ,$W at 222265.40 (p.204 ll.8-9, PDF 211, read in the ink), the write
     of the record buffer X holds.
-  - WHERE IT STOPS (PC log, R2G_PCLOG=5, 2026-11-19; pp.177 and 179-180
-    read in the ink, PDF 184, 186): the $W enters KFRONT (p.177 l.5),
-    through KIODRN, and l.21 BB,SL,KMCP; KMCP (p.179 ll.4-7) -> KSOAR
-    (p.177 l.27).  l.37 (BZB,SMULTI,KUNA) falls through; l.41 BZRZ,KNOGO
-    ("LOOP IF MOUNT OR REW BIT ON", after l.40 L(BU,2),SMOUNT($11)) is
-    taken.  KNOGO (p.179 l.13) runs ll.13-29 and l.30 BB1,SRMIND($12),
-    KCHOPN ("BR. IF REMINDER SENT") is taken: KCHOPN, p.180 l.2
-    (221041.00, half-word 148546), where the bench stops.  So MCP holds
-    the output EOJ's write because the output unit's MOUNT/REW bit is on
-    in IPL's tables and the mount reminder is already marked sent: it is
-    waiting for the operator.  Which unit $11 names was not decoded.
-    MEASURED without the stop: KCHOPN -> KSUPP (p.128, 216242) and back
-    to 222265.40, the same $W, 5,320 times to the 12M step cap.
-    SCAFFOLD CAVEAT: nothing in this bench could clear that bit.  $IA is
-    the stub's ITAB, whose every entry but IF goes to BADI (a stop), so an
-    I/O or other interrupt could never reach MCP; none came (STOPC 0).
-    2,524,753 cycles in all.
-  - Traps after the entry are logged (PTRL: STIC, word 3, SCOMRG): eight,
-    the first *MAIN*'s ,$EOJ at 51.40 with SL 0 and word 3 = SLRBU
-    (045fc00000084040: lower 41, upper 10577); then 231147.40, 20007.40,
-    224147.40, 20013.00, 233147.40, 20021.00, 222266.00, at MCP level.
-  - THE UPPER LIMIT IS 10577, NOT 213766 (found, not fixed).  C22-6728-1
-    printed p.88 (PDF 88, read in the ink): "upper limit of PP 8.32
-    (BU,18)".  BSS writes 213766 there (the plant, check_bss_example4).
-    But p.397 l.3 LX,$14,KSILO+8 and p.384 ll.37-39 SV/SC take the upper
-    limit from the index COUNT field, bits 28-45, which holds 213766 >> 4
-    = 10577.  So the PP's boundaries exclude blank common (213535-213727)
-    and the relocation table.  This stub job touches neither; a real
-    program would take DS.  The page and the code disagree by four bits;
-    unresolved.
+  - K NO GO (PC log, R2G_PCLOG=5, 2026-11-19; pp.177 and 179-180 read in
+    the ink, PDF 184, 186): the $W enters KFRONT (p.177 l.5), through
+    KIODRN, and l.21 BB,SL,KMCP; KMCP (p.179 ll.4-7) -> KSOAR (p.177
+    l.27).  l.37 (BZB,SMULTI,KUNA) falls through; l.41 BZRZ,KNOGO ("LOOP
+    IF MOUNT OR REW BIT ON", after l.40 L(BU,2),SMOUNT($11)) is taken.
+    KNOGO (p.179 l.13) runs ll.13-29 and l.29 BZAH,KCHOPN ("BRANCH IF
+    TIME NOT ELAPSED") is taken: KCHOPN, p.180 l.2 (221041.00, half-word
+    148546), at 2,524,928 cycles.  (Earlier text named l.30's
+    BB1,SRMIND; see below.)
+  - THE UNIT IS REAL, NOT A BENCH ARTIFACT.  The $W's IOD parameter AMR
+    (224032, p.204 l.10) is 11: CT11, channel 34 unit 0, UST entry
+    214772 ($11), unit area 214676 ($12).  IPL sets its MOUNT (.51) and
+    initial-mount (.53) bits (printed p.79 ll.3-4, TP4) and types "MOUNT -
+    REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0" (docs/boot_plan.md): MCP is
+    waiting for the operator to mount the output reel.  WHY KCHOPN:
+    l.30's BB1 (assembled ...221041.34 0E, "SET SWTCH") sets SRMIND
+    whenever it runs, and a probe of that shape confirms the model writes
+    the bit without branching.  Under nooper, uat1 at KCHOPN is still
+    0000400000000000, with bit 63 clear.  So l.30 did not complete, and
+    the branch is l.29's BZAH ("TIME NOT ELAPSED").  R2G_STOP=148512 fires
+    8 cycles before KCHOPN: that is the instruction counter ahead of the
+    branch resolving (inferred).  SRMTC and $TC were not read.
+  - OPERATOR ACTION (the default; R2G_TAMPER=nooper restores the old stop
+    at KCHOPN).  The operator mounts a blank reel and readies the unit.
+    The bench mounts REEL_WORDS (2^18, CHOSEN) zero words as the tape
+    (-D HOST_TAPE, host_tape.c), and the first time the PC reaches KCHOPN
+    gives channel 34 the channel signal: Reference Manual printed p.116
+    (PDF 119, read in the ink), CS "comes on ... whenever the unit changes
+    from not-ready to ready status", "a means of communication from the
+    operator".  gen_tb.py OPSIG -> StretchIO.operatorSignal; nothing in
+    MCP's tables is touched.  NOT MODELLED: unit select (one tape unit,
+    so the same CS clears CT21's MOUNT too) and a not-ready state.
+  - Then IBM's code: the CS report (00001) -> KSTORE (p.122) -> KSIGNL
+    (p.124 l.53) -> KHUNT/KSTAB (p.125) -> p.126 l.5 BZBZ,SMOUNT($11),
+    ZRCPFC clears MOUNT.  The $W, retried from KSUPP, goes through, and
+    MCP prepares the new reel: seven operations on channel 34, each
+    reported EOP alone (00010): density (p.155 l.5), label read (p.183
+    l.25), backspace (p.155 l.18), label write (p.155 l.45), tape mark
+    (p.156 l.14), the $W's record (EWR311, p.154 l.18), and the output
+    EOJ's tape mark (p.164 l.33).  Two model gaps were found on this path
+    and fixed with their own decks: the state-setting CONTROL codes
+    (decks/io_tape_control_modes.strap) and WRITE TAPE MARK
+    (decks/io_tape_mark.strap).
+  - THE REEL (host_tape.c's STRETCH_TAPE_TRACE): from the load point a
+    one-word label, a mark, one 150-word record and a mark.  The record is
+    buffer X (p.209 l.56): control character P and 12 lines, which are
+    p.17's map, every subprogram and common row.
+  - WHERE IT STOPS: ZJOBC1 (020416.40, half-word 16925, p.391 l.37), job
+    control's wait for the next job card, at 2,561,915 cycles, with 17
+    traps after the entry and nothing typed on the console.
+  - Traps after the entry are logged (PTRL: STIC, word 3, SCOMRG): the
+    first *MAIN*'s ,$EOJ at 51.40 with SL 0 and word 3 = SLRBU; then
+    231147.40, 20007.40, 224147.40, 20013.00, 233147.40, 20021.00,
+    222266.00 (pinned), and nine more at MCP level after the $W (222572.40,
+    222574.40, 222266.00, 222320.40, 222311.00, 222320.40, 222146.40,
+    20031.40, 224451.00; printed, not pinned: not yet identified by line).
+  - THE UPPER LIMIT, SETTLED (2026-11-19): KSILO+8.28.  C22-6728-1 printed
+    p.88 says "upper limit of PP 8.32 (BU,18)", but C22-6728 (-0) printed
+    p.197 (PDF 197, read in the ink) prints "PP UPPER LIMIT 8.28", and
+    p.397 l.3 LX,$14,KSILO+8 / p.384 l.39 SC take it from the index count
+    field, bits 28-45.  BSS now writes 213766 there (decks/bss_7030.strap,
+    check_bss_example4), so SLRBU's upper boundary is 213766.
   TASIGN is not on this path (no IOD card).
 THE POST-IPL CORE IMAGE (2026-11-18, later).  post_ipl() runs
   StretchMcpStartTb (tests/run_mcp_start_test.sh's bench: IPL from tape
@@ -418,15 +453,17 @@ IOD_SUBFIELD_SEPARATOR), not Appendix F's 4-8 comma.  MEASURED: with the
 YTCERR -> YPR -> YPRSPL.
 
 INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited).
-Re-run 2026-11-19 with stage 7's new end (the dispatcher, *MAIN*'s $EOJ,
-the stop at KCHOPN): the control run passes all checks, 106 PASS lines.
-The in-bench tampers ran as extra program pairs on the one compiled bench
-(R2G_MEASURE=cretsl,twsxw,ybc51,vic13,ksilo9,lim,eojl17,yxwejm,abeoj,nocc,
-lci15,bs8,fwa,order; each pair's lines are prefixed "MEASURE <t>"); the
-own builds dispbypass, overlap, assembled, nobd, nofetch and abssid each
-as its own R2G_TAMPER build, all 2026-11-19.  Judge7 has fourteen checks
-now.  "Stage 7's thirteen" means all but
-"YLJSLT unchanged".
+Re-run 2026-11-19 with stage 7's operator end (SIT, the channel signal,
+the reel, the stop at ZJOBC1): the control run passes all checks, 113
+PASS lines.  The in-bench tampers ran as extra program pairs on the one
+compiled bench (R2G_MEASURE=cretsl,twsxw,ybc51,vic13,ksilo9,lim,eojl17,
+yxwejm,abeoj,nocc,lci15,bs8,fwa,order,itab; each pair's lines are
+prefixed "MEASURE <t>", judged on 88 checks), the others each as its own
+R2G_TAMPER build.  Judge7 has 21 checks in the default run (22 under
+nooper): "stage 7's twenty" means all but "YLJSLT unchanged", and "the
+operator eight" means its last eight: the OPERATOR ACTION and its
+reports, MOUNT cleared, the seven EOP operations, nothing typed, the
+reel's layout, the record's form, its rows, and the stop at ZJOBC1.
 Some checks pass under every injection, so they are consistency checks,
 not discriminating ones:
 - judge6: "word 020000 was 0 at the fetch" (PREW is never written when no
@@ -434,100 +471,137 @@ not discriminating ones:
 - judge6, under every injection except overlap: "YTSP still 0" and
   "SCNFCG 1, WJCW 0", which are the image's values when p.397 is not
   reached.
-- judge7: "YLJSLT unchanged".  ("No fetch of anything else" and "no other
-  trap" were consistency checks before 2026-11-19.  cretsl, ksilo9 and
-  ybc51 now fail the first; eojl17, abeoj, fwa and order fail the
-  second.)
+- judge7: "YLJSLT unchanged".
 "The stage-6 eleven" means judge6's other eleven checks.
+THE OPERATOR PATH'S OWN INJECTIONS (2026-11-19):
+  nooper (own build) -- no channel signal, the old stop at KCHOPN: 7 fail,
+    the operator eight but "nothing typed".  The run stops at KCHOPN
+    (148546), and the old check "the run stops at KCHOPN, the eighth trap
+    the last", judged under nooper only, passes.  So the operator's
+    action is what moves the run on.
+  vtape (own build) -- the signal is given but no reel is mounted, so the
+    tape is the model's 16-word register image: 6 fail.  The failures are
+    MOUNT (on again at the stop), the seven operations, nothing typed, and
+    the reel's layout, record and rows.  THE RUN STILL REACHES ZJOBC1, at
+    2,581,677 cycles.  The record writes run off the 16-word tape (EE,
+    reports 00110), MCP takes it as the end of the reel, and types
+    "REPLACE TAPE ON CHANNEL 34 UNIT 0 WITH REEL NO. OUTPT JOB **MCP**".
+    So the stop alone is no evidence that the listing was written; the
+    reel checks are.
+  itab (in-bench) -- $IA left at the stub's ITAB from ENTER on (the old
+    bench, every entry but IF a stop): 7 fail.  The CS is reported (00001)
+    but taken by ITAB's entry 13 (BADI, STOPC 3), so MCP never clears
+    MOUNT.  The failures are the operator eight but OPERATOR and "nothing
+    typed", plus "no other interrupt" (indicator 13).
+  The model's own (bsv/ edits, each reverted by the exact patch and
+    checked by hash; the decks' own results are in their headers):
+    nosig -- StretchIO.operatorSignal sets nothing: 7 fail, the operator
+      eight but "nothing typed".  No report, MOUNT stays on, nothing is
+      written, and the run hits the step cap.
+    no036 -- tape CONTROL 036 program-checked again: 6 fail.  The failures
+      are the seven operations, nothing typed, the reel's layout, record
+      and rows, and the stop.  The density CONTROL at KDENOP is reported
+      EPGK + EOP (10010), and MCP types six garbage words.
+    nowtm -- WRITE TAPE MARK (117) program-checked again: 6 fail, the same
+      six.  The label is written (one word), and the mark after it is
+      reported 10010.
+THE EARLIER INJECTIONS, re-measured on the operator path:
   cretsl -- p.142 (PDF 149) l.42 CRETBU's CM0000(BU,1),SL ("CHANGE TO PP
-    LEVEL") as CM1111, so *MAIN* runs at MCP level: 4 fail, all stage 7:
-    the first trap (51.40, but SL 1), the $EOJ path (the next trap is from
-    215563.00: SIFAE l.20 took the MCP-caller path), no 22$EOJ fetch, and
-    the stop (no stub, 2 traps).  Everything up to CRETBU passes.
+    LEVEL") as CM1111, so *MAIN* runs at MCP level: 11 fail, all stage 7:
+    the first trap (51.40, but SL 1), the $EOJ path, no 22$EOJ fetch, and
+    the operator eight.  K NO GO is never reached (no operator action),
+    and MCP types five words.  Everything up to CRETBU passes.
   dispbypass (own build) -- stage 3's DISP goes straight to YRESLD (the old
-    SCAFFOLD), so WJC4G's $RESLD prime stays on MCP's queue: 4 fail.
-    Resume load runs a second time (4 end returns, 55 fetches): resume
-    load's own $RET is unprimed into YRESLD again, so the first trap past
-    the load is the loader's (235306.40, SL 1), there are 13 traps, and
-    only then *MAIN*'s $EOJ.  The $EOJ path still ends at KCHOPN.
+    SCAFFOLD), so WJC4G's $RESLD prime stays on MCP's queue: 3 fail,
+    stage 7's end returns (4), first trap and $EOJ path.  Resume load runs
+    a second time (55 fetches).  The run still reaches K NO GO, writes the
+    reel and stops at ZJOBC1.
   twsxw -- on the disk only, *MAIN*'s card holding its first word is
     punched from XW,0,5 instead of XW,0,6: 1 fails, the load check (word
-    41).  Every fetch, count, return and trap passes.  So the program is
-    loaded from TWS's words, not from the deck BSS read.
+    41).  Every fetch, count, return, trap and the reel pass.  So the
+    program is loaded from TWS's words, not from the deck BSS read.
   ybc51 -- p.392 l.51 BXE,WJC4G1 made a NOP, so the no-IOD branch is not
-    taken: 11 fail, stage 7's thirteen minus "the fetch served first" and
-    "no other trap".  Stage 7 stops at no stub (None).  Stages 1-6 pass.
+    taken: 17 fail, stage 7's twenty but the first fetch, "nothing typed"
+    and "no other trap".  Stage 7 stops at no stub (None).
   vic13 -- p.387 l.23 V+IC,$13,15. as 13.: 2 fail, stage 6's RELFWA
     (got 0) and stage 7's first fetch (RELFWA 0).  Everything after it
-    passes: the loader re-reads card 0.
-  ksilo9 -- p.397 l.3 LX,$14,KSILO+8. as KSILO+9.: 5 fail: YL1's limits
-    and, in stage 7, the first trap, the $EOJ path, the 22$EOJ fetch and
-    the trap count.  Under KSILO+9's limits CRETBU's BE to 000051.0 traps
-    at once (STIC 217306.40), so the program never runs; MCP's handling
-    of that trap then reaches KCHOPN after 2 traps.
+    passes, the reel too: the loader re-reads card 0.
+  ksilo9 -- p.397 l.3 LX,$14,KSILO+8. as KSILO+9.: 7 fail.  The failures
+    are YL1's limits and, in stage 7, "no other fetch", the first trap,
+    the $EOJ path, the seven operations, the reel's layout and the stop.
+    Under KSILO+9's limits CRETBU's BE to 000051.0 traps at once.  MCP
+    handles that trap through to K NO GO, the label and the record (six
+    operations, 152 words), but not the output EOJ's mark.  It stops at
+    the stub's BADF (STOPC 1).
   lim -- the old CHOSEN LIM,200000,214777: 0 fail (see STAGE 2).
   eojl17 -- p.381 l.17 BB,SCORG,YC4INT as BZB (on the disk copy too):
-    20 fail.  l.18 runs on, and its B,DMCP / ,SKOM traps as an unserved
-    op (STOPC 4).  The failures: stage 4's "no other op", SCORG, YDFCS,
-    YL1's limits, YI4TA, RELFWA, the stop, and stage 7's thirteen.
+    26 fail.  l.18 runs on, and its B,DMCP / ,SKOM traps as an unserved
+    op (STOPC 4).  The failures are stage 4's "no other op", six of stage
+    6's, and stage 7's twenty but "nothing typed".
   yxwejm -- p.269 l.40 XW,YEOJTA,YPPMEM as XW,YDBTA,YPPMEM: the fetch asks
-    for $DUMP, and the stub stops at BADF2 (STOPC 1).  23 fail: the
-    stage-6 eleven, and stage 7's thirteen minus "no other trap".  Stage
-    5's checks pass.
+    for $DUMP, and the stub stops at BADF2 (STOPC 1).  29 fail: the
+    stage-6 eleven, and stage 7's twenty but "nothing typed" and "no
+    other trap".  Stage 5's checks pass.
   abeoj -- BSS leaves by $ABEOJ (68.0): MCP takes p.274 ll.46-48 (YEOJS =
     1, B,DMCP / BE,DDUMP), and the stub does not serve its $DUMP (64.0).
-    28 fail: "no other op" (stage 4), stage 5's fetch, $14 and YEOJS, the
-    stage-6 eleven, and stage 7's thirteen.
-  nocc -- PRSPR stores LINE at byte 0 (no control byte): 18 fail: byte 0,
-    header 2, all 10 subprogram rows, all 5 common rows, rows 6-10/'**'.
-    Header 1 passes, because its words survive a one-column shift.
-    Stages 5-7 pass.
-  lci15 -- p.203 l.36 LCI,$9,16 as 15 (15 full words a line): 19 fail:
-    byte 0, bytes 121-132, header 2, every row.  Header 1 passes.  Stages
-    5-7 pass.
-  bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 20 fail, every buffer-line
-    check (byte 0, padding, both headers, all rows).  Stages 5-7 pass.
+    34 fail: "no other op" (stage 4), stage 5's fetch, $14 and YEOJS, the
+    stage-6 eleven, and stage 7's twenty but "nothing typed".
+  nocc -- PRSPR stores LINE at byte 0 (no control byte): 20 fail.  The
+    failures are byte 0, header 2, all 10 subprogram rows, all 5 common
+    rows, rows 6-10/'**', and the reel's record and rows (the same lines,
+    written to tape).  Header 1 passes in stage 4, because its words
+    survive a one-column shift.
+  lci15 -- p.203 l.36 LCI,$9,16 as 15 (15 full words a line): 21 fail:
+    byte 0, bytes 121-132, header 2, every row, and the reel's record and
+    rows.  Header 1 passes.
+  bs8 -- p.203 l.39 SF(BU,48,6) as SF(BU,48,8): 22 fail: every
+    buffer-line check (byte 0, padding, both headers, all rows) and the
+    reel's record and rows.
   fwa -- the call's FWA outside the PP limits (220000): ACHK -> ACHERR
     (SPRIME primes the error print and $ABEOJ, p.203 ll.11-18).  There are
-    8 $SPR and 7 $RET traps, and BSS never finishes.  54 fail: ERRC, OUTN,
+    8 $SPR and 7 $RET traps, and BSS never finishes.  61 fail: ERRC, OUTN,
     the trap counts, FWA, CBTA, CWA, every buffer-line check, four stage-5
-    checks, the stage-6 eleven, and stage 7's thirteen.
-  order -- type-area cards 41 and 42 swapped: 67 fail.  The loader reads
+    checks, the stage-6 eleven, and stage 7's twenty.
+  order -- type-area cards 41 and 42 swapped: 73 fail.  The loader reads
     41 cards and stops (p.322 l.42, sequence error).  The failures are the
     fetch count, last address, call count, SICBU and entry checks, and
     every stage-4, -5, -6 and -7 check but fifteen (in stage 7, all but
-    YLJSLT).  YRLDTA's check passes.
+    YLJSLT and "nothing typed").  YRLDTA's check passes.
   overlap (own build) -- SYSMOD at the assembled 00, on the post-IPL
-    image: 18 fail.  Six are stage 6's: YTSP (1), SCNFCG/WJCW (0, 1),
+    image: 24 fail.  Six are stage 6's: YTSP (1), SCNFCG/WJCW (0, 1),
     YL1's limits, YI4TA, RELFWA, and the stop.  The run stops at TASIGN,
-    half-word 17640, NFET 1, as it did on the assembled image.  The other
-    twelve are stage 7's thirteen minus "no other trap", since there is
-    no trap past TASIGN.
+    half-word 17640, NFET 1, as it did on the assembled image.  The rest
+    are stage 7's twenty but "nothing typed" and "no other trap", since
+    nothing runs past TASIGN.
   assembled (own build) -- the assembled image, with the old YRLTT plant
-    and SYSMOD planted: 3 fail, the SXCHAN/SMCP/SBAMCP check (0, 0,
-    215000.00) and two of stage 7's: the $EOJ path and the trap count.
-    On the assembled image the program's $EOJ, the 22$EOJ fetch and
-    ,SKOM go as on the post-IPL one, but the next trap is from 224237.00,
-    not VSSKOM's $RET at 224147.40, and the run reaches KCHOPN after 4
-    traps, not 8.  So the spooler's path reads words IPL sets.
+    and SYSMOD planted: 8 fail.  They are the SXCHAN/SMCP/SBAMCP check
+    (0, 0, 215000.00) and six of stage 7's: the $EOJ path, the seven
+    operations, the reel's layout, record and rows, and the stop.  On the
+    assembled image the program's $EOJ, the 22$EOJ fetch and ,SKOM go as
+    on the post-IPL one, but the next trap is from 224237.00, not VSSKOM's
+    $RET at 224147.40.  The CS is reported and nothing more is written:
+    the run hits the step cap.  The load check fails too (word 42).  So
+    the spooler's path reads words IPL sets.
   nofetch (own build) -- STUBIF's $FETCH copies nothing (its ST a NOP):
-    22 fail: stage 4's "no other interrupt" (AD on entering 020000 = 0);
-    eight of the stage-6 eleven (the $EOJ program in core, SIT+20..47,
-    SCORG, YDFCS, YL1's limits, YI4TA, RELFWA, the stop: STOPC 3, BADI);
-    stage 7's thirteen.  YMPSAV, YFHBR, M and the 020000 check pass.
-  nobd (own build) -- ENTER's BD a NOP: 62 fail (see STAGE 4): the entry,
-    33 stage-4 checks, stage 5's trap count, linkage, fetch and $14, the
-    stage-6 eleven, stage 7's thirteen.  Stage 7 hits the step cap.
+    26 fail: eight of the stage-6 eleven (the $EOJ program in core,
+    SIT+20..47, SCORG, YDFCS, YL1's limits, YI4TA, RELFWA, the stop) and
+    stage 7's twenty but "nothing typed" and "no other trap".  Stage 4's
+    "no other interrupt" now passes: with $IA = SIT the AD on entering
+    020000 is MCP's to take.  The run hits the step cap.
+  nobd (own build) -- ENTER's BD a NOP: 71 fail (see STAGE 4).  The
+    failures are SICBU and the entry (stage 3), 34 stage-4 checks, stage
+    5's four, the stage-6 eleven, and stage 7's twenty.
   abssid (own build) -- ABSSID (p.291 l.8) spelled BSX: exactly the eight
     1a checks fail (PC area name, M, KSILO count, KSILO+1, KSILO+2,
     YCIDBT, $13, the stop at YC4B5).  1b and 1c pass, and stages 3-7 are
     skipped.
-  Controls: the unmodified pair (106 PASS) and 1b and 1c above.
+  Controls: the unmodified pair (113 PASS) and 1b and 1c above.
 
 Run with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../strap:. from tests/.
 R2G_MEASURE=t1,t2,... runs the listed in-bench tampers beside the control
-(INJECTIONS).  R2G_PCLOG=1|2|3|4|5|6 (a PC log through job control / the
-loader / the stage-3 stub / stage 6 on / resident MCP and low core / all),
+(INJECTIONS).  R2G_PCLOG=1|2|3|4|5|6|7 (a PC log through job control / the
+loader / the stage-3 stub / stage 6 on / resident MCP and low core / all /
+the channel-signal receptor, the tape write and K NO GO),
 R2G_STEPS (stage 7's step cap, 12M), R2G_ONLY6 (the first run alone),
 R2G_KEEP (keep the bench output) and R2G_STOP (stage 3's stop, a half-word
 address; 18346 is T N): diagnosis only.
@@ -554,9 +628,20 @@ from strap2.a8 import A8, A6                        # noqa: E402
 A6INV = {}
 for _c, _v in A6.items():
     A6INV.setdefault(_v, _c)
+A8INV = {}
+for _c, _v in A8.items():
+    A8INV.setdefault(_v, _c)
+
+
+def a8_text(w):
+    """A word as eight A8 bytes, '.' for a byte that is no A8 character."""
+    return "".join(A8INV.get((w >> (56 - 8 * k)) & 0xFF, ".") for k in range(8))
 
 BSV = os.path.join(HERE, "..", "bsv")
 BSC_DIR = "/opt/homebrew/Cellar/bsc/2026.01"
+# The blank OUTPT reel the operator mounts (stage 7): CHOSEN size, 2^18
+# words, far more than the job writes and far less than a reel holds.
+REEL_WORDS = 1 << 18
 DRIVER_AT = 0o100000
 SENT = 0x5555555555555555
 # R2G_PCLOG (diagnosis only): the PC through $EOJ and job control
@@ -572,6 +657,9 @@ PC_LOG4 = [(0o20000 * 2, 0o24000 * 2), (0o250000 * 2, 0o252000 * 2)]
 # R2G_PCLOG=5 (diagnosis only): the resident MCP and low core
 PC_LOG5 = [(0o215000 * 2, 0o223000 * 2), (0, 0o1000 * 2)]
 PC_LOG6 = [(0, 0o300000 * 2)]     # R2G_PCLOG=6: everywhere (with R2G_STEPS)
+# R2G_PCLOG=7 (diagnosis only): the receptor (pp.122-128), K NO GO's pages
+# (pp.177-180) and low core
+PC_LOG7 = [(0o215700 * 2, 0o216400 * 2), (0o217500 * 2, 0o221400 * 2), (0, 0o100 * 2)]
 fails = 0
 
 
@@ -715,32 +803,40 @@ def sym(S, nm, extra=0, alias=None):
 
 
 def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000,
-              mem_dump=None):
+              mem_dump=None, operator_signal=None, reel=None):
     """Build ONE bench and run it on each of `progs` in turn.  The image is
     read at simulation start from a hex file (gen_tb's fast_load, a
     mkRegFileLoad), so programs that load the same set of words differ only
     in that file: it is rewritten and the same simulator rerun.  `reads` are
     (label, word) pairs: the bench prints each word (its expected value is a
     dummy 0) and the values are judged here, field by field.  Returns a list
-    of ({label: value}, output), or (None, error) for a build failure."""
+    of ({label: value}, output), or (None, error) for a build failure.
+    `reel`: a host file mounted as the tape (-D HOST_TAPE, host_tape.c,
+    STRETCH_TAPE), with its own build directories; None keeps the model's
+    16-word register tape."""
     checks = [(lab, str(w), 0) for lab, w in reads]
     hexf = os.path.join(tmp, module + ".hex")
     kw = dict(step_cap=step_cap, cycle_bound=cycle_bound, stop_at_pc=stop_hw,
-              fast_load=hexf, mem_dump=mem_dump,
-              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4, "5": PC_LOG5, "6": PC_LOG6}.get(os.environ.get("R2G_PCLOG", "")))
+              fast_load=hexf, mem_dump=mem_dump, operator_signal=operator_signal,
+              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4, "5": PC_LOG5, "6": PC_LOG6, "7": PC_LOG7}.get(os.environ.get("R2G_PCLOG", "")))
     src = generate(module, progs[0], checks, **kw)
     with open(os.path.join(BSV, module + ".bsv"), "w") as fh:
         fh.write(src)
     env = dict(os.environ, BLUESPECDIR=BSC_DIR + "/libexec/lib",
                PATH=BSC_DIR + "/bin:" + os.environ.get("PATH", ""))
-    for sub in ("build-loader", "simbuild-loader"):
+    bd, sd, dflag, link = "build-loader", "simbuild-loader", [], []
+    if reel:
+        bd, sd, dflag, link = "build-loader-reel", "simbuild-loader-reel", ["-D", "HOST_TAPE"], \
+            ["host_tape.c"]
+        env["STRETCH_TAPE"], env["STRETCH_TAPE_TRACE"] = reel, "1"
+    for sub in (bd, sd):
         os.makedirs(os.path.join(BSV, sub), exist_ok=True)
     results = []
     try:
-        for args in (["-sim", "-simdir", "simbuild-loader", "-bdir", "build-loader",
-                      "-info-dir", "build-loader", "-g", "mk" + module, "-u", module + ".bsv"],
-                     ["-sim", "-simdir", "simbuild-loader", "-bdir", "build-loader",
-                      "-e", "mk" + module, "-o", module + "_sim"]):
+        for args in (["-sim"] + dflag + ["-simdir", sd, "-bdir", bd,
+                      "-info-dir", bd, "-g", "mk" + module, "-u", module + ".bsv"],
+                     ["-sim"] + dflag + ["-simdir", sd, "-bdir", bd,
+                      "-e", "mk" + module, "-o", module + "_sim"] + link):
             r = subprocess.run([BSC_DIR + "/bin/bsc"] + args + ["+RTS", "-K512m", "-RTS"],
                                cwd=BSV, env=env, capture_output=True, text=True)
             if r.returncode:
@@ -764,6 +860,13 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
             m = re.search(r"cycles = (\d+)", out)
             got["_cycles"] = int(m.group(1)) if m else None
             got["_mem"] = {int(a): int(v, 16) for a, v in re.findall(r"MEMDUMP (\d+) ([0-9a-f]+)", out)}
+            # the reel, as written (host_tape.c's STRETCH_TAPE_TRACE), in order
+            got["_tape"] = [(int(a), int(v, 16))
+                            for a, v in re.findall(r"^TAPE_WRITE (\d+) ([0-9a-f]+)", out, re.M)]
+            got["_oper"] = len(re.findall(r"^OPERATOR ACTION:", out, re.M))
+            got["_reports"] = re.findall(r"I/O status report, channel (\d+), "
+                                         r"EPGK UK EE EOP CS = ([01]{5})", out)
+            got["_typed"] = re.findall(r"^CONSOLE_TYPED ([0-9a-f]{16})", out, re.M)
             results.append((got, out))
     finally:
         for name in os.listdir(BSV):        # by exact name, never a glob
@@ -939,9 +1042,10 @@ def tamper_image(words, S):
                 c = EOJ_AT + w - e0
                 words[c] = (words[c] & ~m) | (p.words.get(w, 0) & m)
     elif t and t not in ("order", "nocc", "fwa", "abeoj", "nobd", "nofetch", "overlap",
-                         "assembled", "lim", "twsxw", "dispbypass"):
+                         "assembled", "lim", "twsxw", "dispbypass", "itab", "nooper",
+                         "vtape"):
         raise SystemExit("R2G_TAMPER: abssid, order, nocc, fwa, abeoj, nobd, nofetch,"
-                         " overlap or %s, not %r"
+                         " overlap, itab, nooper, vtape or %s, not %r"
                          % (", ".join(IMAGE_TAMPERS), t))
 
 
@@ -1232,11 +1336,13 @@ def stage34_prog(state, deck_imgs, kwords):
     else:
         assert words[w] == 0, "YRLTT+2 post-IPL: %016x" % words[w]
     plant[at("SICBU")] = SICS
-    # MARKER: SIT+20..47 (MCP's own interruption table; this bench's $IA is
-    # the stub's ITAB, so nothing else reads them) hold the sentinel, so
-    # p.381 ll.13-14's restore from FWIT is seen (the image assembles them
-    # equal).
-    for k in range(20, 48):
+    # MARKER: SIT+20 and SIT+22..47 hold the sentinel, so p.381 ll.13-14's
+    # restore from FWIT is seen (IPL leaves them equal).  SIT is this
+    # bench's $IA from the start (IPL's word 2, below), but those entries
+    # are for indicators 20 and 22-47, which MCP's mask (word 12, IF and
+    # the always-enabled 0-19) never lets interrupt before the restore.
+    # SIT+21, the IF entry, is the $FETCH hook (below), not a marker.
+    for k in [20] + list(range(22, 48)):
         plant[at("SIT", k)] = SENT
     # SYSMOD AS IBM'S IPL LEAVES IT (REAL, measured; see the header's STAGE
     # 6): 10, bypass.  It shares SCORG's word, SCOMRG, which is copied from
@@ -1255,12 +1361,20 @@ def stage34_prog(state, deck_imgs, kwords):
            sy("YRLDTA"), sy("YDFRDA"), sy("YBCBU"), sy("SICBU"),
            sy("MR4"), sy("MPQR"),
            sy("STIC"), sy("STLR"), sy("SL"), sy("MIF6"), sy("SCSPRT"),
-           sy("SLRMCP"), sy("MCR"), sy("SIFAE"),
+           sy("SLRMCP"), sy("MCR"), sy("SIFAE"), sy("SIT"),
            sy("YPPMEM"), sy("YFHFWA"), sy("YFHFWA", 2 * 64 + 32, "RDFET"),
            "YFHTAW  SYN,(8)%o.0" % (S["YFHTA"] // 64),
            sy("YRESLD"), sy("YMPBUF"),
            "YLLSAW  SYN,(8)%o.0" % (S["YLLSAV"] // 64),
-           "START   B,YC4INT",
+           # $IA = SIT, MCP's own interruption table, as IPL leaves word 2
+           # (the post-IPL image: 215023.00, p.110; X377, MCP_Mar63_001-249
+           # p.33).  Only stage 4, the reconstructed BSS processor, runs
+           # under the stub's ITAB (ENTER to IEOJ).
+           # R2G_TAMPER=itab (measurement only): the old bench, $IA left
+           # at the stub's ITAB from ENTER on (every entry but IF a stop).
+           "START   LVI,$1,SIT" if os.environ.get("R2G_TAMPER") != "itab" else "START   NOP",
+           "        SV,$1,$IA" if os.environ.get("R2G_TAMPER") != "itab" else "        NOP",
+           "        B,YC4INT",
            # After ENTER every $MCP call traps IF (ITAB) -- the PP's, and
            # from stage 6 MCP's own B,DMCP / ,DFETCH (STUBIF's IFETCH); one
            # that reaches 32.0 is not expected: stop.
@@ -1431,6 +1545,9 @@ def stage34_prog(state, deck_imgs, kwords):
             "IEOJ    L(BU,18),NEOJ",
             "        +I(BU,18),1",
             "        ST(BU,18),NEOJ",
+            # the BSS processor's end: MCP's own table again (SIT)
+            "        LVI,$1,SIT" if os.environ.get("R2G_TAMPER") != "itab" else "        NOP",
+            "        SV,$1,$IA" if os.environ.get("R2G_TAMPER") != "itab" else "        NOP",
             "        B,IPP",
             "ISPR    L(BU,18),NSPR",
             "        +I(BU,18),1",
@@ -1683,6 +1800,19 @@ def stage34_prog(state, deck_imgs, kwords):
         if w2 in im.words or w2 in plant:
             raise SystemExit("the stub overlaps at %o" % w2)
         words[w2] = v
+    # THE $FETCH HOOK (SCAFFOLD): SIT+21, MCP's IF entry, is SIC,STIC /
+    # BD,SIFAE (p.111 ll.1-3); here its BD goes to STUBIF instead, which
+    # serves $FETCH from the bench's disk images and hands every other IF
+    # trap to SIFAE as before.  FWIT+1, the copy p.381 ll.13-14 restore
+    # SIT+21 from, carries the same hook.  Every other SIT entry is IPL's.
+    # MCP's own DISK FETCH (pp.311-318) is landed but not run: the bench's
+    # disk is not IPL's, and the type areas BSS, '))))))))' and the LB
+    # areas are not in PROSA (lost or bench-made).
+    hook = d.words[d.symtab["ITAB"] // 64 + 21]
+    for nm, k in (("SIT", 21), ("FWIT", 1)):
+        w2 = at(nm, k)
+        assert words[w2] == im.words[at("SIT", 21)], "%s+%d: %016x" % (nm, k, words[w2])
+        words[w2] = hook
     if os.environ.get("R2G_TAMPER") != "assembled":
         # the stub and the disk images go where IPL left nothing
         pi = post_ipl()
@@ -1751,8 +1881,37 @@ def stage34(tmp, state, measure=()):
     # On the overlap path (R2G_TAMPER=overlap) it stops at TASIGN as before.
     halt = S["TASIGN"] // 32 if os.environ.get("R2G_TAMPER") == "overlap" \
         else (d.symtab["SSTOP"] // 32, S["KCHOPN"] // 32)
+    # OPERATOR ACTION (the default since 2026-11-19).  IPL typed "MOUNT -
+    # REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0" and set the unit's MOUNT bit
+    # (printed p.79 ll.3-4); K NO GO holds the $W until the unit signals.
+    # The operator mounts a blank reel and readies the unit: the bench mounts
+    # REEL_WORDS zero words as the tape (tmp/outpt.tape) and, the first time the
+    # $W reaches KCHOPN, gives channel 34 the channel signal (Reference
+    # Manual printed p.116, PDF 119: CS "whenever the unit changes from
+    # not-ready to ready status").  Nothing in MCP's tables is touched.  The
+    # run then stops where job control waits for the next job card, ZJOBC1.
+    # R2G_TAMPER=nooper: no operator (the old stop at KCHOPN); =vtape: the
+    # operator signals but no reel is mounted (the 16-word register tape).
+    oper, reel = (S["KCHOPN"] // 32, 34), os.path.join(tmp, "outpt.tape")
+    if os.environ.get("R2G_TAMPER") != "overlap":
+        halt = (d.symtab["SSTOP"] // 32, S["ZJOBC1"] // 32)
+    if os.environ.get("R2G_TAMPER") == "nooper":
+        oper, halt = None, (d.symtab["SSTOP"] // 32, S["KCHOPN"] // 32)
+    if os.environ.get("R2G_TAMPER") == "vtape":
+        reel = None
+    if reel:
+        os.makedirs(os.path.dirname(reel), exist_ok=True)
+        with open(reel, "wb") as fh:
+            fh.write(bytes(8 * REEL_WORDS))
     if os.environ.get("R2G_STOP"):     # diagnosis only: a half-word address
         halt = int(os.environ["R2G_STOP"], 0)
+    # the output unit K NO GO judges (IOD 11 = CT11, channel 34 unit 0, in
+    # IPL's tables): $10-$12 at the stop, AMR (the print program's IOD
+    # parameter, p.204 l.10), the unit area table's words 0-1 and the
+    # unit status table entry (decoded in judge7)
+    reads += [("x10", 26), ("x11", 27), ("x12", 28), ("amr", 0o224032),
+              ("uat0", 0o214676), ("uat1", 0o214677), ("ust0", 0o214772),
+              ("ust1", 0o214773)]
     reads += [("x13", 29), ("sreads", at("SREADS")), ("yrltt2", at("YRLTT", 2)),
               ("ydfrda", at("YDFRDA"))]
     reads += [(nm.lower(), d.symtab[nm] // 64) for nm in ("NSPR", "NRET", "BADOPX", "NEOJ")]
@@ -1784,7 +1943,7 @@ def stage34(tmp, state, measure=()):
     reads += [("ld_%o" % w, w) for w in sorted(load_oracle())]
     reads += [("mretl%d" % k, d.symtab["MRETL"] // 64 + k) for k in range(4)]
     reads += [("ptrp", d.symtab["PTRP"] // 64)]
-    reads += [("ptrl%d" % k, d.symtab["PTRL"] // 64 + k) for k in range(30)]
+    reads += [("ptrl%d" % k, d.symtab["PTRL"] // 64 + k) for k in range(96)]
     reads += [("flog%d" % k, d.symtab["FLOG"] // 64 + k) for k in range(40, 300)]
     reads += [("lw%d" % k, k) for k in range(16)]     # words 0-15 at the stop
     progs = [progA] if os.environ.get("R2G_ONLY6") else [progA, prog]
@@ -1792,7 +1951,7 @@ def stage34(tmp, state, measure=()):
         progs += [x[0], x[1]]
     res = run_bench(tmp, "StretchBssGoLoadTb", progs, reads, stop_hw=halt,
                     step_cap=int(os.environ.get("R2G_STEPS", 12000000)), cycle_bound=60000000,
-                    mem_dump=(0o200000, 0o23200))
+                    mem_dump=(0o200000, 0o23200), operator_signal=oper, reel=reel)
     for r in res:
         if r[0] is not None:
             r[0]["_twsf"] = d.symtab["SSTOP"] // 32
@@ -2066,7 +2225,7 @@ def judge7(g, g6, S, exp):
     nt = (field(g["ptrp"], 0, 24) // 64 - g["_ptrl"]) // 3
     traps = [(field(g["ptrl%d" % (3 * k)], 0, 24), g["ptrl%d" % (3 * k + 1)],
               field(g["ptrl%d" % (3 * k + 2)], S["SL"] % 64, 1))
-             for k in range(min(nt, 10))]
+             for k in range(min(nt, 32))]
     for k, (a, b, sl) in enumerate(traps):
         print("INFO   trap %d after the entry: STIC %o.%02o, word 3 %016x, SL %d"
               % (k, a // 64, a % 64, b or 0, sl))
@@ -2091,8 +2250,20 @@ def judge7(g, g6, S, exp):
     # KNOGO (p.179 ll.13-25) -> KCHOPN, where the bench stops.  MEASURED
     # without the stop (2026-11-19): KCHOPN -> KSUPP suppresses the $W and
     # it traps again from 222266.00, again and again, to the step cap.
-    check("7: ... and the $W goes to K NO GO (p.179 ll.13-25): the run stops at KCHOPN, the"
-          " eighth trap the last", (g["_stopped"], nt), (S["KCHOPN"] // 32, 8))
+    print("INFO stage 7: %d operator action(s); reports %s; %d words typed; %d tape words"
+          " written" % (g["_oper"], " ".join("%s:%s" % r for r in g["_reports"]),
+                        len(g["_typed"]), len(g["_tape"])))
+    for k, (a, v) in enumerate(g["_tape"]):
+        print("INFO   tape write %2d: position %5d  %016x  %r" % (k, a, v, a8_text(v)))
+    for k, (a, b, sl) in enumerate(traps[10:], 10):
+        print("INFO   trap %d after the entry: STIC %o.%02o, word 3 %016x, SL %d"
+              % (k, a // 64, a % 64, b or 0, sl))
+    for nm in ("ust0", "ust1", "uat0", "uat1"):
+        print("INFO   %s at the stop: %016x" % (nm, g[nm] or 0))
+    if os.environ.get("R2G_TAMPER") == "nooper":
+        check("7: ... and the $W goes to K NO GO (p.179 ll.13-25): the run stops at KCHOPN, the"
+              " eighth trap the last", (g["_stopped"], nt), (S["KCHOPN"] // 32, 8))
+    judge7_operator(g, S, traps, nt)
     check("7: no other trap: still 12 $SPR, 12 PP $RET, 1 $EOJ; no bad op, no other"
           " interrupt", (field(g["nspr"], 0, 18), field(g["nret"], 0, 18),
                          field(g["neoj"], 0, 18), g["badopx"],
@@ -2103,6 +2274,52 @@ def judge7(g, g6, S, exp):
     bad = ["%o" % w for w in sorted(want) if g.get("ld_%o" % w) != want[w]]
     check("7: the program as loaded: each subprogram's first word, transfer vector and"
           " entries at p.17's origins (%d words)" % len(want), bad, [])
+
+
+def judge7_operator(g, S, traps, nt):
+    """Stage 7 past K NO GO: the operator readies channel 34 (OPERATOR ACTION)."""
+    check("7: OPERATOR ACTION: one channel signal on channel 34, at KCHOPN (Reference Manual"
+          " printed p.116: the unit made ready), then the reports MCP takes",
+          (g["_oper"], g["_reports"][:1]), (1, [("34", "00001")]))
+    # MCP's channel-signal receptor (KSTORE p.122 -> KSIGNL p.124 l.53 ->
+    # KHUNT/KSTAB p.125 -> p.126 l.5 BZBZ,SMOUNT($11),ZRCPFC) clears the
+    # unit's MOUNT bit (.51 of its UST entry, p.179's S MOUNT).
+    check("7: ... and MCP's receptor cleared CT11's MOUNT bit (UST 214772 .51, p.126 l.5)",
+          field(g["ust0"], 51, 1), 0)
+    check("7: then seven operations on the blank OUTPT reel, each ending with EOP alone:"
+          " no EPGK, no EE (density p.155 l.5, label read p.183 l.25, backspace p.155"
+          " l.18, label write p.155 l.45, tape mark p.156 l.14, the $W's record p.154"
+          " l.18, the output EOJ's tape mark p.164 l.33)",
+          g["_reports"][1:], [("34", "00010")] * 7)
+    check("7: nothing typed on the console (no mount reminder, no REPLACE TAPE)",
+          g["_typed"], [])
+    # THE REEL AS WRITTEN (host_tape.c's trace, in order).  p.155 l.45 writes
+    # the label from E LAB CW (one word here), p.156 l.14 a tape mark after
+    # it; the $W (p.154 l.18) writes the record buffer X holds (p.209 l.56:
+    # CX, the control character then 12 lines of 133), and the output EOJ's
+    # p.164 l.33 CTL 117 ends the file with a mark.
+    import check_bss_example4 as ex4
+    tape = g["_tape"]
+    mark = 0x0F00000000000000
+    check("7: the reel, written in order from the load point: a one-word label, a tape mark,"
+          " a 150-word record, a tape mark",
+          ([a for a, _v in tape], [k for k, (_a, v) in enumerate(tape) if v == mark]),
+          (list(range(153)), [1, 152]))
+    bits = "".join(format(v, "064b") for _a, v in tape[2:152])
+    chars = "".join(A6INV.get(int(bits[i:i + 6], 2), "~") for i in range(0, len(bits) - 5, 6))
+    lines = [chars[1 + 133 * i:1 + 133 * (i + 1)] for i in range(12)]
+    check("7: the record is the listing: control character P (p.209 l.56), 12 single-spaced"
+          " lines (C22-6678-1 p.20), headers **SUBPROGRAMS** **COMMONS**",
+          (chars[:1], [ln[:1] for ln in lines], lines[0][1:121].split()),
+          ("P", ["-"] * 12, ["**SUBPROGRAMS**", "**COMMONS**"]))
+    subs, coms, _seps = ex4.map_rows([ln[1:121] for ln in lines])
+    check("7: ... and its rows are p.17's map, every subprogram and common row",
+          (subs[:len(ex4.MAP_SUB)], coms[:len(ex4.MAP_COM)]),
+          (list(ex4.MAP_SUB), list(ex4.MAP_COM)))
+    for k, ln in enumerate(lines):
+        print("INFO reel line %2d: %s" % (k + 1, ln.rstrip()))
+    check("7: and the run reaches job control's wait for the next job card, ZJOBC1 (p.391"
+          " l.37, 020416.40)", g["_stopped"], S["ZJOBC1"] // 32)
 
 
 def judge34(res, p2, imgs, exp, d, sym2):

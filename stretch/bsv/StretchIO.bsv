@@ -178,6 +178,11 @@
 //     instruction is "terminated with an exchange-program-check
 //     indication" per p.136 ("Beginning and End of Tape") -- position
 //     is left at 0, not wrapped or made negative.
+// [Since overtaken: SPACE FILE (077), WRITE TAPE MARK (117, 2026-11-19)
+// and the state-setting codes 016/036/037/056/057/156/157 (accepted
+// with EOP, state not modelled, 2026-11-19) are executed; see
+// StretchExecute's tape CTL case.  The paragraph below is the original
+// record.]
 // Every other tape control code the manual documents -- SPACE BLOCK/
 // FILE, WRITE TAPE MARK, BACKSPACE FILE, the density/ECC/parity/light
 // functions (p.130, p.132) -- decodes to Operation Code Invalid here.
@@ -564,6 +569,27 @@ interface StretchIO;
   // (StretchCore's rl_io_report), which must not conflict with the
   // instruction that may write a control word in the same clock.
   method Action clearStatus(WordAddr ch);
+  // THE OPERATOR AT A UNIT (testbench only, never called by
+  // StretchExecute).  Reference Manual printed p.116 (PDF 119, read in
+  // the ink), "Channel Signal (CS)": "This bit comes on when the SIGNAL
+  // key on the unit is depressed, and whenever the unit changes from
+  // not-ready to ready status. ... The main purpose of channel signal is
+  // to provide a means of communication from the operator servicing the
+  // external units to the computer. ... It can originate at any time
+  // regardless of whether or not the unit is operating and has been
+  // previously selected by a LOCATE instruction. ... the CS status bit
+  // in the control word is turned on immediately".  So this sets CS in
+  // the channel's control word and nothing else; the exchange's report
+  // (StretchCore's rl_io_report, p.118) turns it into the indicator and
+  // the channel address in its own time.  "When more than one external
+  // unit is connected to a common control unit, there is no way of
+  // identifying the unit which sends the channel signal" -- so the
+  // method names a channel, not a unit.
+  //
+  // NOT MODELLED: the not-ready state that precedes the ready.  Every
+  // unit here is ready from power-on (cwReset's unitReady), so "the
+  // operator mounts a reel and readies the unit" is only its CS.
+  method Action operatorSignal(WordAddr ch);
 endinterface
 
 module mkStretchIO(StretchIO);
@@ -646,6 +672,7 @@ module mkStretchIO(StretchIO);
   // does not yet do (bsv/README.md).
   RWire#(Tuple2#(WordAddr, ControlWord)) cwW  <- mkRWire;
   RWire#(WordAddr)                       clrW <- mkRWire;
+  RWire#(WordAddr)                       sigW <- mkRWire;   // operatorSignal
 
   (* fire_when_enabled, no_implicit_conditions *)
   rule commitCW;
@@ -656,6 +683,10 @@ module mkStretchIO(StretchIO);
       if (clrW.wget matches tagged Valid .ch &&& kindOf(ch) == d) begin
         r.epgk = 0; r.uk = 0; r.ee = 0; r.eop = 0; r.cs = 0;
       end
+      // A channel signal arriving in the clock a report clears is a new
+      // one (p.116: it "can originate at any time"), so it goes on last.
+      if (sigW.wget matches tagged Valid .ch &&& kindOf(ch) == d)
+        r.cs = 1;
       return r;
     endfunction
     readerCW  <= next(DevReader,  readerCW);
@@ -761,6 +792,9 @@ module mkStretchIO(StretchIO);
   endmethod
   method Action clearStatus(WordAddr ch);
     clrW.wset(ch);
+  endmethod
+  method Action operatorSignal(WordAddr ch);
+    sigW.wset(ch);
   endmethod
 endmodule
 

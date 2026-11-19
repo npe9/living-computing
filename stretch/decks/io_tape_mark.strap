@@ -1,0 +1,82 @@
+! io_tape_mark.strap -- WRITE TAPE MARK (729 IV control code 117) writes
+! a tape mark at the tape's position, advances it by one, and ends with
+! EOP unless SEOP.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  The output end-of-job's
+! $WEF on CT11 (channel 34) is printed p.156 l.14,
+! "CTL,0.0($14),(8)117.  -WEF COMMAND".  The model program-checked every
+! tape CONTROL code it did not implement, so that $WEF ended in EPGK + EOP
+! (tests/check_bss_mcp_go.py, stage 7 on the operator path, 2026-11-19).
+!
+! WHAT THE MANUAL SAYS, Reference Manual printed p.132 (PDF 135, read in
+! the ink): "117  Write Tape Mark.  A standard tape mark (0001111)
+! denoting end of file is written on tape."  And for every control
+! function: "An end-of-operation is given upon the completion of every
+! instruction unless the instruction is of the SEOP type."  This model's
+! tape is word-addressed, and its mark is the one word SPACE FILE (077)
+! already stops on, tapeMarkWord = 0F00000000000000 (StretchTypes.bsv).
+!
+! WHAT EACH CHECK ESTABLISHES (the tape, channel 34, DISABLED throughout,
+! so the status bits stay in the control word; each CCW copies it)
+!   c1     CTL(SEOP) 117 at position 0: accepted (no EPGK) and no EOP.
+!   c2     CTL 117 at position 1: unit ready + EOP, no EPGK.
+!   b0,b1  after W of DATA (position 2), REWIND, and RD of three words:
+!          the first two are marks -- each WTM wrote one, and it wrote it
+!          where the tape was, not at a fixed place.
+!   b2     DATA: the second WTM ADVANCED the position, or the W would
+!          have landed on position 1 (or 0).
+!   b3     after REWIND and SPACE FILE (077), RD of one word: a mark.
+!          SPACE FILE stops just past the FIRST mark, so the word read is
+!          the second mark -- the mark WTM writes is the mark the tape's
+!          own search recognises.
+!   PC=PASS
+!
+! CTL function codes are written in decimal (decks/io_tape.strap's note):
+! 117 = 79, 136 = 94, 077 = 63.
+!
+! INJECTIONS (MEASURED 2026-11-19, observed failure sets):
+! Each injection is a bsv/ edit, reverted by its exact patch and checked by
+! hash, run on all three new decks (io_channel_signal, io_tape_control_modes,
+! io_tape_mark) and, for the first three, on tests/check_bss_mcp_go.py.
+!   nowtm    -- 117 not recognised (program-checked, the old model): c1, c2,
+!               b0..b3 fail (6): EPGK on both CCWs, the W's DATA lands at
+!               position 0 and nothing follows it.  PC passes.  The other
+!               decks pass.  check_bss_mcp_go.py: 6 fail -- the label is
+!               written (1 tape word) and the mark after it is reported
+!               EPGK + EOP (10010); MCP types six garbage words, and there
+!               is no record and no ZJOBC1.
+!   markzero -- the mark written as a zero word: b0, b1 and b3 fail (3).
+!               SPACE FILE then finds no mark and runs to the end of the
+!               reel, so B3 is never stored.  c1, c2, b2 and PC pass: the
+!               status and the position are right, and only the word is
+!               wrong.  The other decks pass.
+!   Control: the unmodified model, all 7 checks pass.
+
+        SLC, (8)300.0
+START   BD,  $+.32                   ! disabled: no report clears the word
+        LVI, $1, 34                  ! the tape's channel (value 34<<5)
+        CTL(SEOP), 0($1), 79         ! 117 write tape mark, SEOP: pos 0
+        CCW, 0($1), C1
+        CTL, 0($1), 79               ! 117 write tape mark: pos 1
+        CCW, 0($1), C2
+        W, 0($1), CWW                ! DATA at pos 2
+        CTL, 0($1), 94               ! 136 rewind
+        RD, 0($1), CWR               ! three words into B0..B2
+        CTL, 0($1), 94               ! 136 rewind
+        CTL, 0($1), 63               ! 077 space file: past the first mark
+        RD, 0($1), CWS               ! one word into B3
+PASS    BEW, $
+        CNOP
+
+        SLC, (8)500.0
+CWW     CW, DATA, 1, 0
+CWR     CW, B0, 3, 0
+CWS     CW, B3, 1, 0
+C1      DD(BU,64), 0
+C2      DD(BU,64), 0
+DATA    DD(BU,64), 1234567
+B0      DD(BU,64), 0
+B1      DD(BU,64), 0
+B2      DD(BU,64), 0
+B3      DD(BU,64), 0
+        END, START

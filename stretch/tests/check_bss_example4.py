@@ -35,8 +35,18 @@ print, and is CHOSEN here so that the map's rows discriminate:
   * the library's order on disk: UST*, SIN (never called), IOCS*, FISIP*, so
     the relocation table's library entries (by disk order, p.9) differ from
     the map's (by fetch order, p.7).
-  * U, the problem program's upper limit in KSILO+8.32: 213713 + max(14,
-    T) = 213766 octal, T = 43 words the relocation table.  So THE BLANK
+  * U, the problem program's upper limit in KSILO+8.28 (BU,18): 213713 +
+    max(14, T) = 213766 octal, T = 43 words the relocation table.  8.28,
+    not 8.32, since 2026-11-19: C22-6728 (-0) printed p.197 (PDF 197, read
+    in the ink) prints "PP UPPER LIMIT 8.28", and MCP's own code takes it
+    from there -- p.397 l.3 LX,$14,KSILO+8 loads the word as an index word
+    and p.384 l.39 SC,$14,SLRBU stores its count field, bits 28-45
+    (Reference Manual printed p.24, PDF 27, read in the ink).  C22-6728-1
+    p.88 (and -0 p.80) print 8.32; the code disagrees with them.  MEASURED
+    (2026-11-19, the deck's L(BU,18),KSILO+8.28 put back to 8.32, the plant
+    at 8.28): 9 fail -- common rows 1-5 (origins 277465 ... 277135, from the
+    wrong field), the relocation table, KSILO+9, and both U checks (no
+    ERRC 2 and no ERRC 3).  The subprogram rows pass.  So THE BLANK
     COMMON ORIGIN ROW (213713) HOLDS BY CONSTRUCTION and is not evidence;
     the named commons' four origins and the ten subprogram rows are.
 The relocation table (the loader's layout, docs/bss_loader_spec.md 5.4) and
@@ -241,7 +251,7 @@ def build(subs=SUBS, lib=LIB, upper=None, mangle=None):
     u = exp["U"] if upper is None else upper
     # KSILO word 8 holds the upper limit; 9-11 a sentinel, so a field the
     # deck never writes shows (the bits outside C12's fields must survive).
-    rows += ["        SLC, (8)%o.0" % (KSILO + 8), "        DD(BU,64), (16)%016X" % (u << 14)]
+    rows += ["        SLC, (8)%o.0" % (KSILO + 8), "        DD(BU,64), (16)%016X" % (u << 18)]
     rows += ["        DD(BU,64), (16)%016X" % SENT] * 3
     src = open(DECK).read()
     for old, new in (("TWSA    XW, INPUT", "TWSA    XW, TWS"), ("LIBA    XW, INPUT", "LIBA    XW, LIBDIR")):
@@ -332,7 +342,7 @@ def expect(subs, lib, decks, firsts, lib_addr):
     main = ep.get("*MAIN*", 0)
     f24 = ((1 << 24) - 1)
     two = (f24 << 40) | (f24 << 8)          # 24-bit fields at .0 and .32
-    ks = {KSILO + 8: (0o41 << 46) | (u << 14),
+    ks = {KSILO + 8: (0o41 << 46) | (u << 18),
           KSILO + 9: (SENT & ~two) | (b << 46) | (b << 14),
           KSILO + 10: (SENT & ~two) | (main << 45) | (main << 13),
           KSILO + 11: SENT & ~(f24 << 40)}
