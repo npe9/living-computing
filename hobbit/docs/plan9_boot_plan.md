@@ -44,6 +44,29 @@ records) and from `_vector0`'s calling convention (`raml.s`), never
 guessed. Required at first: `write`, `exit`/`exits`, `open`, `read`,
 `close`.
 
+**Mechanism.** The kernel's own code is not in hand as a running image,
+so the shim replaces only the *kernel side* of the syscall, never the
+hardware's part of it:
+
+1. the model performs the whole printed event sequence on the `KCALL`
+   (`raml.s` entry, pp. 1-36…1-39): frame push, `PC = *(VB+0)`, PSW
+   switch, `ISP`/`SP` handover — no core change;
+2. the testbench supplies a small **vector page** at a chosen `VB` whose
+   `+0` word is a stub that stores the syscall id `R0` into a reserved
+   doorbell word and spins waiting for the doorbell to be cleared;
+3. on the doorbell write the testbench performs the operation in Python
+   (file table, reads, writes to the console), places the result where
+   the printed return convention puts it (`CSP+4` accumulator or `CSP`
+   return value — `docs/plan9_syscalls.md`), writes the user PC/PSW back
+   into the event frame and clears the doorbell;
+4. the stub then returns through `RETURN`, so the model, not the
+   testbench, unwinds the frame.
+
+The one piece still open is the frame layout the stub must read and
+write (O4 in `docs/plan9_kernel_inventory.md`); the model's own
+`mkHobbitEvents` already defines it, and the shim must use that
+definition rather than assume one.
+
 ### A2 — the toolchain bootstraps on the model
 
 The release ships `hobbit/bin/{za,zc,zl}` as Hobbit executables. With A0

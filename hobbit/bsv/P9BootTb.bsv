@@ -81,14 +81,26 @@ module mkP9BootTb(Empty);
   // The core's own `retire` rule prints each HRI record (HobbitCore.bsv,
   // "retirement presentation"); printing it again here doubled every line.
   // This rule only counts clocks and reports the stop.
+  // The guard is large enough for the real work the shipped binaries do
+  // before they need the kernel: `cat`'s 32-iteration `exits` atexit scan
+  // (0x1174..0x11a0) alone takes about 900 clocks, and the scan ends in
+  // CALL 0x11a2 -> KCALL 0x12da (cyc 11, Table 4-36) -> PC = *(VB+0).
+  // With no kernel loaded, VB is 0 and that vector is empty: the model
+  // then executes the zero vector (KCALL 0) forever, so arriving at PC 0
+  // is the architectural boundary and is reported as such rather than
+  // waiting for the timeout.
   rule observe ((boot == 2) && !done);
     clocks <= clocks + 1;
     let faulted = core.faulted();
-    let timedout = clocks > 400;
+    let timedout = clocks > 20000;
+    let atVector = (core.pc() == 0) && (clocks > 16);
     if (faulted) $display("FAULT pc=%08x", core.faultPc());
-    if (timedout && !faulted) $display("STOP clocks=%0d pc=%08x", clocks, core.pc());
-    done <= faulted || timedout;
-    if (faulted || timedout) $finish;
+    if (atVector && !faulted)
+      $display("VECTOR pc=00000000 clocks=%0d (no handler at VB+0 in this image)", clocks);
+    if (timedout && !faulted && !atVector)
+      $display("STOP clocks=%0d pc=%08x", clocks, core.pc());
+    done <= faulted || timedout || atVector;
+    if (faulted || timedout || atVector) $finish;
   endrule
 
 endmodule
