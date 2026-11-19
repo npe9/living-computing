@@ -84,9 +84,11 @@ def parse_term(r):
         return ('int', (r.rd() << 16) | r.rd())
     if (t & 0xff00) == 0x0600:
         r.rd()
+        size = t & 0xff
         ln = (r.rd() << 16) | r.rd()
-        chars = bytes(r.rd() & 0xff for _ in range(ln))
-        return ('string', chars.decode('latin1'))
+        nwords = (ln * size + 31) // 32
+        chars = bytes(r.rd() & 0xff for _ in range(nwords))
+        return ('string', ln)
     if t == 0x0700:
         r.rd()
         ln = (r.rd() << 16) | r.rd()
