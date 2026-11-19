@@ -49,8 +49,22 @@ if [ "$hris" -ne 41 ]; then
   echo "run_smoke: $hris HRI lines, want 41" >&2
   exit 1
 fi
-if printf '%s\n' "$out" | grep '^HRI ' |
-     grep -Evq '^HRI pc=[0-9a-f]{4} insn=[0-9a-f]{8} sp=[0-9a-f]{8}>[0-9a-f]{8} msp=[0-9a-f]{8}>[0-9a-f]{8} we=[0-9] addr=[0-9a-f]{8} data=[0-9a-f]{8} mask=[0-9a-f]{2} trap=[0-9] cyc=[0-9]+$'; then
+# The check is done in Python: the same regex under /bin/sh and under
+# bash judged the same 41 lines differently (bash: none bad, sh: all 41
+# bad) once the pattern went through the shell, and Python removes that
+# variable entirely.
+bad=$(printf '%s\n' "$out" | python3 -c '
+import sys, re
+pat = re.compile(r"^HRI pc=[0-9a-f]{4} insn=[0-9a-f]{8} sp=[0-9a-f]{8}>[0-9a-f]{8} "
+                 r"msp=[0-9a-f]{8}>[0-9a-f]{8} we=[0-9] addr=[0-9a-f]{8} "
+                 r"data=[0-9a-f]{8} mask=[0-9a-f]{2} trap=[0-9] cyc=[0-9]+$")
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if line.startswith("HRI ") and not pat.match(line):
+        print(line)
+')
+if [ -n "$bad" ]; then
   echo "run_smoke: an HRI line does not match the fixed format with cyc" >&2
+  printf '%s\n' "$bad" | head -3 >&2
   exit 1
 fi

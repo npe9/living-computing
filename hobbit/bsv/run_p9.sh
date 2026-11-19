@@ -2,14 +2,15 @@
 # Load a 1st Edition Plan 9 `z` binary on the model and start at its
 # entry (tools/p9exec.py writes the image, P9BootTb.bsv runs it).
 #
-#   ./run_p9.sh                    echo, the default
-#   ./run_p9.sh cat                any file in tools/plan9-1e/hobbit/bin
+#   ./run_p9.sh                    cat, the default (its 1 Kbyte boot
+#                                  window holds both `_main` and `main`)
+#   ./run_p9.sh echo               any file in tools/plan9-1e/hobbit/bin
 #
 # The image package and the simulator are build products (gitignored).
 set -eu
 cd "$(dirname "$0")"
 here=$(pwd)
-bin=${1:-echo}
+bin=${1:-cat}
 
 BSC=${BSC_BIN:-}
 if [ -z "$BSC" ]; then

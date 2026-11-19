@@ -19,7 +19,7 @@ directory.
 | clock / RTC | `clock.c`, `devrtc.c` | sourced |
 | Ethernet / IIC | `devether.c`, `deveia.c`, `deviic.c` | sourced |
 | MMU | `mmu.c`; model has `HobbitMmu` | modelled, untested against kernel code |
-| user binaries | `hobbit/bin/` (shipped) | run on the model: first instruction retires |
+| user binaries | `hobbit/bin/` (shipped) | `_main` and `main` run on the model (A0 status) |
 
 **There is no kernel image in the release.** `plan9-1e.tar.bz2` ships no
 `/9/` tree (0 entries), only the kernel *sources*, the user binaries and
@@ -30,12 +30,11 @@ the z libraries. So booting 1e has to produce the image ourselves.
 ### A0 — the model runs 1e user code to completion of the startup
 
 Gate: `run_p9.sh cat` executes `_main` and `main` and reaches the first
-`write` syscall. Blocked today by one parcel: the `0x0000` between
-`_main`'s first MOV and the two parameter loads (`0xffff` in `echo`).
-Resolve it from Bell Labs' own `main9.z` records, linked by the rebuilt
-`zl` (or read straight out of the shipped binary at a second site), and
-then implement whatever the run demands next — the model refusing loudly
-is the contract and the guide.
+`write` syscall.  Status: `_main` and `main` now execute; the run stops
+inside libc's `exits` at the first instruction the core does not
+implement (`SHL3`, see the A0 status below), so reaching `write` waits
+on that instruction and on the syscall shim (A1).  The "one parcel" that
+blocked this was not a parcel at all: see below.
 
 ### A1 — a host shim for the syscalls the startup and `za`/`zl` need
 
@@ -81,45 +80,101 @@ reads a file from a modelled disk image, and `za` assembles a program
 *inside* the boot. That is "1e is running", not "the model can run one
 binary".
 
-## A0 status (2026-11-19)
+## A0 status (2026-11-19): closed — there was no hole
 
-Two routes to the parcel, both open:
+**The parcel question is answered: there is no hole, no padding and no
+uninitialised text.** The text section is a sequence of 32-bit words
+stored **little-endian**, and within a word the **high half is the
+earlier parcel**. The `0x0000` that used to sit "next to `_main`'s first
+MOV" is the **second parcel of that three-parcel MOV** — its 32-bit
+source field, the stack offset 0 of `R0`.
 
-* **Link Bell's own `main9.z`** with the rebuilt `zl` and read `_main`'s
-  parcels from the result.  `zl` currently dies with `EXC_BAD_ACCESS`
-  inside `strlen` (lldb, frame `_platform_strlen`) when given
-  `main9.z` plus a synthetic stub: a bad name pointer in the host port's
-  symbol handling.  Next: feed it real members extracted from
-  `libc.a` (`main`, `exits`, `_clock`) instead of a hand-written stub,
-  and fix the name pointer rather than papering over the crash.
-* **Read a second linked site.** `_main` exists in every shipped
-  binary; `echo`/`zl` have `0xffff` there and `cat` `0x0000`.  A third
-  binary with a *different* filler value would identify it as unfilled
-  output, not an instruction; a binary where the parcel is a valid
-  instruction would identify it the other way.
+Two independent proofs, as required:
 
-Until one of those answers, `run_p9.sh cat` stops at 0x12c2 exactly as
-recorded, and the model's refusal is correct behaviour.
+* **`zl` links Bell Labs' own startup.** `tools/build_zl_inferno.py`
+  now builds the 1e linker and `--link-main9` links `libc.a`'s
+  `main9.z` with the real members defining `_clock` and `exits`
+  (`argv0.z`, `atexit.z`, `_exits.z`), then prints `_main`'s parcels:
 
-**New evidence, all five shipped binaries** (parcels from `_main`, low
-byte first):
+  ```
+  header: magic 0x197  text 0xbc  data 0x10  bss 0x84  syms 0x5cc  entry 0x1022
+  main   0x00001020      _main 0x00001022      _clock 0x00002004
+  `_main` at 0x1022, parcels (address order):
+    1022  0bfc                 ENTER R-16        (zl-inserted)
+    1024  86dc 0000 2004       MOV R0,_clock
+    102a  60a1                 MOV argc+0(FP), R4
+    102c  60c2                 MOV argv+4(FP), R8
+    102e  07f9                 CALL 1020
+    1030  c6fd 0000 10d6 ...  MOV $_exits,R4
+    103a  0433                 CALL 10a0
+    103c  0ffa                 JMP 1030
+  ```
+
+  `_main` starts at its symbol address with `ENTER R-16`, which `zl`
+  inserts for `TEXT _main(SB), 1, $12` (`pass.c`'s `follow()`, case
+  ATEXT); its second instruction is the MOV, and its second parcel is
+  0x0000.  The `CATCH R16` the shipped binaries carry after the call is
+  the same function's ACALL case, and a program object with a `$2048`
+  frame makes the linker emit it, which is the discriminating test.
+* **All five shipped binaries, read in address order.** Every `_main`
+  is `ENTER` (0x0bfc), `86dc <hi> <_clock>`, `60a1`, `60c2`, `CALL`,
+  and the CALL lands **exactly on that binary's `main` symbol**:
+
+  ```
+  cat  entry 012bc  main 01020  exits 01170 : 0bfc | 86dc 0000 3004 | 60a1 60c2 | 06ac→1020 | 0805 | c6fd 0000 12da 0000 0004 | 074d→1170
+  echo entry 02ad0  main 01020  exits 0141e : 0bfc | 86dc 0000 4008 | 60a1 60c2 | 80e1 ffff e544→1020 | 0805 | ...
+  rc   entry 0b9c6  main 03112  exits 0ae9c : 0bfc | 86dc 0000 e098 | 60a1 60c2 | 80e1 ffff 7740→3112 | 0805 | ...
+  za   entry 07282  main 02198  exits 05964 : 0bfc | 86dc 0000 8050 | 60a1 60c2 | 80e1 ffff af0a→2198 | 0805 | ...
+  zl   entry 0995c  main 03c96  exits 081a6 : 0bfc | 86dc 0000 b084 | 60a1 60c2 | 80e1 ffff a32e→3c96 | 0805 | ...
+  ```
+
+  The `0xffff` in `echo`/`rc`/`za`/`zl` is the high half of a 32-bit
+  CALL displacement (the long form `0x80e1` is used when the target is
+  farther than the one-parcel 10-bit range): not a filler, not a hole.
+  `rc`/`za`'s entry addresses are ≡ 2 (mod 4) because a one-parcel
+  instruction precedes `_main`; the parcel at such an address is the
+  low half of its word, and the decoder selects the half by address.
+
+**The linker's crash had a single cause.** `diag`'s 1993 varargs hack
+`doprint(..., &(&a)[1])` (`list.c:212`) passed a pointer into the
+caller's frame as a `va_list`; on arm64 the callee reads the format
+string's bytes as the `%s` argument, which is the `EXC_BAD_ACCESS` in
+`_platform_strlen` (`lldb`: `x0 = 0x656e696665646e75`, the ASCII
+`"undefine"`, callers `patch()` → `diag` → `doprint`).  `va_start`/
+`va_end` is the fix.  Five further host-port defects were found and
+fixed the same way (all in patched copies of the vendored sources, listed
+in `tools/build_zl_inferno.py`): `Rlent.offset` must be 32-bit (28-byte
+1e symbol entries), `$ZLLIB` must replace `/hobbit/lib`, `ldobj` must
+zero its `Prog`s, Inferno's fmt has no `%f` and must not be handed the
+1993 `%P` conversion, and the installed `%A/%D/%P` text is unavailable.
+
+**The model now runs the startup.** `tools/p9exec.py` reads the text as
+little-endian words and writes the model image; `bsv/run_p9.sh cat`
+retires ENTER, the MOV to `_clock`, the two parameter loads and the CALL;
+`main` runs; the run stops in libc's `exits` at the first instruction the
+core lacks — one-parcel `SHL3 $2,R12` (0x7843) at 0x1178:
 
 ```
-echo  _main=02ad0  86dc 0bfc 4008 | 0000 | 60c2 60a1 | ffff 80e1
-cat   _main=012bc  86dc 0bfc 3004 | 0000 | 60c2 60a1 | 0805 06ac
-zl    _main=0995c  86dc 0bfc b084 | 0000 | 60c2 60a1 | ffff 80e1
-rc    _main=0b9c6  0806 | 0000 | 86dc 60a1 | e098 80e1 60c2 7740
-za    _main=07282  0ffa | 0000 | 86dc 60a1 | 8050 80e1 60c2 af0a
+HRI pc=12bc insn=0bfc0000 sp=00000800>000007f0 ... cyc=197
+HRI pc=12be insn=86dc0000 ... we=1 addr=00003004 data=00000000 mask=0f
+HRI pc=12c4 insn=60a10000 ... we=1 addr=000007f4
+HRI pc=12c6 insn=60c20000 ... we=1 addr=000007f8
+HRI pc=12c8 insn=06ac0000 ... we=1 addr=000007f0 data=000012ca
+...
+FAULT pc=00001178
+TRAP pc=0x00001178: unimplemented opcode (Tables 1-15..1-20)
 ```
 
-So `0x0000` is *at* the `_main` boundary in every binary — immediately
-before the `86dc` MOV in `rc`/`za` (whose symbols point two bytes
-earlier), immediately after the MOV's three parcels in `echo`/`cat`/`zl`.
-It is not a varying leftover after all; it is a parcel the linker places
-next to the first MOV, and the two groups differ only in whether the
-symbol points at it. That makes it an instruction the assembler emits
-for `_main` (or the linker for `TEXT`) and the next question is *which*,
-which the `main9.z` link will answer.
+`echo` retires the same five startup records (at 0x2ad0, `_clock`
+0x4008, `insn=80e1ffff` for the long CALL) and then stops with
+`TRAP pc=0x00001020: fetch missed the 3 KB prefetch window`, because its
+entry (0x2ad0) and `main` (0x1020) cannot share one 1 Kbyte boot window
+and `mkHobbitPrefetch` has no on-demand fill.
+
+Still open for A0/A1, in order: the kernel's call frame (`argc`/`argv`
+are zero today, so `cat` takes its `argc = 0` path and exits), one-parcel
+`SHL3`/`SHR3` in `HobbitDecode.bsv` (0x1E/0x1F), then the user-side
+trap (`CPU` escape) and the `write`/`exits` shim.
 
 ## Goal B: all the devices
 
@@ -147,7 +202,7 @@ failure set, revert).
 
 ## Order of work
 
-1. **A0** — the parcel, then run the startup to the first syscall.
+1. **A0** — closed: there is no parcel; the startup runs to the core's first refusal.
 2. **A1** — syscall shim (`write`, `exits`, `open`, `read`, `close`).
 3. **A2** — `za`/`zl` bootstrap on the model; compare with shipped objects.
 4. **A3** — assemble and link the kernel; image checks.

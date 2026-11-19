@@ -40,7 +40,7 @@ module mkP9BootTb(Empty);
   // these from the kernel, which this testbench does not model.
   Word entry = p9entry();       // the image's own entry (P9Entry.bsv)
   Word sp0   = 32'h0000_0800;
-  Word msp0  = 32'h0000_0c00;   // FP is 0xC00 (inferred from 0xbfc + 4)
+  Word msp0  = 32'h0000_0c00;   // 1 Kbyte above SP; the real cache is 64 words
   Word psw0  = 32'h0000_0200;   // bit 9: CSP = SP (user level)
 
   HobbitMem mem <- mkP9Mem;
@@ -62,7 +62,14 @@ module mkP9BootTb(Empty);
   endrule
 
   rule ask (loaded && boot == 0);
-    core.prefetchImageAt(p9textbase());
+    // The boot fill is 1 Kbyte (mkHobbitPrefetch installs one way of 128
+    // 8-byte lines) and there is no on-demand fill, so the window must
+    // contain the entry.  tools/p9exec.py --entry-bsv rounds the entry
+    // down to a 1 Kbyte boundary: for `cat` that is 0x1000, which holds
+    // both `_main` (0x12bc) and `main` (0x1020); for the larger binaries
+    // it holds the startup and a call out of the window traps
+    // TR_FETCH_MISS.
+    core.prefetchImageAt(p9fillbase());
     boot <= 1;
   endrule
 
@@ -71,15 +78,11 @@ module mkP9BootTb(Empty);
     boot <= 2;
   endrule
 
+  // The core's own `retire` rule prints each HRI record (HobbitCore.bsv,
+  // "retirement presentation"); printing it again here doubled every line.
+  // This rule only counts clocks and reports the stop.
   rule observe ((boot == 2) && !done);
     clocks <= clocks + 1;
-    if (core.hriValid()) begin
-      let h = core.hri();
-      $display("HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%0d addr=%08x data=%08x mask=%02x trap=%0d cyc=%0d",
-               h.pc, h.insn0, h.insn1, h.sp_before, h.sp_after,
-               h.msp_before, h.msp_after, pack(h.mem_we), h.mem_addr,
-               h.mem_wdata, h.mem_wmask, pack(h.trap), h.cyc);
-    end
     let faulted = core.faulted();
     let timedout = clocks > 400;
     if (faulted) $display("FAULT pc=%08x", core.faultPc());
