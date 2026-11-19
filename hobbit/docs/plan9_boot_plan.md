@@ -176,6 +176,27 @@ are zero today, so `cat` takes its `argc = 0` path and exits), one-parcel
 `SHL3`/`SHR3` in `HobbitDecode.bsv` (0x1E/0x1F), then the user-side
 trap (`CPU` escape) and the `write`/`exits` shim.
 
+## A4 status (DUART): model written, gate red, parked (2026-11-19)
+
+A first `mkHobbitDuart` exists but its gate is **not** green: 26 of 37
+checks pass, the receive path works end to end (`rx_data`, `rx_irq`,
+`isr_rx_ready`), and the transmit path never starts because the
+testbench's bus-driving rule and the device's shift rule starve each
+other (`bsc` reports "rule step can never fire" in one ordering and
+"duart_shift" starvation in the other; `descending_urgency` remedies the
+symptom in one direction only).  The fix belongs in the design, as the
+one-rule-per-behaviour rule in `skill://hobbit` says: a device stage
+should advance its own shifter in the same rule that accepts its
+register writes, not in a competing one.
+
+The work is preserved at `/tmp/duart-wip/` (`HobbitDuart.bsv`,
+`HobbitDuartTb.bsv`, `run_duart.sh`) and is **not** in the suite, so the
+repository gate stays honest.  Its register map cites `io.h:1,20,32-96`,
+`mem.h:43`, `deveia.c:18-81,351-422,481-483,501-563,600-615`.
+
+Also corrected here: `BD19200` is **0xCC** (`deveia.c:54`), not 0xBB —
+the DUART agent caught that against the inventory.
+
 ## Goal B: all the devices
 
 Inventory is fixed by the port's own files; each row is a milestone with

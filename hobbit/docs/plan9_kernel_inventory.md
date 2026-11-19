@@ -334,7 +334,7 @@ otherwise. The device list is `K/cpu:1-22` (identical device lines in
 | Channel A extras: `ipcr`/`acr`, `isr`/`imr`, `ctu`, `ctl` (`K/io.h:45-57`) | — |
 | Global: `opr`, `ipr`/`iopcra`, `start`/`iopcrb`, `stop`, `bcr[4]`, `pwrdn`, `pwrup`, `nak`, `ack`, `cir`, `gicr`, `gibcr`/`update`, `grxfifo`/`gtxfifo`, `icr`, `brg`, `setclk[2]` | `K/io.h:59-95` |
 | Port map: 0 = `duart[0].a`, 1 = `duart[0].b`, 2 = `duart[1].a`, 3 = `duart[1].b` | `K/deveia.c:501-521` |
-| `uartsetup` resets and programs 8N1, parity off, 19200 (`BD19200 = 0xBB`) | `K/deveia.c:401-422` |
+| `uartsetup` resets and programs 8N1, parity off, 19200 (`BD19200 = 0xCC`, `K/deveia.c:54`; `BD9600 = 0xBB`) | `K/deveia.c:54,401-422` |
 | `uartputs` (the console writer) is **polled**: `cr = TxEnable`, spin on `sr & TxRDY`, write `txfifo` | `K/deveia.c:351-372` |
 | `eiarawput` also waits for `TxEMT` | `K/deveia.c:600-615` |
 | `eiaintr` reads `cir & TypeMask` and `gicr & 3` then services `TxAvail0/1`, `RxAvail`, `CtAvail`, `RxAvailErr`; `quart->update = 0` acknowledges | `K/deveia.c:424-479` |
