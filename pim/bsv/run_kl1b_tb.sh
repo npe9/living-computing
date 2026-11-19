@@ -71,3 +71,7 @@ export PATH
 "$BSC" -sim -g mkPimKL1BJumpTb -u PimKL1BJumpTb.bsv
 "$BSC" -sim -e mkPimKL1BJumpTb -o sim_kl1bjump
 ./sim_kl1bjump
+
+"$BSC" -sim -g mkPimKL1BNilTb -u PimKL1BNilTb.bsv
+"$BSC" -sim -e mkPimKL1BNilTb -o sim_kl1bnil
+./sim_kl1bnil

@@ -128,10 +128,12 @@ module mkPimKL1B(PimKL1B);
         8'h18: args.upd(truncate(a), {tagList, 20'h0, hp});  // set_list Gi
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
         8'h13: regs.upd(b, {tagVar, 24'h0, a});   // set_variable c8, r
+        8'h32: regs.upd(a, {tagNil, 24'h0, 0});  // put_nil Ai
         8'h31: regs.upd(a, {tagInt, 16'h0, val[15:0]});  // put_integer Ai, c16
         8'h34: regs.upd(b, regs.sub(a));          // put_value r, r
         8'h33: regs.upd(b, {tagVar, 24'h0, a});   // put_variable r, r
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
+        8'h22: begin heap.upd(hp, {tagNil, 24'h0, 0}); hp <= hp + 1; end  // write_nil
         8'h21: begin heap.upd(hp, {tagInt, 8'h0, val[23:0]}); hp <= hp + 1; end  // write_integer c24
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'h24: begin heap.upd(hp, {tagVar, 24'h0, a}); hp <= hp + 1; end  // write_variable

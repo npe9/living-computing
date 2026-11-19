@@ -30,9 +30,11 @@ The status labels are:
 | `write_variable` | 0x24 | `heap[HP] = UREF(a); HP++` | documented (TR-246 p. 7) | `PimKL1BTb` |
 | `write_constant` | 0x20 | `heap[HP] = c40; HP++` | documented (TR-246 p. 7) | `PimKL1BStructTb` |
 | `write_integer` | 0x21 | `heap[HP] = INT(c24); HP++` | inferred | `PimKL1BIntTb` |
+| `write_nil` | 0x22 | `heap[HP] = NIL; HP++` | documented (TR-246 p. 7) | `PimKL1BNilTb` |
 | `put_list` | 0x2e | `R[a] = LIST(HP)` | documented (TR-246 p. 7) | `PimKL1BStructTb` |
 | `put_constant` | 0x30 | `R[a] = c40` | documented (TR-246 p. 7) | `PimKL1BStructTb` |
 | `put_integer` | 0x31 | `R[a] = INT(c16)` | inferred | `PimKL1BIntTb` |
+| `put_nil` | 0x32 | `R[a] = NIL` | documented (TR-246 p. 7) | `PimKL1BNilTb` |
 | `wait_value` | 0xa4 | halt if `deref(R[a]) != deref(R[b])` | documented (TR-246 p. 5) | `PimKL1BFailTb` |
 | `wait_constant` | 0xa0 | halt if `deref(R[a]) != c40` | documented (TR-246 p. 5) | `PimKL1BConstFailTb` |
 | `wait_list` | 0xa6 | halt if the deref is not a list | documented (TR-246 p. 5) | `PimKL1BWaitTb` |

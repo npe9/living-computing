@@ -427,7 +427,8 @@ test or an explicit label.
      `PimKL1BSuspendTb` (the empty-queue jump; the model used to read
      the stale cell, landing at 0xaaa), `PimKL1BMiscTb`
      (put_variable/get_value and the placeholder set_atom/read_atom)
-     and `PimKL1BJumpTb` (the unconditional jump, 0x67).
+     and `PimKL1BJumpTb` (the unconditional jump, 0x67); `PimKL1BNilTb`
+     covers put_nil/write_nil.
      `set_structured_constant` still halts loudly because it needs the
      constant stream. `set_value`/`set_variable` are a documented
      stand-in: they

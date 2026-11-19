@@ -11,10 +11,16 @@ deref through `read_variable`), `PimKL1BFailTb.bsv`,
 `PimKL1BConstFailTb.bsv`, `PimKL1BStructTb.bsv` (`put_list`,
 `put_constant`, `write_constant`), `PimKL1BIntTb.bsv`
 (`put_integer`, `write_integer`), `PimKL1BWaitTb.bsv`
-(`wait_list`, `wait_integer`) and `PimKL1BSetTb.bsv` (`set_constant`,
-`set_integer`, `set_nil`, `set_list` and the matching reads);
-`run_kl1b_tb.sh` builds and runs all seven. The implemented subset and the loud-failure rule for the
-rest are in the module header.
+(`wait_list`, `wait_integer`), `PimKL1BSetTb.bsv` (`set_constant`,
+`set_integer`, `set_nil`, `set_list` and the matching reads),
+`PimKL1BArithTb.bsv` (the guard built-ins), `PimKL1BGetTb.bsv` (the
+active-unification reads), `PimKL1BControlTb.bsv` (the goal queue's
+FIFO order), `PimKL1BSuspendTb.bsv` (suspend's empty-queue jump),
+`PimKL1BMiscTb.bsv` (put_variable/get_value and the placeholder
+set_atom/read_atom), `PimKL1BJumpTb.bsv` (the unconditional jump) and
+`PimKL1BNilTb.bsv` (put_nil/write_nil); `run_kl1b_tb.sh` builds and
+runs all fourteen. The implemented subset and the loud-failure rule for
+the rest are in the module header.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),
 `PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`
