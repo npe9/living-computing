@@ -342,9 +342,11 @@ What remains unknown:
   `t(mnemonic, Tag, Op, Type)` clauses, and `klb_opr.kl1` gives the
   operand packing rules. The full transcription is in
   `docs/kl1_encoding.md`. The encoding is PIMOS-derived, not printed in
-  TR-246 or TR-389, and the tag word plus data word is six bytes, which
-  does not reconcile with TR-389's four/eight-byte counts without a
-  surviving listing.
+  TR-246 or TR-389. The assembler's clauses emit a tag plus a 32-bit
+  data word; if each is a 40-bit tagged word (TR-389 p. 9), the byte
+  count does not match TR-389's printed four/six/eight lengths, and the
+  assembler's byte serialization is not shown in the clauses read. The
+  mapping stays unresolved without a surviving listing.
 - **Tag bit layout.** The text says an 8-bit tag (TR-389 p. 9) while Figure 7 on
   the same page marks the tag field at bits 63–55 with bits 54–32 `free`. The
   MRB's position inside the tag is not stated.

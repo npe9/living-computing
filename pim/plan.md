@@ -114,11 +114,13 @@ Its evidence gate is satisfiable from the corpus already present: the
 documented KL1-B path is TR-246 and TR-389, transcribed in
 `docs/kl1_architecture.md`, and the PIMOS KL1 compiler source is in
 `docs/nonlocal/pimos.tar.Z` (706 files, including
-`pimos/src/library/compiler/instrtbl.kl1` and `mactbl.kl1`). The genuine
-gap is the machine-code/bit encoding table — TR-246 prints mnemonics
-only and TR-389 prints operand notation but no opcode or bit layout — so
-any encoding derived from the compiler source must be labelled
-source-derived, not historical.
+`pimos/src/library/compiler/instrtbl.kl1` and `mactbl.kl1`). The
+encoding table is also in the corpus: the PIMOS assembler's
+`pimos/src/library/assembler/inst_tab.kl1` lists 263 encodings and
+`klb_opr.kl1` gives the operand packing, transcribed in
+`docs/kl1_encoding.md`. The encoding is PIMOS-derived, not printed in
+TR-246 or TR-389. What remains for WP5.3 is per-mnemonic prose
+semantics and a PIM/m-specific confirmation of the PIMOS encodings.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are

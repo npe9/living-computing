@@ -25,15 +25,22 @@ below are what ICOT's assembler actually emitted.
 
 ## Instruction format
 
-Each instruction is emitted as a 16-bit tag word followed by a 32-bit
-data word (`Word = 1`), or by two 32-bit data words for wide operands
-(`Word = 2`).
+The assembler's internal representation is a tagged word: an 8-bit tag
+and a 32-bit data word (`Word = 1`), or a second 32-bit word for wide
+operands (`Word = 2`). The tag value `16#"23"` marks the core KL1-B set
+and `16#"22"` the extended set; both fit in 8 bits. This matches
+TR-389 p. 9's 40-bit KL1 data (8-bit tag, 32-bit value) rather than a
+16-bit prefix.
 
 | Field | Bits | Meaning |
 |---|---|---|
-| Tag | 16 bits, separate word | `16#"23"` for the core KL1-B set, `16#"22"` for the extended set |
+| Tag | 8 bits | `16#"23"` for the core KL1-B set, `16#"22"` for the extended set |
 | Opcode | data word bits 31–24 | the one-byte operation code from the table |
 | Operand | data word bits 23–0 | up to three 8-bit fields, or a 16/24-bit constant |
+
+The assembler's `{Tag, Op}` pair is its internal list representation; the
+byte serialization to the loader is not shown in these clauses and is
+not claimed here.
 
 The packing rules in `klb_opr.kl1` are literal:
 
@@ -60,13 +67,15 @@ resolution on top of the same field layout; they are defined in
 ### Length reconciliation
 
 TR-389 p. 11 states instruction lengths of four, six, or eight bytes.
-The assembler's tag word plus one data word is six bytes; tag plus two
-data words is ten bytes. The "four-byte" and "eight-byte" forms in
-TR-389 therefore do not map directly onto this table's tag-plus-data
-layout. The discrepancy is unresolved and recorded here rather than
-smoothed over: the table is the assembler's actual output, and TR-389's
-byte counts are prose. A future check should compare an assembled
-module's byte stream against a printed listing, if one survives.
+The assembler's clauses emit tagged words: a tag plus one 32-bit data
+word for `Word = 1`, and a second 32-bit word for `Word = 2`. If each
+word is a 40-bit tagged word (TR-389 p. 9), one instruction is five or
+ten bytes, which does not match the printed four/six/eight counts. The
+assembler's byte serialization to the loader is not shown in the clauses
+read here, so the mapping from these tagged words to TR-389's byte
+lengths is unresolved. The discrepancy is recorded rather than smoothed
+over. A future check should compare an assembled module's byte stream
+against a printed listing, if one survives.
 
 ## The table
 
