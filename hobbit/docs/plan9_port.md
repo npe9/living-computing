@@ -39,12 +39,17 @@ The symbol table fixes the load rule: `sys/src/9/hobbit/mem.h` has
 file — 32-byte `Exec` header included — at 0x1000, which puts the text
 section at 0x1020 and data at 0x4000.
 
-**Open, not guessed:** the first text bytes do not decode as parcels
-from 0x1020 (or from `_main` at 0x2ad0) under any of the four byte
-orders tried, although `zl/asm.c`'s `SPUT` writes parcels big-endian.
-`main9.s`'s four-instruction `_main` prologue is the oracle to settle
-it, and the kernel's `exec` path (not vendored) is the rule to read
-next. Until that is answered there is no loader.
+**The text byte order is settled, by the oracle it needed.** The
+release stores each parcel **low byte first** (little-endian 16-bit
+halves), not in `SPUT`'s write order, and pads an instruction to a
+4-byte boundary. At `_main` (0x2ad0) the first parcel reads `0x86dc`: a
+3-parcel MOV — opcode 0x06, the `AMOV` genop in `zl/optab.c` — with
+`smode 0xd`, `dmode 0xc` and destination field **0x4008**, which is the
+symbol-table address of `_clock`; that is exactly main9.s's first
+instruction, `MOV R0, _clock(SB)`. `tools/p9exec.py` performs that
+check and fails if it stops holding. What is still open is the rest of
+the stream (the padding rule for 1-parcel instructions, and the full
+`_main` prologue), which the loader needs before it runs.
 
 ## Definition of the proof of concept
 

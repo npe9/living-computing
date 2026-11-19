@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+"""Read a 1st Edition Plan 9 `z` (Hobbit) executable.
+
+Everything here is stated by a file in tools/plan9-1e/:
+
+  struct Exec            sys/include/a.out.h  (8 big-endian words)
+  Z_MAGIC = _MAGIC(10)   sys/include/a.out.h  (0x197)
+  Sym = value,type,name  sys/include/a.out.h  (4+1+20+3 = 28 bytes)
+  UTZERO = UZERO+0x1000  sys/src/9/hobbit/mem.h
+  shipped binaries       hobbit/bin/           (3 January 1993)
+
+Two facts about the text were established from the shipped `echo` and
+are checked here rather than assumed:
+
+* **Parcels are little-endian 16-bit halves.** `zl/asm.c`'s SPUT writes
+  a parcel as two bytes, high byte first, but the linked image in the
+  release stores each parcel low byte first: at `_main` the first parcel
+  reads `0x86dc`, which is a 3-parcel MOV (opcode 0x06, the AMOV genop
+  in `zl/optab.c`) whose destination field is 0x4008 -- the address of
+  `_clock` in the symbol table, which is exactly main9.s's first
+  instruction, `MOV R0, _clock(SB)`.
+* **Instructions are padded to 4-byte boundaries**, which is why a
+  3-parcel (6-byte) instruction is followed by one 0x0000 parcel.
+
+The model's image format is big-endian parcels (even parcel in bits
+31:16), so the conversion here is the inverse of the file's order.
+
+    python3 tools/p9exec.py hobbit/tools/plan9-1e/hobbit/bin/echo
+    python3 tools/p9exec.py --image echo.hex <binary>
+"""
+
+import argparse
+import struct
+import sys
+
+MAGIC = {0x197: "z (Hobbit)"}
+HEADER = struct.Struct(">8I")
+SYM = struct.Struct(">IB20s3s")
+UTZERO = 0x1000
+
+
+def read(path):
+    data = open(path, "rb").read()
+    if len(data) < HEADER.size:
+        raise SystemExit("%s: shorter than an Exec header" % path)
+    magic, text, data_sz, bss, syms, entry, spsz, pcsz = HEADER.unpack_from(data)
+    if magic not in MAGIC:
+        raise SystemExit("%s: magic 0x%x is not Z_MAGIC" % (path, magic))
+    text_off = HEADER.size
+    data_off = text_off + text
+    sym_off = data_off + data_sz
+    return {
+        "path": path,
+        "blob": data,
+        "magic": magic,
+        "text": text,
+        "data": data_sz,
+        "bss": bss,
+        "syms": syms,
+        "entry": entry,
+        "text_off": text_off,
+        "data_off": data_off,
+        "sym_off": sym_off,
+    }
+
+
+def symbols(exe):
+    blob = exe["blob"][exe["sym_off"]:exe["sym_off"] + exe["syms"]]
+    out = {}
+    for i in range(0, len(blob) - SYM.size + 1, SYM.size):
+        value, typ, name, _pad = SYM.unpack_from(blob, i)
+        out[name.split(b"\0")[0].decode("latin-1")] = (value, chr(typ))
+    return out
+
+
+def parcel_stream(exe):
+    """Parcels as stored in the text section, in address order.
+
+    The file holds each parcel low byte first; this returns the value of
+    each parcel as the machine sees it (16-bit little-endian halves).
+    """
+    t = exe["blob"][exe["text_off"]:exe["text_off"] + exe["text"]]
+    return [t[i] | (t[i + 1] << 8) for i in range(0, len(t) - 1, 2)]
+
+
+def instruction_length(p):
+    return {0: 1, 1: 1, 2: 3, 3: 5}[p >> 14]
+
+
+def decode(parcels, base, start, count):
+    """Decode `count` instructions, honouring the 4-byte padding."""
+    i = (start - base) // 2
+    out = []
+    for _ in range(count):
+        p = parcels[i]
+        ln = instruction_length(p)
+        fields = [parcels[i + k] for k in range(1, ln)]
+        if ln == 1:
+            out.append((base + 2 * i, p, "op%02x" % (p >> 10 & 0x1F)))
+        else:
+            out.append((base + 2 * i, p,
+                        "op%02x" % ((p >> 8) & 0x3F),
+                        "sm%x" % ((p >> 4) & 0xF), "dm%x" % (p & 0xF),
+                        ["0x%04x" % f for f in fields]))
+        i += ln
+        if i & 1:
+            i += 1
+    return out
+
+
+def to_model_image(exe):
+    """Big-endian-parcel words, one per line, as `asm/hobbit_asm.py` reads."""
+    parcels = parcel_stream(exe)
+    if len(parcels) & 1:
+        parcels.append(0)
+    seen = []          # (address, parcels) in execution order from the entry
+    i = (exe["entry"] - (UTZERO + 0x20)) // 2
+    words = {}
+    # The whole text section maps: address = UTZERO + 0x20 + 2*i.
+    for k in range(0, len(parcels), 2):
+        address = UTZERO + 0x20 + 2 * k
+        words[address] = (parcels[k] << 16) | parcels[k + 1]
+    # Data follows the text in the same image, at its own base.
+    dstart = UTZERO + 0x3000
+    blob = exe["blob"][exe["data_off"]:exe["data_off"] + exe["data"]]
+    for k in range(0, len(blob) - 3, 4):
+        words[dstart + k] = int.from_bytes(blob[k:k + 4], "big")
+    return words, i
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("binary")
+    ap.add_argument("--image", metavar="PATH",
+                    help="write the model image (one 32-bit word per line)")
+    ap.add_argument("--decode", type=int, default=6,
+                    help="instructions to decode at the entry (default 6)")
+    args = ap.parse_args(argv)
+
+    exe = read(args.binary)
+    syms = symbols(exe)
+    print("%s: magic 0x%x (%s)" % (args.binary, exe["magic"], MAGIC[exe["magic"]]))
+    print("  text 0x%x  data 0x%x  bss 0x%x  syms 0x%x  entry 0x%x" %
+          (exe["text"], exe["data"], exe["bss"], exe["syms"], exe["entry"]))
+    for name in ("main", "_main", "etext", "bdata", "edata"):
+        if name in syms:
+            print("  %-6s 0x%08x (%s)" % (name, syms[name][0], syms[name][1]))
+    base = syms.get("main", (UTZERO + 0x20, "T"))[0]
+    print("  text base 0x%x (from symbol `main`)" % base)
+
+    parcels = parcel_stream(exe)
+    for addr, p, *rest in decode(parcels, base, exe["entry"], args.decode):
+        print("  %08x  %04x  %s" % (addr, p, " ".join(map(str, rest))))
+
+    if "_main" in syms:
+        # main9.s: `TEXT _main(SB), 1, $12` / `MOV R0, _clock(SB)`; the
+        # symbol table puts _clock at 0x4008, the first data word.
+        first = decode(parcels, base, syms["_main"][0], 1)[0]
+        p = first[1]
+        fields = first[5] if len(first) > 5 else []
+        if (p >> 8) & 0x3F != 0x06 or "0x4008" not in fields:
+            print("  CHECK FAILED: `_main` does not begin with MOV ...,0x4008",
+                  file=sys.stderr)
+            return 1
+        print("  check: `_main` begins with MOV to 0x4008 (_clock), as main9.s says")
+
+    if args.image:
+        words, entry_parcel = to_model_image(exe)
+        lo, hi = min(words), max(words)
+        with open(args.image, "w") as f:
+            for a in range(lo, hi + 1, 4):
+                f.write("%08x\n" % words.get(a, 0))
+        print("  wrote %s: 0x%x words, 0x%x..0x%x, entry parcel index 0x%x" %
+              (args.image, (hi - lo) // 4 + 1, lo, hi, entry_parcel))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
