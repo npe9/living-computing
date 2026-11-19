@@ -65,10 +65,10 @@ encoding table but not executed, with the blocking reason:
 
 | family | examples | reason |
 |---|---|---|
-| goal-record argument setup | `set_structured_constant`, `set_atom` | `set_structured_constant` needs the constant stream; `set_atom` writes a placeholder atom because the atom table is not modelled |
+| goal-record argument setup | `set_atom` | implemented with a placeholder atom; the atom table is not modelled |
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
-| active unification | `get_constant`, `get_variable`, `get_list`, `get_vector`, `get_structured_constant`, `unify_*` | needs argument registers and structure construction |
-| atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant`, `get_atom`, `get_vector` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
+| active unification | `get_constant`, `get_integer`, `get_nil`, `get_atom` | the PIMOS active-unification reads; `get_value`/`get_bound_value` are implemented, these four are not |
+| atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | arithmetic and comparison | `add`, `subtract`, `multiply`, `divide`, `modulo`, `equal`, `not_equal`, `integer`; extended `add_extended` and friends | named as guard built-ins in TR-246 p. 5; operand and result conventions not yet extracted |
 | control beyond the queue | `switch_*`, `jump`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
 | console and I/O | `get_console`, `put_console` | device shim not built |
