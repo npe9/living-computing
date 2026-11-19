@@ -84,3 +84,7 @@ run_bench PimKL1BJumpTb ./sim_kl1bjump
 "$BSC" -sim -g mkPimKL1BNilTb -u PimKL1BNilTb.bsv
 "$BSC" -sim -e mkPimKL1BNilTb -o sim_kl1bnil
 run_bench PimKL1BNilTb ./sim_kl1bnil
+
+"$BSC" -sim -g mkPimKL1BArgSlotTb -u PimKL1BArgSlotTb.bsv
+"$BSC" -sim -e mkPimKL1BArgSlotTb -o sim_kl1bargslot
+run_bench PimKL1BArgSlotTb ./sim_kl1bargslot

@@ -17,10 +17,12 @@ deref through `read_variable`), `PimKL1BFailTb.bsv`,
 active-unification reads), `PimKL1BControlTb.bsv` (the goal queue's
 FIFO order), `PimKL1BSuspendTb.bsv` (suspend's empty-queue jump),
 `PimKL1BMiscTb.bsv` (put_variable/get_value and the placeholder
-set_atom/read_atom), `PimKL1BJumpTb.bsv` (the unconditional jump) and
-`PimKL1BNilTb.bsv` (put_nil/write_nil); `run_kl1b_tb.sh` builds and
-runs all fourteen. The implemented subset and the loud-failure rule for
-the rest are in the module header.
+set_atom/read_atom), `PimKL1BJumpTb.bsv` (the unconditional jump),
+`PimKL1BNilTb.bsv` (put_nil/write_nil) and `PimKL1BArgSlotTb.bsv`
+(the 8-bit argument-slot width; a 3-bit truncation aliases slot 8 onto
+slot 0); `run_kl1b_tb.sh` builds and runs all fifteen. The
+implemented subset and the loud-failure rule for the rest are in the
+module header.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),
 `PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`

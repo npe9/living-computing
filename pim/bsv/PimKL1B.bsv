@@ -39,7 +39,7 @@ interface PimKL1B;
   method Action step();
   method Bool halted();
   method Word readReg(RegNo r);
-  method Word readArg(Bit#(3) i);
+  method Word readArg(Bit#(8) i);
   method Word pc();
 endinterface
 
@@ -58,8 +58,8 @@ module mkPimKL1B(PimKL1B);
   Reg#(Bit#(3)) rqfp <- mkReg(0);
   Reg#(Bit#(3)) rqt <- mkReg(0);
   // Goal-record argument save area (TR-246 p. 7): set_* writes here.
-  RegFile#(Bit#(3), Word) args <- mkRegFileFull;
-  Reg#(Bit#(3)) argPtr <- mkReg(0);
+  RegFile#(Bit#(8), Word) args <- mkRegFileFull;
+  Reg#(Bit#(8)) argPtr <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
@@ -99,7 +99,7 @@ module mkPimKL1B(PimKL1B);
     if (tag == 8'h23 && isC40(op)) begin
       Word cw = mem.sub(pcR[11:0] + 1);
       case (op)
-        8'h10: args.upd(truncate(a), cw);                          // set_constant C, Gi
+        8'h10: args.upd(a, cw);                          // set_constant C, Gi
         8'h20: begin heap.upd(hp, cw); hp <= hp + 1; end  // write_constant C
         8'h30: regs.upd(a, cw);                          // put_constant C, Ai = C
         8'ha0: if (deref(regs.sub(a)) != cw) haltR <= True;  // wait_constant
@@ -122,10 +122,10 @@ module mkPimKL1B(PimKL1B);
     end else begin
     if (tag == 8'h23) begin
       case (op)
-        8'h00: args.upd(truncate(a), {tagAtom, 24'h0, 0});  // set_atom A, Gi
-        8'h11: args.upd(truncate(a), {tagInt, 16'h0, val[15:0]});  // set_integer c16, Gi
-        8'h12: args.upd(truncate(a), {tagNil, 24'h0, 0});   // set_nil Gi
-        8'h18: args.upd(truncate(a), {tagList, 20'h0, hp});  // set_list Gi
+        8'h00: args.upd(a, {tagAtom, 24'h0, 0});  // set_atom A, Gi
+        8'h11: args.upd(a, {tagInt, 16'h0, val[15:0]});  // set_integer c16, Gi
+        8'h12: args.upd(a, {tagNil, 24'h0, 0});   // set_nil Gi
+        8'h18: args.upd(a, {tagList, 20'h0, hp});  // set_list Gi
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
         8'h13: regs.upd(b, {tagVar, 24'h0, a});   // set_variable c8, r
         8'h32: regs.upd(a, {tagNil, 24'h0, 0});  // put_nil Ai
@@ -232,7 +232,7 @@ module mkPimKL1B(PimKL1B);
 
   method Bool halted() = haltR;
   method Word readReg(RegNo r) = regs.sub(r);
-  method Word readArg(Bit#(3) i) = args.sub(i);
+  method Word readArg(Bit#(8) i) = args.sub(i);
   method Word pc() = pcR;
 
 endmodule

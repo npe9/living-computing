@@ -428,7 +428,10 @@ test or an explicit label.
      the stale cell, landing at 0xaaa), `PimKL1BMiscTb`
      (put_variable/get_value and the placeholder set_atom/read_atom)
      and `PimKL1BJumpTb` (the unconditional jump, 0x67); `PimKL1BNilTb`
-     covers put_nil/write_nil.
+     covers put_nil/write_nil. The argument save area is 8 bits wide
+     (`Gi` is an 8-bit field), so slots 8-255 are addressable; a 3-bit
+     truncation would alias slot 8 onto slot 0, and `PimKL1BArgSlotTb`
+     pins that distinction.
      `set_structured_constant` still halts loudly because it needs the
      constant stream. `set_value`/`set_variable` are a documented
      stand-in: they
