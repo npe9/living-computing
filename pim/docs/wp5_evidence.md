@@ -242,9 +242,13 @@ documented NU tail signal and the model's fault paths.
    but not the vector, priority, mask, or acknowledge path. The model cannot
    implement or test a PE interrupt without inventing one. This is the
    largest gap for WP5.1.
-2. **No KL1-B encoding.** The corpus has no KL1-B manual or encoding table
-   (`docs/isa.md` "Gaps"; `docs/README.md`). The model's ISA is a diagnostic
-   stand-in; a KL1 workload cannot be described as historical PIM/m execution.
+2. **KL1-B encoding is in the corpus but not implemented in the model.**
+   The earlier "no KL1-B encoding" finding was wrong: the PIMOS assembler's
+   `inst_tab.kl1` in `docs/nonlocal/pimos.tar.Z` supplies 263 encodings, and
+   `docs/kl1_encoding.md` transcribes them. The model's ISA is still a
+   diagnostic stand-in; a KL1 workload cannot be described as historical
+   PIM/m execution until the PIMOS encodings are implemented and confirmed
+   against a PIM/m-specific source.
 3. **No PIMOS-to-PE hardware register map.** The manual documents the message
    interface; the boot entry `pim:go/4` is source-only. The model's `PimPU`
    interface is model-defined. Any claim that the model implements the
