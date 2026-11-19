@@ -212,6 +212,25 @@ the first MOV and the two parameter loads — the same filler seen in
 `echo`/`zl` (`0xffff`) and the reason the model's run stops at 0x12c2.
 Everything else the model needs is now known.
 
+## What the two parameter loads encode (2026-11-19)
+
+`main9.z` says `AMOV argc+0(FP), R4` and `AMOV argv+4(FP), R8`, with the
+parameters declared `D_PARAM` at offsets 0 and 4.  The linked one-parcel
+forms in `cat` are `0x60a1` and `0x60c2`, i.e. source fields 5 and 6 and
+destination fields 1 and 2 — and with the p. 1-22 rule that the 5-bit
+fields are stack offsets scaled by four, that is offsets **20 and 24**
+for sources 0 and 4, and registers **R4 and R8** for destinations 1 and
+2 (1x4, 2x4) exactly.
+
+So the encoder's rule is `field = offset/4 + 5` for a `D_PARAM`
+operand (names): the parameter area sits five words above the frame
+reference the source offset counts from.  That is a rule to check
+against a second function, not yet a citation.
+
+Two details remain: the linked order is `argv` before `argc` (the
+source records have the reverse), and the stray `0x0000` parcel between
+the first MOV and them.
+
 ## Definition of the proof of concept
 
 **`echo` from `plan9-1e/hobbit/bin/` runs on the model and prints its
