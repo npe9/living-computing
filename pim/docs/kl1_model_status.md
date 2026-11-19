@@ -35,6 +35,8 @@ The status labels are:
 | `put_integer` | 0x31 | `R[a] = INT(c16)` | inferred | `PimKL1BIntTb` |
 | `wait_value` | 0xa4 | halt if `deref(R[a]) != deref(R[b])` | documented (TR-246 p. 5) | `PimKL1BFailTb` |
 | `wait_constant` | 0xa0 | halt if `deref(R[a]) != c40` | documented (TR-246 p. 5) | `PimKL1BConstFailTb` |
+| `wait_list` | 0xa6 | halt if the deref is not a list | documented (TR-246 p. 5) | `PimKL1BWaitTb` |
+| `wait_integer` | 0xa1 | halt if the deref is not INT c16 | inferred (PIMOS r_c16 variant) | `PimKL1BWaitTb` |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
 | `execute` | 0x61 | `narg = a; pc = label(b:c)` | stand-in | — |
 | `enqueue_goal` | 0x63 | append label to an 8-entry queue | stand-in | — |

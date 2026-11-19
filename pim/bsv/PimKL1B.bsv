@@ -9,8 +9,8 @@
 // Implemented so far: set_value, set_variable, put_value, put_variable,
 // get_value, get_bound_value, write_value, write_variable,
 // write_constant, put_constant, put_list, put_integer, write_integer,
-// read_variable, wait_value, wait_constant, execute, enqueue_goal,
-// suspend, proceed, halt.
+// read_variable, wait_value, wait_constant, wait_list, wait_integer,
+// execute, enqueue_goal, suspend, proceed, halt.
 // Anything else -- including the c40 instructions that need a goal-record
 // argument area (set_constant, read_constant, get_constant) -- halts
 // loudly rather than being skipped (AGENTS.md, "execute partially,
@@ -110,7 +110,11 @@ module mkPimKL1B(PimKL1B);
         8'h24: begin heap.upd(hp, {tagVar, 24'h0, a}); hp <= hp + 1; end  // write_variable
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
         8'h2e: regs.upd(a, {tagList, 20'h0, hp});  // put_list Ai = list HP (TR-246 p.7)
+        8'ha1: if (deref(regs.sub(a)) != {tagInt, 16'h0, {b, c}})   // wait_integer
+                 haltR <= True;
         8'ha4: if (deref(regs.sub(a)) != deref(regs.sub(b)))        // wait_value
+                 haltR <= True;
+        8'ha6: if (deref(regs.sub(a))[39:32] != tagList)            // wait_list
                  haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'h61: narg <= a;                          // execute: jump to label (b:c)

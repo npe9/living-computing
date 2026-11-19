@@ -39,3 +39,7 @@ export PATH
 "$BSC" -sim -g mkPimKL1BIntTb -u PimKL1BIntTb.bsv
 "$BSC" -sim -e mkPimKL1BIntTb -o sim_kl1bint
 ./sim_kl1bint
+
+"$BSC" -sim -g mkPimKL1BWaitTb -u PimKL1BWaitTb.bsv
+"$BSC" -sim -e mkPimKL1BWaitTb -o sim_kl1bwait
+./sim_kl1bwait
