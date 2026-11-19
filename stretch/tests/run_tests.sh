@@ -10114,6 +10114,13 @@ run "RADIX CONVERTER BOX (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtb
 # count 4.  Injection (each group's top bit dropped) fails vectors 2 and
 # 4-8 and passes 0, 1 and 3, the control; the box file's header has it.
 run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_DIR/run_vflbox_test.sh"
+# 2026-11-19: mkFpBox, the floating-point box (plan §1c step 5f, stage 1:
+# MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
+# printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution
+# cycles), on 11 vectors checked bit for bit against the one-step fpMul /
+# fpMulDouble, two literal fractions and the literal clock count 4.  The
+# injections and their observed failure sets are in the box file's header.
+run "FLOATING-POINT BOX (multiply; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
