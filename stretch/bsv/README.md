@@ -770,11 +770,15 @@ the I field ... or it may be used as data". `carryIndex` now indexes `P` = 4 as
 it does `P` = 0 and `carriedVflAddr` clears `i1` for both. `execute()` takes the
 operand from `ea`, which is the carried value for a level and the live indexing
 for an EX subject, since EX subjects are not carried. Timing is unchanged
-because the timing functions read the uncarried `di`. No IBM listing we searched
-writes an indexed immediate: 936 immediates were assembled across 812 decks and
-none had a nonzero first index; the untranscribed diagnostic PDFs were not
-searched. `decks/vfl_immediate_indexed.strap` is the
-oracle and records its injections.
+because the timing functions read the uncarried `di`. When this was fixed, no
+transcribed listing wrote an indexed immediate: 936 immediates were assembled
+across 812 decks and none had a nonzero first index. A later search of the
+diagnostic PDFs (OCR as a finding aid, 2026-11-18) found IBM's own test, in
+`jb_ax4b` PDF p.146, routine 148's "CHECK INDEXING IMMEDIATE LOAD":
+`LI(BU,64,8),0($X3)` prints `0.00 83 400000.20 50`, so I = 3 and P = 4. It is
+transcribed bit-exact as `decks/ax4b_148_immediate_indexed.strap` and the model
+passes it. `decks/vfl_immediate_indexed.strap` keeps the cases that page lacks,
+and both decks record their injections.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

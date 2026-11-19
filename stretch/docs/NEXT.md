@@ -239,11 +239,19 @@ three read in the page images. `carryIndex` now indexes P = 4 as P = 0
 carried). Timing untouched: the timing functions read the uncarried
 `di`. No IBM listing we searched writes one (936 immediates across 812
 assembled decks, none with a nonzero first index; the OCR texts in
-docs/ocr scanned too). Still open as an oracle hunt: the diagnostic
-PDFs with no text layer or transcription (jb_*/ja_*/ka_*,
-SystemTestPrograms). So
-`decks/vfl_immediate_indexed.strap` is the oracle; its header has the
-injections.
+docs/ocr scanned too). **The hunt found one, 2026-11-18:** jb_ax4b PDF
+p.146, routine 148's "CHECK INDEXING IMMEDIATE LOAD", whose
+`LI(BU,64,8),0($X3)` prints `0.00 83 400000.20 50` (I = 3, P = 4) and
+walks $X3 through BIT0..BIT23. Transcribed bit-exact
+(`decks/ax4b_148_immediate_indexed.strap`, pp.146-148 + p.191) and RUN:
+the model passes IBM's test. `decks/vfl_immediate_indexed.strap` keeps
+what p.146 lacks (negative index, short fields, other operations); its
+header has the injections. The same hunt found nothing for the other
+four Reference-Manual-only rules of 2026-11-18 (negative EA, branch to an
+invalid address, DF on fetch-type VFL, FP M+ store-type):
+`docs/archival_inventory.md` "The oracle hunt of 2026-11-18". Next IBM
+candidate on this line: TEST 5B, the unindexed immediate walk, PDF
+pp.143-145.
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's
@@ -268,7 +276,8 @@ found doing it; the leads traced (MCP's LVNI queue entries and p.244's
 LVNI,$12,$, both reaching SVA, not an I field; ax5b I60K9/K11 and
 I00VO, loaded into X0 / unindexed X2) are in the deck header. NOT
 traced: the zero-address dispatches (BR,0($14), B,0.0($1) ...) for the
-sign of their registers, the untranscribed diagnostic PDFs. Not given
+sign of their registers. The diagnostic PDFs were searched by OCR
+2026-11-18 and nothing was found (archival_inventory "The oracle hunt"). Not given
 cases: I/O, EX/EXIC, R/RCZ (same helpers).
 
 ## A BRANCH TO AN INVALID ADDRESS -- built 2026-11-18

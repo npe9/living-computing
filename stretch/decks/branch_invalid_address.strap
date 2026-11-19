@@ -126,6 +126,22 @@
 !   B12 CountBranch counts on suppression     -> RX3 (16)800000100000, RX5
 !                                               (16)1C00000240000 (refilled)
 !   B13 no AD beside EXE (BranchOrMisc)       -> RESAD (16)EF86..., CYCLES 1564
+!
+! IBM ORACLE HUNT, 2026-11-18 -- NOTHING FOUND FOR THIS RULE.  Every page
+! of the diagnostic PDFs (ja_ax1a, jb_ax2a..jb_ax5b, jb_af1c,
+! ja_ua1, ja_uc1a, ka_ex1/1b, ka_ua1, ka_ul1, ja_bb6b/bm6a/bp6a and
+! 7030_SystemTestPrograms) was grepped in OCR text kept as a finding aid
+! (not committed); the hits were triaged from their OCR lines and the
+! existing decks, not read in the page image.
+! Searched: BAD/BADZ, INVALID, "LESS THAN 32", BELOW.  IBM provokes AD with
+! a DATA address (jb_ax5b pp.41-42, I6083, ax5b_16082_op_ad) and with an
+! EXIC subject below 32 (jb_ax5b p.108, ax5b_162_test3b), never with a
+! branch target.
+! The OCR drops digits, so this is not proof of absence.  The one hunt
+! that DID find its feature is the indexed immediate (jb_ax4b PDF p.146,
+! decks/ax4b_148_immediate_indexed.strap).  docs/archival_inventory.md
+! "The oracle hunt of 2026-11-18" has the table.
+!
         SLC, (8)4100.0
 START   BD,  $+.32                   ! run disabled
         LX,  $X10, TWB               ! word 26 := two "B, LOWHIT"
