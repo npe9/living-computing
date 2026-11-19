@@ -17,6 +17,9 @@ bsv/run_smoke.sh
 echo "=== Bluesim NU testbench ==="
 bsv/run_nu_tb.sh
 
+echo "=== Bluesim link testbench ==="
+bsv/run_link_tb.sh
+
 echo "=== Bluesim SDRAM store testbench ==="
 bsv/run_sdram_tb.sh
 
