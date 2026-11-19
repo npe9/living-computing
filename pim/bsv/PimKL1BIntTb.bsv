@@ -24,7 +24,6 @@ package PimKL1BIntTb;
 
 import PimKL1B::*;
 
-(* synthesize *)
 module mkPimKL1BIntTb(Empty);
 
   PimKL1B pu <- mkPimKL1B;
@@ -55,11 +54,23 @@ module mkPimKL1BIntTb(Empty);
     pu.step();
   endrule
 
-  rule check if (pu.halted());
-    Word r1 = pu.readReg(1);
-    Word r5 = pu.readReg(5);
-    $display("r1=%h r5=%h", r1, r5);
-    if (r1 == {8'h02, 16'h0, 16'h1234} && r5 == {8'h02, 8'h0, 24'hABCDEF})
+  Reg#(Bit#(2)) checkIdx <- mkReg(0);
+  Reg#(Word) r1v <- mkReg(0);
+  Reg#(Word) r5v <- mkReg(0);
+
+  rule readR1 if (pu.halted() && checkIdx == 0);
+    r1v <= pu.readReg(1);
+    checkIdx <= 1;
+  endrule
+
+  rule readR5 if (pu.halted() && checkIdx == 1);
+    r5v <= pu.readReg(5);
+    checkIdx <= 2;
+  endrule
+
+  rule check if (checkIdx == 2);
+    $display("r1=%h r5=%h", r1v, r5v);
+    if (r1v == {8'h02, 16'h0, 16'h1234} && r5v == {8'h02, 8'h0, 24'hABCDEF})
       $display("PimKL1BIntTb: PASS");
     else
       $display("PimKL1BIntTb: FAIL");

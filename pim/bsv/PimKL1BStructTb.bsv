@@ -25,7 +25,6 @@ package PimKL1BStructTb;
 
 import PimKL1B::*;
 
-(* synthesize *)
 module mkPimKL1BStructTb(Empty);
 
   PimKL1B pu <- mkPimKL1B;
@@ -61,16 +60,38 @@ module mkPimKL1BStructTb(Empty);
     pu.step();
   endrule
 
-  rule check if (pu.halted());
-    Word r1 = pu.readReg(1);
-    Word r2 = pu.readReg(2);
-    Word r3 = pu.readReg(3);
-    Word r5 = pu.readReg(5);
-    $display("r1=%h r2=%h r3=%h r5=%h", r1, r2, r3, r5);
-    if (r1 == {8'h05, 20'h0, 12'h0}
-        && r2 == {8'h02, 24'h0, 8'h11}
-        && r3 == {8'h02, 24'h0, 8'h33}
-        && r5 == {8'h02, 24'h0, 8'h22})
+  Reg#(Bit#(3)) checkIdx <- mkReg(0);
+  Reg#(Word) r1v <- mkReg(0);
+  Reg#(Word) r2v <- mkReg(0);
+  Reg#(Word) r3v <- mkReg(0);
+  Reg#(Word) r5v <- mkReg(0);
+
+  rule readR1 if (pu.halted() && checkIdx == 0);
+    r1v <= pu.readReg(1);
+    checkIdx <= 1;
+  endrule
+
+  rule readR2 if (pu.halted() && checkIdx == 1);
+    r2v <= pu.readReg(2);
+    checkIdx <= 2;
+  endrule
+
+  rule readR3 if (pu.halted() && checkIdx == 2);
+    r3v <= pu.readReg(3);
+    checkIdx <= 3;
+  endrule
+
+  rule readR5 if (pu.halted() && checkIdx == 3);
+    r5v <= pu.readReg(5);
+    checkIdx <= 4;
+  endrule
+
+  rule check if (checkIdx == 4);
+    $display("r1=%h r2=%h r3=%h r5=%h", r1v, r2v, r3v, r5v);
+    if (r1v == {8'h05, 20'h0, 12'h0}
+        && r2v == {8'h02, 24'h0, 8'h11}
+        && r3v == {8'h02, 24'h0, 8'h33}
+        && r5v == {8'h02, 24'h0, 8'h22})
       $display("PimKL1BStructTb: PASS");
     else
       $display("PimKL1BStructTb: FAIL");

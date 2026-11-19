@@ -44,22 +44,22 @@ The status labels are:
 | `set_nil` | 0x12 | `args[Gi] = NIL` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `set_atom` | 0x00 | `args[Gi] = ATOM` (placeholder value; atom table not modelled) | documented (TR-246 p. 7) | `PimKL1BMiscTb` |
 | `set_list` | 0x18 | `args[Gi] = LIST(HP)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
-| `read_constant` | 0xb0 | halt if `args[argPtr] != c40`, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
-| `read_integer` | 0xb1 | halt if `args[argPtr] != INT c24`, advance | inferred (PIMOS c24 variant) | `PimKL1BSetTb` |
-| `read_nil` | 0xb2 | halt if `args[argPtr]` is not NIL, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
-| `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | `PimKL1BMiscTb` |
+| `read_constant` | 0xb0 | backtrack-or-halt if `args[argPtr] != c40`, else advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
+| `read_integer` | 0xb1 | backtrack-or-halt if `args[argPtr] != INT c24`, else advance | inferred (PIMOS c24 variant) | `PimKL1BSetTb` |
+| `read_nil` | 0xb2 | backtrack-or-halt if `args[argPtr]` is not NIL, else advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
+| `read_atom` | 0xb3 | backtrack-or-halt if `args[argPtr]` is not ATOM, else advance | documented (TR-246 p. 5) | `PimKL1BMiscTb` |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
-| `get_constant` | 0xb8 | compare `deref(R[a])` with c40; bind an unbound REF cell | documented (TR-246 p. 6) | `PimKL1BGetTb` |
-| `get_integer` | 0xb9 | halt unless `deref(R[a])` is INT c16 | inferred (PIMOS c16 variant) | `PimKL1BGetTb` |
-| `get_nil` | 0xba | halt unless `deref(R[a])` is NIL | documented (TR-246 p. 6) | `PimKL1BGetTb` |
-| `get_atom` | 0xc0 | halt unless `deref(R[a])` is ATOM | documented (TR-246 p. 6) | `PimKL1BGetTb` |
+| `get_constant` | 0xb8 | compare `deref(R[a])` with c40; bind an unbound REF cell; backtrack-or-halt on mismatch | documented (TR-246 p. 6) | `PimKL1BGetTb` |
+| `get_integer` | 0xb9 | backtrack-or-halt unless `deref(R[a])` is INT c16; bind if unbound REF cell | inferred (PIMOS c16 variant) | `PimKL1BGetTb` |
+| `get_nil` | 0xba | backtrack-or-halt unless `deref(R[a])` is NIL; bind if unbound REF cell | documented (TR-246 p. 6) | `PimKL1BGetTb` |
+| `get_atom` | 0xc0 | backtrack-or-halt unless `deref(R[a])` is ATOM; bind if unbound REF cell | documented (TR-246 p. 6) | `PimKL1BGetTb` |
 | `add` | 0xf4 | `R[c] = INT(R[a] + R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `subtract` | 0xf5 | `R[c] = INT(R[a] - R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `multiply` | 0xf6 | `R[c] = INT(R[a] * R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `divide` | 0xf7 | `R[c] = INT(R[a] / R[b])`, halt on zero | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `modulo` | 0xf8 | `R[c] = INT(R[a] % R[b])`, halt on zero | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
-| `equal` | 0xf2 | halt unless both INT and equal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
-| `not_equal` | 0xf3 | halt unless both INT and unequal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
+| `equal` | 0xf2 | backtrack-or-halt unless both INT and equal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BGuardBacktrackTb` |
+| `not_equal` | 0xf3 | backtrack-or-halt unless both INT and unequal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `read_variable_without_deref` | 0xa7 | no-op stand-in | stand-in | `PimKL1BNoopTb` |
 | `wait` | 0xe0 | no-op stand-in | stand-in | `PimKL1BNoopTb` |
 | `collect_value` | 0x1d | no-op stand-in | stand-in | `PimKL1BNoopTb` |
@@ -87,7 +87,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `otherwise`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail` are stand-ins with limited state save/restore |
+| control beyond the queue | `otherwise`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail` and guard backtracking are implemented, `otherwise` is not |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same

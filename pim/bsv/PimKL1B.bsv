@@ -84,6 +84,18 @@ module mkPimKL1B(PimKL1B);
     return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
   endfunction
 
+  function Action backtrackOrHalt();
+    action
+      if (cpsp == 0) haltR <= True;
+      else begin
+        argPtr <= cpArgPtr.sub(cpsp - 1);
+        narg <= cpNarg.sub(cpsp - 1);
+        hp <= cpHP.sub(cpsp - 1);
+        cpsp <= cpsp - 1;
+      end
+    endaction
+  endfunction
+
   function Bool isC40(Bit#(8) op);
     return (op == 8'h10 || op == 8'h20 || op == 8'h30
          || op == 8'ha0 || op == 8'hb0 || op == 8'hb8);
@@ -109,27 +121,30 @@ module mkPimKL1B(PimKL1B);
     Bit#(8)  c   = val[7:0];
     if (tag == 8'h23 && isC40(op)) begin
       Word cw = mem.sub(pcR[11:0] + 1);
+      Word d_get = deref(regs.sub(a));
       case (op)
         8'h10: args.upd(a, cw);                          // set_constant C, Gi
         8'h20: begin heap.upd(hp, cw); hp <= hp + 1; end  // write_constant C
         8'h30: regs.upd(a, cw);                          // put_constant C, Ai = C
         8'ha0: if (deref(regs.sub(a)) != cw) haltR <= True;  // wait_constant
         8'hb0: begin                                       // read_constant C
-          if (args.sub(argPtr) != cw) haltR <= True;
-          argPtr <= argPtr + 1;
+          if (args.sub(argPtr) != cw) backtrackOrHalt();
+          else argPtr <= argPtr + 1;
         end
         8'hb8: begin                                       // get_constant C, Ai
-          Word d = deref(regs.sub(a));
-          if (d == cw) begin
+          if (d_get == cw) begin
             // already equal
-          end else if (d[39:32] == tagVar) begin
+          end else if (d_get[39:32] == tagVar) begin
             if (regs.sub(a)[39:32] == tagRef) heap.upd(regs.sub(a)[11:0], cw);
             regs.upd(a, cw);
-          end else haltR <= True;
+          end else backtrackOrHalt();
         end
         default: haltR <= True;   // unimplemented c40 opcode
       endcase
-      pcR <= pcR + 2;
+      Bool c40Backtrack = (op == 8'hb0 && args.sub(argPtr) != cw && cpsp > 0)
+                       || (op == 8'hb8 && d_get != cw && d_get[39:32] != tagVar && cpsp > 0);
+      if (c40Backtrack) pcR <= zeroExtend(cpLabel.sub(cpsp - 1));
+      else pcR <= pcR + 2;
     end else begin
     if (tag == 8'h23) begin
       case (op)
@@ -157,24 +172,24 @@ module mkPimKL1B(PimKL1B);
         8'ha6: if (deref(regs.sub(a))[39:32] != tagList)            // wait_list
                  haltR <= True;
         8'hb1: begin                               // read_integer c24
-          if (args.sub(argPtr) != {tagInt, 8'h0, val[23:0]}) haltR <= True;
-          argPtr <= argPtr + 1;
+          if (args.sub(argPtr) != {tagInt, 8'h0, val[23:0]}) backtrackOrHalt();
+          else argPtr <= argPtr + 1;
         end
         8'hb2: begin                               // read_nil
-          if (args.sub(argPtr)[39:32] != tagNil) haltR <= True;
-          argPtr <= argPtr + 1;
+          if (args.sub(argPtr)[39:32] != tagNil) backtrackOrHalt();
+          else argPtr <= argPtr + 1;
         end
         8'hb3: begin                               // read_atom A
-          if (args.sub(argPtr)[39:32] != tagAtom) haltR <= True;
-          argPtr <= argPtr + 1;
+          if (args.sub(argPtr)[39:32] != tagAtom) backtrackOrHalt();
+          else argPtr <= argPtr + 1;
         end
         8'hf2: begin                               // equal Ai, Aj (guard)
           if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
-              || regs.sub(a)[31:0] != regs.sub(b)[31:0]) haltR <= True;
+              || regs.sub(a)[31:0] != regs.sub(b)[31:0]) backtrackOrHalt();
         end
         8'hf3: begin                               // not_equal Ai, Aj
           if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt
-              || regs.sub(a)[31:0] == regs.sub(b)[31:0]) haltR <= True;
+              || regs.sub(a)[31:0] == regs.sub(b)[31:0]) backtrackOrHalt();
         end
         8'hf4: begin                               // add Ai, Aj, Ak
           if (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt) haltR <= True;
@@ -198,12 +213,33 @@ module mkPimKL1B(PimKL1B);
               || regs.sub(b)[31:0] == 0) haltR <= True;
           else regs.upd(c, {tagInt, regs.sub(a)[31:0] % regs.sub(b)[31:0]});
         end
-        8'hb9: if (deref(regs.sub(a)) != {tagInt, 16'h0, val[15:0]})  // get_integer c16, Ai
-                 haltR <= True;
-        8'hba: if (deref(regs.sub(a))[39:32] != tagNil)               // get_nil Ai
-                 haltR <= True;
-        8'hc0: if (deref(regs.sub(a))[39:32] != tagAtom)              // get_atom A, Ai
-                 haltR <= True;
+        8'hb9: begin                                 // get_integer c16, Ai
+          Word d = deref(regs.sub(a));
+          if (d == {tagInt, 16'h0, val[15:0]}) begin
+            // already equal
+          end else if (d[39:32] == tagVar) begin
+            if (regs.sub(a)[39:32] == tagRef) heap.upd(regs.sub(a)[11:0], {tagInt, 16'h0, val[15:0]});
+            regs.upd(a, {tagInt, 16'h0, val[15:0]});
+          end else backtrackOrHalt();
+        end
+        8'hba: begin                                 // get_nil Ai
+          Word d = deref(regs.sub(a));
+          if (d[39:32] == tagNil) begin
+            // already nil
+          end else if (d[39:32] == tagVar) begin
+            if (regs.sub(a)[39:32] == tagRef) heap.upd(regs.sub(a)[11:0], {tagNil, 24'h0, 0});
+            regs.upd(a, {tagNil, 24'h0, 0});
+          end else backtrackOrHalt();
+        end
+        8'hc0: begin                                 // get_atom A, Ai
+          Word d = deref(regs.sub(a));
+          if (d[39:32] == tagAtom) begin
+            // already atom
+          end else if (d[39:32] == tagVar) begin
+            if (regs.sub(a)[39:32] == tagRef) heap.upd(regs.sub(a)[11:0], {tagAtom, 24'h0, 0});
+            regs.upd(a, {tagAtom, 24'h0, 0});
+          end else backtrackOrHalt();
+        end
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'ha7: noAction;                          // read_variable_without_deref: stand-in (no deref)
         8'h28: noAction;                          // switch_on_non_integer: PC block
@@ -265,6 +301,22 @@ module mkPimKL1B(PimKL1B);
       pcR <= zeroExtend((b << 8) | c);   // switch_on_non_list: not LIST -> label
     end else if (tag == 8'h23 && op == 8'h73 && cpsp > 0) begin
       pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // fail: backtrack to else label
+    end else if (tag == 8'h23 && op == 8'hb1 && args.sub(argPtr) != {tagInt, 8'h0, val[23:0]} && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // read_integer mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hb2 && args.sub(argPtr)[39:32] != tagNil && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // read_nil mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hb3 && args.sub(argPtr)[39:32] != tagAtom && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // read_atom mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hf2 && (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt || regs.sub(a)[31:0] != regs.sub(b)[31:0]) && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // equal mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hf3 && (regs.sub(a)[39:32] != tagInt || regs.sub(b)[39:32] != tagInt || regs.sub(a)[31:0] == regs.sub(b)[31:0]) && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // not_equal mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hb9 && deref(regs.sub(a)) != {tagInt, 16'h0, val[15:0]} && deref(regs.sub(a))[39:32] != tagVar && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // get_integer mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hba && deref(regs.sub(a))[39:32] != tagNil && deref(regs.sub(a))[39:32] != tagVar && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // get_nil mismatch -> backtrack
+    end else if (tag == 8'h23 && op == 8'hc0 && deref(regs.sub(a))[39:32] != tagAtom && deref(regs.sub(a))[39:32] != tagVar && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // get_atom mismatch -> backtrack
     end else begin
       pcR <= pcR + 1;
     end
