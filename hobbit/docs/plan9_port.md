@@ -76,11 +76,19 @@ therefore need no register file: every operand is a memory word.
 
 The addressing mode in that first parcel is **0xD = `*Roffset` stack
 offset indirect** (Table 1-23, printed p. 1-26), not 0xC (absolute
-indirect) — which is exactly right for `FP-4`.  Our assembler writes
-0xC for `MOV *$0xbfc, *$0x4008` (`86CC 0BFC 4008`) and so cannot yet
-express the stack-offset form; Bell's `86DC 0BFC 4008` differs in that
-one nibble and nothing else, a clean statement of what the assembler
-must add before Plan 9's operands can be hand-written.
+indirect) — exactly right for `FP-4`, and our assembler already has it
+as the `Rexpr` operand form.  Written the Bell way,
+
+```
+MOV R0xbfc, *$0x4008     ->  86DC 0BFC 4008
+```
+
+our encoder reproduces the shipped binary's first three `_main` parcels
+exactly; `tests/test_hobbit_asm.py` checks that against
+`tools/plan9-1e/hobbit/bin/echo` itself (symbol table → `_main` → the
+three parcels, low byte first), so the check cannot drift.
+(`MOV *$0xbfc, *$0x4008` is a different instruction — mode 0xC — and
+gives `86CC 0BFC 4008`, which is why reading the mode matters.)
 
 That fixes **text at 0x1020 and little-endian 16-bit parcels**.  It does
 *not* fix the placement rule: `zl/span.c`'s `xspan` lays instructions out

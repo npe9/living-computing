@@ -459,6 +459,36 @@ class TestPlan9OpcodeCrossCheck(unittest.TestCase):
                     r"\{\s*A([A-Z0-9]+),\s*T\w+,\s*(0x[0-9a-fA-F]+),",
                     text)}
 
+    def test_bell_labs_main_prologue_parcels(self):
+        """Our encoder against the shipped binary, parcel for parcel.
+
+        `_main` in the 1st Edition's `cat`/`echo` is main9p.s's
+        `MOV clock-4(FP), _clock(SB)`: mode 0xD (stack offset indirect,
+        Table 1-23 p. 1-26), offset 0xbfc = FP-4, absolute destination
+        0x4008 = the symbol _clock in `echo`.  The linked text at 0x2ad0
+        in tools/plan9-1e/hobbit/bin/echo holds exactly those parcels
+        (low byte first), and our assembler must produce the same three.
+        """
+        import struct
+        binary = (ROOT / "tools" / "plan9-1e" / "hobbit" / "bin" / "echo").read_bytes()
+        magic, text, data, bss, syms, entry, spsz, pcsz = struct.unpack(">8I", binary[:32])
+        self.assertEqual(magic, 0x197)
+        symtab = binary[32 + text + data:32 + text + data + syms]
+        names = {}
+        for i in range(0, len(symtab) // 28 * 28, 28):
+            value, typ = struct.unpack(">IB", symtab[i:i + 5])
+            name = symtab[i + 5:i + 25].split(b"\0")[0].decode("latin-1")
+            names[name] = value
+        self.assertEqual(names["_main"], entry)
+        off = 32 + (entry - 0x1020)          # text base 0x1020 (1e loader)
+        parcels = [binary[off + 2*k] | (binary[off + 2*k + 1] << 8)
+                   for k in range(3)]
+        self.assertEqual(parcels, [0x86DC, 0x0BFC, 0x4008],
+                         "the shipped binary's first _main instruction")
+        assembled, _, _ = assemble("MOV R0xbfc, *$0x4008")
+        self.assertEqual(assembled, parcels,
+                         "our encoder must reproduce Bell Labs' parcels")
+
     def test_optab_contains_all_35_grid_mnemonics(self):
         optab = self._optab()
         missing = sorted(n for n in MANUAL_OPCODE if n not in optab)
