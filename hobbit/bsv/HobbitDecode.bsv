@@ -138,6 +138,19 @@ module mkHobbitDecode(HobbitDecode);
                    TR_NONE);
   endfunction
 
+  // SHL3.CS (opcode 0x1E) and SHR3.CS (opcode 0x1F), Table 1-15 row 11
+  // (p. 1-22): the source is the unsigned five-bit `uimm5` field, and the
+  // destination is the five-bit word stack offset scaled by four (p. 1-22,
+  // Table 3-2 p. 3-4).  Unlike imm5, uimm5 is not sign-extended and is not
+  // scaled: p. 3-41/3-42 print the one-parcel form as `uimm5, stk5`, and
+  // its value is the shift count itself.
+  function DecodedInstr shift1(Word pc, HobbitOp op, Parcel q);
+    return mkInstr(pc, 1, op,
+                   Operand { kind: OK_IMM, val: zeroExtend(q[9:5]) },
+                   Operand { kind: OK_STACK, val: stk5(q[4:0]) },
+                   TR_NONE);
+  endfunction
+
   // MOV.WS (opcode 0x0A, Table 1-15 p. 1-22; p. 3-32): the source is the
   // unsigned `wai5` field multiplied by four (Table 3-2 p. 3-4), and the
   // 5-bit stack offset is zero-extended and multiplied by four (p. 1-22).
@@ -243,6 +256,12 @@ module mkHobbitDecode(HobbitDecode);
         5'h17: return maybeFold(dyad1ss(pc, OP_ADD3, p0), p);
         5'h18: return maybeFold(dyad1ss(pc, OP_MOV, p0), p);
         5'h1C: return maybeFold(dyad1(pc, OP_MOV, p0), p);
+        // Table 1-15 row 11 (p. 1-22): MOV.CS 0x1C (above), MOVA.SS 0x1D,
+        // SHL3.CS 0x1E, SHR3.CS 0x1F.  MOVA's both fields are word stack
+        // offsets (p. 3-33, one-parcel encoding stk5,stk5).
+        5'h1D: return maybeFold(dyad1ss(pc, OP_MOVA, p0), p);
+        5'h1E: return maybeFold(shift1(pc, OP_SHL3, p0), p);
+        5'h1F: return maybeFold(shift1(pc, OP_SHR3, p0), p);
         default: return trapAt(pc, 1, TR_UNIMP);
       endcase
     end else if (p0[15:14] == 2'b10) begin

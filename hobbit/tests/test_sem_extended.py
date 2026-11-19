@@ -2,10 +2,11 @@
 """Unit tests for the instructions added to the one-instruction model.
 
 These are not golden traces: they drive ``sem/hobbit_sem.py`` directly and
-assert the printed operation and flag rules, including the cases the six
+assert the printed operation and flag rules, including the cases the
 new goldens do not reach (overflow, tagged operands, divide by zero, the
-DQM row selection and the kernel transfers).  The page in each assertion
-is the manual page the rule comes from.
+DQM row selection, the kernel transfers and the one-parcel row-11
+shifts).  The page in each assertion is the manual page the rule comes
+from.
 
 Discriminating check, observed 2026-11-19: dropping DIV's sign
 application (``quotient = -quotient`` replaced by a no-op) made this file
@@ -26,6 +27,17 @@ overflow in TADD/TSUB made exactly
 ``test_tadd_sets_carry_and_overflow_then_flag_from_overflow`` and
 ``test_tsub_borrow_and_overflow`` fail (2 of 30), and nothing else.
 Reverted; ``sem/hobbit_sem.py`` is byte-identical to HEAD.
+
+Fourth injection, same day: replacing SHL3's left shift with SHR3's
+arithmetic right shift (the wrong direction, one line in
+``hobbit_sem.py``) made exactly two of the 35 tests fail --
+``test_shl3_accumulator_destination`` (``wdata 0xffffffff`` where the
+trace has ``0xfffffff0``) and ``test_shift_count_is_low_five_bits``
+(``0`` where ``1 << 31`` is ``0x80000000``) -- and nothing else.
+``tests/hri_check.py`` on golden 013 reported exactly ``line 2 field
+DATA: dut=0xffffffff spec=0xfffffff0 pc=0x0002`` (2 instructions
+compared, FAIL); the core was untouched and still matched.  Reverted by
+the reverse edit.
 """
 
 import os
@@ -239,6 +251,57 @@ class MoveAndOtherTest(unittest.TestCase):
         # LDRAA *$0x100 -> accumulator = 0x100 (p. 3-31).
         record, state = run({0: 0x80FA0000, 4: 0x01000000})
         self.assertEqual(state.memory[0x104], 0x100)
+
+
+class OneParcelRow11Test(unittest.TestCase):
+    """Table 1-15 row 11 (p. 1-22): the one-parcel 0x18..0x1F forms."""
+
+    def test_shl3_accumulator_destination(self):
+        # SHL3 $4,R12 = 0x7883: opcode 0x1E, uimm5 4, stk5 3 (p. 3-41).
+        # The destination word 0xffffffff is shifted left, zeros fill,
+        # and only the accumulator at CSP+4 is written; the destination
+        # word is unchanged (p. 3-41, p. 1-7).
+        record, state = run({0: 0x78830000}, {0x10C: 0xFFFFFFFF},
+                            psw=h.PSW_SP | h.PSW_C | h.PSW_V | h.PSW_F)
+        self.assertEqual(record.mem_we, 1)
+        self.assertEqual(record.mem_addr, 0x104)
+        self.assertEqual(record.mem_wdata, 0xFFFFFFF0)
+        self.assertEqual(record.mem_wmask, 0x0F)
+        self.assertEqual(state.memory[0x10C], 0xFFFFFFFF)
+        self.assertEqual(state.memory[0x104], 0xFFFFFFF0)
+        # pp. 3-41/3-42 state no C/V/F effect.
+        self.assertTrue(state.psw & h.PSW_C)
+        self.assertTrue(state.psw & h.PSW_V)
+        self.assertTrue(state.psw & h.PSW_F)
+        self.assertEqual(record.cyc, 1)          # Table 4-32, p. 4-3
+
+    def test_shr3_is_arithmetic(self):
+        # SHR3 $4,R12 = 0x7c83: the sign bit is copied as bits move right
+        # (p. 3-42).  0x80000000 >> 4 is 0xf8000000, not 0x08000000.
+        record, state = run({0: 0x7C830000}, {0x10C: 0x80000000})
+        self.assertEqual(record.mem_addr, 0x104)
+        self.assertEqual(state.memory[0x104], 0xF8000000)
+        self.assertEqual(state.memory[0x10C], 0x80000000)
+        self.assertEqual(record.cyc, 1)
+
+    def test_shift_count_is_low_five_bits(self):
+        # uimm5 = 31: SHL3 $31,R12 = 0x7be3.  1 << 31 = 0x80000000.
+        record, state = run({0: 0x7BE30000}, {0x10C: 1})
+        self.assertEqual(state.memory[0x104], 0x80000000)
+        self.assertEqual(record.cyc, 1)
+
+    def test_mov_cs_immediate(self):
+        # MOV $-1,R12 = 0x73e3 (opcode 0x1C): imm5 sign-extends (p. 3-32).
+        record, state = run({0: 0x73E30000})
+        self.assertEqual(record.mem_addr, 0x10C)
+        self.assertEqual(record.mem_wdata, 0xFFFFFFFF)
+        self.assertEqual(record.cyc, 1)
+
+    def test_three_parcel_shl_still_refused(self):
+        # 0x2E SHL gen16,gen16 is a legal Table 1-18 row but outside this
+        # model's subset; it must refuse, not decode as a 1p shift.
+        with self.assertRaises(h.Unsupported):
+            run({0: 0xAEFD0002, 4: 0x00080000})
 
 
 class DqmTest(unittest.TestCase):

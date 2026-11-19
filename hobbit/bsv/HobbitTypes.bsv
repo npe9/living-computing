@@ -33,6 +33,7 @@ typedef Bit#(0) Token;
 typedef enum {
   OP_NONE,
   OP_MOV, OP_ADD, OP_SUB, OP_ADD3, OP_CMPEQ, OP_CMPGT,
+  OP_SHL3, OP_SHR3, OP_MOVA,
   OP_CALL, OP_RETURN, OP_ENTER, OP_CATCH, OP_POPN, OP_NOP,
   OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN
 } HobbitOp deriving (Eq, Bits);
@@ -293,6 +294,7 @@ endfunction
 function Bool isFoldable(HobbitOp op);
   return op == OP_MOV || op == OP_ADD || op == OP_SUB ||
          op == OP_ADD3 || op == OP_CMPEQ || op == OP_CMPGT ||
+         op == OP_SHL3 || op == OP_SHR3 || op == OP_MOVA ||
          op == OP_NOP;
 endfunction
 
@@ -489,6 +491,11 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     OP_ADD3:  return 0;
     OP_CMPEQ: return 0;                         // CMP row, 1 (p. 3-13)
     OP_CMPGT: return 0;                         // CMP row, 1
+    // Table 4-32 (printed p. 4-3): SHL3 and SHR3 are 1, in the one-parcel
+    // uimm5,stk5 form as well as the three- and five-parcel forms.
+    OP_SHL3:  return 0;
+    OP_SHR3:  return 0;
+    OP_MOVA:  return 0;                         // MOVA row, 1 (Table 4-32)
     OP_NOP:   return 0;
     OP_CALL:  return 0;
     OP_RETURN:return 1;                         // RETURN 2, always indirect

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run a hand-derived golden trace through the Bluesim core.
 #
-#   ./run_golden.sh NNN     NNN is 001..006
+#   ./run_golden.sh NNN     NNN is 001..006 or 013
 #   ./run_golden.sh         run all six in order
 #
 # The image is tests/golden/NNN.hex.  The generated image package and the
@@ -34,7 +34,7 @@ mkdir -p "$GEN"
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006) ;;
+    001|002|003|004|005|006|013) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;

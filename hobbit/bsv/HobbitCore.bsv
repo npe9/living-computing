@@ -141,6 +141,16 @@ function Bool signedGtW(Word a, Word b);
   return x > y;
 endfunction
 
+// p. 3-41: SHL3 shifts the destination left, zeros filling, by the low
+// five bits of the source.  p. 3-42: SHR3 shifts right and copies the
+// sign bit into the vacated bits, so the right shift is arithmetic on the
+// two's-complement word.
+function Word shlWord(Word v, Word n) = v << n[4:0];
+function Word sarWord(Word v, Word n);
+  Int#(32) s = unpack(v);
+  return pack(s >> n[4:0]);
+endfunction
+
 // The flag a folded branch must test.  A compare folded together with
 // its branch produces the new PSW.F in the same instruction, so the
 // branch sees the compare's result, not the previous flag (p. 3-13,
@@ -260,11 +270,11 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
 
   function Bool needsSrc(HobbitOp op) =
     op == OP_MOV || op == OP_ADD || op == OP_SUB || op == OP_ADD3 ||
-    op == OP_CMPEQ || op == OP_CMPGT;
+    op == OP_CMPEQ || op == OP_CMPGT || op == OP_SHL3 || op == OP_SHR3;
 
   function Bool needsDst(HobbitOp op) =
     op == OP_ADD || op == OP_SUB || op == OP_ADD3 ||
-    op == OP_CMPEQ || op == OP_CMPGT;
+    op == OP_CMPEQ || op == OP_CMPGT || op == OP_SHL3 || op == OP_SHR3;
 
   function EuS1Out mkOut(DecInstEntry e, Word pc, Word spb, Word mspb,
                          Word srcV, Word dstV, Word retPc,
@@ -485,6 +495,17 @@ module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
                                data: i.dstVal - i.srcVal };
       OP_ADD3: return WrInfo { we: True, addr: i.spBefore + 4,
                                data: i.dstVal + i.srcVal };
+      // pp. 3-41, 3-42: SHL3/SHR3 leave the destination unchanged and
+      // place the result in the accumulator, the word at CSP+4 (p. 1-7,
+      // Figure 1-4).  Only the low five bits of the source are the count.
+      OP_SHL3: return WrInfo { we: True, addr: i.spBefore + 4,
+                               data: shlWord(i.dstVal, i.srcVal) };
+      OP_SHR3: return WrInfo { we: True, addr: i.spBefore + 4,
+                               data: sarWord(i.dstVal, i.srcVal) };
+      // p. 3-33: MOVA stores the address of the source operand, computed
+      // as a stack offset for the one-parcel stk5,stk5 form.
+      OP_MOVA: return WrInfo { we: True, addr: opAddr2(d.dst, i.spBefore),
+                               data: opAddr2(d.src, i.spBefore) };
       OP_CALL: return WrInfo { we: True, addr: i.spBefore, data: i.base };
       default: return WrInfo { we: False, addr: 0, data: 0 };
     endcase

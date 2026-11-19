@@ -60,4 +60,19 @@ for n in 007 008 009 010 011 012; do
         --spec-lines "$here/golden/$n.trace"
 done
 
+# 013 exercises the one-parcel Table 1-15 row 11 forms MOV.CS, SHL3.CS,
+# SHR3.CS and MOVA.SS.  Both the core and the spec model must reproduce
+# the hand-derived trace (the core implements all four).
+for n in 013; do
+    "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
+    grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
+        --spec-lines "$here/golden/$n.trace"
+
+    python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/$n.hex" \
+        --sp 0x100 --msp 0x180 2>/dev/null | grep '^HRI ' > "$tmp/$n.sem"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
+        --spec-lines "$here/golden/$n.trace"
+done
+
 echo "hobbit: all tests passed"

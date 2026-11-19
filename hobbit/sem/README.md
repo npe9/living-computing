@@ -187,6 +187,8 @@ line.
 | `UREM` | 3p/5p (`0x05`) | `dst = dst%src` unsigned; C always cleared, V unchanged; divide-by-zero is a refusal | p. 3-49 |
 | `DQM` | 3p/5p (`0x07`), source word modes or constant, destination mode selects 2 or 4 words | copy two or four contiguous words; alignment 8 (double) or 16 (quad); the record's one write is the lowest-addressed destination word | p. 3-18 |
 | `MOVA` | 1p `stk5,stk5` (`0x1D`); 3p/5p (`0x04`), source only `0xC/0xD/0xE`, destination any general mode | `dst = &src`; immediate source and register source/destination are illegal | p. 3-33 |
+| `SHL3` | 1p `uimm5,stk5` (`0x1E`) | `Acc = dst << unsigned(src)`; zeros fill; only the low five bits of src select the count; the destination is unchanged; C/V/F unchanged | p. 3-41 |
+| `SHR3` | 1p `uimm5,stk5` (`0x1F`) | `Acc = dst >> src` as an arithmetic shift, sign bit replicated; only the low five bits of src select the count; the destination is unchanged; C/V/F unchanged | p. 3-42 |
 | `LDRAA` | 3p monadic `0x00/0xA`, `flow32` | `Acc = &dst`, the address calculated exactly as a JMP target | p. 3-31 |
 | `TADD` | 3p/5p (`0x0C`) | tagged add: a nonzero tag sets F=1, leaves C/V and memory alone; otherwise C/V and F=V, and the sum is stored only when F=0 | p. 3-44 |
 | `TSUB` | 3p/5p (`0x0D`) | tagged subtract with the same tag/overflow/store rules | p. 3-47 |
@@ -537,12 +539,12 @@ the 3-parcel `SUB` is `a0dd 0008 0004`, and the 5-parcel `CMPEQ` is
 `dffd 0000 0000 0000 0000`.  `insn1` is `0000` for every one-parcel line
 and the second parcel for the multi-parcel lines.
 
-## Golden programs 001–012
+## Golden programs 001–013
 
-The model was run on all twelve images with `--sp 0x100 --msp 0x180`:
+The model was run on all thirteen images with `--sp 0x100 --msp 0x180`:
 
 ```sh
-for n in 001 002 003 004 005 006 007 008 009 010 011 012; do
+for n in 001 002 003 004 005 006 007 008 009 010 011 012 013; do
   python3 sem/hobbit_sem.py --image tests/golden/$n.hex --sp 0x100 --msp 0x180
 done
 ```
@@ -566,11 +568,14 @@ done
   (`cyc=0`); and `ADD $2,R0` / `ADD3 $5,R0` write `0x000c` /
   `0x00000011` before the C1 stop at `0x0018`.
 
-The six new programs hand-derive instructions added in this milestone.
-They have no core comparison yet (the Bluespec core does not implement
-these mnemonics), but `tests/run_tests.sh` runs the model against each
-trace with `hri_check.py`, and `tests/golden/check_golden.py` checks
-their format, state continuity and per-line citation.
+The new programs hand-derive instructions added in this milestone.
+007–012 have no core comparison yet (the Bluespec core does not
+implement MUL, DIV, ADDI, TADD, LDRAA, or the three-parcel MOVA), but
+`tests/run_tests.sh` runs the model against each trace with
+`hri_check.py`, and `tests/golden/check_golden.py` checks their format,
+state continuity and per-line citation.  013 is the exception: the core
+implements its four one-parcel row-11 forms, so `tests/run_tests.sh`
+compares the core, the model and the hand-derived trace three ways.
 
 * **007 `MUL`**: `MOV $7,R8; MUL $6,R8` gives `0x2a` with `cyc=20`
   (Table 4-33's printed maximum), C=V=0.
@@ -584,6 +589,15 @@ their format, state continuity and per-line citation.
 * **011 `MOVA`**: `MOVA R16,R8` stores the address `SP+16 = 0x110`.
 * **012 `LDRAA`**: `LDRAA *$0x100` puts `0x100` in the accumulator at
   `0x104`.
+* **013 one-parcel row 11**: `MOV $-1,R12` stores `0xffffffff` at
+  `0x10c`; `SHL3 $4,R12` writes `0xfffffff0` to the accumulator at
+  `0x104` and leaves `0x10c` alone; `SHR3 $4,R12` shifts the same
+  `0xffffffff` arithmetically back to `0xffffffff` (a logical shift would
+  give `0x0fffffff`); `MOVA R16,R8` stores `SP+16 = 0x110` at `SP+8 =
+  0x108`.  All four are Table 1-15 row 11 one-parcel forms (p. 1-22),
+  the shifts follow pp. 3-41/3-42 and are one cycle each in Table 4-32
+  (p. 4-3).  Unlike 007–012, 013 also runs on the Bluespec core, which
+  implements these four opcodes.
 
 ## Refused constructs
 
@@ -595,14 +609,15 @@ emits no HRI line and stops.  `trap=1` is reserved for the
 unimplemented-instruction sequence (`FLUSHD`/`FLUSHDCE`).  Refused:
 
 * **Opcodes not in the table above.**  In one-parcel form: FLUSHI,
-  FLUSHP, CPU, AND/AND3, SHL3/SHR3, and the unimp rows.  In 3-/5-parcel
-  form: AND/AND3, OR/OR3, XOR/XOR3, SHL/SHL3, SHR/SHR3, USHR/USHR3,
+  FLUSHP, CPU, AND/AND3, and the unimp rows.  In 3-/5-parcel form:
+  AND/AND3, OR/OR3, XOR/XOR3, SHL/SHL3, SHR/SHR3, USHR/USHR3,
   FLUSHPTE, FLUSHPBE, the five-parcel monadic opcode 0x00 (Table 1-20
   p. 1-25 makes it unimp), and every unimp opcode.  These are real
   instructions in the manual; the model simply states only the listed
-  subset.  The shifts and the logical AND/OR/XOR remain outside the
-  subset; the arithmetic, interlocked, tagged, move, DQM, kernel-call
-  and five-parcel forms are implemented.
+  subset.  The logical AND/OR/XOR and the 3-/5-parcel shift forms remain
+  outside the subset; the arithmetic, interlocked, tagged, move, DQM,
+  kernel-call and five-parcel forms and the one-parcel `SHL3`/`SHR3`
+  (pp. 3-41, 3-42) are implemented.
 * **Divide by zero** (`DIV`, `DIV3`, `REM`, `REM3`, `UDIV`, `UREM`).
   pp. 3-17, 3-39, 3-48, 3-49 say it takes the zero-divide exception;
   the event sequence is outside a one-instruction architectural model,

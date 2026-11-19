@@ -1481,6 +1481,29 @@ def step(state: State,
                 # stored in the destination" (p. 3-33); both fields are
                 # word stack offsets here.
                 store = (_stk5(state, dst5), _stk5(state, src5).ea)
+            elif op in (0x1E, 0x1F):                  # SHL3/SHR3 uimm5, stk5
+                # Table 1-15 row 11 (p. 1-22): opcode 0x1E is SHL3.CS and
+                # 0x1F is SHR3.CS, the one-parcel "C" (5-bit immediate
+                # source) and "S" (5-bit word stack offset, scaled by 4)
+                # forms.  p. 3-41: "SHL3: Acc = dst << Unsigned(src)";
+                # p. 3-42: "SHR3: Acc = dst >> src" with the sign bit
+                # copied as bits are shifted rightward.  Both pages print
+                # the one-parcel encoding as uimm5, stk5.  Only the
+                # low-order five bits of the source select the count (the
+                # uimm5 field is already five bits); p. 3-41/3-42 say
+                # nothing about C, V or F, so the PSW is unchanged.  For
+                # SHL3/SHR3 the result goes to the accumulator at CSP+4
+                # and the destination word is left unchanged (pp. 3-41,
+                # 3-42; p. 1-7, Figure 1-4).
+                mnemonic = "SHL3" if op == 0x1E else "SHR3"
+                count = src5 & 0x1F
+                dst_value = _load(state, memory_reader, _stk5(state, dst5))
+                if op == 0x1E:
+                    result = (dst_value << count) & MASK32
+                else:
+                    result = (_sx(dst_value & MASK32, 32) >> count) & MASK32
+                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                         result)
             else:
                 raise Unsupported(
                     "unsupported: 1-parcel opcode 0x%02x (Table 1-15, "
