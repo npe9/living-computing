@@ -289,9 +289,25 @@ def main():
         assert prosa.IOD_DECK == "P1", prosa.IOD_DECK
         prosa.set_tape_units(prosa.TAPE_UNITS_P1_DECK)
         write_tape(src)
+        # SCOMRG (printed p.103 ll.10-27, 215001) as IPL and the BYPASS
+        # command leave it, read at the stop (2026-11-18).  Bits, from 0:
+        # SE 0, SHSECH 0, SCNFCG 1, SCORG 0, SL 1, SM 1, SPINCL 0, SCSINT 0,
+        # SYSMOD 10 (bypass: p.376 l.37 ZBA1X "SET BYPASS FROM IPL MODE"
+        # clears SYSMOD+.1), STRANB 0, SSPFIX 0, STSBIT 0, SPPBT1 1, SPPBT2 1
+        # (p.376 l.38 "SET SWITCHES FOR BYPASS FIRST"), SPPBT3 0, SJ1FUL 0,
+        # SLOCSU 0, SJBUSY 0.  The image assembles a800000000000000 (SYSMOD
+        # 00).  tests/check_bss_mcp_go.py takes SYSMOD = 10 from here.
+        # MEASURED INJECTION (2026-11-18, a scratch wrapper, no file
+        # edited): ZBA1X's CM0000(BU,1),SYSMOD+.1 (235405.40) replaced by
+        # two NOPs in the 22SCOMD type area on the PROSA disk.  The run
+        # still stops at the 200th ZJOBC1 (8,127,089 steps, against
+        # 8,127,106), and only this check fails: SCOMRG = 2cc6000000000000,
+        # SYSMOD 11, the IPL mode.  check_mcp_start.py was not run on it.
         print(generate(module_name, prog,
                        [("mcp_start_no_ipl_error",
-                         str(prog.symtab["XERRAD"] // 64), 0)],
+                         str(prog.symtab["XERRAD"] // 64), 0),
+                        ("mcp_start_scomrg_bypass_mode", str(0o215001),
+                         0x2c86000000000000)],
                        step_cap=40000000,
                        wait_for_io=True,
                        pc_trail=True,

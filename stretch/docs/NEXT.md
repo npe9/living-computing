@@ -24,6 +24,42 @@ accumulate.
 
 
 
+## FP M+ EXTERNAL -- DIAGNOSED, NOT BUILT, 2026-11-18
+
+The two largest open M+ residuals are M+ EXTERNAL at +3.97 (PDF 69) and
++6.31 (PDF 100). PDF 100 is the page *with forwarding*. Its $R
+(INTERNAL) column is −3.07, so the "+6.31" is not a $R figure. Vol. 1
+p.3-20 lists $RM, not $R, as memory. `docs/atlas_oracle.md` "Closing
+the residuals" item 15 has the trace and the tables. **`bsv/` is
+unchanged.**
+
+* **The store path is not the surplus.** A trace gives removal -> next
+  load = 8 clocks, which is E-box 5 + 1 + the 0.6 µs check (the
+  documented events). Load -> removal is 10: 2 to the bus, 7 for the
+  read, 1. The printed (U) rows leave 7.07 clocks for that leg on PDF 69
+  and 4.07 on PDF 100. The old "M+'s store path" framing (item 10, plan
+  row 87) is corrected.
+* **Fetch leg, PDF 69.** The body address (`--body 220000`) is worth
+  0.88. The read latency (above, "a read takes 8 clocks") is worth 1.00
+  a clock. They add (+2.09 with both). The rest is the 1Y/2Y fetch
+  winning the bus every second M+.
+* **Forwarding, PDF 100.** Read in the images: ST (PDF 48/79, 4.80 µs)
+  and LFT (PDF 68/99, 4.36 µs) print the same with and without
+  forwarding. M+ saves 0.9 µs (3 clocks, (U) rows). The mechanism is
+  Vol. 1 printed p.3-22 and Blosk printed p.21: the store operand is
+  forwarded to the fetch level "without first requiring a store to
+  memory". No page gives a time. It is in tension with p.3-21's wait at
+  decoding, since n+1's fetch must compare against n's store before
+  that store leaves the look-ahead. Not built.
+* **Next, if pursued:** the read-latency item, as a suite-wide change
+  with every pin re-measured; then forwarding, with a source for its
+  time. R23-9732 Fig. 3.2.2 sheet 2 (PDF 94): a "MOD TYPE 3" load sets
+  LAAR BUSY after "FETCH ACCEPTED". Reading that as the fetch-and-store
+  load is an INFERENCE (two-LAAR build, 2/1/62).
+* Stale comment: `StretchTiming.bsv`'s `laarStorePost` note says "+2.6
+  (PDF 69) and +5.8 (PDF 100)". It is +3.97 / +6.31 since item 13's
+  `fpYields`. Fix it with the next `bsv/` change.
+
 ## D/ AND THE LAAR -- EXAMINED, NOT BUILT, A DECISION LEFT OPEN, 2026-11-18
 
 This was the open item "D/ should take the LAAR". **The sources say D/
@@ -165,6 +201,20 @@ cycle not counted as a loop.**
   -> YARR 8 clocks, then the 0.6 us check. This is the refill latency
   behind the supply limit. Changing it moves every memory read, so it
   is a separate, suite-wide change.
+  **First data, 2026-11-18** (`docs/atlas_oracle.md` "Closing the
+  residuals" item 15, scratch copies, discarded). Buchholz printed
+  p.206 (PDF 231): "the time to return the word to the requesting unit
+  is 1.6 usec". The model's operand read is bus put -> response 7
+  clocks, level load -> usable 10. `memReadClocks` 5 -> 4, medians:
+  FP M+ PDF 69 +3.97 -> +2.97, PDF 100 +6.31 -> +5.31, L PDF 64 +0.46
+  -> +0.08; +, ST, LFT (42, 48, 68) unchanged. **Worse:** VFL M+ and ST
+  WB XOVR (PDF 117, 124) -23.2 -> -24.2, I-box SC/SR/SV to memory (PDF
+  109) -7.5 -> -9.0, SX -2.0 -> -2.1. Better: K WB XOVR (127) +5 -> +4.
+  At 5 -> 3: M+ +1.97 / +4.32, L -0.04 (VFL and I-box pages not run).
+  The page does not say which of the model's stages the 1.6 us spans
+  (level load, request, two register stages, the 0.6 us operand check),
+  and 3 and 4 both leave L near exact, so choosing by the atlas would be
+  a fit. Not built. The suite's CYCLES pins were not measured under it.
 * **Found, not fixed: the model does not index an immediate VFL
   operand.** Ref. Manual printed p.21 (PDF 24, read in the image): "For
   code 4, the immediate mode is specified and the effective address is
@@ -1306,18 +1356,44 @@ also stays 0. C22-6728 p.197 makes 7.0-7.17 "Number of arcs occupied by
 compiled program" and 7.25 the "Reject flag", and the reconstructed BSS
 sets neither.
 
-**Next:** (1) the record's `$W` and the output EOJ (CEOJ, p.204), which
-need the output tape's IOD/unit; the 1401 side is not landed. (2) TASIGN
-for the GO phase. It needs the channel status table IPL builds (SXCHAN),
-which the IPL boot (volume 1) does not yet hand to this bench. After it
-comes WJ4PE -> YL1 -> WJCV -> YRDFSO -> YPPID4's `$FETCH` of
-`))))))))`, then resume load as BSS postprocessor (C22-6728-1 p.86, read in the
-ink: "If it is a BSS postprocessor, resume load obtains the loader limits
-from KSILO").
-(3) SIFAE's PP half, and the PP run under its own limits: BSS writes
-KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not built: the O
-card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL
-storage.
+**R2b, the GO phase in bypass mode, RUN 2026-11-18 (later)** (same test,
+stage 6). **SYSMOD now comes from a real IPL.** A whole-core dump of
+`StretchMcpStartTb` (IPL, CLOCK, BYPASS, JC4 at ZJOBC1) reads SCOMRG
+`2c86000000000000`: SYSMOD 10, bypass (p.376 l.37 ZBA1X "SET BYPASS FROM IPL
+MODE"). The image assembles 00. `gen_mcp_boot_tb.py` now pins that word.
+- With SYSMOD = 10, p.397 l.6 `BB,SYSMOD,TJUNAS` "-IF BYPASS" is taken:
+  TJUNAS -> YC4BZ -> YL1 (PP limits from KSILO+8) -> YIODSO -> YRDFSO ->
+  YPPID4.
+- YPPID4's `B,DMCP / ,DFETCH` asks for `))))))))`, RELFWA 2.0, 15 words into
+  YBCBU (p.387 ll.22-34, read in the ink).
+- The stub serves no second fetch, and the run stops there (TWSF).
+- WJ4PFF and the overlap TASIGN are not on this path.
+
+The old overlap path is kept as R2G_TAMPER=overlap. At its T N halt SXCHAN
+READ 0, so "the scan walked a table based at 0" is now observed. The dump's
+real SXCHAN is 214724.00 with count 36, over tables at 214515-214777, and
+SMCP is 214514. The tables were not grafted: about 1,200 other resident
+words differ and are unclassified, and the bench's CHOSEN
+`LIM,200000,214777` overlaps them.
+
+**TASIGN was not passed.** The real mode reroutes the path, and TASIGN may
+still be ahead. After the fetch, untraced: p.385 ll.1-5 (in the ink) UNCODE
+every card but one KFI pattern. An UNCODE error goes YIDCER -> YBCERR
+(p.392, transcription only). From there it goes to WJC4G1 if no IOD card
+was read, else YC4C9 -> DECODE -> TASIGN (p.385 l.46, $15 = YCONCG).
+
+**Next:** (1) `))))))))` as BSS leaves it for the postprocessor (spec G6),
+and the trace above read in the ink (p.392, PDF 142). (2) TASIGN on IBM's own
+tables. With SCNFCG = 1 it takes TA9 over SXCHAN's table. This needs the go
+bench started from the post-IPL core image (the dump recipe:
+`gen_mcp_boot_tb.py`'s McpStartTb with gen_tb's `mem_dump=(0, 98304)`), or
+the tables and their pointers taken together. Move the CHOSEN PP limits
+below SMCP = 214514 then. (3) The record's `$W` and the output EOJ (CEOJ,
+p.204), which need the output tape's IOD/unit. The 1401 side is not
+landed. (4) SIFAE's PP half, and the PP run under its own limits: BSS
+writes KSILO in MCP's area. (5) Stage 2's LIM/IOD cards. Still not built:
+the O card, block data, DEFINE/DEFI, sequence and check sums, and B
+IOD/REEL storage.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 

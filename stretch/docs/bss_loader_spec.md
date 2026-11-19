@@ -874,8 +874,10 @@ the map goes through `$SPR` (deck switch SPRSW): MCP's own tentacle setup
 and print program CSTART (pp.117-118, 203) put all 12 lines in output buffer X
 as six-bit BCD. BSS then leaves by `$EOJ` to MCP's YC4NO -> YC4B3 (p.274),
 and (2026-11-18) on through YMPFCH's fetch of the `$EOJ` program, p.381,
-YC4INT -> YLASTC, p.397 and TJUNAS to TASIGN (p.398), which needs IPL's
-channel status table.
+YC4INT -> YLASTC and p.397. In bypass mode, the SYSMOD a real IPL leaves,
+it goes on through TJUNAS, YL1, YIODSO, YRDFSO and YPPID4 to the `$FETCH` of
+`))))))))` at RELFWA 2.0, 15 words: the first card of the TWS arc past its
+two header words (MCP p.387 ll.22-34). What BSS leaves there is G6.
 The IF analyzer's PP half and the return routine are SCAFFOLD (plan R2b
 record).
 **Its table read by MCP's loader, 2026-11-17** (plan R2b,
@@ -1050,6 +1052,10 @@ calls by `SIC,$X15 ; B,name` (6751 p.31).
 - **G6.** How BSS writes subprograms to TWS: the arc header's 2 words, what
   fills the end of a deck, and the disk-address field's exact width (18 bits
   in Figure 4 and Figure 39, the last 18 bits of word 3 in Figure 1).
+  Job control agrees on the 2 header words: in the GO phase, YPPID4 (MCP
+  p.387 ll.22-34, PDF 137) fetches 15 words of `))))))))` from RELFWA 2.0
+  (YPPBSD -13. + 15.), "SO JC WILL LOOK AT FIRST CARD OF AN ARC" (p.397
+  l.18). What that first card is, for a BSS postprocessor, is still open.
 - **G7.** The library's type-area form: `LB` + 36-bit name is the listing's
   (L p.327 ll.23-25). The 36 bits are six A6 characters: `LF(BU,36,6)` (L
   p.327 l.24, read in the ink), `SRDKAD SYN(BU, 36, 6)` "a 36-bit field
