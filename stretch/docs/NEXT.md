@@ -1282,18 +1282,39 @@ also stays 0. C22-6728 p.197 makes 7.0-7.17 "Number of arcs occupied by
 compiled program" and 7.25 the "Reject flag", and the reconstructed BSS
 sets neither.
 
-**Next:** (1) the record's `$W` and the output EOJ (CEOJ, p.204), which
-need the output tape's IOD/unit; the 1401 side is not landed. (2) TASIGN
-for the GO phase. It needs the channel status table IPL builds (SXCHAN),
-which the IPL boot (volume 1) does not yet hand to this bench. After it
-comes WJ4PE -> YL1 -> WJCV -> YRDFSO -> YPPID4's `$FETCH` of
-`))))))))`, then resume load as BSS postprocessor (C22-6728-1 p.86, read in the
-ink: "If it is a BSS postprocessor, resume load obtains the loader limits
-from KSILO").
-(3) SIFAE's PP half, and the PP run under its own limits: BSS writes
-KSILO in MCP's area. (4) Stage 2's LIM/IOD cards. Still not built: the O
-card, block data, DEFINE/DEFI, sequence and check sums, and B IOD/REEL
-storage.
+**R2b, the GO phase in bypass mode, RUN 2026-11-18 (later)** (same test,
+stage 6). **SYSMOD now comes from a real IPL.** A whole-core dump of
+`StretchMcpStartTb` (IPL, CLOCK, BYPASS, JC4 at ZJOBC1) reads SCOMRG
+`2c86000000000000`: SYSMOD 10, bypass (p.376 l.37 ZBA1X "SET BYPASS FROM IPL
+MODE"). The image assembles 00. `gen_mcp_boot_tb.py` now pins that word.
+- With SYSMOD = 10, p.397 l.6 `BB,SYSMOD,TJUNAS` "-IF BYPASS" is taken:
+  TJUNAS -> YC4BZ -> YL1 (PP limits from KSILO+8) -> YIODSO -> YRDFSO ->
+  YPPID4.
+- YPPID4's `B,DMCP / ,DFETCH` asks for `))))))))`, RELFWA 2.0, 15 words into
+  YBCBU (p.387 ll.22-34, read in the ink).
+- The stub serves no second fetch, and the run stops there (TWSF).
+- WJ4PFF and the overlap TASIGN are not on this path.
+
+The old overlap path is kept as R2G_TAMPER=overlap. At its T N halt SXCHAN
+READ 0, so "the scan walked a table based at 0" is now observed. The dump's
+real SXCHAN is 214724.00 with count 36, over tables at 214515-214777, and
+SMCP is 214514. The tables were not grafted: about 1,200 other resident
+words differ and are unclassified, and the bench's CHOSEN
+`LIM,200000,214777` overlaps them.
+
+**Next:** (1) `))))))))` as BSS leaves it for the postprocessor (spec G6).
+Its first card decides p.385 ll.1-5, and a non-type card goes YC4C9 ->
+DECODE -> TASIGN (p.385 l.46, $15 = YCONCG). (2) TASIGN on IBM's own
+tables. With SCNFCG = 1 it takes TA9 over SXCHAN's table. This needs the go
+bench started from the post-IPL core image (the dump recipe:
+`gen_mcp_boot_tb.py`'s McpStartTb with gen_tb's `mem_dump=(0, 98304)`), or
+the tables and their pointers taken together. Move the CHOSEN PP limits
+below SMCP = 214514 then. (3) The record's `$W` and the output EOJ (CEOJ,
+p.204), which need the output tape's IOD/unit. The 1401 side is not
+landed. (4) SIFAE's PP half, and the PP run under its own limits: BSS
+writes KSILO in MCP's area. (5) Stage 2's LIM/IOD cards. Still not built:
+the O card, block data, DEFINE/DEFI, sequence and check sums, and B
+IOD/REEL storage.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16
 

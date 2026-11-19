@@ -149,7 +149,7 @@ Appendix C's hand-written STRAP subprogram (p.34 **[INK]**) uses a different cal
 - **R2b, table half, RUN 2026-11-17:** its relocation table is read by MCP's own resume load and loader, which load Example 4 as p.17 lays it out (`tests/check_bss_mcp_load.py`); record under R2.
 - **R2b, job half, RUN 2026-11-17:** `B TYPE,GO,FORTRAN` through MCP's own job control into KSILO, then YC4INT, WJC4G and resume load load the BSS processor from its type area, and BSS runs under MCP and prints p.17's map (`tests/check_bss_mcp_go.py`); record under R2.
 - **R2b, printer path and `$EOJ`, RUN 2026-11-18:** behind the deck's switch SPRSW, BSS prints each map line through `$SPR`: the call traps IF, and MCP's own tentacle setup (p.117 ll.36-48, p.118) and print program CSTART (p.203) move all 12 lines into the output buffer X as six-bit BCD, row for row p.17. BSS then leaves by `$EOJ` into MCP's YC4NO and reaches YC4B3 (p.274). The IF analyzer's PP half and MCP's return routine are SCAFFOLD; record under R2.
-- **R2b, `$EOJ` past YC4B3, RUN 2026-11-18:** YMPFCH fetches the `$EOJ` program back. The `$FETCH` is a stub over a core image of pp.381-439. From there IBM's code runs p.381 -> YC4INT -> YLASTC -> p.397 (BSS, overlap) -> TJUNAS -> WJ4PFF and stops at TASIGN. TASIGN needs the IPL-built channel status table; record under R2.
+- **R2b, `$EOJ` past YC4B3, RUN 2026-11-18:** YMPFCH fetches the `$EOJ` program back. The `$FETCH` is a stub over a core image of pp.381-439. From there IBM's code runs p.381 -> YC4INT -> YLASTC -> p.397. **Since 2026-11-18 (later)** SYSMOD is 10, bypass, as a real IPL leaves it, so p.397 l.6 goes to TJUNAS -> YL1 -> YIODSO -> YRDFSO -> YPPID4, and the run stops at YPPID4's `$FETCH` of `))))))))`. The overlap path (SYSMOD 00, as assembled) stops at TASIGN. Record under R2.
 - No code survives in any deck. The repo grep is in spec §7.4, and I agree with it.
 - It must be RECONSTRUCTED from C28 pp.7-14:
   - the card scan;
@@ -711,7 +711,7 @@ Both are settled, and the table is fed, in R2b's record below.
 1. **The printer path: RUN 2026-11-18, record below.** Open past it: the record's write (`$W`, p.202-204) and the output EOJ (CEOJ), then the 1401 side.
 2. **Stage 2,** above: the LIM and IOD cards of the PC area, and JC1's PP tables for Assign/Move.
 3. **MCP's dispatcher** (unprime, and for resume load YMPFCH's overlay fetch) and `$RET` into a loaded program are stubs. For `$EOJ` (2026-11-18) YMPFCH is IBM's code; only DFETCH, its disk fetch, is a stub.
-4. **The chain's end:** BSS leaves by `$EOJ`, and MCP's YC4NO, YMPFCH, p.381, YC4INT, YLASTC, p.397, TJUNAS and WJ4PFF take it to TASIGN (RUN 2026-11-18, record below). Not run: TASIGN (it needs IPL's channel status table at SXCHAN), then WJ4PE, YL1, WJCV and YPPID4's fetch of the compiled program `))))))))`.
+4. **The chain's end:** BSS leaves by `$EOJ`, and MCP's YC4NO, YMPFCH, p.381, YC4INT, YLASTC, p.397, TJUNAS, YL1, YIODSO, YRDFSO and YPPID4 take it to the `$FETCH` of the compiled program `))))))))` (RUN 2026-11-18, bypass mode as IPL leaves it; record below). Not run: that fetch (BSS does not write TWS, spec G6), then p.385's card-type test and TASIGN (p.385 l.46), which needs IPL's channel status table at SXCHAN.
 
 #### R2b, the printer path and `$EOJ` (2026-11-18): the map through `$SPR`
 
@@ -729,7 +729,7 @@ Both are settled, and the table is fed, in R2b's record below.
 - **SIFAE's PP half** (p.117 ll.20-28) is not run. Its l.28 copies STLR into SLRBU, which would replace the PP limits that ACHK reads with this bench's register 3. Running it needs the PP to run under its own limits (bound control bit 1, outside protected). But BSS writes KSILO+8..11 in MCP's area, and a DS there is always masked. How MCP let a processor write KSILO is not read.
 - **The return routine** for a major package's `$RET` (KFRONT and the service-op return; MPP1's `Z,MCR`, p.142 from the transcription, among it) is a stub: IRET restores the PP's registers and SL but leaves MCR as p.117 l.47 set it. It is the same blocker as item 3 above.
 - **The record's write.** The 12-line record in buffer X is written by `$W` only at the next `$SPR` (CAOS3A, p.203 l.54 - p.204 l.12) or at the output EOJ (SAEOJT -> AEOJ, CEOJ p.204 ll.14-39, then `$WEF`). The `$W` path was not run or examined beyond the transcriptions (it names the output tapes CT11/CT21 through AMR). Running the paper side needs the 1401 peripheral output program, which is not landed.
-- **`$EOJ` past YC4B3: RUN 2026-11-18 to TASIGN, record next.**
+- **`$EOJ` past YC4B3: RUN 2026-11-18 to TASIGN (overlap), then in bypass mode to YPPID4's `$FETCH`; records next.**
 
 #### R2b, `$EOJ` past YC4B3 (2026-11-18): back to job control, to TASIGN
 
@@ -755,6 +755,31 @@ IBM's code then runs:
 **Deciding bits left as the image assembles them (SCAFFOLD):** SCNFCG = 1, SYSMOD = 00 (overlap), TMAXRF = 0 and SPROGS = 0 (no I/O and no queued interrupts for this job, consistent with no IOD cards), and KSILO+7 = 0. p.395 l.46 zeroes KSILO+7, and the reconstructed BSS does not set the arcs of the compiled program (C22-6728 p.197). That is an open item of R2a, since C22-6728 p.197 says "At the end of the chain, MCP expects to find in the communication region the number of arcs occupied by the compiled program."
 
 **Measured injections:** see the test header.
+
+#### R2b, the GO phase in bypass mode (2026-11-18, later): past p.397 to YPPID4's `$FETCH`
+
+**SYSMOD is taken from a real IPL.** A whole-core dump of `StretchMcpStartTb` (IPL from tape with p.1's IOD deck, the CLOCK and BYPASS commands IPL primes, JC4 polling at ZJOBC1) reads SCOMRG (215001) as `2c86000000000000`: SCNFCG 1, SL 1, SM 1, SYSMOD 10, SPPBT1 1, SPPBT2 1. The image assembles `a800000000000000` (SYSMOD 00, overlap). p.376 (PDF 126, in the ink) l.37 ZBA1X `CM0000(BU,1),SYSMOD+.1` "SET BYPASS FROM IPL MODE" and l.38 `CM1111(BU,2),SPPBT1` "SET SWITCHES FOR BYPASS FIRST". `gen_mcp_boot_tb.py` now pins that SCOMRG word at the start bench's stop. `check_bss_mcp_go.py` plants SYSMOD = 10 from it (`POST_IPL_SYSMOD`); the other SCOMRG bits are left as the bench has them.
+
+**Run.** p.397 (PDF 147, in the ink) l.6 `BB,SYSMOD,TJUNAS` "-IF BYPASS" is taken with $15 = YL1 (l.5), $14 = KSILO+8 (l.3), $13 = YPPBSD (l.4). Then:
+- TJUNAS -> TJEND -> YC4BZ return to YL1 (p.384 ll.36-49): YEDLL and SLRBU from KSILO+8, SCORG 0, and SYSMOD.0 = 1, so not `WJCV-1.0` (l.49) but ll.50-54, YIODSO.
+- YRDFSO (p.387, PDF 137, in the ink, "SWITCHING SUBROUTINE TO READ ONE CARD FROM SOURCE"): $13's flag is on, so YICDTM; SCORG 0, so YPPID4.
+- YPPID4 (ll.22-38): YI4TA <- `))))))))`; YPPBSD's value -13. + 15. = 2.0 is RELFWA, the first card past the arc's two header words; N = 15 to YBCBU; `B,DMCP / ,DFETCH`.
+- The IF trap reaches STUBIF, which serves no second `$FETCH`: the run stops at TWSF. 1,678,113 cycles for stages 3-6.
+
+WJ4PFF and YTSP are not on this path, and SCNFCG stays 1.
+
+**Next.** The fetch needs TWS as BSS leaves it for the postprocessor (spec G6, not reconstructed). What the first card is decides p.385 ll.1-5: an IOD or REEL type card loops to YIODSO; any other card goes YC4C9 -> DECODE -> l.46 `B,TASIGN` with $15 = YCONCG. With SCNFCG = 1, TASIGN takes TA9 over the channel status table.
+
+**The channel status table, read but not grafted.** On the overlap path (R2G_TAMPER=overlap), stopped at T N (021725.00), SXCHAN READ 0: TA9 walked from location 0, as inferred. That is now observed. The start-bench dump has the real tables:
+- SXCHAN = 214724.00, count 36, over tables IPL built at 214515-214777.
+- SMCP = SBAMCP = 214514.00, not the assembled 215000.00.
+- About 1,200 other words from 214764 up differ, not classified.
+
+Not grafted:
+- Some unclassified words may point into the tables.
+- The bench's CHOSEN `LIM,200000,214777` overlaps them.
+
+Running TASIGN on IBM's tables needs the go bench started from the post-IPL image, or the tables taken together with their pointers.
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 
