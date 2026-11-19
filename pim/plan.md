@@ -381,6 +381,16 @@ test or an explicit label.
      use `SRFP`/`SSFP` (TR-246 p. 3-4). The model uses a fixed pool of
      records (a small power of two) rather than the documented free-list
      discipline; the pool size is a model choice, not historical.
+   - **Dereference and suspension.** `deref(w)` follows `REF` cells
+     (tag `0x03`) through the heap until it reaches a non-REF; `UREF`
+     (tag `0x01`) is an unbound variable. Every `wait_*`/`read_*`/
+     `get_*`/`unify_*` instruction shares this deref. Binding a `UREF`
+     writes the bound value into its cell and resumes the goals hooked
+     on it. `suspend` adds the current goal record to the variable's
+     suspension list and returns to the ready queue; the model keeps a
+     per-variable suspension list (a small table) and resumes by
+     enqueueing the hooked records. The deref depth and the table size
+     are model choices.
    - **Decode.** Opcode = bits 31–24 of the value; operand fields per
      `docs/kl1_encoding.md` (`r`, `r_r`, `r_r_r`, `c8`, `c16`, `c24`,
      `c8_r`, `r_c16`, `atom`, and the address-dependent types).
