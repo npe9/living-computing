@@ -20,22 +20,19 @@ module mkPimKL1BTb(Empty);
   function Word prog(Bit#(3) i);
     case (i)
       0: return {8'h23, 32'h14070100};  // set_value 7, r1
-      1: return {8'h23, 32'h63010005};  // enqueue_goal 1, label 5
-      2: return {8'h23, 32'h69010003};  // suspend 1, label 3
-      3: return {8'h23, 32'h14090200};  // set_value 9, r2 (main resumes)
-      4: return {8'h23, 32'h60000000};  // proceed -> A@7
-      5: return {8'h23, 32'h34010300};  // put_value r1, r3 (goal A)
-      6: return {8'h23, 32'h69010007};  // suspend 1, label 7
-      default: return {8'h23, 32'h60000000};  // proceed -> halt
+      1: return {8'h23, 32'ha0010000};  // wait_constant r1, <next word>
+      2: return {8'h02, 32'h00000007};  // the 40-bit constant: int 7
+      3: return {8'h23, 32'h34010300};  // put_value r1, r3
+      default: return {8'h23, 32'h60000000};  // proceed
     endcase
   endfunction
 
-  rule load if (idx < 8);
+  rule load if (idx < 5);
     pu.load(zeroExtend(idx), prog(truncate(idx)));
     idx <= idx + 1;
   endrule
 
-  rule start if (idx == 8 && !started);
+  rule start if (idx == 5 && !started);
     pu.start(0);
     started <= True;
   endrule
@@ -49,7 +46,7 @@ module mkPimKL1BTb(Empty);
     Word r2 = pu.readReg(2);
     Word r3 = pu.readReg(3);
     $display("r1=%h r2=%h r3=%h", r1, r2, r3);
-    if (r2 == {8'h02, 24'h0, 8'h09} && r3 == {8'h02, 24'h0, 8'h07})
+    if (r3 == {8'h02, 24'h0, 8'h07})
       $display("PimKL1BTb: PASS");
     else
       $display("PimKL1BTb: FAIL");

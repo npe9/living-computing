@@ -49,6 +49,11 @@ module mkPimKL1B(PimKL1B);
     return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
   endfunction
 
+  function Bool isC40(Bit#(8) op);
+    return (op == 8'h10 || op == 8'h20 || op == 8'h30
+         || op == 8'ha0 || op == 8'hb0 || op == 8'hb8);
+  endfunction
+
   method Action load(Bit#(12) a, Word w) = mem.upd(a, w);
 
   method Action start(Word entry) if (!run);
@@ -65,6 +70,13 @@ module mkPimKL1B(PimKL1B);
     Bit#(8)  a   = val[23:16];
     Bit#(8)  b   = val[15:8];
     Bit#(8)  c   = val[7:0];
+    if (tag == 8'h23 && isC40(op)) begin
+      Word cw = mem.sub(pcR[11:0] + 1);
+      if (op == 8'ha0) begin                 // wait_constant
+        if (deref(regs.sub(a)) != cw) haltR <= True;
+      end
+      pcR <= pcR + 2;
+    end else begin
     if (tag == 8'h23) begin
       case (op)
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
@@ -102,6 +114,7 @@ module mkPimKL1B(PimKL1B);
       rqfp <= rqfp + 1;
     end else begin
       pcR <= pcR + 1;
+    end
     end
   endmethod
 

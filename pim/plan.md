@@ -391,6 +391,11 @@ test or an explicit label.
      per-variable suspension list (a small table) and resumes by
      enqueueing the hooked records. The deref depth and the table size
      are model choices.
+   - **Multi-word instructions.** The c40 family (set/put/get/write/
+     read/wait_constant) is two words: the opcode/register word, then
+     the 40-bit constant. The fetch reads the second word and advances
+     PC by two for those opcodes. The split is fixed here so each
+     instruction does not re-decide it.
    - **Decode.** Opcode = bits 31–24 of the value; operand fields per
      `docs/kl1_encoding.md` (`r`, `r_r`, `r_r_r`, `c8`, `c16`, `c24`,
      `c8_r`, `r_c16`, `atom`, and the address-dependent types).
