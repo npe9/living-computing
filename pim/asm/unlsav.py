@@ -127,21 +127,29 @@ def parse_module(r):
         arity = r.rd()
         loc = (r.rd() << 16) | r.rd()
         preds.append((name, arity, loc))
-    # decode_code_area: [S1,S2] size, then code until 0xFFFF
+    # decode_code_area: [S1,S2] size, then code until 0xFFFF.  The
+    # stream starts with atom-table words; find the first aligned
+    # [0x0023, V1, V2] instruction tag.
     code_size = (r.rd() << 16) | r.rd()
+    w = r.w
+    start = None
+    for p in range(r.i, module_end - 6):
+        if w[p] == 0x0023 and w[p + 3] == 0x0023 and w[p + 6] == 0x0023:
+            start = p
+            break
+    if start is not None:
+        r.i = start
     code = []
     while r.i + 2 < module_end:
-        t = r.peek()
-        if 0x2300 <= t <= 0x23ff:
-            tag = r.rd()
+        tag = r.rd()
+        if tag == 0xffff:
+            break
+        if 0x2300 <= tag <= 0x23ff:
             aid, name = read_atom_name(r)
             code.append(('atom', tag, name))
         else:
             v1 = r.rd()
             v2 = r.rd()
-            tag = r.rd()
-            if tag == 0xffff:
-                break
             code.append(('inst', (v1 << 16) | v2, tag))
     r.i = module_end
     return mlen, (mod_name, pkg_name, magic, info), gc_terms, hs, preds, code
