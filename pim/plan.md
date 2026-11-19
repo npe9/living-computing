@@ -318,6 +318,27 @@ test or an explicit label.
    label it as such and never present it as historical PIM/m
    microcode.
 
+   **Bluesim boot milestones.** The user's directive is to run PIMOS in
+   Bluesim, using the original binaries as the driver. The sequence:
+
+   1. **Decoder.** Complete `asm/unlsav.py`: walk all 42 modules of
+      `pimm_kernel360E.sav` (GC terms, predicate table, code area),
+      disassemble each module's code, and verify the module boundaries
+      against `0xFFFF`.
+   2. **KL1-B execution design.** Decide new module vs. extending the
+      diagnostic ISA; record the register set (`HP`, `SR`, `SSP`,
+      `RQFP`/`CRFP`/`SRFP`/`SSFP`, `Carg`, tag mask), the 40-bit tagged
+      word, and the fetch/decode/execute split in this plan before code.
+   3. **Interpreter module.** Fetch/decode/execute over
+      `docs/kl1_encoding.md`; start with a hand-assembled program and
+      the kernel's `set_value`/`get_bound_value` sequences.
+   4. **Device shims.** The IPL loads `.sav` modules over SCSI/FEP;
+      provide either that interface or a direct-memory load path, plus
+      the console the boot log needs.
+   5. **Boot-log oracle.** The manual gives the successful sequence
+      "Link Modules ... / PIMOS booting ... / V 3.000 ... / SCSI UNITS
+      FOUND". A Bluesim boot that reproduces it is the acceptance test.
+
 ### Dependencies
 
 WP1 and WP2 are independent. WP3.4 blocks memory-deref instructions in
