@@ -69,6 +69,8 @@ The status labels are:
 | `proceed` | 0x60 | pop the FIFO head; halt when empty | stand-in | `PimKL1BTb`, `PimKL1BControlTb` |
 | `halt` | 0x71 | halt | — | — |
 | `jump` | 0x67 | `pc = label` (c16) | inferred (mnemonic and c16_exe packing) | `PimKL1BJumpTb` |
+| `try_me_else` | 0x68 | push CP {label,argPtr,narg,HP}, fall through | stand-in | `PimKL1BCpTb` |
+| `fail` | 0x73 | pop CP, restore state, jump to label; halt if empty | stand-in | `PimKL1BCpTb` |
 
 `deref` resolves one REF level: `deref(w) = (w[39:32] == REF) ?
 heap[w[11:0]] : w`. A REF whose heap cell is itself a REF does not
@@ -85,7 +87,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `try_me_else`, `otherwise`, `fail`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery not modelled; the three one-word `switch_on_non_*` type tests are in |
+| control beyond the queue | `otherwise`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail` are stand-ins with limited state save/restore |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same

@@ -15,7 +15,7 @@
 // add, subtract, multiply, divide, modulo, equal, not_equal,
 // wait_value, wait_constant, wait_list, wait_integer, execute,
 // enqueue_goal, suspend, proceed, halt, switch_on_non_integer,
-// switch_on_non_atom, switch_on_non_list.
+// switch_on_non_atom, switch_on_non_list, try_me_else, fail.
 // Anything else -- including the structure reads,
 // get_structured_constant, the remaining switch_* forms and the
 // choice-point control -- halts loudly rather than being skipped
@@ -62,6 +62,15 @@ module mkPimKL1B(PimKL1B);
   // Goal-record argument save area (TR-246 p. 7): set_* writes here.
   RegFile#(Bit#(8), Word) args <- mkRegFileFull;
   Reg#(Bit#(8)) argPtr <- mkReg(0);
+
+  // Choice-point stack: minimal backtracking for try_me_else / fail.
+  // Each entry saves the else-label, argPtr, narg, and HP.  Full
+  // register/heap state is NOT restored — documented stand-in.
+  RegFile#(Bit#(4), Bit#(12)) cpLabel <- mkRegFileFull;
+  RegFile#(Bit#(4), Bit#(8))  cpArgPtr <- mkRegFileFull;
+  RegFile#(Bit#(4), Bit#(8))  cpNarg <- mkRegFileFull;
+  RegFile#(Bit#(4), Bit#(12)) cpHP <- mkRegFileFull;
+  Reg#(Bit#(4)) cpsp <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
@@ -212,6 +221,22 @@ module mkPimKL1B(PimKL1B);
         end
         8'h60: if (rqfp == rqt) haltR <= True;      // proceed: empty queue halts
         8'h71: haltR <= True;                     // halt
+        8'h68: begin                                // try_me_else L
+          cpLabel.upd(cpsp, zeroExtend((b << 8) | c));
+          cpArgPtr.upd(cpsp, argPtr);
+          cpNarg.upd(cpsp, narg);
+          cpHP.upd(cpsp, hp);
+          cpsp <= cpsp + 1;
+        end
+        8'h73: begin                                // fail
+          if (cpsp == 0) haltR <= True;
+          else begin
+            argPtr <= cpArgPtr.sub(cpsp - 1);
+            narg <= cpNarg.sub(cpsp - 1);
+            hp <= cpHP.sub(cpsp - 1);
+            cpsp <= cpsp - 1;
+          end
+        end
         8'h1d: noAction;                          // collect_value: stand-in
         8'he0: noAction;                          // wait: stand-in (no suspension)
         default: haltR <= True;                   // unimplemented: stop loud
@@ -238,6 +263,8 @@ module mkPimKL1B(PimKL1B);
       pcR <= zeroExtend((b << 8) | c);   // switch_on_non_atom: not ATOM -> label
     end else if (tag == 8'h23 && op == 8'h2a && deref(regs.sub(a))[39:32] != tagList) begin
       pcR <= zeroExtend((b << 8) | c);   // switch_on_non_list: not LIST -> label
+    end else if (tag == 8'h23 && op == 8'h73 && cpsp > 0) begin
+      pcR <= zeroExtend(cpLabel.sub(cpsp - 1));      // fail: backtrack to else label
     end else begin
       pcR <= pcR + 1;
     end
