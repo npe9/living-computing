@@ -89,6 +89,7 @@ module mkPimKL1B(PimKL1B);
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
         8'ha4: if (deref(regs.sub(a)) != deref(regs.sub(b)))        // wait_value
                  haltR <= True;
+        8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label
           goals.upd(rqt, zeroExtend((b << 8) | c));
