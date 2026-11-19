@@ -97,7 +97,31 @@ def parse_term(r):
         return ('list', [parse_term(r) for _ in range(ln)])
     if t == 0x1900:
         r.rd()
+        read_atom_name(r)
+        read_atom_name(r)
         return ('module',)
+    if t == 0x0900:
+        r.rd()
+        read_atom_name(r)
+        read_atom_name(r)
+        return ('module',)
+    if t == 0x0a00:
+        r.rd()
+        read_atom_name(r)
+        read_atom_name(r)
+        r.rd()  # arity
+        pkg = r.peek()
+        if pkg == 0x0000:
+            r.rd()
+            read_atom_name(r)
+        elif pkg == 0x0100:
+            r.rd()
+        return ('extcall',)
+    if t == 0x0500:
+        r.rd()
+        for _ in range(6):
+            r.rd()
+        return ('exfloat',)
     r.rd()
     return ('?', hex(t))
 
