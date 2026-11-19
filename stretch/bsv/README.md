@@ -464,6 +464,50 @@ by `prepareExec`.  `tests/run_decbox_test.sh` tests the box alone
 `decks/vfl_decimal_add.strap` is the deck.  Open items: `docs/NEXT.md`,
 "DECIMAL VFL ARITHMETIC (G2.3)".
 
+**THE BINARY ADD GOES THROUGH THE SAME BOX, 2026-11-19 (plan §1c step 5e
+stage 3).**  Buchholz printed p.208 (PDF 233) puts the variable-field-length add,
+"binary or decimal", in the serial unit. Printed p.209 (PDF 234) gives
+that unit one adder: "A decimal-correction circuit is switched into the
+data path when decimal addition or subtraction is specified."  So
+`mkDecBox` has a `binary` mode (`DecReq.binary`) rather than there being a
+second adder. In binary mode the digit step has no correction, and
+complementing is inversion instead of nines'. The passes, the clocks
+(4, or 8 to recomplement) and the meaning of `carry` are the decimal ones.
+The binary `+`/`+MG` arm keeps the alignment and the Partial Field rule
+(`binAlign`, split out of `binAccAdd`) and asks the box for the sum. From
+the box's carry it takes `smAdd`'s sign rule and the Lost Carry. `*+`
+keeps `binAccAdd`: its sum follows the multiply box's answer, and a second
+box trip would lose the product its Partial Field is judged on.
+Tests: `run_decbox_test.sh`, now 15 vectors with six binary ones, and two
+measured injections in its header. `decks/vfl_binary_add_indicators.strap`
+gained injection i7 (Lost Carry from the box's carry without the
+like-signs test), which FAILS B1, B2 and B10. **Timing:** no pin and no
+value moved. Nine of the suite's 330 halt clocks, none of them pinned, got
+later, as the divide box's did:
+
+| run | before | after | delta |
+|---|---|---|---|
+| WHAT MCP-DECODE BUILT | 6304280 | 6304300 | +20 |
+| ASSIGN SUCCEEDS, MCP reaches T MOVE | 6322769 | 6322789 | +20 |
+| PAST T MOVE, IPL stops in XERR29 | 6339130 | 6339176 | +46 |
+| MCP's OWN IOD DECK, IPL completes | 6734399 | 6734474 | +75 |
+| printed pp.17-19, IOCD cards into the CST | 19667 | 19671 | +4 |
+| p.18's UNIT loop | 19990 | 19994 | +4 |
+| p.19's DISK card | 19362 | 19366 | +4 |
+| p.18's EIGHT-unit arm | 20576 | 20580 | +4 |
+| Figure 7 Progressive Indexing | 688 | 708 | +20 |
+
+Read counts are identical in all 330. The atlas (`+` and `+MG`, 2,076
+cases) moved 46 cases. Exact cases stay at 539, the mean residual goes from
+-0.72 to -0.70, and the mean |residual| stays 2.13. The largest moves are
+the (BU,8,8) cells on PDF 116/118: ix_ext -2.05 -> -1.05, ix_ext_wbx
++0.44 -> +1.43, and ni_ext_wbx +1.94 -> +2.94. Those three were TRACED: the
+box's 4-clock hold either puts the resume clock on the I-box's next load,
+or keeps a full look-ahead's level 4 clocks longer. A one-pass-a-clock box
+removes both. `docs/NEXT.md`, "THE BINARY ADD'S BOX HOLD", has the trace
+and the open rate question: p.209's 0.6 µs per byte pair against the box's
+chosen 32 bits a clock.
+
 **THE COMPARES, stage 2 (2026-11-16): decimal `K`/`KF`, and `KE`, `KFE`,
 `KR`, `KFR` in both radices (printed pp.65-67).**  One arm.  A decimal
 compare is a subtraction through `mkDecBox` (p.65's Programming Note,
@@ -816,7 +860,15 @@ jb_ax5b routine 1260's TESTs 1A and 1B (PDF pp.8-13,
 `decks/ax5b_160_test1ab_mask.strap`) are IBM's test of the mask register's
 fixed bits, which `StretchStorage.bsv` forces (0-19 one, 48-63 zero, Reference
 Manual Figure 11): two segment runs, both pass. Unforcing mask bit 7, or letting
-bit 55 be written, each fails its run (deck header).
+bit 55 be written, each fails its run (deck header). TEST 1C (PDF pp.14-21,
+`decks/ax5b_160_test1c_mask.strap`) checks the settable bits 20-47 one by one,
+to one and to zero, through the value, flag/spare, count and refill fields of
+an index word; it passes. Making mask bit 30, or bit 26, unsettable fails it in
+the entry IBM prints for that bit (deck header). TEST 2 (PDF pp.22-23,
+`decks/ax5b_160_test2_ia.strap`) walks a one through the interruption address
+register's 18 bits (word 2, Reference Manual printed p.48); it passes, and
+dropping IA bit 9 on a store fails it at "BIT 9". The model keeps all 64 bits of
+word 2 where p.48 gives 18; no IBM test seen so far can tell.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

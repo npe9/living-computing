@@ -24,6 +24,43 @@ accumulate.
 
 
 
+## THE BINARY ADD'S BOX HOLD -- a known residual, 2026-11-19
+
+The binary VFL `+`/`+MG` sum is in `mkDecBox`'s binary mode (plan §1c step
+5e stage 3). Buchholz printed p.209 (PDF 234) gives one adder for both
+radices, with decimal correction switched in for decimal. The box keeps
+its rate: `decDigitsPerCycle`, 32 bits a clock, so 4 clocks a pass and 8
+when it recomplements. That rate is CHOSEN, not sourced. p.209's is
+"A single pair of bytes is extracted, arithmetic or logic performed, and
+the result returned to the registers in one clock cycle of 0.6 µsec",
+which is 2 model clocks a byte pair. The box charges no time of its own:
+`rl_exec_resume` takes its clocks off the E-box budget. Its hold still
+costs clocks, in two ways TRACED on the atlas's PDF 116 `+` (BU,8,8)
+with a per-clock trace of `rl_au_remove` / `rl_exec_resume` /
+`rl_prepare` in scratch copies:
+
+* **ix_ext** (+1.00): the resume clock lands where the I-box's count
+  (`ibusy`) reaches 0. `rl_exec_resume` and `rl_prepare` are mutually
+  exclusive (one per clock), so the next level's load slips one clock,
+  every instruction.
+* **ni_ext_wbx / ix_ext_wbx** (+1.00 / +0.99): with all four look-ahead
+  levels full, a level now leaves the look-ahead at the box's answer
+  rather than at its operand's arrival, 4 clocks later. The next level's
+  load and its two-word operand fetch start that much later, and the
+  crossing field's second read arrives one clock after the E-box is
+  free.
+
+With the box at one pass a clock (`decDigitsPerCycle` = 32, in a scratch
+copy) all three cells came back to their batch42 values. So the cost
+comes from the hold's length (the chosen rate), not from a double charge.
+**Open:**
+(1) the rate p.209 actually gives, 2 clocks a byte pair, would hold longer
+for a long field: decide it with the hold cost in view.
+(2) Getting the overlap back is the divide box's open item too: let
+`rl_prepare` run in the resume clock, or retire the level at the request.
+Both are StretchCore changes. The nine unpinned halt moves this caused are
+in bsv/README.md's "box" section.
+
 ## FP M+ EXTERNAL -- DIAGNOSED, NOT BUILT, 2026-11-18
 
 The two largest open M+ residuals are M+ EXTERNAL at +3.97 (PDF 69) and
@@ -263,9 +300,14 @@ test (pp.173-191: `decks/ax4b_156_test1_lvs.strap`,
 inventory, "Routine 1256"). jb_ax5b followed: routine 1260's prologue
 and TESTs 1A/1B, the mask register's fixed bits (pp.8-13,
 `decks/ax5b_160_test1ab_mask.strap`, two segment runs, both pass;
-inventory, "Routine 1260's prologue and TESTs 1A/1B"). Next on this
-line: 1260 TEST 1C (`16011`, pp.14-21, mask bits 20-47; needs
-`I60K1`/`I60K15` from p.86), then TESTs 2-4 (pp.22-36).
+inventory, "Routine 1260's prologue and TESTs 1A/1B"), then TEST 1C,
+the settable mask bits 20-47 (pp.14-21,
+`decks/ax5b_160_test1c_mask.strap`, one segment run, passes), and TEST
+2, the IA register (pp.22-23, `decks/ax5b_160_test2_ia.strap`, passes).
+Next on this line: 1260 TEST 3 (`16033`, p.24 on, "CHECK THE ABILITY
+TO INTERRUPT"; it fills `I60IT` from `I60XW1`/`I60K5`, runs enabled, and
+calls `I60S1` through `I60SX1` -- see `decks/ax5b_160s1_clr_inds.strap`),
+then TEST 4 (to p.36).
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's

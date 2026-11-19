@@ -1,0 +1,259 @@
+! ax5b_160_test2_ia.strap -- jb_ax5b "I-BOX 5", routine 1260
+! ("----1260---CHECK MASK, INDICATOR, AND INTERRUPT.", banner PDF p.8),
+! its TEST 2: "-TEST 2, CHK DATA IN IA." -- IBM's walk of a single
+! one through the INTERRUPT ADDRESS register's bits 0-17.
+!
+!   PDF p.22     014556.00-014564.00  I6041: TEST 2's loop
+!   PDF pp.22-23 014564.40-014617.00  I60B6: its error table, 18 entries
+!                                     of three half-words each
+!   PDF p.23     014617.40-014623.40  I6043: exit (B,SSW), continuity BIT3
+!   PDF p.23     014624.00-014625.40  the clearing loop that falls into
+!                                     TEST 3 (I6033, 014626.00, PDF p.24)
+!   PDF p.114    024501.00-024546.00  the constant pool and BIT0-BIT20,
+!                                     as decks/ax5b_bit_table.strap
+!                                     transcribes them (verified there)
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi, and the code rows of
+! pp.22-23 again at 400 dpi (every row agreed).  Checked row for row
+! against the printed machine code by
+! tests/verify_ax5b_160_test2_ia_listing.py (83 rows, 6 symbols).
+!
+! THE RULE.  Reference Manual printed p.48 (PDF p.51), "Interruption
+! Address Register", read in the page image: "The interruption address
+! register contains 18 bits and has address 2.0, which places it in the
+! protected area of storage."  (The reference card's special-storage
+! table agrees, word 2 bits 0-17: docs/microarchitecture_plan.md A.10,
+! and STRAP's $IA in docs/c22_6531_appendix_a.md.)  The model holds it
+! as interruptionAddress in bsv/StretchStorage.bsv, which keeps all 64
+! bits of a store (see OBSERVATION below).
+!
+! ENTRY STATE.  IBM reaches I6041 by TEST 1C's "BD,$+.32" (014554.00),
+! so TEST 2 runs with the interruption system DISABLED; the model resets
+! disabled (StretchStorage.bsv's irqEn), so a run from END matches.
+! "Protected area" is no obstacle disabled: printed p.31 (PDF p.35),
+! "In the disabled mode, core storage protection as specified by the
+! address boundary registers in conjunction with the boundary control
+! bit does not take place" (as decks/sic_bd_protected_store.strap
+! quotes it from the page image) -- and IBM's own test stores into word 2
+! here, disabled, and expects the store to take.  So the model's
+! unenforced protection of word 2 (its comment: "permanently protected
+! on real HW; not enforced") is not exercised by this run: a store from
+! the ENABLED state is not what TEST 2 tests.
+!
+! HOW TEST 2 WORKS.  X1 counts eighteen passes (LCI,$X1,18) and indexes
+! the bit table: LV,$X3,BIT0($X1) loads BITk's value (bit k alone), SV
+! stores it into IA's bits 0-24 and KV compares it back algebraically
+! (Reference Manual printed p.24).  BXE is the pass path; a failure
+! takes B,I60B6($X2), X2 stepping 1.32 words (three half-words) per
+! pass, into the entry naming bit k.  CB+ advances X1 by a word to the
+! next BITk.  Bits 18-24 are never written with a one: TEST 2 checks
+! only that each of IA's eighteen bits holds a one by itself.
+!
+! The four rows after the continuity block (LCI/LVI/Z,0.0($X1)/CB+)
+! zero words 0-15 and fall into TEST 3; they follow B,SSW, so the
+! segment run never reaches them.  They are transcribed and verified.
+!
+! RESULT, 2026-11-19: the model PASSES IBM's checks (PC 1410 = SSW, SEN
+! 0), run from END (I6041).  No disagreement with the listing.
+! Final state, pinned in run_tests.sh: IA (word 2) = 0x400000000000, bit
+! 17 alone (BIT17, the last pattern); X1 = 0x4800000000000, value 22.00
+! (eighteen words: CB+ advanced it a word a pass), count 0; X2 =
+! 0x6c00000000000, value 33.00 = 18 x 1.32; X3 = 0x400000000000, value
+! 1.00 = BIT17's.  CYCLES 2057.  X values print the model's
+! packIndexWord layout (value in bits 63-40); CYCLES is MODEL BEHAVIOUR.
+!
+! OBSERVATION, not a finding: p.48 gives IA 18 bits, but the model keeps
+! all 64 bits of a store into word 2.  TEST 2 cannot see it (SV writes
+! bits 0-24 and BIT0-BIT17 have nothing in 18-24), so the model is left
+! as it is; a test that stores a one into bits 18-24 of word 2 and reads
+! it back would be the evidence to change it.
+!
+! MODEL INJECTION, OBSERVED (a scratch copy of bsv/; the tracked bsv/
+! never touched):
+!   M1 IA bit 9 (BSV 54) dropped on a store: "interruptionAddress <= v &
+!     ~(64'h1 << 54)" in StretchStorage.bsv's addrInterruptAddr arm ->
+!     FAIL: PC 1416 (SERS), SEN 0x660c00000000000 (return 014603.00: the
+!     SIC at 014602.00, "-IA DATA FAILURE, BIT 9.", p.23's first row),
+!     IA 0, X1 0x2400000240000 (value 11.00 = nine words, count 9 left),
+!     X2 0x3600000000000 (value 15.40 = 9 x 1.32), X3 0x40000000000000
+!     (BIT9's value 400.00), CYCLES 1151.
+!   CONTROL: the unmodified bsv/ in the same scratch copy: PASS, PC 1410,
+!     SEN 0, IA/X1/X2/X3 as pinned, CYCLES 2057.  StretchStorage.bsv
+!     restored from a saved copy; cmp IDENTICAL with the tracked file.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points at the addresses jb_ax4b PDF p.193's SYN table
+!     prints, which these pages' own machine code repeats (SSW 1301.0,
+!     SERS 1304.0, SEN 1310.0, SENO 1311.0): SSW a PASS halt, SERS a
+!     FAIL halt, SEN/SENO data words SIC stores into, as in
+!     decks/ax5b_160_test1ab_mask.strap.  TEST 2 is entered from TEST
+!     1C's continuity block; it has no prologue of its own.
+!   * IC260 (022737.00) is SYN'd at the address these pages' own machine
+!     code prints for it ("LX,$X13,IC260" 22737.32 10).
+!   * Notation only: "%" and the box glyph are "(" and ")"; the label
+!     glyph the scan shows as "1" is the letter I.  p.23 prints the
+!     clearing row as "Z,0.0.%$X1" (a period after 0.0); written
+!     Z,0.0($X1), which assembles to the printed "0.22 01".
+
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! ---- routine 1260's own label outside these pages, SYN'd at the
+! address this listing prints for it (an input, not a witness) --------
+IC260   SYN, (8)22737.0               ! -CONTINUITY REG 1260. (PDF p.83)
+!
+! ======================================================================
+! PDF p.22, 014556.00-014601.40: TEST 2's loop and the first nine
+! entries of its error table I60B6
+! ======================================================================
+        SLC, (8)14556.0
+I6041   LVI, $X1, 0.0                 ! -TEST 2, CHK DATA IN IA.
+        LCI, $X1, 18
+        LVI, $X2, 0.0
+I6041A  LV, $X3, BIT0($X1)
+        SV, $X3, $IA
+        NOP
+        NOP
+        KV, $X3, $IA
+        BXE, $+1.0
+        B, I60B6($X2)
+I6042   V+I, $X2, 1.32
+        CB+, $X1, I6041A
+        BD, I6043
+!
+I60B6   SIC, SEN                      ! -IA DATA FAILURE, BIT 0.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 1.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 2.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 3.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 4.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 5.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 6.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 7.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 8.
+        BD, SERS
+        BD, I6042
+!
+! ======================================================================
+! PDF p.23, 014602.00-014625.40: the last nine entries, the exit, and
+! the clearing loop that falls into TEST 3 (I6033, 014626.00)
+! ======================================================================
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 9.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 10.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 11.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 12.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 13.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 14.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 15.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 16.
+        BD, SERS
+        BD, I6042
+!
+        SIC, SEN                      ! -IA DATA FAILURE, BIT 17.
+        BD, SERS
+        BD, I6042
+!
+I6043   B, $+1.0
+        BD, I6041
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP.
+        BD, $+.32
+!
+        LX, $X13, IC260               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT3
+        SX, $X13, IC260
+        BD, $+.32
+        LCI, $X1, 16.0
+        LVI, $X1, 0.0
+        Z, 0.0($X1)
+        CB+, $X1, $-.32
+!
+! ======================================================================
+! PDF p.114, 024501.00-024546.00: the common constants and BIT0-BIT20,
+! as decks/ax5b_bit_table.strap transcribes them (verified there, row
+! by row; SENO's SYN left out: SENO is substituted above).  BIT0-BIT17
+! are the eighteen patterns TEST 2 writes into IA.
+! ======================================================================
+        SLC,(8)24501.0
+I00LC   DD(BU,64,8),(8)0000011770025700000000
+I00Z    XW,0,0,0,0
+I00O    DD(BU,64,8),(8)1777777777777777777777
+I00VO   XW,-(8)777777.77,0,0
+I00CO   XW,0,(8)777777,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+BIT0    XW,(8)400000.00,0,0
+BIT1    XW,(8)200000.00,0,0
+BIT2    XW,(8)100000.00,0,0
+BIT3    XW,(8)40000.00,0,0
+BIT4    XW,(8)20000.00,0,0
+BIT5    XW,(8)10000.00,0,0
+BIT6    XW,(8)4000.00,0,0
+BIT7    XW,(8)2000.00,0,0
+BIT8    XW,(8)1000.00,0,0
+BIT9    XW,(8)400.00,0,0
+BIT10   XW,(8)200.00,0,0
+BIT11   XW,(8)100.00,0,0
+BIT12   XW,(8)40.00,0,0
+BIT13   XW,(8)20.00,0,0
+BIT14   XW,(8)10.00,0,0
+BIT15   XW,(8)4.00,0,0
+BIT16   XW,(8)2.00,0,0
+BIT17   XW,(8)1.00,0,0
+BIT18   XW,(8).40,0,0
+BIT19   XW,(8).20,0,0
+BIT20   XW,(8).10,0,0
+        END, I6041
