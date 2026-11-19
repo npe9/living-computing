@@ -5739,9 +5739,10 @@ Staged, each step green and committed:
      fourth box behind the same `NeedBox` bail (`BoxReq.BoxVfl`,
      `boxKind` 3, `vflOf(boxResult)`), instantiated once in `mkEBox`.
      Stage 1 moves the two inlined 48 x 48 -> 96 multipliers, VFL `*`
-     and `*+`, into it. THE RATE IS SOURCED: Buchholz printed p.210
-     (PDF 235), VFL binary multiply "performed by the parallel unit",
-     "12 bits of the multiplier are handled in one cycle", and p.211
+     and `*+`, into it. THE RATE IS SOURCED: Buchholz printed p.208
+     (PDF 233), VFL binary multiply "performed by the parallel unit";
+     printed p.210 (PDF 235), "12 bits of the multiplier are handled in
+     one cycle"; and p.211
      (PDF 236), "the four cycles when multiplicand multiples are added"
      with the carry-propagate add "during the last cycle" -- so four
      clocks, request at T, answer at T+4. Behaviour-preserving by the
@@ -5753,15 +5754,20 @@ Staged, each step green and committed:
      boxes (binary `*` is charged 36 + 2s or more, `*+` 46 + 2s or more,
      against the box's 4). The hold cost the divider measured -- a held
      level stops I-box instructions overlapping the countdown -- was
-     MEASURED here against a baseline suite run with
+     MEASURED here against baseline runs of the same programs with
      `STRETCH_HALT_REPORT=1` (gen_tb.py; every program's halt clock and
-     read count, pinned or not). **RESULT: NOTHING MOVED.** Of the 48
-     suite programs whose source contains `*(` or `*+(` (33 print a halt
-     report; the other 15 are FP decks whose testbenches have their own
-     output), and the 15 MCP and binary-loader runs (MCP's own bootstrap,
-     ASSIGN, past T MOVE, pp.17-19, the eight loader decks), every halt
-     clock and every read count is identical before and after -- 48 of
-     48. Why the hold costs no clock here was NOT traced; the likely
+     read count, pinned or not). **RESULT: NOTHING MOVED** in what was
+     compared: (a) the 48 `run_program.sh` runs in run_tests.sh whose
+     deck contains `*(` or `*+(` (33 VFL/mixed, 15 FP), (b) the 15 MCP
+     and binary-loader runs (MCP's own bootstrap, ASSIGN, past T MOVE,
+     pp.17-19, the eight loader decks) -- every halt clock and read
+     count identical to a baseline copy of master dc5331e, 63 of 63 --
+     and (c) the Python-driven model runs of the 7030 STRAP II
+     (check_strap2_7030*.py: the same "model steps" to the step, up to
+     70,810,942) and the SMAC (pass/fail only). Other suite programs
+     were checked through their pins only; at stage 2 all 322 halt
+     reports of the suite were identical to stage 1's. Why the hold
+     costs no clock here was NOT traced; the likely
      reason is that none of these programs has an I-box instruction
      ready to overlap the first four clocks of a multiply's countdown
      (36 + 2s or more), where the FP divides the divider moved did. The
@@ -5780,7 +5786,7 @@ Staged, each step green and committed:
      `fpStoreClass` 348.
      **Stage 2 (structure only, its own commit):** the 22-line operand
      fetch ladder (`prefetchCount` / `fieldCrosses` / `needsRead`) that
-     nine arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV, CV, LTRCV --
+     nine arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV, LTRCV, LTRS --
      repeated verbatim is one pure function, `vflFetchOperand`,
      returning the field, the slots used and the word to read; each arm
      calls it in four lines. ST and M+ keep their own (their RMW reads
@@ -5961,6 +5967,8 @@ the boundary plan closes neither.
 untouched by anything measured here; shortening it is a decomposition
 problem, not a synthesis-boundary one. No work is scheduled against it
 and none should be until there is a reason beyond the line count.
+(2026-11-18: superseded -- AGENTS.md's mandatory rewrite is that reason;
+the work is §1c step 5e, and the row above carries the new counts.)
 
 *`expensive datapath`* -- the multi-cycle boxes. That stays
 deferred for FP add/multiply on the 2026-09-04 grounds. It becomes live

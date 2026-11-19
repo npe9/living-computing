@@ -22,15 +22,16 @@
 // Buchholz (ed.), "Planning a Computer System", §14.4 "Arithmetic Unit",
 // read in the text layer of docs/Planning_A_Computer_System.pdf:
 //
-//   * printed p.210 (PDF 235): "Operations on the floating-point fraction
+//   * printed p.208 (PDF 233): "Operations on the floating-point fraction
 //     and also variable-field-length binary multiply and divide
 //     operations are performed by the PARALLEL unit."  So this is the
 //     PAU's multiplier, the one the floating-point fraction uses, and not
 //     the serial unit's byte loop.  (R23-9694 printed p.121 says the same
 //     of the VFL divide, "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY
 //     PERFORMED BY PAU", cited in StretchDivBox.bsv.)
-//   * same page: "To expedite the execution of the multiply instructions,
-//     12 BITS OF THE MULTIPLIER ARE HANDLED IN ONE CYCLE. ... The action
+//   * printed p.210 (PDF 235): "To expedite the execution of the multiply
+//     instructions, 12 BITS OF THE MULTIPLIER ARE HANDLED IN ONE CYCLE.
+//     ... The action
 //     is from right to left".
 //   * printed p.211 (PDF 236): the multiplicand multiples are summed in
 //     carry-save adders, "and, DURING THE LAST CYCLE, into the carry

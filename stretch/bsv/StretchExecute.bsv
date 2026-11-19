@@ -3097,8 +3097,8 @@ typedef struct {
 
 // ---------------------------------------------------------------------
 // THE VFL OPERAND FETCH, ONCE (2026-11-18, plan §1c step 5e stage 2).
-// Nine of vflIntOp's arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV, CV,
-// LTRCV -- began with the same 22-line ladder, verbatim: an immediate
+// Nine of vflIntOp's arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV,
+// LTRCV, and LTRS (which also serves decimal *, *+ and /) -- began with the same 22-line ladder, verbatim: an immediate
 // operand is the address field itself; otherwise the field is taken from
 // the words the look-ahead or earlier bails have collected, one word if
 // it does not cross a word boundary and two if it does, and a field not
