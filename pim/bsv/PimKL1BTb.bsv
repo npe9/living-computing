@@ -23,16 +23,19 @@ module mkPimKL1BTb(Empty);
       1: return {8'h23, 32'h13030200};  // set_variable 3, r2
       2: return {8'h23, 32'h34010300};  // put_value r1, r3
       3: return {8'h23, 32'h33010400};  // put_variable r1, r4
+      4: return {8'h23, 32'h25010000};  // write_value r1
+      5: return {8'h23, 32'h14000200};  // set_value 0, r2
+      6: return {8'h23, 32'hbd020300};  // get_bound_value r2, r3
       default: return {8'h23, 32'h60000000};  // proceed
     endcase
   endfunction
 
-  rule load if (idx < 5);
+  rule load if (idx < 7);
     pu.load(zeroExtend(idx), prog(idx));
     idx <= idx + 1;
   endrule
 
-  rule start if (idx == 5 && !started);
+  rule start if (idx == 7 && !started);
     pu.start(0);
     started <= True;
   endrule

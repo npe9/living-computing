@@ -29,10 +29,12 @@ module mkPimKL1B(PimKL1B);
 
   RegFile#(RegNo, Word)  regs <- mkRegFileFull;
   RegFile#(Bit#(12), Word) mem <- mkRegFileFull;
+  RegFile#(Bit#(12), Word) heap <- mkRegFileFull;
 
   Reg#(Word) pcR   <- mkReg(0);
   Reg#(Bool) run   <- mkReg(False);
   Reg#(Bool) haltR <- mkReg(False);
+  Reg#(Bit#(12)) hp <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
@@ -60,6 +62,8 @@ module mkPimKL1B(PimKL1B);
         8'h34: regs.upd(b, regs.sub(a));          // put_value r, r
         8'h33: regs.upd(b, {tagVar, 24'h0, a});   // put_variable r, r
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
+        8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
+        8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
         8'h60: haltR <= True;                     // proceed
         8'h71: haltR <= True;                     // halt
         default: haltR <= True;                   // unimplemented: stop loud
