@@ -144,10 +144,17 @@ documented interfaces.
    report quotes from nextpnr, never an assumption.
    **First achieved 2026-11-19**: `TRELLIS_COMB 18,041/83,640 (21%)`,
    `TRELLIS_FF 5,066 (6%)`, `DP16KD 18/208`, 25.66 MHz at the 25 MHz
-   target, `fpga/build/hobbit_ulx3s.bit` (593,803 bytes). Not yet done:
-   capturing the UART from real hardware and diffing it with
-   `tests/hri_check.py` (no board attached here), and the historical
-   BeBox/EO board models.
+   target, `fpga/build/hobbit_ulx3s.bit` (593,803 bytes).
+   **Second achieved 2026-11-19**: the UART path itself is now proven,
+   not assumed. `bsv/BoardUartTb.bsv` mirrors the board top's datapath
+   (image load, prefetch warm-up, start at SP = 0x100 / MSP = 0x180, the
+   48-deep BRAM retirement queue, the HRI writer) and decodes its `txd`
+   line as 8N1 at 217 clocks/bit, mid-bit. `bsv/run_board_tb.sh` runs
+   that and the smoke test and requires the decoded text to equal the
+   smoke's 41 HRI lines byte for byte: 41 lines, 5,042 characters,
+   identical. It is in `tests/run_tests.sh`. What remains here is a
+   capture from physical hardware (no board attached here), and the
+   historical BeBox/EO board models.
 
 ## Definition of the first milestone
 
