@@ -177,6 +177,41 @@ Two limits of the host port, found by trying to go further:
   compare that function's parcels with the same function in the shipped
   `cat` — identical sources, identical compiler, so identical bytes.
 
+## Bell Labs' own startup records (2026-11-19)
+
+`hobbit/lib/libc.a` in the same distribution ships `main9.z`, and its
+records (the format `zl/obj.c`'s `ldobj` reads) state `_main` exactly:
+
+```
+ATEXT  _main $12
+AMOV   REG R0        -> EXT _clock
+AMOV   PARAM argc+0  -> REG R4
+AMOV   PARAM argv+4  -> REG R8
+ACALL  EXT main
+AMOV   ADDR _exits   -> REG R4
+ACALL  EXT exits
+AJMP   _loop
+ADATA / AGLOBL / AEND
+```
+
+That settles the encoder question from the 1e side, independently of
+any host port: a call is `ACALL` with an `EXT` operand, stack operands
+are `D_AUTO`/`D_PARAM` with negative or frame-relative offsets, and
+`R0`/`R4`/`R8` are register operands (`D_REG`).
+
+Against the linked `cat` at 0x12bc the parcels read (low byte first)
+
+```
+86dc 0bfc 3004 | 0000 | 60c2 60a1 | 0805 ...
+MOV R0,_clock  | ???? | MOV argv,R8 MOV argc,R4 | CALL main
+```
+
+so three of the four startup instructions and the call are identified
+parcel for parcel.  The one unexplained parcel is the `0x0000` between
+the first MOV and the two parameter loads — the same filler seen in
+`echo`/`zl` (`0xffff`) and the reason the model's run stops at 0x12c2.
+Everything else the model needs is now known.
+
 ## Definition of the proof of concept
 
 **`echo` from `plan9-1e/hobbit/bin/` runs on the model and prints its
