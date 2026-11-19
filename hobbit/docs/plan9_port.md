@@ -64,13 +64,15 @@ for instruction:
 frame-relative loads, and `CALL -0x29a`, because Plan 9's pseudo-register
 names are not its syntax)
 
-The two frame loads land in R4 and R8 in `main9p.s`'s order, and the
-following pcrel call is the only branch in the stub: **text begins at
-0x1020, parcels are little-endian 16-bit halves, and each instruction is
-aligned to 4 bytes** (a 3-parcel of six bytes is followed by one
-`0x0000` filler parcel).  Whether the printed displacement lands on
-0x1020 under Plan 9's pc convention is the first thing the loader will
-check, not something to assert now.
+That fixes **text at 0x1020 and little-endian 16-bit parcels**.  It does
+*not* fix the placement rule: `zl/span.c`'s `xspan` lays instructions out
+compactly (`c += p->mark`) and pads only `JMP`/`RETURN` (`rnd(c, AMOD)`)
+and the text end (`rnd(c, 4)`), yet `cat` and `echo` both carry one
+`0x0000` parcel after `_main`'s first MOV, which decodes as `KCALL $0x0`
+and is in neither `main9.s` nor `main9p.s`.  That parcel, and `za`'s
+`_main` starting at an odd parcel boundary (entry 0x7282), are open.
+Until they are explained, the loader will decode at run time and trap
+on an unimplemented parcel rather than assume a size rule.
 
 **One anomaly remains, and it is `echo` only.** `echo`'s `_main`
 (0x2ad0) begins with the same MOV to its own `_clock` (0x4008) and the

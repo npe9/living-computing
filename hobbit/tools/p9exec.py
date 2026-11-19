@@ -158,20 +158,25 @@ def main(argv):
     for addr, p, *rest in decode(parcels, base, exe["entry"], args.decode):
         print("  %08x  %04x  %s" % (addr, p, " ".join(map(str, rest))))
 
-    # Two candidate layouts; report both and claim neither.
-    for code_off, label in ((32, "A: code at file offset 32"),
-                            (64, "B: code at file offset 64")):
-        code = exe["blob"][code_off:code_off + exe["text"]]
-        parcels = [code[i] | (code[i + 1] << 8)
-                   for i in range(0, len(code) - 1, 2)]
-        row = []
-        for name in ("main", "_main"):
-            if name not in syms:
-                continue
-            inst = decode(parcels, base, syms[name][0], 1)[0]
-            row.append("%s@%06x=%s" % (name, syms[name][0], inst[1:]))
-        print("  %-24s %s" % (label, "; ".join(row)))
-    print("  LAYOUT: unresolved -- see the module docstring")
+    # The layout settled from `cat` against main9p.s (see the docstring):
+    # text at 0x1020 (file offset 32 under the kernel's mapping), parcels
+    # little-endian 16-bit halves, instructions aligned to 4 bytes.
+    code = exe["blob"][exe["text_off"]:exe["text_off"] + exe["text"]]
+    parcels = [code[i] | (code[i + 1] << 8)
+               for i in range(0, len(code) - 1, 2)]
+    if "_main" in syms:
+        first = decode(parcels, base, syms["_main"][0], 1)[0]
+        p0 = first[1]
+        fields = first[5] if len(first) > 5 else []
+        clock = syms.get("_clock")
+        ok = ((p0 >> 8) & 0x3F == 0x06 and len(fields) == 2 and
+              (clock is None or fields[1] == "0x%04x" % clock[0]))
+        if not ok:
+            print("  CHECK FAILED: `_main` does not begin with MOV ...,_clock",
+                  file=sys.stderr)
+            return 1
+        print("  check: `_main` begins with MOV ...,0x%04x (_clock), "
+              "as main9.s/main9p.s say" % clock[0])
 
     # Invariants that follow from the header and the symbol table alone.
     problems = []
@@ -180,13 +185,16 @@ def main(argv):
             problems.append("etext != main + text size")
     if "_main" in syms and syms["_main"][0] != exe["entry"]:
         problems.append("entry != _main")
-    if "bdata" in syms and syms["bdata"][0] != UTZERO + 0x3000:
-        problems.append("bdata != 0x%x" % (UTZERO + 0x3000))
+    if "bdata" in syms and "etext" in syms:
+        if syms["bdata"][0] < syms["etext"][0]:
+            problems.append("bdata is inside the text")
+        if "edata" in syms and syms["edata"][0] != syms["bdata"][0] + exe["data"]:
+            problems.append("edata != bdata + data size")
     if problems:
         print("  CHECK FAILED: " + "; ".join(problems), file=sys.stderr)
         return 1
-    print("  check: etext = main + text, entry = _main, bdata = 0x%x" %
-          (UTZERO + 0x3000))
+    print("  check: etext = main + text, entry = _main, "
+          "bdata/edata = 0x%04x/0x%04x" % (syms["bdata"][0], syms["edata"][0]))
 
     if args.image:
         words, entry_parcel = to_model_image(exe)
