@@ -297,6 +297,12 @@ def main():
         # (p.376 l.38 "SET SWITCHES FOR BYPASS FIRST"), SPPBT3 0, SJ1FUL 0,
         # SLOCSU 0, SJBUSY 0.  The image assembles a800000000000000 (SYSMOD
         # 00).  tests/check_bss_mcp_go.py takes SYSMOD = 10 from here.
+        # MEASURED INJECTION (2026-11-18, a scratch wrapper, no file
+        # edited): ZBA1X's CM0000(BU,1),SYSMOD+.1 (235405.40) replaced by
+        # two NOPs in the 22SCOMD type area on the PROSA disk.  The run
+        # still stops at the 200th ZJOBC1 (8,127,089 steps, against
+        # 8,127,106), and only this check fails: SCOMRG = 2cc6000000000000,
+        # SYSMOD 11, the IPL mode.  check_mcp_start.py was not run on it.
         print(generate(module_name, prog,
                        [("mcp_start_no_ipl_error",
                          str(prog.symtab["XERRAD"] // 64), 0),

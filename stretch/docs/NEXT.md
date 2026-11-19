@@ -1302,9 +1302,14 @@ SMCP is 214514. The tables were not grafted: about 1,200 other resident
 words differ and are unclassified, and the bench's CHOSEN
 `LIM,200000,214777` overlaps them.
 
-**Next:** (1) `))))))))` as BSS leaves it for the postprocessor (spec G6).
-Its first card decides p.385 ll.1-5, and a non-type card goes YC4C9 ->
-DECODE -> TASIGN (p.385 l.46, $15 = YCONCG). (2) TASIGN on IBM's own
+**TASIGN was not passed.** The real mode reroutes the path, and TASIGN may
+still be ahead. After the fetch, untraced: p.385 ll.1-5 (in the ink) UNCODE
+every card but one KFI pattern. An UNCODE error goes YIDCER -> YBCERR
+(p.392, transcription only). From there it goes to WJC4G1 if no IOD card
+was read, else YC4C9 -> DECODE -> TASIGN (p.385 l.46, $15 = YCONCG).
+
+**Next:** (1) `))))))))` as BSS leaves it for the postprocessor (spec G6),
+and the trace above read in the ink (p.392, PDF 142). (2) TASIGN on IBM's own
 tables. With SCNFCG = 1 it takes TA9 over SXCHAN's table. This needs the go
 bench started from the post-IPL core image (the dump recipe:
 `gen_mcp_boot_tb.py`'s McpStartTb with gen_tb's `mem_dump=(0, 98304)`), or

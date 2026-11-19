@@ -145,11 +145,14 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   traps IF.  STUBIF serves no second $FETCH: the run stops at TWSF.  This
   is where the path now ends.  Stages 3-6: 1,678,113 cycles.
   WHAT IS NEXT: '))))))))' is the compiled program's type area, which the
-  reconstructed BSS does not write (spec G6: how BSS writes TWS).  What the
-  first card past the header is decides p.385 ll.1-5 (a type card: IOD or
-  REEL, back to YIODSO; anything else: YC4C9 -> DECODE -> l.46 B,TASIGN
-  with $15 = YCONCG).  So TASIGN is still ahead on the bypass path, after
-  this fetch, and with SCNFCG = 1 it takes TA9 (below).
+  reconstructed BSS does not write (spec G6: how BSS writes TWS).  After
+  the fetch, NOT TRACED: p.385 (PDF 135, read in the ink) ll.1-5 send every
+  card to YIO's UNCODE except one KFI pattern, which loops to YIODSO; an
+  UNCODE error goes YIDCER -> YBCERR (p.392, transcription only), whose
+  ll.50-52 go to WJC4G1 if no IOD card was read ("IS NUMBER OF IODS ZERO")
+  or else YC4C9 -> DECODE -> p.385 l.46 B,TASIGN ($15 = YCONCG).  So
+  TASIGN was NOT passed; whether this job reaches it depends on what TWS
+  holds, and if it does, SCNFCG = 1 sends it to TA9 (below).
 SYSMOD = 10 IS REAL (2026-11-18).  The image assembles SCOMRG as
   a800000000000000 (p.103 ll.10-27): SYSMOD 00, overlap.  A whole-core dump
   of StretchMcpStartTb at its stop (IPL from tape with p.1's IOD deck, the
@@ -160,7 +163,10 @@ SYSMOD = 10 IS REAL (2026-11-18).  The image assembles SCOMRG as
   FIRST".  So a machine started the way this model's IPL starts it is in
   bypass mode, and p.397 l.6 (PDF 147, in the ink: "BB,SYSMOD,TJUNAS -IF
   BYPASS", binary 215001.10 80) sends the GO phase to YL1.  The value is
-  planted from that run (POST_IPL_SYSMOD), and gen_mcp_boot_tb.py pins the
+  planted from that run (POST_IPL_SYSMOD), in stage 1's image too (its
+  SCOMRG word, with SCORG, is what stages 3-6 copy); stage 1's three runs
+  take the same cycles as with 00 (61,465 / 30,032 / 30,998) and pass
+  the same checks.  gen_mcp_boot_tb.py pins the
   SCOMRG word at the start bench's stop, so a change there shows.  Only
   SYSMOD is taken: SCNFCG is 1 in both; SL, SM and the SPPBT bits are left
   as this bench has them (no path here reads the SPPBT bits; pp.377-378,
@@ -184,8 +190,10 @@ THE OVERLAP PATH (R2G_TAMPER=overlap, SYSMOD 00 as assembled), as before:
   overlap them (IPL's MCP base, SMCP, is 214514).  Running TASIGN on IBM's tables needs the go bench to start
   from the post-IPL image, or to take the tables and their pointers
   together.
-  Left as the image assembles them (SCAFFOLD): TMAXRF 0, SPROGS 0, SXCHAN 0
-  and the CST; KSILO+7 is 0 (p.395 l.46 zeroes it; the reconstructed BSS
+  TMAXRF (215005.32, its count) and SPROGS (215021-215022) are 0 in the
+  image AND in the post-IPL dump, so they match a real IPL (at JC4's idle
+  poll, before any job; not measured after one).  Left as the image
+  assembles them (SCAFFOLD): SXCHAN 0 and the CST; KSILO+7 is 0 (p.395 l.46 zeroes it; the reconstructed BSS
   does not set 7.0-7.17, "Number of arcs occupied by compiled program",
   C22-6728 p.197).
 STAGE 0 (no bench): p.20's five carriage-control characters (Restore 1,
@@ -229,7 +237,9 @@ YTCERR -> YPR -> YPRSPL.
 
 INJECTIONS (MEASURED, observed failure sets; R2G_TAMPER, no file edited;
 all re-run 2026-11-18 on the bypass-mode stage-6 bench (stop at TWSF);
-control run all pass, 91 PASS lines.  judge6 has 15 checks.  Four pass under every injection
+control run all pass, 91 PASS lines.  abssid and overlap were re-run after SYSMOD was
+planted in stage 1 as well, with the same sets; the others were run just before, with
+stage 1 unchanged by it (see SYSMOD = 10 IS REAL).  judge6 has 15 checks.  Four pass under every injection
 below but `overlap`, so they are consistency checks, not discriminating:
 - "word 020000 was 0 at the fetch": PREW is never written when no fetch
   comes.
@@ -450,6 +460,14 @@ PC_CARD = " BSS"
 BSS_PROC = "BSS     "
 
 
+def set_sysmod(words, S):
+    """SCOMRG's SYSMOD as IPL leaves it (POST_IPL_SYSMOD), in stage 1 and in
+    stages 3-6 alike; R2G_TAMPER=overlap keeps the assembled 00."""
+    w, b = S["SYSMOD"] // 64, S["SYSMOD"] % 64
+    sm = 0 if os.environ.get("R2G_TAMPER") == "overlap" else POST_IPL_SYSMOD
+    words[w] = (words.get(w, 0) & ~(3 << (62 - b))) | (sm << (62 - b))
+
+
 def stage1_prog(card_text, pc_cards):
     """The image, the TYPE card in the $SCR stub, the PC area in $FETCH's."""
     im = image()
@@ -546,6 +564,7 @@ def stage1_prog(card_text, pc_cards):
     for w in (ks, ks + 1, ks + 2, ks + 7):     # KSILO is DR(BU,64) (p.171)
         assert not words.get(w), "KSILO+%d holds a word in the image" % (w - ks)
         words[w] = SENT
+    set_sysmod(words, S)
     im2 = type(im).__new__(type(im))
     im2.__dict__.update(im.__dict__)
     im2.words = words
@@ -795,12 +814,12 @@ def stage34_prog(state, deck_imgs, kwords):
     for k in range(20, 48):
         plant[at("SIT", k)] = SENT
     # SYSMOD AS IBM'S IPL LEAVES IT (REAL, measured; see the header's STAGE
-    # 6): 10, bypass.  The image assembles 00 (p.103 l.18's SCOMRG word).
-    # R2G_TAMPER=overlap keeps the assembled 00, the old overlap path.
-    w = at("SYSMOD")
-    b = S["SYSMOD"] % 64
-    sm = 0 if os.environ.get("R2G_TAMPER") == "overlap" else POST_IPL_SYSMOD
-    plant[w] = (plant.get(w, words.get(w, 0)) & ~(3 << (62 - b))) | (sm << (62 - b))
+    # 6): 10, bypass.  It shares SCORG's word, SCOMRG, which is copied from
+    # stage 1 above, where set_sysmod planted it.
+    assert at("SYSMOD") == at("SCORG") and at("SYSMOD") in plant
+    sb = 62 - S["SYSMOD"] % 64
+    assert (plant[at("SYSMOD")] >> sb) & 3 == \
+        (0 if os.environ.get("R2G_TAMPER") == "overlap" else POST_IPL_SYSMOD)
     for w2, v in plant.items():
         words[w2] = v
     sy = lambda nm, extra=0, al=None: sym(S, nm, extra, al)   # noqa: E731

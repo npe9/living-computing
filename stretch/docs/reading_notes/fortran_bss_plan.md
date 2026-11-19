@@ -758,7 +758,7 @@ IBM's code then runs:
 
 #### R2b, the GO phase in bypass mode (2026-11-18, later): past p.397 to YPPID4's `$FETCH`
 
-**SYSMOD is taken from a real IPL.** A whole-core dump of `StretchMcpStartTb` (IPL from tape with p.1's IOD deck, the CLOCK and BYPASS commands IPL primes, JC4 polling at ZJOBC1) reads SCOMRG (215001) as `2c86000000000000`: SCNFCG 1, SL 1, SM 1, SYSMOD 10, SPPBT1 1, SPPBT2 1. The image assembles `a800000000000000` (SYSMOD 00, overlap). p.376 (PDF 126, in the ink) l.37 ZBA1X `CM0000(BU,1),SYSMOD+.1` "SET BYPASS FROM IPL MODE" and l.38 `CM1111(BU,2),SPPBT1` "SET SWITCHES FOR BYPASS FIRST". `gen_mcp_boot_tb.py` now pins that SCOMRG word at the start bench's stop. `check_bss_mcp_go.py` plants SYSMOD = 10 from it (`POST_IPL_SYSMOD`); the other SCOMRG bits are left as the bench has them.
+**SYSMOD is taken from a real IPL.** A whole-core dump of `StretchMcpStartTb` (IPL from tape with p.1's IOD deck, the CLOCK and BYPASS commands IPL primes, JC4 polling at ZJOBC1) reads SCOMRG (215001) as `2c86000000000000`: SCNFCG 1, SL 1, SM 1, SYSMOD 10, SPPBT1 1, SPPBT2 1. The image assembles `a800000000000000` (SYSMOD 00, overlap). p.376 (PDF 126, in the ink) l.37 ZBA1X `CM0000(BU,1),SYSMOD+.1` "SET BYPASS FROM IPL MODE" and l.38 `CM1111(BU,2),SPPBT1` "SET SWITCHES FOR BYPASS FIRST". `gen_mcp_boot_tb.py` now pins that SCOMRG word at the start bench's stop. `check_bss_mcp_go.py` plants SYSMOD = 10 from it (`POST_IPL_SYSMOD`), in stage 1 and stages 3-6 alike. The other SCOMRG bits are left as the bench has them. The injection: ZBA1X's `CM0000` replaced by NOPs on the disk copy of 22SCOMD. Only the pin fails, reading SYSMOD 11, IPL mode. SCNFCG (1), TMAXRF's count (0) and SPROGS (0) are the same in the dump as in the image. So the earlier SCAFFOLD label on them is lifted, for JC4's idle state before any job. SYSMOD was the one deciding bit that differed.
 
 **Run.** p.397 (PDF 147, in the ink) l.6 `BB,SYSMOD,TJUNAS` "-IF BYPASS" is taken with $15 = YL1 (l.5), $14 = KSILO+8 (l.3), $13 = YPPBSD (l.4). Then:
 - TJUNAS -> TJEND -> YC4BZ return to YL1 (p.384 ll.36-49): YEDLL and SLRBU from KSILO+8, SCORG 0, and SYSMOD.0 = 1, so not `WJCV-1.0` (l.49) but ll.50-54, YIODSO.
@@ -768,7 +768,12 @@ IBM's code then runs:
 
 WJ4PFF and YTSP are not on this path, and SCNFCG stays 1.
 
-**Next.** The fetch needs TWS as BSS leaves it for the postprocessor (spec G6, not reconstructed). What the first card is decides p.385 ll.1-5: an IOD or REEL type card loops to YIODSO; any other card goes YC4C9 -> DECODE -> l.46 `B,TASIGN` with $15 = YCONCG. With SCNFCG = 1, TASIGN takes TA9 over the channel status table.
+**TASIGN was not passed.** The fetch needs TWS as BSS leaves it for the postprocessor (spec G6, not reconstructed). The path after the fetch is NOT TRACED:
+- p.385 (PDF 135, in the ink) ll.1-5 send every card to YIO's UNCODE, except one KFI pattern, which loops back to YIODSO.
+- An UNCODE error goes YIDCER -> YBCERR (p.392, transcription only).
+- YBCERR's ll.50-52 go to WJC4G1 if no IOD card was read.
+- Otherwise they go YC4C9 -> DECODE -> p.385 l.46 `B,TASIGN` with $15 = YCONCG.
+- If TASIGN is reached, SCNFCG = 1 sends it to TA9 over the channel status table.
 
 **The channel status table, read but not grafted.** On the overlap path (R2G_TAMPER=overlap), stopped at T N (021725.00), SXCHAN READ 0: TA9 walked from location 0, as inferred. That is now observed. The start-bench dump has the real tables:
 - SXCHAN = 214724.00, count 36, over tables IPL built at 214515-214777.
