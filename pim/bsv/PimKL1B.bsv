@@ -214,7 +214,10 @@ module mkPimKL1B(PimKL1B);
       pcR <= goals.sub(rqfp);
       rqfp <= rqfp + 1;
     end else if (tag == 8'h23 && op == 8'h69) begin
-      pcR <= (rqfp == rqt) ? goals.sub(rqt) : goals.sub(rqfp);
+      // The just-appended label, not goals.sub(rqt): the register update
+      // is not visible in this cycle, so reading goals.sub(rqt) would
+      // return the stale cell.
+      pcR <= (rqfp == rqt) ? zeroExtend((b << 8) | c) : goals.sub(rqfp);
       rqfp <= rqfp + 1;
     end else begin
       pcR <= pcR + 1;

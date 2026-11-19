@@ -60,7 +60,7 @@ The status labels are:
 | `not_equal` | 0xf3 | halt unless both INT and unequal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `execute` | 0x61 | `narg = a; pc = label(b:c)` | stand-in | `PimKL1BControlTb` |
 | `enqueue_goal` | 0x63 | append label to an 8-entry queue | stand-in | `PimKL1BControlTb` |
-| `suspend` | 0x69 | append label to the same queue | stand-in | — |
+| `suspend` | 0x69 | append label; jump to it when the queue was empty, else the head | stand-in | `PimKL1BSuspendTb` |
 | `proceed` | 0x60 | pop the FIFO head; halt when empty | stand-in | `PimKL1BTb`, `PimKL1BControlTb` |
 | `halt` | 0x71 | halt | — | — |
 

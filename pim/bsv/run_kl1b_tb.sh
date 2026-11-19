@@ -59,3 +59,7 @@ export PATH
 "$BSC" -sim -g mkPimKL1BControlTb -u PimKL1BControlTb.bsv
 "$BSC" -sim -e mkPimKL1BControlTb -o sim_kl1bcontrol
 ./sim_kl1bcontrol
+
+"$BSC" -sim -g mkPimKL1BSuspendTb -u PimKL1BSuspendTb.bsv
+"$BSC" -sim -e mkPimKL1BSuspendTb -o sim_kl1bsuspend
+./sim_kl1bsuspend
