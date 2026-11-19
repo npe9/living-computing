@@ -1465,10 +1465,11 @@ the sources allow.
 - **A model bug, fixed:** SIC prefixed to BD tested its store against the
   enable state before the BD. So ITAB's `SIC,STIC` could not store into
   MCP's area while a PP ran under its own limits, STIC kept the old
-  counter, and SIFAE re-analyzed resume load's `$RET`. Now the store is
-  tested against the state the inner branch leaves (RECONSTRUCTION; Ref.
-  Manual printed p.31, disabled means no protection; p.49's table scheme;
-  MCP p.111). `decks/sic_bd_protected_store.strap`.
+  counter, and SIFAE re-analyzed resume load's `$RET`. Now an inner BD
+  makes the store unmonitored (RECONSTRUCTION; Ref. Manual printed p.31,
+  disabled means no protection; p.49's table scheme; MCP p.111). Only the
+  BD direction changed: SIC with BE from the disabled state still stores,
+  and the deck pins that case too. `decks/sic_bd_protected_store.strap`.
 - **The job's end, IBM's code but `$FETCH`:** the program's `$EOJ` ->
   SIFAE's PP half (ll.20-28, now as printed) -> YJC4TT -> YC4NO -> YC4B3 ->
   YMPFCH's `$FETCH` of 22$EOJ -> p.381 ll.19-37: `,SKOM` (input commands,
@@ -1476,12 +1477,18 @@ the sources allow.
   `$RET`), `,SSPEOJ` (output EOJ). The print program's output subroutine
   then gives `B,$MCP / ,$W` at 222265.40 (p.204 ll.8-9, PDF 211, read in
   the ink).
-- **Where it stops:** the `$W` goes KFRONT -> KMCP (p.179) -> KSOAR ->
-  KNOGO -> KCHOPN, where the bench stops (half-word 148546, 2,524,753
-  cycles). Without the stop, KCHOPN -> KSUPP suppresses the `$W` and it
-  traps again, forever. The output unit or its channel is not available
-  (which test, MOUNT/REW at p.177 l.41 or CH AVL/CH OP at l.45, not
-  isolated). MCP never reaches the next job card or ZJOBC1.
+- **Where it stops:** the `$W` goes KFRONT -> KMCP (p.179 l.4) -> KSOAR
+  (p.177 l.27). There p.177 l.41 `BZRZ,KNOGO` ("LOOP IF MOUNT OR REW BIT
+  ON") is taken, and in KNOGO p.179 l.30 `BB1,SRMIND($12),KCHOPN` ("BR. IF
+  REMINDER SENT") is taken too. The bench stops at KCHOPN, p.180 l.2
+  (221041.00, half-word 148546), after 2,524,753 cycles. So MCP is waiting
+  for the operator to mount the output unit: IPL's tables have its
+  MOUNT/REW bit on and the reminder marked sent. Without the stop, KSUPP
+  sends it back to the same `$W`, 5,320 times up to the step cap.
+  **Scaffold caveat:** `$IA` is the stub's ITAB, which sends every
+  interrupt except IF to a stop. So no I/O interrupt could reach MCP to
+  clear the bit, and none came. MCP never reaches the next job card or
+  ZJOBC1.
 - **Found, not fixed: the PP's upper limit.** C22-6728-1 printed p.88 (in
   the ink) puts the upper limit at KSILO+8.32 (BU,18). p.397 l.3 and p.384
   ll.37-39 take it from the index COUNT field, bits 28-45. So the PP runs
@@ -1491,9 +1498,9 @@ the sources allow.
 - Still SCAFFOLD: ITAB/STUBIF (`$IA` is not SIT), every `$FETCH`, ENTER and
   IRET for the BSS processor (stage 4), and DISP's planted STIC.
 
-**Next:** (1) Why K NO GO holds the output `$W`: the output tape's unit
-and channel entries in IPL's tables, and the I/O interrupt that would
-free them. (2) The upper-limit field of KSILO+8. (3) The other items
+**Next:** (1) The output unit K NO GO waits on: which unit `$11` names
+in IPL's tables, why its MOUNT/REW bit is on, and the interrupt path
+(SIT, not ITAB) that would clear it. (2) The upper-limit field of KSILO+8. (3) The other items
 above.
 
 ## BSS ON MCP'S LOADER -- second subprogram and library entry run, 2026-11-16

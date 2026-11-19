@@ -894,7 +894,8 @@ p.17's origins. TASIGN is not on this path: there are no IOD cards.
 (SIFAE, MDRET, CRETBU; MCP pp.117, 140-142) into `*MAIN*` at 000051.0.
 `*MAIN*`'s entry is SCAFFOLD (`B,$MCP / ,$EOJ`; the compiled program is
 lost). MCP's own end of job then runs to the output EOJ's `$W` (MCP
-p.204 l.8), which K NO GO holds. Found there: C22-6728-1 p.88 puts the
+p.204 l.8), which K NO GO holds (the output unit's MOUNT/REW bit is on;
+MCP p.177 l.41, p.179 l.30). Found there: C22-6728-1 p.88 puts the
 upper limit at KSILO+8.32 (BU,18), but p.397 l.3's LX takes it from the
 index count field (bits 28-45), so the PP's upper bound is 10577, not
 213766. `$FETCH`, ITAB and the BSS processor's own entry are SCAFFOLD

@@ -27,12 +27,15 @@
 ! counter (resume load's ,SDRET), DS came on, and MCP's SIFAE analyzed
 ! the old $RET again.
 !
-! RECONSTRUCTION (the pages do not say it in one sentence): the SIC store
-! is tested against the enable state the inner branch LEAVES -- after
-! BD, disabled, so not monitored; after BE/BEW, enabled; after any other
-! branch, unchanged.  It is the reading the model already uses for the
-! branch target itself (ifViolatesAfter, the BE/BD/BEW arm), and the only
-! one under which MCP's printed table works for a PP.
+! RECONSTRUCTION (the pages do not say it in one sentence): when the
+! inner branch is BD, the SIC store is not monitored -- the system is
+! disabled after it.  Otherwise the store is tested as before, against
+! the state before the branch.  So SIC with BE/BEW from the disabled state
+! still stores unmonitored (no page decides that case; it is unchanged
+! from the model before this deck, and case 2 pins it).  It follows the
+! reading the model already uses for the branch target itself
+! (ifViolatesAfter, the BE/BD/BEW arm), and it is the only one under which
+! MCP's printed table works for a PP.
 !
 ! CASES (bit k of RES = the event in case k):
 !   0  enabled, SIC,PROTA / BD,TA, PROTA protected:
@@ -40,15 +43,23 @@
 !   1  enabled, SIC,PROTB / B,TB, PROTB protected, stays enabled
 !      (CONTROL): DS interrupts (table entry 19 sets RES.1 = 1) and
 !      PROTB stays 0.
+!   2  DISABLED, SIC,PROTC / BE,TC, PROTC protected (run between 0 and 1):
+!      the model's behaviour before this deck, unchanged and pinned -- the
+!      store is made (PROTC.0-18 = the counter) and DS stays off.  No page
+!      decides it; if DS came on, the BE would take it at once (to DSR).
 !
-! INJECTIONS (MEASURED 2026-11-19, StretchExecute's Sic arm, observed):
-!   the bug restored (protViolates, the pre-BD state): 4 fail -- RES
-!     0xc000000000000000 (case 0 raised DS), PROTA 0, CYCLES 292,
-!     MEMREADS 23.  PROTB and PC pass.
-!   the store never tested (no DS from SIC at all): 4 fail -- RES 0 and
-!     PROTB 0x0212800000000000 (the control case stored), CYCLES 269,
-!     MEMREADS 17.  PROTA and PC pass.
-!   Control: the fixed model, all 6 pass.  CYCLES and MEMREADS are MODEL
+! INJECTIONS (MEASURED 2026-11-19, StretchExecute's Sic arm, the test's
+! enable argument; observed):
+!   the bug restored (st.irqEnabled(), the pre-BD state): 4 fail -- RES
+!     0xc000000000000000 (case 0 raised DS), PROTA 0, CYCLES 299,
+!     MEMREADS 25.  PROTB, PROTC and PC pass.
+!   the state after the branch alone (enAfter): 3 fail -- PROTC 0 (case
+!     2's store suppressed), CYCLES 282, MEMREADS 24.  RES passes: the BE
+!     takes the DS at once and DSR's RES.1 is case 1's bit.
+!   the store never tested (False): 4 fail -- RES 0 and PROTB
+!     0x0213e00000000000 (the control case stored), CYCLES 348, MEMREADS
+!     25.  PROTA, PROTC and PC pass.
+!   Control: the fixed model, all 7 pass.  CYCLES and MEMREADS are MODEL
 !   behaviour, not printed times.
 !
         SLC, (8)4100.0
@@ -63,7 +74,15 @@ CASEA   SIC, PROTA
         NOP
 TA      BZB, $DS, TA1
         BB1, RES+.0, $+1.0           ! case 0 raised DS (must not)
-TA1     LWF(U), BNDB
+TA1     LWF(U), BNDC                 ! (disabled, after BD,TA)
+        ST(BU), $UB, 64              ! protect PROTC only
+CASEC   SIC, PROTC
+        BE,  TC
+        NOP
+TC      BZB, $DS, TC1
+        BB1, RES+.2, $+1.0           ! case 2 raised DS (must not)
+TC1     BD,  $+.32                   ! disable again
+        LWF(U), BNDB
         ST(BU), $UB, 64              ! protect PROTB only
         BE,  $+.32                   ! enable
 CASEB   SIC, PROTB
@@ -78,10 +97,13 @@ BNDA    VF,  PROTA+1.0               ! upper (bits 0-17)
                                      !   the area inside is protected
 BNDB    VF,  PROTB+1.0
         VF,  PROTB
+BNDC    VF,  PROTC+1.0
+        VF,  PROTC
         SLC, (8)6100.0
 RES     DD, 0
 PROTA   DD, 0
 PROTB   DD, 0
+PROTC   DD, 0
         SLC, (8)6200.0
 TBL     DD, 0
         SLC, (8)6223.0

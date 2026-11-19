@@ -177,7 +177,8 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   STOPC 8), and stages 3-6 are judged on it: 1,773,207 cycles (2026-11-19;
   1,776,198 before stage 3 went through MCP's dispatcher).  The SECOND
   run of the same bench goes on (stage 7).
-STAGE 7, THE GO PHASE PAST THE FETCH (2026-11-18, the second run).
+STAGE 7, THE GO PHASE PAST THE FETCH (2026-11-18, the second run; the
+dispatcher, *MAIN* and the end of job 2026-11-19).
   WHAT TWS HOLDS.  C22-6728-1 printed p.209 (PDF 209, read in the ink):
   "MCP assumes that the compiled problem program is left in card form and
   may be loaded from the first arc up to and including the number of arcs
@@ -195,7 +196,8 @@ STAGE 7, THE GO PHASE PAST THE FETCH (2026-11-18, the second run).
   LIM or IOD card ahead of the program (none is printed for this job).
   The library decks are LB areas, "LB" + the first entry name (CHOSEN,
   spec G7), as check_bss_mcp_load has them.
-  THE RUN, IBM's code but the fetches and the dispatcher:
+  THE RUN, IBM's code but the fetches (and, before 2026-11-19, the
+  dispatcher):
   - p.385 (PDF 135, read in the ink) ll.1-5: the card (*MAIN*'s first
     binary card) is not the pattern l.4 tests, so YIO (l.6) sends it to
     UNCODE (l.8), whose error return (l.13) is YIDCER.
@@ -259,15 +261,23 @@ STAGE 7, THE GO PHASE PAST THE FETCH (2026-11-18, the second run).
     l.41); the print program's output subroutine CAOS3A then gives B,$MCP
     / ,$W at 222265.40 (p.204 ll.8-9, PDF 211, read in the ink), the write
     of the record buffer X holds.
-  - WHERE IT STOPS: the $W goes KFRONT -> KIODRN -> KMCP (p.179 l.4) ->
-    KSOAR (p.177 l.27) -> the unit and channel tests (ll.37-45) -> KNOGO (p.179
-    ll.13-25) -> KCHOPN, where the bench stops (half-word 148546).
-    MEASURED without that stop (R2G_PCLOG=5, 2026-11-19): KCHOPN -> KSUPP
-    (p.128, 216242) suppresses the $W, and it traps again from 222266.00,
-    the same path, until the 12M step cap.  The output unit's channel is
-    not available to MCP: IPL's tables say so, and no I/O interrupt
-    comes.  Which bit (SMOUNT/REW or CH AVL/CH OP, p.177 ll.40-45) was
-    not isolated.  2,524,753 cycles in all.
+  - WHERE IT STOPS (PC log, R2G_PCLOG=5, 2026-11-19; pp.177 and 179-180
+    read in the ink, PDF 184, 186): the $W enters KFRONT (p.177 l.5),
+    through KIODRN, and l.21 BB,SL,KMCP; KMCP (p.179 ll.4-7) -> KSOAR
+    (p.177 l.27).  l.37 (BZB,SMULTI,KUNA) falls through; l.41 BZRZ,KNOGO
+    ("LOOP IF MOUNT OR REW BIT ON", after l.40 L(BU,2),SMOUNT($11)) is
+    taken.  KNOGO (p.179 l.13) runs ll.13-29 and l.30 BB1,SRMIND($12),
+    KCHOPN ("BR. IF REMINDER SENT") is taken: KCHOPN, p.180 l.2
+    (221041.00, half-word 148546), where the bench stops.  So MCP holds
+    the output EOJ's write because the output unit's MOUNT/REW bit is on
+    in IPL's tables and the mount reminder is already marked sent: it is
+    waiting for the operator.  Which unit $11 names was not decoded.
+    MEASURED without the stop: KCHOPN -> KSUPP (p.128, 216242) and back
+    to 222265.40, the same $W, 5,320 times to the 12M step cap.
+    SCAFFOLD CAVEAT: nothing in this bench could clear that bit.  $IA is
+    the stub's ITAB, whose every entry but IF goes to BADI (a stop), so an
+    I/O or other interrupt could never reach MCP; none came (STOPC 0).
+    2,524,753 cycles in all.
   - Traps after the entry are logged (PTRL: STIC, word 3, SCOMRG): eight,
     the first *MAIN*'s ,$EOJ at 51.40 with SL 0 and word 3 = SLRBU
     (045fc00000084040: lower 41, upper 10577); then 231147.40, 20007.40,
@@ -412,12 +422,10 @@ Re-run 2026-11-19 with stage 7's new end (the dispatcher, *MAIN*'s $EOJ,
 the stop at KCHOPN): the control run passes all checks, 106 PASS lines.
 The in-bench tampers ran as extra program pairs on the one compiled bench
 (R2G_MEASURE=cretsl,twsxw,ybc51,vic13,ksilo9,lim,eojl17,yxwejm,abeoj,nocc,
-lci15,bs8,fwa,order; each pair's lines are prefixed "MEASURE <t>"), and
-dispbypass as its own R2G_TAMPER build.  NOT RE-RUN since 2026-11-18, when
-stage 7 had nine checks and stopped at the $RET into *MAIN*: the own
-builds assembled, overlap, nobd, nofetch and abssid.  Their stage-1..6
-counts are unaffected by this change; their stage-7 counts are stale.
-Judge7 has fourteen checks now.  "Stage 7's thirteen" means all but
+lci15,bs8,fwa,order; each pair's lines are prefixed "MEASURE <t>"); the
+own builds dispbypass, overlap, assembled, nobd, nofetch and abssid each
+as its own R2G_TAMPER build, all 2026-11-19.  Judge7 has fourteen checks
+now.  "Stage 7's thirteen" means all but
 "YLJSLT unchanged".
 Some checks pass under every injection, so they are consistency checks,
 not discriminating ones:
@@ -427,9 +435,9 @@ not discriminating ones:
   "SCNFCG 1, WJCW 0", which are the image's values when p.397 is not
   reached.
 - judge7: "YLJSLT unchanged".  ("No fetch of anything else" and "no other
-  trap" were consistency checks before 2026-11-19.  cretsl, ksilo9, ybc51
-  and dispbypass now fail the first; eojl17, abeoj, fwa and order fail
-  the second.)
+  trap" were consistency checks before 2026-11-19.  cretsl, ksilo9 and
+  ybc51 now fail the first; eojl17, abeoj, fwa and order fail the
+  second.)
 "The stage-6 eleven" means judge6's other eleven checks.
   cretsl -- p.142 (PDF 149) l.42 CRETBU's CM0000(BU,1),SL ("CHANGE TO PP
     LEVEL") as CM1111, so *MAIN* runs at MCP level: 4 fail, all stage 7:
@@ -489,25 +497,27 @@ not discriminating ones:
     fetch count, last address, call count, SICBU and entry checks, and
     every stage-4, -5, -6 and -7 check but fifteen (in stage 7, all but
     YLJSLT).  YRLDTA's check passes.
-  MEASURED 2026-11-18, NOT RE-RUN (stage-7 counts as of then, of nine):
   overlap (own build) -- SYSMOD at the assembled 00, on the post-IPL
-    image: 14 fail.  Six are stage 6's: YTSP (1), SCNFCG/WJCW (0, 1),
+    image: 18 fail.  Six are stage 6's: YTSP (1), SCNFCG/WJCW (0, 1),
     YL1's limits, YI4TA, RELFWA, and the stop.  The run stops at TASIGN,
     half-word 17640, NFET 1, as it did on the assembled image.  The other
-    eight are stage 7's nine minus "no other trap", since there is no
-    trap past TASIGN.
+    twelve are stage 7's thirteen minus "no other trap", since there is
+    no trap past TASIGN.
   assembled (own build) -- the assembled image, with the old YRLTT plant
-    and SYSMOD planted: 1 fails, the SXCHAN/SMCP/SBAMCP check (0, 0,
-    215000.00).  So this path reads none of IBM's IPL-set words beyond
-    those planted before.
+    and SYSMOD planted: 3 fail, the SXCHAN/SMCP/SBAMCP check (0, 0,
+    215000.00) and two of stage 7's: the $EOJ path and the trap count.
+    On the assembled image the program's $EOJ, the 22$EOJ fetch and
+    ,SKOM go as on the post-IPL one, but the next trap is from 224237.00,
+    not VSSKOM's $RET at 224147.40, and the run reaches KCHOPN after 4
+    traps, not 8.  So the spooler's path reads words IPL sets.
   nofetch (own build) -- STUBIF's $FETCH copies nothing (its ST a NOP):
-    18 fail: stage 4's "no other interrupt" (AD on entering 020000 = 0);
+    22 fail: stage 4's "no other interrupt" (AD on entering 020000 = 0);
     eight of the stage-6 eleven (the $EOJ program in core, SIT+20..47,
     SCORG, YDFCS, YL1's limits, YI4TA, RELFWA, the stop: STOPC 3, BADI);
-    stage 7's nine.  YMPSAV, YFHBR, M and the 020000 check pass.
-  nobd (own build) -- ENTER's BD a NOP: 58 fail (see STAGE 4): the entry,
-    every stage-4 check but five, stage 5's trap count, linkage, fetch and
-    $14, the stage-6 eleven, stage 7's nine.  Stage 7 hits the step cap.
+    stage 7's thirteen.  YMPSAV, YFHBR, M and the 020000 check pass.
+  nobd (own build) -- ENTER's BD a NOP: 62 fail (see STAGE 4): the entry,
+    33 stage-4 checks, stage 5's trap count, linkage, fetch and $14, the
+    stage-6 eleven, stage 7's thirteen.  Stage 7 hits the step cap.
   abssid (own build) -- ABSSID (p.291 l.8) spelled BSX: exactly the eight
     1a checks fail (PC area name, M, KSILO count, KSILO+1, KSILO+2,
     YCIDBT, $13, the stop at YC4B5).  1b and 1c pass, and stages 3-7 are
