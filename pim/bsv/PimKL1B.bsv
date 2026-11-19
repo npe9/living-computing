@@ -11,6 +11,7 @@
 // get_value, get_bound_value, write_value, write_variable,
 // write_constant, put_constant, put_list, put_integer, write_integer,
 // read_variable, read_constant, read_integer, read_nil, read_atom,
+// get_constant, get_integer, get_nil, get_atom,
 // add, subtract, multiply, divide, modulo, equal, not_equal,
 // wait_value, wait_constant, wait_list, wait_integer, execute,
 // enqueue_goal, suspend, proceed, halt.
@@ -106,6 +107,15 @@ module mkPimKL1B(PimKL1B);
           if (args.sub(argPtr) != cw) haltR <= True;
           argPtr <= argPtr + 1;
         end
+        8'hb8: begin                                       // get_constant C, Ai
+          Word d = deref(regs.sub(a));
+          if (d == cw) begin
+            // already equal
+          end else if (d[39:32] == tagVar) begin
+            if (regs.sub(a)[39:32] == tagRef) heap.upd(regs.sub(a)[11:0], cw);
+            regs.upd(a, cw);
+          end else haltR <= True;
+        end
         default: haltR <= True;   // unimplemented c40 opcode
       endcase
       pcR <= pcR + 2;
@@ -175,6 +185,12 @@ module mkPimKL1B(PimKL1B);
               || regs.sub(b)[31:0] == 0) haltR <= True;
           else regs.upd(c, {tagInt, regs.sub(a)[31:0] % regs.sub(b)[31:0]});
         end
+        8'hb9: if (deref(regs.sub(a)) != {tagInt, 16'h0, val[15:0]})  // get_integer c16, Ai
+                 haltR <= True;
+        8'hba: if (deref(regs.sub(a))[39:32] != tagNil)               // get_nil Ai
+                 haltR <= True;
+        8'hc0: if (deref(regs.sub(a))[39:32] != tagAtom)              // get_atom A, Ai
+                 haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label

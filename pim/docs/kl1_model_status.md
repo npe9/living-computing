@@ -47,6 +47,10 @@ The status labels are:
 | `read_nil` | 0xb2 | halt if `args[argPtr]` is not NIL, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
 | `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | — |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
+| `get_constant` | 0xb8 | compare `deref(R[a])` with c40; bind an unbound REF cell | documented (TR-246 p. 6) | `PimKL1BGetTb` |
+| `get_integer` | 0xb9 | halt unless `deref(R[a])` is INT c16 | inferred (PIMOS c16 variant) | `PimKL1BGetTb` |
+| `get_nil` | 0xba | halt unless `deref(R[a])` is NIL | documented (TR-246 p. 6) | `PimKL1BGetTb` |
+| `get_atom` | 0xc0 | halt unless `deref(R[a])` is ATOM | documented (TR-246 p. 6) | `PimKL1BGetTb` |
 | `add` | 0xf4 | `R[c] = INT(R[a] + R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `subtract` | 0xf5 | `R[c] = INT(R[a] - R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `multiply` | 0xf6 | `R[c] = INT(R[a] * R[b])` | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
@@ -74,14 +78,13 @@ encoding table but not executed, with the blocking reason:
 |---|---|---|
 | goal-record argument setup | `set_atom` | implemented with a placeholder atom; the atom table is not modelled |
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
-| active unification | `get_constant`, `get_integer`, `get_nil`, `get_atom` | the PIMOS active-unification reads; `get_value`/`get_bound_value` are implemented, these four are not |
+| active unification | `get_structured_constant`, `get_list`, `get_vector` | the structure reads; the constant/integer/nil/atom reads are implemented |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
 | control beyond the queue | `switch_*`, `jump`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
-`get_constant` (the one c40 instruction that needs the argument area
-in memory rather than the register-file model) halts in the same
+`get_structured_constant` and the structure reads halt in the same
 default case.
 
 ## What this means for PIMOS
