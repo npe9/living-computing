@@ -43,6 +43,27 @@ Named choices, which the manual leaves open and which are therefore not
 violations: A = 1, D = 2, Q = 4 (p. 4-2 prints no memory terms); the TLB
 replacement policy (p. 2-1 prints none); the prefetch fill policy.
 
+## 2a. Documented instruction interactions not yet modelled
+
+Printed p. 3-2 ("Certain combinations of instructions may produce
+unexpected results…") states three hardware consequences the model now
+silently ignores. They are listed here because "1:1" includes them:
+
+1. **Wide result visible after a byte/half-word ADD, SHL or MUL.** If the
+   truncated destination overflows but the 32-bit result fits, the next
+   instruction may compute with the *untruncated* value when it is a
+   divide or a right shift using that destination, or when its own
+   destination is wider; two intervening instructions force the
+   truncated value. The model always truncates.
+2. **C/V setting needs two instructions of separation** before an
+   instruction that reads the PSW through the CPU prefix, unless the
+   flags are queried with TESTC/TESTV. The model lets a PSW read see the
+   flags immediately.
+3. **An ENTER may not follow the invalidation of the page it enters** by
+   fewer than two instructions, so the memory table can update. The
+   model does not enforce the spacing (it is a software restriction with
+   a hardware consequence).
+
 ## 3. What "1:1" adds to the boot work
 
 The boot (A0…A5) needs none of the open rows except the DUART. The
