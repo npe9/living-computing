@@ -1,0 +1,161 @@
+! ax4b_5cd_prog_ix_v_plus.strap -- jb_ax4b "I-BOX 4", routine 148 (1248, "INDEX
+! MODIFICATION TEST", banner PDF p.113: "TEST5. CHECK PROGRESSIVE
+! INDEXING, EIGHT CODES."), TESTs 5C and 5D, "CHK PROG IX V+I" and
+! "CHK PROG IX V+IC":
+!
+!   PDF p.149  011166.00-011213.40  both tests, exit, continuity
+!   PDF p.153  011352.00-011371.00  148K25-148K28, 148XW4-148XW9
+!   PDF p.191  013075.00            BIT17
+!
+! Routine 148's other progressive pair, TESTs 5E/5F (V+ICR, V-I), is
+! ibox4_prog_ix_v.strap.  No printed page numbers on these sheets: cited
+! by PDF page and octal location.  Read from the page images at 150 dpi;
+! checked row for row by tests/verify_ax4b_5cd_prog_ix_v_plus_listing.py
+! (53 rows, 6 symbols).
+!
+! WHAT IT TESTS (IBM's code, unchanged).  Each test loads X1 from a
+! control word (I48XW4 (148K25, count 1); I48XW5 (148K25, count 2)), does ONE progressive VFL load
+! "L(code)(BU,64,8),1.0($X1)", and asks four questions, each with its
+! own SIC,SEN / BZXE,SERS:
+!   KV $X2 vs 148K25   the operand (148K25 = 148K27 = 123456.70) arrived
+!                      ($X2 loaded from $R);
+!   KV $X1 vs 148K28   the index value: value + 1.0 = 011353 (148K26), count unchanged (V+I) or 2 -> 1
+!   (V+IC), no refill;
+!   KC $X1 vs BIT17    the count, against bits 0-17 of BIT17's first
+!                      half-word, i.e. its value 1.00 (Reference Manual
+!                      printed p.24, PDF 27, Compare Count, read in the
+!                      page image): count 1 is expected after both codes;
+!   SR,$X1,$X1 / LX,$X1,$X1 / BZXVZ   SR puts X1's refill in bits 0-17
+!                      of the half-word at word 17 -- X1's own value
+!                      field -- and zeroes bits 18-24 (p.24, Store
+!                      Refill), so the value must read zero: "REFILLED"
+!                      otherwise.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", SIC,SEN "1310.00 80", BZXE,SERS "1304.32 C0",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the failing check otherwise.
+!   * Notation only: "%" and the box glyph are "(" and ")"; the label
+!     glyph the scan shows as "1" is the letter I (I48..), as for every
+!     ax4b label (docs/listing_typography.md).  Nothing else changed.
+!   * IC248 and BIT0 are SYN'd from the printed "LX,$X13,IC248"
+!     (11306.32 10) and "V+,$X12,BIT0"; the continuity rows after B,SSW
+!     are never run.
+!
+! RESULT ON THE MODEL, 2026-11-18 (a57832f + this deck): PASSES -- halts
+! at SSW (PC 1410), SEN = 0, X1 = 0x40000 (value 0 after the SR, count
+! 1, refill 0), X2 = 148K25's word (0x29CBB80000000000).  CYCLES 493
+! is MODEL BEHAVIOUR; no time is printed.  IBM's listing and the model
+! AGREE.
+!
+! INJECTIONS, each in a scratch copy of bsv/, OBSERVED for this deck:
+!   count decremented only for codes ending 3 (V+IC no longer counts) ->
+!     FAIL halt, SEN 011205.00: TEST 5D's KC check, "MODIFIED INDEX COUNT.
+!     INCORRECTLY.", CYCLES 408.
+!   refill suppressed (progressiveIndex never refills) -> NO EFFECT, PASS at
+!     493 (PC, SEN, CYCLES compared): neither V+I nor V+IC refills.
+!   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+!   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+! The addresses are the ones this listing prints for them (SIC,SEN
+! "1310.00 80", B,SERS "1304.10 00", SIC,SENO+.32 "1311.40 80", B,SSW
+! "1301.10 00"), the same as routine 148's; what is AT them is SSIP's,
+! which this file replaces with halts, as ax4b_148_immediate_indexed does.
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248 and BIT0: SYN from the printed addresses of "LX,$X13,IC248"
+! (11306.32 10) and "V+,$X12,BIT0" (13054.30 B0); the continuity
+! rows after B,SSW are never run (SSW halts first).
+IC248   SYN, (8)11306.0
+BIT0    SYN, (8)13054.0
+!
+! ======================================================================
+! PDF p.149, 011166.00-011213.40 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)11166.00
+I4845   LX,  $X1, I48XW4               ! -TEST 5C, CHK PROG IX V+I
+        L(V+I)(BU,64,8), 1.0($X1)
+        LX,  $X2, $R
+        KV,  $X2, I48K25
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+I,
+        BZXE, SERS                    ! -FAILED TO OBTAIN CORRECT OPERAND.
+!
+        KV,  $X1, I48K28
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+I,
+        BZXE, SERS                    ! -FAILED TO MODIFY IX VALUE CORRECTLY.
+!
+        KC,  $X1, BIT17
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+I,
+        BZXE, SERS                    ! -MODIFIED INDEX COUNT.
+!
+        SR,  $X1, $X1
+        LX,  $X1, $X1
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+I,
+        BZXVZ, SERS                   ! -REFILLED.
+!
+        LX,  $X1, I48XW5               ! -TEST 5D, CHK PROG IX V+IC.
+        L(V+IC)(BU,64,8), 1.0($X1)
+        LX,  $X2, $R
+        KV,  $X2, I48K25
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+IC,
+        BZXE, SERS                    ! -FAILED TO OBTAIN CORRECT OPERAND.
+!
+        KV,  $X1, I48K28
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+IC,
+        BZXE, SERS                    ! -FAILED TO MODIFY IX VALUE CORRECTLY.
+!
+        KC,  $X1, BIT17
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+IC,
+        BZXE, SERS                    ! -MODIFIED INDEX COUNT. INCORRECTLY.
+!
+        SR,  $X1, $X1
+        LX,  $X1, $X1
+        SIC, SEN                      ! -VFL LOAD PROG INDEXED, CODE V+IC,
+        BZXVZ, SERS                   ! -REFILLED.
+!
+        B,   $+1.0
+        BD,  I4845
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        SC,  $X13, $X12
+        V+,  $X12, BIT0
+        LC,  $X13, $X12
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.153, 011352.00-011371.00: routine 148's constants
+! ======================================================================
+        SLC, (8)11352.0
+I48K25  XW,  (8)123456.70
+I48K26  XW,  (8)765432.10
+I48K27  XW,  (8)123456.70
+I48K28  XW,  I48K26, 1, 0
+        SLC, (8)11364.0
+I48XW4  XW,  I48K25, 1, 0
+I48XW5  XW,  I48K25, 2, 0
+I48XW6  XW,  I48K25, 1, I48K28
+I48XW7  XW,  I48K27, 1, 0
+I48XW8  XW,  I48K27, 2, 0
+I48XW9  XW,  I48K27, 1, I48K28
+!
+! ======================================================================
+! PDF p.191, 013075.00: BIT17 (value 1.00), the count KC compares with
+! ======================================================================
+        SLC, (8)13075.0
+BIT17   XW,  (8)1.00, 0, 0
+        END, I4845

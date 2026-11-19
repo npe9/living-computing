@@ -1,0 +1,246 @@
+! ax4b_3_halfword_19bit.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113: "TEST3. CHECK I-BOX
+! HALF WORD MODIFICATION, 19 BITS."), TEST 3:
+!
+!   PDF p.139  010623.40-010660.00  driver, X1-X8 spur checks
+!   PDF p.140  010660.40-010715.00  X9-X15, bit 23, exit, continuity
+!   PDF p.152  011310.00-011320.00  148S1 (clear all IX regs), 148S2
+!   PDF p.153  011361.00            148XW1
+!   PDF p.154  011373.00            148DMP
+!   PDF p.190  013034.00-013035.00  100Z ("ZERO INDX WD."), 1000
+!                                   ("INDX WD. OF ONES.")
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! by tests/verify_ax4b_3_halfword_19bit_listing.py (121 rows, 7
+! symbols).
+!
+! WHAT IT TESTS (IBM's code, unchanged).  148DMP := an index word of all
+! ones (LX,$X1,1000; SX,$X1,148DMP); every index register is cleared
+! (148S1); X1 := 148DMP+.63 (bits 19-23 of its value all ones).
+!   LR,$X0,0($X1)   0.00 71   a 19-bit (half-word) address: only bits
+!                   0-18 of the effective address may be used, so it
+!                   reads 148DMP's RIGHT half and loads X0's refill.
+!   L(BU),$X0; BZRZ,I4831     X0 nonzero -> "OK".
+! Otherwise the fourteen "L(BU),$Xn / BRZ" checks name which of address
+! bits 19-22 leaked into the J field ("GATING BIT 22 SPUR." for X1 ...
+! "GATING BITS 19,20,21,22 SPUR." for X15), then SR / BXVZ looks for bit
+! 23, and the last entry is "FAILURE IN BITS 0-18".
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44,
+!     read in the page image), so SEN stays 0 on a pass and names the
+!     error entry on a failure.
+!   * IC248 and BIT19 are SYN'd from the printed "LX,$X13,IC248"
+!     (11306.32 10) and "V+,$X13,BIT19" (13077.32 B0); the continuity
+!     rows after B,SSW are never run.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..),
+!     as for every ax4b label (docs/listing_typography.md).  Nothing
+!     else changed.
+!
+! RESULT ON THE MODEL, 2026-11-18 (a57832f + this deck): PASSES -- halts
+! at SSW (PC 1410), SEN = 0, $X0 = refill 777777 octal only (0x3FFFF,
+! the top 18 bits of 148DMP's right half), $X1 = 148XW1's word
+! (0x04BEFF0000000000), 148DMP = all ones (SX of the all-ones X1).
+! CYCLES 340 is MODEL BEHAVIOUR; no time is printed.  IBM's listing and
+! the model AGREE.
+!
+! INJECTIONS, each in a scratch copy of bsv/, OBSERVED for this deck:
+!   LR writes index register J+1 -> FAIL halt, SEN 010633.00: "GATING BIT
+!     22 SPUR." (X1 changed), CYCLES 352.
+!   writes to X0 discarded -> FAIL halt, SEN 010710.00: "GATING AT LEAST BIT
+!     23 SPUR." (X0 never gets the refill), CYCLES 1059.
+!   NOT SHOWN: only the X1 group and the bit-23 exit were reached; the
+!     X2-X15 groups are not shown to discriminate.
+!   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+!   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+! The addresses are the ones this listing prints for them (SIC,SEN
+! "1310.00 80", B,SERS "1304.10 00", SIC,SENO+.32 "1311.40 80", B,SSW
+! "1301.10 00"), the same as routine 148's; what is AT them is SSIP's,
+! which this file replaces with halts, as ax4b_148_immediate_indexed does.
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248 and BIT19: SYN from the printed addresses of "LX,$X13,IC248"
+! (11306.32 10) and "V+,$X13,BIT19" (13077.32 B0); the three continuity
+! rows that name them are never reached here (SSW halts first).
+IC248   SYN, (8)11306.0
+BIT19   SYN, (8)13077.0
+!
+! ======================================================================
+! PDF p.139, 010623.40-010660.00 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)10623.40
+I4830   LX,  $X1, I000                ! -TEST 3 CHECK I-BOX HALF WORD 19
+        SX,  $X1, I48DMP              ! -BIT MODIFICATION.
+        SIC, I48S2
+        B,   I48S1
+        LX,  $X1, I48XW1
+        LR,  $X0, 0($X1)
+        L(BU), $X0
+        BZRZ, I4831                   ! -OK
+!
+        LV,  $X1, I00Z
+        L(BU), $X1
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BIT 22 SPUR.
+        B,   I4831
+!
+        L(BU), $X2
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BIT 21 SPUR.
+        B,   I4831
+!
+        L(BU), $X3
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 21,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X4
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BIT 20 SPUR.
+        B,   I4831
+!
+        L(BU), $X5
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 20,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X6
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 20,21 SPUR.
+        B,   I4831
+!
+        L(BU), $X7
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 20,21,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X8
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BIT 19 SPUR.
+        B,   I4831
+!
+! ---- PDF p.140, 010660.40-010715.00 ----
+        L(BU), $X9
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X10
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,21 SPUR.
+        B,   I4831
+!
+        L(BU), $X11
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,21,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X12
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,20, SPUR.
+        B,   I4831
+!
+        L(BU), $X13
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,20,22 SPUR.
+        B,   I4831
+!
+        L(BU), $X14
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,20,21 SPUR.
+        B,   I4831
+!
+        L(BU), $X15
+        BRZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BITS 19,20,21,22 SPUR.
+        B,   I4831
+!
+        LX,  $X1, I48DMP
+        SR,  $X1, $X1
+        BXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING AT LEAST BIT 23 SPUR.
+        B,   I4831
+!
+        SIC, SEN                      ! -FAILURE IN BITS 0-18 AND POSSIBLE
+        B,   SERS                     ! -FAILURE IN BITS 19-23.
+!
+I4831   B,   $+1.0
+        BD,  I4830
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT19
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.152, 011310.00-011320.00: 148S1, "SUBROUTINE TO CLEAR ALL IX
+! REGS.", and its return 148S2
+! ======================================================================
+        SLC, (8)11310.0
+I48S1   Z,   $X0                      ! -SUBROUTINE TO CLEAR
+        Z,   $X1                      ! -ALL IX REGS.
+        Z,   $X3
+        Z,   $X4
+        Z,   $X5
+        Z,   $X6
+        Z,   $X7
+        Z,   $X8
+        Z,   $X9
+        Z,   $X10
+        Z,   $X11
+        Z,   $X12
+        Z,   $X13
+        Z,   $X14
+        Z,   $X15
+        Z,   $X2
+I48S2   $B,  0
+!
+! ======================================================================
+! PDF p.153 011361.00 (148XW1) and PDF p.154 011373.00 (148DMP)
+! ======================================================================
+        SLC, (8)11361.0
+I48XW1  XW,  I48DMP+.63, 0, 0
+        SLC, (8)11373.0
+I48DMP  XW,  0, 0, 0
+!
+! ======================================================================
+! PDF p.190, 013034.00-013035.00: "COMMON CONSTANTS FOR FETCH ONLY"
+! ======================================================================
+        SLC, (8)13034.0
+I00Z    XW,  0, 0, 0, 0               ! -ZERO INDX WD.
+I000    (8)DD(BU,64,8), 1777777777777777777777  ! -INDX WD. OF ONES.
+        END, I4830

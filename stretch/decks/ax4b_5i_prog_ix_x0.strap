@@ -1,0 +1,140 @@
+! ax4b_5i_prog_ix_x0.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113), TEST 5I "PROG IX WITH
+! IX 0", the last block of routine 148, with what follows it:
+!
+!   PDF p.152  011270.00-011275.40  TEST 5I and its exit
+!   PDF p.152  011276.00-011305.40  routine 148's continuity update and
+!                                   check (never run here: SSW halts)
+!   PDF p.152  011306.00-011307.00  IC248, ICK248
+!   PDF p.152  011310.00-011320.00  148S1 "SUBROUTINE TO CLEAR ALL IX
+!                                   REGS." and its return 148S2
+!   PDF p.153  011352.00, 011364.00 148K25, 148XW4
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 and 300 dpi; checked row
+! for row by tests/verify_ax4b_5i_prog_ix_x0_listing.py (48 rows, 6
+! symbols).
+!
+! WHAT IT TESTS (IBM's code, unchanged).  After 148S1 clears every index
+! register, "LX,$X0,148XW4" loads $X0 with 148K25's address (count 1).
+!   L(BU),0             0.00 80 000000.20 50   I = 0, P = 0
+! must load word 0 (zero): "NOT PROG IX WITH I FLD ZERO USES IX 0 TO
+! GENERATE EFFECT ADR."  A nonzero result takes BZRZ,SERS, with SIC,SEN
+! naming 011273.40.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44,
+!     read in the page image), so SEN stays 0 on a pass and names the
+!     error entry on a failure.
+!   * BIT3 and I50 (routine 150's entry) are SYN'd from the printed
+!     "V+,$X12,BIT3" (13057.30 B0) and "BD,I50" (11424.04 00); both are
+!     after B,SSW and never run.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..),
+!     as for every ax4b label (docs/listing_typography.md).  Nothing
+!     else changed.
+!
+! RESULT ON THE MODEL, 2026-11-18 (a57832f + this deck): PASSES -- halts
+! at SSW (PC 1410), SEN = 0 (BZRZ not taken, so SIC,SEN stored nothing),
+! $X0 = 148XW4's word (0x04BA800000040000).  CYCLES 288 is MODEL
+! BEHAVIOUR; no time is printed.  IBM's listing and the model AGREE.
+!
+! INJECTIONS, each in a scratch copy of bsv/, OBSERVED for this deck:
+!   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) -> FAIL halt
+!     (PC 1416), CYCLES 251; SEN stays 0 -- INFERRED, not dumped: SIC,SEN is
+!     then itself indexed by X0 (= 148XW4's value) and stores elsewhere.
+!   P = 0 treated as immediate, X0 writes dropped, FP unnormalized, FP
+!     18-bit rounding, LR into J+1, SVA 19-bit: no effect on PC, SEN or
+!     CYCLES (only those compared; X0RO would trip the X0 pin).
+!   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+!   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+! The addresses are the ones this listing prints for them (SIC,SEN
+! "1310.00 80", B,SERS "1304.10 00", SIC,SENO+.32 "1311.40 80", B,SSW
+! "1301.10 00"), the same as routine 148's; what is AT them is SSIP's,
+! which this file replaces with halts, as ax4b_148_immediate_indexed does.
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! BIT3 and I50 (routine 150's entry): SYN from the printed addresses of
+! "V+,$X12,BIT3" (13057.30 B0) and "BD,I50" (11424.04 00).  The rows
+! after B,SSW that name them are never reached here (SSW halts first).
+BIT3    SYN, (8)13057.0
+I50     SYN, (8)11424.0
+!
+! ======================================================================
+! PDF p.152, 011270.00-011320.00 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)11270.0
+I4848   SIC, I48S2                    ! -TEST 5I,PROG IX WITH IX 0.
+        B,   I48S1
+        LX,  $X0, I48XW4
+        L(BU), 0
+        SIC, SEN                      ! -NOT PROG IX WITH I FLD ZERO USES
+        BZRZ, SERS                    ! -IX 0 TO GENERATE EFFECT ADR.
+!
+        B,   $+1.0
+        BD,  I4848
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        SC,  $X13, $X12
+        V+,  $X12, BIT3
+        LC,  $X13, $X12
+        SX,  $X13, IC248
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        KV,  $X13, ICK248
+        SIC, SEN
+        BZXE, SERS                    ! -CONTINUITY ERROR.
+        SC,  $X13, $X13
+        LX,  $X12, ICK248
+        SC,  $X12, $X12
+        KV,  $X13, $X12
+        SIC, SEN
+        BZXE, SERS                    ! -CONTINUITY ERROR.
+        BD,  I50
+!
+IC248   XW,  0, 0, 0                  ! -CONTINUITY REG 1248.
+ICK248  XW,  (8)777777.77, (8)740000, 0
+!
+I48S1   Z,   $X0                      ! -SUBROUTINE TO CLEAR
+        Z,   $X1                      ! -ALL IX REGS.
+        Z,   $X3
+        Z,   $X4
+        Z,   $X5
+        Z,   $X6
+        Z,   $X7
+        Z,   $X8
+        Z,   $X9
+        Z,   $X10
+        Z,   $X11
+        Z,   $X12
+        Z,   $X13
+        Z,   $X14
+        Z,   $X15
+        Z,   $X2
+I48S2   $B,  0
+!
+! ======================================================================
+! PDF p.153, 011352.00 and 011364.00: the constants TEST 5I reads
+! ======================================================================
+        SLC, (8)11352.0
+I48K25  XW,  (8)123456.70
+        SLC, (8)11364.0
+I48XW4  XW,  I48K25, 1, 0
+        END, I4848

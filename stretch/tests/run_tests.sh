@@ -11208,6 +11208,154 @@ run "IBOX-4 routine 148 CHECK INDEXING IMMEDIATE LOAD, ON THE MODEL (24 index bi
     "X3:addrIndex(3)=0x10000000000" \
     STEPS=2000000 CYCLES=5946+-0
 
+run "IBOX-4 routine 148 TEST 5B unindexed immediate walk, bit-exact (jb_ax4b PDF pp.143-145, 191)" python3 verify_ax4b_5b_immediate_unindexed_listing.py
+# The unindexed companion of the block above (IBM's own, 2026-11-18):
+# "SVA,$X3,$+.32" writes BITk's value into the address field of
+# "LI(BU,64,8),0" (0.00 80 400000.20 50), a full-word VFL at an ODD
+# half-word, I = 0, P = 4; the 64-bit immediate read back through $R
+# must equal BITk, k = 0..23.  SSW/SERS are PASS/FAIL halts (the
+# listing's own addresses); SIC,SEN names the failing bit's entry.
+# PASSES as the model stands: X1 = BIT23's address 013103.00, count 0
+# (IBM's LCI 24 / C-I walk ends there); X2 = entry 23 (011061.00);
+# X3's value = BIT23's (.01).  CYCLES is MODEL BEHAVIOUR (no printed
+# time).  Injections OBSERVED, scratch copy of bsv/ (deck header):
+#   immediateOperand drops EA bits 18-23 -> FAIL halt (PC 1416), SEN 011050.00
+#     (the bit-18 entry of I4839), CYCLES 5398.
+#   SVA stores {x.addr[23:5], 5'b0} (bits 19-23 of the value lost) -> FAIL
+#     halt, SEN 011052.00 (the bit-19 entry), CYCLES 5680.
+#   instrStored forced False (no store-into-prepared hold) -> NO EFFECT, PASS
+#     at 6834: this deck does NOT reach that hold; no claim is made for it.
+#   P = 0 treated as immediate, X0 writes dropped, I = 0 indexed by X0, FP
+#     unnormalized, FP 18-bit rounding, LR into J+1:
+#     no effect on PC, SEN or CYCLES here (the driver compared only those;
+#     each is caught by a sibling deck).
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TEST 5B unindexed immediate walk, ON THE MODEL (24 address bits through SVA)" ./run_program.sh ../decks/ax4b_5b_immediate_unindexed.strap StretchAx4b5BImmTb \
+    PC=1410 "SEN:712=0" \
+    "X1:addrIndex(1)=0x590c00000000000" \
+    "X2:addrIndex(2)=0x48c400000000000" \
+    "X3:addrIndex(3)=0x10000000000" \
+    STEPS=2000000 CYCLES=6834+-0
+
+run "IBOX-4 routine 148 TEST 5A P field 000, bit-exact (jb_ax4b PDF p.142, 153)" python3 verify_ax4b_5a_p_field_000_listing.py
+# "L(BU),148K24($X1)" (11351.00 81 000000.20 50: I = 1, P = 0) with X1
+# zeroed must load 148K24 and leave X1 alone; "LX,$X0,$R" then KV/KC
+# on $X0.  PASSES: X0 = 148K24's word (what KV and KC require), X1 = 0
+# ("MODIFIES IX REG" otherwise).  CYCLES is MODEL BEHAVIOUR.
+# Injections OBSERVED (deck header):
+#   P = 0 treated as immediate (vi.a.p == 4 || == 0) -> FAIL halt, SEN
+#     010750.40: "P OF 000 ACTS LIKE A P OF 100.", CYCLES 165.
+#   writes to X0 discarded (writeIndex j == 0) -> FAIL halt, SEN 010757.00:
+#     "LOADED FROM I-LEFT INDEX VALUE ADR BUT DID NOT MODIFY IX REG", CYCLES 256.
+#   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) -> FAIL halt,
+#     CYCLES 201; SEN stays 0 -- INFERRED, not dumped: SIC,SEN is then itself
+#     indexed by X0 and stores elsewhere.
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TEST 5A P field 000, ON THE MODEL (X0 written, X1 untouched)" ./run_program.sh ../decks/ax4b_5a_p_field_000.strap StretchAx4b5ATb \
+    PC=1410 "SEN:712=0" \
+    "X0:addrIndex(0)=0x29cbbe029cb80000" \
+    "X1:addrIndex(1)=0" \
+    STEPS=2000000 CYCLES=219+-0
+
+run "IBOX-4 routine 148 TEST 5I I=0 ignores X0, bit-exact (jb_ax4b PDF pp.152-153)" python3 verify_ax4b_5i_prog_ix_x0_listing.py
+# X0 := 148XW4 (148K25's address); "L(BU),0" (I = 0) must load word 0,
+# not 148K25.  BZRZ,SERS is not taken, so SIC,SEN stores nothing: SEN
+# stays 0 (Reference Manual printed p.41, SIC "is executed if and only
+# if the associated branching is successful").  X0 = 148XW4's word, as
+# LX,$X0 left it.  CYCLES is MODEL BEHAVIOUR.  Injections OBSERVED:
+#   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) -> FAIL halt
+#     (PC 1416), CYCLES 251; SEN stays 0 -- INFERRED, not dumped: SIC,SEN is
+#     then itself indexed by X0 (= 148XW4's value) and stores elsewhere.
+#   P = 0 treated as immediate, X0 writes dropped, FP unnormalized, FP
+#     18-bit rounding, LR into J+1, SVA 19-bit: no effect on PC, SEN or
+#     CYCLES (only those compared; X0RO would trip the X0 pin).
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TEST 5I I=0 ignores X0, ON THE MODEL" ./run_program.sh ../decks/ax4b_5i_prog_ix_x0.strap StretchAx4b5ITb \
+    PC=1410 "SEN:712=0" \
+    "X0:addrIndex(0)=0x4ba800000040000" \
+    STEPS=2000000 CYCLES=288+-0
+
+run "IBOX-4 routine 148 TEST 4 18-bit FP modification, bit-exact (jb_ax4b PDF pp.141, 153, 191)" python3 verify_ax4b_4_fp_18bit_listing.py
+# "L(N),0($X1)" with X1 = BIT13+.32 and "L(U),0($X1)" with X1 =
+# 148K24+.63: an FP address is 18 bits, so the index's bits 18-23 must
+# not reach it; L(N) must normalize BIT13 (KV/BXH: $L above BIT13) and
+# L(U) must bring 148K24 back whole (KV and KC).  PASSES: X1 = 148K24's
+# word, from $L.  CYCLES is MODEL BEHAVIOUR.  Injections OBSERVED:
+#   FP normalization off (normalized = False) -> FAIL halt, SEN 010725.00:
+#     the L(N) check, "GATING BIT 18 SPURIOUSLY.", CYCLES 182.
+#   effAddr18 returns ea[23:6] + ea[5] (bit 18 rounds up) -> FAIL halt, SEN
+#     010725.00, the same L(N) check (BIT13+.32 reads BIT13's successor),
+#     CYCLES 182.  Predicted 010732.40 (the L(U) check); it failed earlier.
+#   NOT SHOWN: no injection measured here reaches the second half (L(U)
+#     through 148XW3, "GATING SOME OF 19-23 SPUR."); both stop at L(N).
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TEST 4 18-bit FP modification, ON THE MODEL" ./run_program.sh ../decks/ax4b_4_fp_18bit.strap StretchAx4b4FpTb \
+    PC=1410 "SEN:712=0" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=309+-0
+
+run "IBOX-4 routine 148 TEST 3 19-bit I-box modification, bit-exact (jb_ax4b PDF pp.139-140, 152-154, 190)" python3 verify_ax4b_3_halfword_19bit_listing.py
+# "LR,$X0,0($X1)" with X1 = 148DMP+.63: a half-word address uses bits
+# 0-18 only, reading 148DMP's right half into X0's refill; no other
+# index register may change ("GATING BIT nn SPUR." for X1-X15).
+# PASSES: X0 = refill 777777 only (0x3FFFF, from 148DMP = all ones,
+# which SX,$X1 of IBM's "INDX WD. OF ONES" leaves); X1 = 148XW1's
+# word.  CYCLES is MODEL BEHAVIOUR.  Injections OBSERVED:
+#   LR writes index register J+1 -> FAIL halt, SEN 010633.00: "GATING BIT
+#     22 SPUR." (X1 changed), CYCLES 352.
+#   writes to X0 discarded -> FAIL halt, SEN 010710.00: "GATING AT LEAST BIT
+#     23 SPUR." (X0 never gets the refill), CYCLES 1059.
+#   NOT SHOWN: only the X1 group and the bit-23 exit were reached; the
+#     X2-X15 groups are not shown to discriminate.
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TEST 3 19-bit I-box modification, ON THE MODEL" ./run_program.sh ../decks/ax4b_3_halfword_19bit.strap StretchAx4b3HwTb \
+    PC=1410 "SEN:712=0" \
+    "X0:addrIndex(0)=0x3ffff" \
+    "X1:addrIndex(1)=0x4beff0000000000" \
+    "DMP:4859=0xffffffffffffffff" \
+    STEPS=2000000 CYCLES=340+-0
+
+run "IBOX-4 routine 148 TESTs 5C/5D progressive V+I, V+IC, bit-exact (jb_ax4b PDF pp.149, 153, 191)" python3 verify_ax4b_5cd_prog_ix_v_plus_listing.py
+# Routine 148's progressive pair before 5E/5F (ibox4_prog_ix_v): one
+# "L(code)(BU,64,8),1.0($X1)" each, then IBM's four checks -- operand
+# (KV $X2), value (KV $X1 vs 148K28), count (KC vs BIT17's value 1,
+# Ref. Manual printed p.24) and refill (SR/LX/BZXVZ).  PASSES: X1 =
+# 0x40000 (value cleared by SR of refill 0, count 1), X2 = 148K25's
+# word.  CYCLES is MODEL BEHAVIOUR.  Injections OBSERVED:
+#   count decremented only for codes ending 3 (V+IC no longer counts) ->
+#     FAIL halt, SEN 011205.00: TEST 5D's KC check, "MODIFIED INDEX COUNT.
+#     INCORRECTLY.", CYCLES 408.
+#   refill suppressed (progressiveIndex never refills) -> NO EFFECT, PASS at
+#     493 (PC, SEN, CYCLES compared): neither V+I nor V+IC refills.
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TESTs 5C/5D progressive V+I, V+IC, ON THE MODEL" ./run_program.sh ../decks/ax4b_5cd_prog_ix_v_plus.strap StretchAx4b5CDTb \
+    PC=1410 "SEN:712=0" \
+    "X1:addrIndex(1)=0x40000" \
+    "X2:addrIndex(2)=0x29cbb80000000000" \
+    STEPS=2000000 CYCLES=493+-0
+
+run "IBOX-4 routine 148 TESTs 5G/5H progressive V-IC, V-ICR, bit-exact (jb_ax4b PDF pp.151, 153, 191)" python3 verify_ax4b_5gh_prog_ix_v_minus_listing.py
+# The subtracting pair after 5E/5F; 5H's count reaches zero and X1 is
+# refilled from 148K28.  Same four checks, same final state as 5C/5D.
+# CYCLES is MODEL BEHAVIOUR.  Injections OBSERVED:
+#   count decremented only for codes ending 3 (V-IC no longer counts) ->
+#     FAIL halt, SEN 011250.40: TEST 5G's KC check, CYCLES 201.
+#   refill suppressed -> FAIL halt, SEN 011261.00: TEST 5H's KC check (count
+#     left 0, not refilled to 1), CYCLES 408.
+#   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+#   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+run "IBOX-4 routine 148 TESTs 5G/5H progressive V-IC, V-ICR, ON THE MODEL" ./run_program.sh ../decks/ax4b_5gh_prog_ix_v_minus.strap StretchAx4b5GHTb \
+    PC=1410 "SEN:712=0" \
+    "X1:addrIndex(1)=0x40000" \
+    "X2:addrIndex(2)=0x29cbb80000000000" \
+    STEPS=2000000 CYCLES=500+-0
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the
