@@ -17,6 +17,9 @@ bsv/run_smoke.sh
 echo "=== Bluesim negative-opcode testbench ==="
 bsv/run_neg_tb.sh
 
+echo "=== Bluesim KL1-B execution testbench ==="
+bsv/run_kl1b_tb.sh
+
 echo "=== Bluesim NU testbench ==="
 bsv/run_nu_tb.sh
 
