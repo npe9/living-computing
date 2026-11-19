@@ -1,4 +1,28 @@
-// StretchDecBox.bsv -- the DECIMAL ADDER, as a multi-cycle box.
+// StretchDecBox.bsv -- the DECIMAL ADDER, as a multi-cycle box -- and,
+// since 2026-11-19, the BINARY one: the serial arithmetic unit's adder.
+//
+// >>> ONE ADDER, DECIMAL CORRECTION SWITCHED IN (2026-11-19, plan §1c
+// step 5e stage 3). <<<  Buchholz, "Planning a Computer System", §14.4,
+// printed p.208 (PDF 233): "variable-field-length (binary or decimal)
+// add operations, and logical-connective operations are executed by the
+// serial unit" (the parallel unit, StretchVflBox's mkVflBox, has the
+// binary multiply and divide).  Printed p.209 (PDF 234), of that unit's
+// common adder: "True-complement (inversion) circuits, both before and
+// after the adder, take care of subtraction.  A decimal-correction
+// circuit is switched into the data path when decimal addition or
+// subtraction is specified."  So a binary add is THIS box with the
+// correction off -- DecReq's `binary` -- not a second adder:
+//   * the digit step drops the "above nine" correction: four bits add
+//     with the carry out of bit 3 as the digit carry (sauDigitStep);
+//   * complementing is inversion (ones' complement, 15 - d) instead of
+//     nines' (9 - d), so a subtraction is a + ~b + 1 and the second
+//     pass recomplements to b - a exactly as the decimal one does;
+//   * the passes, the clocks and `carry`'s meaning are the decimal
+//     ones: like signs, the carry out of bit 127 (Lost Carry); unlike,
+//     True iff a >= b.
+// The rate is NOT p.209's: see decDigitsPerCycle.  The caller is
+// vflIntOp's binary + / +MG arm; *+ keeps binAccAdd (its arm says why).
+//
 //
 // >>> WHY A BOX (AGENTS.md, "Idiomatic Bluespec") <<<  Decimal VFL
 // arithmetic needs a 32-digit BCD add/subtract with decimal carry,
@@ -90,6 +114,8 @@ typedef struct {
   Bit#(128) a;     // 32 BCD digits, digit 0 in bits 3:0
   Bit#(128) b;
   Bool      sub;   // True: effective signs unlike, compute |a - b|
+  Bool      binary;  // True: decimal correction off (p.209): a and b
+                     // are 128-bit binary magnitudes, r likewise
 } DecReq deriving (Bits, Eq, FShow);
 
 typedef struct {
@@ -112,6 +138,17 @@ endfunction
 
 // The nines' complement of one digit.
 function Bit#(4) nines(Bit#(4) d) = 4'd9 - d;
+
+// THE SERIAL ADDER'S STEP, with the decimal correction switched in or
+// not (p.209).  Binary: a plain four-bit add, the carry out of bit 3.
+function Tuple2#(Bit#(4), Bit#(1)) sauDigitStep(Bool bin, Bit#(4) x, Bit#(4) y, Bit#(1) c);
+  Bit#(5) s = zeroExtend(x) + zeroExtend(y) + zeroExtend(c);
+  return bin ? tuple2(s[3:0], s[4]) : decDigitStep(x, y, c);
+endfunction
+
+// The complement before (and after) the adder: inversion for binary,
+// nines' for decimal.
+function Bit#(4) sauComp(Bool bin, Bit#(4) d) = bin ? ~d : nines(d);
 
 interface DecBox;
   method Action request(DecReq r);
@@ -137,6 +174,7 @@ module mkDecBox(DecBox);
   Reg#(Bit#(128)) rg_r[2]     <- mkCReg(2, 0);
   Reg#(Bit#(1))   rg_c[2]     <- mkCReg(2, 0);
   Reg#(Bool)      rg_sub[2]   <- mkCReg(2, False);
+  Reg#(Bool)      rg_bin[2]   <- mkCReg(2, False);
   Reg#(Bool)      rg_carry[2] <- mkCReg(2, False);
   Reg#(Bit#(8))   rg_ctr[2]   <- mkCReg(2, 0);
 
@@ -153,7 +191,7 @@ module mkDecBox(DecBox);
     Bit#(1)   c = rg_c[0];
     Bit#(128) r = rg_r[0];
     for (Integer k = 0; k < decDigitsPerCycle; k = k + 1) begin
-      match {.d, .c2} = decDigitStep(a[3:0], b[3:0], c);
+      match {.d, .c2} = sauDigitStep(rg_bin[0], a[3:0], b[3:0], c);
       c = c2;
       a = a >> 4;
       b = b >> 4;
@@ -182,7 +220,7 @@ module mkDecBox(DecBox);
     Bit#(1)   c = rg_c[0];
     Bit#(128) r = rg_r[0];
     for (Integer k = 0; k < decDigitsPerCycle; k = k + 1) begin
-      match {.d, .c2} = decDigitStep(nines(a[3:0]), 0, c);
+      match {.d, .c2} = sauDigitStep(rg_bin[0], sauComp(rg_bin[0], a[3:0]), 0, c);
       c = c2;
       a = a >> 4;
       r = { d, r[127:4] };
@@ -199,12 +237,13 @@ module mkDecBox(DecBox);
     Bit#(128) bc = q.b;
     if (q.sub)
       for (Integer k = 0; k < decDigits; k = k + 1)
-        bc[4*k+3:4*k] = nines(q.b[4*k+3:4*k]);
+        bc[4*k+3:4*k] = sauComp(q.binary, q.b[4*k+3:4*k]);
     rg_a[1]     <= q.a;
     rg_b[1]     <= bc;
     rg_r[1]     <= 0;
     rg_c[1]     <= q.sub ? 1 : 0;
     rg_sub[1]   <= q.sub;
+    rg_bin[1]   <= q.binary;
     rg_ctr[1]   <= fromInteger(passClocks);
     rg_state[1] <= DecAdd;
   endmethod
@@ -227,8 +266,22 @@ endmodule
 // with the accumulator as `a` and the storage operand shifted two digits
 // (offset 8 bits) as `b`: 37600+ + 75679+, 45623+ + 53200-, 53200+ +
 // 53200-, 53200- + 53200+, 53201+ + 53200-.
+//
+// Vectors 9-14 are the BINARY mode (2026-11-19), worked by hand as
+// 128-bit binary: each has a digit above nine somewhere, or a ripple a
+// decimal step would treat differently, so a box that left the decimal
+// correction switched in fails them.
+//
+// MEASURED INJECTIONS, 2026-11-19 (each reverted, the file compared
+// byte for byte with the saved good copy):
+//   * sauDigitStep always decimal (the correction never switched off):
+//     vectors 9-14 FAIL, 0-8 pass (the decimal control).
+//   * sauComp always nines' (binary subtraction complemented as
+//     decimal): vectors 11, 12, 13 FAIL -- exactly the unlike-sign
+//     binary ones -- and 0-10 and 14 pass (decimal, and like-sign
+//     binary, as controls).
 // ---------------------------------------------------------------------
-typedef 9 NDecVec;
+typedef 15 NDecVec;
 
 (* synthesize *)
 module mkDecBoxTb(Empty);
@@ -245,24 +298,39 @@ module mkDecBoxTb(Empty);
   function DecReq reqOf(Bit#(4) i) =
     case (i)
       // p.60 example 1: acc 37600+, operand 75679+: like signs.
-      0: DecReq { a: 128'h37600, b: 128'h75679, sub: False };
+      0: DecReq { a: 128'h37600, b: 128'h75679, sub: False, binary: False };
       // example 2: acc 45623+, operand 53200-: unlike, a < b.
-      1: DecReq { a: 128'h45623, b: 128'h53200, sub: True };
+      1: DecReq { a: 128'h45623, b: 128'h53200, sub: True, binary: False };
       // example 3: acc 53200+, operand 53200-: unlike, equal.
-      2: DecReq { a: 128'h53200, b: 128'h53200, sub: True };
+      2: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False };
       // example 4: acc 53200-, operand 53200+: unlike, equal.
-      3: DecReq { a: 128'h53200, b: 128'h53200, sub: True };
+      3: DecReq { a: 128'h53200, b: 128'h53200, sub: True, binary: False };
       // example 5: acc 53201+, operand 53200-: unlike, a > b.
-      4: DecReq { a: 128'h53201, b: 128'h53200, sub: True };
+      4: DecReq { a: 128'h53201, b: 128'h53200, sub: True, binary: False };
       // 32 nines + 1: the carry out of digit 31 (Lost Carry).
-      5: DecReq { a: 128'h99999999999999999999999999999999, b: 128'h1, sub: False };
+      5: DecReq { a: 128'h99999999999999999999999999999999, b: 128'h1, sub: False, binary: False };
       // a carry rippling across a pass boundary (digit 7 -> 8).
-      6: DecReq { a: 128'h99999999, b: 128'h1, sub: False };
+      6: DecReq { a: 128'h99999999, b: 128'h1, sub: False, binary: False };
       // 0 - 1: recomplement to 1, across all 32 digits.
-      7: DecReq { a: 128'h0, b: 128'h1, sub: True };
+      7: DecReq { a: 128'h0, b: 128'h1, sub: True, binary: False };
+      // BINARY: 2^32 - 1 + 1, the carry rippling across the first
+      // pass boundary (bit 31 -> 32).
+      9: DecReq { a: 128'hFFFFFFFF, b: 128'h1, sub: False, binary: True };
+      // BINARY: 2^128 - 1 + 1: the carry out of bit 127 (Lost Carry).
+      10: DecReq { a: '1, b: 128'h1, sub: False, binary: True };
+      // BINARY, unlike signs, a > b: 0x100 - 1 = 0xFF, end carry.
+      11: DecReq { a: 128'h100, b: 128'h1, sub: True, binary: True };
+      // BINARY, unlike signs, a < b: 1 - 0x100, no end carry, so the
+      // second pass recomplements to 0xFF.
+      12: DecReq { a: 128'h1, b: 128'h100, sub: True, binary: True };
+      // BINARY, unlike signs, equal: zero with the end carry.
+      13: DecReq { a: 128'h5A5A, b: 128'h5A5A, sub: True, binary: True };
+      // BINARY: 9 + 9 = 0x12 (eighteen); decimal correction would
+      // make it 0x18.
+      14: DecReq { a: 128'h9, b: 128'h9, sub: False, binary: True };
       // full width: 10^31 - 1 against 10^31 + ... a > b by one digit.
       default: DecReq { a: 128'h10000000000000000000000000000000,
-                        b: 128'h00000000000000000000000000000001, sub: True };
+                        b: 128'h00000000000000000000000000000001, sub: True, binary: False };
     endcase;
   function DecRsp wantOf(Bit#(4) i) =
     case (i)
@@ -274,9 +342,15 @@ module mkDecBoxTb(Empty);
       5: DecRsp { r: 128'h0,      carry: True };
       6: DecRsp { r: 128'h100000000, carry: False };
       7: DecRsp { r: 128'h1,      carry: False };
+      9: DecRsp { r: 128'h100000000, carry: False };
+      10: DecRsp { r: 128'h0,     carry: True };
+      11: DecRsp { r: 128'hFF,    carry: True };
+      12: DecRsp { r: 128'hFF,    carry: False };   // b - a, recomplemented
+      13: DecRsp { r: 128'h0,     carry: True };
+      14: DecRsp { r: 128'h12,    carry: False };
       default: DecRsp { r: 128'h09999999999999999999999999999999, carry: True };
     endcase;
-  function Bit#(16) clocksOf(Bit#(4) i) = (i == 1 || i == 7) ? 8 : 4;
+  function Bit#(16) clocksOf(Bit#(4) i) = (i == 1 || i == 7 || i == 12) ? 8 : 4;
 
   rule rl_issue (!done && !issued);
     box.request(reqOf(idx));

@@ -3115,8 +3115,10 @@ typedef struct {
 //     hand: the first word, or the second of a crossing field once the
 //     first is in prefetch[0].  The caller sets needsRead only then, so a
 //     needsRead an earlier step set is never cleared.
+// connectiveOp's C/CT/CM main path uses it too (2026-11-19): its ladder
+// was the same one, written a tenth time.
 // ST and M+ do not use it: their RMW reads are interleaved with the store
-// (their arms say why).
+// (their arms say why), in the one order vflRmwNextRead states.
 // ---------------------------------------------------------------------
 typedef struct {
   Bit#(64)         raw;
@@ -3151,6 +3153,25 @@ function VflFetch vflFetchOperand(Bool immediate, BitAddr ea, Bit#(7) len_,
   end
   return f;
 endfunction
+
+// ---------------------------------------------------------------------
+// THE READ-MODIFY-WRITE ORDER OF READS, ONCE (2026-11-19, plan §1c step
+// 5e).  The arms that write their field back -- ST and SRD (three
+// ladders, by crossing and refill), M+/M+MG/M+1, and the CM connective's
+// refill path -- read their words in one order: the field's first word,
+// its second if the field crosses, then the progressive refill word, and
+// write only when all are in hand (vflWriteArmHandled's reason).  Each
+// wrote the same choice of the next word to read; this is it.  `have` is
+// prefetchCount, and the caller asks only while `have` is below
+// vflRmwNeed's count, so the refill address is never chosen for a field
+// word.  Pure, like vflFetchOperand: a function, not a box.
+// ---------------------------------------------------------------------
+function Bit#(2) vflRmwNeed(Bool crosses, Bool refill) =
+  (crosses ? 2 : 1) + (refill ? 1 : 0);
+
+function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
+                                 WordAddr refill) =
+  (have == 0) ? w0 : (have == 1 && crosses) ? (w0 + 1) : refill;
 
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
@@ -3416,7 +3437,7 @@ function ActionValue#(VflOutcome)
                 ind = setResultIndicatorsF(ind, shifted);
                 if (ldPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3605,7 +3626,7 @@ function ActionValue#(VflOutcome)
               Bool decAsk = decRound && !isValid(decOf(boxResult));
               DecRsp decRsp = validValue(decOf(boxResult));
               Maybe#(BoxReq) decReq = tagged Valid (tagged BoxDec DecReq {
-                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False });
+                a: acc.mag, b: 128'd5 << (offDec - 4), sub: False, binary: False });
               Bit#(128) decAccU = acc.mag >> offDec;
               Bit#(128) decAcc = (decRound ? decRsp.r : acc.mag) >> offDec;
               Bit#(7) decNumLen = (vi.m.unsign == 1) ? len_
@@ -3673,7 +3694,7 @@ function ActionValue#(VflOutcome)
                 // DF, p.32 class 3, is raised below with the refill, and
                 // only when the store was not suppressed (refillDfNote).
                 if (vflNeedsRefill) vflWriteArmHandled = True;
-                Bit#(2) stNeed = vflNeedsRefill ? 3 : 2;
+                Bit#(2) stNeed = vflRmwNeed(True, vflNeedsRefill);
                 if (prefetchCount >= stNeed && decAsk) begin
                   needsBox  = decReq;
                   needsRead = tagged Valid 0;
@@ -3703,12 +3724,9 @@ function ActionValue#(VflOutcome)
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                     ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
-                end else if (prefetchCount == 2)
-                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
+                end else
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, True,
+                                                          zeroExtend(vflPx1.refill));
               end
               else if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1 && decAsk) begin
@@ -3724,7 +3742,7 @@ function ActionValue#(VflOutcome)
                   end
                   vflReadsUsed = 1;
                 end else
-                  needsRead = tagged Valid w0;
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, False, 0);
               end else begin
                 // A refill is also needed: defer the write until
                 // BOTH reads (this field's word and the refill word)
@@ -3746,10 +3764,9 @@ function ActionValue#(VflOutcome)
                     ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                     ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
                   end
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                else
-                  needsRead = tagged Valid w0;
+                end else
+                  needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, False,
+                                                          zeroExtend(vflPx1.refill));
               end
             end
           end
@@ -3870,7 +3887,7 @@ function ActionValue#(VflOutcome)
                 if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
                 if (dPf) ind = setBit(ind, ind_PF, 1);
               end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub });
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False });
                 needsRead = tagged Valid 0;
               end
             end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
@@ -3893,40 +3910,64 @@ function ActionValue#(VflOutcome)
               // add, since an unlike-signed one is a subtraction and
               // cannot carry out (decks/vfl_binary_add_indicators.strap
               // B5-B10).
-              // The rule is binAccAdd (StretchALU.bsv), shared with *+.
+              // The rule is binAccAdd's (StretchALU.bsv), shared with *+;
+              // the sum itself is now mkDecBox's (below).
               SM128 acc = readAcc(st);
               // "assumed positive for purposes of the addition itself"
               SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
-              BinAccAdd ba = binAccAdd(accUsed, opnd, offSh);
-              SM128 sum = ba.sum;
-              Bool bLc = ba.lc;
-              Bool bPf = ba.pf;
-              // "If the result is positive, the sum is placed into
-              // the accumulator.  If the result is negative, the
-              // entire accumulator is cleared to zero.  In either
-              // case the content of the accumulator sign byte
-              // register is not changed."  The sign kept is the
-              // accumulator's own, both ways -- which also satisfies
-              // p.60's closing rule, "on any operation in which the
-              // result in the accumulator is all zero, the sign
-              // remains as it was before the operation began".
-              SM128 stored = magnitude
-                ? SM128 { sign: acc.sign,
-                          mag: (sum.sign == 0) ? sum.mag : 0 }
-                : sum;
-              writeAcc(st, stored);
-              // "set according to the contents of the ENTIRE
-              // accumulator when the operation is complete" (p.60,
-              // Arithmetic Result).  A cleared accumulator whose sign
-              // byte stays minus reads RZ AND RN: printed p.47's RN is
-              // "negative whether zero or not".  (Until 2026-11-16 this
-              // comment argued the opposite, that "the sign remains as
-              // it was" required RN off; that sentence is about the
-              // sign kept, not the indicator, and the decimal arm's
-              // A10 already pinned RZ RN for the same case.)
-              ind = setResultIndicatorsF(ind, stored);
-              if (bLc) ind = setBit(ind, ind_LC, 1);
-              if (bPf) ind = setBit(ind, ind_PF, 1);
+              // THE SUM IS THE SERIAL ADDER'S, mkDecBox in BINARY mode
+              // (2026-11-19, plan §1c step 5e stage 3).  Buchholz printed
+              // p.208: "variable-field-length (binary or decimal) add
+              // operations ... are executed by the serial unit", and
+              // p.209: "A decimal-correction circuit is switched into the
+              // data path when decimal addition or subtraction is
+              // specified" -- one adder, so the binary add asks the box
+              // the decimal arm above asks, with the correction off.  The
+              // alignment and PF stay here (binAlign, binAccAdd's first
+              // half); the box adds magnitudes, complementing for unlike
+              // signs, and its carry gives smAdd's sign rule and the LC:
+              // like signs, the carry out of bit 127; unlike, True iff
+              // acc >= operand, which keeps the accumulator's sign.
+              // binAccAdd itself stays for *+ (its sum follows the
+              // multiply box's answer, and a second box trip would lose
+              // the product the PF is judged on).
+              match {.addSh, .bPf} = binAlign(opnd, offSh);
+              Bool bSub = accUsed.sign != addSh.sign;
+              if (decOf(boxResult) matches tagged Valid .br) begin
+                SM128 sum = SM128 { sign: (!bSub || br.carry) ? accUsed.sign : addSh.sign,
+                                    mag: br.r };
+                Bool bLc = !bSub && br.carry;
+                // "If the result is positive, the sum is placed into
+                // the accumulator.  If the result is negative, the
+                // entire accumulator is cleared to zero.  In either
+                // case the content of the accumulator sign byte
+                // register is not changed."  The sign kept is the
+                // accumulator's own, both ways -- which also satisfies
+                // p.60's closing rule, "on any operation in which the
+                // result in the accumulator is all zero, the sign
+                // remains as it was before the operation began".
+                SM128 stored = magnitude
+                  ? SM128 { sign: acc.sign,
+                            mag: (sum.sign == 0) ? sum.mag : 0 }
+                  : sum;
+                writeAcc(st, stored);
+                // "set according to the contents of the ENTIRE
+                // accumulator when the operation is complete" (p.60,
+                // Arithmetic Result).  A cleared accumulator whose sign
+                // byte stays minus reads RZ AND RN: printed p.47's RN is
+                // "negative whether zero or not".  (Until 2026-11-16 this
+                // comment argued the opposite, that "the sign remains as
+                // it was" required RN off; that sentence is about the
+                // sign kept, not the indicator, and the decimal arm's
+                // A10 already pinned RZ RN for the same case.)
+                ind = setResultIndicatorsF(ind, stored);
+                if (bLc) ind = setBit(ind, ind_LC, 1);
+                if (bPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: addSh.mag,
+                                                                 sub: bSub, binary: True });
+                needsRead = tagged Valid 0;
+              end
             end
           end
           6'b011001: begin // * (Multiply)
@@ -4475,7 +4516,7 @@ function ActionValue#(VflOutcome)
               Bool dPf = !addOne && ((dAccF & ~dMask) != 0);
               Bool dSub = (dOpnd.sign != dAccSh.sign);
               Maybe#(BoxReq) dReq = tagged Valid (tagged BoxDec
-                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub });
+                                      DecReq { a: mDig, b: dAccSh.mag, sub: dSub, binary: False });
               Bool dDec = (vi.m.decimal == 1);
               Bool dAsk = dDec && !isValid(decOf(boxResult));
               DecRsp dr = validValue(decOf(boxResult));
@@ -4507,14 +4548,13 @@ function ActionValue#(VflOutcome)
               // (vflWriteArmHandled's reason).  The decimal sum is
               // mkDecBox's, asked for after the last read.
               Bit#(2) mReads = mCross ? 2 : 1;
-              Bit#(2) mNeed  = mReads + (vflNeedsRefill ? 1 : 0);
+              Bit#(2) mNeed  = vflRmwNeed(mCross, vflNeedsRefill);
               // DF, p.32 class 3: raised below with the refill, and only
               // when the store was not suppressed (refillDfNote).
               if (vflNeedsRefill) vflWriteArmHandled = True;
               if (prefetchCount < mNeed) begin
-                needsRead = tagged Valid ((prefetchCount == 0) ? w0
-                              : (prefetchCount == 1 && mCross) ? (w0 + 1)
-                              : zeroExtend(vflPx1.refill));
+                needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, mCross,
+                                                        zeroExtend(vflPx1.refill));
               end else if (dAsk) begin
                 needsBox  = dReq;
                 needsRead = tagged Valid 0;
@@ -4737,7 +4777,7 @@ function ActionValue#(VflOutcome)
                     : (as_ == 0) ? m
                     : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
                 end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True });
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False });
                   needsRead = tagged Valid 0;
                 end
               end
@@ -5549,7 +5589,7 @@ function ActionValue#(VflOutcome)
           // (2026-11-17; the third prefetch slot).
           Bool cmCross = fieldCrosses(ea, len_);
           Bit#(2) cmReads = cmCross ? 2 : 1;
-          if (prefetchCount >= cmReads + 1) begin
+          if (prefetchCount >= vflRmwNeed(cmCross, True)) begin
             Word64 mHiWord = prefetch[0];
             Bit#(64) m = extractFieldBits(prefetch[0], cmCross ? prefetch[1] : 0, off, len_);
             SM128 acc = readAcc(st);
@@ -5580,49 +5620,29 @@ function ActionValue#(VflOutcome)
               ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
               ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);   // DF, p.32 class 3 (refillDfNote)
             end
-          end else if (prefetchCount == 0)
-            needsRead = tagged Valid w0;
-          else if (prefetchCount == 1 && cmCross)
-            needsRead = tagged Valid (w0 + 1);
-          else
-            needsRead = tagged Valid zeroExtend(vflPx1.refill);
+          end else
+            needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, cmCross,
+                                                    zeroExtend(vflPx1.refill));
         end else begin
           Bit#(64) m = 0;
           Word64 mHiWord = 0; // valid only for CM (the only suffix
                                // that writes back); see below.
           Word64 mLoWord = 0;  // and the second word, when CM's field
                                // crosses into it.
-          if (immediate) begin
-            m = immediateOperand(ea, len_);
-          end else begin
-            // C/CT/CM all share this prefetch/bail-out shape, and
-            // since 2026-11-06 all three may take the 2-read crossing
-            // path (CM's "MAY CROSS" note above).  CM is still
-            // guaranteed !immediate by the check further above, and
-            // keeps both words it read for the write back.
-            WordAddr w0 = baWord(ea);
-            Bit#(6) off = baBit(ea);
-            if (!fieldCrosses(ea, len_)) begin
-              if (prefetchCount >= 1) begin
-                m = extractFieldBits(prefetch[0], 0, off, len_);
-                if (cn.suffix == conn_CM) mHiWord = prefetch[0]; // CM's writeback needs the raw word
-                vflReadsUsed = 1;
-              end else
-                needsRead = tagged Valid w0;
-            end else begin
-              if (prefetchCount >= 2) begin
-                m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                if (cn.suffix == conn_CM) begin
-                  mHiWord = prefetch[0];
-                  mLoWord = prefetch[1];
-                end
-                vflReadsUsed = 2;
-              end else if (prefetchCount == 1)
-                needsRead = tagged Valid (w0 + 1);
-              else
-                needsRead = tagged Valid w0;
-            end
-          end
+          // THE OPERAND FETCH IS vflFetchOperand's (2026-11-19, plan §1c
+          // step 5e): C/CT/CM all share it, and since 2026-11-06 all
+          // three may take the two-read crossing path (CM's "MAY CROSS"
+          // note above).  CM is still guaranteed !immediate by the check
+          // further above, and keeps the words it read for the write
+          // back: the first whenever the field is in hand, the second
+          // when it crosses.  (The CM read-modify-write path above has
+          // its own ladder: its refill word is read with the field's.)
+          VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+          m = vf.raw;
+          vflReadsUsed = vf.used;
+          if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+          if (cn.suffix == conn_CM && vf.used >= 1) mHiWord = prefetch[0];
+          if (cn.suffix == conn_CM && vf.used == 2) mLoWord = prefetch[1];
           if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
             SM128 acc = readAcc(st);
             // p.75's byte expansion.  `maskVec` marks exactly which

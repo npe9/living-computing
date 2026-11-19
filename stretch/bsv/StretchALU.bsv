@@ -174,13 +174,22 @@ endfunction
 // for *+).
 typedef struct { SM128 sum; Bool lc; Bool pf; } BinAccAdd deriving (Bits, Eq);
 
-function BinAccAdd binAccAdd(SM128 accUsed, SM128 addend, Bit#(8) offSh);
+// THE ALIGNMENT AND PF, split out 2026-11-19 so the binary + arm can
+// send the aligned operand to the serial adder (mkDecBox, binary mode)
+// and keep the PF rule here: the operand shifted wide, PF if anything
+// is left above bit 127.
+function Tuple2#(SM128, Bool) binAlign(SM128 addend, Bit#(8) offSh);
   Bit#(256) wide = zeroExtend(addend.mag) << offSh;
-  SM128 addSh = SM128 { sign: addend.sign, mag: truncate(wide) };
+  return tuple2(SM128 { sign: addend.sign, mag: truncate(wide) },
+                (wide >> 128) != 0);
+endfunction
+
+function BinAccAdd binAccAdd(SM128 accUsed, SM128 addend, Bit#(8) offSh);
+  match {.addSh, .pf} = binAlign(addend, offSh);
   Bit#(129) carrySum = zeroExtend(accUsed.mag) + zeroExtend(addSh.mag);
   return BinAccAdd { sum: smAdd(accUsed, addSh),
                      lc:  (accUsed.sign == addSh.sign) && carrySum[128] == 1,
-                     pf:  (wide >> 128) != 0 };
+                     pf:  pf };
 endfunction
 
 // >>> THE BINARY TO-MEMORY ADD -- M+, M+MG and M+1 -- AND ITS LOST CARRY

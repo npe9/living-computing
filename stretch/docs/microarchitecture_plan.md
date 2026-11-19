@@ -5792,10 +5792,52 @@ Staged, each step green and committed:
      calls it in four lines. ST and M+ keep their own (their RMW reads
      interleave with the store). `vflIntOp` 2343 / 914 -> **2181 / 752**
      (the function itself, 58 lines with its contract, sits above it).
-     Same hardware: BSV inlines functions. **Next:** the next datapath class
-     into `mkVflBox`: the binary add (`binAccAdd`, the SAU's adder),
-     which is in nearly every deck, so its hold cost must be measured
-     the same way before it is accepted.
+     Same hardware: BSV inlines functions.
+     **Stage 2b (2026-11-19, structure only, two commits):**
+     `connectiveOp`'s C/CT/CM main path calls `vflFetchOperand` too (its
+     ladder was the same one; CM keeps the words it read for the write
+     back), and the read-modify-write arms -- ST/SRD's three ladders,
+     M+/M+MG/M+1, and CM's refill path -- share `vflRmwNextRead` /
+     `vflRmwNeed`, the one order they read in (the field's word, its
+     second if it crosses, then the refill word). Each commit: the full
+     suite green and all 330 `STRETCH_HALT_REPORT` halt reports (cycles
+     and reads) identical to a batch42 (3ab7949) baseline. Line counts
+     (raw / non-comment; a function counted from its `function` line to
+     `endfunction`, `execute()` to its closing `endactionvalue;`, which
+     gives 1519 on batch42 -- the 1535 above was the same function with
+     a different boundary, not a longer one): `vflIntOp` 2181 / 752 ->
+     **2176 / 747**, `connectiveOp` 352 / 159 -> **332 / 136**,
+     `execute()` 1519 / 391 unchanged.
+     **Stage 3 (2026-11-19): the binary add, through `mkDecBox`.**
+     Buchholz printed p.208 (PDF 233) puts the VFL add, "binary or
+     decimal", in the SERIAL unit. That is not the parallel unit
+     `mkVflBox` models. Printed p.209 (PDF 234) gives the serial unit one
+     adder, with "a decimal-correction circuit ... switched into the data
+     path when decimal addition or subtraction is specified". So the
+     binary `+`/`+MG` sum is a `binary` mode of `mkDecBox`, not a variant
+     of `mkVflBox`:
+     - the correction is off and complementing is inversion;
+     - the passes and clocks are the decimal ones (4, or 8 to recomplement);
+     - `boxKind` is unchanged.
+     The arm keeps the alignment and the Partial Field rule (`binAlign`).
+     It takes the sign and the Lost Carry from the box's carry. `*+`
+     keeps `binAccAdd`. Verified:
+     - the box test has 15 vectors and two measured injections;
+     - the indicator deck gained injection i7, which fails B1, B2 and B10;
+     - the full suite is green, and no pin or value moved.
+     Nine unpinned halt clocks moved, by +4 to +75 (bsv/README.md has the
+     table). The atlas `+`/`+MG` mean residual went from -0.72 to -0.70.
+     Three (BU,8,8) cells each got about one clock worse. The cause was
+     TRACED, and it is the hold's length, set by the box's chosen rate:
+     - either the resume clock takes `rl_prepare`'s slot exactly when the
+       I-box would load the next level;
+     - or, with the look-ahead full, the level leaves 4 clocks later, so
+       the next crossing operand arrives late.
+     A one-pass-a-clock box removes both. p.209's own rate (0.6 µs a byte
+     pair) and the overlap are open in `docs/NEXT.md`, "THE BINARY ADD'S
+     BOX HOLD". Line counts: `vflIntOp` 2176 / 747 -> 2200 / 754, because
+     the arm gains its ask branch; `connectiveOp` 332 / 136 and `execute()`
+     1519 / 391 are unchanged.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
@@ -5885,8 +5927,8 @@ the boundary plan does not close this row.) Piccolo numbers are from
 | FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
 | stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
 | rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
-| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
-| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox`, `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e; 2176 / 747 after stage 2b and **2200 / 754** after stage 3, 2026-11-19, with `connectiveOp` 332 / 136 and `execute()` 1519 / 391 counted to its `endactionvalue;`), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
+| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox` (decimal, and since 2026-11-19 the binary VFL add: the serial unit's one adder), `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
 
 **What this changes.** The plan and README item 9 both said the target
 was "stage modules communicating through FIFOs". Piccolo does not do
