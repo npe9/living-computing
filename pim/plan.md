@@ -371,6 +371,16 @@ test or an explicit label.
      tag and a pointer, per TR-246 p. 3. The tag values are the
      model's, not historical, and are fixed here so later instructions
      conform rather than inventing per-instruction tags.
+   - **Goal records.** A goal record is `{Narg, argregN, code address,
+     next}` (TR-246 p. 3). The ready queue is a linked list of records,
+     with `RQFP` at the head and `CRFP` the free list. `execute`
+     allocates a record, fills its arguments, and jumps to the code
+     address; `proceed` pops the next record and jumps to it; `suspend`
+     hooks the current goal onto the variables it blocked on and returns
+     to the ready queue. Suspension records and suspension flag records
+     use `SRFP`/`SSFP` (TR-246 p. 3-4). The model uses a fixed pool of
+     records (a small power of two) rather than the documented free-list
+     discipline; the pool size is a model choice, not historical.
    - **Decode.** Opcode = bits 31–24 of the value; operand fields per
      `docs/kl1_encoding.md` (`r`, `r_r`, `r_r_r`, `c8`, `c16`, `c24`,
      `c8_r`, `r_c16`, `atom`, and the address-dependent types).
