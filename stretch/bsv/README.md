@@ -807,7 +807,11 @@ jb_ax5b routine 1260's TESTs 1A and 1B (PDF pp.8-13,
 `decks/ax5b_160_test1ab_mask.strap`) are IBM's test of the mask register's
 fixed bits, which `StretchStorage.bsv` forces (0-19 one, 48-63 zero, Reference
 Manual Figure 11): two segment runs, both pass. Unforcing mask bit 7, or letting
-bit 55 be written, each fails its run (deck header).
+bit 55 be written, each fails its run (deck header). TEST 1C (PDF pp.14-21,
+`decks/ax5b_160_test1c_mask.strap`) checks the settable bits 20-47 one by one,
+to one and to zero, through the value, flag/spare, count and refill fields of
+an index word; it passes. Making mask bit 30, or bit 26, unsettable fails it in
+the entry IBM prints for that bit (deck header).
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

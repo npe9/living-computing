@@ -11575,6 +11575,24 @@ run "IBOX-5 routine 1260 TEST 1B mask bits 48-63 always zero, ON THE MODEL (I607
     "X1:addrIndex(1)=0" "X2:addrIndex(2)=0x7fffff0000" \
     "X3:addrIndex(3)=0xa59048000080000" STEPS=2000000 CYCLES=5426+-0
 
+# ---- jb_ax5b routine 1260, TEST 1C (2026-11-19) ----
+# IBM's test that mask bits 20-47 can each be set to one and to zero
+# (jb_ax5b PDF pp.14-21), read back through the index word's value,
+# flag/spare (as op-code bits of a planted, executed instruction), count
+# and refill fields.  CYCLES is MODEL BEHAVIOUR.  The OBSERVED model
+# injections (scratch copy of bsv/, plus a CONTROL that passes) are in
+# the deck header; summarized below.
+run "IBOX-5 routine 1260 TEST 1C (mask bits 20-47), bit-exact (jb_ax5b PDF pp.14-21, 86, 114)" python3 verify_ax5b_160_test1c_mask_listing.py
+# Injection M1 (mask bit 30 not settable) -> FAIL SEN 0x640a00000000000
+# (the "MASK BIT 30 TO ONE" entry); M2 (bit 26 not settable) -> FAIL SEN
+# 0x65a000000000000 ("MASK REG BIT 26 TO ONE"), I60DMP all ones.
+run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)" ./run_program.sh ../decks/ax5b_160_test1c_mask.strap StretchAx5b160T1CTb \
+    PC=1410 "SEN:712=0" "I60DMP:9921=0xffffff8000000000" \
+    "MASK:12=0xfffff33000000000" "X0:addrIndex(0)=0xffffff8000000000" \
+    "X2:addrIndex(2)=0x20000" "X3:addrIndex(3)=0xa60800000000000" \
+    "X4:addrIndex(4)=0x650600000000000" "X5:addrIndex(5)=0xa60000000010000" \
+    "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=10326+-0
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the
