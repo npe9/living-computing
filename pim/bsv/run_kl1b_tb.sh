@@ -20,58 +20,67 @@ export BLUESPECDIR
 PATH=$(dirname "$BSC"):$PATH
 export PATH
 
+# Each Bluesim bench exits 0 even when it prints FAIL, so a bare ./sim_kl1b
+# cannot fail this script. Capture the output and require a PASS line.
+run_bench() {
+  name="$1"; shift
+  out=$("$@" 2>&1) || { printf '%s\n' "$out"; echo "FAIL: $name crashed"; exit 1; }
+  printf '%s\n' "$out"
+  printf '%s\n' "$out" | grep -q "PASS" || { echo "FAIL: $name did not print PASS"; exit 1; }
+}
+
 "$BSC" -sim -g mkPimKL1BTb -u PimKL1BTb.bsv
 "$BSC" -sim -e mkPimKL1BTb -o sim_kl1b
-./sim_kl1b
+run_bench PimKL1BTb ./sim_kl1b
 
 "$BSC" -sim -g mkPimKL1BFailTb -u PimKL1BFailTb.bsv
 "$BSC" -sim -e mkPimKL1BFailTb -o sim_kl1bfail
-./sim_kl1bfail
+run_bench PimKL1BFailTb ./sim_kl1bfail
 
 "$BSC" -sim -g mkPimKL1BConstFailTb -u PimKL1BConstFailTb.bsv
 "$BSC" -sim -e mkPimKL1BConstFailTb -o sim_kl1bconstfail
-./sim_kl1bconstfail
+run_bench PimKL1BConstFailTb ./sim_kl1bconstfail
 
 "$BSC" -sim -g mkPimKL1BStructTb -u PimKL1BStructTb.bsv
 "$BSC" -sim -e mkPimKL1BStructTb -o sim_kl1bstruct
-./sim_kl1bstruct
+run_bench PimKL1BStructTb ./sim_kl1bstruct
 
 "$BSC" -sim -g mkPimKL1BIntTb -u PimKL1BIntTb.bsv
 "$BSC" -sim -e mkPimKL1BIntTb -o sim_kl1bint
-./sim_kl1bint
+run_bench PimKL1BIntTb ./sim_kl1bint
 
 "$BSC" -sim -g mkPimKL1BWaitTb -u PimKL1BWaitTb.bsv
 "$BSC" -sim -e mkPimKL1BWaitTb -o sim_kl1bwait
-./sim_kl1bwait
+run_bench PimKL1BWaitTb ./sim_kl1bwait
 
 "$BSC" -sim -g mkPimKL1BSetTb -u PimKL1BSetTb.bsv
 "$BSC" -sim -e mkPimKL1BSetTb -o sim_kl1bset
-./sim_kl1bset
+run_bench PimKL1BSetTb ./sim_kl1bset
 
 "$BSC" -sim -g mkPimKL1BArithTb -u PimKL1BArithTb.bsv
 "$BSC" -sim -e mkPimKL1BArithTb -o sim_kl1barith
-./sim_kl1barith
+run_bench PimKL1BArithTb ./sim_kl1barith
 
 "$BSC" -sim -g mkPimKL1BGetTb -u PimKL1BGetTb.bsv
 "$BSC" -sim -e mkPimKL1BGetTb -o sim_kl1bget
-./sim_kl1bget
+run_bench PimKL1BGetTb ./sim_kl1bget
 
 "$BSC" -sim -g mkPimKL1BControlTb -u PimKL1BControlTb.bsv
 "$BSC" -sim -e mkPimKL1BControlTb -o sim_kl1bcontrol
-./sim_kl1bcontrol
+run_bench PimKL1BControlTb ./sim_kl1bcontrol
 
 "$BSC" -sim -g mkPimKL1BSuspendTb -u PimKL1BSuspendTb.bsv
 "$BSC" -sim -e mkPimKL1BSuspendTb -o sim_kl1bsuspend
-./sim_kl1bsuspend
+run_bench PimKL1BSuspendTb ./sim_kl1bsuspend
 
 "$BSC" -sim -g mkPimKL1BMiscTb -u PimKL1BMiscTb.bsv
 "$BSC" -sim -e mkPimKL1BMiscTb -o sim_kl1bmisc
-./sim_kl1bmisc
+run_bench PimKL1BMiscTb ./sim_kl1bmisc
 
 "$BSC" -sim -g mkPimKL1BJumpTb -u PimKL1BJumpTb.bsv
 "$BSC" -sim -e mkPimKL1BJumpTb -o sim_kl1bjump
-./sim_kl1bjump
+run_bench PimKL1BJumpTb ./sim_kl1bjump
 
 "$BSC" -sim -g mkPimKL1BNilTb -u PimKL1BNilTb.bsv
 "$BSC" -sim -e mkPimKL1BNilTb -o sim_kl1bnil
-./sim_kl1bnil
+run_bench PimKL1BNilTb ./sim_kl1bnil

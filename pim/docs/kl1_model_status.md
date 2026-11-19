@@ -80,7 +80,6 @@ encoding table but not executed, with the blocking reason:
 | family | examples | reason |
 |---|---|---|
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
-| active unification | `get_structured_constant`, `get_list`, `get_vector` | the structure reads; the constant/integer/nil/atom reads are implemented |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
 | control beyond the queue | `switch_*`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
@@ -92,7 +91,12 @@ default case.
 ## What this means for PIMOS
 
 The model can execute a hand-assembled KL1-B program that builds heap
-cells and reads them back, and it can prove the deref path. It cannot
-yet run a PIMOS module: no argument registers, no goal records, no
-atom/vector/structure construction, no arithmetic. The next tranches in
+cells and reads them back, and it can prove the deref path. It has a
+flat argument-save area (`set_*`/`read_*`), a goal-label queue
+(`execute`/`enqueue_goal`/`proceed`/`suspend`) and the integer guard
+built-ins, all as model stand-ins rather than TR-246's record areas.
+It cannot yet run a PIMOS module: atom/vector/structure construction
+(`put_atom*`, `put_vector`, `put_structured_constant`) halts because the
+atom table and vector layouts are not in the corpus, and the
+choice-point and console paths are not modelled. The next tranches in
 `plan.md` name those gaps.
