@@ -142,15 +142,52 @@ def parse_module(r):
     code = []
     while r.i + 2 < len(w):
         tag = r.rd()
+        t = tag >> 8
+        o = tag & 0xff
         if tag == 0xffff:
             break
-        if 0x2300 <= tag <= 0x23ff:
+        elif t == 0x23:
             aid, name = read_atom_name(r)
             code.append(('atom', tag, name))
-        else:
+        elif t == 0x00 and o > 0:
             v1 = r.rd()
             v2 = r.rd()
-            code.append(('inst', (v1 << 16) | v2, tag))
+            code.append(('inst', (v1 << 16) | v2, o))
+        elif t == 0x00 and o == 0:
+            aid, name = read_atom_name(r)
+            code.append(('atomref', aid, name))
+        elif t == 0x01:
+            code.append(('int', o))
+        elif t == 0x02:
+            code.append(('int', -((~o + 1) & 0xff)))
+        elif t == 0x03:
+            hi = r.rd()
+            lo = r.rd()
+            code.append(('int', (hi << 16) | lo))
+        elif t == 0x06:
+            ln = (r.rd() << 16) | r.rd()
+            chars = bytes(r.rd() & 0xff for _ in range(ln))
+            code.append(('string', chars.decode('latin1')))
+        elif tag == 0x1100:
+            size = r.rd()
+            ent = r.rd()
+            for _ in range(ent):
+                a = r.rd()
+                at = a >> 8
+                if at == 0x01 or at == 0x02:
+                    pass
+                elif at == 0x03:
+                    r.rd()
+                    r.rd()
+                elif at == 0x00:
+                    read_atom_name(r)
+                else:
+                    break
+                r.rd()  # L1
+                r.rd()  # L2
+            code.append(('table', size, ent))
+        else:
+            break
     return mlen, (mod_name, pkg_name, magic, info), gc_terms, hs, preds, code
 
 
@@ -158,6 +195,13 @@ def disasm(item, ops):
     if item[0] == 'atom':
         _, tag, name = item
         return 'atom[%04x] %s' % (tag, name)
+    if item[0] == 'atomref':
+        _, aid, name = item
+        return 'atomref %d %s' % (aid, name)
+    if item[0] == 'int':
+        return 'int %d' % item[1]
+    if item[0] == 'string':
+        return 'string %r' % item[1]
     _, val, tag = item
     op = (val >> 24) & 0xff
     ent = ops.get(op)
