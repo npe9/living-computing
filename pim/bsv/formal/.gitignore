@@ -1,5 +1,4 @@
 build/
 formal_images/
-pim_smoke/
-pim_smoke_bug/
-last_run.log
+pim_*/
+last_run*.log

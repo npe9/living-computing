@@ -1,9 +1,8 @@
-// PimNU.bsv -- the PIM/m Network Control Unit: a 5 x 5 crossbar, a
-// routing table, packet buffers, and the documented one-byte-per-four-
-// cycles flow control.
+// PimNU.bsv -- Network Control Unit, per-port FIFO model.
 //
 // Documented facts (M92 = Nakashima et al., "Architecture and
-// Implementation of PIM/m", FGCS '92 vol. 1, printed pages 425-435):
+// Implementation of PIM/m", FGCS '92 vol. 1, printed pages 425-435;
+// see docs/pim_architecture.md):
 //
 //   * "The NU switches four adjacent-PE channel pairs plus the CPU
 //      pair."                                                     p.427
@@ -18,141 +17,102 @@
 //      independent of physical distance, using FIFO output buffers
 //      and back-pressure rather than per-byte acknowledgements."  p.427
 //
+// Model: each input port has its own output FIFO.  The crossbar's
+// destination routing is NOT modelled: the route-table argument is
+// accepted for interface compatibility but unused.  The decision to
+// stay per-port is recorded in plan.md WP4.1.  The output side is a
+// separate port type so a consumer can dequeue a byte; the earlier
+// single-port shape had no way to consume a byte and its put method
+// conflicted with the move rule.
+//
 // Unknown and therefore NOT invented here: the packet header layout,
 // the packet payload format, the meaning of the mark bit beyond
 // header/trailer, the exact 2-bit direction encoding, the CPU-pair
 // protocol, and the arbitration order between the five crossbar inputs.
 // The module models the documented mechanism and marks the rest
 // unknown; see docs/pim_architecture.md section 1.
-//
-// The two-PE test (PimNUTb.bsv) drives ports 0 and 1 of two NUs and
-// checks the byte flow, the rate limit, and the back-pressure.  It does
-// not claim a packet format.
 
 package PimNU;
 
 import Vector::*;
 
-// 9-bit packet byte: 8 data bits and the mark bit (M92 p.427).
-typedef Bit#(9) PacketByte;
-typedef Bit#(8) PacketData;
-typedef Bit#(2) Direction;
+typedef Bit#(9)  PacketByte;
+typedef Bit#(2)  Direction;
+typedef 5        NumPorts;
 
-// Direction codes are the documented set; the numeric assignment is a
-// model choice because the source does not print it.
-Direction dirStraight = 0;
-Direction dirLeft     = 1;
-Direction dirRight    = 2;
-Direction dirArrived  = 3;
-
-// 5 x 5 crossbar: four adjacent-PE channel pairs plus the CPU pair.
-// Port 4 is the CPU pair; the source does not document its protocol.
-typedef 5 NumPorts;
-
-interface PimNUPort;
-  // A byte offered to the port's input.  The port accepts it only when
-  // ready() is true; the source documents back-pressure rather than a
-  // per-byte acknowledgement.
+interface PimNUInPort;
   method Action put(PacketByte b);
-  // A byte available at the port's output, if any.
-  method Maybe#(PacketByte) get();
   method Bool ready();
 endinterface
 
+interface PimNUOutPort;
+  method Maybe#(PacketByte) get();
+  method Action deq();
+  method Bool ready();
+endinterface
+
+typedef Vector#(NumPorts, PimNUInPort) PimNUInPorts;
+typedef Vector#(NumPorts, PimNUOutPort) PimNUOutPorts;
+
 interface PimNU;
-  // in[4] is the CPU pair; in[0..3] are the four adjacent-PE channels.
-  interface Vector#(NumPorts, PimNUPort) in;
-  interface Vector#(NumPorts, PimNUPort) out;
-  // The read buffer's tail interrupt.  The source says the buffer
-  // raises an interrupt when the packet tail arrives; the interrupt
-  // protocol is not documented, so the model exposes a one-cycle pulse.
+  interface PimNUInPorts in_;
+  interface PimNUOutPorts out;
   method Bool packetTail();
 endinterface
 
-// The crossbar is modelled as five independent input-to-output paths.
-// The source does not document the crossbar's internal arbitration, so
-// the model gives each input its own output FIFO and routes by the
-// destination PE's table entry.  Two inputs aimed at the same output
-// are serialised by the output's ready signal; that is deterministic
-// and deadlock-free because every input has its own FIFO.
 module mkPimNU#(Vector#(256, Direction) routeTable)(PimNU);
-
-  // Input buffers: one byte per port, the smallest buffer that can hold
-  // the byte the source's read buffer describes.  The source's read
-  // buffer is 1 KB; the model's one-byte buffer is a deliberate scale
-  // choice so Bluesim stays small.
   Vector#(NumPorts, Reg#(Maybe#(PacketByte))) inBuf <- replicateM(mkReg(Invalid));
-  // Output buffers: one byte per port.  The source's write buffer is
-  // 1 KB; the model scales it down.
   Vector#(NumPorts, Reg#(Maybe#(PacketByte))) outBuf <- replicateM(mkReg(Invalid));
-  // The one-byte-per-four-cycles rate limit.  Each port counts down
-  // from three; a byte is transmitted when the counter reaches zero.
   Vector#(NumPorts, Reg#(Bit#(2))) rate <- replicateM(mkReg(0));
-  // The read buffer's tail pulse.
-  Reg#(Bool) tailPulse <- mkReg(False);
+  PulseWire tailPulse <- mkPulseWireOR;
 
-  // The destination PE number is the low 8 bits of the packet byte's
-  // data field.  The source does not document the header layout, so the
-  // model treats the whole 8-bit data field as the destination for the
-  // first byte of a packet and as payload afterwards.  This is marked
-  // unknown in the module header.
-  function Direction routeFor(PacketByte b);
-    let dest = truncate(b);
-    return routeTable[dest];
-  endfunction
-
-  function Bool isTail(PacketByte b) = b[8];
-
-  // Move one byte from the input buffer to the output buffer when the
-  // rate limit permits and the output is free.  The output's ready
-  // signal is the back-pressure the source describes.
   for (Integer i = 0; i < valueOf(NumPorts); i = i + 1) begin
-    rule move (inBuf[i] matches tagged Valid .b &&& outBuf[i] == Invalid);
-      if (rate[i] == 0) begin
-        outBuf[i] <= Valid(b);
-        inBuf[i] <= Invalid;
-        rate[i] <= 3;
-        if (isTail(b)) tailPulse <= True;
-      end else begin
-        rate[i] <= rate[i] - 1;
-      end
+    // The documented rate is one byte per four machine cycles; the
+    // counter ticks every cycle, independently of the output buffer.
+    rule tick (rate[i] != 0);
+      rate[i] <= rate[i] - 1;
+    endrule
+
+    rule move (inBuf[i] matches tagged Valid .b
+               &&& outBuf[i] matches tagged Invalid
+               &&& rate[i] == 0);
+      outBuf[i] <= tagged Valid b;
+      inBuf[i] <= tagged Invalid;
+      rate[i] <= 3;
+      if (b[8] == 1) tailPulse.send();
     endrule
   end
 
-  // The tail pulse is one cycle wide.
-  rule clearTail (tailPulse);
-    tailPulse <= False;
-  endrule
+  Vector#(NumPorts, PimNUInPort) inVec = newVector;
+  for (Integer i = 0; i < valueOf(NumPorts); i = i + 1) begin
+    inVec[i] = interface PimNUInPort;
+      method Action put(PacketByte b) if (inBuf[i] matches tagged Invalid);
+        inBuf[i] <= tagged Valid b;
+      endmethod
+      method Bool ready() = case (inBuf[i]) matches
+        tagged Invalid: True;
+        tagged Valid .x: False;
+      endcase;
+    endinterface;
+  end
 
-  // The input ports accept a byte only when the input buffer is empty.
-  // The source's back-pressure is on the output side; the input side's
-  // acceptance is the model's handshake.
-  interface Vector#(NumPorts, PimNUPort) in;
-    for (Integer i = 0; i < valueOf(NumPorts); i = i + 1) begin
-      interface PimNUPort;
-        method Action put(PacketByte b) if (inBuf[i] == Invalid);
-          inBuf[i] <= Valid(b);
-        endmethod
-        method Maybe#(PacketByte) get() = outBuf[i];
-        method Bool ready() = inBuf[i] == Invalid;
-      endinterface
-    end
-  endinterface
+  Vector#(NumPorts, PimNUOutPort) outVec = newVector;
+  for (Integer i = 0; i < valueOf(NumPorts); i = i + 1) begin
+    outVec[i] = interface PimNUOutPort;
+      method Maybe#(PacketByte) get() = outBuf[i];
+      method Action deq() if (outBuf[i] matches tagged Valid .b);
+        outBuf[i] <= tagged Invalid;
+      endmethod
+      method Bool ready() = case (outBuf[i]) matches
+        tagged Invalid: True;
+        tagged Valid .x: False;
+      endcase;
+    endinterface;
+  end
 
-  interface Vector#(NumPorts, PimNUPort) out;
-    for (Integer i = 0; i < valueOf(NumPorts); i = i + 1) begin
-      interface PimNUPort;
-        method Action put(PacketByte b) if (outBuf[i] == Invalid);
-          outBuf[i] <= Valid(b);
-        endmethod
-        method Maybe#(PacketByte) get() = outBuf[i];
-        method Bool ready() = outBuf[i] == Invalid;
-      endinterface
-    end
-  endinterface
-
-  method Bool packetTail() = tailPulse;
-
+  interface in_ = inVec;
+  interface out = outVec;
+  method Bool packetTail() = tailPulse._read();
 endmodule
 
 endpackage

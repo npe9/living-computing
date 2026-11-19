@@ -33,6 +33,10 @@
 package HobbitDecode;
 
 import Vector::*;
+import FIFOF::*;
+import GetPut::*;
+import ClientServer::*;
+import RegFile::*;
 import HobbitTypes::*;
 
 interface HobbitDecode;
@@ -344,6 +348,457 @@ module mkHobbitDecode(HobbitDecode);
                           tr: d.tr };
   endmethod
 
+endmodule
+
+// ---------------------------------------------------------------------
+// Prefetch buffer cache: 1024 bytes per way, three ways.
+//
+// Figure 1-1 (printed p. 1-2) prints "PREFETCH BUFFER CACHE 1024 X3
+// bytes" and a 64-bit path into the prefetch/decode unit; p. 1-1 calls
+// it a "3 Kbyte encoded instruction cache (organized as 3-way set
+// associative)".  A way is 1024 bytes = 128 lines of 64 bits, so the
+// buffer is 128 sets x 3 ways x 64 bits = 3 Kbyte.  Set index is
+// addr[9:3], tag is addr[31:10]; the three ways of a set are three
+// different 1 KB regions that map to the same set.
+//
+// The 64-bit line is the diagram's 64-bit path: the fill reads two
+// 32-bit words from the synchronous memory and assembles one line, and
+// the PDU reads whole lines.  The model's memory is 1 KB (HobbitMem),
+// so the boot fill installs one line in every set, in way 0; that covers
+// every address the tests use.  There is no on-demand fill engine in
+// this milestone: a fetch whose line is absent is a model limitation,
+// and the PDU turns it into TR_FETCH_MISS so the core retires a loud
+// trap record rather than aliasing a line silently.  A fetch that hits
+// costs nothing extra: the p. 4-1 assumption "instruction fetches must
+// access in the instruction cache" is adopted, so no Table 4-37 fetch
+// delay is charged.
+interface HobbitPrefetch;
+  method Action startFill();
+  method Bool filling();
+  method Bool ready();
+  method Maybe#(Bit#(64)) lineAt(Word addr);
+endinterface
+
+typedef struct {
+  Bit#(22) tag;      // addr[31:10]
+  Bit#(64) data;     // {word at line+0, word at line+4}
+} PfcLine deriving (Bits);
+
+module mkHobbitPrefetch#(HobbitMem mem)(HobbitPrefetch);
+  // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
+  // docs/bluespec_architecture.md: the cache is a box behind its own
+  // interface, not logic inlined into a pipeline stage.
+
+  // Three banks, one per way (Figure 1-1 / p. 1-1's three-way set
+  // associative organization).  Each bank is a plain array with one
+  // write port and one combinational read; a RegFile emits that shape.
+  // A Vector of 3 KB here is 41,052 LUT4 + 22,539 FF
+  // (docs/area_analysis.md), so it is not an option.
+  RegFile#(Bit#(7), PfcLine) way0 <- mkRegFileFull;
+  RegFile#(Bit#(7), PfcLine) way1 <- mkRegFileFull;
+  RegFile#(Bit#(7), PfcLine) way2 <- mkRegFileFull;
+  // 128 sets x 3 ways of valid bits (way 0 is the only way the boot
+  // fill installs in this milestone).  One 128-bit vector per way keeps
+  // the printed 384 bits, but indexes by set alone: a single 384-bit
+  // vector addressed as {set, way} needs 512 entries, so the writes for
+  // sets 96..127 fell past its end.
+  Reg#(Bit#(128)) valid0 <- mkReg(0);
+  Reg#(Bit#(128)) valid1 <- mkReg(0);
+  Reg#(Bit#(128)) valid2 <- mkReg(0);
+  Reg#(Bit#(7)) fillSet <- mkReg(0);
+  Reg#(Bit#(2)) fillPhase <- mkReg(0);
+  Reg#(Bit#(32)) fillLo <- mkReg(0);
+  Reg#(Bool) fillingR <- mkReg(False);
+  Reg#(Bool) readyR <- mkReg(False);
+
+  // One 64-bit line per three clocks: request the low word, capture it
+  // and request the high word, capture it and install the line.
+  rule fillStep (fillingR);
+    Word lineAddr = zeroExtend(fillSet) << 3;
+    case (fillPhase)
+      2'd0: begin
+        mem.readReq(lineAddr);
+        fillPhase <= 2'd1;
+      end
+      2'd1: begin
+        fillLo <= mem.readData();
+        mem.readReq(lineAddr + 4);
+        fillPhase <= 2'd2;
+      end
+      default: begin
+        Bit#(64) line = { fillLo, mem.readData() };
+        PfcLine l = PfcLine { tag: lineAddr[31:10], data: line };
+        way0.upd(fillSet, l);
+        valid0 <= valid0 | (128'd1 << fillSet);
+        if (fillSet == 7'd127) begin
+          fillingR <= False;
+          readyR   <= True;
+        end else begin
+          fillSet   <= fillSet + 1;
+          fillPhase <= 2'd0;
+        end
+      end
+    endcase
+  endrule
+
+  method Action startFill();
+    if (!fillingR && !readyR) begin
+      fillSet   <= 0;
+      fillPhase <= 0;
+      fillingR  <= True;
+    end
+  endmethod
+
+  method Bool filling() = fillingR;
+  method Bool ready()   = readyR;
+
+  method Maybe#(Bit#(64)) lineAt(Word addr);
+    Bit#(7) set = addr[9:3];
+    Bit#(22) tag = addr[31:10];
+    PfcLine a0 = way0.sub(set);
+    PfcLine a1 = way1.sub(set);
+    PfcLine a2 = way2.sub(set);
+    Maybe#(Bit#(64)) r = tagged Invalid;
+    if ((valid0[set] == 1'b1) && (a0.tag == tag))
+      r = tagged Valid a0.data;
+    else if ((valid1[set] == 1'b1) && (a1.tag == tag))
+      r = tagged Valid a1.data;
+    else if ((valid2[set] == 1'b1) && (a2.tag == tag))
+      r = tagged Valid a2.data;
+    return r;
+  endmethod
+
+endmodule
+
+// ---------------------------------------------------------------------
+// The prefetch/decode unit, split into three explicitly named stage
+// modules.  Figure 1-1 (printed p. 1-2) prints "PREFETCH/DECODE UNIT
+// 3-STAGE PIPELINE" and a 64-bit path from the prefetch buffer; p. 1-32
+// (section 1.10.1) gives the unit its next-PC/alternate-next-PC job.
+//
+// Each stage follows Flute's CPU_StageN_IFC convention
+// (enq/deq/out/notEmpty plus a Server#(Token,Token) reset port); see
+// docs/bluespec_architecture.md.  A stage's `full` register is its
+// back-pressure, so back-pressure is a signal the stage itself raises and
+// no separate stall register (Flute's `set_full`) is needed here.  The
+// stages are passive registers with a combinational datapath, and the
+// wiring between them lives in mkHobbitPdu, not in mkHobbitCore.
+//
+//   PDU_S1  latches the PC and reads three 64-bit prefetch lines
+//           (the 64-bit path; three lines cover the 16-byte parcel
+//           window for every even PC).
+//   PDU_S2  selects the six parcels from those lines.
+//   PDU_S3  decodes and packs the 192-bit entry (Table 1-15..1-20).
+typedef struct {
+  Word pc;
+  Maybe#(Bit#(64)) l0;   // line containing pc & ~7
+  Maybe#(Bit#(64)) l1;   // the next line
+  Maybe#(Bit#(64)) l2;   // the third line (odd parcel start only)
+} PduS1Out deriving (Bits);
+
+typedef struct {
+  Word pc;
+  Bool miss;
+  Vector#(6, Parcel) parcels;
+} PduS2Out deriving (Bits);
+
+typedef struct {
+  Word pc;
+  Bool miss;
+  DecEntry entry;
+} PduS3Out deriving (Bits);
+
+function Bit#(64) pfcData(Maybe#(Bit#(64)) m);
+  return isValid(m) ? validValue(m) : 0;
+endfunction
+
+function DecodedInstr fetchMissInstr(Word pc);
+  return DecodedInstr { pc: pc, plen: 1, op: OP_NONE,
+                        src: Operand { kind: OK_NONE, val: 0 },
+                        dst: Operand { kind: OK_NONE, val: 0 },
+                        insn0: 0, insn1: 0,
+                        fold: False, foldOp: OP_NONE, foldPc: 0,
+                        foldInsn0: 0, foldTarget: 0, foldAfter: 0,
+                        tr: TR_FETCH_MISS };
+endfunction
+
+// ---- PDU_S1: PC and the 64-bit prefetch lines -----------------------
+interface HobbitPduS1;
+  interface Server#(Token, Token) server_reset;
+  method PduS1Out out;
+  method Action deq;
+  method Action enq(Word pc);
+  method Bool notEmpty;
+endinterface
+
+module mkHobbitPduS1#(HobbitPrefetch pf)(HobbitPduS1);
+  Reg#(Bool) full <- mkReg(False);
+  Reg#(Word) pcR <- mkReg(0);
+  FIFOF#(Token) f_reset_reqs <- mkFIFOF;
+  FIFOF#(Token) f_reset_rsps <- mkFIFOF;
+
+  rule rl_reset;
+    f_reset_reqs.deq;
+    full  <= False;
+    f_reset_rsps.enq(?);
+  endrule
+
+  method PduS1Out out;
+    Word a0 = pcR & 32'hFFFFFFF8;
+    return PduS1Out { pc: pcR,
+                      l0: pf.lineAt(a0),
+                      l1: pf.lineAt(a0 + 8),
+                      l2: pf.lineAt(a0 + 16) };
+  endmethod
+
+  method Action enq(Word pc) if (!full);
+    pcR  <= pc;
+    full <= True;
+  endmethod
+
+  method Action deq if (full);
+    full <= False;
+  endmethod
+
+  method Bool notEmpty() = full;
+
+  interface Server server_reset;
+    interface Put request  = toPut(f_reset_reqs);
+    interface Get response = toGet(f_reset_rsps);
+  endinterface
+endmodule
+
+// ---- PDU_S2: select the six parcels --------------------------------
+interface HobbitPduS2;
+  interface Server#(Token, Token) server_reset;
+  method PduS2Out out;
+  method Action deq;
+  method Action enq(PduS1Out d);
+  method Bool notEmpty;
+endinterface
+
+module mkHobbitPduS2(HobbitPduS2);
+  Reg#(Bool) full <- mkReg(False);
+  Reg#(PduS1Out) inR <- mkRegU;
+  FIFOF#(Token) f_reset_reqs <- mkFIFOF;
+  FIFOF#(Token) f_reset_rsps <- mkFIFOF;
+
+  rule rl_reset;
+    f_reset_reqs.deq;
+    full  <= False;
+    f_reset_rsps.enq(?);
+  endrule
+
+  // Four consecutive words cover the six parcels of any instruction at
+  // an even address: pc[1] selects the half of the first word.
+  function Vector#(6, Parcel) selEven(Word w0, Word w1, Word w2);
+    Vector#(6, Parcel) a = replicate(0);
+    Vector#(6, Parcel) b = update(a, 0, w0[31:16]);
+    Vector#(6, Parcel) c = update(b, 1, w0[15:0]);
+    Vector#(6, Parcel) d = update(c, 2, w1[31:16]);
+    Vector#(6, Parcel) e = update(d, 3, w1[15:0]);
+    Vector#(6, Parcel) f = update(e, 4, w2[31:16]);
+    return update(f, 5, w2[15:0]);
+  endfunction
+
+  function Vector#(6, Parcel) selOdd(Word w0, Word w1, Word w2, Word w3);
+    Vector#(6, Parcel) a = replicate(0);
+    Vector#(6, Parcel) b = update(a, 0, w0[15:0]);
+    Vector#(6, Parcel) c = update(b, 1, w1[31:16]);
+    Vector#(6, Parcel) d = update(c, 2, w1[15:0]);
+    Vector#(6, Parcel) e = update(d, 3, w2[31:16]);
+    Vector#(6, Parcel) f = update(e, 4, w2[15:0]);
+    return update(f, 5, w3[31:16]);
+  endfunction
+
+  method PduS2Out out;
+    let d = inR;
+    Word base = d.pc & 32'hFFFFFFFC;
+    Bool oddBase = (base[2:0] == 3'b100);
+    Bool have12 = isValid(d.l0) && isValid(d.l1);
+    Bool miss = !have12 || (oddBase && !isValid(d.l2));
+    Bit#(64) l0 = pfcData(d.l0);
+    Bit#(64) l1 = pfcData(d.l1);
+    Bit#(64) l2 = pfcData(d.l2);
+    Word w0 = oddBase ? l0[31:0]  : l0[63:32];
+    Word w1 = oddBase ? l1[63:32] : l0[31:0];
+    Word w2 = oddBase ? l1[31:0]  : l1[63:32];
+    Word w3 = oddBase ? l2[63:32] : l1[31:0];
+    Vector#(6, Parcel) ps = (d.pc[1] == 1'b0)
+                              ? selEven(w0, w1, w2)
+                              : selOdd(w0, w1, w2, w3);
+    return PduS2Out { pc: d.pc, miss: miss, parcels: ps };
+  endmethod
+
+  method Action enq(PduS1Out d) if (!full);
+    inR  <= d;
+    full <= True;
+  endmethod
+
+  method Action deq if (full);
+    full <= False;
+  endmethod
+
+  method Bool notEmpty() = full;
+
+  interface Server server_reset;
+    interface Put request  = toPut(f_reset_reqs);
+    interface Get response = toGet(f_reset_rsps);
+  endinterface
+endmodule
+
+// ---- PDU_S3: decode and pack the 192-bit entry ----------------------
+interface HobbitPduS3;
+  interface Server#(Token, Token) server_reset;
+  method PduS3Out out;
+  method Action deq;
+  method Action enq(PduS2Out d);
+  method Bool notEmpty;
+endinterface
+
+module mkHobbitPduS3(HobbitPduS3);
+  HobbitDecode dec <- mkHobbitDecode;
+
+  Reg#(Bool) full <- mkReg(False);
+  Reg#(PduS2Out) inR <- mkRegU;
+  FIFOF#(Token) f_reset_reqs <- mkFIFOF;
+  FIFOF#(Token) f_reset_rsps <- mkFIFOF;
+
+  rule rl_reset;
+    f_reset_reqs.deq;
+    full  <= False;
+    f_reset_rsps.enq(?);
+  endrule
+
+  method PduS3Out out;
+    if (inR.miss)
+      return PduS3Out { pc: inR.pc, miss: True,
+                        entry: packDecEntry(fetchMissInstr(inR.pc)) };
+    else
+      return PduS3Out { pc: inR.pc, miss: False,
+                        entry: packDecEntry(dec.decode(inR.pc, inR.parcels)) };
+  endmethod
+
+  method Action enq(PduS2Out d) if (!full);
+    inR  <= d;
+    full <= True;
+  endmethod
+
+  method Action deq if (full);
+    full <= False;
+  endmethod
+
+  method Bool notEmpty() = full;
+
+  interface Server server_reset;
+    interface Put request  = toPut(f_reset_reqs);
+    interface Get response = toGet(f_reset_rsps);
+  endinterface
+endmodule
+
+// ---- PDU: wire the three stages -------------------------------------
+interface HobbitPdu;
+  method Action enq(Word pc);
+  method Bool accepting();
+  method Bool outValid();
+  method PduS3Out out();
+  method Action deq();
+endinterface
+
+module mkHobbitPdu#(HobbitPrefetch pf)(HobbitPdu);
+  HobbitPduS1 s1 <- mkHobbitPduS1(pf);
+  HobbitPduS2 s2 <- mkHobbitPduS2;
+  HobbitPduS3 s3 <- mkHobbitPduS3;
+
+  rule s1ToS2 (s1.notEmpty && !s2.notEmpty);
+    s2.enq(s1.out);
+    s1.deq;
+  endrule
+
+  rule s2ToS3 (s2.notEmpty && !s3.notEmpty);
+    s3.enq(s2.out);
+    s2.deq;
+  endrule
+
+  method Action enq(Word pc) = s1.enq(pc);
+  method Bool accepting() = !s1.notEmpty;
+  method Bool outValid() = s3.notEmpty;
+  method PduS3Out out() = s3.out;
+  method Action deq() = s3.deq;
+endmodule
+
+// ---------------------------------------------------------------------
+// The 32-entry decoded-instruction store (the "IC" of printed p. 4-2;
+// Figure 1-1, printed p. 1-2, "DECODED INSTRUCTION CACHE 32X192bits").
+// p. 1-1 fixes the organization: "32-entry, direct-mapped".
+//
+// The store is Vector#(32, DecEntry): exactly 32 entries of exactly 192
+// bits, with the bit allocation documented in HobbitTypes.  An entry is
+// full (decEntryFull) when a complete decoded instruction is present;
+// that is also the hit condition, together with the 26-bit PC tag.  A
+// collision re-decodes through the PDU at no occupancy cost, which the
+// p. 4-1 in-cache assumption permits.  The store does not widen an
+// entry for a decoded instruction the printed width cannot hold: the
+// next/alternate-next pair is the documented overflow and is recomputed
+// on read (HobbitTypes).
+//
+// The EU asks for an entry by PC; a hit returns it, a miss starts one
+// PDU fill and the EU stalls until the install rule writes the entry.
+// A fill is a p. 4-1 in-cache fetch, so it adds no occupancy cycles.
+interface HobbitDecodeStore;
+  method Maybe#(DecInstEntry) lookup(Word pc);
+  method Action fill(Word pc);
+  method Bool filling();
+  method Action reset();
+endinterface
+
+module mkHobbitDecodeStore#(HobbitPdu pdu)(HobbitDecodeStore);
+  // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
+  // docs/bluespec_architecture.md: a decoded-instruction box with a
+  // lookup/fill boundary, separate from the EU pipeline.
+  //
+  // One write port and a combinational 32:1 read (the EU looks up by PC
+  // every clock).  RegFile emits the plain array shape that maps to LUT
+  // RAM: docs/area_analysis.md's reg_32x192 is 194 LUT4, against 4,498
+  // LUT4 / 6,246 FF for a Vector written by update.  The RegFile starts
+  // undefined, so a 32-bit valid mask gates every hit; the 192-bit
+  // entry's `full` bit remains part of the printed allocation.
+  RegFile#(Bit#(5), DecEntry) ic <- mkRegFileFull;
+  Reg#(Bit#(32)) icValid <- mkReg(0);
+  Reg#(Bool) fillingR <- mkReg(False);
+  Reg#(Word) fillPc <- mkReg(0);
+
+  function Bit#(5) idx(Word pc) = truncate(pc >> 1);
+
+  rule install (fillingR && pdu.outValid() && (pdu.out().pc == fillPc));
+    ic.upd(idx(fillPc), pdu.out().entry);
+    icValid <= icValid | (1 << idx(fillPc));
+    pdu.deq;
+    fillingR <= False;
+  endrule
+
+  method Maybe#(DecInstEntry) lookup(Word pc);
+    let e = ic.sub(idx(pc));
+    if ((icValid[idx(pc)] == 1'b1) && (e[191:166] == pc[31:6]))
+      return tagged Valid (decEntryToInst(e, pc));
+    else
+      return tagged Invalid;
+  endmethod
+
+  method Action fill(Word pc);
+    if (!fillingR && pdu.accepting()) begin
+      fillingR <= True;
+      fillPc   <= pc;
+      pdu.enq(pc);
+    end
+  endmethod
+
+  method Bool filling() = fillingR;
+
+  method Action reset();
+    icValid <= 0;
+    fillingR <= False;
+  endmethod
 endmodule
 
 endpackage
