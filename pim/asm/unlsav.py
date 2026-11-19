@@ -133,14 +133,14 @@ def parse_module(r):
     code_size = (r.rd() << 16) | r.rd()
     w = r.w
     start = None
-    for p in range(r.i, module_end - 6):
+    for p in range(r.i, len(w) - 6):
         if w[p] == 0x0023 and w[p + 3] == 0x0023 and w[p + 6] == 0x0023:
             start = p
             break
     if start is not None:
         r.i = start
     code = []
-    while r.i + 2 < module_end:
+    while r.i + 2 < len(w):
         tag = r.rd()
         if tag == 0xffff:
             break
@@ -151,7 +151,6 @@ def parse_module(r):
             v1 = r.rd()
             v2 = r.rd()
             code.append(('inst', (v1 << 16) | v2, tag))
-    r.i = module_end
     return mlen, (mod_name, pkg_name, magic, info), gc_terms, hs, preds, code
 
 
