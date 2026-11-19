@@ -52,6 +52,9 @@ interface HobbitCore;
   // line per three clocks) after the image is loaded; the run starts
   // when ready().
   method Action prefetchImage();
+  // Fill the prefetch window from an address other than 0 (a Plan 9
+  // image's code starts at 0x1020).
+  method Action prefetchImageAt(Word addr);
   method Bool prefetchReady();
 
   method Action start(Word sp, Word msp);
@@ -1129,6 +1132,10 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   method Action prefetchImage();
     pf.startFill();
+  endmethod
+
+  method Action prefetchImageAt(Word addr);
+    pf.startFillAt(addr);
   endmethod
 
   method Bool prefetchReady() = pf.ready();

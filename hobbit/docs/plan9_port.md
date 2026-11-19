@@ -118,25 +118,36 @@ here rather than smoothed over.
 
 ## First boot attempt (2026-11-19)
 
-`bsv/run_p9.sh echo` loads the 1e `echo` image at 0x1000/0x1020/0x4000
-(`tools/p9exec.py --image`, 4,317 words) into a 64 Kbyte memory, warms
-the prefetch and starts at the entry 0x2ad0 with SP = 0x800, MSP = 0xC00,
-PSW = 0x200 (`bsv/P9BootTb.bsv`).  Result: **`FAULT pc=00002ad0`** and
-no retirement — the fetch missed.
+`bsv/run_p9.sh cat` loads the 1e `cat` image (whole file at 0x1000, text
+0x1020, data 0x3000, 4,317 words) into a 64 Kbyte testbench memory, fills
+the 3 Kbyte prefetch window **from 0x1020** and starts at the image's
+entry 0x12bc with SP = 0x800, MSP = 0xC00, PSW = 0x200.
 
-The cause is stated by the model itself (`HobbitDecode.bsv`,
-`HobbitPrefetch`): the instruction window is 64 words warmed once, and
-"a fetch whose line is absent is a model limitation, and the PDU turns
-it into TR_FETCH_MISS so the core retires a loud trap record rather than
-aliasing a line silently".  The smoke never meets this because it starts
-at 0, inside the warmed window.
+**Bell Labs' first instruction retires on the model:**
 
-So the next task is not in the loader: **the PDU needs a refill on a
-fetch miss** — MMU-translated line fetch, the Table 4-7 fetch/empty
-pipeline delay, and the line installed in place of the warmed window —
-before any Plan 9 program can run past its first line.  The loader
-scaffolding (image, entry package, `startAt(pc, sp, msp, psw)`, 64 Kbyte
-testbench memory) is in place and is what the refill will be tested with.
+```
+HRI pc=12bc insn=86dc0bfc sp=00000800>00000800 msp=00000c00>00000c00 \
+    we=1 addr=00003004 data=00000000 mask=0f trap=0 cyc=1
+```
+
+That is main9p.s's `MOV clock-4(FP), _clock(SB)`: the store lands on
+`cat`'s own `_clock`, at 0x3004, one cycle, exactly as the golden
+discipline requires.
+
+Two fixes were needed to get there, both in the prefetch:
+
+* **the window can start anywhere** — `startFillAt(addr)` / 
+  `prefetchImageAt(addr)` (the boot image's code starts at 0x1020, not 0);
+* **a filled line goes to the set its address names** (`addr[9:3]`), not
+  to the fill counter — with the window at 0x1020 the two differ, and
+  the first run decoded 0x0bfc (a field) as if it were an instruction.
+
+**What stops it next, and it is not the loader:** at 0x12c2 the stream
+has parcel `0x0000`, which the model refuses loudly (`FAULT pc=000012c2`,
+a decode fault, no retirement) — the same unexplained filler that appears
+after `_main`'s first MOV in `cat` and as `0xffff` in `echo`/`zl`. Until
+that parcel is explained, the program cannot run past instruction two.
+That question, not the loader, is the next piece of work.
 
 ## Definition of the proof of concept
 

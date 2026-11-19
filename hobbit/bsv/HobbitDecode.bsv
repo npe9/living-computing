@@ -375,6 +375,9 @@ endmodule
 // delay is charged.
 interface HobbitPrefetch;
   method Action startFill();
+  // Fill the 128-line window from an arbitrary 8-byte-aligned address
+  // (a Plan 9 image's code does not start at 0).
+  method Action startFillAt(Word addr);
   method Bool filling();
   method Bool ready();
   method Maybe#(Bit#(64)) lineAt(Word addr);
@@ -413,13 +416,14 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
   Reg#(Bit#(7)) fillSet <- mkReg(0);
   Reg#(Bit#(2)) fillPhase <- mkReg(0);
   Reg#(Bit#(32)) fillLo <- mkReg(0);
+  Reg#(Word) fillBase <- mkReg(0);
   Reg#(Bool) fillingR <- mkReg(False);
   Reg#(Bool) readyR <- mkReg(False);
 
   // One 64-bit line per three clocks: request the low word, capture it
   // and request the high word, capture it and install the line.
   rule fillStep (fillingR);
-    Word lineAddr = zeroExtend(fillSet) << 3;
+    Word lineAddr = fillBase + (zeroExtend(fillSet) << 3);
     case (fillPhase)
       2'd0: begin
         mem.readReq(lineAddr);
@@ -433,8 +437,12 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
       default: begin
         Bit#(64) line = { fillLo, mem.readData() };
         PfcLine l = PfcLine { tag: lineAddr[31:10], data: line };
-        way0.upd(fillSet, l);
-        valid0 <= valid0 | (128'd1 << fillSet);
+        // The set is the address's own index, not the fill counter: a
+        // window filled from a base other than 0 must land in the sets
+        // that lineAt() looks up (addr[9:3]).
+        Bit#(7) set = lineAddr[9:3];
+        way0.upd(set, l);
+        valid0 <= valid0 | (128'd1 << set);
         if (fillSet == 7'd127) begin
           fillingR <= False;
           readyR   <= True;
@@ -454,8 +462,18 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
     return mmu.translate(xreq(va)).pa;
   endfunction
 
+  method Action startFillAt(Word addr);
+    if (!fillingR && !readyR) begin
+      fillBase  <= addr & 32'hFFFFFFF8;
+      fillSet   <= 0;
+      fillPhase <= 0;
+      fillingR  <= True;
+    end
+  endmethod
+
   method Action startFill();
     if (!fillingR && !readyR) begin
+      fillBase  <= 0;
       fillSet   <= 0;
       fillPhase <= 0;
       fillingR  <= True;

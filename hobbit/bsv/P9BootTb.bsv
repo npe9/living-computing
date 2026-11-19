@@ -62,7 +62,7 @@ module mkP9BootTb(Empty);
   endrule
 
   rule ask (loaded && boot == 0);
-    core.prefetchImage();
+    core.prefetchImageAt(p9textbase());
     boot <= 1;
   endrule
 
