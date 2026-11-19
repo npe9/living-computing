@@ -130,6 +130,8 @@ def parse_term(r):
 
 def parse_module(r):
     mod_start = r.i
+    if r.i + 3 > len(r.w):
+        raise ValueError('truncated module header at %d' % r.i)
     mlen = (r.rd() << 16) | r.rd()
     module_end = mod_start + mlen
     gc = r.rd()
