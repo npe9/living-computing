@@ -88,7 +88,7 @@ recorded in `docs/isa.md` "Gaps" and `docs/pim_architecture.md`
 
 ## Remaining work (2026-11-19)
 
-Status against the milestone (2026-11-19, after WP4): the source
+Status against the milestone (2026-11-19, after WP5): the source
 inventory is in; the one-PE smoke test passes (48 steps, PC 17); the
 assembler selftest passes; the formal BMC passes on the fixed tree and
 each injected twin fails with a VCD; `docs/isa.md` is generated and
@@ -96,17 +96,33 @@ checked; `run_tests.sh` is green. The primary-source round-trip is
 recorded as substituted (no KL1-B listing in the corpus). The network
 and SDRAM store have Bluesim testbenches, and the FPGA top has a
 reproducible build check (28.32 MHz, WP2 gate unchanged).
-WP1, WP3 and WP4 are done; WP2 stays "not hardware-ready" pending a
-re-decision on the fresh measurements; WP5.1 is done: `docs/wp5_evidence.md`
-records the documented sources, the single-PE diagnostic definition and the
-named blockers. WP5.2 (mesh link and packet flow control) is next. The
-diagnostic's negative tests (undefined opcode, legal opcode) are now written
-and wired into `run_tests.sh` (`bsv/PimNegativeTests.bsv`,
-`bsv/run_neg_tb.sh`).
+WP1, WP3, WP4 and WP5.1 are done. WP5.1's evidence is in
+`docs/wp5_evidence.md`: the documented sources, the single-PE diagnostic
+definition and the named blockers. Its negative tests (undefined opcode,
+legal opcode) are written in `bsv/PimNegativeTests.bsv`, run by
+`bsv/run_neg_tb.sh`, and wired into `run_tests.sh`.
+WP5.2 (mesh link and packet flow control) is done: `PimLink.bsv`,
+`PimLinkTb.bsv`, `PimNURouted.bsv` and `PimMesh.bsv` pass
+`run_link_tb.sh`, `run_nu_routed_tb.sh` and `run_mesh_tb.sh`, including
+the four named mesh checks and the lock-until-tail fix. WP2's documented
+fallback is in force on the committed tree: the FPGA flow is marked "not
+hardware-ready" (28.32 MHz measured; the retime was not attempted
+because the historical-accuracy rule forbids reordering the documented
+pipeline), and no claim rests on the bitstream. The owner's re-decision
+remains open; nothing blocks on it. The one open package is WP5.3 (KL1).
+Its evidence gate is satisfiable from the corpus already present: the
+documented KL1-B path is TR-246 and TR-389, transcribed in
+`docs/kl1_architecture.md`, and the PIMOS KL1 compiler source is in
+`docs/nonlocal/pimos.tar.Z` (706 files, including
+`pimos/src/library/compiler/instrtbl.kl1` and `mactbl.kl1`). The genuine
+gap is the machine-code/bit encoding table — TR-246 prints mnemonics
+only and TR-389 prints operand notation but no opcode or bit layout — so
+any encoding derived from the compiler source must be labelled
+source-derived, not historical.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
-independent trees. WP1.3 adds the pim runner.
+independent trees. WP1.3's pim runner is in place.
 
 ### Ordered work plan
 
@@ -284,9 +300,17 @@ test or an explicit label.
    mark bit, a RAM path table indexed by destination PE, a 2-bit
    direction code, a 5 × 5 crossbar) but prints no encoding for any of
    them.
-3. **Stage 6:** KL1. Evidence gate: no KL1-B encoding table or
-   documented compiler/runtime path is in the corpus. Acquire or cite
-   one before adding a KL1 workload; label anything manual-derived.
+3. **Stage 6:** KL1. Evidence gate: a documented KL1-B path IS in the
+   corpus — `docs/kl1_architecture.md` transcribes TR-246 (the abstract
+   KL1 machine and its instruction set) and TR-389 (the PIM macro-call
+   instruction and the concrete 40-bit representation), and
+   `docs/nonlocal/pimos.tar.Z` holds the PIMOS KL1 compiler source
+   (706 files, including `pimos/src/library/compiler/instrtbl.kl1` and
+   `mactbl.kl1`). The genuine gap is a machine-code/bit encoding table:
+   TR-246 prints mnemonics only and TR-389 prints operand notation but
+   no opcode or bit layout. Cite the documented path and label any
+   encoding derived from the compiler source as source-derived; never
+   present an inferred encoding as historical.
 
 ### Dependencies
 
