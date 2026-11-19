@@ -30,8 +30,21 @@ magic 00000197  text 00002258  data 00000374  bss 00000354
 syms  00003db0  entry 00002ad0  spsz 00000000  pcsz 0000085e
 ```
 
-Text is 8,792 bytes loaded at 0x1000, entry 0x2ad0 (inside the text),
-data 880 bytes, bss 852 bytes — a classic 1st Edition `a.out`.
+Text is 8,792 bytes, data 880, bss 852 — a classic 1st Edition `a.out`.
+
+The symbol table fixes the load rule: `sys/src/9/hobbit/mem.h` has
+`UTZERO = UZERO+0x1000`, symbol `main` is **0x1020**, `etext` **0x3278**
+= 0x1020 + 0x2258, `bdata` **0x4000**, `edata` **0x4374**, and
+`_main` **0x2ad0** = the header's `entry`. So the loader maps the whole
+file — 32-byte `Exec` header included — at 0x1000, which puts the text
+section at 0x1020 and data at 0x4000.
+
+**Open, not guessed:** the first text bytes do not decode as parcels
+from 0x1020 (or from `_main` at 0x2ad0) under any of the four byte
+orders tried, although `zl/asm.c`'s `SPUT` writes parcels big-endian.
+`main9.s`'s four-instruction `_main` prologue is the oracle to settle
+it, and the kernel's `exec` path (not vendored) is the rule to read
+next. Until that is answered there is no loader.
 
 ## Definition of the proof of concept
 
