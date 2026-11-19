@@ -11,3 +11,6 @@ sim_golden_*
 *.cxx
 *.h
 *.o
+*.dot
+sim_board
+sim_board.so
