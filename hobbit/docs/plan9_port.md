@@ -149,6 +149,34 @@ after `_main`'s first MOV in `cat` and as `0xffff` in `echo`/`zl`. Until
 that parcel is explained, the program cannot run past instruction two.
 That question, not the loader, is the next piece of work.
 
+## Bell Labs' linker runs, and what it has and has not proved (2026-11-19)
+
+`tools/build_zl_inferno.py` builds the 1st Edition `zl` on this host with
+the Inferno64 C environment, and a hand-assembled object — the record
+grammar of `zl/obj.c`'s `ldobj`/`zaddr`: `ANAME` declarations, then
+`opcode, line, from-Adr, to-Adr` per instruction, terminated by `AEND` —
+links into a valid 1st Edition `a.out`:
+
+```
+header: magic 0x197  text 0x8  data 0  bss 0  syms 0xa8  entry 0x1020
+```
+
+That independently confirms the load rule read from `sysproc.c`: text
+starts at **0x1020**, and the entry a linker picks is 0x1020 when `_main`
+is the first text.
+
+Two limits of the host port, found by trying to go further:
+
+* `zl` refuses (or mis-reads) the *shipped* z archives —
+  `hobbit/lib/libbio.a` gives "bad or out of date archive", a host
+  `struct ar_hdr`/`Bio` divergence, not a z-format problem;
+* the text bytes it emits for a `MOV` do not yet match the parcels the
+  shipped binaries carry, so until the port is faithful its output is
+  **not an oracle** for placement or byte order.  The instrument to
+  check it is already here: link a call into a `libbio.a` function and
+  compare that function's parcels with the same function in the shipped
+  `cat` — identical sources, identical compiler, so identical bytes.
+
 ## Definition of the proof of concept
 
 **`echo` from `plan9-1e/hobbit/bin/` runs on the model and prints its
