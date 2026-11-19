@@ -1,129 +1,88 @@
-# Reaching formal verification for the Hobbit model
+# Full functional completeness and correctness
 
-**Answer to the question this document exists for: no.** Neither
-`plan.md` nor `docs/plan9_boot_plan.md` leads to formal proof by itself —
-they lead to *running* Plan 9 1e on the model. Today verification here is
-trace comparison and hand-derived goldens:
+**The goal, as the owner states it: the model must be functionally complete
+and provably correct — every documented feature of the AT&T 92010, and
+every behaviour it claims proved for all executions, not for examples and
+not up to a bound.**
 
-* the HRI record is the DUT/spec boundary (`HobbitTypes.bsv:80-102`),
-  one record per retired instruction, and `tests/hri_check.py` diffs the
-  core's records against `sem/hobbit_sem.py`'s;
-* `tests/golden/` breaks ties, one hand-derived trace per program;
-* `grep -rln 'sby\|smtbmc' bsv tests tools` finds no proof harness at
-  all, and the README says so: "not a yosys formal proof".
+An earlier version of this document called whole-machine correctness
+"not tractable". That was wrong for a *machine*: the Hobbit is a finite
+state machine, the ISA is a finite table, and refinement can be proved
+per instruction and then composed. What is intractable is reasoning about
+the *operating system* built on it, and that is not what is claimed here.
 
-This document is the missing track. It is written so that each stage is
-a property, a tool, a bound and an artefact — the same discipline as the
-rest of the directory.
+Two words are therefore defined operationally, and every gate below
+measures one of them.
 
-Tools present on this machine (checked): `yosys 0.51`, `sby`, `z3`,
-`boolector`, `yices`, plus the harness devices `yosys_equiv`, `sby_formal`,
-`smtbmc`, `formal_model`, `proof_artifact`.
+## Completeness — every documented feature, nothing refused
 
-## What "full formal" is taken to mean here
+The model today is deliberately partial ("decode completely, execute
+partially, document the rest"). That convention is **retired** for this
+machine: a refusal is a defect unless the *hardware* itself takes the
+unimplemented-instruction sequence for that encoding (e.g. `FLUSHD`, no
+data cache, PRM p. 3-22).
 
-Unbounded, whole-machine functional correctness is not a tractable target
-and will not be claimed. The target is **machine-checked correctness of
-every claim the model makes**, as four property families:
+Completeness gates, all mechanically checked:
 
-| family | property | bound |
+| id | gate | how it is measured |
 |---|---|---|
-| \(F_1\) instruction equivalence | for each implemented instruction, RTL and the printed semantics agree on the HRI record and the architectural post-state | per instruction, symbolic operands |
-| \(F_2\) structural invariants | one write per array per cycle, at most one retirement per cycle, pipeline drains, prefetch tags | k-induction |
-| \(F_3\) MMU and events | translation deterministic; event priority respects p. 1-40; TLB/table coherence after flushes | k-induction + BMC |
-| \(F_4\) device contracts | bus Appendix A handshake, DUART framing/status, timer count/overflow | k-induction |
-| \(F_5\) boot reachability | from the 1e reset state, the first \(N\) retirements of the kernel match a hand-derived trace; no unimplemented-instruction or fetch-miss trap before the console write | bounded, \(N\) stated |
+| C1 | every Table 3-1 instruction executes in the core and in `sem/`, in every printed width and parcel form (1/3/5), every addressing mode of Table 1-23, and the CPU-escape registers of Table 1-24 | a generated matrix over the instruction inventory; zero `Unsupported`/`Unimplemented` outcomes for Table 3-1 rows |
+| C2 | the documented state is complete: PSW (every printed bit), CONFIG, VB, STB, ISP/SP/MSP/SHAD/CSP, the accumulator, both timers, TLB/NPSR contents | state inventory versus PRM Tables 1-1…1-14, each bit cited |
+| C3 | every device the 1e Hobbit port drives is modelled — console DUART, keyboard, screen/Incon, RTC, SCSI, SONIC/Ethernet, IIC/EEPROM, FPU, timers, board IRQ controller (`docs/plan9_kernel_inventory.md` §3) | one model + one end-to-end test per row |
+| C4 | the machine-level behaviours of chapters 1–4 are implemented: prefetch and decode, stack cache and CATCH/POPN/ENTER/RETURN, MMU, event priority, bus protocol, cycle counts of Tables 4-32…4-36 | the feature inventory in `docs/` with no open item that says "not modelled" |
+| C5 | **no refusal is reachable from 1e software**: the shipped binaries and the kernel run to their own ends, and a scan of every trap/refuse site in `bsv/` and `sem/` finds either a hardware-justified trap or nothing | a scripted scan plus the boot of A3/A4 |
 
-## F0 — the interface and the record
+## Correctness — proved for all executions
 
-Before any proof, three things must exist:
+Correctness means refinement: for every program, the RTL's observable
+sequence (the HRI records, the UART, the bus) is one the semantics
+produce. That decomposes:
 
-1. **A Verilog/RTLIL entry point per unit**, produced by `bsc -verilog`
-   from the same module the simulator uses (`mkHobbitCore`,
-   `mkHobbitMmu`, `mkHobbitEvents`, `mkHobbitBus`), so a proof cannot be
-   about a different design. `tools/formal_build.sh` (new) emits them
-   with the bsc version recorded.
-2. **A mechanised specification side per instruction.** `sem/` is Python;
-   proofs need SMT. The plan is to generate, for each instruction, an
-   SMT-LIB contract from the sem's table (reviewable text, checked
-   against the same goldens), so the proof compares RTL against a
-   formula that is a *transcription* of the Python, not a second model.
-   The transcription itself is validated by the existing 56 HRI records
-   (diff the SMT contract's evaluation against `sem/hobbit_sem.py` on
-   every golden state).
-3. **Proof artefacts**: each `sby` run records bound, solver, tool
-   versions and hashes via the `proof_artifact` device, so "proved"
-   always means "proved at this hash with this bound".
+| id | theorem | method |
+|---|---|---|
+| P1 | **per-instruction equivalence**: for every instruction, all operand values, all addressing modes, RTL's retirement record and architectural post-state equal `sem/`'s contract | `sby` in `prove` mode over a generated SMT contract per instruction (symbolic operands, no bounds) |
+| P2 | **pipeline refinement**: the core's steady state is the sequential composition of P1's step relation — fetch never changes semantics, stalls only delay, folding matches Table 4-35 | k-induction over pipeline invariants (one retirement per cycle, drain, slot handoff) composed with P1 |
+| P3 | **MMU and events**: translation is deterministic and equals the printed walk; TLB/NPSR contents remain coherent with the tables under every flush; the p. 1-40 order is respected and exactly one event is taken | k-induction on the MMU/event boxes and the core's event path |
+| P4 | **devices**: each device refines its printed specification — bus Appendix A handshake and timing, DUART framing/status/interrupts, timers, RTC, SCSI, SONIC, IIC | k-induction per device, contracts from the same sources the models cite |
+| P5 | **the platform**: with C3 complete and P4 proved, the 1e kernel's boot is a program on a proved platform; the boot's own correctness is reachability of the stated behaviour (console write, no spurious trap) | bounded reachability used as *evidence*, with the unbounded claim coming from P1–P4 |
 
-## F1 — instruction equivalence (first real milestone)
+**Assumptions are named, never hidden.** The model makes choices the
+manual leaves open — A=1/D=2/Q=4 (p. 4-2 prints no values), TLB
+replacement policy, the 3 KB prefetch window's contents. Correctness is
+stated relative to those choices, each recorded in `docs/` with its
+reason; a proof never silently assumes more than the documents say.
 
-Shape: for instruction \(i\), drive `mkHobbitCore` from a start state
-with the instruction at 0, memory words holding **symbolic** operands
-(`anyseq`) constrained by the addressing modes, events disabled, one
-clocks-per-instruction window; assert
+**Every proof carries its provenance**: tool versions, the RTL hash, the
+contract hash, whether the run was `prove` or `bmc`, and the bound when
+one exists, recorded through the `proof_artifact` device. "Proved" alone
+is never written; "proved for all inputs, k-induction depth n, hash h"
+is.
 
-* the retired HRI record equals the SMT contract's record field for
-  field (`pc`, `insn0/1`, `sp/msp` before and after, `we/addr/data/mask`,
-  `trap`, `cyc`);
-* the architectural post-state (memory words written, accumulator, SP/MSP)
-  equals the contract's.
+## Where this leaves the existing verification
 
-Order: the instructions the 1e user binaries actually execute first
-(`MOV`, `CALL`, `CMPEQ`, `CMPGT`, `ADD`, `SUB`, `ADD3`, `ENTER`,
-`CATCH`, `POPN`, `RETURN`, `JMP*`, and the new `SHL3`/`SHR3`), then the
-rest of Table 3-1. Refusals stay refusals: an instruction the sem
-refuses gets a proof that the RTL traps with the same record.
+The HRI comparison and the goldens do not go away; they become the
+*validation of the contract generator* (P1 needs `sem/` transcribed to
+SMT, and 56 golden records plus 18 assembler checks are the evidence
+that the transcription is faithful) and the regression net that keeps
+the proved machine executing real programs. Nothing that is green today
+is deleted to make a proof easier.
 
-## F2 — structural invariants
+## Order of work
 
-`bsc` already rejects double writes; the proofs here are the ones it
-cannot do: at most one RB (retirement) per cycle; from any reachable
-state the pipeline drains within a stated number of cycles (bounded
-liveness, the deadlock that cost a day is the example); the prefetch
-window's valid/tag invariant.
+1. **C1 first, because it shrinks P1's surface to something provable and
+   because it is the owner's first word**: complete Table 3-1 in `sem/`
+   and the core, mode by mode, with the matrix gate.
+2. **F0/P1 tooling**: `tools/formal_build.sh` (Verilog per unit from the
+   same modules), the SMT contract generator and its golden validation,
+   artefact recording; then P1 for the instructions 1e uses, then the
+   rest of the table.
+3. **P2 invariants**, then **P3**, then **P4** device by device (DUART
+   first, since A4 needs it), then **C3** for the devices 1e drives.
+4. **C2, C4** continuously, each with its citation, as the instruction
+   and feature work proceeds.
+5. **C5/P5**: A3/A4 of the boot plan, with the scan and the reachability
+   evidence.
 
-## F3 — MMU and events
-
-* translation determinism and the identity of TLBs after `FLUSHPTE`/STB;
-* the p. 1-40 priority order as a theorem: no two events are taken in
-  one cycle, and an event of higher priority is never masked by a lower
-  one — the event testbench tests examples, this proves the order;
-* the frame words an event writes match Table 1-26 with the offsets
-  settled by O4 of the kernel inventory.
-
-## F4 — devices
-
-* bus: `DTACK` within the modelled clock after `START`, `BERR` mutually
-  exclusive with `DTACK`, `BGRANT`/`BGACK` exclusivity (Appendix A);
-* DUART: 8N1 framing, status bits, interrupt masking (after A4's model
-  exists — the parked work in `/tmp/duart-wip/` is the starting point);
-* timers: count/overflow/vector properties from pp. 1-19, 1-20.
-
-## F5 — boot reachability
-
-Once A3 produces a 1e kernel image: BMC from the reset state
-(`PSW=0`, `VB=0`, PC = image entry, `raml.s`'s first instructions) for
-\(N\) retirements, checking the HRI stream against a hand-derived trace
-of the boot path, and asserting that no `TR_FETCH_MISS`/unimplemented
-trap occurs before the first console write. \(N\) is stated per run; this
-is reachability, not a proof of the OS.
-
-## Process
-
-Every A/B milestone in `docs/plan9_boot_plan.md` gains its F harness in
-the same change: a new instruction arrives with its F1 proof, a new
-device with its F4 proof. The suite gains a `prove` stage that runs the
-harnesses at their recorded bounds; a failing proof blocks the
-milestone. Bounds are named in every result — "proved for k=40" is a
-result, "proved" alone is not.
-
-## Order
-
-1. **F0** — `tools/formal_build.sh`, the SMT contract generator and its
-   validation against the 56 golden records, artefact recording.
-2. **F1** — the ten instructions 1e's binaries use, then Table 3-1.
-3. **F2** — invariants, starting with "one retirement per cycle" and
-   pipeline drain.
-4. **F3** — translation determinism and the event order.
-5. **F4** — bus contracts, then DUART and timers as their models land.
-6. **F5** — boot reachability behind A3/A4.
+Each milestone in `docs/plan9_boot_plan.md` ships its completeness row and
+its proof in the same change; the repository suite gains a `prove` stage
+that re-runs every harness and fails on any regression.

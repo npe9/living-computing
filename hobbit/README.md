@@ -50,10 +50,13 @@ machines whose differences must remain explicit.
 | TIMER1/TIMER2 | `bsv/HobbitTimers.bsv` | p. 1-19 counters, CONFIG[31:22] event/enable fields, level-one overflow interrupts, CPU-escape reads 0xB/0xC; 31-check `run_timer.sh` |
 | board UART end to end | `bsv/BoardUartTb.bsv`, `bsv/run_board_tb.sh` | the board datapath's `txd` decoded as 8N1 at 217 clocks/bit yields the smoke's 41 HRI lines byte for byte (5,042 characters) |
 
-The core is a partial implementation on purpose: it models the
-memory-to-memory ALU, the stack cache, the control transfers, the MMU,
-the event sequence, the synchronous bus and the timers, and
-traps on the rest. The one structural gap left from the printed
+The goal for this machine is **full functional completeness and
+provability** (`docs/plan9_formal_plan.md`): every documented feature
+implemented and every claim proved for all executions, so the core's
+remaining refusals are defects to be closed, not a design stance. What it
+models today: the memory-to-memory ALU, the stack cache, the control
+transfers, the MMU, the event sequence, the synchronous bus and the
+timers. The one structural gap left from the printed
 Figure 1-1 is the 3 Kbyte three-way prefetch buffer: a 64-word
 direct-mapped window stands in (see `plan.md`). The board bitstream runs
 `mkHobbitCore` with translation and events off, so the MMU and event
