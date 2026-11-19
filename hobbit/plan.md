@@ -118,6 +118,12 @@ documented interfaces.
 5. Implement the MMU: 1,024 segments of 4 MB, paged segments of
    1,024-word pages, non-paged segments, mixed segment tables, split
    TLBs, FLUSHPTE and the translation faults.
+   **Achieved 2026-11-19** (`bsv/HobbitMmu.bsv`, `run_mmu.sh` 41 PASS):
+   both entry formats (Table 2-1/2-2), the PTE R/M writeback, the
+   text/data TLBs, `FLUSHPTE` and STB-based flushes, and fetch/read/
+   write faults as Table 1-26 ids 0x7/0x8/0x9. Named choices: round-robin
+   replacement (the manual prints no policy) and a combinational walk
+   (Table 2-4's penalties are bus timing, step 7).
 6. Implement event processing in the documented priority order
    (printed p. 1-40): reset, interrupts, trace, instruction fetch
    faults, illegal instructions, unimplemented instructions and
@@ -125,6 +131,13 @@ documented interfaces.
    errors, privilege violation, divide by zero — with PC and PSW saved
    on the interrupt stack at the documented addresses, and the PSW
    trace bits.
+   **Achieved 2026-11-19** (`bsv/HobbitEvents.bsv`, `run_event.sh`
+   41 PASS; core integration `run_core_mmu.sh` 12 PASS): the priority
+   order is tested as an order, frames and vector offsets come from
+   Table 1-14/1-26, and a translated fetch fault in the core raises the
+   event with the recorded saved PC/PSW. Not yet wired: TBB branch
+   tracing, and returning from an event (CRET/KCALL/KRET); event frames
+   live in their own model memory rather than through the bus.
 7. Implement the bus: synchronous one-cycle transactions, byte marks,
    double-word/quad-word block transfers, retry and bus-error
    handling, arbitration, the reset start address 0x0, and the
@@ -170,3 +183,32 @@ separately — with the independent one-instruction model and with a
 hand-derived golden trace, and the same image runs on the ULX3S with its
 HRI lines streamed over the UART. The full repository test suite remains
 green.
+
+## Proof of concept: a Plan 9 port (owner's direction, 2026-11-19)
+
+The proof of concept for this machine is **a Plan 9 port, not a smoke
+test**. The 1st Edition of Plan 9 — the last release with the Hobbit
+port — shipped complete Hobbit binaries (`hobbit/bin/`: `za`, `zc`,
+`zl`, `rc`, `echo`, `cat`, `ls`, `sam`, …), the Hobbit kernel sources
+(`sys/src/9/hobbit/`, including `_vector0`, the syscall entry at
+`_vectors+0x00`) and the Hobbit libc (`sys/src/libc/hobbit/main9.s`).
+Those binaries are Bell Labs' own compiled user code for this chip.
+
+The proof of concept is: **`echo` from `plan9-1e/hobbit/bin/` runs on
+the model and prints its argument over the model's UART byte for byte,
+and exits 0**, followed by one file-reading program (`cat` over a
+one-file shim). The loader, the `_main` start-up convention and the
+syscall vector come from the 1st Edition sources, cited by path and
+line; the syscalls themselves are a host shim, not the kernel — booting
+`sys/src/9/hobbit/` is the milestone after that. Stages, gates and
+negative controls are in [`docs/plan9_port.md`](docs/plan9_port.md).
+
+The Plan 9 way of working applies throughout: nothing is added to the
+instruction set and nothing to the toolchain for the port's sake — what
+is needed is hand-assembled in the assembler's own idiom (`TEXT`/`DATA`
+and macros with the parcels spelled out) and linked by `zl`, which is
+also this machine's encoder oracle.
+
+Until the 1e material is vendored, its archive is pinned by
+sha256 `8718e279aa35b10a9391f330976d31c177bad00de40e7f0f67232ffa54fb7d77`
+(`plan9-1e.tar.bz2`), the same archive `tools/plan9-1e/` was taken from.

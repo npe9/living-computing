@@ -105,7 +105,15 @@ echo
 echo "=== bitstream ======================================================="
 ls -l "$BUILD/hobbit_ulx3s.bit"
 
-if grep -q 'Max frequency for clock.*FAIL' "$BUILD/nextpnr.log"; then
-  echo
-  echo "build.sh: WARNING: 25 MHz timing NOT met (see the nextpnr report above)" >&2
-fi
+# nextpnr prints a provisional "Max frequency" line inside its utilisation
+# block and the final one after the critical-path reports; only the last
+# occurrence per clock is the design's number, so judge on that.
+final_clk=$(grep 'Max frequency for clock' "$BUILD/nextpnr.log" | tail -1)
+case "$final_clk" in
+  *FAIL*)
+    echo
+    echo "build.sh: WARNING: 25 MHz timing NOT met: $final_clk" >&2 ;;
+  *)
+    echo
+    echo "build.sh: clock-domain timing: $final_clk" ;;
+esac

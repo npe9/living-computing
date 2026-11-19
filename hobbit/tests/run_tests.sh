@@ -25,6 +25,13 @@ python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
 "$hobbit/bsv/run_uart.sh"
+# The FPGA top's own UART output, decoded at 217 clocks/bit, must equal the
+# smoke test's HRI lines (run_board_tb.sh runs both and compares them).
+"$hobbit/bsv/run_board_tb.sh"
+# MMU, event processing, and the two integrated in the core.
+"$hobbit/bsv/run_mmu.sh"
+"$hobbit/bsv/run_event.sh"
+"$hobbit/bsv/run_core_mmu.sh"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"

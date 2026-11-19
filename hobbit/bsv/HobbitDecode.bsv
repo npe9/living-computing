@@ -38,6 +38,7 @@ import GetPut::*;
 import ClientServer::*;
 import RegFile::*;
 import HobbitTypes::*;
+import HobbitMmu::*;
 
 interface HobbitDecode;
   method DecodedInstr decode(Word pc, Vector#(6, Parcel) p);
@@ -377,6 +378,10 @@ interface HobbitPrefetch;
   method Bool filling();
   method Bool ready();
   method Maybe#(Bit#(64)) lineAt(Word addr);
+  // True when the fetch address has no valid MMU mapping (p. 2-3).
+  method Bool faultAt(Word addr);
+  // Record a text translation so the text TLB/NPSR refills (p. 2-1).
+  method Action noteFetch(Word addr);
 endinterface
 
 typedef struct {
@@ -384,7 +389,7 @@ typedef struct {
   Bit#(64) data;     // {word at line+0, word at line+4}
 } PfcLine deriving (Bits);
 
-module mkHobbitPrefetch#(HobbitMem mem)(HobbitPrefetch);
+module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPrefetch);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: the cache is a box behind its own
   // interface, not logic inlined into a pipeline stage.
@@ -441,6 +446,14 @@ module mkHobbitPrefetch#(HobbitMem mem)(HobbitPrefetch);
     endcase
   endrule
 
+  function MmuReq xreq(Word va) =
+    MmuReq { va: va, isText: True, isWrite: False,
+             user: (psw[10] == 1'b1), enabled: (psw[16] == 1'b1) };
+
+  function Word paOf(Word va);
+    return mmu.translate(xreq(va)).pa;
+  endfunction
+
   method Action startFill();
     if (!fillingR && !readyR) begin
       fillSet   <= 0;
@@ -452,14 +465,25 @@ module mkHobbitPrefetch#(HobbitMem mem)(HobbitPrefetch);
   method Bool filling() = fillingR;
   method Bool ready()   = readyR;
 
-  method Maybe#(Bit#(64)) lineAt(Word addr);
+  method Bool faultAt(Word addr) =
+    mmu.translate(xreq(addr)).fault != MMU_OK;
+
+  method Action noteFetch(Word addr);
+    mmu.noteText(xreq(addr));
+  endmethod
+
+  method Maybe#(Bit#(64)) lineAt(Word va);
+    let xr = mmu.translate(xreq(va));
+    let addr = xr.pa;
     Bit#(7) set = addr[9:3];
     Bit#(22) tag = addr[31:10];
     PfcLine a0 = way0.sub(set);
     PfcLine a1 = way1.sub(set);
     PfcLine a2 = way2.sub(set);
     Maybe#(Bit#(64)) r = tagged Invalid;
-    if ((valid0[set] == 1'b1) && (a0.tag == tag))
+    if (xr.fault != MMU_OK)
+      r = tagged Invalid;
+    else if ((valid0[set] == 1'b1) && (a0.tag == tag))
       r = tagged Valid a0.data;
     else if ((valid1[set] == 1'b1) && (a1.tag == tag))
       r = tagged Valid a1.data;
@@ -494,22 +518,35 @@ typedef struct {
   Maybe#(Bit#(64)) l0;   // line containing pc & ~7
   Maybe#(Bit#(64)) l1;   // the next line
   Maybe#(Bit#(64)) l2;   // the third line (odd parcel start only)
+  Bool fault;            // MMU fetch translation fault (p. 2-3)
 } PduS1Out deriving (Bits);
 
 typedef struct {
   Word pc;
   Bool miss;
+  Bool fault;
   Vector#(6, Parcel) parcels;
 } PduS2Out deriving (Bits);
 
 typedef struct {
   Word pc;
   Bool miss;
+  Bool fault;
   DecEntry entry;
 } PduS3Out deriving (Bits);
 
 function Bit#(64) pfcData(Maybe#(Bit#(64)) m);
   return isValid(m) ? validValue(m) : 0;
+endfunction
+
+function DecodedInstr fetchFaultInstr(Word pc);
+  return DecodedInstr { pc: pc, plen: 1, op: OP_NONE,
+                        src: Operand { kind: OK_NONE, val: 0 },
+                        dst: Operand { kind: OK_NONE, val: 0 },
+                        insn0: 0, insn1: 0,
+                        fold: False, foldOp: OP_NONE, foldPc: 0,
+                        foldInsn0: 0, foldTarget: 0, foldAfter: 0,
+                        tr: TR_FETCH_FAULT };
 endfunction
 
 function DecodedInstr fetchMissInstr(Word pc);
@@ -548,12 +585,15 @@ module mkHobbitPduS1#(HobbitPrefetch pf)(HobbitPduS1);
     return PduS1Out { pc: pcR,
                       l0: pf.lineAt(a0),
                       l1: pf.lineAt(a0 + 8),
-                      l2: pf.lineAt(a0 + 16) };
+                      l2: pf.lineAt(a0 + 16),
+                      fault: pf.faultAt(a0) || pf.faultAt(a0 + 8) ||
+                             pf.faultAt(a0 + 16) };
   endmethod
 
   method Action enq(Word pc) if (!full);
     pcR  <= pc;
     full <= True;
+    pf.noteFetch(pc);
   endmethod
 
   method Action deq if (full);
@@ -627,7 +667,7 @@ module mkHobbitPduS2(HobbitPduS2);
     Vector#(6, Parcel) ps = (d.pc[1] == 1'b0)
                               ? selEven(w0, w1, w2)
                               : selOdd(w0, w1, w2, w3);
-    return PduS2Out { pc: d.pc, miss: miss, parcels: ps };
+    return PduS2Out { pc: d.pc, miss: miss, fault: d.fault, parcels: ps };
   endmethod
 
   method Action enq(PduS1Out d) if (!full);
@@ -671,11 +711,14 @@ module mkHobbitPduS3(HobbitPduS3);
   endrule
 
   method PduS3Out out;
-    if (inR.miss)
-      return PduS3Out { pc: inR.pc, miss: True,
+    if (inR.fault)
+      return PduS3Out { pc: inR.pc, miss: False, fault: True,
+                        entry: packDecEntry(fetchFaultInstr(inR.pc)) };
+    else if (inR.miss)
+      return PduS3Out { pc: inR.pc, miss: True, fault: False,
                         entry: packDecEntry(fetchMissInstr(inR.pc)) };
     else
-      return PduS3Out { pc: inR.pc, miss: False,
+      return PduS3Out { pc: inR.pc, miss: False, fault: False,
                         entry: packDecEntry(dec.decode(inR.pc, inR.parcels)) };
   endmethod
 

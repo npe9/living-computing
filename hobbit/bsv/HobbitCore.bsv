@@ -44,6 +44,8 @@ import ClientServer::*;
 import HobbitTypes::*;
 import HobbitDecode::*;
 import HobbitStackCache::*;
+import HobbitMmu::*;
+import HobbitEvents::*;
 
 interface HobbitCore;
   // Warm the prefetch buffer from the synchronous memory (one 64-bit
@@ -53,6 +55,8 @@ interface HobbitCore;
   method Bool prefetchReady();
 
   method Action start(Word sp, Word msp);
+  // Start with an explicit PSW (the MMU path sets V = 1, p. 1-14).
+  method Action startPsw(Word sp, Word msp, Word psw);
 
   method Bool halted();
   method Bool atLimit();
@@ -78,6 +82,33 @@ interface HobbitCore;
   // True when no retirement record is being presented and none is
   // waiting; the harnesses use it to stop after the last record.
   method Bool quiescent();
+
+  // ---- MMU / event testbench surface --------------------------------
+  method Word psw();
+  method Action setPsw(Word psw);
+  method Word vb();
+  method Action setVb(Word vb);
+  method Bit#(3) il();
+  method Action setIl(Bit#(3) il);
+  method Word isp();
+  method Word shad();
+  method Action setIsp(Word isp);
+  method Action setShad(Word shad);
+  method Action flushPte(Word va);
+  method Action flushTlb();
+  method Action setStb(Word stb);
+  method Bit#(32) mmuHits();
+  method Bit#(32) mmuMisses();
+  method Bit#(32) mmuWalks();
+  method Bit#(32) mmuFaults();
+  method Bool eventTaken();
+  method Word eventPc();
+  method Bit#(4) eventId();
+  method Word savedPc();
+  method Word savedPsw();
+  method Bool eventActive();
+  method Word eventMemRead(Word a);
+  method Action eventMemWrite(Word a, Word v);
 
   // Verification probe for the harnesses (like HobbitMem::peek); the
   // machine never reads it.
@@ -167,8 +198,9 @@ endinterface
 
 module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      MemCycles mcyc,
-                     EuBypass byS2, EuBypass byS3, Bool pswF,
-                     Bool squash, Word pcLimit)(HobbitEuS1);
+                     EuBypass byS2, EuBypass byS3, Reg#(Word) psw,
+                     Bool squash, Word pcLimit,
+                     Reg#(Bool) eventActive)(HobbitEuS1);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: one module per EU stage with a
   // registered boundary and one rule for the work the stage does alone.
@@ -239,7 +271,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     // so a misprediction costs no squashed slot (Table 4-35).
     Word npc = e.nextPc;
     if (isCondJumpOp(d.op) && (dcmp >= 2)) begin
-      Bool taken = branchTaken(d.op, pswF);
+      Bool taken = branchTaken(d.op, (psw[4] == 1'b1));
       npc = (taken == predictedTaken(d.op)) ? e.nextPc : e.altNextPc;
     end
     Bool takenGuess = isCondJumpOp(d.op) ? predictedTaken(d.op) : False;
@@ -296,7 +328,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // fetch request), so EU_S1's handoff (`deq`, `redirect`) and this rule
   // are always mutually exclusive: deq/redirect need a populated slot or
   // a squash, and neither is true here.
-  rule present (active && !squash && !fullR && (pcR < pcLimit));
+  rule present (active && !squash && !fullR && !eventActive &&
+                (pcR < pcLimit));
     if (block != 0)
       block <= block - 1;
     else if (isValid(ic.lookup(pcR)))
@@ -406,9 +439,10 @@ interface HobbitEuS2;
   method EuBypass bypass;
   method Bool squash;
   method Word redirectPc;
+  method Action flush();
 endinterface
 
-module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
+module mkHobbitEuS2#(Reg#(Word) psw)(HobbitEuS2);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.
   //
@@ -425,6 +459,7 @@ module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
   Reg#(EuS1Out) inD  <- mkRegU;
   Reg#(Bool) outFull <- mkReg(False);
   Reg#(EuS2Out) outD <- mkRegU;
+  Wire#(Bool) flushW <- mkDWire(False);
 
   FIFOF#(Token) f_reset_reqs <- mkFIFOF;
   FIFOF#(Token) f_reset_rsps <- mkFIFOF;
@@ -477,13 +512,17 @@ module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
   // rule needs a full one; this rule needs an empty output slot and `deq`
   // needs a full one -- so no two of them ever write the same register in
   // the same clock.
-  rule step (inFull && !outFull);
+  rule step (flushW || (inFull && !outFull));
+   if (flushW) begin
+    inFull  <= False;
+    outFull <= False;
+   end else begin
     let i = inD;
     let e = i.e;
     let d = e.d;
     Bool trap = (d.tr != TR_NONE);
     Bool cmp = isCompareOp(d.op) && !trap;
-    Bool flagNew = flagAfterOp(d.op, i.srcVal, i.dstVal, pswF);
+    Bool flagNew = flagAfterOp(d.op, i.srcVal, i.dstVal, (psw[4] == 1'b1));
     SpMsp after = trap ? SpMsp { sp: i.spBefore, msp: i.mspBefore }
                        : archAfterSpMsp(d, i.spBefore, i.mspBefore);
     WrInfo wr = writeInfoOf(i);
@@ -502,7 +541,7 @@ module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
         redirectR = i.retPc;
       end else if (isCondJumpOp(d.op) && !d.fold) begin
         if (i.sinceCmp == 1) begin
-          Bool taken = branchTaken(d.op, pswF);
+          Bool taken = branchTaken(d.op, (psw[4] == 1'b1));
           if (taken != predictedTaken(d.op)) begin
             squashR   = True;
             redirectR = e.altNextPc;
@@ -540,6 +579,7 @@ module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
                       cmd: cmd };
     outFull <= True;
     inFull  <= False;
+   end
   endrule
 
   rule rl_reset;
@@ -579,6 +619,9 @@ module mkHobbitEuS2#(Bool pswF)(HobbitEuS2);
 
   method Bool squash() = outFull && outD.squash;
   method Word redirectPc() = outFull ? outD.redirectPc : 0;
+  method Action flush();
+    flushW <= True;
+  endmethod
 
   interface Server server_reset;
     interface Put request  = toPut(f_reset_reqs);
@@ -599,6 +642,15 @@ interface HobbitEuS3;
   method Action deq();
   method Bool occupied();
   method Bool pswF();
+  method Maybe#(Bool) flagWrite();
+  method Bool trapPending();
+  method TrapReason trapReason();
+  method Word trapPc();
+  method Parcel trapInsn0();
+  method Bool trapNiladic();
+  method Action clearTrap();
+  method Action flush();
+  method Word lastPc();
   method EuBypass bypass();
   method Bool squash();
   method Word redirectPc();
@@ -608,7 +660,8 @@ interface HobbitEuS3;
   method Bit#(32) folded();
 endinterface
 
-module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
+module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
+                     Bool eventsOn)(HobbitEuS3);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.  The HRI record is the trace port
   // (Flute's g_pc_trace analogue), not datapath.
@@ -621,12 +674,23 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
   Reg#(Bool) inFull <- mkReg(False);
   Reg#(EuS2Out) inD <- mkRegU;
   FIFOF#(Hri) traceQ <- mkSizedFIFOF(64);
-  Reg#(Bool) pswFR <- mkReg(False);
   Reg#(Bool) faultedR <- mkReg(False);
   Reg#(Word) faultPcR <- mkReg(0);
   Reg#(Bit#(32)) ninstr <- mkReg(0);
   Reg#(Bit#(32)) nfold <- mkReg(0);
   Reg#(Bool) haltR <- mkReg(False);
+  Reg#(Word) lastPcR <- mkReg(0);
+  Reg#(Bool) trapPendR <- mkReg(False);
+  Reg#(TrapReason) trapReasonR <- mkReg(TR_NONE);
+  Reg#(Word) trapPcR <- mkReg(0);
+  Reg#(Parcel) trapInsn0R <- mkReg(0);
+  Reg#(Bool) trapNiladicR <- mkReg(False);
+
+  // The compare's flag write and an event's pipeline flush are one-cycle
+  // wires so the core's PSW rule sees them in the commit cycle, and the
+  // commit rule can be blocked in the flush cycle.
+  Wire#(Maybe#(Bool)) flagWW <- mkDWire(tagged Invalid);
+  Wire#(Bool) flushW <- mkDWire(False);
 
   // A folded branch record follows its host in the trace.
   Reg#(Maybe#(Hri)) pendFold <- mkReg(tagged Invalid);
@@ -649,7 +713,7 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
   // into the compare itself cannot use pswFR -- the host is the writer --
   // and EU_S2 resolves that case, reporting it as foldMis).
   function Bool foldFlagValue(EuS2Out o) =
-    isCompareOp(o.e.d.op) ? o.flagValue : pswFR;
+    isCompareOp(o.e.d.op) ? o.flagValue : (psw[4] == 1'b1);
 
   function Bool foldTaken(EuS2Out o) =
     branchTaken(o.e.d.foldOp, foldFlagValue(o));
@@ -662,7 +726,7 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
     if (o.e.d.tr != TR_NONE) return False;
     else if (isCondJumpOp(o.e.d.op) && !o.e.d.fold &&
              (o.sinceCmp == 0)) begin
-      Bool taken = branchTaken(o.e.d.op, pswFR);
+      Bool taken = branchTaken(o.e.d.op, (psw[4] == 1'b1));
       return taken != predictedTaken(o.e.d.op);
     end else
       return foldMispredicted(o);
@@ -699,7 +763,7 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
                  mem_wmask: 0, trap: False, cyc: cyc };
   endfunction
 
-  rule commit (!haltR && traceQ.notFull);
+  rule commit (!haltR && traceQ.notFull && !flushW);
     if (pendFold matches tagged Valid .r) begin
       traceQ.enq(r);
       pendFold <= tagged Invalid;
@@ -716,23 +780,42 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
       traceQ.enq(hostRecord(o, occ));
       if (d.fold)
         pendFold <= tagged Valid (foldRecord(o, foldMispredicted(o) ? 3 : 0));
-      if (o.flagValid) pswFR <= o.flagValue;
+      if (o.flagValid) flagWW <= tagged Valid o.flagValue;
       ninstr <= ninstr + 1;
       if (d.fold) nfold <= nfold + 1;
-      sc.commit(o.cmd);
+      lastPcR <= d.pc;
+      if (d.tr != TR_NONE && eventsOn) begin
+        // A trap has no architectural write and must not move SP/MSP;
+        // noScCmd() carries zero pointers, so keep the before values.
+        let k = noScCmd();
+        k.spBefore  = o.spBefore;
+        k.mspBefore = o.mspBefore;
+        k.spAfter   = o.spBefore;
+        k.mspAfter  = o.mspBefore;
+        sc.commit(k);
+      end else
+        sc.commit(o.cmd);
       inFull <= False;
       if (d.tr != TR_NONE) begin
-        faultedR <= True;
-        faultPcR <= d.pc;
-        haltR    <= True;
-        $fwrite(stderr, "TRAP pc=0x%08x: %s\n", d.pc, trapText(d.tr));
+        if (eventsOn) begin
+          trapPendR    <= True;
+          trapReasonR  <= d.tr;
+          trapPcR      <= d.pc;
+          trapInsn0R   <= d.insn0;
+          trapNiladicR <= (d.insn0[15:10] == 6'b001011) &&
+                          (d.insn0[9:0] >= 10'h200);
+        end else begin
+          faultedR <= True;
+          faultPcR <= d.pc;
+          haltR    <= True;
+          $fwrite(stderr, "TRAP pc=0x%08x: %s\n", d.pc, trapText(d.tr));
+        end
       end
     end
   endrule
 
   rule rl_reset;
     f_reset_reqs.deq;
-    pswFR    <= False;
     faultedR <= False;
     faultPcR <= 0;
     ninstr   <= 0;
@@ -740,12 +823,17 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
     haltR    <= False;
     pendFold <= tagged Invalid;
     inFull   <= False;
+    trapPendR <= False;
+    trapReasonR <= TR_NONE;
+    trapPcR <= 0;
+    trapInsn0R <= 0;
+    trapNiladicR <= False;
+    lastPcR <= 0;
     traceQ.clear;
     f_reset_rsps.enq(?);
   endrule
 
   method Action start();
-    pswFR    <= False;
     faultedR <= False;
     faultPcR <= 0;
     ninstr   <= 0;
@@ -753,6 +841,12 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
     haltR    <= False;
     pendFold <= tagged Invalid;
     inFull   <= False;
+    trapPendR <= False;
+    trapReasonR <= TR_NONE;
+    trapPcR <= 0;
+    trapInsn0R <= 0;
+    trapNiladicR <= False;
+    lastPcR <= 0;
     traceQ.clear;
   endmethod
 
@@ -768,7 +862,20 @@ module mkHobbitEuS3#(HobbitStackCache sc)(HobbitEuS3);
   method Bool occupied() = inFull || traceQ.notEmpty;
   method Hri out() = traceQ.first;
   method Action deq() = traceQ.deq;
-  method Bool pswF() = pswFR;
+  method Bool pswF() = (psw[4] == 1'b1);
+  method Maybe#(Bool) flagWrite() = flagWW;
+  method Bool trapPending() = trapPendR;
+  method TrapReason trapReason() = trapReasonR;
+  method Word trapPc() = trapPcR;
+  method Parcel trapInsn0() = trapInsn0R;
+  method Bool trapNiladic() = trapNiladicR;
+  method Action clearTrap();
+    trapPendR <= False;
+  endmethod
+  method Action flush();
+    flushW <= True;
+  endmethod
+  method Word lastPc() = lastPcR;
 
   method EuBypass bypass();
     if (!inFull) return noBypass();
@@ -798,64 +905,207 @@ endmodule
 
 // ---------------------------------------------------------------------
 // Core: wire the boxes and the three EU stages, and drain the trace.
+//
+// PSW bit 16 (V) selects translation (p. 1-14, p. 2-1).  The stack
+// cache and the prefetch buffer see translating memory faces; a fault
+// latches in the data face (or becomes a TR_FETCH_FAULT in the PDU) and
+// raises the p. 1-38 event sequence instead of the model's loud trap.
+// `eventsOn = False` (mkHobbitCore) keeps the earlier diagnostic
+// behaviour for the fixed oracles; `eventsOn = True`
+// (mkHobbitCoreMmu) is the integrated MMU/event path.
 // ---------------------------------------------------------------------
-module mkHobbitCore#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
+module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
+                         MmuTables tbl, Bool eventsOn)(HobbitCore);
 
-  HobbitPrefetch pf <- mkHobbitPrefetch(mem);
+  Reg#(Word) pswR <- mkReg(0);
+  Reg#(Word) vbR <- mkReg(0);
+  Reg#(Bit#(3)) ilR <- mkReg(7);
+  Reg#(Bool) eventActiveR <- mkReg(False);
+  Reg#(Bool) traceFired <- mkReg(False);
+  Reg#(Bool) eventTakenR <- mkReg(False);
+  Reg#(Word) eventPcR <- mkReg(0);
+  Reg#(Bit#(4)) eventIdR <- mkReg(0);
+  Reg#(Word) savedPcR <- mkReg(0);
+  Reg#(Word) savedPswR <- mkReg(0);
+
+  Wire#(Maybe#(Word)) setPswW <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(Word)) startPswW <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(Word)) eventPswW <- mkDWire(tagged Invalid);
+
+  Reg#(Hri) present <- mkReg(unpack(0));
+  Reg#(Bool) presentValid <- mkReg(False);
+
+  HobbitMmu mmu <- mkHobbitMmu(tbl);
+  HobbitMmuMem textFace <- mkHobbitMmuMem(mem, mmu, True, pswR);
+  HobbitMmuMem dataFace <- mkHobbitMmuMem(mem, mmu, False, pswR);
+  HobbitEventMem evmem <- mkHobbitEventMem;
+  HobbitEvents events <- mkHobbitEvents(evmem, mmu);
+
+  HobbitPrefetch pf <- mkHobbitPrefetch(textFace.mem, mmu, pswR);
   HobbitPdu pdu <- mkHobbitPdu(pf);
   HobbitDecodeStore ic <- mkHobbitDecodeStore(pdu);
-  HobbitStackCache sc <- mkHobbitStackCache(mem, m);
+  HobbitStackCache sc <- mkHobbitStackCache(dataFace.mem, m);
 
   // Instantiate the stages downstream-first so the bypass and flag
   // expressions can be passed as Flute passes stage2.out.bypass.
-  HobbitEuS3 s3 <- mkHobbitEuS3(sc);
-  HobbitEuS2 s2 <- mkHobbitEuS2(s3.pswF);
+  HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, eventsOn);
+  HobbitEuS2 s2 <- mkHobbitEuS2(pswR);
 
   // EU_S3 resolves the youngest misprediction (a jump right after its
   // compare); otherwise EU_S2's.
   Bool squash = s2.squash || s3.squash;
   Word redirectPc = s3.squash ? s3.redirectPc : s2.redirectPc;
 
-  HobbitEuS1 s1 <- mkHobbitEuS1(ic, sc, m, s2.bypass, s3.bypass, s3.pswF,
-                                squash, pcLimit);
+  HobbitEuS1 s1 <- mkHobbitEuS1(ic, sc, m, s2.bypass, s3.bypass, pswR,
+                                squash, pcLimit, eventActiveR);
 
-  // S1 -> S2 handoff, and the squash redirect, as two rules whose guards
-  // are complements: a squash cycle never hands on, and a handoff cycle
-  // is never a squash.
-  //
-  // The redirect is a separate rule because it must also act when S1's
-  // slot is empty (a squash resolved before the next fetch is presented),
-  // and because it writes the same registers S1's `present` rule writes:
-  // `squash` is exactly the complement of `present`'s guard, so the
-  // scheduler can always fire one or the other, never both.
-  rule deliver (!squash && s1.notEmpty && s2.canAccept);
+  // ---- PSW ownership ------------------------------------------------
+  // One rule writes PSW.  A compare's F bit arrives on EU_S3's DWire in
+  // the commit cycle, so a compare-adjacent jump sees it in the next
+  // cycle (Table 4-35's structural 3).  A start or a testbench write
+  // overrides; an event's PSW &= 0xFFFF0000 (p. 1-37/1-38) is applied by
+  // the finish rule.
+  rule pswUpdate;
+    if (isValid(startPswW))
+      pswR <= validValue(startPswW);
+    else if (isValid(setPswW))
+      pswR <= validValue(setPswW);
+    else if (isValid(eventPswW))
+      pswR <= validValue(eventPswW);
+    else if (isValid(s3.flagWrite()))
+      pswR <= (pswR & 32'hFFFFFFEF) |
+              (validValue(s3.flagWrite()) ? 32'h10 : 32'd0);
+  endrule
+
+  // ---- S1 -> S2, the squash redirect, and S2 -> S3 -------------------
+  function Action startCore(Word sp, Word msp, Word p) =
+    action
+      sc.reset(sp, msp);
+      ic.reset;
+      s2.start;
+      s3.start;
+      s1.start(0);
+      events.setIsp(sp);
+      events.setShad(sp);
+      startPswW <= tagged Valid p;
+      presentValid <= False;
+      present <= unpack(0);
+      eventActiveR <= False;
+      eventTakenR <= False;
+      traceFired <= False;
+    endaction;
+
+  function Bool pipelineIdle() =
+    !s1.notEmpty && !s2.occupied && !s3.occupied;
+
+  function Bool intWanted() =
+    (ilR != 3'b111) && ((ilR == 3'b000) || (ilR < pswR[14:12])) &&
+    pipelineIdle();
+
+  function Bool traceWanted() =
+    (pswR[7] == 1'b1) && !traceFired && pipelineIdle();
+
+  function Bool eventWanted() =
+    eventsOn && !eventActiveR &&
+    (s3.trapPending() || dataFace.fault() || intWanted() || traceWanted());
+
+  rule deliver (!eventWanted() && !squash && s1.notEmpty && s2.canAccept);
     s2.enq(s1.out);
     s1.deq;
   endrule
 
-  rule redirect (squash);
+  rule redirect (eventWanted() == False && squash);
     s1.redirect(redirectPc);
   endrule
 
-  // S2 -> S3.
-  rule move2to3 (s2.notEmpty && s3.canAccept);
+  rule move2to3 (!eventWanted() && s2.notEmpty && s3.canAccept);
     s3.enq(s2.out);
     s2.deq;
   endrule
 
-  // Stop the front end when the program reaches the image limit.
-  rule stopAtLimit (s1.pc >= pcLimit);
+  rule stopAtLimit (!eventWanted() && (s1.pc >= pcLimit));
     s1.stop;
   endrule
 
+  // ---- event start / finish -----------------------------------------
+  // The causes are all presented; the events box applies the p. 1-40
+  // priority.  An interrupt outranks an instruction fault, so its PC is
+  // the next instruction; otherwise the faulting instruction's PC (or
+  // the p. 1-39 store PC for a data fault) is saved.
+  rule startEvent (eventWanted());
+    let c = noEventCauses();
+    c.psw = pswR;
+    c.sp  = sc.sp;
+    c.vb  = vbR;
+    let tp = s3.trapPending();
+    let df = dataFace.fault();
+    let iw = intWanted();
+    let tw = traceWanted();
 
+    if (iw)
+      c.pc = s1.pc;
+    else if (tp)
+      c.pc = s3.trapPc();
+    else if (df)
+      c.pc = s3.lastPc();
+    else
+      c.pc = s1.pc;
 
-  // Retirement presentation: one record per clock with an idle clock
-  // between records.  The record's cyc is its occupancy, carried by the
-  // record itself, so the presentation rate never enters the trace.
-  Reg#(Hri) present <- mkReg(unpack(0));
-  Reg#(Bool) presentValid <- mkReg(False);
+    if (tp) begin
+      case (s3.trapReason())
+        TR_CPU:         c.illegal  = True;
+        TR_BAD_LENGTH:  c.illegal  = True;
+        TR_BAD_MODE:    c.illegal  = True;
+        TR_RETURN_MODE: c.illegal  = True;
+        TR_UNIMP: begin
+          c.unimp   = True;
+          c.niladic = s3.trapNiladic();
+        end
+        TR_ALIGN:       c.align    = True;
+        TR_FETCH_MISS:  c.fetchFault = True;
+        TR_FETCH_FAULT: c.fetchFault = True;
+        default:        c.illegal  = True;
+      endcase
+    end
+    if (df) begin
+      if (dataFace.faultWrite()) c.writeFault = True;
+      else                       c.readFault  = True;
+      c.va = dataFace.faultAddr();
+    end
+    if (iw) begin
+      c.interrupt = True;
+      c.il      = ilR;
+    end
+    if (tw) c.trace = True;
 
+    events.setShad(sc.shad);
+    events.raise(c);
+    eventActiveR <= True;
+    if (tw) traceFired <= True;
+    s1.stop;
+    s2.flush;
+    s3.flush;
+    ic.reset;
+    s3.clearTrap;
+    dataFace.clearFault;
+  endrule
+
+  rule finishEvent (eventActiveR && events.done());
+    let r = events.result();
+    eventPswW  <= tagged Valid r.newPsw;
+    s1.start(r.vector);
+    sc.reset(r.newSp, sc.msp);
+    events.ack;
+    eventActiveR <= False;
+    eventTakenR <= r.taken;
+    eventPcR    <= r.vector;
+    eventIdR    <= r.id;
+    savedPcR    <= r.savedPc;
+    savedPswR   <= r.savedPsw;
+    if (r.newPsw[7] == 1'b0) traceFired <= False;
+  endrule
+
+  // ---- retirement presentation --------------------------------------
   rule loadTrace (!presentValid && s3.notEmpty);
     present <= s3.out;
     presentValid <= True;
@@ -878,23 +1128,17 @@ module mkHobbitCore#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
 
   method Bool prefetchReady() = pf.ready();
 
+  method Action startPsw(Word sp, Word msp, Word p);
+    startCore(sp, msp, p);
+  endmethod
+
   method Action start(Word sp, Word msp);
-    sc.reset(sp, msp);
-    ic.reset;
-    s2.start;
-    s3.start;
-    s1.start(0);
-    presentValid <= False;
-    present <= unpack(0);
+    startCore(sp, msp, 0);
   endmethod
 
   method Bool halted() = s3.faulted;
-  // The harnesses stop on (halted || atLimit) && quiescent.  Reaching the
-  // image limit at the fetch PC is not enough: an instruction fetched
-  // before the limit can still be in flight, so the limit is reported
-  // only once EU_S1..EU_S3 hold nothing that is owed a record.
   method Bool atLimit() =
-    (pcLimit != 32'hFFFFFFFF) && (s1.pc >= pcLimit) &&
+    (pcLimit != 32'hFFFFFFFF) && !eventActiveR && (s1.pc >= pcLimit) &&
     !s1.notEmpty && !s2.occupied && !s3.occupied;
   method Bool faulted() = s3.faulted;
   method Word faultPc() = s3.faultPc;
@@ -917,11 +1161,56 @@ module mkHobbitCore#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
   method Hri hri() = present;
   method Bool quiescent() = !presentValid && !s3.notEmpty;
 
+  // ---- MMU / event testbench surface (added; no existing method
+  // changed).  The machine never calls these.
+  method Word psw() = pswR;
+  method Action setPsw(Word p);
+    setPswW <= tagged Valid p;
+    traceFired <= False;
+  endmethod
+  method Word vb() = vbR;
+  method Action setVb(Word v) = action vbR <= v; endaction;
+  method Bit#(3) il() = ilR;
+  method Action setIl(Bit#(3) v) = action ilR <= v; endaction;
+  method Word isp() = events.isp;
+  method Word shad() = events.shad;
+  method Action setIsp(Word v) = events.setIsp(v);
+  method Action setShad(Word v) = events.setShad(v);
+  method Action flushPte(Word va) = mmu.flushPte(va);
+  method Action flushTlb() = mmu.flushAll;
+  method Action setStb(Word v) = mmu.setStb(v);
+  method Bit#(32) mmuHits() = mmu.hits;
+  method Bit#(32) mmuMisses() = mmu.misses;
+  method Bit#(32) mmuWalks() = mmu.walks;
+  method Bit#(32) mmuFaults() = mmu.faults;
+  method Bool eventTaken() = eventTakenR;
+  method Word eventPc() = eventPcR;
+  method Bit#(4) eventId() = eventIdR;
+  method Word savedPc() = savedPcR;
+  method Word savedPsw() = savedPswR;
+  method Bool eventActive() = eventActiveR;
+  method Word eventMemRead(Word a) = events.memRead(a);
+  method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
+
   method Bit#(64) dbgState() =
     { zeroExtend(s1.pc[15:0]), pack(s2.notEmpty), pack(s3.notEmpty),
       pack(ic.filling), pack(pdu.outValid), pack(pdu.accepting),
       pack(pf.ready), s1.dbgS1, 34'b0 };
 
+endmodule
+
+// The fixed oracles keep the earlier loud-trap behaviour and physical
+// memory; the integrated MMU/event path is a separate constructor.
+module mkHobbitCore#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
+  MmuTables tbl <- mkMmuTablesNull();
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, False);
+  return c;
+endmodule
+
+module mkHobbitCoreMmu#(HobbitMem mem, Word pcLimit, MemCycles m,
+                        MmuTables tbl)(HobbitCore);
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True);
+  return c;
 endmodule
 
 endpackage

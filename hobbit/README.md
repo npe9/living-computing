@@ -42,14 +42,19 @@ machines whose differences must remain explicit.
 | hand-derived golden programs | `tests/golden/` | twelve programs, 56 retirement records, each line and each cycle figure justified by a printed page; 001–006 run on the core and the model, 007–012 on the model only (the core does not yet implement those instructions) |
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
 | UART HRI stream | `bsv/HobbitUart.bsv` | 9-check testbench, byte-exact variable-length lines at 115200 |
-| ULX3S target (ECP5 85F) | `fpga/` | bitstream produced: 18,041/83,640 LUT4 (21%), 5,066 FF (6%), 18/208 DP16KD, 25.66 MHz (PASS at 25 MHz); same `smoke.hex`, HRI lines over the UART |
+| ULX3S target (ECP5 85F)|`fpga/`|bitstream produced: 18,519/83,640 `TRELLIS_COMB` (22%), 5,067 FF (6%), 18/208 DP16KD, 603,996 bytes; clock domain 34.95 MHz (PASS at 25 MHz), asynchronous input to clock 29.66 ns; same `smoke.hex`, HRI lines over the UART|
+| MMU|`bsv/HobbitMmu.bsv`|1,024 × 4 MB segments, paged/nonpaged/mixed tables, 2 × 32-entry TLBs, 2 NPSRs, R/M writeback, `FLUSHPTE`; `run_mmu.sh` 41 PASS|
+| event processing|`bsv/HobbitEvents.bsv`|the p. 1-40 priority order, interrupt stack frames, the VB vector offsets; `run_event.sh` 41 PASS|
+| core + MMU + events|`bsv/HobbitCore.bsv`, `mkHobbitCoreMmu`|a translated fetch fault raises the event sequence with the printed vector; `run_core_mmu.sh` 12 PASS|
 | board UART end to end | `bsv/BoardUartTb.bsv`, `bsv/run_board_tb.sh` | the board datapath's `txd` decoded as 8N1 at 217 clocks/bit yields the smoke's 41 HRI lines byte for byte (5,042 characters) |
 
 The core is a partial implementation on purpose: it models the
-memory-to-memory ALU, the stack cache and the control transfers its
-programs use, and traps on the rest. The MMU, event processing, the
-3 Kbyte three-way prefetch buffer (a 64-word direct-mapped window stands
-in), and the bus are still ahead of it (see `plan.md`).
+memory-to-memory ALU, the stack cache, the control transfers, the MMU
+and the event sequence, and traps on the rest. The 3 Kbyte three-way
+prefetch buffer (a 64-word direct-mapped window stands in) and the
+synchronous bus face are still ahead of it (see `plan.md`), and the
+board bitstream runs `mkHobbitCore` with translation and events off, so
+the two new boxes are exercised in Bluesim rather than on the ECP5.
 
 Every instruction the core claims to implement is checked three ways by
 `tests/run_tests.sh`: the core's HRI record, the independent

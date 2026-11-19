@@ -45,7 +45,8 @@ typedef enum {
   TR_BAD_MODE,      // addressing mode documented but outside this milestone
   TR_RETURN_MODE,   // RETURN with anything but a stack offset (p. 3-40 note)
   TR_ALIGN,         // word operand with a non-word stack offset
-  TR_FETCH_MISS     // fetch missed the model's 3 KB prefetch window (p. 1-2)
+  TR_FETCH_MISS,    // fetch missed the model's 3 KB prefetch window (p. 1-2)
+  TR_FETCH_FAULT    // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
 } TrapReason deriving (Eq, Bits);
 
 // Operand kind after decode.  OK_ABS is also used for a branch's already
@@ -160,7 +161,7 @@ endfunction
 //   pc[31:6]       26   [191:166]  tag; the index is pc[5:1]
 //   op              5   [165:161]  HobbitOp
 //   plen code       2   [160:159]  1/3/5 -> 0/1/2
-//   trap reason     3   [158:156]  TrapReason
+//   trap reason     3   [158:156]  TrapReason[2:0]
 //   src kind        2   [155:154]  OperandKind
 //   dst kind        2   [153:152]  OperandKind
 //   fold            1   [151]      a folded one-parcel branch (p. 4-7)
@@ -172,7 +173,8 @@ endfunction
 //   insn1          16   [35:20]    HRI parcel 1
 //   fold insn0     16   [19:4]     HRI parcel of the folded branch
 //   full            1   [3]        1 = a complete decoded entry
-//   reserved        3   [2:0]      zero
+//   trap reason hi  1   [2]        TrapReason[3] (4 bits total with [158:156])
+//   reserved        2   [1:0]      zero
 //
 // The printed p. 1-32 sentence "the PDU assigns a next-PC and
 // alternate-next-PC field for each decoded instruction" cannot be
@@ -221,7 +223,7 @@ function DecEntry packDecEntry(DecodedInstr d);
   return { d.pc[31:6],
            pack(d.op),
            encPlen(d.plen),
-           pack(d.tr),
+           pack(d.tr)[2:0],
            pack(d.src.kind),
            pack(d.dst.kind),
            pack(d.fold),
@@ -233,7 +235,8 @@ function DecEntry packDecEntry(DecodedInstr d);
            d.insn1,
            d.foldInsn0,
            1'b1,
-           3'b0 };
+           pack(d.tr)[3],
+           2'b0 };
 endfunction
 
 function Bool decEntryFull(DecEntry e) = (e[3] == 1'b1);
@@ -257,7 +260,7 @@ function DecodedInstr unpackDecEntry(DecEntry e, Word pc);
     foldInsn0: e[19:4],
     foldTarget: e[83:52],
     foldAfter: pc + plenBytes(decPlen(e[160:159])) + 2,
-    tr: unpack(e[158:156])
+    tr: unpack({ e[2], e[158:156] })
   };
 endfunction
 
@@ -315,6 +318,7 @@ function String trapText(TrapReason t);
     TR_RETURN_MODE: return "RETURN requires a stack offset (p. 3-40)";
     TR_ALIGN:       return "misaligned word stack operand (p. 1-27)";
     TR_FETCH_MISS:  return "fetch missed the 3 KB prefetch window (Figure 1-1, p. 1-2)";
+    TR_FETCH_FAULT: return "MMU fetch fault (Table 1-26 0x7, p. 1-38)";
     default:        return "none";
   endcase
 endfunction
