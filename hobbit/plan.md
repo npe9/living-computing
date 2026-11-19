@@ -142,6 +142,12 @@ documented interfaces.
    UART streams the HRI lines at 115200 so a captured log can be diffed
    with `tests/hri_check.py`. Timing closure at 25 MHz is a number the
    report quotes from nextpnr, never an assumption.
+   **First achieved 2026-11-19**: `TRELLIS_COMB 18,041/83,640 (21%)`,
+   `TRELLIS_FF 5,066 (6%)`, `DP16KD 18/208`, 25.66 MHz at the 25 MHz
+   target, `fpga/build/hobbit_ulx3s.bit` (593,803 bytes). Not yet done:
+   capturing the UART from real hardware and diffing it with
+   `tests/hri_check.py` (no board attached here), and the historical
+   BeBox/EO board models.
 
 ## Definition of the first milestone
 
