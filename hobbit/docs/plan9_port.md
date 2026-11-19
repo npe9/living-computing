@@ -39,22 +39,25 @@ The symbol table fixes the load rule: `sys/src/9/hobbit/mem.h` has
 file — 32-byte `Exec` header included — at 0x1000, which puts the text
 section at 0x1020 and data at 0x4000.
 
-**The text layout is not settled, and is written down as open.** Two
-candidate layouts survive scrutiny, and they disagree:
+**The load rule is now proof, not inference.** `/sys/src/9/port/sysproc.c`
+(1e) checks `entry >= UTZERO+sizeof(Exec) && entry < UTZERO+sizeof(Exec)+text`,
+attaches the file at `UTZERO` (`attachimage(SG_TEXT|SG_RONLY, tc, UTZERO, …)`,
+so file offset 0 is 0x1000 and the 32-byte `Exec` sits at 0x1000…0x101f),
+and records `flen = sizeof(Exec)+text`. So text starts at **0x1020**,
+which is exactly the symbol `main` and exactly the `etext` arithmetic.
+Every shipped binary's entry falls inside that window (`echo` 0x2ad0,
+`cat` 0x12bc, `rc` 0xb9c6, `za` 0x7282, `zl` 0x995c).
 
-| layout | `main` (0x1020) first parcel | `_main` (0x2ad0) first parcel |
-|---|---|---|
-| A: code at file offset 32, parcels low byte first | 0xffff (invalid) | **0x86dc**: 3-parcel MOV, `smode 0xd`, `dmode 0xc`, destination 0x4008 = `_clock`, i.e. main9.s's `MOV R0, _clock(SB)` |
-| B: code at file offset 64, parcels low byte first | 0x86fd: 3-parcel MOV | 0xe930 (1-parcel, not a prologue) |
-
-The etext arithmetic (0x3278 = 0x1020 + 0x2258) says the text is based
-at 0x1020, which neither layout explains on its own; and `zl/asm.c`'s
-`SPUT` writes parcels high byte first, which neither matches. So the
-byte order and the code offset are two unknowns with one equation, and
-`tools/p9exec.py` reports both candidates and **claims neither**. The
-arbiters are the linker's own decoder (`libmach/z.c`, vendored) and the
-kernel's exec path (not vendored); reading those is the next step, not
-guesswork. There is no loader until this is answered.
+**What is still open is the text's own byte order.** With that mapping,
+parcels read low byte first make `_main` in `echo` start with parcel
+0x86dc: a 3-parcel MOV (opcode 0x06 = `AMOV` in `zl/optab.c`) whose
+destination is 0x4008, the symbol-table address of `_clock` — main9.s's
+`MOV R0, _clock(SB)`, the oracle this step needed. But `main` at 0x1020
+then begins with 0xffff, which is not an instruction, and no order tried
+fixes both. So one of the two is an artefact not yet explained; the
+loader must not be written until it is. `tools/p9exec.py` reports both
+orders and claims neither, and gates only what the header proves:
+`etext = main + text`, `entry = _main`, `bdata = 0x4000`.
 
 ## Definition of the proof of concept
 

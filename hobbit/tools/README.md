@@ -39,7 +39,7 @@ recycled much later for RISC-V, so a modern `zc` is not this compiler.
 | `sys/src/cmd/za/` | assembler front end: `a.y` (yacc grammar for every operand form), `lex.c` (driver; sets `thechar = 'z'`, `thestring = "hobbit"`; includes the shared `../cc/lexbody` and `../cc/macbody`), `a.h`, `l.s` (machine constants: `BY2PG`, `KZERO`, `VBADDR`, stack offsets), `mkfile` |
 | `sys/src/cmd/zc/` | C compiler: `z.out.h` (opcode enum `AADD`…`AXOR3`, data types `D_*`, widths `W_*`), `enam.c` (the `anames[]` mnemonic strings), `txt.c`, `cgen.c`, `sgen.c`, `swt.c`, `list.c` |
 | `sys/src/cmd/zl/` | linker: `optab.c` (per-mnemonic type, `genop` byte, `decod` string), `asm.c` (the encoder, below), `span.c` (instruction sizes and `anddec`), `pass.c`, `obj.c`, `list.c`, `l.h` |
-| `sys/src/libmach/z.c`, `zobj.c` | disassembler and object-file support for the `z` object type |
+| `sys/src/libmach/z.c`, `zobj.c` | `z.c` is 67 lines of register offsets and the `Mach` entry only (no z disassembler exists in 1e); `zobj.c` is the object-file support, and its header reads are little-endian (`Bgetc(bp)<<8` etc.) |
 
 ## What the encoder says
 
