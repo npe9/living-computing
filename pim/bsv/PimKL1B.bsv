@@ -6,9 +6,20 @@
 // and a fetch/decode/execute step.  The encodings are the PIMOS
 // assembler's (docs/kl1_encoding.md), labelled PIMOS-derived.
 //
-// Scope for the first test: set_value, set_variable, put_value, proceed,
-// halt.  The structure-building and unification instructions follow once
-// this path is proven.
+// Implemented so far: set_value, set_variable, put_value, put_variable,
+// get_value, get_bound_value, write_value, write_variable,
+// write_constant, put_constant, put_list, read_variable, wait_value,
+// wait_constant, execute, enqueue_goal, suspend, proceed, halt.
+// Anything else -- including the c40 instructions that need a goal-record
+// argument area (set_constant, read_constant, get_constant) -- halts
+// loudly rather than being skipped (AGENTS.md, "execute partially,
+// document the rest").
+//
+// Semantics note.  put_/write_/get_/read_ follow the TR-246 p. 7 images.
+// set_value/set_variable reuse the assembler's c8_r fields but are used
+// as "general register <- integer/variable literal", not TR-246's
+// goal-record argument slots (TR-246 p. 7), which this model does not
+// have yet; the testbenches call this the model's set_value convention.
 package PimKL1B;
 
 import RegFile::*;
@@ -46,6 +57,7 @@ module mkPimKL1B(PimKL1B);
   Bit#(8) tagInt = 8'h02;
   Bit#(8) tagRef = 8'h03;
   Bit#(8) tagVar = 8'h01;
+  Bit#(8) tagList = 8'h05;   // LIST: value points at consecutive car/cdr
 
   function Word deref(Word w);
     return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
@@ -76,9 +88,12 @@ module mkPimKL1B(PimKL1B);
     Bit#(8)  c   = val[7:0];
     if (tag == 8'h23 && isC40(op)) begin
       Word cw = mem.sub(pcR[11:0] + 1);
-      if (op == 8'ha0) begin                 // wait_constant
-        if (deref(regs.sub(a)) != cw) haltR <= True;
-      end
+      case (op)
+        8'h20: begin heap.upd(hp, cw); hp <= hp + 1; end  // write_constant C
+        8'h30: regs.upd(a, cw);                          // put_constant C, Ai = C
+        8'ha0: if (deref(regs.sub(a)) != cw) haltR <= True;  // wait_constant
+        default: haltR <= True;   // needs a goal-record argument area
+      endcase
       pcR <= pcR + 2;
     end else begin
     if (tag == 8'h23) begin
@@ -91,6 +106,7 @@ module mkPimKL1B(PimKL1B);
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'h24: begin heap.upd(hp, {tagVar, 24'h0, a}); hp <= hp + 1; end  // write_variable
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
+        8'h2e: regs.upd(a, {tagList, 20'h0, hp});  // put_list Ai = list HP (TR-246 p.7)
         8'ha4: if (deref(regs.sub(a)) != deref(regs.sub(b)))        // wait_value
                  haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable

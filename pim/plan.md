@@ -364,7 +364,8 @@ test or an explicit label.
      for the macro-call conditions (TR-389 p. 7).
    - **Memory and tags.** The 40-bit word is 8-bit tag + 32-bit value.
      Tags in use in the model: `0x23` instruction/code, `0x01` variable
-     (UREF), `0x02` integer. The heap is a flat cell array with `HP` as
+     (UREF), `0x02` integer, `0x03` reference (REF), `0x05` list. The
+     heap is a flat cell array with `HP` as
      the next free cell: `write_value` stores a register at `HP` and
      advances it; `get_bound_value` reads the cell a register points
      to. Structures are consecutive heap cells with a list/structure
@@ -405,7 +406,16 @@ test or an explicit label.
    - **First test.** A hand-assembled KL1-B program exercising
      `set_value`/`get_bound_value`/`write_value` and `proceed`, run in
      Bluesim, with the same injection discipline as the existing
-     testbenches.
+     testbenches. The implemented subset now also includes
+     `put_constant` (`Ai = C`), `write_constant` (`(HP) = C`, `HP`
+     advanced), `put_list` (`Ai = list HP`) and `read_variable`
+     (deref in place), all from the TR-246 p. 7 images; see
+     `bsv/PimKL1B.bsv`. The c40 instructions that need a goal-record
+     argument area (`set_constant`, `read_constant`, `get_constant`)
+     halt loudly instead of being skipped. `set_value`/`set_variable`
+     are a documented stand-in: they reuse the assembler's `c8_r` fields
+     but write a general register, not TR-246's goal-record argument
+     slot `Gi`.
 
 ### Dependencies
 

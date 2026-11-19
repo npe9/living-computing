@@ -31,3 +31,7 @@ export PATH
 "$BSC" -sim -g mkPimKL1BConstFailTb -u PimKL1BConstFailTb.bsv
 "$BSC" -sim -e mkPimKL1BConstFailTb -o sim_kl1bconstfail
 ./sim_kl1bconstfail
+
+"$BSC" -sim -g mkPimKL1BStructTb -u PimKL1BStructTb.bsv
+"$BSC" -sim -e mkPimKL1BStructTb -o sim_kl1bstruct
+./sim_kl1bstruct

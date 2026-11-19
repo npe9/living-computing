@@ -4,6 +4,15 @@ The model is `PimTypes`, `PimStages`, `PimALU`, `PimE`, `PimPU`; see
 `../plan.md` and `../docs/pim_architecture.md`. The assembler and the
 model ISA table are `../asm/pimasm.py` and `../docs/isa.md`.
 
+The KL1-B execution path is `PimKL1B.bsv` (40-bit tagged word, 8-bit
+register file, flat heap with `HP`, `step()` clock enable), separate
+from the diagnostic ISA. Its testbenches are `PimKL1BTb.bsv` (REF-chain
+deref through `read_variable`), `PimKL1BFailTb.bsv`,
+`PimKL1BConstFailTb.bsv` and `PimKL1BStructTb.bsv` (`put_list`,
+`put_constant`, `write_constant`); `run_kl1b_tb.sh` builds and runs
+all four. The implemented subset and the loud-failure rule for the
+rest are in the module header.
+
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),
 `PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`
 (the routed 5 × 5 crossbar with the route table and CPU-port arrival)
@@ -44,7 +53,8 @@ tools or a failed synthesis/place/route/bitstream step exits nonzero.
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
 the Bluesim smoke test (`run_smoke.sh`), the negative-opcode testbench
-(`run_neg_tb.sh`), the network-unit testbench
+(`run_neg_tb.sh`), the KL1-B testbenches (`run_kl1b_tb.sh`), the
+network-unit testbench
 (`run_nu_tb.sh`), the link testbench (`run_link_tb.sh`), the routed
 crossbar testbench (`run_nu_routed_tb.sh`), the mesh testbench
 (`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and
