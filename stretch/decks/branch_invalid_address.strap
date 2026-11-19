@@ -1,0 +1,313 @@
+! A BRANCH TO AN INVALID ADDRESS IS SUPPRESSED AND SETS AD -- every
+! branch class, both halves of "invalid", and the untaken side of the
+! gate.  StretchExecute branchAddrInvalid / branchAdSuppressed,
+! 2026-11-18.
+!
+! THE PAGES (Reference Manual 22-6530-2, read in the page images):
+!   printed p.21 (PDF 24): "When an effective word address is obtained
+!   which does not correspond to a core storage location that is
+!   physically available in a particular installation, indicator AD,
+!   address invalid, is turned on.  An instruction with an invalid data
+!   address is executed as a NO OPERATION instruction.  A branch
+!   instruction with an invalid address is also executed as a NO
+!   OPERATION."
+!   printed p.39 (PDF 42): "The addresses between 0.0 and 31.32 are
+!   invalid branching addresses."
+!   printed p.45 item 16 (PDF 48): "The affected instruction is executed
+!   as a NO OPERATION.  Branching to an address below 32 also actuates
+!   the indicator."
+!   printed p.51 item c (PDF 54): an effective branch address both
+!   invalid and protected actuates AD only, not IF.
+!   printed p.52 (PDF 55): AD is Class S, "the execution of an
+!   instruction in progress will be suppressed", and the suppression
+!   "must necessarily exclude ... 4. The changing of the state of the
+!   interruption system which occurred as specification of BRANCH
+!   ENABLED, BRANCH DISABLED, or BRANCH ENABLED AND WAIT."  Its worked
+!   example (SIC + CBR as the subject of EXECUTE): the invalid SIC
+!   address and the protected branch address "are encountered because
+!   the condition for branching is met", and with it met the indicators
+!   are "EXE, AD, IF, and DF".
+!
+! THE BUG.  No branch arm compared its target with installed core or
+! with 32.  A taken branch to an uninstalled word ended the run (the
+! fetch read zeros, a BE,0, and the PC read 0); a branch below 32 ran
+! the register words as instructions.  Found under the injections of
+! negative_effective_address.strap (docs/NEXT.md).
+!
+! CHOSEN WHERE THE PAGES DO NOT SETTLE IT:
+!   * ONLY A SUCCESSFUL BRANCH IS CHECKED.  p.21 says "a branch
+!     instruction with an invalid address" with no condition; p.45's
+!     "branching to" and p.52's "encountered because the condition for
+!     branching is met" read the other way.  Cases 9-12 pin that an
+!     untaken CB, BZ..Z, BB1 and NOP with an invalid address field run
+!     normally (count, clear, set the bit) and set no AD.
+!   * UNDER EXECUTE, a subject branch whose condition is met and whose
+!     target is invalid sets EXE AND AD (case 15) -- p.52's example
+!     lists both.  IF beside EXE, which the same example also lists, is
+!     not modelled (docs/NEXT.md).
+!   * A CBR whose suppressed branch had a refill to make still READS the
+!     refill word (evalBranch issues it before the outcome is known);
+!     MEMREADS counts it.  Not printed either way.
+!
+! CASES (bit k of RESAD = AD on after case k; bit k of RESFT = control
+! fell through to the next instruction; the AD indicator is cleared
+! after each case):
+!   0  B,   uninstalled word (8)300000      AD, falls through
+!   1  B,   word 26 (index register 10)     AD, falls through
+!   2  BR,  fall-through + (8)300000.0      AD, falls through
+!   3  B,   $+.32 (valid)                   no AD (control)
+!   4  BXVZ, uninstalled (index indicator,
+!      dispatched by the I-box)             AD, falls through
+!   5  BXVZZ, uninstalled                   AD, falls through, XVZ NOT
+!                                           cleared (RESX.5)
+!   6  BAEZ, uninstalled (arithmetic
+!      indicator: the look-ahead's guessed
+!      branch level, StretchCore)           AD, falls through, AE NOT
+!                                           cleared (RESX.6)
+!   7  CB+, $X3 taken, uninstalled          AD, falls through, X3 NOT
+!                                           counted (RX3)
+!   8  CBRZ, $X5 taken, uninstalled         AD, falls through, X5 NOT
+!                                           counted or refilled (RX5)
+!   9  CB+, $X4 NOT taken, address 0        no AD; X4 counted (RX4)
+!   10 BZXVZZ NOT taken (XVZ on), addr 0    no AD; XVZ cleared (RESX.10)
+!   11 BB1, BITW.1 NOT taken (bit 0), addr 0 no AD; bit set (BITW)
+!   12 NOP, 0                               no AD
+!   13 BBZ, BITW.0 taken (bit 1), uninst.   AD, falls through, bit NOT
+!                                           zeroed (BITW)
+!   14 SIC,RSIC + B,uninstalled             AD, falls through, RSIC not
+!                                           stored
+!   15 EX of "B, uninstalled"               EXE and AD, falls through
+!   16 BE,  uninstalled, run disabled with
+!      PG0 on and masked                    AD, falls through, AND the
+!      enable still happens (p.52 item 4):
+!      PG0 interrupts, its routine sets MARK
+!
+! EXPECTED AND OBSERVED: RESAD = bits 0-2, 4-8, 13-15 =
+! (16)EF87000000000000 (bit 16 is OFF: case 16's AD is cleared by its own
+! interruption, entry 16 at TBL+16 setting MARK bit 1); RESFT = bits 0-16
+! = (16)FFFF800000000000; RESX = bits 5, 6, 15 = (16)0601000000000000; RX3
+! = (16)400000140000 (value 1.0, count 5: uncounted); RX4 =
+! (16)800000000000 (value 2.0, count 0: counted); RX5 = (16)400000040C04
+! (value 1.0, count 1, refill R5W: untouched); RSIC 0; BITW = bits 0, 1;
+! MARK = bits 0 (PG0) and 1 (AD).  AD (bit 16) is cleared after each case
+! with BADZ: BB cannot change indicator bits 0-19 (p.41).
+! PC 4387 (PASS), CYCLES 1567, MEMREADS 138: the clock and read counts are
+! MODEL BEHAVIOUR -- no time is printed for a suppressed branch.
+!
+! INJECTIONS, 2026-11-18, each in a scratch copy of the tree (StretchExecute
+! and StretchIBox copied in, both decks run, the fixed files copied back
+! and checked with cmp -- IDENTICAL every time).  OBSERVED, every check not
+! listed passed:
+!   B1  branchAddrInvalid always False (the   -> run ends after case 0: PC 0,
+!       whole fix)                              CYCLES 175, MEMREADS 10; every
+!                                               result word 0, MARK 0
+!   B2  below-32 half dropped                 -> case 1 runs word 26: hangs at
+!                                               LOWHIT (PC 4388), CYCLES 242
+!   B3  uninstalled half dropped              -> case 0 runs off core: step cap,
+!                                               PC 196609, every result 0
+!   B4  the gate ignores "taken"              -> RESAD (16)EFEF... (cases 9-12),
+!       (every untaken branch, target 0,        RESX (16)0621... (case 10 not
+!       is suppressed)                          cleared), RX4 uncounted, CYCLES
+!                                               1586, MEMREADS 139; and the FP
+!                                               deck: CYCLES 1595, MEMREADS 189
+!   B5  CountBranch arm unguarded             -> lost at case 7 (step cap):
+!                                               RESAD (16)EE..., RESFT (16)FE...
+!   B6  BranchInd arm unguarded               -> lost at case 4 (step cap):
+!                                               RESAD (16)E0..., RESFT (16)F0...
+!   B7  BranchOrMisc arm unguarded            -> as B1 (case 0 is a B)
+!   B8  BE's enable change suppressed too     -> MARK 0, RESAD (16)EF878...
+!                                               (AD never interrupted), CYCLES
+!                                               1513, MEMREADS 130
+!   B9  SIC arm unguarded                     -> RSIC stored, lost at case 14
+!   B10 BitBranch arm unguarded               -> BITW bit 0 zeroed, lost at 13
+!   B11 BranchInd clears on suppression       -> RESX (16)0001... (cases 5 AND 6:
+!                                               both dispatch paths), CYCLES
+!                                               1550, MEMREADS 136
+!   B12 CountBranch counts on suppression     -> RX3 (16)800000100000, RX5
+!                                               (16)1C00000240000 (refilled)
+!   B13 no AD beside EXE (BranchOrMisc)       -> RESAD (16)EF86..., CYCLES 1564
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! run disabled
+        LX,  $X10, TWB               ! word 26 := two "B, LOWHIT"
+        LX,  $X3,  XW3
+        LX,  $X4,  XW4
+        LX,  $X5,  XW5
+!
+! case 0: B to an uninstalled word
+        B,   (8)300000.0
+        BB1, RESFT+.0, $+1.0         ! fell through
+        BZAD, A0
+        BB1, RESAD+.0, $+1.0
+A0     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 1: B to word 26, below 32
+        B,   26.0
+        BB1, RESFT+.1, $+1.0
+        BZAD, A1
+        BB1, RESAD+.1, $+1.0
+A1     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 2: BR, fall-through plus (8)300000.0 half-words: uninstalled
+        BR,  (8)300000.0
+        BB1, RESFT+.2, $+1.0
+        BZAD, A2
+        BB1, RESAD+.2, $+1.0
+A2     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 3: control -- a valid taken branch sets no AD
+        B,   $+.32
+        BB1, RESFT+.3, $+1.0
+        BZAD, A3
+        BB1, RESAD+.3, $+1.0
+A3     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 4: BXVZ, an index-indicator branch, taken, uninstalled
+        LVI, $X15, 0                 ! XVZ on
+        BXVZ, (8)300000.0
+        BB1, RESFT+.4, $+1.0
+        BZAD, A4
+        BB1, RESAD+.4, $+1.0
+A4     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 5: BXVZZ, taken, uninstalled: the clear is suppressed too
+        LVI, $X15, 0                 ! XVZ on
+        BXVZZ, (8)300000.0
+        BB1, RESFT+.5, $+1.0
+        BZAD, A5
+        BB1, RESAD+.5, $+1.0
+A5     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        BZB, $XVZ, $+2.0
+        BB1, RESX+.5, $+1.0          ! XVZ still on
+!
+! case 6: BAEZ, an ARITHMETIC indicator (the guessed-branch level)
+        L(BU,64,8), PAT
+        K(BU,64,8), PAT              ! AE on
+        BAEZ, (8)300000.0
+        BB1, RESFT+.6, $+1.0
+        BZAD, A6
+        BB1, RESAD+.6, $+1.0
+A6     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        BZB, $AE,  $+2.0
+        BB1, RESX+.6, $+1.0          ! AE still on
+!
+! case 7: CB+, count 5 -> 4, taken, uninstalled: not counted
+        CB+, $X3, (8)300000.0
+        BB1, RESFT+.7, $+1.0
+        BZAD, A7
+        BB1, RESAD+.7, $+1.0
+A7     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        SX,  $X3,  RX3
+!
+! case 8: CBRZ, count 1 -> 0, taken, uninstalled: no count, no refill
+        CBRZ, $X5, (8)300000.0
+        BB1, RESFT+.8, $+1.0
+        BZAD, A8
+        BB1, RESAD+.8, $+1.0
+A8     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        SX,  $X5,  RX5
+!
+! case 9: CB+, count 1 -> 0, NOT taken, address 0: counts, no AD
+        CB+, $X4, 0
+        BB1, RESFT+.9, $+1.0
+        BZAD, A9
+        BB1, RESAD+.9, $+1.0
+A9     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        SX,  $X4,  RX4
+!
+! case 10: BZXVZZ with XVZ on: NOT taken, address 0: clears, no AD
+        LVI, $X15, 0                 ! XVZ on
+        BZXVZZ, 0
+        BB1, RESFT+.10, $+1.0
+        BZAD, A10
+        BB1, RESAD+.10, $+1.0
+A10     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        BZB, $XVZ, $+2.0
+        BB1, RESX+.10, $+1.0         ! XVZ still on (must NOT be)
+!
+! case 11: BB1 on a zero bit: NOT taken, address 0: sets it, no AD
+        BB1, BITW+.1, 0
+        BB1, RESFT+.11, $+1.0
+        BZAD, A11
+        BB1, RESAD+.11, $+1.0
+A11     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 12: NOP, 0
+        NOP, 0
+        BB1, RESFT+.12, $+1.0
+        BZAD, A12
+        BB1, RESAD+.12, $+1.0
+A12     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 13: BBZ on a one bit: taken, uninstalled: the bit is NOT zeroed
+        BBZ, BITW+.0, (8)300000.0
+        BB1, RESFT+.13, $+1.0
+        BZAD, A13
+        BB1, RESAD+.13, $+1.0
+A13     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 14: SIC + B, uninstalled: the counter is NOT stored
+        SIC, RSIC
+        B,   (8)300000.0
+        BB1, RESFT+.14, $+1.0
+        BZAD, A14
+        BB1, RESAD+.14, $+1.0
+A14     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+!
+! case 15: EX of "B, uninstalled": EXE and AD (p.52's example)
+        EX,  EXSUB
+        BB1, RESFT+.15, $+1.0
+        BZAD, A15
+        BB1, RESAD+.15, $+1.0
+A15     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        BZEXE, X15
+        BB1, RESX+.15, $+1.0         ! EXE on
+X15     BEXEZ, $+.32                 ! EXE off again
+!
+! case 16: BE, uninstalled, from DISABLED with PG0 on and masked.  The
+! branch is suppressed; the enable is not (p.52 item 4), so PG0
+! interrupts and its routine at TBL+41 sets MARK.
+        LVI, $X13, TBL
+        SV,  $X13, $IA               ! interruption address := TBL
+        BB1, 12.41, $+1.0            ! mask bit 41 on
+        BB1, $PG0, $+1.0             ! PG0 on (disabled: inert)
+        BE,  (8)300000.0
+        BB1, RESFT+.16, $+1.0
+        BD,  $+.32
+        BZAD, A16
+        BB1, RESAD+.16, $+1.0
+A16     BADZ, $+.32                  ! AD off again (bits 0-19 are read-only to BB)
+        BBZ, $PG0, $+1.0             ! tidy, if it never interrupted
+!
+        B,   PASS
+PASS    BEW, $
+!
+LOWHIT  BEW, $                       ! a branch below 32 ran word 26
+!
+        SLC, (8)6000.0
+TWB     B,   LOWHIT                  ! word 26's two half-words
+        B,   LOWHIT
+XW3     XW,  1.0, 5, 0
+XW4     XW,  1.0, 1, 0
+XW5     XW,  1.0, 1, R5W
+R5W     XW,  7.0, 9, 0               ! the refill CBRZ must NOT load
+PAT     DD(BU,64,8), (8)0000125252525212525240
+EXSUB   B,   (8)300000.0             ! EX's subject
+        CNOP
+        SLC, (8)6100.0
+RESAD   DD, 0
+RESFT   DD, 0
+RESX    DD, 0
+RX3     DD, 0
+RX4     DD, 0
+RX5     DD, 0
+RSIC    DD, 0
+BITW    DD(BU,64,8), (16)8000000000000000   ! bit 0 one, bit 1 zero
+MARK    DD, 0
+!
+        SLC, (8)6200.0
+TBL     DD, 0
+        SLC, (8)6220.0
+ADRTN   BB1, MARK+.1, $+1.0          ! entry 16 = AD (its mask bit is on)
+        SLC, (8)6251.0
+PG0RTN  BB1, MARK+.0, $+1.0          ! entry 41 = PG0
+        END, START

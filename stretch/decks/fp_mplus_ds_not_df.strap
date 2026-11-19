@@ -1,0 +1,190 @@
+! FLOATING-POINT ADD TO MEMORY IS A STORE-TYPE OPERATION: DS, NEVER DF --
+! one classification (StretchExecute fpRef), asked by both
+! StretchIBox.prepareExec and execute(), 2026-11-18.
+!
+! THE PAGES (Reference Manual 22-6530-2, read in the page images):
+!   printed p.32 (PDF 35): "A store-type operation is one in which the
+!   contents of an addressed storage location are subject to change."
+!   "A fetch-type operation is one in which the contents of an addressed
+!   storage location are read out for use but are not subject to change
+!   by the operation."
+!   printed p.51 item a (PDF 54), in so many words: "In ADD TO MEMORY,
+!   when the operand in storage is protected, only indicator DS will be
+!   actuated.  Indicator DF will remain unchanged."
+!   printed p.88 (PDF 91), floating-point ADD TO MEMORY (M+): "The
+!   exponent and fraction of the sum replace bits 0-59 of the storage
+!   word."  printed p.89 (PDF 92), ADD MAGNITUDE TO MEMORY (M+MG): "Same
+!   operation as ADD TO MEMORY except ...", and "the sum replaces the
+!   addressed storage operand".
+! So both are store-type.  The other FP operations that read their word
+! (+, L, K, *, / ...) leave it alone and are fetch-type; ST, SRD, SLO and
+! SRT store without reading it; SHF and E+I address nothing (pp.101-102).
+!
+! THE BUG.  execute()'s Fp arm signalled and suppressed DF for every
+! fetching code (`known && !isStoreClass`), M+ and M+MG included, and
+! prepareExec's Fp arm made every code "complete without fetch" when
+! dfSuppresses held.  So a protected M+ with DF's mask one set DF, took
+! DF's interruption and did nothing -- no DS; with the mask zero it set
+! DF and DS both.
+!
+! SHAPE.  cwf_df_fetch_type.strap's setup (boundaries WLOW..WABOVE,
+! control bit 0: signal inside; DS's routine sets word 6 bit 0, DF's
+! word 6 bit 1).  Each case loads the accumulator with FONE, runs the
+! operation on FW (inside the area) and records RESDS.k (DS's routine
+! ran) and RESDF.k (DF's routine ran at mask one; the DF indicator is on
+! at mask zero).
+!   0  M+   on FW, DF mask ONE      DS only
+!   1  M+MG on FW, DF mask ONE      DS only
+!   2  +    on FW, DF mask ONE      DF only (fetch-type control)
+!   3  M+   on FW, DF mask ZERO     DS only
+!   4  M+MG on FW, DF mask ZERO     DS only
+!   5  L    on FW, DF mask ZERO     DF only (fetch-type control)
+! FW is never changed (fw).
+!
+! EXPECTED: resds = bits 0,1,3,4 = (16)D800000000000000; resdf = bits
+! 2,5 = (16)2400000000000000; fw unchanged.
+!
+! CHOSEN, unprinted: a protected M+ still READS its word whatever DF's
+! mask (the arithmetic needs it; execute() then suppresses the store and
+! sets DS), as cwf_df_fetch_type.strap chose for the VFL stores.  Its
+! result and MOP indicators are still set (the DS path's existing shape:
+! p.32 says a DS operation is "terminated", which is not modelled).
+!
+! OBSERVED: as expected; PC 4352 (PASS), CYCLES 981, MEMREADS 103 -- the
+! clock and read counts are MODEL BEHAVIOUR (no printed time).
+!
+! INJECTIONS, 2026-11-18 (scratch tree, files restored and cmp'd IDENTICAL;
+! every check not listed passed, and branch_invalid_address.strap passed):
+!   F1  fpFetchType counts M+/M+MG again   -> resdf (16)FC00..., resds
+!       (both sides: the old behaviour)       (16)1800... (cases 0,1 DF in
+!                                             place of DS; 3,4 DF beside DS),
+!                                             CYCLES 990
+!   F2  execute() back on `known &&        -> resdf (16)FC00..., resds
+!       !isStoreClass`, prepareExec fixed     (16)1800..., CYCLES 991,
+!                                             MEMREADS 105
+!   F3  prepareExec back on dfSuppresses   -> CYCLES 998 only (execute()
+!       for every code, execute() fixed       reads the word itself: MEMREADS
+!                                             unchanged)
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while words 3 and 12 are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, $DF,  $+1.0
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+!
+! case 0: M+, mask one
+        L(U), FONE
+        M+(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.0, $+1.0        ! DF's routine ran
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.0, $+1.0        ! DS's routine ran
+        BBZ, 6.0,  $+1.0
+!
+! case 1: M+MG, mask one
+        L(U), FONE
+        M+MG(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.1, $+1.0
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.1, $+1.0
+        BBZ, 6.0,  $+1.0
+!
+! case 2: +, mask one (fetch-type control)
+        L(U), FONE
+        +(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.1,  $+2.0
+        BB1, RESDF+.2, $+1.0
+        BBZ, 6.1,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.2, $+1.0
+        BBZ, 6.0,  $+1.0
+!
+! ---- DF's mask bit := ZERO
+        BD,  $+.32
+        BBZ, 12.20, $+1.0
+        BE,  $+.32
+!
+! case 3: M+, mask zero
+        L(U), FONE
+        M+(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.3, $+1.0        ! DF indicator on
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.3, $+1.0
+        BBZ, 6.0,  $+1.0
+!
+! case 4: M+MG, mask zero
+        L(U), FONE
+        M+MG(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.4, $+1.0
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.4, $+1.0
+        BBZ, 6.0,  $+1.0
+!
+! case 5: L, mask zero (fetch-type control)
+        L(U), FONE
+        L(U), FW
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, $DF,  $+2.0
+        BB1, RESDF+.5, $+1.0
+        BBZ, $DF,  $+1.0
+        BZB, 6.0,  $+2.0
+        BB1, RESDS+.5, $+1.0
+        BBZ, 6.0,  $+1.0
+!
+        BD,  $+.32
+        B,   PASS
+PASS    BEW, $
+!
+        SLC, (8)6276.0
+FONE    DD(BU,64,8), (16)0028000000000000   ! FP one, unprotected
+WLOW    DD(BU,64,8), 0                      ! inside the area
+FW      DD(BU,64,8), (16)0028000000000000   ! FP one, inside the area
+WABOVE  DD(BU,64,8), 0
+!
+        SLC, (8)6400.0
+RESDF   DD, 0                        ! bit k: DF routine ran (mask one) / DF on (mask zero)
+RESDS   DD, 0                        ! bit k: DS's routine ran
+!
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)6524.0
+DFRTN   BB1, 6.1, $+1.0              ! entry 20 = DF
+        END, START

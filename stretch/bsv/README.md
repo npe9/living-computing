@@ -1605,7 +1605,17 @@ seen (`eboxClocks` gets the decoded instruction).
   (DCV fetched a pointless word until now).  ONE classification,
   `vflRef` / `connFetchType` with `fieldDfSuppresses` (both words of a
   crossing field), is asked by both sides.
-  `decks/cwf_df_fetch_type.strap` has the cases and the injections.)
+  `decks/cwf_df_fetch_type.strap` has the cases and the injections.
+  FLOATING-POINT M+ AND M+MG, 2026-11-18: store-type as well (printed
+  p.51 item a: "In ADD TO MEMORY, when the operand in storage is
+  protected, only indicator DS will be actuated.  Indicator DF will
+  remain unchanged"); they signalled and suppressed DF until then.
+  `StretchExecute.fpFetchType`, asked by execute()'s Fp arm and
+  prepareExec's; `decks/fp_mplus_ds_not_df.strap`.)
+  (A BRANCH TO AN INVALID ADDRESS, 2026-11-18: below word 32 (printed
+  p.39) or not installed (printed p.21) -- suppressed, AD on, by every
+  branch arm through `StretchExecute.branchAddrInvalid`; it used to end
+  the run, or run the register words.  `decks/branch_invalid_address.strap`.)
 
 ### Not modeled at all
 

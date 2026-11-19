@@ -152,7 +152,16 @@ module mkStretchTb(Empty);
       // CB X1, LOOP_TOP(72), v=00 (unchanged), refill=0, branch-if-nonzero
       14: putHWReq(78, encCountBranch(19'd72, 1, 2'b00, 0, 0, 0));
       15: putHWResp();
-      16: putHWReq(79, encNop());
+      // A BRANCH TO ITSELF, not a NOP, since 2026-11-18: the program
+      // used to fall through into its data at word 40, whose zero left
+      // half decodes as BE,0 -- a branch to word 0, which ran the
+      // special registers until something halted.  Word 0 is an invalid
+      // branching address (Ref. Manual printed p.39), so that BE is now
+      // a no-op with AD (StretchExecute branchAddrInvalid) and the run
+      // walked on through memory with the system enabled; the RNX check
+      // below then read OP 0 (measured; the exact path not traced).
+      // With the program ended here it reads 1 again.  End it here.
+      16: putHWReq(79, encB(79));
       17: putHWResp();
       // THE RNX CHECK RUNS DISABLED AND HALTS ON ITS OWN, and both of
       // those are load-bearing now that the interruption mechanism

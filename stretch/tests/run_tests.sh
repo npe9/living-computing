@@ -545,7 +545,9 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # indicator [AD]" and p.32 says an AD address "cannot actuate any of
 # the address alarm indicators".  Seeing it needs control actually at
 # words 1-3 -- the boundary registers themselves -- whose contents
-# would then execute.  The model does not raise AD there either.
+# would then execute.  (Since 2026-11-18 the model raises AD for a branch
+# below 32 -- decks/branch_invalid_address.strap -- and suppresses it
+# before this IF test, so the guard is still unwitnessed.)
 
 run "Clause 1's DS survives a protected branch target (p.52)" ./run_program.sh ../decks/df_bb_if_ds.strap StretchDfBbIfDsTb \
     "PC=4186"          # 004055.00; hand-written from the manual, no deck oracle
@@ -2623,6 +2625,53 @@ run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" 
     "MEMREADS=569" \
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
+
+# >>> A BRANCH TO AN INVALID ADDRESS IS SUPPRESSED AND SETS AD, 2026-11-18. <<<
+# RefMan printed p.21 (PDF 24) "A branch instruction with an invalid address
+# is also executed as a NO OPERATION"; p.39 (PDF 42) "The addresses between
+# 0.0 and 31.32 are invalid branching addresses"; p.45 item 16; p.52 (PDF
+# 55): Class S suppression, BE/BD/BEW's enable change excepted.  Before:
+# a taken branch to uninstalled core ended the run, one below 32 ran the
+# register words.  StretchExecute.branchAddrInvalid, every branch arm.
+# CHOSEN (deck header): successful branches only; AD beside EXE under EX.
+# OBSERVED injections (scratch tree, restored, cmp IDENTICAL):
+#   whole fix off / B arm off      run ends at case 0, PC 0, CYCLES 175
+#   below-32 half off              hangs at LOWHIT (PC 4388)
+#   installed half off             step cap, every result 0
+#   gate ignores "taken"           RESAD, RESX, RX4, CYCLES 1586, MEMREADS 139
+#                                  (and fp_mplus_ds_not_df CYCLES/MEMREADS)
+#   CB / BranchInd / SIC / BB arm off   lost at case 7 / 4 / 14 / 13
+#   BE enable suppressed too       MARK, RESAD, CYCLES 1513, MEMREADS 130
+#   indicator clear not suppressed RESX (cases 5 and 6), CYCLES 1550, MEMREADS 136
+#   count not suppressed           RX3, RX5
+#   no AD beside EXE               RESAD, CYCLES 1564
+# CYCLES and MEMREADS are MODEL behaviour: no printed time for the no-op.
+run "A BRANCH TO AN INVALID ADDRESS IS A NO OPERATION, AD (printed p.21, p.39, p.52)" ./run_program.sh ../decks/branch_invalid_address.strap StretchBrInvTb \
+    "PC=4387" \
+    "CYCLES=1567+-0" \
+    "MEMREADS=138" \
+    "RESAD:3136=0xef87000000000000" "RESFT:3137=0xffff800000000000" \
+    "RESX:3138=0x0601000000000000" "RX3:3139=0x400000140000" \
+    "RX4:3140=0x800000000000" "RX5:3141=0x400000040c04" "RSIC:3142=0" \
+    "BITW:3143=0xc000000000000000" "MARK:3144=0xc000000000000000"
+
+# >>> FLOATING-POINT M+ AND M+MG ARE STORE-TYPE: DS, NEVER DF, 2026-11-18. <<<
+# RefMan printed p.51 item a (PDF 54): "In ADD TO MEMORY, when the operand in
+# storage is protected, only indicator DS will be actuated.  Indicator DF
+# will remain unchanged."  p.32's definitions; p.88-89 M+/M+MG replace the
+# storage word.  StretchExecute.fpFetchType, asked by execute() and
+# StretchIBox.prepareExec.  OBSERVED injections (scratch tree, restored,
+# cmp IDENTICAL):
+#   both sides back to the old class   resdf, resds (cases 0,1,3,4), CYCLES 990
+#   execute() only                     resdf, resds, CYCLES 991, MEMREADS 105
+#   prepareExec only                   CYCLES 998 only
+# CYCLES and MEMREADS are MODEL behaviour.
+run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_program.sh ../decks/fp_mplus_ds_not_df.strap StretchFpMpDsTb \
+    "PC=4352" \
+    "CYCLES=981+-0" \
+    "MEMREADS=103" \
+    "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
+    "fw:3264=0x0028000000000000"
 
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
@@ -11559,9 +11608,9 @@ run "EX: the subject location's address alarm, and p.50's below-32 carve-out" ./
 # indicators": for a BRANCH below 32 the machine raises AD INSTEAD of
 # IF.  For an EXECUTE below 32 it raises NEITHER, because p.50 says the
 # subject may occupy any addressable location, so there is no invalid
-# address to report.  The two coincide today only because this model
-# does not raise AD for a low branch either.  A later AD implementation
-# must not reach for this guard.
+# address to report.  Since 2026-11-18 the branch arms raise AD for a low
+# branch (StretchExecute.branchAddrInvalid) and this EX guard does not ask
+# that predicate -- which is what keeps the two apart.
 #
 # THE CARRIED ALARM IS OR-ED ACROSS LEVELS, NOT OVERWRITTEN, and
 # injection I4 is the one that catches the difference.
@@ -12901,9 +12950,9 @@ run "I-Box 5 routine 1262 head and TEST 1A: EX across three memories (jb_ax5b PD
 # transcriber corrected in their own draft rather than leaving.  For
 # cases 2/3/6/7 the observable is correct -- no IF, no AD, as p.50
 # requires -- while NEITHER rule is implemented: ifViolates' `a >= 32`
-# guard exists for p.45's AD reason, and the two agree only because
-# this model does not raise AD for a low branch either.  A later AD
-# implementation would break it.
+# guard exists for p.45's AD reason.  (Branch AD is built since
+# 2026-11-18, in the branch arms only; the EX subject path does not ask
+# it, so these cases stayed green.)
 #
 # THE ROUTINE HEADER IS WRONG TWICE, not once.  Already known: it calls
 # TEST 3 "THE ILLEGAL COMBINATIONS OF EX AND EXIC" where 3A and 3B are

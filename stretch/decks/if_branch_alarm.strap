@@ -39,7 +39,8 @@
 ! A TARGET BELOW 32 IS AD'S BUSINESS.  p.45: "Branching to an address
 ! below 32 also actuates the indicator [AD]", and p.32 says an AD
 ! address "cannot actuate any of the address alarm indicators".  This
-! model does not yet raise AD there, so such a branch raises NEITHER;
+! model did not raise AD there until 2026-11-18, so such a branch raised
+! NEITHER (now: AD, suppressed -- decks/branch_invalid_address.strap);
 ! the last block below pins that IF at least stays off, which is the
 ! half that is implemented.
 !
@@ -102,8 +103,9 @@ OUT2    BZB, $IF,  $                 ! hang if nothing lit IF
 !   location or a branch TARGET.  Witnessing it needs control actually
 !   at words 1-3 -- the interval timer, the interruption address and
 !   the boundary registers -- whose contents would then be executed as
-!   instructions.  This model does not raise AD there either, so the
-!   case is doubly unmodelled.
+!   instructions.  (Since 2026-11-18 the model raises AD for a branch
+!   below 32 and suppresses it before the IF test, so the guard is
+!   still unwitnessed -- now because no branch below 32 reaches it.)
         BD,  $+.32                   ! disable first: word 3 is protected
         BB1, 3.0,  $+1.0             ! word 3 as a BIT address, not a target
         BE,  $+.32

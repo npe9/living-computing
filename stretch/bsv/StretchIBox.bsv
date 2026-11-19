@@ -254,7 +254,12 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
         operandAddr: fpFetches(f.code) ? tagged Valid w : tagged Invalid,
         storeAddr:   stores             ? tagged Valid w : tagged Invalid,
         storeAddr2:  tagged Invalid,
-        completesWithoutFetch: dfSuppresses(st, w) || !installed(w) };
+        // DF: shared with execute() (StretchExecute fpFetchType: M+ and
+        // M+MG are store-type, printed p.51 item a), 2026-11-18.  Until
+        // then every FP code -- the stores included -- completed without
+        // fetch when dfSuppresses held.
+        completesWithoutFetch: (fpFetchType(f.code) && dfSuppresses(st, w))
+                            || !installed(w) };
     end
     default: return PreparedExec { operandAddr: tagged Invalid,
                                    storeAddr:   tagged Invalid,

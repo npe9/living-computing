@@ -37,9 +37,11 @@
 !   protected and invalid, indicator IF will be actuated.  Indicator AD
 !   will not be actuated as a result of this invalid address unless the
 !   IF mask bit is zero."  A subject instruction IS fetched, which is
-!   what flips the precedence.  The AD half of that pair is not
-!   implemented -- this model raises AD for neither -- and docs/NEXT.md
-!   section 5a already records it as an open rule.
+!   what flips the precedence.  Item c is built since 2026-11-18 (an
+!   invalid branch target sets AD and is suppressed before the IF test,
+!   decks/branch_invalid_address.strap; nothing pins the invalid-AND-
+!   protected combination).  Item d's AD half is not implemented, and
+!   docs/NEXT.md section 5a records it as an open rule.
 !
 ! NEITHER OF THOSE TWO "SPECIAL EXCEPTIONS" IS IMPLEMENTED, and this
 ! file does not pretend otherwise: it runs ENABLED throughout, so

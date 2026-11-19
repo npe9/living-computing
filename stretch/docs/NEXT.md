@@ -221,14 +221,36 @@ traced: the zero-address dispatches (BR,0($14), B,0.0($1) ...) for the
 sign of their registers, the untranscribed diagnostic PDFs. Not given
 cases: I/O, EX/EXIC, R/RCZ (same helpers).
 
-**Observed, not investigated: a branch to an uninstalled address may
-not be a NO OPERATION.** p.21 (PDF 24): "A branch instruction with an invalid
-address is also executed as a NO OPERATION" (and AD, p.45). Under the
-wrap injections of negative_effective_address.strap, `B,(8)600.0($X10)`
-to half-word ~2**19-1281 ended the run (the PC read 0) instead of
-falling through. A grep found no branch-target `installed()` test in
-StretchExecute / StretchCore / StretchIBox (the data paths have one);
-not looked at further. Its own change, with a deck.
+## A BRANCH TO AN INVALID ADDRESS -- built 2026-11-18
+
+**Done:** every branch arm (B/BR/BE/BD/BEW, the indicator branches on
+both dispatch paths, CB/CBR, BB, SIC) asks `StretchExecute.branchAddrInvalid`
+of a successful branch's final target -- below word 32 (printed p.39,
+"invalid branching addresses") or not installed (printed p.21) -- and is
+suppressed with AD (p.45 item 16, p.52 Class S).  Before, the run ended
+(uninstalled) or the register words ran (below 32).
+`decks/branch_invalid_address.strap` has the pages, the CHOSEN readings
+(successful branch only, per p.52's worked example; AD beside EXE under
+EXECUTE; BE/BD/BEW's enable change kept, p.52 item 4) and the injections.
+STILL OPEN, each its own change:
+* p.52's "third example": the instruction counter stepped past the end
+  of storage sets AD (or IF if protected) -- sequential fetch, unbuilt.
+* SIC's OWN address uninstalled: the arm tests `ha < 32` only.
+* p.52's example also lists IF beside EXE for a subject branch whose
+  target is protected; the EXE paths set no IF.
+* A CBR whose AD-suppressed branch had a refill still reads the refill
+  word (and, as before, sets no DF from it): unprinted, MEMREADS counts it.
+* StretchCore's guessed-branch recovery (`recover <= h.target`) uses the
+  target computed at the guess; execute() checks the target it
+  recomputes.  If the index moved between the two, nothing checks the
+  guess-time target for validity.  No program is known to do that.
+* negative_effective_address.strap's injection table predates this fix
+  (its header says so); not re-measured.
+* The smoke test's program (bsv/StretchSmoke.bsv) used to end by falling
+  into its data, whose zero half-word is BE,0 -- a branch to word 0, now
+  a no-op with AD -- and its RNX/OP check then failed.  It now ends with
+  a branch to itself.  Other programs that "halt" by running into zeros
+  would change the same way; the full suite found no other.
 
 ## COMPLETES WITHOUT FETCH -- 2026-11-18; all eight clauses pinned, two model bugs fixed
 
@@ -278,10 +300,12 @@ documented time exists for a no-op'd level, so every pin is model behaviour.
   fetch-and-stores"); KE/KFE/KR whose condition is false are still
   fetch-type.  `tests/atlas_oracle.py` (not in run_tests.sh) was NOT
   re-run, though DCV's level no longer fetches; no suite pin moved.
-  STILL OPEN, NOT CHECKED, from reading the code only: floating-point
-  M+/M+MG appear to signal DF on their field (StretchExecute's Fp arm,
-  `known && !isStoreClass`) though p.32 makes a field "subject to change"
-  DS's; no deck run, not touched here.
+  FLOATING-POINT M+/M+MG, CHECKED AND FIXED 2026-11-18: they did signal
+  and suppress DF (execute()'s `known && !isStoreClass`; prepareExec made
+  every FP code complete without fetch under dfSuppresses).  Printed p.51
+  item a settles it: "In ADD TO MEMORY, when the operand in storage is
+  protected, only indicator DS will be actuated."  One predicate,
+  `StretchExecute.fpFetchType`; `decks/fp_mplus_ds_not_df.strap`.
 
 ## FP DIVIDE TIME -- built 2026-11-17; the atlas's divide residual closed
 
@@ -4168,8 +4192,9 @@ before claiming a block is untranscribed.**
 4. **`ifSignal`'s `a >= 32` guard is unwitnessed**, and its injection
    survived. Testing it needs a taken branch to words 1-3, whose
    contents would then execute — and those are the boundary registers
-   that define the monitored area. The model also does not raise AD
-   for a low branch (p.45), so the case is doubly unmodelled.
+   that define the monitored area. (Since 2026-11-18 the model raises
+   AD for a low branch, p.45, and suppresses it before the IF test, so
+   the guard stays unwitnessed: "A BRANCH TO AN INVALID ADDRESS".)
 
 **THIS ITEM USED TO SAY `jb_ax5b` ROUTINE 1268 WAS "the only known
 deck test of them". That was a misreading, and it is corrected.**
