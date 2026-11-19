@@ -823,10 +823,38 @@ on these sheets. `decks/ax4b_148_immediate_indexed.strap`, bit-exact
 and run on the model: PASSES. Its row `LI(BU,64,8),0($X3)` (`0.00 83
 400000.20 50`) is the first IBM listing row found with a nonzero I on an
 immediate VFL operation, the IBM oracle `decks/vfl_immediate_indexed.strap`
-lacked. Not transcribed, recorded for a later pass: its unindexed
-sibling TEST 5B ("CHKS P FIELD OF 100" / "IMMEDIATE MODE, Z TO LA TEST",
-PDF pp.143-145, I4836A at 010767.40), which SVAs each BITk value into
-the LI's ADDRESS field instead -- the same 24-bit walk with I = 0.
+lacked.
+
+**The rest of routine 148's TESTs 3-5 -- TRANSCRIBED AND RUN,
+2026-11-18.** Seven more decks, each bit-exact against the printed
+machine code by its own `tests/verify_ax4b_*_listing.py`, each run on
+the model with SSIP's SSW/SERS substituted as PASS/FAIL halts at the
+listing's addresses. **All seven PASS: IBM's listing and the model
+agree.** Each deck header has its pages, substitutions and OBSERVED
+injections.
+
+| deck | test | PDF pages (octal) | rows | what IBM checks |
+|---|---|---|---|---|
+| `ax4b_3_halfword_19bit` | TEST 3 | pp.139-140 (010623.40-010715.00), 152, 153, 154, 190 | 121 | `LR,$X0,0($X1)` with X1 = 148DMP+.63: a 19-bit address uses bits 0-18 only; no other index register changes |
+| `ax4b_4_fp_18bit` | TEST 4 | p.141 (010715.40-010736.00), 153, 191 | 39 | `L(N)`/`L(U),0($X1)` with X1 = BIT13+.32 and 148K24+.63: FP addresses are 18 bits; L(N) normalizes |
+| `ax4b_5a_p_field_000` | TEST 5A | p.142 (010736.40-010767.00), 153 | 46 | `L(BU),148K24($X1)`, P = 0, X1 = 0: loads and leaves X1 alone; `LX,$X0,$R` writes index register 0 |
+| `ax4b_5b_immediate_unindexed` | TEST 5B | pp.143-145 (010767.40-011066.40), 191 | 150 | SVA writes BITk's value into `LI(BU,64,8),0` (full word at an odd half-word, P = 4); all 24 bits come back |
+| `ax4b_5cd_prog_ix_v_plus` | TESTs 5C, 5D | p.149 (011166.00-011213.40), 153, 191 | 53 | progressive V+I, V+IC: operand, value, count, refill |
+| `ax4b_5gh_prog_ix_v_minus` | TESTs 5G, 5H | p.151 (011242.00-011267.40), 153, 191 | 53 | progressive V-IC, V-ICR (5H refills from 148K28) |
+| `ax4b_5i_prog_ix_x0` | TEST 5I | p.152 (011270.00-011320.00), 153 | 48 | `L(BU),0` with X0 loaded and I = 0 must not use X0 |
+
+With 148's "CHECK INDEXING IMMEDIATE LOAD" and `ibox4_prog_ix_v` (5E,
+5F), routine 148's TESTs 3, 4 and 5A-5I are now all transcribed. Still
+untranscribed: TEST 1 (1A I-field selection for all sixteen index
+registers, pp.114-120; 1B/1C basic VFL, pp.121-124) and TEST 2 (2A/2B,
+full-word modification in both halves, pp.125-138).
+
+Two readings these pages forced, each checked in the Reference Manual's
+page image: SIC "is executed if and only if the associated branching is
+successful" (printed p.41, PDF 44), so SEN stays 0 on every pass; and KC
+compares the count with bits 0-17 of the addressed half-word (printed
+p.24, PDF 27), so "KC,$X1,BIT17" expects count 1 -- which corrected a
+wrong comment in `ibox4_prog_ix_v.strap` (it said BIT17's count field).
 
 ### The oracle hunt of 2026-11-18: five features with only the Reference Manual behind them
 
@@ -1613,7 +1641,7 @@ reverse index (source -> transcription/implementation).
 | `ja_ax1a_ibox-1.pdf` (60pp) | I-Box 1 diagnostic | Source | RUN: `ibox1_wen_ven_indicators`, `ibox1_wen_ven_original_addresses`, `ibox1_sic_cb_cbz`, `ibox1_p43_p51_span` (20 groups, pp.43-51); bit-exact vs `verify_ibox1_listing.py` |
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
-| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
+| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |

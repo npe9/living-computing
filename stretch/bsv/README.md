@@ -779,6 +779,11 @@ diagnostic PDFs (OCR as a finding aid, 2026-11-18) found IBM's own test, in
 transcribed bit-exact as `decks/ax4b_148_immediate_indexed.strap` and the model
 passes it. `decks/vfl_immediate_indexed.strap` keeps the cases that page lacks,
 and both decks record their injections.
+Routine 148's other tests on these sheets, TESTs 3, 4, 5A, 5B (the unindexed
+immediate walk), 5C/5D, 5G/5H and 5I, are transcribed too (`decks/ax4b_3_*`,
+`ax4b_4_*`, `ax4b_5*`), each bit-exact against its listing, and the model passes
+all of them: 19-bit half-word and 18-bit FP address truncation, P = 0, I = 0
+with X0 loaded, writes to X0, and four progressive-indexing codes.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

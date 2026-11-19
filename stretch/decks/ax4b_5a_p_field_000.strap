@@ -1,0 +1,146 @@
+! ax4b_5a_p_field_000.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113), TEST 5 "CHECKS ALL 8
+! CODES IN THE P FIELD OF A VFL LOAD", block TEST 5A "CHKS P FIELD OF
+! 000":
+!
+!   PDF p.142  010736.40-010767.00  the whole block
+!   PDF p.153  011351.00            148K24, the word it loads
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi, the driver at 400
+! dpi; checked row for row against the printed machine code by
+! tests/verify_ax4b_5a_p_field_000_listing.py (46 rows, 5 symbols).
+!
+! WHAT IT TESTS (IBM's code, unchanged).  Z,$X1 zeroes index register 1;
+!   L(BU),148K24($X1)   11351.00 81 000000.20 50   I = 1, P = 0
+! must load 148K24 (indexing by zero) and leave $X1 alone -- P = 0 is
+! not progressive.  "LX,$X0,$R" puts the result in index register 0,
+! and KV/KC on $X0 compare its value and count with 148K24's.  The
+! failure branches sort the cause: "LOADS OK BUT MODIFIES IX REG" (X1
+! changed), "ACTS LIKE A P OF 100" (KVI: the address itself was
+! loaded), "ACTS LIKE P OF 001, 010, 011, 101, 110, OR 111", "LOADED
+! FROM I-LEFT INDEX VALUE ADR BUT DID NOT MODIFY IX REG", "LOADED FROM
+! UNKNOWN LOCN ...".  It needs $X0 to be a real, writable register:
+! LX,$X0 and the later "L(BU),$X0" (address 20 octal) both use it.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44,
+!     read in the page image), so SEN stays 0 on a pass and names the
+!     error entry on a failure.
+!   * IC248 and BIT21 are SYN'd from the printed "LX,$X13,IC248" (11306.32
+!     10) and "V+,$X13,BIT21" (13101.32 B0); the continuity rows after
+!     B,SSW are never run.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..),
+!     as for every ax4b label (docs/listing_typography.md).  Nothing
+!     else changed.
+!
+! RESULT ON THE MODEL, 2026-11-18 (a57832f + this deck): PASSES -- halts
+! at SSW (PC 1410), SEN = 0, $X0 = 148K24's word (0x29CBBE029CB80000,
+! as LX,$X0,$R must leave it for KV and KC to match), $X1 = 0.  CYCLES
+! 219 is MODEL BEHAVIOUR; no time is printed.  IBM's listing and the
+! model AGREE.
+!
+! INJECTIONS, each in a scratch copy of bsv/, OBSERVED for this deck:
+!   P = 0 treated as immediate (vi.a.p == 4 || == 0) -> FAIL halt, SEN
+!     010750.40: "P OF 000 ACTS LIKE A P OF 100.", CYCLES 165.
+!   writes to X0 discarded (writeIndex j == 0) -> FAIL halt, SEN 010757.00:
+!     "LOADED FROM I-LEFT INDEX VALUE ADR BUT DID NOT MODIFY IX REG", CYCLES 256.
+!   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) -> FAIL halt,
+!     CYCLES 201; SEN stays 0 -- INFERRED, not dumped: SIC,SEN is then itself
+!     indexed by X0 and stores elsewhere.
+!   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+!   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+! The addresses are the ones this listing prints for them (SIC,SEN
+! "1310.00 80", B,SERS "1304.10 00", SIC,SENO+.32 "1311.40 80", B,SSW
+! "1301.10 00"), the same as routine 148's; what is AT them is SSIP's,
+! which this file replaces with halts, as ax4b_148_immediate_indexed does.
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248, the continuity word, and BIT21: SYN from the printed addresses
+! of "LX,$X13,IC248" (11306.32 10) and "V+,$X13,BIT21" (13101.32 B0); the
+! three continuity rows that name them are never reached here (SSW
+! halts first).
+IC248   SYN, (8)11306.0
+BIT21   SYN, (8)13101.0
+!
+! ======================================================================
+! PDF p.142, 010736.40-010767.00 (no printed page number on the sheet)
+! ======================================================================
+!                                     ! -TEST 5 CHECKS ALL 8 CODES
+!                                     ! -IN THE P FIELD OF A VFL LOAD.
+        SLC, (8)10736.40
+I4833   Z,   $X1                      ! -TEST 5A CHKS P FIELD OF 000.
+        L(BU), I48K24($X1)
+        LX,  $X0, $R
+        KV,  $X0, I48K24
+        BXE, $+1.0
+        B,   I4834
+        KC,  $X0, I48K24
+        BXE, $+1.0
+        B,   I4834
+        L(BU), $X1
+        BRZ, I4835                    ! -P OF 000 ALL OK.
+!
+        SIC, SEN                      ! -P OF 000 LOADS OK BUT MODIFIES IX
+        B,   SERS                     ! -REG SPECIFIED BY I-LEFT.
+        B,   I4835
+!
+I4834   KVI, $X0, I48K24
+        BZXE, $+2.0
+        SIC, SEN                      ! -P OF 000 ACTS LIKE
+        B,   SERS                     ! -A P OF 100.
+        B,   I4835
+!
+        L(BU), $X0
+        BRZ, $+1.0
+        B,   I4836
+        L(BU), $X1
+        BRZ, $+2.0
+        SIC, SEN                      ! -P OF 000 ACTS LIKE P OF 001, 010,
+        B,   SERS                     ! -011,101,110, OR 111.
+        B,   I4835
+!
+        SIC, SEN                      ! -LOADED FROM I-LEFT INDEX VALUE ADR
+        B,   SERS                     ! -BUT DID NOT MODIFY IX REG,
+        B,   I4835
+!
+I4836   L(BU), $X1
+        BRZ, $+2.0
+        SIC, SEN                      ! -LOADED FROM UNKNOWN LOCN BUT DID
+        B,   SERS                     ! -MODIFY IX REG SPECIFIED BY I-LEFT.
+        B,   I4835
+!
+        SIC, SEN                      ! -LOADED FROM UNKNOWN LOCN,DID NOT
+        B,   SERS                     ! -MODIFY IX REG SPECIFIED BY I-LEFT.
+!
+I4835   B,   $+1.0
+        BD,  I4833
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT21
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.153, 011351.00: the one constant TEST 5A reads
+! ======================================================================
+        SLC, (8)11351.0
+I48K24  XW,  (8)123456.76, (8)123456, 0
+        END, I4833

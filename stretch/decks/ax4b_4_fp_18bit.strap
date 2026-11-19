@@ -1,0 +1,153 @@
+! ax4b_4_fp_18bit.strap -- jb_ax4b "I-BOX 4", routine 148 (1248, "INDEX
+! MODIFICATION TEST", banner PDF p.113: "TEST4. CHECK FLOATING POINT,
+! 18 BITS, MODIFICATION."), TEST 4 "18 BIT FLOATING POINT
+! MODIFICATION":
+!
+!   PDF p.141  010715.40-010736.00  the whole block
+!   PDF p.153  011351.00-011363.00  148K24, 148XW2, 148XW3
+!   PDF p.153  011372.00            148ER1
+!   PDF p.191  013071.00            BIT13
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 and 300 dpi; checked row
+! for row by tests/verify_ax4b_4_fp_18bit_listing.py (39 rows, 7
+! symbols).
+!
+! WHAT IT TESTS (IBM's code, unchanged).  A floating-point address is 18
+! bits; the index value's bits 18-23 must not reach it.
+!   148ER1's count is 0 ("PREVIOUS FP FAILURE PROHIBITS RUNNING THIS
+!   TEST" otherwise), so BXCZ goes to I4832.
+!   X1 := BIT13+.32 (value 13071.40, bit 18 set)
+!   L(N),0($X1)     0.00 61   loads BIT13 NORMALIZED; KV,$X1,BIT13 /
+!                   BXH then requires $L's first 24 bits to EXCEED
+!                   BIT13's 20.00 ("GATING BIT 18 SPURIOUSLY" otherwise).
+!                   Worked by hand, not pinned (X1 is reloaded after):
+!                   the one fraction bit (13) moves to bit 12 and the
+!                   exponent becomes -1, so they read 34.00.  An
+!                   unnormalized load would read exactly 20.00.
+!   X1 := 148K24+.63 (value 11351.77, bits 18-23 all set)
+!   L(U),0($X1)     0.40 61   loads 148K24 unnormalized; KV and KC
+!                   compare $L's value and count fields with 148K24's
+!                   ("GATING SOME OF 19-23 SPUR." otherwise).
+! The exit B,$+1.0 / BD,I4832 / SIC,SENO+.32 / B,SSW is the routine's
+! usual one.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44,
+!     read in the page image), so SEN stays 0 on a pass and names the
+!     error entry on a failure.
+!   * IC248, BIT20 and I4833 (TEST 5A's entry, "B,I4833 -TERMINATE.")
+!     are SYN'd from the printed "LX,$X13,IC248" (11306.32 10),
+!     "V+,$X13,BIT20" (13100.32 B0) and "B,I4833" (10736.50 00); they
+!     are reached only on the 148ER1 path or after B,SSW.
+!   * TEST 4's first row has no label; END names its printed location,
+!     (8)10715.40, rather than adding one.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..),
+!     as for every ax4b label (docs/listing_typography.md).  Nothing
+!     else changed.
+!
+! RESULT ON THE MODEL, 2026-11-18 (a57832f + this deck): PASSES -- halts
+! at SSW (PC 1410), SEN = 0, $X1 = 148K24's word (0x29CBBE029CB80000:
+! L(U) left the whole word in $L, value and count).  CYCLES 309 is MODEL
+! BEHAVIOUR; no time is printed.  IBM's listing and the model AGREE.
+!
+! INJECTIONS, each in a scratch copy of bsv/, OBSERVED for this deck:
+!   FP normalization off (normalized = False) -> FAIL halt, SEN 010725.00:
+!     the L(N) check, "GATING BIT 18 SPURIOUSLY.", CYCLES 182.
+!   effAddr18 returns ea[23:6] + ea[5] (bit 18 rounds up) -> FAIL halt, SEN
+!     010725.00, the same L(N) check (BIT13+.32 reads BIT13's successor),
+!     CYCLES 182.  Predicted 010732.40 (the L(U) check); it failed earlier.
+!   NOT SHOWN: no injection measured here reaches the second half (L(U)
+!     through 148XW3, "GATING SOME OF 19-23 SPUR."); both stop at L(N).
+!   CONTROL: the unmodified model, the pins below (PASS, SEN = 0).
+!   Each built in a scratch copy of bsv/ and restored (cmp IDENTICAL).
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+! The addresses are the ones this listing prints for them (SIC,SEN
+! "1310.00 80", B,SERS "1304.10 00", SIC,SENO+.32 "1311.40 80", B,SSW
+! "1301.10 00"), the same as routine 148's; what is AT them is SSIP's,
+! which this file replaces with halts, as ax4b_148_immediate_indexed does.
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248, BIT20 and I4833 (TEST 5A's entry): SYN from the printed
+! addresses of "LX,$X13,IC248" (11306.32 10), "V+,$X13,BIT20" (13100.32
+! B0) and "B,I4833" (10736.50 00).  The rows that name them are reached
+! only on the "PREVIOUS FP FAILURE" path or after B,SSW, never here.
+IC248   SYN, (8)11306.0
+BIT20   SYN, (8)13100.0
+I4833   SYN, (8)10736.40
+!
+! ======================================================================
+! PDF p.141, 010715.40-010736.00 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)10715.40
+        LX,  $X1, I48ER1              ! -TEST 4, 18 BIT FLOATING
+        BXCZ, I4832                   ! -POINT MODIFICATION.
+        SIC, SEN                      ! -PREVIOUS FP FAILURE PROHIBITS
+        B,   SERS                     ! -RUNNING THIS TEST.
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT20
+        SX,  $X13, IC248
+        B,   I4833                    ! -TERMINATE.
+!
+I4832   LX,  $X1, I48XW2
+        L(N), 0($X1)
+        LX,  $X1, $L
+        KV,  $X1, BIT13
+        BXH, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -GATING BIT 18 SPURIOUSLY.
+        B,   I48321
+!
+        LX,  $X1, I48XW3
+        L(U), 0($X1)
+        LX,  $X1, $L
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN
+        B,   SERS                     ! -GATING SOME OF 19-23 SPUR.
+!
+I48321  B,   $+1.0
+        BD,  I4832
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT20
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.153, 011351.00-011372.00: the constants TEST 4 reads
+! ======================================================================
+        SLC, (8)11351.0
+I48K24  XW,  (8)123456.76, (8)123456, 0
+        SLC, (8)11362.0
+I48XW2  XW,  BIT13+.32, 0, 0
+I48XW3  XW,  I48K24+.63, 0, 0
+        SLC, (8)11372.0
+I48ER1  XW,  0, 0, 0                  ! -V I SELN, C FP, R VFL.
+!
+! ======================================================================
+! PDF p.191, 013071.00: BIT13, the word L(N) loads
+! ======================================================================
+        SLC, (8)13071.0
+BIT13   XW,  (8)20.00, 0, 0
+        END, (8)10715.40                ! TEST 4 has no label: its first row

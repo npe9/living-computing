@@ -37,7 +37,7 @@ SKIP = {"verify_mcp_page.py",           # takes a page number, run below
         "verify_buchholz_b6.py",        # takes a mode and runs the model
         "verify_problem_4_fp.py",       # takes a deck and runs the model
         "verify_problem_4_matrix.py"}   # takes a deck and runs the model
-PIN_VERIFY = 274   # 274: + verify_ax4b_148_immediate_indexed_listing.py (2026-11-18)
+PIN_VERIFY = 281   # 274: + verify_ax4b_148_immediate_indexed_listing.py (2026-11-18); 279: + verify_ax4b_{5b_immediate_unindexed,5a_p_field_000,5i_prog_ix_x0,4_fp_18bit,3_halfword_19bit}_listing.py (2026-11-18); 281: + verify_ax4b_{5cd_prog_ix_v_plus,5gh_prog_ix_v_minus}_listing.py (2026-11-18)
 PIN_PAGES = 351
 # p.33 makes only a CNOP a NOP.  strap_asm also puts a NOP in the half word it
 # rounds over before a DR(N) or DRZ(N).  Those halves are never executed and no

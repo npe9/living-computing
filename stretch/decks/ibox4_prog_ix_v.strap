@@ -28,8 +28,16 @@
 ! single constant -- I48K28, whose value field is 011353 -- is the
 ! expected result for both directions, and the same KV checks both.
 !
-! BIT17's count field is zero, so the KC check asserts the count was
-! decremented to zero by V+ICR.  It is the same BIT17 the IBOX-2 tape
+! CORRECTED 2026-11-18 (comment only): this paragraph said "BIT17's
+! count field is zero, so the KC check asserts the count was decremented
+! to zero by V+ICR".  KC compares the count with BITS 0-17 OF THE
+! ADDRESSED HALF-WORD (Reference Manual printed p.24, PDF 27, Compare
+! Count, read in the page image), i.e. BIT17's VALUE 1.00 -> 1, not its
+! count field.  So KC asserts count 1: V+ICR's 1 -> 0 refills X1 from
+! I48K28 (count 1), and V-I leaves XW7's count 1 alone.  Found while
+! transcribing TESTs 5C/5D/5G/5H (ax4b_5cd_prog_ix_v_plus,
+! ax4b_5gh_prog_ix_v_minus), where V+I keeps count 1 and passes the
+! same KC.  It is the same BIT17 the IBOX-2 tape
 ! uses at a different address: both tapes lay their BIT0-BIT63 tables
 ! out identically (value 0-23, sign 24, flags 25-27, count 28-45,
 ! refill 46-63), which is worth knowing before hunting a constant.
@@ -50,7 +58,7 @@ K28     XW, K26, 1, 0
         SLC, (8)11366.0
 XW6     XW, K25, 1, K28
 XW7     XW, K27, 1, 0
-! -- the bit table (p.191); BIT17's count field is zero --
+! -- the bit table (p.191); KC reads BIT17 bits 0-17 (value 1), see above --
         SLC, (8)13075.0
 BIT17   XW, (8)1.00, 0, 0
 

@@ -249,9 +249,12 @@ what p.146 lacks (negative index, short fields, other operations); its
 header has the injections. The same hunt found nothing for the other
 four Reference-Manual-only rules of 2026-11-18 (negative EA, branch to an
 invalid address, DF on fetch-type VFL, FP M+ store-type):
-`docs/archival_inventory.md` "The oracle hunt of 2026-11-18". Next IBM
-candidate on this line: TEST 5B, the unindexed immediate walk, PDF
-pp.143-145.
+`docs/archival_inventory.md` "The oracle hunt of 2026-11-18". TEST 5B,
+the unindexed immediate walk (PDF pp.143-145), is now transcribed and
+passes (`decks/ax4b_5b_immediate_unindexed.strap`), with routine 148's
+TESTs 3, 4, 5A, 5C/5D, 5G/5H and 5I (inventory, "The rest of routine
+148's TESTs 3-5"). Next IBM candidates on this line: 148's TEST 1
+(pp.114-124) and TEST 2 (pp.125-138), then jb_ax5b.
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's
