@@ -803,6 +803,11 @@ by bit, keeping count and refill; LVE to an LV in memory, index storage and $R,
 through a second LVE, the final address's width by the class of the instruction
 found (24/19/18), index modification without execution or progressive stepping,
 and only J's register written. Eight segment runs; the model passes all eight.
+jb_ax5b routine 1260's TESTs 1A and 1B (PDF pp.8-13,
+`decks/ax5b_160_test1ab_mask.strap`) are IBM's test of the mask register's
+fixed bits, which `StretchStorage.bsv` forces (0-19 one, 48-63 zero, Reference
+Manual Figure 11): two segment runs, both pass. Unforcing mask bit 7, or letting
+bit 55 be written, each fails its run (deck header).
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

@@ -260,7 +260,12 @@ p.113 prologue followed (IDF1/RET/DPET13 are SSIP's, from p.193's SYN
 table; run from I48, passes), and so did routine 1256, IBM's LVS and LVE
 test (pp.173-191: `decks/ax4b_156_test1_lvs.strap`,
 `decks/ax4b_156_test2_lve.strap`, eight segment runs, all pass;
-inventory, "Routine 1256"). Next IBM candidate on this line: jb_ax5b.
+inventory, "Routine 1256"). jb_ax5b followed: routine 1260's prologue
+and TESTs 1A/1B, the mask register's fixed bits (pp.8-13,
+`decks/ax5b_160_test1ab_mask.strap`, two segment runs, both pass;
+inventory, "Routine 1260's prologue and TESTs 1A/1B"). Next on this
+line: 1260 TEST 1C (`16011`, pp.14-21, mask bits 20-47; needs
+`I60K1`/`I60K15` from p.86), then TESTs 2-4 (pp.22-36).
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's

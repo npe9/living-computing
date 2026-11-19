@@ -1,0 +1,495 @@
+! ax5b_160_test1ab_mask.strap -- jb_ax5b "I-BOX 5", routine 1260
+! ("----1260---CHECK MASK, INDICATOR, AND INTERRUPT.", banner PDF p.8),
+! its prologue and TESTs 1A and 1B, IBM's own test of the MASK
+! REGISTER's fixed bits:
+!
+!   PDF p.8    014064.00-014066.40  I60: the prologue (SSIP's IDF1)
+!   PDF p.8    014067.00            I60ID: location printed, NO code
+!   PDF p.9    014070.00-014112.40  I601: TEST 1A, the bit-24 guard,
+!                                   its abort path, and the bit loop
+!   PDF pp.9-11  014113.00-014162.40  I60B1: TEST 1A's error table,
+!                                   bits 00-19, four half-words each
+!   PDF p.11   014163.00-014166.40  I606: exit (B,SSW), continuity BIT0
+!   PDF p.12   014167.00-014207.00  I607: TEST 1B
+!   PDF pp.12-13  014207.40-014247.00  I60B2: TEST 1B's error table,
+!                                   bits 48-63
+!   PDF p.13   014247.40-014253.00  I6010: exit (B,SSW), continuity BIT1
+!   PDF p.114  024501.00-024552.00  the constant pool and BIT0-BIT24, as
+!                                   decks/ax5b_bit_table.strap transcribes
+!                                   them (verified there, row by row)
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi, and 014111.40 again
+! at 400 dpi (its "0D" looks like "00" at 150).  Checked row for row
+! against the printed machine code by
+! tests/verify_ax5b_160_test1ab_mask_listing.py (240 rows, 18 symbols).
+!
+! THE BANNER'S OWN WORDS FOR TEST 1 (p.8, verbatim):
+!         -TEST 1 CHECKS THAT THE PROGRAMMABLE
+!              -BITS OF THE MASK REGISTER CAN
+!              -BE SET TO BOTH ONE AND ZERO,
+!              -THAT BITS 0-19 ARE ONE, AND
+!              -THAT BITS 48-63 ARE ZERO.
+! TEST 1C (I6011, pp.14-21, "CHECK THAT BITS 20-47 OF MASK REG CAN BE
+! SET TO 1 OR 0") is the programmable half and is NOT in this deck.
+!
+! WHAT THE RULE IS.  Reference Manual Figure 11, the Indicator List
+! (printed p.43, PDF p.46), read in the page image: its "Mask" column
+! prints 1 for indicators 0-19, "m" (settable) for 20-47 and 0 for
+! 48-63.  The mask register is word 12 (TI,1,0,12.0 prints its second
+! address as 000014.02, octal 14).  The model has the rule in
+! bsv/StretchStorage.bsv (the addrMask write and the register's reset
+! value).  Other ax5b decks write the mask (Z,$MASK; TI into $MASK)
+! but none checks its FIXED bits, and StretchStorage.bsv's own comment
+! records that the model once forced only 0-15, not 0-19, and that no
+! test caught it.  This is IBM's test of exactly those bits.
+!
+! HOW TEST 1A WORKS (all from the Reference Manual, printed pp.24-25,
+! PDF pp.27-28, and the printed code):
+!   * LX,$X0,I00Z / SX,$X0,12.0 and TI,1,0,12.0 zero every settable
+!     bit; TI,1,12.0,$X0 reads the mask back into X0.  KV,$X0,BIT24
+!     (p.24: "The address part, bits 0-24, of the half-word ... is
+!     compared with the address part, bits 0-24, of the index word ...
+!     Comparison is algebraic") compares against BIT24, which is -0:
+!     X0 is +(bits 0-19 ones) unless mask bit 24 is stuck on, which
+!     makes X0 negative.  BXH is the pass path.  On failure the block
+!     credits continuity BIT0, BIT1 and BIT2 at once and jumps to TEST 2
+!     (I6041) -- "UNABLE TO TEST ANY FURTHER BITS".
+!   * The loop runs twenty times (LCI,$X2,20).  Pass k: X1 = mask word
+!     (TI), then V+,$X1,BIT(k-1) (BIT0-1.0, the zeroed word 024521.00,
+!     on pass 0), then KV,$X1,BITk; BZXL (not low) is the pass path.
+!     When bits 0..k-1 are all one, adding bit k-1 carries out through
+!     bit 0 and is lost (p.24: "The overflow which may occur in index
+!     arithmetic is ignored"), leaving bits k-19: not low against BITk
+!     exactly when bit k is one.  A failure falls into I604's "$B,0",
+!     whose address SVA set to the k-th entry of I60B1.
+!   * The addresses step by self-modification: LV,$X2,I603+.32 loads
+!     the KV half-word itself as a signed value, and its bit 24 -- the
+!     first bit of the KV op code (hex 90) -- is ONE, so the value is
+!     negative and V-I,$X2,1.0 INCREASES its magnitude by a word.  That
+!     is the printed comment "-SUB TO INCCREMENT, BIT 24 IS 2." (sic).
+!     TEST 1B's I608 does the same ("-SUB TO INCREMENT, BIT 24 IS 1.0").
+!
+! HOW TEST 1B WORKS: sixteen passes (LCI,$X1,16).  Each loads all ones
+! into the mask (LX,$X2,I00O / TI,1,$X2,12.0), reads it back into X2,
+! then SR,$X2,$X2 stores X2's own refill field (mask bits 46-63) into
+! bits 0-17 of X2's value and zeroes bits 18-24 (p.24, STORE REFILL).
+! Mask bits 46-47 are settable, so they are ONE: the three-pass loop at
+! I607A ("-DELETE ANY BITS IN 0 AND 1.") adds BIT1 until the value is
+! not above BIT2, the carry out of bit 0 again being lost.  Then
+! KV,$X2,<BIT3 + pass>; BXL (low) is the pass path, I609's "$B,0" the
+! failure, into I60B2's entry for that pass.
+!
+! A LABELLING QUIRK OF IBM'S, traced from the code and NOT smoothed:
+! after SR, mask bit 48+m sits in value bit 2+m, but the first
+! comparand is BIT3, not BIT2.  Pass j fails when any of value bits
+! 0..3+j is set, so a lone mask bit 48 or 49 both report at entry 0
+! ("-BIT 48 OF MASK REG NOT ZERO."), and a lone mask bit k >= 49 reports
+! at entry k-49, whose message names bit k-1.  The last pass (BIT18)
+! compares a field SR has zeroed and can never fail.  The model
+! injection M2 below confirms the shift: a leaking bit 55 lands in the
+! "-BIT 54" entry.
+!
+! TWO SEGMENTS.  TEST 1A ends in its own "B,SSW" at 014164.40 and TEST
+! 1B at 014251.00.  With SSW a PASS halt the suite runs the deck twice:
+! from END (I60, the prologue, which falls into I601 through SSIP's
+! IDF1) and with ENTRY=I607.  The continuity rows after each B,SSW, and
+! TEST 1A's abort path, are transcribed and verified but never run.
+!
+! RESULT, 2026-11-19: both segments PASS IBM's checks (PC 1410 = SSW,
+! SEN 0).  No disagreement with the listing.
+!   I60 (END: prologue, TEST 1A): RET (word 001306) = 0x60d8800, the
+!     return to 014066.00; X0 = 0x61c400000000000, value 014161.00 =
+!     I60B1 + 19 entries (the 20th pass exits before the step); X1 =
+!     0x100000000000, value bit 19 alone = mask + BIT18 on the last
+!     pass; X2 = 0xa59428000000000, value -(024545.02) (BIT19 with the
+!     KV's J), count 0.  CYCLES 4107.
+!   I607 (TEST 1B): X0 = 0x629600000000000, value 014245.40 = I60B2 +
+!     15 entries; X1 = 0 (count spent); X2 = 0x7fffff0000: value 0
+!     after the delete, and the mask's settable bits 25-47 still ones in
+!     flag, spare, count and refill; X3 = 0xa59048000080000, value
+!     -(024544.04) = BIT18 with the KV's J, count 2 (one delete pass).
+!     CYCLES 5426.
+!   X values print the model's packIndexWord layout (bsv/StretchTypes.bsv):
+!   value in bits 63-40, sign 39, flag 38, spare 37-36, count 35-18,
+!   refill 17-0.  CYCLES is MODEL BEHAVIOUR.
+!
+! MODEL INJECTIONS, OBSERVED (a scratch copy of bsv/, both runs repeated
+! for each; the tracked bsv/ never touched):
+!   M1 mask bit 7 (BSV 56) not forced to one on a write
+!     ("20'hFEFFF" for "20'hFFFFF" in StretchStorage.bsv's addrMask
+!     write) -> I60 FAIL: PC 1416 (SERS), SEN 0x616800000000000 (return
+!     014132.00, i.e. the entry at 014131.00, "-BIT 07 OF MASK REG NOT
+!     ONE."), X0 0x616400000000000 (014131.00 = I60B1 + 7 entries), X1
+!     0xfff00000000000, X2 0xa56428000340000, CYCLES 1777.  I607 PASSES
+!     with every pin.
+!   M2 mask bit 55 (BSV 8) writable instead of always zero
+!     ("{20'hFFFFF, v[43:16], 7'h0, v[8], 8'h00}") -> I607 FAIL: PC 1416,
+!     SEN 0x625200000000000 (return 014224.40), X0 0x624e00000000000
+!     (014223.40, the entry printed "-BIT 54 OF MASK REG NOT ZERO." --
+!     the k-1 labelling above, observed), X1 0x280000 (count 10 left),
+!     X2 0x40007fffff0100, X3 0xa56c48000080000, CYCLES 2376.  I60
+!     PASSES with every pin (TEST 1A zeroes the settable bits first).
+!   CONTROL: the unmodified bsv/ in the same scratch copy: both runs PASS
+!     with the pins in run_tests.sh.  StretchStorage.bsv restored from a
+!     saved copy between injections; cmp IDENTICAL at the end.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points at the addresses jb_ax4b PDF p.193's SYN table
+!     prints, which these pages' own machine code repeats (SSW 1301.0,
+!     SERS 1304.0, RET 1306.40, SEN 1310.0, SENO 1311.0, DPET13 1437.0,
+!     IDF1 1443.0).  SSW is a PASS halt, SERS a FAIL halt, SEN/SENO data
+!     words SIC stores into.  RET is a "$B,0" half-word whose address
+!     field SIC,RET fills and IDF1 ("print ID") is a bare branch to it:
+!     that return path is INFERRED, as in decks/ax4b_156_test1_lvs.strap,
+!     from routine 148's own SIC/$B idiom; no SSIP page shows IDF1's
+!     body.  DPET13 is a data word.  SIC "is executed if and only if the
+!     associated branching is successful" (Reference Manual printed
+!     p.41, PDF 44), so SEN stays 0 on a pass and names the error entry
+!     on a failure.
+!   * IC260 (022737.00) and I6041 (014556.00) are SYN'd at the addresses
+!     these pages' own machine code prints for them ("LX,$X13,IC260"
+!     22737.32 10; "BD,16041" 14556.04 00).
+!   * Notation only: "%" and the box glyph are "(" and ")"; the label
+!     glyph the scan shows as "1" is the letter I (I60.., I00O), as for
+!     every ax5b label (docs/listing_typography.md).
+!   * I60ID prints a location and no code, so it is SYN'd; the word
+!     there is not in this image.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1306.40
+RET     $B, 0                         ! SUBSTITUTE: SSIP's return half-word
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+        SLC, (8)1437.0
+DPET13  DD(BU,64,8), 0                ! SUBSTITUTE: SSIP's ident cell
+        SLC, (8)1443.0
+IDF1    B, RET                        ! SUBSTITUTE: SSIP's "print ID"
+!
+! ---- routine 1260's own labels outside these pages, SYN'd at the
+! addresses this listing prints for them (inputs, not witnesses) ------
+IC260   SYN, (8)22737.0               ! -CONTINUITY REG 1260. (PDF p.83)
+I6041   SYN, (8)14556.0               ! -TEST 2, CHK DATA IN IA. (PDF p.22)
+!
+! ======================================================================
+! PDF p.8, 014064.00-014066.40: routine 1260's prologue
+! ======================================================================
+        SLC, (8)14064.0
+I60     LX, $X1, I60ID                ! -UPDATE IDENT.
+        SX, $X1, DPET13
+        SIC, RET
+        B, IDF1                       ! -PRINT ID.
+        Z, IC260
+        BD, I601
+        CNOP
+! I60ID  %IQSZ@DD%BU,64,8@,I260     Z        014067.00, no machine code
+I60ID   SYN, (8)14067.0
+!
+! ======================================================================
+! PDF p.9, 014070.00-014122.40: TEST 1A -- the bit-24 check, the loop,
+! and the error table's entries for bits 00-03
+! ======================================================================
+        SLC, (8)14070.0
+I601    LX, $X0, I00Z                 ! -TEST 1A, CHECK THAT BITS 0-19 OF
+        SX, $X0, 12.0                 ! -MASK REGISTER ARE ALWAYS ONES.
+        TI, 1, 0, 12.0
+        TI, 1, 12.0, $X0
+        KV, $X0, BIT24
+        BXH, I602
+        SIC, SEN                      ! -BIT 24 OF MASK REG STUCK ON 1,UNABLE
+        B, SERS                       ! -TO TEST ANY FURTHER BITS.
+        LX, $X13, IC260               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT0
+        V+, $X13, BIT1
+        V+, $X13, BIT2
+        SX, $X13, IC260
+        BD, I6041
+!
+I602    Z, BIT0-1.0                   ! -BITS 0-19.
+        LVI, $X0, BIT0-1.0
+        SVA, $X0, I603
+        V+I, $X0, 1.00
+        SVA, $X0, I603+.32
+        LCI, $X2, 20
+        LVI, $X0, I60B1
+I605    SVA, $X0, I604
+        TI, 1, 12.0, $X1
+I603    V+, $X1, 0
+        KV, $X1, 0
+        BZXL, $+1.0
+I604    $B, 0
+!
+        C-I, $X2, 1.0
+        BXCZ, I606
+        V+I, $X0, 2.0
+        LV, $X2, I603+.32
+        SVA, $X2, I603
+        V-I, $X2, 1.0                 ! -SUB TO INCCREMENT, BIT 24 IS 2.
+        SVA, $X2, I603+.32
+        B, I605
+!                                     -YOU CAME TO THIS ERROR TABLE FROM 1604
+I60B1   SIC, SEN                      ! -BIT 00 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 01 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 02 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 03 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+! ---- PDF p.10 ----
+        SIC, SEN                      ! -BIT 04 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 05 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 06 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 07 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 08 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 09 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 10 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 11 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 12 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 13 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+! ---- PDF p.11 ----
+        SIC, SEN                      ! -BIT 14 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 15 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 16 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 17 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 18 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+        SIC, SEN                      ! -BIT 19 OF MASK REG NOT ONE.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I606
+        NOP
+!
+I606    B, $+1.0
+        BD, I601
+        SIC, SENO+.32
+        B, SSW
+        BD, $+.32
+        LX, $X13, IC260               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT0
+        SX, $X13, IC260
+!
+! ======================================================================
+! PDF p.12, 014167.00-014221.40: TEST 1B; p.13, 014222.00-014253.00
+! ======================================================================
+I607    LVI, $X0, BIT3                ! -TEST 1B, CHECK THAT BITS 48-63 OF
+        SVA, $X0, I608                ! -MASK REG ARE ALWAYS ZERO.
+        LVI, $X0, I60B2
+        SVA, $X0, I609
+        LCI, $X1, 16
+I607B   LX, $X2, I00O
+        TI, 1, $X2, 12.0
+        NOP
+        NOP
+        TI, 1, 12.0, $X2
+        SR, $X2, $X2
+        NOP
+!
+        LCI, $X3, 3.0                 ! -DELETE ANY BITS IN 0 AND 1.
+I607A   KV, $X2, BIT2
+        BZXH, I608
+        V+, $X2, BIT1
+        CB, $X3, I607A
+        SIC, SEN                      ! -BITS 0 AND 1 OF IX 2 CANT BE
+        B, SERS                       ! -FORCED TO 00 CONDITION.
+        B, I6010                      ! -TERMINATE.
+!
+I608    KV, $X2, 0
+        BXL, $+1.0
+I609    $B, 0
+!
+        C-I, $X1, 1.0
+        BXCZ, I6010
+        LV, $X3, I608
+        V-I, $X3, 1.0                 ! -SUB TO INCREMENT, BIT 24 IS 1.0
+        SVA, $X3, I608
+        V+I, $X0, 2.0
+        SVA, $X0, I609
+        B, I607B
+!                                     -YOU CAME TO THIS ERROR TABLE FROM 1609
+I60B2   SIC, SEN                      ! -BIT 48 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 49 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 50 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 51 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 52 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+! ---- BIT 53's SIC,SEN ends PDF p.12; its B,SERS opens p.13 ----
+        SIC, SEN                      ! -BIT 53 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 54 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 55 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 56 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 57 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 58 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 59 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 60 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 61 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 62 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+        SIC, SEN                      ! -BIT 63 OF MASK REG NOT ZERO.
+        B, SERS                       ! -UNABLE TO TEST ANY FURTHER BITS.
+        B, I6010
+        NOP
+!
+I6010   B, $+1.0
+        BD, I607
+        SIC, SENO+.32
+        B, SSW                        ! -TO SSIP
+        BD, $+.32
+        LX, $X13, IC260               ! -UPDATE CONTINUITY CHECK.
+        V+, $X13, BIT1
+        SX, $X13, IC260
+!
+! ======================================================================
+! PDF p.114, 024501.00-024552.00: the common constants and BIT0-BIT24,
+! as decks/ax5b_bit_table.strap transcribes them (SENO's SYN left out:
+! SENO is substituted above).  024521.00, the last of the twelve
+! anonymous zero words, is TEST 1A's "BIT0-1.0".
+! ======================================================================
+        SLC,(8)24501.0
+I00LC   DD(BU,64,8),(8)0000011770025700000000
+!                             p.114: "(8)DD(BU,64,8),0 000 011 770 025
+!                             700 000 000"   0000011770025700000000
+I00Z    XW,0,0,0,0          ! p.114: "-ZERO INDX WD."
+I00O    DD(BU,64,8),(8)1777777777777777777777
+!                             p.114: "(8)DD(BU,64,8),1777777777777777
+!                             777777-INDX WD. OF ONES."
+I00VO   XW,-(8)777777.77,0,0
+!                             p.114: "XW,(8)-777777.77,0,0"
+I00CO   XW,0,(8)777777,0    ! p.114: "XW,0,(8)777777,0"
+!
+! Four anonymous DD(BU,64,8),0,0,0 statements, three words each:
+! 024506.00-024521.00, twelve zero words, no labels at all.
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+!
+! -                                         <- a bare comment row, the
+!                                              only thing between the
+!                                              pool and BIT0: the bit
+!                                              table has NO banner
+BIT0    XW,(8)400000.00,0,0
+BIT1    XW,(8)200000.00,0,0
+BIT2    XW,(8)100000.00,0,0
+BIT3    XW,(8)40000.00,0,0
+BIT4    XW,(8)20000.00,0,0
+BIT5    XW,(8)10000.00,0,0
+BIT6    XW,(8)4000.00,0,0
+BIT7    XW,(8)2000.00,0,0
+BIT8    XW,(8)1000.00,0,0
+BIT9    XW,(8)400.00,0,0
+BIT10   XW,(8)200.00,0,0
+BIT11   XW,(8)100.00,0,0
+BIT12   XW,(8)40.00,0,0
+BIT13   XW,(8)20.00,0,0
+BIT14   XW,(8)10.00,0,0
+BIT15   XW,(8)4.00,0,0
+BIT16   XW,(8)2.00,0,0
+BIT17   XW,(8)1.00,0,0
+BIT18   XW,(8).40,0,0
+BIT19   XW,(8).20,0,0
+BIT20   XW,(8).10,0,0
+BIT21   XW,(8)0.04,0,0
+BIT22   XW,(8)0.02,0,0
+BIT23   XW,(8)0.01,0,0
+BIT24   DD(BU),(8)0000000010000000000000
+        END, I60
