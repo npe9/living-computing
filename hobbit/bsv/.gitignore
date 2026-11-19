@@ -24,3 +24,10 @@ sim_event
 sim_event.so
 sim_core_mmu
 sim_core_mmu.so
+p9.img
+P9Image.bsv
+P9Entry.bsv
+sim_p9
+sim_p9.so
+P9BootTb.ba
+P9BootTb.bo

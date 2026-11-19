@@ -116,6 +116,28 @@ a linker artefact of one binary or something about `echo` itself is not
 known; the loader uses `cat` as its oracle and the difference is written
 here rather than smoothed over.
 
+## First boot attempt (2026-11-19)
+
+`bsv/run_p9.sh echo` loads the 1e `echo` image at 0x1000/0x1020/0x4000
+(`tools/p9exec.py --image`, 4,317 words) into a 64 Kbyte memory, warms
+the prefetch and starts at the entry 0x2ad0 with SP = 0x800, MSP = 0xC00,
+PSW = 0x200 (`bsv/P9BootTb.bsv`).  Result: **`FAULT pc=00002ad0`** and
+no retirement — the fetch missed.
+
+The cause is stated by the model itself (`HobbitDecode.bsv`,
+`HobbitPrefetch`): the instruction window is 64 words warmed once, and
+"a fetch whose line is absent is a model limitation, and the PDU turns
+it into TR_FETCH_MISS so the core retires a loud trap record rather than
+aliasing a line silently".  The smoke never meets this because it starts
+at 0, inside the warmed window.
+
+So the next task is not in the loader: **the PDU needs a refill on a
+fetch miss** — MMU-translated line fetch, the Table 4-7 fetch/empty
+pipeline delay, and the line installed in place of the warmed window —
+before any Plan 9 program can run past its first line.  The loader
+scaffolding (image, entry package, `startAt(pc, sp, msp, psw)`, 64 Kbyte
+testbench memory) is in place and is what the refill will be tested with.
+
 ## Definition of the proof of concept
 
 **`echo` from `plan9-1e/hobbit/bin/` runs on the model and prints its

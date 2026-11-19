@@ -57,6 +57,8 @@ interface HobbitCore;
   method Action start(Word sp, Word msp);
   // Start with an explicit PSW (the MMU path sets V = 1, p. 1-14).
   method Action startPsw(Word sp, Word msp, Word psw);
+  // Start at an explicit PC (a Plan 9 image's entry is not 0).
+  method Action startAt(Word pc, Word sp, Word msp, Word psw);
 
   method Bool halted();
   method Bool atLimit();
@@ -978,13 +980,13 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   endrule
 
   // ---- S1 -> S2, the squash redirect, and S2 -> S3 -------------------
-  function Action startCore(Word sp, Word msp, Word p) =
+  function Action startCoreAt(Word sp, Word msp, Word p, Word pc0) =
     action
       sc.reset(sp, msp);
       ic.reset;
       s2.start;
       s3.start;
-      s1.start(0);
+      s1.start(pc0);
       events.setIsp(sp);
       events.setShad(sp);
       startPswW <= tagged Valid p;
@@ -994,6 +996,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
       eventTakenR <= False;
       traceFired <= False;
     endaction;
+
+  function Action startCore(Word sp, Word msp, Word p) =
+    startCoreAt(sp, msp, p, 0);
 
   function Bool pipelineIdle() =
     !s1.notEmpty && !s2.occupied && !s3.occupied;
@@ -1134,6 +1139,10 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   method Action start(Word sp, Word msp);
     startCore(sp, msp, 0);
+  endmethod
+
+  method Action startAt(Word pc, Word sp, Word msp, Word psw);
+    startCoreAt(sp, msp, 0, pc);
   endmethod
 
   method Bool halted() = s3.faulted;
