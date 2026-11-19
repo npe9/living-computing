@@ -5777,11 +5777,16 @@ Staged, each step green and committed:
      "expensive datapath" row of the 1c-audit, not the "stage body"
      row. The others are unchanged: `execute()` 1535, `fpArithClass`
      730, `ioOpExec` 434, `dirIndexOp` 427, `connectiveOp` 352,
-     `fpStoreClass` 348. **Next stages:** (i) structure only, no
-     behaviour: the operand-fetch block repeated nearly verbatim across
-     the L, ST, +, *, LFT/*+, /, M+, K arms (the `prefetchCount` /
-     `fieldCrosses` / `needsRead` ladder) as one function, which is
-     what actually shortens `vflIntOp`; (ii) the next datapath class
+     `fpStoreClass` 348.
+     **Stage 2 (structure only, its own commit):** the 22-line operand
+     fetch ladder (`prefetchCount` / `fieldCrosses` / `needsRead`) that
+     nine arms -- L/LWF, +/+MG, *, LFT/*+, /, KR/KFR, LCV, CV, LTRCV --
+     repeated verbatim is one pure function, `vflFetchOperand`,
+     returning the field, the slots used and the word to read; each arm
+     calls it in four lines. ST and M+ keep their own (their RMW reads
+     interleave with the store). `vflIntOp` 2343 / 914 -> **2181 / 752**
+     (the function itself, 58 lines with its contract, sits above it).
+     Same hardware: BSV inlines functions. **Next:** the next datapath class
      into `mkVflBox`: the binary add (`binAccAdd`, the SAU's adder),
      which is in nearly every deck, so its hold cost must be measured
      the same way before it is accepted.
@@ -5874,7 +5879,7 @@ the boundary plan does not close this row.) Piccolo numbers are from
 | FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
 | stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
 | rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
-| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2343** (914 non-comment), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.6x on `vflIntOp`) |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
 | expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox`, `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
 
 **What this changes.** The plan and README item 9 both said the target
