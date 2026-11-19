@@ -217,6 +217,8 @@ THE POST-IPL CORE IMAGE (2026-11-18, later).  post_ipl() runs
   l.37) with gen_mcp_boot_tb.py's MCP_START_MEM_DUMP=1 and dumps all
   98,304 words at its stop; the dump is cached in bsv/build-hosttape/
   postipl/, keyed by the bench source, the tape and every model source.
+  MEASURED cold (cache moved aside, 2026-11-18): the dump is rebuilt to the
+  same key (the run is deterministic), and the whole test takes 116 s.
   Every stage starts from it (words 0-31, the registers, left to each
   bench).  Against the assembled image (MEASURED, 1,225 words differ):
   - the overlay area 234424-236523 holds 22SCOMD, the command package
@@ -274,9 +276,21 @@ THE OVERLAP PATH (R2G_TAMPER=overlap, SYSMOD 00 as assembled), as before:
   addresses look like pointers into the moved area).  NOT GRAFTED: the
   tables cannot safely be taken alone while the words that may point into
   them are unclassified; and this bench's CHOSEN limits LIM,200000,214777
-  overlap them (IPL's MCP base, SMCP, is 214514).  Running TASIGN on IBM's tables needs the go bench to start
-  from the post-IPL image, or to take the tables and their pointers
-  together.
+  overlap them (IPL's MCP base, SMCP, is 214514).  [All of the above was
+  observed on the assembled image, before 2026-11-18 (later).]
+  ON THE POST-IPL IMAGE (2026-11-18, later; R2G_TAMPER=overlap now plants
+  SYSMOD 00 into the IPL dump, nothing else changed): the run takes the same
+  path and reaches TASIGN, where the bench's stop_at_pc (TASIGN, half-word
+  17640) ends it -- a bench stop, not a halt -- after 1,775,302 cycles,
+  NFET 1, now with IBM's SXCHAN = 214724.00 count 36 and SMCP = SBAMCP =
+  214514.00 in core and the PP limits below them.  TA9 on those tables is
+  NOT run by this test.  One diagnosis run, R2G_TAMPER=overlap
+  R2G_STOP=18346 R2G_ONLY6=1 (2026-11-18), is NOT a clean measurement and
+  is recorded only as observed: stage 4's linkage/tentacle checks fail as
+  well (7 FAIL, the map itself prints right), so the moved stop disturbs
+  more than stage 6; stage 6 passes TASIGN (SCNFCG 0, WJ4PFF cleared it)
+  and ends not at T N but at the stub's unserved-op stop (STOPC 4, STIC
+  22226600).  Not diagnosed.  TA9 on IBM's tables is still open.
   TMAXRF (215005.32, its count) and SPROGS (215021-215022) are 0 in the
   image AND in the post-IPL dump, so they match a real IPL (at JC4's idle
   poll, before any job; not measured after one).  Left as the image
