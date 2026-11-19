@@ -1,0 +1,609 @@
+! ax4b_2b_lhw_fullword.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113), TEST 2B "CHECK IX MOD OF
+! LHW OF FW INSTRCTN.":
+!
+!   PDF p.131  010263.40-010317.00  I4822: bits 0-2, exit
+!   PDF p.132  010317.40-010353.00  I4823: bits 3-5, exit
+!   PDF p.133  010353.40-010407.00  I4824: bits 6-8, exit
+!   PDF p.134  010407.40-010443.00  I4825: bits 9-11, exit
+!   PDF p.135  010443.40-010477.40  I4826: bits 12-14, exit (with a
+!                                   second "BD,$+.32", as printed)
+!   PDF p.136  010500.00-010533.00  I4827: bits 15-17, exit
+!   PDF p.137  010533.40-010567.00  I4828: bits 18-20, exit
+!   PDF p.138  010567.40-010623.00  I4829: bits 21-23, exit
+!   PDF p.153  011351.00            148K24
+!   PDF p.154  011374.00-011423.00  BIT0M-BIT23M
+!   PDF p.191  013054.00-013103.00  BIT0-BIT23
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_2b_lhw_fullword_listing.py.  p.131 carries pencil
+! marks over the first block (ticks, "123456.76", "471370.0", an arrow
+! at the L(BU) row); they are not IBM's code and are not transcribed.
+!
+! WHAT IT TESTS (IBM's code, unchanged).  For k = 0..23:
+!   LVI,$X0,148K24; V+,$X0,BITk    X0's value := 148K24's address + bit k
+!   LV,$X1,BIT(23-k)M              X1's value := -(bit k) (BITnM is the
+!                                  index word -BIT(23-n), p.154)
+!   SVA,$X0,$+.32                  X0's value INTO THE ADDRESS of
+!   L(BU),0($X1)   0.00 81 000000.20 50   a full-word VFL indexed in its
+!                                  LEFT half (I = 1): address + (-bit k)
+!                                  must be 148K24 again
+!   LX,$X1,$R; KV and KC vs 148K24     the word loaded must be 148K24's
+! "ABOVE BIT WHEN SUBTRACTED THRU IX MOD FAILS TO YIELD CORRECT EFFECTIVE
+! ADR."  Where 148K24's address already has bit k set, the V+ carries
+! and the index subtraction must borrow back.
+!
+! EIGHT SEGMENTS, each ending in "B,SSW": I4822 ... I4829, three bits
+! each.  The driver runs this deck eight times: from END (I4822) and
+! with ENTRY=I4823 ... I4829 (gen_tb.py).  Continuity rows after each
+! B,SSW are transcribed and verified, never run.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the error entry on a failure.
+!   * IC248 is SYN'd from the printed "LX,$X13,IC248" (11306.32 10).
+!   * BITnM: the page prints "XW,%8)-0.01" etc.; this assembler takes the
+!     sign before the radix ("XW,-(8)0.01"), as ax5b_bit_table does for
+!     100VO.  Notation only.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..), as
+!     for every ax4b label (docs/listing_typography.md).  Nothing else
+!     changed.
+!
+! RESULT, 2026-11-19: every segment halts at SSW (PASS, PC 1410) with
+! SEN = 0.  The driver compares PC, SEN, CYCLES and the pins listed in
+! tests/run_tests.sh; CYCLES is MODEL BEHAVIOUR, not IBM's timing.
+! SEN, on a failure, is SIC's link: the half-word after the "B,SERS" that
+! was taken, so it names the failing check.
+! MODEL INJECTIONS, OBSERVED (each built in its own scratch copy of
+! stretch/bsv/, all 19 segment runs of TESTs 1-2 repeated; the
+! worktree's bsv/ was never edited):
+!   a negative index ADDS its magnitude (effAddrSigned's sign test
+!     removed) -> all eight segments FAIL halt.  I4823 ... I4829 fail at
+!     their first block (SEN 010327.40, 010363.40, 010417.40, 010453.40,
+!     010507.40, 010543.40, 010577.40), CYCLES 214 (220 for I4829).
+!     I4822 fails at its THIRD block, bit 2 (SEN 010313.40), CYCLES 580:
+!     bits 0 and 1 pass anyway -- NOT TRACED.  INFERRED: the doubled
+!     index carries out of the 24-bit address (bit 0, dropped per
+!     pp.20-21) or reaches 2**23 (bit 1), where the read evidently still
+!     yields 148K24's word.
+!   I = 1..7 read X(I+8) (readIndex(idx | 8)) -> all eight FAIL halt at
+!     their first block (I4822 SEN 010273.40, the others as above),
+!     CYCLES 214 (220 for I4828, I4829).
+!   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) -> all eight
+!     FAIL halt (PC 1416), CYCLES 204-214, SEN 0 (SIC,SEN is itself
+!     indexed by X0 -- INFERRED as in TEST 1A).
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!     19 runs PASS with the pins in run_tests.sh.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+IC248   SYN, (8)11306.0
+!
+        SLC, (8)10263.40
+! ======================================================================
+! PDF p.131, 010263.40-010317.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 0.
+I4822   LVI, $X0, I48K24
+        V+,  $X0, BIT0
+        LV,  $X1, BIT23M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 1.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT1
+        LV,  $X1, BIT22M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 2.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT2
+        LV,  $X1, BIT21M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4822
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT11
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.132, 010317.40-010353.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 3.
+I4823   LVI, $X0, I48K24
+        V+,  $X0, BIT3
+        LV,  $X1, BIT20M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 4.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT4
+        LV,  $X1, BIT19M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 5.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT5
+        LV,  $X1, BIT18M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4823
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT12
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.133, 010353.40-010407.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 6.
+I4824   LVI, $X0, I48K24
+        V+,  $X0, BIT6
+        LV,  $X1, BIT17M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 7.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT7
+        LV,  $X1, BIT16M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 8.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT8
+        LV,  $X1, BIT15M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4824
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT13
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.134, 010407.40-010443.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 9.
+I4825   LVI, $X0, I48K24
+        V+,  $X0, BIT9
+        LV,  $X1, BIT14M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 10.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT10
+        LV,  $X1, BIT13M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 11.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT11
+        LV,  $X1, BIT12M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4825
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT14
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.135, 010443.40-010477.40 (one half-word longer: a second BD,$+.32)
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 12.
+I4826   LVI, $X0, I48K24
+        V+,  $X0, BIT12
+        LV,  $X1, BIT11M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 13.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT13
+        LV,  $X1, BIT10M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 14.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT14
+        LV,  $X1, BIT9M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4826
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT15
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.136, 010500.00-010533.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 15.
+!                                     (prints no code: already aligned)
+I4827   LVI, $X0, I48K24
+        V+,  $X0, BIT15
+        LV,  $X1, BIT8M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 16.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT16
+        LV,  $X1, BIT7M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 17.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT17
+        LV,  $X1, BIT6M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4827
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT16
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.137, 010533.40-010567.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 18.
+I4828   LVI, $X0, I48K24
+        V+,  $X0, BIT18
+        LV,  $X1, BIT5M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 19.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT19
+        LV,  $X1, BIT4M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 20.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT20
+        LV,  $X1, BIT3M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4828
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT17
+        SX,  $X13, IC248
+! ======================================================================
+! PDF p.138, 010567.40-010623.00
+! ======================================================================
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 21.
+I4829   LVI, $X0, I48K24
+        V+,  $X0, BIT21
+        LV,  $X1, BIT2M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 22.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT22
+        LV,  $X1, BIT1M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        CNOP                          ! -LH IX MODIFICATION, SUBTRACT BIT 23.
+        LVI, $X0, I48K24
+        V+,  $X0, BIT23
+        LV,  $X1, BIT0M
+        NOP
+        SVA, $X0, $+.32
+        L(BU), 0($X1)
+        LX,  $X1, $R
+        KV,  $X1, I48K24
+        BXE, $+1.0
+        B,   $+1.32
+        KC,  $X1, I48K24
+        BXE, $+1.32
+        SIC, SEN                      ! -ABOVE BIT WHEN SUBTRACTED THRU IX MOD
+        B,   SERS                     ! -FAILS TO YIELD CORRECT EFFECTIVE ADR.
+        B,   $+1.0
+        BD,  I4829
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT18
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.153, 011351.00: 148K24
+! ======================================================================
+        SLC, (8)11351.0
+I48K24  XW,  (8)123456.76, (8)123456, 0
+!
+! PDF p.154, 011374.00-011423.00: BIT0M-BIT23M (the page: "XW,%8)-0.01" ...)
+        SLC, (8)11374.0
+BIT0M   XW,  -(8)0.01
+BIT1M   XW,  -(8)0.02
+BIT2M   XW,  -(8)0.04
+BIT3M   XW,  -(8)0.10
+BIT4M   XW,  -(8)0.20
+BIT5M   XW,  -(8)0.40
+BIT6M   XW,  -(8)1.0
+BIT7M   XW,  -(8)2.0
+BIT8M   XW,  -(8)4.0
+BIT9M   XW,  -(8)10.0
+BIT10M  XW,  -(8)20.0
+BIT11M  XW,  -(8)40.0
+BIT12M  XW,  -(8)100.0
+BIT13M  XW,  -(8)200.0
+BIT14M  XW,  -(8)400.0
+BIT15M  XW,  -(8)1000.0
+BIT16M  XW,  -(8)2000.0
+BIT17M  XW,  -(8)4000.0
+BIT18M  XW,  -(8)10000.0
+BIT19M  XW,  -(8)20000.0
+BIT20M  XW,  -(8)40000.0
+BIT21M  XW,  -(8)100000.0
+BIT22M  XW,  -(8)200000.0
+BIT23M  XW,  -(8)400000.0
+!
+! PDF p.191, 013054.00-013103.00: BIT0-BIT23
+        SLC, (8)13054.0
+BIT0    XW,  (8)400000.00, 0, 0
+BIT1    XW,  (8)200000.00, 0, 0
+BIT2    XW,  (8)100000.00, 0, 0
+BIT3    XW,  (8)40000.00, 0, 0
+BIT4    XW,  (8)20000.00, 0, 0
+BIT5    XW,  (8)10000.00, 0, 0
+BIT6    XW,  (8)4000.00, 0, 0
+BIT7    XW,  (8)2000.00, 0, 0
+BIT8    XW,  (8)1000.00, 0, 0
+BIT9    XW,  (8)400.00, 0, 0
+BIT10   XW,  (8)200.00, 0, 0
+BIT11   XW,  (8)100.00, 0, 0
+BIT12   XW,  (8)40.00, 0, 0
+BIT13   XW,  (8)20.00, 0, 0
+BIT14   XW,  (8)10.00, 0, 0
+BIT15   XW,  (8)4.00, 0, 0
+BIT16   XW,  (8)2.00, 0, 0
+BIT17   XW,  (8)1.00, 0, 0
+BIT18   XW,  (8).40, 0, 0
+BIT19   XW,  (8).20, 0, 0
+BIT20   XW,  (8).10, 0, 0
+BIT21   XW,  (8)0.04, 0, 0
+BIT22   XW,  (8)0.02, 0, 0
+BIT23   XW,  (8)0.01, 0, 0
+        END, I4822

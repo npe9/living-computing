@@ -689,6 +689,14 @@ if __name__ == '__main__':
     #                             misprint, where there is no halt to pin.
     #                             The checks then read mid-run state, so
     #                             pin only words the loop cannot move
+    #   ENTRY=SYMBOL           -- start at SYMBOL (a half-word-aligned
+    #                             label of the deck) instead of the END
+    #                             target: for a transcribed listing with
+    #                             several independent segments, each
+    #                             ending in its own exit (jb_ax4b routine
+    #                             148's TESTs 1 and 2, one B,SSW per
+    #                             segment), so one deck can run each
+    #                             segment from its own entry label
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -739,6 +747,13 @@ if __name__ == '__main__':
         elif spec == 'WAITIO':
             # stop on core.idle(), not core.halted(): see generate()
             wait_for_io = True
+        elif spec.startswith('ENTRY='):
+            sym = spec[6:]
+            if sym not in prog.symtab:
+                raise SystemExit(f"ENTRY= names an undefined symbol: {sym!r}")
+            if prog.symtab[sym] % 32 != 0:
+                raise SystemExit(f"ENTRY={sym} is not half-word aligned")
+            prog.end_pc = prog.symtab[sym] // 32
         elif spec.startswith('PC='):
             pc_check = int(spec[3:], 0)
         elif spec.startswith('STOPAT='):

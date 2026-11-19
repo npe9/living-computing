@@ -785,6 +785,16 @@ immediate walk), 5C/5D, 5G/5H and 5I, are transcribed too (`decks/ax4b_3_*`,
 `ax4b_4_*`, `ax4b_5*`), each bit-exact against its listing, and the model passes
 all of them: 19-bit half-word and 18-bit FP address truncation, P = 0, I = 0
 with X0 loaded, writes to X0, and four progressive-indexing codes.
+TESTs 1 and 2 followed on 2026-11-19 (`decks/ax4b_1a_*`, `ax4b_1b_*`,
+`ax4b_1c_*`, `ax4b_2a_*`, `ax4b_2b_*`, PDF pp.114-138): the I field selecting
+each of the sixteen index registers, unnormalized and normalized FP loads, VFL
+accumulator offsets 1..64 and sign-byte loads, the second-half I field
+modifying length, byte size and offset as one field (`vflSecondIndex`, with
+index bits 0-2 ignored), and a negative first-half index borrowing back through
+an SVA'd address. Each TEST is a chain of segments that each end in `B,SSW`, so
+`tests/gen_tb.py` gained `ENTRY=SYMBOL`, which starts the run at SYMBOL instead
+of the END entry; the suite runs the five decks 19 times, one per segment, and
+the model passes all 19.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

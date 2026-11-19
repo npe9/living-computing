@@ -854,10 +854,34 @@ injections.
 | `ax4b_5i_prog_ix_x0` | TEST 5I | p.152 (011270.00-011320.00), 153 | 48 | `L(BU),0` with X0 loaded and I = 0 must not use X0 |
 
 With 148's "CHECK INDEXING IMMEDIATE LOAD" and `ibox4_prog_ix_v` (5E,
-5F), routine 148's TESTs 3, 4 and 5A-5I are now all transcribed. Still
-untranscribed: TEST 1 (1A I-field selection for all sixteen index
-registers, pp.114-120; 1B/1C basic VFL, pp.121-124) and TEST 2 (2A/2B,
-full-word modification in both halves, pp.125-138).
+5F), routine 148's TESTs 3, 4 and 5A-5I are now all transcribed.
+
+**Routine 148's TESTs 1 and 2 -- TRANSCRIBED AND RUN, 2026-11-19.**
+Five more decks, same method (page image at 150 dpi, every printed
+machine-code row checked by the deck's own verifier, SSIP's SSW/SERS/
+SEN/SENO substituted at the listing's addresses). Each TEST is a chain
+of segments that each end in `B,SSW`, so one run covers one segment:
+`tests/gen_tb.py` gained `ENTRY=SYMBOL` (start at SYMBOL instead of the
+END entry) and the driver runs each deck once per segment, 19 runs in
+all. **All 19 PASS: IBM's listing and the model agree.**
+
+| deck | test | PDF pages (octal) | rows | segments | what IBM checks |
+|---|---|---|---|---|---|
+| `ax4b_1a_ifield_select` | TEST 1A | pp.114-120 (007441.00-007670.40), 152-154, 190 | 341 | I481, I483, I484, I485 | `SX,$Xn,0($Xn)` with Xn = 148DMP's address: I = n indexes by Xn, for n = 1..15; I = 0 does not index |
+| `ax4b_1b_fp_load` | TEST 1B | p.121 (007671.00-007721.00), 154, 190-191 | 53 | I486 | `L(U)`/`L(N)` of I000 (all ones), I00Z, BIT24: unnormalized loads keep bit 24 out of bits 0-23, normalized ones bring it in |
+| `ax4b_1c_vfl_basic` | TEST 1C | pp.122-125 (007721.40-010046.40), 153-154, 190-191 | 172 | I4810, I4814 | `L(BU),BITn,k` with n - k = 23 (accumulator offset 1..64); `L(B,k,k)` sign byte; lengths 16 and 32 |
+| `ax4b_2a_rhw_fullword` | TEST 2A | pp.125-130 (010047.00-010263.00), 153-154, 190-191 | 293 | I4817, I4819, I4820, I4821 | the RIGHT-half I field of a full-word VFL modifies length/BS/offset as one field |
+| `ax4b_2b_lhw_fullword` | TEST 2B | pp.131-138 (010263.40-010623.00), 153-154, 191 | 473 | I4822-I4829 | the LEFT-half I field with a negative index: SVA'd address minus bit k must be 148K24 again, k = 0..23 |
+
+Template-generated rows (1A's sixteen register blocks, 2A, 2B's eight
+groups) were each compared with the page images; that comparison found
+one error in the template itself (1A's BZRZ target, fixed in the
+verifier) and one break in IBM's pattern, transcribed as printed: p.135
+has a second `BD,$+.32` (010476.00, `10476.44 00`) in I4826's exit, so
+I4827's CNOP (010500.00, p.136) is already aligned and prints no code.
+
+Still untranscribed in routine 148: the p.113 prologue
+(007435.00-007440.00, calling IDF1/RET/DPET13 outside this routine).
 
 Two readings these pages forced, each checked in the Reference Manual's
 page image: SIC "is executed if and only if the associated branching is
@@ -1651,7 +1675,7 @@ reverse index (source -> transcription/implementation).
 | `ja_ax1a_ibox-1.pdf` (60pp) | I-Box 1 diagnostic | Source | RUN: `ibox1_wen_ven_indicators`, `ibox1_wen_ven_original_addresses`, `ibox1_sic_cb_cbz`, `ibox1_p43_p51_span` (20 groups, pp.43-51); bit-exact vs `verify_ibox1_listing.py` |
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
-| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
+| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass; and TESTs 1A, 1B, 1C, 2A, 2B (`ax4b_1a_ifield_select`, `ax4b_1b_fp_load`, `ax4b_1c_vfl_basic`, `ax4b_2a_rhw_fullword`, `ax4b_2b_lhw_fullword`, PDF pp.114-138, 19 segment runs, bit-exact, all pass; only the p.113 prologue of routine 148 is untranscribed); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
