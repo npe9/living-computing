@@ -18,6 +18,8 @@ typedef Bit#(8)  RegNo;
 
 interface PimKL1B;
   method Action load(Bit#(12) a, Word w);
+  method Action loadHeap(Bit#(12) a, Word w);
+  method Action setReg(RegNo r, Word w);
   method Action start(Word entry);
   method Action step();
   method Bool halted();
@@ -55,6 +57,8 @@ module mkPimKL1B(PimKL1B);
   endfunction
 
   method Action load(Bit#(12) a, Word w) = mem.upd(a, w);
+  method Action loadHeap(Bit#(12) a, Word w) = heap.upd(a, w);
+  method Action setReg(RegNo r, Word w) = regs.upd(r, w);
 
   method Action start(Word entry) if (!run);
     pcR <= entry;

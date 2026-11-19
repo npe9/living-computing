@@ -19,19 +19,20 @@ module mkPimKL1BTb(Empty);
 
   function Word prog(Bit#(3) i);
     case (i)
-      0: return {8'h23, 32'h13050100};  // set_variable 5, r1
-      1: return {8'h23, 32'hb4010000};  // read_variable r1
-      2: return {8'h23, 32'h34010300};  // put_value r1, r3
+      0: return {8'h23, 32'hb4010000};  // read_variable r1 (REF 0 -> heap[0])
+      1: return {8'h23, 32'h34010300};  // put_value r1, r3
       default: return {8'h23, 32'h60000000};  // proceed
     endcase
   endfunction
 
-  rule load if (idx < 4);
+  rule load if (idx < 3);
     pu.load(zeroExtend(idx), prog(truncate(idx)));
     idx <= idx + 1;
   endrule
 
-  rule start if (idx == 4 && !started);
+  rule start if (idx == 3 && !started);
+    pu.loadHeap(0, {8'h02, 24'h0, 8'h07});  // heap[0] = int 7
+    pu.setReg(1, {8'h03, 24'h0, 8'h00});    // r1 = REF 0
     pu.start(0);
     started <= True;
   endrule
@@ -43,7 +44,7 @@ module mkPimKL1BTb(Empty);
   rule check if (pu.halted());
     Word r3 = pu.readReg(3);
     $display("r3=%h", r3);
-    if (r3 == {8'h01, 24'h0, 8'h05})
+    if (r3 == {8'h02, 24'h0, 8'h07})
       $display("PimKL1BTb: PASS");
     else
       $display("PimKL1BTb: FAIL");
