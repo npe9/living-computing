@@ -64,6 +64,16 @@ for instruction:
 frame-relative loads, and `CALL -0x29a`, because Plan 9's pseudo-register
 names are not its syntax)
 
+**There are no registers to decode.** The machine is memory-to-memory
+(PRM §1.4, printed p. 1-4: "general purpose registers are eliminated";
+the stack cache "appears as normal memory"), and the 5-bit `R` fields of
+Tables 1-15/1-18 are **stack offsets scaled by 4** (p. 1-22). That is
+why `0x60c2` (src 6, dst 2) is `MOV argv+4(FP), R8` — 2x4 = R8 — and
+`0x60a1` (src 5, dst 1) is `MOV argc+0(FP), R4`, and why the first
+instruction's field `0x0bfc` is `FP-4` with FP = 0xC00 and its
+destination `0x3004`/`0x4008` is `_clock`.  The loader and the core
+therefore need no register file: every operand is a memory word.
+
 That fixes **text at 0x1020 and little-endian 16-bit parcels**.  It does
 *not* fix the placement rule: `zl/span.c`'s `xspan` lays instructions out
 compactly (`c += p->mark`) and pads only `JMP`/`RETURN` (`rnd(c, AMOD)`)
