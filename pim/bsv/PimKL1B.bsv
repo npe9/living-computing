@@ -15,8 +15,8 @@
 // add, subtract, multiply, divide, modulo, equal, not_equal,
 // wait_value, wait_constant, wait_list, wait_integer, execute,
 // enqueue_goal, suspend, proceed, halt.
-// Anything else -- including get_constant, which needs the goal-record
-// argument area in memory -- halts loudly rather than being skipped
+// Anything else -- including the structure reads and
+// get_structured_constant -- halts loudly rather than being skipped
 // (AGENTS.md, "execute partially, document the rest").
 //
 // Semantics note.  put_/write_/get_/read_ follow the TR-246 p. 7 images.
