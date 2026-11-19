@@ -85,6 +85,7 @@ module mkPimKL1B(PimKL1B);
         8'h33: regs.upd(b, {tagVar, 24'h0, a});   // put_variable r, r
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
+        8'h24: begin heap.upd(hp, {tagVar, 24'h0, a}); hp <= hp + 1; end  // write_variable
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
         8'ha4: if (deref(regs.sub(a)) != deref(regs.sub(b)))        // wait_value
                  haltR <= True;
