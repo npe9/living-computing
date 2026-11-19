@@ -35,6 +35,7 @@ module mkPimKL1B(PimKL1B);
   Reg#(Bool) run   <- mkReg(False);
   Reg#(Bool) haltR <- mkReg(False);
   Reg#(Bit#(12)) hp <- mkReg(0);
+  Reg#(Bit#(8)) narg <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
@@ -55,6 +56,7 @@ module mkPimKL1B(PimKL1B);
     Bit#(8)  op  = val[31:24];
     Bit#(8)  a   = val[23:16];
     Bit#(8)  b   = val[15:8];
+    Bit#(8)  c   = val[7:0];
     if (tag == 8'h23) begin
       case (op)
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
@@ -64,6 +66,7 @@ module mkPimKL1B(PimKL1B);
         8'hbc: regs.upd(b, regs.sub(a));          // get_value r, r
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
+        8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h60: haltR <= True;                     // proceed
         8'h71: haltR <= True;                     // halt
         default: haltR <= True;                   // unimplemented: stop loud
@@ -71,7 +74,11 @@ module mkPimKL1B(PimKL1B);
     end else begin
       haltR <= True;
     end
-    pcR <= pcR + 1;
+    if (op == 8'h61 && tag == 8'h23) begin
+      pcR <= zeroExtend((b << 8) | c);
+    end else begin
+      pcR <= pcR + 1;
+    end
   endmethod
 
   method Bool halted() = haltR;
