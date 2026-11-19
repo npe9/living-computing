@@ -92,3 +92,7 @@ run_bench PimKL1BArgSlotTb ./sim_kl1bargslot
 "$BSC" -sim -g mkPimKL1BSwitchTb -u PimKL1BSwitchTb.bsv
 "$BSC" -sim -e mkPimKL1BSwitchTb -o sim_kl1bswitch
 run_bench PimKL1BSwitchTb ./sim_kl1bswitch
+
+"$BSC" -sim -g mkPimKL1BNoopTb -u PimKL1BNoopTb.bsv
+"$BSC" -sim -e mkPimKL1BNoopTb -o sim_kl1bnoop
+run_bench PimKL1BNoopTb ./sim_kl1bnoop
