@@ -130,6 +130,25 @@ Atom operands are a special case: `encode_code_1` writes
 (wait_atom), `0x23C0|Reg` (get_atom), `0x2323` (write_atom), `0x23B3`
 (read_atom), each followed by the atom name.
 
+The kernel's first module has its code from word 333 to 3343 (the
+module ends at 3343). Disassembling the tail with the table in
+`kl1_encoding.md` gives, for example:
+
+```
+write_marked_value r10
+write_marked_value r6
+write_variable r8
+write_value r15
+get_bound_value r3, r13
+set_value 1, r20
+set_value 2, r21
+```
+
+Opcodes `0x3a` and `0x3d` appear in this image but are commented out in
+the 1992 `inst_tab.kl1` (`put_vector_2`, etc.), so the 1994 binary uses
+a slightly larger instruction set than the 1992 table. That is a real
+version difference, not a decode error.
+
 ## What a loader needs
 
 1. Parse the `.sav` header and modules.
