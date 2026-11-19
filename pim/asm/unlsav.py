@@ -107,31 +107,32 @@ def parse_module(r):
     mlen = (r.rd() << 16) | r.rd()
     module_end = mod_start + mlen
     gc = r.rd()
-    # The GCSize field counts the module's own elements, but the stream
-    # also carries the module/package name atoms; parse terms until the
-    # predicate-table marker rather than trusting the count.
+    # decode_module_name: module atom, package atom
+    mod_name = parse_term(r)
+    pkg_name = parse_term(r)
+    # decode_module_info: MagicNum (integer), InfoVec (vector)
+    magic = parse_term(r)
+    info = parse_term(r)
+    # decode_GC_area: terms until the 0x1000 end marker
     gc_terms = []
     while r.peek() != 0x1000:
         gc_terms.append(parse_term(r))
-    tag = r.rd()
+    r.rd()  # 0x1000
     hs = r.rd()
     entries = r.rd()
-    # The predicate table is a variable-length hash table; its exact walk
-    # is not yet transcribed.  Find the code by the first aligned
-    # [VAL1, VAL2, 0x0023] triple and disassemble from there.
+    # decode_entry_table: [atom, Arity, Loc1, Loc2]
     preds = []
-    w = r.w
-    start = None
-    for p in range(r.i, module_end - 6):
-        if w[p] == 0x0023 and w[p + 3] == 0x0023 and w[p + 6] == 0x0023:
-            start = p - 2
-            break
-    if start is None:
-        raise ValueError('no aligned code triples after predicate table')
-    r.i = start
+    for _ in range(entries):
+        aid, name = read_atom_name(r)
+        arity = r.rd()
+        loc = (r.rd() << 16) | r.rd()
+        preds.append((name, arity, loc))
+    # decode_code_area: [S1,S2] size, then code until 0xFFFF
+    code_size = (r.rd() << 16) | r.rd()
     code = []
     while r.i + 2 < module_end:
-        if 0x2300 <= w[r.i] <= 0x23ff:
+        t = r.peek()
+        if 0x2300 <= t <= 0x23ff:
             tag = r.rd()
             aid, name = read_atom_name(r)
             code.append(('atom', tag, name))
@@ -139,11 +140,11 @@ def parse_module(r):
             v1 = r.rd()
             v2 = r.rd()
             tag = r.rd()
-            if tag not in (0x0023, 0x0022):
+            if tag == 0xffff:
                 break
             code.append(('inst', (v1 << 16) | v2, tag))
     r.i = module_end
-    return mlen, gc_terms, hs, preds, code
+    return mlen, (mod_name, pkg_name, magic, info), gc_terms, hs, preds, code
 
 
 def disasm(item, ops):
@@ -199,12 +200,15 @@ def main():
     ops = load_opcodes()
     for m in range(nmod):
         try:
-            mlen, gc_terms, hs, preds, code = parse_module(r)
+            mlen, names, gc_terms, hs, preds, code = parse_module(r)
         except (IndexError, ValueError) as e:
             print('\nmodule %d: stopped at word %d (%s)' % (m, r.i, e))
             break
-        print('\nmodule %d: length=%d hash=%d preds=%d code=%d'
-              % (m, mlen, hs, len(preds), len(code)))
+        mod_name, pkg_name, magic, info = names
+        mn = mod_name[2] if mod_name[0] == 'atom' else str(mod_name)
+        pn = pkg_name[2] if pkg_name[0] == 'atom' else str(pkg_name)
+        print('\nmodule %d: %s/%s length=%d hash=%d preds=%d code=%d'
+              % (m, pn, mn, mlen, hs, len(preds), len(code)))
         for t in gc_terms[:4]:
             print('  gc: %s' % (str(t)[:90],))
         for p in preds[:4]:
