@@ -1,0 +1,475 @@
+! ax4b_1a_ifield_select.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113: "TEST1. BASIC TESTS
+! INCLUDING I FIELD INDEX SELECTION ..."), TEST 1A "I-FLD IX SELN.":
+!
+!   PDF p.114  007441.00-007475.00  I481, I482: IX 0, 1, 2
+!   PDF p.115  007475.40-007500.40  IX 2 (end)
+!   PDF p.116  007501.00-007534.40  IX 3, exit, I483: IX 4, 5
+!   PDF p.117  007535.00-007570.40  IX 6, 7, exit, I484: IX 8
+!   PDF p.118  007571.00-007624.40  IX 9, 10, 11, exit
+!   PDF p.119  007625.00-007654.40  I485: IX 12, 13, 14
+!   PDF p.120  007655.00-007670.40  IX 15, exit
+!   PDF p.152  011310.00-011320.00  148S1 (clear all IX regs), 148S2
+!   PDF p.153  011320.40-011340.40  CNOP, 148K0-148K15
+!   PDF p.153  011372.00            148ER1
+!   PDF p.154  011373.00            148DMP
+!   PDF p.190  013036.00            100VO
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_1a_ifield_select_listing.py.
+!
+! WHAT IT TESTS (IBM's code, unchanged).  148Kn is not a constant but an
+! INSTRUCTION, "SX,$Xn,148DMP" (p.153); "LX,$Xn,148Kn" loads that
+! half-word pair as an index word, so Xn's value is 148DMP's address
+! with Xn's own number in the low bits (11373.01 for X0 ... 11373.37
+! for X15).  Then, for each n:
+!   148S1 clears all sixteen index registers; LX,$Xn,148Kn; Z,148DMP;
+!   SX,$Xn,0($Xn)    I = n: the effective address is Xn's value, i.e.
+!                    148DMP -- the store must land there (BZRZ: 148DMP
+!                    nonzero), "NO IX MODIFICATION WHEN I FIELD IS n."
+! IX 0 is the exception: all sixteen registers are loaded, and
+!   SX,$X0,0($X0)    0.01 10 -- I = 0 means NO indexing, so the store
+!                    goes to word 0, not 148DMP, and 148DMP must stay
+!                    ZERO (BRZ), "IX MODIFICATION WHEN I FIELD IS 0."
+! A failure halts at SERS (below) with SIC's link in SEN; IBM's own code
+! would then store 100VO into 148ER1 ("STORE ERROR INDICATOR"), which
+! later tests read; on a pass 148ER1 stays as I481 cleared it.
+!
+! FOUR SEGMENTS.  Each group of four (I482: IX 0-3, I483: 4-7, I484:
+! 8-11, I485: 12-15) ends in its own "B,SSW" (TO SSIP).  With SSW a PASS
+! halt, one run covers one group, so the driver runs this deck four
+! times: from END (I481) and with ENTRY=I483, I484, I485 (gen_tb.py's
+! ENTRY=, added for these segments).  Each group's continuity rows after
+! its B,SSW are transcribed and verified but never run.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the error entry on a failure.
+!   * IC248 and BIT0-BIT3 are SYN'd from the printed "LX,$X13,IC248"
+!     (11306.32 10) and "V+,$X13,BITk" (13054.32 B0 ... 13057.32 B0);
+!     the continuity rows that name them are never run.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..,
+!     I00VO), as for every ax4b label (docs/listing_typography.md).  The
+!     listing's second NOP of each pair is printed indented; STRAP
+!     ignores that.  Nothing else changed.
+!
+! RESULT, 2026-11-19: every segment halts at SSW (PASS, PC 1410) with
+! SEN = 0.  The driver compares PC, SEN, CYCLES and the pins listed in
+! tests/run_tests.sh; CYCLES is MODEL BEHAVIOUR, not IBM's timing.
+! SEN, on a failure, is SIC's link: the half-word after the "B,SERS" that
+! was taken, so it names the failing check.
+! MODEL INJECTIONS, OBSERVED (each built in its own scratch copy of
+! stretch/bsv/, all 19 segment runs of TESTs 1-2 repeated; the
+! worktree's bsv/ was never edited):
+!   effAddrSigned reads index register (idx & 7), so I = 8..15 index by
+!     X0..X7 -> I484 FAIL halt, SEN 007570.00 (IX 8's B,SERS), CYCLES
+!     318, 148DMP 0; I485 FAIL halt, SEN 007634.00 (IX 12), CYCLES 318.
+!     I481 and I483 (IX 0-7) PASS, as they must; none of the other
+!     runs of these five decks moves.
+!   I = 0 indexed by X0 (effAddrSigned's idx == 0 case removed) ->
+!     I481 FAIL halt (PC 1416), 148DMP 0, CYCLES 613; SEN stays 0 --
+!     INFERRED, not dumped: SIC,SEN (I = 0) is then itself indexed by X0
+!     and stores elsewhere, as in ax4b_5i_prog_ix_x0.
+!   I = 1..7 read X(I+8) (readIndex(idx | 8)) -> I481 FAIL halt, SEN
+!     007470.00 (IX 1's B,SERS), CYCLES 880; I483 FAIL halt, SEN
+!     007524.00 (IX 4), CYCLES 318.
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!     19 runs PASS with the pins in run_tests.sh.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248, BIT0-BIT3: SYN from the printed continuity rows (never run).
+IC248   SYN, (8)11306.0
+BIT0    SYN, (8)13054.0
+BIT1    SYN, (8)13055.0
+BIT2    SYN, (8)13056.0
+BIT3    SYN, (8)13057.0
+!
+! ======================================================================
+! PDF p.114, 007441.00-007475.00 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)7441.0
+!                                     -TEST1A I-FLD IX SELN.
+I481    Z,   I48ER1                   ! -CLEAR ERROR INDICATOR REGISTER.
+I482    SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 0.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X0, I48K0
+        LX,  $X1, I48K1
+        LX,  $X2, I48K2
+        LX,  $X3, I48K3
+        LX,  $X4, I48K4
+        LX,  $X5, I48K5
+        LX,  $X6, I48K6
+        LX,  $X7, I48K7
+        LX,  $X8, I48K8
+        LX,  $X9, I48K9
+        LX,  $X10, I48K10
+        LX,  $X11, I48K11
+        LX,  $X12, I48K12
+        LX,  $X13, I48K13
+        LX,  $X14, I48K14
+        LX,  $X15, I48K15
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X0, 0($X0)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BRZ, $+2.32
+        SIC, SEN                      ! -IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 0.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 1.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X1, I48K1
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X1, 0($X1)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 1.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 2.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X2, I48K2
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X2, 0($X2)
+        NOP
+        NOP
+! ---- PDF p.115, 007475.40-007500.40 ----
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 2.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+! ---- PDF p.116, 007501.00-007534.40 ----
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 3.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X3, I48K3
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X3, 0($X3)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 3.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        B,   $+1.0
+        BD,  I482
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT0
+        SX,  $X13, IC248
+I483    SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 4.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X4, I48K4
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X4, 0($X4)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 4.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 5.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X5, I48K5
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X5, 0($X5)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 5.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+! ---- PDF p.117, 007535.00-007570.40 ----
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 6.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X6, I48K6
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X6, 0($X6)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 6.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 7.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X7, I48K7
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X7, 0($X7)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 7.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        B,   $+1.0
+        BD,  I483
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT1
+        SX,  $X13, IC248
+I484    SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 8.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X8, I48K8
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X8, 0($X8)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 8.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+! ---- PDF p.118, 007571.00-007624.40 ----
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 9.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X9, I48K9
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X9, 0($X9)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 9.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 10.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X10, I48K10
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X10, 0($X10)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 10.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 11.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X11, I48K11
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X11, 0($X11)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 11.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        B,   $+1.0
+        BD,  I484
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT2
+        SX,  $X13, IC248
+! ---- PDF p.119, 007625.00-007654.40 ----
+I485    SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 12.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X12, I48K12
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X12, 0($X12)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 12.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 13.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X13, I48K13
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X13, 0($X13)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 13.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 14.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X14, I48K14
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X14, 0($X14)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 14.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+! ---- PDF p.120, 007655.00-007670.40 ----
+        SIC, I48S2                    ! -CHK I-FLD SELN FOR IX 15.
+        B,   I48S1                    ! -GO CLEAR ALL INDEX REGS.
+        LX,  $X15, I48K15
+        Z,   I48DMP
+        NOP
+        NOP
+        SX,  $X15, 0($X15)
+        NOP
+        NOP
+        L(BU), I48DMP
+        BZRZ, $+2.32
+        SIC, SEN                      ! -NO IX MODIFICATION WHEN
+        B,   SERS                     ! -I FIELD IS 15.
+        LX,  $X1, I00VO               ! -STORE ERROR INDICATOR.
+        SX,  $X1, I48ER1
+        B,   $+1.0
+        BD,  I485
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT3
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.152, 011310.00-011320.00: 148S1, "SUBROUTINE TO CLEAR ALL IX
+! REGS." (Z,$X2 last, as printed), and its return 148S2
+! ======================================================================
+        SLC, (8)11310.0
+I48S1   Z,   $X0                      ! -SUBROUTINE TO CLEAR
+        Z,   $X1                      ! -ALL IX REGS.
+        Z,   $X3
+        Z,   $X4
+        Z,   $X5
+        Z,   $X6
+        Z,   $X7
+        Z,   $X8
+        Z,   $X9
+        Z,   $X10
+        Z,   $X11
+        Z,   $X12
+        Z,   $X13
+        Z,   $X14
+        Z,   $X15
+        Z,   $X2
+I48S2   $B,  0
+!
+! ======================================================================
+! PDF p.153, 011320.40-011340.40: 148K0-148K15, each an instruction
+! "SX,$Xn,148DMP" and a NOP -- loaded by LX as index words
+! ======================================================================
+        CNOP
+I48K0   SX,  $X0, I48DMP
+        NOP
+I48K1   SX,  $X1, I48DMP
+        NOP
+I48K2   SX,  $X2, I48DMP
+        NOP
+I48K3   SX,  $X3, I48DMP
+        NOP
+I48K4   SX,  $X4, I48DMP
+        NOP
+I48K5   SX,  $X5, I48DMP
+        NOP
+I48K6   SX,  $X6, I48DMP
+        NOP
+I48K7   SX,  $X7, I48DMP
+        NOP
+I48K8   SX,  $X8, I48DMP
+        NOP
+I48K9   SX,  $X9, I48DMP
+        NOP
+I48K10  SX,  $X10, I48DMP
+        NOP
+I48K11  SX,  $X11, I48DMP
+        NOP
+I48K12  SX,  $X12, I48DMP
+        NOP
+I48K13  SX,  $X13, I48DMP
+        NOP
+I48K14  SX,  $X14, I48DMP
+        NOP
+I48K15  SX,  $X15, I48DMP
+        NOP
+!
+! PDF p.153 011372.00 (148ER1, "-V I SELN, C FP, R VFL.") and PDF p.154
+! 011373.00 (148DMP)
+        SLC, (8)11372.0
+I48ER1  XW,  0, 0, 0                  ! -V I SELN, C FP, R VFL.
+I48DMP  XW,  0, 0, 0
+!
+! PDF p.190, 013036.00: 100VO.  The page prints "XW,%8)-777777.77,0,0";
+! this assembler takes the sign before the radix, as ax5b_bit_table does.
+        SLC, (8)13036.0
+I00VO   XW,  -(8)777777.77, 0, 0
+        END, I481

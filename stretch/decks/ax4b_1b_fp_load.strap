@@ -1,0 +1,155 @@
+! ax4b_1b_fp_load.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113), TEST 1B "BASIC TEST OF
+! FLOATING POINT LOAD.":
+!
+!   PDF p.121  007671.00-007721.00  I486-I489: five FP loads, the FP
+!                                   error store, exit, continuity, loop
+!   PDF p.153  011372.00            148ER1
+!   PDF p.190  013034.00-013035.00  100Z ("ZERO INDX WD."), 1000
+!                                   ("INDX WD. OF ONES.")
+!   PDF p.191  013104.00            BIT24
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page image at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_1b_fp_load_listing.py.  The sheet carries pencil
+! marks beside the first two loads ("PAC"?) and "<- Pc 54" beside
+! 007703.00; they are not IBM's code and are not transcribed.
+!
+! WHAT IT TESTS (IBM's code, unchanged).  Each load is read back
+! through LX,$X1,$L (bits 0-23 of the left accumulator into X1's value):
+!   L(U),1000     unnormalized: all ones must arrive (KV vs 1000's value)
+!                 "FP UNNOR LOAD FAILS TO LOAD ALL BITS 0-24"
+!   L(U),100Z     zeros must arrive (BXVZ)  "... TO LOAD NO BITS 0-24"
+!   L(N),1000     normalized, the same all-ones check
+!   L(N),BIT24    a lone fraction bit 24 must be normalized UP into bits
+!                 0-23 (BZXVZ: X1 nonzero) "FAILS TO LOAD BIT 24 AND SET"
+!   L(U),BIT24    unnormalized it must stay out of bits 0-23 (BXVZ,I488)
+!                 "FP UNNOR LOAD ACTS LIKE A FP NOR LOAD"
+! A failure halts at SERS (below); IBM's own code would then mark the
+! count field of 148ER1 at I487 ("STORE FP ERR IND.", C+I 777777) for
+! TEST 2A to read.  I489 is the "LOOP ON TEST 1B" entry; it is never
+! reached here.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the error entry on a failure.
+!   * IC248, BIT4 and I4810 (TEST 1C's entry, 007721.40) are SYN'd from
+!     the printed "LX,$X13,IC248" (11306.32 10), "V+,$X13,BIT4"
+!     (13060.32 B0) and "BD,I4810" (7721.44 00); the rows after B,SSW
+!     are never run.
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..,
+!     I000, I00Z), as for every ax4b label (docs/listing_typography.md).
+!     Nothing else changed.
+!
+! RESULT, 2026-11-19: every segment halts at SSW (PASS, PC 1410) with
+! SEN = 0.  The driver compares PC, SEN, CYCLES and the pins listed in
+! tests/run_tests.sh; CYCLES is MODEL BEHAVIOUR, not IBM's timing.
+! SEN, on a failure, is SIC's link: the half-word after the "B,SERS" that
+! was taken, so it names the failing check.
+! MODEL INJECTIONS, OBSERVED (each built in its own scratch copy of
+! stretch/bsv/, all 19 segment runs of TESTs 1-2 repeated; the
+! worktree's bsv/ was never edited):
+!   FP loads always normalize (normalized = True) -> FAIL halt, SEN
+!     007710.40: the L(U),BIT24 check, "FP UNNOR LOAD ACTS LIKE A FP NOR
+!     LOAD"; X1 0x198000000000000, CYCLES 324.  None of the other runs of
+!     these five decks moves.
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!     19 runs PASS with the pins in run_tests.sh.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248, BIT4, I4810: SYN from the printed rows after B,SSW (never run).
+IC248   SYN, (8)11306.0
+BIT4    SYN, (8)13060.0
+I4810   SYN, (8)7721.40
+!
+! ======================================================================
+! PDF p.121, 007671.00-007721.00 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)7671.0
+I486    L(U), I000                    ! -TEST 1B BASIC TEST OF
+        LX,  $X1, $L                  ! -FLOATING POINT LOAD.
+        KV,  $X1, I000
+        BXE, $+2.0
+        SIC, SEN                      ! -FP UNNOR LOAD FAILS TO LOAD ALL
+        B,   SERS                     ! -BITS 0-24, DELETE FP IX MOD.
+        B,   I487                     ! -GO STORE ERR IND.
+!
+        L(U), I00Z
+        LX,  $X1, $L
+        BXVZ, $+2.0
+        SIC, SEN                      ! -FP UNNOR LOAD FAILS TO LOAD NO
+        B,   SERS                     ! -BITS 0-24, DELETE FP IX MOD.
+        B,   I487                     ! -GO STORE ERR IND.
+!
+        L(N), I000
+        LX,  $X1, $L
+        KV,  $X1, I000
+        BXE, $+2.0
+        SIC, SEN                      ! -FP NOR LOAD FAILS TO LOAD ALL
+        B,   SERS                     ! -BITS 0-24, DELETE FP IX MOD.
+        B,   I487                     ! -GO STORE ERR IND.
+!
+        L(N), BIT24
+        LX,  $X1, $L
+        BZXVZ, $+2.0
+        SIC, SEN                      ! -FP NOR LOAD FAILS TO LOAD BIT 24
+        B,   SERS                     ! -AND SET, DELETE FP IX MOD.
+        B,   I487                     ! -GO STORE ERR IND.
+!
+        L(U), BIT24                   ! -TEST NOR MODIFIER.
+        LX,  $X1, $L
+        BXVZ, I488
+        SIC, SEN                      ! -FP UNNOR LOAD ACTS LIKE
+        B,   SERS                     ! -A FP NOR LOAD.
+        B,   I487                     ! -GO STORE ERR IND.
+!
+I487    LX,  $X1, I48ER1              ! -STORE FP ERR IND.
+        C+I, $X1, (8)777777
+        SX,  $X1, I48ER1
+!
+I488    B,   $+1.0
+        BD,  I489
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT4
+        SX,  $X13, IC248
+        BD,  I4810
+!
+I489    LX,  $X1, I48ER1              ! -LOOP ON TEST 1B, CLR ERR IND.
+        Z,   $X0
+        V+,  $X0, $X1
+        SX,  $X0, I48ER1
+        B,   I486
+!
+! PDF p.153, 011372.00: 148ER1 ("-V I SELN, C FP, R VFL.")
+        SLC, (8)11372.0
+I48ER1  XW,  0, 0, 0                  ! -V I SELN, C FP, R VFL.
+!
+! PDF p.190, 013034.00-013035.00: "COMMON CONSTANTS FOR FETCH ONLY"
+        SLC, (8)13034.0
+I00Z    XW,  0, 0, 0, 0               ! -ZERO INDX WD.
+I000    (8)DD(BU,64,8), 1777777777777777777777  ! -INDX WD. OF ONES.
+!
+! PDF p.191, 013104.00: BIT24
+        SLC, (8)13104.0
+BIT24   (8)DD(BU), 0000000010000000000000
+        END, I486

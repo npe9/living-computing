@@ -253,8 +253,11 @@ invalid address, DF on fetch-type VFL, FP M+ store-type):
 the unindexed immediate walk (PDF pp.143-145), is now transcribed and
 passes (`decks/ax4b_5b_immediate_unindexed.strap`), with routine 148's
 TESTs 3, 4, 5A, 5C/5D, 5G/5H and 5I (inventory, "The rest of routine
-148's TESTs 3-5"). Next IBM candidates on this line: 148's TEST 1
-(pp.114-124) and TEST 2 (pp.125-138), then jb_ax5b.
+148's TESTs 3-5"). 148's TEST 1 (pp.114-125) and TEST 2 (pp.125-138)
+followed 2026-11-19: five decks, 19 segment runs via gen_tb.py's
+`ENTRY=`, all pass (inventory, "Routine 148's TESTs 1 and 2"). Left in
+routine 148: the p.113 prologue (calls IDF1/RET/DPET13). Next IBM
+candidate on this line: jb_ax5b.
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's

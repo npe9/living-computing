@@ -11356,6 +11356,117 @@ run "IBOX-4 routine 148 TESTs 5G/5H progressive V-IC, V-ICR, ON THE MODEL" ./run
     "X2:addrIndex(2)=0x29cbb80000000000" \
     STEPS=2000000 CYCLES=500+-0
 
+# ---- routine 148's TESTs 1 and 2 (2026-11-19) ----
+# Each TEST is a chain of segments that each end in "B,SSW" (SSIP's
+# return, here a PASS halt), so each deck runs once per segment:
+# from its END entry and with gen_tb.py's ENTRY=SYMBOL.  On a failure
+# SEN holds SIC's link, the half-word after the B,SERS taken.  CYCLES is
+# MODEL BEHAVIOUR.  The OBSERVED model injections (each in its own
+# scratch copy of bsv/, all 19 runs repeated, plus a CONTROL that
+# passes all 19) are in each deck's header; summarized per deck below.
+run "IBOX-4 routine 148 TEST 1A I-field selection, bit-exact (jb_ax4b PDF pp.114-120, 152-154, 190)" python3 verify_ax4b_1a_ifield_select_listing.py
+# "SX,$Xn,0($Xn)" with Xn = 148DMP's address must store into 148DMP for
+# I = 1..15 and must NOT index for I = 0.  Pins: 148ER1 (4858) stays 0,
+# 148DMP (4859) = the last register's 148Kn word.  Injection: index
+# register (idx & 7) -> I484 FAIL SEN 007570.00 (IX 8), I485 FAIL SEN
+# 007634.00 (IX 12); I = 1..7 read X(I+8) -> I481 FAIL SEN 007470.00
+# (IX 1), I483 FAIL SEN 007524.00 (IX 4); I = 0 indexed by X0 -> I481
+# FAIL halt (SEN 0, INFERRED: SIC,SEN itself indexed).
+run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I482: IX 0-3)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI481Tb \
+    PC=1410 "SEN:712=0" "ER1:4858=0" "DMP:4859=0x4bec71000001800" \
+    "X3:addrIndex(3)=0x4bec71000001800" \
+    STEPS=2000000 CYCLES=1449+-0
+run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I483: IX 4-7)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI483Tb \
+    ENTRY=I483 PC=1410 "SEN:712=0" "ER1:4858=0" "DMP:4859=0x4becf1000001800" \
+    STEPS=2000000 CYCLES=1157+-0
+run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I484: IX 8-11)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI484Tb \
+    ENTRY=I484 PC=1410 "SEN:712=0" "ER1:4858=0" "DMP:4859=0x4bed71000001800" \
+    STEPS=2000000 CYCLES=1157+-0
+run "IBOX-4 routine 148 TEST 1A I-field selection, ON THE MODEL (I485: IX 12-15)" ./run_program.sh ../decks/ax4b_1a_ifield_select.strap StretchAx4b1AI485Tb \
+    ENTRY=I485 PC=1410 "SEN:712=0" "ER1:4858=0" "DMP:4859=0x4bedf1000001800" \
+    STEPS=2000000 CYCLES=1157+-0
+
+run "IBOX-4 routine 148 TEST 1B FP load, bit-exact (jb_ax4b PDF pp.121, 154, 190-191)" python3 verify_ax4b_1b_fp_load_listing.py
+# L(U)/L(N) of I000, I00Z, BIT24.  Pins: 148ER1 0, X1 as the last
+# LX,$X1,$L left it (0x8000000000).  Injection: FP
+# loads always normalize -> FAIL SEN 007710.40, the L(U),BIT24 check.
+run "IBOX-4 routine 148 TEST 1B FP load, ON THE MODEL" ./run_program.sh ../decks/ax4b_1b_fp_load.strap StretchAx4b1BTb \
+    PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0x8000000000" \
+    STEPS=2000000 CYCLES=340+-0
+
+run "IBOX-4 routine 148 TEST 1C basic VFL, bit-exact (jb_ax4b PDF pp.122-125, 153-154, 190-191)" python3 verify_ax4b_1c_vfl_basic_listing.py
+# I4810: L(BU),BITn,k with n - k = 23 (offsets 1..64); I4814: L(B) sign
+# byte, lengths 16 and 32.  Injection: VFL offset forced to 0 -> I4810
+# FAIL SEN 007724.40 (offset 1); byte size always 8 -> I4814 FAIL SEN
+# 007770.00.
+run "IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4810: offsets)" ./run_program.sh ../decks/ax4b_1c_vfl_basic.strap StretchAx4b1CI4810Tb \
+    PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0x10000000000" \
+    STEPS=2000000 CYCLES=408+-0
+run "IBOX-4 routine 148 TEST 1C basic VFL, ON THE MODEL (I4814: sign byte, lengths)" ./run_program.sh ../decks/ax4b_1c_vfl_basic.strap StretchAx4b1CI4814Tb \
+    ENTRY=I4814 PC=1410 "SEN:712=0" "ER1:4858=0" "X1:addrIndex(1)=0xfffc00000000000" \
+    STEPS=2000000 CYCLES=792+-0
+
+run "IBOX-4 routine 148 TEST 2A right-half I of a full word, bit-exact (jb_ax4b PDF pp.125-130, 153-154, 190-191)" python3 verify_ax4b_2a_rhw_fullword_listing.py
+# X1 = BITk modifies length/BS/offset as one field (index bit 3 at
+# instruction bit 35; bits 0-2 ignored).  Injections: second-half I
+# dropped -> all four segments FAIL (I4817 SEN 010111.40); the index
+# field misaligned by three bits (index bit 0 on instruction bit 35) ->
+# all four FAIL, I4817 at SEN 010067.40 (the bit-32 "NO CHANGE" check);
+# offset forced to 0 -> I4820 FAIL 010207.40, I4821 010235.40; byte
+# size always 8 -> I4819 FAIL 010161.40, I4820 010173.40.
+run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4817: bits 32-36)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4817Tb \
+    PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x3fffc0000000ffff" \
+    STEPS=2000000 CYCLES=756+-0
+run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4819: bits 37-41)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4819Tb \
+    ENTRY=I4819 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x400000000001" \
+    STEPS=2000000 CYCLES=722+-0
+run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4820: bits 42-46)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4820Tb \
+    ENTRY=I4820 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x10000000000" \
+    STEPS=2000000 CYCLES=658+-0
+run "IBOX-4 routine 148 TEST 2A right-half I, ON THE MODEL (I4821: bits 47-50)" ./run_program.sh ../decks/ax4b_2a_rhw_fullword.strap StretchAx4b2AI4821Tb \
+    ENTRY=I4821 PC=1410 "SEN:712=0" "X2:addrIndex(2)=0x10000000000" \
+    STEPS=2000000 CYCLES=535+-0
+
+run "IBOX-4 routine 148 TEST 2B left-half I of a full word, bit-exact (jb_ax4b PDF pp.131-138, 153-154, 191)" python3 verify_ax4b_2b_lhw_fullword_listing.py
+# SVA puts 148K24's address + bit k into L(BU),0($X1), X1 = -(bit k):
+# the load must be 148K24, k = 0..23.  Pins: X0 = the segment's last
+# address, X1 = 148K24's word.  Injection: a negative index adds -> all
+# eight FAIL (I4822 at bit 2, SEN 010313.40; the others at their first
+# block); I = 1..7 read X(I+8) -> all eight FAIL at their first block;
+# I = 0 indexed by X0 -> all eight FAIL halt.
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4822: bits 0-2)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4822Tb \
+    PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x24ba400000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4823: bits 3-5)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4823Tb \
+    ENTRY=I4823 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x8ba400000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4824: bits 6-8)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4824Tb \
+    ENTRY=I4824 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x53a400000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4825: bits 9-11)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4825Tb \
+    ENTRY=I4825 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ca400000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4826: bits 12-14)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4826Tb \
+    ENTRY=I4826 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4bc400000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4827: bits 15-17)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4827Tb \
+    ENTRY=I4827 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba800000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4828: bits 18-20)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4828Tb \
+    ENTRY=I4828 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba480000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+run "IBOX-4 routine 148 TEST 2B left-half I, ON THE MODEL (I4829: bits 21-23)" ./run_program.sh ../decks/ax4b_2b_lhw_fullword.strap StretchAx4b2BI4829Tb \
+    ENTRY=I4829 PC=1410 "SEN:712=0" "X0:addrIndex(0)=0x4ba410000000000" \
+    "X1:addrIndex(1)=0x29cbbe029cb80000" \
+    STEPS=2000000 CYCLES=612+-0
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the

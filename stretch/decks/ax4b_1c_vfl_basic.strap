@@ -1,0 +1,332 @@
+! ax4b_1c_vfl_basic.strap -- jb_ax4b "I-BOX 4", routine 148 (1248,
+! "INDEX MODIFICATION TEST", banner PDF p.113), TEST 1C "BASIC TEST OF
+! VFL LOAD, BS, OFFSET, AND LENGTH.":
+!
+!   PDF p.122  007721.40-007752.40  I4810 (offsets 1-64), I4811
+!   PDF p.123  007753.00-010010.00  I4812 exit, I4813 loop, I4814
+!                                   (sign; BS = length = 1..5)
+!   PDF p.124  010010.40-010045.40  BS = length = 6..8, lengths 16 and
+!                                   32, I4815, I4816 exits
+!   PDF p.125  010046.00-010046.40  the last two continuity rows
+!   PDF p.153  011341.00-011350.00  148K16-148K23
+!   PDF p.153  011372.00            148ER1
+!   PDF p.190  013035.00            1000 ("INDX WD. OF ONES.")
+!   PDF p.191  013056.00-013143.00  BIT2, BIT4, BIT23-BIT27, BIT31
+!   PDF p.192  013123.00, 013143.00 BIT39, BIT55
+!
+! No printed page numbers on these sheets: cited by PDF page and octal
+! location.  Read from the page images at 150 dpi; checked row for row
+! against the printed machine code by
+! tests/verify_ax4b_1c_vfl_basic_listing.py.
+!
+! WHAT IT TESTS (IBM's code, unchanged).
+!   I4810: "L(BU),BITn,k" for (n, k) = (24,1), (25,2), (27,4), (31,8),
+!     (39,16), (55,32), (23,64): a 64-bit unsigned VFL load of BITn's
+!     word (one bit set, bit n) with ACCUMULATOR OFFSET k.  n - k = 23
+!     every time, so the bit must come to rest in bit 23 of $R -- inside
+!     the 24 bits "LX,$X1,$R" reads, and BZXVZ finds it nonzero --
+!     and, for k = 64, in bit 23 of $L (LX,$X1,$L).  READING: the offset
+!     moves the field left in the accumulator from its right end; the
+!     Reference Manual's VFL chapter is the authority, this pairing of
+!     n and k is IBM's own evidence for it.  BZXVZ checks NONZERO only:
+!     a field landing elsewhere in bits 0-23 would pass too.
+!   I4814: "L(B),1000" (signed, all ones) must give a negative result
+!     (BRN: the sign byte is ones).  "L(B,k,k),148K(15+k)", k = 1..8:
+!     byte size = length = k, so the field is ONE byte -- the sign byte
+!     -- read from a word whose top k bits are ones (400000, 600000,
+!     ... 776000): the result must be negative (BRN,$+1.0 skips the
+!     "B,$+1.0" into the failure) and zero (BRZ,$+2.0).  Then lengths
+!     16 and 32 of 1000 (all ones): LX,$X0,$R, then SR (refill, bits
+!     46-63) resp. SC (count, bits 28-45) of X0 into X1's value, which
+!     KV / BXH must find above BIT2's value (16 ones in the refill)
+!     resp. BIT4's (14 ones in the count).
+! A failure halts at SERS (below); IBM's own code would then set the
+! refill of 148ER1 (I4811 / I4815, "STORE ERROR IND.", LRI 777777)
+! for TEST 2A to read.  I4813 is the "LOOP, CLR ERR IND." entry; it is
+! never reached here.
+!
+! TWO SEGMENTS.  I4810-I4812 ends in "B,SSW" at 007754.40, and
+! I4814-I4816 in another at 010044.40, so the driver runs this deck
+! twice: from END (I4810) and with ENTRY=I4814 (gen_tb.py).  Their
+! continuity rows after B,SSW are transcribed and verified, never run.
+!
+! SUBSTITUTIONS (not on these pages):
+!   * SSIP's entry points: SSW (001301.00) is a PASS halt, SERS
+!     (001304.00) a FAIL halt, SEN/SENO (001310.00/001311.00) data words
+!     SIC stores into.  The addresses are the listing's own (B,SSW
+!     prints "1301.10 00", B,SERS "1304.10 00", SIC,SEN "1310.00 80",
+!     SIC,SENO+.32 "1311.40 80"); the contents are SSIP's, which is not
+!     transcribed.  SIC "is executed if and only if the associated
+!     branching is successful" (Reference Manual printed p.41, PDF 44),
+!     so SEN stays 0 on a pass and names the error entry on a failure.
+!   * IC248, BIT5, BIT6 and I4817 (TEST 2A's entry, 010047.00) are
+!     SYN'd from the printed "LX,$X13,IC248" (11306.32 10),
+!     "V+,$X13,BIT5" (13061.32 B0), "V+,$X13,BIT6" (13062.32 B0) and
+!     "BD,I4817" (10047.04 00); the rows that name them run only after
+!     B,SSW, i.e. never.
+!   * The comment "OFFSET OF 1 FADS." is the page's own (sic).
+!   * Notation only: the page's "%" and the box glyph are "(" and ")";
+!     the label glyph the scan shows as "1" is the letter I (I48..,
+!     I000), as for every ax4b label (docs/listing_typography.md).
+!     Nothing else changed.
+!
+! RESULT, 2026-11-19: every segment halts at SSW (PASS, PC 1410) with
+! SEN = 0.  The driver compares PC, SEN, CYCLES and the pins listed in
+! tests/run_tests.sh; CYCLES is MODEL BEHAVIOUR, not IBM's timing.
+! SEN, on a failure, is SIC's link: the half-word after the "B,SERS" that
+! was taken, so it names the failing check.
+! MODEL INJECTIONS, OBSERVED (each built in its own scratch copy of
+! stretch/bsv/, all 19 segment runs of TESTs 1-2 repeated; the
+! worktree's bsv/ was never edited):
+!   VFL accumulator offset forced to 0 (offSh = 0) -> I4810 FAIL halt,
+!     SEN 007724.40 (the first check, L(BU),BIT24,1), X1 0x8000000000,
+!     CYCLES 119.  (Also fails 2A I4820/I4821, the offset bits.)
+!   byte size always 8 (effByteSize ignores BS) -> I4814 FAIL halt, SEN
+!     007770.00, X1 0, CYCLES 169 (the L(B,k,k) sign-byte loads).  (Also
+!     fails 2A I4819, I4820.)
+!   CONTROL: the unmodified model in the same scratch arrangement: all
+!     19 runs PASS with the pins in run_tests.sh.
+!
+! ---- SSIP's entry points: SUBSTITUTES (not on these pages) -----------
+        SLC, (8)1301.0
+SSW     BEW, $                        ! SUBSTITUTE: PASS (the return to SSIP)
+        SLC, (8)1304.0
+SERS    BEW, $                        ! SUBSTITUTE: FAIL (SSIP's error report)
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0                ! SUBSTITUTE: SIC's error link word
+SENO    DD(BU,64,8), 0                ! SUBSTITUTE: SIC's other link word
+!
+! IC248, BIT5, BIT6, I4817: SYN from the printed rows after B,SSW.
+IC248   SYN, (8)11306.0
+BIT5    SYN, (8)13061.0
+BIT6    SYN, (8)13062.0
+I4817   SYN, (8)10047.0
+!
+! ======================================================================
+! PDF p.122, 007721.40-007752.40 (no printed page number on the sheet)
+! ======================================================================
+        SLC, (8)7721.40
+I4810   L(BU), BIT24, 1               ! -TEST 1C BASIC TEST OF VFL
+        LX,  $X1, $R                  ! -LOAD, BS, OFFSET, AND LENGTH.
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 1 FADS.
+        B,   I4811
+!
+        L(BU), BIT25, 2
+        LX,  $X1, $R
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 2 FAILS.
+        B,   I4811
+!
+        L(BU), BIT27, 4
+        LX,  $X1, $R
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 4 FAILS.
+        B,   I4811
+!
+        L(BU), BIT31, 8
+        LX,  $X1, $R
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 8 FAILS.
+        B,   I4811
+!
+        L(BU), BIT39, 16
+        LX,  $X1, $R
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 16 FAILS.
+        B,   I4811
+!
+        L(BU), BIT55, 32
+        LX,  $X1, $R
+        BZXVZ, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 32 FAILS.
+        B,   I4811
+        L(BU), BIT23, 64
+        LX,  $X1, $L
+        BZXVZ, I4812
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH OFFSET OF 64 FAILS.
+I4811   LX,  $X0, I48ER1              ! -STORE ERROR IND.
+        LRI, $X0, (8)777777
+        SX,  $X0, I48ER1
+!
+! ======================================================================
+! PDF p.123, 007753.00-010010.00
+! ======================================================================
+I4812   B,   $+1.0
+        BD,  I4813
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT5
+        SX,  $X13, IC248
+        BD,  I4814
+!
+I4813   LX,  $X0, I48ER1              ! -LOOP, CLR ERR IND.
+        LRI, $X0, 0
+        SX,  $X0, I48ER1
+        B,   I4810
+!
+I4814   L(B), I000                    ! -TEST VFL BS AND FLD LENGTH.
+        BRN, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL SIGN MOD FAILS.
+        B,   I4815
+!
+        L(B,1,1), I48K16
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 1, FLD
+        B,   SERS                     ! -LNGTH 1, FAILS
+        B,   I4815
+!
+        L(B,2,2), I48K17
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 2, FLD
+        B,   SERS                     ! -LENGTH 2, FAILS.
+        B,   I4815
+!
+        L(B,3,3), I48K18
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 3, FLD
+        B,   SERS                     ! -LENGTH 3, FAILS.
+        B,   I4815
+!
+        L(B,4,4), I48K19
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD BS 4, FLD
+        B,   SERS                     ! -LENGTH 4, FAILS.
+        B,   I4815
+!
+        L(B,5,5), I48K20
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 5, FLD
+        B,   SERS                     ! -LENGTH 5, FAILS.
+        B,   I4815
+!
+! ======================================================================
+! PDF p.124, 010010.40-010045.40
+! ======================================================================
+        L(B,6,6), I48K21
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 6, FLD
+        B,   SERS                     ! -LENGTH 6, FAILS.
+        B,   I4815
+!
+        L(B,7,7), I48K22
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 7, FLD
+        B,   SERS                     ! -LENGTH 7, FAILS.
+        B,   I4815
+!
+        L(B,8,8), I48K23
+        BRN, $+1.0
+        B,   $+1.0
+        BRZ, $+2.0
+        SIC, SEN                      ! -VFL LOAD, BS 8, FLD
+        B,   SERS                     ! -LENGTH 8, FAILS.
+        B,   I4815
+!
+        L(BU,16,8), I000
+        LX,  $X0, $R
+        SR,  $X0, $X1
+        KV,  $X1, BIT2
+        BXH, $+2.0
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH LENGTH 16 FAILS.
+        B,   I4815
+!
+        L(BU,32,8), I000
+        LX,  $X0, $R
+        SC,  $X0, $X1
+        KV,  $X1, BIT4
+        BXH, I4816
+        SIC, SEN
+        B,   SERS                     ! -VFL LOAD WITH LENGTH 32 FAILS.
+!
+I4815   B,   $+1.0
+        BD,  I4814
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT6
+        SX,  $X13, IC248
+        LX,  $X0, I48ER1
+        LRI, $X0, (8)777777
+        SX,  $X0, I48ER1
+        BD,  I4817
+!
+I4816   B,   $+1.0
+        BD,  I4814
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, IC248              ! -UPDATE CONTINUITY CHECK.
+! ---- PDF p.125, 010046.00-010046.40 ----
+        V+,  $X13, BIT6
+        SX,  $X13, IC248
+!
+! ======================================================================
+! PDF p.153, 011341.00-011350.00: 148K16-148K23; 011372.00: 148ER1
+! ======================================================================
+        SLC, (8)11341.0
+I48K16  XW,  (8)400000.00, 0, 0
+I48K17  XW,  (8)600000.00, 0, 0
+I48K18  XW,  (8)700000.00, 0, 0
+I48K19  XW,  (8)740000.00, 0, 0
+I48K20  XW,  (8)760000.00, 0, 0
+I48K21  XW,  (8)770000.00, 0, 0
+I48K22  XW,  (8)774000.00, 0, 0
+I48K23  XW,  (8)776000.00, 0, 0
+        SLC, (8)11372.0
+I48ER1  XW,  0, 0, 0                  ! -V I SELN, C FP, R VFL.
+!
+! PDF p.190, 013035.00: 1000 ("INDX WD. OF ONES.")
+        SLC, (8)13035.0
+I000    (8)DD(BU,64,8), 1777777777777777777777  ! -INDX WD. OF ONES.
+!
+! PDF p.191, 013056.00 and 013060.00: BIT2, BIT4; 013103.00-013113.00:
+! BIT23-BIT27 and BIT31 (BIT26, BIT28-BIT30 between them are not used)
+        SLC, (8)13056.0
+BIT2    XW,  (8)100000.00, 0, 0
+        SLC, (8)13060.0
+BIT4    XW,  (8)20000.00, 0, 0
+        SLC, (8)13103.0
+BIT23   XW,  (8)0.01, 0, 0
+BIT24   (8)DD(BU), 0000000010000000000000
+BIT25   XW,  0, 0, 0, 4
+        SLC, (8)13107.0
+BIT27   XW,  0, 0, 0, 1
+        SLC, (8)13113.0
+BIT31   XW,  0, 16384, 0
+!
+! PDF p.192, 013123.00 and 013143.00: BIT39, BIT55
+        SLC, (8)13123.0
+BIT39   XW,  0, 64, 0
+        SLC, (8)13143.0
+BIT55   XW,  0, 0, 256
+        END, I4810
