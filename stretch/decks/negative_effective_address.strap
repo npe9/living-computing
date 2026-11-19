@@ -127,10 +127,6 @@
 ! OPERATION"); the run ended and the PC read 0.  FIXED 2026-11-18
 ! (StretchExecute branchAddrInvalid, decks/branch_invalid_address.strap):
 ! the table above was measured BEFORE that fix and was not re-measured.
-! Under it, injections 1, 2 and 6 would no longer end the run at a
-! wrapped branch target -- the branch sets AD and falls through to the
-! "fell through" path (RF/RG/RL = 3) and the later checks run; the
-! failure SETS stay non-empty, the clock counts would differ.
 !
         SLC, (8)300.0
 START   LX,  $X1, XM1                ! -(8)2000.0     (1024 words)

@@ -223,6 +223,9 @@
 !   32 either."  So for cases 2, 3, 6 and 7 the OBSERVABLE is right
 !   (no IF, no AD, exactly as p.50 requires) while neither rule is
 !   actually implemented.  A later AD implementation would break it.
+!   (2026-11-18: branch AD IS implemented now, in the branch arms only
+!   -- StretchExecute.branchAddrInvalid -- and the EX subject path does
+!   not ask it, so these cases are unaffected; the suite stayed green.)
 !
 !   Cases 4-5, a second level in a register, last level in main.
 !   SATISFIED.  resume()'s "one level per clock until it is not an

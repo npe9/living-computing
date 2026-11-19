@@ -545,7 +545,9 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # indicator [AD]" and p.32 says an AD address "cannot actuate any of
 # the address alarm indicators".  Seeing it needs control actually at
 # words 1-3 -- the boundary registers themselves -- whose contents
-# would then execute.  The model does not raise AD there either.
+# would then execute.  (Since 2026-11-18 the model raises AD for a branch
+# below 32 -- decks/branch_invalid_address.strap -- and suppresses it
+# before this IF test, so the guard is still unwitnessed.)
 
 run "Clause 1's DS survives a protected branch target (p.52)" ./run_program.sh ../decks/df_bb_if_ds.strap StretchDfBbIfDsTb \
     "PC=4186"          # 004055.00; hand-written from the manual, no deck oracle
@@ -11606,9 +11608,9 @@ run "EX: the subject location's address alarm, and p.50's below-32 carve-out" ./
 # indicators": for a BRANCH below 32 the machine raises AD INSTEAD of
 # IF.  For an EXECUTE below 32 it raises NEITHER, because p.50 says the
 # subject may occupy any addressable location, so there is no invalid
-# address to report.  The two coincide today only because this model
-# does not raise AD for a low branch either.  A later AD implementation
-# must not reach for this guard.
+# address to report.  Since 2026-11-18 the branch arms raise AD for a low
+# branch (StretchExecute.branchAddrInvalid) and this EX guard does not ask
+# that predicate -- which is what keeps the two apart.
 #
 # THE CARRIED ALARM IS OR-ED ACROSS LEVELS, NOT OVERWRITTEN, and
 # injection I4 is the one that catches the difference.
@@ -12948,9 +12950,9 @@ run "I-Box 5 routine 1262 head and TEST 1A: EX across three memories (jb_ax5b PD
 # transcriber corrected in their own draft rather than leaving.  For
 # cases 2/3/6/7 the observable is correct -- no IF, no AD, as p.50
 # requires -- while NEITHER rule is implemented: ifViolates' `a >= 32`
-# guard exists for p.45's AD reason, and the two agree only because
-# this model does not raise AD for a low branch either.  A later AD
-# implementation would break it.
+# guard exists for p.45's AD reason.  (Branch AD is built since
+# 2026-11-18, in the branch arms only; the EX subject path does not ask
+# it, so these cases stayed green.)
 #
 # THE ROUTINE HEADER IS WRONG TWICE, not once.  Already known: it calls
 # TEST 3 "THE ILLEGAL COMBINATIONS OF EX AND EXIC" where 3A and 3B are

@@ -240,6 +240,10 @@ STILL OPEN, each its own change:
   target is protected; the EXE paths set no IF.
 * A CBR whose AD-suppressed branch had a refill still reads the refill
   word (and, as before, sets no DF from it): unprinted, MEMREADS counts it.
+* StretchCore's guessed-branch recovery (`recover <= h.target`) uses the
+  target computed at the guess; execute() checks the target it
+  recomputes.  If the index moved between the two, nothing checks the
+  guess-time target for validity.  No program is known to do that.
 * negative_effective_address.strap's injection table predates this fix
   (its header says so); not re-measured.
 * The smoke test's program (bsv/StretchSmoke.bsv) used to end by falling
@@ -4154,8 +4158,9 @@ before claiming a block is untranscribed.**
 4. **`ifSignal`'s `a >= 32` guard is unwitnessed**, and its injection
    survived. Testing it needs a taken branch to words 1-3, whose
    contents would then execute — and those are the boundary registers
-   that define the monitored area. The model also does not raise AD
-   for a low branch (p.45), so the case is doubly unmodelled.
+   that define the monitored area. (Since 2026-11-18 the model raises
+   AD for a low branch, p.45, and suppresses it before the IF test, so
+   the guard stays unwitnessed: "A BRANCH TO AN INVALID ADDRESS".)
 
 **THIS ITEM USED TO SAY `jb_ax5b` ROUTINE 1268 WAS "the only known
 deck test of them". That was a misreading, and it is corrected.**
