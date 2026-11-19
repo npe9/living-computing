@@ -36,6 +36,10 @@ module mkPimKL1B(PimKL1B);
   Reg#(Bool) haltR <- mkReg(False);
   Reg#(Bit#(12)) hp <- mkReg(0);
   Reg#(Bit#(8)) narg <- mkReg(0);
+  RegFile#(Bit#(3), Word) gcode <- mkRegFileFull;
+  RegFile#(Bit#(3), Word) gnext <- mkRegFileFull;
+  Reg#(Bit#(3)) rqfp <- mkReg(7);
+  Reg#(Bit#(3)) gp <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
@@ -67,15 +71,24 @@ module mkPimKL1B(PimKL1B);
         8'h25: begin heap.upd(hp, regs.sub(a)); hp <= hp + 1; end  // write_value
         8'hbd: regs.upd(b, heap.sub(regs.sub(a)[11:0]));           // get_bound_value
         8'h61: narg <= a;                          // execute: jump to label (b:c)
-        8'h60: haltR <= True;                     // proceed
+        8'h63: begin                                // enqueue_goal N, label
+          gcode.upd(gp, zeroExtend((b << 8) | c));
+          gnext.upd(gp, zeroExtend(rqfp));
+          rqfp <= gp;
+          gp <= gp + 1;
+        end
+        8'h60: if (rqfp == 7) haltR <= True;      // proceed: empty queue halts
         8'h71: haltR <= True;                     // halt
         default: haltR <= True;                   // unimplemented: stop loud
       endcase
     end else begin
       haltR <= True;
     end
-    if (op == 8'h61 && tag == 8'h23) begin
+    if (tag == 8'h23 && op == 8'h61) begin
       pcR <= zeroExtend((b << 8) | c);
+    end else if (tag == 8'h23 && op == 8'h60 && rqfp != 7) begin
+      pcR <= gcode.sub(rqfp);
+      rqfp <= truncate(gnext.sub(rqfp));
     end else begin
       pcR <= pcR + 1;
     end

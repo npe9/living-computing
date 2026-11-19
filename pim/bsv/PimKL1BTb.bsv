@@ -20,11 +20,11 @@ module mkPimKL1BTb(Empty);
   function Word prog(Bit#(3) i);
     case (i)
       0: return {8'h23, 32'h14070100};  // set_value 7, r1
-      1: return {8'h23, 32'h61020004};  // execute 2, label 4
-      2: return {8'h23, 32'h14090200};  // set_value 9, r2 (skipped)
-      3: return {8'h23, 32'h60000000};  // proceed
+      1: return {8'h23, 32'h63010004};  // enqueue_goal 1, label 4
+      2: return {8'h23, 32'h14090200};  // set_value 9, r2
+      3: return {8'h23, 32'h60000000};  // proceed -> goal at 4
       4: return {8'h23, 32'h34010300};  // put_value r1, r3
-      default: return {8'h23, 32'h60000000};  // proceed
+      default: return {8'h23, 32'h60000000};  // proceed -> empty -> halt
     endcase
   endfunction
 
@@ -47,8 +47,8 @@ module mkPimKL1BTb(Empty);
     Word r2 = pu.readReg(2);
     Word r3 = pu.readReg(3);
     $display("r1=%h r2=%h r3=%h", r1, r2, r3);
-    if (r1 == {8'h02, 24'h0, 8'h07} && r3 == {8'h02, 24'h0, 8'h07}
-        && r2 != {8'h02, 24'h0, 8'h09})
+    if (r1 == {8'h02, 24'h0, 8'h07} && r2 == {8'h02, 24'h0, 8'h09}
+        && r3 == {8'h02, 24'h0, 8'h07})
       $display("PimKL1BTb: PASS");
     else
       $display("PimKL1BTb: FAIL");
