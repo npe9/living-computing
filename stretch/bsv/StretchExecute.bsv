@@ -96,6 +96,7 @@ import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
 import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
 import StretchCvtBox::*;       // CvtReq/CvtRsp/mkCvtBox: the radix converter (DCV)
 import StretchVflBox::*;       // VflReq/VflRsp/mkVflBox: the VFL arithmetic box
+import StretchFpBox::*;        // FpReq/FpRsp/mkFpBox: the floating-point box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
 import StretchVFL::*;
@@ -1750,6 +1751,13 @@ typedef struct {
   // p.93's "further processing of the division is suspended" as
   // structure: nothing is sent.
   Maybe#(DivReq) divReq;
+  // NOT A WRITE EITHER: the floating-point box's request (2026-11-19,
+  // plan §1c step 5f), exactly as divReq is the divider's.  `*`, `D*`
+  // and `*+` report here the multiply they need (mkFpBox,
+  // StretchFpBox.bsv); execute() bails on it with NeedBox when it has no
+  // answer, and on the re-run hands the answer in as fpArithClass's
+  // `fpAns`.  commitFp ignores it.
+  Maybe#(FpReq) fpReq;
 } FpCommit deriving (Bits, Eq, FShow);
 
 // THE FLOATING-POINT VIEW OF LOCATION 8, both directions (Reference
@@ -1814,7 +1822,8 @@ function Tuple2#(Word64, FpCommit)
                               remainder: tagged Invalid,
                               leftZerosCount: tagged Invalid,
                               store: tagged Invalid,
-                              divReq: tagged Invalid };
+                              divReq: tagged Invalid,
+                              fpReq: tagged Invalid };
     Bool isST   = (c == fpop_ST);
     Bool isSRD  = (c == fpop_SRD);
     Bool isSLO  = (c == fpop_SLO);
@@ -2172,7 +2181,7 @@ function Tuple2#(Word64, FpCommit)
                  Word64 accS, Word64 accR0, Word64 factor0,
                  Bool normalized, Bool noisy,
                  Bool protViol, Word64 operandW, Word64 ind0,
-                 Tuple2#(Bit#(49), Bit#(49)) divQR);
+                 Tuple2#(Bit#(49), Bit#(49)) divQR, FpRsp fpAns);
     Word64 ind = ind0;
     // LOCATION 8 AS THE OPERAND.  Reference Manual printed p.80: "in
     // floating-point instructions when address 8 is used as the
@@ -2192,7 +2201,8 @@ function Tuple2#(Word64, FpCommit)
                               remainder: tagged Invalid,
                               leftZerosCount: tagged Invalid,
                               store: tagged Invalid,
-                              divReq: tagged Invalid };
+                              divReq: tagged Invalid,
+                              fpReq: tagged Invalid };
     FpNum opnd0 = fpFromWord(operand);
     FpNum opnd = fpApplySignMods(opnd0, absSign, invSign);
     ind = setBit(ind, ind_TF, opnd0.flags[2]);
@@ -2546,7 +2556,14 @@ function Tuple2#(Word64, FpCommit)
         end
       end
       fpop_STAR: begin // *
-        FpResult r = fpMul(acc, opnd, normalized, noisy);
+        // THE MULTIPLY IS THE FP BOX'S (2026-11-19, StretchFpBox.bsv):
+        // `fpAns` is its answer, the whole of what fpMul returned, and
+        // fpReq is what it is asked.  On the evaluation that produces the
+        // request fpAns is zeros and everything below is DISCARDED by
+        // execute(), which bails before committing (the divide's shape).
+        fpc.fpReq = tagged Valid (tagged FpMul FpMulReq { a: acc, b: opnd,
+                      normalized: normalized, noisy: noisy, dbl: False });
+        FpResult r = fpRspSingle(fpAns);
         fpc.accLeft = tagged Valid fpAccLeft(r.res, accL);
         fpc.accSign = tagged Valid fpSignByte(r.res, accS);
         ind = setBit(ind, ind_MOP, 0);
@@ -2717,7 +2734,10 @@ function Tuple2#(Word64, FpCommit)
         // only IBM 108-127 and the sign byte. Manual-only until a
         // later block loads the low half with DL and multiplies.
         Word64 accR = accR0;
-        FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
+        // The product is the FP box's, as for `*` above.
+        fpc.fpReq = tagged Valid (tagged FpMul FpMulReq { a: acc, b: opnd,
+                      normalized: normalized, noisy: noisy, dbl: True });
+        FpdResult r = fpRspDouble(fpAns);
         fpc.accLeft = tagged Valid fpdAccLeft(r.res);
         fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         fpc.accSign = tagged Valid sbWith(accS, r.res.sign, r.res.flags);
@@ -2771,7 +2791,11 @@ function Tuple2#(Word64, FpCommit)
         // unnormalized throughout the addition", and noisy's
         // one-bits enter "during the left shifting associated
         // with normalization" of the sum.
-        FpdResult m = fpMulDouble(opnd, ftv, False, False);
+        // The product is the FP box's (StretchFpBox.bsv), unnormalized as
+        // p.99 says; the addition below is still this arm's.
+        fpc.fpReq = tagged Valid (tagged FpMul FpMulReq { a: opnd, b: ftv,
+                      normalized: False, noisy: False, dbl: True });
+        FpdResult m = fpRspDouble(fpAns);
         FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
         fpc.accLeft = tagged Valid fpdAccLeft(r.res);
         fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
@@ -2980,13 +3004,19 @@ typedef struct {
 // FOUR SINCE 2026-11-18: the VFL ARITHMETIC BOX (StretchVflBox.bsv,
 // mkVflBox), vflIntOp's datapath moved out class by class; stage 1 is
 // the binary multiply of `*` and `*+`.  An arm that asked it takes
-// `vflOf(boxResult)`.  boxKindOf's Bit#(2) is now full: a fifth box
-// needs it widened, in mkEBox's `boxKind` too.
+// `vflOf(boxResult)`.
+//
+// FIVE SINCE 2026-11-19: the FLOATING-POINT BOX (StretchFpBox.bsv,
+// mkFpBox), fpArithClass's datapath moved out class by class; stage 1 is
+// the multiply of `*`, `D*` and `*+`.  An arm that asked it takes
+// `fpOf(boxResult)`.  boxKindOf is Bit#(3) for it, and mkEBox's
+// `boxKind` with it.
 typedef union tagged {
   DivReq BoxDiv;
   DecReq BoxDec;
   CvtReq BoxCvt;
   VflReq BoxVfl;
+  FpReq  BoxFp;
 } BoxReq deriving (Bits, Eq, FShow);
 
 typedef union tagged {
@@ -2994,7 +3024,13 @@ typedef union tagged {
   DecRsp RspDec;
   CvtRsp RspCvt;
   VflRsp RspVfl;
+  FpRsp  RspFp;
 } BoxRsp deriving (Bits, Eq, FShow);
+
+function Maybe#(FpRsp) fpOf(Maybe#(BoxRsp) r);
+  if (r matches tagged Valid (tagged RspFp .d)) return tagged Valid d;
+  else return tagged Invalid;
+endfunction
 
 function Maybe#(VflRsp) vflOf(Maybe#(BoxRsp) r);
   if (r matches tagged Valid (tagged RspVfl .d)) return tagged Valid d;
@@ -3021,12 +3057,13 @@ function Bit#(7) cvtSigDigits(Bit#(128) dig);
 endfunction
 
 // Which box a request is for: 0 the divider, 1 the decimal adder, 2 the
-// radix converter, 3 the VFL arithmetic box.
-function Bit#(2) boxKindOf(BoxReq r);
+// radix converter, 3 the VFL arithmetic box, 4 the floating-point box.
+function Bit#(3) boxKindOf(BoxReq r);
   case (r) matches
     tagged BoxDec .*: return 1;
     tagged BoxCvt .*: return 2;
     tagged BoxVfl .*: return 3;
+    tagged BoxFp  .*: return 4;
     default:          return 0;
   endcase
 endfunction
@@ -8136,14 +8173,22 @@ function ActionValue#(ExecDispatch)
           Tuple2#(Bit#(49), Bit#(49)) divQR = tuple2(0, 0);
           if (divOf(boxResult) matches tagged Valid .b)
             divQR = tuple2(b.q[48:0], {1'b0, b.rem});
+          // THE MULTIPLIES GO ROUND TWICE TOO, since 2026-11-19: `*`,
+          // `D*` and `*+` come back carrying fpcA.fpReq, and bail on it
+          // the same way for the FP box (StretchFpBox.bsv), whose answer
+          // goes in as fpAns.
+          FpRsp fpAns = fromMaybe(unpack(0), fpOf(boxResult));
           let {indAr, fpcA} = fpArithClass(c, fp.absSign, fp.invSign, ea, acc,
                                            accL, accS, st.readAccRight(),
                                            st.readFactor(),
                                            normalized, noisy,
                                            protViolates(st, ea),
-                                           prefetch[0], ind, divQR);
+                                           prefetch[0], ind, divQR, fpAns);
           if (fpcA.divReq matches tagged Valid .rq &&& !isValid(divOf(boxResult))) begin
             needsBox  = tagged Valid (tagged BoxDiv rq);
+            needsRead = tagged Valid 0;
+          end else if (fpcA.fpReq matches tagged Valid .rq &&& !isValid(fpOf(boxResult))) begin
+            needsBox  = tagged Valid (tagged BoxFp rq);
             needsRead = tagged Valid 0;
           end else begin
             ind = indAr;
@@ -8640,7 +8685,10 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // THE VFL ARITHMETIC BOX (StretchVflBox.bsv), the fourth, 2026-11-18:
   // boxKind 3.
   VflBox                   vflBox        <- mkVflBox;
-  Reg#(Bit#(2))            boxKind       <- mkReg(0);
+  // THE FLOATING-POINT BOX (StretchFpBox.bsv), the fifth, 2026-11-19:
+  // boxKind 4, which is why boxKind is three bits wide.
+  FpBox                    fpBox         <- mkFpBox;
+  Reg#(Bit#(3))            boxKind       <- mkReg(0);
   Reg#(Bool)               boxWait       <- mkReg(False);
   Reg#(Bit#(32))           boxT0         <- mkReg(0);
 
@@ -8685,6 +8733,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
           tagged BoxVfl .d: vflBox.request(d);
+          tagged BoxFp  .d: fpBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;
@@ -8714,6 +8763,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                 || (boxWait ? (boxKind == 1 ? decBox.responseReady()
                                                : boxKind == 2 ? cvtBox.responseReady()
                                                : boxKind == 3 ? vflBox.responseReady()
+                                               : boxKind == 4 ? fpBox.responseReady()
                                                               : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
@@ -8795,6 +8845,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       rbox = tagged Valid (boxKind == 1 ? tagged RspDec decBox.response()
                          : boxKind == 2 ? tagged RspCvt cvtBox.response()
                          : boxKind == 3 ? tagged RspVfl vflBox.response()
+                         : boxKind == 4 ? tagged RspFp fpBox.response()
                                         : tagged RspDiv divBox.response());
       // `boxWait` is cleared below, in the arms of the dispatch that do
       // not ask for a box again -- ONE write per arm.  Clearing it here
@@ -9013,6 +9064,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
           tagged BoxDec .d: decBox.request(d);
           tagged BoxCvt .d: cvtBox.request(d);
           tagged BoxVfl .d: vflBox.request(d);
+          tagged BoxFp  .d: fpBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
         boxWait <= True;

@@ -24,6 +24,27 @@ accumulate.
 
 
 
+## ONE PARALLEL-UNIT MULTIPLIER, NOT TWO -- open, 2026-11-19
+
+`mkVflBox` (VFL binary `*`/`*+`, plan §1c step 5e) and `mkFpBox` (FP `*`,
+`D*`, `*+`, step 5f) each hold a 48 x 12 multiplier at twelve bits a
+clock. Buchholz printed p.208 (PDF 233) puts both in ONE parallel unit:
+"Operations on the floating-point fraction and also variable-field-length
+binary multiply and divide operations are performed by the parallel
+unit." The model keeps two boxes because each was moved out of a different
+function. Merging them (one box, two request kinds, or the FP box taking
+the VFL request) is structure only and changes no timing while only one
+instruction is ever in the E-box. `mkDivBox` (the divides) is the same
+unit by p.208 too; decide the three together.
+
+The FP box's HOLD COST (eleven unpinned halt clocks later by +4 to +84,
+the table in plan §1c step 5f) is the overlap item (2) of the next
+section: a consumer right behind a multiply now waits for the box's
+answer. It shrinks with the box (measured at 2 and 1 clocks); the
+mechanism was not traced on a multiply, and Problem 3.4 Method 1's
+non-linear scaling (+84 / +60 / +1 at 4 / 2 / 1 box clocks) and F216B
+(+63, not run at other rates) are unexplained.
+
 ## THE BINARY ADD'S BOX HOLD -- a known residual, 2026-11-19
 
 The binary VFL `+`/`+MG` sum is in `mkDecBox`'s binary mode (plan §1c step

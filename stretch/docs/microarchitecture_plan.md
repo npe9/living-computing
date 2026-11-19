@@ -5838,6 +5838,94 @@ Staged, each step green and committed:
      BOX HOLD". Line counts: `vflIntOp` 2176 / 747 -> 2200 / 754, because
      the arm gains its ask branch; `connectiveOp` 332 / 136 and `execute()`
      1519 / 391 are unchanged.
+   - **5f (2026-11-19): `fpArithClass`'s datapath into a box, stage 1 --
+     the multiply.** `mkFpBox` (StretchFpBox.bsv) is the fifth box behind
+     the `NeedBox` bail (`BoxReq.BoxFp`, `boxKind` 4, so `boxKind` and
+     `boxKindOf` are now three bits; `fpOf(boxResult)`), instantiated
+     once in `mkEBox`, with `mkVflBox`'s shape. Stage 1 moves the three
+     inlined 48 x 48 -> 96 multipliers and their normalizers: `*`
+     (fpMul), `D*` and the product of `*+` (fpMulDouble). StretchFP.bsv
+     splits each into `fpMulProd` / `fpMulDoubleProd`, which take the
+     product as an argument; the box forms the product twelve multiplier
+     bits a pass and applies them, and fpMul / fpMulDouble remain only as
+     the one-step reference its testbench checks against. The arm sets
+     `FpCommit.fpReq`; execute() bails on it as on `divReq`, and the
+     answered re-run hands the answer in as `fpAns`. THE RATE IS
+     SOURCED, as in 5e: Buchholz printed p.208 (PDF 233), FP fraction
+     work in the parallel unit; p.210 (PDF 235), "12 bits of the
+     multiplier are handled in one cycle"; p.211 (PDF 236), "the four
+     cycles"; and Perf. Char. Vol. 1 Table 2 (printed p.3-3, PDF 21),
+     `*` and `D*` "4 cycles (norm. <= 6)" of execution. So the box takes
+     4 clocks. The instruction's time is unchanged: eboxClocks' 9 for
+     `*`/`D*` (Table 2's 5 + 4) and 20 for `*+`, with the box's clocks
+     taken off it in rl_exec_resume as for every box; no `OVERRAN`
+     report in the suite.
+     Verified: `tests/run_fpbox_test.sh`, 11 vectors bit for bit against
+     the one-step reference, two literal fractions, the literal clock
+     count 4, and four injections whose OBSERVED failure sets are in the
+     box header (shift by 11: all but the zero multiplier; top bit of
+     each group dropped: all but 7 and 8; a/b swapped into the result
+     functions: only 9 and 10; an extra idle pass: all 11 on clocks). The
+     shift-by-11 injection in the real file (reversed, confirmed with
+     cmp) also fails the transcribed diagnostic decks that reach the box
+     through the core: jb_af1c F214A (`*`), F214D (`*` indicators) and
+     F216B (`*+`) each fail on SEN and PC (the error stop, half-word
+     1416, instead of PASS). Full suite green, no pin and no value moved.
+     **TIMING: eleven unpinned halt clocks moved, all later; read counts
+     identical in all 366 halt reports** (`STRETCH_HALT_REPORT=1`
+     against a batch48 7590ec8 baseline run the same day):
+
+     | run | before | after | delta |
+     |---|---|---|---|
+     | ZM's normalized term and exponent bound | 146 | 158 | +12 |
+     | ZM on the DOUBLE multiply | 146 | 158 | +12 |
+     | Every FP operation but MULTIPLY clears ZM | 526 | 566 | +40 |
+     | FP multiply indicators (F214D) | 887 | 911 | +24 |
+     | FP multiply and add sign and modifiers (F216B) | 711 | 774 | +63 |
+     | FP multiply and add indicators (F216D) | 806 | 834 | +28 |
+     | Buchholz B.3, matrix multiplication | 973 | 982 | +9 |
+     | C22-6578 Problem 3.3 Method 1 | 1471 | 1475 | +4 |
+     | C22-6578 Problem 3.3 Method 3 | 1414 | 1487 | +73 |
+     | C22-6578 Problem 3.4 Method 1 | 1449 | 1533 | +84 |
+     | C22-6578 Problem 3.4 Method 2 | 2378 | 2462 | +84 |
+
+     CAUSE: THE SCALING IS MEASURED, THE MECHANISM IS NOT TRACED. With
+     the box at 24 bits a pass (2 clocks, a scratch edit of
+     `FpMulGroup`, since reverted and confirmed with cmp) ZM's normalized
+     term went 146 -> 152 and Problem 3.4 Method 1 1449 -> 1509; at 48
+     bits (1 clock) 149 and 1450. So the cost comes from the hold's
+     length, the box's latency, and is not a double charge. The likely
+     mechanism is the divide box's, traced there on F217B
+     (StretchDivBox.bsv header): the old combinational arm wrote the
+     product and the indicators in the clock the instruction left the
+     look-ahead, so an I-box consumer right behind it (`fp_zm_terms`'s
+     `BZB,$ZM` / `BB,$ZM` after each multiply) ran during the 9-clock
+     countdown, and now it waits for the box's answer. Five decks are
+     exactly +4 per multiply in the source (source lines, not executed
+     counts): `fp_zm_terms` and `fp_zm_terms_double` 3 each, `fp_zm_cleared`
+     10, F214D 6, F216D 7. Only `fp_zm_terms` was read for its
+     consumers. Problem 3.4 Method 1 is not linear in the box's clocks
+     (+84, +60, +1 at 4, 2 and 1), so a consumer's wait alone does not
+     explain it; F216B (+63, four `*+`) was not run at the other
+     rates. Both are open. THE ATLAS DID NOT MOVE: Perf. Char. Vol. 2's
+     FP `*`, `D*` and `*+` pages (PDF 52, 53, 57, 83, 84, 88; 960 cases,
+     a thousand back-to-back copies each), compared case by case from
+     `atlas_oracle.py --tsv`: every case's model time within 0.004 clock
+     of the baseline's. These moves are a
+     model artifact in both directions: the old numbers let a consumer
+     see a result before Table 2's four execution cycles were over, and
+     the new ones let it see the result after 4 of the instruction's 9.
+     Neither is sourced; what a dependent I-box instruction should wait
+     for is the look-ahead interlock question in docs/spec_lookahead.md,
+     and getting the overlap back is the divide box's open item
+     (`rl_prepare` in the resume clock), in `docs/NEXT.md`.
+     Line counts: `fpArithClass` 730 / 303 -> 745 / 310 (raw /
+     non-comment; the arms gained the request and the comment), and the
+     three multipliers and normalizers left the E-box rule for one 48 x 12
+     multiplier in the box. Remaining classes for later stages: the FP
+     add/subtract (fpAdd / fpAddDouble, including `*+`'s sum), the square
+     root, and the merge with `mkVflBox` (one parallel unit, p.208;
+     `docs/NEXT.md`, "ONE PARALLEL-UNIT MULTIPLIER").
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
@@ -5927,8 +6015,8 @@ the boundary plan does not close this row.) Piccolo numbers are from
 | FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
 | stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
 | rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
-| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e; 2176 / 747 after stage 2b and **2200 / 754** after stage 3, 2026-11-19, with `connectiveOp` 332 / 136 and `execute()` 1519 / 391 counted to its `endactionvalue;`), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
-| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox` (decimal, and since 2026-11-19 the binary VFL add: the serial unit's one adder), `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e; 2176 / 747 after stage 2b and **2200 / 754** after stage 3, 2026-11-19, with `connectiveOp` 332 / 136 and `execute()` 1519 / 391 counted to its `endactionvalue;`), `fpArithClass` 730 (745 / 310 after §1c step 5f stage 1, 2026-11-19: the arms gained their box requests) | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
+| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/19: five synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox` (decimal, and since 2026-11-19 the binary VFL add: the serial unit's one adder), `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e), `mkFpBox` (FP multiply, §1c step 5f) | **differs, by prior decision** (narrowing) |
 
 **What this changes.** The plan and README item 9 both said the target
 was "stage modules communicating through FIFOs". Piccolo does not do
