@@ -1497,6 +1497,10 @@ the sources allow.
   neither.
 - Still SCAFFOLD: ITAB/STUBIF (`$IA` is not SIT), every `$FETCH`, ENTER and
   IRET for the BSS processor (stage 4), and DISP's planted STIC.
+- Verified: the full suite (check_strap2_punch, check_strap2_vletable,
+  run_tests.sh) passed in one uninterrupted run at 48f3770, "All regression
+  tests passed."; the only FAIL lines are the 4 expected UNREPRODUCED ones
+  (p359 l41/l42 literals).
 
 **Next:** (1) The output unit K NO GO waits on: which unit `$11` names
 in IPL's tables, why its MOUNT/REW bit is on, and the interrupt path
