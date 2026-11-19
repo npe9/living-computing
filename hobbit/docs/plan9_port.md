@@ -48,23 +48,39 @@ which is exactly the symbol `main` and exactly the `etext` arithmetic.
 Every shipped binary's entry falls inside that window (`echo` 0x2ad0,
 `cat` 0x12bc, `rc` 0xb9c6, `za` 0x7282, `zl` 0x995c).
 
-**The text's byte order is now pinned by two programs, with one
-anomaly left.** With that mapping and parcels read low byte first,
-`_main` starts with parcel 0x86dc in *both* `echo` and `cat`: a 3-parcel
-MOV (opcode 0x06 = `AMOV` in `zl/optab.c`), fields `0x0bfc` and the
-program's own `_clock` address (0x4008 in `echo`, 0x3004 in `cat`),
-followed by the same two 1-parcel parcels `0x60c2` and `0x60a1` — that
-is main9.s's `MOV R0, _clock(SB)` and the two frame-relative MOVs,
-linked identically into both programs. Two independent binaries agreeing
-is the oracle this step needed, and no other byte order reproduces it.
+**The text layout is settled, and `cat` is its oracle.** With the load
+rule above and parcels read low byte first, disassembling `cat`'s
+`_main` (0x12bc) reproduces `sys/src/libc/hobbit/main9p.s` instruction
+for instruction:
 
-Left open: `echo`'s `main` at 0x1020 begins with parcel 0xffff, which is
-not an opcode in `zl/optab.c` (its highest is 0x3e), while `cat`'s
-`main` at the same address begins with a plausible 1-parcel. The loader
-can be written against the `_main` rule and must then explain that
-difference; it is recorded here rather than smoothed over. `tools/p9exec.py` reports both
-orders and claims neither, and gates only what the header proves:
-`etext = main + text`, `entry = _main`, `bdata = 0x4000`.
+```text
+0x12bc  86dc 0bfc 3004   MOV  clock-4(FP), _clock(SB)   ; _clock is at 0x3004
+0x12c4  60c2             MOV  argc+0(FP), R4
+0x12c6  60a1             MOV  argv+4(FP), R8
+0x12c8  ...              CALL main(SB)  -> 0x1020
+```
+
+(our disassembler prints `MOV R20,R4` / `MOV R24,R8` for the two
+frame-relative loads, and `CALL -0x29a`, because Plan 9's pseudo-register
+names are not its syntax)
+
+The two frame loads land in R4 and R8 in `main9p.s`'s order, and the
+following pcrel call is the only branch in the stub: **text begins at
+0x1020, parcels are little-endian 16-bit halves, and each instruction is
+aligned to 4 bytes** (a 3-parcel of six bytes is followed by one
+`0x0000` filler parcel).  Whether the printed displacement lands on
+0x1020 under Plan 9's pc convention is the first thing the loader will
+check, not something to assert now.
+
+**One anomaly remains, and it is `echo` only.** `echo`'s `_main`
+(0x2ad0) begins with the same MOV to its own `_clock` (0x4008) and the
+same two frame loads, but where `cat` has the call it has parcel
+0xffff (no such opcode: `zl/optab.c`'s genops stop at 0x3e), and
+`echo`'s `main` at 0x1020 begins with 0xffff too, while `cat` at the
+same addresses is clean `main9p.s`.  Whether that is
+a linker artefact of one binary or something about `echo` itself is not
+known; the loader uses `cat` as its oracle and the difference is written
+here rather than smoothed over.
 
 ## Definition of the proof of concept
 
