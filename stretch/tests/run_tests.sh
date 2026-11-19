@@ -2491,6 +2491,21 @@ run "TAPE CONTROL: WRITE TAPE MARK writes the mark SPACE FILE finds, and advance
     "b0:326=0x0f00000000000000" "b1:327=0x0f00000000000000" \
     "b2:328=0x000000000012d687" "b3:329=0x0f00000000000000" "PC=406"
 
+# >>> LOCATE SELECTS A TAPE UNIT; UNIT READY IS THE SELECTED UNIT'S, 2026-11-19. <<<
+# Reference Manual printed p.120 (PDF 123, read in the ink): LOCATE selects
+# "one of several devices accommodated by a single channel address"; "The
+# selection address is three bits long and appears in bit positions 47
+# through 49".  Printed p.107 (PDF 110): control word bit 18, Unit Ready.
+# MCP's receptor skips a unit that is not ready (printed p.126 l.2); without
+# unit select one operator action on unit 0 cleared unit 1's MOUNT too
+# (tests/check_bss_mcp_go.py, stage 7).  TAPEREADY=1: only unit 0 ready at
+# the start; OPSIG=397,34,1: the operator readies unit 1 at WAIT1.  Expected
+# values derived before the run.  MEASURED INJECTIONS: the deck's header.
+run "TAPE CONTROL: LOCATE selects a unit, and CCW's unit-ready bit is that unit's" ./run_program.sh ../decks/io_tape_unit_ready.strap StretchTapeUnitReadyTb \
+    "TAPEREADY=1" "OPSIG=397,34,1" \
+    "c0:320=0x0000200000000000" "c1:321=0x0" "c2:322=0x0000210000000000" \
+    "c3:323=0x0000010000000000" "c4:324=0x0000210000000000" "c5:325=0x0000210000000000" "PC=418"
+
 run "MCP's ENTRY: BE into a protected word, SIC/BD interrupt entry" ./run_program.sh ../decks/be_sic_interrupt_entry.strap StretchBeSicTb "PC=4250" \
     "saved_ic:2368=149155349377587200" "entries:2369=35184372088832"
 
@@ -16066,7 +16081,7 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # and job control reaches ZJOBC1.  MEASURED: no operator stops at KCHOPN
 # (7 fail); no reel still reaches ZJOBC1 by MCP's end-of-reel path but
 # fails the six reel checks.
-run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card" python3 check_bss_mcp_go.py
+run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card; a second job card is read, announced and its TYPE card decoded" python3 check_bss_mcp_go.py
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --

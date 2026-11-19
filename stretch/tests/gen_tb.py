@@ -54,7 +54,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              pc_trail_check=None, op_trail=False,
              max_steps_check=None, stop_at_pc=None, wait_for_io=False,
              stop_at_pc_hits=1, pc_log=None, mem_reads=None,
-             operator_signal=None):
+             operator_signal=None, tape_ready=None):
     """operator_signal: optional (half-word, channel) -- THE OPERATOR AT
     A UNIT, Reference Manual printed p.116 (PDF 119, read in the ink):
     channel signal "comes on when the SIGNAL key on the unit is
@@ -67,6 +67,15 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     the unit (or presses its SIGNAL key).  The arrival is the bench's
     stand-in for the operator's reaction time; it is labelled OPERATOR
     ACTION wherever it is used.
+
+    operator_signal may also be a LIST of such actions, each taken once at
+    its own half-word's first arrival, and an action may be (half-word,
+    channel, unit): the operator readies that TAPE unit
+    (StretchIO.operatorReadyTape: the unit turns ready and CS comes on).
+
+    tape_ready: optional 8-bit mask, the tape control's units that are
+    ready at the start (StretchIO.setTapeUnitsReady; bit u = unit u).
+    None leaves the power-on state, all eight ready.
 
     pc_log: optional list of (first, last) half-word ranges; every
     change of the PC into one is displayed as "PCLOG <hw> <step>", for a
@@ -200,8 +209,10 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  Reg#(Bit#(32)) opTrailCount <- mkReg(0);")
     if pc_log:
         lines.append("  Reg#(HWordAddr) pcLogLast <- mkReg(0);")
-    if operator_signal:
-        lines.append("  Reg#(Bool) opSigDone <- mkReg(False);")
+    if operator_signal and not isinstance(operator_signal, list):
+        operator_signal = [operator_signal]
+    for k, _a in enumerate(operator_signal or []):
+        lines.append(f"  Reg#(Bool) opSigDone{k} <- mkReg(False);")
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     if mem_dump:
         lines.append("  Reg#(Bit#(32)) dumpI <- mkReg(0);")
@@ -316,6 +327,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     # afterRun.  `run` still fires once per clock and still counts, so
     # `stepCount` -- which every CYCLES bound and window asserts on --
     # keeps counting core clocks 1:1.
+    if tape_ready is not None:
+        lines.append(f"    core.io.setTapeUnitsReady({tape_ready & 0xff});")
     lines.append("    core.start();")
     if mem_reads is not None:
         lines.append("    memReadsAtStart <= core.mem.memReads();")
@@ -353,12 +366,16 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("    pcLogLast <= core.getPC();")
         lines.append(f"    if (core.getPC() != pcLogLast && ({cond})) "
                      '$display("PCLOG %0d %0d", core.getPC(), stepCount);')
-    if operator_signal:
-        hw, ch = operator_signal
-        lines.append(f"    if (!opSigDone && core.getPC() == {hw}) begin")
-        lines.append(f"      core.io.operatorSignal({ch});")
-        lines.append("      opSigDone <= True;")
-        lines.append(f'      $display("OPERATOR ACTION: channel signal on channel {ch} at half-word {hw}, step %0d", stepCount);')
+    for k, act in enumerate(operator_signal or []):
+        hw, ch = act[0], act[1]
+        lines.append(f"    if (!opSigDone{k} && core.getPC() == {hw}) begin")
+        if len(act) > 2:
+            lines.append(f"      core.io.operatorReadyTape({ch}, {act[2]});")
+        else:
+            lines.append(f"      core.io.operatorSignal({ch});")
+        lines.append(f"      opSigDone{k} <= True;")
+        unit = f" (tape unit {act[2]} made ready)" if len(act) > 2 else ""
+        lines.append(f'      $display("OPERATOR ACTION: channel signal on channel {ch}{unit} at half-word {hw}, step %0d", stepCount);')
         lines.append("    end")
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
@@ -765,6 +782,7 @@ if __name__ == '__main__':
     stop_at_pc = None
     stop_at_pc_hits = 1
     operator_signal = None
+    tape_ready = None
     for spec in sys.argv[3:]:
         if spec == 'ASM=strap2':
             continue
@@ -787,8 +805,13 @@ if __name__ == '__main__':
             # OPSIG=HW,CH: the operator readies the unit on channel CH
             # at the first arrival at half-word HW (generate()'s
             # operator_signal)
-            hw, ch = spec[6:].split(',')
-            operator_signal = (int(hw, 0), int(ch, 0))
+            # OPSIG=HW,CH,UNIT: the operator readies tape unit UNIT
+            # (StretchIO.operatorReadyTape)
+            operator_signal = tuple(int(x, 0) for x in spec[6:].split(','))
+        elif spec.startswith('TAPEREADY='):
+            # TAPEREADY=MASK: the tape units ready at the start (bit u =
+            # unit u; generate()'s tape_ready)
+            tape_ready = int(spec[10:], 0)
         elif spec.startswith('STEPS='):
             step_cap = int(spec[6:], 0)
         elif spec.startswith('CYCLES<='):
@@ -833,4 +856,5 @@ if __name__ == '__main__':
                     cycle_window=cycle_window, wait_for_io=wait_for_io,
                     mem_dump=mem_dump, fast_load=fast_load,
                     stop_at_pc=stop_at_pc, stop_at_pc_hits=stop_at_pc_hits,
-                    mem_reads=mem_reads, operator_signal=operator_signal))
+                    mem_reads=mem_reads, operator_signal=operator_signal,
+                    tape_ready=tape_ready))

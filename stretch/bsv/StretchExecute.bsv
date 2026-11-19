@@ -6739,7 +6739,17 @@ function ActionValue#(IoOutcome)
               // this model has one unit per channel; the right
               // effective address is ignored here rather than
               // decoded.  Named as a gap in bsv/README.md.
-              if (tapeCh) acceptControl();
+              // WHICH unit IS now modelled for its READY bit (2026-11-19):
+              // the selection address is bits 47-49 of the instruction,
+              // printed p.120 (PDF 123, read in the ink) -- the low three
+              // bits of the right effective word address.  The control
+              // word's unit-ready bit is then the selected unit's
+              // (StretchIO.selectTapeUnit; decks/io_tape_unit_ready.strap).
+              // There is still one reel: data is not per unit.
+              if (tapeCh) begin
+                io.selectTapeUnit(effA2[2:0]);
+                acceptControl();
+              end
               else programCheck();
             end else begin
               // ON A DISK, LOCATE IS A SEEK, and it is the whole of
