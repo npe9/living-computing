@@ -333,10 +333,18 @@ the current smoke-test instruction set:
 
 What remains unknown:
 
-- **No instruction encodings.** TR-246 gives mnemonics only; TR-389 gives
-  operand notation (p. 16) and instruction lengths of four, six, or eight bytes
-  (p. 11) but no field positions. No opcode or bit assignment may be inferred
-  from either report.
+- **Instruction encodings are in the PIMOS assembler, not in TR-246 or
+  TR-389.** TR-246 gives mnemonics only; TR-389 gives operand notation
+  (p. 16) and instruction lengths of four, six, or eight bytes (p. 11)
+  but no field positions. The PIMOS source archive
+  (`docs/nonlocal/pimos.tar.Z`) supplies the actual table:
+  `pimos/src/library/assembler/inst_tab.kl1` lists 263 encodings as
+  `t(mnemonic, Tag, Op, Type)` clauses, and `klb_opr.kl1` gives the
+  operand packing rules. The full transcription is in
+  `docs/kl1_encoding.md`. The encoding is PIMOS-derived, not printed in
+  TR-246 or TR-389, and the tag word plus data word is six bytes, which
+  does not reconcile with TR-389's four/eight-byte counts without a
+  surviving listing.
 - **Tag bit layout.** The text says an 8-bit tag (TR-389 p. 9) while Figure 7 on
   the same page marks the tag field at bits 63–55 with bits 54–32 `free`. The
   MRB's position inside the tag is not stated.
@@ -346,13 +354,19 @@ What remains unknown:
 - **Macro-body contents.** Only `wait_list_B` is printed (TR-389 p. 13); there
   is no complete internal-instruction or microcode listing.
 - **Complete KL1-B instruction set.** TR-389 defers to references [2, 6] for
-  the full set (p. 3); the corpus still lacks a KL1-B manual or encoding table.
+  the full set (p. 3). The corpus does contain a complete set: the PIMOS
+  assembler's `inst_tab.kl1` lists 263 encodings, and its `p(...)` operand
+  clauses cover the types those entries name. What is still absent is a
+  printed KL1-B manual with prose semantics for each mnemonic; the table
+  gives encodings and operand types, not per-instruction descriptions.
 - **Inter-cluster packet format and routing** are not given; TR-389 only names
   the multiple-hypercube network (p. 8).
 - **Whether PIM/m retains this design.** Neither report mentions PIM/m or
   PIM/p, so the macro-call/IM mechanism cannot be attributed to either 1992
   variant without a further source.
 
-Consequently the first KL1 workload on this model would be manual-derived from
-TR-246's instruction semantics and TR-389's worked examples, and must not be
-described as historical PIM/m execution.
+Consequently the first KL1 workload on this model can be assembled with the
+PIMOS assembler's own table: `inst_tab.kl1` supplies the encodings and
+`klb_opr.kl1` the operand packing. The result is PIMOS-derived, not printed in
+TR-246 or TR-389, and it must not be described as historical PIM/m execution
+until a PIM/m-specific source confirms the same encodings.

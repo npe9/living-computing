@@ -306,16 +306,22 @@ test or an explicit label.
    instruction and the concrete 40-bit representation), and
    `docs/nonlocal/pimos.tar.Z` holds the PIMOS KL1 compiler source
    (706 files, including `pimos/src/library/compiler/instrtbl.kl1` and
-   `mactbl.kl1`). The genuine gap is a machine-code/bit encoding table:
-   TR-246 prints mnemonics only and TR-389 prints operand notation but
-   no opcode or bit layout. Cite the documented path and label any
-   encoding derived from the compiler source as source-derived; never
-   present an inferred encoding as historical.
+   `mactbl.kl1`). The encoding table is also in the corpus, contrary to
+   the earlier "no encoding table" claim: the PIMOS assembler's
+   `pimos/src/library/assembler/inst_tab.kl1` lists 263 encodings as
+   `t(mnemonic, Tag, Op, Type)` clauses, and `klb_opr.kl1` gives the
+   operand packing. The full transcription is in `docs/kl1_encoding.md`.
+   The encoding is PIMOS-derived, not printed in TR-246 or TR-389;
+   label it as such and never present it as historical PIM/m
+   microcode.
 
 ### Dependencies
 
 WP1 and WP2 are independent. WP3.4 blocks memory-deref instructions in
-WP4/WP5. WP4.1 needs the packet format `PimNU.bsv` documents. WP5.3 is
-blocked on acquisition. WP2's "not hardware-ready" decision is the
+WP4/WP5. WP4.1 needs the packet format `PimNU.bsv` documents. WP5.3's
+documented path and encoding table are both in the corpus
+(`docs/kl1_architecture.md`, `docs/kl1_encoding.md`); what it still
+lacks is per-mnemonic prose semantics and a PIM/m-specific confirmation
+of the PIMOS encodings. WP2's "not hardware-ready" decision is the
 cheapest correct outcome if retiming does not close; do not let it block
 WP3.
