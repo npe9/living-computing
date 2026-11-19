@@ -470,6 +470,9 @@ PC_LOG3 = [(0o250000 * 2, 0o252000 * 2), (0o215470 * 2, 0o215572 * 2),
 # R2G_PCLOG=4 (diagnosis only): stage 6 on, the $EOJ program, the stub and
 # the LOADER
 PC_LOG4 = [(0o20000 * 2, 0o24000 * 2), (0o250000 * 2, 0o252000 * 2)]
+# R2G_PCLOG=5 (diagnosis only): the resident MCP and low core
+PC_LOG5 = [(0o215000 * 2, 0o223000 * 2), (0, 0o1000 * 2)]
+PC_LOG6 = [(0, 0o300000 * 2)]     # R2G_PCLOG=6: everywhere (with R2G_STEPS)
 fails = 0
 
 
@@ -625,7 +628,7 @@ def run_bench(tmp, module, progs, reads, stop_hw, step_cap, cycle_bound=40000000
     hexf = os.path.join(tmp, module + ".hex")
     kw = dict(step_cap=step_cap, cycle_bound=cycle_bound, stop_at_pc=stop_hw,
               fast_load=hexf, mem_dump=mem_dump,
-              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4}.get(os.environ.get("R2G_PCLOG", "")))
+              pc_log={"1": PC_LOG, "2": PC_LOG2, "3": PC_LOG3, "4": PC_LOG4, "5": PC_LOG5, "6": PC_LOG6}.get(os.environ.get("R2G_PCLOG", "")))
     src = generate(module, progs[0], checks, **kw)
     with open(os.path.join(BSV, module + ".bsv"), "w") as fh:
         fh.write(src)
@@ -954,6 +957,7 @@ EOJ_AT = 0o260000            # the type area "22$EOJ" on disk, a core image (SCA
 EOJ_NAME = "22$EOJ  "        # p.269 ll.24, 52-54: YFDO's "22" and YEOJTA's "$EOJ  "
 TWS_NAME = "))))))))"        # p.397 l.19 YTWSTA, the compiled program's type area
 TWS_AT = 0o270000            # the type area '))))))))' on disk, a core image (SCAFFOLD)
+WJC4G_RET = 0o20217 * 64 + 32   # p.386 l.31 ,SDRET (PDF 136), WJC4G's $RET
 SICS = 0x3333333333333333    # SICBU's sentinel (written only by p.333 l.2)
 LIM_A, LIM_B = 0o200000, 0o214513    # the processor's limits: CHOSEN (see header)
 # SCOMRG's SYSMOD (p.103 l.18, bits 8-9) as IBM's IPL and the BYPASS command
@@ -1149,7 +1153,7 @@ def stage34_prog(state, deck_imgs, kwords):
            sy("YRLDTA"), sy("YDFRDA"), sy("YBCBU"), sy("SICBU"),
            sy("MR4"), sy("MPQR"),
            sy("STIC"), sy("STLR"), sy("SL"), sy("MIF6"), sy("SCSPRT"),
-           sy("SLRMCP"), sy("MCR"),
+           sy("SLRMCP"), sy("MCR"), sy("SIFAE"),
            sy("YPPMEM"), sy("YFHFWA"), sy("YFHFWA", 2 * 64 + 32, "RDFET"),
            "YFHTAW  SYN,(8)%o.0" % (S["YFHTA"] // 64),
            sy("YRESLD"), sy("YMPBUF"),
@@ -1186,7 +1190,11 @@ def stage34_prog(state, deck_imgs, kwords):
            "        ST(BU,64),QSNAP+1.0"]
     for k in range(6):
         drv += ["        L(BU,64),(8)215646.0+%d.0" % k, "        ST(BU,64),QSNAP+%d.0" % (k + 2)]
-    drv += ["        B,YRESLD",
+    drv += [# the trap's SIC,STIC (ITAB+21, as SIT+21, p.111 l.2): STIC at
+            # the ,SDRET half word of p.386 l.31, then SIFAE (p.117 l.5)
+            "        LVI,$1,(8)%o.%02o" % (WJC4G_RET // 64, WJC4G_RET % 64),
+            "        SV,$1,STIC",
+            "        BD,SIFAE",
             # $FETCH of 22LOADER from YMPFCH's YFDO (SCAFFOLD for MCP's
             # disk fetch, as IFETCH below for 22$EOJ): name and FWA checked,
             # the type area's core image at LDR_AT copied, N = 0 so M = its
@@ -1338,15 +1346,9 @@ def stage34_prog(state, deck_imgs, kwords):
             "        ST(BU,64),0($3)",
             "        V+I,$3,1.0",
             "        SX,$3,MRETP",
-            "        L(BU,18),NMRET",
-            "        KI(BU,18),1",
-            "        BZAE,MRET2",
-            "        TI,24,STLR+5.0,8.0",
-            "        BE,YRESLD",
-            "MRET2   L(BU,64),SICBU",
+            "        L(BU,64),SICBU",
             "        ST(BU,64),SICB2",
-            "        LI(BU,18),7",
-            "        B,STOPS",
+            "        B,SIFAE+2.0",
             # $FETCH (DFETCH SYN,66.32, p.105 l.36) from MCP's own code
             # after the PP has run: B,DMCP traps IF as the PP's calls do.
             # SCAFFOLD for MCP's DFETCH.  The first must be YMPFCH's fetch of
@@ -1616,7 +1618,7 @@ def stage34(tmp, state, measure=()):
     # mode, YPPID4's fetch of the compiled program '))))))))' (p.387 l.29).
     # On the overlap path (R2G_TAMPER=overlap) it stops at TASIGN as before.
     halt = S["TASIGN"] // 32 if os.environ.get("R2G_TAMPER") == "overlap" \
-        else d.symtab["SSTOP"] // 32
+        else (d.symtab["SSTOP"] // 32, main_entry())
     if os.environ.get("R2G_STOP"):     # diagnosis only: a half-word address
         halt = int(os.environ["R2G_STOP"], 0)
     reads += [("x13", 29), ("sreads", at("SREADS")), ("yrltt2", at("YRLTT", 2)),
@@ -1650,11 +1652,12 @@ def stage34(tmp, state, measure=()):
     reads += [("ld_%o" % w, w) for w in sorted(load_oracle())]
     reads += [("mretl%d" % k, d.symtab["MRETL"] // 64 + k) for k in range(4)]
     reads += [("flog%d" % k, d.symtab["FLOG"] // 64 + k) for k in range(40, 300)]
+    reads += [("lw%d" % k, k) for k in range(16)]     # words 0-15 at the stop
     progs = [progA] if os.environ.get("R2G_ONLY6") else [progA, prog]
     for x in extra:
         progs += [x[0], x[1]]
     res = run_bench(tmp, "StretchBssGoLoadTb", progs, reads, stop_hw=halt,
-                    step_cap=12000000, cycle_bound=60000000,
+                    step_cap=int(os.environ.get("R2G_STEPS", 12000000)), cycle_bound=60000000,
                     mem_dump=(0o200000, 0o23200))
     for r in res:
         if r[0] is not None:
@@ -1806,6 +1809,13 @@ def lib_used():
     return used
 
 
+def main_entry():
+    """*MAIN*'s entry, a half-word address, from p.17's map (000051.0)."""
+    import check_bss_example4 as ex4
+    r = next(r for r in ex4.MAP_SUB if r[0] == "*MAIN*")
+    return (int(r[1], 8) + int(r[2].split(".")[0], 8)) * 2 + r[2].endswith(".4")
+
+
 def load_oracle():
     """What the GO phase's load must leave, from p.17's map (C28-6379 p.17,
     check_bss_example4.MAP_SUB): for each subprogram and each library deck
@@ -1883,10 +1893,18 @@ def judge7(g, g6, S, exp):
                                            if nm != TWS_NAME and not nm.startswith("LB")], [])
     main = field(exp["ksilo"][ex4.KSILO + 10], 0, 19)
     check("7: resume load's $RET (p.333 ll.4-5, in the LOADER) with SICBU = *MAIN*'s entry"
-          " %o.%02o (KSILO+10, p.17's map)" % (main // 2, main % 2 * 32),
+          " %o.%02o (KSILO+10, p.17's map); two MCP $RETs in all" % (main // 2, main % 2 * 32),
           (field(g["nmret"], 0, 18), LOADER_AT * 64 <= mr[1] < 0o237000 * 64,
-           field(g["sicb2"], 0, 24), field(g["stopc"], 0, 18)),
-          (2, True, main * 32, 7))
+           field(g["sicb2"], 0, 24)), (2, True, main * 32))
+    # MCP's own $RET path (SIFAE p.117 l.19 -> KFRONT p.177 -> KPLUG1 p.178
+    # -> CRETN p.140 -> MDRET p.141 -> MUP1 -> MPP1 p.142 -> CRETBU ll.41-51)
+    # restores the PP's registers from SLRBU (l.50 T,15,SLRBU,3.0) and
+    # BE's to SICBU: the run arrives at *MAIN*'s entry with SL = 0 (l.42)
+    # and the boundary register = SLRBU's word (the PP limits YL1 set).
+    check("7: control reaches *MAIN*'s entry %o.%02o through CRETBU (p.142 ll.41-51): SL = 0,"
+          " word 3 (the boundaries) = SLRBU" % (main // 2, main % 2 * 32),
+          (g["_stopped"], field(g["sl"], S["SL"] % 64, 1), g["lw3"] == g["slrbu"]),
+          (main, 0, True))
     check("7: no other trap: still 12 $SPR, 12 PP $RET, 1 $EOJ; no bad op, no other"
           " interrupt", (field(g["nspr"], 0, 18), field(g["nret"], 0, 18),
                          field(g["neoj"], 0, 18), g["badopx"],
