@@ -1483,8 +1483,8 @@ the sources allow.
 - **K NO GO, and the operator (2026-11-19).** The `$W` goes KFRONT ->
   KMCP (p.179 l.4) -> KSOAR (p.177 l.27). There p.177 l.41 `BZRZ,KNOGO`
   ("LOOP IF MOUNT OR REW BIT ON") is taken. KNOGO (p.179 l.13) goes to
-  KCHOPN, p.180 l.2 (221041.00, half-word 148546), after 2,524,753
-  cycles. The branch is l.29 `BZAH,KCHOPN` ("BRANCH IF TIME NOT
+  KCHOPN, p.180 l.2 (221041.00, half-word 148546), after 2,524,928
+  cycles (the nooper run). The branch is l.29 `BZAH,KCHOPN` ("BRANCH IF TIME NOT
   ELAPSED"), not l.30's `BB1,SRMIND` as the earlier record said.
   - The unit is real, not a bench artifact. The `$W`'s IOD parameter (AMR,
     224032) is 11, CT11; `$11` is its UST entry 214772 (channel 34, unit
@@ -1526,7 +1526,19 @@ the sources allow.
     - Unit select. LOC is accepted, but there is one tape unit, so the
       single CS also clears CT21's MOUNT bit.
     - A real not-ready state. `unitReady` is always 1.
-  - **Settled, by inference:** SRMIND (214677 .63) is 0 when the PC reaches l.30 (R2G_STOP=148512 read it), and a probe of the same shape (L/- on 1.32($12), then BB1,1.63($12) on a zero bit) does not branch on the model.  So the branch to KCHOPN is l.29's BZAH ("BRANCH IF TIME NOT ELAPSED"): SRMTC is 0 and the model's $TC is small, so the reminder interval has not elapsed and no reminder is typed.  The PC log's 221020.00 between l.29 and KCHOPN is the next instruction counter before the indicator branch resolved (inferred, not separately proven).
+  - **Why KCHOPN, measured:** l.30 is printed `BB1,SRMIND($12),KCHOPN`,
+    "BR. IF REMINDER SENT, SET SWTCH", assembled 000001.77 8C 221041.34 0E.
+    So it sets SRMIND whenever it runs, branch or not. A probe of the same
+    shape confirms the model writes the bit without branching. In the
+    nooper run, uat1 at KCHOPN is still 0000400000000000, with bit 63
+    clear. So l.30 did not complete on the way to KCHOPN, and the branch
+    is l.29's `BZAH,KCHOPN`, "BRANCH IF TIME NOT ELAPSED": the reminder
+    interval (l.28's KI against ZRMTCC) has not elapsed, and no reminder
+    is typed.
+  - R2G_STOP=148512 (l.30, 221020.00) fires at 2,524,920 cycles, 8
+    before KCHOPN at 2,524,928. That is the instruction counter reaching
+    l.30's address ahead of l.29's indicator branch resolving (inferred).
+    The SRMTC and $TC values themselves were not read.
     So MCP holds the `$W` because the unit is not mounted, and it has
     not yet sent its reminder.
 - **Settled: the PP's upper limit is KSILO+8.28.** C22-6728 (-0) printed

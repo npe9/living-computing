@@ -271,7 +271,7 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     IF MOUNT OR REW BIT ON", after l.40 L(BU,2),SMOUNT($11)) is taken.
     KNOGO (p.179 l.13) runs ll.13-29 and l.29 BZAH,KCHOPN ("BRANCH IF
     TIME NOT ELAPSED") is taken: KCHOPN, p.180 l.2 (221041.00, half-word
-    148546), at 2,524,753 cycles.  (Earlier text named l.30's
+    148546), at 2,524,928 cycles.  (Earlier text named l.30's
     BB1,SRMIND; see below.)
   - THE UNIT IS REAL, NOT A BENCH ARTIFACT.  The $W's IOD parameter AMR
     (224032, p.204 l.10) is 11: CT11, channel 34 unit 0, UST entry
@@ -279,12 +279,13 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     initial-mount (.53) bits (printed p.79 ll.3-4, TP4) and types "MOUNT -
     REEL NUMBER OUTPT ON CHANNEL 34 UNIT 0" (docs/boot_plan.md): MCP is
     waiting for the operator to mount the output reel.  WHY KCHOPN:
-    SRMIND (214677 .63) is 0 when the PC reaches l.30 (R2G_STOP=148512),
-    and a probe of the same shape (BB1,1.63($12) on a zero bit) does not
-    branch on the model, so the branch is l.29's BZAH: SRMTC is 0, the
-    model's $TC is small, the reminder interval has not elapsed, and no
-    reminder is typed.  The PC log's 221020.00 before KCHOPN is the next
-    instruction counter ahead of the indicator branch (inferred).
+    l.30's BB1 (assembled ...221041.34 0E, "SET SWTCH") sets SRMIND
+    whenever it runs, and a probe of that shape confirms the model writes
+    the bit without branching.  Under nooper, uat1 at KCHOPN is still
+    0000400000000000, with bit 63 clear.  So l.30 did not complete, and
+    the branch is l.29's BZAH ("TIME NOT ELAPSED").  R2G_STOP=148512 fires
+    8 cycles before KCHOPN: that is the instruction counter ahead of the
+    branch resolving (inferred).  SRMTC and $TC were not read.
   - OPERATOR ACTION (the default; R2G_TAMPER=nooper restores the old stop
     at KCHOPN).  The operator mounts a blank reel and readies the unit.
     The bench mounts REEL_WORDS (2^18, CHOSEN) zero words as the tape

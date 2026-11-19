@@ -799,7 +799,7 @@ Running TASIGN on IBM's tables needs the go bench started from the post-IPL imag
   - WRITE TAPE MARK was not implemented (`decks/io_tape_mark.strap`).
 - **SIT replaces ITAB.** `$IA` is now MCP's own SIT, except while the reconstructed BSS processor runs. The `$FETCH` hook at SIT+21 is still SCAFFOLD.
 - **The PP upper limit is settled as KSILO+8.28.** C22-6728 (-0) printed p.197 prints "PP UPPER LIMIT 8.28", and MCP's LX/SC read bits 28-45. `decks/bss_7030.strap` now reads 8.28.
-- **K NO GO's branch is l.29, not l.30.** SRMIND is 0 when the PC reaches l.30, and BB1 on a zero bit does not branch on the model (a probe of the same shape). So l.29's `BZAH` ("BRANCH IF TIME NOT ELAPSED") goes to KCHOPN: the reminder interval has not elapsed, and no reminder is typed (inferred from the PC log and the probe).
+- **K NO GO's branch is l.29, not l.30.** l.30's `BB1` is assembled with the set-to-one modifier ("SET SWTCH"), so it writes SRMIND whenever it runs; a probe confirms the model does. At KCHOPN, SRMIND (uat1 bit 63) is still 0 (nooper run). So l.30 did not complete, and l.29's `BZAH` ("BRANCH IF TIME NOT ELAPSED") goes to KCHOPN: the reminder interval has not elapsed, and no reminder is typed. SRMTC and `$TC` were not read.
 
 ### R3. The FORTRAN runtime library as STRAP II subprograms (medium-large)
 
