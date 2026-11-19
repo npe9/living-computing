@@ -1,5 +1,5 @@
 ! FLOATING-POINT ADD TO MEMORY IS A STORE-TYPE OPERATION: DS, NEVER DF --
-! one classification (StretchExecute fpRef), asked by both
+! one classification (StretchExecute fpFetchType), asked by both
 ! StretchIBox.prepareExec and execute(), 2026-11-18.
 !
 ! THE PAGES (Reference Manual 22-6530-2, read in the page images):
