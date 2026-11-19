@@ -1545,7 +1545,10 @@ the sources allow.
   - every `$FETCH`, ENTER and IRET for the BSS processor;
   - DISP's planted STIC;
   - `*MAIN*`'s one-word body.
-- Verified: see the commit that landed this paragraph for the suite run.
+- Verified: the full suite (check_strap2_punch, check_strap2_vletable,
+  run_tests.sh) passed in one uninterrupted run at 2ab6d0d, "All
+  regression tests passed."; the only FAIL lines are the 4 expected
+  UNREPRODUCED ones (p359 l41/l42 literals).
 
 **Next:** (1) MCP's own DISK FETCH in place of the `$FETCH` hook, which
 needs the type areas on an IPL-made disk. (2) A second job card at ZJOBC1:
