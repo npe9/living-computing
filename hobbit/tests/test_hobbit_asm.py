@@ -462,12 +462,15 @@ class TestPlan9OpcodeCrossCheck(unittest.TestCase):
     def test_bell_labs_main_prologue_parcels(self):
         """Our encoder against the shipped binary, parcel for parcel.
 
-        `_main` in the 1st Edition's `cat`/`echo` is main9p.s's
-        `MOV clock-4(FP), _clock(SB)`: mode 0xD (stack offset indirect,
-        Table 1-23 p. 1-26), offset 0xbfc = FP-4, absolute destination
-        0x4008 = the symbol _clock in `echo`.  The linked text at 0x2ad0
-        in tools/plan9-1e/hobbit/bin/echo holds exactly those parcels
-        (low byte first), and our assembler must produce the same three.
+        `_main` in the 1st Edition's `echo` begins, in address order,
+        with `ENTER R-16` (0x0BFC) — which `zl` inserts for
+        `TEXT _main(SB), 1, $12` — then `MOV R0,_clock` as the three
+        parcels 0x86DC 0x0000 0x4008.  The text is a sequence of
+        little-endian 32-bit words whose *high* half is the earlier
+        parcel (zl's SPUT writes big-endian and cflush reverses each
+        four-byte group while swizflag is set), so parcels are read
+        high half first; reading them in file order swaps every pair
+        and was the old, wrong reading.
         """
         import struct
         binary = (ROOT / "tools" / "plan9-1e" / "hobbit" / "bin" / "echo").read_bytes()
@@ -481,13 +484,17 @@ class TestPlan9OpcodeCrossCheck(unittest.TestCase):
             names[name] = value
         self.assertEqual(names["_main"], entry)
         off = 32 + (entry - 0x1020)          # text base 0x1020 (1e loader)
-        parcels = [binary[off + 2*k] | (binary[off + 2*k + 1] << 8)
-                   for k in range(3)]
-        self.assertEqual(parcels, [0x86DC, 0x0BFC, 0x4008],
-                         "the shipped binary's first _main instruction")
-        assembled, _, _ = assemble("MOV R0xbfc, *$0x4008")
-        self.assertEqual(assembled, parcels,
-                         "our encoder must reproduce Bell Labs' parcels")
+        words = [binary[off + 4*k:off + 4*k + 4] for k in range(2)]
+        parcels = []
+        for w in words:
+            parcels.append(w[3] << 8 | w[2])
+            parcels.append(w[1] << 8 | w[0])
+        self.assertEqual(parcels[:4], [0x0BFC, 0x86DC, 0x0000, 0x4008],
+                         "the shipped binary's _main prologue")
+        self.assertEqual(parcels[0], 0x0BFC, "ENTER R-16, inserted for TEXT")
+        assembled, _, _ = assemble("MOV R0, *$0x4008")
+        self.assertEqual(assembled, parcels[1:4],
+                         "our encoder must reproduce Bell Labs' MOV parcels")
 
     def test_optab_contains_all_35_grid_mnemonics(self):
         optab = self._optab()
