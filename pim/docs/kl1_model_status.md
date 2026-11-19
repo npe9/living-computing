@@ -82,7 +82,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `switch_*`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
+| control beyond the queue | `try_me_else`, `otherwise`, `fail`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery not modelled; the three one-word `switch_on_non_*` type tests are in |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same

@@ -14,9 +14,11 @@
 // get_constant, get_integer, get_nil, get_atom,
 // add, subtract, multiply, divide, modulo, equal, not_equal,
 // wait_value, wait_constant, wait_list, wait_integer, execute,
-// enqueue_goal, suspend, proceed, halt.
-// Anything else -- including the structure reads and
-// get_structured_constant -- halts loudly rather than being skipped
+// enqueue_goal, suspend, proceed, halt, switch_on_non_integer,
+// switch_on_non_atom, switch_on_non_list.
+// Anything else -- including the structure reads,
+// get_structured_constant, the remaining switch_* forms and the
+// choice-point control -- halts loudly rather than being skipped
 // (AGENTS.md, "execute partially, document the rest").
 //
 // Semantics note.  put_/write_/get_/read_ follow the TR-246 p. 7 images.
@@ -194,6 +196,9 @@ module mkPimKL1B(PimKL1B);
         8'hc0: if (deref(regs.sub(a))[39:32] != tagAtom)              // get_atom A, Ai
                  haltR <= True;
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
+        8'h28: noAction;                          // switch_on_non_integer: PC block
+        8'h29: noAction;                          // switch_on_non_atom: PC block
+        8'h2a: noAction;                          // switch_on_non_list: PC block
         8'h67: narg <= narg;                       // jump: pc set in the PC block
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label
@@ -224,6 +229,12 @@ module mkPimKL1B(PimKL1B);
       // return the stale cell.
       pcR <= (rqfp == rqt) ? zeroExtend((b << 8) | c) : goals.sub(rqfp);
       rqfp <= rqfp + 1;
+    end else if (tag == 8'h23 && op == 8'h28 && deref(regs.sub(a))[39:32] != tagInt) begin
+      pcR <= zeroExtend((b << 8) | c);   // switch_on_non_integer: not INT -> label
+    end else if (tag == 8'h23 && op == 8'h29 && deref(regs.sub(a))[39:32] != tagAtom) begin
+      pcR <= zeroExtend((b << 8) | c);   // switch_on_non_atom: not ATOM -> label
+    end else if (tag == 8'h23 && op == 8'h2a && deref(regs.sub(a))[39:32] != tagList) begin
+      pcR <= zeroExtend((b << 8) | c);   // switch_on_non_list: not LIST -> label
     end else begin
       pcR <= pcR + 1;
     end
