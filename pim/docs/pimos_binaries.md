@@ -162,3 +162,49 @@ version difference, not a decode error.
 The `.kbn` base address and the exact heap-image layout are the
 remaining unknowns; the `.sav` format is documented above and by
 `encoder.kl1`.
+
+## The SCSI device PIMOS expects
+
+The boot path reads the `.sav` modules over SCSI. The code distinguishes
+two things: the boot file service and the disk driver.
+
+**Boot file service.** `bios/boot/scsi_conf.kl1` gives the PE's own SCSI
+address, default `{0,0,0,6}`: cluster 0, processor 0, SCSI port 0, unit
+6. `bios/boot/bios.kl1` gives the FEP target: `Cluster=0, Processor=0,
+Unit=7, Send_LUN=0, Receive_LUN=1`. So on real hardware the modules come
+from the CSP/FEP file service at unit 7, LUN 0 (send) and LUN 1
+(receive), not from a raw disk the PE block-reads.
+
+**Disk driver.** `bios/scsi/scsi_common.kl1` parses INQUIRY by the
+standard format: byte 0 is the Device Code, byte 1 bit 7 is RMB, byte 4
+is the additional length. It checks the device type only, not a vendor
+or product string. `bios/boot/scsi_man.kl1` maps
+`scsi#direct_access` to `direct_access`, so the expected device is a
+**direct-access (DASD) block device, device code 0**. `bios/scsi/DAM.kl1`
+is the direct-access method: INQUIRY, TEST UNIT READY, READ(6) (21-bit
+block address), WRITE(6), MODE SENSE/SELECT, READ CAPACITY (0x25), and
+the rest of the SCSI-1 command set. `SAM.kl1` is the sequential (tape)
+path and is not used for boot.
+
+The block size is not hardcoded: `read_capacity` (0x25) is the command
+that reports it, so the shim chooses it (512 or 1024) and reports it
+there.
+
+**VM interface.** Under `virtual_machine_interface: yes` (the
+pseudo-PIM configuration closest to the Bluesim model), the disk is a
+`scsi_simulator` whose ports come from the `vm:scsi_where` environment
+variable, default `[{0,0,0,6}]`. The model's device shim therefore
+implements the simulator's command interface, not a physical SCSI bus.
+
+### What a device shim needs
+
+- The command/response interface of `scsi_simulator`: CDB in, data and
+  status out.
+- A block device (SD card or SDRAM image) holding `pimos.ipl` and the
+  `.sav` modules.
+- INQUIRY returning device code 0 (direct access), and READ CAPACITY
+  returning the chosen block size and block count.
+- READ(6)/WRITE(6) block transfers.
+
+A full SCSI bus (arbitration, phases, bus-free) is not needed: the PE's
+driver issues CDBs to a unit and waits for the response.
