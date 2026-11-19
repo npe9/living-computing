@@ -97,8 +97,9 @@ recorded as substituted (no KL1-B listing in the corpus). The network
 and SDRAM store have Bluesim testbenches, and the FPGA top has a
 reproducible build check (28.32 MHz, WP2 gate unchanged).
 WP1, WP3 and WP4 are done; WP2 stays "not hardware-ready" pending a
-re-decision on the fresh measurements; WP5.1 (interrupts, faults and
-PIMOS evidence) is next.
+re-decision on the fresh measurements; WP5.1 is done: `docs/wp5_evidence.md`
+records the documented sources, the single-PE diagnostic definition and the
+named blockers. WP5.2 (mesh link and packet flow control) is next.
 
 The milestone's "full repository test suite" is `stretch/strap/run_tests.sh`
 for the repository and `pim/run_tests.sh` for this directory; the two are
@@ -244,6 +245,13 @@ test or an explicit label.
 1. **Stage 4:** interrupts, faults and the documented PIMOS interface.
    Define the documented sources and a single-PE diagnostic before the
    network.
+   Status (2026-11-19): done as a definition. `docs/wp5_evidence.md`
+   maps the documented interrupts, faults and PIMOS interface and
+   defines the single-PE diagnostic. Blockers named there: no PE
+   interrupt vector, priority, mask or acknowledge path is documented,
+   and `PimPU` has no interrupt input; the NU tail is a standalone
+   pulse. The diagnostic's negative tests (undefined opcode, legal
+   opcode) are specified in §4.2 but not yet written.
 2. **Stage 5:** mesh link and packet flow control. Prove two PEs, then a
    parameterized mesh with deterministic arbitration and
    deadlock-directed tests.
