@@ -1034,6 +1034,20 @@ fails in the "MASK BIT 30 TO ONE" entry; mask bit 26 not settable fails
 at "MASK REG BIT 26 TO ONE" with the planted SV executed as SX; the
 control passes.
 
+**Routine 1260's TEST 2 -- TRANSCRIBED AND RUN, 2026-11-19**
+(`decks/ax5b_160_test2_ia.strap`, PDF pp.22-23, octal
+014556.00-014625.40, plus the p.114 constants it reads; 83 rows and 6
+symbols bit-exact via `tests/verify_ax5b_160_test2_ia_listing.py`).
+"-TEST 2, CHK DATA IN IA.": BIT0-BIT17 stored one at a time into the
+interruption address register with SV and compared back with KV
+(Reference Manual printed p.48: IA "contains 18 bits and has address
+2.0"). One segment run from END; the model passes. Injection, observed:
+IA bit 9 dropped on a store fails in the "IA DATA FAILURE, BIT 9."
+entry; the control passes. Observation, not a finding: the model keeps
+64 bits in word 2, where p.48 gives 18; TEST 2 cannot see it. **TEST 3**
+(`16033`, p.24 on, the ability to interrupt; needs `I60XW1`, `I60K5`,
+`I60IT`, `I60SX1`/`I60S1`) is the next block and is not transcribed.
+
 **TEST 5's HEAD is at `16061`/`16064`/`16065`/`16066`, pp.37-44**,
 which closes a loose end the pp.45-64 map below had to flag. `16066`
 (015360.00, p.40) is a 20-entry dispatch *"-TURN ON MK."* … *"-TURN ON
@@ -1738,7 +1752,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`, `ax4b_148_immediate_indexed` (routine 148's indexed-immediate walk, PDF pp.146-148 + p.191, bit-exact, passes: the first IBM indexed VFL immediate); routine 148's TESTs 3, 4, 5A, 5B, 5C/5D, 5G/5H, 5I (`ax4b_3_halfword_19bit`, `ax4b_4_fp_18bit`, `ax4b_5a_p_field_000`, `ax4b_5b_immediate_unindexed`, `ax4b_5cd_prog_ix_v_plus`, `ax4b_5gh_prog_ix_v_minus`, `ax4b_5i_prog_ix_x0`, PDF pp.139-145, 149, 151-154, 190-191, bit-exact, all pass; and TESTs 1A, 1B, 1C, 2A, 2B (`ax4b_1a_ifield_select`, `ax4b_1b_fp_load`, `ax4b_1c_vfl_basic`, `ax4b_2a_rhw_fullword`, `ax4b_2b_lhw_fullword`, PDF pp.113-138, 20 segment runs with the p.113 prologue, bit-exact, all pass); routine 1256, LVE and LVS (`ax4b_156_test1_lvs`, `ax4b_156_test2_lve`, PDF pp.173-191, 8 segment runs, bit-exact, all pass); bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
-| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); 1260's prologue and TESTs 1A/1B, pp.8-13 (`ax5b_160_test1ab_mask.strap`, 2026-11-19); TEST 1C, pp.14-21 (`ax5b_160_test1c_mask.strap`, 2026-11-19); TEST 2 (pp.22-23) through TEST 4 (p.36) not yet; interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); 1260's prologue and TESTs 1A/1B, pp.8-13 (`ax5b_160_test1ab_mask.strap`, 2026-11-19); TEST 1C, pp.14-21 (`ax5b_160_test1c_mask.strap`, 2026-11-19); TEST 2, pp.22-23 (`ax5b_160_test2_ia.strap`, 2026-11-19); TEST 3 (p.24) through TEST 4 (p.36) not yet; interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |

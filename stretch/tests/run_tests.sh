@@ -11593,6 +11593,19 @@ run "IBOX-5 routine 1260 TEST 1C mask bits 20-47 settable, ON THE MODEL (I6011)"
     "X4:addrIndex(4)=0x650600000000000" "X5:addrIndex(5)=0xa60000000010000" \
     "X6:addrIndex(6)=0x400000040000" STEPS=2000000 CYCLES=10326+-0
 
+# ---- jb_ax5b routine 1260, TEST 2 (2026-11-19) ----
+# IBM's walk of a single one through the interruption address register's
+# bits 0-17 (jb_ax5b PDF pp.22-23; Reference Manual printed p.48: IA has
+# 18 bits at address 2.0).  CYCLES is MODEL BEHAVIOUR.  The OBSERVED
+# model injection and its CONTROL are in the deck header.
+run "IBOX-5 routine 1260 TEST 2 (IA register), bit-exact (jb_ax5b PDF pp.22-23, 114)" python3 verify_ax5b_160_test2_ia_listing.py
+# Injection (IA bit 9 dropped on a store) -> FAIL SEN 0x660c00000000000,
+# the "IA DATA FAILURE, BIT 9." entry.
+run "IBOX-5 routine 1260 TEST 2 IA bits 0-17 hold a one, ON THE MODEL (I6041)" ./run_program.sh ../decks/ax5b_160_test2_ia.strap StretchAx5b160T2Tb \
+    PC=1410 "SEN:712=0" "IA:2=0x400000000000" \
+    "X1:addrIndex(1)=0x4800000000000" "X2:addrIndex(2)=0x6c00000000000" \
+    "X3:addrIndex(3)=0x400000000000" STEPS=2000000 CYCLES=2057+-0
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the

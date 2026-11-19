@@ -265,9 +265,12 @@ and TESTs 1A/1B, the mask register's fixed bits (pp.8-13,
 `decks/ax5b_160_test1ab_mask.strap`, two segment runs, both pass;
 inventory, "Routine 1260's prologue and TESTs 1A/1B"), then TEST 1C,
 the settable mask bits 20-47 (pp.14-21,
-`decks/ax5b_160_test1c_mask.strap`, one segment run, passes). Next on
-this line: 1260 TEST 2 (`16041`, pp.22-23, the IA register), then
-TESTs 3-4 (pp.24-36).
+`decks/ax5b_160_test1c_mask.strap`, one segment run, passes), and TEST
+2, the IA register (pp.22-23, `decks/ax5b_160_test2_ia.strap`, passes).
+Next on this line: 1260 TEST 3 (`16033`, p.24 on, "CHECK THE ABILITY
+TO INTERRUPT"; it fills `I60IT` from `I60XW1`/`I60K5`, runs enabled, and
+calls `I60S1` through `I60SX1` -- see `decks/ax5b_160s1_clr_inds.strap`),
+then TEST 4 (to p.36).
 The EX path's injection reaches only the `L` site of the ten
 `immediateOperand` calls (the other nine are the same one-word edit).
 **Merge note:** the deck's 713-clock pin was measured WITHOUT e996f2c's
