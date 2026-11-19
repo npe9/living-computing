@@ -10,9 +10,10 @@ from the diagnostic ISA. Its testbenches are `PimKL1BTb.bsv` (REF-chain
 deref through `read_variable`), `PimKL1BFailTb.bsv`,
 `PimKL1BConstFailTb.bsv`, `PimKL1BStructTb.bsv` (`put_list`,
 `put_constant`, `write_constant`), `PimKL1BIntTb.bsv`
-(`put_integer`, `write_integer`) and `PimKL1BWaitTb.bsv`
-(`wait_list`, `wait_integer`); `run_kl1b_tb.sh` builds and runs
-all six. The implemented subset and the loud-failure rule for the
+(`put_integer`, `write_integer`), `PimKL1BWaitTb.bsv`
+(`wait_list`, `wait_integer`) and `PimKL1BSetTb.bsv` (`set_constant`,
+`set_integer`, `set_nil`, `set_list` and the matching reads);
+`run_kl1b_tb.sh` builds and runs all seven. The implemented subset and the loud-failure rule for the
 rest are in the module header.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),

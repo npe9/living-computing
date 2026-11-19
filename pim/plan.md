@@ -413,12 +413,15 @@ test or an explicit label.
      `read_variable` (deref in place); the put_/write_/read_ semantics
      come from the TR-246 p. 7 images and the integer pair is inferred
      from its mnemonic and operand type; see
-     `bsv/PimKL1B.bsv`. The c40 instructions that need a goal-record
-     argument area (`set_constant`, `read_constant`, `get_constant`)
-     halt loudly instead of being skipped. `set_value`/`set_variable`
-     are a documented stand-in: they reuse the assembler's `c8_r` fields
-     but write a general register, not TR-246's goal-record argument
-     slot `Gi`.
+     `bsv/PimKL1B.bsv`. The set_*/read_* argument tranche is also in:
+     `set_constant`, `set_integer`, `set_nil`, `set_list`, `set_atom`
+     write the model's argument save area, and `read_constant`,
+     `read_integer`, `read_nil`, `read_atom` compare it sequentially.
+     `get_constant` and `set_structured_constant` still halt loudly
+     because they need the argument area in memory / the constant
+     stream. `set_value`/`set_variable` are a documented stand-in: they
+     reuse the assembler's `c8_r` fields but write a general register,
+     not TR-246's goal-record argument slot `Gi`.
 
 ### Dependencies
 

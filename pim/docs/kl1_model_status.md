@@ -37,6 +37,15 @@ The status labels are:
 | `wait_constant` | 0xa0 | halt if `deref(R[a]) != c40` | documented (TR-246 p. 5) | `PimKL1BConstFailTb` |
 | `wait_list` | 0xa6 | halt if the deref is not a list | documented (TR-246 p. 5) | `PimKL1BWaitTb` |
 | `wait_integer` | 0xa1 | halt if the deref is not INT c16 | inferred (PIMOS r_c16 variant) | `PimKL1BWaitTb` |
+| `set_constant` | 0x10 | `args[Gi] = c40` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
+| `set_integer` | 0x11 | `args[Gi] = INT(c16)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
+| `set_nil` | 0x12 | `args[Gi] = NIL` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
+| `set_atom` | 0x00 | `args[Gi] = ATOM` | documented (TR-246 p. 7) | — |
+| `set_list` | 0x18 | `args[Gi] = LIST(HP)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
+| `read_constant` | 0xb0 | halt if `args[argPtr] != c40`, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
+| `read_integer` | 0xb1 | halt if `args[argPtr] != INT c24`, advance | inferred (PIMOS c24 variant) | `PimKL1BSetTb` |
+| `read_nil` | 0xb2 | halt if `args[argPtr]` is not NIL, advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
+| `read_atom` | 0xb3 | halt if `args[argPtr]` is not ATOM, advance | documented (TR-246 p. 5) | — |
 | `read_variable` | 0xb4 | `R[a] = deref(R[a])` | documented (TR-246 p. 5) | `PimKL1BTb` |
 | `execute` | 0x61 | `narg = a; pc = label(b:c)` | stand-in | — |
 | `enqueue_goal` | 0x63 | append label to an 8-entry queue | stand-in | — |
@@ -56,16 +65,16 @@ encoding table but not executed, with the blocking reason:
 
 | family | examples | reason |
 |---|---|---|
-| goal-record argument setup | `set_constant`, `set_list`, `set_nil`, `set_atom`, `set_structured_constant` | needs the goal-record argument area (TR-246 p. 3) the model does not have |
-| passive unification reads | `read_constant`, `read_integer`, `read_nil`, `read_atom`, `read_eagerly` | needs argument registers and suspension records |
+| goal-record argument setup | `set_structured_constant`, `set_atom` | `set_structured_constant` needs the constant stream; `set_atom` writes a placeholder atom because the atom table is not modelled |
+| passive unification reads | `read_eagerly` | needs the suspension machinery |
 | active unification | `get_constant`, `get_variable`, `get_list`, `get_vector`, `get_structured_constant`, `unify_*` | needs argument registers and structure construction |
 | atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant`, `get_atom`, `get_vector` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
 | arithmetic and comparison | `add`, `subtract`, `multiply`, `divide`, `modulo`, `equal`, `not_equal`, `integer`; extended `add_extended` and friends | named as guard built-ins in TR-246 p. 5; operand and result conventions not yet extracted |
 | control beyond the queue | `switch_*`, `jump`, `try_me_else`, `otherwise`, `fail` | goal/choice-point machinery not modelled |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
-The c40 instructions that need the goal-record argument area —
-`set_constant`, `read_constant`, `get_constant` — halt in the same
+`get_constant` (the one c40 instruction that needs the argument area
+in memory rather than the register-file model) halts in the same
 default case.
 
 ## What this means for PIMOS

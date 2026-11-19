@@ -6,15 +6,16 @@
 // and a fetch/decode/execute step.  The encodings are the PIMOS
 // assembler's (docs/kl1_encoding.md), labelled PIMOS-derived.
 //
-// Implemented so far: set_value, set_variable, put_value, put_variable,
+// Implemented so far: set_value, set_variable, set_constant,
+// set_integer, set_nil, set_atom, set_list, put_value, put_variable,
 // get_value, get_bound_value, write_value, write_variable,
 // write_constant, put_constant, put_list, put_integer, write_integer,
-// read_variable, wait_value, wait_constant, wait_list, wait_integer,
-// execute, enqueue_goal, suspend, proceed, halt.
-// Anything else -- including the c40 instructions that need a goal-record
-// argument area (set_constant, read_constant, get_constant) -- halts
-// loudly rather than being skipped (AGENTS.md, "execute partially,
-// document the rest").
+// read_variable, read_constant, read_integer, read_nil, read_atom,
+// wait_value, wait_constant, wait_list, wait_integer, execute,
+// enqueue_goal, suspend, proceed, halt.
+// Anything else -- including get_constant, which needs the goal-record
+// argument area in memory -- halts loudly rather than being skipped
+// (AGENTS.md, "execute partially, document the rest").
 //
 // Semantics note.  put_/write_/get_/read_ follow the TR-246 p. 7 images.
 // set_value/set_variable reuse the assembler's c8_r fields but are used
@@ -36,6 +37,7 @@ interface PimKL1B;
   method Action step();
   method Bool halted();
   method Word readReg(RegNo r);
+  method Word readArg(Bit#(3) i);
   method Word pc();
 endinterface
 
@@ -53,12 +55,17 @@ module mkPimKL1B(PimKL1B);
   RegFile#(Bit#(3), Word) goals <- mkRegFileFull;
   Reg#(Bit#(3)) rqfp <- mkReg(0);
   Reg#(Bit#(3)) rqt <- mkReg(0);
+  // Goal-record argument save area (TR-246 p. 7): set_* writes here.
+  RegFile#(Bit#(3), Word) args <- mkRegFileFull;
+  Reg#(Bit#(3)) argPtr <- mkReg(0);
 
   // Tag values are the model's; the encoding is PIMOS-derived.
   Bit#(8) tagInt = 8'h02;
   Bit#(8) tagRef = 8'h03;
   Bit#(8) tagVar = 8'h01;
   Bit#(8) tagList = 8'h05;   // LIST: value points at consecutive car/cdr
+  Bit#(8) tagNil = 8'h04;
+  Bit#(8) tagAtom = 8'h06;
 
   function Word deref(Word w);
     return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
@@ -90,15 +97,24 @@ module mkPimKL1B(PimKL1B);
     if (tag == 8'h23 && isC40(op)) begin
       Word cw = mem.sub(pcR[11:0] + 1);
       case (op)
+        8'h10: args.upd(truncate(a), cw);                          // set_constant C, Gi
         8'h20: begin heap.upd(hp, cw); hp <= hp + 1; end  // write_constant C
         8'h30: regs.upd(a, cw);                          // put_constant C, Ai = C
         8'ha0: if (deref(regs.sub(a)) != cw) haltR <= True;  // wait_constant
-        default: haltR <= True;   // needs a goal-record argument area
+        8'hb0: begin                                       // read_constant C
+          if (args.sub(argPtr) != cw) haltR <= True;
+          argPtr <= argPtr + 1;
+        end
+        default: haltR <= True;   // unimplemented c40 opcode
       endcase
       pcR <= pcR + 2;
     end else begin
     if (tag == 8'h23) begin
       case (op)
+        8'h00: args.upd(truncate(a), {tagAtom, 24'h0, 0});  // set_atom A, Gi
+        8'h11: args.upd(truncate(a), {tagInt, 16'h0, val[15:0]});  // set_integer c16, Gi
+        8'h12: args.upd(truncate(a), {tagNil, 24'h0, 0});   // set_nil Gi
+        8'h18: args.upd(truncate(a), {tagList, 20'h0, hp});  // set_list Gi
         8'h14: regs.upd(b, {tagInt, 24'h0, a});   // set_value c8, r
         8'h13: regs.upd(b, {tagVar, 24'h0, a});   // set_variable c8, r
         8'h31: regs.upd(a, {tagInt, 16'h0, val[15:0]});  // put_integer Ai, c16
@@ -116,6 +132,18 @@ module mkPimKL1B(PimKL1B);
                  haltR <= True;
         8'ha6: if (deref(regs.sub(a))[39:32] != tagList)            // wait_list
                  haltR <= True;
+        8'hb1: begin                               // read_integer c24
+          if (args.sub(argPtr) != {tagInt, 8'h0, val[23:0]}) haltR <= True;
+          argPtr <= argPtr + 1;
+        end
+        8'hb2: begin                               // read_nil
+          if (args.sub(argPtr)[39:32] != tagNil) haltR <= True;
+          argPtr <= argPtr + 1;
+        end
+        8'hb3: begin                               // read_atom A
+          if (args.sub(argPtr)[39:32] != tagAtom) haltR <= True;
+          argPtr <= argPtr + 1;
+        end
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
         8'h61: narg <= a;                          // execute: jump to label (b:c)
         8'h63: begin                                // enqueue_goal N, label
@@ -149,6 +177,7 @@ module mkPimKL1B(PimKL1B);
 
   method Bool halted() = haltR;
   method Word readReg(RegNo r) = regs.sub(r);
+  method Word readArg(Bit#(3) i) = args.sub(i);
   method Word pc() = pcR;
 
 endmodule
