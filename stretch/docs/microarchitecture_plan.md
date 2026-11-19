@@ -5792,10 +5792,34 @@ Staged, each step green and committed:
      calls it in four lines. ST and M+ keep their own (their RMW reads
      interleave with the store). `vflIntOp` 2343 / 914 -> **2181 / 752**
      (the function itself, 58 lines with its contract, sits above it).
-     Same hardware: BSV inlines functions. **Next:** the next datapath class
-     into `mkVflBox`: the binary add (`binAccAdd`, the SAU's adder),
-     which is in nearly every deck, so its hold cost must be measured
-     the same way before it is accepted.
+     Same hardware: BSV inlines functions.
+     **Stage 2b (2026-11-19, structure only, two commits):**
+     `connectiveOp`'s C/CT/CM main path calls `vflFetchOperand` too (its
+     ladder was the same one; CM keeps the words it read for the write
+     back), and the read-modify-write arms -- ST/SRD's three ladders,
+     M+/M+MG/M+1, and CM's refill path -- share `vflRmwNextRead` /
+     `vflRmwNeed`, the one order they read in (the field's word, its
+     second if it crosses, then the refill word). Each commit: the full
+     suite green and all 330 `STRETCH_HALT_REPORT` halt reports (cycles
+     and reads) identical to a batch42 (3ab7949) baseline. Line counts
+     (raw / non-comment; a function counted from its `function` line to
+     `endfunction`, `execute()` to its closing `endactionvalue;`, which
+     gives 1519 on batch42 -- the 1535 above was the same function with
+     a different boundary, not a longer one): `vflIntOp` 2181 / 752 ->
+     **2176 / 747**, `connectiveOp` 352 / 159 -> **332 / 136**,
+     `execute()` 1519 / 391 unchanged.
+     **Next, MEASURED AND HELD (2026-11-19):** the binary add. Buchholz
+     printed p.208 (PDF 233) puts the VFL add, binary and decimal, in
+     the SERIAL unit -- not the parallel unit `mkVflBox` models -- and
+     p.209 (PDF 234) gives it one adder with "a decimal-correction
+     circuit ... switched into the data path when decimal addition or
+     subtraction is specified". So its home is a `binary` mode of
+     `mkDecBox`, not `mkVflBox`. A one-clock probe through `mkVflBox`
+     moved 10 of 330 unpinned halt clocks by +1 to +10; the `mkDecBox`
+     binary mode at the box's existing rate (4 clocks, 8 to
+     recomplement) moved 9 by +4 to +75 and the atlas's VFL `+`/`+MG`
+     (BU,8,8) crossing cells by about one clock each, so it is held for
+     a decision rather than committed. No pin or value moved in either.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
@@ -5885,7 +5909,7 @@ the boundary plan does not close this row.) Piccolo numbers are from
 | FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
 | stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
 | rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
-| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412). Re-measured 2026-11-18: `execute()` 1535, but the arms it calls are functions it inlines, the largest `vflIntOp` **2181** (752 non-comment; 2325 / 906 before §1c step 5e; **2176 / 747** 2026-11-19, with `connectiveOp` 332 / 136 and `execute()` 1519 / 391 counted to its `endactionvalue;`), `fpArithClass` 730 | **differs, 5.4x** (2026-11-18: 7.0x on `vflIntOp`) |
 | expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets. Since 2026-11-15/18: four synthesized boxes behind `request`/`responseReady`/`response` -- `mkDivBox`, `mkDecBox`, `mkCvtBox`, `mkVflBox` (VFL binary multiply, §1c step 5e) | **differs, by prior decision** (narrowing) |
 
 **What this changes.** The plan and README item 9 both said the target
