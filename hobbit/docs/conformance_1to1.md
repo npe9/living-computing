@@ -24,9 +24,15 @@ changes.
 | ROM/RAM, boot | — | `mkHobbitMem` (1 KB), testbench 64 KB | **not 1:1**: the model's memory is a testbench window, and the 1e kernel's map (`0x80004000`, I/O windows) is not laid out | open |
 | Console DUART | `io.h`, `deveia.c` | parked WIP (`/tmp/duart-wip/`) | 26/37 checks | open (A4) |
 
-Sizes are checked against the netlist with `tools/area_netlist.py`, so
-"1:1" means "present in the synthesized design at that shape", not
-"asserted in prose".
+Where a size is claimed, it is the declared array's shape, not prose:
+the prefetch is three `RegFile#(Bit#(7), PfcLine)` ways (`HobbitDecode.bsv:521-523`, 128 lines each),
+the stack cache is a 64-word store behind two read ports
+(`HobbitStackCache.bsv`), the decoded store is 32 entries of 192 bits
+(`HobbitTypes.bsv`), the MMU two 32-entry TLB arrays (`HobbitMmu.bsv`).
+`tools/area_netlist.py` attributes synthesized area per block after the
+ULX3S flow, which shows the blocks survive synthesis as their own
+units; it does not measure array dimensions, and this document does not
+claim it does.
 
 ## 2. The cycle tables
 
