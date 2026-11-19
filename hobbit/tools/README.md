@@ -123,3 +123,26 @@ AT&T's own assembler and any surviving Hobbit object file — the BeOS DR4
 disk images preserved by the BeBox community are the likeliest source —
 therefore remain the top acquisition target. See
 [`../docs/README.md`](../docs/README.md).
+
+## The 1st Edition's own Hobbit binaries and sources (added 2026-11-19)
+
+The same archive, `plan9-1e.tar.bz2`, also carries the *shipped* result
+of the port, which is what the proof of concept runs
+([`../docs/plan9_port.md`](../docs/plan9_port.md)):
+
+| path | what |
+|---|---|
+| `plan9-1e/hobbit/bin/echo`, `cat`, `rc`, `za`, `zl` | prebuilt `z`-architecture executables, dated 3 January 1993 — Bell Labs' own compiled user code for this chip, including the assembler and linker |
+| `plan9-1e/sys/src/9/hobbit/` | the Hobbit kernel port (41 files): `raml.s`/`roml.s` reset and vectors (`_vector0` is the syscall entry, `_vectors+0x00 = $syscall`), `trap.c`, `mmu.c`, `screen.c`, `cpu`, … |
+| `plan9-1e/sys/src/libc/hobbit/` | the Hobbit libc assembly (19 files), including `main9.s` (`_main`: `argc+0(FP)`, `argv+4(FP)`, `CALL main`, `exits("main")`) |
+| `plan9-1e/sys/include/a.out.h` | `struct Exec` and `Z_MAGIC = _MAGIC(10) = 0x197` |
+
+`hobbit/bin/echo` measures: `magic 0x197`, text 0x2258 loaded at 0x1000,
+data 0x374, bss 0x354, entry 0x2ad0, `syms` 0x3db0 — a 1st Edition
+`a.out`, so the loader needed for the port is a header parse and three
+copies.
+
+This also corrects the first bullet under **Limits**: the *sources* of
+`za` cannot be built in this release (`outcode` is missing), but the
+release ships working `za` and `zl` **executables**, and they are the
+machine's encoder oracle as binaries as well as in source.
