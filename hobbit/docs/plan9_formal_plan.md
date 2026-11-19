@@ -11,6 +11,17 @@ state machine, the ISA is a finite table, and refinement can be proved
 per instruction and then composed. What is intractable is reasoning about
 the *operating system* built on it, and that is not what is claimed here.
 
+**Sequencing (owner, 2026-11-19): this track comes after Plan 9 boots.**
+The boot work in `docs/plan9_boot_plan.md` — A0 through A5 — is the
+work now; C1…C5 and P1…P5 below are the target that follows it, and no
+boot milestone is delayed to build a proof harness. What continues
+*meanwhile*, because it is what the boot itself needs, is the ordinary
+evidence discipline: every instruction and device the boot requires
+lands with its page cites and its discriminating tests, and each such
+change is written so that its formal harness can be added afterwards
+without redesign (a stated contract boundary, one rule per behaviour,
+named assumptions).
+
 Two words are therefore defined operationally, and every gate below
 measures one of them.
 
