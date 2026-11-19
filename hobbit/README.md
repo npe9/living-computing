@@ -43,6 +43,7 @@ machines whose differences must remain explicit.
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |
 | UART HRI stream | `bsv/HobbitUart.bsv` | 9-check testbench, byte-exact variable-length lines at 115200 |
 | ULX3S target (ECP5 85F) | `fpga/` | bitstream produced: 18,041/83,640 LUT4 (21%), 5,066 FF (6%), 18/208 DP16KD, 25.66 MHz (PASS at 25 MHz); same `smoke.hex`, HRI lines over the UART |
+| board UART end to end | `bsv/BoardUartTb.bsv`, `bsv/run_board_tb.sh` | the board datapath's `txd` decoded as 8N1 at 217 clocks/bit yields the smoke's 41 HRI lines byte for byte (5,042 characters) |
 
 The core is a partial implementation on purpose: it models the
 memory-to-memory ALU, the stack cache and the control transfers its
