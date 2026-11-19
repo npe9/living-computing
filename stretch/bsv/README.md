@@ -867,8 +867,11 @@ an index word; it passes. Making mask bit 30, or bit 26, unsettable fails it in
 the entry IBM prints for that bit (deck header). TEST 2 (PDF pp.22-23,
 `decks/ax5b_160_test2_ia.strap`) walks a one through the interruption address
 register's 18 bits (word 2, Reference Manual printed p.48); it passes, and
-dropping IA bit 9 on a store fails it at "BIT 9". The model keeps all 64 bits of
-word 2 where p.48 gives 18; no IBM test seen so far can tell.
+dropping IA bit 9 on a store fails it at "BIT 9". Since 2026-11-19 word 2 keeps
+bits 0-17 of a store and drops 18-63 (printed p.35: "Bits 0-17 of location 2
+form the interruption address register"; p.34: unassigned bits of locations
+0-15 "are always zero"); `decks/ia_width_18bit.strap` stores ones into word 2
+by ST, SV and SX and reads them back, and fails on the old 64-bit arm.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an
