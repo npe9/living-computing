@@ -1,0 +1,50 @@
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+
+# ULX3S (LFE5U-85F, CABGA381) constraints for the ATT92010 Hobbit board top.
+# Only the pins this design uses are constrained: the 25 MHz clock, the
+# active-high reset button, the eight LEDs, the two FTDI UART pins and the
+# WiFi power-down pin.  The SDRAM and SD card are unused.
+
+# 25 MHz board oscillator (pin G2) and the target design frequency.  This is
+# the clock nextpnr's timing analysis uses; FREQUENCY does not change the
+# oscillator, it states what the design must meet.
+LOCATE COMP "CLK" SITE "G2";
+IOBUF PORT "CLK" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "CLK" 25 MHZ;
+
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+# BTN1: the board's user pushbutton, active high (pressed = 1).  The FPGA
+# wrapper turns it into the power-on reset.
+LOCATE COMP "BTN1" SITE "R1";
+IOBUF PORT "BTN1" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+
+# UART: FTDI RX data is our output (board RX), TXD is FTDI's output to us.
+LOCATE COMP "ftdi_rxd" SITE "L4";
+IOBUF PORT "ftdi_rxd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "ftdi_txd" SITE "M1";
+IOBUF PORT "ftdi_txd" PULLMODE=UP IO_TYPE=LVCMOS33;
+
+# WiFi enable is driven low to keep the ESP32 powered down.
+LOCATE COMP "wifi_en" SITE "F1";
+IOBUF PORT "wifi_en" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+
+# LEDs: D2..C2 from led[3] down to led[0], and the four on the right in the
+# board's own order (E2/E1/H3/D1 correspond to led[5..2] on the ULX3S).
+LOCATE COMP "led[0]" SITE "B2";
+LOCATE COMP "led[1]" SITE "C2";
+LOCATE COMP "led[2]" SITE "C1";
+LOCATE COMP "led[3]" SITE "D2";
+LOCATE COMP "led[4]" SITE "D1";
+LOCATE COMP "led[5]" SITE "E2";
+LOCATE COMP "led[6]" SITE "E1";
+LOCATE COMP "led[7]" SITE "H3";
+IOBUF PORT "led[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[4]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[5]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;

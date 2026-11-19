@@ -88,7 +88,7 @@ recorded as a survival with an expiry date.
 | `cray1/` | Cray-1 (1976) | stub; plan + sources |
 | `edsac/` | EDSAC (1949) | stub; plan + sources |
 | `eniac/` | ENIAC (1945) | stub; plan + sources |
-| `hobbit/` | AT&T 92010 Hobbit (1993) | assembler, one-instruction spec, Bluesim core; HRI-checked |
+| `hobbit/` | AT&T 92010 Hobbit (1993) | assembler, one-instruction spec, cycle-accurate Bluesim core; HRI-checked, ULX3S target |
 | `ias/` | IAS Machine (1952) | stub; plan + sources |
 | `ibm1401/` | IBM 1401 (1959) | stub; plan + sources |
 | `ibm701/` | IBM 701 (1952) | stub; plan + sources |

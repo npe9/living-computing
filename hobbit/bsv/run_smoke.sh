@@ -37,7 +37,20 @@ if printf '%s\n' "$out" | grep -q '^FAIL'; then
   exit 1
 fi
 passes=$(printf '%s\n' "$out" | grep -c '^PASS ' || true)
-if [ "$passes" -lt 5 ]; then
-  echo "run_smoke: only $passes PASS lines" >&2
+if [ "$passes" -lt 26 ]; then
+  echo "run_smoke: only $passes PASS lines (17 functional + 14 cycle/table)" >&2
+  exit 1
+fi
+
+# The fixed smoke program retires 41 instructions; each HRI line must
+# carry the contract's trailing cyc field.
+hris=$(printf '%s\n' "$out" | grep -c '^HRI ' || true)
+if [ "$hris" -ne 41 ]; then
+  echo "run_smoke: $hris HRI lines, want 41" >&2
+  exit 1
+fi
+if printf '%s\n' "$out" | grep '^HRI ' |
+     grep -Evq '^HRI pc=[0-9a-f]{4} insn=[0-9a-f]{8} sp=[0-9a-f]{8}>[0-9a-f]{8} msp=[0-9a-f]{8}>[0-9a-f]{8} we=[0-9] addr=[0-9a-f]{8} data=[0-9a-f]{8} mask=[0-9a-f]{2} trap=[0-9] cyc=[0-9]+$'; then
+  echo "run_smoke: an HRI line does not match the fixed format with cyc" >&2
   exit 1
 fi

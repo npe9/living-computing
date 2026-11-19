@@ -60,7 +60,8 @@ import $pkg::*;
 (* synthesize *)
 module mkGoldenTb_$stem(Empty);
   HobbitMem mem <- mkHobbitMem;
-  HobbitCore core <- mkHobbitCore(mem, imageLength() << 2);
+  HobbitCore core <- mkHobbitCore(mem, imageLength() << 2,
+                                  defaultMemCycles());
 
   Reg#(Bit#(16)) li <- mkReg(0);
   Reg#(Bool) loaded <- mkReg(False);
@@ -76,9 +77,17 @@ module mkGoldenTb_$stem(Empty);
       loaded <= True;
   endrule
 
-  rule start (!started && loaded);
+  // Warm the prefetch buffer from the synchronous read port (p. 4-1
+  // instruction-cache assumption), then start the measured run.
+  Reg#(Bit#(2)) boot <- mkReg(0);
+  rule askPrefetch (loaded && (boot == 0));
+    core.prefetchImage();
+    boot <= 1;
+  endrule
+  rule start ((boot == 1) && core.prefetchReady());
     core.start(32'h00000100, 32'h00000180);
     started <= True;
+    boot <= 2;
   endrule
 
   // Stop after the trap retirement, otherwise when the next PC reaches
@@ -86,7 +95,7 @@ module mkGoldenTb_$stem(Empty);
   // trace rule.
   rule count (started && !finished);
     cycles <= cycles + 1;
-    if ((core.halted() || core.atLimit()) && !core.hriValid())
+    if ((core.halted() || core.atLimit()) && core.quiescent())
       finished <= True;
     else if (cycles > 32'd200000)
       finished <= True;

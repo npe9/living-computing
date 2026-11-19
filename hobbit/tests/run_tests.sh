@@ -23,6 +23,7 @@ python3 "$here/test_hri_check.py"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
+"$hobbit/bsv/run_uart.sh"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
