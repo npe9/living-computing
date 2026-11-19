@@ -105,6 +105,11 @@ module mkStageE#(PimRegFile regs, LocalStore mem,
     return r2;
   endfunction
 
+  // Tag policy (docs/pim_architecture.md "Contradicted" item 1): the
+  // multi-way jump indexes the full 8-bit tag; condTagEq/condTagNe
+  // compare the 7-bit type because the assembler's jmp_tag immediate
+  // carries a tag type; condTagRef/condTagNotRef are type tests and
+  // likewise ignore MRB.
   function Bool evalCond(Cond c, Word av);
     case (c)
       condAlways:     return True;
@@ -141,7 +146,7 @@ module mkStageE#(PimRegFile regs, LocalStore mem,
           ePhase <= 1;
           ePendingTaken <= taken;
           ePendingTarget <= (mi.cond == condMultiway)
-                              ? eUPC + jumpTable.sub(zeroExtend(tagType(wordTag(av))))
+                              ? eUPC + jumpTable.sub(wordTag(av))
                               : mi.next;
           ePendingBranch <= mi.branch && taken;
           ePendingBranchTarget <= truncate(wordData(eRt));

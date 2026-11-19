@@ -325,7 +325,11 @@ the sources confirm from what they contradict.
    silently discards it. Either index and compare the full 8-bit `Tag`, or
    add an explicit, documented mask policy (e.g. compare type only for
    type tests, full tag where MRB matters). Do not leave the choice
-   implicit.
+   implicit. **Resolved (2026-11-19):** the multi-way jump indexes the
+   full 8-bit `Tag`; `condTagEq`/`condTagNe` compare the 7-bit type
+   because the assembler's `jmp_tag` immediate is a tag type; and
+   `condTagRef`/`condTagNotRef` are type tests. The policy is stated in
+   `PimE.bsv` as well.
 2. **The decode table has no nano-code.** `DecodeEntry` contains a
    microprogram base plus `valid/needsEA/isLoad/isStore/deref`. `M92`
    p. 428 says an entry contains the routine start address **and the

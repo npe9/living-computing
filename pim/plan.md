@@ -163,6 +163,12 @@ test or an explicit label.
 
 1. **MRB in the tag-jump table** (item 1): index and compare the full
    8-bit `Tag`, or document a mask policy. Add a regression test.
+   Status (2026-11-19): policy documented — the multi-way jump indexes
+   the full tag; `condTagEq`/`condTagNe` compare the 7-bit type (the
+   assembler's `jmp_tag` immediate is a tag type); `condTagRef`/
+   `condTagNotRef` are type tests. A regression test is blocked: the
+   `StageE` interface does not expose the multi-way micro-PC, and the
+   assembler has no multi-way instruction.
 2. **Nano-code** (item 2): label the current flags as the model's
    nano-code subset, or add a field.
 3. **E two phases** (item 3): label the collapse; do not claim E-stage
