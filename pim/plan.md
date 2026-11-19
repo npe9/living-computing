@@ -93,7 +93,8 @@ inventory is in; the one-PE smoke test passes (48 steps, PC 17); the
 assembler selftest passes; the formal BMC passes on the fixed tree and
 each injected twin fails with a VCD; `docs/isa.md` is generated and
 checked; `run_tests.sh` is green. The primary-source round-trip is
-recorded as substituted (no KL1-B listing in the corpus). The network
+recorded as substituted (no KL1-B printed listing survives in the corpus;
+the PIMOS assembler's encoding table does). The network
 and SDRAM store have Bluesim testbenches, and the FPGA top has a
 reproducible build check (28.32 MHz, WP2 gate unchanged).
 WP1, WP3, WP4 and WP5.1 are done. WP5.1's evidence is in

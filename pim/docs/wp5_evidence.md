@@ -229,8 +229,10 @@ documented NU tail signal and the model's fault paths.
   reaches the PE as an interrupt.
 - The `PimPU` interface has no interrupt input, so the model cannot receive
   one; the NU tail is a standalone pulse.
-- The KL1-B encoding is not in the corpus (`docs/isa.md` "Gaps"), so a
-  KL1-B program cannot be loaded; only the model ISA can.
+- The KL1-B encoding is in the corpus (the PIMOS assembler's
+  `inst_tab.kl1`, transcribed in `docs/kl1_encoding.md`) but not
+  implemented in the model, so a KL1-B program cannot be loaded; only
+  the model ISA can.
 - The exception tag bit assignment is not in the acquired `.tex` files
   (`e-shoen.tex` points to a table that is absent), so the diagnostic cannot
   assert a specific tag value.

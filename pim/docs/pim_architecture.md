@@ -405,11 +405,14 @@ Everything above is a model choice, not a documented PIM/m encoding.
    an 8-bit opcode, 5-bit register fields, a 17-bit immediate and their own
    opcode table. The sources say the PIM/m instruction set is KL1-B, binary
    compatible with Multi-PSI/v2 (`M92` p. 427; `OV92` p. 62). No KL1-B
-   encoding table is given by `M92` or `OV92`. Keep calling the current
-   images a model-defined diagnostic ISA; do not call them PIM/m machine
-   code or claim binary compatibility until a KL1-B encoding is obtained.
-   **Model status:** labelled — the model ISA is a diagnostic stand-in; no
-   KL1-B encoding or binary-compatibility claim is made.
+   encoding table is given by `M92` or `OV92`, but the PIMOS assembler's
+   table is now available (`docs/kl1_encoding.md`). Keep calling the
+   current images a model-defined diagnostic ISA; do not call them PIM/m
+   machine code or claim binary compatibility until the PIMOS-derived
+   KL1-B encoding is implemented in the model.
+   **Model status:** labelled — the model ISA is a diagnostic stand-in;
+   the PIMOS-derived KL1-B encoding is documented but not implemented, so
+   no binary-compatibility claim is made.
 6. **No instruction or data caches in the model.** The model uses one flat
    `RegFile` for memory (`PimPU`) and therefore cannot exhibit the documented
    1 K/4 K-word direct-mapped caches or the cache-miss penalty (`M92`

@@ -2,8 +2,10 @@
 """Generate docs/isa.md from pimasm.py.
 
 The machine and microinstruction encodings are the model's own; the 1992
-sources do not publish the bit assignments, and KL1-B's encoding is not
-in the corpus.  This script is the single generator for the ISA table;
+sources do not publish the bit assignments. KL1-B's encoding is in the
+corpus (the PIMOS assembler's inst_tab.kl1, transcribed in
+docs/kl1_encoding.md) but is not implemented in the model.  This script
+is the single generator for the ISA table;
 ``--check`` fails if the committed document drifts from the assembler.
 
 Usage:
@@ -181,8 +183,10 @@ def render() -> str:
     lines.append("The encodings are the model's own, not historical PIM/m")
     lines.append("encodings. The 1992 sources give the 40-bit word, the 8-bit")
     lines.append("tag, the 32K x 64-bit WCS and the five-stage pipeline, but")
-    lines.append("not the bit assignments. KL1-B's encoding is not in the")
-    lines.append("corpus; see [Gaps](#gaps).")
+    lines.append("not the bit assignments. KL1-B's encoding is in the corpus")
+    lines.append("(the PIMOS assembler's `inst_tab.kl1`, transcribed in")
+    lines.append("[`kl1_encoding.md`](kl1_encoding.md)) but is not implemented")
+    lines.append("in the model; see [Gaps](#gaps).")
     lines.append("")
 
     lines.append("## Word format (40 bits)")
@@ -319,10 +323,11 @@ def render() -> str:
     lines.append("## Gaps")
     lines.append("")
     lines.append("- **KL1-B encoding.** The model ISA is a diagnostic stand-in.")
-    lines.append("  The sources name KL1-B and binary compatibility with")
-    lines.append("  Multi-PSI but do not publish the instruction layout,")
-    lines.append("  opcode table or register-field widths. Do not call these")
-    lines.append("  images PIM/m machine code. See")
+    lines.append("  The full KL1-B instruction set and encoding table is")
+    lines.append("  available (PIMOS-derived and documented in")
+    lines.append("  `kl1_encoding.md`), but it is not implemented in the")
+    lines.append("  model. Do not call these images PIM/m machine code until")
+    lines.append("  the full ISA is implemented. See")
     lines.append("  `docs/pim_architecture.md` \"Not stated\" and `plan.md`")
     lines.append("  WP1.2.")
     lines.append("- **Tag layout.** The 8-bit tag's internal field layout and")

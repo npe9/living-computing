@@ -4,8 +4,10 @@ Generated from `asm/pimasm.py` by `asm/gen_isa_table.py`.
 The encodings are the model's own, not historical PIM/m
 encodings. The 1992 sources give the 40-bit word, the 8-bit
 tag, the 32K x 64-bit WCS and the five-stage pipeline, but
-not the bit assignments. KL1-B's encoding is not in the
-corpus; see [Gaps](#gaps).
+not the bit assignments. KL1-B's encoding is in the corpus
+(the PIMOS assembler's `inst_tab.kl1`, transcribed in
+[`kl1_encoding.md`](kl1_encoding.md)) but is not implemented
+in the model; see [Gaps](#gaps).
 
 ## Word format (40 bits)
 
@@ -188,10 +190,11 @@ entry has all flags clear.
 ## Gaps
 
 - **KL1-B encoding.** The model ISA is a diagnostic stand-in.
-  The sources name KL1-B and binary compatibility with
-  Multi-PSI but do not publish the instruction layout,
-  opcode table or register-field widths. Do not call these
-  images PIM/m machine code. See
+  The full KL1-B instruction set and encoding table is
+  available (PIMOS-derived and documented in
+  `kl1_encoding.md`), but it is not implemented in the
+  model. Do not call these images PIM/m machine code until
+  the full ISA is implemented. See
   `docs/pim_architecture.md` "Not stated" and `plan.md`
   WP1.2.
 - **Tag layout.** The 8-bit tag's internal field layout and
