@@ -25,10 +25,12 @@ slot 0), `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,
 injection failing only this bench), `PimKL1BNoopTb.bsv` (the three
 stand-in opcodes advance PC when the argument is bound),
 `PimKL1BWaitUnboundTb.bsv` (wait halts on an unbound UREF; the
-sentinel instruction never executes), `PimKL1BCpTb.bsv` (the choice
-point stack), `PimKL1BGuardBacktrackTb.bsv` (guard failure backtracks
-to the else label), `PimKL1BBindTb.bsv` (get_constant binds a UREF in
-the heap); `run_kl1b_tb.sh` builds and runs all twenty-three. The
+sentinel instruction never executes), `PimKL1BPutAtomTb.bsv`
+(put_atom and the 0x41-0x5f quick forms write the atom ID to a
+register), `PimKL1BCpTb.bsv` (the choice point stack),
+`PimKL1BGuardBacktrackTb.bsv` (guard failure backtracks to the else
+label), `PimKL1BBindTb.bsv` (get_constant binds a UREF in the heap);
+`run_kl1b_tb.sh` builds and runs all twenty-four. The
 implemented subset and the loud-failure rule for the rest are in the
 module header.
 

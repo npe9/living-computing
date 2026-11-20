@@ -116,3 +116,7 @@ run_bench PimKL1BSetAtomTb ./sim_kl1bsetatom
 "$BSC" -sim -g mkPimKL1BWaitUnboundTb -u PimKL1BWaitUnboundTb.bsv
 "$BSC" -sim -e mkPimKL1BWaitUnboundTb -o sim_kl1bwaitunbound
 run_bench PimKL1BWaitUnboundTb ./sim_kl1bwaitunbound
+
+"$BSC" -sim -g mkPimKL1BPutAtomTb -u PimKL1BPutAtomTb.bsv
+"$BSC" -sim -e mkPimKL1BPutAtomTb -o sim_kl1bputatom
+run_bench PimKL1BPutAtomTb ./sim_kl1bputatom

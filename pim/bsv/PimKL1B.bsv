@@ -284,7 +284,13 @@ module mkPimKL1B(PimKL1B);
         // Without a suspension mechanism, halt loudly on an unbound UREF
         // rather than silently proceed; a bound argument advances.
         8'he0: if (deref(regs.sub(a))[39:32] == tagVar) haltR <= True;
-        default: haltR <= True;                   // unimplemented: stop loud
+        // put_atom: argument-preparation atom write to a register.  The
+        // atom ID is inline in the c field (type atom, not r_c40).
+        8'h40: regs.upd(a, {tagAtom, 24'h0, c});
+        default: if (op >= 8'h41 && op <= 8'h5f) begin
+          // put_atom_1 .. put_atom_31: quick forms, atom ID in opcode.
+          regs.upd(a, {tagAtom, 24'h0, op - 8'h40});
+        end else haltR <= True;                   // unimplemented: stop loud
       endcase
     end else begin
       haltR <= True;

@@ -35,6 +35,8 @@ The status labels are:
 | `put_constant` | 0x30 | `R[a] = c40` | documented (TR-246 p. 7) | `PimKL1BStructTb` |
 | `put_integer` | 0x31 | `R[a] = INT(c16)` | inferred | `PimKL1BIntTb` |
 | `put_nil` | 0x32 | `R[a] = NIL` | documented (TR-246 p. 7) | `PimKL1BNilTb` |
+| `put_atom` | 0x40 | `R[a] = ATOM(c8)` — atom ID in operand c; atom table not modelled | model convention / inferred (c-field packing inherited from `set_atom`; PIMOS atom-operand records carry inline atom names, encoder.kl1:310-364) | `PimKL1BPutAtomTb` |
+| `put_atom_1..31` | 0x41-0x5f | `R[a] = ATOM(op - 0x40)` — quick forms, atom ID in opcode | inferred (opcode-embedded atom ID attested by inst_tab.kl1's quick-form comment; a-register destination is the put_* analog) | `PimKL1BPutAtomTb` |
 | `wait_value` | 0xa4 | halt if `deref(R[a]) != deref(R[b])` | documented (TR-246 p. 5) | `PimKL1BFailTb` |
 | `wait_constant` | 0xa0 | halt if `deref(R[a]) != c40` | documented (TR-246 p. 5) | `PimKL1BConstFailTb` |
 | `wait_list` | 0xa6 | halt if the deref is not a list | documented (TR-246 p. 5) | `PimKL1BWaitTb` |
@@ -85,7 +87,7 @@ encoding table but not executed, with the blocking reason:
 | family | examples | reason |
 |---|---|---|
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
-| atoms and vectors | `put_atom*`, `put_vector`, `put_structured_constant` | atom-table and vector layouts are not documented in the corpus; the atom packing clause (`atom`) is an indirect table reference |
+| atoms and vectors | `put_vector`, `put_structured_constant` | vector layouts and the structured-constant stream are not documented in the corpus |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
 | control beyond the queue | `otherwise`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail` and guard backtracking are implemented, `otherwise` is not |
 | console and I/O | `get_console`, `put_console` | device shim not built |
@@ -100,8 +102,9 @@ cells and reads them back, and it can prove the deref path. It has a
 flat argument-save area (`set_*`/`read_*`), a goal-label queue
 (`execute`/`enqueue_goal`/`proceed`/`suspend`) and the integer guard
 built-ins, all as model stand-ins rather than TR-246's record areas.
-It cannot yet run a PIMOS module: atom/vector/structure construction
-(`put_atom*`, `put_vector`, `put_structured_constant`) halts because the
-atom table and vector layouts are not in the corpus, and the
-choice-point and console paths are not modelled. The next tranches in
+It cannot yet run a PIMOS module: vector/structure construction
+(`put_vector`, `put_structured_constant`) halts because the vector
+layouts are not in the corpus, and the choice-point and console paths
+are not modelled.  `put_atom*` is now implemented as a register write
+with the atom ID, but the atom table itself is still not modelled. The next tranches in
 `plan.md` name those gaps.
