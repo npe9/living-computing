@@ -110,8 +110,15 @@ def parse_term(r):
         # extracts 32/size characters from the 32-bit word, so the
         # encoded string is 2 * ceil(ln*size/32) 16-bit words.
         nwords = 2 * ((ln * size + 31) // 32)
-        chars = bytes(r.rd() & 0xff for _ in range(nwords))
-        return ('string', ln)
+        # elements are packed into 32-bit words from the top
+        # (encoder.kl1 pack_string_element)
+        ws = [r.rd() for _ in range(nwords)]
+        elems = []
+        for k in range(0, nwords, 2):
+            x = ws[k] << 16 | ws[k + 1]
+            elems += [(x >> (32 - size * (j + 1))) & ((1 << size) - 1)
+                      for j in range(32 // size)]
+        return ('string', ln, size, elems[:ln])
     if t == 0x0700:
         r.rd()
         ln = (r.rd() << 16) | r.rd()

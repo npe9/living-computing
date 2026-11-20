@@ -96,7 +96,9 @@ decoder on integers, lists and vectors, the test answering the
 decoder's read requests through the script's `SLOT` operation;
 `put_list`, `get_nil`, `wait_atom`) and `deca` (the same on atoms and
 proper lists, with terms from the real `pimm_kernel360E.sav`; the test
-also plays the atom table; `put_constant`). State: 65 instructions; goals as
+also plays the atom table; `put_constant`; strings, with the guard
+`modulo` on the divide box `PimmMBox.bsv`, a 32-step restoring
+divider). State: 66 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

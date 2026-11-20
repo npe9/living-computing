@@ -584,6 +584,15 @@ class Machine:
             return self.guard_fail()
         self.reg[z] = (INT, (a & 0xffffffff) >> b)
 
+    def i_modulo(self, pc, x, y, z, c16):        # guard arithmetic
+        # the remainder has the dividend's sign, as PDSS's C % (not
+        # established for PIM/m); a zero divisor fails the guard
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or b == 0:
+            return self.guard_fail()
+        r = abs(a) % abs(b)
+        self.reg[z] = (INT, (-r if a < 0 else r) & 0xffffffff)
+
     def i_integer(self, pc, x, y, z, c16):       # guard type check
         if self.g_int(x) is None:
             return self.guard_fail()

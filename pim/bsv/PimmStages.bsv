@@ -22,6 +22,7 @@ import PimmHBox::*;
 import PimmGBox::*;
 import PimmSBox::*;
 import PimmVBox::*;
+import PimmMBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -74,10 +75,10 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2 } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
-                   PimmSBox sbox, PimmVBox vbox, MemPort smem)(PimmExec);
+                   PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -187,7 +188,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_switch_on_non_vector || op == op_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
-                      || op == op_shift_right;
+                      || op == op_shift_right || op == op_modulo;
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
@@ -457,6 +458,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (!isInt(a) || !isInt(b)) guardFail;
+    else if (op == op_modulo) begin
+      // a zero divisor fails the guard; the divide box takes 32 steps
+      if (b.val == 0) guardFail;
+      else begin
+        mbox.divide(a.val, b.val);
+        st <= XDiv;
+      end
+    end
     else if (op == op_shift_right) begin
       // logical; a count outside 0..31 fails the guard
       Bit#(5) count = truncate(b.val);
@@ -474,6 +483,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if ((op == op_not_less_than && ia >= ib) || (op == op_less_than && ia < ib)
              || (op == op_equal && ia == ib)) next;
     else guardFail;
+  endrule
+
+  rule divided (st == XDiv);
+    let d <- mbox.result;
+    regs.wr(z, intC(d.remainder));
+    next;
   endrule
 
   rule note2 (st == XNote2);

@@ -28,12 +28,19 @@ words of the file: that is the check on the string path.
 
 Terms: some written here, and the first terms of the GC areas of the
 real pimm_kernel360E.sav that consist of integers, atoms, lists and
-vectors of at most six elements (larger vectors and strings are not
-modelled yet).  For the real ones the words are the file's and the
+vectors of at most six elements (larger vectors and strings of other
+element sizes or more than 40 elements are left out).  For the real ones the words are the file's and the
 atoms defined earlier in the file are answered as gets.  The oracle
 is asm/unlsav.py's reading of the same words.
 
-New here: put_constant.
+A string in the file is 06ss (ss the element size), its length (32
+bits), then the elements packed from the top into 32-bit words.  The
+decoder asks for a 16-bit string whole with {Buf, Out, Rest} (and one
+more word when the length is odd), and for an 8-bit one a 32-bit word
+at a time, which it unpacks with shifts and set_string_element.
+
+New here: put_constant, and the guard modulo with the Bluespec divide
+box (PimmMBox.bsv).
 
 Observed fault injections into the Bluespec, 2026-11-20, each FAILed
 where shown and was restored:
@@ -41,6 +48,14 @@ where shown and was restored:
   put_constant takes 16 bits         term 0: R 6 = ffff8000 for 8000
   put_constant writes r[y]           term 0: R 0 written for R 6
 
+  modulo gives the quotient          the 16-bit string of 2: R 6 = 1 for 0
+  divide box one step short          the same: R 6 = 1 for 0
+  divide box never subtracts         the same: R 6 = 2 for 0
+  b_shift_right arithmetic           the 8-bit string with a5 last: R 3 = ffffffa5
+                                     for a5 (in the trace; the element is masked)
+
+Not caught: modulo accepting a zero divisor, and nothing here divides a
+negative number: the decoder only takes a length mod 2.
 Not caught: put_constant forcing the integer tag.  Both constants the
 decoder loads this way are integers (32768).
 """
@@ -58,10 +73,11 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import unlsav  # noqa: E402
 
-PINNED = dict(parts=15, lines=18045, real=10)
+PINNED = dict(parts=28, lines=36383, real=16)
 OBJ = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 NIL_NAME = [0x214e, 0x214f]
-REAL = 10
+REAL = 10            # real terms without strings
+REAL_STRINGS = 6     # and with
 
 
 def jis(text):
@@ -69,7 +85,7 @@ def jis(text):
 
 
 # written terms: an integer; ('a', n, name words or None for a reference);
-# ('v', [terms]); ('l', [cars], cdr)
+# ('v', [terms]); ('l', [cars], cdr); ('s', element bits, [elements])
 NIL0 = ('a', 1, NIL_NAME)
 NIL = ('a', 1, None)
 WRITTEN = [
@@ -78,6 +94,13 @@ WRITTEN = [
     ('v', [('a', 7, jis('x')), ('a', 7, None), ('a', 8, jis('yz'))]),
     ('l', [('a', 2, jis('p')), ('l', [3], NIL0), ('v', [('a', 2, None)])], NIL),
     ('l', [], NIL0),
+    ('s', 16, [0x2341, 0x2342]),
+    ('s', 16, [0x2341, 0xffff, 0x8000]),
+    ('s', 8, [1, 2, 3, 4]),
+    ('s', 8, [0xff, 0x80, 0x7f, 0, 0xa5]),
+    ('s', 16, []),
+    ('s', 8, []),
+    ('v', [('s', 8, [65]), ('l', [('s', 16, [7])], NIL0)]),
 ]
 
 
@@ -92,6 +115,16 @@ def encode(t):
         if t[2] is None:
             return [0, t[1]]
         return [0, 0x8000 | t[1], len(t[2]) >> 16, len(t[2]) & 0xffff] + t[2]
+    if t[0] == 's':
+        size, elems = t[1], t[2]
+        per = 32 // size
+        out = [0x0600 | size, len(elems) >> 16, len(elems) & 0xffff]
+        for k in range(0, len(elems), per):
+            x = 0
+            for j, e in enumerate(elems[k:k + per]):
+                x |= e << (32 - size * (j + 1))
+            out += [x >> 16, x & 0xffff]
+        return out
     if t[0] == 'v':
         n = len(t[1])
         return [0x0700, n >> 16, n & 0xffff] + [w for e in t[1] for w in encode(e)]
@@ -113,6 +146,8 @@ def shown(p):
         return [] if n == 0 else '#%x' % n
     if p[0] == 'vector':
         return tuple(shown(e) for e in p[1])
+    if p[0] == 'string':
+        return (p[2], p[3])
     assert p[0] == 'list', p
     out = shown(p[1][-1])
     for e in reversed(p[1][:-1]):
@@ -120,9 +155,15 @@ def shown(p):
     return out
 
 
+def has_string(p):
+    return p[0] == 'string' or (p[0] in ('vector', 'list') and any(has_string(e) for e in p[1]))
+
+
 def simple(p):
     if p[0] in ('int', 'atom'):
         return True
+    if p[0] == 'string':
+        return p[2] in (8, 16) and p[1] <= 40
     if p[0] == 'vector':
         return 1 <= len(p[1]) <= 6 and all(simple(e) for e in p[1])
     return p[0] == 'list' and all(simple(e) for e in p[1])
@@ -143,7 +184,7 @@ def real_terms():
         r.i += 2 + ((words[r.i] << 16) | words[r.i + 1])
     # every term unlsav.parse_module reads at top level (the module
     # information and the GC area), with where it lies in the file
-    out, depth, inner = [], [0], unlsav.parse_term
+    out, depth, inner, count = [], [0], unlsav.parse_term, [0, 0]
 
     def outer(rd):
         i, before = rd.i, dict(rd.atoms)
@@ -152,8 +193,11 @@ def real_terms():
             p = inner(rd)
         finally:
             depth[0] -= 1
-        if depth[0] == 0 and simple(p) and p[0] != 'int' and len(out) < REAL:
-            out.append((words[i:rd.i], before, p))
+        if depth[0] == 0 and simple(p) and p[0] != 'int':
+            k = 1 if has_string(p) else 0
+            if count[k] < (REAL, REAL_STRINGS)[k]:
+                count[k] += 1
+                out.append((words[i:rd.i], before, p))
         return p
     unlsav.parse_term = outer
     try:
@@ -312,7 +356,7 @@ def main(argv):
               % (s.real, real, bad[:3]))
         return 1
     names = sum(1 for w in want if w[1] == 'name')
-    print('pimm lockstep deca: PASS (the IPL file decoder on atoms and proper lists on '
+    print('pimm lockstep deca: PASS (the IPL file decoder on atoms, lists and strings on '
           'the Bluespec core: %d terms, %d of them from the GC areas of the real '
           'pimm_kernel360E.sav, %d trace lines identical to the reference model; the '
           'test answers the reader\'s and the atom table\'s requests; every object as '
