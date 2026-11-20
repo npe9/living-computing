@@ -191,6 +191,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
+  // wait_atom's base is 80
+  Bool isWaitAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b100;
   Cell atomHere = mkCell(tag_ATOMo, zeroExtend(ins.val[23:0]));
   // put_vector_N, N = 2..4: N cells, no header
   Bool isPutVector = op == op_put_vector_1 || op == op_put_vector_2 || op == op_put_vector_3
@@ -216,6 +218,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_suspend) begin
       if (nNoted != 0) suspendGoal;
       else stop(EndFail);
+    end
+    else if (isWaitAtom) begin
+      dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
+      st <= XDeref1;
     end
     else if (oneOperandGuard || twoOperandGuard) begin
       dbox.deref(regs.r(x));
@@ -246,6 +252,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (isGetAtom) begin
       dbox.unify(regs.r(zeroExtend(ins.val[28:24])), atomHere);
       st <= XUnify;
+    end
+    else if (op == op_get_nil) begin
+      dbox.unify(regs.r(x), mkCell(tag_ATOMo, 0));
+      st <= XUnify;
+    end
+    else if (op == op_put_list) begin
+      gbox.alloc(2);       // car, then cdr
+      st <= XVec;
     end
     else if (isPutVector) begin
       gbox.alloc(zeroExtend(vectorN));
@@ -308,7 +322,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ---- guards ----------------------------------------------------------
   rule deref1 (st == XDeref1);
     let a <- dbox.derefResult;
-    if (op == op_switch_on_non_integer) begin
+    if (isWaitAtom) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_ATOMo && a.val == atomHere.val) next;
+      else guardFail;
+    end
+    else if (op == op_switch_on_non_integer) begin
       if (isRef(a)) note(a);
       finish(tagged Next (isInt(a) ? pc + 1 : labelOf(pc, c16)));
     end
@@ -499,7 +518,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule vectorMade (st == XVec);
     let a <- gbox.allocResult;
     sp <= a;
-    regs.wr(x, mkCell(tag_VECT0o + (vectorN << 1) + 1, absAddr(a)));
+    regs.wr(x, op == op_put_list ? mkCell(tag_LISTo + 1, absAddr(a))
+                                 : mkCell(tag_VECT0o + (vectorN << 1) + 1, absAddr(a)));
     next;
   endrule
 

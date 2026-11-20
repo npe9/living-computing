@@ -85,7 +85,10 @@ the image's decoder builds requests with unbound variables for a
 reader to fill, where the source consumes a list of words). So its
 oracle is the data: real `.sav` term streams decoded independently by
 `asm/unlsav.py`. `lockstep_dec0.py` is the first step (one-word
-integers). The rest of the module needs `put_list` 62, `get_nil` 27,
+integers); `lockstep_dect.py` the second: integers, lists and vectors,
+with the test playing the reader (the decoder asks with `[W|Rest]` for
+a word and `{V, Rest}` for 32 bits). Atoms, strings and real `.sav`
+terms are next and need the atom-table side. The rest of the module needs `put_list` 62, `get_nil` 27,
 `wait_atom` 16, `put_structured_constant` 14, `put_constant` 8,
 `put_atom`, `write_nil`, `write_marked_*`, `set_atom`, `wait_constant`,
 `wait_value`, `integer`, `modulo`, `b_multiply`, `new_instruction`, and

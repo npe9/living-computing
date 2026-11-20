@@ -28,6 +28,13 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          structure whose cells are the variables made
                          by consecutive NEWVARs starting with slot b's
                          (variables are single cells taken in order)
+    SLOT    a cell       slot a := cell, as given.  For a test that
+                         answers what a goal asks for: the script's
+                         author runs the reference model as the script
+                         grows (Script.live), finds the cell a goal
+                         left unbound, and names it here.  The address
+                         holds on the Bluespec because the traces,
+                         which show every memory write, are compared.
 """
 import os
 import sys
@@ -36,7 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
-END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR = range(12)
+END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT = range(13)
 SCRIPT_BITS = 20            # the driver's script memory holds 1 << 20 operations
 
 
@@ -80,6 +87,23 @@ class Script:
 
     def setel(self, a, i, e):
         self._op(SETEL, a, 0, (0, i << 16 | e))
+
+    def setslot(self, a, cell):
+        self._op(SLOT, a, 0, cell)
+
+    def live(self):
+        """Perform the operations added since the last call on a private
+        reference machine and return it; live_slot is its slots."""
+        if not hasattr(self, '_live'):
+            self._live = (pimm.Machine(), [(0, 0)] * 16, [0], [])
+        m, slot, done, outs = self._live
+        m.tr = []
+        for o in self.ops[done[0]:]:
+            if o[0] != 'label':
+                self._do(m, slot, o, outs, '')
+        done[0] = len(self.ops)
+        self.live_slot = slot
+        return m
 
     def vector(self, a, first, elems):
         """slot a := a vector of len(elems) cells, built in slots first,
@@ -133,6 +157,41 @@ class Script:
             # the whole memory, so that the simulator has no gap to report
             f.write('0000000000000000\n' * ((1 << SCRIPT_BITS) - len(words)))
 
+    @staticmethod
+    def _do(m, slot, o, outs, label):
+        k, a, b, c = o
+        if k == NEWVAR:
+            slot[a] = m.new_var()
+        elif k == ARG:
+            m.argv[a] = slot[b]
+        elif k == ARGC:
+            m.argv[a] = c
+        elif k == SPAWN:
+            m.record(pimm.READY, c[1], m.argv[1:a + 1])
+        elif k == RUN:
+            try:
+                m.run()
+            except (pimm.Suspend, pimm.Fail):
+                pass
+        elif k == OUT:
+            w = m.deref(slot[a])
+            outs.append((label, w))
+            m.tr.append('O %02x%08x' % w)
+        elif k == UNIFY:
+            m.unify(slot[a], slot[b])
+        elif k == UNIFYC:
+            m.unify(slot[a], c)
+        elif k == NEWSTR:
+            slot[a] = m.new_string(c[1] >> 8, c[1] & 0xff)
+        elif k == SETEL:
+            slot[a] = m.set_element(slot[a], c[1] >> 16, c[1] & 0xffff)
+        elif k == PTR:
+            slot[a] = (c[0], slot[b][1])
+        elif k == SLOT:
+            slot[a] = c
+        else:
+            raise ValueError(k)
+
     def play(self, m=None):
         """Yield (label, [trace lines]) for each labelled part."""
         m = m or pimm.Machine()
@@ -147,36 +206,7 @@ class Script:
                     yield label, m.tr
                 label, m.tr = o[1], []
                 continue
-            k, a, b, c = o
-            if k == NEWVAR:
-                slot[a] = m.new_var()
-            elif k == ARG:
-                m.argv[a] = slot[b]
-            elif k == ARGC:
-                m.argv[a] = c
-            elif k == SPAWN:
-                m.record(pimm.READY, c[1], m.argv[1:a + 1])
-            elif k == RUN:
-                try:
-                    m.run()
-                except (pimm.Suspend, pimm.Fail):
-                    pass
-            elif k == OUT:
-                w = m.deref(slot[a])
-                self.outs.append((label, w))
-                m.tr.append('O %02x%08x' % w)
-            elif k == UNIFY:
-                m.unify(slot[a], slot[b])
-            elif k == UNIFYC:
-                m.unify(slot[a], c)
-            elif k == NEWSTR:
-                slot[a] = m.new_string(c[1] >> 8, c[1] & 0xff)
-            elif k == SETEL:
-                slot[a] = m.set_element(slot[a], c[1] >> 16, c[1] & 0xffff)
-            elif k == PTR:
-                slot[a] = (c[0], slot[b][1])
-            else:
-                raise ValueError(k)
+            self._do(m, slot, o, self.outs, label)
         self.slots = slot
         yield label, m.tr
 

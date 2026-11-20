@@ -81,6 +81,9 @@ of this module can check, on either model, and injections confirm it:
 | `shift_right` (guard) | `23:E9 x y z` | `r[z]` := `r[x] >> r[y]`, logical; an unbound operand is noted and the guard fails; a non-integer or a count outside 0..31 fails the guard (manual: "Fail, Exception") | checked, logical against arithmetic included (`lockstep_rss.py`); the count limit is not run |
 | `integer` (guard) | `23:E2 x` | succeeds if `r[x]` is an integer; unbound is noted and fails (manual: suspend), anything else fails | checked, except the unbound case (a `wait` always precedes it) |
 | `put_vector_1`, `_5`, `_6` | `23:39`, `3D`, `3E` | as `put_vector_2..4` | `_5` checked; `_1`, `_6` not run |
+| `put_list` | `23:2E x` | two new cells, car then cdr, filled by the two `write_*` that follow; `r[x]` := a list pointer to them | checked (`lockstep_dect.py`) |
+| `get_nil` | `23:BA x` | unify `r[x]` with `[]` (the atom 0) | checked |
+| `wait_atom` | `23:80+r`, atom in the low 24 bits | guard: `r` dereferenced must be that atom; unbound is noted and fails | checked |
 | `get_value` | `23:BC x y` | unify `r[x]` with `r[y]` | checked for integer against unbound only |
 | `get_integer` | `23:B9 x c16` | unify `r[x]` with integer `c16` | checked against unbound only |
 | `otherwise` | `23:6A x c16` | clauses below apply only if none above can: if a guard above was waiting on a variable, the goal suspends; else continue | both cases checked. `x` is the arity and the label is the predicate's own first instruction; what the machine uses them for is inferred (re-entry after suspension) |

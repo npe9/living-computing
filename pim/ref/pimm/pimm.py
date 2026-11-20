@@ -260,7 +260,7 @@ class Machine:
             return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
-        if VECT0 < t <= VECT0 + 12:
+        if VECT0 <= t <= VECT0 + 12:
             n = (t - VECT0) // 2
             return tuple(self.term(self.mem[w[1] + i]) for i in range(n))
         raise Unimplemented('term with tag %02x' % w[0])
@@ -634,6 +634,22 @@ class Machine:
         # one cell: opcode byte = c0 | register, low 24 bits = the atom
         v = self.cells[pc][1]
         self.unify(self.reg[(v >> 24) & 31], (ATOM, v & 0xffffff))
+
+    def i_wait_atom(self, pc, x, y, z, c16):
+        # one cell: opcode byte = 80 | register, low 24 bits = the atom
+        v = self.cells[pc][1]
+        w = self.g_word((v >> 24) & 31)
+        if w is None or (w[0] & ~1, w[1]) != (ATOM, v & 0xffffff):
+            return self.guard_fail()
+
+    def i_get_nil(self, pc, x, y, z, c16):
+        self.unify(self.reg[x], NIL)
+
+    def i_put_list(self, pc, x, y, z, c16):
+        # two cells, car then cdr, filled by the two write_* that follow
+        a = self.alloc(2)
+        self.sp = a
+        self.reg[x] = (LIST + 1, a)
 
     # Building a vector: put_vector_N takes N cells and points r[x] at
     # them; the N write_* instructions that follow fill them in order.

@@ -12,7 +12,7 @@ import PimmTypes::*;
 import PimmCore::*;
 
 typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
-               NewStr, SetEl, Ptr } Kind deriving (Bits, Eq);
+               NewStr, SetEl, Ptr, Slot } Kind deriving (Bits, Eq);
 
 module mkPimmDriverTb(Empty);
   PimmCore core <- mkPimmCore("generated/pimm_ipl.hex");
@@ -46,6 +46,7 @@ module mkPimmDriverTb(Empty);
       NewStr: begin core.newString(cell_.val >> 8, zeroExtend(cell_.val[7:0])); answer = True; end
       SetEl:  begin core.setElement(slot.sub(sa), cell_.val >> 16, zeroExtend(cell_.val[15:0])); answer = True; end
       Ptr:    slot.upd(sa, mkCell(cell_.tag, slot.sub(sb).val));
+      Slot:   slot.upd(sa, cell_);
       default: fatal("driver: operation not implemented");
     endcase
     if (answer) awaited <= True;
