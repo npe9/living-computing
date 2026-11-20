@@ -64,6 +64,9 @@
 ! `ib` and rl_prepare's load clock; docs/atlas_oracle.md "Closing the
 ! residuals" item 7).  MEASURED with it removed: 1209 again; with the
 ! decode hold's old word set (storeWaitWord) instead: 1196, no effect.
+! CYCLES 1196 -> 1225, 2026-11-20: interruption recovery (plan §1c 5f; Perf.
+! Char. Vol. 1 printed p.3-24) reruns the undone run-ahead; with the recovery
+! window injected off, 1196 again.
 !
 ! MEASURED INJECTIONS, 2026-11-17, on the final model (each in the
 ! worktree from a saved copy, restored and compared with cmp; observed on

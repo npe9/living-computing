@@ -52,6 +52,10 @@
 !
 ! OBSERVED: as expected; PC 4352 (PASS), CYCLES 981, MEMREADS 103 -- the
 ! clock and read counts are MODEL BEHAVIOUR (no printed time).
+! CYCLES 981 -> 1056, MEMREADS 103 -> 113, 2026-11-20: interruption recovery
+! (plan §1c 5f; Perf. Char. Vol. 1 printed p.3-24) undoes the instructions
+! that ran ahead of the interrupting level and runs them again; with the
+! recovery window injected off the old 981/103 return exactly.
 !
 ! INJECTIONS, 2026-11-18 (scratch tree, files restored and cmp'd IDENTICAL;
 ! every check not listed passed, and branch_invalid_address.strap passed):

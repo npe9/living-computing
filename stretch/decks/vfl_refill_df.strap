@@ -72,6 +72,9 @@
 !      deck): FAIL I1, I2, I3, I4 = (16)80000000000 (DF) ONLY -- each case
 !      its own site (CM, ST one word, M+, ST crossing).  Q5 passes.
 ! Q5 is the control.  CYCLES 1115 (PC 2117); 1119 before the 2026-11-17 preparation floor (measured).
+! CYCLES 1115 -> 1155, 2026-11-20: interruption recovery (plan §1c 5f; Perf.
+! Char. Vol. 1 printed p.3-24) reruns the undone run-ahead; with the recovery
+! window injected off, 1115 again.
 !
         SLC, 1000.0
 START   BD,  $+.32

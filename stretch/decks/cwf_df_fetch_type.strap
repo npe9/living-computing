@@ -83,7 +83,9 @@
 !      DF again, nothing else changed
 ! Every other check passes under each.
 !
-! CYCLES 6031 AND MEMREADS 569 ARE MODEL BEHAVIOUR; no documented time or
+! CYCLES 6110 AND MEMREADS 581 (6031 and 569 before the 2026-11-20
+! interruption recovery, plan §1c 5f, which reruns the undone run-ahead; the
+! old numbers return with its window injected off) ARE MODEL BEHAVIOUR; no documented time or
 ! request count exists for a no-op'd level (Perf. Char. Vol. 1 printed
 ! A-8, PDF 67, gives only its NOOP tag).  Whether a PROTECTED VFL store
 ! fetches is not printed either (Perf. Char. Vol. 1 printed p.2-3 item 6:
