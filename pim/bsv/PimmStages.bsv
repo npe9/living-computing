@@ -180,6 +180,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5;
   Bit#(8) waitN = ins.val[31:24] - op_wait_vector_0[7:0];
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
+                      || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
@@ -311,6 +312,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_hash_on_constant) begin
       if (isRef(a)) note(a);
       hbox.lookup(pc, a, c16, !isRef(a));
+      st <= XHash;
+    end
+    else if (op == op_switch_on_constant) begin
+      if (isRef(a)) note(a);
+      hbox.scan(pc, a, c16, !isRef(a));
       st <= XHash;
     end
     else if (op == op_wait) begin

@@ -23,7 +23,8 @@ stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
-54 instructions now. No
+`lockstep_rpos.py` runs `exception_table:replace_position/3`
+(`switch_on_constant`); 55 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py

@@ -531,6 +531,24 @@ class Machine:
                 return e + 1 + 1 + sx16(cells[e + 1][1])
         return miss
 
+    def i_switch_on_constant(self, pc, x, y, z, c16):
+        # word 1: register, the number of pairs.  Then `c16` pairs
+        # {key, {INT, else << 16 | offset}}, both 16-bit fields relative
+        # to the pair's second cell + 2 (klb_opr.kl1 r_c16_c16_16s_sw /
+        # make_label).  Every pair carries the else label; an unbound
+        # key takes the first pair's, as hash_on_constant takes its
+        # miss label, and the variable is noted.
+        cells = self.cells
+        w = self.g_word(x)
+        for k in range(c16):
+            e = pc + 2 + 2 * k
+            v = cells[e][1]
+            if w is None or (k == c16 - 1 and cells[e - 1] != (w[0] & ~1, w[1])):
+                return e + 2 + sx16(v >> 16)
+            if cells[e - 1] == (w[0] & ~1, w[1]):
+                return e + 2 + sx16(v)
+        raise Unimplemented('switch_on_constant with no pairs at %d' % pc)
+
     # guards
     def i_wait(self, pc, x, y, z, c16):
         if self.g_word(x) is None:
