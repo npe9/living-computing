@@ -1,0 +1,360 @@
+﻿<!--
+#
+# Outline of PIM specification
+#
+# Created by	A.Aiba		99/03/05
+# Revised by 	K.Rokusawa	99/03/09
+#
+-->
+<HTML>
+<HEAD><TITLE>Top Page for FGCS Museum</TITLE></HEAD>
+<BODY BACKGROUND="../../PICS/tile-blue.gif"
+LEFTMARGIN="30">
+
+<BR>
+<CENTER>
+<FONT SIZE=6 COLOR="#00008F"><B>Outline of 5 modules of PIM</B></FONT></CENTER><BR>
+
+<HR WIDTH=90% ALIGN="CENTER" SIZE=7><BR>
+
+Parallel Inference Machines PIM were parallel computers developed in
+the Fifth Generation Computer Systems Project. PIM has 5 different
+models with different architectures: model p, model m, model c, model
+k, and model i. Each model was developed to investigate appropriate
+architecture for parallel inference.<P>
+
+In the following, features 5 models of PIM are briefly described and
+compared.<P><BR><BR>
+
+<HR>
+
+<!--<H1>PIM/p</H1>-->
+
+<CENTER>
+<FONT SIZE="+4"><B>PIM/p</B></FONT>
+</CENTER><P>
+
+<IMG ALIGN=LEFT SRC="./pim-p/med-pim-p-1.jpg">
+
+<P>
+PIM/p is the largest PIM model which contains maximum 512 processing
+elements (PEs).  It was developed for both architectural research and
+parallel software R & D.  </P>
+
+<P>
+PIM/p takes multi-cluster structure.  Each cluster contains eight PEs
+and a shared memory connected with shared bus.  Interprocessor
+communication within a cluster is realized by coherent cache.  The
+cache protocol is invalidation type.  Maximum 64 clusters can be
+connected with hypercube network.  </P>
+
+<P>
+The PE of PIM/p has RISC-like instruction set and has a unique
+features called <I>macro call</I> for light-weight subroutine call.
+</P>
+
+<HR>
+
+<!--<H1>PIM/m</H1>-->
+
+<CENTER>
+<FONT SIZE="+4"><B>PIM/m</B></FONT>
+</CENTER><P>
+
+<IMG ALIGN=LEFT SRC="./pim-m/med-pim-m-1.jpg">
+
+<P>
+PIM/m targets the parallel software development machine and rigid
+compatibility with the Multi-PSI.  </P>
+
+<P>
+Maximum 256 PEs can be connected with two dimensional mesh network.
+</P>
+
+<P>
+The PE of PIM/m has CISC-like micro programmable instruction set.
+</P>
+<BR>
+
+<HR>
+
+
+<!--<H1>PIM/c</H1>-->
+
+<CENTER>
+<FONT SIZE="+4"><B>PIM/c</B></FONT>
+</CENTER><P>
+
+<IMG ALIGN=LEFT SRC="./pim-c/med-pim-c-1.jpg">
+
+<P>
+PIM/c was developed for both architectural research and parallel
+software R & D.  Maximum 256 processing elements can be connected.
+</P>
+
+<P>
+PIM/c takes multi-cluster structure.  Each cluster contains eight PEs
+and a shared memory connected with shared bus.  Interprocessor
+communication within a cluster is realized by coherent cache.  The
+cache protocol is invalidation type.  Maximum 32 clusters can be
+connected with crossbar switch network.  </P>
+
+<P>
+The PE of PIM/c has CISC-like micro programmable instruction set.
+</P>
+<BR>
+
+<HR>
+
+<!--<H1>PIM/k</H1>-->
+
+<CENTER>
+<FONT SIZE="+4"><B>PIM/k</B></FONT>
+</CENTER><P>
+
+<IMG ALIGN=LEFT SRC="./pim-k/med-pim-k-2.jpg">
+
+<P>
+PIM/k focuses on architectural research within a cluster.
+Hierarchical cache system has been investigated to connect larger
+number of PEs in a cluster.  Maximum 16 PEs can be connected.  </P>
+
+<P>
+Four PEs share a local bus and second cache.  They form a
+mini-cluster.  Four mini-clusters and a shared memory are connected
+with shared bus.  Interprocessor communication is realized by coherent
+cache.  The cache protocol is invalidation type.  </P>
+
+<P>
+The PE of PIM/k has RISC-like instruction set.  </P>
+<BR>
+
+<HR>
+
+<!--<H1>PIM/i</H1>-->
+
+<CENTER>
+<FONT SIZE="+4"><B>PIM/i</B></FONT>
+</CENTER><P>
+
+<IMG ALIGN=LEFT SRC="./pim-i/med-pim-i-1.jpg">
+
+<P>
+PIM/i was developed for the experimental use of intra-cluster
+architecture.  </P>
+
+<P>
+A cluster consists of eight PEs and a shared memory connected with a
+shared bus.  Interprocessor communication is realized by coherent
+cache.  The cache protocol is broadcasting type.  </P>
+
+<P>
+The PE of PIM/i has LIW-type instruction set.  </P>
+
+<HR WIDTH=90% ALIGN="CENTER" SIZE=7><BR>
+
+Specifications of PIMs can be summarized as follows.
+
+<BR>
+
+<TABLE BORDER>
+<CAPTION VALIGN="top"><B>(a) Global Configuration</B></CAPTION>
+<TR ALIGN="center">
+  <TH></TH>
+  <TH>Topology</TH>
+  <TH># of Clusters</TH>
+  <TH>Total # of PEs</TH>
+  <TH>Memory Size / Cluster</TH>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/p</TH>
+  <TD>hypercube &#215 2</TD>
+  <TD>64</TD>
+  <TD>512</TD>
+  <TD>256 MB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/m</TD>
+  <TD>mesh</TD>
+  <TD>256</TD>
+  <TD>256</TD>
+  <TD>80 MB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/c</TD>
+  <TD>crossbar</TD>
+  <TD>32</TD>
+  <TD>256</TD>
+  <TD>160 MB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/k</TH>
+  <TD>--</TD>
+  <TD>1 (four mini clusters)</TD>
+  <TD>16</TD>
+  <TD>1 GB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/i</TH>
+  <TD>--</TD>
+  <TD>2</TD>
+  <TD>16</TD>
+  <TD>320 MB</TD>
+</TR>
+</TABLE>
+
+<BR>
+
+<TABLE BORDER>
+<CAPTION VALIGN="top"><B>(b) Processing Element (PE)</B></CAPTION>
+<TR ALIGN="center">
+  <TH></TH>
+  <TH>Instruction set</TH>
+  <TH>Cycle time</TH>
+  <TH>LSI fabrication</TH>
+  <TH>Line interval</TH>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/p</TH>
+  <TD>RISC + macro inst.</TD>
+  <TD>60 nsec (design spec.)</TD>
+  <TD>standard-cell</TD>
+  <TD>0.96 micron</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/m</TH>
+  <TD>CISC (micro programmable)</TD>
+  <TD>65 nsec</TD>
+  <TD>standard-cell</TD>
+  <TD>0.8 micron</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/c</TH>
+  <TD>CISC  (micro programmable)</TD>
+  <TD>50 nsec (design spec.)</TD>
+  <TD>gate-arrays</TD>
+  <TD>0.8 micron</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/k</TH>
+  <TD>RISC</TD>
+  <TD>100 nsec</TD>
+  <TD>custom</TD>
+  <TD>1.2 micron</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/i</TH>
+  <TD>RISC</TD>
+  <TD>100 nsec (design spec.)</TD>
+  <TD>standard-cell</TD>
+  <TD>1.2 micron</TD>
+</TR>
+</TABLE>
+
+<BR>
+
+<TABLE BORDER>
+<CAPTION VALIGN="top"><B>(c) Network</B></CAPTION>
+<TR ALIGN="center">
+  <TH></TH>
+  <TH># of PEs in a cluster</TH>
+  <TH># of NIs in a cluster</TH>
+  <TH>Transfer Rate per channel</TH>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/p</TH>
+  <TD>8</TD>
+  <TD>8</TD>
+  <TD>33 MB / sec &#215 2 (design spec.)</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/m</TH>
+  <TD>1</TD>
+  <TD>1</TD>
+  <TD>8 MB / sec</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/c</TH>
+  <TD>8</TD>
+  <TD>1</TD>
+  <TD>40 MB / sec (design spec.)</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/k</TH>
+  <TD>16</TD>
+  <TD>--</TD>
+  <TD>--</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/i</TH>
+  <TD>8</TD>
+  <TD>1</TD>
+  <TD>--</TD>
+</TR>
+</TABLE>
+(NI = network interface.  )
+
+<BR>
+
+<TABLE BORDER>
+<CAPTION ALIGN="top"><B>(d) Cache System</B></CAPTION>
+<TR ALIGN="center">
+  <TH ROWSPAN="2"></TH>
+  <TH COLSPAN="2">coherence control</TH>
+  <TH ROWSPAN="2">Mapping</TH>
+  <TH COLSPAN="2">Cache Size</TH>
+</TR>
+<TR ALIGN="center">
+  <TH>Protocol</TH>
+  <TH># of States</TH>
+  <TH>Instruction</TH>
+  <TH>Data</TH>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/p</TH>
+  <TD>invalidation</TD>
+  <TD>4</TD>
+  <TD>4 way</TD>
+  <TD COLSPAN="2">64 KB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/m</TD>
+  <TD>--</TD>
+  <TD>--</TD>
+  <TD>direct</TD>
+  <TD>5 KB</TD>
+  <TD>20 KB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/c</TD>
+  <TD>invalidation</TD>
+  <TD>5</TD>
+  <TD>2 way</TD>
+  <TD COLSPAN="2">80 KB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left" ROWSPAN="2">PIM/k</TH>
+  <TD>hierarchical</TD>
+  <TD ROWSPAN="2">4</TD>
+  <TD>(1st) direct</TD>
+  <TD>128 KB</TD>
+  <TD>256 KB</TD>
+</TR>
+<TR ALIGN="center">
+  <TD>invalidation</TD>
+  <TD>(2nd) 4 way</TD>
+  <TD>1 MB</TD>
+  <TD>4 MB</TD>
+</TR>
+<TR ALIGN="center">
+  <TH ALIGN="left">PIM/i</TH>
+  <TD>broadcasting</TD>
+  <TD>6</TD>
+  <TD>direct</TD>
+  <TD>160 KB</TD>
+  <TD>160 KB</TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>

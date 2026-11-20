@@ -1,0 +1,432 @@
+﻿<!--modified by Fukushima 3/31/97-->
+<body bgcolor="#ffffff" text="#000000">
+<TITLE>AITEC NEWS No.8-2</TITLE>
+
+<table border=1>
+<tr><td rowspan=2>
+<img src=GIF/AITECNEWS-LOGO.gif></td>
+<td>March 27, 1997 </td></tr>
+<tr><td> Issue #8-2<br>(issued on Feb.18,1997 in Japanese)</td>
+</tr>
+</table>
+<hr>
+<a name=contents>
+<img src=GIF/table-of-contents.gif></a>
+<ul>
+<LI><A HREF="#articles">Articles This Issue</A>
+   <ul>
+      <li>Abstracts of 27 Research Projects No.2
+         <ol>
+            <li value=14><a href=#14>An Optimization Technique of Efficient Goal Scheduling for KL1 Programs</a>
+            <li><a href=#15>Improving the Runtime System of KLIC</a>
+            <li><a href=#16>KL1 Programming Support System</a>
+            <li><a href=#17>An Implementation of a Parallel Active Database System in KLIC</a>
+            <li><a href=#18>Design of Multi-Agent Type Robot Language/System</a>
+            <li><a href=#19>Development of an MGTP System on KLIC</a>
+            <li><a href=#20>Extended Features of a Deductive Object-Oriented
+           Database Language Quixote for Practical Use</a>
+            <li><a href=#21>A Parallel Multilayer-Channel Router in CMGTP</a>
+            <li><a href=#22>Set Constraint Solvers</a>
+            <li><a href=#23>Development of Abductive Logic Programming Systems</a>
+            <li><a href=#24>Application of Parallel Logic Programming for 
+                            Reconstruction of  Molecular Phylogenetic Trees 
+                            using the Maximum Likelihood Method</a>
+            <li><a href=#25>A Study on Legal Reasoning based on Goal-Dependent Abstraction</a>
+            <li><a href=#26>Legal Reasoning with Situation Variable</a>
+            <li><a href=#27>A Programming System for Statistical Modeling</a>
+         </ol>
+       </ul>
+    <li><a href=#editorial>Message From Editorial Desk</a>
+</uL>
+<hr>
+**March 5 (Wed) - the Second Day of the Workshop**
+
+<pre><a name=articles>
+<h3>ARTICLES THIS ISSUE</h3></a>
+<h4>Session-4 (project#14 - 18)</h4>
+
+14) <a name=14>"An Optimization Technique of Efficient Goal Scheduling for KL1 Programs"</a>
+     NAKASHIMA Hiroshi: Kyoto University (nakasima@lab3.kuis.kyoto-u.ac.jp)
+     (<a href=http://www.lab3.kuis.kyoto-u.ac.jp/list-e.html>http://www.lab3.kuis.kyoto-u.ac.jp/list-e.html</a>)
+
+Conventional implementations of concurrent logic languages, including KLIC, 
+dynamically schedule the execution order of goals, and thus scheduling 
+overhead may cause significant performance degradation if a program consists 
+of, for example, communicating sequential processes. Our research aims to 
+reduce the scheduling overhead by compile-time dependency analysis and 
+run-time scheduling exploiting the analysis result.
+
+The compiler statically analyzes the dependency among goals to find threads.
+The analyzer does not only examine the input/output mode of a variable, 
+but also find out which goal(s) really requires the instantiation of the 
+variable and which goal(s) is really necessary to be scheduled to give 
+a value to it.  Thus unless a pair of goals has a real bidirectional data 
+dependency, their execution order is statically determined as a part of 
+a thread without any risk of deadlock.
+
+This static scheduling makes it possible the run-time system efficiently 
+executes a thread without scheduling overhead.  Moreover, this new 
+scheduling mechanism will drastically reduces GC invocation because it 
+maintains the execution environment of a thread using a stack.
+
+As for the scheduling of threads, which are now objects for dynamic 
+scheduling in place of goals, we devised a sophisticated method named 
+reply-first scheduling.  Since the compiler knows the real dependency of 
+a variable shared by threads, the variable is annotated with its producer 
+thread on its creation.  When its consumer thread is suspended to wait for 
+its value, the run-time system looks up the annotation to give high 
+priority to the producer thread.
+
+We have shown the threading and reply-first scheduling complementarily work 
+for efficient execution.  That is, the threading accelerate the execution on 
+single processor and reply-first scheduling prevents a thread from executing 
+too long to keep quick inter-processor response.
+
+<hr>
+15) <a name=15>"Improving the Runtime System of KLIC"</a>
+     CHIKAYAMA Takashi: The University of Tokyo 
+     (chikayama@logos.t.u-tokyo.ac.jp)
+     (<a href=http://www.logos.t.u-tokyo.ac.jp/>http://http://www.logos.t.u-tokyo.ac.jp</a>)
+
+Research to improve and extend KLIC, a portable implementation of a 
+concurrent logic programming language KL1, and to extend its 
+application area was conducted.  Numerous improvements and exntensions
+were made to the KLIC system.  Representative topics are: addition of
+the ``goal object'' mechanism for allowing meta-level programming in
+KL1, a tracer written in KL1 itself using the goal object mechanism,
+an semi-automatic load distribution mechanism written in KL1 based on
+the lazy task creation policy, and a static analyzer for object code
+optimization for KL1 through abstract execution.  For extending its
+application area, we chose the parallel theorem prover MGTP that runs
+upon KLIC as the target, and improved its performance by better
+scheduling paying attention to the sizes of atomic formulae.  Also, an
+inductive logic programming system was built upon MGTP, which showed
+reasonable speed-up by parallel execution.
+
+<hr>
+16) <a name=16>"KL1 Programming Support System"</a>
+     UEDA Kazunori: Waseda University (ueda@ueda.info.waseda.ac.jp)
+     (<a href=http://www.waseda.ac.jp/>http://www.waseda.ac.jp/</a>)
+
+Strong moding and constraint-based mode analysis are expected to play 
+fundamental roles in debugging concurrent logic/constraint programs 
+as well as in establishing the consistency of communication protocols 
+and in optimization.  Mode analysis of Moded Flat GHC, a subclass of KL1 
+to which most KL1 programs belong, is a constraint satisfaction problem 
+with many simple mode constraints, and can be solved efficiently by 
+unification over feature graphs.  In practice, however, it is important 
+to be able to analyze non-well-moded programs (programs whose mode 
+constraints are inconsistent) and present plausible "reasons" of 
+inconsistency to the programmers in the absence of mode declarations.
+
+The "kima" system we have developed is a static debugging tool for 
+non-well-moded KL1 programs.  The basic idea is to find a minimal 
+inconsistent subset from an inconsistent set of mode constraints and 
+indicate the symbol(occurrence)s in the program text that imposed those 
+constraints.  When there is redundancy in the whole set of mode 
+constraints, a bug can be pinpointed better by considering constraints 
+not in the minimal subset. The system is able to report multiple, 
+independent bugs at once. For large programs, kima narrows search space 
+by stratifying predicates and tries to produce more intuitive explanations. 
+Stratification plays a fundamental role in introducing mode polymorphism 
+as well.
+
+<hr>
+17) <a name=17>"An Implementation of a Parallel Active Database System in KLIC"</a>
+     YOKOTA Haruo: Japan Advanced Institute of Science and Technology
+     (yokota@jaist.ac.jp) 
+     (<a href=http://hy-www.jaist.ac.jp:8080/yokota-lab/index.html>http://hy-www.jaist.ac.jp:8080/yokota-lab/index.html</a>)
+
+To enhance the function and performance of database systems, we are
+now implementing a parallel active database engine, named Parade, by
+using KLIC.  An active database system, an integration of a DBMS and a
+rule base system, is very useful for many database applications, but
+has a vulnerable point in its performance.  We have proposed several
+methods for speeding up the active database system by assuming 
+distributed memory parallel environment.  Inter-database-query
+parallelism is realized by nested transaction using perpetual
+processes of KLIC.  Pipeline execution with a shared logical variable
+of KLIC is suited for inter-database-operation parallelism.
+Intra-database-operation parallelism is realized by data parallel
+execution with horizontal data distribution.  For rule operations, a
+sub-transaction of the nested transaction framework is assigned to a
+rule activation as a coarse grain parallel execution.  Conditions in
+the rules are checked by making a lot of tokens simultaneously
+traverse discrimination networks with hash functions.  It is fine
+grain parallelism of the rule execution.  Its performance can further
+be improved by using processor clusters with software cache for
+tokens.  Moreover, time for optimizing the discrimination networks is
+hidden by parallel execution.  Since a naive parallel system decreases
+the system reliability in spite of the durability is another important
+issue of databases, we have also proposed a fault tolerant parallel
+software mechanism to keep the reliability of Parade high.
+
+<hr>
+18) <a name=18>"Design of Multi-Agent type Robot Language/System"</a>
+     MIZOGUCHI Fumio: Science University of Tokyo 
+     (mizo@ia.noda.sut.ac.jp, ohwada@ia.noda.sut.ac.jp)
+     (<a href=http://isws50.is.noda.sut.ac.jp/>http://isws50.is.noda.sut.ac.jp/</a>)
+
+This paper outlines a parallel logic programming approach to implementing
+cooperative tasks for multiple robots. In this approach, an extended Horn
+clause logic can be used as a specification language for explicitly
+describing negotiation processes between robots, and the distinctive
+feature of the approach is supporting correctness and justification
+of multi-robot programming. This language provides concurrency and 
+synchronization based on a parallel logic language KL1.
+
+We incorporate KL1 into several facilities in which multi-agent
+task planning is employed. First, we incorporate look ahead facility 
+for handling emergent situation; thus reactive planning can be implemented 
+within a logical framework. Second, scene analysis is integrated within 
+multi-agent robot programming environment where dynamics in real-world can 
+be recognized using stream-oriented computation. After recognizing 
+a "change" of the world, new tasks are produced and performed by negotiating 
+robotic agents. Third, inductive learning is introduced to generate control 
+rules that are used for solving conflict resolution and deadlock detection 
+on cooperative tasks.
+
+These rules effectively selected robot actions for improving multi-robot 
+performance. We illustrate these facilities through typical cooperative 
+tasks such as picking and placing distributed blocks.
+
+<hr>
+<h4>Session-5 (project#19 - 23)</h4>
+19) <a name=19>"Development of an MGTP System on KLIC"</a>
+     HASEGAWA Ryuzo: Kyushu University
+     (hasegawa@ar.is.kyushu-u.ac.jp,koshi@ar.is.kyushu-u.ac.jp)
+     (<a href=http://ss104.is.kyushu-u.ac.jp/index-e.html>http://ss104.is.kyushu-u.ac.jp/index-e.html</a>)
+
+MGTP is a model-generation based theorem prover for first-order logic.
+The implementation language of MGTP is KL1 which is complied into C
+language by the KLIC system.
+
+MGTP incorporates several functions to enhance proving efficiency.
+The folding-up and NHM operations eliminate redundant inferences
+caused by case-splittings in MGTP. The merc- and rams-methods
+eliminate redundant computations in conjunctive matching which would
+be a primary cause of significant speed-down of the model-generation
+based theorem provers. Discrimination-tree indexing is available for
+the retrieval operation to find terms that unify with a given term.
+These functions improve the performance of MGTP significantly.
+
+CMGTP is a slightly modified version of MGTP, enabling negative
+constraint propagation. CMGTP can be used as a general constraint
+solver for problems on finite-domains. An MGTP window manager is
+available for providing a user-friendly graphical user interface.
+
+<hr>
+20)  <a name=20>"Extended Features of a Deductive Object-Oriented 
+           Database Language Quixote for Practical Use"</a>
+     YOKOTA Kazumasa: Kyoto University 
+     (yokota@kuis.kyoto-u.ac.jp)(<a href=http://banjo.kuis.kyoto-u.ac.jp/~yokota/E/>http://banjo.kuis.kyoto-u.ac.jp/~yokota/E/</a>)
+
+
+Quixote is a deductive object-oriented database (DOOD) language and
+also a knowledge representation language for various advanced
+applications such as legal reasoning and natural language processing.
+In this research project, we extend the language to provide facilities
+for deductive object-oriented multidatabase systems and extended
+mediator systems in wide-area network environments.  Especially in
+such extensions, we can maintain the consistency of subsumption
+relations of multiple information sources and to navigate information
+sources automatically to search more appropriate answers by using
+extended abduction mechanisms, and data dictionaries and directories
+(DD/D).  This new language is called QUIK (Quixote in Kyoto),
+implemented in Java.
+   
+<hr>
+21) <a name=21>"A Parallel Multilayer-Channel Router in CMGTP"</a>
+     Neng-Fa Zhou: Kyushu Institute of Technology (zhou@mse.kyutech.ac.jp)
+    (<a href=http://www.cad.mse.kyutech.ac.jp/people/zhou/>http://www.cad.mse.kyutech.ac.jp/people/zhou/</a>)
+
+We have developed three different programs for the channel routing
+problem in three different languages, namely, CMGTP, KLIC, and
+CLP(FD). For Deutsch's problem, the CLP(FD) program not only found
+all the best solutions already known by now, but also found a solution
+that has never been found before. The KLIC program succeeded in
+solving the problem for four different types of channels, but its
+performance depends to a large extent on the order in which the
+requirements are given. While the CMGTP program is the shortest one,
+which essentially consists of only three rules, it failed to solve any
+large problems. By comparing the three programs, we clarify the
+advantages and shortcomings of CMGTP, and point out some directions
+for improving CMGTP.
+
+<hr>
+22) <a name=22>"Set Constraint Solvers"</a>
+     SATO Yousuke: Ritsumeikan University 
+     (ysato@theory.cs.ritsumei.ac.jp)(<a href=http://www.ritsumei.ac.jp/>http://www.ritsumei.ac.jp/</a>)
+
+"Set Constraint Solver"  offers two kinds of programs.
+One is for calculating Groebner bases in polynomial rings
+over Boolean rings. You can experiment on various calculations  
+of our a little bit queer Groebner bases.
+The another one is for solving constraints of sets. You can handle
+various types of set constraints using our Groebner bases.
+The whole program was written in prolog last year.
+It is written in klic this year.
+The klic version is about 30 times faster than the prolog version
+for solving a big problem. Now it can calculate a groebner basis 
+of polynomials with 50 variables less than 1 minutes in a standard
+personal computer.
+
+<hr>
+23) <a name=23>"Development of Abductive Logic Programming Systems"</a>
+     INOUE Katsumi: Toyohashi University of Technology 
+                    (Kobe University from Apr.1,1997)
+     (inoue@eedept.kobe-u.ac.jp)(<a href=http://www.tut.ac.jp/english/tut-homeE.html>http://www.tut.ac.jp/english/tut-homeE.html</a>)
+
+In this research, we developed a reasoning system called ALP-MGTP, 
+an abductive logic programming (ALP) system in Prolog.  
+In this software, we give an implementation of bottom-up proof 
+procedures for ALP.  Our ALP system is a reasoning system for 
+logic programs containing negation as failure (NAF), classical 
+negation, disjunction, and abducible literals.  It is based on 
+bottom-up, incremental, backtrack-free computation of the minimal 
+models for disjunctive programs using a model generation theorem 
+prover (MGTP).  This system realizes a sound and complete proof 
+procedure for a large class of logic programs, and can deal with 
+abduction and nonmonotonic inference at the same time.  This system 
+realizes Inoue and Sakama's fixpoint semantics of ALP.  
+Our ALP system consists of a first-order predicate compiler, which is 
+a translator from ALP rules to MGTP clauses, and modules that 
+translate outputs of MGTP to answers for the ALP framework.  
+The experimental results with some benchmark problems show that our 
+ALP system has a good performance compared with other systems.  
+
+<hr>
+<h4>Session-6 (project#24 - 27)</h4>
+24) <a name=24>"Application of Parallel Logic Programming for Reconstruction of
+           Molecular Phylogenetic Trees using the Maximum Likelihood Method"</a>
+      SAITO Naruya 
+          (National Institute of Genetics, Laboratory of Evolutionalr Genetics)
+     (nsaitou@genes.nig.ac.jp,oota@thinker.lab.nig.ac.jp)
+     (<a href=http://www.nig.ac.jp/sayer/>http://www.nig.ac.jp/sayer/</a>)
+
+DeepForest is a set of predicates to analyze molecular data
+(amino acid and nucleotide sequences) in respect of molecular evolution. 
+Function of DeepForest can be divided into three parts, inference of 
+molecular phylogenetic trees, multiple alignment, and database operation. 
+Full set of DeepForest(Unfortunately, the full set version is not 
+released now.) not only analyzes sequence data, but also interprets 
+generated phylogenetic trees to extract significant information.
+
+On the other hand, DeepForest includes a set of utility programs
+(strictly speaking, they are predicates). They search and read input
+data, convert formats, write output data, and make bibliographies. They
+are all written in KL1, and can run on usual UNIX machines with KLIC. 
+We tested these programs on various machines, from Macintosh to CRAY CS6400.
+
+DeepForest was designed to provide useful predicates rather than a package 
+program. We hope users to understand KL1, and write their programs using 
+DeepForest. Although KL1 is nothing but logic programming, it is very 
+easier to learn than PROLOG.
+
+<hr>
+25) <a name=25>"A Study on Legal Reasoning based on Goal-Dependent Abstraction"</a>
+     HARAGUCHI Makoto: Hokkaido University 
+     (makoto@db.huee.hokudai.ac.jp,yoshiaki@db.huee.hokudai.ac.jp)
+     (<a href=http://www-db.huee.hokudai.ac.jp/index_e.html>http://www-db.huee.hokudai.ac.jp/index_e.html</a>)
+
+This study presents a new algorithm to find an appropriate similarity
+under which we apply legal rules analogically.
+Since there may exist a lot of similarities between the premises
+of rule and a case in inquiry, we have to select an appropriate similarity 
+that is relevant to both the rule and a goal of our reasoning.  For this 
+purpose, a new criterion to distinguish the appropriate similarities
+from another useless ones is proposed and tested.
+The criterion is based on GDA, a goal-dependent abstraction,
+to select a similarity such that an abstraction based on the similarity 
+never loses the necessary information to explain the goal.
+In order to cope with our huge space of similarities,
+our GDA algorithm uses two criterions that originate from the 
+terminological structure of our legal knowledge.
+The first one is called a similarity inheritance condition by which
+similarities between general concepts are calculated from the 
+similarities between the most concrete concepts.
+The second one is concerned with role-filler relationships between
+concepts, and is called a value restriction preservingness.  By this
+condition, our similarities are required to preserve the relationships.
+Some experimental results show that our GDA also the two criterions
+help us reduce the huge space of possible similarities.
+
+<hr>
+26) <a name=26>"Legal Reasoning with Siuation Variable"</a>
+     TOJO Satoshi:Japan Advanced Institute of Science and Technology
+     (tojo@jaist.ac.jp)(<a href=http://www.jaist.ac.jp/>http://www.jaist.ac.jp/</a>)
+
+We formalize a legal reasoning system based on situation-theoretic model, 
+as an extended logic programming. In many aspects, legal reasoning 
+depends upon such situations as scope of validity of codes, 
+spatio-temporal locations, views, and so on. One way to formalize
+situatedness is to introduce the concept of module as a set of clauses
+into the language, however, modules are still clumsy to represent
+situations that should be composed, be decomposed, and change on the
+way of inference. Thus, we introduce situation variables that should be
+bound dynamically to the composition of particles of situations that
+are the primitives of situations in this system. In this project, we
+especially pay attention to the analysis of temporal reasoning, and we
+show the system that responds temporal situation for a certain event,
+as well as ordinary goal resolution. In the procedure of the unification 
+of situation variables, we need to introduce the distinction of temporal 
+features of eventualities; namely, we distinguish event/state/property for 
+the term unification where the situation variables are bound differently 
+according to these temporal types. The computer system based on this 
+formalization is implemented in SICStus Prolog. We show an example of 
+`excessive evacuation' in the legal domain as an application of our system.
+
+<hr>
+27) <a name=27>"A Programming System for Statistical Modeling"</a>
+     SATO Taisuke :Tokyo Institute of Technology 
+     (sato@cs.titech.ac.jp)(<a href=http://www.titech.ac.jp/>http://www.titech.ac.jp/</a>)
+
+We have started PRISM (PRogramming In Statistical Modeling) project to 
+explore the idea of logic programs that interact with the real world, 
+learn from data and change adaptively their behaviors.     
+Theoretically it originated from the combination of fixed point 
+semantics and probability theory, but was spurred by the recent success 
+of symbolic statistical model such as hidden markov model and Bayesian 
+networks.  The project aims to establish a common basis for those diverse 
+activities by providing a descriptive means for logical-statistical 
+relationships together with their learning algorithms in a single framework.
+
+<hr><a name=editorial><h3>MESSAGE FROM THE EDITORIAL DESK</h3>
+
+In the "Research Funding Program,"  ex-ICOT members played a part as the 
+research project representatives. But for the most research projects, 
+graduate students actually programmed and made presentations. It shows 
+that a generation change has been constantly under way around us.
+
+Though we are not sure about the next year's budget for this program,
+we are planning to call for research projects from overseas for the next 
+fiscal year depending on the budget.
+
+Also, the KLIC Programming Contest office plans to solicit programs from 
+overseas.
+
+We are looking forward to your requests and comments on the research 
+projects introduced above.
+
+See you in the next AITEC NEWS.   
+</pre>
+<hr><i>
+       A I T E C  N E W S      Issue #8-1<br>                           
+          AITEC NEWS Editorial Team:
+            Makiko Sato, Chie Takahashi, Akira Aiba<br>                 
+            Hiroshi Sato, Shunichi Uchida<br>                           
+          AITEC NEWS English Version Team:
+            Masayo Fukushima, Shunichi Uchida<br>                       
+          Issued on: February 18,1997(Japanese Version)
+                     March    27,1997(English Version)<br>              
+          By: Research Institute for Advanced Information
+              Technology (AITEC),<br> a subcenter of
+              Japan Information Processing Development
+              Center (JIPDEC)<br>                                       
+              2-3-3, Minato-ku, Shiba, Tokyo 105, Japan<br>             
+              Tel: +81-3-3456-3191 Fax: +81-3-3455-4877<br>             
+              E-mail: aitec-news@icot.or.jp<br>                         
+              http://www.icot.or.jp<br>                                 
+</i><hr>
+
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

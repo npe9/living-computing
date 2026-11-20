@@ -1,0 +1,109 @@
+﻿<!--
+#
+# Modified by	C.Takahashi		'98/08/20
+#
+-->
+<HEAD><title>Run-time Monitor Displays</title></HEAD>
+
+<BODY BACKGROUND="../../PICS/tile-blue.gif">
+
+<H1><CENTER>
+Run-time Monitor Displays</CENTER></H1>
+<hr>
+<br>
+
+The <b>Run-time Monitor</b> is a tool to observe behavior of a
+parallel program being executed on the PIM.  Its main function is to
+indicate <b>how busy each element processor is</b> in every two
+seconds using colors. <p>
+
+Generally, it is not easy for us to understand behavior of a parallel
+program being executed on a parallel machine having hundreds of
+element processors like the PIM. <p>
+
+As behavior of application programs for knowledge processing is
+usually <b>irregular</b>, it is difficult to predict in advance the
+amount of <b>their computational load and the timing</b> the load is
+generated.<p>
+
+Thus, we have to anticipate the behavior of the program and make
+division and distribution of the anticipated computational load. <p>
+
+After that, using the run-time monitor, we actually run the program on
+the PIM and observe its load balancing among element processors.  If
+the result is unsatisfactory, we modify the program and repeat this
+process until we obtain a satisfactory result. We call this process as
+<b>"performance degugging"</b>. <p>
+
+We collected several run-time monitor displays below. You can see that
+one job is dynamically divided into several sub-processes and they are
+propagated among many element processors.  These displays are actually
+seen as an animation film. <p>
+
+<b>Structure of the display is different </b>for <A
+HREF="../../PICS/PIM-m.jpeg">PIM/m</A> or <A
+HREF="../../PICS/PIM-p.jpeg">PIM/p</A>
+depending on its interconnection mechanism.  PIM/m has <b>a two
+dimensional mesh structure</b> for its interconnection.  PIM/p has
+<b>"clusters"</b> each of which contains 8 element processor connected
+with a shared memory.  64 of these clusters are connected with a
+network. <p>
+
+With the run-time monitor displays for PIM/m, you can see 256 element
+processor in one rectangular Its <b>vertical axis</b> indicates
+numbers from 0 to 255 which specify <b>256 element processors</b>.
+Its <b>horizontal axis is time</b>. In every 2 seconds, change of the
+computational load is shown using colors. The red means 100% busy and
+blue means idle. <p>
+
+With the displays for PIM/p, you can see <b>64 rectangular boxes which
+correspond to 64 clusters</b>.  Each of these boxes is vertically
+divided into 8 rows corresponding to 8 element processors.  In each
+row, change of the load is shown in every 2 seconds. <p>
+
+Generally, in the <b>beginning</b> of program execution, you see
+<b>blue and green</b> in the display. In the <b>middle </b>, you see
+<b>yellow and red</b>.  Finally, you see green and blue again. <p>
+
+In execution of another program which activates many element
+processors one time, you see that colors change from blue to red
+instantly.<p>
+
+Please enjoy run-time monitor displays below. <p>
+
+<hr>
+
+<h2>[Photos of Run-time Monitor Displays]</h2>
+<b>
+
+<DL>
+<DT><b>[Behavior of MGTP parallel theorem prover on <b>PIM/p</b>]</b><P>
+
+<DL>
+<LI><a href="../../PICS/mgtpS-10.gif">Beginning (gif 49K)</a><P>
+<LI><a href="../../PICS/mgtpS-17.gif">Middle  (gif 51K)</a><P>
+<LI><a href="../../PICS/mgtpS-134.gif">Finishing (gif 22K)</a><P>
+</DL>
+<P>
+
+<DT><b>[Behavior of the multiple protein-sequence alignment program on <b>PIM/m</b>]</b><P>
+
+<DL>
+<LI><a href="../../PICS/xrmS2.gif">Beginning  (gif 17K)</a><P>
+<LI><a href="../../PICS/xrmS3.gif">Middle (gif 22K)</a><P>
+<LI><a href="../../PICS/xrmS4.gif">just before Finish (gif 19K)</a>
+</DL>
+</DL>
+
+</b>
+<p>
+
+<!--
+<hr>
+
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+-->
+
+</BODY>
+</HTML>
+

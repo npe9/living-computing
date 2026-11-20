@@ -1,0 +1,51 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 並列論理型言語 KL1 処理系</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 並列論理型言語 KL1 処理系">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html54 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html52 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html46 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html55 HREF="node4.html"> 並列推論マシン・オペレーティング・システム PIMOS</A>
+<B>Up:</B> <A NAME=tex2html53 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html47 HREF="node2.html"> 並列推論マシン PIM</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00030000000000000000> 並列論理型言語 KL1 処理系</A></H1>
+<P>
+並列論理型言語 KL1 を効率的に並列に実行するための、プログラム言語シス
+テムである。同一の言語仕様と共通する処理方式を用いながら、各モデルの 
+PIM に適合した最適化を施している。
+<P>
+特徴的な処理は単一プロセサ内の逐次実行に関する処理と、プロセサ間に渡る
+処理がある。プロセサ内の処理については、KL1プログラムをいったん抽象機
+械語KL1/Bに最適化コンパイルし、これを各モデルのプロセサに適合した方式 
+(機械語へのコンパイルや、マイクロコードによる解釈実行) で実行する方法
+を取っている。これによって言語仕様の共通化を容易にすると同時に、処理系
+構築の手間を削減している。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img2.gif"><P>
+-->
+<CENTER>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="kl1compiler.gif"><P>
+KL1言語処理系のコンパイル方式
+</CENTER>
+<P>
+並列処理は共有メモリ・クラスタ内の処理と、クラスタ間に渡る処理に大別さ
+れる。クラスタ内処理においては、メモリ・アクセスの競合を調停しつつ、自
+動的な負荷分散を施し、プログラマが細かいレベルでの負荷分散を指定する必
+要を除去している。一方クラスタ間処理においては、プロセスの分散はプログ
+ラム中の指定に従うが、データや実行コードの分配を自動的に行ない、不要に
+なった領域の再利用も自動的に行なう機構を持っている。これらの並列処理機
+構についても、アルゴリズムはもちろん、具体的なコードも各モデルに共通す
+るシステムを用意し、モデルごとに最適な方法でコンパイルなどして実装して
+いる。
+<P>
+<BR> <HR>
+<P></BODY>

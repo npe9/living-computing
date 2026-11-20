@@ -1,0 +1,70 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 大規模集積回路設計支援システム</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 大規模集積回路設計支援システム">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html176 HREF="node16.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html174 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html168 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html177 HREF="node16.html"> 自然言語処理システム</A>
+<B>Up:</B> <A NAME=tex2html175 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html169 HREF="node14.html"> 遺伝子情報処理システム</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION000110000000000000000> 大規模集積回路設計支援システム</A></H1>
+<P>
+LSI-CADの工程中、論理シミュレーション、LSIセル配置、およびLSI配線の工
+程を並列化し、高速化および高品質化を達成した。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img10.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="cad1.jpg"><P>
+論理シミュレータの台数効果<br>
+(縦軸: Kイベント／秒; 横軸: プロセサ数)</CENTER>
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img11.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="cad2.jpg"><P>
+LSI配線の台数効果<br>
+(縦軸: 台数効果; 横軸: プロセサ数)</CENTER>
+<P>
+<CENTER>
+<IMG  ALIGN=BOTTOM ALT="" SRC="cad3.gif" WIDTH="400" HEIGHT="310"><P>
+LSI配置・配線の結果表示</CENTER>
+<P>
+
+<P>
+論理シミュレーション、LSI配線は数日〜数か月という多大な処理時間を必要
+とする工程であり高速化が強く望まれている。また、LSIセル配置では、人手
+による微妙なパラメータ設定が必要であり、適切な結果を得られない場合が存
+在する。これらの問題点を解決するために、このシステムでは下記の技術を開
+発、導入している。
+<DL ><DT>論理シミュレーション
+<DD>     
+見込み計算 (無駄になるかも知れない計算) を積極的に行う機構を導入すること
+で、多大な並列性抽出に成功。また、プロセサ間通信を低減しつつ、負荷の
+均等化を達成する回路分割アルゴリズムを提案。166倍の並列処理効果(256プ
+ロセサ使用時)、数百MIPSのスーパコン上のシステム相当の性能を達成。
+<DT>LSIセル配置
+<DD>      
+適切なセル配置を求めるためにシミュレーティド・アニーリング法(金属の焼
+き鈍し工程を摸擬する方法)を採用し、これにパラメータ設定を自動化する並
+列アルゴリズムを導入。これによって、極めて最適に近い配置を得る能力を実現。
+既存のシステムによる結果と比較し、最小のチップ面積を達成。
+<DT>LSI配線
+<DD>      
+オブジェクト指向のモデル化技法を導入することによって、多大な並列性抽出
+に成功。また、並列に配線経路探索を行いつつ、指定された配線順序を守るこ
+とで、配線品質を向上させる機構を提案。92倍の台数効果(256プロセサ使用
+時)、数百MIPSスーパコン上のシステム相当の性能を達成。また、100%の配線
+率を達成。
+<P>
+ </DL><BR> <HR>
+<P></BODY>

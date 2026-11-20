@@ -1,0 +1,69 @@
+﻿<!--
+# Page for Final Evaluation Report P.112
+#
+# Created by	C. Takahashi	99/12/23
+#
+-->
+<HTML>
+<HEAD><TITLE>Page for Final Evaluation Report P.112</TITLE></HEAD>
+<BODY BACKGROUND="../../PICS/tile-blue.gif">
+
+<CENTER>
+Report on ICOT <BR><BR>
+Mark E. Stickel <BR>
+June 9, 1992 <BR>
+</CENTER>
+
+<HR><A HREF="finaleval113.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../PICS/next_motif.gif"></A>   <A HREF="finaleval111.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../PICS/previous_motif.gif"></A>   <A HREF="finalevalC.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../PICS/contents_motif.gif"></A>
+<HR>
+<!-- -->
+<PRE>
+efficiency of theorem proving and described Argonne's approach to theorem proving. 
+I performed many experiments with theorems ICOT was working on using Argonne's ! 
+OTTER and my own PTTP. I implemented discrimination-net-based term indexing in 
+KL1; this was used in some versions of MGTP. Aspects of the Argonne approach that 
+I described and praised to them also found their way into versions of MGTP. 
+
+A focus of theorem proving research at ICOT was to prove a set of theorems offered 
+by Argonne's Ross Overbeek as challenge problems to test the performance of theo-
+rem proving programs. These are difficult problems solved by few programs. During 
+and between my visits to ICOT, I saw steady progress being made on solving these 
+problems. They were first solved by use of many heuristics, then without heuristics 
+but with very poor parallel speedup, and finally solved with near-linear speedups with-
+out heuristics. A proof "look-ahead" capability often allows the ICOT prover to solve 
+problems after generating many fewer clauses than Argonne's OTTER. 
+
+These problems were solved by a "nonground" MGTP designed to solve such non-
+range-restricted Horn problems. The other, original "ground" MGTP is designed for 
+range-restricted non-Horn problems. Ground MGTP is based on Manthey and Bry's 
+SATCHMO theorem prover and is basically a hyperresolution theorem prover that 
+performs case-splitting on non-unit, positive derived clauses. Case-splitting is feasible 
+because the range restriction ensures that derived clauses are ground, so there is no 
+problem with variable sharing between cases. Ground MGTP is especially well suited 
+to implementation in KL1 on PIMs. The range restriction implies that whenever a pair 
+of terms is unified, at least one of those terms will be ground (variable free). This per-
+mits the efficient implementation of theorem-proving variables by KL1 logical variables 
+and the use of KL1's one-way, single assignment unification. By contrast, nonground 
+MGTP required a unification algorithm, with theorem-proving variables represented 
+by integers and substitutions represented by vectors indexed by these integers, be writ-
+ten in KL1, resulting in a costly slowdown. Case-splitting in ground MGTP provides 
+lots of work for many processing elements, with low communication requirements, thus 
+making it easy to achieve high speedup factors. In contrast, the successful achievement 
+of high speedup factors for the nonground MGTP required much experimentation and 
+refinement of work distribution schemes. 
+
+Ground MGTP is still a niche theorem prover, well-suited only for range-restricted, 
+non-Horn problems. It is motivated by the case-splitting possibilities of non-Horn 
+problems, so it offers nothing extra for Horn problems. Although any problem that is 
+not Initially range-restricted (every variable of a positive literal of a clause must also 
+appear in a negative literal of the clause) can be translated into one that is by adding 
+a "dom" predicate that inductively defines ground terms of the domain and qualifying 
+non-range-restricted clauses with "dom" literals, this is usually not very effective. Nev-
+ertheless, range-restricted non-Horn problems appear to be a useful niche. Evidence 
+of this comes in the form of ICOT's recent solution of an open problem in mathemat-
+
+
+					- 112 - 
+</PRE>
+<!-- -->
+</HTML>

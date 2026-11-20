@@ -1,0 +1,55 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 並列定理証明システム MGTP</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 並列定理証明システム MGTP">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html84 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html82 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html76 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html85 HREF="node7.html"> 並列制約処理言語システム GDCC</A>
+<B>Up:</B> <A NAME=tex2html83 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html77 HREF="node5.html"> 並列非正規関係データベース・システム Kappa-P</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00060000000000000000> 並列定理証明システム MGTP</A></H1>
+<P>
+MGTPは高速かつ高機能の自動推論エンジンを提供することを目標に、PIM上に
+研究開発されたシステムである。データベース的応用指向及び数学的応用指向
+の2種がある。前者 (MGTP/G) は有限領域を、後者 (MGTP/N) は無限領域を扱
+う定理証明系であるが、両者とも性能に関しては世界最高水準にある。
+<P>
+無限領域の定理証明系としては、これまで米国ANLで開発されたOTTERが機能、
+性能面ともに他を先行していたが、OTTER方式に比べ、メモリ量、計算量のオー
+ダを数桁下げる新しい方式 (遅延モデル生成法) を開発するとともに、従来困
+難とされていた分散メモリアーキテクチャ上での並列化方式を実現した。これ
+により、MGTP/NはPIM/m単一PE上で、SPARC II上のOTTERの2〜5倍、
+PIM/m-256PE上では、400〜1000倍の性能を達成した。
+<P>
+一方、有限領域の定理証明系MGTP/Gについては、与えられた問題節をKL1節に
+直接コンパイルする手法、並びに場合分けにより生じる組合せ的爆発を抑制す
+る手法 (ノンホーン・マジックセット) を開発した。MGTP/Gでも、MGTP/Nと同
+様に、PIM/m- 256PE上で200倍以上の速度向上を達成している。MGTP/Gを用い
+て、有限代数の問題を試みた結果、カナダの数学者Benettにより提示された準
+群に関する未解決問題の一部を、自動的に証明することに成功した。
+<P>
+MGTPの機能拡張の一環として、論理プログラミングで開発された「失敗による
+否定」をMGTPの枠組へ組み込む手法を開発した。本手法は、法的推論システム 
+HELLIC IIのルールベース・エンジンに採用されている。さらに、本手法の変
+形として、仮説推論システムをMGTP上に構築する方式を開発した。まだ実験段
+階であるが、従来の方式と比較しても、遜色のない結果が得られている。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img5.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="mgtp1.jpg"><P>
+MGTP/N の台数効果</CENTER><P>
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="mgtp2.jpg"><P>
+MGTP/G の台数効果</CENTER><P>
+<BR> <HR>
+<P></ADDRESS>
+</BODY>

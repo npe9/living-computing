@@ -1,0 +1,63 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 並列推論マシン・オペレーティング・システム PIMOS</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 並列推論マシン・オペレーティング・システム PIMOS">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html64 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html62 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html56 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html65 HREF="node5.html"> 並列非正規関係データベース・システム Kappa-P</A>
+<B>Up:</B> <A NAME=tex2html63 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html57 HREF="node3.html"> 並列論理型言語 KL1 処理系</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00040000000000000000> 並列推論マシン・オペレーティング・システム PIMOS</A></H1>
+<P>
+並列推論マシンのハードウェアを効率的に管理し、並列プログラムの開発に適
+したソフトウェア開発環境を提供するオペレーティング・システム。どのモデ
+ルの PIM でも同一仕様の PIMOS が動作し、同一のプログラム・インタフェー
+ス、同一のソフトウェア開発／実行環境を提供する。
+<P>
+並列処理システム用のオペレーティング・システムは既に数多く開発されてい
+るが、大部分のシステムは逐次型計算機用のシステムを若干手直ししたもので
+あり、プロセサ数十台程度までの小規模システム用か、画一的な処理に向いた
+SIMD方式や数値計算などの特殊用途システムでしかなかった。この点PIMOSは, 
+超高並列システムまでを見通した汎用並列処理システムとして世界で初めて本
+格的に実装され、実際の研究に役立てられるシステムとなっている。また同時
+に、世界初の論理型言語による本格的並列オペレーティング・システムである。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img3.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="pimos.jpg"><P>
+PIMOS の全体構成</CENTER><P>
+
+<CENTER>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="../img3.gif"><P> <!-- paragraph2.gif -->
+PIMOS のプロファイラの表示例</CENTER>
+<P>
+高並列システムにおいては、オペレーティング・システムのわずかなオーバヘッ
+ドでも、それが1台のプロセサに集中すれば、システム全体のボトルネックに
+なってしまう。PIMOSは、基本的な資源・実行管理部において徹底した分散管
+理方針を取ることによって、応用プログラムの実行だけでなく、管理自体も分
+散処理するようにして、このようなボトルネックが生じるのを防いでいる。
+<P>
+PIMOSは、KL1による並列ソフトウェアの開発に向いたさまざまな機能を提供し、
+快適なソフトウェア開発環境を提供している。たとえばPIMOSデバッガでは、
+KL1言語処理系の機能を利用した自動的なデッドロックの検出や、任意のプロ
+グラム部分の実行の一時停止・再開、別ウインドウを用いてのプロセス別のト
+レースや次第に生成されて行くデータの監視などができる。プロファイラでは、
+プログラム実行中あるいは実行後に、どのような計算がいつ、どこで (どのプ
+ロセサで) 行なわれているのかをグラフィックに表示し、負荷分散状況の容易
+な把握を可能にしている。これらの機能を利用することによって、知識プログ
+ラミング・システム群や機能実証ソフトウェア群の研究開発は大幅に加速され
+た。
+<P>
+<BR> <HR>
+<P></ADDRESS>
+</BODY>

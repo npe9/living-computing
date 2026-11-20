@@ -1,0 +1,97 @@
+﻿<!--
+# modified by K.Kawamura (1994.9.26)
+-->
+<title>(4) OS for Parallel Inference Machines: PIMOS</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(4) OS for Parallel Inference Machines: PIMOS</h2>
+<p>
+
+<pre width="136">
+<b>	Machine:     PIM, Multi-PSI
+	Environment: SIMPOS
+	Language:    KL1
+	Source Code: 5.5 MB
+	Documents:   Japanese manuals,
+	             Introductory manual in English
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+The operating system used commonly on all models of PIM.  <p>
+
+<h2><b>Characteristics</b></h2>
+
+With large-scale parallel computer systems, the centralized management
+policy conventionally taken will make management the bottleneck of the
+whole sytem. PIMOS employs a <b>hierarchical and distributed
+management</b> policy to avoid the bottleneck. Actually, even on PIMs
+with their largest configuration currently available (with 256
+processors), management does not at all makes a bottleneck. PIMOS is
+<b>thoroughly written in KL1</b>, a concurrent logic language, and its
+superior portability has been proved on its porting to different
+models of PIM.  <p>
+
+<h2><b>Function</b></h2>
+
+For coherency with fine-grain parallel programs in KL1, the user
+interface is based on <b>data-flow synchronization</b>, which is one
+of the basic features of KL1.  <p>
+
+PIMOS, of course, features I/O resource management functions that
+virtualize and multiplex physical I/O devices. PIMOS, in addition,
+virtualizes resources required for software development, such as
+executable program codes, in a coherent manner. All the virtualized
+resources are managed under the <b>server-client model</b>, keeping
+the kernel of the operating system smaller and allowing <b>easier
+extension of the system</b> by simply adding servers.  <p>
+
+In addition to its conventional "telnet" remote login feature, a
+<b>specialized remote access feature from PSI</b> sequential inference
+workstations is provided, allowing effectively combining features PSI
+with those of the parallel inference machines.  <p>
+
+Software development support tools (compiler with powerful macro and
+preprocessing functions, low overhead debugging tracer for compiled
+codes, graphical visualizer of execution profile such as load
+distribution, etc) provide a <b>comfortable software development
+environment for KL1</b>. For still easier software development,
+<b>basic software building blocks are provided</b> such as utilities
+for data storage, search and update, or libraries for semi-automatic
+dynamic load distribution.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> OS for Parallel Inference Machines: PIMOS [2,933K] <a
+href="../../../ifs/symbolic-proc/pim-psi/pimos.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+<li> OS for Parallel Inference Machines: PIMOS (Object) [2,632K] <a
+href="../../../ifs/symbolic-proc/pim-psi/pimosobj.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+<li> OS for Parallel Inference Machines: PIMOS (Munual) [593K] <a
+href="../../../ifs/symbolic-proc/pim-psi/pimosman.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+<li> OS for Parallel Inference Machines: PIMOS (Munual in PostScript)
+[866K] <a
+href="../../../ifs/symbolic-proc/pim-psi/pimosman.ps.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

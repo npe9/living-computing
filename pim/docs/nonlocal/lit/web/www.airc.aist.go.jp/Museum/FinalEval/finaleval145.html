@@ -1,0 +1,69 @@
+﻿<!--
+# Page for Final Evaluation Report P.145
+#
+# Created by	C. Takahashi	99/12/23
+#
+-->
+<HTML>
+<HEAD><TITLE>Page for Final Evaluation Report P.145</TITLE></HEAD>
+<BODY BACKGROUND="../../PICS/tile-blue.gif">
+
+<CENTER>
+<B>Evaluation of the FGCS Project </B><BR><BR>
+David H. D. Warren <BR>
+Department of Computer Science <BR>
+University of Bristol <BR>
+</CENTER>
+
+<HR><A HREF="finaleval146.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../PICS/next_motif.gif"></A>   <A HREF="finaleval144.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../PICS/previous_motif.gif"></A>   <A HREF="finalevalC.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../PICS/contents_motif.gif"></A>
+<HR>
+<!-- -->
+<PRE>
+has created a number of innovative parallel symbolic applications, notably in the areas 
+of VLSI CAD, molecular biology, natural language analysis, and theorem proving. 
+For me, they are particularly interesting in showing the potential for parallelism in 
+algorithms very different from the kind of regular and・ repetitive numeric computations 
+which are typical of parallel computing today. 
+
+<font size=5><B>Technical Issues </B></font>
+
+There are some specific technical issues on which I would criticise the approach 
+taken by ICOT. While I can appreciate some of the reasons why ICOT took the path 
+it did, I feel the project might have achieved more, and remained closer to its original 
+vision, if certain key decisions had been made differently. 
+
+Perhaps the most important issue is the decision (or assumption?) that parallelism 
+has to be expressed explicitly in user programs, rather than designing systems to ex-
+ploit parallelism automatically (taking advantage of the fact that logic programming, 
+as a declarative formalism, allows parallelism to be expressed implicitly). Requiring 
+the user to take direct responsibility for expressing parallel algorithms adds greatly 
+to the programming burden, especially for the kind of complex knowledge processing 
+applications which are the main target of FGCS. This route is only appropriate for 
+problems which are computationally very intensive and where adequate performance 
+cannot be achieved by other means. But for such problems, the first priority before 
+tackling parallelism is probably to ensure that the sequential algorithm is as fast as 
+it possibly can be, using as low-level a language as is necessary. This tends to argue 
+against using a high-level approach such as logic programming. 
+
+On the other hand, there are many problems which may be potentially speeded 
+up by exploiting implicit parallelism automatically and where logic programming may 
+provide reasonable performance (perhaps via the parallelism) in relation to software 
+development cost. If parallel computers become the norm, as seems technologically 
+inevitable in the near future, software systems which can exploit parallelism automat-
+ically will have a major role to play. It is a pity ICOT didn't take the opportunity 
+to pursue this direction, which is being actively explored by other research groups (in-
+cluding my own). 
+
+The decision to go for explicit parallelism was linked with the decision to adopt 
+the concurrent logic programming paradigm as central to all aspects of the project. In 
+particular, all user programs in practice have to be expressed in, or implemented via, 
+the concurrent LP paradigm, by means of the kernel language KL1. While the concur-
+rent LP paradigm is of considerable interest in its potential for formalising interactive 
+systems, and may be appropriate for many purposes including implementing operating 
+systems, It is not, in my opinion, suitable for most user programs. 
+
+
+					- 145 -
+</PRE>
+<!-- -->
+</HTML>

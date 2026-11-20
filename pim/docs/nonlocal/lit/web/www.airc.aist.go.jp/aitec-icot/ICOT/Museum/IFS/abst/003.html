@@ -1,0 +1,84 @@
+﻿<!--
+# modified by K.Kawamura (1994.9.26)
+-->
+<title>(3) KL1 Pseudo Parallel System for PSI-III</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(3) KL1 Pseudo Parallel System for PSI-III</h2>
+<p>
+
+<pre width="136">
+<b>	Machine:     PSI-III
+	Environment: SIMPOS
+	Language:    ESP, microprogram
+	Source Code: 2.5 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Pseudo Parallel System for KL1 on Sequential Inference Machine PSI-III
+<p>
+
+<h2><b>Features</b></h2>
+
+A system for executing the concurrent logic programming language KL1
+efficiently by firmware interpreter on the sequential inference
+machine PSI-III.  <p>
+
+It may be inefficient that software development, including
+programming, initial debugging and separate testing, is performed only
+on large-scale parallel systems, which are uncommon and expensive. 
+Since a pseudo parallel system is available for KL1 on the sequential
+inference machine PSI-III, upstream software development can be
+carried out on each PSI-III workstation, and, thus, only downstream
+software development needs to be performed on a large-scale parallel
+system which includes total testing and adjustment of load balancing
+between processors. Hence, this software enables us to develop
+large-scale application program efficiently.  <p>
+
+<h2><b>Functions</b></h2>
+
+The PSI-III operating system is SIMPOS. Each SIMPOS process
+corresponds to processor of a pseudo parallel system and is controlled
+by a scheduler written in the sequential logic programming language
+ESP. ESP and the operating system of PSI-III (written in ESP) are
+executed by a KL0 language processor. Since KL0 execution and KL1
+execution have to coexist on a single CPU, each microprogram for
+executing KL0 and KL1 programs must be dynamically swapped properly.
+<p>
+
+To execute KL1 programs efficiently, the language processor is
+implemented entierly by the microprogram code of PSI-III. Moreover,
+the KL1 language processor exploits tagged architecture, five-stage
+pipeline and so on, which are features of the PSI-III hardware.  <p>
+
+To enable easy KL1 program development, this system provides rich
+debugging facilities for KL1 programs, such as a tracer and an
+inspector written in ESP.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> KL1 Pseudo Parallel System for PSI-III [1,354K] <a
+href="../../../ifs/symbolic-proc/pim-psi/psdpim.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+
+
+

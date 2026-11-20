@@ -1,0 +1,284 @@
+﻿<TITLE>IFS News Letter No.5</TITLE>
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#005000"
+      LINK   ="#0070FF"
+      VLINK  ="#854422"
+      ALINK  ="#FF0000">
+<H1>ICOT FREE-SOFTWARE News Letter No.5</H1>
+<pre>
+                                        27, January, 1993
+</pre>
+<p><br><br>
+
+<h2>[Table of Contents]</h2>
+<ul>
+        <li><a href="#introduction"><b>Introduction</b></a>
+        <li><a href="#follow-on"><b>On FGCS Follow-on Project</b></a>
+        <li><a href="#user"><b>On User's Group</b></a>
+        <li><a href="#airaddress"><b>Address of AI Language Research Institute</b></a>
+        <li><a href="#contacts"><b>Contacts</b></a>
+</ul>
+<p><br><br><br>
+
+<a name="introduction"><h2>[Introduction]</h2></a>
+    Since the release of ICOT Free Software (IFS) started on the 7th
+of August for abroad, and on the 7th of September for Japan, over 500
+persons have accessed to the FTP-server machine at ICOT, and more than
+2000 files have been transferred.
+<p>
+
+    In this newsletter, we will briefly describe activities of ICOT
+and further releases of IFS from the next fiscal year.
+<p>
+
+    As well known, the Fifth Generation Computer Systems (FGCS)
+Project started in 1982, and finished its 11 year project period at
+the end of fiscal 1992. To follow on activities of the FGCS Project,
+an FGCS Follow-on Project aiming at provision of a new infrastructure
+for advanced computer research will start in the next fiscal year as a
+two year project. Services on IFS, including support for IFS users,
+and registration of new software into IFS shall be continued within
+the framework of the FGCS Follow-on Project.
+<p><br><br>
+
+<a name="follow-on"><h2>[On FGCS Follow-on Project]</h2></a>
+    As described in the above, the FGCS Follow-on Project is a two
+year project which runs from the beginning of fiscal 1993 till the end
+of fiscal 1994. A major role of the FGCS Follow-on Project is to
+promote a diffusion of parallel knowledge processing technologies that
+have been developed in the FGCS Project.
+<p>
+
+    Many KL1 software aiming at provision of the new infrastructure
+for advanced computer research have been developed for the research on
+parallel knowledge processing technologies in the FGCS Project, and
+the major software have been released as IFS. However, a sequential
+inference machine, PSI, or parallel inference machine, Multi-PSI or
+PIM, is required to execute them. Though a "Pseudo Multi-PSI", that is
+a pseudo parallel system for KL1 software, have been released as IFS,
+a PSI-III is required to execute it. A "PDSS", that is a KL1
+programming environment on UNIX machines, have also been released as
+IFS, there are some limits on its efficiency and functions for
+executing KL1 software on it. Thus, although the PDSS system is
+suitable for learning KL1 language, it cannot be used to execute large
+KL1 software released as IFS. Therefore, it is difficult to execute
+the KL1 software released as IFS at hand.
+<p>
+
+    In the FGCS Follow-on Project, a series of KL1 programming
+environments including a KL1 language processor and a parallel
+operating system, PIMOS, shall be ported onto sequential and parallel
+UNIX machines so that they can be easily used at any sites. These UNIX
+based KL1 programming environments shall be designed to be as
+machine-independent as possible. They are also planned to be released
+as IFS.
+<p>
+
+    An experimental version of the UNIX based KL1 programming
+environments is currently under development for evaluating an
+implementation scheme.  Although we plan to release it as IFS in April
+'93, this version is for language implementation experts and is not
+suitable for application users since it lacks some important features
+for application users such as debugging aids.
+<p>
+
+    The first version for application users is planned to be released
+in September '93.  This version shall provide reasonable software
+development functions including debugging and performance analyses. 
+This system shall be ten times faster than the PDSS, although it is
+for single processor UNIX machines.
+<p>
+
+    The release of a KL1 programming environment for parallel UNIX
+machines is planned in the second quarter of '94.  It shall be
+designed avoiding the use of machine-dependent functions. Various
+improvements are planned after these releases.
+<p>
+
+    The KL1 language specification for a series of the UNIX based KL1
+programming environments shall be almost compatible with the one on
+the PIM. Thus, to execute KL1 software in IFS on these programming
+environments, their main parts can be ported on these programming
+environments with minor modifications. Of course, some parts such as
+I/O parts that invoke some functions of a SIMPOS, the operating system
+for PSI, have to be rewritten in order to use corresponding functions
+of a UNIX.
+<p>
+
+    Simultaneously with the development of a series of the UNIX based
+KL1 programming environments, research and development on the
+following Knowledge Programming Software shall be carried out
+throughout the FGCS Follow-on Project with inheriting achievements of
+the FGCS Project.
+<p>
+
+<dl>
+<dt><b>1) Knowledge Representation Language and Knowledge Base Management</b><br>
+	<dd>In the area of knowledge base management, a parallel database
+	management system, Kappa-P, employing a nested relational
+	model shall be refined into two systems: one is a system on
+	the UNIX based KL1 programming environments to be able to run
+	efficiently, and the other is a system on a KL1 programming
+	environment on the PIM to be able to handle very large-scale
+	data.
+<p>
+	<dd>On such database management systems, an object oriented
+	knowledge representation language, Quixote is now being
+	developed based on deductive logic. In this topic, a better
+	language specification for smarter knowledge representations
+	and a more efficient implementation shall be sought for.
+	Through these research, a deductive object-oriented database
+	system shall be realized and applied in various fields, such
+	as genetic information processing and natural language
+	processing.
+<p>
+<dt><b>2) High-level inference including constraint logic programming andtheorem proving</b><br>
+	<dd>In the area of constraint logic programming, a parallel
+	constraint logic programming language, GDCC has been
+	developed. It shall be refined with respect to its language
+	specification and implementation methods in the FGCS Follow-on
+	Project. Furthermore, applications of the language shall be
+	investigated, and some theoretical research is planned to be
+	made.
+<p>
+	<dd>As for a model generation theorem prover, MGTP, its efficiency
+	and functions shall be further improved so that the full
+	capability of the PIM can be utilized. A design of a new
+	programming language is planned to use the MGTP as its
+	high-level inference engine.
+<p>
+
+<dt><b>3) Novel applications of knowledge processing including genetic information processing and legal reasoning</b><br>
+	<dd>In genetic information processing, there are three major
+	topics: The first one is to analyze DNA sequences and protein
+	sequences, the second one is to investigate higher order
+	structures of proteins, and the third one is to integrate
+	various databases for biological information. In the analysis
+	of sequences, we have started analyzing practical data that
+	are available in public databases. In the investigation of
+	higher order structures of proteins, we shall tackle the
+	problem of predicting higher order structures of the proteins
+	by categorizing the proteins with biological database. As for
+	the integration of databases, we plan to use the knowledge
+	representation language, Quixote to describe biological
+	knowledge intending to evaluate its descriptive power.
+<p>
+	<dd>In legal reasoning, we plan to analyze reasoning of lawyers in
+        trials consisting of various reasoning such as deductive
+        reasoning, inductive reasoning, and analogical reasoning to
+        construct a model for legal reasoning. Further more, we aim at
+        developing the basic technologies to construct a legal
+        reasoning system.
+<p>
+	<dd>Many KL1 software that shall be developed through these research
+	activities are also planned to be released free of charge as IFS.
+<p>
+</dl>
+<p>
+
+Using the UNIX based KL1 programming environments, porting of KL1
+software in IFS onto UNIX machines shall be made more
+straightforwardly. Thus, you can easily use parallel knowledge
+processing technologies that have been developed in the FGCS Project
+at hand.
+<p>
+
+    For the FGCS Follow-on Project, we have organized an International
+Relations & Public Relations Group (IR&PR-G) to support IFS,
+international collaborative research, and publicity activities. The
+group so far consists of four ICOT members: Dr. Uchida, Dr. Aiba, Mr. 
+Narita, and Ms. Namikoshi. For comments and getting information on the
+FGCS Follow-on Project, please access to
+<p>
+
+<dl>
+	<dd><b>irpr@icot.or.jp</b>
+</dl>
+<p>
+
+by e-mail.
+<p>
+
+    We plan to inform various activities of the FGCS Follow-on Project
+in future issues of the ICOT Free Software Newsletter.
+<p><br><br>
+
+<a name="user"><h2>[On User's Group]</h2></a>
+    Anyone interested in organizing a user's group to carry out
+research on particular software of IFS for purposes of revision or
+improvement is invited to contact the IFS-desk via e-mail to the
+address at the end of this newsletter.
+<p>
+
+    Some of your proposal shall be informed by the next volume of the
+newsletter and reactions to your proposal shall also be forwarded to
+you.
+<p>
+
+    If you desire, we can store your revised program on the FTP server
+at ICOT if the revised program is useful for other users.
+<p><br><br>
+
+<a name="airaddress"><h2>[Address of AI Language Research Institute]</h2></a>
+    The address of AI Language Research Institute (AIR) is as follows.
+To contact AIR on Common ESP, please use the following address.
+
+<pre>
+
+        Research Management Department
+        AI Language Research Institute, Ltd.
+
+        c/o Computer & Information Systems Laboratory
+        Mitsubishi Electric Corporation
+        1-1, Ofuna 5-chome, Kamakura
+        Kanagawa 247 Japan
+
+        e-mail: cesp-request@air.co.jp
+        FAX:    +81-467-48-4847
+</pre>
+<p><br><br>
+
+<a name="contacts"><h2>[Contacts]</h2></a>
+    For information on IFS, please access
+<p>
+
+<dl>
+	<dd><b>ifs@icot.or.jp</b>
+</dl>
+<p>
+
+by e-mail.  If you receive a paper edition of this newsletter, please
+let us know your e-mail address and we shall send you its electronic
+edition.  If you cannot use an e-mail facility, please contact the
+address below.
+<p>
+
+    A list of IFS was published in "ICOT Free Software Catalogue"
+which was distributed at the International Conference on Fifth
+Generation Computer Systems 1992, held at the beginning of June, 1992.
+If you do not have a copy of this list, please supply the IFS desk
+with your physical mail address and a copy shall be mailed to you.
+<p>
+
+    If there is anyone in your neighborhood who is interested in IFS,
+please let us know the name and both the e-mail and the physical mail
+addresses so that we can send newsletters and the catalogue.
+<p>
+<pre>
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21st Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618
+</pre>
+<p>
+
+<hr>
+<address>www-admin@icot.or.jp</address>
+
+

@@ -1,0 +1,84 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> プログラム自動合成システム MENDELS ZONE</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" プログラム自動合成システム MENDELS ZONE">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html238 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html236 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html230 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html239 HREF="node22.html"> 棋士システム 碁世代</A>
+<B>Up:</B> <A NAME=tex2html237 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html231 HREF="node20.html"> 文生成ツールの拡張</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION000130000000000000000> プログラム自動合成システム MENDELS ZONE</A></H1>
+<P>
+MENDELS ZONE は形式手法を用いて並列プログラムの開発を支援するシステムである。
+従来より、ソフトウェアの高信頼性、高生産性を得るために、形式手法が有効
+であるとの指摘があった。形式手法を用いることで、ソフトウェア仕様の自動
+検証や調整、仕様からプログラムへの自動変換が可能となるためである。しか
+し、現実には (1) 検証・調整に要する多大な計算時間、(2) 変換されるプロ
+グラムの実行効率の低さが障害となって、実開発への適用は実質的に困難であ
+ると考えられていた。この問題に対してMENDELS ZONE では、
+<DL COMPACT><DT> (1)
+<DD> すべての検証・調整手続きを並列化することで計算時間を大
+幅に短縮、
+<DT> (2)
+<DD> KL1プログラムを生成することでプログラムの実行効率を格段
+に向上
+<P>
+ </DL>
+させ、第五世代コンピュータの高い計算能力のもとで、形式手法によるソフト
+ウェア開発を世界で初めて現実のものへと近づけた。これまでの実験では、検
+証について並列要素数に対してほぼ線形に性能が向上し、生成されるプログラ
+ムについては、宣言的な記述から得られるプログラムであっても従来の10倍以
+上の速度で実行されることが確認されている。
+<P>
+また、形式手法によって実システムを記述する際の問題点として (3) システ
+ムのさまざまな性質を単一の手法によって記述する難しさ、(4) 大規模シス
+テムを形式記述する手間の多さ、(5) 形式記述の理解性の低さなどが挙げら
+れる。これらについては、
+<DL COMPACT><DT> (3)
+<DD> 複数の形式手法を用意し、記述する性質に適した手法を選択、
+<DT> (4)
+<DD> 形式手法にオブジェクトの概念を導入し、オブジェクト単位
+の部品化・再利用を実現、
+<DT> (5)
+<DD> 形式記述を図形表示し、記述の理解性を向上
+<P>
+ </DL>
+させ、記述性の問題にも対処している。複数の形式手法には、機能を記述する
+ための等式論理と、タイミングを記述するための時相論理、構造を記述・表示
+するためのペトリネットが用いられる。ペトリネットは、プログラム実行の様
+子をモニタリングする際にも活用される。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img12.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="mendels.jpg"><P>
+MENDELS ZONEにおけるソフトウェア開発の流れ</CENTER>
+<P>
+図にMENDELS ZONE におけるソフトウェア開発の流れを示す。(1) では等式論理による
+機能(メソッド)仕様が入力され、その正しさが並列に自動検証される。(2) で
+はそれらの構造がペトリネット表示される。(3) では時相論理による機能間の
+タイミング仕様が入力され、その仕様を満足するように(2) のペトリネットが
+並列に自動調整される。(4) では複数のオブジェクトがペトリネットエディタ
+を用いて結合され、(5) ではオブジェクト間のタイミング仕様が入力され、
+(4) のペトリネットが自動調整される。最後に(6) でこれらの仕様がKL1プロ
+グラムへ変換される。
+<P>
+MENDELS ZONE の評価を目的としてプラント制御エキスパートシステムを開発した結果、
+約4,000行の形式記述から6,200行のKL1プログラムが生成され、約5人月を要し
+て目的のシステムが完成した。過去に同一システムを手作業により開発した際
+のデータと比較すると、プログラムサイズは約34%増加しているが、開発者が
+記述するコードの量は約15%減少している。開発工数は従来の約1/2で、特に
+デバッグ時間が1/12となっている。これにより、実開発におけるMENDELS ZONE の有効
+性が確認された。
+<P>
+<BR> <HR>
+<P></BODY>

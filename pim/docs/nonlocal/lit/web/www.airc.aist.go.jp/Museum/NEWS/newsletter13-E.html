@@ -1,0 +1,257 @@
+﻿<!--created by Masayo Fukushima 9/29/97-->
+<body bgcolor="#ffffff" text="#000000">
+<TITLE>AITEC NEWS No.13</TITLE>
+
+<table border=1>
+<tr><td rowspan=2>
+<img src=GIF/AITECNEWS-LOGO.gif></td>
+<td>September 24, 1997 </td></tr>
+<tr><td> Issue #13<br>(issued on Sep.19,1997 in Japanese)</td>
+</tr>
+</table>
+<hr>
+<a name=contents>
+<img src=GIF/table-of-contents.gif></a>
+
+<h2>Special Issue for the KLIC Programming Contest #3</h2> Please
+visit <!-- a href="../../FGCS/KLICON/main-E.html" -->KLIC Programming
+Contest page</a> for the contest details.
+
+<HR>
+<FONT COLOR="#AF0000"><A NAME="INDEX">INDEX</FONT></B></a>
+
+<OL>
+   <LI><B><A HREF="#001">Introduction</A></B>
+   <LI><B><A HREF="#002">How To Organize Your Program</A></B>
+   
+   <LI><B><A HREF="#002">Details of how to organize your program and document
+          </A></B>
+
+   <LI><B><A HREF="#002-2"> About the environments needed to run your program 
+          </A></B>
+
+   <LI><B><A HREF="#003">Message From The Editorial Desk</A></B>
+
+   
+</OL>
+<hr>
+<h3><a name=001><FONT COLOR="#AF0000">INTRODUCTION</a></font></h3>
+Dear Readers,<br><br>
+
+Have you already finished your entry to the KLIC Programming Contest?<br><br>
+
+The contest is open to anyone who wishes to enter. As soon as you enter, we 
+will send detailed information about the contest by email. Even if you are not 
+sure you can really submit a program, please enter anyway.<br><br>
+
+In order to allow for as many entries as possible, we have postponed the 
+"Deadline for ENTRY," from September 30 (Tue) to October 13 (Mon). We are 
+looking forward to your entry.<br><br>
+
+In addition to the special KLIC Programming Contest issues of AITEC NEWS 
+No. 10 and No. 12, we would like to send you more information on the contest 
+in this issue.<br><br>
+
+Have you tried "Solitaire Poker," the subject in the sequential
+environment?  We received some comments that it was a little
+difficult. So, for your programming aids, we have added an evaluation
+program for 'Solitaire Poker.' You can ftp it from <!-- a
+href="../../FGCS/KLICON/97/KLIC97subject-E.html" -->here</a> (for
+non-frame browser users, please ftp it from <!-- a
+href="../../FGCS/KLICON/97/KLIC97subject-body-E.html" -->here</a>).<br>
+
+We hope it will make your programming easier and help you enjoy
+programming!<br><br>
+
+Also, we revised 'the program for hand evaluation' for the sequential 
+environment on September 2. Please check it on the AITEC Homepage.<br><br>
+
+Now, we show you the application details in the following articles.<br><br>
+<hr>
+<a name=002>
+<font color=#AF0000><h3>HOW TO ORGANIZE YOUR PROGRAM AND DOCUMENT</h3></font>
+</a>
+<font color=#AF0000>1. Details of how to organize your program and document</font><br><br>
+
+Your program and document should be sent to us by email during the period 
+from October 1, 1997 to October 31, 1997.<br><br>
+
+
+  The email message should be organized as follows: <br>
+<ol>
+   <li> The destination address should be "klic-contest@icot.or.jp". 
+
+   <li> The Subject of the email should be "KLIC Contest." 
+
+   <li> The body of the email should include the following information: 
+<ul>
+    <li> a. Please specify "Application for KLIC Programming Contest" 
+        as the title at the top.
+    <li> b. Your name*
+    <li> c. Your affiliation*
+    <li> d. Your address*
+    <li> e. Your telephone number*
+    <li> f. Your email address*
+    <li> g. Please specify the category you are applying for, namely, 
+        the sequential environment, parallel environment, or free subject. <br>
+</ul>
+</ol>
+ (* If you apply as a group, please specify the leader's name, affiliation, 
+    telephone number and email address.) <br><br>
+
+In the body of the email, after these seven items, please put the files 
+specified below into one directory and compress it by "tar", "gzip (or 
+compress)" or "uuencode." <br><br>
+
+ (If the compressed file is more than approximately 500KB, please inform the 
+  secretariat.) <br><br>
+
+<FONT COLOR="#AF0000">1) Explanation or Manual of your program  <br><br></font>
+
+Please write explanatory documents or manuals for your program either in 
+Japanese or English. They should be saved as plain text or in HTML. 
+(It should be readable on a viewer.) Please name the file "README" or 
+"README.html".  <br><br>
+
+Please include the following items in your document or manual: <br><br>
+
+For all categories: <br><br>
+<ul>
+    <li> a. General explanation of program's function, behavior etc.
+    <li> b. Descriptions of the system that you use for hand evaluation of a 
+        program (types, OS, etc.)
+    <li> c. Roughly elapsed time to generate the answer(s) using the 
+        test data you attach with it
+    <li> d. Algorithm, points you specially think out
+    <li> e. Others (ex. your requests on the KLIC system, KL1 language)
+ </ul>
+For Category 3 (Free Subject)<br>
+<ul>
+    <li> a. Program name
+    <li> b. General explanation of program's function, behavior etc.
+    <li> c. Environments needed to run your program (hardware, OS, language)
+</ul>
+If you need to use figures or pictures, please convert them into the "gif" 
+format and put them into a sub-directory named "readme.dir". <br><br>
+
+If you use links in HTML documents, their references should be directed to the 
+files in the directory "readme.dir." The HTML version should be 2.0 or newer.
+<br><br>
+Note:
+Please do not mention programmer names in program sources. <br>
+It may be cause for a demerit mark in the judgment.<br><br>
+
+<font color=#AF0000>2) File names of source programs<br><br></font>
+
+Make a list of all the source file names and put it in a file named "SOURCES".
+<br><br>
+Please write one source file name per line. For example, if you have two 
+source files, foo.kl1 and bar.kl1, then your "SOURCES" file should contain
+two lines as follows:<br><br>
+<dl>
+    <dd> foo.kl1
+    <dd> bar.kl1
+</dl>
+Note:<br><br>
+If your program cannot be installed by the command "klic *.kl1" for linking 
+some libraries, for example, please arrange a file such as "makefile" 
+which can generate an executable object file. In this case, please add a 
+document regarding the installation procedure to the item 3) described below 
+with the name "INSTALL"(or "INSTALL.html").<br><br>
+
+<font color=#AF0000>3) Source program files<br><br></font>
+
+You may divide your source program into as many files as you need. If you 
+apply to the free subject category and have some test data, please name the 
+file "test.data" and include it with these files. <br><br>
+
+An example of an APPLICATION FORMAT <br>
+<pre>
+**************************************************************************
+a. Application for KLIC Programming Contest
+b. Ken AITEC
+c. Research Institute for Advanced Information Technology
+d. 2F, Shiba-Tokyo Kaijo-Bldg., 2-3-3 Shiba, Minato-ku, Tokyo 105, Japan
+e. 03-3456-3191
+f. sentan@icot.or.jp
+g. Category: sequential environment
+   --encoded files--
+********EXAMPLE***********************************************************
+</pre>
+<hr>
+<a name=002-2>
+<font color=#AF0000>2.  About the environments needed to run your program</font><br><br></a>
+The environments needed to run your program at AITEC are as follows:<br><br>
+
+1)KLIC version<br><br>
+<blockquote>
+   The KLIC version should be 3.001 or newer.</blockquote>
+
+2) Sequential environment
+<blockquote>
+   A UNIX workstation:
+   On execution, option -H4M is recommended to give the maximum heap size.<br>
+
+   The OS is SUN OS 4.1.3. and JLE 1.1.3
+</blockquote>
+
+3) Parallel environment<br><br>
+<blockquote>
+   A SparcCenter 2000:<br>
+
+   SuperSparc 40MHz, secondary cache is 1MB. <br>
+
+   Main memory is 1311 MB.<br>
+
+   Maximum number of worker processes will be 16. <br>
+
+   The OS is Solaris 2.3.<br>
+</blockquote>
+<hr>
+
+<a name=003>
+<h3><font color=#AF0000>MESSAGE FROM THE EDITORIAL DESK</font></h3></a>
+
+We have published the latest KLIC Programming Contest information in this 
+issue. You can check the newest information on the AITEC Homepage, too. 
+(http://www.icot.or.jp) Also, we will send email to those who enter the 
+contest. We wait for your entry.<br><br>
+
+Please refer to the AITEC Homepage for detailed information regarding ENTRY.  
+You can also make an entry on the Hompage.<br><br>
+
+If you have any questions about the contest, please contact us at 
+klic-contest@icot.or.jp.<br><br>
+
+Challenge your programming skill in the KLIC Programming Contest!<br><br>
+<pre>
+<font size=-1>
+**********************************************************************
+*                                                                    *
+*       A I T E C  N E W S      Issue #13                            *
+*          AITEC NEWS Editorial Team:                                *
+*            Makiko Sato, Chie Takahashi, Akira Aiba                 *
+*            Kazumi Kasai, Kouichi Takeda, Yoshiharu Torii           *
+*            Hiroshi Sato, Shunichi Uchida                           *
+*          AITEC NEWS English Version Team                           *
+*            Masayo Fukushima, Shunichi Uchida                       *
+*          Issued on: September 19, 1997(Japanese Version)           *
+*                     September 24, 1997(English Version)            *
+*          By: Research Institute for Advanced Information           *
+*              Technology (AITEC), a subcenter of                    *
+*              Japan Information Processing Development              *
+*              Center (JIPDEC)                                       *
+*              2-3-3, Minato-ku, Shiba, Tokyo 105, Japan             *
+*              Tel: +81-3-3456-3191 Fax: +81-3-3455-4877             *
+*              E-mail: aitec-news@icot.or.jp                         *
+*              http://www.icot.or.jp                                 *
+*                                                                    *
+**********************************************************************
+</font>
+</pre>
+<hr>
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a>
+</address>
+<a href="./aitec-news-E.html">AITEC NEWS Home</a>
+<a href="http://www.icot.or.jp"><br>
+AITEC Homepage</a>

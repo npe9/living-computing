@@ -1,0 +1,123 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 並列制約処理言語システム GDCC</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 並列制約処理言語システム GDCC">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html94 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html92 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html86 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html95 HREF="node8.html"> 知識表現言語システム Quixote</A>
+<B>Up:</B> <A NAME=tex2html93 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html87 HREF="node6.html"> 並列定理証明システム MGTP</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00070000000000000000> 並列制約処理言語システム GDCC</A></H1>
+<P>
+従来のプログラミング言語による問題解決では (1) 問題の解析、(2) 解法の
+発見、(3) 発見された解法のプログラミングの3ステップを必要としていた。
+制約論理型言語は、問題をどう解くかではなく、どのような問題を解くかを記
+述するプログラミング言語である。このため、問題解決を (1) 問題の解析、
+(2) 解析された問題のプログラミングという、2ステップだけで行なうことが
+できる。しかも、従来の言語では解法が想定する場面以外に適用するには新た
+な解法を発見しなければならなかったのに対して、制約論理型言語では特定の
+場面を想定せずに、より柔軟なプログラムを記述できる。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img6.gif"><P>
+-->
+<CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="gdcc2.gif"><CENTER><P>
+<P>
+一方、場面に応じた問題解決をシステムが行うため、システムに要求される機
+能は増大し、結果的にプログラムの実行効率に問題が生じることがある。特に、
+制約を解く、制約評価系の処理効率はプログラム全体の効率にとって重要な影
+響を与えるため、この効率化は不可欠である。その点で並列処理を導入するこ
+とにより、効率化が実現できた。
+<P>
+並列制約論理型言語GDCCは、このような効率的かつ柔軟な問題解決のためのプ
+ログラミング言語を並列推論マシン上にその処理系を構築することにより、よ
+り効率的な実行を目指したものである。GDCCの特徴は、世界で初めて非線形代
+数方程式を扱える制約論理型言語であり、世界で初めて実際の並列計算機上で
+動作する並列制約論理型言語である点である。
+<P>
+並列推論マシンを利用することにより、非線形代数方程式を扱うシステムは
+16PEで約6倍の並列効果が得られ、絶対性能についても、実用的なシステムに
+必要な性能を達成できた。Vidalによる処理系やSieglによる処理系といった、
+他の並列実装と比較してもより効率の良いシステムが得られ、また効率が高い
+とされているGioviniによる処理系、Backelinによる処理系のような他システ
+ムと比較しても、複数PEを利用することで、より高速なシステムを実現するこ
+とができた (次の表を参照)。これらの比較に際しては、比較的処理時間のか
+かるベンチマークを選んだため、比較対象となる処理系がすべてのベンチマー
+クを解いているわけではないので、それぞれの処理系でデータが得られている
+ものについての比較を行っている。
+<P>
+<!--
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img7.gif"><P>
+-->
+<CENTER>
+<!--
+<TABLE BORDER= UNITS=RELATIVE COLSPEC="C12 C20 R4 R3 R3 R2 R2">
+-->
+<TABLE BORDER="2">
+<TR><TH ROWSPAN=2 VALIGN=BOTTOM>ベンチマーク</TH>
+    <TH ROWSPAN=2 VALIGN=BOTTOM>処理系</TH>
+    <TH COLSPAN=5>PE数</TH>
+<TR><TH ALIGN=RIGHT>1</TH>
+    <TH ALIGN=RIGHT>2</TH>
+    <TH ALIGN=RIGHT>5</TH>
+    <TH ALIGN=RIGHT>12</TH>
+    <TH ALIGN=RIGHT>16</TH>
+<TR><TD ALIGN=CENTER><br>Katsura-4<br>(単位: 秒)</TD>
+    <TD ALIGN=CENTER>GDCCの制約評価系<br>Vidalの処理系<br>Gioviniの処理系</TD>
+    <TD ALIGN=RIGHT>8<br>17<br>40</TD>
+    <TD ALIGN=RIGHT>8<br>10<br>--</TD>
+    <TD ALIGN=RIGHT>4<br>4<br>--</TD>
+    <TD ALIGN=RIGHT>3<br>4<br>--</TD>
+    <TD ALIGN=RIGHT>4<br>--<br>--</TD>
+<TR><TD ALIGN=CENTER>Katsura-5<br>(単位: 秒)</TD>
+    <TD ALIGN=CENTER>GDCCの制約評価系<br>Vidalの処理系</TD>
+    <TD ALIGN=RIGHT>84<br>1103</TD>
+    <TD ALIGN=RIGHT>82<br>551</TD>
+    <TD ALIGN=RIGHT>27<br>146</TD>
+    <TD ALIGN=RIGHT>17<br>79</TD>
+    <TD ALIGN=RIGHT>24<br>--</TD>
+<TR><TD ALIGN=CENTER>Cyc 4-roots<br>(単位: 秒)</TD>
+    <TD ALIGN=CENTER>GDCCの制約評価系<br>Sieglの処理系</TD>
+    <TD ALIGN=RIGHT>1<br>218</TD>
+    <TD ALIGN=RIGHT>1<br>--</TD>
+    <TD ALIGN=RIGHT>1<br>--</TD>
+    <TD ALIGN=RIGHT>1<br>--</TD>
+    <TD ALIGN=RIGHT>1<br>36</TD>
+<TR><TD ALIGN=CENTER>Cyc 5-roots<br>(単位: 秒)</TD>
+    <TD ALIGN=CENTER>GDCCの制約評価系<br>Gioviniの処理系</TD>
+    <TD ALIGN=RIGHT>23<br>143</TD>
+    <TD ALIGN=RIGHT>24<br>--</TD>
+    <TD ALIGN=RIGHT>12<br>--</TD>
+    <TD ALIGN=RIGHT>11<br>--</TD>
+    <TD ALIGN=RIGHT>11<br>--</TD>
+<TR><TD ALIGN=CENTER>T-6<br>(単位: 分)</TD>
+    <TD ALIGN=CENTER>GDCCの制約評価系<br>Backelinの処理系</TD>
+    <TD ALIGN=RIGHT>443<br>90</TD>
+    <TD ALIGN=RIGHT>453<br>--</TD>
+    <TD ALIGN=RIGHT>136<br>--</TD>
+    <TD ALIGN=RIGHT>79<br>--</TD>
+    <TD ALIGN=RIGHT>66<br>--</TD>
+</TABLE>
+</CENTER>
+
+<P>
+このGDCCを用いて、ハンドリングロボット設計支援システム、階層制約の並列
+評価システム、ボロノイ図作成支援システムといった応用システムを試作した。
+それぞれの応用システムにおいて、高い機能と高い効率を実現することができ
+た。たとえば、ハンドリングロボット設計支援システムでは制約論理型言語の
+持つ柔軟性を生かした、高機能で高効率な支援系を実現し、また、ボロノイ図
+作成支援システムでは、その定義を直接プログラムとして記述することで、高
+機能で、ほぼPE台数に比例する台数効果が出るという、高効率のシステムが得
+られた。
+<P>
+<BR> <HR>
+<P></BODY>

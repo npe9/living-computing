@@ -1,0 +1,450 @@
+﻿<!--created by Masayo Fukushima 7/23/97-->
+<body bgcolor="#ffffff" text="#000000">
+<TITLE>AITEC NEWS No.12</TITLE>
+
+<table border=1>
+<tr><td rowspan=2>
+<img src=GIF/AITECNEWS-LOGO.gif></td>
+<td>August 12, 1997 </td></tr>
+<tr><td> Issue #12<br>(issued on Jul.31,1997 in Japanese)</td>
+</tr>
+</table>
+<hr>
+<a name=contents>
+<img src=GIF/table-of-contents.gif></a>
+
+<h2>Special Issue for the KLIC Programming Contest #2</h2> Please
+visit <!-- a href="../../FGCS/KLICON/main-E.html" -->KLIC Programming
+Contest page</a> for the contest details.
+
+<HR>
+<FONT COLOR="#AF0000"><A NAME="Index"></A>INDEX</FONT></B>
+
+<OL>
+   <LI><B><A HREF="#001">Categories</A></B>
+   
+   <LI><B><A HREF="#002-1">Subject for Category 1</A></B>
+
+   <LI><B><A HREF="#002-2">Subject for Category 2</A></B>
+   
+   <LI><B><A HREF="#003">Message From The Editorial Desk</A></B>
+   
+</OL>
+<hr>
+
+Dear readers<br><br>
+
+In this special issue covering the KLIC Programming Contest '97, we would like 
+to inform you of the recently-chosen programming subjects.<br><br>
+
+Please refer to AITEC NEWS No. 10 (July 16; English version) for the contest 
+details. You can also check them on the AITEC Homepage (http://www.icot.or.jp).
+Contact the contest secretariat office (klic-contest@icot.or.jp) if you have 
+any questions.<br><br>
+
+For this contest, two different subjects have been selected in the sequential 
+environment category and parallel environment category, respectively.
+<br><br>
+The contest is open to anyone who wishes to enter. Novices at the KL1 and KLIC 
+are welcome. For new users, information on how to install the KLIC system in 
+your environment is given in the ICOT Free Software (IFS) pages. Please refer 
+to the AITEC Homepage for full details.
+<br><br>
+We invite you to join the KLIC Programming Contest and your programming skills!
+Valuable awards and supplementary prizes for winning program await successful 
+entrants.
+<hr>
+<a name=001>
+<h4>1. Categories</h4></a>
+<pre>
+There are 3 categories you can enter (listed below), and you can enter as many 
+of the following three categories as you wish: 
+
+	Category 1 : Sequential Environment 
+	Category 2 : Parallel Environment
+	Category 3 : Free Subject
+
+For Category 1 and 2, programs should relate to the given subjects below.
+Category 3, programs can be related to any subject, in either a sequential or 
+parallel environment.
+
+Please note that the first prize winner in each category from the last contest 
+is not allowed to enter the same category as that of the previous year.
+
+<a name=002-1>
+<h4>2. Subjects</h4></a>
+Category 1: Sequential Environment
+            
+-- Problem: Solitaire Poker (or Patience Poker)
+
+You are dealt 25 cards from a deck of cards which does not include jokers.
+Place your cards on a board which is divided into a 5-by-5 square pattern. 
+Aim for the best total score with the board.  The board makes 12 hands with 5 
+columns, 5 rows, and 2 diagonals per round, each hand generates its own score.
+
+1. How to mark the total score of a board
+
+The total score is the sum total of the scores from the 12 individual hands.
+Each score of the 12 individual hands is the sum total of the "hand score" and 
+the "additional score."
+
+ 1.1 Hand Score
+
+The following point scores are allotted to the following winning hands.
+
+	Straight Flush		2,745,600 points
+	Four of a Kind		176,000 points
+	Full House		29,333 points
+	Flush			21,500 points
+	Straight		10,767 points
+	Three of a Kind	2,000 points
+	Two Pairs		888 points
+	One Pair		100 points 
+
+Note) An ace can be used as a low card, as well as a high card.
+Possible straights with an ace are therefore 10, J, Q, K, A or A, 2, 3, 4, 5.
+
+
+ 1.2 Additional Score
+
+When a hand gets a hand score as stated above, additional points are added to 
+the hand score for cards which play a role in the winning hand. These 
+additional points are added up for each individual hand; the same card may be 
+counted in other hands on the board.
+
+	Ace			14 points (when played as a high card)
+	King			13 points
+	Queen			12 points
+	Jack			11 points
+	plain cards (2 to 10)	(Points equal card number)
+	Ace			1 point (when played as a low card)
+
+ex. "K, K, 8, 8, A" gets 888 points for the hand score for winning with 
+'Two Pairs', and gets 42 points as an additional score for using two kings 
+and two 8's to form the two pairs.
+
+"10, J, Q, K, A" gets 10,767 points for the hand score for winning with a 
+'Straight', and gets 60 points as an additional score since the following 
+points are allotted for the cards used in making that straight, 10+11+12+13+14.
+	 
+"A, 2, 3, 4, 5", all in the same suit, gets 2,745,600 points for the hand 
+score for winning with a 'Straight Flush', and gets 15 points as an additional 
+score since the following points are allotted for the cards used in making 
+that straight flush, 1+2+3+4+5.
+
+
+2. Program 
+
+2.1 Interface
+
+You should provide a predicate 'poker/2' in module 'solitaire'.  It should 
+accept 25 cards as the first argument and return a list of solution candidates 
+as the second argument.  You can define any auxiliary modules but they must 
+have the name 'solitaire_xxxx' where you can name anything for 'xxxx'.
+
+
+ex.	?- solitaire:poker([card(8,spades),card(2,diamonds),...],Result)
+
+	may return solution candidates as follows;
+
+	Result = [X1,X2,....],
+	X1 = [card(2,diamonds),....,card(8,spades),...],
+	X2 = [card(8,spades),...,card(2,diamonds),....],
+
+(1) Input: The first argument is a list of 25 elements, each representing 
+a card.  Each element has a functor structure of the form 'card(Rank, Suit)'. 
+'Rank' represents the rank of the card, which is either 2, 3, 4, 5, 6, 7, 8, 9,
+ 10, jack, queen, king, or ace.  'Suit' represents the suit of the card, which 
+is either spades, hearts, diamonds, or clubs.	 
+The same card never appears twice in the list.
+
+	ex. card(10, spades), card(jack, clubs), card(ace, hearts)
+
+(2) Output: The second argument is a stream to which solution candidates are 
+sent.  Each solution sent has the same format as its input.  The cards in 
+a solution are regarded as a board consisting of cards in the following order.
+
+	   1, 2, 3, 4, 5,
+	   6, 7, 8, 9,10,
+	   11,12,13,14,15,
+	   16,17,18,19,20,
+	   21,22,23,24,25
+
+The total score is summed up with scores for rows (1,2,3,4,5), ..., 
+(21,22,23,24,25), columns (1,6,11,16,21), ..., (5,10,15,20,25), and diagonals 
+(1,7,13,19,25), (5,9,13,17,21).  Therefore anything symmetrical or rotational 
+wins the same total score.
+
+
+ex. A candidate:
+    
+	[card(10,spades), card(ace,clubs), card(queen,diamonds), 
+	 card(9,hearts), card(ace,hearts), card(6,diamonds), 
+	 card(jack,spades), card(7,hearts), card(ace,diamonds), 
+	 card(5,diamonds), card(4,hearts), card(10,clubs), 
+	 card(queen,spades), card(9,spades), card(9,diamonds),
+	 card(2,spades), card(8,spades), card(8,hearts), 
+	 card(7,spades), card(king,diamonds), card(8,clubs), 
+	 card(queen,clubs), card(jack,diamonds), card(3,clubs), 
+	 card(6,spades)]
+
+This candidate equates to the following board formation and scores.  Here, the 
+suits- spades, hearts, diamonds, and clubs are represented as S, H, D, C, and 
+the ranks- 10, jack, queen, king, and ace are represented as T, J, Q, K, and 
+A, respectively.
+
+				    columns
+		
+			0   |  0   | 124  | 118	 |  0	| 932	 diagonal
+		      ------+------+------+------+------+--
+			ST  |  CA  |  DQ  |  H9	 |  HA	| 128
+			D6  |  SJ  |  H7  |  DA	 |  D5	| 0
+			H4  |  CT  |  SQ  |  S9	 |  D9	| 118	 rows
+			S2  |  S8  |  H8  |  S7	 |  DK	| 116
+			C8  |  CQ  |  DJ  |  C3	 |  S6	| 0
+		      ------+------+------+------+------+--
+							| 21546	 diagonal
+			TOTAL=23082
+    
+
+Remark) Every candidate must be instantiated completely before it is
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+put to the output stream.  Never use incomplete messages and unbound variables 
+for any of the candidates.  Any number of candidates may be sent to the output 
+stream, but only the last one sent within the time limit is considered. 
+(To send only completely instantiated candidates to the stream, you should 
+make sure that the whole data structure is instantiated by using the guard 
+predicate 'wait /1' for each element of the structure.)
+
+
+2.2 Programming Restrictions
+
+   (1) Never use inline C codes.
+
+   (2) Never use priority specification of the form:
+
+	'GOAL@priority(ABSPRIO)'.
+       
+       Only use the forms:
+
+	'GOAL@lower_priority' and
+	`GOAL@lower_priority(RELPRIO)'.
+
+3. Judgment 
+
+The judging committee will select the winners mainly mainly considering the 
+score of the last complete solution obtained, also taking excellence of 
+program construction and quality of attached documents into account.
+
+4. Program for Hand Evaluation
+
+A program for hand evaluation is available from the AITEC Homepage.
+
+		http://www.icot.or.jp/ 
+
+The program may be revised without notice. You can obtain revision information 
+by subscribing to the mailing list prepared for this contest. The attached 
+program itself may or may not be used in the final evaluation, but the scoring 
+rules will remain the same.
+
+<hr>
+<a name=002-2>
+Category 2: Parallel Environment</a>
+
+-- Problem: John Conway's Game of Life
+
+Let's write a parallel program in KL1 solving "Conway's Game of Life".   
+Given an initial state and the number of generations,  the answer is the final 
+state that the program computes.   What load balancing strategy do you employ? 
+ How fast a program can you write? /or/ (How fast can you write a program?) 
+Rewriter's Note:  You should choose between one of the two previous bolded 
+sentences; in the first sentence "fast" modifies program; and in the second 
+sentence "fast" modifies the act of writing.
+
+
+1. About The Game of Life
+
+The Game of Life is played on a square board which is a possibly infinite grid 
+of cells. Each cell can have either of two states, ON and OFF.  The game 
+proceeds generation by generation, and the new state of a cell is determined 
+by the states of cells at the previous generation.  A user determines which 
+cells are ON at generation 0, and subsequently, various patterns may appear, 
+disappear, and evolve on the board.  A cell's state changes according to a 
+set of the following transition rules.
+
+About transition rules: 
+In the Figure 1, the central cell "o" is surrounded by eight neighbor 
+(adjacent) cells "+".  
+
+				+++
+				+o+
+				+++
+
+                   Figure 1.  Surrounding neighbor cells
+
+
+[Rule 1]
+Suppose that a cell is ON at generation N.  
+If the number of ON cells surrounding the cell is two or three, the state of 
+the cell at generation N+1 is ON.  Otherwise, the state becomes OFF.  
+
+
+[Rule 2]
+Suppose that a cell is OFF at generation N.  
+If the number of ON cells surrounding the cell is just three, the state of 
+the cell at generation N+1 becomes ON.  Otherwise, the cell keeps OFF.  
+
+
+
+Examples:
+
+In the following figures, "*" stands for ON, and "." OFF.  
+
+[Example 1 (Blinker)]
+
+Here is a pattern called "Blinker", the cycle time of which is two generations.
+  
+
+		.....	.....	.....
+		.....	..*..	.....
+		.***.	..*..	.***.
+		.....	..*..	.....
+		.....	.....	.....
+
+  Generation	 N	 N+1	 N+2
+
+		 Figure 2.  Blinker
+
+
+[Example 2 (Stable patterns)]
+
+Here are stable patterns which do not change in any generation.  
+
+          ......            ....
+          ..**..            .**.
+          .*..*.            .**.
+          ..**..            ....
+          ......
+
+         Figure 3.  Stable patterns
+
+
+[Example 3 (Glider)]
+
+Here is a pattern called "the Glider", which moves around on a board.  
+
+		......	......	......	......	......
+		..*...	......	......	......	......
+		...*..	.*.*..	...*..	..*...	...*..
+		.***..	..**..	.*.*..	...**.	....*.
+		......	..*...	..**..	..**..	..***.
+		......	......	......	......	......
+  Generation	 N	 N+1	 N+2	 N+3	 N+4
+
+                            Figure 4. Glider
+	
+
+
+2. Program 
+
+2.1 Interface
+
+Please provide a predicate 'compute/3' in the module 'life' as such:
+
+life:compute(NumberOfGenerations,InitialState,FinalState)
+
+where the first and second arguments are input, and the third argument is 
+output.  The first argument, "NumberOfGenerations" takes an integer, "N," as 
+input,  which lets the predicates compute the answer, N generations later.  
+The second argument, "InitialState" takes a list as input, which means ON cells
+ in an initial state.  And the third argument, "FinalState," returns a list as 
+output,which represents ON cells in a final state where time goes for N 
+generations.  
+
+In the lists at the second and third arguments, an ON cell is represented by 
+p(X,Y), where two integers X and Y correspond to X and Y positions on a board, 
+respectively.  Besides, a list of ON cells should be sorted in ascending order,
+ where the comparison of p(X0,Y0) and p(X1,Y1) is defined 
+as:p(X0,Y0) < p(X1,Y1) iff Y0 < Y1 or Y0 = Y1 and X0 < X1. 
+
+Example (Glider):
+	?- life:compute(4,[        p(2,1),
+		                           p(3,2),
+			   p(1,3), p(2,3), p(3,3)],Result).
+yields:
+
+	Result = [         p(3,2),
+                                   p(4,3),
+	  	   p(2,4), p(3,4), p(4,4)].
+
+
+2.2 The Range of Input Data
+
+We suppose that the size of a grid of cells is -2^20 to 2^20; 
+so is the range of X and Y for p(X,Y) as above.  
+
+2.3 Programming Restriction
+
+The contestants have to
+  (1) use the @node pragma for parallelization and
+  (2) not use 'Inline C code'.
+
+3. Judgment
+
+A jury will select winners mainly by taking into account execution timing for 
+several input patterns provided by AITEC; in addition, program construction, 
+the development of algorithms, programming skill, the quality of attached 
+documents, and so on will be considered.  
+
+4. Programs for Your Aids
+
+For your programming aids, a sample program including a main routine and GUI 
+software is provided, and a sample session script is enclosed. 
+Please download it from the AITEC Homepage.
+
+		http://www.icot.or.jp/
+
+The software may be revised without previous notice, but you will be able to 
+get up-to-date information if you subscribe to the mailing list dedicated to 
+this contest. Please contact the contest secretariat.(klic-contest@icot.or.jp)
+<hr><a name=003><h3>MESSAGE FROM THE EDITORIAL DESK</h3></a>
+This issue has featured the programming subjects for the KLIC Programming 
+Contest. For more information, please watch the AITEC Homepage.
+
+		http://www.icot.or.jp/
+
+If you plan to enter the contest, please let us know by e-mail (refer to 
+AITEC NEWS No. 10) or via the AITEC Homepage.
+
+We are very much looking forward to your entry.
+
+<font size=2>
+**********************************************************************
+*                                                                    *
+*       A I T E C  N E W S      Issue #12                            *
+*          AITEC NEWS Editorial Team:                                *
+*            Makiko Sato, Chie Takahashi, Akira Aiba                 *
+*            Kazumi Kasai, Kouichi Takeda, Yoshiharu Torii           *
+*            Hiroshi Sato, Shunichi Uchida                           *
+*          AITEC NEWS English Version Team                           *
+*            Masayo Fukushima, Shunichi Uchida                       *
+*          Issued on: July   31, 1997(Japanese Version)              *
+*                     August 12, 1997(English Version)               *
+*          By: Research Institute for Advanced Information           *
+*              Technology (AITEC), a subcenter of                    *
+*              Japan Information Processing Development              *
+*              Center (JIPDEC)                                       *
+*              2-3-3, Minato-ku, Shiba, Tokyo 105, Japan             *
+*              Tel: +81-3-3456-3191 Fax: +81-3-3455-4877             *
+*              E-mail: aitec-news@icot.or.jp                         *
+*              http://www.icot.or.jp                                 *
+*                                                                    *
+**********************************************************************
+</font>
+</pre>
+<hr>
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a>
+</address>
+<a href="./aitec-news-E.html">AITEC NEWS Home</a>
+<a href="http://www.icot.or.jp"><br>
+AITEC Homepage</a>

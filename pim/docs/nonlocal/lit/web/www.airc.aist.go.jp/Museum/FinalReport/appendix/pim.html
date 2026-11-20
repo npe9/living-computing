@@ -1,0 +1,149 @@
+﻿<HEAD>
+<TITLE>各 PIM モジュールの仕様</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<H1>各 PIM モジュールの仕様</H1>
+<CENTER>
+<TABLE BORDER="2">
+<TR><TH ROWSPAN=2></TH>
+    <TH ROWSPAN=2 VALIGN=TOP>全 PE 数
+                  <font size=1><A HREF="#[1]">[1]</A></font></TH>
+    <TH COLSPAN=3>ノード構成</TH>
+    <TH COLSPAN=2>疎結合ネットワーク</TH>
+<TR><TH>PE 数</TH>
+    <TH>メモリ</TH>
+    <TH>バス容量 (最大)</TH>
+    <TH>トポロジ</TH>
+    <TH>バンド幅<font size=1><A HREF="#[2]">[2]</A></font></TH>
+<TR><TD ALIGN=CENTER>PIM/p</TD>
+    <TD ALIGN=CENTER> 512 </TD>
+    <TD ALIGN=CENTER> 8 </TD>
+    <TD ALIGN=CENTER> 256 MB </TD>
+    <TD ALIGN=CENTER> 130 MB/s </TD>
+    <TD ALIGN=CENTER> 6 次元ハイパーキューブ </TD>
+    <TD ALIGN=CENTER> 33 MB/s × 2 </TD>
+<TR><TD ALIGN=CENTER>PIM/m	</TD>
+    <TD ALIGN=CENTER> 256 </TD>
+    <TD ALIGN=CENTER> 1 </TD>
+    <TD ALIGN=CENTER> 80 MB </TD>
+    <TD ALIGN=CENTER> 40 MB/s<font size=1><A HREF="#[3]">[3]</A></font></TD>
+    <TD ALIGN=CENTER> 2 次元メッシュ (16 × 16) </TD>
+    <TD ALIGN=CENTER> 8 MB/s </TD>
+<TR><TD ALIGN=CENTER>PIM/c	</TD>
+    <TD ALIGN=CENTER> 256  </TD>
+    <TD ALIGN=CENTER> 8 </TD>
+    <TD ALIGN=CENTER> 160 MB </TD>
+    <TD ALIGN=CENTER> 200 MB/s </TD>
+    <TD ALIGN=CENTER> クロスバ (32 × 32) </TD>
+    <TD ALIGN=CENTER> 40 MB/s </TD>
+<TR><TD ALIGN=CENTER>PIM/i	</TD>
+    <TD ALIGN=CENTER> 16 </TD>
+    <TD ALIGN=CENTER> 8 </TD>
+    <TD ALIGN=CENTER> 320 MB </TD>
+    <TD ALIGN=CENTER> 30 MB/s </TD>
+    <TD ALIGN=CENTER> --- </TD>
+    <TD ALIGN=CENTER> ---<font size=1><A HREF="#[4]">[4]</A></font></TD>
+<TR><TD ALIGN=CENTER>PIM/k	</TD>
+    <TD ALIGN=CENTER> 16 </TD>
+    <TD ALIGN=CENTER> 4<font size=1><A HREF="#[5]">[5]</A></font></TD>
+    <TD ALIGN=CENTER> 1 GB<font size=1><A HREF="#[6]">[6]</A></font></TD>
+    <TD ALIGN=CENTER>80 MB/s (両階層とも) </TD>
+    <TD ALIGN=CENTER> 2 階層キャッシュ </TD>
+    <TD ALIGN=CENTER> --- 
+<TR><TD ALIGN=CENTER>Multi-PSI </TD>
+    <TD ALIGN=CENTER> 64	</TD>
+    <TD ALIGN=CENTER> 1 </TD>
+    <TD ALIGN=CENTER> 80 MB </TD>
+    <TD ALIGN=CENTER> 25 MB/s<font size=1><A HREF="#[3]">[3]</A></font></TD>
+    <TD ALIGN=CENTER> 2 次元メッシュ (8 × 8) </TD>
+    <TD ALIGN=CENTER> 10 MB/s </TD>
+</TABLE>
+</CENTER>
+<HR WIDTH="50%" ALIGN="LEFT">
+<TABLE>
+<TR><TD><font size=1><A NAME=[1]>[1]</A></font>
+        PE は要素プロセッサ (Processing Element) の意.</TD>
+    <TD><font size=1><A NAME=[2]>[2]</A></font>
+        ノード・ノード間でリンク双方向合わせた値.</TD>
+<TR><TD><font size=1><A NAME=[3]>[3]</A></font>
+        メインメモリとキャッシュ間のスループット.</TD>
+    <TD><font size=1><A NAME=[4]>[4]</A></font>
+        クラスタ同士は SCSI バスで接続.</TD>
+<TR><TD><font size=1><A NAME=[5]>[5]</A></font>
+        ミニクラスタは 4 PE から成る.</TD>
+    <TD><font size=1><A NAME=[6]>[6]</A></font>
+        16 PE で共有されている.</TD>
+</TABLE>
+<HR SIZE="4" >
+
+<CENTER>
+<TABLE BORDER="2">
+<TR><TH ROWSPAN=2></TH>
+    <TH COLSPAN=4>PE アーキテクチャ</TH>
+<TR><TH>命令セット </TH>
+    <TH> プライベートメモリ
+                      <font size=1><A HREF="#[7]">[7]</A></font></TH>
+    <TH> キャッシュ方式 (状態数
+                      <font size=1><A HREF="#[8]">[8]</A></font>)</TH>
+    <TH> キャッシュサイズ</TH>
+<TR><TD ALIGN=CENTER>PIM/p	</TD>
+    <TD ALIGN=CENTER> RISC + <br>
+                      マクロ呼出 </TD>
+    <TD ALIGN=CENTER> IIM (8 K 語, 1 語 = 6 バイト), <br>
+                      LM (2MB, キャッシュ経由でアクセス) </TD>
+    <TD ALIGN=CENTER> スヌープ, <br>
+                      書込無効型 (4) </TD>
+    <TD ALIGN=CENTER>64 KB </TD>
+<TR><TD ALIGN=CENTER>PIM/m	</TD>
+     <TD ALIGN=CENTER> マイクロプログラム </TD>
+     <TD ALIGN=CENTER> WCS (32K 語, 1 語 = 64 ビット) </TD>
+     <TD ALIGN=CENTER> 書戻型 (3) </TD>
+     <TD ALIGN=CENTER> 5 KB (i), 20 KB (d)
+                       <font size=1><A HREF="#[9]">[9]</A></font></TD>
+<TR><TD ALIGN=CENTER>PIM/c	</TD>
+    <TD ALIGN=CENTER> マイクロプログラム </TD>
+    <TD ALIGN=CENTER> レジスタファイル (256W), <br>
+                      WCS (32K 語, 1 語 = 104 ビット) </TD>
+    <TD ALIGN=CENTER> スヌープ, <br>
+                      書込無効型 (5) </TD>
+    <TD ALIGN=CENTER> 80 KB</TD>
+<TR><TD ALIGN=CENTER>PIM/i	</TD>
+    <TD ALIGN=CENTER> 長命令形式    <br>
+                      (LIW)         </TD>
+    <TD ALIGN=CENTER> LM:          <br>
+                      160Kバイト (i), 80Kバイト (d)
+                      <font size=1><A HREF="#[9]">[9]</A></font></TD>
+    <TD ALIGN=CENTER> スヌープ, <br>
+                      書込更新型 (6) </TD>
+    <TD ALIGN=CENTER>	160 KB (i), 160 KB (d)
+                      <font size=1><A HREF="#[9]">[9]</A></font> <br></TD>
+<TR><TD ROWSPAN=2 ALIGN=CENTER>PIM/k	</TD>
+    <TD ROWSPAN=2 ALIGN=CENTER> RISC        </TD>
+    <TD ROWSPAN=2 ALIGN=CENTER> LM:          <br>
+                      128Kバイト (i), 128Kバイト (d)
+                      <font size=1><A HREF="#[9]">[9]</A></font></TD>
+    <TD ROWSPAN=2 ALIGN=CENTER> 2 階層スヌープ, <br>
+                      書込無効型 (4) </TD>
+    <TD ALIGN=CENTER>1 階層目: 128 KB (i), 256 KB (d)
+                      <font size=1><A HREF="#[9]">[9]</A></font><br></TD>
+<TR><TD ALIGN=CENTER>2 階層目: 1 MB (i), 4 MB (d)
+                      <font size=1><A HREF="#[9]">[9]</A></font></TD>
+<TR><TD ALIGN=CENTER> Multi-PSI </TD>
+    <TD ALIGN=CENTER> マイクロプログラム </TD>
+    <TD ALIGN=CENTER> WCS (16K 語, 1 語 = 53 ビット) </TD>
+    <TD ALIGN=CENTER> 書戻型 (3) </TD>
+    <TD ALIGN=CENTER> 20 KB </TD>
+</TABLE>
+</CENTER>
+<HR WIDTH="50%" ALIGN="LEFT">
+<TABLE>
+<TR><TD><font size=1><A NAME=[7]>[7]</A></font>
+    WCS はマイクロプログラムメモリ, IIM は内部命令メモリ,
+    LM はローカルメモリの意.</TD>
+<TR><TD><font size=1><A NAME=[8]>[8]</A></font>
+    ロック状態を除く.</TD>
+<TR><TD><font size=1><A NAME=[9]>[9]</A></font>
+    (i) は命令, (d) はデータの意</TD>
+</TABLE>
+</BODY>

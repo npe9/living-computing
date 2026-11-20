@@ -1,0 +1,70 @@
+﻿<!--
+# Page for Final Evaluation Report P.146
+#
+# Created by	C. Takahashi	99/12/23
+#
+-->
+<HTML>
+<HEAD><TITLE>Page for Final Evaluation Report P.146</TITLE></HEAD>
+<BODY BACKGROUND="../../PICS/tile-blue.gif">
+
+<CENTER>
+<B>Evaluation of the FGCS Project </B><BR><BR>
+David H. D. Warren <BR>
+Department of Computer Science <BR>
+University of Bristol <BR>
+</CENTER>
+
+<HR><A HREF="finaleval147.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../PICS/next_motif.gif"></A>   <A HREF="finaleval145.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../PICS/previous_motif.gif"></A>   <A HREF="finalevalC.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../PICS/contents_motif.gif"></A>
+<HR>
+<!-- -->
+<PRE>
+For most user programs, a much more high-level approach is needed, and ideally one 
+would like to use declarative logic programming, i.e. logic programming as it was origi-
+nally conceived. In declarative logic programming, the program expresses a declarative 
+view of the problem as well as providing an operational solution to the problem. By 
+contrast, the concurrent LP paradigm provides no declarative view of the problem. At 
+best, it can be said to consist of a declarative description of a concurrent algorithm for 
+solving the problem. In practice, users of the paradigm take an exclusively operational 
+view. Without the declarative underpinning, there is no particular reason to maintain 
+the original connection with logic, and every reason to modify the formalism to make it 
+better fit its operational purpose. For these reasons, it is arguable whether concurrent 
+LP is indeed logic programming in its original sense. 
+
+Be that as it may, the present situation with ICOT systems is that the main user 
+language, KL1, is considerably lower level than traditional logic programming lan-
+guages such as Prolog. Other, more high-level, user languages have been provided, but 
+have had to be implemented on top of KL1. Although ICOT believes the use of KL1 as 
+an intermediate language does not entail any unacceptable overhead, there seems good 
+reason to believe that higher level languages and inference systems (including Prolog for 
+example) could be implemented much more efficiently if a lower level implementation 
+language than KL1 were used. In my view, KL1 is too low-level as a user language for 
+most purposes, but too high-level to serve as the lowest level implementation language. 
+
+For a kernel language based on logic programming to be acceptable as a general user 
+language it must, in my view, provide at least the basic capabilities of Prolog. This 
+certainly seemed to be the view in the original FGCS proposal and in the early stages 
+of ICOT's work. KL1, however, is considerably weaker than Prolog in that it does 
+not provide a builtin search mechanism for finding at least one (and possibly all) solu-
+tions to a problem, although it is more powerful than Prolog in that it provides builtin 
+coroutining (necessary, amongst other things, to support the concurrent LP paradigm). 
+
+It should be noted that it would be possible to have a kernel language providing 
+all the capabilities of Prolog together with all the essential features of KL1 (including 
+at least all of flat GHC which is the heart of KL1). Such a language would be quite 
+acceptable as a user language, while providing the necessary basis to implement an 
+operating system according to the ICOT approach. Such a language is provided by 
+the Andorra-I system implemented by my group at Bristol. This language is viewed 
+primarily as a high-level extension of Prolog. However, since it includes flat GHC as a 
+subset, it is capable of supporting the concurrent LP paradigm. 
+
+Another most important issue, of a completely different nature, is the question of 
+whether ICOT was wise to concentrate so much effort on building specialised hardware 
+for logic programming, as opposed to building, or using off the shelf, more general pur-
+pose hardware not targeted at any particular language or programming paradigm. The 
+
+
+					- 146 -
+</PRE>
+<!-- -->
+</HTML>

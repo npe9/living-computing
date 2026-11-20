@@ -1,0 +1,12 @@
+# Held on disk, not in git (owner's decision, 2026-11-20): documents
+# whose source shows no redistribution terms.  ../LIT_MANIFEST.md,
+# SOURCES.tsv and SHA256SUMS list every file with its URL and SHA-256,
+# so they can be fetched again and verified.  In git: only what came
+# from the AIST-hosted ICOT archive (TR/TM, FGCS proceedings, Museum
+# pages), which permits free academic use unchanged.
+/ipsj/
+/journals/
+/records/
+/fgcs/1994/ps/
+/web/*
+!/web/www.airc.aist.go.jp/

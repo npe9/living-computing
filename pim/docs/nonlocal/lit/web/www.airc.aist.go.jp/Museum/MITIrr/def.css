@@ -1,0 +1,117 @@
+BODY {
+	background: url(../../PICS/tile-blue.gif)
+   }
+
+/* title.html の右肩にある雑誌名 */
+DIV.magazine-name {
+	position: relative;     left:       19em;
+        width:    17.5em;       text-align: center;
+	padding:  0.3em 0.8em;  border:     1px solid black
+   }
+
+/* 表紙 */
+H2.midashi {
+	padding:     1.2em;
+	background:  #ccc;
+	border:      1px solid black;
+	color:       "#00008F";
+	text-align:  center;
+	font-weight: bolder
+   }
+H2.mokuji {
+	text-align: center;
+   }
+P.authors { text-align: right; }
+P.authors A{ font-size: 0.8em}
+
+/* ２段からなるレイアウトのためのテーブル */
+TABLE.layout {
+	width: 38em;
+   }
+TD.left-column {
+	width: 17.5em;
+        text-align: left; vertical-align: top;
+   }
+TD.center-column {
+	width: 1.5em;
+   }
+TD.right-column {
+	width: 17.5em;
+        text-align: left; vertical-align: top;
+   }
+
+/* 節 */
+DIV.section {
+	font-weight: bold;
+   }
+
+/* 基本テーブル */
+
+DIV.table TABLE {
+	border:          1px solid black;
+	border-collapse: collapse;
+        empty-cells:     show;
+   }
+
+TABLE CAPTION {
+        font-size: smaller;
+   }
+
+DIV.table TH {
+        font-size: smaller;
+   }
+
+DIV.table TD {
+        border-left:   1px solid black;
+	text-align:    right;
+        font-size:     0.8em;
+   }
+
+DIV.table .only-top {
+        border-top:    1px solid black;
+   }
+
+DIV.table .only-bottom {
+        border-bottom: 1px solid black;
+   }
+
+DIV.table .only-left {
+        border-left:   1px solid black;
+   }
+
+DIV.table .left-bottom {
+        border-left:   1px solid black;
+        border-bottom: 1px solid black;
+   }
+
+DIV.table .align-left {
+	text-align: left
+   }
+
+DIV.table PRE{
+        position: relative; top: -1em;
+           }
+
+/* 図 */
+IMG.figure {
+	margin-left: 4em
+   }
+DIV.figure-title {
+	font-size: 0.8em
+   }
+DIV.figure-comments {
+	text-indent: 5em;
+	font-size: 0.8em
+   }
+
+/* [注記] */
+PRE.notice { padding: 1em; border: 1px solid black; width: 36.5em}
+
+/* [参照文献] */
+PRE.ref {
+	font-size: 0.75em
+   }
+PRE.ref em {
+	font-style: italic;
+   }
+

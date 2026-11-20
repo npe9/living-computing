@@ -1,0 +1,73 @@
+﻿<!--
+# Page for Final Evaluation Report P.48
+#
+# Created by	C. Takahashi	99/12/23
+#
+-->
+<HTML>
+<HEAD><TITLE>Page for Final Evaluation Report P.48</TITLE></HEAD>
+<BODY BACKGROUND="../../PICS/tile-blue.gif">
+
+<CENTER>
+<B>FGCS Project Evaluation Report <BR><BR>
+Keith L. Clark <BR>
+Imperial College <BR>
+London, UK <BR><BR>
+5th June 1992 </B><BR>
+</CENTER>
+
+<HR><A HREF="finaleval049.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../PICS/next_motif.gif"></A>   <A HREF="finaleval047.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../PICS/previous_motif.gif"></A>   <A HREF="finalevalC.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../PICS/contents_motif.gif"></A>
+<HR>
+<!-- -->
+<PRE>
+This report is an expanded version of the short presentation that I gave at the FGCS Project 
+Evaluation Workshop on June 3rd in Tokyo. It is based on knowledge of the project gained 
+since my first visit to ICOT in 1983, on the ICOT reports and associated presentations of 
+the first two days of the FGCS92 conference, and on the presentations and discussions of 
+the evaluation workshop. 
+
+<B>Interest and involvement with the FGCS project </B>
+
+Let me say at the outset that I was very pleased and honoured to be invited to take part in 
+the evaluation workshop. As one of the originators of the concept of committed choice 
+concurrent logic programming I have had a vested interest in the project, which in the latter 
+stages became a huge experimental investigation into the utility of this variant of logic 
+programing. Your adoption of this special form of logic programming has been criticized. 
+It is said to be too low level, too far away from the ideal of high level declarative 
+programming. The retort I have always given is that at the time you made the decision to 
+fix on such a language as your kernel language for parallel machines, no other proposed 
+type of logic programming language, which one could hope to implement efficiently on a 
+multiprocessor machine, enabled one to program the concurrent communicating processes 
+needed in an operating system for a parallel machine. Quite correctly, you had the 
+programming of the operating system, in the LP language of the machine, as a major goal. 
+In addition, and as you have shown, I have argued that more declarative logic program 
+languages can be supported on top of such a language. (I am now inclined to agree with 
+the view expressed at the evaluation workshop by David Warren that the recently proposed 
+Andorra extension of Prolog, or the Pandora extension of Parlog, are higher level 
+languages which today would be a better starting point for a PIM kernel language than 
+FGHC. But that is with hindsight.) 
+
+Interestingly, three people (Giles Kahn, Alan Robinson and Tony Hoare), who had an 
+influence on the conception of committed choice concurrent logic programming, are 
+attending FGCS92. Giles Kahn, in his 1977 IFIP paper with Dave McQueen on a stream 
+communication model of parallel programming, set me and Frank McCabe on the track of 
+exploring coroutining and pseudo parallelism, with incremental communication via shared 
+variables, in IC-Prolog. It was our inability to see how we might efficiently implement IC-
+Prolog on a multi-processor that was the motivation to find an alternative approach. Then, 
+on a semester visit in 1980 to Syracuse University, at the invitation of Alan Robinson, 
+Steve Gregory and I decided to look at Hoare's CSP for inspiration. The concept of 
+guards and committed choice non-determinism of that language (an idea previously 
+proposed by Dijkstra for his guarded command language) seemed to us just the concept 
+needed to allow efficient implementation of and-parallelism with stream communication in a 
+logic programming language. This lead to the so called Relational Language, which merged 
+the committed choice, communication only on committment, concept of CSP with the 
+equally elegant stream communication model of Kahn and McQueen. 
+
+Because of our early work on concurrent LP languages, Steve Gregory and I were invited 
+to ICOT in 1983. (I was pleased to hear in his Monday conference presentation, that Koichi 
+
+
+					- 48 -
+</PRE>
+<!-- -->
+</HTML>

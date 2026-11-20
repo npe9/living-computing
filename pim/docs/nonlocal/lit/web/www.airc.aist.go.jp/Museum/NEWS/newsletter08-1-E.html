@@ -1,0 +1,419 @@
+﻿<!--modified by Fukushima 3/31/97-->
+<body bgcolor="#ffffff" text="#000000">
+<TITLE>AITEC NEWS No.8-1</TITLE>
+
+<table border=1>
+<tr><td rowspan=2>
+<img src=GIF/AITECNEWS-LOGO.gif></td>
+<td>March 27, 1997 </td></tr>
+<tr><td> Issue #8-1<br>(issued on Feb.18,1997 in Japanese)</td>
+</tr>
+</table>
+<hr>
+<a name=contents>
+<img src=GIF/table-of-contents.gif></a>
+<ul>
+<LI><A HREF="#start">Introduction</A>
+<LI><A HREF="#articles">Articles This Issue</A>
+   <ul>
+      <li>Abstracts of 27 Research Projects No.1
+         <ol>
+            <li><a href=#1>A Declarative 3-D Algorithm Animation System based on KL/1</a>
+            <li><a href=#2>A Pattern-Oriented Visual Parallel Programming Environment</a>
+            <li><a href=#3>Research on Visual Interface of KLIC</a>
+            <li><a href=#4>A Proof Assistant with Commutative Diagram Interface</a>
+            <li><a href=#5>A Study on Parallel Robust Parsing based on GLR Algorithm</a>
+            <li><a href=#6>A Controlled Linguistic Model and its Application to
+                Intelligent Natural Language Processing</a>
+            <li><a href=#7>Language Analysis Tools based on Unification-based Grammar</a>
+            <li><a href=#8>A Proposed Framework of LTB Japanese Grammar and Implementing 
+                its Rules</a>
+            <li><a href=#9>Parallelization of PROGOL in KL1</a>
+            <li><a href=#10>Design and Implementation of Concept Learning System
+                using Concurrent Logic Language KLIC</a>
+            <li><a href=#11>A Parallel Abductive Reasoning System</a>
+            <li><a href=#12>Fast Hypothetical Reasoing System</a>
+            <li><a href=#13>Study on Strategy Acquisition in Tsume-shogi</a>
+         </ol>
+    </ul>
+</ul>
+<hr>
+<pre>
+<H3><a name="start">INTRODUCTION</a></H3>
+Since 1995, AITEC has been conducting the "Research Funding Program" for
+the dissemination and further development of IFS (ICOT Free Software -
+FGCS products). This program aims to improve and extend IFS and make new
+intelligent programs as part of the IFS dissemination project.
+
+This issue features a brief introduction of the second workshop of
+the "Research Funding Program," and also includes a list of abstracts of
+27 research projects. Due to a length problem, let us divide the abstracts
+into two issues: Issue #8-1 and #8-2. (You will receive another news 
+following this issue.)
+
+The workshop was held for March 4 - 5 1997 in Tokyo, where a total of 27
+research projects were presented, including 16 continued projects from 1995,
+and 11 new projects for 1996. The presentations seemed to have been improved
+compared to the last year. We were also impressed to see that some new faces
+joined with ex-ICOT members to work for the projects in the program this year.
+
+The research projects were evaluated from a view point of whether programs
+they would produce were widely usable or not. To make more usable programs,
+some projects had to be replaced with the new ones depending on evaluation
+results. And while we have called for domestic researchers for this year's
+program, we plan to extend the solicitation to overseas researchers in the
+next fiscal year.
+
+The source programs of these research projects are available for download
+from the AITEC Homepage. (<a href=http://www.icot.or.jp/ target=_top>http://www.icot.or.jp</a>)
+
+If you will find some of these programs useful for your research and hope
+to have the English documentation, please let us know. (moro@icot.or.jp)
+We will prepare it as much as possible or try to set up a link between you
+and the project researchers. Or, you can directly contact the researchers
+via their E-mail address or homepage address shown in the following articles.
+<HR>
+<H3><A NAME="articles">Articles This Issue</A></H3>
+
+<b>--The WORKSHOP OF "RESEARCH FUNDING PROGRAM FY1996"</b>
+
+      Date:  March 4 - 5, 1997 (10:00 - 17:30)
+      Place: Shiba My Plaza, Tokyo
+      Program: March 4 (Tue)  Session-1
+                              Session-2
+                              Session-3
+
+               March 5 (Wed)  Session-4
+                              Session-5
+                              Session-6
+
+<h4>ABSTRACTS of 27 Research Projects - No.1</h4>
+**March 4 (Tue)- the First Day of the Workshop**
+
+<h4>Session-1 (project#1 - 4)</h4>
+1) <a name=1>"A Declarative 3-D Algorithm Animation System based on KL/1"</a>
+    MATSUOKA Satoshi: Tokyo Institute of Technology
+    (matsu@is.titech.ac.jp,shin@titech.ac.jp)(<a href=http://www.titech.ac.jp/>http://www.titech.ac.jp/</a>)
+
+Animation is useful in user interfaces, especially for representing dynamic
+features. However, it is often difficult and laborious to create animation
+in an existing user interface environment. In this research, we extend our
+bi-directional translation model to deal with animations.  The new model
+incorporates the notion of time, and includes operations defined for each
+representation in the model. Using this model, animation is basically
+achieved by interpolating successive visualized pictures of application data.
+Other than specifying the way of visualizing application data, programmers
+have only to provide mapping rules between abstract operations and
+interpolating methods, and as a result, complex animation effects can be
+easily specified.
+
+We have developed a system based on this model. This system consists of two
+parts: a mapper and a viewer. A mapper receives a series of data from an
+application, and translates them into pictures, which are interpolated and
+converted to an animation log. An animation log from a mapper can be viewed
+as an animation using a viewer. We provides three viewers for IRIX
+(OpenInventor), Windows95/NT (OpenGL), and X-Window system.
+
+We applied this system to several algorithm animations, such as
+N-Queen Problem, the tower of Hanoi, and N-Body simulation program.
+
+<hr>
+2) <a name=2>"A Pattern-Oriented Visual Parallel Programming Environment"</a>
+    Shibayama Etsuya: Tokyo Institute of Technology
+    (etsuya@is.titech.ac.jp)(<a href=http://www.titech.ac.jp/>http://www.titech.ac.jp/</a>)
+
+We are now developing a visual parallel programming environment KLIEG,
+in which a parallel program is developed by editing visuals (e.g.,
+icons representing processes and lines representing streams) on
+the screen and will be executed after being translated into KL1
+codes. The execution process is animated by the KLIEG tracer.
+
+The most significant feature of the KLIEG environment is a support for
+pattern-oriented parallel programming. Syntactically, a pattern is a
+process diagram with some unspecified portions. Semantically, a pattern
+keeps design information, which is useful not only for software
+engineering purposes but also for visualization of parallel program
+execution and run-time resource allocations.  Basically a pattern is
+defined by an expert designer and used later by (possibly novice)
+programmers. The KLIEG provides a neat graphical user interface both
+for designers and programmers.
+
+
+<hr>
+3) <a name=3>"Research on Visual Interface of KLIC"</a>
+    TANAKA Jiro: University of Tsukuba
+    (jiro@softlab.is.tsukuba.ac.jp, nagumo@softlab.is.tsukuba.ac.jp)
+    (<a href=http://www.tsukuba.ac.jp/>http://www.tsukuba.ac.jp/</a>)
+
+"Graph drawing algorithm" and "Animated visualization" are very useful
+to visualize klic program. Our goal is propose a visual programming system
+which integrate "Programming," "Debugging,"  and "Execution".
+
+For this goal, we present a new improved graph drawing algorithm for
+the undirected graph, especially suited for the program animation.
+We have implemented program visualization system  "viewPP,"  which
+visualizes klic program execution.
+
+ - About graph drawing algorithm -
+
+"klic" program can be expressed by the graph structure.
+An edge indicates a variable. A node indicates an atom, a predicate
+or a functor. Our improved algorithm is based on the "Spring model".
+We have modified "Eades spring model" and invented the new graph
+drawing algorithm which are suited for the animated graph replacement.
+Eades spring model uses an attractive force and a repulsive force.
+We have modified a repulsive force expression the for animation-like
+graph replacement.
+
+ - About visual programming system -
+
+For integrating GUI into klic program, we have implemented a
+klic <-> Tcl/Tk interface program "klitcl", and  released it as ICOT Free
+Software. We can attach GUI into klic application program easily.
+We have implemented the system  "viewPP"  for visualizing klic program
+execution. This system uses the improved algorithm for the visualization
+of klic program.  "klitcl" is used for GUI of "viewPP".
+"viewPP" realizes the klic program execution with 2D graphics and animation.
+
+
+<hr>
+4) <a name=4>"A Proof Assistant with Commutative Diagram Interface"</a>
+    SAKAI Ko: University of Tsukuba (ksakai@math.tsukuba.ac.jp)
+    (<a href=http://www.tsukuba.ac.jp/>http://www.tsukuba.ac.jp/</a>)
+
+The importance of user interfaces for formal theorem prover are now
+recognized. In category theory, commutative diagrams are extensively
+used to help understand (informal) proofs written in natural language
+and logical formulae.  So, it seems natural to require the use of
+commutative diagrams in formal theorem proving in category theory too.
+In fact, the difficulty in understanding formal proof is one of the
+major obstacles in formal mathematics, so assistance in obtaining an
+intuitive idea of what is written would be of great value.  Therefore,
+we are developing a user interface for proof assistant systems, based
+on commutative diagrams.
+<hr>
+<h4>Session-2 (project#5 - 8)</h4>
+5) <a name=5>" A Study on Parallel Robust Parsing based on GLR Algorithm"</a>
+   KUNIFUJI Susumu: Japan Advanced Institute of Science and Technology
+   (kuni@jaist.ac.jp, oku@jaist.ac.jp, ping@jaist.ac.jp)
+   (<a href=http://www.jaist.ac.jp/>http://www.jaist.ac.jp/</a>)
+
+In this research, we propose a parallel robust parser based on
+generalized LR algorithm and implement the parser as a basic natural
+language processing system on PIM and general-propose computers. The
+proposed system can parse not only a grammatical sentence but also an
+ill-formed sentence which is defined as a sentence where one or more
+terminals(words) and/or nonterminals(phrases) are deleted/added/substituted.
+In the process of parsing an ill-formed sentence, there is a problem caused
+by high ambiguity of locations and types of grammatical errors in the
+sentences. To deal with this problem, we develop a scoring mechanism to rank
+the candidates (parsing trees) of the parsing result. At the present time,
+the scoring mechanism is performed based on syntactical information, such
+as types and locations of errors, and its effectiveness is shown by some
+preliminary experiments. Moreover, we also propose a method to parallelize
+our parsing algorithm to reduce the computational cost.
+There are two variants of the proposed parallel parser based on load
+balancing applied: random dynamic and on-demand dynamic load balancing.
+A user of the system can define his own error weight to optimize the ranking
+process and also can select load balancing to improve the parsing time. Our
+parsers are implemented by SICSTUS Prolog and KL1 languages and executed on
+both PIM and general-purpose computers where Prolog is installed.
+
+<hr>
+6) <a name=6>"A Controlled Linguistic Model and its Application to
+      Intelligent Natural Language Processing"</a>
+   Nomura Hirosato: Kyushu Institute of Technology
+   (nomura@dumbo.ai.kyutech.ac.jp, nagai@dmbo.ai.kyutech.ac.jp)
+   (<a href=http://www.kyutech.ac.jp/>http://www.kyutech.ac.jp/</a>)
+
+A controlled linguistic model is a linguistic model which encodes linguistic
+characteristics specified by the domain. Such a model makes it easy to
+realize a powerful language processing system which is hard to realize on
+the generic domain. We concerns a set of legal sentences as such a domain.
+Legal sentences have lexical, syntactical, semantic, and contextual
+constraints. Based on the constraints, especially those on the
+requisite-effectuation structure which shows a logical skeleton structure of
+a law sentence, we actually designed a legal controlled linguistic model
+and then developed a parsing system. Even though they are still experimental
+systems, they can be applied to some practical use.
+
+There is a lot of skills both for designing a controlled linguistic model
+and for developing a parsing system. We accumulated such skills by this
+research project. By applying such skills, we also developed an environment
+system named as LIPS-Tools(Legal Information Processing System Tools).
+It is a GUI workbench for designing a controlled linguistic model
+and for managing variety of tasks on natural language processing.
+It provides flexible interface to parsing systems and other tools.
+Therefore, for example, you can use your own parsing systems suitable for
+your domain.
+
+<hr>
+7) <a name=7>"Language Analysis Tools based on Unification-based Grammar"</a>
+    MATSUMOTO Yuji: Nara Institute of Science and Technology
+    (matsu@is.aist-nara.ac.jp/)(<a href=http://isw3.aist-nara.ac.jp/home-en.html>http://isw3.aist-nara.ac.jp/home-en.html</a>)
+
+The system provides an integrated environment for parsing natural language
+texts as well as for observing the trace of the parsing process.
+The system consists of the following components:  1) a Chart-based parsing
+system, called SAX, that runs with a Definite Clause Grammar by compiling
+the given grammar (in this project, an HPSG has been developed) into a fast
+Prolog code, 2) a statistical dependency analysis system that works for
+reduction of syntactic ambiguity, and 3) a user interface to show the
+intermediate parsing process.  In the statistical dependency analyzer,
+The statistics of the modifier-modifiee dependencies between phrases are
+acquired from a parsed corpus and is used in the later analysis so as to
+avoid constructing phrases with low probability.  Improvement of the system
+is automatically achieved by accumulating correct parsed corpus.
+
+<hr>
+8) <a name=8>"A Proposed Framework of LTB Japanese Grammar and Implementing its Rules"</a>
+    SANO Hiroshi: Tokyo University of Foreign Studies
+    (sano@stargate.fs.tufs.ac.jp)(<a href=http://www.tufs.ac.jp/>http://www.tufs.ac.jp/</a>)
+
+We have developed a set of morphological grammar rules for Japanese
+morphological analysis that is based on a new grammar formalism of LTB
+Japanese Grammar at Tokyo University of Foreign Studies under the
+auspices of the AITEC. The rules are implemented in JUMAN(1) which
+runs on UNIX workstaion, and in BREAKFAST(2) which runs on PCs and IBM
+compatibles running MS-DOS. Great care has been taken in writing the
+user manuals which explain the implementation -independent framework
+and implementation-specific rules. From a user's point of view it is
+useful to users wishing to modify the rules and develop lexicons for
+their own applications.
+
+(1) JUMAN is a Japanese Morphological Analyzer released by Nara
+Institute of Science and Techology.
+(2) BREACFAST is a Japanese Morphological Analyzer released by FUJITSU Ltd.
+<hr>
+<h4>Session-3 (project#9 -10)</h4>
+9) <a name=9>"Parallelization of PROGOL in KL1"</a>
+    FURUKAWA Koichi: Keio University (furukawa@sfc.keio.ac.jp)
+    (<a href=http://www.sfc.keio.ac.jp/~tozaki/furukawa-rg/english/furukawa-rg.html>http://www.sfc.keio.ac.jp/~tozaki/furukawa-rg/english/furukawa-rg.html</a>)
+
+We are designing and implementing PROGOL by using MGTP technology
+which is a theorem proving method based on a bottom-up inference
+called model generation.
+
+Specifically, in the new design, MGTP technology is applied in a more
+elegant manner than the original to the computation of most specific
+hypothesis that is deduced from background knowledge and the negation
+of a positive example.  MGTP technology is also being applied to the
+calculation of the cover set, a set of positive examples covered by
+generated hypotheses, which is the most essential computation for
+obtaining better hypotheses to explain given positive examples.
+
+Since MGTP already has very efficient parallel implementations on
+parallel inference machines, an efficient implementation of parallelized
+PROGOL will readily be realized as well.
+
+<hr>
+10) <a name=10>"Design and Implementation of Concept Learning System
+              using Concurrent Logic Language KLIC"</a>
+     ITO Takayasu: Tohoku University
+     (ito@aoba.ito.ecei.tohoku.ac.jp, kawamoto@aoba.ito.ecei.tohoku.ac.jp)
+     (<a href=http://www.tohoku.ac.jp/>http://www.tohoku.ac.jp/</a>)
+
+ For an advanced knowledge information system it is important and
+useful to install knowledge base system with the learning ability.
+Expressing 'knowledge' and 'concept' using 'predicates', we designed
+and implemented an experimental logic database system CONCEPT-LR using
+the concurrent logic language KLIC developed at ICOT. CONCEPT-LR is a
+system to learn new knowledge and concepts through interaction with a
+user.  CONCEPT-LR consists of four software modules, 'constraint knowledge
+acquisition module', 'learning module', 'knowledge base module', and 'user
+interface module'. The constraint knowledge acquisition module obtains
+domain knowledge from a user. In the learning module, there have been
+implemented two concept learning methods based on predicate logic, inductive
+learning and learning by analogy, and higher-order learning is under
+development. A user of CONCEPT-LR can select one of them when the system is
+initiated to learn new concepts.  The knowledge database module consists of
+various databases like concept database, domain knowledge database,
+analogical knowledge database, etc. The user interface module supports
+interaction between the system and a user. The system has some concurrency
+features, since it is implemented by the concurrent logic language KLIC.
+
+<hr>
+11) <a name=11>"A Parallel Abductive Reasoning System"</a>
+     ITO Hidenori: Nagoya Institute of Technology
+     (itoh@ics.nitech.ac.jp, shohey@juno.ics.nitech.ac.jp)
+     (<a href=http://www-itolab.ics.nitech.ac.jp/>http://www-itolab.ics.nitech.ac.jp/</a>)
+
+We propose a parallel cost-based abductive reasoning system.  A search
+control technique of parallel best-first search is introduced into
+abductive reasoning mechanism, thereby finding much more efficiently a
+minimal-cost explanation of a given observation.  The parallel abductive
+reasoning system is running on any UNIX computer networks, while most of
+existing parallel reasoning systems can run efficiently only on their
+particular parallel computers.  In the system, the KLIC system, a portable
+and high-performance implementation of a concurrent logic programming
+language KL1 through translation into language C, is utilized for local
+reasoning in each processors, and the PVM (Parallel Virtual Machine), a
+software package that permits a heterogeneous collection of Unix computers
+hooked together by a network to be used as a single large parallel
+computer, is utilized for communication among processors.  Good performance
+results are given by some experiments on the system.
+
+<hr>
+12) <a name=12>"Fast Hypothetical Reasoing System"</a>
+     ISHIZUKA Mitsuru: University of Tokyo
+    (ishizuka@miv.t.u-tokyo.ac.jp)
+    (<a href=http://www.miv.t.u-tokyo.ac.jp/HomePageEng.html>http://www.miv.t.u-tokyo.ac.jp/~ishizuka/HomePageEng.html</a>)
+
+
+Although the framework of hypothetical reasoning is very useful, it has
+not been widely used due mainly to its low efficiency.  This study
+aims to develop software tools that allow our achievements
+on an efficient hypothetical reasoning method to be used in wider
+applications, thus expanding the use of the new knowledge processing
+framework.  In particular, we focus on a framework of weighted (or
+cost-based) hypothetical reasoning, which assigns numerical weights to
+possible element hypotheses and obtains an optimal solution hypothesis
+with minimal sum of the weights (or const).  Our method called the
+networked bubble propagation (NBP) method for this problem can compute
+a near-optimal solution in polynomial time.
+Software implementation based on this method includes two versions, i.e.,
+a propositional-logic version and a predicate-logic version
+which handles range-restricted predicate Horn clauses.
+The propositional-logic version called "nbp1" has been completed as
+a software tool in 1995. A predicate-logic version employing this "nbp1"
+as its sub-mechanism is implemented, but still needs some improvements
+as of Feb. 1997.
+
+<hr>
+13) <a name=13>"Study on Strategy Acquisition in Tsume-shogi"</a>
+     ITO Hidenori: Nagoya Institute of Technology
+     (myamada@juno.ics.nitech.ac.jp)
+     (<a href=http://www-itolab.ics.nitech.ac.jp/>http://www-itolab.ics.nitech.ac.jp/</a>)
+
+Tsume-shogi is Japanese chess endgame.We study on strategy acquisition
+in Tsume-shogi. Our strategy acquisition method is based on Inductive
+Login Programming (ILP). FOIL is a famous algorithm of ILP. To obtain
+strategy, FOIL algorithm is improved. The algorithm can find strategies
+from a small example set. Furthermore, a Parallel FOIL algorithm (PFOIL)
+is presented. It is implemented on a parallel machine AP1000. PFOIL can
+find strategies very fast. The acquired strategies are utilized in a
+Tsume-shogi game tree search program. This program is based on a parallel
+algorithm and implemented on a parallel machine AP1000. Many Tsume-shogi
+problems are solved by the program.
+
+<b>--To be continued to AITEC NEWS Issue #8-2</b>
+</pre>
+<hr><i>
+       A I T E C  N E W S      Issue #8-1<br>                           
+          AITEC NEWS Editorial Team:
+            Makiko Sato, Chie Takahashi, Akira Aiba<br>                 
+            Hiroshi Sato, Shunichi Uchida<br>                           
+          AITEC NEWS English Version Team:
+            Masayo Fukushima, Shunichi Uchida<br>                       
+          Issued on: February 18,1997(Japanese Version)
+                     March    27,1997(English Version)<br>              
+          By: Research Institute for Advanced Information
+              Technology (AITEC),<br> a subcenter of
+              Japan Information Processing Development
+              Center (JIPDEC)<br>                                       
+              2-3-3, Minato-ku, Shiba, Tokyo 105, Japan<br>             
+              Tel: +81-3-3456-3191 Fax: +81-3-3455-4877<br>             
+              E-mail: aitec-news@icot.or.jp<br>                         
+              http://www.icot.or.jp<br>                                 
+</i><hr>
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

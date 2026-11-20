@@ -1,0 +1,65 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 並列推論マシン PIM</TITLE>
+<META HTTP-EQUIV="Content-type" CONTENT="text/html; charset=iso-2022-jp">
+</HEAD>
+<BODY>
+<meta name="description" value=" 並列推論マシン PIM">
+<meta name="keywords" value="appendix">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html44 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../PICS/next_motif.gif"></A>   <A NAME=tex2html42 HREF="appendix.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../PICS/up_motif.gif"></A>   <A NAME=tex2html36 HREF="node1.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html45 HREF="node3.html"> 並列論理型言語 KL1 処理系</A>
+<B>Up:</B> <A NAME=tex2html43 HREF="appendix.html">無題</A>
+<B> Previous:</B> <A NAME=tex2html37 HREF="node1.html"> (資料) 第五世代コンピュータ・プロトタイプ・システムの概要</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00020000000000000000> 並列推論マシン PIM</A></H1>
+<P>
+並列推論マシン PIM は、FGCS プロトタイプ・システムの基本部分を構成する。
+設計に当たっては KL1 の並列実行に適したバランスの良いハードウェアと、
+並列化・分散化オーバヘッドの低い KL1 言語処理系の実現に留意した。この
+結果、応用プログラムレベルでの工夫の相乗効果により、問題によっては 512 
+プロセサでほぼ500倍近くの速度という高い並列処理効果を得、絶対的な性能
+としても記号処理システムとして世界最高の速度を得ることができた。
+<P>
+高い総合性能を達成するには、単体プロセサ性能の向上、拡張性の高い階層
+構造を持つ要素プロセサの結合方式という 2 つの技術が鍵を握っている。
+KL1 実行に適した高い総合性能を持つアーキテクチャを探るために5つのモジュー
+ル、PIM/p、PIM/m、PIM/c、PIM/i、PIM/k を開発し、様々な要素技術を検証し
+た (<A HREF="pim.html">別表参照</A>)。
+<P>
+PIM のプロセサの命令体系には RISC、マイクロプログラム、LIW の 3 種類
+がある。RISC とは、1 命令で実行する処理の内容を小さく揃え、連続するい
+くつかの命令を多重処理することで高効率な処理を実現するようなプロセサ
+アーキテクチャのことである。マイクロプログラムとは、高機能な機械語を、
+さらにその一段下のハードウェアを直接制御するソフトウェアで記述するよう
+なプロセサアーキテクチャのことである。LIW とは、1 つの機械語が複数の
+命令を含むようなプロセサアーキテクチャのことである。また各 PIM モジュー
+ルのプロセサは、KL1 を効率良く実行するための専用命令やハードウェア
+(デレファレンス命令、タグアーキテクチャ etc.)  を装備しており、その効
+果も確認できた。
+<P>
+PIM/m を除く各モデルのプロセサ間結合方式は、負荷の集中を避け拡張性を
+高めるために階層構造を成している。8 台程度の要素プロセサ (PE) が 1 
+本のバスにつながれており、1 個のメインメモリを共有する。この部分はノー
+ドまたはクラスタと呼ばれる。クラスタ内の各 PE はアドレス空間を共有し並
+列にデータの読み書きを行うので、データの整合性を保ちバストラヒックを抑
+えるために、スヌープキャッシュという一種のキャッシュが装備されている。
+さらにこれらクラスタはパケット交換を行うネットワークにより疎結合されて
+いる。ネットワークのトポロジにはメッシュ (N 次元格子)、ハイパーキュー
+ブ (N 次元超立方体)、クロスバ (完全結合) などがある。ネットワークは、
+そのデータ転送性能とハードウェア量の兼ね合いを考えて、KL1 実行に適した
+ものが選択された。PIM/k は疎結合ネットワークを使わずに、キャッシュとバ
+スを階層的に配置して全プロセサを接続するようなアーキテクチャを採って
+いる。
+<P>
+PIM/p と PIM/m の総合性能を概算する。PIM/p、PIM/m の要素プロセサ 1 台 
+は 1 秒当たり300 〜 600 K 回推論を行う能力を持っている。PIM/p 最大
+構成 (512 台) で約 150 MLIPS (1秒間に1億5000万回の推論を行なう速度) の
+性能を持ち、これは従来の汎用機に換算すると約 6 GIPS に相当する。
+<P>
+<BR> <HR>
+<P></BODY>

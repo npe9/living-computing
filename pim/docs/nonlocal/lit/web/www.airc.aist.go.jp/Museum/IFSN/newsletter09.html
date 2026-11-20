@@ -1,0 +1,555 @@
+﻿<!--
+# created by S.Tanabe '95/06/02
+-->
+<TITLE>IFS News Letter No.9</TITLE>
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#005000"
+      LINK   ="#0070FF"
+      VLINK  ="#854422"
+      ALINK  ="#FF0000">
+<H1>ICOT FREE-SOFTWARE News Letter No.9</H1>
+<pre>
+                                                               31 March, 1995
+</pre>
+<p><br><br>
+
+ICOT have been researching and developing of the fifth generation
+computer technologies in the fifth generation computer project and its
+follow-on project. ICOT research center will be closed at the end of
+March, 1995.
+<p>
+
+Even though ICOT research center will be closed, services for ICOT
+Free Software will be carried out, including ftp-service and software
+maintenance as they were.
+
+<p><br><br>
+
+<h2>[Table of Contents]</h2>
+<b>
+<ul>
+        <li><a href="#newlyIFS">Newly Released ICOT Free Software</a>
+        <li><a href="#call">Call for KL1 Programs</a>
+        <li><a href="#user">user's group</a>
+        <li><a href="#cu-prolog">user's group for cu-prolog</a>
+        <li><a href="#contacts">Contacts</a>
+</ul>
+</b>
+<p><br><br><br>
+
+
+<a name="newlyIFS"><h2>[Newly Released ICOT Free Software]</h2></a>
+
+To date, we have released 84 programs of ICOT Free Software (IFS). We
+are now preparing to release 16 further programs as IFS. Since IFS's
+first release in August 1992, we release 100 programs for two and a
+half year.
+<p>
+
+The KLIC system version 2, and programs that have been developed in
+the follow-on project using KLIC system are included in those 16
+programs.  By using KLIC system, you can employ the fifth generation
+technologies on your UNIX workstations.
+<p>
+
+<h3>(1) Newly released ICOT Free Software</h3>
+
+The following lists the newly released programs:<br>
+<dl>
+<dt><b>Symbol Processing: 2</b>
+	<dd><a href="../IFS/abst/085.html">85. KLIC version 2: A parallel implementation of KL1 for general purpose computers</a>
+	<dd><a href="../IFS/abst/086.html">86. Distributed Pool</a>
+<dt><<b>b></b>Knowledge Representation, Knowledge-base, Constraint: 3</b>
+	<dd><a href="../IFS/abst/087.html">87. Parallel Database Management System: Kappa(KLIC version)</a>
+	<dd><a href="../IFS/abst/088.html">88. Parallel Constraint Logic Programming System: GDCC(KLIC version)</a>
+	<dd><a href="../IFS/abst/089.html">89. Heterogeneous Distributed Cooperative Problem-Solving System: Helios</a>
+<dt><b>Problem Solving, Meta-reasoning, Theorem Proving: 3</b>
+	<dd><a href="../IFS/abst/090.html">90. MGTP/G(KL1 version/KLIC version)</a>
+	<dd><a href="../IFS/abst/091.html">91. MGTP/N(Model Distribution)</a>
+	<dd><a href="../IFS/abst/092.html">92. Constraint MGTP(Prolog version/KL1 version/KLIC version)</a>
+<dt><b>Experimental Application: 8</b>
+	<dd><a href="../IFS/abst/093.html">93. Multiple Sequence Alignment by Parallel Iterative Improvement Methiod (KLIC version)</a>
+	<dd><a href="../IFS/abst/094.html">94. Multiple Sequence Alignment by Genetic Algorithm</a>
+	<dd><a href="../IFS/abst/095.html">95. Multiple RNA-Sequence Alignment Considering Stem Regions</a>
+	<dd><a href="../IFS/abst/096.html">96. Knowledge Base of Biological Reactions</a>
+	<dd><a href="../IFS/abst/097.html">97. Successive State Splitting of Protein Hidden Markov Network</a>
+	<dd><a href="../IFS/abst/098.html">98. DNA Sequence Analysis using Discriminant Analysis</a>
+	<dd><a href="../IFS/abst/099.html">99. DNA Sequence Analysis using Hidden Markov Model and Genetic Algorithm</a>
+	<dd><a href="../IFS/abst/100.html">100 Legal reasoning system: new HELIC-II</a>
+</dl>
+<p><br><br>
+
+<h3>(2) Detailed Description</h3>
+
+<h4><hr>85 KLIC version 2: A parallel implementation of KL1 for general-purpose computers<hr></h4>
+<b>[Machine]</b>     UNIX machine, etc.<br>
+<b>[Environment]</b> UNIX, MS-DOS<br>
+<b>[Language]</b>    C<br>
+<p>
+
+<b>[Overview]</b><br>
+KLIC version 2 is a portable and high-performance parallel
+implementation of a concurrent logic programming language KL1 through
+translation into the langauge C.
+<p>
+
+<b>[Features]</b><br>
+KL1 is a concurrent logic programming language designed as the kernel
+language of the FGCS project.  KLIC is a portable and high-performance
+parallel implementation of KL1 for systems having basic functions of
+UNIX operating system.
+<p>
+
+<ul>
+<li>By translating KL1 language programs finally into native machine code, its execution performance much superior to interpretive implmentations.
+<li>By using the language C as an intermediate language and making use of the low-level machine-dependent optimization provided by C compilers, high performance and excellent portability are realized at the same time.
+<li>Foreign language programs can be easily linked with KL1 programs.
+</ul>
+<p>
+
+Improvements over the version 1 are as follows.
+<p>
+
+<ul>
+<li>Improved user interface.
+<li>Portable parallel implementations (for parallel and netword-connected systems).
+<li>MS-DOS implemetations.
+</ul>
+<p><br>
+
+<h4><hr>86 Distributed Pool<hr></h4>
+<b>[Machine]</b>     PIM/UNIX machine<br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC<br>
+<b>[Language]</b>    KL1<br>
+<p>
+
+<b>[Overview]</b><br>
+Distributed pool provides basic in-memory database features where data
+are distributed to many processing nodes.
+<p>
+
+<b>[Features]</b><br>
+<ul>
+<li>The contents of a pool are cached on each node to reduce the cost of access on each node.
+<li>The distributed pool distributes memory cunsumption to many processing nodes, making the maximum capacity of the pool much larger.
+<li>Application programers can distribute the computing load flexibly without worrying about data consistency.
+</ul>
+<p><br>
+
+<h4><hr> 87 Parallel Database Management System: Kappa (KLIC version)<hr></h4>
+<b>[Machine]</b>     UNIX machine<br>
+<b>[Environment]</b> UNIX, KLIC<br>
+<b>[Language]</b>    KL1, C<br>
+<p>
+
+<b>[Overview]</b><br>
+Kappa is a parallel database management system based on a nested
+relational model, and runs on UNIX machines with KLIC.
+<p>
+
+<b>[Features]</b><br>
+<dl>
+<dt>Nested Relational Model
+	<dd>The data model of Kappa is based on a nested relational model so that complex structured data of knowledge information processing systems or genetic information processing systems	can be treated efficiently.
+<dt>Parallel Processing Depending on Data Placement
+	<dd>As Kappa has a query processing capability at each node, the distribution of relations and the horizontal partition of relations give us inter-node parallelism.
+<dt>Running on UNIX machines with KLIC
+	<dd>Kappa is written in KL1 and runs on parallel and/or	distributed environments of computer systems with basic	functions of UNIX operating system using KLIC.
+</dl>
+<p><br>
+
+<h4><hr> 88 Parallel Constraint Logic Programming System: GDCC (KLIC version)<hr></h4>
+<b>[Machine]</b>     UNIX machine<br>
+<b>[Environment]</b> UNIX, KLIC<br>
+<b>[Language]</b>    KL1, C<br>
+<p>
+
+<b>[Overview]</b><br>
+GDCC (KLIC version) is a parallel constraint logic programming
+language, which is highly declarative, flexible and efficient, and can
+deal with various constraints including non-linear polynomial
+equations.
+<p>
+
+<b>[Features]</b><br>
+Parallel constraint logic programming system GDCC has various
+constraint solver libraries and the language processor which
+translates GDCC programs to KL1. To provide a more flexible and
+efficient language, GDCC parallelizes both logic language and
+constraint solvers. This system enables you to describe what
+(declarative knowledge) without how (procedural knowledge).
+<p><br>
+
+<h4><hr> 89 Heterogeneous Distributed Cooperative Problem-Solving System: Helios<hr></h4>
+<b>[Machine]</b>     UNIX machine<br>
+<b>[Environment]</b> UNIX<br>
+<b>[Language]</b>    C<br>
+<p>
+
+<b>[Overview]</b><br>
+Helios is a system to support the construction of heterogeneous
+distributed cooperative problem-solving systems by establishing
+message passing between various problem solvers such as databases,
+constraint solvers, etc.
+<p>
+
+<b>[Features]</b><br>
+Helios defines a problem solver as an agent and attaches cooperation
+mechanisms to it. These functions enable us to construct a
+heterogeneous distributed cooperative problem-solving system for
+solving problems with the cooperation of various agents in a
+distributed environment.  Helios encapsulates a problem solver with a
+'capsule' module which absorbs its heterogeneity. Communication
+between agents is carried out by placing them in an 'environment'. An
+encapsulated environment also becomes an agent.
+<p>
+
+Helios provides the capsule description language CAPL, the environment
+description language ENVL, and agent cooperation mechanisms.
+<p><br>
+
+<h4><hr> 90 MGTP/G (KL1 version/KLIC version)<hr></h4>
+<b>[Machine]</b>     PIM/UNIX machine<br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC<br>
+<b>[Language]</b>    KL1, Prolog<br>
+<p>
+
+<b>[Overview]</b><br>
+MGTP/G is a theorem prover for non-Horn clauses that deal with ground
+atoms
+<p>
+
+<b>[Features]</b><br>
+<ul>
+<li>MGTP/G is a bottom-up theorem prover on PIM/UNIX machine.
+<li>Several options are available for efficient execution such as clause indexing, elimination of redundant computation and atom indexing.
+<li>It is possible to obtain the same proof from different strategies.
+<li>Proof tracing and statistical date are displayed by option.
+</ul>
+<p><br>
+
+<h4><hr> 91 MGTP/N (Model Distribution)(KL1 version/KLIC version) <hr></h4>
+<b>[Machine]</b>     PIM/UNIX machine<br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC<br>
+<b>[Language]</b>    KL1<br>
+<p>
+
+<b>[Overview]</b><br>
+MGTP/N is a theorem prover for Horn clauses.
+<p>
+
+<b>[Features]</b><br>
+  There are two types of MGTP/N: 'model copying' and 'model sharing'.<br>
+The difference is how to keep generated atoms.<br>
+  With model sharing, each PE has a copy of the model candidates. An
+advantage of model sharing is that we can minimize inter-PE
+communication since most time-consuming subsumption tests and
+conjunctive matchings can be performed independently at each PE.<br>
+  With model copying, the model candidates are distributed to each PE.<br>
+This method can obtain memory scalability and more parallelism than
+the model sharing method. However, it has the drawback that the
+communication cost increases since generated atoms need to flow to all
+PEs for subsumption tests and conjunctive matchings.
+<p><br>
+
+<h4><hr> 92 Constraint MGTP (Prolog version/KL1 version /KLIC version)<hr></h4>
+<b>[Machine]</b>     PIM/UNIX machine<br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC<br>
+<b>[Language]</b>    KL1/Prolog<br>
+<p>
+
+<b>[Overview]</b><br>
+Extended MGTP to solve finite domain constraint satisfaction problems
+<p>
+
+<b>[Features]</b><br>
+<ul>
+<li>negative atoms can be used to represent negative information propagation,
+<li>the integrity constraint (unit refutation), "A, ~A -> false" is introduced,
+<li>extended MGTP rules, such as "P, ~R -> ~Q" and "~R, Q -> ~P" are added to the original rule "P, Q -> R",
+<li>unit simplification is performed between atoms in the model candidate set and disjunctions in the model-extending candidate set.
+</ul>
+<p><br>
+
+<h4><hr> 93 Multiple Sequence Alignment by Parallel Iterative Improvement Method (KLIC version)<hr></h4>
+<b>[Machine]</b>     UNIX machine<br>
+<b>[Environment]</b> UNIX, KLIC<br>
+<b>[Language]</b>    KL1, C<br>
+<p>
+
+<b>[Overview]</b><br>
+This system partially improves temporary alignment in an iterative
+way, and can effectively achieve high-quality alignment as a result. 
+(KLIC version)
+<p>
+
+<b>[Features]</b><br>
+  Multiple branches of a search tree in this combinatorial problem are
+evaluated in parallel by using many processing elements in each
+iteration.
+  The heuristic method, ``Restricted Partitioning Technique,'' prunes
+a large number of branches in the search tree and makes it possible to
+solve the combinatorial problem in a practical amount of time.
+<p><br>
+
+<h4><hr> 94 Multiple Sequence Alignment by Genetic Algorithm<hr></h4>
+<b>[Machine]</b> PIM/UNIX machine <br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC <br>
+<b>[Language]</b> KL1<br>
+<p>
+
+<b>[Overview]</b><br>
+ This parallel system, the combination of a genetic algorithm and an
+iterative alignment algorithm, produces better results than iterative
+aligners which employ hill-climbing search strategies.
+<p>
+
+<b>[Features]</b><br>
+  This parallel alignment system featuring a genetic algorithm can
+improve an alignment score as rapidly as that with the hill-climbing
+algorithm, and the system gradually increased the score to a higher
+level which might be close to the optimal alignment score. The reason
+why the genetic algorithm shows such high performance seems to be the
+modularity of multiple alignment problems. If we can replace a part of
+a sequence alignment with a better part from another, we obtain a
+better multiple sequence alignment. Crossover operators achieve this
+replacement in a statistical manner.
+<p><br>
+
+<h4><hr> 95 Multiple RNA-Sequence Alignment Considering Stem Regions<hr></h4>
+<b>[Machine]</b> PIM/UNIX machine <br>
+<b>[Environment]</b> PIMOS/UNIX, KLIC <br>
+<b>[Language]</b> KL1<br>
+<p>
+
+<b>[Overview]</b><br>
+ This system refines a rough alignment using a parallel simulated
+annealing algorithm taking into account connected base pairs in RNA
+stem regions.
+<p>
+
+<b>[Features]</b><br>
+  In general, the sum-of-pair alignment does not show complete
+alignment in terms of stem structures, but merely indicates some
+possible stem regions.  This system refines the rough alignment with a
+temperature parallel simulated annealing algorithm which optimizes the
+score obtained by connected base pairs and covariance matches. This
+procedure gives us a proper RNA-sequence alignment, from which we can
+specify stem regions.
+<p><br>
+
+<h4><hr> 96   Knowledge Base of Biological Reactions<hr></h4>
+<b>[Machine]</b>     UNIX machine<br>
+<b>[Environment]</b> UNIX, Motif, micro-Quixote<br>
+<b>[Language]</b>    C, g++, Quixote<br>
+<p>
+
+<b>[Overview]</b><br>
+ This system provides illustrations of biological reactions, signal
+transductions, gene expressions and their relationships using Quixote.
+<p>
+
+<b>[Features]</b><br>
+<ul>
+<li>The aspect of the object oriented database language of Quixote enables to represent pieces of biological processes systematically and easily.
+<li>The aspect of the deductive database language provides total illustration from the pieces of biological processes which may be altered or detailed.
+<li>GUI shows biological processes in the requested minuteness.
+<li>References to the existing public databases such as PIR or ProSite are available.
+</ul>
+<p><br>
+
+<h4><hr> 97 Successive State Splitting of Protein Hidden Markov Network<hr></h4>
+<b>[Machine]</b> UNIX machine <br>
+<b>[Environment]</b> UNIX, Motif <br>
+<b>[Language]</b> C<br>
+<p>
+
+<b>[Overview]</b> <br>
+Successive State Splitting is an optimization mechanism of hidden
+Markov networks using the same expectation maximization criteria as
+the Hidden Markov Model (HMM) learning.
+<p>
+
+<b>[Features]</b><br>
+<ul>
+<li>This system provides a hidden Markov model for a set of amino acid sequences of proteins.
+<li>This system provides an optimal network and hidden Markov model at the same time using the successive state splitting algorithm.
+<li>Network optimization and HMM learning are conducted under the same criteria: expectation maximization.
+</ul>
+<p><br>
+
+<h4><hr> 98 DNA Sequence Analysis using Discriminant Analysis<hr></h4>
+<b>[Machine]</b> UNIX machine <br>
+<b>[Environment]</b> UNIX <br>
+<b>[Language]</b> C<br>
+<p>
+
+<b>[Overview]</b><br>
+This program extracts signal patterns in DNA sequences using a
+discriminant analysis (class II quantification theory).
+<p>
+
+<b>[Features]</b><br>
+  Extraction of signal patterns is one of important problems in
+genetic information processing.  The patterns are utilized for
+considering DNA-protein interaction and predicting functional sites in
+gene identification. Using a discriminant analysis (class II
+quantification theory), this program extracts signal patterns in DNA
+sequences consisting of 2 categories (positive and negative samples).
+<p><br>
+
+<h4><hr> 99 DNA Sequence Analysis using Hidden Markov Model and Genetic Algorithm<hr></h4>
+<b>[Machine]</b> UNIX machine <br>
+<b>[Environment]</b> UNIX <br>
+<b>[Language]</b> C<br>
+<p>
+
+<b>[Overview]</b><br>
+This program extracts signal patterns in DNA sequences using Hidden
+Markov Model (HMM) and Genetic Algorithm (GA).
+<p>
+
+<b>[Features]</b><br>
+  Extraction of signal patterns is one of important problems in
+genetic information processing.  The patterns are utilized for
+considering DNA-protein interaction and predicting functional sites in
+gene identification. This program extracts signal patterns in DNA
+sequences using HMM and GA. The patterns are expressed in the form of
+HMM. The topology of HMM is optimized by GA evaluating the likelihood
+of HMM and complexity of the topology. A subroutine for evaluating
+each HMM is impremented as a process, and executed concurrently.
+<p><br>
+
+<h4><hr>100 Legal reasoning system: new HELIC-II<hr></h4>
+<b>[Machine]</b> UNIX machine <br>
+<b>[Environment]</b> UNIX <br>
+<b>[Language]</b> C<br>
+<p>
+
+<b>[Overview]</b><br>
+The new HELIC-II is an experimental software tool that simulates the
+complex reasoning processes of legal experts and is capable of some
+types of legal reasoning.
+<p>
+
+<b>[Features]</b><br>
+  The new HELIC-II simulates legal reasoning strategies as follows.
+<p>
+
+<ul>
+<li>By inputing a new case and a goal, the new HELIC-II generates the plausible arguments for the current viewpoint.
+<li>By inputing a new case and a goal, the new HELIC-II generates the arguments supporting that goal and the strongest viewpoint for the generated arguments.
+<li>The new HELIC-II simulates a debate between the defendent and the plaintiff.
+</ul>
+<p><br>
+
+<hr>
+  To refer detail of these 16 programs, the "ICOT Free Software
+Catalogue" including all of 100 IFS programs, and the "ICOT Free
+Software Catalogue (Selected Version)" including 23 IFS programs
+released in the follow-on project has recently published in December
+1994. Anyone wishing to obtain these catalogues is invited to contact
+the IFS desk via e-mail, mail or fax at the address given at the end
+of this newsletter.
+<p><br><br>
+
+<a name="call"><h2>[Call for KL1 Programs]</h2></a>
+
+There are now many users of KLIC. We at ICOT would like to gather many
+KL1 programs written by these users into a library for those new to
+KL1.
+<p>
+
+There are many KL1 programs in ICOT Free Software, but, none of them
+are appropriate in size for reading or modifying by KL1 beginners. We
+would therefore like to ask you to send KL1 programs for those KL1
+biginners. We would like to release a KL1 program library with the
+same conditions as ICOT Free Software. Those who agree with this
+proposal should send KL1 programs by e-mail to "ICOT Free Software
+Desk".
+<p>
+
+We will gather those programs and release them as a program library
+the same as for ICOT Free Software. We hope that many of you will send
+Kl1 programs to us suitable for KL1 beginners.
+<p><br><br>
+
+
+<a name="user"><h2>[User's group]</h2></a>
+
+Anyone interested in organizing a user's group to carry out research
+on any particular item of icot free software, for the purposes of
+revision or improvement is invited to contact the ifs-desk via e-mail
+at the address given at the end of this newsletter.
+<p>
+
+We hope to feature some of your proposals in the next issue of the
+newsletter. we will also forward reactions to your proposals to you.
+<p>
+
+Revised programs can be stored on the ftp server at icot, if you feel
+that your revision would be useful for other users.
+<p><br><br>
+
+
+<a name="cu-prolog"><h2>[user's group for cu-prolog]</h2></a>
+
+After its release as ICOT Free Software, a constraint logic
+programming language cu-Prolog, including Prof. Sirai's
+Macintosh/MS-DOS version, has been used by many students, engineers,
+and CLP/NLP researchers.
+<p>
+
+In order to exchange comments and information about cu-Prolog,
+constraint-based grammar formalisms, and CLP, we have organized a
+cu-Prolog user's group. The address is
+<pre>
+
+			    cup@icot.or.jp
+
+Please send e-mail to
+
+			<a href="mailto:cup-request@icot.or.jp">cup-request@icot.or.jp</a>
+
+</pre>
+to join the mailing list. Currently, 49 researchers are on the mailing list.
+<p><br><br>
+
+<a name="contacts"><h2>[Contacts]</h2></a>
+
+<pre>
+For information on IFS, access
+
+			    <a href="mailto:ifs@icot.or.jp">ifs@icot.or.jp</a>
+
+</pre>
+by e-mail.  If you receive a paper edition of this newsletter, let us
+know your e-mail address and we shall send you the electronic edition.
+If you do not have an e-mail facility, contact the address below.
+
+All available IFS is listed in "ICOT Free Software Catalogue", and all
+IFS released in the follow-on project is listed in "ICOT Free Software
+Catalogue (Selected Version)". If you do not have a copy of either
+catalog, supply the IFS-desk with your postal address and we shall
+arrange to send a copy to you.
+<p>
+
+If your colleagues or acquaintances are interested in IFS, let us know
+their name and both their e-mail and postal addresses, and we shall
+arrange to send them both the newsletter and catalogue.
+<p>
+<pre><h4>
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21st Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618
+</h4></pre>
+<p>
+<hr>
+<address><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
