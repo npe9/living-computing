@@ -1,0 +1,128 @@
+                      Cpyright(C) 1996  Yukio Ohsawa, Mitsuru Ishizuka,
+                                        Hiroshi Dohi and Masahiro Itoh
+                                        (Ishizuka Lab., Univ. of Tokyo)
+
+***********************************************************************
+*********     Fast Hypothetical Reasoning System based on     *********
+*********     Networked Bubble Propagation Method             *********
+*********     -- Propositional-Logic Version (NBP1)           ********* 
+***********************************************************************
+
+[Feature of the Software]
+  This software provides a fast hypothetical reasoning system, which can 
+  compute a near-optimal solution in polynomial time.
+
+[Required Environment]
+  This program written in C can run on a Unix machine / Unix OS with 
+  a X-window library.  (We have checked only SunOS.)
+
+[File Configuration]
+   nbp1.c  -- main program written in C (no other subprograms)
+   kd8.dat  -- example knowledge-base file 
+   kd20.dat -- example knowledge-base file 
+   kd22.dat -- example knowledge-base file 
+   kd23.dat -- example knowledge-base file 
+   kd24.dat -- example knowledge-base file 
+
+[Functional Description of the Software]
+  While hypothetical reasoning ( or abduction) is an important 
+  knowledge system's framework applicable to many problems including 
+  diagnosis, design, etc., it takes exponential time against a given 
+  problem size to find its exact solution.  This software NBP1 provides 
+  a fast cost-based (or weighted) hypothetical reasoning system, which 
+  can compute a near-optimal solution in low-order polynomial time. 
+  Here, the cost of a solution is the sum of numerical weights assigned 
+  to element hypotheses included in the solution, and the optimal solution
+  means that its cost is minimal.  The fast reasoning mechanism of this
+  system is based on the networked bubble propagation method, which has 
+  been derived as an improvement of the pivot-and-complement method,
+  an efficient approximate solution method for 0-1 integer programming.
+  Experimental speed perfermance shows a polynomial time of approximately 
+  1.5 power of N, where N is the number of possible element hypotheses
+  in the knowledge base.
+  The software equips a graphical user interface using X-window.
+
+[References]
+ 1) Y. Ohsawa and M. Ishizuka: A Polynomial-time Predicate-logic
+    Hypothetical Reasoning by Networked Bubble Propagation Method,
+    Proc. Canadian Conf. on AI, Toronto, pp.375-387 (1996).
+ 2) Y. Ohsawa and M. Ishizuka: Networked Bubble Propagation Method 
+    as a Polynonmial-time Hypothetical Reasoning for Computing
+    Near-optimal Solution, to appear, Artificial Intelligence (1996).
+
+[User's Manual]
+
+ A) How to install the program
+     Compile the source program (nbp1.c) in a Unix environment with
+     a X-window library as follows to produce an executable program.
+
+     gcc nbp1.c -L(the directory having tk and tcl) -ltk -ltcl 
+     [ -L(the directory having X11 and m) -I(the directory having the 
+     include files of X) ] -lX11 -lm
+
+ B) How to operate on the X-window
+     If you run the program, it can be operated through the X-window's
+     graphical interface using the following operations. 
+
+    'File' Pull-down Menu
+       'Edit' (to open an edit window for a knowledge base)
+       'Quit' (quit the program)
+
+    'Option' Pull-down Menu
+       Select among the following operation modes.
+         non-stop (continuous operation; default mode)
+         step-by-step (stepwise operation)
+       'Exec' buttom (in the display) allows to start in each mode.
+
+    Editing Display Window: edit the knowledge base and execute the
+                            hypothetical reasoning.
+       'Open' menu: open a window for entering the file name of
+                    a knowledge base 
+       'Start' nemu: execute the hypothetical reasoning (NBP method)
+                    on the file before editing
+       'Test' menu: execute the hypothetical reasoning (NBP method)
+                    on the file after editing
+       'Save' menu: save the edited file
+       'Quit' nemu: quit the editing window
+
+ C) Format of knowledge-base file 
+     This ia a tentative version for experiments; revisions are planned.
+     Because of the tentative version, a simple symbol "-" is used for
+     representing ":-" widely used in Prolog. Also, ",(return)" is used
+     to indicate the separation between clauses as exemplified below.  
+     The weight of each element hypothesis will be set to the default
+     value '1' in this version. 'True' and 'False' are expressed as '1' 
+     and '0', respectively.
+
+     The following shows examples of the knowgedge format. 
+      {an example of goal for hypothetical reasoning}
+              1-g,
+      {an example of rule-type propositional clause}
+              a-b,h1,
+      {an example of constraint knowledge indicating inconsistency relation}
+              0-h1,h2,
+      {an example of knowledge-base file -- kb2.dat}
+              1-g,
+              g-ma0,md0,
+              ma0-mb0,
+              ma0-mc0,
+              ma0-hc0,  
+              md0-ha0,
+              md0-hb0,
+              mb0-he0,
+              mc0-me0,
+              me0-hd0,
+              0-ha0,he0,
+              0-hb0,he0,
+              0-ha0,hd0,
+              0-hb0,hd0,
+              0-ha0,hc0, 
+
+       {the following files are attached for trial use; 
+           -- kb8.dat  kb20.dat  kb22.dat  kb23.dat  kb24.dat }
+
+[Others]
+  A predicate-logic version will be released later. 
+
+  You can see the home page of Ishizuka Lab. at
+       http://www.miv.t.u-tokyo.ac.jp/HomePageEng.html

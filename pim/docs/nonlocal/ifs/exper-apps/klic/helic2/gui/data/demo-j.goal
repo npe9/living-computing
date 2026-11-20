@@ -1,0 +1,61 @@
+% 9/20 shuusei by Kokubo
+% 10/19 update for Ver.1.5 by Shibasaki
+% 10/21 shuusei by Kokubo
+
+&define_goal.
+
+{
+立件する(a_object= 殴る(agent=人間[name=>"甲"], object=人間[name=>"乙"]),
+         goal=傷害罪),                     % 2.1 
+
+-傷害である(a_object=人間[name=>"乙"]),    % 2.2   Ver1.0と変わらず
+
+-故意あり(a_object=人間[name=>"甲"],
+         object= 殴る(agent=人間[name=>"甲"], object=人間[name=>"乙"]),
+         goal=傷害罪),                     % 2.5   Ver1.0と変わらず
+
+立件する(a_object= 持ち去る(agent=人間[name=>"甲"],
+                          object=ハンドバッグ[name=>"ハンドバッグ1"],
+                          source=人間[name=>"乙"]),
+         goal=強盗罪),                    % 3.1 
+
+-故意あり(a_object=人間[name=>"甲"],
+         object= 持ち去る(agent=人間[name=>"甲"],
+                        object=ハンドバッグ[name=>"ハンドバッグ1"],
+                        source=人間[name=>"乙"]),
+         goal=強盗罪),                    % 3.2   Ver1.0と変わらず
+
+立件する(a_object= 持ち去る(agent=人間[name=>"甲"],
+                          object=ハンドバッグ[name=>"ハンドバッグ1"],
+                          source=人間[name=>"乙"]),
+         goal=窃盗罪),                   % 3.5
+
+-故意あり(a_object=人間[name=>"甲"],
+          object=  持ち去る(agent=人間[name=>"甲"],
+                           object=ハンドバッグ[name=>"ハンドバッグ1"],
+                           source=人間[name=>"乙"]),
+          goal=窃盗罪),                  % 3.6
+
+意図あり(a_object=人間[name=>"甲"],
+          object=  持ち去る(agent=人間[name=>"甲"],
+                           object=ハンドバッグ[name=>"ハンドバッグ1"],
+                           source=人間[name=>"乙"]),
+          goal=不当領得),                  % 3.9
+
+-意図あり(a_object=人間[name=>"甲"],
+          object=  持ち去る(agent=人間[name=>"甲"],
+                           object=ハンドバッグ[name=>"ハンドバッグ1"],
+                           source=人間[name=>"乙"]),
+          goal=使う(agent=人間[name=>"甲"],
+                             object=ハンドバッグ[name=>"ハンドバッグ1"])),  % 3.12
+
+立件する(a_object= 捨てる(agent=人間[name=>"甲"],
+                                  object=ハンドバッグ[name=>"ハンドバッグ1"]),
+                   goal=器物損壊罪)              % 3.16
+}
+
+
+
+
+
+

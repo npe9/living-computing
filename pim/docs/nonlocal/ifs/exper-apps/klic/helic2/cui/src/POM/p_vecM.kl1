@@ -1,0 +1,39 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pom_vectorMatrix.
+
+:- public 
+    make_matrix/2,
+    set_data/5,
+    get_data/4.
+            
+:- with_macro pimos.
+
+    make_matrix(Size,M):-true|
+        L := Size*Size,
+        new_vector(M1,L),
+        set_nulList(M1,0,L,M2),
+        M = {Size,M2}.
+
+    set_nulList(M1,L,L,M):-true|
+        M = M1.
+otherwise.
+    set_nulList(M1,Pos,L,M):-true|
+        set_vector_element(M1,Pos,_,[],M2),
+        Pos1 := Pos+1,
+        set_nulList(M2,Pos1,L,M).
+
+    set_data({Size,M1},X,Y,V,M):-true|
+        get_position(Size,X,Y,Pos),
+        set_vector_element(M1,Pos,_,V,M2),
+        M = {Size,M2}.
+
+    get_data({Size,M1},X,Y,V):-true|
+        get_position(Size,X,Y,Pos),
+        vector_element(M1,Pos,V,_).
+
+    get_position(Size,X,Y,Pos):-true|
+        Pos := Y*Size+X.

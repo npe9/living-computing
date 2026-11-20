@@ -1,0 +1,76 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（５３）囲碁対局システム：並列版「碁世代」ＧＯ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（５３）囲碁対局システム：並列版「碁世代」ＧＯＧ</h2>
+
+<pre width="136"><b>
+	マ シ ン：Multi-PSI
+	環　　境：PIMOS, SIMPOS
+	言　　語：KL1, ESP
+	ソース量：1.5 MB
+	文　　書：マニュアル (日本語／英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+本プログラムは計算機により囲碁の対局を行うプログラムである。<p>
+
+<h2>構成</h2>
+
+<dl>
+	<dd><img src="053-J.gif">
+</dl>
+<p>
+
+<h2>特徴</h2>
+
+囲碁の対局を行うシステムは大規模な知識処理システムであり、大規模知識処
+理システムの並列化方式の研究、付加分散を始めとする処理効率向上のための
+研究に適している。本システムは、囲碁システムにおいて初めて並列処理を取
+り入れたもので、3つの特徴がある。<P>
+
+<ul>
+
+<li>人間の思考過程をシミュレート
+
+<li>大きな粒の仕事を並列実行
+
+<li>リアルタイム性を保持しながら碁世代を強くするための新しいアイデア
+「遊軍処理方式」を実現 (参考資料参照)
+
+</ul>
+<p>
+
+<h2>参考資料</h2>
+
+<OL>
+
+<LI> Experimental Version of Parallel Computer Go-Playing System
+"GOG",S.Sei et al.,ICOT-TR 718
+
+</OL>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	囲碁対局システム：並列版「碁世代」ＧＯＧ [834K] <a
+href="../../../ifs/exper-apps/pimos/gog-kl1.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

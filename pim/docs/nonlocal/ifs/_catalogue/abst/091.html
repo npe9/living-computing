@@ -1,0 +1,90 @@
+﻿<!--
+# modified by Orie '95/10/17
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/06/10
+# modified by S.Tanabe '95/08/01
+# modified by	A.Aiba		97/08/15
+-->
+<title> (91) MGTP/N ( Model Distribution ) ( KL1 version )</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (91) MGTP/N ( Model Distribution ) ( KL1 version )</h2> <p>
+
+<pre wide="136">
+<b>	Machine:     PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 50 KB
+	Documents:   User's Manual ( English / Japanese )
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+MGTP/G is a theorem prover for Horn clauses.  <p>
+
+<h2><b>Features</b></h2>
+
+There are two types of MGTP/N: <i>model copying</i> and <i>model
+sharing</i>.  The difference is how to keep generated atoms.  <p>
+
+With model sharing, each PE has a copy of the model candidates. An
+advantage of model sharing is that we can minimize inter-PE
+communication since most time-consuming subsumption tests and
+conjunctive matchings can be performed independently at each PE.  <p>
+
+With model copying, the model candidates are distributed to each PE.
+This method can obtain memory scalability and more parallelism than
+the model sharing method. However, it has the drawback that the
+communication cost increases since generated atoms need to flow to all
+PEs for subsumption tests and conjunctive matchings.  <p>
+
+<h2><b>Function</b></h2>
+
+MGTP/N ( Model Generation Theorem Prover/Non-ground Version ) is a
+first order theorem prover for Horn clauses based on model generation. 
+An MGTP clause is represented by an implicational form: <p>
+
+<dl>
+<dd><img src="091.gif">
+</dl>
+<p>
+
+where an antecedent is a conjunction of <img src="A1.gif">, <img
+src="A2.gif">, ..., <img src="An.gif">.  The consequent has at most
+one atom.  Empty consequent represents a condition of contradiction.
+When <i>n</i> = 0 , it gives the initial model ( a set of facts ).  In
+MGTP, proving starts with the initial model and proceeds from the
+antecedent to the consequence in a forward reasoning manner.  <p>
+
+The system has a procedural interface for KL1 programs.  Two options
+are available for proving strategy: sorting generated atoms by their
+weight and deleting useless atoms by their argument pattern.  <p>
+
+In spite of dealing only with Horn clauses, MGTP/N solves many
+mathematical problems such as that of condensed detachment.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/solver-prover/pimos/MGTP-N/README">README</a>.
+
+<li> MGTP/N ( Model Distribution ) ( KL1 version ) [565K] <a
+href="../../../ifs/solver-prover/pimos/MGTP-N/MGTP-N-KL1.tgz"><img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

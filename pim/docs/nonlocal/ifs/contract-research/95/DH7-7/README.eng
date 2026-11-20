@@ -1,0 +1,54 @@
+Bottom-up Progol Processor using MGTP (Prolog Version)
+					Copyright (C) 1996 Koichi Furukawa
+
+[Software]
+source/progol.pl	PProgol main module
+source/magic.pl		magic translation module
+source/m2pl.pl		translation from MGTP to Prolog module
+source/bot.pl		Construct MSH module
+source/search.pl	Search through the subsumption lattice module
+
+[Introduction]
+This Software is an experimental system for inductive inference
+written in Prolog.  It was developed for the purposes of parallelizing
+Progol.
+
+Instead of the original Progol's top-down computation, we employ
+bottom-up computation to construct hypotheses.  MGTP(Model
+Generation Theorem Prover) is used directly in this task.
+
+The user can make an experiment on Machine Learning, and understand
+Progol's mechanism. Since the software is written in Prolog and employ
+MGTP, it has higher level of description and it is easier to
+understand the whole system compared with the original Progol
+written in C.
+
+This software is a prototype of the parallel implementation. Therefore
+the purpose of this system is to make the algorithm clear.  It will be
+needed to modify and refine the system for efficient parallel
+computation.
+
+[Reference]
+H.Fujita, K.Furukawa, N.Yagi, T.Ozaki :
+Most Specific Hypothesis Generation in PROGOL by Using MGTP,
+In the Proceedings of the 10th Annual Conference of JSAI,1996
+(in Japanese)
+
+N.Yagi, H.Fujita, T.Ozaki, K.Furukawa :
+Note on Algorithm for Computing Heuristic Function of A*-search in PROGOL,
+In the Proceedings of the 10th Annual Conference of JSAI,1996
+(in Japanese)
+
+H.Fujita, N.Yagi, T.Ozaki, K.Furukawa :
+A New Design and Implementation of PROGOL by bottom-up computation,
+In the Proceedings of the 6th International Workshop on Inductive Logic
+Progoramming, also in the  Proceedings of the 25th SIG-FAI,1996
+----------
+
+Koichi Furukawa
+graduate school of media and governance,  keio university
+
+5322 Endo Fujisawa-shi Kanagawa-ken
+Tel (0466)47-5111 Ext 3235
+Fax (0466)47-5350
+

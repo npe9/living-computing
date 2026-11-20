@@ -1,0 +1,97 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (14) Constraint Logic Programming Language: CAL in CESP</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (14) Constraint Logic Programming Language: CAL in CESP</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX, CESP, GMP
+	Language:    CESP
+	Source Code: 1 MB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+CAL is a sequential constraint logic programming language which can
+deal with various constraints including non-linear polynomial
+equations.<P>
+
+<h2><b>Functions</b></h2>
+
+Constraint Logic Programming(CLP) Language CAL is a programming
+language based on a new programming pradigm, constraint programming. 
+This paradigm allows us the high-level description of the problem. By
+using CAL, the user enable to solve problems without stating the
+methods to solve them.<P>
+
+<dl>
+ <dt><b>Run in CESP</b>
+
+<dd>The language processor is run on Common ESP, which is the ESP
+language processor available on UNIX machine.<P>
+
+ <dt><b>From "How to solve" to "What to solve"</b>
+
+<dd>By conventional programming lan-guage, the user have to select or
+invent the method to solve problems todescribe the method to solve
+them in terms of programs. On, by using CAL, all the user have to do
+to solve them is to describe relations defining the problems in terms
+of constraints.<P>
+
+ <dt><b>Supports various problem domains</b>
+
+<dd>CAL handles the following constraints:
+	<OL>
+	<LI>non-linear algebraic equations, 
+	<LI>equations on the truth values, and
+	<LI>linear equations and linear inequalities.
+	</OL>
+
+<DT><b>Provides Multiple Environment Handler</b>
+
+<dd>To support context dependent functions, the system provides the
+multiple environment handler.<P>
+
+ <dt><b>Provides the function to approximate real roots</b>
+
+<dd>For non-linear algebraic constraints, the system provides the
+function to approximate real toots of univariate constraints. All real
+roots can be obtained via backtracking, and can be handled through
+contexts.<P>
+
+ <dt><b>Remark</b>
+
+<dd>Numerical calculation in the system uses GNU Multiple Precision
+Package(GMP).
+
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Constraint Logic Programming Language: CAL in CESP [315K] <a
+href="../../../ifs/kbms-clp/cesp/cal-cesp.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

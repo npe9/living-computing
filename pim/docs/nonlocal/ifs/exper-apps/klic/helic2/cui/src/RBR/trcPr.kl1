@@ -1,0 +1,217 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_tracerPrint.
+:- public
+        call/5,
+        redu/7,
+        fail/5.
+%call
+    call({on,_,SGL,_},DP,{{_,HTerm},Env,HIDT},CN,R):-true| %RBR
+        member(SGL,call,YN),
+        ( YN = yes->
+                print_call(DP,{HTerm,Env,HIDT},CN,R)
+        ;
+          YN = no->
+                R = normal(success)
+        ).
+    call({on,_,SGL,_},DP,{{_,HTerm,Trivial},Env,HIDT},CN,R):-true| %CBR
+        member(SGL,call,YN),
+        ( YN = yes->
+                print_call(DP,{{HTerm,Trivial},Env,HIDT},CN,R)
+        ;
+          YN = no->
+                R = normal(success)
+        ).
+    call({off,_,_,_},_,_,_,R):-true|
+        R = normal(success).
+
+%redu
+    redu({on,SRL,SGL,_},DP,RuleName,HeadHTerm,
+                CN,BodyHTermWithCNList,R):-true|
+        member(SGL,redu,YN1),
+        ( YN1 = yes->
+                print_redu(DP,RuleName,HeadHTerm,CN,BodyHTermWithCNList,R)
+        ;
+          YN1 = no->
+                member(SRL,RuleName,YN2),
+                ( YN2 = yes->
+                        print_redu(DP,RuleName,HeadHTerm,
+                                CN,BodyHTermWithCNList,R)
+                ;
+                  YN2 = no->
+                        R = normal(success)
+                )
+        ).
+    redu({off,_,_,_},_,_,_,_,_,R):-true|
+        R = normal(success).
+
+%fail
+    fail({on,_,SGL,_},DP,HTerm,CN,R):-true|
+        member(SGL,fail,YN),
+        ( YN = yes->
+                print_fail(DP,HTerm,CN,R)
+        ;
+          YN = no->
+                R = normal(success)
+        ).
+    fail({off,_,_,_},_,_,_,R):-true|
+        R = normal(success).
+
+%internal method
+%%call
+     print_call({PL,PT},HTerm1,CN1,R):-true|
+        hterm_to_string(HTerm1,PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN," CALL  ",HTerm],Line),
+        sifLibrary:message(Line),
+        R = normal(success).
+%%redu
+     print_redu({PL,PT},RuleName1,HeadHTerm1,CN1,[],R):-true|
+        hLibrary:tTos(RuleName1,RuleName),
+        hterm_to_string(HeadHTerm1,PL,PT,HeadHTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN," REDU ",RuleName,
+                ":  ",HeadHTerm],Line),
+        sifLibrary:message(Line),
+        R = normal(success).
+     print_redu({PL,PT},RuleName1,HeadHTerm1,CN1,BodyHTermWithCNList,R):-
+        BodyHTermWithCNList \= []|
+        hLibrary:tTos(RuleName1,RuleName),
+        hterm_to_string(HeadHTerm1,PL,PT,HeadHTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN," REDU ",RuleName,":  ",HeadHTerm," <-"],Line),
+        HeadHTerm1={_,Env,HIDT},
+        print_redu1(BodyHTermWithCNList,Env,HIDT,{PL,PT},LineList),
+        sifLibrary:message([putl(Line)|LineList]),
+        R = normal(success).
+
+%fail
+     print_fail({PL,PT},HTerm1,CN1,R):-true|
+        hterm_to_string(HTerm1,PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN," FAIL  ",HTerm],Line),
+        sifLibrary:message(Line),
+        R = normal(success).
+
+%%%%%
+
+    print_redu1([],_,_,_,L):-true|
+        L = [].
+    print_redu1([{{greater,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{greater,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{less,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{less,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{equal,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{equal,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{not_equal,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{not_equal,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{same,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{same,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{different,A,B},CN1}|T],Env,HIDT,{PL,PT},L):-true| %BLT
+	hterm_to_string({{different,A,B},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+otherwise.
+    print_redu1([{{_,hp(HID,HTerm1)},CN1}|T],Env,HIDT,{PL,PT},L):-true| %RBR
+        hterm_to_string(hp(HID,{HTerm1,Env,HIDT}),PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+    print_redu1([{{_,HTerm1,Trivial},CN1}|T],Env,HIDT,{PL,PT},L):-true| %CBR
+        hterm_to_string({{HTerm1,Trivial},Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+otherwise.
+    print_redu1([{{_,HTerm1},CN1}|T],Env,HIDT,{PL,PT},L):-true|         %RBR
+        hterm_to_string({HTerm1,Env,HIDT},PL,PT,HTerm),
+        hLibrary:tTos(CN1,CN),
+        append_string:append_string([" ",CN,"             ",HTerm],Line),
+        print_redu1(T,Env,HIDT,{PL,PT},L1),
+        L = [putl(Line)|L1].
+
+    hterm_to_string(HTerm1,PL,PT,String):-true|
+        get_htermString(HTerm1,HTerm2),
+        string(HTerm2,L,_,_),
+        ( PL >= L ->
+                String = HTerm2
+        ;
+          PL < L->
+                substring:substring(HTerm2,0,PL,String,_)
+        ).
+
+%get_htermString
+%%builtin
+    get_htermString({{greater,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"greater",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString({{less,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"less",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString({{equal,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"equal",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString({{not_equal,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"not_equal",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString({{same,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"same",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString({{different,PTerm1,PTerm2},Env,HIDT},HTerm):-true|
+	get_builtinString({{"different",PTerm1,PTerm2},Env,HIDT},HTerm).
+    get_htermString(hp(_HID,{HTerm1,Env,HIDT}),HTerm):-true|
+        get_htermString({HTerm1,Env,HIDT},HTerm).
+otherwise.
+    get_htermString({HTerm1,Env,HIDT},HTerm):-true|
+        reverse_translate:reverse_translate(2,{HTerm1,Env,HIDT},HTerm).
+%%for debug
+otherwise.
+    get_htermString(Term,HTerm):-true|
+        builtin:print("TracerPrinterror"),
+        hLibrary:tTos(Term,HTerm).
+
+   get_builtinString({{Name,PTerm1,PTerm2},Env,_HIDT},HTerm):-true|
+        reverse_translate:reverse_translate(1,{PTerm1,Env},PT1),
+        reverse_translate:reverse_translate(1,{PTerm2,Env},PT2),
+	append_string:append_string([Name,"(",PT1,",",PT2,")"],HTerm).
+
+%list utility
+
+%%member
+    member([],_,YN):-true|
+        YN = no.
+    member([X|_],X,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],X,YN):-true|
+        member(T,X,YN).
+
+%%append
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+

@@ -1,0 +1,101 @@
+===================================================================
+Concurrent Cooperative Parallel Solvers (CCOPS): The BsSolve System
+===================================================================
+
+Machine:     Sun Sparc
+Environment: Solaris 2.5, with Oxford BSP toolset and GNU Multiple
+	     Precision Arithmetic Library
+Language:    KL1 (KLIC) and C
+Documents:   Manuals (English), examples
+
+Overview
+========
+
+The CCOPS team has defined a new execution model for cooperation and
+parallelization of constraints solvers in distributed memory systems.
+Existing solvers are re-used as operators, cooperation comes from
+mixing different solvers and data-parallel solving is programmed in
+bulk-synchronous mode.  The three paradigms can be dynamically
+combined in the BsSolve system.
+
+Characteristics
+===============
+
+BsSolve is a system designed for the explicit cooperation and
+parallelisation of constraints solvers.  It uses the BSP
+(bulk-synchronous processing) paradigm of
+ parallel programming : computation alternates between p independent
+ computations and global operations, where p is the number of available
+ processors.  
+It provides an interface allowing the re-use of existing solvers.
+A simplified interface to the Oxford BSP toolset implementation of
+BSPlib has been also designed.
+
+The resulting system consists in a library called from KLIC programs
+and where existing sequential solvers can be re-used, allowing to
+write strategies for resolution and cooperation between solvers.
+
+Functions
+=========
+1. Pre-existing solvers integration
+
+BsSolve provides structures for writing solvers but also allows the
+use of pre-existing solvers written either in C or KLIC. A set of
+interfacing predicates and functions are provided for this.
+
+2. Resolution and cooperation strategies
+
+The BSP realisation of a set of concurrent-cooperating parallel
+solvers provides a way to express resolution strategies, using the
+following correspondences :
+
+	 - Resolution strategies are written as computation phases of
+p independent sequential computations. Each one is driven by an
+agent. An agent is either an existing solver or a program issuing
+calls to the BsSolve system.
+
+	 - Cooperation strategies are written as so-called
+contractions and expansions, alternating with computation
+phases. These operations trigger all the communications and
+synchronisations in global (bulk-synchronous) mode. In other words, no
+subset of the network may communicate or synchronise without global
+synchronisation.  Any subset of the complete p*p communication graph
+is allowed.
+
+In this execution model, the parallel implementation of a solver is
+simply the explicit cooperation of its agents. The model thus smoothly
+integrates solver cooperation and parallelism.
+
+3. Parallelization of sequential constraints resolution algorithms
+
+Using this scheme, the CCOPS Team has designed and implemented two new
+algorithms dedicated to the parallelization of the Waltz and
+Buchberger's algorithms. These two algorithms raise concrete issues
+related to parallel execution such as the volume and frequency of
+communications, as well as load balancing. According to the BsSolve
+design, explicit high-level operations are defined for implementing
+the algorithms and coping with the difficult problem of dynamic load
+balancing.
+
+File configuration
+==================
+
+The directory structure of the BsSolve distribution is as follow :
+
+  bssolve/	Sources of the BsSolve kernel
+  doc/		All the documentation, in latex format
+  groebner/	Sources of a groebner constraint solver
+  newton/	Sources of an interval constraint solver
+
+Installation
+============
+
+You need GNU multiple precision arithmetic library, Oxford BSP Toolset
+implementation of BspLib and KLIC for installing BsSolve system.
+
+If you want to know about installation in detail, please refer to the
+file 'INSTALL'.
+
+Use
+===
+

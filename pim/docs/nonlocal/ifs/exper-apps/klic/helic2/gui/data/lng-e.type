@@ -1,0 +1,13 @@
+&define_type. 
+
+ verb<event.
+{does_action, reaches_to_condition, has_criminal_intent, behaves_violently, 
+ causes_injury_or_damage, has_conditional_causality, 
+ corresponds_to_a_crime_constituting_condition, 
+ is_injury, has_causality, is_violence} < verb.
+{beating, thrusts_down} < does_action.
+ faints < reaches_to_condition.
+{john, mary,taro,hanako} < person.
+ injury_crime.
+ crime_of_violence.
+ lake. 

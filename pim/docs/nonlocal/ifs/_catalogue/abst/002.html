@@ -1,0 +1,77 @@
+﻿<!--
+# modified by K.Kawamura (1994.9.26)
+-->
+<title>(2) Parallel and Distributed KL1 Language Processor: VPIM</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(2) Parallel and Distributed KL1 Language Processor: VPIM</h2>
+
+
+<pre width="136">
+<b>	Machine:     PIM, Multi-PSI
+	Environment: PIMOS
+	Language:    PSL
+	Source Code: 4.7 MB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A system for implementing a common identical KL1 language processor on
+all PIM models <p>
+
+<h2><b>Characteristics</b></h2>
+
+VPIM is a system for implementing a common identical KL1 language
+processor on all PIM models (except for PIM/m). The source program of
+VPIM is provided here and written in the newly designed language PSL. 
+Because it is written in PSL, VPIM is very easy to read.  <p>
+
+Furthermore, since VPIM can be translated into the C language and,
+thus, be executed on parallel machines (such as Sequent Symmetry) and
+on workstations (such as SUN) as well, it becomes very easy to debug,
+to verify that programs run correctly and to comprehend the dynamic
+system behavior.  <p>
+
+<h2><b>Function</b></h2>
+
+To execute KL1 programs, not only should unification, goal rewriting
+and goal management be realized, but also various functions supported
+by conventional operating systems (for instance, memory management,
+synchronization and communication for parallel execution and
+meta-control) should be provided. VPIM is a program which implements
+these above functions on shared-memory and/or distributed memory
+multiprocessor machines. Moreover, about half of the entire VPIM
+source program is occupied by Japanese comments;this allows Japanese
+to read the source program as a specification.  <p>
+
+The tools which translate VPIM into C code for conventional machines,
+PSL programming environment etc. are also provided.  <p>
+
+To run VPIM on conventional machines and actually execute KL1
+programs, a user-interface portion of PIMOS, FEP etc. are needed. 
+However, the current distribution does not include such programs.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Parallel and Distributed KL1 Language Processor: VPIM [1,761K] <a
+href="../../../ifs/symbolic-proc/unix/vpim.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

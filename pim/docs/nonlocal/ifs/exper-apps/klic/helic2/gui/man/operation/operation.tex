@@ -1,0 +1,1043 @@
+% 1995.03.20  LaTeX_edit(english version) by Computer Institute of Japan.
+\documentstyle[epsf,art10]{article}
+
+\textheight=25cm
+\textwidth=16cm
+\topmargin=-1.0cm
+\oddsidemargin=0cm
+
+
+\begin{document}
+\baselineskip=19pt
+
+\title{GUI operation manual}
+\author{}
+\date{}
+
+\pagestyle{empty}
+\pagestyle{plain}
+
+\maketitle
+
+%\tableofcontents
+
+%\newpage
+
+\makeatletter
+\def\section{\@startsection {section}{1}{\z@}{3.5ex plus 1ex minus 
+.2ex}{2.3ex plus .2ex}{\Large\bf}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{3.25ex plus 1ex minus 
+.2ex}{1.5ex plus .2ex}{\large\bf}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}{3.25ex plus 
+1ex minus .2ex}{1.5ex plus .2ex}{\normalsize\bf}}
+\makeatother
+
+\normalsize
+
+\section{Overview}
+
+This manual explains how to debate using the GUI (Graphical User Interface) of "HELIC-II".
+Conceptual explanation of a debate function is given in '\ref{Debate model}'. 
+It is recommended to read this chapter before using GUI.
+Terminology used in this manual are explained where they first appear.
+However, it is strongly recommended to read through the language manual for further and systematic understanding.
+
+\section{Basic knowledge}
+
+\subsection{Debate model}\label{Debate model}
+
+A debate function of "HELIC-II" materializes a debate model between two agents called a prosecutor and defendant.
+
+The object of the prosecutor agent is to substantiate an argument to justify a self goal, and the object of the pleading agent is to substantiate an effective counter argument to the prosecutor's argument.
+A premise of this debate model is as follows:
+
+\begin{itemize}
+
+\item Each agent has a different knowledge (viewpoint, rule set, etc.).
+\item Only the prosecutor agent has a goal to achieve in a debate.
+This goal, represented as an H term\footnote{\ For details, refer to the language manual.}, may include a variable.
+A defendant rebuts passively to the argument sent from the prosecutor.
+\item Claims from both sides must use arguments in a form of a proof tree based on facts.
+\item The comparison between arguments is determined by the priority
+  relation between the TopRule of arguments\footnote{\ Comparing without evaluating the Sub-Argument causes a different result from the Defeasible Reasoning.}.
+
+\end{itemize}
+
+A debate is proceeded by claiming an argument to the opponent and noticing that the argument is advantageous over the other.
+
+% +----+  	---->  		+----+
+% |検察|     論争プロトコル 	|被告|
+% +----+  	<----  		+----+
+%   |		  	  	  |
+%   V		  	  	  V
+% +===========+	       		+===========+
+% |価値観1    |	       		|価値観2    |
+% |ルール集合1|	       		|ルール集合2|
+% +===========+	       		+===========+
+% 
+% 		[ 論争モデル ]
+
+Each agent sends a message called a debate protocol to the opponent to present the argument.
+The following are the different kinds of debate protocols:
+
+\begin{enumerate}
+
+\item Claim argument (pose)\\
+         Claims an argument.  It is used in a case of doing a claim or rebuttal.
+\item Priority notice (notice)\\
+         Notices that the self argument is dominant.
+\item Cancel argument (cancel)\\
+         Cancels a claimed argument.
+\item End debate (end)\\
+         Notices that the debate on the opponent's argument has been finished.
+
+\end{enumerate}
+
+\section{Structure of HELIC-II GUI}
+
+\subsection{Constitution}
+
+HELIC-II GUI is composed of two Unix Processes.
+One is the inference engine module written by KL1 and the other is the GUI portion written in C.
+These two Unix Processes are tied together by a socket communication.
+To boot "HELIC-II" the inference engine must be first started, followed by the  GUI.
+For instruction on how to boot, refer to '\ref{Activation method}'.
+
+\subsection{State transition during a GUI execution}
+
+The GUI which runs the debate function has the following three states, and the commands that may be used depend on these three states.
+It is in the initial state at the time of booting.
+
+%	   	  debate,rbr		      start
+%+--------+  	--------> 	+--------+  --------> 	+--------+
+%|初期状態|		  	|設定状態|              |論争状態|
+%+--------+	<-------- 	+--------+  <-------- 	+--------+
+%		  quit			      end
+
+\begin{enumerate}
+\item Initial state:
+
+\begin{enumerate}
+\item Use possibility commands
+\begin{itemize}
+\item Knowledge base load relation
+\item Debate agent role setting
+\end{itemize}
+\item State transition command\\
+{\sl Debate} or {\sl RDB} changes the setting state.
+\end{enumerate}
+
+\item Setting state: 
+
+\begin{enumerate}
+\item Use possibility commands
+\begin{itemize}
+\item Viewpoint binding
+\item Goal binding
+\item Use unit binding
+\item Argument browser command\footnote{\ Available only when an
+    argument has already been displayed, and the debate has been finished.}
+\end{itemize}
+ 
+\item State transition commands\\
+{\sl Quit} returns it to the initial state, and {\sl Start} begins the debate.
+\end{enumerate}
+
+\item Debate state:
+
+\begin{enumerate}
+\item Use possibility commands
+\begin{itemize}
+\item Debate relative command
+\item Argument browser command
+\end{itemize}
+\item Condition transition command\\
+{\sl End} returns it to the setting state.
+\end{enumerate}
+
+\end{enumerate}
+
+The following processing is required to transit from the initial state to the setting state:
+\begin{itemize}
+\item Loading a knowledge file.
+For details, refer to '\ref{To load a knowledge}'
+\item Setting debate agents.
+For details, refer to '\ref{To set roles of a debate}'.
+\end{itemize}
+
+The following processing is required to go from a setting state to a debate state:
+\begin{itemize}
+\item Set a use knowledge.
+For details, refer to '\ref{To set a use knowledge}'.
+\item Set a viewpoint.
+For details, refer to '\ref{To set a viewpoint}'.
+\end{itemize}
+
+\section{Activation method}\label{Activation method}
+
+To start "HELIC-II" GUI, the inference engine and the GUI must be started from the Unix shell.
+As mentioned earlier, the inference engine must be started before the GUI. 
+
+\subsection{Start commands}
+
+Commands in this section, {\sl guidbt} and {\sl gui}, are available in a "bin" directory under the installation directory.
+Refer to the installation manual (INSTALL) on how to create these commands.
+
+\subsubsection{Inference engine}
+
+{\bf Command:}
+\begin{quote}
+\verb+guidbt [-port PORTNO]+
+\end{quote}
+
+{\bf Argument:}
+\begin{quote}
+\begin{tabbing}
+PORTNO \ \ \= \kill
+\verb+PORTNO+ \> The Port number of socket.\\
+\end{tabbing}
+\end{quote}
+
+{\bf Explanation:}
+\begin{quote}
+To start the inference engine, specify the port number of the socket that will connect the inference engine with GUI Process by an argument or an environment variable HELIC\_HOST\_PORT.
+The port number must be the same as the port number specified for the GUI.
+
+The following shows how to specify a port number which is 9900 in this example:
+
+\begin{verbatim}
+% setenv HELIC_HOST_PORT 9900
+\end{verbatim}
+
+\end{quote}
+
+{\bf Remarks:}
+\begin{quote}
+The port number will be automatically set to 9000 when it is not specified with an environment variable.
+This command ends automatically by ending the GUI.
+
+\end{quote}
+
+\subsubsection{GUI}
+
+{\bf Command:}
+\begin{quote}
+\verb+gui [-host HOSTNAME] [-port PORTNO]+
+\end{quote}
+
+{\bf Argument:}
+\begin{quote}
+\begin{tabbing}
+HOSTNAME \ \ \= \kill
+\verb+HOSTNAME+ \> The host name of the machine that started the inference engine Process.\\
+\verb+PORTNO+ \> The port number of the socket.\\
+\end{tabbing}
+\end{quote}
+
+{\bf Explanation:}
+\begin{quote}
+Start GUI Process.
+The inference engine must have already been started at this point.
+Specify the port number of the socket and the host name of the machine the inference engine is currently running on.
+This specification may also be made by the environment variable.
+
+The host name of the machine which the inference engine Process is currently running is specified by the environmental variable HELIC\_HOST\_NAME.
+The port number of the socket to be connected to the inference engine Process is specified by the environmental variable HELIC\_HOST\_PORT.
+This port number must be the same as the port number specified when the inference engine first started. 
+
+The specification of an argument has priority when both methods are used to specify a port number and/or a host name.  When the two are not specified, an error window appears and the GUI ends.
+
+The initial window of the GUI is then presented on the screen.
+
+{\bf Related files:}
+
+\begin{quote}
+~\verb+/.Xdefaults+
+\end{quote}
+\end{quote}
+
+\newpage
+
+\section{Operation in the initial window}
+
+This window first opens when the "HELIC-II" is started.
+A knowledge base must be loaded and debate agents must be assigned in this window before opening the debate window.
+For details on how to start this window, refer to '\ref{Activation method} Activation method'.
+In a standard environment, simply enter the following:
+\begin{verbatim}
+	% setenv HELIC_HOST_PORT 9900
+	% setenv HELIC_HOST_PORT here
+	% debate &
+	% gui
+\end{verbatim}
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./initwin.ps,height=6cm}
+\end{center}
+\caption{Initial window}\label{Initial window}
+\end{figure}
+
+\begin{itemize}
+\item Browsing area
+\begin{description}
+\item[Loading Status:] Suggests the knowledge base file that must be loaded in order to start the debate.
+\item[Role Assigment Status:] Displays which debate agent the user or the system is taking charge.
+\end{description}
+\item Action area
+\begin{description}
+\item[Load button:] Loads a knowledge base file.
+Opens the file load window (refer to '\ref{To load a knowledge}').
+\item[Role button:] Determines roles of debate agents.
+\item[Debate button:] Opens a debate window.
+This button does not work until the load and the role setting end.
+\item[Quit button:] Closes all windows and ends "HELIC-II".
+\end{description}
+\end{itemize}
+
+\subsection{To end HELIC-II}
+Select {\sl Quit} in the initial window.
+
+\subsection{To load a knowledge}\label{To load a knowledge}
+Select {\sl Load} in the initial window and open the file load window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./loadwin.ps,height=10cm}
+\end{center}
+\caption{File load window}\label{File load window}
+\end{figure}
+
+\begin{itemize}
+
+\item File type selecting area
+\begin{description}
+\item[Type:] Select a type file.
+Displays *.t or *.type file on the List field.
+\item[Rule:] Select a rule file.
+Displays *.r or *.rule file on the List field.
+It may be selected only when a type file is loaded.
+\item[View:] Select a viewpoint file.
+Displays *.v or *.view file on the List field.
+It may be selected only when a rule file is loaded.
+\item[Query:] Select a goal file.
+Displays *.g or *.goal file on the List field.
+It may be selected only when a viewpoint file is loaded.
+\item[Command:] Select a command file.
+Displays *.c file on the List field.
+\end{description}
+
+\item File selecting area
+\begin{description}
+
+\item[Filter:] Regular expression of the file to be displayed on the Filter File. 
+\item[Directory:] Displays a list of directories under the current directory.
+\item[List:] Displays a list of knowledge base files of the type selected in the file type selecting area in the current directory.
+\item[Loading File:] Displays file names that may be loaded.
+It may be input directly from a keyboard.
+
+\end{description}
+
+\item Action area
+\begin{description}
+\item[Load button:] Orders an inference engine module to load the selected knowledge base file.
+\item[List button:] Opens a list display window of knowledge base files loaded.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./listwin.ps,height=3cm}
+\end{center}
+\caption{Load file list window}\label{Load file list window}
+\end{figure}
+
+\item[Done button:] Ends a load operation.Closes the file load window.
+
+\end{description}
+
+\end{itemize}
+
+\subsubsection{To move a directory}
+Double click the directory displayed in the Directory field of the file load window with the mouse.
+
+\subsubsection{To load a type file}
+Click {\sl Type} at the upper part of the file load window to display *.t or *.type on the List field.
+Double click the file to load. 
+
+\subsubsection{To load a rule file}
+
+Click {\sl Rule} at the upper part of the file load window to display *.r or *.rule on the List field.
+Double click the file to load. 
+
+\subsubsection{To load a viewpoint file}
+
+Click {\sl View} at the upper part of the file load window to display *.v or *.view on the List field.
+Double click the file to load. 
+
+\subsubsection{To load a goal file}
+
+Click {\sl Goal} at the upper part of the file load window to display *.g or *.goal on the List display.  
+Double click the file to load.
+
+\subsubsection{To run a command file}
+
+Click {\sl Command} at the upper part of the file load window to display *.c file on the List field.  
+Double click the file to execute.
+
+\subsubsection{To see a list of files loaded}
+
+Select {\sl List} in the file load window and then the load file list window will be opened.
+
+\subsection{To set roles of a debate}\label{To set roles of a debate}
+
+To set roles of the debate, select {\sl Role} in the initial window and then the role setting window will be opened.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./rolewin.ps,height=5cm}
+\end{center}
+\caption{Role setting window}\label{Role setting window}
+\end{figure}
+
+\begin{itemize}
+\item Role setting area \\
+Set the role of a prosecutor at the left and the role of a defendant at the right.
+\begin{description}
+\item[System:] The system will take charge of the given debate agent (prosecutor or defendant).  The debate will be proceeded automatically.
+\item[User:] The user will take charge of the given debate agent.  The user is responsible for the operation needed for the debate to progress.
+\end{description}
+
+\item Action area
+\begin{description}
+\item[Done button:] Registers roles to a system.
+Closes the role setting window.
+
+\end{description}
+
+\end{itemize}
+
+\subsubsection{To set a user take charge of a prosecutor (defendant)}
+Click {\sl User} at the left (right, in the case of a defendant) side of the role setting window.
+
+\subsubsection{To set a prosecutor (defendant) to be done automatically}
+Click {\sl System} at the left (right, in the case of a defendant) side of the role setting window.
+
+\subsubsection{To register a setting}
+Select {\sl Done} in the role setting window.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	論争ウインドウ
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Operation in the debate window}
+\begin{quotation}
+Two debate windows are opened simultaneously to represent the prosecutor and defendant.
+
+Various setting and operations done in the prosecutor window will apply toward the prosecutor.
+
+To open a debate window, a type, viewpoint, goal, and rule must all be loaded, and the settings of the prosecutor and defendant completed. A pop up window from a debate window is an exclusive control window; while being operated, it will prevent the debate window from receiving any control.
+The debate window becomes sensitive only when it is its turn to speak.
+
+\end{quotation}
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./debatewin.ps,height=12cm}
+\end{center}
+\caption{Debate window}\label{Debate window}
+\end{figure}
+
+\begin{itemize}
+
+\item Debate setting part\\
+The following buttons becomes insensitive during a debate:
+\begin{description}
+\item[View button:] Sets a viewpoint. 
+\item[Unit button:] Sets a use knowledge. 
+\item[Goal button:] Sets a goal. 
+\item[Start button:] Starts a debate. 
+\item[Quit button:] Closes a debate window. 
+\end{description}
+
+\item Debate setting browser part
+\begin{description}
+\item[Goal area:] Displays the goal that is set. 
+\item[View area:] Displays the viewpoint that is set. 
+\end{description}
+
+\item The following buttons are insensitive except during a debate in
+  the debate operation part, and only the executable commands become sensitive at such time.
+\begin{description}
+\item[Pose button:] Claims the argument displayed in the logic display area to the opponent. 
+\item[Notice button:] Gives a priority notification to the opponent showing that its current argument displayed in the show argument area has higher priority than the opponent's argument.
+\item[Cancel button:] Withdraws the claim displayed in the show argument area.
+\item[Finish button:] Informs that the counter argument to the opponent's argument displayed in the show argument area has ended.
+\item[Justify button:] Justifies an argument.
+\item[Depth button:] Sets the number of steps to plans ahead for an opponent's counter argument before generating a claim or counter argument.
+\item[End button:] Forces a debate to end.
+\end{description}
+
+\item Debate state browser part
+\begin{description}
+\item[Debate history area:] Displays a list that shows the states of the present debate.
+\item[State show area:] Display the state of a debate.
+The following are examples of states displayed:
+"The opponent has claimed the following counter argument".
+"The opponent has noticed that the following claim has priority under the human right esteem".
+\item[Issue point display area:] Displays the issue point of the opponent's claim which the argument currently displayed is counter arguing.
+\item[Show argument area:] Displays arguments.
+Displays a Unified conclusion (intermediate proposition) of rules with an indentation, depending on the reference relation.
+Each rule composes the proof tree of an argument.
+\end{description}
+
+\item{Argument browser operation part}
+\begin{description}
+\item[Backward button:] Displays the argument which the counter argument currently displayed in the show argument area is trying to override.
+\item[Forward button:] Returns to the argument displayed immediately
+  before selecting {\sl Backward}, in the case where {\sl Backward} was used.
+Returns to one of the counter arguments to the argument displayed in the show argument area.
+\item[Next button:] Advances to the next counter argument, if it exists, disputing on the same issue point number as the argument currently displayed in the show argument area.
+\item[Previous button:] Advances to the previous counter argument, if it exists, disputing on the same issue point number as the argument currently displayed in the show argument area.
+Displays in the opposite order as the {\sl Next} button.
+\item[Focus button:] Jumps to the argument (Focus argument) currently focused in the debate.
+\item[ClaimList button:] Retrieves its or opponent's past claims.
+\item[Jump button:] Displays the specified argument when a claim identification is input.
+\item[Explain button:] Explains the argument currently displayed in a natural language.
+\item[Form button:] Specifies the display form of the intermediate proposition displayed in the show argument area.
+There are two display formats available; one is an expression by an H term variable and the other is an explanation in a natural language.
+\end{description}
+
+\end{itemize}
+
+\subsection{To open a debate window}
+Select {\sl Debate} in the initial window.
+However, the role setting and loading of required files must be completed for the {\sl Debate} button to become sensitive.
+
+\subsection{To close a debate window}
+Select {\sl Quit} button.
+
+\subsection{To set a viewpoint}\label{To set a viewpoint}
+Select {\sl View} in the debate window and then a viewpoint setting window will be opened.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./viewset.ps,height=6cm}
+\end{center}
+\caption{Viewpoint binding window}\label{Viewpoint binding window}
+\end{figure}
+
+\begin{description}
+
+\item[View Candidate button:] Calls a viewpoint candidate selecting window and sets a viewpoint by selecting from a list of viewpoint candidates.
+\item[Standpoint button:] Calls a standpoint selecting window and adds the selected standpoint to a viewpoint.
+\item[Viewpoint display area:] Displays the content of the current viewpoint.
+Displays the name of a standpoint in the order of higher priority.
+\item[Order button:] Changes the order of a standpoint.
+Opens a viewpoint order modification window.
+\item[Done button:] Sets the specified viewpoint to a debate agent.
+\item[Cancel button:] Clears a viewpoint setting work.
+\end{description}
+
+\subsubsection{To set a viewpoint by specifying a viewpoint candidate}
+To specify a viewpoint candidate that is already available, select {\sl View Candidate} to open a view point candidate selecting window.
+Double click a viewpoint candidate from the list displayed in the viewpoint candidate selecting window.
+A list of standpoints of the selected viewpoint candidate is displayed in the viewpoint display area.
+Select {\sl Done} to set the viewpoint to the debate agent, or use {\sl Standpoint} button or {\sl Order} button to edit.
+
+\subsubsection{To add a standpoint to a viewpoint}
+Select {\sl Standpoint} to open a standpoint selecting window, where every defined standpoint is listed.
+Double click the name of the standpoint to be added.
+The selected standpoint will be added at the bottom of the list of the viewpoint.
+
+\subsubsection{To delete a standpoint from a viewpoint}
+Double click the standpoint to delete in the viewpoint display area.
+
+\subsubsection{To modify the order of a viewpoint}
+Select {\sl Order} to open a viewpoint order modification window.
+The current order is displayed to the left.
+Double click standpoints in the order to be placed.
+The standpoints will be displayed to the right in the new order.
+After selecting all of the standpoints, the viewpoint order modification window closes automatically and the viewpoint will be displayed in the new order in the viewpoint display area.
+
+\subsubsection{To clear a viewpoint}
+Select {\sl Clear}.
+
+\subsubsection{To register the modified viewpoint}
+Select {\sl Done}.  The viewpoint displayed in the viewpoint display
+area will be registered as the viewpoint of the debate agent.
+
+
+\subsubsection{To quit viewpoint modification work}
+Select {\sl Cancel}.
+The modification work is cleared and the viewpoint modification window closes. 
+No changes are made to the viewpoint.
+
+\subsection{To set a use knowledge}\label{To set a use knowledge}
+
+Select {\sl Unit} in the debate window to open a knowledge setting window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./unitset.ps,height=6cm}
+\end{center}
+\caption{Knowledge setting window}\label{Knowledge setting window}
+\end{figure}
+
+\begin{description}
+\item[Unit Name:] Area to specify a meta-unit name for a use knowledge.
+\item[Assigned Unit List:] List of meta-units specified.
+\item[Done:] Registers a unit name input.
+\item[Cancel:] Clears the knowledge setting work and closes the knowledge setting window.
+\end{description}
+
+\subsubsection{To specify a use knowledge}
+Set the cursor to the field next to the unit name and input the unit name.
+If there are no errors in the unit name, it will be added to the Assigned Unit List.
+An error window is output when errors occur.
+
+\subsubsection{To delete a use knowledge}
+Double click the unit name to delete in the Assigned Unit List.
+\subsubsection{To clear a use knowledge}
+Select {\sl Clear}.
+
+\subsubsection{To register a modified use knowledge}
+Select {\sl Done}.
+The list of unit names displayed in the Assigned Unit List will be registered as the use knowledge.
+
+\subsubsection{To quit an use knowledge modification work} 
+Select {\sl Cancel}.
+The modification work is cleared and the use knowledge modification window closes. 
+No changes are made to the viewpoint.
+
+\subsection{To set a goal} 
+Select {\sl Goal} in the debate window to open a goal binding window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./goalwin.ps,width=15cm}
+\end{center}
+\caption{Goal binding window}\label{Goal binding window}
+\end{figure}
+
+\begin{description}
+\item[Goal List:] Displays goal candidates in H term expressions.
+The goal candidate currently set is highlighted when the goal set window is opened. 
+\item[Cancel button:] Clears the goal binding work, and closes the goal binding window.
+\end{description}
+
+\subsubsection{To specify a goal}
+\medskip
+Double click on the goal candidate displayed in the Goal List.  The goal set window closes automatically.
+
+\subsubsection{To quit a goal setting work}
+\medskip
+Select {\sl Cancel}.
+The goal setting window closes. 
+No changes are made to the goal.
+
+\subsection{To do a debate} 
+
+\subsubsection{To start a debate}
+Select {\sl Start} in the debate window.
+The viewpoint and use knowledge of both the prosecutor and defendant, and the goal of the prosecutor must be set.
+If the user is the prosecutor, a claim selection operation must be
+made after {\sl Start}.
+For details regarding this operation, refer to '\ref{To select a claim} To select a claim'.
+
+\subsubsection{To finish a debate} 
+Select {\sl End} in the debate window.
+
+\subsubsection{To select a claim}\label{To select a claim} 
+If the user is the prosecutor, a claim selecting window opens.
+Select an initial claim, which will guide the prosecutor's claim, when the debate first starts, and when the opponent notices that the counter argument to the first argument has finished.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./argslctwin.ps,height=6cm}
+\end{center}
+\caption{Claim selecting window}\label{Claim selecting window}
+\end{figure}
+
+A list of conclusions of the initial claim is displayed in this window.
+Refer to '\ref{Argument list display of a viewpoint}Argument list display of a viewpoint' for the meaning of \verb+>0:!0:<1+.
+Double click a conclusion of a claim from the list.
+The claim selecting window closes and the selected claim (argument) will be displayed in the show argument area.
+
+\subsubsection{To assert a claim to an opponent}
+To assert an initial claim or a counter argument to the opponent, an argument needs to be sent to the opponent.
+To do so, the following two must be done beforehand:
+\begin{itemize}
+\item Display the argument to send in the show argument area.\\
+For details, refer to '\ref{Operating method of an argument browser} Operating method of an argument browser'.
+\item The counter argument to be sent must be effective, that is, in the case of a prosecutor, the argument must have a dominant position, and in the case of a defendant, the argument must have a dominant position or be unrelated.\\
+For details on dominant positions refer to '\ref{To make an argument have a dominant position} To make an argument have a dominant position'. 
+\end{itemize}
+If the above condition is met, the {\sl Pose} button of a debate operation part becomes sensitive.
+Select {\sl Pose} to send and assert claims to the opponent and give the turn to speak to the opponent.
+
+\subsubsection{To choose a counter argument}
+
+A claim of the opponent will be displayed on the show argument area.
+Select the issue point to do a counter argument.
+The number to the left of the issue point indicates which issue point
+to counter argue\footnote{\ For details, refer to '\ref{Argument display of a viewpoint} Argument display of a viewpoint'.}.
+Double click the issue point to open a counter argument selecting window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./cargwin.ps,height=6cm}
+\end{center}
+\caption{Counter argument selecting window}\label{Counter argument selecting window}
+\end{figure}
+
+A list of conclusions of counter arguments which guides the opposite argument to the issue point is displayed in this window.
+Refer to section '\ref{Argument list display of a viewpoint} Argument display of a viewpoint' for the meaning of \verb+>0:!0:<1+.
+Double click a conclusion of a counter argument from the list.
+The counter argument selecting window closes and the selected counter argument will be displayed in the show argument area.
+
+\subsubsection{To give priority notice}\label{To give priority notice}
+
+The opponent's counter argument can be ended by declaring a dominant (or unrelated in the case of a defendant) position of the original argument.
+The following conditions must be met to do so:
+
+\begin{itemize}
+\item The argument to claim a dominant position is displayed in the show argument area.\\
+Use the {\sl Backward} button, since the counter argument of the opponent is displayed.
+\item The argument is not weaker than the opponent's counter argument.\\
+For details on how to make an argument have dominant position, refer to '\ref{To make an argument have a dominant position} To make an argument have a dominant position'.
+\end{itemize}
+When these conditions are met, the {\sl Notice} button of a debate operation part becomes sensitive.
+Select {\sl Notice} to open a standpoint selecting window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./spslctwin.ps,height=6cm}
+\end{center}
+\caption{Standpoint selecting window}\label{Standpoint selecting window}
+\end{figure}
+
+A list of standpoints or a combination of standpoints which has become the basis to judge the dominant position is displayed on the window.
+Double click the standpoint to inform the opponent.
+This completes the process of a priority notice.
+
+However, when the defendant sends an unrelated argument, the standpoint selecting window does not open, and the turn to speak will change to the opponent.
+
+\subsubsection{To inform priority over a priority notification from an opponent}
+
+Display the counter argument that was claimed invalid in the debate display area, and send a priority notice to the opponent.
+For details on how to send a priority notice, refer to section '\ref{To give priority notice} To give priority notice'.
+The turn to speak will not be changed to the opponent.  Search for a different counter argument to the opponent's claim.
+
+\subsubsection{To abandon a claim}
+
+When an effective counter argument cannot be found, the claim must be abandoned.
+Select {\sl Cancel} to abandon the claim.
+
+\subsubsection{To end a counter argument}
+
+Display the argument in the debate display area.\\
+Select {\sl Finish} to end its counter argument.  This will demand another argument from the opponent.
+
+\subsubsection{To make an argument have a dominant position}\label{To make an argument have a dominant position}
+
+The current viewpoint can be reinforced to make the argument displayed have a dominant position.
+Select {\sl Justify} to search for the standpoint to add, in order to make the argument displayed stronger than that of the opponent.
+When such combination is found, the viewpoint change suggestion window opens.
+Select a combination from the list displayed in this window.
+The viewpoint is modified and the content of the show argument display is updated.
+
+\begin{quote}
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./viewchgwin.ps,height=6cm}
+\end{center}
+\caption{Viewpoint change suggestion window}\label{Viewpoint change suggestion window}
+\end{figure}
+
+The list on the left shows the combination of standpoints that may be added.  Select by clicking on a standpoint .
+The content of the viewpoint with the added standpoint is displayed in a list at the right.
+Select {\sl Done} to register the modification of the viewpoint and to close the viewpoint change suggestion window.
+\end{quote}
+
+The change in viewpoint is done by retrieving predefined standpoints.  Therefore, a viewpoint to change the dominant position may not found.
+Also, new viewpoints which contradict the priority notification already given will not become candidates.
+Therefore, selecting {\sl Justify} does not necessarily retrieve standpoints to add.  In such case, an error window opens.
+In such cases, find another argument or abandon the previous argument to proceed.
+
+\subsubsection{To modify steps to plan ahead}
+
+Claims and counter arguments are being generated with a frame of Defeasible Reasoning.  In Defeasible Reasoning, a counter argument to an argument is requested recursively.  Therefore, in order to decrease the amount of computing, the number of steps to plan ahead to an argument can be limited.\\
+Select {\sl Depth} to open the plan ahead (foresight?) setting window.
+Enter the number of steps to plan ahead.
+Select {\sl Done} to complete.
+Entering 1 indicates that one counter argument from the opponent can displayed.
+
+\subsection{Operating method of an argument browser}\label{Operating method of an argument browser}
+
+An argument browser is a function to display an argument in a show argument area using buttons of a debate operation part of a debate window.
+
+\subsubsection{Argument display of a viewpoint}\label{Argument display of a viewpoint}
+
+The following is an example of a display form of a general argument in a show argument area:
+\begin{figure}[htb]
+%\begin{center}
+\begin{verbatim}
+	general_penal_rule00
+	weak
+	             provable_guilty(a_object=take_away(agent=person[nam
+	              take_away(agent=person[name=>"mary"],object=handba
+	              related_crime(a_object=take_away(agent=person[name
+	              punishable(a_object=take_away(agent=person[name=>"
+	               satisfied_condition_of_crime(a_object=take_away(a
+	                take_away(agent=person[name=>"mary"],object=hand
+	                is_stealing(a_object=take_away(agent=person[name
+	                 has_occupied(a_object=person[name=>"jane"],obje
+	                 take_away(agent=person[name=>"mary"],object=han
+	                 recognize(a_object=person[name=>"mary"],object=
+	                  recognize(a_object=person[name=>"mary"],object
+	                   mistake(agent=person[name=>"mary"],object=fai
+	                  take_away(agent=person[name=>"mary"],object=ha
+	   !  1(0)      with_criminal_intent(a_object=person[name=>"mary
+	                 take_away(agent=person[name=>"mary"],object=han
+	               not -punishable(a_object=take_away(agent=person[n
+\end{verbatim}
+%\end{center}
+\caption{Example of an argument display}\label{Example of an argument display}
+\end{figure}
+
+The first line displays the name of the TopRule of the displayed argument.
+The second line shows the priority relation between the TopRule of the
+displayed argument and the rule which guides the intermediate
+proposition of the parent argument which is refuted by the displayed argument.
+{\bf Weak} means that the TopRule of the displayed argument has lower priority.
+{\bf Strong} means that the TopRule of the displayed argument has higher priority.  {\bf Non-relation} indicates that there are no priority relations between the two.
+Lines with a number added to the beginning mean an argument which is expressed in a form of a proof tree.
+Each line is an intermediate proposition that was guided by an intermediate rule used in an argument.
+All variables are expressed in the Unified form.
+The following is another example to explain in details:
+\begin{figure}[htb]
+%\begin{center}
+\begin{verbatim}
+
+ Child information  intermediate proposition 
+=====================================================================
+       !  1(0)      with_criminal_intent(a_object=person[name=>"mary
+
+\end{verbatim}
+%\end{center}
+\caption{Example of an intermediate proposition of an argument display}\label{Example of an intermediate proposition of an argument display}
+\end{figure}
+
+A child information is an information regarding a child of this issue point.
+The first exclamation mark $!$ indicates that the following is an information regarding the rule which guided the issue point and relation with the TopRule of children for this issue point. 
+Three kinds of relations exists:
+$>$ indicates that the issue point has a stronger TopRule relation than all children.
+$!$ indicates that it is either strong or unrelated.
+$<$ indicates that it is weaker than at least one of the children.
+
+The first figure of $1(0)$ shows the number of a child.
+The figure inside the parentheses show the number of the child which a debate has ended.
+The debate is considered to have ended when either of the following occurs;
+the prosecutor and defendant both have noticed their argument to their
+opponent by {\sl notice} command,
+the opponent have noticed that the debate has finished by the {\sl finish} command. 
+
+An intermediate proposition is a conclusion department of a rule.
+A blank before an intermediate proposition shows that the one without an indentation was guided by the one with the indentation.
+
+\subsubsection{Argument list display of a viewpoint}\label{Argument list display of a viewpoint}
+
+This section explains the form to display multiple arguments displayed in a counter argument list display window and argument list display window.
+The following is an example of a counter argument list display:
+
+\begin{figure}[htb]
+%\begin{center}
+\begin{verbatim}
+  Arg ID: p0
+  Issue Pos: 13
+  Consequence: with_criminal_intent(a_object=person
+  RuleName: penal235otsuka_theory
+  Num Of Counter: 1
+  0 : *  !  >:0!:1<:0 -with_criminal_intent(a_object=person
+\end{verbatim}
+%\end{center}
+\caption{Example of a counter argument list display}\label{Example of a counter argument list display}
+\end{figure}
+
+\begin{description}
+\item[Arg identification:] Parent argument identification.
+\item[Issue Pos:] Issue point number of a parent argument.\\
+This child list display shows the issue point of parent argument.
+\item[Consequence:] THEN part of the rule that guides an issue point corresponding to the issue point number of a parent argument.
+\item[RuleName:] Name of the rule that guides an issue point corresponding to the issue point number of a parent argument.
+\item[Num Of Counter:] Number of counter arguments to an issue point corresponding to the issue point number of a parent argument.
+\item[0:] a child number.\\
+\verb+*+ indicates that a counter argument has been completed by a {\sl pose} command.\\
+\verb+!+ shows the TopRule relation between the issue point of the parent argument and argument corresponding to the issue point, and \verb+>+ means the parent is weaker than, \verb+!+ means unrelated to, and \verb+<+ means stronger than the child.\\
+\verb+>:0!:1<:0+ shows the number of strong(\verb+>+), unrelated(\verb+!+), and weak(\verb+<+).
+\end{description}
+
+\subsubsection{To see an argument to counter argue}
+
+Select Backward.
+The argument of the opponent to counter argue is displayed in the show argument area.
+
+\subsubsection{To see a counter argument}
+
+Choose by double clicking an intermediate proposition as an issue point from the arguments currently displayed.
+A list of counter arguments which regards the intermediate proposition as an issue point will be displayed.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./cargwin.ps,height=6cm}
+\end{center}
+\caption{Counter argument selecting window}
+\end{figure}
+
+A list of a conclusion of counter arguments is displayed in this window.
+Double click on a conclusion of the counter argument to see.
+The counter argument selecting window closes and the selected argument is displayed in the show argument area.
+The {\sl Forward} button may also be used to see a counter argument.
+In this case the selecting operation of a counter argument is omitted.
+The argument displayed before using the {\sl Backward} button is displayed in the show argument area.
+Generally, the {\sl Forward} button is used to return to the original
+argument after using the {\sl Backward} button.
+
+\subsubsection{To see other counter arguments on the same issue point}
+
+Select either the {\sl Next} button or {\sl Previous} button to display other arguments debating on the same issue point in the show argument area.
+Since the display order of the {\sl Next} button and {\sl Previous} button are opposite, one can be used to return to the previous display.
+
+\subsubsection{To see the argument that is a focus of a debate}
+
+Select {\sl Focus}.
+
+\subsubsection{To display the argument with the argument identification known}
+
+Select {\sl Jump} to open the argument identification specifying window.
+Enter the argument identification and hit return.
+The argument of the entered argument identification will be displayed.  Notice that argument identification exists only for the argument which have been claimed.
+
+\subsubsection{To retrieve a past claim}
+
+Select {\sl ClaimList} to display the claim list window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./claimwin.ps,width=15cm}
+\end{center}
+\caption{Claim list window}\label{Claim list window}
+\end{figure}
+
+Displayed at the left is the claim of a prosecutor and the right is the claim of a defendant.
+The display form is similar to the argument list display. (Refer to '\ref{Argument list display of a viewpoint} Argument list display of a viewpoint')
+Double click the argument to display.
+
+\subsubsection{To change the argument display into a natural language}
+
+Select {\sl Form} to display the display form selecting window.
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./formwin.ps,height=3cm}
+\end{center}
+\caption{Display form selecting window}\label{Display form selecting window}
+\end{figure}
+
+To display the argument display in H term format, select {\sl H-term}.  To display the argument display in a natural language, select {\sl Natural Language}.  In this case, the Explain information added to the rule is used.
+
+\section{ Operation in DRS window}
+
+\begin{quotation}
+The function of DRS(Defeasible Reasoning System) is to analyze problem in one viewpoint,
+and generates all arguments and all its counter arguments.
+
+DRS window made from initial window.
+
+DRS window is same to remove operation of debate from debate window.
+
+Therefore method of setting type,viewpoint,goal,and rule is refered
+to 'Operation in the debate window'.
+
+It is necessary for openning DRS window to finish load of type,viewpoint goal and rule.
+
+Can't open DRS window and debate window in same time.
+
+\end{quotation}
+
+\begin{figure}[htb]
+\begin{center}
+\epsfile{file=./drswin.ps,height=12cm}
+\end{center}
+\caption{DRS window}\label{DRS window}
+\end{figure}
+
+\begin{itemize}
+
+\item DRS setting part 
+\begin{description}
+\item[View button:] Sets a viewpoin.
+\item[Unit button:] Sets a use knowledge.
+\item[Goal button:] Sets a goal.
+\item[Solve button:] Generates arguments.
+\item[Quit  button:] Closes a DRS window.
+\end{description}
+
+\item DRS setting browser part
+\begin{description}
+\item[Goal area:] Displays the current goal.
+\item[View area:] Displays the current viewpoint.
+\end{description}
+
+\item DRS state browser part
+\begin{description}
+\item[Show argument area:] Displays arguments.
+Displays a Unified conclusion (intermediate proposition) of rules with an inentation, depending on the reference relation.
+Each rule composes the proof tree of an argument.
+\end{description}
+
+\item{Argument browser operation part}
+\begin{description}
+\item[Backward button:] Displays the argument which the counter argument currently displayed in the show argument area is trying to override.
+\item[Forward button:] Returns to the argument displayed immediately
+  before selecting {\sl Backward}, in the case where {\sl Backward} was used.
+Returns to one of the counter arguments to the argument displayed 
+ in the show argument area.
+\item[Next button:] Advances to the next counter argument, if it exists, disputing on the same issue point number as the argument currently displayed in the show argument area.
+\item[Previous button:] Advances to the previous counter argument, if it exists, disputing on the same issue point number as the argument currently displayed in the show argument area.
+Displays in the opposite order as the {\sl Next} button.
+\item[Explain button:] Explains the argument currently displayed in a natural language.
+\item[Form button:] Specifies the display form of the intermediate proposition displayed in the show argument area.
+There are two display formats available; one is an expression by an H term variable and the other is an explanation in a natural language.
+\end{description}
+
+\end{itemize}
+
+\subsection{To open a DRS window}
+Select {\sl DRS} in the initial window.
+However, loading of required files must be completed for
+ the {\sl DRS} button to become sensitive.
+
+\subsection{To close a DRS window}
+Select {\sl Quit} button.
+
+\subsection{To generates arguments}
+
+Select {\sl Solve} in the DRS window.
+The viewpoint and use knowledge and the goal must be set.
+Result of inference is displayed in Show argument area.
+
+Operation of argument browser is refered to 'Argument browser operation part'.
+
+
+\section{Attention}
+
+Current HELIC-II is not supported as follows.
+
+Display argument by using natural language.
+
+Function of browser to see claimed arguments after debate.
+
+
+\end{document}

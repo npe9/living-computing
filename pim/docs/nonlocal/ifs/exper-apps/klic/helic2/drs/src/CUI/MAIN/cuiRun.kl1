@@ -1,0 +1,101 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_run.
+
+:- public 
+    run/4.
+            
+:- with_macro pimos.
+
+%run
+    run(FileName,Data1,Data,ProtocolList):-true|
+        rbrcui_runCommandParser:get_commandList(FileName,CommandList,R1),
+        (   R1 = normal(_)->
+                run1(CommandList,Data1,Data,ProtocolList)
+        ;
+            R1 = abnormal(Reason)->
+                Data = Data1,
+                rbrcui_utility:make_errorProtocol(Reason,Protocol),
+		ProtocolList = [Protocol]
+        ).
+
+%run1
+    run1([],Data1,Data,ProtocolList):-true|
+        Data = Data1,
+        ProtocolList = [receive(ok,[],_)].
+    run1([CPA|T],Data1,Data,ProtocolList):-true|
+        execute(CPA,Data1,Data2,Protocol),
+        run1(T,Data2,Data,ProtocolList1),
+	ProtocolList = [Protocol|ProtocolList1].
+
+%execute
+%%load
+    execute({load,  goal,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:goal(FileName,Data1,Data,Protocol).
+    execute({load,  type,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:type(FileName,Data1,Data,Protocol).
+    execute({load,  rule,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:rule(FileName,Data1,Data,Protocol).
+    execute({load,  pom,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:pom(FileName,Data1,Data,Protocol).
+
+%%compile 
+    execute({compile,  goal,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:goal(FileName,Data1,Data,Protocol).
+    execute({compile,  type,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:type(FileName,Data1,Data,Protocol).
+    execute({compile,  rule,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:rule(FileName,Data1,Data,Protocol).
+    execute({compile,  pom, [FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:pom( FileName,Data1,Data,Protocol).
+
+%%set
+    execute({set,   gp,[Pos]},Data1,Data,Protocol):-true|
+        rbrcui_set:goal1(Pos,Data1,Data,Protocol).
+    execute({set,   goal,[Goal]},Data1,Data,Protocol):-true|
+        rbrcui_set:goal(Goal,Data1,Data,Protocol).
+    execute({set,   useView,[View]},Data1,Data,Protocol):-true|
+        rbrcui_set:useView(View,Data1,Data,Protocol).
+    execute({set,   useSpPriority,SPList},Data1,Data,Protocol):-true|
+        rbrcui_set:useSpPriority(SPList,Data1,Data,Protocol).
+    execute({set,   useUnit,UnitList1},Data1,Data,Protocol):-true|
+        (   UnitList1 = [all]->
+                UnitList = all
+        ;
+        otherwise;
+            true->
+                UnitList = UnitList1
+        ),
+        rbrcui_set:useUnit(UnitList,Data1,Data,Protocol).
+    execute({set,   pl,[PL]},Data1,Data,Protocol):-true|
+        rbrcui_set:pl(PL,Data1,Data,Protocol).
+    execute({set,   pt,[PT]},Data1,Data,Protocol):-true|
+        rbrcui_set:pt(PT,Data1,Data,Protocol).
+    execute({set,   cl,[CL]},Data1,Data,Protocol):-true|
+        rbrcui_set:cl(CL,Data1,Data,Protocol).
+    execute({set,   similarity,[Sim]},Data1,Data,Protocol):-true|
+        rbrcui_set:similarity(Sim,Data1,Data,Protocol).
+    execute({set,   weight,[W]},Data1,Data,Protocol):-true|
+        rbrcui_set:weight(W,Data1,Data,Protocol).
+    execute({set,   psiTermSimTB,[PsiTermSimTB]},Data1,Data,Protocol):-true|
+        rbrcui_set:psiTermSimTB(PsiTermSimTB,Data1,Data,Protocol).
+    execute({set,   psiTermAttWeight,[PsiTermAttWeight]},Data1,Data,Protocol):-true|
+        rbrcui_set:psiTermAttWeight(PsiTermAttWeight,Data1,Data,Protocol).
+
+
+    execute({set,   tf,[TF]},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_tf(TF,Data1,Data,Protocol).
+    execute({set,   sr,SR},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_sr(SR,Data1,Data,Protocol).
+    execute({set,   sg,SG},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_sg(SG,Data1,Data,Protocol).
+%%solve
+    execute({solve,nil,[]},Data1,Data,Protocol):-true|
+        rbrcui_solve:solve(Data1,Data,Protocol).
+    execute({solve,nil,[Goal]},Data1,Data,Protocol):-true|
+       rbrcui_solve:solve(Goal,Data1,Data,Protocol).
+
+

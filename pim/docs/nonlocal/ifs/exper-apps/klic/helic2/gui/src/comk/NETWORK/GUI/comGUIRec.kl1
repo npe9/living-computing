@@ -1,0 +1,917 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module comkRece.
+:- public cmdReceReasonL/3,cmdReceArgL/3,cmdReceArg/3,cmdReceCountL/3,
+          cmdReceClaimL/3,cmdShowArg/3,commandSend/4,commandSend2/4.
+:- with_macro pimos.
+
+
+% command Send 
+
+commandSend('errorInfo',Agent,ErrorInfoList,SendString):- true | 
+        io:outstream([print("Start ErrorInfo"),nl]),
+        cmdReceError(ErrorInfoList,Agent,SendString).
+commandSend('reasonList',Agent,Argument,SendString):- true | 
+        io:outstream([print("Start ReaSonList"),nl]),
+        cmdReceReasonL(Argument,Agent,SendString).
+commandSend('argumentList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start ArgumentList"),nl]),
+        cmdReceArgL(Argument,Agent,SendString).
+commandSend('justificationList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start Justification"),nl]),
+        cmdReceJustL(Argument,Agent,SendString).
+commandSend('argument',Agent,Argument,SendString):- true |
+        io:outstream([print("Start Argument"),nl]),
+%        io:outstream([print(Argument),nl]),
+        cmdReceArg(Argument,Agent,SendString).
+commandSend('counterList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start CounterList"),nl]),
+%	builtin:print(Agent),
+%	builtin:print(Argument),
+        cmdReceCountL(Argument,Agent,SendString).
+commandSend('claimList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start ClaimList"),nl]),
+        cmdReceClaimL(Argument,Agent,SendString).
+commandSend('loadFlag',Agent,Argument,SendString):- true |
+        io:outstream([print("Start LoadFlag"),nl]),
+        cmdLoadSend(Agent,Argument,SendString).
+%commandSend('argument
+%commandSend('ok',Agent,Parameter,Argument,SendString):- true |
+commandSend('ok',Agent,Argument,SendString):- true |
+        io:outstream([print("Start OK"),nl]),
+        cmdReceOk(Agent,Argument,SendString).
+commandSend('standpointList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start StandPoint"),nl]),
+%       io:outstream([print(Argument),nl]),
+        cmdReceStand(Agent,Argument,SendString).
+commandSend('viewCandidateList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start ViewCandidateLIst"),nl]),
+        cmdReceViewL(Agent,Argument,SendString).
+commandSend('viewCandidate',Agent,Argument,SendString):- true |
+        io:outstream([print("Start ViewCandidate"),nl]),
+        cmdReceView(Agent,Argument,SendString).
+commandSend('goalCandidateList',Agent,Argument,SendString):- true |
+        io:outstream([print("Start GoalCandidate"),nl]),
+        cmdReceGoalCaL(Agent,Argument,SendString).
+commandSend('currentUnit',Agent,Argument,SendString):- true |
+%        io:outstream([print(Argument),nl]),
+%        io:outstream([print(Agent),nl]),
+        io:outstream([print("Start CurrentUtil"),nl]),
+        cmdReceCurrU(Agent,Argument,SendString).
+commandSend('currentView',Agent,Argument,SendString):- true |
+        io:outstream([print("Start CurrentView"),nl]),
+        cmdReceCurrV(Agent,Argument,SendString).
+commandSend('quit',_Agent,_Argument,SendString):- true |
+        io:outstream([print("Start Quit"),nl]),
+        SendString="".
+%       cmdReceCurrV(Agent,Argument,SendString).
+commandSend('completeDebate',Agent,Argument,SendString):- true |
+        cmdReceComDebate(Agent,Argument,SendString).
+commandSend('showargument',Agent,Argument,SendString):- true |
+        commandSend2('argument',Agent,Argument,SendString).
+commandSend('explanation',Agent,Argument,SendString):- true |
+	builtin:print(Argument),
+	cmdReceExp('explanation',Agent,Argument,SendString).
+
+commandSend2('argument',Agent,Argument,SendString):- true |
+        io:outstream([print("Start Show Argument"),nl]),        
+        cmdShowArg(Argument,Agent,SendString).
+
+% completeDebate
+
+cmdReceComDebate(_Agent,_Argument,SendString):- true |
+	new_string(ST0,2,8),
+	set_string_element(ST0,0,16#"1",ST1),
+	set_string_element(ST1,1,10#"114",SendString).
+
+% error info
+
+cmdReceError(ErrorInfoList,Agent,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"30",ST1),
+	(   Agent = 'nil' ->
+		convert:charchange(-1,AString),
+		convert:charchange(10#"2",ErSt),        % caution
+		receError(ErrorInfoList,ErrString),
+	        append_string:append_string([ST1,AString,ErSt,ErrString],
+					SendString)
+	;
+	otherwise;
+	    true ->
+	        convert:charpchange(Agent,AString),
+		convert:charchange(10#"2",ErSt),	   % caution
+	        receError(ErrorInfoList,ErrString),
+	        append_string:append_string([ST1,AString,ErSt,
+					ErrString],SendString)).
+
+receError([{Where,Message,'nil'}],ErrString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,c#":",ST1),
+        hLibrary:tTos(Where,WhereString),
+        hLibrary:tTos(Message,MessageString),
+        append_string:append_string([WhereString,ST1,MessageString,ST1,ST1],
+        NStr),
+        convert:stringchange(NStr,ErrString).
+otherwise.
+receError([{Where,Message,Detail}],ErrString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,c#":",ST1),
+        hLibrary:tTos(Where,WhereString),
+        hLibrary:tTos(Message,MessageString),
+        hLibrary:tTos(Detail,DetailString),
+       	append_string:append_string([WhereString,ST1,MessageString,
+                	ST1,ST1,DetailString],NStr),
+        convert:stringchange(NStr,ErrString).
+        
+
+% receive ok
+
+cmdReceOk(_Agent,_Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"20",SendString).  
+
+% receive standpoint list
+
+cmdReceStand(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"61",ST2),
+        convert:charpchange(Agent,AString),
+%        io:outstream([print(AString),nl]),
+        listJL2(Argument,[],ListString),
+        append_string:append_string([ST2,AString,ListString],SendString).
+
+
+% receive viewCandidate list
+
+cmdReceViewL(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"71",ST2),
+        convert:charpchange(Agent,AString),
+        listJL2(Argument,[],ListString),
+        append_string:append_string([ST2,AString,ListString],SendString).
+        
+% receive viewCandidate
+
+cmdReceView(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"111",ST2),
+        convert:charpchange(Agent,AString),
+        listJL2(Argument,[],ListString),
+        append_string:append_string([ST2,AString,ListString],SendString).
+                
+% receive goalCandidate list
+
+cmdReceGoalCaL(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"91",ST2),
+        convert:charpchange(Agent,AString),
+        goalCa(Argument,GoalString),
+        append_string:append_string([ST2,AString,GoalString],SendString).
+
+goalCa([{'nil',GoList}],GoalString):- true |                            
+        convert:shortchange(-1,St),
+        goalCa2(GoList,St,GoalString).
+otherwise.
+goalCa([{Num,GoList}],GoalString):- true |
+        convert:shortchange(Num,St),
+        goalCa2(GoList,St,GoalString).
+
+goalCa2(List,St,GoalString):- true |
+%       io:outstream([print(List),nl]),
+        goalCa3(List,[],GLString),
+        append_string:append_string([St,GLString],GoalString).
+
+goalCa3([L1|Ls],List,GLString):- true |
+        convert:stringchange(L1,L1St),
+        append(List,[L1St],NList),
+        goalCa3(Ls,NList,GLString).
+goalCa3([],List,GLString):- true |
+        convert:listchange(List,GLString).
+        
+% receive current unit 
+
+cmdReceCurrU(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"81",ST2),
+%        io:outstream([print(Agent),nl]),
+        convert:charpchange(Agent,AString),
+%        io:outstream([print(Argument),nl]),
+        listJL2(Argument,[],ListString),
+        append_string:append_string([ST2,AString,ListString],SendString).
+
+% receive currentView
+
+cmdReceCurrV(Agent,Argument,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"101",ST2),
+%        io:outstream([print(Agent),nl]),
+        convert:charpchange(Agent,AString),
+        listJL2(Argument,[],ListString),
+        append_string:append_string([ST2,AString,ListString],SendString).
+
+% receive reason list
+
+cmdReceReasonL(Argument,Agent,String):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"181",ST2),
+        convert:charpchange(Agent,AString),
+        listReaChange(Argument,0,[],ArguString),
+        append_string:append_string([ST2,AString,ArguString],String).
+
+
+listReaChange([L1|Ls],N,List,String):- true |
+        N1 := N +1,
+        listReCh(L1,0,_,NS1),
+        append(List,[NS1],NList),
+        listReaChange(Ls,N1,NList,String).
+listReaChange([],N,List,String):- N >= 0 |
+        convert:listchange(List,String).
+%listReaChange([],N,List,String):- N = 0 |
+%	convert:shortchange(-1,ShortSt),
+%	convert:listchange([ShortSt],String),
+%	builtin:print(String).
+%%%%%  horyuu   
+
+
+listReCh([L1|Ls],0,_,String):- true |
+        hLibrary:tTos(L1,L1St0),
+%       kakkocut(L1St0,L1St),
+%       PP = " ",
+        listReCh(Ls,1,L1St0,String).
+listReCh([L1|Ls],N,PreSt,String):- N > 0 |
+        new_string(ST0,1,8),
+%       PP = 16#"20",
+        set_string_element(ST0,0,16#"20",PP),
+        hLibrary:tTos(L1,L1St0),
+%       kakkocut(L1St0,L1St),
+        append_string:append_string([PreSt,PP,L1St0],NSt),
+        listReCh(Ls,N,NSt,String).
+listReCh([],_N,PreSt,String):- true |
+%        io:outstream([print(PreSt),nl]),
+        convert:stringchange(PreSt,String).
+
+
+% receive justification list 
+
+cmdReceJustL(Argument,Agent,SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"211",ST2),
+        convert:charpchange(Agent,AString),
+        listJustL(Argument,[],[],String1,String2),
+        append_string:append_string([ST2,AString,String1,String2],SendString).
+
+listJustL([L1|Ls],List1,List2,Str1,Str2):- true |
+        L1 ={L11,L1List},
+        listJL1(L11,Str11),
+        listJL2(L1List,[],Str21),
+        append(List1,[Str11],NList1),
+        append(List2,[Str21],NList2),
+        listJustL(Ls,NList1,NList2,Str1,Str2).
+listJustL([],List1,List2,Str1,Str2):- true |
+        convert:listchange(List1,Str1),
+        (wait(Str1) ->
+        convert:listchange(List2,Str2)).
+
+listJL1(Atom,NString):- true |
+        hLibrary:tTos(Atom,String),
+%       kakkocut(String,String2),
+        convert:stringchange(String,NString).
+
+listJL2([L1|Ls],List,ListString):- true |
+%       io:outstream([print(L1),nl]),
+        hLibrary:tTos(L1,LS),
+%        io:outstream([print(LS),nl]),
+%       kakkocut(LS,NLS),
+        convert:stringchange(LS,L1String),
+        append(List,[L1String],NList),
+        listJL2(Ls,NList,ListString).
+listJL2([],List,ListString):- true |
+        convert:listchange(List,ListString).
+        
+
+% receive argument list
+
+cmdReceArgL([ArgL1,ArgL2],Agent,String):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"220",ST2),
+        convert:charpchange(Agent,AString),
+        listReArgL(ArgL1,[],ArguString1),
+%       convert:stringchange(ArgL2,ArguString2),
+        stringLReList(ArgL2,ArguString2),
+%        io:outstream([print(ArguString2),nl]),
+        append_string:append_string([ST2,AString,ArguString1,
+                ArguString2],String).
+%        io:outstream([print(String),nl]).
+
+listReArgL([L1|Ls],List,String):- true |
+        set_vector_element(L1,0,Ell,Ell,_NL0),
+        (Ell = 0 ->
+	        new_string(ST0,2,8),
+		set_string_element(ST0,0,16#"20",ST1),
+		set_string_element(ST1,1,16#"20",ST2),
+        	set_vector_element(L1,1,Ele,Ele,NL1),
+	        set_vector_element(NL1,2,Cons,Cons,_NNL1),
+        	listReArgL2(Ele,Cons,NString),
+	        append_string:append_string([ST2,NString],NNStt),
+        	convert:stringchange(NNStt,NNSt),
+	        append(List,[NNSt],NList),
+        	listReArgL(Ls,NList,String);
+        Ell = 1 ->
+	        new_string(ST0,2,8),
+        	set_string_element(ST0,0,c#"*",SST1),
+		set_string_element(SST1,1,16#"20",ST1),
+        	set_vector_element(L1,1,Ele,Ele,NL1),
+	        set_vector_element(NL1,2,Cons,Cons,_NNL1),
+        	listReArgL2(Ele,Cons,NString),
+	        append_string:append_string([ST1,NString],NNStt),
+        	convert:stringchange(NNStt,NNSt),
+	        append(List,[NNSt],NList),
+        	listReArgL(Ls,NList,String)).
+listReArgL([],List,String):- true |
+%        io:outstream([print(List),nl]),
+        convert:listchange(List,String).
+%        io:outstream([print(String),nl]).
+
+
+listReArgL2(Ele,Cons,String):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"20",ST1),
+        string_make(Ele,EleString),
+        append_string:append_string([EleString,ST1,Cons],String).
+%       convert:stringchange(NS,String),
+%        io:outstream([print(String),nl]).
+
+string_make({A,B,C},String):- true |
+        NA := A+48,
+        NB := B+48,
+        NC := C+48,
+        new_string(ST0,8,8),
+        set_string_element(ST0,0,c#">",ST1),
+        set_string_element(ST1,1,NA,ST2),
+        set_string_element(ST2,2,c#":",ST3),
+        set_string_element(ST3,3,c#"!",ST4),
+        set_string_element(ST4,4,NB,ST5),
+        set_string_element(ST5,5,c#":",ST6),
+        set_string_element(ST6,6,c#"<",ST7),
+        set_string_element(ST7,7,NC,String).
+
+%       new_string(ST0,8,8),
+%       set_string_element(ST0,0,c#"<",ST1),
+%       set_string_element(ST1,1,C,ST2),
+%       set_string_element(ST2,2,c#":",ST3),
+%       set_string_element(ST3,3,c#"=",ST4),
+%       set_string_element(ST4,4,B,ST5),
+%       set_string_element(ST5,5,c#":",ST6),
+%       set_string_element(ST6,6,c#">",ST7),
+%       set_string_element(ST7,7,A,String).
+
+
+
+% receive argument
+
+cmdReceArg(Argument,Agent,String):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"231",ST2),
+        convert:charpchange(Agent,AString),
+        listReAr(Argument,1,_,ArgString),
+%        io:outstream([print(ArgString),nl]),
+        append_string:append_string([ST2,AString,ArgString],String).
+
+listReAr([L1|Ls],N,_S,ArgString):- N = 1 |
+        listReAr1(L1,ArgSt1),
+        N1 := N +1,
+        listReAr(Ls,N1,ArgSt1,ArgString).
+listReAr([L1|Ls],N,St,ArgString):- N = 2 |
+        listReAr2(L1,ArgSt2),
+        N1 := N +1,
+        append_string:append_string([St,ArgSt2],NArgSt),
+        listReAr(Ls,N1,NArgSt,ArgString).
+listReAr([L1|Ls],N,St,ArgString):- N = 3 |
+        new_string(ST0,3,8),
+        set_string_element(ST0,0,16#"3",ST1),
+        listReAr3(L1,ST1,ArgSt3),
+        N1 := N +1,
+        append_string:append_string([St,ArgSt3],NArgSt),
+        listReAr(Ls,N1,NArgSt,ArgString).
+listReAr([L1|Ls],N,St,ArgString):- N = 4 |
+        listReAr4(L1,1,[],ArgSt4),
+        N1 := N +1,
+        append_string:append_string([St,ArgSt4],NArgSt),
+        listReAr(Ls,N1,NArgSt,ArgString).
+listReAr([L1|Ls],N,St,ArgString):- N = 5 |
+        listReAr5(L1,ArgSt5),
+        N1 := N +1,
+        append_string:append_string([St,ArgSt5],NArgSt),
+        listReAr(Ls,N1,NArgSt,ArgString).
+listReAr([L1|Ls],N,St,ArgString):- N = 6 |
+        listReAr6(L1,ArgSt6),
+        N1 := N +1,
+        append_string:append_string([St,ArgSt6],NArgSt),
+        listReAr(Ls,N1,NArgSt,ArgString).
+listReAr([],_N,St,ArgString):- true |
+        ArgString = St.
+
+%% AidInfo {Aid,Paid,Faid} -> "Aid Paid Faid"
+listReAr1({A,B,C},String):- true |
+        listReAr1Sub(A,AString),
+        listReAr1Sub(B,BString),
+        listReAr1Sub(C,CString),
+        (wait(AString),wait(BString),wait(CString) ->
+        convert:listchange([AString,BString,CString],String)).
+
+listReAr1Sub('nil',String):- true |
+        convert:stringchange("",String).
+otherwise.
+listReAr1Sub(A,String):- true |
+        hLibrary:tTos(A,ASt0),
+%       kakkocut(ASt0,NA),
+        convert:stringchange(ASt0,String).
+
+
+%% Issue
+listReAr2('nil',String):- true |
+        convert:stringchange("",String).
+otherwise.
+listReAr2(St,String):- true |
+        convert:stringchange(St,String).
+%        io:outstream([print(String),nl]).
+
+%% ButtonState
+listReAr3([L1|Ls],St,String):- true |
+        listReAr3Sub(L1,St,NSt),
+%	builtin:print(L1),
+        listReAr3(Ls,NSt,String).
+listReAr3([],St,String):- true |
+        String = St.
+
+listReAr3Sub('pose',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,1,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('notice',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,2,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('cancel',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,4,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('finish',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,8,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('justify',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,16,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('end',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,32,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('backward',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,64,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('forward',St,NSt):- true |
+        string_element(St,2,Ele,SSt),
+        or(Ele,128,NEle),
+        set_string_element(SSt,2,NEle,NSt).
+listReAr3Sub('next',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,1,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+listReAr3Sub('previous',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,2,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+listReAr3Sub('focus',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,4,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+listReAr3Sub('jump',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,8,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+listReAr3Sub('claimList',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,16,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+listReAr3Sub('explain',St,NSt):- true |
+        string_element(St,1,Ele,SSt),
+        or(Ele,32,NEle),
+        set_string_element(SSt,1,NEle,NSt).
+
+
+%%Argument
+listReAr4({'nil','nil',[]},_N,_List,String):- true |
+	convert:listchange([],String).
+otherwise.
+listReAr4(Vector,N,List,String) :- N=1 |
+        set_vector_element(Vector,0,L1,L1,NVector),
+	(  L1 = 'nil' ->
+	        convert:stringchange("",TSt1),
+%		convert:listchange([TSt1],String);
+	        append(List,[TSt1],NList),
+        	N1 := N+1,
+	        listReAr4(NVector,N1,NList,String);
+	   otherwise ;
+		true ->
+        hLibrary:tTos(L1,TSt0),
+%	builtin:print(TSt0),
+%       kakkocut(TSt0,TSt),
+        convert:stringchange(TSt0,TSt1),
+        append(List,[TSt1],NList),
+        N1 := N+1,
+        listReAr4(NVector,N1,NList,String)).
+listReAr4(Vector,N,List,String) :- N=2 |
+        set_vector_element(Vector,1,L1,L1,NVector),
+        set_vector_element(NVector,2,Ls,Ls,_NNVec),
+        listReAr4Sub(L1,List,NList),
+        N1 := N+1,
+        listReAr4(Ls,N1,NList,String).
+listReAr4([L1|Ls],N,List,String):- N > 2 |
+        convert:stringchange(L1,L1St),
+        append(List,[L1St],NList),
+        N1 := N+1,
+%	builtin:print(N1),
+%	builtin:print(L1St),
+        listReAr4(Ls,N1,NList,String).
+listReAr4([],_N,List,String):- true |
+%	builtin:print(String),
+        convert:listchange(List,String).
+
+listReAr4Sub(1,List,NList):- true |
+        convert:stringchange("strong",St),
+        append(List,[St],NList).
+listReAr4Sub(0,List,NList):- true |
+        convert:stringchange("non-relation",St),
+        append(List,[St],NList).
+listReAr4Sub(-1,List,NList):- true |
+        convert:stringchange("weak",St),
+        append(List,[St],NList).
+otherwise.
+%listReAr4Sub('nil',List,NList):- true |
+listReAr4Sub(_,List,NList):- true |
+        convert:stringchange("",St),
+        append(List,[St],NList).
+
+%%Status
+listReAr5('nil',String):- true |
+%	convert:stringkchange("",ST1),
+        convert:listchange([],String).
+otherwise.
+listReAr5(St,String):- true |
+%	builtin:print(St),
+        convert:stringkchange(St,NSt),
+        convert:listchange([NSt],String).
+
+
+%%History
+listReAr6('nil',String):- true |
+        convert:stringchange("",String).
+otherwise.
+listReAr6(Term,String):- true |
+        hLibrary:tTos(Term,TermString),
+%	builtin:print("Last Term"),
+%	builtin:print(TermString),
+%       io:outstream([print(TermString0),nl]),
+%       kakkocut(TermString0,TermString),
+        convert:stringkchange(TermString,String).
+
+
+%% receive counterList
+
+
+cmdReceCountL([ArgL1,ArgL2],Agent,String):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"241",NST),
+        convert:charpchange(Agent,AString),
+        listReArgCoL(ArgL1,[],ArguString1),
+%       convert:stringchange(ArgL2,ArguString2),
+        stringLReList(ArgL2,ArguString2),
+        append_string:append_string([NST,AString,ArguString1,ArguString2],
+                String).
+        
+% CounterList 
+
+listReArgCoL([L1|Ls],List,String):- true |
+%	builtin:print(L1),
+        set_vector_element(L1,0,Ell,Ell,_NL0),
+        (Ell = 0 ->
+	        new_string(ST0,2,8),
+		set_string_element(ST0,0,16#"20",ST1),
+		set_string_element(ST1,1,16#"20",ST2),
+%	new_string(NST0,1,8),
+%	set_string_element(NST0,0,16#"20",NST1),
+		set_vector_element(L1,1,RuleName,RuleName,LN11),
+%	builtin:print(RuleName),
+	        set_vector_element(LN11,2,Ele,Ele,NL1),
+        	set_vector_element(NL1,3,Cons,Cons,_NNL1),
+		listReArgCoL0(RuleName,RuleNameString),
+        	listReArgCoL2(Ele,Cons,NString),
+	        append_string:append_string([ST2,RuleNameString,NString],
+					NNStt),
+	        convert:stringchange(NNStt,NNSt),
+        	append(List,[NNSt],NList),
+	        listReArgCoL(Ls,NList,String);
+        Ell = 1 ->
+	        new_string(ST0,2,8),
+        	set_string_element(ST0,0,c#"*",SST1),
+		set_string_element(SST1,1,16#"20",ST1),
+%	new_string(NST0,1,8),
+%	set_string_element(NST0,0,16#"20",NST1),
+		set_vector_element(L1,1,RuleName,RuleName,LN1),
+        	set_vector_element(LN1,2,Ele,Ele,NL1),
+	        set_vector_element(NL1,3,Cons,Cons,_NNL1),
+		listReArgCoL0(RuleName,RuleNameString),
+	        listReArgCoL2(Ele,Cons,NString),
+        	append_string:append_string([ST1,RuleNameString,NString],
+					NNStt),
+	        convert:stringchange(NNStt,NNSt),
+	        append(List,[NNSt],NList),
+        	listReArgCoL(Ls,NList,String)).
+listReArgCoL([],List,String):- true |
+%        io:outstream([print(List),nl]),
+        convert:listchange(List,String).
+%        io:outstream([print(String),nl]).
+
+
+listReArgCoL0(1,RuleNameString):- true |
+	new_string(ST0,2,8),
+	set_string_element(ST0,0,c#">",ST1),
+	set_string_element(ST1,1,16#"20",RuleNameString).
+listReArgCoL0(0,RuleNameString):- true |
+	new_string(ST0,2,8),
+	set_string_element(ST0,0,c#"!",ST1),
+	set_string_element(ST1,1,16#"20",RuleNameString).
+listReArgCoL0(-1,RuleNameString):- true |
+	new_string(ST0,2,8),
+	set_string_element(ST0,0,c#"<",ST1),
+	set_string_element(ST1,1,16#"20",RuleNameString).
+otherwise.
+%listReArgCoL0('nil',RuleNameString):- true |
+listReArgCoL0(_,RuleNameString):- true |
+	new_string(ST0,2,8),
+	set_string_element(ST0,0,c#"n",ST1),
+	set_string_element(ST1,1,16#"20",RuleNameString).
+
+	
+
+listReArgCoL2(Ele,Cons,String):- true |
+%	builtin:print(Ele),
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"20",ST1),
+        string_make(Ele,EleString),
+        append_string:append_string([EleString,ST1,Cons],String).
+%       convert:stringchange(NS,String),
+%        io:outstream([print(String),nl]).
+
+
+
+%%  receive claimList
+
+%cmdReceClaimL([ArgL1,ArgL2,ArgL3],Agent,String):- true |
+cmdReceClaimL([ArgL1,ArgL2,ArgL3],Agent,String):- true |
+%	arglistTake(ClaimList,ArgList),
+%	addinfoTake(ClaimList,AddList),
+        new_string(ST0,2,8),
+        set_string_element(ST0,0,16#"1",ST2),
+        set_string_element(ST2,1,10#"65",NST),
+	convert:charpchange(Agent,AString),
+%        io:outstream([print(AString),nl]),
+	receClaimArg([ArgL1,ArgL2],ArguString1),
+%	receClaimAdd(AddList,ArguString2),
+	convert:listchange(ArgL3,ArguString2),
+        append_string:append_string([NST,AString,ArguString1,ArguString2],
+                String).
+
+arglistTake([CL1,CL2],ArgList):- true |
+	vector_element(CL1,0,ArgL1,_NCL10),
+	vector_element(CL2,0,ArgL2,_NCL20),
+	ArgList=[ArgL1,ArgL2].
+
+addinfoTake([CL1,CL2],AddList):- true |
+	vector_element(CL1,1,AddL1,_NCL10),
+	vector_element(CL2,1,AddL2,_NCL20),
+	AddList = [AddL1,AddL2].
+
+
+% ClaimList ArgumentList
+
+receClaimArg([ArgL1,ArgL2],ArguString):- true |
+	new_string(ST0,1,8),
+	set_string_element(ST0,0,16#"20",ST01),
+	convert:stringchange(ST01,ST1),
+%	new_string(NST0,1,8),
+%	convert:stringchange(NST0,NST1),
+        listReArgCL(ArgL1,[],ArguStringL1),
+        listReArgCL(ArgL2,[],ArguStringL2),
+	append(ArguStringL1,[ST1],NArguStringL1),
+	append(NArguStringL1,ArguStringL2,NArguStL),
+%	append(NArguStringL2,[NST1],NArguStL),
+	convert:listchange(NArguStL,ArguString).
+%	(wait(ArguString) ->
+%	builtin:print(ArguString)).
+
+%       convert:stringchange(ArgL2,ArguString2),
+%        io:outstream([print(ArguString1),nl]),
+%        stringLReList(ArgL2,ArguString2),
+        
+listReArgCL([L1|Ls],List,String):- true |
+        set_vector_element(L1,0,Ell,Ell,_NL0),
+        (Ell = 0 ->
+	        new_string(ST0,2,8),
+		set_string_element(ST0,0,16#"20",ST1),
+		set_string_element(ST1,1,16#"20",ST2),
+        	set_vector_element(L1,1,Ele,Ele,NL1),
+	        set_vector_element(NL1,2,Cons,Cons,_NNL1),
+	        listReArgL2(Ele,Cons,NString),
+        	append_string:append_string([ST2,NString],NNStt),
+	        convert:stringchange(NNStt,NNSt),
+        	append(List,[NNSt],NList),
+	        listReArgCL(Ls,NList,String);
+        Ell = 1 ->
+	        new_string(ST0,2,8),
+        	set_string_element(ST0,0,c#"*",SST1),
+		set_string_element(SST1,1,16#"20",ST1),
+        	set_vector_element(L1,1,Ele,Ele,NL1),
+	        set_vector_element(NL1,2,Cons,Cons,_NNL1),
+        	listReArgL2(Ele,Cons,NString),
+	        append_string:append_string([ST1,NString],NNStt),
+        	convert:stringchange(NNStt,NNSt),
+	        append(List,[NNSt],NList),
+        	listReArgCL(Ls,NList,String)).
+listReArgCL([],List,String):- true |
+	String = List.
+%        io:outstream([print(List),nl]),
+%	append_string:append_string(List,String).
+%        convert:listchange(List,String),
+%        io:outstream([print(String),nl]).
+
+
+%  ClaimList AddInfo
+
+receClaimAdd([AddL1,AddL2],ArguString):- true |
+	new_string(ST0,1,8),
+	set_string_element(ST0,0,16#"20",ST01),
+	convert:stringchange(ST01,ST1),
+	new_string(NST0,1,8),
+	convert:stringchange(NST0,NST1),
+        stringCLReList(AddL1,AddL1StL),
+	stringCLReList(AddL2,AddL2StL),
+	append(AddL1StL,[ST1],NAddL1StL),
+	append(NAddL1StL,AddL2StL,NAddL2StL),
+	append(NAddL2StL,[NST1],AddL),
+	convert:listchange(AddL,ArguString).
+%	append_string:append_string([AddL1St,ST1,AddL2St,NST1],ArguString).
+	
+	
+stringCLReList([L1|Ls],String):- true |
+        stCLReList2([L1|Ls],[],String).
+
+stCLReList2([L1|Ls],List,String):- true |
+        convert:stringchange(L1,L1St),
+        append(List,[L1St],NList),
+        stCLReList2(Ls,NList,String).
+stCLReList2([],List,String):- true |
+	String = List.
+%	append_string:append_string(List,String).
+%        convert:listchange(List,String).
+
+
+%%  receive explanation
+
+cmdReceExp('explanation',Agent,[Argument],String):- true |
+       new_string(ST0,2,8),
+       set_string_element(ST0,0,16#"1",ST2),
+       set_string_element(ST2,1,10#"75",ST3),
+       convert:charpchange(Agent,AString),
+       convert:stringchange(Argument,ArString),
+       append_string:append_string([ST3,AString,ArString],String).
+       
+
+
+%%%  mityakushu
+
+%cmdReceExp('errorInfo',Argument,Agent,String):- true |
+%       new_string(ST0,3,8),
+%       set_string_element(ST0,0,16#"4",ST1),
+%       set_string_element(ST1,1,16#"1",ST2),
+%       set_string_element(ST2,2,10#"85",ST3),
+%       charpchange(Agent,AString),
+        
+                
+%% receive show argument
+
+cmdShowArg(Argument,Agent,String):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"232",ST2),
+        convert:charpchange(Agent,AString),
+        listReShow(Argument,1,[],ArguString),
+        append_string:append_string([ST2,AString,ArguString],String).
+
+
+%%
+
+listReShow([L1|Ls],N,_,String):- N=1 |
+        listReAr1(L1,ArgSt1),
+        N1 := N+1,
+        listReShow(Ls,N1,ArgSt1,String).
+listReShow([L1|Ls],N,St,String):- N=2 |
+        listReAr2(L1,ArgSt2),
+        N1 := N+1,
+        append_string:append_string([St,ArgSt2],NArgSt),
+        listReShow(Ls,N1,NArgSt,String).
+listReShow([L1|Ls],N,St,String):- N=3 |
+	new_string(ST0,3,8),
+	set_string_element(ST0,0,16#"3",ST1),
+	listReAr3(L1,ST1,ArgSt3),
+        N1 := N+1,
+        append_string:append_string([St,ArgSt3],NArgSt),
+        listReShow(Ls,N1,NArgSt,String).
+listReShow([L1|Ls],N,St,String):- N=4 |
+        listReAr4(L1,1,[],ArgSt4),
+        N1 := N+1,
+        append_string:append_string([St,ArgSt4],NArgSt),
+        listReShow(Ls,N1,NArgSt,String).
+listReShow([L1|Ls],N,St,String):- N=5 |
+        listReAr5(L1,ArgSt5),
+        N1 := N+1,
+        append_string:append_string([St,ArgSt5],NArgSt),
+        listReShow(Ls,N1,NArgSt,String).
+listReShow([L1|Ls],N,St,String):- N=6 |
+        listReAr6(L1,ArgSt6),
+        N1 := N+1,
+        append_string:append_string([St,ArgSt6],NArgSt),
+        listReShow(Ls,N1,NArgSt,String).
+listReShow([],_N,St,String):- true |
+        String = St.
+
+
+%%  load type;command;rule;view;query
+
+
+cmdLoadSend(Agent,[{A,B,C,D}],SendString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,1,10#"45",ST1),
+        convert:charpchange(Agent,AString),
+        new_string(NST0,2,8),
+        set_string_element(NST0,0,16#"1",NST1),
+        flagstringmake({A,B,C,D},_N,NST1,NST2),
+        append_string:append_string([ST1,AString,NST2],SendString).
+
+
+flagstringmake(Vector,_N,String,NewString):- true |
+        flagToNumber(Vector,Number),
+        set_string_element(String,1,Number,NewString).
+
+flagToNumber({A,B,C,D},Number):- true |
+        Number := A+ B*2 + C*4 + D*8.
+        
+
+
+        
+append([],L2,List):- true |
+        List = L2.
+append([H|T],L,AL):- true |
+        AL = [H|NAL],
+        append(T,L,NAL).
+
+
+
+kakkocut(LS,NLS):- true |
+        string(LS,Size,BitSize,_NewLS),
+        NSize := Size - 2,
+        new_string(LS2,NSize,BitSize),
+        kakkocut2(LS,NSize,0,0,LS2,NLS).
+
+kakkocut2(LS,NSize,N,M,String,NLS):- N=0 |
+        N1:= N+1,
+        kakkocut2(LS,NSize,N1,M,String,NLS).
+otherwise.
+kakkocut2(LS,NSize,N,M,String,NLS):- M < NSize|
+        string_element(LS,N,NEle,LSS),
+%       N2:= N - 1,
+        N1:= N + 1,
+        M1 := M+1,
+        set_string_element(String,M,NEle,NString),
+        kakkocut2(LSS,NSize,N1,M1,NString,NLS).
+kakkocut2(_LS,NSize,_N,M,String,NLS):- M = NSize |
+        NLS = String,
+        io:outstream([print(NLS),nl]).
+
+
+%  ["string1","string2",… ]  wo encode ni henkan
+stringLReList([L1|Ls],String):- true |
+        stLReList2([L1|Ls],[],String).
+
+stLReList2([L1|Ls],List,String):- true |
+        convert:stringchange(L1,L1St),
+        append(List,[L1St],NList),
+        stLReList2(Ls,NList,String).
+stLReList2([],List,String):- true |
+        convert:listchange(List,String).
+

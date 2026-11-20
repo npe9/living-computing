@@ -1,0 +1,101 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_networkHandler.
+
+:- public 
+    create/3.
+            
+:- with_macro pimos.
+
+%create
+    create(NH,I,R):-true|
+        initiate(NH,R),
+        loop(I,nil).
+
+%initiate
+    initiate(NH,R):-true|
+        NH = [],
+        R  = normal(success).
+
+%loop
+    loop([],_):-true|
+        true.
+    loop([Protocol|T],BR1):-true|
+        execute(Protocol,BR1,BR,R),
+        (   wait(R)->
+                loop(T,BR)).
+
+%execute
+    execute(get_commandArguments(Command,Parameter,Arguments,Result),BR1,BR,R):-true|
+        get_commandArguments(BR1,Command,Parameter,Arguments,Result),
+        BR     = BR1,
+        R      = Result.
+%    execute(receive(ok,_,Result),                   BR1,BR,R):-true|
+%        rbrcui_ioUtility:show_string(nil,"ok",Result),
+%        BR     = BR1,
+%        R      = Result.
+%    execute(receive(errorInfo,[ErrorInfo],Result),   BR1,BR,R):-true|
+%        rbrcui_ioUtility:show_error(ErrorInfo,Result),
+%        BR     = BR1,
+%        R      = Result.
+    execute(receive(errorInfo,[ErrorInfo],Result),   {_,Argument},BR,R):-true|
+        rbrcui_ioUtility:show_error(ErrorInfo,Result),
+        BR     = {dummy,Argument},
+        R      = Result.
+    execute(receive(pl,PL,Result),                   {_,Argument},BR,R):-true|
+        rbrcui_ioUtility:show_term("Print Length",PL,Result),
+        BR     = {dummy,Argument},
+        R      = Result.
+    execute(receive(pt,PT,Result),                   {_,Argument},BR,R):-true|
+        rbrcui_ioUtility:show_term("Print Type",PT,Result),
+        BR     = {dummy,Argument},
+        R      = Result.
+    execute(receive(explanation,Exp,Result),                   {_,Argument},BR,R):-true|
+        rbrcui_ioUtility:show_string(nil,Exp,Result),
+        BR     = {dummy,Argument},
+        R      = Result.
+    execute(receive(help,Help,Result),                   {_,Argument},BR,R):-true|
+        rbrcui_ioUtility:show_listY(Help,Result),
+        BR     = {dummy,Argument},
+        R      = Result.
+otherwise.
+    execute(receive(Parameter,Arguments,Result),                     _,BR,R):-true|
+        BR     = {Parameter,Arguments},
+        Result = normal(success),R = normal(success).
+
+%get_commandArguments
+    get_commandArguments({argumentList,[ArgumentList,AddInfo]},
+                Command,Parameter,Arguments,Result):-true|
+        rbrcui_showArgument:argumentList([ArgumentList,AddInfo],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                rbrcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=argument,Arguments=[Num]).
+    get_commandArguments({counterList,[ArgumentList,AddInfo]},
+                Command,Parameter,Arguments,Result):-true|
+        rbrcui_showArgument:counterList([ArgumentList,AddInfo],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                rbrcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=rebuttal,Arguments=[Num]).
+    get_commandArguments({argument,Argument},
+                Command,Parameter,Arguments,Result):-true|
+        rbrcui_showArgument:argument(Argument,R1),
+        (   wait(R1)->
+                Argument = [_,_,UCL|_],
+                slv_parser:get_commandArguments(UCL,Command,Parameter,Arguments,Result)).
+    get_commandArguments({dummy,Argument},
+                Command,Parameter,Arguments,Result):-true|
+        Argument = [_,_,UCL|_],
+        slv_parser:get_commandArguments(UCL,Command,Parameter,Arguments,Result).
+
+%%%%%%
+    count([],W,L):-true|
+        L = W.
+    count([_|T],W,L):-true|
+        W1 := W+1,
+        count(T,W1,L).
+

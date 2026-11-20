@@ -1,0 +1,89 @@
+-----Protein Structure Visualization System-----
+
+
+KEY FEATURES
+
+A three-dimensional graphical visualization system which interprets an
+original description language.
+
+An object-oriented language ``3D-Talk',' whose syntax is similar to
+English, for the description of graphical objects.
+
+A protein structure manipulation language ``Protein-Talk'' visualizes
+and animates three-dimensional protein structures.
+
+
+INTRODUCTION
+
+This system is built up of two parts, three-dimensional visualization
+tool  ``3D-View'' and the protein structure visualization tool
+``Protein-View''. ``Protein-View'' generates statements in ``3D-Talk''
+and ``3D-View'' interprets them and displays the protein structures.
+
+``3D-View'' is designed to provide users an easy visualization
+environment.  ``3D-Talk'' is a graphical object description language
+that can describe almost any kind of three-dimensional objects.  The
+syntax of this language is similar to that of English. This feature is
+quite useful for those inexperienced in computer languages.  The
+visualized objects can be manipulated by mouse operations. Users can
+rotate, move, and magnify the objects.  The control panel provides
+another way to manipulate the objects and the way to change the
+configurations and environment.  Also, these operation can be done by
+the statements in ``3D-Talk''.
+
+``Protein-View'' reads the data in PDB (Protein Data Bank) and
+visualizes the protein structure.  This tool provides a function to
+show the topology of of protein structure by ribbons, and provides a
+function to change the dihedral angle of chemical bonds for the
+animation of molecular dynamics.
+
+This system can be applied for protein structure design or the
+simulation of molecular dynamics and other fields of visualization,
+such as robot design.
+
+
+ENVIROMENT
+This system can execute on SGI IRIS/4D.
+
+
+FILES
+/proview
+atom.c
+atom.h
+bond.c
+bond.h
+main.c
+method.c
+method.h
+pdb.c
+pdb.h
+pdb_io.c
+prtalk.c
+prtalk.h
+matrix/
+	d3vector.c     eigenvalue.c   matrix.c
+	d3vector.h     eigenvalue.h   matrix.h
+
+/3dview
+3dview.c       exit.h         lexical.c      object.c       sphere.c
+accept.c       function.c     light.c        object.h       sphere.h
+accept.h       function.h     light.h        objecttag.h    symbol.c
+boolean.h      gorth.c        location.c     panel.c        symbol.h
+box.c          gorth.h        location.h     panel.h        text.c
+box.h          group.c        lyyerror.c     parse.tab.c    text.h
+color_obj.c    group.h        main.c         parse.tab.h    token.h
+color_obj.h    hash.c         make_name.c    parser.c       trackball.c
+cylinder.c     hash.h         message.c      parser.h       trackball.h
+cylinder.h     header.c       message.h      primitive.c    ui.c
+data.c         header.h       messagetag.h   primitive.h    ui.h
+data.h         initial.c      node.c         reduce.c       vect.c
+event.c        instance.c     node.h         reduce.h       vect.h
+event.h        lexbuffer.h    nvect.c        rotation.h
+
+
+INSTALL
+Read the document "INSTALL".
+
+
+EXECUTION Read the document "DOC" or directory "prtalk" for further
+information.

@@ -1,0 +1,27 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_stdin.
+
+create(I):-true|
+	klicio:klicio(S),
+	S=[stdin(normal(In))],
+	loop(I,In).
+
+loop([],In):-true|
+	In  = [].
+loop([getc(A)|T],In):-true|
+	In = [getc(A)|In1],
+	loop(T,In1).
+loop([getl(A)|T],In):-true|
+	getlUtility:getl(In,In1,A),
+	loop(T,In1).
+loop([gett(A)|T],In):-true|
+	In = [gett(A)|In1],
+	loop(T,In1).
+loop([getwt(A)|T],In):-true|
+	In = [getwt(A)|In1],
+	loop(T,In1).
+

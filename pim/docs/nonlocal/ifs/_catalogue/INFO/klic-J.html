@@ -1,0 +1,80 @@
+﻿<!--
+#
+# Modified by	C.Takahashi		'98/08/20
+#
+-->
+<HTML>
+<HEAD><TITLE>Notices for IFS KL1 Program Execution on KLIC</TITLE></HEAD>
+
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+IFS の KL1 プログラムを KLIC 上で<br>動作させる際の注意
+</H1></CENTER>
+
+<!--
+<CENTER>
+<TABLE BORDER="5" ALIGN=CENTER UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><CENTER><A HREF="klic-E.html">To English Page for "Notices for IFS KL1 Program Execution on KLIC"</A>
+	</TD></TR>
+</TABLE>
+</CENTER>
+-->
+
+<HR width=95% align="center" size=7><P>
+
+IFS (ICOT無償公開ソフトウェア) には UNIX 上で動く KL1 処理系として 
+KLIC が含まれています.  しかし IFS として配布されている KL1 プログラム
+の動作環境はほとんどが PIM および Multi-PSI 上のオペレーティングシステ
+ム PIMOS を想定しています.  KLIC の提供する実行環境は PIMOS のものとは
+若干異なっています.<P>
+
+KLIC は PIMOS に較べて, 機能面, 実行速度や使用できるメモリ量の面で制約
+があります. 従って, プログラムの内容や大きさにも依りますが, KLIC 上で
+動作させるためには多少の手直しを要するかも知れません. あるいはプログラ
+ムの一部分だけを切り出して KLIC 上で動作させるという方法もあります. し
+かし現在配布しているような大規模 KL1 プログラムの場合, KLIC への移植は
+一般には難しいと考えた方が良いでしょう.  IFS の一部は将来 KLIC 版も公
+開する予定です.<P>
+
+現在の PIM や Multi-PSI 上の KL1 システムと KLIC は, 特に以下のような
+点で仕様が異なっていますので, これらの点に留意して移植を進めて下さい.
+<P>
+
+<UL>
+
+<LI>現在の版の KLIC には浮動小数点数がありません (計画はありますが).
+
+<LI>組込述語で用意されていないものがあります.
+
+<LI>マクロ関係に仕様の違いがあります. 特に, KLIC ではユーザ定義マクロ
+が使えません.
+
+<LI>KLIC では PIMOS システム機能が基本的に使えません. 入出力機能は仕様
+が異なります.
+
+<LI>文字列ストリングの仕様が異なります. 
+
+<LI>KLIC ではホストによって整数データの幅が28ビットまたは60ビットです 
+(PIMOS 上では32ビット).
+
+</UL>
+
+詳細は KLIC の配布キット中に含まれるマニュアルを御参照下さい.<P>
+
+<!--
+<HR width=95% align="center" size=7>
+<CENTER>
+<TABLE BORDER="5" ALIGN=center UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><center><A HREF="../../HomePage-J.html">ホームページに戻る</A>
+	</TD></TR>
+</TABLE>
+</CENTER><P>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+-->
+
+</BODY>
+</HTML>
+

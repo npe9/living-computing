@@ -1,0 +1,123 @@
+
+		ICOT Free Software
+
+	Knowledge Representation Language : Quixote
+
+	(KLIC version,  "big-Quixote")		
+
+					March, 1995
+------------------------------------------------------
+
+1. Introduction
+Quixote is a hybrid language of deductive object-oriented database
+(DOOD) and constraint logic programming (CLP) based on subsumption
+relations.  The new mechanisms of Quixote are a combination of
+object-orientation concepts such as object identity and property
+inheritance, and the concept of a module that classifies a large
+knowledge base.  In addition, its logical inference system is extended
+to be able to make hypothetical reasoning and restricted abduction.
+Such features play important roles in applications such as legal
+reasoning, biological databases, and natural language understanding.
+
+There are two kinds of implementation of Quixote; "big-Quixote" which
+is a full client-server style implementation in KLIC (KL1) and
+"micro-Quixote" which is a small restricted implementation in C.
+
+This file is a documentation of "big-Quixote."
+
+2. Required Environment
+We implement "big-Quixote" so that it can run on usual UNIX environment.
+
+Under the SunOS 4.1.3 environment, "big-Quixote" system consumes about
+10MB disk space.  Compilation requires about 30MB.  Installation of
+"big-Quixote" system doesn't need the privilege of root.
+
+The library/system mandatory for installation and execution of the
+"big-Quixote" system includes the following:
+
+・BSD socket libraty
+
+・KLIC system
+  KLIC is available from IFS of ICOT. 
+
+・Perl
+  Perl is available from directory ``/pub/gnu'' at prep.ai.mit.edu.
+
+・Editor, GNU Emacs or its variants  (GNU Emacs, Mule, etc. )
+  GNU Emacs is available  from directory ``/pub/gnu'' at prep.ai.mit.edu.
+  Mule is available from directory ``/pub/mule'' at etlport.etl.go.jp.
+
+
+3. Files:
+(Before extraction)
+$QXTDIR/
+	BUGS			About bugs (in English)
+	BUGS.j			About bugs (in Japanese)
+	COPYRIGHT		IFS copyright (in English)
+	COPYRIGHT.j		IFS copyright (in Japanese)
+	README			This file (in English)
+	README.j			  (in Japanese)
+	INSTALL			About installation (in English)
+	INSTALL.j				   (in Japanese)
+	qxtall.tgz	All Quixote src programs 
+			(=> BUGS*, COPYRIGHT*, INSTALL*, README*,
+			    client/, doc/, example/, server-dist/)
+	qxtserver.tgz	Quixote server programs 
+			(=> server-dist/)
+	qxtclient.tgz	Quixote client programs 
+			(=> client/)
+	qxtdoc.tgz	documents
+			(=> doc/, example/)
+
+	(server-org.tgz	Quixote original server
+				programs. ; OPTIONAL) 
+
+When you get Quixote system for the first time, please get "qxtall.tgz."
+If you want to get only Quixote server, Quixote client or documents,
+please get "qxtserver.tgz", "qxtclient.tgz" or "qxtdoc.tgz" respectively.
+
+After extracting "qxtdoc.tgz", "qxtclient.tgz" and "qxtserver.tgz",
+you can get the following source files respectively. 
+After extracting "qxtall.tgz", you can get all the following source files.
+-----
+$QXTDIR/
+	server-dist/		Quixote server source 
+		QC-cs/		constraint solver
+		QC-sd/		solution description handler
+		QD-dp/		dispatcher
+		QD-lm/		lattice manager
+		QD-pc/		program converter
+		QD-qd2/		Quixote data manager
+		QD-rt/		rule translator
+		QD-spm/		spy manager
+		QD-um/		update manager
+		QE-ip/		interpreter
+		QS-pm/		persistent manager (1)
+		QF-pm2/		persistent manager (2)
+		QS-henkan/	term converter
+		QS-kl1IF/	KL1 I/F
+		QS-server/	Quixote server
+		QZ-tools/	misc. tools
+-----
+$QXTDIR/
+	client/			Quixote client source (Emacs I/F)
+				*.el(c)
+-----
+$QXTDIR/
+	doc/			documents in the form of Tex
+	example/		example programs
+		QMI/		using Quixote from Mosaic (example)
+-----
+
+"server-original.tgz" is an original version of Quixote server,
+which is extracted into $QXTDIR/server.
+As there are some files of $QXTDIR/server-dist which it is difficult to read,
+refer the files of $QXTDIR/server if necessary.
+
+
+4. Installation 
+About installation, refer to the following files. 
+	INSTALL(.J)
+	doc/INSTALL_E.tex, INSTALL_J.tex 
+	doc/QXTMAN_E.tex, QXTMAN_J.tex 
+

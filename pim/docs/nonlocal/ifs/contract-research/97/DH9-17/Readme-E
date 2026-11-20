@@ -1,0 +1,58 @@
+The HiRise Constraint Solver
+Hiroshi HOSOBE
+
+Copyright (C) 1998 Hiroshi HOSOBE
+
+[Functions]
+
+HiRise is a constraint solver that performs incremental satisfaction
+of constraint systems.  It provides stay, edit, and linear
+constraints, and also allows programmers to specify constraints with
+hierarchical preferences (i.e. constraint hierarchies) like the
+DeltaBlue constraint solver developed by Borning et al.
+
+The characteristics of HiRise are scalability and reliability: it
+efficiently solves up to thousands of simultaneously satisfied
+constraints; theoretically, it correctly solves any constraint
+hierarchies described as combination of stay, edit, and linear
+constraints.
+
+[Compilation and Execution Environment]
+
+The HiRise constraint solver:
+- ANSI C++ (templates required)
+
+Sample program:
+- GNU CC 2.6.3 or later
+- target execution environment of GNU CC
+
+Demo application:
+- Microsoft Visual C++ 5.0
+- Microsoft Windows 95 or NT 4.0
+
+[File Configuration]
+
+README files (English/Japanese):
+Readme-E
+Readme-J
+
+User's manual:
+readme.txt
+
+Source code of the HiRise constraint solver:
+HRBase.cpp    HREdit.cpp    HRList.cpp	  HRSolver.cpp	HRVar.cpp
+HRBase.h      HREdit.h	    HRList.h	  HRSolver.h	HRVar.h
+HRCon.cpp     HRLinear.cpp  HRParser.cpp  HRStay.cpp
+HRCon.h	      HRLinear.h    HRParser.h	  HRStay.h
+
+Sample program and its makefile:
+sample.cpp
+makefile
+
+Source code directory and binary code of a demo application:
+demo/
+HiRiseDemo.exe
+
+Terms of use (English/Japanese):
+use-of-software-E
+use-of-software-J

@@ -1,0 +1,35 @@
+### Files ##################################################
+                        Copyright (C) 1998 Kazuhisa Iizuka
+
+use-of-software-J
+  ICOT フリーソフトウェア使用条件（日本語版）
+
+use-of-software-E
+  ICOT フリーソフトウェア使用条件（日本語版）
+
+Readme-J
+  ファイルの説明（日本語版）
+
+Readme-E
+  ファイルの説明（英語版）
+
+index.html, manual.html, sample.html
+  説明書（日本語版）
+
+jkstream.kl1, wrapstr.kl1, parse.kl1
+  メッセージインタフェース（KLIC 側）
+
+JK.java, Data.java, ArgsManager.java, TagManager.java, RetObject.java
+  メッセージインタフェース（Java 側）
+
+Makefile
+  サンプルプログラム作成用 Makefile
+
+main-ds.kl1, main-pc.kl1, hanoi.kl1, hanoi.html,
+hanoi-pc.html, dataio.html,HanoiDS.java, HanoiPC.java,
+DataIO.java, Sleep.java, HanoiData.java,
+HanoiCanvas.java,HanoiCanvasDisk.java,
+HanoiCanvasMouseListener.java, KDI.java,
+KDICanvas.java,KDPropertyDialog.java, Node.java,
+DoubleBufferedCanvas.java, MouseEventWrapper.java
+  サンプルプログラム</LI>

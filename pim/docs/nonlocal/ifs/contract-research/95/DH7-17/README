@@ -1,0 +1,21 @@
+SAX parsing system and TkVisIPS interface
+
+Nara Institute of Science and Technology, May 1996
+Copyright (C) 1996 Takuya Nakayama, Yuji Matsumoto
+
+./SAX		: SAX parser for Definete Clause Grammars
+./SAX/VisIPS	: Interface programs for VisIPS
+./SAX/sax_user	: Configuration programs
+./SAX/grammar	: sample grammars
+./SAX/Utility	: utility programs
+./SAX/doc	: user manual of SAX system
+./TkVisIPS	: Interface for parsing systems developed in Tkl/Tk
+./TkVisIPS/TkVisIPS.ps	: user manual of TkVisIPS
+
+Note: Before running TkVisIPS with the SAX parser, modify
+SAX/VisIPS/initialize.pl so that "host machine", "port number"
+and "installed directory" are specified properly.
+
+contact persons:
+Takuya Nakayama (takuya-n@is.aist-nara.ac.jp)
+Yuji Matsumoto  (matsu@is.aist-nara.ac.jp)

@@ -1,0 +1,1515 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_att
+%       File Name   : ty_att.kl1
+%       Function    : attributes handling
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 9/13  : is_defined spec change
+%$	1994/ 7/ 5  : string_less_than to generic:less_than
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/28  : expand macros
+%$      1994/ 6/ 3  : var ref set bug fix in glb/lub
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 2/15  : lub attr bug
+%$      1994/ 2/14  : defvalue returns normal(yes|no)
+%$      1994/ 2/14  : skip undef label in include attr
+%$      1994/ 2/ 8  : attribute merge bug
+%$      1994/ 2/ 7  : defpterm -> defattr
+%$      1994/ 1/31  : illegal data failure
+%$      1994/ 1/28  : string comparation bug (string_less_than)
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/27  : compile error
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_att.
+:- with_macro pimos.
+
+% attributes handling
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public psubsume/7,glb/8,lub/8,is_defined/4.
+:-public psubsume/9,glb/10,lub/10,is_defined/5.
+%:-else.
+%:-public psubsume/9,glb/10,lub/10,is_defined/6.
+%:-public psubsume/11,glb/12,lub/12,is_defined/7.
+%:-end_if.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S psubsume(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+psubsume(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    psubsume(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S glb(X,Y,^Z,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+glb(X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    glb(X,Y,_NewX,_NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S lub(X,Y,^NewZ,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+lub(X,Y,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    lub(X,Y,_NewX,_NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S is_defined(X,TypeDB,NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+is_defined(X,TypeDB,NewTypeDB,Result):-
+    is_defined(X,_NewX,TypeDB,NewTypeDB,Result).
+
+
+
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S psubsume(X,Y,^NewX,^NewY,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%          Info : illegal_data(Datalist)
+psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	(X = Y ->
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB,
+%	     Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+	    var_env:deref(X,Xval,Env,Env1),
+	    var_env:deref(Y,Yval,Env1,Env2),
+%	    (ty#is_top(Xval),ty#is_top(Yval) ->
+	    (Xval='&top', Yval='&top' ->
+	        NewX = X,
+	        NewY = Y,
+	        NewEnv = Env2,
+	        NewTypeDB = TypeDB,
+%		Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_top(Xval),ty#is_pterm(Yval) ->
+	    ;Xval='&top',vector(Yval,3) ->
+	        NewX = X,
+	        NewY = Y,
+	        NewEnv = Env2,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_pterm(Xval),ty#is_top(Yval) ->
+	    ;vector(Xval,3),Yval='&top' ->
+	        NewX = X,
+	        NewY = Y,
+	        NewEnv = Env2,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#no)
+	        Result = normal(fail)
+%	    ;ty#is_pterm(Xval),ty#is_pterm(Yval) ->
+	    ;vector(Xval,3),vector(Yval,3) ->
+	        NewX = X,
+	        NewY = Y,
+	        subs_nv_nv(Xval,Yval,_NewXval,_NewYval,Env2,NewEnv,TypeDB,NewTypeDB,Result)
+	    )
+	).
+psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,Env1),
+%	(ty#is_top(Xval) ->
+	(Xval='&top' ->
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+%	;ty#is_pterm(Xval) ->
+	;vector(Xval,3) ->
+	    NewX = X,
+	    subs_nv_nv(Xval,Y,_NewXval,NewY,Env1,NewEnv,TypeDB,NewTypeDB,Result)
+	).
+psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,Env1),
+%	(ty#is_top(Yval) ->
+	(Yval='&top' ->
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+%	;ty#is_pterm(Yval) ->
+	;vector(Yval,3) ->
+	    NewY = Y,
+	    subs_nv_nv(X,Yval,NewX,_NewYval,Env1,NewEnv,TypeDB,NewTypeDB,Result)
+	).
+psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	subs_nv_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+otherwise.
+psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+subs_nv_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    %pterm#is_all(X),pterm#is_all(Y)|
+    vector_element(X,1,Qx),Qx=:=0,
+    vector_element(Y,1,Qy),Qy=:=0| 
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+subs_nv_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_all(X),pterm#is_some(Y)|
+    vector_element(X,1,Qx),Qx=:=0,
+    vector_element(Y,1,Qy),Qy>0|
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+subs_nv_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_some(X),pterm#is_all(Y)|
+    vector_element(X,1,Qx),Qx>0,
+    vector_element(Y,1,Qy),Qy=:=0|
+	NewX = X,
+	NewY = Y,
+	NewEnv = Env,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_nv_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_some(X),pterm#is_some(Y)|
+    vector_element(X,1,Qx),Qx>0,
+    vector_element(Y,1,Qy),Qy>0|
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = identical(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	identical(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    debug#info(debug_tag#att,&debug,Info),
+%    Info = bsubsume(Tx,Ty,TypeDB,TypeDB1,R1),
+    ty_lat:bsubsume(Tx,Ty,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ pterm#read(attributes,Ax,X1,X2) }},
+        vector_element(X1,2,Ax,X2),
+%        {{ pterm#read(attributes,Ay,Y1,Y2) }},
+        vector_element(Y1,2,Ay,Y2),
+        include_attrs(Ax,Ay,X2,Y2,NewX,NewY,
+		      Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewX = X1,
+        NewY = Y1,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+include_attrs([],[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+include_attrs([],[Py|Ay],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    defvalue(Tx,Ly,Vz,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = psubsume(Vz,Vy,_NewVz,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+	psubsume(Vz,Vy,_NewVz,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+	    include_attrs([],Ay,X1,Y,NewX,NewY,
+			  Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+        % skip undefined label
+        include_attrs([],Ay,X1,Y,NewX,NewY,
+		      Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewX = X1,
+        NewY = Y,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+include_attrs([Px|Ax],[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+    defvalue(Ty,Lx,Vz,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%	{{ attribute#read(value,Vx,Px1,_Px2) }},
+	vector_element(Px1,1,Vx,_Px2),
+%    	debug#info(debug_tag#att,&debug,Info),
+%	Info = psubsume(Vx,Vz,_NewVx,_NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	psubsume(Vx,Vz,_NewVx,_NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+	    include_attrs(Ax,[],X,Y1,NewX,NewY,
+			  Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+	NewX = X,
+	NewY = Y1,
+	NewEnv = Env,
+	NewTypeDB = TypeDB1,
+	Result = R1
+    ).
+include_attrs([Px|Ax],[Py|Ay],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    (Lx = Ly ->
+%        {{ attribute#read(value,Vx,Px1,_Px2) }},
+        vector_element(Px1,1,Vx,_Px2),
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+%    	debug#info(debug_tag#att,&debug,Info),
+%        Info = psubsume(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB,TypeDB1,R1),
+        psubsume(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+	    include_attrs(Ax,Ay,X,Y,NewX,NewY,
+			  Env1,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB1,
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	)
+%    ;string_less_than(Lx,Ly) ->
+    ;generic:less_than(Lx,Ly) ->
+%        {{ pterm#read(typename,Ty,Y,Y1) }},
+        vector_element(Y,0,Ty,Y1),
+        defvalue(Ty,Lx,Vz,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ attribute#read(value,Vx,Px1,_Px2) }},
+	    vector_element(Px1,1,Vx,_Px2),
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = psubsume(Vx,Vz,_NewVx,_NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	    psubsume(Vx,Vz,_NewVx,_NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+	        include_attrs(Ax,[Py1|Ay],X,Y1,NewX,NewY,
+			      Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewX = X,
+	        NewY = Y1,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+	;otherwise;true ->
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Ly,Lx) ->
+    ;generic:less_than(Ly,Lx) ->
+%        {{ pterm#read(typename,Tx,X,X1) }},
+        vector_element(X,0,Tx,X1),
+        defvalue(Tx,Ly,Vz,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ attribute#read(value,Vy,Py1,_Py2) }},
+	    vector_element(Py1,1,Vy,_Py2),
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = psubsume(Vz,Vy,_NewVz,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+	    psubsume(Vz,Vy,_NewVz,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+	        include_attrs([Px1|Ax],Ay,X1,Y,NewX,NewY,
+			      Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewX = X1,
+	        NewY = Y,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB1,
+	        Result = R2
+	    )
+	;otherwise;true ->
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+    ).
+
+
+% Result : normal(ty#yes|ty#no)
+identical(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(quantifier,Qx,X,NewX) }},
+    vector_element(X,1,Qx,NewX),
+%    {{ pterm#read(quantifier,Qy,Y,NewY) }},
+    vector_element(Y,1,Qy,NewY),
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    (Qx =:= Qy ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;Qx =\= Qy ->
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S glb(X,Y,^NewX,^NewY,^Z,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label | illegal_data
+glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	(X = Y ->
+	    NewX = X,
+	    NewY = Y,
+	    Z = X,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+	    var_env:deref_with_refp(X,Xval,Xrp,Env, Env1),
+	    var_env:deref_with_refp(Y,Yval,Yrp,Env1,Env2),
+%	    (ty#is_top(Xval),ty#is_top(Yval) ->
+	    (Xval='&top', Yval='&top' ->
+	        (Xrp =:= Yrp ->
+		    NewEnv = Env2,
+		    Z = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Yrp,_,Xrp,NewEnv),
+		    % maybe Z = Xrp will be good?
+		    Z = X
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Xrp,_,Yrp,NewEnv),
+		    % maybe Z = Yrp will be good?
+		    Z = Y
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_top(Xval),ty#is_pterm(Yval) ->
+	    ;Xval='&top',vector(Yval,3) ->
+	        (Xrp =:= Yrp ->
+		    % this can't be?
+		    NewEnv = Env2,
+		    Z = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#set_env_value(Xrp,Yval,Env2,Env3) }},
+		    set_vector_element(Env2,Xrp,_,Yval,Env3),
+%		    {{ ty#refer_to(Yrp,Xrp,Env3,NewEnv) }},
+		    set_vector_element(Env3,Yrp,_,Xrp,NewEnv),
+		    % maybe Z = Xrp will be good?
+		    Z = X
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Xrp,_,Yrp,NewEnv),
+		    % maybe Z = Yrp will be good?
+		    Z = Y
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_pterm(Xval),ty#is_top(Yval) ->
+	    ;vector(Xval,3),Yval='&top' ->
+	        (Xrp=:=Yrp ->
+		    % this can't be?
+		    NewEnv = Env2,
+		    Z = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Yrp,_,Xrp,NewEnv),
+		    % maybe Z = Xrp will be good?
+		    Z = X
+		;Xrp>Yrp ->
+%		    {{ ty#set_env_value(Yrp,Xval,Env2,Env3) }},
+		    set_vector_element(Env2,Yrp,_,Xval,Env3),
+%		    {{ ty#refer_to(Xrp,Yrp,Env3,NewEnv) }},
+		    set_vector_element(Env3,Xrp,_,Yrp,NewEnv),
+		    % maybe Z = Yrp will be good?
+		    Z = Y
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_pterm(Xval),ty#is_pterm(Yval) ->
+	    ;vector(Xval,3),vector(Yval,3) ->
+	        glb_nv_nv(Xval,Yval,_NewXval,_NewYval,Zval,
+			  Env2,Env3,TypeDB,NewTypeDB,Result),
+	        (Xrp=:=Yrp ->
+%		    {{ ty#set_env_value(Xrp,Zval,Env3,NewEnv) }},
+		    set_vector_element(Env3,Xrp,_,Zval,NewEnv),
+		    Z = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env3,Env4) }},
+		    set_vector_element(Env3,Yrp,_,Xrp,Env4),
+%		    {{ ty#set_env_value(Xrp,Zval,Env4,NewEnv) }},
+		    set_vector_element(Env4,Xrp,_,Zval,NewEnv),
+		    Z = X  % Xrp?
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env3,Env4) }},
+		    set_vector_element(Env3,Xrp,_,Yrp,Env4),
+%		    {{ ty#set_env_value(Yrp,Zval,Env4,NewEnv) }},
+		    set_vector_element(Env4,Yrp,_,Zval,NewEnv),
+		    Z = Y  % Yrp?
+		)
+	    )
+	).
+glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref_with_refp(X,Xval,Xrp,Env,Env1),
+%	(ty#is_top(Xval) ->
+	(Xval='&top' ->
+%	    {{ ty#set_env_value(Xrp,Y,Env1,NewEnv) }},
+	    set_vector_element(Env1,Xrp,_,Y,NewEnv),
+	    Z = X,  % Xrp?
+	    NewX = X,
+	    NewY = Y,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+%	;ty#is_pterm(Xval) ->
+	;vector(Xval,3) ->
+	    glb_nv_nv(Xval,Y,_NewXval,NewY,Zval,
+		      Env1,Env2,TypeDB,NewTypeDB,Result),
+	    NewX = X,
+	    Z = X,  % Xrp?
+%	    {{ ty#set_env_value(Xrp,Zval,Env2,NewEnv) }}
+	    set_vector_element(Env2,Xrp,_,Zval,NewEnv)
+	).
+glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref_with_refp(Y,Yval,Yrp,Env,Env1),
+%	(ty#is_top(Yval) ->
+	(Yval='&top' ->
+%	    {{ ty#set_env_value(Yrp,X,Env1,NewEnv) }},
+	    set_vector_element(Env1,Yrp,_,X,NewEnv),
+	    Z = Y,  % Yrp?
+	    NewX = X,
+	    NewY = Y,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+%	;ty#is_pterm(Yval) ->
+	;vector(Yval,3) ->
+	    glb_nv_nv(X,Yval,NewX,_NewYval,Zval,
+		      Env1,Env2,TypeDB,NewTypeDB,Result),
+	    NewY = Y,
+	    Z = Y,  % Yrp
+%	    {{ ty#set_env_value(Yrp,Zval,Env2,NewEnv) }}
+	    set_vector_element(Env2,Yrp,_,Zval,NewEnv)
+	).
+glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	glb_nv_nv(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result).
+otherwise.
+glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+%    Z = ty#void,
+    Z = '&void',
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+glb_nv_nv(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_all(X),pterm#is_all(Y)|
+    vector_element(X,1,Qx),Qx=:=0,
+    vector_element(Y,1,Qy),Qy=:=0|
+%    	debug#info(debug_tag#att,&debug,Info),
+%	Info = pmerge(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	pmerge(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result).
+glb_nv_nv(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_all(X),pterm#is_some(Y)|
+    vector_element(X,1,Qx),Qx=:=0,
+    vector_element(Y,1,Qy),Qy>0|
+	Z = NewY,
+%    	debug#info(debug_tag#att,&debug,Info),
+%	Info = include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	include(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+glb_nv_nv(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_some(X),pterm#is_all(Y)|
+    vector_element(X,1,Qx),Qx>0,
+    vector_element(Y,1,Qy),Qy=:=0|
+	Z = NewX,
+%    	debug#info(debug_tag#att,&debug,Info),
+%	Info = include(Y,X,NewY,NewX,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	include(Y,X,NewY,NewX,Env,NewEnv,TypeDB,NewTypeDB,Result).
+glb_nv_nv(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    pterm#is_some(X),pterm#is_some(Y)|
+    vector_element(X,1,Qx),Qx>0,
+    vector_element(Y,1,Qy),Qy>0|
+	Z = NewX,
+%    	debug#info(debug_tag#att,&debug,Info),
+%	Info = identical(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+	identical(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+pmerge(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    debug#info(debug_tag#att,&debug,Info),
+%    Info = meet(Tx,Ty,Tz,TypeDB,TypeDB1,R1),
+    ty_lat:meet(Tx,Ty,Tz,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        (ty#is_bottom(Tz) ->
+        (Tz='&bottom' ->
+	    NewX = X1,
+	    NewY = Y1,
+%	    NewZ = ty#bottom,
+	    NewZ = '&bottom',
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	;otherwise;true ->
+%	    {{ pterm#new(Z) }},
+	    new_vector(Z,3),
+%	    {{ pterm#set(typename,Tz,Z,Z1) }},
+	    set_vector_element(Z,0,_,Tz,Z1),
+%	    {{ pterm#read(attributes,Ax,X1,X2) }},
+	    vector_element(X1,2,Ax,X2),
+%	    {{ pterm#read(attributes,Ay,Y1,Y2) }},
+	    vector_element(Y1,2,Ay,Y2),
+	    pmerge_attrs(Ax,Ay,Az,X2,Y2,NewX,NewY,
+			 Env,NewEnv,TypeDB1,NewTypeDB,Result),
+%	    {{ pterm#set(attributes,Az,Z1,NewZ) }}
+	    set_vector_element(Z1,2,_,Az,NewZ)
+	)
+    ;otherwise;true ->
+        NewX = X1,
+        NewY = Y1,
+%        NewZ = ty#void,
+        NewZ = '&void',
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+pmerge_attrs([],[],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    Az = [],
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+pmerge_attrs([],[Py|Ay],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    defvalue(Tx,Ly,Vd,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ attribute#read(value,Vy,Py1,Py2) }},
+        vector_element(Py1,1,Vy,Py2),
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = glb(Vd,Vy,_NewVd,_NewVy,Vz,Env,Env1,TypeDB1,TypeDB2,R2),
+	glb(Vd,Vy,_NewVd,_NewVy,Vz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+%	    {{ attribute#set(value,Vz,Py2,Py3) }},
+	    set_vector_element(Py2,1,_,Vz,Py3),
+	    Az = [Py3|NewAz],
+	    pmerge_attrs([],Ay,NewAz,X1,Y,NewX,NewY,
+			 Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+        Az = [Py1|NewAz],
+	pmerge_attrs([],Ay,NewAz,X1,Y,NewX,NewY,
+		     Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        Az = [],
+        NewX = X1,
+        NewY = Y,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+pmerge_attrs([Px|Ax],[],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+    defvalue(Ty,Lx,Vd,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%	{{ attribute#read(value,Vx,Px1,Px2) }},
+	vector_element(Px1,1,Vx,Px2),
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = glb(Vx,Vd,_NewVx,_NewVd,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	glb(Vx,Vd,_NewVx,_NewVd,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+%	    {{ attribute#set(value,NewVz,Px2,Px3) }},
+	    set_vector_element(Px2,1,_,NewVz,Px3),
+	    Az = [Px3|NewAz],
+	    pmerge_attrs(Ax,[],NewAz,X,Y1,NewX,NewY,
+			 Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+        Az = [Px1|NewAz],
+	pmerge_attrs(Ax,[],NewAz,X,Y1,NewX,NewY,
+		     Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        Az = [],
+        NewX = X,
+        NewY = Y1,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+	Result = R1
+    ).
+pmerge_attrs([Px|Ax],[Py|Ay],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    (Lx = Ly ->
+%        {{ attribute#read(value,Vx,Px1,Px2) }},
+        vector_element(Px1,1,Vx,Px2),
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+%	debug#info(debug_tag#att,&debug,Info),
+%        Info = glb(Vx,Vy,_NewVx,_NewVy,NewVz,Env,Env1,TypeDB,TypeDB1,R1),
+        glb(Vx,Vy,_NewVx,_NewVy,NewVz,Env,Env1,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ attribute#set(value,NewVz,Px2,Px3) }},
+	    set_vector_element(Px2,1,_,NewVz,Px3),
+	    Az = [Px3|NewAz],
+	    pmerge_attrs(Ax,Ay,NewAz,X,Y,NewX,NewY,
+			 Env1,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Lx,Ly) ->
+    ;generic:less_than(Lx,Ly) ->
+%        {{ pterm#read(typename,Ty,Y,Y1) }},
+        vector_element(Y,0,Ty,Y1),
+        defvalue(Ty,Lx,Va,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vx,Px1,Px2) }},
+        vector_element(Px1,1,Vx,Px2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = glb(Vx,Va,_NewVx,_NewVa,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	    glb(Vx,Va,_NewVx,_NewVa,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+%	        {{ attribute#set(value,NewVz,Px2,Px3) }},
+	        set_vector_element(Px2,1,_,NewVz,Px3),
+	        Az = [Px3|NewAz],
+	        pmerge_attrs(Ax,[Py1|Ay],NewAz,X,Y1,NewX,NewY,
+			     Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        Az = [],
+	        NewX = X,
+	        NewY = Y1,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    Az = [Px2|NewAz],
+	    pmerge_attrs(Ax,[Py1|Ay],NewAz,X,Y1,NewX,NewY,
+			 Env,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Ly,Lx) ->
+    ;generic:less_than(Ly,Lx) ->
+%        {{ pterm#read(typename,Tx,X,X1) }},
+        vector_element(X,0,Tx,X1),
+        defvalue(Tx,Ly,Va,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vy,Py1,Py2) }},
+        vector_element(Py1,1,Vy,Py2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = glb(Va,Vy,_NewVa,_NewVy,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	    glb(Va,Vy,_NewVa,_NewVy,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+%	        {{ attribute#set(value,NewVz,Py2,Py3) }},
+	        set_vector_element(Py2,1,_,NewVz,Py3),
+	        Az = [Py3|NewAz],
+	        pmerge_attrs([Px1|Ax],Ay,NewAz,X1,Y,NewX,NewY,
+			     Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        Az = [],
+	        NewX = X1,
+	        NewY = Y,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    Az = [Py2|NewAz],
+	    pmerge_attrs([Px1|Ax],Ay,NewAz,X1,Y,NewX,NewY,
+			 Env,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+    ).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S lub(X,Y,^NewX,^NewY,^NewZ,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | illegal_data
+lub(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	(X = Y ->
+	    NewX = X,
+	    NewY = Y,
+	    NewZ = X,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+	    var_env:deref_with_refp(X,Xval,Xrp,Env,Env1),
+	    var_env:deref_with_refp(Y,Yval,Yrp,Env1,Env2),
+%	    (ty#is_top(Xval),ty#is_top(Yval) ->
+	    (Xval='&top',Yval='&top' ->
+	        (Xrp=:=Yrp ->
+		    NewEnv = Env2,
+		    NewZ = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Yrp,_,Xrp,NewEnv),
+		    NewZ = X  % Xrp?
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Xrp,_,Yrp,NewEnv),
+		    NewZ = Y  % Yrp?
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_top(Xval),ty#is_pterm(Yval) ->
+	    ;Xval='&top',vector(Yval,3) ->
+	        (Xrp=:=Yrp ->
+		    % this can't be?
+		    NewEnv = Env2,
+		    NewZ = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Yrp,_,Xrp,NewEnv),
+		    NewZ = X  % Xrp?
+		;Xrp>Yrp ->
+%		    {{ ty#set_env_value(Yrp,Xval,Env2,Env3) }},
+		    set_vector_element(Env2,Yrp,_,Xval,Env3),
+%		    {{ ty#refer_to(Xrp,Yrp,Env3,NewEnv) }},
+		    set_vector_element(Env3,Xrp,_,Yrp,NewEnv),
+		    NewZ = Y  % Yrp?
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_pterm(Xval),ty#is_top(Yval) ->
+	    ;vector(Xval,3),Yval='&top' ->
+	        (Xrp=:=Yrp ->
+		    % this can't be?
+		    NewEnv = Env2,
+		    NewZ = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#set_env_value(Xrp,Yval,Env2,Env3) }},
+		    set_vector_element(Env2,Xrp,_,Yval,Env3),
+%		    {{ ty#refer_to(Yrp,Xrp,Env3,NewEnv) }},
+		    set_vector_element(Env3,Yrp,_,Xrp,NewEnv),
+		    NewZ = X  % Xrp?
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env2,NewEnv) }},
+		    set_vector_element(Env2,Xrp,_,Yrp,NewEnv),
+		    NewZ = Y  % Yrp?
+		),
+	        NewX = X,
+	        NewY = Y,
+	        NewTypeDB = TypeDB,
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+%	    ;ty#is_pterm(Xval),ty#is_pterm(Yval) ->
+	    ;vector(Xval,3),vector(Yval,3) ->
+	        lub_nv_nv(Xval,Yval,_NewXval,_NewYval,NewZval,
+			  Env2,Env3,TypeDB,NewTypeDB,Result),
+	        (Xrp=:=Yrp ->
+%		    {{ ty#set_env_value(Xrp,NewZval,Env3,NewEnv) }},
+		    set_vector_element(Env3,Xrp,_,NewZval,NewEnv),
+		    NewZ = X
+	        ;Xrp<Yrp ->
+%		    {{ ty#refer_to(Yrp,Xrp,Env3,Env4) }},
+		    set_vector_element(Env3,Yrp,_,Xrp,Env4),
+%		    {{ ty#set_env_value(Xrp,NewZval,Env4,NewEnv) }},
+		    set_vector_element(Env4,Xrp,_,NewZval,NewEnv),
+		    NewZ = X  % Xrp?
+		;Xrp>Yrp ->
+%		    {{ ty#refer_to(Xrp,Yrp,Env3,Env4) }},
+		    set_vector_element(Env3,Xrp,_,Yrp,Env4),
+%		    {{ ty#set_env_value(Yrp,NewZval,Env4,NewEnv) }},
+		    set_vector_element(Env4,Yrp,_,NewZval,NewEnv),
+		    NewZ = Y  % Yrp?
+		)
+	    )
+	).
+lub(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref_with_refp(X,Xval,Xrp,Env,Env1),
+%	(ty#is_top(Xval) ->
+	(Xval='&top' ->
+	    NewX = X,
+	    NewY = Y,
+	    NewZ = X,  % Xrp?
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+%	;ty#is_pterm(Xval) ->
+	;vector(Xval,3) ->
+	    lub_nv_nv(Xval,Y,_NewXval,NewY,NewZval,
+		      Env1,Env2,TypeDB,NewTypeDB,Result),
+	    NewZ = X,  % Xrp?
+%	    {{ ty#set_env_value(Xrp,NewZval,Env2,NewEnv) }}
+	    set_vector_element(Env2,Xrp,_,NewZval,NewEnv)
+	).
+lub(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref_with_refp(Y,Yval,Yrp,Env,Env1),
+%	(ty#is_top(Yval) ->
+	(Yval='&top' ->
+	    NewX = X,
+	    NewY = Y,
+	    NewZ = Y,  % Yrp?
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+%	;ty#is_pterm(Yval) ->
+	;vector(Yval,3) ->
+	    lub_nv_nv(X,Yval,NewX,_NewYval,NewZval,
+		      Env1,Env2,TypeDB,NewTypeDB,Result),
+	    NewZ = Y,  % Yrp?
+%	    {{ ty#set_env_value(Yrp,NewZval,Env2,NewEnv) }}
+	    set_vector_element(Env2,Yrp,_,NewZval,NewEnv)
+	).
+lub(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	lub_nv_nv(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result).
+otherwise.
+lub(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+%    NewZ = ty#void,
+    NewZ = '&void',
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+
+lub_nv_nv(X,Y,NewX,NewY,NewZ,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    debug#info(debug_tag#att,&debug,Info),
+%    Info = join(Tx,Ty,Tz,TypeDB,TypeDB1,R1),
+    ty_lat:join(Tx,Ty,Tz,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ pterm#new(Z) }},
+        new_vector(Z,3),
+%        {{ pterm#set(typename,Tz,Z,Z1) }},
+        set_vector_element(Z,0,_,Tz,Z1),
+%        {{ pterm#read(attributes,Ax,X1,X2) }},
+        vector_element(X1,2,Ax,X2),
+%        {{ pterm#read(attributes,Ay,Y1,Y2) }},
+        vector_element(Y1,2,Ay,Y2),
+        pjoin_attrs(Ax,Ay,Az,X2,Y2,NewX,NewY,
+		    Env,NewEnv,TypeDB1,NewTypeDB,Result),
+%        {{ pterm#set(attributes,Az,Z1,NewZ) }}
+        set_vector_element(Z1,2,_,Az,NewZ)
+    ;otherwise;true ->
+        NewX = X1,
+        NewY = Y1,
+%        NewZ = ty#void,
+        NewZ = '&void',
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+pjoin_attrs([],[],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    Az = [],
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+pjoin_attrs([],[Py|Ay],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    defvalue(Tx,Ly,Vd,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ attribute#read(value,Vy,Py1,Py2) }},
+        vector_element(Py1,1,Vy,Py2),
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = lub(Vd,Vy,_NewVd,_NewVy,Vz,Env,Env1,TypeDB1,TypeDB2,R2),
+	lub(Vd,Vy,_NewVd,_NewVy,Vz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+%	    {{ attribute#set(value,Vz,Py2,Py3) }},
+	    set_vector_element(Py2,1,_,Vz,Py3),
+	    Az = [Py3|NewAz],
+	    pjoin_attrs([],Ay,NewAz,X1,Y,NewX,NewY,
+			Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+	pjoin_attrs([],Ay,Az,X1,Y,NewX,NewY,
+		    Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        Az = [],
+        NewX = X1,
+        NewY = Y,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+pjoin_attrs([Px|Ax],[],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+    defvalue(Ty,Lx,Vd,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%	{{ attribute#read(value,Vx,Px1,Px2) }},
+	vector_element(Px1,1,Vx,Px2),
+%	debug#info(debug_tag#att,&debug,Info),
+%	Info = lub(Vx,Vd,_NewVx,_NewVd,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	lub(Vx,Vd,_NewVx,_NewVd,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	(R2 = normal(ty#yes) ->
+	(R2 = normal(success) ->
+%	    {{ attribute#set(value,NewVz,Px2,Px3) }},
+	    set_vector_element(Px2,1,_,NewVz,Px3),
+	    Az = [Px3|NewAz],
+	    pjoin_attrs(Ax,[],NewAz,X,Y1,NewX,NewY,
+			Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+	pjoin_attrs(Ax,[],Az,X,Y1,NewX,NewY,
+		    Env,NewEnv,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        Az = [],
+        NewX = X,
+        NewY = Y1,
+        NewEnv = Env,
+        NewTypeDB = TypeDB1,
+	Result = R1
+    ).
+pjoin_attrs([Px|Ax],[Py|Ay],Az,X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    (Lx = Ly ->
+%        {{ attribute#read(value,Vx,Px1,Px2) }},
+        vector_element(Px1,1,Vx,Px2),
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+%	debug#info(debug_tag#att,&debug,Info),
+%        Info = lub(Vx,Vy,_NewVx,_NewVy,NewVz,Env,Env1,TypeDB,TypeDB1,R1),
+        lub(Vx,Vy,_NewVx,_NewVy,NewVz,Env,Env1,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ attribute#set(value,NewVz,Px2,Px3) }},
+	    set_vector_element(Px2,1,_,NewVz,Px3),
+	    Az = [Px3|NewAz],
+	    pjoin_attrs(Ax,Ay,NewAz,X,Y,NewX,NewY,
+			Env1,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y,
+	    NewEnv = Env1,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Lx,Ly) ->
+    ;generic:less_than(Lx,Ly) ->
+%        {{ pterm#read(typename,Ty,Y,Y1) }},
+        vector_element(Y,0,Ty,Y1),
+        defvalue(Ty,Lx,Va,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vx,Px1,Px2) }},
+        vector_element(Px1,1,Vx,Px2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = lub(Vx,Va,_NewVx,_NewVa,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	    lub(Vx,Va,_NewVx,_NewVa,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+%	        {{ attribute#set(value,NewVz,Px2,Px3) }},
+	        set_vector_element(Px2,1,_,NewVz,Px3),
+	        Az = [Px3|NewAz],
+	        pjoin_attrs(Ax,[Py1|Ay],NewAz,X,Y1,NewX,NewY,
+			    Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        Az = [],
+	        NewX = X,
+	        NewY = Y1,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    pjoin_attrs(Ax,[Py1|Ay],Az,X,Y1,NewX,NewY,
+			Env,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X,
+	    NewY = Y1,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Ly,Lx) ->
+    ;generic:less_than(Ly,Lx) ->
+%        {{ pterm#read(typename,Tx,X,X1) }},
+        vector_element(X,0,Tx,X1),
+        defvalue(Tx,Ly,Va,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vy,Py1,Py2) }},
+        vector_element(Py1,1,Vy,Py2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = lub(Va,Vy,_NewVa,_NewVy,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+	    lub(Va,Vy,_NewVa,_NewVy,NewVz,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+%	        {{ attribute#set(value,NewVz,Py2,Py3) }},
+	        set_vector_element(Py2,1,_,NewVz,Py3),
+	        Az = [Py3|NewAz],
+	        pjoin_attrs([Px1|Ax],Ay,NewAz,X1,Y,NewX,NewY,
+			    Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        Az = [],
+	        NewX = X1,
+	        NewY = Y,
+	        NewEnv = Env1,
+	        NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    pjoin_attrs([Px1|Ax],Ay,Az,X1,Y,NewX,NewY,
+			Env,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    Az = [],
+	    NewX = X1,
+	    NewY = Y,
+	    NewEnv = Env,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+    ).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S is_defined(X,^NewX,TypeDB,NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label
+%               | illegal_value_type | illegal_data
+is_defined(X,NewX,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X)|
+    vector(X,3)|
+%	{{ pterm#read(typename,Tx,X,X1) }},
+	vector_element(X,0,Tx,X1),
+	is_def_thru_check(Tx,X1,NewX,TypeDB,NewTypeDB,Result).
+otherwise.
+is_defined(X,NewX,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X]}.
+    Info = {type,illegal_data,[X]}.
+
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    Tx = '&top' |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    Tx = '&bottom' |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    Tx = '&integer' |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    Tx = '&string' |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    % number
+    vector(Tx,1) |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    % string
+    string(Tx,_,_) |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+    % cover
+    vector(Tx,2) |
+	NewX = X, NewTypeDB = TypeDB, Result = normal(success).
+otherwise.
+is_def_thru_check(Tx,X,NewX,TypeDB,NewTypeDB,Result):-
+	defattr(Tx,Ad,TypeDB,TypeDB1,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+%	    {{ pterm#read(attributes,Ax,X,X2) }},
+	    vector_element(X,2,Ax,X2),
+%	    debug#info(debug_tag#att,&debug,Info),
+%	    Info = def_check_attrs(Ax,Ad,X2,NewX,TypeDB1,NewTypeDB,Result),
+	    def_check_attrs(Ax,Ad,X2,NewX,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X,
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	).
+
+
+%% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%%        Info : undefined_label | illegal_value_type
+%def_check_attrs([],[],X,NewX,TypeDB,NewTypeDB,Result):-
+%    NewX = X,
+%    NewTypeDB = TypeDB,
+%%    Result = normal(ty#yes).
+%    Result = normal(success).
+%def_check_attrs([],[_Pd|_Ad],X,NewX,TypeDB,NewTypeDB,Result):-
+%    NewX = X,
+%    NewTypeDB = TypeDB,
+%%    Result = normal(ty#yes).
+%    Result = normal(success).
+%def_check_attrs([Px|_Ax],[],X,NewX,TypeDB,NewTypeDB,Result):-
+%    NewX = X,
+%    NewTypeDB = TypeDB,
+%    Result = abnormal(Info),
+%%    {{ attribute#read(label,Lx,Px,_Px1) }},
+%    vector_element(Px,0,Lx,_Px1),
+%%    Info = {ty#typemid,undefined_label,[X,Lx]}.
+%    Info = {type,undefined_label,[X,Lx]}.
+%def_check_attrs([Px|Ax],[Pd|Ad],X,NewX,TypeDB,NewTypeDB,Result):-
+%%    {{ attribute#read(label,Lx,Px,Px1) }},
+%    vector_element(Px,0,Lx,Px1),
+%%    {{ attribute#read(label,Ld,Pd,Pd1) }},
+%    vector_element(Pd,0,Ld,Pd1),
+%    (Lx = Ld ->
+%%        {{ attribute#read(value,Vx,Px1,_Px2) }},
+%        vector_element(Px1,1,Vx,_Px2),
+%%        {{ attribute#read(value,Vd,Pd1,_Pd2) }},
+%        vector_element(Pd1,1,Vd,_Pd2),
+%        Env = {}, % dummy
+%        glb_nv_nv(Vx,Vd,_NewVx,_NewVd,_NewVz,Env,_,TypeDB,TypeDB1,R1),
+%%        (R1 = normal(ty#yes) ->
+%        (R1 = normal(success) ->
+%	    def_check_attrs(Ax,Ad,X,NewX,TypeDB1,NewTypeDB,Result)
+%	;otherwise;true ->
+%	    NewX = X,
+%	    NewTypeDB = TypeDB1,
+%	    Result = abnormal(Info),
+%%	    Info = {ty#typemid,illegal_value_type,[X,Lx]}
+%	    Info = {type,illegal_value_type,[X,Lx]}
+%	)
+%%    ;string_less_than(Lx,Ld) ->
+%    ;generic:less_than(Lx,Ld) ->
+%        NewX = X,
+%        NewTypeDB = TypeDB,
+%        Result = abnormal(Info),
+%%        Info = {ty#typemid,undefined_label,[X,Lx]}
+%        Info = {type,undefined_label,[X,Lx]}
+%%    ;string_less_than(Ld,Lx) ->
+%    ;generic:less_than(Ld,Lx) ->
+%        def_check_attrs([Px1|Ax],Ad,X,NewX,TypeDB,NewTypeDB,Result)
+%    ).
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : undefined_label | illegal_value_type
+def_check_attrs([],[],X,NewX,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewTypeDB = TypeDB,
+    Result = normal(success).
+def_check_attrs([],[_Pd|_Ad],X,NewX,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewTypeDB = TypeDB,
+    Result = normal(success).
+def_check_attrs([Px|_Ax],[],X,NewX,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+    vector_element(Px,0,Lx,_Px1),
+    Info = {type,undefined_label,[X,Lx]}.
+def_check_attrs([Px|Ax],[Pd|Ad],X,NewX,TypeDB,NewTypeDB,Result):-
+    vector_element(Px,0,Lx,Px1),
+    vector_element(Pd,0,Ld,Pd1),
+    (Lx = Ld ->
+        vector_element(Px1,1,Vx,_Px2),
+        vector_element(Pd1,1,Vd,_Pd2),
+        Env = {}, % dummy
+
+%%%%%%%%%%%%%%%modify oosaki for involve variable
+%        glb_nv_nv(Vx,Vd,_NewVx,_NewVd,_NewVz,Env,_,TypeDB,TypeDB1,R1),
+        glb_nv_nvX(Vx,Vd,_NewVx,_NewVd,_NewVz,Env,_,TypeDB,TypeDB1,R1),
+%%%%%%%%%%%%%%%
+
+        (R1 = normal(success) ->
+	    def_check_attrs(Ax,Ad,X,NewX,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X,
+	    NewTypeDB = TypeDB1,
+	    Result = abnormal(Info),
+	    Info = {type,illegal_value_type,[X,Lx]}
+	)
+    ;generic:less_than(Lx,Ld) ->
+        NewX = X,
+        NewTypeDB = TypeDB,
+        Result = abnormal(Info),
+        Info = {type,undefined_label,[X,Lx]}
+    ;generic:less_than(Ld,Lx) ->
+        def_check_attrs([Px1|Ax],Ad,X,NewX,TypeDB,NewTypeDB,Result)
+    ).
+
+%%%add oosaki 960328
+    glb_nv_nvX(0,_Vd,_NewVx,_NewVd,_NewVz,_Env,_,TypeDB,TypeDB1,R1):-true|
+	TypeDB1 = TypeDB,
+	R1 = normal(success).
+otherwise.
+    glb_nv_nvX(Vx,Vd,_NewVx,_NewVd,_NewVz,Env,_,TypeDB,TypeDB1,R1):-true|
+	glb_nv_nv(Vx,Vd,_NewVx,_NewVd,_NewVz,Env,_,TypeDB,TypeDB1,R1).
+
+% only for debug
+:- public defvalue/6.
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no)
+defvalue(Type,Label,Value,TypeDB,NewTypeDB,Result):-
+    defattr(Type,DefAttr,TypeDB,NewTypeDB,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        scan_def_label(DefAttr,Label,Value,Result)
+    ;otherwise;true ->
+%        Value = ty#void,
+        Value = '&void',
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes|ty#no)
+scan_def_label([],_Label,Value,Result):-
+%    Value = ty#void,
+    Value = '&void',
+%    Result = normal(ty#no).
+    Result = normal(fail).
+%    Result = abnormal(Info),
+%    Info = {ty#typemid,undefined_label,[Label]},
+%    Value = ty#void.
+scan_def_label([Px|Attr],Label,Value,Result):-
+%    attribute#read(label,Lx,Px,Px1),
+    vector_element(Px,0,Lx,Px1),
+    (Lx = Label ->
+%        attribute#read(value,Value,Px1,_Px2),
+        vector_element(Px1,1,Value,_Px2),
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+        scan_def_label(Attr,Label,Value,Result)
+    ).
+
+
+% only for debug
+:- public defattr/5.
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no)
+defattr(Type,PTerm,TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_position(Type,Position,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB1,NewTypeDB),
+        set_vector_element(TypeDB1,5,AttrTBL,NewAttrTBL,NewTypeDB),
+        vector_element(AttrTBL,Position,PTerm,NewAttrTBL),
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+%        PTerm = ty#void,
+        PTerm = '&void',
+        NewTypeDB = TypeDB1,
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+

@@ -1,0 +1,72 @@
+% Copyright (C) 1996  Katsumi Inoue 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% README.English           %%%
+%%%         by Katsumi Inoue %%%
+%%%         (1996.6.13)      %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+An Abductive Logic Programming System (ALP system)
+--- ALP-MGTP (Prolog version) ---
+
+Katsumi Inoue,  Keigo Tsubouchi, and Tomokazu Yamamoto
+Department of Information and Computer Sciences 
+Toyohashi University of Technology 
+
+Abstract: In this software, we give an implementation of 
+    an *abductive logic programming* (ALP) system.  
+    The ALP system is a reasoning system for logic programs 
+    containing negation as failure (NAF), classical negation, 
+    disjunction, and abducible literals.  It is based on bottom-up, 
+    incremental, backtrack-free computation of the minimal models 
+    for disjunctive programs using a *model generation theorem prover* 
+    (MGTP).  This system realizes a sound and complete proof procedure 
+    for a large class of logic programs, and can deal with abduction 
+    and nonmonotonic inference at the same time.  This system realizes 
+    Inoue and Sakama's fixpoint semantics of ALP.  See 
+
+        Katsumi Inoue and Chiaki Sakama, 
+        A Fixpoint Characterization of Abductive Logic Programs, 
+        Journal of Logic Programming, vol.27, no.2, pp.107-136, May 1996. 
+
+    Our ALP system consists of a *first-order predicate compiler*, 
+    which is a translator from ALP rules to MGTP clauses, and 
+    modules that translate the outputs of MGTP to the answers 
+    for the ALP framework.  The experimental results with some benchmark 
+    problems show that our ALP system has a good performance compared 
+    with other systems.  
+
+
+%%% This directory contains the following files: 
+
+1. README           Japanese version of this file
+2. README.English   This file
+3. advertise.txt    Brief introduction of ALP-MGTP (in Japanese)
+4. copyright.txt    Copyright owner of ALP-MGTP (in Japanese)
+5. function.txt     Main features of ALP-MGTP (in Japanese) 
+6. image.txt        Image of users of ALP-MGTP (in Japanese)
+7. manual  <dir>    Directory containing Technical Report and Manual 
+8. publication.txt  Papers describing ALP-MGTP (in Japanese)
+9. source  <dir>    Directory containing software and examples
+
+
+%%%%%%%%%%%%
+%%% NOTE %%%
+%%%%%%%%%%%%
+
+There has been no English manual for ALP-MGTP.  
+If you are interested in using ALP-MGTP, please 
+contact the copyright owner: 
+
+  Katsumi Inoue
+  Department of Information and Computer Sciences
+  Toyohashi University of Technology
+  Tempaku-cho, Toyohashi  441,  Japan
+
+  Email: inoue@tutics.tut.ac.jp 
+  URL:   http://ai.tutics.tut.ac.jp/~inoue
+  Phone: +81-532-44-6763 
+  Fax:   +81-532-44-6757 
+
+-------------------------------------------------------------------
+13 June 96 - Katsumi Inoue, inoue@tutics.tut.ac.jp

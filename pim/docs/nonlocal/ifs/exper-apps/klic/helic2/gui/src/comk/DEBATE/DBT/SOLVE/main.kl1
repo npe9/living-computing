@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_main.
+
+:- public 
+    main/4.
+            
+:- with_macro pimos.    
+
+%main
+    main(NH,Info1,Info,R):-true|
+	initiate(NH,Info1,Info2,Pool,R1),
+	( R1 = normal(success)->
+		brows(Info2,Pool,Info,R2),
+		( wait(R2)->
+			R = normal(success))
+	;
+	  R1 = abnormal(_)->
+		Info = Info2,
+		R    = R1
+	).
+
+%initiate
+    initiate(NH,Info1,Info,Pool,R):-true|
+        dbtgui_debateNetworkHandler:create(NH,P,_),
+        dbtu_poolManager:create({[],[],P,[],p},Pool1),
+        dbtgui_rbrUtility:solve(Info1,Info,ST,R1),
+        (   R1 = normal(success)->
+                Pool1 = [send(ial,initiate(ST,R2))|Pool],
+		(wait(R2)->
+			R=R2)
+	;
+            R1 = normal(fail)->
+		Pool1 = [],
+		R     = abnormal({dbt,'Goal is fail',nil})
+        ;
+            R1 = abnormal(_)->
+                Pool1 = [],
+		R     = R1
+        ).
+
+%brows
+    brows(Info1,Pool1,Info,R):-true|
+        dbtgui_shellCurrentState:create({{0,0,0,0},"",nil,nil,{nil,nil}},CSS1),
+        dbtgui_showArgumentUtility:show_argumentList(
+		{Pool1,Info1,CSS1},{Pool,Info2,CSS},R1),
+	( wait(R1)->
+		slv_shell:get_commandArguments({Pool,Info2,CSS},{[],Info},_,R)).
+

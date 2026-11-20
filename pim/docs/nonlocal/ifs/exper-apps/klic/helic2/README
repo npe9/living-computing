@@ -1,0 +1,183 @@
+				HELIC-II
+
+										
+1.overview
+
+A judge or lawyer uses inference to apply a law to real accident called legal
+reasoning. HELIC-II is tool that realizes Legal reasoning on computer,and
+researches inference process of legal exparts.
+
+
+Functions of HELIC-II is generation of argument,selection of argument ,
+selection of argument .
+
+Explanation of these function is as follows.
+
+1.1 generation of argument
+
+This function makes a proof tree which indicates a conclusion(goal) as an
+argument when the facts and rules are already given and then a conclusion is
+given.
+
+There are two kinds of rules; usual rules(RBR rules) and CBR rules.  CBR rule
+has the characteristic of being applied after generalization.
+
+1.2 selection of argument 
+
+This function is realized by defeasible reasoning, that is one of nonmonotonic
+reasoning.
+
+Defeasible reasoning generates an argument of a given conclusion and its counter
+argument.  It then determines the type of argument from the TopRule relation
+(refer to appendix for details), the priority relation of rules between the
+argument and its counter argument, and the type of its counter argument.
+
+Types of arguments are as follows:
+
+* justify
+	Refutes all counter arguments.
+* defeated
+	Refuted by at least one of its counter argument.
+* plausible
+	Unrelated or refutes to a counter argument.
+
+1.3 debate
+
+A debate function of "HELIC-II" materializes a debate model between two agents
+called a prosecutor and defendant.
+
+The object of the prosecutor agent is to substantiate an argument to justify a
+self goal, and the object of the pleading agent is to substantiate an effective
+counter argument to the prosecutor's argument.
+
+A premise of this debate model is as follows:
+
+(1) Each agent has a different knowledge (viewpoint, unit).
+
+(2) Only the prosecutor agent has a goal to achieve in a debate.
+    This goal, represented as an H term.
+    A defendant rebuts passively to the argument sent from the prosecutor.
+
+(3) Claims from both sides must use arguments in a form of a proof tree based on
+    facts.
+
+(4) The comparison between arguments is determined by the priority relation 
+    between the TopRule of arguments.
+
+
+	+----------+  	---->  		+---------+
+	|Prosecutor| Debate protocol  	|Defendant|
+	+----------+  	<----  		+---------+
+	  |		  	  	  |
+	  V		  	  	  V
+	+===========+	       		+===========+
+	|goal	    |			|           |
+	|Viewpoint 1|	       		|Viewpoint 2|
+	|Rule set 1 |	       		|Rule set 2 |
+	+===========+	       		+===========+
+
+			[Debate model]
+
+A debate is proceeded by claiming an argument to the opponent and noticing that
+the argument is advantageous over the other.
+
+Each agent sends a message called a debate protocol to the opponent to present
+the argument.
+
+The following are the different kinds of debate protocols:
+
+	* Claim argument (pose)
+        	Claims an argument.  It is used in a case of doing a claim or
+		rebuttal.
+
+	* Priority notice (notice)
+	        Notices that the self argument is dominant.
+
+	* Cancel argument (cancel)
+	        Cancels a claimed argument.
+
+	* End debate (end)
+        	Notices that the debate on the opponent's argument has been
+		finished.
+
+HELIC-II has 3 programs(DRS CUI GUI) to provides this function.
+User runs HELIC-II that choices one program in three programs.
+
+Following table is to explain relation of programs and functions.
+
+=============================================================================
+Program Name	Functions		Execution environment
+=============================================================================
+DRS		1.1+1.2			UNIX + KLIC
+CUI		1.1+1.2+1.3		UNIX + KLIC
+		by only using keyboard
+		 
+GUI		1.1+1.2+1.3		UNIX + KLIC + OSF/motif
+		by using graphic user interface
+=============================================================================
+
+KLIC is also IFS program.
+KLIC is compiler of concurrent logic language KL1.
+
+2.execution environment
+
+Confirmed to run on following environments in execution and installation.
+
+2.1 UNIX machine
+
+(1) hardware
+	(a) machine
+		Sun sparcStatiion 10
+	(b) memory
+		more than 32MB
+	(c) harddisk
+		more than 40MB
+
+(2) software
+	(a) OS
+		SunOS 4.1.3
+	(b) C compiler
+		gcc-2.6.2
+	(c) KLIC(KLIC is IFS)
+		more than version1.7
+	(d) environment of Japanese
+		Needs following either gcc library or header file,
+		when installs DRS or CUI or GUI that use knowlede 
+		source(rule,type) to include Japanese.
+		
+		* library
+			libfl.a
+		* header file
+			euc.h
+
+	(e) In using GUI,needs more than OSF/Motif 1.2.
+		
+It is easy for japanese input/output to use emacs for Japanese(nemacs),
+when uses Japanese in DRS or CUI.
+
+Release period of HELIC-II on DOS/V is not defined.
+
+3.installation
+
+KLIC must be installed before installing HELIC-II.
+
+Method of installation is as follows.
+
+3.1 UNIX machine
+
+(1) DRS
+	(a) Gets drs.tgz by ftp with binary mode.
+	(b) Melts drs.tgz(gtar xvzf drs.tgz).
+	(c) Next installation is refered to INSTALL(.j) into melted file.
+(2) CUI
+	(a) Gets cui.tgz by ftp with binary mode.
+	(b) Melts cui.tgz(gtar xvzf cui.tgz).
+	(c) Next installation is refered to INSTALL(.j) into melted file.
+(3) GUI
+	(a) Gets gui.tgz by ftp with binary mode.
+	(b) Melts gui.tgz(gtar xvzf gui.tgz).
+	(c) Next installation is refered to INSTALL(.j) into melted file.
+
+3.2 DOS/V machine
+
+Release period of HELIC-II on DOS/V is not defined.

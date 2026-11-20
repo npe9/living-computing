@@ -1,0 +1,139 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/08/01
+# modified by D.Sekita '97/7/3
+# modified by A.Aiba	'97/08/15
+# modified by D.Sekita '97/05/18
+-->
+
+<title> (85) KLIC version 2: A parallel implementation of KL1 for
+general-purpose computers</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+
+<h2> (85) KLIC version 2: A parallel implementation of KL1 for
+general-purpose computers</h2> <p>
+
+<h2><b>Note</b></h2>
+<h3><p>
+
+KLIC is currently maintained by <a href="http://www.icot.or.jp/">
+AITEC</a>, and the newer, more stable version may be released. Please
+access <a href="http://www.klic.org/"> the KLIC home
+page</a> for the latest infomation.  </p></h3>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine, etc
+	Environment: UNIX
+	Language:    C
+	Source code: 3.5 MB
+	Documents:   Manual and tutorial (both in English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+KLIC version 2 is a portable and high-performance parallel
+implementation of a concurrent logic programming language KL1 through
+translation into the langauge C.  <p>
+
+<h2><b>Features</b></h2>
+
+KL1 is a concurrent logic programming language designed as the kernel
+language of the FGCS project.  KLIC is a portable and high-performance
+parallel implementation of KL1 for systems having basic functions of
+UNIX operating system.  <p>
+
+<ul>
+
+<li>By translating KL1 language programs finally into native machine
+code, its execution performance much superior to interpretive
+implmentations.
+
+<li>By using the language C as an intermediate language and making use
+of the low-level machine-dependent optimization provided by C
+compilers, high performance and excellent portability are realized at
+the same time.
+
+<li>Foreign language programs can be easily linked with KL1 programs.
+
+</ul>
+<p>
+
+Improvements over the version 1 are as follows.  <p>
+
+<ul>
+
+<li>Improved user interface.
+
+<li>Portable parallel implementations (for parallel and
+netword-connected systems).
+
+</ul>
+<h2><b>Function</b></h2>
+
+<ul>
+
+<li>A KL1 to C compiler and its runtime system are provided.
+
+<li>All the essential features of the concurrent logic programming
+language KL1 are provided.
+
+<li>The system is more than twice as fast as modern Prolog
+implementations with the same or smaller object code size.
+
+<li>The debugging tracer features stepping, spying, deadlock
+detection, etc.
+
+<li>As only standard features of the language C and UNIX are used,
+the system can be ported with almost no modification to a wide variety
+of UNIX systems.
+
+<li>Parallel implementations for system with shared memory or PVM.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/README1">README</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/readme/README.klic">README
+(detail)</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/INSTALL">INSTALL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/KL1TUT.info">TUTORIAL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/tutorial.tex">TUTORIAL(TeX)</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/Makefile">Makefile</a>.
+
+<li> KLIC version 2: A parallel implementation of KL1 for
+general-purpose computers
+
+<a
+href="../../../ifs/symbolic-proc/unix/klic/klic-2.002.tgz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

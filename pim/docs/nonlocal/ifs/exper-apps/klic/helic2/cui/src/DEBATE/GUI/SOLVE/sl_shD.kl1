@@ -1,0 +1,22 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_showDisplayInfo.
+
+:- public 
+    show_pl/3,
+    show_pt/3.
+
+:- with_macro pimos.
+
+%show_pl
+    show_pl(CS1,CS,R):-true|
+        CS1 = [get(displayParameter,{PL,_}),
+               send(nh,receive(pl,PL,R))|CS].
+
+%show_pt
+    show_pt(CS1,CS,R):-true|
+        CS1 = [get(displayParameter,{_,PT}),
+               send(nh,receive(pt,PT,R))|CS].

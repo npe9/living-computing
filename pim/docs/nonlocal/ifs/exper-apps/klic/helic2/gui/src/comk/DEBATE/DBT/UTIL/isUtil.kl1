@@ -1,0 +1,228 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_issueUtility.
+
+:- public 
+    get_numOfCounterArgument/3,
+    is_issue/5,
+    get_topRuleRel/5,
+    get_topRuleRelInfo/5,
+    get_topRuleNameList/3,
+    make_consequence/5.
+            
+:- with_macro pimos.
+
+%get_numOfCounterArgument
+    get_numOfCounterArgument(SV,IPos,NumOfCA):-true|
+        (   integer(IPos)->
+                dbt_svUtility:get_solution(SV,IPos,counterSolutionTable,CST),
+                count(CST,0,NumOfCA)
+        ;
+            IPos = naf(_)->
+                dbt_svUtility:get_solution(SV,IPos,nafSolutionTable,NST),
+                count(NST,0,NumOfCA)
+        ).
+
+%is_issue
+    is_issue(SV,Pos,MAT1,MAT,YN):-true|      %Pos ha naf(Pos) no baai ari
+        in_sameMeaning(SV,Pos,MAT1,MAT,YN1),
+        (   YN1 = yes->
+                YN = no
+        ;
+            YN1 = no ->
+                is_issue1(SV,Pos,YN)
+        ).
+
+    in_sameMeaning(_,_,MAT1,MAT,YN):-true|
+        YN = no,MAT = MAT1.
+%    in_sameMeaning(SV,Pos,MAT1,MAT,YN):-true|
+%        MAT1 = [in_sameMeaning({SV,Pos},YN)|MAT].
+
+    is_issue1(SV,Pos,YN):-integer(Pos)|
+        dbt_svUtility:get_solution(SV,Pos,counterSolutionTable,CST),
+        (   CST = fail->
+                YN = no
+        ;
+            CST = nil-> %for show counter argument
+                YN = no
+        ;
+            CST = []->
+                YN = no
+        ;
+            CST \= fail,CST \=nil,CST \=[]->
+                YN = yes
+        ).
+    is_issue1(SV,naf(Pos),YN):-integer(Pos)|
+        dbt_svUtility:get_solution(SV,naf(Pos),consJudge,ConsJudge),
+        (   ConsJudge = fail->
+                YN = no
+        ;
+            ConsJudge \= fail->
+                YN = yes
+        ).
+
+%get_topRuleRel
+    get_topRuleRel(SV,IPos,Info1,Info,Rel):-true|
+        Info1 = {RBR1,POM1,{ViewName,UseUnit,Goal,AgentName},Para},
+        POM1  = [get({viewUnitUnitRelTable,ViewName},UURT,_)|POM2],
+        Info  = {RBR1,POM2,{ViewName,UseUnit,Goal,AgentName},Para},
+        
+        (   IPos =naf(_) ->
+                UURT = [],
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                        % naf to nokoro wo show_argument sitatoki
+                                        % aite gawanohouga tuyoitoki "Rel = d"
+                                        % jibun nohouga tuyoi toki   "Rel = j"
+                Rel = j
+%                Rel = d             
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        ;
+            integer(IPos)->
+                dbt_svUtility:get_solution(SV,IPos,ruleName,TopRuleName),
+                get_caTopRuleNameList(SV,IPos,CaTopRuleNameList),
+                get_topRuleRel1(CaTopRuleNameList,TopRuleName,UURT,[],RelList),
+                get_topRuleRel2(RelList,j,Rel)
+        ).
+
+%get_topRuleNameList
+    get_topRuleNameList(SV,IPos,TopRuleNameList):-true|
+        dbt_svUtility:get_solution(SV,IPos,ruleName,TopRuleName),
+        get_caTopRuleNameList(SV,IPos,CaList),
+        combination(CaList,0,TopRuleName,TopRuleNameList).
+
+    combination([],_,_,List):-true|
+        List = [].
+    combination([R1|T],Pos,R2,List):-true|
+        Pos1 := Pos+1,
+        combination(T,Pos1,R2,List1),
+        List = [{Pos,{R1,R2}}|List1].
+
+%get_caTopRuleNameList
+    get_caTopRuleNameList(SV,IPos,List):-true|
+        get_numOfCounterArgument(SV,IPos,NumOfCA),
+        get_caTopRuleNameList1(SV,0,NumOfCA,IPos,List).
+
+    get_caTopRuleNameList1(_,C,C,_,List):-true|
+        List = [].
+    get_caTopRuleNameList1(SV,CPos,C,IPos,List):-CPos\=C,integer(IPos)|
+        dbt_counterArgumentUtility:get_counterArgumentRuleName(SV,IPos,CPos,RuleName),
+        CPos1:=  CPos+1,
+        get_caTopRuleNameList1(SV,CPos1,C,IPos,List1),
+        List = [RuleName|List1].
+    get_caTopRuleNameList1(SV,CPos,C,IPos,List):-CPos\=C,IPos=naf(_)|
+        dbt_counterArgumentUtility:get_counterArgumentRuleName(SV,IPos,CPos,RuleName),
+        CPos1:=  CPos+1,
+        get_caTopRuleNameList1(SV,CPos1,C,IPos,List1),
+        List = [RuleName|List1].
+
+    get_topRuleRel1([],_,UURT1,UURT,RelList):-true|
+        UURT = UURT1,
+        RelList = [].
+    get_topRuleRel1([R1|T],TopRuleName,UURT1,UURT,RelList):-true|
+        UURT1 = [get_unitUnitRelReason(TopRuleName,R1,Rel,SPList)|UURT2],
+        get_topRuleRel1(T,TopRuleName,UURT2,UURT,RelList1),
+        RelList = [{TopRuleName,R1,Rel,SPList}|RelList1].
+
+    get_topRuleRel1ForNaf([],RelList):-true|
+        RelList = [].
+    get_topRuleRel1ForNaf([R|T],RelList):-true|
+        get_topRuleRel1ForNaf(T,RelList1),
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        RelList = [{nil,R,-1,[]}|RelList1].  %show {arglist,claimlist,counterlist} de {Storonj,Non,weak}
+                                             %naf notoki weak wo nisitaitoki ha -1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        RelList = [{nil,R,1,[]}|RelList1].
+                                             %naf notoki strong  nisitaitoki ha 1
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    get_topRuleRel2([],Rel1,Rel):-true|
+        Rel = Rel1.
+    get_topRuleRel2([{_,_,1,_}|T],Rel1,Rel):-true|
+        get_topRuleRel2(T,Rel1,Rel).
+    get_topRuleRel2([{_,_,0,_}|T],_,Rel):-true|
+        get_topRuleRel2(T,p,Rel).
+    get_topRuleRel2([{_,_,-1,_}|_],_,Rel):-true|
+        Rel = d.
+
+%get_topRuleRelInfo
+    get_topRuleRelInfo(SV,IPos,Info1,Info,RelList):-true|
+        Info1 = {RBR1,POM1,{ViewName,UseUnit,Goal,AgentName},Para},
+        POM1  = [get({viewUnitUnitRelTable,ViewName},UURT,_)|POM2],
+        Info  = {RBR1,POM2,{ViewName,UseUnit,Goal,AgentName},Para},
+
+        (   IPos =naf(_) ->
+                UURT = [],
+                get_caTopRuleNameList(SV,IPos,CaTopRuleNameList),
+                get_topRuleRel1ForNaf(CaTopRuleNameList,RelList)
+        ;
+            integer(IPos)->
+                dbt_svUtility:get_solution(SV,IPos,ruleName,TopRuleName),
+                get_caTopRuleNameList(SV,IPos,CaTopRuleNameList),
+                get_topRuleRel1(CaTopRuleNameList,TopRuleName,UURT,[],RelList)
+        ).
+
+
+
+%make_consequence
+    make_consequence(SV,IPos,PL,h,Consequence):- true| %"h" means h-term
+        dbt_svUtility:get_solution(SV,IPos,consequence,Consequence1),
+        (   IPos = naf(_)->
+                NafFlag = 1
+        ;
+            integer(IPos)->
+                NafFlag = 0
+        ),
+        iToh(NafFlag,Consequence1,SV,PL,Consequence).
+    make_consequence(SV,IPos,PL,e,Consequence):- true| %"e" means natural lang
+        dbt_svUtility:get_solution(SV,IPos,explanation,Consequence1),
+	string(Consequence1,L,_,_),
+        (   L=<PL ->
+            	Consequence = Consequence1
+        ;
+            L > PL ->
+                substring:substring(Consequence1,0,PL,Consequence,_)
+        ).
+
+    iToh(0,Consequence1,{ENV,HID,_},PL,Consequence):-true|
+        reverse_translate:reverse_translate(2,{Consequence1,ENV,HID},Consequence2),
+        ( string(Consequence2,L,_)->
+                (   L=<PL ->
+                        Consequence = Consequence2
+                ;
+                    L > PL ->
+                        substring:substring(Consequence2,0,PL,Consequence,_)
+                )
+        ;
+        otherwise;
+         true->
+                Consequence = "reverse-translate timming error"
+        ).
+    iToh(1,Consequence1,{ENV,HID,_},PL,Consequence):-true|
+        reverse_translate:reverse_translate(2,{Consequence1,ENV,HID},Consequence2),
+        ( string(Consequence2,L,_)->
+                (   L=<PL ->
+                        append_string:append_string(["not ",Consequence2],Consequence)
+                ;
+                    L > PL ->
+                        substring:substring(Consequence2,0,PL,Consequence3,_),
+                        append_string:append_string(["not ",Consequence3],Consequence)
+                )
+        ;
+        otherwise;
+         true->
+                Consequence = "reverse-translate timming error"
+        ).
+
+%%%%%%%%%internal method
+
+    count([],X,Y):-true|
+        Y = X.
+    count([_|T],X,Y):-true|
+        X1 :=X+1,
+        count(T,X1,Y).
+

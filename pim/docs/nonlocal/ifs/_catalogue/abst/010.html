@@ -1,0 +1,75 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(10) Dynamical Programming DP</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(10) Dynamical Programming DP</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Sparc, PIM
+	Environment: UNIX, PIMOS
+	Language:    C, KL1
+	Source Code: 250KB, 500KB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A logic programming system which controls symbolic inferences by
+general heuristics based on dynamics.<P>
+
+<h2><b>Description</b></h2>
+
+Programs in DP look like those in Prolog, but computation does not
+always proceed on top-down and left-to-right basis. Information flow
+is implicit in programs, and computation proceeds along various
+directions depending upon various contexts. Namely, DP deals with the
+whole logic program as a constraint.  <p>
+
+The declarative semantics of a program is given by capturing the
+degree of violation of constraint in terms of potential energy. The
+energy gives rise to a dynamics, which controls computation so as to
+process important information only. This dynamical semantics could
+support partial information processing under the limitation of
+computational resources.  <p>
+
+DP will give rise to a heterarchy consisting of various modules of
+constraints. In particular, we are conducting a basic research on a
+natural language processing system which looks like: <p>
+
+ <dl>
+<dd><img src="010.gif">
+</dl>
+
+<p>
+
+Two different implementations are going on. One is written in C, runs
+in UNIX. and is equippe with a graphic interface based on X Window. 
+This program runs on Macintosh, with a different graphic interface. 
+The other version in written in KL1 and runs in PIMOS.  This latter
+version is not yet equipped with dynamics, because the emphasis is in
+parallel implementation.  <p>
+
+<h2>FTP</h2>
+<ul>
+<li> Dynamical Programming DP  [194K]
+<a href="../../../ifs/kbms-clp/unix/dp.tgz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

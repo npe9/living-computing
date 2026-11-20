@@ -1,0 +1,471 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tatt
+%       File Name   : ty_tatt.kl1
+%       Function    : create attribute table from definition
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/14  : typo fix sucess -> success
+%$	1994/ 7/ 5  : string_less_than to generic:less_than
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 7/ 4  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 3/ 2  : fix error message
+%$      1994/ 1/31  : rename debug tag from cmp to tatt
+%$      1994/ 1/28  : inherit to bottom bug
+%$      1994/ 1/28  : label comparation bug (string_less_than)
+%$      1994/ 1/28  : attributes inheritance bug
+%$      1994/ 1/27  : builtin string type check in check_attrs
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/26  : builtin type check in check_attrs
+%$      1994/ 1/25  : move attribute initialization to ty_tlat
+%$      1994/ 1/19  : initialize attribute
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tatt.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public make_attribute_table/4.
+%:-else.
+%:-public make_attribute_table/6.
+%:-end_if.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S make_attribute_table(AttrDefs,TypeDB,NewTypeDB,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | illegal_dcl_syntax
+%               | illegal_attribute_dcl_syntax | type_error
+%               | undefined_label | type_dcl_error
+make_attribute_table(AttrDefs,TypeDB,NewTypeDB,Result):-
+%    debug#info(debug_tag#tatt,&debug,Info),
+%    Info = initialize_attribute_tables(AttrDefs,TypeDB,TypeDB1,R1),
+    initialize_attribute_tables(AttrDefs,TypeDB,TypeDB1,R1),
+    go_to_inherit_attributes(R1,TypeDB1,NewTypeDB,Result).
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | illegal_dcl_syntax
+%               | illegal_attribute_dcl_syntax | type_error
+%               | undefined_label | type_dcl_error
+%go_to_inherit_attributes(normal(ty#yes),TypeDB,NewTypeDB,Result)-->
+go_to_inherit_attributes(normal(success),TypeDB,NewTypeDB,Result):-
+%    debug#info(debug_tag#tatt,&debug,Info),
+%    Info = inherit_attributes(TypeDB,TypeDB1,R1),
+    inherit_attributes(TypeDB,TypeDB1,R1),
+    go_to_check_attr_types(R1,TypeDB1,NewTypeDB,Result).
+otherwise.
+go_to_inherit_attributes(R,TypeDB,NewTypeDB,Result):-
+    Result = R,
+    NewTypeDB = TypeDB.
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | type_error | undefined_label
+%               | type_dcl_error
+%go_to_check_attr_types(normal(ty#yes),TypeDB,NewTypeDB,Result)-->
+go_to_check_attr_types(normal(success),TypeDB,NewTypeDB,Result):-
+%    debug#info(debug_tag#tatt,&debug,Info),
+%    Info = check_attr_types(TypeDB,NewTypeDB,Result),
+    check_attr_types(TypeDB,NewTypeDB,Result).
+otherwise.
+go_to_check_attr_types(R,TypeDB,NewTypeDB,Result):-
+    Result = R,
+    NewTypeDB = TypeDB.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name | illegal_dcl_syntax
+%               | illegal_attribute_dcl_syntax
+initialize_attribute_tables(AttrDefs,TypeDB,NewTypeDB,Result):-
+    ty_util:make_dcl_pterm(AttrDefs,PTerms,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        initial_attr(PTerms,TypeDB,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB,
+        Result = R1
+    ).
+
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+initial_attr([],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+initial_attr([PTerm|PTerms],TypeDB,NewTypeDB,Result):-
+%    pterm#read(typename,Name,PTerm,PTerm1),
+    vector_element(PTerm,0,Name,PTerm1),
+    ty_lat:name_to_position(Name,Pos,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB1,TypeDB2),
+        set_vector_element(TypeDB1,5,AttrTBL,NewAttrTBL,TypeDB2),
+%        pterm#read(attributes,Attributes,PTerm1,_PTerm2),
+        vector_element(PTerm1,2,Attributes,_PTerm2),
+        set_vector_element(AttrTBL,Pos,_,Attributes,NewAttrTBL),
+        initial_attr(PTerms,TypeDB2,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+inherit_attributes(TypeDB,NewTypeDB,Result):-
+%    CurrentLayer = [ty#top],
+    CurrentLayer = ['&top'],
+    inherit_to_ilb(CurrentLayer,TypeDB,NewTypeDB,Result).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+inherit_to_ilb(CurrentLayer,TypeDB,NewTypeDB,Result):-
+%    debug#info(debug_tag#tatt,&debug,Info),
+%    Info = inh_attrs(CurrentLayer,TypeDB,TypeDB1,R1),
+    inh_attrs(CurrentLayer,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        inh_attrs_ilb(CurrentLayer,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+inh_attrs_ilb([],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+inh_attrs_ilb([Name|CurrentLayer],TypeDB,NewTypeDB,Result):-
+    ty_lat:immediate_lower_bound(Name,ILB,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        inherit_to_ilb(ILB,TypeDB1,TypeDB2,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    inh_attrs_ilb(CurrentLayer,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+inh_attrs([],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+inh_attrs([Name|CurrentLayer],TypeDB,NewTypeDB,Result):-
+    merge_into_immediate_lowers(Name,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        inh_attrs(CurrentLayer,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+merge_into_immediate_lowers(Name,TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_position(Name,Position,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ typeDB#read(attrTBL,AttrTBL,TypeDB1,TypeDB2) }},
+        vector_element(TypeDB1,5,AttrTBL,TypeDB2),
+        % set_vector_element(AttrTBL,Position,ParAttr,_NewParAttr,AttrTBL1),
+        vector_element(AttrTBL,Position,ParAttr,_AttrTBL1),
+        ty_lat:immediate_lower_bound(Name,ILB,TypeDB2,TypeDB3,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    merge_parent_attr(ILB,ParAttr,TypeDB3,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewTypeDB = TypeDB3,
+	    Result = R2
+	)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+merge_parent_attr([],_ParAttr,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+merge_parent_attr([ILE|ILB],ParAttr,TypeDB,NewTypeDB,Result):-
+%    (ty#is_bottom(ILE) ->
+    (ILE = '&bottom' ->
+        merge_parent_attr(ILB,ParAttr,TypeDB,NewTypeDB,Result)
+    ;otherwise;true ->
+        ty_lat:name_to_position(ILE,ILEPos,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB1,TypeDB2) }},
+	    set_vector_element(TypeDB1,5,AttrTBL,NewAttrTBL,TypeDB2),
+	    set_vector_element(AttrTBL,ILEPos,ILEAttr,
+			       NewILEAttr,NewAttrTBL),
+	    meet_attrs(ParAttr,ILEAttr,NewILEAttr,TypeDB2,TypeDB3,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+	        merge_parent_attr(ILB,ParAttr,TypeDB3,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewTypeDB = TypeDB3,
+	        Result = R2
+	    )
+	;otherwise;true ->
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+    ).
+
+% Parent と Child をマージして結果を NewChild に返す。
+% NewParent は Parent のまま
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+merge_attrs(Parent,Child,NewChild,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,ParTypeName,Parent,Parent1) }},
+    vector_element(Parent,0,ParTypeName,Parent1),
+%    {{ pterm#read(attributes,ParAttrs,Parent1,_NewParent) }},
+    vector_element(Parent1,2,ParAttrs,_NewParent),
+%    {{ pterm#get(typename,ChildTypeName,NewChildTypeName,Child,Child1) }},
+    set_vector_element(Child,0,ChildTypeName,NewChildTypeName,Child1),
+%    {{ pterm#get(attributes,ChildAttrs,NewChildAttrs,Child1,NewChild) }},
+    set_vector_element(Child1,2,ChildAttrs,NewChildAttrs,NewChild),
+%    debug#info(debug_tag#tatt,&debug,Info1),
+%    Info1 = meet(ParTypeName,ChildTypeName,NewChildTypeName,
+%		TypeDB,TypeDB1,R1),
+    ty_lat:meet(ParTypeName,ChildTypeName,NewChildTypeName,
+		TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        meet_attrs(ParAttrs,ChildAttrs,NewChildAttrs,
+		   TypeDB1,NewTypeDB,Result)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+        NewTypeDB = TypeDB1,
+        Result = abnormal(Info),
+%        Info = {ty#typemid,type_dcl_error,[Parent,Child]}
+        Info = {type,type_dcl_error,[Parent,Child]}
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : type_dcl_error | illegal_type_name
+meet_attrs([],ChildAttrs,NewChildAttrs,TypeDB,NewTypeDB,Result):-
+    NewChildAttrs = ChildAttrs,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+meet_attrs(ParAttrs,[],NewChildAttrs,TypeDB,NewTypeDB,Result):-
+    NewChildAttrs = ParAttrs,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+meet_attrs([Par|ParAttrs],[Child|ChildAttrs],NewChildAttrs,
+	   TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,ParLabel,Par,Par1) }},
+    vector_element(Par,0,ParLabel,Par1),
+%    {{ attribute#read(label,ChildLabel,Child,Child1) }},
+    vector_element(Child,0,ChildLabel,Child1),
+%    (string_less_than(ParLabel,ChildLabel) ->
+    (generic:less_than(ParLabel,ChildLabel) ->
+        NewChildAttrs = [Par1|NewChildAttrs1],
+        meet_attrs(ParAttrs,[Child1|ChildAttrs],NewChildAttrs1,
+		   TypeDB,NewTypeDB,Result)
+    ;ParLabel = ChildLabel ->
+%        {{ attribute#read(value,ParValue,Par1,_Par2) }},
+        vector_element(Par1,1,ParValue,_Par2),
+%        {{ attribute#read(value,ChildValue,Child1,Child2) }},
+        vector_element(Child1,1,ChildValue,Child2),
+        merge_attrs(ParValue,ChildValue,NewChildValue,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    {{ attribute#set(value,NewChildValue,Child2,NewChild) }},
+	    set_vector_element(Child2,1,_,NewChildValue,NewChild),
+	    NewChildAttrs = [NewChild|NewChildAttrs1],
+	    meet_attrs(ParAttrs,ChildAttrs,NewChildAttrs1,
+		       TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(ChildLabel,ParLabel) ->
+    ;generic:less_than(ChildLabel,ParLabel) ->
+        NewChildAttrs = [Child1|NewChildAttrs1],
+        meet_attrs([Par1|ParAttrs],ChildAttrs,NewChildAttrs1,
+		   TypeDB,NewTypeDB,Result)
+    ).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name | type_error | undefined_label
+check_attr_types(TypeDB,NewTypeDB,Result):-
+%    {{ typeDB#read(dbsize,DBSize,TypeDB,TypeDB1) }},
+    vector_element(TypeDB,0,DBSize,TypeDB1),
+    check_all_attr_types(0,DBSize,TypeDB1,NewTypeDB,Result).
+
+check_all_attr_types(N,DBSize,TypeDB,NewTypeDB,Result):-
+    N>=DBSize|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+check_all_attr_types(N,DBSize,TypeDB,NewTypeDB,Result):-
+    N<DBSize|
+%	{{ typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB,TypeDB1) }},
+	set_vector_element(TypeDB,5,AttrTBL,NewAttrTBL,TypeDB1),
+	vector_element(AttrTBL,N,Attrs,NewAttrTBL),
+	check_attrs(Attrs,TypeDB1,TypeDB2,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    check_all_attr_types(~(N+1),DBSize,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewTypeDB = TypeDB2,
+	    Result = R1
+	).
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name | type_error | undefined_label
+check_attrs([],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+check_attrs([Attr|Attrs],TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(value,Value,Attr,_Attr1) }},
+    vector_element(Attr,1,Value,_Attr1),
+%    {{ pterm#read(typename,TypeName,Value,Value1) }},
+    vector_element(Value,0,TypeName,Value1),
+    is_builtin(TypeName,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        check_attrs(Attrs,TypeDB,NewTypeDB,Result)
+    ;otherwise;true ->
+%        {{ pterm#read(attributes,CheckAttr,Value1,_Value2) }},
+        vector_element(Value1,2,CheckAttr,_Value2),
+        ty_lat:name_to_position(TypeName,Pos,TypeDB,TypeDB1,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+%	    {{ typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB1,TypeDB2) }},
+	    set_vector_element(TypeDB1,5,AttrTBL,NewAttrTBL,TypeDB2),
+	    vector_element(AttrTBL,Pos,DefinedAttr,NewAttrTBL),
+%	    debug#info(debug_tag#tatt,&debug,Info),
+%	    Info = check_attr_definition(CheckAttr,DefinedAttr,TypeDB2,TypeDB3,R3),
+	    check_attr_definition(CheckAttr,DefinedAttr,TypeDB2,TypeDB3,R3),
+%	    (R3 = normal(ty#yes) ->
+	    (R3 = normal(success) ->
+	        check_attrs(Attrs,TypeDB3,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewTypeDB = TypeDB3,
+	        Result = R3
+	    )
+	;otherwise;true ->
+	    NewTypeDB = TypeDB1,
+	    Result = R2
+	)
+    ).
+
+
+%
+%is_builtin(X,R):-ty#is_top(X)|R=normal(ty#yes).
+is_builtin(X,R):-X='&top'|R=normal(success).
+%is_builtin(X,R):-ty#is_bottom(X)|R=normal(ty#yes).
+is_builtin(X,R):-X='&bottom'|R=normal(success).
+%is_builtin(X,R):-ty#blt_integer(X)|R=normal(ty#yes).
+is_builtin(X,R):-X='&integer'|R=normal(success).
+%is_builtin(X,R):-ty#blt_string(X)|R=normal(ty#yes).
+is_builtin(X,R):-X='&string'|R=normal(success).
+%is_builtin(X,R):-ty#is_number(X)|R=normal(ty#yes).
+is_builtin(X,R):-vector(X,1)|R=normal(success).
+%is_builtin(X,R):-ty#is_string(X)|R=normal(ty#yes).
+is_builtin(X,R):-string(X,_,_)|R=normal(success).
+%is_builtin(X,R):-ty#is_cover(X)|R=normal(ty#yes).
+is_builtin(X,R):-vector(X,2)|R=normal(success).
+otherwise.
+%is_builtin(_,R):-true|R=normal(ty#no).
+is_builtin(_,R):-true|R=normal(fail).
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name | type_error | undefined_label
+check_attr_definition([],_DefinedAttr,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+check_attr_definition(_CheckAttr,[],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+check_attr_definition([Check|CheckAttr],[Defined|DefinedAttr],
+		      TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,CheckLabel,Check,Check1) }},
+    vector_element(Check,0,CheckLabel,Check1),
+%    {{ attribute#read(label,DefinedLabel,Defined,Defined1) }},
+    vector_element(Defined,0,DefinedLabel,Defined1),
+    (CheckLabel = DefinedLabel ->
+%        {{ attribute#read(value,CheckValue,Check1,_Check2) }},
+        vector_element(Check1,1,CheckValue,_Check2),
+%        {{ attribute#read(value,DefinedValue,Defined1,_Defined2) }},
+        vector_element(Defined1,1,DefinedValue,_Defined2),
+        DummyEnv = {},
+%	debug#info(debug_tag#tatt,&debug,Info),
+%        Info = glb(CheckValue,DefinedValue,_GLBValue,DummyEnv,_NewDummyEnv,
+%		   TypeDB,TypeDB1,R1),
+        ty_att:glb(CheckValue,DefinedValue,_GLBValue,DummyEnv,_NewDummyEnv,
+		   TypeDB,TypeDB1,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    check_attr_definition(CheckAttr,DefinedAttr,
+				  TypeDB1,NewTypeDB,Result)
+%        ;R1 = normal(ty#no) ->
+        ;R1 = normal(fail) ->
+	    NewTypeDB = TypeDB1,
+%	    Info = {ty#typemid,type_error,[Check,Defined]},
+	    Info = {type,type_error,[Check,Defined]},
+	    Result = abnormal(Info)
+	;otherwise;true->
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(CheckLabel,DefinedLabel) ->
+    ;generic:less_than(CheckLabel,DefinedLabel) ->
+        check_attr_definition(CheckAttr,[Defined1|DefinedAttr],
+			      TypeDB,NewTypeDB,Result)
+%    ;string_less_than(DefinedLabel,CheckLabel) ->
+    ;generic:less_than(DefinedLabel,CheckLabel) ->
+        check_attr_definition([Check1|CheckAttr],DefinedAttr,
+			      TypeDB,NewTypeDB,Result)
+    ).

@@ -1,0 +1,1757 @@
+
+				CUI操作マニュアル
+
+0.はじめに
+											
+このマニュアルは主に論争機能を提供するツールであるCUIの操作方法に関して説明したものであ
+る。
+
+本マニュアルを読むにあたり、まず、「HELIC-II言語マニュアル」を先に読み、論駁推論、知
+識ベースの記述方法を把握してから、本マニュアルを読むことをお進めする。
+
+1.概要
+
+CUIは、HELIC-II の論争機能を、ユーザのキー入力のみで提供するツールである。論争の当事
+者（検察、被告）の一方または双方をユーザ自身が行うことができる。
+
+このマニュアルは、第２章で提供機能について簡単に説明し、第３章で実行時の状態遷移、第４章
+で知識ファイル、第５章で起動方法を説明する。第６章では、提供するコマンドを説明し、第７章
+で実行例を紹介する。最後に付録として用語説明が載せてある。
+
+2. 提供機能
+
+CUIは、検察側と被告側という２つの当事者（エージェント）の間の論争モデルを実現したもので
+ある。
+
+論争モデルにおける検察エージェントの目標は、自身のゴールを正当化する論証を生成することで
+あり、被告エージェントの目標は、その論証に対する有効な反論を生成することである。
+
+この論争モデルの前提は以下の通りである。
+
+・ 双方のエージェントは、それぞれ異なる知識(価値観,ルール集合)を持つ。
+・ 検察エージェントのみが論争の中で達成すべきゴール(goal)を持つ。
+   そのゴールはH項(H項については「HELIC-II言語マニュアル」を参照)として表現され内部
+   に変数を含んでいても良い。
+   被告は検察の出した論証に対して受動的に反駁を行なう。
+・ 双方の主張は、事実に基底する推論木の形をした論証を用いて行なわなければならない。
+・ 論証間の比較は、論証のTopRuleの間の優先関係によって決定される。
+
+論争の過程において、双方が、自分の価値観の基で優位になる論証を相手に主張(pose)したり、 
+自分の論証の方が相手の論証より優位であることを通知(notice)することにより、論争を進めてい
+く。
+
+
+	+------------+  	---->  		+------------+
+	|検察        |	     論争プロトコル 	|被告        |
+	|エージェント|				|エージェント|
+	+------------+  	<----  		+------------+
+	  |			  	  	  |
+	  V		  		  	  V
+	+===========+	       			+===========+
+	|ゴール     |				|	    |
+	|価値観1    |	       			|価値観2    |
+	|ルール集合1|	       			|ルール集合2|
+	+===========+	       			+===========+
+
+			    [ 論争モデル ]
+
+各エージェントは論争プロトコルと呼ばれるメッセージを相手に通知することにより、自分の考え
+を相手に通知する。以下にその種類を示す。
+
+(1) 論証主張(pose)
+	自分の論証を通知する。
+(2) 優先通知(notice)
+	自分の論証の方が優位であること通知する。
+(3) 論証棄却(cancel)
+	自分が以前通知した論証を棄却する。
+(4) 論争終了(finish)
+	相手論証について論争が終了したことを通知する。
+
+3 実行時の状態遷移
+
+CUIには以下の3つの状態があり、 状態に応じて使えるコマンドが制限される。
+起動時は初期状態である。
+
+	   	  start
++--------+  	--------> 	+--------+
+|初期状態|		  	|論争状態|
++--------+	<-------- 	+--------+
+		  end
+
+	          ab
++--------+      --------> 	+------------+
+|初期状態|	  		|論証表示状態|
++--------+      <-------- 	+------------+
+	          end
+
+初期状態:
+ ・ 使用可能コマンド
+	初期コマンド
+ ・ 状態遷移コマンド
+	論争開始コマンド"start"で論争状態に移る。
+ ・ コマンドを使用するタイミング
+	コマンドの実行が終るたびに次のコマンドの入力ができる。
+
+論争状態:
+ ・ 使用可能コマンド
+	論争コマンド
+ ・ 状態遷移コマンド
+	検察の論争当事者がユーザ(user)の場合、"end"で初期状態に戻る。
+	検察の論争当事者がコンピュータ(system)の場合、論争が終了すると自動的に初期状態に
+	戻る。
+ ・ コマンドを使用するタイミング
+	発言権のある論争当事者がユーザ(user)の時に入力できる。
+
+論証表示状態:
+ ・ 使用可能コマンド
+	論証表示コマンド
+ ・ 状態遷移コマンド
+	論証表示終了コマンドである"end"で通常状態に戻る。
+ ・ コマンドを使用するタイミング
+	コマンドの実行が終るたびに次のコマンドの入力ができる。
+
+初期状態から論争状態へ行く(論争を行なう)ためには以下の処理を必ず行なわなければいけない。
+なお、括弧内のコマンドはその時に使用するコマンド名である
+
+(1) 知識ファイルの読み込み
+	以下の(a),(b)のファイルを必ず読み込まなければならない。
+	さらに、読み込む順番は、(a)の次に(b)を読み込まなければならない。
+
+	(a) 型定義ファイル(compile typeコマンド)、または 
+	    型定義内部表現ファイル(load typeコマンド)
+	(b) ルール定義ファイル(compile ruleコマンド)、または
+	    ルール内部表現定義ファイル(load ruleコマンド)
+
+(2) 使用知識の設定
+	読み込んだルール(ユニット)の内、どのルール(ユニット)を使用するかを設定する
+        (set unitコマンド)。
+
+(3) 論争当事者の設定
+	検察,被告の論争当事者をユーザが行なうのかコンピュータが行なうのかの設定。
+	(set p solver または set d solverコマンド)
+
+また、初期状態から論証表示状態へ行くためには以下の処理を必ず行なわなければならない。
+なお、括弧内のコマンドはその時に使用するコマンド名である。
+
+(1) 知識ファイルの読み込み
+	以下の(a)と(b)のファイル全てを必ず読み込まなければならない。
+	さらに、読み込む順番は、(a)の次に(b)を読み込まなければならない。
+
+	(a) 型定義ファイル(compile typeコマンド)、または 
+	    型定義内部表現ファイル(load typeコマンド)
+	(b) ルール定義ファイル(compile ruleコマンド)、または
+	    ルール内部表現定義ファイル(load ruleコマンド)
+
+(2) 使用知識の設定
+	読み込んだルール(ユニット)の内、どのルール(ユニット)を使用するかを設定する
+        (set unitコマンド)。
+
+(3) 論駁推論の実行
+	論駁推論を実行(solveコマンド)し、結論(goal)に対する証明が成功した時。
+
+4.知識ファイル
+
+論争で必要とする知識をファイルに保存したものを知識ファイルと呼ぶ。
+知識ファイルにはユーザ定義ファイル、内部表現ファイルの2種類がある。ユーザ定義ファイルは
+HELIC-IIの言語仕様に従ってユーザが書いたファイルであり、内部表現ファイルはユーザ定義
+ファイルで書かれている知識が推論時に効率的に参照できるように変換されたものである。
+
+これら2種類の知識ファイルの読み込みを可能にしているのは、以下の理由による。
+CUI内部で扱うデータは全て内部表現に変換しなければならないため、ユーザ定義ファイルは常に
+内部表現への変換が行なわれる。そのため、不変的で内部表現への変換に時間がかかる知識(例え
+ば型など)が記述されたユーザ定義ファイルも常に変換を行なわなければならない。そこで、この
+変換に要する時間を節約するために内部表現形式に変換されたファイルからの読み込みを可能とし
+た。
+
+以下は各種知識ファイルの名称である。
+
+
+定義内容	ユーザ定義ファイル	 内部表現ファイル	
+====================================================================
+ルール		ルール定義ファイル 	 ルール定義内部表現ファイル
+型            	型定義ファイル 		 型定義内部表現ファイル
+半順序		半順序定義ファイル	 半順序定義内部表現ファイル
+ゴール		ゴール定義ファイル	 ゴール定義内部表現ファイル	 
+
+半順序定義ファイルはユニット定義、判断基準定義、価値観定義を順番に定義したファイルである。
+ユーザ定義ファイルからの読み込みはcompileコマンド、内部表現ファイルからの読み込みはload
+コマンド、ユーザ定義ファイルから内部表現ファイルへの変換はtransコマンドを使う。
+なお、ユーザ定義ファイルに日本語を含んでいる場合はファイルをeucコードで書かなければなら
+ない。
+
+5. 起動方法
+
+HELIC-IIをインストールするとcui/binの下にcuiというオブジェクトができるので、
+以下のように起動する。
+
+        ! cui
+          +++
+
+プログラムが正常に動作するためには、環境変数のpathにcui/binまでのディレクトリパス名が設定さ
+れていなければならない。詳しくは「CUIインストール・マニュアル」参照のこと。
+
+
+
+6.コマンド説明
+
+各コマンドを説明するにあたって、そこで使われる引数の意味は以下である。
+
+(1) 小文字は固定の文字。大文字はそこに任意の文字が入ることを意味する。
+(2) <x | y | z> は、x y zの中から必ず一つを選んで入れることを意味する。
+(3) {x}は x の０回以上の繰り返し。
+(4) [x]は x を１回または省略できる。
+(5) コマンドの次に指定する<p|d>は、このコマンドが検察(p)に対するものなのか、被告(d)に対
+    するものなのかを指定するものである。
+
+また、注意事項として以下がある。
+
+・コマンド入力は1行で1コマンドとみなされる。
+・日本語を入出力する場合、terminalの入出力モードがeucでなければならない。
+・ファイル名は絶対パス、相対パスどちらでもよい。
+・例は全てカレント・ディレクトリがcui/dataになっている時に実行したものである。
+
+6.1 初期コマンド
+
+6.1.1 知識ファイルの読み込み
+
+知識ファイルの読み込みに関するコマンドを説明する。
+
+(1)  compile <p|d> <type|rule|pom> FILENAME   
+     compile        goal           FILENAME
+
+
+	    <type|rule|pom> 		読み込むファイルのタイプを指定する。
+					typeは型定義ファイル、
+					ruleはルール定義ファイル、
+					pomは半順序定義ファイルを表す。
+	     goal			ゴール定義ファイルを読み込む。
+	     FILENAME 			読み込むファイルの名前
+
+   機能:
+	ユーザ定義の知識ファイルの読み込み。
+
+	なお、compileコマンドを実行すると、作業用のファイルとして、カレント・ディレク
+        トリの下に、tmp1とtmp2というファイルが作成される。
+
+   例:
+	compile p type cntrct.type
+	compile p rule cntrct.rule
+	compile p pom  cntrct.pom
+	compile   goal cntrct.goal
+
+(2)  load <p|d> <type|rule|pom> FILENAME
+     load        goal           FILENAME
+
+	    <type|rule|pom>     読み込むファイルのタイプを指定する。
+				typeは型定義内部表現ファイル、
+				ruleはルール定義内部表現ファイル、
+				pomは半順序定義内部表現ファイルを表す。
+	     goal		ゴール定義内部表現ファイルを読み込む。
+	     FILENAME 		読み込むファイルの名前
+
+   機能:
+	内部表現の知識ファイルの読み込み。
+	ファイル名はtransコマンドで変換された後のファイルを指定する。
+
+   例:
+	load p type cntrct.t
+	load p rule cntrct.r
+	load p pom  cntrct.p
+	load   goal goal.g
+
+6.1.2 内部表現ファイルへの変換
+
+ユーザ定義ファイルから内部表現ファイルへの変換に関するコマンドを説明する。
+
+(1)  trans <type|rule|pom|goal> FILENAME1 FILENAME2
+
+	    <type|rule|pom|goal>変換するファイルのタイプを指定する。
+				typeは型定義ファイル、
+				ruleはルール定義ファイル、
+				pomは半順序定義ファイル、
+				goalはゴール定義ファイルを表す。
+	     FILENAME1 		読み込むファイルの名前
+	     FILENAME2 		出力ファイルの名前
+
+   機能:
+	ユーザ定義ファイルから内部表現ファイルへの変換。
+
+   例:
+	trans type cntrct.type cntrct.t
+	trans rule cntrct.rule cntrct.r
+	trans pom  cntrct.pom  cntrct.p
+	trans goal cntrct.goal  cntrct.g
+
+6.1.3 実行環境の設定
+
+実行環境を設定する。
+
+(1)  set <p|d> view VIEW
+
+	   VIEW			価値観の名前。
+
+  機能:
+	使用する価値観を設定する。価値観は、半順序定義ファイルに定義されているものを用い
+	る。
+	なお、価値観については付録を参照のこと。
+
+  例:
+	set p view prosecutor0
+
+(2)  set <p|d> sp [SP {SP}]
+
+	     SP  		判断基準の名前。
+
+  機能:
+	使用する判断基準の優先順位を設定する。判断基準は、半順序定義ファイルに定義されて
+	いるものを用いる。
+	また、判断基準の名前は優先度が低いものから書き、判断基準を省略すると、ルール間の
+	関係は全て無関係となる。
+	なお、判断基準については付録を参照のこと。
+
+  例:
+	set  p sp importance_of_civil_code importance_of_amount_money
+		価値観を 「"importance_of_amount_money"という基準を
+                "importance_of_civil_code"より優先させる」 と設定する。
+	set  p sp
+		価値観を設定しない。つまり、あらゆる判断基準を無視し、結果としてルール間
+		の優先関係は全てないものとする。
+
+(3)  set <p|d> unit <UNIT {UNIT}>|all
+
+	    UNIT 		ユニット名
+
+    機能:
+    	loadやcompileコマンドで読み込んだルール定義の中で、使用するルール（またはルール集
+	合）をユニットの形で指定する。ユニットについては、付録を参照のこと。
+        （指定しないユニットは、loadやcompileコマンドで読み込まれていても、使用されない）
+	allを指定すると全てのルールを使用することとなる。
+
+    例:
+	set p unit all
+		全てのユニットを使用する。
+		
+(4)  set goal GOAL
+
+	    GOAL 		H項
+				H項については、「HELIC-II言語マニュアル」を参照のこと。
+
+    機能:
+	証明する結論(goal)を設定する。
+
+    例:
+	 set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+
+(5)  set <p|d> pl INTEGER
+
+	    INTEGER		整数
+
+    機能:
+	H項を表示する場合、そのH項を何バイト表示するかを指定する。
+
+    例:
+	 set p pl 1000
+
+(6)  set <p|d>  pt <h|e>
+
+	    <h|e>	  	H項の表示のタイプを指定する。
+				hはH項そのままの表示、
+				eはH項のexplainで書いたものを表示する。
+
+    機能:
+	H項を表示する時、そのまま表示するか、H項のexplainを表示するかを指定する。
+
+    例:
+	 set p pt h
+
+(7)  set <p|d> cl INTEGER | -1
+
+	    INTEGER		0以上の整数
+
+    機能:
+	論駁推論時の反論段数を指定する。反論段数は付録を参照のこと。
+
+	-1を指定すると反論段数が無限になる。
+
+	反論段数(INTEGER)に0を指定すると、反論を求めないために、論証生成機能が実現される。
+	また、0より大きい数字を指定すると反論を求めることとなり、論駁推論機能が実現される。
+
+    例:
+	 set p cl 0
+	 set p cl 1000
+	 set p cl -1
+
+(8) set <p|d> sim INTEGER
+
+	    INTEGER		1から100までの整数
+
+    機能:
+	類似度の閾値を設定する。
+	類似度の閾値の規定値は70である。
+	類似度の閾値については「HELIC-II言語マニュアル」を参照のこと。
+
+    例:
+	 set p sim 70
+
+(9) set <p|d> weight INTEGER
+
+	    INTEGER		1から10までの整数
+    機能:
+	trivialな項の重みを設定する。
+	trivialな項の重みの規定値は7である。
+	trivialな項の重みについては「HELIC-II言語マニュアル」を参照のこと。
+
+    例:
+	 set weight 7
+
+(10) set <p|d> ptst A B C D E
+
+	    A 			100から1までの整数
+	    B 			100から1までの整数
+	    C 			100から1までの整数
+	    D 			100から1までの整数
+	    E			100から1までの整数
+
+    機能:
+	Ψ項抽象化テーブルを設定する。
+	A,B,C,DはΨ項をそれぞれ1,2,3,4段抽象化した時の類似度。
+	EはΨ項を5段以上抽象化した時の類似度。
+	A>=B>=C>=D>=Eでなくてはならない。
+	Ψ項抽象化テーブルの規定値は100 90 80 70 60 50である。
+	Ψ項抽象化テーブルについては「HELIC-II言語マニュアル」を参照のこと。
+
+    例:
+	 set p ptst 100 90 80 70 60 50
+
+(11) set <p|d> ptaw INTEGER
+
+    	    INTEGER		1から10までの整数
+
+    機能:
+	Ψ項具体化重みを設定する。
+	Ψ項具体化重みの規定値は7である。
+	Ψ項具体化重みについては「HELIC-II言語マニュアル」を参照のこと。
+
+    例:
+	 set p ptaw 7
+
+(12) set <p|d> gp INTEGER
+
+	    INTEGER		ゴール番号
+
+    機能:
+	ゴール番号を指定することによりゴールを設定する。
+	このコマンドを使う場合はゴール定義ファイルを読み込んだ場合に使用する。
+
+    例:
+	 set p gp 0
+
+(13)   set <p|d> solver <user|system>
+
+	    <user|system>	論争当事者をユーザが担当する場合はuser、コンピュータが担
+				当する場合はsystemを指定する。
+				systemを指定し論争状態になったら、コンピュータが争点や反
+				論を自動的に選択し論争を進めていく。
+				userを指定し論争状態になったら、ユーザが自分で論争コマン
+				ドを入力し、論争を進めていく。
+
+   機能:
+	ユーザとシステムがどの論争当事者（検察、被告）を担当するかを指定する。
+
+   例:
+	set p solver user
+	set p solver system
+
+6.1.4 コマンド・ファイルの実行
+
+コマンドがかかれたファイル(これをコマンド・ファイルと呼ぶ)からコマンドを取り出し、それら
+を実行する。
+
+(1)  run FILENAME
+
+	      FILENAME 		読み込むファイルの名前
+
+   機能:
+        CUIを立ちあげるたびに、load、compile、setコマンドを入力する煩わしさを避けるため、
+	コマンド・ファイルに記載されたコマンドを実行する。
+
+	コマンド・ファイルの仕様は以下である。
+  		・１コマンドは１行に書く。
+		・使用できるコマンドは、load、 compile、set、solveコマンドのみである。
+		・日本語を含む場合はファイルをeucコードで書かかなければならない。
+
+   コマンド・ファイルの記述例
+
+	compile p type cntrct.type
+	compile p rule cntrct.rule
+	compile p pom cntrct.pom
+	set     p solver system
+	set     p unit all
+	set     p sp 
+	compile d type cntrct.type
+	compile d rule cntrct.rule
+	compile d pom cntrct.pom
+	set     d solver system
+	set     d unit all
+	set     d sp 
+	set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+	
+  例:
+	run cntrct.c 
+
+6.1.5 知識ベース、実行環境の表示
+
+知識ベースや実行環境の表示を行う。
+
+(1)  show <p|d> view [VIEW|all]
+
+	    VIEW  		価値観の名前
+
+   機能:
+	現在設定されている価値観、価値観の中で定義されている判断基準の優先関係、全ての価
+	値観を表示する。
+
+	価値観の指定の違いにより、表示内容が以下に別れる。
+
+	価値観の指定	表示内容
+	===============================================================================
+	省略		現在設定されている価値観を表示する。
+	VIEW		VIEWの中で定義されている判断基準の優先関係を優先関係の低いものか
+			ら表示する。
+	all		全ての価値観を表示する。
+
+   例:
+	show p view
+	show p view prosecutor0
+	show p view all
+
+(2) show <p|d> sp [SP|all]
+
+		SP		判断基準の名前。
+
+    機能:
+	現在設定されている判断基準の優先関係、判断基準の中で定義されているユニットの優先関
+	係、全ての判断基準を表示する。
+
+	判断基準の指定の違いにより、表示内容が以下に別れる。
+
+	判断基準の指定	表示内容
+	===============================================================================
+	省略		現在設定されている判断基準の優先関係を表示する。
+	SP		SPの中で定義されているユニットの優先関係を優先関係の低いものから
+			表示する。
+	all		全ての判断基準を表示する。
+
+    例:
+	show p sp 
+	show p sp importance_of_civil_code
+	show p sp all
+
+(3)  show <p|d> unit [UNIT|all]
+
+		UNIT		ユニットの名前。
+
+   機能:
+	現在設定されているユニット、ユニット間の包含関係、全てのユニットを表示する。
+
+	ユニットの指定の違いにより、表示内容が以下に別れる。
+
+	ユニットの指定	表示内容
+	===============================================================================
+	省略		現在設定されているユニットを表示する。
+	UNIT		UNITの中で定義されているユニットを表示する。
+	all		全てのユニットを表示する。
+
+   例:
+	show p unit
+	show p unit civil_code
+	show p unit all
+
+(4)  show goal
+
+    機能:
+	証明する法的結論(goal)を表示する。
+
+(5)  show <p|d> pl
+
+    機能:
+	現在設定されているH項の表示長さ(バイト)を表示する。
+
+(6)  show <p|d> pt 
+
+    機能:
+	現在設定されているH項の表示タイプを表示する。
+
+(7)  show <p|d> cl
+
+    機能:
+	現在設定されている論駁推論時の反論段数を表示する。
+
+(8) show <p|d> sim 
+
+    機能:
+	類似度の閾値を表示する。
+	類似度の閾値の規定値は70である。
+	類似度の閾値については「HELIC-II言語マニュアル」を参照のこと。
+
+(9) show <p|d> weight 
+
+    機能:
+	trivialな項の重みを表示する。
+	trivialな項の重みの規定値は7である。
+	trivialな項の重みについては「HELIC-II言語マニュアル」を参照のこと。
+
+(10) show <p|d> ptst 
+
+    機能:
+	Ψ項抽象化テーブルを表示する。
+	Ψ項抽象化テーブルの規定値は100 90 80 70 60 50である。
+	Ψ項抽象化テーブルについては「HELIC-II言語マニュアル」を参照のこと。
+
+(11) show <p|d> ptaw
+
+    機能:
+	Ψ項具体化重みを表示する。
+	Ψ項具体化重みの規定値は7である。
+	Ψ項具体化重みについては「HELIC-II言語マニュアル」を参照のこと。
+
+(12) show <p|d> solver
+
+    機能:
+	現在の各エージェントのsolverを表示する。
+
+6.1.6 プログラムの終了
+
+(1)  quit
+
+    機能:
+	プログラムの終了。
+
+6.1.7 論駁推論の実行
+
+(1)  solve  <p|d> [GOAL]
+
+	GOAL		H項。
+
+   機能:
+	設定された証明すべき結論(goal)に対して論駁推論を開始する。
+	もし、結論に対する証明が失敗すると、"no"が表示される。
+	成功し、結論に変数を含んでいる場合はその変数情報が表示される。
+	もし、変数が束縛されなかった場合はその変数の情報は"?"が表示される。
+	(例えば変数Xを持つgoalに対して論駁推論をした結果、その変数は束縛されなかった場合
+	は"X=?"と表示される)
+	変数がない場合は"yes"が表示される。
+
+	本コマンドを実行するにあたって型、ルールの読み込みと使用するユニットの設定をしな
+	ければならない。
+
+6.2 論争開始コマンド
+
+(1)  start 
+
+   機能:
+	論争を開始し、検察に与えられたgoalに対して、そのgoalを導くための論証(初期論証)が
+	複数生成される。論争当事者がユーザの場合、startの後に初期論証一覧が表示されるの
+	で、その内どれについて論争を進めていくかの番号(初期論証番号)を入力しなければなら
+	ない。
+
+	以下が初期論証一覧表示の例である。
+
+		Goal : canWithdraw(agent=father,object=contract(agent=tarou
+		0 :    >:0!:3<:0  canWithdraw(agent=father,object=contract(
+
+			[ 初期論証一覧表示の例 ]
+
+	"0"は初期論証番号、">:0!:3<:0"はこの初期論証番号0の論証に対する反論とのTopRule関
+	係を表している。（TopRule関係については、付録を参照のこと）
+
+	この例の場合、反論が3つあり、その反論とのTopRule関係が無関係であることを表してい
+	る。
+
+6.3 論争コマンド
+
+論争コマンドは論争当事者の一方または双方をユーザにしたときのみ使える。
+
+6.3.1 論証の表示
+
+論証表示系とは、論争の途中で、現在や過去に提示された論証を表示するためのコマンド集合であ
+る。
+論証表示系のコマンド説明を容易にするために、論証間の関係,論証表示系コマンド関係,論証表示
+形式について以下に説明する。
+
+[論証間の関係]
+	論証間の関係を図1を使って説明する。
+
+		p0 +------+-----+
+			d1+-----+
+			d2+-----+
+
+		[ 図1: 論証間の関係例 ]
+
+	論証p0に対してd1,d2の反論があったとする。
+	このときp0とd1,d2はそれぞれ親子関係にあり、p0を親、d1,d2を子と呼ぶ。
+	また、d1,d2はそれぞれ兄弟関係にあり、d1を兄、d2を弟と呼ぶ。
+
+[論証表示系コマンド関係]
+
+	親から子を見る場合はshow counter,forwardを使う。
+	forwardはbackwardを以前使った場合、それの逆、つまり、親から子をみる時に使う。
+	子から親を見る場合はbackwardを使う。
+	兄から弟を見る場合はnextを使う。
+	弟から兄を見る場合はpreviousを使う。
+
+	図1でp0->d1->d2->d1->p0->d2の順で論証を見ていく場合、以下のようにコマンド入力を
+	行なう。
+
+	コマンド入力			表示されている論証
+	========================================================
+					p0
+	show counter
+	0				d1
+	next				d2
+	previous			d1
+	backward			p0
+	forward				d2
+
+	show counterコマンドは複数ある子の内どの子を表示させるかを選ばなければならない。
+	この例の場合、ユーザはd1かd2のどちらかを選択しなければならず、論証番号が、d1が
+	0,d2が1であったためにユーザは0を選択した。
+
+	また、一番最後のforwardでd2を表示したが、ここで、show counterコマンドで1を入力し
+	てもd2が表示される。
+
+[論証表示形式]
+
+	以下が一般的な論証の表示形式の例である。
+
+	History : start
+	RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+	0  :             r11:canWithdraw(agent=fa
+	1  :              r1:contract(agent=tarou
+	2  :               act4:buy(agent=tarou[age=
+	3  :               act5:loan(agent=tarou[age
+	4  :               act6:causality(source=buy
+	5  :   !  2(0)    r6:-valid(a_object=cont
+	6  :               act5:loan(agent=tarou[age
+	7  :               r1:contract(agent=tarou
+	8  :                act4:buy(agent=tarou[age=
+	9  :                act5:loan(agent=tarou[age
+	10 :                act6:causality(source=buy
+	11 :   !  1(0)     r2:needAllow(agent=fath
+	12 :                r1:contract(agent=tarou
+	13 :                 act4:buy(agent=tarou[age=
+	14 :                 act5:loan(agent=tarou[age
+	15 :                 act6:causality(source=buy
+	16 :                act0:isFather(a_object=fa
+	17 :               act10:-allow(agent=father,
+	18 :               act0:isFather(a_object=fa
+	19 :              act0:isFather(a_object=fa
+	UseCommand : [pose,end,show,set]
+
+	History:
+		検察,被告間でやりとりするプロトコル・メッセージ。
+		プログラム内部ではこのプロトコルをやりとりすることにより、自分の考えを相
+		手に通知する。
+	AidInfo:
+		表示している論証ID,親の論証ID,FOCUS論証のIDの順で表示している。
+		nilはないことを表す。
+		FOCUS論証は付録を参照のこと。
+	RuleInfo:
+		表示している論証を導くルールの名前と表示している論証の親論証との
+		TopRule関係の順で表示してる。TopRule関係はwin,draw,lose,nilの4種類
+		あり、それぞれ強い,無関係,弱い,TopRule関係がないことを表す。
+	0-19:
+		推論木を表す。
+
+		11を例にとり、さらに詳しく説明する。
+
+		争点番号   子情報	consequence
+		=================================================================
+		11 :       !  1(0)      r2:needAllow(agent=fath
+
+		争点番号は現在表示している論証に複数ある争点を識別するための番号である。
+		show counterで子を見る場合はこの争点番号を指定する。
+
+		子情報はこの争点に対する子に関する情報を示したものである。
+		最初の"!"はこの争点に対して複数ある子とのTopRule関係の情報を表したもので
+		ある。
+		種類としては>,!,<があり、>は全ての子に対するTopRul関係が強い争点、!は強
+		いのと無関係なTopRul関係がある争点、<は1つでも弱いものがある争点をあらわ
+		す。
+
+		次の"1(0)"は、最初の数字が子の数を表す。次の括弧内の数字は論争が終了した
+		子の数を表す。なお、ここでいう論争終了とは、検察,被告両方でお互いの主張
+		が優位であることをnoticeコマンドにより通知した場合とfinishコマンドにより
+		相手から自分の主張した論証について論争を終了したことを通知された場合を指
+		す。
+
+		consequenceはルールの実行部(then部)に相当する。
+		各行のconsequenceに空白がはいっていて1段差があるのは、1段差あるものによ
+		り、段差がないものが導かれたことをあらわす。
+		r1は使用したルール名。
+	Can use command:
+		現在使用できるコマンドの一覧。
+
+(1) backward
+
+ 機能:
+	現在表示している論証の親を表示する。
+
+(2) forward
+
+ 機能:
+	現在表示している論証の子を表示する。
+	forwardコマンドはbackwardコマンドを以前使った場合、それの逆を見るコマンドである。
+
+(3) next
+
+ 機能:
+	現在表示している論証の弟を表示する。
+
+(4) previous
+
+ 機能:
+	現在表示している論証の兄を表示する。
+
+(5) focus
+
+ 機能:
+	FOCUS論証を表示する。
+	FOCUS論証は付録を参照のこと。
+
+(6) jump ARG
+
+	  ARG			論証ID
+
+ 機能:
+	論証IDがARGである論証を表示する。
+
+ 例:
+	jump p0
+
+(7) show counter ISSUE
+
+	  ISSUE			争点番号
+
+ 機能:
+	争点番号がISSUEに対する子の一覧を表示する。
+        子一覧表示の後にどの子を表示するかの番号(子番号)を入力しなければいけない。
+
+	子一覧表示を以下の例を使って説明する。
+
+		 Arg ID: nill
+		 Issue Pos: 11
+		 Consequence: needAllow(agent=fath
+		 RuleName: r2
+		 Num Of Counter: 1
+		0 :  *  !  >:0!:0<:0 -needAllow(agent=fat
+
+			[ 子一覧表示の例 ]
+	
+		Arg ID:
+			親論証ID。nillは親論証がないか、親論証IDがない場合。
+		Issue Pos:
+			親論証の争点番号。
+			この子一覧表示は親論証のどの争点に対するものなのかを表す。
+		Consequence:
+			親論証の争点番号に対応する争点を導くルールの実行部。
+		RuleName:
+			親論証の争点番号に対応する争点を導くルールの名前。
+		Num Of Counter:
+			親論証の争点番号に対応する争点に対する反論の数。
+		0:
+			子番号。
+			子一覧表示の後に、見たい子の論証の子番号を入力しなければいけない。
+			"*"は既にposeコマンドにより反論ずみの場合であり、まだ反論してい
+			ない場合はなにも表示されない。
+			"!"は親論証の争点とこの子番号に対応する論証とのTopRule関係を表し
+			ていて、種類としては>,!,<がある。それぞれ、親に対して子が弱い,無
+			関係,強いである。
+			">:0!:0<:0"はこの子番号に対応する論証に対する子とのTopRule関係で
+			あり、強い(>),無関係(!),弱い(<)がいくつあるかを示したものである。
+
+ 例:
+	show counter 11
+
+(8) show claim
+
+ 機能:
+	これまで検察,被告双方で主張した論証の一覧を表示する。
+	主張済み論証一覧表示の後にどの論証を表示するかの番号(主張済み論証番号)を入力しな
+	ければいけない。
+
+
+	以下に主張済み論証一覧表示の例を示す。
+	
+
+		%-prosecutor claimed argument
+		0 : *  >:0!:3<:0  canWithdraw(agent=fa
+		%-defendant claimed argument
+		2 : *  >:0!:1<:0  -needAllow(agent=fat
+
+			[ 主張済み論証一覧表示の例 ]
+
+	この例の場合、主張済み論証番号は"0"や"2"であり、"0"が検察の論証,"2"が被告の論証
+	を表している。
+
+6.3.2 論争の制御
+
+論争の制御とは、論争の一方または双方をユーザが担当したとき、論争の進行を制御するためのコ
+マンドである。論争においては、双方のエージェントが、自分に発言権があるときに、自分の主張
+を相手に提示することで行われる。
+
+本コマンドを説明するにあたっては以下の図2の例を使う。
+
+			 r1
+		p0+------*--------------+
+			 r2  
+		       d0+---*----------+
+			   p1+----*-----+
+				d1+-----+
+		       d2+--------------+
+
+		[ 図2: 論証間の関係例 ]
+
+	p0は初期論証。
+	論証p0に対する反論はd0とd2、d0に対する反論はp1、p1に対する反論はd1がある。
+	反論d0に対するp0の争点を導くルールがr1,d0を導くルールがr2である。
+
+(1) pose 
+
+ 機能:
+	現在表示されている自分の主張（論証）を相手に主張する。
+
+ 発言権:
+	相手に移る。
+
+ 使用例:
+	(a) 	検察が初期論証を被告に主張する時。
+
+		例:	
+			p0を相手に通知する場合。
+
+	(b) 	相手からposeコマンドにより、論証を送ってきた時、その論証に対して反論する
+		時。
+
+
+		例:
+			p0に対してd0の反論をする場合。
+
+	(c) 	相手からfinishコマンドにより、相手の論証に対する自分の反論について論争が
+		終了したことを通知してきた時、この反論以外の反論をする時。
+
+		例:
+			p0に対してd0の反論をしたが、相手からfinishコマンドでd0の論争が終
+			了したことを通知してきたが、さらに、d2の反論をしたい場合。
+
+	(d) 	自分からcancelコマンドにより、自分の反論を棄却したが、この反論以外の反論
+		をしたい時。
+
+		例:
+			p0に対してd0の反論をし、自分でd0をcancelコマンドで棄却したが、d2
+			の反論をしたい時。
+
+ 使用条件:
+  	相手の論証に対する反論をする場合(上記の(b),(c),(d))、相手の論証とそれに対する自
+	分の反論との優先関係が、検察の場合は自分の反論の方が優位であり、被告の場合は優位
+	か無関係であるときのみ使える。
+	これを図2の例を使って説明する。
+	相手がp0を主張し、自分がd0をposeコマンドで反論したい場合、自分が検察の場合は
+	r2>r1、被告の場合はr2>r1または無関係のときのみposeコマンドが使える。
+	もし、これ以外で使いたい場合はjustifyコマンドにより、ルールの優先関係を変更して
+	使う。
+	このような制約があるのは、刑法において、検察には自分の論証に対して立証責任がある
+	のに対して、被告にはこれがないという立証の非対称性のためである。
+
+ 注意事項:
+	相手の論証に対する反論をした場合(上記の(b),(c),(d))、そこで使われたルールの優先
+	関係は登録され、justifyコマンドを使う際に参照される。
+
+	例えば、相手のp0の論証に対してd0の反論をする場合、もし、r1<r2であった場合にはこ
+	の関係を使って論争が行なわれたことが登録される。
+
+(2) notice
+
+ 機能:
+	自分の価値観で判断する限り、現在表示されている自分の論証の方が、相手の論証より優
+	位(あるいは被告の場合は無関係もよい)であることを相手に通知する。
+
+	このコマンド入力後、もし自分の論証が優位であった場合、その根拠となる判断基準名を
+	選択しなければいけない。
+
+ 発言権:
+	N通知は発言権は相手に移るが、NN通知は再度自分に発言権がある。
+	なお、N通知,NN通知は下の「使用例」を参照のこと。
+
+ 使用例:
+	(a) 	相手が自分の論証に対して反論を通知してきた時、自分の論証の方が優位である
+		ことを相手に通知する時。
+		なお、この時にnoticeコマンドを使うことをN通知と呼ぶ。
+
+		例:
+			自分の論証p0に対して相手がd0の反論し、自分のp0の方が優位であるこ
+			とを相手に通知したい時。
+
+
+	(b) 	相手がnoticeコマンドで相手の論証の方が自分の論証より優位であることを通知
+		してきた時に自分の論証の方が優位であることを相手に通知する時。
+		なお、この時にnoticeコマンドを使うことをNN通知と呼ぶ。	
+
+		例:
+			相手がp0を主張したが、自分がそれに対してd0の反論をし、さらに相手
+			がnoticeコマンドにより、p0の方が優位であるとしていってきたが、自
+			分のd0の方が優位である時。
+
+  使用条件:
+	このnoticeコマンドにより優位であるとする自分の論証とそれに対する相手の論証との優
+	先関係が、検察の場合は自分の論証の方が優位であり、被告の場合は優位か無関係である
+	時のみ使える。
+
+	これを図2をつかって説明する。
+	自分がp0を主張し、相手がそれに対してd0の反論をしてきたが、自分のp0の方が優位(検
+	察はr1>r2,被告はr1>r2か無関係)である時や、相手がp0を主張したが、自分がそれに対し
+	てd0の反論をし、さらに相手がnoticeコマンドにより、p0の方が優位であるとしてきたが、
+	自分のd0の方が優位である時(検察の場合はr2>r1、被告の時はr2>r1か無関係)に使える。
+
+	もし、それ以外で使いたい場合はjustifyコマンドにより、ルールの優先関係を変更して
+	使う。
+	このような制約があるのは、刑法において、検察には自分の論証に対して立証責任がある
+	のに対して、被告にはこれがないという立証の非対称性のためである。
+
+(3) cancel
+
+ 機能:
+	現在表示されている自分の論証を取り下げることを相手に通知する。
+
+ 使用例:
+	(a)	相手の論証に対して、自分が反論をし、さらに相手がnoticeコマンドにより、優
+		先通知をしてきた時に自分で出した反論を取り下げる。
+
+		例:
+			相手がp0を通知し、それに対してd0の反論をし、さらに相手がnoticeコ
+			マンドにより、優先通知をしてきた時に自分で出したd0を取り下げる時。
+
+	(b) 	相手の論証に対して反論Aをし、さらにその反論に対する反論を相手から通知さ
+		れたので、自分で出した反論Aを取り下げる時。
+
+		例:	
+			自分のp1に対して相手がd1の反論をしてきたので、p1を取り下げる時。
+
+ 発言権:
+	発言権は相手に移らない。
+
+(4) finish
+
+ 機能:
+	現在表示されている相手の論証に対する反論が終了したことを相手に通知する。
+
+ 発言権:
+	発言権は相手に移る。
+
+ 使用例:
+	(a) 	自分の論証に対して相手が反論してきたが、その反論については論争を終了した
+		い時。
+
+	     	例:
+			自分が通知したp0に対して相手がd0の反論をしてきたが、そのd0につい
+			ては論争を終了したい時。
+
+6.3.3 その他
+
+(1) justify
+
+ 機能:
+	自分の論証の方が相手の論証より優位になるようにするため、自分の価値観に新たな情報
+	を加えて価値観を更新する。
+
+	pose,noticeコマンドを発行したいが、現在の価値観のもとではルールの優先関係が優位
+	になっていないために発行できない場合などに、価値観を変更して優位になるようにする。
+	
+	コマンド入力後、優位になる価値観が複数できるので、その内1つを選択しなければいけ
+	ない。
+
+ 使用例:
+	相手がp0を主張し、自分はそれに対してd0の反論をしようとしたが現在の価値観では
+	r1>r2になってしまう。そこでjustifyコマンドを使い、現在の価値観を変更し、r2>r1に
+	なるようにする。
+
+ 使用条件:
+	以前poseコマンドで相手に反論を通知した時に、これから変更するルールの優先関係と逆
+	の関係を使ってしまっている場合はjustifyコマンドは失敗する。
+
+	例えば、以前poseコマンドを使った時にr1>r2の関係を使ってしまっているにもかかわら
+	ず、r2>r1をjustifyコマンドを使って作ろうとした場合などである。
+
+6.4 論争終了/論証表示終了コマンド
+
+(1) end
+
+ 機能:
+	論争を終了する。
+
+6.5 論証表示開始コマンド
+
+(1)  ab <p|d>
+
+   機能:
+	論証表示状態へ移動する。
+	本コマンドの前に行なわれたsolveコマンドが成功している時のみ成功する。
+	コマンド入力後、goalを導く論証(初期論証)の一覧が表示(初期論証一覧表示)されるので、
+	その内どれについて表示をするのかの番号(初期論証番号)を入力しなければならない。
+
+	以下が初期論証一覧表示の例である。
+
+		Goal : canWithdraw(agent=father,objec
+		0 :  p >:0!:3<:0
+
+			[ 初期論証一覧表示の例 ]
+
+	"0"は初期論証番号、
+	"p"はこの初期論証の種類。j、p、dがあり、それぞれ、justify plausible、defeatedに
+	対応している。
+	">:0!:3<:0"はこの初期論証に対する反論とのTopRule関係であり、強い(>)、無関係(!)、
+	弱い(<)の数を表している。
+	この例の場合、反論が3つあり、その反論とのTopRule関係が無関係であることを表してい
+	る。
+
+6.6 論証表示コマンド
+    コマンドの詳細は「6.3.1 論証の表示」を参照のこと。
+
+(1) backward
+(2) forward
+(3) next
+(4) previous
+(5) show counter ISSUE
+(6) set pl INTEGER
+(7) set pt <h|e>
+(8) show pl
+(9) show pt 
+(10) show explain
+
+6.7 tracerコマンド
+
+tracerはルールの実行中の情報を表示するためのもので、以下の機能を持っている。
+
+(1) リダクション情報表示
+	ルールのリダクションに関する情報(ルール名,H項)を表示。
+
+(2) spyの設定。
+	(a) 指定したルールについてのみの情報を表示する。
+
+	(b) 指定したルールの状態のときのみ情報を表示する。
+	    この状態には以下の3つがある。
+
+	    ・ルールが呼ばれた時(CALL)
+	    ・発火可能なルールがある時(REDU)
+	    ・発火可能なルールがない時(FAIL)
+
+表示する情報は以下である。
+
+<表示情報>::= 
+	<CALLルール識別番号>  <ルールの状態>  { <ルール名> ":" } <H項> 
+	{ "<-" <Body>}
+
+	<ルール名> ":" がある時は、REDUのときのみ、
+	"<-" <Body>がある時は、REDUのときのみ、
+
+<CALLルール識別番号>::=
+	<integer>
+
+	CALLされた時の識別番号。
+
+<ルールの状態>::=
+	"CALL"|"REDU"|"FAIL"
+
+<Body>::=
+	<H項> { <H項>}
+
+	リダクションされたときのbodyのH項情報。
+
+例:
+	1 CALL a (agent=x,object=y)
+	1 REDU r1:a(agent=x,object=y) <-
+	2      	b(agent=x)
+	3	c(agent=y)
+	2 CALL b(agent=x)
+        2 REDU f1:b(agent=x)
+	3 CALL c(agent=y)
+        3 REDU f2:c(agent=y)
+
+なお、tracerコマンドは初期状態と論争状態の時のみ使用可能できる。また、初期状態の時は検察
+(p)に対するものなのか、被告(d)に対するものなのかを必ず指定しなければならない。反対に論争
+状態の時は指定してはいけない。
+
+6.7.1 tf関係
+
+tracerの制御に関する処理をする。
+
+(1) set [<p|d>] tf <on|off>
+
+    機能:
+	tracerを起動するかどうかを指定する。
+	"on"の場合は起動し、"off"の場合は起動しない。
+
+    例:
+	set p tf on
+
+(2) show [<p|d>] tf 
+
+    機能:
+	現在tracerが起動状態かどうか問い合わせる。
+
+    例:
+	show p tf 
+
+6.7.2 sr関係
+
+ルールにspyをかける場合に関する処理をする。
+
+(1) set [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName		ルール名。		
+
+    機能:
+	spyをかけるルールを指定する。
+
+    例:
+	set p sr act0
+
+(2) add [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName		ルール名。		
+
+    機能:
+	spyをかけるルールを追加する。
+
+    例:
+	add p sr act0
+
+(3) remove [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName		ルール名。		
+
+    機能:
+	spyをかけるルールを削除する。
+
+    例:
+	remove p sr act0
+
+(4) clear [<p|d>] sr 
+
+    機能:
+	spyをかけるルールを全て削除する。
+
+    例:
+	clear p sr
+
+(5) show [<p|d>] sr 
+
+    機能:
+	現在のspyのかかっているルールを表示する。
+
+    例:
+	show p sr
+
+6.5.3 sg関係
+
+ルールの状態にspyをかける場合に関する処理をする。
+
+(1) set [<p|d>] sg <SG {SG}>
+
+	SG		ルールの状態であり、call,redu,failのどれか。
+
+    機能:
+	spyをかけるルールの状態を指定する。
+
+    例:
+	set p sg call fail
+
+(2) add [<p|d>] sg <SG {SG}>
+
+	SG		ルールの状態であり、call,redu,failのどれか。
+
+    機能:
+	spyをかけるルールの状態を追加する。
+
+    例:
+	add p sg redu
+
+(3) remove [<p|d>] sg <SG {SG}>
+
+	SG		ルールの状態。call,redu,failのどれか。
+
+    機能:
+	spyをかけるルールの状態を削除する。
+
+    例:
+	remove p sg redu
+
+(4) clear [<p|d>] sg 
+
+    機能:
+	spyをかけるルールの状態を全て削除する。
+
+(5) show [<p|d>] sg 
+
+    機能:
+	現在のspyのかかっているルールの状態を表示する。
+
+6.8 その他
+
+(1) help [COMMAND|all]
+
+    機能:
+	コマンドに関するヘルプ機能。
+	helpコマンドはどの状態(初期状態、論争状態、論証表示状態)でも使用可能である。
+
+    例:
+	help
+
+
+7．実行例
+
+以下に実際に論争を行なう過程を示す。
+なお、文中で使われている"%"から改行までは、この実行例を説明するためのものであり、
+"+++"の上の文字はユーザ入力を表す。
+
+!cd cui/data
+ +++++++++++				%カレントディレクトリの変更
+!cui               
+ +++		 	   		%プログラム起動
+HELIC-II>compile p type cntrct.type
+	 ++++++++++++++++++++++++++	%検察側型定義ファイル読み込み
+ok
+HELIC-II>compile p rule cntrct.rule
+	 ++++++++++++++++++++++++++	%検察側ルール定義ファイル読み込み
+ok
+HELIC-II>compile p pom cntrct.pom
+	 ++++++++++++++++++++++++       %検察側半順序定義ファイル読み込み
+ok
+HELIC-II>compile d type cntrct.type
+	 ++++++++++++++++++++++++++	%被告側型定義ファイル読み込み
+ok
+HELIC-II>compile d rule cntrct.rule
+	 ++++++++++++++++++++++++++	%被告側ルール定義ファイル読み込み
+ok
+HELIC-II>compile d pom cntrct.pom
+	 ++++++++++++++++++++++++	%被告側半順序定義ファイル読み込み
+ok
+HELIC-II>set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+         ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ok					%goalの設定			
+HELIC-II>set  p solver user
+	 ++++++++++++++++++++		%検察の論争当事者をユーザにする
+ok
+HELIC-II>set  d solver user
+	 ++++++++++++++++++		%被告の論争当事者をユーザにする
+ok
+HELIC-II>set  p unit all
+	 +++++++++++++++		%検察の使用するルールは全て
+ok
+HELIC-II>set  d unit all
+	 +++++++++++++++		%被告の使用するルールは全て
+ok
+HELIC-II>set  p sp 
+	 +++++++++			%検察の価値観を設定しない。
+ok					%つまり、ルール間の優先関係はなしとする。
+HELIC-II>set  d sp 
+	 +++++++++			%被告の価値観を設定しない。
+ok
+HELIC-II>set  p pl 20 
+	 ++++++++++++			%検察のH項の表示の長さを20byteにする。
+ok
+HELIC-II>set  d pl 20 
+	 ++++++++++++			%被告のH項の表示の長さを20byteにする。
+ok
+HELIC-II>start
+	 +++++				%論争開始
+Goal : canWithdraw(agent=fa
+0 :    >:0!:3<:0  canWithdraw(agent=fa
+Please input number > 0
+                      +			%goalを導く論証が1つあり、それを選択しその論証を
+					%表示する
+
+History : start
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>pose
+  ++++				%この論証(p0)を相手に通知する
+Status : prosecutor claim p0.
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>show counter 11
+  +++++++++++++++		%現在表示している相手の論証(p0)の争点番号11に対する反論
+				%をみる
+ Arg ID: p0
+ Issue Pos: 11
+ Consequence: needAllow(agent=fath
+ RuleName: r2
+ Num Of Counter: 1
+0 :    !  >:0!:1<:0 -needAllow(agent=fat
+Please input number > 0
+		      +		%反論が1つありそれを選択
+History : claim(p0,nil)
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {nil,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,backward,justify,pose,end,show,set]
+D>pose
+  ++++			%現在表示している論証(d0)を被告の反論とする。
+			%被告が反論する場合、優位か無関係でなければいけない。
+			%この場合、RuleInfoのTopRule関係をみると"draw"。つまり、無関係で
+			%あるために相手に通知することができる。
+
+Status : defendant claim d0.
+Status : defendant claimed d0.
+History : claim(d0,issue(claim(p0,nil),11))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,backward,end,show,set]
+P>backward
+  ++++++++	%自分の論証(p0)に対して相手から反論(d0)をうけた。
+		%このような場合の戦略としては2つある。
+		%1つは自分の論証の方が相手の反論よりも強いことをnoticeコマンドを使ってい
+		%う場合である。
+		%他の方法は相手の反論(d0)に対してさらに反論をposeコマンドを使用して行な
+		%う場合である。この例ではnoticeコマンドを使用する。
+		%noticeコマンドを通知する場合、優位となる以前に自分が通知した論証(p0)を
+		%表示しないと実行できないために、backwardコマンドを使って以前の論証(p0)
+		%を表示させる。
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,justify,end,show,set]
+P>justify
+  +++++++	
+		%現在の自分野価値観だとp0とd0とのTopRule関係が無関係になっているために優
+		%先通知が出来ない。
+		%検察の場合、優先通知をするためには、必ず強くなければならない
+		%そこで現在の価値観をp0が強くなるようにjustifyコマンドで変更する。
+
+0 : {importance_of_civil_code,[importance_of_civil_code]}
+Please input number > 0
+                      +		%強くなるための価値観の候補が1つありのでそれを選択。
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,notice,end,show,set]
+P>notice
+  ++++++
+		%justifyコマンドにより、争点番号11の反論(d0)との関係が強く(">")なってい
+		%るのがわかる。今度はp0の優先通知ができる。
+
+0 : [importance_of_civil_code]
+Please input number > 0
+		      +		%優先通知の根拠となる判断基準を選択
+
+Status : prosecutor notify that p0 is stronger than d0 by stanpoint of [importance_of_civil_code].
+Status : prosecutor notified that p0 was stronger than d0 by stanpoint of [importance_of_civil_code].But you draw.
+History : notice([importance_of_civil_code],claim(d0,issue(claim(p0,nil),11)))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,cancel,'show claim',jump,backward,justify,notice,end,show,set]
+D>notice
+  ++++++
+		%相手が優先通知してきたので、それに対して自分の反論(d0)の優先通知をする。
+		%被告の場合は無関係でも優先通知をすることができる。
+		%この場合無関係であるので、優先通知の根拠となる判断基準の選択はない。
+
+Status : defendant notify that p0 isn't always stronger than d0,because of non-relation of r3 and r2 in current viewpoint.
+Status : defendant notified that p0 wasn't always stronger than d0,because of non-relation of r2 and r3 in current viewpoint.But you win by [[importance_of_civil_code]].
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>finish
+  ++++++	%p0に対しては論争終了
+Status : defendant finish p0
+Status : defendant finished p0
+Goal : canWithdraw(agent=fa
+0 : *  >:1!:2<:0  canWithdraw(agent=fa
+Please input number > 0
+		      +
+History : start
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,nil}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>end
+  +++		%論争を終了
+ok
+HELIC-II>quit
+	 ++++	%プログラムを終了する。
+
+
+
+[付録]
+
+<用語説明>
+
+価値判断
+	判断基準間の優先関係。
+
+	例:価値観定義ファイルに以下のように書かれていた場合
+		view1 := {sp2<sp1}.
+		view2 := {sp1<sp2}.
+
+	価値判断名view1はsp1の方がsp2より優先関係が高い。
+	価値判断名view2はsp2の方がsp1より優先関係が高い。
+
+判断基準
+	ユニット間の優先関係。
+
+	例:判断基準定義ファイルに以下のように書かれていた場合
+		sp1 := {u2<u1}.
+		sp2 := {u1<u2}.
+
+	判断基準名sp1はユニットu1の方がu2より優先関係が高い。
+	判断基準名sp2はユニットu2の方がu1より優先関係が高い。
+
+ユニット
+	ルール名。または、ルール名の集合。
+
+	例: ユニット定義ファイルに以下のように書かれていた場合
+	    (r1,r2,r3,r4,r5,r6はルール名。)
+
+		u1:= {r1,r2,r3}.
+		u2:= {r4,r5,r6}.
+
+	r1からr6までユニット名、かつu1,u2もユニット名である。
+	u1にはr1,r2,r3が包含されている。
+	u2にはr4,r5,r6が包含されている。
+	
+論証
+	結論を説明するための事実や仮説の集合。
+
+	例:
+		a,b,cは事実。x,yは仮説。
+		ルールとしてr1,r2がある。
+
+		r1:x <- a,b,c.
+		r2:y <- x.
+
+		論証[y,x,a,b,c]は結論yを説明するものであり、y,xは仮説である。
+仮説
+	事実や仮説をルールに適用してもとまったもの。
+争点
+	ある論証の内の仮説で反論を持つ仮説。
+
+	例:
+		a,b,c,dは事実。x,y,-xは仮説。
+		ルールとしてr1,r2,r3がある。
+
+		r1:x <- a,b,c.
+		r2:y <- x.
+		r3:-x<- d.
+
+		論証[y,x,a,b,c]の争点としてxがあり、その争点に対して反論[-x,d]
+		がある。
+反論
+	ある論証を否定する論証。
+
+	例:
+		上記の例の場合、論証[y,x,a,b,c]に対して反論[-x,d]がある。
+
+TopRule関係
+	論証とその反論との優先関係
+
+	例:	
+			r1
+		p0+-----*------+
+			r2
+		      d0+------+
+
+	論証p0があり、その反論としてd0がある。
+	r2はd0を導くルール名。p0の争点を導くルール名r1がある。
+
+	この場合のTopRule関係とは、r1とr2の関係をいい、
+	r1はr2にたいして強い(r1>r2),無関係(r1!r2),弱い(r1<r2)がある。
+	特に強い場合、r1>r2の場合はp0はd0より優位であると呼ぶ。
+
+FOCUS論証
+	現在焦点の当たっている論証。
+	相手の通知によりFOCUS論証は異なる。
+	以下に相手の通知とFOCUS論証の関係を示す。
+
+	相手の通知			FOCUS論証
+	==========================================================
+	論証主張(pose)			相手の一番新しい主張
+	優先通知(notice(N通知))		相手の一番新しい主張
+	
+	N通知,NN通知は「6.3.2 論争の制御」(2) noticeを参照のこと
+goal
+	論争を行なう際に検察が証明しようとする結論。
+初期論証
+	goalを導く論証で、検察が最初に選んだ論証。
+論争当事者
+	被告,検察で論争を行なう際に、それぞれをコンピュータにやらせるのかユーザにやらせ
+	るのかの指定。
+初期状態
+	「3 実行時の状態遷移」を参照のこと
+論争状態
+	「3 実行時の状態遷移」を参照のこと
+親
+	「6.3.1 論証の表示」の[論証間の関係]を参照のこと
+子
+	「6.3.1 論証の表示」の[論証間の関係]を参照のこと
+兄
+	「6.3.1 論証の表示」の[論証間の関係]を参照のこと
+弟
+	「6.3.1 論証の表示」の[論証間の関係]を参照のこと

@@ -1,0 +1,167 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_parser2.
+
+:- public 
+    get_commandArguments/6.
+            
+:- with_macro pimos.
+
+%%%%%%FOR INPUT
+
+    get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result):-true|
+        (   AgentName = d->
+                Prompt = "D>"
+        ;
+            AgentName = p->
+                Prompt = "P>"
+        ),
+        dbtcui_ioUtility:get_commandArguments(Prompt,Command1,Arguments1),
+        parse(Command1,Arguments1,UseComList,Command2,Parameter2,Arguments2,Result2),
+        (   Result2 = normal(_),Command2\=nil->
+                is_useCommand(UseComList,Command2,Parameter2,YN),
+                (   YN = yes->
+                        Command=Command2,Parameter=Parameter2,Arguments=Arguments2,Result=Result2
+                ;
+                    YN = no->
+                        Reason = {gui,'Can not use this command now',Command2},
+                        dbtcui_ioUtility:show_error(Reason,Result3),
+                        ( wait(Result3)->
+                            get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result))
+                )
+        ;
+            Result2 = normal(_),Command2=nil->
+                get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result)
+        ;
+            Result2 = abnormal(Reason)->
+                dbtcui_ioUtility:show_error(Reason,R),
+                (   wait(R)->
+                        get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result))
+        ).
+
+%cr
+    parse(nil,_,_,Command,Parameter,Arguments,Result):-true|
+        Command = nil,Parameter = nil,Arguments = nil,Result = normal(success).
+%pose
+    parse(pose,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = pose,Parameter = nil,Arguments = [],Result = normal(success).
+%notice 
+    parse(notice,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = reasonList,Arguments = [],Result = normal(success).
+%cancel
+    parse(cancel,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = cancel,Parameter = nil,Arguments = [],Result = normal(success).
+%finish
+    parse(finish,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = finish,Parameter = nil,Arguments = [],Result = normal(success).
+%end
+    parse(end,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = end,Parameter = nil,Arguments = [],Result = normal(success).
+%backward
+    parse(backward,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = backward,Parameter = nil,Arguments = [],Result = normal(success).
+%forward
+    parse(forward,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = forward,Parameter = nil,Arguments = [],Result = normal(success).
+%next
+    parse(next,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = next,Parameter = nil,Arguments = [],Result = normal(success).
+%previous
+    parse(previous,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = previous,Parameter = nil,Arguments = [],Result = normal(success).
+%focus
+    parse(focus,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = focus,Parameter = nil,Arguments = [],Result = normal(success).
+%jump Aid
+    parse(jump,[Aid],_,Command,Parameter,Arguments,Result):-true|
+        Command = jump,Parameter = nil,sToaList([Aid],Arguments,Result).
+%justify
+    parse(justify,[],_,Command,Parameter,Arguments,Result):-true|
+        Command = justify,Parameter = nil,Arguments = [],Result = normal(success).
+%show counter IssueNum
+    parse(show,["counter",IssueNum],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = counterList,sToiList([IssueNum],Arguments,Result).
+%show claim
+    parse(show,["claim"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = claimList,Arguments = [],Result = normal(success).
+%use command
+    parse(use,["command"],UseComList,Command,Parameter,Arguments,Result):-true|
+        Command = nil,Parameter = nil,Arguments = nil,
+        dbtcui_ioUtility:show_listX(UseComList,Result).
+
+%set depth
+    parse(set,["depth",Depth],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = depth,sToiList([Depth],Arguments,Result).
+%set explanationMode
+    parse(set,["explanationMode","h"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = explanationMode,Arguments = [h],Result = normal(success).
+    parse(set,["explanationMode","e"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = explanationMode,Arguments = [e],Result = normal(success).
+%show explanation
+    parse(show,["explanation"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = explanation,Arguments = [],Result = normal(success).
+
+otherwise.
+    parse(_,_,_,_,_,_,Result):-true|
+        Result = abnormal({gui,'Illegal command or arguments',nil}).
+
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({gui,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({gui,'Illegal atom',A})
+        ).
+                
+
+
+%%%%is_useCommand
+    is_useCommand(UseComList,send,claimList,YN):-true|
+        member(UseComList,claimList,YN).
+    is_useCommand(UseComList,send,reasonList,YN):-true|
+        member(UseComList,notice,YN).
+    is_useCommand(UseComList,send,explanation,YN):-true|
+        member(UseComList,explain,YN).
+    is_useCommand(_,send,counterList,YN):-true|
+        YN = yes.
+    is_useCommand(_,set,depth,YN):-true|
+        YN = yes.
+    is_useCommand(_,set,explanationMode,YN):-true|
+        YN = yes.
+    is_useCommand(_,end,_,YN):-true|
+        YN = yes.
+otherwise.
+    is_useCommand(UseComList,Command,_,YN):-true|
+        member(UseComList,Command,YN).
+
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).

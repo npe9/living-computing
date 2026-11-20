@@ -1,0 +1,106 @@
+﻿<!--
+#
+# Modified by	C.Takahashi		'98/08/20
+#
+-->
+<HTML>
+<HEAD><TITLE>ICOT Free Software Character Code</TITLE></HEAD>
+
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+ICOTフリーソフトウェアの文字コードの扱いについて
+</H1></CENTER>
+
+<!--
+<CENTER>
+<TABLE BORDER="5" ALIGN=CENTER UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><CENTER><A HREF="character-E.html">To English Page for "ICOT Free Software Character Code"</A>
+	</TD></TR>
+</TABLE>
+</CENTER>
+-->
+
+<HR width=95% align="center" size=7><P>
+
+<CENTER>
+<H2>要旨</H2>
+</CENTER>
+
+このサーバ上では, ICOTフリーソフトウェアは原則としてASCII＋JIS漢字コー
+ド (JIS X 0208) を用いてアーカイブされています. したがって, UNIXマシン
+上ではアーカイブを展開するだけでファイルの中身を読むことができます.<P>
+
+元々UNIX上で動作させることを前提としたソフトウェアは問題ありませんが,
+ICOTフリーソフトウェアにはPSIやPIM上での動作を前提として書かれたものが
+多く, その場合には, オリジナルのファイルの文字コードはPSI独自のものが
+使われています. したがって, PSIやPIM上で動くソフトウエアを動作させるた
+めには, 文字コードをPSI独自のものに変換しなければなりません. この変換
+機能はSIMPOSのFTPに組み込まれていますので, UNIXマシンからPSIへ転送する
+時に, この機能を利用して文字コードを変換することができます.<P>
+
+
+<H2>1. ソースやドキュメントを読んだり, プリントしたりしたい時</H2><P>
+
+本アーカイブは原則として ASCII＋JIS漢字コード (JIS X 0208) を用いてい
+ますから, uncompress+tar してできるファイルは, UNIX 上でそのまま読んだ
+りプリントしたりできます. (ただし, CESP および SICStus Prolog で動作す
+るプログラムで漢字を含むものは EUC コードを用いています.)<P>
+
+
+<H2>2. 動作させたい時</H2><P>
+
+<H2>2.1 UNIX 上で動作するソフトウエア</H2><P>
+
+C, CESP, Prolog 等 UNIX上で動作するソフトウェアは, uncompress+tar して
+展開されたファイルをそのまま用いて make 等でコンパイルできるようになっ
+ています. それぞれのソフトウェアのインストール方法に従ってください.
+インストール方法は各ディレクトリの INSTALL というファイルに書かれてい
+ます.<P>
+
+<H2>2.2 PSI, Multi-PSI, PIM 上で動作するソフトウェア</H2><P>
+
+PSI, Multi-PSI, PIM 上で動作するソフトウェアは, 文字コードをPSI独自の
+ものに変換しなければなりません. SIMPOSのFTPに組み込まれている文字コー
+ド変換機能を使えば, PSIへの転送と同時に文字コードを変換することができ
+ます.<P>
+
+SIMPOSのFTPでは, 転送タイプを ascii に設定するとファイル転送時にASCII
+→PSI, PSI→ASCIIの文字コード変換が自動的に行われます. しかし, 転送対
+象のファイルが漢字を含む場合には, 漢字部分の文字コード変換が行われませ
+んので, 「コード系の指定」をする必要があります. ファイルが漢字を含むか
+どうかは各ソフトウエアのREADME[.j] に書いてあるはずですが, わからない
+場合は, とりあえず 2.2.2 のようにコード系の指定をしておけばうまくいき
+ます.<P>
+
+<H2>2.2.1  日本語を含まないソフトウェア</H2><P>
+
+SIMPOS の FTP を使って, 転送タイプを ascii に設定してファイルを転送し
+ます.<P>
+
+<H2>2.2.2  日本語を含むソフトウェア</H2><P>
+
+SIMPOSのFTPを使って, 転送タイプを ascii に設定し, さらにコード系の指定
+をします. コード系の指定をするためには,<P>
+
+<DD>FTP> mget *.kl1 /jis *.kl1<P>
+
+のように, SIMPOSのFTPの転送コマンド (put, mput, get, mget) のリモート
+ファイル名の後に /jis というオプションを付加します.<P>
+
+<!--
+<HR width=95% align="center" size=7>
+<CENTER>
+<TABLE BORDER="5" ALIGN=center UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><center><A HREF="../../HomePage-J.html">ホームページに戻る</A>
+	</TD></TR>
+</TABLE>
+</CENTER><P>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+-->
+
+</BODY>
+</HTML>
+

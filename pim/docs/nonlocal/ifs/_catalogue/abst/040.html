@@ -1,0 +1,100 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (40) Linguistic Knowledge Description Language</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (40) Linguistic Knowledge Description Language</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI-II
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 2.5 MB
+	Documents:   Operation Manual, Installation Note (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system offers a programming system and its development support
+environment for a Prolog-based language for natural language
+processing.<P>
+
+<h2><b>Configuration</b></h2>
+
+<dl>
+<ul>
+  <dt><li><b>Coordinator:</b>
+    <dd>Controls the followings tools.
+  <dt><li><b>Installer:</b>
+    <dd>Supports installation for this system.
+  <dt><li><b>Workspace:</b>
+    <dd>Excutes programs.
+  <dt><li><b>Tracer:</b>
+    <dd>Traces execution process of programs.
+  <dt><li><b>Inspector:</b>
+    <dd>Analyzes data structures.
+  <dt><li><b>Graphic Inspector:</b>
+    <dd>Displays data structures graphically.
+  <dt><li><b>Editor:</b>
+    <dd>Used for editting programs and compiling programs.
+  <dt><li><b>Browser:</b>
+    <dd>Displays Informations about programs.
+</ul>
+</dl>
+
+<h2><b>Function</b></h2>
+
+This system is a programming system a prolog-based language that
+enables ones to describe objects with complex structures and
+constraints between them. This function is crucial to describe natural
+language processing system based on situation semantics,or grammatical
+theories like GPSG or LFG.  <p>
+
+This system supports a Prolog-based programming language with two
+additional features, PST (Partial Specified Terms) and lazy
+evaluation. PST enables description of knowledge and semantics,and
+lazy evaluation enables constraint description.  <p>
+
+This system also presents tools for program development. They are
+designed to work independently.<P>
+
+<h2><b>Example</b></h2>
+
+This is an example of partially specified term and lazy evaluation. By
+running this example, each PST is unified. As a result,"A" is bound
+25,then this value is printed on the screen.<P>
+
+<pre>
+
+  X = {name/taro,age/A},
+  print(A?),
+  .....
+  X = {age/25,weight/80}.
+</pre>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Linguistic Knowledge Description Language [986K] <a
+href="../../../ifs/natural-lang/simpos/cil.tar.gz"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

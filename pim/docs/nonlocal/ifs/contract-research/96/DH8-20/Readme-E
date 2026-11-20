@@ -1,0 +1,50 @@
+Readme-E
+Copyright (C) 1997 Etsuya Shibayama
+
+A Parallel Visual Programming Environment KLIEG Version 2.0
+
+[Features of the Software]
+
+KLIEG is a visual parallel programming environment, in which a
+parallel program is developed by editing visuals (e.g., icons
+representing processes and lines representing streams) on the screen
+and will be executed after being translated into KL1 codes. The
+execution process is animated by the KLIEG tracer.
+
+The most significant feature of the KLIEG environment is a support for
+pattern-oriented parallel programming. Syntactically, a pattern is a
+process diagram with some unspecified potions. Semantically, a pattern
+keeps design information, which is useful not only for software
+engineering purposes but also for visualization of parallel program
+execution and run-time resource allocations.  Basically a pattern is
+defined by an expert designer and used later by (possibly novice)
+programmers. The KLIEG provides a neat graphical user interface both
+for designers and programmers.
+
+
+[Required Environment]
+
+We checked that our software can run on SparcStation 10/20s with
+Solaris 2.5J, KLIC-2.002, Amulet-2.0, gcc-2.7.2, and libg++-2.7.1
+(optionally Rie-1.0.6, flex-2.5.3).  We expect that our software can
+run on other unix boxes possibly with minor modifications.
+
+[File Configuration]
+
+README-J
+README-E
+
+Directories for Source File
+
+Makefile
+editor/
+tracer/
+examples/
+
+Directory for Documents
+
+manual/
+
+Patch file for Amulet 2.0
+
+Patch-for-Amulet.patch

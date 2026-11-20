@@ -1,0 +1,55 @@
+Datagol			Copyright (C) 1999 古川康一
+==========================================================
+配布ファイルの構成
+Readme-J			このファイル
+Readme-E			このファイルの英語版
+INSTALL				インストールガイド
+use-of-software-J		ソフトウェアの利用条件(日本語版)
+use-of-software-E		ソフトウェアの利用条件(英語版)
+
+doc/				ユーザマニュアル ディレクトリ
+source/				プログラム ディレクトリ
+source/AILP/			Abductive-Datagol プログラムディレクトリ
+source/AILP/sample		サンプルプログラム ディレクトリ
+source/RDB/			Datagol/RDB プログラムディレクトリ
+source/RDB/sample		サンプルプログラムディレクトリ
+
+doc:
+	Datagol.ps		Datagol ユーザマニュアル	
+
+source/AILP:
+	a-datagol.pl		abductive-Datagol メインモジュール
+	eval.pl			(部分演繹用)メタインタプリタ モジュール
+	msh.pl			最弱仮説生成モジュール
+	parser.pl		データ読み込み モジュール
+	path.pl			パスセット計算モジュール
+	search.pl		仮説束内探索 モジュール
+	util.pl			ユーティリティー モジュール
+
+source/AILP/sample:
+	animals.pl		abductive-Datagol用 動物分類問題
+	family.pl		abductive-Datagol用 家族関係学習問題
+	grammar.pl		abductive-Datagol用 文法学習問題
+
+source/RDB:
+	Makefile		Datagol/RDBのMakefile
+	make_datagol.pl		MakeのためのPrologプログラム
+
+	Datagol.java		GUI メイン モジュール
+	DBPLG.java		GUI/推論エンジン インターフェースモジュール
+	DG.java			推論エンジン/RDB インターフェースモジュール
+	OutPanel.java		出力用モジュール
+
+	datagol.pl		Datagol/RDB トップ モジュール
+	gui.pl			GUI/推論エンジン インターフェースモジュール	
+	main.pl			推論エンジン モジュール
+	msh.pl			最弱仮説計算モジュール
+	rdb.pl			推論エンジン/RDBインターフェースモジュール
+	search.pl		仮説束内探索モジュール
+	trans.pl		Prolog to SQL コンパイラ
+	util.pl			ユーティリティー モジュール
+
+
+source/RDB/sample:
+	animals.pl		Datagol/RDB 用 動物分類問題
+	animals.sql		Datagol/RDB 用 動物分類問題(データ)

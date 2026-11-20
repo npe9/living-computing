@@ -1,0 +1,36 @@
+========================================================
+(C)1995 Institute for New Generation Computer Technology
+(Read COPYRIGHT for detailed information.)
+========================================================
+
+[1] What is a distributed pool?
+-------------------------------
+
+A distributed pool is a table maintenance utility which provides
+various forms of tables with arbitrary keys and data. It has been
+extensively used by experimental parallel application programs. Users
+can ease programming efforts by using a distributed pool.
+ 
+The original pool provided by PIMOS operating system of PIMs did not
+run in parallel. All the data is managed by a single process.
+Therefore, when data are accessed from many nodes at the same time,
+network congestion and access latency become problematic. The
+distributed pool is designed to solve these problems. The distributed
+pool distributes the original pool to each node, and maintains the
+coherence among copies cached to several original pools.
+
+The distributed pool will alleviate load congestion, and improve data
+access latency. Moreover, by dispersing the memory consumption at many
+transaction nodes, the maximum capacity of the pool is greatly
+expanded.
+
+[2] Execution Environment
+-------------------------
+Programs using a distributed pool run under PIMOS operating system of
+PIMs, or KLIC a portable KL1 implementation.
+
+Following two archive files are available for users.
+
+dpool_pimos.tar.gz 	for PIMOS
+dpool_klic.tar.gz 	for KLIC
+	

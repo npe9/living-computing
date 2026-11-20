@@ -1,0 +1,24 @@
+======================================================================
+
+                 Visual interface of KLIC(klitcl) and
+              Message interface of KLIC and Java(javakli)
+
+======================================================================
+                                 Copyright (C) 1999 Kazuhisa Iizuka
+
+
+--- Files ----------------------------------------
+javakli/              Message interface of KLIC and Java(javakli)
+klitcl/               Visual interface of KLIC(klitcl)
+
+javakli-system.ps.gz  an explanation of javakli's system(Japanese)
+Readme-E              about files(This file)
+Readme-J              about files(Japanese)
+use-of-software-E     terms and conditions for use of this software(English)
+use-of-software-J     terms and conditions for use of this software(Japanese)
+
+
+--- How to use -----------------------------------
+Please refer to the HTML files.
+ javakli : javakli/doc/index.html
+ klitcl  : klitcl/doc/index.html

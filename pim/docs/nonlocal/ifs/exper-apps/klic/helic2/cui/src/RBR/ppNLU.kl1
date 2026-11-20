@@ -1,0 +1,211 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_pp.
+:- public pp/2.
+:- with_macro pimos.
+
+pp([],Out):-
+    Out = [].
+pp([{Env,HIDT,SV}|T],Out):-
+    vector(SV,Size) |
+    get_ans(0,Size,SV,Env,OutH),
+    pp(T,OutT),
+    Out = [{Env,HIDT,OutH}|OutT].
+
+get_ans(I,Size,SV,Env,Out):-
+    I < Size |
+    set_vector_element(SV,I,Data,Data1,SV1),
+    get_ans_one(Data,Env,Data1),
+    get_ans(~(I+1),Size,SV1,Env,Out).
+get_ans(Size,Size,SV,_Env,Out):-
+    Out = SV.
+
+%$get_ans_one({succ,Cons,Rule,CL,J,SAI,CT},Data1):-
+get_ans_one({succ,Cons,{Rule,Exp},CL,J,SAI,CT,Sim},Env,Data1):-
+    get_argJ(J,J1),
+    get_SAI(SAI,SAI1),
+    get_exp(Exp,Env,Exp1),
+    pp_cnt(CT,CT1),
+%$    Data1 = {succ,Cons,Rule,CL,J1,SAI1,CT1}.
+    Data1 = {succ,Cons,{Rule,Exp1},CL,J1,SAI1,CT1,Sim}.
+get_ans_one({succ,Cons,Rule,CL},_Env,Data1):-
+    Data1 = {succ,Cons,Rule,CL}.
+get_ans_one({fail,Entry},_Env,Data1):-
+    Data1 = {fail,Entry,[]}.
+get_ans_one({unsolve,Entry},_Env,Data1):-
+    Data1 = {fail,Entry,[]}.
+get_ans_one({naf,Entry},_Env,Data1):-
+    Data1 = {fail,Entry,[]}.
+get_ans_one({CJ,Cons,NafST},_Env,Data1):-
+    get_consJ(CJ,CJ1),
+    pp(NafST,NafST1),
+    Data1 = {CJ1,Cons,NafST1}.
+
+get_SAI([],SAI1):-
+    SAI1 = [].
+get_SAI([{J,N,L}|SAI],SAI1):-
+    get_argJ(J,J1),
+    get_SAI(SAI,SAIT),
+    SAI1 = [{J1,N,L}|SAIT].
+
+pp_cnt(fail,CT1):- 
+    CT1 = fail.
+pp_cnt([],CT1):- 
+    CT1 = fail.
+%$
+pp_cnt(nil,CT1):-
+    CT1 = nil.
+otherwise.
+pp_cnt(CT,CT1):-
+    pp_cnt0(CT,CT1).
+
+pp_cnt0([{{Env,HIDT,CV},TR,SH}|CT],CT1):- 
+    vector(CV,Size) |
+    get_ruleREL(TR,TR1,_),
+    get_shouhai(SH,SH1,_),
+    get_ans_cst(0,Size,CV,Env,CV1),
+    pp_cnt0(CT,CT1T),
+    CT1 = [{{Env,HIDT,CV1},TR1,SH1}|CT1T].
+pp_cnt0([],CT1):- 
+    CT1 = [].
+
+get_ans_cst(I,Size,SV,Env,Out):-
+    I < Size |
+    set_vector_element(SV,I,Data,Data1,SV1),
+    get_ans_cst_one(Data,Env,Data1),
+    get_ans(~(I+1),Size,SV1,Env,Out).
+get_ans_cst(Size,Size,SV,_Env,Out):-
+    Out = SV.
+
+get_ans_cst_one({succ,Cons,{Rule,Exp},CL,c_top(_J),SAI,nil,Sim},Env,Data1):-
+    get_SAI(SAI,SAI1),
+    get_exp(Exp,Env,Exp1),
+    Data1 = {succ,Cons,{Rule,Exp1},CL,nil,SAI1,nil,Sim}.
+get_ans_cst_one({fail,Entry},_Env,Data1):-
+    Data1 = {fail,Entry}.
+get_ans_cst_one({unsolve,Entry},_Env,Data1):-
+    Data1 = {fail,Entry}.
+get_ans_cst_one({naf,Entry},_Env,Data1):-
+    Data1 = {fail,Entry}.
+otherwise.
+get_ans_cst_one({succ,Cons,{Rule,Exp},CL,J,SAI,CT,Sim},Env,Data1):-
+    get_argJ(J,J1),
+    get_SAI(SAI,SAI1),
+    pp_cnt(CT,CT1),
+    get_exp(Exp,Env,Exp1),
+    Data1 = {succ,Cons,{Rule,Exp1},CL,J1,SAI1,CT1,Sim}.
+
+%get_argJ(c_top(_),Jin,Jout):-
+%    Jout = Jin.
+%otherwise.
+%get_argJ(J,_,Jout):-
+%    get_argJ(J,Jout).
+
+get_argJ({1,1},Jout):- Jout = justify.
+get_argJ({2,2},Jout):- Jout = directly.
+get_argJ({2,1},Jout):- Jout = stro_d.
+get_argJ({2,0},Jout):- Jout = unre_d.
+get_argJ({2,-1},Jout):- Jout = weak_d.
+get_argJ({3,1},Jout):- Jout = stro_p.
+get_argJ({3,0},Jout):- Jout = unre_p.
+get_argJ({3,-1},Jout):- Jout = weak_p.
+otherwise.
+get_argJ(In,Jout):- atom(In) | Jout = In.
+
+get_shouhai(1,Jout,JR):- Jout = defeat, JR=defeated.
+get_shouhai(2,Jout,JR):- Jout = defeated, JR=defeat.
+get_shouhai(3,Jout,JR):- Jout = draw, JR=draw.
+get_shouhai(4,Jout,JR):- Jout = alr, JR=inv.
+get_shouhai(5,Jout,JR):- Jout = inv, JR=alr.
+get_shouhai(6,Jout,JR):- Jout = alr_inv, JR=alr_inv.
+otherwise.
+get_shouhai(In,Jout,JR):- 
+    atom(In)|
+    Jout = In,
+    get_shouhaiR(In,JR).
+
+get_ruleREL(1,Jout,JR):- Jout = strong, JR=weak.
+get_ruleREL(0,Jout,JR):- Jout = unrelated, JR=unrelated.
+get_ruleREL(-1,Jout,JR):- Jout = weak, JR=strong.
+otherwise.
+get_ruleREL(In,Jout,JR):- 
+    atom(In) |
+    Jout = In, 
+    get_ruleRELR(In,JR).
+
+get_consJ(1,CJ1):- CJ1 = justify.
+get_consJ(2,CJ1):- CJ1 = defeted.
+get_consJ(3,CJ1):- CJ1 = plausible.
+get_consJ(4,CJ1):- CJ1 = fail.
+otherwise.
+get_consJ(In,CJ1):- 
+    atom(In) |
+    CJ1 = In.
+
+get_shouhaiR(defeat,JR):- JR=defeated.
+get_shouhaiR(defeated,JR):- JR=defeat.
+get_shouhaiR(draw,JR):- JR=draw.
+get_shouhaiR(alr,JR):- JR=inv.
+get_shouhaiR(inv,JR):- JR=alr.
+get_shouhaiR(alr_inv,JR):- JR=alr_inv.
+
+get_ruleRELR(strong,JR):- JR=weak.
+get_ruleRELR(unrelated,JR):- JR=unrelated.
+get_ruleRELR(weak,JR):- JR=strong.
+
+get_exp([],_Env,Exp1):-
+    Exp1 = "".
+get_exp(String,_Env,Exp1):-
+    string(String,_,_) |
+    Exp1 = String.
+get_exp(Exp,Env,Exp1):-
+    list(Exp) |
+    get_string_list(Exp,Env,ExpM),
+    append_string(ExpM,Exp1).
+
+get_string_list([EH|Exp],Env,Exp1):-
+    string(EH,_,_) |
+    get_string_list(Exp,Env,Exp1T),
+    Exp1 = [EH|Exp1T].
+get_string_list([EH|Exp],Env,Exp1):-
+    integer(EH) |
+    reverse_translate:reverse_translate(1,{EH,Env},EHS),
+    get_string_list(Exp,Env,Exp1T),
+    Exp1 = [EHS|Exp1T].
+get_string_list([],_Env,Exp1):-
+    Exp1 = [].
+
+append_string([],Out):-
+    Out = "".
+append_string(In,Out):-
+    list(In) |
+    count_length(In,L,Mid),
+    new_string(S,L,8),
+    set_string_list(Mid,S,0,Out).
+
+count_length([],L,Out):-
+    L := 0, Out = [].
+count_length([InH|InT],L,Out):-
+    string(InH,LH,_) |
+    count_length(InT,LT,OutT),
+    Out = [InH|OutT],
+    L := LH + LT.
+
+set_string_list([],S,_P,Out):-
+    Out = S.
+set_string_list([InH|InT],S,P,Out):-
+    string(InH,SH,_) |
+    set_string(InH,S,0,SH,P,S1),
+    set_string_list(InT,S1,~(P+SH),Out).
+
+set_string(InH,S,I,N,P,S1):-
+    I < N |
+    string_element(InH,I,Ele,InH1),
+    set_string_element(S,P,Ele,Smid),
+    set_string(InH1,Smid,~(I+1),N,~(P+1),S1).
+set_string(_InH,S,I,N,_P,S1):-
+    I >= N |
+    S1 = S.

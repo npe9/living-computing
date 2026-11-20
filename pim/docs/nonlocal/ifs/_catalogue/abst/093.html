@@ -1,0 +1,75 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+-->
+<title> (93) Multiple Sequence Alignment by Parallel Iterative Improvement Method (KLIC version)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (93) Multiple Sequence Alignment by Parallel Iterative Improvement Method (KLIC version)</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX Machine
+	Environment: UNIX, KLIC
+	Language:    KL1, C
+	Source Code: 3 MB
+	Documents:   Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system partially improves temporary alignment in an iterative
+way, and can effectively achieve high-quality alignment as a result. 
+(KLIC version) <p>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>Partial optimization modules by dynamic programming. Each of the
+modules, written in KL1 on KLIC or in C language, is executed on a
+slave processing element.
+
+<li>Parallel execution control module. This module, written in KL1 on
+KLIC, works on a master processing element.
+
+<li>Miscellaneous sequential modules. These modules, written in C
+language, are available for the performance evaluation of parallel
+processing.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+Multiple branches of a search tree in this combinatorial problem are
+evaluated in parallel by using many processing elements in each
+iteration.  <p>
+
+The heuristic method, ``Restricted Partitioning Technique,'' prunes a
+large number of branches in the search tree and makes it possible to
+solve the combinatorial problem in a practical amount of time.  <p>
+
+<h2>FTP</h2>
+
+<ul>
+
+<li> Multiple Sequence Alignment by Parallel Iterative Improvement
+Method (KLIC version) [626K] <a
+href="../../../ifs/exper-apps/klic/pia_klic.tar.gz"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

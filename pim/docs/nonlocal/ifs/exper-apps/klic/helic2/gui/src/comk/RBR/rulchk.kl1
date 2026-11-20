@@ -1,0 +1,246 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_rule_check.
+:- with_macro pimos.
+:- public
+    rule_check_list/4,
+    rule_check/5.
+
+rule_check_list([{RN,Rule}|RT],TS,RL1,Res):-
+    rule_check(Rule,TS,Rule1,TS1,Res0),
+    rule_check_list1(Res0,RT,TS1,RLT1,Res),
+    RL1 = [{RN,Rule1}|RLT1].
+rule_check_list([],TS,RL1,Res):-
+    TS = [], RL1 = [], Res = normal(success).
+
+rule_check_list1(normal(success),RL,TS,RL1,Res1):-
+    rule_check_list(RL,TS,RL1,Res1).
+otherwise.
+rule_check_list1(Res,RL,TS,RL1,Res1):-
+    Res1 = Res, RL1 = RL, TS = [].
+
+rule_check(Rule0,TS,Rule,TS1,Res):-
+    vector(Rule0,5),
+    vector_element(Rule0,0,H),
+    vector_element(Rule0,1,B),
+    vector_element(Rule0,2,Env),
+    vector_element(Rule0,3,Exp),
+    vector_element(Rule0,4,HIDT) |
+    check_env(Env,TS,Envm1,TSm,Res1),
+    check_HIDT(Res1,HIDT,TSm,HIDT1,TSm1,Res2,Envm1,Envm2),
+    check_head(Res2,H,TSm1,H1,TSm2,Res3,Envm2,Envm3),
+    check_body(Res3,B,TSm2,B1,TS1,Res,Envm3,Env1),
+    Rule = {H1,B1,Env1,Exp,HIDT1}.
+rule_check(Rule0,TS,Rule,TS1,Res):-
+    vector(Rule0,6),
+    vector_element(Rule0,0,H),
+    vector_element(Rule0,1,B),
+    vector_element(Rule0,2,Env),
+    vector_element(Rule0,3,Exp),
+    vector_element(Rule0,4,HIDT),
+    vector_element(Rule0,5,CBREnv) |
+    check_env(Env,TS,Envm1,TSm,Res1),
+    check_HIDT(Res1,HIDT,TSm,HIDT1,TSm1,Res2,Envm1,Envm2),
+    check_head(Res2,H,TSm1,H1,TSm2,Res3,Envm2,Envm3),
+%$    check_body(Res3,B,TSm2,B1,TS1,Res,Envm3,Env1),
+%$    Rule = {H1,B1,Env1,Exp,HIDT1,CBREnv}.
+%$   
+    check_body(Res3,B,TSm2,B1,TSm3,Res4,Envm3,Env1),
+    check_envC(Res4,CBREnv,TSm3,CBREnv1,TS1,Res),
+    Rule = {H1,B1,Env1,Exp,HIDT1,CBREnv1}.
+
+check_envC(normal(success),Env,TS,Env1,TS1,Res1):-
+    check_env(Env,TS,Env1,TS1,Res1).
+otherwise.
+check_envC(Res,Env,TS,Env1,TS1,Res1):-
+	Env1 = Env, TS1 = TS, Res1 = Res.
+%$
+
+check_env(Env,TS,Env1,TS1,Res1):-
+    vector_element(Env,0,Size) |
+    check_env1(Size,Env,TS,Env1,TS1,Res1).
+
+check_env1(0,Env,TS,Env1,TS1,Res):-
+    Env1 = Env, TS1 = TS, Res = normal(success).
+check_env1(N,Env,TS,Env1,TS1,Res):-
+    N > 0 |
+    check_env2(normal(success),1,N,Env,TS,Env1,TS1,Res).
+
+check_env2(normal(success),I,N,Env,TS,Env1,TS1,Res):-
+    I =< N |
+    vector_element(Env,I,PT,Envm),
+    check_PT(PT,TS,_PT1,TSm,Res1,Envm,Envm1),
+    check_env2(Res1,~(I+1),N,Envm1,TSm,Env1,TS1,Res).
+otherwise.
+check_env2(Res0,_I,_N,Env,TS,Env1,TS1,Res):-
+    Env1 = Env, TS1 = TS, Res = Res0.
+
+check_PT(PT,TS,PT1,TS1,Res,Env,Env1):-
+    integer(PT) |
+    Env1 = Env,
+    PT1 = PT, TS1 = TS, Res = normal(success). 
+otherwise.
+check_PT(PT,TS,PT1,TS1,Res,Env,Env1):-
+    is_defined(PT,TS,PT1,TS1,Res,Env,Env1).
+
+check_HIDT(normal(success),HIDT,TS,HIDT1,TS1,Res1,Env,Env1):-
+    vector_element(HIDT,0,Size) |
+    check_HIDT1(Size,HIDT,TS,HIDT1,TS1,Res1,Env,Env1).
+otherwise.
+check_HIDT(Res,HIDT,TS,HIDT1,TS1,Res1,Env,Env1):-
+    Env1 = Env,
+    HIDT1 = HIDT, TS1 = TS, Res1 = Res.
+
+check_HIDT1(0,HIDT,TS,HIDT1,TS1,Res,Env,Env1):-
+    Env1 = Env,
+    HIDT1 = HIDT, TS1 = TS, Res = normal(success).
+check_HIDT1(Size,HIDT,TS,HIDT1,TS1,Res,Env,Env1):-
+    Size > 0 |
+    check_HIDT2(normal(success),1,Size,HIDT,TS,HIDT1,TS1,Res,Env,Env1).
+
+check_HIDT2(normal(success),I,Size,HIDT,TS,HIDT1,TS1,Res,Env,Env1):-
+    I =< Size |
+    set_vector_element(HIDT,I,HT,HT1,HIDTm),
+    check_HT(HT,TS,HT1,TSm,Resm,Env,EnvM),
+    check_HIDT2(Resm,~(I+1),Size,HIDTm,TSm,HIDT1,TS1,Res,EnvM,Env1).
+otherwise.
+check_HIDT2(Res,_I,_Size,HIDT,TS,HIDT1,TS1,Res1,Env,Env1):-
+    Env1 = Env,
+    HIDT1 = HIDT, TS1 = TS, Res1 = Res.
+
+check_HT({HT},TS,HT1,TS1,Res,Env,Env1):-
+    integer(HT) |
+    Env1 = Env,
+    HT1 = {HT}, TS1 = TS, Res = normal(success).
+check_HT({{NOT,PT},CL,OC},TS,HT1,TS1,Res,Env,Env1):-
+    check_PT(PT,TS,PT1,TSm,Res1,Env,EnvM),
+    check_CL(Res1,CL,TSm,CL1,TS1,Res,EnvM,Env1),
+    HT1 = {{NOT,PT1},CL1,OC}.
+
+check_CL(normal(success),[{CN,HT}|CLT],TS,CL1,TS1,Res1,Env,Env1):-
+    check_term(HT,TS,HT1,TSm,Res,Env,EnvM),
+    check_CL(Res,CLT,TSm,CLT1,TS1,Res1,EnvM,Env1),
+    CL1 = [{CN,HT1}|CLT1].
+check_CL(normal(success),[{CN,HT,Triv}|CLT],TS,CL1,TS1,Res1,Env,Env1):-
+    check_term(HT,TS,HT1,TSm,Res,Env,EnvM),
+    check_CL(Res,CLT,TSm,CLT1,TS1,Res1,EnvM,Env1),
+    CL1 = [{CN,HT1,Triv}|CLT1].
+otherwise.
+check_CL(Res,CL,TS,CL1,TS1,Res1,Env,Env1):-
+    Env1 = Env,
+    CL1 = CL, TS1 = TS, Res1 = Res.
+
+check_term(T,TS,T1,TS1,Res,Env,Env1):-
+    integer(T) |
+    Env1 = Env,
+    T1 = T, TS1 = TS, Res = normal(success).
+check_term({T},TS,T1,TS1,Res,Env,Env1):-
+    integer(T) |
+    Env1 = Env,
+    T1 = {T}, TS1 = TS, Res = normal(success).
+check_term({T,I,L},TS,T1,TS1,Res,Env,Env1):-
+    integer(I) |
+    is_defined({T,I,L},TS,T1,TS1,Res,Env,Env1).
+otherwise.
+check_term(T,TS,T1,TS1,Res,Env,Env1):-
+    check_HT(T,TS,T1,TS1,Res,Env,Env1).
+
+check_head(normal(success),H,TS,H1,TS1,Res1,Env,Env1):-
+    check_HT(H,TS,H1,TS1,Res1,Env,Env1).
+otherwise.
+check_head(Res,H,TS,H1,TS1,Res1,Env,Env1):-
+    Env1 = Env,
+    H1 = H, TS1 = TS, Res1 = Res.
+
+check_body(normal(success),[HH|HT],TS,H1,TS1,Res1,Env,Env1):-
+    check_body1(HH,TS,HH1,TSm,Res,Env,EnvM),
+    check_body(Res,HT,TSm,HT1,TS1,Res1,EnvM,Env1),
+    H1 = [HH1|HT1].
+otherwise.
+check_body(Res,H,TS,H1,TS1,Res1,Env,Env1):-
+    Env1 = Env,
+    H1 = H, TS1 = TS, Res1 = Res.
+
+check_body1({NAF,HT},TS,B1,TS1,Res,Env,Env1):-
+    check_HT(HT,TS,HT1,TS1,Res,Env,Env1),
+    B1 = {NAF,HT1}.
+check_body1({[],HT,Trivial},TS,B1,TS1,Res,Env,Env1):-
+    check_HT(HT,TS,HT1,TS1,Res,Env,Env1),
+    B1 = {[],HT1,Trivial}.
+% for SpecialVerb ***
+check_body1({less,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    B1 = {less,P1,P2}, 
+    TS1 = TS, Res = normal(success), Env1 = Env.
+check_body1({greater,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    B1 = {greater,P1,P2},
+    TS1 = TS, Res = normal(success), Env1 = Env.
+check_body1({equal,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    B1 = {equal,P1,P2},
+    TS1 = TS, Res = normal(success), Env1 = Env.
+check_body1({not_equal,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    B1 = {not_equal,P1,P2},
+    TS1 = TS, Res = normal(success), Env1 = Env.
+check_body1({same,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    check_PT(P1,TS,P1n,TSm,Res1,Env,EnvM),
+    check_PT1(Res1,P2,TSm,P2n,TS1,Res,EnvM,Env1),
+    B1 = {same,P1n,P2n}.
+check_body1({different,P1,P2},TS,B1,TS1,Res,Env,Env1):-
+    check_PT(P1,TS,P1n,TSm,Res1,Env,EnvM),
+    check_PT1(Res1,P2,TSm,P2n,TS1,Res,EnvM,Env1),
+    B1 = {different,P1n,P2n}.
+
+check_PT1(normal(success),PT,TS,PT1,TS1,Res,Env,Env1):-
+    check_PT(PT,TS,PT1,TS1,Res,Env,Env1).
+otherwise.
+check_PT1(Res0,PT,TS,PT1,TS1,Res,Env,Env1):-
+    Res = Res0, PT1 = PT, TS1 = TS, Env1 = Env.
+
+
+%%oosaki modify 960403
+%is_defined({TN,I,AL},TS,PT1,TS1,Res,Env,Env1):-
+%    no_varAL(AL,Env,ALold,ALnew,Env1),
+%    TS = [is_defined({TN,I,ALnew},Res0)|TS1],
+%    PT1 = {TN,I,ALold},
+%    is_defined2(Res0,PT1,Res).
+
+is_defined({TN,I,AL},TS,PT1,TS1,Res,Env,Env1):-
+    no_varAL(AL,Env,_ALold,ALnew,Env1),
+    TS = [is_defined({TN,I,ALnew},Res0)|TS1],
+    PT1 = {TN,I,AL},
+    is_defined2(Res0,PT1,Res).
+
+is_defined2(normal(success),_PT,Res):-
+    Res = normal(success).
+otherwise.
+is_defined2(_Res0,PT,Res):-
+    Res = abnormal({rbr,undefined_type_Pterm,PT}).
+
+
+
+no_varAL([],Env,ALold,ALnew,Env1):-
+    ALold = [], ALnew = [], Env1 = Env.
+no_varAL([{L,P}|AL],Env,ALold,ALnew,Env1):-
+    no_varP(P,Env,Pold,Pnew,EnvM),
+    no_varAL(AL,EnvM,ALoldT,ALnewT,Env1),
+    ALold = [{L,Pold}|ALoldT],
+    ALnew = [{L,Pnew}|ALnewT].
+
+no_varP({Name,I,AL},Env,Pold,Pnew,Env1):-
+    no_varAL(AL,Env,ALold,ALnew,Env1),
+    Pold = {Name,I,ALold},
+    Pnew = {Name,I,ALnew}.
+no_varP(0,Env,Pold,Pnew,Env1):-
+    Pold = 0, Pnew = 0, Env1 = Env.
+no_varP(P,Env,Pold,Pnew,Env1):-
+    P > 0 |
+    vector_element(Env,P,Pmid,EnvM),
+    no_varP(Pmid,EnvM,Pold,Pnew,Env1).
+
+
+
+
+
+

@@ -1,0 +1,77 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pom_stringMatrix.
+
+:- public 
+    make_matrix/2,
+    set_data/5,
+    get_data/4,
+    get_YList/4,
+    get_XList/4.
+
+            
+:- with_macro pimos.
+
+%make_matrix
+    make_matrix(Size,M):-true|
+        string("",_,Type,_),
+        L := Size*Size,
+        new_string(M1,L,Type),
+        M = {Size,M1}.
+
+%set_data
+    set_data({Size,M1},X,Y,V,M):-true|
+        get_position(Size,X,Y,Pos),
+        set_string_element(M1,Pos,V,M2),
+        M = {Size,M2}.
+
+%get_data
+    get_data({Size,M1},X,Y,V):-true|
+        get_position(Size,X,Y,Pos),
+        string_element(M1,Pos,V,_).
+
+%get_YList
+    get_YList({Size,M1},X,V,YList):-true|
+        get_YList1(M1,0,Size,X,V,YList).
+
+    get_YList1(_,Size,Size,_,_,YList):-true|
+        YList=[].
+otherwise.
+    get_YList1(M1,CurrentY,Size,X,V,YList):-true|
+        Pos := CurrentY*Size+X,
+        string_element(M1,Pos,CurrentV,_),
+        NextY := CurrentY+1,
+        get_YList1(M1,NextY,Size,X,V,YList1),
+        (   CurrentV = V->
+                YList = [CurrentY|YList1]
+        ;
+            CurrentV \= V->
+                YList = YList1
+        ).
+
+%get_XList
+    get_XList({Size,M1},Y,V,XList):-true|
+        StartPos := Size*Y,
+        get_XList1(M1,StartPos,0,Size,V,XList).
+
+    get_XList1(_,_,Size,Size,_,XList):-true|
+        XList = [].
+otherwise.
+    get_XList1(M1,StartPos,CurrentX,Size,V,XList):-true|
+        Pos := StartPos+CurrentX,
+        string_element(M1,Pos,CurrentV,_),
+        NextX := CurrentX+1,
+        get_XList1(M1,StartPos,NextX,Size,V,XList1),
+        (   CurrentV = V->
+                XList = [CurrentX|XList1]
+        ;
+            CurrentV \= V->
+                XList = XList1
+        ).
+
+%%%%internal method
+    get_position(Size,X,Y,Pos):-true|
+        Pos := Y*Size+X.

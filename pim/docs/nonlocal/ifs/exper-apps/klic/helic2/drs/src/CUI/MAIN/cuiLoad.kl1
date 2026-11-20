@@ -1,0 +1,129 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_load.
+
+:- public 
+    type/4,
+    goal/4,
+    pom/4,
+    rule/4.    
+            
+:- with_macro pimos.
+
+    type(FileName,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [],
+                rbrcui_protocolPool:get(load,type,FileName,ProtocolList),
+                send(ProtocolList,RPM1,RPM,Result),
+                make_protocol(Result,ok,Protocol),
+                Data = {RPM,CS}
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {RPM1,CS},
+                rbrcui_utility:make_errorProtocol(Reason,Protocol)
+        ).
+    goal(FileName,{RPM,CS1},Data,Protocol):-true|
+        rbrcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(GoalList1)],
+                get_goal(GoalList1,GoalList,DispGoalList,IngiEnvList,R2),
+                (   R2 = normal(success) ->
+                        CS1   = [set(goalList,GoalList),
+                                 set(dispGoalList,DispGoalList),
+                                 set(currentGoal,nil),
+                                 set(ingiEnvList,IngiEnvList)|CS],
+                        make_protocol(normal(success),ok,Protocol),
+                        Data   = {RPM,CS}
+                ;
+                    R2 = abnormal(Reason) ->
+                        rbrcui_utility:make_errorProtocol(Reason,Protocol),
+                        Data   = {RPM,CS1}
+                )
+        ;
+            R1 = abnormal(Reason) ->
+                rbrcui_utility:make_errorProtocol(Reason,Protocol),
+                Data   = {RPM,CS1}
+        ).
+    pom(FileName,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(A),gett(B),gett(C),gett(D),gett(E)],
+                (   wait(E)->
+                        Term = {A,B,C,D,E},
+                        rbrcui_protocolPool:get(load,pom,Term,ProtocolList),
+                        send(ProtocolList,RPM1,RPM,Result),
+                        make_protocol(Result,ok,Protocol),
+                        Data = {RPM,CS})
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {RPM1,CS},
+                rbrcui_utility:make_errorProtocol(Reason,Protocol)
+        ).
+    rule(FileName,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(Term)],
+                (   Term\=end_of_file->
+                        rbrcui_protocolPool:get(load,rule,Term,ProtocolList),
+                        send(ProtocolList,RPM1,RPM,Result),
+                        make_protocol(Result,ok,Protocol),
+                        Data = {RPM,CS}
+                ;
+                    Term=end_of_file->
+                        Data = {RPM1,CS},
+                        Protocol = receive(errorInfo,[],_)
+                )
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {RPM1,CS},
+                rbrcui_utility:make_errorProtocol(Reason,Protocol)
+        ).
+
+%%%%%%%%%%%%%internal method
+%send
+    send([Protocol],RPM1,RPM,Result):-true |
+        RPM1 = [Protocol|RPM],
+        is_normal(Protocol,Result).
+
+    is_normal(set_parameter(type,_,normal(yes)),Result):-true| %dummy
+        Result = normal(success).
+    is_normal(set_parameter(_,_,normal(success)),Result):-true|
+        Result = normal(success).
+    is_normal(set_parameter(_,_,abnormal(Reason)),Result):-true|
+        Result = abnormal(Reason).
+
+%get_goal
+    get_goal({GoalList1},GoalList,DispGoalList,IngiEnvList,R):-true|
+        get_goal1(GoalList1,GoalList,DispGoalList,IngiEnvList,R).
+otherwise.
+    get_goal(H,_,_,_,R):-true|
+        R =abnormal({drs,'Illegal syntax',H}).
+                                
+    get_goal1([],GoalList,DispGoalList,IngiEnvList,R):-true|
+        GoalList     = [],
+        DispGoalList = [],
+        IngiEnvList  = [],
+        R            = normal(success).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%kokowo injijouhouwo toxtute kurutokorowo shuusei
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    get_goal1([{C,{A,B,X,_,D}}|T],GoalList,DispGoalList,IngiEnvList,R):-true|
+        get_goal1(T,GoalList1,DispGoalList1,IngiEnvList1,R),
+        Goal         = {A,B,C,D},
+        GoalList     = [Goal|GoalList1],
+        DispGoalList = [C|DispGoalList1],
+        IngiEnvList  = [X|IngiEnvList1].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+otherwise.
+    get_goal1(H,_,_,_,R):-true|
+        R            = abnormal({drs,'Illegal syntax',H}).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),_,Protocol):-true|
+        Protocol = receive(ok,_,_).

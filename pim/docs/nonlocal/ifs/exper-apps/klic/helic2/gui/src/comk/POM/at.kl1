@@ -1,0 +1,58 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pom_atomTable.
+
+:- public 
+    create/1.
+            
+:- with_macro pimos.
+
+    create(I):-true |
+        loop(I,[]).
+
+    loop([],_):-true |
+        true.
+    loop([get_ID(Atom,ID)|T],Pool1):-true |
+        get_ID(Atom,Pool1,Pool,ID),
+        loop(T,Pool).
+    loop([get_AD(AD)|T],Pool):-true |
+        get_AD(Pool,AD),
+        loop(T,Pool).
+
+%get_ID
+    get_ID(Atom,Pool1,Pool,ID):-true|
+        get_ID1(Pool1,Atom,0,Pool,ID).
+
+    get_ID1([],Atom,Pos,Pool,ID):-true|
+        Pool = [Atom],
+        ID   = Pos.
+    get_ID1([Atom|T],Atom,Pos,Pool,ID):-true|
+        Pool = [Atom|T],
+        ID = Pos.
+otherwise.
+    get_ID1([Atom1|T],Atom2,Pos,Pool,ID):-Atom1 \= Atom2|
+        NextPos := Pos+1,
+        get_ID1(T,Atom2,NextPos,Pool1,ID),
+        Pool = [Atom1|Pool1].
+%get_AD
+
+    get_AD(Pool,AD):-true|
+        count(Pool,0,L),
+        new_vector(AD1,L),
+        get_AD1(Pool,AD1,0,AD).
+
+    count([],Pos,L):-true|
+        L = Pos.
+    count([_|T],Pos,L):-true|
+        NextPos := Pos+1,
+        count(T,NextPos,L).
+
+    get_AD1([],AD1,_,AD):-true|
+        AD = AD1.
+    get_AD1([H|T],AD1,Pos,AD):-true|
+        set_vector_element(AD1,Pos,_,H,AD2),
+        NextPos := Pos+1,
+        get_AD1(T,AD2,NextPos,AD).

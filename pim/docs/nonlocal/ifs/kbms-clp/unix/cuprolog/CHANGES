@@ -1,0 +1,64 @@
+	cu-Prolog (UNIX version) changes
+				Hiroshi Tsuda (tsuda@icot.or.jp)
+
+88.11.23 Ver.2.00	OS command 
+90.4.1 rewrite refute, syspred (ver.3.0) 
+91.12  cu-Prolog III
+--------------------------
+92.7   ICOT Free Software Release
+Oct5-1992: 
+	patch (init_status(): set globval vars)
+	main.c (set global vars)	:thanks to Mr.Horikawa
+	   syspred1.c (reaad_pred bug)	:thanks to Dr.Fontanini
+	   cu3eman.tex	(delete lingmacros.sty) :thanks to Mr.Utsumi
+Oct29-1992: patch (up_init(): reset termset log)
+	main.c (reset termset log) :thanks to Dr.Sivand Lakmazaheri
+Nov4-1992:  syspred1.c (general_assert): tanks to Dr.Sivand Lakmazaheri
+	trans.c (sort body literals for folding): thanks to H.Sirai
+May28-1993: syspred1.c, defsysp.c 	(thanks to Mr.H.Ono)
+	abolish_pred/1  debug
+	add project_cstr/2
+93.7.15 init_status()   shp  %Z(hash list)
+Jul16-1993: defsysp.c                   (thanks to Mr.H.Ono)
+Jul30-1993: main.c, mainsub.c, include.h, globalv.h, varset.h
+	add decode_args(),heap_alloc()
+	Add command arguments.
+Aug3-1993: main.c, mainsub.c, new.c, tr_split.c
+	speed up		(ver3.1)
+Aug17-1993: cu-Prolog user's group information, unify.c (by H.Sirai)
+93.8.31 initialize_pointer()
+Sep22-1993: main.c mainsub.c  (debug GC)
+	    sample/marcus.p (simple English parser)	
+May22-1994: unify.c (debug PST unification)
+	    sample/hpsg.p  (simple HPSG parser: grammar by G.Smolka)
+94.7.6--13  speedup, unify.c etc.
+Jun27-1994: unify.c (debug PST unification)
+	new.c, varset.h, funclist.h      (by. Mr. T.Hamanaka)
+July8-1994: unification speed up (remove setjmp()). 
+	system predicates: apnd(),neq() support.
+	- debug PST unifier
+	- remove setjmp() statements
+	- rewrite source files applicable to '-O4' compile option of CC.
+	- add apnd/3 predicate (system append predicate)
+	- add neq/2 predicate (system not_equal predicate).
+Aug 10-1994: name predicate for Kanji string. (by. T.Hamanaka; v3.8)
+	syspred1.c, read.c, varset.h, globalv.h
+94.9.2  statistics (%S command)
+94.9.27  atom_to_str/2  (ver3.7)
+94.10.25  for HELIOS, debug maisub.c (ver.3.8)
+94.10.27  debug (labels of non-PST terms)	(v3.81)
+	hash for EUC-Kanji
+	defsysp.c, main.c, mainsub.c, new.c, globalv.h, include.h,
+	varset.h
+Nov.4-1994: syspred1.c , syspred2.c , include.h (by. Kobayashi; v3.9)
+	allow EUC-Kanji code in strlen, divstr, substring, concat2,
+	concat system preds.
+94.12.2/5  mainsub.c, new.c 
+	core dump in   "call(X) :- X."  (Thanks to Mr. Maeda)
+95.1.20  *.c, include.h
+	rewrite:  (struct pair *)NULL --> NULL_ENV  etc.
+95.1.27 defsysp.c,  syspred1.c 			(v.3.94)
+	retract (type2->type1)
+	defsysp.c   tr_sub.c     (Thanks to Mr. Seki)
+	bug in not/1 pred (save gloval vars)
+--------------

@@ -1,0 +1,46 @@
+==============================================================================
+                            README : GDA-LES
+    Copyright (C) 1999 Tokuyasu KAKUTA (Faculty of Law, Hokkaido University)
+                             Jan. 31, 1999
+==============================================================================
+
+[Necessary Environments]
+
+SICStus-Prolog 3 #5
+Tcl7.6/Tk4.2
+
+* The works of the system have been confirmed with the following 
+  machines and OSs: 
+    PC-AT machine (memory size:128M), Windows95. 
+    Sun SparcStation20 (memory size:256M), Solaris 2.5.1. 
+
+[Quantity of the software and file configuration]
+
+H10-10/
+     |--Readme-J ............. Japanese version of README
+     |--Readme-E ............. English version of README
+     |--use-of-software-J .... Japanese version of terms and conditions 
+     |                         for use of "ICOT FREE SOFTWARE"
+     |--use-of-software-E .... English version of terms and conditions 
+     |                         for use of "ICOT FREE SOFTWARE"
+     |--src/
+     |    |--newgda.pl ....... Source program for GDA core system
+     |    |--user.pl ......... Source program for user interface
+     |    |--gui.pl .......... Source program for GUI
+     |    |--window.pl ....... Source program for GUI parts module
+     |    |--park.kb ......... Example for GDA-LES
+     |    |--win_test.pl ..... Example for GUI parts module
+     |--example/
+     |    |--civil.kb ........ Example an actual legal problem case
+     |    |--civil.txt ....... Illustration and analysis of "civil.kb"
+     |                         (in Japanese)
+     |--doc/ (The following 4 files are written in Japanese)
+          |--manual.txt ...... Manual for GDA-LES
+          |--intro.txt ....... Introduction for GDA and GDA-LES
+          |--winlibin.txt .... Internal specifications for GUI parts module
+          |--winlibex.txt .... External specifications for GUI parts module
+
+==============================================================================
+                         Tokuyasu KAKUTA (Faculty of Law, Hokkaido University)
+                                              E-mail:kaku@juris.hokudai.ac.jp
+                                           Copyright (C) 1999 Tokuaysu KAKUTA

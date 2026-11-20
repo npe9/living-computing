@@ -1,0 +1,83 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (43) Japanese Sentence Generator</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (43) Japanese Sentence Generator</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    CESP, SICStusProlog
+	Source Code: 1.1 MB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Japanese sentence generator.<P>
+
+<h2><b>Configuration</b></h2>
+
+<CENTER>
+<IMG SRC="043.gif"> 
+</CENTER>
+
+<h2><b>Function</b></h2>
+
+This sentence generator program is ported from the Japanese sentence
+generator which is originally written in CIL(Prolog augmented by a
+record-like structure, see [40]Lingistic Knouledge Description
+Language), to CESP and SICStusProlog. The sentence generator provides
+a function for generating a sentence form a intermediate expression. 
+The intermediate expression is a kind of frame structure written in
+PST(Partial Specified Term). The sentence generator consists of two
+module, macro expander and string synthesizer. Sentence generation is
+done in the folowing sequence.  <p>
+
+<DL>
+
+<DT>1. macro expansion
+
+<DD>The macro expander expands each macro expression in a given
+intermediate expression,according to a corresponding expansion rule.
+
+<DT>syntactic structure ganeration
+
+<DD>After completion of macro expansion,the macro expander transforms
+the intermediate expression into a structure nested list called
+syntactic structure.
+
+<DT>morphological processing
+
+<DD>The string synthesizer transforms syntactic structure to a
+sentence according morphological rules.
+
+</DL>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Japanese Sentence Generator [390K] <a
+href="../../../ifs/natural-lang/unix/jpnsgen.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

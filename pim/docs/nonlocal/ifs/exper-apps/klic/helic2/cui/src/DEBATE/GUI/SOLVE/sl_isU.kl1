@@ -1,0 +1,196 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_issueUtility.
+
+:- public 
+    get_numOfCounterArgument/3,
+    is_issue/3,
+    make_consequence/5,
+    get_issueJudge/3.
+            
+:- with_macro pimos.
+
+%get_numOfCounterArgument
+    get_numOfCounterArgument(SV,IPos,NumOfCA):-true|
+        (   integer(IPos)->
+                slv_solutionVecUtility:get_solution(SV,IPos,counterSolutionTable,CST),
+                count(CST,0,NumOfCA)
+        ;
+            IPos = naf(_)->
+                slv_solutionVecUtility:get_solution(SV,IPos,nafSolutionTable,NST),
+                count(NST,0,NumOfCA)
+        ).
+
+%is_issue
+    is_issue(SV,Pos,YN):-integer(Pos)|
+        slv_solutionVecUtility:get_solution(SV,Pos,counterSolutionTable,CST),
+        (   CST = fail->
+                YN = no
+        ;
+            CST = nil-> %for show counter argument
+                YN = no
+        ;
+            CST = []->
+                YN = no
+        ;
+            CST \= fail,CST \=nil,CST \=[]->
+                YN = yes
+        ).
+    is_issue(SV,naf(Pos),YN):-integer(Pos)|
+        slv_solutionVecUtility:get_solution(SV,naf(Pos),consJudge,ConsJudge),
+        (   ConsJudge = fail->
+                YN = no
+        ;
+            ConsJudge \= fail->
+                YN = yes
+        ).
+
+%make_consequence
+    make_consequence(SV,IPos,PL,h,Consequence):- true| %"h" means h-term
+        slv_solutionVecUtility:get_solution(SV,IPos,consequence,Consequence1),
+        (   IPos = naf(_)->
+                NafFlag = 1
+        ;
+            integer(IPos)->
+                NafFlag = 0
+        ),
+        iToh(NafFlag,Consequence1,SV,PL,Consequence).
+    make_consequence(SV,IPos,PL,e,Consequence):- true| %"e" means natural lang
+        slv_solutionVecUtility:get_solution(SV,IPos,explanation,Consequence1),
+	string(Consequence1,L,_,_),
+        (   L=<PL ->
+            	Consequence = Consequence1
+        ;
+            L > PL ->
+                substring:substring(Consequence1,0,PL,Consequence,_)
+        ).
+
+
+    iToh(0,Consequence1,{ENV,HID,_},PL,Consequence):-true|
+        reverse_translate:reverse_translate(2,{Consequence1,ENV,HID},Consequence2),
+        ( string(Consequence2,L,_)->
+                (   L=<PL ->
+                        Consequence = Consequence2
+                ;
+                    L > PL ->
+                        substring:substring(Consequence2,0,PL,Consequence,_)
+                )
+        ;
+        otherwise;
+         true->
+                Consequence = "reverse-translate timming error"
+        ).
+    iToh(1,Consequence1,{ENV,HID,_},PL,Consequence):-true|
+        reverse_translate:reverse_translate(2,{Consequence1,ENV,HID},Consequence2),
+        ( string(Consequence2,L,_)->
+                (   L=<PL ->
+                        append_string:append_string(["not ",Consequence2],Consequence)
+                ;
+                    L > PL ->
+                        substring:substring(Consequence2,0,PL,Consequence3,_),
+                        append_string:append_string(["not ",Consequence3],Consequence)
+                )
+        ;
+        otherwise;
+         true->
+                Consequence = "reverse-translate timming error"
+        ).
+
+%get_issueJudge
+    get_issueJudge(SV,Pos,IJ):-true| %IJ = sj/uj/sp/up/nil
+        slv_counterArgumentUtility:get_counterArgumentJudgeList(SV,Pos,CAJInfoList),
+        get_issueJudge1(CAJInfoList,IJ).
+
+    get_issueJudge1(CAJInfoList,IJ):-true|
+        get_cajl(CAJInfoList,{sj(0),sp(0),uj(0),up(0),wj(0),wp(0),sd(0),ud(0),wd(0)},CAJL),
+        get_issueJudge2(CAJL,IJ).
+
+    get_cajl([],Work,CAJL):-true|
+        CAJL = Work.
+    get_cajl([{_,TopRuleRel,CAJ1}|T],Work,CAJL):-true|
+        get_caj(TopRuleRel,CAJ1,CAJ),
+        add_cajl(Work,CAJ,Work1),
+        get_cajl(T,Work1,CAJL).
+
+    get_caj(weak,j,CAJ):-true|
+        CAJ = sj.
+    get_caj(weak,p,CAJ):-true|
+        CAJ = sp.
+    get_caj(unrelated,j,CAJ):-true|
+        CAJ = uj.
+    get_caj(unrelated,p,CAJ):-true|
+        CAJ = up.
+    get_caj(strong,j,CAJ):-true|
+        CAJ = wj.
+    get_caj(strong,p,CAJ):-true|
+        CAJ = wp.
+    get_caj(weak,d,CAJ):-true|
+        CAJ = sd.
+    get_caj(unrelated,d,CAJ):-true|
+        CAJ = ud.
+    get_caj(strong,d,CAJ):-true|
+        CAJ = wp.
+
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},sj,CAJL):-true|
+        SJ1 := SJ+1,
+        CAJL = {sj(SJ1),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},sp,CAJL):-true|
+        SP1 := SP+1,
+        CAJL = {sj(SJ),sp(SP1),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},uj,CAJL):-true|
+        UJ1 := UJ+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ1),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},up,CAJL):-true|
+        UP1 := UP+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP1),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},wj,CAJL):-true|
+        WJ1 := WJ+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ1),wp(WP),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},wp,CAJL):-true|
+        WP1 := WP+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP1),sd(SD),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},sd,CAJL):-true|
+        SD1 := SD+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD1),ud(UD),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},ud,CAJL):-true|
+        UD1 := UD+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD1),wd(WD)}.
+    add_cajl({sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},wd,CAJL):-true|
+        WD1 := WD+1,
+        CAJL = {sj(SJ),sp(SP),uj(UJ),up(UP),wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD1)}.
+
+%%%%%%get_issueJudge2
+    get_issueJudge2({sj(SJ),_,_,_,_,_,_,_,_},IJ):-SJ>0|
+        IJ = sj.
+    get_issueJudge2({sj(SJ),sp(SP),_,_,_,_,_,_,_},IJ):-SJ=0,SP>0|
+        IJ = sp.
+    get_issueJudge2({sj(SJ),sp(SP),uj(UJ),_,_,_,_,_,_},IJ):-SJ=0,SP=0,UJ>0|
+        IJ = uj.
+    get_issueJudge2({sj(SJ),sp(SP),uj(UJ),up(UP),_,_,_,_,_},IJ):-SJ=0,SP=0,UJ=0,UP>0|
+        IJ = up.
+otherwise.
+    get_issueJudge2({_,_,_,_,WJ,WP,SD,UD,WD},IJ):-true|
+        get_issueJudge21({WJ,WP,SD,UD,WD},IJ).
+
+    get_issueJudge21({wj(WJ),_,_,_,_},IJ):-WJ>0|
+        IJ = wj.
+    get_issueJudge21({wj(WJ),wp(WP),_,_,_},IJ):-WJ=0,WP>0|
+        IJ = wp.
+    get_issueJudge21({wj(WJ),wp(WP),sd(SD),_,_},IJ):-WJ=0,WP=0,SD>0|
+        IJ = sd.
+    get_issueJudge21({wj(WJ),wp(WP),sd(SD),ud(UD),_},IJ):-WJ=0,WP=0,SD=0,UD>0|
+        IJ = ud.
+    get_issueJudge21({wj(WJ),wp(WP),sd(SD),ud(UD),wd(WD)},IJ):-WJ=0,WP=0,SD=0,UD=0,WD>0|
+        IJ = wd.
+
+%%%%%%%%%internal method
+
+    count([],X,Y):-true|
+        Y = X.
+    count([_|T],X,Y):-true|
+        X1 :=X+1,
+        count(T,X1,Y).
+

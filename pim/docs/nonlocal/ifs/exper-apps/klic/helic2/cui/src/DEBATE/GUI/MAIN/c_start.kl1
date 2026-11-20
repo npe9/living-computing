@@ -1,0 +1,56 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_startDebate.
+
+:- public 
+    startDebate/4,
+    startDebate/3.
+
+:- with_macro pimos. 
+
+    startDebate(Goal,Data1,Data,GUIProtocol):-true|
+        dbtcui_set:goal(p,Goal,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                GUIProtocol = GUIProtocol1
+        ;
+            GUIProtocol1 = receive(_,ok,_,_)->
+		dbtcui_set:goal(d,Goal,Data2,Data3,GUIProtocol2),
+	        (   GUIProtocol2 = receive(_,errorInfo,_,_)->
+        	        Data     = Data3,
+                	GUIProtocol = GUIProtocol2
+	        ;
+        	    GUIProtocol2 = receive(_,ok,_,_)->
+			startDebate(Data3,Data,GUIProtocol)
+		)
+        ).
+
+    startDebate({DBT1,CGS1},Data,GUIProtocol):-true|
+        CGS1 = [make_nh(NH)|CGS],
+        dbtcui_debateNetworkHandler:create(NH,P,D),
+        dbtcui_protocolPool:get(nil,execute,start_debate,{P,D},ProtocolList),
+        send(ProtocolList,DBT1,DBT,Result),
+        make_protocol(Result,ok,nil,[],GUIProtocol), %
+        Data = {DBT,CGS}.
+
+%send
+    send(Protocol,DBT1,DBT,Result):-true |
+        DBT1 = [Protocol|DBT],
+        is_normal(Protocol,Result).
+
+%%is_normal
+    is_normal({_,[execute(start_debate,_,_,normal(success))]},Result):-true|
+        Result = normal(success).
+    is_normal({_,[execute(_,_,_,abnormal(Reason))]},Result):-true|
+        Result = abnormal(Reason).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,GUIProtocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,GUIProtocol):-true|
+        GUIProtocol = receive(AgentName,ProtocolName,Arguments,_R).
+
+

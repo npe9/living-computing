@@ -1,0 +1,88 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(8) Strategy Management Shell</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(8) Strategy Management Shell</h2>
+<p>
+
+<pre>
+<b>	Machine:     PIM
+	Environment: PIMOS 3.0
+	Language:    KL1, ESP
+	Source Code: 400 KB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A Dynamic Load-balancing Multi-tasking OS based on Strategy Management
+on a Parallel Machine.  <p>
+
+<h2><b>Configuration</b></h2>
+
+A new dynamic load balancing scheme for general-purpose parallel
+machines is proposed, and the structure of the operating system (OS)
+with performance management capability-Strategy Management Shell- is
+described. Strategy Management Shell consists of three susbsystems,
+each for dynamic load-balancing distributed processing, strategy
+management, and simple user-interface.<P>
+
+<h2><b>Function</b></h2>
+<dl>
+<dt><b>Dynamic Load-balancing Distributed Processing:</b>
+
+<dd>The OS intergrates multi-tasking feature into parallel processing
+capability. When a processing element (PE) that has no necessary
+program tries to execute processes, the PE sends the processes to
+other PEs that have programs. With this mechanism, the OS can control
+load-balancing of processes over PEs through dynamic replacement of
+programs. Virtual machine mechanism helps to identify PEs to which
+programs and processes are sent.
+
+<dt><b>Strategy Management:</b>
+
+<dd>Dynamic replacement strategies and their performance indices are
+stored in a database. Every job is executed under "the best strategy
+at the moment" with consulting the database.  <p>
+
+In parallel the OS tries to improve strategies;the OS may run extra
+execution under experimental strategies and add the result to the
+database, if the parallel machine can afford it.
+
+</dl>
+<p>
+
+<h2><b>References</b></h2>
+<dl>
+<dt>Youji Kohda and Munenori Maeda:
+<dd>Evolution of Parallel Systems:From Batch-processing to Multi-tasking (in Japanese), IPSJ Computer System Symposium, 1991 March, pp.85-94.
+<dt>Youji Kohda:
+<dd>A Dynamic Load-Balancing Strategy on Parallel Machines through Remapping of Programs and Processes (in Japanese), Transactions of Information Processing Society of Japan, vol.31, no.12 (1990), pp.1792-1800.
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Strategy Management Shell [430K] <a
+href="../../../ifs/symbolic-proc/pimos/strtgysh.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

@@ -1,0 +1,73 @@
+========================================================
+(C)1993, 1994, 1995 Institute for New Generation Computer Technology
+(Read COPYRIGHT for detailed information.)
+(C)1996, 1997 Japan Information Processing Development Center
+(Read COPYRIGHT-JIPDEC for detailed information.)
+(C)1998, Takashi Chikayama and Takahide Yoshikawa
+========================================================
+
+(i)  Software Functions.
+This system adds a generational garbage collector into the KLIC system
+version 3.002, which is an implementation of a concurrent logic
+programming language KL1.
+
+KLIC allocates not only KL1's data structures but also
+control data structures to its heap area.
+This makes runtime system simpler, but the load of GC processes become heavier.
+
+This system divides the heap area into two semispaces:
+One for newly allocated objects that are likely to become garbage large;
+and the other for long-lived objects, reducing the burden of GC processes.
+
+(ii) Required Environment.
+
+The system is meant to be portable to most UNIX systems,
+like the original KLIC. 
+
+We tested the following platforms.
+  Solaris 2.6    (SPARC Version)
+  Solaris 2.6    (Intel Version)
+  Solaris 2.5.1  (SPARC Version)
+  Linux   2.0.31 (Intel Version)
+  FreeBSD 2.2.8
+
+
+(iii) File Configuration.
+
+klic-3.002-GGC2.5/
+  |- Configure     	Configuration Script
+  |- README        	KLIC 3.002 readme (english)
+  |- README.j      	KLIC 3.002 readme (japanese)
+  |- README_GGC.j  	KLIC 3.002 GGC 2.5 readme (japanese)
+  |- README_GGC  	KLIC 3.002 GGC 2.5 readme (english)
+  |- compiler
+	|- *.*     	Source programs for KL1 Compiler.
+  |- documents
+	|- *.*    	Documentation for KLIC System.
+  |- include
+	|- klic
+	    |- *.*	Include files for KLIC System.
+  |- runtime
+	|- *.*     	Source programs fot KLIC runtime.
+  |- test
+	|- *.*	   	test programs.
+
+(vi) Changes.
+
+klic-3.002-GGC2.5/
+  |- Configure     	Add options for generational GC.
+  |- README_GGC.j  	KLIC 3.002 GGC 2.5 readme (japanese)
+  |- README_GGC 	KLIC 3.002 GGC 2.5 readme (english)
+  |- include
+	|- klic
+	    |- g_methtab.h, gd_methtab.h, gobj.h	
+		Added GGC method.
+	    |- options.h
+		Added options for generational GC.
+	    |- param.h, struct.h, unify.h
+		Modified for generational GC.
+  |- runtime
+	|- alloc.c, faisus.c, gc.c, intrpt.c, kmain.c,
+	   sched.c, unify.c
+		Modified for generational GC.
+

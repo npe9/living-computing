@@ -1,0 +1,128 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_networkHandler.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create(I,R):-true|
+        initiate(S1,R),
+	( wait(R) ->
+	        builtin:print("Initiate Start"),
+        	loop(I,S1)).
+
+%initiate
+    initiate(NStream,R):-true|
+        get_socketAddress(SocketAddress),
+        unix:unix([bind(inet(SocketAddress),R1)]),
+        (  R1 = normal(Socket)->
+                Socket = [accept(R2)],
+		( R2 = normal(Stream) ->
+			connectCheck(Stream,NStream,N),	
+			( wait(N) ->
+				builtin:print("Socket Connect OK"),
+	        	        R = normal(success),
+				builtin:print(R)))
+        ;
+           R1 = abnormal(_)->
+                R = abnormal({network,'network error',nil})
+        ).
+
+%get_socketAddress
+    get_socketAddress(SocketAddress):-true|
+        unix:getenv("HELIC_HOST_PORT",Value),
+	(Value = 0->
+	builtin:print("HELIC_HOST_PORT number not set "),
+	SocketAddress = 9000
+	;
+	otherwise ;
+		true->
+	string(Value,VaSize,_,NValue),
+	stringToInt(NValue,VaSize,0,0,SocketAddress)).
+
+%        unix:getenv("HELIC_HOST_PORT",Value),
+%	string(Value,VaSize,_,NValue),
+%	stringToInt(NValue,VaSize,0,0,SocketAddress).
+
+
+
+stringToInt(String,Size,N,PreInt,Int):- Size >N |
+	countN(Size,N,Number),
+%	builtin:print(Number),
+	N1 := N+1,
+	string_element(String,N,NEle,NString),
+	NNEle := NEle -48,
+	NI := Number*NNEle,
+%	builtin:print(NEle),
+	NInt := NI + PreInt,
+	stringToInt(NString,Size,N1,NInt,Int).
+stringToInt(_String,Size,N,PreInt,Int):- Size=N |
+	Int = PreInt.
+
+
+countN(Size,N,Number):- true |
+	M := Size - N -1,
+	countN1(M,1,1,Number).
+
+countN1(M,N,PreNum,Number):- N =< M |
+	NNum := PreNum*10,
+	N1 := N + 1,
+	countN1(M,N1,NNum,Number).
+otherwise.
+countN1(_M,_N,PreNum,Number):- true |
+	Number = PreNum.
+
+%        SocketAddress = 9012.
+
+%connect Check
+
+connectCheck(Stream,NewStream,N):- true |
+	comkreceive:netR2(Stream,_String,NewS,Flag),
+	(Flag = 0 ->
+		comksend:comksend(NewS,_Agent,'ok',_Argument,
+						_Result,NewStream),
+		N=0;
+	Flag = 1 ->
+		Stream = NewStream,N=0).
+
+
+%loop
+    loop([],S1):-true|
+        S1=[].
+    loop([get_commandArguments(Command,AgentName,Parameter,
+                Arguments,Result)|T],S1):-true|
+        builtin:print("Loop Start1"),
+        comkreceive:comkreceive(S1,_Int,Command,AgentName,Parameter,
+                        Arguments,Result,NS1),
+	builtin:print(Result),
+	( wait(Command) ->
+		builtin:print(Command),
+		builtin:print(AgentName),
+		builtin:print(Parameter),
+		builtin:print(Arguments)),
+	        (   wait(Result) ->
+        	        loop(T,NS1)).
+    loop([receive(AgentName,Parameter,Arguments,Result)|T],S1):-true|
+        builtin:print("Loop Start2"),
+        comksend:comksend(S1,AgentName,Parameter,Arguments,Result,NS1),
+	builtin:print(Result),
+        (   wait(Result) ->
+                loop(T,NS1)).
+    loop([show(AgentName,_Parameter,Arguments,Result)|T],S1):-true|
+        builtin:print("Loop Start3"),
+	NewParameter = 'showargument',
+        comksend:comksend(S1,AgentName,NewParameter,Arguments,Result,NS1),
+	builtin:print(Result),
+        (   wait(Result) ->
+                loop(T,NS1)).
+
+
+
+
+

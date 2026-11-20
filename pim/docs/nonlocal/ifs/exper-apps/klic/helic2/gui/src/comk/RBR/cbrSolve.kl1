@@ -1,0 +1,204 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module cbr_solve.
+:- public cbr_solve/3,
+          cbr_solve/4.
+:- with_macro pimos.
+
+%cbr_solve
+    cbr_solve(CBRSol,RSim,R):- true |
+        cbr_solve(CBRSol,{7,{100,90,80,70,60,50},7},RSim,R).
+
+    cbr_solve(CBRSol,HyoukaTB,RSim,R):- true |
+            vector_element(CBRSol,1,HIDT,_),
+            vector_element(CBRSol,2,X,_),
+        X = {_,ConseL},
+	( ConseL \= []->
+            get_RSimList(ConseL,HIDT,HyoukaTB,{0,0,0,0},RSim,R)
+	;
+	  ConseL = []->
+	    RSim = 100,
+	    R = normal(success)
+	).
+                %{0,0,0,0}is {NumOfTrivialHTerm,=NTH
+                %              NumOfNotTrivialHTerm,=NNTH
+                %              SumTrivialHTermSim,=STHS
+                %              SumNotTrivialHTermSim,=SNTHS
+
+
+%get_RSim
+    get_RSimList([],_,HyoukaTB,RSimInfo,RSim,R):- true |
+        get_RSim(RSimInfo,HyoukaTB,RSim,R).
+    get_RSimList([Conse|T],HIDT,HyoukaTB,RSimInfo1,RSim,R):- true |
+        get_RSimInfo(Conse,HIDT,HyoukaTB,RSimInfo1,RSimInfo2),
+        get_RSimList(T,HIDT,HyoukaTB,RSimInfo2,RSim,R).
+
+    get_RSim({NTH,NNTH,STHS,SNTHS},HyoukaTB,RSim,R):-true|
+        get_K(HyoukaTB,K),
+        RSim := (STHS*K+SNTHS*10)/(NTH*K+NNTH*10),
+        R    = success.
+
+%get_RSimInfo
+    get_RSimInfo({{HTerm,0},success},HIDT,HyoukaTB,
+                {NTH,NNTH1,STHS,SNTHS1},RSimInfo):-true|
+        get_HSim(HTerm,HIDT,HyoukaTB,HSim),
+        NNTH           := NNTH1+1,
+        SNTHS          := SNTHS1+HSim,
+        RSimInfo = {NTH,NNTH,STHS,SNTHS}.
+    get_RSimInfo({{_,0},fail},_,_,
+                {NTH,NNTH1,STHS,SNTHS},RSimInfo):-true|
+        NNTH           := NNTH1+1,
+        RSimInfo = {NTH,NNTH,STHS,SNTHS}.
+    get_RSimInfo({{HTerm,1},success},HIDT,HyoukaTB,
+                {NTH1,NNTH,STHS1,SNTHS},RSimInfo):-true|
+        get_HSim(HTerm,HIDT,HyoukaTB,HSim),
+
+        NTH           := NTH1+1,
+        STHS          := STHS1+HSim,
+        RSimInfo = {NTH,NNTH,STHS,SNTHS}.
+    get_RSimSimInfo({{_,1},fail},_,_,
+                {NTH1,NNTH,STHS,SNTHS},RSimInfo):-true|
+        NTH           := NTH1+1,
+        RSimInfo = {NTH,NNTH,STHS,SNTHS}.
+
+%get_HSim
+    get_HSim({HTerm1},HIDT,HyoukaTB,HSim):-integer(HTerm1)|
+        vector_element(HIDT,HTerm1,HTerm,_),
+        get_HSim(HTerm,HIDT,HyoukaTB,HSim).
+    get_HSim({Pred,KakuList,_},HIDT,HyoukaTB,HSim):-true|
+        get_PredSim(Pred,HyoukaTB,PredSim),
+        (  PredSim = 0->
+                HSim = 0
+        ;
+           PredSim \=0->
+                get_KSimInfoList(KakuList,HIDT,HyoukaTB,
+                        {0,0,0,0,0},{NK,NTK,NNTK,STKS,STNKS}),
+                        %{0,0,0,0,0} is  {NumOfKaku,=NK  
+                        %                  NumOfTrivialKaku,=NTK
+                        %                  NumOfNotTrivialKaku,=NNTK
+                        %                  SumTrivialKakuSim,=STKS
+                        %                  SumTrivialNotKakuSim}=STNKS
+                get_K(HyoukaTB,K),
+                HSim := ((NK*PredSim*10)+ STKS*K +STNKS*10)/
+                        ( NK        *10 +(NTK *K)+ NNTK*10)
+        ).
+
+%get_PredSim
+    get_PredSim({_,PTerm},HyoukaTB,PredSim):-true|
+        get_PSim(PTerm,HyoukaTB,PredSim).
+
+%get_PSim
+    get_PSim(pterm(_,UnifyInfo),HyoukaTB,PSim):-true|
+        get_PSim1(UnifyInfo,HyoukaTB,PSim).
+
+    get_PSim1({_,_,_,_,MatchDansuu,Specify},HyoukaTB,PSim):-true|
+        get_DansuuTB(HyoukaTB,DansuuTB),
+        ( MatchDansuu>=0,MatchDansuu=<4->
+                vector_element(DansuuTB,MatchDansuu,DS,_)
+        ;
+          MatchDansuu >4->
+                vector_element(DansuuTB,5,DS,_)
+        ),
+        ( Specify = not_specify->
+
+                AS = 10
+        ;
+          Specify = specify->
+        	get_PTermAttK(HyoukaTB,PTermAttK),
+                AS = PTermAttK
+        ),
+        PSim := (DS * AS)/10.
+
+
+%    matchDansuu_to_PSim(0,PSim):-true|
+%        PSim = 100.
+%    matchDansuu_to_PSim(1,PSim):-true|
+%        PSim = 90.
+%    matchDansuu_to_PSim(2,PSim):-true|
+%        PSim = 80.
+%    matchDansuu_to_PSim(3,PSim):-true|
+%        PSim = 70.
+%    matchDansuu_to_PSim(4,PSim):-true|
+%        PSim = 60.
+%otherwise.
+%    matchDansuu_to_PSim(_,PSim):-true|
+%        PSim = 50.
+
+%get_KSimInfoList
+    get_KSimInfoList([],         _,_,KSimInfo1,KSimInfo):-true|
+        KSimInfo = KSimInfo1.
+    get_KSimInfoList([Kaku|T],HIDT,HyoukaTB,KSimInfo1,KSimInfo):-true|
+        get_KSimInfo(Kaku,HIDT,HyoukaTB,KSimInfo1,KSimInfo2),
+        get_KSimInfoList(T,HIDT,HyoukaTB,KSimInfo2,KSimInfo).
+
+%get_KSimInfo
+                        %{NumOfKaku,=NK  
+                        % NumOfTrivialKaku,=NTK
+                        % NumOfNotTrivialKaku,=NNTK
+                        % SumTrivialKakuSim,=STKS
+                        % SumTrivialNotKakuSim}=STNKS
+    get_KSimInfo({_,Term,0,success},HIDT,HyoukaTB,
+                {NK1,NTK,NNTK1,STKS,STNKS1},KSimInfo):-true|
+        get_TSim(Term,HIDT,HyoukaTB,TSim),
+        NK             := NK1+1,
+        NNTK           := NNTK1+1,
+        STNKS          := STNKS1+TSim,
+        KSimInfo = {NK,NTK,NNTK,STKS,STNKS}.
+    get_KSimInfo({_,Term,1,success},HIDT,HyoukaTB,
+                {NK1,NTK1,NNTK,STKS1,STNKS},KSimInfo):-true|
+        get_TSim(Term,HIDT,HyoukaTB,TSim),
+        NK             := NK1+1,
+        NTK            := NTK1+1,
+        STKS           := STKS1+TSim,
+        KSimInfo = {NK,NTK,NNTK,STKS,STNKS}.
+    get_KSimInfo({_,_},_,_,
+                KSimInfo1,KSimInfo):-true|
+                        %when a(b) and a(b,c)matched
+        KSimInfo = KSimInfo1.
+    get_KSimInfo({_,_,_},_,_,
+                KSimInfo1,KSimInfo):-true|
+                        %when a(b) and a(b,c)matched
+        KSimInfo = KSimInfo1.
+    get_KSimInfo({_,_,0,fail},_,_, 
+                {NK1,NTK,NNTK1,STKS,STNKS},KSimInfo):-true|
+        NK             := NK1+1,
+        NNTK           := NNTK1+1,
+        KSimInfo = {NK,NTK,NNTK,STKS,STNKS}.
+    get_KSimInfo({_,_,1,fail},_,_,  
+                {NK1,NTK1,NNTK,STKS,STNKS},KSimInfo):-true|
+        NK             := NK1+1,
+        NTK            := NTK1+1,
+        KSimInfo = {NK,NTK,NNTK,STKS,STNKS}.
+
+    get_TSim(Term,HIDT,HyoukaTB,TSim):-true|
+        is_PTerm(Term,YN),
+        ( YN = yes->
+            get_PSim(Term,HyoukaTB,TSim)
+        ;
+          YN = no->
+            get_HSim(Term,HIDT,HyoukaTB,TSim)
+        ).
+
+%is_PTerm
+    is_PTerm(Term,YN):- integer(Term) | 
+        YN=yes.
+    is_PTerm(pterm(Term,_),YN):- integer(Term) | 
+        YN=yes. 
+    is_PTerm(pterm(Term,_),YN):- vector(Term,3)| 
+        YN=yes. 
+otherwise.
+    is_PTerm(_,YN):- true| 
+        YN=no.
+
+%%%%for HyoukaTB
+
+    get_K(HyoukaTB,K):-true|
+        vector_element(HyoukaTB,0,K).
+    get_DansuuTB(HyoukaTB,DansuuTB):-true|
+        vector_element(HyoukaTB,1,DansuuTB).
+    get_PTermAttK(HyoukaTB,PTermAttK):-true|
+        vector_element(HyoukaTB,2,PTermAttK).
+

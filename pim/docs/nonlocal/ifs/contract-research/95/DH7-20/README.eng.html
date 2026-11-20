@@ -1,0 +1,349 @@
+﻿<h2> Parade: PARallel Active Database Engine </h2>
+<dl>
+<dt> Copyright (C) 1996 by Yokota-Laboratory,
+<dl> 
+<dt> Japan Advanced Inst. of Sci. and Tech., 
+<dt>1-1 Asahidai, Tatsunokuchi, Ishikawa 923-12, Japan.
+</dl>
+</dl>
+
+<hr>
+<h3>Contents</h3>
+
+<dl>
+<dt><a href="#dir">Directories</a>
+<dt><a href="#inst">Installation</a>
+<dt><a href="#usage">Usage</a>
+<dt><a href="#sqlcmd">Command accepted by SQL client</a>
+<dt><a href="#sqlex">SQL examples</a>
+<dt><a href="#svrcmd">Commands accepted by Parade server</a>
+<dt><a href="#note">Note</a>
+</dl> <p>
+
+<hr>
+<a name="dir">
+<h3>Directories</h3>
+
+<dl>
+<dt> Expanded directory has the following directories: <p>
+<dl>
+<dt> doc/    -- documents
+<dt> common/ -- common use source and relations
+<dl>
+<dt> client/ -- common source of SQL client
+<dt> server/ -- common source of Parade server
+<dt> coding/ -- source for enhancing termio
+<dt> util/   -- source of utility (ex. append)
+<dt> rel/    -- readable relations
+<dt> newrel/ -- encoded relations (automatically generated at the install)
+<dt> input/  -- examples of SQL sentences
+</dl>
+<dt> sun/    -- proper source for unix (SUN) workstations
+<dl>
+<dt> client/ -- SQL client for unix workstations
+<dt> server/ -- Parade server for unix workstations
+<dt> socket/ -- source of socket and parallel I/O for unix workstations
+</dl>
+<dt> ncube/  -- proper source for nCUBE2 parallel machines
+<dl>
+<dt> client/ -- SQL client for nCUBE2
+<dt> server/ -- Parade server for nCUBE2
+<dt> socket/ -- source of socket and parallel I/O for nCUBE2
+</dl>
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="inst">
+<h3>Installation</h3>
+
+<dl>
+<dt> Install into a unix workstation (ex. sun)
+<dl> 
+<dt> "make" or "make sun" at the top directory
+</dl>
+<p>
+<dt> Install into an nCUBE2 machine
+<dl>
+<dt> Prepare KLIC for nCUBE2
+<dl>
+<dt> If you do not have KLIC for nCUBE2, please contact:
+<dl>
+<dt> Email: miyazaki@jaist.ac.jp
+</dl>
+</dl>
+<dt> "make ncube" at the top directory in the host machine of nCUBE2
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="usage">
+<h3> Usage </h3>
+
+<dl>
+<dt> Parade server on SUN
+<dl>
+<dt> Go to the directory of server
+<dl>
+<dt> sun1> cd sun/server
+</dl>
+<dt> Execute server
+<dl>
+<dt> sun1> ./rdbserv
+<dl>
+<dt> Default port number is 12345.
+<dt> If you want to change the port number to 23456, 
+</dl>
+<dt> sun1> ./rdbserv 23456
+</dl>
+</dl>
+<p>
+<dt> SQL client for SUN Server
+<dl> 
+<dt> Go to the directory of client for SUN
+<dl>
+<dt> sun2> cd sun/client
+</dl>
+<dt> Execute client
+<dl>
+<dt> sun2> ./sqlclt sun1 12345
+<dl>
+<dt> or
+</dl>
+<dt> sun2> ./sqlclt
+<dt> Server Machine: sun1.
+<dt> Server Port: 12345.
+</dl>
+</dl>
+<p>
+<dt> Parade server on nCUBE2
+<dl>
+<dt> Go to the directory of server
+<dl>
+<dt> ncube> cd ncube/server
+</dl>
+<dt> Execute server (ex. using 4 processors in 3 dimensions)
+<dl>
+<dt> ncube> xnc -d3 ./rdbserv -p4
+<dl>
+</dl>
+</dl>
+</dl>
+<p>
+<dt> SQL client for nCUBE Server
+<dl> 
+<dt> Go to the directory of client for nCUBE
+<dl>
+<dt> sun3> cd ncube/client
+</dl>
+<dt> Execute client
+<dl>
+<dt> sun3> ./sqlclt ncube 12345
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="sqlcmd">
+<h3>Commands accepted by SQL client</h3>
+
+<dl>
+<dt> start_transaction
+<dt> commit_transaction
+<dt> rollback_transaction
+<dt> create table "TABLE"
+<dt> attribute("ATTNAME", ATTNUNBER, "TYPE", LENGTH)
+<dt> primary_key("TYPE", NUMBER)
+<dt> partitions("TYPE", "DISK")
+<dt> parallel_disk({DISK_NUMBER, DISKDIROFROOT, DISKDIROFLEAF...})
+<dt> page(PAGESIZE(K), MAXCHILDNO, MAXRECORDNO)
+<dt> insert into "TABLE"
+<dt> values([TUPLE])
+<dt> delete "TABLE"
+<dt> drop table "TABLE"
+<dt> select "ATT",... / count / sum("ATT") / avg("ATT") / max("ATT") / min("ATT")
+<dt> where EXPRESSION
+<dt> from ``TABLE'',...
+<dt> and / or 
+<dt> = / < / > / =< / =< / \= / in
+<dt> order by ``ATT''
+<dt> group by ``ATT''
+<dt> having EXPRESSION
+<dt> end
+</dl>
+<p>
+
+<hr>
+<a name="sqlex">
+<h3> SQL examples </h3>
+
+Create a relation:
+<dl>
+<dt> SQL> create table "samplef".
+<dt> SQL> attribute("number", 1, "integer", 7).
+<dt> SQL> attribute("yomi", 2, "char", 10).
+<dt> SQL> partitions(flat,"../../common/newrel/samplef").
+<dt> SQL> end.
+</dl> <p>
+
+Create a relation with Btree index:
+<dl>
+<dt> SQL> create table "sampleb".
+<dt> SQL> attribute("number", 1, "integer", 7).
+<dt> SQL> attribute("yomi", 2, "char", 10).
+<dt> SQL> partitions(btree, "../../common/newrel/btree/sampleb",1,1).
+<dt> SQL> parallel_disk({2,"../../common/newrel/btree/sasmpleb",
+"../../common/newrel/btree1/","../../common/newrel/btree2/"}).
+<dt> SQL> primary_key(int, 1).
+<dt> SQL> page(4, 200, 40).
+<dt> SQL> end.
+</dl> <p>
+
+Drop a relation:
+<dl>
+<dt> SQL> drop table "samplef".
+<dt> SQL> end.
+</dl> <p>
+
+Insert tuples:
+<dl>
+<dt> SQL> insert into "samplef".
+<dt> SQL> values([1,"foo"]).
+<dt> SQL> values([2,"hoge"]).
+<dt> SQL> values([3,"bar"]).
+<dt> SQL> values([4,"afo"]).
+<dt> SQL> end.
+</dl> <p>
+
+Delete tuples:
+<dl>
+<dt> SQL> delete "samplef".
+<dt> SQL> where "number" >= [3].
+<dt> SQL> end.
+</dl> <p>
+
+Declaration of a transaction:
+<dl>
+<dt> SQL> start transaction.
+<dt> SQL> insert into "samplef".
+<dt> SQL> values([5,"bfo"]).
+<dt> SQL> end.
+<dt> SQL> commit transaction.
+</dl> <p>
+
+Abort the transaction:
+<dl>
+<dt> SQL> start transaction.
+<dt> SQL> delete "samplef".
+<dt> SQL> where "number" = [1].
+<dt> SQL> end.
+<dt> SQL> rollback transaction.
+</dl> <p>
+
+Get relation without conditions:
+<dl>
+<dt> SQL> select * .
+<dt> SQL> from "emp".
+<dt> SQL> end.
+</dl> <p>
+
+Selection1:
+<dl>
+<dt> SQL> select "ename", "job", "sal", "comm".
+<dt> SQL> from "emp".
+<dt> SQL> where "job"=["manager"] or ( "sal" > [3000] and "deptno" = [10] ).
+<dt> SQL> end.
+</dl> <p>
+
+Selection2:
+<dl>
+<dt> SQL> select "ename", "deptno".
+<dt> SQL> from "emp".
+<dt> SQL> where "deptno" in [10,30].
+<dt> SQL> end.
+</dl> <p>
+
+Join (nested):
+<dl>
+<dt> SQL> select "empno", "job", "deptno".
+<dt> SQL> from "emp".
+<dt> SQL> where "deptno" = next.
+<dt> SQL> select "deptno".
+<dt> SQL> from "dept".
+<dt> SQL> where "loc" = ["newyork"].
+<dt> SQL> end.
+</dl> <p>
+
+Join:
+<dl>
+<dt> SQL> select * .
+<dt> SQL> from "emp", "dept".
+<dt> SQL> where "emp"-"deptno" = "dept"-"deptno".
+<dt> SQL> end.
+</dl> <p>
+
+Count:
+<dl>
+<dt> SQL> select count.
+<dt> SQL> from "emp".
+<dt> SQL> where "job" = ["manager"].
+<dt> SQL> end.
+</dl> <p>
+
+Group by
+<dl>
+<dt> SQL> select "job", avg("sal").
+<dt> SQL> from "emp".
+<dt> SQL> group by "job".
+<dt> SQL> end.
+</dl> <p>
+
+Please find examples in "common/input"
+<p>
+
+<hr>
+<a name="svrcmd">
+<h3>Commands accepted by Parade server</h3>
+
+<dl>
+<dt> [start_transaction]
+<dt> [commit_transaction]
+<dt> [rollback_transaction]
+<dt> [create(RELNAME, PARAMETER)]
+<dt> [drop(RELNAME)]
+<dt> [insert(RELNAME, LISTOFTUPLES)]
+<dt> [delete(RELNAME, LISTOFTUPLES)]
+<dt> [get_relation(RELNAME)]
+<dt> [join(INRELNAME1, INRELNAME2, CONDITION, OUTRELNAME)]
+<dt> [selection(INRELNAME, CONDITION, OUTRELNAME)]
+<dt> [projection(INRELNAME, ATTLIST, OUTRELNAME)]
+<dt> [difference_rdb(INRELNAME1, INRELNAME2, OUTRELNAME)]
+<dt> [sort_rdb(INRELNAME, CONDITION, OUTRELNAME)]
+<dt> [group_by(INRELNAME, ATT, OUTRELNAME)]
+<dt> [count_rdb(INRELNAME, OUTRELNAME)]
+<dt> [sum_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [avg_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [max_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [min_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [copy_rdb(INRELNAME, OUTRELNAME)]
+</dl>
+<p>
+
+<hr>
+<a name="note">
+<h3>Note</h3>
+
+<dl>
+<dt> This software is still under development, and not guaranteed the
+right behavior.<p>
+<dt> Currently, tables created or dropped by a client are not reflected
+to the other clients automatically.  To reflect these operations,
+these clients should be restarted. <p>
+<dt> Socket communication in SUN uses asynchronous I/O having some
+bugs of OS or KLIC, and may hang-up at start up time.  At that case,
+restart the client or server.<p>
+<dt> For NEWS-OS 6.1.X, default in /etc/socketconf should be changed
+form syscall to sockmod.<p>
+</dl>

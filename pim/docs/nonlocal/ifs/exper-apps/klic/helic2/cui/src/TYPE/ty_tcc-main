@@ -1,0 +1,56 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : main
+%       File Name   : ty_tcc.kl1
+%       Function    : command interface
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$      1994/ 7/19  : add arg 1 case
+%$      1994/ 7/14  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module main.
+
+main :-
+    unix:argc(Argc),
+    (Argc =:= 2 ->
+        unix:argv(Argv),
+        [SourceFile, ObjectFile] = Argv,
+        ty_top:compile_type(SourceFile, ObjectFile, Result),
+        io:outstream([print(Result),nl])
+    ;Argc =:= 1 ->
+        unix:argv(Argv),
+        [SourceFile] = Argv,
+        ObjectFile = stdout,
+        ty_top:compile_type(SourceFile, ObjectFile, Result),
+        io:outstream([print(Result),nl])
+    ;Argc =:= 0 ->
+        SourceFile = stdin,
+        ObjectFile = stdout,
+        ty_top:compile_type(SourceFile, ObjectFile, Result),
+        io:outstream([print(Result),nl])
+    ;otherwise;true ->
+        print_usage
+    ).
+
+
+
+print_usage :-
+    unix:unix([stdout(Result)]),
+    termout(Result).
+
+termout(normal(Out)):-
+    Out = [
+	   fwrite("tc srcfile [objfile]"),putc(key#lf),
+	   fwrite("tc < srcfile  > objfile"),putc(key#lf),
+	   fwrite("    srcfile : type definition file (input)"),putc(key#lf),
+	   fwrite("    objfile : type object file (output)"),putc(key#lf)
+	  ].
+otherwise.
+termout(_).

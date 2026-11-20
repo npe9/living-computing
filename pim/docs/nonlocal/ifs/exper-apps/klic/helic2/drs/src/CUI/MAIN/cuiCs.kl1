@@ -1,0 +1,54 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_currentState.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+
+%create
+    create(NH,I):-true| 
+        get_defaultDisplayParameter(DP),
+        loop(I,NH,{xx,nil,nil,nil,xx,DP,nil,nil}).
+
+    get_defaultDisplayParameter(DP):-true|
+        DP = {30,h}.
+
+%loop
+    loop([],NH,_):-true|
+        NH=[].
+    loop([make_nh(NH1)|T],NH,CS):-true|
+        merge({NH1,NH2},NH),
+        loop(T,NH2,CS).
+    loop([set(ElementName,E)|T],NH,CS1):-true|
+        get_elementPos(ElementName,ElementPos),
+        set_vector_element(CS1,ElementPos,_,E,CS),
+        loop(T,NH,CS).
+    loop([get(ElementName,E)|T],NH,CS):-true|
+        get_elementPos(ElementName,ElementPos),
+        vector_element(CS,ElementPos,E,_),
+        loop(T,NH,CS).
+
+              % loadFlag   goalList   dispGoalList currnetGoal 
+%get_elementPos
+%    get_elementPos(loadFlag,Pos):-true|
+%        Pos = 0.
+    get_elementPos(goalList,Pos):-true|
+        Pos = 1.
+    get_elementPos(dispGoalList,Pos):-true|
+        Pos = 2.
+    get_elementPos(currentGoal ,Pos):-true|
+        Pos = 3.
+%    get_elementPos(currentUnit ,Pos):-true|
+%        Pos = 4.
+    get_elementPos(displayParameter,Pos):-true|
+        Pos = 5.
+    get_elementPos(ingiEnvList,Pos):-true|
+        Pos = 6.
+    get_elementPos(st,Pos):-true|
+        Pos = 7.

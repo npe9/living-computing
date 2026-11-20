@@ -1,0 +1,74 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（２４）Ｂｏｙｅｒ−Ｍｏｏｒｅ型定理証明システム：ＢＭＴＰ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（２４）Ｂｏｙｅｒ−Ｍｏｏｒｅ型定理証明システム：ＢＭＴＰ</h2>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシン
+	環　　境：UNIX
+	言　　語：SICSTUS Prolog
+	ソース量：400 KB
+	文　　書：マニュアル (英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+Lispプログラムの性質を証明するシステムである。<p>
+
+<h2>構成</h2>
+<dl>
+	<dd><img src="024-J.gif">
+</dl>
+<p>
+
+<h2>機能</h2>
+
+Boyer-Moore型の定理証明システムは、最も強力な定理証明システムの一つと
+して知られている。その特徴は、
+
+<ul>
+
+<li>Lisp関数で表現される計算可能な領域を対象としている。
+
+<li>基本関数 (AND, OR, NOT, IMPLIES, EQUAL) やシェルと称されるデータ型
+構成子（ADD1,CONSなど）に関する公理、および関数定義式を所与の書き換え
+規則とし、与えられた命題に対して真偽値に到達するまで繰り返し項書き換え
+を試みる。
+
+<li>経験に基づいて調整されたヒューリスティックな書き換え規則が効果的に
+適用される。
+
+<li>機能的に定義されるデータ型 (自然数、リスト、ストリングなど)、なら
+びに機能的に定義される関数から自然に導かれる帰納法図式を用いて、帰納的
+推論が行われる。
+
+</ul>
+
+本システムには、「A Computational Logic,Academic Press, 1979」に基づき、
+Prologによりコンパクトに実装したものである。<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	Ｂｏｙｅｒ−Ｍｏｏｒｅ型定理証明システム：ＢＭＴＰ [99K] <a
+href="../../../ifs/solver-prover/unix/bmtp.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

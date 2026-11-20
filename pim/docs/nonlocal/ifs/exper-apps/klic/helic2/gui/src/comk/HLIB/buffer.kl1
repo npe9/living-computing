@@ -1,0 +1,68 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_buffer.
+
+    get_workFileName(FN):-true|
+	FN = "/tmp/work1".
+
+    buffer(I):-true|
+	get_workFileName(FN),
+	helic_file:file(FN,write,File),
+	File = normal(B),
+	loop(I,B).
+
+    loop([],B):-true|
+	B = [].
+%put
+    loop([putl(A)|T],B):-true|
+	B = [putl(A)|B1],
+	loop(T,B1).
+    loop([putb(A)|T],B):-true|
+	B = [putb(A)|B1],
+	loop(T,B1).
+    loop([putt(A)|T],B):-true|
+	B = [putt(A)|B1],
+	loop(T,B1).
+    loop([puttq(A)|T],B):-true|
+	B = [puttq(A)|B1],
+	loop(T,B1).
+    loop([putwt(A)|T],B):-true|
+	B = [putwt(A)|B1],
+	loop(T,B1).
+    loop([putwtq(A)|T],B):-true|
+	B = [putwtq(A)|B1],
+	loop(T,B1).
+
+%read
+    loop([getc(A)|T],B):-true|
+	read(getc(A),B,B1),
+	loop(T,B1).
+    loop([getl(A)|T],B):-true|
+	read(getl(A),B,B1),
+	loop(T,B1).
+    loop([gett(A)|T],B):-true|
+	read(gett(A),B,B1),
+	loop(T,B1).
+    loop([getwt(A)|T],B):-true|
+	read(getwt(A),B,B1),
+	loop(T,B1).
+
+%operator
+    loop([remove_op(Priority,Type,Op)|T],B):-true|
+	B = [remove_op(Priority,Type,Op)|B1],
+	loop(T,B1).
+    loop([add_op(Priority,Type,Op)|T],B):-true|
+	B = [add_op(Priority,Type,Op)|B1],
+	loop(T,B1).
+
+    read(Command,B,B1):-true|
+	B = [],
+	get_workFileName(FN),
+	helic_file:file(FN,read,F1),
+	F1 = normal(In),
+	In = [Command],
+	helic_file:file(FN,write,F2),
+	F2 = normal(B1).

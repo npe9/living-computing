@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------
+W-KLIC: A Logic Language for Internet Programming
+-------------------------------------------------------------------------
+
+Note: any use of this software implies the acceptance of the terms and
+	conditions of ICOT Free Software Foundation. Copy of these terms
+	and conditions is reported in the user manual supplied with this
+	software. 
+	*NO WARRANTY*
+
+Files:
+	Organized in the following subdirectories:
+	1. standard: basic code for W-KLIC; support for HTML manipulation, preliminary
+		CGI scripting, CCI interface, http communication
+	2. plugin: extension for handling embedding of modules in HTML pages
+		(via Netscape)
+	3. cgi: refined implementation of CGI scripting support
+	4. virtualclass: example (uses CCI and CGI) of a virtual classroom
+
+Installation:
+	- Edit the Makefile to replace (look for FIX) the pointer
+		to the local CGI directory
+
+	Local File Modifications:
+	cgi_copy.kl1: replace the name "avatar" with the name of
+			the local http server
+	
+

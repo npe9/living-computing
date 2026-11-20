@@ -1,0 +1,123 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_initialArgumentList.
+:- public create/2.
+:- with_macro pimos.
+
+    create({STG,SVT},I):-true|
+        initiate(IAL,WIAL), 
+        loop(I,SVT,IAL,WIAL,STG).
+
+    initiate(IAL,WIAL):-true|
+        hLibrary:pool(bag,IAL),
+        hLibrary:pool(bag,WIAL).
+
+    loop([],SVT,IAL,WIAL,_):-true|
+        SVT   = [],
+        IAL   = [],
+        WIAL  = [].
+    loop([initiate(ST,R)|T],SVT,IAL,WIAL,STG):-true|
+        initiate(ST,SVT,IAL,WIAL,SVT1,IAL1,WIAL1,R),
+        loop(T,SVT1,IAL1,WIAL1,STG).
+    loop([refer_argList(ArgList)|T],SVT,IAL,WIAL,STG):-true|
+        IAL = [carbon_copy(IAList)|IAL1],
+        refer_argList(IAList,SVT,SVT1,ArgList),
+        loop(T,SVT1,IAL1,WIAL,STG).
+    loop([is_inArg(Arg,YN)|T],SVT,IAL,WIAL,STG):-true|
+        IAL = [carbon_copy(IAList)|IAL1],
+        refer_argList(IAList,SVT,SVT1,ArgList),
+        member(ArgList,Arg,YN),
+        loop(T,SVT1,IAL1,WIAL,STG).
+    loop([get_arg(Arg,Status)|T],SVT,IAL,WIAL,STG):-true|
+        WIAL = [get_all(IAList1)|WIAL1],
+        get_arg(IAList1,SVT,SVT1,IAList,Arg,Status),
+        put_list(IAList,WIAL1,WIAL2),
+        loop(T,SVT1,IAL,WIAL2,STG).
+    loop([finish|T],SVT,IAL,WIAL,{STG}):-true|
+        (   STG = all->
+                WIAL1 = WIAL
+        ;
+            STG = one->
+                WIAL = [get_all(_)|WIAL1]
+        ),
+        loop(T,SVT,IAL,WIAL1,{STG}).
+
+    initiate(ST,SVT1,IAL1,WIAL1,SVT,IAL,WIAL,R):-true|
+        initiate1(ST,SVT1,IAL1,WIAL1,SVT2,IAL2,WIAL,R1),
+        (   R1 = normal(success)->
+                check_initiate(ST,SVT2,IAL2,SVT,IAL,R)).
+
+    initiate1([],SVT1,IAL1,WIAL1,SVT,IAL,WIAL,R):-true|
+        SVT   = SVT1,
+        IAL   = IAL1,
+        WIAL  = WIAL1,
+        R     = normal(success).
+    initiate1([SV|T],SVT1,IAL1,WIAL1,SVT,IAL,WIAL,R):-true|
+        SVT1  = [make_SVID(SVID),put(SVID,SV)|SVT2],
+        Arg   = {SVID,0},
+        IAL1  = [put(Arg)|IAL2],
+        WIAL1 = [put(Arg)|WIAL2],
+        (   wait(SVID)->
+            initiate1(T,SVT2,IAL2,WIAL2,SVT,IAL,WIAL,R)).
+
+    check_initiate([],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT   = SVT1,
+        IAL   = IAL1,
+        R     = normal(success).
+    check_initiate([SV|T],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+            check_initiate(T,SVT2,IAL1,SVT,IAL,R)).
+
+%get_arg
+    get_arg([],SVT1,SVT,IAList,_,Status):-true|
+        SVT    = SVT1,
+        IAList = [],
+        Status = no.
+    get_arg([{SVID,Pos}|T],SVT1,SVT,IAList,Arg,Status):-true|
+        SVT1   = [refer_SV(SVID,SV,_)|SVT2],
+        get_arg1({SV,Pos},S1),
+        (   S1 = yes->
+                SVT     = SVT2,
+                IAList  = T,
+                Arg     = {SV,Pos},
+                Status  = yes
+        ;
+            S1 = no->
+                get_arg(T,SVT2,SVT,IAList1,Arg,Status),
+                IAList = [{SVID,Pos}|IAList1]
+        ).
+
+
+
+%    get_arg1({SV,Pos},S):-true|
+    get_arg1(_,S):-true|
+        S = yes.
+%%%
+    put_list([],WIAL1,WIAL):-true|
+        WIAL=WIAL1.
+    put_list([{SVID,Pos}|T],WIAL1,WIAL):-true|
+        WIAL1 = [put({SVID,Pos})|WIAL2],
+        put_list(T,WIAL2,WIAL).
+
+
+%refer_argList
+    refer_argList([],SVT1,SVT,ArgList):-true|
+        SVT = SVT1,
+        ArgList = [].
+    refer_argList([{SVID,Pos}|T],SVT1,SVT,ArgList):-true|
+        SVT1 = [refer_SV(SVID,SV,_)|SVT2],
+        refer_argList(T,SVT2,SVT,ArgList1),
+        ArgList = [{SV,Pos}|ArgList1].
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+

@@ -1,0 +1,68 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_shellCurrentState.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create({ButtonVec,Status,History,RuleRel,DisplayArgInfo},I):-true| %RuleRel = nil|{MLArg,{MR,YR}},
+        loop(I,{nil,nil,nil,nil,nil,[],ButtonVec,Status,History,RuleRel,DisplayArgInfo}).
+
+%0:argumentList 1:counterList 2:claimList 3:reasonList 4:justificationList 5:forwardList
+%6:buttonVec 7:status 8:history 9:ruleRel 10:displayArgInfo
+
+%loop
+    loop([],_):-true|
+        true.
+    loop([set(ElementName,E)|T],ElementVec1):-true|
+        get_elementPos(ElementName,ElementPos),
+        set_vector_element(ElementVec1,ElementPos,_,E,ElementVec),
+        loop(T,ElementVec).
+    loop([get(ElementName,E)|T],ElementVec):-true|
+        get_elementPos(ElementName,ElementPos),
+        vector_element(ElementVec,ElementPos,E,_),
+        loop(T,ElementVec).
+    loop([get_pos(ElementName,Pos,EE)|T],ElementVec):-true|
+        get_elementPos(ElementName,ElementPos),
+        vector_element(ElementVec,ElementPos,List,_),
+        get_element(List,0,Pos,EE),
+        loop(T,ElementVec).
+
+
+%get_elementPos
+    get_elementPos(argumentList,Pos):-true|
+        Pos = 0.
+    get_elementPos(counterList,Pos):-true|
+        Pos = 1.
+    get_elementPos(claimList,Pos):-true|
+        Pos = 2.
+    get_elementPos(reasonList,Pos):-true|
+        Pos = 3.
+    get_elementPos(justificationList,Pos):-true|
+        Pos = 4.
+    get_elementPos(forwardList,Pos):-true|
+        Pos = 5.
+    get_elementPos(buttonVec,Pos):-true|
+        Pos = 6.
+    get_elementPos(status,Pos):-true|
+        Pos = 7.
+    get_elementPos(history,Pos):-true|
+        Pos = 8.
+    get_elementPos(ruleRel,Pos):-true|
+        Pos = 9.
+    get_elementPos(displayArgInfo,Pos):-true|
+        Pos = 10.
+
+%get_element
+    get_element([E1|_],L,L,E):-true|
+        E = E1.
+otherwise.
+    get_element([_|T],W,L,E):-true|
+        W1 := W +1,
+        get_element(T,W1,L,E).

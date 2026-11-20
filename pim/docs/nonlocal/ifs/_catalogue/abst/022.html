@@ -1,0 +1,75 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(22) Parallel Model Generation Theorem Prover: MGTP</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(22) Parallel Model Generation Theorem Prover: MGTP</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 2 KB
+	Documents:   Manual (Japanese/English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+MGTP is a massively parallel, high performance theorem prover on
+finite domain first order priblems.
+
+<h2><b>Feature</b></h2>
+
+Parallel theorem prover for the range restricted(every variable in
+succeedent appears at least once in antecedent) problems.
+
+<ol>
+
+<li>This theorem prover is designed for a variety of applications
+which need a powerful inference engine on finite domain.
+
+<li>This system enjoys the excelent performance of PIM by compiling
+the problem into KL1 clauses.
+
+<li>This is a massively parallel theorem prover that performs linear
+speed-up with the number of processors.
+
+</ol>
+
+<h2><b>Configuration</b></h2>
+
+MGTP consists of a problem compiler and an interpreter.
+
+<h2><b>Function</b></h2>
+
+The return value of MGTP is a set of models if the problem is
+satisfiable, or an nil list if the problem is unsatisfiable.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/solver-prover/pimos/MGTP/README">README</a>.
+
+<li> Parallel Model Generation Theorem Prover: MGTP [20K] <a
+href="../../../ifs/solver-prover/pimos/MGTP/mgtp.tgz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

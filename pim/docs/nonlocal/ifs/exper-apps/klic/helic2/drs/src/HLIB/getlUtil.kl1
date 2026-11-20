@@ -1,0 +1,58 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module getlUtility.
+
+%%%%%%stdio
+
+getl(Stream1,Stream,String):-true|
+        getc_loop(Stream1,[],Stream,CL),
+        count(CL,0,Length),
+        new_string(String1,Length,8),
+        set_string(CL,0,String1,String).
+
+getc_loop(S,Work,Stream,CL):-true|
+        S = [getc(C)|S1],
+        (  C = key#lf->
+                Stream = S1,
+                CL = Work
+        ;
+           C = key#del->
+                remove_last(Work,Work1),
+                getc_loop(S1,Work1,Stream,CL)
+        ;
+        otherwise;
+           true->
+                add_last(Work,C,Work1),
+                getc_loop(S1,Work1,Stream,CL)
+        ).
+
+count([],C,L):-true|
+        L = C.
+count([_|T],C,L):-true|
+        C1 := C+1,
+        count(T,C1,L).
+
+set_string([],_,String1,String):-true|
+        String = String1.
+set_string([C|T],Pos,String1,String):-true|
+        set_string_element(String1,Pos,C,String2),
+        Pos1 := Pos+1,
+        set_string(T,Pos1,String2,String).
+
+
+remove_last([],Work):-true|
+        Work = [].
+remove_last([_],Work):-true|
+        Work = [].
+remove_last([H|T],Work):-T\=[]|
+        remove_last(T,Work1),
+        Work = [H|Work1].
+
+add_last([],C,Work):-true|
+        Work = [C].
+add_last([H|T],C,Work):-true|
+        add_last(T,C,Work1),
+        Work = [H|Work1].

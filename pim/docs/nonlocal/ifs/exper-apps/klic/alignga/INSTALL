@@ -1,0 +1,125 @@
+Multiple Sequence Alignment using Multi Group Genetic Algorithm
+
+1. machine environment
+  [PIM version]
+  Machine: PIM/m 256PEs
+  SIMPOS : III Version 8.2
+  PIMOS : 
+
+  [KLICversion}
+  Machine: Sparc Center (20PE)
+  KLIC: Version 1.7
+
+  [gavtool]
+   Machine: Sparc
+   SunOS: Release 4.1.3-JLE1.1.3 OS/AS=V4.13 (AB1405)
+   System Memory: 16M
+   DISK Memory: 10M
+   Toolkit: OpenWare/Motif version2
+
+2. how to install
+   [PIM version]
+   Please FTP the files under kl1 to your machine that is accessable to PIM/m.
+   If you access to PIM by telnet, 'to UNIX file system' is O.K.
+   (*.unload : binary mode
+    *.kl1 & *.com : ascii mode)
+
+   After login to PIM(PIMOS login),
+   in "KL1 listener", please input;
+ 	> load("gav.unload"). [return]
+   then KL1 program will be loaded on PIM.
+   And when you input;
+	> take "compile.com". [return]
+   then you can re-compile KL1 source files.
+
+   [KLIC version]
+   Please FTP all files under software/gav/KLIC to your machine,
+   that's have installen distributed KLIC system.
+   Then please modify the source file main.kl1 like below;
+  
+   if internet address of your machine that do gavtool is A.B.C.D 
+   then 
+       old: {{192,156,144,116},10000},              % SocketAddress
+       ->
+       new: {{A,B,C,D},10000},              % SocketAddress
+
+   After that please enter "compile" command.
+
+   [gavtool]
+   Please make same directory structure as directory "gav" on SUN machine.
+   And on directory "gav", please input;
+   	$ make
+   then two files, gavtool/gavtool & gadmks/gadmks, will be made.
+   And please copy gadmks into directory gavtool.
+
+3. How to execute
+   [PIM version]
+   Example goal is written in "kl1/demo.com"
+   After setting XENVIRONMENT "gav/gavtool/gavtool.res",
+   please input;
+	% gav/gavtool/gavtool
+   then "Fitness Graph window" appears.
+   Then in "Fitness Graph window" appears, please click "simulation"&"start"
+   (Please check port No. = 10000.)
+   After that, on KL1 listener, enter the goal.
+
+   goal syntax is below;
+
+   gav:ga(
+	SeqList,	% Sequence List [List of string data]
+	NameList,	% Name of Sequence's List [List of string data]
+	GrpVectList,	% List of GrpVet, [List of Vector]
+			% GrpVect = {Population,SelectionRate} [Vector of int]
+	CrossoverRate,	% crossover percentage [integer]
+	OneCycleTime,	% Time of one cycle (sec) [integer]
+	DPCutRatio,	% Cut percentage in Dynamic Programming [integer]
+	GapParam,	% GapCost Parameter  {A,B,C} (cost=A+B*K)
+			% [vector of int]  
+	ExecTime,	% Execution Time (sec) [integer]
+	RandomSeed,	% Seed of Random Numbers [integer]
+	Address,	% Internet address and port No. for gavtool [vector]
+			% default port No. = 10000
+			% 192.26.9.203 => {{192,26,9,203},10000}
+	Output ).	% Output.
+
+   [KLIC version]
+   After setting XENVIRONMENT "gav/gavtool/gavtool.res",
+   please input;
+	% gav/gavtool/gavtool
+   then "Fitness Graph window" appears.
+   Then in "Fitness Graph window" appears, please click "simulation"&"start"
+   (Please check port No. = 10000.)
+   After that, please enter "gav" command on xterm.
+   And if you change the data and/or parameters, 
+   then please modify main.kl1 and "compile" again.
+   Goal syntax is same as PIM version.
+
+4. gavtool info 
+[Fitness Graph window]
+   To see real time display on KL1 program executuion, 
+   before execution starts, click "simulation"&"start".
+   If you use the already executed data file, please click "file"&"open",
+   and decide the file to read.
+   example data is "cross0.gatd" and "cross10.gatd" under gav/gavtool
+
+   In this Fitness Graph window,
+   we can see the real lines that is history of average fitness scores in
+   each group and dotted lines that is history of maximum and minimum 
+   scores.
+   We can change the lines displayd by change "options"&"dislpay group"
+
+   expand : giving the range by mouse right button
+   shrink : giving the range by mouse center button
+   (You can change the direction by click 
+    "options"の"expand ..." and change it.)
+
+   On this graph if we click mouse right button, 
+   We can see "Individual Distribution graph window".
+
+[Individual Distribution graph window]
+    On this window, if we click the bar by mouse right button,
+    we can see the individual informatin.
+    (Individual ID, fitness score, last migration, last crossover)
+
+    And on Individual Distribution graph window, if you click the Group
+    Alphabet Character, you can see the best score alignment in the group.

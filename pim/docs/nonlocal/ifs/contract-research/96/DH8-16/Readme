@@ -1,0 +1,100 @@
+The molecular evolution inference system
+
+ #####   ######  ######  #####   ######   ####   #####   ######   ####    #####
+ #    #  #       #       #    #  #       #    #  #    #  #       #          #
+ #    #  #####   #####   #    #  #####   #    #  #    #  #####    ####      #
+ #    #  #       #       #####   #       #    #  #####   #            #     #
+ #    #  #       #       #       #       #    #  #   #   #       #    #     #
+ #####   ######  ######  #       #        ####   #    #  ######   ####      #
+
+					### Prototype version (Rev. 0.72) ###
+						August 14, 1997
+
+				Copyright (C) 1996-1997 Satoshi OOta
+
+1. What is `DeepForest'?
+
+`DeepForest' is a set of predicates to infer molecular phylogenetic
+trees mainly from amino acid sequences. By default, users can use the
+maximum likelihood method to infer the trees.  The complete version of
+`DeepForest' will analyze sequence data set intelligently, and infers
+a reliable molecular phylogenetic tree.
+
+2. Restriction of the present version
+
+This version is a prototype of `DeepForest'. User can use only a part
+of function on `DeepForest', and I have to warn you that the present
+version is extremely slow. This programs are written almost by KL1,
+and can be compiled by KLIC.
+
+3. How to compile `DeepForest'
+
+In directory ./unix, type `test.com'.  All modulues will be generated. 
+Of course, you have to install the newest version of klic before the
+compilation.
+
+4. How to run demo of prototype of `DeepForest'
+
+A simple demo program `test.kl1' has been prepared. This program tests
+almost function of `DeepForest'. You can refer this program to write
+your own programs using modules.
+
+The way to run the program is quite simple.  Just type `test'.  The
+program will begin to evaluate a given data sets (the data have `.pl'
+extensions basically. Pleases refere them to understand the function).
+
+The `test.com' will not compile all source files. `*.com' files are
+script files for compiling. Please compile remainders by hand using
+the `*.com' files. I shoud note that these programs are experimental.
+
+Binary files (for Soralis 2.3) have been prepared. If you are Sun
+SparcStation/Soralis 2.x user, please copy these binary files to an
+execution directory. Once test.com is executed, these binary files will
+be destroyed.
+
+5. Parallel execution of `DeepForest'
+
+Parallel logic programming made `DeepForest' executable in
+distributed/shared memory parallel environment.  If distributed/shared
+memory klic is available in you system, why don't you try parallel
+execution by `DeepForest'? I have tested parallel system on three
+clustered workstations (distributed version) and CRAY CS6400 (shared
+memory version).
+
+6. Required environment
+
+This prototype version is so small that you can run `DeepForest' even
+on PC with the newest version of klic.  I have tested on Macintosh
+(Duo 280c) with Mach Ten.  Also PIMOS version of `go/0' (contour/1 and
+traverse/3) is included in this file.  Since these programs are quite
+experimental one, only nucleotide data are available.
+
+7. Concept of `DeepForest'
+
+`DeepForest' is not only  an  application   program,   but   also
+set   of  predicates   which   are  useful for data analyses. The
+programs  are  presented  as  modules,  which   includes   useful
+predicates,  and  users  can   construct  new customized programs
+easily in scheme of logic programming.
+
+8. Documentation
+
+For more information, please refer the documents under
+./df/doc/DeepForest directory.
+
+------------------------------------------------------------
+Satoshi OOta (Neither Ota nor Ohta nor Oota, but OOta!)
+------------------------------------------------------------
+Department of Genetics,
+School of Life Science,
+The Graduate University of Advanced Studies
+at
+Laboratory of Evolutionary Genetics,
+National Institute of Genetics,
+Mishima, 411 Japan
+FAX: +81-559-81-6794
+TEL: +81-559-81-6790
+------------------------------------------------------------
+
+				Copyright (C) 1996-1997 Satoshi OOta
+

@@ -1,0 +1,316 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module view_unitUnitRelTable.
+
+:- public 
+    create/5,
+    quick_create/2.
+            
+:- with_macro pimos.
+
+    quick_create({R,C,SpAV,UAV},I):-true|
+        loop(I,R,C,SpAV,UAV).
+
+    create(View1,SpUUR1,View,SpUUR,I):-true |
+        initiate(View1,SpUUR1,View,SpUUR,R,C,SpAV,UAV),
+        loop(I,R,C,SpAV,UAV).
+
+    initiate(View1,SpUUR1,View,SpUUR,R,C,SpAV,UAV):-true |
+        SpUUR1 = [get_AD(SpAV,UAV)|SpUUR2],
+        vector(UAV,UAVL,_),
+        vector(SpAV,SpAVL,_),
+
+        pom_stringMatrix:make_matrix(UAVL,R1),
+        pom_vectorMatrix:make_matrix(UAVL,C1),
+
+        View1 = [get_SPLargeList(SPList1)|View],
+        change_toIDList(SPList1,SpAV,SPList),
+
+        initiate1(SPList,SpUUR2,R1,C1,SpAVL,SpUUR,R,C).
+
+    initiate1([],SpUUR1,R1,C1,_,SpUUR,R,C):-true|
+        SpUUR = SpUUR1,
+        R     = R1,
+        C     = C1.
+    initiate1([SP|T],SpUUR1,R1,C1,SpAVL,SpUUR,R,C):-true |
+        SpUUR1 = [get_unitUnitRelList(SP,UURList)|SpUUR2],
+        initiate11(UURList,SP,R1,C1,SpAVL,R2,C2),
+        initiate1(T,SpUUR2,R2,C2,SpAVL,SpUUR,R,C).
+
+    initiate11([],_,R1,C1,_,R,C):-true|
+        R = R1,
+        C = C1.
+    initiate11([{{I,J},Pij}|T],SP,R1,C1,SpAVL,R,C):-true|
+        add_rel_into_table(R1,C1,{{I,J},Pij},SP,SpAVL,R2,C2),
+        initiate11(T,SP,R2,C2,SpAVL,R,C).
+
+%add_rel_into_table
+
+    add_rel_into_table(R1,C1,{{I,J},Pij},SP,SpAVL,R,C):-true|
+        pom_stringMatrix:get_data(R1,I,J,Rij),
+        (   Rij = 0->
+                add_rel_into_table1(R1,C1,{{I,J},Pij},SP,SpAVL,R,C)
+        ;
+            Rij =  Pij,Rij \= 0->
+                R = R1,
+                pom_vectorMatrixUtility:set_C1(C1,I,J,SP,C)
+        ;
+            Rij \= Pij,Rij \= 0->
+                R = R1,
+                C = C1
+        ).
+
+    add_rel_into_table1(R1,C1,{{I,J},Pij},SP,SpAVL,R,C):-true|
+        get_suiisokuList(R1,{{I,J},Pij},SuiisokuList),
+        reverse_Pij(Pij,ReversePij),
+        is_loop(SuiisokuList,ReversePij,R1,Result),
+        (   Result = yes->
+                R = R1,
+                C = C1
+        ;
+            Result = no ->
+                get_setData(Pij,V1,V2),
+                set_RList(SuiisokuList,V1,V2,R1,R),
+                set_CList(SuiisokuList,{I,J},SP,SpAVL,C1,C)
+        ).
+
+    reverse_Pij(1,ReversePij):-true|
+        ReversePij = 2.
+    reverse_Pij(2,ReversePij):-true|
+        ReversePij = 1.
+
+%get_suiisokuList
+    get_suiisokuList(R,{{I,J},Pij},SuiisokuList):-true|
+        pom_stringMatrix:get_XList(R,I,Pij,XList1),
+        pom_stringMatrix:get_YList(R,J,Pij,YList1),
+        get_combinationList([I|XList1],[J|YList1],SuiisokuList).
+
+    get_combinationList([],_,List):-true|
+        List = [].
+    get_combinationList([E1|T],ListB,List):-true|
+        get_combinationList1(ListB,E1,SubList),
+        get_combinationList(T,ListB,List1),
+        append(SubList,List1,List).
+
+    get_combinationList1([],_,List):-true|
+        List = [].
+    get_combinationList1([E|T],E,List):-true|
+        get_combinationList1(T,E,List).
+    get_combinationList1([E2|T],E1,List):-E1\=E2|
+        get_combinationList1(T,E1,List1),
+        List = [{E1,E2}|List1].
+
+%is_loop
+    is_loop([],_,_,Result):-true|
+        Result = no.
+    is_loop([{X,Y}|T],ReversePij,R,Result):-true|
+        pom_stringMatrix:get_data(R,X,Y,Rxy),
+        (   ReversePij =  Rxy->
+                Result = yes
+        ;
+        otherwise;
+            true->
+                is_loop(T,ReversePij,R,Result)
+        ).
+
+%get_setData
+    get_setData(1,V1,V2):-true|
+        V1 = 1,V2 = 2.
+    get_setData(2,V1,V2):-true|
+        V1 = 2,V2 = 1.
+
+%set_RList
+    set_RList([],_,_,R1,R):-true|
+        R = R1.
+    set_RList([{X,Y}|T],V1,V2,R1,R):-true|
+        pom_stringMatrix:set_data(R1,X,Y,V1,R2),
+        pom_stringMatrix:set_data(R2,Y,X,V2,R3),
+        set_RList(T,V1,V2,R3,R).
+
+%set_CList
+    set_CList([],_,_,_,C1,C):-true|
+        C = C1.
+    set_CList([{X,Y}|T],{I,J},SP,SpAVL,C1,C):-true|
+        pom_vectorMatrixUtility:set_C2(C1,{X,Y},{I,J},SP,C2),
+        set_CList(T,{I,J},SP,SpAVL,C2,C).
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+%%%%%%%
+
+    loop([],_,_,_,_):-true|
+        true.
+    loop([get_all(ALL)|T],R,C,SpAV,UAV):-true|
+        ALL = {R,C,SpAV,UAV},
+        loop(T,R,C,SpAV,UAV).
+    loop([get_unitUnitRel(U2,U1,Rel)|T],R,C,SpAV,UAV):-true|
+        get_rel(R,UAV,U1,U2,Rel),
+        loop(T,R,C,SpAV,UAV).
+    loop([get_unitUnitRelReason(U2,U1,Rel,SPList)|T],R,C,SpAV,UAV):-true|
+        get_rel(R,UAV,U1,U2,Rel),
+        get_reason(R,C,SpAV,UAV,U1,U2,SPList),
+        loop(T,R,C,SpAV,UAV).
+
+%%%%%%%
+
+%get_rel
+    get_rel(R,UAV,U1,U2,Rel):-true|
+        get_valueForR(R,UAV,U1,U2,V),
+        (   V = 2->
+                Rel = -1
+        ;
+        otherwise;
+            true->
+                Rel = V
+        ).
+
+%get_value
+    get_valueForR(R,UAV,U1,U2,Rel):-true|
+        change_toID(UAV,U1,X,YN1),
+        (   YN1 = yes->
+                change_toID(UAV,U2,Y,YN2),
+                (   YN2 = yes->
+                        pom_stringMatrix:get_data(R,X,Y,Rel)
+                ;
+                    YN2 = no ->
+                        Rel = 0
+                )
+        ;
+            YN1 = no ->
+                Rel = 0
+        ).
+
+    get_valueForC(C,UAV,U1,U2,Rel):-true|
+        change_toID(UAV,U1,X,YN1),
+        (   YN1 = yes->
+                change_toID(UAV,U2,Y,YN2),
+                (   YN2 = yes->
+                        pom_vectorMatrix:get_data(C,X,Y,Rel)
+                ;
+                    YN2 = no ->
+                        Rel = []
+                )
+        ;
+            YN1 = no ->
+                Rel = []
+        ).
+
+%get_reason
+    get_reason(_,C,SpAV,UAV,U1,U2,SPList):-true|
+        get_valueForC(C,UAV,U1,U2,SPLV),
+        get_reason1(SPLV,SpAV,SPList1),
+        remove_sameData(SPList1,[],SPList).
+
+    remove_sameData([],_,SPList):-true|
+        SPList = [].
+    remove_sameData([H|T],Work,SPList):-true|
+        member(Work,H,YN),
+        (   YN = yes->
+                remove_sameData(T,Work,SPList)
+        ;
+            YN = no->
+                remove_sameData(T,[H|Work],SPList1),
+                SPList = [H|SPList1]
+        ).
+
+    get_reason1([],_,SPList):-true|
+        SPList = [].
+    get_reason1([E1|T],SpAV,SPList):-true|
+        vector(SpAV,SpAVL,_),
+        string("",_,Type,_),
+        new_string(S1,SpAVL,Type),
+        set_sp(E1,S1,S),
+        sToSp(S,0,SpAVL,SpAV,SPs),
+        get_reason1(T,SpAV,SPList1),
+        SPList = [SPs|SPList1].
+
+    set_sp(E1,S1,S):-integer(E1)|
+        set_string_element(S1,E1,1,S).
+    set_sp(E1,S1,S):-vector(E1,Size)|
+        set_vector(E1,0,Size,S1,S).
+    set_sp(E1,S1,S):-list(E1)|
+        set_list(E1,S1,S).
+
+    set_vector(_,Size,Size,S1,S):-true|
+        S = S1.
+otherwise.
+    set_vector(E1,Pos,Size,S1,S):-true|
+        vector_element(E1,Pos,E2,_),
+        set_sp(E2,S1,S2),
+        Pos1 := Pos+1,
+        set_vector(E1,Pos1,Size,S2,S).
+
+    set_list([],S1,S):-true|
+        S = S1.
+    set_list([E|T],S1,S):-true|
+        set_sp(E,S1,S2),
+        set_list(T,S2,S).
+
+    sToSp(_,Size,Size,_,SPList):-true|
+        SPList = [].
+otherwise.
+    sToSp(SPString,Pos,Size,SpAV,SPList):-true|
+        string_element(SPString,Pos,V,_),
+        Pos1 := Pos+1,
+        (   V = 0->
+                sToSp(SPString,Pos1,Size,SpAV,SPList)
+        ;
+            V = 1->
+                vector_element(SpAV,Pos,SP,_),
+                sToSp(SPString,Pos1,Size,SpAV,SPList1),
+                SPList = [SP|SPList1]
+        ).
+
+%%%%%%%internal method
+
+%change_toIDList
+    change_toIDList([],_,List):-true|
+        List = [].
+    change_toIDList([H|T],AV,List):-true|
+        change_toID(AV,H,ID,YN),
+        (   YN = yes->
+                change_toIDList(T,AV,List1),
+                List = [ID|List1]
+        ;
+            YN = no->
+                change_toIDList(T,AV,List)
+        ).
+
+%change_toID
+    change_toID(AV,H,ID,YN):-true|
+        vector(AV,Size,_),
+        change_toID1(AV,0,Size,H,ID,YN).
+
+    change_toID1(_,Size,Size,_,_,YN):-true|
+        YN = no.
+otherwise.
+    change_toID1(AV,Pos,Size,H,ID,YN):-true|
+        vector_element(AV,Pos,E,_),
+        (   E = H->
+                ID = Pos,
+                YN = yes
+        ;
+        otherwise;
+            true->
+                Pos1 := Pos+1,
+                change_toID1(AV,Pos1,Size,H,ID,YN)
+        ).
+
+
+%%%%list processing 
+
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+

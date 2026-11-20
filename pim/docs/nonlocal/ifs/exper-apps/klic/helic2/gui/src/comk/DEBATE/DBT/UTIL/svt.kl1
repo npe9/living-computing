@@ -1,0 +1,109 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_solutionVecTable.
+:- public create/2.
+:- with_macro pimos.
+
+    create({RBR,POM},I):-true|
+        initiate(SVT,SVIDT), 
+        loop(I,{RBR,POM},SVT,SVIDT,0).
+
+    initiate(SVT,SVIDT):-true|
+        hLibrary:pool(keyed_bag,SVT),
+        hLibrary:pool(keyed_bag,SVIDT).
+
+    loop([],{RBR,POM},SVT,SVIDT,_):-true|
+        RBR  = [],
+        POM  = [],
+        SVT  = [],
+        SVIDT = [].
+    loop([put(SVID,SV)|T],Init,SVT,SVIDT,Num):-true| 
+        SVT   = [put(SVID,SV)|SVT1],
+        SVIDT = [put(SV,SVID)|SVIDT1],
+        loop(T,Init,SVT1,SVIDT1,Num).
+    loop([make_SVID(SVID)|T],Init,SVT,SVIDT,Num):-true| 
+        SVID = Num,
+        Num1 := Num+1,
+        loop(T,Init,SVT,SVIDT,Num1).
+    loop([is_inSVID(SVID,YN)|T],Init,SVT,SVIDT,Num):-true| 
+        SVT = [empty(SVID,YN1)|SVT1],
+        (   YN1 = yes->
+                YN = no
+        ;
+            YN1 = no->
+                YN = yes
+        ),
+        loop(T,Init,SVT1,SVIDT,Num).
+    loop([is_inSV(SV,YN)|T],Init,SVT,SVIDT,Num):-true| 
+        SVIDT = [empty(SV,YN1)|SVIDT1],
+        (   YN1 = yes->
+                YN = no
+        ;
+            YN1 = no->
+                YN = yes
+        ),
+        loop(T,Init,SVT,SVIDT1,Num).
+    loop([refer_SV(SVID,SV,YN)|T],Init,SVT,SVIDT,Num):-true| 
+        SVT = [empty(SVID,YN1)|SVT1],
+        (   YN1 = yes->
+                SVT2 = SVT1,
+                YN = no
+        ;
+            YN1 = no->
+                SVT1 = [carbon_copy(SVID,[SV])|SVT2],
+                YN = yes
+        ),
+        loop(T,Init,SVT2,SVIDT,Num).
+    loop([refer_SVID(SV,SVID,YN)|T],Init,SVT,SVIDT,Num):-true| 
+        SVIDT = [empty(SV,YN1)|SVIDT1],
+        (   YN1 = yes->
+                SVIDT2 = SVIDT1,
+                YN = no
+        ;
+            YN1 = no->
+                SVIDT1 = [carbon_copy(SV,[SVID])|SVIDT2],
+                YN = yes
+        ),
+        loop(T,Init,SVT,SVIDT2,Num).
+    loop([change_view(ViewName,SVIDList,Result)|T],Init,SVT,SVIDT,Num):-true| 
+        change_view(SVIDList,ViewName,Init,SVT,SVIDT,Init1,SVT1,SVIDT1,Result),
+        loop(T,Init1,SVT1,SVIDT1,Num).
+
+    change_view(SVIDList,ViewName,{RBR1,POM1},SVT1,SVIDT1,Init,SVT,SVIDT,Result):-true|
+            POM1 = [get({viewUnitUnitRelTable,ViewName},UURT,Result1)|POM],
+            (   Result1 = normal(_)->
+                    change_view1(SVIDList,RBR1,SVT1,SVIDT1,UURT,RBR,SVT,SVIDT,Result),
+                    Init = {RBR,POM}
+            ;
+                Result1 = abnormal(_)->
+                    Init    = {RBR1,POM},
+                    SVT     = SVT1,
+                    SVIDT   = SVIDT1,
+                    Result  = Result1
+            ).
+
+    change_view1([],RBR1,SVT1,SVIDT1,UURT,RBR,SVT,SVIDT,Result):-true|
+        RBR     = RBR1,
+        SVT     = SVT1,
+        SVIDT   = SVIDT1,
+        UURT    = [],
+        Result  = normal(success).
+    change_view1([SVID|T],RBR1,SVT1,SVIDT1,UURT,RBR,SVT,SVIDT,Result):-true|
+        merge({UURT1,UURT2},UURT),
+        SVT1 = [carbon_copy(SVID,[SV])|SVT2],
+        RBR1 = [execute(change_priority,{UURT1,SV},NewSV,Result1)|RBR2],
+        (   Result1 = normal(_)->
+                SVT2   = [get(SVID,_),put(SVID,NewSV)|SVT3],
+                SVIDT1 = [get(SV,_),  put(NewSV,SVID)|SVIDT2],
+                change_view1(T,RBR2,SVT3,SVIDT2,UURT2,RBR,SVT,SVIDT,Result)
+        ;
+            Result1 = abnormal(_)->
+                RBR     = RBR2,
+                SVT     = SVT2,
+                SVIDT   = SVIDT1,
+                UURT2   = [],
+                Result  = Result1
+        ).

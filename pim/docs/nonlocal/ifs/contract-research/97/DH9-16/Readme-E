@@ -1,0 +1,25 @@
+
+This file contains the description of files that accompany the release
+of the planner COPLAS, a conditional planner that can handle sensing
+actions.
+
+
+LIST OF FILES:
+-------------
+
+Readme-E:                This file.
+
+planner.pl:              The prolog source code for the planner.
+
+blocksdomain.pl,
+briefcasedomain.pl,
+montlake.pl,
+travel.pl:               Four sample domains to test the planner.
+
+usermanual.txt:          User's manual.
+
+use-of-software-E;       Conditions for using the software.
+
+
+
+================================================

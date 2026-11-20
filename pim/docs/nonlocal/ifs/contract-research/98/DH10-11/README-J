@@ -1,0 +1,13 @@
+PRISM (PRogramming In Statistical Modeling) プログラミング処理系
+----------------------------------------------------------------
+
+(ファイル名)          (内容)
+INSTALL               インストール方法 (英語)
+README-E              ファイル構成一覧(英語版)
+README-J              ファイル構成一覧(本ファイル)
+use-of-software-E     ソフトウェアの利用条件(日本語版)
+use-of-software-J     ソフトウェアの利用条件(英語版)
+manual-j.ps.gz        ユーザマニュアル(日本語版)
+manual-e.ps.gz        ユーザマニュアル(英語版)
+prism1.2.tgz          ソースファイル(tar + gz)
+examples.tgz          例プログラム(tar + gz)

@@ -1,0 +1,191 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    (C)1994 Institute for New Generation Computer Technology        %%%%
+%%%%    (Read COPYRIGHT for detailed information.)                      %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_help.
+
+:- public 
+    help/1.
+    help/2.
+            
+:- with_macro pimos. 
+
+%help/3
+    help(Protocol):-true|
+        Help = [
+"        ab              help            run             start",
+"        add             load            set             trans",
+"        clear           quit            show  ",
+"        compile         remove          solve"],
+        make_protocol(normal(success),help,p,Help,Protocol).
+
+    help(Command,Protocol):-true|
+        get_help(Command,Help,Result),
+        make_protocol(Result,help,p,Help,Protocol).
+
+%%%%%
+    get_help("all",Help,Result):-true|
+        Help =[
+"    compile             goal            ReadFileName",
+"    compile     <p|d>   <type|rule|pom> ReadFileName",
+"    load                goal            ReadFileName",
+"    load        <p|d>   <type|rule|pom> ReadFileName",
+"    set         <p|d>   solver          <user|system>",
+"    set                 gp              Position",
+"    set                 goal            Goal",
+"    set         <p|d>   view            View",
+"    set         <p|d>   sp              SP-list",
+"    set         <p|d>   unit            Unit-list",
+"    set         <p|d>   pl              Int",
+"    set         <p|d>   pt              <h|e>",
+"    set         <p|d>   cl              Int",
+"    set         <p|d>   sim             Int",
+"    set         <p|d>   weight          Int",
+"    set         <p|d>   ptst            Int Int Int Int Int Int",
+"    set         <p|d>   ptaw            Int",
+"    set         <p|d>   tf              <on|off>",
+"    set         <p|d>   sr              RuleName-list",
+"    set         <p|d>   sg              SpyGate-ist",
+"    run                                 ReadFileName",
+"    solve       <p|d>                   [Goal]",
+"    ab          <p|d>",
+"    start                               [Goal]",
+"    quit  ",
+"    show                goal",
+"    show        <p|d>   view            [View]",
+"    show        <p|d>   sp              [SP]",
+"    show        <p|d>   unit            [Unit]",
+"    show        <p|d>   solver",
+"    show        <p|d>   pl",
+"    show        <p|d>   pt",
+"    show        <p|d>   cl",
+"    show        <p|d>   sim",
+"    show        <p|d>   weight",
+"    show        <p|d>   ptst",
+"    show        <p|d>   ptaw",
+"    show        <p|d>   tf",
+"    show        <p|d>   sr",
+"    show        <p|d>   sg",
+"    add         <p|d>   sr              RuleName-list",
+"    add         <p|d>   sg              SpyGate-list",
+"    remove      <p|d>   sr              RuleName-list",
+"    remove      <p|d>   sg              SpyGate-list",
+"    clear       <p|d>   sr",
+"    clear       <p|d>   sg",
+"    trans               <goal|type|rule|pom> ReadFileName WriteFileName",
+"    help                                [Command]"],
+        Result = normal(success).
+
+    get_help("compile",Help,Result):-true|
+        Help =[
+"    compile             goal            ReadFileName",
+"    compile     <p|d>   <type|rule|pom> ReadFileName"],
+        Result = normal(success).
+
+    get_help("load",Help,Result):-true|
+        Help =[
+"    load                goal            ReadFileName",
+"    load        <p|d>   <type|rule|pom> ReadFileName"],
+        Result = normal(success).
+
+    get_help("set",Help,Result):-true|
+        Help =[
+"    set         <p|d>   solver          <user|system>",
+"    set                 gp              Position",
+"    set                 goal            Goal",
+"    set         <p|d>   view            View",
+"    set         <p|d>   sp              SP-list",
+"    set         <p|d>   unit            Unit-list",
+"    set         <p|d>   pl              Int",
+"    set         <p|d>   pt              <h|e>",
+"    set         <p|d>   cl              Int",
+"    set         <p|d>   sim             Int",
+"    set         <p|d>   weight          Int",
+"    set         <p|d>   ptst            Int Int Int Int Int Int",
+"    set         <p|d>   ptaw            Int",
+"    set         <p|d>   tf              <on|off>",
+"    set         <p|d>   sr              RuleName-list",
+"    set         <p|d>   sg              SpyGate-ist"],
+        Result = normal(success).
+
+    get_help("run",Help,Result):-true|
+        Help =[
+"    run                                 ReadFileName"],
+        Result = normal(success).
+
+    get_help("solve",Help,Result):-true|
+        Help =[
+"    solve       <p|d>                   [Goal]"],
+        Result = normal(success).
+
+    get_help("ab",Help,Result):-true|
+        Help =[
+"    ab          <p|d>"],
+        Result = normal(success).
+
+    get_help("start",Help,Result):-true|
+        Help =[
+"    start                               [Goal]"],
+        Result = normal(success).
+
+    get_help("quit",Help,Result):-true|
+        Help =[
+"    quit  "],
+        Result = normal(success).
+
+    get_help("show",Help,Result):-true|
+        Help =[
+"    show                goal"
+"    show        <p|d>   view            [View]",
+"    show        <p|d>   sp              [SP]",
+"    show        <p|d>   unit            [Unit]",
+"    show        <p|d>   solver",
+"    show        <p|d>   pl",
+"    show        <p|d>   pt",
+"    show        <p|d>   cl",
+"    show        <p|d>   sim",
+"    show        <p|d>   weight",
+"    show        <p|d>   ptst",
+"    show        <p|d>   ptaw",
+"    show        <p|d>   tf",
+"    show        <p|d>   sr",
+"    show        <p|d>   sg"],
+        Result = normal(success).
+
+    get_help("add",Help,Result):-true|
+        Help =[
+"    add         <p|d>   sr              RuleName-list",
+"    add         <p|d>   sg              SpyGate-list"],
+        Result = normal(success).
+
+    get_help("remove",Help,Result):-true|
+        Help =[
+"    remove      <p|d>   sr              RuleName-list",
+"    remove      <p|d>   sg              SpyGate-list"],
+        Result = normal(success).
+
+    get_help("clear",Help,Result):-true|
+        Help =[
+"    clear       <p|d>   sr",
+"    clear       <p|d>   sg"],
+        Result = normal(success).
+
+    get_help("trans",Help,Result):-true|
+        Help =[
+"    trans               <goal|type|rule|pom> ReadFileName WriteFileName"],
+        Result = normal(success).
+
+    get_help("help",Help,Result):-true|
+        Help =[
+"    help                                [Command]"],
+        Result = normal(success).
+otherwise.
+    get_help(C,_,Result):-true|
+        Result = abnormal({cui,'Illegal command',C}).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,          AgentName,_,        Protocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,Protocol):-true|
+        Protocol = receive(AgentName,ProtocolName,Arguments,_).

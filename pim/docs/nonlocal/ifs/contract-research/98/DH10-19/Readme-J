@@ -1,0 +1,57 @@
+HiRise制約解消系 for Java, Ver. 2.0
+細部 博史
+
+Copyright (C) 1998-1999 Hiroshi HOSOBE
+
+[機能]
+
+本パッケージは，HiRise制約解消系のバージョン2.0を提供するものである．
+HiRiseは，制約系のインクリメンタルな解消を行う制約解消系である．HiRise
+はstay，edit，1次等式の3種類の制約を提供し，Borningらによって開発され
+たDeltaBlue制約解消系と同様，プログラマーは階層的な優先度を持つ制約(す
+なわち制約階層)を指定できる．
+
+バージョン2.0では，新たにConstraintSetと呼ばれるクラスを導入した．これ
+は，連言または最適化を用いて，2つの制約をグループ化するものである．連
+言を用いると，同じConstraintSetに属する2つの制約は，1つの制約であるか
+のように振る舞う．すなわち，それらの充足が同時に起こるようになる．一方，
+最適化を用いると，同じConstraintSetに含まれる2つの制約は，2つとも充足
+できない場合に適切に処理される．この機能は，最小2乗法の代用として利用
+できる．
+
+[コンパイルおよび実行環境]
+
+本ソフトウェアのコンパイルおよび実行には，Java Development Kit (JDK)
+1.1相当の開発・実行環境が必要である．これまでに，Sun Microsystems JDK
+1.1.7およびMicrosoft Visual J++ 6.0でコンパイルを行えることを確認した．
+サンプルプログラムの実行には，先の開発環境に付属のJavaインタープリター
+が利用できる．また，デモアプレットの実行には，先の環境に付属のアプレッ
+トビューワーや，Microsoft Ineternet Explorer 4.0が利用できる．
+
+[ファイル構成]
+
+READMEファイル(和/英)：
+Readme-J
+Readme-E
+
+HiRise制約解消系マニュアル：
+readme.txt
+
+ソフトウェア利用条件(和/英)：
+use-of-software-J
+use-of-software-E
+
+HiRise制約解消系ソースコード：
+Constraint.java         ConstraintSet.java      Edit.java
+HiRiseObject.java       Linear.java             Solver.java
+Stay.java               Variable.java
+
+サンプルプログラムソースコード：
+Sample.java
+
+デモアプレットソースコード：
+CSetDemo.java           ExtTextField.java       GraphicsUtility.java
+HiRiseDemo.java         InfoPanel.java          TreeDemo.java
+
+バイトコード：
+*.class

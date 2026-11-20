@@ -1,0 +1,312 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_argumentListUtility.
+
+:- public 
+
+    get_initialArgumentList/4,
+    get_counterArgumentList/7,
+    get_claimArgumentList/4.
+
+:- with_macro pimos.
+
+%get_argumentList
+    get_initialArgumentList({Pool1,Info1},Data,LArgList,InitialArgumentList):-true|
+        get_initialArgumentList1(Pool1,Pool2,LArgList,AL),
+        get_argumentList(AL,{Pool2,Info1},Data,ArgumentList),
+        get_addInfoForIA(LArgList,Data,AddInfo),
+        InitialArgumentList = [ArgumentList,AddInfo].
+
+    get_initialArgumentList1(Pool1,Pool,LArgList,AL):-true|
+        dbtgui_guiUtility:get_initialArgumentList(Pool1,Pool2,LArgList),
+        get_al(LArgList,Pool2,Pool,AL).
+
+    get_al([],Pool1,Pool,AL):-true|
+        Pool = Pool1,
+        AL   = [].
+    get_al([LArg|T],Pool1,Pool,AL):-true|
+        dbtgui_LArgUtility:get_AID(LArg,Pool1,Pool2,_,YN),
+        (   YN = yes->
+                A = {1,LArg}
+        ;
+            YN = no->
+                A = {0,LArg}
+        ),
+        get_al(T,Pool2,Pool,AL1),
+        AL = [A|AL1].
+
+    get_addInfoForIA([],_,AddInfo):-true|
+        AddInfo = [].
+    get_addInfoForIA([{SV,APos}|_],Data,AddInfo):-true|
+	get_plpt(Data,PL,PT),
+        dbt_issueUtility:make_consequence(SV,APos,PL,PT,Consequence),
+        AddInfo = [Consequence].
+
+%get_counterArgumentList
+    get_counterArgumentList(CLArg,Pos,Data1,Data,LArgList,CounterArgumentList,R):-true|
+        get_counterArgumentList1(CLArg,Pos,Data1,Data2,LArgList,AL,AddInfo,R1),
+        (   R1 = normal(success)->
+                get_argumentListForCA(AL,Data2,Data,ArgumentList),
+                (   wait(ArgumentList)->
+                        CounterArgumentList = [ArgumentList,AddInfo],
+                        R = normal(success))
+        ;
+            R1 = abnormal(_)->
+                R = R1,
+                Data = Data2
+        ).
+
+    get_counterArgumentList1(LArg,Pos,{Pool1,Info},Data,LArgList,AL,AddInfo,R):-true|
+        dbtgui_LArgUtility:get_PArg(LArg,PArg),
+        get_IPos(PArg,Pos,Pool1,Pool2,IPos,R1),
+        (   R1 = normal(success)->
+		get_plpt({_,Info},PL,PT),
+                get_addInfoForCA(LArg,IPos,AL,PL,PT,Pool2,Pool3,AddInfo),
+                get_counterArgumentList2(PArg,LArg,IPos,{Pool3,Info},Data,LArgList,AL),
+                R = normal(success)
+        ;
+            R1 = abnormal(_)->
+                Data  = {Pool2,Info},
+                R     = R1
+        ).
+
+    get_IPos({SV,APos},Pos,Pool1,Pool,IPos,Result):-true|
+
+        IPos1 := APos + Pos,
+        dbt_svUtility:is_illegalPos(SV,IPos1,YN1),
+        (   YN1 = yes->
+                Pool   = Pool1,
+                Result = abnormal({gui,'Illegal Issue Pos',Pos})
+        ;
+            YN1 = no->
+                dbt_svUtility:is_nafPos(SV,IPos1,YN2),
+                (   YN2 = yes->
+                        IPos = naf(IPos1)
+                ;
+                    YN2 = no->
+                        IPos = IPos1
+                ),
+
+                Pool1 = [make(mat,MAT)|Pool],
+                dbt_issueUtility:is_issue(SV,IPos,MAT,[],YN3),
+                (   YN3 = yes->
+                        Result = normal(success)
+                ;
+                     YN3 = no->
+                         Result= abnormal({ui,'Illegal Issue Pos',Pos})
+                )
+        ).
+
+    get_counterArgumentList2({SV,_},LArg,IPos,Data1,Data,LArgList,AL):-true|
+        dbt_issueUtility:get_numOfCounterArgument(SV,IPos,NumOfCA),
+        get_counterArgumentList21(0,NumOfCA,LArg,IPos,Data1,Data,LArgList,AL).
+
+    get_counterArgumentList21(L,L,_,_,Data1,Data,LArgList,AL):-true|
+        Data     = Data1,
+        LArgList = [],
+        AL       = [].
+otherwise.
+    get_counterArgumentList21(CPos,L,PLArg,IPos,{Pool1,Info},Data,LArgList,AL):-true|
+        LArg        = {PLArg,IPos,CPos},
+        dbtgui_LArgUtility:get_AID(LArg,Pool1,Pool2,_,YN1),
+        (   YN1 = yes->
+                ClaimFlag = 1
+        ;
+            YN1 = no->
+                ClaimFlag = 0
+        ),
+        dbtgui_LArgUtility:get_ruleRelInfo(LArg,{Pool2,Info},Data1,RuleRelInfo,YN2),
+        (   YN2 = yes->
+                RuleRelInfo = {_RuleName,_ParentRuleName,TopRuleRel1,_SPList},
+                change_value(TopRuleRel1,TopRuleRel)
+        ;
+            YN2 = no->
+                TopRuleRel = nil
+        ),
+
+        dbtgui_LArgUtility:get_PArg(LArg,PArg),
+        NextCPos := CPos+1,
+        get_counterArgumentList21(NextCPos,L,PLArg,IPos,Data1,Data,LArgList1,AL1),
+        LArgList     = [LArg|LArgList1],
+        AL           = [{ClaimFlag,TopRuleRel,PArg}|AL1].
+
+    change_value(1,TopRuleRel):-true| 
+        TopRuleRel = -1.
+    change_value(-1,TopRuleRel):-true| 
+        TopRuleRel = 1.
+    change_value(0,TopRuleRel):-true| 
+        TopRuleRel = 0.
+otherwise.
+    change_value(_,TopRuleRel):-true| 
+        TopRuleRel = nil.
+
+    get_addInfoForCA(LArg,IPos,AL,PL,PT,Pool1,Pool,AddInfo):-true|
+        dbtgui_LArgUtility:get_AID(LArg,Pool1,Pool,AID1,YN1),
+        (   YN1 = yes->
+                AID = AID1
+        ;
+            YN1 = no->
+                AID = nil
+        ),
+        dbtgui_LArgUtility:get_PArg(LArg,{SV,_}),
+        dbt_issueUtility:make_consequence(SV,IPos,PL,PT,Consequence),
+        dbtgui_LArgUtility:get_ruleName(LArg,IPos,RuleName),
+        count(AL,0,NumOfCounter),
+
+        dbtgui_messageUtility:make_message(["Arg ID: ",AID],S1),
+        dbtgui_messageUtility:make_message(["Issue Pos: ",IPos],S2),
+        dbtgui_messageUtility:make_message(["Consequence: ",Consequence],S3),
+        dbtgui_messageUtility:make_message(["RuleName: ",RuleName],S4),
+        dbtgui_messageUtility:make_message(["Num Of Counter: ",NumOfCounter],S5),
+        AddInfo = [S1,S2,S3,S4,S5].
+
+%get_claimArgumentList
+    get_claimArgumentList({Pool1,Info1},Data,LArgList,ClaimArgumentList):-true|
+        Info1 = {_,_,{_,_,_,AgentName},_},
+        (   AgentName = p->
+                get_claimArgumentList1(m,Pool1,_Pool2,PLArgList,PAL)
+        ;
+            AgentName = d->
+                get_claimArgumentList1(y,Pool1,_Pool2,PLArgList,PAL)
+        ),
+        (   AgentName = p->
+                get_claimArgumentList1(y,_Pool2,Pool3,DLArgList,DAL)
+        ;
+            AgentName = d->
+                get_claimArgumentList1(m,_Pool2,Pool3,DLArgList,DAL)
+        ),
+
+        append(PLArgList,[" "|DLArgList],LArgList),
+
+        get_argumentList(PAL,{Pool3,Info1},{Pool4,Info2},PArgumentList),
+        get_argumentList(DAL,{Pool4,Info2},Data,DArgumentList),
+
+        ClaimArgumentList = [PArgumentList,DArgumentList,[]].
+
+    get_claimArgumentList1(MorY,Pool1,Pool,LArgList,ArgumentList):-true|
+        (   MorY = m->
+                Pool1 = [make(mat,AT)|Pool]
+        ;
+            MorY = y->
+                Pool1 = [make(yat,AT)|Pool]
+        ),
+
+        AT = [refer_argList(ArgList1),refer_finishArgList(ArgList2)],
+        append(ArgList1,ArgList2,W),
+        hset:create(W,XX),
+        XX= [get_all(CAList)],
+        get_claimArgumentList2(CAList,LArgList,ArgumentList).
+
+    get_claimArgumentList2([],LAL,AL):-true|
+        LAL = [],
+        AL  = [].
+    get_claimArgumentList2([{SV,APos}|T],LAL,AL):-true|
+        get_claimArgumentList2(T,LAL1,AL1),
+        LAL = [{SV,APos}|LAL1],
+        AL  = [{1,{SV,APos}}|AL1].
+    get_claimArgumentList2([{SV1,IPos,CPos}|T],LAL,AL):-true|
+        LArg = {{SV1,0},IPos,CPos},
+        dbtgui_LArgUtility:get_PArg(LArg,Arg),
+        get_claimArgumentList2(T,LAL1,AL1),
+        LAL = [LArg|LAL1],
+        AL  = [{1,Arg}|AL1].
+
+%%%%%%%%internal method
+
+%get_argumentList
+    get_argumentList([],Data1,Data,ArgumentList):-true|
+        Data         = Data1,
+        ArgumentList = [].
+    get_argumentList([H|T],Data1,Data,ArgumentList):-true|
+        get_argument(H,Data1,Data2,Argument),
+        get_argumentList(T,Data2,Data,ArgumentList1),
+        ArgumentList = [Argument|ArgumentList1].
+
+    get_argument({ClaimFlag,{SV,APos}},Data1,Data,Argument):-true|
+
+        dbt_svUtility:get_numOfSolution(SV,L),
+        get_ruleRelInfo(APos,L,SV,Data1,Data,RuleRelInfo),
+
+	get_plpt(Data,PL,PT),        
+        dbt_issueUtility:make_consequence(SV,APos,PL,PT,Consequence),
+        Argument = {ClaimFlag,RuleRelInfo,Consequence}.
+
+    get_ruleRelInfo(Start,End,SV,{Pool1,Info1},Data,RuleRelInfo):-true|
+        Pool1    = [make(mat,MAT)|Pool],
+        get_ruleRelInfo1(Start,End,SV,{MAT,Info1},{[],Info},{0,0,0},RuleRelInfo),
+        Data = {Pool,Info}.
+
+    get_ruleRelInfo1(L,L,_,Data1,Data,Work,RuleRelInfo):-true|
+        Data        = Data1,
+        RuleRelInfo = Work.
+otherwise.
+    get_ruleRelInfo1(Pos,L,SV,{MAT1,Info1},Data,Work1,RuleRelInfo):-true|
+        dbt_svUtility:is_nafPos(SV,Pos,YN1),
+        (   YN1 = yes->
+                IPos = naf(Pos)
+        ;
+            YN1 = no->
+                IPos = Pos
+        ),
+        dbt_issueUtility:is_issue(SV,IPos,MAT1,MAT2,YN2),
+        (   YN2 = yes->
+                dbt_issueUtility:get_topRuleRelInfo(SV,IPos,Info1,Info2,RRI),
+                add_data(RRI,Work1,Work2)
+        ;
+            YN2 = no->
+                Info2 = Info1,
+                Work2 = Work1
+        ),
+        Pos1 := Pos+1,
+        get_ruleRelInfo1(Pos1,L,SV,{MAT2,Info2},Data,Work2,RuleRelInfo).
+
+
+
+    add_data([],W1,W):-true|
+        W = W1.
+    add_data([{_,_,1,_}|T],{A1,B,C},W):-true|
+        A := A1+1,
+        add_data(T,{A,B,C},W).
+    add_data([{_,_,0,_}|T],{A,B1,C},W):-true|
+        B := B1+1,
+        add_data(T,{A,B,C},W).
+    add_data([{_,_,-1,_}|T],{A,B,C1},W):-true|
+        C := C1+1,
+        add_data(T,{A,B,C},W).        
+
+%get_argumentListForCA
+    get_argumentListForCA([],Data1,Data,ArgumentList):-true|
+        Data         = Data1,
+        ArgumentList = [].
+    get_argumentListForCA([H|T],Data1,Data,ArgumentList):-true|
+        get_argumentForCA(H,Data1,Data2,Argument),
+        get_argumentListForCA(T,Data2,Data,ArgumentList1),
+        ArgumentList = [Argument|ArgumentList1].
+
+    get_argumentForCA({ClaimFlag,TopRuleRel,{SV,APos}},Data1,Data,Argument):-true|
+        dbt_svUtility:get_numOfSolution(SV,L),
+        get_ruleRelInfo(APos,L,SV,Data1,Data,RuleRelInfo),
+	get_plpt(Data,PL,PT),
+        dbt_issueUtility:make_consequence(SV,APos,PL,PT,Consequence),
+        Argument = {ClaimFlag,TopRuleRel,RuleRelInfo,Consequence}.
+
+%%%%%%%%%utility
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+
+    count([],W,L):-true|
+        L = W.
+    count([_|T],W,L):-true|
+        W1 := W+1,
+        count(T,W1,L).
+
+%get_plpt
+    get_plpt({_,{_,_,_,{_,PT1,OP}}},PL,PT):-true|
+	vector_element(OP,0,PL,_),
+	PT = PT1.

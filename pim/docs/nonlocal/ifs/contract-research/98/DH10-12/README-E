@@ -1,0 +1,26 @@
+Copyright (C) 1999 Takeo Igarashi
+
+
+H10-12/			top directory
+
+H10-12/pegasus/		application directory
+H10-12/pegasus/pegasus.html	drawing editor Pegasus JAVA applet start page (HTML)
+H10-12/pegasus/manual-e.html	manual (HTML format)
+H10-12/pegasus/manual/		manual sub directory (gif pictures)
+H10-12/pegasus/README.txt	document
+
+H10-12/source/		source directory
+H10-12/source/program/		Drawing editor Pegasus JAVA1.1 source files
+H10-12/source/document/		description of the source files
+H10-12/source/README.txt	document
+
+H10-12/README-J		This file in Japanese 
+H10-12/README-E		This fileÅ@ 
+
+H10-12/use-of-software-J	TERMS AND CONDITIONS FOR USE in Japanese
+H10-12/use-of-software-E	TERMS AND CONDITIONS FOR USE
+
+
+!!! pegasus.html requires JDK1.1 compatible browser !!
+
+

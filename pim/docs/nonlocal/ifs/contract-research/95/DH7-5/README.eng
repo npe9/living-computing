@@ -1,0 +1,90 @@
+	Improved KLIC with Optimized Goal Scheduling Ver.1.10
+	    Kazuhiko Ohno and Masahiko Ikawa (Kyoto Univ.)
+
+	  Copyright (C) 1996 Kazuhiko Ohno, Masahiko Ikawa,
+	 and Computer Architecture Laboratory, Department of
+		Information Science, Kyoto University.
+
+1. Introduction
+
+This software is an improved version of KLIC (Ver 2.002) with
+optimized compiler and runtime system for efficient goal scheduling.
+
+2. Feature of the Software
+
+Since the original version of KLIC dynamically schedules the execution
+order of goals, its scheduling overhead may cause significant
+performance degradation if your program consists of, for example,
+communicating sequential processes.  This optimized version aims to
+reduce the scheduling overhead by compile-time dependency analysis and
+run-time scheduling exploiting the analysis result.
+
+The compiler statically analyzes the dependency among goals to find
+threads.  Since a thread consists of goals whose order of execution is
+statically determined, the runtime system efficiently executes the
+thread without scheduling overhead.  Moreover, this new scheduling
+mechanism will drastically reduces GC invocation because it maintains
+the execution environment of a thread using a stack.
+
+Note that the current version of this software is a prototype and thus
+it does NOT support the all features of the original KLIC.
+
+3. Usage
+
+The following instructions are the differences from the original KLIC.
+See the documents of KLIC for common instructions not shown here.
+
+3.1  Installation
+
+Do "Configure" in the top directory, and then do "make."
+
+Follow the following special instructions on "Configure."
+
+  + The current version is only applicable to single processor single
+    processor environment.  Thus reply "no" to the following query.
+
+    Configure also for parallel implementations?  (yes or no) [no] no
+                                                                   ~~
+  + Optimization level of C compiler should be "none", that is;
+
+    Which optimization level to use? [none] none
+                                            ~~~~
+
+3.2  Compilation
+
+In directories sched-test/test0*/, "Makefile" for test00.kl1, ...,
+test04.kl1 are available.  Each "Makefile" will makes the optimized
+object (test0*) and also the ordinary object (test0*_normal) for each
+test program.
+
+3.3  Execution
+
+The run-time option "-n" should always be specified.
+
+The following options are available:
+
+  + -sst <n> : stack size for each thread (default = 100 word)
+  + -nst <n> : number of stacks for threads (default = 10)
+
+Default values can be changed by modifying the values of STACKSIZE and
+STACKNUM in the file "include/klic/sched.h".
+
+
+4. Restrictions
+
+This version is a prototype of the improved KLIC for evaluation.  Thus
+it has the following restrictions.
+
+4.1  Restrictions on Programming
+
+  + Pragmas cannot be used, and thus parallel codes cannot be obtained.
+  + Only basic data types (atom, integer, functor, list) are implemented.
+  + Only the following basic built-in predicates are implemented.
+    (a) =/2, wait/1, atomic/1, atom/1, integer/1, :=/2
+    (b) arithmetics such as add/3, and macros such as '+' and '-'.
+    (c) comparisons such as equal/2, and macros such as '=:='.
+
+4.2  Restrictions on Compilation and Execution
+
+  + Separated compilation is not available.
+  + Runtime tracing is not available.

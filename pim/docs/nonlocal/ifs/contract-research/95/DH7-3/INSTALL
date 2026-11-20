@@ -1,0 +1,74 @@
+KLIEG Version 1.0 インストールガイド
+Copyright (C) 1996  Toyoda Masashi (toyoda@is.titech.ac.jp)
+
+１．必要なソフトウェア
+
+KLIEGをコンパイルするには, KL1の処理系klic, GUI開発環境のAmuletが必要です．
+パッケージには，Rieおよびflexが，自動生成したファイルを添付してありますが，
+これらのファイルでうまくコンパイルできない場合には，Rie, flexをインストール
+する必要があります．
+
+これらのソフトウェアは以下の場所から入手できます．
+
+klic 2.002	ftp://ftp.icot.or.jp/ifs/symbolic-proc/unix/klic/klic.tgz
+Rie 1.0.6	ftp://ftp.is.titech.ac.jp/pub/Rie/rie-1.0.6.tar.gz
+Amulet 1.2	http://www.cs.cmu.edu/afs/cs/project/amulet/amulet1/amulet.tar.Z
+
+ただし，Amuletの最新版Version 2.0では動作しません．
+
+
+２．動作環境
+
+OS: SUN Sparc Station 上の Solaris 2.3以上．
+コンパイラ: gcc 2.7.0 および 2.7.2，libg++ 2.7.1で動作確認済．
+
+３．インスト−ルの手順
+
+３．１ klic, Amuletのインスト−ル
+
+各ソフトウェアのインストレ−ションガイドに従ってインスト−ルしてください．
+
+libg++ 2.7.0 以上をお使いの場合は，Amuletをインストールした後，
+AMULET_DIR/bin/Makefile.vars.gcc.Sun 中の"-liostream" を "-lstdc++" に
+変更してください．
+
+
+３．２ Rie, flex のインストール（必要な場合）
+
+このパッケージに添付した自動生成ファイル(tracerディレクトリのkl.tab.cc,
+kl.tab.h, lex.yy.cc)を使用すれば，Rie, flexは必要ありません．
+これらのファイルのコンパイルがうまく行かない場合には，Rie, flexを
+インストールしたうえで，
+
+>make realclean
+
+を実行し，インストールをやり直してください．
+
+
+３．３ KLIEGのインスト−ル
+
+MakefileのKLIEG_DIR変数を適当なディレクトリに設定し
+
+>make
+>make install
+
+としてください．必要に応じて，/usr/local/bin/ などから
+実行形式にリンクを張るとよいでしょう．
+
+（注）tracerディレクトリのtracer-types.ccは，gccに-O2オプションを
+      付けるとコンパイルできません．最適化したいときは，このファ
+      イルにだけは-O2を付けないようにしてください．
+
+４．KLIEGの実行
+
+４．１ 環境設定
+
+環境変数 KLIEG_WORK_DIR を適当なディレクトリに設定してください．
+KLIEG_WORK_DIRは，KLIEGプログラムのコンパイル時に作業用として使われます．
+指定しない場合，カレントディレクトリの .klieg-work ディレクトリが
+自動的に作られて KLIEG_WORK_DIR として使用されます．
+
+４．２ 実行
+
+KLIEG_DIR/bin/klieg を実行してください．
+

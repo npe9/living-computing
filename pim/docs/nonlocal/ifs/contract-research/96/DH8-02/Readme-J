@@ -1,0 +1,63 @@
+
+######## Readme-J in viewPP version1.00 ########
+
+                             Copyright (C) 1997  南雲 淳
+
+viewPP のアーカイブに含まれるファイルは，以下の通り
+です．
+
+----- * ----- * ----- * -----
+Readme-J			アーカイブ内容について(このファイル)
+Readme-E			アーカイブ内容について(英語版)
+
+viewpp.tcl			viewPPメインプログラム
+viewpp_fileread.tcl		viewPPサブプログラム
+viewpp_gardpred.tcl		(同上)
+klitcld.c			klitcldメインプログラム
+klitcl.kl1			klitclモジュール
+viewpp.kl1			viewPPプログラムklicパート
+list.kl1			viewpp.kl1用サブプログラム
+
+bitmap/clear.ppm		アイコン用画像ファイル
+bitmap/exec.ppm			(同上)
+bitmap/exit.ppm			(同上)
+bitmap/file.ppm			(同上)
+bitmap/replace.ppm		(同上)
+
+sample/append.vpp		入力ファイルのサンプル
+sample/reverse.vpp		(同上)
+
+man_html/viewpp_man.html	ユーザーズマニュアル
+man_html/viewpp_glossary.html	viewPPに関する用語集
+man_html/bug.gif		マニュアル用画像ファイル
+man_html/example1.gif		(同上)
+man_html/example2.gif		(同上)
+man_html/example3.gif		(同上)
+man_html/items.gif		(同上)
+man_html/viewpp_sd.gif		(同上)
+man_html/vpp1.gif		(同上)
+man_html/vpp2.gif		(同上)
+man_html/vpp3.gif		(同上)
+
+klitcl/Readme			パッチについてのReadme
+klitcl/klitcl.patch		klitclバージョンアップパッチ
+----- * ----- * ----- * -----
+
+・動作環境について
+
+作者は，以下の環境で動作チェックをしています．
+これ以外の環境の場合は Makefile の大幅な書き
+かえが必要かもしれません．
+
+  OS  : SunOS 5.4 or 5.5.1 (Solaris2.4 or 2.5.1)
+  klic: version 2.002
+  Tcl : version 7.5
+  Tk  : version 4.1
+
+・インストールについて
+
+コンパイルおよびインストールについては，
+man_html/viewpp_man.html
+のインストールについての章を参照してください．
+
+(eof)

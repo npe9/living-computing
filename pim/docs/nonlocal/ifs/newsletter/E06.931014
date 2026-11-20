@@ -1,0 +1,227 @@
+                                                     14, October, 1993
+
+                                                           No. 6
+                  ICOT FREE SOFTWARE NEWSLETTER
+                  -----------------------------
+
+
+[Newly released ICOT Free Software]
+
+    To date, 71 programs have been released as ICOT Free Software. 
+Now, we are releasing a further six programs. These include the
+experimental version of KLIC -- a KL1 programming environment for UNIX
+systems, a language processor for a process-oriented high-level
+programming language running on top of KL1, and several tools for
+genome information processing.
+
+
+1) Newly Released Software
+
+  The following lists the new programs:
+
+Symbol Processing: 3
+- - ----------------------------------------------------------------
+72  Portable KL1 processing system: experimental version
+    /ifs/symbolic-proc/unix/pkl1.tar.Z             130871 bytes
+
+73  Process oriented programming language AYA
+    /ifs/symbolic-proc/pimos/aya.tar.Z             235617 bytes
+
+74  KL1 Load Distribution Library
+    /ifs/symbolic-proc/unix/ldlib.tar.Z            123055 bytes
+
+
+Applications programs of parallel logic programming: 3
+- - ----------------------------------------------------------------
+75  Multiple Sequence Alignment by Parallel Iterative Aligner
+    /ifs/exper-apps/pimos/multialign.tar.Z         178138 bytes
+
+76  Intelligent Refiner for Multiple Sequence Alignment
+    /ifs/exper-apps/pimos/editalign.tar.Z          710383 bytes
+
+77  Protein Structure Visualization system: Protein View
+    /ifs/exper-apps/unix/proview.tar.Z             997633 bytes	 
+
+
+2) Detailed Description
+
+1. Portable KL1 processing system: experimental version
+
+      The first and experimental version of the KLIC system for
+      investigating execution method of KL1 programs on UNIX systems
+      has been released. 
+
+      KLIC translates KL1 programs into equivalent C programs, which
+      are compiled and linked with the KLIC runtime library to obtain
+      an executable.  This version runs only sequentially, but
+      parallel versions will be available eventually.
+
+      The compiler of this version is written in Prolog.  An Edinburgh
+      Prolog compatible and a C language system are needed for to use
+      it.  With Prolog and C language systems, the KLIC system can run
+      on any computer, including personal computers.  Future releases
+      of the compiler will be written in KL1 make the Prolog system
+      unnecessary.
+
+      Since this version is developed to investigate execution method
+      of KL1 programs on UNIX systems, there are no convenient
+      facilities such as debugger, etc. A version of KLIC with these
+      facilities will be released soon.
+
+2. Process oriented programming language AYA
+
+      AYA is designed upon KL1. Using AYA, it is easier to write and
+      read parallel logic programs than it would be when using KL1.
+      Furthermore, it is easy to avoid and fix AYA programs bugs.
+
+      Message communications between processes can be expressed
+      directly in AYA programs. Processes can have several states. 
+      Input and output process modes are also introduced. Variables
+      and streams for communication between processes can be
+      terminated automatically.
+
+3. KL1 Load Distribution Library
+
+      The load distribution library is a set of utilities that
+      implement typical load distribution schemes such as network
+      generation, process mapping, and dynamic load distribution for
+      KL1 programming.
+
+      The library provides templates for typical distribution schemes.
+      A parallel program for solving a given problem is created by
+      linking this library with problem-specific code written by the
+      user.
+
+4. Multiple sequence alignment by Parallel Iterative Aligner
+
+      This program solves multiple alignment problems that align
+      similar parts of protein sequences. The parallel iterative
+      aligner, a method of repeating partiall improvement by using
+      dynamic programming, is implemented.
+
+      Put concretely, possible partial improvement is done on each
+      processor in parallel, with the best result being selected.
+      This is a sort of hill-climbing method, the program being
+      written in KL1. This program solves large scale multiple
+      alignment problems with high quality on PIM. For example,
+      aligning 20 sequences,each of which consists of 80 characters
+      requires about 10 minutes on PIM using 256 processors.
+
+      The result of this program has a confidence high enough to allow
+      the investigation of biological considerations. Analyzing the
+      behavior of this program will provide you with valuable
+      knowledge on parallel information processing and parallel load
+      distribution.
+
+5. Intelligent Refiner for Multiple Sequence Alignment
+
+      This program refines a protein sequence aligned by Multiple
+      Sequence Alignment with biological knowledge. This program has
+      an interface to obtain knowledge such as the plan a biologist
+      uses for refining protein sequences.
+
+      This program is providfed with automatic aligner with
+      constraints, that acts on a part of protein sequences designated
+      by the user, using the mouse interface. The automatic aligner
+      with constraints aligns protein sequences, keeping part of the
+      sequences fixed by user. This program is written in C with Xlib
+      and OSF/Motif, making it easy for users to handle.
+
+      The alignment of part of protein sequence is processed by KL1
+      program, with the result of the alignment appearing on the
+      display. This program has an alignment editor that can insert
+      and delete gaps, as well as search for a motif by means of the
+      mouse interface.
+
+6. Protein Structure Visualization System: Protein View
+
+      This system displays the three-dimensional structure of a
+      protein on a graphical work station. This system consists of tow
+      parts, Pro-View and 3D-View.
+
+      Pro-View reads protein data from PDB(Protein Data Bank) and
+      generates graphical object description language 3D-talk. 3D-View
+      is a three-dimensional general purpose visualization tool that
+      interprets 3D-Talk.
+
+      3D-View can visualize not only protein structures, but also
+      robot structures and flight simulation. It also lets you animate
+      these objects.
+
+      3D-Talk is a object-oriented language. It is easy for beginners
+      to understand because its grammar is similar to that of English.
+      Pro-View is a tool for analyzing protein structures. It features
+      a Pro-Talk, an extension of 3D-Talk. This system provides a
+      powerful means of visualizing processes such as protein folding
+      simulation.
+
+
+      The ICOT Free Software Catalog-II has recently been published. 
+      Its contents explain these new programs that have released as
+      ICOT Free Software. Anyone wishing to obtain this catalog is
+      invited to contact the IFS desk via e-mail, mail or fax at the
+      address at the end of this newsletter.
+
+
+[User's Group]
+
+    Anyone interested in organizing a user's group to carry out
+research on any particular item of ICOT Free Software, for the
+purposes of revision or improvement is invited to contact the IFS-desk
+via e-mail at the address given at the end of this newsletter.
+
+    We hope to feature some of your proposals in the next issue of the
+newsletter. Reactions to your proposals shall also be forwarded to
+you.
+
+    Revised programs can be stored on the FTP server at ICOT, if you
+feel that your revision would be useful for other users.
+
+[About Common ESP]
+
+    Some programs in ICOT Free Software can be executed under Common
+ESP (CESP).  CESP is not part of the ICOT Free Software, instead being
+available from AI Language Research Institute (AIR). The address of
+the AIR is as follows. To contact AIR with questions related to Common
+ESP, use the following address.
+
+	Research Management Department
+	AI Language Research Institute, Ltd.
+
+        c/o Computer & Information Systems Laboratory
+	Mitsubishi Electric Corporation
+	1-1, Ofuna 5-chome, Kamakura
+	Kanagawa 247 Japan
+
+	e-mail: cesp-request@air.co.jp
+	FAX:	+81-467-48-4847
+
+
+[Contacts]
+
+    For information on IFS, access
+
+			    ifs@icot.or.jp
+
+by e-mail.  If you receive a paper edition of this newsletter, let us
+know your e-mail address and we shall send you the electronic edition.
+If you do not have an e-mail facility, contact the address below.
+
+    All available IFS is listed in "ICOT Free Software Catalog" and
+"ICOT Free Software Catalogue II" . If you do not have a copy of
+either catalog, supply the IFS-desk with your postal address and we
+shall arrange to send a copy to you.
+
+    If any of your colleagues or acquaintances are interested in IFS,
+let us know their name and both their e-mail and postal addresses, and
+we shall arrange to send them both the newsletter and catalog.
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21st Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618

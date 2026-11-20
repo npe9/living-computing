@@ -1,0 +1,664 @@
+IRIS 1% cat helix.pdb
+
+ATOM      1  N   ALA     1       0.433   0.750   0.500
+ATOM      2  CA  ALA     1      -0.646   1.282  -0.345
+ATOM      3  CB  ALA     1      -0.065   2.289  -1.340
+ATOM      4  C   ALA     1      -1.308   0.135  -1.110
+ATOM      5  O   ALA     1      -2.534   0.037  -1.133
+ATOM      6  N   PRO     2      -0.541  -0.778  -1.766
+ATOM      7  CA  PRO     2      -1.146  -1.874  -2.497
+ATOM      8  CB  PRO     2       0.023  -2.654  -3.076
+ATOM      9  CG  PRO     2       1.276  -1.924  -2.620
+ATOM     10  CD  PRO     2       0.844  -0.731  -1.783
+ATOM     11  C   PRO     2      -1.977  -2.730  -1.540
+ATOM     12  O   PRO     2      -3.133  -3.058  -1.845
+ATOM     13  N   THR     3      -1.463  -3.120  -0.388
+ATOM     14  CA  THR     3      -2.261  -3.943   0.532
+ATOM     15  CB  THR     3      -1.497  -4.130   1.844
+ATOM     16  CG2 THR     3      -0.164  -4.827   1.564
+ATOM     17  OG1 THR     3      -2.273  -4.931   2.739
+ATOM     18  C   THR     3      -3.594  -3.247   0.814
+ATOM     19  O   THR     3      -4.647  -3.880   0.737
+ATOM     20  N   TRP     4      -3.615  -1.968   1.140
+ATOM     21  CA  TRP     4      -4.896  -1.300   1.411
+ATOM     22  CB  TRP     4      -4.657   0.198   1.615
+ATOM     23  CG  TRP     4      -5.990   0.894   1.897
+ATOM     24  CD2 TRP     4      -7.280   0.257   1.964
+ATOM     25  CE3 TRP     4      -7.639  -1.096   1.798
+ATOM     26  CZ3 TRP     4      -9.006  -1.367   1.932
+ATOM     27  CE2 TRP     4      -8.226   1.223   2.238
+ATOM     28  CZ2 TRP     4      -9.592   0.943   2.371
+ATOM     29  CH2 TRP     4      -9.971  -0.395   2.210
+ATOM     30  CD1 TRP     4      -6.208   2.195   2.130
+ATOM     31  NE1 TRP     4      -7.547   2.453   2.344
+ATOM     32  C   TRP     4      -5.841  -1.507   0.226
+ATOM     33  O   TRP     4      -6.999  -1.875   0.420
+ATOM     34  N   GLY     5      -5.414  -1.292  -1.005
+ATOM     35  CA  GLY     5      -6.323  -1.492  -2.143
+ATOM     36  C   GLY     5      -6.916  -2.900  -2.082
+ATOM     37  O   GLY     5      -8.128  -3.064  -2.220
+ATOM     38  N   MET     6      -6.129  -3.940  -1.881
+ATOM     39  CA  MET     6      -6.699  -5.294  -1.823
+ATOM     40  CB  MET     6      -5.607  -6.292  -1.435
+ATOM     41  CG  MET     6      -6.201  -7.701  -1.374
+ATOM     42  SD  MET     6      -4.915  -8.876  -0.917
+ATOM     43  CE  MET     6      -5.614 -10.533  -0.845
+ATOM     44  C   MET     6      -7.818  -5.332  -0.779
+ATOM     45  O   MET     6      -8.903  -5.839  -1.059
+ATOM     46  N   HIS     7      -7.618  -4.820   0.421
+ATOM     47  CA  HIS     7      -8.692  -4.856   1.424
+ATOM     48  CB  HIS     7      -8.260  -4.073   2.665
+ATOM     49  CG  HIS     7      -9.378  -4.111   3.708
+ATOM     50  CD2 HIS     7     -10.568  -4.733   3.573
+ATOM     51  NE2 HIS     7     -11.274  -4.535   4.707
+ATOM     52  ND1 HIS     7      -9.348  -3.527   4.925
+ATOM     53  CE1 HIS     7     -10.519  -3.790   5.543
+ATOM     54  C   HIS     7      -9.958  -4.226   0.839
+ATOM     55  O   HIS     7     -11.039  -4.804   0.946
+ATOM     56  N   TYR     8      -9.891  -3.063   0.220
+ATOM     57  CA  TYR     8     -11.107  -2.458  -0.342
+ATOM     58  CB  TYR     8     -10.734  -1.199  -1.129
+ATOM     59  CG  TYR     8     -12.000  -0.569  -1.713
+ATOM     60  CD2 TYR     8     -11.914   0.567  -2.456
+ATOM     61  CE2 TYR     8     -13.088   1.151  -2.999
+ATOM     62  CD1 TYR     8     -13.212  -1.145  -1.490
+ATOM     63  CE1 TYR     8     -14.387  -0.560  -2.033
+ATOM     64  CZ  TYR     8     -14.296   0.626  -2.809
+ATOM     65  OH  TYR     8     -15.421   1.186  -3.328
+ATOM     66  C   TYR     8     -11.791  -3.458  -1.276
+ATOM     67  O   TYR     8     -11.299  -4.572  -1.450
+ATOM     68  OXT TYR     8     -12.832  -3.148  -1.853
+
+IRIS 2% proview -m helix.pdb
+
+Root is a group;
+push Root;
+Residue is a group;
+push Residue;
+Z is a group;
+push Z;
+Res1 is a group;
+push Res1;
+N is a sphere;
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{0.433000,0.750000,0.500000};
+N2 to{-0.106500,1.016000,0.077500};
+N moves{0.433000,0.750000,0.500000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-0.646000,1.282000,-0.345000};
+CA1 to{-0.106500,1.016000,0.077500};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-0.646000,1.282000,-0.345000};
+CA2 to{-0.977000,0.708500,-0.727500};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-0.646000,1.282000,-0.345000};
+CA3 to{-0.355500,1.785500,-0.842500};
+CA moves{-0.646000,1.282000,-0.345000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-1.308000,0.135000,-1.110000};
+C1 to{-0.977000,0.708500,-0.727500};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-1.308000,0.135000,-1.110000};
+C2 to{-1.921000,0.086000,-1.121500};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-1.308000,0.135000,-1.110000};
+C3 to{-0.924500,-0.321500,-1.438000};
+C moves{-1.308000,0.135000,-1.110000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-2.534000,0.037000,-1.133000};
+O1 to{-1.921000,0.086000,-1.121500};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-2.534000,0.037000,-1.133000};
+pop;
+Res2 is a group;
+push Res2;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-0.541000,-0.778000,-1.766000};
+N1 to{-0.924500,-0.321500,-1.438000};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-0.541000,-0.778000,-1.766000};
+N2 to{-0.843500,-1.326000,-2.131500};
+N3 is a pipe0;
+N3 top is :BondRadius;
+N3 bottom is :BondRadius;
+N3 color is :Nitrogen;
+N3 from{-0.541000,-0.778000,-1.766000};
+N3 to{0.151500,-0.754500,-1.774500};
+N moves{-0.541000,-0.778000,-1.766000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-1.146000,-1.874000,-2.497000};
+CA1 to{-0.843500,-1.326000,-2.131500};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-1.146000,-1.874000,-2.497000};
+CA2 to{-1.561500,-2.302000,-2.018500};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-1.146000,-1.874000,-2.497000};
+CA3 to{-0.561500,-2.264000,-2.786500};
+CA moves{-1.146000,-1.874000,-2.497000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-1.977000,-2.730000,-1.540000};
+C1 to{-1.561500,-2.302000,-2.018500};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-1.977000,-2.730000,-1.540000};
+C2 to{-2.555000,-2.894000,-1.692500};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-1.977000,-2.730000,-1.540000};
+C3 to{-1.720000,-2.925000,-0.964000};
+C moves{-1.977000,-2.730000,-1.540000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-3.133000,-3.058000,-1.845000};
+O1 to{-2.555000,-2.894000,-1.692500};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-3.133000,-3.058000,-1.845000};
+pop;
+Res3 is a group;
+push Res3;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-1.463000,-3.120000,-0.388000};
+N1 to{-1.720000,-2.925000,-0.964000};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-1.463000,-3.120000,-0.388000};
+N2 to{-1.862000,-3.531500,0.072000};
+N moves{-1.463000,-3.120000,-0.388000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-2.261000,-3.943000,0.532000};
+CA1 to{-1.862000,-3.531500,0.072000};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-2.261000,-3.943000,0.532000};
+CA2 to{-2.927500,-3.595000,0.673000};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-2.261000,-3.943000,0.532000};
+CA3 to{-1.879000,-4.036500,1.188000};
+CA moves{-2.261000,-3.943000,0.532000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-3.594000,-3.247000,0.814000};
+C1 to{-2.927500,-3.595000,0.673000};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-3.594000,-3.247000,0.814000};
+C2 to{-4.120500,-3.563500,0.775500};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-3.594000,-3.247000,0.814000};
+C3 to{-3.604500,-2.607500,0.977000};
+C moves{-3.594000,-3.247000,0.814000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-4.647000,-3.880000,0.737000};
+O1 to{-4.120500,-3.563500,0.775500};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-4.647000,-3.880000,0.737000};
+pop;
+Res4 is a group;
+push Res4;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-3.615000,-1.968000,1.140000};
+N1 to{-3.604500,-2.607500,0.977000};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-3.615000,-1.968000,1.140000};
+N2 to{-4.255500,-1.634000,1.275500};
+N moves{-3.615000,-1.968000,1.140000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-4.896000,-1.300000,1.411000};
+CA1 to{-4.255500,-1.634000,1.275500};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-4.896000,-1.300000,1.411000};
+CA2 to{-5.368500,-1.403500,0.818500};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-4.896000,-1.300000,1.411000};
+CA3 to{-4.776500,-0.551000,1.513000};
+CA moves{-4.896000,-1.300000,1.411000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-5.841000,-1.507000,0.226000};
+C1 to{-5.368500,-1.403500,0.818500};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-5.841000,-1.507000,0.226000};
+C2 to{-6.420000,-1.691000,0.323000};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-5.841000,-1.507000,0.226000};
+C3 to{-5.627500,-1.399500,-0.389500};
+C moves{-5.841000,-1.507000,0.226000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-6.999000,-1.875000,0.420000};
+O1 to{-6.420000,-1.691000,0.323000};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-6.999000,-1.875000,0.420000};
+pop;
+Res5 is a group;
+push Res5;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-5.414000,-1.292000,-1.005000};
+N1 to{-5.627500,-1.399500,-0.389500};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-5.414000,-1.292000,-1.005000};
+N2 to{-5.868500,-1.392000,-1.574000};
+N moves{-5.414000,-1.292000,-1.005000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-6.323000,-1.492000,-2.143000};
+CA1 to{-5.868500,-1.392000,-1.574000};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-6.323000,-1.492000,-2.143000};
+CA2 to{-6.619500,-2.196000,-2.112500};
+CA moves{-6.323000,-1.492000,-2.143000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-6.916000,-2.900000,-2.082000};
+C1 to{-6.619500,-2.196000,-2.112500};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-6.916000,-2.900000,-2.082000};
+C2 to{-7.522000,-2.982000,-2.151000};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-6.916000,-2.900000,-2.082000};
+C3 to{-6.522500,-3.420000,-1.981500};
+C moves{-6.916000,-2.900000,-2.082000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-8.128000,-3.064000,-2.220000};
+O1 to{-7.522000,-2.982000,-2.151000};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-8.128000,-3.064000,-2.220000};
+pop;
+Res6 is a group;
+push Res6;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-6.129000,-3.940000,-1.881000};
+N1 to{-6.522500,-3.420000,-1.981500};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-6.129000,-3.940000,-1.881000};
+N2 to{-6.414000,-4.617000,-1.852000};
+N moves{-6.129000,-3.940000,-1.881000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-6.699000,-5.294000,-1.823000};
+CA1 to{-6.414000,-4.617000,-1.852000};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-6.699000,-5.294000,-1.823000};
+CA2 to{-7.258500,-5.313000,-1.301000};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-6.699000,-5.294000,-1.823000};
+CA3 to{-6.153000,-5.793000,-1.629000};
+CA moves{-6.699000,-5.294000,-1.823000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-7.818000,-5.332000,-0.779000};
+C1 to{-7.258500,-5.313000,-1.301000};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-7.818000,-5.332000,-0.779000};
+C2 to{-8.360500,-5.585500,-0.919000};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-7.818000,-5.332000,-0.779000};
+C3 to{-7.718000,-5.076000,-0.179000};
+C moves{-7.818000,-5.332000,-0.779000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-8.903000,-5.839000,-1.059000};
+O1 to{-8.360500,-5.585500,-0.919000};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-8.903000,-5.839000,-1.059000};
+pop;
+Res7 is a group;
+push Res7;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-7.618000,-4.820000,0.421000};
+N1 to{-7.718000,-5.076000,-0.179000};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-7.618000,-4.820000,0.421000};
+N2 to{-8.155000,-4.838000,0.922500};
+N moves{-7.618000,-4.820000,0.421000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-8.692000,-4.856000,1.424000};
+CA1 to{-8.155000,-4.838000,0.922500};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-8.692000,-4.856000,1.424000};
+CA2 to{-9.325000,-4.541000,1.131500};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-8.692000,-4.856000,1.424000};
+CA3 to{-8.476000,-4.464500,2.044500};
+CA moves{-8.692000,-4.856000,1.424000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-9.958000,-4.226000,0.839000};
+C1 to{-9.325000,-4.541000,1.131500};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-9.958000,-4.226000,0.839000};
+C2 to{-10.498500,-4.515000,0.892500};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-9.958000,-4.226000,0.839000};
+C3 to{-9.924500,-3.644500,0.529500};
+C moves{-9.958000,-4.226000,0.839000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-11.039000,-4.804000,0.946000};
+O1 to{-10.498500,-4.515000,0.892500};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-11.039000,-4.804000,0.946000};
+pop;
+Res8 is a group;
+push Res8;
+N is a sphere;
+N1 is a pipe0;
+N1 top is :BondRadius;
+N1 bottom is :BondRadius;
+N1 color is :Nitrogen;
+N1 from{-9.891000,-3.063000,0.220000};
+N1 to{-9.924500,-3.644500,0.529500};
+N color is :Nitrogen;
+N radius is :NitrogenRadius;
+N2 is a pipe0;
+N2 top is :BondRadius;
+N2 bottom is :BondRadius;
+N2 color is :Nitrogen;
+N2 from{-9.891000,-3.063000,0.220000};
+N2 to{-10.499000,-2.760500,-0.061000};
+N moves{-9.891000,-3.063000,0.220000};
+CA is a sphere;
+CA1 is a pipe0;
+CA1 top is :BondRadius;
+CA1 bottom is :BondRadius;
+CA1 color is :Carbon;
+CA1 from{-11.107000,-2.458000,-0.342000};
+CA1 to{-10.499000,-2.760500,-0.061000};
+CA color is :Carbon;
+CA radius is :CarbonRadius;
+CA2 is a pipe0;
+CA2 top is :BondRadius;
+CA2 bottom is :BondRadius;
+CA2 color is :Carbon;
+CA2 from{-11.107000,-2.458000,-0.342000};
+CA2 to{-11.449000,-2.958000,-0.809000};
+CA3 is a pipe0;
+CA3 top is :BondRadius;
+CA3 bottom is :BondRadius;
+CA3 color is :Carbon;
+CA3 from{-11.107000,-2.458000,-0.342000};
+CA3 to{-10.920500,-1.828500,-0.735500};
+CA moves{-11.107000,-2.458000,-0.342000};
+C is a sphere;
+C1 is a pipe0;
+C1 top is :BondRadius;
+C1 bottom is :BondRadius;
+C1 color is :Carbon;
+C1 from{-11.791000,-3.458000,-1.276000};
+C1 to{-11.449000,-2.958000,-0.809000};
+C color is :Carbon;
+C radius is :CarbonRadius;
+C2 is a pipe0;
+C2 top is :BondRadius;
+C2 bottom is :BondRadius;
+C2 color is :Carbon;
+C2 from{-11.791000,-3.458000,-1.276000};
+C2 to{-11.545000,-4.015000,-1.363000};
+C3 is a pipe0;
+C3 top is :BondRadius;
+C3 bottom is :BondRadius;
+C3 color is :Carbon;
+C3 from{-11.791000,-3.458000,-1.276000};
+C3 to{-12.311500,-3.303000,-1.564500};
+C moves{-11.791000,-3.458000,-1.276000};
+O is a sphere;
+O1 is a pipe0;
+O1 top is :BondRadius;
+O1 bottom is :BondRadius;
+O1 color is :Oxygen;
+O1 from{-11.299000,-4.572000,-1.450000};
+O1 to{-11.545000,-4.015000,-1.363000};
+O color is :Oxygen;
+O radius is :OxygenRadius;
+O moves{-11.299000,-4.572000,-1.450000};
+pop;
+pop;
+pop;
+pop;
+Root moves{5.221250,2.491875,0.472875};
+Root drawall;
+
+IRIS 3% 

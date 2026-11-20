@@ -1,0 +1,134 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_icaPool.
+
+:- public 
+    create/2,
+    get_icaInfoList/5.
+
+:- with_macro pimos.
+
+%create
+    create({STG},I):-true|
+        initiate(STG,IssuePool,CAPool),
+        loop(I,IssuePool,CAPool).
+
+%initiate
+    initiate({IssueSTG,CASTG},IssuePool,CAPool):-true|
+        dbtcui_issuePool:create({IssueSTG},IssuePool),
+        dbtcui_caPool:create({CASTG},CAPool).
+
+%loop
+    loop([],IssuePool,CAPool):-true|
+        IssuePool   = [],
+        CAPool      = [].
+    loop([put({PArg,AID},Pool1,Pool)|T],IssuePool1,CAPool1):-true| 
+        get_icaInfoList(PArg,Pool1,Pool,IPosList,CAInfoList),
+        IssuePool1  = [put(AID,IPosList)|IssuePool],
+        CAPool1     = [put(AID,CAInfoList)|CAPool],
+        loop(T,IssuePool,CAPool).
+    loop([get(AID,Data1,Data,ICA,YN)|T],IssuePool1,CAPool1):-true| 
+        get(AID,Data1,{IssuePool1,CAPool1},Data,{IssuePool,CAPool},ICA,YN),
+        (   wait(YN)->
+                loop(T,IssuePool,CAPool)).
+    loop([finish({AID,IPos,CPos})|T],IssuePool1,CAPool1):-true| 
+        IssuePool1 = [finish({AID,IPos})|IssuePool],
+        CAPool1    = [finish({AID,IPos,CPos})|CAPool],
+        loop(T,IssuePool,CAPool).
+    loop([get_all(ALL)|T],IssuePool1,CAPool1):-true| 
+        IssuePool1 = [get_all(ALL1)|IssuePool],
+        CAPool1    = [get_all(ALL2)|CAPool],
+        ALL        = {ALL1,ALL2},
+        loop(T,IssuePool,CAPool).
+
+%get
+    get(AID,Data1,{IssuePool1,CAPool1},Data,ICAPool,ICA,YN):-true|
+        IssuePool1  = [get(AID,IPos,YN1)|IssuePool2],
+        (   YN1 = yes->
+                Data1   = {Pool,Info1},
+                CAPool1 = [get({AID,IPos},Info1,Info,CPos,YN2)|CAPool2],
+                get1(YN2,{IPos,CPos},AID,{Pool,Info},{IssuePool2,CAPool2},Data,ICAPool,ICA,YN)
+        ;
+            YN1 = success->
+                Data    = Data1,
+                ICAPool = {IssuePool2,CAPool1},
+                YN      = finish
+        ;
+            YN1 = fail->
+                justify(AID,Data1,{IssuePool2,CAPool1},Data,ICAPool,ICA,YN)
+        ).
+
+    get1(yes,ICA1,_,Data1,ICAPool1,Data,ICAPool,ICA,YN):-true|
+        Data    = Data1,
+        ICAPool = ICAPool1,
+        ICA     = ICA1,
+        YN      = yes.
+    get1(success,{IPos,_},AID,Data1,{IssuePool1,CAPool},Data,ICAPool,ICA,YN):-true|
+        IssuePool1 = [remove({AID,IPos})|IssuePool],
+        get(AID,Data1,{IssuePool,CAPool},Data,ICAPool,ICA,YN).
+    get1(fail,{IPos,_},AID,Data1,{IssuePool1,CAPool},Data,ICAPool,ICA,YN):-true|
+        IssuePool1 = [remove({AID,IPos})|IssuePool],
+        get(AID,Data1,{IssuePool,CAPool},Data,ICAPool,ICA,YN).
+
+%justify
+    justify(AID,Data1,{IssuePool1,CAPool1},Data,ICAPool,ICA,YN):-true|
+        IssuePool1 = [get_IPosList(AID,IPosList)|IssuePool],
+        justify1(IPosList,AID,Data1,CAPool1,Data,CAPool,ICA,YN),
+        ICAPool    = {IssuePool,CAPool}.
+
+    justify1([],_,Data1,CAPool1,Data,CAPool,_,YN):-true|
+        Data    = Data1,
+        CAPool  = CAPool1,
+        YN      = cancel.
+    justify1([IPos|T],AID,Data1,CAPool1,Data,CAPool,ICA,YN):-true|
+        CAPool1 = [justify({AID,IPos},Data1,Data2,SPList,CPos,YN1)|CAPool2],
+        (   YN1 = yes->
+                Data2  = {Pool1,Info},
+                dbtcui_messagePool:make_message({justify},{SPList},Status),
+                dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool,R1),
+                (   wait(R1)->
+                        Data   = {Pool,Info},
+                        CAPool = CAPool2,
+                        ICA    = {IPos,CPos},
+                        YN     = yes)
+        ;
+            YN1 = no->
+                justify1(T,AID,Data2,CAPool2,Data,CAPool,ICA,YN)
+        ).
+
+%get_icaInfoList
+    get_icaInfoList({SV,APos},Pool1,Pool,IPosList,CAInfoList):-true|
+        Pool1 = [make(mat,MAT)|Pool],
+        dbt_svUtility:get_numOfSolution(SV,L),
+        get_icaInfoList1(APos,L,SV,MAT,IPosList,CAInfoList).
+
+    get_icaInfoList1(L,L,_,MAT,IPosList,CAInfoList):-true|
+        MAT         = [],
+        IPosList    = [],
+        CAInfoList  = [].
+otherwise.
+    get_icaInfoList1(Pos,L,SV,MAT1,IPosList,CAInfoList):-true|
+        dbt_svUtility:is_nafPos(SV,Pos,YN1),
+        (   YN1 = yes->
+                MAT         = MAT1,
+                IPosList    = IPosList1,
+                CAInfoList  = CAInfoList1
+        ;
+            YN1 = no->
+                IPos = Pos,
+                dbt_issueUtility:is_issue(SV,IPos,MAT1,MAT,YN2),
+                (   YN2 = yes->
+                        dbt_issueUtility:get_topRuleNameList(SV,IPos,CAInfo),
+                        IPosList   = [IPos|IPosList1],
+                        CAInfoList = [{IPos,CAInfo}|CAInfoList1]
+                ;
+                    YN2 = no->
+                        IPosList    = IPosList1,
+                        CAInfoList  = CAInfoList1
+                )
+        ),
+        Pos1 := Pos+1,
+        get_icaInfoList1(Pos1,L,SV,MAT,IPosList1,CAInfoList1).

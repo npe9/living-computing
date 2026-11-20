@@ -1,0 +1,1291 @@
+				DRS operation manual
+
+0. Introduction
+										
+This manual explains the operation method of DRS, which is a tool that provides
+a function of generating argument and function of selecting argument.
+
+It is recommanded that the user reads "HELIC-II language manual" to understand
+the description methods of the knowledge base and defeasible reasoning.
+
+1. Overview
+
+DRS is a tool that provides a function of generating argument and function of
+selecting argument of HELIC-II, by user's keyboard inputs only.
+
+This manual explains the following in the indicated chapters:
+
+	Simple explanation of provided functions in Chapter 2.
+	State transition of execution in Chapter 3.
+	Knowledge files in Chapter 4.
+	Activation method in Chapter 5.
+	Provided DRS commands in Chapter 6.
+	Execution examples in Chapter 7.
+	Technical terms in Appendix.
+
+2.  Provided functions
+
+DRS provides a function of generating argument and selecting argument.
+
+Explanations of these functions are as follows.
+
+If these functions are used in DRS, they will change by the specification of the
+number of reasoning counter argument level.
+
+For details, refer to 6.1.3 (7) Setting the execution environment.
+
+2.1 Generating argument
+
+This function makes a proof tree which indicates a conclusion(goal) as an
+argument when the facts and rules are already given and then a conclusion is
+given.
+
+There are two kinds of rules; usual rules and CBR rules.  CBR rule has the
+characteristic of being applied after generalization.
+
+2.2 Selecting argument
+
+This function is realized by defeasible reasoning that is one of nonmonotonic
+reasoning.  Defeasible reasoning generates an argument of a given conclusion and
+its counter argument.
+
+It then determines the type of argument from the TopRule relation (refer to
+appendix for details), the priority relation of rules between the argument and
+its counter argument, and the type of its counter argument.
+
+Types of arguments are as follows:
+
+ (1) justify
+	Refutes all counter arguments.
+ (2) defeated
+	Refuted by at least one of its counter argument.
+ (3) plausible
+	Unrelated or refutes to a counter argument.
+
+"Refutes," "refuted," and "unrelated" are determined by the TopRule relation for
+the counter argument, and the type of the counter argument.
+
+For details, refer to "HELIC-II language manual."
+
+3.  State transition of execution
+
+There are two states in DRS as shown in the following figure; one can display
+the argument which is the reasoning result (show argument state), but the other
+cannot (initial state).
+
+Commands that are usable depend on the state.
+
+It is in the initial state at the time of activation.
+
+			  ab
+	+-------------+ -------> +-------------------+
+	|Initial state|	 	 |Show argument state|
+	+-------------+ <------  +-------------------+
+			 end
+
+ Initial state:
+	* Usable command
+		Initial command
+	* State transition command
+		It changes to the show argument state by 'ab' which is
+		the show argument start command.
+ Show argument state:
+	* Usable command
+		Show argument command
+	* State transition command
+		It changes to the initial state by 'end' which is the show
+		argument end command.
+
+To change from an initial state to a show argument state, the following
+processing must be done.
+
+Command written in parentheses are names of commands to be used .
+
+ (1) Loading knowledge files
+      The following files from (a) to (b) must be loaded.
+      File(a) must be loaded before file(b).
+  (a) A type definition file (compile type command),
+       or a type definition internal expression file (load type command).
+  (b) A rule definition file (compile rule command),
+       or a rule internal expression definition file (load rule command).
+ (2) Setting a use knowledge
+      Sets units (set unit command) that will be used at reasoning.
+ (3) Executing defeasible reasoning
+      Executes defeasible reasoning(solve command), and the proof for goal succeeds.
+
+4.  Knowledge files
+
+The file to save the knowledge used in defeasible reasoning is called a
+knowledge file.
+
+There are two kinds of knowledge files; one is user definition file and the
+other is internal expression file.
+
+An user definition file is a file that the user wrote according to the language
+syntax of HELIC-II.
+
+An internal expression file is a converted file of the knowledge written in the
+user definition file, to make referencing efficient in reasoning.
+
+The reason for loading these knowledge files is as follows.
+
+All user definition files will always be converted into internal expressions,
+since all data to be handled in DRS are in internal expressions.
+
+Therefore, user definition files which describe knowledge that require longer
+time of conversion (for example, type etc.) must always be converted.
+
+To save time of this conversion, it is possible to load from internal
+expression.  The following are names of various knowledge files:
+
+ Definition content  User definition file	Internal indication file
+ =====================================================================================
+ Rule		     Rule definition file       Rule definition internal indication file
+ Type		     Type declaration file      Type declaration internal indication file
+ Partial order	     Partial order definition 	Partial order definition internal 
+		     file                       expression file
+ goal		     Goal definition file       Goal definition internal indication file
+
+Partial order definition internal expression file defines the unit, standpoint,
+and viewpoint definition .
+
+To load from a user definition file, use the compile command.
+
+To load from an internal expression file, use the load command.
+
+To convert from a user definition file to an internal expression file, use the
+trans command.
+
+If the user definition file includes Japanese, the file must be written in euc
+code.
+
+5.  Execution method
+
+When HELIC-II is installed, the object drs is created under drs/bin.
+
+HELIC-II is executed by the following ("!" is a prompt of a shell).
+
+! drs
+  +++
+
+For the program to work normally, the 'path' of the environmental variable of
+shell must be set to 'drs/bin'.
+
+For details, refer to "Install manual."
+
+6.  Command explanations
+
+The meaning of arguments used in each command explanation is as follows:
+
+ (1) Lower case characters are fixed characters, and upper case characters are
+     variable characters.
+ (2) <x｜y｜z> means to select one of x, y and z.
+ (3) {x} means x is repeated 0 or more times.
+ (4) [x] means x once, or may be omitted.
+
+The following are notes to remember:
+
+ * A single line of command input is considered as one command.
+   All commands must be written in a single line, although examples in this manual may
+   have line feeds for clarity.
+ * For Japanese input/output, the input/output mode of terminal must be euc.
+ * A file name may either be an absolute path or relative path.
+ * All following examples have been executed with drs/data as the current directory.
+
+6.1  Initial commands
+
+6.1.1  Loading knowledge files
+
+The commands to load knowledge files are explained below.
+
+ (1) compile <type|rule|pom|goal> FILENAME
+
+	<type|rule|pom|goal> 	Type of the file to load.
+				Type indicates a type declaration file.
+				Rule indicates a rule definition file.
+				Pom indicates a partial order definition file.
+				Goal indicates a goal definition file.
+	FILENAME		Name of the file to load.
+
+     Function:
+	Loads a rule definition file.
+
+     Example:
+	compile type cntrct.type
+	compile rule cntrct.rule
+	compile pom  cntrct.pom
+
+ (2) load <rule|type|pom|goal> FILENAME
+
+	<rule|type|pom|goal>	Type of the file to load.
+				Rule indicates a rule definition internal expression
+				file.
+				Type indicates a type declaration internal expression 
+				file.
+				Pom indicates a partial order internal expression
+				definition file.
+				Goal indicates a goal definition internal expression 
+				file.
+	FILENAME		Name of the file to load.
+
+    Function:
+	Loads a rule definition internal expression file, type declaration internal
+	expression file, or a partial order definition internal expression file.
+	FILENAME specifies the file converted by the trans command.
+
+    Example:
+	load type cntrct.t
+	load rule cntrct.r
+	load pom  cntrct.p
+
+6.1.2  Converting to internal expression files
+
+The commands to convert into internal expression file from an user definition
+file are explained below:
+
+ (1) trans <type|rule|pom|goal> FILENAME1 FILENAME2
+
+	<type|rule|pom|goal>	Type of the file to load.
+				Type indicates a type declaration file.
+				Rule indicates a rule definition file.
+				Pom indicates a partial order definition file.
+				Goal indicates a goal definition file.
+	FILENAME1 		Name of the file to be load.
+
+	FILENAME2		Name of the output file.
+
+    Function:
+	Converts to an internal expression file from a user definition file of a
+	type, rule and partial order.
+
+    Example:
+	trans type cntrct.type cntrct.t
+	trans rule cntrct.rule cntrct.r
+	trans pom  cntrct.pom  cntrct.p
+
+6.1.3  Setting the execution environment
+
+Set commands used to set or change the environment are explained in this section.
+
+ (1) set view VIEW
+
+	VIEW   viewpoint name
+
+    Function:
+	Sets the using viewpoint.
+	Uses the viewpoint defined in a partial order definition internal expression 
+	file.
+	For details on viewpoint, refer to the appendix.
+
+    Example:
+	set view prosecutor0
+
+ (2) set sp [SP {SP}]
+
+	SP    Name of a standpoint.
+
+    Function:
+	Sets the using priority order of standpoints.
+	Uses the standpoint defined in a partial order definition internal expression 
+	file.
+	Lists the name of standpoints in the order of lower priority.
+	If the standpoint is omitted, the relation between rules will be all unrelated.
+	For details on standpoints, refer to the appendix.
+
+    Example:
+	set sp   importance_of_civil_code importance_of_amount_money
+		Sets to give priority to the standard,  "importance_of_amount_money" 
+		over "importance_of_civil_code".
+
+	set  sp
+		There is no priority order of standpoints.
+		Thus, all standpoints are ignored and as a result, the priority
+		relations between rules will not exist.
+
+ (2) set unit <UNIT {UNIT}> | all
+
+	UNIT       Unit name
+
+    Function:
+	Specifies the using unit (or unit set) in the rule definition loaded by	the load
+	or compile commands.
+	For details on unit, refer to the appendix.
+	(unit not specified will be not used, even when they have been loaded by the
+	load or compile commands.)
+
+    Example:
+	set unit all
+		Uses all rules.
+
+ (4) set goal GOAL
+
+	GOAL            H term
+			For details on an H term, refer to "HELIC-II language 
+			manual."
+
+    Function:
+	Sets the legal conclusion (goal) to prove.
+
+    Example:
+	set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+
+ (5) set pl INTEGER
+
+	INTEGER      Integer
+
+    Function:
+	Sets print length (bytes) for H term.
+
+    Example:
+	set pl 1000
+
+ (6) set pt <h|e>
+
+	<h|e>		Specifies the type to display an H term or explanation.
+			H displays the H term, and e displays what has been written in
+			explanation of the H term.
+
+    Function:
+	Specifies whether to display the H term, or the explanation of the H term.
+
+    Example:
+	set pt h
+
+ (7) set cl <INTEGER | -1>
+
+	INTEGER         Integer
+
+    Function:
+	Specifies the counter argument level in defeasible reasoning.
+	For details on counter argument levels, refer to the appendix.
+	If zero is specified to the counter argument level (INTEGER), the function of
+	generating argument will be realized, since counter arguments will not be
+	generated.
+	If Sets -1,The counter argument level is infinite.
+	If a number higher than zero is specified, the function of defeasible reasoning
+	will be realized, since the counter argument will be generated.
+
+    Example:
+	set cl 0
+	set cl 1000
+ 	set cl -1
+
+ (8) set sim INTEGER
+
+	INTEGER		Integer from 1 to 100.
+
+    Function:
+	Sets limitation of similarity.
+
+    Example:
+	set sim 70
+
+ (9) set weight INTEGER
+
+	INTEGER		Integer from 1 to 10.
+
+    Function:
+	Sets weight of trivial term.
+
+    Example:
+	set weight 7
+
+ (10) set ptst A B C D E
+
+	A		Integer from 1 to 100.
+	B 		Integer from 1 to 100.
+	C		Integer from 1 to 100.
+	D		Integer from 1 to 100.
+	E		Integer from 1 to 100.
+
+    Function:
+	Sets Psi term abstract table.
+	A>=B>=C>=D>=E.
+	Defalt of Psi term abstract table is 100 90 80 70 60 50.
+
+    Example:
+	set ptst 100 90 80 70 60 50
+
+ (11) set ptaw INTEGER
+
+	INTEGER		Integer from 1 to 10.
+
+    Function:
+	Sets weight of Psi term abstruction.
+
+    Example:
+	set ptaw 7
+
+ (12) set gp INTEGER
+
+	INTEGER		Number of goal
+
+    Function:
+	Sets the goal to use number of goal.
+	This command is used,as loaded the goal definition file.
+
+    Example:
+	set gp 0
+
+6.1.4  Executing command files
+										
+Retrieve the command from a file (called command file) which contains the command and
+execute it.
+
+(1) run FILENAME
+
+	FILENAME	Name of the file to load.
+
+    Function:
+	Executes the command written in the command file, to avoid the load,compile, and
+	set commands input every time when starting the DRS.
+
+	Specifications of a command file are as follows:
+	One command must be written in a single line.
+	Commands which may be used are load, compile, set ,and solve commands only.
+	If Japanese are included, the file must be written by euc code.
+
+	An example of a description of command files is as follows.
+
+		compile type cntrct.type
+		compile rule cntrct.rule
+		compile pom cntrct.pom
+		set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+		set unit all
+
+    Example:
+	run cntrct.c
+
+6.1.5  Displaying the knowledge base and execution environment
+
+Display the execution environment defined with set commands.
+
+ (1) show view [VIEW|all]
+
+	VIEW    Viewpoint name
+
+    Function:
+	Displays the currently set viewpoint, the priority relations of standpoints
+	defined in the viewpoint, and names of all viewpoints.
+	The displayed content depends on specifications of VIEW as follows.
+
+ Specifications of VIEW		Displayed contents
+ ============================================================================
+ Omission			Currently set viewpoint.
+ VIEW				Priority relations of standpoints 
+				defined in VIEW.
+ all				Names of all viewpoints.
+
+    Example:
+	show view
+	show view prosecutor0
+	show view all
+
+ (2) show sp [SP|all]
+
+	SP        Standpoint name
+
+    Function:
+	Displays the currently set priority relation of standpoints, the priority
+	relation units defined in the standpoint, and names of all viewpoints.
+	The displayed content depends on specifications of SP as follows.
+
+ Specification of SP		Displayed contents
+ ============================================================================
+ Omission			Currently set priority relation of standpoints.
+ SP				Priority relations of units defined in SP.
+ all				Names of all standpoints.
+
+    Example:
+	show sp
+	show sp importance_of_civil_code
+	show sp all
+
+ (3) show unit [UNIT|all]
+
+    Function:
+	Displays the currently using units, relation of inclusion between units,the name
+	of all units.
+	The displayed content depends on specifications of the UNIT as follows.
+
+ Specifications of UNIT		Displayed contents
+ ============================================================================
+ Omission			Currently using units.
+ UNIT				Relation of inclusion between units.
+ all				Names of all units.
+
+    Example:
+	show unit
+	show unit civil_code
+	show unit all
+
+ (4) show goal
+
+    Function:
+	Displays the legal conclusion (goal) to be proved.
+
+ (5) show pl
+
+    Function:
+	Displays the print length (byte) for the H term.
+
+ (6) show pt
+
+    Function:
+	Displays the print type for the H term.
+
+ (7) show cl
+
+    Function:
+	Displays the counter argument level of defeasible reasoning.
+
+ (8) show sim
+
+    Function:
+	Displays limitation of similarity.
+
+ (9) show weight
+
+    Function:
+	Displays weight of trivial term.
+    
+ (10) show ptst 
+
+    Function:
+	Displays Psi term abstract table.
+
+ (11) show ptaw
+
+    Function:
+	Displays weight of Psi term abstruction.
+
+6.1.6  End of the program
+
+ (1) quit
+
+    Function:
+	Ends the program.
+
+6.1.7  Executing defeasible reasoning
+
+ (1) solve
+
+    Function:
+	Starts defeasible reasoning for the currently set legal conclusion (goal).
+	If the proof of the goal fails, "no" is displayed.
+	If it succeeds and it includes a variable in the goal, the variable information
+	is displayed.
+
+	If the variable is not restrained, "?" will be displayed as the information of
+	the variable.
+
+	(For example, if a variable is not restrained as the result of defeasible
+	reasoning for a goal which included a variable X, "X=?" is displayed.)
+
+	If a variable does not exists "yes" will be displayed.
+
+	Before using this command, knowledge files of a type, rule and partial order
+	must be loaded, and unit, and goal to be used must be set.
+
+6.2  Show argument start command
+
+ (1) ab
+
+    Function:
+	Changes to a show argument state.
+	It will only succeed when a solve command executed before this command has
+	succeeded.
+
+	After the command input, a list of arguments for indicating the goal (initial
+	arguments) will be displayed (initial argument list).
+
+	There for the number of the argument to be displayed must be input(initial
+	argument number).
+
+	An example of an initial argument list is as follows.
+
+		Goal : canWithdraw(agent=father,objec
+		0 :  p >:0!:3<:0
+
+			[ Example of an initial argument list ]
+
+	"0" is the initial argument number, and "p" is the type of argument for the
+	initial argument.
+	There are three kinds of type of arguments, j, p, and d, which correspond to
+	justify, plausible, and defeated respectively.
+	">:0!:3<:0" is the TopRule relation for the counter argument in the initial
+	argument, which means the numbers of strong (>), unrelated (!) and weak(<).
+	In the above example, three counter argument exists and the TopRule relation is
+	unrelated for the counter argument.
+
+6.3  Show argument command
+
+A show argument command is a set of commands to display arguments.
+To simplify the explanation on show argument commands, the relation between arguments,
+show argument command relation, and show argument form are explained below:
+
+ [ The relation between arguments ]
+	The relation between arguments is explained by using Figure 1.
+
+	p0 +------+-----+
+	        d1+-----+
+		d2+-----+
+
+ [ Figure 1: Example of a relation between arguments ]
+
+	There are counter arguments, d1 and d2 for p0.
+	p0 has a parent and child relation with d1 and d2 individually, where p0 is
+	called the parent, and d1, d2 the child.
+
+	d1 and d2 has a brother relation with each other, where d1 is called the older
+	brother and d2 is the younger brother.
+
+ [ The show argument command relation ]
+	To see the child from a parent, use show counter or forward.
+	To see the parent from a child, use backward.
+	To see the younger brother from the older brother, use next.
+	To see the older brother from a younger brother, use previous.
+
+	The difference between show counter command and forward command is as follows.
+
+	The show counter argument gives the selection of child.
+	While the forward command displays the child argument which has been seen last
+	using the backward command.
+
+	Input the command as follows, to see the arguments in the following order in
+	Figure 1:
+
+		p0->d1->d2->d1->p0->d2
+
+	Command input		Argument to be displayed
+	====================================================================
+				p0
+
+	show counter
+	0			d1
+	next			d2
+	previous		d1
+	backward		p0
+	forward			d2
+
+	One child to be seen must selected from many children by the show counter
+	command.
+
+	Therefore, the user must select either d1 or d2.
+	The user has selected 0 because the child argument number of d2 is 1 and d1 is
+	0.
+
+	The last command of forward has displayed d2, however input 1 in the show
+	argument command will also display d2.
+
+ [ The show argument form ]
+
+	An example of the form of a show argument is as follows.
+
+	ArgJudge : plausible
+	RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+	0  :             r11:canWithdraw(agent=father,objec
+	1  :              r1:contract(agent=tarou[age=>{19}
+	2  :               act4:buy(agent=tarou[age=>{19}],imp
+	3  :               act5:loan(agent=tarou[age=>{19}],ob
+	4  :               act6:causality(source=buy(agent=tar
+	5  :    !J (2)    r6:-valid(a_object=contract(agent
+	6  :               act5:loan(agent=tarou[age=>{19}],ob
+	7  :               r1:contract(agent=tarou[age=>{19}
+	8  :                act4:buy(agent=tarou[age=>{19}],imp
+	9  :                act5:loan(agent=tarou[age=>{19}],ob
+	10 :                act6:causality(source=buy(agent=tar
+	11 :    !J (1)     r2:needAllow(agent=father,a_objec
+	12 :                r1:contract(agent=tarou[age=>{19}
+	13 :                 act4:buy(agent=tarou[age=>{19}],imp
+	14 :                 act5:loan(agent=tarou[age=>{19}],ob
+	15 :                 act6:causality(source=buy(agent=tar
+	16 :                act0:isFather(a_object=father,basis
+	17 :               act10:-allow(agent=father,object=loa
+	18 :               act0:isFather(a_object=father,basis
+	19 :              act0:isFather(a_object=father,basis
+	UseCommand:  : [end,show,set]
+
+	ArgJudge:
+		Type of argument in the currently displayed argument.
+		There are three kinds: "justify," "plausible," and "defeated."
+
+	RuleInfo:
+		Displays the name of a rule which indicates the displayed argument, and
+		the TopRule relation for parent argument.
+
+		There are four kinds of TopRule relations; "strong,""unrelated," "weak,"
+		and "nil (there is no TopRule relation)."
+
+	0-19:
+		A proof tree.
+
+		The following, using 13 as an example, is used to explain further
+		details.
+
+	Issue point number	Child information consequence
+	=================================================================
+	11 :       		!J (1)       	   r2:needAllow(agent=father,a_objec
+
+		The issue point number identifies the many issue points on the currently
+		displayed argument.
+
+		To see a child argument by show counter command, specify the issue point
+		number.
+
+		A child information shows the information on the child for the issue
+		point.
+		The first "!" indicates the information on the TopRule relation with the
+		existing many children for the issue point.
+		There are three kinds: ">," "!," and "<."
+		">" means that TopRule relation is strong for all children in an issue
+		point.
+		"!" means that TopRule relation is strong and unrelated for children in
+		an issue point.
+		"<" means that TopRule relation has weak for more than one child in an
+		issue point.
+		The next "J" indicates the type of the argument of many children for the
+		issue point.
+		There are three kinds; "J," "P," and "D."
+		"J" indicates that all children arguments for the issue point is
+		justify, "P" is justify or plausible, and "D" is defeated by at
+		least one.
+		The next "(1)" indicates the number of children.
+
+		"Consequence" is the then part of a rule.
+		A blank included in each line of "consequence" indicates that the one
+		with no indentations has been indicated by the one with an indentation.
+		"r2" is rule name.
+	Can use command:
+		The list of commands that may be currently used.
+
+ (1) backward
+
+    Function:
+	Displays the parent of the currently displaying argument.
+
+ (2) forward
+
+    Function:
+	Displays the child of the currently displaying argument.
+	The difference between the show counter command and forward command is as
+	follows.
+	The show counter argument gives the selection of child to see.
+	While the forward command displays the child argument which has been seen last
+	using the backward command.
+
+ (3) next
+
+    Function:
+	Displays the younger brother of the currently displaying argument.
+
+ (4) previous
+
+    Function:
+	Displays the older brother of the currently displaying argument.
+
+ (5) show counter ISSUE
+
+	ISSUE    Issue point number
+
+    Function:
+	Displays the list of children (children list) that the issue point number
+	corresponds to ISSUE.
+	After displaying the children list, input the number of the child (child number)
+	to display.
+
+	The following example explains the children list.
+
+		 Issue Pos: 11
+		 Consequence: needAllow(agent=father,a_objec
+		 RuleName: r2
+		 Num Of Counter: 1
+		0 : !j >:0!:0<:0
+
+			[ Example of a children list ]
+
+	Issue Pos:
+		The issue point number of a parent argument.
+		This children list shows the issue point of the parent argument.
+
+	Consequence:
+		Then part of the rule that indicates the issue point corresponding to
+		the issue point number of the parent argument.
+
+	RuleName:
+		The name of the rule that indicates the issue point corresponding to the
+		issue point number of the parent argument.
+
+	Num Of Counter:
+		The number of children to the issue point corresponding to the issue
+		point number of the parent argument.
+
+	0:
+		Child number.
+		After the children list, the user must input the child number to see the
+		child.
+		"!" indicates the TopRule relation between the issue point for the
+		parent argument and the child argument.
+
+		There are ">," "!" and "<," and they mean that the child is "weak,"
+		"unrelated," or "strong" for a parent respectively.
+
+		"j" indicates the kind of type of child argument.
+		The three kinds are "j," "p" and "d," and they mean "justify,"
+		"plausible," and "defeated" respectively.
+
+		">:0!:0<:0" is the TopRule relation with the child corresponding to the
+		argument of the child, and indicates the number of strong (>),
+		unrelated(!) and weak (<) relations.
+
+    Example:
+	show counter 11
+
+ (6) set pl INTEGER
+
+	INTEGER   Integer
+
+    Function:
+	Sets print length (byte) for H term.
+
+    Example:
+	set pl 1000
+
+ (7) set pt <h|e>
+
+	<h|e> 	Specifies the type to display an H term or explanation.
+		"H" is displays the H term, and "e" displays what has been written in
+		explanation of the H term.
+
+    Function:
+	Specifies whether to display the H term, or the explanation of the H term.  
+
+    Example:
+	set pt h
+
+ (8) show pl
+
+    Function:
+	Displays the print length (byte) for H term.
+
+ (9) show pt
+
+    Function:
+	Displays the print type for H term.
+
+(10) show explain
+
+    Function:
+	Displays explanation of the current displaying argument.
+
+6.4  Show argument end command
+
+ (1) end
+
+    Function:
+	Ends the show argument state, and returns to the initial state.
+
+6.5 tracer command
+
+Tracer is to display rule information into execution,and has following functions.
+
+ (1) Display reduction informations.
+	Displays rule reduction informations into execution.
+
+ (2) Sets spy.
+	Sets followin spy points.
+
+	(a) Specified rules.
+	(b) Specified rule status.
+	    This rule status is as follows.
+
+	    	* call rule(CALL)
+	    	* reduction rule(REDU)
+		* fail rule(FAIL)
+
+Display of rule information is as follows.
+
+<Display of rule information>::=
+	<CALL rule number> <Rule status> {<Rule name> ":"} <H term>
+	{ "<-" <Body>}
+
+	When there is <Rule name> ":",rule status is only REDU.
+	When there is "<-" <Body>,rule status is only REDU.
+
+<Call rule number>::=
+	<Integer>
+
+	Call rule number means to identify one call rule into call rules.
+
+<Rule status>::= 
+	"CALL"|"REDU"|"FAIL"
+
+<Body>::=
+	<H term> { <H term>}
+
+	Body is then part in rule.
+
+    Example:
+        1 CALL a (agent=x,object=y)
+        1 REDU r1:a(agent=x,object=y) <-
+        2       b(agent=x)
+        3       c(agent=y)
+        2 CALL b(agent=x)
+        2 REDU f1:b(agent=x)
+        3 CALL c(agent=y)
+        3 REDU f2:c(agent=y)
+
+6.5.1 Relation of tf
+
+These commands are management of tracer.
+
+(1) set tf <on|off>
+
+    Function:
+	Sets wheither execute tracer or not.
+	"on" is execution of tracer.
+	"off" is not execution of tracer.
+
+    Example:
+	set tf on
+
+(2) show tf
+
+    Function:
+	Displays wheither executed tracer or not.
+
+    Example:
+	show tf
+
+6.5.2 Relation of sr
+
+These commands are relation of spy rules.
+
+(1) set sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Sets the spy rules.
+
+    Example:
+	set sr act0
+
+(2) add sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Adds the spy rules.
+
+    Example:
+	add sr act0
+
+(3) remove sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Removes the spy rules.
+
+    Example:
+	remove sr act0
+
+(4) clear sr
+
+    Function:
+	Remove  all spy rules.
+
+    Example:
+	clear sr
+
+(5) show sr
+
+    Function:
+	Displays current spy rules.
+
+    Example:
+	show sr
+
+6.5.2 Relation of sg
+
+These commands are relation of spy rule status.
+
+(1) set sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Sets the spy rule status.
+
+    Example:
+	set sg call fail
+
+(2) add sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Adds the spy rule status.
+
+    Example:
+	add sg redu
+
+(3) remove sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Removes the spy rule status.
+
+    Example:
+	remove sg call
+
+(4) clear sg
+
+    Function:
+	Remove all spy rule status.
+
+    Example:
+	clear sg
+
+(5) show sg
+
+    Function:
+	Displays current spy rule status.
+
+    Example:
+	show sg
+
+6.6 Otherwise command
+
+(1) help [COMMAND]
+
+	COMMAND 	Command name.
+
+    Function:
+	Displays information of command.
+
+    Example:
+	help
+
+7．Execution example
+
+An execution example of DRS is given below.
+"!" indicates the prompt of shell, from "%" to the line feed is an explanation of the
+execution example, and "+++" indicates the user input.
+The current directory is 'drs/data' in following example.
+
+! drs
+  +++	
+	% Starts DRS.
+DRS>compile type cntrct.type
+    ++++++++++++++++++++++++
+	% Reads a type  declaration file.
+ok
+DRS>compile rule cntrct.rule
+    ++++++++++++++++++++++++
+	% Reads a rule definition file.
+ok
+DRS>compile pom cntrct.pom
+    ++++++++++++++++++++++
+	% Reads a partial order definition file.
+ok
+DRS>set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	% Sets the goal
+ok
+DRS>set   unit all
+    ++++++++++++++
+	% Uses all rules.
+ok
+DRS>set sp
+    ++++++
+	% Does not set rule relations.
+ok
+DRS>solve
+    +++++
+	% Starts defeasible reasoning.
+yes
+DRS>ab
+    ++
+	% Starts show argument.
+Goal : canWithdraw(agent=father,objec
+0 :  p >:0!:3<:0
+Please input number > 0
+		      +
+	% Selects the initial argument number 0.
+ArgJudge : plausible
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=father,objec
+1  :              r1:contract(agent=tarou[age=>{19}
+2  :               act4:buy(agent=tarou[age=>{19}],imp
+3  :               act5:loan(agent=tarou[age=>{19}],ob
+4  :               act6:causality(source=buy(agent=tar
+5  :    !J (2)    r6:-valid(a_object=contract(agent
+6  :               act5:loan(agent=tarou[age=>{19}],ob
+7  :               r1:contract(agent=tarou[age=>{19}
+8  :                act4:buy(agent=tarou[age=>{19}],imp
+9  :                act5:loan(agent=tarou[age=>{19}],ob
+10 :                act6:causality(source=buy(agent=tar
+11 :    !J (1)     r2:needAllow(agent=father,a_objec
+12 :                r1:contract(agent=tarou[age=>{19}
+13 :                 act4:buy(agent=tarou[age=>{19}],imp
+14 :                 act5:loan(agent=tarou[age=>{19}],ob
+15 :                 act6:causality(source=buy(agent=tar
+16 :                act0:isFather(a_object=father,basis
+17 :               act10:-allow(agent=father,object=loa
+18 :               act0:isFather(a_object=father,basis
+19 :              act0:isFather(a_object=father,basis
+UseCommand:  : [end,show,set]
+>show counter 11
+ +++++++++++++++
+	% Shows the child information of the issue point number 11.
+ Issue Pos: 11
+ Consequence: needAllow(agent=father,a_objec
+ RuleName: r2
+ Num Of Counter: 1
+0 : !j >:0!:0<:0
+Please input number > 0
+                      +
+	% Shows the argument of the child number 0.
+ArgJudge : justify
+Issue : needAllow(agent=father,a_objec
+RuleInfo({RuleName,TopRuleRel}) : {r3,unrelated}
+0  :             r3:-needAllow(agent=father,a_obje
+1  :              act1:give(agent=father,goal=tarou[a
+2  :              r4:interest(goal=money[amount=>{5
+3  :               act2:buy(agent=tarou[age=>{19}],obj
+4  :               act3:win_prize(agent=tarou[age=>{19
+5  :              r1:contract(agent=tarou[age=>{19}
+6  :               act4:buy(agent=tarou[age=>{19}],imp
+7  :               act5:loan(agent=tarou[age=>{19}],ob
+8  :               act6:causality(source=buy(agent=tar
+9  :              act0:isFather(a_object=father,basis
+UseCommand:  : [backward,end,show,set]
+>end
+ +++
+	% Ends the show argument.
+ok
+DRS>quit
+    ++++
+	% Ends DRS.
+
+[ Appendix ]
+
+< The explanations of technical terms >
+
+Unit
+	Rule name, or the set of rule names.
+
+	Example:
+		Suppose a unit definition file is written as follows:
+		(r1 ,r2 ,r3 ,r4 ,r5, and r6 are rule names).
+
+			u1:= {r1,r2,r3}.
+			u2:= {r4,r5,r6}.
+
+		R1 to r6 are unit names, and u1 and u2 are also unit names.
+		r1, r2 and r3 are contained in u1.
+		r4, r5 and r6 are contained in u2.
+
+Standpoint
+	Defines a priority relation between units.
+
+	Example:
+		A standpoint definition file is written as follows:
+
+			sp1 := {u2<u1}.
+			sp2 := {u1<u2}.
+
+		In the standpoint name sp1, the priority relation of unit u1 is higher
+		than u2.
+		In the standpoint name sp2, the priority relation of unit u2 is higher
+		than u1.
+
+Viewpoint
+	Defines the priority relation between standpoints.
+
+	Example:
+		A viewpoint definition file is written as follows:
+
+			view1 := {sp2<sp1}.
+			view2 := {sp1<sp2}.
+
+		In the viewpoint name view1, the priority relation of sp1 is higher than
+		sp2.
+		In the viewpoint name view2, the priority relation of sp2 is higher than
+		sp1
+
+TopRule relation
+	The priority relation between rules that indicate the issue point and counter
+	argument.
+
+	Example:
+
+			        r1
+			p0+-----*------+
+                                r2
+			      d0+------+
+
+		There is an argument, p0 and its counter argument, d0.
+		r2 is the rule name that indicates d0.
+		r1 is the rule name that indicates the issue point of p0.
+		TopRule relation in this case is the relation between r1 and r2.
+		r1 is either strong (r1>r2), unrelated (r1!R2), or weak (r1<r2) to r2.
+
+Hypothesis
+	The one obtained by applying hypotheses and facts to a rule.
+
+Argument
+	The set of facts or hypotheses to explain the conclusions (goal).
+
+	Example:
+		a, b, and c are facts, and x and y are hypotheses.
+		There are r1 and r2 as rules.
+
+			r1:x <- a,b,c.
+			r2:y <- x.
+
+		Arguments, [y, x, a, b, c] are to explain the conclusion y, and x and y
+		are hypotheses.
+
+Issue point
+	A hypothesis in a certain argument that has a counter argument.
+
+	Example:
+		a, b, c, and d are facts, and x, y,-x are hypotheses.
+		There are r1, r2, and r3 as rules.
+
+			r1:x <- a,b,c.
+			r2:y <- x.
+			r3:-x<- d.
+
+		There is x as an issue point of the arguments, [y, x, a, b, c].
+		There are counter arguments, [-x, d] to the issue point.
+
+Counter argument
+	An argument that negates a certain argument.
+
+	Example:
+		In the above example, there are counter arguments, [-x, d] to the
+		arguments [y, x, a, b, c].
+
+Counter argument level
+	The number of reasoning counter argument in advance at the time of execution of
+	defeasible reasoning.
+
+	Example:
+						 Counter argument level
+			p0+-------------------+  	0
+			      d0+-------------+  	1
+				  p1+---------+  	2
+				      d1+-----+  	3
+
+		There is a counter argument, d0 to argument p0, p1 to d0, and d1 to p1.
+		If the counter argument level of p0 is 0, 1, 2, and 3, the counter
+		argument to p0, d0, p1 and d1 will be obtained respectively.
+

@@ -1,0 +1,88 @@
+ H9-7/ 
+    |-- Readme-J                                   Japanese version
+    |-- Readme-E                                   This file
+    |
+    |-- documents/ 
+    |     |-- manual.ps                            MGTP manual
+    |
+    |-- nseq/                                      N-seq MGTP directory
+    |     |-- klic/                                KLIC version directory
+    |     |     |-- mgtp-NS-pim7-noRTF6.kl1        N-seq MGTP body
+    |     |     |-- dom.kl1                        Dom insert program
+    |     |     |-- mg2kl1.kl1                     Problem translator
+    |     |     |-- rangeCheck.kl1                 Range checker
+    |     |     |-- SYN002-1.007:008.mg            Problem example
+    |     |     |-- SYN006-1dom.mg                 //
+    |     |-- pim/                                 PIM version directory
+    |           |-- mgtpNS7.kl1                    N-seq MGTP body
+    |           |-- QG5_5c_merc.kl1                Problem example (KL1 form)
+    |           |-- QG5_7c_merc.kl1                //
+    |           |-- SYN002-1-020dom_merc.kl1       //
+    |           |-- SYN009-1dom_merc.kl1           //
+    |           |-- SYN036-4dom_merc.kl1           //
+    |           |-- test2_445.kl1                  //
+    |           |-- gc.sav                         GC initiator
+    |           |-- Nseq.com                       Command file
+    |           |-- aliases.com                    //
+    |
+    |-- Java-MGTP/                                  Java-MGTP directory
+    |     |-- ASCII_UCodeESC_CharStream.java        java program
+    |     |-- MGTP.java                             //   
+    |     |-- MGTPClauses.java                      //
+    |     |-- MGTPDict.java                         //
+    |     |-- MGTPExternal.java                     //
+    |     |-- MGTPExternal.java                     //
+    |     |-- MGTPParser.java                       //
+    |     |-- MGTPExternal.java                     //
+    |     |-- MGTPParserConstants.java              //      
+    |     |-- MGTPParserTokenManager.java           //
+    |     |-- MGTPPre.java                          //
+    |     |-- MGTPPreConstants.java                 // 
+    |     |-- MGTPPreTokenManager.java              //           
+    |     |-- MGTPTerms.java                        //
+    |     |-- ParseError.java                       //
+    |     |-- Token.java                            //
+    |     |-- excode.mg                             Problem example
+    |     |-- test.mg                               //
+    |     |-- test1.mg                              //
+    |     |-- fib.mg                                //
+    |     |-- SYN009-1.mg                           //
+    |     |-- SYN059-1.mg                           //
+    |
+    |-- PTV/                                        PTV directory
+    |     |-- ASCII_UCodeESC_CharStream.java        Java program
+    |     |-- MGTP.java                             //
+    |     |-- MGTPClasses.java                      //
+    |     |-- MGTPClauses.java                      //
+    |     |-- MGTPDict.java                         //
+    |     |-- MGTPExternal.java                     //
+    |     |-- MGTPParser.java                       //
+    |     |-- MGTPParserConstants.java              //
+    |     |-- MGTPParserTokenManager.java           //
+    |     |-- MGTPPreConstants.java                 //
+    |     |-- MGTPPreTokenManager.java              //
+    |     |-- MGTPStat.java                         //
+    |     |-- MGTPTerms.java                        //
+    |     |-- NodeW.java                            //
+    |     |-- PTVisualizer.java                     //
+    |     |-- ParseError.java                       //
+    |     |-- Token.java                            //
+    |
+    |-- Simplify/                                   PTV(simplify) directory
+          |-- ASCII_UCodeESC_CharStream.java        Java program
+          |-- Counter.java			    //
+          |-- ETerm.java			    //
+          |-- MGTP.java                             //
+          |-- MGTPClauses.java                      //
+          |-- MGTPDict.java                         //
+          |-- MGTPParser.java                       //
+          |-- MGTPParserConstants.java              //
+          |-- MGTPParserTokenManager.java           //
+          |-- Model.java                            //
+          |-- NodeW.java                            //
+          |-- PTVisualizer.java                     //
+          |-- ParseError.java                       //
+          |-- Token.java                            //
+          |-- classes.java                          //
+
+

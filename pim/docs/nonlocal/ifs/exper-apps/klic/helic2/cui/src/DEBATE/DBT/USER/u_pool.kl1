@@ -1,0 +1,85 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_poolManager.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.    
+
+    create({RBR,POM,NH,IDT,Which},I):-true|
+        merge({IDT1,IDT2},IDT),
+
+        dbtu_solutionVecTable:create({RBR,POM},SVT),
+        merge({SVT0,SVT1,SVT2,SVT3,SVT4},SVT),
+
+        dbtu_argumentTable:create({IDT1,SVT1,Which},AT),
+
+        dbtu_initialArgumentList:create({SVT2},IAL),
+
+        dbtu_myOrYourArgumentTable:create({SVT3},MAT),
+        dbtu_myOrYourArgumentTable:create({SVT4},YAT),
+
+        hLibrary:pool(bag,HL),
+
+        dbtu_counterArgumentTable:create(CT),
+
+        dbtu_noticeTable:create(MNT),
+        dbtu_noticeTable:create(YNT),
+
+        loop(I,{SVT0,AT,IAL,MAT,YAT,MNT,YNT,HL,IDT2,CT,NH}).
+
+    loop([],   {SVT, AT,IAL,MAT,YAT,MNT,YNT,HL,IDT, CT,NH}):-true|
+        SVT=[],AT=[],IAL=[],MAT=[],YAT=[],MNT=[],YNT=[],HL=[],IDT=[],CT=[],NH=[].
+    loop([send(PoolName,Command)|T],PoolVec1):-true|
+        get_poolPos(PoolName,Pos),
+        vector_element(PoolVec1,Pos,Pool1,_),
+        Pool1 = [Command|Pool],
+        set_vector_element(PoolVec1,Pos,_,Pool,PoolVec),
+        loop(T,PoolVec).
+    loop([make(PoolName,Pool)|T],PoolVec1):-true|
+        make(PoolVec1,PoolName,PoolVec,Pool),
+        loop(T,PoolVec).
+    loop([makeList(PoolNameList,PoolList)|T],PoolVec1):-true|
+        makeList(PoolNameList,PoolVec1,PoolVec,PoolList),
+        loop(T,PoolVec).
+
+    makeList([],PoolVec1,PoolVec,PoolList):-true|
+        PoolVec  = PoolVec1,
+        PoolList = [].
+    makeList([PoolName|T],PoolVec1,PoolVec,PoolList):-true|
+        make(PoolVec1,PoolName,PoolVec2,Pool),
+        makeList(T,PoolVec2,PoolVec,PoolList1),
+        PoolList = [Pool|PoolList1].
+
+    make(PoolVec1,PoolName,PoolVec,Pool1):-true|
+        get_poolPos(PoolName,Pos),
+        vector_element(PoolVec1,Pos,Pool,_),
+        merge({Pool0,Pool1},Pool),
+        set_vector_element(PoolVec1,Pos,_,Pool0,PoolVec).
+
+    get_poolPos(svt,Pos):-true|
+        Pos = 0.
+    get_poolPos(at,Pos):-true|
+        Pos = 1.
+    get_poolPos(ial,Pos):-true|
+        Pos = 2.
+    get_poolPos(mat,Pos):-true|
+        Pos = 3.
+    get_poolPos(yat,Pos):-true|
+        Pos = 4.
+    get_poolPos(mnt,Pos):-true|
+        Pos = 5.
+    get_poolPos(ynt,Pos):-true|
+        Pos = 6.
+    get_poolPos(hl,Pos):-true|
+        Pos = 7.
+    get_poolPos(idt,Pos):-true|
+        Pos = 8.
+    get_poolPos(ct,Pos):-true|
+        Pos = 9.
+    get_poolPos(nh,Pos):-true|
+        Pos = 10.

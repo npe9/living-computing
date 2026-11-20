@@ -1,0 +1,29 @@
+Copyright (C) 1998 Takeo Igarashi
+
+
+H9-14/			top directory
+
+H9-14/pegasus/		application directory
+H9-14/pegasus/Pegasus.exe	drawing editor Pegasus application program
+H9-14/pegasus/gigadll.dll	Constraint solver ( Dynamic Link Library)
+H9-14/pegasus/wmf_head.wmf	header file for wmf  (do not modify or delete)
+H9-14/pegasus/manual.htm	manual (HTML format)
+H9-14/pegasus/manual/		manual sub directory (gif pictures)
+H9-14/pegasus/diagrams/		sample diagrams
+H9-14/pegasus/README.txt	document
+
+H9-14/source/		source directory
+H9-14/source/pegasus/		Drawing editor Pegasus source files (Microsoft Visual Basic 2.0)
+H9-14/source/gigadll/ 		Constraint solver source files (Microsoft Visual C++ 1.5)
+H9-14/source/README.txt		document
+
+H9-14/README-J		This file in Japanese 
+H9-14/README-E		This fileÅ@ 
+
+H9-14/use-of-software-J	TERMS AND CONDITIONS FOR USE in Japanese
+H9-14/use-of-software-E	TERMS AND CONDITIONS FOR USE
+
+
+!!! Pegasus.exe requires a Visual Basic DLL (vbrjp200.dll) !!
+
+

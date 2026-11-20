@@ -1,0 +1,11 @@
+yacc -d drsny.y
+mv y.tab.c ../y_tab.c
+mv y.tab.h ../y_tab.h
+flex nl.l
+mv lex.yy.c ../lex_yyF.c
+lex -e nl.l
+mv lex.yy.c ../lex_yyE.c
+lex  nl.l
+mv lex.yy.c ../lex_yy.c
+lex -w nl.l
+mv lex.yy.c ../lex_yyW.c

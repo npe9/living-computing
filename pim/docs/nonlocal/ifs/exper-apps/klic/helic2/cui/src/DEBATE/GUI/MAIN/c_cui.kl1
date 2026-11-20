@@ -1,0 +1,259 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui.
+
+:- public 
+    go/0.
+            
+:- with_macro pimos.
+
+%go
+    go:-
+        dbtcui_networkHandler:create(NH,R),
+        (   R = normal(_)->
+                debate:create(DBT),
+                merge({NH1,NH2},NH),
+                dbtcui_guiCurrentState:create(NH1,CGS),
+                loop({DBT,CGS},NH2)
+        ;
+            R = abnormal(_)->
+                true
+        ).
+
+    loop(Data,NH1):- true|
+        GetProtocol = get_commandArguments(Command,AgentName,Parameter,Arguments,R1),
+        NH1 = [GetProtocol|NH],
+        (   R1 = normal(_)->
+                loop1({Command,AgentName,Parameter,Arguments},Data,NH)
+        ;
+            R1 = abnormal(_)->
+                Data = {[],[]},
+                NH   = []
+        ).
+
+
+%%loop1
+    loop1({quit,_,_,_},Data,NH):-true|
+        Data = {[],[]},
+        NH=[].
+    loop1({run,_,_,[FileName]},Data1,NH1):-true|
+        dbtcui_run:run(FileName,Data1,Data,ProtocolList),
+	send_loop(ProtocolList,NH1,NH),
+	loop(Data,NH).
+otherwise.
+    loop1(CAPA,Data1,NH1):-true|
+        execute(CAPA,Data1,Data,Protocol),
+        NH1 = [Protocol|NH],
+        Protocol = receive(_,_,_,R),
+        (   wait(R)->
+             loop(Data,NH)).
+
+%execute
+%%load
+    execute({load,  AgentName,type,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_load:type(AgentName,FileName,Data1,Data,Protocol).
+    execute({load,  AgentName,rule,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_load:rule(AgentName,FileName,Data1,Data,Protocol).
+    execute({load,  AgentName,pom,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_load:pom(AgentName,FileName,Data1,Data,Protocol).
+    execute({load,  _,goal,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_load:goal(d,FileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_load:goal(p,FileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                Protocol = Protocol1
+        ).
+
+%%trans
+    execute({trans,  _,type,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        dbtcui_trans:type(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  _,rule,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        dbtcui_trans:rule(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  _,pom,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        dbtcui_trans:pom(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  _,goal,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        dbtcui_trans:goal(FileName1,FileName2,Data1,Data,Protocol).
+
+%%compile
+    execute({compile,  AgentName,type,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_compile:type(AgentName,FileName,Data1,Data,Protocol).
+    execute({compile,  AgentName,rule,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_compile:rule(AgentName,FileName,Data1,Data,Protocol).
+    execute({compile,  AgentName,pom,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_compile:pom(AgentName,FileName,Data1,Data,Protocol).
+    execute({compile,  _,goal,[FileName]},Data1,Data,Protocol):-true|
+        dbtcui_compile:goal(d,FileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_compile:goal(p,FileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                Protocol = Protocol1
+        ).
+
+%%set
+    execute({set,   AgentName,solver,[Solver]},Data1,Data,Protocol):-true|
+        dbtcui_set:solver(AgentName,Solver,Data1,Data,Protocol).
+    execute({set,   _,gp,[Pos]},Data1,Data,Protocol):-true|
+        dbtcui_set:goal1(p,Pos,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_set:goal1(d,Pos,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                Protocol = Protocol1
+        ).
+    execute({set,   _,goal,[Goal]},Data1,Data,Protocol):-true|
+        dbtcui_set:goal(p,Goal,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_set:goal(d,Goal,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                Protocol = Protocol1
+        ).
+    execute({set,   AgentName,useView,[View]},Data1,Data,Protocol):-true|
+        dbtcui_set:useView(AgentName,View,Data1,Data,Protocol).
+    execute({set,   AgentName,useSpPriority,SPList},Data1,Data,Protocol):-true|
+        dbtcui_set:useSpPriority(AgentName,SPList,Data1,Data,Protocol).
+    execute({set,   AgentName,useUnit,      UnitList1},Data1,Data,Protocol):-true|
+        (   UnitList1 = [all]->
+                UnitList = all
+        ;
+        otherwise;
+            true->
+                UnitList = UnitList1
+        ),
+        dbtcui_set:useUnit(AgentName,UnitList,Data1,Data,Protocol).
+    execute({set,   AgentName,pl,      [PL]},Data1,Data,Protocol):-true|
+        dbtcui_set:pl(AgentName,PL,Data1,Data,Protocol).
+    execute({set,   AgentName,pt,      [PT]},Data1,Data,Protocol):-true|
+        dbtcui_set:pt(AgentName,PT,Data1,Data,Protocol).
+    execute({set,   AgentName,cl,      [CL]},Data1,Data,Protocol):-true|
+        dbtcui_set:cl(AgentName,CL,Data1,Data,Protocol).
+    execute({set,   AgentName,similarity,[Sim]},Data1,Data,Protocol):-true|
+        dbtcui_set:similarity(AgentName,Sim,Data1,Data,Protocol).
+    execute({set,   AgentName,weight,[W]},Data1,Data,Protocol):-true|
+        dbtcui_set:weight(AgentName,W,Data1,Data,Protocol).
+    execute({set,   AgentName,psiTermSimTB,[PsiTermSimTB]},Data1,Data,Protocol):-true|
+        dbtcui_set:psiTermSimTB(AgentName,PsiTermSimTB,Data1,Data,Protocol).
+    execute({set,   AgentName,psiTermAttWeight,[PsiTermAttWeight]},Data1,Data,Protocol):-true|
+        dbtcui_set:psiTermAttWeight(AgentName,PsiTermAttWeight,Data1,Data,Protocol).
+
+%%send
+    execute({send,  _,goal,_},Data1,Data,Protocol):-true|
+        dbtcui_send:goal(p,Data1,Data,Protocol).
+    execute({send,  AgentName,useView,_},Data1,Data,Protocol):-true|
+        dbtcui_send:useView(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,useSpPriority,_},Data1,Data,Protocol):-true|
+        dbtcui_send:useSpPriority(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,useUnit,_},Data1,Data,Protocol):-true|
+        dbtcui_send:useUnit(AgentName,Data1,Data,Protocol).
+
+    execute({send,  AgentName,view,[ViewName]},Data1,Data,Protocol):-true|
+        dbtcui_send:view(AgentName,ViewName,Data1,Data,Protocol).
+    execute({send,  AgentName,sp,[SP]},Data1,Data,Protocol):-true|
+        dbtcui_send:sp(AgentName,SP,Data1,Data,Protocol).
+    execute({send,  AgentName,unit,Unit1},Data1,Data,Protocol):-true|
+        (   Unit1 = [all]->
+                Unit = all
+        ;
+        otherwise;
+            true->
+                Unit = Unit1
+        ),
+        dbtcui_send:unit(AgentName,Unit,Data1,Data,Protocol).
+
+    execute({send,  AgentName,solver,_},Data1,Data,Protocol):-true|
+        dbtcui_send:solver(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,pl,_},Data1,Data,Protocol):-true|
+        dbtcui_send:pl(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,pt,_},Data1,Data,Protocol):-true|
+        dbtcui_send:pt(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,cl,_},Data1,Data,Protocol):-true|
+        dbtcui_send:cl(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,similarity,_},Data1,Data,Protocol):-true|
+        dbtcui_send:similarity(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,weight,_},Data1,Data,Protocol):-true|
+        dbtcui_send:weight(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,psiTermSimTB,_},Data1,Data,Protocol):-true|
+        dbtcui_send:psiTermSimTB(AgentName,Data1,Data,Protocol).
+    execute({send,  AgentName,psiTermAttWeight,_},Data1,Data,Protocol):-true|
+        dbtcui_send:psiTermAttWeight(AgentName,Data1,Data,Protocol).
+
+%%tracer
+    execute({set,AgentName,   tf,[TF]},Data1,Data,Protocol):-true|
+        dbtcui_tracer:set_tf(AgentName,TF,Data1,Data,Protocol).
+    execute({send,AgentName,  tf,_},Data1,Data,Protocol):-true|
+        dbtcui_tracer:get_tf(AgentName,Data1,Data,Protocol).
+
+    execute({set,AgentName,   sr,SR},Data1,Data,Protocol):-true|
+        dbtcui_tracer:set_sr(AgentName,SR,Data1,Data,Protocol).
+    execute({add,AgentName,   sr,SR},Data1,Data,Protocol):-true|
+        dbtcui_tracer:add_sr(AgentName,SR,Data1,Data,Protocol).
+    execute({remove,AgentName,sr,SR},Data1,Data,Protocol):-true|
+        dbtcui_tracer:remove_sr(AgentName,SR,Data1,Data,Protocol).
+    execute({clear,AgentName,sr,_},Data1,Data,Protocol):-true|
+        dbtcui_tracer:clear_sr(AgentName,Data1,Data,Protocol).
+    execute({send,AgentName,sr,_},Data1,Data,Protocol):-true|
+        dbtcui_tracer:get_sr(AgentName,Data1,Data,Protocol).
+
+    execute({set,AgentName,   sg,SG},Data1,Data,Protocol):-true|
+        dbtcui_tracer:set_sg(AgentName,SG,Data1,Data,Protocol).
+    execute({add,AgentName,   sg,SG},Data1,Data,Protocol):-true|
+        dbtcui_tracer:add_sg(AgentName,SG,Data1,Data,Protocol).
+    execute({remove,AgentName,sg,SG},Data1,Data,Protocol):-true|
+        dbtcui_tracer:remove_sg(AgentName,SG,Data1,Data,Protocol).
+    execute({clear,AgentName,sg,_},Data1,Data,Protocol):-true|
+        dbtcui_tracer:clear_sg(AgentName,Data1,Data,Protocol).
+    execute({send,AgentName,sg,_},Data1,Data,Protocol):-true|
+        dbtcui_tracer:get_sg(AgentName,Data1,Data,Protocol).
+
+%check
+    execute({check, AgentName,unit,[UnitName]},Data1,Data,Protocol):-true|
+        dbtcui_check:unit(AgentName,UnitName,Data1,Data,Protocol).
+
+%solve
+    execute({solve, AgentName,_,[]},Data1,Data,Protocol):-true|
+	dbtcui_solve:solve(AgentName,Data1,Data,Protocol).
+    execute({solve, AgentName,_,[Goal]},Data1,Data,Protocol):-true|
+	dbtcui_solve:solve(AgentName,Goal,Data1,Data,Protocol).
+
+%ab
+    execute({ab, AgentName,_,_},Data1,Data,Protocol):-true|
+	dbtcui_argumentBrawzer:go(AgentName,Data1,Data,Protocol).
+
+%%startDebate
+    execute({startDebate,_,_,[]},Data1,Data,Protocol):-true|
+       	dbtcui_startDebate:startDebate(Data1,Data,Protocol).
+    execute({startDebate,_,_,[Goal]},Data1,Data,Protocol):-true|
+       	dbtcui_startDebate:startDebate(Goal,Data1,Data,Protocol).
+
+%help
+    execute({send,_,help,[]},Data1,Data,Protocol):-true|
+	Data = Data1,
+       	dbtcui_help:help(Protocol).
+    execute({send,_,help,[C]},Data1,Data,Protocol):-true|
+	Data = Data1,
+       	dbtcui_help:help(C,Protocol).
+
+
+otherwise.
+    execute({C,     AgentName,P,A},Data1,Data,Protocol):-true|
+        Data         = Data1,
+        dbtcui_utility:make_errorProtocol(AgentName,
+                {cui,'This command not support',{C,P,A}},Protocol).
+
+
+%%%send_loop
+    send_loop([],NH1,NH):-true|
+	NH = NH1.
+    send_loop([Protocol|T],NH1,NH):-true|
+	NH1 = [Protocol|NH2],
+	send_loop(T,NH2,NH).
+

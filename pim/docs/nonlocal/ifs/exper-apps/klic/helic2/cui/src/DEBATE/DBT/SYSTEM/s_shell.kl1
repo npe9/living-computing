@@ -1,0 +1,161 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_systemShell.
+
+:- public 
+    start/4,
+    claim1/4,
+    claim2/4,
+    notice1/4.
+            
+:- with_macro pimos.
+
+%start
+    start({Pool1,Info1,CSS1},Data,CPA,R):-true|
+        Pool1 = [make(ial,IAL)|Pool2],
+        IAL   = [get_arg(PArg,YN1)],
+        (   YN1 = yes->
+                PArg = LArg,
+                dbtcui_showArgumentUtility:show_argumentInfo({Pool2,Info1,CSS1},
+                        nil,LArg,{Pool,Info,[]},R1),
+                (   wait(R1)->
+                        CPA   = {pose,claim,[PArg]},
+                        Data  = {Pool,Info},
+                        R     = R1)
+        ;
+            YN1 = no->
+                CPA     = {end,_,_},
+                CSS1    = [],
+                Data    = {Pool2,Info1},
+                R       = normal(success)
+        ).
+
+%claim1
+    claim1({Pool1,Info1,CSS1},Data,CPA,R):-true|
+        Pool1   = [make(icat,ICAT)|Pool2],
+        CSS1    = [get(displayArgInfo,{_,YLArg})|CSS],
+        dbtcui_LArgUtility:get_AID(YLArg,Pool2,Pool3,AID,_),
+        ICAT    = [get(AID,{Pool3,Info1},{Pool4,Info2},ICA,YN1)],
+        (   YN1 = yes->
+                ICA   = {IPos,CPos},
+                MLArg = {YLArg,IPos,CPos},
+                dbtcui_showArgumentUtility:show_argumentInfo({Pool4,Info2,CSS},
+                        YLArg,MLArg,{Pool,Info,[]},R),
+                (   wait(R)->
+                        Data  = {Pool,Info},
+                        YLArg = {SV,_},
+                        CPA   = {pose,counter,[{SV,IPos,CPos}]})
+        ;
+        otherwise;
+            true->
+                CSS  = [],
+                Data = {Pool4,Info2},
+                CPA  = {finish,_,_},
+                R    = normal(success)
+        ).
+
+%claim2
+    claim2({Pool1,Info1,CSS},Data,CPA,R):-true|
+        merge({CSS1,CSS2},CSS),
+        claim1({Pool1,Info1,CSS1},Data1,CPA1,R1),
+        claim21(R1,CPA1,CSS2,Data1,Data,CPA,R).
+
+    claim21(normal(_),{finish,_,_},CSS,{Pool1,Info1},Data,CPA,R):-true|
+        merge({CSS1,CSS2},CSS),
+        notice1({Pool1,Info1,CSS1},Data1,CPA1,R1),
+        claim22(R1,CPA1,CSS2,Data1,Data,CPA,R).
+    claim21(normal(_),{C,P,A},     CSS,Data1,Data,CPA,R):-C\=finish|
+        CSS  = [],
+        Data = Data1,
+        CPA  = {C,P,A},
+        R    = normal(success).
+    claim21(abnormal(Reason),_    ,     CSS,Data1,Data,_,R):-true|
+        CSS  = [],
+        Data = Data1,
+        R    = abnormal(Reason).
+
+    claim22(normal(_),{cancel,_,_},CSS,{Pool1,Info},Data,CPA,R):-true|
+        CSS=[get(ruleRel,{MLArg,_})],
+        dbtcui_guiUtility:is_initialArgument(MLArg,Pool1,Pool,YN1),
+        Data = {Pool,Info},
+        (   YN1 = yes->
+                CPA  = {finish,_,_}
+        ;
+            YN1 = no->
+                CPA  = {cancel,_,_}
+        ),
+        R = normal(success).
+    claim22(normal(_),{C,P,A},     CSS,Data1,Data,CPA,R):-C\=cancel|
+        CSS  = [],
+        Data = Data1,
+        CPA  = {C,P,A},
+        R    = normal(success).
+    claim22(abnormal(Reason),_,CSS,Data1,Data,_,R):-true|
+        CSS   = [],
+        Data1 = Data,
+        R     = abnormal(Reason).
+
+%notice1
+    notice1({Pool1,Info1,CSS1},Data,CPA,R):-true|
+        CSS1 = [get(ruleRel,{_,{MR,YR}})],
+        (   MR\=nil,YR\=nil->
+                Info1 = {_,_,{_,_,_,Which},_},
+                dbtcui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info2,Rel,SPList),
+                notice11(Rel,{MR,YR,SPList,Which},{Pool1,Info2},Data,CPA,R)
+        ;
+        otherwise;      %for naf
+            true->
+                CPA = {cancel,_,_},    
+                Data = {Pool1,Info1}
+        ).
+
+    notice11(1,{_,_,SPList,_},Data1,Data,CPA,R):-true|
+        get_first(SPList,SP),
+        Data = Data1,
+        CPA  = {notice,win,SP},
+        R    = normal(success).
+    notice11(0,{MR,YR,_,d},Data1,Data,CPA,R):-true|
+        dbtcui_guiUtility:get_justificationList(MR,YR,Data1,{Pool1,Info1},SetJL,DispJL,R1),
+        (   R1 = normal(success)->
+                get_first(SetJL,SP),
+                get_first(DispJL,{AddSP,_}),
+                dbtcui_guiUtility:justify(SP,Info1,Info,R2),
+                (   wait(R2)->
+                        dbtcui_messagePool:make_message({justify},{SP},Status),
+                        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool,R3)),
+                (   wait(R3)->
+                        Data = {Pool,Info},
+                        CPA  = {notice,win,[AddSP]},
+                        R    = normal(success))
+        ;
+            R1 = abnormal(_)->
+                Data = {Pool1,Info1},
+                CPA  = {notice,draw,nil},
+                R    = normal(success)
+        ).
+otherwise.
+    notice11(_,{MR,YR,_,_},Data1,Data,CPA,R):-true|
+        dbtcui_guiUtility:get_justificationList(MR,YR,Data1,{Pool1,Info1},SetJL,DispJL,R1),
+        (   R1 = normal(success)->
+                get_first(SetJL,SP),
+                get_first(DispJL,{AddSP,_}),
+                dbtcui_guiUtility:justify(SP,Info1,Info,R2),
+                (   wait(R2)->
+                        dbtcui_messagePool:make_message({justify},{SP},Status),
+                        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool,R3)),
+                (   wait(R3)->
+                        Data = {Pool,Info},
+                        CPA  = {notice,win,[AddSP]},
+                        R    = normal(success))
+        ;
+            R1 = abnormal(_)->
+                Data = {Pool1,Info1},
+                CPA  = {cancel,_,_},
+                R    = normal(success)
+        ).
+
+    get_first([H|_],SPList):-true|
+        SPList = H.

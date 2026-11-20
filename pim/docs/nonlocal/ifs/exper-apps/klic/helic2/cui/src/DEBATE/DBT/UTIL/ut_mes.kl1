@@ -1,0 +1,41 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_messageUtility.
+
+:- public 
+    get_fullAgentName/2,
+    get_fullOppositeAgentName/2,
+    make_message/2.
+
+:- with_macro pimos.
+
+%get_fullName
+    get_fullAgentName(p,FN):-true|
+        FN = prosecutor.
+    get_fullAgentName(d,FN):-true|
+        FN = defendant.
+
+%get_oppositeFullName
+    get_fullOppositeAgentName(d,FN):-true|
+        FN = prosecutor.
+    get_fullOppositeAgentName(p,FN):-true|
+        FN = defendant.
+
+%make_message
+    make_message(List1,String):-true|
+        make_message1(List1,List),
+        append_string:append_string(List,String).
+
+    make_message1([],List):-true|
+        List = [].
+    make_message1([H|T],List):-string(H,_,_)|
+        make_message1(T,List1),
+        List = [H|List1].
+otherwise.
+    make_message1([H1|T],List):-true|
+        hLibrary:tTos(H1,H),
+        make_message1(T,List1),
+        List = [H|List1].

@@ -1,0 +1,601 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_top
+%       File Name   : ty_top.kl1
+%       Function    : top level interface
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/20  : local tree version pool
+%$	1994/ 7/15  : bug fix : wrap/2 return value structure mismatch
+%$	1994/ 7/ 5  : comment out debug options
+%$	1994/ 7/ 5  : expand macros
+%$      1994/ 4/26  : add messages for builtin functions for RBR
+%$      1994/ 1/31  : create_type bug
+%$      1994/ 1/26  : debug#info codes
+%$      1993/12/24  : latest update
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_top.
+%:- with_macro ty_macro.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+:- public compile_type/3,create_type/3.
+
+% for debug
+%:- public compile_type/4,create_type/4.
+:- public create/1.
+
+
+
+% message dispatching for compiler
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S compile_type(Pathname,SavePathname,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%:-if_equal(debug,no).
+compile_type(SourcePathname,SavePathname,Result):-
+    ty_tcmp:compile(SourcePathname,SavePathname,Result).
+
+%compile_type(SourcePathname,SavePathname,Result,Debug):-
+%    ty_tcmp:compile(SourcePathname,SavePathname,Result),
+%    Debug = [nodebug].
+%:-else.
+%compile_type(SourcePathname,SavePathname,Result):-
+%    ty_tcmp:compile(_Debug,[],SourcePathname,SavePathname,Result).
+%
+%compile_type(SourcePathname,SavePathname,Result,Debug):-
+%    ty_tcmp:compile(Debug,[],SourcePathname,SavePathname,Result).
+%:-end_if.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S compile_poset(Pathname,SavePathname,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+% process creation, message handling
+
+%=====================================================================
+% C create(^Stream)
+%=====================================================================
+% for debug
+create(Stream):-
+%    process(Stream,ty#void).
+    process(Stream,'&void').
+
+%=====================================================================
+% C create_type(Pathname,^Stream,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+create_type(Pathname,Stream,Result):-
+    ty_tload:load(Pathname,TypeDB,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        Result = R1,
+        process(Stream,TypeDB)
+    ;otherwise;true ->
+        Result = R1
+    ).
+
+%create_type(Pathname,Stream,Result,Debug):-
+%    Debug = [nodebug],
+%    ty_tload:load(Pathname,TypeDB,R1),
+%%    (R1 = normal(ty#yes) ->
+%    (R1 = normal(success) ->
+%        Result = R1,
+%        process(Stream,TypeDB)
+%    ;otherwise;true ->
+%        Result = R1
+%    ).
+%:-else.
+%create_type(Pathname,Stream,Result):-
+%    ty_tload:load(_DebugInfo,[],Pathname,TypeDB,R1),
+%%    (R1 = normal(ty#yes) ->
+%    (R1 = normal(success) ->
+%        Result = R1,
+%        process(Stream,TypeDB)
+%    ;otherwise;true ->
+%        Result = R1
+%    ).
+%
+%create_type(Pathname,Stream,Result,DebugInfo):-
+%    ty_tload:load(DebugInfo,[],Pathname,TypeDB,R1),
+%%    (R1 = normal(ty#yes) ->
+%    (R1 = normal(success) ->
+%        Result = R1,
+%        process(Stream,TypeDB)
+%    ;otherwise;true ->
+%        Result = R1
+%    ).
+%:-end_if.
+
+%=====================================================================
+% M []
+%=====================================================================
+process([],TypeDB):-
+    free_typeDB(TypeDB).
+
+%=====================================================================
+% M subsume(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%=====================================================================
+% M subsume(X,Y,^NewX,^NewY,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([subsume(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:psubsume(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([subsume(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:psubsume(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+process([subsume(X,Y,NewX,NewY,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([subsume(X,Y,NewX,NewY,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:psubsume(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([subsume(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:psubsume(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([subsume(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:psubsume(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([subsume(X,Y,NewX,NewY,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:psubsume(_Debug,[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([subsume(X,Y,NewX,NewY,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:psubsume(Debug,[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M glb(X,Y,^NewX,^NewY,^Z,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([glb(X,Y,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:glb(X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([glb(X,Y,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:glb(X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+process([glb(X,Y,NewX,NewY,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([glb(X,Y,NewX,NewY,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:glb(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([glb(X,Y,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:glb(_Debug,[],X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([glb(X,Y,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:glb(Debug,[],X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([glb(X,Y,NewX,NewY,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:glb(_Debug,[],X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([glb(X,Y,NewX,NewY,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:glb(Debug,[],X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M lub(X,Y,^NewX,^NewY,^Z,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([lub(X,Y,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:lub(X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([lub(X,Y,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:lub(X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+process([lub(X,Y,NewX,NewY,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_att:lub(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([lub(X,Y,NewX,NewY,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:lub(X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([lub(X,Y,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:lub(_Debug,[],X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([lub(X,Y,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:lub(Debug,[],X,Y,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([lub(X,Y,NewX,NewY,Z,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_att:lub(_Debug,[],X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([lub(X,Y,NewX,NewY,Z,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_att:lub(Debug,[],X,Y,NewX,NewY,Z,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M greater(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([greater(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:greater(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([greater(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:greater(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([greater(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:greater(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([greater(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:greater(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M less(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([less(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:less(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([less(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:less(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([less(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:less(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([less(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:less(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M equal(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([equal(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([equal(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([equal(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:equal(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([equal(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:equal(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M not_equal(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([not_equal(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:not_equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([not_equal(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:not_equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([not_equal(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:not_equal(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([not_equal(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:not_equal(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M same(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([same(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:same(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([same(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:same(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([same(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:same(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([same(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:same(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M different(X,Y,Env,^NewEnv,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([different(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+    ty_blt:different(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([different(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_blt:different(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([different(X,Y,Env,NewEnv,Result)|Stream],TypeDB):-
+%    ty_blt:different(_Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([different(X,Y,Env,NewEnv,Result,Debug)|Stream],TypeDB):-
+%    ty_blt:different(Debug,[],X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M is_defined(X,^NewX,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([is_defined(X,Result)|Stream],TypeDB):-
+    ty_att:is_defined(X,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([is_defined(X,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:is_defined(X,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+process([is_defined(X,NewX,Result)|Stream],TypeDB):-
+    ty_att:is_defined(X,NewX,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([is_defined(X,NewX,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_att:is_defined(X,NewX,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([is_defined(X,Result)|Stream],TypeDB):-
+%    ty_att:is_defined(_Debug,[],X,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([is_defined(X,Result,Debug)|Stream],TypeDB):-
+%    ty_att:is_defined(Debug,[],X,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([is_defined(X,NewX,Result)|Stream],TypeDB):-
+%    ty_att:is_defined(_Debug,[],X,NewX,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([is_defined(X,NewX,Result,Debug)|Stream],TypeDB):-
+%    ty_att:is_defined(Debug,[],X,NewX,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% M get_explanations(X,^NewX,Explanations,^Result)
+%=====================================================================
+process([get_explanations(X,Explanations,Result)|Stream],TypeDB):-
+    ty_info:get_explanations(X,Explanations,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+process([get_explanations(X,NewX,Explanations,Result)|Stream],TypeDB):-
+    ty_info:get_explanations(X,NewX,Explanations,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+
+%=====================================================================
+% D compile_type(SourcePathname,SavePathname,^Result)
+%=====================================================================
+process([compile_type(SourcePathname,SavePathname,Result)|Stream],TypeDB):-
+    compile_type(SourcePathname,SavePathname,Result),
+    process(Stream,TypeDB).
+
+%process([compile_type(SourcePathname,SavePathname,Result,Debug)|Stream],TypeDB):-
+%    compile_type(SourcePathname,SavePathname,Result,Debug),
+%    process(Stream,TypeDB).
+
+
+%=====================================================================
+% D load(SavePathname,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([load(SavePathname,Result)|Stream],TypeDB):-
+    free_typeDB(TypeDB),
+    ty_tload:load(SavePathname,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([load(SavePathname,Result,Debug)|Stream],TypeDB):-
+%    free_typeDB(TypeDB),
+%    Debug = [nodebug],
+%    ty_tload:load(SavePathname,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([load(SavePathname,Result)|Stream],TypeDB):-
+%    free_typeDB(TypeDB),
+%    ty_tload:load(_Debug,[],SavePathname,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([load(SavePathname,Result,Debug)|Stream],TypeDB):-
+%    free_typeDB(TypeDB),
+%    ty_tload:load(Debug,[],SavePathname,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D meet(X,Y,Z,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([meet(X,Y,Z,Result)|Stream],TypeDB):-
+    ty_lat:meet(X,Y,Z,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([meet(X,Y,Z,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:meet(X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([meet(X,Y,Z,Result)|Stream],TypeDB):-
+%    ty_lat:meet(_Debug,[],X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([meet(X,Y,Z,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:meet(Debug,[],X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D join(X,Y,Z,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([join(X,Y,Z,Result)|Stream],TypeDB):-
+    ty_lat:join(X,Y,Z,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([join(X,Y,Z,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:join(X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([join(X,Y,Z,Result)|Stream],TypeDB):-
+%    ty_lat:join(_Debug,[],X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([join(X,Y,Z,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:join(Debug,[],X,Y,Z,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D bsubsume(X,Y,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([bsubsume(X,Y,Result)|Stream],TypeDB):-
+    ty_lat:bsubsume(X,Y,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([bsubsume(X,Y,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:bsubsume(X,Y,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([bsubsume(X,Y,Result)|Stream],TypeDB):-
+%    ty_lat:bsubsume(_Debug,[],X,Y,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([bsubsume(X,Y,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:bsubsume(Debug,[],X,Y,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D upper_bound(X,^UB,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([upper_bound(X,UB,Result)|Stream],TypeDB):-
+    ty_lat:upper_bound(X,UB,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([upper_bound(X,UB,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:upper_bound(X,UB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([upper_bound(X,UB,Result)|Stream],TypeDB):-
+%    ty_lat:upper_bound(_Debug,[],X,UB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([upper_bound(X,UB,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:upper_bound(Debug,[],X,UB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D immediate_upper_bound(X,^IUB,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([immediate_upper_bound(X,IUB,Result)|Stream],TypeDB):-
+    ty_lat:immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([immediate_upper_bound(X,IUB,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([immediate_upper_bound(X,IUB,Result)|Stream],TypeDB):-
+%    ty_lat:immediate_upper_bound(_Debug,[],X,IUB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([immediate_upper_bound(X,IUB,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:immediate_upper_bound(Debug,[],X,IUB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D lower_bound(X,^LB,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([lower_bound(X,LB,Result)|Stream],TypeDB):-
+    ty_lat:lower_bound(X,LB,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([lower_bound(X,LB,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:lower_bound(X,LB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([lower_bound(X,LB,Result)|Stream],TypeDB):-
+%    ty_lat:lower_bound(_Debug,[],X,LB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([lower_bound(X,LB,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:lower_bound(Debug,[],X,LB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+%=====================================================================
+% D immediate_lower_bound(X,^ILB,^Result)
+%=====================================================================
+%:-if_equal(debug,no).
+process([immediate_lower_bound(X,ILB,Result)|Stream],TypeDB):-
+    ty_lat:immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result),
+    process(Stream,NewTypeDB).
+%process([immediate_lower_bound(X,ILB,Result,Debug)|Stream],TypeDB):-
+%    Debug = [nodebug],
+%    ty_lat:immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-else.
+%process([immediate_lower_bound(X,ILB,Result)|Stream],TypeDB):-
+%    ty_lat:immediate_lower_bound(_Debug,[],X,ILB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%process([immediate_lower_bound(X,ILB,Result,Debug)|Stream],TypeDB):-
+%    ty_lat:immediate_lower_bound(Debug,[],X,ILB,TypeDB,NewTypeDB,Result),
+%    process(Stream,NewTypeDB).
+%:-end_if.
+
+otherwise.
+% skip unknown message
+process([Message|Stream],TypeDB):-
+%    hLibrary:stdio(out,OutStream),
+    ty_osif:stdio(out,OutStream),
+%    Depth = 20,
+%    Length = 20,
+%    variable:wrap(Message,Result,Depth,Length),
+    variable:wrap(Message,WrappedTerm),
+%    vector_element(Result,1,WrappedTerm,_),
+%    OutStream = [putf("~nUnknown message : ~w~n",[WrappedTerm]),flush(_)],
+    OutStream = [putc(key#lf),fwrite("Unknown message : ",_),
+		 putwt(WrappedTerm),putc(key#lf),fflush(_)],
+    process(Stream,TypeDB).
+
+
+
+%---------------------------------------------------------------------
+% L free_typeDB(TypeDB)
+%---------------------------------------------------------------------
+%free_typeDB(TypeDB):-
+%%    TypeDB = ty#void | true.
+%    TypeDB = '&void' | true.
+%free_typeDB(TypeDB):-
+%%    ty#is_typeDB(TypeDB)|
+%    vector(TypeDB,7)|
+%%	typeDB#read(posTBL,PosTBL,TypeDB,TypeDB1),
+%	vector_element(TypeDB,1,PosTBL,TypeDB1),
+%	PosTBL = [],
+%%	typeDB#read(expTBL,ExpTBL,TypeDB1,_TypeDB2),
+%	vector_element(TypeDB1,6,ExpTBL,_TypeDB2),
+%	ExpTBL = [].
+
+free_typeDB(_):-true|true.

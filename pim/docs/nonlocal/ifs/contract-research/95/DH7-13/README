@@ -1,0 +1,38 @@
+
+README
+
+Copyright (C) 1996 Yosuke Sato
+
+"Set Constraint Solver" is a small system that offers two kinds of programs.
+One is for calculating Gr\"{o}bner bases in polynomial rings
+over Boolean rings. You can experiment on various calculations  
+of our a little bit queer Gr\"{o}bner bases.
+The another one is for solving constraints of sets. You can handle
+various types of set constraints using our Gr\"{o}bner bases.
+The whole program is written in prolog. 
+Though we developed the software using SICStus prolog,
+it is also available in other prolog compilers with minor changes
+of the source program.
+
+
+Contents
+
+README		this file
+
+README.j	this file(Japanese)
+
+RELEASE_NOTE	release note
+
+RELEASE_NOTE.j	release note(Japanese)
+
+set.pl		a source program written in SICStus prolog
+
+manual.tex 	a latex source code for user's manual
+
+background.tex	a latex source code of theoritical background for the system
+
+manualj.tex	a latex source code for user's manual(Japanese)
+
+backgroundj.tex	a latex source code of theoritical background for the system(Japanese)
+
+

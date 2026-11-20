@@ -1,0 +1,36 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_argumentBrawzer.
+
+:- public 
+    go/3.
+
+:- with_macro pimos. 
+
+    go({RPM,CS1},Data,Protocol):-true|
+        CS1  = [get(st,ST)|CS2],
+        go1(ST,CS2,CS,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%show_argument
+    go1(nil,CS1,CS,Result):-true|
+        CS = CS1,
+        Result = abnormal({drs,'Solution is nothing',nil}).
+otherwise.
+    go1(ST,CS1,CS,Result):-true|
+        CS1 = [get(displayParameter,DP1),make_nh(NH)|CS2],
+        slv_shell:go({ST,NH,DP1},DP,R1),
+        (   wait(R1)->
+                CS2 = [set(displayParameter,DP)|CS],
+                Result = R1).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,_,Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,Arguments,Protocol):-true|
+        Protocol = receive(ProtocolName,Arguments,_).
+

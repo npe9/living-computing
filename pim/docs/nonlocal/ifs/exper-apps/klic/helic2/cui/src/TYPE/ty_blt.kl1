@@ -1,0 +1,728 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_blt
+%       File Name   : ty_blt.kl1
+%       Function    : builtin fuctions for RBR module
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/15  : typo fix
+%$	1994/ 7/ 5  : string_less_than to generic:less_than
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 5/24  : same : attributes vs attributes lack of string_less_than
+%$      1994/ 5/23  : not_equal bug fix
+%$      1994/ 5/23  : cover value access
+%$      1994/ 4/25  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_blt.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public greater/7,less/7,equal/7,not_equal/7.
+:-public same/7,different/7.
+%:-else.
+%:-public greater/9,less/9,equal/9,not_equal/9.
+%:-public same/9,different/9.
+%:-end_if.
+
+% integer builtins
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S greater(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+greater(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    greater(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S greater(X,Y,^NewX,^NewY,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+greater(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	var_env:deref(X,Xval,Env,Env1),
+	var_env:deref(Y,Yval,Env1,NewEnv),
+	greater_nv(Xval,Yval,_NewXval,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewX = X, NewY = Y.
+greater(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,NewEnv),
+	greater_nv(Xval,Y,_NewXval,NewY,Result),
+	NewTypeDB = TypeDB,
+	NewX = X.
+greater(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,NewEnv),
+	greater_nv(X,Yval,NewX,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewY = Y.
+greater(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	NewEnv = Env, NewTypeDB = TypeDB,
+	greater_nv(X,Y,NewX,NewY,Result).
+otherwise.
+greater(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illegal_data,Add}
+greater_nv(X,Y,NewX,NewY,Result):-
+%    {{ pterm#get(typename,Tx,NTx,X,NewX),
+    set_vector_element(X,0,Tx,NTx,NewX),
+%       pterm#get(typename,Ty,NTy,Y,NewY) }},
+    set_vector_element(Y,0,Ty,NTy,NewY),
+    greater_t_t(Tx,Ty,NTx,NTy,Result).
+
+greater_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_number(Ty) |
+    vector(Tx,1), vector(Ty,1) |
+%	{{ number#read(value,Vx,Tx,NTx),
+	vector_element(Tx,0,Vx,NTx),
+%	   number#read(value,Vy,Ty,NTy) }},
+	vector_element(Ty,0,Vy,NTy),
+	greater_than(Vx,Vy,Result).
+greater_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_cover(Ty) |
+    vector(Tx,1), vector(Ty,2) |
+%	{{ number#read(value,Vx,Tx,NTx),
+	vector_element(Tx,0,Vx,NTx),
+%	   cover#read(to,Ny,Ty,NTy),
+	vector_element(Ty,1,Ny,NTy),
+%	   number#read(value,Vy,Ny,_) }},
+	vector_element(Ny,0,Vy,_),
+	greater_than(Vx,Vy,Result).
+greater_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_number(Ty) |
+    vector(Tx,2), vector(Ty,1) |
+%	{{ cover#read(from,Nx,Tx,NTx),
+	vector_element(Tx,0,Nx,NTx),
+%	   number#read(value,Vx,Nx,_),
+	vector_element(Nx,0,Vx,_),
+%	   number#read(value,Vy,Ty,NTy) }},
+	vector_element(Ty,0,Vy,NTy),
+	greater_than(Vx,Vy,Result).
+greater_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_cover(Ty) |
+    vector(Tx,2), vector(Ty,2) |
+%	{{ cover#read(from,Nx,Tx,NTx),
+	vector_element(Tx,0,Nx,NTx),
+%	   number#read(value,Vx,Nx,_),
+	vector_element(Nx,0,Vx,_),
+%	   cover#read(to,Ny,Ty,NTy),
+	vector_element(Ty,1,Ny,NTy),
+%	   number#read(value,Vy,Ny,_) }},
+	vector_element(Ny,0,Vy,_),
+	greater_than(Vx,Vy,Result).
+otherwise.
+greater_t_t(Tx,Ty,NTx,NTy,Result):-
+    NTx = Tx, NTy = Ty,
+%    Result = normal(ty#no).
+    Result = normal(fail).
+
+greater_than(Nx,Ny,Result):-
+	( Nx > Ny ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	;otherwise;true ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S less(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+less(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    less(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S less(X,Y,^NewX,^NewY,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+less(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	var_env:deref(X,Xval,Env,Env1),
+	var_env:deref(Y,Yval,Env1,NewEnv),
+	less_nv(Xval,Yval,_NewXval,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewX = X, NewY = Y.
+less(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,NewEnv),
+	less_nv(Xval,Y,_NewXval,NewY,Result),
+	NewTypeDB = TypeDB,
+	NewX = X.
+less(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,NewEnv),
+	less_nv(X,Yval,NewX,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewY = Y.
+less(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	NewEnv = Env, NewTypeDB = TypeDB,
+	less_nv(X,Y,NewX,NewY,Result).
+otherwise.
+less(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+less_nv(X,Y,NewX,NewY,Result):-
+%    {{ pterm#get(typename,Tx,NTx,X,NewX),
+    set_vector_element(X,0,Tx,NTx,NewX),
+%       pterm#get(typename,Ty,NTy,Y,NewY) }},
+    set_vector_element(Y,0,Ty,NTy,NewY),
+    less_t_t(Tx,Ty,NTx,NTy,Result).
+
+less_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_number(Ty) |
+    vector(Tx,1), vector(Ty,1) |
+%	{{ number#read(value,Vx,Tx,NTx),
+	vector_element(Tx,0,Vx,NTx),
+%	   number#read(value,Vy,Ty,NTy) }},
+	vector_element(Ty,0,Vy,NTy),
+	less_than(Vx,Vy,Result).
+less_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_cover(Ty) |
+    vector(Tx,1), vector(Ty,2) |
+%	{{ number#read(value,Vx,Tx,NTx),
+	vector_element(Tx,0,Vx,NTx),
+%	   cover#read(from,Ny,Ty,NTy),
+	vector_element(Ty,0,Ny,NTy),
+%	   number#read(value,Vy,Ny,_) }},
+	vector_element(Ny,0,Vy,_),
+	less_than(Vx,Vy,Result).
+less_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_number(Ty) |
+    vector(Tx,2), vector(Ty,1) |
+%	{{ cover#read(to,Nx,Tx,NTx),
+	vector_element(Tx,1,Nx,NTx),
+%	   number#read(value,Vx,Nx,_),
+	vector_element(Nx,0,Vx,_),
+%	   number#read(value,Vy,Ty,NTy) }},
+	vector_element(Ty,0,Vy,NTy),
+	less_than(Vx,Vy,Result).
+less_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_cover(Ty) |
+    vector(Tx,2), vector(Ty,2) |
+%	{{ cover#read(to,Nx,Tx,NTx),
+	vector_element(Tx,1,Nx,NTx),
+%	   number#read(value,Vx,Nx,_),
+	vector_element(Nx,0,Vx,_),
+%	   cover#read(from,Ny,Ty,NTy),
+	vector_element(Ty,0,Ny,NTy),
+%	   number#read(value,Vy,Ny,_) }},
+	vector_element(Ny,0,Vy,_),
+	less_than(Vx,Vy,Result).
+otherwise.
+less_t_t(Tx,Ty,NTx,NTy,Result):-
+    NTx = Tx, NTy = Ty,
+%    Result = normal(ty#no).
+    Result = normal(fail).
+
+less_than(Nx,Ny,Result):-
+	( Nx < Ny ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	;otherwise;true ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	).
+
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S equal(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    equal(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S equal(X,Y,^NewX,^NewY,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	var_env:deref(X,Xval,Env,Env1),
+	var_env:deref(Y,Yval,Env1,NewEnv),
+	equal_nv(Xval,Yval,_NewXval,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewX = X, NewY = Y.
+equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,NewEnv),
+	equal_nv(Xval,Y,_NewXval,NewY,Result),
+	NewTypeDB = TypeDB,
+	NewX = X.
+equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,NewEnv),
+	equal_nv(X,Yval,NewX,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewY = Y.
+equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	NewEnv = Env, NewTypeDB = TypeDB,
+	equal_nv(X,Y,NewX,NewY,Result).
+otherwise.
+equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+equal_nv(X,Y,NewX,NewY,Result):-
+%    {{ pterm#get(typename,Tx,NTx,X,NewX),
+    set_vector_element(X,0,Tx,NTx,NewX),
+%       pterm#get(typename,Ty,NTy,Y,NewY) }},
+    set_vector_element(Y,0,Ty,NTy,NewY),
+    equal_t_t(Tx,Ty,NTx,NTy,Result).
+
+equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_number(Ty) |
+    vector(Tx,1), vector(Ty,1) |
+%	{{ number#read(value,Nx,Tx,NTx),
+	vector_element(Tx,0,Nx,NTx),
+%	   number#read(value,Ny,Ty,NTy) }},
+	vector_element(Ty,0,Ny,NTy),
+	( Nx =:= Ny ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	; Nx =\= Ny ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	).
+equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_cover(Ty) |
+    vector(Tx,2), vector(Ty,2) |
+%	{{ cover#read(from,Nxf,Tx,Tx1),
+	vector_element(Tx,0,Nxf,Tx1),
+%	   number#read(value,Vxf,Nxf,_),
+	vector_element(Nxf,0,Vxf,_),
+%	   cover#read(to,Nxt,Tx1,NTx),
+	vector_element(Tx1,1,Nxt,NTx),
+%	   number#read(value,Vxt,Nxt,_),
+	vector_element(Nxt,0,Vxt,_),
+%	   cover#read(from,Nyf,Ty,Ty1),
+	vector_element(Ty,0,Nyf,Ty1),
+%	   number#read(value,Vyf,Nyf,_),
+	vector_element(Nyf,0,Vyf,_),
+%	   cover#read(to,Nyt,Ty1,NTy),
+	vector_element(Ty1,1,Nyt,NTy),
+%	   number#read(value,Vyt,Nyt,_) }},
+	vector_element(Nyt,0,Vyt,_),
+	( Vxf =:= Vyf, Vxt =:= Vyt ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	;otherwise;true ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	).
+otherwise.
+equal_t_t(Tx,Ty,NTx,NTy,Result):-
+    NTx = Tx, NTy = Ty,
+%    Result = normal(ty#no).
+    Result = normal(fail).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S not_equal(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+not_equal(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    not_equal(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+not_equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	var_env:deref(X,Xval,Env,Env1),
+	var_env:deref(Y,Yval,Env1,NewEnv),
+	not_equal_nv(Xval,Yval,_NewXval,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewX = X, NewY = Y.
+not_equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,NewEnv),
+	not_equal_nv(Xval,Y,_NewXval,NewY,Result),
+	NewTypeDB = TypeDB,
+	NewX = X.
+not_equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,NewEnv),
+	not_equal_nv(X,Yval,NewX,_NewYval,Result),
+	NewTypeDB = TypeDB,
+	NewY = Y.
+not_equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%   ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	NewEnv = Env, NewTypeDB = TypeDB,
+	not_equal_nv(X,Y,NewX,NewY,Result).
+otherwise.
+not_equal(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X,
+    NewY = Y,
+    NewEnv = Env,
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+not_equal_nv(X,Y,NewX,NewY,Result):-
+%    {{ pterm#get(typename,Tx,NTx,X,NewX),
+    set_vector_element(X,0,Tx,NTx,NewX),
+%       pterm#get(typename,Ty,NTy,Y,NewY) }},
+    set_vector_element(Y,0,Ty,NTy,NewY),
+    not_equal_t_t(Tx,Ty,NTx,NTy,Result).
+
+not_equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_number(Ty) |
+    vector(Tx,1), vector(Ty,1) |
+%	{{ number#read(value,Nx,Tx,NTx),
+	vector_element(Tx,0,Nx,NTx),
+%	   number#read(value,Ny,Ty,NTy) }},
+	vector_element(Ty,0,Ny,NTy),
+	( Nx =:= Ny ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	; Nx =\= Ny ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	).
+not_equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_number(Tx), ty#is_cover(Ty) |
+    vector(Tx,1), vector(Ty,2) |
+	NTx = Tx, NTy = Ty,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+not_equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_number(Ty) |
+    vector(Tx,2), vector(Ty,1) |
+	NTx = Tx, NTy = Ty,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+not_equal_t_t(Tx,Ty,NTx,NTy,Result):-
+%    ty#is_cover(Tx), ty#is_cover(Ty) |
+    vector(Tx,2), vector(Ty,2) |
+%	{{ cover#read(from,Nxf,Tx,Tx1),
+	vector_element(Tx,0,Nxf,Tx1),
+%	   number#read(value,Vxf,Nxf,_),
+	vector_element(Nxf,0,Vxf,_),
+%	   cover#read(to,Nxt,Tx1,NTx),
+	vector_element(Tx1,1,Nxt,NTx),
+%	   number#read(value,Vxt,Nxt,_),
+	vector_element(Nxt,0,Vxt,_),
+%	   cover#read(from,Nyf,Ty,Ty1),
+	vector_element(Ty,0,Nyf,Ty1),
+%	   number#read(value,Vyf,Nyf,_),
+	vector_element(Nyf,0,Vyf,_),
+%	   cover#read(to,Nyt,Ty1,NTy),
+	vector_element(Ty1,1,Nyt,NTy),
+%	   number#read(value,Vyt,Nyt,_) }},
+	vector_element(Nyt,0,Vyt,_),
+	( Vxf =:= Vyf, Vxt =:= Vyt ->
+%	     Result = normal(ty#no)
+	     Result = normal(fail)
+	;otherwise;true ->
+%	     Result = normal(ty#yes)
+	     Result = normal(success)
+	).
+otherwise.
+not_equal_t_t(Tx,Ty,NTx,NTy,Result):-
+    NTx = Tx, NTy = Ty,
+%    Result = normal(ty#no).
+    Result = normal(fail).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S same(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+same(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    same(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S same(X,Y,^NewX,^NewY,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : illegal_type_name | undefined_label | illegal_data
+same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_var(Y)|
+    integer(X),X>0,integer(Y),Y>0|
+	var_env:deref(X,Xval,Env, Env1),
+	var_env:deref(Y,Yval,Env1,Env2),
+	same_nv(Xval,Yval,_NewXval,_NewYval,
+		Env2,NewEnv,TypeDB,NewTypeDB,Result),
+	NewX = X, NewY = Y.
+same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_var(X),ty#is_pterm(Y)|
+    integer(X),X>0,vector(Y,3)|
+	var_env:deref(X,Xval,Env,Env1),
+	same_nv(Xval,Y,_NewXval,NewY,
+		Env1,NewEnv,TypeDB,NewTypeDB,Result),
+	NewX = X.
+same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_var(Y)|
+    vector(X,3),integer(Y),Y>0|
+	var_env:deref(Y,Yval,Env,Env1),
+	same_nv(X,Yval,NewX,_NewYval,
+		Env1,NewEnv,TypeDB,NewTypeDB,Result),
+	NewY = Y.
+same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    ty#is_pterm(X),ty#is_pterm(Y)|
+    vector(X,3),vector(Y,3)|
+	same_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+otherwise.
+same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X, NewY = Y,
+    NewEnv = Env, NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_data,[X,Y]}.
+    Info = {type,illegal_data,[X,Y]}.
+
+same_nv(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(quantifier,Qx,X,X1),
+    vector_element(X,1,Qx,X1),
+%       pterm#read(quantifier,Qy,Y,Y1) }},
+    vector_element(Y,1,Qy,Y1),
+    (Qx =:= Qy ->
+        % some : sid =:= sid (sid > 0)
+        % all : 0 =:= 0
+        same_t(X1,Y1,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result)
+    ;otherwise;true ->
+        % some vs all : sid =\= 0 (sid > 0)
+        % all vs some : 0 =\= sid (sid > 0)
+        NewX = X1, NewY = Y1,
+        NewEnv = Env, NewTypeDB = TypeDB,
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+
+same_t(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1),
+    vector_element(X,0,Tx,X1),
+%       pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+    (Tx = Ty ->
+%        {{ pterm#read(attributes,Ax,X1,X2),
+        vector_element(X1,2,Ax,X2),
+%	   pterm#read(attributes,Ay,Y1,Y2) }},
+	vector_element(Y1,2,Ay,Y2),
+        same_attributes(Ax,Ay,X2,Y2,NewX,NewY,
+			Env,NewEnv,TypeDB,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewX = X1, NewY = Y1,
+        NewEnv = Env, NewTypeDB = TypeDB,
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+
+same_attributes([],[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    NewX = X, NewY = Y,
+    NewEnv = Env, NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+same_attributes([],[Py|Ay],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Tx,X,X1) }},
+    vector_element(X,0,Tx,X1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    ty_att:defvalue(Tx,Ly,Vx,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+	same(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    same_attributes([],Ay,X1,Y,NewX,NewY,
+			    Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X1, NewY = Y,
+	    NewEnv = Env1, NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+        NewX = X1, NewY = Y,
+        NewEnv = Env, NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+same_attributes([Px|Ax],[],X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ pterm#read(typename,Ty,Y,Y1) }},
+    vector_element(Y,0,Ty,Y1),
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+    ty_att:defvalue(Ty,Lx,Vy,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        {{ attribute#read(value,Vx,Px1,_Px2) }},
+        vector_element(Px1,1,Vx,_Px2),
+	same(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    same_attributes(Ax,[],X,Y1,NewX,NewY,
+			    Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X, NewY = Y1,
+	    NewEnv = Env1, NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+        NewX = X, NewY = Y1,
+        NewEnv = Env, NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+same_attributes([Px|Ax],[Py|Ay],X,Y,NewX,NewY,
+		Env,NewEnv,TypeDB,NewTypeDB,Result):-
+%    {{ attribute#read(label,Lx,Px,Px1) }},
+    vector_element(Px,0,Lx,Px1),
+%    {{ attribute#read(label,Ly,Py,Py1) }},
+    vector_element(Py,0,Ly,Py1),
+    (Lx = Ly ->
+%        {{ attribute#read(value,Vx,Px1,_Px2) }},
+        vector_element(Px1,1,Vx,_Px2),
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+        same(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+	    same_attributes(Ax,Ay,X,Y,NewX,NewY,
+			    Env1,NewEnv,TypeDB1,NewTypeDB,Result)
+	;otherwise;true ->
+	    NewX = X, NewY = Y,
+	    NewEnv = Env1, NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Lx,Ly) ->
+    ;generic:less_than(Lx,Ly) ->
+%        {{ pterm#read(typename,Ty,Y,Y1) }},
+        vector_element(Y,0,Ty,Y1),
+        ty_att:defvalue(Ty,Lx,Vy,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vx,Px1,_Px2) }},
+        vector_element(Px1,1,Vx,_Px2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+	    same(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+	        same_attributes(Ax,[Py1|Ay],X,Y1,NewX,NewY,
+			     Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewX = X, NewY = Y1,
+	        NewEnv = Env1, NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+	;otherwise;true ->
+	    NewX = X, NewY = Y1,
+	    NewEnv = Env, NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+%    ;string_less_than(Ly,Lx) ->
+    ;generic:less_than(Ly,Lx) ->
+%        {{ pterm#read(typename,Tx,X,X1) }},
+        vector_element(X,0,Tx,X1),
+        ty_att:defvalue(Tx,Ly,Vx,TypeDB,TypeDB1,R1),
+%        {{ attribute#read(value,Vy,Py1,_Py2) }},
+        vector_element(Py1,1,Vy,_Py2),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+	    same(Vx,Vy,_NewVx,_NewVy,Env,Env1,TypeDB1,TypeDB2,R2),
+%	    (R2 = normal(ty#yes) ->
+	    (R2 = normal(success) ->
+	        same_attributes([Px1|Ax],Ay,X1,Y,NewX,NewY,
+			     Env1,NewEnv,TypeDB2,NewTypeDB,Result)
+	    ;otherwise;true ->
+	        NewX = X1, NewY = Y,
+	        NewEnv = Env1, NewTypeDB = TypeDB2,
+	        Result = R2
+	    )
+	;otherwise;true ->
+	    NewX = X1, NewY = Y,
+	    NewEnv = Env, NewTypeDB = TypeDB1,
+	    Result = R1
+	)
+    ).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S different(X,Y,Env,^NewEnv,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(success|fail) | abnormal(Info)
+%        Info : {type,illeal_data,Add}
+different(X,Y,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    different(X,Y,_NewX,_NewY,Env,NewEnv,TypeDB,NewTypeDB,Result).
+
+different(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,Result):-
+    same(X,Y,NewX,NewY,Env,NewEnv,TypeDB,NewTypeDB,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        Result = normal(ty#no)
+        Result = normal(fail)
+%    ;R1 = normal(ty#no) ->
+    ;R1 = normal(fail) ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+        Result = R1
+    ).

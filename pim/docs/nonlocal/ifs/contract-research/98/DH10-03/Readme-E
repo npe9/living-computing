@@ -1,0 +1,59 @@
+ H10-03/ 
+    |-- Readme-J                                   Japanese version
+    |-- Readme-E                                   This file
+    |
+    |-- documents/ 
+    |     |-- manual.ps                            CMGTP manual
+    |
+    |
+    |-- Java-CMGTP/                                 Java-CMGTP directory
+    |     |-- AConj.java                            java program
+    |     |-- ASCII_UCodeESC_CharStream.java        //
+    |     |-- Clause.java                           //   
+    |     |-- Cnsq.java                             //   
+    |     |-- Counter.java                          //   
+    |     |-- DList.java                            //   
+    |     |-- EXTermTemp.java                       //   
+    |     |-- MGTP.java                             //   
+    |     |-- MGTPChecker.java                      //
+    |     |-- MGTPCheckerConstants.java             //
+    |     |-- MGTPCheckerTokenManager.java          //
+    |     |-- MGTPParser.java                       //
+    |     |-- MGTPParserConstants.java              //      
+    |     |-- MGTPParserTokenManager.java           //
+    |     |-- PerseException.java                   //
+    |     |-- Term.java                             //
+    |     |-- TMNode.java                           //
+    |     |-- Token.java                            //
+    |     |-- TokenMgrError.java                    //
+    |     |-- XTerm.java                            //
+    |     |-- fib.mg                                Problem example
+    |     |-- test.mg                               //
+    |     |-- SYN009-1.mg                           //
+    |     |-- SYN059-1.mg                           //
+    |
+    |-- PTV/                                        PTV directory
+          |-- AConj.java                            java program
+          |-- ASCII_UCodeESC_CharStream.java        //
+          |-- Clause.java                           //   
+          |-- Cnsq.java                             //   
+          |-- Counter.java                          //   
+          |-- DList.java                            //   
+          |-- EXTermTemp.java                       //   
+          |-- GT.java                               //   
+          |-- MGTP.java                             //   
+          |-- MGTPChecker.java                      //
+          |-- MGTPCheckerConstants.java             //
+          |-- MGTPCheckerTokenManager.java          //
+          |-- MGTPParser.java                       //
+          |-- MGTPParserConstants.java              //      
+          |-- MGTPParserTokenManager.java           //
+          |-- PerseException.java                   //
+          |-- PTVisualizer.java                     //
+          |-- Term.java                             //
+          |-- TMNode.java                           //
+          |-- Token.java                            //
+          |-- TokenMgrError.java                    //
+          |-- XTerm.java                            //
+          |-- ptest.mg                             Problem example
+          |-- SYN002-1_010dom.mg                    //

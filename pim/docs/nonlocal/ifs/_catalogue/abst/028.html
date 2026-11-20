@@ -1,0 +1,94 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (28) Reasoning System: EUODHILOS</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (28) Reasoning System: EUODHILOS</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 1.7 MB
+	Documents:   Manuals (Japanese/English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A General Reasoning System for a Variety of Logics.
+  
+<h2><b>Characteristics</b></h2>
+
+EUODHILOS is a general-purpose reasoning assistant system that allows
+users interactively to define the language and derivation rules of a
+logical system, and to construct proofs in the defined system. It
+consists of three important components:
+
+<ol>
+
+<li>an expressive and tractable framework for representing a logic,
+
+<li>a powerful and flexible proof construction facility, and 
+
+<li>a visual reasoning-oriented human-computer interface.
+
+</ol>
+
+<h2><b>Specifying a Logic</b></h2>
+
+The definite clause grammar formalism is slightly augmented with
+operator precedence and special constructs to handle proper logical
+concepts such as variable binding, scope, substitution, etc., and
+employed for specifying the syntax of logical expressions. Once the
+syntax is defined, EUODHILOS generates a parser and an unparser for
+the language.  <p>
+
+An inference rule is specified in natural deduction style in three
+parts: the derivations of the premises of the rule, the conclusion of
+the rule, and the restrictions that are imposed on the derivations of
+the premises and the conclusion, such as variable occurrence
+conditions and substitution conditions. In EUODHILOS, the side
+conditions of a rule are supposed to be described in terms of the
+built-in primitive side conditions and their combinations.  Derived
+rules are also definable if they have been ju stified as valid. A
+rewriting rule is specified with a pair of forms before and after
+rewriting.
+ 
+<h2><b>Proof Construction Facilities and Proof Development</b></h2>
+
+EUODHILOS has various facilities which support the natural and
+efficient constructions of proofs in a defined logical system. 
+Foremost among these facilities is the idea of a <i>sheet of
+thought</i>. A sheet of thought is a field in which we can compose a
+proof from its fragments, separate a proof into parts, or reason using
+derived rules and lemmas. EUODHILOS supports various proof methods
+related to sheets of thought-forward reasoning, baskward reasoning,
+mixed forward and backward reasoning, and schematic proof. The proofs
+are visualized in tree-form with justifications indicated in the right
+margin.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Reasoning System: EUODHILOS [273K] <a
+href="../../../ifs/solver-prover/simpos/euod.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

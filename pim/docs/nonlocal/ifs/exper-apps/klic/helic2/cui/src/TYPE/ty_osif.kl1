@@ -1,0 +1,684 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_osif
+%       File Name   : ty_osif.kl1
+%       Function    : OS interface
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/20  : replace keyed_bag/set with local tree version
+%$	1994/ 7/15  : replace keyed_bag/set with pimospool
+%$	1994/ 7/14  : bug fix open/4 : pathname string check for stdio
+%$	1994/ 7/14  : stdio/2
+%$	1994/ 7/13  : key_sort/2
+%$	1994/ 7/13  : keyed_set, keyed_bag for klic v1.422
+%$	1994/ 7/13  : remove set_horophrasting/2
+%$	1994/ 7/13  : remove add/3
+%$	1994/ 7/11  : file open
+%$	1994/ 7/11  : atom-term conversion utilities
+%$	1994/ 7/ 6  : string utilities
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 7/ 5  : expand macros
+%$      1994/ 4/26  : add pool creation interface
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : hLibrary file/3 spec change
+%$      1994/ 2/ 4  : term_to_qstring/2 and term_to_string/2
+%$      1994/ 2/ 4  : print_error/1 for term read error handling
+%$      1994/ 2/ 4  : printf/2 for debug#print
+%$      1994/ 1/21  : in/4 -> exist/4 for keyed_set
+%$      1993/12/24  : latest update
+%$      1993/11/26  : bag,keyed_set
+%$      1993/11/25  : file open
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_osif.
+:- with_macro pimos.
+:- public add_at/4,get_at/4,in/4,remove_at/4,
+	  get_contents/3,get_contents_with_key/3,get_contents_at/4,get_keys/3,
+	  put_with/4,get_with/4,exist/4.
+:- public open/4,close/1,gett/3,putt/3.
+:-public keyed_bag/1,keyed_set/1.
+:-public atom_to_string/2,string_to_atom/2.
+:-public or_string_elements/7,and_string_elements/7,
+	 complement_string_elements/4,substring/5,string_tail/3,
+	 append_string/2,search_character/6.
+:-public key_sort/2.
+%:-public term_to_string/2,term_to_qstring/2,string_to_term/2.
+%:-public printf/2,print_error/1.
+%:-public set_horophrasting/2.
+
+
+% These should be macros in the future.
+% keyed bag
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S keyed_bag(Bag)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%keyed_bag(Bag):-
+%    pool:keyed_bag(Bag).
+
+% for KLIC v1.422
+%keyed_bag(Bag):-
+%    keyed_bag:create(Bag).
+
+% from PIMOSPOOL
+%keyed_bag(Bag):-
+%    keyed_bag:keyed_bag(Bag).
+
+% local version
+keyed_bag(Bag):-
+    ty_util:keyed_bag(Bag).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S keyed_set(Set)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%keyed_set(Set):-
+%    pool:keyed_set(Set).
+
+% for KLIC v1.422
+%keyed_set(Set):-
+%    keyed_set:create(Set).
+
+% from PIMOSPOOL
+%keyed_set(Set):-
+%    keyed_bag:keyed_set(Set).
+
+% local version
+keyed_set(Set):-
+    ty_util:keyed_set(Set).
+
+% These should be macros in the future.
+% keyed bag
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S add_at(Key,Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%add_at(Key,Data,Old,New):-
+%    Old = [put(Key,Data)|New].
+
+add_at(Key,Data,Tree,NewTree):-
+    ty_util:add_at(Key,Data,Tree,NewTree).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_at(Key,Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_at(Key,Data,Old,New):-
+%    Old = [get_if_any(Key,X)|TMP],
+%    (vector(X,0) ->
+%        New = TMP,
+%%        Data = ty#void
+%        Data = '&void'
+%    ;otherwise;true ->
+%        vector_element(X,0,Data,_),
+%        TMP = [put(Key,Data)|New]
+%    ).
+
+get_at(Key,Data,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:get_at(Key,X,Tree),
+    (vector(X,1) ->
+        vector_element(X,0,Data)
+    ;vector(X,0) ->
+%        Data = ty#void
+        Data = '&void'
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S in(Key,Old,New,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%in(Key,Old,New,Result):-
+%    Old = [get_if_any(Key,X)|TMP],
+%    (vector(X,0) ->
+%        New = TMP,
+%%        Result = ty#no
+%        Result = fail
+%    ;otherwise;true ->
+%        vector_element(X,0,Y,_),
+%        TMP = [put(Key,Y)|New],
+%%        Result = ty#yes
+%        Result = success
+%    ).
+
+in(Key,Tree,NewTree,Result):-
+    NewTree = Tree,
+    ty_util:get_at(Key,X,Tree),
+    (vector(X,1) ->
+%        Result = ty#yes
+        Result = success
+    ;vector(X,0) ->
+%        Result = ty#no
+        Result = fail
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S remove_at(Key,Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%remove_at(Key,Data,Old,New):-
+%    Old = [get(Key,Data)|New].
+
+remove_at(Key,Data,Tree,NewTree):-
+    ty_util:remove_at(Key,Data,Tree,NewTree).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_contents(Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_contents(Data,Old,New):-
+%    Old = [carbon_copy(Contents)|New],
+%    only_data(Contents,Data).
+
+get_contents(Data,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:carbon_copy(Contents,Tree),
+    only_data(Contents,Data).
+
+only_data([],Data):-Data=[].
+only_data([{_,Datum}|Contents],Data):-
+    Data=[Datum|NewData],
+    only_data(Contents,NewData).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_contents_with_key(Contents,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_contents_with_key(Contents,Old,New):-
+%    Old = [carbon_copy(Contents)|New].
+
+get_contents_with_key(Contents,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:carbon_copy(Contents,Tree).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_contents_at(Key,Contents,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_contents_at(Key,Contents,Old,New):-
+%    Old = [carbon_copy(Key,Contents)|New].
+
+get_contents_at(Key,Contents,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:carbon_copy_at(Key,Contents,Tree).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_keys(Keys,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_keys(Keys,Old,New):-
+%    Old = [carbon_copy(Contents)|New],
+%    only_keys(Contents,Keys).
+
+get_keys(Keys,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:carbon_copy(Contents,Tree),
+    only_keys(Contents,Keys).
+
+only_keys([],Keys):-Keys=[].
+only_keys([{Key,_}|Contents],Keys):-
+    Keys=[Key|NewKeys],
+    only_keys(Contents,NewKeys).
+
+% keyed set
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S put_with(Key,Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%put_with(Key,Data,Old,New):-
+%    Old = [put(Key,Data,_)|New].
+
+put_with(Key,Data,Tree,NewTree):-
+    ty_util:put_with(Key,Data,Tree,NewTree).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_with(Key,Data,Old,New)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%get_with(Key,Data,Old,New):-
+%    Old = [get_if_any(Key,X)|TMP],
+%    (vector(X,0) ->
+%        New = TMP,
+%%        Data = ty#void
+%        Data = '&void'
+%    ;otherwise;true ->
+%        vector_element(X,0,Data,_),
+%        TMP = [put(Key,Data,_)|New]
+%    ).
+
+get_with(Key,Data,Tree,NewTree):-
+    NewTree = Tree,
+    ty_util:get_with(Key,X,Tree),
+    (vector(X,1) ->
+        vector_element(X,0,Data)
+    ;vector(X,0) ->
+%        Data = ty#void
+        Data = '&void'
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S exist(Key,Old,New,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%exist(Key,Old,New,Result):-
+%    Old = [get_if_any(Key,X)|TMP],
+%    (vector(X,0) ->
+%        New = TMP,
+%%        Result = ty#no
+%        Result = fail
+%    ;otherwise;true ->
+%        vector_element(X,0,Y,_),
+%        TMP = [put(Key,Y,_)|New],
+%%        Result = ty#yes
+%        Result = success
+%    ).
+
+exist(Key,Tree,NewTree,Result):-
+    NewTree = Tree,
+    ty_util:get_with(Key,X,Tree),
+    (vector(X,1) ->
+%        Result = ty#yes
+        Result = success
+    ;vector(X,0) ->
+%        Result = ty#no
+        Result = fail
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S open(Pathname,Mode,File,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% hLibrary
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : {ty#typemid,open_fail,Add}
+%open(Pathname,Mode,File,Result):-
+%    hLibrary:file(Pathname,Mode,R1),
+%    (ty#functor(R1,P,_),P=normal ->
+%        vector_element(R1,1,File,_),
+%        Result = normal(ty#yes)
+%    ;otherwise;true ->
+%        Result = abnormal(Info),
+%        Info = {ty#typemid,open_fail,[Pathname]}
+%    ).
+
+
+% PIMOS
+%open(Pathname,Mode,File,Result):-
+%    % hLibrary:file(Pathname,Mode,File),
+%    % Result = normal.
+%    get_user_file_device(Pathname,Mode,File,Result).
+%
+%get_user_file_device(Pathname,Mode,File,Result):-true|
+%	get_file_device(Pathname,Mode,Device,R1),
+%	(R1 = normal ->
+%	    buffer:input_filter(File,Device),
+%	    Result = normal
+%	;otherwise;true ->
+%	    File = Device,
+%	    Result = R1
+%	).
+%
+%get_file_device(Pathname,Mode,Device,Result):-
+%    shoen:raise(pimos_tag#task,general_request, GeneralRequestDevice),
+%    GeneralRequestDevice = [file(R1)],
+%    wait_file_request_device(Pathname,Mode,Device,R1,Result).
+%
+%wait_file_request_device(Pathname,Mode,Device,normal(FRS,_,_),Result):-true|
+%	FRS = [open(Pathname,{Mode,R1})],
+%	(R1 = normal(Device,_Abort,_Attention) ->
+%	    Result = normal
+%	;otherwise;true ->
+%	    Device = ty#void,
+%	    Result = abnormal(open_error(Pathname))
+%	).
+%otherwise.
+%wait_file_request_device(Pathname,_,Device,_,Result) :- true|
+%	Device=ty#void,
+%	Result=abnormal(open_error(Pathname)).
+
+
+% For KLIC
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S open(Pathname,Mode,File,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% hLibrary
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : {ty#typemid,open_fail,Add}
+open(Pathname,Mode,InStream,Result):-
+    string(Pathname,_,8), Mode = read |
+	klicio:klicio(S),
+	S=[read_open(Pathname,R1)],
+	(functor(R1,P,A),A=:=1, P=normal ->
+	    arg(1,R1,InStream),
+	    Result = normal(success)
+	;otherwise;true ->
+	    Result = abnormal(Info),
+	    Info = {type,open_fail,[Pathname]}
+	).
+open(Pathname,Mode,OutStream,Result):-
+    string(Pathname,_,8), Mode = write |
+	klicio:klicio(S),
+	S=[write_open(Pathname,R1)],
+	(functor(R1,P,_),P=normal ->
+	    arg(1,R1,OutStream),
+	    Result = normal(success)
+	;otherwise;true ->
+	    Result = abnormal(Info),
+	    Info = {type,open_fail,[Pathname]}
+	).
+open(Pathname,_Mode,InStream,Result):-
+    Pathname = stdin |
+	klicio:klicio(S),
+	S=[stdin(R1)],
+	(functor(R1,P,A),A=:=1, P=normal ->
+	    arg(1,R1,InStream),
+	    Result = normal(success)
+	;otherwise;true ->
+	    Result = abnormal(Info),
+	    Info = {type,open_fail,[stdin]}
+	).
+open(Pathname,_Mode,OutStream,Result):-
+    Pathname = stdout |
+	klicio:klicio(S),
+	S=[stdout(R1)],
+	(functor(R1,P,_),P=normal ->
+	    arg(1,R1,OutStream),
+	    Result = normal(success)
+	;otherwise;true ->
+	    Result = abnormal(Info),
+	    Info = {type,open_fail,[stdout]}
+	).
+open(Pathname,_Mode,ErrStream,Result):-
+    Pathname = stderr |
+	klicio:klicio(S),
+	S=[stderr(R1)],
+	(functor(R1,P,_),P=normal ->
+	    arg(1,R1,ErrStream),
+	    Result = normal(success)
+	;otherwise;true ->
+	    Result = abnormal(Info),
+	    Info = {type,open_fail,[stderr]}
+	).
+otherwise.
+open(Pathname,Mode,ErrStream,Result):-
+    Result = abnormal(Info),
+    Info = {type,open_fail,[Pathname,Mode]}.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S gett(Term,File,^NewFile)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+gett(Term,File,NewFile):-
+    File = [gett(Term)|NewFile].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S putt(Term,File,^NewFile)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+putt(Term,File,NewFile):-
+    File = [puttq(Term)|NewFile].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S close(File)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+close(File):-
+    File = [].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S term_to_string(Term,String)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%term_to_string(Term,String):-
+%    buffer:character_pool([size(65535)],In),
+%    set_horophrasting(In,In1),
+%    In1 = [putt(Term),getl(String)].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S term_to_qstring(Term,QuotedString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%term_to_qstring(Term,String):-
+%    hLibrary:tTos(Term,String).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S string_to_term(String,Term)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%string_to_term(String,Term):-
+%    hLibrary:sTot(String,Term).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S atom_to_string(Atom,String)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+atom_to_string(Atom,String):-
+    atom_table:get_atom_string(Atom,String).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S string_to_atom(String,Atom)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+string_to_atom(String,Atom):-
+    atom_table:make_atom(String,Atom).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S print_error(ErrorInfo)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%print_error(ErrorInfo):-
+%    hLibrary:stdio(out,Out),
+%    set_horophrasting(Out,Out1),
+%    Out1 = [print_error(ErrorInfo),flush(_)].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S printf(Format,List)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%printf(Format,List):-
+%    hLibrary:stdio(out,Out),
+%    set_horophrasting(Out,Out1),
+%    Out1 = [putf(Format,List),flush(_)].
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S set_horophrasting(In,Out)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%set_horophrasting(In,Out):-
+%    In = [print_depth(ty#printmax),
+%	  print_length(ty#printmax),
+%	  print_string_length(ty#printmax),
+%	  print_atom_length(ty#printmax)|Out].
+
+
+% Followings are predicates for KLIC port.
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S sorter:key_sort(In,Out)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% [注意!]
+% AttrPairsが{Key,Data}の形式であり、かつ、Key が string で
+% あることを前提にしている。
+key_sort(In,Out):-
+    key_qsort(In,Out,[]).
+
+key_qsort([],Out,NewOut):-
+    NewOut = Out.
+key_qsort([X|In],Out,NewOut):-
+    partition(In, X, S, L),
+    key_qsort(S, Out, Out1),
+    Out1 = [X|Out2],
+    key_qsort(L, Out2, NewOut).
+
+partition([], P, S, L):-
+    S=[], L=[].
+partition([X|In], P, S, L):-
+    vector_element(X,0,Kx),
+    vector_element(P,0,Kp),
+    generic:less_than(Kx,Kp)|
+	S=[X|S0], partition(In, P, S0, L).
+partition([X|In], P, S, L):-
+    vector_element(X,0,Kx),
+    vector_element(P,0,Kp),
+    generic:not_less_than(Kx,Kp)|
+	L=[X|L0], partition(In, P, S, L0).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S or_string_elements(String1,Position,Length,String2,Position2,
+%		      ^NewString1,^Newstring2)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+or_string_elements(String1,Position1,Length,String2,Position2,
+		    NewString1,NewString2):-
+    string(String1,Size1,ElementSize1),
+    string(String2,Size2,ElementSize2),
+    ElementSize1 =:= ElementSize2,
+    integer(Position1), integer(Position2),
+    integer(Length),
+    0 =< Position1, Position1 < Size1,
+    0 =< Position2, Position2 < Size2,
+    0 =< Length, Length =< ~(Size1 - Position1),
+                 Length =< ~(Size2 - Position2) |
+	or_loop(Length,String1,Position1,String2,Position2,
+		 NewString1,NewString2).
+
+or_loop(Length,String1,_Position1,String2,_Position2,
+	 NewString1,NewString2):-
+    Length =< 0 |
+	NewString1 = String1, NewString2 = String2.
+or_loop(Length,String1,Position1,String2,Position2,
+	 NewString1,NewString2):-
+    Length > 0 |
+	string_element(String1,Position1,Element1),
+	string_element(String2,Position2,Element2),
+	NewElement := Element1 \/ Element2,
+	set_string_element(String1,Position1,NewElement,TmpString1),
+	or_loop(~(Length-1),TmpString1,~(Position1+1),
+		 String2,~(Position2+1),NewString1,NewString2).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S and_string_elements(String1,Position,Length,String2,Position2,
+%		       ^NewString1,^Newstring2)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+and_string_elements(String1,Position1,Length,String2,Position2,
+		    NewString1,NewString2):-
+    string(String1,Size1,ElementSize1),
+    string(String2,Size2,ElementSize2),
+    ElementSize1 =:= ElementSize2,
+    integer(Position1), integer(Position2),
+    integer(Length),
+    0 =< Position1, Position1 < Size1,
+    0 =< Position2, Position2 < Size2,
+    0 =< Length, Length =< ~(Size1 - Position1),
+                 Length =< ~(Size2 - Position2) |
+	and_loop(Length,String1,Position1,String2,Position2,
+		 NewString1,NewString2).
+
+and_loop(Length,String1,_Position1,String2,_Position2,
+	 NewString1,NewString2):-
+    Length =< 0 |
+	NewString1 = String1, NewString2 = String2.
+and_loop(Length,String1,Position1,String2,Position2,
+	 NewString1,NewString2):-
+    Length > 0 |
+	string_element(String1,Position1,Element1),
+	string_element(String2,Position2,Element2),
+	NewElement := Element1 /\ Element2,
+	set_string_element(String1,Position1,NewElement,TmpString1),
+	and_loop(~(Length-1),TmpString1,~(Position1+1),
+		 String2,~(Position2+1),NewString1,NewString2).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S complement_string_elements(String,Position,Length,^NewString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+complement_string_elements(String,Position,Length,NewString):-
+    string(String,Size,ElementSize),
+    integer(Position), integer(Length),
+    0 =< Position, Position < Size,
+    0 =< Length, Length =< ~(Size - Position) |
+	Mask := (1 << ElementSize) - 1,
+	complement_loop(Length, String, Position, Mask, NewString).
+
+complement_loop(Length, String, _Position, _Mask, NewString):-
+    Length =< 0 |
+	NewString = String.
+complement_loop(Length, String, Position, Mask, NewString):-
+    Length > 0 |
+	string_element(String, Position, Element),
+	complement_with_mask(Element,Mask,NewElement),
+	set_string_element(String, Position, NewElement, TmpString),
+	complement_loop(~(Length-1), TmpString, ~(Position+1), Mask, NewString).
+
+complement_with_mask(Int,Mask,NewInt):-
+    inline:"%2 = makeint(~intval(%0) & intval(%1));":
+    [Int+int, Mask+int, Result-int] | NewInt=Result.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S substring(String,Position,Length,^SubString,^NewString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+substring(String, Position, Length, SubString, NewString):-
+    string(String, Size, ElementSize),
+    integer(Position),
+    integer(Length),
+    Position >= 0, Position < Size,
+    Length >= 0, Length =< ~(Size - Position) |
+	new_string(WorkString, Length, ElementSize),
+	substring_loop(0, Length, Position,
+			String, WorkString, NewString, SubString).
+
+substring_loop(Current, Current, _Position,
+			String, WorkString, NewString, SubString):-
+    true |
+	NewString = String,
+	SubString = WorkString.
+otherwise.
+substring_loop(Current, Length, Position,
+			String, WorkString, NewString, SubString):-
+    true |
+	string_element(String, Position, Element, TmpString),
+	set_string_element(WorkString, Current, Element, NewWorkString),
+	substring_loop(~(Current + 1), Length, ~(Position + 1),
+			TmpString, NewWorkString, NewString, SubString).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S string_tail(String,Position,^NewString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+string_tail(String, Position, NewString):-
+    string(String,Size,ElementSize),
+    integer(Position),
+    0 =< Position, Position < Size |
+	Length := Size - Position,
+	substring(String, Position, Length, NewString, _).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S append_string(StringList, ^NewString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+append_string([S0|SL], RS):-
+    append_string2_loop(SL, S0, RS).
+append_string([], RS):-
+    RS = string#"".
+
+append_string2_loop([S|SL], PS, RS):-
+    append_string(PS, S, NPS),
+    append_string2_loop(SL, NPS, RS).
+
+append_string2_loop([], PS, RS):-
+    RS = PS.
+
+append_string(String1, String2, NewString):-
+    string(String1, Size1, EleSize),
+    string(String2, Size2, EleSize) |
+	new_string(WorkString, ~(Size1 + Size2), EleSize),
+	append_string_loop(0, 0, Size1, String1, WorkString, WorkString2),
+	append_string_loop(0, Size1, ~(Size1 + Size2),
+				String2, WorkString2, NewString).
+
+append_string_loop(Current, Size, Size, String, WorkString, NewString):-
+    true |
+	NewString = WorkString.
+otherwise.
+append_string_loop(Current, Position, Size, String, WorkString, NewString):-
+    true |
+	string_element(String, Current, Element, TmpString),
+	set_string_element(WorkString, Position, Element, NewWorkString),
+	append_string_loop(~(Current + 1), ~(Position + 1),
+			   Size, TmpString, NewWorkString, NewString).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S search_character(String,Start,End,CharacterCode,^Position,^NewString)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+search_character(String,Start,End,CharacterCode,Position,NewString):-
+    generic:search_character(String,Start,End,CharacterCode,Position),
+    NewString = String.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%S stdio(Type,^Stream)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% These are just for convenience. Should use open/4.
+stdio(in,In):-
+    open(stdin,in,In,_).
+stdio(out,Out):-
+    open(stdout,out,Out,_).
+stdio(err,Err):-
+    open(stderr,err,Err,_).

@@ -1,0 +1,194 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_DR.
+:- public
+    own_subarg/4,
+    compare/6.
+:- with_macro pimos.
+
+% JE
+% 1:justify
+% 2:already defeated
+% 3:merely plasible
+
+own_subarg(InCR,ST,STO,Hantei):-
+    own_subarg(1,InCR,ST,STO,Hantei). 
+
+own_subarg(Jin,[],ST,STO,Jout):-
+    STO = ST,
+    Jout = Jin.
+own_subarg(2,_,ST,STO,Jout):-
+    STO = ST,
+    Jout = 2.
+otherwise.
+own_subarg(Jin,[naf(Index)|CT],ST,STO,Jout):-
+    rbr_solution_table:get_naf_judgeN(Index,ST,STm,J),
+    own_subargNAF(J,Jin,CT,STm,STO,Jout).
+%own_subarg(Jin,[naf(_)|CT],ST,STO,Jout):-
+%    own_subarg(Jin,CT,ST,STO,Jout).
+%own_subarg(_Jin,[nafF(_)|_CT],ST,STO,Jout):-
+%    STO = ST,
+%    Jout = 2.
+otherwise.
+own_subarg(Jin,[CH|CT],ST,STO,Jout):-
+    rbr_solution_table:get_judgeN(CH,ST,STmid,JE),
+    updateJ0(Jin,JE,Jmid),
+    own_subarg(Jmid,CT,STmid,STO,Jout).
+
+own_subargNAF(1,_Jin,_CT,ST,STO,Jout):-
+    STO = ST,
+    Jout = 2.
+otherwise.
+own_subargNAF(_,Jin,CT,ST,STO,Jout):-
+    own_subarg(Jin,CT,ST,STO,Jout).
+
+updateJ0(Jin,{JE,_},Jout):-
+    integer(JE) |
+    updateJ(Jin,JE,Jout).
+%updateJ0(Jin,JE,Jout):-
+%    integer(JE) |
+%    updateJ(Jin,JE,Jout).
+
+updateJ(Jin,1,Jout):-
+    Jout = Jin.
+otherwise.
+updateJ(_Jin,JE,Jout):-
+    Jout = JE.
+
+% J ::=
+%     {1,1}  | justify
+%     {2,2}  | dilectly defeated
+%     {2,1}  | already defeated with strong top rule
+%     {2,0}  | already defeated with unrelated top rule
+%     {2,-1} | already defeated with week top rule
+%     {3,1}  | merely plausible with strong top rule
+%     {3,0}  | merely plausible  with unrelated top rule
+%     {3,-1} | merely plausible with week top rule
+
+compare(CSTL,{Rule,_Exp},Jin,CST1,J,RM):-
+    compare(CSTL,Rule,Jin,{Jin,1},CST1m,J,RM),
+    reduce_fail(CST1m,CST1).
+compare(CSTL,Rule,Jin,CST1,J,RM):-
+    atom(Rule) |
+    compare(CSTL,Rule,Jin,{Jin,1},CST1m,J,RM),
+    reduce_fail(CST1m,CST1).
+
+% {1,1} = {katimake, top_rule}
+%          katimake = 1: all_kati, 2: some_make 3: othe
+%          top_rule = 1: all_strong, 2: some_unrel, 3: some_week
+
+compare(nil,_Rule,Jin,_Jarg0,CST1,J,RM):-
+    RM = [],
+    CST1 = nil,
+    J = c_top(Jin).
+compare([],_Rule,_Jin,Jarg0,CST1,J,RM):-
+    RM = [],
+    CST1 = [],
+    J = Jarg0.
+compare(fail,_Rule,_Jin,Jarg0,CST1,J,RM):-
+    RM = [],
+    CST1 = fail,
+    J = Jarg0.
+compare([fail|T],Rule,Jin,Jarg0,CST1,J,RM):- %$
+    compare(T,Rule,Jin,Jarg0,CST1,J,RM).
+compare([{{Env,HIDT,ST},_TR,_SH}|T],Rule,Jin,Jarg0,CST1,J,RM):-
+    rbr_solution_table:get_elementN(0,ST,Data,STm),
+    compare1(Data,T,Env,HIDT,STm,Rule,Jin,Jarg0,CST1,J,RM).
+
+compare1({succ,_Con,{RuleE,_Exp},_ChildList,JE,_SAI,_CST1,_Sim},
+               T,Env,HIDT,ST,Rule,Jin,Jarg0,CST1,J,RM):-
+%    rbr_solution_table:get_judgeN(0,ST,STmid,JE),
+%    rbr_solution_table:get_ruleN(0,STmid,STout,RuleE),
+%%    rule_compare(Rule,RuleE,RJ),
+    RM = [get_unitUnitRel(Rule,RuleE,RJ)|RM1],
+    get_shouhai0(RJ,Jin,JE,Shouhai),
+    trans_judge(Jarg0,RJ,Shouhai,Jmid),
+    compare(T,Rule,Jin,Jmid,CST1T,J,RM1),
+    CST1 = [{{Env,HIDT,ST},RJ,Shouhai}|CST1T].
+compare1({fail,_E},
+               T,_,_,_ST,Rule,Jin,Jarg0,CST1,J,RM):-
+    compare(T,Rule,Jin,Jarg0,CST1T,J,RM),
+    CST1 = [fail|CST1T].
+
+trans_judge({2,2},_RJ,_Shouhai,Jout):-
+    Jout = {2,2}.
+otherwise.
+%trans_judge({KatiMake,TopRule},RJ,Shouhai,Jout):-
+%    trans_katimake(KatiMake,Shouhai,KatiMakeO),
+%    trans_top_rule(TopRule,RJ,TopRuleO),
+%    Jout = {KatiMakeO,TopRuleO}.
+trans_judge(Jin,RJ,Shouhai,Jout):-
+    trans_katimake(Jin,Shouhai,J1),
+    trans_top_rule(J1,RJ,Shouhai,Jout).
+
+trans_katimake({2,TR},_,KatiMakeO):- KatiMakeO = {2,TR}.
+trans_katimake({1,1},2,KatiMakeO):- KatiMakeO =  {2,2}.
+trans_katimake(Jin,5,KatiMakeO):- KatiMakeO = Jin.
+trans_katimake(Jin,6,KatiMakeO):- KatiMakeO = Jin.
+otherwise.
+trans_katimake({_,TR},2,KatiMakeO):- KatiMakeO = {2,TR}.
+otherwise.
+trans_katimake({1,1},1,KatiMakeO):- KatiMakeO = {1,1}.
+otherwise.
+trans_katimake({_,TR},_,KatiMakeO):- KatiMakeO = {3,TR}.
+
+trans_top_rule({2,2},_,_,TopRuleO):- TopRuleO = {2,2}.
+otherwise.
+trans_top_rule(Jin,_,5,TopRuleO):- TopRuleO = Jin.
+trans_top_rule(Jin,_,6,TopRuleO):- TopRuleO = Jin.
+otherwise.
+trans_top_rule({KM,-1},_,_,TopRuleO):- TopRuleO = {KM,-1}.
+trans_top_rule({KM,_},-1,_,TopRuleO):- TopRuleO = {KM,-1}.
+otherwise.
+trans_top_rule({KM,0},_,_,TopRuleO):- TopRuleO = {KM,0}.
+trans_top_rule({KM,_},0,_,TopRuleO):- TopRuleO = {KM,0}.
+otherwise.
+trans_top_rule(In,_,_,TopRuleO):- TopRuleO = In.
+
+get_shouhai0(RJ,Jin,c_top(JE),Shouhai):-
+    get_shouhai(RJ,Jin,JE,Shouhai).
+
+%%%%%oosaki modify 950811
+%get_shouhai0(RJ,Jin,nil,Shouhai):-
+%    get_shouhai(RJ,Jin,JE,Shouhai).
+get_shouhai0(RJ,Jin,{JE,_},Shouhai):-
+    integer(JE) |
+    get_shouhai(RJ,Jin,JE,Shouhai).
+otherwise.
+get_shouhai0(RJ,Jin,JE,Shouhai):-
+    get_shouhai(RJ,Jin,JE,Shouhai).
+
+get_shouhai(1,1,1,Shouhai):- Shouhai = 1.
+get_shouhai(1,1,2,Shouhai):- Shouhai = 5.
+get_shouhai(1,1,3,Shouhai):- Shouhai = 1.
+get_shouhai(1,2,1,Shouhai):- Shouhai = 4.
+get_shouhai(1,2,2,Shouhai):- Shouhai = 6.
+get_shouhai(1,2,3,Shouhai):- Shouhai = 4.
+get_shouhai(1,3,1,Shouhai):- Shouhai = 3.
+get_shouhai(1,3,2,Shouhai):- Shouhai = 5.
+get_shouhai(1,3,3,Shouhai):- Shouhai = 3.
+get_shouhai(0,1,1,Shouhai):- Shouhai = 3.
+get_shouhai(0,1,2,Shouhai):- Shouhai = 5.
+get_shouhai(0,1,3,Shouhai):- Shouhai = 3.
+get_shouhai(0,2,1,Shouhai):- Shouhai = 4.
+get_shouhai(0,2,2,Shouhai):- Shouhai = 6.
+get_shouhai(0,2,3,Shouhai):- Shouhai = 4.
+get_shouhai(0,3,1,Shouhai):- Shouhai = 3.
+get_shouhai(0,3,2,Shouhai):- Shouhai = 5.
+get_shouhai(0,3,3,Shouhai):- Shouhai = 3.
+get_shouhai(-1,1,1,Shouhai):- Shouhai = 2.
+get_shouhai(-1,1,2,Shouhai):- Shouhai = 5.
+get_shouhai(-1,1,3,Shouhai):- Shouhai = 3.
+get_shouhai(-1,2,1,Shouhai):- Shouhai = 4.
+get_shouhai(-1,2,2,Shouhai):- Shouhai = 6.
+get_shouhai(-1,2,3,Shouhai):- Shouhai = 4.
+get_shouhai(-1,3,1,Shouhai):- Shouhai = 2.
+get_shouhai(-1,3,2,Shouhai):- Shouhai = 5.
+get_shouhai(-1,3,3,Shouhai):- Shouhai = 3.
+
+reduce_fail([fail],CST1):- CST1 = fail.
+otherwise.
+reduce_fail(In,Out):- Out = In.

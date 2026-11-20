@@ -1,0 +1,32 @@
+gtrans goal cntrct.goal cntrct.g
+gtrans goal demo-e.goal demo-e.g
+gtrans goal demo-j.goal demo-j.g
+gtrans goal koujo.goal koujo.g
+gtrans goal tax.goal tax.g
+gtrans goal lng-e.goal lng-e.g
+gtrans goal lng-j.goal lng-j.g
+
+gtrans type cntrct.type cntrct.t
+gtrans type demo-e.type demo-e.t
+gtrans type demo-j.type demo-j.t
+gtrans type koujo.type koujo.t
+gtrans type tax.type  tax.t
+gtrans type lng-e.type  lng-e.t
+gtrans type lng-j.type  lng-j.t
+
+gtrans rule cntrct.rule cntrct.r
+gtrans rule cntrct-j.rule cntrct-j.r
+gtrans rule demo-e.rule demo-e.r
+gtrans rule demo-j.rule demo-j.r
+gtrans rule koujo.rule koujo.r
+gtrans rule tax.rule tax.r
+gtrans rule lng-e.rule lng-e.r
+gtrans rule lng-j.rule lng-j.r
+
+gtrans pom cntrct.pom cntrct.v
+gtrans pom demo-e.pom demo-e.v
+gtrans pom demo-j.pom demo-j.v
+gtrans pom koujo.pom koujo.v
+gtrans pom tax.pom tax.v
+gtrans pom lng-e.pom lng-e.v
+gtrans pom lng-j.pom lng-j.v

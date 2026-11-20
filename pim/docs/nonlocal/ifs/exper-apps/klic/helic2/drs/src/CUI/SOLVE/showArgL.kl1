@@ -1,0 +1,180 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_showArgumentList.
+
+:- public 
+    show_initialArgumentList/3,
+    get_initialArgumentList/5,
+    show_counterArgumentList/5,
+    get_counterArgumentList/7.
+
+:- with_macro pimos.
+
+%show_initialArgumentList
+    show_initialArgumentList(CS1,CS,R):-true|
+        get_initialArgumentList(CS1,CS2,LArgList,DispInfo,R1),
+        (   R1 = normal(success)->
+                CS2 = [set(argumentList,LArgList),
+                       send(nh,receive(argumentList,DispInfo,R))|CS]
+        ;
+            R1 = abnormal(Reason)->
+                CS2 = [send(nh,receive(errorInfo,[Reason],R))|CS]
+        ).
+
+%get_initialArgumentList
+    get_initialArgumentList(CS1,CS,LArgList,DispInfo,R):-true|
+        CS1 = [send(ial,refer_argList(LArgList)),
+               get(displayParameter,DP)|CS],
+        get_initialArgumentList1(LArgList,MenuItemList),
+        get_addInfoForIA(LArgList,DP,AddInfo),
+        (   wait(MenuItemList),wait(AddInfo)->
+                DispInfo = [MenuItemList,AddInfo],
+                R        = normal(success)).
+
+    get_initialArgumentList1([],MenuItemList):-true|
+        MenuItemList = [].
+    get_initialArgumentList1([LArg|T],MenuItemList):-true| 
+        slv_LArgUtility:get_argJudge(LArg,ArgJudge),
+        get_counterInfo(LArg,CounterInfo),          
+        get_initialArgumentList1(T,MenuItemList1),
+        MenuItemList = [{ArgJudge,nil,CounterInfo}|MenuItemList1].
+
+    get_addInfoForIA([],_,AddInfo):-true|
+        AddInfo = [].
+    get_addInfoForIA([{SV,APos}|_],{PL,PT},AddInfo):-true|
+        slv_issueUtility:make_consequence(SV,APos,PL,PT,Consequence),
+        AddInfo = [Consequence].
+
+%show_counterArgumentList
+    show_counterArgumentList(CLArg,Pos,CS1,CS,R):-true|
+        get_counterArgumentList(CLArg,Pos,CS1,CS2,LArgList,DispInfo,R1),
+        (   R1 = normal(success)->
+                CS2 = [set(counterList,LArgList),
+                       send(nh,receive(counterList,DispInfo,R))|CS]
+        ;
+            R1 = abnormal(Reason)->
+                CS2 = [send(nh,receive(errorInfo,[Reason],R))|CS]
+        ).
+
+%get_counterArgumentList
+    get_counterArgumentList(CLArg,Pos,CS1,CS,LArgList,DispInfo,R):-true|
+        get_IPos(CLArg,Pos,IPos,R1),
+        (   R1 = normal(success)->
+                get_counterArgumentList1(CLArg,IPos,LArgList,MenuItemList),
+                get_addInfoForCA(CLArg,IPos,CS1,CS,AddInfo),
+                (   wait(MenuItemList),wait(AddInfo)->
+                        DispInfo = [MenuItemList,AddInfo],
+                        R = normal(success))
+        ;
+            R1 = abnormal(_)->
+                CS = CS1,
+                R  = R1
+        ).
+
+    get_IPos(LArg,Pos,IPos,Result):-true|
+        slv_LArgUtility:get_PArg(LArg,{SV,APos}),
+        IPos1 := APos + Pos,
+        slv_solutionVecUtility:is_illegalPos(SV,IPos1,YN1),
+        (   YN1 = yes->
+                Result = abnormal({drs,'Illegal Issue Pos',Pos})
+        ;
+            YN1 = no->
+                slv_solutionVecUtility:is_nafPos(SV,IPos1,YN2),
+                (   YN2 = yes->
+                        IPos = naf(IPos1)
+                ;
+                    YN2 = no->
+                        IPos = IPos1
+                ),
+                slv_issueUtility:is_issue(SV,IPos,YN3),
+                (   YN3 = yes->
+                        Result = normal(success)
+                ;
+                     YN3 = no->
+                        Result= abnormal({drs,'Illegal Issue Pos',Pos})
+                )
+        ).
+
+    get_counterArgumentList1(LArg,IPos,LArgList,MenuItemList):-true|
+        slv_LArgUtility:get_PArg(LArg,{SV,_}),
+        slv_issueUtility:get_numOfCounterArgument(SV,IPos,NumOfCA),
+        get_counterArgumentList2(0,NumOfCA,LArg,IPos,LArgList,MenuItemList).
+
+    get_counterArgumentList2(L,L,_,_,LArgList,MenuItemList):-true|
+        LArgList     = [],
+        MenuItemList = [].
+otherwise.
+    get_counterArgumentList2(CPos,L,PLArg,IPos,LArgList,MenuItemList):-true|
+        LArg = {PLArg,IPos,CPos},
+        slv_LArgUtility:get_argJudge(LArg,ArgJudge),
+        slv_LArgUtility:get_topRuleRel(LArg,TopRuleRel),
+        get_counterInfo(LArg,CounterInfo),
+        CPos1 := CPos+1,
+        get_counterArgumentList2(CPos1,L,PLArg,IPos,LArgList1,MenuItemList1),
+        LArgList     = [LArg|LArgList1],
+        MenuItemList = [{ArgJudge,TopRuleRel,CounterInfo}|MenuItemList1].
+
+    get_addInfoForCA(LArg,IPos,CS1,CS,AddInfo):-true|
+        CS1 = [get(displayParameter,{PL,PT})|CS],
+
+        slv_LArgUtility:get_PArg(LArg,{SV,_}),
+        slv_issueUtility:make_consequence(SV,IPos,PL,PT,Consequence),
+        slv_LArgUtility:get_ruleName(LArg,IPos,RuleName),
+        slv_issueUtility:get_numOfCounterArgument(SV,IPos,NumOfCA),
+        hLibrary:tTos(IPos,IPosString),
+        hLibrary:tTos(RuleName,RuleNameString),
+        hLibrary:tTos(NumOfCA,NumOfCAString),
+        append_string:append_string(["Issue Pos: ",IPosString],S2),
+        append_string:append_string(["Consequence: ",Consequence],S3),
+        append_string:append_string(["RuleName: ",RuleNameString],S4),
+        append_string:append_string(["Num Of Counter: ",NumOfCAString],S5),
+        AddInfo = [S2,S3,S4,S5].
+
+%%%%%%%%internnal method
+%get_counterInfo
+    get_counterInfo(LArg,CounterInfo):-true|
+        slv_LArgUtility:get_PArg(LArg,{SV,APos}),
+        slv_solutionVecUtility:get_numOfSolution(SV,L),
+        get_counterInfo(APos,L,SV,{0,0,0},CounterInfo).
+
+    get_counterInfo(L,L,_,Work,CounterInfo):-true|
+        CounterInfo = Work.
+otherwise.
+    get_counterInfo(Pos,L,SV,Work1,CounterInfo):-true|
+        slv_solutionVecUtility:is_nafPos(SV,Pos,YN1),
+        (   YN1 = yes->
+                IPos = naf(Pos)
+        ;
+            YN1 = no->
+                IPos = Pos
+        ),
+        slv_issueUtility:is_issue(SV,IPos,YN2),
+        (   YN2 = yes->
+                slv_counterArgumentUtility:get_counterArgumentJudgeList(SV,IPos,CAJL),
+                add_CI(CAJL,Work1,Work2)
+        ;
+            YN2 = no->
+                Work2 = Work1
+        ),
+        Pos1 := Pos+1,
+        get_counterInfo(Pos1,L,SV,Work2,CounterInfo).
+
+
+%%%%%%%%%%
+    add_CI([],W1,W):-true|
+        W = W1.
+    add_CI([{_,strong,_}|T],{A1,B,C},W):-true|
+        A := A1+1,
+        add_CI(T,{A,B,C},W).
+    add_CI([{_,unrelated,_}|T],{A,B1,C},W):-true|
+        B := B1+1,
+        add_CI(T,{A,B,C},W).
+    add_CI([{_,weak,_}|T],{A,B,C1},W):-true|
+        C := C1+1,
+        add_CI(T,{A,B,C},W).        
+
+
+

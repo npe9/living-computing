@@ -1,0 +1,51 @@
+【インストールの準備】
+MGTPのインストールに先だって、KLIC (Ver. 2.002以上)をインストールして
+おく必要がある。
+
+【配布ファイル】
+配布アーカイブには、srcディレクトリとbinディレクトリが含まれる。srcディ
+レクトリには、インストールに必要なKL1プログラムが、binディレクトリには、
+mg2dnhmとklic_runのシェルスクリプトファイルが含まれている。
+
+【コマンドと配布ファイル】
+
+--------------------------------------------------
+コマンド名 | インストールに必要なファイル 
+--------------------------------------------------
+mg2kl1     | mg2kl1.kl1
+intMerc}   | intMerc.kl1, match.kl1
+dom        | dom.kl1
+mc         | mc.kl1
+mercpat    | mercpat.kl1, unify.kl1
+rchk       | rangeCheck.kl1
+simplify   | simplify.kl1
+tptp2mgtp  | tptp2mgtp.kl1
+fdown      | folddown.kl1
+mg2dnhm    | nhmmodeとnhmtransのインストールが必要
+nhmmode    | nhmmode.kl1
+nhmtrans   | nhmtrans.kl1
+kl1mod     | kl1mod.kl1, fm.kl1
+klic_run   | kl1modのインストールとbody.kl1
+トレーサ   | mgtp_m.kl1, trace_aux.kl1, tracer.kl1, 問題ファイル^1
+--------------------------------------------------
+
+
+^1 問題ファイル(KL1プログラム)はMGTPトランスレータ(mg2kl1)によってMGファ
+イルから作る。
+
+インストールに必要なファイルが揃っていることを確認し、
+% klic -o コマンド名 -O2 インストールに必要なファイル(*.kl1)
+を実行する。
+
+【例】 intMercをインストールする場合には、
+% klic -o intMerc -O2 intMerc.kl1, match.kl1
+を実行する。
+
+【注意】 klic_runをインストールする際には、
+% klic -c -O2 body.kl1
+を実行しbody.oを作成した後、
+binディレクトリのklic_run(シェルスクリプト)の二行目を変更
+する必要がある。二行目は
+set klic_dir=/usr/local/klic
+となっているが、/usr/local/klicをbody.oがおいてある
+ディレクトリ名に書換える。

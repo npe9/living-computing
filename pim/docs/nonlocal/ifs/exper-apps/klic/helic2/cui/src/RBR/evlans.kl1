@@ -1,0 +1,228 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_eval_answer.
+:- public 
+    check_sol/6,
+    eval_answer/3.
+:- with_macro pimos.
+
+eval_answer(ST,RM,ST1):-
+    RM = {RM1,RM2},
+    eval_answer0(ST,RM1,STm),
+    consis_check(STm,RM2,ST1).
+%    eval_answer0(ST,RM,ST1).
+
+eval_answer0([],RM,NewST):-
+    RM = [],
+    NewST = [].
+eval_answer0([fail(_Node,_ST,_Env,_HIDT)|STT],RM,NewST):-
+    eval_answer0(STT,RM,NewST).
+%t eval_answer0([fail(_Node,ST,Env,HIDT)|STT],RM,NewST):-
+%t     cut_ST(ST,ST1),
+%t     eval_answer0(STT,RM,NewSTT),
+%t     NewST = [{Env,HIDT,ST1}|NewSTT].
+%eval_answer0([naf(Node,ST)|STT],RM,NewST):-
+%    eval_answer0(STT,RM,NewSTT).
+eval_answer0([succ(0,ST,Env,HIDT)|STT],RM,NewST):-
+    RM = {RM1,RM2},
+    eval_answer1(0,ST,Env,HIDT,RM1,Env1,HIDT1,ST1m,_),
+    cut_ST(ST1m,ST1),
+    eval_answer0(STT,RM2,NewSTT),
+    NewST = [{Env1,HIDT1,ST1}|NewSTT].
+
+eval_answer1(Index,ST,Env,HIDT,RM,Env1,HIDT1,ST1,Index1):-
+   integer(Index) |
+   Index1 = Index, 
+   rbr_solution_table:get_element(Index,ST,OldData,STm),
+   eval_answer2(OldData,Env,HIDT,STm,Index,RM,Env1,HIDT1,ST1).
+eval_answer1(naf(Index),ST,Env,HIDT,RM,Env1,HIDT1,ST1,Index1):-
+   rbr_solution_table:get_element(Index,ST,OldData,STm),
+   eval_naf_answer(OldData,Env,HIDT,STm,Index,RM,Env1,HIDT1,ST1,Index1).
+
+eval_naf_answer({naf,{Q,CL,OC}},
+                Env,HIDT,ST,Index,RM,Env1,HIDT1,ST1,Index1):-
+    rbr_oldt:solve({{[],{Q,CL,OC}},Env,HIDT},RM,STnaf0),
+    Env1 = Env, 
+    HIDT1 = HIDT,
+    Index1 = naf(Index),
+    naf_judge(STnaf0,ConsJudge,STnaf),
+    rbr_solution_table:put_element(Index,ST,
+                        {ConsJudge,{Q,CL,OC},STnaf},ST1).
+
+eval_answer2({succ,_Q,_RuleName,ChildList},
+                Env,HIDT,ST,_Index,RM,Env1,HIDT1,ST1):-
+    eval_answer_list(ChildList,Env,HIDT,ST,RM,Env1,HIDT1,ST1,_CL1).
+%% following for CBR
+eval_answer2({succ,_Q,_RuleName,ChildList,_Sim},
+                Env,HIDT,ST,_Index,RM,Env1,HIDT1,ST1):-
+    eval_answer_list(ChildList,Env,HIDT,ST,RM,Env1,HIDT1,ST1,_CL1).
+eval_answer2({fail,_Cons},
+                Env,HIDT,ST,_Index,RM,Env1,HIDT1,ST1):-
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+
+eval_answer_list([],Env,HIDT,ST,RM,Env1,HIDT1,ST1,CL1):-
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST, CL1 = [].
+eval_answer_list([Index|ChildList],Env,HIDT,ST,RM,Env1,HIDT1,ST1,CL1):-
+    RM = {RM1,RM2},
+    eval_answer1(Index,ST,Env,HIDT,RM1,Envm,HIDTm,STm,Index1),
+    eval_answer_list(ChildList,Envm,HIDTm,STm,RM2,Env1,HIDT1,ST1,CL1T),
+    CL1 = [Index1|CL1T].
+
+cut_ST({Size,V},NewV):- 
+    new_vector(V0,Size),
+    cp_vector(0,Size,V,V0,NewV).
+
+cp_vector(Size,Size,_V,V0,NewV):-
+    NewV = V0.
+cp_vector(Index,Size,V,V0,NewV):-
+    Index < Size |
+    vector_element(V,Index,Ele,Vn),
+    set_vector_element(V0,Index,_,Ele,V0n),
+    cp_vector(~(Index+1),Size,Vn,V0n,NewV).
+
+% 1:justify
+% 2:already defeated
+% 3:merely plasible
+% 4:fail
+
+naf_judge(ST,ConsJudge,ST1):-
+    naf_judge(ST,4,ConsJudge,ST1m),
+    naf_ST(ConsJudge,ST1m,ST1).
+
+naf_judge([],CJ,CJ1,ST1):-
+    CJ1 = CJ,
+    ST1 = [].
+naf_judge([SV|ST],CJ,CJ1,ST1):-
+    get_top_AJ(SV,AJ,SV1),
+    update_CJ(AJ,CJ,CJm),
+    naf_judge(ST,CJm,CJ1,ST1T),
+    ST1 = [SV1|ST1T].
+
+naf_ST(4,_ST,ST1):-
+    ST1 = [].
+otherwise.
+naf_ST(_,ST,ST1):-
+    ST1 = ST.
+
+update_CJ(_AJ,2,CJ1):-
+    CJ1 = 2.
+update_CJ({2,_},_CJ,CJ1):-
+    CJ1 = 2.
+otherwise.
+update_CJ(4,CJ,CJ1):-
+    CJ1 = CJ.
+update_CJ(fail,CJ,CJ1):-
+    CJ1 = CJ.
+update_CJ({3,_},_CJ,CJ1):-
+    CJ1 = 3.
+update_CJ({1,_},1,CJ1):-
+    CJ1 = 1.
+update_CJ({1,_},4,CJ1):-
+    CJ1 = 1.
+otherwise.
+update_CJ(_AJ,CJ,CJ1):-
+    CJ1 = CJ.
+
+get_top_AJ(SV,AJ,SV1):-
+    vector_element(SV,2,S,SV1),
+    vector_element(S,0,SE,_),
+    get_top_AJ1(SE,AJ).
+
+%$get_top_AJ1({succ,_,_,_,AJ,_,_},AJ1):- AJ1 = AJ.
+get_top_AJ1({succ,_,_,_,AJ,_,_,_},AJ1):- AJ1 = AJ.
+otherwise.
+get_top_AJ1(S,AJ1):-
+    vector_element(S,0,AJ1,_).
+
+consis_check([],RM,Out):-
+    RM = [], Out = [].
+consis_check([{Env,HIDT,SV}|STT],RM,Out):-
+    vector(SV,Size) |
+    RM = {RM1,RM2},
+    consis_checkV(0,Size,SV,[],{Env,HIDT},RM1,SV1,{Env1,HIDT1}),
+    consis_check(STT,RM2,OutT),
+    Out = [{Env1,HIDT1,SV1}|OutT].
+
+consis_checkV(I,Size,SV,InL,EnvHIDT,RM,SV1,EnvHIDT1):-
+    I < Size |
+    vector_element(SV,I,Sol,SVm),
+    check_sol(Sol,InL,EnvHIDT,RM,OutL,Res),
+    consis_checkV1(Res,I,Size,SVm,OutL,SV1,EnvHIDT1).
+consis_checkV(I,Size,SV,_InL,EnvHIDT,RM,SV1,EnvHIDT1):-
+    I >= Size |
+    RM = [], SV1 = SV, EnvHIDT1 = EnvHIDT.
+    
+consis_checkV1(inconsis(EnvHIDT),_I,_Size,SV,_InL,SV1,EnvHIDT1):-
+    set_top_arg_judge(SV,inconsistent,SV1),
+    EnvHIDT1 = EnvHIDT.
+consis_checkV1(consis(EnvHIDT,RM),I,Size,SV,InL,SV1,EnvHIDT1):-
+    consis_checkV(~(I+1),Size,SV,InL,EnvHIDT,RM,SV1,EnvHIDT1).
+
+check_sol({_CJ,_Cons,_NST},InL,EnvHIDT,RM,OutL,Res):-
+    OutL = InL,
+    Res = consis(EnvHIDT,RM).
+check_sol({_Fail,_Entry},InL,EnvHIDT,RM,OutL,Res):-
+    OutL = InL,
+    Res = consis(EnvHIDT,RM).
+check_sol(Sol,InL,EnvHIDT,RM,OutL,Res):-
+    vector_element(Sol,0,succ),
+    vector_element(Sol,1,HT) |
+    check_sol0(HT,InL,EnvHIDT,RM,OutL,Res). 
+
+check_sol0({HT,_},InL,EnvHIDT,RM,OutL,Res):-
+    check_sol1(InL,HT,EnvHIDT,RM,OutL,Res).
+otherwise.
+check_sol0(HT,InL,EnvHIDT,RM,OutL,Res):-
+    check_sol1(InL,HT,EnvHIDT,RM,OutL,Res).
+
+check_sol1([],HT,EnvHIDT,RM,OutL,Res):-
+    Res = consis(EnvHIDT,RM),
+    OutL = [HT].
+check_sol1([InHT|InL],HT,EnvHIDT,RM,OutL,Res):-
+    check_hterm(InHT,HT,EnvHIDT,RM,EnvHIDT1,RMm,Res0),
+    check_sol2(Res0,InHT,InL,HT,EnvHIDT1,RMm,OutL,Res).
+
+
+%oosaki modify
+%check_hterm({{-,_},_,_},{{-,_},_,_},EnvHIDT,RM,EnvHIDT1,RM1,Res):-
+%    EnvHIDT1 = EnvHIDT, RM1 = RM, Res = consis.
+%check_hterm({{[],_},_,_},{{[],_},_,_},EnvHIDT,RM,EnvHIDT1,RM1,Res):-
+%    EnvHIDT1 = EnvHIDT, RM1 = RM, Res = consis.
+%check_hterm({{-,H1},CL1,OC1},{{[],H2},CL2,OC2},EnvHIDT,RM,EnvHIDT1,RM1,Res):-
+%    RM = [check_hTerm_Unify({{[],H1},CL1,OC1},{{[],H2},CL2,OC2},EnvHIDT,EnvHIDT1,Res)
+%       |RM1].
+%check_hterm({{[],H1},CL1,OC1},{{-,H2},CL2,OC2},EnvHIDT,RM,EnvHIDT1,RM1,Res):-
+%    RM = [check_hTerm_Unify({{[],H1},CL1,OC1},
+%                            {{[],H2},CL2,OC2},EnvHIDT,EnvHIDT1,Res)|RM1].
+
+check_hterm({{A,_},_,_},{{A,_},_,_},EnvHIDT,RM,EnvHIDT1,RM1,Res):- true|
+    EnvHIDT1 = EnvHIDT, RM1 = RM, Res = consis.
+check_hterm({{A,pterm(H1,_)},CL1,OC1},{{B,pterm(H2,_)},CL2,OC2},
+                EnvHIDT,RM,EnvHIDT1,RM1,Res):- A\=B|            %for cbr
+    RM = [check_hTerm_Unify({{[],H1},CL1,OC1},{{[],H2},CL2,OC2},EnvHIDT,EnvHIDT1,Res)
+        |RM1].
+otherwise.
+check_hterm({{_,H1},CL1,OC1},{{_,H2},CL2,OC2},EnvHIDT,RM,EnvHIDT1,RM1,Res):- true| 
+                                                                %A\=B 
+                                                                %for rbr
+    RM = [check_hTerm_Unify({{[],H1},CL1,OC1},{{[],H2},CL2,OC2},EnvHIDT,EnvHIDT1,Res)
+        |RM1].
+
+check_sol2(consis,InHT,InL,HT,EnvHIDT,RM,OutL,Res):-
+    check_sol1(InL,HT,EnvHIDT,RM,OutLT,Res),
+    OutL = [InHT|OutLT].
+check_sol2(inconsis,_InHT,_InL,_HT,EnvHIDT,RM,_OutL,Res):-
+    RM = [], Res = inconsis(EnvHIDT).
+
+%oosaki modify950811
+set_top_arg_judge(SV,_,SV1):-
+    set_vector_element(SV,0,SE,SE1,SV1),
+    set_vector_element(SE,1,E,_,_SE1),
+    SE1 = {fail,E}.
+
+
+
+    

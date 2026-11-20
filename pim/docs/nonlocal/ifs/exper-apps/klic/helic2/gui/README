@@ -1,0 +1,98 @@
+			 GUI(Graphic User Interface for debate)
+										
+1.  Overview
+
+The GUI is a tool which provides the debate function of HELIC-II only by
+ Graphic User Interface.  It allows the user to simulate both or either of the
+agents (a prosecutor and or a defendant).
+
+A debate function of "HELIC-II" materializes a debate model between two agents
+called a prosecutor and defendant.
+
+The object of the prosecutor agent is to substantiate an argument to justify a
+self goal, and the object of the pleading agent is to substantiate an effective
+counter argument to the prosecutor's argument.
+
+A premise of this debate model is as follows:
+
+(1) Each agent has a different knowledge (viewpoint, unit).
+
+(2) Only the prosecutor agent has a goal to achieve in a debate.
+    This goal, represented as an H term.
+    A defendant rebuts passively to the argument sent from the prosecutor.
+
+(3) Claims from both sides must use arguments in a form of a proof tree based on
+    facts.
+
+(4) The comparison between arguments is determined by the priority relation
+    between the TopRule of arguments.
+
+	+----------+  	---->  		+---------+
+	|Prosecutor| Debate protocol  	|Defendant|
+	+----------+  	<----  		+---------+
+	  |		  	  	  |
+	  V		  	  	  V
+	+===========+	       		+===========+
+	|goal	    |			|           |
+	|Viewpoint 1|	       		|Viewpoint 2|
+	|Rule set 1 |	       		|Rule set 2 |
+	+===========+	       		+===========+
+
+			[Debate model]
+
+A debate is proceeded by claiming an argument to the opponent and noticing that
+the argument is advantageous over the other.
+
+Each agent sends a message called a debate protocol to the opponent to present
+the argument.
+
+The following are the different kinds of debate protocols:
+
+	 Claim argument (pose)
+        	Claims an argument.  It is used in a case of doing a claim or
+		rebuttal.
+
+	 Priority notice (notice)
+	        Notices that the self argument is dominant.
+
+	 Cancel argument (cancel)
+	        Cancels a claimed argument.
+
+	 End debate (end)
+        	Notices that the debate on the opponent's argument has been
+		finished.
+
+2.execution environment
+
+Confirmed to run on following environments in execution and installation.
+
+(1) hardware
+	(a) machine
+		Sun sparcStatiion 10
+	(b) memory
+		more than 32MB
+	(c) harddisk
+		more than 40MB
+
+(2) software
+	(a) OS
+		SunOS 4.1.3
+	(b) C compiler
+		gcc-2.6.2
+	(c) KLIC(KLIC is IFS)
+		more than version1.7
+	(d) OSF/Motif
+		version1.2
+	(e) environment of Japanese
+		Needs following either gcc library or header file,
+		when installs GUI that use knowlede source(rule,type)to 
+		include Japanese.
+		
+		* library
+			libfl.a
+		* header file
+			euc.h
+
+3.installation
+
+Please refer to GUI install manual(file name:INSTALL).

@@ -1,0 +1,254 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module sp_unitUnitRelTable.
+
+:- public 
+    create/5,
+    quick_create/2.
+            
+:- with_macro pimos.
+
+    quick_create({SpAV,UAV,UURList},I):-true|
+        hLibrary:pool(keyed_bag,UURKB1),
+        put_uurList(UURList,UURKB1,UURKB),
+        loop(I,UURKB,SpAV,UAV).
+
+    create(SUU1,SpSU1,SUU,SpSU,I):- true |
+        initiate(SUU1,SpSU1,SUU,SpSU,UURKB,SpAV,UAV),
+        loop(I,UURKB,SpAV,UAV).
+
+    initiate(SUU1,SpSU1,SUU,SpSU,UURKB,SpAV,UAV):-true |
+        hLibrary:pool(keyed_bag,UURKB1),
+        pom_atomTable:create(SpAT1),
+        pom_atomTable:create(UAT1),
+        SpSU1 = [get_spList(SPList)|SpSU2],
+        initiate1(SPList,SUU1,SpSU2,UURKB1,SpAT1,UAT1,SUU, SpSU, UURKB, SpAT, UAT),
+        SpAT = [get_AD(SpAV)],UAT = [get_AD(UAV)].
+
+    initiate1([],SUU1,SpSU1,UURKB1,SpAT1,UAT1,SUU,SpSU,UURKB,SpAT,UAT):-true |
+        SUU   = SUU1,
+        SpSU  = SpSU1,
+        UURKB = UURKB1,
+        SpAT  = SpAT1,
+        UAT   = UAT1.
+    initiate1([SP|T],SUU1,SpSU1,UURKB1,SpAT1,UAT1,SUU,SpSU,UURKB,SpAT,UAT):-true |
+        SpSU1 = [get_scopeUnitList(SP,SUList)|SpSU2],
+        hLibrary:pool(keyed_bag,100,UURSKB1),
+        SpAT1  = [get_ID(SP,SPID)|SpAT2],
+        initiate11(SUList,SPID,SUU1,UURSKB1,UAT1,SUU2,UURSKB,UAT2),
+        UURKB1 = [put(SPID,UURSKB)|UURKB2],
+        initiate1(T,SUU2,SpSU2,UURKB2,SpAT2,UAT2,SUU,SpSU,UURKB,SpAT,UAT).
+
+    initiate11([],_,SUU1,UURSKB1,UAT1,SUU,UURSKB,UAT):-true |
+        SUU    = SUU1,
+        UURSKB = UURSKB1,
+        UAT    = UAT1.
+    initiate11([{SU1,SU2}|T],SP,SUU1,UURSKB1,UAT1,SUU,UURSKB,UAT):-true |
+        SUU1 = [is_scopeUnit(SU1,YN1),is_scopeUnit(SU2,YN2)|SUU2],
+        (   YN1 = no ->
+                UList1 = [SU1],
+                SUU3   = SUU2
+        ;
+            YN1 = yes ->
+                SUU2 = [get_unitList(SU1,UList1)|SUU3]
+        ),
+        (   YN2 = no ->
+                UList2 = [SU2],
+                SUU4   = SUU3
+        ;
+            YN2 = yes ->
+                SUU3 = [get_unitList(SU2,UList2)|SUU4]
+        ),
+        atom_to_ID(UList1,UAT1,UIDList1,UAT2),
+        atom_to_ID(UList2,UAT2,UIDList2,UAT3),
+        combination(UIDList1,UIDList2,Comb1),
+        put_data(Comb1,1,SP,UURSKB1,UURSKB2),
+        initiate11(T,SP,SUU4,UURSKB2,UAT3,SUU,UURSKB,UAT).
+
+    atom_to_ID([],UAT1,UIDList,UAT):-true|
+        UAT = UAT1,
+        UIDList = [].
+    atom_to_ID([H|T],UAT1,UIDList,UAT):-true|
+        UAT1 = [get_ID(H,HID)|UAT2],
+        atom_to_ID(T,UAT2,UIDList1,UAT),
+        UIDList = [HID|UIDList1].
+
+    combination([],_,Comb):-true |
+        Comb = [].
+    combination([H1|T],List,Comb):-true |
+        combination1(List,H1,SubComb1),
+        combination(T,List,SubComb2),
+        append(SubComb1,SubComb2,Comb).
+
+    combination1([],_,List):-true |
+        List = [].
+    combination1([H2|T],H1,List):-true |
+        combination1(T,H1,List1),
+        List = [{H1,H2}|List1].
+
+    append([],Y,Z):- true |
+        Z = Y.
+    append([L|X],Y,Z):- true |
+        append(X,Y,Z1),
+        Z = [L|Z1].
+
+    put_data([],_,_,UURSKB1,UURSKB):-true |
+        UURSKB = UURSKB1.
+    put_data([{A,A}|T],Num,SP,UURSKB1,UURSKB):-true |%remove A
+        put_data(T,Num,SP,UURSKB1,UURSKB).
+otherwise.
+    put_data([Key|T],Num,SP,UURSKB1,UURSKB):-true |
+        UURSKB1 = [empty(Key,YN)|UURSKB2],
+        (   YN = yes ->
+                UURSKB2 = [put(Key,Num)|UURSKB3]
+        ;
+            YN = no ->
+                UURSKB2 = [carbon_copy(Key,[Num1])|UURSKB3],
+                check_num(Num1,Num,{SP,Key})
+        ),
+        put_data(T,Num,SP,UURSKB3,UURSKB).
+
+    check_num(Num1,Num2,_):- Num1=:=Num2 |
+        true.
+otherwise.
+    check_num(_,_,_):- true |
+        true.
+
+%%%%%%%%%%
+
+    loop([],UURKB,SpAV,_):-true |
+        vector(SpAV,Length,_),
+        terminate(0,Length,UURKB).
+    loop([get_unitUnitRelList(ALL)|T],UURKB1,SpAV,UAV):-true |
+        get_all(SpAV,UURKB1,UURKB2,ALL),
+        loop(T,UURKB2,SpAV,UAV).
+    loop([get_unitUnitRelList(SP,UList)|T],UURKB1,SpAV,UAV):-true |
+        UURKB1 = [get(SP,UURSKB1)|UURKB2],
+        UURSKB1= [carbon_copy(UList)|UURSKB2],
+        UURKB2 = [put(SP,UURSKB2)|UURKB3],
+        loop(T,UURKB3,SpAV,UAV).
+    loop([get_all(ALL)|T],UURKB1,SpAV,UAV):-true |
+        get_all(SpAV,UURKB1,UURKB2,UnitUnitRelList),
+        ALL={SpAV,UAV,UnitUnitRelList},
+        loop(T,UURKB2,SpAV,UAV).
+    loop([get_AD(SpAV1,UAV1)|T],UURKB1,SpAV,UAV):-true |
+        SpAV = SpAV1,
+        UAV  = UAV1,
+        loop(T,UURKB1,SpAV,UAV).
+    loop([get_satisfySPList(R1,R2,Rel,SPList)|T],UURKB1,SpAV,UAV):-true |
+        get_satisfySPList({R1,R2,Rel},UURKB1,SpAV,UAV,SPList,UURKB2),
+        loop(T,UURKB2,SpAV,UAV).
+
+%%%get_satisfySPList
+    get_satisfySPList({R1,R2,Rel},UURKB1,SpAV,UAV,SPList,UURKB):-true|
+        change_toID(UAV,R1,R1ID,YN1),
+        change_toID(UAV,R2,R2ID,YN2),
+        (   YN1=yes,YN2=yes->
+                get_satisfySPList1({{R2ID,R1ID},Rel},UURKB1,SpAV,SPList,UURKB)
+        ;
+        otherwise;
+            true->
+                SPList = [],
+                UURKB  = UURKB1
+        ).
+
+    get_satisfySPList1(RuleRel,UURKB1,SpAV,SPList,UURKB):-true|
+        vector(SpAV,L,_),
+        get_satisfySPList2(0,L,RuleRel,UURKB1,SpAV,SPList,UURKB).
+
+    get_satisfySPList2(L,L,_,UURKB1,_,SPList,UURKB):-true|
+        SPList = [],
+        UURKB    = UURKB1.
+otherwise.
+    get_satisfySPList2(SPID,L,RuleRel,UURKB1,SpAV,SPList,UURKB):-true|
+        UURKB1 = [get(SPID,UURSKB1)|UURKB2],
+        UURSKB1= [carbon_copy(UList)|UURSKB2],
+        UURKB2 = [put(SPID,UURSKB2)|UURKB3],
+        member(UList,RuleRel,YN),
+        SPID1 := SPID+1,
+        get_satisfySPList2(SPID1,L,RuleRel,UURKB3,SpAV,SPList1,UURKB),
+        (   YN = yes->
+                change_fromID(SpAV,SPID,SP,_),
+                SPList = [SP|SPList1]
+        ;
+            YN = no->
+                SPList = SPList1
+        ).
+
+%%%%%
+    change_fromID(AV,Pos,H,YN):-true|
+        vector_element(AV,Pos,H,_),
+        YN = yes.
+
+    change_toID(AV,H,ID,YN):-true|
+        vector(AV,Size,_),
+        change_toID1(AV,0,Size,H,ID,YN).
+
+    change_toID1(_,Size,Size,_,_,YN):-true|
+        YN = no.
+otherwise.
+    change_toID1(AV,Pos,Size,H,ID,YN):-true|
+        vector_element(AV,Pos,E,_),
+        (   E = H->
+                ID = Pos,
+                YN = yes
+        ;
+        otherwise;
+            true->
+                Pos1 := Pos+1,
+                change_toID1(AV,Pos1,Size,H,ID,YN)
+        ).
+%%%%%%
+
+    terminate(L,L,KB):-true |
+        KB = [].
+otherwise.
+    terminate(Pos,L,KB1):-true |
+        KB1 = [get(Pos,B)|KB2],
+        B = [],
+        Pos1 := Pos+1,
+        terminate(Pos1,L,KB2).
+
+    get_all(SpAV,UURKB1,UURKB,UnitUnitRelList):-true|
+        vector(SpAV,L,_),
+        get_all1(0,L,UURKB1,UURKB,UnitUnitRelList).
+
+    get_all1(L,L,UURKB1,UURKB,ALL):-true |
+        UURKB = UURKB1,
+        ALL=[].
+    get_all1(Pos,L,UURKB1,UURKB,ALL):-Pos\=L|
+        UURKB1 = [get(Pos,UURSKB1)|UURKB2],
+        UURSKB1= [carbon_copy(UList)|UURSKB2],
+        UURKB2 = [put(Pos,UURSKB2)|UURKB3],
+        Pos1 := Pos+1,
+        get_all1(Pos1,L,UURKB3,UURKB,ALL1),
+        ALL = [{Pos,UList}|ALL1].
+
+%%%%%%%%%%%%%%%%%
+
+    put_uurList([],UURKB1,UURKB):-true|
+        UURKB = UURKB1.
+    put_uurList([{SP,List}|T],UURKB1,UURKB):-true|
+        hLibrary:pool(keyed_bag,100,UURSKB1),
+        put_all(List,UURSKB1,UURSKB2),
+        UURKB1 = [put(SP,UURSKB2)|UURKB2],
+        put_uurList(T,UURKB2,UURKB).
+
+    put_all([],KB1,KB):-true |
+        KB = KB1.
+    put_all([{Key,Data}|T],KB1,KB):-true |
+        KB1 = [put(Key,Data)|KB2],
+        put_all(T,KB2,KB).
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+

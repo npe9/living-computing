@@ -1,0 +1,31 @@
+-----Protein Structure Visualization System-----
+
+EXECUTION
+
+1) Provide the configuration file ".3dview" at the current directory or
+those in $PATH.
+
+2) The statements in 3D-Talk is feeded to 3dview through standard-in,
+as below:
+
+	3dview < 4HHB.3d
+
+3dview displays and moves the graphic objects described in 3D-Talk.
+The mouse operation is also available to move the objects in the
+window.
+
+
+3) Proview generates 3D-Talk statements from PDB(Protein Data Bank)
+file.  And, 3dview visualizes the statements.  This is carried out
+simply by unix's pipe mechanism, as below.
+
+	proview 4HHB.pdb | 3dview
+
+4) Proview has the following options:
+
+	-r	Generate a ribbon which represents the main chain topology.
+	-m	Generate only the main chain atoms.
+	-h	Helices are represented by spiral ribbons.
+	-s	Strands are represented by ribbons with an arrow.
+	-t 	Turns are represented by ribbons.
+	-O	All secondary structures are generated.

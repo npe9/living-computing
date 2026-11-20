@@ -1,0 +1,50 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_counterArgumentUtility.
+
+:- public 
+    
+    get_counterArgument/4,
+    get_counterArgumentRuleName/4.
+            
+:- with_macro pimos.
+
+    
+%get_counterArgument
+    get_counterArgument(SV,IPos,CPos,Arg):-true|
+        (   integer(IPos)->
+                dbt_svUtility:get_solution(SV,IPos,counterSolutionTable,CST),
+                get_element(CST,0,CPos,CSV),
+                CSV = {SV1,_,_}
+        ;
+            IPos = naf(_)->
+                dbt_svUtility:get_solution(SV,IPos,nafSolutionTable,ST),
+                get_element(ST,0,CPos,SV1)
+        ),
+        
+        Arg = {SV1,0}.
+
+%get_counterArgumentRuleName
+    get_counterArgumentRuleName(SV,IPos,CPos,RuleName):-true|
+        get_counterArgument(SV,IPos,CPos,{CSV,Pos}),
+        dbt_svUtility:get_solution(CSV,Pos,ruleName,RuleName).
+
+
+%%%%%%internal method
+%get_element
+    get_element([H|_],Pos,Pos,CSV):-true|
+        CSV = H.
+otherwise.
+    get_element([_|T],N,Pos,CSV):-true|
+        N1 := N+1,
+        get_element(T,N1,Pos,CSV).
+
+%count
+    count([],X,Y):-true|
+        Y = X.
+    count([_|T],X,Y):-true|
+        X1 :=X+1,
+        count(T,X1,Y).

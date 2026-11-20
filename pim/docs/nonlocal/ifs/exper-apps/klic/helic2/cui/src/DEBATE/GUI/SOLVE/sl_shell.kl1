@@ -1,0 +1,142 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_shell.
+
+:- public 
+    go/3.
+            
+:- with_macro pimos.
+
+%go
+    go({ST,RNH,DP1},Retern,R):-true|
+        initiate({ST,RNH,DP1},CS,R1),
+        (   R1 = normal(success)->
+                loop(CS,nil,Retern,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+
+%initiate
+    initiate({SV,RNH,DP},CS,R):-true|
+        slv_initialArgumentList:create(IAL1),
+        IAL1 = [initiate(SV,R)|IAL],
+        slv_networkHandler:create(RNH,SNH,R1),
+        (   R1 = normal(success)->
+                slv_currentState:create({IAL,SNH,DP},CS1),
+                show_initialArgumentList(CS1,CS,R)
+        ;
+            R1 = abnormal(_)->
+                RNH = [],
+                R   = R1
+        ).
+
+%show_initialArgumentList
+    show_initialArgumentList(CS1,CS,R):-true|
+        slv_showArgumentList:show_initialArgumentList(CS1,CS,R).
+
+%loop
+    loop(CS1,CLArg,Retern,R):-true|
+        CS1 = [send(nh,get_commandArguments(Command,Parameter,Arguments,R1))|CS],
+        (   R1 = normal(_) ->
+                loop1(Command,Parameter,Arguments,CLArg,CS,Retern,R)
+        ;
+            R1 = abnormal(_)->
+                CS = [get(displayParameter,Retern)],
+                R  = R1
+        ).
+
+%end
+    loop1(end,_,[],_,CS,Retern,R):-true|
+        CS = [get(displayParameter,Retern)],
+        R  = normal(success).
+
+%send argument [Pos]
+    loop1(send,argument,[Pos],_,CS1,Retern,R):-true|
+        CS1    = [get_pos(argumentList,Pos,LArg),
+                  set(forwardList,[])|CS2],            %clear forwardList
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%send counterList [Pos]
+    loop1(send,counterList,[Pos],CLArg,CS1,Retern,R):-true|
+        slv_showArgumentList:show_counterArgumentList(CLArg,Pos,CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+
+%send rebuttal [Pos]
+    loop1(send,rebuttal,[Pos],_,CS1,Retern,R):-true|
+        CS1    = [get_pos(counterList,Pos,LArg),
+                  set(forwardList,[])|CS2],            %clear forwardList 
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%backward
+    loop1(backward,nil,[],CLArg,CS1,Retern,R):-true|
+        slv_LArgUtility:get_backwardLArg(CLArg,CS1,CS2,LArg,yes),
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%forward
+    loop1(forward,nil,[],_,CS1,Retern,R):-true|
+        slv_LArgUtility:get_forwardLArg(CS1,CS2,LArg,yes),
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%next
+    loop1(next,nil,[],CLArg,CS1,Retern,R):-true|
+        slv_LArgUtility:get_nextLArg(CLArg,CS1,CS2,LArg,yes),
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%previous
+    loop1(previous,nil,[],CLArg,CS1,Retern,R):-true|
+        slv_LArgUtility:get_previousLArg(CLArg,CS1,CS2,LArg,yes),
+        slv_showArgument:show_argument(LArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,LArg,Retern,R)).
+
+%set pl
+    loop1(set,pl,[PL],CLArg,CS1,Retern,R):-true|
+        CS1 = [get(displayParameter,{_,PT}),set(displayParameter,{PL,PT})|CS2],
+        slv_showArgument:show_argument(CLArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+%set pt
+    loop1(set,pt,[PT],CLArg,CS1,Retern,R):-true|
+        CS1 = [get(displayParameter,{PL,_}),set(displayParameter,{PL,PT})|CS2],
+        slv_showArgument:show_argument(CLArg,CS2,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+%send pl
+    loop1(send,pl,[],CLArg,CS1,Retern,R):-true|
+        slv_showDisplayInfo:show_pl(CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+%send pt
+    loop1(send,pt,[],CLArg,CS1,Retern,R):-true|
+        slv_showDisplayInfo:show_pt(CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+%send explaination
+    loop1(send,explanation,[],CLArg,CS1,Retern,R):-true|
+	slv_showArgument:show_explanation(CLArg,CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+%send help
+    loop1(send,help,[],CLArg,CS1,Retern,R):-true|
+	slv_showHelp:show_help(CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).
+    loop1(send,help,[C],CLArg,CS1,Retern,R):-true|
+	slv_showHelp:show_help(C,CS1,CS,R1),
+        (   wait(R1)->
+                loop(CS,CLArg,Retern,R)).

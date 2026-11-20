@@ -1,0 +1,100 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(19) Constraint Logic Programming Language: CAL in ESP</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(19) Constraint Logic Programming Language: CAL in ESP</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 1.3 MB
+	Documents:   Manual (Japanese/English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+CAL is a sequential constraint logic programming language which can
+deal with various constraints including non-linear polynomial
+equations.<P>
+ 
+<h2><b>Characteristics</b></h2>
+
+Constraint logic programming(CLP) is a scheme of programming language
+with the following features:
+
+<ul>
+
+ <li>natural, declarative semantics.
+
+ <li>clear operational semantics that coincides with the declarative
+semantics.
+
+</ul>
+
+This system gives a CLP language CAL and the environment for CAL user.
+<p>
+
+In CAL system, you can use <i>Context</i>. A context is a constraint
+set. A new context is created whenever the constraint set is changed. 
+The history of changing contexts is manipulated by the <i>Context
+Tree</i>, and <i>Current Context</i> is the target of the context
+manipulation.  You can set a context on the context tree arbitrarily
+as the current context.<P>
+
+<h2><b>Function</b></h2>
+
+A CAL system has any principal functions:
+
+<dl>
+<dt><b>Finding real roots:</b>
+
+<dd> The query "find" computes real roots of the univariate equations
+and returns ont solution. The user can obtain other solutions by
+backtrack, and branches of the context tree are created.<P>
+    
+<dt><b>Context:</b>
+
+<dd> CAL system manipulates the history of changing context by the
+context tree.  And you can set a context on the context tree
+arbitrarily as the current context (the target of the context
+manipulation).<P>
+    
+<dt><b>Various constraint solvers:</b>
+
+<dd>CAL system has 4 constraint solvers, 
+	<OL>
+	<LI>Algebraic constraint solver, 
+	<LI>Boolean constraint solver, 
+	<LI>Linear constraint solver, 
+	<LI>Set constraint solver. The user can specify one of these
+solvers.  
+	</OL>
+</dl> <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Constraint Logic Programming Language: CAL in ESP [722K] <a
+href="../../../ifs/kbms-clp/simpos/cal-esp.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

@@ -1,0 +1,98 @@
+	(C)1992 Institute for New Generation Computer Technology
+	(Read COPYRIGHT for detailed information.)
+
+ICOT Free Software
+"Constraint Logic Programming Lanuguage	cu-Prolog"
+
+1. Introduction
+ cu-Prolog is an experimental constraint logic programming language.
+Unlike most conventional CLP systems, cu-Prolog allows user-defined 
+predicates as constraints and is suitable for implementing a natural 
+language processing system based on the unification-based 
+grammar. As an application of cu-Prolog, we developed 
+a JPSG (Japanese Phrase Structure Grammar) parser 
+with the JPSG Working Group (the chairman is Prof. GUNJI, Takao of
+Osaka University) at ICOT. 
+
+cu-Prolog is also the complete implementation of the constraint
+unification and its name (cu) comes from the technique.
+
+2. Environment
+Originally, cu-Prolog is implemented in the C language of UNIX
+4.2/3BSD. Later, prof.Sirai of Chukyo-University implemented cu-Prolog
+in Apple Macintosh and DJ's GPP (80386/486 MS-DOS machine with the DOS
+extender).
+
+3. Content of this free software
+INSTALL		README		doc/		
+INSTALL.j	README.j	src/	/sample
+
+doc/
+cu3eman.bbl	cu3man.bbl	cup3.index	cup3e.xref
+cu3eman.tex	cu3man.tex	cup3.xref
+
+src/
+defsysp.c	main.c		print.c		syspred1.c	unify.c
+funclist.h	mainsub.c	read.c		syspred2.c	varset.h
+globalv.h	makefile	refute.c	tr_split.c
+include.h	modular.c	sysp.h		tr_sub.c
+jpsgsub.c	new.c		syspdef.h	trans.c
+
+sample/
+eisele.p	jpsg.p		jpsg2.p		kasper.p	memap.p
+
+4. How to install?
+Read INSTSALL and doc/cu3eman.tex.
+You have only to compile all the C programs by typing "make" after
+UNIX shell prompt.
+
+5. Port cu-Prolog into other systems.
+Originally, cu-Prolog is implemented in the C language of UNIX
+4.2/3BSD. Later, prof.Sirai of Chukyo-University implemented cu-Prolog
+in Apple Macintosh and DJ's GPP (80386/486 MS-DOS machine with the DOS
+extender).
+
+They are available from 
+	FTP host name: 	csli.stanford.edu
+	Directory:	pub/MacCup. 
+or
+	ftp.icot.or.jp
+	pub/cuprolog
+
+6. Reference
+
+Hiroshi Tsuda, Hasida Koiti and Sirai Hidetosi,
+JPSG Parser on Constraint Logic Programming,
+In Proceedings of 4th ACL European Chapter, pp 95--102, 1989.
+
+Hiroshi Tsuda, Hasida Koiti and Sirai Hidetosi,
+cu-Prolog and its application to a JPSG parser,
+In K.Furukawa,H.Tanaka,and T.Fujisaki(eds.), Logic Programming'89,
+pp.134--143, Springer-Verlag, LNAI-485.
+
+Hiroshi Tsuda,
+cu-Prolog for Constraint-Based Grammar, Proceedings of FGCS'92, 1992.
+
+Hiroshi Tsuda, Hasida Koiti and Sirai Hidetosi,
+cu-PrologIII system.
+Technical Report ICOT-TM1160, 1992.
+
+
+7. Patch Information
+Oct5-1992: main.c (set global vars)	:thanks to Mr.Horikawa.
+	   syspred1.c (reaad_pred bug)	:thanks to Dr.Fontanini
+	   cu3eman.tex	(delete lingmacros.sty) :thanks to Mr.Utsumi
+Oct29-1992: main.c (reset termset log) :thanks to Dr.Sivand Lakmazaheri
+Jan10-1996: update jpsg.p : thanks to John Fry
+
+
+8. Q&A
+Q: How to run cu-Prolog on Linux:
+A: Add the following lines in the end of src/include.h
+
+#undef is_readable
+#undef is_writable
+#define is_readable(FP) (!((FP)->_flags & _IO_NO_READS))
+#define is_writable(FP) (!((FP)->_flags & _IO_NO_WRITES))
+
+(by Yukihiro Oda  in fj.os.linux, fj.lang.prolog, 16 Dec 1995)

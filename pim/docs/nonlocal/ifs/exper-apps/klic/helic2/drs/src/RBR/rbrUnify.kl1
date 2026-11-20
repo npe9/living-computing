@@ -1,0 +1,784 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_unif.
+:- public
+     hTerm_Unify/9.
+:- with_macro pimos.
+
+hTerm_Unify({HNumber1},{HNumber2},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,Result):- 
+                   integer(HNumber1),integer(HNumber2) |
+      idCheck(HNumber1,HNumber2,IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub(Ans,HN1E,HN2E,Env,NIDTable,{HNumber1,HNumber2},TS,[],
+                NHTerm,NewEnv,NewIDTable,Result).
+hTerm_Unify({H1,H2,H3},{HNumber2},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,Result):- 
+                   integer(HNumber2) |
+      idCheck({H1,H2,H3},HNumber2,IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub(Ans,HN1E,HN2E,Env,NIDTable,{0,HNumber2},TS,[],NHTerm,NewEnv,
+                NewIDTable,Result).
+hTerm_Unify({HNumber1},{H21,H22,H23},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,Result):- 
+                   integer(HNumber1) |
+      idCheck(HNumber1,{H21,H22,H23},IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub(Ans,HN1E,HN2E,Env,NIDTable,{HNumber1,0},TS,[],NHTerm,NewEnv,
+                NewIDTable,Result).
+hTerm_Unify({H11,H12,H13},{H21,H22,H23},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,
+                Result):- true |
+      idCheck({H11,H12,H13},{H21,H22,H23},IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub(Ans,HN1E,HN2E,Env,NIDTable,{0,0},TS,[],NHTerm,NewEnv,
+                NewIDTable,Result).
+
+hTUnify0({HNumber1},{HNumber2},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,TSs,Result):- 
+                   integer(HNumber1),integer(HNumber2) |
+      idCheck(HNumber1,HNumber2,IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub_o(Ans,HN1E,HN2E,Env,NIDTable,{HNumber1,HNumber2},TS,TSs,
+                NHTerm,NewEnv,NewIDTable,Result).
+hTUnify0({H1,H2,H3},{HNumber2},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,TSs,Result):- 
+                   integer(HNumber2) |
+      idCheck({H1,H2,H3},HNumber2,IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub_o(Ans,HN1E,HN2E,Env,NIDTable,{0,HNumber2},TS,TSs,NHTerm,NewEnv,
+                NewIDTable,Result).
+hTUnify0({HNumber1},{H21,H22,H23},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,TSs,Result):- 
+                   integer(HNumber1) |
+      idCheck(HNumber1,{H21,H22,H23},IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub_o(Ans,HN1E,HN2E,Env,NIDTable,{HNumber1,0},TS,TSs,NHTerm,NewEnv,
+                NewIDTable,Result).
+hTUnify0({H11,H12,H13},{H21,H22,H23},Env,IDTable,TS,NHTerm,NewEnv,NewIDTable,TSs,
+        Result):- true |
+      idCheck({H11,H12,H13},{H21,H22,H23},IDTable,Ans,NIDTable,HN1E,HN2E),
+      hTUnifySub_o(Ans,HN1E,HN2E,Env,NIDTable,{0,0},TS,TSs,NHTerm,NewEnv,
+                NewIDTable,Result).
+
+idCheck(N1,N2,IDTable,Ans,NIDTable,NewN1E,NewN2E):- 
+                  integer(N1),integer(N2) |
+      set_vector_element(IDTable,N1,N1E,N1E,N1DT1),
+      integerCheck(N1E,N1DT1,NewN1E,NewN1DT1),
+      set_vector_element(NewN1DT1,N2,N2E,N2E,NIDT2),
+      integerCheck(N2E,NIDT2,NewN2E,NIDTable),
+      idCheckSub(NewN1E,NewN2E,Ans).
+idCheck(N1,N2,IDTable,Ans,NIDTable,NewN1E,N2E):- 
+                  integer(N1),vector(N2) |
+      set_vector_element(IDTable,N1,N1E,N1E,NIDT1),
+      integerCheck(N1E,NIDT1,NewN1E,NIDTable),
+      idCheckSub(NewN1E,N2,Ans),
+      N2E=N2.
+idCheck(N1,N2,IDTable,Ans,NIDTable,N1E,NewN2E):- 
+                  vector(N1),integer(N2) |
+      set_vector_element(IDTable,N2,N2E,N2E,NIDT2),
+      integerCheck(N2E,NIDT2,NewN2E,NIDTable),
+      idCheckSub(N1,NewN2E,Ans),
+      N1E=N1.
+idCheck(N1,N2,IDTable,Ans,NIDTable,NH1E,NH2E):-
+                  vector(N1),vector(N2) |
+      NH1E=N1,
+      NH2E=N2,
+      NIDTable=IDTable, 
+      idCheckSub(N1,N2,Ans).
+
+idCheckSub({_,_,N13},{_,_,N13},Ans):- integer(N13) | Ans =N13.
+idCheckSub({_,_,_},{_,_,[]},Ans):- true | Ans = fail.
+idCheckSub({_,_,@},{_,_,@},Ans):- true | Ans ='@'.
+idCheckSub({_,_,N13},{_,_,@},Ans):- integer(N13)| Ans = N13.
+idCheckSub({_,_,@},{_,_,N23},Ans):- integer(N23) | Ans = N23.
+idCheckSub({_,_,[]},{_,_,_},Ans):- true | Ans = fail.
+otherwise.
+idCheckSub(_,_,Ans) :- true | Ans=fail.
+
+integerCheck(Number,Table,NewNumber,NewTable):- integer(Number) |
+      set_vector_element(Table,Number,N1,N1,Table0),
+      integerCheck(N1,Table0,NewNumber,NewTable).
+otherwise.
+integerCheck(Number,Table,NewNumber,NewTable):- true |
+      NewNumber=Number,NewTable=Table.
+
+
+hTUnifySub(fail,_,_,Env,IDTable,_,TS,TS1,NHTerm,NewEnv,NewIDTable,Result):- 
+                  true |
+      Result=fail,NewEnv=Env,NewIDTable=IDTable,NHTerm=[],
+      TS1 = TS.
+otherwise.
+hTUnifySub(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,Npair,TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):-
+    property_or_event(HN11,TS,Env,TS0,R),
+    hTUnifySubL0(R,N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,
+       Npair,TS0,TS1,NHTerm, NewEnv,NewIDTable,Result).
+
+hTUnifySubL0(event,N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,
+       Npair,TS,TS1,NHTerm, NewEnv,NewIDTable,Result):-
+        hTUnifySubL(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,
+                Npair,TS,TS1,NHTerm, NewEnv,NewIDTable,Result).
+hTUnifySubL0(property,N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,
+       Npair,TS,TS1,NHTerm, NewEnv,NewIDTable,Result):-
+        hTUnifySubL_p(N,{HN11,HN12,HN13},{HN21,HN22,HN23},
+                Env,IDTable,
+                Npair,TS,TS1,NHTerm,NewEnv,NewIDTable,Result).
+
+%%%%%%%%%%%%%% for top event
+hTUnifySubL(_,_,_,Env,IDTable,{N1,N1},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N1),N1>0 |
+      NewIDTable=IDTable,
+      Result=success,
+      TS=TS1,
+      NewEnv=Env,
+      NHTerm={N1}.
+otherwise.
+hTUnifySubL(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,NHTList,
+                NewEnv,NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTUnifySubL(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- atom(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,NHTList,NewEnv,
+                   NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTUnifySubL(Res,_,_,Env,IDTable,_,TS,TS1,NHTerm,NewEnv,NewIDTable,Result):- 
+                  true |
+      TS1 = TS,
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,NHTerm=[].
+
+hTUnify1Sub0(success,NHT,HTL1,HTL2,{HN13,HN23},Env,IDTable,TS,TS1,NewHT,NewEnv,
+        NewIDTable, Result) :- true |
+      hTUnify1Sub(HTL1,HTL2,NHT,{HN13,HN23},Env,IDTable,[],TS,TS1,NewHT,NewEnv,
+             NewIDTable,Result,_).
+otherwise.
+hTUnify1Sub0(Res,_,_,_,_,Env,IDTable,TS,TS1,NewHT,NewEnv,NewIDTable,Result):- 
+                  true |
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,TS=TS1,NewHT=[].
+
+hTUnify1Sub([],[],_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- true |
+      Result=success,NewHT=[],NewEnv=Env,TS=TS1,NewIDTable=IDTable,AddList=List.
+hTUnify1Sub([],HTermL2,_,{HN13,_},Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- 
+                integer(HN13) |
+      predAdd(HTermL2,HN13,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList).
+hTUnify1Sub([HTL1|HTL1s],HTermL2,{Num1,{B,L1,ID}},{HN13,HN23},Env,IDTable,List,TS,TS1,
+             NewHT,NewEnv,NewIDTable,Result,AddList):- true |
+      takeName(HTL1,HTermL2,L2Term,NHTermL2,Ans),
+      predUnify2(Ans,HTL1,L2Term,{HN13,HN23},Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,
+                TSs,Res,AddList1),
+      hTUf1SubSub(Res,HTL1s,NHTermL2,{Num1,{B,L1,ID}},{HN13,HN23},NEnv,NIDTable,
+        AddList1,TSs,TS1,NHTs,NewEnv,NewIDTable,Result,AddList),
+      NewHT=[NHTPred|NHTs].
+otherwise.
+hTUnify1Sub([],HTermL2,_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):-  true |
+      termCheck(HTermL2,[],IDTable,NewList,NewIDTable,Result),
+      NewEnv=Env,
+      TS=TS1,
+      NewHT=NewList,
+      AddList=List.
+
+hTUf1SubSub(success,HTL1,NHTermL2,NHT,{HN13,HN23},Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- true |
+      hTUnify1Sub(HTL1,NHTermL2,NHT,{HN13,HN23},Env,IDTable,List,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result,AddList).
+otherwise.
+hTUf1SubSub(Res,_,_,_,_,NEnv,NID,List,TS,TS1,NHT,NewEnv,NewIDTable,
+                   Result,AddList):- true |
+            Result=Res,NewEnv=NEnv,TS=TS1,NewIDTable=NID,NHT=[],AddList=List.
+%%%%%%%%%%%%%% for top property
+hTUnifySubL_p(_,_,_,Env,IDTable,{N1,N1},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N1),N1>0 |
+      NewIDTable=IDTable,
+      Result=success,
+      TS=TS1,
+      NewEnv=Env,
+      NHTerm={N1}.
+otherwise.
+hTUnifySubL_p(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0_p(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,
+                NHTList,NewEnv,NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTUnifySubL_p(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- atom(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0_p(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,NHTList,NewEnv,
+                   NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTUnifySubL_p(Res,_,_,Env,IDTable,_,TS,TS1,NHTerm,NewEnv,NewIDTable,Result):- 
+                  true |
+      TS1 = TS,
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,NHTerm=[].
+
+hTUnify1Sub0_p(success,NHT,HTL1,HTL2,{HN13,HN23},Env,IDTable,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result) :- true |
+      hTUnify1Sub_p(HTL1,HTL2,NHT,{HN13,HN23},Env,IDTable,[],TS,TS1,NewHT,NewEnv,
+             NewIDTable,Result,_).
+otherwise.
+hTUnify1Sub0_p(Res,_,_,_,_,Env,IDTable,TS,TS1,NewHT,NewEnv,NewIDTable,Result):- 
+                  true |
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,TS=TS1,NewHT=[].
+
+hTUnify1Sub_p([],[],_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- true |
+      Result=success,NewHT=[],NewEnv=Env,TS=TS1,NewIDTable=IDTable,AddList=List.
+hTUnify1Sub_p(HTermL2,[],_,{HN13,_},Env,IDTable,List,TS,TS1,
+        NewHT,NewEnv,NewIDTable,Result,AddList):- 
+                integer(HN13) |
+      predAdd(HTermL2,HN13,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList).
+hTUnify1Sub_p(HTermL2,[HTL1|HTL1s],{Num1,{B,L1,ID}},{HN13,HN23},Env,IDTable,List,TS,TS1,
+             NewHT,NewEnv,NewIDTable,Result,AddList):- true |
+      takeName(HTL1,HTermL2,L2Term,NHTermL2,Ans),
+      predUnify2(Ans,L2Term,HTL1,{HN13,HN23},Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,
+                TSs,Res,AddList1),
+      hTUf1SubSub_p(Res,NHTermL2,HTL1s,{Num1,{B,L1,ID}},{HN13,HN23},NEnv,
+        NIDTable,AddList1,TSs,TS1,NHTs,NewEnv,NewIDTable,Result,AddList),
+      NewHT=[NHTPred|NHTs].
+otherwise.
+hTUnify1Sub_p(HTermL2,[],_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):-  true |
+      termCheck(HTermL2,[],IDTable,NewList,NewIDTable,Result),
+      NewEnv=Env,
+      TS=TS1,
+      NewHT=NewList,
+      AddList=List.
+
+hTUf1SubSub_p(success,HTL1,NHTermL2,NHT,{HN13,HN23},Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- true |
+      hTUnify1Sub_p(HTL1,NHTermL2,NHT,{HN13,HN23},Env,IDTable,List,TS,TS1,
+        NewHT,NewEnv,NewIDTable,Result,AddList).
+otherwise.
+hTUf1SubSub_p(Res,_,_,_,_,NEnv,NID,List,TS,TS1,NHT,NewEnv,NewIDTable,
+                   Result,AddList):- true |
+            Result=Res,NewEnv=NEnv,TS=TS1,NewIDTable=NID,NHT=[],AddList=List.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+nagCheck({A,H1},{A,H2},Ans,PTerm1,PTerm2,Nag):- true |
+      Nag=A,Ans=success,PTerm1=H1,PTerm2=H2.
+otherwise.
+nagCheck({_,H1},{_,H2},Ans,PTerm1,PTerm2,Nag):- true |
+      Ans=fail,Nag=0,PTerm1=H1,PTerm2=H2.
+
+
+pTermUni(fail,_,_,Env,TS,TS1,NPT,NEnv,Result):- true |
+      Result=fail,NEnv=Env,TS=TS1,NPT=[].
+pTermUni(success,PTerm1,PTerm2,Env,TS,TS1,NPT,NEnv,Result):- true |
+
+%%oosaki modify &add 960408
+%H-Table ni pterm(X,Y) ga haixtutekitatokinoshori
+%      predUnify1case(PTerm1,PTerm2,TS,Env,TS1,NPT,NEnv,Result).      
+
+      get_purePTerm(PTerm1,PTerm10),
+      get_purePTerm(PTerm2,PTerm20),
+      predUnify1case(PTerm10,PTerm20,TS,Env,TS1,NPT,NEnv,Result).
+
+
+%%oosaki remove 96/03/26
+%      predUnify1(PTerm1,PTerm2,TS,Env,TS1,NPT,NEnv,Result).
+
+newTermMake(success,N,Nag,NPT,{N1,N2},IDTable,_,NHT,NIDTable,Result):-
+                   true |
+      idTableChange({N1,N2},IDTable,Number,NIDTable,Result),
+      NHT={Number,{{Nag,NPT},_,N}}.
+otherwise.
+newTermMake(Res,_,_,_,_,IDTable,_,NHT,NIDTable,Result):- true |
+      Result=Res,NIDTable=IDTable,NHT=[].
+
+idTableChange({0,N2},IDTable,Number,NIDTable,Result):- N2 > 0 |
+      Number=N2,NIDTable=IDTable,Result=success.
+idTableChange({0,0},IDTable,Number,NIDTable,Result):- true |
+      Number=0,NIDTable=IDTable,Result=success.
+idTableChange({N1,0},IDTable,Number,NIDTable,Result):- N1 > 0 |
+      Number=N1,NIDTable=IDTable,Result=success.
+idTableChange({N1,N2},IDTable,Number,NIDTable,Result):- N1 > 0 ,N2 > 0 |
+      smallCheck(N1,N2,Number0,Number),
+      set_vector_element(IDTable,Number0,_,Number,NIDTable),
+      Result=success.
+
+smallCheck(N1,N2,Number,SmallN):- N1 > N2 |
+                  Number=N1,SmallN=N2.
+smallCheck(N1,N2,Number,SmallN):- N1 < N2 |
+                  Number=N2,SmallN=N1.
+
+hTmake0(success,NHT,NIDTable1,NHTList,NHTerm,NewIDTable):- 
+              true  |
+   hTmake(NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTmake0(_,NHT,NIDTable1,NHTList,NHTerm,NewIDTable):-
+              true  |
+       NHTList=[],NHTerm=NHT,NewIDTable=NIDTable1.
+
+hTmake({N,Term},IDTable,NHTList,NHTerm,NewIDTable):- N=0 |
+      set_vector_element(Term,1,_,NHTList,NHTerm),
+      NewIDTable=IDTable.
+hTmake({N,Term},IDTable,NHTList,NHTerm,NewIDTable):- N>0 |
+      set_vector_element(Term,1,_,NHTList,NTerm),
+      set_vector_element(IDTable,N,N1,N1,NewIDT),
+      idTableCheck(N1,N,NewIDT,NTerm,NHTerm,NewIDTable).
+
+idTableCheck(N1,_,IDTable,NTerm,NHTerm,NewIDTable):- integer(N1) |
+      set_vector_element(IDTable,N1,N1E,N1E,NIDT),
+      idTableCheck(N1E,N1,NIDT,NTerm,NHTerm,NewIDTable).
+otherwise.
+idTableCheck(_,N,IDTable,NTerm,NHTerm,NewIDTable):- true |
+      set_vector_element(IDTable,N,_,NTerm,NewIDTable),
+      NHTerm={N}.
+
+termCheck([],List,IDTable,NewList,NewIDTable,Result):- true |
+            NewList=List,NewIDTable=IDTable,Result=success.
+termCheck([HTL1|HTLs],List,IDTable,NewList,NewIDTable,Result):- 
+                       true |
+      append(List,[HTL1],NList),
+      termCheck(HTLs,NList,IDTable,NewList,NewIDTable,Result).
+
+predAdd([TermL1|TLs],TermScolemID,Env,IDTable,List,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result,AddList):- true |
+      predAdd1(TermL1,TermScolemID,Env,IDTable,List,TS,TS2,NewHT1,
+                Env1,IDTable1,Res,List2),
+      predAddSub(Res,TLs,TermScolemID,Env1,IDTable1,List2,TS2,TS1,
+                NewHT2,NewEnv,NewIDTable,Result,AddList),
+      NewHT=[NewHT1|NewHT2].
+predAdd([],_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,NewIDTable,
+        Result,AddList):- true |
+      TS=TS1,
+      NewHT=[],
+      Env=NewEnv,
+      NewIDTable=IDTable,
+      Result=success,
+      AddList=List.
+
+predAddSub(success,TL,TermScolemID,Env,IDTable,List,TS,TS1,
+        NewHT,NewEnv,NewIDTable,Result,AddList):- true |
+      predAdd(TL,TermScolemID,Env,IDTable,List,TS,TS1,NewHT,
+             NewEnv,NewIDTable,Result,AddList).
+predAddSub(fail,_,_,Env,IDTable,List,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result,AddList):- true |
+      Result=fail,
+      AddList=List,
+      Env=NewEnv,
+      IDTable=NewIDTable,
+      NewHT=[],
+      TS=TS1.
+
+
+predAdd1(HTL1,TermScolemID,Env,IDTable,List,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result,AddList):- 
+                vector_element(HTL1,1,TermL1),
+                integer(TermL1),TermL1 > 0 |
+      set_vector_element(Env,TermL1,TermL1E,TermL1E,Env1),
+      set_vector_element(HTL1,1,_,TermL1E,NHTL1),
+      predAdd1(NHTL1,TermScolemID,Env1,IDTable,List,
+               TS,TS1,NewHT,NewEnv,NewIDTable,Result,AddList).
+predAdd1(HTL1,TermScolemID,Env,IDTable,List,TS,TS1,NewHT,
+        NewEnv,NewIDTable,Result,AddList):- 
+                vector_element(HTL1,1,0) |
+      set_vector_element(HTL1,0,KName,KName,HTL2),
+      somenumbermake(KName,TermScolemID,[],NHT),
+      set_vector_element(HTL2,1,_,NHT,NewHT),
+      TS=TS1,Env=NewEnv,IDTable=NewIDTable,Result=success,
+      AddList=List.
+predAdd1(HTL1,TermScolemID,Env,IDTable,List,TS,TS1,
+        NewHT,NewEnv,NewIDTable,Result,AddList):-
+                vector_element(HTL1,1,HTVec),
+                vector_element(HTVec,0,TOP),
+                TOP = '&top',
+                vector_element(HTVec,2,Li),
+                vector_element(HTVec,1,0) |
+      set_vector_element(HTL1,0,KName,KName,HTL2),
+      somenumbermake(KName,TermScolemID,Li,NHT),
+      set_vector_element(HTL2,1,_,NHT,NewHT),
+      TS=TS1,
+      Env=NewEnv,
+      IDTable=NewIDTable,
+      Result=success,
+      AddList=List.
+predAdd1(HTL1,TermScolemID,Env,IDTable,List,
+        TS,TS1,NewHT,NewEnv,NewIDTable,Result,AddList):-
+                vector_element(HTL1,1,HTVec),
+                vector_element(HTVec,0,TOP),
+                TOP = '&top',
+                vector_element(HTVec,2,Li),
+                vector_element(HTVec,1,Number),
+                Number > 0 |
+      set_vector_element(HTL1,0,KName,KName,_),
+      somenumbermake(KName,TermScolemID,Li,NHT),
+      eqcheck(NHT,Number,Res),
+      predAddC(Res,KName,NHT,NewHT,Result),
+      TS=TS1,
+      Env=NewEnv,
+      IDTable=NewIDTable,
+      AddList=List.
+otherwise.
+predAdd1(_,_,Env,IDTable,List,
+        TS,TS1,NewHT,NewEnv,NewIDTable,Result,AddList):- true |
+      Result=fail,
+      TS=TS1,
+      NewHT=[],
+      Env=NewEnv,
+      IDTable=NewIDTable,
+      AddList=List.
+
+somenumbermake('agent',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 2,
+      NHT={'&top',Number,Li}.
+somenumbermake('object',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 4,
+      NHT={'&top',Number,Li}.
+somenumbermake('cause',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 6,
+      NHT={'&top',Number,Li}.
+somenumbermake('condition',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 8,
+      NHT={'&top',Number,Li}.
+somenumbermake('purpose',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 10,
+      NHT={'&top',Number,Li}.
+somenumbermake('place',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 12,
+      NHT={'&top',Number,Li}.
+somenumbermake('source',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 14,
+      NHT={'&top',Number,Li}.
+somenumbermake('goal',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 16,
+      NHT={'&top',Number,Li}.
+somenumbermake('time',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 18,
+      NHT={'&top',Number,Li}.
+somenumbermake('time_from',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 20,
+      NHT={'&top',Number,Li}.
+somenumbermake('time_to',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 22,
+      NHT={'&top',Number,Li}.
+somenumbermake('implement',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 24,
+      NHT={'&top',Number,Li}.
+somenumbermake('material',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 26,
+      NHT={'&top',Number,Li}.
+somenumbermake('quantity',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 28,
+      NHT={'&top',Number,Li}.
+somenumbermake('number',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 30,
+      NHT={'&top',Number,Li}.
+somenumbermake('manner',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 32,
+      NHT={'&top',Number,Li}.
+somenumbermake('basis',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 34,
+      NHT={'&top',Number,Li}.
+somenumbermake('a_object',TermID,Li,NHT):- true |
+      Number := 100 * TermID + 36,
+      NHT={'&top',Number,Li}.
+
+eqcheck({'&top',SNumber,_},Number,Res):- Number = SNumber |
+                Res=success.
+otherwise.
+eqcheck(_,_,Res):- true | Res=fail.
+
+predAddC(success,KName,NHT,NewHT,Result):- true |
+      Result=success,
+      NewHT={KName,NHT}.
+predAddC(fail,_,_,NewHT,Result):- true |
+      Result=fail,NewHT=[].
+
+
+predAddC1(success,_,NHT,NewHT,Result):- true |
+      Result=success,
+      NewHT=NHT.
+predAddC1(fail,_,_,NewHT,Result):- true |
+      Result=fail,NewHT=[].
+
+takeName(HTL1,[],L2Term,NHTermL2,Ans):- true | 
+           Ans=no,L2Term=HTL1,NHTermL2=[].
+takeName(HTL1,[HTL2|HTermL2s],L2Term,NHTermL2,Ans):-
+                        vector_element(HTL1,0,A),
+                        vector_element(HTL2,0,A)|
+           Ans=yes,NHTermL2=HTermL2s,L2Term=HTL2.
+otherwise.
+takeName(HTL1,[HTL2|HTermL2],L2Term,NHTermL2,Ans):- true |
+     NHTermL2=[HTL2|NHTL2s],
+     takeName(HTL1,HTermL2,L2Term,NHTL2s,Ans).
+
+predUnify2(yes,HTL1,HTL2,_,Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,TSs,
+               Result,AddList):- true |
+     AddList=List,
+
+%%oosaki modify & add 960408
+%H-Table ni pterm(X,Y) ga haixtutekitatokino shori wo tuika
+%     set_vector_element(HTL1,1,Term,Term,_),
+%     set_vector_element(HTL2,1,L2Term,L2Term,NHTL2),
+
+     vector_element(HTL1,1,Term1,_),
+     vector_element(HTL2,1,L2Term1,NHTL2),
+     get_purePTerm(Term1,Term),
+     get_purePTerm(L2Term1,L2Term),
+%%
+
+     predUnify3(Term,L2Term,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result),
+     set_vector_element(NHTL2,1,_,NHT,NHTPred).
+predUnify2(no,HTL1,_,{_,HN23},Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,TSs,
+               Result,AddList):- 
+%L            integer(HN23) |
+            integer(HN23) |
+     predAdd1(HTL1,HN23,Env,IDTable,List,TS,TSs,NHT,NEnv,NIDTable,
+            Res,AddList),
+     vector_element(HTL1,0,A,_),
+     predAddC1(Res,A,NHT,NHTPred,Result).
+%L otherwise.
+%L predUnify2(no,HTL1,HTL2,{HN13,HN23},Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,TSs,
+%L                Result,AddList):- true |
+%L      Env=NEnv,
+%L      TS=TSs,
+%L      NHTPred=HTL1,
+%L      termCheck([HTL1],List,IDTable,AddList,NIDTable,Result).
+otherwise.
+predUnify2(no,HTL1,_,_,Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,TSs,
+               Result,AddList):- true |
+     Env=NEnv,
+     TS=TSs,
+     NHTPred=HTL1,
+     termCheck([HTL1],List,IDTable,AddList,NIDTable,Result).
+
+%%oosaki add 960404
+get_purePTerm(pterm(PT1,_),PT):-true|
+     PT = PT1.
+otherwise.
+get_purePTerm(Term1,Term):-true|
+     Term = Term1.
+%%
+
+predUnify3(Term1,Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- 
+                        integer(Term1) |
+     pTermCheck(Term2,Ans),
+     predUnify3PT(Ans,Term1,Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+predUnify3({TermNumber},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- true |
+     hTermCheck(Term2,Env,Ans),
+     predUnify3HT(Ans,{TermNumber},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+%$predUnify3({T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- 
+%$       vector(T1) |
+%$     hTermCheck(Term2,Env,Ans),
+%$     predUnify3HT(Ans,{T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+%$otherwise.
+%$predUnify3({T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):-
+%$       true |
+%$     pTermCheck(Term2,Ans),
+%$     predUnify3PT(Ans,{T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+predUnify3({T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):-
+     list(T3) |
+     pTermCheck(Term2,Ans),
+     predUnify3PT(Ans,{T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+predUnify3({T1,T2,[]},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):-
+     pTermCheck(Term2,Ans),
+     predUnify3PT(Ans,{T1,T2,[]},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+otherwise.
+predUnify3({T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- 
+       vector(T1) |
+     hTermCheck(Term2,Env,Ans),
+     predUnify3HT(Ans,{T1,T2,T3},Term2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+
+pTermCheck(Term,Ans):- integer(Term) | Ans=yes.
+pTermCheck({_,T2,T3},Ans):- integer(T2),list(T3) | Ans=yes.
+pTermCheck({_,T2,[]},Ans):- integer(T2)| Ans=yes. %$ insert line
+otherwise.
+pTermCheck(_,Ans):- true | Ans=no.
+
+hTermCheck({TNumber},_,Ans):- integer(TNumber) | Ans=yes.
+hTermCheck({_,_,T3},_,Ans):- integer(T3) | Ans=yes.
+hTermCheck({_,_,@},_,Ans):- true | Ans=yes.
+otherwise.
+hTermCheck(_,_,Ans):- true | Ans=no.
+
+%%%%%%%%%%%%%%%%%%%
+predUnify3PT(no,_,_,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- true |
+           NEnv=Env,NIDTable=IDTable,TS=TSs,Result=fail,NHT=[].
+predUnify3PT(yes,PTerm1,PTerm2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- true |
+     NIDTable=IDTable,
+     predUnify1case(PTerm1,PTerm2,TS,Env,TSs,NHT,NEnv,Result).
+
+predUnify3HT(no,_,_,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- true |
+           NEnv=Env,NIDTable=IDTable,TS=TSs,Result=fail,NHT=[].
+predUnify3HT(yes,HTerm1,HTerm2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result):- true |
+     hTUnify0(HTerm1,HTerm2,Env,IDTable,TS,NHT,NEnv,NIDTable,TSs,Result).
+
+
+%predUnify1(PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):- true |
+%    scIDto0(PTerm1,Pterm1n),
+%           TS=[subsume(Pterm1n,PTerm2,Env,Env0,Result0)|TSs0],
+%    predUnify10(Result0,PTerm1,PTerm2,TSs0,Env0,TSs,NPT,NewEnv,Result).
+%
+%predUnify10(normal(success),PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):-
+%           TS=[glb(PTerm1,PTerm2,NPT,Env,NewEnv,Result0)|TSs],
+%     reChange(Result0,Result).
+%otherwise.
+%predUnify10(Res,PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):- true |
+%     Result = Res, NewEnv = Env, TSs = TS.
+
+
+%oosaki remove 96/03/26
+%predUnify1(PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):-
+%
+%%       sifLibrary:message([
+%%               putb("RBR-PTerm1: "),   putt(PTerm1),putc(key#lf),
+%%               putb("RBR-PTerm2: "),   putt(PTerm2),putc(key#lf),
+%%               putb("RBR-Env1: "),     putt(Env),putc(key#lf),
+%%               putb("RBR-Env: "),      putt(NewEnv),putc(key#lf),
+%%               putl("=============")]),
+%
+%           TS=[glb(PTerm1,PTerm2,NPT,Env,NewEnv,Result0)|TSs],
+%     reChange(Result0,Result).
+
+
+scIDto0({V,_,ATR},PTermN):-
+    PTermN = {V,0,ATR}.     
+otherwise.
+scIDto0(PTerm,PTermN):-
+    PTermN = PTerm.
+
+predUnify1case(PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):-
+    integer(PTerm1) |
+    predUnify10case(normal(success),PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result).
+predUnify1case(PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):-
+    integer(PTerm2) |
+    predUnify10case(normal(success),PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result).
+otherwise.
+predUnify1case(PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):- true |
+    scIDto0(PTerm1,PTerm1n),
+    scIDto0(PTerm2,PTerm2n),
+
+%       sifLibrary:message([
+%               putb("SAME-PTerm1: "),  putt(PTerm1n),putc(key#lf),
+%               putb("SAME-PTerm2: "),  putt(PTerm2n),putc(key#lf),
+%               putb("SAME-Env1: "),    putt(Env),putc(key#lf),
+%               putb("SAME-Env: "),     putt(Env0),putc(key#lf),
+%               putl("=============")]),
+
+           TS=[same(PTerm1n,PTerm2n,Env,Env0,Result0)|TSs0],
+    predUnify10case(Result0,PTerm1,PTerm2,TSs0,Env0,TSs,NPT,NewEnv,Result).
+
+predUnify10case(normal(success),PTerm1,PTerm2,TS,Env,TSs,NPT,NewEnv,Result):-
+           TS=[glb(PTerm1,PTerm2,NPT,Env,NewEnv,Result0)|TSs],
+     reChange(Result0,Result).
+otherwise.
+predUnify10case(Res,_,_,TS,Env,TSs,_,NewEnv,Result):- true |
+     Result = Res, NewEnv = Env, TSs = TS.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+append([H|T],L,AL):- true | 
+           AL=[H|NAL],
+           append(T,L,NAL).
+append([],L,AL):- true | AL=L.
+
+reChange(normal(success),Result):- true | Result=success.
+otherwise.
+reChange(Res,Result):- true | Result=Res.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+property_or_event({_,PT},TS,Env,TS1,R):-
+    pterm_with_env_to_type_name(PT,Env,TypeName),
+    TS = [upper_bound(TypeName,TL,_R)|TS1],
+    property_or_event1(TL,R).
+
+pterm_with_env_to_type_name(0,_Env,TypeName):-
+    TypeName = '&top'.
+pterm_with_env_to_type_name(VarID,Env,TypeName):-
+    VarID > 0 |
+    vector_element(Env,VarID,PTerm,Env1),
+    pterm_with_env_to_type_name(PTerm,Env1,TypeName).
+pterm_with_env_to_type_name(PTerm,_Env,TypeName):-
+    vector(PTerm,3) |
+    vector_element(PTerm,0,TypeName,_PTerm1).
+
+property_or_event1([],R):-
+    R = event.
+property_or_event1([event|_],R):-
+    R = event.
+property_or_event1([property|_],R):-
+    R = property.
+otherwise.
+property_or_event1([_|T],R):-
+    property_or_event1(T,R).
+
+
+%%%%%%%%%%%%%%%%%%%
+hTUnifySub_o(_,_,_,Env,IDTable,{N1,N1},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N1),N1>0 |
+      NewIDTable=IDTable,
+      Result=success,
+      TS=TS1,
+      NewEnv=Env,
+      NHTerm={N1}.
+otherwise.
+hTUnifySub_o(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- integer(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0_o(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,NHTList,
+        NewEnv,NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+hTUnifySub_o(fail,_,_,Env,IDTable,_,TS,TS1,NHTerm,NewEnv,NewIDTable,Result):- 
+                  true |
+      Result=fail,NewEnv=Env,NewIDTable=IDTable,NHTerm=[],
+      TS1 = TS.
+otherwise.
+hTUnifySub_o(N,{HN11,HN12,HN13},{HN21,HN22,HN23},Env,IDTable,{N1,N2},TS,TS1,NHTerm,
+          NewEnv,NewIDTable,Result):- atom(N) |
+      nagCheck(HN11,HN21,Ans1,PTerm1,PTerm2,Nag),
+      pTermUni(Ans1,PTerm1,PTerm2,Env,TS,TS0,NPT,NEnv,Res1),
+      newTermMake(Res1,N,Nag,NPT,{N1,N2},IDTable,NEnv,NHT,NIDTable,Res2),
+      hTUnify1Sub0_o(Res2,NHT,HN12,HN22,{HN13,HN23},NEnv,NIDTable,TS0,TS1,NHTList,NewEnv,
+                   NIDTable1,Result),
+      hTmake0(Res1,NHT,NIDTable1,NHTList,NHTerm,NewIDTable).
+otherwise.
+hTUnifySub_o(Res,_,_,Env,IDTable,_,TS,TS1,NHTerm,NewEnv,NewIDTable,Result):- 
+                  true |
+      TS1 = TS,
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,NHTerm=[].
+
+hTUnify1Sub0_o(success,NHT,HTL1,HTL2,{HN13,HN23},Env,IDTable,TS,TS1,NewHT,NewEnv,
+        NewIDTable,Result) :- true |
+      hTUnify1Sub_o(HTL1,HTL2,NHT,{HN13,HN23},Env,IDTable,[],TS,TS1,NewHT,NewEnv,
+             NewIDTable,Result,_).
+otherwise.
+hTUnify1Sub0_o(Res,_,_,_,_,Env,IDTable,TS,TS1,NewHT,NewEnv,NewIDTable,Result):- 
+                  true |
+      Result=Res,NewEnv=Env,NewIDTable=IDTable,TS=TS1,NewHT=[].
+
+hTUnify1Sub_o([],[],_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- true |
+      Result=success,NewHT=[],NewEnv=Env,TS=TS1,NewIDTable=IDTable,AddList=List.
+hTUnify1Sub_o([],HTermL2,_,{HN13,_},Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):- 
+                integer(HN13) |
+      predAdd(HTermL2,HN13,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList).
+hTUnify1Sub_o([HTL1|HTL1s],HTermL2,{Num1,{B,L1,ID}},{HN13,HN23},Env,IDTable,List,TS,TS1,
+             NewHT,NewEnv,NewIDTable,Result,AddList):- true |
+      takeName(HTL1,HTermL2,L2Term,NHTermL2,Ans),
+      predUnify2(Ans,HTL1,L2Term,{HN13,HN23},Env,IDTable,List,TS,NHTPred,NEnv,NIDTable,
+                TSs,Res,AddList1),
+      hTUf1SubSub(Res,HTL1s,NHTermL2,{Num1,{B,L1,ID}},{HN13,HN23},NEnv,NIDTable,
+        AddList1,TSs,TS1,NHTs,NewEnv,NewIDTable,Result,AddList),
+      NewHT=[NHTPred|NHTs].
+otherwise.
+hTUnify1Sub_o([],HTermL2,_,_,Env,IDTable,List,TS,TS1,NewHT,NewEnv,
+            NewIDTable,Result,AddList):-  true |
+      termCheck(HTermL2,[],IDTable,NewList,NewIDTable,Result),
+      NewEnv=Env,
+      TS=TS1,
+      NewHT=NewList,
+      AddList=List.
+

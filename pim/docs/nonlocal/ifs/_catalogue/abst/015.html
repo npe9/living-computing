@@ -1,0 +1,90 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(15) Hierarchical Constraint Logic Programming Language: CHAL</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(15) Hierarchical Constraint Logic Programming Language: CHAL</h2>
+<p>
+
+<pre width="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 61 KB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A hierarchical constraint logic programming language processor which
+introduces hierarchy in terms of strength of constraints.<P>
+
+<h2><b>Function</b></h2>
+
+Hierarchical constraint logic programming language CHAL is based on
+new programming paradigm "constraint programming" which allows user a
+high-level description in problem solving. CHAL consists of constraint
+hierarchy solver which manipulates various strength of constraints in
+various domains and constraint language processor. User can make a
+program of his problem without worrying about solving method.<P>
+
+<dl>
+
+ <dt><b>An Extension of Constraint Logic Programming Language</b>
+
+<dd>Usual constraint logic programming languages output nothing if
+there is no solution for given constraints. On the other hand, by
+introducing hierarchy of strength in constraints, CHAL ignores some
+weak constraints in order to output some better solutions.
+
+<dd>This function is important in planning and design problems.
+
+ <dt><b>Constraints Solvers for Various Domains</b>
+
+<dd>CHAL provides the following constraint solvers for various domains
+of users:
+
+<OL>
+<LI>non-linear algebraic equations, 
+<LI>Boolean equations.
+</OL>
+User can specify various strength for these constraints.
+</dl>
+
+<h2><b>Reference</b></h2>
+
+<OL>
+
+<LI>Satoh, K., "Formalizing Soft Constraints by Interpretation
+Ordering", <i>Proceedings of the Ninth European Conference on
+Artificial Intelligence</i>, pp.585-590, Stockholm, Sweden(1990).
+
+<LI>Satoh, K.and Aiba, A., Computing Soft Constraints by Hierarchical
+Constraint Logic Programming, <i>ICOT-TR-610</i>, ICOT, Japan(1990).
+</OL>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Hierarchical Constraint Logic Programming Language: CHAL [76K] <a
+href="../../../ifs/kbms-clp/simpos/chal.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

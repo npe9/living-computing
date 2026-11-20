@@ -1,0 +1,154 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : var_env
+%       File Name   : var_env.kl1
+%       Function    : attributes handling
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 8/19  : bug fix: add_offset_term failure when free variable
+%$	1994/ 6/27  : expand macros
+%$      1994/ 6/ 3  : add deref_with_refp for var set bug in glb/lub
+%$      1994/ 5/17  : add offset to env in merge_env
+%$      1994/ 5/17  : add_offset
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 3/ 1  : merge_env env2 position bug
+%$      1994/ 2/15  : free var check bug in deref
+%$      1993/12/09  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module var_env.
+:- with_macro pimos.
+:- public deref/4,deref_with_refp/5,merge_env/5,add_offset/4.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S deref(X,Y,Env,NewEnv)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+deref(X,Y,Env,NewEnv):-
+    deref_with_refp(X,Y,_,Env,NewEnv).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S deref_with_refp(X,Y,RefP,Env,NewEnv)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+deref_with_refp(X,Y,RefP,Env,NewEnv):-
+    vector_element(Env,X,X1,Env1),
+%    (ty#is_free(X1) ->
+    (integer(X1),X1=:=0 ->
+%	pterm#new(PT),
+        new_vector(PT,3),
+%	pterm#set(typename,ty#top,PT,PT1),
+        set_vector_element(PT,0,_,'&top',PT1),
+%       pterm#set(attributes,[],PT1,Y),
+        set_vector_element(PT1,2,_,[],Y),
+        NewEnv = Env,
+        RefP = X
+%	ty#is_var(X1) ->
+    ;(integer(X1),X1>0) ->
+        deref_with_refp(X1,Y,RefP,Env1,NewEnv)
+%	ty#is_pterm(X1) ->
+    ;vector(X1,3) ->
+        Y = X1,
+        NewEnv = Env,
+        RefP = X
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S merge_env(Env1,Env2,NewEnv,Offset,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes)
+merge_env(Env1,Env2,NewEnv,Offset,Result):-
+    vector_element(Env1,0,Count1,Env11),
+    vector_element(Env2,0,Count2,Env21),
+    Offset = Count1,
+    add_offset_env(Count2,Env11,Env21,Env3,Offset,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        NewCount := Count1+Count2,
+        set_vector_element(Env3,0,_,NewCount,NewEnv),
+        Result = R1
+    ;otherwise;true ->
+        NewEnv = Env3,
+        Result = R1
+    ).
+
+add_offset_env(N,Env1,_Env2,NewEnv,_Offset,Result):-
+    N=<0|
+	NewEnv = Env1,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+add_offset_env(N,Env1,Env2,NewEnv,Offset,Result):-
+    N>0|
+	M := N-1,
+	vector_element(Env2,N,E,Env21),
+	add_offset(Offset,E,NewE,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    set_vector_element(Env1,~(Offset+N),_,NewE,Env11),
+	    add_offset_env(M,Env11,Env21,NewEnv,Offset,Result)
+	;otherwise;true ->
+	    NewEnv = Env1,
+	    Result = R1
+	).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S add_offset(Offset,Term,NewTerm,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes)
+add_offset(Offset,Term,NewTerm,Result):-
+    integer(Offset),Offset>0|
+	add_offset_term(Offset,Term,NewTerm,Result).
+add_offset(Offset,Term,NewTerm,Result):-
+    integer(Offset),Offset =:= 0|
+	NewTerm = Term,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+add_offset(Offset,Term,NewTerm,Result):-
+    NewTerm = Term,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_offset,[Offset]}.
+    Info = {type,illegal_offset,[Offset]}.
+
+
+add_offset_term(_Offset,Term,NewTerm,Result):-
+%    ty#is_free(Term)|
+    integer(Term),Term=:=0|
+	NewTerm = Term,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+add_offset_term(Offset,Term,NewTerm,Result):-
+%    ty#is_var(Term)|
+    integer(Term),Term>0|
+	NewTerm := Term + Offset,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+add_offset_term(Offset,Term,NewTerm,Result):-
+%    ty#is_pterm(Term)|
+    vector(Term,3)|
+%	pterm#get(attributes,Attrs,NewAttrs,Term,NewTerm),
+	set_vector_element(Term,2,Attrs,NewAttrs,NewTerm),
+	add_offset_attrs(Offset,Attrs,NewAttrs,Result).
+
+add_offset_attrs(_Offset,[],NewAttrs,Result):-
+    NewAttrs = [],
+%    Result = normal(ty#yes).
+    Result = normal(success).
+add_offset_attrs(Offset,[Attr|Attrs],NewAttrs,Result):-
+%    attribute#get(value,Value,NewValue,Attr,NewAttr),
+    set_vector_element(Attr,1,Value,NewValue,NewAttr),
+    add_offset(Offset,Value,NewValue,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        NewAttrs = [NewAttr|NewAttrs1],
+        add_offset_attrs(Offset,Attrs,NewAttrs1,Result)
+    ;otherwise;true ->
+        NewAttrs = [NewAttr],
+        Result = R1
+    ).

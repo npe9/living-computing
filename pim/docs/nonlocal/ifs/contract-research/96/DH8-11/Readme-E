@@ -1,0 +1,118 @@
+Copyright (C) 1997 Miyuki Koshimura
+====================================================
+Model Generation Theorem Proving System : MGTP
+
+MGTP(Model Generation Theorem Prover) is a model generation based
+theorem-proving programs for first-order logic. This package includes
+several preprocessor commands and proving commands. Manipulation on
+negative constraints and folding-up facility have capacity to reduce
+proving time. MGTP is coded in KLIC and portable to many different
+kinds of computer on which KLIC is available.
+
+[The structure of directories]
+
+ |- Install	How to install MGTP system
+ |- Readme-E	This file
+ |- Readme-J	Japanese version of this file
+ |- documents/	Directory for manual
+ |- klic/	Directory for KL1 programs
+ |- mg/		Directory for MGTP problems
+ |- sh/		Directory for shell scripts
+ |- tcl/	Directory for Tcl/Tk scripts 
+ |- tptp/	Directory for TPTP sample problems
+
+[Directories and files]
+ |- documents/
+ |	|- GUI.tex		Latex source for chapter 4
+ |	|- Install.tex		Latex source for appendix
+ |	|- Prepro.tex		Latex source for chapter 2
+ |	|- Prove.tex		Latex source for chapter 3
+ |	|- mgtp-disp-br1.ps	PostScript file referred by latex
+ |	|- mgtp-disp-br2.ps	PostScript file referred by latex
+ |	|- mgtp-disp-stdin.ps	PostScript file referred by latex
+ |	|- mgtp-filem.ps	PostScript file referred by latex
+ |	|- mgtp.tex		The top latex soruce
+ |	|- mgtpwm-up.ps		PostScript file refered by latex
+ |
+ |- klic/
+ |	|- Makefile		Makefile for installation
+ |	|- bin/			Directory for installed command
+ |	|- dom.kl1		Dom predicates insertion program
+ |	|- fm.kl1		Utilities for file I/O
+ |	|- fu_nhm1.kl1		MGTP with folding-up (FU) (compiler version)
+ |	|- intCDEMercNW.kl1	MGTP with term-rewriting (interpreter version)
+ |	|- intCMercNW.kl1	Constraint MGTP (interpreter version)
+ |	|- intMercNW.kl1	MGTP (interpreter version)
+ |	|- intMercNWFU.kl1	MGTP with FU (interpreter version)
+ |	|- matchNW.kl1		Matcher program
+ |	|- mercpat.kl1		Merc pattern generator
+ |	|- mg2klic.kl1		MGTP-to-KL1 transformation program
+ |	|- nhmdel.kl1		Irrelevant clauses filter
+ |	|- nhmfilter.kl1	Non minimal adornment filter
+ |	|- nhmmode.kl1		Mode analyzer for NHM
+ |	|- nhmtrans.kl1		NHM transformation program
+ |	|- rangeCheck.kl1	Range-restrictedness chcker
+ |	|- termMemoryG.kl1	Discrimination tree program
+ |	|- tptp2mgtp.kl1	TPTP-to-MGTP transformation program
+ |	|- unify.kl1		Unifier
+ |	|- unifyNW.kl1		Unifier for wrapped terms
+ |
+ |- mg/
+ |	|- MSC007-2.002.dmg	MGTP clause set with term-rewriting rules
+ |	|- PUZ001-2.dmg		MGTP clause set with term-rewriting rules
+ |	|- PUZ006-1.dmg		MGTP clause set with term-rewriting rules
+ |	|- PUZ007-1.dmg		MGTP clause set with term-rewriting rules
+ |	|- PUZ012-1.mg		MGTP clause set
+ |	|- PUZ016-1.dmg		MGTP clause set with term-rewriting rules
+ |	|- PUZ030-1.mg		MGTP clause set
+ |	|- PUZ031-1.mg		MGTP clause set
+ |	|- SYN005-1.010.mg	MGTP clause set
+ |	|- SYN008-1.mg		MGTP clause set
+ |	|- SYN009-1.mg		MGTP clause set
+ |	|- SYN014-2.mg		MGTP clause set
+ |	|- SYN070-1.mg		MGTP clause set
+ |	|- SYN083-1.mg		MGTP clause set
+ |	|- SYN101-1.002:002.mg	MGTP clause set
+ |	|- SYN102-1.007:007.mg	MGTP clause set
+ |	|- latin.mg		MGTP clause set
+ |	|- latin1.mg		MGTP clause set
+ |	|- latin1c.mg		CMGTP clause set
+ |	|- queen.mg		MGTP clause set
+ |	|- queen1.mg		MGTP clause set
+ |	|- queen1c.mg		CMGTP clause set
+ |
+ |- sh/
+ |	|- mgnhm		Shell script for NHM transformation
+ |	|- rmirrelevant		Shell script for removing irrelevant clauses
+ |
+ |- tcl/
+ |	|- MGTPWMDIR/
+ |	|	|- help/
+ |	|	|	|- conp			Messages for help
+ |	|	|	|- haba-fukasa		Messages for help
+ |	|	|	|- int			Messages for help
+ |	|	|	|- loose		Messages for help
+ |	|	|	|- mode			Messages for help
+ |	|	|	|- nhm			Messages for help
+ |	|	|	|- time-out		Messages for help
+ |	|	|	|- timer-samp		Messages for help
+ |	|	|- mgtp-disp-br			Tcl/Tk script for GUI system
+ |	|	|- mgtp-disp-file		Tcl/Tk script for GUI system
+ |	|	|- mgtp-disp-stdin		Tcl/Tk script for GUI system
+ |	|	|- mgtp-filem			Tcl/Tk script for GUI system
+ |	|	|- mgtpwm			Tcl/Tk script for GUI system
+ |	|	|- src/
+ |	|	|	|- cmgtp.kl1		Constraint MGTP(compiler version)
+ |	|	|	|- fu-with-nhm.kl1	MGTP with FU (compiler version)
+ |	|	|	|- fu.kl1		MGTP with FU (compiler version)
+ |	|	|	|- lmgtp.kl1		MGTP (compiler version)
+ |	|	|	|- mgtp.kl1		MGTP (compiler version)
+ |	|- mgtpwm				Tcl/Tk script for GUI system
+ |
+ |- tptp/
+ |	|- EQU001-0.ax		Axiom file referred by TPTP problem files
+ |	|- PUZ012-1.p		TPTP problem
+ |	|- PUZ030-1.p		TPTP problem
+ |	|- SYN009-1.p		TPTP problem
+ |	|- SYN014-1.p		TPTP problem
+ |	|- SYN014-2.p		TPTP problem

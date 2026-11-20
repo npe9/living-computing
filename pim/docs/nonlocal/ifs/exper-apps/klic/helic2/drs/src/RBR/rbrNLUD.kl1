@@ -1,0 +1,491 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_oldt.
+:- public 
+    solve/3,
+%*    solve1/7,
+    counter_solve_top/4.
+:- with_macro pimos.
+
+% <Query> ::= {<Hterm>,<Env>,<HIDT>}
+solve(Query,RM,ST):-
+    solve(Query,RM,ST,not_counter,0).
+
+%%oosaki
+%solve(Query,RM,ST,CF,CounterD):-
+%  rbr_solution_table:create_with_hash(100,ST0), 
+%  RM = {RM1,RM2,RM3},
+%  solve(Query,ST0,RM1,STm,[],not_top,[]), 
+%  rbr_eval_answer:eval_answer(STm,RM2,STmm),
+%  rbr_counter:dr(CF,STmm,RM3,ST,CounterD).
+
+solve(Query,RM,ST,CF,CounterD):- true|
+   rbr_solution_table:create_with_hash(100,ST0), 
+   RM = {RM1,RM2,RM3,RM4},                              %add RM4
+   RM4 = [                                              %add
+          tracer(get(callNumber,CN,_R2)),               %add
+          tracer(print(call,Query,CN,_R3))],            %add
+        solve(Query,CN,ST0,RM1,STm,[],not_top,[]),      %add CN
+        rbr_eval_answer:eval_answer(STm,RM2,STmm),
+        rbr_counter:dr(CF,STmm,RM3,ST,CounterD).
+
+
+%%oosaki  
+%counter_solve_top(Query,RM,ST,CounterD):-
+%  solve(Query,RM,ST,counter_top,CounterD).
+
+counter_solve_top(Query,RM,ST,CounterD):-
+
+    RM = {RM1,RM2},
+    RM1 = [                                             %add
+          tracer(get(callNumber,CN,R1)),                %add
+          tracer(print(call,Query,CN,R2))],             %add
+    ( wait(R1),wait(R2)->
+        solve(Query,RM2,ST,counter_top,CounterD)).
+
+%%oosaki
+%solve(Query,ST,RM,ST1,ST1T,TF,RLS):-
+%  blt_chk(Query,Res),
+%  solve_bc(Res,Query,ST,RM,ST1,ST1T,TF,RLS).
+
+solve(Query,CN,ST,RM,ST1,ST1T,TF,RLS):-                 %add CN
+  blt_chk(Query,Res),
+  solve_bc(Res,Query,CN,ST,RM,ST1,ST1T,TF,RLS).         %add NC
+
+%%oosaki
+%solve_bc(yes,Query,ST,RM,ST1,ST1T,TF,_RLS):-
+%  solve_blt(Query,ST,RM,ST1,ST1T,TF).
+%solve_bc(no,Query,ST,RM,ST1,ST1T,TF,RLS):-
+%  solve0(Query,ST,RM,ST1,ST1T,TF,RLS).
+
+solve_bc(yes,Query,CN,ST,RM,ST1,ST1T,TF,_RLS):-         %add CN
+  solve_blt(Query,CN,ST,RM,ST1,ST1T,TF).                %add CN
+solve_bc(no,Query,CN,ST,RM,ST1,ST1T,TF,RLS):-           %add CN
+  solve0(Query,CN,ST,RM,ST1,ST1T,TF,RLS).               %add CN
+
+%oosaki
+%solve0({{not,{Q,CL,OC}},_Env,_HIDT},ST,RM,ST1,ST1T,_TF,_RLS):-
+%  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,_Q1,ST2,new(Node)),
+%  rbr_solution_table:update_data(Node,ST2,naf,ST3),
+%  ST1 = [naf(Node,ST3)|ST1T],
+%  RM = [].
+%solve0({{[],{Q,CL,OC}},Env,HIDT},ST,RM,ST1,ST1T,TF,RLS):-
+%  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,Q1,ST2,Result),
+%  solve1(Result,{Q1,Env,HIDT},ST2,RM,ST1,ST1T,TF,RLS).
+%solve0({{[],hp(HID,{Q,CL,OC})},Env,HIDT},ST,RM,ST1,ST1T,TF,RLS):-
+%  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,Q1,ST2,Result),
+%  solve1(Result,hp(HID,{Q1,Env,HIDT}),ST2,RM,ST1,ST1T,TF,RLS).
+
+solve0({{not,{Q,CL,OC}},Env,HIDT},CN,ST,RM,ST1,ST1T,_TF,_RLS):-                 %add CN
+  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,_Q1,ST2,new(Node)),
+  rbr_solution_table:update_data(Node,ST2,naf,ST3),
+  ST1 = [naf(Node,ST3)|ST1T],
+  RM  = [tracer(print(redu,not,{{Q,CL,OC},Env,HIDT},CN,[],_,_R))].      %add
+solve0({{[],{Q,CL,OC}},Env,HIDT},CN,ST,RM,ST1,ST1T,TF,RLS):-                    %add CN
+  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,Q1,ST2,Result),           
+  solve1(Result,{Q1,Env,HIDT},CN,ST2,RM,ST1,ST1T,TF,RLS).                       %add CN
+solve0({{[],hp(HID,{Q,CL,OC})},Env,HIDT},CN,ST,RM,ST1,ST1T,TF,RLS):-            %add CN
+  rbr_solution_table:check_and_put_query({Q,CL,OC},ST,Q1,ST2,Result),
+  solve1(Result,hp(HID,{Q1,Env,HIDT}),CN,ST2,RM,ST1,ST1T,TF,RLS).               %add CN
+
+%oosaki
+%solve1(new(Node),Q,ST,RM,ST1,ST1T,TF,RLS):-
+%  RM = [get_rules(Q,RLS,OrRuleList)|RM1],
+%  solveOR(OrRuleList,Node,Q,ST,RM1,ST1,ST1T,TF,RLS).
+
+solve1(new(Node),Q,CN,ST,RM,ST1,ST1T,TF,RLS):-          %add CN
+  RM = [get_rules(Q,RLS,OrRuleList)|RM1],
+  solveOR(OrRuleList,Node,Q,CN,ST,RM1,ST1,ST1T,TF,RLS). %add CN
+
+%oosaki
+%solveOR([],Node,{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF,_RLS):-
+%  rbr_solution_table:update_data(Node,ST,fail,ST2),
+%  ST1 = [fail(Node,ST2,Env,HIDT)|ST1T],
+%  RM = [].
+%solveOR([],Node,hp(_HID,{_Q,Env,HIDT}),ST,RM,ST1,ST1T,_TF,_RLS):-
+%  rbr_solution_table:update_data(Node,ST,fail,ST2),
+%  ST1 = [fail(Node,ST2,Env,HIDT)|ST1T],
+%  RM = [].
+%solveOR(OrRuleList,Node,Q,ST,RM,ST1,ST1T,TF,RLS):-
+%  list(OrRuleList) |
+%  solveOR1(OrRuleList,Node,Q,ST,RM,ST1,ST1T,TF,RLS).
+
+solveOR([],Node,{Q,Env,HIDT},CN,ST,RM,ST1,ST1T,_TF,_RLS):-              %add CN
+  rbr_solution_table:update_data(Node,ST,fail,ST2),
+  ST1 = [fail(Node,ST2,Env,HIDT)|ST1T],
+  RM  = [tracer(print(fail,{Q,Env,HIDT},CN,_R1))].                      %add
+solveOR([],Node,hp(HID,{Q,Env,HIDT}),CN,ST,RM,ST1,ST1T,_TF,_RLS):-      %add CN
+  rbr_solution_table:update_data(Node,ST,fail,ST2),
+  ST1 = [fail(Node,ST2,Env,HIDT)|ST1T],
+  RM  = [tracer(print(fail,hp(HID,{Q,Env,HIDT}),CN,_R1))].              %add
+solveOR(OrRuleList,Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS):-                   %add CN
+  list(OrRuleList) |
+  solveOR1(OrRuleList,Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS).                 %add CN
+
+%oosaki
+%solveOR1([],_Node,_Q,_ST,RM,ST1,ST1T,_TF,_RLS):-
+%  ST1 = ST1T,
+%  RM = [].
+%solveOR1([{Rule,BLH,Qnew,cbr}|BLT],Node,Q,ST,RM,ST1,ST1T,TF,RLS):-
+%  Rule = {RN,_} |
+%  get_real_entry(Qnew,Entry,Qnew1),
+%  RM = {RM1,RM2},
+%  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+%  cbr_solveAND(BLH,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),
+%  solveOR1(BLT,Node,Q,ST,RM2,ST1T0,ST1T,TF,RLS).
+%solveOR1([{Rule,BLH,Qnew}|BLT],Node,Q,ST,RM,ST1,ST1T,TF,RLS):-
+%  Rule = {RN,_} |
+%  get_real_entry(Qnew,Entry,Qnew1),
+%  RM = {RM1,RM2},
+%  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+%  solveAND(BLH,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),
+%  solveOR1(BLT,Node,Q,ST,RM2,ST1T0,ST1T,TF,RLS).
+
+solveOR1([],_Node,_Q,_CN,_ST,RM,ST1,ST1T,_TF,_RLS):-                    %add CN
+  ST1 = ST1T,
+  RM = [].
+solveOR1([{Rule,BLH,Qnew,cbr}|BLT],Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS):-   %add CN
+  Rule = {RN,_} |
+  get_real_entry(Qnew,Entry,Qnew1),
+  RM = {RM1,RM2,RM3},                                                   %add RM3
+  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+
+  RM3 = [tracer(print(redu,RN,Qnew1,CN,BLH,BLH_CN,R1))],                %add
+
+  ( wait(R1)->                                                          %add
+        cbr_solveAND(BLH_CN,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),  
+                                                                        %modify BLH ->BLH_CN
+        solveOR1(BLT,Node,Q,CN,ST,RM2,ST1T0,ST1T,TF,RLS)).              %add CN
+solveOR1([{Rule,BLH,Qnew}|BLT],Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS):-       %add CN
+  Rule = {RN,_} |
+  get_real_entry(Qnew,Entry,Qnew1),
+  RM = {RM1,RM2,RM3},                                                   %add RM3
+  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+
+  RM3 = [tracer(print(redu,RN,Qnew1,CN,BLH,BLH_CN,R1))],                %add
+
+  ( wait(R1)->
+        solveAND(BLH_CN,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),
+                                                                        %modify BLH ->BLH_CN
+        solveOR1(BLT,Node,Q,CN,ST,RM2,ST1T0,ST1T,TF,RLS)).              %add CN
+
+%oosaki
+%solveAND([BH|BT],Rule,InC,Node,{Q,Env,HIDT},ST,RM,ST1,ST1T,TF,RLS):-
+%  RM = {RM1,RM2},
+%  solve({BH,Env,HIDT},ST,RM1,STL,[],not_top,RLS),
+%  solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+%solveAND([],Rule,InC,Node,{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF,RLS):-
+%  RM = [],
+%  rev(InC,InCR),
+%  rbr_solution_table:add_answer(ST,Node,{Rule,InCR,nil},ST1H0),
+%  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T].
+%solveAND([BH|BT],Rule,InC,Node,hp(HID,{Q,Env,HIDT}),ST,RM,ST1,ST1T,TF,RLS):-
+%  RM = {RM1,RM2},
+%  solve({BH,Env,HIDT},ST,RM1,STL,[],not_top,RLS),
+%  solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+%solveAND([],Rule,InC,Node,hp(HID,{_Q,Env,HIDT}),ST,RM,ST1,ST1T,_TF,_RLS):-
+%  RM = [],
+%  rev(InC,InCR),
+%  rbr_solution_table:add_answer(ST,Node,{Rule,InCR,nil},ST1H0),
+%  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T].
+
+solveAND([{BH,BHCN}|BT],Rule,InC,Node,{Q,Env,HIDT},ST,RM,ST1,ST1T,TF,RLS):-     
+                                                                %modify BH -> {BH,BHCN}
+  RM = {RM1,RM2},                                                               %add
+  solve({BH,Env,HIDT},BHCN,ST,RM1,STL,[],not_top,RLS),                          %add BHCN
+  solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+solveAND([],Rule,InC,Node,{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF,_RLS):-
+  RM = [],
+  rev(InC,InCR),
+  rbr_solution_table:add_answer(ST,Node,{Rule,InCR,nil},ST1H0),
+  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T].
+solveAND([{BH,BHCN}|BT],Rule,InC,Node,hp(_,{Q,Env,HIDT}),ST,RM,ST1,ST1T,TF,RLS):- 
+                                                                %modify BH -> {BH,BHCN}
+  RM = {RM1,RM2},                                                               %add
+  solve({BH,Env,HIDT},BHCN,ST,RM1,STL,[],not_top,RLS),                          %add BHCN
+  solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+solveAND([],Rule,InC,Node,hp(_,{_Q,Env,HIDT}),ST,RM,ST1,ST1T,_TF,_RLS):-
+  RM = [],
+  rev(InC,InCR),
+  rbr_solution_table:add_answer(ST,Node,{Rule,InCR,nil},ST1H0),
+  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T].
+
+%oosaki
+%solveORAND no shorigaiyou imi ga yokuwakaranai
+
+%%% for built in %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+solveORAND([fail(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,Q,RM,ST1,ST1T,TF,RLS):-
+  ST1 = [fail(built_in,ST0,Env,HIDT)|ST2],
+  solveORAND(AT,Rule,InC,BT,Node,Q,RM,ST2,ST1T,TF,RLS).
+solveORAND([succ(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           {Q,Env0,HIDT0},RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  solveAND(BT,Rule,InC,Node,{Q,Env,HIDT},ST0,RM1,ST1,ST1T0,TF,RLS),
+  solveORAND(AT,Rule,InC,BT,Node,{Q,Env0,HIDT0},RM2,ST1T0,ST1T,TF,RLS).
+solveORAND([succ(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           hp(HID,{Q,Env0,HIDT0}),RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  solveAND(BT,Rule,InC,Node,hp(HID,{Q,Env,HIDT}),ST0,RM1,ST1,ST1T0,TF,RLS),
+  solveORAND(AT,Rule,InC,BT,Node,hp(HID,{Q,Env0,HIDT0}),RM2,ST1T0,ST1T,TF,RLS).
+otherwise.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+solveORAND([fail(Fnode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,Q,RM,ST1,ST1T,TF,RLS):-
+  rbr_solution_table:update_data(Node,ST0,fail,Rule,ST01), 
+  ST1 = [fail(Fnode,ST01,Env,HIDT)|ST2],
+  solveORAND(AT,Rule,InC,BT,Node,Q,RM,ST2,ST1T,TF,RLS).
+solveORAND([naf(FNode,ST0)|AT],Rule,InC,BT,Node,Q,RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  solveAND(BT,Rule,[naf(FNode)|InC],Node,Q,ST0,RM1,ST1,ST1T0,TF,RLS),
+  solveORAND(AT,Rule,InC,BT,Node,Q,RM2,ST1T0,ST1T,TF,RLS).
+solveORAND([succ(AnsNode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           {Q,Env0,HIDT0},RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  solveAND(BT,Rule,[AnsNode|InC],Node,{Q,Env,HIDT},ST0,RM1,ST1,ST1T0,TF,RLS),
+  solveORAND(AT,Rule,InC,BT,Node,{Q,Env0,HIDT0},RM2,ST1T0,ST1T,TF,RLS).
+solveORAND([succ(AnsNode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           hp(HID,{Q,Env0,HIDT0}),RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  solveAND(BT,Rule,[AnsNode|InC],Node,hp(HID,{Q,Env,HIDT}),ST0,RM1,ST1,ST1T0,TF,RLS),
+  solveORAND(AT,Rule,InC,BT,Node,hp(HID,{Q,Env0,HIDT0}),RM2,ST1T0,ST1T,TF,RLS).
+solveORAND([],_Rule,_InC,_BT,_Node,_Q,RM,ST1,ST1T,_TF,_RLS):-
+  RM = [], ST1 = ST1T.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+rev(In,Out):-
+    rev(In,[],Out).
+
+rev([],Mid,Out):-
+    Out = Mid.
+rev([H|T],Mid,Out):-
+    rev(T,[H|Mid],Out).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cbr xxx
+cbr_solveAND([{BH,BHCN}|BT],Rule,InC,Node,hp(_HID,{Q,Env,HIDT}),ST,RM,ST1,ST1T,TF,RLS):-
+                                                                %modify BH ->{BH,BHCN}
+  RM = {RM1,RM2},
+  cbr_solve({BH,Env,HIDT},BHCN,ST,RM1,STL,[],not_top,RLS),      %add BHCN
+  cbr_solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+cbr_solveAND([],Rule,InC,Node,hp(_HID,{_Q,Env,HIDT}),ST,RM,ST1,ST1T,_TF,_RLS):-
+  rev(InC,InCR),
+  rbr_solution_table:get_sub_tree_conseq(Node,InCR,ST,ConsTree,STm),
+  RM = [get_similarity(Threshold),get_weight(W),get_psiTermSimTB(PTermSIMTB),
+	get_psiTermAttWeight(PsiTermAttWeight)],
+  HyoukaTB = {W,PTermSIMTB,PsiTermAttWeight},
+  cbr_solve:cbr_solve({Env,HIDT,ConsTree},HyoukaTB,Similarity,_Result),
+  cbr_judge(Similarity,Threshold,STm,ST1,ST1T,Node,Rule,InCR,Env,HIDT).
+cbr_solveAND([{BH,BHCN}|BT],Rule,InC,Node,{Q,Env,HIDT},ST,RM,ST1,ST1T,TF,RLS):-
+                                                                %modify BH ->{BH,BHCN}
+  RM = {RM1,RM2},
+  cbr_solve({BH,Env,HIDT},BHCN,ST,RM1,STL,[],not_top,RLS),      %add BHCN
+  cbr_solveORAND(STL,Rule,InC,BT,Node,{Q,Env,HIDT},RM2,ST1,ST1T,TF,RLS).
+cbr_solveAND([],Rule,InC,Node,{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF,_RLS):-
+  rev(InC,InCR),
+  rbr_solution_table:get_sub_tree_conseq(Node,InCR,ST,ConsTree,STm),
+  RM = [get_similarity(Threshold),get_weight(W),get_psiTermSimTB(PTermSIMTB),
+	get_psiTermAttWeight(PsiTermAttWeight)],
+  HyoukaTB = {W,PTermSIMTB,PsiTermAttWeight},
+  cbr_solve:cbr_solve({Env,HIDT,ConsTree},HyoukaTB,Similarity,_Result),
+  cbr_judge(Similarity,Threshold,STm,ST1,ST1T,Node,Rule,InCR,Env,HIDT).
+
+cbr_judge(Sim,Thr,ST,ST1,ST1T,Node,Rule,InCR,Env,HIDT):-
+  Sim >= Thr |
+  rbr_solution_table:add_answer(ST,Node,{Rule,InCR,Sim},ST1H0), 
+  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T].
+cbr_judge(Sim,Thr,ST,ST1,ST1T,Node,_Rule,_InCR,Env,HIDT):-
+  Sim < Thr |
+  rbr_solution_table:update_data(Node,ST,fail,ST0),
+  ST1 = [fail(Node,ST0,Env,HIDT)|ST1T].
+
+cbr_solve({{[],{Q,CL,OC},Triv},Env,HIDT},CN,ST,RM,ST1,ST1T,TF,RLS):-            %add CN
+  rbr_solution_table:check_and_put_query({{Q,CL,OC},Triv},ST,Q1,ST2,Result),
+  cbr_solve1(Result,{Q1,Env,HIDT},CN,ST2,RM,ST1,ST1T,TF,Triv,RLS).              %add CN
+cbr_solve({{[],hp(HID,{Q,CL,OC}),Triv},Env,HIDT},CN,ST,RM,ST1,ST1T,TF,RLS):-    %add CN
+  rbr_solution_table:check_and_put_query({{Q,CL,OC},Triv},ST,Q1,ST2,Result),
+  cbr_solve1(Result,hp(HID,{Q1,Env,HIDT}),CN,ST2,RM,ST1,ST1T,TF,Triv,RLS).      %add CN
+otherwise.
+cbr_solve(  {Builtin,Env,HIDT},CN,ST,RM,ST1,ST1T,TF,RLS):-    %add 
+  solve_blt({Builtin,Env,HIDT},CN,ST,RM,ST1,ST1T,TF).
+
+
+cbr_solve1(new(Node),Q,CN,ST,RM,ST1,ST1T,TF,Triv,RLS):-                         %add CN
+  RM = [cbr_get_rules(Q,RLS,OrRuleList)|RM1],
+  cbr_solveOR(OrRuleList,Node,Q,CN,ST,RM1,ST1,ST1T,TF,Triv,RLS).                %add CN
+
+cbr_solveOR([],Node,{_Q,Env,HIDT},_CN,ST,RM,ST1,ST1T,_TF,Triv,_RLS):-           %add CN
+  RM = [],
+  cbr_trivial_judge(Triv,Node,Env,HIDT,ST,ST1,ST1T).
+cbr_solveOR([],Node,hp(_HID,{_Q,Env,HIDT}),_CN,ST,RM,ST1,ST1T,_TF,Triv,_RLS):-   %add CN
+  RM = [],
+  cbr_trivial_judge(Triv,Node,Env,HIDT,ST,ST1,ST1T).
+cbr_solveOR(OrRuleList,Node,Q,CN,ST,RM,ST1,ST1T,TF,_Triv,RLS):-                 %add CN
+  list(OrRuleList) |
+  cbr_solveOR1(OrRuleList,Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS).                     %add CN
+
+cbr_trivial_judge(0,Node,Env,HIDT,ST,ST1,ST1T):-
+  rbr_solution_table:update_data(Node,ST,fail,ST2),
+  ST1 = [fail(Node,ST2,Env,HIDT)|ST1T].
+cbr_trivial_judge(1,Node,Env,HIDT,ST,ST1,ST1T):-
+  rbr_solution_table:update_data(Node,ST,fail,ST2),
+  ST1 = [trivial(Node,ST2,Env,HIDT)|ST1T].
+
+cbr_solveOR1([],_Node,_Q,_CN,_ST,RM,ST1,ST1T,_TF,_RLS):-                        %add CN
+  ST1 = ST1T,
+  RM = [].
+cbr_solveOR1([{Rule,BLH,Qnew,cbr}|BLT],Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS):-       %add CN
+  Rule = {RN,_} |
+  get_real_entry(Qnew,Entry,Qnew1),
+  RM = {RM1,RM2,RM3},                                                           %add
+  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+
+  RM3 = [tracer(print(redu,RN,Qnew1,CN,BLH,BLH_CN,R1))],                        %add
+
+  ( wait(R1)->                                                                  %add
+        cbr_solveAND(BLH_CN,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),  
+                                                                        %modify BLH -> BLH_CN
+        cbr_solveOR1(BLT,Node,Q,CN,ST,RM2,ST1T0,ST1T,TF,RLS)).                  %add CN
+cbr_solveOR1([{Rule,BLH,Qnew}|BLT],Node,Q,CN,ST,RM,ST1,ST1T,TF,RLS):-           %add CN
+  Rule = {RN,_} |
+  get_real_entry(Qnew,Entry,Qnew1),
+  RM = {RM1,RM2,RM3},                                                           %add RM3
+  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+
+  RM3 = [tracer(print(redu,RN,Qnew1,CN,BLH,BLH_CN,R1))],                        %add
+
+  ( wait(R1)->                                                                  %add
+        solveAND(BLH_CN,Rule,[],Node,Qnew1,ST0,RM1,ST1,ST1T0,TF,[RN|RLS]),
+                                                                        %modify BLH -> BLH_CN
+        cbr_solveOR1(BLT,Node,Q,CN,ST,RM2,ST1T0,ST1T,TF,RLS)).                  %add CN
+
+%cbr_solveOR1([{Rule,[],Qnew}|BLT],Node,Q,ST,RM,ST1,ST1T,TF):-
+%  Qnew = {Entry,Env,HIDT} |
+%  rbr_solution_table:update_entry(Node,ST,Entry,ST0),
+%  rbr_solution_table:add_answer(ST0,Node,{Rule,[],nil},ST1H0),
+%  ST1 = [succ(Node,ST1H0,Env,HIDT)|ST1T0],
+%  cbr_solveOR1(BLT,Node,Q,ST,RM,ST1T0,ST1T,TF).
+
+%$ add-begin
+cbr_solveORAND([fail(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,Q,RM,ST1,ST1T,TF,RLS):-
+  ST1 = [fail(built_in,ST0,Env,HIDT)|ST2],
+  cbr_solveORAND(AT,Rule,InC,BT,Node,Q,RM,ST2,ST1T,TF,RLS).
+cbr_solveORAND([succ(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           {Q,Env0,HIDT0},RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  cbr_solveAND(BT,Rule,InC,Node,{Q,Env,HIDT},ST0,RM1,ST1,ST1T0,TF,RLS),
+  cbr_solveORAND(AT,Rule,InC,BT,Node,{Q,Env0,HIDT0},RM2,ST1T0,ST1T,TF,RLS).
+cbr_solveORAND([succ(built_in,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           hp(HID,{Q,Env0,HIDT0}),RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  cbr_solveAND(BT,Rule,InC,Node,hp(HID,{Q,Env,HIDT}),ST0,RM1,ST1,ST1T0,TF,RLS),
+  cbr_solveORAND(AT,Rule,InC,BT,Node,hp(HID,{Q,Env0,HIDT0}),RM2,ST1T0,ST1T,TF,RLS).
+%$ add-end
+otherwise.
+cbr_solveORAND([fail(Fnode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,Q,RM,ST1,ST1T,TF,RLS):-
+  rbr_solution_table:update_data(Node,ST0,fail,ST01),
+  ST1 = [fail(Fnode,ST01,Env,HIDT)|ST2],
+  cbr_solveORAND(AT,Rule,InC,BT,Node,Q,RM,ST2,ST1T,TF,RLS).
+cbr_solveORAND([trivial(FNode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           {Q,Env0,HIDT0},RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  cbr_solveAND(BT,Rule,[FNode|InC],Node,{Q,Env,HIDT},ST0,RM1,ST1,ST1T0,TF,RLS),
+  cbr_solveORAND(AT,Rule,InC,BT,Node,{Q,Env0,HIDT0},RM2,ST1T0,ST1T,TF,RLS).
+cbr_solveORAND([succ(AnsNode,ST0,Env,HIDT)|AT],Rule,InC,BT,Node,
+           {Q,Env0,HIDT0},RM,ST1,ST1T,TF,RLS):-
+  RM = {RM1,RM2},
+  cbr_solveAND(BT,Rule,[AnsNode|InC],Node,{Q,Env,HIDT},ST0,RM1,ST1,ST1T0,TF,RLS),
+  cbr_solveORAND(AT,Rule,InC,BT,Node,{Q,Env0,HIDT0},RM2,ST1T0,ST1T,TF,RLS).
+cbr_solveORAND([],_Rule,_InC,_BT,_Node,_Q,RM,ST1,ST1T,_TF,_RLS):-
+  RM = [], ST1 = ST1T.
+
+print_rule_name(List):-
+    io:outstream(Out),
+    print_rule_name1(List,Out).
+
+print_rule_name1([{{Rule,_},_BLH,_Qnew}|BLT],Out):-
+    Out = [print(Rule),print(',')|OutT],
+        print_rule_name1(BLT,OutT).
+print_rule_name1([],Out):-
+        Out = [nl].
+
+print_head(Q):-
+    vector_element(Q,0,H),
+    vector_element(H,0,P),
+    vector_element(P,0,NOT),
+    vector_element(P,1,P1) |
+    io:outstream(Out),
+    print_head1(NOT,P1,Out).
+
+print_head1([],P1,Out):-
+    print_head2(P1,Out).
+print_head1(-,P1,Out):-
+    Out = [print(-)|Out2],
+    print_head2(P1,Out2).
+
+print_head2(P1,Out):-
+    integer(P1) |
+    Out = [print(P1),nl].
+otherwise.
+print_head2(P1,Out):-
+    vector_element(P1,0,Name) |
+    Out = [print(Name),nl].
+
+get_real_entry({{Q},Env,HIDT},Entry,Qnew1):-
+    integer(Q) | 
+    get_real_Hterm(Q,HIDT,Entry),
+    Qnew1 = {{Q},Env,HIDT}.
+otherwise.
+get_real_entry({Q,Env,HIDT},Entry,Qnew1):-
+    Entry = Q,
+    Qnew1 = {Q,Env,HIDT}.
+        
+
+get_real_Hterm(Integer,HIDT,Hterm):-
+    integer(Integer) |
+    vector_element(HIDT,Integer,Ele,HIDT1),
+    get_real_Hterm(Ele,HIDT1,Hterm).
+otherwise.
+get_real_Hterm(Ele,_HIDT,Hterm):-
+    Hterm = Ele.
+
+blt_chk({{greater,_X,_Y},_E,_H},Res):-    true | Res = yes.
+blt_chk({{less,_X,_Y},_E,_H},Res):-       true | Res = yes.
+blt_chk({{equal,_X,_Y},_E,_H},Res):-      true | Res = yes.
+blt_chk({{not_equal,_X,_Y},_E,_H},Res):-  true | Res = yes.
+blt_chk({{same,_X,_Y},_E,_H},Res):-       true | Res = yes.
+blt_chk({{different,_X,_Y},_E,_H},Res):- true | Res = yes.
+otherwise.
+blt_chk(_,Res):- true | Res = no.
+
+%oosaki
+%solve_blt(Query,ST,RM,ST1,ST1T,TF):-
+%    RM = [solve_blt(Query,Query1,Res)|RM1],
+%    solve_blt2(Res,Query1,ST,RM1,ST1,ST1T,TF).
+
+solve_blt(Query,CN,ST,RM,ST1,ST1T,TF):-                 %add CN
+    RM = [solve_blt(Query,Query1,Res)|RM1],
+    solve_blt2(Res,Query1,CN,ST,RM1,ST1,ST1T,TF).       %add CN
+
+%oosaki
+%solve_blt2(normal(success),{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF):-
+%  RM = [],
+%  ST1 = [succ(built_in,ST,Env,HIDT)|ST1T].
+%otherwise.
+%solve_blt2(_,{_Q,Env,HIDT},ST,RM,ST1,ST1T,_TF):-
+%  ST1 = [fail(built_in,ST,Env,HIDT)|ST1T],
+%  RM = [].
+
+solve_blt2(normal(success),{Q,Env,HIDT},CN,ST,RM,ST1,ST1T,_TF):-        %add CN
+  RM  = [tracer(print(redu,blt,{Q,Env,HIDT},CN,[],_,_R1))],                     %add
+
+%%% oosaki modify
+  ST1 = [succ(built_in,ST,Env,HIDT)|ST1T].
+%%%  ST1 = ST1T.
+
+otherwise.
+solve_blt2(_,{Q,Env,HIDT},CN,ST,RM,ST1,ST1T,_TF):-                      %add CN
+  RM  = [tracer(print(fail,{Q,Env,HIDT},CN,_R1))],                      %add
+  ST1 = [fail(built_in,ST,Env,HIDT)|ST1T].                              
+

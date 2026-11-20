@@ -1,0 +1,47 @@
+Datagol			Copyright (C) 1998 Koichi FURUKAWA
+===========================================================
+
+Readme-J			Japanese Version of This File
+Readme-E			This File
+INSTALL				Install Guide
+use-of-software-J		Terms and Conditions for Use of IFS (Japanese)
+use-of-software-E		Terms and Conditions for Use of IFS (English)
+
+doc/				User Manual Directory
+source/				Program Directory
+sample/				Sample File Directory
+
+doc:
+	Datagol.ps		Datagol User Manual
+	ILE.ps			ILE User Manual
+
+source/Datagol:
+	Makefile	Makefile for Datagol
+	cover.kl1	Cover Check Module
+	edb.kl1		EDB Module
+	idb.kl1		IDB Module
+	magic.kl1	Magic Translation Module
+	main.kl1	Datagol Main Module
+	match.kl1	Term Matching Module
+	merc.kl1	Merc Translation Module
+	mode2mg.kl1	Mode Declaration to MG-Clause Trainslation Module
+	msh.kl1		Most Specific Hypothesis Generation Module
+	astar-like.kl1	A*-like Search Main Module
+	refine.kl1	Refinement Module
+	tmG.kl1		Discrimination Tree Module
+	unify.kl1	Unification Module
+	union.kl1	Path Set Calculation Module
+	util.kl1	Utility Module
+
+source/ILE:
+	ILE.java	ILE original file
+	ILE.class	ILE byte code
+	DataSave.class  
+	Displays.class  
+	DebugArea.class 
+	Make_Up.class
+
+sample:
+	animals.pgl	Animals Problem for Datagol
+	family.pl	family relationships example
+	family.ile	a file after debugging family.pl by ILE

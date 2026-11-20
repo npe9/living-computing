@@ -1,0 +1,78 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_sort.
+
+:- public 
+    sort/2.
+            
+:- with_macro pimos.
+
+    sort(AL1,AL):-true|
+        aTosList(AL1,SL1),
+        sort1(SL1,[],SL),
+        sToaList(SL,AL).
+
+    sort1([],W,SL):-true|
+        SL = W.
+    sort1([S|T],W1,SL):-true|
+        put(W1,S,W),
+        sort1(T,W,SL).
+
+    put([],S,W):-true|
+        W = [S].
+    put([S1|T],S2,W):-true|
+        is_before(S1,S2,YN),
+        (   YN = no->
+                W = [S2,S1|T]
+        ;
+            YN = yes->
+                put(T,S2,W1),
+                W = [S1|W1]
+        ).
+
+
+    aTosList([],List):-true |
+        List = [].
+    aTosList([A|T],List):-true |
+        hLibrary:tTos(A,S),
+        aTosList(T,List1),
+        List = [S|List1].
+
+    sToaList([],List):-true |
+        List = [].
+    sToaList([S|T],List):-true |
+        hLibrary:sTot(S,A),
+        sToaList(T,List1),
+        List = [A|List1].
+
+    is_before(X,Y,R):-true|
+        string(X,XL,_,_),
+        string(Y,YL,_,_),
+        (   XL >= YL->
+                L = YL,
+                Flag = no
+        ;
+            XL < YL->
+                L = XL,
+                Flag = yes
+        ),
+        is_before1(X,Y,0,L,Flag,R).
+
+    is_before1(_,_,L,L,Flag,R):-true|
+        R = Flag.
+    is_before1(X,Y,Pos,L,Flag,R):-Pos\=L|
+        string_element(X,Pos,XCode,_),
+        string_element(Y,Pos,YCode,_),
+        (   XCode > YCode->
+                R = no
+        ;
+            XCode < YCode->
+                R = yes
+        ;
+            XCode = YCode->
+                Pos1 := Pos+1,
+                is_before1(X,Y,Pos1,L,Flag,R)
+        ).

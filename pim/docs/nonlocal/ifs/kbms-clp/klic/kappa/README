@@ -1,0 +1,280 @@
+%
+%	(C)1992, 1993, 1995 Institute for New Generation Computer Technology
+%	   1999 Japan Information Processing Development Center
+%	        Research Institute for Advanced Information Technology
+%
+%		配布その他はCOPYRIGHTファイルを参照して下さい
+%		(Read COPYRIGHT for detailed information.)
+%
+README
+	Parallel Database Management System: Kappa
+
+1. Abstract
+
+  Kappa is a parallel database management system (DBMS), based on a
+nested relational model on a UNIX machine with KLIC. The system allows
+us to treat complex structured data efficiently, required knowledge
+information processing systems.
+
+2. Environment
+    Machine & OS:
+	Sun SparcStation 10 running SunOS 4.1.3
+	SparcCenter 2000 running SunOS 5.3 (Solaris 2.3)
+    Disk:
+	29 mega bytes
+
+3. File Name List
+    kappa.tgz    All files contain kanji characters.
+
+Kappa:
+INSTALL	   INSTALL.j  README	 README.j   doc/       src/
+
+Kappa/doc:
+man_e/	man_j/
+
+Kappa/doc/man_e:
+install/  users/    util/	prg/	irpr/
+
+Kappa/doc/man_e/install:
+install.tex
+
+Kappa/doc/man_e/users:
+emu.tex	     func_li.tex  limit.tex    usr_man.tex
+env.tex	     gaiyou.tex	  pcm.tex
+
+Kappa/doc/man_e/util:
+add_utl.tex  dbi.tex	  report.tex   util.tex
+
+Kappa/doc/man_e/prg:
+guide.tex
+
+Kappa/doc/man_e/irpr:
+irprop.tex
+
+Kappa/doc/man_j:
+install/  users/    utl/	prg/	irpr/
+
+Kappa/doc/man_j/install:
+install.tex
+
+Kappa/doc/man_j/users:
+emu.tex	       func_lim.tex   limit.tex	     users_man.tex
+env.tex	       gaiyou.tex     pcm.tex
+
+Kappa/doc/man_j/utl:
+add_utl.tex  dbi.tex	  report.tex   util.tex
+
+Kappa/doc/man_j/prg:
+guide.tex
+
+Kappa/doc/man_j/irpr:
+irprop.tex
+
+Kappa/src:
+Makefile@	  hap/		    lib/	      shp/
+Makefile.SUNmake  icp/		    macro_proc/	      srv/
+Makefile.gmake	  ifp/		    main/	      svm/
+add_utl/	  include/	    mkbag/	      tbm/
+bfm/		  irpr/		    obj/	      tbp/
+ckif/		  ixp/		    rcm/	      tcp/
+clm/		  jop/		    rcp/	      trp/
+dbi/		  kgobj/	    rec/
+dbm/		  ktemp/	    report/
+flm/		  lcp/		    set/
+
+Kappa/src/add_utl:
+Makefile       add_main.kl1   create.kl1     kp_file.kl1    kp_table.kl1
+add.kl1	       add_utl.kl1    get.kl1	     kp_schema.kl1  time.kl1
+
+Kappa/src/bfm:
+Makefile      bfm.kl1	    bfm.mac	  bfm_swap.kl1
+
+Kappa/src/ckif:
+Makefile     ifm.mac	  ifm_idx.kl1  ifm_rec.kl1  ifm_scm.kl1
+
+Kappa/src/clm:
+Makefile  clm.kl1   clm.mac
+
+Kappa/src/dbi:
+Makefile       dbi_main.kl1   dbimng.kl1
+dbi_ifpN.kl1   dbido.kl1      utl_macro.mac
+
+Kappa/src/dbm:
+Makefile      dbm.kl1	    dbm.mac	  dbm_lock.kl1
+
+Kappa/src/flm:
+Makefile     dfp.kl1	  flm.kl1      io_klic.kl1  rfp.kl1
+
+Kappa/src/hap:
+Makefile  hap.kl1   hap.mac
+
+Kappa/src/icp:
+Makefile  icp.kl1   icp.mac
+
+Kappa/src/ifp:
+Makefile	   ifp_com.kl1	      ifp_open.kl1	 ifp_tbpcom.kl1
+ifp.kl1		   ifp_hash.kl1	      ifp_pfilter.kl1
+ifp.mac		   ifp_ht.kl1	      ifp_ra.kl1
+ifp_b_tr.kl1	   ifp_info_pool.kl1  ifp_svm_com.kl1
+
+Kappa/src/include:
+Makefile.ini@		default.kl1		kappa_klic_default.mac
+Makefile.ini.SUMmake	default_funt.mkh	option
+Makefile.ini.gmake	kappa_default.mac
+
+Kappa/src/irpr:
+Makefile	irpr_client	irpr_conv.kl1	irpr_debug.kl1
+irpr_kappa.kl1	irpr_lib.kl1	irpr_main.kl1	irpr_request.kl1
+irpr_select.kl1	irpr_service.kl1
+
+Kappa/src/irpr/irpr_client:
+Makefile	irpr_client.kl1	irpr_lib.kl1
+
+Kappa/src/ixp:
+Makefile	 ixp_PntNod.h	  ixp_SrcStr.c	   ixp_load.kl1
+ixp.h		 ixp_SrcCom.c	  ixp_SrcStr.h	   ixp_match.kl1
+ixp.kl1		 ixp_SrcCom.h	  ixp_add.kl1	   ixp_node.kl1
+ixp.mac		 ixp_SrcInt.c	  ixp_common.kl1   ixp_nodeadd.kl1
+ixp_PntCom.c	 ixp_SrcInt.h	  ixp_del.kl1	   ixp_page.kl1
+ixp_PntCom.h	 ixp_SrcOcc.c	  ixp_get.kl1	   ixp_psearch.kl1
+ixp_PntLef.c	 ixp_SrcOcc.h	  ixp_leaf.kl1	   ixp_read.kl1
+ixp_PntLef.h	 ixp_SrcRID.c	  ixp_leafadd.kl1  ixp_search.kl1
+ixp_PntNod.c	 ixp_SrcRID.h	  ixp_leafget.kl1
+
+Kappa/src/jop:
+Makefile  jop.kl1   jop.mac
+
+Kappa/src/kgobj:
+GO_IDX.c	    GO_REC.c		Makefile	    gstring16_funt.mkh
+GO_IDX.h	    GO_get_term.c	g_string16.h	    iformat.h
+GO_LIB.c	    GO_newstr.c		gstring16.c	    newgobj.h
+
+Kappa/src/ktemp:
+Makefile	  shoen_new.kl1	    t_req_dev.kl1
+module_table.kl1  t_dev.kl1	    timer_utl.kl1
+
+Kappa/src/lcp:
+Makefile       lcp.kl1	      lcp.mac	     lcp_queue.kl1
+
+Kappa/src/lib:
+Makefile	    int2atom.kl1	lib_Cmodule.c	    lib_shp.kl1
+gregexp.c	    isch.mac		lib_butls.kl1	    lib_sort.kl1
+gregexp16.c	    isch2sch.kl1	lib_datacheck.kl1   libsch.kl1
+gregexp16_funt.mkh  lib.h		lib_inline.kl1	    libstring.h
+gregexp_funt.mkh    lib.kl1		lib_regexp.kl1	    sit.mac
+
+Kappa/src/macro_proc:
+Makefile   butls.kl1  m3.kl1
+
+Kappa/src/main:
+Makefile  main.kl1
+
+Kappa/src/mkbag:
+Makefile	 merger.kl1	  mk_bag__002.kl1  pool.kl1
+comp.kl1	 mk_bag__000.kl1  mk_bag__003.kl1  qsort.kl1
+hash.kl1	 mk_bag__001.kl1  mk_bag__004.kl1  sorter.kl1
+
+Kappa/src/obj:
+
+Kappa/src/rcm:
+Makefile	rcm.kl1		rcm.mac		rcm_header.kl1
+
+Kappa/src/rcp:
+Makefile	rcp.mac		rcp_file.kl1	rcp_lib.kl1
+rcp.kl1		rcp_commit.kl1	rcp_header.kl1	rcp_slot.kl1
+
+Kappa/src/rec:
+Makefile	rec_Read.kl1	rec_delete.c	rec_read.h	rec_read_tb.c
+rec.h		rec_Record.kl1	rec_delete.h	rec_read_gr.c	rec_read_tb.h
+rec_Add.kl1	rec_Rep.kl1	rec_main.c	rec_read_gr.h	term/
+rec_Del.kl1	rec_add.c	rec_main.h	rec_read_oc.c
+rec_InAdd.kl1	rec_add.h	rec_read.c	rec_read_oc.h
+
+Kappa/src/rec/term:
+Makefile	      term.kl1		    term_encode.c
+newatom.c	      term_decode.c	    termlist.h
+term.h		      term_decode_funt.mkh
+
+Kappa/src/report:
+Makefile	rep_lib.kl1	rep_main.kl1	rep_tblist.kl1
+rep_dbinfo.kl1	rep_mac.mac	rep_tbinfo.kl1	reporting.kl1
+
+Kappa/src/set:
+Makefile	    con.kl1		or.kl1		    set.mac
+and.kl1		    dif.kl1		reset_negative.kl1  tbp_set.kl1
+check.kl1	    not.kl1		reset_schema.kl1    tbp_set_sort.kl1
+
+Kappa/src/shp:
+Makefile       shp.c	      shp_convert.h  shp_print.h
+g_kappa_shp.h  shp.h	      shp_funt.mkh   shpcre.kl1
+schema.kl1     shp_convert.c  shp_print.c    shppol.kl1
+
+Kappa/src/srv:
+Makefile	 kappa.kl1	  srv.mac
+dummyServer.kl1	 sri.kl1	  srv_info.kl1
+
+Kappa/src/svm:
+Makefile	svm.mac		svm_end.kl1	svm_pool.kl1	svm_task.kl1
+svm.kl1		svm_dev.kl1	svm_log.kl1	svm_recove.kl1	svm_utl.kl1
+
+Kappa/src/tbm:
+Makefile     tbm.kl1	  tbmmdb.kl1   tbmsdb.kl1   tbmtbct.kl1
+
+Kappa/src/tbp:
+datasearch/  ixleaf/	  main/	       read/	    tbp_lib/	 tbp_sort/
+format/	     ixread/	  mref/	       search/	    tbp_set/	 update/
+
+Kappa/src/tbp/datasearch:
+Makefile	   tbpds_checkt.kl1   tbpds_fmt.kl1	 tbpds_tbl.kl1
+tbpdatasearch.kl1  tbpds_cond.kl1     tbpds_selop.kl1	 tbpds_value.kl1
+tbpds_attr.kl1	   tbpds_flt.kl1      tbpds_set.kl1
+
+Kappa/src/tbp/format:
+Makefile	 gifmt_funt.mkh	  ifmt_convifmt.c  iformat.mac
+gifmt.c		 ifmt.h		  iformat.kl1	   imtgroup.kl1
+
+Kappa/src/tbp/ixleaf:
+Makefile    ixleaf.kl1
+
+Kappa/src/tbp/ixread:
+Makefile       readindex.kl1
+
+Kappa/src/tbp/main:
+Makefile      tbp.mac	    tbpixpm.kl1	  tbpsrp.kl1
+tbp.kl1	      tbphpm.kl1    tbpmtbip.kl1  tbpstbip.kl1
+
+Kappa/src/tbp/mref:
+Makefile  mref.kl1
+
+Kappa/src/tbp/read:
+Makefile      read.kl1	    readall.kl1	  sricre.kl1	valflat.kl1
+nest.kl1      read.mac	    readoccp.kl1  subrec.kl1
+nestpath.kl1  read_lib.kl1  ridelm.kl1	  unnest.kl1
+
+Kappa/src/tbp/search:
+Makefile	 search.kl1	  searchindex.kl1
+
+Kappa/src/tbp/tbp_lib:
+Makefile      tbprdfmt.kl1
+
+Kappa/src/tbp/tbp_set:
+Makefile   setop.kl1
+
+Kappa/src/tbp/tbp_sort:
+Makefile	 tbpsortcom.kl1	  tbpsortform.kl1  tbpsorttbl.kl1
+tbpsort.kl1	 tbpsortflat.kl1  tbpsortset.kl1
+
+Kappa/src/tbp/update:
+Makefile    tbprep.kl1
+
+Kappa/src/tcp:
+Makefile     tcp.kl1	  tcp_cnt.kl1  tcp_ovf.kl1  tcp_utl.kl1
+recshp.kl1   tcp.mac	  tcp_idx.kl1  tcp_rec.kl1
+
+Kappa/src/trp:
+Makefile	  trp_coord.kl1	    trp_pool.kl1      trp_subtran1.kl1
+trp.kl1		  trp_filter.kl1    trp_recove.kl1
+trp.mac		  trp_lib.kl1	    trp_subtran.kl1
+
+4. Install
+    See doc/man_e/install/install.tex

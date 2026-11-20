@@ -1,0 +1,257 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module hanjunjo_translater.
+
+:- public 
+    go/3.
+            
+:- with_macro pimos.
+
+    go(InputFileName,OutputFileName,Result):-true |
+        read_data(InputFileName,UnitData,STData,ViewData,R1),
+        (   R1 = normal(success) ->
+                user_to_internal({UnitData,STData,ViewData},{UnitList,STList,ViewList},R2),
+                (   R2 = normal(success) ->
+                      partialOrderModule:create(UnitList,STList,ViewList,POM),
+                      POM = [get_all(HanJunjo)],
+                      write_data(OutputFileName,HanJunjo,Result)
+                ;
+                    R2 = abnormal(_) ->
+                      Result = R2
+                )
+        ;
+            R1 = abnormal(_) ->
+                Result = R1
+        ).
+
+    user_to_internal({UnitData,STData,ViewData},HanJunjo,R):-true |
+        unit1(UnitData,Unit,R1),
+        st1(STData,ST,R2),
+        view1(ViewData,View,R3),
+        check_R(R1,R2,R3,R),
+        HanJunjo = {Unit,ST,View}.
+
+%    unit([],Unit,R):-true |
+%        Unit = [],
+%        R = normal(success).
+%    unit([&(define_unit)|UnitDataList],Unit,R):-true |
+%        unit1(UnitDataList,Unit,R).
+%otherwise.
+%    unit([H|_],_,R):-true |
+%        R = abnormal({trans,'Illegal unit definition',H}).
+
+    unit1([],Unit,R):-true |
+        Unit = [],
+        R = normal(success).
+    unit1([:=(UnitName,UnitNameVector)|T],Unit,R):-atom(UnitName) |
+        hUtility:vector_to_list(UnitNameVector,UnitNameList),
+        is_atomList(UnitNameList,R1),
+        (   R1 = normal(success) ->
+                unit1(T,Unit1,R),
+                Unit = [{UnitName,UnitNameList}|Unit1]
+        ;
+            R1 = abnormal(_) ->
+                R = R1
+        ).
+otherwise.
+    unit1([H|_],_,R):-true |
+        R = abnormal({trans,'Illegal unit',H}).
+
+%    st([&(define_standpoint)|StDataList],St,R):-true |
+%        st1(StDataList,St,R).
+%otherwise.
+%    st([H|_],_,R):-true |
+%        R = abnormal({trans,'Illegal standpoint definition',H}).
+
+    st1([],St,R):-true |
+        St = [],
+        R = normal(success).
+    st1([:=(StName,StNameVectorVector)|T],St,R):-atom(StName) |
+        hUtility:vector_to_list(StNameVectorVector,StNameVectorList),
+        stNameListX(StNameVectorList,StNameListList,R1),
+        (   R1 = normal(success) -> 
+                st1(T,St1,R),
+                St = [{StName,StNameListList}|St1]
+        ;
+            R1 = abnormal(_) ->
+                R = R1
+        ).
+otherwise.
+    st1([H|_],_,R):-true |
+        R = abnormal({trans,'Illegal standpoint',H}).
+
+    stNameListX([],ListList,R):-true|
+        ListList = [],
+        R = normal(success).
+    stNameListX([StNameVector|T],ListList,R):-true|
+        stNameList(StNameVector,List,R1),
+        (   R1 = normal(success) ->
+               stNameListX(T,ListList1,R),
+               ListList = [List|ListList1]
+        ;
+            R1 = abnormal(_) ->
+                R = R1
+        ).
+
+    stNameList(E1,List,R):-atom(E1)|  %add 94/8/10
+        List = [E1],
+        R = normal(success).
+    stNameList(<(E1,E2),List,R):-true |
+        stNameList1(<(E1,E2),List,R).
+otherwise.
+    stNameList(Term,_,R):-true |
+        R = abnormal({trans,'Illegal standpoint',Term}).
+
+    stNameList1(E,List,R):-atom(E)|
+        List = [E],
+        R = normal(success).
+    stNameList1(<(E1,E2),List,R):-true|
+        stNameList2(E1,NewE1,R1),
+        (   R1 = normal(success) ->
+                stNameList1(E2,List1,R),
+                List = [NewE1|List1]
+        ;
+            R1 = abnormal(_) ->
+                R = R1
+        ).
+otherwise.
+    stNameList1(Vector,List,R):-true| 
+        stNameList2(Vector,List1,R),
+        List = [List1].
+
+    stNameList2(Atom,List,R):-atom(Atom)|
+        List = Atom,
+        R = normal(success).
+    stNameList2(Vector,List,R):-vector(Vector,_)|
+        hUtility:vector_to_list(Vector,List),
+        is_atomList(List,R).
+otherwise.
+    stNameList2(Term,_,R):-true|
+        R = abnormal({trans,'Illegal standpoint',Term}).
+
+    is_atomList([],R):-true |
+        R = normal(success).
+    is_atomList([H|T],R):-atom(H) |
+        is_atomList(T,R).
+otherwise.
+    is_atomList([H|_],R):-atom(H) |
+        R = abnormal({trans,'Illegal standpoint',H}).
+
+%    view([&(define_view)|ViewDataList],View,R):-true |
+%        view1(ViewDataList,View,R).
+%otherwise.
+%    view([H|_],_,R):-true |
+%        R = abnormal({trans,'Illegal view definition',H}).
+
+    view1([],View,R):-true |
+        View = [],
+        R = normal(success).
+    view1([:=(ViewName,{StNameVector})|T],View,R):-atom(ViewName) |
+        stNameList(StNameVector,StNameList,R1),
+        (   R1 = normal(success) -> 
+                is_atomList(StNameList,R2),
+                (   R2 = normal(success) ->
+                        view1(T,View1,R),
+                        View = [{ViewName,StNameList}|View1]
+                ;    
+                    R2 = abnormal(_) ->
+                        R = R2
+                )
+        ;
+            R1 = abnormal(_) ->
+                R = R1
+        ).
+otherwise.
+    view1([H|_],_,R):-true |
+        R = abnormal({trans,'Illegal view',H}).
+
+    check_R(abnormal(Reason),_,_,R):-true|
+        R = abnormal(Reason).
+    check_R(_,abnormal(Reason),_,R):-true|
+        R = abnormal(Reason).
+    check_R(_,_,abnormal(Reason),R):-true|
+        R = abnormal(Reason).
+    check_R(normal(success),normal(success),normal(success),R):-true|
+        R = normal(success).
+
+%read_data
+    read_data(FileName,U,S,V,R):-true |
+        hLibrary:file(FileName,read,File1),
+        (   File1 = abnormal(_) ->
+                R = abnormal({trans,'Do not find file',FileName})
+        ;
+            File1 = normal(File2) ->
+                File2 = [remove_op(700,xfx, (<)),add_op(700,xfy, (<))|File],
+                read_data1(File,ReadData1,R1),
+                (   wait(R1)->
+                        get_usv(ReadData1,U,S,V,R))
+        ).
+
+    read_data1(File,ReadData,R):-true|
+        File = [gett(Data)|File1],
+        (   Data = end_of_file ->
+                File1    = [],
+                ReadData = [],
+                R = normal(success)
+        ;
+            Data \= end_of_file ->
+                read_data1(File1,ReadData1,R),
+                ReadData = [Data|ReadData1]
+        ).
+
+    get_usv([&(define_unit)|USV],U,S,V,R):-true|
+        get_u(USV,U,SV,R1),
+        (   R1 = normal(_)->
+                get_sv(SV,S,V,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+otherwise.
+    get_usv(_,_,_,_,R):-true|
+        R = abnormal({trans,'&define_unit. is nothing',nil}).
+
+    get_u([],_,_,R):-true|
+        R = abnormal({trans,'&define_standpoint. is nothing',nil}).
+    get_u([&(define_standpoint)|T],U,SV,R):-true|
+        U  = [],
+        SV = T,
+        R  = normal(success).
+otherwise.
+    get_u([U1|T],U,SV,R):-true|
+        get_u(T,U2,SV,R),
+        U = [U1|U2].
+
+    get_sv([],_,_,R):-true|
+        R = abnormal({trans,'&define_view. is nothing',nil}).
+    get_sv([&(define_view)|T],S,V,R):-true|
+        S  = [],
+        V  = T,
+        R  = normal(success).
+otherwise.
+    get_sv([S1|T],S,V,R):-true|
+        get_sv(T,S2,V,R),
+        S = [S1|S2].
+
+%write_data
+    write_data(FileName,{A,B,C,D,E},R):-true |
+        hLibrary:file(FileName,write,File),
+        (   File = abnormal(_) ->
+                R = abnormal({trans,'Do not make file',FileName})
+        ;
+            File = normal(File1) ->
+                File1 = [
+                            putt(A),putb("."),putc(key#lf),putc(key#lf),
+                            putt(B),putb("."),putc(key#lf),putc(key#lf),
+                            putt(C),putb("."),putc(key#lf),putc(key#lf),
+                            putt(D),putb("."),putc(key#lf),putc(key#lf),
+                            putt(E),putb("."),putc(key#lf),putc(key#lf)
+                        ],
+                R = normal(success)        
+        ).
+
+
+

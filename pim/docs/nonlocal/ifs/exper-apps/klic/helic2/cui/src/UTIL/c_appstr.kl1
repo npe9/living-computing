@@ -1,0 +1,57 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module append_string.
+
+:- public 
+    append_string/2.
+            
+:- with_macro pimos.
+
+
+    append_string([],String):-true|
+        String = "".
+otherwise.
+    append_string(List,String):-true|
+        get_type(T),
+        get_length(List,0,L),
+        new_string(String1,L,T),
+        append_string1(List,0,String1,String).
+
+%    get_type([S|_],T):-true|
+%        string(S,_,T,_).
+    get_type(T):-true|
+        string("",_,T,_).
+
+    get_length([],W,L):-true|
+        L = W.
+    get_length([S|T],W,L):-string(S,L1,_)|
+        W1 := L1+W,
+        get_length(T,W1,L).
+otherwise.
+    get_length([_|T],W,L):-true|
+        sifLibrary:message("error append string"),
+        get_length(T,W,L).
+
+    append_string1([],_,String1,String):-true|
+        String = String1.
+    append_string1([""|T],Pos,String1,String):-true|
+        append_string1(T,Pos,String1,String).
+    append_string1([S|T],Pos,String1,String):-string(S,L,_),L >0|
+        append_string2(String1,S,Pos,0,L,String2),
+        Pos1 := Pos+L,
+        append_string1(T,Pos1,String2,String).
+otherwise.
+    append_string1([_|T],Pos,String1,String):-true|
+        append_string1(T,Pos,String1,String).
+
+    append_string2(String1,_,_,L,L,String):-true|
+        String = String1.
+    append_string2(String1,S,Pos,W,L,String):-W\=L|
+        string_element(S,W,E,_),
+        set_string_element(String1,Pos,E,String2),
+        Pos1 := Pos+1,
+        W1   := W+1,
+        append_string2(String2,S,Pos1,W1,L,String).

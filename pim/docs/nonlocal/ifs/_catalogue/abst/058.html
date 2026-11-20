@@ -1,0 +1,112 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (58) LSI Routing Program</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (58) LSI Routing Program</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI, PIM
+	Environment: PIMOS, SIMPOS
+	Language:    KL1, ESP
+	Source Code: 0.5 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This tool is used to select routing paths between terminals in LSI
+circuits.<P>
+
+<h2><b>Configuration</b></h2>
+
+<CENTER>
+<IMG SRC="058.gif">
+</CENTER>
+
+<dl>
+
+<dt><b>Routing Program:</b>
+
+<dd>quickly searches for routing paths based on circuit information.
+
+<dt><b>Visualization Program:</b>
+
+<dd>displays routing paths in real time.
+
+</dl>
+
+<h2><b>Function</b></h2>
+
+Circuit information consists of <i>grid size,path through inhibition
+area,through hole inhibition points</i> and <i>netlist</i>.  First,the
+boundary of a path-searching area is decided with a given <i>grid
+size</i>. Next,pairs of terminals are given subject to
+<i>netlist</i>.<P>
+
+Then,the routing program searches the routing paths whithout pathing
+through the inhibition area or bending on through hole inhibition
+points. The visualization program displays the state of the routing
+operation.<P>
+
+<h2><b>Feature</b></h2>
+
+To realize high parallelism,the routing program has been designed
+based on a concurrent objects model. Each line segment on a grid line
+corresponds to an object. We implemented these objects as <i>line
+processes</i>. Routing paths are decided by communication of <i>line
+processes</i>.  <p>
+
+<p>
+
+<dl>
+
+<dd><u>High-speed Routing</u>
+
+<ul>
+
+<dd> <li>Concurrent routing of multiple pairs of terminals.
+
+<dd> <li>Parallel searching of routing paths in a pair of terminals.
+
+</ul>
+
+<dd><u>Applicability to large-scale data</u>
+
+<ul>
+
+<dd> 
+
+<li>A process assigned to each processor reduces the number of
+communication paths between processors.
+
+</ul>
+
+</dl>
+
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> LSI Routing Program [89K] <a
+href="../../../ifs/exper-apps/pimos/lsirout.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

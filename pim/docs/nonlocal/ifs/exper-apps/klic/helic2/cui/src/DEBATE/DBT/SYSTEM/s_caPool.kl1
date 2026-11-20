@@ -1,0 +1,125 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_caPool.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create({STG},I):-true|
+        initiate(CAPool),
+        loop(I,CAPool,STG).
+
+%initiate
+    initiate(CAPool):-true|
+        hLibrary:pool(keyed_bag,CAPool).
+
+%loop
+    loop([],CAPool,_):-true|
+        CAPool=[].
+    loop([put(AID,CAInfoList)|T],CAPool1,STG):-true| 
+        put(CAInfoList,AID,CAPool1,CAPool),
+        loop(T,CAPool,STG).
+    loop([get({AID,IPos},Info1,Info,CPos,YN)|T],CAPool1,STG):-true|
+        CAPool1 = [get({AID,IPos},{NonUse1,ALL,FinishFlag})|CAPool2],
+        (   NonUse1=[]->
+                NonUse = [],
+                (   FinishFlag=on->
+                        Info = Info1,
+                        YN   = success
+                ;
+                    FinishFlag=off->
+                        Info = Info1,
+                        YN   = fail
+                )
+        ;
+            NonUse1\=[]->
+                get(NonUse1,FinishFlag,Info1,Info,NonUse,CPos,YN)
+        ),
+        CAPool2 = [put({AID,IPos},{NonUse,ALL,FinishFlag})|CAPool],
+        (   wait(YN)->
+                loop(T,CAPool,STG)).
+    loop([finish({AID,IPos,_CPos})|T],CAPool1,STG):-true|
+        CAPool1 = [get({AID,IPos},{NonUse1,ALL,_})|CAPool2],
+        (   STG=all ->
+                NonUse=NonUse1
+        ;
+            STG=one->
+                NonUse=[]
+        ),
+        CAPool2 = [put({AID,IPos},{NonUse,ALL,on})|CAPool],
+        loop(T,CAPool,STG).
+    loop([justify({AID,IPos},Data1,Data,SPList,CPos,YN)|T],CAPool1,STG):-true|
+        CAPool1 = [get({AID,IPos},{_,ALL1,_})|CAPool2],
+        (   ALL1=[]->
+                Data = Data1,
+                YN   = no
+        ;
+            ALL1\=[]->
+                justify(ALL1,Data1,Data,SPList,CPos,YN)
+        ),
+        CAPool2 = [put({AID,IPos},{[],[],off})|CAPool],
+        (   wait(YN)->
+                loop(T,CAPool,STG)).
+    loop([get_all(ALL)|T],CAPool1,STG):-true|  %for debug
+        CAPool1 = [carbon_copy(ALL)|CAPool],
+        loop(T,CAPool,STG).
+
+%put
+    put([],_,CAPool1,CAPool):-true|
+        CAPool=CAPool1.
+    put([{IPos,CAInfo}|T],AID,CAPool1,CAPool):-true|
+        CAPool1 = [put({AID,IPos},{CAInfo,CAInfo,off})|CAPool2],
+        put(T,AID,CAPool2,CAPool).
+
+%get
+    get([],on,Info1,Info,NonUse,_,YN):-true|
+        Info   = Info1,
+        NonUse = [],
+        YN     = success.
+    get([],off,Info1,Info,NonUse,_,YN):-true|
+        Info   = Info1,
+        NonUse = [],
+        YN     = fail.
+    get([{CPos1,{MR,YR}}|T],FinishFlag,Info1,Info,NonUse,CPos,YN):-true|
+        is_claim({MR,YR},Info1,Info2,YN1),
+        (   YN1 = yes->
+                Info   = Info2,
+                NonUse = T,
+                CPos   = CPos1,
+                YN     = yes
+        ;
+            YN1 = no->
+                get(T,FinishFlag,Info2,Info,NonUse,CPos,YN)
+        ).
+
+    is_claim({MR,YR},Info1,Info,YN):-true|
+        Info1 = {_,_,{_,_,_,AgentName},_},
+        dbtcui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info,Rel,_SPList),
+        dbtcui_guiUtility:check_argumentLevel(Rel,AgentName,YN).
+
+%justify
+    justify([],Data1,Data,_,_,YN):-true|
+        Data = Data1,
+        YN   = no.
+    justify([{CPos1,{MR,YR}}|T],Data1,Data,SPList,CPos,YN):-true|
+        dbtcui_guiUtility:get_justificationList(MR,YR,Data1,Data2,JL,_,R1),
+        (   R1=normal(success)->
+                Data2 = {Pool,Info1},
+                JL    = [SPList|_],
+                dbtcui_guiUtility:justify(SPList,Info1,Info,R2),
+                (   wait(R2)->
+                        Data  = {Pool,Info},
+                        CPos = CPos1,
+                        YN   = yes)
+        ;
+            R1=abnormal(_)->
+                justify(T,Data2,Data,SPList,CPos,YN)
+        ).
+
+

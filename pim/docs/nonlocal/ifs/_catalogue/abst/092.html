@@ -1,0 +1,102 @@
+﻿<!--
+# modified by Orie '95/11/14
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+# modified by	A.Aiba		97/08/15
+-->
+
+<title> (92) Constraint MGTP (Prolog version/KL1 version /KLIC
+version)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (92) Constraint MGTP (Prolog version/KL1 version /KLIC
+version)</h2> <p>
+
+<pre wide="136">
+<b>	Machine:     PIM/UNIX machine
+	Environment: PIMOS/UNIX, KLIC
+	Language:    Prolog/KL1
+	Source Code: 0.2 MB
+	Documents:   Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Extended MGTP to solve finite domain constraint satisfaction problems.
+<p>
+
+<h2><b>Features</b></h2>
+<ul>
+
+<li>negative atoms can be used to represent negative information
+propagation,
+
+<li>the integrity constraint ( unit refutation ), <img
+src="092_A.gif"> is introduced,
+
+<li>extended MGTP rules, such as <img src="092_PR-Q.gif"> and <img
+src="092_RQ-P.gif"> are added to the original rule <img
+src="092_PQ-R.gif">,
+
+<li>unit simplification is performed between atoms in the model
+candidate set and disjunctions in the model-extending candidate set.
+
+</ul> <p>
+
+<h2><b>Function</b></h2>
+
+Although finite domain constraint satisfaction problems can be
+described in concise descriptions as MGTP input clauses, MGTP has the
+demerit that it cannot propagate negative constraints since it is
+based on forward reasoning and only uses positive atoms, and cannot
+prune a lot of redundant branches.  <p>
+
+To overcome this in CMGTP, we can use negative atoms to represent
+negative constraint propagation, and the following unif refutation and
+unit simplification mechanism are introduced to prune redundant
+branches: <p>
+
+<dl>
+<pre>
+<img src="092_1.gif">   <img src="092_2.gif">   <img src="092_3.gif">
+</pre>
+</dl>
+<p>
+
+where M, D shows <i>model candidate set</i>, and <i>model extending
+candidate set</i> respectively.  <p>
+
+CMGTP can be considered as a meta language to describe constraint
+propagation rules directly.  <p>
+
+We have tried to solve quasigroup existence problems in finite algebra
+using CMGTP.  CMGTP can solve them more efficiently than other
+constraints solvers.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/solver-prover/klic/CMGTP/README">README</a>.
+
+<li> Constraint MGTP (Prolog version/KL1 version /KLIC version) [597K]
+<a
+href="../../../ifs/solver-prover/klic/CMGTP/CMGTP.tar.gz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

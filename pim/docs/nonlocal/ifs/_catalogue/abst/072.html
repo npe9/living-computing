@@ -1,0 +1,70 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (72) Portable KL1 processing system:experimental version</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (72) Portable KL1 processing system:experimental version</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    C, Prolog
+	Source Code: 0.1 MB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+KL1 is a concurrent logic programming language. This system is for
+trying out a portable implementation scheme of KL1.<P>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>Full portability and reasonable efficiency by compiling KL1
+programs into C programs.
+
+<li>Only those KL1 functions which are frequently used and have a
+significant impact on efficiency are implemented.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+KLIC is an implementation of a concurrent logic programming language,
+KL1. KL1 is based on a flat version of the Guarded Horn Clauses(GHC)
+language. GHC is a member of the committed-choice logic programming
+language family and has siblings such as Concurrent Prolog, Parlog,
+Janus, and Fleng.  <p>
+
+In the KLIC implementation, KL1 programs are compiled into C programs
+and then compiled and linked with runtime libraries by C compilers.
+<p>
+
+The current system is a sequential implementation.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Portable KL1 processing system:experimental version [131K] <a
+href="../../../ifs/symbolic-proc/unix/pkl1.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

@@ -1,0 +1,55 @@
+Datagol			Copyright (C) 1999 Koichi FURUKAWA
+==========================================================
+
+Readme-J			This File(Japanese)
+Readme-E			This File
+INSTALL				Installation Guide
+use-of-software-J		Terms and Conditions for Use of IFS (Japanese)
+use-of-software-E		Terms and Conditions for Use of IFS (English)
+
+doc/				User Manual Directory
+source/				Program Directory
+source/AILP/			Abductive-Datagol Program Directory
+source/AILP/sample		Sample File Directory
+source/RDB/			Datagol/RDB Program Directory
+source/RDB/sample		Sample File Directory
+
+doc:
+	Datagol.ps		Datagol User Manual
+
+source/AILP:
+	a-datagol.pl		abductive-Datagol Main Module
+	eval.pl			Meta Interpreter
+	msh.pl			MSH Construction Module
+	parser.pl		Data Load Module
+	path.pl			Path Set Calculation Module
+	search.pl		A*-like Search Module
+	util.pl			Utility Module
+
+source/AILP/sample:
+	animals.pl		Animals Problem 
+	family.pl		Family Relationship Problem
+	grammar.pl		Grammar Induction Problem
+
+source/RDB:
+	Makefile		Makefile for Datagol/RDB
+	make_datagol.pl		Prolog Program used in Make
+
+	Datagol.java		GUI Main Module
+	DBPLG.java		Interface of GUI and Inductive Inference Engine
+	DG.java			Interface of Inductive Inference Engine and RDB
+	OutPanel.java		Output Module
+
+	datagol.pl		Datagol/RDB Top Level Module
+	gui.pl			Interface of GUI and Inductive Inference Engine
+	main.pl			Inference Engine
+	msh.pl			MSH Construction Module
+	rdb.pl			Interface of Inductive Inference Engine and RDB
+	search.pl		A*-like Search Module
+	trans.pl		Prolog to SQL Compiler
+	util.pl			Utility Module
+
+
+source/RDB/sample:
+	animals.pl		Animals Problem 
+	animals.sql		Animals Problem (Data)

@@ -1,0 +1,29 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_makeFile.
+
+:- public 
+    goal/2.
+
+:- with_macro pimos.
+
+%goal
+    goal(Goal,R):-true|
+        rbrcui_defaultName:get_inputFileName(InputFileName),
+        rbrcui_utility:put_file(InputFileName,InputFile,R1),
+        (   R1 = normal(success)->
+                InputFile = 
+                    [
+                        putl("&define_goal."),
+                        putl("{"),
+                        putb("    "),putb(Goal),
+                        putl("}")
+                    ],
+                R = normal(success)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).

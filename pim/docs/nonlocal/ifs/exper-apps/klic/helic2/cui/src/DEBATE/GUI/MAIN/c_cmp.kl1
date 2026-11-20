@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_compile.
+
+:- public 
+    goal/5,
+    rule/5,
+    type/5,
+    pom/5.
+
+:- with_macro pimos.
+
+%goal
+    goal(AgentName,InputFileName,Data1,Data,Protocol):-true|
+        dbtcui_defaultName:get_outputFileName(OutputFileName),
+        dbtcui_trans:goal(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_load:goal(AgentName,OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%rule
+    rule(AgentName,InputFileName,Data1,Data,Protocol):-true|
+        dbtcui_defaultName:get_outputFileName(OutputFileName),
+        dbtcui_trans:rule(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_load:rule(AgentName,OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%type
+    type(AgentName,InputFileName,Data1,Data,Protocol):-true|
+        dbtcui_defaultName:get_outputFileName(OutputFileName),
+        dbtcui_trans:type(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_load:type(AgentName,OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%pom
+    pom(AgentName,FileName,Data1,Data,Protocol):-true|
+        dbtcui_defaultName:get_outputFileName(OutputFileName),
+        dbtcui_trans:pom(FileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,ok,_,_)->
+                dbtcui_load:pom(AgentName,OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+
+
+

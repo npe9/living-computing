@@ -1,0 +1,82 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_svUtility.
+
+:- public 
+    is_illegalPos/3,
+    is_nafPos/3,
+    get_numOfSolution/2,
+    get_solution/4.
+            
+:- with_macro pimos.
+
+%is_illegalPos
+    is_illegalPos({_,_,St_vec},Pos,YN):-integer(Pos)|
+        vector(St_vec,Size,_),
+        (   Size =< Pos->
+                YN = yes
+        ;
+            Size > Pos ->
+                YN = no
+        ).
+    is_illegalPos({_,_,St_vec},naf(Pos),YN):-true|
+        vector(St_vec,Size,_),
+        (   Size =< Pos->
+                YN = yes
+        ;
+            Size > Pos ->
+                YN = no
+        ).
+
+%is_nafPos
+    is_nafPos({_,_,St_vec},Pos,YN):-true|
+        vector_element(St_vec,Pos,Solution,_),
+        is_naf1(Solution,YN).
+
+    is_naf1(fail,YN):-true|
+        YN = yes.
+    is_naf1({_,_,_},YN):-true|
+        YN = yes.
+otherwise.
+    is_naf1(_,YN):-true|
+        YN = no.
+
+    get_numOfSolution({_,_,St_vec},L):-true|
+        vector(St_vec,L,_).
+
+%get_solution
+    get_solution({_,_,St_vec},Pos,Name,Info):-integer(Pos)|
+        vector_element(St_vec,Pos,Solution,_),
+        get_solution1(Name,Solution,Info).
+    get_solution({_,_,St_vec},naf(Pos),Name,Info):-integer(Pos)|
+        vector_element(St_vec,Pos,Solution,_),
+        get_solution2(Name,Solution,Info).
+
+    get_solution1(consequence,          {succ,Cons,_ ,_ ,_ ,_  ,_  ,_},Consequence):-true|
+        Consequence = Cons.
+    get_solution1(ruleName,             {succ,_   ,RN,_ ,_ ,_  ,_  ,_},RuleName):-true|
+        RN = {RuleName,_}.
+    get_solution1(explanation,          {succ,_   ,RN,_ ,_ ,_  ,_  ,_},Explanation):-true|
+        RN = {_,Explanation}.
+    get_solution1(childList,            {succ,_   ,_ ,CL,_ ,_  ,_  ,_},ChildList):-true|
+        ChildList = CL.
+    get_solution1(argJudge,             {succ,_   ,_ ,_ ,AJ,_  ,_  ,_},ArgJudge):-true|
+        ArgJudge = AJ.
+    get_solution1(subArgInfo,           {succ,_   ,_ ,_ ,_ ,SAI,_  ,_},SubArgInfo):-true|
+        SubArgInfo = SAI.
+    get_solution1(counterSolutionTable, {succ,_   ,_ ,_ ,_ ,_  ,CST,_},CounterST):-true|
+        CounterST = CST.
+    get_solution1(similarity,           {succ,_   ,_ ,_ ,_ ,_  ,_  ,Sim},Similarity):-true|
+        Similarity = Sim.
+
+    get_solution2(consJudge,{CJ,_,_},ConsJudge):-true|
+        ConsJudge = CJ.
+    get_solution2(consequence,{_,C,_},Consequence):-true|
+        Consequence = C.
+    get_solution2(nafSolutionTable,{_,_,NST},NafSolutionTable):-true|
+        NafSolutionTable = NST.
+    get_solution2(explanation,_,Exp):-true|
+        Exp = "".

@@ -1,0 +1,46 @@
+Copyright (C) 1997 木下佳樹、高橋孝一、中田秀基、坂井公
+
+「図式を用いたユーザインタフェイスを持つ、圏論証明支援システム」
+
+[ファイル構成]
+
+welcome.html	このソフトウェアのスタートファイル。
+		Java の動くブラウザーでこのファイルを見てください。
+		この HTML からソフトウェアの起動や、
+		ソースファイル、使い方、例題を見ることができます。
+example2.html	アプレット本体。
+usage.html	このソフトウェアの使い方。
+nougaki.html	このソフトウェアの目的
+lists.html	ソースのリスト。
+cell.gif, fuse1.gif, fuse2.gif 説明に必要な図。
+Readme-E	このファイルの英語版。
+Readme-J	このファイル。
+specification   このソフトウェアの仕様書
+
+ソースファイル:
+Arc.java		DrawTest2.java		Namable.java
+ArcPutable.java		DummyEvent.java		Node.java
+ArcRect.java		DummyPlug.java		Pair.java
+ArcsPutable.java	InputDialog.java	Path.java
+BlinkArc.java		InputPanel.java		Prover.java
+BlinkArcs.java		Interrupter.java	Putable.java
+Cluster.java		Loop.java		RewindTick.java
+DonePutable.java	LoopPutable.java	Rewinder.java
+DrawControls.java	MessagePanel.java	Set.java
+DrawPanel.java		MyParser.java		Tickable.java
+DrawTest.java		MyPoint.java
+
+コンパイルされたファイル:
+Arc.class		DrawTest2.class		Namable.class
+ArcPutable.class	DummyEvent.class	Node.class
+ArcRect.class		DummyPlug.class		Pair.class
+ArcsPutable.class	InputDialog.class	Path.class
+BlinkArc.class		InputPanel.class	Prover.class
+BlinkArcs.class		Interrupter.class	Putable.class
+Cluster.class		Loop.class		RewindTick.class
+DonePutable.class	LoopPutable.class	Rewinder.class
+DrawControls.class	MassagePanel.class	Set.class
+DrawPanel.class		MyParser.class		Tickable.class
+DrawTest.class		MyPoint.class		
+
+以上。

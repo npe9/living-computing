@@ -1,0 +1,93 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (25) Forward Chaining Inference System: KORE/IE</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (25) Forward Chaining Inference System: KORE/IE</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    Quintus Prolog
+	Source Code: 113 KB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A rule-based programming tool with a fast maching filter on logic
+programming.
+
+<h2><b>Purpose</b></h2>
+
+On logic programming, it is important to speed up inference engines
+without sacrificing flexible power for rule expressions. In order to
+speed up inference, we make the matching process faster by developing
+a matching filter that is called a LHS filter.
+
+<h2><b>Configuration</b></h2>
+
+The program consists of 
+	<OL>
+	<LI>the rule compiler,
+	<LI>the inference stepper for controlling the recognize-act
+cycle, and
+	<LI>functions for representing rule actions.
+	</OL>
+
+<h2><b>Function</b></h2>
+
+By using the LHS filter, KORE/IE is fast enough to construct
+applications on logic programming. The performance of KORE/IE is
+comparable with that of the OPS5. The LHS filter is used to obtain
+instantiations without using particular mechanisms through a matching
+process in inference systems. The LHS filter can be used to improve
+the matching process and speed up the inference systems. In order to
+realize the LHS filter, we exploit advantages of logic programming
+such as an indexing mechanism and a mechanism for logical variable
+bindings. The indexing mechanism is used to speed up the searching
+rules and working memory elements in a matching process. The variable
+bindings mechanism is exploited to realize an efficient join
+computation in the matching process.
+ 
+<h2><b>References</b></h2>
+
+<ol>
+
+<li>Shintani, T.: A Fast Prolog-based Production System KORE/IE, Proc. 
+of the Fifth International Conference and Symposium on Logic
+Programming, pp.26-41(1988).
+
+<li>Shintani, T.: A Rule based Consistency Maintenance for Subjective
+Judgments, Proc.  of International Conference on Information
+Technology (InfoJapan'90) Part:2, Information Processing Society of
+Japan, pp.179-186(1990).
+
+</ol>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Forward Chaining Inference System: KORE/IE [79K] <a
+href="../../../ifs/solver-prover/unix/kore-ie.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

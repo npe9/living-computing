@@ -1,0 +1,74 @@
+			 DRS(Defeasible Reasoning System)
+										
+1.  Overview
+
+DRS is a tool that provides a function of generating argument and function of
+selecting argument of HELIC-II, by user's keyboard inputs only.
+
+Details of this functions are as follows.
+
+[Generating argument]
+
+This function makes a proof tree which indicates a conclusion(goal) as an
+argument when the facts and rules are already given and then a conclusion is
+given.
+
+There are two kinds of rules; usual rules(RBR rules) and CBR rules.  CBR rule
+has the characteristic of being applied after generalization.
+
+[Selecting argument]
+
+This function is realized by defeasible reasoning, that is one of nonmonotonic
+reasoning.
+
+Defeasible reasoning generates an argument of a given conclusion and its counter
+argument.  It then determines the type of argument from the TopRule relation
+(refer to appendix for details), the priority relation of rules between the
+argument and its counter argument, and the type of its counter argument.
+
+Types of arguments are as follows:
+
+* justify
+	Refutes all counter arguments.
+* defeated
+	Refuted by at least one of its counter argument.
+* plausible
+	Unrelated or refutes to a counter argument.
+
+Refutes,refuted, and unrelated are determined by the TopRule relation for the
+counter argument, and the type of the counter argument.
+
+For details, refer to HELIC-II language manual.
+
+2.execution environment
+
+Confirmed to run on following environments in execution and installation.
+
+(1) hardware
+	(a) machine
+		Sun sparcStatiion 10
+	(b) memory
+		more than 32MB
+	(c) harddisk
+		more than 40MB
+
+(2) software
+	(a) OS
+		SunOS 4.1.3
+	(b) C compiler
+		gcc-2.6.2
+	(c) KLIC(KLIC is IFS)
+		more than version1.7
+	(d) environment of Japanese
+		Needs following either gcc library or header file,
+		when installs DRS that use knowlede source(rule,type)
+		to include Japanese.
+		
+		* library
+			libfl.a
+		* header file
+			euc.h
+
+3.installation
+
+Please refer to DRS install manual(file name: INSTALL).

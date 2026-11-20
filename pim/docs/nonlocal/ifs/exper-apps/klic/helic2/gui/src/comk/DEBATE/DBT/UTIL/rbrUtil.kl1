@@ -1,0 +1,59 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_rbrUtility.
+
+:- public 
+    solve/4,
+    check_arg/6.
+            
+:- with_macro pimos.    
+
+%solve
+    solve(Info1,Info,ST,R):-true|
+        Info1 = {RBR1,POM1,{UseViewName,UseUnit,Goal,AgentName},Para},
+        Info  = {RBR, POM, {UseViewName,UseUnit,Goal,AgentName},Para},
+
+        POM1 = [get({viewUnitUnitRelTable,UseViewName},UURT,R1)|POM],
+        (   R1 = normal(_)->
+                Goal    = {Hterm,Env,_,HtermID},
+                Goal1   = {Hterm,Env,HtermID},
+                        %-message "  Now making initial arguments... "
+                RBR1    = [execute(solve,{UURT,[],Goal1},ST,R)|RBR]
+                        %-message "  end."
+        ;
+            R1 = abnormal(_)->
+                R       = R1,
+                RBR     =  RBR1
+        ).
+
+%check_arg
+    check_arg({SV,Pos},IPos,Info1,Info,NewArg,R):-true|
+        Info1 = {RBR1,POM1,{ViewName,UseUnit,Goal,AgentName},Para},
+        POM1  = [get({viewUnitUnitRelTable,ViewName},UURT,R1)|POM],
+        (   R1 = normal(_)->
+                (   integer(IPos)->
+                        RBR1 = [execute(check_arg2,{UURT,[],{SV,Pos}},NewSV,R)|RBR]
+                ;
+                    IPos = naf(_)->
+                        RBR1 = [execute(check_arg1,{UURT,[],{SV,Pos}},NewSV,R)|RBR]
+                ;
+                    IPos = initial->     
+                        RBR1 = [execute(check_arg1,{UURT,[],{SV,Pos}},NewSV,R)|RBR]
+                ),
+                Info = {RBR, POM,{ViewName,UseUnit,Goal,AgentName},Para},
+                check_arg1(R,{NewSV,Pos},NewArg)
+        ;
+            R1 = abnormal(_)->
+                Info = {RBR1,POM,{ViewName,UseUnit,Goal,AgentName},Para},
+                R    = R1
+        ).
+
+%%check_arg1
+    check_arg1(normal(_),NewArg1,NewArg):-true|
+        NewArg = NewArg1.
+otherwise.
+    check_arg1(_,_,_):-true|
+        true.

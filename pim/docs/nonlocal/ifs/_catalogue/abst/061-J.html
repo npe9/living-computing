@@ -1,0 +1,103 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（６１）並列プログラム開発支援システム：ＭＥＮＤＥＬＳ　ＺＯＮＥ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（６１）並列プログラム開発支援システム：ＭＥＮＤＥＬＳ　ＺＯＮＥ</h2>
+
+<pre width="136"><b>
+	マ シ ン：Multi-PSI
+	環　　境：PIMOS, SIMPOS
+	言　　語：ESP, KL1
+	ソース量：10 MB
+	文　　書：マニュアル (英語／日本語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+定理証明手法を用いて並列プログラムの開発を支援するプログラミング環境で
+ある。<p>
+
+<h2>特徴</h2>
+
+MENDELオブジェクトの仕様とそれらの結合情報、オブジェクト間のタイミング
+に関する制約を入力すると、正しいKL1プログラムが自動生成される。<p>
+
+<h2>機能</h2>
+
+<DL>
+
+<DT>●オブジェクト生成：
+
+<DD>等式論理によって記述されたオブジェクトの仕様が、項書換え技法によっ
+て並列に自動検証される。正しさの確認された仕様からは、オブジェクトのプ
+ログラムが自動生成される。
+
+<DT>●オブジェクト結合：
+
+<DD>高レベルペトリネットによって表現されたオブジェクトを、ユーザが結合
+する。
+
+<DT>●オブジェクト調整：
+
+<DD>タイミングに関する制約を時相論理によって記述する。ペトリネットで表
+されたオブジェクトがその仕様を満たさない場合は、定理証明手法により仕様
+を満たすように自動的に調整される。
+
+</DL>
+
+<PRE>
+
+　┌─────────┐　　　　　┌───────┐
+　│オブジェクトの仕様│────＞│　　　　　　　│
+　└─────────┘　　　　　│　　　　　　　│
+　┌───────────┐　　　│　　　　　　　│　　　┌────────┐
+　│オブジェクトの結合情報│──＞│ＭＥＮＤＥＬＳ│──＞│ＫＬ１プログラム│
+　└───────────┘　　　│　　ＺＯＮＥ　│　　　└────────┘
+　┌─────────┐　　　　　│　　　　　　　│
+　│タイミング制約　　│────＞│　　　　　　　│
+　└─────────┘　　　　　└───────┘
+</pre>
+<p>
+
+<h2>参考文献</h2>
+
+<OL>
+
+<LI>Honiden,S.,et al.: An Application of Structural Modeling and
+Automated Reasoning to Real-Time Systems Design, <i>The Journal of
+Real-Time systems</i>,Vol.1,No.3,pp.313-331(1990).<p>
+
+<LI>Ohsuga, A.,et al:Metis: A Term Rewriting System Generator,in
+<i>Software Science and Engineering</i>(Nakata,I.and
+Hagiya,M.eds.),pp.1-15,World Scientific(1991).<p>
+
+<LI>Uchihira,N.,et al.:Verification and Synthesis of Concurrent
+Programs Using Petri Nets and Temporal Logic, <i>Trans. 
+IEICE</i>,Vol.E73,No.12,pp.2001-2010(1990).<p>
+
+</OL>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	並列プログラム開発支援システム：ＭＥＮＤＥＬＳ　ＺＯＮＥ 
+[1,001K] <a
+href="../../../ifs/exper-apps/pimos/mendels.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

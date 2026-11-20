@@ -1,0 +1,104 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_tracer.
+
+:- public 
+    set_tf/4,
+    get_tf/3,
+
+    set_sr/4,
+    add_sr/4,
+    remove_sr/4,
+    clear_sr/3,
+    get_sr/3,
+    
+    set_sg/4,
+    add_sg/4,
+    remove_sg/4,
+    clear_sg/3,
+    get_sg/3.
+
+:- with_macro pimos. 
+
+%tf
+    set_tf(TF,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,tf,TF,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    get_tf({RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(show,tf,_,ProtocolList),
+        send(ProtocolList,RPM1,RPM,TF,Result),
+        make_protocol(Result,tf,TF,Protocol),
+        Data = {RPM,CS}.
+
+%sr
+    set_sr(SR,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,sr,SR,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    add_sr(SR,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(add,sr,SR,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    remove_sr(SR,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(remove,sr,SR,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    clear_sr({RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(clear,sr,_,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    get_sr({RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(show,sr,_,ProtocolList),
+        send(ProtocolList,RPM1,RPM,SR,Result),
+        make_protocol(Result,sr,SR,Protocol),
+        Data = {RPM,CS}.
+
+%sg
+    set_sg(SG,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,sg,SG,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    add_sg(SG,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(add,sg,SG,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    remove_sg(SG,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(remove,sg,SG,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    clear_sg({RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(clear,sg,_,ProtocolList),
+        send(ProtocolList,RPM1,RPM,_,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+    get_sg({RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(show,sg,_,ProtocolList),
+        send(ProtocolList,RPM1,RPM,SG,Result),
+        make_protocol(Result,sg,SG,Protocol),
+        Data = {RPM,CS}.
+
+%%%%%%%%%%%%%%%%%%%%%%
+%send
+    send([tracer(Message)],RPM1,RPM,Value,Result):-true|
+        RPM1 = [tracer(Message)|RPM],
+        arg(2,Message,Value),
+        arg(3,Message,Result).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,_,Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,Arguments,Protocol):-true|
+        Protocol = receive(ProtocolName,Arguments,_).
+

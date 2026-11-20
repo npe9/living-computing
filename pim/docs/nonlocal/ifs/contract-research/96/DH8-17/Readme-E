@@ -1,0 +1,53 @@
+Readme-E
+%%%
+%%% Copyright (C) 1997  Takayasu Ito
+%%%
+%%%         CONCEPT-LR
+
+manifest of this package
+
+INSTALL 		how to install CONCEPT-LR
+README			README for CONCEPT-LR 
+Readme-E		this file
+Readme-J		excluded files in Japanese
+documents		document directory
+src			source code directory
+
+
+./doc:
+conceptlr.tex		manual in Japanese (LaTeX) 
+CONCEPT-LR.eps		figure of manual
+example1		an example of inductive learning 
+example2		an example of learning by analogy
+
+
+./src:
+Makefile		Makefile to build the CONCEPT-LR
+analogy.kl1		analogy module
+base_op.kl1		basic file I/O module 
+constraint.kl1		constraint knowledge module
+data_structure.kl1	recursive data structure knowledge module
+domain.kl1		domain knowledge module
+environment.kl1 	environment module
+eqv.kl1 		equality knowledge module
+example.kl1		example handling module
+generalization.kl1	generalization of non-recursive clause module
+handle.kl1		inductive learning module
+interpreter.kl1 	SLD induction module
+iostream.kl1		standard I/O module
+justification.kl1	sequential justification module
+main.kl1		main routine 
+myfile.kl1		file I/O module
+pjustification.kl1	parallel justification module
+pred.kl1		predicate typing module
+rec_generalization.kl1	generalization of recursive clause module
+specialization.kl1	specialization module
+theory.kl1		concept database module
+userinterface.kl1	user interface module
+
+
+
+
+
+
+

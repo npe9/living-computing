@@ -1,0 +1,37 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module hLibrary.
+
+%stdio
+    stdio(IoType,Stdio):- true|
+        helic_stdio:stdio(IoType,Stdio).
+
+%pool
+    pool(PoolName,Size,Pool):- true |
+	pool(PoolName,Pool).
+    pool(PoolName,Pool):- true |
+	helic_pool:pool(PoolName,Pool).
+
+%file
+    file(FileName,Mode,File):- true|
+	helic_file:file(FileName,Mode,File).
+
+%buffer
+    buffer(Buffer):-true |
+	helic_buffer:buffer(Buffer).
+
+%tTos
+tTos(Term,String):-true|
+	dbt_stringIo:output_stream(O,Buffer),
+	O      = [putt(Term)],
+	String = Buffer.
+
+%sTot
+sTot(String,Term):-true|
+	dbt_stringIo:output_stream(O,Buffer),
+	O=[putc(#"("),fwrite(String),putc(#")"),putc(#".")],
+	dbt_stringIo:input_stream(I,Buffer),
+        I=[gett(Term)].

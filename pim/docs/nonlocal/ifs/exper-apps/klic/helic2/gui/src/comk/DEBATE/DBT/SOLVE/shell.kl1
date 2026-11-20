@@ -1,0 +1,218 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_shell.
+
+:- public 
+    get_commandArguments/4.
+            
+:- with_macro pimos.
+
+%get_commandArguments
+    get_commandArguments({Pool,Info,CSS1},Retern,CPA,R):-true|
+        CSS1 = [get(displayArgInfo,DisplayArgInfo)|CSS],
+        get_commandArguments({Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+    get_commandArguments({Pool1,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Pool1 = [make(nh,NH)|Pool],
+        NH = [get_commandArguments(Command,Parameter,Arguments,R1)],
+        Data = {Pool,Info,DisplayArgInfo,CSS},
+        (   R1 = normal(_) ->
+                get_commandArguments1(Command,Parameter,Arguments,Data,Retern,CPA,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+
+%end
+    get_commandArguments1(end,nil,[],
+                {Pool1,Info,_,CSS},Retern,CPA,R):-true|
+         CSS     = [],
+         Retern  = {Pool1,Info},
+         CPA     = {end,nil,[]},
+         R       = normal(success).
+
+    get_commandArguments1(exitBrowse,nil,[],
+                {Pool1,Info,_,CSS},Retern,CPA,R):-true|
+         CSS     = [],
+         Retern  = {Pool1,Info},
+         CPA     = {end,nil,[]},
+         R       = normal(success).
+
+%set depth
+    get_commandArguments1(set,depth,[Depth1],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+
+	(   Depth1 = -1->
+		Depth = infinite
+	;
+	    Depth1 \= -1->
+		Depth = Depth1
+	),
+
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(counter,Depth,R1)|RBR],
+        Info  = {RBR,B,C,D},
+
+        (   R1 = normal(success)->
+%                DisplayArgInfo = {_,LArg},
+%                sendProtocol_getCommandArguments(argument,[LArg],
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set explanationMode
+    get_commandArguments1(set,explanationMode,[Mode],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+
+        Info1 = {A,B,C,{X,Y1,Z}},
+        Info  = {A,B,C,{X,Y ,Z}},
+
+        (   Mode = h->
+		Y = h,
+                DisplayArgInfo = {_,LArg},
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            Mode = e->
+		Y = Y1,
+                sendProtocol_getCommandArguments(errorInfo,[{dbt,'Non support',nil}],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send explanation
+    get_commandArguments1(send,explanation,[],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        sendProtocol_getCommandArguments(explanation,["Non support"],
+               {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send argument [Pos]
+    get_commandArguments1(send,argument,[Pos],
+                {Pool,Info,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(argumentList,Pos,LArg),
+                   set(forwardList,[])|CSS],            %clear forwardList
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send counterList [Pos]
+    get_commandArguments1(send,counterList,[Pos],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility2:get_counterList({Pool1,Info1,DisplayArgInfo,CSS1},Pos,
+                {Pool,Info,CSS2},LArgList,CounterList,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(counterList,LArgList)|CSS],
+                sendProtocol_getCommandArguments(counterList,CounterList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send rebuttal [Pos]
+    get_commandArguments1(send,rebuttal,[Pos],
+                {Pool,Info,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(counterList,Pos,LArg),
+                   set(forwardList,[])|CSS],            %clear forwardList 
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%backward
+    get_commandArguments1(backward,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility3:get_backward({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%forward
+    get_commandArguments1(forward,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility3:get_forward({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%next
+    get_commandArguments1(next,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility3:get_next({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%previous
+    get_commandArguments1(previous,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility3:get_previous({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%explain 
+    get_commandArguments1(explain,nil,[],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        sendProtocol_getCommandArguments(errorInfo,[{gui,'Non support explain',nil}],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+otherwise.
+    get_commandArguments1(Command,Parameter,Argument,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        sendProtocol_getCommandArguments(errorInfo,[{gui,'This command is not supported ',
+		{Command,Parameter,Argument}}],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+        
+%%%%%%%internal method
+
+%sendProtocol_getCommandArguments
+    sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool1,Info1,{FLArg,CLArg},CSS1},Retern,CPA,R):-true|
+        dbtgui_shellUtility4:get_argumentInfo({Pool1,Info1,{FLArg,CLArg},CSS1},LArg,
+                {Pool2,Info,CSS},ArgumentInfo,R1),
+        Pool2 = [make(nh,NH)|Pool],
+        (   R1 = normal(success)->
+                NH = [receive(argument,ArgumentInfo,R2)],
+                DisplayArgInfo = {FLArg,LArg}
+        ;
+            R1 = abnormal(Reason)->
+                NH = [receive(errorInfo,[Reason],R2)],
+                DisplayArgInfo = {FLArg,CLArg}
+
+        ),
+        (   wait(R2)->
+                get_commandArguments(
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)).
+otherwise.
+    sendProtocol_getCommandArguments(Parameter,Arguments,
+                {Pool1,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Pool1 = [make(nh,NH)|Pool],
+        NH = [receive(Parameter,Arguments,R1)],
+        (   wait(R1)->
+                get_commandArguments(
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)).

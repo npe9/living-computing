@@ -1,0 +1,93 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(23) Program Generation System: PAPYRUS</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(23) Program Generation System: PAPYRUS</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 4 MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system provids various supports function for extracting a program
+from constructive proofs of the formula as the program specification.
+
+<h2><b>Configuration</b></h2>
+
+PAPYRUS consists of two main components:
+
+<ul>
+
+<li>To define the logic,description format,and program extraction
+rules,and the other checks proofs and extracts programs according to
+the definitions.
+
+<li>A proof editor for making proof construction as simple as
+possible.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+PAPYRUS is the system for generating programs based on Curry-Howard
+Isomorphism.  <p>
+
+ Main features is as follows:
+
+<ul>
+
+<li>PAPYRUS manages logical definitions as type data of CC. 
+Therefore,changing that data enables the use of various logics for
+program generation.
+
+<li>PAPYRUS has a built-in proof checker based on CC,and automatically
+checks each partial proof as soon as it is made.
+
+<li>PAPYRUS manages program extraction rules as rules of TRS. 
+Therefore,changing that data enables the use of various realizability
+interpretations. Furthermore,programs can be extracted from the
+completed proofs according to the rules.
+
+<li>PAPYRUS allows the use of various description formats through a
+macro definition mechanism based on TRS(Term Rewriting System).
+
+<li>The operator can call the prover freely to construct proofs
+interactively.
+
+<li>Various support functions are provided by the structure
+editor,such as the function to jump to unproven portions.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Program Generation System: PAPYRUS [3,781K] <a
+href="../../../ifs/solver-prover/simpos/papyrus.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

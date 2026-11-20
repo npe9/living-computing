@@ -1,0 +1,135 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_load.
+
+:- public 
+    type/5,
+    goal/5,
+    pom/5,
+    rule/5.    
+            
+:- with_macro pimos.
+
+    type(AgentName,FileName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [],
+                dbtcui_protocolPool:get(AgentName,load,type,FileName,ProtocolList),
+                send(ProtocolList,DBT1,DBT,Result),
+                make_protocol(Result,type,AgentName,GUIProtocol),
+                Data = {DBT,CGS}
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {DBT1,CGS},
+                dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol)
+        ).
+    goal(AgentName,FileName,{DBT,CGS1},Data,GUIProtocol):-true|
+        dbtcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(GoalList1)],
+                get_goal(GoalList1,GoalList,DispGoalList,IngiEnvList,R2),
+                (   R2 = normal(success) ->
+                        CGS1  = [set(AgentName,goalList,GoalList),
+                                 set(AgentName,dispGoalList,DispGoalList),
+                                 set(AgentName,currentGoal,nil),
+                                 set(AgentName,ingiEnvList,IngiEnvList)|CGS],
+                        make_protocol(normal(success),goal,AgentName,GUIProtocol),
+                        Data   = {DBT,CGS}
+                ;
+                    R2 = abnormal(Reason) ->
+                        dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol),
+                        Data   = {DBT,CGS1}
+                )
+        ;
+            R1 = abnormal(Reason) ->
+                dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol),
+                Data   = {DBT,CGS1}
+        ).
+    pom(AgentName,FileName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(A),gett(B),gett(C),gett(D),gett(E)],
+                (   wait(E)->
+                        Term = {A,B,C,D,E},
+                        dbtcui_protocolPool:get(AgentName,load,pom,Term,ProtocolList),
+                        send(ProtocolList,DBT1,DBT,Result),
+                        make_protocol(Result,view,AgentName,GUIProtocol),
+                        Data = {DBT,CGS})
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {DBT1,CGS},
+                dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol)
+        ).
+    rule(AgentName,FileName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(success) ->
+                File = [gett(Term)],
+		( Term \= end_of_file->
+                      dbtcui_protocolPool:get(AgentName,load,rule,Term,ProtocolList),
+                      send(ProtocolList,DBT1,DBT,Result),
+                      make_protocol(Result,rule,AgentName,GUIProtocol),
+                      Data = {DBT,CGS}
+		;
+		  Term = end_of_file->
+                      Data = {DBT1,CGS},
+		      dbtcui_utility:make_errorProtocol(AgentName,
+				{cui,"Illegal syntax",nil},GUIProtocol)
+		)
+        ;
+            R1 = abnormal(Reason) ->
+                Data = {DBT1,CGS},
+                dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol)
+        ).
+
+%%%%%%%%%%%%%internal method
+%send
+    send(Protocol,DBT1,DBT,Result):-true |
+        DBT1 = [Protocol|DBT],
+        is_normal(Protocol,Result).
+
+    is_normal({_,ProtocolList},Result):-true |
+        is_normal1(ProtocolList,Result).
+
+    is_normal1([],Result):-true|
+        Result = normal(success).
+    is_normal1([set_parameter(type,_,normal(yes))],Result):-true| %dummy
+        Result = normal(success).
+    is_normal1([set_parameter(_,_,normal(success))|T],Result):-true|
+        is_normal1(T,Result).
+    is_normal1([set_parameter(_,_,abnormal(Reason))|_],Result):-true|
+        Result = abnormal(Reason).
+
+%get_goal
+    get_goal({GoalList1},GoalList,DispGoalList,IngiEnvList,R):-true|
+        get_goal1(GoalList1,GoalList,DispGoalList,IngiEnvList,R).
+otherwise.
+    get_goal(H,_,_,_,R):-true|
+        R =abnormal({cui,'Illegal syntax',H}).
+                               
+    get_goal1([],GoalList,DispGoalList,IngiEnvList,R):-true|
+        GoalList     = [],
+        DispGoalList = [],
+        IngiEnvList  = [],
+        R            = normal(success).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%kokowo injijouhouwo toxtute kurutokorowo shuusei
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    get_goal1([{C,{A,B,X,_,D}}|T],GoalList,DispGoalList,IngiEnvList,R):-true|
+        get_goal1(T,GoalList1,DispGoalList1,IngiEnvList1,R),
+        Goal         = {A,B,C,D},
+        GoalList     = [Goal|GoalList1],
+        DispGoalList = [C|DispGoalList1],
+        IngiEnvList  = [X|IngiEnvList1].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+otherwise.
+    get_goal1(H,_,_,_,R):-true|
+        R            = abnormal({cuis,'Illegal syntax',H}).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,GUIProtocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol).
+    make_protocol(normal(success),LoadFileType,AgentName,GUIProtocol):-true|
+	GUIProtocol = receive(AgentName,ok,[],_).

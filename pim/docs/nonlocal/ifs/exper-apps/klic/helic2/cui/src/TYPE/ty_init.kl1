@@ -1,0 +1,42 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_init
+%       File Name   : ty_init.kl1
+%       Function    : initiation parameters
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 4/14  : compact/decompact for rapid gett/putt
+%$      1994/ 1/26  : debug tag macro
+%$      1994/ 1/21  : debug tag
+%$      1993/12/27  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_init.
+:- with_macro pimos.
+
+:- public default_typeDB_size/1.
+default_typeDB_size(X):-true|X=3000.
+
+:- public ty_debug_tag/2.
+%ty_debug_tag(debug_tag#tcmp,X):-X=true.
+%ty_debug_tag(debug_tag#tatt,X):-X=true.
+%ty_debug_tag(debug_tag#tlat,X):-X=true.
+%ty_debug_tag(debug_tag#att,X):-X=true.
+%ty_debug_tag(debug_tag#lat,X):-X=true.
+%otherwise.
+ty_debug_tag(_,X):-X=false.
+
+:-public ty_debug_print/1.
+% on/off
+ty_debug_print(X):-X=off.
+
+:-public ty_compact_occurrence_threshold/1.
+ty_compact_occurrence_threshold(Threshold):-Threshold = 3.

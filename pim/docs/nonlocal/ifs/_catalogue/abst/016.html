@@ -1,0 +1,84 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(16) Robot Design Support System</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(16) Robot Design Support System</h2>
+<p>
+
+<pre>
+<b>	Machine:     Multi PSI
+	Environment: PIMOS
+	Language:    GDCC
+	Source Code: 33 KB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A system for supporting robot structure design.<P>
+
+<h2><b>Configuration</b></h2>
+
+The system consists of the following modules. They have been written
+by the parallel constraint programming language GDCC.
+
+<ol>
+ <li>kinematics program(Kinematics)
+ <li>statics program(Statics)
+ <li>program for determinant calculation(Determinant)
+</ol>
+
+<h2><b>Function</b></h2>
+
+On conventional robot design process the programs manipulating them
+has been written one by one according to fundumental structure of
+robot set up by robot designer. Therefore, it has been difficult to
+support fundumental structure design efficienitly. We introduce the
+paradigm of constraint logic programming to robot engineering. Using
+the flexibility of constraint logic programing to robot engineering,
+any robot structure can be handled only by changing a query to the
+system, and thefore there is no need to write an individual program
+for analysis and evaluation. The system will generate constraints
+dependent on a robot being designed, and solve the constraints for
+analysis and evaluation. The main functions of the system are as
+follows.  <p>
+
+<ol>
+
+ <li>automatical generation of the constraint expressions of
+kinematics and statics to any structure of robot
+
+ <li>solution of direct and inverse kinematics
+
+ <li>calculation of torque of each joint
+
+ <li>calculation of manipulability
+
+</ol>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Robot Design Support System [40K] <a
+href="../../../ifs/kbms-clp/pimos/robot.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

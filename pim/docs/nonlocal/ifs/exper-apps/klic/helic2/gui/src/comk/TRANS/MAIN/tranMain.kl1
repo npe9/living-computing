@@ -1,0 +1,167 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module main.
+
+:- with_macro pimos.
+
+
+main :- true |
+	unix:argv(ArgList),
+	unix:argc(Argc),
+	( Argc = 3 ->
+		argtake(ArgList,CommandName,NArgList,NewString)
+%	 ;
+%	  Argc = 5 ->
+%		argtake2(ArgList,[],NArgList,Number),
+%		( Number =3 ->
+%			hanjunjo(NArgList,R)
+%		; otherwise ;true ->
+%			sifLibrary:message([putb(" !trans-illegal Input Arg"),
+%					putc(key#lf)]))
+	; otherwise;true ->
+		sifLibrary:message([putb(" !trans-illegal Input Arg"),
+					putc(key#lf)])).
+
+
+%   get commandName 
+%   rule
+
+getCommandNameR(CommandName):- true |
+%	unix:getenv("HOME",Path),
+%	pathMake(Path,"/ifs/v2/trans/bin/transrg -r",CommandName).
+	CommandName = "gtransrg -r".
+
+%   goal
+
+getCommandNameG(CommandName):- true |
+%	unix:getenv("HOME",Path),
+%	pathMake(Path,"/ifs/v2/trans/bin/transrg -g",CommandName).
+	CommandName = "gtransrg -g".
+
+
+
+pathMake(String1,String2,NewString):- true |
+	string(String1,StSize,EleSize,_),
+	string(String2,StSize2,EleSize2,_),
+	Num := StSize + StSize2,
+	Num0 := StSize ,
+	new_string(NewString0,Num,EleSize),
+	stringMake2(NewString0,0,0,StSize,String1,NString1),
+	stringMake2(NString1,Num0,0,StSize2,String2,NewString).
+
+
+
+
+%   arglist take
+
+argtake(ArgList,CommandName,NArgList,R):- true |
+	argtake2(ArgList,[],NArgList,Number),
+	( Number = 0 ->
+		getCommandNameG(CommandName),
+		stringConnect(NArgList,CommandName,R)
+	;
+	  Number = 1 ->
+		getCommandNameR(CommandName),
+		stringConnect(NArgList,CommandName,R)
+	;
+	  Number = 2 ->
+		type(NArgList,R),
+		( R=abnormal(Result) ->
+			Result={Name1,Name2,[Ele]},
+			sifLibrary:message([putb(" !trans-"),putt(Name2),
+				putb(" "),putt(Ele),putc(key#lf)])
+		;
+		R = normal(success) -> true )
+	;
+	  Number = 3 ->
+		hanjunjo(NArgList,R),
+		( R=abnormal(Result) ->
+			Result={Name1,Name2,[Ele]},
+			sifLibrary:message([putb(" !trans-"),putt(Name2),
+				putb(" "),putt(Ele),putc(key#lf)])
+		;
+		R = normal(success) -> true )
+	;
+	  Number = 4 ->
+		sifLibrary:message([putb("!trans-illegal Input Arg"),
+				putc(key#lf)]),
+		stringConnect([],CommandName,R)
+	;
+	  otherwise;
+		true ->
+		sifLibrary:message([putb("!trans-illegal Input Arg"),
+				putc(key#lf)]),
+		stringConnect([],CommandName,R)).
+
+argtake2(["goal"|ArgLs],NArgL,NArgList,Number):- true |
+	Number = 0,
+	append(NArgL,ArgLs,NArgList).
+argtake2(["rule"|ArgLs],NArgL,NArgList,Number):- true |
+	Number = 1,
+	append(NArgL,ArgLs,NArgList).
+argtake2(["type"|ArgLs],NArgL,NArgList,Number):- true |
+	Number = 2,
+	append(NArgL,ArgLs,NArgList).
+argtake2(["pom"|ArgLs],NArgL,NArgList,Number):- true |
+	Number = 3,
+	append(NArgL,ArgLs,NArgList).
+argtake2([],_,_,Number):- true |
+	Number = 4.
+otherwise.
+argtake2([L1|Ls],NArgL,NArgList,Number):- true |
+	append(NArgL,[L1],NL1),
+	argtake2(Ls,NL1,NArgList,Number).
+
+
+stringConnect([],CommandName,R):- true | R = "Fail".
+otherwise.
+stringConnect(ArgList,CommandName,Result):- true |
+	ArgList = [Arg1,Arg2],
+	stringMake(CommandName,Arg1,NewString),
+	stringMake(NewString,Arg2,NString),
+	unix:system(NString,Result).
+	
+
+
+stringMake(String1,String2,NewString):- true |
+	string(String1,StSize,EleSize,_),
+	string(String2,StSize2,EleSize2,_),
+	Num := StSize + StSize2+1,
+	Num0 := StSize +1,
+	new_string(NewString0,Num,EleSize),
+	stringMake2(NewString0,0,0,StSize,String1,NString1),
+	set_string_element(NString1,StSize,10#"32",NNString),
+	stringMake2(NNString,Num0,0,StSize2,String2,NewString).
+
+
+
+stringMake2(String,Number,Num,Size,String1,NewString):- Num < Size |
+	string_element(String1,Num,StEle1,NString1),
+	set_string_element(String,Number,StEle1,NString),
+	Number1 := Number +1,
+	Num1 := Num +1,
+	stringMake2(NString,Number1,Num1,Size,NString1,NewString).
+otherwise.
+stringMake2(String,Number,Num,Size,String1,NewString):- true  |
+	NewString = String.
+	
+	
+type([Arg1,Arg2],R):- true |
+	ty_top:compile_type(Arg1,Arg2,R).
+
+hanjunjo([Arg1,Arg2],R):- true |
+	hanjunjo_translater:go(Arg1,Arg2,R).
+
+
+append([H|T],L,AL):- true |
+	AL = [H|NAL],
+	append(T,L,NAL).
+append([],L,AL):- true |
+	L = AL.
+
+
+
+

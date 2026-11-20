@@ -1,0 +1,80 @@
+﻿<!--
+#
+# created by	A.Aiba		'97/09/12
+#
+-->
+<HTML>
+<HEAD><TITLE>ICOT Free Software Character Code</TITLE></HEAD>
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+ICOT Free Software Character Code
+</H1></CENTER><P>
+
+<HR width=95% align="center" size=7><P>
+
+<CENTER>
+<H2>ABSTRACT</H2>
+</CENTER><P>
+
+As a rule, all files in the ICOT Free Software archives use ASCII +JIS
+(JIS X 0208) character code.  So you can read the files from your own
+UNIX terminal.  The software programs for PSI, Multi-PSI and PIM use
+PSI character code that is different from ASCII+JIS.  If you want to
+run one of these programs, you must convert the character code from
+ASCII to PSI.  The FTP command on SIMPOS has a function for character
+code conversion.  You can convert the character code using the FTP
+command on SIMPOS when you transfer files from UNIX to PSI by the
+method as stated in the followings.<P>
+
+
+<H2>1.  Reading or printing files</H2><P>
+
+As a rule, all files in the ICOT Free Software archives use ASCII +JIS
+(for KANJI) character code (Exception: The source files for CESP and
+SICStus Prolog use EUC character code for KANJI).  So you can read or
+print the files extracted with the tar command, without any character
+code conversion.  (You need a KANJI terminal, such as kterm on X11R5,
+to read the KANJI characters.)<P>
+
+<H2>2.  Running the software</H2><P>
+
+<H2>2.1 Running on UNIX</H2><P>
+
+You can install the programs for UNIX (written in C, CESP, Prolog,
+etc.) simply by extracting the files with the tar command, without any
+character code conversion.  For detail information, see the INSTALL
+file for each piece of software.<P>
+
+<H2>2.2 Running on PSI, Multi-PSI and PIM</H2><P>
+
+You must convert the character code from ASCII to PSI when you want to
+run the software on PSI, Multi-PSI or PIM.  You can convert the
+character code by using the FTP command on SIMPOS.<P>
+
+FTP on SIMPOS converts character code from ASCII to PSI automatically
+by setting ascii transfer type.  But FTP on SIMPOS does *NOT* convert
+the KANJI character code.  When you transfer files that include KANJI,
+You must set the character code name by using the `/jis' option after
+the remote UNIX file name.  A comment must be made in the README file
+of each piece of software to state whether the file contains KANJI or
+not.  If you cannot judge whether the files use KANJI or ASCII only,
+you should always use the `/jis' option after the remote file name.<P>
+
+<DL>
+
+<DT>1)  The files use ASCII only (do not include KANJI)
+
+<DD>Use the FTP command on SIMPOS and set the ascii transfer type.
+ 
+<DT>2) The files use KANJI characters
+
+<DD>Use the FTP command on SIMPOS and set the ascii transfer type.
+Moreover, use the `/jis' option after the remote file name.<P>
+
+For example,     FTP> mget *.kl1 /jis *.kl1
+</DL>
+
+</BODY>
+</HTML>
+

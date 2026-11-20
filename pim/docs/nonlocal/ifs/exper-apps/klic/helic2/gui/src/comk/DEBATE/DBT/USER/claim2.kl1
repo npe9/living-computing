@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_claim2.
+
+:- public 
+    claim/4.
+            
+:- with_macro pimos.
+
+%claim
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+    claim(Claim,{O,Pool1,Info1},Data,NextDR):-true| %Claim = {YA,MI,YA_Arg}
+        initiate(Claim,Pool1,Info1,Pool2,Info2,CSS,R1),
+        (   R1 = normal(success)->
+                dbtgui_shell:get_commandArguments({Pool2,Info2,CSS},{Pool3,Info3},CPA,R2),
+                (   R2 = normal(_)->
+                        execute(CPA,Claim,{O,Pool3,Info3},Data,NextDR)
+                ;
+                    R2 = abnormal(_)->
+                        Data = {O,Pool3,Info3},NextDR = []
+                )
+                
+        ;
+            R1 = abnormal(_)->
+                Data = {O,Pool2,Info2},NextDR = []
+        ).
+
+%initiate
+    initiate({YA,MI,YA_Arg},Pool1,Info1,Pool,Info,CSS,R):-true|
+        make_YDArg({YA,MI,YA_Arg},Pool1,Info1,Pool2,Info2,Status,YDArg,R1),
+        (   R1 = normal(success)->
+                get_MLArgMYRuleName(MI,YA_Arg,Pool2,Pool3,MLArg,MYRuleName),
+                YLArg   = YDArg,
+                History = claim(YA,MI),
+                InitVec = {{1,1,1,1},Status,History,{MLArg,MYRuleName},{YLArg,YLArg}},
+                dbtgui_shellCurrentState:create(InitVec,CSS1),
+                dbtgui_showArgumentUtility:receive_argumentInfo({Pool3,Info2,CSS1},
+                        YLArg,YLArg,{Pool,Info,CSS},R)
+        ;
+            R1 = abnormal(_)->
+                Pool = Pool2,
+                Info = Info2,
+                R    = R1
+        ).
+
+%%make_YDArg
+    make_YDArg({YA,MI,YA_Arg},Pool1,Info1,Pool,Info,Status,YDArg,R):-true|
+        Pool1 = [makeList([ct,at],[CT,AT1])|Pool2],
+        MI    = issue(claim(MA,_),IPos),
+        CT    = [claim({MA,IPos},YA)],
+        AT1   = [is_inID(YA,YN1)|AT2],
+        Info1 = {_,_,{_,_,_,AgentName},_},
+        dbtgui_messagePool:make_message({claim,you},{AgentName,YA},Status),
+        (   YN1 = yes->
+                AT2     = [refer_arg(YA,YDArg,_)],
+                Pool    = Pool2,
+                Info    = Info1,
+                R       = normal(success)
+        ;
+            YN1 = no->
+                dbtgui_rbrUtility:check_arg(YA_Arg,IPos,Info1,Info,YDArg,R1),
+                (   R1 = normal(_)->
+                        AT2     = [put(YA,YDArg,R2)],
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                        (   R2 = normal(_)->        %korega naito umaku ugokanai
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                                Pool2   = [makeList([yat],[YAT])|Pool],
+                                YAT     = [put(YDArg)],
+                                R       = normal(success))
+                ;
+                    R1 = abnormal(_)->
+                        AT2     = [],
+                        Pool    = Pool2,
+                        R       = R1
+                )
+        ).
+
+%%get_MLArgMYRuleName
+    get_MLArgMYRuleName(MI,YA_Arg,Pool1,Pool,MLArg,MYRuleName):-true|
+        MI      = issue(claim(MA,_),IPos),
+        Pool1   = [make(at,AT)|Pool],
+        AT      = [refer_arg(MA,MDArg,_)], 
+        dbtgui_LArgUtility:get_LArgFromDArg(MDArg,MLArg),
+        dbtgui_LArgUtility:get_ruleName(YA_Arg,0,YR),
+        (   IPos = naf(_)->
+                MYRuleName  = {nil,YR}
+        ;
+            integer(IPos)->
+                dbtgui_LArgUtility:get_ruleName(MLArg,IPos,MR),
+                MYRuleName  = {MR,YR}
+        ).
+
+%execute
+    execute({pose,counter,[{SV,IPos,CPos}]},{YA,MI,_},{O1,Pool1,Info1},Data,_):-true|
+        MLArg   = {{SV,0},IPos,CPos},
+        MDArg   = {SV,IPos,CPos},
+        Pool1   = [makeList([at,mat,ct,mnt,hl],[AT,MAT,CT,MNT,HL])|Pool2],
+        AT      = [is_inArg(MDArg,YN1)|AT1],
+        (   YN1 = yes->
+                AT1 = [refer_ID(MDArg,MA,R1)]
+                    % message-"Already sent this argument"
+        ;
+            YN1 = no->
+                AT1 = [make_ID(MA),put(MA,MDArg,R1)]
+        ),
+        (   wait(R1)->
+                Info1 = {_,_,{_,_,_,AgentName},_},
+                dbtgui_messagePool:make_message({claim,i},{AgentName,MA},Status),
+                dbtgui_showArgumentUtility:show_status(Pool2,Status,Pool,R2)),
+        (   wait(R2)->
+                MAT   = [put(MDArg)],
+                CT    = [claim({YA,IPos},MA)],
+                set_uur(MDArg,MA,YA,MNT,Info1,Info),
+                dbtgui_LArgUtility:get_PArg(MLArg,MPArg),
+                O1    = [{claim(MA,issue(claim(YA,MI),IPos)),MPArg}|O],
+                HL    = [put(send(y,{claim(MA,issue(claim(YA,MI),IPos)),MPArg}))],
+                Data  = {O,Pool,Info}).
+    execute({notice,win,SPList},{YA,MI,YA_Arg},{O1,Pool1,Info1},Data,_):-true|
+        MI      = issue(claim(MA,_),IPos),
+        get_MLArgMYRuleName(MI,YA_Arg,Pool1,Pool2,_,{MR,YR}),
+        dbtgui_guiUtility:make_noticeStatus({i,SPList,MA,MR,YA,YR},Info1,Info,Status),
+        dbtgui_showArgumentUtility:show_status(Pool2,Status,Pool3,R1),
+        (   wait(R1)->
+                Pool3   = [makeList([mnt,hl],[MNT,HL])|Pool],
+                MNT     = [put(win,{MA,IPos},{YA,{MR,YR},SPList})],
+                HL      = [put(send(y,notice({SPList,MR,YR},claim(YA,MI))))],
+                O1      = [notice({SPList,MR,YR},claim(YA,MI))|O],
+                Data    = {O,Pool,Info}).
+    execute({notice,draw,_},{YA,MI,YA_Arg},{O1,Pool1,Info1},Data,_):-true|
+        MI      = issue(claim(MA,_),IPos),
+        get_MLArgMYRuleName(MI,YA_Arg,Pool1,Pool2,_,{MR,YR}),
+        dbtgui_guiUtility:make_noticeStatus({i,nil,MA,MR,YA,YR},Info1,Info,Status),
+        dbtgui_showArgumentUtility:show_status(Pool2,Status,Pool3,R1),
+        (   wait(R1)->
+                Pool3   = [makeList([mnt,hl],[MNT,HL])|Pool],
+                MNT     = [put(draw,{MA,IPos},{YA,{MR,YR}})],
+                HL      = [put(send(y,notice({nil,MR,YR},claim(YA,MI))))],
+                O1      = [notice({nil,MR,YR},claim(YA,MI))|O],
+                Data    = {O,Pool,Info}).
+    execute({cancel,_,_},{_,MI,_},{O1,Pool1,Info},Data,_):-true|
+        MI      = issue(claim(MA,OI),_),
+        Info = {_,_,{_,_,_,AgentName},_},
+        dbtgui_messagePool:make_message({cancel,i},{AgentName,MA},Status),
+        dbtgui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2   = [send(hl,put(send(y,pass(cancel(claim(MA,OI))))))|Pool],
+                O1      = [pass(cancel(claim(MA,OI)))|O],
+                Data    = {O,Pool,Info}).
+    execute({finish,_,_},{YA,MI,_},{O1,Pool1,Info},Data,_):-true|
+        Info = {_,_,{_,_,_,AgentName},_},
+        dbtgui_messagePool:make_message({finish,i},{AgentName,YA},Status),
+        dbtgui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                MI      = issue(claim(MA,_),IPos),
+                Pool2   = [makeList([at,yat,ct,hl],[AT,YAT,CT,HL])|Pool],
+                AT      = [refer_arg(YA,YDArg,_)],
+                YAT     = [finish(YDArg)],
+                CT      = [finish({MA,IPos},YA)],
+                HL      = [put(send(y,finish(claim(YA,MI))))],
+                O1      = [finish(claim(YA,MI))|O],
+                Data    = {O,Pool,Info}).
+    execute({end,_,_},_,Data1,Data,NextDR):-true|
+        Data    = Data1,
+        NextDR  = [].
+
+%set_uur
+    set_uur({SV,IPos,CPos},MA,YA,MNT,Info1,Info):-integer(IPos)|
+        YLArg  = {SV,0},
+        MLArg  = {{SV,0},IPos,CPos},
+        dbtgui_LArgUtility:get_ruleName(YLArg,IPos,YR),
+        dbtgui_LArgUtility:get_ruleName(MLArg,0,MR),
+
+        dbtgui_guiUtility:get_unitUnitRelReason(YR,MR,Info1,Info,Rel,_),
+        (   Rel = -1->
+                Type      = lose,
+		XXRuleName= {YR,MR}
+        ;
+            Rel = 0->
+                Type      = draw,
+		XXRuleName= {MR,YR}
+        ),
+
+        MNT = [put(Type,{YA,IPos},{MA,XXRuleName})].
+                    %                        MNT = [put(Type,{YA,IPos},{MA,{RN1,RN2}})]
+                    % hontouha {RN1,RN2} daga "change view" wo surutokini RN2>RN1 mo yurusu
+                    %sikasi programu ha RN1 > RN2 moyurusutonaxtuteirutameni rule rel ha tuneni
+                    %{MyRule,YourRule}tosi Type ha kono2tuno kankei wo kijutusurukototosuru
+otherwise.
+    set_uur(_,_,_,MNT,Info1,Info):-true|
+        MNT    = [],
+        Info   = Info1.

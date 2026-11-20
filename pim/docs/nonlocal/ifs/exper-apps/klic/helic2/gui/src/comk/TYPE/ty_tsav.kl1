@@ -1,0 +1,121 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tsav
+%       File Name   : ty_tsav.kl1
+%       Function    : save type DB information
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/19  : typeDB arg relay fix
+%$	1994/ 7/13  : remove set_horophrasting/2
+%$	1994/ 7/ 5  : comment out debug options
+%$	1994/ 7/ 4  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : hLibrary file/3 spec change
+%$      1994/ 4/14  : compact/decompact for rapid gett/putt
+%$      1994/ 2/ 4  : set horophrasting level via osif
+%$      1994/ 1/27  : set horophrasting level
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/21  : format bug of putf
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tsav.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:- public save/4.
+%:-else.
+%:- public save/6.
+%:-end_if.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S save(SaveFilePathName,TypeDB,NewTypeDB,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes)
+save(SaveFilePathName,TypeDB,NewTypeDB,Result):-
+    do_save(SaveFilePathName,TypeDB,NewTypeDB,Result).
+
+do_save(SaveFilePathName,TypeDB,NewTypeDB,Result):-
+    Mode = write,
+    ty_osif:open(SaveFilePathName,Mode,File,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        % horophrasting
+%        ty_osif:set_horophrasting(File,File1),
+        File1 = File,
+%        typeDB#read(dbsize,DBSize,TypeDB,TypeDB1),
+        vector_element(TypeDB,0,DBSize,TypeDB1),
+        % put DB size as a header
+%        File1 = [putf("~t.~n",[DBSize])|File2],
+        File1 = [putt(DBSize),putc(#"."),putc(key#lf)|File2],
+        save_typeDB(DBSize,File2,TypeDB1,NewTypeDB),
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+        Result = R1
+    ).
+
+save_typeDB(N,File,TypeDB,NewTypeDB):-
+    N=<0|
+	ty_osif:close(File),
+	NewTypeDB = TypeDB.
+save_typeDB(N,File,TypeDB,NewTypeDB):-
+    N>0|
+	M := N-1,
+	save_unit(M,File,File1,TypeDB,TypeDB1),
+	save_typeDB(M,File1,TypeDB1,NewTypeDB).
+
+
+save_unit(Pos,File,NewFile,TypeDB,NewTypeDB):-
+    % position
+    % Pos = Pos
+    % name
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB,TypeDB1),
+    set_vector_element(TypeDB,2,NameTBL,NewNameTBL,TypeDB1),
+    vector_element(NameTBL,Pos,Name,NewNameTBL),
+    % lower code
+%    typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB,TypeDB1),
+    set_vector_element(TypeDB1,3,LowerTBL,NewLowerTBL,TypeDB2),
+    vector_element(LowerTBL,Pos,LowerCode,NewLowerTBL),
+%    ty_util:bit2byte(LowerCode,LowerByteVector),
+    ty_util:encapsulate(LowerCode,LowerByteVector),
+    % upper code
+%    typeDB#get(upperTBL,UpperTBL,NewUpperTBL,TypeDB,TypeDB1),
+    set_vector_element(TypeDB2,4,UpperTBL,NewUpperTBL,TypeDB3),
+    vector_element(UpperTBL,Pos,UpperCode,NewUpperTBL),
+%    ty_util:bit2byte(UpperCode,UpperByteVector),
+    ty_util:encapsulate(UpperCode,UpperByteVector),
+    % attribute
+%    typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB,TypeDB1),
+    set_vector_element(TypeDB3,5,AttrTBL,NewAttrTBL,TypeDB4),
+    vector_element(AttrTBL,Pos,Attr,NewAttrTBL),
+    % explanation
+%    typeDB#get(expTBL,ExpTBL,NewExpTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB4,6,ExpTBL,NewExpTBL,NewTypeDB),
+    ty_osif:get_with(Name,Exp,ExpTBL,NewExpTBL),
+    %
+%    File = [putf("{~t,~T,~t,~t,~T,~T}.~n",
+%		 [Pos,Name,
+%		  LowerByteVector,UpperByteVector,
+%		  Attr,Exp])|NewFile].
+    File = [putc(#"{"),putt(Pos),putc(#","),
+	    puttq(Name),putc(#","),
+	    putt(LowerByteVector),putc(#","),
+	    putt(UpperByteVector),putc(#","),
+	    puttq(Attr),putc(#","),
+	    puttq(Exp),putc(#"}"),putc(#"."),putc(key#lf)|NewFile].

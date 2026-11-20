@@ -1,0 +1,114 @@
+&define_unit.
+
+%%%%%%%%%%%%%%%  LEVEL 0
+
+
+u_principle_of_no_crime_without_no_rule := { u_principle_of_no_crime_without_no_rule_for_injury,
+                        u_principle_of_no_crime_without_no_rule_for_burglary,
+                        u_principle_of_no_crime_without_no_rule_for_theft,
+                        u_principle_of_no_crime_without_no_rule_for_occupation_by_dead_person}.
+
+   u_principle_of_no_crime_without_no_rule_for_injury:= { u_j_principle_of_no_crime_without_no_rule_for_injury,
+                                    u_t_principle_of_no_crime_without_no_rule_for_injury }.
+
+        u_j_principle_of_no_crime_without_no_rule_for_injury
+                     := {  penal236j_asahikawa_d361014 }.
+
+        u_t_principle_of_no_crime_without_no_rule_for_injury:= { penal204ono_theory }.
+
+    u_principle_of_no_crime_without_no_rule_for_burglary := { u_t_principle_of_no_crime_without_no_rule_for_burglary,
+                                      u_j_not_intentional_burglary_for_penal236 }.
+
+        u_t_principle_of_no_crime_without_no_rule_for_burglary:= { penal236otsuka_theory}.
+
+        u_j_not_intentional_burglary_for_penal236:={  penal236j_asahikawa_d361014 }.
+
+    u_principle_of_no_crime_without_no_rule_for_theft:={u_t_principle_of_no_crime_without_no_rule_for_theft}.
+
+        u_t_principle_of_no_crime_without_no_rule_for_theft:= { penal235otsuka_theory }.
+
+
+u_balance_of_crimes:= { u_balance_of_injury_and_violence,
+                             u_balance_of_burglary_and_end_of_burglary,
+                             u_differnce_of_theft_and_destruction,
+                             u_meaning_of_violence_crime }.
+
+    u_balance_of_injury_and_violence:= { u_j_balance_of_injury_and_violence,
+                                     u_t_balance_of_injury_and_violence }.
+
+        u_t_balance_of_injury_and_violence:= { penal204dando_theory }.
+
+    u_balance_of_burglary_and_end_of_burglary:= { u_t_balance_of_burglary_and_end_of_burglary,
+                         u_j_intentional_burglary_for_penal236 }.
+
+        u_t_balance_of_burglary_and_end_of_burglary:= { penal236fujiki_theory }.
+
+    u_differnce_of_theft_and_destruction:={u_t_differnce_of_theft_and_destruction}.
+
+        u_t_differnce_of_theft_and_destruction:= { penal235dando_theory, penal235hirano_theory }.
+
+            penal235dando_theory:={ penal235dando_theory1, penal235dando_theory2 }.
+
+            penal235hirano_theory:={ penal235hirano_theory1, penal235hirano_theory2, penal235hirano_theory3 }.
+
+u_common_sense:= { u_t_common_sense }.
+
+    u_t_common_sense:= {u_t_xx_for_occupation_by_dead_person, 
+                              u_t_balance_of_appearance_and_physiology,
+                              penal235hirano_theory  }.
+
+
+u_j_daishinin_court:={ penal204j_dai_showa080906, penal204j_dai_taisho150720, penal204j_dai_meiji450620,
+                penal235j_dai_taisho040521, penal235j_dai_taisho090204 }.
+
+u_j_superior:={ penal204j_shouwa_s320423 }.
+
+u_j_high_court:={ penal204j_oosaka_h290531 }.
+
+u_j_local_court:={ penal204j_tokyo_d380323,  penal236j_asahikawa_d361014 }.
+
+
+u_t_majority:={ penal38theory_of_legal_coincidence, penal204dando_theory, u_principle_of_no_crime_without_no_rule_for_burglary }.
+
+    penal38theory_of_legal_coincidence:={penal38theory_of_legal_coincidence_in_abstract_mistake_of_fact}.
+
+u_t_minority:=
+      { u_t_abstract_coincidence, penal204ono_theory, u_balance_of_burglary_and_end_of_burglary }.
+
+sympo15 :=  {'act0','act1','act2','act3','act4','act5','act6','act7','act8','act9','act10','act11','act12','act12_2','act13_2','act13_3','act16','act17','common_sense_rule3','common_sense_rule4','common_sense_rule5','common_sense_rule6','common_sense_rule7','common_sense_rule8','common_sense_rule9','common_sense_rule10','common_sense_rule12','common_sense_rule12_2','common_sense_rule14_2','common_sense_rule14_3','common_sense_rule14_4','common_sense_rule16','common_sense_rule17','transitivity_of_causality_3stage','general_penal_rule0','general_penal_rule1','general_penal_rule2','general_penal_rule3','penal204definition1','penal236definition1','penal235definition1','penal235definition2','penal261definition','penal204','penal208_1','penal208_2','penal209','penal235','penal236','penal236_2','penal254','penal254_2','penal261','theory_of_conditional_causality1','theory_of_conditional_causality2','theory_of_conditional_causality3','theory_of_rational_causality','penal204theory_of_perfection2','penal204theory_of_functional_disorder2','penal204dando_theory','penal204ono_theory','penal235ono_theory_in_occupation_by_dead_person2','penal235uematsu_theory_in_occupation_by_dead_person1','penal235uematsu_theory_in_occupation_by_dead_person2','penal235dando_theory1','penal235dando_theory2','penal38theory_of_legal_coincidence_in_abstract_mistake_of_fact','penal236fujiki_theory','penal236otsuka_theory','penal204j_dai_showa080906','penal204j_dai_taisho150720','penal236j_asahikawa_d361014','penal235otsuka_theory',general_penal_rule00,general_penal_rule01,general_penal_rule02,general_penal_rule12,general_penal_rule21,penal235hirano_theory3}.
+
+&define_standpoint.
+
+lex_superior		:=  { 	a<b}.		%dummy
+guarantee_of_freedom	:=  { 	a<b}.   	%dummy
+
+lex_posterior 		:=  {	penal204j_dai_taisho150720<penal204j_dai_showa080906}.
+
+balance_of_crimes 	:=  {	penal204ono_theory<penal204dando_theory,
+				penal235otsuka_theory<penal235dando_theory1,
+				penal236j_asahikawa_d361014<penal236fujiki_theory}.
+principle_of_no_crime_without_no_rule
+			:=  {	penal235dando_theory1<penal235otsuka_theory,
+				penal236fujiki_theory<penal236j_asahikawa_d361014}.
+
+principle_of_responsibility           
+            		:=  {	penal204dando_theory<penal204ono_theory}.
+
+
+flexibility_of_law	:=  {	penal235dando_theory2<penal235hirano_theory3}.
+
+
+&define_view.
+
+prosecutor0:={ lex_superior}.
+prosecutor1:={ lex_posterior<lex_superior}.
+prosecutor2:={ balance_of_crimes<lex_posterior<lex_superior}.
+prosecutor3:={ flexibility_of_law<balance_of_crimes<lex_posterior<lex_superior}.
+prosecutor4:={ flexibility_of_law<balance_of_crimes<principle_of_no_crime_without_no_rule<lex_posterior<lex_superior}.
+
+defendant0:={ guarantee_of_freedom}.
+defendant1:={ principle_of_responsibility<guarantee_of_freedom}.
+defendant2:={ principle_of_no_crime_without_no_rule<principle_of_responsibility<guarantee_of_freedom}.
+defendant3:={ principle_of_no_crime_without_no_rule<principle_of_responsibility<guarantee_of_freedom<balance_of_crimes}.
+
+

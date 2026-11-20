@@ -1,0 +1,97 @@
+
+Quant2: A program for DNA sequence analysis
+        based on discriminant analysis
+
+What is Quant2
+------------------------------
+
+Quant2 is a program for DNA sequence analysis based 
+on discriminant analysis (class II quantification 
+theory). Features of Quant2 are described as follows:
+
+  - Extracting signal patterns in DNA sequences
+    consisting of 2 categories (positive and negative
+    samples).
+
+  - Calculating category weights which indicate
+    contribution to discrimination of 2 categories.
+    (The weights are assigned to bases A, T, C, and G 
+    at each position in a DNA sequence.)
+
+  - Selecting minimum set of category weights, which 
+    is significant to the discrimination, based on 
+    statistical test.
+
+  - Predicting functional sites and discriminating 
+    DNA sequences using obtained category weights.
+
+
+Requirements:
+-------------
+
+1) Hardware:
+   - UNIX system
+   - 400KB disk space
+
+2) Software:
+   - C compiler
+
+We know that the program run on workstations from 
+Sun, HP and Silicon Graphics. 
+
+
+Installation:
+-------------
+
+Please unpack the distribution of the program 
+inside the directory where the program should 
+be located. 
+
+  zcat Quant2.tgz | tar xvf -
+
+When the distribution is unpacked, you have to 
+configure the Makefile. The Makefile contains 
+some variables that must correspond to your 
+system. Now you can type:
+
+  make 
+
+from command line.
+
+
+Files:
+------
+
+1) Document files
+
+   COPYRIGHT, COPYRIGHT.j, Quant2.doc, README
+
+2) Source files
+
+   Makefile, quant2.h, eqn-sys.c, lda.c,
+   main.c, xutils.c
+					
+3) Sample sequence data files
+
+   positive.seq, negative.seq, test.seq
+
+
+References:
+-----------
+
+[1] Yada,T., Ishikawa,M., Totoki,Y. and Okubo,K. (1995)
+    Statistical analysis of human DNA sequences in the 
+    vicinity of poly(A) signal,
+    In Proc. of the 3rd Int. Conf. on BIOINFORMATICS 
+    and GENOME RESEARCH, (in press).
+
+[2] Hayashi,C.: Ann. Inst. Statist. Math., 2, 35 (1950)
+
+[3] Hayashi,C.: Ann. Inst. Statist. Math., 3, 69 (1952)
+
+[4] Iida,Y.: Bull. Chem. Sco. Jpn., 60, 2977-81 (1987)
+
+[5] Iida,Y.: Comput. Applc. Biosci., 3, 93-8 (1987)
+
+[6] Press, W.H. et al.: Numerical Recipies in C, Cambridge (1988)
+

@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module comkGui.
+:- public cmdSetPid/8,cmdLoadType/8,cmdLoadCommand/8,cmdLoadRule/8,
+          cmdLoadView/8,cmdLoadQuery/8,cmdSetSolver/8,cmdSendSpl/8,
+          cmdSendVcl/8,cmdSendGcl/8,cmdSendCu/8,cmdSendCv/8,cmdSendVc/8,
+          cmdSetSpl/8,cmdCheckUnit/8,cmdSetUl/8,cmdSetGoal/8,cmdStartDebate/8,
+          cmdOK/8.
+
+:- with_macro pimos.
+
+
+cmdSetPid(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+	Agent = 'nil',
+        convert:intTochange(String,Number,4,0,Int,NNum,_NString),
+        Command = 'pid',
+        Parameter = 'nil',
+        Argument = Int.
+
+cmdOK(_String,_Number,N,NNum,Command,Parameter,Argument,Agent):- true |
+%       convert:intTochange(String,Number,4,0,Int,NNum,NString),
+        NNum = N,
+        Command = 'ok',
+        Parameter = 'nil',
+	Agent = 'nil',
+        Argument = [].
+
+
+cmdLoadType(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NString2),
+        Command = 'load',
+        Parameter = 'type',
+        Argument = [NStr].
+
+
+cmdLoadCommand(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NString2),
+        Command = 'load',
+        Parameter = 'command',
+        Argument = [NStr].
+%	Argument = ["/home2/legal/V2-GUI/COM/
+
+
+cmdLoadRule(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NString2),
+        Command = 'load',
+        Parameter = 'rule',
+        Argument = [NStr].
+        
+        
+
+cmdLoadView(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NString2),
+        Command = 'load',
+        Parameter = 'view',
+        Argument = [NStr].
+        
+
+
+cmdLoadQuery(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NSTRING2),
+        Command = 'load',
+        Parameter = 'query',
+        Argument = [NStr].
+%       builtin:print(Argument).
+        
+
+cmdSetSolver(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:charpToatom(NString,NNum1,1,0,Role,NNum,_NSTRING2),
+        io:outstream([print(Role),nl]),
+        Command = 'set',
+        Parameter = 'solver',
+        setSol(Role,Argument).
+
+setSol('p',Argument):- true | Argument = ['system'].
+setSol('d',Argument):- true | Argument = ['user'].
+
+%       (Role = 'p' ->
+%       Argument = ['user'];
+%       Role = 'q' ->
+%       Argument = ['system']).
+
+
+cmdSendSpl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'send',
+        Parameter = 'standpointList',
+        Argument = [].
+
+cmdSendVcl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'send',
+        Parameter = 'viewCandidateList',
+        Argument = [].
+
+cmdSendCu(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'send',
+        Parameter = 'currentUnit',
+        Argument =[].
+
+cmdSendCv(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'send',
+        Parameter = 'currentView',
+        Argument =[].
+
+
+cmdSendVc(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NSTRING2),     
+%       listToAtomL([NStr],NList),
+        Command = 'send',
+        Parameter = 'viewCandidate',
+        hLibrary:sTot(NStr,NStr0),
+        Argument = [NStr0].
+
+
+cmdSetSpl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:liToList(NString,NNum1,_,0,List,NNum,_NSTRING2),
+        listToAtomL(List,NewList),
+        Command = 'set',
+        Parameter = 'standpointList',
+        Argument = NewList. %%%%%%%%%%%%%%%%%%%  check hituyou ari 
+
+
+cmdCheckUnit(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NStr,NNum,_NSTRING2),     
+        Command = 'check',
+        Parameter = 'unit',
+        hLibrary:sTot(NStr,NStArom),
+        Argument = [NStArom].
+
+
+cmdSetUl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:liToList(NString,NNum1,_,0,List,NNum,_NSTRING2),
+        Command = 'set',
+        Parameter = 'unitList',
+        listToAtomL(List,NewList),
+        Argument = NewList.  %%%%%%%%%%%%%%%%%%% check hituyou ari
+
+
+
+cmdSetGoal(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NSTRING2),
+        Command = 'set',
+        Parameter = 'goal',
+        Argument = [Int].
+
+%%%%%   shuusei ari
+cmdStartDebate(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+        Command = 'startDebate' ,
+        Agent  = 'p',
+        Parameter = 'nil',
+        Argument =[].
+        
+        
+
+cmdSendGcl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+%       convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NSTRING2),
+        Command = 'send',
+        Parameter = 'goalCandidateList',
+        Argument = [].
+        
+
+listToAtomL([L1|Ls],NewList):- true |
+        listToAt([L1|Ls],[],NewList).
+listToAtomL([],NewList):- true |
+	NewList=[].
+
+listToAt([L1|Ls],List,NewList):- true |
+        hLibrary:sTot(L1,L1Atom),
+        append(List,[L1Atom],NList),
+        listToAt(Ls,NList,NewList).
+listToAt([],List,NewList):- true | NewList=List.
+
+        
+append([],L2,List):- true |
+        List = L2.
+append([H|T],L,AL):- true |
+        AL = [H|NAL],
+        append(T,L,NAL).
+

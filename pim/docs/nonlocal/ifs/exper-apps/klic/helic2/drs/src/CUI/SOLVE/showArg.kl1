@@ -1,0 +1,73 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_showArgument.
+
+:- public 
+    show_argument/4,
+    get_argumentInfo/5,
+    show_explanation/4.
+
+:- with_macro pimos.
+
+%show_argument
+    show_argument(CLArg,CS1,CS,R):-true|
+        get_argumentInfo(CLArg,CS1,CS2,ArgumentInfo,R1),
+        (   wait(R1)->
+                CS2 = [send(nh,receive(argument,ArgumentInfo,R))|CS]).
+
+%get_argumentInfo
+    get_argumentInfo(CLArg,CS1,CS,ArgumentInfo,R):-true|
+        get_argJudge(CLArg,ArgJudge),
+        get_issue(CLArg,CS1,CS2,Issue),
+        slv_sensitivity:get_buttonState(CLArg,CS2,CS3,ButtonState),
+        get_argument(CLArg,CS3,CS,Argument),
+        (   wait(Argument),wait(ButtonState)->
+                ArgumentInfo = [ArgJudge,Issue,ButtonState,Argument],
+                R = normal(success)).
+%get_argJudge
+    get_argJudge(CLArg,ArgJudge):-true|
+        slv_LArgUtility:get_argJudge(CLArg,ArgJudge).
+
+%get_issue
+    get_issue(CLArg,CS1,CS,Issue):-true|
+        slv_LArgUtility:get_IPos(CLArg,ParentPArg,IPos,YN),
+        CS1 = [get(displayParameter,{PL,PT})|CS],
+        (   YN = yes->
+                ParentPArg = {SV,_},
+                slv_issueUtility:make_consequence(SV,IPos,PL,PT,Issue)
+        ;
+            YN = no->
+                Issue = nil
+        ).
+
+%get_argument
+    get_argument(CLArg,CS1,CS,Argument):-true|
+        CS1 = [get(displayParameter,DP)|CS],
+        slv_LArgUtility:get_ruleName(CLArg,0,RuleName),
+        slv_LArgUtility:get_topRuleRel(CLArg,RuleRel),
+        slv_LArgUtility:get_PArg(CLArg,PArg),
+        PArg = {SV,APos},
+        slv_argumentElementList:get_argumentElementList(SV,APos,DP,AEL),
+        Argument = {RuleName,RuleRel,AEL}.
+
+%show_explanation
+    show_explanation(CLArg,CS1,CS,R):-true|
+	get_explanation(CLArg,Exp),
+        (   wait(Exp)->
+                CS1 = [send(nh,receive(explanation,Exp,R))|CS]).
+
+%get_explanation
+    get_explanation(CLArg,Exp):-true|
+        slv_LArgUtility:get_PArg(CLArg,PArg),
+        PArg = {SV,Pos},
+        slv_issueUtility:make_consequence(SV,Pos,100000,e,Exp1),
+	( Exp1 = "" ->
+		Exp = "nil"
+	;
+	otherwise;
+	  true->
+		Exp = Exp1
+	).

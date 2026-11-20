@@ -1,0 +1,103 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_counterArgumentTable.
+:- public create/1.
+:- with_macro pimos.
+
+    create(I):-true|
+        initiate(AT,FT,CT,PT),
+        loop(I,AT,FT,CT,PT).
+
+    initiate(AT,FT,CT,PT):-true|
+        hLibrary:pool(keyed_bag,AT),
+        hLibrary:pool(keyed_bag,FT),
+        hLibrary:pool(keyed_bag,CT),
+        hLibrary:pool(keyed_bag,PT).
+
+    loop([],AT,FT,CT,PT):-true|
+        AT = [],
+        FT = [],
+        CT = [],
+        PT = [].
+    loop([claim({ID1,IPos},ID2)|T],AT,FT,CT,PT):-true|
+        AT = [put({ID1,IPos},ID2)|AT1],
+        PT = [put(ID2,{ID1,IPos})|PT1],
+        loop(T,AT1,FT,CT,PT1).
+    loop([refer_parent(ID1,Parent,YN)|T],AT,FT,CT,PT):-true|
+        PT = [empty(ID1,YN1)|PT1],
+        (   YN1 = no->
+                PT1 = [get(ID1,Parent),put(ID1,Parent)|PT2],
+                YN = yes
+        ;
+            YN1 = yes->
+                PT2 = PT1,
+                YN = no
+        ),
+        loop(T,AT,FT,CT,PT2).
+    loop([finish({ID1,IPos},ID2)|T],AT,FT,CT,PT):-true|
+        FT = [put({ID1,IPos},ID2)|FT1],
+        loop(T,AT,FT1,CT,PT).
+    loop([cancel({ID1,IPos},ID2)|T],AT,FT,CT,PT):-true|
+        CT = [put({ID1,IPos},ID2)|CT1],
+        loop(T,AT,FT,CT1,PT).
+    loop([get_numOfClaim({ID1,IPos},Count)|T],AT,FT,CT,PT):-true|
+        AT = [carbon_copy({ID1,IPos},List1)|AT1],
+        hset:create(List1,W),
+        W=[get_all(List)],
+        count(List,0,Count),
+        loop(T,AT1,FT,CT,PT).
+    loop([get_claimJudge({ID1,IPos},Judge)|T],AT,FT,CT,PT):-true|
+        FT = [carbon_copy({ID1,IPos},Finish)|FT1],
+        AT = [carbon_copy({ID1,IPos},Claim)|AT1],
+        CT = [carbon_copy({ID1,IPos},Cancel)|CT1],
+        get_claimJudge(Finish,Claim,Cancel,Judge),
+        loop(T,AT1,FT1,CT1,PT).
+%    loop([is_cancel({ID1,IPos},YN)|T],AT,FT,CT,PT):-true|
+%        CT = [carbon_copy({ID1,IPos},List)|CT1],
+%        (   List = []->
+%                YN = no
+%        ;
+%            List \= []->
+%                YN = yes
+%        ),
+%        loop(T,AT,FT,CT1,PT).
+
+    count([],W,L):-true|
+        L = W.
+    count([_|T],W,L):-true|
+        W1 := W+1,
+        count(T,W1,L).
+
+%get_claimJudge
+    get_claimJudge(Finish,_,_,J):-Finish \=[]|
+        J = finish.
+    get_claimJudge(Finish,Claim,Cancel,J):-Finish =[],Claim\=[],Cancel=[]|
+        J = claim.
+    get_claimJudge(Finish,Claim,Cancel,J):-Finish =[],Claim=[],Cancel\=[]|
+        J = cancel.
+    get_claimJudge(Finish,Claim,Cancel,J):-Finish =[],Claim\=[],Cancel\=[]|
+        get_claimJudge1(Claim,Cancel,J).
+    get_claimJudge(Finish,Claim,Cancel,J):-Finish =[],Claim=[],Cancel=[]|
+        J = nil.
+
+    get_claimJudge1([],_,J):-true|
+        J = cancel.
+    get_claimJudge1([ID|T],Cancel,J):-true|
+        member(Cancel,ID,YN),
+        (   YN = yes->
+                get_claimJudge1(T,Cancel,J)
+        ;
+            YN = no->
+                J = claim
+        ).
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).

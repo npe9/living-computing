@@ -1,0 +1,123 @@
+								1 July, 1992
+								       No. 1
+
+                   ICOT FREE SOFTWARE NEWSLETTER
+                   -----------------------------
+
+[Introduction]
+
+We, the Institute for New Generation Computer Technology (ICOT), have
+made our original and advanced software available to the public free
+of charge in order to contribute toward the progress of computer
+science.  Anyone wanting to use this "ICOT Free Software" may freely
+do so and may also freely modify, copy and distribute it provided that
+ICOT gives no warranty on this software.  We hope that this software
+will be available for your research and development activities.
+
+This newsletter is published in order to provide users new information
+on ICOT Free Software.  New issues will be published successively to
+announce the latest changes in the software.
+
+A list of ICOT Free Software was distributed at the International
+Conference on Fifth Generation Computer Systems 1992, held at the
+beginning of June, 1992.  If you do not have a copy of this list,
+please contact us at the address below.
+
+If there are persons in your neighborhood who are interested in ICOT
+Free Software, please let us know their names and addresses so that we
+can send them newsletters.
+
+
+[How and When to Access the Software]
+
+We are now preparing to distribute ICOT Free Software through anonymous
+ftp from the ftp-server machine at ICOT.  Setup will be finished in 
+August, and the released software will be announced through this 
+newsletter.
+
+
+[Contents of ICOT Free Software]
+
+ - Classification by Field
+
+          Symbol processing                                8
+          Knowledge representation, Knowledge base, and
+          Constraints                                     13
+          Problem solving, Advanced inference, and
+          Theorem proving                                 11
+          Natural language processing                     19
+          Experimental application                        20
+          --------------------------------------------------
+          Total                                           71
+
+ - Classification by Language:
+
+          KL1                                             36
+          ESP                                             19
+          Common ESP                                       6
+          C                                                5
+          Prolog                                           5
+          --------------------------------------------------
+          Total                                           71
+
+
+[Environment for Execution]
+
+To execute the KL1 and ESP programs included in this software, some
+special machines are needed such as the parallel inference machine PIM
+/ Multi-PSI for KL1 programs, and the sequential inference machine PSI
+for ESP programs. However, PDSS and CESP are available for UNIX
+workstations.
+
+PDSS (PIMOS Development Support System) is a system to execute KL1
+programs on BSD UNIX workstations, and compatibility with the KL1
+system on the Multi-PSI/PIM is preserved except in the implementation
+method and execution efficiency.  Executing large scale KL1 programs
+on PDSS directly is difficult because of several constraints, but
+relatively small programs or parts of large programs are executable on
+PDSS.  Notes on the executability of KL1 programs on PDSS will be
+published with the programs.  PDSS itself is also involved with ICOT
+Free Software.
+
+CESP (Common ESP) is a system to execute ESP programs on UNIX
+workstations, and compatibility with the ESP system is preserved
+except for I/O and the specification of a few predicates.  Not only
+the programs written in CESP, but those written in ESP as well are
+executable on the CESP system with slight modifications. Notes on
+porting from ESP to CESP will be published with programs.  The CESP
+language processor is distributed free of charge for academic use from
+AI Language Research Institute (AIR), Ltd.  If you would like a tape
+of the CESP system, write to the following address:
+
+        Research Management Department
+        AI Language Research Institute, Ltd.
+
+        3rd Floor, Sakurai Bldg.
+        15-15, Shiba 3-chome
+        Minato-ku, Tokyo 105
+        Japan
+
+        e-mail: cesp-request@air.co.jp
+	FAX:	+81-3-3456-4418
+
+
+[Contacts]
+
+For information on ICOT Free Software, please contact 
+
+	ifs@icot.or.jp
+
+by e-mail.  If you receive the paper edition of this newsletter,
+please let us know your e-mail address and we will send you the
+electronic edition.  If you cannot use the e-mail facility, please
+contact
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21th Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome,
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:    +81-3-3456-1618

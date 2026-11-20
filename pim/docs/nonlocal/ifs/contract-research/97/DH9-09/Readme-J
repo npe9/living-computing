@@ -1,0 +1,299 @@
+/**********************************************************************/
+/*                  klint - KL1 プログラム静的解析系                  */
+/*                                                                    */
+/*                            Version 2.0                             */
+/*                             March 1998                             */
+/*                                                                    */
+/*                             上田  和紀                             */
+/*                                                                    */
+/*                     早稲田大学理工学部情報学科                     */
+/*                    ueda@ueda.info.waseda.ac.jp                     */
+/*                                                                    */
+/*                 Copyright (C) 1998  Kazunori Ueda                  */
+/*                                                                    */
+/**********************************************************************/
+
+1. 概要:
+
+Klint V2 は、KL1 プログラムのための制約ベースの静的解析系であり、以下
+の機能をもっています。
+
+  - モード解析
+  - データ参照数解析 (linearity analysis)
+  - 型解析
+
+Klint V2 の中心的な機能はモード解析で、文献 [1] に述べてある方法でKL1
+プログラムのモードを解析します。プログラムが「良くモードづけられている 
+(well-moded)」とは、大まかに言えば、プログラムの中で使っている通信プロ
+トコルが協調的であるということです。KL1 プログラムは、well-moded に書
+くことを強く推奨します。それによって、多くの誤りが静的に検出できるよう
+になり [3]、またプログラムのより高度な最適化が可能となるからです。
+
+Klint V2 は、プログラム中で扱うデータの参照数と型の解析も行ないます。
+データ参照数解析の目的は、一つの変数出現からしか参照されないデータと、
+複数の変数出現から参照される可能性のあるデータとを区別することです。こ
+のように、参照数解析はコンパイル時ゴミ集めのための基本的な情報を提供し
+てくれます。
+
+Klint V2 における型解析の目的は、どのような関数記号がプログラムの各パ
+ス (ゴールの引数として出現しうるデータ構造の中の個々の場所) に出現しう
+るかを調べることです。Klint V2 では、関数記号は、(1) 整数、(2) 浮動小
+数点数、(3) 空リスト([])、(4) 上記以外の定数記号、(5) 文字列、(6) ベク
+タ、(7)リスト構成子、(8) その他の(１引数以上の)関数記号、の８つのカテ
+ゴリに分類して解析します。
+
+Klint V2 を使うにあたって、プログラマがモードや参照数や型の宣言を与え
+る必要はありません。それらは klint V2 が推論してくれます。
+
+Klint V2 の構成要素は、制約生成系、モード／参照数解析系、型解析系の三
+つに大きく分けることができます。制約生成系は、与えられた KL1 プログラ
+ムが構文的に課するモード／参照数／型制約を抽出します。モード／参照数解
+析系はまず、モード制約集合 S に対応するモードグラフ [1] を作ることによっ
+て、S が充足可能かどうかを調べます。S に対応するモードグラフは、プログ
+ラムの主モード(principal mode, もっとも一般的なモード)を表現しています。
+S が充足(不)可能なとき、プログラムは「良くモードづけられている (いない)
+((non-)well-moded)」と言います。プログラムが良くモードづけられている場
+合、モード／参照数解析系は、引き続き参照数解析を行ないます。参照数解析
+系は、モード解析と同様の方法でプログラムの参照数グラフを作成します。
+
+型解析系も、モード解析と同様の方法でプログラムの型グラフを作成します。
+しかし、モード解析と異なり、型解析が型誤りを報告することはありません。
+これは、異なるカテゴリに属する関数記号が同一パスに出現しないということ
+を仮定してはいないからです。
+
+モード解析の入門的な文献としては[2]があります。
+
+
+2. 使用法
+
+Klint の利用法は非常に簡単で、KL1 プログラムのソースファイルを
+
+  % klint < xxx.kl1
+
+のように klint に与えるだけです。
+
+入力:
+
+Klint V2 への入力は、一つ以上のモジュールからなるKL1プログラムで、標準
+入力 (stdin) から与えます。複数のファイルからなるプログラムを解析する
+ときは
+
+  % cat xxx.kl1 yyy.kl1 zzz.kl1 | klint
+
+として下さい。
+
+
+出力:
+
+与えられたプログラムが well-moded ならば、klint V2 はプログラムのモー
+ドグラフ、参照数グラフ、および型グラフを標準出力 (stdout) から出力しま
+す。
+
+プログラムが non-well-moded なときは、klint V2 はどのモード制約が最終
+的にモード誤りを引き起こしたかを報告したあと、その時点での (作成中の) 
+モードグラフを出力します。参照数解析は行なわず、引き続き型グラフを出力
+します。Non-well-moded であるとは、プログラムが課するモード制約集合が
+充足不能であることを意味します。Klint の次の版では、文献 [4] のアイデ
+アを用いて、モード制約の矛盾する極小部分集合を出力するようにする予定で
+す（この機能は、klint V1 の拡張である kima にはすでに実装されています）。
+
+Klint V2 がどのようなモード／参照数／型制約を生成しているかは、コマン
+ド klint のかわりに、制約生成のみを行なう klint1 を用いることによって
+知ることができます。制約解析のみを行なう klint2 と併用して
+
+  % klint1 < xxx.kl1 | klint2
+
+とすると、
+
+  % klint <xxx.kl1 .
+
+と同じ出力が得られます。
+
+
+3. 実行例
+
+ファイル merge.kl1 に下記のストリーム併合プログラムが入っているとしま
+す。
+
+  :- module m.
+
+  merge([],   Y,    Z ) :- true| Z=Y.
+  merge(X,    [],   Z ) :- true| Z=X.
+  merge([A|X],Y,    Z0) :- true| Z0=[A|Z], merge(X,Y,Z).
+  merge(X,    [A|Y],Z0) :- true| Z0=[A|Z], merge(X,Y,Z).
+
+Klint V2 の出力は、以下のようになります。
+
+  > klint < merge.kl1
+  *** Mode Graph ***
+  node(0): (unconstrained)
+   <(m:merge)/3,1> ---> node(13)
+   <(m:merge)/3,2> ---> node(13)
+   <(m:merge)/3,3> --*> node(13)
+  node(13): in
+   <cons,1> ---> node(15)
+   <cons,2> ---> node(13)
+  node(15): (unconstrained)
+
+  *** Linearity Graph ***
+  node(0): (unconstrained)
+   <(m:merge)/3,1> ---> node(13)
+   <(m:merge)/3,2> ---> node(13)
+   <(m:merge)/3,3> ---> node(13)
+  node(13): (unconstrained)
+   <cons,1> ---> node(15)
+   <cons,2> ---> node(13)
+  node(15): (unconstrained)
+
+  *** Type Graph ***
+  node(0): []
+   <(m:merge)/3,1> ---> node(13)
+   <(m:merge)/3,2> ---> node(13)
+   <(m:merge)/3,3> ---> node(13)
+  node(13): [nil,cons]
+   <cons,1> ---> node(15)
+   <cons,2> ---> node(13)
+  node(15): []
+
+まずモードグラフの読み方を説明します。根節点 (節点 0) から３本の枝が出
+ています。これらは、merge の第１引数と第２引数が、節点 13 によって表わ
+される同一のモードをもち、第３引数はそれとは正反対のモードをもつことを
+表わしています。節点 13 は、merge の引数として出現するリストの cdr は
+リスト全体と同一のモードをもつことを表明しています。この出力結果のグラ
+フィカルな表現は、文献 [3] などにあります。
+
+モードグラフの次に出力されている参照数グラフは、merge プログラム自身が
+どのデータの共有も新たに引き起こさないことを示しています。つまり、入力
+ストリームの要素 (節点 15) が共有されていない限り、出力ストリームの要
+素も非共有であることが保証されます。またこのプログラムは、入力ストリー
+ムおよび出力ストリームの骨格 (skeleton) の共有も引き起こしません (節点 
+13)。したがって、入力ストリームの骨格が複数参照になっていない限り (複
+数参照になるかどうかは、プログラム全体の解析によって明らかになります)、
+その骨格は出力ストリームの骨格形成に再利用することができます。
+
+つぎに、複数参照が検出される例を示します。
+
+  :- module main.
+
+  main :- true | tty:ttystream([gett(X),putt(Y),nl]), quicksort(X,Y).
+
+  quicksort(Xs,Ys) :- qsort(Xs,Ys,[]).
+  qsort([],    Ys0,Ys ) :- true | Ys=Ys0.
+  qsort([X|Xs],Ys0,Ys3) :- true |
+      part(X,Xs,S,L), qsort(S,Ys0,[X|Ys2]), qsort(L,Ys2,Ys3).
+
+  part(_,[],    S, L ) :- true | S=[], L=[].
+  part(A,[X|Xs],S0,L ) :- A>=X | S0=[X|S], part(A,Xs,S,L).
+  part(A,[X|Xs],S, L0) :- A< X | L0=[X|L], part(A,Xs,S,L).
+
+このクイックソートプログラムの参照数グラフは下記のようになります。
+
+  *** Linearity Graph ***
+  node(0): (unconstrained)
+   <(main:quicksort)/2,1> ---> node(28)
+   <(main:quicksort)/2,2> ---> node(20)
+   <(main:qsort)/3,1> ---> node(28)
+   <(main:qsort)/3,2> ---> node(20)
+   <(main:qsort)/3,3> ---> node(20)
+   <(main:part)/4,1> ---> SHARED
+   <(main:part)/4,2> ---> node(28)
+   <(main:part)/4,3> ---> node(28)
+   <(main:part)/4,4> ---> node(28)
+   <(tty:ttystream)/1,1> ---> node(1)
+  node(28): (unconstrained)
+   <cons,2> ---> node(28)
+  node(20): (unconstrained)
+   <cons,1> ---> SHARED
+   <cons,2> ---> node(20)
+  node(1): (unconstrained)
+   <cons,1> ---> node(2)
+   <cons,2> ---> node(5)
+  node(2): (unconstrained)
+   <gett/1,1> ---> node(28)
+  node(5): (unconstrained)
+   <cons,1> ---> node(6)
+  node(6): (unconstrained)
+   <putt/1,1> ---> node(20)
+
+このグラフは、結果のリスト (節点 20) の要素、および part の第１引数の
+値が共有されうることを表わしています。共有の原因は、qsort の第２節にあ
+ります。しかし、結果のリストの骨格は単一参照であることが保証されます。
+また、入力リストの骨格や要素も新たに共有されることがありません。
+
+(なおこのプログラムでは、データの共有は発生するものの、共有されるデー
+タが整数値のみであるので、整数値を即値として管理する処理系では、ゴミの
+発生することはありません。)
+
+
+4. インストール
+
+Klint V2 は KL1 言語だけで書かれていて、KLIC 処理系でコンパイルするこ
+とができます。コマンド
+
+  % make
+
+によって、三つの実行可能ファイル klint、klint1、klint2 が作られます。
+
+Klint V2 の配布キットは、下記のファイルからなっています。
+
+  (1) Makefile -- make ファイル
+  (2) Readme-J -- このファイル
+      Readme-E -- このファイルの英語版
+  (3) klint-main.kl1, klint1-main3.kl1, klint2-mainA.kl1
+      read_program3.kl1, normalize5.kl1, unify.kl1
+      builtin_DB5.kl1, numberbuiltin3.kl1, findpath4.kl1
+      constraints9.kl1, type.kl1, stdinout.kl1
+      graphB.kl1, tgraph2.kl1, decode2.kl1, tdecode.kl1
+      reduce5.kl1, sort.kl1, outmessage4.kl1, klint2.kl1
+	       -- klint V2 のソースプログラム
+  (4) examples/merge.kl1, examples/quicksort.kl1
+               -- このマニュアルで用いた例題プログラム
+
+
+5. サポートされていない KL1 言語の機能
+
+次の KL1 言語の機能は現時点ではサポートしていません。
+
+(1) マクロ展開
+
+(2) インラインＣコード機能
+
+(3) ジェネリック・オブジェクトの生成 `generic:new(...)' とメソッド呼出
+    し `generic:METHOD'
+
+その他の KL1 第３版の組込述語はすべてサポートしています。
+
+
+6. 制限
+
+(1) Klint V2 のモード解析は主モードを求めることを目的にしていますが、
+節に３回以上出現する変数 (nonlinear な変数) については、一方向的な情報
+の流れをもっていると仮定して制約のリダクションを行ない、最汎解よりも制
+約の強い解を出力することがあります。しかし、これまでに書かれた KL1 プ
+ログラムで、nonlinear な変数を (返信箱つきのメッセージなどの) 双方向通
+信に用いていた例はほとんどありません。
+
+(2) 上記 (1) の制約強化によっても、単項または２項の制約へのリダクショ
+ンができなかった３項以上の制約については、その充足可能性は検査しません。
+Klint V2 は単にそれらの制約がリダクションできなかった旨を報告します。
+
+
+参考文献
+
+[1] Ueda, K. and Morita, M., Moded Flat GHC and Its Message-Oriented
+Implementation Technique.  New Generation Computing, Vol.13, No.1
+(1994), pp.3-43.
+
+[2] Ueda, K., I/O Mode Analysis in Concurrent Logic Programming.  In
+Theory and Practice of Parallel Programming, LNCS 907, Springer, 1995,
+pp.356-368.
+
+[3] Ueda, K., Experiences with Strong Moding in Concurrent
+Logic/Constraint Programming.  In Proc. Int. Workshop on Parallel
+Symbolic Languages and Systems (PSLS'95), T. Ito, R.H. Halstead, Jr., and
+C. Queinnec (eds.), LNCS 1068, Springer, 1996, pp.134-153.
+
+[4] Cho, K. and Ueda, K., Diagnosing Non-Well-Moded Concurrent Logic
+Programs.  To be presented at 1996 Joint International Conference and
+Symposium on Logic Programming (JICSLP'96), Bonn, Germany, September
+1996.

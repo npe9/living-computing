@@ -1,0 +1,33 @@
+
+README
+
+Copyright (C) 1997 Yosuke Sato
+
+"Set Constraint Solver" is a small system that offers two kinds of programs.
+One is for calculating Gr\"{o}bner bases in polynomial rings
+over Boolean rings. You can experiment on various calculations  
+of our a little bit queer Gr\"{o}bner bases.
+The another one is for solving constraints of sets. You can handle
+various types of set constraints using our Gr\"{o}bner bases.
+The whole program is written in KLIC.
+In order to use this software, you have to install KLIC.
+
+Contents
+
+README-E	this file
+
+README-J	this file(Japanese)
+
+RELEASE_NOTE-J	release note(Japanese)
+
+RELEASE_NOTE-E	release note
+
+setsolver.kl1	a source program written in KLIC
+
+manual.tex 	a latex source code for user's manual
+
+manualj.tex	a latex source code for user's manual(Japanese)
+
+background.tex	a latex source code of theoritical background for the system
+
+example		a directory where 4 banchmark files are located

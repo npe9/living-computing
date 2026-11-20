@@ -1,0 +1,185 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_solution_table.
+:- with_macro pimos.
+:- public 
+    create_with_hash/2,
+    check_and_put_query/5,
+    get_element/4,
+    put_element/4,
+    get_elementN/4,
+    put_elementN/4,
+    update_entry/4,
+    update_element/5,
+    update_data/4,
+    update_data/5, %% for debug
+    add_answer/4,
+    get_judgeN/4,
+    get_naf_judgeN/4,
+    get_ruleN/4,
+    get_CST/4,
+    get_child_list/4,
+    get_sub_tree_conseq/5.
+
+%<SolutionTable> ::= {Size, <SolutionVec>}
+%<SolutionVec>   ::= <Solution>-vec
+%<Solution>      ::= {succ,<Entry>,<RuleName>,<ChildList>}
+%                  | {fail,<Entry>}
+%                  | {unsolve,<Entry>}
+%  <Entry> ::= {<Hterm>,<Env>,<HIDT>}
+
+create_with_hash(Size,SolV):-
+    % consider hash with lookup
+    new_vector(SolV0,Size),
+    SolV = {0,SolV0}.
+
+check_and_put_query(Q,{I,SolV},Q1,Out,Result):-
+    Q1 = Q, 
+    set_vector_element(SolV,I,_,{unsolve,Q},SolV1),
+    Out = {~(I+1),SolV1},
+    Result = new(I).
+
+get_element(Index,{I,SolV},OldData,Out):-
+    vector_element(SolV,Index,OldData,SolV1),
+    Out = {I,SolV1}.
+
+put_element(Index,{I,SolV},NewData,Out):-
+    set_vector_element(SolV,Index,_,NewData,SolV1),
+    Out = {I,SolV1}.
+
+get_elementN(Index,SolV,OldData,SolV1):-
+    vector_element(SolV,Index,OldData0,SolV1),
+    check_Ele_judge(OldData0,OldData).
+
+put_elementN(Index,SolV,NewData,SolV1):-
+    set_vector_element(SolV,Index,_,NewData,SolV1).
+
+
+update_element(Index,{I,SolV},OldData,NewData,Out):-
+    set_vector_element(SolV,Index,OldData,NewData,SolV1),
+    Out = {I,SolV1}.
+
+update_entry(Index,{I,SolV},Entry,Out):-
+    set_vector_element(SolV,Index,E,E1,SolV1),
+    set_vector_element(E,1,Entry0,Entry1,E1),
+    update_entry1(Entry0,Entry,Entry1),
+    Out = {I,SolV1}.
+
+update_entry1({_Entry0,Triv},Entry,Entry1):-
+    Entry1 = {Entry,Triv}.
+otherwise.
+update_entry1(_Entry0,Entry,Entry1):-
+    Entry1 = Entry.
+
+update_data(Index,{I,SolV},Data,Out):-
+    set_vector_element(SolV,Index,E,E1,SolV1),
+    set_vector_element(E,0,_,Data,E1),
+    Out = {I,SolV1}.
+
+update_data(Index,{I,SolV},Data,Rule,Out):- %%% for debug
+    set_vector_element(SolV,Index,E,E1,SolV1),
+    set_vector_element(E,0,_,Data,Em),
+    set_vector_element(Em,1,OLD,{OLD,Rule},E1),
+    Out = {I,SolV1}.
+
+add_answer({I,SolV},Node,{Rule,InCR},Out):-
+    set_vector_element(SolV,Node,{_,Q},
+                       {succ,Q,Rule,InCR},SolV1),
+    Out = {I,SolV1}.
+add_answer({I,SolV},Node,{Rule,InCR,Sim},Out):-
+    set_vector_element(SolV,Node,{_,Q},
+                       {succ,Q,Rule,InCR,Sim},SolV1),
+    Out = {I,SolV1}.
+
+get_judgeN(Index,SolV,SolV1,JE):-
+    vector_element(SolV,Index,{succ,_,_,_,JE0,_,_,_})|
+    SolV1 = SolV,
+    check_judge(JE0,JE).
+get_judgeN(Index,SolV,SolV1,JE):-
+    vector_element(SolV,Index,Sol),
+    vector_element(Sol,0,fail)|
+    SolV1 = SolV,
+    JE = {2,2}.
+    
+get_ruleN(Index,SolV,SolV1,RuleE):-
+%$    vector_element(SolV,Index,{succ,_,RuleE,_,_,_,_},SolV1).
+%$1    vector_element(SolV,Index,{succ,_,RuleE,_,_,_,_,_},SolV1).
+    vector_element(SolV,Index,{succ,_,{RuleE,_Exp},_,_,_,_,_},SolV1).
+
+%get_CST(Index,SolV,SolV1,CST):-
+%    vector_element(SolV,Index,{succ,_,_,_,_,_,CST,_},SolV1).
+get_CST(Index,SolV,SolV1,CST):-
+    set_vector_element(SolV,Index,SE,SE1,SolV1),
+    get_CST1(SE,CST,SE1).
+
+get_CST1(SE,CST,SE1):-
+    vector(SE,8) |
+    vector_element(SE,6,CST,SE1).
+get_CST1(SE,CST,SE1):-
+    vector(SE,3) |
+    vector_element(SE,2,CST,SE1).
+otherwise.
+get_CST1(SE,CST,SE1):-
+    CST = [], SE1 = SE.
+
+get_child_list(Index,SolV,SolV1,CL):-
+    vector_element(SolV,Index,{succ,_,_,CL,_,_,_,_},SolV1).
+
+get_naf_judgeN(Index,SV,SV1,JE):-
+    vector_element(SV,Index,{JE0,_,_},SV1),
+    check_naf_judge(JE0,JE).
+
+check_judge(justify,Jout):- Jout = {1,1}.
+check_judge(directly,Jout):- Jout = {2,2}.
+check_judge(stro_d,Jout):- Jout = {2,1}.
+check_judge(unre_d,Jout):- Jout = {2,0}.
+check_judge(weak_d,Jout):- Jout = {2,-1}.
+check_judge(stro_p,Jout):- Jout = {3,1}.
+check_judge(unre_p,Jout):- Jout = {3,0}.
+check_judge(weak_p,Jout):- Jout = {3,-1}.
+otherwise.
+check_judge(In,Jout):- Jout = In.
+
+check_naf_judge(justify,JE):-    JE = 1.
+check_naf_judge(defeted,JE):-    JE = 2.
+check_naf_judge(plausible,JE):-  JE = 3.
+check_naf_judge(fail,JE):-       JE = 4.
+otherwise.
+check_naf_judge(JE0,JE):-        JE = JE0.
+
+check_Ele_judge(OldData0,OldData):-
+    vector(OldData0,Size),
+    Size > 4 |
+    set_vector_element(OldData0,4,JE0,JE,OldData),
+    check_judge(JE0,JE).
+otherwise.
+check_Ele_judge(OldData0,OldData):-
+    OldData = OldData0.
+
+get_sub_tree_conseq(Index,ChildList,{I,SV},ConsTree,ST1):-
+    set_vector_element(SV,Index,Sol,Sol1,SV1),
+    vector_element(Sol,1,Cons,Sol1),
+    get_sub_tree_conseq1(ChildList,SV1,ConsList,SV2),
+    ST1 = {I,SV2},
+    ConsTree = {Cons,ConsList}.
+
+get_sub_tree_conseq1([],SV,ConsList,SV1):-
+    ConsList = [], SV1 = SV.
+get_sub_tree_conseq1([CH|CT],SV,ConsList,SV2):-
+    set_vector_element(SV,CH,Sol,Sol1,SV1),
+    get_sub_tree_conseq2(Sol,Cons,Sol1),
+    get_sub_tree_conseq1(CT,SV1,ConsListT,SV2),
+    ConsList = [Cons|ConsListT].
+
+get_sub_tree_conseq2(Sol,Cons,Sol1):-
+    vector_element(Sol,0,succ) |
+    vector_element(Sol,1,Cons0,Sol1),
+    Cons = {Cons0,success}.
+get_sub_tree_conseq2(Sol,Cons,Sol1):-
+    vector_element(Sol,0,fail) |
+    vector_element(Sol,1,Cons0,Sol1),
+    Cons = {Cons0,fail}.
+

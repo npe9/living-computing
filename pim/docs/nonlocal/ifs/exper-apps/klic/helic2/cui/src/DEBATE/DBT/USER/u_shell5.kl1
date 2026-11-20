@@ -1,0 +1,185 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    (C)1994 Institute for New Generation Computer Technology        %%%%
+%%%%    (Read COPYRIGHT for detailed information.)                      %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_shellUtility5.
+
+:- public 
+    get_help/1,
+    get_help/2.
+            
+:- with_macro pimos. 
+
+%help/3
+    get_help(Help,R):-true|
+        Help = [
+        "    add        end             help            notice          set",
+        "    backward   finish          jump            pose            show",
+        "    cancel     forward         justify         previous",
+        "    clear      focus           next            remove"],
+        R = normal(success).
+
+    get_help(Command,Help,R):-true|
+        get_help1(Command,Help,R).
+
+%get_help
+    get_help1("all",Help,Result):-true|
+        Help =[
+        "    pose",
+        "    notice",
+        "    cancel",
+        "    finish",
+        "    backward",
+        "    forward",
+        "    next",
+        "    previous",
+        "    focus",
+        "    jump                       ArgumentID",
+        "    justify",
+        "    end",
+        "    set        pl              Int",
+        "    set        pt              <h|e>",
+        "    set        cl              Int",
+        "    set        sim             Int",
+        "    set        weight          Int",
+        "    set        ptst            Int Int Int Int Int Int",
+        "    set        ptaw            Int",
+        "    set        tf              <on|off>",
+        "    set        sr              RuleName-list",
+        "    set        sg              SpyGate-list",
+        "    show       counter         Position",
+        "    show       claim",
+        "    show       goal",
+        "    show       view            [View]",
+        "    show       sp              [SP]",
+        "    show       unit            [Unit]",
+        "    show       pl",
+        "    show       pt",
+        "    show       cl",
+        "    show       sim",
+        "    show       weight",
+        "    show       ptst",
+        "    show       ptaw",
+        "    show       explain",
+        "    show       tf",
+        "    show       sr",
+        "    show       sg  ", 
+        "    add        sr              RuleName-list",
+        "    add        sg              SpyGate-list",
+        "    remove     sr              RuleName-list",
+        "    remove     sg              SpyGate-list",
+        "    clear      sr",
+        "    clear      sg",
+        "    help                       [Command]"],
+        Result = normal(success).
+
+    get_help1("pose",Help,Result):-true|
+        Help =["    pose"],
+        Result = normal(success).
+
+    get_help1("notice",Help,Result):-true|
+        Help =["    notice"],
+        Result = normal(success).
+
+    get_help1("cancel",Help,Result):-true|
+        Help =["    cancel"],
+        Result = normal(success).
+
+    get_help1("finish",Help,Result):-true|
+        Help =["    finish"],
+        Result = normal(success).
+
+    get_help1("backward",Help,Result):-true|
+        Help =["    backward"],
+        Result = normal(success).
+
+    get_help1("forward",Help,Result):-true|
+        Help =["    forward"],
+        Result = normal(success).
+
+    get_help1("next",Help,Result):-true|
+        Help =["    next"],
+        Result = normal(success).
+
+    get_help1("previous",Help,Result):-true|
+        Help =["    previous"],
+        Result = normal(success).
+
+    get_help1("focus",Help,Result):-true|
+        Help =["    focus"],
+        Result = normal(success).
+
+    get_help1("jump",Help,Result):-true|
+        Help =["    jump                        ArgumentID"],
+        Result = normal(success).
+
+    get_help1("justify",Help,Result):-true|
+        Help =["    justify"],
+        Result = normal(success).
+
+    get_help1("end",Help,Result):-true|
+        Help =["    end"],
+        Result = normal(success).
+
+    get_help1("set",Help,Result):-true|
+        Help =[
+        "    set        pl              Int",
+        "    set        pt              <h|e>",
+        "    set        cl              Int",
+        "    set        sim             Int",
+        "    set        weight          Int",
+        "    set        ptst            Int Int Int Int Int Int",
+        "    set        ptaw            Int",
+        "    set        tf              <on|off>",
+        "    set        sr              RuleName-list",
+        "    set        sg              SpyGate-list"],
+        Result = normal(success).
+
+    get_help1("show",Help,Result):-true|
+        Help =[
+        "    show       counter         Position",
+        "    show       claim",
+        "    show       goal",
+        "    show       view            [View]",
+        "    show       sp              [SP]",
+        "    show       unit            [Unit]",
+        "    show       pl",
+        "    show       pt",
+        "    show       cl",
+        "    show       sim",
+        "    show       weight",
+        "    show       ptst",
+        "    show       ptaw",
+        "    show       explain",
+        "    show       tf",
+        "    show       sr",
+        "    show       sg  "],
+        Result = normal(success).
+
+    get_help1("add",Help,Result):-true|
+        Help =[
+        "    add        sr              RuleName-list",
+        "    add        sg              SpyGate-list"],
+        Result = normal(success).
+
+    get_help1("remove",Help,Result):-true|
+        Help =[
+        "    remove     sr              RuleName-list",
+        "    remove     sg              SpyGate-list"],
+        Result = normal(success).
+
+    get_help1("clear",Help,Result):-true|
+        Help =[
+        "    clear      sr",
+        "    clear      sg"],
+        Result = normal(success).
+
+    get_help1("help",Help,Result):-true|
+        Help =[
+        "    help                       [Command]"],
+        Result = normal(success).
+
+otherwise.
+    get_help1(C,_,Result):-true|
+        Result = abnormal({cui,'Illegal command',C}).

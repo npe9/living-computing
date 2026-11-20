@@ -1,0 +1,260 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr.
+:- public 
+     create/1,
+     create/2.
+:- with_macro pimos.
+
+create(RBR):-
+    rbr_rule_manager:create(RM,_Res),
+    rbr_loop(RBR,RM,{nil,nil,nil,nil,nil,nil}).
+
+create(InitParaList,RBR):-
+    set_init_parameter(InitParaList,RBR).
+
+set_init_parameter({TypeFileName,RuleList,RuleNameList,_Mode,_Sim,_Cnt},RBR):-
+    rbr_rule_manager:create(RM,_Res),
+    RM = [set_type(TypeFileName,_R),
+          set_rule_list(RuleList,_R1),
+          set_verb_index(RuleNameList)|RM1],
+    rbr_loop(RBR,RM1,{TypeFileName,RuleList,RuleNameList,_Mode,_Sim_Cnt}).
+
+rbr_loop([],RM,_Para):-
+    RM = [].
+rbr_loop([set_parameter(PName,Input,Result)|RBR],RM,Para):-
+    set_parameter(PName,Input,RM,Para,RM1,Para1,Result),
+    rbr_loop_t(Result,RBR,RM1,Para1).
+
+rbr_loop([execute(Com,In,Out,Res)|RBR],RM,Para):-
+    check_paraEXE(Para,Para1,Res1),
+    rbr_loop1(Res1,Com,In,Out,Res,RBR,RM,Para1).
+rbr_loop([tracer(Message)|RBR],RM1,Para):-
+    RM1 = [tracer(Message)|RM],
+    rbr_loop(RBR,RM,Para).
+rbr_loop([get_parameter(weight,W,Result)|RBR],RM1,Para):-
+    RM1 = [get_weight(W)|RM],
+    Result = normal(success),
+    rbr_loop(RBR,RM,Para).
+rbr_loop([get_parameter(psiTermSimTB,PsiTermSimTB,Result)|RBR],RM1,Para):-
+    RM1 = [get_psiTermSimTB(PsiTermSimTB)|RM],
+    Result = normal(success),
+    rbr_loop(RBR,RM,Para).
+rbr_loop([get_parameter(psiTermAttWeight,PsiTermAttWeight,Result)|RBR],RM1,Para):-
+    RM1 = [get_psiTermAttWeight(PsiTermAttWeight)|RM],
+    Result = normal(success),
+    rbr_loop(RBR,RM,Para).
+otherwise.
+rbr_loop([get_parameter(PName,Output,Result)|RBR],RM,Para):-
+    get_parameter(PName,Para,Output,Result),
+    rbr_loop_t(Result,RBR,RM,Para).
+
+rbr_loop1(normal(success),Com,In,Out,Res,RBR,RM,Para):-
+    RM = {RM1,RM2},
+    rbr_exe(Com,In,RM1,Out,Res),
+    rbr_loop_t(Res,RBR,RM2,Para).
+otherwise.
+rbr_loop1(Res0,Com,In,_Out,Res,RBR,RM,Para):-
+    Res = Res0,
+    close_stream(Com,In),
+    rbr_loop(RBR,RM,Para).
+
+rbr_loop_t(normal(_),RBR,RM,Para):-
+    rbr_loop(RBR,RM,Para).
+otherwise.
+rbr_loop_t(_,RBR,RM,Para):-
+    rbr_loop(RBR,RM,Para).
+
+set_parameter(set_max_node,MaxNode,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM = [set_max_node(MaxNode)|RM1],
+    Result = normal(success),
+    Para1 = {T,RL,RN,M,S,Cnt}.
+set_parameter(type,TypeFileName,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM = [set_type(TypeFileName,Result)|RM1],
+    update_para(Result,TypeFileName,T,T1),
+    Para1 = {T1,RL,RN,M,S,Cnt}.
+set_parameter(rule_list,RuleList,RM,Para,RM1,Para1,Result):-
+    check_paraRL(Para,Para0,Res0),
+    set_rule_list(Res0,RuleList,RM,Para0,RM1,Para1,Result).
+set_parameter(rule_name_list,RuleNameList,RM,Para,RM1,Para1,Result):-
+    check_paraRNL(Para,Para0,Res),
+    set_rule_name_list(Res,RuleNameList,RM,Para0,RM1,Para1,Result).
+set_parameter(mode,NorA,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM1 = RM,
+    update_mode(NorA,M,M1,Result),
+    Para1 = {T,RL,RN,M1,S,Cnt}.
+set_parameter(similarity,Integer,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM = [set_similarity(Integer)|RM1],
+    update_sim(Integer,S,S1,Result),
+    Para1 = {T,RL,RN,M,S1,Cnt}.
+set_parameter(weight,W,RM,Para,RM1,Para1,Result):-
+    RM = [set_weight(W)|RM1],
+    Para1 = Para,
+    Result = normal(success).
+set_parameter(psiTermSimTB,PsiTermSimTB,RM,Para,RM1,Para1,Result):-
+    RM = [set_psiTermSimTB(PsiTermSimTB)|RM1],
+    Para1 = Para,
+    Result = normal(success).
+set_parameter(psiTermAttWeight,PsiTermAttWeight,RM,Para,RM1,Para1,Result):-
+    RM = [set_psiTermAttWeight(PsiTermAttWeight)|RM1],
+    Para1 = Para,
+    Result = normal(success).
+set_parameter(counter,Integer,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM = [set_counter(Integer,Res)|RM1],
+    update_cnt(Res,Integer,Cnt,Cnt1,Result),
+    Para1 = {T,RL,RN,M,S,Cnt1}.
+otherwise.
+set_parameter(PName,_Integer,RM,Para,RM1,Para1,Result):-
+    RM1 = RM, Para1 = Para,
+    Result = abnormal({rbr,unknown_parameter_name,PName}).
+
+set_rule_list(normal(success),RuleList,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,Result):-
+    RM = [set_rule_list(RuleList,Result)|RM1],
+    update_para(Result,RuleList,RL,RL1),
+    Para1 = {T,RL1,RN,M,S,Cnt}.
+otherwise.
+set_rule_list(Res,_RuleList,RM,Para,RM1,Para1,Result):-
+    RM1 = RM, Para1 = Para, Result = Res.
+
+set_rule_name_list(normal(success),RuleNameList,RM,{T,RL,RN,M,S,Cnt},RM1,Para1,
+        Result):-
+    RM = [set_verb_index(RuleNameList,Result)|RM1],
+    update_para(Result,RuleNameList,RN,RN1),
+    Para1 = {T,RL,RN1,M,S,Cnt}.
+otherwise.
+set_rule_name_list(Res,_RuleNameList,RM,Para,RM1,Para1,Result):-
+    RM1 = RM, Para1 = Para, Result = Res.
+
+check_paraRL({nil,RL,RN,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_defined_type_file,[]}),
+    Para = {nil,RL,RN,M,S,Cnt}.
+otherwise.
+check_paraRL(Para0,Para,Res):-
+    Para = Para0,
+    Res = normal(success).
+
+check_paraRNL({nil,RL,RN,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_defined_type_file,[]}),
+    Para = {nil,RL,RN,M,S,Cnt}.
+check_paraRNL({TF,nil,RN,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_set_rule_list,[]}),
+    Para = {TF,nil,RN,M,S,Cnt}.
+otherwise.
+check_paraRNL(Para0,Para,Res):-
+    Para = Para0,
+    Res = normal(success).
+
+check_paraEXE({nil,RL,RN,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_defined_type_file,[]}),
+    Para = {nil,RL,RN,M,S,Cnt}.
+check_paraEXE({TF,nil,RN,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_set_rule_list,[]}),
+    Para = {TF,nil,RN,M,S,Cnt}.
+check_paraEXE({TF,RL,nil,M,S,Cnt},Para,Res):-
+    Res = abnormal({rbr,not_set_rule_name_list,[]}),
+    Para = {TF,RL,nil,M,S,Cnt}.
+otherwise.
+check_paraEXE(Para0,Para,Res):-
+    Para = Para0,
+    Res = normal(success).
+
+update_para(normal(_),New,_Old,New1):-
+    New1 = New.
+otherwise.
+update_para(_,_New,Old,New1):-
+    New1 = Old.
+
+update_mode(analysis,_Mold,Mnew,Result):-
+    Mnew = analysis,
+    Result = normal(success).
+otherwise.
+update_mode(Mode,Mold,Mnew,Result):-
+    Mnew = Mold,
+    Result = abnormal({rbr,not_support_mode,Mode}).
+
+update_sim(Integer,_Sold,Snew,Result):-
+    integer(Integer) |
+    Snew = Integer,
+    Result = normal(success).
+otherwise.
+update_sim(Integer,Sold,Snew,Result):-
+    Snew = Sold,
+    Result = abnormal({rbr,not_integer_similarity,Integer}).
+
+update_cnt(normal(_),Integer,_Cnt,Cnt1,Result):-
+    Cnt1 = Integer,
+    Result = normal(success).
+otherwise.
+update_cnt(Res,_Integer,Cnt,Cnt1,Result):-
+    Cnt1 = Cnt,
+    Result = Res.
+
+get_parameter(type,{T,_RL,_RN,_M,_S,_Cnt},Output,Result):-
+    Output = T,
+    Result = normal(success).
+get_parameter(rule_list,{_T,RL,_RN,_M,_S,_Cnt},Output,Result):-
+    Output = RL,
+    Result = normal(success).
+get_parameter(rule_name_list,{_T,_RL,RN,_M,_S,_Cnt},Output,Result):-
+    Output = RN,
+    Result = normal(success).
+get_parameter(mode,{_T,_RL,_RN,M,_S,_Cnt},Output,Result):-
+    Output = M,
+    Result = normal(success).
+get_parameter(similarity,{_T,_RL,_RN,_M,S,_Cnt},Output,Result):-
+    Output = S,
+    Result = normal(success).
+get_parameter(counter,{_T,_RL,_RN,_M,_S,Cnt},Output,Result):-
+    Output = Cnt,
+    Result = normal(success).
+otherwise.
+get_parameter(PName,_Para,_Output,Result):-
+    Result = abnormal({rbr,unknown_parameter_name,PName}).
+
+%oosaki modify
+%rbr_exe(solve,In,RM,Out,Res):-
+%    In = {UOS,_AddFact,Q},
+
+rbr_exe(solve,In,RM,Out,Res):-true|
+    In = {UOS,_AddFact,{X,Y,Z}},
+    Q  = {X,env(Y,Y),Z},
+
+    RM = [
+           tracer(clear(callNumber,nil,_)),     %add
+           set_unit_order_stream(UOS)|RM1],      
+    rbr_oldt:solve(Q,RM1,ST1),
+    rbr_pp:pp(ST1,Out),
+    end_solve(Out,Res).
+rbr_exe(change_priority,{UOS,SolV},RM,SolVout,Res):-
+    RM = [set_unit_order_stream(UOS)|RM1],
+    rbr_CP:change_priority(SolV,RM1,SolVout0,Res),
+    rbr_pp:pp([SolVout0],[SolVout]).
+rbr_exe(check_arg1,In,RM,SolVout,Res):-
+    In = {UOS,_AddFact,{SolV,LineNum}},
+    RM = [set_unit_order_stream(UOS)|RM1],
+    rbr_CA:check_arg(SolV,LineNum,RM1,1,SolVout0,Res),
+    rbr_pp:pp([SolVout0],[SolVout]).
+rbr_exe(check_arg2,In,RM,SolVout,Res):-
+    In = {UOS,_AddFact,{SolV,LineNum}},
+    RM = [set_unit_order_stream(UOS)|RM1],
+    rbr_CA:check_arg(SolV,LineNum,RM1,2,SolVout0,Res),
+    rbr_pp:pp([SolVout0],[SolVout]).
+otherwise.
+rbr_exe(Com,_In,RM,_Out,Result):-
+    RM = [],
+    Result = abnormal({rbr,not_implimented_command,Com}).
+
+end_solve(Out,Res):-
+    list(Out) | 
+    Res = normal(success).
+end_solve([],Res):-
+    Res = normal(fail).
+
+close_stream(solve,{UOS,_AddFact,_Q}):-     UOS = [].
+close_stream(change_priority,{UOS,_SolV}):-  UOS = [].
+close_stream(check_arg1,{UOS,_AddFact,_}):- UOS = [].
+close_stream(check_arg2,{UOS,_AddFact,_}):- UOS = [].
+

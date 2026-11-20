@@ -1,0 +1,138 @@
+
+     Heterogeneous Distributed Cooperative Problem Solving System
+				HELIOS
+
+
+
+[REMARK] This HELIOS system has bugs in the capsule description
+         language CAPL.  Because of the presence of those bugs,
+         CAPSULE of HELIOS does not work correctly.  We are now fixing
+         those bugs, and we will release revised version of CAPL
+         language processor as soon as possible.
+
+1. What is HELIOS
+
+A heterogeneous distributed cooperative problem solving system HELIOS
+is a system to construct heterogeneous distributed cooperative problem
+solving systems. In knowledge information processing, it is difficult
+to construct huge application system using single programming language
+accords with single programming paradigm. To construct those
+application system, therefore, it is necessary to combine various
+problem solvers.
+
+We proposed a heterogeneous distributed cooperative problem solving
+system HELIOS under this situation.  Basic components of HELIOS are
+"Agents" and "Environments."
+
+An agent is a problem solver encapsulated by a module called a
+"capsule."  Problem solvers can communicate with each other by type
+conversion function in capsules even though they are implemented by
+distinct programming languages. Furthermore, agents can cooperate with
+each other by description of negotiation in capsules even though they
+have no cooperation facilities.
+
+Besides agents, a global field holding agents in it is required to
+search agents that can solve certain problems, to control execution of
+agents like agents' synchronization when a problem is divided into
+several sub-problems, and to maintain global information. A global
+field with those facilities and common language is called an
+"environment." By encapsulating an environment by a capsule, we can
+construct a new agent. Each environment and each capsule is defined by
+the environment description language ENVL and the capsule description
+language CAPL.
+
+This package provides an implementation of HELIOS on SUN OS. This
+provides CAPL language processor, ENVL language processor, several
+tools for detecting hierarchy of agents to construct HELIOS
+applications. Users are required to describe CAPL programs and ENVL
+programs depending on problem solvers that users have. Then, this
+package generates executable programs of applications automatically.
+
+We confirm execution of HELIOS on the following environment:
+
+Hardware:
+ AS4080 (Toshiba's SUN Sparc 10 compatible machine)
+
+Software:
+ SUN OS 4.1.3
+ X Window System X11/Rel5
+ GNU gcc version 2.6.0
+ TCL/TK
+ Yacc/Lex
+
+Language for problem solvers:
+ Prolog    SICStus prolog 2.1
+ Perl      GNU Perl 4.0.1.8 Patch 36
+ LISP      KCL Nov13,1990 version 
+
+2. Install
+
+To install, all users have to do is expand tar files, set the
+directory to an environment variable $HELIOSDIR, and make once. For
+detail, please refer to the installation manual (doc/INSTALL).
+
+3. Directories/Files configuration
+
+ - COPYRIGHT、COPYRIGHT.j
+	They declare copyright of IFS.
+
+ - README、README.j
+   	This document.
+
+ - doc/INSTALL
+	Installation  manual. 
+
+ - doc/USERMAN
+	User manual. This contains outline of HELIOS, implementation
+	model of HELIOS, files required to execute HELIOS, and
+	operations of HELIOS.
+
+ - doc/LANGMAN
+	Language manuals for CAPL and ENVL.
+
+ - system/makefile
+	This is the make file to construct HELIOS.
+
+ - system/src/
+	This directory contains source codes of HELIOS.
+
+ - system/bin/
+	This directory contains executable files of HELIOS.
+
+ - system/lib/
+	This directory contains library files for execution of HELIOS.
+
+ - system/config/
+	This directory contains various files for setting up HELIOS. 
+	This directory has the following files:
+		helios.hia	This contains hierarchy of agents.
+		helios.init	This contains information on arguments
+				of invocation of agent. This file can
+				be rewritten by users.
+		helios.dal	This contains machine names when
+				HELIOS is used in a distributed
+				environment. This should be specified
+				by users.
+ - system/app/
+	This directory contains applications of HELIOS. For more
+	detail, please refer to user manual (doc/userman).
+
+4. How to use HELIOS
+
+a) Making applications for HELIOS
+	First, please place files containing CAPL programs and ENVL
+	programs in the appropriate directory in $HELIOSDIR/app/.
+	Then, please describe machine information in $HELIOS/config. 
+	Please execute HELIOS compiler to produce executable programs
+	of a HELIOS application.
+
+	For more detail, please refer to user manual (doc/USERMAN),
+	and language manuals (doc/LANGMAN).
+
+b) Execution of a HELIOS application
+	First, please invoke daemon called heliosd for communication
+for users and machines, and send a message to the agent through the
+user-interface. Then, the agent is invoked automatically, and results
+will be presented through the user-interface. For more detail, please
+refer to users manual (doc/USERMAN).
+

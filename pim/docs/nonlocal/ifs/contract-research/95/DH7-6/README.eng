@@ -1,0 +1,157 @@
+========================================================
+Copyright (C)1995 Makoto Amamiya and Tetsuji Kuboyama
+========================================================
+
+MGTP System with An Advanced Inference Engine and Tools for Its Applications
+--------------------------------------------------------
+
+[1] Overview
+
+MGTP is a model-generation-based theorem prover for the first-order logic
+with finite Herbrand domains. MGTP takes implication form formulas, called
+MGTP program, as input, and generates models of the input formulas. This
+distribution consists of two major parts:
+
+MGTP system:
+  * Translator:       compiles an MGTP program into a KL1 program.
+  * Inference Engine: finds solutions of the input formulas.
+Application:
+  * LR parser generator: translates CFG rules into an MGTP program for
+                         generalized LR parsing.
+
+This system provides the basic model-generation theorem prover for
+first-order logic. In addition to the basic prover, it provides KL1
+interface for composing procedures written in KL1. The MGTP system allows
+KL1 programmers to use this system as a subsystem for reasoning.
+
+The inference engine incorporates a dynamic lemma generation technique,
+which increases the inferential power dramatically.
+
+[2] Execution Environment
+
+Since the MGTP system is written in KL1, the system requires the KL1-to-C
+compiler system: KLIC (newer than version 2.0). The KLIC compiler is
+portable to most UNIX systems, and the MGTP system runs on the same system
+as KLIC runs. For example, the MGTP system is available on Sun Sparc, DEC
+Alpha, Linux on IBM-PC.
+
+[3] Documents
+
+A manual of the system is provided in jLaTeX format(in Japanese).  The
+source of the manual file should be found under the directory "documents".
+
+[4] Files
+
+See the file MANIFEST.
+
+[5] Installation
+
+Type 'make all' in the directory 'src/'.  Some executable files are
+generated as follows:
+
+  mgtp:   compiles an MGTP program into an executable code (perl script)
+  mg2kl1: translates an MGTP program into a KL1 program
+  cfg2mg: translates CFG rules into an MGTP program (perl script)
+  cfg2y:  translates CFG rules into an input form for bison
+  y2mg:   translates an output of bison into an MGTP program (perl script)
+
+You must tell your environment where to find the above executable files.
+
+[6] Using MGTP
+
+An MGTP program is written in a file with a '.mg' suffix. The command 'mgtp'
+is used to compile an MGTP program into a KL1 program. For example, in the
+program file 'foo.mg', type
+
+   % mgtp foo.kl1
+
+(We assume '%' is the Unix shell prompt).
+
+* Compiler Options
+
+  Options available for the compilation command `mgtp' are listed
+  below.
+
+  -c
+       Link with the inference engine for CMGTP. By defaults, the standard
+       inference engine is used.
+
+  -d 
+       Link with the inference engine for Dynamic Lemma Generation. By
+       default, the standard inference engine is used.
+
+  -o <FILE>
+       Use the file name for the generated executable file.
+       By default, the executable file is put in `a.out'.
+
+  -R 
+       Do recompilation regardless of file dates.
+
+  -v
+       Output the commands executed for compilation to standard error output.
+
+
+* Syntax
+
+ We present a BNF-like grammar for the MGTP syntax. 
+
+  MGTP_program    ::= { MGTP_clause }+ [':- kl1_program.' KL1_program]
+  MGTP_clause     ::= Negative_clause | Bipolar_clause | Positive_clause
+  Negative_clause ::= Antecedent '-->' [ Action `|' ] `false.'
+  Bipolar_clause  ::= Antecedent '-->' [ Action `|' ]  Consequent `.'
+  Positive_clause ::= true --> [ Action `|' ] Consequent `.'
+  Antecedent      ::= MGTP_Atom { `,' ( MGTP_Atom | `{' Guard `}' ) }*
+  Consequent      ::= MGTP_Atom { `;' MGTP_Atom }*
+  MGTP_Atom       ::= /* KL1 term */
+  Action          ::= KL1_Body_Predicate { `,' KL1_Body_Predicate }*
+  Guard           ::= KL1_Guard { `,' KL1_Guard }*
+
+
+[7] Tests
+
+Under the directory 'src/':
+
+* Test for MGTP with standard :
+
+   % ./mgtp -v ../samples/hase2.mg
+   % ./a.out
+   unsat
+   ************************************ 
+   Failed Branches     : 10497
+   Models              : 0
+   ************************************
+
+* Test for MGTP with dynamic lemma generation:
+
+   % ./mgtp -vd ../samples/hase2.mg
+   % ./a.out
+   unsat
+   ************************************ 
+   Failed Branches             : 90
+   Factorized Branches         : 0
+   Forward Simplified Literals : 587
+   Models                      : 0
+   hit-rate of lemmata         : 587/668
+   ************************************
+
+* Test for LR parser generator:
+
+   % ./cfg2mg  ../samples/G1.cfg
+   % ./mgtp -v ../samples/G1.mg
+   % ./a.out < ../samples/G1.s
+   S(NP(n("I")),VP(v("ate"),NP(a("sweet"),NP(NP(n("plums")),
+                      PP(p("in"),NP(d("the"),NP(n("icebox")))))))) 
+   S(NP(n("I")),VP(v("ate"),NP(NP(a("sweet"),NP(n("plums"))),
+                      PP(p("in"),NP(d("the"),NP(n("icebox")))))))
+   S(NP(n("I")),VP(VP(v("ate"),NP(a("sweet"),NP(n("plums")))),
+                      PP(p("in"),NP(d("the"),NP(n("icebox"))))))
+   unsat
+   ************************************ 
+   Failed Branches     : 3
+   Models              : 0
+   ************************************ 
+
+---
+Please send comments on the distribution to the following address.
+
+	kuboyama@al.is.kyushu-u.ac.jp

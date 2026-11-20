@@ -1,0 +1,37 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_check.
+
+:- public 
+    unit/5.
+
+:- with_macro pimos. 
+
+%unit
+    unit(AgentName,UnitName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,unit,[UnitName],ProtocolList),
+        send(ProtocolList,DBT1,DBT,Result),
+        make_protocol(Result,ok,AgentName,[],GUIProtocol),
+        Data = {DBT,CGS}.
+
+%send
+    send(Protocol,DBT1,DBT,Result):-true |
+        DBT1 = [Protocol|DBT],
+        is_normal(Protocol,Result).
+
+%%is_normal
+    is_normal({_,[get_parameter(_,_,normal(_))]},Result):-true|
+        Result = normal(success).
+otherwise.
+    is_normal({_,[get_parameter(_,_,abnormal(Reason))]},Result):-true|
+        Result = abnormal(Reason).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,GUIProtocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,GUIProtocol):-true|
+        GUIProtocol = receive(AgentName,ProtocolName,Arguments,_R).
+

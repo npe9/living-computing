@@ -1,0 +1,29 @@
+Copyright (C) 1998 Takeo Igarashi
+
+ファイルの内容
+
+ディレクトリ構成
+
+H9-14/			トップディレクトリ
+
+H9-14/pegasus/		実行ファイルおよび実行環境 トップディレクトリ
+H9-14/pegasus/Pegasus.exe	図形描画エディタ Pegasus アプリケーション 実行可能ファイル 
+H9-14/pegasus/gigadll.dll	制約解消系エンジン Dynamic Link Library
+H9-14/pegasus/wmf_head.wmf	wmf 形式保存用 ヘッダーファイル (変更不可)
+H9-14/pegasus/manual.htm	HTML 形式 マニュアル	
+H9-14/pegasus/diagrams/		サンプル画像集 ディレクトリ
+H9-14/pegasus/README.txt		ドキュメント
+
+H9-14/source/		ソースファイル トップディレクトリ
+H9-14/source/pegasus/		図形描画エディタ Pegasus ソースファイル (Microsoft Visual Basic 2.0)
+H9-14/source/gigadll/ 		制約解消系エンジン ソースファイル (Microsoft Visual C++ 1.5)
+H9-14/source/README.txt		ドキュメント
+
+H9-14/README-J		このファイル　 
+H9-14/README-E		このファイルの英語版　 
+
+H9-14/use-of-software-J	ソフトウェアの利用条件
+H9-14/use-of-software-E	ソフトウェアの利用条件の英語版
+
+
+

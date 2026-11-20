@@ -1,0 +1,134 @@
+The molecular evolution inference software
+
+ #####   ######  ######  #####   ######   ####   #####   ######   ####    #####
+ #    #  #       #       #    #  #       #    #  #    #  #       #          #
+ #    #  #####   #####   #    #  #####   #    #  #    #  #####    ####      #
+ #    #  #       #       #####   #       #    #  #####   #            #     #
+ #    #  #       #       #       #       #    #  #   #   #       #    #     #
+ #####   ######  ######  #       #        ####   #    #  ######   ####      #
+
+					### Prototype version (Rev. 0.71) ###
+						July 6, 1996
+
+					Copyright (C) 1996 Satoshi OOta
+
+1. What is `DeepForest'?
+
+`DeepForest'  is  a  set  of  predicates   to   infer   molecular
+phylogenetic  trees mainly from amino acid sequences. By default,
+users can use the maximum likelihood method to infer the   trees.
+The   complete  version   of  `DeepForest' analyzes sequence data
+set intelligently, and infers a reliable  molecular  phylogenetic
+tree.
+
+2. Restriction of the present version
+
+This version is a prototype of `DeepForest'. User can use only  a
+part  of  function  on  `DeepForest',  and I should warn you that
+the present version is extremely slow. This programs are  written
+almost  by KL1, and can be compiled by klic.
+
+3. How to compile `DeepForest'
+
+In directory ./unix, just  make  it.  Of  course,  you  have  to
+install the newest version of klic before the compilation.
+
+4. How to run prototype of `DeepForest'
+
+The way to run  the  program  is  quite  simple.  Just  type  the
+following command in your shell.
+
+go [Input file name]
+
+The program  begins  to  evaluate  a  given  sequence  data  set.
+However, actually, you have to build input data before execution.
+Unfortunately, there is no useful utility to make input  file  at
+present.  I  have prepared simple-sample input file, by which you
+can try to execute `go/0'.  To run 'go/0' using the sample  file,
+type  `make  simple' or 'make sample'. I warn you that the latter
+data requires extreme long time to terminate (about 66 minutes by
+Fujitsu S-4/20L).
+
+5. Parallel execution of `go/0'^*
+
+Parallel   logic   programming   made   `go/0'   executable    in
+distributed/parallel  environment.   If distributed/shared memory
+klic is available in you  system,  why  don't  you  try  parallel
+execution by `go/0'? However, I again warn you, this version does
+*not* run efficiently. You  should  not  expect  high-performance
+data   analyses.    I   have   tested  distributed `go/0' only on
+three clustered workstations.
+
+* We cannot execute 'go/0' correctly in  distributed  environment
+using  the  present  version of klic (2.002). Developpers of klic
+are trying to fix its bug.
+
+6. Required environment
+
+This prototype version is so small that you can run  `go/0'  even
+on   PC   with  the  newest  version  of  klic.  I have tested on
+Macintosh (Duo 280c) with Mach Ten. However, complete version  of
+`go/0'  will  run  exclusively  on  X  window system.  Also PIMOS
+version of `go/0' (contour/1 and traverse/3) is included in  this
+file.  Since  these  programs  are  quite  experimental one, only
+nucleotide data is available.
+
+7. Concept of `DeepForest'
+
+`DeepForest' is not only  an  application   program,   but   also
+set   of  predicates   which   are  useful for data analyses. The
+programs  are  presented  as  modules,  which   includes   useful
+predicates,  and  users  can   construct  new customized programs
+easily in scheme of logic programming.
+
+8. Included files
+
+The following programs are included in this file.
+
+For UNIX
+----------------------------------------------------------------------------
+name			description
+----------------------------------------------------------------------------
+calculate.kl1		module for evaluating a symbol as a numerical value
+clike.kl1		module evaluating conditional likelihood
+get_seq.kl1		gets sequence data 
+get_seq_2.kl1		gets sequence data 
+go.kl1			go/0 itself
+list.kl1		module for list manipulation
+max.kl1			selects a symbol having larger numerical value
+plot_like.kl1		plots likelihood values
+remove_gap_site.kl1	removes gap sites from given sequences
+remove_gap_site_2.kl1	removes gap sites from given sequences
+string.kl1		module for string manipulation 
+symbol.kl1		module for symbol computation
+termio.kl1		module for term input/output
+traverse.kl1		module for optimizing a tree by traversing branches
+tree.kl1		module for tree manipulation
+sample.pl		Sample input data
+----------------------------------------------------------------------------
+
+For PIMOS
+----------------------------------------------------------------------------
+name			description
+----------------------------------------------------------------------------
+contour.kl1		generates a likelihood surface
+traverse.kl1		optimizes a tree by traversing branches
+----------------------------------------------------------------------------
+
+
+------------------------------------------------------------
+Satoshi OOta (Neither Ota nor Ohta nor Oota, but OOta!)
+------------------------------------------------------------
+Department of Genetics,
+School of Life Science,
+The Graduate University of Advanced Studies
+at
+Laboratory of Evolutionary Genetics,
+National Institute of Genetics,
+Mishima, 411 Japan
+FAX: +81-559-81-6794
+TEL: +81-559-81-6790
+------------------------------------------------------------
+
+					Copyright (C) 1996 Satoshi OOta
+

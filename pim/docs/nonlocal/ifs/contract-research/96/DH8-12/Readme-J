@@ -1,0 +1,205 @@
+/*********************************************************************/
+/*								     */
+/* Readme-J							     */
+/*								     */
+/* Copyright (C) 1997 ティラマヌコン・タナラック(ping@jaist.ac.jp)   */ 
+/*                    奥村 学                    (oku@jaist.ac.jp)   */
+/*                    國藤 進                   (kuni@jaist.ac.jp)   */
+/*                    今井 宏樹             (imai@cs.titech.ac.jp)   */
+/*								     */
+/*					       平成 9 年 5 月 9 日   */
+/*								     */
+/*********************************************************************/
+
+   このファイルは R-LRPar というソフトウェアの概要およびディレクトリ構
+成，ファイル名およびファイルの内容を記述している．
+
+★ 概要
+
+   ・ソフトウェア名称
+
+        "R-LRPar" という自然言語処理用ソフトウェアである．
+
+   ・特徴ある機能
+
+       - 本ソフトウェアは，予め与えられた文脈自由文法のもとで，
+         入力文(自然言語)に対する構文解析結果を出力する．この
+         解析結果が，それに続く意味解析，文脈解析，推論などの処
+         理プロセスの入力となる．また，一般化 LR 法に基づいた構
+         文解析アルゴリズムを採用しているので，高速な解析が実現
+         できる．
+
+       - 本ソフトウェアは，これまでの構文解析ツールのように，シ
+         ステムの文法に適合する文だけでなく，不適格文をも受理で
+         きる頑健な構文解析ツールである．その際，文法に適合する
+         文に対しては，不必要な誤り解析は行なわないので，無用な
+         効率の低下を引き起こさない．
+
+       - 本ソフトウェアは解析結果の優先順位として構文構造を考慮
+         したスコアづけを用意されているが，ユーザの必要に応じて
+         スコアリングの定義を変更することができる．
+
+       - 本ソフトウェアは汎用計算機だけではなく，PIM という並列
+          計算機に起動できる．並列化としては「要求駆動型動的負荷
+          分散方式」および「ランダム型動的負荷分散方式」が用意され，
+          必要に応じて利用できる．
+
+   ・用途
+
+       - 本ソフトウェアは，これまでの構文解析ツールのように，シ
+         ステムの文法に適合する文だけでなく，不適格文をも受理で
+         きる頑健な構文解析ツールである．
+
+       - 並列マシン PIM 上での構文解析を提供している．
+
+
+   ・使用言語
+
+       -  Prolog  :  Prolog 版の R-LRPar 本体
+       -  KL1     :  KL1 版の R-LRPar 本体
+       -  Perl    :  入力文の品詞づけた後の処理
+       -  Shell   :  入力文の品詞づける前の処理
+       -  C       :  入力文の品詞をづける処理
+                     主に Brill's Tagger の部分である．
+
+   ・OS 等の環境
+
+    【 R-LRPar の逐次版 ( Prolog 版 ) 】
+
+       - Sicstus Prolog や汎用の Prolog のインタプリタ
+       - Unix などの Perl や shell script がインストールしている環境
+       - C compiler を持つシステムが望ましい．
+
+    【 R-LRPar の並列版 ( KL1 版 ) 】
+
+       - 並列マシン PIM 
+       - 並列オペレーティングシステム PIMOS
+
+   ・ソースプログラムの分量
+
+       -  R-LRPar 本体の逐次版  : 1200 行程度 （0.5 M 程度）
+       -  R-LRPar 本体の並列版  : 1500 行程度 （0.5 M 程度）
+       -  その他                :   80 行程度 （3.0 k 程度）
+
+   ・その他
+
+       -  Brill's Tagger は附属しているが，本システムは前処理として
+          この Tagger を使っているので，欠かせない部分である．
+          利用にあたって，R-LRPar/btagger/README を参照してから利用して
+          下さい．
+
+★ ディレクトリの構成，ファイル名およびファイルの内容
+
+   ソフトウェアの本体は R-LRPar ディレクトリの下に保存している．そのディ
+レクトリの構成は以下の通りである．
+
+   ・ R-LRPar
+   │
+   └─┐
+       ├ btagger
+       │
+       ├ tagger_util
+       │
+       ├ LR_prolog
+       │
+       └ LR_kl1
+
+    個々のサブディレクトリについて説明する．
+
+(1) btagger
+
+    このディレクトリは，Brill 氏により品詞づけプログラムが入っている．
+本ソフトウェアの利用に関して，解析したい文の各単語に「品詞」を予めつけ
+る必要がある．このディレクトリはその役割を果たす．品詞セットは
+PENNTREE BANK によるものである．
+
+    また，このディレクトリは更に Docs, Bin_and_Data, Learner_Code,
+Tagger_Code, Utilities, および Utils のサブディレクトリを含んでいる．
+
+   ◎ Docs/         - Brill's Tagger の研究および利用に関する資料
+   ◎ Bin_and_Data/ - Brill's Tagger の実行プログラム
+   ◎ Learner_Code/ - Brill's Tagger の学習プログラム
+                     これは本ソフトウェアとはあまり関係がないが，
+                     品詞セットを変更する時に有用である．
+   ◎ Tagger_Code/  - Brill's Tagger のソースプログラム
+   ◎ Utilities/    - utility のプログラム群
+   ◎ Utils/        - Brill's Tagger のソースプログラムに使われる
+                      utility のプログラム群
+
+   詳細はディレクトリ btagger の Docs や README を参照すればよい．
+
+(2) tagger_util
+
+    このディレクトリは本ソフトウェアに Brill's Tagger の利用にあたり，
+インタフェースを提供している．このディレクトリは以下の 2 つのプログラ
+ムから成っている．
+
+   ◎ changeform   -  Brill's Tagger から出力した結果を prolog 形式に
+                      変換するプログラム．
+   ◎ runtagger    -  環境の設定，Brill's Tagger の呼び出し，
+                      changeform の呼び出し
+
+(3) LR_prolog
+
+    このディレクトリは逐次版 R-LRPar のプログラムを保存している．ディ
+レクトリの構成は以下の通りである．
+
+   ◎ README            -  基本的な動作を記述している．
+   ◎ maketable/        -  文法から LR 表への変換プログラム
+      ・run_maketable.pl     - トップレベルのプログラム
+      ・maketable.pl         - 文法から LR 表を生成するプログラム
+      ・cfd2mod.pl           - 文法整形プログラム
+      ・find_term_nonterm.pl - 終端記号および非終端記号を探すプログラム
+   ◎ util/             -  パーザに必要な utility プログラム
+   ◎ gram/             -  文法，LR 表，文法に対応する prolog 節
+   ◎ parser/           -  逐次版パーザの本体
+      ・error_handle.pl      - 不適文解析に関するプログラム
+      ・run.pl               - トップレベルのプログラム(consult)
+      ・runcomp.pl           - トップレベルのプログラム(compile)
+      ・sent_file_example    - 解析文の例
+      ・parser.pl            - パーザ本体のプログラム
+      ・parser_interface.pl  - パーザ本体のインタフェースプログラム
+      ・sent_file.re@        - その解析文の例
+      ・util_lr@             - パーザ本体の utility プログラム
+   ◎ makeclause/       -  LR 表から prolog への変換プログラム
+      ・run_makeclause.pl    - トップレベルのプログラム
+      ・makeclause.pl        -  LR 表から prolog 節を生成するプログラム
+      ・find_term_nonterm.pl - 終端記号および非終端記号を探すプログラム
+   ◎ sample_sentences/ -  解析文の例
+
+(4) LR_kl1
+
+    このディレクトリは並列版 R-LRPar のプログラムを保存している．ディ
+レクトリの構成は以下の通りである．
+
+   ◎ README            -  基本的な動作を記述している．
+   ◎ maketable@        -  文法から LR 表への変換プログラム
+      ・run_maketable.pl     - トップレベルのプログラム
+      ・maketable.pl         - 文法から LR 表を生成するプログラム
+      ・cfd2mod.pl           - 文法整形プログラム
+      ・find_term_nonterm.pl - 終端記号および非終端記号を探すプログラム
+   ◎ util/             -  パーザに必要な utility プログラム
+   ◎ gram/             -  文法，LR 表，文法に対応する KL1 節
+   ◎ parser/           -  並列版パーザの本体
+      ・parser_main.kl1     - パーザ本体の主プログラム
+      ・gram260kl1/         - 大きい文法のディレクトリ
+      ・gramsmallkl1/       - 小さい文法のディレクトリ
+   ◎ makeclause/       -  LR 表から KL1 への変換プログラム
+      ・run_makeclausekl1.pl - トップレベルのプログラム
+      ・makeclausekl1.pl     -  LR 表から KL1 節を生成するプログラム
+      ・cfg2mod.pl           - 文法の整形プログラム
+      ・find_term_nonterm.pl - 終端記号および非終端記号を探すプログラム
+   ◎ sample_sentences/ -  解析文の例
+
+★ その他
+
+Copyright (C) 1997
+
+      ・ タナラック・ティラマヌコン
+         Thanaruk    THEERAMUNKONG    (ping@jaist.ac.jp)
+      ・ 奥村 学
+         OKUMURA Manabu               (oku@jaist.ac.jp)
+      ・ 國藤 進
+         KUNIFUJI Susumu              (kuni@jaist.ac.jp)
+      ・ 今井 宏樹
+         IMAI Hiroki                  (imai@cs.titech.ac.jp)

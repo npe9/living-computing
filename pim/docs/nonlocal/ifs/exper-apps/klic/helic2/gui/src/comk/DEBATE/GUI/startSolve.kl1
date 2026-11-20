@@ -1,0 +1,57 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_startSolve.
+
+:- public 
+    startSolve/3.
+
+:- with_macro pimos. 
+
+    startSolve({DBT1,CGS1},Data,GUIProtocol):-true|
+        CGS1 = [make_nh(NH)|CGS],
+	merge({NH1,NH2},NH),
+        dbtgui_protocolPool:get(p,execute,start_solve,NH1,ProtocolList),
+        send(ProtocolList,DBT1,DBT,R1),
+        (   R1 = normal(success)->
+		brows(NH2,R2),
+		(   wait(R2)->
+			GUIProtocol = receive(nil,ok,[],R3),
+		        Data = {DBT,CGS})
+		
+	;
+	    R1 = abnormal(Reason)->
+		NH2  = [],
+		dbtgui_utility:make_errorProtocol(nil,Reason,GUIProtocol),
+	        Data = {DBT,CGS}
+	).
+
+%send
+    send(Protocol,DBT1,DBT,Result):-true |
+        DBT1 = [Protocol|DBT],
+        is_normal(Protocol,Result).
+
+%%is_normal
+    is_normal({_,[execute(_,_,_,normal(success))]},Result):-true|
+        Result = normal(success).
+    is_normal({_,[execute(_,_,_,abnormal(Reason))]},Result):-true|
+        Result = abnormal(Reason).
+
+%brows
+    brows(NH,R):-true|
+	NH = [],
+	R  = normal(success).
+%	A1 = [{nil,nil,nil},nil,[],{nil,nil,[]},nil,nil],
+%           NH  = [receive(nil,completeDebate,[]      ,R1)|NH1],
+%        (wait(R1)->
+%	   NH1 = [get_commandArguments(	_,_,_,_      ,R2)|NH2]),
+%        (wait(R2)->
+%	   NH2 = [receive(		p,argument,A1,R3)|NH3]),
+%        (wait(R3)->
+%	   NH3 = [get_commandArguments(	_,_,_,_      ,R4)]),
+%	(wait(R4)->
+%	   R = normal(success)).
+
+

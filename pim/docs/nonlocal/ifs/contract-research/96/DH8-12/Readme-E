@@ -1,0 +1,222 @@
+/*********************************************************************/
+/*								     */
+/* Readme-E							     */
+/*								     */
+/* Copyright (C) 1997 Thanaruk Theeramunkong (ping@jaist.ac.jp)      */ 
+/*                    Manabu Okumura         (oku@jaist.ac.jp)       */
+/*                    Susumu Kunifuji        (kuni@jaist.ac.jp)      */
+/*                    Hiroki Imai            (imai@cs.titech.ac.jp)  */
+/*								     */
+/*					       9 May 1997	     */
+/*								     */
+/*								     */
+/*********************************************************************/
+
+   This file includes an introduction of a software named "R-LRPar".
+It also describes the file construction of this software together with
+some brief explanations.
+
+[1] Introduction
+
+   o Software Name
+
+        This software is named as "R-LRPar". It is a basic software for 
+        Natural Language Processing.
+
+   o Characteristics and Functions
+
+      - The software parse an input sentence under constraints given
+        in the form of a context free grammar. As the result, It outputs
+        the syntactic trees which are the interpretation of the sentence. 
+        The interpretation result can be applied later in the succeeding
+        processing, such as semantic analysis module, discourse analysis
+        module or any inference module. The algorithm applied is based
+        on the fastest parsing algorithm named `Generalized LR parsing
+        method'. Due to this, our software is expected to parse an input
+        efficiently and with high speed.
+
+      - This software can analyze not only grammatical inputs but
+        also ungrammatically ill-formed inputs. Although it can robustly
+        parse an _ill-formed_ input, efficiency of the analysis of
+        _grammatical_ inputs is not sacrificed because the extra
+        processing steps which are needed for analyzing ill-formed
+        inputs are not executed.
+
+      - This software includes a tagger which is used as a preprocessor
+        for assigning the most appropriate lexical category to each word
+        in an input before parsing. This tagger is based on the
+        rule-based tagging method constructed by Brill. Before using it,
+        please see its license.
+
+      - This software also provides a way to give priority to any
+        syntactic interpretation of a sentence. The scoring method is
+        now based on syntactic contraints. However, a user can easily
+        change the definiton of scoring.
+
+      - This software can execute on both general-purpose computer and 
+        a lossely-coupled parallel machine named PIM. The load balancing
+        provided are "On-demand dynamic load balancing" and
+        "random dynamic load balancing". A user can select either of them.
+
+   o Usage Purpose
+
+      - This software can use for parsing context free langauge.
+        It can parse both well-formed and ill-formed sentences.
+        In another word, it is robust parser.
+
+      - The software can run on parallel environment, especially on PIM
+
+   o Language
+
+      -  Prolog  :  For the main program of prolog version of R-LRPar
+      -  KL1     :  For the main program of KL1 version of R-LRPar
+      -  C       :  Brill's tagger
+      -  Perl    :  For proprocessing of the tagger
+      -  Shell   :  Interface of the tagger
+
+   o OS and enviroment requirement
+
+    == prolog version R-LRPar ==
+
+      - Sicstus Prolog or general-purpose prolog interpretor
+      - UNIX where  Perl are installed
+      - C compiler 
+
+    ==  KL1 version R-LRPar   ==
+
+      - A parallel machine named PIM 
+      - A parallel environment named PIMOS
+
+   o The size of source program
+
+      -  prolog version R-LRPar : around 1200 lines (0.5 M)
+      -  KL1 version    R-LRPar : around 1500 lines (0.5 M)
+      -  Others                 : around   80 lines (3.0 k)
+
+   o Others
+
+      -  This software also includes Brill's Tagger. It is used as
+         preprocessing. It provides a way to give syntactic tags to 
+         words in a sentence. To use it. please refer "README" in 
+         the directory named "R-LRPar/btagger/".
+
+[2] The file construction of the software
+
+   The software is kept under the directory "R-LRPar". The file
+construction is as follows.
+
+  R-LRPar
+   |
+   |---- btagger
+   |
+   |---- tagger_util
+   |
+   |---- LR_prolog
+   |
+   |---- LR_kl1
+
+   The detail of each directory is explained in the following.
+
+(1) btagger
+
+    This directory contains Brill's tagger. This tagger is for tagging
+a sentence to be analysed. The tag set is one provided by PENNTREE
+BANK.  The directory is devided into some subdirectory: Docs,
+Bin_and_Data, Learner_Code, Tagger_Code, Utilities, and Utils
+
+   o Docs/         - include some documents of Brill's Tagger.
+   o Bin_and_Data/ - include executable programs of Brill's Tagger.
+   o Learner_Code/ - include learning part of Brill's Tagger .
+                     It is not directly related with this software.
+                     But if one wants to change the tag set, it will be
+                     useful.
+   o Tagger_Code/  - include source codes of Brill's Tagger.
+   o Utilities/    - include general utility programs.
+   o Utils/        - include utility program needed for Brill's Tagger.
+
+   More detail can be found in the file README under the directory btagger
+   and files under btagger/Docs.
+
+(2) tagger_util
+
+    This directory contain an interface for Brill's Tagger. It includes
+two programs.
+
+   o changeform   -  a program for change the result of Brill's tagger to
+                     prolog clauses.
+   o runtagger    - a program for setting environment in using Brill's
+                    Tagger. It calls changeform as a subprocess.
+
+(3) LR_prolog
+
+    This directory includes the main program of prolog version of 
+R-LRPar. It includes:
+
+   o README            -  describe basic usage of R-LRPar
+   o maketable/        -  include programs for translating
+                          a context free grammar (CFG) to an LR table.
+      - run_maketable.pl     - Top-level program (prolog language)
+      - maketable.pl         - program for translating a CFG to an LR table.
+      - cfd2mod.pl           - program for arranging the form of a CFG.
+      - find_term_nonterm.pl - program for finding terminal and nonterminal
+                               symbols
+   o util/             -  utility programs for the parser, R-LRPar
+   o gram/             -  include grammars and its corresponding prolog 
+                          clauses
+   o parser/           -  prolog version of R-LRPar
+      - error_handle.pl      - program for processing ill-formedness 
+                               in a sentence
+      - run.pl               - Top-level program (prolog, consult)
+      - runcomp.pl           - Top-level program (prolog, compile)
+      - sent_file_example    - Example sentences
+      - parser.pl            - parser main program
+      - parser_interface.pl  - parser interface
+      - sent_file.re@        - another set of example sentences
+      - util_lr@             - utility program for the parser
+   o makeclause/       -  program for translating an LR table to prolog
+                          clauses
+      - run_makeclause.pl    - Top-level program
+      - makeclause.pl        - main program for translating an LR table to
+                               prolog clauses
+      - find_term_nonterm.pl - program for finding terminal and nonterminal
+                               symbols
+   o sample_sentences/ -  example sentences
+
+(4) LR_kl1
+
+    This directory includes the main program of KL1 version of 
+R-LRPar. It includes:
+
+   o README            -  describe basic usage of R-LRPar
+   o maketable/        -  include programs for translating
+                          a context free grammar (CFG) to an LR table.
+      - run_maketable.pl     - Top-level program (prolog language)
+      - maketable.pl         - program for translating a CFG to an LR table.
+      - cfd2mod.pl           - program for arranging the form of a CFG.
+      - find_term_nonterm.pl - program for finding terminal and nonterminal
+                               symbols
+   o util/             -  utility programs for the parser, R-LRPar
+   o gram/             -  include grammars and its corresponding KL1
+                          clauses
+   o parser/           -  KL1 version of R-LRPar
+      - parser_main.kl1     - parser main program
+      - gram260kl1/         - directory of a big grammar
+      - gramsmallkl1/       - directory of a small grammar
+   o makeclause/       -  program for translating an LR table to KL1
+                          clauses
+      - run_makeclausekl1.pl - Top-level program
+      - makeclausekl1.pl     - main program for translating an LR table to
+                               KL1 clauses
+      - cfd2mod.pl           - program for arranging the form of a CFG.
+      - find_term_nonterm.pl - program for finding terminal and nonterminal
+                               symbols
+   o sample_sentences/ - example sentences
+
+[3] Others
+
+Copyright (C) 1997
+
+      o Thanaruk    THEERAMUNKONG    (ping@jaist.ac.jp)
+      o OKUMURA Manabu               (oku@jaist.ac.jp)
+      o KUNIFUJI Susumu              (kuni@jaist.ac.jp)
+      o IMAI Hiroki                  (imai@cs.titech.ac.jp)

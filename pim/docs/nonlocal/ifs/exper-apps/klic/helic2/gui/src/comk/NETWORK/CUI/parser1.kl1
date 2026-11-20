@@ -1,0 +1,172 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_parser1.
+
+:- public 
+    get_commandArguments/5.
+            
+:- with_macro pimos.
+
+%get_commandArguments
+    get_commandArguments(Command,AgentName,Parameter,Arguments,Result):-true|
+        dbtcui_ioUtility:get_commandArguments("HELIC-II>",Command1,Arguments1),
+        parse(Command1,Arguments1,Command2,AgentName2,Parameter2,Arguments2,Result2),
+        (   Result2 = normal(_),Command2\=nil->
+                Command = Command2,AgentName=AgentName2,
+                Parameter=Parameter2,Arguments=Arguments2,Result=Result2
+        ;
+            Result2 = normal(_),Command2=nil->
+                get_commandArguments(Command,AgentName,Parameter,Arguments,Result)
+        ;
+            Result2 = abnormal(Reason)->
+                dbtcui_ioUtility:show_error(Reason,R),
+                (   wait(R)->
+                        get_commandArguments(Command,AgentName,Parameter,Arguments,Result))
+        ).
+
+    parse(nil,_,Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = nil,AgentName=nil,Parameter = nil,Arguments=nil,Result=normal(success).
+
+%%%%%%%%%%%%%for p
+%load
+    parse(load,["p","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse(load,["p","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse(load,["p","view",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = view,Arguments=[FileName],Result=normal(success).
+    parse(load,["p","goal",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = query,Arguments=[FileName],Result=normal(success).
+    parse(load,["p","command",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = command,Arguments=[FileName],Result=normal(success).
+
+%set
+    parse(set,["p","solver","user"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = solver,Arguments=[user],Result=normal(success).
+    parse(set,["p","solver","system"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = solver,Arguments=[system],Result=normal(success).
+    parse(set,["p","goal",Num],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = goal,sToiList([Num],Arguments,Result).
+    parse(set,["p","view"|SPList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = standpointList,sToaList(SPList,Arguments,Result).
+    parse(set,["p","unit"|UnitList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = unitList,sToaList(UnitList,Arguments,Result).
+    parse(set,["p","depth",Depth],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = depth,sToiList([Depth],Arguments,Result).
+    parse(set,["p","explanationMode","h"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = explanationMode,Arguments=[h],Result=normal(success).
+    parse(set,["p","explanationMode","e"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = explanationMode,Arguments=[e],Result=normal(success).
+
+%send
+    parse(show,["p","goal","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = goalCandidateList,Arguments=[],Result=normal(success).
+    parse(show,["p","view","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = viewCandidateList,Arguments=[],Result=normal(success).
+    parse(show,["p","view",ViewName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = viewCandidate,sToaList([ViewName],Arguments,Result).
+    parse(show,["p","sp","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = standpointList,Arguments=[],Result=normal(success).
+    parse(show,["p","unit"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = currentUnit,Arguments=[],Result=normal(success).
+    parse(show,["p","view"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = currentView,Arguments=[],Result=normal(success).
+%check
+    parse(check,["p","unit",UnitName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = check,AgentName=p,Parameter = unit,sToaList([UnitName],Arguments,Result).
+
+%%%%%%%%%%%%%for d
+%load
+    parse(load,["d","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse(load,["d","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse(load,["d","view",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = view,Arguments=[FileName],Result=normal(success).
+    parse(load,["d","goal",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = query,Arguments=[FileName],Result=normal(success).
+    parse(load,["d","command",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = command,Arguments=[FileName],Result=normal(success).
+
+%set
+    parse(set,["d","solver","user"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = solver,Arguments=[user],Result=normal(success).
+    parse(set,["d","solver","system"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = solver,Arguments=[system],Result=normal(success).
+    parse(set,["d","goal",Num],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = goal,sToiList([Num],Arguments,Result).
+    parse(set,["d","view"|SPList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = standpointList,sToaList(SPList,Arguments,Result).
+    parse(set,["d","unit"|UnitList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = unitList,sToaList(UnitList,Arguments,Result).
+    parse(set,["d","depth",Depth],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = depth,sToiList([Depth],Arguments,Result).
+    parse(set,["d","explanationMode","h"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = explanationMode,Arguments=[h],Result=normal(success).
+    parse(set,["d","explanationMode","e"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = explanationMode,Arguments=[e],Result=normal(success).
+
+%send
+    parse(show,["d","goal","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = goalCandidateList,Arguments=[],Result=normal(success).
+    parse(show,["d","view","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = viewCandidateList,Arguments=[],Result=normal(success).
+    parse(show,["d","view",ViewName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = viewCandidate,sToaList([ViewName],Arguments,Result).
+    parse(show,["d","sp","all"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = standpointList,Arguments=[],Result=normal(success).
+    parse(show,["d","unit"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = currentUnit,Arguments=[],Result=normal(success).
+    parse(show,["d","view"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = currentView,Arguments=[],Result=normal(success).
+%check
+    parse(check,["d","unit",UnitName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = check,AgentName=d,Parameter = unit,sToaList([UnitName],Arguments,Result).
+
+%startDebate
+    parse(debate,[],Command,_,Parameter,Arguments,Result):-true|
+        Command = startDebate,Parameter = nil,Arguments=[],Result=normal(success).
+
+%startSolve
+    parse(solve,[],Command,_,Parameter,Arguments,Result):-true|
+        Command = startSolve,Parameter = nil,Arguments=[],Result=normal(success).
+
+%quit
+    parse(quit,[],Command,_AgentName,Parameter,Arguments,Result):-true|
+        Command = quit,Parameter = nil,Arguments=[],Result=normal(success).
+
+otherwise.
+    parse(_,_,_,_,_,_,Result):-true|
+        Result = abnormal({ui,'Illegal command or arguments',nil}).
+
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({gui,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({gui,'Illegal atom',A})
+        ).
+                

@@ -1,0 +1,56 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_texp
+%       File Name   : ty_texp.kl1
+%       Function    : create explanation table
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/20  : interface bug in put_exp_defs/3
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_texp.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public make_explanation_table/4.
+%:-else.
+%:-public make_explanation_table/6.
+%:-end_if.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S make_explanation_table(ExpDefs,TypeDB,NewTypeDB,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes)
+make_explanation_table(ExpDefs,TypeDB,NewTypeDB,Result):-
+%    {{ typeDB#get(expTBL,ExpTBL,NewExpTBL,TypeDB,NewTypeDB) }},
+    set_vector_element(TypeDB,6,ExpTBL,NewExpTBL,NewTypeDB),
+    put_exp_defs(ExpDefs,ExpTBL,NewExpTBL),
+%    Result = normal(ty#yes).
+    Result = normal(success).
+
+
+put_exp_defs([],ExpTBL,NewExpTBL):-
+    NewExpTBL = ExpTBL.
+put_exp_defs([{Name,ExpList}|ExpDefs],ExpTBL,NewExpTBL):-
+%    ExpTBL = [put(Name,ExpList,_)|ExpTBL1],
+    ty_osif:put_with(Name,ExpList,ExpTBL,ExpTBL1),
+    put_exp_defs(ExpDefs,ExpTBL1,NewExpTBL).

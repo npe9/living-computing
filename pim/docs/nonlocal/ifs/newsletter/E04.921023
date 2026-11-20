@@ -1,0 +1,352 @@
+                                                     23 October, 1992
+                                                                No. 4
+
+                 ICOT FREE SOFTWARE NEWSLETTER
+                 -----------------------------
+
+[ICOT Free Software and Machines]
+
+    In ICOT Free Software, the programs are split into the following
+four categories with respect to the programming language in which they
+are written.  Different kinds of machines, or operating systems are
+required for each category. This information is repeated in README,
+which can be found at the top level of the FTP-server.
+
+(1) Programs written in KL1
+
+    Programs in the directory named "XXX/pimos" and pimos in the
+directory named "symbolic-proc/pim-psi" are written in KL1. Currently,
+to execute these programs, a parallel inference machine PIM or
+Multi-PSI, the KL1 language processor that runs on, and the operating
+system for the parallel inference machine PIMOS are required to
+execute these programs.
+
+    By using PDSS (PIMOS Development Support System), that is the
+system to execute KL1 on BSD UNIX, KL1 programs can be executed except
+those that require functions in PIMOS or large programs.
+
+    If you have PSI-III, you can emulate KL1 processing on PIM by
+installing Pseudo PIM/m (pdspim). This is equivalent to the PIMOS/KL1
+environment in terms of functions, but large programs cannot be
+executed on Pseudo PIM/m.
+
+(2) Programs written in ESP
+
+    Programs in the directory named "XXX/simpos" are written in ESP. 
+To execute them, the sequential inference machine PSI and its
+operating system SIMPOS are required.
+
+    By using the Common ESP language processor on a UNIX machine, ESP
+programs can be executed on a UNIX machine. In Common ESP,
+compatibility with the ESP system is preserved except for I/O and the
+specification of a few predicates.  Not only the programs written in
+CESP, but those written in ESP as well are executable on the CESP
+system with slight modification. Notes on porting from ESP to Common
+ESP are contained in INFO.tar.Z in the directory "ifs".
+
+(3) Programs written in Common ESP
+
+    Programs in the directory named "XXX/cesp" are written in Common
+ESP, and these programs can be executed on a UNIX machine with the
+Common ESP language processor. The Common ESP language processor is
+distributed free of charge for academic use from AI Language Research
+Institute (AIR), Ltd. as shown below.
+
+(4) Programs written in other languages
+
+    Programs in the directory named "XXX/UNIX" are written in the
+language C, or Prolog, and these programs can be executed on UNIX.
+
+
+[How to Get IFS Programs through FTP]
+
+     The following is the standard way to get programs from the FTP-
+server at ICOT.
+
+  1)  ftp ftp.icot.or.jp
+	    Connect to ICOT FTP-server machine using FTP command.
+  2)  Name: anonymous
+      Password:
+	    Login with the user name "anonymous", and input your
+	    mail address as the password.
+  3)  FTP> cd ifs
+	    Change to the directory "ifs".
+  4)  FTP> get README
+	    Get the README file first.  This file contains overall
+	    information on the ICOT Free Software.
+  5)  Find the desired files by referring to the directory structure
+	    shown in the README file.
+  6)  FTP> binary
+	    Set the transfer mode of FTP to image (binary).
+  7)  FTP> get XXXXX.tar.Z
+	    Get an archive file, where XXX.tar.Z is the name of the
+	    file.
+
+
+[Report on Revisions]
+
+    Revisions of the following programs have been released.
+
+・ [4] OS for Parallel Inference Machine: PIMOS  	18 September
+	Object code and source code have ben separated.
+
+・ [5] A Concurrent Object-Oriented Language：A'UM-90	29 September
+	Revised to aum-1.2c (Bug fix)．aum-pat-1.2b is a patch for
+        this program.
+
+・ [9] CLP Language：cu-Prolog 				 7 October
+	Bug fixed.
+
+・[14] Constraint Logic Programming Language：CAL (CESP version)
+							14 August
+	Revision of Boolean and Simplex constraint solvers.
+
+・[18] Parallel Constraint Logic Programming System：GDCC
+							13 August
+	Addition of the operation manual.
+
+・[19] Constraint Logic Programming Language：CAL (ESP version)
+							14 August
+	Revision of Boolean and Simplex constraint solvers.
+
+
+[On User's Group]
+
+Since 7th August, the date at which ICOT Free Software was first
+released, there have been about 580 transmission from domestic, and
+more than 2000 transmission from abroad.
+
+Anyone interested in organizing the user's group to research a
+particular software program for purposes of revision or improvement,
+please contact the IFS-desk via e-mail to the address at the end of
+this newsletter.
+
+Your offer will be informed by the next volume of the newsletter and
+reactions to your offer will also be forwarded to you. 
+
+If you desire, we will store your revised program on the FTP server at
+ICOT.
+
+
+[News on the second cite]
+
+Due to the goodwill of SICS (Swedish Institute of Computer Science) in
+Sweden, all ICOT free software is available from the FTP server
+machine at SICS. It has the same directory organization as that at
+ICOT, and the method to get programs is also the same as that at ICOT
+except that the name of the server machine differs. If SICS is more
+convenient for you than ICOT, you can also use the FTP server machine
+at SICS.
+
+The FTP server machine address at SICS is
+
+			ftp.sics.se
+
+
+[Contents of the Third Release of ICOT Free Software]
+
+    The following is a list of the eight latest ICOT Free Software
+Programs (up to 12th October).  In total, 64 ICOT Free Software
+programs have been released.  The number attached to the name of each
+software is the same as that in the list of ICOT Free Software.  The
+size of each tar-file is also given.
+
+
+Symbol Processing: 2
+----------------------------------------------------------------------
+2  Parallel and Distributed KL1 Language Processor: VPIM        1.8MB
+3  Pseudo Parallel System for KL1 on Sequential Inference Machine
+   PSI-III		   					1.1MB
+
+Knowledge Representation, Knowledge-base, Constraint: 2
+----------------------------------------------------------------------
+11  Knowledge Representation Language: Quixote
+    (Tentative version)		        			  1MB
+13  Parallel Database Management System: Kappa-P
+    (Tentative version)					  	1.6MB
+
+Experimental Application: 4
+----------------------------------------------------------------------
+60  Group Problem Solving System for Task Allocation Problem	293KB
+63  Combined Constraint Solver: Consort        			375KB
+64  Design Support System based on Qualitative Reasoning: Desq 	794KB
+71  A Diagnostic and Control Expert System based on a Plant Model
+			                			421KB
+
+[Address of AIR]
+
+    The address of AI Language Research Institute (AIR) is as follows.
+To contact AIR on Common ESP, please use the following address.
+
+	Research Management Department
+	AI Language Research Institute, Ltd.
+
+        c/o Computer & Information Systems Laboratory
+	Mitsubishi Electric Corporation
+	1-1, Ofuna 5-chome, Kamakura
+	Kanagawa 247 Japan
+
+	e-mail: cesp-request@air.co.jp
+	FAX:	+81-467-48-4847
+
+
+[Contacts]
+
+    For information on ICOT Free Software, please contact
+
+			    ifs@icot.or.jp
+
+by e-mail.  If you receive the paper edition of this newsletter, please
+let us know your e-mail address and we will send you the electronic
+edition.  If you cannot use the e-mail facility, please contact the
+address below.
+
+    A list of ICOT Free Software was published in "ICOT Free Software
+Catalogue" which was distributed at the International Conference on
+Fifth Generation Computer Systems 1992, held at the beginning of June,
+1992.  If you do not have a copy of this list, please supply the IFS
+desk with your physical mail address and a copy will be mailed to you.
+
+    If there are persons in your neighborhood who are interested in
+ICOT Free Software, please let us know their names and both their
+e-mail and physical mail addresses so that we can send them
+newsletters and the catalogue.
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21st Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618
+
+
+[Released ICOT Free Software]
+
+    The following is the list of the 64 ICOT Free Software programs
+which have been released up to 12th October including those listed
+above. The date of the first release, and the date of the latest
+revision are also attached.  Third releases of programs are indicated
+by asterixes ("*").
+
+Symbol Processing: 8
+----------------------------------------------------------------------
+   1  KL1 Programming Environment on UNIX: PDSS      7 Sept.     2.6MB
+*  2  Parallel and Distributed KL1 Language Processor: VPIM
+						    12 Oct.      1.8MB
+*  3  Pseudo Parallel System for KL1 on Sequential Inference Machine
+      PSI-III					    12 Oct.      1.1MB
+   4  OS for Parallel Inference Machines: PIMOS      7 Aug.
+                                  (Latest revision: 18 Sept.)
+		Source Program                                   2.6MB
+		Object Program                                   2.2MB
+   5  A Concurrent Object-oriented Language: A'Um-90 7 Sept.
+                                  (Latest revision: 29 Sept.)    1.1MB
+   6  Experimental Reflective Programming System: ExReps
+                                                     7 Aug.      132KB
+   7  Programming Environment for KL1 with Program Visualization
+                                                     7 Aug.      255KB
+   8  Strategy Management Shell                      7 Aug.      430KB
+
+Knowledge Representation, Knowledge-base, Constraint: 12
+----------------------------------------------------------------------
+   9  CLP Language: cu-Prolog                        7 Aug.
+                                   (Latest revision: 7 Oct.)     252KB
+  10  Dynamical Programming: DP                      7 Aug.      454KB
+* 11  Knowledge Representation Language: Quixote (Tentative version)
+                                                    12 Oct.        1MB
+  12  Nested Relational Database Management System: Kappa-II
+                                                     7 Sept.  
+		The system                                       5.7MB
+		Data-1                                           5.3MB
+		Data-2                                           4.8MB
+		Data-3                                            10MB
+* 13  Parallel Database Management System: Kappa-P (Tentative version)
+                                                   12 Oct.       1.6MB
+  14  Constraint Logic Programming Language: CAL (CESP version)
+                                                     7 Aug.
+                                  (Latest revision: 14 Aug.)     269KB
+  15  Hierarchical Constraint Logic Programming Language: CHAL
+                                                     7 Aug.       76KB
+  16  Robot Design Support System                    7 Aug.       40KB
+  17  Hierarchical Constraint Parallel Solver: P-CHAL
+                                                     7 Aug.       24KB
+  18  Parallel Constraint Logic Programming Language: GDCC
+                                                     7 Aug.
+                                  (Latest revision: 13 Aug.)     622KB
+  19  Constraint Logic Programming Language: CAL (ESP version)
+                                                     7 Aug.
+                              (Latest revision: 14 Aug.)     722KB
+  20  Voronoi Diagram Construction Program           7 Aug.       96KB
+  21  Knowledge Verification System: KNOV            7 Aug.      244KB
+
+Problem Solving, Meta-reasoning, Theorem Proving: 7
+----------------------------------------------------------------------
+  22  Parallel Model Generation Theorem Prover: MGTP 7 Sept.      44KB
+  23  Program Generation System: PAPYRUS             7 Aug.      3.8MB
+  25  Forward Chaining Inference System: KORE/IE     7 Sept.      79KB
+  28  Reasoning System: EUODHILOS                    7 Aug.      273KB
+  29  Fuzzy Clustering Tool                          7 Aug.      406KB
+  30  Parallel Problem Solving System                7 Aug.       72KB
+  32  A Structure-Mapping Engine: SME                7 Aug.      180KB
+
+Natural Language Processing: 19
+----------------------------------------------------------------------
+  33  Morphological Dictionary for Japanese          7 Aug.      1.5MB
+  34  Localized Unification Grammar Rules: LUG       7 Aug.   
+		The System                                       832KB
+		Japanese Analysis Environment                    1.5MB
+		Manual                                           873KB
+  35  Dependency Grammar for Japanese: RDG           7 Aug.      113KB
+  36  A Sentence Retrieval Tool: KWIC (CESP version) 7 Sept.     1.1MB
+  37  Morphological Analyzing Program                7 Aug.      402KB
+  38  Grammar Writing Support System: Linguist       7 Aug.      557KB
+  39  Parallel Parsing System: PAX                   7 Aug.       75KB
+  40  Linguistic Knowledge Description Language      7 Sept.     1.5MB
+  41  The Syntax Analyzer                            7 Sept.     167KB
+  42  Experimental System for Argument Text Generation: Dulcinea
+                                                     7 Sept.     873KB
+  43  Japanese Sentence Generator                    7 Aug.      390KB
+  44  A Sentence Dividing Tool                       7 Aug.       80KB
+  45  Summarizing Support System                     7 Aug.      196KB
+  46  A Support System for Generating Controlled Japanese Text: ICOTEXT
+                                                     7 Aug.      522KB
+  47  A Sentence Retrieval Tool: KWIC (ESP version)  7 Aug.      1.9MB
+  48  Experimental Dialogue System                   7 Aug.      550KB
+  49  Text Structure Analysis System                 7 Sept.     316KB
+  50  An Experimental Discourse Analyzer             7 Aug.      345KB
+  51  A Parallel Processing Based Natural Language Analysis
+      Tool: Laputa                                   7 Aug.      537KB
+
+Experimental Application: 18
+----------------------------------------------------------------------
+  52  Go Playing Game System "GOG" The Sequential Version
+                                                     7 Sept.     628KB
+  53  Go Playing Game System "GOG" The Parallel Version
+                                                     7 Sept.     834KB
+  54  A Parallel Legal Reasoning System: HELIC-II    7 Aug.      775KB
+  55  Multiple Sequence Alignment by 3-dim DP        7 Aug.       93KB
+  56  Multiple Sequence Alignment by Parallel Simulated Annealing
+                                                     7 Aug.       98KB
+  57  Standard Cell Placement Experimental System    7 Aug.      262KB
+  58  LSI Routing Program                            7 Sept.      89KB
+  59  Parallel Logic Simulator                       7 Aug.      2.1MB
+* 60  Group Problem Solving System for Task Allocation Problem
+                                                    12 Oct.      293KB
+  61  A Concurrent Program Development System: MENDELS ZONE
+                                                     7 Aug.      1.0MB
+  62  KL1 Execution Data Collecting Tool: Performance Monitor
+                                                     7 Aug.      377KB
+* 63  Combined Constraint Solver: Consort           12 Oct.      375KB
+* 64  Design Support System based on Qualitative Reasoning: Desq
+                                                    12 Oct.      794KB
+  65  Experimental Parallel Hierarchical Recursive Layout
+      System: Co-HLEX                                7 Aug.      397KB
+  68  Experimental Sequence Analysis System          7 Aug.      169KB
+  69  Case-Based Circuit Design Support System       7 Aug.      1.0MB
+  70  High Level Synthesis System: RODIN             7 Aug.      903KB
+* 71  A Diagnostic and Control Expert System based on a Plant Model
+                                                    12 Oct.      421KB
+

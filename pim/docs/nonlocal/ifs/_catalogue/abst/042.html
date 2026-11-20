@@ -1,0 +1,101 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+
+<title> (42) Experimental System for Argument Text Generation:
+Dulcinea</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (42) Experimental System for Argument Text Generation: <i>Dulcinea</i></h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI or pseudo-PIM/m
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 2MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Dulcinea generates Japanese text that justifies a given goal.<P>
+
+<h2><b>Configuration</b></h2>
+
+The system consists of following four modules.<P>
+
+<dl>
+
+<dt><b>Semantic Contents Generator:</b>
+
+<dd> This module creates an Argument Graph which represents the
+semantic content of arguments.
+
+<dt><b>FTS Generator:</b>
+
+<dd> This module creates an FTS(Functional Text Structure) from a
+given argument graph.
+
+<dt><b>Text Structure Generator:</b>
+
+<dd> This module adds order and connection information to the FTS.
+
+<dt><b>Realizer:</b>
+
+<dd> Tense, aspect and mood are fixed in this module.
+
+</dl>
+
+<h2><b>Function</b></h2>
+
+<ol>
+
+<li>Beliefs consist of facts,rules and judgments for the state of
+affairs. The system makes arguments in various domains by exchanging
+the contents of a belief database.
+
+<li>This system can generate not only direct grounds,but also
+refutations for the expected opposing arguments,together with examples
+that are indispensable to persuasive argument.
+
+<li>By varying the argument strategies and criteria for sentence
+structure,you can perform the text generation experiment and conduct
+research into the objective criteria for natural text.
+
+</ol>
+
+<h2><b>Reference</b></h2>
+
+<OL>
+
+<LI> IKEDA Teruo,KOTANI,Akira,HAGIWARA Kaoru and KUBO Yukihiro
+``Argument Text Generation System(Dulcinea),'' In <i>the Proceedings
+of International Conference on Fifth Generation Computer Systems</i>
+1992 <p>
+
+<h2>FTP</h2>
+
+<ul>
+
+<li> Experimental System for Argument Text Generation: <i>Dulcinea</i>
+[873K] <a
+href="../../../ifs/natural-lang/pimos/dulcinea.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

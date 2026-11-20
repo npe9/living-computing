@@ -1,0 +1,324 @@
+Copyright (C) 1996  植木 正裕
+
+1. EDR 辞書を用いた日本語解析ツール
+
+(1) 概要
+
+  EDR 日本語単語辞書を利用し、日本語文の形態素解析・統語解析を統合して行なう
+システムである。
+
+(2) 特徴
+
+  ・EDR 日本語単語辞書を利用している
+  ・形態素解析と統語解析を統合している
+
+(3) 機能
+
+  本システムは、日本電子化辞書研究所(EDR)で開発された EDR 日本語単語辞書を用
+いて、日本語の形態素解析と統語解析を統合して行なうシステムである。EDR 辞書は
+登録語数２５万語という非常に大規模な辞書であり、日本語単語辞書以外にも概念辞
+書・対訳辞書などがあることから、自然言語処理のさまざまな分野での利用が可能で
+ある。本システムはそのうちの形態素・統語解析部分として提供されるものである。
+複数の辞書や意味解析を行なうシステムなどと組み合わせることで、より幅広い目的
+に使用することが可能となる。
+
+2. 実行環境
+
+  本システムの作成は以下の環境で行なった。
+
+    マシン:   SS10/51
+    OS:       SunOS 4.1.3
+    使用言語: C (gcc 2.7.2 使用)
+              protcl ver1.4 (sicstus prolog 2.1#9 + tcl 7.4 + tk 4.0)
+              perl 4.036
+    ソース量: 約 45k  (辞書引きサーバ) (必須)
+              約 71k  (LR 表ジェネレータ)
+              約 72k  (MSLR パーザ  ただし、LR 表データは除く) (必須)
+
+  なお、本システムは「EDR 辞書を用いた」日本語解析ツールであるため、EDR 日本
+語単語辞書が必要であるが、EDR 辞書はフリーの辞書でないため、本システムには含
+まれていない。(付録 D 参照のこと)
+(EDR 辞書の詳細および入手法に関しては、http://www.iijnet.or.jp/edr/ を参照。)
+  辞書引きサーバでは EDR が公開している辞書検索ライブラリを使用している。こ
+れは http://www.iijnet.or.jp/edr/Tool.html より入手可能である。
+
+  また、以下の環境でも動作確認を行なった。
+
+    マシン: NEWS5000WI
+    OS:     NEWS-OS 4.2.1R
+    備考:   tcl/tk によるインタフェースについては未確認
+
+3. ファイル名一覧
+
+  README.euc             このファイル
+
+  dsv/                   辞書引きサーバ
+    Makefile
+    check_dic.c
+    consult.c
+    dsv.h
+    hash.c
+    hash.h
+    hinsi_sai2.h
+    hira_kana2.c
+    make_exe.c
+    serv.c
+
+  mlr/                   LR 表ジェネレータ
+    LR.c
+    LR.h
+    Makefile
+    README
+    ReadRules.c
+    WriteLR.c
+    WriteLR_cpm.c
+    config.h
+    connect.c
+    cpm.c
+    error.c
+    fileio.c
+    follow.c
+    gen_sglr.c
+    grform.c
+    make_sglr.prl
+    mlr2.c
+    time.c
+
+  mslr/                  MSLR パーザ
+    bigram_sai.pl
+    client.pl
+    compile.pl
+    cond.pl
+    consult.pl
+    hinshi.pl
+    hostdsv.prl
+    jiritsugo.pl
+    load.pl
+    pack.pl
+    parser1-2.sglr.pl
+    sglr.pl
+    stack.pl
+    tree.pl
+    unpack.pl
+    usage
+    util.pl
+    xmslr.tk
+
+  sample/                サンプル
+    dtrans.patch
+    sample.bun
+    sample.con
+    sample.dic
+    sample.gr
+    search.patch
+    sicstusrc.sample
+
+4. インストール手順
+
+  本システムには、LR 表ジェネレータ、LR 表変換ユーティリティ、辞書引きサー
+バ、MSLR パーザの４つのモジュールがあるが、MSLR パーザで使う LR 表はすでに含
+まれているので、文法を変更する必要がない場合、辞書引きサーバと MSLR パーザだ
+けがあればよい。
+  LR 表を生成し直すための手順は付録を参照のこと。
+
+(1) 辞書引きサーバ
+
+  EDR 辞書検索ライブラリおよび EDR 日本語単語辞書のシステム辞書を作成する。
+(付録参照)
+
+  環境変数 EDR_LIB_DIR、EDR_INCLUDE_DIR を設定する。
+
+  dsv のディレクトリに入って make する。
+
+(2) MSLR パーザ
+
+  特にインストール手続きは不要だが、解析を高速に行なうためにコンパイルを行な
+うことをお勧めする。コンパイルをするには sicstus prolog を起動し、compile.pl 
+を consult すればよい。
+
+  | ?- [compile].
+
+  SUN の場合、コンパイル前に
+
+  | ?- prolog_flag(compiling,_,fastcode).
+
+を実行しておくことが望ましい。
+
+  ただし、コンパイルによって作成される *.ql は、prolog のソース(*.pl)に比べ
+てかなりサイズが大きく(約 10 倍)なる。
+
+  また、LR 表(sglr.pl)は大きいため読み込みに時間がかかる。save/1 によってシ
+ステムの状態を保存し、それを restore するのが望ましい。sicstus prolog を起動
+し、以下の手順で save を行なう。
+
+  (prolog の library を読み込む)
+  | ?- use_module(library(ordsets)).
+  | ?- use_module(library(lists)).
+
+  (コンパイルを行なった場合)
+  | ?- [load].
+  (コンパイルを行なわなかった場合)
+  | ?- [consult].
+
+  (save を行なう)
+  | ?- save(mslr).
+
+以上の手順により mslr というファイルが作成される。次に MSLR パーザを起動する
+には、
+
+  % ./mslr
+
+とするだけでよい。
+
+5. 解析手順
+
+  MSLR パーザを実行するためには、辞書引きサーバ dsv が必ず必要となる。dsv は 
+background でも実行可能である。
+  MSLR パーザ本体の起動は「4. インストール手順」に従って行なう。
+
+  MSLR パーザでは、ファイル名を指定してそのファイル中のすべての文の解析を行
+なうこともできるし、文の番号を指定して１文ずつ解析を行なうこともできる。
+
+  (1) ファイル中のすべての文を解析したい場合
+
+    | ?- mslr(filename).
+
+  (2) ファイル中の特定の文だけを解析したい場合
+
+    | ?- kioku(filename).    ← いったんすべての文を読み込む
+    | ?- disp_sentence.      ← 読み込まれている文の表示
+    | ?- mslr(number).       ← 文番号 number の文を解析
+
+  ファイル名や文番号はリストにして複数指定できる。
+
+    | ?- mslr([filename1, filename2, filename3]).
+    | ?- mslr([number1, number2, number3]).
+
+  解析結果をファイルに残したい場合には、option(output) を指定する。
+
+    | ?- set_option(output).
+
+
+  ★ protcl ユーザは以下の機能も使用できる。
+
+  MSLR パーザは protcl を使うことで、解析木の情報を tk の canvas 上に表示す
+ることができる。
+
+  mslr で解析した後なら次のようにすればよい。
+
+    | ?- xdisp_tree(number).
+
+  mslr の代わりに xmslr を使えば、まず初めに解析を行ない、その結果を表示させ
+ることができる。
+
+    | ?- xmslr(number).
+
+  xdisp_tree は文番号での指定しかできない。xmslr も内部では xdisp_tree を実行しているので、やはり文番号での指定のみ有効である。
+
+----------------------------------------------------------------------
+付録
+
+A. LR 表の生成
+
+  MSLR パーザで使用する LR 表のデータを作成するためには、mlr2 と gen_sglr の
+２つのプログラムが必要になる。これらはそれぞれ mlr, gen_sglr のディレクトリ
+で make を行なうことで作成できる。
+
+  文法は CFG 形式で作成する。また、終端記号間の連接マトリクスを用意する。
+  (連接の制約を入れたくなければ、すべて連接可能となるようなマトリクスを用意
+する。)
+  make_sglr.prl を実行すると、MSLR パーザで利用できる prolog の program 形式
+のファイルを作成する。
+
+  % ./make_sglr.prl -g grammar -c connection_matrix -o sglr.pl
+
+B. EDR 辞書検索ライブラリおよび EDR 日本語単語辞書のシステム辞書の作成
+
+  EDR 辞書検索ライブラリおよびシステム辞書作成ツールは以下の URL より入手で
+きる。
+
+  http://www.iijnet.or.jp/edr/Tool.html
+
+  Windows 版辞書ブラウザ(Tool-Windows-Archives.tar.gz)の一部として含まれてい
+る。src/search が辞書検索ライブラリのソース、src/dtrans/unix がシステム辞書
+作成ツールのソースである。なお、src/search 以下のファイルは漢字コードが SJIS 
+になっているので注意が必要である。また、本来 Windows で使用することを目的と
+しているので、辞書を変換する際などに漢字コードを EUC から SJIS に変換してい
+る部分がある。sample ディレクトリにある patch をあてれば UNIX 上で EUC コー
+ドでの検索が行なえる。
+  コンパイルは、それぞれのディレクトリで make するだけである。
+
+  システム辞書は dtrans を使って作成する。日本語単語辞書からシステム辞書を作
+成する場合には次のようにする。
+
+  % dtrans -WD < JWD.DIC
+
+  パッケージの中にもドキュメントが含まれているので、詳しくはそちらを参照して
+もらいたい。
+
+C. 解析例
+
+  % ./mslr    ← prolog を save したファイルからの実行
+                 (「4. インストール手順」参照)
+  
+  yes
+  | ?- kioku('../sample/sample.bun').
+  
+  yes
+
+  | ?- disp_sentence.
+  1 , 本プログラムは、日本電子化辞書研究所（ＥＤＲ）で開発されたＥＤＲ日本語単
+  語辞書を用いて、日本語の形態素解析と統語解析を統合して行なうソフトウェアであ
+  る。
+
+  yes
+
+  | ?- mslr(1).
+
+  本プログラムは、日本電子化辞書研究所（ＥＤＲ）で開発されたＥＤＲ日本語単語辞
+  書を用いて、日本語の形態素解析と統語解析を統合して行なうソフトウェアである。
+
+  consulting dictionary ... done
+
+  time for consult = 1260 msec
+
+
+  analyzing sentence o.o..oooooooooooooo..oooooooo..oooooooooooooooooooooooooooo.oooooo..o..ooooo done
+
+  time for analyze = 3240 msec
+
+  unpacking forest ... done
+
+  time for unpack = 90 msec
+
+  extracting bunsetsu ... done
+
+  time for extracting bunsetsu = 130 msec
+
+  本プログラムは、              [t_n,n,jo,tten]
+  日本電子化辞書研究所          [n_固,n,b_n_sahen,n,n]
+  （ＥＤＲ）で                  [lkakko,n_未_,rkakko,jo]
+  開発された                    [n_sa,ev変未,jd,jd止体]
+  ＥＤＲ日本語単語辞書を        [n_未_,n,n,n,jo]
+  用いて、                      [ve_1,jo,tten]
+  日本語の                      [n_固,b_n,jo]
+  形態素解析と                  [n,n_sa,jo]
+  統語解析を                    [n_未_,n,n,jo]
+  統合して                      [n_sa,ev変用,jo]
+  行なう                        [ve,ev止体]
+  ソフトウェアで                [n,jo]
+  ある。                        [ve,ev止体,kuten]
+
+
+  Number of result = 1
+
+  time for total = 4780 msec
+
+
+  yes
+
+D. サンプル辞書
+
+  (株)日本電子化辞書研究所のご好意で、sample/sample.bun に含まれる語彙項目につ
+いてのみ、サンプル辞書という形でアーカイブに含めさせていただいた。使用方法につ
+いては付録 B ですでに述べた通りである。

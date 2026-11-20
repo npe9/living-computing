@@ -1,0 +1,32 @@
+Copyright (C) 1997 Hidenori Itoh
+
+May 9, 1997.
+
+Research Theme : Study on Strategy Acquisition in Tsume-shogi
+Researcher     : Hidenori Itoh
+
+This package includes the following files and program packages 
+about above research.
+
+Readme-E		This file
+Readme-J		Japanese version of this file
+tsumeshogi.tar.gz 	Parallel game tree search program for Tsume-Shogi
+			: This program solves Tsume-shogi problems on 
+                          a parallel machine AP1000.
+
+foili.tar.gz 		FOIL-I for strategy Acquisition
+			: This program acquires Tsume-Shogi strategy form 
+                          background knowledge, positive examples and 
+                          negative examples.
+
+pfoil.tar.gz		Parallel FOIL
+			: This program is a parallel FOIL inplemented on 
+                          a parallel machine AP1000.
+
+
+
+Above three package's volume:
+tsumeshogi.tar.gz 	503k
+foili.tar.gz		173k
+pfoil.tar.gz 		135k
+

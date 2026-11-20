@@ -1,0 +1,96 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%									%
+%	Knowledge Base of Biological Reactions				%
+%									%
+%		1995.3 							%
+%									%
+%	(C)1995 Institute for New Generation Computer Technology	%
+%	Read COPYRIGHT for detail information.				%
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+1. Abstract
+
+This system provides illustrations of biological reactions, signal 
+transductions, gene expressions and their relationships using Quixote.
+
+2. Configuration
+
+Knowledge Base Module ..........Signal Transduction Pathway
+Interface Module ...............Pathway Viewing and Query Processing
+External DB Interface Module ...PIR access 
+
+3. Features
+
+(1) KB Module
+
+The aspect of the object oriented database language of Quixote enables 
+to represent pieces of biological processes systematically and easily.
+And the aspect of the deductive database language provides total 
+illustration from the pieces of biological processes which may be altered 
+or detailed.
+
+(2) IF Module
+
+GUI shows biological processes in the requested minuteness.
+
+(3) DB Module
+
+References to the existing public databases such as PIR or ProSite 
+are available.
+
+4. Environment
+
+Machine     : UNIX Workstation(tested in IRIS, Sparc10)
+Environment : UNIX, X Window(Motif)
+Language    : C, C++, yacc/lex
+Source Code : 190KB
+
+5. files
+
+Bio-Reaction KB (pathway/)
+	motifhead.c	motifhead.h 
+	TextWidget.c	TextWidget.h 
+	callbacks.c
+	newclass.c	newclass.h 
+	bind.c		bind.h
+	io.c 
+	allow.c 
+	questionBox.c
+	wprintf.c 
+	qxoteParse.c	qxoteParse.l	qxoteParse.y 
+	main.c 
+	Makefile
+
+micro-Quixote Version 8 (pathway/mq-008/)
+
+BUGS            COPYRIGHT.j     INSTALL         src/
+COPYRIGHT       GNU/            README
+
+GNU:
+COPYING         MANIFEST        obstack.c       parse_t.c       quixote.el
+COPYING.LIB     alloca.c        obstack.h       parse_t.h
+
+src:
+ChangeLog       cs-dot.c        ext.c           obstack.c@      subrel.c
+MANIFEST        cs-ext.c        extern.h        obstack.h@      subsump.c
+Makefile-dist   cs-sub.c        internal.c      option.c        syntax.ref
+alloca.c@       cs.c            internal.h      parse.y         syntax.ref.j
+api.c           dot.c           lex.c           parse_t.c@      tree.c
+api_example.c   emit.c          lookup.c        parse_t.h@      tree.h
+atom.c          emit.h          mq.1            print.c         unify.c
+attr.c          error.c         mq.c            quixote.el@     version.c
+commands.c      exec.c          mq.h            rule.c
+
+6. Usage
+
+(1) Install and Run
+
+	Please see INSTALL
+
+(2) Retrieval
+
+	Please see DOC
+
+(3) Knowledge Update
+
+	Please see DOC

@@ -1,0 +1,81 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (52) Go Playing Game System "GOG"(The Sequential Version)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (52) Go Playing Game System "GOG"(The Sequential Version)</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 1.5 MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Go Playing Game System.<P>
+ 
+<h2><b>Configuration</b></h2>
+<pre>
+
+       　　　　　┌─────　Playing System (Board Recognition
+       　　　　　│　　　　　　　Move Generation, Local Area Search)
+    GOG　────┼─────　Knowledge Editor
+       　　　　　└─────　Evaluation Tool
+
+</pre>
+
+<h2><b>Function</b></h2>
+
+The "GOG" plays whole Go game by the Chinese rule. We can edit some
+"candidate knowledges" using Knowledge editor. We can also evaluate
+the improved candidate knowledges using Evaluation tool.<P>
+
+<h2><b>Feature</b></h2>
+
+The approach of GOG is based on simulating a human player's thinking
+mechanism. As a Go-playing program requires basic AI techniques such
+as searching, processing ambiguous patterns, exceptional processing,
+and cooperative problem solving, it is a suitable research subject for
+knowledge processing technologies.  <p>
+
+Due to the high branching factor of the Go game tree, computer chess
+type full board search becomes hopeless in this domain. In the stage
+of board recognition and planning, GOG simulates the human player's
+"focus of attention".<P>
+
+<h2><b>References</b></h2>
+
+<OL>
+
+<LI> Methodology of GOSEDAI, N.Sanechika et al., ICOT-TR 717, The
+Specifications of "GO Generation", N.Sanechika et al., ICOT-TR 720
+
+</OL>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Go Playing Game System "GOG"(The Sequential Version) [712K] <a
+href="../../../ifs/exper-apps/simpos/gog-esp.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

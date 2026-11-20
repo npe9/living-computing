@@ -1,0 +1,35 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     ICOT FREE SOFTWARE No.90 MGTP-G (KL1 version)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The structure of this software
+
+ This software includes : 
+
+   README.j          README (In Japanese)
+   README.e          this file
+   mgtp-manual-J.ps  manuals in Japanese (PS file)
+   mgtp-manual-E.ps  manuals in English (PS file)
+   mgtpx_s_merc_stats.kl1
+   mgtpx_s_time
+   mgtpx_clink_stats.kl1
+   mgtpx_s_tm_stats.kl1
+   mgtpx_index_stats.kl1
+   mgtpx_tm_stats.kl1
+   mgtpx_merc_stats.kl1
+   naive_a_st.kl1
+   merc_a_st.kl1
+   mgtpx_s_clink_stats.kl1
+   rams_a2_st.kl1
+   merc_alls_stats.kl1
+   mgtpx_s_index_stats.kl1
+
+  See the manuals for the mechanism of MGTP-G, the installation, 
+  and the execution.
+
+If you have any trouble with this software, please let me
+   know. Comments, suggestions, and bug fixes are welcome.
+
+ifs@icot.or.jp

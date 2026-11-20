@@ -1,0 +1,259 @@
+			GUIトランスレータ操作マニュアル
+
+1. 概要
+									
+ユーザが自分で新たに言語マニュアルに従って知識ベースを作成した場合、これ
+らの構文をチェックしてGUIで扱い易い内部表現に変換しなければならない。
+この構文のチェックと内部表現への変換を行うのが「トランスレータ」の役割で
+ある。
+具体的には、以下の知識ベースのファイルの内部表現の変換を行なう。
+
+・ 型定義ファイル
+・ ルール定義ファイル 	   
+・ 半順序定義ファイル
+・ ゴール定義ファイル
+
+また、トランスレータは、以下の４つの機能を提供している。
+
+(1) 型内部表現変換機能
+    型定義ファイルを内部表現に変換する。
+(2) ルール内部表現変換機能
+    ルール定義ファイルを内部表現に変換する。
+(3) 半順序内部表現変換機能
+    ユニット階層、判断基準、価値観を内部表現に変換する。
+(4) ゴール内部表現変換機能
+    ゴール定義ファイルを内部表現に変換する。
+
+以下にトランスレータのコマンド、および実行中に出力されるエラーメッセージ
+の解説を行う。
+
+2. コマンド
+
+以下にトランスレータのコマンドについて説明する。
+以下の説明では、小文字は固定の文字、大文字はそこに任意の文字が入ることを
+意味する。
+また、知識ベースのファイルに日本語を含んでいる場合は、そのファイルはEUC
+コードでwriteしなくてはならない。
+なお、実行例はカレントディレクトリがgui/dataの時に実行したときのものであ
+る。
+
+2.1 型内部表現変換
+
+  (1) コマンド
+
+        gtrans type INPUT OUTPUT
+
+          INPUT ：型定義ファイル名
+          OUTPUT：出力先のファイル名
+		  出力ファイル名の拡張子は.t にしなければならない。
+
+  (2) 機能
+
+        型の構文チェックと内部表現への変換を行う。
+	
+
+  (3) 実行例
+
+        % gtrans type koujo.type koujo.t
+
+2.2 ルール内部表現変換
+
+   (1) コマンド
+
+        gtrans rule INPUT OUTPUT
+
+          INPUT ：ルール定義ファイル名
+          OUTPUT：出力先のファイル名
+		  出力ファイル名の拡張子は.r にしなければならない。
+
+   (2) 機能
+
+        ルールの構文チェックと内部表現への変換を行う。
+
+   (3) 実行例
+
+        % gtrans rule koujo.rule koujo.r
+
+2.3 半順序内部表現変換
+
+  (1) コマンド
+
+        gtrans pom INPUT OUTPUT
+
+           INPUT  : 半順序定義のファイル名
+           OUTPUT : 出力先のファイル名
+  		    出力ファイル名の拡張子は.v にしなければならない。
+
+ (2) 機能
+
+     半順序関係の構文チェックと内部表現への変換を行う。
+
+ (3) 実行例
+
+    % gtrans pom koujo.pom koujo.v
+
+2.4 ゴール内部表現変換機能
+
+  (1) コマンド
+
+        gtrans goal INPUT OUTPUT
+
+          INPUT ：ゴール定義ファイル名
+          OUTPUT：出力先のファイル名
+  		  出力ファイル名の拡張子は.g にしなければならない。
+
+  (2) 機能
+
+        ゴールの構文チェックと内部表現への変換を行う。
+
+  (3) 実行例
+
+        % gtrans goal koujo.goal koujo.g
+
+3 エラーメッセージ
+
+ルール、ゴール、型、半順序変換時に出されるエラーメッセージに関する出されるメッ
+セージ・意味・その対処方法について述べる。
+
+3.1 ルール、ゴールの変換時のエラー
+
+  !trans-illegal syntax :line NUMBER ELEMENT
+
+   意味 : NUMBER 行目のELEMENT が構文記述シンタックスに反する。
+   対処 : ELEMENT 近辺部分を書き直す。
+
+       < 例 >
+
+         !trans-illegal syntax :line 440 'goal'
+
+  !trans-illegal variable definition :line NUMBER ELEMENT
+
+   意味 : 変数 ELEMENT に対する型指定場所が定められている場所に
+          記述されていない。あるいは、型指定が重複されている。
+   対処 : 定められている場所に記述し直す。
+
+      < 例 >
+
+          !trans-illegal variable difinition:line 439 'Z'
+
+  !trans-illegal htermID definition :line NUMBER ELEMENT
+
+   意味 : H項変数( 言語マニュアル参照) ELEMENT に対するH項指定場所が定めら
+          れている場所に記述されていない。あるいは、H項指定が重複されている。
+          または、H項定数(言語マニュアル参照) ELEMENT に対するH項指定場所が
+          定められている場所に記述されていない。あるいは、H項指定が重複され
+          ている。
+   対処 : 定められている場所に記述し直す。
+
+      < 例 >
+ 
+          !trans-illegal htermID definition:line 440 '@奪う'
+
+  !trans-Input file can't open or don't exist
+
+   意味 : Input file の open に失敗した。あるいは、見つからない。
+   対処 : ファイル名を指定し直す。
+
+
+  !trans-Output file can't open or mistake pathname
+
+   意味 : Output file の open に失敗した。あるいは、パス名が間違っている。
+   対処 : ファイル名を指定し直す。
+
+  !trans-Memory error
+
+   意味 : 処理中において、メモリ獲得に失敗した。
+   対処 : 実行し直す。
+
+  !trans-illegal argument NUMBER
+
+   意味 : 入力時における引数の数が異なる。
+   対処 : 入力をやり直す。
+
+3.2 型の変換時のエラー
+
+  !trans-corrupted_file PATHNAME
+
+   意味 : PATHNAME で指定された型定義ファイルの内部形式が違う。ファイルが壊れ
+          ている。
+   対処 : 型定義ファイルをトランスレートし直し、新たに生成し直した型定義ファ
+          イルを指定する。
+
+  !trans-illegal_attribute_dcl_syntax PAIR
+
+   意味 : PAIR で指定された属性の宣言が構文記述シンタックスに反する。
+   対処 : 型定義ファイル中の PAIR の記述を修正する。
+
+  !trans-illegal_dcl_syntax X
+
+   意味 : X で指定された型の宣言が構文記述シンタックスに反する。
+   対処 : 型定義ファイル中の X の記述を修正する。
+
+  !trans-illegal_file PATHNAME
+
+   意味 : PATHNAME で指定されたファイルが型定義ファイルではない。
+          (ヘッダの形式が違う。)
+   対処 : 型定義ファイルをトランスレートし直し、新たに生成し直
+	した型定義ファイルを指定する。
+
+  !trans-illegal_term TERM
+
+   意味 : TERM で指定された項が構文記述シンタックスに反する。
+   対処 : 型定義ファイル中の TERM の記述を修正する。
+
+  !trans-loop_definition LOOPNAMELIST
+
+   意味 : LOOPNAMELIST 中の型名の宣言の中にループを構成する定
+	  義がある。
+   対処 : 型定義ファイル中の LOOPNAMELIST の型の記述を修正する。
+
+  !trans-open_fail PATHNAME
+
+   意味 : PATHNAME で指定されたファイルがオープンできない。
+   対処 : ファイル名を確認し、正しいファイル名を指定する。
+
+  !trans-type_dcl_error X Y
+
+   意味 : 属性継承の解決中に型 X と Y に矛盾を検出した。
+   対処 : 型定義ファイルの X, Y の宣言を修正する。
+
+  !trans-type_error X Y
+
+   意味 : 属性の型 X が、宣言されている属性の型 Y と矛盾する。
+   対処 : 型定義ファイルの X, Y の宣言を修正する。
+
+3.3 半順序関係の変換時のエラー
+
+  !trans-Don't find file: XX
+	意味:入力ファイル名XXが正しくない。
+	対処:正しい入力ファイル名を指定する。
+
+  !trans-Don't make file: XX
+	意味:出力ファイル名XXが正しくない。
+	対処:正しい出力ファイル名を指定する。
+
+  !trans-illegal unit definition : XX
+	意味:"&define_unit"がない。
+	対処:ユニット階層定義ファイルの頭に"&define_unit"を書く
+
+  !trans-illegal unit : XX
+	意味:ユニット階層の表記XXが正しくない
+	対処:XXの所を正しいユニット・シンタックスに基づいた表記にする
+
+  !trans-illegal standpoint definition : XX
+	意味:"&define_standpoint"がない。
+	対処:判断基準定義ファイルの頭に"&define_standpoint"を書く
+
+  !trans-illegal standpoint : XX
+	意味:判断基準の表記XXが正しくない
+	対処:XXの所を正しい判断基準シンタックスに基づいた表記にする
+
+  !trans-illegal view definition : XX
+	意味:"&define_view"がない。
+	対処:価値観定義ファイルの頭に"&define_view"を書く
+
+  !trans-illegal view :XX
+	意味:価値観の表記XXが正しくない
+	対処:XXの所を正しい価値観シンタックスに基づいた表記にする
+
+

@@ -1,0 +1,88 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+-->
+<title>(92) 制約 MGTP ( Prolog版 / KL1版 / KLIC版)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(92) 制約 MGTP ( Prolog版 / KL1版 / KLIC版)</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM/UNIXマシン
+	環　　境：PIMOS/UNIX, KLIC
+	言　　語：Prolog/KL1
+	ソース量：0.2 MB
+	文　　書：マニュアル (日本語・英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+有限領域の制約充足問題を解くための MGTP 処理系<p>
+
+<h2>特徴</h2>
+
+<ul>
+
+<li>負の制約伝搬を実現するために、negative atom を用いたルール表現が可能。
+
+<li>unit refutation ルール、<img src="092_A.gif"> を導入。
+
+ <li><img src="092_PQ-R.gif"> といったルールに関して、それと論理的に等
+価である<img src="092_PR-Q.gif"> や <img src="092_RQ-P.gif"> といった
+負の制約伝搬ルールが記述可能。
+
+<li>モデル候補集合に含まれるアトムとモデル拡張候補集合に含まれる選言の
+間で unit simplification が行ない、冗長な枝を削除する。
+
+</ul>
+<p>
+
+<h2>機能</h2>
+
+オリジナルの MGTP は有限領域の制約充足問題に対して非常に簡易な一階述語
+形式での記述を可能にしたが、反面、負の情報を扱わないため、枝刈り効果が
+十分ではなく、探索木が爆発してしまうという欠点を持っていた。<p>
+
+CMGTP はこのような欠点を補うため、MGTP に負アトムを導入し、また、以下
+に示すような unit refutation、unit simplificationのメカニズムを導入す
+ることによって、負の情報による制約伝搬を可能にした。ここで、$M, D$ は
+それぞれモデル候補集合、モデル拡張候補集合を表す。<p>
+
+<dl>
+<pre>
+   <img src="092_1.gif">   <img src="092_2.gif">   <img src="092_3.gif">
+</pre>
+</dl>
+<p>
+
+CMGTP では、有限領域の制約充足問題の制約式をダイレクトに記述できるとい
+う意味で、制約記述のためのメタ言語として考えることができる。<p>
+
+例題として扱った有限代数分野の準群問題に関しては、非常に効率良く解が求
+められることがわかっている。<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li><a
+href="../../../ifs/solver-prover/klic/CMGTP/README.j">README</a>.
+
+<li>	制約 MGTP ( Prolog版 / KL1版 / KLIC版) [597K] <a
+href="../../../ifs/solver-prover/klic/CMGTP/CMGTP.tar.gz">
+<img src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

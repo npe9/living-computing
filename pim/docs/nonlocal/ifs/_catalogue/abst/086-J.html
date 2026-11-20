@@ -1,0 +1,90 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+-->
+<title>(86) 分散プール</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(86) 分散プール</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM/UNIXマシン
+	環　　境：PIMOS/UNIX, KLIC
+	言　　語：KL1
+	ソース量：0.2 MB
+	文　　書：ユーザーズマニュアル (日本語・英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+データを分散して管理するメモリベースの簡易データベース<p>
+
+<h2>特徴</h2>
+
+<ul>
+
+<li>プールに格納されるデータは各ノードにキャッシュされるので、データへ
+のアクセスは各ノード毎に低コストでなされる。
+
+<li>メモリ消費を多数の処理ノードに分散しているので、プールの最大容量を
+大きくすることができる。
+
+<li>データの一貫性を気にすることなくフレキシブルに負荷を分散することが
+できる。
+
+</ul>
+<p>
+
+<h2>機能</h2>
+
+分散プールではデータをキー付で格納し、そのキーを用いてデータの取り出し
+や参照を行なう。ユーザに対し提供している機能を以下に示す。<p>
+
+<ul>
+
+<li>キーに対応するデータを参照する。
+
+<li>キーに対応するデータを追加する。
+
+<li>もしキーに対応するデータがあるなら、そのデータを取り出し、新しいデー
+タを同じキーで格納する。
+
+<li>もしキーに対応するデータがあるなら、そのデータを取り出し、新しいデー
+タを同じキーで格納する。もし対応するデータがなかったら、新しいデータは
+プールに格納されない。
+
+<li>もしキーに対応するデータがあるなら、それを取り出す。
+
+<li>キーに対応するデータを削除する。
+
+</ul>
+<p>
+
+<h2>ＦＴＰ</h2>
+
+<ul>
+
+<li><a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/README.j">README</a>.
+
+<li>	分散プール	<br> <a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/dpool_klic.tgz">
+ＫＬＩＣ版 [169K]<img src="I-ftp-copy.gif"></a><br> <a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz">
+ＰＩＭＯＳ版 [226K]<img src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

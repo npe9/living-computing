@@ -1,0 +1,54 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_argumentBrawzer.
+
+:- public 
+    go/4.
+
+:- with_macro pimos. 
+
+    go(AgentName,{DBT,CGS1},Data,Protocol):-true|
+        CGS1  = [get(AgentName,st,ST)|CGS],
+        go1(ST,AgentName,{DBT,CGS},Data,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol).
+
+%show_argument
+    go1(nil,_,Data1,Data,Result):-true|
+	Data = Data1,
+        Result = abnormal({cui,'Solution is nothing',nil}).
+otherwise.
+    go1(ST,AgentName,Data1,Data,Result):-true|
+	get_plpt(AgentName,Data1,Data2,PL1,PT1,R1),
+	( wait(R1)->
+	        slv_shell:go({ST,_,{PL1,PT1}},{PL,PT},R2)),
+	( wait(R2)->
+		set_plpt(AgentName,PL,PT,Data2,Data,R)),
+	( wait(R)->
+		Result = normal(success)).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,Protocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,Protocol):-true|
+        Protocol = receive(AgentName,ProtocolName,Arguments,normal(success)).
+
+%%%%%%%%%
+
+    get_plpt(AgentName,Data1,Data,PL,PT,R):-true|
+	dbtcui_send:pl(AgentName,Data1,Data2,Protocol1),
+	Protocol1 = receive(_,_,PL,_),
+	dbtcui_send:pt(AgentName,Data2,Data,Protocol2),
+	Protocol2 = receive(_,_,PT,_),
+	( wait(PL),wait(PT)->
+		R = normal(success)).
+
+    set_plpt(AgentName,PL,PT,Data1,Data,R):-true|
+	dbtcui_set:pl(AgentName,PL,Data1,Data2,Protocol1),
+	Protocol2 = receive(OK1,_,_,_),
+	dbtcui_set:pt(AgentName,PT,Data2,Data,Protocol2),
+	Protocol2 = receive(OK2,_,_,_),
+	( wait(OK1),wait(OK2)->
+		R = normal(success)).

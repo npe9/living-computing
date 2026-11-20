@@ -1,0 +1,82 @@
+================================================================
+              README for klitcl version 1.00
+================================================================
+
+1. Contents of package
+
+ This archive containing follow files.
+
+  README           (README file written in Japanese)
+  Makefile         (Makefile for generate klitcld)
+  klitcld.c        (Source file of klitcld)
+  klitcl.kl1       (klitcl module written by klic)
+
+  ---in `doc' directory
+
+   klitcl.doc      (Usage of klitcl (written in Japanese))
+
+   klitcl.tex      (Users Manual (written in Japanese))
+   klitcl.eps      (Figure for Manual)
+   sample1.eps     (as above)
+   sample2.eps     (as above)
+
+   catalog_page.tex (Introduction of klitcl
+                       (IFS catalog form written in Japanese))
+
+  ---in `sample' directory
+
+   sample1.kl1     (sample file)
+   sample2.kl1     (sample file)
+
+  ---in `hanoi' directory
+
+   readme          (Explanation of sample application)
+   hanoi.tcl       (Sample application (`The tower of hanoi' Tcl part))
+   hanoi.kl1       (Sample application (`The tower of hanoi' klic part))
+
+2. How to Install and Use klitcl
+
+   2.1 Generate klitcld
+
+     In extracted directory, type `make'.
+     (If you need, edit Makefile)
+
+   2.2 Compile a application program
+
+     Application program using klitcl module must be
+     compiled with klitcl.kl1.
+
+     For example....
+
+     % klic -o prog klitcl.kl1 prog.kl1
+
+   2.3 Execute a application
+
+     In the first, execute `klitcld'.
+
+     Next, execute your application program.
+
+     For Example....
+
+     % ./klitcld &
+     % ./prog
+
+     <NOTICE> 
+        klitcld and your application must be executed in
+        _same_directory_.
+
+3. Target of this program
+
+   Target user of this program is......
+
+    * User who want to attach GUI to application made by klic.
+    * User who want to use klic predicate in Tcl/Tk script.
+
+4. About copyright
+
+    Copyright of this program is kept by Jun Nagumo as author.
+
+================================================================
+                                  Copyright (C) 1996 Jun Nagumo
+================================================================
+(eof)

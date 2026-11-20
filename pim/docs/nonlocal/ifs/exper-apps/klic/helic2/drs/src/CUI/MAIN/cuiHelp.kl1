@@ -1,0 +1,165 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    (C)1994 Institute for New Generation Computer Technology        %%%%
+%%%%    (Read COPYRIGHT for detailed information.)                      %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_help.
+
+:- public 
+    help/1.
+    help/2.
+            
+:- with_macro pimos. 
+
+%help/3
+    help(Protocol):-true|
+        Help = [
+	"    ab 	help 		remove    trans",
+	"    add    	load		set    ",
+	"    clear	quit 		show",
+	"    compile	run		solve"],
+        make_protocol(normal(success),help,Help,Protocol).
+
+    help(Command,Protocol):-true|
+        get_help(Command,Help,Result),
+        make_protocol(Result,help,Help,Protocol).
+
+%%%%%
+    get_help("all",Help,Result):-true|
+        Help =[
+	"    compile 	<goal|type|rule|pom>	 	ReadFileName",
+	"    load 	<goal|type|rule|pom> 		ReadFileName",
+	"    set 	gp 				Position",
+	"    set 	goal 				Goal",
+	"    set 	view 				View",
+	"    set 	sp 				SP-list",
+	"    set 	unit 				Unit-list",
+	"    set 	pl 				Int",
+	"    set 	pt 				<h|e>",
+	"    set 	cl 				Int",
+	"    set 	sim 				Int",
+	"    set 	weight 				Int",
+	"    set 	ptst 				Int Int Int Int Int Int",
+	"    set 	ptaw 				Int",
+	"    set 	tf 				<on|off>",
+	"    set 	sr 				RuleName-list",
+	"    set 	sg				SpyGate-list",
+	"    run 					ReadFileName",
+	"    solve 					[Goal]",
+	"    ab ",
+	"    quit ",
+	"    show 	goal",
+	"    show 	view				[View]",
+	"    show 	sp				[SP]",
+	"    show 	unit				[Unit]",
+	"    show 	pl",
+	"    show 	pt",
+	"    show 	cl",
+	"    show 	sim",
+	"    show 	weight",
+	"    show 	ptst",
+	"    show 	ptaw",
+	"    show 	tf",
+	"    show 	sr",
+	"    show 	sg",
+	"    add 	sr 				RuleName-list",
+	"    add 	sg 				SpyGate-list",
+	"    remove 	sr 				RuleName-list",
+	"    remove 	sg 				SpyGate-list",
+	"    clear 	sr",
+	"    clear 	sg",
+	"    trans 	<goal|type|rule|pom> 		ReadFileName WriteFileName",
+	"    help 					[Command]"],
+        Result = normal(success).
+
+    get_help("compile",Help,Result):-true|
+        Help =[
+	"    compile 	<goal|type|rule|pom>	 	ReadFileName"],
+        Result = normal(success).
+    get_help("load",Help,Result):-true|
+        Help =[
+	"    load 	<goal|type|rule|pom> 		ReadFileName"],
+        Result = normal(success).
+    get_help("set",Help,Result):-true|
+        Help =[
+	"    set 	gp 				Position",
+	"    set 	goal 				Goal",
+	"    set 	view 				View",
+	"    set 	sp 				SP-list",
+	"    set 	unit 				Unit-list",
+	"    set 	pl 				Int",
+	"    set 	pt 				<h|e>",
+	"    set 	cl 				Int",
+	"    set 	sim 				Int",
+	"    set 	weight 				Int",
+	"    set 	ptst 				Int Int Int Int Int Int",
+	"    set 	ptaw 				Int",
+	"    set 	tf 				<on|off>",
+	"    set 	sr 				RuleName-list",
+	"    set 	sg				SpyGate-list"],
+        Result = normal(success).
+    get_help("run",Help,Result):-true|
+        Help =[
+	"    run 					ReadFileName"],
+        Result = normal(success).
+    get_help("solve",Help,Result):-true|
+        Help =[
+	"    solve 					[Goal]"],
+        Result = normal(success).
+    get_help("ab",Help,Result):-true|
+        Help =[
+	"    ab "],
+        Result = normal(success).
+    get_help("quit",Help,Result):-true|
+        Help =[
+	"    quit "],
+        Result = normal(success).
+    get_help("show",Help,Result):-true|
+        Help =[
+	"    show 	goal",
+	"    show 	view				[View]",
+	"    show 	sp				[SP]",
+	"    show 	unit				[Unit]",
+	"    show 	pl",
+	"    show 	pt",
+	"    show 	cl",
+	"    show 	sim",
+	"    show 	weight",
+	"    show 	ptst",
+	"    show 	ptaw",
+	"    show 	tf",
+	"    show 	sr",
+	"    show 	sg"],
+        Result = normal(success).
+    get_help("add",Help,Result):-true|
+        Help =[
+	"    add 	sr 				RuleName-list",
+	"    add 	sg 				SpyGate-list"],
+        Result = normal(success).
+    get_help("remove",Help,Result):-true|
+        Help =[
+	"    remove 	sr 				RuleName-list",
+	"    remove 	sg 				SpyGate-list"],
+        Result = normal(success).
+    get_help("clear",Help,Result):-true|
+        Help =[
+	"    clear 	sr",
+	"    clear 	sg"],
+        Result = normal(success).
+    get_help("trans",Help,Result):-true|
+        Help =[
+	"    trans 	<goal|type|rule|pom> 		ReadFileName WriteFileName"],
+        Result = normal(success).
+    get_help("help",Help,Result):-true|
+        Help =[
+	"    help 					[Command]"],
+        Result = normal(success).
+otherwise.
+    get_help(C,_,Result):-true|
+        Result = abnormal({cui,'Illegal command',C}).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,          _,        Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,Arguments,Protocol):-true|
+        Protocol = receive(ProtocolName,Arguments,_).

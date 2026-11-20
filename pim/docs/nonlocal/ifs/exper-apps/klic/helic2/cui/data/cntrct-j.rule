@@ -1,0 +1,145 @@
+&define_absolute_rule.
+&define_RBR_rule.     {
+
+
+act0::isFather(a_object=father, basis=tarou[age=>19])
+||"fatherは１９歳の太郎の父である。".
+
+
+act1::give(agent=father, goal=tarou[age=>19], object=money[amount=>1])
+||"fatherは太郎に１万円を小遣いとしてあげた。".
+
+
+act2::buy(agent=tarou[age=>19], object=lottery, implement=money[amount=>1])
+||"太郎は、小遣いで宝くじを買った。".
+
+
+act3::win_prize(agent=tarou[age=>19], source=lottery,goal=money[amount=>50])
+||"太郎は、宝くじで５０万円を当てた。".
+
+
+act4::buy(agent=tarou[age=>19], object=byke, implement=money[amount=>60])|#act 
+||"太郎は、６０万円のバイクを買った。".
+
+
+act5::loan(agent=tarou[age=>19], object=money[amount=>10], 
+           source=money[amount=>50])|#result
+||"太郎は、１０万円の負債を負った。".
+
+
+act6::causality(source= #act, goal= #result)
+||"バイクの購入と負債には因果関係にある。".
+
+
+act10:: -allow(agent=father, object= #result)
+||"父は、太郎が負債を負うことに同意していない。".
+
+
+act7a::married(agent=tarou[age=>19])
+||"太郎は、その後で結婚した".
+
+act7b:: -married(agent=tarou[age=>19])
+||"太郎は、その後で結婚していない".
+
+
+act8a::becomeAdult(agent=tarou[age=>19])
+||"太郎は、その後、２０歳になった".
+
+act8b:: -becomeAdult(agent=tarou[age=>19])
+||"太郎は、その後、２０歳になっていない。".
+
+
+
+act9a::payLoan(agent=tarou[age=>19], object= #result)
+||"太郎の口座から最初の引き落としがあった".
+
+act9b:: -payLoan(agent=tarou[age=>19], object= #result)
+||"太郎の口座から最初の引き落としがなかった。".
+
+%   ---------------------------------
+
+
+r1::contract(agent=X, implement=Z, source=W, object= @result)
+               <- buy(agent=X/person, implement=S/money)|@act,
+                  loan(agent=X, object=Z/money, source=W/money)|@result,
+                  causality(source= @act, goal= @result)
+|| X "が" S "を購入し、その結果、負債を負ったならば、" X  "は契約をしたことになる。".
+
+
+
+r2::needAllow(agent=Y, a_object= @act)
+               <- contract(agent=X/person[age=>19])|@act,
+                  isFather(a_object=Y, basis=X)
+||"１９歳である" X "が、契約をするときは、父" Y "の同意が必要である。".
+
+
+r3:: -needAllow(agent=Y, a_object= @act)
+               <- give(agent=Y, goal=X/person[age=>19], object=Z/money),
+                  interest(goal=W/money, source=Z),
+                  contract(agent=X, source=W)|@act,
+                  isFather(a_object=Y, basis=X)
+||"１９歳である" X "が、お金" Z "を父" Y "からもらい、そのお金を通常の方法で" W "に増やして、それで契約をしたならば父の同意は不要である。".
+
+
+r4::interest(goal=W, source=Z) 
+               <- buy(agent=X/person, object=lottery, implement=Z/money),
+                  win_prize(agent=X, source=lottery, goal=W/money)
+|| X "がお金" Z "で宝くじを買い、それが当選してお金" W "となったときは、通常の方法で増やしたことになる。".
+
+r5:: -interest(goal=W, source=Z) 
+               <- buy(agent=X/person, object=lottery, implement=Z/money),
+                 win_prize(agent=X, source=lottery, goal=W/money[amount=>50])
+|| X "がお金" Z "で宝くじを買い、それが５０万円もの額に当選したときは、通常の方法で増やしたことにならない。".
+
+r6:: -valid(a_object= @act)
+               <- loan(agent=X/person, object=Z/money, source=W/money)|@loan,
+                  contract(agent=X, object= @loan)|@act,
+                  needAllow(agent=Y/person, a_object= @act),
+                  -allow(agent=Y, object= @loan),
+                  isFather(a_object=Y, basis=X)
+||X "が契約をするのに、父" Y "の同意が必要にもかかわらず、同意を得ていなかったならば、その契約は無効である。".
+
+
+r7:: valid(a_object= @act)
+               <- contract(agent=X/person)|@act,
+                  becomeAdult(agent=X),
+                  agree(agent=X, object= @act)
+||"契約をした後で、２０歳になり、自分の契約を認証（追認）したときは、その契約は有効である。".
+
+r8:: valid(a_object= @act)
+               <- contract(agent=X/person)|@act,
+                  married(agent=X),
+                  agree(agent=X, object= @act)
+||"契約をした後で、結婚し、自分の契約を認証（追認）したときは、その契約は有効である。".
+
+
+r9::agree(agent=X, object= @con)
+               <- loan(agent=X/person)|@act,
+                  contract(agent=X, object= @act)|@con,
+                  payLoan(agent=X, object= @act)
+|| X "が負債を負う契約をした後で、銀行口座から引き落としがあったときは、その契約を認証（追認）したことになる。".
+
+r10:: -agree(agent=X, object= @con)
+               <- loan(agent=X/person)|@act,
+                  contract(agent=X, object= @act)|@con,
+                  payLoan(agent=X, object= @act)
+|| X "が負債を負う契約をした後で、銀行口座から引き落としがあっただけでは、その契約を認証（追認）したことにならない。".
+
+r11::canWithdraw(agent=Y, object= @act)
+               <- contract(agent=X/person)|@act,
+                  -valid(a_object= @act),
+                  isFather(a_object=Y, basis=X)
+|| X "がした契約が無効であるとき、その父" Y "はその契約を取り消すことができる。".
+
+}
+&define_CBR_rule.
+
+
+
+
+
+
+
+
+
+

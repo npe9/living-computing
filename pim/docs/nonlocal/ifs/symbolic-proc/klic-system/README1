@@ -1,0 +1,24 @@
+========================================================
+(C)1993, 1994, 1995 Institute for New Generation Computer Technology
+(Read COPYRIGHT for detailed information.)
+========================================================
+This directory contains source files for KLIC system, a portable
+implementation of a concurrent logic proramming language KL1.
+
+The newest version is in klic-2.002.tgz that contains:
+
+  - KL1 to C compiler
+  - runtime system
+  - documents (manual and tutorial) in English
+  - old manual in Japanese
+  - beta version of a distributed parallel implementation upon PVM
+  - beta version of a shared memory parallel implementation on
+    SPARCCenter and DEC Alpha.
+
+Some bugs in klic-2.000 were fixed.
+
+The next version which corresponds to several parallel machines
+will be released in May 1995.
+
+May 1995
+Tetsuro Fujise (ICOT)

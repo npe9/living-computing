@@ -1,0 +1,12 @@
+&define_goal.
+
+{
+corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=crime_of_violence, goal=Y,object=X4),
+
+corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4),
+
+-corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4)
+}

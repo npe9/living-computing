@@ -1,0 +1,110 @@
+/**********************************************************************/
+/*             kima - Analyzer of Ill-moded KL1 Programs              */
+/*                                                                    */
+/*                            Version 1.0                             */
+/*                             April 1997                             */
+/*                                                                    */
+/*                         上田 和紀、長 健太                         */
+/*                     早稲田大学理工学部情報学科                     */
+/*                    ueda@ueda.info.waseda.ac.jp                     */
+/*                                                                    */
+/*               Copyright (C) 1997  上田 和紀、長 健太               */
+/*                                                                    */
+/**********************************************************************/
+
+概要:
+
+kimaは、モードづけできない(ill-modedな)プログラムの、モード誤り(mode
+error)を、文献[4]の方法で解析するツールである。kimaを用いてモード誤りを
+特定することで、KL1プログラムの通信プロトコルの誤りを、静的に検出するこ
+とができる。
+
+kimaは、モード誤りを、モード制約の矛盾する極小部分集合として特定する。モー
+ド誤りに対応する極小部分集合、およびそれに含まれる各制約がプログラム中の
+どのシンボルからどの規則によって得られたものであるかを表示することで、プ
+ログラマのバグ発見を速くかつ容易にする。
+
+可能な場合は、さらに、極小部分集合中のもっとも“疑わしい”制約と、モード
+矛盾を解消するようなプログラムの修正案を提示する。
+
+kimaは、モード宣言などの、解析対象のKL1プログラム以外の入力は必要としな
+い。
+
+kimaは2つのプログラムで構成されている。一つはモード制約生成系(klint101)
+でもう一つはモード制約解析系(kima2)である。モード制約生成系は、KL1プログ
+ラムが構文的に課するモード制約を生成する。モード制約解析系は、モード制約
+が全体として矛盾する場合、その矛盾する極小部分集合を見つけ、さらに可能な
+場合、その中から誤りの真の原因と思われるモード制約とそれを課した記号に対
+する修正案を提示する。
+
+kimaが依拠している並行論理／制約プログラミングの強モード体系については文
+献[1]を参照してほしい。モード解析の概要は文献[2]に述べられている。
+
+
+インストール:
+
+klint101およびkima2は完全にKL1で書かれ、KLICでコンパイルできる。これらを
+作成するにはMakefileを使用すればよい。kimaはシェルスクリプトとして定義し
+てある。
+
+
+ファイル:
+
+klint101-main.kl1, read_program.kl1, normalize.kl1, unify.kl1,
+        numbergoal.kl1, findpath.kl1, constraints.kl1, stdinout.kl1,
+        getpgraph.kl1, pnode.kl1, stack.kl1: 
+        klint101のソースプログラム (KL1)
+kima2-main.kl1, checkprocess.kl1, fixvariable.kl1, copygraph.kl1,
+        renamegraph.kl1, getminimal200.kl1, graph.kl1, decode.kl1,
+        reduce.kl1, stdinout.kl1, outmessage.kl1:
+        kima2のソースプログラム (KL1)
+kima:      トップレベルコマンド (Bourne Shell)
+Readme-J:  このファイル
+Readme-E:  このファイルの英語版
+GUIDE.txt: ユーザガイド (plain text)
+Makefile:  Make ファイル
+        
+
+未サポート機能:
+
+(1) マクロ展開機能。将来、klic処理系が、Ｃコンパイラの -E オプションに対
+    応する機能を提供した段階でサポートしたい。
+
+(2) 'inline' 機能。
+
+(3) 組込述語のいくつか。
+
+
+バグ:
+
+(1) 組込述語と名前が一致している述語の呼出しは、その述語のモジュール名が
+    明記してあっても、すべて組込述語の呼出しと見なされてしまう。改訂版で
+    は修正の予定。
+
+(2) 'arg', 'setarg', 'vector_element', 'set_vector_element' は、構造体全
+    体とその要素とのモードの整合性を検査していない。これも改訂版で修正の
+    予定。
+
+(3) ３回以上出現する変数にかかわるモード制約で、単純な制約に簡約化できな
+    かったものの充足可能性は検査していない。
+
+
+参考文献:
+
+[1] Ueda, K. and Morita, M., Moded Flat GHC and Its Message-Oriented
+    Implementation Technique.  New Generation Computing, Vol.13, No.1
+    (1994), pp.3-43.
+
+[2] Ueda, K., I/O Mode Analysis in Concurrent Logic Programming.  In
+    Theory and Practice of Parallel Programming, LNCS 907, Springer,
+    1995, pp.356-368.
+
+[3] Ueda, K., Experiences with Strong Moding in Concurrent
+    Logic/Constraint Programming.  In Proc. Int. Workshop on Parallel
+    Symbolic Languages and Systems (PSLS'95), T. Ito, R.H. Halstead,
+    Jr., and C. Queinnec (eds.), LNCS 1068, Springer, 1996, pp.134-153.
+
+[4] Cho, K. and Ueda, K., Diagnosing Non-Well-Moded Concurrent Logic
+    Programs.  In Proc. 1996 Joint International Conference and
+    Symposium on Logic Programming (JICSLP'96), M. Maher (ed.), The MIT
+    Press, 1996, pp.215-229.

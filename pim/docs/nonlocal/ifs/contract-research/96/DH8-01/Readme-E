@@ -1,0 +1,32 @@
+Copyright (C) 1997 Takashi Chikayama (the University of Tokyo)
+
+This directory contains the software results of the Research Funding
+Program of AITEC, titled "Improving the Runtime System of KLIC" and
+related documents.
+
+The top-level subdirectories of this directory are the following.
+
+    Documents:
+	Manuals and other documents of the software
+    Sources:
+	Source programs, examples, and outputs of the examples
+
+Each directory contains the following subdirectories.
+
+    enhanced-klic:	KLIC enhanced with the "goal-object" feature
+    ddu:		Tracer written in KL1 itself
+    skuld:		An automatic load-distribution mechanism
+    KAbI:		An abstract interpreter for KL1
+    KL1PP:		A pretty printer for KL1
+    ILP-MGTP:		An inductive logic programming system upon MGTP
+
+However, the directory Sources/enhanced-klic is lacking.  We decided
+that, to avoid making different versions of KLIC being distributed, we 
+should not include a KLIC system here, and merge the enhanced features 
+to the normal release of KLIC.  Please use the newest release of KLIC
+for the enhanced features.
+
+This directory also contains the following.
+
+    Readme-E:		This file
+    Readme-J:		The same information in Japanese

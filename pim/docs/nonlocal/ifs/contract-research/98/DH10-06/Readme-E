@@ -1,0 +1,70 @@
+The CFLP system: Directory Structure
+====================================
+(c) 1998-1999, Research Institute for Symbolic Computation (RISC-Linz)
+               and Institute of Information Sciences and Electronics, Tsukuba
+
+This software distribution represents the first current version (January 1999) 
+of a distributed implementation of a programming language called CFLP 
+embedded into the environment of the computer algebra system Mathematica. 
+CFLP is a functional-logic language extended with constraint solving 
+facilities.
+
+Distribution
+------------
+
+The distribution if the CFLP system is structured as follows:
+
+    Readme-E                  ... this file
+    use-of-software-E         ... conditions for using the software
+    packages/                 ... implementation of the CFLP system
+       Calculus.m 
+       CSLaunch.m
+       Debug.m               
+       RewriteRuleDefs.m
+       RewriteRules.m        
+       SchedulerInterface.m 
+       Scheduler.m           
+       Substitutions.m       
+       TypeChecker.m
+       TSolve.m              
+       TermSyntax.m
+       Terms.m  
+       TypeSyntax.m
+       Types.m
+       Variables.m
+       Calculi/
+         TypeRules.m
+       Solvers/               ... implementation of exteral constraint solvers
+         Linear.m             ... solver for linear equations
+         Polynomial.m         ... solver for polynomial equations
+         Derivative.m         ... solver for differential equations
+         PartialDerivative.m  ... solver for partial differential equations
+         StartSolvers.m
+         StopSolvers.m
+         MainLoop.m
+       Examples/              ... implementation of a sample CFLP package
+         ElDemo.m   
+    documents/                ... the documentation
+	UserGuide.ps.gz       ... the user's guide and instalation guide
+        report99.ps.gz        ... the CFLP progress report
+        ReportCFLP.ps.gz      ... the CFLP preliminary report
+	src/                  ... source and documentation of the CFLP system
+	  Calculus.nb         ... as a Mathematica notebook
+          Calculus.nb.ps      ... as a PostScript file (for printing)
+          Solvers/
+            Linear.nb
+            Linear.nb.ps
+            ...
+        Examples/            
+          ElDemo.nb           ... the documented source of the CFLP sample 
+                                  package (notebook)
+          ElDemo.nb.ps        ... the sample package (PostScript)
+          Examples.nb         ... more examples of problems solved with CFLP
+          Examples.nb.ps      ... the PS format of Examples.nb
+    scripts/                  
+        installSolvers        ... shell scripts to start shared 
+                                  constraint solvers on Unix platforms
+        uninstallSolvers      ... shell scripts to stop the execution of 
+                                  shared constraint solvers on a Unix platform
+
+

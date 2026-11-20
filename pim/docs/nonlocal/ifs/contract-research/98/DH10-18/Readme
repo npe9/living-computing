@@ -1,0 +1,23 @@
+HOW TO INSTALL
+
+Get the following files:
+
+DeepForest.tar.gz
+cgi-bin.tar.gz
+version1_0.tar.gz
+
+Put DeepForest.tar.gz to /usr/local/etc/httpd/htdocs.
+Put cgi-bin.tar.gz to /usr/local/etc/httpd.
+Put version1_0.tar.gz to $HOME/DeepForest.
+
+Extract them in each directory.
+
+Link /usr/local/etc/httpd/htdocs/DeepForest/doc to
+$HOME/DeepForest/version1_0/doc/doc.
+
+Make in  $HOME/DeepForest/version1_0/.
+
+Run your httpd.
+
+
+

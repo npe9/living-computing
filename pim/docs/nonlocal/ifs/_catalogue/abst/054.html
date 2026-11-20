@@ -1,0 +1,73 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (54) A Parallel Leagal Reasoning System: HELIC-II</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (54) A Parallel Leagal Reasoning System: HELIC-II</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM, Multi-PSI
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 1.7 MB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A parallel processing system for legal reasoning referencing to
+statutes and old cases.<P>
+
+<h2><b>Configuration</b></h2>
+<dl>
+	<dd><img src="054.gif">
+</dl>
+<p>
+
+<h2><b>Function</b></h2>
+
+HELIC-II draws legal conclusions for a given case by referencing the
+relevant statute and old cases and outputting them in the form of
+inference trees.  <p>
+
+Legal knowledge consists of statutes and old cases.  <p>
+
+As a statute is a set of legal rules, inference by a statute is
+realized as rule-based reasoning. Since legal rules often contain
+legal predicates (legal concepts), we need case-based reasoning to
+match legal concepts and concrete facts by referencing old cases and
+to reuse their explanations.  <p>
+
+The rule-based engine refers to legal rules and draws legal
+consequences deductively. This engine is based on the parallel theorem
+prover MGTP (Model Generation Theorem Prover) and has several new
+functions.  <p>
+
+The case-based engine searches for similar cases and new arguments are
+constructed by applying case rules to the new case. For the
+efficience, these processes are executed by parallel processing.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> A Parallel Leagal Reasoning System: HELIC-II [775K] <a
+href="../../../ifs/exper-apps/pimos/helic2.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

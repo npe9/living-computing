@@ -1,0 +1,175 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tload
+%       File Name   : ty_tload.kl1
+%       Function    : load type DB information
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 4/26  : osif pool creation call
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : hLibrary file/3 spec change
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 4/14  : compact/decompact for rapid gett/putt
+%$      1994/ 2/ 1  : dbsize set bug
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tload.
+:- with_macro pimos.
+
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public load/3.
+%:-else.
+%:-public load/5.
+%:-end_if.
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S load(LoadFilePathName,NewTypeDB,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_file | corrupted_file
+load(LoadFilePathName,NewTypeDB,Result):-
+    do_load(LoadFilePathName,NewTypeDB,Result).
+
+do_load(LoadFilePathName,NewTypeDB,Result):-
+    load_header(DBSize,LoadFilePathName,File,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#new(TypeDB0),
+        new_vector(TypeDB0,7),
+        ty_osif:keyed_set(PosTBL),
+        new_vector(NameTBL,DBSize),
+        new_vector(LowerTBL,DBSize),
+        new_vector(UpperTBL,DBSize),
+        new_vector(AttrTBL,DBSize),
+        ty_osif:keyed_set(ExpTBL),
+%        typeDB#set(dbsize,DBSize,TypeDB0,TypeDB1),
+        set_vector_element(TypeDB0,0,_,DBSize,TypeDB1),
+%        typeDB#set(nameTBL,NameTBL,TypeDB1,TypeDB2),
+        set_vector_element(TypeDB1,2,_,NameTBL,TypeDB2),
+%        typeDB#set(lowerTBL,LowerTBL,TypeDB2,TypeDB3),
+        set_vector_element(TypeDB2,3,_,LowerTBL,TypeDB3),
+%        typeDB#set(upperTBL,UpperTBL,TypeDB3,TypeDB4),
+        set_vector_element(TypeDB3,4,_,UpperTBL,TypeDB4),
+%        typeDB#set(attrTBL,AttrTBL,TypeDB4,TypeDB5),
+        set_vector_element(TypeDB4,5,_,AttrTBL,TypeDB5),
+%        typeDB#set(posTBL,PosTBL,TypeDB5,TypeDB6),
+        set_vector_element(TypeDB5,1,_,PosTBL,TypeDB6),
+%        typeDB#set(expTBL,ExpTBL,TypeDB6,TypeDB7),
+        set_vector_element(TypeDB6,6,_,ExpTBL,TypeDB7),
+        load_typeDB(DBSize,File,TypeDB7,NewTypeDB,LoadFilePathName,Result)
+    ;otherwise;true ->
+        Result = R1
+    ).
+
+
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_file
+load_header(DBSize,PathName,NewFile,Result):-
+    Mode = read,
+    ty_osif:open(PathName,Mode,File,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        % header defines DB size
+       ty_osif:gett(DBSize,File,File1),
+       (integer(DBSize) ->
+	   NewFile = File1,
+%           Result = normal(ty#yes)
+           Result = normal(success)
+       ;otherwise;true ->
+	   ty_osif:close(File1),
+           Result = abnormal(Info),
+%           Info = {ty#typemid,illegal_file,[PathName]}
+           Info = {type,illegal_file,[PathName]}
+       )
+    ;otherwise;true ->
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : corrupted_file
+load_typeDB(N,File,TypeDB,NewTypeDB,_PathName,Result):-
+    N=<0|
+	ty_osif:close(File),
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+load_typeDB(N,File,TypeDB,NewTypeDB,PathName,Result):-
+    N>0|
+	ty_osif:gett(Unit,File,File1),
+	load_unit(Unit,TypeDB,TypeDB1,PathName,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    load_typeDB(~(N-1),File1,TypeDB1,NewTypeDB,PathName,Result)
+	;otherwise;true ->
+	    ty_osif:close(File1),
+	    NewTypeDB = TypeDB1,
+	    Result = R1
+	).
+
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : corrupted_file
+load_unit(Unit,TypeDB,NewTypeDB,_PathName,Result):-
+    {Pos,Name,LBV,UBV,Attr,Exp} = Unit|
+	% position
+%	typeDB#get(posTBL,PosTBL,NewPosTBL,TypeDB,TypeDB1),
+	set_vector_element(TypeDB,1,PosTBL,NewPosTBL,TypeDB1),
+	ty_osif:put_with(Name,Pos,PosTBL,NewPosTBL),
+	% name
+%	typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB1,TypeDB2),
+	set_vector_element(TypeDB1,2,NameTBL,NewNameTBL,TypeDB2),
+	set_vector_element(NameTBL,Pos,_,Name,NewNameTBL),
+	% lower code
+%	ty_util:byte2bit(LBV,LowerCode),
+	ty_util:decapsulate(LBV,LowerCode),
+%	typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB2,TypeDB3),
+	set_vector_element(TypeDB2,3,LowerTBL,NewLowerTBL,TypeDB3),
+	set_vector_element(LowerTBL,Pos,_,LowerCode,NewLowerTBL),
+	% upper code
+%	ty_util:byte2bit(UBV,UpperCode),
+	ty_util:decapsulate(UBV,UpperCode),
+%	typeDB#get(upperTBL,UpperTBL,NewUpperTBL,TypeDB3,TypeDB4),
+	set_vector_element(TypeDB3,4,UpperTBL,NewUpperTBL,TypeDB4),
+	set_vector_element(UpperTBL,Pos,_,UpperCode,NewUpperTBL),
+	% attribute
+%	typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB4,TypeDB5),
+	set_vector_element(TypeDB4,5,AttrTBL,NewAttrTBL,TypeDB5),
+	set_vector_element(AttrTBL,Pos,_,Attr,NewAttrTBL),
+	% explanation
+%	typeDB#get(expTBL,ExpTBL,NewExpTBL,TypeDB5,NewTypeDB),
+	set_vector_element(TypeDB5,6,ExpTBL,NewExpTBL,NewTypeDB),
+	ty_osif:put_with(Name,Exp,ExpTBL,NewExpTBL),
+	%
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+load_unit(Term,TypeDB,NewTypeDB,PathName,Result):-
+%    Term = ty#eof|
+    Term = end_of_file|
+	NewTypeDB = TypeDB,
+	Result = abnormal(Info),
+%	Info = {ty#typemid,corrupted_file,[PathName]}.
+	Info = {type,corrupted_file,[PathName]}.

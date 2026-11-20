@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_stdinter.
+
+create(I):-true|
+	helic_stdin:create(In),
+
+	helic_stdout:create(Out),
+	
+	loop(I,In,Out).
+
+loop([],In,Out):-true|
+	In  = [],
+	Out = [].
+
+%-input
+loop([getc(A)|T],In,Out):-true|
+	In = [getc(A)|In1],
+	loop(T,In1,Out).
+loop([getl(A)|T],In,Out):-true|
+	In = [getl(A)|In1],
+	loop(T,In1,Out).
+loop([gett(A)|T],In,Out):-true|
+	In = [gett(A)|In1],
+	loop(T,In1,Out).
+loop([getwt(A)|T],In,Out):-true|
+	In = [getwt(A)|In1],
+	loop(T,In1,Out).
+
+%-output
+
+loop([putc(A)|T],In,Out):-integer(A),A >=0,A=<255|
+	Out = [putc(A)|Out1],
+	loop(T,In,Out1).
+loop([putl(A)|T],In,Out):-true|
+	Out = [putl(A)|Out1],
+	loop(T,In,Out1).
+loop([putb(A)|T],In,Out):-true|
+	Out = [putb(A)|Out1],
+	loop(T,In,Out1).
+loop([putt(A)|T],In,Out):-true|
+	Out = [putt(A)|Out1],
+	loop(T,In,Out1).
+loop([putwt(A)|T],In,Out):-true|
+	Out = [putwt(A)|Out1],
+	loop(T,In,Out1).
+otherwise.
+loop([_|T],In,Out):-true|
+	loop(T,In,Out).

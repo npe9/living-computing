@@ -1,0 +1,1035 @@
+
+% 94/09/09 Syntax check by Kitakata.
+% 94/09/12 Reasoning check by Shibasaki.
+% 94/09/13 Adjustment check by Kokubo.
+% 94/09/16 Replace "agent" of 刑235死者占有植松説2 & 刑261
+%          with "a_object" by Shibasaki.
+% 94/09/20 Replace "agent"/"a_object" of 刑261定義 & 刑236旭川地裁判昭和361014
+% 94/09/21 Replace "agent"/"a_object" 
+% 94/09/26 Change by Nitta
+%              %%Ni  新たに消去した部分
+%              %%New (begin)  新たに追加した部分は、この次の行から始まる。
+%              %%New (end)    新たに追加した部分は、この前の行で終る。
+% 94/10/17 Change by Nitta
+%              %%Ni2  新たに消去した部分
+%              %%New2 (begin)  新たに追加した部分は、この次の行から始まる。
+%              %%New2 (end)    新たに追加した部分は、この前の行で終る。
+% 94/10/19 Reasoning check by Shibasaki.
+
+
+&define_absolute_rule.
+&define_RBR_rule.     {
+
+act0::恨む(agent=人間[name=>"甲"], object=人間[name=>"乙"]).
+act1::待ち伏せる(agent=人間[name=>"甲"], object=人間[name=>"乙"], 
+                 purpose=痛めつける(agent=人間[name=>"甲"],
+object=人間[name=>"乙"]),
+                 time= 夜[name=>"夜1"],   place= 道路[name=>"道路1"]).
+act2::殴る(agent=人間[name=>"甲"], object=人間[name=>"乙"], 
+            time= 夜[name=>"夜1"], place= 道路[name=>"道路1"], manner="強い", 
+            implement=拳[possessor=>人間[name=>"甲"]]) 
+                       |#強打.
+act3::意図あり(a_object=人間[name=>"甲"], object= #強打, 
+               goal=痛めつける(agent=人間[name=>"甲"], object=人間[name=>"乙"])).
+act4:: -故意あり(a_object=人間[name=>"甲"], object= #強打, goal=強盗罪).
+act5::転倒する(agent=人間[name=>"乙"], place= 道路[name=>"道路1"], 
+               condition= #強打)
+                       |#転倒.
+act6::打撲する(agent=人間[name=>"乙"], place= 道路[name=>"道路1"], 
+               object=後頭部[possessor=>人間[name=>"乙"]], condition= #転倒)
+                       |#打撲.
+act7::失神する(agent=人間[name=>"乙"], condition= #打撲)|#失神.
+act8::誤解する(agent=人間[name=>"甲"], object= #失神,
+               goal= 死亡する(agent=人間[name=>"乙"], condition= #打撲),
+               time= #失神).
+act9::所有権を持っている(a_object=人間[name=>"乙"], 
+                         object=ハンドバッグ[name=>"ハンドバッグ1"]).
+act10::占有している(a_object=人間[name=>"乙"], 
+                     object=ハンドバッグ[name=>"ハンドバッグ1"],
+                     time= #強打)|#所有.
+act11::認識している(a_object=人間[name=>"甲"], object= #所有,
+                    time= #強打).
+act12::持ち去る(agent=人間[name=>"甲"], 
+                object=ハンドバッグ[name=>"ハンドバッグ1"], 
+                source=人間[name=>"乙"])
+                        |#持ち去り.
+act12_2::短時間である(a_object= #持ち去り, basis= #失神).
+
+%%Ni act13::意図あり(a_object=人間[name=>"甲"], object= #持ち去り, 
+%%Ni                 goal= だます(agent=人間[name=>"甲"],  
+%%Ni                               object=人間,
+%%Ni                               goal=死亡する(agent=人間[name=>"乙"], 
+%%Ni                                       condition=強盗する(agent=some 人間,
+%%Ni                                                       object=人間[name=>"乙"])))).
+
+%%New (begin)
+%仕様3.6
+act13_2::意図あり(a_object=人間[name=>"甲"], object= #持ち去り, 
+                goal= 隠す(agent=人間[name=>"甲"],  
+                           object= #強打)). 
+
+%仕様3.9
+act13_3:: 意図あり(a_object=人間[name=>"甲"], object= #持ち去り,
+                  goal= 使う(agent=人間[name=>"甲"],
+                                   object=ハンドバッグ[name=>"ハンドバッグ1"])).
+%%New (end)
+
+%%Ni act14:: -意図あり(a_object=人間[name=>"甲"], 
+%%Ni                   object= 使う(agent=人間[name=>"甲"],
+%%Ni                                     object=ハンドバッグ[name=>"ハンドバッグ1"])).
+%%  act15::故意あり(a_object=人間[name=>"甲"], object= #持ち去り,
+%%                  goal= 占有物離脱横領罪).
+act16::捨てる(agent=人間[name=>"甲"], 
+               object=ハンドバッグ[name=>"ハンドバッグ1"],
+               goal= 川[name=>"川1"]) |#捨てる.
+act17::故意あり(a_object=人間[name=>"甲"], 
+                object= #捨てる,  goal=器物損壊罪).
+
+
+
+% 4. 関連知識の記述 (RBR)
+
+% 4.1  一般知識  ---------------------------------
+
+
+
+%      <<定義>>
+
+常識定義1:: 所有している(a_object=X/人間, object=具体物[possessor=>X]).
+
+       %％ ある具体物の持ち主であるということは、その具体物を所有していることであ
+       %％ る。
+       %％  （注意）  possessor は 「所有している」の意味で使う。
+       %％            possessor は 「所有権を持っている」ではない。
+
+常識定義2:: 占有している(a_object=X, object=Y)
+             <- 所有している(a_object=X/人間, object=Y/動産).
+
+       %％ 動産を所有することと、占有することは同じ意味である。
+       %％ （注意） 動産では、  所有している＝占有している、  であるが、
+       %％                      所有している＝所有権を持っている、 ではない。
+       %％          不動産では、所有している＝占有している、ではない。
+
+常識定義3:: 所有している(a_object=X, object=Y)
+             <- 所有が主体へ移動する(agent=X/人間, object=Y/具体物や抽象物).
+
+       %％ 所有する行為が行われると、所有している状態が成立する。
+
+常識定義4:: 所有権を持っている(a_object=X, object=Y)
+             <- 所有権が主体へ移動する(agent=X/人間, object=Y/具体物や抽象物).
+
+       %％ 所有権を得る行為が行われると、所有権を持っている状態が成立する。
+
+常識定義5:: -所有している(a_object=X, object=Y)
+             <- 所有が主体から離脱する(agent=X/人間, object=Y/具体物や抽象物).
+
+       %％ 所有を放棄する行為が行われると、所有していない状態が成立する。
+
+常識定義6:: -所有権を持っている(a_object=X, object=Y)
+             <- 所有権が主体から離脱する(agent=X/人間, object=Y/具体物や抽象物).
+
+       %％ 所有権を放棄する行為が行われると、所有権のない状態が成立する。
+
+常識定義7:: 不在にする(agent=X, place=Y)
+             <- 立ち去る(agent=X/人間, source=Y/場所).
+
+       %％ ある場所を立ち去るということは、その場所を不在にすることである。
+
+常識定義8:: 失神している(a_object=X, condition = @失神)
+             <- 失神する(agent=X/人間)|@失神.
+
+       %％ 「失神する」と「失神している」状態になる。
+
+常識定義9:: 人事不省である(a_object=X, condition = @人事不省)
+             <- 人事不省になる(agent=X/人間)|@人事不省.
+
+       %％ 「人事不省になる」と「人事不省である」状態になる。
+
+常識定義10:: 髪がない(a_object=X, condition= @断髪)
+             <- 髪を切る(agent=X/女)|@断髪.
+
+       %％ 「髪を切る」と「髪がない」状態になる。
+
+常識定義11:: 死んでいる(a_object= X, condition= @殺人)
+            <- 殺す(agent=Y/人間, object=X/人間)|@殺人.
+
+       %％  人を「殺す」という行為を行うと、その結果、人が「死んでいる」という状
+       %％  態が成立する。
+
+常識定義11_2:: 死んでいる(a_object= X, condition= @死亡)
+            <- 死亡する(agent=X/人間)|@死亡.
+
+       %％  人が死亡すると、その結果、人が「死んでいる」という状態が成立する。
+
+% 使用2.1
+常識定義12:: 故意あり(a_object=X, object= @暴行, goal=暴行罪)
+            <- 暴行する(agent=X/人間, object=Y/人間) |@暴行,
+               意図あり(a_object=X, object= @暴行, 
+                        goal=痛めつける(agent=X,object=Y)).
+
+常識定義12の2:: 故意あり(a_object=X, object= @暴行, goal=暴行罪)
+            <- 活動する(agent=X/人間, object=Y/人間) |@暴行,
+               暴行である(a_object= @暴行),
+               意図あり(a_object=X, object= @暴行, 
+                        goal=痛めつける(agent=X,object=Y)).
+
+       %％ 人を痛めつける意図で暴行すると、暴行罪の故意があったということになる。
+
+%%Ni 常識定義13:: -意図あり(a_object=X, object= @持ち去り, 
+%%Ni                        goal=使う(agent=X, object=Y))
+%%Ni            <- 持ち去る(agent=X/人間, source=Y/人間, 
+%%Ni                        object=Z/具体物[possessor=>Y])|@持ち去り,
+%%Ni               意図あり(a_object=X, object= @持ち去り, 
+%%Ni                        goal=捨てる(agent=X,object=Y)).
+
+%%Ni 常識定義14:: -意図あり(a_object=X, object= @持ち去り, 
+%%Ni                        goal=所有する(agent=X, object=Y))
+%%Ni             <- 持ち去る(agent=X/人間, source=Y/人間, 
+%%Ni                         object=Z/具体物[possessor=>Y])|@持ち去り,
+%%Ni                意図あり(a_object=X, object= @持ち去り, 
+%%Ni                         goal=捨てる(agent=X, object=Z)).
+%%Ni
+%%Ni       %％ 捨てるために持ち去ることと、使ったり、所有したりするために持ち去ること
+%%Ni       %％ は矛盾する。
+
+%%New (begin)
+%仕様3.12
+常識定義14_2:: -意図あり(a_object=X, object= @持ち去り, 
+                       goal=使う(agent=X, object=Z))
+            <- 持ち去る(agent=X/人間, source=Y/人間, 
+                        object=Z/具体物[possessor=>Y])|@持ち去り,
+               意図あり(a_object=X, object= @持ち去り, 
+                        goal=捨てる(agent=X, object=Z)).
+
+       %  捨てるために持ち去ることと、それを使用するために持ち去ることは矛盾する。
+
+%仕様3.6
+常識定義14_3:: -意図あり(a_object=X, object= @持ち去り, 
+                           goal=だます(agent=X, object=人間,
+                                      goal=所有権を持っている(agent=X, object=Z)))
+            <- 活動する(agent=X/人間)|@行為,
+               持ち去る(agent=X, source=Y/人間, 
+                        object=Z/具体物[possessor=>Y])|@持ち去り,
+               意図あり(a_object=X, object= @持ち去り, 
+                        goal=隠す(agent=X, object= @行為)).
+
+       %  ある行為を隠すために物を持ち去ることと、その物を所有権を持つようにふ
+       %  るまうために持ち去ることは矛盾する。
+
+%仕様3.12
+常識定義14_4:: 意図あり(a_object=X, object= @持ち去り, 
+                           goal=捨てる(agent=X, object=Z))
+            <- 持ち去る(agent=X/人間, source=Y/人間, 
+                        object=Z/具体物[possessor=>Y])|@持ち去り,
+               捨てる(agent=X, object=Z).
+
+       %  他人の物を持ち去った後で、それを捨てたときは、捨てるつもりで持ち去った
+       %  ことになる。
+
+%%New (end)
+
+常識定義15:: 認識している(a_object=X, object= @認識結果, time= @場面)
+            <- 誤解する(agent=X/人間, 
+                        object= Y/状態が成立している(), 
+                        goal=  Z/状態が成立している()|@認識結果,
+                        time= 活動する()|@場面).
+%%9/13temp              time= 活動する()|@場面),
+%%9/13temp               different(Y,Z).
+% 使用3.5
+常識定義16:: 認識している(a_object=X, object= @認識結果, time=@場面)
+             <- 誤解する(agent=X/人間, 
+                         object= Y/動詞概念(), 
+                         goal=   Z/動詞概念()|@認識結果,
+                         time=  動詞概念()|@場面).
+
+% 常識定義16:: 認識している(a_object=X, object= @認識結果, time=@場面)
+%            <- 誤解する(agent=X/人間, 
+%                        object= Y/活動する(), 
+%                        goal=   Z/活動する()|@認識結果,
+%                        time=  活動する()|@場面),
+%              different(Y,Z).
+
+       %％ 誤解するということは、事実でないことを認識することである。
+
+
+常識定義17:: 打撲をしている(a_object=X)
+            <- 打撲する(agent=X/人間).
+
+       %％ 打撲すると、打撲している状態となる。
+
+% 使用旧3.6
+常識定義18:: 認識している(a_object=人間[name=>"甲"], 
+                          object=死んでいる(a_object=人間[name=>"乙"]), 
+                          time= #持ち去り).
+
+% 常識定義18:: 認識している(a_object=X, 
+%                          object=状態が成立している(a_object=Y, 
+%                          condition= @出来事), time=Z)
+%            <- 認識している(a_object=X/人間, 
+%                            object=現象をおこす(agent=Y/人間)|@出来事,
+%                            time=Z/top).
+
+       %％  ある現象である結果が生じたとき、その現象が生じたことを認識していたと
+       %％  きは、その結果が生じたことも認識していたことになる。
+
+% 使用旧3.9
+常識定義19:: 故意あり(a_object=X, object= @持ち去り, goal=占有離脱物横領罪)
+            <- 占有している(a_object=Y/人間, object=Z/具体物)|@所有,
+               持ち去る(agent=X/人間, object=Z, source=Y)|@持ち去り,
+               -認識している(a_object=X, object= @所有, time= @持ち去り).
+
+       %％  他人の物を、その人が所有していると知らずに持ち去る行為には、占有物離
+       %％  脱横領の故意がある。
+
+
+
+
+
+
+% 4.2 刑法常識  --------------------------------------
+
+%              <<刑法総論に関する常識>>
+
+% 刑因果連鎖1:: X(a_object=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @行為1) 
+%            <- 活動する(agent=人間)|@行為1,
+%               状態が成立している(condition= @行為1)|@状態2,
+%               X/状態が成立している(a_object=A1, object=A2,
+%                                    place=A3, time=A4, implement=A5,
+%                                    manner=A6, condition= @状態2).
+
+  %  ある行為がある状態を引き起こし、それがさらに別の状態を引き起こしたときには、
+  %  最初の行為と最後の状態の間には条件関係が成り立つ。
+
+% 刑因果連鎖2:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @行為1) 
+%            <- 活動する(agent=人間)|@行為1,
+%               活動する(condition= @行為1)|@行為2,
+%               X/活動する(agent=A1, object=A2, place=A3,
+%                   time=A4, implement=A5, manner=A6, condition= @行為2).
+
+  %  ある行為がある行為を引き起こし、それがさらに別の行為を引き起こしたときには、
+  %  最初の行為と最後の行為の間には条件関係が成り立つ。
+
+% 刑因果連鎖3:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @行為1) 
+%            <- 活動する(agent=人間)|@行為1,
+%               現象をおこす(condition= @行為1)|@現象2,
+%               X/現象をおこす(agent=A1, object=A2, place=A3, time=A4, 
+%                              implement=A5, manner=A6, condition= @現象2).
+
+  %  ある行為がある現象を引き起こし、それがさらに別の現象を引き起こしたときには、
+  %  最初の行為と最後の現象の間には条件関係が成り立つ。
+
+% 刑因果連鎖4:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @現象1) 
+%            <- 現象をおこす(agent=人間)|@現象1,
+%               現象をおこす(condition= @現象1)|@現象2,
+%               X/現象をおこす(agent=A1, object=A2, place=A3, time=A4, 
+%                              implement=A5, manner=A6,
+%                              condition= @現象2).
+
+  %  ある現象がある現象を引き起こし、それがさらに別の現象を引き起こしたときには、
+  %  最初の現象と最後の現象の間には条件関係が成り立つ。
+
+% 使用2.1
+刑因果連鎖_3段階:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+                manner=A6, condition= @行為)
+            <-  X/現象をおこす(agent=A1, object=A2, place=A3, time=A4,
+                              implement=A5, manner=A6, 
+                            condition= 現象をおこす(condition= 
+                                           現象をおこす(condition= 活動する(agent=人間)|@行為))).
+
+
+% 使用2.1
+刑一般0:: 処罰する(a_object= @行為, goal=Y)
+            <- 構成要件に該当する(a_object= 活動する(agent=人間)|@行為, 
+                                  goal=Y/罪),
+               not -処罰する(a_object= @行為).
+
+  %  ある罪の構成要件に該当したときは、例外があるときを除き、処罰される。
+
+刑一般1:: 重罪である(a_object= 傷害罪, basis=暴行罪).
+
+  %  傷害罪は暴行罪よりも重罪である。
+
+刑一般2:: 重罪である(a_object= 強盗罪, basis=窃盗罪).
+
+  %  強盗罪は窃盗罪よりも重罪である。
+
+刑一般3:: 重罪である(a_object= 窃盗罪, basis=占有離脱物横領罪).
+
+  %  窃盗罪は占有物離脱横領罪よりも重罪である。
+
+刑一般4:: 故意あり(a_object= X, object= @暴行, goal= 傷害罪)
+            <- 暴行する(agent=X/人間, object=Y/人間) |@暴行,
+               故意あり(a_object= X, object= @暴行, goal= 殺人罪).
+
+  %  殺人の故意は傷害の故意を包含する。
+
+刑一般5:: 故意あり(a_object= X, object= @暴行, goal= 暴行罪)
+            <- 暴力をふるう(agent=X/人間, object=Y/人間) |@暴行,
+               故意あり(a_object= X, object= @暴行, goal= 傷害罪).
+
+  %  傷害の故意は暴行の故意を包含する。
+
+刑一般6:: 故意あり(a_object= X, object= @暴行, goal= 暴行罪)
+            <- 暴力をふるう(agent=X/人間, object=Y/人間) |@暴行,
+               意図あり(a_object= X, object= @暴行, 
+                        purpose= 痛めつける(agent=X, object=Y)).
+
+  %  相手を痛めつけるつもりで暴力をふるったときは、暴行の故意があった。
+  %  （注意）「暴力をふるう」は一般用語、「暴行する」は刑法用語として使い分けて
+  %           いる。
+
+
+刑一般7:: -故意あり(a_object= X, object= @行為, goal= Z)
+            <- 活動する(agent=X/人間, object=Y/人間) |@行為,
+               not 故意あり(a_object= X, object= @行為, goal=Z/罪).
+
+  %  故意の存在が立証できないときは、故意がなかったことになる。
+
+刑一般8:: -法的因果関係あり(source= @行為, goal= @結果)
+            <- 活動する(agent=X/人間, object=Y/人間) |@行為,
+               状態が成立している(a_object=Z)|@結果,
+               not 法的因果関係あり(source= @行為, goal= @結果).
+
+  %  因果関係の存在が立証できないときは、因果関係がなかったことになる。
+
+%% New2 (begin)   +++++++++++++++++++++++++++++
+%仕様2.1
+刑一般00:: 立件する(a_object= @行為, goal=G)
+            <- 活動する(agent=X/人間) |@行為,
+               関連する犯罪(a_object= @行為, goal=G/罪),
+               処罰する(a_object= @行為, goal=G).
+
+  % ある行為について、関連する犯罪名があって、それが処罰の条件を満たしたとき、
+  % 立件されたことになる。
+
+%仕様3.1
+刑一般01:: 関連する犯罪(a_object= 持ち去る(agent=X/人間),  goal=強盗罪).
+
+%仕様3.5
+刑一般02:: 関連する犯罪(a_object= 持ち去る(agent=X/人間),  goal=窃盗罪).
+刑一般03:: 関連する犯罪(a_object= 持ち去る(agent=X/人間),  
+                                                 goal=占有離脱物横領罪).
+刑一般11:: 関連する犯罪(a_object= 暴力をふるう(agent=X/人間),  goal=殺人罪).
+
+%仕様2.1
+刑一般12:: 関連する犯罪(a_object= 暴力をふるう(agent=X/人間),  goal=傷害罪).
+刑一般13:: 関連する犯罪(a_object= 暴力をふるう(agent=X/人間),  goal=暴行罪).
+
+%仕様3.15
+刑一般21:: 関連する犯罪(a_object= 捨てる(agent=X/人間),  goal=器物損壊罪).
+
+  %  上記は行為と関連する犯罪名のリストである。
+
+%% New2 (end)   +++++++++++++++++++++++++++++
+
+
+% 使用2.1
+刑204定義1:: 暴行である(a_object= @殴る)
+            <- 殴る(agent=X/人間, object=Y/人間)|@殴る.
+
+  % 殴ることは暴行である。
+
+
+
+刑236定義1:: 強取である(a_object= @奪う)
+            <- 奪う(agent=X/人間, object=Y/具体物[possessor=>Z/人間], 
+                    source=Z) |@奪う,
+               故意あり(a_object=X, object= @奪う, goal=強盗罪).
+
+  % 強取する、とは、強盗の故意をもって、奪うことをいう。
+
+
+% 使用3.5
+刑235定義1:: 盗みである(a_object= @持ち去り)
+                 <- 占有している(a_object=Z/人間, object=Y/具体物) |@占有,
+                    持ち去る(agent=X/人間, object=Y, source=Z)|@持ち去り,
+                    認識している(a_object=X, 
+                    object= 占有している(a_object=Z, object=Y), 
+                    time= @持ち去り).
+               
+    % 「盗む」とは、他人が所有し、他人が占有していることを認識しているものを
+    %  持ち去ることをいう。
+
+刑235定義2:: -意図あり(a_object=X, object=Y, goal=所有する(agent=X,object=Y))
+              <- 意図あり(a_object=X/人間, object= Y/具体物[possessor=>Z/人間],
+                             goal=返す(agent=X, object=Y, goal=Z)).
+
+    % 返すつもりであったときは、自分で所有するつもりがなかったことになる。
+
+
+% 使用3.15
+% shuusei 9/20
+% 刑261定義:: 壊す行為である(a_object= 捨てる(a_object=X/人間, object=Y/具体物)).
+刑261定義:: 壊す行為である(a_object= 捨てる(agent=X/人間, object=Y/具体物)).
+
+       %％ 「捨てる」ことは、「壊す」ことにつながる。
+
+
+
+
+
+
+% 4.3  刑法条文   -----------------------------------------------
+
+
+
+%              <<刑法総論に関する法令文>>
+
+刑35:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=人間)|@行為,
+               構成要件に該当する(a_object= @行為, goal=Z/罪),
+               正当行為である(a_object= @行為).
+
+  % （刑法35条） 正当な行為は罰しない。
+
+刑36:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=人間)|@行為,
+               構成要件に該当する(a_object= @行為, goal=Z/罪),
+               正当防衛である(a_object= @行為).
+
+  % （刑法36条）正当防衛の行為は罰しない。
+
+刑38:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為, 
+               錯誤あり(a_object= @行為,  goal=Z/罪).
+
+  % （刑法38条）錯誤がある行為は、認識していた罪には罰しない。
+
+% 使用旧3.9
+刑38抽象的事実錯誤:: 
+         抽象的事実錯誤あり(a_object=X, object= @行為, goal=Z, source=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               形式的構成要件に該当する(a_object= @行為, goal=Z/罪),
+               故意あり(a_object=X, object= @行為, goal=Y/罪).
+%%9/13temp               故意あり(a_object=X, object= @行為, goal=Y/罪),
+%%9/13temp               different(Y,Z).
+
+  % （刑法38条）ある罪に該当すると思って行為を行ったところ、その行為が別の罪に
+  %   該当するときには、抽象的事実の錯誤がある。
+
+刑39:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               構成要件に該当する(a_object= @行為, goal=Z/罪),
+               心神喪失者である(a_object= X).
+
+  % （刑法39条）心神喪失者の行為は罰しない。
+
+刑41:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間[年齢=>[0..13]])|@行為,
+               構成要件に該当する(a_object= @行為, goal=Z/罪).
+
+  % （刑法41条）１４歳未満の人の行為は罰しない。
+
+刑54の1:: -処罰する(a_object= @行為, goal=Z)
+            <- 活動する(agent=人間)|@行為,
+               構成要件に該当する(a_object= @行為, goal=Y/罪),
+               構成要件に該当する(a_object= @行為, goal=Z/罪),
+               重罪である(a_object=Y, basis=Z).
+
+  % （刑法54条）１つの行為が複数の罪に触れるとき(観念的競合)は、重い刑で処罰する。
+
+刑54の2:: -処罰する(a_object= @行為2, goal=Z2)
+            <- X/活動する(agent=P/人間)|@行為1,
+               Y/活動する(agent=P)|@行為2,
+%%9/13temp               different(X,Y),
+               手段結果関係あり(a_object=P, object= @行為1, goal= @行為2),
+               構成要件に該当する(a_object= @行為1, goal=Z1/罪),
+               構成要件に該当する(a_object= @行為2, goal=Z2/罪),
+               重罪である(a_object=Z1, basis=Z2).
+
+  % （刑法54条）手段と結果の関係にある２つの行為が複数の罪に触れるとき(牽連犯)
+  %   は、重い刑で処罰する。
+
+
+
+%              <<刑法各論に関する法令文>>
+
+% 使用2.1
+刑204::構成要件に該当する(a_object= @行為, goal=傷害罪)
+            <- 活動する(agent=X/人間, object=Y/人間)|@行為,
+               暴行である(a_object= @行為),
+               傷害である(a_object=Y)|@傷害,
+               故意あり(a_object=X, object= @行為, goal=傷害罪),
+               法的因果関係あり(source= @行為, goal= @傷害).
+
+  %  傷害罪（刑法204条）
+  %       人の身体を傷害すると、10年以下の懲役、500円以下の罰金
+
+
+刑208の1::構成要件に該当する(a_object= @行為, goal=暴行罪)
+            <- 活動する(agent=X/人間, object=Y/人間)|@行為,
+               暴行である(a_object= @行為),
+               -傷害である(a_object=Y),
+               故意あり(a_object=X, object= @行為, goal=暴行罪).
+
+刑208の2::構成要件に該当する(a_object= @行為, goal=暴行罪)
+            <- 活動する(agent=X/人間, object=Y/人間)|@行為,
+               暴行である(a_object= @行為),
+               傷害である(a_object=Y)|@傷害,
+               故意あり(a_object=X, object= @行為, goal=暴行罪),
+               -法的因果関係あり(source= @行為, goal= @傷害).
+
+  % 暴行罪（刑法208条）
+  %       暴行を加えたが傷害に至らないときは、2年以下の懲役、500円以下の罰金、
+  %                                              拘留、科料
+
+刑209::構成要件に該当する(a_object= @行為, goal=過失傷害罪)
+            <- 活動する(agent=X/人間, object=Y/人間)|@行為,
+               暴行である(a_object= @行為),
+               傷害である(a_object=Y)|@傷害,
+               過失あり(a_object=X, object= @行為),
+               法的因果関係あり(source= @行為, goal= @傷害).
+
+  % 過失傷害罪（刑法209条）
+  %       過失で人の身体を傷害したときは、500円以下の罰金、科料
+
+刑235::構成要件に該当する(a_object= @行為, goal=窃盗罪)
+            <- 持ち去る(agent=X/人間, 
+                        object=Y/具体物, source=Z/人間)|@行為,
+               盗みである(a_object= @行為),               
+               故意あり(a_object=X, object= @行為, goal=窃盗罪).
+
+%仕様旧3.9
+刑235の2::形式的構成要件に該当する(a_object= @盗み, goal=窃盗罪)
+            <- 占有している(a_object=Z/人間, object=Y/具体物),
+               持ち去る(agent=X, object=Y, source=Z)|@盗み.
+
+  % 窃盗罪（刑法235条）
+  %        他人の財物を窃取したときは、10年以下の懲役
+
+% 使用3.1
+刑236::構成要件に該当する(a_object= @盗み,  goal=強盗罪)
+            <- 活動する(agent=X/人間, object=Z/人間)|@暴行,
+               暴行である(a_object= @暴行),
+               占有している(a_object=Z, object=Y/具体物)|@所有,
+               認識している(a_object=X, object= @所有, time= @暴行),
+               持ち去る(agent=X, object=Y, source=Z)|@盗み,
+               故意あり(a_object=X, object= @盗み, goal=強盗罪).
+
+刑236の2::形式的構成要件に該当する(a_object= @盗み,  goal=強盗罪)
+            <- 活動する(agent=X/人間, object=Z/人間)|@暴行,
+               暴行である(a_object= @暴行),
+               占有している(a_object=Z, object=Y/具体物)|@所有,
+               持ち去る(agent=X, object=Y, source=Z)|@盗み.
+
+  % 強盗罪 （刑法236条）
+  %         暴行又は脅迫をもって他人の財物を強取すると、5年以上の有期懲役
+
+刑254::構成要件に該当する(a_object= @持ち去り, goal=占有離脱物横領罪)
+            <- 持ち去る(agent=X/人間, object=Z/具体物)|@持ち去り,
+               -占有している(a_object=Y/人間, object=Z),
+               所有権を持っている(agent=Y, object=Z),
+               故意あり(a_object=X, object= @持ち去り, 
+                        goal=占有離脱物横領罪).
+
+刑254の2::形式的構成要件に該当する(a_object= @持ち去り, goal=占有離脱物横領罪)
+            <- -占有している(a_object=Y/人間, object=Z/具体物),
+               持ち去る(agent=X/人間, object=Z)|@持ち去り,
+               所有権を持っている(agent=Y, object=Z).
+
+  % 占有離脱物横領罪 （刑法254条）
+  %         占有を離れた他人のものを横領すると、1年以下の懲役、100円以下の罰金、
+  %                                                     科料
+
+% 使用3.15
+刑261::構成要件に該当する(a_object= @壊す, goal=器物損壊罪)
+            <- 占有している(a_object=Y/人間, object=Z/具体物),
+               活動する(agent=X/人間, object=Z)|@壊す,
+               壊す行為である(a_object= @壊す),
+               故意あり(a_object=X, object= @壊す, goal=器物損壊罪).
+
+  % 器物損壊罪 （刑法261条）
+  %         器物を損壊すると、3年以下の懲役、500円以下の罰金、科料
+
+ 
+
+
+
+% 4.4  学説  ---------------------------------------------------
+
+
+%              <<刑法総論に関する学説>>
+% 使用2.1
+刑因果条件説1:: 法的因果関係あり(source= @行為, goal= @結果) 
+            <- 活動する(agent=人間)|@行為,
+               状態が成立している(condition= @行為)|@結果.
+
+  %  （条件説）ある行為とある状態の間に条件関係があるときには、法的な因果関係が
+  %           ある。
+  %  （注意）条件関係（「〜なければ〜なし」の関係）を condition で表すことにし
+  %          ている。
+
+
+刑因果条件説2:: 法的因果関係あり(source= @行為, goal= @結果) 
+            <- 活動する(agent=人間)|@行為,
+               活動する(condition= @行為)|@結果.
+
+  %  （条件説）ある行為とある行為の間に条件関係があるときには、法的な因果関係が
+  %           ある。
+
+
+刑因果条件説3:: 法的因果関係あり(source= @行為, goal= @結果) 
+            <- 活動する(agent=人間)|@行為,
+               現象をおこす(condition= @行為)|@結果.
+
+  %  （条件説）ある行為とある現象の間に条件関係があるときには、法的な因果関係が
+  %           ある。
+
+
+刑因果相当説:: 法的因果関係あり(source= @行為, goal= @結果) 
+            <- 活動する(agent=人間)|@行為,
+               現象をおこす(condition= @行為)|@結果,
+               相当因果関係あり(source= @行為, goal= @結果).
+
+  %  （相当因果関係説）ある行為とある現象の間に条件関係があるときには、法的な因
+  %                   果関係がある。
+
+
+
+
+
+%           << 傷害の定義に関する学説>>
+
+刑204定義完全性説1:: 傷害である(a_object=X)
+            <- 身体の完全性が異常である(a_object=X/人間).
+
+刑204定義完全性説2:: -傷害である(a_object=X)
+            <- -身体の完全性が異常である(a_object=X/人間).
+
+   % （傷害の定義：完全性説）「傷害」とは、「身体の完全性の侵害」のことで
+   %                         ある。
+
+
+刑204定義機能障害説1:: 傷害である(a_object=X)
+            <- 生理機能が異常である(a_object=X/人間).
+
+刑204定義機能障害説2:: -傷害である(a_object=X)
+            <- -生理機能が異常である(a_object=X/人間).
+
+   % （傷害の定義：機能障害説）「傷害」とは、「生理機能の障害」のことであ
+   %                          る。
+
+
+%           << 傷害の故意に関する学説>>
+
+% 使用2.1
+刑204団藤説::  故意あり(a_object=X, object= @暴行, goal=傷害罪)
+              <- 活動する(agent=X/人間, object=Y/人間)|@暴行,
+                 暴行である(a_object= @暴行),
+                 故意あり(a_object=X, object= @暴行, goal=暴行罪),
+                 傷害である(a_object=Y)|@傷害,
+                 法的因果関係あり(source= @暴行, goal= @傷害).
+
+    % （傷害の故意：団藤説）暴行の故意しかなくても、その暴行によって、傷
+    %                  害が発生したときには、傷害罪の故意が認められる。
+
+% 使用2.5
+刑204小野説::  -故意あり(a_object=X, object= @暴行, goal=傷害罪)
+              <- 活動する(agent=X/人間, object=Y/人間)|@暴行,
+                 暴行である(a_object= @暴行),
+                 故意あり(a_object=X, object= @暴行, goal=暴行罪),
+                 傷害である(a_object=Y)|@傷害,
+                 法的因果関係あり(source= @暴行, goal= @傷害).
+
+    % （傷害の故意：小野説）暴行の故意しかなくて、その暴行によって、傷害
+    %                  が発生したときには、傷害罪の故意はない。暴行罪と
+    %                  過失傷害罪に該当する。
+
+
+
+
+%             <<死者の占有関係に関する学説>>
+
+刑235死者占有小野説1:: 占有している(a_object=X, object=Y, time= @持ち去り)
+                 <- 死亡する(agent=X/人間) |@死亡,
+                    占有している(a_object=X, object=Y/具体物, time= @死亡),
+                    持ち去る(agent=Z/人間, object=Y)|@持ち去り,
+                    短時間である(a_object= @持ち去り, basis= @死亡).
+
+    % （死者の占有：小野説）死者であっても、死亡直後であれば、占有関係は継
+    %               続すると考えるべきである。
+% 使用3.5
+刑235死者占有小野説2:: 認識している(a_object=Z, 
+                                    object=占有している(a_object=X, object=Y), 
+                                    time= @持ち去り)
+                 <- 認識している(a_object=Z/人間, 
+                                 object=死亡する(agent=X/人間)),
+                    持ち去る(agent=Z, object=Y)|@持ち去り.
+
+% 刑235死者占有小野説2:: 認識している(a_object=Z, 
+%                                    object=占有している(a_object=X, object=Y, 
+%                                                        time= @持ち去り),
+%                                    time= @持ち去り)
+%                 <- 認識している(a_object=Z/人間, 
+%                                 object=死亡する(agent=X/人間)|@死亡),
+%                    認識している(a_object=Z, 
+%                                 object=占有している
+%                        (agent=Z, object=Y/具体物, time= @死亡),time= @死亡),
+%                    持ち去る(agent=Z, object=Y)|@持ち去り,
+%                    短時間である(a_object= @持ち去り, basis= @死亡).
+
+    % （小野説の変形）死んだと思っても、死亡直後であれば、占有関係は継
+    %               続すると認識している。
+
+
+刑235死者占有団藤説:: 占有している(a_object=X, object=Y, time= @持ち去り)
+                 <- 殺す(agent=Z/人間, object=X/人間)|@殺人,
+                    占有している(a_object=X, object=Y/具体物, time= @殺人),
+                    持ち去る(agent=Z, object=Y)|@持ち去り,
+                    短時間である(a_object= @持ち去り, basis= @殺人).
+
+    % （死者の占有：団藤説）死者には、占有関係は消滅する。ただし、被害者を
+    %              死に至らしめた加害者に関してのみ、占有関係は保持される。
+
+
+刑235死者占有植松説1:: -占有している(a_object=X, object=具体物[possessor=>X])
+                 <- 死んでいる(a_object=X/人間).
+ 
+    % （死者の占有：植松説）死者には、占有関係は存在しない。
+
+% 使用3.6
+刑235死者占有植松説2:: -認識している(a_object=Y, 
+                                     object=占有している(a_object=X, object=Z),
+                                     time= @場面 )
+                 <- 認識している(a_object=Y/人間, 
+                                  object=死んでいる(a_object=X/人間),
+                                  time= 活動する()|@場面 ),
+                    占有している(a_object=X, object=Z/具体物).
+ 
+    % （植松説の変形）死んでいると認識しているときには、占有関係は存在しな
+    %           いと思っている。
+
+
+
+%             <<窃盗の故意に関する学説>>
+
+%仕様3.6
+刑235団藤説1:: -故意あり(a_object=X, object= @持ち去り, goal=窃盗罪)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り,
+                    -意図あり(a_object=X, object= @持ち去り, goal=不当領得).
+
+%仕様3.6
+刑235団藤説2:: -意図あり(a_object=X, object= @持ち去り, goal=不当領得)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り,
+                    -意図あり(a_object=X, object= @持ち去り, 
+                             goal=だます(agent=X, object=人間,
+                                      goal=所有権を持っている(agent=X, 
+                                                              object=Y))).
+
+    % （窃盗の故意：団藤説）窃盗の故意が成立するには、不当領得の意思が必
+    %       要である。不当領得の意思とは、自分が所有権者のようにふるまう
+    %       意思である。
+
+% 使用旧3.13
+刑235平野説1:: -故意あり(a_object=X, object= @持ち去り, goal=窃盗罪)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り,
+%%9/13temp                    different(X,Z),
+                    -意図あり(a_object=X, object= @持ち去り, goal=不当領得).
+% 使用旧3.13
+刑235平野説2:: -意図あり(a_object=X, object= @持ち去り, goal=不当領得)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り,
+%%9/13temp                    different(X,Z),
+                    -意図あり(a_object=X, object= @持ち去り,  
+                             goal=使う(agent=X, object=Y)).
+
+%%New (begin)
+%仕様3.9
+刑235平野説3:: 意図あり(a_object=X, object= @持ち去り, goal=不当領得)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り,
+%%                different(X,Z),
+                    意図あり(a_object=X, object= @持ち去り,  
+                             goal=使う(agent=X, object=Y)).
+%%New (end)
+
+    % （窃盗の故意：平野説）窃盗の故意が成立するには、不当領得の意思が必
+    %       要である。不当領得の意思とは、その物を利用・処分する意思であ
+    %       る。 
+
+
+刑235大塚説:: 故意あり(a_object=X, object= @持ち去り, goal=窃盗罪)
+                 <- 持ち去る(agent=X/人間, object=Y/具体物[possessor=>Z/人間])
+                        |@持ち去り.
+%%9/13temp                        |@持ち去り,
+%%9/13temp                    different(X,Z).
+
+    % （窃盗の故意：大塚説）不当領得の意思がなくても、窃盗の故意は成立する。
+
+ 
+
+
+
+%            <<抽象的事実の錯誤に関する学説>>
+% 使用3.10
+刑38抽象的事実錯誤に対する法定的符合説::
+            -構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為, 
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪).
+%%9/13temp                        goal=Z/罪, source=Y/罪),
+%%9/13temp               different(Y,Z).
+
+  % （抽象的事実錯誤：法定的符合説）抽象的事実の錯誤がある行為は、認識した罪に
+  %            関しては未遂となり、実行した行為は過失となる。
+
+
+
+刑38抽象的事実錯誤に対する牧野説1:: 
+           構成要件に該当する(a_object= @行為, goal=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Z, basis=Y).
+
+刑38抽象的事実錯誤に対する牧野説2:: 
+           -構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Z, basis=Y).
+
+  % （牧野説A） 軽い罪の故意で重い結果の生じたときは、軽い罪の既遂と重い罪の過失
+  %            が生じる。
+
+刑38抽象的事実錯誤に対する牧野説3:: -構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Y, basis=Z).
+
+刑38抽象的事実錯誤に対する牧野説4:: 構成要件に該当する(a_object= @行為, goal=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Y, basis=Z).
+
+  % （牧野説B） 重い罪の故意で軽い結果の生じたときは、重い罪の未遂と軽い罪の既遂
+  %            となる。
+
+刑38抽象的事実錯誤に対する宮本説1::
+            -構成要件に該当する(a_object= @行為, goal=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪).
+%%9/13temp                                  goal=Z/罪, source=Y/罪),
+%%9/13temp               different(Y,Z).
+% 使用旧3.9
+刑38抽象的事実錯誤に対する宮本説2:: 
+            構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪).
+%%9/13temp                                  goal=Z/罪, source=Y/罪),
+%%9/13temp               different(Y,Z).
+
+  % （宮本説） 認識した行為の未遂と結果の罪の過失と既遂を認める。
+
+刑38抽象的事実錯誤に対する草野説1:: 
+           構成要件に該当する(a_object= @行為, goal=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Z, basis=Y).
+
+刑38抽象的事実錯誤に対する草野説2:: 
+           -構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Z, basis=Y).
+
+  % （草野説A） 軽い罪の故意で重い結果の生じたときは、軽い罪の既遂と重い罪の過失
+  %            が生じる。
+
+刑38抽象的事実錯誤に対する草野説3:: 
+           -構成要件に該当する(a_object= @行為, goal=Z)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Y, basis=Z).
+
+刑38抽象的事実錯誤に対する草野説4:: 
+           -構成要件に該当する(a_object= @行為, goal=Y)
+            <- 活動する(agent=X/人間)|@行為,
+               抽象的事実錯誤あり(a_object=X, object= @行為,  
+                                  goal=Z/罪, source=Y/罪),
+               重罪である(a_object=Y, basis=Z).
+
+  % （草野説B） 重い罪の故意で軽い結果の生じたときは、重い罪の未遂と軽い罪の過失
+  %            が生じる。
+
+
+
+%          <<強盗の意思が後から生じたときの学説>>
+% 使用3.1
+刑236藤木説:: 故意あり(a_object=X, object= @持ち去り, goal=強盗罪)
+              <- 活動する(agent=X/人間, object=Z/人間)|@暴行,
+                 暴行である(a_object= @暴行),
+                -故意あり(a_object=X, object= @暴行, goal=強盗罪),
+                 持ち去る(agent=X, object=Y/具体物[possessor=>Z], 
+                         source=Z) |@持ち去り.
+
+ % （強盗の意思が後で生じたとき：藤木説）暴行をしたときはその意図はなかっ
+ %      たが、後に、物品を持ち去る行為をしたときは、強盗罪が成立する。
+
+刑236大塚説:: -故意あり(a_object=X, object= @持ち去り, goal=強盗罪)
+              <- 活動する(agent=X/人間, object=Z/人間)|@暴行,
+                 暴行である(a_object= @暴行),
+                -故意あり(a_object=X, object= @暴行, goal=強盗罪),
+                 持ち去る(agent=X, object=Y/具体物[possessor=>Z], 
+                     source=Z)|@持ち去り,
+                 故意あり(a_object=X, object= @持ち去り, goal=窃盗罪).
+
+ % （強盗の意思が後で生じたとき：大塚説）暴行をしたときはその意図はなかっ
+ %      たが、後に、物品を持ち去る行為をしたとき強盗罪ではなく、窃盗罪
+ %      である。
+
+%            << 傷害の定義に関する判例>>  
+% 使用2.1
+刑204大判昭和080906:: 傷害である(a_object= Y, condition= @暴行)
+             <-  暴行する(agent=X/人間, object=Y/人間)|@暴行, 
+                 失神する(agent=Y, condition= @暴行).
+
+  % (刑204大判昭和080906)
+  % 湖につき落して失神させる行為は傷害にあたる。
+
+% 使用2.2
+刑204大判大正150720:: -傷害である(a_object= Y)
+             <-  暴行する(agent=X/人間, object=Y/人間) |@行為, 
+                 人事不省になる(agent=Y, condition= @行為).
+
+  %(刑204大判大正150720)
+  % 殴った結果、３０分程度、人事不省に陥った程度では、傷害にはならない。
+
+%          <<強盗の意思が後から生じたときに関する判例>> 
+% 使用3.2
+% replace 9/20
+% 刑236旭川地裁判昭和361014:: -故意あり(agent=X, object= @持ち去り, goal=強盗罪)
+刑236旭川地裁判昭和361014:: -故意あり(a_object=X, object= @持ち去り, goal=強盗罪)
+            <-  暴行する(agent=X/人間, object=Z/人間)|@暴行,
+                -故意あり(a_object=X, object= @暴行, goal=強盗罪),
+                失神する(agent=Z, condition= @暴行),
+                持ち去る(agent=X, object=Y/具体物[possessor=>Z], 
+                         source=Z) |@持ち去り.
+
+ %(刑236旭川地裁判昭和361014)
+ % 暴行したところ、被害者が失神したので、その後に、衣服を盗もうと思い、
+ % 衣服をはぎとった行為については、強盗罪の故意は認めない。
+}
+&define_CBR_rule.
+
+
+
+
+
+
+
+

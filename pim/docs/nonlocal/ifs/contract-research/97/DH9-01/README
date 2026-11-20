@@ -1,0 +1,50 @@
+#   README
+#   Copyright (C) 1998, Katsumi Nitta( nitta@dis.titech.ac.jp )
+
+[ Directry Tree ]
+
+./H9-1
+	+- README
+	+- README-J
+	+- Shaky2.0/
+		+- Install_J(in Japanese)
+		+- USERMAN_J(in Japanese)
+		+- src/
+			+- Makefile		
+			+- io.pl		program source files
+			+- system.pl		( written in prolog )
+			+- la.pl		
+			+- main.pl
+			+- transfer.pl
+			+- db.pl			
+			+- makefile.pl		
+			+- grammar.pl		
+			+- utility.pl
+			+- sample/		sample data files for demonstration
+				+- sample1
+				+- sample2
+				+- sample3
+				+- sample4		
+	+- rbrs-1.0/
+		+- Makefile
+		+- INSTALL-J		Install manual ( written in Japanese )
+		+- USSERMAN-J		User's manual ( written in Japanese )
+		+- comparePRule.pl	Module for reasoning priority between normal rule
+		+- compareRule.pl	Module for reasoning priority betwee priority rule
+		+- debate_Dic		Dictionary file for demonstration
+		+- deate_Rule		Rule file for demonstration
+		+- findAllArg.pl	Module for finding all argument
+		+- findIssue.pl		Module for finding issue
+		+- interface.tcl	Module for user interface ( written in Tcl/Tk )
+		+- makeArg.pl		Module for making argument
+		+- makeCoutnerArg.pl	Module for making counter argument
+		+- makeclause.pl	Module for transrating system's rule from rule file
+		+- makelower.pl		Module for transrating system's dictionary 
+						from rule file
+		+- operator.pl		Module for declation of operater
+		+- priority.pl		Module for reasoning priority between argument
+		+- rbrs				shell script for start up
+		+- startscript.pl	Startup file of this system ( written in prolog )
+		+- tcltkinterface.pl	Module for using Tcl/Tk file
+		+- unify.pl			Module for unification
+

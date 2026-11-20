@@ -1,0 +1,100 @@
+/**********************************************************************/
+/*                 MGTP Development Support Tools                     */
+/*                                                                    */
+/*                           Ryuzo Hasegawa                           */
+/*                 Department of Intellient Sysytems                  */
+/*               Graduate School of Information Science               */
+/*                     and Electrical Engineering                     */
+/*                         Kyushu University                          */
+/*                   hasegawa@ar.is.kyushu-u.ac.jp                    */
+/*                                                                    */
+/*                 Copyright (C) 1996  Ryuzo Hasegawa                 */
+/*                                                                    */
+/**********************************************************************/
+
+OVERVIEW:
+
+This software facilitates programming on MGTP(Model Generation Theorem
+Prover)[1] which is a bottom-up theorem proving system running on
+KLIC. Many kind of functions are available through options.
+
+This software contains the following tools(command names are
+surrounded by parenthesis):
+
+(1) MGTP Translator(mg2kl1): compiles MG clauses to KL1 clauses which
+is linked with MGTP engine so as to determine satisfiability of MG
+clauses.
+
+(2) MGTP Interpreter(intMerc): is an MGTP inference engine which can
+interpret MG clauses directly, and so MGTP Translator is not
+necessary.
+
+(3) Helpful Commands:
+   (a) Range-restricted Checker(rchk): judges range-restrictedness of
+       the set of MG clauses.
+   (b) DOM Inserter(dom): inserts dom predicates into the antecedent of
+       non-range-restricted MG clauses and adds MG clauses which define 
+       the dom predicate.
+   (c) MG-clause Counter(mc): displays a count of positive MG clauses,
+       mixed MG clauses, negative MG clauses and other type terms 
+       in a file.
+   (d) MERC-pattern Generator(mercpat): analyze the antecedent of a MG clause 
+       and produce MERC-pattern for conjunctive matching of MGTP engine.
+   (e) MG-clauses Redundancy Eliminator(simplify): deletes MG clauses which
+      represent tautology and remove redundant literals of MG clauses 
+      in order to decrease proof time.
+   (f) TPTP-to-MGTP Translator(tptp2mgtp): translates TPTP[3]-style
+       problem into MG clauses.
+
+(4) Pre-processors for pruning search space: 
+
+   (a) FD(Folding Down)[2] Translator(fdown): translates a MG clause into
+       another MG clause containing negated atom to incorporate FD in
+       MGTP proving. Translated MG clauses have to linked with 
+       Constraints MGTP engine.
+
+   (b) NHM(Non Horn Magic Set) Translator(mg2dnhm): translates a MG
+       clause into other MG clauses to incorporate NHM in MGTP proving.
+
+(5) MGTP Tracer: traces proving process in MGTP 
+
+(6) An Interactive Programming Environment for KLIC(klic_run)
+
+
+INSTALLATION:
+All tools are totally written in KL1 and can be compiled using KLIC.
+This distribution includes 'src' and 'bin' directories.
+The 'src' contains all KL1 sources for the tools and the 'bin' contains 
+mg2dnhm and klic_run defined as shellscripts.
+
+The following items indicate relations between commands and source files.
+
+   (1) mg2kl1: mg2kl1.kl1
+   (2) intMerc: intMerc.kl1, match.kl1
+   (3) dom: dom.kl1
+   (4) mc: mc.kl1
+   (5) mercpat: mercpat.kl1, unify.kl1
+   (6) rchk: rangeCheck.kl1
+   (7) simplify: simplify.kl1
+   (8) tptp2mgtp: tptp2mgtp.kl1
+   (9) fdown: folddown.kl1
+  (10) mg2dnhm: nhmmode and nhmtrans installations are necessary
+  (11) nhmmode: nhmmode.kl1
+  (12) nhmtrans: nhmtrans.kl1
+  (13) kl1mod: kl1mod.kl1, fm.kl1
+
+Typing in
+klic -o 'command name' 'source files(*.kl1)'
+produces the command 'command name' which works as shell command.
+
+REFERENCES:
+
+[1] H. Fujita and R. Hasegawa: A Model Generation Theorem Prover in
+KL1 Using a Ramified-Stack Algorithm, Proc. 8th ICLP, pp.535-548 (1991)
+
+[2] R. Letz, K. Mayr and C. Goller: Controlled Intergration of the Cut
+Rule into Connection Tableau Calculi, J. of Automated Reasoning,
+Vol.13, No. 3, pp.297-337 (1994)
+
+[3] C. Suttner, G. Sutcliffe and T. Yemenis: The TPTP Problem Library,
+Proc. 12th CADE, pp.252-266 (1993)

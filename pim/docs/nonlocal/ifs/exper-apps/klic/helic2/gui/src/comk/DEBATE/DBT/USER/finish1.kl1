@@ -1,0 +1,32 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_finish1.
+
+:- public 
+    finish/4.
+            
+:- with_macro pimos.
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+
+    finish(claim(MA,nil),{O,Pool1,Info},Data,NextDR):-true|
+        initiate(claim(MA,nil),Pool1,Info,Pool2,R),
+        (   wait(R)->
+                Pool2  = [send(hl,put(send(m,start)))|Pool],
+                Data   = {O,Pool,Info},
+                NextDR = start).
+
+    initiate(claim(MA,nil),Pool1,Info,Pool,R):-true|
+        Info = {_,_,{_,_,_,AgentName},_},
+        dbtgui_messagePool:make_message({finish,you},{AgentName,MA},Status),
+        dbtgui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2 = [makeList([at,mat],[AT,MAT])|Pool],
+                AT    = [refer_arg(MA,MA_Arg,_)],
+                MAT   = [finish(MA_Arg)],
+                R     = normal(success)).

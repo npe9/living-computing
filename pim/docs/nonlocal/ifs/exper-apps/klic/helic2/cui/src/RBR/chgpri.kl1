@@ -1,0 +1,225 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_CP.
+:- public change_priority/4.
+:- with_macro pimos.
+
+change_priority(ST,RM,NewST,Res):-
+    dr00(ST,RM,NewST,not_counter),
+    Res = normal(success).
+%change_priority(not_top,ST,RM,NewST):-
+%    dr00(ST,RM,NewST,not_top).
+%change_priority(counter_top,ST,RM,NewST):-
+%    dr_top(ST,RM,NewST).
+
+dr_top({Env,HIDT,ST},RM,NewST):-
+   rbr_solution_table:get_elementN(0,ST,OldData,STm),
+   dr2_top(OldData,Env,HIDT,STm,RM,_Env1,_HIDT1,NewST).
+
+dr2_top({succ,Con,RuleName,ChildList,_,_,_,_},
+                Env,HIDT,ST,RM,Env1,HIDT1,Out):-
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM,Env1,HIDT1,{SAI,_},STm),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_solution_table:put_elementN(0,STm1,
+                        {succ,Con,RuleName,ChildList,c_top(Jin),SAI,nil,nil},ST1),
+    Out = {{Env1,HIDT1,ST1},c_top,Jin}.
+
+dr00({Env,HIDT,ST},RM,NewST,CF):-
+   rbr_solution_table:get_elementN(0,ST,OldData,STm),
+   dr20(OldData,Env,HIDT,STm,0,RM,_Env1,_HIDT1,NewST,CF).
+
+dr20({succ,Con,Rule,ChildList,_,_,CST0,_},
+                Env,HIDT,ST,Index,RM,Env1,HIDT1,Out,CF):-
+    RM = {RM1,RM2,RM3},
+%$    couter_solve(Con,Env,HIDT,RM1,CST),
+    dr_CST(CST0,RM1,CST),
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM2,Env1,HIDT1,{SAIown,_SAIm},STm),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+%    update_SAI(SAIm,J,Index,SAI1),
+    rbr_solution_table:put_elementN(Index,STm1,
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,nil},ST1),
+    J = {TR,SH},
+    get_succ_out(CF,Env1,HIDT1,ST1,TR,SH,Out).
+otherwise.
+dr20(_Element,
+                Env,HIDT,ST,_Index,RM,Env1,HIDT1,Out,CF):-
+   RM = [],
+   get_fail_out(CF,ST,Env,HIDT,Env1,HIDT1,Out).
+
+get_succ_out(not_top,Env,HIDT,ST,TR,SH,Out):-
+    Out = {{Env,HIDT,ST},TR,SH}.
+get_succ_out(not_counter,Env,HIDT,ST,_TR,_SH,Out):-
+    Out = {Env,HIDT,ST}.
+
+get_fail_out(not_counter,ST,Env,HIDT,Env1,HIDT1,Out):-
+    Env1 = Env, HIDT1 = HIDT, Out = {Env,HIDT,ST}.
+get_fail_out(not_top,_ST,Env,HIDT,Env1,HIDT1,Out):-
+    Env1 = Env, HIDT1 = HIDT, Out = fail.
+
+dr_child([],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1):-
+    Env1 = Env, 
+    HIDT1 = HIDT,
+    SAI1 = SAI,
+    RM = [],
+    ST1 = ST.
+dr_child([Index|CL],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1):-
+    RM = {RM1,RM2},
+    dr10SAI(Index,ST,Env,HIDT,SAI,RM1,Envm,HIDTm,SAIm,STm,not_top),
+    dr_child1(CL,Envm,HIDTm,STm,SAIm,RM2,Env1,HIDT1,SAI1,ST1).
+
+dr10SAI(Index,ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF):-
+   integer(Index) |
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr20SAI(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF).
+dr10SAI(naf(Index),ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF):-
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr_naf(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF).
+
+dr_naf({fail,Con},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{1,1},Index,SAIo1),
+    update_SAI(SAIa,{1,1},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    rbr_solution_table:put_elementN(Index,ST,
+                        {4,Con},ST1),
+    RM = [], Env1 = Env, HIDT1 = HIDT.
+dr_naf({1,_Con,_NST},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{2,2},Index,SAIo1),
+    update_SAI(SAIa,{2,2},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+otherwise.
+dr_naf({_,_Con,_NST},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{1,1},Index,SAIo1),
+    update_SAI(SAIa,{1,1},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+
+dr20SAI({succ,Con,Rule,ChildList,_,_,CST0,_},
+                Env,HIDT,SAI,ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    RM = {RM1,RM2,RM3},
+%    couter_solve(Con,Env,HIDT,RM1,CST),
+    dr_CST(CST0,RM1,CST),
+    dr_child(ChildList,Env,HIDT,ST,SAI,RM2,Env1,HIDT1,{SAIown,SAIm},STm),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+    update_SAI(SAIm,J,Index,SAIall),
+    update_SAI(SAIown,J,Index,SAIown1),    
+    SAI1 = {SAIown1,SAIall},
+    rbr_solution_table:put_elementN(Index,STm1,
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,nil},ST1).
+dr20SAI({fail,_Entry},
+                Env,HIDT,SAI,ST,_Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+   RM = [],
+   Env1 = Env, HIDT1 = HIDT, SAI1 = SAI, ST1 = ST.
+
+dr_child1([],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1):-
+    Env1 = Env, 
+    HIDT1 = HIDT,
+    SAI1 = SAI,
+    RM = [],
+    ST1 = ST.
+dr_child1([Index|CL],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1):-
+    RM = {RM1,RM2},
+    dr10SAI1(Index,ST,Env,HIDT,SAI,RM1,Envm,HIDTm,SAIm,STm,not_top),
+    dr_child1(CL,Envm,HIDTm,STm,SAIm,RM2,Env1,HIDT1,SAI1,ST1).
+
+dr10SAI1(Index,ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF):-
+   integer(Index) |
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr20SAI1(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF).
+dr10SAI1(naf(Index),ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF):-
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr_naf1(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF). 
+
+dr_naf1({fail,Con},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{1,1},Index,SAIb1),
+%    update_SAI(SAI,{1,1},Index,SAI1),
+    update_SAI(SAI,{1,1},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    rbr_solution_table:put_elementN(Index,ST,
+                        {4,Con},ST1),
+    RM = [], Env1 = Env, HIDT1 = HIDT.
+dr_naf1({1,_Con,_NST},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{2,2},Index,SAIb1),
+    update_SAI(SAI,{2,2},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+otherwise.
+dr_naf1({_,_Con,_NST},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{1,1},Index,SAIb1),
+    update_SAI(SAI,{1,1},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+
+dr20SAI1({succ,Con,Rule,ChildList,_,_,CST0,_},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    RM = {RM1,RM2,RM3},
+%    couter_solve(Con,Env,HIDT,RM1,CST),
+    dr_CST(CST0,RM1,CST),
+    dr_child(ChildList,Env,HIDT,ST,{[],SAI},RM2,Env1,HIDT1,{SAIown,SAIm},STm),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+    update_SAI(SAIm,J,Index,SAIall),
+    update_SAI(SAIown,J,Index,SAIown1),    
+    append_SAI(SAIown1,SAIb,SAIb1),
+    SAI1 = {SAIb1,SAIall},
+    rbr_solution_table:put_elementN(Index,STm1,
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,nil},ST1).
+dr20SAI1({fail,_Entry},
+                Env,HIDT,SAI,ST,_Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+   RM = [],
+   Env1 = Env, HIDT1 = HIDT, SAI1 = SAI, ST1 = ST.
+
+dr_CST(fail,RM,CST):- 
+    RM = [],
+    CST = fail.
+dr_CST([],RM,CST):- 
+    RM = [],
+    CST = [].
+dr_CST([{{Env,HIDT,ST},_,_}|CSTT],RM,CST):-
+    RM = {RM1,RM2},
+    dr_top({Env,HIDT,ST},RM1,CSTH0),
+    dr_CST(CSTT,RM2,CSTT0),
+    CST = [CSTH0|CSTT0].
+
+update_SAI([],J,Index,SAI1):-
+    SAI1 = [{J,1,[Index]}].
+update_SAI([{J,N,List}|T],J,Index,SAI1):-
+    SAI1 = [{J,~(N+1),[Index|List]}|T].
+otherwise.
+update_SAI([H|T],J,Index,SAI1):-
+    update_SAI(T,J,Index,SAI1T),
+    SAI1 = [H|SAI1T].
+
+append_SAI([H|T],SAIb,SAIb1):-
+    insert_SAI(SAIb,H,SAIbm),
+    append_SAI(T,SAIbm,SAIb1).
+append_SAI([],SAIb,SAIb1):-
+    SAIb1 = SAIb.
+
+insert_SAI([],H,SAIb1):-
+    SAIb1 = [H].
+insert_SAI([{J,N,List}|T],{J,N2,List2},SAIb1):-
+    append(List,List2,List3),
+    SAIb1 = [{J,~(N+N2),List3}|T].
+otherwise.
+insert_SAI([H|T],Ele,SAIb1):-
+    insert_SAI(T,Ele,SAIb1T),
+    SAIb1 = [H|SAIb1T].
+
+append([H|T],L,Res):-
+    append(T,L,ResT),
+    Res = [H|ResT].
+append([],L,Res):-
+    Res = L.
+

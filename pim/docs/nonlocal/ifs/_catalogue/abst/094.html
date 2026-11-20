@@ -1,0 +1,90 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+-->
+<title> (94) Multiple Sequence Alignment by Genetic Algorithm</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (94) Multiple Sequence Alignment by Genetic Algorithm</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/UNIX Machine
+	Environment: PIMOS/UNIX, KLIC
+	Language:    KL1
+	Source Code: 0.3 MB
+	Documents:   Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This parallel system, the combination of a genetic algorithm and an
+iterative alignment algorithm, produces better results than iterative
+aligners which employ hill-climbing search strategies.  <p>
+
+<h2><b>Features</b></h2>
+
+This parallel alignment system featuring a genetic algorithm can
+improve an alignment score as rapidly as that with the hill-climbing
+algorithm, and the system gradually increased the score to a higher
+level which might be close to the optimal alignment score.  The reason
+why the genetic algorithm shows such high performance seems to be the
+modularity of multiple alignment problems. If we can replace a part of
+a sequence alignment with a better part from another, we obtain a
+better multiple sequence alignment. Crossover operators achieve this
+replacement in a statistical manner.  <p>
+
+<h2><b>Function</b></h2>
+
+In this system, each individual alignment is assigned to a PE, so the
+size of population is 255 when using PIM/m with 256 PEs. A PE is used
+as a manager process to select discarded individuals and crossover
+candidates. The period of each generation is controlled with the
+system timer, whose default value is eighty seconds. When each PE
+finds that the system timer has passed eighty seconds, it does not
+apply another mutation operator but sends the current alignment to the
+manager PE. On average, four mutations occur in a generation with the
+crossover operation, or six mutations occur in a generation without
+it.  The maximum alignment score among the population is decided as
+having converged when it is invariable through more than one hundred
+generations.  It took about two hours to obtain the converged score
+when solving a practical-scale alignment problem, which consists of
+twenty-two sequences with eighty amino-acid letters each.  <p>
+
+This system can also execute on computers with basic functions of UNIX
+operating system using KLIC.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/exper-apps/klic/alignga/README">README</a>,
+
+<LI><a
+href="../../../ifs/exper-apps/klic/alignga/INSTALL">INSTALL</a>,
+
+<LI><a
+href="../../../ifs/exper-apps/klic/alignga/COPYRIGHT">COPYRIGHT</a>,
+
+<LI><a
+href="../../../ifs/exper-apps/klic/alignga/image.tgz">IMAGE</a>.
+
+<li> Multiple Sequence Alignment by Genetic Algorithm  [1,114K]
+<a href="../../../ifs/exper-apps/klic/alignga/software.tgz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

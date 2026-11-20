@@ -1,0 +1,91 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (38) Grammar Writing Support System: LINGUIST</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (38) Grammar Writing Support System: LINGUIST</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    CESP
+	Source Code: 1.5 MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+An environment for supporting grammar writing.
+
+<h2><b>Configuration</b></h2>
+<pre>
+　　　　　　　　　┌────────────────────────┐
+┌───────┐│　　　　　　　┌─────────┐　　　　　　│
+│Ｇｒａｍｍａｒ├┼──────＞│Ｇｅｎｅｒａｔｏｒ├──────┼─＞Ａ　
+│Ｒｕｌｅ　　　││　　　┌──＞│　　　　　　　　　├─┐　　　　│　　Ｃｏｍｐｌｅｔｅ
+└───────┘│　　　│　　　└─────────┘　│　　　　│　　Ｐａｒｓｅｒ
+　　　　　　　　　│　　　│　　　　　ＬＩＮＧＵＩＳＴ　　│　　　　│
+　　　　　　　　　│　　　│　　　　　　　　　　　　　　　Ｖ　　　　│
+　　　　　　　　　│┌──┴─────┐　　┌────────┐　　│┌─────────┐
+　　　　　　　　　││Ｄｅｂｕｇｇｅｒ│＜─┤Ａｃｃｅｓｓｏｒ│＜─┼┤Ｓｅｎｔｅｎｃｅｓ│
+　　　　　　　　　│└────────┘　　└────────┘　　│└─────────┘
+　　　　　　　　　└────────────────────────┘
+
+    Generator: provides functions for creating a parser.
+    Accessor:  provides functions for performing sentence analysis and result cheking.
+    Debugger:  provides functions for debugging,tracing grammar rules,and correcting errors.
+
+</pre>
+
+<h2><b>Function</b></h2>
+
+LINGUIST is an interactive Japanese language analysis system on CESP
+which is available under Unix. The LINGUIST computational tool was
+designed to assist the development of grammar rules written in DCG. 
+LINGUIST can be used to develop grammar rules written in DCG and to
+modify them for use in many sort of application systems.  <p>
+
+LINGUIST offers many features to make analysis experiments easy and
+comprehensive.  These features include the following:<P>
+
+<ul>
+
+<li>Minimun key entries. LINGUIST is designed to allow most operations
+to be performed with a mouse.
+
+<li>Multiple windows. Provides high visibility flow of executions to
+be viewed by locating all necessary functions in one window.
+
+<li>Powerful utilities. A visual debugger traces grammar rules.
+
+<li>Supplied linguistic knowledge source. Basic grammars that contain
+grammar rules for Japanese sentence analysis snd dictionaries.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Grammar Writing Support System: LINGUIST [557K] <a
+href="../../../ifs/natural-lang/cesp/linguist.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

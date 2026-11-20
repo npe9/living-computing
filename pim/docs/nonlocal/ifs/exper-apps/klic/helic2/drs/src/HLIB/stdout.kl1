@@ -1,0 +1,40 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_stdout.
+
+create(I):-true|
+        klicio:klicio(S),
+        S=[stdout(normal(Out))],
+        
+        loop(I,Out).
+
+loop([],Out):-true|
+        Out  = [].
+loop([putc(A)|T],Out):-integer(A),A >=0,A=<255|
+        Out = [putc(A)|Out1],
+        loop(T,Out1).
+loop([putl(A)|T],Out):-true|
+        Out = [fwrite(A,_),putc(key#lf)|Out1],
+        loop(T,Out1).
+loop([putb(A)|T],Out):-true|
+        Out = [fwrite(A,_)|Out1],
+        loop(T,Out1).
+loop([putt(A)|T],Out):-true|
+        Out = [putt(A)|Out1],
+        loop(T,Out1).
+loop([puttq(A)|T],Out):-true|
+        Out = [puttq(A)|Out1],
+        loop(T,Out1).
+loop([putwt(A)|T],Out):-true|
+        Out = [putwt(A)|Out1],
+        loop(T,Out1).
+loop([putwtq(A)|T],Out):-true|
+        Out = [putwtq(A)|Out1],
+        loop(T,Out1).
+otherwise.
+loop([_|T],Out):-true|
+        loop(T,Out).
+

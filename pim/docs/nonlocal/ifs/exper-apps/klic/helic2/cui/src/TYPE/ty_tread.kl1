@@ -1,0 +1,299 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tread
+%       File Name   : ty_tread.kl1
+%       Function    : read declaration file
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1995/ 2/ 6  : ignore &define_type
+%$	1994/ 7/15  : typo fix
+%$	1994/ 7/ 5  : comment out debug options
+%$	1994/ 7/ 4  : expand macros
+%$      1994/ 4/26  : osif pool creation call
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 2/10  : builtin encode bug
+%$      1994/ 2/ 4  : gett error handling
+%$      1994/ 1/27  : add '..' operator for cover type
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tread.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public get_definitions/6.
+%:-else.
+%:-public get_definitions/8.
+%:-end_if.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_definitions(Pathname,^PoDefs,^AttrDefs,^ExpDefs,^BasicNameTBL,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% PoDefs : list
+% AttrDefs : list
+% BasicNameTBL : pool:keyed_set
+% Result : normal(ty#yes) |  abnormal(illegal_term | term_read_error)
+get_definitions(Pathname,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,Result):-
+    do_get_definitions(Pathname,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,Result).
+
+do_get_definitions(Pathname,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,Result):-
+    Mode = read,
+    ty_osif:open(Pathname,Mode,File,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        File = [add_op(85,xfx,syn#from_to)|File1],
+        File = [addop('..',xfx,85),addop('=>',xfx,800)|File1],
+        read_definitions(File1,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,Result)
+    ;otherwise;true ->
+        PoDefs = [],
+        AttrDefs = [],
+        ExpDefs = [],
+        Result = R1
+    ).
+
+
+read_definitions(File,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,Result):-
+    ty_osif:keyed_set(OldBasicNameTBL),
+    read(File,PoDefs,AttrDefs,ExpDefs,OldBasicNameTBL,BasicNameTBL,Result).
+
+%---------------------------------------------------------------------
+% L read(File,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,NewBasicNameTBL,Result)
+%---------------------------------------------------------------------
+% main loop for read definitions
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : {PosInfo,illegal_term(Term)}
+%	          | term_read_error(Term)
+read(File,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,NewBasicNameTBL,Result):-
+    ty_osif:gett(Term,File,File1),
+    term_shape(Term,File1,PoDefs,AttrDefs,ExpDefs,
+	       BasicNameTBL,NewBasicNameTBL,Result).
+
+% End Of File
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+%    Term = ty#eof|
+    Term = end_of_file|
+	ty_osif:close(File),
+	PoDefs = [],
+	AttrDefs = [],
+	ExpDefs = [],
+	NewBasicNameTBL = BasicNameTBL,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+
+% gett Error
+%term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+%	   BasicNameTBL,NewBasicNameTBL,Result):-
+%    ty#is_gett_error(Term)|
+%%	ty_osif:print_error(Term),
+%	ty_osif:close(File),
+%	PoDefs = [],
+%	AttrDefs = [],
+%	ExpDefs = [],
+%	NewBasicNameTBL = BasicNameTBL,
+%	Info = {ty#typemid,term_read_error,[Term]},
+%	Result = abnormal(Info).
+
+otherwise.
+
+% &define_type. ignore it.
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+    functor(Term,P,A),P=('&'),A=:=1,
+    arg(1,Term,Arg),Arg=define_type|
+        read(File,PoDefs,AttrDefs,ExpDefs,
+	     BasicNameTBL,NewBasicNameTBL,Result).
+
+otherwise.
+
+% X < Y | {A,B,C..} < Y | X < {A,B,C..}
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+%    ty#functor(Term,syn#po,2)|
+    functor(Term,P,A),P='<',A=:=2|
+%        ty#arg(Term, 1,Small,Term1),
+        arg(1,Term,Small),
+%        ty#arg(Term1,2,Large,Term2),
+        arg(2,Term,Large),
+%	podef_shape(Small,Large,Term2,File,PoDefs,AttrDefs,ExpDefs,
+%		    BasicNameTBL,NewBasicNameTBL,Result).
+	podef_shape(Small,Large,Term,File,PoDefs,AttrDefs,ExpDefs,
+		    BasicNameTBL,NewBasicNameTBL,Result).
+
+% X :: [A,B,C..]
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+%    ty#functor(Term,syn#exp,2)|
+    functor(Term,P,A),P='::',A=:=2|
+%	ty#arg(Term, 1,Name,Term1),
+	arg(1,Term,Name),
+%        ty#arg(Term1,2,ExpList,_Term2),
+        arg(2,Term,ExpList),
+        ExpDefs = [{Name,ExpList}|NewExpDefs],
+        read(File,PoDefs,AttrDefs,NewExpDefs,
+	     BasicNameTBL,NewBasicNameTBL,Result).
+
+% pterm without attributes
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+    atom(Term)|
+        ty_osif:put_with(Term,Term,BasicNameTBL,BasicNameTBL1),
+        AttrDefs = [Term|NewAttrDefs],
+        read(File,PoDefs,NewAttrDefs,ExpDefs,
+	     BasicNameTBL1,NewBasicNameTBL,Result).
+
+% pterm with attributes
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+%    ty#functor(Term,Pred,1)|
+    functor(Term,Pred,A),A=:=1|
+        ty_osif:put_with(Pred,Pred,BasicNameTBL,BasicNameTBL1),
+%        ty#arg(Term,1,Attr,_),
+        arg(1,Term,Attr),
+        AttrDefs = [{Pred,Attr}|NewAttrDefs],
+        read(File,PoDefs,NewAttrDefs,ExpDefs,
+	     BasicNameTBL1,NewBasicNameTBL,Result).
+
+otherwise.
+% syntax error
+term_shape(Term,File,PoDefs,AttrDefs,ExpDefs,
+	   BasicNameTBL,NewBasicNameTBL,Result):-
+    true|
+	ty_osif:close(File),
+	PoDefs = [],
+	AttrDefs = [],
+	ExpDefs = [],
+	NewBasicNameTBL = BasicNameTBL,
+	Result = abnormal(Info),
+%	Info = {ty#typemid,illegal_term,[Term]}.
+	Info = {type,illegal_term,[Term]}.
+
+
+%---------------------------------------------------------------------
+% L podef_shape(Small,Large,Term,File,PoDefs,ExpDefs,AttrDefs,
+%               BasicNameTBL,BasicNameTBL,Result)
+%---------------------------------------------------------------------
+% Subroutines for partial order definitions called
+% from term_shape/?
+% Result : normal(ty#yes) |  abnormal(illegal_term)
+
+% X < Y
+podef_shape(Small,Large,_Term,File,PoDefs,AttrDefs,ExpDefs,
+	    BasicNameTBL,NewBasicNameTBL,Result):-
+    atom(Small),atom(Large)|
+%	((syn#is_integer(Small);syn#is_string(Small)) ->
+	((Small=integer;Small=string) ->
+	    BasicNameTBL1 = BasicNameTBL
+	;otherwise;true ->
+	    ty_osif:put_with(Small,Small,BasicNameTBL, BasicNameTBL1)
+	),
+%	((syn#is_integer(Large);syn#is_string(Large)) ->
+	((Large=integer;Large=string) ->
+	    BasicNameTBL2 = BasicNameTBL1
+	;otherwise;true ->
+	    ty_osif:put_with(Large,Large,BasicNameTBL1,BasicNameTBL2)
+	),
+        PoDefs = [{Small,Large}|NewPoDefs],
+        read(File,NewPoDefs,AttrDefs,ExpDefs,
+	     BasicNameTBL2,NewBasicNameTBL,Result).
+
+% X < {A,B,C..}
+podef_shape(Small,Large,_Term,File,PoDefs,AttrDefs,ExpDefs,
+	    BasicNameTBL,NewBasicNameTBL,Result):-
+    atom(Small),vector(Large,Ln)|
+%	((syn#is_integer(Small);syn#is_string(Small))->
+	((Small=integer;Small=string)->
+	    BasicNameTBL1 = BasicNameTBL
+	;otherwise;true ->
+	    ty_osif:put_with(Small,Small,BasicNameTBL, BasicNameTBL1)
+	),
+	podef_large_set(Ln,Large,Small,
+			PoDefs,NewPoDefs,BasicNameTBL1,BasicNameTBL2),
+        read(File,NewPoDefs,AttrDefs,ExpDefs,
+	     BasicNameTBL2,NewBasicNameTBL,Result).
+
+% {A,B,C..} < Y
+podef_shape(Small,Large,_Term,File,PoDefs,AttrDefs,ExpDefs,
+	    BasicNameTBL,NewBasicNameTBL,Result):-
+    vector(Small,Sn),atom(Large)|
+%	((syn#is_integer(Large);syn#is_string(Large))->
+	((Large=integer;Large=string)->
+	    BasicNameTBL1 = BasicNameTBL
+	;otherwise;true ->
+	    ty_osif:put_with(Large,Large,BasicNameTBL, BasicNameTBL1)
+	),
+	podef_small_set(Sn,Small,Large,
+			PoDefs,NewPoDefs,BasicNameTBL1,BasicNameTBL2),
+        read(File,NewPoDefs,AttrDefs,ExpDefs,
+	     BasicNameTBL2,NewBasicNameTBL,Result).
+
+otherwise.
+podef_shape(_Small,_Large,Term,File,PoDefs,AttrDefs,ExpDefs,
+	    BasicNameTBL,NewBasicNameTBL,Result):-
+    ty_osif:close(File),
+    PoDefs = [],
+    AttrDefs = [],
+    ExpDefs = [],
+    NewBasicNameTBL = BasicNameTBL,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_term,[Term]}.
+    Info = {type,illegal_term,[Term]}.
+
+% L
+podef_large_set(N,_LargeVector,_Small,PoDefs,NewPoDefs,
+		BasicNameTBL,NewBasicNameTBL):-
+    N=<0|
+        NewPoDefs = PoDefs,
+	NewBasicNameTBL = BasicNameTBL.
+podef_large_set(N,LargeVector,Small,PoDefs,NewPoDefs,
+		BasicNameTBL,NewBasicNameTBL):-
+    N>0|
+	M := N-1,
+	vector_element(LargeVector,M,Large,NewLargeVector),
+%	((syn#is_string(Large);syn#is_integer(Large))->
+	((Large=string;Large=integer)->
+	    BasicNameTBL1 = BasicNameTBL
+	;otherwise;true ->
+	    ty_osif:put_with(Large,Large,BasicNameTBL,BasicNameTBL1)
+	),
+        PoDefs = [{Small,Large}|PoDefs1],
+        podef_large_set(M,NewLargeVector,Small,PoDefs1,NewPoDefs,
+			BasicNameTBL1,NewBasicNameTBL).
+
+% L
+podef_small_set(N,_SmallVector,_Large,PoDefs,NewPoDefs,
+		BasicNameTBL,NewBasicNameTBL):-
+    N=<0|
+        NewPoDefs = PoDefs,
+	NewBasicNameTBL = BasicNameTBL.
+podef_small_set(N,SmallVector,Large,PoDefs,NewPoDefs,
+		BasicNameTBL,NewBasicNameTBL):-
+    N>0|
+	M := N-1,
+	vector_element(SmallVector,M,Small,NewSmallVector),
+%	((syn#is_integer(Small);syn#is_string(Small))->
+	((Small=integer;Small=string)->
+	    BasicNameTBL1 = BasicNameTBL
+	;otherwise;true ->
+	    ty_osif:put_with(Small,Small,BasicNameTBL,BasicNameTBL1)
+	),
+        PoDefs = [{Small,Large}|PoDefs1],
+        podef_small_set(M,NewSmallVector,Large,PoDefs1,NewPoDefs,
+			BasicNameTBL1,NewBasicNameTBL).

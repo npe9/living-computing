@@ -1,0 +1,23 @@
+-------------------------------------------------------------------------
+W-KLIC: A Logic Language for Internet Programming
+-------------------------------------------------------------------------
+
+Note: any use of this software implies the acceptance of the terms and
+	conditions of ICOT Free Software. Copy of these terms 
+	and conditions is reported in the user manual supplied with this
+	software. 
+	*NO WARRANTY*
+
+Files:
+	docs : documentation
+		outline			outline of project
+		page			page description
+		summary			summary of project report
+		use-of-software-E	copyright and terms of use
+		userman			user manual
+	code : software
+		all			W-KLIC modules
+		virtualclass		demonstration	
+                plugins                 Plug-in to embed KLIC code in
+					HTML documents
+

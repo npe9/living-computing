@@ -1,0 +1,153 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+:- module datafcheck.
+:- public datafcheck/7,datafcheck1/7.
+
+
+datafcheck(String,Number1,Number2,Length,RString,Ans,RLen):- true |
+        NNumber := Number1 + 2,
+        datafcheck1(String,NNumber,Number2,Length,RString,Ans,RLen).
+
+
+datafcheck1(String,Number1,_Number2,Length,RString,Ans,RLen):- 
+                Length = -1 |
+        Ans = 1,
+%       Len := Length - Number2 + 1,
+        RLen = Number1,
+        RString= String.
+%       substring:substring(String,Number2,Len,RString,NString).
+        
+datafcheck1(String,Number1,_Number2,Length,RString,Ans,RLen):- 
+                Number1 < Length |
+        NNum2 = Number1,
+%       io:outstream([print(Number1),nl]),
+        string_element(String,Number1,Element,NString),
+        NNumber := Number1 + 1,
+        (Element = 16#"0" ->
+%                io:outstream([print("Number 0 Start"),nl]),
+                NLength = -1,
+                NNumber2 = Number1;
+%               datafcheck1(NString,Number1,Number1,-1,RString,Ans,RLen);
+%               Ans = 1,
+%               RString = String;
+        Element = 16#"1"  ->
+%                io:outstream([print("Number 1 Start"),nl]),
+                NLength = Length,
+                NNumber2 := NNumber + 1;
+        Element = 16#"2"  ->
+%                io:outstream([print("Number 2 Start"),nl]),
+                NLength = Length,
+                NNumber2 := NNumber + 1;
+        Element = 16#"3"  ->
+                NLength = Length,
+%                io:outstream([print("Number 3 Start"),nl]),
+                NNumber2 := NNumber + 2;
+        Element = 16#"4"  ->
+                NLength = Length,
+                NNumber2 := NNumber + 2;
+        Element = 16#"5"  ->
+                NLength = Length,
+%                io:outstream([print("Number 5 Start"),print(Length),nl]),
+                NNumber2 := NNumber + 4;
+%                io:outstream([print("Number 5 End=="),print(NNumber2),nl]);
+        Element = 16#"6"  ->
+                NLength = Length,
+                NNumber2 := NNumber + 4;
+        Element = 16#"7"  ->
+                NLength = Length,
+%                io:outstream([print("Number 7 Start"),nl]),
+                stringCountCheck(String,Length,NNumber,NNumber2);
+%                io:outstream([print("Number 7 End"),print(NNumber2),
+%        print("NumberSTRATNUm"),print(NNumber),nl]);
+        Element = 16#"8"  ->
+                NLength = Length,
+%                io:outstream([print("Number 8 Start"),nl]),
+                listCountCheck(String,Length,NNumber,NNumber2)),
+        datafcheck1(NString,NNumber2,NNum2,NLength,RString,Ans,RLen).
+datafcheck1(String,Number1,Number2,Length,RString,Ans,RLen):- 
+%                Number1 >= Length,Length = 1024 |
+               Number1 > Length |
+%        io:outstream([print("Number ...."),print(Number1),nl]),
+        Ans = 0,
+%       RLen := Number1 - 256,
+%       RString = String,
+        Len := Length - Number2,
+        RLen = Len,
+%        io:outstream([print("DataRLen:::"),print(Number2),print("----"),print(Number1),nl]),
+        substring:substring(String,Number2,Len,RString,_NString).
+%       (wait(RString) ->
+%       io:outstream([print("RString:::"),print(RString),nl])).
+datafcheck1(String,Number1,_Number2,Length,RString,Ans,_RLen):- 
+%                Number1 >= Length ,Length < 1024 |
+		Number1 = Length |
+        Ans = 1,
+        RString = String.
+
+
+
+stringCountCheck(String,Length,Number,NNumber) :- (Number +1) < Length |
+        convert:shortTochangeP(String,Number,2,0,Int,NNum,_NewString),
+%        io:outstream([print("StringNumber"),print(Int),nl]),
+        NNumber := NNum + Int.
+%        io:outstream([print(NNumber),nl]).
+otherwise.
+stringCountCheck(_String,_Length,Number,NNumber) :- true |
+        NNumber := Number + 1.
+
+
+listCountCheck(String,Length,Number,NNumber):- (Number + 1) < Length |
+        convert:shortTochangeP(String,Number,2,0,Int,NNum,NewString),
+%       PreNum = NNum,
+        listCountCheck2(NewString,Length,NNum,Int,0,NNumber).
+otherwise.
+listCountCheck(_String,_Length,Number,NNumber):- true |
+        NNumber := Number + 1.
+
+
+listCountCheck2(String,Length,Num,Int,N,NNumber):- 
+                Num < Length , N < Int |
+%               N < Int |
+        N1 := N + 1,
+        string_element(String,Num,Element,NSt),
+        NN := Num + 1,
+        (Element = 16#"1" ->
+                NNum := NN + 1,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"2" ->
+                NNum := NN + 1,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"3" ->
+                NNum := NN + 2,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"4" ->
+                NNum := NN + 2,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"5" ->
+                NNum := NN + 4,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"6" ->
+                NNum := NN + 4,
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"7" ->
+                stringCountCheck(NSt,Length,NN,NNum),
+                listCountCheck2(NSt,Length,NNum,Int,N1,NNumber);
+        Element  = 16#"8" ->
+                listCountCheck(NSt,Length,NN,NNumber)).
+listCountCheck2(_String,Length,Num,Int,N,NNumber):- 
+                Num =< Length , N = Int |
+%                       N = Int |
+%        io:outstream([print("IntNumber ...."),print(NNumber),print(";;;"),
+%                        print(Int),nl]),
+        NNumber = Num.
+otherwise.
+listCountCheck2(_String,_Length,Num,_Int,_N,NNumber):- true |
+%        io:outstream([print("IntNumber0 ...."),print(NNumber),print(";;;0"),
+%                        print(Int),nl]),
+        NNumber := Num + 1.
+
+
+

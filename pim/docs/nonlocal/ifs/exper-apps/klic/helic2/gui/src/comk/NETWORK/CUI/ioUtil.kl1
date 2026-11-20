@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_ioUtility.
+
+:- public     
+    show_listYWithNumber/2,
+    show_listX/2,
+    show_listY/2,
+    show_term/3,
+    show_string/3,
+    show_error/2,
+    show_goal/3,
+    show_argument/2,
+    show_claimList/3,
+    get_num/3,
+    get_commandArguments/3.
+            
+:- with_macro pimos.
+
+
+%%%%%%%%%%%%%%%%%%%%%FOR OUTPUT
+
+%show_listX
+    show_listX([H],R):-true|
+        sifLibrary:message([putb(" "),putt(H),putc(key#lf)]),
+        R = normal(success).
+    show_listX([H|T],R):-T\=[]|
+        sifLibrary:message([putb(" "),putt(H)]),
+        show_listX(T,R).
+
+%show_listY
+    show_listY([],R):-true|
+        R = normal(success).
+    show_listY([H|T],R):-string(H)|
+        sifLibrary:message([putb(" "),putb(H),putc(key#lf)]),
+        show_listY(T,R).
+otherwise.
+    show_listY([H|T],R):-true|
+        sifLibrary:message([putb(" "),putt(H),putc(key#lf)]),
+        show_listY(T,R).
+
+%show_listYWithNumber
+    show_listYWithNumber(List,R):-true|
+        show_listYWithNumber1(List,0,R).
+
+    show_listYWithNumber1([],_,R):-true|
+        R = normal(success).
+    show_listYWithNumber1([H|T],Pos,R):-string(H,_,_)|
+        sifLibrary:message([putt(Pos),putb(" : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_listYWithNumber1(T,Pos1,R).
+otherwise.
+    show_listYWithNumber1([H|T],Pos,R):-true|
+        sifLibrary:message([putt(Pos),putb(" : "),putt(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_listYWithNumber1(T,Pos1,R).
+
+%show_argument
+    show_argument(List,R):-true|
+        show_argument1(List,0,R).
+
+    show_argument1([],_,R):-true|
+        R = normal(success).
+    show_argument1([H|T],Pos,R):-Pos<10|
+        sifLibrary:message([putt(Pos),putb("  : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_argument1(T,Pos1,R).
+    show_argument1([H|T],Pos,R):-Pos>=10|
+        sifLibrary:message([putt(Pos),putb(" : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_argument1(T,Pos1,R).
+
+%show_term
+    show_term(Title,Term,R):-Title\=nil|
+        sifLibrary:message([putb(Title),putb(" : "),putt(Term),putc(key#lf)]),
+        R = normal(success).
+    show_term(nil,Term,R):-true|
+        sifLibrary:message([putt(Term),putc(key#lf)]),
+        R = normal(success).
+
+%show_string
+    show_string(Title,String,R):-Title\=nil|
+        sifLibrary:message([putb(Title),putb(" : "),putb(String),putc(key#lf)]),
+        R = normal(success).
+    show_string(nil,String,R):-true|
+        sifLibrary:message([putl(String)]),
+        R = normal(success).
+
+%show_error
+    show_error({Where,Reason,nil},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putc(key#lf)]),
+        R = normal(success).
+    show_error({Where,Reason,[]},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putc(key#lf)]),
+        R = normal(success).
+otherwise.
+    show_error({Where,Reason,Detail},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putb("::"),putt(Detail),putc(key#lf)]),
+        R = normal(success).
+
+%show_goal
+    show_goal(List,CG,R):-true|
+        show_goal1(List,0,CG,R).
+
+    show_goal1([],_,_,R):-true|
+        R = normal(success).
+    show_goal1([H|T],Pos,Pos,R):-true|
+        sifLibrary:message([putb(" * "),putt(Pos),putb(" : "),putt(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_goal1(T,Pos1,Pos,R).
+    show_goal1([H|T],Pos,CG,R):-Pos\=CG|
+        sifLibrary:message([putb("   "),putt(Pos),putb(" : "),putt(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_goal1(T,Pos1,Pos,R).
+
+%show_claimList
+    show_claimList(Arg1,Arg2,R):-true|
+        sifLibrary:message([putl("%-prosecutor claimed argument")]),
+        (   Arg1 = []->
+                sifLibrary:message([putl("  *** empty ***")]),
+                R1 = normal(success)
+        ;
+            Arg1 \= []->
+                show_listYWithNumber1(Arg1,0,R1)
+        ),
+
+        sifLibrary:message([putl("%-defendant claimed argument")]),
+        (   wait(R1),Arg2 = []->
+                sifLibrary:message([putl("  *** empty ***")]),
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                count(Arg1,0,C1),
+                C := C1+1,
+                show_listYWithNumber1(Arg2,C,R)
+        ).
+
+%%%%%%%%FOR INPUT
+
+%get_num
+    get_num(N,Num,Result):-true|
+        get_num1(Num1),
+        (   Num1 \= cr->
+                check_num(Num1,N,YN),
+                (   YN = yes->
+                        Num = Num1,
+                        Result = normal(success)
+                ;
+                    YN = no->
+                        show_error({cui,'Illegal number',Num1},R1),
+                        (   wait(R1)->
+                                get_num(N,Num,Result))
+                )
+        ;
+            Num1 =cr->
+                get_num(N,Num,Result)
+        ).
+
+    get_num1(Num):-true|
+        hLibrary:stdio(inter,Io),
+        Io = [                
+                putb("Please input number > "),
+                getl(Line)],
+        (   Line = ""->
+                Num = cr
+        ;
+        otherwise;
+            true->
+                hLibrary:sTot(Line,Num)
+        ).
+
+    check_num(Num,N,YN):-integer(Num),0=<Num,N>Num|
+        YN = yes.
+otherwise.
+    check_num(_,_,YN):-true|
+        YN = no.
+
+%get_commandArguments
+    get_commandArguments(Prompt,Command,Arguments):-true|
+        hLibrary:stdio(inter,Io),
+        Io = [                
+                putb(Prompt),
+                getl(Line)],
+        sifLibrary:get_commandArguments(Line,Command,Arguments).
+
+
+%%%%%%%
+
+    count([],W,C):-true|
+        C = W.
+    count([_|T],W,C):-true|
+        W1:=W+1,
+        count(T,W1,C).

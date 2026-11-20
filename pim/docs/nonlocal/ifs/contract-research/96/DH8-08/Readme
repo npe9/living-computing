@@ -1,0 +1,205 @@
+This document explains how to install and use QUIK version 0.1.
+
+
+1. What is QUIK?
+
+QUIK is a DOOD (deductive object-oriended database) language, which
+has been designed to extend Quixote for distributed environment.  In
+(big-)Quixote, object identity and subsumption relation are global
+over modules in a non-distributed environment, while, in QUIK, they
+are local in mediators in a distributed environment.
+
+
+2. Current Version
+
+The version 0.1 is a prototype system of QUIK, which works only in a
+non-distributed environment.  It can be considered as a variant of
+Micro-Quixote version 1.0.  A concept of "mediator" was introduced in
+version 0.5, it is not released.  We are now developing QUIK version
+1.0, which will work in a distributed environment.
+We will release the version 1.0 in spring, 1999.
+
+
+3. Installation
+
+QUIK version 0.1, written in Java, work under JDK 1.1 environment.
+Please put the archive file under the directory $USR and decode it, 
+then you can find the following directory structute:
+
+	$USR/quik/java_qxt
+	$USR/quik/java_cup
+
+Set the environment variable CLASSPATH as follows;
+
+	.:$USR/quik:$JAVA/lib/classes.zip
+
+where $JAVA is a directory of JDK1.1.
+
+
+4. Operations
+
+Type the following in your prompt:
+
+	% java java_qxt.Main
+
+then you can see the window with three input sub-windows of file name,
+program, and query, and an output sub-window of the results.
+
+(1) file name
+
+You can specify a file name to read a QUIK program, which is written
+by using another editor.  By clicking "set program" button, you can
+see the program in the program sub-window.
+
+(2) program
+
+You can enter a program directly in this windows.
+Please refer the syntax of QUIK version 0.1.
+
+(3) query
+
+After (1) or (2), and clicking "set program" button, you can enter a
+query in this window.
+
+(4) result
+
+After (3) and clicking "set query" button, the query is processed and
+its corresponding results are displayed in this windows.
+
+
+5. Syntax of QUIK version 0.1
+
+This syntax basically follows with micro-Quixote version 1.0.
+
+(1) Comment, White Space
+
+Comment begins % and end with newline.  Comment is treated as white
+space.  Space, tab, newline, and formfeed are white space.  Note that
+space in Kanji character is not white space.
+
+You can insert white space anywhere between lexeme.
+
+(2) ATOM
+
+Begins with lowercase letter or number, followed by alpha numeric
+letters or underscore.
+
+(3) Quoted Atom (ATOM)
+
+"......"
+
+(4) Variable (VARIABLE)
+
+Begins with uppercase letter or underscore, followed by alpha numeric
+letters or underscore.
+
+(5) Reserved Words
+
+The word which begins with '&' is reserved, and has special meaning.
+
+(6) Grammar of QUIK
+
+Notation:
+        [A]        =  A can be omitted
+        A-list     =  A [ ',' A-list ]
+        A-sequence =  A [ A-sequence ]
+	'c'	   =  terminal of character 'c'
+	"string"   =  terminal of "string"
+	TERMINAL
+
+=======================
+<quik> ::= <program> | <query>
+
+<program>     ::= <program-definition> '.'
+<program-definition> ::= "&program" ";;" <definition>-sequence "&end"
+
+<definition> ::= "&subsumption" ";;" <subsumption-relation>-sequence
+              |  "&rule"        ";;" <rule>-sequence
+
+=======================
+<subsumption-relation> ::= ATOM <subsumption-operator> ATOM ";;"
+                        |  ATOM <subsumption-operator> '{' ATOM-list '}' ";;"
+
+=======================
+<rule> ::= <clause>
+
+<clause> ::= <attribute-representation> ";;"                /* fact */
+          |  <attribute-representation> "<=" <body> ";;"
+
+<body> ::= <attribute-representation>-list
+        |  <attribute-representation>-list "||" '{' <constraint>-list '}'
+
+<attribute-representation> ::=
+          <object-variable-term>
+       |  <object-variable-term> '|' '{' <constraint>-list '}'
+       |  <object-variable-term> '/' '[' <constraint>-list ']'
+       |  <object-variable-term> '/'
+	  '[' <attribute>-list ']' '|' '{' <constraint>-list '}'
+
+<attribute> ::= ATOM <attribute-operator> <term>
+
+<attribute-operator> ::= "->" | "<-" | '='
+
+<constraint> ::= <term> <subsumption-operator> <term>
+              |  <term> <external-operator> <term>
+
+<subsumption-operator> ::= "=<" | ">=" | "=="
+
+<external-operator> ::= "##" | "#anything you defined#"
+
+<term> ::= <object-variable-term>
+        |  <dot-term>
+
+<object-variable-term> ::= <object>
+                      |  VARIABLE
+
+<object> ::= ATOM
+          |  ATOM '[' <attribute>-list ']'
+
+<dot-term> ::= <term> '.' ATOM
+
+<query> ::= "?-" <body> '.'
+         |  "?-" <body> ";;" <program-definition> '.'
+
+
+
+6. Information
+
+As for QUIK, please refer the following documents:
+
+Kazumasa Yokota</b>, Yutaka Banjou, Takashi Kuroda, and Takeo Kunishima,
+``Extensions of Query Processing Facilities in Mediator Systems'',
+Proc. International Workshop on Knowledge Representation
+Meets Databases (KRDB'97)</i>, pp,17.1-8, Greece, Aug. 30, 1997.</a>
+http://alpha.c.oka-pu.ac.jp/~yokota/paper/krdb.ps, or
+http://SunSITE.Informatik.RWTH-Aachen.DE/Publications/CEUR-WS/Vol-8/paper-17.ps
+
+Bojiang Liu, Kazumasa Yokota, and Nobutaka Ogata, 
+``Specific Features of the QUIK Mediator System'',
+to appear in IEICE Transactions on Information and Systems, Jan., 1999.
+http://alpha.c.oka-pu.ac.jp/~paper/liu.ps
+
+Furthermore, Japanese users can access the followings:
+
+Yutaka Banjou, Takashi Kuroda, and Kazumasa Yokota,
+``Query Processing Based on Hypothesis Generation for Distributed 
+Environments'',
+IPSJ SIGDBS, 97-DBS-111-3, pp.17-24, Jan. 21-22, 1996. (in Japanese)
+http://alpha.c.oka-pu.ac.jp/~paper/banjouDB.ps
+
+Yasuhiro Nakai, Takanori Miyake, Takao Nose, and Kazumasa Yokota,
+``Generation of Candidate Answers for Reducing Inconsistencies among 
+Multiple Subsumption Relations'', 
+IPSJ SIGDBS, 97-DBS-114, pp.114-22, Jan., 1998. (in Japanese)
+http://alpha.c.oka-pu.ac.jp/~paper/nakai3.ps
+
+Kazumasa Yokota, Nobutaka Ogata, and Bojiang Liu,
+``Implementation of Ontologies for Mediators'',
+IPSJ SIGDBS, July, 1998. (in Japanese)
+http://alpha.c.oka-pu.ac.jp/~paper/fukui.ps
+
+Please send questions and reports about this system to
+yokota@c.oka-pu.ac.jp.
+ ---------
+
+

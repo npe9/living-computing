@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Copyright (C) 1998
+%%%    Taisuke Sato, Yoshitaka Kameya, Yasushi Hagiwara, Nobuhisa Ueda,
+%%%      Dept. of Computer Science, Tokyo Institute of Technology.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PRISM (PRogramming In Statistical Modeling) programming system
+--------------------------------------------------------------
+
+Distribution files are:
+
+(Filename)            (Contents)
+INSTALL               Installation guide (English)
+README-E              File list of this software (This file)
+README-J              File list of this software (Japanese)
+use-of-software-E     The use of ICOT free software (English)
+use-of-software-J     The use of ICOT free software (Japanese)
+manual.ps             User's manual (Japanese only)
+examples/             Directory of example programs
+  blood.psm
+  japanese.dat
+  lost_theory.psm
+  two_models.psm
+  japaneseABO.dat
+  hmm.psm
+  alarm.psm
+library/              Directory of source files
+  Makefile
+  c_interface.pl
+  em.pl
+  emGUI.pl
+  emNoGUI.pl
+  em_stable.pl
+  exec.pl
+  foreign.pl
+  foreignGUI.pl
+  make_routines.pl
+  misc.pl
+  modifier.pl
+  parse.pl
+  prism.pl
+  startGUI.pl
+  startNoGUI.pl
+  start_stable.pl
+  sw_handling.pl
+  tclIF.pl
+  prism.h
+  em.c
+  graph.c
+  prob.c
+  random.c
+  trie.c

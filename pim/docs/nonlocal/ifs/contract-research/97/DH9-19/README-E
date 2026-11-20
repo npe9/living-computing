@@ -1,0 +1,130 @@
+                Improved KLIC with Optimized Goal Scheduling
+                    and High Performance Thread Execution
+                           Copyright (C) 1998
+             Hiroshi Nakashima, Kazuhiko Ohno, Namiyo Sugiyama
+            Department of Information and Computer Sciences 
+                    Toyohashi University of Technology
+
+
+1. Abstract
+
+An  improved version of the parallel logic programming language system
+KLIC, with  an  optimized  goal  scheduler  and a program analyzer for
+optimization.  
+
+
+2. Features
+
+Since the original version of KLIC dynamically schedules the execution
+order   of   goals, its  scheduling  overhead  may  cause  significant
+performance  degradation  if  your  program  consists of, for example,
+communicating sequential processes.  
+
+This  optimized version aims to reduce the scheduling overhead through
+compile-time  dependency  analysis  to  find threads.   Since a thread
+consists  of  goals whose order of execution is statically determined,
+the  runtime system efficiently executes the thread without scheduling
+overhead.   Moreover, this  latest  version  is  much faster in thread
+execution  than  the  previous version because the stacking method for
+thread execution is improved.  
+
+
+3.Functions
+
+ - Compile-time dependency analysis for static scheduling of the goals
+   in a thread.  
+
+ - Efficient   runtime   scheduling   combining   intra-thread  static
+   scheduling and inter-thread dynamic scheduling.  
+
+ - Intra-thread execution environment management with stacks to reduce
+   GC frequency and to improve access locality.  
+
+NOTE: Because  this  version is a prototype, we have some restrictions
+described in Section 5.
+
+
+4.File Directories
+
+
+The files in the following directories of the standard distribution of
+KLIC are modified.
+
+ - compiler             optimized version of compiler
+ - runtime              optimized version of runtime system
+ - include/klic         include files for optimized runtime system
+
+The following directories are added to the standard distribution.
+
+ - compiler/analyzer    analyzer
+ - sched-test           test programs
+
+
+5. How to use
+
+Here, we describe the difference with the original KLIC.
+
+5.1 Installation
+
+  Execute `Configure' at the top directory and `make'.
+
+5.2 compilation
+
+When the installation is completed, two KL1 compilers should have been
+created:
+
+  - kl1cmp: same as the original KLIC.
+
+  - kl1cmp-t: kl1cmp with analyzer and optimizer.
+
+The compiler-driver `klic' has the additional option as follows:
+
+  - -T :compile goals into threads.
+
+When  this  option is specified, klic attaches `-t' to the name of KL1
+compiler.  if you specify the compiler's name with `-K' option.  
+
+We  have sample programs and Makefile under `sched-test/'.   By typing
+`make'  under  the  directory,  the  following  executable  files  are 
+generated for each xxx.kl1.  
+
+  - xxx   : same as the original KLIC
+  - xxx-t : goals are compiled into threads.       
+
+
+6. Limitations
+
+This version has the following limitations.
+
+We  made  tests  for the sample programs under `sched-test/', but some
+other programs may cause errors due to the bugs of this compiler.  
+
+- Restrictions in program description
+
+  - The program must be well-moded.
+
+  - @priority cannot be used.
+
+  - Parallel execution is not supported.
+
+  - Only the following built-in predicates are available.
+      - tt =/2, wait/1, current_priority/1, current_node/2
+      - atomic/1
+      - atom/1, make_atom/2, atom_number/2, get_atom_string/2,
+        intern/2, get_atom_name/2
+      - integer/1, :=/2
+      - integer arithmetics like `add/3', and arithmetic macros like `+', `-'.
+      - integer comparison like `equal/2', and comparison macros like `=:='.
+      - functor/3, new_functor/3, arg/3, setarg/4
+      - list/1
+      - io:outstream/1
+
+- Restriction in compilation and execution
+
+  - The source program must be in one file.
+
+  - The runtime tracing is not supported.
+
+
+
+

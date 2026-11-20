@@ -1,0 +1,111 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module comkreceive.
+:- public comkreceive/8,netR2/4.
+
+:- with_macro pimos.
+
+
+comkreceive(Stream,Int,Command,AgentName,Parameter,Argument,Result,ST1):- 
+                        true |
+        netR2(Stream,NString2,ST1,Flag),
+        commandTake:commandTake(Flag,NString2,0,Int,Command,Parameter,
+                Argument,AgentName),
+        flagcheck(Flag,Result).
+%	(wait(Result) ->
+%        builtin:print({Command,AgentName,Parameter,Argument})).
+
+flagcheck(0,Result):- true | Result = normal(success).
+flagcheck(1,Result):- true | Result = abnormal({net,receiveerror,nil}).
+
+netR2(Stream,String,NewS,Flag):- true |
+%	Stream = [fflush(RR)|Stream2],
+%	(wait(RR) ->
+        Stream = [fread(1024,Data)|St1],
+	(wait(Data) ->
+	builtin:print("Read OK"),
+%	builtin:print(Data),
+        netR20(St1,Data,String,NewS,Flag)).
+        
+netR20(Stream,Data,String,NewS,Flag):- string(Data) |
+        Flag =0,
+        io:outstream([print("Receive::::"),print(Data),nl]),
+        generic:string(Data,DataLen,_DataSize),
+        lenCheck(DataLen,1024,Length),
+%       io:outstream([print("ppp"),print(DataLen),nl]),
+        netR3(Stream,Length,Data,Data,String,NewS).
+otherwise.
+netR20(Stream,_Data,_String,NewS,Flag):- true |
+        Flag=1,
+        NewS = Stream.
+
+
+lenCheck(DataLen,_,Length):- DataLen < 1024 |
+        Length = DataLen.
+%       Length = 1024.
+otherwise.
+lenCheck(_DataLen,_,Length):- true |
+        Length = 1024.
+
+
+netR3(Stream,Length,Data1,Data2,String,NewS):- true |
+        datafcheck:datafcheck(Data2,0,0,Length,RData,Ans,RLen),
+        (wait(Ans) ->
+        io:outstream([print("AnswerAnsWer"),print(Ans),nl])),
+        netR4(Ans,0,Data1,RData,Length,Stream,String,NewS,RLen).
+
+
+%netR4(1,0,Data,RData,Length,Stream,String,NewS,RLen):- true |
+%       NewS = Stream,
+%%      Data = String,
+%%      NRLen := RLen +2,
+%       substring:substring(Data,0,RLen,String,NData),
+%       io:outstream([print("END::"),print(String),nl,print("RestNumber"),
+%                       print(RLen),nl]).
+%netR4(1,1,Data,RData,Length,Stream,String,NewS,RLen):- true |
+%       NewS = Stream,
+%%      Data = String,
+%       NRLen := RLen +2,
+%       substring:substring(Data,0,NRLen,String,NData),
+%       io:outstream([print("END::"),print(String),nl,print("RestNumber"),
+%                       print(NRLen),nl]).
+netR4(1,_,Data,_RData,_Length,Stream,String,NewS,_RLen):- true |
+        NewS = Stream,
+        Data = String.
+%        io:outstream([print("END..."),print(Data),nl]).
+netR4(0,N,Data,RData,_Length,Stream,String,NewS,_RLen):- true |
+        Stream = [fread(1024,NData)|ST1],
+%        io:outstream([print(NData),nl]),
+        append_string:append_string([RData,NData],NewData2),
+%        io:outstream([print(NewData2),nl]),
+        append_string:append_string([Data,NData],NewData),
+%        io:outstream([print(NewData),nl]),
+%       NLength := Length + RLen,
+	string(NewData2,NLength,_,_),
+        netR5(ST1,N,NLength,NewData,NewData2,String,NewS).
+
+netR5(Stream,_N,Length,Data1,Data2,String,NewS):- true |
+        datafcheck:datafcheck1(Data2,0,0,Length,RData,Ans,RLen),
+%        (wait(Ans) ->
+%        io:outstream([print("AnswerAnsWer11"),print(Ans),print(";;"),
+%                print(RLen),nl,print("RestNumber11"),print(RData),nl])),
+        netR4(Ans,1,Data1,RData,Length,Stream,String,NewS,RLen).
+
+
+
+%       netR5(NData,RLen,Data,ST1,String,NewS).
+
+
+%netR5(NData,RLen,Data,Stream,String,NewS):- RLen =< 256 |
+%       substring:substring(NData,0,RLen,NewData,NNData),
+%       append_string:append_string([Data,NewData],String),
+%       Stream = NewS.
+%netR5(NData,RLen,Data,Stream,String,NewS):- RLen > 256 |
+%       Stream = [fread(256,NData2)|ST1],
+%       append_string:append_string([Data,NData],NData3),
+%       NRLen := RLen - 256,
+%       netR5(NData2,NRLen,NData3,ST1,String,NewS).
+

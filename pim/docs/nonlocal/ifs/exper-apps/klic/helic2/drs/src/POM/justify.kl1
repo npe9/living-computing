@@ -1,0 +1,167 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module get_justify.
+
+:- public 
+    get_justify/5.
+            
+:- with_macro pimos.
+
+
+    get_justify({ViewName,R1,R2},{NT1,SpUUR1,ViewDef1,ViewUURM1},Output,JustifyList,Result):-true|
+        ViewUURM1 = [get_unitUnitRel(ViewName,R1,R2,Rel)|ViewUURM2],
+        (   Rel = 1->
+                Output = {NT1,SpUUR1,ViewDef1,ViewUURM2},
+                Result = abnormal({pom,'Current View is justify',nil})
+        ;
+        otherwise;
+            true->
+                get_justify1({ViewName,R1,R2},{NT1,SpUUR1,ViewDef1,ViewUURM2},Output,JustifyList,Result1),
+                (   Result1 = normal(_)->
+                    (   JustifyList = []->
+                            make_emptyMessage(R1,R2,EmptyMes),
+                            Result = abnormal({pom,EmptyMes,nil})
+                    ;
+                        JustifyList \= []->
+                            Result = normal(success)
+                    )
+                ;
+                    Result1 = abnormal(_)->
+                        Result = Result1
+                )
+        ).
+
+    get_justify1({ViewName,R1,R2},{NT1,SpUUR1,ViewDef1,ViewUURM},Output,JustifyList,Result):-true|
+        SpUUR1      = [get_satisfySPList(R1,R2,1,SPList)|SpUUR2],
+        ViewDef1    = [get_spList(ViewName,View)|ViewDef],              %View = [sp1,sp2,..]
+        NT1         = [refer_usedRuleRel(Strong1,Non)|NT],
+        count(View,0,C1),C:=C1+1,
+        Strong      = [{R1,R2}|Strong1],
+        get_justify2(SPList,View,C,{Strong,Non},SpUUR2,SpUUR,JustifyList,Result),
+        Output      = {NT,SpUUR,ViewDef,ViewUURM}.
+
+    get_justify2([],_,_,_,SpUUR1,SpUUR,JustifyList,Result):-true|
+        SpUUR = SpUUR1,
+        JustifyList = [],
+        Result      = normal(success).
+    get_justify2([SP|T],View,C,CheckRuleRel,SpUUR1,SpUUR,JustifyList,Result):-true|
+        get_justify3(0,C,View,SP,CheckRuleRel,SpUUR1,SpUUR2,ViewList,R1),
+        (   wait(R1)->
+                get_justify2(T,View,C,CheckRuleRel,SpUUR2,SpUUR,JustifyList1,Result),
+                (   ViewList = []->
+                        JustifyList = JustifyList1
+                ;
+                    ViewList \= []->
+                        JustifyList = [{SP,ViewList}|JustifyList1]
+                )).
+
+    get_justify3(C,C,_,_,_,SpUUR1,SpUUR,ViewList,R):-true|
+        SpUUR    = SpUUR1,
+        ViewList = [],
+        R        = normal(success).
+otherwise.
+    get_justify3(Pos,C,View,SP,CheckRuleRel,SpUUR1,SpUUR,ViewList,R):-true|
+        make_newView(View,0,Pos,SP,NewView),
+        check_view(NewView,CheckRuleRel,SpUUR1,SpUUR2,YN),
+        (   wait(YN)->
+                (   YN = yes->
+                        SpUUR    = SpUUR2,
+                        ViewList = [NewView],
+                        R        = normal(success)
+                ;
+                    YN = no->
+                        Pos1 := Pos+1,
+                        get_justify3(Pos1,C,View,SP,CheckRuleRel,SpUUR2,SpUUR,ViewList1,R),
+                        ViewList = ViewList1
+                )).
+
+
+%subeteno sp list wo motomerutokiha ikano program wo tukau
+%    get_justify3(Pos,C,View,SP,CheckRuleRel,SpUUR1,SpUUR,ViewList,R):-true|
+%        make_newView(View,0,Pos,SP,NewView),
+%        check_view(NewView,CheckRuleRel,SpUUR1,SpUUR2,YN),
+%        Pos1 := Pos+1,
+%        (   wait(YN)->
+%                get_justify3(Pos1,C,View,SP,CheckRuleRel,SpUUR2,SpUUR,ViewList1,R),
+%                (   YN = yes->
+%                        ViewList = [NewView|ViewList1]
+%                ;
+%                    YN = no->
+%                        ViewList = ViewList1
+%                )).
+
+    check_view(NewView,CheckRuleRel,SpUUR1,SpUUR,YN):-wait(NewView)|
+        viewTable:create({dummy,NewView},ViewTable),
+        view_unitUnitRelTable:create(ViewTable,SpUUR1,[],SpUUR,UURT),
+        check_view1(CheckRuleRel,UURT,YN).
+
+    check_view1({Strong,Non},UURT1,YN):-true|
+        check_ruleRel(Strong,strong,UURT1,UURT2,YN1),
+        (   YN1 = yes->
+                check_ruleRel(Non,non,UURT2,[],YN2),
+                (   YN2 = yes->
+                        YN = yes
+                ;
+                    YN2 = no->
+                        YN = no
+                )
+        ;
+            YN1 = no->
+                UURT2 = [],
+                YN    = no
+        ).
+
+%make_newView
+    make_newView([],Pos,Pos,SP,NewView):-true|
+        NewView = [SP].
+    make_newView([H|T],Pos,Pos,SP,NewView):-true|
+        NewView = [SP,H|T].
+otherwise.
+    make_newView([H|T],CP,Pos,SP,NewView):-true|
+        CP1 := CP+1,
+        make_newView(T,CP1,Pos,SP,NewView1),
+        NewView = [H|NewView1].
+
+%check_ruleRel
+    check_ruleRel([],_,UURT1,UURT,YN):-true|
+        UURT = UURT1,
+        YN   = yes.
+    check_ruleRel([{R1,R2}|T],strong,UURT1,UURT,YN):-true|
+        UURT1 = [get_unitUnitRel(R1,R2,Rel)|UURT2],
+        (   Rel = 1->
+                check_ruleRel(T,strong,UURT2,UURT,YN)
+        ;
+        otherwise;
+            true->
+                UURT = UURT2,
+                YN   = no
+        ).
+    check_ruleRel([{R1,R2}|T],non,UURT1,UURT,YN):-true|
+        UURT1 = [get_unitUnitRel(R1,R2,Rel)|UURT2],
+        (   Rel = 1->
+                check_ruleRel(T,non,UURT2,UURT,YN)
+        ;
+            Rel = 0->
+                check_ruleRel(T,non,UURT2,UURT,YN)
+        ;
+        otherwise;
+            true->
+                UURT = UURT2,
+                YN   = no
+        ).
+
+%
+    make_emptyMessage(R1,R2,EmptyMes):-true|
+        hLibrary:tTos(R1,S1),
+        hLibrary:tTos(R2,S2),
+        append_string:append_string(["'Can not justify ",S1," > ",S2,".'"],S),
+        hLibrary:sTot(S,EmptyMes).
+%%%%
+    count([],P,C):-true|
+        C = P.
+    count([_|T],P,C):-true|
+        P1 := P+1,
+        count(T,P1,C).

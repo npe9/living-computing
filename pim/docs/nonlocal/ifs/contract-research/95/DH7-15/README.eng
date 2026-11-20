@@ -1,0 +1,522 @@
+/*********************************************************************/
+/*								     */
+/* README.eng							     */
+/*								     */
+/* Copyright (C) 1996 Thanaruk Theeramunkong (ping@jaist.ac.jp)      */ 
+/*                    Hiroki Imai            (imai@cs.titech.ac.jp)  */
+/*                    Manabu Okumura         (oku@jaist.ac.jp)       */
+/*                    Susumu Kunifuji        (kuni@jaist.ac.jp)      */
+/*								     */
+/*					     2 September 1996	     */
+/*								     */
+/* The file indicates some primitive information for R-LRPAR         */
+/*								     */
+/*********************************************************************/
+
+   This document includes some information useful for installing and
+using a prototype robust parser named `R-LRPar'.
+
+1) General Information
+
+ -  The software is useful for research on natural language 
+    processing.
+
+ -  The software is constructed for studying syntactic analysis of
+    ill-formed sentences. It is promoted and granted by AITEC(*) under 
+    the project named IFS(**).
+
+    (*) Research Institute for Advanced Information Technology
+    (*) ICOT Free Software
+
+ -  The whole software is stored in the directory named "src". 
+    The component of this software is described in section 3.
+
+ -  There is also a manual written in Japanese. It is kept in a file
+    named "Manual" (EUC Code) and "Manual.jis" (JIS Code)
+
+2) What is R-LRPar ? 
+
+    R-LRPar is an extended GLR parser for analyzing ill-formed sentences.
+As the GLR method is well-known as a fastest parsing algorithm,
+R-LRPar is expected to inherit this property and then it will parse
+ill-formed sentences speedily. 
+    In general, most of grammatical ill-formedness (later also, called
+errors) can be classified into four types: (1) Extra Constituents (2)
+Missing Constituents (3) Substituted Constituents.  The detail of
+types of ill-formedness is described in [1][4]. 
+    The parser can detect and correct multiple arbitrary errors in the
+analyzed sentence.  However, without any constraint, it takes a large
+amount of computation time to parse a relatively long ill-formed
+sentence because the parser will try to find all parsing possibilities
+through very large search space. To solve this problem, a reasonable
+heuristic is applied to reduce the search space during an ill-formed
+sentence is analyzed. 
+    R-LRPar can certainly parse any grammatical sentence. In this
+case, the parsing speed of the grammatical sentence is not sacrificed
+even if the original GLR parsing algorithm is modified by adding some
+mechanisms to deal ill-formed sentences.
+
+3) Software Characteristics
+
+    - The software parse an input sentence under constraints given
+      in the form of a context free grammar. As the result, It outputs
+      the syntactic trees which are the interpretation of the sentence. 
+      The interpretation result can be applied later in the succeeding
+      processing, such as semantic analysis module, discourse analysis
+      module or any inference module. The algorithm applied is based
+      on the fastest parsing algorithm named `Generalized LR parsing
+      method'. Due to this, our software is expected to parse an input
+      efficiently and with high speed.
+
+    - This software can analyze not only grammatical inputs but
+      also ungrammatically ill-formed inputs. Although it can robustly
+      parse an _ill-formed_ input, efficiency of the analysis of
+      _grammatical_ inputs is not sacrificed because the extra
+      processing steps which are needed for analyzing ill-formed
+      inputs are not executed.
+
+    - This software includes a tagger which is used as a preprocessor
+      for assigning the most appropriate lexical category to each word
+      in an input before parsing. This tagger is based on the
+      rule-based tagging method constructed by Brill. Before using it,
+      please see its license.
+
+4) Languages and Environments
+
+    The software is written using Prolog, Perl, Shell, C languages.
+    The main part is written in Prolog. The following shows the detail.
+
+    -  Prolog  :  The main program of R-LRPar 
+    -  Shell   :  The processing module before tagging each word in 
+                  the analyzed sentence.
+    -  Perl    :  The processing module after tagging each word in 
+                  the analyzed sentence.
+    -  C       :  The Tagger for assigning the most proper lexical 
+                  category to each word in the sentence.
+                  (Mostly, Brill's tagger)
+
+    The desirable environment is as follows.
+
+    -  The software should be executed in UNIX environment.
+
+    -  The software requires sicstus prolog or any general-purpose prolog
+       interpreter. Sicstus prolog is licensed by Swedish Institute of
+       Computer Science.
+
+    -  Perl interpreter is also needed in the system. You can find it 
+       via the following URL. It is a free software
+
+             http://www.perl.com/perl/
+
+    -  Some parts of this software are constructed by using shell
+       script language. That is an interpreter of shell script is 
+       needed.
+
+    -  C compiler is also required if you want to modified the original
+       Brill's tagger.
+ 
+5) The List of the Files
+
+    The main program of R-LRPar is composed of almost 3,000 lines 
+    (1.0 M bytes). The following is the list of the files including in
+    this software.
+
+	./Manual                           # Electronic Manual Directory
+	./man                              # Manual File
+	./man/cat1
+	./man/cat1/rlrpar.1
+	./man/man1
+	./man/man1/rlrpar.1
+	./man/whatis
+	./README
+	./src
+	./src/LR_prolog                    # Including the main program 
+	./src/LR_prolog/action2entry.pl
+	./src/LR_prolog/append.pl
+	./src/LR_prolog/change_form.pl
+	./src/LR_prolog/decide_action_write_table.pl
+	./src/LR_prolog/error_handling.pl
+	./src/LR_prolog/expand.pl
+	./src/LR_prolog/extract.pl
+	./src/LR_prolog/first.pl
+	./src/LR_prolog/flags.pl
+	./src/LR_prolog/table1
+	./src/LR_prolog/tmp.entry
+	./src/LR_prolog/make_all_gss.pl
+	./src/LR_prolog/maketable_write_table.pl
+	./src/LR_prolog/mkcnd.pl
+	./src/LR_prolog/mkinterface.pl
+	./src/LR_prolog/mkstart.pl
+	./src/LR_prolog/mkstart2.pl
+	./src/LR_prolog/mymakegss.pl
+	./src/LR_prolog/other_entry.pl
+	./src/LR_prolog/parseinterf
+	./src/LR_prolog/parser.pl
+	./src/LR_prolog/print_tree.pl
+	./src/LR_prolog/record_info.pl
+	./src/LR_prolog/retrieve-E.pl
+	./src/LR_prolog/start.pl
+	./src/LR_prolog/symbol_handling.pl
+	./src/LR_prolog/table2
+	./src/LR_prolog/time.pl
+	./src/LR_prolog/tmp.cnd
+	./src/LR_prolog/gram1
+	./src/LR_prolog/tmp.start
+	./src/LR_prolog/tree.pl
+	./src/LR_prolog/util.pl
+	./src/LR_prolog/gram
+	./src/LR_prolog/gram2
+	./src/LR_prolog/run.pl
+	./src/LR_prolog/table
+	./src/LR_prolog/sent_file.re
+	./src/LR_prolog/changesent.pl
+	./src/LR_kl1                    # RLRPar for PIM (under construction)
+	./src/LR_kl1/action2entry.pl
+	./src/LR_kl1/append.pl
+	./src/LR_kl1/change_form.pl
+	./src/LR_kl1/decide_action_write_table.pl
+	./src/LR_kl1/error_handling.pl
+	./src/LR_kl1/expand.pl
+	./src/LR_kl1/extract.pl
+	./src/LR_kl1/first.pl
+	./src/LR_kl1/flags.pl
+	./src/LR_kl1/gram
+	./src/LR_kl1/gram.orig
+	./src/LR_kl1/make_all_gss.pl
+	./src/LR_kl1/maketable_write_table.pl
+	./src/LR_kl1/mkcnd.pl
+	./src/LR_kl1/mkinterface.pl
+	./src/LR_kl1/mkstart.pl
+	./src/LR_kl1/mkstart2.pl
+	./src/LR_kl1/mymakegss.pl
+	./src/LR_kl1/other_entry.pl
+	./src/LR_kl1/parseinterf
+	./src/LR_kl1/parser.pl
+	./src/LR_kl1/print_tree.pl
+	./src/LR_kl1/record_info.pl
+	./src/LR_kl1/retrieve-E.pl
+	./src/LR_kl1/start.pl
+	./src/LR_kl1/symbol_handling.pl
+	./src/LR_kl1/table
+	./src/LR_kl1/time.pl
+	./src/LR_kl1/tmp.cnd
+	./src/LR_kl1/tmp.entry
+	./src/LR_kl1/tmp.start
+	./src/LR_kl1/tree.pl
+	./src/LR_kl1/util.pl
+	./src/gram
+	./src/gram/gram260
+	./src/gram/gram
+	./src/gram/gram.orig
+	./src/gram/gramtable
+	./src/gram/gram260.org
+	./src/gram/gram260_table
+	./src/R-LRParser                       # Interface program for RLRPar 
+	./src/R-LRParser/exam_sent
+	./src/R-LRParser/sfile
+	./src/R-LRParser/sfile.re
+	./src/R-LRParser/README
+	./src/R-LRParser/runtagger
+	./src/R-LRParser/sent_file.re
+	./src/R-LRParser/changeform
+	./src/btagger                          # Brill's tagger (see license)
+	./src/btagger/Tagger_Code
+	./src/btagger/Tagger_Code/nbest-tagger.c
+	./src/btagger/Tagger_Code/start-state-tagger.c
+	./src/btagger/Tagger_Code/final-state-tagger.c
+	./src/btagger/Tagger_Code/tagger.c
+	./src/btagger/Utils
+	./src/btagger/Utils/lex.c
+	./src/btagger/Utils/lex.h
+	./src/btagger/Utils/registry.c
+	./src/btagger/Utils/registry.h
+	./src/btagger/Utils/registryP.h
+	./src/btagger/Utils/darray.c
+	./src/btagger/Utils/darray.h
+	./src/btagger/Utils/darrayP.h
+	./src/btagger/Utils/memory.c
+	./src/btagger/Utils/memory.h
+	./src/btagger/Utils/useful.h
+	./src/btagger/Utils/bool.h
+	./src/btagger/Utils/sysdep.h
+	./src/btagger/Utils/useful.c
+	./src/btagger/Utils/lex.o
+	./src/btagger/Utils/useful.o
+	./src/btagger/Utils/darray.o
+	./src/btagger/Utils/registry.o
+	./src/btagger/Utils/memory.o
+	./src/btagger/Docs
+	./src/btagger/Docs/README.FIRST
+	./src/btagger/Docs/README.LONG
+	./src/btagger/Docs/README.QUICK
+	./src/btagger/Docs/README.TRAINING
+	./src/btagger/Docs/aaai94-tagger.ps
+	./src/btagger/Docs/README.NBEST
+	./src/btagger/Makefile
+	./src/btagger/Learner_Code
+	./src/btagger/Learner_Code/fix-kbest-rule-learn.c
+	./src/btagger/Learner_Code/contextual-rule-learn.c
+	./src/btagger/Learner_Code/unknown-lexical-learn.prl
+	./src/btagger/Learner_Code/unknown-lexical-learn-continue.prl
+	./src/btagger/Learner_Code/kbest-contextual-rule-learn.c
+	./src/btagger/COPYRIGHT
+	./src/btagger/Utilities
+	./src/btagger/Utilities/combine-lexicons.prl
+	./src/btagger/Utilities/comparitor-nbest.prl
+	./src/btagger/Utilities/comparitor.prl
+	./src/btagger/Utilities/delete-top-n.prl
+	./src/btagger/Utilities/incorporate-new-bigrams.prl
+	./src/btagger/Utilities/incorporate-new-words.prl
+	./src/btagger/Utilities/make-restricted-lexicon.prl
+	./src/btagger/Utilities/trim-bigrams.prl
+	./src/btagger/Utilities/divide-in-two-rand.prl
+	./src/btagger/Utilities/tagged-to-untagged.prl
+	./src/btagger/Utilities/bigram-generate.prl
+	./src/btagger/Utilities/wordlist-make.prl
+	./src/btagger/Utilities/word-tag-count.prl
+	./src/btagger/Bin_and_Data
+	./src/btagger/Bin_and_Data/BIGRAMS
+	./src/btagger/Bin_and_Data/CONTEXTUALRULEFILE
+	./src/btagger/Bin_and_Data/CONTEXTUALRULEFILE.BROWN
+	./src/btagger/Bin_and_Data/LEXICON.BROWN
+	./src/btagger/Bin_and_Data/CONTEXTUALRULEFILE.WSJ
+	./src/btagger/Bin_and_Data/LEXICALRULEFILE
+	./src/btagger/Bin_and_Data/LEXICALRULEFILE.BROWN
+	./src/btagger/Bin_and_Data/LEXICALRULEFILE.WSJ
+	./src/btagger/Bin_and_Data/LEXICON
+	./src/btagger/Bin_and_Data/LEXICON.BROWN.AND.WSJ
+	./src/btagger/Bin_and_Data/LEXICON.WSJ.Z
+	./src/btagger/Bin_and_Data/NBEST-RULES
+	./src/btagger/Bin_and_Data/CONTEXTUALRULEFILE.WSJ.NOLEX
+	./src/btagger/Bin_and_Data/contextual-rule-learn
+	./src/btagger/Bin_and_Data/kbest-contextual-rule-learn
+	./src/btagger/Bin_and_Data/fix-kbest-rule-learn
+	./src/btagger/Bin_and_Data/tagger
+	./src/btagger/Bin_and_Data/final-state-tagger
+	./src/btagger/Bin_and_Data/start-state-tagger
+	./src/btagger/Bin_and_Data/nbest-tagger
+	./src/btagger/Bin_and_Data/README
+	./src/btagger/Bin_and_Data/Example
+	./src/btagger/Bin_and_Data/Example/example_sentences
+	./src/btagger/Bin_and_Data/Example/example_sentences.re
+	./src/btagger/README
+	./src/btagger/HOWTOUSE
+	./Manual.jis                      # Manual    (in jis code)
+	./README.jis                      # README    (in jis code)
+	./Files                           # The List of File
+	./Specification                   # Specification
+
+6) How to use this software: Start-up and Basic Commands
+
+   6.1) Preparation
+
+      As the preprocessing of the software, we first use Brill's
+      tagger to assign a lexical category to each word in the
+      analyzed sentence. This procedure is described in 
+      'src/R-LRParser/README'. A simple example is shown as follows.
+
+      1) Let "sfile" be a file including the sentences we would like
+         to analyze. Then type
+
+         %  src/R-LRParser/runtagger sfile 
+
+         As the result, a file named "sfile.re" is created. In this
+         file, each sentence in "sfile" is tagged with a lexical
+         category and the output is in the form of prolog clause.
+
+      2) Create a symbolic link from "sfile.re" to "sent_file.re".
+
+   6.2) Start Up
+
+      In this software, a LR table will be constructed from a context
+      free grammar. And then, from this table, a set of prolog clauses
+      corresponding to the items in the table is generated. These
+      clauses and the "main program" of R-LRPar are formed LR parser.
+
+      The series of this procedure is almost executed automatically.
+      Such method is shown as follows. Here, the current directory is
+      "src/LR_prolog".
+
+      1) Start up a prolog interpreter. (under src/LR_prolog)
+
+      2) Type "[run]." to read in "run.pl" into prolog database.
+
+      3) Type "start." to start up the parser．In each step, 
+         a help menu is provided.
+
+   6.3) Basic Commands
+
+   ・ "start." for executing the parser, R-LRPar
+   ・ h        for help
+   ・ c        for changing the set of analyzed sentences
+   ・ l        for displaying the set of sentences
+   ・ l(N,M)   for displaying N-th to M-th sentences
+   ・ N        (an integer) for analyzing N-th sentence
+   ・ q        for exit
+
+   6.4) An Example
+
+      The following is the sample execution of the parser under the
+      directory named "src/LR_prolog".
+
+---------- Begin Example (1) ----------
+SICStus 3  #3: Wed Apr 17 01:11:05 JST 1996
+| ?- [run].
+{consulting ~/work/project/icot/Software/src/LR_prolog/run.pl...}
+{consulting ~/work/project/icot/Software/src/LR_prolog/mymakegss.pl...}
+..........         ..........
+..........         ..........
+..........         ..........
+{~/work/project/icot/Software/src/LR_prolog/start.pl consulted, 3520 msec 145104 bytes}
+
+****************************************
+*  Type "start." to start the process  *
+****************************************
+
+{~/work/project/icot/Software/src/LR_prolog/run.pl consulted, 205250 msec 3944288 bytes}
+
+yes
+| ?- 
+---------- End Example (1) ----------
+The above is the execution of "run.pl" under a prolog interpreter.
+Note that there are several files read into the prolog database.
+---------- explantion (1) ----------
+
+=====================================================================
+
+---------- Begin Example (2) ----------
+
+| ?- start.
+*******************************
+*  Welcome to R-LRPar system  *
+*                beta version *
+*******************************
+Do you want to indicate the filename of the sentences ? (y/n)
+(Default is sent_file.re)
+{Warning: abolish(user:input_sentence) - no matching predicate}
+|: n.
+{consulting ~/work/project/icot/Software/src/LR_prolog/sent_file.re...}
+{~/work/project/icot/Software/src/LR_prolog/sent_file.re consulted, 20 msec 2960 bytes}
+
+Command (h: help) > h.
+
+  h      - help
+  c      - change sentence set
+  l      - list sentences
+  l(N,M) - list Nth-Mth sentences
+  N      - Using Nth sentence
+  q      - quit
+
+
+Command (h: help) > 
+
+---------- End Example (2) ----------
+
+This time, R-LRPar is started by the command, "start." . While there
+are some messages displayed, we just answer such questions. Moreover,
+we can see a help menu by typing "h." . Then, please input the number
+of the sentence you want to analyze.
+---------- Explanation (2) ----------
+
+=====================================================================
+
+---------- Begin Example (3) ----------
+
+Command (h: help) > l
+     .
+1: hello(uh) 
+2: the(dt) secretariat(nnp) for(in) the(dt) first(jj) international(jj) conference(nn) of(in) interpreting(vbg) telephony(nn) 
+3: yes(uh) that(dt) [39,115](vbz) me(prp) 
+4: just(rb) a(dt) moment(nn) 
+5: i(prp) would(md) like(vb) to(to) ask(vb) something(nn) about(in) registration(nn) to(to) the(dt) conference(nn) 
+6: sure(rb) go(vb) ahead(rb) please(vb) 
+7: i(prp) have(vbp) the(dt) registration(nn) form(nn) here(rb) at(in) hand(nn) 
+8: yes(uh) 
+9: in(in) the(dt) registration(nn) form(nn) there(ex) is(vbz) an(dt) item(nn) for(in) the(dt) name(nn) of(in) the(dt) credit(nn) card(nn) and(cc) the(dt) credit(nn) card(nn) number(nn) 
+10: there(ex) [39,115](vbz) someone(nn) who(wp) does(vbz) [110,39,116](rb) have(vb) any(dt) credit(nn) cards(nns) 
+
+Command (h: help) > 3.
+
+[(265,1),(285,1),(289,1),(295,1),(299,1),(305,1),(309,1),(315,1),(319,1),(325,1),(329,1),(352,1),(356,1),(362,1),(366,1),(372,1),(376,1),(382,1),(386,1),(392,1),(396,1),(415,1),(419,1),(425,1),(429,1),(435,1),(439,1),(445,1),(449,1),(455,1),(459,1),(464,1),(466,6),(477,1),(481,1),(488,3),(491,3),(497,1),(501,1),(509,1),(514,1),(519,1),(524,1),(529,1),(535,1),(539,1),(545,1),(549,1),(555,1),(559,1),(565,1),(569,1),(574,1),(594,1),(598,1),(604,1),(608,1),(614,1),(618,1),(624,1),(628,1),(634,1),(638,1),(661,1),(665,1),(671,1),(675,1),(681,1),(685,1),(691,1),(695,1),(701,1),(705,1),(724,1),(728,1),(734,1),(738,1),(744,1),(748,1),(754,1),(758,1),(764,1),(768,1),(773,1),(775,6),(786,1),(790,1),(797,3),(800,3),(806,1),(810,1),(818,1),(823,1),(828,1),(833,1),(838,1),(844,1),(848,1),(854,1),(858,1),(864,1),(868,1),(874,1),(878,1),(886,1),(888,6),(899,1),(905,1),(910,1),(915,1),(920,1),(925,1)]
+135 trees exist.
+0: [sentence,[s,uh,comma(subst,orig:dt),[s,[simp,[vp,vbz,[obj,[np,prp]]]]]]].
+1: [sentence,[s,[simp,[vp,vb(subst,orig:uh),[obj,[np,dt,[gerund,[vp,vbz,[obj,[np,prp]]]]]]]]]].
+...............................
+...............................
+134: [sentence,[s,[simp,[vp,vbz(subst,orig:uh),[obj,[np,[ddet,dt]]],[infinitive1,[bep,vbz],[pred,[np,prp]]]]]]].
+Parsing Time: 37960 (ms)
+
+Command (h: help) > 
+
+---------- End Example (3) ----------
+
+The above is the appearance when we type "l." . Here, a list of
+sentences is shown. Then the number of the analyzed sentence is input.
+Here, it is 3. That is
+
+「yes(uh) that(dt) [39,115](vbz) me(prp) 」
+
+This sentence is analyzed and as the result, there are 134 syntactic
+trees output.
+---------- Explanation (3) ----------
+
+7) A Brief Guidance
+
+    o How to use the software
+  
+        1) Type " prolog " to start up prolog interpreter.
+        2) Type " ['src/LR_prolog/run']. " to consult the system.
+        3) Type "start." to start up the system.
+        4) Type "h." to see the help menu.
+        5) Type the item we want in the help menu
+
+    o How to change the set of sentences
+
+        1) Let "sfile" be the name of the file including the sentences
+           you want to analyze. Then type the following command at shell.
+
+           %  src/R-LRParser/runtagger sfile 
+
+           As the result, "sfile.re" is generated.
+
+        2) Put a symbolic link from "sfile.re" to "sent_file.re" by 
+           typing the following commands.
+
+           % /bin/rm src/LR_prolog/sent_file.re
+           % ln -s sfile src/LR_prolog/sent_file.re
+
+        3) Type '[changesent].' on prolog interpreter to change the
+           set of sentences.
+
+8) Software License 
+
+   This software is written at Okumura-Kunifuji Laboratory, Department
+of Information Science, Japan Advanced Institute of Science and
+Technology (JAIST) under the grant of IFS. All copyright is reserved
+by IFS and Okumura-Kunifuji Laboratory.
+   This software is intended to provide as a free software on the
+internet. One could use or modify this software, except the Brill's
+tagger. However, in the use of software, we are not liable for
+incidental, indirect, special or consequential damages,
+notwithstanding being aware of the possibility of such damages. This
+agreement shall be governed by and construed in accordance with the
+substantive laws of Japan.
+
+9) The Software Contributors
+
+   - Thanaruk THEERAMUNKONG    (ping@jaist.ac.jp)
+   - Hiroki   IMAI             (imai@cs.titech.ac.jp)
+   - Manabu   OKUMURA          (oku@jaist.ac.jp)
+   - Susumu   KUNIFUJI         (kuni@jaist.ac.jp)
+
+10) Others
+
+    In this software, we include a tagger offerred by Brill as a free
+    software. This tagger is used as the preprocessor in our system.
+    To use this tagger, also see the document "src/btagger/README".
+
+--
+Copyright (C) 1996, IFS and Okumura-Kunifuji Laboratory, Department of
+Information Science, Japan Advanced Institute of Science and
+Technology
+

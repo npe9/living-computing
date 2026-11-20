@@ -1,0 +1,58 @@
+&define_goal.
+
+{
+canWithdraw(agent=father, object= contract(agent=tarou[age=>19])),
+
+contract(agent=tarou[age=>19]),
+
+-valid(a_object=contract(agent=tarou[age=>19])),
+
+isFather(a_object=father, basis=tarou[age=>19]),
+
+agree(agent=tarou[age=>19], object= contract(agent=tarou[age=>19])),
+
+valid(a_object= contract(agent=tarou[age=>19])),
+
+-valid(a_object= contract(agent=tarou[age=>19])),
+
+loan(agent=X/person,object=Z/money, source=W/money),
+
+contract(agent=X/person,object=loan(agent=X/person,object=Z/money, source=W/money)),
+
+needAllow(agent=father, a_object=contract(agent=X/person, object=loan(agent=X/person,object=Z/money, source=W/money))),
+
+-allow(agent=father, object=loan(agent=X/person,object=Z/money, source=W/money)),
+
+
+
+
+
+interest(goal=money[amount=>50], source=money[amount=>1]),
+
+-interest(goal=money[amount=>50], source=money[amount=>1]),
+
+needAllow(agent=father, a_object= contract(agent=tarou[age=>19])),
+
+-needAllow(agent=father, a_object= contract(agent=tarou[age=>19])),
+
+contract(agent=tarou[age=>19], implement=Z/money),
+
+buy(agent=X/person, implement=Z/money),
+
+loan(agent=X/person, object=Y/money, source=Z/money),
+
+payLoan(agent=X/person, object=loan(agent=X, object=Y/money, source=Z/money)),
+
+causality(source= buy(agent=X/person, implement=Z/money),
+          goal= loan(agent=X, object=Y/money, source=W/money))
+
+
+}
+
+
+
+
+
+
+
+

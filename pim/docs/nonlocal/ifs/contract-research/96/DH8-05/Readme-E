@@ -1,0 +1,29 @@
+MG-Progol		Copyright (C) 1997 Koichi FURUKAWA
+===========================================================
+
+Readme-J			Japanese version of this file.
+Readme-E			This file
+INSTALL				Install guide
+specification.txt		specifications
+
+source/				Program Directory
+source/progol.kl1		MG-Progol main inference engine
+
+source/trans/			Translator Directory
+source/trans/Makefile		Makefile for Translator
+      /trans/bk2mg.kl1  	Translator Background knowledge into MG-Clauses
+      /trans/merc.kl1		Merc translator
+      /trans/mg2kl1.kl1		Translator MG-Clause into KL1 Program
+      /trans/mode2mg.kl1	Translator Mode Declarations into MG-Clauses
+      /trans/pgl2kl1.kl1	Translator Main Module
+      /trans/util.kl1		Utility Module
+      /trans/w_kl1.kl1		Output Module
+
+sample/				Sample Program Directory
+sample/animals.pgl		animals problem
+sample/train.pgl		Train problem
+sample/animals.kl1		KL1 file of animals.pgl
+sample/train.kl1		KL1 file of train.pgl
+
+doc/				Document Directory
+doc/manual.tex			Manual

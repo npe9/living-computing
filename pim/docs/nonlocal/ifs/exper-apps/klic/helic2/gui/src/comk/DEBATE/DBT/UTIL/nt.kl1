@@ -1,0 +1,144 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_noticeTable.
+:- public create/1.
+:- with_macro pimos.
+
+    create(I):-true| 
+        initiate(NT), 
+        loop(I,NT).
+
+    initiate(NT):-true|
+        hLibrary:pool(keyed_bag,NT).
+
+    loop([],NT):-true|
+        NT  = [].
+    loop([put(Type,{ID1,IPos},Data)|T],NT):-true| 
+            %Data type is as follows
+                %win    :{ID2,{ID1Rule,ID2Rule},SPList}
+                %lose   :{ID2,{ID1Rule,ID2Rule},SPList}
+                %draw   :{ID2,{ID1Rule,ID2Rule}}
+                %nil    :{ID2,{ID1Rule,ID2Rule}}
+        NT = [put({Type,{ID1,IPos}},Data)|NT1],
+        loop(T,NT1).
+    loop([refer_SPList(Type,SPList)|T],NT):-true| 
+        refer_SPList(NT,NT1,Type,SPList),
+        loop(T,NT1).
+    loop([refer_ruleRel(Type,RuleRel)|T],NT):-true| 
+        refer_ruleRel(NT,NT1,Type,RuleRel),
+        loop(T,NT1).
+    loop([refer_usedSPList(SPList)|T],NT):-true| 
+        refer_usedSPList(NT,NT1,SPList),
+        loop(T,NT1).
+    loop([refer_usedRuleRel(StrongRel,NonRel)|T],NT):-true| 
+        refer_usedRuleRel(NT,NT1,StrongRel,NonRel),
+        loop(T,NT1).
+    loop([get_all(ALL)|T],NT):-true| 
+        NT = [get_all(ALL)|NT1],
+        loop(T,NT1).
+    loop([cancel(ID1,IPos,ID2)|T],NT):-true| 
+        cancel(NT,{ID1,IPos,ID2},NT1),
+        loop(T,NT1).
+
+%refer_SPList
+    refer_SPList(NT1,NT,Type,SPList):-true|
+        NT1 = [carbon_copy(ALL)|NT],
+        refer_SPList1(ALL,Type,SPList1),
+        hset:create(SPList1,Work),Work = [get_all(SPList)].
+
+    refer_SPList1([],_,SPList):-true|
+        SPList = [].
+    refer_SPList1([{{Type,{_,_}},{_,{_,_},SPList1}}|T],Type,SPList):-true|
+        refer_SPList1(T,Type,SPList2),
+        append(SPList1,SPList2,SPList).
+otherwise.
+    refer_SPList1([_|T],Type,SPList):-true|
+        refer_SPList1(T,Type,SPList).
+
+%refer_usedSPList
+    refer_usedSPList(NT1,NT,SPList):-true|
+        NT1 = [carbon_copy(ALL)|NT],
+        refer_usedSPList1(ALL,SPList1),
+        hset:create(SPList1,Work),Work = [get_all(SPList)].
+
+    refer_usedSPList1([],SPList):-true|
+        SPList = [].
+    refer_usedSPList1([{{_,{_,_}},{_,{_,_},SPList1}}|T],SPList):-true|
+        refer_usedSPList1(T,SPList2),
+        append(SPList1,SPList2,SPList).
+otherwise.
+    refer_usedSPList1([_|T],SPList):-true|
+        refer_usedSPList1(T,SPList).
+
+%refer_ruleRel
+    refer_ruleRel(NT1,NT,Type,RuleRel):-true|
+        NT1 = [carbon_copy(ALL)|NT],
+        refer_ruleRel1(ALL,Type,RuleRel1),
+        hset:create(RuleRel1,Work),Work = [get_all(RuleRel)].
+
+    refer_ruleRel1([],_,RuleRel):-true|
+        RuleRel = [].
+    refer_ruleRel1([{{Type,{_,_}},{_,RuleRel1}}|T],Type,RuleRel):-true|
+        refer_ruleRel1(T,Type,RuleRel2),
+        RuleRel = [RuleRel1|RuleRel2].
+    refer_ruleRel1([{{Type,{_,_}},{_,RuleRel1,_}}|T],Type,RuleRel):-true|
+        refer_ruleRel1(T,Type,RuleRel2),
+        RuleRel = [RuleRel1|RuleRel2].
+otherwise.
+    refer_ruleRel1([_|T],Type,RuleRel):-true|
+        refer_ruleRel1(T,Type,RuleRel).
+
+    append([],Y,Z):-true|
+        Z = Y.
+    append([L|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [L|Z1].
+
+
+%refer_usedRuleRel
+    refer_usedRuleRel(NT1,NT,String,Non):-true|
+        NT1 = [carbon_copy(ALL)|NT],
+        refer_usedRuleRel1(ALL,String1,Non1),
+        hset:create(String1,Work1),Work1 = [get_all(String)],
+        hset:create(Non1,   Work2),Work2 = [get_all(Non)].
+
+    refer_usedRuleRel1([],Strong,Non):-true|
+        Strong = [],
+        Non    = [].
+    refer_usedRuleRel1([{{win,_},{_,{R1,R2}}}|T],Strong,Non):-true|
+        refer_usedRuleRel1(T,Strong1,Non),
+        Strong = [{R1,R2}|Strong1].
+    refer_usedRuleRel1([{{lose,_},{_,{R1,R2}}}|T],Strong,Non):-true|
+        refer_usedRuleRel1(T,Strong1,Non),
+        Strong = [{R2,R1}|Strong1].
+    refer_usedRuleRel1([{{draw,_},{_,{R1,R2}}}|T],Strong,Non):-true|
+        refer_usedRuleRel1(T,Strong,Non1),
+        Non = [{R1,R2}|Non1].
+    refer_usedRuleRel1([{{win,_},{_,{R1,R2},_}}|T],Strong,Non):-true|
+        refer_usedRuleRel1(T,Strong1,Non),
+        Strong = [{R1,R2}|Strong1].
+    refer_usedRuleRel1([{{lose,_},{_,{R1,R2},_}}|T],Strong,Non):-true|
+        refer_usedRuleRel1(T,Strong1,Non),
+        Strong = [{R2,R1}|Strong1].
+
+
+
+%cancel
+    cancel(NT1,{ID1,IPos,ID2},NT):-true|
+        NT1 = [get_all(ALL)|NT2],
+        cancel1(ALL,{ID1,IPos,ID2},NT2,NT).
+
+
+    cancel1([],_,NT1,NT):-true|
+        NT = NT1.
+    cancel1([{{_,{ID1,IPos}},{ID2,_}}|T],  {ID1,IPos,ID2},NT1,NT):-true|
+        cancel1(T,{ID1,IPos,ID2},NT1,NT).
+    cancel1([{{_,{ID1,IPos}},{ID2,_,_}}|T],{ID1,IPos,ID2},NT1,NT):-true|
+        cancel1(T,{ID1,IPos,ID2},NT1,NT).
+otherwise.
+    cancel1([{{Type,{ID1,IPos}},Data}|T],CancelKey,NT1,NT):-true|
+        NT1 = [put({Type,{ID1,IPos}},Data)|NT2],
+        cancel1(T,CancelKey,NT2,NT).

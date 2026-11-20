@@ -1,0 +1,17 @@
+&define_unit.
+new_case := {fact_1, fact_2, fact_3, fact_4, fact_5,fact_6}.
+criminal_law := {article_208, article_204_theory_of_intentional, article_204_theory_of_offence_aggravated_by_results_of_crime, theory_of_conditional_causality}.
+criminal_law_terminology_interpretation := {theory_of_conditional_causality}.
+criminal_law_common_sense := {criminal_law_common_sense_1}.
+judicial_precedent := {supreme_court_showa_080906}.
+
+demo := {new_case,criminal_law,criminal_law_terminology_interpretation,
+	 criminal_law_common_sense,judicial_precedent}.
+
+&define_standpoint.
+esteems_principle_of_the_legality_of_crimes_and_punishment := {article_204_theory_of_intentional_crime < article_204_theory_of_offence_aggravated_by_results_of_crime}.
+esteems_balance_of_crime:={article_204_theory_of_offence_aggravated_by_results_of_crime < article_204_theory_of_intentional_crime}. 
+
+&define_view.
+prosecutor := {esteems_balance_of_crime < esteems_principle_of_the_legality_of_crimes_and_punishment}.
+defendant := {esteems_principle_of_the_legality_of_crimes_and_punishment < esteems_balance_of_crime}.

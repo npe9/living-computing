@@ -1,0 +1,91 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (59) Parallel Logic Simulator</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (59) Parallel Logic Simulator</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI, PIM
+	Environment: PIMOS, SIMPOS
+	Language:    KL1, ESP
+	Source Code: 0.4 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A VLSI-CAD tool to verify the logical and timing specification of
+designed circuits.<P>
+
+<h2><b>Purpose</b></h2>
+
+Logic simulation is one of the most time-consuming stages in LSI
+design. We built a high-performance parallel logic simulator aiming at
+exploiting the entire potential of the Parallel Inference Machine with
+the Time Warp mechanism.<P>
+
+<h2><b>Specification</b></h2>
+
+<dl>
+<dt> Signal and delay model
+<dd> 3 values (Hi, Lo, X), non-unit delay
+<dt> Input circuits
+<dd> Circuits following the ISCAS'89 format
+<dt> Input vectors
+<dd> Randomly generated(The clock follows a given interval)
+</dl>
+
+<h2><b>Configuration and Key features</b></h2>
+
+This logic simulator consists of two parts: the preprocessing module
+and the simulation module.  <p>
+
+In the preprocessing module, target circuits are statically
+partitioned according to the Cascading-Oriented Partitioning, which
+achieves low inter-PE communication, high parallelism extraction and
+load balancing.  <p>
+
+In the simulation module, the Time Warp mechanism(TW) is used for
+time-keeping. It tries to exploit complete parallelism with
+speculative computation, while the rollback process cancels
+speculation errors to maintain the correctness of simulation.  <p>
+
+The antimessage reduction mechanism, adequate message scheduling, and
+the Adaptively Moving Time-Ceiling are used to reduce the cost and
+frequency of rollback.<P>
+ 
+<h2><b>Bibliography</b></h2>
+
+<OL>
+
+<LI> Y.Matsumoto and K.Taki. : Parallel Logic Simulator based on Time
+Warp and its Evaluation. In <i>Proc. Int. Conf. on Fifth Generation
+Computer Systems</i>, ICOT, Tokyo, 1992.
+
+</OL>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Parallel Logic Simulator [2,122K] <a
+href="../../../ifs/exper-apps/pimos/logisim.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

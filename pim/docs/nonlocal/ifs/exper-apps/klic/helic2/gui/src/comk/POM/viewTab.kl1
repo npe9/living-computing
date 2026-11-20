@@ -1,0 +1,57 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module viewTable.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+    create({ViewName,SPList},I):- true |
+        initiate(SPList,SPB),
+        loop(I,ViewName,SPList,SPB).
+
+    initiate([],SPB):-true |
+        hset:create(SPB).
+otherwise.
+    initiate(SPList,SPB):-true |
+        hset:create(SPB1),
+        initiate1(SPList,SPB1,SPB).
+
+    initiate1([_],SPB1,SPB):-true |
+        SPB = SPB1.
+    initiate1([SP1|T],SPB1,SPB):-T\=[] |
+        initiate11(T,SP1,SPB1,SPB2),
+        initiate1(T,SPB2,SPB).
+
+    initiate11([],_,SPB1,SPB):-true |
+        SPB = SPB1.
+    initiate11([SP2|T],SP1,SPB1,SPB):-true |
+        SPB1 = [put({SP1,SP2})|SPB2],
+        initiate11(T,SP1,SPB2,SPB).
+
+    loop([],_,_,SPB):-true |
+        SPB = [].
+    loop([get_viewName(ViewName1)|T],ViewName,SPList,SPB):-true |
+        ViewName1 = ViewName,
+        loop(T,ViewName,SPList,SPB).
+    loop([get_SPOrgList(SPList1)|T],ViewName,SPList,SPB):-true |
+        SPList1 = SPList,
+        loop(T,ViewName,SPList,SPB).
+    loop([get_SPLargeList(SPList1)|T],ViewName,SPList,SPB):-true |
+        reverse(SPList,SPList1),
+        loop(T,ViewName,SPList,SPB).
+    loop([get_SPList(SPList1)|T],ViewName,SPList,SPB1):-true |
+        SPB1 = [get_all(SPList1)|SPB2],
+        loop(T,ViewName,SPList,SPB2).
+
+    reverse(List,NewList):-true |
+        reverse1(List,[],NewList).
+
+    reverse1([],Work,NewList):-true |
+        NewList = Work.
+    reverse1([H|T],Work,NewList):-true |
+        reverse1(T,[H|Work],NewList).

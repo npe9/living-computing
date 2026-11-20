@@ -1,0 +1,917 @@
+										
+				HELC-II 導入マニュアル
+
+
+
+1.はじめに
+
+このマニュアルは、HELIC-II のマニュアル類の中で最初に読むべきものとして作成され
+たものである。
+
+ここには、HELIC-IIの機能の概要を紹介した後で、HELIC-II をインストールし、知識ベー
+スを構築し、知識をコンパイルして、実行するまでの手順を簡単に説明している。このマ
+ニュアルを読んで、さらに詳しい情報を知りたいときは、該当箇所に指示してあるマニュ
+アルを読んでいただきたい。
+
+2.HELIC-II とは
+
+2.1 HELIC-II の３つの機能
+
+HELIC-II は法令文を事件に適用するときの思考過程（法的推論）をコンピュータ上でシ
+ミュレーションし、その思考過程を解析するための実験ツールである。このシステムは論
+証生成、論証選択、論争、という３つの機能を持っている。「論証生成」は、ユーザの与
+えた結論（ゴール）が成り立つかどうかを法令文や判例を引用して論証を生成する機能で
+ある。「論証選択」は、ある結論に対する論証に対して反論があるときに、どちらが適切
+かを判定する機能である。「論争」は、検察側（原告側）と被告側が法廷で論争するとき
+の論争戦略をシミュレーションする機能である。以下に、その概要を説明する。
+
+(a) 論証生成機能
+
+論証生成機能とは、ある事件の「事実データ」と証明したい「結論（ゴール）」を入力す
+ると、法令文や判例などを利用して、論証を生成する機能である。
+
+例を使って論証機能を説明する。まず、以下の知識ベース（法令文、判例）があるとする。
+
+・ 法令文: 「他人の財物を盗んだら窃盗罪である。」
+
+・ 判例（要約）: 「消印済の収入印紙は、交換価値がなくても、財産権の目的となる物で
+		   あるから財物である。」
+
+ここで、以下の事件が発生し、
+
+・ 事件:「甲は支払期日の過ぎた小切手を乙から盗んだ。」
+
+ゴールとして以下のものを入力したとする。
+
+・ ゴール: 「窃盗罪が成り立つことを立証したい。」
+
+このとき、法令文や判例を用いて、以下の論証を生成するのが、論証生成機能である。
+
+・ 論証: 「窃盗罪を立証するには、他人の財物を盗んだことが必要である（法
+	   令文から）。
+	   支払期日の過ぎた小切手は無効であって交換価値がないかもしれないが、財産
+	   権の目的となる物であるから財物である（判例から）。よって、支払期日の過
+	   ぎた小切手を盗んだ行為は窃盗罪になる。」
+
+論証生成の機能は、演繹、ルールの汎化、類似判断、の３つの機能からなっている。「演
+繹」は法令文や判例ルールのそのままの適用を実現するのに用い、「ルールの汎化」は、
+法令文の拡大解釈の生成に用い、「ルールの汎化 ＋ 類似判断」は判例に現れた判断の類
+推適用に用いる。
+
+(b) 論証選択機能
+
+論証選択機能とは、互いに矛盾する結論を持つ２つの論証を与えたとき、より正当な論証
+を選択する機能をいう。
+
+例を使って論証選択機能を説明する。
+
+・ 法令文: 他人の財物を盗んだら窃盗罪である。
+・ 判例１（要約）: 他人の自転車を無断で使用して、もとの場所に戻した事件では、所
+		   有権が侵害されていないから窃盗にはならないと判断された。
+・ 判例２（要約）: 他人の自動車を無断で使用して、もとの場所に戻そうと思ったが、
+		   戻す前に逮捕された事件では、占有権が侵害されたから窃盗である
+		   と判断された。
+
+という知識ベースがあって、以下の事件が与えられたとする。
+
+・ 事件: 他人の自転車を無断で使用して乗り捨てた。
+
+このとき、判例１を引用すれば窃盗ではないし、判例２を引用すれば窃盗である、という
+論証が生成される。
+
+判例１の判断には、「所有権が侵害されたか否か」が重要視されているのに対し、
+判例２の判断には、「占有権が侵害されたか否か」が重要視されている。
+
+また、判例１は、結果的に「法体系の安定性に忠実である」のに対し、判例２は「社会感
+情に合っている」と考えることもできる。
+
+従って、「法体系を重視」する人は判例１が判例２より重要であると考えるであろうし、
+「社会感情を重視」する人にとっては、判例２の方が重要であろう（社会感情自体も時代
+とともに変化するが）。
+
+また、判例１は判例２より古いことから、「新しい判例を重視」する立場からは判例２が
+重要である。
+
+このように、異なった論証が与えられたときに、どちらの論証が正当かを決めるには、判
+断基準を明らかにする必要がある。
+
+(c) 論争機能
+
+論争機能は、二人の論争当事者の間で起こる法的論争をシミュレートする機能をいう。
+
+例を使って論争機能を説明する。
+
+・ 法令文: 他人の財物を盗んだら窃盗罪である。
+
+・ 判例１（要約）: 他人の自転車を無断で使用して、もとの場所に戻した事件で窃盗に
+		   はならないと判断された。
+
+・ 判例２（要約）: 他人の自動車を無断で使用して、もとの場所に戻そうと思ったが、
+		   戻す前に逮捕された事件で窃盗であると判断された。
+
+という知識ベースがあって、以下の事件が与えられたとする。
+
+・ 事件: 他人の自転車を無断で使用して乗り捨てた。
+
+このとき、判例１を引用すれば窃盗ではないし、判例２を引用すれば窃盗である、という
+論証が生成される。
+
+検察が窃盗罪を成立させたいという意欲（ゴール）を持っている時、検察は判例２を引用
+した論証を採用し、相手に主張する。
+
+一方、無罪になりたい被告は判例１を引用する論証を主張して無罪になりたいと考える。
+検察の主張に勝つには、「法体系の安定性に忠実である」という判断基準を自分の価値観
+に加えれば良いと判断し、価値観を補強してから相手に判例１を引用した無罪の論証で反
+論する。
+
+反論を受けた検察は、自らの論証の優位性を示すために、「社会感情にあっている」とい
+う判断基準で自らの価値観を補強し、被告に「社会感情」に照らしてみて、判例２を引用
+した有罪論証の方が無罪論証よりも優先すると通告する。
+
+それに対し被告は「法体系の安定」の観点から無罪論証の方が優先されると逆に通告する。
+この結果、窃盗になるかならないかに関して双方の主張は対立し、この点は争点として記
+録され論争後の裁判官の判断に委ねられる。
+
+論争機能はこのように異なる価値観を持つ論争当事者が事件を様々な観点から分析して個々
+のゴールを満たそうとする論争をシミュレートする。
+
+この機能は、今までに言及されてきた論証生成機能、論証選択機能をメタレベルで制御す
+ることで実現されている。
+
+2.2 HELIC-II の知識ベース
+
+HELIC-II の知識ベースは、以下の３種類の情報からなっている。
+
+・ 概念辞書：
+    	「人」「法人」「自動車」「権利」などの名詞的概念、
+	「殴る」「売る」「死ぬ」などの動詞的概念、
+	「生きている」「所有している」などの形容詞的概念など、
+	システムで使う概念はあらかじめ辞書に登録しておかなければならない。
+
+・ ルール ：
+ 	法律の条文、判例、解釈の学説、常識的知識などををルールとして記述したもの
+	である。
+
+・ 判断基準 ：
+     	「一般法は特別法に優先する」「最高裁の判例は、高裁の判例に優先する」「犯
+	罪要件の判断には、結果よりも行為を重視すべきである」などの様々な判断基準
+	の定義と、どのルールにどの判断基準が関係するかの指定からなる。
+
+ユーザは、システムの実行前に、これらの知識ベースを読み込んでおく。
+
+実行時には、 さらにパラメータとして、判断基準の間の優先関係（これを「価値観」と
+呼んでいる）を入力する。
+
+2.3 HELIC-IIの使い方の例
+
+HELIC-IIの３つの機能を組み合わせると、以下のような使い方が可能となる。
+
+・ 使い方１（論証生成機能のみ）:
+	解きたい事件の概要を入力し、「どんな結論が成り立ちますか」と質問すると、
+	可能な結論とその理由付けをすべて列挙する。
+
+・ 使い方２（論証生成機能＋論証選択機能）:
+        解きたい事件の概要と、ユーザの価値観を入力し、「この結論が成り立ちますか」
+	と質問すると、その結論を正当化する論証を出力する。
+
+	その際、その論証に反論があるかどうかを調べ、他から論破されない論証だけ出
+	力する。これを「裁判官モード」の使い方という。
+
+・ 使い方３（論証生成機能＋論証選択機能＋論争機能）:
+        解きたい事件の概要と、２種類の価値観を入力すると、原告と被告の法廷論争を
+	シミュレートする。ユーザは、原告や被告の一方を担当し、システムが相手側を
+	担当して、互いに反撃し合う。これを「弁護士モード」の使い方という。
+
+2.4 HELIC-II の構成要素
+
+HELIC-II は以下のものから構成されている。
+
+(1) プログラム
+ 	システムを起動するには、以下の３種類のプログラムのいずれかを利用する。
+
+	GUI は グラフィックインターフェース、DRS と CUI はテキストベースのインター
+	フェースである。
+
+	マシン環境や実行モードによって、プログラムを１つ選ぶことになる。
+
+			+============+===========+==========+
+			|	     |UNIX,DOS/V |UNIX+Motif|
+			+============+======================+
+			|裁判官モード| DRS,CUI   |   GUI    |
+			+------------+----------------------+
+			|弁護士モード| CUI       |   GUI    |
+			+============+======================+
+
+(2) 知識ベース
+
+	括弧内は対応するファイルの名前です。
+
+ 	・刑法概念辞書 
+		刑法に関する用語の辞書(data/demo-j.type)
+
+        ・刑法条文のルールベース 
+		刑法条文のルール(data/demo-j.rule)
+
+        ・刑法判例のルールベース 
+		刑法総論、生命身体に関する罪、財産に関する罪、に関する判例のルー
+		ル(data/demo-j.rule)
+
+        ・刑法の価値観データ 
+		価値判断をするための価値観のリスト(data/demo-j.pom)
+
+        ・刑法の試験問題 
+		事例問題の事実データ(data/demo-j.rule)
+
+(3) マニュアル
+
+	括弧内は対応するファイルの名前です。
+
+	・導入マニュアル(README(.j))
+		プログラムの概要、動作環境など
+
+        ・インストール・マニュアル(INSTALL(.j))
+		自分のコンピュータにHELIC-II をインストールするための説明
+			
+        ・言語マニュアル(man/language(-j))
+		法令文や判例の書き方の説明
+
+        ・トランスレータ・マニュアル(man/translater(-j)) 
+		記述した知識をプログラムに取り込むための説明。
+		DRS,CUIは操作マニュアルに書いてあります。
+
+        ・操作マニュアル(man/operation(-j))
+	 	プログラムの操作方法に関する説明
+
+3. HELIC-II を使うには
+
+3.1 まず環境を整えよう
+										
+HELIC-II はICOTフリーソフト（IFS）の No.100 として登録されている。インターネット
+に加入している方は
+
+             icot.or.jp
+
+に匿名FTPして、を出して、プログラムやマニュアルやデータをとってくる。インターネッ
+トに加入していない方は、
+
+             03-3456-3191
+
+に電話して、入手方法を聞いて欲しい。
+
+どなたでもシステムを自由にコピーして使うことができるが、使用した結果として生じた
+損害などについては責任は負いません。
+
+以下の環境で動作を確認しました。
+
+[UNIXマシンで動かす場合]
+
+      (1) ハード
+
+	(a) マシン
+		Sun SparcStation 10
+	(b) メモリ
+		32MB以上
+	(c) ハードディスク
+		40MB以上
+
+      (2) ソフト
+	 (a) OS
+		SunOS 4.1.3
+	 (b) Cコンパイラ
+		gcc-2.6.2
+	 (c) KLIC （これもICOT Free Softです）。
+		1.7以上
+	 (d) 日本語環境
+    	  	日本語などの2byteキャラクタを使えるHELIC-IIをインストールするには
+	    	以下のgccのライブラリかヘッダファイルのどちらかが必要です。
+
+		 	ライブラリ(libfl.a)
+
+       	  	 	ヘッダファイル(euc.h)
+
+ 	 (e) GUIを使う場合はこの他にmotifが必要。
+
+なお、DOS/V用のHELIC-IIの公開は未定です。
+
+3.2 システムをインストールするには
+										
+まず、特名FTPでicot.or.jpに入り、カレント・ディレクトリを
+"/ifs/exper-apps/klic/helic2"にします。
+
+次にhelic2の下にあるREADME（.j）をとってきて読んでください。ここには、HELIC-IIの
+概要や動作環境などが書いてあります。
+
+次に自分の欲しいプログラム(DRSまたはCUIまたはGUI)をbinaryモードでもってきて解凍
+してください。
+
+解凍すると、その中にプログラムのインストール・マニュアル(INSTALL(.j))があります
+ので、それに従って、あなたのコンピュータにインストールします。
+
+次に操作マニュアル(man/operation(-j))に従って、プログラムを立ちあげ、簡単なデモ
+プログラムを動かすことができます。
+
+これに飽きたら、自分で知識ベースを作ってみましょう。
+
+「HELIC-II言語マニュアル」(man/language(-j))に従って、知識を概念、ルール、価値観、
+などに分けて記述し、ファイルに格納します。
+
+もう一度、プログラムを立ちあげて、このファイルを読み込めば、あなたの応用システム
+が動きます。
+
+4. 実行してみよう
+
+インストールが終ったら、すでに用意されている刑法知識ベースを使って HELIC-IIを実 
+行してみよう。実行するには、プログラムを立ちあげなければならない。プログラム
+( DRS, CUI, GUI ) には、３つあるので、以下にそれぞれの使い方を簡単に説明する。
+
+なお、"!"はシェルのプロンプト、"%"から改行まではこの実行例を説明するためのもので
+あり、"+++"の上の文字はユーザ入力を表す。
+
+4.1 DRSによる実行
+
+!../bin/drs
+ ++++++++++		    	%プログラム起動
+DRS>compile type cntrct.type
+    ++++++++++++++++++++++++	%型定義ファイル読み込み
+				
+ok							        
+DRS>compile rule cntrct.rule	
+    ++++++++++++++++++++++++	%ルール定義ファイル読み込み
+				
+							       
+ok								
+DRS>compile pom cntrct.pom
+    ++++++++++++++++++++++	%半順序定義ファイル読み込み
+				
+ok							   
+DRS>set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				%goalを設定する
+ok					
+DRS>set unit all
+    ++++++++++++		%全てのルールを使用する
+ok
+DRS>set  sp 
+    +++++++			%価値観を設定しない。
+ok				%つまり、ルール間の優先関係はなしとする。
+DRS>solve
+    +++++			%論駁推論開始
+yes
+DRS>ab
+    ++				%論証表示開始
+Goal : canWithdraw(agent=father,objec
+0 :  p >:0!:3<:0
+Please input number > 0
+		      +		%初期論証番号0を選択
+ArgJudge : plausible
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=father,objec
+1  :              r1:contract(agent=tarou[age=>{19}
+2  :               act4:buy(agent=tarou[age=>{19}],imp
+3  :               act5:loan(agent=tarou[age=>{19}],ob
+4  :               act6:causality(source=buy(agent=tar
+5  :    !J (2)    r6:-valid(a_object=contract(agent
+6  :               act5:loan(agent=tarou[age=>{19}],ob
+7  :               r1:contract(agent=tarou[age=>{19}
+8  :                act4:buy(agent=tarou[age=>{19}],imp
+9  :                act5:loan(agent=tarou[age=>{19}],ob
+10 :                act6:causality(source=buy(agent=tar
+11 :    !J (1)     r2:needAllow(agent=father,a_objec
+12 :                r1:contract(agent=tarou[age=>{19}
+13 :                 act4:buy(agent=tarou[age=>{19}],imp
+14 :                 act5:loan(agent=tarou[age=>{19}],ob
+15 :                 act6:causality(source=buy(agent=tar
+16 :                act0:isFather(a_object=father,basis
+17 :               act10:-allow(agent=father,object=loa
+18 :               act0:isFather(a_object=father,basis
+19 :              act0:isFather(a_object=father,basis
+UseCommand:  : [end,show,set]
+>show counter 11
+ +++++++++++++++		%争点番号11の子情報を見る
+ Issue Pos: 11
+ Consequence: needAllow(agent=father,a_objec
+ RuleName: r2
+ Num Of Counter: 1
+0 : !j >:0!:0<:0
+Please input number > 0
+		      +		%子番号0の論証を見る
+ArgJudge : justify
+Issue : needAllow(agent=father,a_objec
+RuleInfo({RuleName,TopRuleRel}) : {r3,unrelated}
+0  :             r3:-needAllow(agent=father,a_obje
+1  :              act1:give(agent=father,goal=tarou[a
+2  :              r4:interest(goal=money[amount=>{5
+3  :               act2:buy(agent=tarou[age=>{19}],obj
+4  :               act3:win_prize(agent=tarou[age=>{19
+5  :              r1:contract(agent=tarou[age=>{19}
+6  :               act4:buy(agent=tarou[age=>{19}],imp
+7  :               act5:loan(agent=tarou[age=>{19}],ob
+8  :               act6:causality(source=buy(agent=tar
+9  :              act0:isFather(a_object=father,basis
+UseCommand:  : [backward,end,show,set]
+>end
+ +++				%論証表示終了
+ok
+DRS>quit
+    ++++			%プログラム終了
+
+4.2 CUIによる実行
+
+!cd cui/data
+ +++++++++++				%カレントディレクトリの変更
+!cui               
+ +++		 	   		%プログラム起動
+HELIC-II>compile p type cntrct.type
+	 ++++++++++++++++++++++++++	%検察側型定義ファイル読み込み
+ok
+HELIC-II>compile p rule cntrct.rule
+	 ++++++++++++++++++++++++++	%検察側ルール定義ファイル読み込み
+ok
+HELIC-II>compile p pom cntrct.pom
+	 ++++++++++++++++++++++++       %検察側半順序定義ファイル読み込み
+ok
+HELIC-II>compile d type cntrct.type
+	 ++++++++++++++++++++++++++	%被告側型定義ファイル読み込み
+ok
+HELIC-II>compile d rule cntrct.rule
+	 ++++++++++++++++++++++++++	%被告側ルール定義ファイル読み込み
+ok
+HELIC-II>compile d pom cntrct.pom
+	 ++++++++++++++++++++++++	%被告側半順序定義ファイル読み込み
+ok
+HELIC-II>set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+         ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ok					%goalの設定			
+HELIC-II>set  p solver user
+	 ++++++++++++++++++++		%検察の論争当事者をユーザにする
+ok
+HELIC-II>set  d solver user
+	 ++++++++++++++++++		%被告の論争当事者をユーザにする
+ok
+HELIC-II>set  p unit all
+	 +++++++++++++++		%検察の使用するルールは全て
+ok
+HELIC-II>set  d unit all
+	 +++++++++++++++		%被告の使用するルールは全て
+ok
+HELIC-II>set  p sp 
+	 +++++++++			%検察の価値観を設定しない。
+ok					%つまり、ルール間の優先関係はなしとする。
+HELIC-II>set  d sp 
+	 +++++++++			%被告の価値観を設定しない。
+ok
+HELIC-II>set  p pl 20 
+	 ++++++++++++			%検察のH項の表示の長さを20byteにする。
+ok
+HELIC-II>set  d pl 20 
+	 ++++++++++++			%被告のH項の表示の長さを20byteにする。
+ok
+HELIC-II>start
+	 +++++				%論争開始
+Goal : canWithdraw(agent=fa
+0 :    >:0!:3<:0  canWithdraw(agent=fa
+Please input number > 0
+                      +			%goalを導く論証が1つあり、それを選択しその論証を
+					%表示する
+
+History : start
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>pose
+  ++++				%この論証(p0)を相手に通知する
+Status : prosecutor claim p0.
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>show counter 11
+  +++++++++++++++		%現在表示している相手の論証(p0)の争点番号11に対する反論
+				%をみる
+ Arg ID: p0
+ Issue Pos: 11
+ Consequence: needAllow(agent=fath
+ RuleName: r2
+ Num Of Counter: 1
+0 :    !  >:0!:1<:0 -needAllow(agent=fat
+Please input number > 0
+		      +		%反論が1つありそれを選択
+History : claim(p0,nil)
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {nil,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,backward,justify,pose,end,show,set]
+D>pose
+  ++++			%現在表示している論証(d0)を被告の反論とする。
+			%被告が反論する場合、優位か無関係でなければいけない。
+			%この場合、RuleInfoのTopRule関係をみると"draw"。つまり、無関係で
+			%あるために相手に通知することができる。
+
+Status : defendant claim d0.
+Status : defendant claimed d0.
+History : claim(d0,issue(claim(p0,nil),11))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,backward,end,show,set]
+P>backward
+  ++++++++	%自分の論証(p0)に対して相手から反論(d0)をうけた。
+		%このような場合の戦略としては2つある。
+		%1つは自分の論証の方が相手の反論よりも強いことをnoticeコマンドを使ってい
+		%う場合である。
+		%他の方法は相手の反論(d0)に対してさらに反論をposeコマンドを使用して行な
+		%う場合である。この例ではnoticeコマンドを使用する。
+		%noticeコマンドを通知する場合、優位となる以前に自分が通知した論証(p0)を
+		%表示しないと実行できないために、backwardコマンドを使って以前の論証(p0)
+		%を表示させる。
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,justify,end,show,set]
+P>justify
+  +++++++	
+		%現在の自分野価値観だとp0とd0とのTopRule関係が無関係になっているために優
+		%先通知が出来ない。
+		%検察の場合、優先通知をするためには、必ず強くなければならない
+		%そこで現在の価値観をp0が強くなるようにjustifyコマンドで変更する。
+
+0 : {importance_of_civil_code,[importance_of_civil_code]}
+Please input number > 0
+                      +		%強くなるための価値観の候補が1つありのでそれを選択。
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,notice,end,show,set]
+P>notice
+  ++++++
+		%justifyコマンドにより、争点番号11の反論(d0)との関係が強く(">")なってい
+		%るのがわかる。今度はp0の優先通知ができる。
+
+0 : [importance_of_civil_code]
+Please input number > 0
+		      +		%優先通知の根拠となる判断基準を選択
+
+Status : prosecutor notify that p0 is stronger than d0 by stanpoint of [importance_of_civil_code].
+Status : prosecutor notified that p0 was stronger than d0 by stanpoint of [importance_of_civil_code].But you draw.
+History : notice([importance_of_civil_code],claim(d0,issue(claim(p0,nil),11)))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,cancel,'show claim',jump,backward,justify,notice,end,show,set]
+D>notice
+  ++++++
+		%相手が優先通知してきたので、それに対して自分の反論(d0)の優先通知をする。
+		%被告の場合は無関係でも優先通知をすることができる。
+		%この場合無関係であるので、優先通知の根拠となる判断基準の選択はない。
+
+Status : defendant notify that p0 isn't always stronger than d0,because of non-relation of r3 and r2 in current viewpoint.
+Status : defendant notified that p0 wasn't always stronger than d0,because of non-relation of r2 and r3 in current viewpoint.But you win by [[importance_of_civil_code]].
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>finish
+  ++++++	%p0に対しては論争終了
+Status : defendant finish p0
+Status : defendant finished p0
+Goal : canWithdraw(agent=fa
+0 : *  >:1!:2<:0  canWithdraw(agent=fa
+Please input number > 0
+		      +
+History : start
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,nil}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>end
+  +++		%論争を終了
+ok
+HELIC-II>quit
+	 ++++	%プログラムを終了する。
+
+
+4.3 GUIによる実行
+
+GUI は、上記の DRS と CUI の２つのインターフェースと同等の機能をグラフィックイン
+ターフェースを使い実現したものである。GUIを起動すると、２つのwindowが現れる。左
+側が検察のwindow、右側が被告のwindowである。それぞれの windowには、双方のゴール、
+価値観、論証などが表示されている。論争に使われるコマンドは全て画面中に表示されて
+いるので、必要なボタンをマウスでクリックするだけで、論争を実行することが出来る。
+詳しくは「GUI操作マニュアル」を参照のこと。
+
+5.知識ベースを自作する
+
+用意された刑法知識ベースを追加・修正したい場合や、新たに別な応用分野の知識ベース
+を作成したい場合には、「言語マニュアル」に従って、概念辞書、ルール、判断基準、な
+どを作成しなければならない。
+
+以下に知識ベースを作成し、それをDRSに読み込み実行する過程を示します。
+
+なお、以下の知識ベースのファイルは全てeucコードでwriteしなければいけません。
+
+   (1) 以下の「概念辞書」を用意し、exm21.type というファイルにしまっておきます。
+
+                人([age:integer]).
+                太郎 < 山田家.	
+                花子 < 山田家.
+                山田家 < 人.
+                次郎 < 人.
+                三郎 < 人.
+                殴る < 対人行為をする.
+                暴行罪 < 罪.
+                暴行行為である < 行為.
+
+   (2) 以下の「ルールベース」を用意し、exm21.rule というファイルにしまいます。
+
+          &define_absolute_rule.
+          &define_RBR_rule. 
+           {
+             f1::殴る(agent=太郎,object=次郎).
+             f2::殴る(agent=花子[age=>10],object=三郎).
+
+             r1::暴行罪(agent=X)
+                    <- 対人行為をする(agent=X/人,object=Y/人)|@action,
+                       暴行行為である(a_object=@action).
+
+             r3::-暴行罪(agent=X)
+                    <- 対人行為をする(agent=X/人[age=>[0..13]],
+                                      object=Y/人)|@act,
+                       暴行行為である(a_object=@act).
+
+             r2::暴行行為である(a_object=@act)
+                   <- 殴る(agent=X/人,object=Y/人)|@act,
+                      different(X,Y).
+           }
+          &define_CBR_rule.
+
+   (3) ルール,判断基準,価値観の情報を以下のように書いて、exm21.pomとします。
+
+               &define_unit.
+                 fact:= {f1,f2}.
+                 rule:= {r1,r2,r3}.
+                 未成年者保護:= {r3}.
+                 社会秩序維持:= {r1}.
+
+               &define_sp.
+                 教育重視:= { 社会秩序維持 < 未成年者保護 }.
+                 秩序重視:= { 未成年者保護 < 社会秩序維持}.
+
+               &define_view.
+                 view1 := {教育重視 < 秩序重視}.
+                 view2 := {秩序重視 < 教育重視}.
+
+     これで知識ベースの登録は終了です。
+
+  (4)   以下の手順で実行します。
+
+      	(4.0)  前準備
+
+	 emacs の中で、
+		  M-x shell
+	 を実行し、shell にはいります。
+
+		  C-x C-k p
+
+         を実行し、プロセスの入出力をeuc-codeにします。英数字だけしか使用しない
+         場合は、この操作は不要です。
+
+	(4.1)  起動
+
+	  次にカレント・ディレクトリを以下のようにします。
+	  これは、知識ベースのファイルの指定を簡素化するためです。
+
+		!cd drs/data
+		!drs
+
+          をシェルから入力して、DRSを立ちあげます。
+         
+	(4.2)  知識ベースの読み込み
+
+          以下で、DRS> はシステムからのプロンプトです。
+	  また、+の上の文字はユーザの入力を、% はコメントを表しています。
+
+
+	DRS>compile type exe21.type   % 概念辞書の読み込み
+	    +++++++++++++++++++++++
+	ok
+	DRS>compile rule exe21.rule   % ルール（事実データも含む）の読み込み
+	    +++++++++++++++++++++++
+	ok
+	DRS>compile pom exe21.pom     % 価値判断情報の読み込み
+	    +++++++++++++++++++++++
+	ok
+	DRS>set unit fact rule  % 参照するルールの範囲をfactとruleに限定する。
+	    ++++++++++++++++++
+	ok
+	DRS>set view view1      % 価値観をview1に設定。
+	    ++++++++++++++
+	ok
+
+	(4.3) 実行
+
+	DRS>solve 暴行罪(agent=太郎)    % 質問の入力。
+	    ++++++++++++++++++++++++
+	yes                             % 質問に対する論証が生成された。
+	DRS>ab                          % 論証がいくつあるかを表示せよ。
+	    ++
+	Goal : 暴行罪(agent=太郎)
+	0 :  j >:1!:0<:0                % 論証が1つである。
+	Please input number > 0	        % その論証を出力せよ。
+		              +
+	ArgJudge : justify              % 以下の論証は、有効な反論がない。
+	RuleInfo({RuleName,TopRuleRel}) : {r1,nil}
+	0  :    >J (1)   r1:暴行罪(agent=太郎)
+	1  :              f1:殴る(agent=太郎,object=次郎)
+	2  :              r2:暴行行為である(a_object=殴る(a
+	3  :               f1:殴る(agent=太郎,object=次郎)
+	UseCommand:  : [end,show,set]
+	>end
+	 +++
+	ok
+
+	DRS>set view view2              % 価値観をview2に変更
+	    ++++++++++++++
+	ok
+	DRS>solve 暴行罪(agent=太郎)    % 質問の入力。
+	    ++++++++++++++++++++++++
+	yes                             % 質問に対する論証が生成された。
+	DRS>ab                          % 論証がいくつあるかを表示せよ。
+            ++
+	Goal : 暴行罪(agent=太郎)
+	0 :  d >:0!:0<:1                % 論証が1つである。
+	Please input number > 0         % その論証を出力せよ。
+			      +
+	ArgJudge : defeated             % 以下の論証には、有効な反論がある。
+	RuleInfo({RuleName,TopRuleRel}) : {r1,nil}
+	0  :    <J (1)   r1:暴行罪(agent=太郎)
+	1  :              f1:殴る(agent=太郎,object=次郎)
+	2  :              r2:暴行行為である(a_object=殴る(a
+	3  :               f1:殴る(agent=太郎,object=次郎)
+	UseCommand:  : [end,show,set]
+	>end
+	 +++
+	ok
+	DRS>quit
+	    ++++
+
+
+
+
+
+
+
+
+
+

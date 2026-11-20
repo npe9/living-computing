@@ -1,0 +1,40 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_finish2.
+
+:- public 
+    finish/4.
+            
+:- with_macro pimos.
+
+%finishi
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+    finish(Claim,{O,Pool1,Info},Data,NextDR):-true|
+        initiate(Claim,Pool1,Info,Pool2,R),
+        (   wait(R)->
+                Claim   = claim(_,issue(claim(YA,MI),_)),
+                Pool2   = [makeList([at,hl],[AT,HL])|Pool],
+                AT      = [refer_arg(YA,YA_Arg,_)],
+                HL      = [put(send(m,{claim(YA,MI),YA_Arg}))],
+                Data    = {O,Pool,Info},
+                NextDR  = {claim(YA,MI),YA_Arg}).
+
+%initiate
+    initiate(claim(MA, issue(claim(YA,_),IPos)),Pool1,Info,Pool,R):-true|
+        Info = {_,_,{_,_,_,AgentName},_},
+        dbtcui_messagePool:make_message({finish,you},{AgentName,MA},Status),
+        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2 = [makeList([at,mat,ct,icat],[AT,MAT,CT,ICAT])|Pool],
+                AT    = [refer_arg(MA,MA_Arg,_)],
+                MAT   = [finish(MA_Arg)],
+                CT    = [finish({YA,IPos},MA)],
+                MA_Arg = {_,_,CPos},
+                ICAT  = [finish({YA,IPos,CPos})],
+                R     = normal(success)).

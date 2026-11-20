@@ -1,0 +1,93 @@
+﻿<!--
+# modified by orie(1995.7.25)
+# modified by K.Kawamura(1994.9.26)
+# modified by	A.Aiba		97/08/15
+-->
+
+<title> (82) Parallel Theorem Prover: MGTP/N Prolog Version</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (82) Parallel Theorem Prover: MGTP/N Prolog Version</h2> <p>
+
+<pre wide="136">
+<b>	Machine:     UNIX/PC
+	Environment: UNIX/MS-DOS
+	Language:    Prolog
+	Source Code: 60KB
+	Documents:   User's Manual(English,Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+MGTP/N is a theorem prover for Horn clauses that deal with non ground
+atoms<P>
+
+<h2><b>Features</b></h2>
+<ul>
+
+<li>MGTP/N is a bottom-up theorem prover written in Sicstus-Prolog.
+
+<li>MGTP/N deals with a set of Horn clauses
+
+<li>Efficient inference is enabled by eliminating redundant
+conjunctive matching (CJM) and compiling the clauses into Prolog
+
+<li>Support of unification in CJM and procedural interface for Prolog
+programs
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+MGTP/N(Model Generation Theorem Prover/Non-ground Version) is a first
+order theorem prover for Horn clauses based on model generation. An
+MGTP clause is represented by an implicational form:<P>
+
+<dl>
+<dd><img src="082.gif">
+</dl>
+<p>
+
+Where an antecedent is a conjunction of <i>A1, A2, ..., An</i>. When
+<i>n</i> = 0, it gives the initial model(a set of facts). When
+<i>m</i> = 0, it represents a condition of contradiction. In MGTP,
+proving starts with the initial model and proceeds from the antecedent
+to the consequence in a forward reasoning manner.  <p>
+
+The <i>range-restrictedness</i> condition is not imposed on problem
+clauses of MGTP/N. A clause is said to be range-restricted if every
+variable in the clause has at least one occurrence in its antecedent. 
+This leads to the necessity of unification with an occurs check
+because atoms appearing in the proof may contain variables. The
+unification program is written in Prolog for making the unification
+sound. With Horn clause, it is not necessary to consider
+case-splitting. Generated atoms are maniplated using the (Prolog)
+assert function.  <p>
+
+In spite of dealing only with Horn clauses, MGTP/N not only solves
+many mathematical problems such as that of condensed detachment but
+also is used as a practical tool for mode analyzing in the KL1
+compiler.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Parallel Theorem Prover: MGTP/N Prolog Version [573K] <a
+href="../../../ifs/solver-prover/unix/MGTP-N/MGTP-N-Prolog.tar.gz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

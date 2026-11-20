@@ -1,0 +1,26 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_shellUtility2.
+
+:- public 
+    get_counterList/6,
+    get_claimList/5.
+
+:- with_macro pimos.
+
+%get_counterList
+    get_counterList({Pool1,Info1,{_,CLArg},CSS},Pos,Data,LArgList,CounterList,R):-true|
+        dbtgui_argumentListUtility:get_counterArgumentList(CLArg,Pos,{Pool1,Info1},
+                {Pool,Info},LArgList,CounterList,R),
+        Data = {Pool,Info,CSS}.
+
+%get_claimList
+    get_claimList({Pool1,Info1,_,CSS},Data,LArgList,ClaimList,R):-true|
+        dbtgui_argumentListUtility:get_claimArgumentList({Pool1,Info1},
+                {Pool,Info},LArgList,ClaimList),
+        (   wait(ClaimList)->
+                R    = normal(success),
+                Data = {Pool,Info,CSS}).

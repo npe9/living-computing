@@ -1,0 +1,79 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（５５）３次元ＤＰ法によるマルチプル・アライメント</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（５５）３次元ＤＰ法によるマルチプル・アライメント</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM
+	環　　境：PIMOS, SIMPOS
+	言　　語：KL1, ESP
+	ソース量：0.5 MB
+	文　　書：なし
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+タンパク質のアミノ酸配列を解析するソフトウェアである。<p>
+
+<h2>構成</h2>
+<pre>
+        Generator:             ３次元ＤＰを行うプロセスネットワークを構築する。
+        Cost Evaluate Process: コストを計算して実際にＤＰを行う。
+</pre>
+<p>
+
+<h2>機能</h2>
+
+類似する複数のタンパク質のアミノ酸配列のデータを整列させるソフトウェア
+である。整列とはアミノ酸配列の共通部分および類似部分を縦に並べることを
+意味する。アミノ酸間の類似性は、既に生物学的に定義されている。例えば、<P>
+
+<PRE>
+    HEKLLHPGIQKTTKLFGETTY
+    LHQLTHLSFSKMKALLERSHSPYY
+    ELHSFTHCGQTALTLQ
+</PRE>
+
+という３つのタンパク質のアミノ酸配列は、<P>
+
+<PRE>
+    --HEKLLHPGIZKTTKLF-GET--YY
+    -LHQ-LTHLSFSKMKALLERSHSPYY
+    ELHS-FTHCG---QTAL--TLQ----
+      ^    ^        ^
+      |    |        |
+
+</PRE>
+
+のように整列させることができる。ここで挿入されているハイフンは、進化過
+程で起きた欠失を表す。整列結果の中でよく保存している部分「↑」は、タン
+パクの機能上重要な部分に対応する。<P>
+
+このプログラムはダイナミックプログラミング法 (ＤＰ)という組み合わせ最
+適化問題を解く際によく使用される方法を並列化して実装されている。３次元
+ＤＰを用いており。３本の配列を複数組実行することができる。<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	３次元ＤＰ法によるマルチプル・アライメント [93K] <a
+href="../../../ifs/exper-apps/pimos/aligndp.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

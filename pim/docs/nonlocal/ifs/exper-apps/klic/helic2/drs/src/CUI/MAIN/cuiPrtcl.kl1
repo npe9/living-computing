@@ -1,0 +1,113 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_protocolPool.
+
+:- public 
+    get/4.
+            
+:- with_macro pimos.
+
+    get(Command,Parameter,Arguments,ProtocolList):-true|
+        get1(Command,Parameter,Arguments,ProtocolList).
+
+%set
+    get1(set,useView,View,PL):-true|
+        PL = [set_parameter(useView,View,_)].
+    get1(set,useSpPriority,SPList,PL):-true |
+        PL = [set_parameter(useSpPriority,SPList,_)].
+    get1(set,useUnit,UnitList,PL):-true |
+        PL = [set_parameter(useUnit,UnitList,_)].
+
+    get1(set,goal,Goal,PL):-Goal\=nil |
+        PL = [set_parameter(goal,Goal,_)].
+    get1(set,cl,CL,PL):-true |
+        PL = [set_parameter(counter,CL,_)].
+    get1(set,similarity,Sim,PL):-true |
+        PL = [set_parameter(similarity,Sim,_)].
+    get1(set,weight,W,PL):-true |
+        PL = [set_parameter(weight,W,_)].
+    get1(set,psiTermSimTB,PsiTermSimTB,PL):-true |
+        PL = [set_parameter(psiTermSimTB,PsiTermSimTB,_)].
+    get1(set,psiTermAttWeight,PsiTermAttWeight,PL):-true |
+        PL = [set_parameter(psiTermAttWeight,PsiTermAttWeight,_)].
+
+%tracer
+    get1(set,tf,TF,PL):-true |
+        PL = [tracer(set(flag,TF,_))].
+    get1(show,tf,_,PL):-true|
+        PL = [tracer(get(flag,_,_))].
+
+    get1(set,pl,XX,PL):-true |
+        PL = [tracer(set(pl,XX,_))].
+    get1(show,pl,_,PL):-true|
+        PL = [tracer(get(pl,_,_))].
+
+    get1(set,pt,PT,PL):-true |
+        PL = [tracer(set(pt,PT,_))].
+    get1(show,pt,_,PL):-true|
+        PL = [tracer(get(pt,_,_))].
+
+    get1(set,sr,SR,PL):-true |
+        PL = [tracer(set(spy(rule),SR,_))].
+    get1(add,sr,SR,PL):-true |
+        PL = [tracer(add(spy(rule),SR,_))].
+    get1(remove,sr,SR,PL):-true |
+        PL = [tracer(remove(spy(rule),SR,_))].
+    get1(clear,sr,_,PL):-true |
+        PL = [tracer(clear(spy(rule),nil,_))].
+    get1(show,sr,_,PL):-true|
+        PL = [tracer(get(spy(rule),_,_))].
+
+    get1(set,sg,SG,PL):-true |
+        PL = [tracer(set(spy(gate),SG,_))].
+    get1(add,sg,SG,PL):-true |
+        PL = [tracer(add(spy(gate),SG,_))].
+    get1(remove,sg,SG,PL):-true |
+        PL = [tracer(remove(spy(gate),SG,_))].
+    get1(clear,sg,_,PL):-true |
+        PL = [tracer(clear(spy(gate),nil,_))].
+    get1(show,sg,_,PL):-true|
+        PL = [tracer(get(spy(gate),_,_))].
+
+%get
+    get1(show,useView,nil,PL):-true |
+        PL = [get_parameter(useView,_,_)].
+    get1(show,useUnit,nil,PL):-true |
+        PL = [get_parameter(useUnit,_,_)].
+
+    get1(show,view,View,PL):-true |
+        PL = [get_parameter({view,View},_,_)].
+    get1(show,sp,SP,PL):-true |
+        PL = [get_parameter({sp,SP},_,_)].
+    get1(show,unit,UnitList,PL):-true|
+        PL = [get_parameter({unit,UnitList},_,_)].
+
+    get1(show,cl,_,PL):-true|
+        PL = [get_parameter(counter,_,_)].
+    get1(show,similarity,_,PL):-true|
+        PL = [get_parameter(similarity,_,_)].
+    get1(show,weight,_,PL):-true|
+        PL = [get_parameter(weight,_,_)].
+    get1(show,psiTermSimTB,_,PL):-true|
+        PL = [get_parameter(psiTermSimTB,_,_)].
+    get1(show,psiTermAttWeight,_,PL):-true|
+        PL = [get_parameter(psiTermAttWeight,_,_)].
+
+%load
+    get1(load,pom,ViewData,PL):-true |
+        PL = [set_parameter(pom,ViewData,_)].
+    get1(load,rule,RuleData,PL):-true |
+        PL = [set_parameter(rule,RuleData,_)].
+    get1(load,type,FileName,PL):-true |
+        PL = [set_parameter(type,FileName,_)].
+
+%%execute
+    get1(execute,solve,_,PL):-true |
+        PL = [execute(solve,_,_,_)].
+
+
+
+

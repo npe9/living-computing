@@ -1,0 +1,377 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_parser2.
+
+:- public 
+    get_commandArguments/6.
+            
+:- with_macro pimos.
+
+%%%%%%FOR INPUT
+
+    get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result):-true|
+        (   AgentName = d->
+                Prompt = "D>"
+        ;
+            AgentName = p->
+                Prompt = "P>"
+        ),
+        dbtcui_ioUtility:get_commandArguments(Prompt,Command1,Arguments1),
+        parse(Command1,Arguments1,UseComList,Command2,Parameter2,Arguments2,Result2),
+        (   Result2 = normal(_),Command2\=nil->
+                is_useCommand(UseComList,Command2,Parameter2,YN),
+                (   YN = yes->
+                        Command=Command2,Parameter=Parameter2,Arguments=Arguments2,Result=Result2
+                ;
+                    YN = no->
+			make_errorMessage(Command2,Parameter2,Arguments2,Mes),
+                        Reason = {cui,'Can not use this command now',Mes},
+                        dbtcui_ioUtility:show_error(Reason,Result3),
+                        ( wait(Result3)->
+                            get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result))
+                )
+        ;
+            Result2 = normal(_),Command2=nil->
+                get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result)
+        ;
+            Result2 = abnormal(Reason)->
+                dbtcui_ioUtility:show_error(Reason,R),
+                (   wait(R)->
+                        get_commandArguments(AgentName,UseComList,Command,Parameter,Arguments,Result))
+        ).
+
+%cr
+    parse(nil,_,_,Command,Parameter,Arguments,Result):-true|
+        Command = nil,Parameter = nil,Arguments = nil,Result = normal(success).
+%pose
+    parse("pose",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = pose,Parameter = nil,Arguments = [],Result = normal(success).
+%notice 
+    parse("notice",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = reasonList,Arguments = [],Result = normal(success).
+%cancel
+    parse("cancel",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = cancel,Parameter = nil,Arguments = [],Result = normal(success).
+%finish
+    parse("finish",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = finish,Parameter = nil,Arguments = [],Result = normal(success).
+%end
+    parse("end",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = end,Parameter = nil,Arguments = [],Result = normal(success).
+%backward
+    parse("backward",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = backward,Parameter = nil,Arguments = [],Result = normal(success).
+%forward
+    parse("forward",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = forward,Parameter = nil,Arguments = [],Result = normal(success).
+%next
+    parse("next",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = next,Parameter = nil,Arguments = [],Result = normal(success).
+%previous
+    parse("previous",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = previous,Parameter = nil,Arguments = [],Result = normal(success).
+%focus
+    parse("focus",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = focus,Parameter = nil,Arguments = [],Result = normal(success).
+%jump Aid
+    parse("jump",[Aid],_,Command,Parameter,Arguments,Result):-true|
+        Command = jump,Parameter = nil,sToaList([Aid],Arguments,Result).
+%justify
+    parse("justify",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = justify,Parameter = nil,Arguments = [],Result = normal(success).
+%show counter IssueNum
+    parse("show",["counter",IssueNum],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = counterList,sToiList([IssueNum],Arguments,Result).
+%show claim
+    parse("show",["claim"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = claimList,Arguments = [],Result = normal(success).
+%%use command
+%    parse("show",["uc"],UseComList,Command,Parameter,Arguments,Result):-true|
+%        Command = nil,Parameter = nil,Arguments = nil,
+%        dbtcui_ioUtility:show_listX(UseComList,Result).
+%set 
+    parse("set",["pl",PL],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pl,
+	set_pl(PL,Arguments,Result).
+    parse("set",["pt","h"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pt,Arguments = [h],Result = normal(success).
+    parse("set",["pt","e"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pt,Arguments = [e],Result = normal(success).
+    parse("set",["cl",CL],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = cl,
+	set_cl(CL,Arguments,Result).
+    parse("set",["sim",Sim],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter=similarity,
+        set_similarity(Sim,Arguments,Result).
+    parse("set",["weight",W],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter=weight,
+        set_weight(W,Arguments,Result).
+    parse("set",["ptst"|PsiTermSimTB],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter=psiTermSimTB,
+        set_psiTermSimTB(PsiTermSimTB,Arguments,Result).
+    parse("set",["ptaw",PsiTermAttWeight],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter=psiTermAttWeight,
+        set_psiTermAttWeight(PsiTermAttWeight,Arguments,Result).
+
+%show 
+    parse("show",["goal"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = goal,Arguments = [],Result = normal(success).
+    parse("show",["view"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = useView,Arguments = [],Result = normal(success).
+    parse("show",["view",ViewName],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = view,sToaList([ViewName],Arguments,Result).
+    parse("show",["sp"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = useSpPriority,Arguments = [],Result = normal(success).
+    parse("show",["sp",SP],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = sp,sToaList([SP],Arguments,Result).
+    parse("show",["unit"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = useUnit,Arguments = [],Result = normal(success).
+    parse("show",["unit",Unit],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = unit,sToaList([Unit],Arguments,Result).
+
+    parse("show",["pl"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = pl,Arguments = [],Result = normal(success).
+    parse("show",["pt"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = pt,Arguments = [],Result = normal(success).
+    parse("show",["cl"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = cl,Arguments = [],Result = normal(success).
+    parse("show",["sim"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = similarity,Arguments = [],Result = normal(success).
+    parse("show",["weight"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = weight,Arguments = [],Result = normal(success).
+    parse("show",["ptst"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = psiTermSimTB,Arguments = [],Result = normal(success).
+    parse("show",["ptaw"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = psiTermAttWeight,Arguments = [],Result = normal(success).
+
+    parse("show",["explain"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = explanation,Arguments = [],Result = normal(success).
+    parse("help",[],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = help,Arguments = [],Result = normal(success).
+    parse("help",[C],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = help,Arguments = [C],Result = normal(success).
+
+%tracer
+    parse("set",["tf","on"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = tf,Arguments = [on],Result = normal(success).
+    parse("set",["tf","off"],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = tf,Arguments = [off],Result = normal(success).
+    parse("show",["tf"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = tf,Arguments = [],Result = normal(success).
+
+    parse("set",["sr"|SpyRuleList],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("add",["sr"|SpyRuleList],_,Command,Parameter,Arguments,Result):-true|
+        Command = add,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("remove",["sr"|SpyRuleList],_,Command,Parameter,Arguments,Result):-true|
+        Command = remove,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("clear",["sr"],_,Command,Parameter,Arguments,Result):-true|
+        Command = clear,Parameter = sr,Arguments = [],Result = normal(success).
+    parse("show",["sr"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = sr,Arguments = [],Result = normal(success).
+
+    parse("set",["sg"|SpyGateList],_,Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = sg,get_spyGateList(SpyGateList,Arguments,Result).
+    parse("add",["sg"|SpyGateList],_,Command,Parameter,Arguments,Result):-true|
+        Command = add,Parameter = sg,get_spyGateList(SpyGateList,Arguments,Result).
+    parse("remove",["sg"|SpyGateList],_,Command,Parameter,Arguments,Result):-true|
+        Command = remove,Parameter = sg,get_spyGateList(SpyGateList,Arguments,Result).
+    parse("clear",["sg"],_,Command,Parameter,Arguments,Result):-true|
+        Command = clear,Parameter = sg,Arguments = [],Result = normal(success).
+    parse("show",["sg"],_,Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = sg,Arguments = [],Result = normal(success).
+
+otherwise.
+    parse(_,_,_,_,_,_,Result):-true|
+        Result = abnormal({cui,'Illegal command or arguments',nil}).
+
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({cui,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({cui,'Illegal atom',A})
+        ).
+
+%%%%is_useCommand
+    is_useCommand(UseComList,send,reasonList,YN):-true|
+	member(UseComList,notice,YN).
+    is_useCommand(UseComList,send,claimList,YN):-true|
+	member(UseComList,claimList,YN).
+    is_useCommand(_,send,Parameter,YN):-
+	Parameter\=reasonList,
+	Parameter\=claimList|
+        YN = yes.
+    is_useCommand(_,set,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,add,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,remove,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,clear,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,end,_,YN):-true|
+        YN = yes.
+otherwise.
+    is_useCommand(UseComList,Command,_,YN):-true|
+        member(UseComList,Command,YN).
+
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+
+    get_spyGateList([],L,R):-true|
+        L = [],
+        R = normal(success).
+    get_spyGateList(["call"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [call|L1].
+    get_spyGateList(["redu"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [redu|L1].
+    get_spyGateList(["fail"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [fail|L1].
+otherwise.
+    get_spyGateList([H|_],_,R):-true|
+        R = abnormal({cui,'Illegal Argument',H}).
+
+%%%%%
+%%%%%
+    set_similarity(Sim1,Arguments,Result):-true|
+        sToiList([Sim1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[Sim],
+                ( Sim>0,Sim=<100 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal similarity',Sim})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_weight(W1,Arguments,Result):-true|
+        sToiList([W1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[W],
+                ( W>0,W=<10 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal weight',W})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_psiTermSimTB([A1,B1,C1,D1,E1,F1],Arguments,Result):-true|
+        sToiList([A1,B1,C1,D1,E1,F1],Arguments1,R1),
+        ( R1 = normal(success)->
+		Arguments1=[A,B,C,D,E,F],
+                ( 100>=A,A>=B,B>=C,C>=D,D>=E,E>=F,F>0->
+                   Arguments = [{A,B,C,D,E,F}],Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal psiTermSimTB',[A,B,C,D,E,F]})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+otherwise.
+    set_psiTermSimTB(TB,_,Result):-true|
+        Result = abnormal({cui,'Illegal psiTermSimTB',TB}).
+
+    set_psiTermAttWeight(PsiTermAttWeight1,Arguments,Result):-true|
+        sToiList([PsiTermAttWeight1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[PsiTermAttWeight],
+                (  PsiTermAttWeight>0,PsiTermAttWeight=<10->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal psiTermAttWeight',PsiTermAttWeight})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+%%set pl
+    set_pl(PL1,Arguments,Result):-true|
+        sToiList([PL1],Arguments,R1),
+	( R1 = normal(success)->
+            Arguments=[PL],
+	    ( integer(PL),PL>0->
+	        Result = normal(success)
+	    ;
+	     otherwise;
+	      true->
+	        Result = abnormal({cui,'Illegal pl',PL})
+	    )
+	;
+	  R1 = abnormal(_)->
+	    Result = R1
+	).
+
+
+%set_cl
+    set_cl(CL1,Arguments,Result):-true|
+	sToiList([CL1],Arguments1,Result1),
+	( Result1 = normal(success),Arguments1=[CL],CL>=0->
+	    Arguments = [CL],Result= normal(success)
+	;
+	  Result1 = normal(success),Arguments1=[-1]->
+	    Arguments = [infinite],Result= normal(success)
+	;
+	otherwise;
+	  true->
+	    Result = Result1
+	).
+
+
+%%%%%%
+    make_errorMessage(send,claimList,_,Mes):-true|
+	Mes = 'show claim'.
+    make_errorMessage(send,reasonList,_,Mes):-true|
+	Mes = notice.
+otherwise.
+    make_errorMessage(C,_,_,Mes):-true|
+	Mes = C.

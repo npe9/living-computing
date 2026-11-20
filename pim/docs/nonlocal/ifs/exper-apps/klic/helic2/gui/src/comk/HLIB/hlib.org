@@ -1,0 +1,34 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module hLibrary.
+
+%stdio
+    stdio(IoType,Stdio):- true|
+        helic_stdio:stdio(IoType,Stdio).
+
+%pool
+    pool(PoolName,Size,Pool):- true |
+	pool(PoolName,Pool).
+    pool(PoolName,Pool):- true |
+	helic_pool:pool(PoolName,Pool).
+
+%file
+    file(FileName,Mode,File):- true|
+	helic_file:file(FileName,Mode,File).
+
+%buffer
+    buffer(Buffer):-true |
+	helic_buffer:buffer(Buffer).
+
+%tTos
+    tTos(Term,String):- true |
+        buffer(B),
+	B = [puttq(Term),getl(String)].
+
+%sTot
+    sTot(String,Term):-true |
+        buffer(B),
+	B = [putb(String),putb("."),gett(Term)].

@@ -1,0 +1,74 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(20) Voronoi Diagram Construction Program</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(20) Voronoi Diagram Construction Program</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI
+	Environment: PIMOS
+	Language:    GDCC
+	Source Code: 260 KB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This program constructs a Voronoi Diagram which is an essential
+concept of Computational geometry.
+
+<h2><b>Characteristics</b></h2>
+
+<b>Voronoi Diagram</b> is an essential concept of Computational
+geometry, and this is widely used in various application areas.  <p>
+
+The algorithm of this program is <i>O(N)</i>(<i>N</i> is the number of
+given points) in calculation time, that is the same order as the most
+effective algorithm which is well known.  <p>
+
+And this algorithm is high degree of parallelism, so parallel speedup
+is obtained using any processors.
+
+<h2><b>Function</b></h2>
+
+<b>Voronoi Diagram</b> of a finite set S of points in the plane is a
+partition so that each region is a set of points which is closer to a
+point in S in the region than to any other points in S.  <p>
+
+This program constructs a <b>Voronoi Diagram</b> of a finite set S of
+given points in the plane.  <p>
+
+It is written in <b>GDCC</b>, parallel constraint logic programming
+language, and you can execute this program on Multi-PSI.
+
+<dl>
+	<dd><img src="020.gif">
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Voronoi Diagram Construction Program [96K] <a
+href="../../../ifs/kbms-clp/pimos/voronoi.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

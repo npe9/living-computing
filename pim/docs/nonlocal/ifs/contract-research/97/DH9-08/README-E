@@ -1,0 +1,45 @@
+
+                IFS Japanese Morphological ANALYSIS PACKAGE
+                       An Interface for Windows95/NT
+                -------------------------------------------
+
+Copyright (C) 1997 by Japan Information Processing Service Co., Ltd.
+              All rights reserved.
+Copyright (C) 1998 SANO Hiroshi
+              All rights reserved.
+
+
+Archive Files
+
+JpnMorph ---+--- COPYRIGHT	Copyright Declarement
+            |
+            +--- README-E	README File
+            |
+            +--- bin\		Interface programs
+            |
+            +--- install\	Instructions for install
+            |
+            +--- help\		Help files
+
+
+
+1. How to Install the package
+
+  Follow the instruction of the install document.
+
+2. How to extract files from the package
+
+(1) Download the WinZip file at the following FTP sites.
+    Web http://www.winzip.com
+(2) Extract files from the ziped file by using WinZip application.
+
+3. Notice
+
+  Please note that the interface is only available for Windows95 and
+WindowsNT(4.0).
+
+
+(*) Microsoft, Windows, Windows95 and WindowsNT are registered
+trademarks of Microsoft Corporation.
+
+-----     -----     -----     -----     -----     -----

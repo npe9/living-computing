@@ -1,0 +1,8 @@
+Bugs of big-Quixote			Sep. 30 1995
+
+	・When you execute qxt-quit command to terminate Qmacs,
+	  the cursor sometimes does not return the *Quixote* window
+	  by reason of a bug of Emacs. If you execute Ctrl-g, you
+	  may restart.
+
+	・You cannot use kanjis on Mule by reason of a bug of Mule.

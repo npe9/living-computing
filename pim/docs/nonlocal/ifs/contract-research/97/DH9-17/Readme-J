@@ -1,0 +1,55 @@
+HiRise制約解消系
+細部 博史
+
+Copyright (C) 1998 Hiroshi HOSOBE
+
+[機能]
+
+HiRiseは制約系のインクリメンタルな解消を行う制約解消系である．HiRiseは
+stay，edit，1次制約を提供し，Borningらにより開発されたDeltaBlue制約解
+消系のように，プログラマーは階層的な選好を持つ制約(すなわち制約階層)を
+指定できる．
+
+HiRiseの特徴はスケーラビリティと信頼性である．HiRiseは，数千個までの連
+立された制約を効率的に解くことができ，理論的には，stay，edit，1次制約
+の組合せとして記述される任意の制約階層を正しく解くことができる．
+
+[コンパイルおよび実行環境]
+
+HiRise制約解消系：
+- ANSI C++ (テンプレート必須)
+
+サンプルプログラム：
+- GNU CC 2.6.3以降
+- GNU CCが対象とする実行環境
+
+デモアプリケーション：
+- Microsoft Visual C++ 5.0
+- Microsoft Windows 95またはNT 4.0
+
+[ファイル構成]
+
+READMEファイル(和/英)：
+Readme-J
+Readme-E
+
+ユーザーズマニュアル：
+readme.txt
+
+HiRise制約解消系ソース：
+HRBase.cpp    HREdit.cpp    HRList.cpp	  HRSolver.cpp	HRVar.cpp
+HRBase.h      HREdit.h	    HRList.h	  HRSolver.h	HRVar.h
+HRCon.cpp     HRLinear.cpp  HRParser.cpp  HRStay.cpp
+HRCon.h	      HRLinear.h    HRParser.h	  HRStay.h
+
+サンプルプログラムおよびmakefile：
+sample.cpp
+makefile
+
+デモアプリケーションソースディレクトリおよびバイナリ：
+demo/
+HiRiseDemo.exe
+
+ソフトウェア利用条件(和/英)：
+use-of-software-J
+use-of-software-E

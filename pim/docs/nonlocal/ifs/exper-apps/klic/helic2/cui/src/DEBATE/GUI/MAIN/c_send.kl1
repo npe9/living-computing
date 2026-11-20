@@ -1,0 +1,160 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_send.
+:- public 
+    goal/4,
+
+    useView/4,
+    useSpPriority/4,
+    useUnit/4,
+
+    view/5,
+    sp/5,
+    unit/5,
+
+    solver/4,
+    pl/4,
+    pt/4,
+    cl/4,
+    similarity/4,
+    weight/4,
+    psiTermSimTB/4,
+    psiTermAttWeight/4.
+            
+:- with_macro pimos. 
+
+%goal
+    goal(AgentName,{DBT,CGS1},Data,Protocol):-true|
+        CGS1 = [get(AgentName,currentGoal,CurrentGoal),
+		get(AgentName,dispGoalList,DispGoalList)|CGS],
+        (   DispGoalList = nil->
+                dbtcui_utility:make_errorProtocol(AgentName,
+			{cui,'Goal file not read',nil},Protocol)
+        ;
+            DispGoalList \= nil->
+                make_protocol(normal(success),goal,AgentName,[{CurrentGoal,DispGoalList}],Protocol)
+        ),
+        Data = {DBT,CGS}.
+
+%useView
+    useView(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,useView,nil,ProtocolList),
+        send(ProtocolList,DBT1,DBT,UseView,Result),
+        make_protocol(Result,useView,AgentName,UseView,Protocol),
+        Data = {DBT,CGS}.
+
+%useSpPriority
+    useSpPriority(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,useView,nil,ProtocolList),
+        send(ProtocolList,DBT1,DBT,UseView,Result),
+        make_protocol(Result,useSpPriority,AgentName,UseView,Protocol),
+        Data = {DBT,CGS}.
+
+%useUnit
+    useUnit(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,useUnit,nil,ProtocolList),
+        send(ProtocolList,DBT1,DBT,UseUnit,Result),
+        make_protocol(Result,useUnit,AgentName,UseUnit,Protocol),
+        Data = {DBT,CGS}.
+
+%view
+    view(AgentName,ViewName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,view,ViewName,ProtocolList),
+        send(ProtocolList,DBT1,DBT,ViewList,Result),
+        make_protocol(Result,view,AgentName,ViewList,Protocol),
+        Data = {DBT,CGS}.
+%sp
+    sp(AgentName,SP,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,sp,SP,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SPList,Result),
+        make_protocol(Result,sp,AgentName,SPList,Protocol),
+        Data = {DBT,CGS}.
+
+%unit
+    unit(AgentName,Unit,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,unit,Unit,ProtocolList),
+        send(ProtocolList,DBT1,DBT,UnitList,Result),
+        make_protocol(Result,unit,AgentName,UnitList,Protocol),
+        Data = {DBT,CGS}.
+
+%solver
+    solver(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,solver,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,Solver,Result),
+        make_protocol(Result,solver,AgentName,Solver,Protocol),
+        Data = {DBT,CGS}.
+
+%pl
+    pl(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,pl,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,PL,Result),
+        make_protocol(Result,pl,AgentName,PL,Protocol),
+        Data = {DBT,CGS}.
+
+%pt
+    pt(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,pt,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,PT,Result),
+        make_protocol(Result,pt,AgentName,PT,Protocol),
+        Data = {DBT,CGS}.
+
+%cl
+    cl(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,cl,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,CL,Result),
+        make_protocol(Result,cl,AgentName,CL,Protocol),
+        Data = {DBT,CGS}.
+
+%similarity
+    similarity(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,similarity,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,TF,Result),
+        make_protocol(Result,similarity,AgentName,TF,Protocol),
+        Data = {DBT,CGS}.
+
+%weight
+    weight(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,weight,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,TF,Result),
+        make_protocol(Result,weight,AgentName,TF,Protocol),
+        Data = {DBT,CGS}.
+
+%psiTermSimTB
+    psiTermSimTB(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,psiTermSimTB,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,TF,Result),
+        make_protocol(Result,psiTermSimTB,AgentName,TF,Protocol),
+        Data = {DBT,CGS}.
+
+%psiTermAttWeight
+    psiTermAttWeight(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,psiTermAttWeight,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,TF,Result),
+        make_protocol(Result,psiTermAttWeight,AgentName,TF,Protocol),
+        Data = {DBT,CGS}.
+
+%%%%%%%%%%%%internal method
+%send
+    send(Protocol,DBT1,DBT,RD,Result):-true |
+        DBT1 = [Protocol|DBT],
+	Protocol = {_,[Protocol1]},
+        is_normal(Protocol1,RD,Result).
+
+%%is_normal
+    is_normal(get_parameter(_,Info1,normal(_)),Info,Result):-true|
+        Info    = Info1,
+        Result  = normal(success).
+otherwise.
+    is_normal(get_parameter(_,_,abnormal(Reason)),_,Result):-true|
+        Result = abnormal(Reason).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,Protocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,Protocol):-true|
+        Protocol = receive(AgentName,ProtocolName,Arguments,_).
+
+

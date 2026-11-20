@@ -1,0 +1,74 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+-->
+<title> (95) Multiple RNA-Sequence Alignment Considering Stem Regions</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (95) Multiple RNA-Sequence Alignment Considering Stem Regions</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/UNIX Machine
+	Environment: PIMOS/UNIX, KLIC
+	Language:    KL1
+	Source Code: 0.3 MB
+	Documents:   Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system refines a rough alignment using a parallel simulated
+annealing algorithm taking into account connected base pairs in RNA
+stem regions.  <p>
+
+<h2><b>Features</b></h2>
+
+In general, the sum-of-pair alignment does not show complete alignment
+in terms of stem structures, but merely indicates some possible stem
+regions.  This system refines the rough alignment with a temperature
+parallel simulated annealing algorithm which optimizes the score
+obtained by connected base pairs and covariance matches. This
+procedure gives us a proper RNA-sequence alignment, from which we can
+specify stem regions. <p>
+
+<h2><b>Function</b></h2>
+
+After a twelve-hour annealing process beginning with a rough alignment
+done by a parallel iterative algorithm (IFS No.75), this system
+generated the final RNA alignment as shown below. The alignment
+identified well-known tRNA stem sets of clover shape.  It is important
+when specifying stem regions correctly to take into account the
+covariance mutations when aligning RNA sequences, because most stem
+regions include many such mutations.<P>
+
+This system can also execute on computers with basic functions of UNIX
+operating system using KLIC.  <p>
+
+<dl>
+        <dd><img src="095.gif">
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Multiple RNA-Sequence Alignment Considering Stem Regions [162K]
+<a href="../../../ifs/exper-apps/klic/RNASA.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

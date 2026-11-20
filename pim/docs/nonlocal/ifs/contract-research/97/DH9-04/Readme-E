@@ -1,0 +1,90 @@
+The CFLP interpreter: Directory Structure
+=========================================
+(c) 1998, Research Institute for Symbolic Computation (RISC-Linz)
+
+This software distribution represents the first skeleton prototype of a
+distributed implementation of a programming language called CFLP embedded into
+the environment of the computer algebra system Mathematica. CFLP is a
+functional-logic language extended with constraint solving facilities.
+
+This distribution is a snapshot of work in progress; the current version 
+of the software can be downloaded from the project Web page
+
+  http://www.risc.uni-linz.ac.at/projects/basic/distcon/
+
+Distribution
+------------
+
+The distribution if the CFLP system is structured as follows:
+
+    Readme-E                  ... this file
+    use-of-software-E         ... conditions for using the software
+    packages/                 ... implementation of the CFLP system
+        CFLPsyntax.nb         ... a palette for interactive use
+	Calculus.m	      ... the implementation packages
+	RewriteRuleDefs.m  
+	RewriteRules.m     
+	Scheduler.m                                   
+	TSolve.m           
+	TermSyntax.m       
+	Terms.m            
+	TypeChecker.m      
+	TypeSyntax.m       
+	Types.m
+	Variables.m
+    documents/                ... the documentation
+	packages/             ... source and documentation of the CFLP system
+	     Calculus.nb          ... as a Mathematica notebook
+             Calculus.nb.ps       ... as a PostScript file (for printing)
+             ... 
+	InstManual.txt        ... the installation manual
+	UserManual.ps         ... the user's manual
+        CFLP.ps               ... the CFLP report (draft)
+        Example/              ... an example for running the system
+           README             ... howto run the example
+           ElDemo.nb          ... the demonstration notebook
+           ElDemo.nb.ps       ... the demonstration notebook (PostScript)
+           Electrical.m       ... auxiliary definitions (package)
+	   Electrical.nb      ... auxiliary definitions (notebook)
+	   Electrical.nb.ps   ... auxiliary definitions (PostScript)
+
+Packages
+--------
+
+The subdirectory 'packages' contains the packages that are necessary to
+run the CFLP interpreter. 
+
+The notebook CFLPsyntax.nb contains a palette for entering expressions in CFLP
+syntax for the convenience of interactive use.
+
+The packages 
+
+	Calculus.m	   
+	RewriteRuleDefs.m  
+	RewriteRules.m     
+	TSolve.m           
+	TermSyntax.m       
+	Terms.m            
+	TypeChecker.m      
+	TypeSyntax.m       
+	Types.m
+	Variables.m
+
+implement the components of the CFLP interpreter. 
+
+- Scheduler.m contains the code for the scheduler which is responsible for
+  distributing constraints to the solvers.
+
+- TypeSyntax.m and TermSyntax.m implement the mechanism for
+  understanding the visual representations of the language.  
+
+- TypeChecker.m contains the implementation of the type checker. 
+
+- RewriteRuleDefs.m and RewriteRues.m mainly contain code for how to
+  handle conditional rewrite rules.
+
+- Calculus.m is the implementation of CFLP inference rules.
+
+The directory documents/packages contains the notebook files that were used
+for creating the packages; these files represent the Mathematica source code
+of the system; the corresponding PostScript files can be used for printing.

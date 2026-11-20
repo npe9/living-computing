@@ -1,0 +1,114 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (35) Dependency Grammar for Japanese:RDG
+</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (35) Dependency Grammar for Japanese:RDG</H2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    SICStus Prolog
+	Source Code: 80 KB
+	Documents:   Brief Manuals (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Japanese dependency grammar for syntactic analysis.<P>
+
+<h2><b>Feature</b></h2>
+
+RDG(Restricted Dependency Grammar) is a Japanese dependency grammar
+for syntactic analysis. In RDG, a constituent which composed of a
+sentence is called a phrase. RDG makes a dependency structure. It is
+not a tree but a connected graph structure. A characteristic of RDG is
+as follows:<P>
+
+<ol>
+
+<li>Grammar rules are generally devided into two functional aspects. 
+The first group is the interpretation of how to make an arc which
+connects a pair of phrases. The second group is the interpretation of
+whether one phrase modifies the other or not.  In RDG, the second
+group depends on global information which made use of the constraints
+among connectivities between arbitrary pair of phrases in a sentence. 
+So we can suppress the generation of useless solutions.
+
+<li>Every phrase should modify more than one phrase on its right. So,
+some linguistic phenomena, themes or ellipses that are major
+characteristics of Japanese can be treated naturally.
+
+<li>RDG has been evaluated based on the experiment using a Japanese
+newspaper editorial, with especially attention given to the number of
+solutions.
+
+</ol>
+
+<h2><b>Configuration</b></h2>
+
+RDG is currently implemented in SICStus Prolog Ver 0.7. In addition to
+RDG, the following programs are provided.
+
+<dl>
+
+<dt>Parser
+
+<dd> It employs a bottom-up parsing algorithm based on a parse table
+which records partial results produced during parsing. The parser
+produces all possible dependency structures that satisfy RDG
+constraints.
+
+<dt>Input data
+
+<dd> The sample input data of RDG.
+
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li>Dependency Grammar for Japanese:RDG [113K] <a
+href="../../../ifs/natural-lang/unix/rdg.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

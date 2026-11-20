@@ -1,0 +1,48 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_showGoal.
+
+:- public     
+    show_goal/3,
+    show_varInfoList/2.
+
+%show_goal
+%    show_goal(_,[Goal],Result):-true|
+%       sifLibrary:message([putb(" "),putb(Goal),putc(key#lf)]),
+%       Result = normal(success).
+
+    show_goal(CurrentGoal,DispGoalList,Result):-true|
+        show_goal1(DispGoalList,0,CurrentGoal,Result).
+
+    show_goal1([],_,_,Result):-true|
+        Result = normal(success).
+    show_goal1([Goal|T],CurrentGoal,CurrentGoal,Result):-true|
+        sifLibrary:message([putb(" * "),putt(CurrentGoal),putb(": "),putb(Goal),putc(key#lf)]),
+        Pos := CurrentGoal+1,
+        show_goal1(T,Pos,CurrentGoal,Result).
+otherwise.
+    show_goal1([Goal|T],Pos1,CurrentGoal,Result):-true|
+        sifLibrary:message([putb("   "),putt(Pos1),putb(": "),putb(Goal),putc(key#lf)]),
+        Pos := Pos1+1,
+        show_goal1(T,Pos,CurrentGoal,Result).
+
+%show_varInfoList
+    show_varInfoList(no,Result):-true|
+        sifLibrary:message([putl("no")]),
+        Result = normal(success).
+    show_varInfoList([],Result):-true|
+        sifLibrary:message([putl("yes")]),
+        Result = normal(success).
+otherwise.
+    show_varInfoList(VarInfoList,Result):-true|
+        show_varInfoList1(VarInfoList,Result).
+
+    show_varInfoList1([],Result):-true|
+        Result = normal(success).
+    show_varInfoList1([VarInfo|T],Result):-true|
+        rbrcui_ioUtility:show_listX(VarInfo,R1),
+        ( wait(R1)->
+                show_varInfoList1(T,Result)).

@@ -1,0 +1,57 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_run.
+
+:- public 
+    run/5.
+            
+:- with_macro pimos.
+
+%run
+    run(AgentName,FileName,Data1,Data,GUIProtocol):-true|
+        dbtgui_runCommandParser:get_commandList(FileName,CommandList,R1),
+        (   R1 = normal(_)->
+                run1(CommandList,AgentName,Data1,Data,GUIProtocol)
+        ;
+            R1 = abnormal(Reason)->
+                Data = Data1,
+                dbtgui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol)
+        ).
+
+%run1
+    run1([],AgentName,{DBT,CGS1},Data,GUIProtocol):-true|
+        CGS1        = [get(AgentName,loadFlag,LoadFlag)|CGS],
+        GUIProtocol = receive(AgentName,loadFlag,[LoadFlag],_R),
+        Data = {DBT,CGS}.
+    run1([CPA|T],AgentName,Data1,Data,GUIProtocol):-true|
+        execute(CPA,AgentName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ;
+        otherwise;
+            true->
+                run1(T,AgentName,Data2,Data,GUIProtocol)
+        ).
+
+%%execute
+    execute({load,  type,FileName},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_load:type(AgentName,FileName,Data1,Data,GUIProtocol).
+    execute({load,  rule,FileName},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_load:rule(AgentName,FileName,Data1,Data,GUIProtocol).
+    execute({load,  view,FileName},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_load:view(AgentName,FileName,Data1,Data,GUIProtocol).
+    execute({load,  query,FileName},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_load:goal(AgentName,FileName,Data1,Data,GUIProtocol).
+    execute({set,   solver,Solver},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_set:solver(AgentName,Solver,Data1,Data,GUIProtocol).
+    execute({set,   goal,Pos},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_set:goal(AgentName,Pos,Data1,Data,GUIProtocol).
+    execute({set,   standpointList,SPList},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_set:standpointList(AgentName,SPList,Data1,Data,GUIProtocol).
+    execute({set,   unitList,UnitList},AgentName,Data1,Data,GUIProtocol):-true|
+        dbtgui_set:unitList(AgentName,UnitList,Data1,Data,GUIProtocol).
+

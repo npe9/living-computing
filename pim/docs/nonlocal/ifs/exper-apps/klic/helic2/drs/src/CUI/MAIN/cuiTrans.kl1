@@ -1,0 +1,63 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_trans.
+
+:- public 
+    goal/5,
+    rule/5,
+    type/5,
+    pom/5.
+
+:- with_macro pimos.
+
+%goal
+    goal(InputFileName,OutputFileName,Data1,Data,Protocol):-true|
+        Data = Data1,
+        rbrcui_defaultName:get_transProgramName(TransProgramName),
+        append_string:append_string([TransProgramName," -g ",
+                InputFileName," ",OutputFileName],TransCommand),
+        unix:system(TransCommand,R1),
+        (   R1 = 0->
+                Protocol = receive(ok,_,_)
+        ;
+        otherwise;
+            true->
+                Protocol = receive(errorInfo,[],_)
+        ).
+
+%rule
+    rule(InputFileName,OutputFileName,Data1,Data,Protocol):-true|
+        Data = Data1,
+        rbrcui_defaultName:get_transProgramName(TransProgramName),
+        append_string:append_string([TransProgramName," -r ",
+                InputFileName," ",OutputFileName],TransCommand),
+        unix:system(TransCommand,R1),
+        (   R1 = 0->
+                Protocol = receive(ok,[],_)
+        ;
+        otherwise;
+            true->
+                Protocol = receive(errorInfo,[],_)
+        ).
+
+%type
+    type(InputFileName,OutputFileName,Data1,Data,Protocol):-true|
+        Data = Data1,
+        ty_top:compile_type(InputFileName,OutputFileName,R2),
+        make_protocol(R2,Protocol).
+
+%pom
+    pom(FileName1,FileName2,Data1,Data,Protocol):-true|
+        Data = Data1,
+        hanjunjo_translater:go(FileName1,FileName2,R2),
+        make_protocol(R2,Protocol).
+
+%%%%%%%%%%%%%internal method
+%make_protocol
+    make_protocol(abnormal(Reason),Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),Protocol):-true|
+        Protocol = receive(ok,[],_).

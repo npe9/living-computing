@@ -1,0 +1,101 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_myOrYourArgumentTable.
+:- public create/2.
+:- with_macro pimos.
+
+    create({SVT},I):-true|
+        initiate(AT,FAT), 
+        loop(I,SVT,AT,FAT).
+
+    initiate(AT,FAT):-true|
+        hset:create(AT),
+        hset:create(FAT).
+
+    loop([],SVT,AT,FAT):-true|
+        SVT  = [],
+        AT   = [],
+        FAT  = [].
+    loop([put({SV,Pos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [put({SVID,Pos})|AT1],
+        loop(T,SVT1,AT1,FAT).
+    loop([remove({SV,Pos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [remove({SVID,Pos})|AT1],
+        FAT = [remove({SVID,Pos})|FAT1],
+        loop(T,SVT1,AT1,FAT1).
+    loop([is_in({SV,Pos},YN)|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT = [in({SVID,Pos},YN)|AT1],
+        loop(T,SVT1,AT1,FAT).
+    loop([refer_argList(ALL)|T],SVT,AT,FAT):-true|
+        AT = [get_all(ALL1)|AT1],
+        refer_argList(ALL1,SVT,SVT1,ALL),
+        loop(T,SVT1,AT1,FAT).
+    loop([refer_finishArgList(ALL)|T],SVT,AT,FAT):-true|
+        FAT = [get_all(ALL1)|FAT1],
+        refer_argList(ALL1,SVT,SVT1,ALL),
+        loop(T,SVT1,AT,FAT1).
+    loop([finish({SV,Pos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [remove({SVID,Pos})|AT1],
+        FAT = [put({SVID,Pos})|FAT1],
+        loop(T,SVT1,AT1,FAT1).
+    loop([is_finish({SV,Pos},YN)|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        FAT = [in({SVID,Pos},YN)|FAT1],
+        loop(T,SVT1,AT,FAT1).
+    loop([change_view(ViewName,Status)|T],SVT,AT,FAT):-true|
+        AT = [get_all(ALL1)|AT1],
+        get_SVIDList(ALL1,SVIDList),
+        SVT = [change_view(ViewName,SVIDList,Status)|SVT1],
+        loop(T,SVT1,AT1,FAT).
+%for counter
+    loop([put({SV,IPos,CPos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [put({SVID,IPos,CPos})|AT1],
+        loop(T,SVT1,AT1,FAT).
+    loop([remove({SV,IPos,CPos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [remove({SVID,IPos,CPos})|AT1],
+        FAT = [remove({SVID,IPos,CPos})|FAT1],
+        loop(T,SVT1,AT1,FAT1).
+    loop([is_in({SV,IPos,CPos},YN)|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT = [in({SVID,IPos,CPos},YN)|AT1],
+        loop(T,SVT1,AT1,FAT).
+    loop([finish({SV,IPos,CPos})|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        AT  = [remove({SVID,IPos,CPos})|AT1],
+        FAT = [put({SVID,IPos,CPos})|FAT1],
+        loop(T,SVT1,AT1,FAT1).
+    loop([is_finish({SV,IPos,CPos},YN)|T],SVT,AT,FAT):-true|
+        SVT = [refer_SVID(SV,SVID,_)|SVT1],
+        FAT = [in({SVID,IPos,CPos},YN)|FAT1],
+        loop(T,SVT1,AT,FAT1).
+
+%%
+    refer_argList([],SVT1,SVT,ArgList):-true|
+        SVT = SVT1,
+        ArgList = [].
+    refer_argList([{SVID,Pos}|T],SVT1,SVT,ArgList):-true|
+        SVT1 = [refer_SV(SVID,SV,_)|SVT2],
+        refer_argList(T,SVT2,SVT,ArgList1),
+        ArgList = [{SV,Pos}|ArgList1].
+    refer_argList([{SVID,IPos,CPos}|T],SVT1,SVT,ArgList):-true|
+        SVT1 = [refer_SV(SVID,SV,_)|SVT2],
+        refer_argList(T,SVT2,SVT,ArgList1),
+        ArgList = [{SV,IPos,CPos}|ArgList1].
+
+    get_SVIDList([],SVIDList):-true|
+        SVIDList = [].
+    get_SVIDList([{SVID,_}|T],SVIDList):-true|
+        get_SVIDList(T,SVIDList1),
+        SVIDList = [SVID|SVIDList1].
+    get_SVIDList([{SVID,_,_}|T],SVIDList):-true|
+        get_SVIDList(T,SVIDList1),
+        SVIDList = [SVID|SVIDList1].

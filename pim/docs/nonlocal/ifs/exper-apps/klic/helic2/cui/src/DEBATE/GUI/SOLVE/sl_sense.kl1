@@ -1,0 +1,31 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_sensitivity.
+
+:- public 
+    get_buttonState/4.
+            
+:- with_macro pimos.
+
+%get_buttonState
+    get_buttonState(CLArg,CS1,CS,ButtonState):-true|
+        slv_LArgUtility:has_backwardLArg(CLArg,           YN1),
+        slv_LArgUtility:has_forwardLArg(        CS1,CS2,  YN2),
+        slv_LArgUtility:get_nextLArg(CLArg,     CS2,CS3,_,YN3),
+        slv_LArgUtility:get_previousLArg(CLArg, CS3,CS,_, YN4),
+
+        add(YN1, [],backward,W1),
+        add(YN2, W1,forward, W2),
+        add(YN3, W2,next,    W3),
+        add(YN4, W3,previous,ButtonState).
+
+%%%%%%%%%%%%%%%%%internal method
+%add
+    add(yes,List1,E,List):-true|
+        List = [E|List1].
+    add(no,List1,_,List):-true|
+        List = List1.
+

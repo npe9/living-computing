@@ -1,0 +1,309 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_LArgUtility.
+
+:- public 
+    get_PArg/2,
+    get_AID/5,
+    get_ruleName/3,
+
+    get_LArgFromAID/5,
+    get_LArgFromDArg/2,
+
+    get_parentLArg/5,
+    get_parentPArg/5,
+    get_parentAID/5,
+    get_parentRuleName/5,
+
+    get_IPos/6,
+
+    get_ruleRelInfo/5,
+
+    has_forwardLArg/3,
+    get_forwardLArg/4,
+    has_backwardLArg/4,
+    get_backwardLArg/5,
+    get_nextLArg/5,
+    get_previousLArg/5.
+
+:- with_macro pimos.
+
+%get_PArg %for display PArg = {SV,APos}
+    get_PArg({SV,APos},PArg):-true|
+        PArg = {SV,APos}.
+    get_PArg({ParentLArg,IPos,CPos},PArg):-true|
+        get_PArg(ParentLArg,{SV,_}),
+        dbt_counterArgumentUtility:get_counterArgument(SV,IPos,CPos,PArg).
+
+%get_AID
+    get_AID(LArg,Pool1,Pool,AID,YN):-true|
+        get_AID1(LArg,Pool1,Pool,AID1,YN),
+        (   YN = yes->
+                AID = AID1
+        ;
+            YN = no->
+                AID = nil
+        ).
+
+    get_AID1({SV,APos},Pool1,Pool,AID,YN):-true|
+        Pool1 = [make(at,AT)|Pool],
+        AT    = [refer_ID({SV,APos},AID,YN)].
+    get_AID1({{SV,_},IPos,CPos},Pool1,Pool,AID,YN):-true|
+        Pool1 = [make(at,AT)|Pool],
+        AT    = [refer_ID({SV,IPos,CPos},AID,YN)].
+otherwise.
+    get_AID1(_,Pool1,Pool,_,YN):-true|
+        Pool = Pool1,
+        YN   = no.
+
+%get_ruleName
+    get_ruleName(LArg,IPos,RuleName):-integer(IPos)|
+        get_PArg(LArg,{SV,_}),
+        dbt_svUtility:get_solution(SV,IPos,ruleName,RuleName).
+    get_ruleName(_,naf(_),RuleName):-true|
+        RuleName = nil.
+
+%get_LArgFromAID
+    get_LArgFromAID(AID,Pool1,Pool,LArg,YN):-true|
+        Pool1 = [make(at,AT)|Pool],
+        AT    = [refer_arg(AID,DArg,YN)],
+        (   YN = yes->
+                get_LArgFromDArg(DArg,LArg)
+        ;
+            YN = no->
+                true
+        ).
+
+%get_LArgFromDArg
+    get_LArgFromDArg({SV,APos},LArg):-true|
+        LArg = {SV,APos}.
+    get_LArgFromDArg({SV,IPos,CPos},LArg):-true|
+        LArg = {{SV,0},IPos,CPos}.
+
+%%for parent 
+
+%get_parentLArg
+    get_parentLArg({SV,APos},Pool1,Pool,ParentLArg,YN):-true|
+        get_parentInfo({SV,APos},Pool1,Pool,{ParentLArg,_,_,_,_,_},YN).
+    get_parentLArg({ParentLArg1,_,_},Pool1,Pool,ParentLArg,YN):-true|
+        Pool       = Pool1,
+        ParentLArg = ParentLArg1,
+        YN         = yes.
+
+%get_parentPArg
+    get_parentPArg({SV,APos},Pool1,Pool,ParentPArg,YN):-true|
+        get_parentInfo({SV,APos},Pool1,Pool,{_,ParentPArg,_,_,_,_},YN).
+    get_parentPArg({ParentLArg,_,_},Pool1,Pool,ParentPArg,YN):-true|
+        Pool       = Pool1,
+        get_PArg(ParentLArg,ParentPArg),
+        YN         = yes.
+
+%get_parentAID
+    get_parentAID({SV,APos},Pool1,Pool,ParentAID,YN):-true|
+        get_parentInfo({SV,APos},Pool1,Pool,{_,_,_,ParentAID,_,_},YN).
+    get_parentAID({{SV,APos},_,_},Pool1,Pool,ParentAID,YN):-true|
+        Pool1 = [make(at,AT)|Pool],
+        AT    = [refer_ID({SV,APos},ParentAID1,YN)],
+        (   YN = yes->
+                ParentAID = ParentAID1
+        ;
+            YN = no->
+                ParentAID = nil
+        ).
+otherwise.
+    get_parentAID(_,Pool1,Pool,ParentAID,YN):-true|
+        Pool = Pool1,
+        ParentAID = nil,
+        YN   = no.
+
+%get_parentRuleName
+    get_parentRuleName({SV,APos},Pool1,Pool,ParentRuleName,YN):-true|
+        get_parentInfo({SV,APos},Pool1,Pool,{_,_,_,_,_,ParentRuleName},YN).
+    get_parentRuleName({ParentLArg,IPos,_},Pool1,Pool,ParentRuleName,YN):-true|
+        Pool = Pool1,
+        get_ruleName(ParentLArg,IPos,ParentRuleName),
+        (   ParentRuleName = nil->
+                YN = no
+        ;
+            ParentRuleName \= nil->
+                YN = yes
+        ).
+
+%get_IPos
+    get_IPos({SV,APos},Pool1,Pool,ParentPArg,IPos,YN):-true| 
+        get_parentInfo({SV,APos},Pool1,Pool,{_,ParentPArg,_,_,IPos,_},YN).
+    get_IPos({ParentLArg,IPos1,_},Pool1,Pool,ParentPArg,IPos,YN):-true| 
+        Pool = Pool1,
+        get_PArg(ParentLArg,ParentPArg),
+        IPos = IPos1,
+        YN = yes.
+
+%get_ruleRelInfo %RuleRelInfo = {R,PR,Rel,SPList}
+    get_ruleRelInfo({SV,APos},{Pool1,Info1},Data,RuleRelInfo,YN):-true| 
+        get_ruleName({SV,APos},APos,RuleName),
+        get_parentInfo({SV,APos},Pool1,Pool,{_,_,_,_,_,ParentRuleName},YN1),
+        (   RuleName \=nil,ParentRuleName\=nil,YN1 = yes->
+                dbtgui_guiUtility:get_unitUnitRelReason(RuleName,ParentRuleName,Info1,Info,Rel,SPList),
+                RuleRelInfo = {RuleName,ParentRuleName,Rel,SPList},
+                Data = {Pool,Info},
+                YN   = yes
+        ;
+        otherwise;
+            true->
+                Data = {Pool,Info1},
+                YN   = no
+        ).
+    get_ruleRelInfo({ParentLArg,IPos,CPos},{Pool,Info1},Data,RuleRelInfo,YN):-true| 
+        get_ruleName(ParentLArg,IPos,ParentRuleName),
+        get_ruleName({ParentLArg,IPos,CPos},0,RuleName),
+        (   RuleName \=nil,ParentRuleName\=nil->
+                dbtgui_guiUtility:get_unitUnitRelReason(RuleName,ParentRuleName,Info1,Info,Rel,SPList),
+                RuleRelInfo = {RuleName,ParentRuleName,Rel,SPList},
+                Data = {Pool,Info},
+                YN   = yes
+        ;
+        otherwise;
+            true->
+                Data = {Pool,Info1},
+                YN   = no
+        ).
+
+%has_forwardLArg
+    has_forwardLArg(CSS1,CSS,YN):-true|
+        CSS1 = [get(forwardList,FL)|CSS],
+        (   FL = []->
+                YN = no
+        ;
+            FL \=[]->
+                YN = yes
+        ).
+
+%get_forwardLArg
+    get_forwardLArg(CSS1,CSS,ForwardLArg,YN):-true|
+        CSS1 = [get(forwardList,FL1)|CSS2],
+        (   FL1 = []->
+                CSS = CSS2,
+                YN  = no
+        ;
+            FL1 \=[]->
+                FL1  = [ForwardLArg|FL],
+                CSS2 = [set(forwardList,FL)|CSS],
+                YN  = yes
+        ).
+
+%has_backwardLArg
+    has_backwardLArg(LArg,Pool1,Pool,YN):-true|
+        get_parentLArg(LArg,Pool1,Pool,_,YN).
+
+%get_backwardLArg
+    get_backwardLArg(LArg,{Pool1,CSS1},Data,BackwardLArg,YN):-true|
+        get_parentLArg(LArg,Pool1,Pool,BackwardLArg,YN),
+        (   YN = yes->
+                CSS1 = [get(forwardList,FL1),set(forwardList,[LArg|FL1])|CSS]
+        ;
+            YN = no->
+                CSS  = CSS1
+        ),
+        Data = {Pool,CSS}.
+
+%get_nextLArg
+    get_nextLArg({SV,APos},Pool1,Pool,NextLArg,YN):-true|
+        dbtgui_guiUtility:is_initialArgument({SV,APos},Pool1,Pool2,YN1),
+        (   YN1 = yes->
+                dbtgui_guiUtility:get_initialArgumentList(Pool2,Pool,IAL),
+                get_nextLArgForInitialArgument(IAL,{SV,APos},NextLArg,YN)
+        ;
+            YN1 = no->
+                Pool = Pool2,
+                YN   = no
+        ).
+    get_nextLArg({ParentLArg,IPos,CPos},Pool1,Pool,NextLArg,YN):-true|
+        Pool = Pool1,
+        get_PArg(ParentLArg,{SV,_}),
+        dbt_issueUtility:get_numOfCounterArgument(SV,IPos,NumOfCA),
+        CPos1 := CPos+1,
+        (   NumOfCA = CPos1->
+                YN = no
+        ;
+            NumOfCA > CPos1->
+                NextLArg = {ParentLArg,IPos,CPos1},
+                YN = yes
+        ).
+%get_previousLArg
+    get_previousLArg({SV,APos},Pool1,Pool,PreviousLArg,YN):-true|
+        dbtgui_guiUtility:is_initialArgument({SV,APos},Pool1,Pool2,YN1),
+        (   YN1 = yes->
+                dbtgui_guiUtility:get_initialArgumentList(Pool2,Pool,IAL),
+                get_previousLArgForInitialArgument(IAL,{SV,APos},PreviousLArg,YN)
+        ;
+            YN1 = no->
+                Pool = Pool2,
+                YN   = no
+        ).
+    get_previousLArg({ParentLArg,IPos,CPos},Pool1,Pool,PreviousLArg,YN):-true|
+        Pool = Pool1,
+        (   CPos = 0->
+                YN = no
+        ;
+            CPos \= 0->
+                CPos1 := CPos-1,
+                PreviousLArg = {ParentLArg,IPos,CPos1},
+                YN = yes
+        ).
+
+
+%%%%%%%internal method
+
+%get_parentInfo
+    get_parentInfo({SV,APos},Pool1,Pool,ParentInfo,YN):-true|
+        Pool1 = [makeList([at,ct],[AT1,CT])|Pool2],
+        AT1   = [refer_ID({SV,APos},ChildAID,YN1)|AT],
+        get_parentInfo1(YN1,ChildAID,{AT,CT},ParentInfo,YN),
+        (   wait(YN)->
+                Pool = Pool2).
+
+    get_parentInfo1(no,_,{AT,CT},ParentInfo,YN):-true|
+        AT = [],CT = [],
+        ParentInfo  = {nil,nil,nil,nil,nil,nil},
+        YN          = no.
+    get_parentInfo1(yes,ChildAID,{AT,CT},ParentInfo,YN):-true|
+        CT = [refer_parent(ChildAID,Parent,YN1)],                       %Parent = {ParentAID,IPos}
+        get_parentInfo2(YN1,Parent,AT,ParentInfo,YN).
+
+    get_parentInfo2(no,_,AT,ParentInfo,YN):-true|
+        AT          = [],
+        ParentInfo  = {nil,nil,nil,nil,nil,nil},
+        YN          = no.
+    get_parentInfo2(yes,{AID,IPos},AT,ParentInfo,YN):-true|
+        AT      = [refer_arg(AID,DArg,YN)],
+        get_LArgFromDArg(DArg,LArg),
+        get_PArg(LArg,PArg),
+        get_ruleName(LArg,IPos,RuleName),
+        ParentInfo = {LArg,PArg,DArg,AID,IPos,RuleName},
+        YN      = yes.
+
+%get_nextLArgForInitialArgument
+    get_nextLArgForInitialArgument([IA],IA,_,YN):-true|
+        YN = no.
+    get_nextLArgForInitialArgument([IA,NextIA1|_],IA,NextIA,YN):-true|
+        NextIA = NextIA1,
+        YN = yes.
+otherwise.
+    get_nextLArgForInitialArgument([_|T],IA,NextIA,YN):-true|
+        get_nextLArgForInitialArgument(T,IA,NextIA,YN).
+
+%get_previousLArgForInitialArgument
+    get_previousLArgForInitialArgument([],_,_,YN):-true|
+        YN = no.
+    get_previousLArgForInitialArgument([IA],IA,_,YN):-true|
+        YN = no.
+    get_previousLArgForInitialArgument([PreviousIA1,IA|_],IA,PreviousIA,YN):-true|
+        PreviousIA = PreviousIA1,
+        YN = yes.
+otherwise.
+    get_previousLArgForInitialArgument([_|T],IA,PreviousIA,YN):-true|
+        get_previousLArgForInitialArgument(T,IA,PreviousIA,YN).
+

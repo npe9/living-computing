@@ -1,0 +1,214 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui.
+
+:- public 
+    go/0.
+            
+:- with_macro pimos.
+
+%go
+    go:-
+        rbrcui_networkHandler:create(NH,R),
+        (   R = normal(_)->
+                merge({NH1,NH2},NH),
+                rbrpom_manager:create(RPM),
+                rbrcui_currentState:create(NH1,CS),
+                loop({RPM,CS},NH2)
+        ;
+            R = abnormal(_)->
+                true
+        ).
+
+    loop(Data,NH1):- true|
+        GetProtocol = get_commandArguments(Command,Parameter,Arguments,R1),
+        NH1 = [GetProtocol|NH],
+        (   R1 = normal(_)->
+                loop1({Command,Parameter,Arguments},Data,NH)
+        ;
+            R1 = abnormal(_)->
+                Data = {[],[]},
+                NH   = []
+        ).
+
+%%loop1
+    loop1({quit,_,_},Data,NH):-true|
+        Data = {[],[]},
+        NH=[].
+    loop1({run,_,[FileName]},Data1,NH1):-true|
+        rbrcui_run:run(FileName,Data1,Data,ProtocolList),
+	send_loop(ProtocolList,NH1,NH),
+	loop(Data,NH).
+otherwise.
+    loop1(CAPA,Data1,NH1):-true|
+        execute(CAPA,Data1,Data,Protocol),
+        NH1 = [Protocol|NH],
+        Protocol = receive(_,_,R),
+        (   wait(R)->
+             loop(Data,NH)).
+
+%%load
+    execute({load,  goal,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:goal(FileName,Data1,Data,Protocol).
+    execute({load,  type,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:type(FileName,Data1,Data,Protocol).
+    execute({load,  rule,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:rule(FileName,Data1,Data,Protocol).
+    execute({load,  pom,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_load:pom(FileName,Data1,Data,Protocol).
+
+%%trans
+    execute({trans,  goal,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        rbrcui_trans:goal(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  type,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        rbrcui_trans:type(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  rule,[FileName1,FileName2]},Data1,Data,Protocol):-true|
+        rbrcui_trans:rule(FileName1,FileName2,Data1,Data,Protocol).
+    execute({trans,  pom, [FileName1,FileName2]},Data1,Data,Protocol):-true|
+        rbrcui_trans:pom( FileName1,FileName2,Data1,Data,Protocol).
+
+%%compile
+    execute({compile,  goal,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:goal(FileName,Data1,Data,Protocol).
+    execute({compile,  type,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:type(FileName,Data1,Data,Protocol).
+    execute({compile,  rule,[FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:rule(FileName,Data1,Data,Protocol).
+    execute({compile,  pom, [FileName]},Data1,Data,Protocol):-true|
+        rbrcui_compile:pom( FileName,Data1,Data,Protocol).
+
+%%set
+    execute({set,   gp,[Pos]},Data1,Data,Protocol):-true|
+        rbrcui_set:goal1(Pos,Data1,Data,Protocol).
+    execute({set,   goal,[Goal]},Data1,Data,Protocol):-true|
+        rbrcui_set:goal(Goal,Data1,Data,Protocol).
+    execute({set,   useView,[View]},Data1,Data,Protocol):-true|
+        rbrcui_set:useView(View,Data1,Data,Protocol).
+    execute({set,   useSpPriority,SPList},Data1,Data,Protocol):-true|
+        rbrcui_set:useSpPriority(SPList,Data1,Data,Protocol).
+    execute({set,   useUnit,UnitList1},Data1,Data,Protocol):-true|
+        (   UnitList1 = [all]->
+                UnitList = all
+        ;
+        otherwise;
+            true->
+                UnitList = UnitList1
+        ),
+        rbrcui_set:useUnit(UnitList,Data1,Data,Protocol).
+    execute({set,   pl,[PL]},Data1,Data,Protocol):-true|
+        rbrcui_set:pl(PL,Data1,Data,Protocol).
+    execute({set,   pt,[PT]},Data1,Data,Protocol):-true|
+        rbrcui_set:pt(PT,Data1,Data,Protocol).
+    execute({set,   cl,[CL]},Data1,Data,Protocol):-true|
+        rbrcui_set:cl(CL,Data1,Data,Protocol).
+    execute({set,   similarity,[Sim]},Data1,Data,Protocol):-true|
+        rbrcui_set:similarity(Sim,Data1,Data,Protocol).
+    execute({set,   weight,[W]},Data1,Data,Protocol):-true|
+        rbrcui_set:weight(W,Data1,Data,Protocol).
+    execute({set,   psiTermSimTB,[PsiTermSimTB]},Data1,Data,Protocol):-true|
+        rbrcui_set:psiTermSimTB(PsiTermSimTB,Data1,Data,Protocol).
+    execute({set,   psiTermAttWeight,[PsiTermAttWeight]},Data1,Data,Protocol):-true|
+        rbrcui_set:psiTermAttWeight(PsiTermAttWeight,Data1,Data,Protocol).
+
+%%send
+    execute({send,  goal,_},Data1,Data,Protocol):-true|
+        rbrcui_send:goal(Data1,Data,Protocol).
+    execute({send,  useView,_},Data1,Data,Protocol):-true|
+        rbrcui_send:useView(Data1,Data,Protocol).
+    execute({send,  useSpPriority,_},Data1,Data,Protocol):-true|
+        rbrcui_send:useSpPriority(Data1,Data,Protocol).
+    execute({send,  useUnit,_},Data1,Data,Protocol):-true|
+        rbrcui_send:useUnit(Data1,Data,Protocol).
+    execute({send,  view,[View]},Data1,Data,Protocol):-true|
+        rbrcui_send:view(View,Data1,Data,Protocol).
+    execute({send,  sp,[SP]},Data1,Data,Protocol):-true|
+        rbrcui_send:sp(SP,Data1,Data,Protocol).
+    execute({send,  unit,Unit1},Data1,Data,Protocol):-true|
+        (   Unit1 = [all]->
+                Unit = all
+        ;
+        otherwise;
+            true->
+                Unit = Unit1
+        ),
+        rbrcui_send:unit(Unit,Data1,Data,Protocol).
+    execute({send,  pl,_},Data1,Data,Protocol):-true|
+        rbrcui_send:pl(Data1,Data,Protocol).
+    execute({send,  pt,_},Data1,Data,Protocol):-true|
+        rbrcui_send:pt(Data1,Data,Protocol).
+    execute({send,  cl,_},Data1,Data,Protocol):-true|
+        rbrcui_send:cl(Data1,Data,Protocol).
+    execute({send,  similarity,_},Data1,Data,Protocol):-true|
+        rbrcui_send:similarity(Data1,Data,Protocol).
+    execute({send,  weight,_},Data1,Data,Protocol):-true|
+        rbrcui_send:weight(Data1,Data,Protocol).
+    execute({send,  psiTermSimTB,_},Data1,Data,Protocol):-true|
+        rbrcui_send:psiTermSimTB(Data1,Data,Protocol).
+    execute({send,  psiTermAttWeight,_},Data1,Data,Protocol):-true|
+        rbrcui_send:psiTermAttWeight(Data1,Data,Protocol).
+
+
+%%tracer
+    execute({set,   tf,[TF]},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_tf(TF,Data1,Data,Protocol).
+    execute({send,  tf,_},Data1,Data,Protocol):-true|
+        rbrcui_tracer:get_tf(Data1,Data,Protocol).
+
+    execute({set,   sr,SR},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_sr(SR,Data1,Data,Protocol).
+    execute({add,   sr,SR},Data1,Data,Protocol):-true|
+        rbrcui_tracer:add_sr(SR,Data1,Data,Protocol).
+    execute({remove,sr,SR},Data1,Data,Protocol):-true|
+        rbrcui_tracer:remove_sr(SR,Data1,Data,Protocol).
+    execute({clear,sr,_},Data1,Data,Protocol):-true|
+        rbrcui_tracer:clear_sr(Data1,Data,Protocol).
+    execute({send,sr,_},Data1,Data,Protocol):-true|
+        rbrcui_tracer:get_sr(Data1,Data,Protocol).
+
+    execute({set,   sg,SG},Data1,Data,Protocol):-true|
+        rbrcui_tracer:set_sg(SG,Data1,Data,Protocol).
+    execute({add,   sg,SG},Data1,Data,Protocol):-true|
+        rbrcui_tracer:add_sg(SG,Data1,Data,Protocol).
+    execute({remove,sg,SG},Data1,Data,Protocol):-true|
+        rbrcui_tracer:remove_sg(SG,Data1,Data,Protocol).
+    execute({clear,sg,_},Data1,Data,Protocol):-true|
+        rbrcui_tracer:clear_sg(Data1,Data,Protocol).
+    execute({send,sg,_},Data1,Data,Protocol):-true|
+        rbrcui_tracer:get_sg(Data1,Data,Protocol).
+
+%%check
+%    execute({check, unit,[UnitName]},Data1,Data,Protocol):-true|
+%        rbrcui_check:unit(UnitName,Data1,Data,Protocol).
+
+%%solve
+    execute({solve,nil,[]},Data1,Data,Protocol):-true|
+       rbrcui_solve:solve(Data1,Data,Protocol).
+    execute({solve,nil,[Goal]},Data1,Data,Protocol):-true|
+       rbrcui_solve:solve(Goal,Data1,Data,Protocol).
+
+%%argument brawzer
+    execute({ab,_,_},Data1,Data,Protocol):-true|
+       rbrcui_argumentBrawzer:go(Data1,Data,Protocol).
+%help
+    execute({send,help,[]},Data1,Data,Protocol):-true|
+	Data = Data1,
+        rbrcui_help:help(Protocol).
+    execute({send,help,[C]},Data1,Data,Protocol):-true|
+	Data = Data1,
+        rbrcui_help:help(C,Protocol).
+otherwise.
+    execute({C,P,A},Data1,Data,Protocol):-true|
+        Data = Data1,
+        rbrcui_utility:make_errorProtocol(
+                {drs,'This command not support',{C,P,A}},Protocol).
+
+
+%%%send_loop
+    send_loop([],NH1,NH):-true|
+	NH = NH1.
+    send_loop([Protocol|T],NH1,NH):-true|
+	NH1 = [Protocol|NH2],
+	send_loop(T,NH2,NH).

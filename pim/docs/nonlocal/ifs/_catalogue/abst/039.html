@@ -1,0 +1,83 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (39) Parallel Parsing System: PAX</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (39) Parallel Parsing System: PAX</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI, Multi-PSI
+	Environment: SIMPOS, PIMOS
+	Language:    ESP, KL1
+	Source Code: 1.5 KB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A parallel parsing system on parallel inference machine.<P>
+
+<h2><b>Structure</b></h2>
+
+PAX translates DCG grammar into kl1 program. The KL1 program can be
+executed parallely on parallel inference macnines.<P>
+
+<pre>
+
+　　　　　　　　　　　　　　┌───────────┐
+　　　　　　　　　　　　　　│ＤＣＧ　Ｇｒａｍｍａｒ│
+　　　　　　　　　　　　　　└───────────┘
+　　　　　　　　　　　　　　　　　　　│
+　　　　　　　　　　　　　　　　　　　Ｖ
+　　　　　　　　　　　　　　┌──────────────┐
+　　　　　　　　　　　　　　│ＰＡＸ　Ｔｒａｎｓｌａｔｏｒ│
+　　　　　　　　　　　　　　└──────────────┘
+　　　　　　　　　　　　　　　　　　　│
+　　　　　　　　　　　　　　　　　　　Ｖ
+　┌────────┐　　　┌──────────┐　　　┌───────────┐
+　│Ｓｅｎｔｅｎｃｅ├──＞│ＫＬ１Ｐｒｏｇｒａｍ├──＞│Ｔｒａｓｅ　Ｔｒｅｅｓ│
+　└────────┘　　　└──────────┘　　　└───────────┘
+
+
+</pre>
+
+<h2><b>Function</b></h2>
+
+In practical natural language processing systems quick response is
+indispensable. PAX parses input sentence in parallel thus anables such
+systems to respond quickly.  <p>
+
+PAX searches for number of parsing trees at once(OR parallelism),and
+creates sub-trees from number of different places in a input
+sentence(AND parallelism). Utilizing these two kinds of
+parallelisms,PAX searches all the parsing trees in a short time.  <p>
+
+Grammar developer does not have to concern about parallel processing
+at all,because PAX translates a grammar in DCG format into KL1 program
+automatically. And in many cases the parsing will speed up.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Parallel Parsing System: PAX [75K] <a
+href="../../../ifs/natural-lang/pimos/pax.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

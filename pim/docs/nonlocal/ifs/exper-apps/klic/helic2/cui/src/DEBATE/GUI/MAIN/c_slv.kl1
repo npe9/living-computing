@@ -1,0 +1,109 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_solve.
+
+:- public 
+    solve/5,
+    solve/4.
+
+:- with_macro pimos. 
+
+    solve(AgentName,Goal,Data1,Data,Protocol):-true|
+        dbtcui_set:goal(AgentName,Goal,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(_,errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ;
+            Protocol1 = receive(_,ok,_,_)->
+                solve(AgentName,Data2,Data,Protocol)
+        ).
+
+    solve(AgentName,{DBT1,CGS1},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,execute,solve,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,ST,R1),
+        (   R1 = normal(success)->
+                show_variable(ST,AgentName,CGS1,CGS,Protocol)
+        ;
+            R1 = abnormal(Reason)->
+                CGS = CGS1,
+                dbtcui_utility:make_errorProtocol(AgentName,Reason,Protocol)
+        ),
+        Data = {DBT,CGS}.        
+
+%send
+    send(Protocol,DBT1,DBT,ST,Result):-true |
+        DBT1 = [Protocol|DBT],
+	Protocol = {_,[Protocol1]},
+        is_normal(Protocol1,ST,Result).
+
+%%is_normal
+    is_normal(execute(solve,_,ST1,normal(_)),ST,Result):-true|
+        ST     = ST1,
+        Result = normal(success).
+    is_normal(execute(solve,_,_,abnormal(Reason)),_,Result):-true|
+        Result = abnormal(Reason).
+
+%%%%%%%%%show variable
+    show_variable([],AgentName,CGS1,CGS,Protocol):-true|
+        CGS1      = [set(AgentName,st,nil)|CGS],
+        Protocol = receive(AgentName,varInfoList,no,_).
+otherwise.
+    show_variable(ST,AgentName,CGS1,CGS,Protocol):-true|
+        CGS1 = [set(AgentName,st,ST)|CGS2],
+        show_varInfoList(ST,AgentName,CGS2,CGS,Protocol).
+
+%show_varInfoList
+    show_varInfoList(ST,AgentName,CGS1,CGS,Protocol):-true|
+        get_varInfoList(ST,AgentName,CGS1,CGS,VarInfoList),
+        Protocol = receive(AgentName,varInfoList,VarInfoList,_).
+
+    get_varInfoList(ST,AgentName,CGS1,CGS,VarInfoList):-true|
+        CGS1 = [ get(AgentName,ingiEnvList,IngiEnvList),
+                get(AgentName,currentGoal,Pos)|CGS],
+        get_element(IngiEnvList,0,Pos,IngiEnv),
+        vector(IngiEnv,L,_),
+        (   L = 1->
+                VarInfoList = []
+        ;
+            L \=1->
+                get_varInfoList1(ST,IngiEnv,L,VarInfoList)
+        ).
+
+    get_varInfoList1([],_,_,VarInfoList):-true|
+        VarInfoList = [].
+%oosaki modify
+%    get_varInfoList1([{Env,_,_}|T],IngiEnv,L,VarInfoList):-true|
+    get_varInfoList1([{env(Env,_),_,_}|T],IngiEnv,L,VarInfoList):-true|
+        get_varInfo(1,L,IngiEnv,Env,VarInfo),
+        get_varInfoList1(T,IngiEnv,L,VarInfoList1),
+        VarInfoList = [VarInfo|VarInfoList1].
+
+    get_varInfo(L,L,_,_,VarInfo):-true|
+        VarInfo = [].
+otherwise.
+    get_varInfo(Pos,L,IngiEnv,Env,VarInfo):-true|
+        vector_element(IngiEnv,Pos,Ingi,_),
+        vector_element(Env,Pos,Value1,_),
+        ( Value1 = 0->
+                Value = "?"
+        ;
+        otherwise;
+          true->
+                reverse_translate:reverse_translate(1,{Value1,Env},Value)
+        ),
+        append_string:append_string([Ingi,"=",Value],Display),
+        Pos1 := Pos+1,
+        get_varInfo(Pos1,L,IngiEnv,Env,VarInfo1),
+        VarInfo = [Display|VarInfo1].
+
+%%%%%%%
+    get_element([H|_],L,L,E):-true|
+        E = H.
+otherwise.
+    get_element([_|T],Pos1,L,E):-true|
+        Pos := Pos1+1,
+        get_element(T,Pos,L,E).
+

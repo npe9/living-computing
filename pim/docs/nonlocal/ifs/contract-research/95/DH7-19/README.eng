@@ -1,0 +1,42 @@
+===========================================================================
+                            R E A D M E
+
+  Copyright (C) 1996  Makoto Haraguchi, Tokuyasu Kakuta, Yoshiaki Okubo
+
+      A Study on Legal Reasoning based on Goal-Dependent Abstraction
+
+              Makoto Haraguchi (Hokkaido University)
+
+                         January 21, 1997
+
+===========================================================================
+
+This directory contains the source files and the documents relevant to
+"legal reasoning system by analogy based on Goal-Dependent Abstraction". 
+These files are shown as follows: 
+
+    README ............. List of the files (in Japanese)
+    README.english ..... List of the files (This file)
+    INSTALL ............ Installation Manual
+    advertise.txt ...... Material for advertisement (in Japanese)
+    advertise.english .. Material for advertisement (in English)
+    manual.txt ......... User's Manual
+    name.txt ........... Copyright
+    user.txt ........... Imagination of the users
+    pub.txt ............ List of the publication
+    src/ ............... Directory for Source Files
+      main.kl1 ......... Main Module
+      newgda.kl1 ....... NEWGDA System Modules
+    sample/ ............ Directory for Sample Data Files
+      demo.in .......... Sample input data based on 'demo.cl'
+      demo.cl .......... Sample knowledge
+    doc/ ............... Directory for Documents
+      newgda.txt ....... Brief about our system
+      catalog.txt ...... Catalog for advertisement (Previous version)
+      catalog.html ..... HTML file corresponds to Catalog file
+
+---------------------------------------------------------------------------
+                               Tokusyasu Kakuta kaku@cs.dis.titech.ac.jp
+                                                kaku@db.huee.hokudai.ac.jp
+
+

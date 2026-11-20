@@ -1,0 +1,142 @@
+========================================================
+(C)1993, 1994, 1995 Institute for New Generation Computer Technology
+(Read COPYRIGHT for detailed information.)
+========================================================
+
+KL1 to C compiler system: KLIC (version 2.0)
+=================================================
+Last Revision: April 24, 1995
+Takashi Chikayama (Univ. of Tokyo)
+Tetsuro Fujise (ICOT)
+Daigo Sekita (Mitsubishi Research Inst.)
+
+[1] What is KLIC
+
+KLIC is an implementation of a concurrent logic programming language
+KL1.  KL1 is based on a flat version of the Guarded Horn Clauses (GHC)
+language.  GHC is a member of so-called commited-choice logic
+programming language family and has sibblings such as Concurrent
+Prolog, Parlog, Janus and Fleng.
+
+The KLIC implementation compiles KL1 programs into C programs, then
+compiles them using C compilers of the host system, and then links the
+objects with runtime libraries (including libraries provided by UNIX).
+
+This distribution includes two parallel implementations. One is a
+distributed memory implementation, which is currently based on a free
+interprocess communication libary, PVM (Parallel Virtual Machine).
+And anothor is shared memory implementation which is avairable on SUN
+SparcCenter and DEC Alpha.  
+
+  KLIC --+-- sequential impl.
+         |
+         +-- parallel impl. ---+--- distributed memory impl.
+                               |
+                               +--- shared memory impl.
+
+These parallel implementations are ``beta versions''. Some
+inconveniences still remains.  See the manuals under the directory
+"documents" for details.  
+
+[2] Execution Environment
+
+The KLIC compiler that translates KL1 programs into C programs is
+written in KL1 itself.  Included in the distribution is the compiler
+already compiled into C, along with the original KL1 source files.
+
+KL1 programs compiled by the KLIC compiler have to be compiled by a C
+compiler and linked with the KLIC runtime library and libraries
+provided by UNIX.
+
+The system is meant to be portable to most UNIX systems.  The
+sequential system has been tested on many UNIX systems, and runs on
+virtually any system.
+
+Sequential Implementation:
+
+Avirable on many platforms, including Sun Sparc, DEC Alpha, Linux on
+IBM-PC.
+
+Parallel Implementation:
+
+* For the distributed memory parallel implementation, PVM (3.3.2 or
+later) is required. This version must be available if the sequential
+implementation KLIC and PVM are both available.
+
+* The shared memory parallel implementation is running on only the
+following platform. 
+
+	SparcCenter 2000 running SunOS 5.3 (Solaris 2.3)
+		with gcc-2.5.7
+	DEC 7000 AXP running OSF1
+		with gcc-2.5.8
+
+We should be obliged if you would report any successful or failed
+installations on systems other than the above-listed ones to the
+following address.
+
+	klic@icot.or.jp
+
+[3] Documents
+
+A manual of the system is provided in texinfo format with the
+distribution.  The source of the manual and preformatted info and dvi
+files should be found under the directory "documents".
+
+[4] Files
+
+See the file MANIFEST.
+
+[5] Installation
+
+Installing the runtime system requires running the configuration
+script Configure in the root directory of the KLIC system, and running
+make.  See the file INSTALL for details.
+
+[6] Functions provided
+
+This system provides the basic execution mechanism for KL1 programs.
+
+In addition to the basic functions, following functions are provided.
+
+	- Some built-in predicates (integer and floating point
+	  arithmetics, etc.)
+	- Strings, vectors and their primitive operations
+	- Tracer (stepping, spying, etc)
+	- Input/output including asynchronous I/O on sockets
+	  (not on some systems)
+	- Priority control mechanisms
+	- Parallel execution mechanisms
+
+[7] Bugs
+
+- Manuals are still incomplete.
+
+- Parallel vesions are still incomplete.
+
+- Many mandatory features are missing.
+
+- We are sure there are many others.
+
+Please send bug reports and comments on the system to the following
+address.
+
+	klic-bugs@icot.or.jp
+
+Please do let us know of all bugs or inconveniences you find.  That'll
+help us improve the subsequent versions for all the users.
+
+[8] Announcements and Information Exchange
+
+Announcements of bugs, bug fixes, availability of newer versions and
+so on will be made on a mailing list with the following address.
+
+	klic-users@icot.or.jp
+
+This same mailing list may also be used to exchange information among
+users.
+
+Please send a request mail to the following address to register in or
+delete from this mailing list.
+
+	klic-requests@icot.or.jp

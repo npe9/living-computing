@@ -1,0 +1,103 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_networkHandler.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create(I,R):-true|
+        initiate(R),
+        loop(I).
+
+%initiate
+    initiate(R):-true|
+        R = normal(success).
+
+%loop
+    loop([]):-true|
+        true.
+    loop([get_commandArguments(Command,AgentName,Parameter,Arguments,Result)|T]):-true|
+        get_commandArguments(Command,AgentName,Parameter,Arguments,Result),
+        loop(T).
+    loop([receive(AgentName,Parameter,Arguments,Result)|T]):-true|
+        receive(AgentName,Parameter,Arguments,Result),
+        loop(T).
+%    loop([show(AgentName,Parameter,Arguments,Result)|T]):-true|
+%        show(AgentName,Parameter,Arguments,Result),
+%        loop(T).
+
+%get_commandArguments1
+    get_commandArguments(Command,AgentName,Parameter,Arguments,Result):-true|
+        dbtcui_parser1:get_commandArguments(Command,AgentName,Parameter,Arguments,Result).
+
+%receive
+    receive(AgentName,Parameter,Arguments,Result):-true|
+        receive1(Parameter,Arguments,AgentName,R1),
+        (   wait(R1)->
+                Result = normal(success)).
+
+%receive1
+%before start debate
+    receive1(useView,View,AgentName,Result):-true|
+        dbtcui_showPom:show_useView(View,AgentName,Result).
+    receive1(useSpPriority,View,_,Result):-true|
+        dbtcui_showPom:show_useSpPriority(View,Result).
+    receive1(useUnit,UnitList,_,Result):-true|
+        dbtcui_showPom:show_useUnit(UnitList,Result).
+
+    receive1(view,ViewList,AgentName,Result):-true|
+        dbtcui_showPom:show_view(ViewList,AgentName,Result).
+    receive1(sp,SPList,_,Result):-true|
+        dbtcui_showPom:show_sp(SPList,Result).
+    receive1(unit,UnitList,_,Result):-true|
+        dbtcui_showPom:show_unit(UnitList,Result).
+
+    receive1(goal,[{CurrentGoal,DisplayGoal}],_,Result):-true|
+        dbtcui_showGoal:show_goal(CurrentGoal,DisplayGoal,Result).
+
+
+    receive1(solver,Solver,_,Result):-true|  
+        dbtcui_ioUtility:show_term("Solver",Solver,Result).
+    receive1(cl,infinite,_,Result):-true|  
+        dbtcui_ioUtility:show_term("CL",-1,Result).
+    receive1(cl,CL,_,Result):-integer(CL)|  
+        dbtcui_ioUtility:show_term("CL",CL,Result).
+    receive1(similarity,Sim,_,Result):-true|  
+        dbtcui_ioUtility:show_term("Similarity",Sim,Result).
+    receive1(weight,W,_,Result):-true|  
+        dbtcui_ioUtility:show_term("Weight",W,Result).
+    receive1(psiTermSimTB,PsiTermSimTB,_,Result):-true|  
+        dbtcui_ioUtility:show_term("PsiTermSimTB",PsiTermSimTB,Result).
+    receive1(psiTermAttWeight,PsiTermAttWeight,_,Result):-true|  
+        dbtcui_ioUtility:show_term("PsiTermAttWeight",PsiTermAttWeight,Result).
+
+    receive1(tf,TF,_,Result):-true|  
+        dbtcui_ioUtility:show_term("TraceFlag",TF,Result).
+    receive1(sr,SR,_,Result):-true|  
+        dbtcui_ioUtility:show_term("SpyRule",SR,Result).
+    receive1(sg,SG,_,Result):-true|  
+        dbtcui_ioUtility:show_term("SpyGate",SG,Result).
+
+    receive1(varInfoList,VarInfoList,_,Result):-true|  
+        dbtcui_showGoal:show_varInfoList(VarInfoList,Result).
+%%common 
+    receive1(ok,_,_,Result):-true|  
+        dbtcui_ioUtility:show_string(nil,"ok",Result).
+    receive1(errorInfo,[Reason],_,Result):-true|  
+        dbtcui_ioUtility:show_error(Reason,Result).
+    receive1(errorInfo,[],_,Result):-true|  
+        Result = normal(success).
+    receive1(pl,PL,_,Result):-true|  
+        dbtcui_ioUtility:show_term("Print Length",PL,Result).
+    receive1(pt,PT,_,Result):-true|  
+        dbtcui_ioUtility:show_term("Print Type",PT,Result).
+    receive1(help,Help,_,Result):-true|  
+        dbtcui_ioUtility:show_listY(Help,Result).
+
+

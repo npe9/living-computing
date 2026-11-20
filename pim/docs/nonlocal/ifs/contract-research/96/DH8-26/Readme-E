@@ -1,0 +1,67 @@
+## -*- PARCAR/KP Parallel Abductive Reasoning System on KLIC+PVM -*- ##
+## Copyright (C) 1997  Shohei Kato     Dept. of AI & Comp. Sci.,     ##
+##                                     Nagoya Inst. of Tech, JAPAN   ##
+
+
+File Directory:
+
+.:
+----- Size - File Name ---- Contents ----------------------------------
+      3567   Readme-E       This File
+      3096   Readme-J       This File (in Japanese)
+      1304   specification  Specification (in Japanese)
+      3157   Manual-E       User Manual
+      4067   Manual-J       User Manual (in Japanese)
+      1234   Makefile       Makefile for Installation
+       500   userdef.h      User Definitions
+-----------------------------------------------------------------------
+
+examples:                         Example Diagnostic Problems
+----- Size - File Name ---- Contents ----------------------------------
+            Format          Format of Example Problems
+      2039  ex_1             1-bit Ripple Carry Adder Circuit
+      3005  ex_2             2-bit Ripple Carry Adder Circuit
+      3971  ex_3             3-bit Ripple Carry Adder Circuit
+      5903  ex_5             5-bit Ripple Carry Adder Circuit
+      8801  ex_8             8-bit Ripple Carry Adder Circuit
+     10777  ex_10           10-bit Ripple Carry Adder Circuit
+     11786  ex_11           11-bit Ripple Carry Adder Circuit
+     12796  ex_12           12-bit Ripple Carry Adder Circuit
+     13804  ex_13           13-bit Ripple Carry Adder Circuit
+     14813  ex_14           14-bit Ripple Carry Adder Circuit
+     15822  ex_15           15-bit Ripple Carry Adder Circuit
+     16831  ex_16           16-bit Ripple Carry Adder Circuit
+     17840  ex_17           17-bit Ripple Carry Adder Circuit
+     18849  ex_18           18-bit Ripple Carry Adder Circuit
+     19858  ex_19           19-bit Ripple Carry Adder Circuit
+     20867  ex_20           20-bit Ripple Carry Adder Circuit
+------------------------------------------------------------------------
+
+master:
+----- Size - File Name ---- Contents -----------------------------------
+      1472  Makefile.aimk   Makefile for Master Processor
+      3313  ans_ck.c        Packet Reception Process on the Master Side
+      2678  buf.c           Communication Buffering on the Master Side
+      3330  multibuf.c      Construction of Packet to send to Slave Side
+      3717  output.c        Output
+      9689  parcar.c        Toplevel of the PARCAR/KP
+      2326  parcar.h        Header File of the PARCAR/KP
+       617  parcarhosts     Configuration of Processor Architecture
+------------------------------------------------------------------------
+
+slave:
+----- Size - File Name ---- Contents -----------------------------------
+      2141  Makefile.aimk   Makefile for Slave Processors
+      5926  convert.kl1     Data Conversion for language C
+      6904  encode.kl1      Data tranforming for Communication <1>
+      4361  lib.kl1         Data tranforming for Communication <2>
+      1990  loadave.kl1     Estimate of load-average
+      1452  main.kl1        Toplevel of the Slave Side
+      7037  pvm.kl1         Process at the Non-block Communication 
+      6530  refutation.kl1  SLD-refutation
+     15104  slave.kl1       Main Program on the Slave Side
+      1666  term_buf.c      Communication Buffering on the Slave Side
+       298  term_buf.h      Header File of <term_buf.c>
+      2251  time.kl1        Timing Control for Subgoal Distribution
+      8419  variable.kl1    Pre-process of the Above Data tranforming 
+------------------------------------------------------------------------

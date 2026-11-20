@@ -1,0 +1,348 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_counter.
+:- public
+    dr/5,
+    dr2_top_for_CA/8,
+    dr20_for_CA/9.
+:- with_macro pimos.
+
+dr(TF,ST,RM,NewST,CntD):-
+    dr0(TF,ST,RM,NewST0,CntD),
+    reduce_fail(NewST0,NewST).
+
+dr0(not_counter,ST,RM,NewST,CntD):-
+    dr00(ST,RM,NewST,not_counter,CntD).
+dr0(not_top,ST,RM,NewST,CntD):-
+    dr00(ST,RM,NewST,not_top,CntD).
+dr0(counter_top,ST,RM,NewST,CntD):-
+    dr_top(ST,RM,NewST,CntD).
+
+dr_top([],RM,NewST,_CntD):-
+    RM = [],
+    NewST = [].
+dr_top([{Env,HIDT,ST}|STT],RM,NewST,CntD):-
+    RM = {RM1,RM2},
+    dr1_top(ST,Env,HIDT,RM1,_Env1,_HIDT1,Out,CntD),
+    dr_top(STT,RM2,NewSTT,CntD),
+    NewST = [Out|NewSTT].
+
+dr1_top(ST,Env,HIDT,RM,Env1,HIDT1,ST1,CntD):-
+   rbr_solution_table:get_elementN(0,ST,OldData,STm),
+   dr2_top(OldData,Env,HIDT,STm,RM,Env1,HIDT1,ST1,CntD).
+
+%$dr2_top({succ,Con,RuleName,ChildList},
+dr2_top(Sol,
+                Env,HIDT,ST,RM,Env1,HIDT1,Out,CntD):-
+    vector_element(Sol,0,succ),
+    vector_element(Sol,1,Con),
+    vector_element(Sol,2,RuleName),
+    vector_element(Sol,3,ChildList),
+    vector_element(Sol,4,Sim) |
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM,Env1,HIDT1,{SAI,_},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_solution_table:put_elementN(0,STm1,
+                        {succ,Con,RuleName,ChildList,c_top(Jin),SAI,nil,Sim},ST1),
+    Out = {{Env1,HIDT1,ST1},c_top,Jin}.
+dr2_top({fail,_Entry},
+                Env,HIDT,_ST,RM,Env1,HIDT1,Out,_CntD):-
+    RM = [], Env1 = Env, HIDT1 = HIDT,
+    Out = fail.
+
+dr00([],RM,NewST,_,_CntD):-
+    RM = [],
+    NewST = [].
+dr00([{Env,HIDT,ST}|STT],RM,NewST,CF,CntD):-
+    RM = {RM1,RM2},
+    dr10(ST,Env,HIDT,RM1,_Env1,_HIDT1,Out,CF,CntD),
+    dr00(STT,RM2,NewSTT,CF,CntD),
+%    NewST = [{{Env1,HIDT1,ST1},TR,SH}|NewSTT].
+    NewST = [Out|NewSTT].
+
+dr10(ST,Env,HIDT,RM,Env1,HIDT1,ST1,CF,CntD):-
+   rbr_solution_table:get_elementN(0,ST,OldData,STm),
+   dr20(OldData,Env,HIDT,STm,0,RM,Env1,HIDT1,ST1,CF,CntD).
+
+%$dr20({succ,Con,Rule,ChildList},
+dr20(Sol,
+                Env,HIDT,ST,Index,RM,Env1,HIDT1,Out,CF,CntD):-
+    vector_element(Sol,0,succ),
+    vector_element(Sol,1,Con),
+    vector_element(Sol,2,Rule),
+    vector_element(Sol,3,ChildList),
+    vector_element(Sol,4,Sim) |
+    RM = {RM1,RM2,RM3},
+    counter_solve(Con,Env,HIDT,RM1,CST,CntD),
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM2,Env1,HIDT1,{SAIown,_SAIm},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+%    update_SAI(SAIm,J,Index,SAI1),
+    rbr_solution_table:put_elementN(Index,STm1,
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,Sim},ST1),
+    J = {TR,SH},
+    get_succ_out(CF,Env1,HIDT1,ST1,TR,SH,Out).
+otherwise.
+dr20(_Element,
+                Env,HIDT,ST,_Index,RM,Env1,HIDT1,Out,CF,_CntD):-
+   RM = [],
+   get_fail_out(CF,ST,Env,HIDT,Env1,HIDT1,Out).
+
+get_succ_out(not_top,Env,HIDT,ST,TR,SH,Out):-
+    Out = {{Env,HIDT,ST},TR,SH}.
+get_succ_out(not_counter,Env,HIDT,ST,_TR,_SH,Out):-
+    Out = {Env,HIDT,ST}.
+
+get_fail_out(not_counter,ST,Env,HIDT,Env1,HIDT1,Out):-
+    Env1 = Env, HIDT1 = HIDT, Out = {Env,HIDT,ST}.
+get_fail_out(not_top,_ST,Env,HIDT,Env1,HIDT1,Out):-
+    Env1 = Env, HIDT1 = HIDT, Out = fail.
+
+dr_child([],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1,_CntD):-
+    Env1 = Env, 
+    HIDT1 = HIDT,
+    SAI1 = SAI,
+    RM = [],
+    ST1 = ST.
+dr_child([Index|CL],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1,CntD):-
+    RM = {RM1,RM2},
+    dr10SAI(Index,ST,Env,HIDT,SAI,RM1,Envm,HIDTm,SAIm,STm,not_top,CntD),
+    dr_child1(CL,Envm,HIDTm,STm,SAIm,RM2,Env1,HIDT1,SAI1,ST1,CntD).
+
+dr10SAI(Index,ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF,CntD):-
+   integer(Index) |
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr20SAI(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF,CntD).
+dr10SAI(naf(Index),ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF,_CntD):-
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr_naf(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF).
+
+dr_naf({fail,Con},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{1,1},Index,SAIo1),
+    update_SAI(SAIa,{1,1},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    rbr_solution_table:put_elementN(Index,ST,
+                        {4,Con},ST1),
+    RM = [], Env1 = Env, HIDT1 = HIDT.
+dr_naf({1,_Con,_NST},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{2,2},Index,SAIo1),
+    update_SAI(SAIa,{2,2},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+otherwise.
+dr_naf({_,_Con,_NST},
+                Env,HIDT,{SAIo,SAIa},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIo,{1,1},Index,SAIo1),
+    update_SAI(SAIa,{1,1},Index,SAIa1),
+    SAI1 = {SAIo1,SAIa1},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+
+%$dr20SAI({succ,Con,Rule,ChildList},
+dr20SAI(Sol,
+                Env,HIDT,SAI,ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF,CntD):-
+    vector_element(Sol,0,succ),
+    vector_element(Sol,1,Con),
+    vector_element(Sol,2,Rule),
+    vector_element(Sol,3,ChildList),
+    vector_element(Sol,4,Sim) |
+    RM = {RM1,RM2,RM3},
+    counter_solve(Con,Env,HIDT,RM1,CST,CntD),
+    dr_child(ChildList,Env,HIDT,ST,SAI,RM2,Env1,HIDT1,{SAIown,SAIm},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+    update_SAI(SAIm,J,Index,SAIall),
+    update_SAI(SAIown,J,Index,SAIown1),    
+    SAI1 = {SAIown1,SAIall},
+    rbr_solution_table:put_elementN(Index,STm1,
+%$                        {succ,Con,Rule,ChildList,J,SAIown,CST1},ST1).
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,Sim},ST1).
+dr20SAI({fail,_Entry},
+                Env,HIDT,SAI,ST,_Index,RM,Env1,HIDT1,SAI1,ST1,_CF,_CntD):-
+   RM = [],
+   Env1 = Env, HIDT1 = HIDT, SAI1 = SAI, ST1 = ST.
+
+dr_child1([],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1,_CntD):-
+    Env1 = Env, 
+    HIDT1 = HIDT,
+    SAI1 = SAI,
+    RM = [],
+    ST1 = ST.
+dr_child1([Index|CL],Env,HIDT,ST,SAI,RM,Env1,HIDT1,SAI1,ST1,CntD):-
+    RM = {RM1,RM2},
+    dr10SAI1(Index,ST,Env,HIDT,SAI,RM1,Envm,HIDTm,SAIm,STm,not_top,CntD),
+    dr_child1(CL,Envm,HIDTm,STm,SAIm,RM2,Env1,HIDT1,SAI1,ST1,CntD).
+
+dr10SAI1(Index,ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF,CntD):-
+   integer(Index) |
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr20SAI1(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF,CntD).
+dr10SAI1(naf(Index),ST,Env,HIDT,SAI,RM,Env1,HIDT1,SAI1,ST1,CF,_CntD):-
+   rbr_solution_table:get_elementN(Index,ST,OldData,STm),
+   dr_naf1(OldData,Env,HIDT,SAI,STm,Index,RM,Env1,HIDT1,SAI1,ST1,CF). 
+
+dr_naf1({fail,Con},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{1,1},Index,SAIb1),
+%    update_SAI(SAI,{1,1},Index,SAI1),
+    update_SAI(SAI,{1,1},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    rbr_solution_table:put_elementN(Index,ST,
+                        {4,Con},ST1),
+    RM = [], Env1 = Env, HIDT1 = HIDT.
+dr_naf1({1,_Con,_NST},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{2,2},Index,SAIb1),
+    update_SAI(SAI,{2,2},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+otherwise.
+dr_naf1({_,_Con,_NST},
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+    update_SAI(SAIb,{1,1},Index,SAIb1),
+    update_SAI(SAI,{1,1},Index,SAIm),
+    SAI1 = {SAIb1,SAIm},
+    RM = [], Env1 = Env, HIDT1 = HIDT, ST1 = ST.
+
+%$dr20SAI1({succ,Con,Rule,ChildList},
+dr20SAI1(Sol,
+                Env,HIDT,{SAIb,SAI},ST,Index,RM,Env1,HIDT1,SAI1,ST1,_CF,CntD):-
+    vector_element(Sol,0,succ),
+    vector_element(Sol,1,Con),
+    vector_element(Sol,2,Rule),
+    vector_element(Sol,3,ChildList),
+    vector_element(Sol,4,Sim) |
+    RM = {RM1,RM2,RM3},
+    counter_solve(Con,Env,HIDT,RM1,CST,CntD),
+    dr_child(ChildList,Env,HIDT,ST,{[],SAI},RM2,Env1,HIDT1,{SAIown,SAIm},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+    update_SAI(SAIm,J,Index,SAIall),
+    update_SAI(SAIown,J,Index,SAIown1),    
+    append_SAI(SAIown1,SAIb,SAIb1),
+    SAI1 = {SAIb1,SAIall},
+    rbr_solution_table:put_elementN(Index,STm1,
+%$                        {succ,Con,Rule,ChildList,J,SAIown,CST1},ST1).
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,Sim},ST1).
+dr20SAI1({fail,_Entry},
+                Env,HIDT,SAI,ST,_Index,RM,Env1,HIDT1,SAI1,ST1,_CF):-
+   RM = [],
+   Env1 = Env, HIDT1 = HIDT, SAI1 = SAI, ST1 = ST.
+
+update_SAI([],J,Index,SAI1):-
+    SAI1 = [{J,1,[Index]}].
+update_SAI([{J,N,List}|T],J,Index,SAI1):-
+    SAI1 = [{J,~(N+1),[Index|List]}|T].
+otherwise.
+update_SAI([H|T],J,Index,SAI1):-
+    update_SAI(T,J,Index,SAI1T),
+    SAI1 = [H|SAI1T].
+
+append_SAI([H|T],SAIb,SAIb1):-
+    insert_SAI(SAIb,H,SAIbm),
+    append_SAI(T,SAIbm,SAIb1).
+append_SAI([],SAIb,SAIb1):-
+    SAIb1 = SAIb.
+
+insert_SAI([],H,SAIb1):-
+    SAIb1 = [H].
+insert_SAI([{J,N,List}|T],{J,N2,List2},SAIb1):-
+    append(List,List2,List3),
+    SAIb1 = [{J,~(N+N2),List3}|T].
+otherwise.
+insert_SAI([H|T],Ele,SAIb1):-
+    insert_SAI(T,Ele,SAIb1T),
+    SAIb1 = [H|SAIb1T].
+
+append([H|T],L,Res):-
+    append(T,L,ResT),
+    Res = [H|ResT].
+append([],L,Res):-
+    Res = L.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+counter_solve(Ans,Env,HIDT,RM,CST,CntD):-
+    RM = [check_counter(CntD,CntD1,Res)|RM1],
+    counter_solve1(Res,Ans,Env,HIDT,RM1,CST,CntD1).
+
+counter_solve1(no,_Ans,_Env,_HIDT,RM,CST,_CntD):-
+    RM = [], CST = [].
+counter_solve1(yes,Ans,Env,HIDT,RM,CST,CntD):-
+    not_answer(Ans,NotAns),
+    rbr_oldt:counter_solve_top({NotAns,Env,HIDT},RM,CST,CntD).
+
+
+%oosaki add
+%%%start
+not_answer({{-,pterm(Q,U)},CL,_OC},NotAns):-    
+    not_some(Q,Qnew),
+    NotAns = {[],{{[],pterm(Qnew,U)},CL,@}}.    %add U
+not_answer({{[],pterm(Q,U)},CL,_OC},NotAns):-    %add U
+    not_some(Q,Qnew),
+    NotAns = {[],{{-, pterm(Qnew,U)},CL,@}}.    %add U
+%%%%end
+not_answer({HTerm,_Triv},NotAns):-
+    not_answer(HTerm,NotAns).
+otherwise.
+not_answer({{-,Q},CL,_OC},NotAns):-
+    not_some(Q,Qnew),
+    NotAns = {[],{{[],Qnew},CL,@}}.
+not_answer({{[],Q},CL,_OC},NotAns):-
+    not_some(Q,Qnew),
+    NotAns = {[],{{-,Qnew},CL,@}}.
+
+
+not_some(Q,Qnew):-
+    integer(Q) |
+    Qnew = Q.
+not_some({TN,_E,AL},Qnew):-
+    not_some_AL(AL,AL1),
+    Qnew = {TN,0,AL1}.
+
+not_some_AL([],AL1):-
+    AL1 = [].
+not_some_AL([{L,P}|T],AL1):-
+    not_some(P,Pnew),
+    not_some_AL(T,AL1T),
+    AL1 = [{L,Pnew}|AL1T].
+
+reduce_fail([fail],CST1):- CST1 = fail.
+otherwise.
+reduce_fail(In,Out):- Out = In.
+
+dr2_top_for_CA({succ,Con,RuleName,ChildList,_,_,_,Sim},
+                Env,HIDT,ST,Index,RM,Out,CntD):-
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM,Env1,HIDT1,{SAI,_},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,_Jin),
+    rbr_solution_table:put_elementN(Index,STm1,
+%$                        {succ,Con,RuleName,ChildList,c_top(Jin),SAI,nil},ST1),
+%$                          {succ,Con,RuleName,ChildList,c_top(Jin),SAI,nil,nil},ST1),
+                          {succ,Con,RuleName,ChildList,nil,SAI,nil,Sim},ST1),
+%$    Out = {{Env1,HIDT1,ST1},c_top,Jin}.
+    Out = {Env1,HIDT1,ST1}.
+dr2_top_for_CA({fail,_Entry},
+                _Env,_HIDT,_ST,_Index,RM,Out,_CntD):-
+    RM = [], Out = fail.
+
+dr20_for_CA({succ,Con,Rule,ChildList,_,_,_,Sim},
+                Env,HIDT,ST,Index,RM,Out,CF,CntD):-
+    RM = {RM1,RM2,RM3},
+    counter_solve(Con,Env,HIDT,RM1,CST,CntD),
+    dr_child(ChildList,Env,HIDT,ST,{[],[]},RM2,Env1,HIDT1,{SAIown,_SAIm},STm,CntD),
+    rbr_DR:own_subarg(ChildList,STm,STm1,Jin),
+    rbr_DR:compare(CST,Rule,Jin,CST1,J,RM3),
+%    update_SAI(SAIm,J,Index,SAI1),
+    rbr_solution_table:put_elementN(Index,STm1,
+%$                        {succ,Con,Rule,ChildList,J,SAIown,CST1},ST1),
+                        {succ,Con,Rule,ChildList,J,SAIown,CST1,Sim},ST1),
+    J = {TR,SH},
+    get_succ_out(CF,Env1,HIDT1,ST1,TR,SH,Out).
+otherwise.
+dr20_for_CA(_Element,
+                Env,HIDT,ST,_Index,RM,Out,CF,_CntD):-
+   RM = [],
+   get_fail_out(CF,ST,Env,HIDT,_Env1,_HIDT1,Out).
+

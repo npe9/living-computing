@@ -1,0 +1,122 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_send.
+
+:- public 
+    goalCandidateList/4,
+    viewCandidateList/4,
+    viewCandidate/5,
+    currentView/4,
+    standpointList/4,
+    currentUnit/4.
+            
+:- with_macro pimos. 
+
+%goalCandidateList
+    goalCandidateList(AgentName,{DBT,CGS1},Data,GUIProtocol):-true|
+        CGS1 = [get(AgentName,currentGoal,CurrentGoal),get(AgentName,dispGoalList,DispGoalList)|CGS],
+        (   DispGoalList = nil->
+                dbtgui_utility:make_errorProtocol(AgentName,{gui,'Goal file not read',nil},GUIProtocol)
+        ;
+            DispGoalList \= nil->
+                make_protocol(normal(success),goalCandidateList,AgentName,
+                        [{CurrentGoal,DispGoalList}],GUIProtocol)
+        ),
+        Data = {DBT,CGS}.
+
+%viewCandidateList
+    viewCandidateList(AgentName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtgui_protocolPool:get(AgentName,show,view,all,ProtocolList),
+        send(ProtocolList,DBT1,DBT,ViewNameList,Result),
+        make_protocol(Result,viewCandidateList,AgentName,ViewNameList,GUIProtocol),
+        Data = {DBT,CGS}.
+
+%viewCandidate
+    viewCandidate(AgentName,ViewName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtgui_protocolPool:get(AgentName,show,view,ViewName,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SPList,Result),
+        make_protocol(Result,viewCandidate,AgentName,SPList,GUIProtocol),
+        Data = {DBT,CGS}.
+
+%currentView
+    currentView(AgentName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtgui_protocolPool:get(AgentName,show,useView,nil,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SPList1,Result),
+        (   Result = normal(success)->
+                SPList = SPList1
+        ;
+            Result = abnormal(_)->
+                SPList = []
+        ),
+        make_protocol(normal(success),currentView,AgentName,SPList,GUIProtocol),
+        Data = {DBT,CGS}.
+
+%standpointList
+    standpointList(AgentName,{DBT1,CGS},Data,GUIProtocol):-true|
+        dbtgui_protocolPool:get(AgentName,show,sp,nil,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SPNameList1,Result),
+        (   Result=normal(_)->
+                dbtgui_sort:sort(SPNameList1,SPNameList)
+        ;
+            Result=abnormal(_)->
+                true
+        ),
+        make_protocol(Result,standpointList,AgentName,SPNameList,GUIProtocol),
+        Data = {DBT,CGS}.
+
+%currentUnit
+    currentUnit(AgentName,{DBT,CGS1},Data,GUIProtocol):-true|
+        CGS1 = [get(AgentName,currentUnit,CurrentUnit)|CGS],
+        make_protocol(normal(success),currentUnit,AgentName,CurrentUnit,GUIProtocol),
+        Data = {DBT,CGS}.
+
+
+%%%%%%%%%%%%internal method
+%send
+    send(Protocol,DBT1,DBT,RD,Result):-true |
+        DBT1 = [Protocol|DBT],
+        is_normal(Protocol,RD,Result).
+
+%%is_normal
+    is_normal({_,[get_parameter(useView,View,normal(_))]},SPList,Result):-true|
+        View    = {_,SPList1},
+        reverse(SPList1,[],SPList),
+        Result  = normal(success).
+    is_normal({_,[get_parameter({view,all},ViewList,normal(_))]},ViewNameList,Result):-true|
+        get_nameList(ViewList,ViewNameList,Result).
+    is_normal({_,[get_parameter({view,ViewName},View,normal(_))]},SPList,Result):-
+        ViewName\=all,ViewName\=nil|
+        View = {_,SPList1},
+        reverse(SPList1,[],SPList),
+        Result  = normal(success).
+    is_normal({_,[get_parameter({sp,all},SPList,normal(_))]},SPNameList,Result):-true|
+        get_nameList(SPList,SPNameList,Result),
+        Result  = normal(success).
+otherwise.
+    is_normal({_,[get_parameter(_,_,abnormal(Reason))|_]},_,Result):-true|
+        Result = abnormal(Reason).
+
+%%get_nameList
+    get_nameList([],ViewNameList,Result):-true|
+        ViewNameList = [],
+        Result       = normal(success).
+    get_nameList([{ViewName,_}|T],ViewNameList,Result):-true|
+        get_nameList(T,ViewNameList1,Result),
+        ViewNameList = [ViewName|ViewNameList1].
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,GUIProtocol):-true|
+        dbtgui_utility:make_errorProtocol(AgentName,Reason,GUIProtocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,GUIProtocol):-true|
+        GUIProtocol = receive(AgentName,ProtocolName,Arguments,_R).
+
+%%%%list utility
+
+    reverse([],W,L):-true|
+        L = W.
+    reverse([H|T],W,L):-true|
+        reverse(T,[H|W],L).
+

@@ -1,0 +1,64 @@
+% Copyright (C) 1996 by Yokota-Laboratory, 
+%	Japan Advanced Inst. of Sci. and Tech.,
+%	1-1 Asahidai, Tatsunokuchi, Ishikawa 923-12, Japan.
+
+【並列アクティブデータベースプロトタイプ: PARADE】
+
+<<ディレクトリ構成>>
+
+  トップディレクトリ
+    |- README			READMEファイル(compile方法を含む)
+    |- COPYRIGHT		著作権の宣言
+    |- advertise.txt		宣伝紹介資料
+    |- rdbhosts			SQLサーバ登録のためのファイル
+    |
+    |- doc			ドキュメント類のディレクトリ
+    |  |- catalogue.tex		IFS準拠のカタログ
+    |  |- papers.tex		発表論文等
+    |  |- parade_doc.tex	利用手引書
+    |
+    |- sun			Sun等のUnixマシン固有ソースのディレクトリ
+    |  |- client                Sun等のUnixマシン用のSQLクライアント
+    |  |- server		Sun等のUnixマシン用のSQLサーバ
+    |  |- socket		Sun等のUnixマシン固有のソケット用のソース
+    |
+    |- ncube			nCUBE2固有ソースのディレクトリ
+    |  |- client		nCUBE2用のSQLクライアント        
+    |  |- server		nCUBE2用のSQLサーバ              
+    |  |- socket		nCUBE2固有のソケット/並列入出力用のソース
+    |
+    |- common			共通ソースのディレクトリ
+       |- client		SQLクライアントの共通ソース
+       |- server		SQLサーバの共通ソース
+       |- coding		termioを高速化するためのソース
+       |- util			append 等のユーティリティソース
+       |- rel			初期データベース
+       |- newrel		termioを高速化した際のデータベース格納
+                                ディレクトリ(インストール時に自動生成)
+
+<<インストールの手順>>
+
+Sun等のUnixマシンの場合: 1) トップディレクトリで "make" or "make sun" を
+                            実行して下さい．
+
+nCUBE2の場合:		1) nCUBE2のホストにログインして下さい．
+			2) トップディレクトリで "make ncube" を
+                           実行して下さい(*)．
+
+			  (*) nCUBE2用のKLICが必要です．nCUBE2用のKLICは
+			      以下の連絡先まで問い合わせて下さい．
+			      Email: miyazaki@jaist.ac.jp
+
+
+<<ドキュメント>>
+
+詳細については、./doc/parade_doc.tex を参照して下さい。
+この ./doc/parade_doc.tex は，ASC版 LaTeXのソースファイル
+であり，御参照前にコンパイルして頂く必要があります．
+
+
+<<注意事項>>
+
+本システムは、まだ実験/開発段階であり正常な動作を必ずしも保障していません。
+そのため、間違った入力によりシステムが異常停止したり、障害が発生すること
+があります。

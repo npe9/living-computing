@@ -1,0 +1,88 @@
+﻿<!--
+#
+# created by	A.Aiba		'97/09/12
+#
+-->
+<HTML>
+<HEAD><TITLE>Notices for IFS KL1 Program Execution on PDSS</TITLE></HEAD>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#005000"
+      LINK   ="#0070FF"
+      VLINK  ="#854422"
+      ALINK  ="#FF0000">
+
+<CENTER><H1>
+NOTICES FOR IFS KL1 PROGRAM EXECUTION ON PDSS
+</H1>,</CENTER>
+
+<CENTER>
+<TABLE BORDER="5" ALIGN=CENTER UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><CENTER><A HREF="pdss-J.html">To Japanese Page for "Notices for IFS KL1 Program Execution on PDSS"</A>
+	</TD></TR>
+</TABLE>
+</CENTER>
+
+<HR width=95% align="center" size=7><P>
+
+IFS (ICOT Free Software) contains PDSS, which is the KL1 execution
+environment running on UNIX, but the role of PDSS is now replaced by
+KLIC, another KL1 implementation on UNIX also distributed as IFS and
+much more efficient.  PDSS will not be maintained well in future.
+Users are recommended to use KLIC instead.<P>
+
+PDSS enables the execution of KL1 programs on UNIX-based computer
+systems.  However, almost all Kl1 programs distributed as IFS are
+supposed to be able to use PIMOS as their execution environment; PIMOS
+is the operating system for Multi-PSI and PIM.  It must be noted that
+PDSS provides a different execution environment from that provided by
+PIMOS.<P>
+
+PDSS is different from PIMOS in the following points: the
+specification of the KL1 language, the specification of I/O, some
+other functionalities, execution speed, and the size of memory that
+can be used.  Therefore, KL1 programs which are written to execute on
+PIMOS may or may not be executed on PDSS without some modification.
+Since large-scale KL1 programs that are distributed as IFS intensively
+use PIMOS functions, porting them to PDSS is fairly difficult.<P>
+
+Porting KL1 programs to PDSS may require some modification at the
+source code level --- the amount of modification actually depends on
+the contents and the sizes of KL1 programs.  Sometimes just a fragment
+of a KL1 program may be executable on PDSS.  There are several
+important issues to port KL1 programs from PIMOS to PDSS.<P>
+
+<OL>
+
+<LI>PDSS does not support several of the built-in predicates that have
+been implemented recently, such as string and bignum operations.  On
+PDSS, this should be realized using a KL1 library.
+
+<LI>There are several differences in the specification of macros.  For
+instance, user defined macros are not usable on PDSS.
+
+<LI>Basically, PIMOS system calls cannot be used on PDSS. Furthermore,
+the specification of I/O is different as well.
+
+<LI>The specification of character strings is different.
+
+<LI>On PDSS, if a predicate has too many arguments, register-shortage
+errors occur.
+
+</OL>
+
+<HR width=95% align="center" size=7>
+<CENTER>
+<TABLE BORDER="5" ALIGN=center UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><center><A HREF="../../../HomePage.html">Back to the HomePage</A>
+	</TD></TR>
+</TABLE>
+</CENTER><P>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+
+</BODY>
+</HTML>
+
+

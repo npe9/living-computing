@@ -1,0 +1,23 @@
+IFS No.22
+  Parallel Model Generation Theorem Prover: MGTP
+
+
+  MGTP(Model Generation Theorem Prover) is the parallel theorem prover 
+based on KL1.
+  This program is written by parallel program language KL1, and
+executable on PSI-II,PSI-III,multi-PSI.
+  The files required are : 
+
+   otter.kl1
+   rotter.kl1
+   preotter.kl1
+   prerotter.kl1
+
+  For install this system, you need to compile all files with suffix
+'kl1' to KL1 code.
+  And the manual is 'manualE.tex'.
+
+
+
+
+

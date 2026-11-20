@@ -1,0 +1,836 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_shell.
+
+:- public 
+    get_commandArguments/4.
+            
+:- with_macro pimos.
+
+%get_commandArguments
+    get_commandArguments({Pool,Info,CSS1},Retern,CPA,R):-true|
+        CSS1 = [get(displayArgInfo,DisplayArgInfo)|CSS],
+        get_commandArguments({Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+    get_commandArguments({Pool1,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Pool1 = [make(nh,NH)|Pool],
+        NH = [get_commandArguments(Command,Parameter,Arguments,R1)],
+        Data = {Pool,Info,DisplayArgInfo,CSS},
+        (   R1 = normal(_) ->
+                get_commandArguments1(Command,Parameter,Arguments,Data,Retern,CPA,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+
+%pose claim
+        %'pose' ga kitatokino {{SV,APos},nil} ha kanarazu 
+        %'pose claim'dearu. mata  {SV,APos}ha kanarazu initial Arg de aru
+    get_commandArguments1(pose,nil,[],            
+                {Pool,Info,{nil,{SV,APos}},CSS},Retern,CPA,R):-true|
+        CSS     = [],
+        Retern  = {Pool,Info},
+        CPA     = {pose,claim,[{SV,APos}]},
+        R       = normal(success).
+
+%pose counter
+        %'pose' ga kitatokino FLArg:{SV,APos} CLArg:{{SV,APos},IPos,CPos}} ha kanarazu 
+        %'pose counter 'dearu. mata  {SV,IPos,CPos}ha kanarazu counter 
+    get_commandArguments1(pose,nil,[],
+                {Pool,Info,{{SV,APos},{{SV,APos},IPos,CPos}},CSS},Retern,CPA,R):-true|
+        CSS     = [],
+        Retern  = {Pool,Info},
+        CPA     = {pose,counter,[{SV,IPos,CPos}]},
+        R       = normal(success).
+
+%send reasonList
+    get_commandArguments1(send,reasonList,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility1:get_reasonList({Pool1,Info1,DisplayArgInfo,CSS1},
+                {Pool,Info,CSS2},ReasonList,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(reasonList,ReasonList)|CSS],
+                sendProtocol_getCommandArguments(reasonList,ReasonList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%notice draw/win
+    get_commandArguments1(notice,nil,[Pos],
+                {Pool,Info,_,CSS1},Retern,CPA,R):-true|
+        CSS1 = [get(reasonList,ReasonList)|CSS],
+        (   ReasonList = []->
+                CSS     = [],
+                Retern  = {Pool,Info},
+                CPA     = {notice,draw,[]},
+                R       = normal(success)
+        ;
+            ReasonList \= []->
+                CSS     = [get_pos(reasonList,Pos,SPList)],
+                Retern  = {Pool,Info},
+                CPA     = {notice,win,SPList},
+                R       = normal(success)
+        ).
+
+%cancel
+    get_commandArguments1(cancel,nil,[],
+                {Pool,Info,_,CSS},Retern,CPA,R):-true|
+        CSS     = [],
+        Retern  = {Pool,Info},
+        CPA     = {cancel,nil,[]},
+        R       = normal(success).
+
+%finish
+    get_commandArguments1(finish,nil,[],
+                {Pool,Info,_,CSS},Retern,CPA,R):-true|
+        CSS     = [],
+        Retern  = {Pool,Info},
+        CPA     = {finish,nil,[]},
+        R       = normal(success).
+
+%end
+    get_commandArguments1(end,nil,[],
+                {Pool1,Info,_,CSS},Retern,CPA,R):-true|
+         CSS     = [],
+         Retern  = {Pool1,Info},
+         CPA     = {end,nil,[]},
+         R       = normal(success).
+
+%        send_okProtocol(Pool1,Pool,R1),
+%        (   wait(R1)->
+%                CSS     = [],
+%                Retern  = {Pool,Info},
+%                CPA     = {end,nil,[]},
+%                R       = normal(success)).
+
+%justify
+    get_commandArguments1(justify,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility1:get_justificationList({Pool1,Info1,DisplayArgInfo,CSS1},
+                {Pool,Info,CSS2},SetJL,DispJL,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(justificationList,SetJL)|CSS],
+                sendProtocol_getCommandArguments(justificationList,DispJL,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set justification [Pos]
+    get_commandArguments1(set,justification,[Pos],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(justificationList,Pos,SPList)|CSS2],
+        dbtcui_shellUtility1:justify({Pool1,Info1,DisplayArgInfo,CSS2},SPList,
+                {Pool,Info,CSS},R1),
+        (   R1 = normal(success)->
+                DisplayArgInfo = {_,LArg},
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send argument [Pos]
+    get_commandArguments1(send,argument,[Pos],
+                {Pool,Info,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(argumentList,Pos,LArg),
+                   set(forwardList,[])|CSS],            %clear forwardList
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send counterList [Pos]
+    get_commandArguments1(send,counterList,[Pos],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility2:get_counterList({Pool1,Info1,DisplayArgInfo,CSS1},Pos,
+                {Pool,Info,CSS2},LArgList,CounterList,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(counterList,LArgList)|CSS],
+                sendProtocol_getCommandArguments(counterList,CounterList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send rebuttal [Pos]
+    get_commandArguments1(send,rebuttal,[Pos],
+                {Pool,Info,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(counterList,Pos,LArg),
+                   set(forwardList,[])|CSS],            %clear forwardList 
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send claimList
+    get_commandArguments1(send,claimList,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility2:get_claimList({Pool1,Info1,DisplayArgInfo,CSS1},
+                {Pool,Info,CSS2},LArgList,ClaimList,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(claimList,LArgList)|CSS],
+                sendProtocol_getCommandArguments(claimList,ClaimList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%jump claim [Pos],
+    get_commandArguments1(jump,claim,[Pos],
+                {Pool,Info,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        CSS1    = [get_pos(claimList,Pos,LArg),
+                   set(forwardList,[])|CSS],            %clear forwardList 
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%backward
+    get_commandArguments1(backward,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_backward({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%forward
+    get_commandArguments1(forward,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_forward({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%next
+    get_commandArguments1(next,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_next({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%previous
+    get_commandArguments1(previous,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_previous({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS},LArg,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%focus
+    get_commandArguments1(focus,nil,[],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_focus({Pool1,Info1,DisplayArgInfo,CSS1},{Pool,Info,CSS2},LArg,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(forwardList,[])|CSS],            %clear forwardList 
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%jump  [Aid]
+    get_commandArguments1(jump,nil,[Aid],
+                {Pool1,Info1,DisplayArgInfo,CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility3:get_jump({Pool1,Info1,DisplayArgInfo,CSS1},Aid,{Pool,Info,CSS2},LArg,R1),
+        (   R1 = normal(success)->
+                CSS2 = [set(forwardList,[])|CSS],            %clear forwardList 
+                sendProtocol_getCommandArguments(argument,[LArg],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                CSS = CSS2,
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set pl
+    get_commandArguments1(set,pl,[PL],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,B,C,{X,Y,OtherPara1}},
+	set_vector_element(OtherPara1,0,_,PL,OtherPara),
+        Info  = {A,B,C,{X,Y,OtherPara}},
+        DisplayArgInfo = {_,LArg},
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%set pt
+    get_commandArguments1(set,pt,[PT],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,B,C,{X,_ ,Z}},
+        Info  = {A,B,C,{X,PT,Z}},
+        DisplayArgInfo = {_,LArg},
+        sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%set cl
+    get_commandArguments1(set,cl,[CL],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(counter,CL,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set sim
+    get_commandArguments1(set,similarity,[Sim],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(similarity,Sim,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set weight
+    get_commandArguments1(set,weight,[W],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(weight,W,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%set psiTermSimTB
+    get_commandArguments1(set,psiTermSimTB,[PsiTermSimTB],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(psiTermSimTB,PsiTermSimTB,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+
+%set psiTermAttWeight
+    get_commandArguments1(set,psiTermAttWeight,[PsiTermAttWeight],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [set_parameter(psiTermAttWeight,PsiTermAttWeight,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send goal
+    get_commandArguments1(send,goal,_,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info  = {_,_,{_,_,Goal,_},_},
+        sendProtocol_getCommandArguments(goal,Goal,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send view
+    get_commandArguments1(send,useView,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,POM1,C,D},
+	C     = {UseViewName,_,_,_},
+        POM1 = [get({view,UseViewName},[View],R1)|POM],
+        Info  = {A,POM,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(useView,View,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send view View
+    get_commandArguments1(send,view,[ViewName],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,POM1,C,D},
+        POM1 = [get({view,ViewName},ViewList,R1)|POM],
+        Info  = {A,POM,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(view,ViewList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%send sp 
+    get_commandArguments1(send,useSpPriority,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,POM1,C,D},
+	C     = {UseViewName,_,_,_},
+        POM1 = [get({view,UseViewName},[View],R1)|POM],
+        Info  = {A,POM,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(useView,View,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%send sp SP
+    get_commandArguments1(send,sp,[SP],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,POM1,C,D},
+        POM1 = [get({sp,SP},SpNameList,R1)|POM],
+        Info  = {A,POM,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(sp,SpNameList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%send unit
+    get_commandArguments1(send,useUnit,_,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info = {A,POM,C,D},
+	C     = {_,UseUnitNameList,_,_},
+        sendProtocol_getCommandArguments(useUnit,UseUnitNameList,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send unit Unit
+    get_commandArguments1(send,unit,[all],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {A,POM1,C,D},
+        POM1 = [get({scopeUnit,all},ScopeUnitNameList,R1)|POM2],
+        (   R1 = normal(success)->
+	        get_unit(ScopeUnitNameList,POM2,POM,UnitList),
+        	Info  = {A,POM,C,D},
+                sendProtocol_getCommandArguments(unit,UnitList,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+	        POM2  = POM,
+        	Info  = {A,POM,C,D},
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+    get_commandArguments1(send,unit,Unit,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-Unit\=all|
+        Info1 = {A,POM1,C,D},
+        POM1 = [is({unitOrScopeUnitList,Unit},YN,R1)|POM2],
+        (   R1 = normal(success),YN = yes ->
+           	get_unit(Unit,POM2,POM,UnitList),
+		Info  = {A,POM,C,D},
+	        sendProtocol_getCommandArguments(unit,UnitList,
+        	        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+	;
+    	    R1 = normal(success),YN = {no,Unknown} ->
+                POM = POM2,
+		Info  = {A,POM,C,D},
+		Reason = {cui,'Illegal unit name',Unknown},
+	        sendProtocol_getCommandArguments(errorInfo,[Reason],
+        	   	{Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                POM = POM2,
+		Info  = {A,POM,C,D},
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+       	                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+
+%send pl
+    get_commandArguments1(send,pl,_,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info = {_,_,_,{_,_,OtherPara}},
+	vector_element(OtherPara,0,PL,_),
+        sendProtocol_getCommandArguments(pl,PL,
+               {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send pt
+    get_commandArguments1(send,pt,_,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info  = {_,_,_,{_,PT,_}},
+        sendProtocol_getCommandArguments(pt,PT,
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%send cl
+    get_commandArguments1(send,cl,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [get_parameter(counter,CL,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(cl,CL,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send sim
+    get_commandArguments1(send,similarity,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [get_parameter(similarity,Sim,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(similarity,Sim,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send weight
+    get_commandArguments1(send,weight,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [get_parameter(weight,W,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(weight,W,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send psiTermSimTB
+    get_commandArguments1(send,psiTermSimTB,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [get_parameter(psiTermSimTB,PsiTermSimTB,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(psiTermSimTB,PsiTermSimTB,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send psiTermAttWeight
+    get_commandArguments1(send,psiTermAttWeight,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [get_parameter(psiTermAttWeight,PsiTermAttWeight,R1)|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(psiTermAttWeight,PsiTermAttWeight,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send explan
+    get_commandArguments1(send,explanation,[],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        DisplayArgInfo = {_,LArg},
+	dbtcui_shellUtility4:get_explanation(LArg,Exp),
+        sendProtocol_getCommandArguments(explanation,Exp,
+               {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R).
+
+%help
+    get_commandArguments1(send,help,[],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+	dbtcui_shellUtility5:get_help(Help,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(help,Help,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+    get_commandArguments1(send,help,[C],
+                {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+	dbtcui_shellUtility5:get_help(C,Help,R1),
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(help,Help,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%%tracer
+
+%set tf
+    get_commandArguments1(set,tf,[TF],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(set(flag,TF,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%send tf
+    get_commandArguments1(send,tf,[],
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(get(flag,TF,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(tf,TF,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%set sr SRList
+    get_commandArguments1(set,sr,SR,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(set(spy(rule),SR,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%add sr SRList
+    get_commandArguments1(add,sr,SR,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(add(spy(rule),SR,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%remove sr SRList
+    get_commandArguments1(remove,sr,SR,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(remove(spy(rule),SR,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%clear sr
+    get_commandArguments1(clear,sr,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(clear(spy(rule),_,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%send sr
+    get_commandArguments1(send,sr,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(get(spy(rule),SR,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(sr,SR,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%set sg SGList
+    get_commandArguments1(set,sg,SG,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(set(spy(gate),SG,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%add sg SGList
+    get_commandArguments1(add,sg,SG,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(add(spy(gate),SG,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%remove sg SGList
+    get_commandArguments1(remove,sg,SG,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(remove(spy(gate),SG,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%clear sg
+    get_commandArguments1(clear,sg,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(clear(spy(gate),_,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(ok,[],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+%send sg
+    get_commandArguments1(send,sg,_,
+                {Pool,Info1,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Info1 = {RBR1,B,C,D},
+        RBR1  = [tracer(get(spy(gate),SG,R1))|RBR],
+        Info  = {RBR,B,C,D},
+        (   R1 = normal(success)->
+                sendProtocol_getCommandArguments(sg,SG,
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ;
+            R1 = abnormal(Reason)->
+                sendProtocol_getCommandArguments(errorInfo,[Reason],
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)
+        ).
+
+%%%%%%%internal method
+
+%sendProtocol_getCommandArguments
+    sendProtocol_getCommandArguments(argument,[LArg],
+                {Pool1,Info1,{FLArg,CLArg},CSS1},Retern,CPA,R):-true|
+        dbtcui_shellUtility4:get_argumentInfo({Pool1,Info1,{FLArg,CLArg},CSS1},LArg,
+                {Pool2,Info,CSS},ArgumentInfo,R1),
+        Pool2 = [make(nh,NH)|Pool],
+        (   R1 = normal(success)->
+                NH = [receive(argument,ArgumentInfo,R2)],
+                DisplayArgInfo = {FLArg,LArg}
+        ;
+            R1 = abnormal(Reason)->
+                NH = [receive(errorInfo,[Reason],R2)],
+                DisplayArgInfo = {FLArg,CLArg}
+
+        ),
+        (   wait(R2)->
+                get_commandArguments(
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)).
+otherwise.
+    sendProtocol_getCommandArguments(Parameter,Arguments,
+                {Pool1,Info,DisplayArgInfo,CSS},Retern,CPA,R):-true|
+        Pool1 = [make(nh,NH)|Pool],
+        NH = [receive(Parameter,Arguments,R1)],
+        (   wait(R1)->
+                get_commandArguments(
+                        {Pool,Info,DisplayArgInfo,CSS},Retern,CPA,R)).
+
+%send_okProtocol
+%    send_okProtocol(Pool1,Pool,R):-true|
+%        Pool1 = [make(nh,NH)|Pool],
+%        NH = [receive(ok,[],R)].
+
+    get_unit([],POM1,POM,UnitList):-true |
+        POM = POM1,
+        UnitList = [].
+    get_unit([U|T],POM1,POM,UnitList):-true |
+        POM1= [is({unit,U},YN,_)|POM2],
+        (   YN = yes ->
+                get_unit(T,POM2,POM,UnitList1),
+                UnitList = [{U,[]}|UnitList1]
+        ;
+            YN = no ->
+                POM2 = [get({scopeUnitToUnit,[U]},UList,_)|POM3],
+                get_unit(T,POM3,POM,UnitList1),
+                UList = [UList1],
+                UnitList = [UList1|UnitList1]
+        ).

@@ -1,0 +1,19 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_CA.
+:- public check_arg/6.
+:- with_macro pimos.
+
+check_arg({Env,HIDT,SV},Line,RM,OneTwo,SV1,Res):-
+    set_vector_element(SV,Line,Sol,_,SVm),
+    check_arg(OneTwo,Line,Sol,Env,HIDT,SVm,RM,SV1),
+    Res = normal(success).
+
+check_arg(1,Line,Sol,Env,HIDT,SVm,RM,SV1):-
+   rbr_counter:dr20_for_CA(Sol,Env,HIDT,SVm,Line,RM,SV1,not_counter,-1).
+check_arg(2,Line,Sol,Env,HIDT,SVm,RM,SV1):-
+   rbr_counter:dr2_top_for_CA(Sol,Env,HIDT,SVm,Line,RM,SV1,-1).
+

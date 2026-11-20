@@ -1,0 +1,1134 @@
+%-*-latex-*-
+\documentstyle[a4, epsf] {jreport}
+
+\def\subjectname{立体構造表示言語\linebreak[1]}
+\newcommand{\magnify}{のスケールを変更する。既定値は1.0である。}
+\newcommand{\nurbsCaption}{pointsを制御点とするオブジェクトに、nurbsを
+かけて滑らかにする(on)しない(off)を設定をする。}
+\newcommand{\widthCaption}{線の太さを持つ。\ 太さを持った線は、X軸か、Y
+軸に沿って描かれる。そのため、角度によって沿う軸が入れ替わることがある。
+DefaultLineWidthが、既定値として設定されている。}
+\newcommand{\deleteCaption}{オブジェクト自身を開放する。}
+\newcommand{\drawCaption}{オブジェクトの表示モードを「表示」にする。}
+\newcommand{\hideCaption}{オブジェクトの表示モードを「非表示」にする。}
+\newcommand{\movesCaption}{オブジェクトを指定した座標に移動する。}
+\newcommand{\colorCaption}{マテリアルオブジェクトへの参照を持つ。この
+メンバの初期値は、DefaultObjectColor\index{DefaultObjectColor}の内容である。}
+\newcommand{\locationCaption}{オブジェクトの座標データの参照を返す。}
+\newcommand{\rotationCaption}{rotateメッセージで設定された、オブジェク
+トの座標系に対する角度を返す。}
+\newcommand{\rotateCaption}{オブジェクトの座標系に対する角度を設定する。}
+
+\newenvironment{membertable}{\begin{tabular}{p{30mm}|p{110mm}}}{\end{tabular}}
+\newenvironment{messagetable}{\begin{tabular}{p{58mm}|p{82mm}}}{\end{tabular}}
+
+
+\title{\subjectname\\ 参照マニュアル}
+
+\author{NEC技術情報システム開発株式会社}
+\date{平成 5 年 2 月}
+
+%\makeindex
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{言語仕様}
+\section{文法}
+この言語の文法を、BNFを用いて記述すると以下のようになる。
+
+\begin{verbatim}
+<statement>  ::= <expression> ";"
+               | <message> ";"
+<expression> ::= <expression> <message>
+               | <object> <message>
+<object>  ::= <object> member_selector
+            | <article> class_name
+            | variable
+            | literal
+<article> ::= "a"
+            | "an"
+<message> ::= message_selector
+            | message_selector <argument>
+<argument> ::= "(" expression ")"
+            |  <coordinate>
+            |  <list>
+            |  variable
+            |  literal
+<coordinate>::= "{"number "," number "," number"}"
+<list>   ::= "[" <argument> [ "," <argument>] "]" 
+\end{verbatim}
+
+\bigskip
+\begin{tabular}{c|l}
+\hline
+member  & radius depth top bottom height division \\
+selector& string font size width style points color \\ \hline
+message & is draw drawall hide hideall wire wireall \\
+selector& transform moves location rotate rotation \\
+	& from to alpha append bind cdr car \\
+        & magnify antialiases into up push pop \\
+        & smooths nurbs shines colors speculer \\
+        & insert element value delete quit sync \\ \hline
+\end{tabular}
+\bigskip
+
+文は、メッセージと、そのメッセージの送り先である変数で構成される。メッ
+セージを実行した結果、値を返すようなメッセージの場合、返された値を変数
+に代入、あるいは引数としてメッセージで渡すことができる。記述例を以下に
+示す。
+
+\begin{verbatim}
+   Sphere is a sphere;
+   Sphere moves{1,2,3};
+   Sphere color is Red;
+   Text is a text;
+   Text color is Sphere color ; 
+   Text moves (Sphere location); # Sphereの位置にTextを移動する。
+\end{verbatim}
+
+この例ではmovesメッセージで設定したSphereの座標位置\{1,2,3\}へTextを
+移動させている。
+
+\section{変数(variable)}
+
+変数名は、予約語を除く全ての文字列を指定することが可能である。変数の指
+定方法としては、絶対位置を指定する方法と、カレントオブジェクトからの相
+対位置を指定する方法が用意されている。相対位置指定および、絶対位置を指
+定する例を以下に示す。
+
+\bigskip
+\begin{verbatim}
+   X is a group;
+    into X;
+   SphereA is a sphere;    # X SphereA is a sphere;
+   SphereA color is :Red;  # X SphereA radius is Red
+   SphereA draw;
+   SphereB is a sphere;    # X SphereB is a sphere;
+   SphereB color is :Red;  # X SphereA radius is Red;
+   SphereB draw;
+   up;
+\end{verbatim}
+
+上の例では、SphereA,SphereBの変数指定が、グループオブジェクトXからの相
+対位置指定であり、メンバーcolorへのマテリアルオブジェクトの参照を代入
+する際の:Redがルートからの絶対位置指定となっている。\\メンバーの値の参
+照、書き換えは、以下のように行なう。
+
+\begin{verbatim}
+   X is a sphere;
+   X color is Red;
+   Y is a sphere;
+   Y color is Green; 
+   Y color is X color; 
+\end{verbatim}
+
+上の例では、 Yの色はXのcolorというメンバーが参照しているオブジェクトを
+参照することになる。
+
+\chapter{クラス}
+本システムに組み込まれているクラスを示す。グラフィックオブジェクトの括
+弧内の文字は、クラス名を表している。
+\begin{itemize}
+\item リテラルオブジェクト
+\begin{enumerate}
+\item 数オブジェクト
+\item 文字列オブジェクト
+\item 位置情報オブジェクト
+\item リストオブジェクト
+\item マテリアルオブジェクト
+\end{enumerate}
+
+\item グラフィックオブジェクト
+\begin{enumerate}
+\item グループオブジェクト(group)
+\item テキストオブジェクト(text)
+\item 線オブジェクト(segment)
+\item 点オブジェクト(line)
+\item ポリゴンオブジェクト
+\item 球オブジェクト(sphere)
+\item 円筒オブジェクト
+\item 角柱オブジェクト
+\item 円錐オブジェクト
+\item 角錐オブジェクト
+\item 箱オブジェクト
+\end{enumerate}
+\end{itemize}
+
+\section{リテラルオブジェクト}
+
+ここでは、表示の対象ではないデータについて説明する。
+
+\subsection{数オブジェクト}
+
+数として、整数と実数を扱う。直接的な整数、16進表記、実数の表記のみを受
+理する。
+
+\bigskip
+[例)] 1 , -10 , 0xffff , 0.1 , -5.9
+
+\bigskip
+数に対する操作
+
+\begin {tabular}{ll}
+加算 & A is B + C; \\
+減算 & A is B - C; \\
+乗算 & A is B * C; \\
+除算 & A is B / C; \\
+\end{tabular}
+
+\bigskip
+もし、片方が整数、もう一方が実数であった場合には、整数を実数に直して演
+算を行なう。また、数値演算として以下のものも、用意している。
+
+\bigskip
+\begin{tabular}{lr@{ is }l}
+正弦関数 & A & sin(B); \index{sin} \\
+余弦関数 & A & cos(B); \index{cos} \\
+正接関数 & A & tan(B); \index{tan} \\
+逆正弦関数 & A & asin(B); \index{asin} \\
+逆余弦関数 & A & acos(B); \index{acos} \\
+逆正接関数 & A & atan(B); \index{atan} \\
+指数関数 & A & exp(B); \index{exp} \\
+対数関数 & A & log(B); \index{log} \\
+整数化関数 & A & int(B); \index{int}
+\end{tabular}
+
+\subsection{文字列オブジェクト}
+文字列は、"記号で囲まれるものとしている。文字列中で文字"を含む場合には、
+必ず$\backslash$を前に入れなければならない。但し、本システムでは、
+$\backslash$に続いて0xffなどの8進、16進文字表記は、できないものとしてい
+る。
+
+\bigskip
+例) "String" , "$\backslash$"string$\backslash$""
+
+\subsection{位置情報オブジェクト}
+位置情報オブジェクトは、三つの「数」で引数が与えられた場合に、このデー
+タ型のオブジェクトが生成される。シリンダオブジェクトやパイプオブジェク
+ト等で位置情報を与える時に使用する。
+
+\bigskip
+例) X is \{1,2,3\}; 
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+value インデックス \index{value} & インデックスで指定した軸の座標値を
+返す。\newline インデックスの値は、0、1、2\ のいずれかで、それぞれx軸、y
+軸、z軸の座標値を返す。\\ \hline
+value\  \{インデックス,\ インデックスで指定された軸の座標値\} & 位置情報に
+おいてインデックスで示される座標値を変更する。\\ \hline
+\end{messagetable}
+
+\bigskip
+
+注) 位置情報の座標値を変更すると、その位置情報を参照しているすべての、
+グラフィックオブジェクトの位置も変更される。
+
+
+\subsection{リストオブジェクト}
+位置情報の構造化を行うために定義するデータ型である。ポリゴンで任意の面
+オブジェクトを扱う際、この型で位置情報を記述する。書式を以下に示す。
+
+リスト $\longrightarrow$ [位置情報並びまたは、リスト]
+
+リストの例を以下に示す。
+
+\begin {tabular}{r@{ X is }l}
+例1) & []; \\
+例2) & [\{1,2,3\},\{4,5,6\},\{7,8,9\}]; \\
+例3) &
+[[\{1,2,3\},\{4,5,6\},\{7,8,9\}],[\{10,11,12\},\{13,14,15\},\{16,17,18\}]];
+\end{tabular}
+
+\medskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+append リスト要素または、座標データ \index{append} &
+受信先のリストの再後尾に要素を追加する。 \\ \hline
+insert リスト要素または、座標データ \index{insert} &
+受信先のリストの先頭に要素を挿入する。そして挿入後のリストの先頭を返す。
+\\ \hline
+element {インデックス} \index{element} & 
+受信先のリストの先頭(0番目)から、インデックスで示される要素を返す。\\ \hline
+element {インデックス,リスト要素または、座標データ} &
+受信先のリストの先頭(0番目)から、インデックスで示される要素の書換えを
+行なう。\\ \hline
+car \index{car} & リストオブジェクトのcar部を返す。\\ \hline
+cdr \index{cdr} & リストオブジェクトのcdr部を返す。\\ \hline
+\end{messagetable}
+
+\subsection{マテリアルオブジェクト}
+グラフィックオブジェクトに対する「色」の情報を持つオブジェクトである。\\
+グラフィックオブジェクト「球」を赤色で表示する例を以下に示す。
+
+\begin{center}
+\begin{verbatim}
+Red_R is 10.0;
+Red_G is 0.0;
+Red_B is 0.0;
+Red_speculer_R is 10.0;
+Red_speculer_G is 0.0;
+Red_speculer_B is 0.0;
+Red_speculer_Shine is 10.0;
+Red is a material;
+Red colors {Red_R,Red_G,Red_B};
+Red speculer {Red_speculer_R,Red_speculer_G,Red_speculer_B};
+Red shines Red_Shine;
+Red bind;
+Sphere is a sphere;
+Sphere color is Red;
+Sphere draw;
+\end{verbatim}
+\end{center}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+colors \{赤の値,緑の値,青の値\} \index{colors} &
+色情報をRGBで設定する。 \\ \hline
+speculer \{赤の値,緑の値,青の値\} \index{speculer} &
+RGB毎の反射率を設定する。 \\ \hline
+shines 輝度データ \index{shines} & 輝度を設定する。 \\ \hline
+alpha 透明度データ \index{alpha} & 透明度を設定する。透明度データには0〜
+1が設定可能で、1で不透明になる。 \\ \hline
+bind \index{bind} & 色情報をシステムに登録する。 \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\medskip
+但し、colors,speculerの引数要素は必ずshinesで設定される輝度の値を越え
+てはならない。
+
+\section{グラフィックオブジェクト}
+ここでは、実際に表示の対象となるオブジェクト、つまりdrawメッセージを受
+けとることのできるオブジェクトについて述べる。
+
+\subsection {グループオブジェクト(group)}
+オブジェクトの階層管理を行うためのオブジェクトである。このオブジェクト
+を生成すると、任意の変数名（予約語を除く）でオブジェクトをこのオブジェ
+クトのグループに登録することができる。
+
+\bigskip
+記述例
+
+\begin {tabular}{ll}
+（正）             & （誤） \\
+A is a group;      & A B is a sphere; \\
+A B is a group;    & A B C is a sphere; \\
+A B C is a sphere; &
+\end{tabular}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & オブジェクト\magnify \\ \hline
+draw \index{draw} & \drawCaption
+もし、グルーピングされているグラフィックオブジェクトが「表示」モードで
+存在すれば、それを表示する。 \\ \hline
+drawall \index{drawall} & グループ内のグラフィックオブジェクトの
+表示モードをすべて「表示」にする。 \\ \hline
+wireall \index{wireall} & グループ内のグラフィックオブジェクトの
+表示モードをすべて「ワイヤーフレーム表示」にする。 \\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+hideall \index{hideall} & グループ内のグラフィックオブジェクトの
+表示モードをすべて「非表示」にする。 \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {カレントグループ}
+カレントグループは、表示システムのなかでユーザが操作の対象としているグ
+ループオブジェクトを指している。これを変更することで、オブジェクト階層
+間の移動を実現している。以下に例を示す。
+
+\begin {tabular}{ll}
+A is a group; & \\
+A B is a group; & \\
+A B C is a group; & \\
+into A B; & \#カレントグループ A B \\
+push C;   & \#カレントグループ A B C \\
+pop; & \#カレントグループ A B \\
+up; & \#カレントグループ A \\
+up; & \#カレントグループ
+\end {tabular}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+into グループ名 \index{into} & カレントグループを変更する。 \\ \hline
+up \index{up} & カレントグループの親をカレントグループに変更する。\\ \hline
+push グループ名 \index{push} & カレントグループをスタックに積み上げ、
+指定されたグループをカレントグループに変更する。\\ \hline
+pop \index{pop} & スタックに積まれたグループを、カレントグループに変更
+する。\\ \hline
+\end{messagetable}
+
+\medskip
+注) カレントグループを変更した際に、Bという変数を指定すると、それは、
+カレントグループのメンバーであるBという変数をアクセスする。但し、引数
+として":"のみを指定した場合、ルートオブジェクトをアクセスする。任意の
+ノードからルートからの絶対位置で変数を指定する場合には": B"と記述する。
+
+\subsection {テキストオブジェクト(text)}
+このオブジェクトは三次元座標上に文字列を表示させるオブジェクトである。
+生成から表示までの記述例を示す。
+
+\begin{center}
+\begin {verbatim}
+Text is a text;
+Text color is :Red;
+Text moves {-3,2,3};
+Text string is "String";
+Text size is 36;
+Text draw;
+\end{verbatim}
+\end{center}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+string \index{string} & 表示すべき文字列への参照を持つ。(ASCII文字列の
+み)\\ \hline
+font \index{font} & 文字フォントのフォント名を持つ。初期値は、:
+DefaultFont\index{DefaultFont}の内容である。フォント名一覧は、
+\newline /usr/4Dgifts/example/fontmanager/enum\_families.cをコン
+パイルし、実行すれば表示される。\\ \hline
+size \index{size} & 文字フォントの大きさを持つ。このメンバの初期値は、:
+DefaultFontSize\index{DefaultFontSize}の内容である。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify}  & 表示位置\magnify \\ \hline
+location     \index{location} & \locationCaption \\ \hline
+draw \index{draw} & \drawCaption \\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {線オブジェクト(segment)}
+\subsubsection {二点間を結ぶ線オブジェクト}
+このオブジェクトは三次元座標上の二点を結ぶ線を、表示させるオブジェクト
+である。生成から表示までの記述例を示す。
+\begin {verbatim}
+Segment is a segment;
+Segment color is :Yellow;
+Segment style is 0x0f0f;
+Segment width is 3.0;
+Segment from {3,4,5};
+Segment to {-3,-4,-5};
+Segment draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+width \index{width} & \widthCaption \\ \hline
+style & ラインスタイルを持つ。スタイルは16bitで表現されたビットパター
+ンの繰り返しで、描画パターンが決定される。このオブジェクトが生成された
+時には、styleの値は、DefaultLineStyleの値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+このオブジェクトの移動の中心は、from\ メッセージで設定された座標である。
+\\ \hline
+magnify 数値 \index{magnify}  & オブジェクト\magnify \\ \hline
+location \index{location} & moves,\ fromメッセージで設定された、座標デー
+タの参照を返す。\\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+& \rotateCaption \\ \hline
+draw \index{draw} & \drawCaption \\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+smooth \{on$\|$off\} & スムースフラグをon、またはoffにする。\\ \hline
+antialiases \{on$\|$off\} & アンチエイリアスフラグをon、またはoffにす
+る。\\ \hline
+from \{x座標の値,y座標の値,z座標の値\} & 線オブジェクトの始点の設定を
+行う。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} & 線オブジェクトの終点の設定を行
+う。\\ \hline
+\end{messagetable}
+
+\subsubsection {連続する点を結ぶ線オブジェクト(line)}
+このオブジェクトは三次元座標上の連続する点を結ぶグラフィックプリミティ
+ブ線を表示させるオブジェクトである。生成から表示までの記述例を示す。
+\begin{verbatim}
+Rect is a line;
+Rect style is 0x0f0f;
+Rect width is 5.0;
+Rect color is :Yellow;
+Rect points is [{0,3,0},{1.763,-2.427,0},{-2.863,0.927,0},
+{2.853,0.927,0},{-1.763,-2.427,0},{0,3,0}];
+Rect draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+width \index{width} & \widthCaption \\ \hline
+style & ラインスタイルを持つ。スタイルは16bitで表現されたビットパター
+ンの繰り返しで、描画パターンが決定される。このオブジェクトが生成された
+時には、styleの値は、DefaultLineStyleの値を持つ。\\ \hline
+points & 点の座標リストを持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify}  & オブジェクト\magnify \\ \hline
+location     \index{location} & \locationCaption     \\ \hline
+rotation     \index{rotation} & \rotationCaption     \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+& \rotateCaption \\ \hline
+draw         \index{draw}     & \drawCaption         \\ \hline
+hide         \index{hide}     & \hideCaption         \\ \hline
+nurbs        \{on$\|$off\}    & \nurbsCaption        \\ \hline
+delete       \index{delete}   & \deleteCaption       \\ \hline
+smooth \{on$\|$off\} & スムースフラグをon、またはoffにする。\\ \hline
+antialiases \{on$\|$off\} & アンチエイリアスフラグをon、またはoffにす
+る。\\ \hline
+\end{messagetable}
+
+\subsection {点オブジェクト(dot)}
+このオブジェクトは三次元座標上に点を描くオブジェクトである。生成から表
+示までの記述例を示す。
+
+\begin{verbatim}
+Dot is a dot;
+Dot color is Red;
+Dot moves {4,5,6};
+Dot draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify}  & 描画位置\magnify \\ \hline
+location     \index{location} & \locationCaption \\ \hline
+draw \index{draw} & \drawCaption \\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+smooth \{on$\|$off\} & スムースフラグをon、またはoffにする。\\ \hline
+antialiases \{on$\|$off\} & アンチエイリアスフラグをon、またはoffにす
+る。\\ \hline
+\end{messagetable}
+
+\subsection {メッシュオブジェクト(mesh)}
+n$\times$m個の三次元座標上の座標を通るメッシュを描くオブジェクトである。
+\begin{verbatim}
+ Points is [{1,2,3},{4,5,6}];
+ Points is (Points insert [{7,8,9},{10,11,12}]);
+ Points is (Points insert [{13,14,15},{16,17,18}]);
+ Mesh is a mesh;
+ Mesh color is Red;
+ Mesh points is Points;
+ Mesh draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+points & 表示を行う点のリストを持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify}  & オブジェクト\magnify \\ \hline
+location     \index{location} & \locationCaption     \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+& rotateCaption \\ \hline
+wire & オブジェクトの表示モードを「ワイヤーフレーム表示」にする。\\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+hide   \index{hide}   & \hideCaption \\ \hline
+nurbs  \{on$\|$off\}  & \nurbsCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+
+\subsection {球オブジェクト(sphere)}
+このオブジェクトは三次元座標上に球を描くオブジェクトである。生成から表
+示までの記述例を示す。
+\begin{verbatim}
+ Sphere_locate is {4,5,6};
+ Sphere is a sphere;
+ Sphere color is Red;
+ Sphere radius is 2;
+ Sphere depth is 4;
+ Sphere moves Sphere_locate;
+ Sphere draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+radius & 半径の数値を持つ。このオブジェクトが生成された時、この値は、
+DefaultSphereRadius\index{DefaultSphereRadius}の値を持つ。\\ \hline
+depth & 球の滑らかさを持つ。このオブジェクトが生成された時、この値は、
+DefaultSphereDepth\index{DefaultSphereDepth}の値を持つ。なお、このメン
+バの値は、\ 1〜30の値でなければならない。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify}  & オブジェクト\magnify \\ \hline
+location     \index{location} & \locationCaption     \\ \hline
+rotation     \index{rotation} & \rotationCaption     \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+& \rotateCaption \\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire & オブジェクトの表示モードを「ワイヤーフレーム表示」にする。\\ \hline
+hide   \index{hide}   & \hideCaption   \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {円筒オブジェクト(cylinder, pipe}
+
+\subsubsection{二点間を結ぶ円筒(cylinder0, pipe0)}
+「二点間を結ぶ円筒」とは、円筒の中心線が二点を結ぶような円筒である。オ
+ブジェクトのクラス名としては、cylinder0と、pipe0がある。
+cylinder0\index{cylinder0}は、底面、天井面にポリゴンを表示し、
+pipe0\index{pipe0}は、底面、天井面にポリゴンを表示しないものである。こ
+のオブジェクトの回転の中心は、メッセージfrom,toで設定された点の中点で
+ある。オブジェクトの生成例を以下に示す。
+
+\begin{verbatim}
+ X is a cylinder0;
+ X from {1,2,3};
+ X to {1,2,3};
+ X top is 0.5;
+ X bottom is 0.5;
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+top \index{top} & 天井面の半径の数値を持つ。このオブジェクトが生成された時
+には、topの値は、DefaultRadiusTop\index{DefaultRadiusTop}の値を持つ。
+\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivide\index{DefaultDivide}
+の値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable} \hline
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+移動の際、fromメッセージで設定された座標を基準に移動する。\\ \hline
+magnify 数値 \index{magnify}  & \magnify \\ \hline
+location     \index{location} & \locationCaption \\ \hline
+rotation     \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+from \{x座標の値,y座標の値,z座標の値\} \index{from} & 「円筒」オブジェ
+クトの始点の設定を行う。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} \index{to} & 「円筒」オブジェクト
+の終点の設定を行う。\\ \hline
+\end{messagetable}
+
+\subsubsection{円筒(cylinder1, pipe1)}
+円筒の中心を回転、移動の中心とする円筒である。オブジェクトのクラス名と
+しては、cylinder1と、pipe1がある。cylinder1\index{cylinder1}は、底面、
+天井面にポリゴンを表示し、pipe1\index{pipe1}は、底面、天井面にポリゴン
+を表示しないものである。オブジェクトの生成例を以下に示す。
+
+\begin{verbatim}
+ X is a cylinder1;
+ X height is 1;
+ X division is 30;
+ X top is 0.5;
+ X bottom is 0.5;
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable} \hline
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+height \index{height} & 円筒の高さを持つ。このオブジェクトが生成された
+時、こtの値はDefaultHeight\index{DefaultHeight}の値を持つ。\\ \hline
+top \index{top}  & 天井面の半径の数値を持つ。このオブジェクトが生成さ
+れた時には、topの値は、DefaultRadiusTopの値を持つ。\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivide\index{DefaultDivide}
+の値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {角柱オブジェクト(pillar)}
+\subsubsection{二点間を結ぶ角柱(pillar0)}
+「二点間を結ぶ角柱」とは、角柱の中心線が二点間の線分と成るような角柱で
+ある。オブジェクトのクラス名は、pillar0である。このオブジェクトの回転
+の中心は、メッセージfrom,toで設定された点の中点である。オブジェクトの
+生成例を以下に示す。
+
+\begin{verbatim}
+ X is a pillar0;
+ X from {1,2,3};
+ X to {1,2,3};
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable}
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+top \index{top} & 天井面の半径の数値を持つ。このオブジェクトが生成され
+た時には、topの値は、DefaultRadiusTop\index{DefaultRadiusTop}の値を持
+つ。\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivide\index{DefaultDivide}
+の値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+from \{x座標の値,y座標の値,z座標の値\} \index{from} & 角柱オブジェクト
+の始点の設定を行う。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} \index{to} & 角柱オブジェクトの終
+点の設定を行う。\\ \hline
+\end{messagetable}
+
+\subsubsection{角柱(pillar1)}
+角柱の中心を回転、移動の中心とする角柱である。オブジェクトのクラス名は、
+pillar1\index{pillar1}である。オブジェクトの生成例を以下に示す。
+
+\begin{verbatim}
+ X is a pillar1;
+ X top is 0.5;
+ X bottom is 0.5;
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable}
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+height \index{height} & 角柱の高さを持つ。\\ \hline
+top \index{top} & 天井面の半径の数値を持つ。このオブジェクトが生成され
+た時には、topの値は、DefaultRadiusTop\index{DefaultRadiusTop}の値を持
+つ。\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivideの値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {円錐オブジェクト(corn)}
+始点を底面の中心とし、終点を頂点とするような円錐を描く。
+
+\begin{verbatim}
+ X is a corn;
+ X bottom is 0.5;
+ X from {1,2,3};
+ X to {1,2,3};
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable}
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+top \index{top} & 天井面の半径の数値を持つ。このオブジェクトが生成され
+た時には、topの値は、DefaultRadiusTop\index{DefaultRadiusTop}の値を持
+つ。\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivideの値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+from \{x座標の値,y座標の値,z座標の値\} \index{from} & 始点を設定する。
+この座標が、底面の中心となる。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} \index{to} & 終点を設定する。この
+座標が頂点となる。\\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+
+\subsection {角錐オブジェクト(conic)}
+始点を底面の中心とし、終点を頂点とするような角錐を描く。
+
+\begin{verbatim}
+ X is a conic;
+ X bottom is 0.5;
+ X from {1,2,3};
+ X to {1,2,3};
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable}
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+top \index{top} & 天井面の半径の数値を持つ。このオブジェクトが生成され
+た時には、topの値は、DefaultRadiusTop\index{DefaultRadiusTop}の値を持
+つ。\\ \hline
+bottom \index{bottom} & 底面の半径の数値を持つ。このオブジェクトが生成
+された時には、bottomの値は、
+DefaultRadiusBottom\index{DefaultRadiusBottom}の値を持つ。\\ \hline
+division \index{division} & 底面の角度の分割数を持つ。このオブジェクト
+が生成された時には、divisionの値は、DefaultDivideの値を持つ。\\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+from \{x座標の値,y座標の値,z座標の値\} \index{from} & 始点を設定する。
+この座標が、底面の中心となる。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} \index{to} & 終点を設定する。この
+座標が頂点となる。\\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+
+\subsection {箱オブジェクト(box)}
+箱オブジェクトは、始点から、終点迄を対角とする箱を描く。
+
+\begin{verbatim}
+ X is a box;
+ X from {1,2,3};
+ X to {1,2,3};
+ X color is Red;
+ X draw;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトの持つメンバーを示す。\\
+\begin{membertable}
+\em{メンバー名} & \em{内容} \\ \hline \hline
+color \index{color} & \colorCaption \\ \hline
+\end{membertable}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+\em{メッセージ} & \em{処理概要} \\ \hline \hline
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & \movesCaption
+\\ \hline
+magnify 数値 \index{magnify} & \magnify \\ \hline
+location \index{location} & \locationCaption \\ \hline
+rotation \index{rotation} & \rotationCaption \\ \hline
+rotate \{x座標軸上の回転角度,y座標軸上の回転角度,z座標軸上の回転角度\}
+\index{rotate} & \rotateCaption \\ \hline
+from \{x座標の値,y座標の値,z座標の値\} \index{from} & 箱を書き始める基
+準点を設定する。終端位置と基準点から、縦、横、幅を決定する。\\ \hline
+to \{x座標の値,y座標の値,z座標の値\} \index{to} & 終端位置の座標を設定
+する。終端位置と基準点から、縦、横、幅を決定する。\\ \hline
+draw \index{draw} & オブジェクトの表示モードを「ポリゴン表示」にする。
+\\ \hline
+wire \index{wire} & オブジェクトの表示モードを「ワイヤーフレーム表示」
+にする。\\ \hline
+hide \index{hide} & \hideCaption \\ \hline
+delete \index{delete} & \deleteCaption \\ \hline
+\end{messagetable}
+
+\subsection {ライトオブジェクト(light)}
+環境光のオブジェクトである。マテリアルオブジェクトが、オブジェクト自身
+の色を付加するのに対し、環境光の光線の色、光源の位置を指定するオブジェ
+クトである。ライトオブジェクトの表示システム内での個数は最大8個である。
+生成の例を以下に示す。
+
+\begin{verbatim}
+ Light0 is a light;
+ Light0 colors{0.2,0.2,0.2};
+ Light0 moves{10,10,-10};
+ Light0 bind;
+\end{verbatim}
+
+\bigskip
+\noindent
+このオブジェクトが実行可能なメッセージを以下に示す。\\
+\begin{messagetable}
+moves \{x座標の値,y座標の値,z座標の値\} \index{moves} & 光源の位置を設
+定する。\\ \hline
+colors \{redの値,greenの値,blueの値\} \index{colors} & 光線のRGB成分を
+設定する。\\ \hline
+bind \index{bind} & 環境光の情報をシステムに登録する。\\ \hline
+\end{messagetable}
+
+\subsection {システムメッセージ}
+システムに対しての操作について述べる。
+\subsubsection{syncメッセージ}
+非同期表示モードの同期をとるためのメッセージを用意した。
+このメッセージの送り先は何を指定しても良い。
+このメッセージは、表示システムが-RTオプションで起動された場合には、何
+の処理も行なわれない。もし、-RTオプションを付加せずに表示システムを、
+起動した場合では、文の実行を中断して、表示の更新を行なう。実行例を以下
+に示す。
+\begin {itemize}
+\item []  sync;
+\end {itemize}
+\subsubsection{quitメッセージ}
+スクリプトの制御により、表示プログラムの終了をさせるために用意したメッセージである。
+\begin {itemize}
+\item []  quit;
+\end {itemize}
+
+\chapter{オブジェクトのコピーと参照}
+\section{オブジェクトのコピー}
+変数の内容のコピーの方法は、
+\begin {itemize}
+\item [] X = Y;
+\end {itemize}
+である。コピーの対象であるデータ型を以下に示す。
+\begin{enumerate}
+\item 球、円筒などのグラフィックオブジェクト
+\item グループオブジェクト
+\item リストオブジェクト
+\item 数オブジェクト
+\item 文字列オブジェクト
+\item 位置情報オブジェクト
+\end{enumerate}
+グラフィックオブジェクトのメンバー、座標情報、角度情報については、参照
+をコピーするのみとしている。
+\begin {itemize}
+\item [] Xlist is [{0,0,2},{0,0,3},{0,0,4}]; 
+\item [] X is a line;
+\item [] X color is Red;
+\item [] X points is Xlist;
+\item [] X draw;
+\item [] X0 = X;
+\end {itemize}
+上の例ではlineオブジェクトをコピーしているが、Xのメンバーである
+pointsが保持しているリストXlistのコピーは行なわれない。また、グループ
+オブジェクトのコピーを行なった場合は、グルーピングされているグラフィックオブジェク
+トのコピーも同時に行なう。
+
+\section{オブジェクトの参照}
+ある変数の内容を他の変数名で参照する場合、以下のように記述する。
+\begin {itemize}
+\item [] X is Y;
+\end {itemize}
+例えば、二つの球を描かせ、その二つの球を円筒で結ぶように描画させるには、
+以下のように記述すれば良い。
+\begin{itemize}
+\item[] Sphere0 is a sphere;
+\item[] Sphere0 color is Red;
+\item[] Sphere0 moves{1,1,1};
+\item[] Sphere1 = Sphere0;
+\item[] Sphere1 moves{3,3,3};
+\item[] Cylinder is a cylinder0;
+\item[] Cylinder color is Yellow;
+\item[] Cylinder top is 0.3;
+\item[] Cylinder bottom is 0.3;
+\item[] Cylinder from (Sphere0 location);
+\item[] Cylinder to (Sphere1 location);
+\item[] Cylinder draw;
+\end{itemize}
+\appendix
+\chapter{予約語の一覧}
+\begin{tabular}{|c||l|}
+\hline
+\multicolumn{2}{|c|}{予約語} \\
+\hline 
+クラス & light material sphere text dot line cylinder0 cylinder1 \\
+ & pillar0 pillar1 pipe0 pipe1 box mesh pyramid conic corn segment \\
+\hline
+メンバ & radius depth top bottom height division width style points color  \\
+ & string font size\\
+\hline
+メッセージ & is draw drawall hide hideall wire wireall \\
+ & transform moves location rotate rotation from to magnify antialiases \\
+ & smooths nurbs shines colors speculer bind alpha into up push pop cdr \\
+ & car append insert element value delete quit sync \\
+\hline
+数値演算関数 & sin asin cos acos tan atan log exp int \\
+\hline
+\end{tabular}
+\end{document}

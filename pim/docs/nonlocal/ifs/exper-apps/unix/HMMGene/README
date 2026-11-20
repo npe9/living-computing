@@ -1,0 +1,126 @@
+
+HMMGene: A program for signal pattern extraction 
+         from DNA sequences
+
+HMMView: A program for HMM viewer
+
+HMMRecog: A program for signal pattern recognition
+          in DNA sequences
+
+
+What are HMM* ?
+---------------
+
+HMMGene is a program for signal pattern extraction 
+from DNA sequences. In HMMGene, signal patterns are 
+represented as a stochastic model called Hidden 
+Markov Model (HMM). Network of HMM is optimized by 
+Genetic Algorithm and Baum-Welch algorithm (BWA). 
+Akaike Information Criterion (AIC) which gives a 
+criterion for the balance of adaptation and 
+complexity of a model is applied in the evaluation 
+of HMMs. A subroutine for evaluating each HMM is 
+processed in parallel.
+
+HMMView is a program for HMM viewer. HMMView uses 
+output file of HMMGene as a input data. 
+
+HMMRecog is a program for signal pattern recognition 
+in DNA sequences using an HMM obtained by HMMGene. 
+As for the algorithm of signal pattern recognition, 
+Viterbi Algorithm (VA) is used. 
+
+
+Requirements:
+-------------
+
+1) Hardware:
+   - UNIX system
+   - 1.4MB disk space
+
+2) Software:
+   - C compiler (for HMMGene and HMMRecog)
+   - Tcl/Tk (for HMMView)
+
+We know that the programs run on workstations from 
+Sun, HP and Silicon Graphics. 
+
+
+Installation:
+-------------
+
+Please unpack the distribution of the programs 
+inside the directory where the programs should 
+be located. 
+
+  zcat HMMGene.tgz | tar xvf -
+
+1) HMMGene and HMMRecog
+   HMMGene and HMMRecog are written for C language.
+   When the distribution is unpacked, you have to 
+   configure the Makefile. The Makefile contains 
+   some variables that must correspond to your system. 
+   Now you can type:
+
+     make 
+
+  from command line.
+
+2) HMMView
+   HMMView is written for Tcl/Tk. When the distribution 
+   is unpacked, you have to configure the first line of 
+   the HMMView. You should specify absolute path of the 
+   wish.
+
+
+Files:
+------
+
+1) Document files
+
+   COPYRIGHT, COPYRIGHT.j, README,
+   HMMGene.doc, HMMView.doc, HMMRecog.doc
+
+2) Source files
+
+   Makefile, ga.h, hmm-gene.h, hmm.h, sp2mp.h,
+   ga.c, ga_dmutation.c, ga_fitness.c, ga_imutation.c, 
+   ga_misc.c, ga_pmutation.c, ga_recombination.c, 
+   ga_scaling.c, ga_selection.c, 
+   hmm-gene.c, hmm-gene_misc.c, hmm_backward.c, 
+   hmm_baum.c, hmm_forward.c, hmm_misc.c, hmm_recog.c, 
+   hmm_train.c, hmm_viterbi.c, 
+   sp2mp.c, timer.c, utils.c, xutils.c 
+   HMMView
+
+3) Sample sequence data files
+
+   learn.seq, recog.seq
+
+4) Sample condition files
+
+   env.cnd, ga.cnd, hmm.cnd
+
+References:
+-----------
+
+[1] Yada,T., Ishikawa,M., Tanaka,H. and Asai,K. (1995)
+    A New Method for the Extraction of Signal Patterns
+    in DNA Sequences, In Proc. of the 4th Int. Conf. on
+    Intelligent System for Molecular Biology, (in press).
+
+
+Related works:
+--------------
+
+[1] Fujiwara,Y. et al. (1994) 
+    Stochastic Motif Extraction Using Hidden Markov Model,
+    In Proc. of the 3rd Int. Conf. on Intelligent System 
+    for Molecular Biology, 121-129.
+
+[2] Tanaka, H. et al. (1993)  
+    Classification of Proteins via Successive State Splitting 
+    of Hidden Markov Network,
+    In Proc. of W26 in the 13th Int. Joint Conf. on
+    Artificial Intelligence, 25-30.
+

@@ -1,0 +1,18 @@
+
+
+[File Configuration]
+
+Logic Model for IP 
+
+./logicmodle/  
+  IPmodel-v1.03.pl ----- source code of the program
+  readme-logic ---   readme of the program
+  paper.ps --------- technical description (draft)
+
+MGBA IP Solver 
+./mgba/
+  readme-mgb ----- readme  of the program
+  Example-mgb ---  Examples of the IP problems (inputs to the system)
+  Makefile -----   Make file
+  mgi --           Executable of the system
+  mgi.c -----      Source code of the system

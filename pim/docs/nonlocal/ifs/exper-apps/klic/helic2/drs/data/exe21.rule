@@ -1,0 +1,19 @@
+&define_absolute_rule.
+&define_RBR_rule.  	{
+
+ f1::殴る(agent=太郎,object=次郎).
+ f2::殴る(agent=花子[age=>10],object=三郎).
+
+ r1::暴行罪(agent=X)
+	<- P/対人行為をする(agent=X/人,object=Y/人)|@action,
+	   暴行行為である(a_object=@action).
+
+ r3::-暴行罪(agent=X)
+	<- P/対人行為をする(agent=X/人[age=>[0..13]],object=Y/人)|@action,
+	   暴行行為である(a_object=@action).
+
+ r2::暴行行為である(a_object=@act)
+	<- 殴る(agent=X/人,object=Y/人)|@act,
+	   different(X,Y).
+}
+&define_CBR_rule.

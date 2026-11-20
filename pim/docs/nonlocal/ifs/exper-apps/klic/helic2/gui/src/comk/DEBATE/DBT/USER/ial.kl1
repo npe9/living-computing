@@ -1,0 +1,75 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_initialArgumentList.
+:- public create/2.
+:- with_macro pimos.
+
+    create({SVT},I):-true|
+        initiate(IAL), 
+        loop(I,SVT,IAL).
+
+    initiate(IAL):-true|
+        hLibrary:pool(bag,IAL).
+
+    loop([],SVT,IAL):-true|
+        SVT   = [],
+        IAL   = [].
+    loop([initiate(ST)|T],SVT,IAL):-true|
+        initiate(ST,SVT,IAL,SVT1,IAL1,_),
+        loop(T,SVT1,IAL1).
+    loop([initiate(ST,R)|T],SVT,IAL):-true|
+        initiate(ST,SVT,IAL,SVT1,IAL1,R),
+        loop(T,SVT1,IAL1).
+    loop([is_inArg(Arg,YN)|T],SVT,IAL):-true|
+        IAL = [carbon_copy(IAList)|IAL1],
+        refer_argList(IAList,SVT,SVT1,ArgList),
+        member(ArgList,Arg,YN),
+        loop(T,SVT1,IAL1).
+    loop([refer_argList(ArgList)|T],SVT,IAL):-true|
+        IAL = [carbon_copy(IAList)|IAL1],
+        refer_argList(IAList,SVT,SVT1,ArgList),
+        loop(T,SVT1,IAL1).
+
+    initiate(ST,SVT1,IAL1,SVT,IAL,R):-true|
+        initiate1(ST,SVT1,IAL1,SVT2,IAL2,R1),
+        (   R1 = normal(success)->
+                check_initiate(ST,SVT2,IAL2,SVT,IAL,R)).
+
+    initiate1([],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT   = SVT1,
+        IAL   = IAL1,
+        R     = normal(success).
+    initiate1([SV|T],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT1  = [make_SVID(SVID),put(SVID,SV)|SVT2],
+        Arg   = {SVID,0},
+        IAL1  = [put(Arg)|IAL2],
+        (   wait(SVID)->
+            initiate1(T,SVT2,IAL2,SVT,IAL,R)).
+
+    check_initiate([],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT   = SVT1,
+        IAL   = IAL1,
+        R     = normal(success).
+    check_initiate([SV|T],SVT1,IAL1,SVT,IAL,R):-true|
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+            check_initiate(T,SVT2,IAL1,SVT,IAL,R)).
+
+    refer_argList([],SVT1,SVT,ArgList):-true|
+        SVT = SVT1,
+        ArgList = [].
+    refer_argList([{SVID,Pos}|T],SVT1,SVT,ArgList):-true|
+        SVT1 = [refer_SV(SVID,SV,_)|SVT2],
+        refer_argList(T,SVT2,SVT,ArgList1),
+        ArgList = [{SV,Pos}|ArgList1].
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).

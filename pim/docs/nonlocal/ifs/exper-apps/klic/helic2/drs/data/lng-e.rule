@@ -1,0 +1,74 @@
+&define_absolute_rule.
+&define_RBR_rule.     
+{
+
+fact_1 :: beating(agent=john, object=mary) |#beating
+|| "john_beated_mary".
+
+fact_2 ::behaves_violently(agent=john, object=mary) |#behaves_violently
+|| "john_behaves_violently_for_mary".
+
+fact_3 :: has_criminal_intent(agent= #beating, basis=#behaves_violently)
+|| "the_fact_that_john_beated_mary_involves_a_criminal_intent_to_behave_violently".
+
+fact_4 :: -has_criminal_intent(agent= #beating, 
+	basis=causes_injury_or_damage(agent=john, object=mary))
+|| "the_fact_that_john_beated_mary_did_not_involve_a_criminal_intent_to_cause_an_injury_or_damage".
+
+fact_5 :: faints(agent=mary)|#fainting
+|| "mary_fainted".
+
+fact_6 :: has_conditional_causality(agent=#beating, object=#fainting)
+|| "mary_fainted_because_john_beated_mary".
+
+article_208 ::
+corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=crime_of_violence, goal=Y)
+<-  P/does_action(agent=X/person)|@action,
+    has_criminal_intent(agent=@action, 
+	basis=behaves_violently(agent=X, object=Y/person)),
+    is_violence(a_object=@action)
+|| "if" X "behaved_violently_to " Y "the_action_corresponds_to_a_crime_constituting_condition_of_crime_of_violence".
+
+article_204_theory_of_intentional ::
+-corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=injury_crime, goal=Y)
+<-  P/does_action(agent=X/person)|@action,
+  - has_criminal_intent(agent=@action,
+    basis=causes_injury_or_damage(agent=X, object=Y/person)|@causes_injury_or_damage)
+|| "because_the_action_of" X "did_not_involve_a_criminal_intent_of_injury" "it_does_not_correspond_to_a_crime_constituting_condition_of_an_injury_crime".
+
+article_204_theory_of_offence_aggravated_by_results_of_crime ::
+corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=injury_crime, goal=Y)
+<-  P1/does_action(agent=X/person)|@action,
+    corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=crime_of_violence, goal=Y),
+  -  has_criminal_intent(agent=@action,basis=causes_injury_or_damage(agent=X,object=Y)),
+    P2/reaches_to_condition(agent=Y)|@condition,
+    has_causality(agent=@action, object=@condition),
+    is_injury(agent=@condition)
+|| "action_of" X "corresponds_to_a_crime_constituting_condition_of_crime_of_violence_to" Y "if" Y "reached_a_condition_of_injury_because_of_the_cause" "the_action_corresponds_to_a_crime_constituting_condition_of_an_injury_crime" "even_if_it_did_not_involve_a_criminal_intent_of_injury".
+
+theory_of_conditional_causality ::
+has_causality(agent=@event_1, object=@event_2)
+<-  has_conditional_causality(agent=P1/verb()|@event_1, object=P2/verb()|@event_2)
+|| "if_there_is_a_conditional_causality_between_event1_and_event2" "there_exists_a_causality".
+
+criminal_law_common_sense_1 ::
+is_violence(a_object=beating(agent=X/person, object=Y/person))
+|| "action_of" X "beating" Y "is_violence".
+
+}
+
+&define_CBR_rule.     {
+supreme_court_showa_080906 ::
+is_injury(agent=@fainting)
+<-  V/thrusts_down<does_action>(agent=X/taro<person>, object=Y/hanako<person>,
+	goal=!lake)|@action,
+    faints(agent=Y)|@fainting,
+    has_conditional_causality(agent=@action, basis=@fainting)
+|| "if" Y "fainted_because_of" V "action_of" X "the_fainting_is_considered_an_injury".
+
+}
+

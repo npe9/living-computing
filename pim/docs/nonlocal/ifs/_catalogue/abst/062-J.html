@@ -1,0 +1,73 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+
+<title>（６２）ＫＬ１動作情報収集ツール：Ｐｅｒｆｏｒｍａｎｃｅ　Ｍｏ
+ｎｉｔｏｒ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（６２）ＫＬ１動作情報収集ツール：Performance Monitor</h2>
+
+<pre width="136"><b>
+	マ シ ン：pseudo Multi-PSI
+	環　　境：PIMOS
+	言　　語：KL1
+	ソース量：200 KB
+	文　　書：マニュアル (日本語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+並列論理型言語KL1の動作情報を収集するツールである。<p>
+
+<h2>機能</h2>
+
+PerformanceMonitorは、ノード／述語ごとのリダクション数・サスペンション
+数・プロセス間通信量の情報を収集し、SIMPOSウインドウシステム上にグラフィ
+カルに表示するツールである。<p>
+
+<h2>画面構成</h2>
+
+PerformanceMonitorは、4枚のウインドウによって構成される。<p>
+
+<dl>
+	<dd><img src="062-J.gif">
+</dl>
+<p>
+
+
+METHODウインドウは、表示する情報の種類を選択するメニューウインドウであ
+る。SELECTウインドウは、表示の制限を行うためのメニューウインドウである。
+情報を表示するゴールの選択などができる。GRAPHウインドウは、情報を濃淡
+グラフで表示するウインドウである。SCROLLウインドウによってスクロールさ
+せることができる。<p>
+
+<h2>特徴</h2>
+
+PerformanceMonitorの情報収集は、すべてKL1の機能を用いて行われるため、
+ファームウェアに依存せず動作させることが可能である。ただし、SIMPOSのウ
+インドウシステムを用いてインプリメントされているため、他のプラットフォー
+ム上で動作させるには、ウインドウ関係の処理をすべて移植する必要がある。
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	ＫＬ１動作情報収集ツール：Performance Monitor [377K] <a
+href="../../../ifs/exper-apps/pimos/pmonitor.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

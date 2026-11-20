@@ -1,0 +1,146 @@
+	
+	Install and test big-Quixote 
+
+---------------------------------------------------------------
+
+Please refer to the following manuals.
+
+- Quixote Installation Manual 		(doc/INSTALL_E.tex)
+- Quixote System Operation Manual 	(doc/QXTMAN_E.tex)
+
+======================================================================
+1. Getting and Extracting Quixote
+======================================================================
+	Obtain the source code of Quixote system you need (ex. qxtall.tgz)
+	using ftp in binary (image) mode, extracting it by the use
+	of zcat, tar or uncompress.
+
+----------- Extracting qxtall.tgz -----------------
+% zcat qxtall.tgz | tar xvf -
+-----------------------------------------------
+
+	Please refer to 3 of "Quixote Installation Manual."
+
+======================================================================
+2. Compile Quixote
+======================================================================
+	The directory extracted the Quixote source code is called
+	QXTDIR. The server and the client is compiled with
+	make commmand in QXTDIR/server-dist and QXTDIR/client
+	respectively. If necessary, modify the Makefiles.
+	The following warning which is no problem occurs
+	in compiling the Quixote server.
+		Redundant clause
+		Clause deleted: sie_non_delayed/4$0/4
+		Redundant clause
+		Clause deleted: sie_delayed_solution_lists/4$0/5
+	It takes about 40 minutes to compile the Quixote server.
+	Please refer to 4 of "Quixote Installation Manual."
+
+
+======================================================================
+3. Setting for Emacs I/F
+======================================================================
+	Change .cshrc and .emacs as follows.
+	Refer to 2.2 of "Quixote System Operation Manual"
+
+-----------add to .cshrc -----------------
+# Quixote
+setenv QXTDIR xxxxx
+------------------------------------------
+xxxxx is the directory where Quixote IFS file is extracted.
+
+
+-----------add to .emacs -----------------
+;; Quixote
+(setq load-path (cons (concat (expand-file-name
+       (substitute-in-file-name "$QXTDIR")) "/client") load-path))
+(autoload 'qxt-start
+	  "qxt-all" "Start Quixote session to SERVER."
+	  t nil)
+(setq auto-mode-alist
+      (cons '("\\.qxt$" . qxt-mode) auto-mode-alist))
+(autoload 'qxt-mode
+	  "qxt-mode" "Major mode for Quixote, DOODKRL."
+	  t nil)
+(setq qxt-inferior-qxt-program "yyyyyy")
+------------------------------------------
+yyyyy is the program name of Quixote server in full-path 
+(for example, /usr/local/bin/quixote).
+
+
+======================================================================
+4. Query and answer from Qmacs I/F
+======================================================================
+	Please refer to: 
+		example/cider_demo.qxt
+
+%----------------- program --------------------------
+&program;;
+&submodule;;
+    usa >- west;;
+    uk >- west;;
+&rule;;
+japan::{cider/[source=soda_pop];;
+	drink[name=X]/[trade=no_tax] <= X/[alcohol=non]};;
+west::cider/[source=apple, process=ferment];;
+uk::cider/[alcohol=yes];;
+usa::cider/[alcohol=non];;
+&end.
+
+
+%--------------- query ---------------
+[q1]
+?-japan:drink[name=cider]/[trade=X].
+
+[q2]
+?-japan:drink[name=cider]/[trade=X];;&program;;&rule;;japan::cider/[alcohol=non];;&end.
+
+%-----------How to execute this example -------------
+
+(1) From GNU-Emacs (including Quixote mode), type
+	M-x qxt-start
+    Then, *Quixote* window is created in Emacs, the following message
+    appears in the *Quixote* window, and the Quixote server
+    process is invoked. 
+	Quixote server on nil
+  	server>
+
+
+(2) Set a region from "&program" to "&end." of the above program,
+    and type 
+	M-x qxt-create-database
+
+    Answer an appropriate DB name such as "cider".  When the DB is
+    created without any trouble, the following message appears
+    in the *Quixote* window. 
+	Quixote server on nil
+  	server> ** created : 1.1
+	database>
+
+(3) Set a region from "?-" to "." of the question [q1] above, and type
+	M-x qxt-query
+
+    Then, an expected answer is as follows. 
+	database> ** 1 answer exists **
+	** Answer 1 **
+	 IF japan:cider.alcohol == non THEN
+    	X == no_tax
+	database>
+
+    Set a region from "?-" to "." of the question [q2] above, and type
+	M-x qxt-query
+
+    Then, an expected answer is as follows. 
+	database> ** 1 answer exists **
+	** Answer 1 **
+    	X == no_tax
+	database>
+
+(4) Type 
+	M-x qxt-quit
+    to quit Qmacs and kill the Quixote server process. 
+-----------------------------------------------------
+
+    ( Qmacs has a bug that the cursor does not return the *Quixote*
+      window after executing qxt-quit command. Refer to BUGS. )

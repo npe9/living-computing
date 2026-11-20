@@ -1,0 +1,82 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (73) Process oriented programming language AYA</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (73) Process oriented programming language AYA</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI, PIM/m
+	Environment: PIMOS V3.5 and later
+	Language:    KL1
+	Source Code: 50 KB
+	Documents:   User's manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+AYA is a process oriented programming language.<P>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>AYA is a language for application programs based on KL1.
+
+<li>The language processor runs on PIMOS as a preprocessor of the KL1
+compiler.
+
+<li>In AYA, the processes and communications between them can be
+described naturally.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+AYA is a programming language for general application programs that is
+based on process oriented programming techniques.  <p>
+
+In AYA, a process is a program unit and processes communicate with
+each other. Procedures corresponding to messages are defined in
+processes. Communication is done via shared variables among processes
+and such communications are referred to as lines. Stream
+communications are also supported.  <p>
+
+AYA also introduces the concept of "scene". Using this concept, the
+changing status of a process can be described directly. Each scene
+independently defines accepting messages and corresponding behaviors. 
+In other words, there can be several definitions for one message, each
+definition corresponding to a scene.  <p>
+
+Using this method, the situation in which a message in a sequence
+changes the way in which a process corresponds to messages that
+follow, can be described naturally.  <p>
+
+The language processor of AYA translates programs in AYA to KL1. This
+processor runs on PIMOS V3.5 and later and works as a preprocessor for
+the KL1 compiler.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Process oriented programming language AYA [236K] <a
+href="../../../ifs/symbolic-proc/pimos/aya.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

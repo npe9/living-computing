@@ -1,0 +1,967 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_util
+%       File Name   : ty_util.kl1
+%       Function    : common utilities
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1995/ 2/ 6  : bug fix: illegal attribute syntax
+%$	1994/ 7/27  : add vector version of cover structure in make_pterm
+%$                        for convenience of test pro
+%$	1994/ 7/27  : vector - functor bug in make_pterm
+%$	1994/ 7/20  : keyed_set/keyed_bag
+%$	1994/ 7/19  : bug fix make_dcl_pterm : pterm with attr form
+%$	1994/ 7/15  : bug fix : decapsule
+%$	1994/ 7/15  : typo fix
+%$	1994/ 7/14  : encapsulate,decapsulate for KLIC port
+%$	1994/ 7/13  : key_sort/2
+%$	1994/ 7/13  : string utilities calling to osif
+%$	1994/ 7/13  : term_to_string to atom_to_string
+%$	1994/ 7/ 4  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 4/14  : compact/decompact for rapid gett/putt
+%$      1994/ 2/14  : make make_pterm/5 public for test pro
+%$      1994/ 2/ 7  : var syntax in make_pterm/3 for test pro
+%$      1993/ 2/ 4  : pterm creation predicates
+%$      1993/12/24  : latest update
+%$      1993/12/24  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module ty_util.
+:-with_macro pimos.
+:-public make_pterm/3,make_dcl_pterm/3.
+:-public make_pterm/5.
+%:-public bit2byte/2,byte2bit/2.
+:-public compact/2,decompact/2.
+:-public encapsulate/2,decapsulate/2.
+:-public keyed_bag/1,get_at/3,add_at/4,remove_at/4,carbon_copy_at/3.
+:-public keyed_set/1,get_with/3,put_with/4,carbon_copy/2.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S make_pterm(Defs,PTerms,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_syntax | illegal_attribute_syntax
+make_pterm(Defs,PTerms,Result):-
+    QID = 1,
+    make_pterm(Defs,QID,_NewQID,PTerms,Result).
+
+make_pterm([],QID,NewQID,PTerms,Result):-
+    NewQID = QID,
+    PTerms = [],
+%    Result = normal(ty#yes).
+    Result = normal(success).
+make_pterm([Def|Defs],QID,NewQID,PTerms,Result):-
+    mk_pterm(Def,PTerm,QID,QID1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        make_pterm(Defs,QID1,NewQID,NewPTerms,Result),
+        PTerms = [PTerm|NewPTerms]
+    ;otherwise;true ->
+        NewQID = QID1,
+        PTerms = [],
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_syntax, illegal_attribute_syntax
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_some(X)|
+    functor(X,P,A),P=some,A=:=1|
+%	vector_element(X,1,XX,_X),
+	arg(1,X,XX),
+	mk_pterm(XX,PTerm,QID,QID1,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+%	    pterm#set(quantifier,QID,PTerm,NewPTerm),
+	    set_vector_element(PTerm,1,_,QID,NewPTerm),
+	    NewQID := QID1+1,
+	    Result = R1
+	;otherwise;true ->
+	    NewPTerm = PTerm,
+	    NewQID = QID1,
+	    Result = R1
+	).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_var(X)|
+    functor(X,P,A),P='&var',A=:=1|
+%	vector_element(X,1,VarID,_X),
+	arg(1,X,VarID),
+	NewPTerm = VarID,
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_integer(X)|
+    X = integer|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,ty#integer,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,'&integer',PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_string(X)|
+    X=string|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,ty#string,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,'&string',PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+    atom(X)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,X,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,X,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+    string(X,_,_)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,X,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,X,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+    integer(X)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	number#new(Number0),
+	new_vector(Number0,1),
+%	number#set(value,X,Number0,Number),
+	set_vector_element(Number0,0,_,X,Number),
+%	pterm#set(typename,Number,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,Number,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_cover(X,From,To)|
+    X=[R],functor(R,P,A),P='..',A=:=2,
+    arg(1,R,From),arg(2,R,To)|
+	FromNumber = {From},
+	ToNumber = {To},
+%	cover#new(Cover),
+	new_vector(Cover,2),
+%	cover#set(from,FromNumber,Cover,Cover1),
+	set_vector_element(Cover,0,_,FromNumber,Cover1),
+%	cover#set(to,ToNumber,Cover1,NewCover),
+	set_vector_element(Cover1,1,_,ToNumber,NewCover),
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,NewCover,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,NewCover,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_cover(X,From,To)|   % vector version for convenience of test pro
+    X=[R],vector(R,3),vector_element(R,0,P),P='..'|
+	vector_element(R,1,From),
+	vector_element(R,2,To),
+	FromNumber = {From},
+	ToNumber = {To},
+%	cover#new(Cover),
+	new_vector(Cover,2),
+%	cover#set(from,FromNumber,Cover,Cover1),
+	set_vector_element(Cover,0,_,FromNumber,Cover1),
+%	cover#set(to,ToNumber,Cover1,NewCover),
+	set_vector_element(Cover1,1,_,ToNumber,NewCover),
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,NewCover,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,NewCover,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+	NewQID = QID,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%    syn#is_pterm(X)|
+    functor(X,Pred,A),atom(Pred),A=:=1|
+%	ty#functor(X,Pred,1,X1),
+%	ty#arg(X1,1,AttrDefs,_X2),
+	arg(1,X,AttrDefs),
+	mk_attrs(AttrDefs,AttrPairs,QID,NewQID,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    % [注意!]
+	    % AttrPairsが{Key,Data}の形式であることを前提にしてPIMOSの
+	    % sorterを利用している。
+%	    sorter:key_sort(AttrPairs,SortedAttrPairs),
+	    ty_osif:key_sort(AttrPairs,SortedAttrPairs),
+%	    pterm#new(PTerm),
+	    new_vector(PTerm,3),
+%	    pterm#set(typename,Pred,PTerm,PTerm1),
+	    set_vector_element(PTerm,0,_,Pred,PTerm1),
+%	    pterm#set(attributes,SortedAttrPairs,PTerm1,NewPTerm),
+	    set_vector_element(PTerm1,2,_,SortedAttrPairs,NewPTerm),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    NewPTerm = ty#void,
+	    NewPTerm = '&void',
+	    Result = R1
+	).
+otherwise.
+mk_pterm(X,NewPTerm,QID,NewQID,Result):-
+%	NewPTerm = ty#void,
+	NewPTerm = '&void',
+	NewQID = QID,
+	Result = abnormal(Info),
+%	Info = {ty#typemid,illegal_syntax,[X]}.
+	Info = {type,illegal_syntax,[X]}.
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_attribute_syntax
+mk_attrs([],Attrs,QID,NewQID,Result):-
+    Attrs = [],
+    NewQID = QID,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+mk_attrs([Pair|Pairs],Attrs,QID,NewQID,Result):-
+%    ty#functor(Pair,syn#occattr,2)|
+    functor(Pair,P,A),P='=>',A=:=2|
+%	ty#arg(Pair,1,Label,Pair1),
+	arg(1,Pair,Label),
+%	ty#arg(Pair1,2,Value,_Pair2),
+	arg(2,Pair,Value),
+	mk_pterm(Value,PTermValue,QID,QID1,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+%	    ty_osif:term_to_string(Label,LabelStr),
+	    ty_osif:atom_to_string(Label,LabelStr),
+%	    attribute#new(Attr),
+	    new_vector(Attr,2),
+%	    attribute#set(label,LabelStr,Attr,Attr1),
+	    set_vector_element(Attr,0,_,LabelStr,Attr1),
+%	    attribute#set(value,PTermValue,Attr1,NewAttr),
+	    set_vector_element(Attr1,1,_,PTermValue,NewAttr),
+	    Attrs = [NewAttr|NewAttrs],
+	    mk_attrs(Pairs,NewAttrs,QID1,NewQID,Result)
+	;otherwise;true ->
+	    Attrs = [],
+	NewQID=QID1,
+	    Result = R1
+	).
+otherwise.
+mk_attrs([Pair|_Pairs],Attrs,QID,NewQID,Result):-
+    Attrs = [],
+	NewQID=QID,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_attribute_syntax,[Pair]}.
+    Info = {type,illegal_attribute_syntax,[Pair]}.
+otherwise.
+mk_attrs(Term,Attrs,QID,NewQID,Result):-
+    Attrs = [],
+	NewQID=QID,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_attribute_syntax,[Term]}.
+    Info = {type,illegal_attribute_syntax,[Term]}.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_dcl_syntax | illegal_attribute_dcl_syntax
+make_dcl_pterm([],PTerms,Result):-
+%    Result = normal(ty#yes),
+    Result = normal(success),
+    PTerms = [].
+make_dcl_pterm([Def|Defs],PTerms,Result):-
+    mk_dcl_pterm(Def,PTerm,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        make_dcl_pterm(Defs,NewPTerms,Result),
+        PTerms = [PTerm|NewPTerms]
+    ;otherwise;true ->
+        PTerms = [],
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_attribute_dcl_syntax
+mk_dcl_pterm(X,NewPTerm,Result):-
+%    syn#is_integer(X)|
+    X=integer|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,ty#integer,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,'&integer',PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_dcl_pterm(X,NewPTerm,Result):-
+%    syn#is_string(X)|
+    X=string|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,ty#string,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,'&string',PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+mk_dcl_pterm(X,NewPTerm,Result):-
+    atom(X)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,X,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,X,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_dcl_pterm(X,NewPTerm,Result):-
+    string(X,_,_)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,X,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,X,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_dcl_pterm(X,NewPTerm,Result):-
+    integer(X)|
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	number#new(Number0),
+	new_vector(Number0,1),
+%	number#set(value,X,Number0,Number),
+	set_vector_element(Number0,0,_,X,Number),
+%	pterm#set(typename,Number,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,Number,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_dcl_pterm(X,NewPTerm,Result):-
+%    syn#is_cover(X,From,To)|
+    X=[R],functor(R,P,A),P='..',A=:=2,
+    arg(1,R,From),arg(2,R,To)|
+	FromNumber = {From},
+	ToNumber = {To},
+%	cover#new(Cover),
+	new_vector(Cover,2),
+%	cover#set(from,FromNumber,Cover,Cover1),
+	set_vector_element(Cover,0,_,FromNumber,Cover1),
+%	cover#set(to,ToNumber,Cover1,NewCover),
+	set_vector_element(Cover1,1,_,ToNumber,NewCover),
+%	pterm#new(PTerm),
+	new_vector(PTerm,3),
+%	pterm#set(typename,NewCover,PTerm,PTerm1),
+	set_vector_element(PTerm,0,_,NewCover,PTerm1),
+%	pterm#set(attributes,[],PTerm1,NewPTerm),
+	set_vector_element(PTerm1,2,_,[],NewPTerm),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+mk_dcl_pterm(X,NewPTerm,Result):-
+%    syn#is_pterm(X)|
+    vector(X,2), vector_element(X,0,Pred),atom(Pred)|
+%	ty#functor(X,Pred,1,X1),
+%	ty#arg(X1,1,AttrDefs,_X2),
+	vector_element(X,1,AttrDefs),
+	mk_dcl_attrs(AttrDefs,AttrPairs,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    % [注意!]
+	    % AttrPairsが{Key,Data}の形式であることを前提にしてPIMOSの
+	    % sorterを利用している。
+%	    sorter:key_sort(AttrPairs,SortedAttrPairs),
+	    ty_osif:key_sort(AttrPairs,SortedAttrPairs),
+%	    pterm#new(PTerm),
+	    new_vector(PTerm,3),
+%	    pterm#set(typename,Pred,PTerm,PTerm1),
+	    set_vector_element(PTerm,0,_,Pred,PTerm1),
+%	    pterm#set(attributes,SortedAttrPairs,PTerm1,NewPTerm),
+	    set_vector_element(PTerm1,2,_,SortedAttrPairs,NewPTerm),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    NewPTerm = ty#void,
+	    NewPTerm = '&void',
+	    Result = R1
+	).
+otherwise.
+mk_dcl_pterm(X,NewPTerm,Result):-
+%	NewPTerm = ty#void,
+	NewPTerm = '&void',
+	Result = abnormal(Info),
+%	Info = {ty#typemid,illegal_dcl_syntax,[X]}.
+	Info = {type,illegal_dcl_syntax,[X]}.
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_attribute_dcl_syntax
+mk_dcl_attrs([],Attrs,Result):-
+    Attrs = [],
+%    Result = normal(ty#yes).
+    Result = normal(success).
+mk_dcl_attrs([Pair|Pairs],Attrs,Result):-
+%    ty#functor(Pair,syn#dclattr,2)|
+    functor(Pair,P,A),P=':',A=:=2|
+%	ty#arg(Pair,1,Label,Pair1),
+	arg(1,Pair,Label),
+%	ty#arg(Pair1,2,Value,_Pair2),
+	arg(2,Pair,Value),
+	mk_dcl_pterm(Value,PTermValue,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+%	    ty_osif:term_to_string(Label,LabelStr),
+	    ty_osif:atom_to_string(Label,LabelStr),
+%	    attribute#new(Attr),
+	    new_vector(Attr,2),
+%	    attribute#set(label,LabelStr,Attr,Attr1),
+	    set_vector_element(Attr,0,_,LabelStr,Attr1),
+%	    attribute#set(value,PTermValue,Attr1,NewAttr),
+	    set_vector_element(Attr1,1,_,PTermValue,NewAttr),
+	    Attrs = [NewAttr|NewAttrs],
+	    mk_dcl_attrs(Pairs,NewAttrs,Result)
+	;otherwise;true ->
+	    Attrs = [],
+	    Result = R1
+	).
+otherwise.
+mk_dcl_attrs([Pair|_Pairs],Attrs,Result):-
+    Attrs = [],
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_attribute_dcl_syntax,[Pair]}.
+    Info = {type,illegal_attribute_dcl_syntax,[Pair]}.
+otherwise.
+mk_dcl_attrs(Term,Attrs,Result):-
+    Attrs = [],
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_attribute_dcl_syntax,[Term]}.
+    Info = {type,illegal_attribute_dcl_syntax,[Term]}.
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S encapsulate(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%encapsulate(X,Y):-
+%    bit2byte(X,EX),
+%    set_vector_element(EX,1,ByteList,CompactedByteList,Y),
+%    compact(ByteList,CompactedByteList).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S decapsulate(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%decapsulate(X,Y):-
+%    set_vector_element(X,1,CompactedByteList,ByteList,DX),
+%    decompact(CompactedByteList,ByteList),
+%    byte2bit(DX,Y).
+
+
+% bit-byte converter
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S bit2byte(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%bit2byte(X,Y):-
+%    bit_string_to_byte_vector(X,Y).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S byte2bit(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%byte2bit(X,Y):-
+%    byte_vector_to_bit_string(X,Y).
+
+% 1 bit string to encapsulated byte vector
+%bit_string_to_byte_vector(Bits,EncapsulatedByteVector):-
+%    string(Bits,Size,1,Bits1),
+%    (R1 := Size mod 8, R1=:=0 ->
+%        CharSize := Size / 8
+%    ;otherwise;true ->
+%        CharSize := Size / 8 + 1
+%    ),
+%    change_element_size(Bits1,8,Bytes),
+%    EncapsulatedByteVector = {Size,ByteList},
+%    four_bits(0,CharSize,Bytes,ByteList).
+
+%four_bits(N,Size,_,ByteList):-N>=Size|
+%    ByteList = [].
+%four_bits(N,Size,Bytes,ByteList):-N<Size|
+%    string_element(Bytes,N,Byte,NewBytes),
+%    ByteList = [Byte|NewByteList],
+%    four_bits(~(N+1),Size,NewBytes,NewByteList).
+
+
+% encapsulated byte vector to 1 bit string
+%byte_vector_to_bit_string(EncapsulatedByteVector,BitString):-
+%    {Size,ByteList} = EncapsulatedByteVector,
+%    (R1 := Size mod 8, R1=:=0 ->
+%        CharSize := Size / 8
+%    ;otherwise;true ->
+%        CharSize := Size / 8 + 1
+%    ),
+%    new_string(Bytes,CharSize,8),
+%    set_bytes(ByteList,0,Bytes,NewBytes),
+%    change_element_size(NewBytes,1,Bits),
+%    builtin#substring(Bits,0,Size,BitString,_).
+
+%set_bytes([],_,Bytes,NewBytes):-
+%    NewBytes = Bytes.
+%set_bytes([Byte|ByteList],N,Bytes,NewBytes):-
+%    set_string_element(Bytes,N,Byte,Bytes1),
+%    set_bytes(ByteList,~(N+1),Bytes1,NewBytes).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S compact(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+compact([],OL):-OL=[].
+compact([H|IL],OL):-
+    CurrentDigit = H,
+    CurrentOccurrence = 1,
+    ty_init:ty_compact_occurrence_threshold(Threshold),
+    n_compact(IL,CurrentDigit,CurrentOccurrence,Threshold,OL).
+
+n_compact([],CurrentDigit,CurrentOccurrence,Threshold,OL):-
+    compact_check(CurrentOccurrence,Threshold,CurrentDigit,OL,NOL),
+    NOL = [].
+n_compact([H|IL],CurrentDigit,CurrentOccurrence,Threshold,OL):-
+    H =:= CurrentDigit |
+	n_compact(IL,CurrentDigit,~(CurrentOccurrence+1),Threshold,OL).
+n_compact([H|IL],CurrentDigit,CurrentOccurrence,Threshold,OL):-
+    H =\= CurrentDigit |
+	compact_check(CurrentOccurrence,Threshold,CurrentDigit,OL,NOL),
+	NewCurrentDigit = H,
+	NewCurrentOccurrence = 1,
+	n_compact(IL,NewCurrentDigit,NewCurrentOccurrence,Threshold,NOL).
+
+compact_check(Count,Threshold,X,L,LL):-
+    Count < Threshold |
+	n_element_copy(Count,X,L,LL).
+compact_check(Count,Threshold,X,L,LL):-
+    Count >= Threshold |
+	Compaction = {Count,X},
+	L = [Compaction|LL].
+
+n_element_copy(N,X,L,LL):-
+    N > 0 |
+	L = [X|TL],
+	n_element_copy(~(N-1),X,TL,LL).
+n_element_copy(N,_X,L,LL):-
+    N =< 0 |
+	LL = L.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S decompact(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+decompact([],OL):-OL=[].
+decompact([H|IL],OL):-
+    decode_element(H,OL,TOL),
+    decompact(IL,TOL).
+
+decode_element(H,L,LL):-
+    vector(H,2) |
+	vector_element(H,0,N,H1),
+	vector_element(H1,1,X,_H2),
+	n_element_copy(N,X,L,LL).
+decode_element(H,L,LL):-
+    integer(H) |
+	L = [H|LL].
+
+
+
+% The followings are for KLIC port.
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S encapsulate(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% PseudoBitString : 8#{1,0,1,0,0,...}
+% EncapsulatedVector : {Size,[10,...]}
+encapsulate(PseudoBitString,EncapsulatedVector):-
+    string_to_stream(PseudoBitString,BitSize,BitStream),
+    bitstream_to_bytestream(BitStream,ByteStream),
+    compact(ByteStream,CompactedByteStream),
+    EncapsulatedVector = {BitSize,CompactedByteStream}.
+
+% {1,0,0,1,...} -> [1,0,0,1,...]
+string_to_stream(String,Size,Stream):-
+    generic:string(String,Size,_ElementSize),
+    string2stream(Size,String,Stream).
+
+string2stream(Size,_String,Stream):-Size=<0|
+	Stream = [].
+string2stream(Size,String,Stream):-Size>0|
+	Position := Size-1,
+	string_element(String,Position,Element),
+	Stream = [Element|NewStream],
+	string2stream(Position,String,NewStream).
+
+% ビットストリーム -> バイトストリーム(十進)
+% [1,0,0,1,...] -> [90,00,00,...]
+bitstream_to_bytestream([],ByteStream):-ByteStream = [].
+otherwise.
+bitstream_to_bytestream(BitStream,ByteStream):-
+    Count = 7,
+    Byte = 0,
+    bitstream2bytestream(BitStream,Count,Byte,ByteStream).
+
+bitstream2bytestream([],Count,Byte,ByteStream):- Count =:= 7 |
+    ByteStream = [].
+bitstream2bytestream([],Count,Byte,ByteStream):- Count < 7 |
+	ByteStream = [Byte].
+bitstream2bytestream([Bit|BitStream],Count,Byte,ByteStream):- Count =:= 0 |
+	ByteStream = [~(Byte+Bit)|NewByteStream],
+	NewCount = 7,
+	NewByte = 0,
+	bitstream2bytestream(BitStream,NewCount,NewByte,NewByteStream).
+bitstream2bytestream([Bit|BitStream],Count,Byte,ByteStream):- Count > 0 |
+	NewByte := Byte + (Bit << Count),
+	NewCount := Count-1,
+	bitstream2bytestream(BitStream,NewCount,NewByte,ByteStream).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S decapsulate(X,Y)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% PseudoBitString : 8#{1,0,1,0,0,...}
+% EncapsulatedVector : {Size,[10,...]}
+decapsulate(EncapsulatedVector,PseudoBitString):-
+    vector_element(EncapsulatedVector,0,BitSize),
+    vector_element(EncapsulatedVector,1,CompactedByteStream),
+    decompact(CompactedByteStream,ByteStream),
+    bytestream_to_bitstream(ByteStream,BitStream),
+    stream_to_string(BitStream,BitSize,PseudoBitString).
+
+bytestream_to_bitstream([],BitStream):-
+    BitStream = [].
+bytestream_to_bitstream([Byte|ByteStream],BitStream):-
+    Count = 8,
+    byte2bitstream(Count,Byte,BitStream,NewBitStream),
+    bytestream_to_bitstream(ByteStream,NewBitStream).
+
+byte2bitstream(Count,_Byte,BitStream,NewBitStream):- Count =:= 0 |
+    NewBitStream = BitStream.
+byte2bitstream(Count,Byte,BitStream,NewBitStream):- Count > 0 |
+	NewCount := Count-1,
+	Bit := Byte /\ (1 << NewCount),
+	(Bit =:= 0 ->
+	    BitStream = [0|BitStream1]
+	;otherwise;true ->
+	    BitStream = [1|BitStream1]
+	),
+	byte2bitstream(NewCount,Byte,BitStream1,NewBitStream).
+
+stream_to_string(BitStream,BitSize,PseudoBitString):-
+    new_string(PseudoBitString0,BitSize,8),
+    stream2string(BitSize,BitStream,PseudoBitString0,PseudoBitString).
+
+stream2string(EffectiveSize,_Stream,String,NewString):-
+    EffectiveSize =:= 0|
+	NewString = String.
+stream2string(EffectiveSize,[Element|Stream],String,NewString):-
+    EffectiveSize > 0|
+	Position := EffectiveSize-1,
+	set_string_element(String,Position,Element,String1),
+	stream2string(Position,Stream,String1,NewString).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S keyed_set(X)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+keyed_set(Tree):-
+    Tree = [].
+
+
+%
+% keyed_set
+%
+
+% keyed_set Tree : {Key,[Data],SmallTree,LargeTree}
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_with(Key,Data,Tree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+get_with(_Key,Data,[]):-
+    Data={}.
+otherwise.
+get_with(Key,Data,Tree):-
+%    Tree = {K,_,_,_},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_get_with(R,Key,Data,Tree).
+
+cmp_get_with(same,_Key,Data,Tree):-
+%    Tree = {_,DL,_,_},
+    vector_element(Tree,1,DL),
+    [D] = DL,
+    Data = {D}.
+cmp_get_with(less,Key,Data,Tree):-
+%    Tree = {_,_,S,_},
+    vector_element(Tree,2,S),
+    get_with(Key,Data,S).
+cmp_get_with(greater,Key,Data,Tree):-
+%    Tree = {_,_,_,L},
+    vector_element(Tree,3,L),
+    get_with(Key,Data,L).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S put_with(Key,Data,Tree,^NewTree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+put_with(Key,Data,[],NewTree):-
+%    NewTree = {Key,[Data],[],[]}.
+    new_vector(Tree0,4),
+    set_vector_element(Tree0,0,_,Key,Tree1),
+    set_vector_element(Tree1,1,_,[Data],Tree2),
+    set_vector_element(Tree2,2,_,[],Tree3),
+    set_vector_element(Tree3,3,_,[],NewTree).
+otherwise.
+put_with(Key,Data,Tree,NewTree):-
+%    Tree = {K,_,_,_},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_put_with(R,Key,Data,Tree,NewTree).
+
+cmp_put_with(same,Key,Data,Tree,NewTree):-
+%    Tree = {_,_,S,L},
+%    NewTree = {Key,[Data],S,L},
+    set_vector_element(Tree,0,_,Key,Tree1),
+    set_vector_element(Tree1,1,_,[Data],NewTree).
+cmp_put_with(less,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,NS,L},
+    set_vector_element(Tree,2,S,NS,NewTree),
+    put_with(Key,Data,S,NS).
+cmp_put_with(greater,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,S,NL},
+    set_vector_element(Tree,3,L,NL,NewTree),
+    put_with(Key,Data,L,NL).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S carbon_copy(Contents,Tree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+carbon_copy(Contents,Tree):-
+    traverse_tree(Tree,Contents,[]).
+
+traverse_tree([],Contents,NewContents):-
+    NewContents = Contents.
+traverse_tree(Tree,Contents,NewContents):-vector(Tree,4)|
+%    Tree = {Key,DL,S,L},
+    vector_element(Tree,0,Key),
+    vector_element(Tree,1,DL),
+    vector_element(Tree,2,S),
+    vector_element(Tree,3,L),
+    traverse_tree(S,Contents,Contents1),
+    key_data_pair(Key,DL,Contents1,Contents2),
+    traverse_tree(L,Contents2,NewContents).
+
+key_data_pair(_,[],Contents,NewContents):-
+    NewContents = Contents.
+key_data_pair(Key,[Data|DL],Contents,NewContents):-
+    Contents = [{Key,Data}|Contents1],
+    key_data_pair(Key,DL,Contents1,NewContents).
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S keyed_bag(X)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+keyed_bag(Tree):-
+    Tree = [].
+
+% keyed_bag Tree : {Key,DataList,Small,Large}
+
+%
+% keyed_bag
+%
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_at(Key,Data,Tree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+get_at(_,Data,[]):-
+    Data={}.
+otherwise.
+get_at(Key,Data,Tree):-
+%    Tree = {K,_,_,_},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_get_at(R,Key,Data,Tree).
+
+cmp_get_at(same,_Key,Data,Tree):-
+%    Tree = {_,DL,_,_},
+    vector_element(Tree,1,DL),
+    scan_get_data(DL,Data).
+cmp_get_at(less,Key,Data,Tree):-
+%    Tree = {_,_,S,_},
+    vector_element(Tree,2,S),
+    get_at(Key,Data,S).
+cmp_get_at(greater,Key,Data,Tree):-
+%    Tree = {_,_,_,L},
+    vector_element(Tree,3,L),
+    get_at(Key,Data,L).
+
+scan_get_data([],Data):-
+    % no data
+    Data = {}.
+scan_get_data([D|_],Data):-
+    % LIFO
+    Data = {D}.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S add_at(Key,Data,Tree,^NewTree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+add_at(Key,Data,[],NewTree):-
+%    NewTree = {Key,[Data],[],[]},
+    new_vector(Tree0,4),
+    set_vector_element(Tree0,0,_,Key,   Tree1),
+    set_vector_element(Tree1,1,_,[Data],Tree2),
+    set_vector_element(Tree2,2,_,[],    Tree3),
+    set_vector_element(Tree3,3,_,[],    NewTree).
+otherwise.
+add_at(Key,Data,Tree,NewTree):-
+%    Tree = {K,_,_,_},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_add_at(R,Key,Data,Tree,NewTree).
+
+cmp_add_at(same,Key,Data,Tree,NewTree):-
+%    Tree = {_,DL,S,L},
+%    NewTree = {Key,NDL,S,L},
+    set_vector_element(Tree,0,_,Key,Tree1),
+    scan_add_data(DL,Data,NDL),
+    set_vector_element(Tree1,1,DL,NDL,NewTree).
+cmp_add_at(less,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,NS,L},
+    set_vector_element(Tree,2,S,NS,NewTree),
+    add_at(Key,Data,S,NS).
+cmp_add_at(greater,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,S,NL},
+    set_vector_element(Tree,3,L,NL,NewTree),
+    add_at(Key,Data,L,NL).
+
+scan_add_data([],Data,NDL):-
+    NDL = [Data].
+scan_add_data(DL,Data,NDL):-DL=[_|_]|
+    NDL = [Data|DL].
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S remove_at(Key,Data,Tree,^NewTree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% If there is no data, remove_at fails.
+% Data must be given ground data otherwise deadlock.
+remove_at(Key,Data,Tree,NewTree):-
+%    Tree = {K,_,_,_},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_remove_at(R,Key,Data,Tree,NewTree).
+
+cmp_remove_at(same,Key,Data,Tree,NewTree):-
+%    Tree = {_,DL,S,L},
+%    NewTree = {Key,NDL,S,L},
+    set_vector_element(Tree,0,_,Key,Tree1),
+    set_vector_element(Tree1,1,DL,NDL,NewTree),
+    scan_remove_data(DL,Data,NDL).
+cmp_remove_at(less,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,NS,L},
+    set_vector_element(Tree,2,S,NS,NewTree),
+    remove_at(Key,Data,S,NS).
+cmp_remove_at(greater,Key,Data,Tree,NewTree):-
+%    Tree = {K,DL,S,L}
+%    NewTree = {K,DL,S,NL},
+    set_vector_element(Tree,3,L,NL,NewTree),
+    remove_at(Key,Data,L,NL).
+
+% If unifiable, remove it.
+% If Data is ground, check unifiability.
+% If Data is not ground(variable), unify it with D.
+% If no unifiable data, fail.
+scan_remove_data([D|DL],Data,NDL):-D=Data|
+    NDL = DL.
+otherwise.
+scan_remove_data([D|DL],Data,NDL):-
+    NDL = [D|DL1],
+    scan_remove_data(DL,Data,DL1).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S carbon_copy_at(Contents,Tree)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+carbon_copy_at(Key,Contents,Tree):-
+    traverse_tree_at(Key,Tree,Contents).
+
+traverse_tree_at(_,[],Contents):-
+    Contents = [].
+otherwise.
+traverse_tree_at(Key,Tree,Contents):-
+%    Tree = {K,DL,S,L},
+    vector_element(Tree,0,K),
+    comp(Key,K,R),
+    cmp_traverse_tree_at(R,Key,Tree,Contents).
+    
+cmp_traverse_tree_at(same,Key,Tree,Contents):-
+%    Tree = {Key,DL,_,_},
+    vector_element(Tree,1,Contents).
+cmp_traverse_tree_at(less,Key,Tree,Contents):-
+%    Tree = {_,_,S,_},
+    vector_element(Tree,2,S),
+    traverse_tree_at(Key,S,Contents).
+cmp_traverse_tree_at(greater,Key,Tree,Contents):-
+%    Tree = {_,_,_,L},
+    vector_element(Tree,3,L),
+    traverse_tree_at(Key,L,Contents).
+
+
+% comparator
+% We only support atom and integer. Because we only use them as key
+% of keyed_set / keyed_bag.
+comp(X,Y,Z):-atom(X),atom(Y)|
+	comp_atom(X,Y,Z).
+comp(X,Y,Z):-integer(X),integer(Y)|
+	comp_int(X,Y,Z).
+
+comp_atom(X,Y,Z):-X=Y|
+	Z=same.
+comp_atom(X,Y,Z):-
+    tag_and_value(X,_,Xv),tag_and_value(Y,_,Yv),Xv<Yv |
+	Z=less.
+comp_atom(X,Y,Z):-
+    tag_and_value(X,_,Xv),tag_and_value(Y,_,Yv),Xv>Yv |
+	Z=greater.
+
+comp_int(X,Y,Z):-X=:=Y|
+	Z=same.
+comp_int(X,Y,Z):-X<Y|
+	Z=less.
+comp_int(X,Y,Z):-X>Y|
+	Z=greater.

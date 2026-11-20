@@ -1,0 +1,61 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_showArgumentUtility.
+
+:- public 
+    show_argumentList/3,
+    show_argumentInfo/5,
+    show_status/4,
+    receive_argumentInfo/5.
+            
+:- with_macro pimos.
+
+%show_argumentList
+    show_argumentList({Pool1,Info1,CSS1},Data,R):-true|
+        dbtcui_argumentListUtility:get_initialArgumentList({Pool1,Info1},
+                {Pool2,Info},LArgList,ArgumentList),
+        (   wait(ArgumentList)->
+                Pool2   = [make(nh,NH)|Pool],
+                NH      = [receive(argumentList,ArgumentList,R)],
+                CSS1    = [set(argumentList,LArgList)|CSS],
+                Data    = {Pool,Info,CSS}).
+
+%show_argumentInfo
+    show_argumentInfo({Pool1,Info1,CSS1},FLArg,CLArg,Data,R):-true|
+        Data1 = {Pool1,Info1,CSS1},
+        dbtcui_shellUtility4:get_aidInfo(FLArg,CLArg,Data1,Data2,AidInfo),
+        dbtcui_shellUtility4:get_issue(CLArg,Data2,Data4,Issue),
+        dbtcui_shellUtility4:get_argument(CLArg,Data4,Data5,Argument),
+        dbtcui_shellUtility4:get_status(Data5,Data6,Status),
+        dbtcui_shellUtility4:get_history(Data6,{Pool2,Info,CSS},History),
+        ArgumentInfo = [AidInfo,Issue,Argument,Status,History],
+        send_protocol(show,ArgumentInfo,Pool2,Pool,R),
+        Data         = {Pool,Info,CSS}.
+
+%show_status
+    show_status(Pool1,Status,Pool,R):-true|
+        ArgumentInfo = [{nil,nil,nil},nil,{nil,nil,[]},Status,nil],
+        send_protocol(show,ArgumentInfo,Pool1,Pool,R).
+
+%receive_argumentInfo
+    receive_argumentInfo({Pool1,Info1,CSS1},FLArg,CLArg,Data,R):-true|
+        dbtcui_shellUtility4:get_argumentInfo({Pool1,Info1,{FLArg,_},CSS1},CLArg,
+                {Pool2,Info,CSS2},ArgumentInfo,R1),
+        (   wait(R1)->
+                send_protocol(receive,ArgumentInfo,Pool2,Pool,R),
+                (   wait(R)->
+                        CSS2 = [set(status,"")|CSS],
+                        Data = {Pool,Info,CSS})).
+
+
+%%%%%%%%internal method
+%send_protocol
+    send_protocol(show,   ArgumentInfo,Pool1,Pool,R):-true|
+        Pool1   = [make(nh,NH)|Pool],
+        NH      = [show(argument,ArgumentInfo,R)].
+    send_protocol(receive,ArgumentInfo,Pool1,Pool,R):-true|
+        Pool1   = [make(nh,NH)|Pool],
+        NH      = [receive(argument,ArgumentInfo,R)].

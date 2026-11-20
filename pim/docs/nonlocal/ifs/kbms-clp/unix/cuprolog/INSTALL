@@ -1,0 +1,62 @@
+	(C)1992 Institute for New Generation Computer Technology
+	(Read COPYRIGHT for detailed information.)
+
+ICOT Free Software
+"Constraint Logic Programming Lanuguage	cu-Prolog"
+INSTALL GUIDE
+
+---------------------------------
+1. How to install cu-Prolog.
+To get the execution code of cu-Prolog, 
+you have only to compile and link 
+all the modules (src/*.c files). In UNIX for example, type 
+ 	 cc -o cuprolog *.c [CR]
+or 
+	 make [CR]
+
+For optimization and debugging, see src/makefile.
+
+2. How to customize cu-Prolog.
+Before compiling, you may have to rewrite some statements in 
+ src/include.h in accordance with your system.
+
+2.1 CPU time
+cu-Prolog uses system dependent libraries to count process times.
+(1) If your system has  times() function, 
+	(times() is the UNIX 4.2/3 BSD Library which returns 
+	CPU time in 60th of a second.)
+ 	 #define CPUTIME	60
+(2) If times() in your system returns CPU time in N-th of a second,
+	 #define CPUTIME	N
+(3) In Sun-4 system,  clock() is supported.
+Then, please define  SUN4 as follows instead of  CPUTIME.
+	 #define SUN4	1
+(4) Otherwise, the CPU time is not printed.
+ 	 #define CPUTIME	0
+
+2.2 Heap size
+cu-Prolog has the following data areas.
+(1) system heap	that stores program clauses.
+	Its size is  SHEAP_SIZE (the default value is 20000)
+(2) user heap	that stores temporal data in the Prolog interpreter.
+	Its size is  HEAP_SIZE  (the default value is 600000)
+(3) constraint heap	that stores constraints and PSTs.
+	Its size is  CHEAP_SIZE  (the default value is 25000)
+(4) environment stack	that stores temporal environments in the
+Prolog interpreter.
+	Its size is  ESP_SIZE  (the default value is 500000)
+(5) user stack	that is a trail stack in the Prolog interpreter.
+	Its size is  USTACK_SIZE  (the default value is 10000)
+(6) string heap	that stores strings.
+	Its size is  NAME_SIZE   (the default value is 50000)
+
+You can adjust these stack sizes with command arguments.
+
+2.3 Adding new system predicates
+To add your new system predicates, read the following documents. 
+	doc/newpred_e.doc  (English)
+	doc/newpred_j.doc  (Japanese)
+
+------------------------------------
+
+(For more information, refer to ./doc/cu3eman.tex.)

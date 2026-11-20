@@ -1,0 +1,100 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+# modified by S.Tanabe '95/08/01
+-->
+<title>（９）制約論理型言語：ｃｕ−Ｐｒｏｌｏｇ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（９）制約論理型言語：ｃｕ−Ｐｒｏｌｏｇ</h2>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシン
+	環　　境：UNIX
+	言　　語：C
+	ソース量：0.4 MB
+	文　　書：ユーザーズマニュアル (日本語／英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+記号的・組合せ的制約を対象とする制約論理型言語ｃｕ−Ｐｒｏｌｏｇの処理
+系。<p>
+
+<h2>特徴</h2>
+
+<UL>
+
+<LI>ＵＮＩＸ上スタンドアローンで動作するインタプリタ（Ｃによる全ソース
+公開）
+
+<LI>ＤＥＣ−１０　Ｐｒｏｌｏｇ準拠シンタックス
+
+<LI>自然言語文法理論の素性構造に対応する部分項を導入　例｛ｆ／ａ，ｇ／
+ｂ，ｈ／Ｘ｝
+
+<LI>unfold/fold変換をベースにした記号・組合せ的制約ソルバー
+
+</UL>
+<p>
+
+<h2>機能</h2>
+
+従来の制約論理型言語では、代数方程式や不等式による数値的な制約を扱うも
+のが多い。しかし、自然言語処理およびＡＩ全般では、記号・組合せ的制約が
+しばしば現れる。ｃｕ−Ｐｒｏｌｏｇはまさに後者の制約を処理するべく設計
+された。<P>
+
+ｃｕ−Ｐｒｏｌｏｇは、ホーン節の拡張である次の制約付ホーン節（ＣＨＣ）
+にて記述される。<P>
+
+<dl>
+	<dd><img src="009-J.gif">
+</dl>
+<pre>
+
+ここで、制約部分には<P>
+
+<CENTER>
+member(X,[ga,wo,ni]) や head_feature_principle(H,M,D)
+</CENTER>
+
+などの、ユーザが定義した述語を用いることができるのである。制約解消系で
+は、プログラム変換の技法であるunfold/fold変換をヒューリスティックスで
+制御しているのもユニークな点である。<P>
+
+ｃｕ−Ｐｒｏｌｏｇの特徴を生かした応用として、制約ベースの日本語文法理
+論である日本語句構造文法（ＪＰＳＧ）に基づく、簡単な日本語のパーザを付
+す。ここでは、自然言語の辞書や文法が、部分項および組合せ制約によりエレ
+ガントに記述されているのを見ることができるだろう。<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li><a
+href="../../../ifs/kbms-clp/unix/cuprolog/README.j">README</a>,
+<a
+href="../../../ifs/kbms-clp/unix/cuprolog/CHANGES">HISTORY</a>,
+<a
+href="../../../ifs/kbms-clp/unix/cuprolog/INSTALL.j">INSTALL</a>,
+<a
+href="../../../ifs/kbms-clp/unix/cuprolog/cupdoc.tar.gz">DOCUMENT</a>.
+
+<li>制約論理型言語：ｃｕ−Ｐｒｏｌｏｇ [108K] <a
+href="../../../ifs/kbms-clp/unix/cuprolog/cupsrc.tar.gz"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

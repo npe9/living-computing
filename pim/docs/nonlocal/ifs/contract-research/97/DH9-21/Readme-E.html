@@ -1,0 +1,476 @@
+﻿<!- Copyright (C) 1996-1998 by Haruo Yokota,                  >
+<!-     Japan Advanced Inst. of Sci. and Tech.,               >
+<!-     1-1 Asahidai, Tatsunokuchi, Ishikawa 923-1292, Japan. >
+
+<html>
+<head>
+<title>Parade: PARallel Active Database Engine</title>
+</head>
+
+<body>
+<center>
+<h1> Parade: PARallel Active Database Engine </h1>
+<dl>
+<dt> Copyright (C) 1996-1998 by Haruo Yokota,
+<dl> 
+<dt> Japan Advanced Inst. of Sci. and Tech., 
+<dt>1-1 Asahidai, Tatsunokuchi, Ishikawa 923-1292, Japan.
+</dl>
+</dl>
+</center>
+
+<hr>
+<h3>Contents</h3>
+
+<dl>
+<dt><a href="#fea">Features of this software</a>
+<dt><a href="#req">Required Environment</a>
+<dt><a href="#dir">Directories</a>
+<dt><a href="#inst">Installation</a>
+<dt><a href="#usage">Usage</a>
+<dt><a href="#sqlcmd">Command accepted by SQL client</a>
+<dt><a href="#sqlex">SQL examples</a>
+<dt><a href="#svrcmd">Commands accepted by Parade server</a>
+<dt><a href="#note">Note</a>
+</dl> <p>
+
+<hr>
+<a name="fea">
+<h3>Features of the Software</h3>
+
+This software is an experimental parallel active database system which
+enhances traditional database functionality with powerful rule
+processing capabilities.  The rules are defined by users to specify
+the desired active behavior that in passive database system must be
+encoded in applications.  <p>
+The software has the following functions:
+<ul>
+<li> It supports parallel nested transactions for efficient rule
+execution.  Using the nested transaction mechanism, an abortion of a
+child transaction has no effect upon the parent transaction.
+<li> A distributed deadlock detection mechanism makes the system avoid
+bottlenecks in concurrency control processing.
+<li> Several levels of parallelism are implemented, such as, intra
+relational algebra operation parallelism by partitioning data
+horizontally, inter algebra operation parallelism by pipeline
+execution of KLIC's logical variables, and parallel nested
+transactions.
+<li> It supports interactive SQL clients as well as relational algebra
+streams from KLIC clients.
+<li> The rule manager, which utilizes the suspending and resuming mechanism
+of KL1 processes, enables active data handling under the nested transaction.
+<li> Page based I/O sub-system provides about ten times better performance
+than the original KLIC I/O. The page based I/O is implemented by
+using generic object of KLIC. Some relational operations are executed as
+method calls to the page object. Currently, only projection, selection, and
+join operations are supported.
+</ul>
+
+<hr>
+<a name="req">
+<h3>Required Environment</h3>
+
+<ul>
+<li> nCUBE2:nCX 5.105a 3.4.0 (both nbsd and nsdisk are required)
+<li> SunOS 4.1.3
+<li> Solaris 2.4 for Sparc
+<li> Solaris 2.6 for Intel
+<li> 386 BSD  (BSDI BSD/OS 2.0.1)
+<li> FreeBSD  (RELEASE 2.2.5)
+<li> NEWS: NEWS-OS 6.1.1
+</ul>
+
+<hr>
+<a name="dir">
+<h3>Directories</h3>
+
+<dl>
+<dt> Expanded directory has the following directories: <p>
+<dl>
+<dt> COPYRIGHT -- copyright
+<dt> Readme-E.html -- (HTML) README in English
+<dt> Readme-J.html -- (HTML) README in Japanese
+<dt> use-of-software-E -- (TEXT) conditions for use of this software in English
+<dt> use-of-software-J -- (TEXT) conditions for use of this 
+software in Japanese   
+<dt> rdbhosts -- registration file for the SQL servers
+<dt> Makefile -- makefile
+<dl>
+<dt> doc/    -- documents in Japanese
+<dt> common/ -- common use source and relations
+<dl>
+<dt> client/ -- common source of clients
+<dl>
+<dt> sqlclt/ -- common source of SQL client
+<dt> oqlclt/ -- common source of OQL client
+</dl>
+<dt> server/ -- common source of Parade server
+<dt> coding/ -- source for enhancing termio
+<dt> util/   -- source of utility (ex. append)
+<dt> rel/    -- readable relations
+<dt> newrel/ -- encoded relations (automatically generated at the install)
+</dl>
+<dt> sun/    -- proper source for unix (SUN) workstations
+<dl>
+<dt> client/ -- clients for unix workstations
+<dl>
+<dt> sqlclt/  -- SQL client for unix workstations
+<dt> oqlclt/  -- OQL client for unix workstations
+<dt> javaQBE/ -- QBE client for unix workstations
+</dl>
+<dt> server/ -- Parade server for unix workstations
+<dt> socket/ -- source of socket and parallel I/O for unix workstations
+</dl>
+<dt> ncube/  -- proper source for nCUBE2 parallel machines
+<dl>
+<dt> client/ -- SQL client for nCUBE2
+<dt> server/ -- Parade server for nCUBE2
+<dt> socket/ -- source of socket and parallel I/O for nCUBE2
+</dl>
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="inst">
+<h3>Installation</h3>
+
+<dl>
+<dt> Install into a unix workstation (ex. sun)
+<dl> 
+<dt> "make" or "make sun" at the top directory
+</dl>
+<p>
+<dt> Install into an nCUBE2 machine
+<dl>
+<dt> Prepare KLIC for nCUBE2
+<dl>
+<dt> If you do not have KLIC for nCUBE2, please contact:
+<dl>
+<dt> Email: miyazaki@jaist.ac.jp
+</dl>
+</dl>
+<dt> "make ncube" at the top directory in the host machine of nCUBE2
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="usage">
+<h3> Usage </h3>
+
+<dl>
+<dt> Parade server on SUN
+<dl>
+<dt> Go to the directory of server
+<dl>
+<dt> sun1> cd sun/server
+</dl>
+<dt> Execute server
+<dl>
+<dt> sun1> ./rdbserv
+<dl>
+<dt> Default port number is 12345.
+<dt> If you want to change the port number to 23456, 
+</dl>
+<dt> sun1> ./rdbserv 23456
+</dl>
+</dl>
+<p>
+<dt> SQL client for SUN Server
+<dl> 
+<dt> Go to the directory of client for SUN
+<dl>
+<dt> sun2> cd sun/client/sqlclt
+</dl>
+<dt> Execute client
+<dl>
+<dt> sun2> ./sqlclt server: sun1 port: 12345 echo: off
+<dl>
+<dt> or
+</dl>
+<dt> sun2> ./sqlclt
+<dt> Server Machine: sun1.
+<dt> Server Port: 12345.
+<dt> Echo: off.
+</dl>
+</dl>
+<p>
+<dt> Parade server on nCUBE2
+<dl>
+<dt> Go to the directory of server
+<dl>
+<dt> ncube> cd ncube/server
+</dl>
+<dt> Execute server (ex. using 4 processors in 3 dimensions)
+<dl>
+<dt> ncube> xnc -d3 ./rdbserv -p4
+<dl>
+</dl>
+</dl>
+</dl>
+<p>
+<dt> SQL client for nCUBE Server
+<dl> 
+<dt> Go to the directory of client for nCUBE
+<dl>
+<dt> sun3> cd ncube/client
+</dl>
+<dt> Execute client
+<dl>
+<dt> sun3> ./sqlclt server: ncube port: 12345 echo: off
+</dl>
+</dl>
+<p>
+
+<hr>
+<a name="sqlcmd">
+<h3>Commands accepted by SQL client</h3>
+
+<dl>
+<dt> start transaction
+<dt> commit transaction
+<dt> rollback transaction
+<dt> abortall transaction
+<dt> create table "TABLE"
+<dt> attribute("ATTNAME", ATTNUNBER, "TYPE", LENGTH)
+<dt> primary_key("TYPE", NUMBER)
+<dt> partitions("TYPE", "DISK")
+<dt> parallel_disk({DISK_NUMBER, DISKDIROFROOT, DISKDIROFLEAF...})
+<dt> page(PAGESIZE(K), MAXCHILDNO, MAXRECORDNO)
+<dt> insert into "TABLE"
+<dt> values([TUPLE])
+<dt> delete "TABLE"
+<dt> drop table "TABLE"
+<dt> defrule "RULE"
+<dt> undefrule
+<dt> echo "STRING"
+<dt> select "ATT",... / count / sum("ATT") / avg("ATT") / max("ATT") / min("ATT")
+<dt> where EXPRESSION
+<dt> from ``TABLE'',...
+<dt> and / or 
+<dt> = / < / > / =< / =< / \= / in
+<dt> order by ``ATT''
+<dt> group by ``ATT''
+<dt> having EXPRESSION
+<dt> end
+</dl>
+<p>
+
+<hr>
+<a name="sqlex">
+<h3> SQL examples </h3>
+
+Create a relation based on KLIC I/O:
+<dl>
+<dt> SQL> create table work.
+<dt> SQL> attribute("number", 1, "integer", 4).
+<dt> SQL> attribute("name", 2, "char", 20).
+<dt> SQL> partitions(flat,"../../common/newrel/work").
+<dt> SQL> end.
+</dl> <p>
+
+Create a relation based on page I/O:
+<dl>
+<dt> SQL> create table workp.
+<dt> SQL> attribute("number", 1, "integer", 4).
+<dt> SQL> attribute("name", 2, "char", 20).
+<dt> SQL> partitions(page,"../../common/newrel/workp").
+<dt> SQL> end.
+</dl> <p>
+
+Create a relation with Btree index:
+<dl>
+
+<dt> SQL> create table sampleb.
+<dt> SQL> attribute("number", 1, "integer", 7).
+<dt> SQL> attribute("yomi", 2, "char", 10).
+<dt> SQL> partitions(btree, "../../common/newrel/btree/sampleb",1,1).
+<dt> SQL> parallel_disk({2,"../../common/newrel/btree/sasmpleb",
+"../../common/newrel/btree1/","../../common/newrel/btree2/"}).
+<dt> SQL> primary_key(int, 1).
+<dt> SQL> page(4, 200, 40).
+<dt> SQL> end.
+</dl> <p>
+
+Insert tuples:
+<dl>
+<dt> SQL> insert into work.
+<dt> SQL> values([1,"foo"]).
+<dt> SQL> values([2,"hoge"]).
+<dt> SQL> values([3,"bar"]).
+<dt> SQL> values([4,"afo"]).
+<dt> SQL> end.
+</dl> <p>
+
+Delete tuples:
+<dl>
+<dt> SQL> delete.
+<dt> SQL> from work.
+<dt> SQL> where number=2.
+<dt> SQL> end.
+</dl> <p>
+
+Declaration of a transaction:
+<dl>
+<dt> SQL> start transaction.
+<dt> SQL> insert into work.
+<dt> SQL> values([5,"bfo"]).
+<dt> SQL> end.
+<dt> SQL> commit transaction.
+</dl> <p>
+
+Rollback the sub-transaction:
+<dl>
+<dt> SQL> start transaction.
+<dt> SQL> delete
+<dt> SQL> from work.
+<dt> SQL> where number=1.
+<dt> SQL> end.
+<dt> SQL> rollback transaction.
+</dl> <p>
+
+Abort the root transaction:
+<dl>
+<dt> SQL> insert into work.
+<dt> SQL> values([5,"bfo"]).
+<dt> SQL> end.
+<dt> SQL> abortall transaction.
+</dl> <p>
+
+Drop a relation:
+<dl>
+<dt> SQL> drop table work.
+<dt> SQL> end.
+</dl> <p>
+
+Get relation without conditions:
+<dl>
+<dt> SQL> select * .
+<dt> SQL> from emp.
+<dt> SQL> end.
+</dl> <p>
+
+Selection1:
+<dl>
+<dt> SQL> select ename, job, sal, comm.
+<dt> SQL> from emp.
+<dt> SQL> where job="manager" or ( sal > [3000] and deptno = [10] ).
+<dt> SQL> end.
+</dl> <p>
+
+Selection2:
+<dl>
+<dt> SQL> select ename, dept.
+<dt> SQL> from emp.
+<dt> SQL> where dept in [20, 30].
+<dt> SQL> end.
+</dl> <p>
+
+Join (nested):
+<dl>
+<dt> SQL> select empno, job, dept.
+<dt> SQL> from emp.
+<dt> SQL> where dept = next.
+<dt> SQL> select dept.
+<dt> SQL> from dept.
+<dt> SQL> where location = next.
+<dt> SQL> select location.
+<dt> SQL> from location.
+<dt> SQL> where name = "Sighthill".
+<dt> SQL> end.
+</dl> <p>
+
+Join:
+<dl>
+<dt> SQL> select * .
+<dt> SQL> from emp, dept.
+<dt> SQL> where emp.dept = dept.dept.
+<dt> SQL> end.
+</dl> <p>
+
+Count:
+<dl>
+<dt> SQL> select count.
+<dt> SQL> from emp.
+<dt> SQL> where job="manager".
+<dt> SQL> end.
+</dl> <p>
+
+Group by
+<dl>
+<dt> SQL> select job, avg(sal).
+<dt> SQL> from emp.
+<dt> SQL> group by job.
+<dt> SQL> end.
+</dl> <p>
+
+Add a rule
+<dl>
+<dt> SQL> defrule "tmp".
+<dt> SQL> when retrieve(work).
+<dt> SQL> if true.
+<dt> SQL> then immidiate.
+<dt> SQL> echo "warning".
+<dt> SQL> end.
+</dl> <p>
+
+Delete a rule
+<dl>
+<dt> SQL> undefrule.
+<dt> SQL> where name="tmp".
+<dt> SQL> end.
+</dl> <p>
+
+
+Please find examples in "common/input"
+<p>
+
+<hr>
+<a name="svrcmd">
+<h3>Commands accepted by Parade server</h3>
+
+<dl>
+<dt> [start_transaction]
+<dt> [commit_transaction]
+<dt> [rollback_transaction]
+<dt> [abortall_transaction]
+<dt> [echo(STRING)]
+<dt> [create(RELNAME, PARAMETER)]
+<dt> [drop(RELNAME)]
+<dt> [insert(RELNAME, LISTOFTUPLES)]
+<dt> [delete(RELNAME, LISTOFTUPLES)]
+<dt> [get_relation(RELNAME)]
+<dt> [join(INRELNAME1, INRELNAME2, CONDITION, OUTRELNAME)]
+<dt> [selection(INRELNAME, CONDITION, OUTRELNAME)]
+<dt> [projection(INRELNAME, ATTLIST, OUTRELNAME)]
+<dt> [difference_rdb(INRELNAME1, INRELNAME2, OUTRELNAME)]
+<dt> [sort_rdb(INRELNAME, CONDITION, OUTRELNAME)]
+<dt> [group_by(INRELNAME, ATT, OUTRELNAME)]
+<dt> [count_rdb(INRELNAME, OUTRELNAME)]
+<dt> [sum_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [avg_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [max_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [min_rdb(INRELNAME, ATT, OUTRELNAME)]
+<dt> [copy_rdb(INRELNAME, OUTRELNAME)]
+</dl>
+<p>
+
+<hr>
+<a name="note">
+<h3>Note</h3>
+
+<ul>
+<li> This software is still under development, and not guaranteed the
+normal behavior.
+<li> Currently, tables created or dropped by a client are not reflected
+to the other clients automatically.  To reflect these operations,
+these clients should be restarted. 
+<li> Socket communication in Sun Workstations uses asynchronous I/O having
+some bugs of OS or KLIC, and may hang-up at start up time.  At that case,
+restart the client or server.
+<li> For NEWS-OS 6.1.X, default in /etc/socketconf should be changed
+from syscall to sockmod.<p>
+</ul>
+</body>
+</html>

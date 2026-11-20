@@ -1,0 +1,93 @@
+﻿<!--
+# created by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+-->
+<title> (86) Distributed Pool</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (86) Distributed Pool</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/UNIX machine
+	Environment: PIMOS/UNIX, KLIC
+	Language:    KL1
+	Source Code: 0.2 MB
+	Documents:   User's Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Distributed pool provides basic in-memory database features where data
+are distributed to many processing nodes.  <p>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>The contents of a pool are cached on each node to reduce the cost
+of access on each node.
+
+<li>The distributed pool distributes memory cunsumption to many
+processing nodes, making the maximum capacity of the pool much larger.
+
+<li>Application programers can distribute the computing load flexibly
+without worrying about data consistency.
+
+</ul>
+<p>
+
+<h2><b>Function</b></h2>
+
+The distributed pool stores data with a search key and enables its
+extraction and reference according to its key. It provides the
+following functions:<P>
+
+<ul>
+
+<li>Referring data.
+
+<li>Adding data.
+
+<li>Extracting data, if any, and then storing new data with the same
+key.
+
+<li>Extracting data, if any, and then storing new data with the same
+key. If there is no corresponding data, the new data is not stored in
+the pool either.
+
+<li>Extracting data if any with the given key exist.
+
+<li>Deleting data.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/README">README</a>.
+
+<li> Distributed Pool<br> <a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/dpool_klic.tgz">KLIC
+version [169K]<img src="../../../PICS/I-ftp-copy.gif"></a><br> <a
+href="../../../ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz">PIMOS
+version [226K]<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

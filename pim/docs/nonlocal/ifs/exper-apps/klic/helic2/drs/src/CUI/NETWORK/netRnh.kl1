@@ -1,0 +1,95 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_networkHandler.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create(I,R):-true|
+        initiate(R),
+        loop(I).
+
+%initiate
+    initiate(R):-true|
+        R = normal(success).
+
+%loop
+    loop([]):-true|
+        true.
+    loop([get_commandArguments(Command,Parameter,Arguments,Result)|T]):-true|
+        get_commandArguments(Command,Parameter,Arguments,Result),
+        loop(T).
+    loop([receive(Parameter,Arguments,Result)|T]):-true|
+        receive(Parameter,Arguments,Result),
+        loop(T).
+
+%get_commandArguments1
+    get_commandArguments(Command,Parameter,Arguments,Result):-true|
+        rbrcui_parser:get_commandArguments(Command,Parameter,Arguments,Result).
+
+%receive
+    receive(Parameter,Arguments,Result):-true|
+        receive1(Parameter,Arguments,R1),
+        (   wait(R1)->
+                Result = normal(success)).
+
+%receive1
+%before start
+    receive1(useView,View,Result):-true|
+        rbrcui_showPom:show_useView(View,Result).
+    receive1(useSpPriority,View,Result):-true|
+        rbrcui_showPom:show_useSpPriority(View,Result).
+    receive1(useUnit,UnitList,Result):-true|
+        rbrcui_showPom:show_useUnit(UnitList,Result).
+
+    receive1(view,ViewList,Result):-true|
+        rbrcui_showPom:show_view(ViewList,Result).
+    receive1(sp,SPList,Result):-true|
+        rbrcui_showPom:show_sp(SPList,Result).
+    receive1(unit,UnitList,Result):-true|
+        rbrcui_showPom:show_unit(UnitList,Result).
+
+    receive1(goal,[{CurrentGoal,DisplayGoal}],Result):-true|
+        rbrcui_showGoal:show_goal(CurrentGoal,DisplayGoal,Result).
+
+    receive1(cl,CL,Result):-integer(CL)|
+        rbrcui_ioUtility:show_term("CL",CL,Result).
+    receive1(cl,infinite,Result):- true|
+        rbrcui_ioUtility:show_term("CL",-1,Result).
+    receive1(similarity,Sim,Result):-true|  
+        rbrcui_ioUtility:show_term("Similarity",Sim,Result).
+    receive1(weight,W,Result):-true|  
+        rbrcui_ioUtility:show_term("Weight",W,Result).
+    receive1(psiTermSimTB,PsiTermSimTB,Result):-true|  
+        rbrcui_ioUtility:show_term("PsiTermSimTB",PsiTermSimTB,Result).
+    receive1(psiTermAttWeight,PsiTermAttWeight,Result):-true|  
+        rbrcui_ioUtility:show_term("PsiTermAttWeight",PsiTermAttWeight,Result).
+
+    receive1(tf,TF,Result):-true|  
+        rbrcui_ioUtility:show_term("TraceFlag",TF,Result).
+    receive1(sr,SR,Result):-true|  
+        rbrcui_ioUtility:show_term("SpyRule",SR,Result).
+    receive1(sg,SG,Result):-true|  
+        rbrcui_ioUtility:show_term("SpyGate",SG,Result).
+
+    receive1(varInfoList,VarInfoList,Result):-true|  
+        rbrcui_showGoal:show_varInfoList(VarInfoList,Result).
+%%common 
+    receive1(ok,_,Result):-true|  
+        rbrcui_ioUtility:show_string(nil,"ok",Result).
+    receive1(errorInfo,[Reason],Result):-true|  
+        rbrcui_ioUtility:show_error(Reason,Result).
+    receive1(errorInfo,[],Result):-true|  
+        Result = normal(success).
+    receive1(pl,[PL],Result):-true|  
+        rbrcui_ioUtility:show_term("Print Length",PL,Result).
+    receive1(pt,[PT],Result):-true|  
+        rbrcui_ioUtility:show_term("Print Type",PT,Result).
+    receive1(help,Help,Result):-true|  
+        rbrcui_ioUtility:show_listY(Help,Result).

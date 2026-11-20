@@ -1,0 +1,69 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (75) Multiple Sequence Alignment by Parallel Iterative Aligner</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (75) Multiple Sequence Alignment by Parallel Iterative Aligner</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/m
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 0.42 MB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+The system partially improves temporary alignment in an iterative way,
+and can effectively achieve high-quality alignment as a result.<P>
+
+<h2><b>Features</b></h2>
+
+Multiple branches of a search tree in this combinatorial problem are
+evaluated in parallel by using many processing elements in each
+iteration.  <p>
+
+The heuristic method, `Restricted Partitioning Technique', prunes a
+large number of branches from the search tree and makes it possible to
+solve the combinatorial problem in a practical amount of time.<P>
+
+<h2><b>Function</b></h2>
+
+This system solves, for example, an alignment of 22 sequences, each of
+which has 80 amino acids, in about 10 minutes, when using PIM/m with
+256 processing elements(PEs).  <p>
+
+In the restricted partitioning technique, the number of sequences in
+the smaller devided group is restricted to one or two. 253
+PEs(combinations of 1 from 22 plus combinations of 2 from 22) are used
+to execute all restricted partitioning in parallel. Additionally, one
+processor is used for a manager process which selects the best
+alignment in every iteration.  In total, 254 PEs are employed when
+22-sequence alignment is solved.  <p>
+
+<h2>FTP</h2>
+
+<ul>
+
+<li> Multiple Sequence Alignment by Parallel Iterative Aligner [178K]
+<a href="../../../ifs/exper-apps/pimos/multialign.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

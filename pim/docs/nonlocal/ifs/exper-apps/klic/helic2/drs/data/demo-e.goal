@@ -1,0 +1,61 @@
+% 9/20 shuusei by Kokubo
+% 10/19 update for Ver.1.5 by Shibasaki
+% 10/21 shuusei by Kokubo
+
+&define_goal.
+
+{
+provable_guilty(a_object= hit(agent=person[name=>"mary"], object=person[name=>"jane"]),
+         goal=crime_of_inflicting_injury),                     % 2.1 
+
+-is_injured(a_object=person[name=>"jane"]),    % 2.2   Ver1.0と変わらず
+
+-with_criminal_intent(a_object=person[name=>"mary"],
+         object= hit(agent=person[name=>"mary"], object=person[name=>"jane"]),
+         goal=crime_of_inflicting_injury),                     % 2.5   Ver1.0と変わらず
+
+provable_guilty(a_object= take_away(agent=person[name=>"mary"],
+                          object=handbag[name=>"handbag1"],
+                          source=person[name=>"jane"]),
+         goal=crime_of_robbery),                    % 3.1 
+
+-with_criminal_intent(a_object=person[name=>"mary"],
+         object= take_away(agent=person[name=>"mary"],
+                        object=handbag[name=>"handbag1"],
+                        source=person[name=>"jane"]),
+         goal=crime_of_robbery),                    % 3.2   Ver1.0と変わらず
+
+provable_guilty(a_object= take_away(agent=person[name=>"mary"],
+                          object=handbag[name=>"handbag1"],
+                          source=person[name=>"jane"]),
+         goal=crime_of_theft),                   % 3.5
+
+-with_criminal_intent(a_object=person[name=>"mary"],
+          object=  take_away(agent=person[name=>"mary"],
+                           object=handbag[name=>"handbag1"],
+                           source=person[name=>"jane"]),
+          goal=crime_of_theft),                  % 3.6
+
+with_intent(a_object=person[name=>"mary"],
+          object=  take_away(agent=person[name=>"mary"],
+                           object=handbag[name=>"handbag1"],
+                           source=person[name=>"jane"]),
+          goal=own_illegally),                  % 3.9
+
+-with_intent(a_object=person[name=>"mary"],
+          object=  take_away(agent=person[name=>"mary"],
+                           object=handbag[name=>"handbag1"],
+                           source=person[name=>"jane"]),
+          goal=use(agent=person[name=>"mary"],
+                             object=handbag[name=>"handbag1"])),  % 3.12
+
+provable_guilty(a_object= abandon(agent=person[name=>"mary"],
+                                  object=handbag[name=>"handbag1"]),
+                   goal=crime_of_destruction)              % 3.16
+}
+
+
+
+
+
+

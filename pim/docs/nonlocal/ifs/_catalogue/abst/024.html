@@ -1,0 +1,77 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(24) Boyer-Moore Theorem Prover: BMTP</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(24) Boyer-Moore Theorem Prover: BMTP</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    SICSTUS Prolog
+	Source Code: 400 KB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A theorem prover for verifying properties of Lisp programs.
+
+<h2><b>Configuration</b></h2>
+<dl>
+<dd><img src="024.gif">
+</dl>
+<p>
+
+<h2><b>Description</b></h2>
+
+Boyer-Moore theorem prover is known as one of the most powerful
+automated reasoning systems in the world. The main feature of the
+system is as follows:
+
+<ul>
+
+<li>Deals with computationally definable objects represented as Lisp
+functions.
+
+<li>Repeatedly tries to rewrite a given formula until it is rewritten
+to TRUE or FALSE, using axioms about primitive functions (AND, OR,
+NOT, IMPLIES, EQUAL), constructors called shell (ADD1, CONS, etc.),
+and user-defined functions as rewrite rules.
+
+<li>Heuristic rewriting is applied in a sophisticated way.
+
+<li>Induction is applied using induction schemes which can be derived
+mechanically from recursively defined data-types (natural numbers,
+list structures, strings, etc.) and recursively defined functions.
+
+</ul>
+<p>
+
+This system is a compact version of the prover based on "A
+Computational Logic, Academic Press, 1979," and implemented in Prolog.
+<p>
+
+<h2>FTP</h2>
+<ul>
+<li> Boyer-Moore Theorem Prover: BMTP  [99K]
+<a href="../../../ifs/solver-prover/unix/bmtp.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

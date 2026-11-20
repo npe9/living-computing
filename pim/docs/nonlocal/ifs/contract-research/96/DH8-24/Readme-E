@@ -1,0 +1,70 @@
+#	Readme-J for Shaky v1.0
+#	Copyright (C) 1997, Masanori Ohmori (oomori@jaist.ac.jp)
+ 
+[Dirctory Tree]
+
+ +- Readme_J(in Japanese)
+ +- Readme_E(in English)
+ +- Install_J(in Japanese)
+ +- USERMAN_J(in Japanese)
+ +- [sample]
+       +- sample1
+       +- sample_sr1
+       +- sample2
+       +- sample_sr2
+ +- [src]
+       +- Makefile		
+       +- inference.pl
+       +- solve.pl
+       +- constraint_solver.pl	
+       +- io.pl			
+       +- system.pl
+       +- cs.pl			
+       +- la.pl			
+       +- tmp.pl
+       +- cs_out.pl
+       +- main.pl
+       +- transfer.pl
+       +- db.pl			
+       +- makefile.pl		
+       +- unify.pl
+       +- grammar.pl		
+       +- relation.pl		
+       +- utility.pl
+
+[Shaky Installation Manual]
+
+INSTALL_J (in Japanese)
+
+[Shaky System Operation Manual]
+
+USERMAN_J (in Japanese)
+
+[Shaky System Program Source]
+
+Makefile		
+inference.pl
+solve.pl
+constraint_solver.pl	
+io.pl			
+system.pl
+cs.pl			
+la.pl			
+tmp.pl
+cs_out.pl
+main.pl
+transfer.pl
+db.pl			
+makefile.pl		
+unify.pl
+grammar.pl		
+relation.pl		
+utility.pl
+
+[Shaky Sample Program Source]
+
+sample1
+sample1_sr
+sample2
+sample2_sr
+

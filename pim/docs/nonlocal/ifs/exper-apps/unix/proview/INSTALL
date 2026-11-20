@@ -1,0 +1,34 @@
+Protein Structure Visualization System(C++)
+
+1)Environment
+
+Machine : SGI IRIS/4D (High performance machine is required)
+
+OS	:IRIX 4.0 or higher version.
+Compiler:Gnu c++ (g++) Version 2.3 or higher version.
+         Gnu bison 1.19 or higher version is required. 
+
+2)Installation
+
+1.Source Files
+  The two systems "proview" and "3dview" should be compiled seperately.
+  Provide two directories for each system.
+  Copy all the source files (./src/*) of each system into the directory.
+
+2.Compilation and Installation
+  Then "make" at each directory. Copy the executables "proview" and
+  "3dview" into the appropriate target directory.
+
+3.Configuration of the system
+  3dview reads the configuraion file ".3dview" at the current
+  directory.  This file configurates the environment of the
+  visualization at the start up. Modify .3dview as you prefere.
+
+3)How to use
+  Read the document "DOC" or "Reference Manual" for further
+  information.
+
+
+
+
+

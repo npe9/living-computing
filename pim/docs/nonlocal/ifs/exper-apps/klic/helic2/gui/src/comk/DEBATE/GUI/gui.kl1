@@ -1,0 +1,165 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui.
+
+:- public 
+    go/0.
+            
+:- with_macro pimos.
+
+%go
+    go:-
+        dbtgui_networkHandler:create(NH,R),
+        (   R = normal(_)->
+                debate:create(DBT),
+                merge({NH1,NH2},NH),
+                dbtgui_guiCurrentState:create(NH1,CGS),
+                loop({DBT,CGS},NH2)
+        ;
+            R = abnormal(_)->
+                true
+        ).
+
+    loop(Data,NH1):- true|
+        GetProtocol = get_commandArguments(Command,AgentName,Parameter,Arguments,R1),
+        NH1 = [GetProtocol|NH],
+        (   R1 = normal(_)->
+                loop1({Command,AgentName,Parameter,Arguments},Data,NH)
+        ;
+            R1 = abnormal(_)->
+                Data = {[],[]},
+                NH   = []
+        ).
+
+
+%%loop1
+    loop1({quit,_,_,_},Data,NH):-true|
+        Data = {[],[]},
+        NH=[].
+otherwise.
+    loop1(CAPA,Data1,NH1):-true|
+        execute(CAPA,Data1,Data,GUIProtocol),
+        (   wait(GUIProtocol)->
+                NH1 = [GUIProtocol|NH],
+                GUIProtocol = receive(_,_,_,R),
+                (   wait(R)->
+                        loop(Data,NH))).
+
+%execute
+%%load
+    execute({load,  _,type,[FileName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_load:type(d,FileName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,loadFlag,_,_)->
+                dbtgui_load:type(p,FileName,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+   execute({load,  _,rule,[FileName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_load:rule(d,FileName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,loadFlag,_,_)->
+                dbtgui_load:rule(p,FileName,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+    execute({load,  _,view,[FileName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_load:view(d,FileName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,loadFlag,_,_)->
+                dbtgui_load:view(p,FileName,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+    execute({load,  _,query,[FileName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_load:goal(d,FileName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,loadFlag,_,_)->
+                dbtgui_load:goal(p,FileName,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+    execute({load,  _,command,[FileName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_run:run(d,FileName,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,loadFlag,_,_)->
+                dbtgui_run:run(p,FileName,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+
+%    execute({load,  AgentName,type,[FileName]},Data1,Data,GUIProtocol):-true|
+%        dbtgui_load:type(AgentName,FileName,Data1,Data,GUIProtocol).
+%    execute({load,  AgentName,rule,[FileName]},Data1,Data,GUIProtocol):-true|
+%        dbtgui_load:rule(AgentName,FileName,Data1,Data,GUIProtocol).
+%    execute({load,  AgentName,view,[FileName]},Data1,Data,GUIProtocol):-true|
+%        dbtgui_load:view(AgentName,FileName,Data1,Data,GUIProtocol).
+%    execute({load,  AgentName,query,[FileName]},Data1,Data,GUIProtocol):-true|
+%        dbtgui_load:goal(AgentName,FileName,Data1,Data,GUIProtocol).
+
+%%set
+    execute({set,   AgentName,solver,[Solver]},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:solver(AgentName,Solver,Data1,Data,GUIProtocol).
+
+%    execute({set,   AgentName,goal,[Pos]},Data1,Data,GUIProtocol):-true|
+%        dbtgui_set:goal(AgentName,Pos,Data1,Data,GUIProtocol).
+    execute({set,   _,goal,[Pos]},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:goal(p,Pos,Data1,Data2,GUIProtocol1),
+        (   GUIProtocol1 = receive(_,ok,_,_)->
+                dbtgui_set:goal(d,Pos,Data2,Data,GUIProtocol)
+        ;
+            GUIProtocol1 = receive(_,errorInfo,_,_)->
+                Data        = Data2,
+                GUIProtocol = GUIProtocol1
+        ).
+
+    execute({set,   AgentName,standpointList,SPList},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:standpointList(AgentName,SPList,Data1,Data,GUIProtocol).
+    execute({set,   AgentName,unitList,UnitList},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:unitList(AgentName,UnitList,Data1,Data,GUIProtocol).
+    execute({set,   AgentName,depth,[Depth]},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:depth(AgentName,Depth,Data1,Data,GUIProtocol).
+    execute({set,   AgentName,explanationMode,[Mode]},Data1,Data,GUIProtocol):-true|
+        dbtgui_set:explanationMode(AgentName,Mode,Data1,Data,GUIProtocol).
+
+
+%%send
+    execute({send,  AgentName,goalCandidateList,_},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:goalCandidateList(AgentName,Data1,Data,GUIProtocol).
+    execute({send,  AgentName,viewCandidateList,_},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:viewCandidateList(AgentName,Data1,Data,GUIProtocol).
+    execute({send,  AgentName,viewCandidate,[ViewName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:viewCandidate(AgentName,ViewName,Data1,Data,GUIProtocol).
+    execute({send,  AgentName,currentView,_},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:currentView(AgentName,Data1,Data,GUIProtocol).
+    execute({send,  AgentName,standpointList,_},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:standpointList(AgentName,Data1,Data,GUIProtocol).
+    execute({send,  AgentName,currentUnit,_},Data1,Data,GUIProtocol):-true|
+        dbtgui_send:currentUnit(AgentName,Data1,Data,GUIProtocol).
+%check
+    execute({check, AgentName,unit,[UnitName]},Data1,Data,GUIProtocol):-true|
+        dbtgui_check:unit(AgentName,UnitName,Data1,Data,GUIProtocol).
+%%startDebate
+    execute({startDebate,_,_,_},Data1,Data,GUIProtocol):-true|
+       dbtgui_startDebate:startDebate(Data1,Data,GUIProtocol).
+%%startSolve
+    execute({startSolve,_,_,_},Data1,Data,GUIProtocol):-true|
+       dbtgui_startSolve:startSolve(Data1,Data,GUIProtocol).
+%%exitBrowse
+    execute({exitBrowse,AgentName,_,_},Data1,Data,GUIProtocol):-true|
+        Data = Data1,
+	GUIProtocol = receive(AgentName,ok,[],_).
+otherwise.
+    execute({C,     AgentName,P,A},Data1,Data,GUIProtocol):-true|
+        Data         = Data1,
+        dbtgui_utility:make_errorProtocol(AgentName,
+                {gui,'This command not support',{C,P,A}},GUIProtocol).
+

@@ -1,0 +1,55 @@
+================================================================
+              README for klitcl version 1.00
+================================================================
+
+1. パッケージ内容について
+
+  このアーカイブには，以下のファイル・ディレクトリが
+  含まれています．
+
+    README                     このファイル
+    Makefile                   klitcld 生成用 Makefile
+    klitcld.c                  klitcld ソース	
+    klitcl.kl1                 klitcl モジュール
+
+    doc ディレクトリ内
+
+      klitcl.doc               簡単な使用法の説明
+
+      klitcl.tex               ユーザーズマニュアル(LaTeXソース)
+      klitcl.eps               マニュアル用図版
+      sample1.eps              (同上)
+      sample2.eps              (同上)
+
+      catalog_page.tex         klitclの紹介(IFSカタログ形式)
+
+    sample ディレクトリ内
+
+      sample1.kl1              マニュアル内にあるサンプル1
+      sample2.kl1              マニュアル内にあるサンプル2
+
+    hanoi ディレクトリ内
+
+      readme                   サンプルアプリケーションの説明
+      hanoi.tcl                サンプルアプリケーション (tclパート)
+      hanoi.kl1                サンプルアプリケーション (klicパート)
+
+2. インストールについて
+
+  インストール方については，doc/klitcl.doc あるいは doc/klitcl.tex
+  を参照してください．
+
+3. 想定しているユーザ層
+
+  このソフトウェアでは，「klic のアプリに Tk ウィジェットを用いた
+  GUI を実装したい」「klic から Tcl インタープリタの機能を用いたい」
+  というようなユーザを想定しています．
+
+4. 著作権について
+
+  本アーカイブに含まれるすべてのファイルの著作権は，
+  製作者である南雲にありますが，プログラムの改変等は
+  自由です．
+
+                                  Copyright (C) 1996 Jun Nagumo
+(eof)

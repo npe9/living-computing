@@ -1,0 +1,176 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_set.
+
+:- public 
+    goal/4,
+    useView/4,
+    useSpPriority/4,
+    useUnit/4,
+    pl/4,
+    pt/4,
+    cl/4,
+    similarity/4,
+    weight/4,
+    psiTermSimTB/4,
+    psiTermAttWeight/4.
+            
+:- with_macro pimos. 
+
+%goal
+    goal(Goal,Data1,Data,Protocol):-true|
+        rbrcui_makeFile:goal(Goal,R1),
+        (   R1 = normal(success)->
+                rbrcui_defaultName:get_inputFileName(GoalFileName),
+                rbrcui_compile:goal(GoalFileName,Data1,Data2,Protocol1),
+                (   Protocol1 = receive(ok,_,_)->
+                        goal1(0,Data2,Data,Protocol)
+                ;
+                    Protocol1 = receive(errorInfo,_,_)->
+                        Data     = Data2,
+                        Protocol = Protocol1
+                )
+        ;
+            R1 = abnormal(Reason)->
+                make_protocol(abnormal(Reason),_,_,Protocol),
+                        Data = Data1
+        ).
+
+    goal1(Pos,{RPM1,CS1},Data,Protocol):-true|
+        CS1 = [get(goalList,GoalList)|CS2],
+        (   GoalList \= nil->
+                get_element(GoalList,0,Pos,Goal,YN1),
+                (   YN1 = yes->
+                        rbrcui_protocolPool:get(set,goal,Goal,ProtocolList),
+                        send(ProtocolList,RPM1,RPM,Result),
+                        (   Result = normal(_)->
+                                CS2 = [set(currentGoal,Pos)|CS]
+                        ;
+                            Result = abnormal(_)->
+                                CS  = CS2
+                        ),
+                        make_protocol(Result,ok,[],Protocol),
+                        Data = {RPM,CS}
+                ;
+                    YN1 = no->
+                        make_protocol(abnormal({drs,'Illegal goal number',Pos}),_,_,Protocol),
+                        Data = {RPM1,CS2}
+                )
+        ;
+            GoalList = nil->
+                make_protocol(abnormal({drs,'Goal file not read',nil}),_,_,Protocol),
+                Data = {RPM1,CS2}
+        ).
+
+%useView
+    useView(View,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,useView,View,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%useSpPriority
+    useSpPriority(SPList,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,useSpPriority,SPList,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%useUnit
+    useUnit(UnitList,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,useUnit,UnitList,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%pl
+    pl(PL,{RPM1,CS1},Data,Protocol):-true|
+        CS1 = [get(displayParameter,{_,PT}),set(displayParameter,{PL,PT})|CS],
+        rbrcui_protocolPool:get(set,pl,PL,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%pt
+    pt(PT,{RPM1,CS1},Data,Protocol):-true|
+        CS1 = [get(displayParameter,{PL,_}),set(displayParameter,{PL,PT})|CS],
+        rbrcui_protocolPool:get(set,pt,PT,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%cl
+    cl(CL,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,cl,CL,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%similarity
+    similarity(Sim,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,similarity,Sim,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%weight
+    weight(W,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,weight,W,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%psiTermSimTB
+    psiTermSimTB(PsiTermSimTB,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,psiTermSimTB,PsiTermSimTB,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%psiTermAttWeight
+    psiTermAttWeight(PsiTermAttWeight,{RPM1,CS},Data,Protocol):-true|
+        rbrcui_protocolPool:get(set,psiTermAttWeight,PsiTermAttWeight,ProtocolList),
+        send(ProtocolList,RPM1,RPM,Result),
+        make_protocol(Result,ok,[],Protocol),
+        Data = {RPM,CS}.
+
+%%%%%%%%%%%%%%%%%%%%%%
+%send
+    send([Protocol],RPM1,RPM,Result):-true|
+        RPM1 = [Protocol|RPM],
+        is_normal(Protocol,Result).
+
+%%is_normal
+    is_normal(set_parameter(_,_,R),Result):-true|
+        Result = R.
+    is_normal(tracer(set(_,_,R)),Result):-true|
+        Result = R.
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,_,Protocol):-true|
+        rbrcui_utility:make_errorProtocol(Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,Arguments,Protocol):-true|
+        Protocol = receive(ProtocolName,Arguments,_).
+
+%%%%%%%%%%%%%list utility
+
+%get_element
+    get_element([],_,_,_,YN):-true|
+        YN = no.
+    get_element([E1|_],L,L,E,YN):-true|
+        E  = E1,
+        YN = yes.
+otherwise.
+    get_element([_|T],W,L,E,YN):-true|
+        W1 := W +1,
+        get_element(T,W1,L,E,YN).
+
+%reverse
+    reverse([],W,L):-true|
+        L = W.
+    reverse([H|T],W,L):-true|
+        reverse(T,[H|W],L).
+

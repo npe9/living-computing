@@ -1,0 +1,51 @@
+Readme-J
+%%% 
+%%% Copyright (C) 1997  伊藤貴康
+%%%
+%%%         CONCEPT-LR
+
+本パッケージのファイルの構成は以下のとうりである．
+
+
+INSTALL 		インストール方法
+README			CONCEPT-LRの簡単な説明
+Readme-E		ファイル構成(英語)
+Readme-J		ファイル構成(日本語)
+
+
+
+doc ディレクトリ内
+
+conceptlr.tex		CONCEPT-LRの日本語マニュアル (LaTeX) 
+                        (システムの説明，評価実験報告を含む)
+CONCEPT-LR.eps          マニュアル用図版
+example1		CONCEPT-LR の使用例 (帰納的学習)
+example2		CONCEPT-LR の使用例 (類推による学習)
+
+
+src ディレクトリ内
+
+Makefile		CONCEPT-LRを生成用 Makefile
+analogy.kl1		類推を行うモジュール
+base_op.kl1		ファイルから情報をとり出す基本操作用のモジュール
+constraint.kl1		制約知識入力を行うモジュール
+data_structure.kl1	再帰的データ構造知識を扱うモジュール
+domain.kl1		領域知識を扱うモジュール
+environment.kl1 	環境を扱うモジュール
+eqv.kl1 		等価知識を扱うモジュール
+example.kl1		事例を扱うモジュール
+generalization.kl1	非自己再帰節の一般化を行うモジュール
+handle.kl1		帰納的学習を行うモジュール
+interpreter.kl1 	SLD導出を行うモジュール
+iostream.kl1		最も低レベルの標準入出力を扱うモジュール
+justification.kl1	逐次の正当化を行うモジュール
+main.kl1		CONCEPT-LRのメインルーチン
+myfile.kl1		最も低レベルのファイル入出力を扱うモジュール
+pjustification.kl1	並列の正当化を行うモジュール
+pred.kl1		述語のタイプ付けを扱うモジュール
+rec_generalization.kl1	自己再帰節の一般化を行うモジュール
+specialization.kl1	特殊化を行うモジュール
+theory.kl1		概念データベースを扱うモジュール
+userinterface.kl1	ユーザーの入出力を扱うモジュール
+
+

@@ -1,0 +1,6 @@
+&define_goal.
+{
+    ¹½À®Í×·ï¤Ë³ºÅö¤¹¤ë(agent=²¥¤ë(agent=¹Ã, object=²µ, basis=X1, goal=X2), basis=Ë½¹Ôºá, goal=X3, object=X4),
+    ¹½À®Í×·ï¤Ë³ºÅö¤¹¤ë(agent=²¥¤ë(agent=¹Ã, object=²µ, basis=X1, goal=X2), basis=½ý³²ºá, goal=X3, object=X4) ,
+  - ¹½À®Í×·ï¤Ë³ºÅö¤¹¤ë(agent=²¥¤ë(agent=¹Ã, object=²µ, basis=X1, goal=X2), basis=½ý³²ºá, goal=X3, object=X4)}
+

@@ -1,0 +1,96 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+-->
+<title> (89) Heterogeneous Distributed Cooperative Problem-Solving System : Helios</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (89) Heterogeneous Distributed Cooperative Problem-Solving System : Helios</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    C
+	Source Code: 0.9 MB
+	Documents:   User's Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Helios is a system to support the construction of heterogeneous
+distributed cooperative problem-solving systems by establishing
+message passing between various problem solvers such as databases,
+constraint solvers, etc.  <p>
+
+<h2><b>Features</b></h2>
+
+Helios defines a problem solver as an agent and attaches cooperation
+mechanisms to it. These functions enable us to construct a
+heterogeneous distributed cooperative problem-solving system for
+solving problems with the cooperation of various agents in a
+distributed environment.  Helios encapsulates a problem solver with a
+<var>capsule</var> module which absorbs its heterogeneity. 
+Communication between agents is carried out by placing them in an
+<var>environment</var>.  An encapsulated environment also becomes an
+agent.  <p>
+
+Helios provides the capsule description language CAPL, the environment
+description language ENVL, and agent cooperation mechanisms.  <p>
+
+<dl>
+        <dd><img src="089.gif">
+</dl>
+<p>
+
+<h2><b>Function</b></h2>
+
+Helios works on a distributed environment, and supports the following
+functions.  <p>
+
+<ul>
+
+<li>communication between programs/systems implemented in various
+languages.
+
+<li>constructing a problem-solving system by combining existing
+problem solvers in a bottom-up manner.
+
+<li>constructing VLDB/VLKB by combining existing databases/knowledge
+bases.
+
+<li>constructing a constraint solving system to solve constraints over
+multiple domains by combining various constraint solvers.
+
+<li>constructing multi-agent systems/distributed problem solvers.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/kbms-clp/unix/helios/README">README</a>.
+
+<li> Heterogeneous Distributed Cooperative Problem-Solving System :
+Helios [3,700K] <a
+href="../../../ifs/kbms-clp/unix/helios/helios.tgz"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

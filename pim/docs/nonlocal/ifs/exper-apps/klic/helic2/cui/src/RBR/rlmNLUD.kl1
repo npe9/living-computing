@@ -1,0 +1,995 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_rule_manager.
+:- with_macro pimos.
+:- public
+    create/2.
+
+
+create(Strm0,Res):-
+    merge({Strm0,Strm1},Strm),
+    Res = normal(success),
+    initiate(Strm1,TRC,HyoukaTB),
+    loop(Strm,_RuleV,_RNB,_VB,_TS,_UO,HyoukaTB,_RNL,_Node,infinite,TRC).
+
+initiate(Strm1,TRC,HyoukaTB):-true|
+    rbr_tracer:create({Strm1,30,h},TRC),
+    get_initialHyoukaTB(HyoukaTB).
+
+get_initialHyoukaTB(HyoukaTB):-true|
+    HyoukaTB = {60,7,{100,90,80,70,60,50},7}.
+
+loop([get_all(Out)|T],
+        RuleV,RNB,VB,TS0,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    Out = TS0,
+    loop(T,RuleV,RNB,VB,TS0,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([],_RuleV,RNB,VB,TS,UO,_HyoukaTB,_RNL,_Node,_CntD,TRC):-
+    RNB = [], VB = [], TS = [], UO = [], TRC = [].
+loop([set_counter(CntD,Res)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD0,TRC):-
+    set_counter(CntD,CntD0,NewCntD,Res),
+    loop(T,RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,NewCntD,TRC).
+loop([get_counter(CntD1)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD,TRC):-
+    CntD1 = CntD,                                                       %oosaki modify
+    loop(T,RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD,TRC).
+loop([check_counter(CntD0,CntD1,Res)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD,TRC):-
+    check_counter(CntD,CntD0,CntD1,Res),
+    loop(T,RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD,TRC).
+loop([set_max_node(MaxNode)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,_Node0,CntD,TRC):-
+    loop(T,RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,{0,MaxNode},CntD,TRC).
+loop([get_new_node(NewNode)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node0,CntD,TRC):-
+    get_new_node(Node0,NewNode,Node),
+    loop(T,RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_rule_list(RuleList,Res)|T],
+        RuleVold,RNBold,VB,TS0,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    hLibrary:pool(keyed_bag,RNB),
+    new_vector(RuleV,1000),
+    set_rule_list(RuleList,RNB,RuleV,0,RNB1,RuleV1,Res,TS0,TS),
+    update_V(Res,RuleVold,RuleV1,RuleVnew),
+    update_VB(Res,RNBold,RNB1,RNBnew),
+    loop(T,RuleVnew,RNBnew,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_type(TypeFile,R)|T],
+        RuleV,RNB,VB,TS0,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    TS0 =[], 
+    ty_top:create_type(TypeFile,TS,R),
+    merge(TS1,TS),
+    loop(T,RuleV,RNB,VB,TS1,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_verb_index(RuleNameList,Res)|T],
+        RuleV,RNB,VBold,TS,UO,HyoukaTB,RNLold,Node,CntD,TRC):-
+  hLibrary:pool(keyed_bag,VBn),
+  get_verb_name_list(RuleNameList,RuleV,RNB,VBn,TS,RuleV1,RNB1,VB1,TS1,Res,RNL),
+  update_VB(Res,VBold,VB1,VBnew),
+  update_RNL(Res,RNLold,RNL,RNLnew),
+  loop(T,RuleV1,RNB1,VBnew,TS1,UO,HyoukaTB,RNLnew,Node,CntD,TRC).
+loop([set_unit_order_stream(UOnew)|T],
+        RuleV,RNB,VB,TS,UOold,HyoukaTB,RNL,Node,CntD,TRC):-
+    UOold = [],
+    loop(T,RuleV,RNB,VB,TS,UOnew,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_unitUnitRel(Rule,RuleE,RJ)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    UO = [get_unitUnitRel(Rule,RuleE,RJ)|UOT],
+    loop(T,RuleV,RNB,VB,TS,UOT,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_rules(Goal,RLS,NewGoals)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    get_rules(Goal,NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,RLS,TRC).
+loop([cbr_get_rules(Goal,RLS,NewGoals)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    cbr_get_rules(Goal,NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,RLS,TRC).
+%oosaki modify
+%loop([check_hTerm_Unify(HT1,HT2,{Env,HIDT},EnvHIDT1,Res)|T],RuleV,RNB,VB,TS,UO,
+%       HyoukaTB,RNL,Node,CntD,TRC):-
+%    TS = {TS1,TS2},
+%    rbr_unif:hTerm_Unify(HT1,HT2,Env,HIDT,TS1,_Hnew,_Env1,_HIDT1,Res0),
+%    EnvHIDT1 = {Env,HIDT},
+%    unif_to_consis(Res0,Res),
+%    loop(T,RuleV,RNB,VB,TS2,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([check_hTerm_Unify(HT1,HT2,{env(Env,CEnv),HIDT},EnvHIDT1,Res)|T], 
+                                                        %mod Env->env(Env,CEnv)
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    TS = {TS1,TS2},
+    rbr_unif:hTerm_Unify(HT1,HT2,Env,HIDT,TS1,_Hnew,_Env1,_HIDT1,Res0),
+    EnvHIDT1 = {env(Env,CEnv),HIDT},
+    unif_to_consis(Res0,Res),
+    loop(T,RuleV,RNB,VB,TS2,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_similarity(Sim)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB1,RNL,Node,CntD,TRC):-
+    set_similarity(HyoukaTB1,Sim,HyoukaTB),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_similarity(Sim)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    get_similarity(HyoukaTB,Sim),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_weight(Weight)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB1,RNL,Node,CntD,TRC):-
+    set_weight(HyoukaTB1,Weight,HyoukaTB),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_weight(Weight)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    get_weight(HyoukaTB,Weight),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_psiTermSimTB(PsiTermSimTB)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB1,RNL,Node,CntD,TRC):-
+    set_psiTermSimTB(HyoukaTB1,PsiTermSimTB,HyoukaTB),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_psiTermSimTB(PsiTermSimTB)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    get_psiTermSimTB(HyoukaTB,PsiTermSimTB),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([set_psiTermAttWeight(PsiTermAttWeight)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB1,RNL,Node,CntD,TRC):-
+    set_psiTermAttWeight(HyoukaTB1,PsiTermAttWeight,HyoukaTB),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([get_psiTermAttWeight(PsiTermAttWeight)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    get_psiTermAttWeight(HyoukaTB,PsiTermAttWeight),
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+%$loop([solve_blt(Query,Query1,Res)|T],
+%$        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+%$    solve_blt(Query,TS,Query1,TS1,Res),
+%$    loop(T,RuleV,RNB,VB,TS1,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([solve_blt(Query,Query1,Res)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC):-
+    Query = {Q,env(Env,EnvC),HIDT},
+    solve_blt({Q,Env,HIDT},TS,{Q1,Env1,HIDT1},TS1,Res),
+    Query1 = {Q1,env(Env1,EnvC),HIDT1},
+    loop(T,RuleV,RNB,VB,TS1,UO,HyoukaTB,RNL,Node,CntD,TRC).
+loop([tracer(Message)|T],
+        RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC1):-
+    TRC1 = [Message|TRC],
+    loop(T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNL,Node,CntD,TRC).
+
+get_new_node({CNode,MaxNode},NewNode,Node):-
+    CNode = ~(MaxNode-1) |
+    NewNode = 0, Node = {0,MaxNode}.
+get_new_node({CNode,MaxNode},NewNode,Node):-
+    CNode < ~(MaxNode-1) |
+    NewNode := CNode+1,
+    Node = {NewNode,MaxNode}.
+   
+update_VB(normal(success),VBold,VB1,VBnew):-
+    VBold = [], 
+    VBnew = VB1.
+otherwise.
+update_VB(_,VBold,VB1,VBnew):-
+    VBnew = VBold,
+    VB1 = [].
+
+update_RNL(normal(success),_RNLold,RNL1,RNLnew):-
+    RNLnew = RNL1.
+otherwise.
+update_RNL(_,RNLold,_RNL1,RNLnew):-
+    RNLnew = RNLold.
+
+update_V(normal(success),_Vold,V1,Vnew):-
+    Vnew = V1.
+otherwise.
+update_V(_,Vold,_V1,Vnew):-
+    Vnew = Vold.
+
+
+%oosaki modify
+%get_type_name({{[],PTerm},_,_},Env,Type):-
+%    pterm_with_env_to_type_name(PTerm,Env,Type).
+%get_type_name({{-,PTerm},_,_},Env,Type):-
+%    pterm_with_env_to_type_name(PTerm,Env,TypeName),
+%    Type = {-,TypeName}.
+%get_type_name({{{[],PTerm},_,_},_Triv},Env,Type):-
+%    pterm_with_env_to_type_name(PTerm,Env,Type).
+%get_type_name({{{-,PTerm},_,_},_Triv},Env,Type):-
+%    pterm_with_env_to_type_name(PTerm,Env,TypeName),
+%    Type = {-,TypeName}.
+
+get_type_name({{[],PTerm1},_,_},Env,Type):-
+    get_type_name1(PTerm1,PTerm),
+    pterm_with_env_to_type_name(PTerm,Env,Type).
+get_type_name({{-,PTerm1},_,_},Env,Type):-
+    get_type_name1(PTerm1,PTerm),
+    pterm_with_env_to_type_name(PTerm,Env,TypeName),
+    Type = {-,TypeName}.
+get_type_name({{{[],PTerm1},_,_},_Triv},Env,Type):-
+    get_type_name1(PTerm1,PTerm),
+    pterm_with_env_to_type_name(PTerm,Env,Type).
+get_type_name({{{-,PTerm1},_,_},_Triv},Env,Type):-
+    get_type_name1(PTerm1,PTerm),
+    pterm_with_env_to_type_name(PTerm,Env,TypeName),
+    Type = {-,TypeName}.
+
+get_type_name1(pterm(PTerm1,_),PTerm):-true|
+    PTerm = PTerm1.
+otherwise.
+get_type_name1(PTerm1,PTerm):-true|
+    PTerm = PTerm1.
+
+set_rule_list([{RuleName,Rule}|RT],B,RuleV,I,B1,RuleV1,Res,TS,TS1):-
+    B = [empty(RuleName,YesOrNo)|Bn],
+    set_rule_list1(YesOrNo,RuleName,Rule,RT,Bn,RuleV,I,B1,RuleV1,Res,TS,TS1).
+set_rule_list([],B,RuleV,_I,B1,RuleV1,Res,TS,TS1):-
+    TS1 = TS,
+    B1 =B,
+    RuleV1 = RuleV,
+    Res = normal(success).
+otherwise.
+set_rule_list(X,B,RuleV,_I,B1,RuleV1,Res,TS,TS1):-
+    TS1 = TS,
+    B1 =B,
+    RuleV1 = RuleV,
+    Res = abnormal({rbr,illegal_rule_list,X}).
+
+set_rule_list1(yes,RuleName,Rule,RT,B,RuleV,I,B1,RuleV1,Res,TS,TS1):-
+    check_rule(Rule,TS,RuleName,Rulem,TSm,Res0),
+    set_rule_list2(Res0,RuleName,Rulem,RT,B,RuleV,I,B1,RuleV1,Res,TSm,TS1).
+set_rule_list1(no,RuleName,_Rule,_RT,B,RuleV,_I,B1,RuleV1,Res,TS,TS1):-
+    B1 = B, RuleV1 = RuleV, TS1 = TS,
+    Res = abnormal({rbr,duplicate_rule_name,RuleName}).
+
+set_rule_list2(normal(success),RuleName,Rule,RT,B,RuleV,I,B1,RuleV1,Res,TS,TS1):-
+    B = [put(RuleName,I)|Bn],
+    set_vector_element(RuleV,I,_,Rule,RuleVn),
+    set_rule_list(RT,Bn,RuleVn,~(I+1),B1,RuleV1,Res,TS,TS1).
+set_rule_list2(Res0,_RuleName,_Rule,RT,B,RuleV,_I,B1,RuleV1,Res,TS,TS1):-
+    Res0 = abnormal({rbr,undefined_type_Pterm,PTH}) |
+    B1 = B, RuleV1 = RuleV,
+    error_rule_list(RT,PTT,TS,TS1),
+    PTL = [PTH|PTT],
+    Res = abnormal({rbr,undefined_type_Pterm,PTL}).
+
+error_rule_list([{RuleName,Rule}|RT],PTL,TS,TS1):-
+    check_rule(Rule,TS,RuleName,_Rulem,TSm,Res0),
+    error_rule_list1(Res0,RT,PTL,TSm,TS1).
+error_rule_list([],PTL,TS,TS1):-
+    PTL = [], TS1 = TS.
+
+error_rule_list1(normal(success),RT,PTL,TS,TS1):-
+    error_rule_list(RT,PTL,TS,TS1).
+error_rule_list1(Res0,RT,PTL,TS,TS1):-
+    Res0 = abnormal({rbr,undefined_type_Pterm,PTH}) |
+    PTL = [PTH|PTT],
+    error_rule_list(RT,PTT,TS,TS1).
+
+
+get_verb_name_list(all,RuleV,RNB,VB,TS,RuleV1,RNB1,VB1,TS1,Res,AllRule):-
+    RNB = [carbon_copy(List)|RNBm],
+    get_all_verb_name(List,RuleNameList),
+    get_verb_name_list(RuleNameList,RuleV,RNBm,VB,TS,RuleV1,RNB1,VB1,TS1,Res,AllRule).
+get_verb_name_list([RNH|RNT],RuleV,RNB,VB,TS,RuleV1,RNB1,VB1,TS1,Res,AllRule):-
+    delete_all_rules([RNH|RNT],RuleList,AllRule,RNB,RuleV,RNBm,RuleVm,Res0),
+    get_verb_name_list00(Res0,RuleList,RuleVm,RNBm,VB,TS,RuleV1,RNB1,VB1,TS1,Res).
+
+get_verb_name_list00(normal(success),RuleList,RuleVm,RNBm,VB,TS,RuleV1,RNB1,VB1,TS1,
+        Res):-
+    get_verb_name_list0(RuleList,RuleVm,RNBm,VB,TS,RuleV1,RNB1,VB1,TS1,Res).
+otherwise.
+get_verb_name_list00(Res0,_RuleList,RuleVm,RNBm,VB,TS,RuleV1,RNB1,VB1,TS1,Res):-
+    RuleV1 = RuleVm, RNB1 = RNBm, VB1 = VB, TS1 = TS, Res = Res0.
+
+get_verb_name_list0([RNH|RNT],RuleV,RNB,VB,TS,RuleV1,RNB1,VB1,TS1,Res):-
+    RNB = [carbon_copy(RNH,Index)|RNBn],
+    get_verb_name_list1(Index,RNH,RNT,RuleV,RNBn,VB,TS,RuleV1,RNB1,VB1,TS1,Res).
+get_verb_name_list0([],RuleV,RNB,VB,TS,RuleV1,RNB1,VB1,TS1,Res):-
+    RuleV1 = RuleV, RNB1 = RNB, VB1 = VB, TS1 = TS,
+    Res = normal(success).
+
+get_all_verb_name([{RuleName,_}|Tin],RuleNameList):-
+    get_all_verb_name(Tin,RNLT),
+    RuleNameList = [RuleName|RNLT].
+get_all_verb_name([],RuleNameList):-
+    RuleNameList = [].
+
+get_verb_name_list1([OneIndex],RNH,RNT,RuleV,RNBn,VB,TS,RuleV1,RNB1,VB1,TS1,Res):-
+    set_vector_element(RuleV,OneIndex,Rule,Rule1,RuleVn),
+    set_vector_element(Rule,0,Head,Head1,RuleM),
+    vector_element(Head,0,{Not,PTerm},Head1),
+    pterm_to_type_name(PTerm,RuleM,TypeName,Rule1),
+    put_verb_index(Not,TypeName,RNH,VB,TS,VBt,TSt),
+    get_verb_name_list0(RNT,RuleVn,RNBn,VBt,TSt,RuleV1,RNB1,VB1,TS1,Res).
+get_verb_name_list1([],RNH,_RNT,RuleV,RNBn,VB,TS,RuleV1,RNB1,VB1,TS1,Res):-
+    RuleV1 = RuleV, RNB1 = RNBn, VB1 = VB, TS1 = TS,
+    Res = abnormal({rbr,unknown_rule_name,RNH}).
+
+put_verb_index([],TypeName,RN,VB,TS,VB1,TS1):-
+    TS = [upper_bound(TypeName,TL,_R)|TS1],
+    put_verb_index(TL,RN,VB,VB1).
+put_verb_index(-,TypeName,RN,VB,TS,VB1,TS1):-
+    TS = [lower_bound(TypeName,TL,_R)|TS1],
+    put_not_verb_index(TL,RN,VB,VB1).
+
+put_verb_index(['&bottom'|TT],RN,VB,VB1):-
+    put_verb_index(TT,RN,VB,VB1).
+put_verb_index(['&top'|TT],RN,VB,VB1):-
+    VB = [put('&top',RN)|VBt],
+     put_verb_index(TT,RN,VBt,VB1).
+otherwise.
+put_verb_index([TH|TT],RN,VB,VB1):-
+    VB = [put(TH,RN)|VBt],
+    put_verb_index(TT,RN,VBt,VB1).
+put_verb_index([],_RN,VB,VB1):-
+    VB1 = VB.
+
+put_not_verb_index([],_RN,VB,VB1):-
+    VB1 = VB.
+put_not_verb_index(['&top'|TT],RN,VB,VB1):-
+    put_not_verb_index(TT,RN,VB,VB1).
+otherwise.
+put_not_verb_index([TH|TT],RN,VB,VB1):-
+    VB = [put({-,TH},RN)|VBt],
+    put_not_verb_index(TT,RN,VBt,VB1).
+
+get_candi_rule([RNH|RNT],RuleV,RNB,RuleV1,RNB1,RuleCandi):-
+    RNB = [carbon_copy(RNH,[Index])|RNBt],
+    vector_element(RuleV,Index,Rule,RuleVt),
+    get_candi_rule(RNT,RuleVt,RNBt,RuleV1,RNB1,RuleCandiT),
+    RuleCandi = [{RNH,Rule}|RuleCandiT].
+get_candi_rule([],RuleV,RNB,RuleV1,RNB1,RuleCandi):-
+    RuleV1 = RuleV, RNB1 = RNB, RuleCandi = [].
+
+%oosaki modify
+unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr}}|T],                          %mod E -> Env
+        hp(HID,{H,Env,HIDT}),TS,NewGoal):- 
+    Env = env(E,CE),                                                    %add
+    merge_env(E,Er,En,Voff,_R),
+    merge_env(CE,Er,CEn,_,_),                                           %add 
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    rbr_unif:hTerm_Unify({HID},Hr1,En,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),
+    check_unify1(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},      %mod Env0 -> env(Env0,CEn)
+        TS2,Voff,Hoff,T,hp(HID,{H,Env,HIDT}), NewGoal).                 %mod E -> Env
+unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr,CEr}}|T],                          %mod E -> Env
+        hp(HID,{H,Env,HIDT}),TS,NewGoal):- 
+    Env = env(E,CE),                                                    %add
+    merge_env(E,  Er,En,Voff,_R),
+    merge_env(CE,CEr,CEn,_,_),                                           %add 
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    rbr_unif:hTerm_Unify({HID},Hr1,En,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),
+    check_unify1(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},      %mod Env0 -> env(Env0,CEn)
+        TS2,Voff,Hoff,T,hp(HID,{H,Env,HIDT}), NewGoal).                 %mod E -> Env
+unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr}}|T],                          %mod E -> Env
+        {H,Env,HIDT},TS,NewGoal):-      
+    Env = env(E,CE),                                                    %add
+    merge_env(E,Er,En,Voff,_R),
+    merge_env(CE,Er,CEn,_,_),                                           %add 
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    rbr_unif:hTerm_Unify(H,Hr1,En,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),
+    check_unify1(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},              %mod Env0 -> {Env0,CEn}
+        TS2,Voff,Hoff,T,{H,Env,HIDT},NewGoal).                          %mod E -> Env
+unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr,CEr}}|T],                      %mod _CBREnv -> CEr
+        {H,Env,HIDT},TS,NewGoal):-                                      %mod E -> Env
+    Env = env(E,CE),                                                    %add
+    merge_env(E, Er,En,Voff,_R),
+    merge_env(CE,CEr,CEn,_,_),                                          %add 
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    rbr_unif:hTerm_Unify(H,Hr1,En,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),
+    check_unify1CBR(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},           %mod Env0 -> {Env0,CEn}
+        TS2,Voff,Hoff,T,{H,Env,HIDT},NewGoal).                          %modify E -> Env
+unif_check_list([],_Goal,TS,NewGoal):-
+    TS = [], NewGoal = [].
+
+check_unify1(success,BodyR,Hnew,Env,HIDT,{RN,Exp},TS,Voff,Hoff,T,Goal,NewGoal):-
+    get_newID_BodyL(BodyR,Voff,Hoff,BodyR1,HIDT),
+    unif_check_list(T,Goal,TS,NewGoalT),
+    get_new_exp(Exp,Voff,Exp1),
+    NewGoal = [{{RN,Exp1},BodyR1,{Hnew,Env,HIDT}}|NewGoalT].
+otherwise.
+check_unify1(_,_BodyR,_Hnew,_Env,_HIDT,_RN,TS,_Voff,_Hoff,T,Goal,NewGoal):-
+    unif_check_list(T,Goal,TS,NewGoal).
+
+check_unify1CBR(success,BodyR,Hnew,Env,HIDT,{RN,Exp},TS,Voff,Hoff,T,Goal,NewGoal):-
+    get_newID_BodyL(BodyR,Voff,Hoff,BodyR1,HIDT),
+    unif_check_list(T,Goal,TS,NewGoalT),
+    get_new_exp(Exp,Voff,Exp1),
+    NewGoal = [{{RN,Exp1},BodyR1,{Hnew,Env,HIDT},cbr}|NewGoalT].
+otherwise.
+check_unify1CBR(_,_BodyR,_Hnew,_Env,_HIDT,_RN,TS,_Voff,_Hoff,T,Goal,NewGoal):-
+    unif_check_list(T,Goal,TS,NewGoal).
+
+merge_HTable(HT,HTr,Voff,HTn,Offset):-
+    vector(HT,S1),
+    vector(HTr,S2) |
+    new_vector(HTn0,~(S1+S2-1)),
+    set_vector_element(HTn0,0,_,~(S1+S2-2),HTnM),
+    set_vectorE(1,S1,1,HT,HTnM,HTn1),
+    offset_HDT(1,S2,~(S1-1),Voff,HTr,HTr1),
+    set_vectorE(1,S2,S1,HTr1,HTn1,HTn),
+    Offset := S1-1.
+
+set_vectorE(I,N,P,HT,HTr,HTr1):-
+    I < N |
+    vector_element(HT,I,E,HT1),
+    set_vector_element(HTr,P,_,E,HTrM),
+    set_vectorE(~(I+1),N,~(P+1),HT1,HTrM,HTr1).
+set_vectorE(I,N,_P,_HT,HTr,HTr1):-
+    I >= N |
+    HTr1 = HTr.
+
+offset_HDT(I,N,Hoff,Voff,HTr,HTr1):-
+    I < N |
+    set_vector_element(HTr,I,OldH,NewH,HTrM),
+    get_newID_Hterm(OldH,Voff,Hoff,NewH),
+    offset_HDT(~(I+1),N,Hoff,Voff,HTrM,HTr1).
+offset_HDT(I,N,_Hoff,_Voff,HTr,HTr1):-
+    I = N |
+    HTr1 = HTr.
+
+get_newID_Hterm({Head},_Voff,Hoff,Head1):-
+    integer(Head) |
+    Head1= { ~(Head+Hoff)}.
+get_newID_Hterm({{NOT,PTerm},CL,OC},Voff,Hoff,Head1):-
+    get_newID_PTerm(PTerm,Voff,PTerm1),
+    get_newID_CaseList(CL,Voff,Hoff,CL1),
+    Head1 = {{NOT,PTerm1},CL1,OC}.
+ 
+get_newID_BodyL([BodyH|BodyT],Voff,Hoff,Body1,HIDT):-
+    get_newID_Body(BodyH,Voff,Hoff,Body1H,HIDT),
+    get_newID_BodyL(BodyT,Voff,Hoff,Body1T,HIDT),
+    Body1 = [Body1H|Body1T].
+get_newID_BodyL([],_Voff,_Hoff,Body1,_HIDT):-
+    Body1 = [].
+
+%$ get_newID_Body({HtermID},_Voff,Hoff,Body1):-
+%%%% for built in %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+get_newID_Body({greater,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {greater,P1new,P2new}.
+get_newID_Body({less,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {less,P1new,P2new}.
+get_newID_Body({equal,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {equal,P1new,P2new}.
+get_newID_Body({not_equal,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {not_equal,P1new,P2new}.
+get_newID_Body({same,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {same,P1new,P2new}.
+get_newID_Body({different,P1,P2},Voff,_Hoff,Body1,_HIDT):-
+    get_newID_PTerm(P1,Voff,P1new),
+    get_newID_PTerm(P2,Voff,P2new),
+    Body1 = {different,P1new,P2new}.
+otherwise.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+get_newID_Body({NAF,{HtermID}},_Voff,Hoff,Body1,HIDT):-
+    integer(HtermID) |
+    get_real_Hterm(~(HtermID+Hoff),HIDT,Hterm),
+%D    Body1 = {NAF, Hterm}.
+    HtermN := HtermID+Hoff,
+    Body1 = {NAF, hp(HtermN,Hterm)}.
+get_newID_Body({NAF,{{NOT,PTerm},CL,OC}},Voff,Hoff,Head1,_HIDT):-
+    get_newID_PTerm(PTerm,Voff,PTerm1),
+    get_newID_CaseList(CL,Voff,Hoff,CL1),
+    Head1 = {NAF,{{NOT,PTerm1},CL1,OC}}.
+get_newID_Body({NAF,{HtermID},Triv},_Voff,Hoff,Body1,HIDT):-
+    integer(HtermID) |
+    get_real_Hterm(~(HtermID+Hoff),HIDT,Hterm),
+%D    Body1 = {NAF, Hterm,Triv}.
+    HtermN := HtermID+Hoff,
+    Body1 = {NAF, hp(HtermN,Hterm),Triv}.
+get_newID_Body({NAF,{{NOT,PTerm},CL,OC},Triv},Voff,Hoff,Head1,_HIDT):-
+    get_newID_PTerm(PTerm,Voff,PTerm1),
+    get_newID_CaseList(CL,Voff,Hoff,CL1),
+    Head1 = {NAF,{{NOT,PTerm1},CL1,OC},Triv}.
+
+get_newID_PTerm(PTerm,Voff,PTerm1):-
+    integer(PTerm) |
+    PTerm1 := PTerm+Voff.
+get_newID_PTerm({TN,EID,AL},Voff,PTerm1):-
+    get_newID_AList(AL,Voff,AL1),
+    PTerm1 = {TN,EID,AL1}.
+
+get_newID_AList([{L,P}|AL],Voff,AL1):-
+    get_newID_PTerm(P,Voff,P1),
+    get_newID_AList(AL,Voff,ALT),
+    AL1 = [{L,P1}|ALT].
+get_newID_AList([],_Voff,AL1):-
+    AL1 = [].
+
+get_newID_CaseList([{CN,Term}|CL],Voff,Hoff,CL1):-
+    get_newID_term(Term,Voff,Hoff,Term1),
+    get_newID_CaseList(CL,Voff,Hoff,CLT),
+    CL1 = [{CN,Term1}|CLT].
+get_newID_CaseList([{CN,Term,Triv}|CL],Voff,Hoff,CL1):-
+    get_newID_term(Term,Voff,Hoff,Term1),
+    get_newID_CaseList(CL,Voff,Hoff,CLT),
+    CL1 = [{CN,Term1,Triv}|CLT].
+get_newID_CaseList([],_Voff,_Hoff,CL1):-
+    CL1 = [].
+
+get_newID_term(PTerm,Voff,_Hoff,Term1):-
+    integer(PTerm) |
+    Term1 := PTerm + Voff.
+get_newID_term({TN,EID,AL},Voff,_Hoff,Term1):-
+    integer(EID) |
+    get_newID_AList(AL,Voff,AL1),
+    Term1 = {TN,EID,AL1}.
+otherwise.
+get_newID_term(Hterm,Voff,Hoff,Hterm1):-
+    get_newID_Hterm(Hterm,Voff,Hoff,Hterm1).
+
+merge_env(E,Er,EnN,Voff,R):-
+    enlarge(E,Er,E1,Er1),
+    var_env:merge_env(E1,Er1,EnN,Voff,R).
+
+enlarge(E,Er,E1,Er1):-
+    vector(E,Size) |
+    vector_element(E,0,S1,Em),
+    vector_element(Er,0,S2,Er1),
+    enlarge1(Size,S1,S2,Em,E1).
+
+enlarge1(Size,S1,S2,E,E1):-
+    Size > S1 + S2 |
+    E1 = E. 
+enlarge1(Size,S1,S2,E,E1):-
+    Size =< S1 + S2 |
+    new_vector(Em,~(S1+S2+1)),
+    set_vector_element(Em,0,_,S1,Em1),
+    set_vectorE(1,~(S1+1),1,E,Em1,E1).
+
+get_real_Hterm(Integer,HIDT,Hterm):-
+    integer(Integer) |
+    vector_element(HIDT,Integer,Ele,HIDT1),
+    get_real_Hterm(Ele,HIDT1,Hterm).
+otherwise.
+get_real_Hterm(Ele,_HIDT,Hterm):-
+    Hterm = Ele.
+
+get_new_exp([EH|Exp],Voff,Exp1):-
+    string(EH,_,_) |
+    get_new_exp(Exp,Voff,Exp1T),
+    Exp1 = [EH|Exp1T].
+get_new_exp([EH|Exp],Voff,Exp1):-
+    integer(EH) |
+    get_new_exp(Exp,Voff,Exp1T),
+    Exp1 = [~(EH+Voff)|Exp1T].
+get_new_exp([],_Voff,Exp1):-
+    Exp1 = [].
+
+unif_to_consis(success,Res):-
+    Res = inconsis.
+otherwise.
+unif_to_consis(_,Res):-
+    Res = consis.
+
+check_rule(Rule,TS,RuleName,Rule1,TS1,Res):-
+    rbr_rule_check:rule_check(Rule,TS,Rule1,TS1,Res0),
+    check_rule1(Res0,RuleName,Res).
+
+check_rule1(abnormal({rbr,undefined_type_Pterm,PT}),RuleName,Res):-
+    Res = abnormal({rbr,undefined_type_Pterm,{RuleName,PT}}).
+otherwise.
+check_rule1(Res0,_RuleName,Res):-
+    Res = Res0.
+
+pterm_to_type_name(VarID,Rule,TypeName,Rule1):-
+    integer(VarID) |
+    set_vector_element(Rule,2,Env,Env1,RuleM),
+    vector_element(Env,VarID,PTerm,Env1),
+    pterm_to_type_name(PTerm,RuleM,TypeName,Rule1).
+pterm_to_type_name(PTerm,Rule,TypeName,Rule1):-
+    vector(PTerm,3) |
+    vector_element(PTerm,0,TypeName,_PTerm1),
+    Rule1 = Rule.
+
+
+%%oosaki modify
+pterm_with_env_to_type_name(PTerm,env(Env,_),TypeName):-true|
+        pterm_with_env_to_type_name1(PTerm,Env,TypeName).
+
+pterm_with_env_to_type_name1(0,_Env,TypeName):-
+    TypeName = '&top'.
+%$    TypeName = '$$$all$$$'.
+pterm_with_env_to_type_name1(VarID,Env,TypeName):-
+    VarID > 0 |
+    vector_element(Env,VarID,PTerm,Env1),
+    pterm_with_env_to_type_name1(PTerm,Env1,TypeName).
+pterm_with_env_to_type_name1(PTerm,_Env,TypeName):-
+    vector(PTerm,3) |
+    vector_element(PTerm,0,TypeName,_PTerm1).
+
+cbr_get_candi_rule([RNH|RNT],RuleV,RNB,RuleV1,RNB1,RuleCandi):-
+    RNB = [carbon_copy(RNH,[Index])|RNBt],
+    vector_element(RuleV,Index,Rule,RuleVt),
+    cbr_get_candi_rule(RNT,RuleVt,RNBt,RuleV1,RNB1,RuleCandiT),
+    RuleCandi = [{RNH,Rule}|RuleCandiT].
+%    empty_body_check(Rule,RNH,RuleCandiT,RuleCandi).
+cbr_get_candi_rule([],RuleV,RNB,RuleV1,RNB1,RuleCandi):-
+    RuleV1 = RuleV, RNB1 = RNB, RuleCandi = [].
+
+%empty_body_check(Rule,RNH,RuleCandiT,RuleCandi):-
+%    vector_element(Rule,1,[]) |
+%    RuleCandi = [{RNH,Rule}|RuleCandiT].
+%empty_body_check(Rule,_RNH,RuleCandiT,RuleCandi):-
+%    vector_element(Rule,1,Body),
+%    list(Body) |
+%    RuleCandi = RuleCandiT.
+
+
+%oosaki modify
+cbr_unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr}}|T],
+        hp(HID,{{H,Triv},Env,HIDT}),TS,NewGoal):-                       %mod E -> Env
+    Env = env(E,CE),                                                    %add
+    merge_env(E,Er,En,Voff,_R),
+    merge_env(CE,Er,CEn,_,_),                                           %add
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    cbr_unif:hTerm_Unify({HID},Hr1,En,CEn,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1), %add CEn
+    cbr_check_unify1(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},TS2,Voff,Hoff,T, 
+                                                        %mod Env0 -> env(Env0,CEn)
+        hp(HID,{{H,Triv},Env,HIDT}),NewGoal).                           %mod E -> Env
+
+cbr_unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr}}|T],
+        {{H,Triv},Env,HIDT},TS,NewGoal):-                               %mod E -> Env
+    Env = env(E,CE),                                                    %add
+    merge_env(E,Er,En,Voff,_R),
+    merge_env(CE,Er,CEn,_,_),                                           %add
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    cbr_unif:hTerm_Unify(H,Hr1,En,CEn,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),   %add CEn
+    cbr_check_unify1(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},TS2,Voff,Hoff,T,  
+                                                        %mod Env0 -> env(Env0,CEn)
+        {{H,Triv},Env,HIDT},NewGoal).                                   %mod E -> Env
+
+cbr_unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr,CEr}}|T],                  %mod _CBREnv -> CEr
+        hp(HID,{{H,Triv},Env,HIDT}),TS,NewGoal):-                       %mod E -> Env
+    Env = env(E,CE),                                                    %add
+    merge_env(E, Er, En,Voff,_R),
+    merge_env(CE,CEr,CEn,_,_),                                          %add
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    cbr_unif:hTerm_Unify({HID},Hr1,En,CEn,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1), %add CEn
+    cbr_check_unify1CBR(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},       %mod Env0 -> env(Env0,CEn)
+        TS2,Voff,Hoff,T,hp(HID,{{H,Triv},Env,HIDT}),NewGoal).           %mod E -> Env
+cbr_unif_check_list([{RN,{Hr,Br,Er,Exp,HIDTr,CEr}}|T],                  %mod _CBREnv -> CEr
+        {{H,Triv},Env,HIDT},TS,NewGoal):-                               %mod E -> Env
+    Env = env(E,CE),                                                    %add
+    merge_env( E, Er,En,Voff,_R),
+    merge_env(CE,CEr,CEn,_,_),                                          %add
+    merge_HTable(HIDT,HIDTr,Voff,HIDTn,Hoff),
+    get_newID_Hterm(Hr,Voff,Hoff,Hr1),
+    TS = {TS1,TS2},
+    cbr_unif:hTerm_Unify(H,Hr1,En,CEn,HIDTn,TS1,Hnew,EnvO,HIDTN2,R1),   %add CBREnv
+    cbr_check_unify1CBR(R1,Br,Hnew,env(EnvO,CEn),HIDTN2,{RN,Exp},       %mod Env0 -> env(Env0,CEn)
+        TS2,Voff,Hoff,T,{{H,Triv},Env,HIDT},NewGoal).                   %mod E -> Env
+cbr_unif_check_list([],_Goal,TS,NewGoal):-
+    TS = [], NewGoal = [].
+
+cbr_check_unify1(success,BodyR,Hnew,Env,HIDT,{RN,Exp},TS,Voff,Hoff,T,Goal,NewGoal):-
+    get_newID_BodyL(BodyR,Voff,Hoff,BodyR1,HIDT),
+    cbr_unif_check_list(T,Goal,TS,NewGoalT),
+    get_new_exp(Exp,Voff,Exp1),
+    NewGoal = [{{RN,Exp1},BodyR1,{Hnew,Env,HIDT}}|NewGoalT].
+otherwise.
+cbr_check_unify1(_,_BodyR,_Hnew,_Env,_HIDT,_RN,TS,_Voff,_Hoff,T,Goal,NewGoal):-
+    cbr_unif_check_list(T,Goal,TS,NewGoal).
+
+cbr_check_unify1CBR(success,BodyR,Hnew,Env,HIDT,{RN,Exp},TS,Voff,Hoff,T,Goal,NewGoal):-
+    get_newID_BodyL(BodyR,Voff,Hoff,BodyR1,HIDT),
+    cbr_unif_check_list(T,Goal,TS,NewGoalT),
+    get_new_exp(Exp,Voff,Exp1),
+    NewGoal = [{{RN,Exp1},BodyR1,{Hnew,Env,HIDT},cbr}|NewGoalT].
+otherwise.
+cbr_check_unify1CBR(_,_BodyR,_Hnew,_Env,_HIDT,_RN,TS,_Voff,_Hoff,T,Goal,NewGoal):-
+    cbr_unif_check_list(T,Goal,TS,NewGoal).
+
+cbr_get_rules(hp(HID,Goal),NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNLall,Node,CntD,RLS,TRC):-
+    Goal = {Head,Env,_HIDT},
+    get_type_name(Head,Env,Type),
+    VB = [carbon_copy(Type,RNL)|VB1],
+    append(RNL,RNLall,RNL1),
+    deletelist(RLS,RNL1,RNL11),
+    cbr_get_candi_rule(RNL11,RuleV,RNB,RuleV1,RNB1,RuleCandi),
+    TS = {TS1,TS2},
+    cbr_unif_check_list(RuleCandi,hp(HID,Goal),TS1,NewGoals),
+    loop(T,RuleV1,RNB1,VB1,TS2,UO,HyoukaTB,RNLall,Node,CntD,TRC).
+otherwise.
+cbr_get_rules(Goal,NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,RNLall,Node,CntD,RLS,TRC):-
+    Goal = {Head,Env,_HIDT},
+    get_type_name(Head,Env,Type),
+    VB = [carbon_copy(Type,RNL)|VB1],
+    append(RNL,RNLall,RNL1),
+    deletelist(RLS,RNL1,RNL11),
+    cbr_get_candi_rule(RNL11,RuleV,RNB,RuleV1,RNB1,RuleCandi),
+    TS = {TS1,TS2},
+    cbr_unif_check_list(RuleCandi,Goal,TS1,NewGoals),
+    loop(T,RuleV1,RNB1,VB1,TS2,UO,HyoukaTB,RNLall,Node,CntD,TRC).
+
+%get_rules(hp(HID,Goal),NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,AllRule,Node,CntD,RLS,TRC):-
+%    Goal = {Head,Env,_HIDT} |
+%    RNB = [carbon_copy(CR)|RNBs], 
+%    get_key_list(CR,CandiRule),
+%    deletelist(RLS,CandiRule,CandiRule0),
+%    get_candi_rule(CandiRule0,RuleV,RNBs,RuleV1,RNB1,RuleCandi),
+%    TS = {TS1,TS2},
+%    unif_check_list(RuleCandi,hp(HID,Goal),TS1,NewGoals),
+%    loop(T,RuleV1,RNB1,VB,TS2,UO,HyoukaTB,AllRule,Node,CntD,TRC).
+%otherwise.
+%get_rules(Goal,NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,AllRule,Node,CntD,RLS,TRC):-
+%    Goal = {Head,Env,_HIDT} |
+%    RNB = [carbon_copy(CR)|RNBs], 
+%    get_key_list(CR,CandiRule),
+%    deletelist(RLS,CandiRule,CandiRule0),
+%    get_candi_rule(CandiRule0,RuleV,RNBs,RuleV1,RNB1,RuleCandi),
+%    TS = {TS1,TS2},
+%    unif_check_list(RuleCandi,Goal,TS1,NewGoals),
+%    loop(T,RuleV1,RNB1,VB,TS2,UO,HyoukaTB,AllRule,Node,CntD,TRC).
+
+get_rules(hp(HID,Goal),NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,AllRule,Node,CntD,RLS,TRC):-
+    Goal = {Head,Env,_HIDT} |
+    get_type_name(Head,Env,Type),
+    VB = [carbon_copy(Type,RNL)|VB1],
+    append(RNL,AllRule,CandiRule),
+    deletelist(RLS,CandiRule,CandiRule0),
+    get_candi_rule(CandiRule0,RuleV,RNB,RuleV1,RNB1,RuleCandi),
+    TS = {TS1,TS2},
+    unif_check_list(RuleCandi,hp(HID,Goal),TS1,NewGoals),
+    loop(T,RuleV1,RNB1,VB1,TS2,UO,HyoukaTB,AllRule,Node,CntD,TRC).
+otherwise.
+get_rules(Goal,NewGoals,T,RuleV,RNB,VB,TS,UO,HyoukaTB,AllRule,Node,CntD,RLS,TRC):-
+    Goal = {Head,Env,_HIDT} |
+    get_type_name(Head,Env,Type),
+    VB = [carbon_copy(Type,RNL)|VB1],
+    append(RNL,AllRule,CandiRule),
+    deletelist(RLS,CandiRule,CandiRule0),
+    get_candi_rule(CandiRule0,RuleV,RNB,RuleV1,RNB1,RuleCandi),
+    TS = {TS1,TS2},
+    unif_check_list(RuleCandi,Goal,TS1,NewGoals),
+    loop(T,RuleV1,RNB1,VB1,TS2,UO,HyoukaTB,AllRule,Node,CntD,TRC).
+
+delete_all_rules([RNH|RNT],RuleList,AllRule,RNB,RuleV,RNB1,RuleV1,Res):-
+    get_all_flag(RNH,RNB,RuleV,RNBm,RuleVm,AllF),
+    delete_all_rules1(AllF,RNH,RNT,RuleList,AllRule,RNBm,RuleVm,RNB1,RuleV1,Res).
+delete_all_rules([],RuleList,AllRule,RNB,RuleV,RNB1,RuleV1,Res):-
+    RuleList = [], AllRule = [], RNB1 = RNB, RuleV1 = RuleV, Res = normal(success).
+
+%%%    Res = abnormal({rbr,unknown_rule_name,RNH})
+delete_all_rules1(abnormal({rbr,unknown_rule_name,RNH}),
+    _RNH,_RNT,_RuleList,_AllRule,RNB,RuleV,RNB1,RuleV1,Res):-
+    Res = abnormal({rbr,unknown_rule_name,RNH}),
+    RNB1 = RNB,
+    RuleV1 = RuleV.
+otherwise.
+delete_all_rules1(AllF,RNH,RNT,RuleList,AllRule,RNB,RuleV,RNB1,RuleV1,Res):-
+    AllF = 0 |
+    AllRule = [RNH|AllRuleT],
+    delete_all_rules(RNT,RuleList,AllRuleT,RNB,RuleV,RNB1,RuleV1,Res).
+otherwise.
+delete_all_rules1(_,RNH,RNT,RuleList,AllRule,RNB,RuleV,RNB1,RuleV1,Res):-
+    RuleList = [RNH|RuleListT],
+    delete_all_rules(RNT,RuleListT,AllRule,RNB,RuleV,RNB1,RuleV1,Res).
+
+get_all_flag(RNH,RNB,RuleV,RNB1,RuleV1,AllF):-
+    RNB = [carbon_copy(RNH,Index0)|RNB1], 
+    get_all_flag1(Index0,RNH,RuleV,RuleV1,AllF).
+
+get_all_flag1([Index],_RNH,RuleV,RuleV1,AllF):-
+    vector_element(RuleV,Index,Rule,RuleV1),
+    vector_element(Rule,0,Head,RuleM),
+    vector_element(Head,0,{Not,PTerm},_Head1),
+    pterm_to_all_flag(Not,PTerm,RuleM,AllF,_Rule1).
+get_all_flag1([],RNH,RuleV,RuleV1,AllF):-
+    RuleV1 = RuleV,
+    AllF = abnormal({rbr,unknown_rule_name,RNH}).
+
+pterm_to_all_flag(-,_VarID,Rule,AllFlag,Rule1):-
+    AllFlag = not_rule, Rule1 = Rule.
+pterm_to_all_flag([],VarID,Rule,AllFlag,Rule1):-
+    pterm_to_all_flag1(VarID,Rule,AllFlag,Rule1).
+
+pterm_to_all_flag1(VarID,Rule,AllFlag,Rule1):-
+    VarID = 0 |
+    AllFlag = 0, Rule1 = Rule.
+pterm_to_all_flag1(VarID,Rule,AllFlag,Rule1):-
+    VarID > 0 |
+    set_vector_element(Rule,2,Env,Env1,RuleM),
+    vector_element(Env,VarID,PTerm,Env1),
+    pterm_to_all_flag1(PTerm,RuleM,AllFlag,Rule1).
+pterm_to_all_flag1(PTerm,Rule,AllFlag,Rule1):-
+    vector(PTerm,3) |
+    vector_element(PTerm,1,AllFlag,_PTerm1),
+    Rule1 = Rule.
+
+append([H|T],L,Lout):-
+    append(T,L,LT),
+    Lout = [H|LT].
+append([],L,Lout):-
+    Lout = L.
+
+solve_blt({{greater,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    TS = [greater(X,Y,Env,NewEnv,Res)|TS1],
+    Q1 = {{greater,X,Y},NewEnv,HIDT}.
+solve_blt({{less,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    TS = [less(X,Y,Env,NewEnv,Res)|TS1],
+    Q1 = {{less,X,Y},NewEnv,HIDT}.
+%$ shuusei '96/11/21
+%solve_blt({{equal,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+%    TS = [equal(X,Y,Env,NewEnv,Res)|TS1],
+%    Q1 = {{equal,X,Y},NewEnv,HIDT}.
+%solve_blt({{not_equal,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+%    TS = [not_equal(X,Y,Env,NewEnv,Res)|TS1],
+%    Q1 = {{not_equal,X,Y},NewEnv,HIDT}.
+solve_blt({{equal,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    solve_equal(X,Y,TS,Env,NewEnv,Res,TS1),
+    Q1 = {{equal,X,Y},NewEnv,HIDT}.
+solve_blt({{not_equal,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    solve_not_equal(X,Y,TS,Env,NewEnv,Res,TS1),
+    Q1 = {{not_equal,X,Y},NewEnv,HIDT}.
+%$ shuusei_end '96/11/21
+solve_blt({{same,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    TS = [same(X,Y,Env,NewEnv,Res)|TS1],
+    Q1 = {{same,X,Y},NewEnv,HIDT}.
+solve_blt({{different,X,Y},Env,HIDT},TS,Q1,TS1,Res):-
+    TS = [different(X,Y,Env,NewEnv,Res)|TS1],
+    Q1 = {{different,X,Y},NewEnv,HIDT}.
+
+%$ add '95/11/21
+solve_equal(X,Y,TS,Env,NewEnv,Res,TS1):-
+    string_equal(X,Y,Env,Env1,YorN),
+    solve_equal1(YorN,X,Y,TS,Env1,NewEnv,Res,TS1).
+
+solve_equal1(equal,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    NewEnv = Env1,
+    TS1 = TS,
+    Res = normal(success).
+solve_equal1(not_equal,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    NewEnv = Env1,
+    TS1 = TS,
+    Res = fail.
+solve_equal1(no,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    TS = [equal(X,Y,Env1,NewEnv,Res)|TS1].
+
+solve_not_equal(X,Y,TS,Env,NewEnv,Res,TS1):-
+    string_equal(X,Y,Env,Env1,YorN),
+    solve_not_equal1(YorN,X,Y,TS,Env1,NewEnv,Res,TS1).
+
+solve_not_equal1(equal,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    NewEnv = Env1,
+    TS1 = TS,
+    Res = fail.
+solve_not_equal1(not_equal,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    NewEnv = Env1,
+    TS1 = TS,
+    Res = normal(success).
+solve_not_equal1(no,X,Y,TS,Env1,NewEnv,Res,TS1):-
+    TS = [not_equal(X,Y,Env1,NewEnv,Res)|TS1].
+
+string_equal(X,Y,Env,Env1,YorN):-
+    get_real_PT(X,Env,XS,EnvM),
+    string_equal1(XS,Y,EnvM,Env1,YorN).
+
+string_equal1(no,Y,Env,Env1,YorN):-
+    Env1 = Env,
+    YorN = no.
+otherwise.
+string_equal1(XS,Y,Env,Env1,YorN):-
+    get_real_PT(Y,Env,YS,Env1),
+    string_equal2(YS,XS,YorN).    
+
+string_equal2(no,_XS,YorN):-
+    YorN = no.
+otherwise.
+string_equal2(XS,XS,YorN):-
+    YorN = equal.
+otherwise.
+string_equal2(XS,YS,YorN):-
+    YorN = not_equal.
+
+get_real_PT(0,Env,Xres,Env1):-
+    Env1 = Env,
+    Xres = no.
+otherwise.
+get_real_PT(X,Env,Xres,Env1):-
+    integer(X) |
+    vector_element(Env,X,XX,EnvM),
+    get_real_PT(XX,EnvM,Xres,Env1).
+get_real_PT({X,_,[]},Env,Xres,Env1):-
+    string(X,_,_) |
+    Xres = X,
+    Env1 = Env.
+otherwise.
+get_real_PT(_X,Env,Xres,Env1):-
+    Env1 = Env,
+    Xres = no.
+	
+%$ add_end '95/11/21
+
+%rule_vec_to_list(RV,I,RL,RV1):-
+%    vector_element(RV,I,0) |
+%    RL = [], RV1 = RV.
+%otherwise.
+%rule_vec_to_list(RV,I,RL,RV1):- true |
+%    vector_element(RV,I,{Rule,_},RV0),
+%    rule_vec_to_list(RV0,~(I+1),RLT,RV1),
+%    RL = [Rule|RLT].
+
+get_key_list([{Key,_C}|T],KeyList):-
+    get_key_list(T,KeyListT),
+    KeyList = [Key|KeyListT].
+get_key_list([],KeyList):-
+    KeyList = [].
+
+check_counter(infinite,CntD0,CntD1,Res):-
+    CntD1 := ~(CntD0+1), 
+    Res = yes.
+check_counter(N,CntD0,CntD1,Res):-
+    N =< CntD0 |
+    CntD1 = '***error***',
+    Res = no.
+check_counter(N,CntD0,CntD1,Res):-
+    N > CntD0 |
+    CntD1 := ~(CntD0+1), 
+    Res = yes.
+
+set_counter(infinite,_,NewCntD,Res):-
+    NewCntD = infinite,
+    Res = normal(success).
+set_counter(N,_,NewCntD,Res):-
+    N >= 0 |
+    NewCntD = N,
+    Res = normal(success).
+otherwise.
+set_counter(InCntD,CntD0,NewCntD,Res):-
+    NewCntD = CntD0,
+    Res = abnormal({rbr,illegal_counter_depth,InCntD}).
+
+deletelist([],RNL,RNL1):-
+    RNL1 = RNL.
+deletelist([E|T],RNL,RNL1):-
+    deleteE(RNL,E,RNL0),
+    deletelist(T,RNL0,RNL1).
+
+deleteE([E|RNL],E,RNL1):-
+    RNL1 = RNL.
+deleteE([],_E,RNL1):-
+    RNL1 = [].
+otherwise.
+deleteE([E1|RNL],E,RNL1):-
+    RNL1 = [E1|RNL1T],
+    deleteE(RNL,E,RNL1T).
+
+%for HyoukaTB method
+%HyoukaTB = {Sim,Weight,PsiTermSimTB,PsiTermAttK}
+
+set_similarity(HyoukaTB1,Sim,HyoukaTB):-true|
+    set_vector_element(HyoukaTB1,0,_,Sim,HyoukaTB).
+set_weight(HyoukaTB1,Weight,HyoukaTB):-true|
+    set_vector_element(HyoukaTB1,1,_,Weight,HyoukaTB).
+set_psiTermSimTB(HyoukaTB1,PsiTermSimTB,HyoukaTB):-true|
+    set_vector_element(HyoukaTB1,2,_,PsiTermSimTB,HyoukaTB).
+set_psiTermAttWeight(HyoukaTB1,PsiTermAttWeight,HyoukaTB):-true|
+    set_vector_element(HyoukaTB1,3,_,PsiTermAttWeight,HyoukaTB).
+
+
+get_similarity(HyoukaTB,Sim):-true|
+    vector_element(HyoukaTB,0,Sim,_).
+get_weight(HyoukaTB,Weight):-true|
+    vector_element(HyoukaTB,1,Weight,_).
+get_psiTermSimTB(HyoukaTB,PsiTermSimTB):-true|
+    vector_element(HyoukaTB,2,PsiTermSimTB,_).
+get_psiTermAttWeight(HyoukaTB,PsiTermAttWeight):-true|
+    vector_element(HyoukaTB,3,PsiTermAttWeight,_).
+
+
+
+
+
+

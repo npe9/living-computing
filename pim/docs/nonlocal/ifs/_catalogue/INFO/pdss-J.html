@@ -1,0 +1,78 @@
+﻿<!--
+#
+# Modified by	C.Takahashi		'98/08/20
+#
+-->
+<HTML>
+<HEAD><TITLE>Notices for IFS KL1 Program Execution on PDSS</TITLE></HEAD>
+
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+IFS の KL1 プログラムを PDSS 上で<br>動作させる際の注意
+</H1></CENTER>
+
+<!--
+<CENTER>
+<TABLE BORDER="5" ALIGN=CENTER UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><CENTER><A HREF="pdss-J.html">To Japanese Page for "Notices for IFS KL1 Program Execution on PDSS"</A>
+	</TD></TR>
+</TABLE>
+</CENTER>
+-->
+
+<HR width=95% align="center" size=7><P>
+
+IFS (ICOT無償公開ソフトウェア) には, UNIX 上で動く KL1 処理系として 
+PDSS が含まれています.  しかし, この PDSS の果たす役割は同じく IFS と
+して配布されており, もっと効率的な UNIX 上の KL1 処理系である KLIC が
+肩代りすることになっています.  したがって, PDSS の保守は今後あまりよく
+なされないでしょう.  KLIC を使うことをおすすめします.<P>
+
+PDSS は KL1 プログラムを UNIX 上で実行することができます.  しかし, IFS 
+として配布されている KL1 プログラムの動作環境はほとんどが PIM および 
+Multi-PSI となっています.  PDSS は PIM に較べて, 実行速度や使用できる
+メモリ量に大きな制約があり, KL1 言語仕様や入出力の仕様の点においても違
+いがあります. 従って, プログラムの内容や大きさにも依りますが, PDSS 上
+で動作させるためには多少の手直しを要するかも知れません. あるいはプログ
+ラムの一部分だけを切り出して PDSS 上で動作させるという方法もあります. 
+しかし現在配布しているような大規模 KL1 プログラムの場合, PDSS への移植
+は一般には難しいと考えた方が良いでしょう.<P>
+
+現在の PIM や Multi-PSI 上の KL1 システムと PDSS は, 特に以下のような
+点で仕様が異なっていますので, これらの点に留意して移植を進めて下さい.
+<P>
+
+<UL>
+
+<LI>最近になって追加されたstring_operation系やbignum系の組込述語は 
+PDSSでは用意されていません. KL1 のライブラリを用意する必要があります.
+
+<LI>マクロ関係に仕様の違いがあります. 特に, PDSS ではユーザ定義マクロ
+が使えません.
+
+<LI>PDSS では PIMOS システム機能が基本的に使えません. 入出力機能は仕様
+が異なります.
+
+<LI>文字列ストリングの仕様が異なります. 
+
+<LI>PDSS ではひとつの述語内の変数が多いとレジスタ不足になります. 
+
+</UL>
+
+<!--
+<HR width=95% align="center" size=7>
+<CENTER>
+<TABLE BORDER="5" ALIGN=center UNITS=RELATIVE WIDTH=99%>
+	<TR><TD><center><A HREF="../../HomePage-J.html">ホームページに戻る</A>
+	</TD></TR>
+</TABLE>
+</CENTER><P>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+-->
+
+</BODY>
+</HTML>
+

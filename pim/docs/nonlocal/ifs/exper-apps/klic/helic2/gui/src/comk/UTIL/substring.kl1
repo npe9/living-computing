@@ -1,0 +1,28 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module substring.
+
+:- public 
+    substring/5.
+            
+:- with_macro pimos.
+
+
+    substring(OS1,OPos,L,DS,OS):-true|
+        string(OS1,_,Size,OS2),
+        new_string(DS1,L,Size),
+        set_element(DS1,OS2,0,OPos,L,DS,OS).
+
+    set_element(DS1,OS1,EPos,_,EPos,DS,OS):-true|
+        DS = DS1,
+        OS = OS1.
+otherwise.
+    set_element(DS1,OS1,DPos1,OPos1,EPos,DS,OS):-true|
+        string_element(OS1,OPos1,C,OS2),
+        set_string_element(DS1,DPos1,C,DS2),
+        DPos2 := DPos1+1,
+        OPos2 := OPos1+1,
+        set_element(DS2,OS2,DPos2,OPos2,EPos,DS,OS).

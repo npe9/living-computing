@@ -1,0 +1,120 @@
+Copyright (C) 1997 Miyuki Koshimura
+====================================================
+モデル生成型自動証明システムＭＧＴＰ
+
+MGTP(Model Generation Theorem Prover)は，モデル生成法に基づく一階述語
+論理の定理証明システムです．本システムは，MGTP用前処理コマンドとMGTP証
+明コマンドからなります．否定制約の導入やフォールディングアップ機能によ
+り，大幅な証明時間の短縮を図ることもできます．MGTPは，KLICで記述されて
+おり，KLICが走行する様々なコンピュータ上で稼働します．
+
+
+【ディレクトリ構成】
+
+ |- Install	インストールの手引
+ |- Readme-E	このファイルの英語版
+ |- Readme-J	このファイル	
+ |- documents/	マニュアル用ディレクトリ
+ |- klic/	KLICのソースファイル用ディレクトリ
+ |- mg/		MGTPの例題ファイル用ディレクトリ
+ |- sh/		シェルスクリプト用ディレクトリ
+ |- tcl/	Tcl/Tk用ディレクトリ
+ |- tptp/	TPTP問題用ディレクトリ
+
+【ディレクトリとファイル】
+ |- documents/
+ |	|- GUI.tex		マニュアル用Latexファイル(４章)
+ |	|- Install.tex		マニュアル用Latexファイル(付録)
+ |	|- Prepro.tex		マニュアル用Latexファイル(２章)
+ |	|- Prove.tex		マニュアル用Latexファイル(３章)
+ |	|- mgtp-disp-br1.ps	マニュアル用PostScriptファイル
+ |	|- mgtp-disp-br2.ps	マニュアル用PostScriptファイル
+ |	|- mgtp-disp-stdin.ps	マニュアル用PostScriptファイル
+ |	|- mgtp-filem.ps	マニュアル用PostScriptファイル
+ |	|- mgtp.tex		マニュアル用Latexファイル(トップレベル)
+ |	|- mgtpwm-up.ps		マニュアル用PostScriptファイル
+ |
+ |- klic/
+ |	|- Makefile		インストール用Makeファイル
+ |- 	|- bin/			コマンドをインストールするディレクトリ(デフォルト)
+ |	|- dom.kl1		dom述語挿入プログラム
+ |	|- fm.kl1		ファイルI/Oユーティリティ
+ |	|- fu_nhm1.kl1		フォールディングアップ(FU)機能付MGTP(コンパイル版)
+ |	|- intCDEMercNW.kl1	項書換え機能付MGTP(インタプリタ版)
+ |	|- intCMercNW.kl1	制約MGTP(インタプリタ版)
+ |	|- intMercNW.kl1	MGTP(インタプリタ版)
+ |	|- intMercNWFU.kl1	FU機能付MGTP(インタプリタ版)
+ |	|- matchNW.kl1		項照合プログラム
+ |	|- mercpat.kl1		MERC連言照合パターン生成プログラム
+ |	|- mg2klic.kl1		MGTP節→KL1節変換プログラム
+ |	|- nhmdel.kl1		冗長節削除プログラム
+ |	|- nhmfilter.kl1	修飾子フィルター(極小束縛のみ選択)
+ |	|- nhmmode.kl1		NHM用モード解析器
+ |	|- nhmtrans.kl1		NHM変換プログラム
+ |	|- rangeCheck.kl1	値域限定判定プログラム
+ |	|- termMemoryG.kl1	弁別木プログラム
+ |	|- tptp2mgtp.kl1	TPTP形式→MGTP節変換プログラム
+ |	|- unify.kl1		単一化プログラム
+ |	|- unifyNW.kl1		単一化プログラム(wrap項用)
+ |
+ |- mg/
+ |	|- MSC007-2.002.dmg	MGTP節集合(項書換え規則入り)
+ |	|- PUZ001-2.dmg		MGTP節集合(項書換え規則入り)
+ |	|- PUZ006-1.dmg		MGTP節集合(項書換え規則入り)
+ |	|- PUZ007-1.dmg		MGTP節集合(項書換え規則入り)
+ |	|- PUZ012-1.mg		MGTP節集合
+ |	|- PUZ016-1.dmg		MGTP節集合(項書換え規則入り)
+ |	|- PUZ030-1.mg		MGTP節集合
+ |	|- PUZ031-1.mg		MGTP節集合
+ |	|- SYN005-1.010.mg	MGTP節集合
+ |	|- SYN008-1.mg		MGTP節集合
+ |	|- SYN009-1.mg		MGTP節集合
+ |	|- SYN014-2.mg		MGTP節集合
+ |	|- SYN070-1.mg		MGTP節集合
+ |	|- SYN083-1.mg		MGTP節集合
+ |	|- SYN101-1.002:002.mg	MGTP節集合
+ |	|- SYN102-1.007:007.mg	MGTP節集合
+ |	|- latin.mg		MGTP節集合
+ |	|- latin1.mg		MGTP節集合
+ |	|- latin1c.mg		CMGTP節集合
+ |	|- queen.mg		MGTP節集合
+ |	|- queen1.mg		MGTP節集合
+ |	|- queen1c.mg		CMGTP節集合
+ |
+ |- sh/
+ |	|- mgnhm		NHM変換器シェルスクリプト
+ |	|- rmirrelevant		冗長節削除器シェルスクリプト
+ |
+ |- tcl/
+ |	|- MGTPWMDIR/
+ |	|	|- help/
+ |	|	|	|- conp			ヘルプ用メッセージファイル
+ |	|	|	|- haba-fukasa		ヘルプ用メッセージファイル
+ |	|	|	|- int			ヘルプ用メッセージファイル
+ |	|	|	|- loose		ヘルプ用メッセージファイル
+ |	|	|	|- mode			ヘルプ用メッセージファイル
+ |	|	|	|- nhm			ヘルプ用メッセージファイル
+ |	|	|	|- time-out		ヘルプ用メッセージファイル
+ |	|	|	|- timer-samp		ヘルプ用メッセージファイル
+ |	|	|- mgtp-disp-br			GUIシステムTcl/Tkスクリプト
+ |	|	|- mgtp-disp-file		GUIシステムTcl/Tkスクリプト
+ |	|	|- mgtp-disp-stdin		GUIシステムTcl/Tkスクリプト
+ |	|	|- mgtp-filem			GUIシステムTcl/Tkスクリプト
+ |	|	|- mgtpwm			GUIシステムTcl/Tkスクリプト
+ |	|	|- src/
+ |	|	|	|- cmgtp.kl1		制約MGTP(コンパイル版)
+ |	|	|	|- fu-with-nhm.kl1	FU機能付MGTP(コンパイル版)
+ |	|	|	|- fu.kl1		FU機能付MGTP(コンパイル版)
+ |	|	|	|- lmgtp.kl1		MGTP(コンパイル版)
+ |	|	|	|- mgtp.kl1		MGTP(コンパイル版)
+ |	|- mgtpwm				GUIシステムTcl/Tkスクリプト
+ |
+ |- tptp/
+ |	|- EQU001-0.ax		TPTP問題ファイルから参照される公理ファイル
+ |	|- PUZ012-1.p		TPTP問題
+ |	|- PUZ030-1.p		TPTP問題
+ |	|- SYN009-1.p		TPTP問題
+ |	|- SYN014-1.p		TPTP問題
+ |	|- SYN014-2.p		TPTP問題
+
+以上

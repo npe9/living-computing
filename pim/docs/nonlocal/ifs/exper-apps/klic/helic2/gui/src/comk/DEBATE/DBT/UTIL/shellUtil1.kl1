@@ -1,0 +1,50 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_shellUtility1.
+
+:- public 
+    get_reasonList/4,
+    get_justificationList/5,
+    justify/4.
+            
+:- with_macro pimos.
+
+%get_reasonList
+    get_reasonList({Pool,Info1,_,CSS1},Data,ReasonList,R):-true|
+        CSS1 = [get(ruleRel,RuleRel)|CSS],
+        (   RuleRel = {_,{MR,YR}},MR\=nil,YR\=nil->
+                dbtgui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info,_,ReasonList),
+                (   wait(ReasonList)->
+                        R    = normal(success),
+                        Data = {Pool,Info,CSS})
+        ;
+        otherwise;
+            true->
+                R    = abnormal({gui,'Rule name is nothing',get_reasonList}),
+                Data = {Pool,Info1,CSS}
+        ).
+
+%get_justificationList
+    get_justificationList({Pool1,Info1,{FLArg,CLArg},CSS1},Data,SetJL,DispJL,R):-true|
+        CSS1 = [get(ruleRel,RuleRel)|CSS],
+        get_ruleName(CLArg,FLArg,RuleRel,{Pool1,Info1},{Pool2,Info2},MR,YR),
+        dbtgui_guiUtility:get_justificationList(MR,YR,{Pool2,Info2},{Pool,Info},SetJL,DispJL,R),
+        Data = {Pool,Info,CSS}.
+
+%justify
+    justify({Pool,Info1,_,CSS},SPList,Data,R):-true|
+        dbtgui_guiUtility:justify(SPList,Info1,Info,R),
+        Data  = {Pool,Info,CSS}.
+
+%%%%%%%%%internal method
+    get_ruleName({{SV,APos},IPos,CPos},{SV,APos},_,{Pool1,Info1},Data,MR,YR):-true| 
+        dbtgui_LArgUtility:get_ruleRelInfo({{SV,APos},IPos,CPos},{Pool1,Info1},{Pool,Info},{MR,YR,_,_},_),
+        Data = {Pool,Info}.
+otherwise.
+    get_ruleName(MLArg,_,{MLArg,{MR1,YR1}},Data1,Data,MR,YR):-true| 
+        MR   = MR1,
+        YR   = YR1,
+        Data = Data1.

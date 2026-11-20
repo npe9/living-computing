@@ -1,0 +1,84 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(7) Programming Environment for KL1 with Program Visualization</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(7) Programming Environment for KL1 with Program Visualization</h2>
+<p>
+
+<pre width= "139">
+<b>	Machine:     PSI
+	Environment: SIMPOS, pseudo multi PSI
+	Language:    KL1
+	Source Code: 2 MB
+	Documents:   Manual (English)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+An environment for KL1 with program visualization <p>
+
+<h2><b>Configuration</b></h2>
+
+In making program,each KL1 program clause has a MVC architecture. In
+running program,each scheduling queue in the KL1 executer has a MVC
+architecture.  <p>
+
+<h2><b>Function</b></h2>
+
+This system is intended to make the readability of KL1 programs
+higher,and save programmer labor by means of a total programming
+environment with program visualization.  <p>
+
+This trial needed a logical method of analysis of a KL1 program. The
+result is a system which has these features: <p>
+
+<ol>
+
+<li>A graphic figure that makes the abstract concepts of data flow and
+processes and streams,which KL1 has,visable to the user. A graphic
+figure has a consistency between the program in programming and the
+goal in execution.
+
+<li>Simultaneously a graphic and a textual representation of the
+program are used in programming. They are causally connected to each
+other. Because graphic representations are very good at being
+understood by intuition but bulkier than text. Texts and graphics have
+their merits and demerits.
+
+<li>A modeless design is the graphic editor. Graphics are difficult to
+draw on a computer screen,and need various modes and many mouse button
+clicks. This system having a graphic editor which impliments modeless
+design,a user can draw and edit graphics without being troubled with
+which mode he is operating in,and by the fewest number of clicks.
+
+<li>Multi window design we adopted. In this design,each a KL1 program
+clause is shown in a separate window. PP supports functions to compose
+a program by collecting multi windows,which are linked by call-called
+relation,and to recognize clauses which define the same predicate.
+</ol> <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Programming Environment for KL1 with Program Visualization [199K]
+<a href="../../../ifs/symbolic-proc/pimos/kl1graph.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

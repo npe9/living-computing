@@ -1,0 +1,75 @@
+----------------------------------------------------------------------
+[English Title of the Software]
+
+   A Parallel Visual Programming Environment KLIEG
+
+
+[Features of the Software]
+
+KLIEG is a parallel visual programming environment in which a user can
+develop a parallel program by editing visuals (e.g., icons
+representing processes and lines representing streams) on the screen.
+A program developed in the KLIEG environment will be translated into 
+KL1 codes and then executed efficiently.
+The execution process is animated by the KLIEG tracer.
+
+[Required Environment]
+
+We checked that our software can run on SparcStation 10/20s with
+Solaris 2.3J, KLIC-2.002, Amulet-1.2, gcc-2.7.2, and libg++-2.7.1.
+We expect that our software can run on other unix boxes possibly with
+minor modifications.
+
+[File Configuration]
+
+README
+README.j
+
+%$ Directory for Source File
+
+Makefile
+editor
+tracer
+examples
+
+%$ Directory for Documents
+
+manual
+
+[How to Install]
+
+1. Installation of klic and Amulet
+
+Before installation of KLIEG, in addition of g++, the following software:
+
+  klic 2.002	ftp://ftp.icot.or.jp/ifs/symbolic-proc/unix/klic/klic.tgz
+  Amulet 1.2	http://www.cs.cmu.edu/afs/cs/project/amulet/amulet1/amulet.tar.Z
+
+must be properly installed.
+After installation of Amulet 1.2, if you use libg++ 2.7.0 or later, 
+replace -liostream in AMULET_DIR/bin/Makefile.vars.gcc.Sun with -stdc++.
+
+Notice that the current version of KLIEG cannot be compiled with Amulet 2.0.
+
+2. Installation of KLIEG
+
+Modify KLIEG_DIR in Makefile appropriately and then build and install
+KLIEG as follows:
+
+> make
+> make install 
+
+Notice that, with -O2 option, g++ cannot compile tracer/tracer-types.cc. 
+
+[Getting Started]
+
+KLIEG requires a working directly, which can be specified by the
+environment variable KLIEG_WORK_DIR.  
+
+To start a KLIEG session, just execute KLIEG_DIR/bin/klieg and 
+an editor window will appear.
+Pressing the middle button will open the toplevel menu (see
+manual/editor.eps).
+You can create a new process definition (choose "process") or
+load a sample program (choose "Load") from the example directory.
+----------------------------------------------------------------------

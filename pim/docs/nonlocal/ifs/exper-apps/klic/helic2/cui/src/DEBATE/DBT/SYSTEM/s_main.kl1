@@ -1,0 +1,93 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_main.
+
+:- public 
+    start/7.
+            
+:- with_macro pimos.    
+
+%start
+                %Info = {RBR,POM,UseKnowledge,Para}             %rbr ni kaesu mono
+                %R = {ST,Result}      %user ni kaesu mono
+                %UseKnowledge = {useView,useUnit,goal,agentName}
+                %Para         = {solver,lang,verbose}
+    start(Y,O,NH,IDT,{RBR,POM,{UseView,UseUnit,Goal,AgentName,STG},Para},Info,R):-true|
+        merge({RBR0,RBR1},RBR),
+        merge({POM0,POM1},POM),
+        dbts_poolManager:create({RBR1,POM1,NH,IDT,AgentName,STG},Pool),
+        loop(Y,_,O,Pool,{RBR0,POM0,{UseView,UseUnit,Goal,AgentName},Para},Info1,R),
+        Info1 = {A,B,{C1,C2,C3,C4},D},Info = {A,B,{C1,C2,C3,C4,STG},D}.
+
+%loop
+                %Info = {RBR,POM,UseKnowledge,Para}
+                %UseKnowledge = {useView,useUnit,goal,agentName}
+                %Para         = {solver,lang,verbose}
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %R            = {ST,Result}                 %user ni kaesu mono
+    loop([],_,O,Pool,Info1,Info,R):-true|
+        terminate(O,Pool,Info1,normal(success),Info,R).
+    loop(_,[],O,Pool,Info1,Info,R):-true|
+        terminate(O,Pool,Info1,normal(success),Info,R).
+    loop([DR|Y],_,O1,Pool1,Info1,Info,R):-wait(DR)|
+        (   DR = display_info(Result)->
+                Result = normal(success),
+                loop(Y,_,O1,Pool1,Info1,Info,R)
+        ;
+            DR = initiate(Result)->
+                dbtcui_rbrUtility:solve(Info1,Info2,ST,Result1),
+                (   Result1 = normal(_)->
+                        Pool1 = [send(ial,initiate(ST,Result2))|Pool2],
+                        (   Result2 = normal(success)->
+                                Result = Result1,
+                                loop(Y,_,O1,Pool2,Info2,Info,R))
+                ;
+                    Result1 = abnormal(_)->                    %%%%send errorInfo 
+                        terminate(O1,Pool1,Info2,Result1,Info,R)
+                )
+        ;
+        otherwise;
+            true->
+                Pool1 = [send(hl,put(receive(y,DR)))|Pool2],
+                execute(DR,{O1,Pool2,Info1},{O,Pool3,Info2},NextDR),
+                loop(Y,NextDR,O,Pool3,Info2,Info,R)
+        ).
+    loop(Y,DR,O1,Pool1,Info1,Info,R):-wait(DR),DR\=[]|
+        Pool1 = [send(hl,put(receive(m,DR)))|Pool2],
+        execute(DR,{O1,Pool2,Info1},{O2,Pool3,Info2},NextDR),
+        loop(Y,NextDR,O2,Pool3,Info2,Info,R).
+    
+
+%terminate
+   terminate(O,Pool,Info1,Result,Info,R):-true|
+        O=[],
+        Pool = [],
+        Info = Info1,
+        R = Result.
+
+%execute
+                    %Data = {O,Pool,Info}    
+    execute(start,Data1,Data,NextDR):-true|
+        dbts_start:start(Data1,Data,NextDR).
+    execute({claim(YA,nil),Arg},Data1,Data,NextDR):-true|
+        dbts_claim1:claim({YA,nil,Arg},Data1,Data,NextDR).
+    execute({claim(YA,MI),Arg},Data1,Data,NextDR):-MI\=nil|
+        dbts_claim2:claim({YA,MI,Arg},Data1,Data,NextDR).
+    execute(notice(SP,claim(MA,issue(claim(YA,MI),IPos))),Data1,Data,NextDR):-true|
+        dbts_notice1:notice(SP,claim(MA,issue(claim(YA,MI),IPos)),Data1,Data,NextDR).
+    execute(notice(SP1,notice(SP2,CLAIM)),Data1,Data,NextDR):-true|
+        dbts_notice2:notice(SP1,notice(SP2,CLAIM),Data1,Data,NextDR).
+    execute(pass(notice(SP1,notice(SP2,Claim))),Data1,Data,NextDR):-true|
+        dbts_pass:notice(SP1,notice(SP2,Claim),Data1,Data,NextDR).
+    execute(pass(cancel(Claim)),Data1,Data,NextDR):-true|
+        dbts_pass:cancel(Claim,Data1,Data,NextDR).
+    execute(finish(claim(MA,nil)),Data1,Data,NextDR):-true|
+        dbts_finish1:finish(claim(MA,nil),Data1,Data,NextDR).
+    execute(finish(claim(MA,YI)),Data1,Data,NextDR):-YI \= nil|
+        dbts_finish2:finish(claim(MA,YI),Data1,Data,NextDR).
+    execute(cancel(Claim),Data1,Data,NextDR):-true|
+        dbts_cancel:cancel(Claim,Data1,Data,NextDR).
+

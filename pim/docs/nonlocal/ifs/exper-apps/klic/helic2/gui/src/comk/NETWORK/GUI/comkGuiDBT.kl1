@@ -1,0 +1,216 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module comkGuiDBT.
+:- public cmdPose/8,cmdSendRl/8,cmdNotice/8,cmdCancel/8,cmdFinish/8,
+          cmdJustify/8,cmdSetJust/8,cmdSendArg/8,cmdSendCounter/8,
+        cmdEndDebate/8,
+          cmdSendRebut/8,cmdBackward/8,cmdForward/8,cmdNext/8,
+          cmdPrevious/8,cmdFocus/8,cmdJump/8,cmdSendCl/8,cmdJumpClaim/8,
+          cmdSendExp/8,cmdSendErrInfo/8,cmdSendBye/8,cmdEntBrow/8,
+	  cmdExitBrow/8,cmdStartSol/8,cmdExpMode/8,cmdSetDepth/8.
+
+:- with_macro pimos.
+
+cmdPose(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NSTRING),
+        Command = 'pose',
+        Parameter = 'nil',
+        Argument =[].
+
+cmdSendRl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NSTRING),
+        Command = 'send',
+        Parameter = 'reasonList',
+        Argument =[].
+
+
+cmdNotice(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'notice',
+        Parameter = 'nil',
+        Argument = [Int].
+
+
+cmdCancel(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'cancel',
+        Parameter = 'nil',
+        Argument = [].
+
+cmdFinish(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'finish',
+        Parameter = 'nil',
+        Argument = [].
+
+cmdJustify(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'justify',
+        Parameter = 'nil',
+        Argument = [].
+
+cmdSetJust(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'set',
+        Parameter = 'justification',
+        Argument = [Int].
+
+cmdEndDebate(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	Agent = 'nil',
+        Command = 'end',
+        Parameter = 'nil',
+        Argument =[].
+
+cmdSendArg(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'send',
+        Parameter = 'argument',
+        Argument = [Int].
+
+cmdSendCounter(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+%	builtin:print(NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'send',
+        Parameter = 'counterList',
+        Argument = [Int].
+%	builtin:print("Send CounterList"),
+%	builtin:print({Command,Agent,Parameter,Argument}).
+
+
+cmdSendRebut(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'send',
+        Parameter = 'rebuttal',
+        Argument = [Int].
+
+
+cmdBackward(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'backward',
+        Parameter = 'nil',
+        Argument =[].
+
+
+cmdForward(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'forward',
+        Parameter = 'nil',
+        Argument =[].
+
+cmdNext(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'next',
+        Parameter = 'nil',
+        Argument =[].
+
+
+cmdPrevious(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'previous',
+        Parameter = 'nil',
+        Argument =[].
+
+
+cmdFocus(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'focus',
+        Parameter = 'nil',
+        Argument =[].
+
+
+cmdJump(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:stringToList(NString,NNum1,_,0,NNSt,NNum,_NNString),
+        hLibrary:sTot(NNSt,NAtom),
+        Command = 'jump',
+        Parameter = 'nil',
+        Argument =[NAtom].
+
+
+cmdSendCl(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'send',
+        Parameter = 'claimList',
+        Argument =[].
+
+cmdJumpClaim(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+        convert:shortTochange(NString,NNum1,2,0,Int,NNum,_NNString),
+        Command = 'jump',
+        Parameter = 'claim',
+        Argument =[Int].
+
+
+cmdSendExp(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum1,_NString),
+%        convert:stringToList(NString,NNum1,_,0,_NNSt,NNum,_NNString),
+%        Command = 'explain',
+	Command = 'send',
+        Parameter = 'explanation',
+%       Argument =[NNSt].
+        Argument =[].
+        
+
+cmdSendBye(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+        Command = 'quit',
+	Agent = 'nil',
+        Parameter = 'nil',
+        Argument = [].
+
+
+cmdSendErrInfo(String,Number,_N,NNum,Command,Parameter,Argument,Agent):- true |
+        convert:charpToatom(String,Number,1,0,Agent,NNum,_NString),
+        Command = 'error',
+        Parameter = 'nil',
+        Argument =[].
+
+
+%tuika
+
+cmdEntBrow(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	Agent = 'nil',
+	Command = 'enterBrowse',
+	Parameter = 'nil',
+	Argument = [].
+
+cmdExitBrow(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	Agent = 'nil',
+	Command = 'exitBrowse',
+	Parameter = 'nil',
+	Argument = [].
+
+cmdStartSol(_String,_Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	Agent = 'nil',
+	Command = 'startSolve',
+	Parameter = 'nil',
+	Argument =[].
+
+cmdExpMode(String,Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+	convert:charpToatom(NString,NNum1,1,0,Int,_NNums,_NNString),
+%	Command = 'explanation',
+%	Parameter = 'mode',
+	Command = 'set',
+	Parameter = 'explanationMode',
+	( Int = 'p' ->
+		Argument = [h];
+	Int = 'd' ->
+		Argument = [e]).
+
+cmdSetDepth(String,Number,_N,_NNum,Command,Parameter,Argument,Agent):- true |
+	convert:charpToatom(String,Number,1,0,Agent,NNum1,NString),
+	convert:shortTochange(NString,NNum1,2,0,Int,_NNums,_NNString),
+	( wait(Int) ->
+		Command = 'set',
+		Parameter = 'depth',
+%	Command = 'setDepth',
+%	Parameter = 'nil',
+		Argument = [Int]).

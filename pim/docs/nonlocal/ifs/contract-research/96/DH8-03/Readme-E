@@ -1,0 +1,113 @@
+/**********************************************************************/
+/*             kima - Analyzer of Ill-moded KL1 Programs              */
+/*                                                                    */
+/*                            Version 1.0                             */
+/*                             April 1997                             */
+/*                                                                    */
+/*                    Kazunori Ueda and Kenta Cho                     */
+/*           Department of Information and Computer Science           */
+/*                         Waseda University                          */
+/*                    ueda@ueda.info.waseda.ac.jp                     */
+/*                                                                    */
+/*          Copyright (C) 1997  Kazunori Ueda and Kenta Cho           */
+/*                                                                    */
+/**********************************************************************/
+
+OVERVIEW:
+
+The kima system analyses the mode errors of ill-moded KL1 programs using
+the ideas described in [4].  By identifying mode errors, it helps us
+debug communication protocols of KL1 programs statically.
+
+kima identifies a mode error as a minimal inconsistent subset of mode
+constraints.  By presenting a minimal incosistent subset together with
+the program symbols and rules that imposed the constraints in the
+subset, it helps programmers locate bugs quickly and easily.
+
+Whenever possible, kima further indicates the "most suspicious" mode
+constraint in a minimal subset and proposes possible corrections that
+resolve mode errors.
+
+The only necessary input to kima is the KL1 program to be analyzed; it
+does not require additioanal information such as mode declarations.
+
+The kima system consists of two parts: a mode constraint generator
+(klint101) and a mode constraint analyzer (kima2).  The mode constraint
+generator generates the mode constraints syntactically imposed by a
+given KL1 program.  The mode constraint analyzer tries to find minimal
+incosistent subsets of mode constraints and, whenever possible, tries to
+further pinpoint a bug and propose possible corrections of the bug.
+
+Strong moding in concurrent logic/constraint programming, on which kima
+based, is described in [1].  An introduction to mode analysis can be
+found in [2].
+
+
+INSTALLATION:
+
+klint101 and kima2 are totally written in KL1 and can be compiled using
+KLIC.  Use Makefile to make klint101 and kima2.  kima is defined as a
+shellscript.
+
+
+FILES:
+
+klint101-main.kl1, read_program.kl1, normalize.kl1, unify.kl1,
+        numbergoal.kl1, findpath.kl1, constraints.kl1, stdinout.kl1,
+        getpgraph.kl1, pnode.kl1, stack.kl1: Source programs for
+        klint101 (in KL1)
+kima2-main.kl1, checkprocess.kl1, fixvariable.kl1, copygraph.kl1,
+        renamegraph.kl1, getminimal200.kl1, graph.kl1, decode.kl1,
+        reduce.kl1, stdinout.kl1, outmessage.kl1: Source programs for
+        kima2 (in KL1)
+kima:      Top-level command (in Bourne Shell)
+Readme-E:  This file
+Readme-J:  Japanese version of this file
+GUIDE.txt: User's Guide (plain text)
+Makefile:  Make file
+        
+
+FEATURES NOT YET SUPPORTED:
+
+(1) Macro expansion.  We expect that a future release of klic will
+    feature a KL1 counterpart of cc's  -E option.
+
+(2) 'inline' feature.
+
+(3) Some built-in predicates.
+
+
+BUGS:
+
+(1) Body goals whose names coincide with those of built-ins are regarded
+    as calls to built-in predicates, even if the module names are
+    explicitly specified.  Will be fixed in the next release.
+
+(2) 'arg', 'setarg', 'vector_element', 'set_vector_element' do not check
+    the consistency of the modes of structures/vectors and those of
+    elements.  This means that the current system will report weaker
+    principal modes.  Will be fixed in the next release.
+
+(3) The satisfiability of non-binary constraints that could not be
+    reduced to unary/binary constraints is not checked.
+
+
+REFERENCES:
+
+[1] Ueda, K. and Morita, M., Moded Flat GHC and Its Message-Oriented
+    Implementation Technique.  New Generation Computing, Vol.13, No.1
+    (1994), pp.3-43.
+
+[2] Ueda, K., I/O Mode Analysis in Concurrent Logic Programming.  In
+    Theory and Practice of Parallel Programming, LNCS 907, Springer,
+    1995, pp.356-368.
+
+[3] Ueda, K., Experiences with Strong Moding in Concurrent
+    Logic/Constraint Programming.  In Proc. Int. Workshop on Parallel
+    Symbolic Languages and Systems (PSLS'95), T. Ito, R.H. Halstead,
+    Jr., and C. Queinnec (eds.), LNCS 1068, Springer, 1996, pp.134-153.
+
+[4] Cho, K. and Ueda, K., Diagnosing Non-Well-Moded Concurrent Logic
+    Programs.  In Proc. 1996 Joint International Conference and
+    Symposium on Logic Programming (JICSLP'96), M. Maher (ed.), The MIT
+    Press, 1996, pp.215-229.

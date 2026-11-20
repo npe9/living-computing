@@ -1,0 +1,147 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_networkHandler.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create(I,R):-true|
+        initiate(R),
+        loop(I,nil).
+
+%initiate
+    initiate(R):-true|
+        R = normal(success).
+
+%loop
+    loop([],_):-true|
+        true.
+    loop([get_commandArguments(Command,AgentName,Parameter,Arguments,Result)|T],X1):-true|
+        get_commandArguments(Command,AgentName,Parameter,Arguments,Result),
+	(   Command = startDebate->
+		X = dbt
+	;
+	    Command = startSolve->
+		X = slv
+	;
+	otherwise;
+	    true->
+		X = X1
+	),
+        loop(T,X).
+    loop([receive(AgentName,Parameter,Arguments,Result)|T],X):-
+		Parameter\=completeDebate|
+        receive(AgentName,Parameter,Arguments,Result),
+        loop(T,X).
+%%%%%%%%%%%%%%%
+    loop([receive(_,completeDebate,_,Result)|T1],dbt):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(completeDebate)",_),
+	Result = normal(success),
+	brows_dbt(T1,T),
+        loop(T,dbt).
+    loop([receive(_,completeDebate,_,Result)|T1],slv):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(completeDebate)",_),
+	Result = normal(success),
+	brows_slv(T1,T),
+        loop(T,slv).
+
+%%brows_dbt
+    brows_dbt([get_commandArguments(Command,AgentName,Parameter,
+		Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"send(enterBrows)",_),
+	Command = enterBrowse,AgentName=nil,Parameter=nil,Arguments=[],
+	Result=normal(success),
+	brows_dbt1(T1,T).
+
+    brows_dbt1([show(AgentName,Parameter,Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"show(argument)",_),
+	Result = normal(success),
+	brows_dbt2(T1,T).
+
+    brows_dbt2([get_commandArguments(Command,AgentName,
+		Parameter,Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"send(ok)",_),
+	Command = ok,AgentName=nil,Parameter=nil,Arguments=[],Result=normal(success),	
+	brows_dbt3(T1,T).
+
+    brows_dbt3([receive(_,argument,_,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(argument)",_),
+	Result = normal(success),
+	brows_dbt4(T1,T).
+
+    brows_dbt4([get_commandArguments(Command,
+		AgentName,Parameter,Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"send(exit brows)",_),
+	Command = exitBrowse,AgentName=nil,Parameter=nil,Arguments=[],
+	Result=normal(success),
+	brows_dbt5(T1,T).
+
+    brows_dbt5([receive(_,ok,_,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(ok)",_),
+	Result = normal(success),
+	T = T1.
+
+%%brows
+    brows_slv([get_commandArguments(Command,AgentName,Parameter,
+		Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"send(enterBrows)",_),
+	Command = enterBrowse,AgentName=nil,Parameter=nil,Arguments=[],
+	Result=normal(success),
+	brows_slv1(T1,T).
+
+    brows_slv1([receive(_,argument,_,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(argument)",_),
+	Result = normal(success),
+	brows_slv2(T1,T).
+
+    brows_slv2([get_commandArguments(Command,
+		AgentName,Parameter,Arguments,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"send(exit brows)",_),
+	Command = exitBrowse,AgentName=nil,Parameter=nil,Arguments=[],
+	Result=normal(success),
+	brows_slv3(T1,T).
+
+    brows_slv3([receive(_,ok,_,Result)|T1],T):-true|
+        dbtcui_ioUtility:show_string(nil,"receive(ok)",_),
+	Result = normal(success),
+	T = T1.
+
+%get_commandArguments1
+    get_commandArguments(Command,AgentName,Parameter,Arguments,Result):-true|
+        dbtgui_parser1:get_commandArguments(Command,AgentName,Parameter,Arguments,Result).
+
+%receive
+    receive(AgentName,Parameter,Arguments,Result):-true|
+        receive1(Parameter,Arguments,AgentName,R1),
+        (   wait(R1)->
+                Result = normal(success)).
+
+%receive1
+%before start debate
+    receive1(loadFlag,[_LoadFlag],_AgentName,Result):-true|
+        dbtcui_ioUtility:show_string(nil,"ok",Result).
+    receive1(standpointList,SPList,_AgentName,Result):-true|
+        dbtcui_ioUtility:show_listX(SPList,Result).
+    receive1(viewCandidateList,ViewNameList,_AgentName,Result):-true|
+        dbtcui_ioUtility:show_listX(ViewNameList,Result).
+    receive1(viewCandidate,SPList,_AgentName,Result):-true|
+        dbtcui_ioUtility:show_listX(SPList,Result).
+    receive1(goalCandidateList,[{CurrentGoal,DispGoalList}],_AgentName,Result):-true|
+        dbtcui_ioUtility:show_goal(DispGoalList,CurrentGoal,Result).
+    receive1(currentUnit,UnitList,_AgentName,Result):-true|
+        dbtcui_ioUtility:show_listX(UnitList,Result).
+    receive1(currentView,SPList,_AgentName,Result):-true|  
+        dbtcui_ioUtility:show_listX(SPList,Result).
+
+%%common 
+    receive1(ok,_,_AgentName,Result):-true|  
+        dbtcui_ioUtility:show_string(nil,"ok",Result).
+    receive1(errorInfo,[Reason],_AgentName,Result):-true|  
+        dbtcui_ioUtility:show_error(Reason,Result).
+

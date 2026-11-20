@@ -1,0 +1,123 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module helic_keyed_bag.
+
+create(I):-true|
+        loop(I,[]).
+
+loop([],_):-true|
+        true.
+loop([H|T],W1):-true|
+        execute(H,W1,W),
+        loop(T,W).
+
+execute(empty(YN),W1,W):-true|
+        (  W1 = []->
+                YN = yes
+        ;
+          W1 \= []->
+                YN = no
+        ),
+        W = W1.
+execute(empty(Key,YN),W1,W):-true|
+        empty(W1,Key,YN),
+        W = W1.
+
+execute(put(Key,X),W1,W):-true|
+        put(W1,Key,X,W).
+
+execute(get(Key,X),W1,W):-true|
+        get(W1,Key,X,W).
+
+execute(get_all(All),W1,W):-true|
+        make_all(W1,All),
+        W = [].
+execute(get_all(Key,All),W1,W):-true|
+        get_all(W1,Key,All,W).
+
+execute(carbon_copy(All),W1,W):-true|
+        make_all(W1,All),
+        W = W1.
+execute(carbon_copy(Key,All),W1,W):-true|
+        carbon_copy(W1,Key,All,W).
+
+
+%-internal method
+empty([],_,YN):-true|
+        YN = yes.
+empty([{Key,_}|_],Key,YN):-true|
+        YN = no.
+otherwise.
+empty([_|T],Key,YN):-true|
+        empty(T,Key,YN).
+
+put([],Key,X,W):-true|
+        W = [{Key,[X]}].
+put([{Key,L1}|T],Key,X,W):-true|
+        append(L1,[X],L),
+        W = [{Key,L}|T].
+otherwise.
+put([H|T],Key,X,W):-true|
+        put(T,Key,X,W1),
+        W = [H|W1].
+
+get([{Key,L1}|T],Key,X,W):-true|
+        L1 = [X|L],
+        (  L = []->
+                W = T
+        ;
+           L \= []->
+                W = [{Key,L}|T]
+        ).
+otherwise.
+get([H|T],Key,X,W):-true|
+        get(T,Key,X,W1),
+        W = [H|W1].
+
+get_all([],_,All,W):-true|
+        All = [],
+        W = [].
+get_all([{Key,L}|T],Key,All,W):-true|
+        All=L,
+        W = T.
+otherwise.
+get_all([H|T],Key,All,W):-true|
+        get_all(T,Key,All,W1),
+        W = [H|W1].
+
+
+carbon_copy([],_,All,W):-true|
+        All = [],
+        W = [].
+carbon_copy([{Key,L}|T],Key,All,W):-true|
+        All=L,
+        W = [{Key,L}|T].
+otherwise.
+carbon_copy([H|T],Key,All,W):-true|
+        carbon_copy(T,Key,All,W1),
+        W = [H|W1].
+
+append([],Y,Z):-true|
+        Z = Y.
+append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+
+make_all(W,List):-true|
+        make_all1(W,[],List).
+
+make_all1([],Work,All):-true|
+        All = Work.
+make_all1([{Key,List}|T],Work1,All):-true|
+        make_all2(List,Key,Work2),
+        append(Work1,Work2,Work),
+        make_all1(T,Work,All).
+
+make_all2([],_,Work):-true|
+        Work = [].
+make_all2([H|T],Key,Work):-true|
+        make_all2(T,Key,Work1),
+        Work = [{Key,H}|Work1].

@@ -1,0 +1,238 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_debateNetworkHandler.
+
+:- public 
+    create/3.
+            
+:- with_macro pimos.
+
+%create
+    create(NH,P,D):-true|
+        NH=[],
+        loop(P,D,nil).
+
+%loop
+    loop([],_,_):-true|
+        true.
+    loop(_,[],_):-true|
+        true.
+    loop([Protocol|P],D,BR1):-true|
+        execute(Protocol,p,BR1,BR,R),
+        (   wait(R)->
+                loop(P,D,BR)).
+    loop(P,[Protocol|D],BR1):-true|
+        execute(Protocol,d,BR1,BR,R),
+        (   wait(R)->
+                loop(P,D,BR)).
+
+%execute
+    execute(get_commandArguments(Command,Parameter,Arguments,Result),AgentName,BR1,BR,R):-true|
+        get_commandArguments(BR1,AgentName,Command,Parameter,Arguments,Result),
+        BR     = BR1,
+        R      = Result.
+    execute(show(argument,[AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History],Result),
+                        _,BR1,BR,R):-true|
+        show(AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History,Result),
+        BR     = BR1,
+        R      = Result.
+    execute(receive(Parameter,Arguments,Result),                     AgentName,BR1,BR,R):-
+	true|
+	receive(Parameter,Arguments,Result,AgentName,BR1,BR,R).
+
+%receive
+    receive(useView,View,Result,AgentName,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_useView(View,AgentName,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(useSpPriority,View,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_useSpPriority(View,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(useUnit,UnitList,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_useUnit(UnitList,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(view,ViewList,Result,AgentName,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_view(ViewList,AgentName,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(sp,SPList,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_sp(SPList,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(unit,UnitList,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_showPom:show_unit(UnitList,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(goal,Goal,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_showGoal:show_goalString(Goal,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(pl,PL,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("Print Length",PL,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(pt,PT,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("Print Type",PT,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(cl,infinite,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("CL",-1,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(cl,CL,Result,_,{_,Argument},BR,R):-integer(CL)|
+        dbtcui_ioUtility:show_term("CL",CL,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(similarity,Sim,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("Similarity",Sim,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(weight,W,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("Weight",W,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(psiTermSimTB,PsiTermSimTB,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("PsiTermSimTB",PsiTermSimTB,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(psiTermAttWeight,PsiTermAttWeight,Result,_,_,BR,R):-true|
+        dbtcui_ioUtility:show_term("PsiTermAttWeight",PsiTermAttWeight,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(explanation,Exp,Result,_,_,BR,R):-true|
+        dbtcui_ioUtility:show_string("Explanation",Exp,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(tf,TF,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("TraceFlag",TF,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(sr,SR,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("SpyRule",SR,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(sg,SG,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_term("SpyGate",SG,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(help,Help,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_listY(Help,Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(ok,_,Result,_,{_,Argument},BR,R):-true|
+        dbtcui_ioUtility:show_string(nil,"ok",Result),
+        BR = {dummy,Argument},
+        R  = Result.
+    receive(errorInfo,[ErrorInfo],Result,_,BR1,BR,R):-true|
+        dbtcui_ioUtility:show_error(ErrorInfo,Result),
+        BR     = BR1,
+        R      = Result.
+    receive(errorInfo,[],Result,_,BR1,BR,R):-true|
+	Result = normal(success),
+        BR     = BR1,
+        R      = Result.
+otherwise.
+    receive(Parameter,Arguments,Result,_,_,BR,R):-true|
+        BR     = {Parameter,Arguments},
+        Result = normal(success),R = normal(success).
+
+%get_commandArguments
+    get_commandArguments({reasonList,[]},
+                _,Command,Parameter,Arguments,Result):-true|
+        Command=notice,Parameter=nil,Arguments=[-1],Result=normal(success).
+    get_commandArguments({reasonList,SPListList},
+                _,Command,Parameter,Arguments,Result):-SPListList\=[]|
+        dbtcui_showPom:reasonList(SPListList,R1),
+        (   wait(R1)->
+                count(SPListList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=notice,Parameter=nil,Arguments=[Num]).
+    get_commandArguments({justificationList,JustificationList},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_showPom:justificationList(JustificationList,R1),
+        (   wait(R1)->
+                count(JustificationList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=set,Parameter=justification,Arguments=[Num]).
+    get_commandArguments({argumentList,[ArgumentList,[Issue]]},
+                _,Command,Parameter,Arguments,Result):-ArgumentList\=[]|
+        dbtcui_showArgument:argumentList([ArgumentList,[Issue]],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=argument,Arguments=[Num]).
+    get_commandArguments({argumentList,[[],_]},
+                AgentName,Command,Parameter,Arguments,Result):-true|
+        dbtcui_ioUtility:show_string("","Initial argument is nothing.",R1),
+	(   wait(R1)->
+        	dbtcui_parser2:get_commandArguments(AgentName,[],
+			  Command,Parameter,Arguments,Result)).
+    get_commandArguments({counterList,[ArgumentList,AddInfo]},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_showArgument:counterList([ArgumentList,AddInfo],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=rebuttal,Arguments=[Num]).
+    get_commandArguments({claimList,[ArgumentList1,ArgumentList2,_]},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_showArgument:claimList([ArgumentList1,ArgumentList2,_],R1),
+        (   wait(R1)->
+                get_numForClaimList(ArgumentList1,ArgumentList2,Num,Result),
+                Command=jump,Parameter=claim,Arguments=[Num]).
+    get_commandArguments({argument,Argument},
+                AgentName,Command,Parameter,Arguments,Result):-true|
+        dbtcui_showArgument:argument(Argument,R1),
+        (   wait(R1)->
+                Argument = [_,_,UCL|_],
+                dbtcui_parser2:get_commandArguments(AgentName,UCL,Command,
+			Parameter,Arguments,Result)).
+    get_commandArguments({dummy,Argument},
+                AgentName,Command,Parameter,Arguments,Result):-true|
+        Argument = [_,_,UCL|_],
+        dbtcui_parser2:get_commandArguments(AgentName,UCL,Command,
+		Parameter,Arguments,Result).
+
+%show
+    show(_,_,{_,_,[]},Status,_,Result):-true|
+        dbtcui_ioUtility:show_string("Status",Status,Result).
+otherwise.
+    show(AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History,Result):-true|
+        dbtcui_showArgument:argument([AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History],Result).
+        
+
+%%%%%%%%
+    get_numForClaimList(ArgumentList1,ArgumentList2,Num,R):-true|
+        append(ArgumentList1,[" "|ArgumentList2],ArgumentList),
+        count(ArgumentList,0,N),
+        count(ArgumentList1,0,N1),
+        dbtcui_ioUtility:get_num(N,Num1,R1),
+        (   N1=Num1->
+                dbtcui_ioUtility:show_error({cui,'Illegal Number',Num1},R2),
+                (   wait(R2)->
+                        get_numForClaimList(ArgumentList1,ArgumentList2,Num,R))
+        ;
+            N1\=Num1->
+                Num = Num1,
+                R   = normal(success)
+        ).
+
+%%%%%%
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+
+    count([],W,L):-true|
+        L = W.
+    count([_|T],W,L):-true|
+        W1 := W+1,
+        count(T,W1,L).
+
+

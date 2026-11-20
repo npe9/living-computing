@@ -1,0 +1,93 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (37) Morphological Analyzing Program</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (37) Morphological Analyzing Program</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    CESP
+	Source Code: 0.3 MB (Without dictionary)
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A total supporting tool for the development of morphological analyzer
+and its dictionary.<P>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>Morphological analyzing program:
+
+<dd>- Outputs all interpretation at one time as a graph stack
+structure
+
+<dd>- Recognizes unknown words and location of failure point in
+analysis easily
+
+<dd>- Can be used as a server program on UNIX system
+
+<li>Dictionary developing environment:
+
+<dd>- Results of the analysis including ambiguity and occurrence of
+unknown words are displayed effectively
+
+<dd>- Registration and deletion of entries, and revision of definition
+for categories can be executed instantly for the intermediate
+dictionary
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+This system provides a common development environment of morphological
+analyzer and its dictionary for NLP system developer and enables them
+to get morphological analyzer they need easily.  <p>
+
+In this system, user describe a morphological dictionary first, in
+which morphological categories with their connection information and
+morphemes of each category should be defined. Next, the user translate
+this dectionary into an intermediate dictionary, with which one can
+perform analyzing test, modify the attributes of categories and add
+new entries instantly. This analyzer can be combined with other
+applications on CESP.  <p>
+
+Moreover, this system can transform the analyzer into a server program
+on UNIX system.  Using the server combined with various applications
+developed on UNIX system, one can make a NLP system efficiently, which
+would be very practical because a server program can be accessed by
+many people simultaneously. This server program performs not only
+morphological analysis but also revision of intermediate dictionary
+such as addition of entries.  Then, one can take advantage of this
+function to build a flexible application.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Morphological Analyzing Program [402K] <a
+href="../../../ifs/natural-lang/cesp/morphana.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

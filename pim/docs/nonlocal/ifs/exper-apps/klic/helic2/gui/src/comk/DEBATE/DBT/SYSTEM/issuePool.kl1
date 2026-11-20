@@ -1,0 +1,83 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_issuePool.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create({STG},I):-true|
+        initiate(IPool),
+        loop(I,IPool,STG).
+
+%initiate
+    initiate(IPool):-true|
+        hLibrary:pool(keyed_bag,IPool).
+
+%loop
+    loop([],IPool,_):-true|
+        IPool=[].
+    loop([put(AID,IPosList)|T],IPool1,STG):-true| 
+        (   IPosList=[]->
+                FinishFlag=on
+        ;
+            IPosList\=[]->
+                FinishFlag=off
+        ),
+        IPool1 = [put(AID,{IPosList,IPosList,FinishFlag})|IPool],
+        loop(T,IPool,STG).
+    loop([get(AID,IPos,YN)|T],IPool1,STG):-true|
+        IPool1 = [get(AID,{NonUse,ALL,FinishFlag})|IPool2],
+        (   NonUse=[]->
+                (   FinishFlag=on->
+                        YN = success
+                ;
+                    FinishFlag=off->
+                        YN = fail
+                )
+        ;
+            NonUse\=[]->
+                NonUse = [IPos|_],
+                YN     = yes
+        ),
+        IPool2 = [put(AID,{NonUse,ALL,FinishFlag})|IPool],
+        loop(T,IPool,STG).
+    loop([finish({AID,_IPos})|T],IPool1,STG):-true|
+        IPool1 = [get(AID,{NonUse1,ALL,_})|IPool2],
+        (   STG=all ->
+                NonUse=NonUse1
+        ;
+            STG=one->
+                NonUse=[]
+        ),
+        IPool2 = [put(AID,{NonUse,ALL,on})|IPool],
+        loop(T,IPool,STG).
+    loop([remove({AID,IPos})|T],IPool1,STG):-true|
+        IPool1 = [get(AID,{NonUse1,ALL,FinishFlag})|IPool2],
+        remove(NonUse1,IPos,NonUse),
+        IPool2 = [put(AID,{NonUse,ALL,FinishFlag})|IPool],
+        loop(T,IPool,STG).
+    loop([get_IPosList(AID,IPosList)|T],IPool1,STG):-true|
+        IPool1 = [get(AID,{NonUse,ALL,FinishFlag})|IPool2],
+        IPosList = ALL,
+        IPool2 = [put(AID,{NonUse,[],FinishFlag})|IPool],
+        loop(T,IPool,STG).
+    loop([get_all(ALL)|T],IPool1,STG):-true|  %for debug
+        IPool1 = [carbon_copy(ALL)|IPool],
+        loop(T,IPool,STG).
+
+
+%%%%%
+    remove([],_,L):-true|
+        L = [].
+    remove([H|T],H,L):-true|
+        L = T.
+otherwise.
+    remove([H1|T],H,L):-true|
+        remove(T,H,L1),
+        L = [H1|L1].

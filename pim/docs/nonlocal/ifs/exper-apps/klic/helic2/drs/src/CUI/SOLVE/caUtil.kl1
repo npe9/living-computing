@@ -1,0 +1,151 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_counterArgumentUtility.
+
+:- public 
+    get_counterArgument/4,
+    get_counterArgumentRuleName/4,
+    get_counterArgumentJudgeList/3,
+    get_counterArgumentTopRuleRel/4,
+    get_counterArgumentArgJudge/4.
+
+:- with_macro pimos.
+    
+%get_counterArgument
+    get_counterArgument(SV,IPos,CPos,Arg):-true|
+        (   integer(IPos)->
+                slv_solutionVecUtility:get_solution(SV,IPos,counterSolutionTable,CST),
+                get_element(CST,0,CPos,CSV),
+                CSV = {SV1,_,_}
+        ;
+            IPos = naf(_)->
+                slv_solutionVecUtility:get_solution(SV,IPos,nafSolutionTable,ST),
+                get_element(ST,0,CPos,SV1)
+        ),
+        
+        Arg = {SV1,0}.
+
+%get_counterArgumentRuleName
+    get_counterArgumentRuleName(SV,IPos,CPos,RuleName):-true|
+        get_counterArgument(SV,IPos,CPos,{CSV,Pos}),
+        slv_solutionVecUtility:get_solution(CSV,Pos,ruleName,RuleName).
+
+%get_counterArgumentJudgeList
+    get_counterArgumentJudgeList(SV,Pos1,InfoList):-integer(Pos1)|
+        slv_solutionVecUtility:get_solution(SV,Pos1,counterSolutionTable,ST),
+        count(ST,0,C),
+        get_counterArgumentJudgeList1(0,C,SV,Pos1,InfoList).
+    get_counterArgumentJudgeList(SV,naf(Pos1),InfoList):-integer(Pos1)|
+        slv_solutionVecUtility:get_solution(SV,naf(Pos1),nafSolutionTable,ST),
+        count(ST,0,C),
+        get_counterArgumentJudgeList1(0,C,SV,naf(Pos1),InfoList).
+
+    get_counterArgumentJudgeList1(C,C,_,_,InfoList):-true|
+        InfoList = [].
+    get_counterArgumentJudgeList1(Pos2,C,SV,Pos1,InfoList):-Pos2\=C|
+        get_counterArgumentJudge(SV,Pos1,Pos2,Info),
+        Pos21 := Pos2+1,
+        get_counterArgumentJudgeList1(Pos21,C,SV,Pos1,InfoList1),
+        InfoList = [Info|InfoList1].
+
+    get_counterArgumentJudge(SV,Pos1,Pos2,Info):-integer(Pos1)|
+        slv_solutionVecUtility:get_solution(SV,Pos1,counterSolutionTable,CST),
+        get_element(CST,0,Pos2,CSV1),
+        CSV1 = {CSV,TopRuleRel,_},
+        get_caj(CSV,0,CAJ),
+        Info = {Pos2,TopRuleRel,CAJ}.
+    get_counterArgumentJudge(SV,naf(Pos1),Pos2,Info):-integer(Pos1)|
+        slv_solutionVecUtility:get_solution(SV,naf(Pos1),nafSolutionTable,NST),
+        get_element(NST,0,Pos2,NSV),
+        slv_solutionVecUtility:get_solution(NSV,0,argJudge,CAJ1),
+        change_argJudge(CAJ1,CAJ),
+        Info = {Pos2,weak,CAJ}.  
+
+    get_caj(SV,Pos,CAJ):-true|
+        slv_solutionVecUtility:get_solution(SV,Pos,subArgInfo,SubArgInfo),
+        get_caj1(SubArgInfo,{j(0),p(0),d(0)},CAJ).
+
+    get_caj1([],{j(J),p(P),d(D)},CAJ):-true|
+        (   J>0,P=0,D=0->
+                CAJ = j
+        ;
+%            J>0,P>0,D=0->   %modify 96/1/25
+            J>=0,P>0,D=0->
+                CAJ = p
+        ;
+            D>0->
+                CAJ = d
+        ;
+            J=0,P=0,D=0->  %fact
+                CAJ = j
+        ).
+    get_caj1([{AJ,Num,_}|T],{j(J),p(P),d(D)},CAJ):-true|
+        change_argJudge(AJ,AJ1),
+        (   AJ1 = j ->
+                J1:=J+Num,P1=P,D1=D
+        ;
+            AJ1 = p ->
+                J1=J,P1:=P+Num,D1=D
+        ;
+            AJ1 = d ->
+                J1=J,P1=P,D1:=D+Num
+        ;
+        otherwise;
+            true->
+                J1=J,P1=P,D1=D
+        ),
+        get_caj1(T,{j(J1),p(P1),d(D1)},CAJ).
+
+    change_argJudge(justify,AJ):-true|
+        AJ = j.
+    change_argJudge(directly,AJ):-true|
+        AJ = d.
+    change_argJudge(stro_d,AJ):-true|
+        AJ = d.
+    change_argJudge(unre_d,AJ):-true|
+        AJ = d.
+    change_argJudge(weak_d,AJ):-true|
+        AJ = d.
+    change_argJudge(stro_p,AJ):-true|
+        AJ = p.
+    change_argJudge(unre_p,AJ):-true|
+        AJ = p.
+    change_argJudge(weak_p,AJ):-true|
+        AJ = p.
+    change_argJudge(inconsistent,AJ):-true|
+        AJ = i.
+
+%%%%%%%
+    get_counterArgumentTopRuleRel(SV,IPos,CPos,TopRuleRel):-true|
+        get_counterArgumentJudgeList(SV,IPos,InfoList),
+        get_element(InfoList,0,CPos,{_,TopRuleRel,_}).
+
+    get_counterArgumentArgJudge(SV,IPos,CPos,ArgJudge):-true|
+        get_counterArgumentJudgeList(SV,IPos,InfoList),
+        get_element(InfoList,0,CPos,{_,_,ArgJudge}).
+
+%%%%%%internal method
+%get_element
+    get_element([H|_],Pos,Pos,CSV):-true|
+        CSV = H.
+otherwise.
+    get_element([_|T],N,Pos,CSV):-true|
+        N1 := N+1,
+        get_element(T,N1,Pos,CSV).
+
+%count
+    count([],X,Y):-true|
+        Y = X.
+    count([_|T],X,Y):-true|
+        X1 :=X+1,
+        count(T,X1,Y).
+
+
+
+
+
+
+

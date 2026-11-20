@@ -1,0 +1,12 @@
+``Copyright (C) 1996 Kenzo KONISHI and Kazuo TAKI in Kobe University''
+
+本プログラムのインストールについて．
+
+Progディレクトリにcdして，makeを行なう．
+
+現在，動作確認を行なっている実行環境は，SunOS 4.1.3，Solaris2.3です．
+Solarisの場合は，Makefile中のOS指定部分を
+
+OS=SOLARIS23
+
+とすることで，対応しています．

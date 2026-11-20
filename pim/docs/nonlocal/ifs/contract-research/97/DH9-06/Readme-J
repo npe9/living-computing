@@ -1,0 +1,47 @@
+Datagol			Copyright (C) 1998 古川 康一
+===========================================================
+配布ファイルの構成
+Readme-J			このファイル
+Readme-E			このファイルの英語版
+INSTALL				インストールガイド
+use-of-software-J		ソフトウェアの利用条件(日本語版)
+use-of-software-E		ソフトウェアの利用条件(英語版)
+
+doc/				ユーザマニュアル ディレクトリ
+source/				プログラム ディレクトリ
+sample/				サンプルプログラム ディレクトリ
+
+doc:
+	Datagol.ps		Datagol ユーザマニュアル
+	ILE.ps			ILE ユーザマニュアル
+
+source/Datagol:
+	Makefile	DatagolのMakefile
+	cover.kl1	被覆計算モジュール
+	edb.kl1		外延データベースモジュール
+	idb.kl1		内包データベースモジュール
+	magic.kl1	マジックセット変換モジュール
+	main.kl1	Datagolメインモジュール
+	match.kl1	ターム照合モジュール
+	merc.kl1	MERC変換器
+	mode2mg.kl1	モード宣言のMG-Clause変換器
+	msh.kl1		最弱仮説計算モジュール
+	astar-like.kl1	仮説束内探索メインモジュール
+	refine.kl1	候補仮説生成モジュール
+	tmG.kl1		弁別木モジュール
+	unify.kl1	単一化モジュール
+	union.kl1	パスセット計算モジュール
+	util.kl1	ユーティリティモジュール
+
+source/ILE:
+	ILE.java	ILE本体
+	ILE.class	ILEバイトコード
+	DataSave.class  
+	Displays.class  
+	DebugArea.class 
+	Make_Up.class
+
+sample:
+	animals.pgl	Datagol用 動物分類問題 
+	family.pl	Progol用 家族関係学習問題
+	family.ile	family.plのILEでデバッグを行った後の出力ファイル

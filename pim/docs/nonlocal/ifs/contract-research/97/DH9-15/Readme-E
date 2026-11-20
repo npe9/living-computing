@@ -1,0 +1,72 @@
+Copyright (C) 1998  Katsumi Inoue 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Readme-E                 %%%
+%%%         by Katsumi Inoue %%%
+%%%         (1998.3.20)      %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Incorporating Linear-Space Best-First Search in MGTP
+
+by
+  Katsumi Inoue
+  Department of Electrical and Electronics Engineering 
+  Kobe University 
+and 
+  Jun-ichi Sekiyama
+  Department of Information and Computer Sciences 
+  Toyohashi University of Technology 
+
+Other Cooperate Members: 
+  Hiromasa Haneda (Kobe Univ.)
+  Hidetomo Nabeshima (Toyohashi Univ. of Technology)
+  Ryuzo Hasegawa (Kyushu Univ.) 
+
+Abstract: 
+  MGTP has been widely used as a theorem prover for full first-order
+  logic.  However, for purposes other than theorem proving, MGTP has
+  been less used.  In particular, the methodology for non-Horn clause
+  programming has not been well developed as compared with Horn clause
+  logic programming.  In this research, to expand the application range
+  of MGTP, we incorporate search based on costs into MGTP.  First, we
+  introduce the depth-first iterative-deepening (DFID) search into MGTP
+  in order to improve the termination of MGTP.  Next, we propose a
+  general programming language in the form of disjunctive logic programs
+  with costs.  Then, to apply MGTP to optimization problems, we
+  incorporate a new search algorithm into MGTP with a best-first
+  iterative-deepening (BFID) method, which deals with problems with
+  costs.  Finally, we apply Non-Horn Magic Sets (NHM) method in order to
+  increase the efficiency of optimization problems.  Using NHM, we can
+  restrict the search space in bottom-up reasoning only to subgoals that
+  are related to the given goal.  
+
+
+%%% This directory contains the following files: 
+
+1. Readme-E           This file
+2. Readme-J           Japanese version of this file
+3. manual  <dir>      Directory containing Technical Report and Manual 
+4. source  <dir>      Directory containing software and examples
+5. use-of-software-E  Terms and conditions for use of software (English) 
+6. use-of-software-J  Terms and conditions for use of software (Japanese) 
+
+
+%%%%%%%%%%%%
+%%% NOTE %%%
+%%%%%%%%%%%%
+
+There has been no English manual for MGTP-BF.  
+If you are interested in using MGTP-BF, please 
+contact the copyright owner: 
+
+  Katsumi Inoue
+  Department of Electrical and Electronics Engineering 
+  Kobe University 
+  Rokkodai-cho, Nada-ku, Kobe  657-8501,  Japan
+
+  Email: inoue@eedept.kobe-u.ac.jp
+  Phone: +81-78-803-1079
+  Fax:   +81-78-881-3193
+
+-------------------------------------------------------------------
+20 March 98 - Katsumi Inoue, inoue@eedept.kobe-u.ac.jp

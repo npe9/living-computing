@@ -1,0 +1,53 @@
+#   README
+#   Copyright (C) 1998, 新田 克己( nitta@dis.titech.ac.jp )
+
+[ ディレクトリ構成 ]
+
+ここには Shaky2.0 と Rbrs1.0 という２つの法的推論用言語が格納されています。
+
+./H9-1
+	+- README
+	+- README-J
+	+- Shaky2.0/
+		+- Install_J(日本語)
+		+- USERMAN_J(日本語)
+		+- src/
+			+- Makefile		
+			+- io.pl		プログラムソースファイル
+			+- system.pl		
+			+- la.pl		
+			+- main.pl
+			+- transfer.pl
+			+- db.pl			
+			+- makefile.pl		
+			+- grammar.pl		
+			+- utility.pl
+			+- sample/		デモ用サンプルプログラム
+				+- sample1
+				+- sample2
+				+- sample3
+				+- sample4		
+	+- rbrs-1.0/
+		+- INSTALL-J		日本語インストールマニュアル
+		+- USERMAN-J		本プログラムの使用法・使用例
+		+- comparePRule.pl	ルールの優先関係の推論を行うモジュール
+		+- compareRule.pl	ルールの優先関係の推論を行うモジュール
+		+- debate_Dic		例題用辞書ファイル
+		+- deate_Rule		例題用ルールファイル
+		+- deate_Rule_JP.txt    例題用ルールファイルの説明
+		+- findAllArg.pl	全解探索モジュール
+		+- findIssue.pl		論点検索用モジュール
+		+- interface.tcl	ユーザーインターフェース記述 Tcl/Tk モジュール
+		+- makeArg.pl		論証生成モジュール
+		+- makeCoutnerArg.pl	反論生成モジュール
+		+- makeclause.pl	ルール形式変換モジュール
+		+- makelower.pl		辞書記述変換モジュール
+		+- operator.pl		オペレータ宣言記述
+		+- priority.pl		優先関係決定モジュール
+		+- rbrs			起動用 shell script
+		+- startscript.pl	起動用モジュール読み込みプログラム
+		+- tcltkinterface.pl	インターフェース生成 Prolog モジュール
+		+- unify.pl		単一化モジュール
+                +- cbr.pl		事例ベース推論モジュール
+
+

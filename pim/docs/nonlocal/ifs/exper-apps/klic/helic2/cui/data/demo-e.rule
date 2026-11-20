@@ -1,0 +1,1035 @@
+
+% 94/09/09 Syntax check by Kitakata.
+% 94/09/12 Reasoning check by Shibasaki.
+% 94/09/13 Adjustment check by Kokubo.
+% 94/09/16 Replace "agent" of penal235uematsu_theory_in_occupation_by_dead_person2 & penal261
+%          with "a_object" by Shibasaki.
+% 94/09/20 Replace "agent"/"a_object" of penal261definition & penal236j_asahikawa_d361014
+% 94/09/21 Replace "agent"/"a_object" 
+% 94/09/26 Change by Nitta
+%              %%Ni  新たに消去した部分
+%              %%New (begin)  新たに追加した部分は、こ_次_行から始まる。
+%              %%New (end)    新たに追加した部分は、こ_前_行で終る。
+% 94/10/17 Change by Nitta
+%              %%Ni2  新たに消去した部分
+%              %%New2 (begin)  新たに追加した部分は、こ_次_行から始まる。
+%              %%New2 (end)    新たに追加した部分は、こ_前_行で終る。
+% 94/10/19 Reasoning check by Shibasaki.
+
+
+&define_absolute_rule.
+&define_RBR_rule.     {
+
+act0::hate(agent=person[name=>"mary"], object=person[name=>"jane"]).
+act1::wait_for(agent=person[name=>"mary"], object=person[name=>"jane"], 
+                 purpose=hurt(agent=person[name=>"mary"],
+object=person[name=>"jane"]),
+                 time= night[name=>"night1"],   place= street[name=>"street1"]).
+act2::hit(agent=person[name=>"mary"], object=person[name=>"jane"], 
+            time= night[name=>"night1"], place= street[name=>"street1"], manner="hard", 
+            implement=fist[possessor=>person[name=>"mary"]]) 
+                       |#hard_hitting.
+act3::with_intent(a_object=person[name=>"mary"], object= #hard_hitting, 
+               goal=hurt(agent=person[name=>"mary"], object=person[name=>"jane"])).
+act4:: -with_criminal_intent(a_object=person[name=>"mary"], object= #hard_hitting, goal=crime_of_robbery).
+act5::fall_down(agent=person[name=>"jane"], place= street[name=>"street1"], 
+               condition= #hard_hitting)
+                       |#falling.
+act6::bruise(agent=person[name=>"jane"], place= street[name=>"street1"], 
+               object=back_head[possessor=>person[name=>"jane"]], condition= #falling)
+                       |#bruise.
+act7::faint(agent=person[name=>"jane"], condition= #bruise)|#fainting.
+act8::mistake(agent=person[name=>"mary"], object= #fainting,
+               goal= die(agent=person[name=>"jane"], condition= #bruise),
+               time= #fainting).
+act9::has_ownership(a_object=person[name=>"jane"], 
+                         object=handbag[name=>"handbag1"]).
+act10::has_occupied(a_object=person[name=>"jane"], 
+                     object=handbag[name=>"handbag1"],
+                     time= #hard_hitting)|#ownership.
+act11::recognize(a_object=person[name=>"mary"], object= #ownership,
+                    time= #hard_hitting).
+act12::take_away(agent=person[name=>"mary"], 
+                object=handbag[name=>"handbag1"], 
+                source=person[name=>"jane"])
+                        |#taking_away.
+act12_2::in_short_time(a_object= #taking_away, basis= #fainting).
+
+%%Ni act13::with_intent(a_object=person[name=>"mary"], object= #taking_away, 
+%%Ni                 goal= deceive(agent=person[name=>"mary"],  
+%%Ni                               object=person,
+%%Ni                               goal=die(agent=person[name=>"jane"], 
+%%Ni                                       condition=burglary(agent=some person,
+%%Ni                                                       object=person[name=>"jane"])))).
+
+%%New (begin)
+%仕様3.6
+act13_2::with_intent(a_object=person[name=>"mary"], object= #taking_away, 
+                goal= hide(agent=person[name=>"mary"],  
+                           object= #hard_hitting)). 
+
+%仕様3.9
+act13_3:: with_intent(a_object=person[name=>"mary"], object= #taking_away,
+                  goal= use(agent=person[name=>"mary"],
+                                   object=handbag[name=>"handbag1"])).
+%%New (end)
+
+%%Ni act14:: -with_intent(a_object=person[name=>"mary"], 
+%%Ni                   object= use(agent=person[name=>"mary"],
+%%Ni                                     object=handbag[name=>"handbag1"])).
+%%  act15::with_criminal_intent(a_object=person[name=>"mary"], object= #taking_away,
+%%                  goal= 占有物離脱横領crime).
+act16::abandon(agent=person[name=>"mary"], 
+               object=handbag[name=>"handbag1"],
+               goal= river[name=>"river1"]) |#abandon.
+act17::with_criminal_intent(a_object=person[name=>"mary"], 
+                object= #abandon,  goal=crime_of_destruction).
+
+
+
+% 4. 関連知識_記述 (RBR)
+
+% 4.1  一般知識  ---------------------------------
+
+
+
+%      <<definition>>
+
+common_sense_rule1:: has_owned(a_object=X/person, object=physical_object[possessor=>X]).
+
+       %％ あるphysical_object_持ち主であるということは、そ_physical_objectをhas_ownedことであ
+       %％ る。
+       %％  （注意）  possessor は 「has_owned」_意味でuse。
+       %％            possessor は 「has_ownership」ではない。
+
+common_sense_rule2:: has_occupied(a_object=X, object=Y)
+             <- has_owned(a_object=X/person, object=Y/movable_property).
+
+       %％ movable_propertyをownことと、占有することは同じ意味である。
+       %％ （注意） movable_propertyでは、  has_owned＝has_occupied、  であるが、
+       %％                      has_owned＝has_ownership、 ではない。
+       %％          不movable_propertyでは、has_owned＝has_occupied、ではない。
+
+common_sense_rule3:: has_owned(a_object=X, object=Y)
+             <- moved_possession_to_owner(agent=X/person, object=Y/physical_object_and_abstract_object).
+
+       %％ ownactionが行われると、has_ownedsituationが成立する。
+
+common_sense_rule4:: has_ownership(a_object=X, object=Y)
+             <- moved_ownership_to_owner(agent=X/person, object=Y/physical_object_and_abstract_object).
+
+       %％ ownership権を得るactionが行われると、has_ownershipsituationが成立する。
+
+common_sense_rule5:: -has_owned(a_object=X, object=Y)
+             <- leave_possession_from_owner(agent=X/person, object=Y/physical_object_and_abstract_object).
+
+       %％ ownershipを放棄するactionが行われると、ownershipしていないsituationが成立する。
+
+common_sense_rule6:: -has_ownership(a_object=X, object=Y)
+             <- leave_ownership_from_owner(agent=X/person, object=Y/physical_object_and_abstract_object).
+
+       %％ ownership権を放棄するactionが行われると、ownership権_ないsituationが成立する。
+
+common_sense_rule7:: is_absent(agent=X, place=Y)
+             <- leave(agent=X/person, source=Y/position).
+
+       %％ あるpositionをleaveということは、そ_positionをis_absentことである。
+
+common_sense_rule8:: have_fainted(a_object=X, condition = @fainting)
+             <- faint(agent=X/person)|@fainting.
+
+       %％ 「faint」と「have_fainted」situationになる。
+
+common_sense_rule9:: is_unconsciousness(a_object=X, condition = @unconsciousness)
+             <- lose_consciousness(agent=X/person)|@unconsciousness.
+
+       %％ 「lose_consciousness」と「is_unconsciousness」situationになる。
+
+common_sense_rule10:: bald(a_object=X, condition= @cutting_the_hair)
+             <- cut_the_hair(agent=X/woman)|@cutting_the_hair.
+
+       %％ 「cut_the_hair」と「bald」situationになる。
+
+common_sense_rule11:: dead(a_object= X, condition= @murder)
+            <- kill(agent=Y/person, object=X/person)|@murder.
+
+       %％  人を「kill」というactionを行うと、そ_effect、人が「dead」という状
+       %％  態が成立する。
+
+common_sense_rule11_2:: dead(a_object= X, condition= @death)
+            <- die(agent=X/person)|@death.
+
+       %％  人がdieと、そ_effect、人が「dead」というsituationが成立する。
+
+% 使用2.1
+common_sense_rule12:: with_criminal_intent(a_object=X, object= @violence, goal=crime_of_violence)
+            <- use_violence(agent=X/person, object=Y/person) |@violence,
+               with_intent(a_object=X, object= @violence, 
+                        goal=hurt(agent=X,object=Y)).
+
+common_sense_rule12_2:: with_criminal_intent(a_object=X, object= @violence, goal=crime_of_violence)
+            <- P/act(agent=X/person, object=Y/person) |@violence,
+               is_violence(a_object= @violence),
+               with_intent(a_object=X, object= @violence, 
+                        goal=hurt(agent=X,object=Y)).
+
+       %％ 人をhurt意図でuse_violenceと、crime_of_violence_故意があったということになる。
+
+%%Ni common_sense_rule13:: -with_intent(a_object=X, object= @taking_away, 
+%%Ni                        goal=use(agent=X, object=Y))
+%%Ni            <- take_away(agent=X/person, source=Y/person, 
+%%Ni                        object=Z/physical_object[possessor=>Y])|@taking_away,
+%%Ni               with_intent(a_object=X, object= @taking_away, 
+%%Ni                        goal=abandon(agent=X,object=Y)).
+
+%%Ni common_sense_rule14:: -with_intent(a_object=X, object= @taking_away, 
+%%Ni                        goal=own(agent=X, object=Y))
+%%Ni             <- take_away(agent=X/person, source=Y/person, 
+%%Ni                         object=Z/physical_object[possessor=>Y])|@taking_away,
+%%Ni                with_intent(a_object=X, object= @taking_away, 
+%%Ni                         goal=abandon(agent=X, object=Z)).
+%%Ni
+%%Ni       %％ abandonためにtake_awayことと、使ったり、ownershipしたりするためにtake_awayこと
+%%Ni       %％ は矛盾する。
+
+%%New (begin)
+%仕様3.12
+common_sense_rule14_2:: -with_intent(a_object=X, object= @taking_away, 
+                       goal=use(agent=X, object=Z))
+            <- take_away(agent=X/person, source=Y/person, 
+                        object=Z/physical_object[possessor=>Y])|@taking_away,
+               with_intent(a_object=X, object= @taking_away, 
+                        goal=abandon(agent=X, object=Z)).
+
+       %  abandonためにtake_awayことと、それを使用するためにtake_awayことは矛盾する。
+
+%仕様3.6
+common_sense_rule14_3:: -with_intent(a_object=X, object= @taking_away, 
+                           goal=deceive(agent=X, object=person,
+                                      goal=has_ownership(agent=X, object=Z)))
+            <- P/act(agent=X/person)|@action,
+               take_away(agent=X, source=Y/person, 
+                        object=Z/physical_object[possessor=>Y])|@taking_away,
+               with_intent(a_object=X, object= @taking_away, 
+                        goal=hide(agent=X, object= @action)).
+
+       %  あるactionをhideために物をtake_awayことと、そ_物をownership権を持つようにふ
+       %  るまうためにtake_awayことは矛盾する。
+
+%仕様3.12
+common_sense_rule14_4:: with_intent(a_object=X, object= @taking_away, 
+                           goal=abandon(agent=X, object=Z))
+            <- take_away(agent=X/person, source=Y/person, 
+                        object=Z/physical_object[possessor=>Y])|@taking_away,
+               abandon(agent=X, object=Z).
+
+       %  他人_物を持ち去った後で、それを捨てたときは、abandonつもりで持ち去った
+       %  ことになる。
+
+%%New (end)
+
+common_sense_rule15:: recognize(a_object=X, object= @recognized_result, time= @scene)
+            <- mistake(agent=X/person, 
+                        object= Y/is_state(), 
+                        goal=  Z/is_state()|@recognized_result,
+                        time= act()|@scene).
+%%9/13temp              time= act()|@scene),
+%%9/13temp               different(Y,Z).
+% 使用3.5
+common_sense_rule16:: recognize(a_object=X, object= @recognized_result, time=@scene)
+             <- mistake(agent=X/person, 
+                         object= Y/event_concept(), 
+                         goal=   Z/event_concept()|@recognized_result,
+                         time=   W/event_concept()|@scene).
+
+% common_sense_rule16:: recognize(a_object=X, object= @recognized_result, time=@scene)
+%            <- mistake(agent=X/person, 
+%                        object= Y/act(), 
+%                        goal=   Z/act()|@recognized_result,
+%                        time=  W/act()|@scene),
+%              different(Y,Z).
+
+       %％ mistakeということは、事実でないことを認識することである。
+
+
+common_sense_rule17:: be_bruised(a_object=X)
+            <- bruise(agent=X/person).
+
+       %％ bruiseと、bruiseしているsituationとなる。
+
+% 使用旧3.6
+common_sense_rule18:: recognize(a_object=person[name=>"mary"], 
+                          object=dead(a_object=person[name=>"jane"]), 
+                          time= #taking_away).
+
+% common_sense_rule18:: recognize(a_object=X, 
+%                          object=is_state(a_object=Y, 
+%                          condition= @event), time=Z)
+%            <- recognize(a_object=X/person, 
+%                            object=cause_event(agent=Y/person)|@event,
+%                            time=Z/top).
+
+       %％  あるphenomenonであるeffectが生じたとき、そ_phenomenonが生じたことを認識していたと
+       %％  きは、そ_effectが生じたことも認識していたことになる。
+
+% 使用旧3.9
+common_sense_rule19:: with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_embezzlement_of_lost_articles)
+            <- has_occupied(a_object=Y/person, object=Z/physical_object)|@ownership,
+               take_away(agent=X/person, object=Z, source=Y)|@taking_away,
+               -recognize(a_object=X, object= @ownership, time= @taking_away).
+
+       %％  他人_物を、そ_人がhas_ownedと知らずにtake_awayactionには、占有物離
+       %％  脱横領_故意がある。
+
+
+
+
+
+
+% 4.2 penal法常識  --------------------------------------
+
+%              <<penal法総論に関する常識>>
+
+% transitivity_of_causality1:: X(a_object=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @action1) 
+%            <- act(agent=person)|@action1,
+%               is_state(condition= @action1)|@situation2,
+%               X/is_state(a_object=A1, object=A2,
+%                                    place=A3, time=A4, implement=A5,
+%                                    manner=A6, condition= @situation2).
+
+  %  あるactionがあるsituationを引き起こし、それがさらに別_situationを引き起こしたときには、
+  %  最初_actionと最後_situation_間には条件関係が成り立つ。
+
+% transitivity_of_causality2:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @action1) 
+%            <- act(agent=person)|@action1,
+%               act(condition= @action1)|@action2,
+%               X/act(agent=A1, object=A2, place=A3,
+%                   time=A4, implement=A5, manner=A6, condition= @action2).
+
+  %  あるactionがあるactionを引き起こし、それがさらに別_actionを引き起こしたときには、
+  %  最初_actionと最後_action_間には条件関係が成り立つ。
+
+% transitivity_of_causality3:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @action1) 
+%            <- act(agent=person)|@action1,
+%               cause_event(condition= @action1)|@phenomenon2,
+%               X/cause_event(agent=A1, object=A2, place=A3, time=A4, 
+%                              implement=A5, manner=A6, condition= @phenomenon2).
+
+  %  あるactionがあるphenomenonを引き起こし、それがさらに別_phenomenonを引き起こしたときには、
+  %  最初_actionと最後_phenomenon_間には条件関係が成り立つ。
+
+% transitivity_of_causality4:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+%                manner=A6, condition= @phenomenon1) 
+%            <- cause_event(agent=person)|@phenomenon1,
+%               cause_event(condition= @phenomenon1)|@phenomenon2,
+%               X/cause_event(agent=A1, object=A2, place=A3, time=A4, 
+%                              implement=A5, manner=A6,
+%                              condition= @phenomenon2).
+
+  %  あるphenomenonがあるphenomenonを引き起こし、それがさらに別_phenomenonを引き起こしたときには、
+  %  最初_phenomenonと最後_phenomenon_間には条件関係が成り立つ。
+
+% 使用2.1
+transitivity_of_causality_3stage:: X(agent=A1, object=A2, place=A3, time=A4, implement=A5,
+                manner=A6, condition= @action)
+            <-  X/cause_event(agent=A1, object=A2, place=A3, time=A4,
+                              implement=A5, manner=A6, 
+                            condition= P/cause_event(condition= 
+                                           cause_event(condition= act(agent=person)|@action))).
+
+
+% 使用2.1
+general_penal_rule0:: punishable(a_object= @action, goal=Y)
+            <- satisfied_condition_of_crime(a_object= P/act(agent=person)|@action, 
+                                  goal=Y/crime),
+               not -punishable(a_object= @action).
+
+  %  あるcrime_構成要件に該当したときは、例外があるときを除き、処罰される。
+
+general_penal_rule1:: is_more_grave(a_object= crime_of_inflicting_injury, basis=crime_of_violence).
+
+  %  crime_of_inflicting_injuryはcrime_of_violenceよりもis_more_grave。
+
+general_penal_rule2:: is_more_grave(a_object= crime_of_robbery, basis=crime_of_theft).
+
+  %  crime_of_robberyはcrime_of_theftよりもis_more_grave。
+
+general_penal_rule3:: is_more_grave(a_object= crime_of_theft, basis=crime_of_embezzlement_of_lost_articles).
+
+  %  crime_of_theftは占有物離脱横領crimeよりもis_more_grave。
+
+general_penal_rule4:: with_criminal_intent(a_object= X, object= @violence, goal= crime_of_inflicting_injury)
+            <- use_violence(agent=X/person, object=Y/person) |@violence,
+               with_criminal_intent(a_object= X, object= @violence, goal= crime_of_homicide).
+
+  %  murder_故意はinjury_故意を包含する。
+
+general_penal_rule5:: with_criminal_intent(a_object= X, object= @violence, goal= crime_of_violence)
+            <- violate(agent=X/person, object=Y/person) |@violence,
+               with_criminal_intent(a_object= X, object= @violence, goal= crime_of_inflicting_injury).
+
+  %  injury_故意はviolence_故意を包含する。
+
+general_penal_rule6:: with_criminal_intent(a_object= X, object= @violence, goal= crime_of_violence)
+            <- violate(agent=X/person, object=Y/person) |@violence,
+               with_intent(a_object= X, object= @violence, 
+                        purpose= hurt(agent=X, object=Y)).
+
+  %  相手をhurtつもりで暴力をふるったときは、violence_故意があった。
+  %  （注意）「violate」は一般用語、「use_violence」はpenal法用語として使い分けて
+  %           いる。
+
+
+general_penal_rule7:: -with_criminal_intent(a_object= X, object= @action, goal= Z)
+            <- act(agent=X/person, object=Y/person) |@action,
+               not with_criminal_intent(a_object= X, object= @action, goal=Z/crime).
+
+  %  故意_存在が立証できないときは、故意がなかったことになる。
+
+general_penal_rule8:: -exist_legal_causality(source= @action, goal= @effect)
+            <- act(agent=X/person, object=Y/person) |@action,
+               is_state(a_object=Z)|@effect,
+               not exist_legal_causality(source= @action, goal= @effect).
+
+  %  因果関係_存在が立証できないときは、因果関係がなかったことになる。
+
+%% New2 (begin)   +++++++++++++++++++++++++++++
+%仕様2.1
+general_penal_rule00:: provable_guilty(a_object= @action, goal=G)
+            <- P/act(agent=X/person) |@action,
+               related_crime(a_object= @action, goal=G/crime),
+               punishable(a_object= @action, goal=G).
+
+  % あるactionについて、related_crime名があって、それが処罰_条件を満たしたとき、
+  % 立件されたことになる。
+
+%仕様3.1
+general_penal_rule01:: related_crime(a_object= take_away(agent=X/person),  goal=crime_of_robbery).
+
+%仕様3.5
+general_penal_rule02:: related_crime(a_object= take_away(agent=X/person),  goal=crime_of_theft).
+general_penal_rule03:: related_crime(a_object= take_away(agent=X/person),  
+                                                 goal=crime_of_embezzlement_of_lost_articles).
+general_penal_rule11:: related_crime(a_object= violate(agent=X/person),  goal=crime_of_homicide).
+
+%仕様2.1
+general_penal_rule12:: related_crime(a_object= violate(agent=X/person),  goal=crime_of_inflicting_injury).
+general_penal_rule13:: related_crime(a_object= violate(agent=X/person),  goal=crime_of_violence).
+
+%仕様3.15
+general_penal_rule21:: related_crime(a_object= abandon(agent=X/person),  goal=crime_of_destruction).
+
+  %  上記はactionとrelated_crime名_リストである。
+
+%% New2 (end)   +++++++++++++++++++++++++++++
+
+
+% 使用2.1
+penal204definition1:: is_violence(a_object= @hit)
+            <- hit(agent=X/person, object=Y/person)|@hit.
+
+  % hitことはis_violence。
+
+
+
+penal236definition1:: is_taking_by_force(a_object= @rob)
+            <- rob(agent=X/person, object=Y/physical_object[possessor=>Z/person], 
+                    source=Z) |@rob,
+               with_criminal_intent(a_object=X, object= @rob, goal=crime_of_robbery).
+
+  % 強取する、とは、強盗_故意をもって、robことをいう。
+
+
+% 使用3.5
+penal235definition1:: is_stealing(a_object= @taking_away)
+                 <- has_occupied(a_object=Z/person, object=Y/physical_object) |@占有,
+                    take_away(agent=X/person, object=Y, source=Z)|@taking_away,
+                    recognize(a_object=X, 
+                    object= has_occupied(a_object=Z, object=Y), 
+                    time= @taking_away).
+               
+    % 「盗む」とは、他人がownershipし、他人がhas_occupiedことをrecognizeも_を
+    %  take_awayことをいう。
+
+penal235definition2:: -with_intent(a_object=X, object=Y, goal=own(agent=X,object=Y))
+              <- with_intent(a_object=X/person, object= Y/physical_object[possessor=>Z/person],
+                             goal=return(agent=X, object=Y, goal=Z)).
+
+    % returnつもりであったときは、自分でownつもりがなかったことになる。
+
+
+% 使用3.15
+% shuusei 9/20
+% penal261definition:: is_desructive_act(a_object= abandon(a_object=X/person, object=Y/physical_object)).
+penal261definition:: is_desructive_act(a_object= abandon(agent=X/person, object=Y/physical_object)).
+
+       %％ 「abandon」ことは、「break」ことにつながる。
+
+
+
+
+
+
+% 4.3  penal法条文   -----------------------------------------------
+
+
+
+%              <<penal法総論に関する法令文>>
+
+penal35:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=person)|@action,
+               satisfied_condition_of_crime(a_object= @action, goal=Z/crime),
+               is_proper_act(a_object= @action).
+
+  % （penal法35条） 正当なactionは罰しない。
+
+penal36:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=person)|@action,
+               satisfied_condition_of_crime(a_object= @action, goal=Z/crime),
+               is_self_defense(a_object= @action).
+
+  % （penal法36条）正当防衛_actionは罰しない。
+
+penal38:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action, 
+               is_mistake_of_criminal_intent(a_object= @action,  goal=Z/crime).
+
+  % （penal法38条）錯誤があるactionは、認識していたcrimeには罰しない。
+
+% 使用旧3.9
+penal38abstract_mistake_of_fact:: 
+         exist_abstract_mistake_of_fact(a_object=X, object= @action, goal=Z, source=Y)
+            <- act(agent=X/person)|@action,
+               satisfied_formal_condition_of_crime(a_object= @action, goal=Z/crime),
+               with_criminal_intent(a_object=X, object= @action, goal=Y/crime).
+%%9/13temp               with_criminal_intent(a_object=X, object= @action, goal=Y/crime),
+%%9/13temp               different(Y,Z).
+
+  % （penal法38条）あるcrimeに該当すると思ってactionを行ったところ、そ_actionが別_crimeに
+  %   該当するときには、抽象的事実_錯誤がある。
+
+penal39:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               satisfied_condition_of_crime(a_object= @action, goal=Z/crime),
+               is_damaged_mentally(a_object= X).
+
+  % （penal法39条）心神喪失者_actionは罰しない。
+
+penal41:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=X/person[age=>[0..13]])|@action,
+               satisfied_condition_of_crime(a_object= @action, goal=Z/crime).
+
+  % （penal法41条）１４歳未満_人_actionは罰しない。
+
+penal54_1:: -punishable(a_object= @action, goal=Z)
+            <- act(agent=person)|@action,
+               satisfied_condition_of_crime(a_object= @action, goal=Y/crime),
+               satisfied_condition_of_crime(a_object= @action, goal=Z/crime),
+               is_more_grave(a_object=Y, basis=Z).
+
+  % （penal法54条）１つ_actionが複数_crimeに触れるとき(観念的競合)は、重いpenalでpunishable。
+
+penal54_2:: -punishable(a_object= @action2, goal=Z2)
+            <- X/act(agent=P/person)|@action1,
+               Y/act(agent=P)|@action2,
+%%9/13temp               different(X,Y),
+               exists_means_effect_relation(a_object=P, object= @action1, goal= @action2),
+               satisfied_condition_of_crime(a_object= @action1, goal=Z1/crime),
+               satisfied_condition_of_crime(a_object= @action2, goal=Z2/crime),
+               is_more_grave(a_object=Z1, basis=Z2).
+
+  % （penal法54条）手段とeffect_関係にある２つ_actionが複数_crimeに触れるとき(牽連犯)
+  %   は、重いpenalでpunishable。
+
+
+
+%              <<penal法各論に関する法令文>>
+
+% 使用2.1
+penal204::satisfied_condition_of_crime(a_object= @action, goal=crime_of_inflicting_injury)
+            <- act(agent=X/person, object=Y/person)|@action,
+               is_violence(a_object= @action),
+               is_injured(a_object=Y)|@injury,
+               with_criminal_intent(a_object=X, object= @action, goal=crime_of_inflicting_injury),
+               exist_legal_causality(source= @action, goal= @injury).
+
+  %  crime_of_inflicting_injury（penal法204条）
+  %       人_身体をinjuryすると、10年以下_懲役、500円以下_罰金
+
+
+penal208_1::satisfied_condition_of_crime(a_object= @action, goal=crime_of_violence)
+            <- act(agent=X/person, object=Y/person)|@action,
+               is_violence(a_object= @action),
+               -is_injured(a_object=Y),
+               with_criminal_intent(a_object=X, object= @action, goal=crime_of_violence).
+
+penal208_2::satisfied_condition_of_crime(a_object= @action, goal=crime_of_violence)
+            <- act(agent=X/person, object=Y/person)|@action,
+               is_violence(a_object= @action),
+               is_injured(a_object=Y)|@injury,
+               with_criminal_intent(a_object=X, object= @action, goal=crime_of_violence),
+               -exist_legal_causality(source= @action, goal= @injury).
+
+  % crime_of_violence（penal法208条）
+  %       violenceを加えたがinjuryに至らないときは、2年以下_懲役、500円以下_罰金、
+  %                                              拘留、科料
+
+penal209::satisfied_condition_of_crime(a_object= @action, goal=crime_of_accidental_inflicting_injury)
+            <- act(agent=X/person, object=Y/person)|@action,
+               is_violence(a_object= @action),
+               is_injured(a_object=Y)|@injury,
+               by_negligence(a_object=X, object= @action),
+               exist_legal_causality(source= @action, goal= @injury).
+
+  % crime_of_accidental_inflicting_injury（penal法209条）
+  %       過失で人_身体をinjuryしたときは、500円以下_罰金、科料
+
+penal235::satisfied_condition_of_crime(a_object= @action, goal=crime_of_theft)
+            <- take_away(agent=X/person, 
+                        object=Y/physical_object, source=Z/person)|@action,
+               is_stealing(a_object= @action),               
+               with_criminal_intent(a_object=X, object= @action, goal=crime_of_theft).
+
+%仕様旧3.9
+penal235_2::satisfied_formal_condition_of_crime(a_object= @stealing, goal=crime_of_theft)
+            <- has_occupied(a_object=Z/person, object=Y/physical_object),
+               take_away(agent=X, object=Y, source=Z)|@stealing.
+
+  % crime_of_theft（penal法235条）
+  %        他人_財物を窃取したときは、10年以下_懲役
+
+% 使用3.1
+penal236::satisfied_condition_of_crime(a_object= @stealing,  goal=crime_of_robbery)
+            <- act(agent=X/person, object=Z/person)|@violence,
+               is_violence(a_object= @violence),
+               has_occupied(a_object=Z, object=Y/physical_object)|@ownership,
+               recognize(a_object=X, object= @ownership, time= @violence),
+               take_away(agent=X, object=Y, source=Z)|@stealing,
+               with_criminal_intent(a_object=X, object= @stealing, goal=crime_of_robbery).
+
+penal236_2::satisfied_formal_condition_of_crime(a_object= @stealing,  goal=crime_of_robbery)
+            <- act(agent=X/person, object=Z/person)|@violence,
+               is_violence(a_object= @violence),
+               has_occupied(a_object=Z, object=Y/physical_object)|@ownership,
+               take_away(agent=X, object=Y, source=Z)|@stealing.
+
+  % crime_of_robbery （penal法236条）
+  %         violence又は脅迫をもって他人_財物を強取すると、5年以上_有期懲役
+
+penal254::satisfied_condition_of_crime(a_object= @taking_away, goal=crime_of_embezzlement_of_lost_articles)
+            <- take_away(agent=X/person, object=Z/physical_object)|@taking_away,
+               -has_occupied(a_object=Y/person, object=Z),
+               has_ownership(agent=Y, object=Z),
+               with_criminal_intent(a_object=X, object= @taking_away, 
+                        goal=crime_of_embezzlement_of_lost_articles).
+
+penal254_2::satisfied_formal_condition_of_crime(a_object= @taking_away, goal=crime_of_embezzlement_of_lost_articles)
+            <- -has_occupied(a_object=Y/person, object=Z/physical_object),
+               take_away(agent=X/person, object=Z)|@taking_away,
+               has_ownership(agent=Y, object=Z).
+
+  % crime_of_embezzlement_of_lost_articles （penal法254条）
+  %         占有を離れた他人_も_を横領すると、1年以下_懲役、100円以下_罰金、
+  %                                                     科料
+
+% 使用3.15
+penal261::satisfied_condition_of_crime(a_object= @break, goal=crime_of_destruction)
+            <- has_occupied(a_object=Y/person, object=Z/physical_object),
+               act(agent=X/person, object=Z)|@break,
+               is_desructive_act(a_object= @break),
+               with_criminal_intent(a_object=X, object= @break, goal=crime_of_destruction).
+
+  % crime_of_destruction （penal法261条）
+  %         器物を損breakると、3年以下_懲役、500円以下_罰金、科料
+
+ 
+
+
+
+% 4.4  学説  ---------------------------------------------------
+
+
+%              <<penal法総論に関する学説>>
+% 使用2.1
+theory_of_conditional_causality1:: exist_legal_causality(source= @action, goal= @effect) 
+            <- act(agent=person)|@action,
+               is_state(condition= @action)|@effect.
+
+  %  （条件説）あるactionとあるsituation_間に条件関係があるときには、法的な因果関係が
+  %           ある。
+  %  （注意）条件関係（「〜なければ〜なし」_関係）を condition で表すことにし
+  %          ている。
+
+
+theory_of_conditional_causality2:: exist_legal_causality(source= @action, goal= @effect) 
+            <- act(agent=person)|@action,
+               act(condition= @action)|@effect.
+
+  %  （条件説）あるactionとあるaction_間に条件関係があるときには、法的な因果関係が
+  %           ある。
+
+
+theory_of_conditional_causality3:: exist_legal_causality(source= @action, goal= @effect) 
+            <- act(agent=person)|@action,
+               cause_event(condition= @action)|@effect.
+
+  %  （条件説）あるactionとあるphenomenon_間に条件関係があるときには、法的な因果関係が
+  %           ある。
+
+
+theory_of_rational_causality:: exist_legal_causality(source= @action, goal= @effect) 
+            <- act(agent=person)|@action,
+               cause_event(condition= @action)|@effect,
+               exist_reasonable_causality(source= @action, goal= @effect).
+
+  %  （相当因果関係説）あるactionとあるphenomenon_間に条件関係があるときには、法的な因
+  %                   果関係がある。
+
+
+
+
+
+%           << injury_definitionに関する学説>>
+
+penal204theory_of_perfection1:: is_injured(a_object=X)
+            <- is_abnormal_with_body_perfection(a_object=X/person).
+
+penal204theory_of_perfection2:: -is_injured(a_object=X)
+            <- -is_abnormal_with_body_perfection(a_object=X/person).
+
+   % （injury_definition：完全性説）「injury」とは、「身体_完全性_侵害」_ことで
+   %                         ある。
+
+
+penal204theory_of_functional_disorder1:: is_injured(a_object=X)
+            <- is_abnormal_with_physiological_function(a_object=X/person).
+
+penal204theory_of_functional_disorder2:: -is_injured(a_object=X)
+            <- -is_abnormal_with_physiological_function(a_object=X/person).
+
+   % （injury_definition：機能障害説）「injury」とは、「生理機能_障害」_ことであ
+   %                          る。
+
+
+%           << injury_故意に関する学説>>
+
+% 使用2.1
+penal204dando_theory::  with_criminal_intent(a_object=X, object= @violence, goal=crime_of_inflicting_injury)
+              <- act(agent=X/person, object=Y/person)|@violence,
+                 is_violence(a_object= @violence),
+                 with_criminal_intent(a_object=X, object= @violence, goal=crime_of_violence),
+                 is_injured(a_object=Y)|@injury,
+                 exist_legal_causality(source= @violence, goal= @injury).
+
+    % （injury_故意：dando_theory）violence_故意しかなくても、そ_violenceによって、傷
+    %                  害が発生したときには、crime_of_inflicting_injury_故意が認められる。
+
+% 使用2.5
+penal204ono_theory::  -with_criminal_intent(a_object=X, object= @violence, goal=crime_of_inflicting_injury)
+              <- act(agent=X/person, object=Y/person)|@violence,
+                 is_violence(a_object= @violence),
+                 with_criminal_intent(a_object=X, object= @violence, goal=crime_of_violence),
+                 is_injured(a_object=Y)|@injury,
+                 exist_legal_causality(source= @violence, goal= @injury).
+
+    % （injury_故意：ono_theory）violence_故意しかなくて、そ_violenceによって、injury
+    %                  が発生したときには、crime_of_inflicting_injury_故意はない。crime_of_violenceと
+    %                  crime_of_accidental_inflicting_injuryに該当する。
+
+
+
+
+%             <<死者_占有関係に関する学説>>
+
+penal235ono_theory_in_occupation_by_dead_person1:: has_occupied(a_object=X, object=Y, time= @taking_away)
+                 <- die(agent=X/person) |@death,
+                    has_occupied(a_object=X, object=Y/physical_object, time= @death),
+                    take_away(agent=Z/person, object=Y)|@taking_away,
+                    in_short_time(a_object= @taking_away, basis= @death).
+
+    % （死者_占有：ono_theory）死者であっても、death直後であれば、占有関係は継
+    %               続すると考えるべきである。
+% 使用3.5
+penal235ono_theory_in_occupation_by_dead_person2:: recognize(a_object=Z, 
+                                    object=has_occupied(a_object=X, object=Y), 
+                                    time= @taking_away)
+                 <- recognize(a_object=Z/person, 
+                                 object=die(agent=X/person)),
+                    take_away(agent=Z, object=Y)|@taking_away.
+
+% penal235ono_theory_in_occupation_by_dead_person2:: recognize(a_object=Z, 
+%                                    object=has_occupied(a_object=X, object=Y, 
+%                                                        time= @taking_away),
+%                                    time= @taking_away)
+%                 <- recognize(a_object=Z/person, 
+%                                 object=die(agent=X/person)|@death),
+%                    recognize(a_object=Z, 
+%                                 object=has_occupied
+%                        (agent=Z, object=Y/physical_object, time= @death),time= @death),
+%                    take_away(agent=Z, object=Y)|@taking_away,
+%                    in_short_time(a_object= @taking_away, basis= @death).
+
+    % （ono_theory_変形）死んだと思っても、death直後であれば、占有関係は継
+    %               続するとrecognize。
+
+
+penal235dando_theory_in_occupation_by_dead_person:: has_occupied(a_object=X, object=Y, time= @taking_away)
+                 <- kill(agent=Z/person, object=X/person)|@murder,
+                    has_occupied(a_object=X, object=Y/physical_object, time= @murder),
+                    take_away(agent=Z, object=Y)|@taking_away,
+                    in_short_time(a_object= @taking_away, basis= @murder).
+
+    % （死者_占有：dando_theory）死者には、占有関係は消滅する。ただし、被害者を
+    %              死に至らしめた加害者に関して_み、占有関係は保持される。
+
+
+penal235uematsu_theory_in_occupation_by_dead_person1:: -has_occupied(a_object=X, object=physical_object[possessor=>X])
+                 <- dead(a_object=X/person).
+ 
+    % （死者_占有：uematsu_theory）死者には、占有関係は存在しない。
+
+% 使用3.6
+penal235uematsu_theory_in_occupation_by_dead_person2:: -recognize(a_object=Y, 
+                                     object=has_occupied(a_object=X, object=Z),
+                                     time= @scene )
+                 <- recognize(a_object=Y/person, 
+                                  object=dead(a_object=X/person),
+                                  time= act()|@scene ),
+                    has_occupied(a_object=X, object=Z/physical_object).
+ 
+    % （uematsu_theory_変形）deadとrecognizeときには、占有関係は存在しな
+    %           いと思っている。
+
+
+
+%             <<窃盗_故意に関する学説>>
+
+%仕様3.6
+penal235dando_theory1:: -with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_theft)
+                 <- P/take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away,
+                    -with_intent(a_object=X, object= @taking_away, goal=own_illegally).
+
+%仕様3.6
+penal235dando_theory2:: -with_intent(a_object=X, object= @taking_away, goal=own_illegally)
+                 <- P/take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away,
+                    -with_intent(a_object=X, object= @taking_away, 
+                             goal=deceive(agent=X, object=person,
+                                      goal=has_ownership(agent=X, 
+                                                              object=Y))).
+
+    % （窃盗_故意：dando_theory）窃盗_故意が成立するには、own_illegally_意思が必
+    %       要である。own_illegally_意思とは、自分がownership権者_ようにふるまう
+    %       意思である。
+
+% 使用旧3.13
+penal235hirano_theory1:: -with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_theft)
+                 <- take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away,
+%%9/13temp                    different(X,Z),
+                    -with_intent(a_object=X, object= @taking_away, goal=own_illegally).
+% 使用旧3.13
+penal235hirano_theory2:: -with_intent(a_object=X, object= @taking_away, goal=own_illegally)
+                 <- take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away,
+%%9/13temp                    different(X,Z),
+                    -with_intent(a_object=X, object= @taking_away,  
+                             goal=use(agent=X, object=Y)).
+
+%%New (begin)
+%仕様3.9
+penal235hirano_theory3:: with_intent(a_object=X, object= @taking_away, goal=own_illegally)
+                 <- take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away,
+%%                different(X,Z),
+                    with_intent(a_object=X, object= @taking_away,  
+                             goal=use(agent=X, object=Y)).
+%%New (end)
+
+    % （窃盗_故意：hirano_theory）窃盗_故意が成立するには、own_illegally_意思が必
+    %       要である。own_illegally_意思とは、そ_物を利用・処分する意思であ
+    %       る。 
+
+
+penal235otsuka_theory:: with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_theft)
+                 <- take_away(agent=X/person, object=Y/physical_object[possessor=>Z/person])
+                        |@taking_away.
+%%9/13temp                        |@taking_away,
+%%9/13temp                    different(X,Z).
+
+    % （窃盗_故意：otsuka_theory）own_illegally_意思がなくても、窃盗_故意は成立する。
+
+ 
+
+
+
+%            <<抽象的事実_錯誤に関する学説>>
+% 使用3.10
+penal38theory_of_legal_coincidence_in_abstract_mistake_of_fact::
+            -satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action, 
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime).
+%%9/13temp                        goal=Z/crime, source=Y/crime),
+%%9/13temp               different(Y,Z).
+
+  % （abstract_mistake_of_fact：theory_of_legal_coincidence）抽象的事実_錯誤があるactionは、認識したcrimeに
+  %            関しては未遂となり、実行したactionは過失となる。
+
+
+
+penal38makino_theory_in_abstract_mistake_of_fact1:: 
+           satisfied_condition_of_crime(a_object= @action, goal=Y)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Z, basis=Y).
+
+penal38makino_theory_in_abstract_mistake_of_fact2:: 
+           -satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Z, basis=Y).
+
+  % （makino_theoryA） 軽いcrime_故意で重いeffect_生じたときは、軽いcrime_既遂と重いcrime_過失
+  %            が生じる。
+
+penal38makino_theory_in_abstract_mistake_of_fact3:: -satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Y, basis=Z).
+
+penal38makino_theory_in_abstract_mistake_of_fact4:: satisfied_condition_of_crime(a_object= @action, goal=Y)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Y, basis=Z).
+
+  % （makino_theoryB） 重いcrime_故意で軽いeffect_生じたときは、重いcrime_未遂と軽いcrime_既遂
+  %            となる。
+
+penal38miyamoto_theory_in_abstract_mistake_of_fact1::
+            -satisfied_condition_of_crime(a_object= @action, goal=Y)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime).
+%%9/13temp                                  goal=Z/crime, source=Y/crime),
+%%9/13temp               different(Y,Z).
+% 使用旧3.9
+penal38miyamoto_theory_in_abstract_mistake_of_fact2:: 
+            satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime).
+%%9/13temp                                  goal=Z/crime, source=Y/crime),
+%%9/13temp               different(Y,Z).
+
+  % （miyamoto_theory） 認識したaction_未遂とeffect_crime_過失と既遂を認める。
+
+penal38kusano_theory_in_abstract_mistake_of_fact1:: 
+           satisfied_condition_of_crime(a_object= @action, goal=Y)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Z, basis=Y).
+
+penal38kusano_theory_in_abstract_mistake_of_fact2:: 
+           -satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Z, basis=Y).
+
+  % （kusano_theoryA） 軽いcrime_故意で重いeffect_生じたときは、軽いcrime_既遂と重いcrime_過失
+  %            が生じる。
+
+penal38kusano_theory_in_abstract_mistake_of_fact3:: 
+           -satisfied_condition_of_crime(a_object= @action, goal=Z)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Y, basis=Z).
+
+penal38kusano_theory_in_abstract_mistake_of_fact4:: 
+           -satisfied_condition_of_crime(a_object= @action, goal=Y)
+            <- act(agent=X/person)|@action,
+               exist_abstract_mistake_of_fact(a_object=X, object= @action,  
+                                  goal=Z/crime, source=Y/crime),
+               is_more_grave(a_object=Y, basis=Z).
+
+  % （kusano_theoryB） 重いcrime_故意で軽いeffect_生じたときは、重いcrime_未遂と軽いcrime_過失
+  %            が生じる。
+
+
+
+%          <<強盗_意思が後から生じたとき_学説>>
+% 使用3.1
+penal236fujiki_theory:: with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_robbery)
+              <- act(agent=X/person, object=Z/person)|@violence,
+                 is_violence(a_object= @violence),
+                -with_criminal_intent(a_object=X, object= @violence, goal=crime_of_robbery),
+                 take_away(agent=X, object=Y/physical_object[possessor=>Z], 
+                         source=Z) |@taking_away.
+
+ % （強盗_意思が後で生じたとき：fujiki_theory）violenceをしたときはそ_意図はなかっ
+ %      たが、後に、物品をtake_awayactionをしたときは、crime_of_robberyが成立する。
+
+penal236otsuka_theory:: -with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_robbery)
+              <- act(agent=X/person, object=Z/person)|@violence,
+                 is_violence(a_object= @violence),
+                -with_criminal_intent(a_object=X, object= @violence, goal=crime_of_robbery),
+                 take_away(agent=X, object=Y/physical_object[possessor=>Z], 
+                     source=Z)|@taking_away,
+                 with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_theft).
+
+ % （強盗_意思が後で生じたとき：otsuka_theory）violenceをしたときはそ_意図はなかっ
+ %      たが、後に、物品をtake_awayactionをしたときcrime_of_robberyではなく、crime_of_theft
+ %      である。
+
+%            << injury_definitionに関する判例>>  
+% 使用2.1
+penal204j_dai_showa080906:: is_injured(a_object= Y, condition= @violence)
+             <-  use_violence(agent=X/person, object=Y/person)|@violence, 
+                 faint(agent=Y, condition= @violence).
+
+  % (penal204j_dai_showa080906)
+  % 湖につき落してfaintingさせるactionはinjuryにあたる。
+
+% 使用2.2
+penal204j_dai_taisho150720:: -is_injured(a_object= Y)
+             <-  use_violence(agent=X/person, object=Y/person) |@action, 
+                 lose_consciousness(agent=Y, condition= @action).
+
+  %(penal204j_dai_taisho150720)
+  % 殴ったeffect、３０分程度、unconsciousnessに陥った程度では、injuryにはならない。
+
+%          <<強盗_意思が後から生じたときに関する判例>> 
+% 使用3.2
+% replace 9/20
+% penal236j_asahikawa_d361014:: -with_criminal_intent(agent=X, object= @taking_away, goal=crime_of_robbery)
+penal236j_asahikawa_d361014:: -with_criminal_intent(a_object=X, object= @taking_away, goal=crime_of_robbery)
+            <-  use_violence(agent=X/person, object=Z/person)|@violence,
+                -with_criminal_intent(a_object=X, object= @violence, goal=crime_of_robbery),
+                faint(agent=Z, condition= @violence),
+                take_away(agent=X, object=Y/physical_object[possessor=>Z], 
+                         source=Z) |@taking_away.
+
+ %(penal236j_asahikawa_d361014)
+ % violenceしたところ、被害者がfaintingした_で、そ_後に、衣服を盗もうと思い、
+ % 衣服をはぎとったactionについては、crime_of_robbery_故意は認めない。
+}
+&define_CBR_rule.
+
+
+
+
+
+
+
+

@@ -1,0 +1,100 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/06/10
+# modified by S.Tanabe '95/08/01
+# modified by	A.Aiba		97/08/15
+-->
+<title> (90) MGTP/G (KL1 version/KLIC version)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (90) MGTP/G (KL1 version/KLIC version)</h2> <p>
+
+<pre wide="136">
+<b>	Machine:     PIM/UNIX machine
+	Environment: PIMOS/UNIX, KLIC
+	Language:    KL1, Prolog
+	Source Code: 160 KB
+	Documents:   User's Manual (English / Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+MGTP/G is a theorem prover for non-Horn clauses that deal with ground
+atoms.  <p>
+
+<h2><b>Features</b></h2>
+<ul>
+
+<li>MGTP/G is a bottom-up theorem prover on PIM/UNIX machine.
+
+<li>Several options are available for efficient execution such as
+clause indexing, elimination of redundant computation and atom
+indexing.
+
+<li>It is possible to obtain the same proof from different strategies.
+
+<li>Proof tracing and statistical date are displayed by option.
+
+</ul>
+<p>
+
+<h2><b>Function</b></h2>
+
+MGTP/G (Model Generation Theorem Prover/Ground Version) is a first
+order theorem prover based on model generation. An MGTP clause is
+represented by an implicational form: <p>
+
+<dl>
+<dd><img src="090.gif">
+</dl>
+<p>
+
+where an antecedent is a conjunction of <img src="A1.gif">, <img
+src="A2.gif">, ..., <img src="An.gif">; a consequent is a disjunction
+of <img src="C1.gif">, <img src="C2.gif">, ..., <img src="Cm.gif">. 
+When <i>n</i> = 0 , it gives the initial model ( a set of facts ).
+When <i>m</i> = 0 , it represents a condition of contradiction.  This
+MGTP clause is translated to KL1 clause by the pre-processor written
+in Prolog.  <p>
+
+In MGTP, proving starts with the initial model and proceeds from the
+antecedent to the consequence in a forward reasoning manner.  When
+<img src="m-2.gif">, a case-splitting is examined.  <p>
+
+The <i>range-restrictedness</i> condition is imposed on the problem
+clauses of MGTP/G. A clause is said to be range-restricted if every
+variable in the clause has at least one occurrence in its antecedent.
+When range-restricedness is satisfied, all atoms appearing in the
+proof are ground.  Efficient implementation is made possible by the
+groundness.  <p>
+
+MGTP/G has is capable of dealing with most AI applications in spite of
+its range-restrictedness. It is easy to implement useful frame work in
+MGTP/G, such as negation as failure, hypothesis reasoning and modal
+reasoning by representing features in clauses.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/solver-prover/klic/MGTP-G/README">README</a>.
+
+<li> MGTP/G (klic version) [561K]<a
+href="../../../ifs/solver-prover/klic/MGTP-G/MGTP-G.tgz"><img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

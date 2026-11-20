@@ -1,0 +1,186 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module view_unitUnitRelTableManager.
+
+:- public 
+    create/4,
+    quick_create/2.
+            
+:- with_macro pimos.
+
+    quick_create({ViewInfo},VM):-true |
+        hLibrary:pool(keyed_bag,100,UURTKB1),
+        hLibrary:pool(bag,VB1),
+        put_all(ViewInfo,UURTKB1,VB1,UURTKB,VB),
+        loop(VM,UURTKB,VB).
+
+    create(ViewList,SpUUR1,SpUUR,VM):-true |
+        initiate(ViewList,SpUUR1,SpUUR,UURTKB,VB),
+        loop(VM,UURTKB,VB).
+
+    initiate(ViewList,SpUUR1,SpUUR,UURTKB,VB):-true |
+        hLibrary:pool(keyed_bag,100,UURTKB1),
+        hLibrary:pool(bag,VB1),
+        initiate1(ViewList,SpUUR1,UURTKB1,VB1,SpUUR,UURTKB,VB).
+
+    initiate1([],SpUUR1,UURTKB1,VB1,SpUUR,UURTKB,VB):-true |
+        SpUUR  = SpUUR1,
+        UURTKB = UURTKB1,
+        VB     = VB1.
+    initiate1([{ViewName,SpList}|T],SpUUR1,UURTKB1,VB1,SpUUR,UURTKB,VB):-true |
+        viewTable:create({ViewName,SpList},ViewTable),
+        view_unitUnitRelTable:create(ViewTable,SpUUR1,[],SpUUR2,UURT),
+        UURTKB1 = [put(ViewName,UURT)|UURTKB2],
+        VB1 = [put(ViewName)|VB2],
+        initiate1(T,SpUUR2,UURTKB2,VB2,SpUUR,UURTKB,VB).
+
+    loop([],UURTKB,VB):-true |
+        terminate(UURTKB),
+        VB = [].
+    loop([create_viewUnitUnitRelTable(ViewName,UURT)|T],UURTKB1,VB):-true |
+        UURTKB1 = [get(ViewName,UURTOrg1)|UURTKB2],
+        UURTOrg1 = [get_all(ALL)|UURTOrg2],
+        view_unitUnitRelTable:quick_create(ALL,UURT),
+        UURTKB2 = [put(ViewName,UURTOrg2)|UURTKB3],
+        loop(T,UURTKB3,VB).
+    loop([get_all(ALL)|T],UURTKB1,VB):-true |
+        UURTKB1 = [get_all(Info)|UURTKB2],
+        get_all(Info,UURTKB2,ALL1,UURTKB3),
+        ALL = {ALL1},
+        loop(T,UURTKB3,VB).
+    loop([get_unitUnitRel(ViewName,R1,R2,Rel)|T],UURTKB1,VB):-true |
+        UURTKB1 = [get(ViewName,UURT1)|UURTKB2],
+        UURT1   = [get_unitUnitRel(R1,R2,Rel)|UURT2],
+        UURTKB2 = [put(ViewName,UURT2)|UURTKB3],
+        loop(T,UURTKB3,VB).
+    loop([get_unitUnitRelReason(ViewName,R1,R2,Rel,Reason)|T],UURTKB1,VB):-true |
+        UURTKB1 = [get(ViewName,UURT1)|UURTKB2],
+        UURT1   = [get_unitUnitRelReason(R1,R2,Rel,Reason)|UURT2],
+        UURTKB2 = [put(ViewName,UURT2)|UURTKB3],
+        loop(T,UURTKB3,VB).
+    loop([get_unitUnitRelInfo(RuleList,UURelList)|T],UURTKB1,VB1):-true |
+        get_unitUnitRelInfo(RuleList,UURTKB1,VB1,UURTKB2,VB2,UURelList),
+        loop(T,UURTKB2,VB2).
+%change view
+    loop([change_view(ViewName,SpList,SpUUR1,SpUUR)|T],UURTKB1,VB):-true |
+        UURTKB1 = [get(ViewName,OldUURT)|UURTKB2],
+        OldUURT = [],
+
+        viewTable:create({ViewName,SpList},ViewTable),
+        view_unitUnitRelTable:create(ViewTable,SpUUR1,[],SpUUR,NewUURT),
+        UURTKB2 = [put(ViewName,NewUURT)|UURTKB3],
+        loop(T,UURTKB3,VB).
+%make view
+    loop([make_view(ViewName,SpList,SpUUR1,SpUUR)|T],UURTKB0,VB):-true |
+        UURTKB0 = [empty(ViewName,YN1)|UURTKB1],
+        (   YN1 = yes->
+                UURTKB2 = UURTKB1
+        ;
+            YN1 = no->
+                UURTKB1 = [get(ViewName,OldUURT)|UURTKB2],
+                OldUURT = []
+        ),
+
+        viewTable:create({ViewName,SpList},ViewTable),
+        view_unitUnitRelTable:create(ViewTable,SpUUR1,[],SpUUR,NewUURT),
+        UURTKB2 = [put(ViewName,NewUURT)|UURTKB3],
+        loop(T,UURTKB3,VB).
+
+%%%%%%%%%%%%%%%%5
+    put_all([],UURTKB1,VB1,UURTKB,VB):-true |
+        UURTKB = UURTKB1,
+        VB     = VB1.
+    put_all([{ViewName,Info}|T],UURTKB1,VB1,UURTKB,VB):-true |
+        view_unitUnitRelTable:quick_create(Info,UURT),
+        UURTKB1 = [put(ViewName,UURT)|UURTKB2],
+        VB1     = [put(ViewName)|VB2],
+        put_all(T,UURTKB2,VB2,UURTKB,VB).
+
+    get_all([],UURTKB1,ALLList,UURTKB):-true |
+        ALLList = [],
+        UURTKB = UURTKB1.
+    get_all([{ViewName,UURT1}|T],UURTKB1,ALLList,UURTKB):-true |
+        UURT1 = [get_all(ALL)|UURT2],
+        UURTKB1 = [put(ViewName,UURT2)|UURTKB2],
+        get_all(T,UURTKB2,ALLList1,UURTKB),
+        ALLList = [{ViewName,ALL}|ALLList1].
+
+    terminate(Pool):-true |
+        Pool = [get_all(ALL)],
+        terminate1(ALL).
+
+    terminate1([]):-true |
+        true.
+    terminate1([{_,SUBPOOL}|T]):-true |
+        SUBPOOL = [],
+        terminate1(T).
+
+
+%%%%%%%%%%%%%%
+
+    get_unitUnitRelInfo(RuleList,UURTKB1,VB1,UURTKB,VB,UURelList):-true|
+        VB1 = [carbon_copy(AllView)|VB],
+        get_unitUnitRelInfo1(AllView,RuleList,UURTKB1,{[],[],[]},UURTKB,UURelList).
+
+    get_unitUnitRelInfo1([],_,UURTKB1,Work,UURTKB,UURelList):-true|
+        UURTKB = UURTKB1,
+        UURelList = Work.
+    get_unitUnitRelInfo1([ViewName|T],RuleList,UURTKB1,{J,P,D},UURTKB,UURelList):-true|
+        UURTKB1 = [get(ViewName,UURT1)|UURTKB2],
+        get_unitUnitRelInfo11(RuleList,UURT1,{[],[],[]},UURT2,UURelL,Judge),
+        UURTKB2 = [put(ViewName,UURT2)|UURTKB3],
+        (   Judge = j->
+                J1 = [{ViewName,UURelL}|J],
+                P1 = P,
+                D1 = D
+        ;
+            Judge = p->
+                J1 = J,
+                P1 = [{ViewName,UURelL}|P],
+                D1 = D
+        ;
+            Judge = d->
+                J1 = J,
+                P1 = P,
+                D1 = [{ViewName,UURelL}|D]
+        ),
+        get_unitUnitRelInfo1(T,RuleList,UURTKB3,{J1,P1,D1},UURTKB,UURelList).
+
+    get_unitUnitRelInfo11([],UURT1,{J,P,D},UURT,UURelL,Judge):-true|
+        UURT = UURT1,
+        UURelL = {J,P,D},
+        (   J\=[],P=[],D=[]->
+                Judge = j
+        ;
+            P\=[],D=[]->
+                Judge = p
+        ;
+            D\=[]->
+                Judge = d
+        ).
+    get_unitUnitRelInfo11([{R1,R2}|T],UURT1,{J,P,D},UURT,UURelL,Judge):-true|
+        UURT1 = [get_unitUnitRel(R1,R2,Rel),
+                 get_unitUnitRelReason(R1,R2,Rel,Reason)|UURT2],
+        (   Rel = 1->
+                J1 = [{R1,R2,Rel,Reason}|J],
+                P1 = P,
+                D1 = D
+        ;
+            Rel = 0->
+                J1 = J,
+                P1 = [{R1,R2,Rel,Reason}|P],
+                D1 = D
+        ;
+            Rel = -1->
+                J1 = J,
+                P1 = P,
+                D1 = [{R1,R2,Rel,Reason}|D]
+        ),
+        get_unitUnitRelInfo11(T,UURT2,{J1,P1,D1},UURT,UURelL,Judge).
+
+%%%%%%%%%%
+
+

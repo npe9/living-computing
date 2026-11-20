@@ -1,0 +1,109 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_showArgument.
+
+:- public 
+    argumentList/2,
+    counterList/2,
+    argument/2.
+            
+:- with_macro pimos.
+
+%argumentList
+    argumentList([ArgumentList1,[Issue]],Result):-true|
+        rbrcui_ioUtility:show_string("Goal",Issue,R1),
+        change_argumentList(ArgumentList1,ArgumentList),
+        (   wait(R1)->
+                rbrcui_ioUtility:show_listYWithNumber(ArgumentList,Result)).
+
+%counterList
+    counterList([ArgumentList1,AddInfo],Result):-true|
+        rbrcui_ioUtility:show_listY(AddInfo,R1),
+        change_argumentList(ArgumentList1,ArgumentList),
+        (   wait(R1)->
+                rbrcui_ioUtility:show_listYWithNumber(ArgumentList,Result)).
+
+%argument
+    argument([ArgJudge,Issue,UseCommand,{RuleName,TopRuleRel,Argument}],Result):-true|
+        show_argJudge(ok,ArgJudge,              R0),
+        show_issue(   R0,Issue,                 R1),
+        show_ruleInfo(R1,{RuleName,TopRuleRel}, R2),
+        show_argument(R2,Argument,              R3),
+        show_useCommand(R3,UseCommand,          Result).
+
+    show_argJudge(R1,ArgJudge,R):-wait(R1)|
+            rbrcui_ioUtility:show_term("ArgJudge",ArgJudge,R).
+
+    show_useCommand(R1,UseCommand1,R):-wait(R1)|
+        get_defaultUseCommand(UseCommand2),
+        append(UseCommand1,UseCommand2,UseCommand),
+        rbrcui_ioUtility:show_term("UseCommand: ",UseCommand,R).
+
+    get_defaultUseCommand(UseCommand):-true|
+%        UseCommand = [end,'show counter'].
+        UseCommand = [end,show,set].
+
+    show_issue(R1,Issue,R):-true|
+        (   wait(R1),Issue=nil->
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                rbrcui_ioUtility:show_string("Issue",Issue,R)
+        ).
+
+    show_ruleInfo(R1,{RuleName,TopRuleRel},R):-true|
+        (   wait(R1)->
+                rbrcui_ioUtility:show_term("RuleInfo({RuleName,TopRuleRel})",{RuleName,TopRuleRel},R)).
+
+    show_argument(R1,Argument,R):-true|
+        (   wait(R1)->
+                show_argument1(Argument,0,R)).
+
+    show_argument1([],_,R):-true|
+        R = normal(success).
+    show_argument1([H|T],Pos,R):-Pos<10|
+        sifLibrary:message([putt(Pos),putb("  : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_argument1(T,Pos1,R).
+    show_argument1([H|T],Pos,R):-Pos>=10|
+        sifLibrary:message([putt(Pos),putb(" : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_argument1(T,Pos1,R).
+
+%%%%
+    change_argumentList([],AL):-true|
+        AL = [].
+    change_argumentList([{ArgJudge1,TopRuleRel1,{Strong1,Non1,Weak1}}|T],AL):-true|
+        hLibrary:tTos(ArgJudge1,ArgJudge2),
+        substring:substring(ArgJudge2,0,1,ArgJudge,_),
+        change_topRuleRel(TopRuleRel1,TopRuleRel),
+        hLibrary:tTos(Strong1,Strong),
+        hLibrary:tTos(Non1,Non),
+        hLibrary:tTos(Weak1,Weak),
+        append_string:append_string([TopRuleRel,ArgJudge,
+                " >:",Strong,"!:",Non,"<:",Weak],A),
+        change_argumentList(T,AL1),
+        AL = [A|AL1].
+
+    change_topRuleRel(nil,TopRuleRel):-true|
+        TopRuleRel = " ".
+    change_topRuleRel(strong,TopRuleRel):-true|
+        TopRuleRel = ">".
+    change_topRuleRel(unrelated,TopRuleRel):-true|
+        TopRuleRel = "!".
+    change_topRuleRel(weak,TopRuleRel):-true|
+        TopRuleRel = "<".
+otherwise.
+    change_topRuleRel(_,TopRuleRel):-true|
+        TopRuleRel = " ".
+
+%%%%
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].

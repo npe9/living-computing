@@ -1,0 +1,207 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_argumentTable.
+:- public create/2.
+:- with_macro pimos.
+
+    create({IDM,SVT,Which},I):-true|
+        initiate(IDT,AT), 
+        loop(I,IDM,SVT,IDT,AT,Which).
+
+    initiate(IDT,AT):-true|
+        hLibrary:pool(keyed_bag,IDT),
+        hLibrary:pool(keyed_bag,AT).
+
+    loop([],IDM,SVT,IDT,AT,_):-true|
+        IDM = [],
+        SVT = [],
+        IDT = [],
+        AT  = [].
+    loop([Protocol|T],IDM,SVT,IDT,AT,Which):-true|
+        execute(Protocol,IDM,SVT,IDT,AT,Which,IDM1,SVT1,IDT1,AT1,Which1),
+        loop(T,IDM1,SVT1,IDT1,AT1,Which1).
+
+    execute(make_ID(ID),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM1  = [make_ID(Which,ID)|IDM],
+        SVT   = SVT1,
+        IDT   = IDT1,
+        AT    = AT1,
+        Which = Which1.
+
+%put
+    execute(put(ID,{SV,Pos},Status),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT]
+        ;
+            YN1 = no ->
+                SVT2 = [make_SVID(SVID),put(SVID,SV)|SVT]
+        ),
+        Arg = {SVID,Pos},
+%        IDT1  = [empty(Arg,YN2),put(Arg,ID)|IDT],YN2 =yes, %onaji key ga sonzaisiteha ikenai
+%        AT1 = [empty(ID,YN3),put(ID,Arg)|AT], YN3 = yes,    %kanarazu,is_inID(..)de tashikameru
+
+        IDT1  = [put(Arg,ID)|IDT],
+        AT1 = [put(ID,Arg)|AT],
+        Which = Which1,
+
+        ( wait(SVID)->
+            Status = normal(success)).
+
+%is_in*
+    execute(is_inArg({SV,Pos},YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT],
+                IDT1 = [empty({SVID,Pos},YN2)|IDT],
+                (   YN2 = yes->
+                        YN = no
+                ;
+                    YN2 = no->
+                        YN = yes
+                )
+        ;
+            YN1 = no ->
+                SVT = SVT2,
+                IDT = IDT1,
+                YN = no
+        ),
+        AT = AT1,
+        Which = Which1.
+    execute(is_inID(ID,YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT   = SVT1,
+        AT1 = [empty(ID,YN1)|AT],
+        (   YN1 = yes->
+                YN = no
+        ;
+            YN1 = no->
+                YN = yes
+        ),
+        IDT = IDT1,
+        Which = Which1.
+%refer
+    execute(refer_arg(ID,Arg,YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        AT1 = [empty(ID,YN1)|AT2],
+        (   YN1 = yes->
+                AT = AT2,
+                SVT = SVT1,
+                YN = no
+        ;
+            YN1 = no->
+                AT2 = [carbon_copy(ID,[Arg1])|AT],
+                (   Arg1 = {SVID,IPos}->
+                        SVT1 = [refer_SV(SVID,SV,_)|SVT],
+                        Arg = {SV,IPos}
+                ;
+                    Arg1 = {SVID,IPos,CPos}->
+                        SVT1 = [refer_SV(SVID,SV,_)|SVT],
+                        Arg = {SV,IPos,CPos}
+                ),
+                YN = yes
+        ),
+        IDT = IDT1,
+        Which = Which1.
+    execute(refer_ID({SV,Pos},ID,YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT],
+                IDT1 = [empty({SVID,Pos},YN2)|IDT2],
+                (   YN2 = yes->
+                        YN = no,
+                        IDT = IDT2
+                ;
+                    YN2 = no->
+                        YN = yes,
+                        IDT2 = [carbon_copy({SVID,Pos},[ID])|IDT]
+                )
+        ;
+            YN1 = no ->
+                SVT = SVT2,
+                IDT = IDT1,
+                YN = no
+        ),
+        AT = AT1,
+        Which = Which1.
+
+%%%%%%%%%%%%%for counter
+
+    execute(put(ID,{SV,IPos,CPos},Status),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT]
+        ;
+            YN1 = no ->
+                SVT2 = [make_SVID(SVID),put(SVID,SV)|SVT]
+        ),
+        Arg = {SVID,IPos,CPos},
+%        IDT1  = [empty(Arg,YN2),put(Arg,ID)|IDT],%YN2 =yes, %onaji key ga sonzaisiteha ikenai
+%        AT1 = [empty(ID,YN3),put(ID,Arg)|AT],%YN3 = yes,    %kanarazu,is_inID(..)de tashikameru
+
+        IDT1  = [put(Arg,ID)|IDT],
+        AT1 = [put(ID,Arg)|AT],
+        Which = Which1,
+        ( wait(SVID)->
+            Status = normal(success)).
+
+%is_in*
+    execute(is_inArg({SV,IPos,CPos},YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT],
+                IDT1 = [empty({SVID,IPos,CPos},YN2)|IDT],
+                (   YN2 = yes->
+                        YN = no
+                ;
+                    YN2 = no->
+                        YN = yes
+                )
+        ;
+            YN1 = no ->
+                SVT = SVT2,
+                IDT = IDT1,
+                YN = no
+        ),
+        AT = AT1,
+        Which = Which1.
+%refer
+    execute(refer_ID({SV,IPos,CPos},ID,YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM   = IDM1,
+        SVT1  = [is_inSV(SV,YN1)|SVT2],
+        (   YN1 = yes->
+                SVT2 = [refer_SVID(SV,SVID,_)|SVT],
+                IDT1 = [empty({SVID,IPos,CPos},YN2)|IDT2],
+                (   YN2 = yes->
+                        YN = no,
+                        IDT = IDT2
+                ;
+                    YN2 = no->
+                        YN = yes,
+                        IDT2 = [carbon_copy({SVID,IPos,CPos},[ID])|IDT]
+                )
+        ;
+            YN1 = no ->
+                SVT = SVT2,
+                IDT = IDT1,
+                YN = no
+        ),
+        AT = AT1,
+        Which = Which1.
+
+%empty add 94/11/5
+    execute(empty(YN),IDM1,SVT1,IDT1,AT1,Which1,IDM,SVT,IDT,AT,Which):-true|
+        IDM     = IDM1,
+        SVT     = SVT1,
+        IDT     = IDT1,
+        AT1     = [empty(YN)|AT],
+        Which   = Which1.
+        

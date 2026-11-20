@@ -1,0 +1,158 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+:- module commandTake.
+:- public commandTake/8.
+
+commandTake(0,String,Number,Int,Command,Parameter,Argument,Agent):- true |
+        commandTake0(String,Number,Int,Command,Parameter,Argument,Agent).
+commandTake(1,_String,_Number,_Int,_Command,_Parameter,_Argument,_Agent):- true |
+        true.
+
+commandTake0(String,Number,Int,Command,Parameter,Argument,Agent):- true |
+        convert:ushortTochangeP(String,Number,2,0,Int,NNum,NString),
+        (Int = 10 ->
+                comkGui:cmdSetPid(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 20 ->
+                comkGui:cmdOK(NString,NNum,0,_NNUM2,Command,Parameter,
+                                        Argument,Agent);
+        Int = 40  ->
+                comkGui:cmdLoadType(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 41  ->
+                comkGui:cmdLoadCommand(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 42  ->
+                comkGui:cmdLoadRule(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 43  ->
+                comkGui:cmdLoadView(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 44  ->
+                comkGui:cmdLoadQuery(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 50  ->
+                comkGui:cmdSetSolver(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 60  ->
+                comkGui:cmdSendSpl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 70  ->
+                comkGui:cmdSendVcl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 80  ->
+                comkGui:cmdSendCu(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 90  ->
+                comkGui:cmdSendGcl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 100 ->
+                comkGui:cmdSendCv(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 110 ->
+                comkGui:cmdSendVc(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 120 ->
+                comkGui:cmdSetSpl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 130 ->
+                comkGui:cmdCheckUnit(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 140 ->
+                comkGui:cmdSetUl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 150 ->
+                comkGui:cmdSetGoal(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 160 ->
+                comkGui:cmdStartDebate(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 161 ->
+                comkGuiDBT:cmdEndDebate(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 170 ->
+                comkGuiDBT:cmdPose(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 180 ->
+                comkGuiDBT:cmdSendRl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 182 ->
+                comkGuiDBT:cmdNotice(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 190 ->
+                comkGuiDBT:cmdCancel(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 200 ->
+                comkGuiDBT:cmdFinish(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 210 ->
+                comkGuiDBT:cmdJustify(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 212 ->
+                comkGuiDBT:cmdSetJust(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 230 ->
+                comkGuiDBT:cmdSendArg(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 240 ->
+                comkGuiDBT:cmdSendCounter(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 250 ->
+                comkGuiDBT:cmdSendRebut(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 260 ->
+                comkGuiDBT:cmdBackward(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 270 ->
+                comkGuiDBT:cmdForward(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 280 ->
+                comkGuiDBT:cmdNext(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 290 ->
+                comkGuiDBT:cmdPrevious(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 300 ->
+                comkGuiDBT:cmdFocus(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 310 ->
+                comkGuiDBT:cmdJump(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 320 ->
+                comkGuiDBT:cmdSendCl(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 322 ->
+                comkGuiDBT:cmdJumpClaim(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 330 ->
+                comkGuiDBT:cmdSendExp(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 340 ->
+                comkGuiDBT:cmdSendErrInfo(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent);
+        Int = 350 ->
+                comkGuiDBT:cmdSendBye(NString,NNum,0,_NNUM2,Command,
+                                        Parameter,Argument,Agent); 
+	Int = 360 ->
+		comkGuiDBT:cmdEntBrow(NString,NNum,0,_NNUM2,Command,
+					Parameter,Argument,Agent); %1/23 tuika
+	Int = 361 ->
+		comkGuiDBT:cmdExitBrow(NString,NNum,0,_NNUM2,Command,
+					Parameter,Argument,Agent); % tuika
+	Int = 380 ->
+		comkGuiDBT:cmdStartSol(NString,NNum,0,_NNUM2,Command,
+					Parameter,Argument,Agent); % tuika
+	Int = 390 ->
+		comkGuiDBT:cmdExpMode(NString,NNum,0,_NNUM2,Command,
+					Parameter,Argument,Agent); % tuika
+	Int = 400 ->
+		builtin:print("Cmd Set Depth Start"),
+		comkGuiDBT:cmdSetDepth(NString,NNum,0,_NNUM2,Command,
+					Parameter,Argument,Agent)). % tuika
+
+
+

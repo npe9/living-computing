@@ -1,0 +1,19 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_pool.
+
+
+pool(PoolName,_,Pool):-true|
+	pool(PoolName,Pool).
+
+pool(bag,Pool):-true|
+  	bag:create(Pool).
+pool(stack,Pool):-true|
+  	stack:create(Pool).
+pool(keyed_bag,Pool):-true|
+  	helic_keyed_bag:create(Pool).
+pool(keyed_set,Pool):-true|
+  	helic_keyed_bag:create(Pool).

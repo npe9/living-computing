@@ -1,0 +1,69 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%									%
+%	Successive State Splitting of Protein Hidden Markov Network	%
+%									%
+%		1995.3 							%
+%									%
+%	(C)1995 Institute for New Generation Computer Technology	%
+%	Read COPYRIGHT for detail information.				%
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+1. Abstract
+
+SSS is an optimization mechanism of hidden Markov networks using the same 
+expectation maximization criteria as the HMM learning.
+
+2. Configuration
+
+HMM Engine ............ HMM (Viterbi) learning 
+Network Generator ..... New network by splitting the chosen state
+Network Tester ........ Determine a state and splitting
+GUI Monitor ........... Network shape and output/transition probabilities
+
+3. Features
+
+This system provides:
+(1) a hidden Markov model for a set of amino acid sequences of proteins;
+(2) an optimal network and hidden Markov model using the SSS algorithm;
+(3) network optimization and HMM learning by the expectation maximization.
+
+4. Environment
+
+Machine     : UNIX Workstation(tested in Sparc10)
+Environment : UNIX, X Window(Motif)
+Language    : C
+Source Code : 100 kbytes
+
+5. files
+
+struct.h	e_struct.h	defs.h
+
+disc_viterbi.c	gethmn.c	getsample.c	hmmdisplay.c
+init.c		inithmn.c	logcal.c	mklogtbl.c
+nodesplit.c	outputdisplay.c	watchhmn.c	hmnbackbone.c
+
+DHMM.res	Makefile	hmn.conf	protein.sample
+
+hmnet/
+hmn.big		hmn.new		hmn.old		hmn.zen
+
+samples/
+sample.real     sample2         sample3         sample4         sampleAA
+
+6. Usage
+
+(1) Install
+
+	-1- set SRC in Makefile
+	-2- make		for installation
+	-3- make HmnALC		for auto lenear configuration file makeup
+
+(2) Clearances
+
+	-4- make clean		for recompilation
+	-5- make allclean	for all reinstallation
+
+(3) Run
+
+	-1- setenv XENVIRONMENT DHMM.res
+	-2- ./DHMM

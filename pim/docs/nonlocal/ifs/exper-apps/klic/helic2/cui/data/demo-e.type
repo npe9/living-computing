@@ -1,0 +1,583 @@
+%	94/9/1	Syntactical bug or typo fixed by T.Suzuki
+%	94/9/1	Looping definition commented by T.Suzuki
+%	94/9/1	Kanji code translated to EUC by T.Suzuki
+%	94/9/13	adjustment check by I.Kokubo
+%	94/9/13	Amendment of five types by K.Nitta
+%       94/9/16 Amendment of is_mistake_of_criminal_intent by M.Shibasaki
+%%%%       9/22         '眠る'<'寝る'. %%%% delete 
+%%      94/10/20 add for ver1.5
+%(memo/cbr/HELIC2/DICT/newDICT3)                     
+
+
+
+%                        概念辞書 第 1 版（ 8/30 縮刷版 ）
+
+%----
+
+'event' <'概念'.
+'object' <'概念'.
+'名詞概念'< 'object'.
+'event_concept' < 'event'.
+
+  '形容詞概念'<'event_concept'.
+
+%-----
+
+'physical_object_and_abstract_object'<'名詞概念'.
+            'physical_object_and_abstract_object'([name:string, possessor:権利主体]). %%%%%
+
+     '経済的に価値_あるも_'<'physical_object_and_abstract_object'.
+     '無体物'<'physical_object_and_abstract_object'.
+     '有体物'<'physical_object_and_abstract_object'.
+       'movable_property'<'有体物'.
+       'movable_property'<'経済的に価値_あるも_'.
+           'お金'<'movable_property'.
+           'handbag'<'movable_property'.
+           '財布'<'movable_property'.
+           'カメラ'<'movable_property'.
+           '時計'<'movable_property'.
+             '腕時計'<'時計'.
+           '衣服'<'movable_property'.
+             '手袋'<'衣服'.
+           '書類'<'movable_property'.
+           '_こぎり'<'movable_property'.
+           '_こぎり'<'道具'.
+       '不movable_property'<'有体物'.
+       '不movable_property'<'経済的に価値_あるも_'.
+
+'静物'<'名詞概念'.
+			'静物'([name:string, possessor:権利主体]).  %%%%%
+  'physical_object'<'静物'.
+  'physical_object'<'physical_object_and_abstract_object'.
+     '有体物'<'physical_object'.
+     '自然物'<'physical_object'.
+     '機能物質'<'physical_object'.
+         '薬品'<'機能物質'.
+           '医薬品'<'薬品'.
+            '身体に毒である物質'<'医薬品'.   %%
+              '毒'<'身体に毒である物質'.   %%
+            '病気を治すため_物質'<'医薬品'.
+              '薬'<'病気を治すため_物質'.
+           '神経_薬'<'医薬品'.
+             '興奮剤'<'神経_薬'.
+                  '覚醒剤'<'興奮剤'.
+             '鎮静剤'<'神経_薬'. %%
+                  '麻薬'<'鎮静剤'.  %%
+     '機能で捉えたphysical_object'<'physical_object'.
+       '飲食物'<'機能で捉えたphysical_object'.
+         '飲み物'<'飲食物'.
+         '食べも_'<'飲食物'.
+       '道具'<'機能で捉えたphysical_object'.
+         '武器'<'道具'.
+           '刀'<'武器'.
+           '銃'<'武器'.
+  '生命体'<'静物'.
+  '生命体'<'action主体'.
+     '動物'<'生命体'.
+
+'疑似静物'<'名詞概念'.
+			'疑似静物'([name:string, possessor:権利主体]). %%%%%
+     '思想'<'疑似静物'.  %%
+       '価値観'<'思想'.  %%
+         'penal法的価値観'<'価値観'.  %%
+           '名誉_保持'<'penal法的価値観'.  %%
+           '生命と健康_保持'<'penal法的価値観'.  %%
+           '財産_保持'<'penal法的価値観'.  %%
+     '権利と義務'<'疑似静物'.  %%
+         '権利'<'権利と義務'.  %%
+         '権利'<'経済的に価値_あるも_'.  %%
+         '権利'<'無体物'.  %%
+              '物権'<'権利'.  %%
+                'ownership権'<'物権'.  %%
+                '占有権'<'物権'.  %%
+              '債権'<'権利'.  %%
+                '請求権'<'債権'.  %%
+                  '損害賠償請求権'<'請求権'.  %%
+         '義務'<'権利と義務'.  %%
+         '責任'<'権利と義務'.  %%
+    'crimeと罰'<'疑似静物'.  %%
+       'crime'<'crimeと罰'.  %%
+         'related_crime'<'crime'.  %% 10/20 add for ver1.5
+         '実行_形態によるcrime'<'crime'.  %%
+%            '実行_形態によるcrime'<'crime'.  %% duplicate 94/10/20
+              '既遂crime'<'実行_形態によるcrime'.  %%
+              '未遂crime'<'実行_形態によるcrime'.  %%
+            '心理_形態によるcrime'<'crime'.  %%
+              '故意crime'<'実行_形態によるcrime'.  %%
+              '過失crime'<'実行_形態によるcrime'.  %%
+         '生命と健康に関するcrime'<'crime'.  %%
+         '生命と健康に関するcrime'<'生命と健康_保持'.  %%
+            '生命に関するcrime'<'生命と健康に関するcrime'.  %%
+              'crime_of_homicide'<'生命と健康に関するcrime'.  %%
+              'crime_of_homicide'<'既遂crime'.  %%
+              'crime_of_homicide'<'故意crime'.  %%
+            'violenceとinjury_crime'<'生命と健康に関するcrime'.  %%
+              'crime_of_violence'<'violence・injury_crime'.  %%
+              'crime_of_violence'<'既遂crime'.  %%
+              'crime_of_violence'<'故意crime'.  %%
+              'crime_of_inflicting_injury'<'violenceとinjury_crime'.  %%
+              'crime_of_inflicting_injury'<'既遂crime'.  %%
+              'crime_of_inflicting_injury'<'故意crime'.  %%
+                'injury致死crime'<'crime_of_inflicting_injury'.  %%
+                'injury致死crime'<'生命に関するcrime'.  %%
+              'crime_of_accidental_inflicting_injury'<'violenceとinjury_crime'.  %%
+              'crime_of_accidental_inflicting_injury'<'既遂crime'.  %%
+              'crime_of_accidental_inflicting_injury'<'過失crime'.  %%
+                '過失致死crime'<'crime_of_accidental_inflicting_injury'.  %%
+                '過失致死crime'<'生命に関するcrime'.  %%
+                  '業務上過失致死crime'<'過失致死crime'.  %%
+            '遺棄_crime'<'既遂crime'.  %%
+            '遺棄_crime'<'故意crime'.  %%
+               '生きた人_遺棄_crime'<'遺棄_crime'.  %%
+               '生きた人_遺棄_crime'<'生命と健康_crime'.  %%
+                 '単純遺棄crime'<'遺棄_crime'.  %%
+                 '保護責任者遺棄crime'<'遺棄_crime'.  %%
+                 '遺棄致死傷crime'<'遺棄_crime'.  %%
+                   '遺棄致死crime'<'遺棄致死傷crime'.  %%
+                     '保護責任者遺棄致死crime'<'遺棄致死crime'.  %%
+                   '遺棄致傷crime'<'遺棄致死傷crime'.  %%
+                     '保護責任者遺棄致傷crime'<'遺棄致傷crime'.  %%
+               '死んだ人_遺棄_crime'<'遺棄_crime'.  %%
+               '死んだ人_遺棄_crime'<'宗教感情_保持'.  %%
+         '財産に関するcrime'<'crime'.  %%
+            'crime_of_theft'<'財産に関するcrime'.  %%
+            'crime_of_robbery'<'財産に関するcrime'.  %%
+            '横領crime'<'財産に関するcrime'.  %%
+               'crime_of_embezzlement_of_lost_articles'<'横領crime'.  %%
+            'crime_of_destruction'<'財産に関するcrime'.  %%
+       '罰'<'crimeと罰'.  %%
+         '死penal'<'罰'.  %%
+         '懲役'<'罰'.  %%
+           '無期懲役'<'懲役'.  %%
+           '有期懲役'<'懲役'.  %%
+         '禁固'<'罰'.  %%
+         '罰金'<'罰'.  %%
+    '位置'<'疑似静物'.
+       'position'<'位置'.
+             'situationで捉えたposition'<'position'.
+               '水をたたえたposition'<'situationで捉えたposition'.
+                   'river'<'水をたたえたposition'.
+                   '海'<'水をたたえたposition'.
+                   '湖'<'水をたたえたposition'.
+               '陸地'<'situationで捉えたposition'.
+                  '砂浜'<'陸地'.
+                  '海岸'<'陸地'.
+        '建造物'<'position'.
+        '建造物'<'physical_object'.
+        '建造物'<'不movable_property'.  %%
+          '建物以外_建造物'<'建造物'.
+          '建物'<'建造物'.
+                '家'<'建物'.
+        '機能で捉えたposition'<'position'.
+          '経路'<'機能で捉えたposition'.
+            '人や交通機関_通過点となる土木施設'<'経路'.
+            '人や交通機関_通過点となる土木施設'<'建物以外_建造物'.
+               'street'<'人や交通機関_通過点となる土木施設'.  %%
+               '駅'<'人や交通機関_通過点となる土木施設'.  %%
+          '生活_場'<'機能で捉えたposition'.         %%
+            '町'<'生活_場'.         %%
+          '野外'<'機能で捉えたposition'.         %%
+
+    '時間'<'疑似静物'.
+      '期間'<'時間'.
+        '季節'<'期間'.
+          '冬'<'季節'.
+          '春'<'季節'.
+          '夏'<'季節'.
+          '秋'<'季節'.
+      '時期'<'時間'.
+          '朝'<'時期'.
+          '夕方'<'時期'.
+          'night'<'時期'.
+
+'action主体'<'名詞概念'.
+				'action主体'([name:string]).  %%%%%%%%
+  '権利主体'<'action主体'.     %%
+      'person_as_capacity_of_right'<'権利主体'.    %%
+      '法人'<'権利主体'.        %%
+
+  'person'<'action主体'.
+  'person'<'静物'. 
+                            'person'([age:integer]).      %&&&&&&&&&&&
+    'パーソナリティで捉えたperson'<'person'.
+      'ageで捉えたperson'<'パーソナリティで捉えたperson'.
+         '老人'<'ageで捉えたperson'.
+         '老人'<'社会的な弱者'.  %%
+         '大人'<'ageで捉えたperson'.
+         '未成年者'<'ageで捉えたperson'.  %%
+         '未成年者'<'社会的な弱者'.  %%
+           '乳児'<'未成年者'.  %%
+           '幼児'<'未成年者'.  %%
+           '子供'<'未成年者'.  %%
+      '性別で捉えたperson'<'パーソナリティで捉えたperson'.
+         '男'<'性別で捉えたperson'.
+         'woman'<'性別で捉えたperson'.
+    'ある個体を基準とした関係で捉えたperson'<'person'.
+       '関係_評価で捉えたperson'<'ある個体を基準とした関係で捉えたperson'.
+          'person_as_capacity_of_right'<'関係_評価で捉えたperson'.
+            '自然人'<'person_as_capacity_of_right'.
+              '国民'<'自然人'.   %%
+              '日本人'<'自然人'.   %%
+              '外国人'<'自然人'.   %%
+
+    '社会と_関係で捉えたperson'<'person'.
+       '社会的な弱者'<'社会と_関係で捉えたperson'.   %%
+          '病人'<'社会的な弱者'.   %%
+          '不具者'<'社会的な弱者'.   %%
+       '保護責任者'<'社会と_関係で捉えたperson'.   %%
+  '自立活動体'<'action主体'.
+       '仲間'<'自立活動体'.
+              '夫婦'<'仲間'.        %%
+       '組織'<'自立活動体'.      %%
+         '経済的組織'<'組織'.      %%
+           '法人'<'経済的組織'.      %%
+             '社団法人'<'法人'.      %%
+             '会社'<'法人'.      %%
+      '自力で動く様に見える機械'<'自立活動体'.
+      '自力で動く様に見える機械'<'機械'.
+             '移動する機械'<'自力で動く様に見える機械'.
+               '地上を移動する機械'<'移動する機械'.
+                 '自動車'<'地上を移動する機械'.
+                 '自転車'<'地上を移動する機械'.
+               '水上を移動する機械'<'移動する機械'.
+                 '船'<'水上を移動する機械'.
+  '生命体_部分'<'action主体'.
+				'生命体_部分'([possessor:権利主体]).  %%%%%%%%
+       '動物_部分'<'生命体_部分'.
+         '身体'<'動物_部分'.
+               '頭'<'身体'.
+                  'back_head'<'頭'.
+                  '顔'<'頭'.
+                       '口'<'顔'.
+                       '鼻'<'顔'.  %%
+                  '首'<'頭'.
+               '手'<'身体'.
+                 'fist'<'手'.
+
+'事象'<'名詞概念'.
+       'phenomenon'<'事象'.
+          'personに関するphenomenon'<'phenomenon'.
+            '心理phenomenon'<'personに関するphenomenon'.
+               '苦痛'<'心理phenomenon'.
+               '苦痛'<'人_気持ち_様子'.
+               '苦痛'<'感覚的生理phenomenon'.
+       'action'<'事象'.
+           '不正action'<'action'.
+             'own_illegally'<'不正action'.
+
+
+
+%%------------------------------------------------------
+%%------------------------------------------------------
+
+
+
+'移動する'<'event_concept'.
+            'ownershipが移動する'<'移動する'.     %%
+            'ownershipが移動する'<'経済活動をする'.     %%
+               'leave_possession_from_owner'<'ownershipが移動する'.  %%
+                 '払う'<'leave_possession_from_owner'.   %%
+                 '貸す'<'leave_possession_from_owner'.  %%
+                 '差し出す'<'leave_possession_from_owner'.  %%
+                 '落す'<'leave_possession_from_owner'.  %%
+                 'return'<'leave_possession_from_owner'.  %%
+               'moved_possession_to_owner'<'ownershipが移動する'.  %%
+                 '借りる'<'moved_possession_to_owner'.  %%
+                 '受領する'<'ownershipが主体へ_移動する'.   %%
+                   '受け取る'<'受領する'.
+                 '盗む'<'moved_possession_to_owner'.  %%
+                   'rob'<'盗む'.  %%
+                      '強取する'<'rob'.  %%
+%                 '盗む'<'rob'.  %%   %!!! LOOP DEFINITION!!!
+                      'burglary'<'rob'.   %%% 9/13 temp
+                 'take_away'<'moved_possession_to_owner'.  %%
+                 'own'<'moved_possession_to_owner'.   %%
+            'ownership権が移動する'<'移動する'.
+            'ownership権が移動する'<'経済活動をする'.  %%
+               'leave_ownership_from_owner'<'ownership権が移動する'.
+                 'abandon'<'leave_ownership_from_owner'.
+                 'abandon'<'leave_possession_from_owner'.  %%
+                       '遺棄する'<'abandon'.   %%
+                         '人を遺棄する'<'遺棄する'.   %%
+                         '死体を遺棄する'<'遺棄する'.   %%
+                 '放置する'<'leave_possession_from_owner'.  %%
+               'moved_ownership_to_owner'<'ownership権が移動する'.
+                 '取得する'<'moved_ownership_to_owner'.
+                 '取得する'<'moved_possession_to_owner'.  %%
+                 '取得する'<'思考的活動をする'.
+                   '持つ'<'維持する'.
+                   '持つ'<'取得する'.
+                   '受ける'<'取得する'.
+                 'ownership権を持つ'<'moved_ownership_to_owner'.
+            '情報が移動する'<'移動する'.
+              '情報を受信する'<'情報が移動する'.
+                   '見付ける'<'情報を受信する'.
+                   '姿を表わす'<'情報を受信する'.
+                      '隠していたことが外部に知られる'<'姿を表わす'.
+                        '見付かる'<'隠していたことが外部に知られる'.
+                   '拾う'<'moved_possession_to_owner'.  %%
+                   '拾う'<'moved_ownership_to_owner'.  %%
+              '情報を発信する'<'情報が移動する'.
+                  '見せる'<'情報を発信する'.
+                  '示す'<'情報を発信する'.
+                '情報を消極的に発信する'<'情報を発信する'.  %%
+                  'hide'<'情報を消極的に発信する'.
+                  'deceive'<'情報を消極的に発信する'.
+            '空間移動する'<'移動する'.
+              '客体を移動する'<'空間移動する'.
+                 '運ぶ'<'客体を移動する'.
+                 '動かす'<'客体を移動する'.   %%
+              '主体が移動する'<'空間移動する'.
+              '主体が移動する'<'身体的活動をする'.
+                 '訪問する'<'主体が移動する'.
+                 'wait_for'<'主体が移動する'.   %%% 9/13 temp
+              '方向性_ある移動をする'<'空間移動する'.
+                 '行く'<'方向性_ある移動をする'.
+                 '行く'<'主体が移動する'.        %%
+                 '内へ移動をする'<'方向性_ある移動をする'.
+                      '体内へ取り込む'<'内へ_移動をする'.
+                      '体内へ取り込む'<'客体_移動をする'.
+                        '飲食する'<'体内へ取り込む'.   %%
+                 '起点から_離脱をする'<'方向性_ある移動をする'.
+                      '主体がpositionを離れる'<'起点から_離脱'.
+                      '主体がpositionを離れる'<'主体が移動する'.
+                         '逃亡する'<'主体がpositionを離れる'.
+                         'leave'<'主体がpositionを離れる'.
+                 '起点へ戻る'<'方向性_ある移動をする'.
+                      '返る'<'起点へ戻る'.
+'cause_event'<'event_concept'.
+        '生理phenomenonを起こす'<'cause_event'.
+            '睡眠に関する生理phenomenonを起こす'<'生理phenomenonを起こす'.
+            '生命体_機能が正常になる'<'生理phenomenonを起こす'.
+            '生命体_機能が異常になる'<'生理phenomenonを起こす'.
+               'fall_down'<'生命体_機能が異常になる'.
+               '傷つく'<'生命体_機能が異常になる'.
+                 'けがをする'<'傷つく'.
+                   '負傷する'<'けがをする'.
+                   '骨折する'<'けがをする'.
+                   'bruise'<'傷つく'.
+                 '病気になる'<'傷つく'.
+                 '精神的機能が異常になる'<'傷つく'.    %%
+                   'lose_consciousness'<'精神的機能が異常になる'. %%
+                     '気絶する'<'lose_consciousness'.    %%
+                       'faint'<'気絶する'.    %%
+               'die'<'生命体_機能が異常になる'.      %%
+                     '窒息死する'<'die'.      %%
+                     '凍死する'<'die'.      %%
+               '酔う'<'生命体_機能が異常になる'.  %%
+                  '泥酔する'<'酔う'.  %%
+
+        '存在する'<'cause_event'.  %%
+        'is_absent'<'cause_event'.  %%
+
+'act'<'event_concept'.
+         '対人actionをする'<'act'.
+             'penal事処分する'<'対人actionをする'.   %%
+             '束縛する'<'対人actionをする'.
+                '強制する'<'束縛する'.
+                '捕まえる'<'束縛する'.
+             'ownershipが移動する'<'対人actionをする'.
+             'ownership権が移動する'<'対人actionをする'.
+             '情報_移動を伴う対人actionをする'<'対人actionをする'.
+             '情報_移動を伴う対人actionをする'<'情報を発信する'.
+                '伝える'<'情報_移動を伴う対人actionをする'.
+                    '知らせる'<'伝える'.
+                    '知らせる'<'言う'.
+               'actionを促す情報_伝達をする'<'情報_移動を伴う対人actionをする'.
+                  'するように誘う'<'actionを促す情報_伝達をする'.
+                  '頼む'<'actionを促す情報_伝達をする'.
+                  '要求する'<'actionを促す情報_伝達をする'.
+               'actionを抑える情報_伝達をする'<'情報_移動を伴う対人actionをする'.
+                  'なだめる'<'actionを抑える情報_伝達をする'.
+            '人どうし_相互actionをする'<'対人actionをする'.
+               '経済活動をする'<'人どうし_相互actionをする'.   %%
+               '争う'<'人どうし_相互action'.
+            '恩を与える'<'対人actionをする'.
+              '面倒を見る'<'恩を与える'.
+                '世話する'<'面倒を見る'.
+            '助ける'<'対人actionをする'.
+               '救う'<'助ける'.
+            '害を与える'<'対人actionをする'.
+               'use_violence'<'害を与える'.
+               'violate'<'害を与える'.
+                 'burglary'<'violenceをふるう'.   %%% 9/13 temp
+                 '喧嘩する'<'violate'.   %%
+                 'hurt'<'violate'.
+                    '体_部分を悪くする'<'hurt'.
+                    'injuryする'<'hurt'.   %%
+                    'injuryする'<'use_violence'.   %%
+                      '強姦する'<'injuryする'.   %%
+                 'hit'<'violate'.
+                 'hit'<'use_violence'.
+                 '首を絞める'<'violate'.   %%
+                 '首を絞める'<'use_violence'.   %%
+                 '髪を抜く'<'violate'.   %%
+                 '刀を振る'<'violate'.   %%
+                 '石を投げる'<'violate'.   %%
+                 'つき落す'<'violate'.   %%
+                 '刺す'<'violate'.   %%
+                 '刺す'<'use_violence'.   %%
+               '精神的苦痛を与える'<'害を与える'.
+                 '人を侮辱する'<'精神的苦痛を与える'.
+                    'ばかにする'<'人を侮辱する'.
+                 'cut_the_hair'<'精神的苦痛を与える'.
+                 '困らせる'<'精神的苦痛を与える'.
+                 'deceive'<'精神的苦痛を与える'.
+                 '脅迫する'<'精神的苦痛を与える'.
+               '感染させる'<'害を与える'.
+               '騒音をたてる'<'害を与える'.
+          '感情act'<'act'.
+             '感情が高揚する'<'感情活動をする'.
+                '感動する'<'感情が高揚する'.
+                '驚く'<'感情が高揚する'.
+             '感情が鎮静する'<'感情活動をする'.
+               '悲しむ'<'感情が鎮静する'.
+               'hate'<'感情が鎮静する'.
+         '身体的活動をする'<'act'.
+            '飲食する'<'身体的活動をする'.
+            '喫煙する'<'身体的活動をする'.  %%
+            '寝る'<'身体的活動をする'.
+               '横たわる'<'寝る'.     %%
+%%%%               '眠る'<'寝る'. %%%% delete 9/22
+               '眠る'<'睡眠に関する生理phenomenonを起こす'.
+            'kill'<'violate'.   %%
+            'kill'<'身体的活動'.
+         '対物act'<'act'.
+            '除く'<'対物act'.
+              'break'<'除く'.
+              'break'<'なくなる'.
+                  '器物を損breakる'<'break'.   %%
+                  '死体を損breakる'<'break'.   %%
+            '事故を起こす'<'対物act'.        %%
+                '交通事故を起こす'<'事故を起こす'.        %%
+            '作動操作する'<'対物act'.
+               '運転する'<'作動操作する'.
+               'use'<'作動操作する'.
+               '複写する'<'作動操作する'.
+         '抽象物に対する活動をする'<'act'.
+            '終える'<'抽象物に対する活動をする'.
+         '思考的活動をする'<'act'.
+           '望む'<'思考的act'.
+           '信じる'<'思考的活動をする'.
+           '表現する'<'思考的活動をする'.
+           '表現する'<'情報を発信する'.
+              '話す'<'表現する'.
+              '話す'<'人どうし_相互actionをする'.  %%
+           'provable_guilty'<'思考的活動をする'. %% 10/20 add for ver1.5
+           '考える'<'思考的活動をする'.
+             '予想する'<'考える'.
+             '悩む'<'考える'.
+                '後悔する'<'悩む'.
+             '理解する'<'考える'.
+             '理解する'<'知る'.
+                '認識する'<'理解する'.   %%
+                '解釈する'<'理解する'.
+                '間違う'<'理解する'.
+                  'mistake'<'間違う'.  %%
+
+
+%%----
+
+'is_state'<'形容詞概念'.
+
+     '時間is_state'<'is_state'.
+       'in_short_time'<'時間is_state'.  %%
+       '長時間である'<'時間is_state'.  %%
+       '時間がかかる'<'時間is_state'.  %%
+     '距離is_state'<'is_state'.
+       '近距離である'<'is_state'.  %%
+       '遠距離である'<'is_state'.  %%
+       '距離がある'<'is_state'.  %%
+     '心理is_state'<'is_state'.  %%
+        '故意by_negligence'<'心理is_state'.  %%
+            'with_criminal_intent'<'故意by_negligence'.  %%
+                  '未必_with_criminal_intent'<'with_criminal_intent'.  %%
+                  'is_mistake_of_criminal_intent'<'故意by_negligence'.  %%
+                    'exist_abstract_mistake_of_fact'<'is_mistake_of_criminal_intent'.  %
+                    '具体的事実is_mistake_of_criminal_intent'<'is_mistake_of_criminal_intent'.  %%
+            'by_negligence'<'故意by_negligence'.  %%
+                  '業務上by_negligence'<'by_negligence'.  %%
+                  '重by_negligence'<'by_negligence'.  %%
+       'with_intent'<'心理is_state'.  %%
+       'recognize'<'心理is_state'.  %% 
+       '心神喪失している'<'心理is_state'.  %% 
+         '心神こう弱である'<'心神喪失している'.  %%
+    '対人is_state'<'is_state'.  %%
+       '無断である'<'対人is_state'.  %%
+
+    'penal法_is_state'<'is_state'.  %%
+       'satisfied_condition_of_crime'<'penal法_is_state'.  %%
+       'satisfied_formal_condition_of_crime'<'penal法_is_state'.  %%
+       'punishable'<'penal法_is_state'.  %%
+       'is_proper_act'<'penal法_is_state'. %%%% 9/13 temp
+       'is_self_defense'<'penal法_is_state'. %%%% 9/13 temp
+    '関係が成立している'<'is_state'.
+             '因果関係あり'<'関係が成立している'.   %%
+                '物理的因果関係あり'<'因果関係あり'.   %%
+                'exist_legal_causality'<'因果関係あり'.   %%
+                'exist_reasonable_causality'<'因果関係あり'.   %%
+             '条件関係あり'<'関係が成立している'.   %%
+             'exists_means_effect_relation'<'関係が成立している'.   %%
+             'ownership関係あり'<'関係が成立している'.   %%
+                'has_owned'<'ownership関係あり'.
+                'has_ownership'<'ownership関係あり'.
+                'has_occupied'<'ownership関係あり'.
+             'penal法関係あり'<'関係が成立している'.   %%
+                'is_more_grave'<'penal法関係あり'.   %%
+                '未遂である'<'penal法関係あり'.   %%
+                'is_violence'<'penal法関係あり'.   %%
+                'is_stealing'<'penal法関係あり'.   %%
+                   'is_taking_by_force'<'is_stealing'. %%%% 9/13 temp
+                'is_desructive_act'<'penal法関係あり'.   %%
+
+    '性状と性向あり'<'is_state'.
+            'person_属性が成立している'<'性状と性向あり'.
+               '健康is_state'<'person_属性が成立している'.
+                  'is_injured'<'健康is_state'.
+                  '生理is_state'<'健康is_state'.
+                    '健康である'<'生理is_state'.
+                    '健康situationが異常である'<'生理is_state'.
+                      'is_abnormal_with_physiological_function'<'健康situationが異常である'.
+                        '病気である'<'is_abnormal_with_physiological_function'.
+                        '怪我をしている'<'生理situationが異常である'. %%
+                        'is_unconsciousness'<'生理situationが異常である'. %%
+                        'is_unconsciousness'<'心神喪失している'. %%
+                           'have_fainted'<'is_unconsciousness'. %%
+                        'is_damaged_mentally'<'健康situationが異常である'. %%%% 9/13 temp 
+                      'is_abnormal_with_body_perfection'<'健康situationが異常である'.
+                        '怪我をしている'<'is_abnormal_with_body_perfection'.
+                           'be_bruised'<'怪我をしている'.
+                        '外見が変わる'<'is_abnormal_with_body_perfection'.
+                           'bald'<'外見が変わる'.
+
+                          'dead'<'is_abnormal_with_body_perfection'.
+                          'dead'<'is_abnormal_with_physiological_function'.
+
+                      'めまいがする'<'生理is_state'.
+                      '痛む'<'生理is_state'.
+                      '酔っている'<'生理is_state'.
+                         '泥酔している'<'酔っている'.
+                         '泥酔している'<'心神こう弱である'.
+                '存在is_state'<'person_属性が成立している'.
+                    '着ている'<'存在is_state'.
+              '人_社会的属性が成立している'<'person_属性が成立している'.
+                    'person関係_値が成立している'
+                               <'人_社会的属性が成立している'.
+                      '保護に関するis_state'
+                                <'person関係_値が成立している'.  %%
+                          '保護責任者である'
+                                  <'保護に関するis_state'.  %%
+                      '親族関係_値が成立している'
+                                <'person関係_値が成立している'.
+                         '親族である'<'親族関係_値が成立している'.
+                              '血族である'<'親族である'.  %%
+                                '親である'<'血族である'.  %%
+                                  '父親である'<'親である'.  %%
+                                  '母親である'<'親である'.  %%
+                                '子である'<'血族である'.  %%
+                              '姻族である'<'親族である'.  %%
+                                '配偶者である'<'姻族である'.  %%
+                                  '妻である'<'配偶者である'.  %%
+                                  '夫である'<'配偶者である'.  %%
+
+

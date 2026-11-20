@@ -1,0 +1,63 @@
+﻿<!--
+#
+# created by	A.Aiba		'97/09/12
+#
+-->
+<HTML>
+<HEAD><TITLE>Notices for IFS KL1 Program Execution on KLIC</TITLE></HEAD>
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+NOTICES FOR IFS KL1 PROGRAM EXECUTION ON KLIC
+</H1></CENTER>
+
+<HR width=95% align="center" size=7><P>
+
+
+IFS (ICOT Free Software) contains KLIC, which is the KL1 execution
+environment running on UNIX.  However, almost all KL1 programs
+currently distributed as IFS are supposed to be able to use PIMOS as
+their execution environment.  PIMOS is the operating system for
+Multi-PSI and PIM.  It must be noted that KLIC provides an execution
+environment different from that provided by PIMOS.<P>
+
+KLIC is different from PIMOS in functionalities, execution speed, and
+the size of memory that can be used.  Therefore, KL1 programs which
+are written to execute on PIMOS may or may not be executed on KLIC
+without some modification.  Since large-scale KL1 programs that are
+distributed as IFS intensively use PIMOS functions, porting them to
+KLIC is fairly difficult.  KLIC versions of some of the software in
+IFS will be released in near future.<P>
+
+Porting KL1 programs to KLIC may require some modification at the
+source code level --- the amount of modification actually depends on
+the contents and the sizes of KL1 programs.  Sometimes just a fragment
+of a KL1 program may be executable on KLIC.  There are several
+important issues to port KL1 programs from PIMOS to KLIC.<P>
+
+<OL>
+
+<LI>The current version of KLIC does not support floating point
+numbers, although there is a plan.
+
+<LI>KLIC does not support several of the built-in predicates in PIMOS
+version of KL1.
+
+<LI>There are several differences in the specification of macros.  For
+instance, user defined macros are not usable on KLIC.
+
+<LI>Basically, PIMOS system calls cannot be used on KLIC.
+Furthermore, the specification of I/O is different as well.
+
+<LI>The specification of character strings is different.
+
+<LI>Integer data have only 28 bits on 32-bit machines and 60 bits on
+64-bit machines, while they have 32 bits on PIMOS.
+
+</OL>
+
+For details, read the manual included in the distribution.
+
+</BODY>
+</HTML>
+

@@ -1,0 +1,91 @@
+&define_absolute_rule.
+&define_RBR_rule.     {
+
+
+act0::isFather(a_object=father, basis=tarou[age=>19]).
+act1::give(agent=father, goal=tarou[age=>19], object=money[amount=>1]).
+act2::buy(agent=tarou[age=>19], object=lottery, implement=money[amount=>1]).
+act3::win_prize(agent=tarou[age=>19], source=lottery,goal=money[amount=>50]).
+act4::buy(agent=tarou[age=>19], object=byke, implement=money[amount=>60])|#act .
+act5::loan(agent=tarou[age=>19], object=money[amount=>10],source=money[amount=>50])|#result.
+act6::causality(source= #act, goal= #result).
+act10:: -allow(agent=father, object= #result).
+act7a::married(agent=tarou[age=>19]).
+act7b:: -married(agent=tarou[age=>19]).
+act8a::becomeAdult(agent=tarou[age=>19]).
+act8b:: -becomeAdult(agent=tarou[age=>19]).
+act9a::payLoan(agent=tarou[age=>19], object= #result).
+act9b:: -payLoan(agent=tarou[age=>19], object= #result).
+
+%   ---------------------------------
+
+
+r1::contract(agent=X, implement=Z, source=W, object= @result)
+               <- buy(agent=X/person, implement=S/money)|@act,
+                  loan(agent=X, object=Z/money, source=W/money)|@result,
+                  causality(source= @act, goal= @result).
+
+r2::needAllow(agent=Y, a_object= @act)
+               <- contract(agent=X/person[age=>19])|@act,
+                  isFather(a_object=Y, basis=X).
+
+r3:: -needAllow(agent=Y, a_object= @act)
+               <- give(agent=Y, goal=X/person[age=>19], object=Z/money),
+                  interest(goal=W/money, source=Z),
+                  contract(agent=X, source=W)|@act,
+                  isFather(a_object=Y, basis=X).
+
+
+r4::interest(goal=W, source=Z) 
+               <- buy(agent=X/person, object=lottery, implement=Z/money),
+                  win_prize(agent=X, source=lottery, goal=W/money).
+
+r5:: -interest(goal=W, source=Z) 
+               <- buy(agent=X/person, object=lottery, implement=Z/money),
+                 win_prize(agent=X, source=lottery, goal=W/money[amount=>50]).
+
+r6:: -valid(a_object= @act)
+               <- loan(agent=X/person, object=Z/money, source=W/money)|@loan,
+                  contract(agent=X, object= @loan)|@act,
+                  needAllow(agent=Y/person, a_object= @act),
+                  -allow(agent=Y, object= @loan),
+                  isFather(a_object=Y, basis=X).
+
+
+r7:: valid(a_object= @act)
+               <- contract(agent=X/person)|@act,
+                  becomeAdult(agent=X),
+                  agree(agent=X, object= @act).
+
+r8:: valid(a_object= @act)
+               <- contract(agent=X/person)|@act,
+                  married(agent=X),
+                  agree(agent=X, object= @act).
+
+r9::agree(agent=X, object= @con)
+               <- loan(agent=X/person)|@act,
+                  contract(agent=X, object= @act)|@con,
+                  payLoan(agent=X, object= @act).
+
+r10:: -agree(agent=X, object= @con)
+               <- loan(agent=X/person)|@act,
+                  contract(agent=X, object= @act)|@con,
+                  payLoan(agent=X, object= @act).
+
+r11::canWithdraw(agent=Y, object= @act)
+               <- contract(agent=X/person)|@act,
+                  -valid(a_object= @act),
+                  isFather(a_object=Y, basis=X).
+
+}
+&define_CBR_rule.
+
+
+
+
+
+
+
+
+
+

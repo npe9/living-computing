@@ -1,0 +1,130 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:-module helic_file.
+
+file(FileName,Mode,File):- true|
+        klicio:klicio(S),
+        (  Mode = read->
+                S=[read_open(FileName,R)]
+        ;
+           Mode = write->
+                S=[write_open(FileName,R)]
+        ),
+        file1(R,Mode,File).
+
+file1(normal(F),read,File):-true|
+        File = normal(I),
+        read(I,F).
+file1(normal(F),write,File):-true|
+        File = normal(I),
+        write(I,F).
+otherwise.
+file1(_,_,File):-true|
+        File= abnormal("").
+
+
+read([],In):-true|
+        In  = [].
+read([getc(A)|T],In):-true|
+        In = [getc(A)|In1],
+        read(T,In1).
+read([getl(A)|T],In):-true|
+        getl(In,In1,A),
+        read(T,In1).
+read([gett(A)|T],In):-true|
+        In = [gett(A)|In1],
+        read(T,In1).
+read([getwt(A)|T],In):-true|
+        In = [getwt(A)|In1],
+        read(T,In1).
+read([remove_op(_,Type,Op)|T],In):-true|
+        In = [rmop(Op,Type)|In1],
+        read(T,In1).
+read([add_op(Priority,Type,Op)|T],In):-true|
+        In = [addop(Op,Type,Priority)|In1],
+        read(T,In1).
+        
+
+
+%-write
+write([],Out):-true|
+        Out  = [].
+write([putc(A)|T],Out):-integer(A),A >=0,A=<255|
+        Out = [putc(A)|Out1],
+        write(T,Out1).
+write([putl(A)|T],Out):-true|
+        Out = [fwrite(A,_),putc(key#lf)|Out1],
+        write(T,Out1).
+write([putb(A)|T],Out):-true|
+        Out = [fwrite(A,_)|Out1],
+        write(T,Out1).
+write([putt(A)|T],Out):-true|
+        Out = [putt(A)|Out1],
+        write(T,Out1).
+write([puttq(A)|T],Out):-true|
+        Out = [puttq(A)|Out1],
+        write(T,Out1).
+write([putwt(A)|T],Out):-true|
+        Out = [putwt(A)|Out1],
+        write(T,Out1).
+write([putwtq(A)|T],Out):-true|
+        Out = [putwtq(A)|Out1],
+        write(T,Out1).
+write([remove_op(_,Type,Op)|T],Out):-true|
+        Out = [rmop(Op,Type)|Out1],
+        write(T,Out1).
+write([add_op(Priority,Type,Op)|T],Out):-true|
+        Out = [addop(Op,Type,Priority)|Out1],
+        write(T,Out1).
+
+
+
+%%%%internal method
+
+getl(IN1,IN,String):-true|
+        getl1(IN1,IN,CL,EOF),
+        (  EOF = yes,CL=[]->
+                String  = -1
+        ;
+        otherwise;
+           true->
+                string("",_,Type,_),
+                count(CL,0,Length),
+                new_string(String1,Length,Type),
+                set_character(CL,String1,0,String)
+        ).
+
+getl1(In1,IN,CL,EOF):-true|
+        In1 = [getc(C)|In2],
+        getl2(C,In2,IN,CL,EOF).
+
+getl2(key#lf,IN1,IN,CL,EOF):-true|
+        IN  = IN1,
+        CL  = [],
+        EOF = no.
+getl2(-1,IN1,IN,CL,EOF):-true|
+        IN = IN1,
+        CL = [],
+        EOF = yes.
+otherwise.
+getl2(C,IN1,IN,CL,EOF):-true|
+        getl1(IN1,IN,CL1,EOF),
+        CL = [C|CL1].
+
+set_character([],A1,_,A):-true|
+        A = A1.
+set_character([C|T],A1,Pos,A):-true|
+        set_string_element(A1,Pos,C,A2),
+        Pos1 := Pos+1,
+        set_character(T,A2,Pos1,A).
+
+count([],X,Y):-true|
+        Y = X.
+count([_|T],X,Y):-true|
+        X1 := X+1,
+        count(T,X1,Y).
+
+

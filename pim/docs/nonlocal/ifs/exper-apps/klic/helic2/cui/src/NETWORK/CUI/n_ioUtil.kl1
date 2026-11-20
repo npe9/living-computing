@@ -1,0 +1,145 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_ioUtility.
+
+:- public     
+    show_listYWithNumber/2,
+    show_listYWithNumber1/3,
+    show_listX/2,
+    show_listY/2,
+    show_term/3,
+    show_string/3,
+    show_error/2,
+    get_num/3,
+    get_commandArguments/3.
+            
+:- with_macro pimos.
+
+
+%%%%%%%%%%%%%%%%%%%%%FOR OUTPUT
+
+%show_listX
+    show_listX([],R):-true|
+        R = normal(success).
+    show_listX([H],R):-true|
+        sifLibrary:message([putb(" "),putt(H),putc(key#lf)]),
+        R = normal(success).
+    show_listX([H|T],R):-T\=[]|
+        sifLibrary:message([putb(" "),putt(H)]),
+        show_listX(T,R).
+
+%show_listY
+    show_listY([],R):-true|
+        R = normal(success).
+    show_listY([H|T],R):-string(H)|
+        sifLibrary:message([putb(" "),putb(H),putc(key#lf)]),
+        show_listY(T,R).
+otherwise.
+    show_listY([H|T],R):-true|
+        sifLibrary:message([putb(" "),putt(H),putc(key#lf)]),
+        show_listY(T,R).
+
+%show_listYWithNumber
+    show_listYWithNumber(List,R):-true|
+        show_listYWithNumber1(List,0,R).
+
+    show_listYWithNumber1([],_,R):-true|
+        R = normal(success).
+    show_listYWithNumber1([H|T],Pos,R):-string(H,_,_)|
+        sifLibrary:message([putt(Pos),putb(" : "),putb(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_listYWithNumber1(T,Pos1,R).
+otherwise.
+    show_listYWithNumber1([H|T],Pos,R):-true|
+        sifLibrary:message([putt(Pos),putb(" : "),putt(H),putc(key#lf)]),
+        Pos1 := Pos+1,
+        show_listYWithNumber1(T,Pos1,R).
+
+%show_term
+    show_term(Title,Term,R):-Title\=nil|
+        sifLibrary:message([putb(Title),putb(" : "),putt(Term),putc(key#lf)]),
+        R = normal(success).
+    show_term(nil,Term,R):-true|
+        sifLibrary:message([putt(Term),putc(key#lf)]),
+        R = normal(success).
+
+%show_string
+    show_string(Title,String,R):-Title\=nil|
+        sifLibrary:message([putb(Title),putb(" : "),putb(String),putc(key#lf)]),
+        R = normal(success).
+    show_string(nil,String,R):-true|
+        sifLibrary:message([putl(String)]),
+        R = normal(success).
+
+%show_error
+    show_error({Where,Reason,nil},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putc(key#lf)]),
+        R = normal(success).
+    show_error({Where,Reason,[]},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putc(key#lf)]),
+        R = normal(success).
+otherwise.
+    show_error({Where,Reason,Detail},R):-true|
+        sifLibrary:message([putb("!"),putt(Where),putb("-"),putt(Reason),putb("::"),putt(Detail),putc(key#lf)]),
+        R = normal(success).
+
+%%%%%%%%FOR INPUT
+
+%get_num
+    get_num(N,Num,Result):-true|
+        get_num1(Num1),
+        (   Num1 \= cr->
+                check_num(Num1,N,YN),
+                (   YN = yes->
+                        Num = Num1,
+                        Result = normal(success)
+                ;
+                    YN = no->
+                        show_error({cui,'Illegal number',Num1},R1),
+                        (   wait(R1)->
+                                get_num(N,Num,Result))
+                )
+        ;
+            Num1 =cr->
+                get_num(N,Num,Result)
+        ).
+
+    get_num1(Num):-true|
+        hLibrary:stdio(inter,Io),
+        Io = [                
+                putb("Please input number > "),
+                fflush(_),
+                getl(Line)],
+        (   Line = ""->
+                Num = cr
+        ;
+        otherwise;
+            true->
+                hLibrary:sTot(Line,Num)
+        ).
+
+    check_num(Num,N,YN):-integer(Num),0=<Num,N>Num|
+        YN = yes.
+otherwise.
+    check_num(_,_,YN):-true|
+        YN = no.
+
+%get_commandArguments
+    get_commandArguments(Prompt,Command,Arguments):-true|
+        hLibrary:stdio(inter,Io),
+        Io = [                
+                putb(Prompt),
+                fflush(_),
+                getl(Line)],
+        sifLibrary:get_commandArguments(Line,Command,Arguments).
+
+%%%%%%%
+
+    count([],W,C):-true|
+        C = W.
+    count([_|T],W,C):-true|
+        W1:=W+1,
+        count(T,W1,C).

@@ -1,0 +1,41 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_utility.
+
+:- public 
+    get_file/3,
+    put_file/3,
+    make_errorProtocol/2.
+            
+:- with_macro pimos.
+
+%get_file
+    get_file(FileName,File,R):-true |
+        hLibrary:file(FileName,read,F),
+        get_file1(F,FileName,File,R).
+
+    get_file1(abnormal(_),FileName,_,R):-true |
+        R = abnormal({drs,'File not found',FileName}).
+otherwise.
+    get_file1(normal(F),_,File,R):-true |
+        File = F,
+        R = normal(success).
+
+%put_file
+    put_file(FileName,File,R):-true |
+        hLibrary:file(FileName,write,F),
+        put_file1(F,FileName,File,R).
+
+    put_file1(abnormal(_),FileName,_,R):-true |
+        R = abnormal({drs,'File not found',FileName}).
+otherwise.
+    put_file1(normal(F),_,File,R):-true |
+        File = F,
+        R = normal(success).
+
+%make_errorProtocol
+    make_errorProtocol(Reason,ErrorProtocol):-true|
+        ErrorProtocol = receive(errorInfo,[Reason],_).

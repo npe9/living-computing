@@ -1,0 +1,56 @@
+%%%                                        %%%
+%%%      README                            %%%
+%%%     Copyright (C) 1999 Fumio Mizoguchi %%%
+%%%                                        %%%
+
+
+Concurrent and Cooperative Control Software Systems for Mobile Robots
+====================================================
+Jan. 31, 1999
+Fumio Mizoguchi(Science University of Tokyo)
+
+
+
+- Information
+
+Compiler     MRL Compiler
+     +------ mrlCompiler.kl1    The MRL Compiler
+     +------ util.kl1           The utility 
+     +------ Sample             Sample programs
+
+Multiagent  Multiagent System
+     +------ office_system.mrl  Main system program
+     +------ environment.kl1    Environment information
+     +------ robot_data.kl1     Registration of machine name
+     +------ util.kl1           The utility 
+     +------ RobotServer        Control programs for real robots
+
+Infrared    Control System of Infrared Sensors
+     +------ SensorChangeServer.java   Control system of infrared sensors
+     +------ Sensor.java               Program for connecting WebIO
+
+Guide       Guidance System using Camera Robot
+     +------ Guide           Guide system
+     +------ CameraClient    Camera robot client
+     +------ CameraServerr   Camera robot server
+     +------ Image           Analyze image
+
+Interface   User Interface
+     +------ Server  User Interface for Server
+               +----  Server.java       Main program
+               +----  KlicChannel.java  Connecting program with KLIC systems
+               +----  KlicReader.java   Receiving program from KLIC systems
+               +----  KlicSender.java   Sending program to KLIC systems
+               +----  Channel.java      Communication program with Java systems
+               +----  server.html       html file
+               +----  media2.gif        The Map of Media Center
+     +------ Client  User Interface for Client
+               +----  PrinterClient.java   Client system for print delivery
+               +----  DeliveryClient.java  Client system for document delivery
+               +----  Client.java          Client program
+               +----  printer.html         The html file for print delivery
+               +----  delivery.html        The html file for document delivery
+               +----  media2.gif           The Map of Media Center
+               +----  Commander            The sending system of robot command
+
+Doc        User's Manual

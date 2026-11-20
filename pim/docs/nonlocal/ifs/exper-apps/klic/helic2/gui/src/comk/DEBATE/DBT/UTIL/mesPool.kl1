@@ -1,0 +1,98 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_messagePool.
+
+:- public 
+   make_message/3. 
+
+:- with_macro pimos.
+
+%claim
+    make_message({claim,i},{MAN,MAID},Message):-true|
+        dbtgui_messageUtility:get_fullAgentName(MAN,MFAN),
+        dbtgui_messageUtility:make_message([MFAN," claim ",MAID ,"."],Message).
+
+    make_message({claim,you},{MAN,YAID},Message):-true|
+        dbtgui_messageUtility:get_fullOppositeAgentName(MAN,YFAN),
+        dbtgui_messageUtility:make_message([YFAN," claimed ",YAID ,"."],Message).
+
+%noticeWin
+
+    make_message({noticeWin,i},{SP,MAN,MAID,_MR,YAID,_YR,_Shouhai},Message):-true|
+        dbtgui_messageUtility:get_fullAgentName(MAN,MFAN),
+        dbtgui_messageUtility:make_message([MFAN," notify that ",MAID,
+                " is stronger than " ,YAID," by stanpoint of ",SP,"."],Message).
+
+    make_message({noticeWin,you},{SP,MAN,MAID,_MR,YAID,_YR,Shouhai},Message):-true|
+        dbtgui_messageUtility:get_fullOppositeAgentName(MAN,YFAN),
+        make_shouhaiMessage(Shouhai,ShouhaiMes),
+        dbtgui_messageUtility:make_message([YFAN," notified that ",YAID,
+                " was stronger than " ,MAID," by stanpoint of ",SP,".",ShouhaiMes],Message).
+
+%noticeDraw
+    make_message({noticeDraw,i}, {_SP,MAN,MAID,MR,YAID,YR,_Shouhai},Message):-true|
+        dbtgui_messageUtility:get_fullAgentName(MAN,MFAN),
+        dbtgui_messageUtility:make_message([MFAN," notify that ",
+                YAID," isn't always stronger than ",MAID,",because of ",
+                "non-relation of ",MR," and ",YR," in current viewpoint."],Message).
+
+    make_message({noticeDraw,you},{_SP,MAN,MAID,MR,YAID,YR,Shouhai},Message):-true|
+        dbtgui_messageUtility:get_fullOppositeAgentName(MAN,YFAN),
+        make_shouhaiMessage(Shouhai,ShouhaiMes),
+        dbtgui_messageUtility:make_message([YFAN," notified that ",
+                MAID," wasn't always stronger than ",YAID,",because of ",
+                "non-relation of ",MR," and ",YR," in current viewpoint.",ShouhaiMes],Message).
+
+%cancel
+    make_message({cancel,i},{MAN,MAID},Message):-true|
+        dbtgui_messageUtility:get_fullAgentName(MAN,MFAN),
+        dbtgui_messageUtility:make_message([MFAN," cancel ",MAID],Message).
+
+    make_message({cancel,you},{MAN,YAID},Message):-true|
+        dbtgui_messageUtility:get_fullOppositeAgentName(MAN,YFAN),
+        dbtgui_messageUtility:make_message([YFAN," canceled ",YAID],Message).
+
+%finish
+    make_message({finish,i},{MAN,MAID},Message):-true|
+        dbtgui_messageUtility:get_fullAgentName(MAN,MFAN),
+        dbtgui_messageUtility:make_message([MFAN," finish ",MAID],Message).
+
+    make_message({finish,you},{MAN,YAID},Message):-true|
+        dbtgui_messageUtility:get_fullOppositeAgentName(MAN,YFAN),
+        dbtgui_messageUtility:make_message([YFAN," finished ",YAID],Message).
+
+%justify
+   make_message({justify},{SP},Message):-true|
+        make_justifyMessage(SP,SPMes),
+        dbtgui_messageUtility:make_message(["standpoint is changed to ",SPMes],Message).
+
+
+%%%internal method
+
+%make_shouhaiMessage
+    make_shouhaiMessage({win,SPListList},ShouhaiMes):-true|
+        dbtgui_messageUtility:make_message(["But you win by ",SPListList,"."],ShouhaiMes).
+    make_shouhaiMessage({draw,_},ShouhaiMes):-true|
+        ShouhaiMes = "But you draw.".
+    make_shouhaiMessage({lose,SPListList},ShouhaiMes):-true|
+        dbtgui_messageUtility:make_message(["But you lose by ",SPListList,"."],ShouhaiMes).
+
+
+%make_justifyMessage
+    make_justifyMessage(SP,SPMes):-true|
+        make_justifyMessage1(SP,[],SPMes1),
+        dbtgui_messageUtility:make_message(SPMes1,SPMes).
+
+    make_justifyMessage1([SP],W,L):-true|
+        L = [SP|W].
+otherwise.
+    make_justifyMessage1([SP|T],W,L):-true|
+        make_justifyMessage1(T,[" > ",SP|W],L).
+
+    reverse([],W,L):-true|
+        L = W.
+    reverse([H|T],W,L):-true|
+            reverse(T,[H|W],L).

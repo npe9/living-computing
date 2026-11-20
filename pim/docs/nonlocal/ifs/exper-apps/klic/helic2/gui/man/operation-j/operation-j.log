@@ -1,0 +1,233 @@
+This is JTeX, Version 1.12, based on TeX C Version 2.95 (preloaded format=jlplain 92.2.20)  9 APR 1996 22:39
+**&jlplain operation-j
+(operation-j.tex
+** JLaTeX ver.1.3......Isozaki
+(/usr/local/share/lib/tex/inputs/j-article.sty
+Document Style `j-article' <16 Mar 88>.
+(/usr/local/share/lib/tex/inputs/j-art10.sty)
+\c@part=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+)
+(/usr/local/share/lib/tex/inputs/epsf.sty
+EPSF macro package for LaTeX. version 1.3 - Released October 31, 1990
+\@arga=\count88
+\@argb=\count89
+\@argc=\count90
+\@ctmpa=\count91
+\@ctmpb=\count92
+\@ctmpc=\count93
+\@ctmpd=\count94
+\@ctmpe=\count95
+\@darg=\dimen101
+\@bblen=\dimen102
+\ps@stream=\read0
+) (/usr/local/share/lib/tex/inputs/j-art10.sty) (operation-j.aux
+LaTeX Warning: Label `figRW' multiply defined.
+) (operation-j.toc [1
+
+] [2])
+\tf@toc=\write3
+ [3] (operation-j.lof)
+\tf@lof=\write4
+ [4] [5] [6] [7]
+Overfull \hbox (8.49213pt too wide) in paragraph at lines 208--212
+[] []推 論 エ ン ジ ン を 起 動 す る。 起 動 す る に は 引 数 ま た は 環 境 
+変 数 \tenrm HELIC[]HOST[]PORT に よっ て、 GUI
+
+\hbox(7.70879+1.44539)x405.24408
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(0.0+0.0)x0.0
+..\glue 0.0
+..\glue -20.0
+..\glue -5.0
+..\hbox(0.0+0.0)x20.0, glue set 20.0fil
+...\glue 0.0 plus 1.0fil
+..\glue 5.0
+.\penalty 0
+.\tendmjf 推
+.etc.
+
+[8]
+Overfull \hbox (22.2452pt too wide) in paragraph at lines 252--257
+て 指 定 さ れ る。 推 論 エ ン ジ ン \tenrm Pro-cess と 結 ぶ ソ ケッ ト の ポ
+ー ト 番 号 は、 環 境 変 数 HELIC[]HOST[]PORT
+
+\hbox(7.70879+1.44539)x405.24408, glue set - 1.0
+.\tendmjhira て
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmje 指
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjh 定
+.etc.
+
+[9]
+Overfull \hbox (1.20117pt too wide) in paragraph at lines 279--282
+[]\tenrm HELIC-II が 起 動 す る と こ の ウ イ ン ド ウ が ま ず 開 く。 論 争
+ ウ イ ン ド ウ を 開 く 前 に、 こ の 中 で 知 識 ベー ス の ロー
+
+\hbox(7.70879+1.44539)x455.24408
+.\hbox(0.0+0.0)x9.15
+.\tenrm H
+.\tenrm E
+.\tenrm L
+.\tenrm I
+.etc.
+
+epsf:[initwin.ps]
+BoundingBox: (52bp,538bp)--(359bp,823bp) =>(182bp,170bp)
+epsf:[loadwin.ps]
+BoundingBox: (52bp,183bp)--(396bp,823bp) =>(150bp,284bp) [10]
+Overfull \hbox (5.30704pt too wide) in paragraph at lines 339--341
+[] []ルー ル 定 義 ファ イ ル を 選 択 す る。 \tenrm *.r の ファ イ ル の み 
+が List フィー ル ド に 表 示 さ れ る。 型 定 義 ファ
+
+\hbox(7.70879+1.44539)x408.24408
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(6.94444+0.0)x9.67348
+..\glue -22.0
+..\glue 0.0
+..\glue -5.0
+..\hbox(6.94444+0.0)x31.67348
+...\glue 5.0
+...\tenbf R
+...\tenbf u
+...\tenbf l
+...\tenbf e
+...etc.
+..\glue 5.0
+.\penalty 0
+.\tendmjkata ル
+.etc.
+
+[11]
+epsf:[listwin.ps]
+BoundingBox: (52bp,586bp)--(325bp,823bp) =>(98bp,85bp) [12]
+epsf:[rolewin.ps]
+BoundingBox: (209bp,290bp)--(404bp,503bp) =>(129bp,142bp) [13]
+epsf:[debatewin.ps]
+BoundingBox: (52bp,-31bp)--(559bp,824bp) =>(201bp,341bp) [14] [15]
+epsf:[viewset.ps]
+BoundingBox: (187bp,227bp)--(424bp,566bp) =>(117bp,170bp) [16] [17]
+epsf:[unitset.ps]
+BoundingBox: (151bp,229bp)--(460bp,563bp) =>(157bp,170bp) [18]
+epsf:[goalwin.ps]
+BoundingBox: (-269bp,248bp)--(883bp,543bp) =>(426bp,106bp)
+epsf:[argslctwin.ps]
+BoundingBox: (123bp,286bp)--(489bp,506bp) =>(283bp,170bp) [19] [20]
+epsf:[cargwin.ps]
+BoundingBox: (123bp,240bp)--(489bp,551bp) =>(199bp,170bp) [21]
+epsf:[spslctwin.ps]
+BoundingBox: (198bp,272bp)--(414bp,521bp) =>(146bp,170bp) [22]
+epsf:[viewchgwin.ps]
+BoundingBox: (97bp,272bp)--(516bp,521bp) =>(286bp,170bp) [23]
+Overfull \hbox (2.46123pt too wide) in paragraph at lines 872--874
+[]論 証 ブ ラ ウ ザ は 論 争 ウ イ ン ド ウ の 論 争 操 作 部 の ボ タ ン を 使
+ い 論 証 表 示 エ リ ア に 論 証 を 表 示 さ せ る 機 能 で あ る。 
+
+\hbox(7.70879+1.44539)x455.24408
+.\hbox(0.0+0.0)x9.15
+.\tendmjl 論
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjf 証
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.etc.
+
+
+Overfull \hbox (2.46123pt too wide) in paragraph at lines 905--912
+[]最 初 の 行 は、 表 示 さ れ て い る 論 証 の トッ プ ルー ル の 名 称 を 表
+ 示 し、 二 番 目 の 行 は、 表 示 さ れ て い る 論 証 の トッ
+
+\hbox(7.70879+1.44539)x455.24408
+.\hbox(0.0+0.0)x9.15
+.\tendmjd 最
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjf 初
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.etc.
+
+[24] [25]
+Overfull \hbox (2.46542pt too wide) in paragraph at lines 994--999
+表 示 さ れ た 中 間 命 題 を マ ウ ス で ダ ブ ル ク リッ ク す る こ と で 中
+ 間 命 題 は 選 択 さ れ る。 中 間 命 題 を 選 択 す る こ と で、
+
+\hbox(7.70879+1.44539)x455.24408
+.\tendmjj 表
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmje 示
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjhira さ
+.etc.
+
+epsf:[cargwin.ps]
+BoundingBox: (123bp,240bp)--(489bp,551bp) =>(199bp,170bp)
+Overfull \hbox (15.29091pt too wide) in paragraph at lines 1012--1017
+[]こ の 他 に、 \tenrm For-ward ボ タ ン に よっ て も 反 論 へ 移 動 で き る
+。 こ の 場 合 は 反 論 の 選 択 操 作 が 省 略 さ れ、 直 前 の Back-
+
+\hbox(7.70879+1.44539)x455.24408
+.\hbox(0.0+0.0)x9.15
+.\tendmjhira こ
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjhira の
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.etc.
+
+[26]
+epsf:[claimwin.ps]
+BoundingBox: (-111bp,249bp)--(725bp,542bp) =>(426bp,149bp)
+epsf:[formwin.ps]
+BoundingBox: (147bp,327bp)--(465bp,464bp) =>(198bp,85bp) [27]
+Overfull \hbox (18.88956pt too wide) in paragraph at lines 1084--1089
+[]\tenrm DRS(Defeasible Rea-son-ing Sys-tem) ウ イ ン ド ウ は 初 期 ウ イ ン 
+ド ウ か ら 開 か れ る。 DRS(Defeasible
+
+\hbox(7.70879+2.5)x405.24408, glue set - 1.0
+.\hbox(0.0+0.0)x15.00002
+.\tenrm D
+.\tenrm R
+.\tenrm S
+.\tenrm (
+.etc.
+
+
+Overfull \hbox (7.92192pt too wide) in paragraph at lines 1090--1092
+[]\tenrm DRS ウ イ ン ド ウ を 開 く に は、 型、 価 値 観、 ゴー ル、 ルー ル 
+の ロー ド が 完 了 し て い る 必 要 が あ る。 
+
+\hbox(7.70879+1.44539)x405.24408
+.\hbox(0.0+0.0)x15.00002
+.\tenrm D
+.\tenrm R
+.\tenrm S
+.\glue(\@@jasciikanjiskip) 2.2886
+.etc.
+
+epsf:[drswin.ps]
+BoundingBox: (43bp,64bp)--(569bp,729bp) =>(269bp,341bp)
+Underfull \hbox (badness 10000) in paragraph at lines 1105--1106
+
+
+\hbox(0.0+0.0)x430.24408
+.\glue(\rightskip) 0.0
+
+[28] [29] [30] (operation-j.aux)
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+ 
+Here is how much of TeX's memory you used:
+ 325 strings out of 3241
+ 2951 string characters out of 50777
+ 42484 words of memory out of 262141
+ 2951 multiletter control sequences out of 9500
+ 29508 words of font info for 176 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 14i,6n,15p,194b,472s stack positions out of 300i,40n,60p,2000b,4000s
+
+Output written on operation-j.dvi (30 pages, 85452 bytes).

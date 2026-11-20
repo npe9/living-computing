@@ -1,0 +1,87 @@
+Copyright (C) 1997  Katsumi Inoue 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Readme-E                 %%%
+%%%         by Katsumi Inoue %%%
+%%%         (1997.5.9)       %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Development of Action Language Systems
+--- Action-MGTP (Prolog version) ---
+
+by
+  Katsumi Inoue
+  Department of Electrical and Electronics Engineering 
+  Kobe University 
+and 
+  Tomokazu Yamamoto
+  Department of Information and Computer Sciences 
+  Toyohashi University of Technology 
+
+Abstract: 
+  Reasoning about action domains in which environment and
+  knowledge change dynamically by executing action is a classical
+  problem in AI, and recently it has become a hot subject for agent and
+  robot planning.  For this problem, it is known that nonmonotonic
+  reasoning and abduction are useful technique to cope with
+  the frame problem and prediction problem.  However, there has been few
+  previous research that realized reasoning about action on computers. 
+
+  As a method of reasoning about action domains, there are high-level 
+  action languages.  They are simple and declarative languages,
+  and can represent changes of states by executing action.  We here
+  propose a new action language, which permits to represent 
+  nondeterministic actions and static constraints by extending
+  the language ${\cal A}$ proposed by Gelfond and Lifschitz.  We also
+  consider a translation of descriptions in our action language into
+  extended disjunctive logic programs.  
+
+  Using these techniques, we implemented the action language system, 
+  called Action-MGTP, on top of our abductive logic programming (ALP) 
+  system.  The ALP system is a reasoning system for logic programs 
+  containing negation as failure (NAF), classical negation, disjunction, 
+  and abducible literals.  It is based on bottom-up, incremental, 
+  backtrack-free computation of the minimal models for disjunctive 
+  programs using a model generation theorem prover (MGTP).  
+
+  Furthermore, to make the action system more efficient, we improve 
+  the efficiency of our ALP system by introducing negative clauses to
+  compute negation as failure.  The experimental results with some
+  action domains show that our action system has a good performance.
+
+  Consequently, we realize a query answering system to reason about
+  action in dynamic domains automatically.  
+
+
+%%% This directory contains the following files: 
+
+1. Readme-E         This file
+2. Readme-J         Japanese version of this file
+3. advertise.txt    Brief introduction of Action-MGTP (in Japanese)
+4. copyright.txt    Copyright owner of Action-MGTP (in Japanese)
+5. function.txt     Main features of Action-MGTP (in Japanese) 
+6. image.txt        Image of users of Action-MGTP (in Japanese)
+7. manual  <dir>    Directory containing Technical Report and Manual 
+8. publication.txt  Papers describing Action-MGTP (in Japanese)
+9. source  <dir>    Directory containing software and examples
+
+
+%%%%%%%%%%%%
+%%% NOTE %%%
+%%%%%%%%%%%%
+
+There has been no English manual for Action-MGTP.  
+If you are interested in using Action-MGTP, please 
+contact the copyright owner: 
+
+  Katsumi Inoue
+  Department of Electrical and Electronics Engineering 
+  Kobe University 
+  Rokkodai-cho, Nada-ku, Kobe  657,  Japan
+
+  Email: inoue@eedept.kobe-u.ac.jp
+  Phone: +81-78-803-1079
+  Fax:   +81-78-881-3193
+
+-------------------------------------------------------------------
+9 May 97 - Katsumi Inoue, inoue@eedept.kobe-u.ac.jp

@@ -1,0 +1,212 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_showPom.
+
+:- public     
+    show_useView/2,
+    show_useSpPriority/2,
+    show_useUnit/2,
+    show_view/2,
+    show_sp/2,
+    show_unit/2.
+
+%show_useView
+    show_useView({ViewName,SPList},R):-true|
+        rbrpom_manager:get_defaultUseViewName(DUVN),
+        (   DUVN = ViewName->
+                sifLibrary:message([putl(" Current using view name is default view.")]),
+                R = normal(success)
+        ;
+            DUVN \= ViewName->
+                View = {ViewName,SPList},
+                view(View,String),
+                sifLibrary:message([putb("    "),putb(String),putc(key#lf)]),
+                (   wait(String)->
+                        R = normal(success))
+        ).
+
+%show_useSpPriority
+    show_useSpPriority({_,[]},R):-true|
+        sifLibrary:message([putl(" SP priority is nothing.")]),
+        R = normal(success).
+    show_useSpPriority({_,SPList},R):-SPList\=[]|
+        view1(SPList,List),
+        append_string:append_string(List,String),
+        sifLibrary:message([putb("    "),putb(String),putc(key#lf)]),
+        ( wait(String)->
+                R = normal(success)).
+
+%show_useUnit
+    show_useUnit([],R):-true|
+        sifLibrary:message([putl(" Current using unit is nothing.")]),
+        R = normal(success).
+    show_useUnit(all,R):-true|
+        sifLibrary:message([putl(" Current using unit is all unit.")]),
+        R = normal(success).
+otherwise.
+    show_useUnit(UnitList,R):-true|
+        rbrcui_ioUtility:show_listX(UnitList,R).
+
+%show_view
+    show_view([],R):-true|
+        sifLibrary:message([putl(" View is empty.")]),
+        R = normal(success).
+otherwise.
+    show_view(ViewList1,R):-true|
+        remove_defaultView(ViewList1,ViewList),
+        (   ViewList = []->
+                sifLibrary:message([putl(" View is empty.")]),
+                R = normal(success)
+        ;
+            ViewList \= []->
+                show_view1(ViewList,R)
+        ).
+
+    remove_defaultView(ViewList1,ViewList):-true|
+        rbrpom_manager:get_defaultUseViewName(DUVN),
+        remove_defaultView1(ViewList1,DUVN,ViewList).
+
+    remove_defaultView1([],_,ViewList):-true|
+        ViewList = [].
+    remove_defaultView1([{VN,_}|T],VN,ViewList):-true|
+%modify oosaki 950807 
+%remove_defaultView1(T,V,ViewList).
+        remove_defaultView1(T,VN,ViewList).
+otherwise.
+    remove_defaultView1([V|T],VN,ViewList):-true|
+        remove_defaultView1(T,VN,ViewList1),
+        ViewList = [V|ViewList1].
+
+    show_view1([],R):-true|
+        R = normal(success).
+    show_view1([View|T],R):-true|
+        view(View,String),
+        ( wait(String)->
+                sifLibrary:message([putb("    "),putb(String),putc(key#lf)]),
+                show_view1(T,R)).
+%show_sp
+    show_sp([],R):-true|
+        sifLibrary:message([putl(" Sp is empty.")]),
+        R = normal(success).
+otherwise.
+    show_sp(SPList,R):-true|
+        show_sp1(SPList,R).
+
+    show_sp1([],R):-true|
+        R = normal(success).
+    show_sp1([Sp|T],R):-true|
+        sp(Sp,String),
+        ( wait(String)->
+                sifLibrary:message([putb("    "),putb(String),putc(key#lf)]),
+                show_sp1(T,R)).
+%show_unit
+    show_unit([],R):-true|
+        sifLibrary:message([putl(" Unit is empty.")]),
+        R = normal(success).
+otherwise.
+    show_unit(UnitList,R):-true|
+        show_unit1(UnitList,R).
+
+    show_unit1([],R):-true|
+        R = normal(success).
+    show_unit1([Unit|T],R):-true|
+        unit(Unit,String),
+        ( wait(String)->
+                sifLibrary:message([putb("    "),putb(String),putc(key#lf)]),
+                show_unit1(T,R)).
+
+%%%%%%%%%%%%%
+%view
+    view({ViewName1,List1},String):-true|
+        view1(List1,List2),
+        hLibrary:tTos(ViewName1,ViewName),
+        append([ViewName," := {"|List2],["}"],List),
+        append_string:append_string(List,String).
+
+    view1([],List):-true|
+        List = [""].
+    view1([H1],List):-true|
+        hLibrary:tTos(H1,H),
+        List = [H].
+    view1([H1|T],List):-T\=[]|
+        hLibrary:tTos(H1,H),
+        view1(T,List1),
+        List = [H," <"|List1].
+
+%sp
+    sp({SpName1,List1},String):-true|
+        sp1(List1,List2),
+        append(["{"|List2],["}"],List3),
+        hLibrary:tTos(SpName1,SpName),
+        append_string:append_string([SpName," := "|List3],String).
+
+    sp1([],List):-true|
+        List = [""].
+    sp1([H1],List):-true|
+        sp2(H1,H),
+        List = H.
+    sp1([H1|T],List):-T\=[]|
+        sp2(H1,H),
+        sp1(T,List1),
+        append(H,[" ,"],List0),
+        append(List0,List1,List).
+
+    sp2([],List):-true|
+        List = [""].
+    sp2([H1],List):-true|
+        sp3(H1,H),
+        List = H.
+    sp2([H1|T],List):-T\=[]|
+        sp3(H1,H),
+        sp2(T,List1),
+        append(H,[" <"],List0),
+        append(List0,List1,List).
+
+    sp3(H1,H):-atom(H1)|
+        hLibrary:tTos(H1,H2),
+        H = [H2].
+    sp3(H1,H):-list(H1)|
+        unit1(H1,H2),
+        append(["{"|H2],["}"],H).
+
+%unit
+    unit({UnitName1,List1},String):-true|
+        (   List1 \= []->
+                unit1(List1,List2),
+                hLibrary:tTos(UnitName1,UnitName),
+                append([UnitName," := {"|List2],["}"],List),
+                append_string:append_string(List,String)
+        ;
+            List1 = []->
+                hLibrary:tTos(UnitName1,UnitName),
+                append_string:append_string([UnitName," := {}"],String)
+        ).
+
+    unit1([],List):-true|
+        List = [""].
+    unit1([H1],List):-true|
+        hLibrary:tTos(H1,H),
+        List = [H].
+    unit1([H1|T],List):-T\=[]|
+        hLibrary:tTos(H1,H),
+        unit1(T,List1),
+        List = [H,","|List1].
+
+%%%%%%
+    append([],B,C):-true|
+        C = B.
+    append([X|A],B,C):-true|
+        append(A,B,C1),
+        C = [X|C1].
+
+    remove([],_,L):-true|
+        L = [].
+    remove([H|T],H,L):-true|
+        remove(T,H,L).
+otherwise.
+    remove([H1|T],H,L):-true|
+        remove(T,H,L1),
+        L = [H1|L1].

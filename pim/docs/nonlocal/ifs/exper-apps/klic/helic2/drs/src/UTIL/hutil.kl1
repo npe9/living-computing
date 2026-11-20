@@ -1,0 +1,47 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module hUtility.
+
+:- public 
+    count/2,
+    vector_to_list/2,
+    list_to_vector/2.
+            
+:- with_macro pimos.
+
+
+    vector_to_list(Vector,List):-vector(Vector,Size) |
+        vector_to_list1(Vector,0,Size,List).
+
+    vector_to_list1(_,Size,Size,List):-true |
+        List = [].
+otherwise.
+    vector_to_list1(Vector,Pos,Size,List):-vector_element(Vector,Pos,Ele) |
+        Pos1 := Pos+1,
+        vector_to_list1(Vector,Pos1,Size,List1),
+        List = [Ele|List1].
+
+    list_to_vector(List,NewVector):-true |
+        count(List,Size),
+        new_vector(Vector,Size),
+        list_to_vector1(Vector,0,Size,List,NewVector).
+
+    list_to_vector1(Vector,Size,Size,[],NewVector):-true |
+        NewVector = Vector.
+otherwise.
+    list_to_vector1(Vector,Pos,Size,[H|T],NewVector):-true |
+        set_vector_element(Vector,Pos,_,H,Vector1),
+        Pos1 := Pos+1,
+        list_to_vector1(Vector1,Pos1,Size,T,NewVector).
+
+    count(List,Size):- true |
+        count1(List,0,Size).
+
+    count1([],Size1,Size):- true |
+        Size = Size1.
+    count1([_|T],Size1,Size):- true |
+        Size2 := Size1+1,
+        count1(T,Size2,Size).

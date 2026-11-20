@@ -1,0 +1,72 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（６６）協調型論理設計エキスパートシステム</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（６６）協調型論理設計エキスパートシステム</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM, Multi-PSI
+	環　　境：PIMOS 3.0,
+	          SIMPOS
+	言　　語：KL1
+	ソース量：3 MB
+	文　　書：なし
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+面積と時間に関する制約条件を受け取り、その制約条件を満たすCMOSスタンダー
+ドセルの回路(ネットリスト)を出力するシステム。<p>
+
+<h2>構成</h2>
+<dl>
+	<dd><img src="066-J.gif">
+</dl>
+<p>
+
+<h2>機能</h2>
+
+<DL>
+
+<DT>（１）<b>最適化機能</b>
+
+<DD>対応する制約条件を厳しくして繰り返すことにより、面積または時間につ
+いて厳密に最適な回路が設計できる。
+
+<DT>（２）<b>評価・再設計機構</b>
+
+<DD>制約違反の十分条件(Nogood Justification:NJ)を利用して評価・再設計
+を行う。
+
+<DT>（３）<b>協調設計機構</b>
+
+<DD>設計の単位となるエージェントは、設計結果(成功の場合)あるいはNJ(失
+敗の場合)を交換することにより協調する。
+
+</DL>
+
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	協調型論理設計エキスパートシステム [492K] <a
+href="../../../ifs/exper-apps/pimos/colodex.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

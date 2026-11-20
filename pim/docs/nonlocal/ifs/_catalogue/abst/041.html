@@ -1,0 +1,101 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (41) The Syntactic Analyzer</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (41) The Syntactic Analyzer</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 1.5 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Sequential analyzer for syntax and semantics.<P>
+
+<h2><b>Configuration</b></h2>
+
+SAX(Sequential Analyzer for syntaX and semantics) system is a
+syntactic and semantic analyzer based on logic programming. The
+grammar is written in DCG. SAX system provides with the user a
+facility to develop a grammar,and is composed of submodules,
+translator,and debugging tools. The configuration of SAX system is as
+follows.  <p>
+
+<dl>
+
+<dt>Translator
+
+<dd>Translator is translated grammar rules into a parsing program
+written in ESP.
+
+<dt>Debugging utility
+
+<dd>SAX system provides the grammar debugging utility,such as the
+grammar debugger,and graphic display utility.
+
+</dl>
+
+<h2><b>Function</b></h2>
+
+A characteristic of SAX system is as follows:<P>
+
+<ol>
+
+<li>The SAX parsing algorithm is bottom-up parsing with top-down
+prediction. If there are some applicable grammar rules,all of them are
+executed at the same time. So we can analyze more effectively.
+
+<li>The SAX grammar rule is basically an extension of DCG(Definite
+Clause Grammar).<P>
+
+By using these extensions,we can analyze more effectively. The
+extension of DCG is as follows.  <p>
+
+<DL>
+
+<DT>Delayed Extra Condition
+
+<DD>In our system,a delayed extra condition can be specified. 
+Basically,delayed extra conditions are used to compose semantic
+structure. The Prolog goals in the delayed extra conditions are
+evaluated after parsing.  <p>
+
+<DT>Preference Calculation
+
+<DD>The Preference rules enable us to calculate one of the plausible
+results using local information of the parsing process.
+
+</DL>
+</ol>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> The Syntactic Analyzer [167K] <a
+href="../../../ifs/natural-lang/unix/synana.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

@@ -1,0 +1,82 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(17) Hierarchical Constraint Parallel Solver: P-CHAL</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(17) Hierarchical Constraint Parallel Solver: P-CHAL</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI
+	Environment: PIMOS
+	Language:    GDCC
+	Source Code: 17 KB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A parallel solver for constraint hierarchy which introduces hierarchy
+in terms of strength of constraints.
+
+<h2><b>System Architecture</b></h2>
+<dl>
+	<dd><img src="017.gif">
+</dl>
+
+<p>
+<h2><b>Function</b></h2>
+
+Hierarchical constraint parallel solver P-CHAL is based on new
+programming paradigm "constraint programming" which allows user a
+high-level description in problem solving. P- CHAL is a parallel
+consrraint solver which manipulates various strength of constraints in
+various domains.<P>
+
+<dl>
+<ol>
+
+<dt><li><b>Parallel Solving of Constraint Hierarchy:</b>
+
+<dd>P-CHAL reduces computational costs by a bottom-up calculation of
+maximal consistent sets and parallel processing of GDCC.
+
+<dt><li><b>Constraints Solvers for Various Domains</b>
+
+<dd>P-CHAL provides constraint solvers for non-linear algebraic
+equations and Boolean equations for various domains of users. User can
+specify various strength for these constraints.
+
+</ol>
+</dl>
+
+<h2><b>Reference</b></h2>
+
+<OL> <LI> Satoh,K.,"Formalizing Soft Constraints by Interpretation
+Ordering",Proceedings of the Ninth European Conference on Artificial
+Intelligence,pp.585 - 590,Stockholm,Sweden(1990).  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Hierarchical Constraint Parallel Solver: P-CHAL [24K] <a
+href="../../../ifs/kbms-clp/pimos/p-chal.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

@@ -1,0 +1,88 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (60) Group Problem Solving System for Task Allocation Problems</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (60) Group Problem Solving System for Task Allocation Problems</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI
+	Environment: PIMOS, SIMPOS
+	Language:    KL1, ESP
+	Source Code: 1.0 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+We have developed a multi-agent system for task allocation
+problems.<P>
+
+<h2><b>Configuration</b></h2>
+
+<CENTER>
+<IMG SRC="060.gif">
+</CENTER>
+
+
+
+<h2><b>Function</b></h2>
+
+Our system searches for semi-optimal solutions for task allocation
+problems. We treat the following problem. Given a set of resources
+(e.g., workers), a set of tasks (e.g., jobs) and task evaluation
+functions defined by each resources (e.g., overtime), then find the
+allocation of tasks to resources which minimize the sum of the
+resources' task evaluation function values.  <p>
+
+For this problem, our system assigns random task allocation to agents
+(corresponding to resources one to one). Then the agents try to change
+their task allocations, toward the globally optimal allocation, by
+iteration of task migrations among them, through the exchanges of
+messages. As the iteration proceeds, the result of the re-allocation
+is improved. Since our system is based on a group of loosely-coupled
+agents, it offers the following advantages:<P>
+
+<ul>
+
+<li><i>adaptability:</i> Each of the agents has the mechanism of
+coordination, so that they continue to search for better task
+allocations, in spite of changes of the agents or the tasks during the
+search.
+
+<li><i>parallelism:</i> Each agent may act in parallel, so that it
+needs less time to reach the solution.
+
+<li><i>built-in search strategy:</i> In general, problem solving for
+these kinds of problems requires knowledge about controlling search,
+to avoid combinatorial explosion. However, there are problems which
+are too complex to easily extract the knowledge. Our system can be
+applied to such difficult problems.
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Group Problem Solving System for Task Allocation Problems [293K]
+<a href="../../../ifs/exper-apps/pimos/gpsstap.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

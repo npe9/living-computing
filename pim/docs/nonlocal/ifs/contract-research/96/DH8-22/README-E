@@ -1,0 +1,37 @@
+PRISM Contents
+--------------
+Copyright (C) 1997
+  SATO Taisuke and KAMEYA Yoshitaka,
+    Dept. of Computer Science, Tokyo Institute of Technology
+
+= prism.pl   -- PRISM system (written in Prolog)
+= random.c   -- C routine for random number generation
+= manual.ps  -- User manual (in Japanese, Post Script file)
+= examples/* -- PRISM program examples (see README.ex)
+
+
+Installation
+------------
+[NOTE] To use PRISM, you need SICStus Prolog 2.1.
+
+1. Change to a directory where you wish to install PRISM.
+   for example, /usr/local/lib/prism.
+
+  % cd /usr/local/lib/
+  % zcat H8-22.tgz | tar xvf -
+
+2. Compile the C routine
+
+  % gcc -c random.c
+
+3. Run SICStus Prolog 2.1
+(a) compile prism.pl
+(b) save to file "prism"
+
+  % prolog
+  SICStus 2.1 #9: Fri May 9 12:34:56 JST 1997
+  | ?- compile(prism),save(prism),halt.
+
+4. Make PRISM available as commands, for example,
+
+  % ln -s /usr/local/lib/prism/prism /usr/local/bin/prism

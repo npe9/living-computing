@@ -1,0 +1,33 @@
+%%%                                        %%%
+%%%      README                            %%%
+%%%     Copyright (C) 1998 Fumio Mizoguchi %%%
+%%%                                        %%%
+
+
+Concurrent and Cooperative Control Software Systems for Mobile Robots
+====================================================
+Feb. 28, 1998
+Fumio Mizoguchi(Science University of Tokyo)
+
+
+
+- Information
+
+SOURCE      Directory for Source File
+     +------ compile.kl1   The R2-D2 Compiler
+     +------ util.kl1      The utility 
+     +------ machine.kl1   Registration of machine name
+     +------ library       Library for the simulator
+
+Simulator   Simulator for mobile robot
+     +------ JavaApplet    Simulator
+     +------ Server        Controller
+
+Sample      Sample programs
+     +------ Arm      Sample programs for arm robot
+               +----  ArmSimulator   Simulator for arm robot
+     +------ Mobile   Sample programs for mobile robot
+
+Doc         User's Manual
+
+

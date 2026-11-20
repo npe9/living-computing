@@ -1,0 +1,137 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module unify_ptermForCBR.
+:- public unify/9.
+
+    unify(QueryLimitPT,RulePT,TS1,Env1,CEnv,TS,NPT,Env,R):-true|
+        glb(QueryLimitPT,RulePT,PT,Env1,TS1,Env,TS2,R1),
+        ( R1 = success->
+                get_realPTerm(QueryLimitPT,CEnv,QueryPTX),
+                lub(QueryPTX,RulePT,MatchPT,Env1,TS2,Env2,TS3,R2),
+                ( R2 = success->
+                        get_typeName(QueryPTX,CEnv,QueryTy),
+                        get_typeName(MatchPT,Env2,MatchTy),
+                        cbr_calculateDansuu:get_dansuu(QueryTy,MatchTy,
+                                TS3,TS4,MatchDansuu,R3),
+                        ( R3 = success->
+                                get_realPTerm(QueryLimitPT,Env1,QueryLimitPTX),
+                                get_realPTerm(RulePT,      Env1,RulePTX),
+                                get_realPTerm(MatchPT,     Env2,MatchPTX),
+                                is_specify(QueryLimitPTX,RulePTX,Env,TS4,TS,Specify),
+                                NPT = pterm(PT,{QueryPTX,RulePTX,QueryLimitPTX,
+                                                MatchPTX,MatchDansuu,Specify}),
+                                R = success
+                        ;
+                          R3 = fail->
+                                TS = TS4,
+                                NPT = dummy,
+                                R = fail
+                        )
+                ;
+                  R2 = fail->
+                        TS  = TS3,
+                        NPT = dummy,
+                        R   = fail
+                )
+        ;
+          R1 = fail->
+                TS = TS2,
+                NPT = dummy,
+                R  = fail
+        ).
+
+%%%%for Env method
+
+%%(1) a[age=>10]<+> no translate kextukaha 
+%%       EnvValue=0 CEnvValue={a,0,[{age,0,10}]}
+%%       Env kara ataiwo toxtutadakedeha {a,0,[{age,0,10}]}
+%%	 no jouhou ga han ei sarenai
+%%(2) a[age=>10]<person> no translate kextukaha 
+%%       EnvValue={person,0,[]} CEnvValue={a,0,[{age,0,10}]}
+%%       Env kara ataiwo toxtutadakedeha {a,0,[{age,0,10}]}
+%%	 no jouhou ga han ei sarenai
+%%%joukinobaai de QueryLimitPT ni PTerm no no attribute
+%%%jouhou wo fuka siteyaranakerebanaranai
+%%%tumari (1)no baaiha {'&top',0,{a,0,[{age,0,10}]}}
+%%%       (2)no baaiha {person,0,{a,0,[{age,0,10}]}}
+%get_queryLimitPT
+%    get_queryLimitPT(QueryLimitPT1,Env,CEnv,QueryLimitPT):-true|
+%        get_typeName(QueryLimitPT1,Env,TypeName),
+%        get_realPTerm(QueryLimitPT1,CEnv,QueryPTX),
+%        vector_element(QueryPTX,2,Att,_),
+%        ( Att \= [],TypeName='&top'->                
+%                QueryLimitPT = {'&top',0,Att}
+%	;
+%          Att \= [],TypeName\='&top'->
+%		get_realPTerm(QueryLimitPT1,Env,QueryLimitPT2),
+%		set_vector_element(QueryLimitPT2,2,Att,QueryLimitPT)
+%        ;
+%          Att = [],TypeName='&top'->
+%		QueryLimitPT = {'&top',0,[]}
+%	;
+%	  Att = [],TypeName \='&top'->
+%                QueryLimitPT = QueryLimitPT1
+%        ).
+
+%get_realPTerm
+    get_realPTerm(0,_,PT):-true|
+        PT = {'&top',0,[]}.
+    get_realPTerm(PT1,Env,PT):-integer(PT1),PT1>0|
+        vector_element(Env,PT1,PT2,_),
+        get_realPTerm(PT2,Env,PT).
+    get_realPTerm(PT1,_,PT):-vector(PT1,3)|
+        PT = PT1.
+
+%get_typeName
+    get_typeName(0,_,TypeName):- true|
+        TypeName = '&top'.
+    get_typeName(PTerm1,Env,TypeName):- integer(PTerm1),PTerm1>0|
+            vector_element(Env,PTerm1,PTerm2,_),
+            get_typeName(PTerm2,Env,TypeName).
+otherwise.
+    get_typeName(PTerm1,_,TypeName):- vector(PTerm1,3)|
+        vector_element(PTerm1,0,TypeName,_).
+
+%change_typeName
+    change_typeName(PT1,TypeName,Env,PT):-true|
+        get_realPTerm(PT1,Env,PT2),
+        set_vector_element(PT2,0,_,TypeName,PT3),
+        set_vector_element(PT3,1,_,0,PT).
+
+    change_result(normal(success),R):-true|
+        R = success.
+    change_result(abnormal(_),R):-true|
+        R = fail.
+otherwise.
+    change_result(normal(_),R):-true|
+        R = fail.
+
+%is_specify
+    is_specify(QueryPT1,RulePT1,Env,TS1,TS,R):-true|
+        change_typeName(QueryPT1,'&top',Env,QueryPT),
+        change_typeName(RulePT1, '&top',Env,RulePT),
+        same(QueryPT,RulePT, Env,TS1,_,TS,R1),
+        ( R1 = success->
+             R = not_specify
+        ;
+          R1 = fail->
+             R = specify
+        ).
+
+
+%%%%for Type module method
+    glb(PT1,PT2,PT,Env1,TS1,Env,TS,R):-true|
+        TS1=[glb(PT1,PT2,PT,Env1,Env,R1)|TS],
+        change_result(R1,R).
+
+    lub(PT1,PT2,PT,Env1,TS1,Env,TS,R):-true|
+        TS1=[lub(PT1,PT2,PT,Env1,Env,R1)|TS],
+        change_result(R1,R).
+
+    same(PT1,PT2,Env1,TS1,Env,TS,R):-true|
+        TS1=[same(PT1,PT2,Env1,Env,R1)|TS],
+        change_result(R1,R).
+

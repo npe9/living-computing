@@ -1,0 +1,131 @@
+﻿
+<!--
+# modified by Orie '95/03/02
+# modified by Orie '95/05/25
+# modified by S.Tanabe '95/08/01
+# modified by D.Sekita '98/05/18
+#
+-->
+<title>(85)並列論理型言語 KL1 の汎用機上の処理系 : KLIC 第2版</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(85)並列論理型言語 KL1 の汎用機上の処理系 : KLIC 第2版</h2>
+
+<CENTER>
+<TABLE BORDER="5" ALIGN=CENTER UNITS=RELATIVE WIDTH=90%>
+
+<TR><TD><BLINK><h2>注意</h2></BLINK><P>
+
+<H4>ＫＬＩＣ現在、第五世代フリーソフトウェアのひとつとして、「ＫＬＩＣ
+協会」の手によって保守・更新が行なわれています。ここで公開されているＫ
+ＬＩＣは古いバージョンですから、ＫＬＩＣを利用される場合には<A
+HREF="../../../Free-Software/Free-Software-J.html">こちら</A>からダウ
+ンロードするようにしてください。</H4></TD></TR></TABLE></P> </CENTER>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシンなど
+	環　　境：UNIX
+	言　　語：C
+	ソース量：3.5 MB
+	文　　書：マニュアル, チュートリアル (英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+KLIC 第2版は並列論理型言語 KL1 の並列処理系であり，KL1言語をC 言語に翻
+訳する方式によって高い移植性と高性能を同時に実現している。<p>
+
+<h2>特徴</h2>
+
+KL1 は第五世代コンピュータプロジェクトの核言語として開発された並列論理
+型言語である.  本 KLIC 第2版システムは, UNIX オペレーティング・システ
+ムの基本部分が動作する計算機システム上のポータブルで高性能な KL1 の並
+列処理系である。<P>
+
+<ul>
+
+<li>KL1言語プログラムを最終的には機械語プログラムに翻訳してから実行す
+る方式をとることによって, インタプリタ方式などよりもはるかに高い性能を
+実現している。
+
+<li>機械語への翻訳にはC言語を経由する方式をとり, 低レベルの機械依存の
+最適化を機種ごとのCコンパイラに任せることによって, 移植性を損なわずに
+高性能を実現している。
+
+<li>他言語プログラムとのリンクも容易である。
+
+</ul>
+
+KLIC 第1版と比べての主な改良・拡張点は以下の通りである。<P>
+
+<ul>
+
+<li>ユーザインタフェースの改良。
+
+<li>移植性の高い並列実装 ( 並列 UNIX 機や、ネットワーク結合した計算機
+群が対象 )。
+
+</ul>
+<p>
+
+<h2>機能</h2>
+
+<ul>
+
+<li>KL1 から C へのコンパイラと、実行時システムを提供する。
+
+<li>並列論理型 KL1 の主要機能を実現している。
+
+<li>同じハードウェア上なら従来の Prolog システムの 2 倍以上の速度を、
+同程度以下のコードサイズで実現する高性能システムである。
+
+<li>ステップ実行、スパイ機能、デッドロック検出機能などを備えたトレーサ
+を持っている。
+
+<li>C 言語、UNIX システムの標準的な機能のみを用いているので、多様な 
+UNIX システムにほとんど変更なく移植できる。
+
+<li>共有メモリ並列機や、PVM を備えたシステムで並列実行が可能である。
+
+</ul>
+<p>
+
+<h2>ＦＴＰ</h2>
+
+<ul>
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/README1">README</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/readme/README.klic.j">README
+（詳細版）</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/INSTALL.j">INSTALL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/KL1TUT.info">TUTORIAL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/tutorial.tex">TUTORIAL(TeX)</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/Makefile">Makefile</a>.
+
+<li>	並列論理型言語 KL1 の汎用機上の処理系 : KLIC 第2版<a
+href="../../../ifs/symbolic-proc/unix/klic/klic-2.002.tgz">
+<img src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+<address>www-admin@icot.or.jp</address>

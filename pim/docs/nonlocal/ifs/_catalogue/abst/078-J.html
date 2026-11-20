@@ -1,0 +1,105 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+# modified by S.Tanabe '95/08/01
+-->
+<title>（７８）並列論理型言語ＫＬ１の汎用機上の処理系：ＫＬＩＣ第１版</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（７８）並列論理型言語ＫＬ１の汎用機上の処理系：ＫＬＩＣ第１版</h2>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシン
+	環　　境：UNIX
+	言　　語：C, Prolog
+	ソース量：0.4 Mb
+	文　　書：簡単なマニュアル (英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+Ｃ言語に翻訳する方式により高い移植性と高性能を同時に実現した並列論理型
+言語ＫＬ１の処理系<p>
+
+<h2>特徴</h2>
+
+ＫＬ１は第五世代計算機計画の核言語として開発された並列論理型言語である。
+本ＫＬＩＣシステムは、従来専用マシンでしか効率良く動作しなかったＫＬ１
+言語プログラムを、ＵＮＩＸシステム上でも効率良く動作できるようにしたポー
+タブルで高性能な処理系である。<P>
+
+<UL>
+
+<LI>ＫＬ１言語プログラムを最終的には機械語に翻訳してから実行する方式を
+とることによって、インタプリタ方式などよりもはるかに高い性能を実現して
+いる。
+
+<LI>機械語への翻訳にはＣ言語を経由する方式をとり、低レベルの機械依存の
+最適化を機種ごとのＣコンパイラに任せることによって、移植性を損なわずに
+高性能を実現している。
+
+<LI>他言語プログラムとのリンクも容易である。
+
+</UL>
+
+<p>
+
+<h2>機能</h2>
+
+<UL>
+
+<LI>ＫＬ１からＣへのコンパイラと、実行時システムを提供する。
+
+<LI>並列論理型言語ＫＬ１の主要機能を実現している。
+
+<LI>同じハードウェア上なら従来のＰｒｏｌｏｇシステムの２倍以上の速度を、
+同程度以下のコードサイズで実現する高性能システムである。
+
+<LI>ステップ実行、スパイ機能などを備えたトレーサを持っている。
+
+<LI>Ｃ言語、ＵＮＩＸシステムの標準的な機能のみを用いているので、多様な
+ＵＮＩＸシステムにほとんど変更なく移植できる。
+
+</UL>
+
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/README1">README</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/readme/README.klic.j">README
+（詳細版）</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/INSTALL.j">INSTALL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/KL1TUT.info">TUTORIAL</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/tutorial.tex">TUTORIAL(TeX)</a>,
+
+<li><a
+href="../../../ifs/symbolic-proc/unix/klic/tutorial/Makefile">Makefile</a>.
+
+<li>	並列論理型言語ＫＬ１の汎用機上の処理系：ＫＬＩＣ(最新版) <a
+href="../../../ifs/symbolic-proc/unix/klic/klic.tgz"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

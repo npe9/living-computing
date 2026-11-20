@@ -1,0 +1,89 @@
+
+                        Copyright(C)1997  Mitsuru Ishizuka
+                                          Shigeki Fukuta
+                                          Yukio Ohsawa
+
+                                   Dept. of Information & Commun. Eng.
+                                   School of Eng.
+                                   Univ. of Tokyo
+
+**********************************************************************
+******            Fast Hypothetical Reasoning System            ******
+******        Based on Networked Bubble Propagation Method      ******
+******            -- Predicated-logic version:  NBP2a           ******
+**********************************************************************
+
+
+Summary:
+     This program provides a predicate-logic version of fast 
+cost-based hypothetical reasoning based on Networked Bubble 
+Propagation (NBP) method. (More precisely, this program can deal with 
+range-restricted function-free Horn clauses.)  While the computation 
+time for cost-based hypothetical reasoning grows exponentially in 
+general with respect to problem size, this program can compute a good 
+near-optimal solution in low-order polynomial time.
+
+     The  NBP method has been developed originally based on
+pivot-and-compliment method, which is an efficient approximate
+solution method for 0-1 integer programming.  With replacing
+pivotting and other operations in the pivot-and-compliment method by
+network-based operations and the use of knowledge network structure,
+it achieves high inference efficiency.  Its propositional-logic
+version achieves approximately 1.5-order of polynomial time with
+respect to the number of possible element hypotheses.
+
+     Although an extended NBP method for handling predicate-logic
+knowledge is shown in Ref. 2) and 3), this predicate-logic version 
+NBP2a is implemented with a different rather simple approach.  This 
+program uses QSQR method, an efficient deductive database method, in
+an iterative deepening manner to produce a series of subproblems of
+propositional-logic hypothetical reasoning, which can be solved
+efficiently by the NBP method of propositional-logic version.
+
+Software Construction:
+
+nbp1b.c: A propositional-logic version of NBP method written in C for
+	 cost-based hypothetical reasoning.
+
+{nbp:	 An executable program produced by compiling nbp1b.c with a C
+         compiler and a X-window software tool as follows;
+    	        gcc nbp1b.c -1X11 -lm -0 nbp }
+
+qsqr.plg: A Sicstus Prolog program for transforming a predicate-logic
+	 hypothetical reasoning problem into a series of propositional
+	 -logic subproblems in an iterative deepening manner.
+
+runqsqr: A Pearl program to perform smooth data exchange between
+	 qsqr.plg and nbp (a propositional-logic version of NBP method).
+
+Sicstus Prolog is required for executing qsqr.plg.  Peal interpreter is 
+required for runqsqr.
+
+     This NBP2a program is a preliminary version and still needs some
+improvements of implementing QSQR portion to achieve high efficiency.
+
+
+References:
+1) Y. Ohsawa and M. Ishizuka: Networked Bubble Propagation Method as a 
+   Polynomial-time Hypothetical Reasoning for Computing Quasi-optimal
+   Solution, Proc. IEEE Int'l Conf. on Tools with AI (TAI'93), Boston,
+   pp.184-187 (1993)
+2) Y. Ohsawa and M. Ishizuka: Networked Bubble Propagation : A
+   Polynomial-time Predicate-logic Hypothetical Reasoning by Networked
+   Bubble Propagation Method, Proc. Canadian AI'96, Toronto, pp.375-387
+   (1996)
+3) Y. Ohsawa and M. Ishizuka: Networked Bubble Propagation: A
+   Polynomial-time Hypothetical Reasoning Method for Computing
+   Near-optimal Solutions, Artificial Intelligence, Vol.91, No.1,
+   pp.131-154 (March 1997)
+4) A. Kondo, T. Makino and M. Ishizuka: An Efficient Hypothetical
+   Reasoning System for Predicate-logic Knowledge-base, Proc. IEEE Int'l 
+   Conf. on Tools for AI (TAI'91), San Jose, pp.352-358 (1991)
+5) A. Kondo and M. Ishizuka: Efficient Hypothetical Reasoning System
+   for Predicate-logic Knowledge Base, Knowledge-Based Systems, Vol.6,
+   No.2, pp.87-94 (1993)
+6) A. Kondo and M. Ishizuka: Efficient Inference Method for Computing
+   an Optimal Solution in Predicate-logic Hypothetical Reasoning,
+   Knowledge-Based Systems, Vol.9, pp.163-171 (1996)
+
+================================= end ==================================

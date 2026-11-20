@@ -1,0 +1,1690 @@
+			HELIC-II Language manual
+										
+1. Overview
+
+The data of HELIC-II consists the following four files.
+
+The content of each file must be described in HELIC-II language.
+
+(1) Type definition file
+
+The hierarchical relation and attribute of the type are described.
+
+All types to be used in a rule definition file must be defined in this file.
+
+(2) Rule definition file
+
+The content of a case, law, theory, judicial precedent rule, etc. are described.
+
+(3) Partial order definition file
+
+Partial order consists of unit,standpoint and viewpoint.
+
+Unit can be described as hierarchical unit order.
+
+For example,rules can be sorted in hierarchy as a unit, and multiple units in
+one unit.
+
+The priority relation between rules of every standpoint is described.  
+
+For example, in a standpoint of the Supreme Court priority, the judicial
+precedent rule of Supreme Court has priority over the judicial precedent rule of
+a district court.
+
+The priority relation between standpoints of every viewpoint is described.
+
+(4) Goal definition file
+Goal is described.
+
+This manual explains the method of describing goals and the above files in
+HELIC-II language, and the type of solution which the system generates for the
+goal, by using simple examples.
+
+The precise syntaxes of HELIC-II language are given in Appendix 1.
+
+The given examples are simple cases where the type takes no attributes.
+
+How to handle cases with types that take an attribute is given in Appendix 2.
+
+The data of examples to be used throughout this manual are as follows.
+
+[Type definition file]
+
+ &define_type. 
+
+  verb<event.
+ {does_action, reaches_to_condition, has_criminal_intent, behaves_violently, 
+  causes_injury_or_damage, has_conditional_causality, 
+  corresponds_to_a_crime_constituting_condition, 
+  is_injury, has_causality, is_violence} < verb.
+ {beating, thrusts_down} < does_action.
+  faints < reaches_to_condition.
+ {john, mary,taro,hanako} < person.
+  injury_crime.
+  crime_of_violence.
+  lake. 
+
+
+[Rule definition file]
+
+&define_absolute_rule.
+&define_RBR_rule.     
+{
+
+fact_1 :: beating(agent=john, object=mary) |#beating
+|| "john_beated_mary".
+
+fact_2 ::behaves_violently(agent=john, object=mary) |#behaves_violently
+|| "john_behaves_violently_for_mary".
+
+fact_3 :: has_criminal_intent(agent= #beating, basis=#behaves_violently)
+|| "the_fact_that_john_beated_mary_involves_a_criminal_intent_to_behave_violently".
+
+fact_4 :: -has_criminal_intent(agent= #beating, 
+	basis=causes_injury_or_damage(agent=john, object=mary))
+|| "the_fact_that_john_beated_mary_did_not_involve_a_criminal_intent_to_cause_an_injury_or_damage".
+
+fact_5 :: faints(agent=mary)|#fainting
+|| "mary_fainted".
+
+fact_6 :: has_conditional_causality(agent=#beating, object=#fainting)
+|| "mary_fainted_because_john_beated_mary".
+
+article_208 ::
+corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=crime_of_violence, goal=Y)
+<-  P/does_action(agent=X/person)|@action,
+    has_criminal_intent(agent=@action, 
+	basis=behaves_violently(agent=X, object=Y/person)),
+    is_violence(a_object=@action)
+|| "if" X "behaved_violently_to " Y "the_action_corresponds_to_a_crime_constituting_condition_of_crime_of_violence".
+
+article_204_theory_of_intentional ::
+-corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=injury_crime, goal=Y)
+<-  P/does_action(agent=X/person)|@action,
+  - has_criminal_intent(agent=@action,
+    basis=causes_injury_or_damage(agent=X, object=Y/person)|@causes_injury_or_damage)
+|| "because_the_action_of" X "did_not_involve_a_criminal_intent_of_injury" "it_does_not_correspond_to_a_crime_constituting_condition_of_an_injury_crime".
+
+article_204_theory_of_offence_aggravated_by_results_of_crime ::
+corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=injury_crime, goal=Y)
+<-  P1/does_action(agent=X/person)|@action,
+    corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=crime_of_violence, goal=Y),
+  -  has_criminal_intent(agent=@action,basis=causes_injury_or_damage(agent=X,object=Y)),
+    P2/reaches_to_condition(agent=Y)|@condition,
+    has_causality(agent=@action, object=@condition),
+    is_injury(agent=@condition)
+|| "action_of" X "corresponds_to_a_crime_constituting_condition_of_crime_of_violence_to" Y "if" Y "reached_a_condition_of_injury_because_of_the_cause" "the_action_corresponds_to_a_crime_constituting_condition_of_an_injury_crime" "even_if_it_did_not_involve_a_criminal_intent_of_injury".
+
+theory_of_conditional_causality ::
+has_causality(agent=@event_1, object=@event_2)
+<-  has_conditional_causality(agent=P1/verb()|@event_1, object=P2/verb()|@event_2)
+|| "if_there_is_a_conditional_causality_between_event1_and_event2" "there_exists_a_causality".
+
+criminal_law_common_sense_1 ::
+is_violence(a_object=beating(agent=X/person, object=Y/person))
+|| "action_of" X "beating" Y "is_violence".
+
+}
+
+&define_CBR_rule.     {
+supreme_court_showa_080906 ::
+is_injury(agent=@fainting)
+<-  V/thrusts_down<does_action>(agent=X/taro<person>, object=Y/hanako<person>,
+	goal=!lake)|@action,
+    faints(agent=Y)|@fainting,
+    has_conditional_causality(agent=@action, basis=@fainting)
+|| "if" Y "fainted_because_of" V "action_of" X "the_fainting_is_considered_an_injury".
+
+}
+
+[Partial order definition file]
+
+&define_unit.
+new_case := {fact_1, fact_2, fact_3, fact_4, fact_5,fact_6}.
+criminal_law := {article_208, article_204_theory_of_intentional, article_204_theory_of_offence_aggravated_by_results_of_crime, theory_of_conditional_causality}.
+criminal_law_terminology_interpretation := {theory_of_conditional_causality}.
+criminal_law_common_sense := {criminal_law_common_sense_1}.
+judicial_precedent := {supreme_court_showa_080906}.
+
+demo := {new_case,criminal_law,criminal_law_terminology_interpretation,
+	 criminal_law_common_sense,judicial_precedent}.
+
+&define_standpoint.
+esteems_principle_of_the_legality_of_crimes_and_punishment := {article_204_theory_of_intentional_crime < article_204_theory_of_offence_aggravated_by_results_of_crime}.
+esteems_balance_of_crime:={article_204_theory_of_offence_aggravated_by_results_of_crime < article_204_theory_of_intentional_crime}. 
+
+&define_view.
+prosecutor := {esteems_balance_of_crime < esteems_principle_of_the_legality_of_crimes_and_punishment}.
+defendant := {esteems_principle_of_the_legality_of_crimes_and_punishment < esteems_balance_of_crime}.
+
+
+[Goal definition file]
+
+ &define_goal.
+
+ {
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=crime_of_violence, goal=Y,object=X4),
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+ 	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4),
+
+ -corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4)
+ }
+
+
+2. Description of types
+
+ Example)
+
+  verb<event.
+ {does_action, reaches_to_condition, has_criminal_intent, behaves_violently, 
+  causes_injury_or_damage, has_conditional_causality, 
+  corresponds_to_a_crime_constituting_condition, 
+  is_injury, has_causality, is_violence} < verb.
+ {beating, thrusts_down} < does_action.
+  faints < reaches_to_condition.
+ {john, mary,taro,hanako} < person.
+  injury_crime.
+  crime_of_violence.
+  lake. 
+
+A hierarchical relation between a type and the attribute that a type obtains are
+described in a type definition file.
+
+The syntax is as follows.
+
+&define_type. TypeHIERARCHY1 ... TypeHIERARCHYn TypeATTRIBUTE1 ... TypeATTRIBUTEm
+
+TypeHIERARCHYi (i=1, ..., n) bares hierarchical relation between types, and the
+syntax is either of the following:
+
+TYPE1 < TYPE.
+{TYPE1, ..., TYPEk} < TYPE.
+
+TYPE and TYPEi (i=1, ..., k) are type names.
+
+TypeATTRIBUTEi (i=1, ..., m) is the hierarchical relation between types, and the
+syntax is either of the following:
+
+TYPE.
+TYPE([ATTRIBUTE1:AttributeTERM1, ..., ATTRIBUTEj:AttributeTERMj]).
+
+ATTRIBUTEi (i=1, ..., j) is an attribute name, and the syntax is an atom.
+
+AttributeTERMi (i=1, ..., j) is an attribute term, and the syntax is defined
+recursively as follows.
+
+TYPE  or
+TYPE([ATTRIBUTE1:AttributeTERM1, ..., ATTRIBUTEp:AttributeTERMp])
+
+In the type description of this example, neither types do not take attributes.
+The handling of types that take attributes, and the ψterm are shown in Appendix2.
+
+2.1 Kinds of type
+
+There are three kinds of types: general type, built-in type, constant type.
+
+General type is the type that the user is able to name arbitrarily.
+
+The types that has been specified in the type definition file of the exercise
+are all general type.
+
+Built-in type is predefined in the system, and there are four kinds which are
+top, bottom, string, and integer.
+
+Top indicates the type located at the highest.
+
+Bottom indicates the type located at the lowest.
+
+The upper and lower type of a type that is not explicitly specifying the upper
+and lower type is top and bottom, respectively.
+
+String has the character enclosed in quotation marks as its lower type.
+
+Integer has an integer as its lower type.
+
+Constant type consists of integer, string (the characters enclosed in quotation
+marks) and range type.
+
+Range type expresses with a set of integers ,and has an integer or a range type
+as its lower type.
+
+2.2 Unification between ψ term and subsumption relation
+
+When none of the types take an attribute, the ψ term agrees with the type.
+
+The unification between the ψterm is the operation to get the greatest lower
+bound (glb) between ψ terms.
+
+When t1 and t2 are types and two ψterms, ψ1=t1 and ψ2=t2 are given, then glb
+(ψ1, ψ2) = t1∩t2 where, t1∩t2 denotes the greatest common lower bound of two
+types, t1 and t2.
+
+If t1 is lower than t2, ψ2 is said to subsume ψ1.
+
+3. Description of a rule
+
+There are two kinds of rules: the RBR rule and CBR rule.
+
+The content of a fact, law, theory, etc. are described as RBR rules.
+
+The rule that rely on a factual relation of an individual judicial precedent is
+described as a CBR rule.
+
+The syntax of a rule definition file is as follows.
+
+ &define_absolute_rule. RBRRULEBASE
+ &define_RBR_rule. RBRRULEBASE
+ &define_CBR_rule. CBRRULEBASE
+
+The syntax of RBRRULEBASE is as follows.
+
+{RBRRULE1, ..., RBRRULEj}
+
+The syntax of CBRRULEBASEi is as follows.
+
+{CBRRULE1, ..., CBRRULEk}
+
+However , RBRRULEi (i=1, ..., j) is a RBR rule, and CBRRULEi (i=1, ..., k=
+) is a CBR rule.
+
+3.1 Description of a fact
+
+ Example)
+
+ fact_1 :: beating(agent=john, object=mary) |#beating
+ || "john_beated_mary".
+
+ fact_2 ::behaves_violently(agent=john, object=mary) |#behaves_violently
+ || "john_behaves_violently_for_mary".
+
+ fact_3 :: has_criminal_intent(agent= #beating, basis=#behaves_violently)
+ || "the_fact_that_john_beated_mary_involves_a_criminal_intent_to_behave_violently".
+
+ fact_4 :: -has_criminal_intent(agent= #beating, 
+	basis=causes_injury_or_damage(agent=john, object=mary))
+ || "the_fact_that_john_beated_mary_did_not_involve_a_criminal_intent_to_cause_an_injury_or_damage".
+
+ fact_5 :: faints(agent=mary)|#fainting
+ || "mary_fainted".
+
+ fact_6 :: has_conditional_causality(agent=#beating, object=#fainting)
+ || "mary_fainted_because_john_beated_mary".
+
+The syntax of a fact is one of the following four.
+
+(1) RuleName :: VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn) | HTERMID ||EXPLANATION.
+(2) RuleName :: VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn) ||EXPLANATION.
+(3) RuleName :: HTERMID ||EXPLANATION.
+(4) RuleName :: -VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn) ||EXPLANATION.
+
+RuleName is a name that is given to each fact uniquely.
+VERB corresponds to a verb of a natural language.
+Its syntax is a ψterm.
+ATTNAMEi is a name of attribute, and must be any of the next 17:
+
+	agent, object, cause, condition, purpose, place, source,
+	goal, time, time-from, time-to, imlement, material,
+	quantity, number, manner, basis
+
+TERMi is a value of a attribute, and an H term or ψterm for syntax.
+Syntax of a H term is one of the following four:
+
+(a) VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn) | HTERMID
+(b) VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn)
+(c) HTERMID
+(d) -VERB(ATTNAME1=TERM1, ..., ATTNAMEn=TERMn)
+
+HTERMID is an identifier for "pure H term" (H term of a type (b)) and is called
+an H term identifier.
+
+HTERMID appears in two kinds of meaning in syntax.
+
+HTERMID that appears as an H term of (c) represents the "pure H term" itself
+which the HTERMID indicates.
+
+(a) represents the "pure H term," and shows that HTERMID that appears at the end
+of an H term indicates the "pure H term."
+
+An H term identifier describes with type (a), only when it first appears in that
+scope.
+
+For all other facts, it describes with type (c).
+
+(Appendix 1 (2)*1 can be referenced for the precise meaning of "first.")
+
+The scope of an H term identifier is explained in 3.2.
+
+EXPLANATION is a data to display cases to the user.
+
+Its syntax mixes variables used with a fact in a string.
+
+"||EXPLANATION" need not to be described.
+
+In this example, the fact, "fact_1" shows that "john beated mary."
+The identifier, "# beating" is attached.
+
+"fact3" shows that "the fact that john beated mary involves a criminal intent to
+behave violently."
+
+"fact 4" shows that "the fact that john beated mary does not involve a criminal
+intent to cause an injury."
+
+"fact5" shows that "mary fainted" and the identifier, "#fainting" is attached.
+
+"fact6" shows that "there was a conditional causality between the fact that john
+has beaten mary, and mary has fainted."
+
+3.2 Description of a law, theory, etc.
+
+ Example)
+
+ article_208 ::
+ corresponds_to_a_crime_constituting_condition(agent=@action, 
+	basis=crime_of_violence, goal=Y)
+ <-  P/does_action(agent=X/person)|@action,
+    has_criminal_intent(agent=@action, 
+	basis=behaves_violently(agent=X, object=Y/person)),
+    is_violence(a_object=@action)
+ || "if" X "behaved_violently_to " Y "the_action_corresponds_to_a_crime_constituting_condition_of_crime_of_violence".
+
+A law and theory etc. are describe as a RBR rule.
+Syntax of a RBR rule is one of the following:
+
+(1) RuleName :: HTERM||EXPLANATION.
+(2) RuleName :: HTERM <- BodyHTERM1, ..., BodyHTERMn||EXPLANATION.
+
+BodyHTERM1, ..., BodyHTERMn is called a rule body, and HTERM is called a rule head.
+
+(1) is the fact explained in 3.1.
+
+RuleName in (2) is the name that is given uniquely to each rule.
+
+HTERM is the H term explained in 3.1.
+
+BodyHTERMi (i=1,.., n) is an H term, or the one with not attached before an H
+term.
+
+EXPLANATION is a data to display a rule.
+
+Its syntax mixes variables used with a fact in a string.
+
+"||EXPLANATION" need not to be described.
+
+(2) shows that if BodyHTERM1, ..., BodyHTERMn can be realized (if there is not
+attached before the H term, then they are not realized), then HTERM can also be
+realized.
+
+"article_208" of the example shows the following:
+
+A personX takes an action, and X has a criminal intent to behaves violently to
+personY with that action.
+
+If the action is violence, the action corresponds to a crime constituting
+condition of a crime of violence to Y.
+
+An H term identifier either begins with # or @.
+
+It is called an H term constant and H term variable, respectively.
+
+Usually, such as the example, if the H term identifier is used only in the rule
+head, then the H term constant is used.  In all other cases, the H term variable
+is used.
+
+The difference in handling the two in the system is explained below.
+
+In Prolog, predicates with the same string are handled as different predicates,
+if the number of arguments differs.  In HELIC-II, verbs of the same string and
+having concept except property is handled as same verbs, even if the number of
+cases differs.
+
+For example, if the fact "fact1::beating(agent=taro, object=hanako)." exists to
+the inquiry " ?- beating(agent=taro).," " beating(agent=taro, object=hanako)."
+is returned as a solution.
+
+This is because it is considered that the case, "object" has been omitted from
+the goal, "?  -beating (agent=taro)."  The value of the omitted case is
+automatically judged by the system, depending on the location the H term
+appears.
+
+When the H term which is a rule head, does not appear in a rule body and "-" is
+not attached, the omitted case is regarded as having a ψterm which cannot take
+a glb with any other ψterm.  The omitted case of the H term other than the one
+above is considered as having a variable which does not appear in the rule.
+
+However, if the user is indicating the H term by an H term identifier, then the
+following rule has priority.
+
+(1) If the user is indicating the H term by an H term constant, the omitted case
+of the H term is considered as having a ψterm which cannot take a glb with any
+other ψterm.
+
+(2) If the user is indicating the H term by an H term variable, the omitted case
+of the H term is considered as having a variable which does not appear in the
+rule.
+
+An H term identifier considers that the same H term is indicated only when they
+are the same string in its scope.
+
+The scope of an H term constant is a rule basis, and the scope of an H term
+variable is a rule.
+
+3.3 Description of a case rule
+
+ Example)
+
+ supreme_court_showa_080906 ::
+ is_injury(agent=@fainting)
+ <-  V/thrusts_down<does_action>(agent=X/taro<person>, object=Y/hanako<person>,
+	goal=!lake)|@action,
+    faints(agent=Y)|@fainting,
+    has_conditional_causality(agent=@action, basis=@fainting)
+ || "if" Y "fainted_because_of" V "action_of" X "the_fainting_is_considered_an_injury".
+
+The reasoning that rely strongly on a factual relation of an individual judicial
+precedent that is shown in the reasons for judgment in a judgment document is
+described as a CBR rule, since it is difficult to make it abstract and make into
+a RBR rule.
+
+In a CBR rule, the advisability of an application of a rule is determined by
+using the degree of similarity that utilizes a type hierarchy, other a
+unification which is done to RBR rule.
+
+The difference between a CBR rule and RBR rule are the following four points.
+
+(1) For ψterm in a rule body which may be abstracted, the type name of the
+upper limit of an abstraction is enclosed with "<>."
+
+(2) "!" is attached to the case which does not affect the unification of H terms
+contained in the case, even when the unification of the case in a rule body
+fails.
+
+(3) "!" is attached to the H term which does not affect the unification of the
+rule , even when the unification of the H term, which is not a value of a case,
+in a rule body fails.
+
+(4) When the unification of the rule succeeds under the above condition, the
+computation of the degree of similarity, calculated by comparing
+
+(a) the ψ term not abstracted by the original case rule
+
+(b) the ψ term that restricts individual ψ terms by the unification must be
+over the threshold value in the system, in order for the application of a rule
+to succeed.
+
+As explained in 3.1, the syntax of a pure H term is VERB(CASE1=TERM1, ..., CASEn=TERMn).
+
+In a CBR rule, the syntax becomes
+
+	[!]VERB[<TYPE>](CASE1=[!]TERM1[<TYPE1>], ..., CASEn=[!]TERMn[<TYPEn>]).
+
+[] indicates that it may be omitted, and TYPE and TYPEi(i=1, ..., n)are type names.
+
+The example, "supreme_court_showa_080906" shows the case rule, "Taro thrust down
+Hanako into a lake, and Hanako fainted, so if there is a conditional causality
+between them, fainting is an injury."
+
+At this time "thrusts_down" may be abstract to "does_an_action."
+"taro" and "hanako" may be abstract to "person."
+"lake" may fail an unification.
+
+4. Description of partial order definition 
+
+4.1 Description of a unit hierarchy
+
+ Example)
+
+&define_unit.
+new_case := {fact_1, fact_2, fact_3, fact_4, fact_5,fact_6}.
+criminal_law := {article_208, article_204_theory_of_intentional, article_204_theory_of_offence_aggravated_by_results_of_crime, theory_of_conditional_causality}.
+criminal_law_terminology_interpretation := {theory_of_conditional_causality}.
+criminal_law_common_sense := {criminal_law_common_sense_1}.
+judicial_precedent := {supreme_court_showa_080906}.
+demo := {new_case,criminal_law,criminal_law_terminology_interpretation,
+	 criminal_law_common_sense,judicial_precedent}.
+
+Rules can be sorted in a hierarchy as a unit.
+
+A hierarchical relation between units is described in a unit hierarchy
+definition file.
+
+The syntax of a unit hierarchy definition file is the following.
+
+&define_unit. UNITHIERARCHY1 ... UNITHIERARCHYn
+
+UNITHIERARCHYi (i=1, ..., n) is a unit hierarchical relation, and its syntax is
+the following.
+
+UNIT := {UNIT1, ..., UNITm}.
+
+UNIT and UNITi (i=1, ..., m) are unit names, and include rule names.
+
+The same unit may be under a different unit.
+
+In the example, the unit "new case" shows that it is composed of units, "fact1,"
+"fact2," "fact3," "fact4," and "fact5."  The unit "criminal_law" shows that it
+is composed of units, "article_208," "article_204_theory_of_intentional_crime,"
+"article_204_theory_of_offence_aggravated_by_results_of_crime," and
+"theory_of_conditional_causality."
+
+The unit, "criminal_law_terminology_interpretation" shows that it is composed of
+the unit, "theory_of_conditional_causality."
+
+The unit, "criminal_law_common_sense" shows that it is composed of the unit,
+"criminal_law_common_sense_1."
+
+The unit, "judicial_precedent" shows that it is composed of the unit,
+"supreme_court_showa_080906."
+
+4.2 Description of a standpoint
+
+ Example)
+
+&define_standpoint.
+esteems_principle_of_the_legality_of_crimes_and_punishment := {article_204_theory_of_intentional_crime < article_204_theory_of_offence_aggravated_by_results_of_crime}.
+esteems_balance_of_crime:={article_204_theory_of_offence_aggravated_by_results_of_crime < article_204_theory_of_intentional_crime}. 
+
+The priority relation between units for each standpoint is described in a
+standpoint definition file.
+
+Each standpoint is developed internally to a priority relation between rules.
+
+It is used to determine a strength of an argument to a goal.
+
+The syntax of a standpoint definition file is the following.
+
+&define_standpoint. STANDPOINT1 ... STANDPOINTn
+
+STANDPOINTi (i=1, ..., n) is a priority relation between units for each
+standpoint, and its syntax is the following.
+
+STANDPOINTNAME := {UNITSET1 < ...< UNITSETm}.
+
+STANDPOINTNAME is a name of a standpoint.
+
+UNITSETi (i=1, ..., n) is a single or multiple units, and the syntax is one of
+the following:
+
+UNIT {UNIT1, ..., UNITn}
+
+In the standpoint, "esteems_principle_of_the_legality_of_crimes_and_punishment,"
+of the example, it shows that the rule contained in the unit,
+"article_204_theory_of_intentional_crime" is given priority over the rule
+contained in "article_204_theory_of_offence_aggravated_by_results_of_crime."
+
+In the standpoint "esteems_balance_of_crime," it show that the rule contained in
+the unit, "article_204_theory_of_offence_aggravated_by results_of_crime" is
+given priority over the rule contained in
+"article_204_theory_of_intentional_crime."
+
+4.3 Description of a viewpoint
+
+ Example)
+
+ &define_view.
+ prosecutor := {esteems_balance_of_crime < esteems_principle_of_the_legality_of_crimes_and_punishment}.
+ defendant := {esteems_principle_of_the_legality_of_crimes_and_punishment < esteems_balance_of_crime}.
+
+The priority relation between standpoints for each viewpoint is described in a
+viewpoint definition file.
+
+Each viewpoint is developed internally to a priority relation between rules.
+
+The syntax of a viewpoint definition file is the following:
+
+&define_view. VIEW1 ... VIEWn
+
+VIEWi (i=1, ..., n) is the priority relation between standpoints for each
+viewpoint, and its syntax is as follows:
+
+
+	VIEWNAME := {STANDPOINTNAME1 < ...< STANDPOINTNAMEm}.
+	VIEWNAME is a viewpoint name, STANDPOINTNAMEi (i=1, ..., m) is a standpoint name.
+
+In the example, it shows that the standpoint,
+"esteems_principle_of_the_legality_of_crimes_and_punishment" is given priority
+over the standpoint, "esteems_balance_of_crime," in the viewpoint, "prosecutor."
+
+It also shows that the standpoint, "esteems_balance_of_crime" is given priority
+over the standpoint,
+"esteems_principle_of_the_legality_of_crimes_and_punishment" in the viewpoint,
+"defendant."
+
+5. Description of a goal
+
+Example)
+
+ &define_goal.
+
+ {
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=crime_of_violence, goal=Y,object=X4),
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4),
+
+ -corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=X1,goal=X2), basis=injury_crime, goal=Y,object=X4)
+ }
+
+
+The user describes the inquiry to the above data of HELIC-II as a goal, and
+inputs to a system.
+
+The syntax of a goal is either of the following among the H term which was
+explained in 3.1.
+
+(b) VERB(CASE1=TERM1, ..., CASEn=TERMn)
+
+(d) -VERB(CASE1=TERM1, ..., CASEn=TERMn)
+
+6. Generation of a solution
+
+The system first generates all correct arguments to the goal of the user.
+
+Then, the type of each argument is determined based on the priority relation
+between rules.
+
+The viewpoint selected by the user has already been developed in a priority
+relation between individual rules by the following procedure:
+
+(1) Priority relation between rules is decided in accordance with the standpoint
+highest in priority order.
+
+(2) Priority relation between rules contained in the standpoint second highest
+in priority order is added only if it does not contradict with existing priority
+relation.
+
+(3) The procedure of (2) is repeated for all standpoints.
+
+6.1 Generation of a correct argument
+
+Previously omitted cases in a rule are supplemented by the method shown in 3.2,
+and H term identifier shall be replaced with an H term that it indicates.
+
+After an argument solution set and an argument are explained, a correct argument
+is explained.
+
+(1) Argument solution set α(Π)
+
+ (a) Π is a rule set in HELIC-II.
+ (b) Π' is a set containing elements of Π, besides the H terms with not (notH).
+ (c) α(Π) is the minimum set that satisfies the following:
+  (i) If R::L0. is a rule inside Π', then L0∈α(Π).  L0 is an H term.
+  (ii) If R::L0←L1, ..., Lm is a rule in Π' and L1, ..., Lm∈α(Π), then L0∈α(Π).
+  (iii) If 
+    α(Π) contains p and "-"q, and if θ such that θp=θq exists
+    for an element r contained inα(Π) and an H removed in (b), if σ such that 
+    σr=σH exists then α(Π)=｛V(agent=X1, object=X2, basis=X3, goal=X4).,
+   -V(agent=X1, object=X2, basis=X3, goal=X4).｝
+   (At this time, Π contradicts as an argument.)
+
+θ complies to the form {ψ1/φ, ..., ψn/φn}.
+
+ψi and φi are ψ terms.  φi is a subtype of ψi.
+
+This substitution shows the operation which replaces ψ1, .. ,ψn with φ1, ..., 
+φn.
+
+For example, the following rule set
+
+{Theory of conditional causality::
+ has_causality(agent=beating(agent=john,, object=mary, basis=d1, goal=d2),
+ 	object=faints(agent=mary, object=d3, basis=d4, goal=d5),
+	basis=d6, goal=d7),
+ <- has_conditional_causality(agent=P1/beating(agent=john, object=mary, 
+		basis=d1, goal=d2),
+	object=P2/faints(agent=mary, object=d3, basis=d4, goal=d5),
+	basis=d8, goal=d9),
+    fact6::has_conditional_causality(agent=beating(agent=john, object=mary, 
+		basis=d1, goal=d2),
+	object=faints(agent=mary, object=d3, basis=d4, goal=d5),
+		basis=d8, goal=d9).}
+
+has the following argument solution set.
+
+{has_causality(agent=beating(agent=john, object=mary, basis=d1, goal=d2),
+ object=faints(agent=mary, object=d3, basis=d4, goal=d5),
+	basis=d6, goal=d7).,
+ has_conditional_causality(agent=beating(agent=john, object=mary, basis=d1, goal=d2),
+	object=faints(agent=mary, object=d3, basis=d4, goal=d5),
+	basis=d8, goal=d9).}
+
+(2) The argument A that is extracted from the rule set, π for the H term, p.
+
+A is a subset of an instance of rule setπ.  A is the argument extracted from
+the rule set π for the H term, p, only when A is the minimum set that becomes p
+∈α(A).  
+
+θγ is called an instance of γ for substituteθ and ruleγ.
+
+(3) The correct argument A that is extracted from the rule set, π for the H term, p.
+
+A is the correct argument extracted from the rule set π for the H term p only
+when A is the most general (the level of abstraction of ψ term is the highest)
+argument in the argument to the instance of p.
+
+For example, the correct argument Arg1 to the goal of the example given above:
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, 
+	object=mary, basis=X1, goal=X2),basis=a_crime_of_violence, goal=X3, object=X4)
+
+is as follows.
+
+{article_208 ::p
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, 
+	object=mary, basis=c2, goal=c3),basis=crime_of_violence, goal=mary, object=c1)
+ <-  beating(agent=john, object=mary, basis=c2, goal=c3),
+     has_criminal_intent(agent= beating(agent=john, object=mary, basis=c2, goal=c3),
+	basis=behaves_violently(agent=john, object=mary, basis=X1, goal=X2),
+		object=c4, goal=c5),
+     is_violence(a_object=beating(agent=X/person, object=Y/person, basis=X1, goal=X2),
+	object=c6, basis=c7, goal=c8).,
+ fact1::beating(agent=john, object=mary, basis=c2, goal=c3).,
+ fact3::has_criminal_intent(agent= beating(agent=john, object=mary, basis=c2, goal=c3),
+	basis=behaves_violently(agent=john, object=mary, basis=X1, goal=X2),
+	object=c4, goal=c5).,
+ criminal_law_common_sense_1 ::
+ is_violence(a_object=beating(agent=X/person, object=Y/person, basis=X1, goal=X2),
+	object=c6, basis=c7, goal=c8).}
+
+The H term that is finally guided by an argument is called a conclusion
+(consequence) of the argument.
+
+A conclusion of argument Arg1 becomes as follows:
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, 
+	object=mary, basis=c2, goal=c3),basis=A_crime_of_violence, goal=mary, object=c1)
+
+In HELIC-II system, Arg1 is represented in a form of the following proof tree.
+
+However, the omitted cases are not displayed unless a new value has been
+assigned.
+
+0  :             article_208:corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=crime_of_violence,goal=mary,object=?)
+1  :              fact_1:beating(agent=john,object=mary,basis=?,goal=?)
+2  :              fact_3:has_criminal_intent(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=behaves_violently(agent=john,object=mary))
+3  :              criminal_law_common_sense_1:is_violence(a_object=beating(agent=john,object=mary,basis=?,goal=?))
+
+
+Similarly, the conclusion of the correct argument Arg2 to the inquiry,
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary, 
+	basis=X1, goal=X2),basis=An_injury_crime, goal=X3, object=X4)
+
+is as follows.
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary,
+	 basis=c2, goal=c3),basis=An_injury_crime, goal=mary, object=c9)
+
+The following is a representation of this argument in a form of a proof tree.
+
+0  :    !J (1)   article_204_theory_of_offence_aggravated_by_results_of_crime:corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=injury_crime,goal=mary,object=?)
+1  :              fact_1:beating(agent=john,object=mary,basis=?,goal=?)
+2  :              article_208:corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=crime_of_violence,goal=mary)
+3  :               fact_1:beating(agent=john,object=mary,basis=?,goal=?)
+4  :               fact_3:has_criminal_intent(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=behaves_violently(agent=john,object=mary))
+5  :               criminal_law_common_sense_1:is_violence(a_object=beating(agent=john,object=mary,basis=?,goal=?))
+6  :              fact_4:-has_criminal_intent(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=causes_injury_or_damage(agent=john,object=mary))
+7  :              fact_5:faints(agent=mary)
+8  :              theory_of_conditioal_causality:has_causality(agent=beating(agent=john,object=mary,basis=?,goal=?),object=faints(agent=!mary))
+9  :               fact_6:has_conditional_causality(agent=beating(agent=john,object=mary,basis=?,goal=?),object=faints(agent=!mary))
+10 :              supreme_court_showa_080906:82:is_injury(agent=faints(agent=!mary))
+11 :               fact_1:!beating(agent=!john,object=!mary,goal=!?)
+12 :               fact_5:!faints(agent=!mary)
+13 :               fact_6:!has_conditional_causality(agent=!beating(agent=!john,object=!mary,goal=!?),basis=!?,object=faints(agent=mary))
+
+The conclusion to the correct argument Arg3 to the goal,
+
+ -corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary,
+	 basis=X1, goal=X2),basis=an_injury_crime, goal=X3, object=X4)
+
+is as follows.
+
+ -corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary,
+	 basis=c2, goal=c3),basis=an_injury_crime, goal=mary, object=X4)
+
+The following is a representation of this argument in a form of a proof tree.
+
+0  :    !J (1)   article_204_theory_of_intentional:-corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=injury_crime,goal=mary,object=?)
+1  :              fact_1:beating(agent=john,object=mary,basis=?,goal=?)
+2  :              fact_4:-has_criminal_intent(agent=beating(agent=john,object=mary,basis=?,goal=?),basis=causes_injury_or_damage(agent=john,object=mary))
+
+6.2 Determination of the type of an argument 
+
+In the HELIC-II system, the correct answer argument obtained in 6.1 is
+classified into the following three types: "Argument that was justified
+(justified argument)," "Argument that was refuted (defeated argument),"
+"Argument that was simply not refuted(merely plausible argument)."
+
+In this section, an attack and refutation are explained, followed by the
+explanation of the above arguments.
+
+(1) Attack
+
+Argument B is an attack to argument A, and simultaneously, argument A is an
+attack to argument B when the following conditions are met:
+
+	Argument A is an argument to H term p.
+	Argument B is an argument to H term p.
+	There existsθ such that θp=θq
+
+Arg2 shown in 6.1 is an argument to the following.
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john,
+	object=mary,basis=c2, goal=c3),basis=An_injury_crime, goal=mary, object=c9)
+
+Arg3 is an argument to the following.
+
+ -corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary,
+	 basis=c2, goal=c3),basis=an_injury_crime, goal=mary, object=X4)
+
+These arguments are attacks to each other.
+
+(2) Refutation
+
+"B refutes A" when argument B is an attack to argument A, the top rule (Rule
+that directly guides a conclusion) of B has priority over the top rule of A, and
+all part arguments of B have been justified.
+
+"Argument C is a part argument of argument B" is the relation C⊂B.
+
+For example, Arg1 is a part argument of Arg2.
+
+All part arguments of Arg2 are justified arguments since no attack exists.
+
+Similarly, all part arguments of Arg3 are justified argument since no attack
+exists.
+
+If the top rule of Arg2,
+"article_204_theory_of_offence_aggravated_by_results_of_crime" of Arg2, and the
+top rule of Arg3, "article_204_theory_of_intentional_crime" are compared, the
+former has priority under the viewpoint of a prosecutor, and the latter has
+priority under the viewpoint of a defendant.
+
+In other words, Arg2 refutes Arg3 under the view point "prosecutor," and Arg3
+refutes Arg2 under the view point, "defendant."
+
+(3) Type of an argument
+
+The following are definitions of the three kinds of arguments given at the
+beginning of this section:
+
+ (a) Justified argument: Argument that refutes all attacks, that does not
+     include a part argument that is refuted.
+
+ (b) Defeated argument: Argument that is refuted by any argument.
+
+ (c) Merely plausible argument: Argument that is neither of the above.
+
+In the example, under the view point, "defendant," Arg3 becomes the justified
+argument, and Arg2 becomes the refuted argument, and it becomes the vice versa
+under the viewpoint, "prosecutor."
+
+If (a) is changed to
+
+ (d) Justified argument: Argument that is not refuted from any other arguments,
+     the judgment of the type of argument does not change in this example.
+
+However, the difference can be understood when the following example is
+considered.  Arg4 shall be the argument that guides the following, under the
+viewpoint "defendant" and its top rule has priority over the top rule of Arg3.
+
+ corresponds_to_a_crime_constituting_condition(agent=beating(agent=john, object=mary,
+ 	basis=c2, goal=c3),basis=An_injury_crime, goal=mary, object=c10)
+
+By the definition of (a), Arg2 becomes an merely plausible argument, however, by
+the definition of (a'), it becomes a justified argument.
+
+7 Execution of rule
+
+In this section ,execution of rule , unification of H term and ψ 
+term are explained.
+
+7.1 RBR rule
+
+7.1.1 rule
+
+When the following condition is filled, a RBR rule is carried out.
+
+(1) 6.1 Generation of a corrent argument (1)-(2) 
+
+(2) success of  body builtin predicate.
+
+7.1.2 H term
+
+Unification of H term explains by using between following H terms.
+
+Query : a(agent=a1,object=a2,goal=a3(agent=a4),....)
+Rule  : b(agent=b1,object=b2,goal=b3(agent=b4)....)
+
+Success condition of H term is as follows.
+
+(1) Unification of predicate(a and b)
+
+ (a) Check nagation
+     It succeeds when there are which and "-" or both are not here.
+     It fails when there is "-" in either side.
+
+ (b) Predicate(a,b) must be b=<a type hierarchy
+
+(2) Unification of attribute name(agent,object,goal)
+
+ (a) H term predicate(a) in query H term doesn't have property:
+
+	Attribute name in H term in query must be in rule H term.
+
+ (b) H term predicate(a) in query H term has property:
+
+	Attribute name in H term in rule must be in query H term.
+
+(3) Unification of attribute value(a1 and b1,a2 and b2,a3(agent=a4) and
+	b3(agent=b4))
+
+ (a) Both attribute value are ψ term:
+
+	Go to 7.1.3 ψ term
+
+ (b) Both attribute value are H term:
+
+	Go to (4)
+
+(4) Unification of H term in attribute value(a3(agent=a4) and b3(agent=b4))
+
+ (a) Unification of predicate(a3 and b3)
+
+  (i) Check nagation
+     It succeeds when there are which and "-" or both are not here.
+     It fails when there is "-" in either side.
+
+  (ii) Predicate(a3,b3) must be 7.1.3 ψ term
+
+ (b) Unification of attribute name(agent)
+
+  It succeeds without attribute name query and rule H term.
+
+ (c) Unification of attribute value(a4 and b4)
+
+  (i) Both attribute value are ψ term:
+
+	Go to 7.1.3 ψ term
+
+  (ii) Both attribute value are H term:
+
+	Go to (4)
+
+  (iii) Attribute of the one which exists when there is no attribute 
+        which copes with either rule or query is substituted.
+
+7.1.3 ψ term
+
+(1) When variable is contained in either. (for example, X/a1, Y/b1)     
+	When GLB was taken between both ψ term and it succeeded.
+
+(2) When constant isn't contained in which as well. (for example, a1, b1)   
+    Must be the same type name.
+    For example, a1 and a1 are succeed, a1 and b1 fail.
+
+7.2 CBR rule
+
+A CBR rule is the thing to describe a past precedent.
+
+Character of CBR rule is partial matching and expression of limit.
+
+Partial matching describes important part(exact) and non important 
+part(trivial).
+
+Expression of limit restricts unification of type information.
+
+These function are explained by using following example.
+
+        fact:
+                f1::a(agent=y,object=z).
+                f2::c(agent=y,object=z).
+
+        CBR rule:
+              	c1::x(agent=y,object=z)<-
+                a1<a>(agent=y,object=z),
+                !b1(agent=y,object=z),
+                c1<c>((agent=!y,object=z).
+
+	type information:
+		a1<a. b1<b. c1<c.
+
+"!" means non importance.
+
+Term with "!" is called trivial.
+Term without "!" is called exact.
+
+"a" and "b" for <a> and  <b> are called limit.
+
+In this case, a1 can be abstraction until a,
+c1 can be abstraction until c.
+
+And CBR rule can not describe naf operator.
+
+7.2.1 rule
+
+When the following condition is filled, a CBR rule is carried out.
+
+(1) Success of  body builtin predicate.
+
+(2) Similarity in rule exceeded similarity of HELIC-II.
+
+Calculation of similarity in CBR rule .
+
+by using following data.
+
+Explain calculation of similarity in CBR rule by using 
+following three H term in body.
+
+	A/hit<violence>(agent=!X/taro<human>,object=Y/jiro<human>),
+	!death(agent=Y),
+	cause(source=A(agent=!X,object=Y),
+	      goal=death(agent=Y))
+
+And there are three fact.
+
+	kick(agent=hanako,object=yoshiko).
+	death(agent=yoshiko).
+	cause(source=kick(agent=hanako,object=yoshiko),
+	      goal=death(agent=yoshiko)).
+
+Two H term in body assemble to following data by HELIC-II.
+
+	(hit<viorence>,agent, !X/taro<human>)
+	(hit<viorence>,object,Y/jiro<human>)
+
+H term in first fact assemble to following data by HELIC-II.
+
+	(kick,agent,hanako)
+	(kick,object,yoshiko)
+
+Similarity of "hit" and "kick" is DS1.
+Similarity of "taro" and "jiro" is DS2.
+Similarity of "jiro" and "yoshiko" is DS3.
+
+DS1,DS2,DS3 are represented between 0 and 100.
+
+Similarity of first H term in body and first fact is as follows.
+
+		(DS1*10+DS1*10+DS2*W+DS3*10)
+        HS1 =   ----------------------------
+                        (10+10+W+10)
+
+W is to lighten weight toward the trivial term.
+W is called weight of trivial term.
+W is integer between 1 and 10.
+W is set by user.
+
+Similarity of second H term in body and second fact is HS2.
+Similarity of third H term in body and third fact is HS3.
+
+And Similarity of this CBR rule is as follows.
+
+                (HS1*10+HS2*W+HS3*10)
+        RS=     ---------------------
+                     (10+W+10)
+
+To succeed this rule,RS must be bigger than similarity of HELIC-II.
+
+(Attention)
+ Case of following Unification:
+
+	 hit(agent=tarou,object=jirou) 	 injury(agent=tarou)
+
+ Result of unification is follows.
+
+	hit(agent=tarou,object=jirou)
+
+ HELIC-II ignores calculation of similarity in "object=jirou".
+
+Detail of calculating similarity is as follows.
+
+(1) Calculating similarity in ψ term(PS)
+
+Calculating similarity in ψ term(PS) is as follows.
+
+	PS = DS*AS/10
+
+DS,AS is as follows.
+
+ (a) Calculating Dansuu(DS)
+
+     ψ term is length to abstract for unification is called Dansuu.
+
+     Default Dansuu value is as follows.
+
+     Initial value is 100,1 step up is 90,2 step up is 80,
+     3 step up is 70,4 step up is 60 more than 5 step up is 50.
+
+     This table is called ψ term abstract table.
+
+ (b) Calculating attribute(AS)
+
+     * Attribute of ψterm is concrete
+
+	AS = 7
+
+     * Attribute of ψterm is not concrete
+
+	AS = 10
+
+     Concrete example is Unification of tarou[age=>10] and tarou.
+
+     AS is called weight of ψ term abstruction
+
+(2) Calculating similarity in H term(HS)
+
+     Explains by using following H term to get by unification.
+
+	pred(at1,at2,....atn)
+
+     W is weight of trivial term.
+     PredS is similarity of pred.
+     NumTrivial is number of trivial attribute in attributes.
+     ATxS is similarity in all trivial attributes.
+     ATyS is similarity in attributes without trivial attributes.
+
+ (a) PredS = 0
+	HS = 0
+
+ (b) PredS \= 0
+
+	     (N*PredS)*10+(ATTxS)*W+ATyS)*10
+	HS = -------------------------------
+	      N*10+N*W+(N-NumTrivial)*10
+
+(3) Calculating similarity in rule(RS)
+
+    Explains by using a set of H term as H1,H2,H3,....HN in body. 
+
+     W is weight of trivial term.
+     NumTrivial is number of trivial H term.
+     HTxS is amount of all trivial H term similarity.
+     HyS is amount of  H term similarity except trivial H term similarity.
+
+		(HTxS)*W + (HyS)*10
+	RS = ------------------------------
+		N*W + (N-NumTrivial)*10
+
+7.2.2 H term
+
+Unification of H term explains by using between following H terms.
+
+Query : a(agent=a1,object=a2,goal=a3(agent=a4),....)
+Rule  : b(agent=b1,object=b2,goal=b3(agent=b4)....)
+
+Success condition of H term is as follows.
+
+(1) Unification of predicate(a and b)
+
+ (a) Check nagation
+     It succeeds when there are which and "-" or both are not here.
+     It fails when there is "-" in either side.
+
+ (b) Predicate(a,b) must be b=<a type hierarchy
+
+(2) Unification of attribute name(agent,object,goal)
+
+ (a) H term predicate(a) in query H term doesn't have property:
+
+	Attribute name in H term in query must be in rule H term.
+
+ (b) H term predicate(a) in query H term has property:
+
+	Attribute name in H term in rule must be in query H term.
+
+(3) Unification of attribute value(a1 and b1,a2 and b2,a3(agent=a4) and
+	b3(agent=b4))
+
+ (a) Both attribute value are ψ term:
+
+	Go to 7.2.3 ψ term
+
+ (b) Both attribute value are H term:
+
+	Go to (4)
+
+(4) Unification of H term in attribute value(a3(agent=a4) and b3(agent=b4))
+
+ (a) Unification of predicate(a3 and b3)
+
+  (i) Check nagation
+     It succeeds when there are which and "-" or both are not here.
+     It fails when there is "-" in either side.
+
+  (ii) Predicate(a3,b3) must be 7.2.3 ψ term
+
+ (b) Unification of attribute name(agent)
+
+  It succeeds without attribute name query and rule H term.
+
+ (c) Unification of attribute value(a4 and b4)
+
+  (i) Both attribute value are ψ term:
+
+	Go to 7.2.3 ψ term
+
+  (ii) Both attribute value are H term:
+
+	Go to (4)
+
+  (iii) Attribute of the one which exists when there is no attribute 
+        which copes with either rule or query is substituted.
+
+7.2.3 ψ term
+
+When GLB was taken between both ψ term and it succeeded.
+
+8. Attention
+
+Following function isn't supported in current HELIC-II.
+
+(1) Builtin predicate isn't display.
+
+(2) Can be only used upper character,lower character,"_" in rule explanation.
+
+(3) Can be only used H term variable in unitication of variable and H term.
+
+    Unification of a(agent=X) and a(agent=b(agent=c)) is fail.
+
+Appendix 1. Syntax of HELIC-II language
+
+{X} denotes that X may be repeated zero or more arbitrary number of times.
+
+[X] denotes that X exists once, or is omitted and is empty.
+
+1 byte character space, tab, and line feed may appear in arbitrary places in
+syntax.
+
+Type definition (1) 
+
+<Type definition> ::= 
+	"&define_type."{<Hierarchy definition>} {<Attribute definition>} 
+	{<Explanation definition>}
+<Hierarchy definition> ::= 
+	  <General type> "<" <Built-in type> "."
+	| <General type> "<" <General type> "."
+	| "{" <General type> {"," <General type> } "}" "<" <Built-in type> "."
+	| "{" <General type> {"," <General type> } "}" "<" <General type> "."
+<General type> ::= 
+	<Atom> besides the ones listed below
+	"integer," "string," "agent," "object," "cause,"
+	"condition," "purpose," "place," "source," "goal,"
+	"time," "time-from," "time-to," "imlement,"
+	"material," "quantity," "number," "manner," "basis"
+<Atom> ::= 
+	Line of alphanumeric, Japanese characters, or underline that begins 
+	with Alphabetical lower case letter or Japanese.
+	| Line of characters enclosed with two single quotes("'"). 
+<Built-in type> ::= 
+	"integer" | "string"
+<Attribute definition> ::= 
+	<General type> "."
+	| <General type> "([" <Attribute> {"," <Attribute> } "])" "."
+<Attribute> ::= 
+	<Attribute name> ":" <Attribute type>
+<Attribute name> ::= 
+	<Atom>
+<String> ::= 
+	Line of characters enclosed with two single quotes("'"). 
+<Attribute type> ::= 
+	<Type>
+	| <General type> "([" <Attribute> {"," <Attribute> } "])"
+<Type> ::= 
+	<General type> | <Built-in type> | <Constant type>
+<Constant type> ::= 
+	<Integer> | <String> | <Range type>
+<Range type> ::= 
+	"[" <Integer> ".." <Integer> "]"
+<Explanation definition> ::= 
+	<General type> "::" "["<String> {"," <String> } "]" "."　  *1
+<Integer> ::= integer
+
+*1 General type in the explanation definition must be defined in a hierarchy 
+   definition or attribute definition.
+
+(2) Rule definition
+
+<Rule definition> ::= 
+	"&define_absolute_rule." {<Absolute rule base>}
+	"&define_RBR_rule." {<RBR rule base>}
+	"&define_CBR_rule." {<CBR rule base>}
+<Absolute rule base> ::= 
+	"{" <Absolute rule> { "," <Absolute rule>} "}"
+<RBR rule base> ::= 
+	"{" <RBR rule> { "," <RBR rule>} "}"
+<Absolute rule> ::= 
+	<Unit> "::" <H term> "<-" <H term> { "," <H term>}
+	[ "||"<Rule explanation>] "."
+	| <Unit> "::" <H term> [ "||"<Rule explanation>] "."
+<RBR rule> ::= 
+	<Unit> "::" <H term> "<-" <Body H term> { "," <Body H term>}
+	[ "||"<Rule explanation>] "."
+	| <Unit> "::" <H term> [ "||"<Rule explanation>] "."
+<Unit> ::= 
+	Line of alphanumeric, Japanese characters, or underline that begins 
+	with Alphabetical lower case letter or Japanese.
+<H term> ::= 
+	<Predicate name> "(" [<Case description>] ")" ["|" <H term identifier>]    *1
+	| <H term identifier>
+	| ["-"] <Predicate name> "(" [<Case description>] ")"
+<Predicate name> ::= 
+	[<Variable> "/" ] <General type>
+	| <Variable>
+<Case description> ::= 
+	<Case name> "=" <Term> {"," <Case name> "=" <Term>}
+<Case name> ::= 
+	"agent" | "object" | "cause" | "condition" | "purpose" | "place" | "source" 
+	| "goal" | "time" | "time-from" | "time-to" | "imlement" | "material" 
+	| "quantity" | "number" | "manner" | "basis"
+<Term> ::= 
+	<H term> | <ψterm>
+<ψterm> ::= 
+	[<Variable> "/" ] <No variable ψterm>      *2
+	| <Variable>
+<No variable ψterm> ::= 
+	<Type>
+	| <General type> "[" <Attribute name> "=>" <ψterm>
+	{"," <Attribute name> "=>" <ψterm>} "]"
+<General type> ::= 
+	"Type definition (1) " reference
+<Variable> ::= 
+	Line of alphanumeric, Japanese characters, or underline that begins with 
+	alphabetical upper case letters or underline ("_").
+<Type> ::= 
+	"Type definition(1)" reference         *3 *4
+<Attribute name> ::= 
+	<Atom>
+<H term identifier> ::= 
+	<H term variable> | <H term constant>
+<H term variable> ::= 
+	"@" <Atom>
+<H term constant> ::= 
+	"#" <Atom>
+<Atom> ::= 
+	"Type definition(1)" reference
+<Body H term> ::= 
+	["not"] <H term> | <Built-in predicate>
+<Rule explanation> ::= 
+	<Clause> {<Clause>}
+<Clause > ::= 
+	<Variable> | <String>
+<String> ::= 
+	"Type definition(1)" reference
+<Built-in predicate> ::= 
+	<Built-in predicate name> "(" <ψterm> "," <ψterm> ")"
+<Built-in predicate name> ::= 
+	"less" | "greater" | "equal" | "not_equal" | "same" | "different"
+<CBR rule base> ::= 
+	"{" <CBR rule> { "," <CBR rule>} "}"
+<CBR rule> ::= 
+	<Unit> "::" <H term> "<-" <CBR body H term>
+	{ "," <CBR body H term>} [ "||"<Rule explanation>] "."
+	| <Unit> "::" <CBR H term> [ "||"<Rule explanation>] "."
+<CBR body> ::= 
+	["!"] <CBR H term>
+	| <Built-in predicate>
+<CBR H term> ::= 
+	<CBR predicate name> "(" [<CBR case description>] ")" [ "|" <H term identifier>]
+	| <H term identifier>
+	| ["-"] <CBR predicate name> "(" [<CBR case description>] ")"
+<CBR predicate name> ::= [<Variable> "/" ] <General type> 
+	  [ "<" <Type name> ">" ]
+	| <Variable>
+<CBR case description> ::= 
+	<Case name> "=" <CBR term> {"," <Case name> "=" <CBR term>}
+<CBR term> ::= 
+	["!"] <CBR H term> | ["!"] <CBR ψterm>
+<CBR ψterm> ::= 
+	[<Variable> "/" ] <No variable CBR ψterm>
+	| <Variable>
+<No variable CBR ψterm> ::= 
+	<Type> [ "<" <Type name> ">" ]
+	| <General type> "[" <Attribute name> "=>" <ψterm>
+	  {"," <Attribute name> "=>" <ψterm>} "]" [ "<" <General type> ">" ]
+
+*1 When the same H term variable appears multiple times in a rule, <Predicate
+name> "(" [<Case description>] ")" "|" is appended only to the following H term
+variable:
+
+ If the H term variable appears in the body, the H term variable that appears
+first in the body.
+
+ If the H term variable does not appear in a body, the H term variable that
+appears first in the head.
+
+When the same H term constant appears multiple times in a rule base (absolute
+rule base, RBR rule base, or CBR rule base), <Predicate name> "(" [<Case
+description>] ")" "|" is appended only to the following H term constant in the
+rule which appears first.
+
+ If the H term variable appears in the body, the H term constant that appears
+first in the body.
+
+ If the H term variable does not appear in a body, the H term constant that
+appears first in the head.
+
+By the restriction mentioned above, an infinite term of H term as the following
+cannot be described.  See(agent=Taro, object=#See)|#See.
+
+A variable cannot appear in <Predicate name> "(" [<Case description>] ")" of an
+H term with"|" <H term identifier> attached.
+
+*2 When the same variable appears multiple times in a rule, "/" <No variable ψ
+term> cannot be appended to variables other than the ones below.
+
+ If the variable appears in the body, the variable that appears first in the
+body.
+
+ If the variable does not appear in a body, the variable that appears first in
+the head.
+
+*3 General type must all be defined in the type definition file.
+
+*4 But Don't use Built-in type.
+
+(3) Partial order definition
+
+<Partial order definition>::=
+	<Unit hierarchy definition> <Standpoint definition> <Viewpoint definition>
+
+
+<Unit hierarchy definition> ::= 
+	"&define_unit." <Unit hierarchy> {<Unit hierarchy>}　  *1
+<Unit hierarchy> ::= 
+	<UnitSet> ":=" "{" <UnitSet> {"," <UnitSet> } "}."
+<UnitSet>::=
+	Line of alphanumeric, Japanese characters, or underline that begins 
+	with Alphabetical lower case letter or Japanese.
+	| <Unit>
+<Unit> ::= 	
+	"Rule definition(2)" reference
+
+<Standpoint definition> ::= 
+	"&define_standpoint." {<Standpoint>}    *2
+<Standpoint> ::= 
+	<Standpoint name> ":=" "{" <Unit relation>{ "," <Unit relation> }"}" "."
+	
+<Unit relation> ::= 
+	<Unit set> "<" <Unit set> {"<" <Unit set>}
+<Standpoint name> ::= 
+	Line of alphanumeric, Japanese characters, or underline that begins 
+	with an alphabetical lower case letter or Japanese character.
+<Unit set> ::=
+	<UnitSet> 
+	| "{" <UnitSet> {"," <UnitSet>} "}"
+
+
+<Viewpoint definition> ::= 
+	"&define_view." {<Viewpoint>}      *3
+<Viewpoint> ::= 
+	<Viewpoint name>":=" "{" <Standpoint name> "<" <Standpoint name>
+	{"<" <Standpoint name>} "}" "."    *4
+<Viewpoint name> ::= 
+	<Atom>
+<Atom> ::= 
+	"Type definition (1) " reference
+
+
+*1 All rule names need not to be described.
+*2 The same standpoint name cannot appear more than once.
+*3 The same viewpoint name cannot appear more than once.
+*4 Standpoint name must all be defined in the standpoint definition file.
+
+
+(4) Goal
+
+<Goal definition> ::= 
+	"&define_goal{" <GOALS> "}"
+  <GOALS>::=
+        <GOAL> { "," <GOAL>}
+  <GOAL>::=
+	["-"] <Predicate name> "(" <Case description> ")"
+<Predicate name> ::= 
+	"Rule definition(2)" reference
+<Case description> ::= 
+	"Rule definition(2)" reference
+
+
+Appendix 2. Handling a ψterm and type that takes an attribute
+
+(1) Inheritance of an attribute
+
+An attribute of a type is inherited according to the hierarchical relation.
+
+That is, the attribute of an upper type is merged as an attribute of a lower
+type.
+
+There are two kinds of inheritance of an attribute; in one case, the lower type
+does not have the same attribute name as the one of the upper type, and in the
+other case, it does.
+
+These are handled as follows:
+
+(1) Attribute name is not the same as the attribute name of an upper type
+
+The attribute defined for an upper type is inheriteded by an attribute of a
+lower type.
+
+(2) Attribute name is the same as the attribute name of an upper type
+
+The greatest lower bound between each type is taken as the lower type If there
+are multiple upper types and the same attribute is defined in them, then
+similarly, the greatest lower bound between this attribute and the attribute
+defined in the lower type is taken.
+
+A definition on the following type has been given as an example.
+
+&define_type.{
+{japanese, american} < person.
+nisei < japanese.
+nisei < american.
+taro < nisei.
+{male, female} < sex.
+racial mixture < yellow.
+racial mixture < white.
+{black, blue} < color.
+person [sex_distinction : sex].
+japanese [hair : black, race : yellow].
+american [eye : blue, race : white].
+taro [last name : "icot ", sex : man].}
+
+
+"japanese" has "person" as an upper type.
+
+The attribute "sex_distinction => sex" of "person" is inherited to "japanese" as
+it is, since it is not defined in "japanese."
+
+The attribute of "person" is inherited similarly to "american."
+
+"nisei" has "japanese" and "american" as upper types.
+
+Attributes of both "japanese" and "american" are inherited since no attributes
+are defined directly in "nisei."
+
+When attributes of these upper types are observed, there are "hair" and "eye" as
+attribute names that differ and there are "race" and "sex_distinction" as common
+attribute names.
+
+"hair" and "eye" are inherited as attributes of "nisei."
+
+"race" is a common attribute of an upper type.
+
+Therefore, the greatest lower bound of "yellow" which is a type of the attribute
+"race" of "japanese" and "white" which is a type of the attribute "race" of
+"american" are taken.
+
+As a result, "racial mixture" is given by inheritance as the type of the
+attribute "race" of "nisei."
+
+"sex" is inherited similarly as the type of the attribute "sex_distinction" of
+"person."
+
+For the attribute of "taro", the attribute defined in "taro" and "nisei" are
+merged.
+
+As a result, the attribute of "taro" becomes "last name=>"icot"," "race=>racial
+mixture," "hair=>black," "eye=>blue," "sex_distinction=>male."
+
+The following attribute is defined to "taro":
+
+Taro [last name =>"icot," race=>racial mixture, hair=>black, eye=>blue, sex_distinction=>male]
+
+(2) ψterm
+
+ψterm is introduced as a data structure that represents a concept.
+
+ψterm consists of the following elements:
+
+Type name : Represents a class of object, meaningwise.
+Attribute : Represents characteristics of a type.
+	    Represents by a pair of an attribute name to identify the attribute,
+	    and a type that becomes the value.
+Variable : Represents that different attributes have the same value.
+
+X is a variable, T a type name, L an attribute name, and ψ a ψterm.
+Then a ψterm can be defined recursively as follows.
+
+X : T[L1=>ψ1, ..., Ln=>ψn]
+
+This shows that the type name, T has L1, ..., Ln as attributes and ψ1, ..., ψn
+as values of the attribute.
+
+The notation of a variable can be omitted if only one appears in the ψterm.
+
+(3) Unification between ψterms
+
+The unification between ψterms is the operation to get the greatest common
+lower bound (glb).
+
+When two ψterms, x and y are the following,
+
+	x=t1[Ai=>Ui, Bj=>Uj]
+	y=t2[Ai=>Vi, Ck=>Vk]
+
+the greatest common lower bound glb(x,y) can be achieved by the following
+manner.
+
+	glb(x,y) = t3[Ai=>glb(Ui,Vi), Bj=>Uj, Ck=>Vk]
+
+where t3 = t1∩t2 .
+
+If t1∩t2 = bottom, glb(x,y) does not exist, and the unification fails.
+
+(4) Subsumption relation between ψterms
+
+When two ψterms, x and y are the following.
+x=t1[Ai=>Ui, Bj=>Uj]
+y=t2[Ai=>Vi]
+and if Vi subsumes Ui for all i and t1 < t2, y subsumes x.
+
+
+

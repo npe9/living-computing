@@ -1,0 +1,137 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_runCommandParser.
+
+:- public 
+    get_commandList/3.
+            
+:- with_macro pimos.
+
+%get_commandList
+    get_commandList(FileName,CommandList,R):-true |
+        dbtgui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(_)->
+                get_commandList1(File,CommandList,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+
+
+    get_commandList1(File1,CommandList,R):-true|
+        File1 = [getl(Line)|File],
+        (   Line = -1->
+                File        = [],
+                CommandList = [],
+                R           = normal(success)
+        ;
+            Line \= -1->
+                get_command(Line,CPA,R1),
+                (   R1 = normal(_)->
+                        get_commandList1(File,CommandList1,R),
+                        (   CPA = nil->
+                                CommandList = CommandList1
+                        ;
+                            CPA \=nil->
+                                CommandList = [CPA|CommandList1]
+                        )
+                ;
+                    R1 = abnormal(_)->
+                        File = [],
+                        R    = R1
+                )
+        ).
+
+
+%%get_command
+    get_command(Line,CPA,R):-true|
+        sifLibrary:get_commandArguments(Line,Command1,Arguments1),
+        get_command1(Command1,Arguments1,CPA,R).
+
+    get_command1(load,["type",FileName],CPA,R):-true|
+        CPA = {load,type,FileName},
+        R  = normal(success).
+    get_command1(load,["rule",FileName],CPA,R):-true|
+        CPA = {load,rule,FileName},
+        R  = normal(success).
+    get_command1(load,["view",FileName],CPA,R):-true|
+        CPA = {load,view,FileName},
+        R  = normal(success).
+    get_command1(load,["query",FileName],CPA,R):-true|
+        CPA = {load,query,FileName},
+        R  = normal(success).
+    get_command1(set,["solver","user"],CPA,R):-true|
+        CPA = {set,solver,user},
+        R  = normal(success).
+    get_command1(set,["solver","system"],CPA,R):-true|
+        CPA = {set,solver,system},
+        R  = normal(success).
+    get_command1(set,["goal",Pos1],CPA,R):-true|
+        sToiList([Pos1],Arguments,R1),
+        (   R1 = normal(_)->
+                Arguments = [Pos],
+                CPA = {set,goal,Pos},
+                R  = normal(success)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+    get_command1(set,["standpointList"|SPList1],CPA,R):-SPList1 \=[]|
+        sToaList(SPList1,SPList,R1),
+        (   R1 = normal(_)->
+                CPA = {set,standpointList,SPList},
+                R  = normal(success)
+        ;
+            R1 = abnormal(_)->
+                R  = R1
+        ).
+    get_command1(set,["unitList"|UnitList1],CPA,R):-UnitList1 \=[]|
+        sToaList(UnitList1,UnitList,R1),
+        (   R1 = normal(_)->
+                CPA = {set,unitList,UnitList},
+                R  = normal(success)
+        ;
+            R1 = abnormal(_)->
+                R  = R1
+        ).
+    get_command1(nil,_,CPA,R):-true|
+        CPA = nil,
+        R   = normal(success).
+otherwise.
+    get_command1(C,P,_,R):-true|
+        R  = abnormal({gui,'Illegal command',{C,P}}).
+
+
+%%%%%internal method
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({ui,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({ui,'Illegal atom',A})
+        ).
+
+

@@ -1,0 +1,298 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_runCommandParser.
+
+:- public 
+    get_commandList/3.
+            
+:- with_macro pimos.
+
+%get_commandList
+    get_commandList(FileName,CommandList,R):-true |
+        rbrcui_utility:get_file(FileName,File,R1),
+        (   R1 = normal(_)->
+                get_commandList1(File,CommandList,R)
+        ;
+            R1 = abnormal(_)->
+                R = R1
+        ).
+
+    get_commandList1(File1,CommandList,R):-true|
+        File1 = [getl(Line)|File],
+        (   Line = -1->
+                File        = [],
+                CommandList = [],
+                R           = normal(success)
+        ;
+            Line \= -1->
+                get_command(Line,CPA,R1),
+                (   R1 = normal(_)->
+                        get_commandList1(File,CommandList1,R),
+                        (   CPA = nil->
+                                CommandList = CommandList1
+                        ;
+                            CPA \=nil->
+                                CommandList = [CPA|CommandList1]
+                        )
+                ;
+                    R1 = abnormal(_)->
+                        File = [],
+                        R    = R1
+                )
+        ).
+
+
+%get_command
+    get_command(Line,CPA,R):-true|
+        sifLibrary:get_commandArguments(Line,Command1,Arguments1),
+        get_command1(Command1,Arguments1,CPA,R).
+
+%%load
+    get_command1("load",["goal",FileName],CPA,R):-true|
+        CPA = {load,goal,[FileName]},
+        R  = normal(success).
+    get_command1("load",["type",FileName],CPA,R):-true|
+        CPA = {load,type,[FileName]},
+        R  = normal(success).
+    get_command1("load",["rule",FileName],CPA,R):-true|
+        CPA = {load,rule,[FileName]},
+        R  = normal(success).
+    get_command1("load",["pom",FileName],CPA,R):-true|
+        CPA = {load,pom,[FileName]},
+        R  = normal(success).
+
+%compile
+    get_command1("compile",["goal",FileName],CPA,R):-true|
+        CPA = {compile,goal,[FileName]},
+        R  = normal(success).
+    get_command1("compile",["type",FileName],CPA,R):-true|
+        CPA = {compile,type,[FileName]},
+        R  = normal(success).
+    get_command1("compile",["rule",FileName],CPA,R):-true|
+        CPA = {compile,rule,[FileName]},
+        R  = normal(success).
+    get_command1("compile",["pom",FileName],CPA,R):-true|
+        CPA = {compile,pom, [FileName]},
+        R  = normal(success).
+
+%%set
+    get_command1("set",["gp",Pos],CPA,R):-true|
+	sToiList([Pos],Arguments,R),
+        CPA = {set,gp,Arguments}.
+    get_command1("set",["goal"|List],CPA,R):-List\=[]|
+        append_string:append_string(List,Goal),
+        CPA = {set,goal,[Goal]},
+        R  = normal(success).
+    get_command1("set",["view",View],CPA,R):-true|
+        sToaList([View],Arguments,R),
+        CPA = {set,useView,Arguments}.
+    get_command1("set",["sp"|SPList],CPA,R):-true|
+        sToaList(SPList,Arguments,R),
+        CPA = {set,useSpPriority,Arguments}.
+    get_command1("set",["unit"|UnitList],CPA,R):-UnitList \=[]|
+        sToaList(UnitList,Arguments,R),
+	CPA = {set,useUnit,Arguments}.
+
+    get_command1("set",["pl",PL],CPA,R):-true|
+	set_pl(PL,Arguments,R),
+	CPA = {set,pl,Arguments}.
+    get_command1("set",["pt","h"],CPA,R):-true|
+        CPA = {set,pt,[h]},
+        R   = normal(success).
+    get_command1("set",["pt","e"],CPA,R):-true|
+        CPA = {set,pt,[e]},
+        R   = normal(success).
+    get_command1("set",["cl",CL],CPA,R):-true|
+	set_cl(CL,Arguments,R),
+        CPA = {set,cl,Arguments}.
+    get_command1("set",["sim",Sim],CPA,R):-true|
+	set_similarity(Sim,Arguments,R),
+        CPA = {set,similarity,Arguments}.
+    get_command1("set",["weight",W],CPA,R):-true|
+	set_weight(W,Arguments,R),
+	CPA = {set,weight,Arguments}.
+    get_command1("set",["ptst"|PsiTermSimTB],CPA,R):-true|
+	set_psiTermSimTB(PsiTermSimTB,Arguments,R),
+        CPA = {set,psiTermSimTB,Arguments}.
+    get_command1("set",["ptaw",PsiTermAttWeight],CPA,R):-true|
+	set_psiTermAttWeight(PsiTermAttWeight,Arguments,R),
+        CPA = {set,psiTermAttWeight,Arguments}.
+
+    get_command1("set",["tf","on"],CPA,R):-true|
+        CPA = {set,tf,[on]},
+        R = normal(success).
+    get_command1("set",["tf","off"],CPA,R):-true|
+        CPA = {set,tf,[off]},
+        R = normal(success).
+    get_command1("set",["sr"|SpyRuleList],CPA,R):-true|
+        sToaList(SpyRuleList,Arguments,R),
+        CPA = {set,sr,Arguments}.
+    get_command1("set",["sg"|SpyGateList],CPA,R):-true|
+        get_spyGateList(SpyGateList,Arguments,R),
+        CPA = {set,sg,Arguments}.
+
+%solve 
+    get_command1("solve",[],CPA,R):-true|
+        CPA = {solve,nil,[]},
+        R   = normal(success).
+    get_command1("solve",List,CPA,R):-List\=[]|
+        append_string:append_string(List,Goal),
+        CPA = {solve,nil,[Goal]},
+        R   = normal(success).
+%lf
+    get_command1(nil,_,CPA,R):-true|
+        CPA = nil,
+        R   = normal(success).
+otherwise.
+    get_command1(C,P,_,R):-true|
+        R  = abnormal({drs,'Illegal command',{C,P}}).
+
+%%%%%internal method
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({drs,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({drs,'Illegal atom',A})
+        ).
+
+%%%%%%
+
+    get_spyGateList([],L,R):-true|
+        L = [],
+        R = normal(success).
+    get_spyGateList(["call"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [call|L1].
+    get_spyGateList(["redu"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [redu|L1].
+    get_spyGateList(["fail"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [fail|L1].
+otherwise.
+    get_spyGateList([H|_],_,R):-true|
+        R = abnormal({drs,'Illegal Argument',H}).
+
+
+%%%%%
+    set_similarity(Sim1,Arguments,Result):-true|
+        sToiList([Sim1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[Sim],
+                ( Sim>0,Sim=<100 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({drs,'Illegal similarity',Sim})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_weight(W1,Arguments,Result):-true|
+        sToiList([W1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[W],
+                ( W>0,W=<10 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({drs,'Illegal weight',W})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_psiTermSimTB([A1,B1,C1,D1,E1,F1],Arguments,Result):-true|
+        sToiList([A1,B1,C1,D1,E1,F1],Arguments1,R1),
+        ( R1 = normal(success)->
+		Arguments1=[A,B,C,D,E,F],
+                ( 100>=A,A>=B,B>=C,C>=D,D>=E,E>=F,F>0->
+                   Arguments = [{A,B,C,D,E,F}],Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({drs,'Illegal psiTermSimTB',[A,B,C,D,E,F]})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+otherwise.
+    set_psiTermSimTB(TB,_,Result):-true|
+        Result = abnormal({drs,'Illegal psiTermSimTB',TB}).
+
+    set_psiTermAttWeight(PsiTermAttWeight1,Arguments,Result):-true|
+        sToiList([PsiTermAttWeight1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[PsiTermAttWeight],
+                (  PsiTermAttWeight>0,PsiTermAttWeight=<10->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({drs,'Illegal psiTermAttWeight',PsiTermAttWeight})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+%%set pl
+    set_pl(PL1,Arguments,Result):-true|
+        sToiList([PL1],Arguments,R1),
+	( R1 = normal(success)->
+            Arguments=[PL],
+	    ( integer(PL),PL>0->
+	        Result = normal(success)
+	    ;
+	     otherwise;
+	      true->
+	        Result = abnormal({drs,'Illegal pl',PL})
+	    )
+	;
+	  R1 = abnormal(_)->
+	    Result = R1
+	).
+
+%set_cl
+    set_cl(CL1,Arguments,Result):-true|
+	sToiList([CL1],Arguments1,Result1),
+	( Result1 = normal(success),Arguments1=[CL],CL>=0->
+	    Arguments = [CL],Result= normal(success)
+	;
+	  Result1 = normal(success),Arguments1=[-1]->
+	    Arguments = [infinite],Result= normal(success)
+	;
+	otherwise;
+	  true->
+	    Result = Result1
+	).

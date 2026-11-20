@@ -1,0 +1,685 @@
+﻿<!- Copyright (C) 1996-1997 by Haruo Yokota,			>
+<!-     Japan Advanced Inst. of Sci. and Tech.,                 >
+<!-     1-1 Asahidai, Tatsunokuchi, Ishikawa 923-12, Japan.     >
+
+<html>
+<head>
+<title>Software developed through contract research program of FY 1995</title>
+</head>
+<body>
+
+<A HREF = ./Readme-J.html> [Japanese page is here] </A>
+<HR>
+
+This software consists of two independent parts:
+
+<H2>(1) parade (PARallel Active Database Engine) : </H2>
+		a parallel active database prototype system 
+<h2>(2) fatpas (FAult Tolerant PArallel Software) : </H2>
+		fault tolerant parallel software libraries and translator
+<p>
+	This one consists of following two parts: 
+
+<h3> (2-1) expand : macro conversion program for KLIC </h3>
+<h3> (2-2) fts    : fault tolerant parallel software libraries 	</h3>
+
+<HR>
+
+<center><h1>
+Parade: PARallel Active Database Engine
+</h1><br>
+by<p>
+<h3>
+Dr. Haruo Yokota at Japan Advanced Institute of Science and Technology (JAIST)
+</h3>
+</center>
+<br><br>
+
+<h3>[Features of the Software]</h3>
+
+This software is an experimental parallel active database system which
+enhances traditional database functionality with powerful rule
+processing capabilities.  The rules are defined by users to specify
+the desired active behavior that in passive database system must be
+encoded in applications.  <p>
+The software has the following functions:
+<ul>
+<li> It supports parallel nested transactions for efficient rule
+execution.  Using the nested transaction mechanism, an abortion of a
+child transaction has no effect upon the parent transaction.
+<li> A distributed deadlock detection mechanism makes the system avoid
+bottlenecks in concurrency control processing.
+<li> Several levels of parallelism are implemented, such as, intra
+relational algebra operation parallelism by partitioning data
+horizontally, inter algebra operation parallelism by pipeline
+execution of KLIC's logical variables, and parallel nested
+transactions.
+<li> It supports interactive SQL clients as well as relational algebra
+streams from KLIC clients.
+<li> The rule manager, which utilizes the suspending and resuming mechanism
+of KL1 processes, enables active data handling under the nested transaction.
+</ul>
+
+<h3>[Required Environment]</h3>
+
+KLIC version 2.002 on the following machines:
+<ul>
+<li> nCUBE2:nCX 5.105a 3.4.0 (nbsd and nsdisk are required)
+<li> Sun: SunOS 4.1.3 (Solaris 1.1), SunOS 5.4 (Solaris 2.4)
+<li> PC: 386 BSD (BSDI BSD/OS 2.0.1)
+<li> NEWS: NEWS-OS 6.1.1
+</ul>
+
+<h3>[File Configuration]</h3>
+
+Expanded directory has the following directories and files:
+
+<dl>
+<dt> parade/
+<dl>
+<dt> COPYRIGHT
+<dt> Readme-E.html
+<dt> Readme-J.txt
+<dt> advertise-E.html
+<dt> advertise-J.html
+<dt> rdbhosts
+<dt> Makefile
+<dl>
+<dt> common/
+<dl>
+<dt> client/
+<dl>
+<dt> sqlclt/
+<dl>
+<dt> dict.kl1
+<dt> hostname.kl1
+<dt> parser.kl1
+<dt> sqlclt.kl1
+<dt> uif.kl1
+</dl>
+<dt> oqlclt/
+<dl>
+<dt> hostname.kl1
+<dt> paraio.kl1
+<dt> uif.kl1
+<dt> dict.kl1
+<dt> oqlclt.kl1
+<dt> parser.kl1
+</dl>
+</dl>
+<dt> server/
+<dl>
+<dt> access.kl1
+<dt> access1.kl1
+<dt> algebra.kl1
+<dt> create.kl1
+<dt> deadlock.kl1
+<dt> delete.kl1
+<dt> drop.kl1
+<dt> exec.kl1
+<dt> insert.kl1
+<dt> lock.kl1
+<dt> log.kl1
+<dt> node_io.kl1
+<dt> processor.kl1
+<dt> projection.kl1
+<dt> rdbserv.kl1
+<dt> selection.kl1
+<dt> trans.kl1
+<dt> rule.kl1
+<dt> btree/
+<dl>
+<dt> bt_add.kl1
+<dt> bt_del.kl1
+<dt> bt_del1.kl1
+<dt> bt_del2.kl1
+<dt> bt_del3.kl1
+<dt> bt_get.kl1
+<dt> bt_name.kl1
+<dt> bt_page.kl1
+<dt> bt_pagename.kl1
+<dt> bt_util.kl1
+<dt> btinit.dat	
+<dt> btree.kl1
+</dl>
+</dl>
+<dt> coding/
+<dl>
+<dt> Makefile
+<dt> decoder.kl1
+<dt> encoder.kl1
+<dt> fastio.kl1
+</dl>
+<dt> util/
+<dl>
+<dt> Makefile
+<dt> util.kl1
+</dl>
+<dt> rel/
+<dl>
+<dt> Makefile
+<dt> attributes
+<dt> audit
+<dt> dept
+<dt> emp
+<dt> faculty
+<dt> relations.skel
+<dt> nrelations.skel
+<dt> rule
+</dl>
+<dt> newrel/
+</dl>
+<dt> doc/
+<dl>
+<dt> catalogue.tex
+<dt> papers.tex
+<dt> parade_doc.tex
+</dl>
+<dt> sun/
+<dl>
+<dt> client/
+<dl>
+<dt> sqlclt/
+<dl>
+<dt> Makefile
+</dl>
+<dt> oqlclt/
+<dl>
+<dt> Makefile
+</dl>
+<dt> javaQBE/
+<dl>
+<dt> readme
+<dt> index.html
+<dt> makefile
+<dt> DropPanel.java
+<dt> ScrollableTable.java
+<dt> GroupTable.java
+<dt> SelectPanel.java
+<dt> Attribute.java
+<dt> QbePanel.java
+<dt> Tag.java
+<dt> AttributePanel.java
+<dt> QbeSettingPanel.java
+<dt> TagTable.java
+<dt> AttributeTable.java
+<dt> QueryAttributes.java
+<dt> VStackLayout.java
+<dt> QueryCreate.java
+<dt> Client.java
+<dt> QueryData.java
+<dt> Communicate.java
+<dt> QueryDelete.java
+<dt> Const.java
+<dt> QueryDrop.java
+<dt> CreatePanel.java
+<dt> QueryInsert.java
+</dl>
+</dl>
+<dt> server/
+<dl>
+<dt> Makefile
+<dt> catalog.kl1
+</dl>
+<dt> socket/
+<dl>
+<dt> paraio.kl1
+<dt> socket.kl1
+</dl>
+</dl>
+<dt> ncube/
+<dl>
+<dt> client/
+<dl>
+<dt> Makefile
+</dl>
+<dt> server/
+<dl>
+<dt> Makefile
+<dt> catalog.kl1
+</dl>
+<dt> socket/
+<dl>
+<dt> paraio.kl1
+<dt> socket.kl1
+</dl>
+</dl>
+</dl>
+</dl>
+<p>
+
+<h3>[Others]</h3>
+
+This software is still under development.<p>
+
+
+<HR>
+
+<center><h1>
+KLIC to FLAT KL1 CONVERTER 
+</h1><br>
+by<p>
+<h3>
+Eiji Sugino, Haruo Yokota at JAIST (Japan Advanced Institute of Science and Technology, Hokuriku)
+</h3>
+</center>
+<br><br>
+
+<h3>[Function]</h3>
+This program converts KL1 programs included macro description 
+into almost flat KL1 programs.  
+
+<h3>[Files]</h3>
+<dl>
+<dt> fatpas/
+<dl>
+<dt> expand/
+<dl>
+<dt> README.j
+<dt> README.e
+<dt> README-j.html
+<dt> README-e.html
+<dt> Makefile
+<dt> diff.kl1
+<dt> kl1cmp.kl1
+<dt> kl1cmp0.kl1
+<dt> macro.kl1
+<dt> main.kl1
+<dt> obj.kl1
+<dt> util.kl1
+<dt> write.kl1
+<dt> difftest
+<dt> test
+</dl>
+</dl>
+</dl>
+
+<h3> [Installation]</h3>
+
+<h4>	1) Modify the Makefile if necessary </h4>
+<h4>	2) Do 'make all' and  you get 'kl1expand' </h4>
+
+<h3> [Usage] </h3>
+
+	Converted programs are put to Standard-Output.
+
+<h4> 1) You can put programs as file-name </h4>
+
+	% kl1expand File1 File2 ... 
+<br>
+	Attention) File names should be '***.kl1'.
+	
+<h4> 2) You can put programs from Standard-Input </h4>
+
+	% cat hogehoge.kl1 | kl1expand user
+<br>
+	Attention) You should put 'user' as file name.
+
+<h3> [Attention:] </h3>
+ This program is made from KLIC compiler, so 
+
+<h4>   - OR-condition in guard part is not expanded.  </h4>
+		ex.    head :-  (guard1 ; guard2) | body.  
+
+<h4>   - Commands after the module declaration are put at the last 
+	after clauses. </h4>
+<h4>   - Commands before the module declaration are put at the beggining 
+	before the module declaration. </h4>
+
+<HR>
+
+<center><h1>
+Fault-Tolerant Parallel Software Library
+</h1><br>
+by<p>
+<h3>
+Eiji Sugino and Haruo Yokota at JAIST (Japan Advanced Inst. of Sci. and Tech.,
+Hokuriku)
+</h3>
+</center>
+<br><br>
+
+<h3>[Function] </h3>
+
+	It executes programs like samples as fault-tolerant parallel software.
+
+<h4>  distribution(Primary,Backup) : in watchdog.kl1 </h4>
+
+	divides all nodes into two groups, and fork watchdog processes on
+	each nodes. 
+
+<h4>  copy(Args,Args1,Args2,Interrupt) : in copy.kl1 </h4>
+
+	replicates arguments 'Args' into 'Args1' and 'Args2',
+	and prepares forwarding processes for each variables.
+
+<h3> [Usages] </h3>
+
+	You should compile your program with 
+
+	<h4>	1) watchdog.kl1 and copy.kl1, and </h4>
+	<h4>	2) ncube.kl1   or  sparc.kl1 depended on your system </h4>
+
+	for example, 
+<dl>
+<dt>	% klic -v -dp -o dofts watchdog.kl1 copy.kl1 sparc.kl1 main.kl1 ft_queen.kl1 
+<dt>	% ./dofts -n -p5 7d 
+</dl>
+	Attention)  You should put nodes, number of which is more than 2.
+
+<h3> [Files] </h3>
+
+<dl>
+<dt> fatpas/
+<dl>
+<dt> fts/
+<dl>
+<dt> README.j        
+<dt> README-j.html
+<dt> README.e        
+<dt> README-e.html
+<dt> watchdog.kl1   
+<dt> copy.kl1      
+<dt> ncube.kl1 <dl>% for nCUBE2 </dl>
+<dt> sparc.kl1 <dl>% for SPARC </dl>
+<dt>        === samples ===
+<dt> ------- sample 1 ------- 
+<dl>
+	<dt> main.kl1
+	<dt> queen.kl1
+	<dt> ft_queen.kl1
+	<dt> ft_queen_faulty.kl1 
+</dl>
+<dt> ------- sample 2 ------- 
+<dl>
+	<dt> main-sim.kl1
+	<dt> f_sim.kl1
+	<dt> f_sim_faulty.kl1
+</dl>
+</dl>
+</dl>
+</dl>
+
+<HR>
+<h3> [Example]</h3>
+
+	This program is under construction and we cannot complete
+	as tracing facility on distributed KLIC is not available.
+	Now you can see an only example execution. 
+
+<h4>	1) compile it  </h4>
+
+<dl>
+<dt>	% make sparc
+</dl>
+
+<h4>	2) do without any error  </h4>
+<dl>
+<dt>	% ./dofts-s -p5 10 100d
+<dt>	Leader [1]
+<dt>	Leader [2]
+<dt>	Backup Site Group  : 2 4 
+<dt>	Primary Site Group : 1 3 
+<dt>	30 [67,1]                     
+	<dl> <== outputs A (30) and B ([67,1]) </dl>
+<dt>	Response time is 1359 msec
+</dl>
+
+<h4>	3) do with an error</h4>
+<dl>
+<dt>	amethyst[300]% ./dofts-sf -p5 10 100d
+<dt>	Leader [1]
+<dt>	Leader [2]
+<dt>	Primary Site Group : 1 3 
+<dt>	Backup Site Group  : 2 4 
+<dt>	BOMB! 3
+<dl>					<== 'exit' is called on Node 3  </dl>
+<dt>	30 FAULT was detected on PRIMARY SITE!	
+<dl>					<== fault is detected after output 'A' </dl>
+<dt>	FAULT was informed to BACKUP!
+<dt>	BACKUP change to PRIMARY !!! REBIRTH (1) [4]
+<dt>	REBIRTH (2) [4]
+<dt>	 ... REBIRTH ndet_replay [117,1]	
+<dl>					<== outputs B after some messages </dl>
+<dt>	^Ckill tasks from io_server		
+<dl>					<== finish with ^C  </dl>
+</dl>
+
+<HR>
+Because Fault-tolerant Conversion program is under construction,
+you should write one by hand. And we only guide your programming.
+
+<h3>[Guide for FATPAS]
+</h3>
+		
+<h4> 1) Split program into two parts; host program and fault-tolerant one.</h4>
+
+	ex.  Original user program is constructed of main.kl1 and queen.kl1 .
+		And  'queen:queen(N,Result)'  is the target for FATPAS.
+
+<h4>  2)  Convert the target program as followings.</h4>
+
+<h4>     2-1) The top clause is converted as followings.</h4>
+
+<dl>
+<dt> % Original HEAD <dl>
+<dt>	queen(N,R) :-       
+<dt>		% fork watchdogs <dl>
+<dt>	    watchdog:distribution(Primary,Backup),  </dl>
+<dt>		%  <dl>
+<dt>	    queen_1({N,R},Primary,Backup) @ lower_priority(10).  </dl>
+</dl>
+<dt>		%  <dl>
+<dt>	queen_1(Args,[PTop|Primary],[BTop|Backup]) :-  
+<dt>		% replicate arguments <dl>
+<dt>	    copy:copy(Args,Args1,Args2,Interrupt),  </dl>
+<dt>		% merge the interrupt streams<dl>
+<dt>	    Interrupt = {Interrupt1,Interrupt2}, Log = ack(Log1), </dl>
+<dt>		% fork a top goal for each sites<dl>
+<dt>	    PTop = {primary,queen,queen,Args1,Log,Signal,Interrupt1},
+<dt>	    BTop = {backup ,queen,queen,Args2,Log1,Signal,Interrupt2}. </dl>
+</dl> </dl>
+
+<h4>   2-2) Make clauses for the top goal in module 'exgoal'.</h4>
+
+	Define following clauses between '=-=-=-=-' lines.
+<dl>
+<dt>	:- module exgoal.
+<dt>
+<dt>	call_goal(Site,Module,Predicate,Args,Log,GSig,Raise)-SC :- <dl>
+ <dt>	    call_goal_0(Site,Module,Predicate,Args,Log,GSig,Raise)-SC @ lower_priority.
+</dl>
+<dt>	% =-=-=-=-
+<dt>	call_goal_0(primary,queen,queen,{A,B},Log,GSig,Raise)-SC :-  <dl>
+<dt>	    queen:queen_record(A,B,Log)+GSig+Raise-SC.  </dl>
+<dt>	call_goal_0(backup ,queen,queen,{A,B},Log,GSig,Raise)-SC :- <dl>
+<dt>	    queen:queen_replay(A,B,Log)+GSig+Raise-SC. </dl>
+<dt>	% =-=-=-=-
+<dt>	otherwise.
+<dt>	call_goal_0(Type,Module,Method,Arguments,Log,GSignal,Raise)-SC :- <dl>
+<dt>	    klicio:klicio([stdout(normal(Out))]),
+<dt>	    variable:wrap((Type::Module:Method/Arguments), G), 
+<dt>	    Out = [fwrite("Illegal goal invocation : "),
+		   putwt(G), nl,fflush(_)],
+<dt>	    Raise = []. </dl>
+</dl>
+
+<h4>     2-3)  Make clauses for the top goal in original module. </h4>
+
+<h4> (1) It's like Instant Replay conversion.</h4>
+
+<dl>	
+<dt>	% Record Version
+<dt>	queen_record(N,X,Log) :- <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_record(N,X,~(All-1),Log)@node(1). </dl>
+<dt>
+<dt>	queen_0_record(4,X,A,Log) :- queen_record([1,2,3,4],[],[],X,A,Log).
+<dt>	.... 
+<dt>
+<dt>	queen_record([P|U],C,L,I,PE,Log) :-  <dl>
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1),
+<dt> 		merge_record(I1,I2,I,Log2),
+<dt>		append(U,C,N),
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3). </dl>
+<dt>
+<dt>	% Replay Version
+<dt>	queen_replay(N,X,Log) :-  <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_replay(N,X,~(All-1),Log)@node(1). </dl>
+<dt>
+<dt>	queen_0_replay(4,X,A,Log) :- queen_replay([1,2,3,4],[],[],X,A,Log).
+<dt>	.... 
+<dt>
+<dt>	queen_replay([P|U],C,L,I,PE,Log) :-  <dl>
+<dt>	    Log = c1(Log1,Log2,Log3) | <dl>
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_replay(U,[P|C],L,I2,PE,TO,Log1),
+<dt> 		merge_replay(I1,I2,I,Log2),
+<dt>		append(U,C,N),
+<dt>		c1_replay(P,1,N,L,L,I1,PE,Log3). </dl> </dl>
+</dl>
+
+<h4>	(2) Add following arguments for all user-defined predicates. </h4>
+
+		GSig : is for interruption from top to leaf. 
+			You should carry it to sub-goals.
+<br>
+		Raise: is for signal from leaf to top. 
+			When the clause has several sub-goals,
+			you should merge them in sub-goals to one.
+<br>
+		SC:   is a variable pair for short-circuit detection.
+			You only put it on all goals. 
+
+<dl>
+<dt>	% Record Version
+<dt>	queen_record(N,X,Log)+GSig+Raise-SC :-  <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_record(N,X,~(All-1),Log)+GSig+Raise-SC @node(1). </dl>
+<dt>
+<dt>	queen_0_record(4,X,A,Log)+GSig+Raise-SC :- <dl>
+<dt>		queen_record([1,2,3,4],[],[],X,A,Log)+GSig+Raise-SC. </dl>
+<dt>	.... 
+<dt>	
+<dt>	queen_record([P|U],C,L,I,PE,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_record(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_record(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl>
+</dl>
+<h4>		(3) In Record Version, you should put a synchronization argument
+		'ack(...)' in head goal as followings.
+</h4>
+
+<dl>
+<dt>	queen_record([P|U],C,L,I,PE,ack(Log))+GSig+Raise-SC :- <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_record(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_record(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl>
+<dt>	queen_record([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>		Raise=[],
+<dt>		Log=c2(Ack), 
+<dt>		I=[]. </dl>
+</dl>
+
+<h4>		(4) In Record Version, you should put a synchronization goal
+		'output(...)' for body-unification as followings.
+</h4>
+
+<dl>
+<dt>	queen_record([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>		Raise=[],
+<dt>		Log=c2(Ack), 
+<dt>		output(Ack,I, [])-SC. </dl>
+<dt>	     
+<dt>	output(Ack,X,Y)-SC :- wait(Ack) | X = Y.  
+</dl>
+
+<h4>		(5) In Replay Version, you should put a clause for interruption check.</h4>
+<dl>
+<dt>	% Replay Version
+<dt>	queen_replay(A,   B,   Log)+GSig+Raise-SC :- <dl>
+<dt>	    (wait(Log) -> queen_replay_0(A, B, Log)+GSig+Raise-SC ;
+<dt>	     alternatively;
+<dt>	     GSig = [rebirth|GSig1] -> queen_record(A, B, _)+GSig1+Raise-SC).</dl>
+<dt>	queen_replay_0(N,X,Log)+GSig+Raise-SC :- <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_replay(N,X,~(All-1),Log)+GSig+Raise-SC @node(1).</dl>
+<dt>
+<dt>	queen_0_replay( 4,X,A,Log)+GSig+Raise-SC :- <dl>
+<dt>		queen_replay([1,2,3,4],[],[],X,A,Log)+GSig+Raise-SC. </dl>
+<dt>	....
+<dt>
+<dt>	queen_record([P|U],C,L,I,PE,Log)+GSig+Raise-SC :- <dl>
+<dt>	   Log = c1(Log1,Log2,Log3) | <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_replay(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_replay(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_replay(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_replay(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl></dl>
+<dt>	queen_replay([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>	    Log=c2(Ack) | <dl>
+<dt>		Raise=[],
+<dt>		I=[]. </dl></dl>
+</dl>
+
+<h4>		(6) You should change throwing goals ('goal @ node(N)') into 
+		unification goals as followings.
+</h4>
+
+<dl>
+<dt>	throw_record(A,B,C,D,E,F,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = [goal(primary,queen,queen,{A,B,C,D,E},Log)]. </dl>
+<dt>	throw_replay(A,B,C,D,E,F,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = [goal(primary,queen,queen,{A,B,C,D,E},Log)]. </dl>
+</dl>
+
+	  In this version, goals are thrown to the neighboring node,
+	so you need not add destination node number.
+
+<h4>		(7) You should add clauses for throwing goals in module 'exgoal'. </h4>
+<dl>
+<dt>	call_goal_0(primary,queen,queen,{A,B,C,D,E},Log,GSig,Raise)-SC :-<dl>
+<dt>	    queen:queen_record(A,B,C,D,E,Log)+GSig+Raise-SC. </dl>
+<dt>	call_goal_0(backup ,queen,queen,{A,B,C,D,E},Log,GSig,Raise)-SC :-<dl>
+<dt>	    queen:queen_replay(A,B,C,D,E,Log)+GSig+Raise-SC.</dl>
+<dt>	....
+<dt>	otherwise.
+<dt>	call_goal_0(Type,Module,Method,Arguments,Log,GSignal,Raise)-SC :-<dl>
+<dt>	    klicio:klicio([stdout(normal(Out))]),
+<dt>	    variable:wrap((Type::Module:Method/Arguments), G), 
+<dt>	    Out = [fwrite("Illegal goal invocation : "),
+		   putwt(G), nl,fflush(_)],
+<dt>	    Raise = []. </dl>
+</dl>
+	Attention) You can get "ft_queen.kl1" after some optimization.
+
+<hr>
+
+<h3>[FTP]</h3>
+<ul>
+<!-- <li> <a href="../../../../ifs/contract-research/95/DH7-20/README.eng">README</a> -->
+<li> Programs and Documents [160KB]
+<a href="../../../../ifs/contract-research/95/DH7-20/H7-20.tgz">
+<img src="../../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+<adress><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></adress>
+</body>
+</html>
+
+
+

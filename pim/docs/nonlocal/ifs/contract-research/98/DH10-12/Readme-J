@@ -1,0 +1,31 @@
+Copyright (C) 1999 Takeo Igarashi
+
+ファイルの内容
+
+ディレクトリ構成
+
+H10-12/			トップディレクトリ
+
+H10-12/pegasus/		実行環境 トップディレクトリ
+H10-12/pegasus/pegasus.html	図形描画エディタ Pegasus アプレット実行用 HTML ページ 
+H10-12/pegasus/manual.html	HTML 形式 マニュアル（日本語）	
+H10-12/pegasus/manual-e.html	HTML 形式 マニュアル(英語版)	
+H10-12/pegasus/manual/		マニュアル用図版
+H10-12/pegasus/programs/	JAVA class files
+H10-12/pegasus/README.txt	ドキュメント
+
+H10-12/source/		ソースファイル トップディレクトリ
+H10-12/source/program/		図形描画エディタ Pegasus JAVA1.1 ソースファイル
+H10-12/source/document/		ソースファイルの説明
+H10-12/source/README.txt	ドキュメント
+
+H10-12/README-J		このファイル　 
+H10-12/README-E		このファイルの英語版　 
+
+H10-12/use-of-software-J	ソフトウェアの利用条件
+H10-12/use-of-software-E	ソフトウェアの利用条件の英語版
+
+
+!!! pegasus.html を使用するには JDK1.1 に対応したブラウザが必要です。 !!
+
+

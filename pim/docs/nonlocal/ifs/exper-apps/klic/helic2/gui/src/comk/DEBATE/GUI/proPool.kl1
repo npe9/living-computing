@@ -1,0 +1,72 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_protocolPool.
+
+:- public 
+    get/5.
+            
+:- with_macro pimos.
+
+    get(Which,Command,Parameter,Arguments,ProtocolList):-true|
+        get1(Command,Parameter,Arguments,ProtocolList1),
+        ProtocolList = {Which,ProtocolList1}.
+
+%set
+    get1(set,useView,View,PL):-View\=nil |
+        PL = [set_parameter(useView,View,_R)].
+    get1(set,defaultUseView,SPList,PL):-true |
+        PL = [set_parameter(defaultUseView,SPList,_R)].
+    get1(set,useUnit,all,PL):-true |
+        PL = [set_parameter(useUnit,all,_R)].
+    get1(set,useUnit,UnitList,PL):-UnitList \=all |
+        PL = [set_parameter(useUnit,UnitList,_R)].
+    get1(set,goal,Goal,PL):-Goal\=nil |
+        PL = [set_parameter(goal,Goal,_R)].
+    get1(set,solver,S,PL):-true |
+        PL = [set_parameter(solver,S,_R)].
+    get1(set,depth,Depth,PL):-true |
+        PL = [set_parameter(counter,Depth,_R)].
+    get1(set,explantionMode,Mode,PL):-true |
+        PL = [set_parameter(lang,Mode,_R)].
+
+%get
+    get1(show,useView,nil,PL):-true |
+        PL = [get_parameter(useView,_View,_R)].
+    get1(show,view,all,PL):-true |
+        PL = [get_parameter({view,all},_ViewList,_R1)].
+    get1(show,view,ViewName,PL):-ViewName\=all |
+        PL = [get_parameter({view,ViewName},_View,_R)].
+
+    get1(show,useUnit,nil,PL):-true |
+        PL = [get_parameter(useUnit,_UseUnitList,_R)].
+    get1(show,unit,all,PL):-true|
+        PL = [get_parameter({unit,all},_UnitList,_R1),
+              get_parameter(useUnit,_UseUnitList,_R2)].
+    get1(show,unit,UnitNameList,PL):-UnitNameList\=all |
+        PL = [get_parameter({unit,UnitNameList},_UnitList,_R)].
+
+    get1(show,sp,nil,PL):-true |
+        PL = [get_parameter({sp,all},_SPList,_R)].
+    get1(show,sp,SpName,PL):-SpName\=nil |
+        PL = [get_parameter({sp,SpName},_Sp,_R)].
+
+%load
+    get1(load,view,ViewData,PL):-true |
+        PL = [set_parameter(view,ViewData,_R)].
+    get1(load,rule,RuleData,PL):-true |
+        PL = [set_parameter(rule,RuleData,_R)].
+    get1(load,type,FileName,PL):-true |
+        PL = [set_parameter(type,FileName,_R)].
+
+%%execute
+    get1(execute,start_debate,NH,PL):-true |
+        PL = [execute(start_debate,NH,_ST,_R)].
+    get1(execute,start_solve,NH,PL):-true |
+        PL = [execute(start_solve,NH,_,_R)].
+
+
+
+

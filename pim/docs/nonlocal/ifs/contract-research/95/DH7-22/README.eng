@@ -1,0 +1,19 @@
+``Copyright (C) 1996 Kenzo KONISHI and Kazuo TAKI in Kobe University''
+File Configuration
+
+Expanded directory has the following directories and files :
+
+H7-22-----------+--- Intro      (Advertisement in Japanese)
+                |
+                +--- INSTALL    
+                |
+                +--- ForUsers   (Who use this program? in Japanese)
+                |
+                +--- manual.tex (User's Manual in Japanese)
+                |
+                +--- Prog ------+---- C Program Source
+                |               |
+                |               +---- MCNC-Data (Sample Data)
+                |               
+                +--- Copyright
+

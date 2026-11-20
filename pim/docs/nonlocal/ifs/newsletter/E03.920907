@@ -1,0 +1,175 @@
+							7 September, 1992
+								    No. 3
+
+                   ICOT FREE SOFTWARE NEWSLETTER
+                   -----------------------------
+
+
+[FTP Release for Domestic Area]
+
+    Since the first release of ICOT Free Software on 7th August,
+anonymous FTP has been available only from abroad.  On 7th September,
+anonymous FTP from domestic (within Japan) becomes also available.  
+ICOT Free Software programs are obtainable through anonymous FTP from 
+our ftp-server machine: 
+			    ftp.icot.or.jp .
+
+
+
+[How to Get IFS Programs through FTP]
+
+     The following is the standard way to get programs from the FTP-
+server at ICOT.
+
+  1)  ftp ftp.icot.or.jp
+	    Connect to ICOT FTP-server machine by FTP command.
+  2)  Name: anonymous
+      Password:
+	    Login with the user name ``anonymous'', and input your
+	    mail address as the password.
+  3)  FTP> cd ifs
+	    Enter into the directory ``ifs''.
+  4)  FTP> get README
+	    Get README file first.  This file contains overall
+	    information on the ICOT Free Software.
+  5)  Find out desired files by referring to the directory structure
+	    shown in README file.
+  6)  FTP> binary
+	    Set transfer mode of FTP to image (binary).
+  7)  FTP> get XXXXX.tar.Z
+	    Get an archive file.
+
+
+
+[Report on the Accesses from Abroad]
+
+    By 1st September, since the first release of ICOT Free Software on
+7th August, there have been over 200 persons accessed to the FTP-server
+machine at ICOT, and more than 1000 files have been transferred as
+follows:
+
+    +-----------+-----------------------+------------------------+
+    | Country   | # of Accessed Persons | # of Transferred Files |
+    +-----------+-----------------------+------------------------+
+    | USA       |	   108		|	    644		 |
+    | Canada    |	    18		|	     97		 |
+    | German    |	    12		|	     63		 |
+    | UK        |	    14		|	     51		 |
+    | Austria   |	     7		|	     36		 |
+    | Australia |	    10		|	     36		 |
+    | Korea     |	     7		|	     30		 |
+    | France    |	     7		|	     26		 |
+    | Holland   |	     9		|	     26		 |
+    | Sweden    |	    11		|	     25		 |
+    | Others    |	    24		|	     93		 |
+    +-----------+-----------------------+------------------------+
+    |   Total   |	   227		|	   1127		 |
+    +-----------+-----------------------+------------------------+
+
+
+
+[Contents of the Second Release of IFS]
+
+    The following is the list of the 15 ICOT Free Software Programs to be
+released on 7th September.  In total, 58 ICOT Free Software Programs have
+been released.  The number attached to the name of each software is the
+same as that in the list of ICOT Free Software.  The size of each
+tar-file is also given.
+
+  Symbol Processing: 3
+  ------------------------------------------------------------------
+   1 KL1 Programming Environment on UNIX: PDSS			2.6MB
+   2 Parallel and Distributed KL1 Language Processor: VPIM	1.8MB
+   5 A Concurrent Object-oriented Language: A'UM-90		1.1MB
+
+  Knowledge Representation, Knowledge Base and Constraints: 1
+  ------------------------------------------------------------------
+  12 Nested Relational Database Management System: Kappa-II	5.7MB
+	(Data files are attached)
+
+  Problem Solving, Meta-reasoning, Theorem Proving: 3
+  ------------------------------------------------------------------
+  22 Parallel Model Generation Theorem Prover: MGTP		44KB
+  25 Forward Chaining Inference System: KORE/IE			79KB
+  30 Parallel Problem Solving System				72KB
+
+  Natural Language Processing: 5
+  ------------------------------------------------------------------
+  36 A Sentence Retrieval Tool: KWIC (CESP Version)		1.1MB
+  40 Linguistic Knowledge Description Language			1.5MB
+  41 The Syntax Analyzer					167KB
+  42 Experimental System for Argument Text Generation: Dulcinea	868KB
+  49 Text Structure Analysis System				316KB
+
+  Experimental Application: 3
+  ------------------------------------------------------------------
+  52 Go Playing Game System ``GOG'' (sequential version)	628KB
+  53 Go Playing Game System ``GOG'' (parallel version)		834KB
+  58 LSI Routing Program					89KB
+
+
+
+[Address Change of AIR]
+
+    AI Language Research Institute (AIR) will move to the following
+address.  If you would like to contact on Common ESP, use the following
+address after 17th September.
+
+	Research Management Department
+	AI Language Research Institute, Ltd.
+
+        c/o Computer & Information Systems Laboratory
+	Mitsubishi Electric Corporation
+	1-1, Ofuna 5-chome, Kamakura
+	Kanagawa 247 Japan
+
+	e-mail: cesp-request@air.co.jp
+	FAX:	+81-467-48-4847
+
+
+
+[PDSS Release]
+
+    PDSS (PIMOS Development Support System) is a system to execute KL1
+programs on BSD UNIX workstations, and compatibility with the KL1 system
+on the Multi-PSI/PIM is preserved except in the implementation method and
+execution efficiency.  Executing large scale KL1 programs on PDSS
+directly is difficult because of several constraints, but relatively
+small programs or parts of large programs are executable on PDSS.
+
+    PDSS is released as ICOT Free Software at the second release on 7th
+September.
+
+
+
+[Contacts]
+
+    For information on ICOT Free Software, please contact
+
+			    ifs@icot.or.jp
+
+by e-mail.  If you receive the paper edition of this newsletter, please
+let us know your e-mail address and we will send you the electronic
+edition.  If you cannot use the e-mail facility, please contact the
+address below.
+
+    A list of ICOT Free Software ``ICOT Free Software Catalogue'' was
+distributed at the International Conference on Fifth Generation Computer
+Systems 1992, held at the beginning of June, 1992.  If you do not have a
+copy of this list, please contact IFS desk with your physical mail
+address.
+
+    If there are persons in your neighborhood who are interested in ICOT
+Free Software, please let us know their names and both e-mail and
+physical mail addresses so that we can send them newsletters and the
+catalogue.
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21th Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618

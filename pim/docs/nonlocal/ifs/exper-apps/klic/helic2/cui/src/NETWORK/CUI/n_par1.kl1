@@ -1,0 +1,515 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_parser1.
+
+:- public 
+    get_commandArguments/5.
+            
+:- with_macro pimos.
+
+%get_commandArguments
+    get_commandArguments(Command,AgentName,Parameter,Arguments,Result):-true|
+        dbtcui_ioUtility:get_commandArguments("HELIC-II>",Command1,Arguments1),
+        parse(Command1,Arguments1,Command2,AgentName2,Parameter2,Arguments2,Result2),
+        (   Result2 = normal(_),Command2\=nil->
+                Command = Command2,AgentName=AgentName2,
+                Parameter=Parameter2,Arguments=Arguments2,Result=Result2
+        ;
+            Result2 = normal(_),Command2=nil->
+                get_commandArguments(Command,AgentName,Parameter,Arguments,Result)
+        ;
+            Result2 = abnormal(Reason)->
+                dbtcui_ioUtility:show_error(Reason,R),
+                (   wait(R)->
+                        get_commandArguments(Command,AgentName,Parameter,Arguments,Result))
+        ).
+
+%nil
+    parse(nil,_,Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = nil,AgentName=nil,Parameter = nil,Arguments=nil,Result=normal(success).
+
+%run
+    parse("run",[FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = run,AgentName=nil,Parameter = nil,Arguments=[FileName],Result=normal(success).
+
+%load
+    parse("load",["goal",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=nil,Parameter = goal,Arguments=[FileName],Result=normal(success).
+
+    parse("load",["p","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse("load",["p","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse("load",["p","pom",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=p,Parameter = pom,Arguments=[FileName],Result=normal(success).
+
+    parse("load",["d","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse("load",["d","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse("load",["d","pom",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = load,AgentName=d,Parameter = pom,Arguments=[FileName],Result=normal(success).
+
+%trans
+    parse("trans",["goal",FileName1,FileName2],
+		Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = trans,AgentName=nil,Parameter = goal,
+	Arguments=[FileName1,FileName2],Result=normal(success).
+
+    parse("trans",["type",FileName1,FileName2],
+		Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = trans,AgentName=p,Parameter = type,
+	Arguments=[FileName1,FileName2],Result=normal(success).
+    parse("trans",["rule",FileName1,FileName2],
+		Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = trans,AgentName=p,Parameter = rule,
+	Arguments=[FileName1,FileName2],Result=normal(success).
+    parse("trans",["pom",FileName1,FileName2],
+		Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = trans,AgentName=p,Parameter = pom,
+	Arguments=[FileName1,FileName2],Result=normal(success).
+
+%compile
+    parse("compile",["goal",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=nil,Parameter = goal,Arguments=[FileName],Result=normal(success).
+
+    parse("compile",["p","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=p,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse("compile",["p","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=p,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse("compile",["p","pom",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=p,Parameter = pom,Arguments=[FileName],Result=normal(success).
+
+    parse("compile",["d","type",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=d,Parameter = type,Arguments=[FileName],Result=normal(success).
+    parse("compile",["d","rule",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=d,Parameter = rule,Arguments=[FileName],Result=normal(success).
+    parse("compile",["d","pom",FileName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = compile,AgentName=d,Parameter = pom,Arguments=[FileName],Result=normal(success).
+
+%set
+    parse("set",["p","solver","user"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = solver,Arguments=[user],Result=normal(success).
+    parse("set",["p","solver","system"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = solver,Arguments=[system],Result=normal(success).
+    parse("set",["d","solver","user"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = solver,Arguments=[user],Result=normal(success).
+    parse("set",["d","solver","system"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = solver,Arguments=[system],Result=normal(success).
+
+    parse("set",["gp",Pos],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=nil,Parameter = gp,sToiList([Pos],Arguments,Result).
+    parse("set",["goal"|List],Command,AgentName,Parameter,Arguments,Result):-List\=[]|
+        Command = set,AgentName=nil,Parameter = goal,append_string:append_string(List,Goal),
+	Arguments = [Goal],Result=normal(success).
+
+    parse("set",["p","view",View],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = useView,sToaList([View],Arguments,Result).
+    parse("set",["d","view",View],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = useView,sToaList([View],Arguments,Result).
+
+    parse("set",["p","sp"|SPList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = useSpPriority,sToaList(SPList,Arguments,Result).
+    parse("set",["d","sp"|SPList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = useSpPriority,sToaList(SPList,Arguments,Result).
+
+    parse("set",["p","unit"|UnitList],Command,AgentName,Parameter,Arguments,Result):-
+	UnitList \=[]|
+        Command = set,AgentName=p,Parameter = useUnit,sToaList(UnitList,Arguments,Result).
+    parse("set",["d","unit"|UnitList],Command,AgentName,Parameter,Arguments,Result):-
+	UnitList \=[]|
+        Command = set,AgentName=d,Parameter = useUnit,sToaList(UnitList,Arguments,Result).
+
+    parse("set",["p","pl",PL],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = pl,
+	set_pl(PL,Arguments,Result).
+    parse("set",["d","pl",PL],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = pl,
+	set_pl(PL,Arguments,Result).
+
+    parse("set",["p","pt","h"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = pt,Arguments=[h],Result=normal(success).
+    parse("set",["d","pt","h"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = pt,Arguments=[h],Result=normal(success).
+    parse("set",["p","pt","e"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = pt,Arguments=[e],Result=normal(success).
+    parse("set",["d","pt","e"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = pt,Arguments=[e],Result=normal(success).
+
+    parse("set",["p","cl",CL],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = cl,set_cl(CL,Arguments,Result).
+    parse("set",["d","cl",CL],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = cl,set_cl(CL,Arguments,Result).
+
+
+    parse("set",["p","sim",Sim],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter=similarity,
+        set_similarity(Sim,Arguments,Result).
+    parse("set",["d","sim",Sim],Command,AgentName,Parameter,Arguments,Result):-true|
+	Command = set,AgentName=d,Parameter=similarity,
+        set_similarity(Sim,Arguments,Result).
+
+    parse("set",["p","weight",W],Command,AgentName,Parameter,Arguments,Result):-true|
+	Command = set,AgentName=p,Parameter=weight,
+        set_weight(W,Arguments,Result).
+    parse("set",["d","weight",W],Command,AgentName,Parameter,Arguments,Result):-true|
+	Command = set,AgentName=d,Parameter=weight,
+        set_weight(W,Arguments,Result).
+
+    parse("set",["p","ptst"|PsiTermSimTB],
+                Command,AgentName,Parameter,Arguments,Result):-PsiTermSimTB\=[]|
+	Command=set,AgentName=p,Parameter=psiTermSimTB,
+        set_psiTermSimTB(PsiTermSimTB,Arguments,Result).
+    parse("set",["d","ptst"|PsiTermSimTB],
+                Command,AgentName,Parameter,Arguments,Result):-PsiTermSimTB\=[]|
+	Command=set,AgentName=d,Parameter=psiTermSimTB,
+        set_psiTermSimTB(PsiTermSimTB,Arguments,Result).
+
+    parse("set",["p","ptaw",PsiTermAttWeight],
+                Command,AgentName,Parameter,Arguments,Result):-true|
+	Command=set,AgentName=p,Parameter=psiTermAttWeight,
+        set_psiTermAttWeight(PsiTermAttWeight,Arguments,Result).
+    parse("set",["d","ptaw",PsiTermAttWeight],
+                Command,AgentName,Parameter,Arguments,Result):-true|
+	Command=set,AgentName=d,Parameter=psiTermAttWeight,
+        set_psiTermAttWeight(PsiTermAttWeight,Arguments,Result).
+
+%send
+
+    parse("show",["goal"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=nil,Parameter = goal,Arguments=[],Result=normal(success).
+
+    parse("show",["p","view"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = useView,Arguments=[],Result=normal(success).
+    parse("show",["d","view"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = useView,Arguments=[],Result=normal(success).
+    parse("show",["p","view",ViewName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = view,sToaList([ViewName],Arguments,Result).
+    parse("show",["d","view",ViewName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = view,sToaList([ViewName],Arguments,Result).
+
+    parse("show",["p","sp"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = useSpPriority,Arguments=[],Result=normal(success).
+    parse("show",["d","sp"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = useSpPriority,Arguments=[],Result=normal(success).
+    parse("show",["p","sp",SP],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = sp,sToaList([SP],Arguments,Result).
+    parse("show",["d","sp",SP],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = sp,sToaList([SP],Arguments,Result).
+
+    parse("show",["p","unit"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = useUnit,Arguments=[],Result=normal(success).
+    parse("show",["d","unit"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = useUnit,Arguments=[],Result=normal(success).
+    parse("show",["p","unit",Unit],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = unit,sToaList([Unit],Arguments,Result).
+    parse("show",["d","unit",Unit],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = unit,sToaList([Unit],Arguments,Result).
+
+    parse("show",["p","solver"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = solver,Arguments=[],Result=normal(success).
+    parse("show",["d","solver"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = solver,Arguments=[],Result=normal(success).
+
+    parse("show",["p","pl"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = pl,Arguments=[],Result=normal(success).
+    parse("show",["d","pl"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = pl,Arguments=[],Result=normal(success).
+
+    parse("show",["p","pt"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = pt,Arguments=[],Result=normal(success).
+    parse("show",["d","pt"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = pt,Arguments=[],Result=normal(success).
+
+    parse("show",["p","cl"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = cl,Arguments=[],Result=normal(success).
+    parse("show",["d","cl"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = cl,Arguments=[],Result=normal(success).
+
+    parse("show",["p","sim"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = similarity,Arguments=[],Result=normal(success).
+    parse("show",["d","sim"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = similarity,Arguments=[],Result=normal(success).
+
+    parse("show",["p","weight"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = weight,Arguments=[],Result=normal(success).
+    parse("show",["d","weight"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = weight,Arguments=[],Result=normal(success).
+
+    parse("show",["p","ptst"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = psiTermSimTB,Arguments=[],Result=normal(success).
+    parse("show",["d","ptst"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = psiTermSimTB,Arguments=[],Result=normal(success).
+
+    parse("show",["p","ptaw"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = psiTermAttWeight,Arguments=[],Result=normal(success).
+    parse("show",["d","ptaw"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = psiTermAttWeight,Arguments=[],Result=normal(success).
+
+%check
+    parse("check",["p","unit",UnitName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = check,AgentName=p,Parameter = unit,sToaList([UnitName],Arguments,Result).
+    parse("check",["d","unit",UnitName],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = check,AgentName=d,Parameter = unit,sToaList([UnitName],Arguments,Result).
+
+%solve
+    parse("solve",["p"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = solve,AgentName=p,Parameter = nil,Arguments=[],Result=normal(success).
+    parse("solve",["d"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = solve,AgentName=d,Parameter = nil,Arguments=[],Result=normal(success).
+
+    parse("solve",["p"|List],Command,AgentName,Parameter,Arguments,Result):-List\=[]|
+        Command = solve,AgentName=p,Parameter = nil,
+	append_string:append_string(List,Goal),
+	Arguments = [Goal],Result=normal(success).
+    parse("solve",["d"|List],Command,AgentName,Parameter,Arguments,Result):-List\=[]|
+        Command = solve,AgentName=d,Parameter = nil,
+	append_string:append_string(List,Goal),
+	Arguments = [Goal],Result=normal(success).
+
+%ab
+    parse("ab",["p"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = ab,AgentName=p,Parameter = argument,Arguments=[],Result=normal(success).
+    parse("ab",["d"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = ab,AgentName=d,Parameter = argument,Arguments=[],Result=normal(success).
+
+%startDebate
+    parse("start",[],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = startDebate,AgentName=nil,Parameter = nil,
+	Arguments=[],Result=normal(success).
+
+    parse("start",List,Command,AgentName,Parameter,Arguments,Result):-List\=[]|
+        Command = startDebate,AgentName=nil,Parameter = nil,
+	append_string:append_string(List,Goal),
+	Arguments = [Goal],Result=normal(success).
+
+%quit
+    parse("quit",[],Command,_AgentName,Parameter,Arguments,Result):-true|
+        Command = quit,AgentName=nil,Parameter = nil,Arguments=[],Result=normal(success).
+
+%tracer
+%%flag
+    parse("set",["p","tf","on"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = tf,Arguments=[on],Result=normal(success).
+    parse("set",["d","tf","on"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = tf,Arguments=[on],Result=normal(success).
+    parse("set",["p","tf","off"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = tf,Arguments=[off],Result=normal(success).
+    parse("set",["d","tf","off"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = tf,Arguments=[off],Result=normal(success).
+    parse("show",["p","tf"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = tf,Arguments=[],Result=normal(success).
+    parse("show",["d","tf"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = tf,Arguments=[],Result=normal(success).
+%%spy(rule)
+    parse("set",["p","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("set",["d","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("add",["p","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = add,AgentName=p,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("add",["d","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = add,AgentName=d,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("remove",["p","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = remove,AgentName=p,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("remove",["d","sr"|SpyRuleList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = remove,AgentName=d,Parameter = sr,sToaList(SpyRuleList,Arguments,Result).
+    parse("clear",["p","sr"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = clear,AgentName=p,Parameter = sr,Arguments=[],Result=normal(success).
+    parse("clear",["d","sr"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = clear,AgentName=d,Parameter = sr,Arguments=[],Result=normal(success).
+    parse("show",["p","sr"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = sr,Arguments=[],Result=normal(success).
+    parse("show",["d","sr"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = sr,Arguments=[],Result=normal(success).
+
+%%spy(gate)
+    parse("set",["p","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=p,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("set",["d","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = set,AgentName=d,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("add",["p","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-
+	SpyGateList\=[]|
+        Command = add,AgentName=p,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("add",["d","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-
+	SpyGateList\=[]|
+        Command = add,AgentName=d,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("remove",["p","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-
+	SpyGateList\=[]|
+        Command = remove,AgentName=p,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("remove",["d","sg"|SpyGateList],Command,AgentName,Parameter,Arguments,Result):-
+	SpyGateList\=[]|
+        Command = remove,AgentName=d,Parameter = sg,
+        get_spyGateList(SpyGateList,Arguments,Result).
+    parse("clear",["p","sg"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = clear,AgentName=p,Parameter = sg,Arguments=[],Result=normal(success).
+    parse("clear",["d","sg"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = clear,AgentName=d,Parameter = sg,Arguments=[],Result=normal(success).
+    parse("show",["p","sg"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=p,Parameter = sg,Arguments=[],Result=normal(success).
+    parse("show",["d","sg"],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=d,Parameter = sg,Arguments=[],Result=normal(success).
+
+%help
+    parse("help",[],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=nil,Parameter = help,Arguments=[],Result=normal(success).
+    parse("help",[C],Command,AgentName,Parameter,Arguments,Result):-true|
+        Command = send,AgentName=nil,Parameter = help,Arguments=[C],Result=normal(success).
+
+otherwise.
+    parse(_,_,_,_,_,_,Result):-true|
+        Result = abnormal({ui,'Illegal command or arguments',nil}).
+
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({cui,'Illegal integer',A})
+        ).
+
+    sToaList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToaList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   atom(A)->
+                sToaList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({cui,'Illegal atom',A})
+        ).
+                
+
+    get_spyGateList([],L,R):-true|
+        L = [],
+        R = normal(success).
+    get_spyGateList(["call"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [call|L1].
+    get_spyGateList(["redu"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [redu|L1].
+    get_spyGateList(["fail"|T],L,R):-true|
+        get_spyGateList(T,L1,R),
+        L = [fail|L1].
+otherwise.
+    get_spyGateList([H|_],_,R):-true|
+        R = abnormal({cui,'Illegal Argument',H}).
+
+%%%%%
+    set_similarity(Sim1,Arguments,Result):-true|
+        sToiList([Sim1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[Sim],
+                ( Sim>0,Sim=<100 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal similarity',Sim})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_weight(W1,Arguments,Result):-true|
+        sToiList([W1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[W],
+                ( W>0,W=<10 ->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal weight',W})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+    set_psiTermSimTB([A1,B1,C1,D1,E1,F1],Arguments,Result):-true|
+        sToiList([A1,B1,C1,D1,E1,F1],Arguments1,R1),
+        ( R1 = normal(success)->
+		Arguments1=[A,B,C,D,E,F],
+                ( 100>=A,A>=B,B>=C,C>=D,D>=E,E>=F,F>0->
+                   Arguments = [{A,B,C,D,E,F}],Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal psiTermSimTB',[A,B,C,D,E,F]})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+otherwise.
+    set_psiTermSimTB(TB,_,Result):-true|
+        Result = abnormal({cui,'Illegal psiTermSimTB',TB}).
+
+    set_psiTermAttWeight(PsiTermAttWeight1,Arguments,Result):-true|
+        sToiList([PsiTermAttWeight1],Arguments,R1),
+        ( R1 = normal(success)->
+		Arguments=[PsiTermAttWeight],
+                (  PsiTermAttWeight>0,PsiTermAttWeight=<10->
+                   Result = normal(success)
+                ;
+                otherwise;
+                  true->
+                   Result = abnormal({cui,'Illegal psiTermAttWeight',PsiTermAttWeight})
+                )
+        ;
+          R1 = abnormal(_)->
+                Result = R1
+        ).
+
+%%set pl
+    set_pl(PL1,Arguments,Result):-true|
+        sToiList([PL1],Arguments,R1),
+	( R1 = normal(success)->
+            Arguments=[PL],
+	    ( integer(PL),PL>0->
+	        Result = normal(success)
+	    ;
+	     otherwise;
+	      true->
+	        Result = abnormal({cui,'Illegal pl',PL})
+	    )
+	;
+	  R1 = abnormal(_)->
+	    Result = R1
+	).
+
+
+%set_cl
+    set_cl(CL1,Arguments,Result):-true|
+	sToiList([CL1],Arguments1,Result1),
+	( Result1 = normal(success),Arguments1=[CL],CL>=0->
+	    Arguments = [CL],Result= normal(success)
+	;
+	  Result1 = normal(success),Arguments1=[-1]->
+	    Arguments = [infinite],Result= normal(success)
+	;
+	otherwise;
+	  true->
+	    Result = Result1
+	).
+

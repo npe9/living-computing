@@ -1,0 +1,74 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (31) Argus Verification System: Argus/V</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (31) Argus Verification System: Argus/V</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI
+	Environment: PIMOS, SIMPOS
+	Language:    KL1, ESP
+	Source Code: 1 MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A system for proving the properties of Horn logic programs using
+first-order inference and induction.<P>
+ 
+<h2><b>Configuration</b></h2>
+<dl>
+	<dd><img src="031.gif">
+</dl>
+<p>
+
+<h2><b>Function</b></h2>
+
+Proving the properties of Horn logic programs is fundamental to
+applying meta-reasoning- based information processing to the systems
+described using Horn logic programs. This system automatically shows
+that a given formula <i>F</i> is valid in the minimum Herbrand model
+of a given Horn logic program <i>P</i>. (<i>F</i> is a formula of the
+form "atom conjunction ⊃ atom conjunction" such that variables
+quantified by ∃ appear only in the part right to ⊃.)  <p>
+
+ The basic proof procedure starts with initial goal <i>F</i>. Five
+inference rules, similar to the ordinary Prolog execution and the
+"Negation as Failure" rule, are repeatedly applied to each goal to
+generate subgoals. When all generated goals become true, it turns out
+that <i>F</i> is valid in the minimum Herbrand model of <i>P</i>. In
+the basic proof procedure, the application of the inference rules is
+nondeterministic, so that the search space for proof is very large. In
+our actual proof procedure, how each predicate appearing in <i>F</i>
+recurses in <i>P</i> is analyzed, and an outline of possible proof,
+called <i>inductive proof plan</i>, is extracted. The main part of
+proof is generated according to this inductive proof plan, so that the
+search space for proof is much reduced. When more than two inductive
+proof plans are extracted from <i>F</i>, proofs according to them are
+searched in parallel.  <p>
+
+<h2>FTP</h2>
+<ul>
+<li> Argus Verification System: Argus/V  [392K]
+<a href="../../../ifs/solver-prover/pimos/argus-v.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

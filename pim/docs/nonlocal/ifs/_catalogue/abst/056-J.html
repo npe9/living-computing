@@ -1,0 +1,85 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（５６）並列ＳＡ法によるマルチプル・アライメント</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（５６）並列ＳＡ法によるマルチプル・アライメント</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM
+	環　　境：PIMOS, SIMPOS
+	言　　語：KL1, ESP
+	ソース量：0.4 MB
+	文　　書：マニュアル (英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+タンパク質のアミノ酸配列を解析するソフトウェアである<p>
+
+<h2>構成</h2>
+<pre>
+        Generator:   各温度でのSAを行うプロセスネットワークを構築する。
+        SA Executor: 各温度でのSAを実際に行う。
+</pre>
+<p>
+
+<h2>機能</h2>
+
+類似する複数のタンパク質のアミノ酸配列のデータを整列させるソフトウェア
+である。整列とはアミノ酸配列の共通部分および類似部分を縦に並べることを
+意味する。アミノ酸間の類似性は、既に生物学的に定義されている。例えば、
+<P>
+
+<PRE>
+    HEKLLHPGIQKTTKLFGETTY
+    LHQLTHLSFSKMKALLERSHSPYY
+    ELHSFTHCGQTALTLQ
+</PRE>
+
+という3つのタンパク質のアミノ酸配列は、<P>
+
+<PRE>
+
+    --HEKLLHPGIZKTTKLF-GET--YY
+    -LHQ-LTHLSFSKMKALLERSHSPYY
+    ELHS-FTHCG---QTAL--TLQ----
+      ^    ^        ^
+      |    |        |
+
+</PRE>
+
+のように整列させることができる。ここで挿入されているハイフンは、進化過
+程で起きた欠失を表す。整列結果の中でよく保存している部分「↑」は、タン
+パクの機能上重要な部分に対応する。<P>
+
+このプログラムはシミュレーテッドアニーリング(SA)法という組み合わせ最適
+化問題を解く際によく使用される方法を並列化して実装されている。SAでは、
+温度パラメータを徐々に減少させて解を得るが、並列SAでは予め複数の温度を
+設定しておき。それぞれの温度の処理を、各プロセッサが実行する。各プロセッ
+サは、適当なインターバルで隣接する温度を担当するプロセッサと解を交換す
+る。結果的に、最低温度を担当するプロセッサに良質な解が得られる。<P>
+
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	並列ＳＡ法によるマルチプル・アライメント [98K] <a
+href="../../../ifs/exper-apps/pimos/alignsa.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

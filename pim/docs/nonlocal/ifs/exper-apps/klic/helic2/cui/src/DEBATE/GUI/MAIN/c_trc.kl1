@@ -1,0 +1,106 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_tracer.
+
+:- public 
+    set_tf/5,
+    get_tf/4,
+
+    set_sr/5,
+    add_sr/5,
+    remove_sr/5,
+    clear_sr/4,
+    get_sr/4,
+    
+    set_sg/5,
+    add_sg/5,
+    remove_sg/5,
+    clear_sg/4,
+    get_sg/4.
+
+:- with_macro pimos. 
+
+%tf
+    set_tf(AgentName,TF,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,set,tf,TF,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    get_tf(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,tf,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,TF,Result),
+        make_protocol(Result,tf,AgentName,TF,Protocol),
+        Data = {DBT,CGS}.
+
+%sr
+    set_sr(AgentName,SR,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,set,sr,SR,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    add_sr(AgentName,SR,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,add,sr,SR,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    remove_sr(AgentName,SR,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,remove,sr,SR,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    clear_sr(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,clear,sr,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    get_sr(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,sr,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SR,Result),
+        make_protocol(Result,sr,AgentName,SR,Protocol),
+        Data = {DBT,CGS}.
+
+%sg
+    set_sg(AgentName,SG,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,set,sg,SG,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    add_sg(AgentName,SG,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,add,sg,SG,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    remove_sg(AgentName,SG,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,remove,sg,SG,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    clear_sg(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,clear,sg,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,_,Result),
+        make_protocol(Result,ok,AgentName,[],Protocol),
+        Data = {DBT,CGS}.
+    get_sg(AgentName,{DBT1,CGS},Data,Protocol):-true|
+        dbtcui_protocolPool:get(AgentName,show,sg,_,ProtocolList),
+        send(ProtocolList,DBT1,DBT,SG,Result),
+        make_protocol(Result,sg,AgentName,SG,Protocol),
+        Data = {DBT,CGS}.
+
+%%%%%%%%%%%%%%%%%%%%%%
+%send
+    send(Protocol,DBT1,DBT,Value,Result):-true|
+        DBT1 = [Protocol|DBT],
+	Protocol = {_,[tracer(Message)]},
+        arg(2,Message,Value),
+        arg(3,Message,Result).
+
+%make_protocol
+    make_protocol(abnormal(Reason),_,AgentName,_,Protocol):-true|
+        dbtcui_utility:make_errorProtocol(AgentName,Reason,Protocol).
+    make_protocol(normal(success),ProtocolName,AgentName,Arguments,Protocol):-true|
+        Protocol = receive(AgentName,ProtocolName,Arguments,_).
+
+

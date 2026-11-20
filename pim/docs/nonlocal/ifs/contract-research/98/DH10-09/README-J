@@ -1,0 +1,52 @@
+
+README-J
+
+Copyright (C) 1999 Yosuke Sato
+
+
+
+配布ディレクトリーには以下のファイルが収められている。
+
+
+README-E		このファイルの英語版
+
+README-J		このファイル
+
+RELEASE_NOTE-E		配布ノート(英語版)
+
+RELEASE_NOTE-J		配布ノート(日本語版)
+
+s_setsolver.kl1		新ソースプログラム(逐次処理用)
+
+p_setsolver.kl1		新ソースプログラム(並列処理用)
+
+setsolver.kl1		旧ソースプログラム(1996年度に公開)
+
+manual.tex		ユーザーマニュアル(英語版)
+
+manualj.tex		ユーザーマニュアル(日本語版)
+
+parallel.tex		並列計算用プログラムの操作マニュアル(英語版)
+
+parallelj.tex		並列計算用プログラムの操作マニュアル(日本語版)
+
+background1.tex		このソフトウェアを使用するにあたって必要と思われる
+			バックグラウンドの理論概説を記したLatexのソースコード(英語)
+
+background2.tex		今回のリリースで採用した新アルゴリズムに関する理論概説
+			を記したLatexのソースコード(日本語)
+
+example/		実行例が収められたディレクトリー
+
+  benchmark1-4		逐次版の実行例
+
+  parallel1-4		並列版の実行例
+
+use-of-software-J	ＩＣＯＴフリーソフトウェア（ＩＦＳ）の利用にあたって
+
+use-of-software-J	ＩＣＯＴフリーソフトウェア（ＩＦＳ）の利用にあたって(英語版)
+
+
+
+
+

@@ -1,0 +1,62 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_pass.
+
+:- public 
+    notice/5,
+    cancel/4.
+            
+:- with_macro pimos.
+
+%notice
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+    notice(SP,Notice,{O1,Pool1,Info1},Data,_):-true|
+        initiate_notice(SP,Notice,Pool1,Info1,Pool2,Info,R),
+        (   wait(R)->
+                Pool2   = [send(hl,put(send(y,notice(SP,Notice))))|Pool],
+                O1      = [notice(SP,Notice)|O],
+                Data    = {O,Pool,Info}).
+
+    initiate_notice({YReason,YR,MR}, 
+            notice({MReason,MR,YR},Claim),Pool1,Info1,Pool,Info,R):-true|
+        Claim = claim(YA,issue(claim(MA,YI),IPos)),
+        Pool1 = [makeList([at,yat,ynt,ct],[AT,YAT,YNT,CT])|Pool2],
+        AT    = [refer_arg(YA,YDArg,_)],
+        YAT   = [finish(YDArg)],
+        CT    = [finish({MA,IPos},YA)],
+        (   YReason = nil->
+                YNT    = [put(draw,{MA,IPos},{YA,{MR,YR}})]
+        ;
+            YReason \= nil->
+                YNT    = [put(win,{MA,IPos},{YA,{MR,YR},YReason})]
+        ),
+
+        _History = notice(YReason,notice(MReason,claim(YA,issue(claim(MA,YI),IPos)))),
+        dbtgui_guiUtility:make_noticeStatus({you,YReason,MA,MR,YA,YR},Info1,Info,Status),
+        dbtgui_showArgumentUtility:show_status(Pool2,Status,Pool,R).
+
+%cancel
+    cancel(Claim,{O1,Pool1,Info1},Data,_):-true|
+        initiate_cancel(Claim,Pool1,Info1,Pool2,Info,R),
+        (   wait(R)->
+                O1      = [cancel(Claim)|O],
+                Pool2   = [send(hl,put(send(y,cancel(Claim))))|Pool],
+                Data    = {O,Pool,Info}).
+
+    initiate_cancel(claim(YA,issue(claim(MA,YI),IPos)),Pool1,Info1,Pool,Info,R):-true|
+        Pool1   = [makeList([at,yat,ct],[AT,YAT,CT])|Pool2],
+        AT      = [refer_arg(YA,YDArg,_)],
+        YAT     = [remove(YDArg)],
+        CT      = [cancel({MA,IPos},YA)],
+
+        _History = cancel(claim(YA,issue(claim(MA,YI),IPos))),
+        Info1   = {_,_,{_,_,_,AgentName},_},
+        dbtgui_messagePool:make_message({cancel,you},{AgentName,YA},Status),
+        dbtgui_showArgumentUtility:show_status(Pool2,Status,Pool,R),
+        Info = Info1.

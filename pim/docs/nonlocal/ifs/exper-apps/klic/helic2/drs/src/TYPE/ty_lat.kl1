@@ -1,0 +1,2592 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_lat
+%       File Name   : ty_lat.kl1
+%       Function    : lattice operations
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/15  : typo fix
+%$	1994/ 7/14  : bug fix : bit#on -> 1
+%$	1994/ 7/14  : string element size from 1 to 8
+%$	1994/ 7/13  : string utilities calling to osif
+%$	1994/ 7/ 5  : redundant clause in meet_gen,subs_general
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/30  : expand macros
+%$      1994/ 5/19  : bug fix in lower_bound,immediate_lower_bound
+%$                    add otherwise
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 2/16  : iub bug
+%$      1994/ 2/15  : join atom-blt combination bug
+%$      1994/ 2/14  : meet atom-blt combination bug
+%$      1994/ 2/14  : subsume usrint,usrstr loop bug
+%$      1994/ 2/10  : subsume integer - usrint bug
+%$      1994/ 2/10  : subsume number-number bug
+%$      1994/ 2/ 8  : cover check bug
+%$      1994/ 2/ 7  : bsubsume loop
+%$      1994/ 1/28  : iub of top, ilb of bottom
+%$      1994/ 1/28  : ilb bug
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/09  : subsume
+%$      1993/11/25  : iub,ulb
+%$      1993/11/19  : iub,ulb
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_lat.
+:- with_macro pimos.
+
+
+% meet,join,subsume,
+% upper_bound,immediate_upper_bound,
+% lower_bound,immediate_lower_bound
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public meet/6,join/6,bsubsume/5.
+:-public upper_bound/5,immediate_upper_bound/5,lower_bound/5,immediate_lower_bound/5.
+%:-else.
+%:-public meet/8,join/8,bsubsume/7.
+%:-public upper_bound/7,immediate_upper_bound/7,lower_bound/7,immediate_lower_bound/7.
+%:-end_if.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S meet(X,Y,Z)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	meet_num(Y,X,Z,TypeDB,NewTypeDB,Result).
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	meet_str(Y,X,Z,TypeDB,NewTypeDB,Result).
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	meet_cov(Y,X,Z,TypeDB,NewTypeDB,Result).
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	meet_int(Y,X,Z,TypeDB,NewTypeDB,Result).
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	meet_bltstr(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+meet(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	meet_gen(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+meet(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Nx,X, X1) }},
+	vector_element(X,0,Nx, X1),
+%	{{ number#read(value,Ny,Y,_Y1) }},
+	vector_element(Y,0,Ny,_Y1),
+	(Nx=:=Ny ->
+	    Z = X1,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;Nx=\=Ny ->
+%	    Z = ty#bottom,
+	    Z = '&bottom',
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+meet_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Ny,Y,Y1) }},
+	vector_element(Y,0,Ny,Y1),
+%	{{ cover#read(from,From,X,X1) }},
+	vector_element(X,0,From,X1),
+%	{{ number#read(value,FromN,From,_From1) }},
+	vector_element(From,0,FromN,_From1),
+%	{{ cover#read(to,To,X1,_X2) }},
+	vector_element(X1,1,To,_X2),
+%	{{ number#read(value,ToN,To,_To1) }},
+	vector_element(To,0,ToN,_To1),
+	(FromN =< Ny,Ny =< ToN ->
+	    Z = Y1,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#bottom,
+	    Z = '&bottom',
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+meet_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+meet_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet_str(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_str(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+	(X = Y ->
+	    Z = X,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#bottom,
+	    Z = '&bottom',
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+meet_str(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Nx,X,X1) }},
+	vector_element(X,0,Nx,X1),
+%	{{ cover#read(from,From,Y,Y1) }},
+	vector_element(Y,0,From,Y1),
+%	{{ number#read(value,FromN,From,_From1) }},
+	vector_element(From,0,FromN,_From1),
+%	{{ cover#read(to,To,Y1,_Y2) }},
+	vector_element(Y1,1,To,_Y2),
+%	{{ number#read(value,ToN,To,_To1) }},
+	vector_element(To,0,ToN,_To1),
+	(FromN =< Nx,Nx =< ToN ->
+	    Z = X1,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#bottom,
+	    Z = '&bottom',
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+meet_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	{{ cover#read(from,Xf,X,X1) }},
+	vector_element(X,0,Xf,X1),
+%	{{ number#read(value,XfN,Xf,_Xf1) }},
+	vector_element(Xf,0,XfN,_Xf1),
+%	{{ cover#read(from,Yf,Y,Y1) }},
+	vector_element(Y,0,Yf,Y1),
+%	{{ number#read(value,YfN,Yf,_Yf1) }},
+	vector_element(Yf,0,YfN,_Yf1),
+%	{{ cover#read(to,Xt,X1,X2) }},
+	vector_element(X1,1,Xt,X2),
+%	{{ number#read(value,XtN,Xt,_Xt1) }},
+	vector_element(Xt,0,XtN,_Xt1),
+%	{{ cover#read(to,Yt,Y1,_Y2) }},
+	vector_element(Y1,1,Yt,_Y2),
+%	{{ number#read(value,YtN,Yt,_Yt1) }},
+	vector_element(Yt,0,YtN,_Yt1),
+%	ty#greater(XfN,YfN,ZfN),
+	(XfN<YfN->ZfN=YfN;otherwise;true->ZfN=XfN),
+%	ty#smaller(XtN,YtN,ZtN),
+	(XtN<YtN->ZtN=XtN;otherwise;true->ZtN=YtN),
+	(ZfN =:= ZtN ->
+%	    {{ number#new(Z0) }},
+	    new_vector(Z0,1),
+%	    {{ number#set(value,ZfN,Z0,Z) }},
+	    set_vector_element(Z0,0,_,ZfN,Z),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;ZfN < ZtN ->
+%	    {{ cover#get(from,Zf,NewZf,X2,X3) }},
+	    set_vector_element(X2,0,Zf,NewZf,X3),
+%	    {{ number#set(value,ZfN,Zf,NewZf) }},
+	    set_vector_element(Zf,0,_,ZfN,NewZf),
+%	    {{ cover#get(to,Zt,NewZt,X3,Z) }},
+	    set_vector_element(X3,1,Zt,NewZt,Z),
+%	    {{ number#set(value,ZtN,Zt,NewZt) }},
+	    set_vector_element(Zt,0,_,ZtN,NewZt),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;ZfN > ZtN ->
+%	    Z = ty#bottom,
+	    Z = '&bottom',
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+meet_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Z = ty#bottom,
+	Z = '&bottom',
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+otherwise.
+meet_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet_int(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+	Z = X,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+	Z = X,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_int(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Z = ty#bottom,
+	Z = '&bottom',
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+otherwise.
+meet_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+meet_bltstr(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Z = ty#bottom,
+	Z = '&bottom',
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+	Z = X,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+otherwise.
+meet_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+
+meet_gen(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+meet_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+meet_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	Z = ty#bottom,
+	Z = '&bottom',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+meet_gen(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = meet_general(Y,X,Z,TypeDB,NewTypeDB,Result),
+	meet_general(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+meet_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+meet_general(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    name_to_lower_code(X,CodeX,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        name_to_lower_code(Y,CodeY,TypeDB1,TypeDB2,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    and_lower_code(CodeX,CodeY,AndCode),
+	    lower_code_to_name(AndCode,Z,TypeDB2,NewTypeDB),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#void,
+	    Z = '&void',
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+%        Z = ty#void,
+        Z = '&void',
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+:-public name_to_lower_code/5.
+%---------------------------------------------------------------------
+% L name_to_lower_code(Name,Code,TypeDB,NewTypeDB,Result)
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+name_to_lower_code(Name,Code,TypeDB,NewTypeDB,Result):-
+    name_to_position(Name,Pos,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB1,NewTypeDB),
+        set_vector_element(TypeDB1,3,LowerTBL,NewLowerTBL,NewTypeDB),
+        vector_element(LowerTBL,Pos,Code,NewLowerTBL)
+    ;otherwise;true ->
+%        Code = ty#void,
+        Code = '&void',
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+:- public name_to_position/5.
+%---------------------------------------------------------------------
+% L name_to_position(Name,Pos)
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(illegal_type_name(Name))
+name_to_position(Name,Pos,TypeDB,NewTypeDB,Result):-
+%    typeDB#get(posTBL,PosTBL,NewPosTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB,1,PosTBL,NewPosTBL,NewTypeDB),
+    ty_osif:get_with(Name,Pos,PosTBL,NewPosTBL),
+%    (Pos = ty#void ->
+    (Pos = '&void' ->
+        Result = abnormal(Info),
+%        Info = {ty#typemid,illegal_type_name,[Name]}
+        Info = {type,illegal_type_name,[Name]}
+    ;otherwise;true ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ).
+
+
+:- public lower_code_to_name/4.
+%---------------------------------------------------------------------
+% L lower_code_to_name(Code,Name,TypeDB,NewTypeDB)
+%---------------------------------------------------------------------
+lower_code_to_name(Code,Name,TypeDB,NewTypeDB):-
+    lower_code_to_position(Code,Pos),
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB,2,NameTBL,NewNameTBL,NewTypeDB),
+    vector_element(NameTBL,Pos,Name,NewNameTBL).
+
+:-public lower_code_to_position/2.
+%---------------------------------------------------------------------
+% L lower_code_to_position(Code,Position)
+%---------------------------------------------------------------------
+lower_code_to_position(Code,Position):-
+    string(Code,Size,_,_),
+    Position := Size - 1.
+
+
+:-public and_lower_code/3.
+%---------------------------------------------------------------------
+% L and_lower_code(X,Y,Z)
+%---------------------------------------------------------------------
+and_lower_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx<Ly|
+    % YのLx分の長さ部分とXのandをとり、結果のうち後ろから
+    % さがして最初に1が見つかったところまでを捨てたものを返す。
+    % (tailing 0 を捨てる) コードの有効な長さはuniqueであり、それを
+    % 利用してテーブル中のポジションの計算をするため。
+%    builtin#and_string_elements(X,0,Lx,Y,0,And,_NY),
+    ty_osif:and_string_elements(X,0,Lx,Y,0,And,_NY),
+%    search_character(And,~(Lx-1),0,bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,~(Lx-1),0,1,Pos,NewAnd),
+%    builtin#substring(NewAnd,0,~(Pos+1),Z,_).
+    ty_osif:substring(NewAnd,0,~(Pos+1),Z,_).
+and_lower_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx>Ly|
+%    builtin#and_string_elements(Y,0,Ly,X,0,And,_NX),
+    ty_osif:and_string_elements(Y,0,Ly,X,0,And,_NX),
+%    search_character(And,~(Ly-1),0,bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,~(Ly-1),0,1,Pos,NewAnd),
+%    builtin#substring(NewAnd,0,~(Pos+1),Z,_).
+    ty_osif:substring(NewAnd,0,~(Pos+1),Z,_).
+and_lower_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx=Ly|
+%    builtin#and_string_elements(X,0,Lx,Y,0,And,_NY),
+    ty_osif:and_string_elements(X,0,Lx,Y,0,And,_NY),
+%    search_character(And,~(Lx-1),0,bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,~(Lx-1),0,1,Pos,NewAnd),
+%    builtin#substring(NewAnd,0,~(Pos+1),Z,_).
+    ty_osif:substring(NewAnd,0,~(Pos+1),Z,_).
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% join
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X,Y,Z : string
+% Result : normal(ty#yes) | abnormal(illegal_type_name(Name)
+
+
+join(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	join_num(Y,X,Z,TypeDB,NewTypeDB,Result).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	join_str(Y,X,Z,TypeDB,NewTypeDB,Result).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	join_cov(Y,X,Z,TypeDB,NewTypeDB,Result).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	join_int(Y,X,Z,TypeDB,NewTypeDB,Result).
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	join_bltstr(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+join(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	join_gen(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+join(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+	(X = Y ->
+	    Z = X
+	;otherwise;true ->
+%	    Z = ty#integer
+	    Z = '&integer'
+	),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_num(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Ny,Y,_Y1) }},
+	vector_element(Y,0,Ny,_Y1),
+%	{{ cover#read(from,From,X,X1) }},
+	vector_element(X,0,From,X1),
+%	{{ number#read(value,FromN,From,_From1) }},
+	vector_element(From,0,FromN,_From1),
+%	{{ cover#read(to,To,X1,X2) }},
+	vector_element(X1,1,To,X2),
+%	{{ number#read(value,ToN,To,_To1) }},
+	vector_element(To,0,ToN,_To1),
+	(FromN =< Ny, Ny =< ToN ->
+	    Z = X2,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#integer,
+	    Z = '&integer',
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	).
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = X,
+%	    Result = normal(ty#yes)
+%	;R1 = normal(ty#no) ->
+%	    Z = ty#top,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_num(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_str(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_str(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+	(X = Y ->
+	    Z = X
+	;otherwise;true ->
+%	    Z = ty#string
+	    Z = '&string'
+	),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = X,
+%	    Result = normal(ty#yes)
+%	;R1 = normal(ty#no) ->
+%	    Z = ty#top,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_str(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Nx,X,_X1) }},
+	vector_element(X,0,Nx,_X1),
+%	{{ cover#read(from,From,Y,Y1) }},
+	vector_element(Y,0,From,Y1),
+%	{{ number#read(value,FromN,From,_From1) }},
+	vector_element(From,0,FromN,_From1),
+%	{{ cover#read(to,To,Y1,Y2) }},
+	vector_element(Y1,1,To,Y2),
+%	{{ number#read(value,ToN,To,_To1) }},
+	vector_element(To,0,ToN,_To1),
+	(FromN =< Nx,Nx =< ToN ->
+	    Z = Y2,
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#top,
+	    Z = '&top',
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	).
+join_cov(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	{{ cover#read(from,Xf,X,X1) }},
+	vector_element(X,0,Xf,X1),
+%	{{ number#read(value,XfN,Xf,_Xf1) }},
+	vector_element(Xf,0,XfN,_Xf1),
+%	{{ cover#read(from,Yf,Y,Y1) }},
+	vector_element(Y,0,Yf,Y1),
+%	{{ number#read(value,YfN,Yf,_Yf1) }},
+	vector_element(Yf,0,YfN,_Yf1),
+%	{{ cover#read(to,Xt,X1,X2) }},
+	vector_element(X1,1,Xt,X2),
+%	{{ number#read(value,XtN,Xt,_Xt1) }},
+	vector_element(Xt,0,XtN,_Xt1),
+%	{{ cover#read(to,Yt,Y1,_Y2) }},
+	vector_element(Y1,1,Yt,_Y2),
+%	{{ number#read(value,YtN,Yt,_Yt1) }},
+	vector_element(Yt,0,YtN,_Yt1),
+	(YfN =< XtN, XfN =< YtN ->
+%	    ty#smaller(XfN,YfN,ZfN),
+	    (XfN<YfN->ZfN=XfN;otherwise;true->ZfN=YfN),
+%	    ty#greater(XtN,YtN,ZtN),
+	    (XtN<YtN->ZtN=YtN;otherwise;true->ZtN=XtN),
+%	    {{ cover#get(from,Zf,NewZf,X2,X3) }},
+	    set_vector_element(X2,0,Zf,NewZf,X3),
+%	    {{ number#set(value,ZfN,Zf,NewZf) }},
+	    set_vector_element(Zf,0,_,ZfN,NewZf),
+%	    {{ cover#get(to,Zt,NewZt,X3,Z) }},
+	    set_vector_element(X3,1,Zt,NewZt,Z),
+%	    {{ number#set(value,ZtN,Zt,NewZt) }},
+	    set_vector_element(Zt,0,_,ZtN,NewZt),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#integer,
+	    Z = '&integer',
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	).
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = X,
+%	    Result = normal(ty#yes)
+%	;R1 = normal(ty#no) ->
+%	    Z = ty#top,
+%	    Result = R1
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+otherwise.
+join_cov(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+	Z = Y,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+	Z = Y,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = ty#top,
+%	    Result = normal(ty#yes)
+%	;R1 = normal(ty#no) ->
+%	    Z = ty#top,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#bottom,
+%	    Result = R1
+%	).
+otherwise.
+join_int(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+	Z = Y,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,R1),
+%	(R1 = normal(ty#yes) ->
+%	    Z = Y,
+%	    Result = normal(ty#yes)
+%	;R1 = normal(ty#no) ->
+%	    Z = ty#top,
+%	    Result = normal(ty#yes)
+%	;otherwise;true ->
+%	    Z = ty#void,
+%	    Result = R1
+%	).
+otherwise.
+join_bltstr(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	Z = X,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	Z = Y,
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Z = ty#top,
+	Z = '&top',
+%	Result = normal(ty#yes).
+	Result = normal(success).
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	Z = ty#top,
+	Z = '&top',
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+join_gen(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	join_general(Y,X,Z,TypeDB,NewTypeDB,Result).
+otherwise.
+join_gen(X,_Y,Z,TypeDB,NewTypeDB,Result):-
+%    Z = ty#void,
+    Z = '&void',
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+join_general(X,Y,Z,TypeDB,NewTypeDB,Result):-
+    name_to_upper_code(X,CodeX,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        name_to_upper_code(Y,CodeY,TypeDB1,TypeDB2,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    and_upper_code(CodeX,CodeY,AndCode),
+	    upper_code_to_name(AndCode,Z,TypeDB2,NewTypeDB),
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Z = ty#void,
+	    Z = '&void',
+	    NewTypeDB = TypeDB2,
+	    Result = R2
+	)
+    ;otherwise;true ->
+%        Z = ty#void,
+        Z = '&void',
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+name_to_upper_code(Name,Code,TypeDB,NewTypeDB,Result):-
+    name_to_position(Name,Pos,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#get(upperTBL,UpperTBL,NewUpperTBL,TypeDB1,NewTypeDB),
+        set_vector_element(TypeDB1,4,UpperTBL,NewUpperTBL,NewTypeDB),
+        vector_element(UpperTBL,Pos,Code,NewUpperTBL)
+    ;otherwise;true ->
+%        Code = ty#void,
+        Code = '&void',
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+and_upper_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx<Ly|
+    % Yの後ろからLx分の長さ部分とXのandをとり、結果のうち前から
+    % さがして最初に1が見つかったところまでを捨てたものを返す。
+    % (heading 0 を捨てる) コードの有効な長さはuniqueであり、それを
+    % 利用してテーブル中のポジションの計算をするため。
+%    builtin#and_string_elements(X,0,Lx,Y,~(Ly-Lx),And,_NY),
+    ty_osif:and_string_elements(X,0,Lx,Y,~(Ly-Lx),And,_NY),
+%    search_character(And,0,~(Lx-1),bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,0,~(Lx-1),1,Pos,NewAnd),
+%    builtin#string_tail(NewAnd,Pos,Z).
+    ty_osif:string_tail(NewAnd,Pos,Z).
+and_upper_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx>Ly|
+%    builtin#and_string_elements(Y,0,Ly,X,~(Lx-Ly),And,_NX),
+    ty_osif:and_string_elements(Y,0,Ly,X,~(Lx-Ly),And,_NX),
+%    search_character(And,0,~(Ly-1),bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,0,~(Ly-1),1,Pos,NewAnd),
+%    builtin#string_tail(NewAnd,Pos,Z).
+    ty_osif:string_tail(NewAnd,Pos,Z).
+and_upper_code(X,Y,Z):-string(X,Lx,_),string(Y,Ly,_),Lx=Ly|
+%    builtin#and_string_elements(X,0,Lx,Y,0,And,_NY),
+    ty_osif:and_string_elements(X,0,Lx,Y,0,And,_NY),
+%    search_character(And,0,~(Lx-1),bit#on,Pos,NewAnd),
+    ty_osif:search_character(And,0,~(Lx-1),1,Pos,NewAnd),
+%    builtin#string_tail(NewAnd,Pos,Z).
+    ty_osif:string_tail(NewAnd,Pos,Z).
+
+%---------------------------------------------------------------------
+% L upper_code_to_name(Code,Name,TypeDB,NewTypeDB)
+%---------------------------------------------------------------------
+upper_code_to_name(Code,Name,TypeDB,NewTypeDB):-
+    upper_code_to_position(Code,Pos,TypeDB,TypeDB1),
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB1,NewTypeDB),
+    set_vector_element(TypeDB1,2,NameTBL,NewNameTBL,NewTypeDB),
+    vector_element(NameTBL,Pos,Name,NewNameTBL).
+
+%---------------------------------------------------------------------
+% L upper_code_to_position(Code,Position)
+%---------------------------------------------------------------------
+upper_code_to_position(Code,Position,TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,Size,TypeDB,NewTypeDB),
+    vector_element(TypeDB,0,Size,NewTypeDB),
+    string(Code,CodeLength,_,_),
+    Position := Size - CodeLength.
+
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% subsume(X,Y,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X,Y : string
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%          Info : illegal_type_name(Name)
+bsubsume(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	(ty#is_bottom(Y) ->
+	(Y = '&bottom' ->
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	subs_num(Y,X,TypeDB,NewTypeDB,Result).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	subs_str(Y,X,TypeDB,NewTypeDB,Result).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	subs_cov(Y,X,TypeDB,NewTypeDB,Result).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	subs_bltint(Y,X,TypeDB,NewTypeDB,Result).
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	subs_bltstr(Y,X,TypeDB,NewTypeDB,Result).
+otherwise.
+bsubsume(X,Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	subs_general(Y,X,TypeDB,NewTypeDB,Result).
+otherwise.
+bsubsume(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_num(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Nx,X,_X1) }},
+	vector_element(X,0,Nx,_X1),
+%	{{ number#read(value,Ny,Y,_Y1) }},
+	vector_element(Y,0,Ny,_Y1),
+	(Nx=:=Ny ->
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;Nx=\=Ny ->
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result).
+otherwise.
+subs_num(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_str(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+	(X = Y ->
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,Result),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,Result).
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_str(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_cov(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	{{ number#read(value,Nx,X,_X1) }},
+	vector_element(X,0,Nx,_X1),
+%	{{ cover#read(from,From,Y,Y1) }},
+	vector_element(Y,0,From,Y1),
+%	{{ number#read(value,FromN,From,_From1) }},
+	vector_element(From,0,FromN,_From1),
+%	{{ cover#read(to,To,Y1,_Y2) }},
+	vector_element(Y1,1,To,_Y2),
+%	{{ number#read(value,ToN,To,_To1) }},
+	vector_element(To,0,ToN,_To1),
+	(FromN =< Nx,Nx =< ToN ->
+%	        Result = normal(ty#yes)
+	        Result = normal(success)
+	;otherwise;true ->
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+subs_cov(X,Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	{{ cover#read(from,Xf,X,X1) }},
+	vector_element(X,0,Xf,X1),
+%	{{ number#read(value,XfN,Xf,_Xf1) }},
+	vector_element(Xf,0,XfN,_Xf1),
+%	{{ cover#read(from,Yf,Y,Y1) }},
+	vector_element(Y,0,Yf,Y1),
+%	{{ number#read(value,YfN,Yf,_Yf1) }},
+	vector_element(Yf,0,YfN,_Yf1),
+%	{{ cover#read(to,Xt,X1,_X2) }},
+	vector_element(X1,1,Xt,_X2),
+%	{{ number#read(value,XtN,Xt,_Xt1) }},
+	vector_element(Xt,0,XtN,_Xt1),
+%	{{ cover#read(to,Yt,Y1,_Y2) }},
+	vector_element(Y1,1,Yt,_Y2),
+%	{{ number#read(value,YtN,Yt,_Yt1) }},
+	vector_element(Yt,0,YtN,_Yt1),
+	(YfN =< XfN, XtN =< YtN ->
+%	    Result = normal(ty#yes)
+	    Result = normal(success)
+	;otherwise;true ->
+%	    Result = normal(ty#no)
+	    Result = normal(fail)
+	).
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_cov(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+%
+% L
+%
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = subsume_general(Y,X,TypeDB,NewTypeDB,Result),
+%	{{ subsume_general(Y,X,TypeDB,NewTypeDB,Result) }}.
+otherwise.
+subs_bltint(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = subsume_general(Y,X,TypeDB,NewTypeDB,Result),
+%	{{ subsume_general(Y,X,TypeDB,NewTypeDB,Result) }}.
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+otherwise.
+subs_bltstr(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result).
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#string,X,TypeDB,NewTypeDB,Result),
+%	bsubsume(ty#string,X,TypeDB,NewTypeDB,Result).
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#no).
+	Result = normal(fail).
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result),
+%	bsubsume(ty#integer,X,TypeDB,NewTypeDB,Result).
+otherwise.
+subs_general(X,Y,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+%	debug#info(debug_tag#lat,&debug,Info),
+%	Info = subsume_general(Y,X,TypeDB,NewTypeDB,Result),
+	subsume_general(Y,X,TypeDB,NewTypeDB,Result).
+otherwise.
+subs_general(X,_Y,TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+% Result : normal(ty#yes|ty#no) | abnormal(Info)
+%        Info : illegal_type_name
+subsume_general(X,Y,TypeDB,NewTypeDB,Result):-
+    name_to_lower_code(X,CodeX,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        name_to_position(Y,PosY,TypeDB1,NewTypeDB,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    string(CodeX,SizeX,_,CodeX1),
+	    (PosY < SizeX ->
+	        check_bit(CodeX1,PosY,_,Result)
+	    ;otherwise;true ->
+%	        Result = normal(ty#no)
+	        Result = normal(fail)
+	    )
+	;otherwise;true ->
+	    Result = R2
+	)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+
+% Result : normal(ty#yes|ty#no)
+check_bit(String,Position,NewString,Result):-
+    string_element(String,Position,E,NewString),
+%    (E = bit#on ->
+    (E = 1 ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% upper_bound(X,^UB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X : string
+% UB : list of string
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info = illegal_type_name(Name)
+
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+%	UB = [ty#top],
+	UB = ['&top'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	ub(X,UB,TypeDB,NewTypeDB,Result).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	UB = [ty#integer],
+	UB = ['&integer'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	UB = [ty#string],
+	UB = ['&string'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	UB = [ty#integer],
+	UB = ['&integer'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	UB = [ty#top],
+	UB = ['&top'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	UB = [ty#top],
+	UB = ['&top'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	ub(X,UB,TypeDB,NewTypeDB,Result).
+otherwise.
+upper_bound(X,UB,TypeDB,NewTypeDB,Result):-
+    UB = [],
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+ub(X,UB,TypeDB,NewTypeDB,Result):-
+    name_to_upper_code(X,CodeX,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%	debug#info(debug_tag#lat,&debug,Info),
+%        Info = upper_element_names(CodeX,UB,TypeDB1,NewTypeDB),
+        upper_element_names(CodeX,UB,TypeDB1,NewTypeDB)
+    ;otherwise;true ->
+        UB = [],
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+upper_element_names(Code,NameList,TypeDB,NewTypeDB):-
+    string(Code,Size,_,Code1),
+    ub_names(Size,Code1,_,NameList,TypeDB,NewTypeDB).
+
+ub_names(N,Code,NewCode,NameList,TypeDB,NewTypeDB):- N>0|
+    M := N-1,
+    check_bit(Code,M,Code1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        % 上界テーブル中のコードは先行の0を消したものが入っ
+        % ている。コード中のあるビット位置に対応するポジショ
+        % ンを求めるには、そのコードの先行の0の数分を足さな
+        % ければならない。先行0の数は全体の要素数からそのコー
+        % ドの長さを引くことで求められる。
+%        typeDB#read(dbsize,Size,TypeDB,TypeDB1),
+        vector_element(TypeDB,0,Size,TypeDB1),
+        string(Code1,CodeLength,_,Code2),
+        Pos := Size - CodeLength + M,
+%        typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB1,TypeDB2),
+        set_vector_element(TypeDB1,2,NameTBL,NewNameTBL,TypeDB2),
+        vector_element(NameTBL,Pos,Name,NewNameTBL),
+        NameList = [Name|NewNameList],
+        ub_names(M,Code2,NewCode,NewNameList,TypeDB2,NewTypeDB)
+    ;otherwise;true ->
+        ub_names(M,Code1,NewCode,NameList,TypeDB,NewTypeDB)
+    ).
+ub_names(N,Code,NewCode,NameList,TypeDB,NewTypeDB):- N=<0|
+    NewTypeDB = TypeDB,
+    NewCode = Code,
+    NameList = [].
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% immediate_upper_bound
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X : string
+% IUB : list of string
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : illegal_type_name(Name)
+
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	IUB = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	iub(X,IUB,TypeDB,NewTypeDB,Result).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	IUB = [ty#integer],
+	IUB = ['&integer'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	IUB = [ty#string],
+	IUB = ['&string'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	IUB = [ty#integer],
+	IUB = ['&integer'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	IUB = [ty#top],
+	IUB = ['&top'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	IUB = [ty#top],
+	IUB = ['&top'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	iub(X,IUB,TypeDB,NewTypeDB,Result).
+otherwise.
+immediate_upper_bound(X,IUB,TypeDB,NewTypeDB,Result):-
+    IUB = [],
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+iub(X,IUB,TypeDB,NewTypeDB,Result):-
+    upper_mask_code(X,Mask,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        string(Mask,Size,_,NewMask),
+%	{{ typeDB#read(dbsize,DBSize,TypeDB1,TypeDB2) }},
+	vector_element(TypeDB1,0,DBSize,TypeDB2),
+        Offset := DBSize-Size,
+%	debug#info(debug_tag#lat,&debug,Info),
+%        Info = least_among_ub(Size,Offset,NewMask,IUB,TypeDB2,NewTypeDB),
+        least_among_ub(Size,Offset,NewMask,IUB,TypeDB2,NewTypeDB)
+    ;otherwise;true ->
+        IUB = [],
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+upper_mask_code(X,MaskCode,TypeDB,NewTypeDB,Result):-
+    name_to_upper_code(X,Code,TypeDB,NewTypeDB,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        set_string_element(Code,0,bit#off,MaskCode)
+        set_string_element(Code,0,0,MaskCode)
+    ;otherwise;true ->
+%        MaskCode = ty#void
+        MaskCode = '&void'
+    ),
+    Result = R1.
+
+%上界のうちで最も小さいものを求める。
+% 0 番目はもとのコードのビットなので調べない
+least_among_ub(N,Offset,Mask,IUBL,TypeDB,NewTypeDB):-N>1|
+    M := N-1,
+    check_least_if_on(M,Offset,Mask,NewMask,IUBL,IUBL1,TypeDB,TypeDB1),
+    least_among_ub(M,Offset,NewMask,IUBL1,TypeDB1,NewTypeDB).
+least_among_ub(N,_Offset,_Mask,IUBL,TypeDB,NewTypeDB):-N=<1|
+    IUBL = [],
+    NewTypeDB = TypeDB.
+
+check_least_if_on(M,Offset,Mask,NewMask,IUBL,NewIUBL,TypeDB,NewTypeDB):-
+%    string_element(Mask,M,bit#on)|
+    string_element(Mask,M,1)|
+	string(Mask,Size,_,Mask1),
+%	new_string(WorkMask,Size,1),
+	new_string(WorkMask,Size,8),
+%	builtin#or_string_elements(WorkMask,0,Size,Mask1,0,
+%				   WorkMask1,NewMask),
+	ty_osif:or_string_elements(WorkMask,0,Size,Mask1,0,
+				   WorkMask1,NewMask),
+%	set_string_element(WorkMask1,M,bit#off,WorkMask2),
+	set_string_element(WorkMask1,M,0,WorkMask2),
+%	typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB,TypeDB1),
+	set_vector_element(TypeDB,3,LowerTBL,NewLowerTBL,TypeDB1),
+	% 上界コードはコード長とテーブル内のポジションは反比例するので
+	% Offset でポジションを補正する
+	vector_element(LowerTBL,~(M+Offset),Code,NewLowerTBL),
+	check_and_all_zero(Code,WorkMask2,TypeDB1,TypeDB2,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    lower_code_to_name(Code,Name,TypeDB2,NewTypeDB),
+	    IUBL = [Name|NewIUBL]
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    NewIUBL = IUBL,
+	    NewTypeDB = TypeDB2
+	).
+check_least_if_on(M,_Offset,Mask,NewMask,IUBL,NIUBL,TypeDB,NewTypeDB):-
+%    string_element(Mask,M,bit#off)|
+    string_element(Mask,M,0)|
+	NewTypeDB = TypeDB,
+	NewMask = Mask,
+	NIUBL = IUBL.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% lower_bound(X,^LB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X : string
+% LB : list of string
+% Result : normal(ty#yes) | abnormal(illegal_type_name)
+
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	lb(X,LB,TypeDB,NewTypeDB,Result).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+%	LB = [ty#bottom],
+	LB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	LB = [ty#bottom],
+	LB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+%	LB = [ty#bottom],
+	LB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	LB = [ty#bottom],
+	LB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X= '&integer'|
+	lb(X,LB,TypeDB,NewTypeDB,Result).
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+	lb(X,LB,TypeDB,NewTypeDB,Result).
+otherwise.
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	lb(X,LB,TypeDB,NewTypeDB,Result).
+otherwise.
+lower_bound(X,LB,TypeDB,NewTypeDB,Result):-
+    LB = [],
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+lb(X,LB,TypeDB,NewTypeDB,Result):-
+    name_to_lower_code(X,CodeX,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%	debug#info(debug_tag#lat,&debug,Info),
+%        Info = lower_element_names(CodeX,LB,TypeDB1,NewTypeDB),
+        lower_element_names(CodeX,LB,TypeDB1,NewTypeDB)
+    ;otherwise;true ->
+        LB = [],
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+lower_element_names(Code,NameList,TypeDB,NewTypeDB):-
+    string(Code,Size,_,Code1),
+    lb_names(Size,Code1,_,NameList,TypeDB,NewTypeDB).
+
+lb_names(N,Code,NewCode,NameList,TypeDB,NewTypeDB):- N>0|
+    M := N-1,
+    check_bit(Code,M,Code1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB,TypeDB1),
+        set_vector_element(TypeDB,2,NameTBL,NewNameTBL,TypeDB1),
+        vector_element(NameTBL,M,Name,NewNameTBL),
+        NameList = [Name|NewNameList],
+        lb_names(M,Code1,NewCode,NewNameList,TypeDB1,NewTypeDB)
+    ;otherwise;true ->
+        lb_names(M,Code1,NewCode,NameList,TypeDB,NewTypeDB)
+    ).
+lb_names(N,Code,NewCode,NameList,TypeDB,NewTypeDB):- N=<0|
+    NewCode = Code,
+    NameList = [],
+    NewTypeDB = TypeDB.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% immediate_lower_bound(X,^ILB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% X : string
+% ILB : list of string
+% Result : normal(ty#yes) | abnormal(illegal_type_name)
+
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(X)|
+    X = '&top'|
+	ilb(X,ILB,TypeDB,NewTypeDB,Result).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(X)|
+    X = '&bottom'|
+	ILB = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#is_number(X)|
+    vector(X,1)|
+%	ILB = [ty#bottom],
+	ILB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(X)|
+    string(X,_,_)|
+	ILB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(X)|
+    vector(X,2)|
+%	ILB = [ty#bottom],
+	ILB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(X)|
+    X = '&integer'|
+%	ILB = [ty#bottom],
+	ILB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	ilb(X,ILB,TypeDB,NewTypeDB,Result).
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(X)|
+    X = '&string'|
+%	ILB = [ty#bottom],
+	ILB = ['&bottom'],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+%	ilb(X,ILB,TypeDB,NewTypeDB,Result).
+otherwise.
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+    atom(X)|
+	ilb(X,ILB,TypeDB,NewTypeDB,Result).
+otherwise.
+immediate_lower_bound(X,ILB,TypeDB,NewTypeDB,Result):-
+    ILB = [],
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[X]}.
+    Info = {type,illegal_type_name,[X]}.
+
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+ilb(X,ILB,TypeDB,NewTypeDB,Result):-
+    lower_mask_code(X,Mask,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        string(Mask,Size,_,NewMask),
+%	debug#info(debug_tag#lat,&debug,Info),
+%        Info = greatest_among_lb(Size,NewMask,ILB,TypeDB1,NewTypeDB),
+        greatest_among_lb(Size,NewMask,ILB,TypeDB1,NewTypeDB)
+    ;otherwise;true ->
+        ILB = [],
+        NewTypeDB = TypeDB1
+    ),
+    Result = R1.
+
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+lower_mask_code(X,MaskCode,TypeDB,NewTypeDB,Result):-
+    name_to_lower_code(X,Code,TypeDB,NewTypeDB,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        string(Code,Size,_,NewCode),
+%        builtin#substring(NewCode,0,~(Size-1),MaskCode,_)
+        ty_osif:substring(NewCode,0,~(Size-1),MaskCode,_)
+    ;otherwise;true ->
+%        MaskCode = ty#void
+        MaskCode = '&void'
+    ),
+    Result = R1.
+
+%下界のうちで最も大きいものを求める。
+greatest_among_lb(N,Mask,ILBL,TypeDB,NewTypeDB):-N>0|
+    M := N-1,
+    check_greatest_if_on(M,Mask,NewMask,ILBL,ILBL1,TypeDB,TypeDB1),
+    greatest_among_lb(M,NewMask,ILBL1,TypeDB1,NewTypeDB).
+greatest_among_lb(N,_Mask,ILBL,TypeDB,NewTypeDB):-N=<0|
+    ILBL = [],
+    NewTypeDB = TypeDB.
+
+
+check_greatest_if_on(M,Mask,NewMask,ILBL,NewILBL,TypeDB,NewTypeDB):-
+%    string_element(Mask,M,bit#on)|
+    string_element(Mask,M,1)|
+	string(Mask,Size,_,Mask1),
+%	new_string(WorkMask,Size,1),
+	new_string(WorkMask,Size,8),
+%	builtin#or_string_elements(WorkMask,0,Size,Mask1,0,
+%				   WorkMask1,NewMask),
+	ty_osif:or_string_elements(WorkMask,0,Size,Mask1,0,
+				   WorkMask1,NewMask),
+%	set_string_element(WorkMask1,M,bit#off,WorkMask2),
+	set_string_element(WorkMask1,M,0,WorkMask2),
+	set_vector_element(TypeDB,4,UpperTBL,NewUpperTBL,TypeDB1),
+	vector_element(UpperTBL,M,Code,NewUpperTBL),
+	check_and_all_zero(WorkMask2,Code,TypeDB1,TypeDB2,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    upper_code_to_name(Code,Name,TypeDB2,NewTypeDB),
+	    ILBL = [Name|NewILBL]
+%	;R1 = normal(ty#no) ->
+	;R1 = normal(fail) ->
+	    NewILBL = ILBL,
+	    NewTypeDB = TypeDB2
+	).
+check_greatest_if_on(M,Mask,NewMask,ILBL,NILBL,TypeDB,NewTypeDB):-
+%    string_element(Mask,M,bit#off)|
+    string_element(Mask,M,0)|
+	NewMask = Mask,
+	NILBL = ILBL,
+	NewTypeDB = TypeDB.
+
+
+check_and_all_zero(LowerCode,UpperCode,TypeDB,NewTypeDB,Result):-
+    string(LowerCode,LSize,_,LowerCode1),
+    string(UpperCode,USize,_,UpperCode1),
+    Lpos := LSize - 1,
+%    typeDB#read(dbsize,DBSize,TypeDB,NewTypeDB),
+    vector_element(TypeDB,0,DBSize,NewTypeDB),
+    Upos := DBSize - USize,
+    (Lpos < Upos ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;Lpos >= Upos ->
+%        builtin#and_string_elements(LowerCode1,Upos,~(Lpos-Upos+1),
+%                                    UpperCode1,0,
+%                                    LowerCode2,_UpperCode2),
+        ty_osif:and_string_elements(LowerCode1,Upos,~(Lpos-Upos+1),
+                                    UpperCode1,0,
+                                    LowerCode2,_UpperCode2),
+%        search_character(LowerCode2,Upos,Lpos,bit#on,Pos,_LowerCode3),
+        ty_osif:search_character(LowerCode2,Upos,Lpos,1,Pos,_LowerCode3),
+        (Pos < 0 ->
+%            Result = normal(ty#yes)
+            Result = normal(success)
+        ;Pos >= 0 ->
+%            Result = normal(ty#no)
+            Result = normal(fail)
+        )
+    ).

@@ -1,0 +1,338 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%  PsiTerm , HTerm reverse translate   %
+%  11/29 Buffer sakujo
+%  shuuseityuu
+
+
+:- module reverse_translate.
+:- public reverse_translate/3.
+:- with_macro pimos.
+
+
+reverse_translate(1,{PsiTerm,Env1},Out):- true |
+    ( Env1 = env(Env2,_)->
+	Env = Env2
+    ;
+    otherwise;
+      true->
+	Env = Env1
+    ),
+    r_translate_pterm(PsiTerm,0,Env,[],_NEnv,List1),
+    reverseChange(List1,"",Out).
+reverse_translate(2,{HTerm,env(Env,_),HIDT},Out):- true |
+    r_translate_hterm(HTerm,Env,HIDT,[],List1,_NEnv,_NHIDT),
+    reverseChange(List1,"",Out).
+
+% PsiTerm reverse translate  %
+
+%oosaki add
+%%start
+r_translate_pterm(pterm(PT,U),Num,Env,List,NEnv,List1):- vector(U,_)|
+    r_translate_pterm(PT,Num,Env,List,NEnv,List1).
+%%end
+r_translate_pterm(PTerm,Num,Env,List,NEnv,List1):- 
+                    integer(PTerm) |
+    envSearch(PTerm,PTerm,Num,Env,List,NEnv,List1).
+%    r_translate_pterm(PTermElement,Env,OrigPTerm).
+%r_translate_pterm({'&top',_,_},Num,Env,
+%    List,NEnv,List1):- 
+%                    true |
+%    r_translate_pterm1({Atom,Number,[]},Num,List,
+%    List1),
+%    NEnv=Env.
+r_translate_pterm({Atom,Number,Attribute},Num,Env,List,NEnv,List1):- 
+                    Attribute = [] |
+    r_translate_pterm1({Atom,Number,[]},Num,List,
+    List1),
+    NEnv=Env.
+otherwise.
+r_translate_pterm({Atom,Number,Attribute},Num,Env,List,NEnv,List1):- true |
+    r_translate_pterm1({Atom,Number,[]},1,List,
+    List2),
+    r_translate_attri(Attribute,Env,List2,NEnv,
+        List3),
+    r_t_a(Number,Num,List3,List1).
+
+r_t_a(Number,_Num,List,List1):- Number=0 |
+     append(List,[putb("]")],List1).
+r_t_a(Number,Num,List,List1):- 
+                Number >0 ,Num > 0 |
+     append(List,[putb("]")],List1).
+r_t_a(Number,Num,List,List1):- 
+                Number >0 ,Num = 0 |
+     append(List,[putb("]#")],List2),
+     append(List2,[puttq(Number)],List1).
+
+envSearch(Number,Num,Num2,Env,List,NEnv,List1)
+                :- true |
+    set_vector_element(Env,Number,NumElement,NumElement,Env2),
+    envSearchSub(NumElement,Num,Num2,Env2,List,
+    NEnv,List1). 
+
+
+envSearchSub(0,_Num,_Num2,NEnv,List,NEnv1,
+    List1):- 
+            true|
+    append(List,[putb("?")],List1),
+    NEnv1=NEnv.
+%envSearchSub('&top',_Num,_Num2,NEnv,List,NEnv1,
+%    List1):- 
+%            true|
+%    append(List,[putb("?")],List1),
+%    NEnv1=NEnv.
+envSearchSub(Number,Num,Num2,NEnv,List,NEnv1,
+    List1):- 
+            Number > 0 |
+    envSearch(Number,Num,Num2,NEnv,List,NEnv1,
+    List1).
+otherwise.
+envSearchSub(NumElement,_Num,Num2,NEnv,List,
+    NEnv1,List1):- 
+            true |
+    r_translate_pterm(NumElement,Num2,NEnv,List,
+    NEnv1,List1).
+
+
+%10/25 shuusei
+r_translate_attri([{Att1,Att2}|Ats],Env,List,NEnv,List1):- Ats\=[]|
+    append(List,[putb("[")],NL),
+    append(NL,[putb(Att1)],NL1),
+    append(NL1,[putb("=>")],List2),
+    r_translate_pterm(Att2,0,Env,List2,NEnv1,List3),
+    r_translate_attri(Ats,NEnv1,List3,NEnv,List1).
+r_translate_attri([{Att1,Att2}],Env,List,NEnv,List1):- true |
+    append(List,[putb("[")],NL),
+    append(NL,[putb(Att1)],NL1),
+    append(NL1,[putb("=>")],List2),
+    r_translate_pterm(Att2,0,Env,List2,NEnv,List1).
+r_translate_attri([],Env,List,NEnv,List1):- true |
+        NEnv=Env,List1=List.
+
+r_translate_pterm1({'&top',_,[]},_Num,List,
+    List1):- true |
+    append(List,[putb("?")],List1).
+r_translate_pterm1({Atom,Number,[]},_Num,List,
+    List1):- Number = 0 |
+    append(List,[puttq(Atom)],List1).
+r_translate_pterm1({Atom,Number,[]},Num,List,
+    List1):- Number > 0,Num=1 |
+    append(List,[puttq(Atom)],List1).
+r_translate_pterm1({Atom,Number,[]},Num,List,
+    List1):- Number > 0,Num=0 |
+    append(List,[puttq(Atom)],NL),
+    append(NL,[putb("#")],NL1),
+    append(NL1,[puttq(Number)],List1).
+
+%  list -> String Change
+
+reverseChange([putb(A)|Ls],String,Out):- true |
+    append_string:append_string([String,A],NString),
+    reverseChange(Ls,NString,Out).
+reverseChange([puttq(A)|Ls],String,Out):- true |
+    hLibrary:tTos(A,As),
+    append_string:append_string([String,As],NString),
+    reverseChange(Ls,NString,Out).
+reverseChange([],String,Out):- true |
+    Out = String.
+
+%  HTerm reverse translate %
+
+%r_translate_hterm
+r_translate_hterm(HTerm,Env,HIDT,List,List1,NEnv,NHIDT):- integer(HTerm)|
+%%%%%%%%%%%%%oosaki modify
+%    set_vector_element(HIDT,HTerm,HTElement,HTElement,NHIDT2),
+%%%%%%%%%%%%
+    vector_element(HIDT,HTerm,HTElement,NHIDT2),
+    r_translate_hterm(HTElement,Env,NHIDT2,List,List1,NEnv,NHIDT).
+r_translate_hterm({HTerm},Env,HIDT,List,List1,NEnv,NHIDT):- true|
+    set_vector_element(HIDT,HTerm,HTElement,HTElement,NHIDT2),
+    r_translate_hterm(HTElement,Env,NHIDT2,List,List1,NEnv,NHIDT).
+r_translate_hterm({Predicate,Case,ID},Env,HIDT,List,List1,NEnv,NHIDT):- true|
+    pred_reverse(Predicate,ID,Env,HIDT,List,List2,Env2,HIDT2),
+    case_reverse(Case,0,Env2,HIDT2,List2,List3,NEnv,NHIDT),
+    append(List3,[putb(")")],List1).
+%%for CBR
+r_translate_hterm({CbrHTerm,Trivial},Env,HIDT,List,List1,NEnv,NHIDT):- 
+        integer(CbrHTerm)|
+    vector_element(HIDT,CbrHTerm,HTElement,NHIDT2),
+    r_translate_hterm({HTElement,Trivial},Env,NHIDT2,List,List1,NEnv,NHIDT).
+r_translate_hterm({hp(_,CbrHTerm),Trivial},Env,HIDT,List,List1,NEnv,NHIDT):- true|
+    r_translate_hterm({CbrHTerm,Trivial},Env,HIDT,List,List1,NEnv,NHIDT).
+
+r_translate_hterm({{Predicate,Case,ID},Trivial},Env,HIDT,
+        List,List1,NEnv,NHIDT):- true|
+    append(List,[putb("!")],List2),
+    pred_reverse(Predicate,ID,Env,HIDT,List2,List3,Env2,HIDT2),
+    case_reverse(Case,0,Env2,HIDT2,List3,List4,NEnv,NHIDT),
+    append(List4,[putb(")")],List1).
+
+
+% pred_reverse({not,PTerm},ID,Env,HIDT,List,List1,
+
+%oosaki modify
+%pred_reverse({-,PTerm},_ID,Env,HIDT,List,List1,
+%    NEnv,NHIDT):- true |
+%    append(List,[putb("-")],List2),
+%    r_translate_pterm(PTerm,1,Env,List2,NEnv,
+%    List1),
+%    NHIDT=HIDT.
+%otherwise.
+%pred_reverse({_,PTerm},_ID,Env,HIDT,List,List1,
+%    NEnv,NHIDT):- true |
+%    r_translate_pterm(PTerm,1,Env,List,NEnv,
+%    List1),
+%    NHIDT=HIDT.
+
+pred_reverse({Naf,pterm(PTerm,U)},_ID,Env,HIDT,List,List1,NEnv,NHIDT):- true |
+    is_naf(Naf,YN),
+    ( YN = yes ->
+        append(List,[putb("-")],List2)
+    ;
+      YN = no->
+        List2 = List
+    ),
+    r_translate_pterm(PTerm,1,Env,List2,NEnv,List3),
+    append(List3,[],List1),
+    NHIDT=HIDT.
+otherwise.
+pred_reverse({Naf,PTerm},_ID,Env,HIDT,List,List1,NEnv,NHIDT):- true |
+    is_naf(Naf,YN),
+    ( YN = yes ->
+        append(List,[putb("-")],List2)
+    ;
+      YN = no->
+        List2 = List
+    ),
+    r_translate_pterm(PTerm,1,Env,List2,NEnv,List1),
+    NHIDT=HIDT.
+
+
+is_naf(-,YN):-true|
+    YN = yes.
+is_naf([],YN):-true|
+    YN = no.
+
+%case_reverse
+case_reverse([],_,Env1,HIDT1,List1,List,Env,HIDT):- true|
+    List=List1,
+    Env=Env1,
+    HIDT=HIDT1.
+case_reverse([C|Case],Num1,Env1,HIDT1,List1,List,Env,HIDT):- Num1=0|
+    case_reverse1(C,"(",List1,Env1,HIDT1,List2,Env2,HIDT2),
+    Num2 := Num1 +1,
+    case_reverse(Case,Num2,Env2,HIDT2,List2,List,Env,HIDT).
+case_reverse([C|Case],Num1,Env1,HIDT1,List1,List,Env,HIDT):- Num1\=0|
+    case_reverse1(C,",",List1,Env1,HIDT1,List2,Env2,HIDT2),
+    Num2 := Num1 +1,
+    case_reverse(Case,Num2,Env2,HIDT2,List2,List,Env,HIDT).
+
+%case_reverse1
+case_reverse1({Name,Term,Trivial,success},
+        Dmt,List1,Env1,HIDT1,List,Env,HIDT):-true|
+    append(List1,[putb(Dmt),
+                  puttq(Name),
+                  putb("=!")],List2),
+    phtermCheck(Term,Number),
+    r_ph(Number,Term,List2,Env1,HIDT1,List,Env,HIDT).
+case_reverse1({Name,_,Trivial,fail},
+        Dmt,List1,Env1,HIDT1,List,Env,HIDT):-true|
+    append(List1,[putb(Dmt),
+                  puttq(Name),
+                  putb("=!?")],List),
+    Env  = Env1,
+    HIDT = HIDT1.
+case_reverse1({Name,Term,Trivial},
+        Dmt,List1,Env1,HIDT1,List,Env,HIDT):-true|
+    append(List1,[putb(Dmt),
+                  puttq(Name),
+                  putb("=!")],List2),
+    phtermCheck(Term,Number),
+    r_ph(Number,Term,List2,Env1,HIDT1,List,Env,HIDT).
+case_reverse1({Name,Term},
+        Dmt,List1,Env1,HIDT1,List,Env,HIDT):-true|
+    append(List1,[putb(Dmt),
+                  puttq(Name),
+                  putb("=")],List2),
+    phtermCheck(Term,Number),
+    r_ph(Number,Term,List2,Env1,HIDT1,List,Env,HIDT).
+
+
+%%phtermCheck
+phtermCheck(Num,Number):- integer(Num) | Number=1.
+phtermCheck({_E1,_E2,[]},Number):- true  | Number=1.
+phtermCheck({_E1,_E2,E3},Number):- list(E3) | Number =1.
+
+%oosaki add
+phtermCheck(pterm(Num,         _),Number):- integer(Num) | Number=1.
+phtermCheck(pterm({_E1,_E2,[]},_),Number):- true  | Number=1.
+phtermCheck(pterm({_E1,_E2,E3},_),Number):- list(E3) | Number =1.
+
+phtermCheck({Num},Number):- integer(Num) | Number=0.
+otherwise.
+phtermCheck({_E1,_E2,_E3},Number):- true | Number=0.
+
+
+r_ph(0,Term,List,Env,HIDT,List1,NEnv,NHIDT):- true |
+    r_translate_hterm(Term,Env,HIDT,List,List1,
+    NEnv,NHIDT).
+r_ph(1,Term,List,Env,HIDT,List1,NEnv,NHIDT):- true |
+    r_translate_pterm(Term,0,Env,List,NEnv,List1),
+    NHIDT=HIDT.
+
+%rule_reverse({Name,Rule},Lis,Lis1):-
+%    Lis = [puttq(Name),putb("::"),nl|LisM],
+%    rule_reverse1(Rule,LisM,LisM1),
+%    LisM1 = [nl|Lis1].
+
+%rule_reverse1({Head,Body,Env,_Exp,HIDT},Lis,Lis1):-
+%    r_translate_hterm(Head,Env,HIDT,Lis,LisM,EnvM,HIDTM),
+%    body_rev(Body,LisM,EnvM,HIDTM,Lis1).
+    
+%body_rev(Body,Lis,Env,HIDT,Lis1):-
+%    list(Body) |
+%    Lis = [nl,putb("<- ")|LisM1],
+%    body_rev1(Body,LisM1,Env,HIDT,Lis1).
+%body_rev([],Lis,Env,HIDT,Lis1):-
+%    Lis = [putb("."),nl|Lis1].
+
+%body_rev1([Last],Lis,Env,HIDT,Lis1):-
+%    r_translate_nhterm(Last,Env,HIDT,Lis,LisM,_Env1,_HIDT1),
+%    LisM = [putb("."),nl|Lis1].
+%otherwise.
+%body_rev1([BH|BT],Lis,Env,HIDT,Lis1):-
+%    r_translate_nhterm(BH,Env,HIDT,Lis,LisM,EnvM,HIDTM),
+%    LisM = [putb(","),nl|LisM1],
+%    body_rev1(BT,LisM1,EnvM,HIDTM,Lis1).
+
+%r_translate_nhterm({[],Hterm},Env,HIDT,Lis,Lis1,Env1,HIDT1):-
+%    r_translate_hterm(Hterm,Env,HIDT,Lis,Lis1,Env1,HIDT1).
+%r_translate_nhterm({not,Hterm},Env,HIDT,Lis,Lis1,Env1,HIDT1):-
+%%    Lis = [putb("not ")|LisM],
+%    append(Lis,[putb("not ")],LisM),
+%    r_translate_hterm(Hterm,Env,HIDT,LisM,Lis1,Env1,HIDT1).
+
+%get_string_list(Lis,Out):-
+%    Lis=[getl(H)|Lis1],
+%    get_string_list1(H,Lis1,Out).
+
+%get_string_list1(-1,Lis,Out):-
+%    Lis = [],
+%    Out = [].
+%get_string_list1("",Lis,Out):-
+%    Lis = [],
+%    Out = [].
+%otherwise.
+%get_string_list1(S,Lis,Out):-
+%    get_string_list(Lis,T),
+%    Out = [S|T].
+
+
+append([H|T],L,AL):- true |
+    AL = [H|NAL],
+    append(T,L,NAL).
+append([],L,AL):- true |
+    AL=L.

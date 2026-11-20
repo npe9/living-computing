@@ -1,0 +1,174 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pom_vectorMatrixUtility.
+
+:- public 
+    set_C1/5,
+    set_C2/5.
+            
+:- with_macro pimos.
+
+%set_C1
+    set_C1(C1,I,J,SP,C):-true|
+        pom_vectorMatrix:get_data(C1,I,J,OldCij),
+        Cij1 = SP,
+        member(OldCij,Cij1,YN),
+        (   YN = yes->
+                C = C1
+        ;
+            YN = no ->
+                append(OldCij,[Cij1],NewCij),
+                pom_vectorMatrix:set_data(C1,I,J,NewCij,C2),
+                pom_vectorMatrix:set_data(C2,J,I,NewCij,C)
+        ).
+
+%set_C2
+    set_C2(C1,{I,J},{I,J},SP,C):-true| %Old Cij ha kanarazu []
+
+        NewCij = [SP],
+
+        pom_vectorMatrix:set_data(C1,I,J,NewCij,C2),
+        pom_vectorMatrix:set_data(C2,J,I,NewCij,C).
+otherwise.
+    set_C2(C1,{X,Y},{I,J},SP,C):-true|
+        pom_vectorMatrix:get_data(C1,X,I,Cxi),
+        pom_vectorMatrix:get_data(C1,Y,J,Cyj),
+        pom_vectorMatrix:get_data(C1,X,Y,OldCxy),
+
+        vector_rule(Cxi,Cyj,SP,Cxy1),
+    
+        member(OldCxy,Cxy1,YN),
+        (   YN = yes->
+                C = C1
+        ;
+            YN = no->
+                append(OldCxy,[Cxy1],NewCxy),
+                pom_vectorMatrix:set_data(C1,X,Y,NewCxy,C2),
+                pom_vectorMatrix:set_data(C2,Y,X,NewCxy,C)
+        ).
+
+%vector_rule
+%%(0,0)
+    vector_rule([],[],SP,Cxy1):-true|       
+        Cxy1 = SP.
+%(1,0)
+    vector_rule([X],[],SP,Cxy1):-true|      
+        (   integer(X)->
+                (   X=SP ->
+                        Cxy1 = SP
+                ;
+                    X\=SP ->
+                        Cxy1 = {X,SP}
+                )
+        ;
+            vector(X)->
+                Cxy1 = {X,SP}
+        ).
+%(0,1)
+    vector_rule([],[X],SP,Cxy1):-true|
+        (   integer(X)->
+                (   X=SP->
+                        Cxy1 = SP
+                ;
+                    X\=SP->
+                        Cxy1 = {X,SP}
+                )
+        ;
+            vector(X)->
+                Cxy1 = {X,SP}
+        ).
+%(1,1)
+    vector_rule([X1],[X2],SP,Cxy1):-true|
+        (   integer(X1),integer(X2)->
+                (   X1=X2,X2=SP->
+                        Cxy1 = SP
+                ;
+                    X1\=X2,X2=SP->
+                        Cxy1 = {X1,SP}
+                ;
+                    X1=X2,X2\=SP->
+                        Cxy1 = {X1,SP}
+                ;
+                    X1\=X2,X2\=SP->
+                        Cxy1 = {X1,X2,SP}
+                )
+        ;
+            vector(X1),integer(X2)->
+                (
+                    X2=SP->
+                        Cxy1 = {X1,SP}
+                ;
+                    X2\=SP->
+                        Cxy1 = {X1,X2,SP}
+                )
+        ;
+            integer(X1),vector(X2)->
+                (   X1=SP->
+                        Cxy1 = {X2,SP}
+                ;
+                    X1\=SP->
+                        Cxy1 = {X1,X2,SP}
+                )
+        ;
+            vector(X1),vector(X2)->     %hontouha vec_equal wo tukuranakerebaikenai
+                (   X1 = X2 ->
+                        Cxy1 = {X1,SP}
+                ;
+                otherwise;
+                    true->
+                        Cxy1 = {X1,X2,SP}
+                )
+        ).
+%(n,0)
+    vector_rule([X1|T],[],SP,Cxy1):-T\=[]|
+        Cxy1 = {[X1|T],SP}.
+%(0,n)
+    vector_rule([],[X2|T],SP,Cxy1):-T\=[]|
+        Cxy1 = {[X2|T],SP}.
+%(n,1)
+    vector_rule([X1|T],[X2],SP,Cxy1):-T\=[]|
+        (   integer(X2)->
+                (   SP=X2->
+                        Cxy1 = {[X1|T],SP}
+                ;
+                    SP\=X2->
+                        Cxy1 = {[X1|T],X2,SP}
+                )
+        ;
+            vector(X2)->
+                Cxy1 = {[X1|T],X2,SP}
+        ).
+%(1,n)
+    vector_rule([X1],[X2|T],SP,Cxy1):-T\=[]|
+        (   integer(X1)->
+                (   SP\=X1->
+                        Cxy1 = {X1,[X2|T],SP}
+                ;
+                    SP=X1->
+                        Cxy1 = {[X2|T],SP}
+                )
+        ;
+            vector(X1)->
+                Cxy1 = {X1,[X2|T],SP}
+        ).
+otherwise.
+    vector_rule(X1L,X2L,SP,Cxy1):-true|
+        Cxy1 = {X1L,X2L,SP}.
+%%%%%utility
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].

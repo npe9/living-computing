@@ -1,0 +1,87 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（１５）階層制約論理型言語：ＣＨＡＬ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（１５）階層制約論理型言語：ＣＨＡＬ</h2>
+
+<pre width="136"><b>
+	マ シ ン：PSI
+	環　　境：SIMPOS
+	言　　語：ESP
+	ソース量：61 KB
+	文　　書：なし
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+制約に強さの階層を導入し、できるだけ強い制約を満たす解を探索する階層制
+約論理型言語処理系である。<p>
+
+<h2>機能</h2>
+
+階層制約論理型言語ＣＨＡＬは、問題解決において高水準の記述をユーザに許
+すような、新しいプログラミング・パラダイム、「制約プログラミング」に基
+づき、さまざまな領域における制約の成立の要求度、すなわち制約の階層を扱
+うことが可能な制約評価系と、それらを有効に利用する制約論理型言語の処理
+系である。この言語を用いることによって、ユーザは問題の解法については原
+則的に触れることなしに、プログラミングを行うことが可能になる。<P>
+
+<DL>
+
+<DT>制約論理型言語の拡張
+
+<DD>通常の制約論理型言語では、与えられた制約に解がない場合には何の出力
+もなかったが、階層制約論理型言語では制約に強さの階層を導入することで、
+すべての制約を考えると解がない場合でも、弱い制約を無視することで次善解
+を得ることができる。この機能は計画や設計問題において重要である。<P>
+
+<DT>各種の領域の問題に対応
+
+<DD>階層制約論理型言語ＣＨＡＬは、ユーザの各種の問題領域に対応するため、
+	<OL>
+	<LI>非線形代数方程式
+	<LI>真偽値上の等式
+	</OL>
+
+といった、各種制約のための制約評価系が用意されており、これらの制約に対
+して強さの階層を指定できるようになっている。<p>
+</DL>
+
+<h2>参考文献</h2>
+
+<OL>
+
+<LI>Satoh,K., "Formalizing Soft Constraints by Interpretation
+Ordering", Proceedings of the Ninth European Confernce on Artificial
+Intelligence, pp.585-590,Stockholm,Sweden(1990).
+
+<LI>Satoh,K. and Aiba,A., Computing Soft Constraints by Hierarchical
+Constraint Logic Programming, <i>ICOT-TR-610</i>,ICOT,Japan(1990).
+
+</OL>
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	階層制約論理型言語：ＣＨＡＬ [76K] <a
+href="../../../ifs/kbms-clp/simpos/chal.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

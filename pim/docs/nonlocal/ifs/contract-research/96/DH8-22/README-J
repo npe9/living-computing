@@ -1,0 +1,11 @@
+PRISM 構成
+----------
+Copyright (C) 1997
+  SATO Taisuke and KAMEYA Yoshitaka,
+    Dept. of Computer Science, Tokyo Institute of Technology
+
+・prism.pl   -- PRISM処理系本体(Prolog)
+・random.c   -- Cルーチン
+・manual.ps  -- ユーザマニュアル
+                (Post Script ファイル, インストール方法は節3.2, p.11 記載)
+・examples/* -- PRISMの例プログラム(詳しくは README.ex)

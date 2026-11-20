@@ -1,0 +1,796 @@
+﻿<!- Copyright (C) 1996-1997 by Haruo Yokota,			>
+<!-     Japan Advanced Inst. of Sci. and Tech.,                 >
+<!-     1-1 Asahidai, Tatsunokuchi, Ishikawa 923-12, Japan.     >
+
+<html>
+<head>
+<title>Software developed through contract research program of FY 1995</title>
+</head>
+<body>
+
+<A HREF = ./Readme-E.html> [English page is here] </A>
+<HR>
+
+このソフトウェアは，独立した2つのソフトウェアから構成されています．
+
+<H2>(1) parade (PARallel Active Database Engine) : </H2>
+		並列アクティブデータベースプロトタイプ
+<h2>(2) fatpas (FAult Tolerant PArallel Software) : </H2>
+		耐故障並列ソフトウェアライブラリ 
+<p>
+	このプログラムは、さらに次の二つから構成されています。
+<h3> (2-1) expand : KLICマクロ展開プログラム </h3>
+<h3> (2-2) fts  : 耐故障並列ソフトウェアライブラリ </h3>
+
+<HR>
+<center><h1>
+【並列アクティブデータベースエンジン: Parade】
+</h1><br>
+by<p>
+<h3>
+横田治夫 at JAIST (北陸先端科学技術大学院大学)
+</h3>
+</center>
+<br><br>
+
+<h3>[用途]</h3>
+広範囲のデータベース処理を前提にしており、動的な経営判断や株の
+動向解析といったビジネス分野も対象にしているが、現バージョンは
+まだ必ずしも安定していないため、実験的利用が望ましいと思われる。
+サーバーの関係代数レベルのストリームインタフェースは、KLIC で
+書かれたアプリケーションプログラムに対してデータベース利用をサ
+ポートする。
+
+<h3>[機能]</h3>
+
+用意されたアクティブルールによって能動的にデータベースの内容を
+チェックして条件を判断し、定められた動作を行うことを目標に作ら
+れており、以下の機能を持つ。
+<p>
+<ul>
+<li> 効率良い動作のため、ネステッドトランザクションをサポートし
+ており、子トランザクションのアボートは、親トランザクション 
+に影響を与えない。
+<li>データの排他制御においては分散デッドロック検出を行い、処理
+の集中を避けている。 
+<li>データベース操作は、関係データベース演算を基本としており、
+水平分散されたデータに対して並列検索処理を行う。 
+<li>ユーザインタフェースは、インタラクティブな SQL クライアント
+を複数持てるのと同時に、KLIC からの関係代数レベルのストリー
+ムインタフェースも用意している。
+<li>KL1プロセスのsuspend/resume機能を利用したルール処理機構によ
+り、能動的なデータの更新・検索等をネステッドトランザクショ
+ンの保護の下で効率よく実行できる。
+</ul>
+
+<h3>[実行環境]</h3>
+
+以下のマシン上とKLIC version 2.002の組み合わせ
+<ul>
+<li> nCUBE2:nCX 5.105a 3.4.0 (要 nbsd, nsdisk)
+<li> Sun: SunOS 4.1.3 (Solaris 1.1)，SunOS 5.4 (Solaris 2.4)
+<li> PC: 386 BSD (BSDI BSD/OS 2.0.1)
+<li> NEWS: NEWS-OS 6.1.1
+</ul>
+
+
+<h3>[ファイル構成]</h3>
+<dl>
+<dt> parade/
+<dl>
+<dt> COPYRIGHT
+<dt> Readme-E.html
+<dt> Readme-J.txt
+<dt> advertise-E.html
+<dt> advertise-J.html
+<dt> rdbhosts
+<dt> Makefile
+<dl>
+<dt> common/
+<dl>
+<dt> client/
+<dl>
+<dt> sqlclt/
+<dl>
+<dt> dict.kl1
+<dt> hostname.kl1
+<dt> parser.kl1
+<dt> sqlclt.kl1
+<dt> uif.kl1
+</dl>
+<dt> oqlclt/
+<dl>
+<dt> hostname.kl1
+<dt> paraio.kl1
+<dt> uif.kl1
+<dt> dict.kl1
+<dt> oqlclt.kl1
+<dt> parser.kl1
+</dl>
+</dl>
+<dt> server/
+<dl>
+<dt> access.kl1
+<dt> access1.kl1
+<dt> algebra.kl1
+<dt> create.kl1
+<dt> deadlock.kl1
+<dt> delete.kl1
+<dt> drop.kl1
+<dt> exec.kl1
+<dt> insert.kl1
+<dt> lock.kl1
+<dt> log.kl1
+<dt> node_io.kl1
+<dt> processor.kl1
+<dt> projection.kl1
+<dt> rdbserv.kl1
+<dt> selection.kl1
+<dt> trans.kl1
+<dt> rule.kl1
+<dt> btree/
+<dl>
+<dt> bt_add.kl1
+<dt> bt_del.kl1
+<dt> bt_del1.kl1
+<dt> bt_del2.kl1
+<dt> bt_del3.kl1
+<dt> bt_get.kl1
+<dt> bt_name.kl1
+<dt> bt_page.kl1
+<dt> bt_pagename.kl1
+<dt> bt_util.kl1
+<dt> btinit.dat	
+<dt> btree.kl1
+</dl>
+</dl>
+<dt> coding/
+<dl>
+<dt> Makefile
+<dt> decoder.kl1
+<dt> encoder.kl1
+<dt> fastio.kl1
+</dl>
+<dt> util/
+<dl>
+<dt> Makefile
+<dt> util.kl1
+</dl>
+<dt> rel/
+<dl>
+<dt> Makefile
+<dt> attributes
+<dt> audit
+<dt> dept
+<dt> emp
+<dt> faculty
+<dt> relations.skel
+<dt> nrelations.skel
+<dt> rule
+</dl>
+<dt> newrel/
+</dl>
+<dt> doc/
+<dl>
+<dt> catalogue.tex
+<dt> papers.tex
+<dt> parade_doc.tex
+</dl>
+<dt> sun/
+<dl>
+<dt> client/
+<dl>
+<dt> sqlclt/
+<dl>
+<dt> Makefile
+</dl>
+<dt> oqlclt/
+<dl>
+<dt> Makefile
+</dl>
+<dt> javaQBE/
+<dl>
+<dt> readme
+<dt> index.html
+<dt> makefile
+<dt> DropPanel.java
+<dt> ScrollableTable.java
+<dt> GroupTable.java
+<dt> SelectPanel.java
+<dt> Attribute.java
+<dt> QbePanel.java
+<dt> Tag.java
+<dt> AttributePanel.java
+<dt> QbeSettingPanel.java
+<dt> TagTable.java
+<dt> AttributeTable.java
+<dt> QueryAttributes.java
+<dt> VStackLayout.java
+<dt> QueryCreate.java
+<dt> Client.java
+<dt> QueryData.java
+<dt> Communicate.java
+<dt> QueryDelete.java
+<dt> Const.java
+<dt> QueryDrop.java
+<dt> CreatePanel.java
+<dt> QueryInsert.java
+</dl>
+</dl>
+<dt> server/
+<dl>
+<dt> Makefile
+<dt> catalog.kl1
+</dl>
+<dt> socket/
+<dl>
+<dt> paraio.kl1
+<dt> socket.kl1
+</dl>
+</dl>
+<dt> ncube/
+<dl>
+<dt> client/
+<dl>
+<dt> Makefile
+</dl>
+<dt> server/
+<dl>
+<dt> Makefile
+<dt> catalog.kl1
+</dl>
+<dt> socket/
+<dl>
+<dt> paraio.kl1
+<dt> socket.kl1
+</dl>
+</dl>
+</dl>
+</dl>
+<p>
+
+<h3>[その他]</h3>
+現在、開発途上です。
+
+
+<HR>
+
+<center><h1>
+【KLICマクロ展開プログラム】
+</h1><br>
+by<p>
+<h3>
+杉野栄二、横田治夫 at JAIST (北陸先端科学技術大学院大学)
+</h3>
+</center>
+<br><br>
+
+<h3>[用途]</h3>
+
+KL1ソースプログラムに対して加工を行ないたいときに、じゃまになる
+KLICのマクロ表記をとりのぞきたいとき、
+またKLICで記述されたプログラムをPIMへ移植したいときにも役立つ。
+あるいは、KLICで記述されたマクロが どのように展開されるかを
+確かめたいときに有効である。
+
+<h3>[機能]</h3>
+
+本プログラムは、KLICにおけるマクロ表記等を含むKL1プログラムを
+ほぼプレーンなKL1プログラムに変換し、標準出力へ出力する。
+
+<h3>[実行環境]</h3>
+<ul>
+<li> KLIC (klic version 3.001 )
+</ul>
+
+<h3>[ファイル構成]</h3>
+<dl>
+<dt> fatpas/
+<dl>
+<dt> expand/
+<dl>
+<dt> README.j
+<dt> README-j.html
+<dt> README.e
+<dt> README-e.html
+<dt> Makefile
+<dt> diff.kl1
+<dt> kl1cmp.kl1
+<dt> kl1cmp0.kl1
+<dt> macro.kl1
+<dt> main.kl1
+<dt> obj.kl1
+<dt> util.kl1
+<dt> write.kl1
+<dt> difftest
+<dt> test
+</dl>
+</dl>
+</dl>
+
+<h3> [インストール方法]</h3>
+<h4> 必要に応じてMakefile を修正し、</h4>
+<h4> make all で実行形式 kl1expand が作られる。</h4>
+
+<h3> [使い方] 変換結果は、標準出力に出力される。</h3>
+
+<h4> その１）ファイルから入力する場合</h4>
+<dl>
+<dt>	% kl1expand File1 File2 ... 
+<dt>        入力ファイル名は、***.kl1 の形であること。
+</dl>
+
+<h4> その２）標準入力から入力する場合</h4>
+<dl>
+<dt>	% cat hogehoge.kl1 | kl1expand user 
+<dt>	入力ファイル名として 'user' を指定すれば、標準入力からプログラムを
+        読み込む。
+</dl>
+
+<h3> [変換後のプログラムについて] </h3>
+
+</ul>
+<li>    KLICのコンパイラを元にしているため、ガードのOR	
+<dl>
+<dt>		head :-  (guard1 ; guard2) | body. 
+<BR>
+<dt>	 の形はそのまま出力する。
+</ul>
+</ul>      ・ モジュール宣言以下のコマンド<BR>
+<BR>
+		:- xxxxx. <BR>
+<BR>
+	 は、モジュール内の述語定義の一番最後にまとめて出力される。<BR>
+<BR>
+      ・ モジュール宣言前のコマンドは、モジュール宣言の前に出力される。<BR>
+<BR>
+
+
+<h3> [KLICのバージョンアップに対応するヒント] </h3>
+  本プログラム対応版のKLICコンパイラ(compilerディレクトリ以下の *.kl1)を、
+  新版のコンパイラと比較して、それに対応するプログラムを変更する。
+<BR>
+  KLICのバージョンアップに対応するために、ファイル名モジュール名等
+  できるだけ保存するようにしてある。
+<BR>
+  対応するオリジナルのファイルとの共通部分の比較機能
+<P>
+	% make cmp <BR>
+<P>
+  も提供する。本プログラムの相違部分には、% IGNORE ... 等のコメントがあるが、
+  この比較機能はこの部分だけ無視して比較を行なうため、共通部分に変更が
+  あれば、この機能でわかる。
+
+<h3> [試験] </h3> 
+本プログラム自身を展開した結果とオリジナルプログラムに対して、
+      klicでコンパイルした結果で比較した。
+
+<h4> 試験方法</h4>
+<dl>
+<dt>    % kl1expand XXX.kl1 > tmp.kl1 
+<dt>   	% klic -c XXX.kl1 tmp.kl1
+<dt>    % cmp XXX.c tmp.c 
+</dl>
+
+<h4> 試験結果</h4>
+<ul>
+<li> 	main.kl1 	○ 
+<li>	write.kl1	○ 
+<li>	util.kl1	△ 
+<li>	obj.kl1		△ 
+<li>	macro.kl1	△ 
+<li>	kl1cmp.kl1	× 
+</ul>
+<dl>
+<dt>	○は一致したもの、
+<dt>	△はkl1cmp.kl1 中の tidy_clause を行なわないと一致する。
+<P>
+		tidy_clauseは、変数名のつけかえ等を行なって
+		結果クローズの見栄えを良くするものである。
+		このため、変数の割り付け方が変わるものと思われる。
+<P>		
+	        kl1cmp.kl1 のかわりに kl1cmp0.kl1を用いてコンパイルすると
+		tidy_clauseを行わない結果が得られる。
+
+<dt>	×は、述語のコンパイル順序が変わることによる。
+<P>
+		クローズ内のif-then 表記マクロの展開によって、新たに生成
+		される述語の順序が オリジナルのコンパイラでは逆順になっている。
+		このため、内部で生成するテーブル、ラベル名等の割り付けが
+		異る。
+</dl>
+
+<HR>
+
+<h3> 変更履歴：</h3>  
+<ul>
+<li> klic (limited release version 2.004) コンパイラをもとに作成。
+ [Version 1.0] 1996.10.25 by  
+<A HREF="http://www.jaist.ac.jp/~sugino/home-j.html">
+杉野栄二 (sugino@jaist.ac.jp)</A>
+ただし、klic (version 3.001)での動作を確認(1997.7.30) 。
+
+<li> 1996.10.31  プリティプリントを変更 
+	<ul>
+	<li> orゴールの表記に段下げをつけた。
+	<li> ボディ変数と非変数のボディユニファイが
+	   出ないようにした。（変数を非変数に置き換える）
+	</ul>
+<li> 1996.12.19  プリティプリントを修正
+		ボディで冗長なユニフィケーションが出ていたため。
+<li> 1997.02.28  ガード組み込み述語の演算部分の表記を修正
+		(divide(A,B,C) -> C := A/B   等)
+</ul> 
+
+<HR>
+
+<center><h1>
+【耐故障並列ソフトウェアライブラリ】
+</h1><br>
+by<p>
+<h3>
+杉野栄二、横田治夫 at JAIST (北陸先端科学技術大学院大学)
+</h3>
+</center>
+<br><br>
+
+<h3>[用途]</h3>
+
+一般の並列計算機上で、KL1プログラムの耐故障実行を実現する。
+
+
+<h3>[機能]</h3>
+
+	サンプルプログラム ft_queen.kl1 のように
+	耐故障ソフトウェア化したKL1プログラムとリンクすることで、
+	耐故障実行を行う。 
+
+  <h4> 述語 distribution(Primary,Backup) : watchdog.kl1 で提供される </h4>
+
+	は、すべてのノードを二つに分け、それぞれで監視プロセス起動する。
+	それぞれのプロセスへのストリームをリストにしてPrimary, Backup
+	へ返す。
+
+  <h4> 述語 copy(Args,Args1,Args2,Interrupt) : copy.kl1 で提供される </h4>
+
+	は、与えられた引数（変数を含む）Argsを複製し、Args1, Args2へ返す。
+	変数に対してはそれぞれプロセスが生成される、Argsの変数に
+	動的にユニファイされる値に対しては、対応するArgs1,Args2の変数に
+	ブロードキャストされる。 逆にArgs1, Args2へは同じ値がユニファイされる
+	ものとし、そのいずれかをArgsの対応する変数へ送る。
+	変数に対して生成されているプロセスは、
+	ストリーム Interruptへ fault が送られると ArgsとArgs2とをユニファイして
+	終了する。
+
+<h3> [使い方] </h3>
+
+	ライブラリ watchdog.kl1、copy.kl1 および、
+	使用する環境に応じてncube.kl1	または 	sparc.kl1 、
+	それとユーザプログラム 
+	（サンプルプログラムならば main.kl1 と ft_queen.kl1 ）
+	をKLICでコンパイル、リンクして起動する。
+
+<p>
+	% klic -v -dp -o dofts watchdog.kl1 copy.kl1 sparc.kl1 main.kl1 ft_queen.kl1 
+<br>
+	注）使用可能なノード数の総数が3個以上なければならない。
+
+
+<h3>[実行環境]</h3>
+<ul>
+<li> KLIC klic version 2.002
+<li> nCUBE2:nCX 5.105a 3.4.0 または
+<li> SunOS 4.1.3
+</ul>
+
+<h3>[ファイル構成]</h3>
+<dl>
+<dt> fatpas/
+<dl>
+<dt> fts/
+<dl>
+<dt> README.j   <dl> % 日本語版 README </dl>
+<dt> README-j.html   <dl> % 本ファイル </dl>
+<dt> README.e   <dl> % 英語版 README </dl>
+<dt> README-e.html   <dl> % 英語版 html </dl>
+<dt> watchdog.kl1    <dl> % 監視プロセス </dl>
+<dt> copy.kl1        <dl> % プロセス複製 </dl>
+<dt> ncube.kl1       <dl> % nCUBE2向けライブラリ </dl>
+<dt> sparc.kl1       <dl> % SPARC向けライブラリ </dl>
+<dt>        === サンプルプログラム ===
+<dt> main.kl1        <dl> % サンプルプログラム 主ルーチン </dl>
+<dt> queen.kl1       <dl> % N-Queenプログラム </dl>
+<dt> ft_queen.kl1    <dl> % 耐故障化 N-Queenプログラム </dl>
+<dt> ft_queen_faulty.kl1   <dl> % 耐故障化 N-Queenプログラム エラーあり</dl>
+<dt> main-sim.kl1    <dl> % サンプルプログラム(その２）主ルーチン </dl>
+<dt> f_sim.kl1       <dl> % サンプルプログラム（その２）</dl>
+<dt> f_sim_faulty.kl1 <dl> % サンプルプログラム（その２）エラーあり </dl>
+</dl>
+</dl>
+</dl>
+
+<HR>
+<h3> [実行例] </h3>
+
+	分散版KLICのトレース機能が利用できないため、バグが完全に
+	とりきれていない。  よって現在の版では、故障に対して完全に
+	実行継続できない。
+
+	サンプルプログラム（その２）については、ある程度の
+	継続動作が見られる。
+
+<h4>	1) コンパイル </h4>
+<dl>
+<dt>	% make sparc
+</dl>
+
+<h4>	2) エラー無しの実行 </h4>
+<dl>
+<dt>	% ./dofts-s -p5 10 100d
+<dt>	Leader [1]
+<dt>	Leader [2]
+<dt>	Backup Site Group  : 2 4 
+<dt>	Primary Site Group : 1 3 
+<dt>	30 [67,1]                     
+	<dl> <== プログラム出力 A (30), B ([67,1]) </dl>
+<dt>	Response time is 1359 msec
+</dl>
+
+<h4>	3) エラーありの実行</h4>
+<dl>
+<dt>	amethyst[300]% ./dofts-sf -p5 10 100d
+<dt>	Leader [1]
+<dt>	Leader [2]
+<dt>	Primary Site Group : 1 3 
+<dt>	Backup Site Group  : 2 4 
+<dt>	BOMB! 3
+<dl>					<== Node 3 でexit </dl>
+<dt>	30 FAULT was detected on PRIMARY SITE!	
+<dl>					<== 出力 A の後、故障検出 </dl>
+<dt>	FAULT was informed to BACKUP!
+<dt>	BACKUP change to PRIMARY !!! REBIRTH (1) [4]
+<dt>	REBIRTH (2) [4]
+<dt>	 ... REBIRTH ndet_replay [117,1]	
+<dl>					<== 内部メッセージの後、出力 B </dl>
+<dt>	^Ckill tasks from io_server		
+<dl>					<== 正常終了しないため ^C </dl>
+</dl>
+
+<HR>
+耐故障化変換 プログラムは、未完成であるので、以下に耐故障化変換の指針を記す。
+
+<h3> [耐故障化の指針]</h3>
+		
+<h4> １） 耐故障実行させたい部分を分離する。</h4>
+
+	ユーザプログラムは、main.kl1 と queen.kl1 に分離されており、
+	述語 queen:queen(N,Result) を耐故障実行する。
+<br>
+	注） オリジナルのプログラムは、main.kl1 queen.kl1 だけで動作する。
+
+<h4>  ２）耐故障実行させたい部分を次の手順で変更する。</h4>
+
+<h4>   2-1) 呼び出される一番上の述語を次の例のように変更する。</h4>
+
+<dl>
+<dt> % オリジナルの述語呼び出し <dl>
+<dt>	queen(N,R) :-       
+<dt>		% 監視プロセス生成  <dl>
+<dt>	    watchdog:distribution(Primary,Backup),  </dl>
+<dt>		% 次の述語へ引数を渡す <dl>
+<dt>	    queen_1({N,R},Primary,Backup) @ lower_priority(10).  </dl>
+</dl>
+<dt>		% プライマリとバックアップの主プロセスへのストリームを取り <dl>
+<dt>	queen_1(Args,[PTop|Primary],[BTop|Backup]) :-  
+<dt>		% 引数を複製し、<dl>
+<dt>	    copy:copy(Args,Args1,Args2,Interrupt),  </dl>
+<dt>		% 割り込み線をマージし、<dl>
+<dt>	    Interrupt = {Interrupt1,Interrupt2}, Log = ack(Log1), </dl>
+<dt>		% プライマリ、バックアップそれぞれへ
+<dt>		% トップのゴールをフォークする <dl>
+<dt>	    PTop = {primary,queen,queen,Args1,Log,Signal,Interrupt1},
+<dt>	    BTop = {backup ,queen,queen,Args2,Log1,Signal,Interrupt2}. </dl>
+</dl> </dl>
+
+<h4>   2-2) トップゴールの呼び出し口を用意する。</h4>
+
+	呼び出し口は、モジュール exgoal に定義される。
+<br>
+	上では、モジュール queen の述語 queen は、オリジナルのアリティが2
+	となっているので、以下の =-=-=-=- の間の2クローズが定義される。
+
+<dl>
+<dt>	:- module exgoal.
+<dt>
+<dt>	call_goal(Site,Module,Predicate,Args,Log,GSig,Raise)-SC :- <dl>
+ <dt>	    call_goal_0(Site,Module,Predicate,Args,Log,GSig,Raise)-SC @ lower_priority.
+</dl>
+<dt>	% =-=-=-=-
+<dt>	call_goal_0(primary,queen,queen,{A,B},Log,GSig,Raise)-SC :-  <dl>
+<dt>	    queen:queen_record(A,B,Log)+GSig+Raise-SC.  </dl>
+<dt>	call_goal_0(backup ,queen,queen,{A,B},Log,GSig,Raise)-SC :- <dl>
+<dt>	    queen:queen_replay(A,B,Log)+GSig+Raise-SC. </dl>
+<dt>	% =-=-=-=-
+<dt>	otherwise.
+<dt>	call_goal_0(Type,Module,Method,Arguments,Log,GSignal,Raise)-SC :- <dl>
+<dt>	    klicio:klicio([stdout(normal(Out))]),
+<dt>	    variable:wrap((Type::Module:Method/Arguments), G), 
+<dt>	    Out = [fwrite("Illegal goal invocation : "),
+		   putwt(G), nl,fflush(_)],
+<dt>	    Raise = []. </dl>
+</dl>
+
+<h4>    2-3)  2-3 で定義した トップゴール に対応する述語を用意する。</h4>
+
+<h4>	(1) もとの述語に対して Instant Replay 変換する </h4>
+
+<dl>	
+<dt>	% Record Version
+<dt>	queen_record(N,X,Log) :- <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_record(N,X,~(All-1),Log)@node(1). </dl>
+<dt>
+<dt>	queen_0_record(4,X,A,Log) :- queen_record([1,2,3,4],[],[],X,A,Log).
+<dt>	.... 
+<dt>
+<dt>	queen_record([P|U],C,L,I,PE,Log) :-  <dl>
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1),
+<dt> 		merge_record(I1,I2,I,Log2),
+<dt>		append(U,C,N),
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3). </dl>
+<dt>
+<dt>	% Replay Version
+<dt>	queen_replay(N,X,Log) :-  <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_replay(N,X,~(All-1),Log)@node(1). </dl>
+<dt>
+<dt>	queen_0_replay(4,X,A,Log) :- queen_replay([1,2,3,4],[],[],X,A,Log).
+<dt>	.... 
+<dt>
+<dt>	queen_replay([P|U],C,L,I,PE,Log) :-  <dl>
+<dt>	    Log = c1(Log1,Log2,Log3) | <dl>
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_replay(U,[P|C],L,I2,PE,TO,Log1),
+<dt> 		merge_replay(I1,I2,I,Log2),
+<dt>		append(U,C,N),
+<dt>		c1_replay(P,1,N,L,L,I1,PE,Log3). </dl> </dl>
+</dl>
+
+<h4>	(2) すべてのユーザ述語について引数を追加する </h4>
+
+	引数GSigは上位からの割り込み用であり、全ゴールにブロードキャストされる
+	ように、サブゴールにそのまま渡す。
+<br>
+	引数Raiseはゴールからの割り出し用なので、サブゴールが複数あるような
+	場合には、mergeされるようにサブゴールのRaiseストリームから成る
+	ベクタをユニファイする。
+	サブゴールが一つだけなら、そのまま渡す。 サブゴールが存在しなければ、
+	[] とユニファイする。
+<br>
+	引数組 SC は、ショートサーキットするだけのためなので、そのまま各ゴール
+	につけるだけである。
+
+<dl>
+<dt>	% Record Version
+<dt>	queen_record(N,X,Log)+GSig+Raise-SC :-  <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_record(N,X,~(All-1),Log)+GSig+Raise-SC @node(1). </dl>
+<dt>
+<dt>	queen_0_record(4,X,A,Log)+GSig+Raise-SC :- <dl>
+<dt>		queen_record([1,2,3,4],[],[],X,A,Log)+GSig+Raise-SC. </dl>
+<dt>	.... 
+<dt>	
+<dt>	queen_record([P|U],C,L,I,PE,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_record(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_record(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl>
+</dl>
+<h4>	(3) Record Versionでは、非決定的述語で Logのack待ち部分を挿入する</h4>
+
+<dl>
+<dt>	queen_record([P|U],C,L,I,PE,ack(Log))+GSig+Raise-SC :- <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		Log = c1(Log1,Log2,Log3),
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_record(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_record(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_record(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_record(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl>
+<dt>	queen_record([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>		Raise=[],
+<dt>		Log=c2(Ack), 
+<dt>		I=[]. </dl>
+</dl>
+
+<h4>	(4) Record Version では、非決定的述語で ボディユニファイのところに
+	    ack待ちを挿入する (出力コミット)</h4>
+
+<dl>
+<dt>	queen_record([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>		Raise=[],
+<dt>		Log=c2(Ack), 
+<dt>		output(Ack,I, [])-SC. </dl>
+<dt>	     
+<dt>	output(Ack,X,Y)-SC :- wait(Ack) | X = Y.  
+</dl>
+
+<h4>	(5) Replay Version では各述語の前に 割り込みチェック処理用の
+	    クローズを挿入する</h4>
+<dl>
+<dt>	% Replay Version
+<dt>	queen_replay(A,   B,   Log)+GSig+Raise-SC :- <dl>
+<dt>	    (wait(Log) -> queen_replay_0(A, B, Log)+GSig+Raise-SC ;
+<dt>	     alternatively;
+<dt>	     GSig = [rebirth|GSig1] -> queen_record(A, B, _)+GSig1+Raise-SC).</dl>
+<dt>	queen_replay_0(N,X,Log)+GSig+Raise-SC :- <dl>
+<dt>		current_node(_,All),
+<dt>		queen_0_replay(N,X,~(All-1),Log)+GSig+Raise-SC @node(1).</dl>
+<dt>
+<dt>	queen_0_replay( 4,X,A,Log)+GSig+Raise-SC :- <dl>
+<dt>		queen_replay([1,2,3,4],[],[],X,A,Log)+GSig+Raise-SC. </dl>
+<dt>	....
+<dt>
+<dt>	queen_record([P|U],C,L,I,PE,Log)+GSig+Raise-SC :- <dl>
+<dt>	   Log = c1(Log1,Log2,Log3) | <dl>
+<dt>		Raise = {Raise1,Raise2,Raise3,Raise4},
+<dt>		TO:= (P mod PE)+1,
+<dt>		throw_replay(U,[P|C],L,I2,PE,TO,Log1)+GSig+Raise1-SC,
+<dt> 		merge_replay(I1,I2,I,Log2)+GSig+Raise2-SC,
+<dt>		append_replay(U,C,N)+GSig+Raise3-SC,
+<dt>		c1_replay(P,1,N,L,L,I1,PE,Log3)+GSig+Raise4-SC. </dl></dl>
+<dt>	queen_replay([],[_|_],_,I,ack(Log))+Sig+Raise-SC:- <dl>
+<dt>	    Log=c2(Ack) | <dl>
+<dt>		Raise=[],
+<dt>		I=[]. </dl></dl>
+</dl>
+
+<h4>	(6) throw goal ('goal @ node(N)')は、すべて次のような割り出しに変える</h4>
+
+<dl>
+<dt>	throw_record(A,B,C,D,E,F,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = [goal(primary,queen,queen,{A,B,C,D,E},Log)]. </dl>
+<dt>	throw_replay(A,B,C,D,E,F,Log)+GSig+Raise-SC :- <dl>
+<dt>		Raise = [goal(primary,queen,queen,{A,B,C,D,E},Log)]. </dl>
+</dl>
+	  現在のバージョンでは、隣のノードへ勝手に投げるのでノード番号は
+	必要ない。  
+
+<h4>	(7) throw goalするゴールに対応する入口を モジュールexgoalに追加する。</h4>
+<dl>
+<dt>	call_goal_0(primary,queen,queen,{A,B,C,D,E},Log,GSig,Raise)-SC :-<dl>
+<dt>	    queen:queen_record(A,B,C,D,E,Log)+GSig+Raise-SC. </dl>
+<dt>	call_goal_0(backup ,queen,queen,{A,B,C,D,E},Log,GSig,Raise)-SC :-<dl>
+<dt>	    queen:queen_replay(A,B,C,D,E,Log)+GSig+Raise-SC.</dl>
+<dt>	....
+<dt>	otherwise.
+<dt>	call_goal_0(Type,Module,Method,Arguments,Log,GSignal,Raise)-SC :-<dl>
+<dt>	    klicio:klicio([stdout(normal(Out))]),
+<dt>	    variable:wrap((Type::Module:Method/Arguments), G), 
+<dt>	    Out = [fwrite("Illegal goal invocation : "),
+		   putwt(G), nl,fflush(_)],
+<dt>	    Raise = []. </dl>
+</dl>
+	注）ft_queen.kl1 は、throw goalするゴールをc1に変え、
+	   その他不必要な部分をオプティマイズしたものである。
+
+<hr>
+
+<h3>[FTP]</h3>
+<ul>
+<!-- <li> <a href="ftp://ftp.icot.or.jp/ifs/contract-research/95/DH7-20/README.eng">README</a> -->
+<li> プログラムとドキュメント [160KB]
+<a href="../../../../ifs/contract-research/95/DH7-20/H7-20.tgz"><img
+src="../../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+<adress><a href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></adress>
+</body>
+</html>

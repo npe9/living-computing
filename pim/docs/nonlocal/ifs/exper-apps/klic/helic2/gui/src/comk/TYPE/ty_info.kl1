@@ -1,0 +1,110 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_info
+%       File Name   : ty_info.kl1
+%       Function    : explanation infomation handling
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/25  : add mid to error info
+%$      1994/ 1/ 8  : unify result format
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_info.
+:- with_macro pimos.
+
+% explanation information handling
+
+:- public get_explanations/5,get_explanations/6.
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_explanations(Pterm,^Explanations,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+get_explanations(Pterm,Explanations,TypeDB,NewTypeDB,Result):-
+    get_explanations(Pterm,_NewPTerm,Explanations,TypeDB,NewTypeDB,Result).
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S get_explanations(Pterm,^NewPTerm,^Explanations,TypeDB,^NewTypeDB,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% Result : normal(ty#yes) | abnormal(Info)
+%        Info : illegal_type_name
+get_explanations(Pterm,NewPTerm,Explanations,TypeDB,NewTypeDB,Result):-
+%    pterm#read(typename,Name,Pterm,NewPTerm),
+    vector_element(Pterm,0,Name,NewPTerm),
+    type_class(Name,Explanations,TypeDB,NewTypeDB,Result).
+
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#is_top(Name)|
+    Name='&top'|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#is_bottom(Name)|
+    Name='&bottom'|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#is_integer(Name)|
+    integer(Name)|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#is_string(Name)|
+    string(Name,_,_)|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#blt_integer(Name)|
+    Name='&integer'|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#blt_string(Name)|
+    Name = '&string'|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+%    ty#is_cover(Name)|
+    vector(Name,2)|
+	Explanations = [],
+	NewTypeDB = TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+    atom(Name)|
+%	typeDB#get(expTBL,ExpTBL,NewExpTBL,TypeDB,NewTypeDB),
+	set_vector_element(TypeDB,6,ExpTBL,NewExpTBL,NewTypeDB),
+	ty_osif:get_with(Name,Explanations,ExpTBL,NewExpTBL),
+%	Result = normal(ty#yes).
+	Result = normal(success).
+otherwise.
+type_class(Name,Explanations,TypeDB,NewTypeDB,Result):-
+    Explanations = [],
+    NewTypeDB = TypeDB,
+    Result = abnormal(Info),
+%    Info = {ty#typemid,illegal_type_name,[Name]}.
+    Info = {type,illegal_type_name,[Name]}.

@@ -1,0 +1,130 @@
+
+  [ LIPS-Tools のファイルリスト ]
+                                                    by  永井 秀利
+
+            Copyright (C) 1997  九州工業大学 情報工学部 知能情報工学科
+                                                      永井 秀利
+                                                      中村 貞吾
+                                                      野村 浩郷
+
+Configure         -  環境設定スクリプト
+Makefile          -  デフォルトの想定環境に基づく LIPS-Tools の Makefile
+Makefile.filter   -  Makefile 作成用 sed スクリプト
+Makefile.in       -  Makefile のソース
+Readme-E          -  英語版のファイルリスト
+Readme-J          -  このファイル
+Readme.1st        -  'read me' ファイル
+cmd-lib           -  LIPS-Tools から利用されるコマンドが置かれたディレクトリ
+doc               -  ドキュメントファイルが置かれたディレクトリ
+jsax-if           -  JUMAN & SAX との Tcl/Tk インターフェースライブラリ
+law-model         -  法律文制限言語モデル関係のトップディレクトリ
+lips.in           -  'lips' コマンドのソースファイル
+lipsrc.sample.in  -  '.lipsrc' のサンプルファイルのソース
+tcl-lib           -  LIPS-Tools の Tcl/Tk ライブラリが置かれたディレクトリ
+
+LIPS-Tools/cmd-lib:
+Makefile.part     -  このディレクトリのための Makefile の一部
+Readme.1st        -  このディレクトリのための 'read me' ファイル
+make-kwic.doc     -  make-kwic のドキュメント
+make-kwic.in      -  make-kwic コマンドのソース
+
+LIPS-Tools/doc:
+ChangeLog          -  変更履歴
+Config-Log         -  Configure スクリプトのログサンプル
+Install            -  インストールガイド
+JUMAN-on-SICStus3  -  JUMAN を SICStus 3 の上で動かすためのヒント
+Law-Model          -  法律文制限言語モデル解説
+Manual             -  LIPS-Tools ソフトウェア仕様書
+Readme.1st         -  このディレクトリのための 'read me' ファイル
+Result-smpl        -  解析結果出力のサンプル
+UserGuide          -  ユーザーズガイド
+
+LIPS-Tools/jsax-if:
+Makefile.part      -  このディレクトリのための Makefile の一部
+jsax.in            -  jsax コマンドのソース
+jsax_ctrl.tcl.in   -+
+jsax_dsp.tcl        |
+jsax_if.tcl.in      | JUMAN & SAX とのインターフェースのための
+jsax_menu.tcl       |                            Tcl/Tk ライブラリのソース
+jsax_run.tcl.in    -+
+
+LIPS-Tools/law-model:
+Juman             -  JUMAN 関連ファイルが置かれたディレクトリ
+Makefile.part     -  このディレクトリのための Makefile の一部
+SAX               -  SAX 関連ファイルが置かれたディレクトリ
+
+LIPS-Tools/law-model/Juman:
+Makefile.part     -  このディレクトリのための Makefile の一部
+dictionary        -  辞書ファイルが置かれたディレクトリ
+grammar           -  形態素解析用文法が置かれたディレクトリ
+juman_pl          -  LIPS-Tools のために変更が加えられた JUMAN の
+                              prolog ライブラリファイルが置かれたディレクトリ
+jumanrc.sample.in -  '.jumanrc' のサンプルファイルのソース
+
+LIPS-Tools/law-model/Juman/dictionary:
+Makefile.part  -  このディレクトリのための Makefile の一部
+adj.dic        -+
+adv.dic         |
+aux.dic         |
+con.dic         | 辞書ファイル
+noun.dic        |
+spcl.dic        |
+verb.dic       -+
+
+LIPS-Tools/law-model/Juman/grammar:
+JUMAN.connect  -+
+JUMAN.grammar   | 形態素解析用文法ファイル
+JUMAN.kankei    |
+JUMAN.katuyou  -+
+Makefile.part  -  このディレクトリのための Makefile の一部
+
+LIPS-Tools/law-model/Juman/juman_pl:
+Makefile.part     -  このディレクトリのための Makefile の一部
+juman_user.pl.in  -  LIPS-Tools のために変更が
+                                加えられた JUMAN の prolog ライブラリファイル
+
+LIPS-Tools/law-model/SAX:
+Makefile.part  -  このディレクトリのための Makefile の一部
+gram_util      -  文法記述のための prolog プログラムが置かれたディレクトリ
+grammar        -  構文解析用文法が置かれたディレクトリ
+utility        -  LIPS-Tools のために書き換えられた 
+                        SAX ユーティリティプログラムが置かれたディレクトリ
+
+LIPS-Tools/law-model/SAX/gram_util:
+Makefile.part        -  このディレクトリのための Makefile の一部
+char-to-list.pl      -+
+fstruct_print.pl      |
+ld-grammar-util.pl.in | 文法記述のための prolog プログラム
+make_sem.pl           |
+predicate.pl         -+
+
+LIPS-Tools/law-model/SAX/grammar:
+LIPS-grammar       -  文法ファイルの中心
+Makefile.part      -  このディレクトリのための Makefile の一部
+case_name.pl       -+
+con_np.pl           |
+ld-grammar-db.pl.in | 文法記述上の補助ファイル
+thesaurus.pl        |
+verb_case.pl       -+
+
+LIPS-Tools/law-model/SAX/utility:
+LIPS_startup.pl.in        -  prolog 立ち上げ時の初期化プログラム
+Makefile.part             -  このディレクトリのための Makefile の一部
+juman_sax_for_LIPS.pl     -  LIPS-Tools 用に書き換えられた
+                                               SAX の 'juman_sax.pl'
+sax_user.JUMAN.LIPS.pl.in -  LIPS-Tools 用に書き換えられた
+                                               SAX の 'sax_user.JUMAN.pl'
+LIPS-Tools/tcl-lib:
+Makefile.part    -  このディレクトリのための Makefile の一部
+edbind.tcl       -+
+edfileop.tcl      |
+edframe.tcl       |
+edit_menu.tcl     |
+edsearch.tcl      |
+edslfile.tcl      | LIPS-Tools を構成する Tcl/Tk ライブラリファイル
+file_menu.tcl     |
+research.tcl      |
+research_menu.tcl |
+scr_lstbox.tcl    |
+scr_text.tcl      |
+search_menu.tcl  -+

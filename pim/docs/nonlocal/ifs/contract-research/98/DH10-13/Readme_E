@@ -1,0 +1,87 @@
+                  
+ 		    DJ Version 0.5 beta
+                        (Neng-Fa Zhou)
+
+
+Software Features
+=================
+DJ is a language that amalgamates Java and Constraint Programming.
+Developing GUIs including applets in Java is a time-consuming process.
+The users have to choose appropriate layout managers and sometimes
+have to determine the sizes and positions of graphical components.
+There are many visual tools for creating Java programs without the
+need to write any code. However, none of these tools supports
+constraints. DJ, as an extension of Java, significantly simplifies the
+process of constructing GUIs and Java applets. The users only need to
+specify the components that compose a GUI and the relationships among
+the components by using constraints. The layout for the components is
+automatically determined by the system. As a constraint programming
+language, DJ improves the current constraint languages in that
+problems and solutions can be described in the same language. And most
+importantly, because DJ is a compiling language that uses Java as the
+object language, results can be distributed on the World Wide Web as
+Java applets and/or included in other larger applications.
+
+
+Required Environment
+====================
+Executable binaries are available for PC (Windows95/NT) and Sparc(SunOS 
+or Solaris) in this package. For other platforms, you need to first 
+install B-Prolog Version 3.1 
+    (http://www.cad.mse.kyutech.ac.jp/people/zhou/bprolog.html)
+
+
+File Configuration
+==================
+sparc             --- executable binaries for sparc
+win32             --- executable binaries for Windows-95/Windows-NT
+examples/         --- example programs and the compiled Java and HTML files
+doc/manual.ps     --- the manual in post script format
+use-of-software-E --- copy right notice in English
+use-of-software-J --- copy right notice in Japanese
+Readme-E          --- Readme in English
+Readme-J          --- Readme in Japanese
+
+Installation
+============
+**NOTICE : JDK1.1 or up is required to compile the generated Java programs
+
+Install on Sparcs
+-----------------
+1. save the file "dj.tgz" in the $HOME directory.
+
+2. uncompress and extract the files from "dj.tgz".
+
+3. add "$HOME/dj/sparc" to the "path" environment variable
+
+4. now "dj" becomes a command for compiling DJ programs into Java. 
+   Type "dj file" to compile a DJ program saved in "file", and 
+   type "dj -help" to see how to use the command.
+
+
+Install on Windows-PC
+---------------------
+1. save the file "dj.tgz" in the "C:\" directory.
+
+2. uncompress and extract the files.
+
+3. add "C:\dj\win32" to the path environment variable
+
+4. now "dj" becomes a command for compiling DJ programs into Java. 
+   Type  "dj -help" to see how to use the command.
+
+
+Correspondence
+==============
+Send bug reports and/or suggestions to:
+
+   Neng-Fa Zhou
+   Faculty of Computer Science and Systems Engineering 
+   Kyushu Institute of Technology 
+   680-4 Kawazu, Iizuka, Fukuoka, Japan
+   Tel. 0948-29-7774   Fax. 0948-29-7760                    
+   zhou@mse.kyutech.ac.jp
+
+
+
+

@@ -1,0 +1,61 @@
+The HiRise Constraint Solver for Java, Ver. 2.0
+Hiroshi HOSOBE
+
+Copyright (C) 1998-1999 Hiroshi HOSOBE
+
+[Functions]
+
+This package presents version 2.0 of the HiRise constraint solver.
+HiRise performs incremental satisfaction of constraint systems.  It
+provides three kinds of constraints, stay, edit, and linear ones, and
+also allows programmers to specify constraints with hierarchical
+preferences (i.e. constraint hierarchies) like the DeltaBlue
+constraint solver developed by Borning et al.
+
+Version 2.0 newly introduced a class named ConstraintSet, which groups
+two constraints using either conjunction or optimization.  With
+conjunction, two constraints belonging to the same ConstraintSet
+behave as a single constraint; that is, their satisfaction occurs at
+the same time.  On the other hand, with optimization, two constraints
+contained in the same ConstraintSet are treated properly when both of
+them cannot be satisfied, which can be used as a substitution for the
+least-squares method.
+
+[Compilation and Execution Environment]
+
+To compile and execute this software, Java Development Kit (JDK) 1.1
+or a compatible development and execution environment is required.  We
+have so far successfully compiled the source files using Sun
+Microsystems JDK 1.1.7 and Microsoft Visual J++ 6.0 (Japanese
+version).  To execute the sample program, you can use Java
+interpreters that come with these development environments.  Also, to
+execute the demo applet, you can exploit Microsoft Internet Explorer
+4.0 as well as the applet viewers included in these environments.
+
+[File Configuration]
+
+README files (English/Japanese):
+Readme-E
+Readme-J
+
+User's manual:
+readme.txt
+
+Terms of use (English/Japanese):
+use-of-software-E
+use-of-software-J
+
+Source code of the HiRise constraint solver:
+Constraint.java         ConstraintSet.java      Edit.java
+HiRiseObject.java       Linear.java             Solver.java
+Stay.java               Variable.java
+
+Source code of the sample program:
+Sample.java
+
+Source code of the demo applet:
+CSetDemo.java           ExtTextField.java       GraphicsUtility.java
+HiRiseDemo.java         InfoPanel.java          TreeDemo.java
+
+Byte code:
+*.class

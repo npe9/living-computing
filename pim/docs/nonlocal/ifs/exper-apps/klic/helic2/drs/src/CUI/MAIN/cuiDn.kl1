@@ -1,0 +1,34 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_defaultName.
+
+:- public 
+    get_outputFileName/1,
+    get_inputFileName/1,
+    get_transProgramName/1.
+
+:- with_macro pimos.
+
+%get_outputFileName
+    get_outputFileName(OutputFileName):-true|
+%       unix:getenv("HOME",Home),
+%       append_string:append_string([Home,"/.output"],OutputFileName).
+
+        OutputFileName = "tmp1".
+
+%get_inputFileName
+    get_inputFileName(InputFileName):-true|
+%       unix:getenv("HOME",Home),
+%       append_string:append_string([Home,"/.input"],InputFileName).
+
+        InputFileName = "tmp2".
+
+%get_transProgramName
+    get_transProgramName(TransProgramName):-true|
+        TransProgramName = "dtransrg".
+
+
+

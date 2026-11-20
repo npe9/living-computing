@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Copyright (C) 1998
+%%%    Taisuke Sato, Yoshitaka Kameya, Yasushi Hagiwara, Nobuhisa Ueda,
+%%%      Dept. of Computer Science, Tokyo Institute of Technology.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PRISM (PRogramming In Statistical Modeling) プログラミング処理系
+----------------------------------------------------------------
+
+ディレクトリ構成：
+
+(ファイル名)          (内容)
+INSTALL               インストール方法 (英語)
+README-E              ファイル構成一覧(英語版)
+README-J              ファイル構成一覧(本ファイル)
+use-of-software-E     ソフトウェアの利用条件(日本語版)
+use-of-software-J     ソフトウェアの利用条件(英語版)
+manual.ps             ユーザマニュアル
+examples/             例プログラムディレクトリ
+  blood.psm
+  japanese.dat
+  lost_theory.psm
+  two_models.psm
+  japaneseABO.dat
+  hmm.psm
+  alarm.psm
+library/              ソースファイルディレクトリ
+  Makefile
+  c_interface.pl
+  em.pl
+  emGUI.pl
+  emNoGUI.pl
+  em_stable.pl
+  exec.pl
+  foreign.pl
+  foreignGUI.pl
+  make_routines.pl
+  misc.pl
+  modifier.pl
+  parse.pl
+  prism.pl
+  startGUI.pl
+  startNoGUI.pl
+  start_stable.pl
+  sw_handling.pl
+  tclIF.pl
+  prism.h
+  em.c
+  graph.c
+  prob.c
+  random.c
+  trie.c

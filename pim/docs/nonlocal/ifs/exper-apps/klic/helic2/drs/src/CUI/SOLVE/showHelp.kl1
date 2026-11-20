@@ -1,0 +1,95 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%    (C)1994 Institute for New Generation Computer Technology        %%%%
+%%%%    (Read COPYRIGHT for detailed information.)                      %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_showHelp.
+
+:- public 
+    show_help/3,
+    show_help/4.
+            
+:- with_macro pimos. 
+
+%show_help
+    show_help(CS1,CS,R):-true|
+	get_help(Help,R1),
+        (   R1 = normal(success)->
+                CS1 = [send(nh,receive(help,Help,R))|CS]).
+
+    show_help(C,CS1,CS,R):-true|
+	get_help(C,Help,R1),
+        (   R1 = normal(success)->
+                CS1 = [send(nh,receive(help,Help,R))|CS]
+	;
+	    R1 = abnormal(Reason)->
+                CS1 = [send(nh,receive(errorInfo,[Reason],R))|CS]
+	).
+
+%help/3
+    get_help(Help,R):-true|
+        Help = [
+    	"     backward    	next",
+	"     end 	    	previous",
+	"     forward	    	set",
+	"     help	    	show"],
+        R = normal(success).
+
+    get_help(Command,Help,R):-true|
+        get_help1(Command,Help,R).
+
+%get_help
+    get_help1("all",Help,Result):-true|
+        Help =[
+	"    end ",
+	"    backward",
+	"    forward ",
+	"    next ",
+	"    previous",
+	"    set 	pl 		Int",
+	"    set 	pt 		<h|e>",
+	"    show 	counter",
+	"    show 	pl ",
+	"    show 	pt ",
+	"    show 	explain",
+	"    help 			[Command]"],
+        Result = normal(success).
+    get_help1("end",Help,Result):-true|
+        Help =[
+	"    end "],
+        Result = normal(success).
+    get_help1("backward",Help,Result):-true|
+        Help =[
+	"    backward"],
+        Result = normal(success).
+    get_help1("forward",Help,Result):-true|
+        Help =[
+	"    forward "],
+        Result = normal(success).
+    get_help1("next",Help,Result):-true|
+        Help =[
+	"    next "],
+        Result = normal(success).
+    get_help1("previous",Help,Result):-true|
+        Help =[
+	"    previous"],
+        Result = normal(success).
+    get_help1("set",Help,Result):-true|
+        Help =[
+	"    set 	pl 		Int",
+	"    set 	pt 		<h|e>"],
+        Result = normal(success).
+    get_help1("show",Help,Result):-true|
+        Help =[
+	"    show 	counter",
+	"    show 	pl ",
+	"    show 	pt ",
+	"    show 	explain"],
+        Result = normal(success).
+    get_help1("help",Help,Result):-true|
+        Help =[
+	"    help 			[Command]"],
+        Result = normal(success).
+otherwise.
+    get_help1(C,_,Result):-true|
+        Result = abnormal({drs,'Illegal command',C}).

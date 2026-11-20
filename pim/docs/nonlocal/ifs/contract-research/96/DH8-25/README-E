@@ -1,0 +1,92 @@
+
+                Japanese Morphological Grammar Rules Version 1.5
+                ------------------------------------------------
+
+Copyright (C) 1994-1997 SANO Hiroshi
+
+
+Archive Files
+
+JpnMorph ---+--- COPYRIGHT	Copyright Declarement
+            |
+            +--- README-E	README File
+            |
+            +--- RULE/		Morphological Analysis Dara
+            |
+            +--- DICT/		Dictionary Data
+            |
+            +--- MISC/		Utility Programs
+
+
+
+1. How to Install the package
+
+(1) Convert the MISC/MANUAL/vol4.dvi file to a PS(Post Script)
+formatted file that is appropriate for PS printers.
+(2) Print the PS formatted file using the laserprinter(or whatever).
+(3) Follow the instruction of the document.
+
+2. Quick Installation
+
+The package requires the environment varibles.
+
+  % setenv JUMANPATH /...../juman
+  % setenv JUMANVERSION 1.0 | 2.0
+  % setenv MORPHPATH /..../JpnMorph
+
+Setting JUMANRC file up.
+
+  % MISC/LIB/mkjumanrc.sh
+
+Setting RULERC file up then compile the grammar rules.
+
+  % MISC/LIB/setjumanrc.sh bsic
+  % MISC/LIB/cmplrule.sh -C default
+
+Expanding dictionary data files.
+
+  % DICT/CLOSEWORD/expand
+
+Making a JUMAN parser with the grammar rules and dictionary data.
+
+  % MISC/LIB/cmpldict.sh -C bsic
+
+In order to parse a sample sentences, type the following command.
+
+  % MISC/LIB/kaiseki < MISC/CORPUS/CNST/kenpo
+
+3. How to distribute the package
+
+(1) Create a tared file.
+  % tar cvf jpnmorph.tar JpnMorph
+(2) Compress the file with gzip command.
+  % gzip jpnmorph.tar
+
+  Store the compressed file created by gzip on a remote network site
+to allow another users to get the package.
+
+4. How to extract files from the package
+
+(1) Uncompress the archive
+  % gunzip -c jpnmorph.tar.gz
+(2) Extract files from the tared file
+  % tar xvf jpnmorph.tar
+
+5. How to compile the grammar rules and dictionary data
+
+(1) Grammar Rules
+  % MISC/LIB/cmplrule.sh -C bsic
+(2) Dictionary Data
+  % MISC/LIB/cmpldict.sh -C bsic
+
+6. The following commands can be used to parse sentences
+
+  % MISC/LIB/kaiseki < <INPUT_FILE>
+
+  % MISC/LIB/kaiseki0 < <INPUT_FILE>
+
+  % MISC/LIB/kaiseki1 < <INPUT_FILE>
+
+  % MISC/LIB/kaiseki2 < <INPUT_FILE>
+
+-----     -----     -----     -----     -----     -----

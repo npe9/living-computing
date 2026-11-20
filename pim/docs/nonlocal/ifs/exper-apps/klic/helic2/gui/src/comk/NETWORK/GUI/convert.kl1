@@ -1,0 +1,680 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%TEST  vesion2  10/26 ,11/1,11/7,11/11
+:- module convert.
+:- public convert/2,ushortchange/2,shortchange/2,intchange/2,unitchange/2,
+           stringchange/2,listchange/2,charToatom/7,ucharToatom/7,
+           shortTochange/7,ushortTochange/7,intTochange/7,stringToList/7,
+           liToList/7,charpToatom/7,charchange/2,charpchange/2,
+           ushortTochangeP/7.
+:- with_macro pimos.
+
+convert(List,AppendString):- true |
+%       NULL0 = 0,
+%       NULL1 := NULL0 - 48,
+        _NULL1 = nil,
+%       generic:string(ST0,1,8),
+%       set_string_element(ST0,1,nil,ST1),      
+%       NList = [ST0|List],
+%       io:outstream([print(List),nl]),
+        append_string:append_string(List,AppendString).
+
+
+
+
+
+%%%  ushort 変換部分  %%%%%
+
+ushortchange(St,LenString):- St < 256 |
+        new_string(ST0,3,8),
+        set_string_element(ST0,0,16#"4",ST1),
+        set_string_element(ST1,2,St,LenString).
+otherwise.
+ushortchange(St,LenString) :- true |
+%       io:outstream([print(St),nl]),
+%       generic:string(St,SizeSt,_),
+%       SizeSt = St,
+        new_string(ST0,3,8),
+        Sho := St / 256,
+        Amari := St mod 256,
+        set_string_element(ST0,0,16#"4",ST1),
+        set_string_element(ST1,1,Sho,NST0),
+        set_string_element(NST0,2,Amari,LenString).             
+
+
+%%%   char 変換部分  %%%%%
+
+charchange(Char,CharString):- Char < 0 |
+        new_string(ST0,2,8),
+        NChar := Char + 256,
+        set_string_element(ST0,0,16#"1",ST1),
+        set_string_element(ST1,1,NChar,CharString).
+charchange(Char,CharString):- atom(Char) |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"1",ST1),
+        hLibrary:tTos(Char,CharSt),
+        append_string:append_string([ST1,CharSt],CharString).
+%       set_string_element(ST1,1,Char,CharString).
+otherwise.
+charchange(Char,CharString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"1",ST1),
+	new_string(CharSt0,1,8),
+	set_string_element(CharSt0,0,Char,CharSt),
+%        hLibrary:tTos(Char,CharSt),
+        append_string:append_string([ST1,CharSt],CharString).
+%       set_string_element(ST1,1,Char,CharString).
+        
+
+
+charpchange(Char,CharString):- Char < 0 |
+        new_string(ST0,2,8),
+        NChar := Char + 256,
+        set_string_element(ST0,0,16#"1",ST1),
+        set_string_element(ST1,1,NChar,CharString).
+otherwise.
+charpchange('p',CharString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,0,16#"1",ST1),
+        set_string_element(ST1,1,16#"0",CharString).
+charpchange('d',CharString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,0,16#"1",ST1),
+        set_string_element(ST1,1,16#"1",CharString).
+        
+
+%%%   uchar 変換部分   %%%%%
+
+ucharchange(UChar,UCharString):- true |
+        new_string(ST0,2,8),
+        set_string_element(ST0,0,16#"2",ST1),
+        set_string_element(ST1,1,UChar,UCharString).
+
+
+%%%   short 変換部分   %%%%%
+
+shortchange(Short ,ShortString):- Short < 0 |
+        new_string(ST0,3,8),
+        set_string_element(ST0,0,16#"3",ST1),
+        NShort := Short + 65536,
+        shortchange1(NShort,ST1,ShortString).
+
+otherwise.
+shortchange(Short,ShortString):- true |
+        new_string(ST0,3,8),
+        set_string_element(ST0,0,16#"3",ST1),
+        shortchange1(Short,ST1,ShortString).
+
+shortchange1(Short,String,ShortString):- Short >= 256 |
+        Sho := Short /256,
+        Amari := Short mod 256,
+        set_string_element(String,1,Sho,NString),
+        set_string_element(NString,2,Amari,ShortString).
+otherwise.
+shortchange1(Short,String,ShortString):- true |
+        set_string_element(String,2,Short,ShortString).
+        
+
+%%%%  short part2
+
+
+shortchangeP(Short ,ShortString):- Short < 0 |
+        new_string(ST0,2,8),
+        NShort := Short + 65536,
+        shortchangeP1(NShort,ST0,ShortString).
+
+otherwise.
+shortchangeP(Short,ShortString):- true |
+%	builtin:print(Short),
+        new_string(ST0,2,8),
+        shortchangeP1(Short,ST0,ShortString).
+
+shortchangeP1(Short,String,ShortString):- Short >= 256 |
+        Sho := Short /256,
+        Amari := Short mod 256,
+        set_string_element(String,0,Sho,NString),
+        set_string_element(NString,1,Amari,ShortString).
+otherwise.
+shortchangeP1(Short,String,ShortString):- true |
+        set_string_element(String,1,Short,ShortString).
+        
+
+
+        
+
+%%%    int 変換部分   %%%%%%
+
+
+intchange(Int,IntString):- Int < 0 |
+        new_string(ST0,5,8),
+        set_string_element(ST0,0,16#"5",ST1),
+        Int0 := (-1) - Int,
+        intchange2(Int,Int0,ST1,IntString).
+otherwise.
+intchange(Int,IntString):- true |
+        new_string(ST0,5,8),
+        set_string_element(ST0,0,16#"5",ST1),
+        intchange3(Int,ST1,IntString).
+
+intchange2(_Int,Int0,ST1,IntString):- true |
+        divbite(Int0,DivVector),
+        intchange4(ST1,DivVector,0,IntString).
+
+
+divbite(Int,DivVector):- true |
+%       new_vector(DivVector,4),
+        Sho1 := Int / 16777216,
+        Amari1 := Int mod 16777216,
+        Sho2 := Amari1 / 65536,
+        Amari2 := Amari1 mod 65536,
+        Sho3 := Amari2 / 256,
+        Amari3 := Amari2 mod 256,
+        DivVector = {Sho1,Sho2,Sho3,Amari3}.
+
+intchange4(ST1,DivVector,Number,IntString):- Number < 4 |
+        set_vector_element(DivVector,Number,Ele,Ele,DivV),
+        NEle := 16#"FF" - Ele,
+        Num := Number + 1,
+        set_string_element(ST1,Num,NEle,IntS),
+        intchange4(IntS,DivV,Num,IntString).
+intchange4(ST1,_DivVector,Number,IntString):- Number = 4 |
+        IntString = ST1.
+
+        
+        
+intchange3(Int,ST1,IntString):- true |
+        divbite(Int,Vector),
+        intchange5(ST1,Vector,0,IntString).
+
+intchange5(ST1,DivVector,Number,IntString):- Number < 4 |
+        set_vector_element(DivVector,Number,Ele,Ele,DivV),
+        Num := Number + 1,
+        set_string_element(ST1,Num,Ele,IntS),
+        intchange5(IntS,DivV,Num,IntString).
+intchange5(ST1,_DivVector,Number,IntString):- Number = 4 |
+        IntString = ST1.
+
+
+%%%     unit 変換部分   %%%%%%
+
+
+unitchange(UInt,UIntString):- true |
+        new_string(ST0,5,8),    
+        set_string_element(ST0,0,16#"6",ST1),
+        intchange3(UInt,ST1,UIntString).
+
+
+%%%     string 変換部分 %%%%%%
+
+
+        
+stringchange(String,NewString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"7",ST1),
+        string(String,StSize,_EleSize,NString),
+        shortchangeP(StSize,StSizeString),
+        append_string:append_string([ST1,StSizeString,NString],
+			NewString),
+	(wait(NewString) ->
+		builtin:print(NewString)).
+
+%%%    string change part2 %%%%
+
+stringkchange(String,NewString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"7",ST1),
+	new_string(SST0,1,8),
+	set_string_element(SST0,0,16#"0a",SST1),
+	append_string:append_string([String,SST1],String2),
+        string(String2,StSize,_EleSize,NString),
+        shortchangeP(StSize,StSizeString),
+        append_string:append_string([ST1,StSizeString,NString],NewString).
+        
+        
+%%%     list 変換部分   %%%%%
+
+listchange([],ListString):- true |
+	new_string(ST0,3,8),
+        set_string_element(ST0,0,16#"8",ListString).
+otherwise.		
+listchange(List,ListString):- true |
+        new_string(ST0,1,8),
+        set_string_element(ST0,0,16#"8",ST1),
+%        countelementL(List,0,ListNumber,[],NewList0),
+        countelement(List,0,ListNumber),
+        shortchangeP(ListNumber,LiNumString),
+        NList = [ST1,LiNumString],
+        append(NList,List,NewList),
+%       io:outstream([print(NewList),nl]),
+        append_string:append_string(NewList,ListString).
+
+%countelementL([L1|Ls],Number,ENumber,NList,NewList):- true |
+%	string(L1,L1Size,_,NL1),
+%	(  L1Size = 3 ->
+%		string_element(NL1,0,NLEle,NNL1),
+%		( NLEle = 16#"7" ->
+%			countelementL(Ls,Number,ENumber,NList,
+%				NewList);
+%		otherwise;
+%			true ->
+%			NNumber := Number + 1,
+%			append(NList,[NNL1],NList2),
+%			countelementL(Ls,NNumber,ENumber,NList2,NewList));
+%	otherwise;
+%		true ->
+%        NNumber := Number +1,
+%	append(NList,[NL1],NList2),
+%        countelementL(Ls,NNumber,ENumber,NList2,NewList)).
+%countelementL([],Number,ENumber,NList,NewList):- true | 
+%	ENumber = Number,NList=NewList.
+
+
+countelement([_L1|Ls],Number,ENumber):- true |
+        NNumber := Number +1,
+        countelement(Ls,NNumber,ENumber).
+countelement([],Number,ENumber):- true | 
+	ENumber = Number.
+
+
+%%%     char -> atom    %%%%%
+%%%     0x0161 ->  'a'  %%%%%
+%%%     0x01ff ->  -1   %%%%%
+
+charToatom(String,Number,EleNum,0,Atom,NNum,NewString):- true |
+        string_element(String,Number,Ele,NString),
+        (Ele = 16#"1" ->
+        NNumber := Number + 1,
+        charToatom(NString,NNumber,EleNum,1,Atom,NNum,NewString)).
+charToatom(String,Number,_EleNum,1,Atom,NNum,NewString):- true |
+        string_element(String,Number,Ele,_NString),
+        charToatom2(Ele,NEle),
+        Atom = NEle,
+        NNumber := Number + 1,
+        NNum = NNumber,
+        NewString = String.
+
+
+charToatom2(Ele,NEle):- true |
+        P0 = 16#"80",
+        and(Ele,P0,NNP),
+        (NNP = 0 -> 
+                NEle = Ele ;
+         NNP = P0 ->
+                charToatom3(Ele,NEle)).
+
+charToatom3(Ele,NEle):- true |
+        TT = 16#"FF",
+        NEle := Ele - TT - 1.
+
+
+charpToatom(String,Number,EleNum,0,Atom,NNum,NewString):- true |
+        string_element(String,Number,_,NString),
+        NNumber := Number + 1,
+        charpToatom(NString,NNumber,EleNum,1,Atom,NNum,NewString).
+charpToatom(String,Number,_EleNum,1,Atom,NNum,NewString):- true |
+        string_element(String,Number,Ele,_NString),
+        charpToatom2(Ele,NEle),
+        Atom = NEle,
+        NNumber := Number + 1,
+        NNum = NNumber,
+        NewString = String.
+
+
+charpToatom2(Ele,NEle):- true |
+        P0 = 16#"80",
+        and(Ele,P0,NNP),
+        (NNP = 0 -> 
+                charpToatom4(Ele,NEle);
+         NNP = P0 ->
+                charToatom3(Ele,NEle)).
+
+charpToatom4(0,NEle):- true |
+        Ele = "p",
+        hLibrary:sTot(Ele,NEle).
+charpToatom4(1,NEle):- true |
+        Ele = "d",
+        hLibrary:sTot(Ele,NEle).
+
+
+%%%     uchar -> atom   %%%%%
+%%%     0x0261 -> 'a'   %%%%%
+
+ucharToatom(String,Number,EleNum,0,Atom,NNum,NewString):- true |
+        string_element(String,Number,Ele,NString),
+        (Ele = 16#"2" ->
+        NNumber := Number + 1,
+        ucharToatom(NString,NNumber,EleNum,1,Atom,NNum,NewString)).
+ucharToatom(String,Number,_EleNum,1,Atom,NNum,NewString):- true |
+        string_element(String,Number,Atom,_NString),
+        NNumber := Number + 1,
+        NNum = NNumber,
+        NewString = String.
+
+
+%%%     short -> integer  %%%%%
+%%%     0x03ffff -> -1    %%%%%
+
+shortTochange(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+        string_element(String,Number,Ele,NString),
+        (Ele = 16#"3" ->
+        NNumber := Number + 1,
+        shortTochange1(NString,NNumber,EleNum,0,Integer,[],NNum,NewString)).
+
+
+shortTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N < EleNum |
+        string_element(String,Number,Ele,NString),
+        append(List,[Ele],Ls),
+        NNumber := Number + 1,
+        N1 := N + 1,
+        shortTochange1(NString,NNumber,EleNum,N1,Integer,Ls,NNum,NewString).
+shortTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N = EleNum |
+        NNum = Number,
+        NewString = String,
+        shortTochange2(List,0,1,EleNum,Integer).
+                
+shortTochange2([L1|Ls],PreNum,1,EleNum,Integer):- true |
+        P0 = 16#"80",
+        and(L1,P0,NL),
+        (NL = 0 ->
+                shToch(L1,EleNum,1,1,Int),
+                NInt := Int + PreNum,
+                shortTochange3(Ls,NInt,2,EleNum,Integer);
+        NL = P0 ->
+                shortTochange4([L1|Ls],PreNum,1,EleNum,Integer)).
+
+shToch(L1,EleNum,PreNum,N,Int):-  N < EleNum |
+        NPreNum := 256*PreNum,
+        N1 := N +1,
+        shToch(L1,EleNum,NPreNum,N1,Int).
+shToch(L1,EleNum,PreNum,N,Int):-  N = EleNum |
+        Int := L1 * PreNum.
+        
+
+shortTochange3([L1|Ls],PreNum,N,EleNum,Integer):- true |
+        shToch(L1,EleNum,1,N,Int),
+        N1 := N + 1,
+        NInt := Int + PreNum,
+        shortTochange3(Ls,NInt,N1,EleNum,Integer).
+shortTochange3([],PreNum,_N,_EleNum,Integer):- true |
+        Integer = PreNum.
+        
+
+shortTochange4(List,_PreNum,_N,_EleNum,Integer):- true |
+        shTochm(List,Int),
+        TT = 16#"FF",
+        NTT := 256*TT + TT,
+        Integer := Int - NTT - 1.
+
+shTochm(List,Int):- true |
+        countelement(List,0,_LN),
+        shortTochange3(List,0,1,2,Int).
+%       shTochm1(List,1,LN,1,Int).
+
+%shTochm1([L1|Ls],PreNum,LN,N,Int):- true |
+%       shToch(L1,LN,PreNum,N,NInt),
+%       N1 := N + 1,
+%       NNInt := NInt + PreNum,
+%       shTochm1(Ls,NNInt,LN,N1,Int).
+%shTochm1([],PreNum,LN,N,Int):- true |
+%       Int = PreNum.
+
+%%%     short   part2
+
+
+shortTochangeP(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+        shortTochange1(String,Number,EleNum,0,Integer,[],NNum,NewString).
+
+        
+%%%     ushort    ->    integer %%%%%
+%%%     0x04ffff  ->    65535   %%%%%
+
+
+ushortTochange(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+        string_element(String,Number,Ele,NString),
+        (Ele = 16#"4" ->
+        NNumber := Number + 1,
+        ushortTochange1(NString,NNumber,EleNum,0,Integer,[],NNum,NewString)).
+
+ushortTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N < EleNum  |
+        string_element(String,Number,Ele,NString),
+        append(List,[Ele],Ls),
+        NNumber := Number + 1,
+        N1 := N + 1,
+        ushortTochange1(NString,NNumber,EleNum,N1,Integer,Ls,NNum,NewString).
+ushortTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N = EleNum  |
+        NNum = Number ,
+        NewString = String,
+        ushortTochange2(List,0,1,EleNum,Integer).
+
+ushortTochange2(List,PreNum,_N,EleNum,Integer):- true |
+        shortTochange3(List,PreNum,1,EleNum,Integer).
+
+
+%%%%  ushort part2
+
+
+ushortTochangeP(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+%       string_element(String,Number,Ele,NString),
+%       (Ele = 16#"4" ->
+%       NNumber := Number + 1,
+        ushortTochange1(String,Number,EleNum,0,Integer,[],NNum,NewString).
+
+
+%%%     int             ->      integer %%%%%
+%%%     0x05ffffffff    ->      -1      %%%%%
+
+
+intTochange(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+        string_element(String,Number,Ele,NString),
+        (Ele = 16#"5" ->
+        NNumber := Number + 1,
+        intTochange1(NString,NNumber,EleNum,0,Integer,[],NNum,NewString)).
+
+
+intTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N < EleNum |
+        string_element(String,Number,Ele,NString),
+        append(List,[Ele],Ls),
+        NNumber := Number + 1,
+        N1 := N + 1,
+        intTochange1(NString,NNumber,EleNum,N1,Integer,Ls,NNum,NewString).
+intTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N = EleNum |
+        NNum = Number,
+        NewString = String,
+        intTochange2(List,0,1,EleNum,Integer).
+
+
+intTochange2([L1|Ls],PreNum,1,EleNum,Integer):- true |
+        P0 = 16#"80",
+        and(L1,P0,NL),
+        (NL = 0 ->
+                shToch(L1,EleNum,4,1,Int),
+                NInt := Int + PreNum,
+                shortTochange3(Ls,NInt,2,EleNum,Integer);
+        NL = P0 ->
+                intTochange4([L1|Ls],PreNum,1,EleNum,Integer)).
+
+
+intTochange4(List,_PreNum,_N,_EleNum,Integer):- true |
+%       intToch(List,1,[],NewList,RL),
+        intToch2(List,0,1,Int),
+%       io:outstream([print(Int),nl]),
+%       TT = 16#"FF",
+        NInt := 256*256*256*255 + 256*256*255 + 256*255 + 255,
+        Integer := Int - NInt -1.
+
+                
+intToch([L1|Ls],N,NL,NewList,RL):- N = 1 |
+        RL = L1,
+        N1 := N+1,
+        intToch(Ls,N1,NL,NewList,_).
+intToch([L1|Ls],N,NL,NewList,RL):- N > 1 |
+        append(NL,[L1],NNL),
+        intToch(Ls,N,NNL,NewList,RL).
+intToch([],_,NL,NewList,_RL):- true | NewList = NL.
+
+
+intToch2([L1|Ls],PreNum,N,Integer):- true |
+        shToch(L1,4,1,N,Int),
+        NInt := Int + PreNum,
+        N1 := N+1,
+        intToch2(Ls,NInt,N1,Integer).
+intToch2([],PreNum,_,Integer):- true | Integer=PreNum.
+
+%%%     uint            ->      integer    %%%%%
+%%%     0x06ffffffff    ->      4294967295 %%%%%
+
+
+uintTochange(String,Number,EleNum,0,Integer,NNum,NewString):- true |
+        string_element(String,Number,_,NString),
+        NNumber := Number + 1,
+        uintTochange1(NString,NNumber,EleNum,1,Integer,[],NNum,NewString).
+
+
+uintTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N < EleNum |
+        string_element(String,Number,Ele,NString),
+        append(List,[Ele],Ls),
+        NNumber := Number + 1,
+        N1 := N + 1,
+        uintTochange1(NString,NNumber,EleNum,N1,Integer,Ls,NNum,NewString).
+uintTochange1(String,Number,EleNum,N,Integer,List,NNum,NewString):- 
+                        N = EleNum |
+        NNum = Number,
+        NewString = String,
+        uintTochange2(List,0,1,EleNum,Integer).
+
+
+uintTochange2([L1|Ls],PreNum,1,EleNum,Integer):- true |
+                shToch(L1,EleNum,4,1,Int),
+                NInt := Int + PreNum,
+                shortTochange3(Ls,NInt,2,EleNum,Integer).
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%  String Element ->  List henkan -> String
+%%%%%%  0x070003616263 ->  ["a","b","c"] -> "abc"
+%%%%%%
+
+
+stringToList(String,Number,EleNum,0,NString,NNum,NewString):- true |
+%       generic:string(String,Size,_),
+%       new_vector(NVector,2),
+%       io:outstream([print(NVector),nl]),
+        NNumber := Number  + 1,
+        stToList(String,NNumber,0,0,EleNum,[],List,NNum,NewString),
+        append_string:append_string(List,NString).
+        
+
+stToList(String,Number,0,ENum,EleNum,List,NList,NextNumber,NewString):-
+                        true  |
+%       io:outstream([print(String),nl]),
+        shortTochange1(String,Number,2,0,Int,[],NNum,NString),
+%       shortTochangeP(String,Number,2,0,Int,NNumber,NString),
+        NNumber := NNum,
+%       NEleNum := ElementNumber+1,
+%       io:outstream([print(NSizeNumber),nl]),  
+        stToList2(NString,NNumber,Int,ENum,EleNum,List,
+                NList,NextNumber,NewString).
+
+
+stToList2(String,Number,Int,ENum,_EleNum,List,NList,NextNumber,NewString):- 
+                        Int = ENum |
+        NList = List,
+        NextNumber = Number,
+        NewString = String.
+stToList2(String,Number,Int,ENum,EleNum,List,NList,NextNumber,NewString):-
+                ENum < Int |
+        new_string(ST0,1,8),
+        string_element(String,Number,ESize),
+        set_string_element(ST0,0,ESize,NST0),
+        append(List,[NST0],Ls),
+        NNumber := Number +1 ,
+%       NEleNum := EleNum +1,
+        NENum := ENum +1,
+        stToList2(String,NNumber,Int,NENum,EleNum,Ls,NList,
+                NextNumber,NewString).
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+
+%%%%%%%%%%%%%%   0x080003000161000162000163 -> ["a","b","c"]
+%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%  
+
+liToList(String,Number,EleNum,0,List,NextNumber,NewString) :- true |
+        NNumber := Number +1,
+%       generic:string(StringList,ListSize,_),
+%       io:outstream([print(ListSize),nl]),
+        liToList2(String,NNumber,0,0,EleNum,[],List,NextNumber,NewString).
+
+        
+
+liToList2(String,Number,_Count,_Integer,SizeNumber,
+                List,NList,NextNumber,NewString):- true |
+        shortTochangeP(String,Number,2,0,Int,NNumber,NString),
+        liToList3(NString,NNumber,Int,1,SizeNumber,
+                List,NList,NextNumber,NewString).
+
+
+%       NSizeNumber = 1,                           %%%%%%
+%       io:outstream([print(NNumber),nl]),      
+%       liToVec31(StringList,NNumber,NInteger,1,0,SizeNumber,
+%               NVector,Vector,NextNumber).
+
+
+liToList3(String,Number,NInt,Int,
+        SizeNumber,List,NList,NextNumber,NewString):-
+                NInt >= Int |
+        string_element(String,Number,Element,NString),
+        (Element = 16#"1" ->
+                charToatom(String,Number,1,0,NElement,NNumber,NString);
+        Element = 16#"2" ->
+                ucharToatom(String,Number,1,0,NElement,NNumber,NString);
+        Element = 16#"3" ->
+                shortTochange(String,Number,2,0,NElement,NNumber,NString);
+        Element = 16#"4" ->
+                ushortTochange(String,Number,2,0,NElement,NNumber,NString);
+        Element = 16#"5" ->
+                intTochange(String,Number,4,0,NElement,NNumber,NString);
+        Element = 16#"6" ->
+                uintTochange(String,Number,4,0,NElement,NNumber,NString);
+        Element = 16#"7" ->
+                stringToList(String,Number,_,0,NElement,NNumber,NString);
+        Element = 16#"8" ->
+                liToList(String,Number,_,0,NElement,NNumber,NString)),
+        NI := Int + 1,
+        append(List,[NElement],NL),
+        liToList3(NString,NNumber,NInt,NI,SizeNumber,
+                NL,NList,NextNumber,NewString).
+liToList3(String,Number,NInt,Int,
+        _SizeNumber,List,NList,NextNumber,NewString):-
+                NInt < Int |
+        NextNumber = Number,
+        NList = List,
+        NewString = String.
+        
+        
+%%%%%%%%%%%%%%%%%%%%%%% 
+        
+        
+        
+append([],L2,List):- true |
+        List = L2.
+append([H|T],L,AL):- true |
+        AL = [H|NAL],
+        append(T,L,NAL).
+
+

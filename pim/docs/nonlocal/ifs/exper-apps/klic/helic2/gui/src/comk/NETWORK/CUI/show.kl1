@@ -1,0 +1,175 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_receiveProtocolShow.
+
+:- public 
+    reasonList/2,
+    justificationList/2,
+    argumentList/2,
+    counterList/2,
+    claimList/2,
+    argument/2,
+    explanation/2,
+
+    change_argumentList/2,
+    change_counterArgumentList/2.
+            
+:- with_macro pimos.
+
+%reasonList
+    reasonList(SPListList,Result):-true|
+        dbtcui_ioUtility:show_listYWithNumber(SPListList,Result).
+
+%justificationList
+    justificationList(JustificationList,Result):-true|
+        dbtcui_ioUtility:show_listYWithNumber(JustificationList,Result).
+
+%argumentList
+    argumentList([ArgumentList1,[Issue]],Result):-true|
+        dbtcui_ioUtility:show_string("Goal",Issue,R1),
+        change_argumentList(ArgumentList1,ArgumentList),
+        (   wait(R1)->
+                dbtcui_ioUtility:show_listYWithNumber(ArgumentList,Result)).
+
+%counterList
+    counterList([ArgumentList1,AddInfo],Result):-true|
+        dbtcui_ioUtility:show_listY(AddInfo,R1),
+        change_counterArgumentList(ArgumentList1,ArgumentList),
+        (   wait(R1)->
+                dbtcui_ioUtility:show_listYWithNumber(ArgumentList,Result)).
+
+%claimList
+    claimList([ArgumentList1,ArgumentList2,_],Result):-true|
+        change_argumentList(ArgumentList1,ArgumentList11),
+        change_argumentList(ArgumentList2,ArgumentList22),
+        dbtcui_ioUtility:show_claimList(ArgumentList11,ArgumentList22,Result).
+
+%explanation
+    explanation([EXP],Result):-true|
+        dbtcui_ioUtility:show_string("EXPLANATION",EXP,Result).
+
+%argument
+    argument([AidInfo,Issue,Button,{RuleName,TopRuleRel,Argument},Status,History],Result):-true|
+        show_status(  ok,Status,                R1),
+        show_history( R1,History,               R2),
+        show_issue(   R2,Issue,                 R3),
+        show_aidInfo( R3,AidInfo,               R4),
+        show_ruleInfo(R4,{RuleName,TopRuleRel}, R5),
+        show_argument(R5,Argument,              R6),
+        show_ucl(     R6,Button,                Result).
+
+    argument([AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History],Result):-true|
+        show_status(  ok,Status,                R1),
+        show_history( R1,History,               R2),
+        show_issue(   R2,Issue,                 R3),
+        show_aidInfo( R3,AidInfo,               R4),
+        show_ruleInfo(R4,{RuleName,TopRuleRel}, R5),
+        show_argument(R5,Argument,              Result).
+
+    show_status(R1,Status,R):-true|
+        (   wait(R1),Status=""->
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                dbtcui_ioUtility:show_string("Status",Status,R)
+        ).
+
+    show_history(R1,History,R):-true|
+        (   wait(R1),History=nil->
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                dbtcui_ioUtility:show_term("History",History,R)
+        ).
+
+    show_issue(R1,Issue,R):-true|
+        (   wait(R1),Issue=nil->
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                dbtcui_ioUtility:show_string("Issue",Issue,R)
+        ).
+
+    show_aidInfo(R1,AidInfo,R):-true|
+        (   wait(R1),AidInfo={nil,nil,nil}->
+                R = normal(success)
+        ;
+        otherwise;
+            true->
+                dbtcui_ioUtility:show_term("AidInfo({ArgID,ParentArgID,FocusArgID})",AidInfo,R)
+        ).
+
+    show_ruleInfo(R1,{RuleName,TopRuleRel1},R):-true|
+        (   wait(R1)->
+                change_topRuleRel(TopRuleRel1,TopRuleRel),
+                dbtcui_ioUtility:show_term("RuleInfo({RuleName,TopRuleRel})",{RuleName,TopRuleRel},R)).
+
+    change_topRuleRel(1,TopRuleRel):-true|
+        TopRuleRel = win.
+    change_topRuleRel(0,TopRuleRel):-true|
+        TopRuleRel = draw.
+    change_topRuleRel(-1,TopRuleRel):-true|
+        TopRuleRel = lose.
+    change_topRuleRel(nil,TopRuleRel):-true|
+        TopRuleRel = nil.
+
+    show_argument(R1,Argument,R):-true|
+        (   wait(R1)->
+                dbtcui_ioUtility:show_argument(Argument,R)).
+
+    show_ucl(R1,Button,R):-true|
+        (   wait(R1)->
+                dbtcui_ioUtility:show_term("Can use command",Button,R)).
+
+
+%%%%
+    change_argumentList([],AL):-true|
+        AL = [].
+    change_argumentList([{ClaimedFlag1,{Strong1,Non1,Weak1},Consequence}|T],AL):-true|
+        (   ClaimedFlag1 = 0->
+                ClaimedFlag = " "
+        ;
+            ClaimedFlag1 = 1->
+                ClaimedFlag = "*"
+        ),
+        hLibrary:tTos(Strong1,Strong),
+        hLibrary:tTos(Non1,Non),
+        hLibrary:tTos(Weak1,Weak),
+        append_string:append_string([ClaimedFlag,"  >:",Strong,"!:",Non,"<:",Weak,"  ",Consequence],A),
+        change_argumentList(T,AL1),
+        AL = [A|AL1].
+
+    change_counterArgumentList([],AL):-true|
+        AL = [].
+    change_counterArgumentList([{ClaimedFlag1,TopRuleRel1,{Strong1,Non1,Weak1},Consequence}|T],AL):-true|
+        (   ClaimedFlag1 = 0->
+                ClaimedFlag = " "
+        ;
+            ClaimedFlag1 = 1->
+                ClaimedFlag = "*"
+        ),
+        (   TopRuleRel1 = 1->
+                TopRuleRel = ">"
+        ;
+            TopRuleRel1 = 0->
+                TopRuleRel = "!"
+        ;
+            TopRuleRel1 = -1->
+                TopRuleRel = "<"
+        ;
+            TopRuleRel1 = nil->
+                TopRuleRel = " "
+        ),
+        hLibrary:tTos(Strong1,Strong),
+        hLibrary:tTos(Non1,Non),
+        hLibrary:tTos(Weak1,Weak),
+        append_string:append_string([ClaimedFlag,"  ",TopRuleRel,"  >:",
+                Strong,"!:",Non,"<:",Weak," ",Consequence],A),
+        change_counterArgumentList(T,AL1),
+        AL = [A|AL1].

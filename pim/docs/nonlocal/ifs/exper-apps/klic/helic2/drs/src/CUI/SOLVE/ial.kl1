@@ -1,0 +1,58 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_initialArgumentList.
+:- public create/1.
+:- with_macro pimos.
+
+    create(I):-true|
+        initiate(IAL), 
+        loop(I,IAL).
+
+    initiate(IAL):-true|
+        hLibrary:pool(bag,IAL).
+
+    loop([],IAL):-true|
+        IAL   = [].
+    loop([initiate(ST,R)|T],IAL1):-true|
+        initiate(ST,IAL1,IAL,R),
+        loop(T,IAL).
+    loop([is_inArg(Arg,YN)|T],IAL1):-true|
+        IAL1 = [carbon_copy(ArgList)|IAL],
+        member(ArgList,Arg,YN),
+        loop(T,IAL).
+    loop([refer_argList(ArgList)|T],IAL1):-true|
+        IAL1 = [carbon_copy(ArgList)|IAL],
+        loop(T,IAL).
+    loop([get_numOfArg(Num)|T],IAL1):-true|
+        IAL1 = [carbon_copy(ArgList)|IAL],
+        count(ArgList,0,Num),
+        loop(T,IAL).
+
+    initiate([],IAL1,IAL,R):-true|
+        IAL   = IAL1,
+        R     = normal(success).
+    initiate([SV|T],IAL1,IAL,R):-true|
+        Arg   = {SV,0},
+        IAL1  = [put(Arg)|IAL2],
+        initiate(T,IAL2,IAL,R).
+
+%%%%%%%%list method
+%member
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+%count
+    count([],W,C):-true|
+        C = W.
+    count([_|T],W,C):-true|
+        W1:=W+1,
+        count(T,W1,C).
+

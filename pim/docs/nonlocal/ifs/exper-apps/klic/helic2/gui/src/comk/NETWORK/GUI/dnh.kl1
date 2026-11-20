@@ -1,0 +1,78 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_debateNetworkHandler.
+
+:- public 
+    create/3.
+            
+:- with_macro pimos.
+
+%create
+    create(NH,P,D):-true|
+        loop(P,D,NH).
+
+%loop
+    loop([],_,NH):-true|
+        NH = [].
+    loop(_,[],NH):-true|
+        NH = [].
+    loop([Protocol|P],D,NH1):-true|
+        execute(Protocol,p,NH1,NH,R),
+        (   wait(R)->
+                loop(P,D,NH)).
+    loop(P,[Protocol|D],NH1):-true|
+        execute(Protocol,d,NH1,NH,R),
+        (   wait(R)->
+                loop(P,D,NH)).
+
+%execute
+    execute(get_commandArguments(Command,Parameter,Arguments,Result),RequestAgentName,NH1,NH,R):-true|
+        NH1 = [get_commandArguments(Command1,InputAgentName,Parameter1,Arguments1,Result1)|NH2],
+	(   Result1 = normal(_)->
+	        check_agentName(RequestAgentName,InputAgentName,NH2,NH3,R1),
+        	(   R1 = normal(success)->
+	                Command   = Command1,Parameter = Parameter1,Arguments = Arguments1,Result = Result1,
+        	        NH        = NH3,
+                	R         = normal(success)
+	        ;
+        	    R1 = abnormal(_)->
+                	Protocol = get_commandArguments(Command,Parameter,Arguments,Result),
+	                execute(Protocol,RequestAgentName,NH3,NH,R)
+        	)
+	;
+	    Result1 = abnormal(_)->
+		NH = NH2,
+		R  = Result1
+	).
+
+    execute(receive(Parameter,Arguments,Result),RequestAgentName,NH1,NH,R):-true|
+        NH1 = [receive(RequestAgentName,Parameter,Arguments,Result)|NH],
+        (   wait(Result)->
+                R = normal(success)).
+    execute(show(Parameter,Arguments,Result),RequestAgentName,NH1,NH,R):-true|
+        NH1 = [show(RequestAgentName,Parameter,Arguments,R1)|NH2],
+        (   wait(R1)->
+                NH2 = [get_commandArguments(_,_,_,_,R2)|NH],
+                (   wait(R2)->
+                        Result = normal(success),
+                        R      = normal(success))).
+
+%check_agentName
+    check_agentName(AgentName,AgentName,NH1,NH,R):-AgentName\=nil|
+        NH = NH1,
+        R  = normal(success).
+    check_agentName(_,nil,NH1,NH,R):-true| %for end
+        NH = NH1,
+        R  = normal(success).
+otherwise.
+    check_agentName(_,InputAgentName,NH1,NH,R):-true|
+        send_errorInfo(InputAgentName,NH1,NH,R1),
+        (   wait(R1)->
+                R = abnormal({gui,'Illegal command sequence',InputAgentName})).
+
+%send_errorInfo
+    send_errorInfo(InputAgentName,NH1,NH,R):-true|
+        NH1 = [receive(InputAgentName,errorInfo,[{gui,'Illegalcommand sequence',InputAgentName}],R)|NH].

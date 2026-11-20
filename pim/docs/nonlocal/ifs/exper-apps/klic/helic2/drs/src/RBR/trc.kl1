@@ -1,0 +1,186 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbr_tracer.
+:- public
+        create/2.
+
+%create
+    create({RM,PL,PT},Tracer1):-true|
+        RM = [],
+        merge(Tracer1,Tracer),
+        get_initialParameter(InitialParameter),
+        loop(Tracer,InitialParameter,{PL,PT}).
+
+%get_initialParameter
+    get_initialParameter(InitialParameter):-true|
+        get_initialFlag(Flag),
+        get_initialSpyRuleList(SpyRuleList),
+        get_initialSpyGateList(SpyGateList),
+        get_initialCallNumber(CallNumber),
+        InitialParameter = {Flag,SpyRuleList,SpyGateList,CallNumber}. 
+
+    get_initialFlag(Flag):-true|
+        Flag = off.
+    get_initialSpyRuleList(SpyRuleList):-true|
+        SpyRuleList = [].
+    get_initialSpyGateList(SpyGateList):-true|
+        SpyGateList = [call,redu,fail].
+    get_initialCallNumber(CallNumber):-true|
+        CallNumber = 0.
+
+%loop
+    loop([],_,_):-true|
+        true.
+
+%%for flag
+    loop([set(flag,on,R)|T],_,DP):-true|
+        get_initialParameter({_,B,C,D}),
+        R = normal(success),
+        loop(T,{on,B,C,D},DP).
+    loop([set(flag,off,R)|T],_,DP):-true|
+        get_initialParameter({_,B,C,D}),
+        R = normal(success),
+        loop(T,{off,B,C,D},DP).
+    loop([get(flag,Flag1,R)|T],{Flag,B,C,D},DP):-true|
+        Flag1 = Flag,
+        R    = normal(success),
+        loop(T,{Flag,B,C,D},DP).
+
+%for spy(rule)
+    loop([set(spy(rule),SpyRuleList,R)|T],{A,_,C,D},DP):-true|
+        R = normal(success),
+        loop(T,{A,SpyRuleList,C,D},DP).
+    loop([add(spy(rule),RuleList,R)|T],{A,SpyRuleList1,C,D},DP):-true|
+        append_list(RuleList,SpyRuleList1,SpyRuleList,R),
+        loop(T,{A,SpyRuleList,C,D},DP).
+    loop([remove(spy(rule),RuleList,R)|T],{A,SpyRuleList1,C,D},DP):-true|
+        remove_list(RuleList,SpyRuleList1,SpyRuleList,R),
+        loop(T,{A,SpyRuleList,C,D},DP).
+    loop([clear(spy(rule),_,R)|T],{A,_,C,D},DP):-true|
+        get_initialSpyRuleList(SpyRuleList),
+        R = normal(success),
+        loop(T,{A,SpyRuleList,C,D},DP).
+    loop([get(spy(rule),RuleList,R)|T],{A,SpyRuleList,C,D},DP):-true|
+        RuleList = SpyRuleList,
+        R = normal(success),
+        loop(T,{A,SpyRuleList,C,D},DP).
+        
+%for spy(gate)
+    loop([set(spy(gate),SpyGateList,R)|T],{A,B,_,D},DP):-true|
+        R = normal(success),
+        loop(T,{A,B,SpyGateList,D},DP).
+    loop([add(spy(gate),GateList,R)|T],{A,B,SpyGateList1,D},DP):-true|
+        append_list(GateList,SpyGateList1,SpyGateList,R),
+        loop(T,{A,B,SpyGateList,D},DP).
+    loop([remove(spy(gate),GateList,R)|T],{A,B,SpyGateList1,D},DP):-true|
+        remove_list(GateList,SpyGateList1,SpyGateList,R),
+        loop(T,{A,B,SpyGateList,D},DP).
+    loop([clear(spy(gate),_,R)|T],{A,B,_,D},DP):-true|
+        get_initialSpyGateList(SpyGateList),
+        R = normal(success),
+        loop(T,{A,B,SpyGateList,D},DP).
+    loop([get(spy(gate),GateList,R)|T],{A,B,SpyGateList,D},DP):-true|
+        GateList = SpyGateList,
+        R = normal(success),
+        loop(T,{A,B,SpyGateList,D},DP).
+
+%for callNumber
+    loop([clear(callNumber,_,R)|T],{A,B,C,_},DP):-true|
+        get_initialCallNumber(CallNumber),
+        R = normal(success),
+        loop(T,{A,B,C,CallNumber},DP).
+    loop([get(callNumber,N,R)|T],{A,B,C,CallNumber1},DP):-true|
+        N = CallNumber1,
+        CallNumber := CallNumber1+1,
+        R = normal(success),
+        loop(T,{A,B,C,CallNumber},DP).
+%for print
+    loop([print(call,HTerm,CN,R)|T],CS,DP):-true|
+        rbr_tracerPrint:call(CS,DP,HTerm,CN,R),
+        loop(T,CS,DP).
+    loop([print(redu,RuleName,HeadHTerm,CN,
+                BodyHTermList,BodyHTermWithCNList,R)|T],CS1,DP):-true|
+        CS1 = {A,B,C,CCN1},
+        make_bodyHTermWithCNList(BodyHTermList,CCN1,BodyHTermWithCNList,CCN),
+        rbr_tracerPrint:redu(CS1,DP,RuleName,HeadHTerm,CN,
+                BodyHTermWithCNList,R),
+        CS = {A,B,C,CCN},
+        loop(T,CS,DP).
+    loop([print(fail,HTerm,CN,R)|T],CS,DP):-true|
+        rbr_tracerPrint:fail(CS,DP,HTerm,CN,R),
+        loop(T,CS,DP).
+
+%for displayParameter
+    loop([set(pt,PT,R)|T],CS,{A,_}):-true|
+        R = normal(success),
+        loop(T,CS,{A,PT}).
+    loop([get(pt,PT1,R)|T],CS,{A,PT}):-true|
+        PT1 = PT,
+        R  = normal(success),
+        loop(T,CS,{A,PT}).
+    loop([set(pl,PL,R)|T],CS,{_,B}):-true|
+        R = normal(success),
+        loop(T,CS,{PL,B}).
+    loop([get(pl,PL1,R)|T],CS,{PL,B}):-true|
+        PL = PL1,
+        R  = normal(success),
+        loop(T,CS,{PL,B}).
+
+%for debug
+    loop([get(all,ALL,R)|T],{A,B,C,D},DP):-true|
+        ALL = {A,B,C,D},
+        R   = normal(success),
+        loop(T,{A,B,C,D},DP).
+
+%%%%internal method
+    make_bodyHTermWithCNList([],N1,L,N):-true|
+        L = [],
+        N = N1.
+    make_bodyHTermWithCNList([H|T],N1,L,N):-true|
+        N2 := N1+1,
+        make_bodyHTermWithCNList(T,N2,L1,N),
+        L = [{H,N1}|L1].
+
+%%%%list utility
+
+%append_list
+    append_list([],Y,Z,R):-true|
+        Z = Y,
+        R = normal(success).
+    append_list([X1|T],Y,Z,R):-true|
+        member(Y,X1,YN),
+        ( YN = yes->
+                append_list(T,Y,Z,R)
+        ;
+          YN = no->
+                append_list(T,[X1|Y],Z,R)
+        ).
+
+%member
+    member([],_,YN):-true|
+        YN = no.
+    member([X|_],X,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],X,YN):-true|
+        member(T,X,YN).
+
+%remove_list
+    remove_list([],Y,Z,R):-true|
+        Z = Y,
+        R = normal(success).
+    remove_list([X1|T],Y1,Z,R):-true|
+        remove(Y1,X1,Y),
+        remove_list(T,Y,Z,R).
+
+    remove([],_,Y):-true|
+        Y=[].
+    remove([X|T],X,Y):-true|
+        remove(T,X,Y).
+otherwise.
+    remove([X1|T],X,Y):-true|
+        remove(T,X,Y1),
+        Y = [X1|Y1].

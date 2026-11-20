@@ -1,0 +1,63 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_start.
+
+:- public 
+    start/3.
+            
+:- with_macro pimos.
+
+%start
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+    start({O,Pool1,Info1},Data,NextDR):-true|
+        initiate(Pool1,Info1,Pool2,Info2,CSS,R1),
+        (   R1 = normal(success)->
+                dbtcui_systemShell:start({Pool2,Info2,CSS},{Pool,Info},CPA,R2),
+                (   R2 = normal(_)->
+                        execute(CPA,{O,Pool,Info},Data,NextDR)
+                ;
+                    R2 = abnormal(_)->
+                        Data = {O,Pool,Info},NextDR = []
+                )
+        ;
+            R1 = abnormal(_)->
+                Data = {O,Pool2,Info2},NextDR = []
+        ).
+
+%initiate
+    initiate(Pool1,Info1,Pool,Info,CSS,R):-true|
+        Pool    = Pool1,
+        Info    = Info1,
+        dbtcui_shellCurrentState:create({{1,0,0,0},"",start,nil,{nil,nil}},CSS),
+        R = normal(success).
+
+%execute
+    execute({pose,claim,[Arg]},{O1,Pool1,Info},Data,_):-true|
+        Pool1   = [makeList([at,mat,hl],[AT,MAT,HL])|Pool2],
+        AT = [is_inArg(Arg,YN1)|AT1],
+        (   YN1 = yes->
+                AT1 = [refer_ID(Arg,ID,R1)]
+                %- message "  Already claimed this argument : ",ID
+        ;
+            YN1 = no->
+                AT1 = [make_ID(ID),put(ID,Arg,R1)]
+        ),
+        (   wait(R1)->
+                Info = {_,_,{_,_,_,AgentName},_},
+                dbtcui_messagePool:make_message({claim,i},{AgentName,ID},Status),
+                dbtcui_showArgumentUtility:show_status(Pool2,Status,Pool,R2)),
+        (   wait(R2)->
+                MAT     = [put(Arg)],
+                O1      = [{claim(ID,nil),Arg}|O],
+                HL      = [put(send(y,{claim(ID,nil),Arg}))],
+                Data    = {O,Pool,Info}).
+    execute({end,_,_},Data1,Data,NextDR):-true|
+        Data        = Data1,
+        NextDR      = [].
+

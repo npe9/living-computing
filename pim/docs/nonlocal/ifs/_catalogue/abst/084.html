@@ -1,0 +1,78 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (84) Protein Structure Prediction Based on Multi Level Description</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (84) Protein Structure Prediction Based on Multi Level Description</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 5 MB
+	Documents:   User's Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system is a protein structure prediction system based on MLD.<P>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li> This system consists of data analysis module on UNIX, and
+optimization module on PIM.
+
+<li> Many tools for statistic analysis of protein structure are
+provided.
+
+<li> The optimization module based on iterative dynamic programming is
+implemented on PIM.
+
+<li> The SGI Graphics Workstation is required for visualization.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+This system predicts a protein structure from the given amino-acid
+sequence. The method devised to implement this system is based on
+Multi-Level Description scheme, where the re- lation between the local
+structure and the amino-acid sequence at that region(primary
+Constraints) is first considered. Large-scale relations are modeled at
+large-scale levels, middle-scale ones at middle levels, small-scale
+ones at local levels. The geometric constraints between neighboring
+local structures are also considered. The protein structure is, thus,
+predicted as the optimal MLD that best satisfies the primary and
+geometric constraints.  <p>
+
+The optimization module written in KL1 and implemented on PIM rapidly
+searches for the optimal MLD in parallel. The predicted results are
+visualized for further visual investigation.  <p>
+
+<h2>FTP</h2>
+
+<ul>
+
+<li> Protein Structure Prediction Based on Multi Level Description
+[792K] <a href="../../../ifs/exper-apps/pimos/mssd.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

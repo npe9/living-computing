@@ -1,0 +1,90 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title>(5) A Concurrent Object-oriented Language: A'UM-90</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(5) A Concurrent Object-oriented Language: A'UM-90</h2>
+<p>
+
+<pre wide="138">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    C++
+	Source Code: 3MB
+	Documents:   Manual (English/Japanese),
+             Language specification (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A language system for the A'UM concurrent object-oriented programming
+language.  <p>
+
+<h2><b>Features</b></h2> A'UM, a descendent of the concurrent logic
+programming language KL1, has following features: <p>
+
+Concurrent objects: All objects in A'UM computation model run
+concurrently.  <p>
+
+Stream communication: Objects communicate with one another through
+directed paths (streams). Operations on streams, such as connecting,
+merging, and appending them, facilitate correct and concise
+description of message transfer and of synchronization between
+objects.  <p>
+
+Fine grain parallelism: All operations are performed concurrently,
+unless explicit message sending imposes an ordering on them.  <p>
+
+Intricate synchronization: can be easily set up as ordering of
+messages maintained in networks of streams.  <p>
+
+<h2><b>Function</b></h2>
+
+The A'UM-90 language system provides the following functions: <p>
+
+<b> An environment for concurrent execution of A'UM programs</b> on
+commercial computers. Also, parallel execution is possible on a
+multicomputer. A compiler is available, which investigates stream
+operations for their validity, and reports errors when necessary.  <p>
+
+<b> Foreign language interface</b> enabling programmers to combine an
+A'UM program with one written in other languages, such as C.  <p>
+
+<b> A debugger</b> furnished with breakpoints, stepping and tracing
+execution, inspecting internal states of objects, and other functions.
+<p>
+
+<h2><b>Environment to use</b></h2>
+
+A'UM-90 runs on Sun SPARCstations and Sequent Symmetries. Compilation
+of A'UM-90 requires GNU C++ version 1.37 or later.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> A Concurrent Object-oriented Language: A'UM-90 (Ver.1.2c)
+[1,119K] <a
+href="../../../ifs/symbolic-proc/unix/aum-1.2c.tar.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+<li> A Concurrent Object-oriented Language: A'UM-90 (Patch for
+Ver.1.2b) [3K] <a
+href="../../../ifs/symbolic-proc/unix/aum-pat-1.2b.Z">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

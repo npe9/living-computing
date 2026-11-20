@@ -1,0 +1,103 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_shellUtility4.
+
+:- public 
+    get_argumentInfo/5,
+    get_aidInfo/5,
+    get_issue/4,
+    get_argument/4,
+    get_status/3,
+    get_history/3,
+    get_explanation/2.
+
+:- with_macro pimos.
+
+%get_argumentInfo
+    get_argumentInfo({Pool1,Info1,{FLArg,_},CSS1},CLArg,Data,ArgumentInfo,R):-true|
+        Data1 = {Pool1,Info1,CSS1},
+        get_aidInfo(FLArg,CLArg,Data1,Data2,AidInfo),
+        get_issue(CLArg,Data2,Data3,Issue),
+        dbtgui_sensitivityUtility:get_buttonState(FLArg,CLArg,Data3,Data4,ButtonState),
+        get_argument(CLArg,Data4,Data5,Argument),
+        get_status(Data5,Data6,Status),
+        get_history(Data6,Data,History),
+
+        (   wait(Argument),wait(ButtonState)->
+                ArgumentInfo = [AidInfo,Issue,ButtonState,Argument,Status,History],
+                R = normal(success)).
+
+%get_aidInfo
+    get_aidInfo(FLArg,CLArg,{Pool1,Info,CSS},Data,AidInfo):-true|
+        dbtgui_LArgUtility:get_AID(      CLArg,Pool1,Pool2,CAID,_),
+        dbtgui_LArgUtility:get_parentAID(CLArg,Pool2,Pool3,PAID,_),
+        dbtgui_LArgUtility:get_AID(      FLArg,Pool3,Pool ,FAID,_),
+        Data    = {Pool,Info,CSS},
+        AidInfo = {CAID,PAID,FAID}.
+
+%get_issue
+    get_issue(CLArg,{Pool1,Info,CSS},Data,Issue):-true|
+        dbtgui_LArgUtility:get_IPos(CLArg,Pool1,Pool,ParentPArg,IPos,YN),
+        Data = {Pool,Info,CSS},
+
+        (   YN = yes->
+                ParentPArg = {SV,_},
+		get_plpt(Info,PL,PT),
+                dbt_issueUtility:make_consequence(SV,IPos,PL,PT,Issue)
+        ;
+            YN = no->
+                Issue = nil
+        ).
+
+%get_plpt
+    get_plpt({_,_,_,{_,PT1,OP}},PL,PT):-true|
+	vector_element(OP,0,PL,_),
+	PT = PT1.
+
+%get_argument
+    get_argument(CLArg,{Pool1,Info1,CSS},Data,Argument):-true|
+        dbtgui_LArgUtility:get_ruleName(CLArg,0,RuleName),
+
+        dbtgui_LArgUtility:get_ruleRelInfo(CLArg,{Pool1,Info1},{Pool2,Info2},RuleRelInfo,YN),
+
+        (   YN = yes->
+                RuleRelInfo = {_,_,RuleRel,_}
+        ;
+            YN = no->
+                RuleRel = nil
+        ),
+
+        dbtgui_LArgUtility:get_PArg(CLArg,PArg),
+        PArg = {SV,APos},
+            
+        dbtgui_argumentElementListUtility:get_argumentElementList(SV,APos,{Pool2,Info2},{Pool,Info},AEL),
+
+        Data = {Pool,Info,CSS},
+        Argument = {RuleName,RuleRel,AEL}.
+
+%get_status
+    get_status({Pool,Info,CSS1},Data,Status):-true|
+        CSS1 = [get(status,Status)|CSS],
+        Data = {Pool,Info,CSS}.
+
+%get_history
+    get_history({Pool,Info,CSS1},Data,History):-true|
+        CSS1 = [get(history,History)|CSS],
+        Data = {Pool,Info,CSS}.
+
+%get_explanation
+    get_explanation(CLArg,Exp):-true|
+        dbtgui_LArgUtility:get_PArg(CLArg,PArg),
+        PArg = {SV,Pos},
+	dbt_issueUtility:make_consequence(SV,Pos,100000,e,Exp).
+
+%%%%%%%%%internal metho
+
+    count([],W,N):-true|
+        N = W.
+    count([_|T],W,N):-true|
+        W1 := W+1,
+        count(T,W1,N).

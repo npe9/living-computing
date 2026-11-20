@@ -1,0 +1,189 @@
+﻿<!--
+#
+# created by	A.Aiba		'97/09/12
+#
+-->
+<HTML>
+<HEAD><TITLE>Converting ESP Programs to CESP Programs</TITLE></HEAD>
+<BODY BACKGROUND="../../../PICS/tile-blue.gif">
+
+<CENTER><H1>
+A GUIDE TO CONVERTING ESP PROGRAMS TO CESP PROGRAMS
+</H1>
+</CENTER>
+
+<HR width=95% align="center" size=7><P>
+
+ESP (Extended Self-contained Prolog) is an object-oriented logic
+programming language that was developed by ICOT.  ESP can run only on
+a PSI that is an ESP machine.  On the other hand, AI Language Research
+Institute, Ltd. (AIR) extended ESP, and developed CESP (Common ESP) so
+that it can be used on UNIX machines.  This document shows several
+general points to be noted when converting ESP programs to CESP
+programs.  This document is written with the aid of AIR.<P>
+
+<H2>1.  CESP</H2><P>
+
+CESP is not part of the ICOT Free Software, instead being available
+from MITSUBISHI ELECTRIC COMPUTER SYSTEMS(TOKYO) CORP. (MTC).<P>
+
+CESP Ver.3.3 assumes the following environment.<P>
+
+<PRE>
+    Computer         : SUN4 (SPARC)
+    Operating System : Sun OS R4.0.3, R4.1, R4.1.1 or R4.1.2
+    Main Memory      : 16MB or more (Swap size is 64MB)
+    Disk Storage     : 90MB or more for SUN4 (SPARC)
+    Editor           : Interactive debugging environment installed 
+                       on GNU Emacs (preferred)
+    Window           : Available X11R4 interface / Japanese characters
+                       with Xmw (for X11R5) and Wnn (R4.0.2)
+</PRE>
+<P>
+
+For further details, apply to MTC by Fax or Postal mail.<P>
+
+<PRE>
+    MITSUBISHI ELECTRIC COMPUTER SYSTEMS CORP.
+    2-nd Application Systems Develpment Dept.
+    Software Products Promotion Group
+
+    87-1, Kawakamicho, Totsukaku, Yokohama,
+    Kanagawa 244, Japan
+
+    TEL:  +81-45-825-5679(Japanese Only)
+    FAX:  +81-45-825-5822
+</PRE><P>
+
+<H2>2.  Conversion to CESP</H2>
+
+Many ESP programs need a PSI machine and SIMPOS (the OS of PSI).  When
+you convert such programs to CESP programs, one task is to rewrite the
+incompatible segments such as I/O part.  Some fundamental data forms
+of CESP are different from those of ESP.  Read the CESP Language
+Manual [1] first.  Some general points of conversion are as follows:<P>
+
+<DL>
+
+<DT>(1) Built-in predicates<P>
+
+<DL>
+
+<DT>  (a) Built-in predicates for PSI
+
+<DD>You must rewrite the part of the program (e.g., built-in
+predicates such as "word", "set_system_register" or "address") that
+depends on the PSI hardware (e.g., register, 40bits/word).<P>
+
+<DT>(b) Differences in built-in predicates of CESP and ESP 
+
+<DD>The predicates of ESP, "heap_vector" and "stack_vector",
+correspond to "impure_vector" and "pure_vector" in CESP.  Read [1] to
+learn the differences in CESP and ESP built-in predicates.<P>
+
+<DT>(c) Standard operators of CESP
+
+<DD>Some special symbols such as "&" and "**" are used as standard
+operators in CESP but not in ESP.  Before you can declare "add_op" of
+such operators in CESP, you must declare "remove_op" of them.<P>
+
+</DL>
+
+<DT>(2) Data form<P>
+
+<DL>
+
+<DT>(a) Data form of string
+
+<DD>Although 1 bit string data and 32 bit string data are available in
+ESP, they are not available in CESP.  Use "impure_vector" instead in
+CESP.
+
+<DT>(b) Range of integer
+
+<DD>While the range of the integer in ESP is from -2^31 to 2^31-1,
+that in CESP is from -2^28 to 2^28-1.
+
+<DT>(c) Character code
+
+<DD>While the character code in ESP is JIS (Japanese Industrial
+Standard; JIS X 0208-1983), that in CESP is EUC.
+
+<DT>(d) Comparison of different data type
+
+<DD>Data types are compared differently in CESP and ESP.<P>
+</DL>
+
+<DT>(3) Interface<P>
+
+<DL>
+
+<DT>(a) Window methods
+
+<DD>The window in CESP is different from that in ESP.  In particular,
+the emacs_window in CESP is different from the pmacs_window in ESP.
+(You can use the "scrollbar" instead of the pmacs_window.)  The macros
+for the mouse in ESP (e.g., mouse#r) must be changed to the atoms in
+CESP (e.g., 'mouse#r').  You can not use the extra PSI font on UNIX
+machines.
+
+<DT>(b) File I/O methods
+
+<DD>The file I/O methods in CESP are a little different from those in
+ESP.  For example, the order of arguments in the ":create" method is
+different.
+
+<DT>(c) Method for library and directory etc.
+
+<DD>Some methods for the library and directory etc. in ESP are not in
+CESP.  You need to program the difference.<P>
+
+</DL>
+
+<DT>(4) Others<P>
+
+<DL>
+
+<DT>(a) Capacities of PSI and UNIX machine
+
+<DD>The UNIX machine and the ESP machine differ as follows: the
+execution speed of CESP on the UNIX machine is slower than ESP on PSI,
+and the UNIX machine does not have as much memory as PSI.  If a class
+has many clauses, you should divide the class.
+
+<DT>(b) Exception manipulation
+	<DL>
+	<DT>- set_mode exception_fail/exception_handler
+
+	<DD>You can set these in CESPshell.  You can choose for the
+CESP system to manipulate exception as failure, or for the system to
+show a manipulation menu when an exception occurs.
+
+	<DT>- set_exception_object/2
+
+	<DD>You can designate any class to be called when an exception
+occurs.  The method in CESP is different from that in ESP.<P>
+
+	</DL>
+
+<DT>(c) Inheritance of "as_program"
+
+<DD>Any class cannot inherit "as_program".  It does not exist in CESP.
+
+</DL>
+
+</DL>
+
+<H2>Reference<P></H2>
+
+<DL>
+
+<DT>[1] CESP Language Guide Version 3, AI Language Research Institute,
+Ltd.  (1992).
+
+</DL>
+
+</BODY>
+</HTML>
+
+

@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrcui_compile.
+
+:- public 
+    goal/4,
+    rule/4,
+    type/4,
+    pom/4.
+
+:- with_macro pimos.
+
+%goal
+    goal(InputFileName,Data1,Data,Protocol):-true|
+        rbrcui_defaultName:get_outputFileName(OutputFileName),
+        rbrcui_trans:goal(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(ok,_,_)->
+                rbrcui_load:goal(OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%rule
+    rule(InputFileName,Data1,Data,Protocol):-true|
+        rbrcui_defaultName:get_outputFileName(OutputFileName),
+        rbrcui_trans:rule(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(ok,_,_)->
+                rbrcui_load:rule(OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%type
+    type(InputFileName,Data1,Data,Protocol):-true|
+        rbrcui_defaultName:get_outputFileName(OutputFileName),
+        rbrcui_trans:type(InputFileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(ok,_,_)->
+                rbrcui_load:type(OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+%pom
+    pom(FileName,Data1,Data,Protocol):-true|
+        rbrcui_defaultName:get_outputFileName(OutputFileName),
+        rbrcui_trans:pom(FileName,OutputFileName,Data1,Data2,Protocol1),
+        (   Protocol1 = receive(ok,_,_)->
+                rbrcui_load:pom(OutputFileName,Data2,Data,Protocol)
+        ;
+            Protocol1 = receive(errorInfo,_,_)->
+                Data     = Data2,
+                Protocol = Protocol1
+        ).
+
+
+
+

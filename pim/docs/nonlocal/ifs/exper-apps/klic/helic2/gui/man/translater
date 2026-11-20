@@ -1,0 +1,323 @@
+			GUI translater operation manual
+										
+1. Outline
+
+To run "HELIC-II system", start a GUI and load the files of an internal data of
+the knowledge base as follows:
+
+	A file that describes a rule (a rule definition file)
+	A file that describes a goal (a goal definition file)
+	A file that describes a type (a type declaration file)
+	A file that defines a partial order definishion
+				          (a partial order definishion file)
+
+Load files of the knowledge base after starting a GUI, if using the knowledge
+base prepared by the system.  To use customized knowledge base, describe the
+knowledge base by referring to the language manual and convert it to the
+internal data after checking its syntaxes.  It is a role of a "translator" to
+check syntaxes and convert to an internal data.
+
+ A translator has following four functions;
+
+  (1) Rule internal data conversion function
+
+	converts a rule definition file to an internal data.
+
+  (2) Goal internal data conversion function
+
+	converts a goal definition file to an internal data.
+
+  (3) Type internal data conversion function
+
+	converts a type declaration file to an internal data.
+
+  (4) Partial order internal data conversion function
+
+	converts a partial order definition file to an internal data.
+
+ This manual explains the commands for using a translator and the error messages
+to be output in execution.
+
+2. Commands
+
+When running on Unix , the translator runs by executing the following commands.
+These are the notes for the explanation of 2.1
+
+ (1) Characters in small letters are fixed, and characters in capital letters
+     will be replaced with optional characters.
+
+ (2) The files prepared by the user shall be written in EUC codes.  
+
+2.1 Explanation of each command
+
+2.1.1 Conversion of a rule
+
+  (1) Command
+
+      gtrans rule INPUT OUTPUT
+
+      INPUT : Specify a file name of a user definition rule.  Attach the suffix
+	      .rule to the file name.
+      OUTPUT: Specify an output file name.  Attach the suffix .r to the file 
+	      name.
+
+  (2) Functions
+
+     Checks syntaxes of a rule and converts to an internal data.  
+
+  (3) Execution example
+
+      % gtrans rule koujo.rule koujo.r
+
+
+2.1.2 Conversion of a goal
+
+  (1) Command
+
+      gtrans goal INPUT OUTPUT
+
+      INPUT : Specify a file name of a user definition goal. Attach the suffix
+              .goal to the file name.
+      OUTPUT: Specify an output file name.  Attach the suffix .g to the file 
+	      name.
+
+  (2) Functions
+
+      Checks syntaxes of a goal and converts to an internal data.  
+
+  (3) Execution example
+
+      % gtrans goal koujo.goal koujo.g
+
+
+2.1.3 Conversion of a type
+
+  (1) Command
+
+      gtrans type INPUT OUTPUT
+
+      INPUT : Specify a file name of a user definition type. Attach the suffix
+              .type to the file name.
+      OUTPUT: Specify an output file name.  Attach the suffix .t to the file 
+              name.
+
+  (2) Functions
+
+      Checks syntaxes of a type and converts to an internal data.  
+
+  (3) Execution example
+
+      % gtrans type koujo.type koujo.t
+
+2.1.4 Conversion of a partial order relation
+
+  (1) Command
+
+      gtrans pom INPUT OUTPUT
+
+      INPUT : Specify an input file name of partial order definition file 
+	      by a user definition.  
+      OUTPUT: Specify an output file name. Attach the suffix .v to the file 
+              name.
+
+  (2) Functions
+
+      Checks syntaxes of a partial order relation and converts to an internal 
+      data.  
+
+  (3) Execution example
+
+      % gtrans pom koujo.pom koujo.v
+
+2.2 Error messages
+
+This chapter explains the meanings and corrections of error messages displayed
+in the conversion of a rule, goal, type, and a partial order relation.
+
+2.2.1 Errors in a conversion of a rule and a goal
+
+      !trans-illegal syntax : line NUMBER ELEMENT
+
+      Meaning    : ELEMENT on NUMBER line is against the structure description 
+                   syntax.
+      Correction : Rewrite near ELEMENT
+
+	< Example >
+
+	!trans-illegal syntax : line 440 'goal'
+
+
+      !trans-illegal variable definition : line NUMBER ELEMENT
+
+      Meaning    : The type specified place for the variable ELEMENT is not 
+                   described in the determined place, or the type designation 
+                   is repeated.
+      Correction : Rewrite in the determined place.
+
+	< Example >
+
+	!trans-illegal variable difinition : line 439 'Z'
+
+
+      !trans-illegal htermID definition  : line NUMBER ELEMENT
+
+      Meaning    : The H term specified place for the H term variable (refer 
+                   to the language manual) ELEMENT is not described in the 
+                   determined place, or the H term designation is repeated.  
+                   The H term specified place for the H term constant 
+                   (refer to the language manual) ELEMENT is not described in 
+                   the determined place, or the H term designation is repeated.
+  
+      Correction : Rewrite in the determined place.
+
+	< Example >
+
+	!trans-illegal htermID definition : line 440 '@\take'
+
+
+      !trans-Input file can't open or don't exist
+
+      Meaning    : The system failed to open the input file,or the file cannot
+                   be found.
+      Correction : Specify the file name again.
+
+
+      !trans-Output file can't open or mistake pathname
+
+      Meaning    : The system failed to open the output file,or the specified 
+                   path name is incorrect.
+      Correction : Specify the file name again.
+
+
+      !trans-Memory error
+
+      Meaning    : The memory can not be acquired.
+      Correction : Run again.
+
+
+      !trans-illegal argument NUMBER
+
+      Meaning    : The number of the input arguments does not matched.
+      Correction : Input again.
+
+
+2.2.2 Errors in the conversion of the type
+
+      !trans-corrupted_file PATHNAME
+
+      Meaning    : The internal form of the type definition file specified by
+                   PATHNAME is incorrect.  The file has been destroyed.
+      Correction : Translate the type declaration file again, and specify the 
+                   new type definition file.
+
+
+      !trans-illegal_attribute_dcl_syntax PAIR
+
+      Meaning    : The declaration of the attribute specified by PAIRis against
+                   the structure description syntax.
+      Correction : Modify the description of PAIR in the type declaration file.
+
+
+      !trans-illegal_dcl_syntax X
+
+      Meaning    : The declaration of the type specified by X is against the 
+                   structure description syntax.
+      Correction : Modify the description of X in the type declaration file.
+
+
+      !trans-illegal_file PATHNAME
+
+      Meaning    : The file specified by PATHNAME is not the type definition 
+                   file.  
+                   (The form of the header is wrong.)
+      Correction : Translate the type declaration file again, and specify the 
+                   new type definition file.
+
+
+      !trans-illegal_term TERM
+
+      Meaning    : The term specified by TERM is against the structure 
+                   description syntax.
+      Correction : Modify the description of TERM in the type declaration file.
+
+
+      !trans-loop_definition LOOPNAMELIST
+
+      Meaning    : A definition which composes a loop is found in the 
+                   declaration of type name in LOOPNAMELIST.
+      Correction : Modify the description of type of LOOPNAMELIST in the type 
+                   declaration file.
+
+
+      !trans-open_fail PATHNAME
+
+      Meaning    : The file specified by PATHNAME cannot be opened.
+      Correction : Confirm the file name and specify the correct file name.
+
+
+      !trans-type_dcl_error X Y
+
+      Meaning    : The contradiction is detected between type X and Y in the 
+                   solution of attribute succession.
+      Correction : Modify the declaration of X and Y in the type declaration 
+                   file.
+
+
+      !trans-type_error X Y
+
+      Meaning    : The attribute type X contradicts the declared attribute 
+                   type Y.
+      Correction : Modify the declaration of X and Y in the type declaration 
+                   file.
+
+2.2.3 Errors in the conversion of a partial order relation
+
+      !trans-Don't find file : XX
+
+      Meaning    : The input file name XX is incorrect.
+      Correction : Specify the correct input file name.
+
+
+      !trans-Don't make file : XX
+
+      Meaning    : The output file name XX is incorrect.
+      Correction : Specify the correct output file name.
+
+
+      !trans-illegal unit definition : XX
+
+      Meaning    : "&define_unit" is not written.
+      Correction : Write "&define_unit" at the beginning of the unit 
+                   definition file.
+
+
+      !trans-illegal unit : XX
+
+      Meaning    : The description \verb+XX+ of the unit is incorrect.
+      Correction : Describe \verb+XX+ based on the correct unit syntax.
+
+
+      !trans-illegal standpoint definition : XX
+  
+      Meaning    : "&define_standpoint" is not written.
+      Correction : Write "&define_standpoint" at the beginning of the 
+                   standpoint definition file.
+
+
+      !trans-illegal standpoint : XX
+
+      Meaning    : The description XX of the standpoint is incorrect.
+      Correction : Describe XX based on the correct standpoint syntax.
+
+
+      !trans-illegal view definition : XX
+
+      Meaning    : "&define_view" is not written.
+      Correction : Write "&define_view" at the beginning of the viewpoint 
+                   definition file.
+
+
+      !trans-illegal view : XX
+
+      Meaning    : The description XX of the viewpoint is incorrect.
+      Correction : Describe XX based on the correct viewpoint syntax.

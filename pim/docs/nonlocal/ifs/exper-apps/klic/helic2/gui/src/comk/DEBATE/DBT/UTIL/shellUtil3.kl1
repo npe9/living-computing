@@ -1,0 +1,63 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_shellUtility3.
+
+:- public 
+    get_backward/4,
+    get_forward/4,
+    get_next/4,
+    get_previous/4,
+    get_focus/4,
+    get_jump/5.
+            
+:- with_macro pimos.
+
+%get_backward
+    get_backward({Pool1,Info,{_,CLArg},CSS1},Data,LArg,R):-true|
+        dbtgui_LArgUtility:get_backwardLArg(CLArg,{Pool1,CSS1},{Pool,CSS},LArg,YN),
+        make_result(YN,backward,R),
+        Data = {Pool,Info,CSS}.
+
+%get_forward
+    get_forward({Pool,Info,_,CSS1},Data,LArg,R):-true|
+        dbtgui_LArgUtility:get_forwardLArg(CSS1,CSS,LArg,YN),
+        make_result(YN,forward,R),
+        Data = {Pool,Info,CSS}.
+
+%get_next
+    get_next({Pool1,Info,{_,CLArg},CSS},Data,LArg,R):-true|
+        dbtgui_LArgUtility:get_nextLArg(CLArg,Pool1,Pool,LArg,YN),
+        make_result(YN,next,R),
+        Data = {Pool,Info,CSS}.
+
+%get_previous
+    get_previous({Pool1,Info,{_,CLArg},CSS},Data,LArg,R):-true|
+        dbtgui_LArgUtility:get_previousLArg(CLArg,Pool1,Pool,LArg,YN),
+        make_result(YN,previous,R),
+        Data = {Pool,Info,CSS}.
+
+%get_focus
+    get_focus({Pool,Info,{FLArg,_},CSS},Data,LArg,R):-FLArg \=nil|
+        LArg = FLArg,
+        R    = normal(success),
+        Data = {Pool,Info,CSS}.
+    get_focus({Pool,Info,{nil,_},CSS},Data,_,R):-true|
+        make_result(no,focus,R),
+        Data = {Pool,Info,CSS}.
+
+%get_jump
+    get_jump({Pool1,Info,_,CSS},AID,Data,LArg,R):-true|
+        dbtgui_LArgUtility:get_LArgFromAID(AID,Pool1,Pool,LArg,YN),
+        make_result(YN,jump,R),
+        Data = {Pool,Info,CSS}.
+
+
+%%%%%%%%%%%%%%internal method
+
+    make_result(yes,_,Result):-true|
+        Result = normal(success).
+    make_result(no,Detail,Result):-true|
+        Result = abnormal({gui,'Sense check error',Detail}).

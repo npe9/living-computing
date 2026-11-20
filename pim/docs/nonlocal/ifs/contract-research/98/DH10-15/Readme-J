@@ -1,0 +1,57 @@
+%%%                                        %%%
+%%%      README                            %%%
+%%%     Copyright (C) 1999 Fumio Mizoguchi %%%
+%%%                                        %%%
+
+
+移動ロボットの並列協調制御ソフトウエアの研究開発
+====================================================
+1999年1月31日
+東京理科大学                       溝口 文雄
+
+
+○ ソフトウエア情報
+
+Compiler     MRLコンパイラ
+     +------ mrlCompiler.kl1    MRLコンパイラプログラム
+     +------ util.kl1           ユーティリティ プログラム
+     +------ Sample             MRLサンプルプログラム集
+
+Multiagent  マルチエージェントシステム
+     +------ office_system.mrl  メインプログラム
+     +------ environment.kl1    環境情報プログラム
+     +------ robot_data.kl1     マシン名登録プログラム
+     +------ util.kl1           ユーティリティプログラム
+     +------ RobotServer        実ロボット制御プログラム集
+
+Infrared    赤外線センサ群管理システム
+     +------ SensorChangeServer.java   赤外線センサ群管理システムプログラム
+     +------ Sensor.java               WebIO接続用プログラム
+
+Guide       移動ロボット誘導用プログラム
+     +------ Guide           誘導システム
+     +------ CameraClient    カメラロボット管理システム
+     +------ CameraServerr   カメラロボット制御システム
+     +------ Image           画像解析システム
+
+Interface   ユーザインタフェースプログラム
+     +------ Server  ユーザインタフェースサーバ
+               +----  Server.java       メインプログラム
+               +----  KlicChannel.java  KLICプログラムとの接続プログラム
+               +----  KlicReader.java   KLICプログラムからの受信用プログラム
+               +----  KlicSender.java   KLICプログラムへの送信用プログラム
+               +----  Channel.java      Javaプログラムとの通信用プログラム
+               +----  server.html       起動用htmlファイル
+               +----  media2.gif        メディアセンター概略図
+     +------ Client  ユーザインタフェースクライアント
+               +----  PrinterClient.java   プリンタデリバリ用クライアントプログラム
+               +----  DeliveryClient.java  文書デリバリ用クライアントプログラム
+               +----  Client.java          クライアントソケット通信用プログラム
+               +----  printer.html         プリンタデリバリ起動用htmlファイル
+               +----  delivery.html        文書デリバリ起動用htmlファイル
+               +----  media2.gif           メディアセンター概略図
+               +----  Commander            コマンドを直接送信するシステム
+
+
+Doc        ユーザマニュアル
+

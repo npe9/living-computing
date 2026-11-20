@@ -1,0 +1,96 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（４２）立論テキスト生成実験システム：Ｄｕｌｃｉｎｅａ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（４２）立論テキスト生成実験システム：Ｄｕｌｃｉｎｅａ</h2>
+
+<pre width="136"><b>
+	マ シ ン：Multi-PSI または pseudo-PIM/m
+	環　　境：PIMOS
+	言　　語：KL1
+	ソース量：2 MB
+	文　　書：マニュアル (日本語／英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+システムの持つ信念内容に基づき、与えられたゴールの正当性を主張する文章
+を生成する。<p>
+
+<h2>構成</h2>
+
+
+以下の４つのモジュールから構成される。<P>
+
+<DL>
+
+<DT>意味内容生成部：
+
+<DD>文章の意味内容を表す立論グラフを生成する。<P>
+
+<DT>ＦＴＳ生成部：
+
+<DD>立論グラフを抽象的な文章構造（ＦＴＳ）に変換する。<P>
+
+<DT>文章構造生成部：
+
+<DD>ＦＴＳに接続表現に関する情報を加える。<P>
+
+<DT>文章生成部：
+
+<DD>文章を表出する。
+
+</DL>
+<p>
+
+<h2>機能</h2>
+
+<ol>
+
+<li>信念内容は、事実、規則、自体に対するシステムの判断からなり、信念デー
+タベースを変えることにより、様々な立論ドメインにおいて立論を行うことが
+できる。
+
+<li>直接の論拠だけでなく、実例や予想される反論への批判など、説得力のあ
+る立論に必須な要素を加えた文章を生成することができる。
+
+<li>立論戦略や、文章構造の評価基準を変えながら文章生成の実験を進めるこ
+とにより、自然な文章のための客観的な評価基準を研究することができる。
+
+</ol>
+<p>
+
+<h2>文献</h2>
+<OL>
+
+<LI> IKEDA Teruo,KOTANI,Akira,HAGIWARA Kaoru and KUBO Yukihiro<d>
+Argument Text Generation System(Dulcinea)<d> In <i>the Proceedings of
+International Conference on Fifth Generation Computer Systems 1992</i>
+<p>
+
+</OL>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	立論テキスト生成実験システム：Ｄｕｌｃｉｎｅａ [873K] <a
+href="../../../ifs/natural-lang/pimos/dulcinea.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

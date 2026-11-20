@@ -1,0 +1,118 @@
+          Improved KLIC with Optimized Goal Scheduling Ver2.10
+            Kazuhiko Ohno and Masahiko Ikawa (Kyoto Univ.)
+                                  1997.6.20
+
+          Copyright (C) 1996-1997  Kazuhiko Ohno, Masahiko Ikawa,
+            and Computer Architecture Laboratory, Department of
+            Information Science, Kyoto University.
+
+1. Introduction
+
+This software is an improved version of KLIC (Ver 2.002) with
+optimized compiler and runtime system for efficient goal scheduling.
+
+2. Feature of the Software
+
+Since the original version of KLIC dynamically schedules the execution
+order of goals, its scheduling overhead may cause significant
+performance degradation if your program consists of, for example,
+communicating sequential processes.  This optimized version aims to
+reduce the scheduling overhead by compile-time dependency analysis and
+run-time scheduling exploiting the analysis result.
+
+The compiler statically analyzes the dependency among goals to find
+threads.  Since a thread consists of goals whose order of execution is
+statically determined, the runtime system efficiently executes the
+thread without scheduling overhead.  Moreover, this new scheduling
+mechanism will drastically reduces GC invocation because it maintains
+the execution environment of a thread using a stack.
+
+This version also has new features; optimization of inner-thread goal
+scheduling, and reply-first scheduling.
+
+If a goal p/n is always followed by a goal q/m, the code of the clause
+p/n is optimized to directly jump to the code of clause q/m.
+
+In the parallel execution, reply-first scheduling is available.
+In this scheduling, data requests from other nodes promote the scheduling
+of the concerning threads.  This scheduling improve the response time
+to the data request and reduces the idling time of nodes.
+
+
+Note that the current version of this software does NOT support the all
+features of the original KLIC.
+
+3. Usage
+
+The following instructions are the differences from the original KLIC.
+See the documents of KLIC for common instructions not shown here.
+
+3.1  Installation
+
+Do "Configure" in the top directory, and then do "make."
+
+Follow the following special instructions on "Configure."
+
+  + Optimization level of C compiler should be "none", that is;
+
+    Which optimization level to use? [none] none
+                                            ~~~~
+
+3.2  Compilation
+
+The installation generates two compilers; the original version kl1cmp
+and the optimizing version kl1cmp-p.
+
+The compiler-driver klic has the following new options :
+
+  + -e Optimize goal scheduling.
+
+  + -E Optimize goal scheduling and make reply-first scheduling.
+
+Specify kl1cmp-p as the KL1 compiler when these options are specified.
+
+In directories sched-test/, Makefile and test programs are provided.
+"make" in sched-test/ generates the following objects for each sample
+source xxx.kl1 :
+
+  +xxx          Compiled by original KLIC.
+  +xxx-sched    Goal scheduling is optimized.
+  +xxx-reply    Goal scheduling is optimized and also make
+                reply-first scheduling.
+
+
+3.3  Execution
+
+The following options are available:
+
+  + -S1 <n> : stack size for each thread (default = 100 word)
+  + -S2 <n> : number of stacks for threads (default = 10)
+
+Default values can be changed by modifying the values of STACKSIZE and
+STACKNUM in the file "include/klic/sched.h".
+
+
+4. Restrictions
+
+This version has the following restrictions.
+
+4.1  Restrictions on Programming
+
+  + The program must be well-moded.
+  + The @priority pragma cannot be used.
+  + Only the following basic built-in predicates are implemented.
+      (a) =/2, wait/1, current_priority/1, current_node/2
+      (b) atomic/1
+      (c) atom/1, make_atom/2, atom_number/2, get_atom_string/2,
+          intern/2, get_atom_name/2
+      (d) integer/1, :=/2
+      (e) arithmetics such as add/3 , and macros such as '+' and '-'.
+      (f) comparisons such as equal/2, and macros such as '=:='.
+      (g) functor/3, new_functor/3, arg/3, setarg/4
+      (h) list/1
+      (i) io:outstream/1
+
+4.2  Restrictions on Compilation and Execution
+
+  + Separated compilation is not available.
+  + Runtime tracing is not available.

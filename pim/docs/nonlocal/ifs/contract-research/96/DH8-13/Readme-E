@@ -1,0 +1,35 @@
+=====================================================
+ Japanese Probabilistic Dependency Analyzer
+ Computation Linguistics Laboratory
+ Nara Institute of Science and Technology
+ Copyright (C) 1997 Masakazu Fujio and Yuji Matsumoto
+=====================================================
+
+1. Files
+
+ *Data files
+  Segmentation
+  ./auto ./key ./zoku
+  Dependency analysis
+  ./Hstat
+
+ *Execution files
+  ./unit	Segmentation(Perl)
+  ./dep		Dependency analyzer(Perl)
+  ./best	Best answer detector(C)
+  ./ki		Tree writer(C)
+
+2. Compilation
+ 
+  gcc -O2 -o best best.c
+  gcc -O2 -o ki ki.c
+
+3. Usage
+
+Japanese Morphological Analyzer "ChaSen version 1.0" is
+necessary, which is available from the following URL:
+
+	URL: http://cactus.aist-nara.ac.jp/lab/nlt/chasen.html
+
+Execution sample
+cat txt | chasen -e | unit -b | dep | best -v | ki

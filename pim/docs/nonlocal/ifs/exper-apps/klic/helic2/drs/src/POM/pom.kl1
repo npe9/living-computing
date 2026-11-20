@@ -1,0 +1,297 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module partialOrderModule.
+
+:- public 
+   create/1,
+    create/4,
+    quick_create/2.
+            
+:- with_macro pimos.
+
+    create(I):-true |
+        loop(I,off,[],[],[],[],[]).
+
+    create(UnitList,SpList,ViewList,I):-true |
+        initiate(UnitList,SpList,ViewList,SUU,SpSU,SpUUR,ViewDef,ViewUURM),
+        loop(I,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+
+    initiate(UnitList,SpList,ViewList,SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true|
+        scopeUnitUnitTable:create(UnitList,SUU1),
+        spScopeUnitTable:create(SpList,SpSU1),
+        sp_unitUnitRelTable:create(SUU1,SpSU1,SUU,SpSU,SpUUR1),
+        viewDefineTable:create(ViewList,ViewDef),
+        view_unitUnitRelTableManager:create(ViewList,SpUUR1,SpUUR,ViewUURM).
+
+    quick_create(InitDataList,I):-true |
+        quick_initiate(InitDataList,SUU,SpSU,SpUUR,ViewDef,ViewUURM),
+        loop(I,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+
+    quick_initiate({SUUData,SpSUData,SpUURData,ViewDefData,ViewUURMData},
+                SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true|
+        scopeUnitUnitTable:quick_create(SUUData,SUU),
+        spScopeUnitTable:quick_create(SpSUData,SpSU),
+        sp_unitUnitRelTable:quick_create(SpUURData,SpUUR),
+        viewDefineTable:quick_create(ViewDefData,ViewDef),
+        view_unitUnitRelTableManager:quick_create(ViewUURMData,ViewUURM).
+
+    loop([],_,SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU =[],
+        SpSU=[],
+        SpUUR=[],
+        ViewDef=[],
+        ViewUURM=[].
+    loop([initiate(InitDataList)|T],_,SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU = [],
+        SpSU= [],
+        SpUUR= [],
+        ViewDef= [],
+        ViewUURM= [],
+        quick_initiate(InitDataList,SUU1,SpSU1,SpUUR1,ViewDef1,ViewUURM1),
+        loop(T,on,SUU1,SpSU1,SpUUR1,ViewDef1,ViewUURM1).
+    loop([get_all(ALL)|T],on,SUU1,SpSU1,SpUUR1,ViewDef1,ViewUURM1):-true |
+        SUU1 =      [get_all(SUUData)|SUU2],
+        SpSU1=      [get_all(SpSUData)|SpSU2],
+        SpUUR1=     [get_all(SpUURData)|SpUUR2],
+        ViewDef1=   [get_all(ViewDefData)|ViewDef2],
+        ViewUURM1=  [get_all(ViewUURMData)|ViewUURM2],
+        ALL = {SUUData,SpSUData,SpUURData,ViewDefData,ViewUURMData},
+        loop(T,on,SUU2,SpSU2,SpUUR2,ViewDef2,ViewUURM2).
+
+%%%suu access command
+
+    loop([get({unit,all},UnitNameList,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU1 = [get_allUnitList(_,UnitNameList)|SUU2],
+        Result = normal(success),
+        loop(T,on,SUU2,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([get({scopeUnit,all},ScopeUnitNameList,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU1 = [get_allScopeUnitList(_,ScopeUnitNameList)|SUU2],
+        Result = normal(success),
+        loop(T,on,SUU2,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([get({unitOrScopeUnitToUnit,UnitOrScopeUnitList},UnitNameList,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):- true|
+%        SUU1 = [is_unitOrScopeUnitList(UnitOrScopeUnitList,YN)|SUU2],       
+        SUU2 = SUU1,YN = yes,
+        (   YN = yes ->
+                SUU2 = [get_unitListList(UnitOrScopeUnitList,UnitNameList)|SUU3],
+                Result = normal(success)
+        ;
+            YN = {no,UnknownList}->
+                Result = abnormal({pom,'Illegal unit name',UnknownList}),
+                SUU3 = SUU2
+        ),
+        loop(T,on,SUU3,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([is({unit,UnitName},YN,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU1 = [is_unit(UnitName,YN)|SUU2],
+        Result = normal(success),
+        loop(T,on,SUU2,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([is({unitOrScopeUnitList,UnitOrScopeUnitList},YN,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU1 = [is_unitOrScopeUnitList(UnitOrScopeUnitList,YN)|SUU2],
+        Result = normal(success),
+        loop(T,on,SUU2,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([get({scopeUnitToUnit,ScopeUnitList},ScopeUnitToUnitList,Result)|T],on,
+                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        SUU1 = [is_unitOrScopeUnitList(ScopeUnitList,YN)|SUU2],
+        (   YN = yes ->
+                get_scopeUnitToUnitList(ScopeUnitList,SUU2,SUU3,ScopeUnitToUnitList),
+                Result = normal(success)
+        ;
+            YN = no(Unknown)->
+                Result = abnormal({pom,'Illegal unit name',Unknown}),
+                SUU3 = SUU2
+        ),
+        loop(T,on,SUU3,SpSU,SpUUR,ViewDef,ViewUURM).
+%    loop([get({unitOrScopeUnitList,all},on,UnitOrScopeUnitList,Result)|T],
+%                SUU1,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+%        SUU1 = [get_allScopeUnitList(_,ScopeUnitList),
+%                get_allUnitList(_,UnitNameList)|SUU2],
+%        append(ScopeUnitList,UnitNameList,UnitOrScopeUnitList),
+%        loop(T,on,SUU2,SpSU,SpUUR,ViewDef,ViewUURM).
+
+%%%%%%%%%%%%%standpoint access command
+
+    loop([get({sp,all},SPList,Result)|T],on,                 % show sp
+                SUU,SpSU1,SpUUR,ViewDef,ViewUURM):-true |
+        SpSU1 = [get_spOrgList(SPList)|SpSU2],
+        Result = normal(success),
+        loop(T,on,SUU,SpSU2,SpUUR,ViewDef,ViewUURM).
+    loop([get({sp,SPName},SP,Result)|T],on,                  % show sp Name
+                SUU,SpSU1,SpUUR,ViewDef,ViewUURM):-SPName \=all |
+        SpSU1 = [is_sp(SPName,YN)|SpSU2],
+        (   YN =yes->
+                SpSU2 = [get_scopeUnitOrgList(SPName,ScopeUnitList)|SpSU3],
+                SP = [{SPName,ScopeUnitList}],
+                Result = normal(success)
+        ;
+            YN =no->
+                SpSU3 = SpSU2,
+                Result = abnormal({pom,'Illegal standpoint name',SPName})
+        ),
+        loop(T,on,SUU,SpSU3,SpUUR,ViewDef,ViewUURM).
+    loop([is({sp,SPName},YN,Result)|T],on,
+                SUU,SpSU1,SpUUR,ViewDef,ViewUURM):-true |
+        SpSU1 = [is_sp(SPName,YN)|SpSU2],
+        Result = normal(success),
+        loop(T,on,SUU,SpSU2,SpUUR,ViewDef,ViewUURM).
+
+%%%%%%%%%
+    loop([get({view,all},ViewList,Result)|T],on,                     % show view
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM):-true |
+        ViewDef1= [get_viewList(ViewList)|ViewDef2],
+        Result = normal(success),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef2,ViewUURM).
+    loop([get({view,ViewName},View,Result)|T],on,                % show view ViewName
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM):-ViewName\=all |
+        ViewDef1= [is_view(ViewName,YN)|ViewDef2],
+        (   YN = yes ->
+                ViewDef2 = [get_view(ViewName,View1)|ViewDef3],
+                View     = [View1],
+                Result   = normal(success)
+        ;
+            YN = no ->
+                ViewDef3 = ViewDef2,
+                Result = abnormal({pom,'Illegal view name',ViewName})
+        ),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef3,ViewUURM).
+    loop([is({view,ViewName},YN,Result)|T],on,
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM):-true |
+        ViewDef1= [is_view(ViewName,YN)|ViewDef2],
+        Result = normal(success),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef2,ViewUURM).
+
+%%%%%%%%%view_uurUnitRelTableManager access method
+
+    loop([get({viewUnitUnitRelTable,ViewName},UURT,Result)|T],on,
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM1):-true |
+        ViewDef1= [is_view(ViewName,YN)|ViewDef2],
+        (   YN = yes ->
+                ViewUURM1 = [create_viewUnitUnitRelTable(ViewName,UURT)|ViewUURM2],
+                Result = normal(success)
+        ;
+            YN = no ->
+                ViewUURM2 = ViewUURM1,
+                Result = abnormal({pom,'Illegal view name',ViewName})
+        ),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef2,ViewUURM2).
+
+% 
+    loop([get({unitUnitRelReason,ViewName,R1,R2},Output,Result)|T],on,
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM1):-true |
+        ViewDef1= [is_view(ViewName,YN)|ViewDef2],
+        (   YN = yes ->
+                ViewUURM1 = [get_unitUnitRel(ViewName,R1,R2,Rel)|ViewUURM2],
+                (   Rel = 0->
+                        ViewUURM3 = ViewUURM2,
+                        Output = {Rel,[]},
+                        Result = normal(success)
+                ;
+                    Rel = -1->
+                        ViewUURM2 = [get_unitUnitRelReason(ViewName,R1,R2,Rel,SPList)|ViewUURM3],%
+%                        ViewUURM2 = [get_unitUnitRelReason(ViewName,R1,R2,Rel,[SPList])|ViewUURM3],
+                        Output = {Rel,SPList},
+                        Result = normal(success)
+                ;
+                    Rel = 1->
+                        ViewUURM2 = [get_unitUnitRelReason(ViewName,R1,R2,Rel,SPList)|ViewUURM3],
+%                        ViewUURM2 = [get_unitUnitRelReason(ViewName,R1,R2,Rel,[SPList])|ViewUURM3],
+                        Output = {Rel,SPList},
+                        Result = normal(success)
+                )
+        ;
+            YN = no ->
+                ViewUURM3 = ViewUURM1,
+                Result = abnormal({pom,'Illegal view name',ViewName})
+        ),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef2,ViewUURM3).
+
+    loop([get({unitUnitRelInfo,RuleList},UURelInfo,Result)|T],on,
+                SUU,SpSU,SpUUR,ViewDef,ViewUURM1):-true |
+        ViewUURM1 = [get_unitUnitRelInfo(RuleList,UURelInfo)|ViewUURM2],
+        Result = normal(success),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM2).
+
+
+    loop([is({containSP,ViewName,SPList},YN,Result)|T],on,
+                SUU,SpSU,SpUUR,ViewDef1,ViewUURM):-true |
+        ViewDef1= [is_view(ViewName,YN1)|ViewDef2],
+        (   YN1 = yes ->
+                ViewDef2 = [is_containSP(ViewName,SPList,YN)|ViewDef3],
+                Result = normal(success)
+        ;
+            YN1 = no ->
+                ViewDef3 = ViewDef2,
+                Result = abnormal({pom,'Illegal view name',ViewName})
+        ),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef3,ViewUURM).
+
+%%%%%%get_justify
+    loop([get_jusify({ViewName,R1,R2,Pool1},{Pool,JustifyList},Result)|T],on,
+                SUU,SpSU,SpUUR1,ViewDef1,ViewUURM1):-true |
+        Pool1 = [make(mnt,NT1)|Pool],
+        get_justify:get_justify({ViewName,R1,R2},{NT1,SpUUR1,ViewDef1,ViewUURM1},
+                    Output,JustifyList,Result),
+        Output = {[],SpUUR,ViewDef,ViewUURM},
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([jusify({ViewName,SPList},Result)|T],on,
+                SUU,SpSU,SpUUR1,ViewDef1,ViewUURM1):-true |
+        ViewUURM1 = [change_view(ViewName,SPList,SpUUR1,SpUUR)|ViewUURM],
+        ViewDef1  = [change_view(ViewName,SPList)|ViewDef],
+        Result    = normal(success),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([make_view({ViewName,SPList},Result)|T],on,
+                SUU,SpSU1,SpUUR1,ViewDef1,ViewUURM1):-true |
+        check_spName(SPList,SpSU1,SpSU,R1),
+        (   R1 = abnormal(_)->
+                SpUUR = SpUUR1,ViewDef = ViewDef1,ViewUURM = ViewUURM1,
+                Result    = R1
+        ;
+            R1 = normal(_)->
+                ViewUURM1 = [make_view(ViewName,SPList,SpUUR1,SpUUR)|ViewUURM],
+                ViewDef1  = [make_view(ViewName,SPList)|ViewDef],
+                Result    = normal(success)
+        ),
+        loop(T,on,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+
+%%%%%%%
+    loop([get(_,_,Result)|T],off,
+                SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        Result = abnormal({pom,'View file not load',nil}),
+        loop(T,off,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([is(_,_,Result)|T],off,
+                SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        Result = abnormal({pom,'View file not load',nil}),
+        loop(T,off,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+    loop([make_view(_,Result)|T],off,
+                SUU,SpSU,SpUUR,ViewDef,ViewUURM):-true |
+        Result = abnormal({pom,'View file not load',nil}),
+        loop(T,off,SUU,SpSU,SpUUR,ViewDef,ViewUURM).
+
+    get_scopeUnitToUnitList([],SUU1,SUU,ScopeUnitToUnitList):-true |
+        SUU = SUU1,
+        ScopeUnitToUnitList = [].
+    get_scopeUnitToUnitList([ScopeUnit|T],SUU1,SUU,ScopeUnitToUnitList):-true |
+        SUU1 = [get_unitList(ScopeUnit,UnitList)|SUU2],
+        get_scopeUnitToUnitList(T,SUU2,SUU,ScopeUnitToUnitList1),
+        ScopeUnitToUnitList = [{ScopeUnit,UnitList}|ScopeUnitToUnitList1].
+
+
+%check_spName
+    check_spName([],SpSU1,SpSU,R):-true|
+        SpSU = SpSU1,
+        R    = normal(success).
+    check_spName([SPName|T],SpSU1,SpSU,R):-true|
+        SpSU1 = [is_sp(SPName,YN)|SpSU2],
+        (   YN = yes->
+                check_spName(T,SpSU2,SpSU,R)
+        ;
+            YN = no->
+                SpSU = SpSU2,
+                R = abnormal({pom,'Illegal standpoint name',SPName})
+        ).

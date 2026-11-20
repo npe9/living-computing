@@ -1,0 +1,99 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (76) Intelligent Refiner for Multiple Sequence Alignment</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (76) Intelligent Refiner for Multiple Sequence Alignment</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/m
+	Environment: UNIXS, PIMOS
+	Language:    KL1, C
+	Source Code: 1.73 MB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This program refines Multiple Sequence Alignment with biological
+knowledge.<P>
+
+<h2><b>Features</b></h2>
+
+This program has three functions: <p>
+
+<UL>
+
+<LI>Alignment Editor, Automatic Alignment, and Reference to a Data
+Base PROSITE.
+
+<LI>Alignment Editor and Reference to a Data Base PROSITE run on UNIX
+machines.
+
+<LI>Automatic Alignment runs on PIM/m(PIMOS) and on UNIX machines.
+
+<LI>Automatic Alignment is connected with Alignment Editor by a Soket.
+
+</UL>
+
+
+<h2><b>Function</b></h2>
+
+<dl>
+
+<dt> The functions of Alignment Editor are as follows:
+
+<dd> Insertion and deletion of gaps with a mouse.
+
+<dd> Insertion, deletion, and overwriting of amino acids.
+
+</dl><P>
+
+This system shows the scores for a Multiple Sequence Alignment, a Data
+File name, and an Editor mode. This system shows identical columns and
+bar charts for the scores. It calls the Automatic Alignment program(in
+KL1 or C) and the Reference to a Data Base PROSITE program(in C).<P>
+
+<dl>
+
+<dt> The functions of Automatic Alignment are as follows:
+
+<dd> Automatic Alignment makes Multiple Sequence Alignment under
+constraints made in the Alignment Editor. It computes Multiple
+Sequence Alignment on PIM/m(PIMOS) or on UNIX. It can compute the
+region of Multiple Sequence Alignment shown in the Alignment Editor.
+
+<dt> The functions of Reference to Data Base PROSITE are as follows:
+
+<dd> Reference of a Data Base PROSITE searches for a motif through a
+Data Base PROSITE and shows it on a list widget. You can choose an
+item from the list widget. If you click on the item, it is selected
+and motif is shown.
+
+</dl>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Intelligent Refiner for Multiple Sequence Alignment [770K] <a
+href="../../../ifs/exper-apps/pimos/editalign.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

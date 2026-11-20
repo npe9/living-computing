@@ -1,0 +1,82 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtu_notice1.
+
+:- public 
+    notice/5.
+            
+:- with_macro pimos.
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+
+    notice(SP,Claim,{O,Pool1,Info1},Data,NextDR):-true|
+        initiate(SP,Claim,Pool1,Info1,Pool2,Info2,CSS,R1),
+        (   R1 = normal(success)->
+                dbtcui_shell:get_commandArguments({Pool2,Info2,CSS},{Pool3,Info3},CPA,R2),
+                (   R2 = normal(_)->
+                        execute(CPA,SP,Claim,{O,Pool3,Info3},Data,NextDR)
+                ;
+                    R2 = abnormal(_)->
+                        Data = {O,Pool3,Info3},NextDR = []
+                )
+                
+        ;
+            R1 = abnormal(_)->
+                Data = {O,Pool2,Info2},NextDR = []
+        ).
+
+%initiate
+    initiate({SPList,YR,MR},Claim,Pool1,Info1,Pool,Info,CSS,R):-true|
+        Claim   = claim(MA,issue(claim(YA,MI),IPos)),
+        Pool1   = [send(ynt,put(draw,{YA,IPos},{MA,{YR,MR}}))|Pool2],
+        dbtcui_LArgUtility:get_LArgFromAID(MA,Pool2,Pool3,MLArg,_),
+        dbtcui_LArgUtility:get_LArgFromAID(YA,Pool3,Pool4,YLArg,_),
+        dbtcui_guiUtility:make_noticeStatus({you,SPList,MA,MR,YA,YR},Info1,Info2,Status),
+        History = notice(SPList,claim(MA,issue(claim(YA,MI),IPos))),
+        InitVec = {{0,1,1,0},Status,History,{MLArg,{MR,YR}},{YLArg,MLArg}},
+        dbtcui_shellCurrentState:create(InitVec,CSS1),
+        dbtcui_showArgumentUtility:receive_argumentInfo({Pool4,Info2,CSS1},
+                YLArg,MLArg,{Pool,Info,CSS},R).
+
+%execute
+    execute({notice,win,SPList},SP,Claim,{O1,Pool1,Info1},Data,_):-true|
+        SP      = {_,YR,MR},
+        Claim   = claim(MA,issue(claim(YA,_),IPos)),
+        dbtcui_guiUtility:make_noticeStatus({i,SPList,MA,MR,YA,YR},Info1,Info,Status),
+        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2   = [makeList([mnt,hl],[MNT,HL])|Pool],
+                MNT     = [put(lose,{YA,IPos},{MA,{YR,MR},SPList})],
+                HL      = [put(send(y,pass(notice({SPList,MR,YR},notice(SP,Claim)))))],
+                O1      = [pass(notice({SPList,MR,YR},notice(SP,Claim)))|O],
+                Data    = {O,Pool,Info}).
+    execute({notice,draw,_},SP,Claim,{O1,Pool1,Info1},Data,_):-true|
+        SP      = {_,YR,MR},
+        Claim   = claim(MA,issue(claim(YA,_),IPos)),
+        dbtcui_guiUtility:make_noticeStatus({i,nil,MA,MR,YA,YR},Info1,Info,Status),
+        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2   = [makeList([mnt,hl],[MNT,HL])|Pool],
+                MNT     = [put(draw,{YA,IPos},{MA,{MR,YR}})],
+% hontouha {RN1,RN2} daga "change view" wo surutokini RN2>RN1 mo yurusu
+%sikasi programu ha RN1 > RN2 moyurusutonaxtuteirutameni rule rel ha tuneni
+%{MyRule,YourRule}tosi Type ha kono2tuno kankei wo kijutusurukototosuru
+                HL      = [put(send(y,pass(notice(nil,notice(SP,Claim)))))],
+                O1      = [pass(notice({nil,MR,YR},notice(SP,Claim)))|O],
+                Data    = {O,Pool,Info}).
+    execute({cancel,_,_},_,claim(MA,issue(claim(YA,MI),IPos)),{O1,Pool1,Info},Data,_):-true|
+        Info = {_,_,{_,_,_,AgentName},_},
+        dbtcui_messagePool:make_message({cancel,i},{AgentName,MA},Status),
+        dbtcui_showArgumentUtility:show_status(Pool1,Status,Pool2,R1),
+        (   wait(R1)->
+                Pool2   = [send(hl,put(send(y,pass(cancel(claim(MA,issue(claim(YA,MI),IPos)))))))|Pool],
+                O1      = [pass(cancel(claim(MA,issue(claim(YA,MI),IPos))))|O],
+                Data    = {O,Pool,Info}).
+    execute({end,_,_},_,_,Data1,Data,NextDR):-true|
+        Data    = Data1,
+        NextDR = [].

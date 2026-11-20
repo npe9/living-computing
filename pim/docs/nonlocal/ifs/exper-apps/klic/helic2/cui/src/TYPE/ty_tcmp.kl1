@@ -1,0 +1,116 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tcmp
+%       File Name   : ty_tcmp.kl1
+%       Function    : type declaration compiler
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 7/20  : tree version local pool
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 6/29  : expand macros
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 2/ 4  : close typeDB after make_lattice
+%$      1994/ 2/ 4  : debug print for compile progress
+%$      1994/ 1/31  : rename debug tag from cmp to tcmp
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/25  : close typeDB after tatt in error case
+%$      1994/ 1/21  : close typeDB
+%$      1994/ 1/18  : unification failure in go_to_mk_lattice
+%$      1993/12/24  : latest update
+%$      1993/11/18  : begin
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tcmp.
+:- with_macro pimos.
+
+% compile type declaration file
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public compile/3.
+%:-else.
+%:-public compile/5.
+%:-end_if.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S compile(SourcePathname,SaveFilePathname,^Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+compile(SourcePathname,SaveFilePathname,Result):-
+%    debug#print("~nreading file ~t ...",[SourcePathname]),
+    ty_tread:get_definitions(SourcePathname,PoDefs,AttrDefs,
+			     ExpDefs,BasicNameTBL,R1),
+    go_to_mk_lattice(R1,PoDefs,AttrDefs,ExpDefs,BasicNameTBL,
+		     SaveFilePathname,Result).
+
+
+%go_to_mk_lattice(normal(ty#yes),PoDefs,AttrDefs,ExpDefs,BasicNameTBL,
+%		 SaveFilePathname,Result)-->
+go_to_mk_lattice(normal(success),PoDefs,AttrDefs,ExpDefs,BasicNameTBL,
+		 SaveFilePathname,Result):-
+%    debug#print("~nmaking lattice table ...",[]),
+%    debug#info(debug_tag#tcmp,&debug,Info),
+%    Info = make_lattice_table(PoDefs,BasicNameTBL,TypeDB,R1),
+    ty_tlat:make_lattice_table(PoDefs,BasicNameTBL,TypeDB,R1),
+    go_to_mk_attribute(R1,AttrDefs,ExpDefs,TypeDB,SaveFilePathname,Result).
+otherwise.
+go_to_mk_lattice(R,_PoDefs,_AttrDefs,_ExpDefs,BasicNameTBL,
+		 _SaveFilePathname,Result):-
+%    BasicNameTBL = [],   % close pool
+    Result = R.
+
+
+%go_to_mk_attribute(normal(ty#yes),AttrDefs,ExpDefs,TypeDB,SaveFilePathname,Result)-->
+go_to_mk_attribute(normal(success),AttrDefs,ExpDefs,TypeDB,SaveFilePathname,Result):-
+%    debug#print("~nmaking attribute table ...",[]),
+%    debug#info(debug_tag#tcmp,&debug,Info),
+%    Info = make_attribute_table(AttrDefs,TypeDB,NewTypeDB,R1),
+    ty_tatt:make_attribute_table(AttrDefs,TypeDB,NewTypeDB,R1),
+    go_to_mk_explanation(R1,ExpDefs,NewTypeDB,SaveFilePathname,Result).
+otherwise.
+go_to_mk_attribute(R,_AttrDefs,_ExpDefs,TypeDB,_SaveFilePathname,Result):-
+    close_typeDB(TypeDB),
+    Result = R.
+
+%go_to_mk_explanation(normal(ty#yes),ExpDefs,TypeDB,SaveFilePathname,Result)-->
+go_to_mk_explanation(normal(success),ExpDefs,TypeDB,SaveFilePathname,Result):-
+%    debug#print("~nmaking explanation table ...",[]),
+    ty_texp:make_explanation_table(ExpDefs,TypeDB,TypeDB1,R1),
+    go_to_save(R1,SaveFilePathname,TypeDB1,Result).
+otherwise.
+go_to_mk_explanation(R,_ExpDefs,TypeDB,_SaveFilePathname,Result):-
+    close_typeDB(TypeDB),
+    Result = R.
+
+%go_to_save(normal(ty#yes),SaveFilePathname,TypeDB,Result)-->
+go_to_save(normal(success),SaveFilePathname,TypeDB,Result):-
+%    debug#print("~nsaving object file ~t ...",[SaveFilePathname]),
+    ty_tsav:save(SaveFilePathname,TypeDB,NewTypeDB,Result),
+    close_typeDB(NewTypeDB).
+otherwise.
+go_to_save(R,_SaveFilePathname,TypeDB,Result):-
+    close_typeDB(TypeDB),
+    Result = R.
+
+
+
+%close_typeDB(TypeDB):-
+%%    typeDB#read(posTBL,PosTBL,TypeDB,TypeDB1),
+%    vector_element(TypeDB,1,PosTBL,TypeDB1),
+%%    typeDB#read(expTBL,ExpTBL,TypeDB1,_NewTypeDB),
+%    vector_element(TypeDB1,6,ExpTBL,_NewTypeDB),
+%    PosTBL = [],
+%    ExpTBL = [].
+
+close_typeDB(_):-true|true.  % close pool

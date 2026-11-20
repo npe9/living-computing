@@ -1,0 +1,87 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (44) A Sentence Dividing Tool</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (44) A Sentence Dividing Tool</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Language:    CESP
+	Source Code: 85 KB
+	Documents:   Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A tool for deviding a long sentence at a conjunctive particle.<P>
+
+<h2><b>Function</b></h2>
+
+A long sentence has many ambiguities. This tool can resolve ambiguity
+of a long complicated Japanese sentence by dividing it at a
+conjunctive particle into some simple sentences.<P>
+
+<ul>
+
+<li>This tool can divide a sentence at 13 conjunctive particles.
+
+<li>When the sentence has some conjunctive particles, preference rule
+decides at which conjunctive particle it should be diveded.
+
+<li>Tense rule decides tenses of the devided sentences.
+
+<li>This tool can devide surface sentence by using LAX for
+morphological analysis.
+
+</ul>
+
+<h2><b>Example</b></h2>
+
+<dl>
+
+<dt><b>Input</b>
+
+<dd> Kare wa ongaku kai he iku <u>kawarini</u> record wo katta.<p>
+
+<dd>(<u>Instead of</u> going to the concert, he bought a record.)
+
+<p>
+
+<dt><b>Output</b>
+
+<dd> Kare wa ongaku kai he ika <u>nakatta</u>. <u>Sonokawari</u>
+record wo katta.
+
+<dd>(He <u>didn't go</u> to the concert. <u>Instead, </u> he bought a record.)
+
+</dl>
+
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> A Sentence Dividing Tool [81K] <a
+href="../../../ifs/natural-lang/cesp/sdiv.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

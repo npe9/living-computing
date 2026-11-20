@@ -1,0 +1,47 @@
+%%%                                         %%%
+%%%      README                             %%%
+%%%     Copyright (C) 1996 Fumio Mizoguchi  %%%
+%%%                                         %%%
+
+
+Design of Multi-Agent Type Robot Language/System 
+====================================================
+June 21, 1996
+Fumio Mizoguchi(Science University of Tokyo)
+
+[1] Feature of the Software
+
+  The cooperative robot programming language has the features of 
+ the synchronization control and the communication with other robots.
+ The software realize the cooperative tasks between each robots.
+
+
+[2] Required Environment
+
+ Robot language 
+    machine : UNIX machine 
+    Any environment that runs KLIC. 
+
+ Vision system 
+    machine : UNIX machine 
+    OS : Solaris 
+    A video board such as SUN Video is needed. 
+
+ Robot 
+    The five degree-of-freedom manipulator RV-M1 which
+   produced by Mitsubishi Electric Corporation. 
+
+ (NOTICE) 
+      Even if there is the difference of the robot command, 
+     this software will be able to cope with this problems.
+     See the file Doc/manual.tex(Japanese) for details.
+     If there is something wrong with this software, 
+     please send me an E-mail addressed by iizuka@ia.noda.sut.ac.jp
+
+
+[3] Configuration
+
+  First, execute the configuration script 'Configure'.
+ Executing Configure, "SOURCE/user_set.kl1" and "C_PROG/move?.c" are generated.
+ See the file Doc/manual.tex(Japanese) and Doc/shikaku_manual.tex(Japanese)
+ for details.

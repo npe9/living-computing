@@ -1,0 +1,12 @@
+PRISM (PRogramming In Statistical Modeling) programming system
+--------------------------------------------------------------
+
+(Filename)            (Contents)
+README-E              The list of files (this file)
+README-J              The list of files (in japanese)
+use-of-software-E     The usage of software (in English)
+use-of-software-J     The usage of software (in Japanese)
+manual-e.ps.gz        User's manual (in English)
+manual-j.ps.gz        User's manual (in Japanese)
+prism1.2.tgz          Source files(tar + gz)
+examples.tgz          Program examples(tar + gz)

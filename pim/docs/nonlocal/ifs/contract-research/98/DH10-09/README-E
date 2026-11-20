@@ -1,0 +1,50 @@
+
+README-E
+
+Copyright (C) 1999 Yosuke Sato
+
+
+
+Contents
+
+
+README-E		this file
+
+README-J		this file(Japanese)
+
+RELEASE_NOTE-E		release note
+
+RELEASE_NOTE-J		release note(Japanese)
+
+s_setsolver.kl1		new source program(for sequential computation)
+
+p_setsolver.kl1		new source program(for parallel computation)
+
+setsolver.kl1		a source program of previous release
+
+manual.tex		a latex source code for user's manual
+
+manualj.tex		a latex source code for user's manual(Japanese)
+
+parallel.tex		a comprehensive manual for using p_setsolver.kl1
+
+parallelj.tex		a comprehensive manual for using p_setsolver.kl1(Japanese)
+
+background1.tex		a latex source code of theoritical background for the system
+
+background2.tex		a latex source code of theoritical background for new algorithm
+			used in this release(Japanese)
+
+example/		a directory where some example files are located
+
+  benchmark1-4		examples of serial computation
+
+  parallel1-4		examples of parallel computation
+
+use-of-software-E	TERMS AND CONDITIONS FOR USE OF "ICOT FREE SOFTWARE"
+
+use-of-software-J	TERMS AND CONDITIONS FOR USE OF "ICOT FREE SOFTWARE"(Japanese)
+
+* We have not yet written any paper in English concerning our new algorithm.
+  As soon as we write some paper in English, we will add it as an English version of
+  background2.tex.

@@ -1,0 +1,70 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (45) Summarizing Support System</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (45) Summarizing Support System</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PSI
+	Environment: SIMPOS
+	Language:    ESP
+	Source Code: 3 MB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+This system selects highlighted sentence from a Japanese text after
+semantic analysis.<P>
+
+<h2><b>Configuration</b></h2>
+<dl>
+	<dd><img src="045.gif">
+</dl>
+<p>
+
+<h2><b>Function</b></h2>
+
+<i>World Knowledge</i> is a hierachy of frames with multiple
+inheritance. A relation between two frames is either <i>is-a</i> or
+<i>part-of</i> relation. In <i>Analytic Dictionary</i>, frame,
+attribute or value is written for each word. In <i>Connection
+Knowledge</i>, patterns that decide intersentence relations are
+described.  <p>
+
+<i>Context Analysis Module</i> consists of three routines: "Frame
+Creation" that translates surface words in the input text into frames,
+attributes or values, "Anaphora Processing" that identifies frames
+according to anaphoric relations, "Intersentence Relation Analysis"
+that connects two sentences according to anaphoric relations and
+conjunctives. The output of <i>Context Analysis Module</i> is an
+anaphoric relations and a text structure. <i>Importance Evaluation
+Module</i> evaluates each sentence by applying some criteria to yield
+importance score, which are used in the <i>Summary Generation
+Module</i> to select a most important sentence.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Summarizing Support System [196K] <a
+href="../../../ifs/natural-lang/simpos/sum.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

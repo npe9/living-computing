@@ -1,0 +1,44 @@
+1995.3.20
+
+<< SSS Monitor: HMM Network Auto-Configuration Algorithm >>
+
+<Windows>
+
+[Network] shows network configurations built by SSS. Clicking states 
+shows output distributions in the [Probabilities] window. Buttons 
+represents (1) network configutraion initialiation, (2) configuration 
+restoration, (3) sample file selection and (4) state transition 
+investigation of each sample.
+
+[Probabilities] shows the output distribution of the chosen state. 
+Colors of amino acid characters are of the alignment editor in IFS. 
+It also shows transition probabilities.
+
+<<Buttons>>
+
+<quit>		quit this program
+
+<samples>	select sample data file
+
+<hmnet>		select HMM network configuration data file
+
+<exec>		execute one step of SSS (one split)
+
+<seqdump>	stdout state transitions of all samples
+
+<netsave>	save the current configuration
+
+each state	display the output distribution of the state at the 
+		[Probabilities] window; every clicking shows 
+		different state transition probabilities and outputs.
+
+<step>		stepwise execution of HMM learning
+
+<split=>	split the selected (displayed) state
+<split<>	(= parallel, > old-new, < new-old)
+<split>>
+
+<bar>
+<statseq>
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

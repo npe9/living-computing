@@ -1,0 +1,38 @@
+
+       Applying Constraint Logic Programming Language for Modelling
+            Multi-objective Decision Making under Uncertainty
+
+Principal Investigator : John Darlington
+                         Imperial College (±Ñ)
+
+[Directory Structure]
+
+This software distribution represents the revised prototype of solvers 
+for integer programming (IP) problems from specification to
+solution. It includes three representative systems: TIP, a
+logic modelling tool for IP, MGBAS, an IP solver based on 
+  Minimised Geometric Buchberger Algorithm (MGBA), and SIPS, a
+stochastic IP solver based on MGBA.
+
+The distribution if the three systems are structured as follows:
+
+
+    Readme-E        ... this file
+    doct            ... document for explaining the software package 
+    TIP/            ... Transformation of IP
+     README-TIP
+     TIP.nb
+    MGBAS/          ... Minimised Geometric Buchberger Solver for IP
+     README-MGBA
+     Example-MGBA
+     mgba.c
+     mgba
+    SIPS/           ... Stochastic IP Solver  
+     README-SIPS
+     Example-SIPS
+     sips.c
+     sips
+
+
+
+

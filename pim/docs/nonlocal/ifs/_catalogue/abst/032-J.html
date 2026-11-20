@@ -1,0 +1,81 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（３２）構造写像エンジン：ＳＭＥ</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（３２）構造写像エンジン：ＳＭＥ</h2>
+
+<pre width="136"><b>
+	マ シ ン：PIM/m, Multi-PSI
+	環　　境：PIMOS 3.4, SIMPOS
+	言　　語：KL1
+	ソース量：0.44 MB
+	文　　書：マニュアル (日本語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+構造写像理論に基づいて、木構造形式で記述された2つの系の対応関係を類似
+度とともに抽出するプログラムである。<p>
+
+<h2>構成</h2>
+
+ベース、ターゲット間のペア集合生成部、ペア集合結合 (対応関係生成)部、
+対応関係の類似度評価部、推論候補生成部より構成される。外付けインタフェー
+ス部として木構造入力エディタ、対応関係ブラウザがある。<p>
+
+<h2>機能</h2>
+<ul>
+
+<li>与えられたターゲットの構造に類似しているベース構造をメモリから引き
+出す。
+
+<li>ベース・ターゲット間の対応関係を作る。
+
+<li>ベースに存在し、ターゲットに存在しない関係を推論する。
+
+<li>対応関係に対して類似度の評価点を与える。
+
+<li>ベースデータとターゲットデータのグラフィカルな入力を支援する。
+
+<li>抽出された対応関係をグラフィカルに表示する。
+
+</ul>
+<p>
+
+<h2>文献</h2>
+<ul>
+
+<li>B.Falkenhainer, K.D.Forbus, D.Gentner : The Structure-Mapping
+Engine, Proc.  of the Fifth National-Conference on Artificial
+Intelligent, 1986
+
+<li>山路孝浩、他：構造写像エンジンの高速化、情報処理学会第４３回全国大
+会、1991
+
+</ul>
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	構造写像エンジン：ＳＭＥ [180K] <a
+href="../../../ifs/solver-prover/pimos/sme.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

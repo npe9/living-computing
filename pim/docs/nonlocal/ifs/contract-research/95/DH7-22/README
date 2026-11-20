@@ -1,0 +1,17 @@
+``Copyright (C) 1996 Kenzo KONISHI and Kazuo TAKI in Kobe University''
+
+展開後のファイル構成
+
+H7-22-----------+--- Intro	ソフトウェアの宣伝紹介資料
+		|
+		+--- INSTALL	インストール説明
+		|
+		+--- ForUsers	利用想定者のイメージ
+		|
+		+--- manual.tex	ユーザーズ・マニュアル
+		|
+		+--- Prog ------+---- プログラムコード
+		|		|
+		|		+---- MCNC-Data（サンプルデータ）
+		|		
+		+--- Copyright	著作権

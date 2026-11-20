@@ -1,0 +1,262 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_LArgUtility.
+
+:- public 
+    get_PArg/2,
+    get_ruleName/3,
+
+%    get_LArgFromDArg/2,
+
+    get_parentLArg/3,
+    get_parentPArg/3,
+    get_parentRuleName/3,
+
+    get_argJudge/2,
+    get_topRuleRel/2,
+    get_counterArgInfo/3,
+    get_IPos/4,
+
+    has_forwardLArg/3,
+    get_forwardLArg/4,
+    has_backwardLArg/2,
+    get_backwardLArg/5,
+    get_nextLArg/5,
+    get_previousLArg/5.
+
+:- with_macro pimos.
+
+%get_PArg 
+    get_PArg({SV,APos},PArg):-true|
+        PArg = {SV,APos}.
+    get_PArg({ParentLArg,IPos,CPos},PArg):-true|
+        get_PArg(ParentLArg,{SV,_}),
+        slv_counterArgumentUtility:get_counterArgument(SV,IPos,CPos,PArg).
+
+%get_ruleName
+    get_ruleName(LArg,IPos,RuleName):-integer(IPos)|
+        get_PArg(LArg,{SV,_}),
+        slv_solutionVecUtility:get_solution(SV,IPos,ruleName,RuleName).
+    get_ruleName(_,naf(_),RuleName):-true|
+        RuleName = nil.
+
+%get_LArgFromDArg
+%    get_LArgFromDArg({SV,APos},LArg):-true|
+%        LArg = {SV,APos}.
+%    get_LArgFromDArg({SV,IPos,CPos},LArg):-true|
+%        LArg = {{SV,0},IPos,CPos}.
+
+%%for parent 
+
+%get_parentLArg
+    get_parentLArg({_,_},_,YN):-true|
+        YN         = no.
+    get_parentLArg({ParentLArg1,_,_},ParentLArg,YN):-true|
+        ParentLArg = ParentLArg1,
+        YN         = yes.
+
+%get_parentPArg
+    get_parentPArg({_,_},_,YN):-true|
+        YN         = no.
+    get_parentPArg({ParentLArg,_,_},ParentPArg,YN):-true|
+        get_PArg(ParentLArg,ParentPArg),
+        YN         = yes.
+
+%get_parentRuleName
+    get_parentRuleName({_,_},_,YN):-true|
+        YN = no.
+    get_parentRuleName({ParentLArg,IPos,_},ParentRuleName,YN):-true|
+        get_ruleName(ParentLArg,IPos,ParentRuleName),
+        (   ParentRuleName = nil->
+                YN = no
+        ;
+            ParentRuleName \= nil->
+                YN = yes
+        ).
+
+%get_IPos
+    get_IPos({_,_},_,_,YN):-true| 
+        YN      = no.
+    get_IPos({ParentLArg,IPos1,_},ParentPArg,IPos,YN):-true| 
+        get_PArg(ParentLArg,ParentPArg),
+        IPos    = IPos1,
+        YN      = yes.
+
+%get_argJudge
+    get_argJudge({SV,Pos},ArgJudge):-true|
+        slv_solutionVecUtility:get_solution(SV,Pos,argJudge,ArgJudge1),
+        change_argJudge(ArgJudge1,ArgJudge).
+    get_argJudge({LArg,IPos,CPos},ArgJudge):-true|
+        get_PArg(LArg,{SV,_}),
+        slv_counterArgumentUtility:get_counterArgumentArgJudge(SV,IPos,CPos,ArgJudge1),
+        (   ArgJudge1 = j->
+                ArgJudge = justify
+        ;
+            ArgJudge1 = d->
+                ArgJudge = defeated
+        ;
+            ArgJudge1 = p->
+                ArgJudge = plausible
+        ;
+        otherwise;
+            true->
+                ArgJudge = nil
+        ).
+
+    change_argJudge(justify,AJ):-true|
+        AJ= justify.
+    change_argJudge(directly,AJ):-true|
+        AJ= defeated.
+    change_argJudge(stro_d,AJ):-true|
+        AJ= defeated.
+    change_argJudge(unre_d,AJ):-true|
+        AJ= defeated.
+    change_argJudge(weak_d,AJ):-true|
+        AJ= defeated.
+    change_argJudge(stro_p,AJ):-true|
+        AJ= plausible.
+    change_argJudge(unre_p,AJ):-true|
+        AJ= plausible.
+    change_argJudge(weak_p,AJ):-true|
+        AJ= plausible.
+    change_argJudge(inconsistent,AJ):-true|
+        AJ= '?'.
+    change_argJudge(nil,AJ):-true|        %for show counter argument
+        AJ= '-'.
+
+
+%get_topRuleRel
+    get_topRuleRel({_,_},TopRuleRel):-true|
+        TopRuleRel = nil.
+    get_topRuleRel({LArg,IPos,CPos},TopRuleRel):-true|
+        get_PArg(LArg,{SV,_}),
+        slv_counterArgumentUtility:get_counterArgumentTopRuleRel(SV,IPos,CPos,TopRuleRel).
+
+%get_counterArgInfo
+    get_counterArgInfo(LArg,IPos,CounterArgInfo):-true|
+        get_PArg(LArg,{SV,_}),
+        slv_counterArgumentUtility:get_counterArgumentJudgeList(SV,IPos,CounterArgInfo).
+
+%has_forwardLArg
+    has_forwardLArg(CS1,CS,YN):-true|
+        CS1 = [get(forwardList,FL)|CS],
+        (   FL = []->
+                YN = no
+        ;
+            FL \=[]->
+                YN = yes
+        ).
+
+%get_forwardLArg
+    get_forwardLArg(CS1,CS,ForwardLArg,YN):-true|
+        CS1 = [get(forwardList,FL1)|CS2],
+        (   FL1 = []->
+                CS = CS2,
+                YN  = no
+        ;
+            FL1 \=[]->
+                FL1  = [ForwardLArg|FL],
+                CS2 = [set(forwardList,FL)|CS],
+                YN  = yes
+        ).
+
+%has_backwardLArg
+    has_backwardLArg(LArg,YN):-true|
+        get_parentLArg(LArg,_,YN).
+
+%get_backwardLArg
+    get_backwardLArg(LArg,CS1,CS,BackwardLArg,YN):-true|
+        get_parentLArg(LArg,BackwardLArg,YN),
+        (   YN = yes->
+                CS1 = [get(forwardList,FL1),set(forwardList,[LArg|FL1])|CS]
+        ;
+            YN = no->
+                CS  = CS1
+        ).
+
+%get_nextLArg
+    get_nextLArg({SV,APos},CS1,CS,NextLArg,YN):-true|
+        is_initialArgument({SV,APos},CS1,CS2,YN1),
+        (   YN1 = yes->
+                get_initialArgumentList(CS2,CS,IAL),
+                get_nextLArgForInitialArgument(IAL,{SV,APos},NextLArg,YN)
+        ;
+            YN1 = no->
+                CS = CS2,
+                YN   = no
+        ).
+    get_nextLArg({ParentLArg,IPos,CPos},CS1,CS,NextLArg,YN):-true|
+        CS = CS1,
+        get_PArg(ParentLArg,{SV,_}),
+        slv_issueUtility:get_numOfCounterArgument(SV,IPos,NumOfCA),
+        CPos1 := CPos+1,
+        (   NumOfCA = CPos1->
+                YN = no
+        ;
+            NumOfCA > CPos1->
+                NextLArg = {ParentLArg,IPos,CPos1},
+                YN = yes
+        ).
+
+%get_previousLArg
+    get_previousLArg({SV,APos},CS1,CS,PreviousLArg,YN):-true|
+        is_initialArgument({SV,APos},CS1,CS2,YN1),
+        (   YN1 = yes->
+                get_initialArgumentList(CS2,CS,IAL),
+                get_previousLArgForInitialArgument(IAL,{SV,APos},PreviousLArg,YN)
+        ;
+            YN1 = no->
+                CS = CS2,
+                YN   = no
+        ).
+    get_previousLArg({ParentLArg,IPos,CPos},CS1,CS,PreviousLArg,YN):-true|
+        CS = CS1,
+        (   CPos = 0->
+                YN = no
+        ;
+            CPos \= 0->
+                CPos1 := CPos-1,
+                PreviousLArg = {ParentLArg,IPos,CPos1},
+                YN = yes
+        ).
+
+
+%%%%%%%internal method
+
+%get_nextLArgForInitialArgument
+    get_nextLArgForInitialArgument([IA],IA,_,YN):-true|
+        YN = no.
+    get_nextLArgForInitialArgument([IA,NextIA1|_],IA,NextIA,YN):-true|
+        NextIA = NextIA1,
+        YN = yes.
+otherwise.
+    get_nextLArgForInitialArgument([_|T],IA,NextIA,YN):-true|
+        get_nextLArgForInitialArgument(T,IA,NextIA,YN).
+
+%get_previousLArgForInitialArgument
+    get_previousLArgForInitialArgument([],_,_,YN):-true|
+        YN = no.
+    get_previousLArgForInitialArgument([IA],IA,_,YN):-true|
+        YN = no.
+    get_previousLArgForInitialArgument([PreviousIA1,IA|_],IA,PreviousIA,YN):-true|
+        PreviousIA = PreviousIA1,
+        YN = yes.
+otherwise.
+    get_previousLArgForInitialArgument([_|T],IA,PreviousIA,YN):-true|
+        get_previousLArgForInitialArgument(T,IA,PreviousIA,YN).
+
+%%%%%%%
+%get_initialArgumentList
+    get_initialArgumentList(CS1,CS,IAL):-true|
+        CS1 = [send(ial,refer_argList(IAL))|CS].
+
+%is_initialArgument
+    is_initialArgument({SV,APos},CS1,CS,YN):-true|
+        CS1 = [send(ial,is_inArg({SV,APos},YN))|CS].
+otherwise.
+    is_initialArgument(_,CS1,CS,YN):-true|
+        CS = CS1,
+        YN   = no.

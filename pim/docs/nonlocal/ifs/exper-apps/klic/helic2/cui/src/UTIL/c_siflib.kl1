@@ -1,0 +1,100 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module sifLibrary.
+
+:- public 
+    get_commandArguments/3,
+    get_arguments/2,
+    separate_by_space/2,
+    message/1.
+            
+:- with_macro pimos.
+
+    get_commandArguments(Line,Command,Arguments):- true |
+        separate_by_space(Line,List),
+        count(List,Size),
+        (   Size =:= 0->
+                Command = nil,Arguments=[]
+        ;
+            Size =:= 1->
+                List = [Command],Arguments=[]
+        ;
+            Size > 1 ->
+                List = [Command|Arguments]
+        ).
+
+    get_arguments(Line,Arguments):- true |
+        separate_by_space(Line,Arguments).
+
+    separate_by_space(Line,Arguments):- true |
+        string(Line,Size,_,_),
+        separate_by_space1(0,Size,Line,Arguments).
+
+    separate_by_space1(Pos,Size,_,Arguments):- 
+        equal(Pos,Size)|
+        Arguments = [].
+    separate_by_space1(Pos,Size,Line,Arguments):- 
+        not_equal(Pos,Size),string_element(Line,Pos,Code),equal(Code,#" ") |
+        Pos1 := Pos + 1,
+        separate_by_space1(Pos1,Size,Line,Arguments).
+    separate_by_space1(Pos,Size,Line,Arguments):- 
+        not_equal(Pos,Size),string_element(Line,Pos,Code),not_equal(Code,#" ") |
+        Pos1 := Pos + 1,
+        separate_by_space2(Pos1,Size,Pos,Line,Argument,NextPos),
+        separate_by_space1(NextPos,Size,Line,Arguments1),
+        Arguments = [Argument|Arguments1].
+
+    separate_by_space2(Pos,Size,StartPos,Line,Argument,NextPos):-
+        equal(Pos,Size)|
+        Length  := Size - StartPos,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        builtin#substring(Line,StartPos,Length,Argument,_), %for klic
+	substring:substring(Line,StartPos,Length,Argument,_),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        NextPos := Size.
+    separate_by_space2(Pos,Size,StartPos,Line,Argument,NextPos):- 
+        not_equal(Pos,Size),string_element(Line,Pos,Code),equal(Code,#" ") |
+        Length := Pos-StartPos,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%        builtin#substring(Line,StartPos,Length,Argument,_), %for klic
+        substring:substring(Line,StartPos,Length,Argument,_),
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        NextPos := Pos+1.
+    separate_by_space2(Pos,Size,StartPos,Line,Argument,NextPos):- 
+        not_equal(Pos,Size),string_element(Line,Pos,Code),not_equal(Code,#" ") |
+        Pos1 := Pos+1,
+        separate_by_space2(Pos1,Size,StartPos,Line,Argument,NextPos).
+
+
+    count(List,Size):- true |
+        count1(List,0,Size).
+
+    count1([],Size1,Size):- true |
+        Size = Size1.
+    count1([_|T],Size1,Size):- true |
+        Size2 := Size1+1,
+        count1(T,Size2,Size).
+
+    message(String):-string(String)|
+        hLibrary:stdio(inter,O),
+            O=[
+%                print_depth(65535),
+%                print_length(65535),
+%                print_string_length(65535),
+%                print_atom_length(65535),
+                putl(String)].
+    message(List):-list(List)|
+        hLibrary:stdio(inter,O) ,
+        O = List.
+%        O= [
+%                print_depth(65535),
+%                print_length(65535),
+%                print_string_length(65535),
+%                print_atom_length(65535)|List].
+
+
+

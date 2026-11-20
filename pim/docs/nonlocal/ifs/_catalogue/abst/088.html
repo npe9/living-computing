@@ -1,0 +1,96 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+-->
+<title> (88) Parallel Constraint Logic Programming System : GDCC (KLIC version)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<pre>
+<h2> (88) Parallel Constraint Logic Programming System
+			 : GDCC (KLIC version)</h2>
+</pre>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX, KLIC
+	Language:    KL1, C
+	Source Code: 6 MB
+	Documents:   Manual (English / Japanese )
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+GDCC (KLIC version) is a parallel constraint logic programming
+language, which is highly declarative, flexible and efficient, and can
+deal with various constraints including non-linear polynomial
+equations.  <p>
+
+<h2><b>Features</b></h2>
+
+Parallel constraint logic programming system GDCC has various
+constraint solver libraries and the language processor which
+translates GDCC programs to KL1. To provide a more flexible and
+efficient language, GDCC parallelizes both logic language and
+constraint solvers. This system enables you to describe what
+(declarative knowledge) without how (procedural knowledge).  <p>
+
+<h2><b>Function</b></h2>
+
+<dl>
+
+<dt> Various constraint solvers :
+
+<dd>The GDCC system has two parallel constraint solevrs : (1) an
+algebraic constraint solver, (2) a boolean constraint solver.  If you
+have to solve the other domain problem, you can construct the new
+constraint solver within the interface rules of GDCC.
+
+<dt> Block:
+
+<dd>The block is the meta control mechanism that will provide the
+following facilities : (1)to handle multiple environments, (2) to
+localize constraint failure, and (3)to specify a certain constraint
+set on evaluating a goal.
+
+<dt> Two level parallelism :
+
+<dd>GDCC provides a more flexible and efficient language by
+parallelizing both the logic language and constraint solvers.
+
+<dt> Finding real roots :
+
+<dd>GDCC provides a facility that computes the real roots of the
+univariate equations and returns all root combinations.
+
+</dl>
+<p>
+
+GDCC programs are translated to KL1 by the language processor of GDCC
+and then compiled and linked with the constraint solver library by C
+compiler.  Therefore GDCC became more portable and efficient.  <p>
+
+<h2>FTP</h2>
+
+<ul>
+
+<li> Parallel Constraint Logic Programming System : GDCC (KLIC
+version) [114K] <a
+href="../../../ifs/kbms-clp/klic/gdcc/GDCC4.0.tgz"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

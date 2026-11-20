@@ -1,0 +1,68 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（７２）ＫＬ１言語処理方式検討用処理系</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（７２）ＫＬ１言語処理方式検討用処理系</h2>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシン
+	環　　境：UNIX
+	言　　語：C, Prolog
+	ソース量：0.1 MB
+	文　　書：マニュアル (英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+ＫＬ１からＣへのコンパイルの基本方式の妥当性を検討するための試作処理系
+<p>
+
+<h2>特徴</h2>
+<ul>
+
+<li>ＫＬ１プログラムをＣ言語に変換し、高い移植性を実現
+
+<li>ＫＬ１言語の諸機能のうち、性能上鍵となる頻繁に利用される機能を中心
+に一部だけを実現した処理系
+
+</ul>
+<p>
+
+<h2>機能</h2>
+
+ＫＬＩＣは並列論理型プログラミング言語ＫＬ１の処理系である。ＫＬ１は
+Flat GHCに基づいて開発された言語である。ＧＨＣはcommited-choice型の論
+理型プログラミング言語に属し、Concurrent Prolog,Parlog,JanusやFlengと
+同種の言語である。<P>
+
+ＫＬ１言語で記述されたプログラムをEdinburgh使用のPrologの上のコンパイ
+ラでＣ言語に変換し、Ｃコンパイラでそれをコンパイルする。コンパイラが生
+成したオブジェクトを実行時ライブラリとリンクし、実行コードを作成する。
+<P>
+
+なお、この版は逐次処理系である。<p>
+
+<h2>ＦＴＰ</h2>
+
+<ul>
+
+<li>	ＫＬ１言語処理方式検討用処理系 [131K] <a
+href="../../../ifs/symbolic-proc/unix/pkl1.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

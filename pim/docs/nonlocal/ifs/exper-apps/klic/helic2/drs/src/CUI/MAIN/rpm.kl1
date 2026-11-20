@@ -1,0 +1,298 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module rbrpom_manager.
+
+:- public 
+    create/1,
+    get_defaultUseViewName/1.
+            
+:- with_macro pimos.
+
+    create(I):-true |
+        rbr:create(RBR),
+
+        partialOrderModule:create([],[],[],POM1),
+        get_defaultUseViewName(DefaultUseViewName),
+        POM1 = [make_view({DefaultUseViewName,[]},_)|POM],
+
+        get_defaultRBRParameter({Mode,Sim,CL,_TraceFlag}),
+        RBR = [
+                set_parameter(mode,Mode,_),
+                set_parameter(similarity,Sim,_),
+                set_parameter(counter,CL,_)|RBR1],
+
+%                set_parameter(counter,CL,_),
+%                set_parameter(trace_flag,TraceFlag,_)|RBR1],
+
+        loop(I,RBR1,POM,{DefaultUseViewName,nil,nil}).
+                % 4th parameter means {useView,useUnit,Goal}
+
+    get_defaultRBRParameter(Def):-true|
+        Def = {analysis,70,1,off}.    %{Mode,Sim,CL,TraceFlag}
+
+    loop([],RBR,POM,_):-true|
+        RBR = [],
+        POM = [].
+%%set
+%rbr
+    loop([set_parameter(type,Type,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(type,Type,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([set_parameter(rule,RuleData,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(rule_list,RuleData,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+%pom
+
+
+%%oosaki modify 960228
+%    loop([set_parameter(pom,ViewData,Result)|T],RBR,POM,UseKnowledge):-true|
+%        UseKnowledge = {UseViewName,_,_},
+%        get_defaultUseViewName(UseViewName),
+%        POM = [ initiate(ViewData),
+%                make_view({UseViewName,[]},_)|POM1],
+%        Result = normal(success),
+%        loop(T,RBR,POM1,UseKnowledge).
+%%
+
+    loop([set_parameter(pom,ViewData,Result)|T],RBR,POM,UseKnowledge1):-true|
+        get_defaultUseViewName(UseViewName),
+        POM = [ initiate(ViewData),
+                make_view({UseViewName,[]},_)|POM1],
+        Result = normal(success),
+	UseKnowledge1 = {_,_,C},
+	UseKnowledge  = {UseViewName,nil,C},
+        loop(T,RBR,POM1,UseKnowledge).
+
+
+    loop([set_parameter(useView,UseViewName1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        POM = [is({view,UseViewName1},YN,Result1)|POM1],
+        (   Result1 = normal(_)->
+                (   YN = yes ->
+                        NewUseViewName = UseViewName1,
+                        Result = normal(success)
+                ;
+                    YN = no ->
+                        NewUseViewName = UseViewName,
+                        Result = abnormal({rpm,'Illegal view name',UseViewName1})
+                )
+        ;
+            Result1 = abnormal(_)->
+                NewUseViewName = UseViewName,
+                Result = Result1
+        ),
+        loop(T,RBR,POM1,{NewUseViewName,UseUnitNameList,Goal}).
+%    loop([set_parameter(useSpPriority,SPList,Result)|T],RBR,POM,UseKnowledge):-true|
+%        UseKnowledge = {UseViewName,_,_},
+%        POM = [make_view({UseViewName,SPList},Result)|POM1],
+%        loop(T,RBR,POM1,UseKnowledge).
+    loop([set_parameter(useSpPriority,SPList,Result)|T],RBR,POM,UseKnowledge):-true|
+        UseKnowledge = {A,B,C},
+        get_defaultUseViewName(DefaultUseViewName),
+        POM = [make_view({DefaultUseViewName,SPList},Result)|POM1],
+        (   Result = normal(_)->
+                UseViewName = DefaultUseViewName
+        ;
+            Result = abnormal(_)->
+                UseViewName = A
+        ),
+        
+        loop(T,RBR,POM1,{UseViewName,B,C}).
+    loop([set_parameter(useUnit,UnitOrScopeUnitNameList,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):- UnitOrScopeUnitNameList\=all|
+        POM = [get({unitOrScopeUnitToUnit,UnitOrScopeUnitNameList},UnitNameList,Result1)|POM1],
+        (   Result1 = normal(_)->
+                RBR = [set_parameter(rule_name_list,UnitNameList,Result)|RBR1],
+                (   Result = normal(_)->
+                        NewUseUnitNameList = UnitOrScopeUnitNameList
+                ;
+                    Result = abnormal(_)->
+                        NewUseUnitNameList = UseUnitNameList
+                )
+        ;
+            Result1 = abnormal(_)->
+                NewUseUnitNameList = UseUnitNameList,
+                RBR1 = RBR,
+                Result= Result1
+         ),
+        loop(T,RBR1,POM1,{UseViewName,NewUseUnitNameList,Goal}).
+    loop([set_parameter(useUnit,all,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        RBR = [set_parameter(rule_name_list,all,Result)|RBR1],
+        (   Result = normal(_)->
+                 NewUseUnitNameList = all
+        ;
+            Result = abnormal(_)->
+                 NewUseUnitNameList = UseUnitNameList            
+        ),
+        loop(T,RBR1,POM,{UseViewName,NewUseUnitNameList,Goal}).
+    loop([set_parameter(goal,Goal1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,_}):-true|
+        Result = normal(success),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal1}).
+    loop([set_parameter(similarity,Int,Result)|T],RBR,POM,UseKnowledge):-integer(Int)|
+        RBR = [set_parameter(similarity,Int,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([set_parameter(weight,W,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(weight,W,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([set_parameter(psiTermSimTB,PsiTermSimTB,Result)|T],
+                RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(psiTermSimTB,PsiTermSimTB,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([set_parameter(psiTermAttWeight,PsiTermAttWeight,Result)|T],
+                RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(psiTermAttWeight,PsiTermAttWeight,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([set_parameter(counter,Int,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [set_parameter(counter,Int,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+%%%
+    loop([tracer(Message)|T],RBR,POM,UseKnowledge):-true| 
+        RBR = [tracer(Message)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+%%get
+    loop([get_parameter(useView,View,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        (   UseViewName \= nil ->
+                POM = [get({view,UseViewName},[View],Result)|POM1]
+        ;
+            UseViewName = nil ->
+                POM1 = POM,
+                Result = abnormal({rpm,'View not set ',[]})
+        ),
+        loop(T,RBR,POM1,{UseViewName,UseUnitNameList,Goal}).
+    loop([get_parameter({view,ViewName},ViewList,Result)|T],RBR,POM,UseKnowledge):-true|
+        POM = [get({view,ViewName},ViewList,Result)|POM1],
+        loop(T,RBR,POM1,UseKnowledge).
+    loop([get_parameter(useUnit,UseUnit,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        (   UseUnitNameList \= nil ->
+                UseUnit = UseUnitNameList,
+                Result  = normal(success)
+        ;
+            UseUnitNameList = nil ->
+                Result = abnormal({rpm,'Unit not set',nil})
+        ),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal}).
+    loop([get_parameter({unit,all},UnitList,Result)|T],
+                RBR,POM,UseKnowledge):-true|
+        POM = [get({scopeUnit,all},ScopeUnitNameList,Result1)|POM1],
+        (   Result1 = normal(_)->
+                get_unit(ScopeUnitNameList,POM1,POM2,UnitList),
+                Result = normal(success)
+        ;
+            Result1 = abnormal(_)->
+                POM2 = POM1,
+                Result = Result1
+        ),
+        loop(T,RBR,POM2,UseKnowledge).
+    loop([get_parameter({unit,UnitOrScopeUnitList},UnitList,Result)|T],
+                RBR,POM,UseKnowledge):-UnitOrScopeUnitList\=all|
+        POM = [is({unitOrScopeUnitList,UnitOrScopeUnitList},YN,Result1)|POM1],
+        (   Result1 = normal(_)->
+                (   YN = yes ->
+                        get_unit(UnitOrScopeUnitList,POM1,POM2,UnitList),
+                        Result = normal(success)
+                ;
+                    YN = {no,Unknown} ->
+                        POM2 = POM1,
+                        Result = abnormal({rpm,'Illegal unit name',Unknown})
+                )
+        ;
+            Result1 = abnormal(_)->
+                POM2 = POM1,
+                Result = Result1
+        ),
+        loop(T,RBR,POM2,UseKnowledge).
+    loop([get_parameter({sp,Name},SpNameList,Result)|T],RBR,POM,UseKnowledge):-true|
+        POM = [get({sp,Name},SpNameList,Result)|POM1],
+        loop(T,RBR,POM1,UseKnowledge).
+    loop([get_parameter(goal,Goal1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        (   Goal = nil ->
+                Result = abnormal({rpm,'Goal not set',nil})
+        ;
+            Goal \=nil ->
+                Goal1 = Goal,
+                Result = normal(success)
+        ),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal}).
+    loop([get_parameter(similarity,Value,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(similarity,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+
+    loop([get_parameter(weight,Value,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(weight,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([get_parameter(psiTermSimTB,Value,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(psiTermSimTB,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([get_parameter(psiTermAttWeight,Value,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(psiTermAttWeight,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+
+    loop([get_parameter(counter,Value,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(counter,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+    loop([get_parameter(trace_flag,OnOff,Result)|T],RBR,POM,UseKnowledge):-true|
+        RBR = [get_parameter(trace_flag,OnOff,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge).
+
+%execute
+    loop([execute(solve,_,ST,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal}):-true|
+        check_solve(UseViewName,UseUnitNameList,Goal,Result1),
+        (   Result1 = normal(_)->
+            POM = [get({viewUnitUnitRelTable,UseViewName},UURT,Result2)|POM1],
+            (   Result2 = normal(_)->
+%                    Goal = {Hterm,Env,_Explanation,HtermID},
+                    Goal = {Hterm,Env,_,HtermID},
+                    Goal1 = {Hterm,Env,HtermID},
+                    RBR = [execute(solve,{UURT,[],Goal1},ST,Result)|RBR1]
+            ;
+                Result2 = abnormal(_)->
+                    Result = Result2,
+                    RBR1 = RBR
+            )
+        ;
+            Result1 = abnormal(_)->
+                Result = Result1,
+                POM1 = POM,
+                RBR1 = RBR
+        ),
+        loop(T,RBR1,POM1,{UseViewName,UseUnitNameList,Goal}).
+
+    check_solve(UseViewName,UseUnitNameList,Goal,Result):- UseViewName \=nil,       
+                                                           UseUnitNameList \= nil,
+                                                           Goal \= nil|
+        Result = normal(success).
+    check_solve(nil,_,_,Result):- true|
+        Result = abnormal({rpm,'Do not set use view',nil}).
+    check_solve(_,nil,_,Result):- true|
+        Result = abnormal({rpm,'Do not set use unit',nil}).
+    check_solve(_,_,nil,Result):- true|
+        Result = abnormal({rpm,'Do not set goal',nil}).
+
+    get_unit([],POM1,POM,UnitList):-true |
+        POM = POM1,
+        UnitList = [].
+    get_unit([U|T],POM1,POM,UnitList):-true |
+        POM1= [is({unit,U},YN,_)|POM2],
+        (   YN = yes ->
+                get_unit(T,POM2,POM,UnitList1),
+                UnitList = [{U,[]}|UnitList1]
+        ;
+            YN = no ->
+                POM2 = [get({scopeUnitToUnit,[U]},UList,_)|POM3],
+                get_unit(T,POM3,POM,UnitList1),
+                UList = [UList1],
+                UnitList = [UList1|UnitList1]
+        ).
+
+%%get_defaultUseViewName
+    get_defaultUseViewName(DefaultUseViewName):-true|
+        DefaultUseViewName = defaultView.

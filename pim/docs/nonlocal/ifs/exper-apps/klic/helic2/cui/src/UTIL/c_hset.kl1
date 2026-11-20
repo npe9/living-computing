@@ -1,0 +1,94 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module hset.
+:- public create/1,create/2.
+:- with_macro pimos.
+
+    create(Pool):- true |
+        loop(Pool,[]).
+
+    create(InitialtData1,Pool):- true |
+        check(InitialtData1,[],InitialtData),
+        loop(Pool,InitialtData).
+
+    check([],Work,InitialtData):- true |
+        InitialtData = Work.
+    check([H|T],Work,InitialtData):- true |
+        member(Work,H,YN),
+        (   YN = yes ->
+                check(T,Work,InitialtData)
+        ;
+            YN = no  ->
+                append(Work,[H],Work1),
+                check(T,Work1,InitialtData)
+        ).
+
+    loop([],_):- true|
+        true.
+    loop([put(Data)|T],Work):- true |
+        member(Work,Data,S),
+        (   S = yes ->
+                loop(T,Work)
+        ;
+            S = no  ->
+                append(Work,[Data],Work1),
+                loop(T,Work1)
+        ).
+    loop([putList(List)|T],Work):- true |
+        putList(List,Work,Work1),
+        loop(T,Work1).
+    loop([remove(Data)|T],Work):- true |
+        remove(Work,Data,Work1),
+        loop(T,Work1).
+    loop([get_all(Data)|T],Work):- true |
+        Data = Work,
+        loop(T,Work).
+    loop([in(Data,YesNo)|T],Work):- true |
+        member(Work,Data,YesNo),
+        loop(T,Work).
+    loop([empty(YesNo)|T],Work):- true |
+        (   Work = [] ->
+                YesNo = yes
+        ;
+            Work \= [] ->
+                YesNo = no
+        ),
+        loop(T,Work).
+
+    putList([],Work,List):-true |
+        List = Work.
+    putList([Data|T],Work,List):-true |
+        member(Work,Data,S),
+        (   S = yes ->
+                putList(T,Work,List)
+        ;
+            S = no  ->
+                append(Work,[Data],Work1),
+                putList(T,Work1,List)
+        ).
+
+    member([],_,S):- true |
+        S = no.
+    member([H|_],Data,S):- H = Data |
+        S = yes.
+otherwise.
+    member([_|T],Data,S):- true |
+        member(T,Data,S).
+
+    append([],Y,Z):- true |
+        Z = Y.
+    append([L|X],Y,Z):- true |
+        append(X,Y,Z1),
+        Z = [L|Z1].
+
+    remove([],_,Work):-true |
+        Work = [].
+    remove([Data1|T],Data2,Work):- Data1 = Data2|
+        Work = T.
+otherwise.
+    remove([Data1|T],Data2,Work):- true|
+        remove(T,Data2,Work1),
+        Work = [Data1|Work1].

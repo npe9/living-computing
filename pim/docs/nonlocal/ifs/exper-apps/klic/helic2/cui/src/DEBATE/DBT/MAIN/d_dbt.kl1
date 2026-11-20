@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module debate.
+
+:- public 
+    create/1.
+            
+:- with_macro pimos.
+
+    create(I):-true |
+        dbt_agent:create({d},D),
+        dbt_agent:create({p},P),
+        loop(I,P,D).
+
+    loop([],P,D):-true|
+        P = [], 
+        D = [].
+    loop([{Which,ProtocolList}|T],P1,D1):-true|
+        send_to_agent(Which,ProtocolList,P1,D1,P,D),
+        loop(T,P,D).
+
+    send_to_agent(nil,[execute(start_debate,{PNH,DNH},_,Result)],P1,D1,P,D):-true|
+        dbt_IDManager:create(IDT),
+        merge({IDT1,IDT2},IDT),
+        P1 = [execute(start_debate,{IDT1,Px,Dx1,PNH},SubResult1,R1)|P],
+        D1 = [execute(start_debate,{IDT2,Dx,Px2,DNH},SubResult2,R2)|D],
+        check_result(SubResult1,SubResult2,SubResult),
+        (   SubResult = normal(_)->
+                display_info(Px,Dx,Px1,Dx1,RR1),
+                (   wait(RR1)->
+                        Px1 = [initiate(_),start|Px2]),
+                (   wait(R1),wait(R2)->
+                        check_result(R1,R2,Result))
+        ;
+            SubResult = abnormal(_)->
+                Result = SubResult
+        ).
+    send_to_agent(p,ProtocolList,P1,D1,P,D):-true|
+        D = D1,
+        send_to_agent1(ProtocolList,P1,P).
+    send_to_agent(d,ProtocolList,P1,D1,P,D):-true|
+        P = P1,
+        send_to_agent1(ProtocolList,D1,D).
+
+    display_info(P,D,P1,D1,R):-true|
+        P = [display_info(R1)|P1],
+        D = [display_info(R2)|D1],
+        (   R1=normal(_),R2=normal(_)->
+                R = normal(success)).
+
+    send_to_agent1([],S1,S):-true |
+        S = S1.
+    send_to_agent1([H|T],S1,S):-true |
+        S1 = [H|S2],
+        send_to_agent1(T,S2,S).
+
+    check_result(normal(success),normal(success),Result):-true|
+        Result = normal(success).
+    check_result(abnormal(Reason),_,Result):-true|
+        Result = abnormal(Reason).
+    check_result(_,abnormal(Reason),Result):-true|
+        Result = abnormal(Reason).
+        

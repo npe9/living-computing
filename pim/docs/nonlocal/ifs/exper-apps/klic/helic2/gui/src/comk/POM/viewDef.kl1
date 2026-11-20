@@ -1,0 +1,124 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module viewDefineTable.
+
+:- public 
+    quick_create/2,
+    create/2.
+            
+:- with_macro pimos.
+
+
+    quick_create({ViewList,ViewSPList},I):- true |
+        hset:create(ViewList,ViewB),
+        hLibrary:pool(keyed_bag,ViewSPKB1),
+        put_all(ViewSPList,ViewSPKB1,ViewSPKB),
+        loop(I,ViewB,ViewSPKB).
+
+    create(ViewList,I):- true |
+        initiate(ViewList,ViewB,ViewSPKB),
+        loop(I,ViewB,ViewSPKB).
+
+    initiate(ViewList,ViewB,ViewSPKB):-true |
+        hset:create(ViewB1),
+        hLibrary:pool(keyed_bag,ViewSPKB1),
+        initiate1(ViewList,ViewB1,ViewSPKB1,ViewB,ViewSPKB).
+
+    initiate1([],ViewB1,ViewSPKB1,ViewB,ViewSPKB):-true |
+        ViewB = ViewB1,
+        ViewSPKB = ViewSPKB1.
+    initiate1([{View,SPList}|T],ViewB1,ViewSPKB1,ViewB,ViewSPKB):-true |
+        ViewB1 = [put(View)|ViewB2],
+        ViewSPKB1 = [empty(View,YN)|ViewSPKB2],
+        (   YN = yes ->
+                ViewSPKB2 = [put(View,SPList)|ViewSPKB3]
+        ;
+            YN = no ->  %display_console("error viewDefTable")
+                ViewSPKB3 = ViewSPKB2
+        ),
+        initiate1(T,ViewB2,ViewSPKB3,ViewB,ViewSPKB).
+
+    loop([],ViewB,ViewSPKB):-true |
+        ViewB = [],
+        ViewSPKB = [].
+    loop([get_viewNameList(ViewList)|T],ViewB1,ViewSPKB):-true |
+        ViewB1 = [get_all(ViewList)|ViewB2],
+        loop(T,ViewB2,ViewSPKB).
+    loop([get_view(ViewName,View)|T],ViewB,ViewSPKB1):-true |
+        ViewSPKB1 = [carbon_copy(ViewName,[SPList])|ViewSPKB2],
+        View = {ViewName,SPList},
+        loop(T,ViewB,ViewSPKB2).
+    loop([get_viewList(ViewList)|T],ViewB,ViewSPKB1):-true |
+        ViewSPKB1 = [carbon_copy(ViewList)|ViewSPKB2],
+        loop(T,ViewB,ViewSPKB2).
+    loop([is_view(View,YN)|T],ViewB1,ViewSPKB):-true |
+        ViewB1 = [in(View,YN)|ViewB2],
+        loop(T,ViewB2,ViewSPKB).
+    loop([get_spList(View,SPList)|T],ViewB,ViewSPKB1):-true |
+        ViewSPKB1 = [carbon_copy(View,[SPList])|ViewSPKB2],
+        loop(T,ViewB,ViewSPKB2).
+    loop([is_containSP(View,SPList1,Result)|T],ViewB,ViewSPKB1):-true |
+        ViewSPKB1 = [carbon_copy(View,[SPList])|ViewSPKB2],
+        is_containSP(SPList1,SPList,Y,N),
+        (   Y=[],N\=[]->
+                Result = no(N)
+        ;
+            Y\=[],N=[]->
+                Result = yes
+        ;
+            Y\=[],N\=[]->
+                Result = no(N)
+        ),
+        loop(T,ViewB,ViewSPKB2).
+    loop([get_all(ALL)|T],ViewB1,ViewSPKB1):-true |
+        ViewB1 = [get_all(ViewList)|ViewB2],
+        ViewSPKB1 = [carbon_copy(ViewSPList)|ViewSPKB2],
+        ALL = {ViewList,ViewSPList},
+        loop(T,ViewB2,ViewSPKB2).
+    loop([change_view(View,SPList)|T],ViewB,ViewSPKB1):-true |
+        ViewSPKB1 = [get(View,_),put(View,SPList)|ViewSPKB2],
+        loop(T,ViewB,ViewSPKB2).
+    loop([make_view(View,SPList)|T],ViewB1,ViewSPKB1):-true |
+        ViewSPKB1 = [empty(View,YN1)|ViewSPKB2],
+        (   YN1 = yes->
+                ViewB1    = [put(View)|ViewB2],
+                ViewSPKB2 = [put(View,SPList)|ViewSPKB3]
+        ;
+            YN1 = no->
+                ViewB2    = ViewB1,
+                ViewSPKB2 = [get(View,_),put(View,SPList)|ViewSPKB3]
+        ),
+        loop(T,ViewB2,ViewSPKB3).
+
+    put_all([],KB1,KB):-true|
+        KB = KB1.
+    put_all([{Key,Data}|T],KB1,KB):-true|
+        KB1=[put(Key,Data)|KB2],
+        put_all(T,KB2,KB).
+
+%%%%%
+    is_containSP([],_,Y,N):-true|
+        Y = [],
+        N = [].
+    is_containSP([SP|T],SPList,Y,N):-true|
+        member(SPList,SP,YN),
+        (   YN = yes->
+                Y = [SP|Y1],
+                N = N1
+        ;
+            YN = no->
+                Y = Y1,
+                N = [SP|N1]
+        ),
+        is_containSP(T,SPList,Y1,N1).
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).

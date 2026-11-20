@@ -1,0 +1,82 @@
+﻿<!--
+# modified by Orie '95/03/02
+# modified by S.Tanabe '95/05/25
+# modified by S.Tanabe '95/08/01
+-->
+<title>(87) 並列データベース管理システム : Kappa (KLIC版)</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(87) 並列データベース管理システム : Kappa (KLIC版)</h2>
+
+<pre width="136"><b>
+	マ シ ン：UNIXマシン
+	環　　境：UNIX, KLIC
+	言　　語：KL1, C
+	ソース量：6 MB
+	文　　書：マニュアル (日本語・英語)
+</b>
+</pre>
+<hr><p>
+
+<h2>概要</h2>
+
+Kappa は、非正規関係モデルに基づく並列データベース管理システムであり,
+KLIC上で動作する。<p>
+
+<h2>構成</h2>
+
+<dl>
+        <dd><img src="087-J.gif">
+</dl>
+<p>
+
+<h2>機能</h2>
+
+<dl>
+
+ <dt>非正規関係モデル
+
+<dd> 知識情報処理システムや遺伝子情報処理システムの複雑な構造のデータ
+を管理するために、広く利用されている関係モデルを拡張した非正規関係モデ
+ルを採用している。
+
+<dt>データ配置と並列処理
+
+<dd> 各ノード毎に問合せ処理能力をもっているため、非正規関係の分散配置
+や、一つの非正規関係を複数のノードに分ける水平分割によって、ノード間の
+並列処理が可能になる。
+
+<dt>UNIXマシン上で動作
+
+<dd> KLIC を用いることにより、UNIX オペレーティング・システムの基本部
+分が動作する計算機システムで Kappa を利用することができる。
+
+<dt>例題プログラム　irpr
+
+<dd> 名簿管理システム（通称irpr）が、例題プログラムとして添付されている。
+
+</dl>
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li><a
+href="../../../ifs/kbms-clp/klic/kappa/README.j">README</a>.
+
+<li>	並列データベース管理システム : Kappa (KLIC版) [765K] <a
+href="../../../ifs/kbms-clp/klic/kappa/kappa.tgz"> <img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

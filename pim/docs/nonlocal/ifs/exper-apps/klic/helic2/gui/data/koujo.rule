@@ -1,0 +1,78 @@
+&define_absolute_rule.
+&define_RBR_rule.  	{
+ act1::運転する(agent=甲, object= 自動車).
+ act2::交通事故をおこす(agent=甲) | #事故.
+ act3::けがをする(agent=乙, cause= #事故) | #けが.
+ act4::誤解する(agent=甲, object= #けが, goal=死ぬ(agent=乙)).
+ act5::置き去りにする(agent=甲, object=乙) | #置き去り.
+ act6::死ぬ(agent=乙, cause=寒さ) | #死亡.
+ act7::法的因果関係あり(agent= #置き去り, object= #死亡).
+
+刑法219条::構成要件に該当する(a_object= @捨てる, object=保護責任者遺棄致死罪)
+        <- 犯罪行為に該当する(a_object= P/捨てる(agent=X/自然人, 
+                    object=Y/自然人)|@捨てる, object=生体遺棄) ,
+            犯意がある(agent=X, object= @捨てる, purpose=生体遺棄),
+            保護責任者である(agent=X, object=Y),
+            社会的な弱者である(a_object=Y),
+            死ぬ(agent=Y) | @死亡,
+            法的因果関係あり(agent= @捨てる, object= @死亡).
+
+判例1p:: 保護責任者である(agent=X, object=Y)
+        <- 交通事故をおこす(agent=X/自然人) | @事故,
+            けがをする(agent=Y/自然人, cause= @事故).
+判例1d::- 保護責任者である(agent=X, object=Y)
+        <- 交通事故をおこす(agent=X/自然人) | @事故,
+            けがをする(agent=Y/自然人, cause= @事故),
+             not 保護する(agent=X, object=Y).
+判例2p1:: 犯罪行為に該当する(a_object= 置き去りにする(agent=自然人,
+                    object=自然人), object=生体遺棄).
+判例2p2:: 犯罪行為に該当する(a_object= 死体を放置する(agent=自然人,
+                    object=自然人), object=死体遺棄).
+判例2d::- 犯罪行為に該当する(a_object= @置き去り, object=生体遺棄)
+        <- not 健康状態が異常になる(agent=Y/自然人, 
+	cause= 置き去りにする(agent=自然人, 
+                    object=Y) | @置き去り).
+定説1::- 法益が重なる(agent= 生体遺棄, object= 死体遺棄).
+定説2:: 共通点がある(agent= 生体遺棄, object= 死体遺棄).
+定説3:: 社会的な弱者である(a_object= X) 
+       <- けがをする(agent=X/自然人).
+定説4:: 誤解する(agent=X, object=置き去りにする(agent=X, object=Y),
+                     goal=死体を放置する(agent=X, object=Y))
+        <- 誤解する(agent=X/自然人, object=けがをする(agent=Y/自然人), 
+                     goal=死ぬ(agent=Y)),
+           置き去りにする(agent=X, object=Y).
+学説3p:: 犯意がある(agent= X, object= @行為, purpose= Z)
+        <- 犯罪行為に該当する(a_object= 行為(agent=X/自然人) | @行為,
+		object=Z/犯罪行為名),
+            誤解する(agent=X, object=@行為, 
+                     goal=P/行為(agent=X)).
+学説3d1:: 故意がある(agent= X, object= @行為1, purpose= Z) 
+        <- 犯罪行為に該当する(a_object= 行為(agent=X/自然人) | @行為2, 
+		object=Z/犯罪行為名),
+            誤解する(agent=X, object= P/行為(agent=X) | @行為1,
+                     goal= @行為2).
+学説3d2::- 故意がある(agent= X, object= @行為, purpose= Z) 
+        <- 犯罪行為に該当する(a_object= 行為(agent=X/自然人) | @行為,
+		object=Z/犯罪行為名),
+            誤解する(agent=X, object= @行為,
+                     goal=行為(agent=X)).
+学説3d3::- 責任がある(agent= X, object= @行為, purpose= Z) 
+        <- 故意がある(agent= X/自然人, object= 行為(agent=X) | @行為, 
+                    purpose= W/犯罪行為名),
+          - 故意がある(agent= X, object= @行為, purpose= Z/犯罪行為名),
+          - 法益が重なる(agent= Z, object= W).
+学説3d4::- 犯意がある(agent= X, object= @行為 ,purpose= Z) 
+        <- - 責任がある(agent= X/自然人, object= 行為(agent=X) | @行為,
+                    purpose= Z/犯罪行為名).
+判例3p0::責任がある(agent= X, object= @行為, purpose= Z) 
+        <- 故意がある(agent= X/自然人, object= 行為(agent=X) | @行為,
+                    purpose= W/犯罪行為名),
+          - 故意がある(agent= X, object= @行為, purpose= Z/犯罪行為名),
+            共通点がある(agent= W, object= Z).
+学説3d0::- 犯意がある(agent= X, object= @行為, purpose= Z) 
+        <- 犯罪行為に該当する(a_object= 行為(agent=X/自然人) | @行為,
+		object=Z/犯罪行為名),
+            誤解する(agent=X, object= @行為, 
+                     goal=行為(agent=X)).
+}
+&define_CBR_rule.

@@ -1,0 +1,129 @@
+
+  [ File list of LIPS-Tools ]
+                                        by  Hidetoshi NAGAI
+
+            Copyright (C) 1997  Kyusyu Institute of Technology, 
+                                   Department of Artificial Intelligence
+                                                 Hidetoshi NAGAI
+                                                 Teigo  NAKAMURA
+                                                 Hirosato NOMURA
+
+Configure         -  configuration script
+Makefile          -  Makefile for LIPS-Tools ( based on default configuration )
+Makefile.filter   -  sed script for generating 'Makefile'
+Makefile.in       -  source of 'Makefile'
+Readme-E          -  this file
+Readme-J          -  Japanese version of file list
+Readme.1st        -  'read me' file
+cmd-lib           -  directory includes commands for LIPS-Tools
+doc               -  directory includes document files
+jsax-if           -  directory includes Tcl/Tk libraries for JUMAN & SAX
+law-model         -  top directory of controlled linguistic model 
+                                                            for law sentences
+lips.in           -  source file of 'lips' command
+lipsrc.sample.in  -  source file of sample file of '.lipsrc'
+tcl-lib           -  Tcl/Tk libraries for LIPS-Tools
+
+LIPS-Tools/cmd-lib:
+Makefile.part     -  a part of 'Makefile' for this directory
+Readme.1st        -  'read me' file for this directory
+make-kwic.doc     -  document file of make-kwic
+make-kwic.in      -  source file of make-kwic ( generate KWIC )
+
+LIPS-Tools/doc:
+ChangeLog          -  change log
+Config-Log         -  sample log file of 'Configure' script
+Install            -  document to install 'LIPS-Tools'
+JUMAN-on-SICStus3  -  hint to run JUMAN on SICStus 3
+Law-Model          -  guide for controlled linguistic model for law sentences
+Manual             -  LIPS-Tools software manual
+Readme.1st         -  'read me' file for this directory
+Result-smpl        -  sample result of parsing
+UserGuide          -  users' guide
+
+LIPS-Tools/jsax-if:
+Makefile.part      -  a part of 'Makefile' for this directory
+jsax.in            -  source file of 'jsax' コマンド
+jsax_ctrl.tcl.in   -+  
+jsax_dsp.tcl        |
+jsax_if.tcl.in      | Tcl/Tk library sources for interface of JUMAN & SAX 
+jsax_menu.tcl       |
+jsax_run.tcl.in    -+
+
+LIPS-Tools/law-model:
+Juman             -  directory for files depend on JUMAN
+Makefile.part     -  a part of 'Makefile' for this directory
+SAX               -  directory for files depend on SAX
+
+LIPS-Tools/law-model/Juman:
+Makefile.part     -  a part of 'Makefile' for this directory
+dictionary        -  directory for dictionary files
+grammar           -  directory for grammar data for morphological analysis
+juman_pl          -  directory for JUMAN prolog library files 
+                                                    modified for LIPS-Tools
+jumanrc.sample.in -  source of sample file of '.jumanrc'
+
+LIPS-Tools/law-model/Juman/dictionary:
+Makefile.part  -  a part of 'Makefile' for this directory
+adj.dic        -+
+adv.dic         |
+aux.dic         |
+con.dic         | dictionary files
+noun.dic        |
+spcl.dic        |
+verb.dic       -+
+
+LIPS-Tools/law-model/Juman/grammar:
+JUMAN.connect  -+
+JUMAN.grammar   | grammar files for morphological analysis
+JUMAN.kankei    |
+JUMAN.katuyou  -+
+Makefile.part  -  a part of 'Makefile' for this directory
+
+LIPS-Tools/law-model/Juman/juman_pl:
+Makefile.part     -  a part of 'Makefile' for this directory
+juman_user.pl.in  -  JUMAN prolog library file modified for LIPS-Tools
+
+LIPS-Tools/law-model/SAX:
+Makefile.part  -  a part of 'Makefile' for this directory
+gram_util      -  directory of prolog programs to describe grammar
+grammar        -  directory for grammar data
+utility        -  directory for SAX utility modified for LIPS-Tools
+
+LIPS-Tools/law-model/SAX/gram_util:
+Makefile.part         -  a part of 'Makefile' for this directory
+char-to-list.pl       -+
+fstruct_print.pl       |
+ld-grammar-util.pl.in  | sorce files of prolog programs to describe grammar
+make_sem.pl            |
+predicate.pl          -+
+
+LIPS-Tools/law-model/SAX/grammar:
+LIPS-grammar        -  core file of grammar description
+Makefile.part       -  a part of 'Makefile' for this directory
+case_name.pl        -+
+con_np.pl            |
+ld-grammar-db.pl.in  | support files to describe grammar
+thesaurus.pl         |
+verb_case.pl        -+
+
+LIPS-Tools/law-model/SAX/utility:
+LIPS_startup.pl.in        -  source file of initialize program
+Makefile.part             -  a part of 'Makefile' for this directory
+juman_sax_for_LIPS.pl     -  SAX 'juman_sax.pl' file modified for LIPS-Tools
+sax_user.JUMAN.LIPS.pl.in -  SAX 'sax_user.JUMAN.pl' modified for LIPS-Tools
+
+LIPS-Tools/tcl-lib:
+Makefile.part    -  a part of 'Makefile' for this directory
+edbind.tcl       -+
+edfileop.tcl      |
+edframe.tcl       |
+edit_menu.tcl     |
+edsearch.tcl      |
+edslfile.tcl      | Tcl/Tk libraries constructs LIPS-Tools
+file_menu.tcl     |
+research.tcl      |
+research_menu.tcl |
+scr_lstbox.tcl    |
+scr_text.tcl      |
+search_menu.tcl  -+

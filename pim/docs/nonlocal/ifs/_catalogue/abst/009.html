@@ -1,0 +1,128 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+# modified by S.Tanabe '95/08/01
+# modified by	A.Aiba	'97/08/15
+-->
+<title>(9) CLP Language: cu-Prolog</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>(9) CLP Language: cu-Prolog</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     UNIX machine
+	Environment: UNIX
+	Source Code: 0.4 MB
+	Language:    C
+	Documents:   User's Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+ cu-Prolog is a symbolic and combinatorial constraint logic
+programming language.
+
+<h2><b>Features</b></h2>
+<ul>
+ <li>cu-Prolog interpreter is written only in the C language.
+ <li>cu-Prolog support Partially Specified Term(PST) for feature
+structures of constraint-based grammar formalisms.
+<p>
+
+      For example,<pre>{f/a,g/b,h/X}.</pre>
+
+ <li>Its symbolic and combinatorial constraint solver is based on the
+unfold/fold transformation.
+</ul>
+
+<h2><b>Function</b></h2>
+Most CLP languages treat numerical constraints in terms of algebraic
+equations or inquations. However, for natural language processing or
+AI applications in general, symbolic and combinatorial constraints are
+far more important. cu-Prolog was designed to process the latter kinds
+of constraint.
+<p>
+
+cu-Prolog programs consist of the following Constrained Horn
+Clauses(CHC).
+<p>
+<dl>
+	<dd><img src="009.gif">
+</dl>
+<p>
+
+The Constraint part contains user-defined Prolog predicates such as
+<p>
+
+<pre>
+      member(X,[ga,wo,ni]) or head_feature_principle(H,M,D).
+</pre>
+<p>
+
+The constraint solver uses unfold/fold transformation, which is
+well-known as a program transformation technique, with some
+heuristics.  <p>
+
+A simple Japanese parser based on JPSG (Japanese Phrase Structure
+Grammar) is one of the most successful application of cu-Prolog. 
+Various constraints of the constraint-based grammar formalism are
+naturally and elegantly described with PSTs and combinatorial
+constraints of cu-Prolog.  <p>
+
+<!--
+<h2><b>User's Group</b></h2>
+Following its release as ICOT Free Software, the constraint logic
+programming language cu-Prolog, including Prof.  Shirai's
+Macintosh/MS-DOS version, has been used by many students, engineers,
+and CLP/NLP researchers.  <p>
+
+Now, encourage the exchange of comments and information relating to
+cu-Prolog, constraint-based grammar formalisms, and CLP, we have
+organized a cu-Prolog user's group. The address is <p>
+
+<dl>
+<dd><a href="mailto:cup@icot.or.jp"><b>cup@icot.or.jp</b></a>
+</dl>
+<p>
+
+To join the mailing list, send  e-mail to 
+
+<dl>
+<dd><b><a
+href="mailto:cup-request@icot.or.jp"><b>cup-request@icot.or.jp</b></a>
+</dl>
+<p>
+-->
+
+<h2>FTP</h2>
+<ul>
+
+<li><a
+href="../../../ifs/kbms-clp/unix/cuprolog/README">README</a>,
+
+<LI><a
+href="../../../ifs/kbms-clp/unix/cuprolog/CHANGES">HISTORY</a>,
+
+<LI><a
+href="../../../ifs/kbms-clp/unix/cuprolog/INSTALL">INSTALL</a>,
+
+<LI><a
+href="../../../ifs/kbms-clp/unix/cuprolog/cupdoc.tar.gz">DOCUMENT</a>.
+
+<li> CLP Language: cu-Prolog  [108K]
+<a href="../../../ifs/kbms-clp/unix/cuprolog/cupsrc.tar.gz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

@@ -1,0 +1,122 @@
+========================================================
+(C)1993, 1994, 1995 Institute for New Generation Computer Technology
+(配布その他は COPYRIGHT ファイルを参照して下さい.)
+(C)1996, 1997 Japan Information Processing Development Center
+(配布その他は COPYRIGHT-JIPDEC ファイルを参照してください)
+(C)1998, Takashi Chikayama and Takahide Yoshikawa
+========================================================
+
+(i) 本システムについて.
+
+本システムは,並列論理型言語 KL1 の処理系 KLIC 3.002 版に
+世代方式 Garbage Collection(GC) を実装したものである.
+
+KLIC 処理系は,短寿命な制御用データ構造を,プログラム中から
+明示的に利用する通常のデータと同じヒープ領域に割り付ける
+設計となっている.これは,処理系の構造を単純にしている反面GCに
+掛ける負担を大きくしている.
+
+本システムは,様々なデータ構造を割り付けるヒープ領域を,
+比較的長時間保持されているデータを格納する領域と回収率の高い最近
+割り付けたデータを格納する領域に分割し,GC処理の負担を大幅に軽減している.
+
+(ii) 動作環境.
+
+本システムは, ほぼすべての一般的な UNIX システム上で
+変更せずに動作すると思われる.
+
+なお,以下の環境では動作確認を行なった.
+  ・Solaris 2.6    (SPARC 版)
+  ・Solaris 2.6    (Intel 版)
+  ・Solaris 2.5.1  (SPARC 版)
+  ・Linux 2.0.31   (Intel 版)
+  ・FreeBSD 2.2.8
+
+(iii)  使い方.
+
+(1) ランタイムライブラリ作成方法.
+	KLIC ランタイムライブラリの作成方法は, KLIC 3.002 版と
+	ほぼ同じである.
+
+	% ./Configure 
+		問い合わせに答える.
+		途中, Generational GC を有効にするかどうか聞いてくる
+		ので,そこで yes と答えると世代 GC 対応ランタイムライブラリ
+		(libklic.a, libklict.a)が作成される.
+	% make
+	% make tests
+	% make install
+
+
+(2) 実行ファイルの作成方法.
+	% klic <file name>
+		で実行ファイルが作成される.
+
+(3) 新たに追加された実行時オプション.
+	KLIC 3.002 版でのオプションに加え,以下のオプションが
+	追加されている.
+	
+        -oa <ratio>: 旧世代領域の active cell ratio の指定.(デフォルトは 0.8)
+		     旧世代領域の active cell がこの比率を越えると警告がでる.
+	 	    
+        -na <ratio>: 新世代領域の active cell ratio の指定.(デフォルトは 0.8)
+		     新世代領域の active cell がこの比率を越えると
+		     新世代領域のサイズが拡大される.
+
+        -R <old_new heap ratio>: 旧世代領域のサイズ指定.(デフォルトは 100)
+				 新世代領域のサイズの何倍かを指定する.
+
+        -non-ggc   : GC 経験回数にかかわらず旧世代領域にデータを
+		     コピーしないようにする.
+
+(4) 新たに追加されたランタイムライブラリのコンパイル時オプション.
+	Configure スクリプト実行時に生成される
+	include/klic/config.h に新たに以下の行が追加された.
+
+	#define     GGC2		: 基本的な世代 GC への対応.
+	#define     REMEMBER_HOOK	: Hook 鎖の世代 GC への対応.
+					  (この指定には GGC2 オプションが必須)
+	#define     GENERIC_GGC		: Data Object の世代 GC への対応.
+					  (この指定には GGC2 オプションが必須)
+
+(iv) ファイル構成.
+
+klic-3.002-GGC2.5/
+  |- Configure     	Configuration スクリプト
+  |- README        	KLIC 3.002 版の readme (英語版)
+  |- README.j      	KLIC 3.002 版の readme (日本語版)
+  |- README_GGC.j  	KLIC 3.002 GGC 2.5 版の readme (日本語版)
+  |- README_GGC  	KLIC 3.002 GGC 2.5 版の readme (英語版)
+  |- compiler
+	|- *.*     	KL1 コンパイラ のソースプログラム.
+  |- documents
+	|- *.*    	KLIC のドキュメント.
+  |- include
+	|- klic
+	    |- *.*	KLIC インクルードファイル.
+  |- runtime
+	|- *.*     	KLIC ランタイムのソースプログラム.
+  |- test
+	|- *.*	   	テストプログラム.
+
+
+(v) 改版履歴.
+
+・KLIC 3.002 版からの変更点.
+
+klic-3.002-GGC2.5/
+  |- Configure     	世代 GC 対応とした.
+  |- README_GGC.j  	世代 GC 対応 KLIC のREADME(日本語版).
+  |- README_GGC 	世代 GC 対応 KLIC のREADME(英語版).
+  |- include
+	|- klic
+	    |- g_methtab.h, gd_methtab.h, gobj.h	
+		GGC メソッド追加.
+	    |- options.h
+		ランタイムオプション追加.
+	    |- param.h, struct.h, unify.h
+		世代 GC 用のコードを追加.
+  |- runtime
+	|- alloc.c, faisus.c, gc.c, intrpt.c, kmain.c,
+	   sched.c, unify.c
+		世代 GC 用のコードを追加.

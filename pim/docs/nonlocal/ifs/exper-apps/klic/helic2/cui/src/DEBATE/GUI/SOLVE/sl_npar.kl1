@@ -1,0 +1,140 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_parser.
+
+:- public 
+    get_commandArguments/5.
+            
+:- with_macro pimos.
+
+%%%%%%FOR INPUT
+
+    get_commandArguments(UCL,Command,Parameter,Arguments,Result):-true|
+        rbrcui_ioUtility:get_commandArguments(">",Command1,Arguments1),
+        parse(Command1,Arguments1,Command2,Parameter2,Arguments2,Result2),
+        (   Result2 = normal(_),Command2\=nil->
+                is_useCommand(UCL,Command2,Parameter2,YN),
+                (   YN = yes->
+                        Command=Command2,Parameter=Parameter2,Arguments=Arguments2,Result=Result2
+                ;
+                    YN = no->
+                        Reason = {cui,'Can not use this command now',Command2},
+                        rbrcui_ioUtility:show_error(Reason,Result3),
+                        ( wait(Result3)->
+                            get_commandArguments(UCL,Command,Parameter,Arguments,Result))
+                )
+        ;
+            Result2 = normal(_),Command2=nil->
+                get_commandArguments(UCL,Command,Parameter,Arguments,Result)
+        ;
+            Result2 = abnormal(Reason)->
+                rbrcui_ioUtility:show_error(Reason,R),
+                (   wait(R)->
+                        get_commandArguments(UCL,Command,Parameter,Arguments,Result))
+        ).
+
+%cr
+    parse(nil,_,Command,Parameter,Arguments,Result):-true|
+        Command = nil,Parameter = nil,Arguments = nil,Result = normal(success).
+%end
+    parse("end",[],Command,Parameter,Arguments,Result):-true|
+        Command = end,Parameter = nil,Arguments = [],Result = normal(success).
+%backward
+    parse("backward",[],Command,Parameter,Arguments,Result):-true|
+        Command = backward,Parameter = nil,Arguments = [],Result = normal(success).
+%forward
+    parse("forward",[],Command,Parameter,Arguments,Result):-true|
+        Command = forward,Parameter = nil,Arguments = [],Result = normal(success).
+%next
+    parse("next",[],Command,Parameter,Arguments,Result):-true|
+        Command = next,Parameter = nil,Arguments = [],Result = normal(success).
+%previous
+    parse("previous",[],Command,Parameter,Arguments,Result):-true|
+        Command = previous,Parameter = nil,Arguments = [],Result = normal(success).
+%show counter IssueNum
+    parse("show",["counter",IssueNum],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = counterList,sToiList([IssueNum],Arguments,Result).
+
+
+%set pl
+    parse("set",["pl",PL],Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pl,set_pl(PL,Arguments,Result).
+%set pt
+    parse("set",["pt","h"],Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pt,Arguments=[h],Result=normal(success).
+    parse("set",["pt","e"],Command,Parameter,Arguments,Result):-true|
+        Command = set,Parameter = pt,Arguments=[e],Result=normal(success).
+%show pl
+    parse("show",["pl"],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = pl,Arguments=[],Result=normal(success).
+%show pt
+    parse("show",["pt"],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = pt,Arguments=[],Result=normal(success).
+%show explanation
+    parse("show",["explain"],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = explanation,Arguments=[],Result=normal(success).
+%help
+    parse("help",[],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = help,Arguments=[],Result=normal(success).
+    parse("help",[C],Command,Parameter,Arguments,Result):-true|
+        Command = send,Parameter = help,Arguments=[C],Result=normal(success).
+otherwise.
+    parse(_,_,_,_,_,Result):-true|
+        Result = abnormal({cui,'Illegal command or arguments',nil}).
+
+    sToiList([],List,Result):-true |
+        List = [],
+        Result = normal(success).
+    sToiList([S|T],List,Result):-true |
+        hLibrary:sTot(S,A),
+        (   integer(A)->
+                sToiList(T,List1,Result),
+                List = [A|List1]
+        ;
+        otherwise;
+            true->
+                Result= abnormal({cui,'Illegal integer',A})
+        ).
+
+%%%%is_useCommand
+    is_useCommand(_,send,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,end,_,YN):-true|
+        YN = yes.
+    is_useCommand(_,set,_,YN):-true|
+        YN = yes.
+otherwise.
+    is_useCommand(UseComList,Command,_,YN):-true|
+        member(UseComList,Command,YN).
+
+%%%%%%%%%%%
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+%%%%%%%%
+
+%%set pl
+    set_pl(PL1,Arguments,Result):-true|
+        sToiList([PL1],Arguments,R1),
+	( R1 = normal(success)->
+            Arguments=[PL],
+	    ( integer(PL),PL>0->
+	        Result = normal(success)
+	    ;
+	     otherwise;
+	      true->
+	        Result = abnormal({cui,'Illegal pl',PL})
+	    )
+	;
+	  R1 = abnormal(_)->
+	    Result = R1
+	).
+

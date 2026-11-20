@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_sensitivityUtility.
+
+:- public 
+    get_buttonState/5.
+            
+:- with_macro pimos.
+
+    get_buttonState(FLArg,CLArg,{Pool1,Info1,CSS1},Data,ButtonState):-true|
+        CSS1 = [get(buttonVec,{PoseFlag,NoticeFlag,CancelFlag,FinishFlag}),
+                get(ruleRel,RuleRel)|CSS2],
+        Data1 = {Pool1,Info1,CSS2},
+
+        is_pose(PoseFlag,CLArg,FLArg,               Data1,Data2,    YN1),
+        is_notice(NoticeFlag,RuleRel,CLArg,         Data2,Data3,    YN2),
+        is_justify1(PoseFlag,CLArg,FLArg,           Data3,Data4,    YN3),
+        is_justify2(NoticeFlag,RuleRel,CLArg,       Data4,Data5,    YN4),
+        is_backward(CLArg,                          Data5,Data6,    YN5),
+        is_forward(                                 Data6,Data7,    YN6),
+        is_next(CLArg,                              Data7,Data8,    YN7),
+        is_previous(CLArg,                          Data8,Data9,    YN8),
+        is_jump(                                    Data9,Data10,   YN9),
+        is_claimList(                               Data10,Data11,  YN10),
+        is_cancel(CancelFlag,RuleRel,CLArg,         Data11,Data,    YN11),
+        is_finish(FinishFlag,CLArg,FLArg,                           YN12),
+        is_focus(FLArg,                                             YN13),
+
+        get_alwaysSensetiveButtonList(W1),
+        add(YN1, W1,    pose,       W2),
+        add(YN2, W2,    notice,     W3),
+        add(YN3, W3,    justify,    W4),
+        add(YN4, W4,    justify,    W5),
+        add(YN5, W5,    backward,   W6),
+        add(YN6, W6,    forward,    W7),
+        add(YN7, W7,    next,       W8),
+        add(YN8, W8,    previous,   W9),
+        add(YN9, W9,    jump,       W10),
+        add(YN10,W10,   claimList,  W11),
+        add(YN11,W11,   cancel,     W12),
+        add(YN12,W12,   finish,     W13),
+        add(YN13,W13,   focus,      ButtonState).
+
+%%%%%%%%%%%%%%%%%internal method
+%pose
+    is_pose(1,{SV,APos},nil,{Pool1,Info,CSS},Data,YN):-true|    %for pose claim
+        dbtgui_guiUtility:is_initialArgument({SV,APos},Pool1,Pool,YN),
+        Data = {Pool,Info,CSS}.
+    is_pose(1,{{SV,APos},IPos,CPos},{SV,APos},{Pool1,Info1,CSS},Data,YN):-integer(IPos)| %for pose counter
+        dbtgui_LArgUtility:get_ruleRelInfo({{SV,APos},IPos,CPos},{Pool1,Info1},{Pool,Info},{_,_,Rel,_},YN1),
+        (   YN1 = yes->
+                Info1 = {_,_,{_,_,_,Which},_},
+                dbtgui_guiUtility:check_argumentLevel(Rel,Which,YN)
+        ;
+            YN1 = no->
+                YN = no
+        ),
+        Data = {Pool,Info,CSS}.
+
+    is_pose(1,{{SV,APos},IPos,_},{SV,APos},Data1,Data,YN):-IPos = naf(_)| %for naf counter
+        Data = Data1,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%naf no counter ha hanron dekiru
+%        YN   = yes.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%naf no counter ha hanron dekinai tosuru
+        YN   = no.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+otherwise.
+    is_pose(_,_,_,Data1,Data,YN):-true|
+        Data = Data1,
+        YN   = no.
+
+%notice naf notokiha notice ha dekinai 
+    is_notice(1,{MLArg,{MR,YR}},MLArg,{Pool,Info1,CSS},Data,YN):-MR\=nil,YR\=nil| %sensitive MR < YR 
+                                                                                    %MR ! YR,Agent=d is sense
+        Info1 = {_,_,{_,_,_,Which},_},
+        dbtgui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info,Rel,_),
+        dbtgui_guiUtility:check_argumentLevel(Rel,Which,YN),
+        Data = {Pool,Info,CSS}.
+otherwise.
+    is_notice(_,_,_,Data1,Data,YN):-true|
+        Data = Data1,
+        YN = no.
+%cancel
+    is_cancel(1,{MLArg,{_,_}},MLArg,{Pool1,Info,CSS},Data,YN):-true|
+	dbtgui_guiUtility:is_initialArgument(MLArg,Pool1,Pool,YN1),
+	(   YN1 = yes->
+		YN = no
+	;
+	    YN1 = no->
+		YN = yes
+	),
+	Data = {Pool,Info,CSS}.
+otherwise.
+    is_cancel(_,_,_,Data1,Data,YN):-true|
+        Data = Data1,
+        YN   = no. 
+
+%finish
+    is_finish(1,FLArg,FLArg,YN):-true|
+        YN = yes.
+otherwise.
+    is_finish(_,_,_,YN):-true|
+        YN = no.
+
+%justify1 for pose %naf no tokiha justify dekinai
+    is_justify1(1,{{SV,APos},IPos,CPos},{SV,APos},{Pool1,Info1,CSS},Data,YN):-integer(IPos)|
+        dbtgui_LArgUtility:get_ruleRelInfo({{SV,APos},IPos,CPos},{Pool1,Info1},{Pool,Info},{_,_,Rel,_},YN1),
+        (   YN1 =  yes->
+                is_justify11(Rel,YN)
+        ;
+            YN1 = no->
+                YN = no
+        ),
+        Data = {Pool,Info,CSS}.
+otherwise.
+    is_justify1(_,_,_,Data1,Data,YN):-true| 
+        Data = Data1,
+        YN   = no.
+
+    is_justify11(-1,YN):-true|
+        YN = yes.
+    is_justify11(0,YN):-true|
+        YN = yes.
+otherwise.
+    is_justify11(_,YN):-true|
+        YN = no.
+
+%justify2 for notice                    %not no baai R ga nil
+    is_justify2(1,{MLArg,{MR,YR}},MLArg,{Pool,Info1,CSS},Data,YN):-MR\=nil,YR\=nil| %sensitive MR < YR 
+        dbtgui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info,Rel,_),
+	( Rel = 1->
+		YN = no
+	;
+	otherwise;
+	  true->
+		YN = yes
+	),
+        Data = {Pool,Info,CSS}.
+otherwise.
+    is_justify2(_,_,_,Data1,Data,YN):-true|
+        Data = Data1,
+        YN   = no.
+
+%backward
+    is_backward(CLArg,{Pool1,Info,CSS},Data,YN):-true|
+        dbtgui_LArgUtility:has_backwardLArg(CLArg,Pool1,Pool,YN),
+        Data = {Pool,Info,CSS}.
+
+%forward
+    is_forward({Pool,Info,CSS1},Data,YN):-true|
+        dbtgui_LArgUtility:has_forwardLArg(CSS1,CSS,YN),
+        Data = {Pool,Info,CSS}.
+
+%next
+    is_next(CLArg,{Pool1,Info,CSS},Data,YN):-true| %data gaarunoha initial arg kadoukano check notame
+        dbtgui_LArgUtility:get_nextLArg(CLArg,Pool1,Pool,_,YN),
+        Data = {Pool,Info,CSS}.
+
+%previous
+    is_previous(CLArg,{Pool1,Info,CSS},Data,YN):-true|
+        dbtgui_LArgUtility:get_previousLArg(CLArg,Pool1,Pool,_,YN),
+        Data = {Pool,Info,CSS}.
+
+%focus
+    is_focus(nil,YN):-true|
+        YN = no.
+otherwise.
+    is_focus(_,YN):-true|
+        YN = yes.
+
+%jump
+    is_jump({Pool1,Info,CSS},Data,YN):-true|
+        dbtgui_guiUtility:has_claimList(Pool1,Pool,YN),
+        Data = {Pool,Info,CSS}.
+
+%claimList
+    is_claimList({Pool1,Info,CSS},Data,YN):-true|
+        dbtgui_guiUtility:has_claimList(Pool1,Pool,YN),
+        Data = {Pool,Info,CSS}.
+
+%%%%%%%%%%internal method
+%get_alwaysSensetiveButtonList
+    get_alwaysSensetiveButtonList(ButtonList):-true|
+%        ButtonList = [end]. 
+        ButtonList = [end,explain]. 
+
+%add
+    add(yes,List1,E,List):-true|
+        List = [E|List1].
+    add(no,List1,_,List):-true|
+        List = List1.
+

@@ -1,0 +1,89 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (74) KL1 Load Distribution Library</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (74) KL1 Load Distribution Library</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 0.1MB
+	Documents:   User's Manual (Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A KL1 library implementing typical load distribution schemes.<P>
+
+<h2><b>Features</b></h2>
+
+<ul>
+
+<li>A set of utilities which implement typical load distribution
+schemes such as network generation, process mapping, and dynamic load
+distribution
+
+<li>Written in parallel logic language KL1
+
+<li>The library has a modular and hierarchical structure, allowing
+incremental development of new load distribution schemes.
+
+</ul>
+
+<h2><b>Function</b></h2>
+
+The library provides 'templates' showing typical load distribution
+schemes. A parallel program is created by linking a load distribution
+utility in the library with the problem-specific code written by the
+user. The user writes KL1 predicates which conform to the interface
+specification prescribed by the load distribution utility. The codes
+of those predicates are passed when starting the utility.  <p>
+
+The current version of the library contains the following:<P>
+
+<ul>
+
+<li>Network generation: Lays out processes connected by the perfect
+graph or hypercube topologies on the processing nodes
+
+<li>Process mapping: Creates a network of processes with the process
+definitions and the network topology specified by the user
+
+<li>Dynamic load distribution: Dynamically balances the processor load
+for tree-search type programs
+
+<li>Others (heuristic search, etc.)
+
+</ul>
+<p>
+
+The user can develop new load destribution utilities on top of
+existing low-lovel utilities.The package includes tools for utility
+development.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> KL1 Load Distribution Library [123K] <a
+href="../../../ifs/symbolic-proc/pimos/ldlib.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

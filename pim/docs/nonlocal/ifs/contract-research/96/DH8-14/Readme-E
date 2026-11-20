@@ -1,0 +1,33 @@
+===========================================================================
+  Copyright (C) 1997  Makoto Haraguchi, Tokuyasu Kakuta, Yoshiaki Okubo
+
+                            R E A D M E
+
+        A study on Legal Reasoning Based on Goal-Dependent Abstraction
+
+                    HARAGUCH Makoto (Hokkaido University)
+
+                            May 21, 1997
+===========================================================================
+
+This directory contains the source files and the documents relevant to 
+"Legal reasoning system by analogy based on Goal-Dependent Abstraction" 
+(This system is called "GDA-LES" system).
+
+These files are shown as follows: 
+
+  Readme-E ........... This file (in English)
+  Readme-J ........... Japanese version of this file
+  INSTALL ............ Install manual (in Japanese)
+  manual.txt ......... User's manual (in Japanese)
+  name.txt ........... Copyright (in Japanese)
+  pub.txt ............ List of the publications (in Japanese)
+  spec.txt ........... Specifications of this system (in Japanese)
+  src/
+    newgda.pl ........ Source program (main mudule)
+    user.pl .......... Source program (interface mudule)
+  sample/
+    demo.kb .......... Sample knowledge
+
+---------------------------------------------------------------------------
+                               Tokuyasu Kakuta  kaku@db.huee.hokudai.ac.jp

@@ -1,0 +1,30 @@
+MG-Progol		Copyright (C) 1997 古川 康一
+===========================================================
+配布ファイルの構成
+Readme-J			このファイル
+Readme-E			このファイルの英語版
+INSTALL				インストールガイド
+specification.txt		プログラム仕様書
+
+source/				プログラム ディレクトリ
+source/progol.kl1		MG-Progol本体
+
+source/trans/			トランスレータ ディレクトリ
+source/trans/Makefile		トランスレータ用 Makefile
+      /trans/bk2mg.kl1  	背景知識のMG-Clause変換器
+      /trans/merc.kl1		MERC変換器
+      /trans/mg2kl1.kl1		MG-ClauseのKL1プログラム変換器
+      /trans/mode2mg.kl1	モード宣言のMG-Clause変換器
+      /trans/pgl2kl1.kl1	トランスレータ本体
+      /trans/util.kl1		ユーティリティモジュール
+      /trans/w_kl1.kl1		出力モジュール
+
+sample/				サンプルプログラム ディレクトリ
+sample/animals.pgl		動物分類問題
+sample/train.pgl		Train 問題
+sample/animals.kl1		animals.pglをkl1ファイルに変換したもの
+sample/train.kl1		train.pglをkl1ファイルに変換したもの
+
+doc/				ドキュメント
+doc/manual.tex			マニュアル
+

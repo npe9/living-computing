@@ -1,0 +1,117 @@
+
+         Channel Routers in CLP(FD), KLIC, and CMGTP
+
+------------------
+Problem Description
+------------------
+
+VLSI layout design consists of two phases: the first phase, cal
+placement, determines the positions of the modules on the VLSI 
+chip, and the second phase, called routing, connects the modules 
+with wiring. Channel routing is a kind of routing where the routing 
+area is restricted to a rectangular channel. A channel consists of 
+two parallel rows with terminals on them. A connection requirement, 
+called a net, specifies the terminals that must be interconnected 
+through a routing path. A channel routing problem is to find routing 
+paths for a given set of nets in a given channel such that no
+paths overlap each other. 
+
+There are a lot of different definitions of the problem that impose
+different restrictions on the channel and routing paths. We consider
+nHV type channels, where H denotes a horizontal layer for placing
+horizontal segments, V denotes a vertical layer for placing vertical
+segments, and n is an integer meaning that there are n pairs of 
+horizontal and vertical layers.
+
+
+--------------------------
+Channel Routing in CLP(FD)
+--------------------------
+The directory "clpfd" contains the following three files:
+
+        route.pl	-- the program
+        deutsch72.pl    -- data 1
+	deutsch218.pl   -- data 2
+	outjava.pl      -- display the result by using Java
+	Guide.java      -- a simple interpreter that draws graphical objects
+	Board.java      -- draw a N*N board for N-Queens
+	Channel.java    -- draw a channel for route.pl
+	*.class         -- Java objects
+
+The program "route.pl" is written for runing on B-Prolog which is 
+available from 
+
+	http://www.cad.mse.kyutech.ac.jp/people/zhou/bprolog.html
+
+but the program can be easily modified for runing on SICStus and 
+Eclipse. 
+
+To use the channel router to solve a problem, one must build another 
+file that contains the problem-dependent information. "deutsch72.pl" 
+and "deutsch218.pl" are two examples for solving the famous Deutsch's 
+difficult problem.
+
+The files need to be compiled as follows for execution.
+
+	?-compile(route).
+	?-compile(deutsch72).
+	?-compile(deutsch218).
+	?-compile(outjava).
+
+To solve the deutsch72 problem, load the program as follows:
+
+	?-load(deutsch72).
+
+The main program "route.out" will be loaded automatically.
+To run the program, type one of the following queries.
+
+	?-go1.
+	?-go2.
+	?-go3.
+	?-go4.
+
+The query "gon" solves the problem for a nHV channel. The result,
+which is in LaTex format, is solved in a file.
+
+-----------------------
+Channel Routing in KLIC	
+-----------------------
+
+The directory "klic" contains the following three files:
+
+	route.kl1
+	deutsch72.kl1
+	deutsch218.kl1
+
+Like the CLP(FD) program, the file "route.kl1" is problem independent.
+To use it to solve a problem, one must supplement it with another file
+that stores the problem-dependent information on the channel and the 
+specific connecting requirements.
+
+To solve the "deutsch72" problem, first compile the two files as:
+
+	klic -o route route.kl1 deutsch72.kl1
+
+and then execute the program by typing	"route".
+
+-----------------------
+Channel Routing in MGTP
+-----------------------
+The directory "mgtp" contains one file named "route.mg4", a program
+for solving a small scale problem. The program consists essentially 
+of only three rules: one for specifying the search space, one for 
+representing the horizontal constraint graph (neq) and the last one
+for representing the vertical constraint graph(above).
+
+To execute the program on a Prolog version of MGTP, first compile it
+into a Prolog program as:
+
+	?-mgpl(route).
+
+and then compile and execute the Prolog program as:
+
+	?-mgtp(route).
+
+Consult CMGTP user's manual for how to execute the program on other
+versions of MGTP.
+

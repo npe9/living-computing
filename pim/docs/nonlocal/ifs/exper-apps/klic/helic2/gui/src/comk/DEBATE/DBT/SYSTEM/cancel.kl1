@@ -1,0 +1,32 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_cancel.
+
+:- public 
+    cancel/4.
+            
+:- with_macro pimos.
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+
+%    cancel(claim(MA,nil),{O1,Pool1,Info1},Data,NextDR):-true|
+%        Pool1  = [send(hl,put(send(m,start)))|Pool2],
+%        Data   = {O1,Pool2,Info1},
+%        NextDR = start.
+
+    cancel(claim(MA,issue(claim(YA,MI),IPos)),{O1,Pool1,Info1},Data,NextDR):-true|
+        Pool1  = [makeList([at,mat,hl,ct],[AT,MAT,HL,CT])|Pool2],
+        AT     = [refer_arg(YA,YA_Arg,_),refer_arg(MA,MA_Arg,_)],
+        MAT    = [remove(MA_Arg)],
+        CT     = [cancel({YA,IPos},MA)],
+
+        HL     = [put(send(m,{claim(YA,MI),YA_Arg}))],
+        Data   = {O1,Pool2,Info1},
+        NextDR = {claim(YA,MI),YA_Arg}.
+
+

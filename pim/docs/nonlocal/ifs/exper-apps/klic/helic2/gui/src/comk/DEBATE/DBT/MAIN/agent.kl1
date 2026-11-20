@@ -1,0 +1,380 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_agent.
+
+:- public 
+    get_defaultStorategy/2,
+    create/2.
+            
+:- with_macro pimos.
+
+    create({Name},I):-true |
+        rbr:create(RBR),
+
+        partialOrderModule:create(POM),
+
+        get_defaultParameter(Default),
+        get_defaultRBRParameter({Mode,Sim,Counter}),
+        get_defaultStorategy(Name,STG),
+
+        RBR = [set_parameter(mode,Mode,_),
+                set_parameter(similarity,Sim,_),
+		set_parameter(counter,Counter,_)|RBR1],
+
+        loop(I,RBR1,POM,{nil,nil,nil,Name,STG},Default).
+                % 4th parameter means {useView,useUnit,Goal,Name,STG}
+
+    get_defaultParameter(Default):-true |
+        Default = {system,h,{1000,nil,nil,nil,nil}}. 
+		%{solver,lang,OtherPara}
+		%OtherPara = {PrintLength,reserve,reserve,reserve,reserve}
+
+    get_defaultRBRParameter(Def):-true|
+        Def = {analysis,70,1}.    %{Mode,Sim,Counter}
+
+    get_defaultStorategy(p,STG):-true|
+        STG = {{one},{one,one}}. %{{InitialArgSTG},{IssueSTG,CASTG}}
+    get_defaultStorategy(d,STG):-true|
+        STG = {{one},{one,one}}.
+
+    loop([],RBR,POM,_,_):-true|
+        RBR = [],
+        POM = [].
+
+%%set
+%rbr
+    loop([set_parameter(type,Type,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        RBR = [set_parameter(type,Type,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge,Para).
+    loop([set_parameter(rule,RuleData,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        RBR = [set_parameter(rule_list,RuleData,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge,Para).
+    loop([set_parameter(counter,Counter,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        RBR = [set_parameter(counter,Counter,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge,Para).
+
+%pom
+    loop([set_parameter(view,ViewData,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        POM = [initiate(ViewData)|POM1],
+        Result = normal(success),
+        loop(T,RBR,POM1,UseKnowledge,Para).
+    loop([set_parameter(useView,UseViewName1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+        POM = [is({view,UseViewName1},YN,Result1)|POM1],
+        (   Result1 = normal(_)->
+                (   YN = yes ->
+                        NewUseViewName = UseViewName1,
+                        Result = normal(success)
+                ;
+                    YN = no ->
+                        NewUseViewName = UseViewName,
+                        Result = abnormal({dbt,'Illegal view name',UseViewName1})
+                )
+        ;
+            Result1 = abnormal(_)->
+                NewUseViewName = UseViewName,
+                Result = Result1
+        ),
+        loop(T,RBR,POM1,{NewUseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([set_parameter(defaultUseView,SPList,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+        get_defaultUseViewName(Name,DefaultUseViewName),
+        POM = [make_view({DefaultUseViewName,SPList},Result)|POM1],
+        (   Result = normal(_)->
+                NewUseViewName = DefaultUseViewName
+        ;   
+            Result = abnormal(_)->
+                NewUseViewName = UseViewName
+        ),
+        loop(T,RBR,POM1,{NewUseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([set_parameter(useUnit,UnitOrScopeUnitNameList,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):- UnitOrScopeUnitNameList\=all|
+        POM = [is({unitOrScopeUnitList,UnitOrScopeUnitNameList},YN,Result1)|POM1],
+        (   Result1 = normal(_)->
+                (   YN = yes ->
+                        POM1 = [get({unitOrScopeUnitToUnit,UnitOrScopeUnitNameList},UnitNameList,Result2)|POM2],
+                        (   Result2 = normal(_)->
+                                RBR = [set_parameter(rule_name_list,UnitNameList,Result)|RBR1],
+                                (   Result = normal(_)->
+                                        NewUseUnitNameList = UnitOrScopeUnitNameList
+                                ;
+                                    Result = abnormal(_)->
+                                        NewUseUnitNameList = UseUnitNameList
+                                )
+                        ;
+                            Result2 = abnormal(_)->
+                                NewUseUnitNameList = UseUnitNameList,
+                                RBR1 = RBR,
+                                Result= Result2
+                       )
+                ;
+                    YN = {no,UnknownList} ->
+                        NewUseUnitNameList = UseUnitNameList,
+                        POM2 = POM1,
+                        RBR1 = RBR,
+                        Result = abnormal({dbt,'Illegal unit name',UnknownList})
+                )
+        ;
+           Result1 = abnormal(_)->
+                NewUseUnitNameList = UseUnitNameList,
+                POM2 = POM1,
+                RBR1 = RBR,
+                Result = Result1
+        ),
+        loop(T,RBR1,POM2,{UseViewName,NewUseUnitNameList,Goal,Name,STG},Para).
+    loop([set_parameter(useUnit,all,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+
+        POM = [get({unit,all},UnitNameList,Result1)|POM1],
+        (   Result1 = normal(_)->
+                RBR = [set_parameter(rule_name_list,UnitNameList,Result)|RBR1],
+                (   Result = normal(_)->
+                        NewUseUnitNameList = all
+                ;
+                    Result = abnormal(_)->
+                        NewUseUnitNameList = UseUnitNameList            
+                )
+        ;
+            Result1 = abnormal(_)->
+                Result = Result1,
+                RBR1 = RBR,
+                NewUseUnitNameList = UseUnitNameList
+        ),
+        loop(T,RBR1,POM1,{UseViewName,NewUseUnitNameList,Goal,Name,STG},Para).
+%    loop([add_parameter(useUnit,UseUnitList,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+%        Result = abnormal({dbt,'Non suport',add_unit}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+%    loop([del_parameter(useUnit,UseUnitList,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+%        Result = abnormal({dbt,'Non suport',del_unit}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+    loop([set_parameter(goal,Goal1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,_,Name,STG},Para):-true|
+        Result = normal(success),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal1,Name,STG},Para).
+    loop([set_parameter(solver,SorU,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara}):-true|
+        (   SorU = system ->
+                NewSolver = system,
+                Result = normal(success)
+        ;
+            SorU = user ->
+                NewSolver = user,
+                Result = normal(success)
+        ;
+        otherwise;
+            true ->
+                NewSolver = Solver,
+                Result = abnormal({dbt,'Illegal solver',SorU})
+        ),
+        loop(T,RBR,POM,UseKnowledge,{NewSolver,Lang,OtherPara}).
+    loop([set_parameter(similarity,Int,Result)|T],RBR,POM,UseKnowledge,Para):-integer(Int)|
+        RBR = [set_parameter(similarity,Int,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge,Para).
+    loop([set_parameter(lang,L,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara}):-true|
+        (   L = h ->
+                NewLang = h,
+                Result = normal(success)
+        ;
+            L = e ->
+                NewLang = e,
+                Result = normal(success)
+        ;
+        otherwise;
+            true ->
+                NewLang = Lang,
+                Result = abnormal({dbt,'Illegal langage',L})
+        ),
+        loop(T,RBR,POM,UseKnowledge,{Solver,NewLang,OtherPara}).
+    loop([set_parameter(pl,PL,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara1}):-integer(PL)|
+	set_vector_element(OtherPara1,0,_,PL,OtherPara),
+        Result = normal(success),
+        loop(T,RBR,POM,UseKnowledge,{Solver,Lang,OtherPara}).
+
+%%get
+    loop([get_parameter(useView,View,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+        (   UseViewName \= nil ->
+                POM = [get({view,UseViewName},View,Result)|POM1]
+        ;
+            UseViewName = nil ->
+                POM1 = POM,
+                Result = abnormal({dbt,'View not set ',[]})
+        ),
+        loop(T,RBR,POM1,{UseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([get_parameter({view,ViewName},ViewList,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        POM = [get({view,ViewName},ViewList,Result)|POM1],
+        loop(T,RBR,POM1,UseKnowledge,Para).
+    loop([get_parameter(useUnit,UseUnit,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+        (   UseUnitNameList = all ->
+                POM = [get({unit,all},UnitNameList,Result)|POM1],
+                UseUnit = [{all,UnitNameList}]
+        ;
+            UseUnitNameList = nil ->
+                POM1 = POM,
+                Result = abnormal({dbt,'Unit not set',nil})
+        ;
+        otherwise;
+            true ->
+                get_unit(UseUnitNameList,POM,POM1,UseUnit),
+                Result = normal(success)
+        ),
+        loop(T,RBR,POM1,{UseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([get_parameter({unit,all},UnitList,Result)|T],
+                RBR,POM,UseKnowledge,Para):-true|
+        POM = [get({scopeUnit,all},ScopeUnitNameList,Result1)|POM1],
+        (   Result1 = normal(_)->
+                get_unit(ScopeUnitNameList,POM1,POM2,UnitList),
+                Result = normal(success)
+%                POM1 = [get({scopeUnitToUnit,ScopeUnitNameList},UnitList,Result)|POM2]
+        ;
+            Result1 = abnormal(_)->
+                POM2 = POM1,
+                Result = Result1
+        ),
+        loop(T,RBR,POM2,UseKnowledge,Para).
+    loop([get_parameter({unit,UnitOrScopeUnitList},UnitList,Result)|T],
+                RBR,POM,UseKnowledge,Para):-UnitOrScopeUnitList\=all|
+        POM = [is({unitOrScopeUnitList,UnitOrScopeUnitList},YN,Result1)|POM1],
+        (   Result1 = normal(_)->
+                (   YN = yes ->
+                        get_unit(UnitOrScopeUnitList,POM1,POM2,UnitList),
+                        Result = normal(success)
+                ;
+                    YN = {no,Unknown} ->
+                        POM2 = POM1,
+                        Result = abnormal({dbt,'Illegal unit name',Unknown})
+                )
+        ;
+            Result1 = abnormal(_)->
+                POM2 = POM1,
+                Result = Result1
+        ),
+        loop(T,RBR,POM2,UseKnowledge,Para).
+    loop([get_parameter({sp,Name},SpNameList,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        POM = [get({sp,Name},SpNameList,Result)|POM1],
+        loop(T,RBR,POM1,UseKnowledge,Para).
+%    loop([get_parameter({type,top},TypeInfo,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+%        Result = abnormal({dbt,'Non suport',type_command}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+%    loop([get_parameter({type,Name},TypeInfo,Result)|T],RBR,POM,UseKnowledge,Para):-Name\=top|
+%        Result = abnormal({dbt,'Non suport',type_command}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+%    loop([get_parameter({type,Name,up},TypeInfo,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+%        Result = abnormal({dbt,'Non suport',type_command}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+%    loop([get_parameter({type,Name,down},TypeInfo,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+%        Result = abnormal({dbt,'Non suport',type_command}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+%    loop([get_parameter({type,Name,Int},TypeInfo,Result)|T],RBR,POM,UseKnowledge,Para):-integer(Int)|
+%        Result = abnormal({dbt,'Non suport',type_command}),
+%        loop(T,RBR,POM,UseKnowledge,Para).
+    loop([get_parameter(goal,Goal1,Result)|T],RBR,POM,
+                {UseViewName,UseUnitNameList,Goal,Name,STG},Para):-true|
+        (   Goal = nil ->
+                Result = abnormal({dbt,'Goal not set',nil})
+        ;
+            Goal \=nil ->
+                Goal1 = Goal,
+                Result = normal(success)
+        ),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([get_parameter(similarity,Value,Result)|T],RBR,POM,UseKnowledge,Para):-true|
+        RBR = [get_parameter(similarity,Value,Result)|RBR1],
+        loop(T,RBR1,POM,UseKnowledge,Para).
+    loop([get_parameter(pl,PL,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara}):-true|
+	vector_element(OtherPara,0,PL,_),
+        Result = normal(success),
+        loop(T,RBR,POM,UseKnowledge,{Solver,Lang,OtherPara}).
+    loop([get_parameter(solver,S,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara}):-true|
+        Result = normal(success),
+        S = Solver,
+        loop(T,RBR,POM,UseKnowledge,{Solver,Lang,OtherPara}).
+    loop([get_parameter(lang,L,Result)|T],RBR,POM,UseKnowledge,
+                {Solver,Lang,OtherPara}):-true|
+        Result = normal(success),
+        L = Lang,
+        loop(T,RBR,POM,UseKnowledge,{Solver,Lang,OtherPara}).
+    loop([execute(start_solve,NH,_,R)|T],RBR1,POM1,
+                {UseViewName1,UseUnitNameList1,Goal1,Name1,STG},Para1):-true|
+        check_solve(UseViewName1,UseUnitNameList1,Goal1,R1),
+        (   R1 = normal(_)->
+		Info1 = {RBR1,POM1,{UseViewName1,UseUnitNameList1,
+				Goal1,Name1},Para1},
+		slv_main:main(NH,Info1,Info,R2),
+		(   wait(R2)->
+			Info = {RBR,POM,{UseViewName,UseUnitNameList,
+					Goal,Name},Para},
+			R = R2)
+        ;
+            R1 = abnormal(_)->
+                R    = R1,
+                RBR1 = RBR,POM1 = POM,
+                UseViewName=UseViewName1,UseUnitNameList=UseUnitNameList1,
+		Goal=Goal1,Name=Name1,Para=Para1
+        ),
+        loop(T,RBR,POM,{UseViewName,UseUnitNameList,Goal,Name,STG},Para).
+    loop([execute(start_debate,{IDT,I,O,NH},Result1,Result)|T],RBR,POM,
+                UK,Para):-true|
+        UK = {UseViewName,UseUnitNameList,Goal,_AgentName,_STG},
+        check_solve(UseViewName,UseUnitNameList,Goal,Result1),
+        (   Result1 = normal(_)->
+                Para = {Solver,_,_},
+                start_debate(Solver,{IDT,I,O,NH},{RBR,POM,UK,Para},{RBR1,POM1,UK1,Para1},Result)
+        ;
+            Result1 = abnormal(_)->
+                IDT=[],
+                I=[],O=[],NH=[],
+                RBR1   = RBR,
+                POM1   = POM,
+                UK1    = UK,
+                Para1  = Para,
+                Result = Result1
+        ),
+        loop(T,RBR1,POM1,UK1,Para1).
+
+    start_debate(user,  {IDT,I,O,NH},Info1,Info,Result):-true|
+        dbtu_main:start(I,O,NH,IDT,Info1,Info,Result).
+    start_debate(system,{IDT,I,O,NH},Info1,Info,Result):-true|
+        dbts_main:start(I,O,NH,IDT,Info1,Info,Result).
+
+    check_solve(UseViewName,UseUnitNameList,Goal,Result):- UseViewName \=nil,       
+                                                           UseUnitNameList \= nil,
+                                                           Goal \= nil|
+        Result = normal(success).
+    check_solve(nil,_,_,Result):- true|
+        Result = abnormal({ui,'Do not set use view',nil}).
+    check_solve(_,nil,_,Result):- true|
+        Result = abnormal({ui,'Do not set use unit',nil}).
+    check_solve(_,_,nil,Result):- true|
+        Result = abnormal({ui,'Do not set goal',nil}).
+
+    get_unit([],POM1,POM,UnitList):-true |
+        POM = POM1,
+        UnitList = [].
+    get_unit([U|T],POM1,POM,UnitList):-true |
+        POM1= [is({unit,U},YN,_)|POM2],
+        (   YN = yes ->
+                get_unit(T,POM2,POM,UnitList1),
+                UnitList = [{U,[]}|UnitList1]
+        ;
+            YN = no ->
+                POM2 = [get({scopeUnitToUnit,[U]},UList,_)|POM3],
+                get_unit(T,POM3,POM,UnitList1),
+                UList = [UList1],
+                UnitList = [UList1|UnitList1]
+        ).
+
+%%get_defaultUseViewName
+    get_defaultUseViewName(p,DefaultUseViewName):-true|
+        DefaultUseViewName = currentProsecutorViewpoint.
+    get_defaultUseViewName(d,DefaultUseViewName):-true|
+        DefaultUseViewName = currentDefendantViewpoint.
+

@@ -1,0 +1,53 @@
+	  ***	   KLIC version 3     ***
+	(prototype version under development)
+
+The KLIC version 3 being developed to enhance functionality and
+efficiency of the runtime system of KLIC, to make KLIC a more useful
+system for wider range of application.
+
+**********************************************************************
+This software is under development and, except for the goal object
+feature, features augmented to the original KLIC are not yet ready for
+practical use.  Think of it as a pre-alpha version.
+**********************************************************************
+
+The current version of the software provides the following features,
+in addition to those provided by the original KLIC.
+
+- The Goal Object feature that allows metalevel handling of executable
+  goals.
+
+- A tracer, called DDU, written in KL1 itself built upon the goal
+  object feature.
+
+- A semiautomatic load distribution mechanism, called SKULD, based on
+  lazy task creation concept.
+
+The distribution contains the following files and subdirectories.
+
+  README
+    A terse description of what's in the distribution (in Japanese)
+
+  HANDBILL
+    Description of the software (in Japanese)
+
+  INFO
+    Information on what's where, etc (in Japanese)
+
+  Documents
+  Sources
+    The directory Documents contains manuals and documents on the
+    internal structure of the software.  The directory Sources
+    contains source code and sample programs.  Both directories have
+    the following subdirectories corresponding  to different parts of
+    the software.
+
+      enhanced-klic
+	KLIC enhanced with the goal object feature
+      ddu
+	Tracer written in KL1 itself
+      skuld
+	Semiautomatic load distribution feature
+
+All the documents except for this very document and those included in
+the original KLIC are in Japanese.

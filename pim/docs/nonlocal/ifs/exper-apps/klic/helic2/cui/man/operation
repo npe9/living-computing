@@ -1,0 +1,2044 @@
+				CUI operation manual
+0. Introduction
+										
+This manual explains the operation method of CUI, which is a tool that provides
+a function of debate.
+
+It is recommanded that the user reads "HELIC-II language manual" to understand
+the description methods of the knowledge base and defeasible reasoning.
+
+1.  Overview
+
+The CUI is a tool which provides the debate function of HELIC-II only by
+ keyboard.
+
+It allows the user to simulate both or either of the agents (a prosecutor and or
+a defendant).
+
+This manual explains the following in the indicated chapters:
+
+	Simple explanation of provided functions in Chapter 2
+	State transition of execution in Chapter 3
+	Knowledge files in Chapter 4
+	Activation method in Chapter 5
+	Provided Debate commands in Chapter 6
+	Execution examples in Chapter 7
+	Technical terms in Appendix
+
+2. Provided functions
+
+A debate function of "HELIC-II" materializes a debate model between two agents
+called a prosecutor and defendant.
+
+The object of the prosecutor agent is to substantiate an argument to justify a
+self goal, and the object of the pleading agent is to substantiate an effective
+counter argument to the prosecutor's argument.
+
+A premise of this debate model is as follows:
+
+(1) Each agent has a different knowledge (viewpoint, unit).
+
+(2) Only the prosecutor agent has a goal to achieve in a debate.
+    This goal, represented as an H term.
+    A defendant rebuts passively to the argument sent from the prosecutor.
+
+(3) Claims from both sides must use arguments in a form of a proof tree based on
+    facts.
+
+(4) The comparison between arguments is determined by the priority
+    relation between the TopRule of arguments.
+
+	+----------+  	---->  		+---------+
+	|Prosecutor| Debate protocol  	|Defendant|
+	+----------+  	<----  		+---------+
+	  |		  	  	  |
+	  V		  	  	  V
+	+===========+	       		+===========+
+	|goal	    |			|           |
+	|Viewpoint 1|	       		|Viewpoint 2|
+	|Rule set 1 |	       		|Rule set 2 |
+	+===========+	       		+===========+
+
+			[Debate model]
+
+A debate is proceeded by claiming an argument to the opponent and noticing that
+the argument is advantageous over the other.
+
+Each agent sends a message called a debate protocol to the opponent to present
+the argument.
+
+The following are the different kinds of debate protocols:
+
+	 Claim argument (pose)
+        	Claims an argument.  It is used in a case of doing a claim or
+		rebuttal.
+
+	 Priority notice (notice)
+	        Notices that the self argument is dominant.
+
+	 Cancel argument (cancel)
+	        Cancels a claimed argument.
+
+	 End debate (end)
+        	Notices that the debate on the opponent's argument has been
+		finished.
+
+3. State transition of execution
+
+The CUI has the following three states, and the commands that may be used depend
+on these three states.
+
+It is in the initial state at the time of booting.
+
+	   	  	  start
+ +-------------+  	--------> 	+------------+
+ |Initial state|	  		|Debate state|
+ +-------------+        <-------- 	+------------+
+		  	   end
+
+                  	   ab
+ +-------------+ 	-------> 	+-------------------+
+ |Initial state|         	 	|Show argument state|
+ +-------------+ 	<------  	+-------------------+
+                 	  end
+
+
+ Initial state:
+	* Usable commands
+		Initial commands
+
+	* State transition commands
+		Transit to the debate state by "start" command.
+
+	* Timing for using commands
+		Whenever the execution of a command ends, the next command can
+		be input.
+
+ Debate state:
+	* Usable commands
+		Debate commands
+
+	* State transition commands
+		If a debate agent of the prosecutor is the user, it returns to
+		the initial state by the "end" command.
+
+		If a debate agent of the prosecutor is the computer, it returns
+		to the initialstate automatically when the debate ends.
+
+	* Timing for using commands
+		Commands can be input when it is the user's turn to speak.
+
+ Show argument state:
+        * Usable command
+                Show argument command
+
+        * State transition command
+                It changes to the initial state by "end" which is the show
+		argument end command.
+
+	* Timing for using commands
+		Whenever the execution of a command ends, the next command can
+		be input.
+
+To change from the initial state to the debate state (to do the debate),follow
+the procedure given below.
+
+Command written in parentheses are names of commands to be used .
+
+ (1)  Loading knowledge files
+      The following files from (a) to (b) must be loaded.
+      File(a) must be loaded before file(b).
+
+  (a) A type definition file (compile type command), or a type definition
+      internal expression file (load type command).
+
+  (b) A rule definition file (compile rule command), or a rule internal
+      expression definition file (load rule command).
+
+ (2)  Setting a use knowledge
+      Sets units (set unit command) that will be used at reasoning.
+
+ (3) Setting the debate agents
+	Set the user and the computer to simulate either of the debate agents
+	(the prosecutor or the defendant).
+	(set p solver or set d solver commands)
+
+To change from an initial state to a show argument state, the following
+processing must be done.
+
+Command written in parentheses are names of commands to be used .
+
+ (1)  Loading knowledge files
+
+      The following files from (a) to (b) must be loaded.
+      File(a) must be loaded before file(b).
+
+  (a) A type definition file (compile type command), or a type definition
+      internal expression file (load type command).
+
+  (b) A rule definition file (compile rule command), or a rule internal
+      expression definition file (load rule command).
+
+ (2)  Setting a use knowledge
+      Sets units (set unit command) that will be used at reasoning.
+
+ (3)  Executing defeasible reasoning
+      Executes defeasible reasoning(solve command), and the proof for goal
+      succeeds.
+
+4.  Knowledge files
+
+The file to save the knowledge used in defeasible reasoning is called a
+knowledge file.  There are two kinds of knowledge files; one is user definition
+file and the other is internal expression file.
+
+An user definition file is a file that the user wrote according to the language
+syntax of HELIC-II.
+
+An internal expression file is a converted file of the knowledge written in the
+user definition file, to make referencing efficient in reasoning.
+
+The reason for loading these knowledge files is as follows.
+
+All user definition files will always be converted into internal expressions,
+since all data to be handled in CUI are in internal expressions.
+
+Therefore, user definition files which describe knowledge that require longer
+time of conversion (for example, type etc.) must always be converted.
+
+To save time of this conversion, it is possible to load from internal
+expression.  The following are names of various knowledge files:
+
+ Definition content  User definition file	Internal indication file
+ =====================================================================================
+ Rule		     Rule definition file       Rule definition internal indication file
+ Type		     Type declaration file      Type declaration internal indication file
+ Partial order	     Partial order definition 	Partial order definition internal 
+		     file                       expression file
+ goal		     Goal definition file       Goal definition internal indication file
+
+Partial order definition internal expression file defines the unit, standpoint,
+and viewpoint definition .
+
+To load from a user definition file, use the compile command.
+
+To load from an internal expression file, use the load command.
+
+To convert from a user definition file to an internal expression file, use the
+trans command.
+
+If the user definition file includes Japanese, the file must be written in euc
+code.
+
+5. Execution method
+
+When HELIC-II is installed, the object "cui" is produced under cui/bin.
+
+Therefore, in order to start, input as follows;
+
+		! cui
+		  +++
+
+For the program to work normally, the 'path' of the environmental variable of
+shell must be set to 'cui/bin'.
+
+For details, refer to "Install manual."
+
+6.  Command explanations
+
+The meaning of arguments used in each command explanation is as follows:
+
+ (1) Lower case characters are fixed characters, and upper case characters are
+     variable characters.
+
+ (2) <x｜y｜z> means to select one of x, y and z.
+
+ (3) {x} means x is repeated 0 or more times.
+
+ (4) [x] means x once, or may be omitted.
+
+ (5) <p|d> specified after a command indicates whether the command is for the
+     prosecutor (p) or the defendant (d).
+
+The following are notes to remember:
+
+ * A single line of command input is considered as one command.
+
+   All commands must be written in a single line, although examples in this
+   manual may
+
+   have line feeds for clarity.
+
+ * For Japanese input/output, the input/output mode of terminal must be euc.
+
+ * A file name may either be an absolute path or relative path.
+
+ * All following examples have been executed with cui/data as the current
+   directory.
+
+6.1  Initial commands
+
+6.1.1  Loading knowledge files
+
+The commands to load knowledge files are explained below.
+
+ (1) compile <p|d> <type|rule|pom|goal> FILENAME
+     compile        goal                FILENAME
+
+	<type|rule|pom> 	Type of the file to load.
+				Type indicates a type declaration file.
+				Rule indicates a rule definition file.
+				Pom indicates a partial order definition file.
+	goal			Loads a goal definition file.
+	FILENAME		Name of the file to load.
+
+     Function:
+	Loads a rule definition file.
+
+     Example:
+	compile p type cntrct.type
+	compile p rule cntrct.rule
+	compile p pom  cntrct.pom
+	compile   goal cntrct.goal
+
+ (2) load <p|d> <rule|type|pom> FILENAME
+     load        goal           FILENAME
+
+	<rule|type|pom>		Type of the file to load.
+				Rule indicates a rule definition internal expression
+				file.
+				Type indicates a type declaration internal expression
+				file.
+				Pom indicates a partial order internal expression
+				definition file.
+	goal			Loads a goal definition internal indication file.
+	FILENAME		Name of the file to load.
+
+    Function:
+	Loads a rule definition internal expression file, type declaration
+	internal expression file, or a partial order definition internal
+	expression file.
+
+FILENAME specifies the file converted by the trans command.
+
+    Example:
+	load p type cntrct.t
+	load p rule cntrct.r
+	load p pom  cntrct.p
+	load   goal cntrct.g
+
+6.1.2  Converting to internal expression files
+
+The commands to convert into internal expression file from an user definition
+file are explained below:
+
+ (1) trans <type|rule|pom|goal> FILENAME1 FILENAME2
+
+	<type|rule|pom|goal>	Type of the file to translate.
+				Type indicates a type declaration file.
+				Rule indicates a rule definition file.
+				Pom indicates a partial order definition file.
+				Goal indicates a goal definition file.
+	FILENAME1 		Name of the file to be load.
+
+	FILENAME2		Name of the output file.
+
+    Function:
+	Converts to an internal expression file from a user definition file of a
+	type, rule and partial order.
+
+    Example:
+	trans type cntrct.type cntrct.t
+	trans rule cntrct.rule cntrct.r
+	trans pom  cntrct.pom  cntrct.p
+	trans goal cntrct.goal cntrct.g
+
+6.1.3  Setting the execution environment
+
+Set commands used to set or change the environment are explained in this
+section.
+
+ (1) set <p|d> view VIEW
+
+	VIEW   viewpoint name
+
+    Function:
+	Sets the using viewpoint.
+
+	Uses the viewpoint defined in a partial order definition internal
+	expression file.
+
+	For details on viewpoint, refer to the appendix.
+
+    Example:
+	set p view prosecutor0
+
+ (2) set <p|d> sp [SP {SP}]
+
+	SP    Name of a standpoint.
+
+    Function:
+	Sets the using priority order of standpoints.
+
+	Uses the standpoint defined in a partial order definition internal
+	expression file.
+
+	Lists the name of standpoints in the order of lower priority.
+
+	If the standpoint is omitted, the relation between rules will be all
+	unrelated.
+
+	For details on standpoints, refer to the appendix.
+
+    Example:
+	set p sp   importance_of_civil_code importance_of_amount_money
+
+		Sets to give priority to the standard,"importance_of_amount_money" 
+		over "importance_of_civil_code".
+
+	set p sp
+
+		There is no priority order of standpoints.
+		Thus, all standpoints are ignored and as a result, the priority
+		relations between rules will not exist.
+
+ (3) set <p|d> unit <UNIT {UNIT}> | all
+
+	UNIT       Unit name
+
+    Function:
+	Specifies the using unit (or unit set) in the rule definition loaded by
+	the load or compile commands.
+
+	For details on unit, refer to the appendix.
+
+	(unit not specified will be not used, even when they have been loaded by
+	the load or compile commands.)
+
+    Example:
+	set p unit all
+		Uses all rules.
+
+ (4) set goal GOAL
+
+	GOAL            H term
+			For details on an H term, refer to "HELIC-II language
+			manual."
+
+    Function:
+	Sets the legal conclusion (goal) to prove.
+
+    Example:
+	set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+
+ (5) set <p|d> pl INTEGER
+
+	INTEGER      Integer
+
+    Function:
+	Sets print length (bytes) for H term.
+
+    Example:
+	set p pl 1000
+
+ (6) set <p|d> pt <h|e>
+
+	<h|e>		Specifies the type to display an H term or explanation.
+
+			H displays the H term, and e displays what has been
+			written in explanation of the H term.
+
+    Function:
+	Specifies whether to display the H term, or the explanation of the H
+	term.
+
+    Example:
+	set p pt h
+
+ (7) set <p|d> cl <INTEGER | -1>
+
+	INTEGER         Integer
+
+    Function:
+	Specifies the counter argument level in defeasible reasoning.
+
+	For details on counter argument levels, refer to the appendix.
+
+	If zero is specified to the counter argument level (INTEGER), the
+	function of generating argument will be realized, since counter
+	arguments will not be generated.
+
+	If Sets -1,The counter argument level is infinite.
+
+	If a number higher than zero is specified, the function of defeasible
+	reasoning will be realized, since the counter argument will be
+	generated.
+
+    Example:
+	set p cl 0
+	set p cl 1000
+ 	set p cl -1
+
+ (8) set <p|d> sim INTEGER
+
+	INTEGER		Integer from 1 to 100.
+
+    Function:
+	Sets limitation of similarity.
+
+    Example:
+	set p sim 70
+
+ (9) set <p|d> weight INTEGER
+
+	INTEGER		Integer from 1 to 10.
+
+    Function:
+	Sets weigth of trivial term.
+
+    Example:
+	set p weight 7
+
+ (10) set <p|d> ptst A B C D E
+
+	A		Integer from 1 to 100.
+	B 		Integer from 1 to 100.
+	C		Integer from 1 to 100.
+	D		Integer from 1 to 100.
+	E		Integer from 1 to 100.
+
+    Function:
+	Sets Psi term abstract table.
+	A>=B>=C>=D>=E.
+	Defalt of Psi term abstract table is 100 90 80 70 60 50.
+
+    Example:
+	set p ptst 100 90 80 70 60 50
+
+ (11) set <p|d> ptaw INTEGER
+
+	INTEGER		Integer from 1 to 10.
+
+    Function:
+	Sets weight of Psi term abstruction.
+
+    Example:
+	set p ptaw 7
+
+ (12) set <p|d> gp INTEGER
+
+	INTEGER		Number of goal
+
+    Function:
+	Sets the goal to use number of goal.
+	This command is used,as loaded the goal definition file.
+
+    Example:
+	set p gp 0
+
+ (13) set <p|d> solver <user|system>
+
+	<user|system>
+		Specify user if the human takes charge of a debate agent, or
+		system if the computer does.
+
+		The computer automatically selects an issue point and a counter
+		argument, and proceeds the debate when it is at the debate state
+		after specifying the system.
+
+		In the debate state after specifying a user, the user inputs a
+		debate command by oneself and proceeds the debate.
+
+  Function:
+	Specifies the debate agents (a prosecutor or a defendant) for the user
+	and the system.
+
+  Examples:
+	set p solver user
+	set p solver system
+
+6.1.4  Executing command files
+										
+Retrieve the command from a file (called command file) which contains the
+command and execute it.
+
+(1) run FILENAME
+
+	FILENAME	Name of the file to load.
+
+    Function:
+	Executes the command written in the command file, to avoid the load,
+	compile, and set commands input every time when starting the CUI.
+
+	Specifications of a command file are as follows:
+
+	One command must be written in a single line.
+
+	Commands which may be used are load, compile, set ,and solve commands
+	only.
+
+	If Japanese are included, the file must be written by euc code.
+
+	An example of a description of command files is as follows.
+
+	compile p type cntrct.type
+        compile p rule cntrct.rule
+        compile p pom cntrct.pom
+        set     p solver system
+        set     p unit all
+	set     p sp
+        compile d type cntrct.type
+        compile d rule cntrct.rule
+        compile d pom cntrct.pom
+        set     d solver system
+        set     d unit all
+	set     d sp
+        set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+
+    Example:
+	run cntrct.c
+
+6.1.5  Displaying the knowledge base and execution environment
+
+Display the execution environment defined with set commands.
+
+ (1) show <p|d> view [VIEW|all]
+
+	VIEW    Viewpoint name
+
+    Function:
+	Displays the currently set viewpoint, the priority relations of
+	standpoints defined in the viewpoint, and names of all viewpoints.
+
+	The displayed content depends on specifications of VIEW as follows.
+
+ Specifications of VIEW		Displayed contents
+ ============================================================================
+ Omission			Currently set viewpoint.
+ VIEW				Priority relations of standpoints 
+				defined in VIEW.
+ all				Names of all viewpoints.
+
+    Example:
+	show p view
+	show p view prosecutor0
+	show p view all
+
+ (2) show <p|d> sp [SP|all]
+
+	SP        Standpoint name
+
+    Function:
+	Displays the currently set priority relation of standpoints, the
+	priorityrelation units defined in the standpoint, and names of all 
+	viewpoints.
+
+	The displayed content depends on specifications of SP as follows.
+
+
+ Specification of SP		Displayed contents
+ ============================================================================
+ Omission			Currently set priority relation of standpoints.
+ SP				Priority relations of units defined in SP.
+ all				Names of all standpoints.
+
+    Example:
+	show p sp
+	show p sp importance_of_civil_code
+	show p sp all
+
+ (3) show <p|d> unit [UNIT|all]
+
+    Function:
+	Displays the currently using units, relation of inclusion between units,
+	the name of all units.
+
+	The displayed content depends on specifications of the UNIT as follows.
+
+ Specifications of UNIT		Displayed contents
+ ============================================================================
+ Omission			Currently using units.
+ UNIT				Relation of inclusion between units.
+ all				Names of all units.
+
+    Example:
+	show p unit
+	show p unit civil_code
+	show p unit all
+
+ (4) show goal
+
+    Function:
+	Displays the legal conclusion (goal) to be proved.
+
+ (5) show <p|d> pl
+
+    Function:
+	Displays the print length (byte) for the H term.
+
+ (6) show <p|d> pt
+
+    Function:
+	Displays the print type for the H term.
+
+ (7) show <p|d> cl
+
+    Function:
+	Displays the counter argument level of defeasible reasoning.
+
+ (8) show <p|d> sim
+
+    Function:
+	Displays limitation of similarity.
+
+ (9) show <p|d> weight
+
+    Function:
+	Displays weigth of trivial term.
+    
+ (10) show <p|d> ptst 
+
+    Function:
+	Displays  Psi term abstract table.
+
+ (11) show <p|d> ptaw
+
+    Function:
+	Displays weight of Psi term abstruction.
+
+ (12) show <p|d> solver
+
+    Function:
+	Displays solver in the agent.
+
+6.1.6  End of the program
+
+ (1) quit
+
+    Function:
+	Ends the program.
+
+6.1.7  Executing defeasible reasoning
+
+ (1) solve
+
+    Function:
+	Starts defeasible reasoning for the currently set legal conclusion
+	(goal).
+
+	If the proof of the goal fails, "no" is displayed.
+
+	If it succeeds and it includes a variable in the goal, the variable
+	information is displayed.
+
+	If the variable is not restrained, "?" will be displayed as the
+	information of the variable.
+
+	(For example, if a variable is not restrained as the result of
+	defeasible reasoning for a goal which included a variable X, "X=?" is
+	displayed.)
+
+	If a variable does not exists "yes" will be displayed.
+
+	Before using this command, knowledge files of a type, rule and partial
+	order must be loaded, and unit, and goal to be used must be set.
+
+6.2 Debate start command
+
+ (1) start
+
+  Function:
+	After the debate starts, many arguments (initial arguments) are created
+	to achieve the goal given to the prosecutor.
+
+	If a debate agent is the user, an initial argument list is displayed
+	after the start.
+
+	Therefore, a number (an initial argument number) from the list must be
+	input to designate which argument should be debated.
+
+	An example of the initial argument list is as follows;
+
+	Goal : canWithdraw(agent=father,object=contract(agent=tarou
+        0 :    >:0!:3<:0  canWithdraw(agent=father,object=contract(
+
+		[ Example of the initial argument list ]
+
+	"0" indicates the initial argument number.
+
+	">:0!:3<:0" displays the TopRule relation with a counter argument to the
+	argument of this initial argument number 0.
+
+	Detail of the TopRule relation refer to the appendix.
+
+	In case of the above example, there is three counter argument, and it
+	shows that the counter argument means is unrelated to the TopRule
+	relation.
+
+
+6.3 Debate command
+
+A debate command can only be used when the user is one or both of the debate
+agents.
+
+6.3.1 Show argument command
+
+A show argument command is a set of commands to claim current or past arguments
+in the middle of the debate.
+
+To simplify the command explanation of the show argument command, this section
+explains the relation between arguments, the show argument command relation, and
+the argument display form as follows;
+
+[ Relation between arguments ]
+
+	The relation between arguments is explained in figure 1.
+
+	p0 +------+-----+
+	        d1+-----+
+        	d2+-----+
+
+[ Figure 1: Example of the relation between arguments ]
+
+	In figure 1, it shows that there are counter arguments d1 and d2 for the
+	argument p0.
+
+	In this case, p0 is called a parent of d1 and d2, and d1 and d2 are
+	called children.
+
+	d1 and d2 are also brothers, and are called an older brother and a
+	younger brother respectively.
+
+[ Show argument command relation ]
+
+	To see a child from a parent, use show counter and forward.
+
+	However, if backward was used before, in other words, backward was used
+	to see a parent from a child, use forward.
+
+	To see a parent from a child, use backward.
+	To see a younger brother from an older brother, use next.
+
+	To see an older brother from a younger brother, use previous.
+
+	To see arguments in the order of p0->d1->d2->d1->p0->d2 in figure 1,
+input
+ commands as follows;
+
+	Command input		Displayed arguments
+	============================================================================
+				p0
+	show counter		
+	0			d1
+	next			d2
+	previous		d1
+	backward		p0
+	forward			d2
+
+	When the show counter command is used, the child to be displayed must be
+	selected when multiple children exist.
+
+	In this example, the user must select either d1 or d2 and the user has
+	selected 0 because the argument number of d1 is 0 and d2 is 1.
+
+	d2 has also been displayed by the latest forward.
+
+	Therefore, if 1 is input at the show counter command, d2 is actually
+	displayed.
+
+[ Argument display form ]
+
+	The followings are general examples of the argument display form.
+
+	RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+	0  :             r11:canWithdraw(agent=fa
+	1  :              r1:contract(agent=tarou
+	2  :               act4:buy(agent=tarou[age=
+	3  :               act5:loan(agent=tarou[age
+	4  :               act6:causality(source=buy
+	5  :   !  2(0)    r6:-valid(a_object=cont
+	6  :               act5:loan(agent=tarou[age
+	7  :               r1:contract(agent=tarou
+	8  :                act4:buy(agent=tarou[age=
+	9  :                act5:loan(agent=tarou[age
+	10 :                act6:causality(source=buy
+	11 :   !  1(0)     r2:needAllow(agent=fath
+	12 :                r1:contract(agent=tarou
+	13 :                 act4:buy(agent=tarou[age=
+	14 :                 act5:loan(agent=tarou[age
+	15 :                 act6:causality(source=buy
+	16 :                act0:isFather(a_object=fa
+	17 :               act10:-allow(agent=father,
+	18 :               act0:isFather(a_object=fa
+	19 :              act0:isFather(a_object=fa
+	UseCommand : [pose,end,show,set]
+
+	History:
+		A protocol message exchanged between the prosecutor and the
+		defendant.  
+
+		In the program, one's idea is noticed to its opponent by sending
+		this protocol.
+
+	AidInfo:
+		Identifications of the displayed argument, parent argument, and
+		FOCUS argument are displayed respectively.
+
+		'Nil' means that don't exists argument ID.
+
+		Refer to the appendix for the FOCUS argument.
+
+	RuleInfo:
+		Displays in the order of the TopRule relation between the name
+		of the rule which indicates the displayed argument, and the
+		parent argument ofthe displayed argument.
+
+		The TopRule relation has four kinds ,win, draw, lose, and nil,
+		and they mean strong, unrelated, weak, and no TopRule relation
+		respectively.
+
+
+	0-19:
+		Indicates a proof tree.
+
+		For example, suppose the number is 13.
+
+		Issue point number	Child information	consequence
+		========================================================================
+        	11 :   			!  1(0)     		r2:needAllow(agent=fath
+
+		An issue point number is a number to distinguish other issue
+		points.
+
+		When user see a child argument by the show counter command, user
+		inputs this issue point number.
+
+		The child information shows the information of a child arguments
+		for this issue point.
+
+		The first "!" represents the information of the TopRule relation
+		between the children for this issue point.
+
+		This kinds are >, !, <.
+
+		> represents the issue point where the TopRule relation for all
+		children is strong.
+
+		! represents the issue point that has the strong and unrelated
+		TopRule relation.
+
+		< represents an issue point that has at least one weak TopRule
+		relation.
+
+		In "1(0)", the first number represents the number of the child
+		argument.
+
+		The second number represents the number of the child whose
+		debate has ended.
+
+		Furthermore, the debate end means that the prosecutor and the
+		defendant have both noticed their dominant argument or that
+		their opponents finished the debate on the claimed argument by
+		the finish command.
+
+		consequence is the then part of a rule.
+
+		Consequence of each line has a blank and is indented.
+
+		It means that the one which does not have an indentation was
+		indicated by the one which does.
+
+		"r2" is rule name.
+
+	Can use command:
+		A list of commands that may be currently used.
+
+		The user can only use the commands in the list or the show
+		counter command.
+
+ (1) backward
+
+  Function:
+	Displays a parent of the argument currently displayed.
+
+ (2) forward
+
+  Function:
+	Displays a child of the argument currently displayed.
+
+	The forward command is a command to see the reverse situation when the
+	backward command has been used before.
+
+ (3) next
+
+  Function:
+	Displays a younger brother of the argument currently displayed.
+
+ (4) previous
+
+  Function:
+	Displays an older brother of the argument currently displayed.
+
+ (5) focus
+
+  Function:
+	Displays the FOCUS argument.
+	For more details on the FOCUS argument, refer to the appendix.
+
+ (6) jump ARG
+
+	ARG
+		Argument identification
+
+  Function:
+	Displays the argument with ARG as its argument identification.
+
+  Example:
+	jump p0
+
+ (7) show counter ISSUE
+
+	ISSUE
+		Issue point number
+
+  Function:
+	Displays a child list for the issue point numbers (ISSUE).
+
+	After the child list display, user must input the number (child number)
+	which child argument to be displayed.
+
+	The following example explains the child list.
+
+		Arg ID: nill
+                 Issue Pos: 11
+                 Consequence: needAllow(agent=fath
+                 RuleName: r2
+                 Num Of Counter: 1
+                0 :  *  !  >:0!:0<:0 -needAllow(agent=fat
+
+			[ Example of a child list ]
+
+	Arg ID:
+		Parent argument identification.
+
+		"nill" means nothing of parent argument or nothing of ID in
+		parent argument.
+
+	Issue Pos:
+		An issue point number of a parent argument.
+
+	Consequence:
+		The then part of a rule that indicates the issue point
+		corresponding to the issue point number of the parent argument.
+
+	RuleName:
+		The name of a rule that indicates the issue point corresponding
+		to the issue point number of the parent argument.
+
+	Num Of Counter:
+		The number of counter arguments for the issue point
+		corresponding to the issue point number of the parent argument.
+
+	0:
+		A child number.
+
+		After the child list display, user must input a child number to
+		see the argument of the child.
+
+		"*" represents that a counter argument was already issued by the
+		pose command.
+
+		"!" indicates the TopRule relation between the issue point of
+		the parent argument and the argument corresponding to the child
+		number.
+
+		There are >, !, < , and they mean that the child is weak,
+		unrelated, or strong to a parent respectively.
+
+		">:0!:0<:0" is the TopRule relation with the child of the
+		argument corresponding to the child number, and indicates the
+		number of strong (>),unrelated (!), and weak (<) relations.
+
+  Example:
+	show counter 11
+
+ (8) show claim
+
+  Function:
+	Displays a list of the arguments that both ,the prosecutor and the
+	defendant, have claimed.
+
+	After the claimed argument list display, input the number (claimed
+	argument number) of the argument that is to be display.
+
+	An example of a claimed argument list is shown below;
+
+
+		%-prosecutor claimed argument
+                0 : *  >:0!:3<:0  canWithdraw(agent=fa
+                %-defendant claimed argument
+                2 : *  >:0!:1<:0  -needAllow(agent=fat
+
+		[ Example of a claimed argument list ]
+
+	In this example, the claimed argument number is "0" or "2".
+
+	"0" indicates the argument of a prosecutor and "2" indicates the
+	argument of defendant.
+
+6.3.2 Debate control command
+
+A debate control command is a command that controls the progress of the debate
+when the user takes charge of one or both sides of the debate.
+
+The debate is carried out by both agents presenting their argument to their
+opponent when they have the turn to speak.
+
+This section explains the debate control command using the following figure 2.
+
+			 r1
+		p0+------*--------------+
+			 r2
+		       d0+---*----------+
+			   p1+----*-----+
+			        d1+-----+
+		       d2+--------------+
+
+	[ Figure 2: Relation between arguments ]
+
+	P0 is an initial argument.
+
+	The counter argument of the argument p0 is d0 and d2.
+
+	The counter argument of d0 is p1, and the counter argument of p1 is d1.
+
+	The rule that indicates the issue point of p0 for the counter argument
+	d0 is r1, and the rule that indicates d0 is r2.
+
+ (1) pose
+
+  Function:
+	Claims currently displayed argument to its opponent.
+
+  Turn to speak:
+	Transfer to the opponent.
+
+  Example of use:
+	(a) When a prosecutor claims an initial argument to a defendant.
+
+	  Example:
+		When p0 is noticed to an opponent.
+
+	(b) When arguing over the argument sent from an opponent by the pose
+	    command.
+
+	  Example:
+		When giving counter argument d0 against p0.
+
+	(c) When starting another counter argument when the opponent notices by
+	    the finish command that the debate over the counter argument has
+	    finished.
+
+	  Example:
+		When the opponent notices by the finish command that the debate
+		of d0, the counter argument against p0, has finished, but the
+		counter argument d2 still needs to be added.
+
+
+	(d) When canceling the counter argument by the cancel command to enter a
+	    different counter argument.
+
+	  Example:
+		When canceling the d0 counter argument against p0 by the cancel
+		command and entering the d2 counter argument
+
+  Use condition:
+	To use this command when giving a counter argument against an opponent's
+	argument ( (b),(c), and (d) given above), the counter argument needs to be
+	predominant over the opponent's argument in the case of a prosecutor.
+
+
+	In the case of a defendant, the counter argument needs to be either predominant
+	or unrelated.
+
+	Figure 2 is a good example to clarify the above use condition.
+	When the opponent claims p0 and the counter argument of d0 is done by the pose
+	 command, the pose command can only be used if r2 is predominant over r1
+	 (r2>r1) for a prosecutor.  For a defendant, r2 must be predominant over r1
+	 (r2>r1) or r2 and r1 must be unrelated.
+	To use in other situations, modify the priority relation of the rule by a
+	 justify command.
+	Such restriction is due to the asymmetric nature of proof; the prosecutor has
+	 a burden of proof under the criminal law, while the defendant does not.
+
+  Note:
+	When a counter argument is given to the opponent's argument (the above (b),
+	 (c), and (d)), the priority relation of the rule used in the situation is
+	 registered and is referred when the justify command is used.
+
+	For example, when counter argument d0, is given to the opponent's argument p0,
+	 but r1 is predominant over r2 (r1>r2), the fact that this debate took place
+	 with this relation is registered.
+
+ (2) notice
+
+  Function:
+	Notices to the opponent that one's argument currently displayed is predominant
+	 over the opponent's (or in the case of a defendant, it can be unrelated) as
+	 far as judging by its viewpoint.
+
+	If an argument of oneself has a dominant position after input of this command,
+	 you must select the name of a standpoint that is a ground of your dominance.
+
+  Turn to speak:
+	Although the turn to speak is transferred to the opponent by 'N notice', it
+	 can be transferred back by 'NN notice'.
+	Refer to the following "example of use" for 'N notice' or 'NN notice' for
+	 further details.
+
+  Example of use :
+	(a) When noticing to the opponent that its argument has a dominant position
+	    over the opponent's counter argument .
+	    The notice command used at this point is called 'N notice'.
+
+	 Example:
+		When the opponent does the counter argument (d0) to the argument p0 and
+		 oneself wants to notice that p0 of oneself has a dominant position over the
+		 opponent's.
+
+	(b) When noticing that it is its argument which has a dominant position when
+ 	    the opponent notices by the notice command that the opponent's argument has a
+	    dominant position.
+	    The notice command used at this point is called 'NN notice'.
+
+	 Example:
+		When the opponent claims by the notice command that argument (p0) has a
+		 dominant position over its counter argument (d0) when it does not.
+
+  Use condition:
+	The use of this command depends on the priority relation between one's argument
+	 and the opponent's argument.  Therefore, this command can only be used when
+	 one's argument is dominant over the other ,or may be unrelated for a
+	 defendant.
+
+	The above situation is explained by using Figure 2.
+	This command may be used under the following circumstances:
+
+	 1) when one's p0 has a dominant position (in the case of a prosecutor, r1 < r2
+	    and in case of a defendant, r1 < r2 or unrelated) over the opponent's counter
+	    argument (d0).
+	 2) when one's d0 has a dominant position over the opponent's p0, but the
+	    opponent notices by the notice command that its p0 is dominant when it is not.
+
+	 To use in other situations, modify the priority relation of the rule by a
+	 justify command.
+
+	Such restriction is due to the asymmetric nature of proof; the prosecutor has
+	 a burden of proof under the criminal law, while the defendant does not.
+
+ (3) cancel
+
+  Function:
+	Notices to the opponent that the argument currently displayed is canceled.
+
+  Example of use:
+	(a) When canceling the counter argument issued to the opponent which resulted
+	    the priority notice to be sent from the opponent.
+
+	 Example:
+		When canceling the d0 issued to the opponent when the opponent issues
+		back the notice command, stating that its p0 has dominance over its
+		counter argument(d0).
+
+	(b) When canceling the counter argument A because of the notice of the
+	    opponent's argument to A.
+
+	 Example:
+		When canceling p1 because the opponent did a counter argument d1 against
+		p1.
+
+  Turn to speak:
+	The turn to speak does not transfer to the opponent.
+
+ (4) finish
+
+  Function:
+	Notices to the opponent that the counter argument against the opponent's
+	 argument currently displayed has finished.
+
+  Turn to speak:
+	The turn to speak transfers to the opponent.
+
+  Example of use:
+
+	(a) When finishing the debate ,ignoring the opponent's counter argument
+
+	 Example:
+		When finishing the debate with the opponent's counter argument (d0)
+		against one's p0.
+
+6.3.3 Others
+
+ (1) justify
+
+  Function:
+	Updates the viewpoint by adding new information to make one's argument have a
+	 dominant position over the opponent's argument
+
+	Modifies the viewpoint in order to be able to issue pose and notice commands
+	 when not possible because of the priority relation.
+
+	One of viewpoints must be selected after the command input, since a multiple
+	 number of viewpoints with higher priority will be created.
+
+  Example:
+	Because of the present viewpoint, r1 will be predominant over r2 (r1>r2) even
+	 when a counter argument (d0) is issued to the opponent's argument (p0).
+	Therefore, to let r2>r1, modify the present viewpoint by using the justify
+	 command.
+
+  Use condition:
+	The justify command will fail if the added priority relation conflicts with
+	 the priority relation already used in a pose command.
+
+	For example, when trying to make r2>r1 relation by the justify command even
+	 when the r1>r2 relation has been used in the earlier pose command.
+
+6.4 Debate end / Show argument end command
+
+ (1) end
+
+  Function:
+	Ends the debate.
+
+6.5  Show argument command
+
+ (1) ab <p|d>
+
+    Function:
+	Changes to a show argument state.
+	It will only succeed when a solve command executed before this command has
+	succeeded.
+	After the command input, a list of arguments for indicating the goal (initial
+	arguments) will be displayed (initial argument list).
+
+	There for the number of the argument to be displayed must be input (initial
+	argument number).
+
+	An example of an initial argument list is as follows.
+
+		Goal : canWithdraw(agent=father,objec
+		0 :  p >:0!:3<:0
+
+			[ Example of an initial argument list ]
+
+	"0" is the initial argument number, and "p" is the type of argument for the
+	initial argument.
+	There are three kinds of type of arguments, j, p, and d, which correspond to
+	justify, plausible, and defeated respectively.
+
+	">:0!:3<:0" is the TopRule relation for the counter argument in the initial
+	argument, which means the numbers of strong (>), unrelated (!) and weak(<).
+
+
+	In the above example, three counter argument exists and the TopRule relation is
+	unrelated for the counter argument.
+
+6.6  Show argument command
+     Detail of these commands refer to 6.3.1 Show argument command.
+
+ (1) backward
+ (2) forward
+ (3) next
+ (4) previous
+ (5) show counter ISSUE
+ (6) set pl INTEGER
+ (7) set pt <h|e>
+ (8) show pl
+ (9) show pt
+(10) show explain
+
+6.7 tracer command
+
+Tracer is to display rule information into execution, and has following functions.
+
+ (1) Display reduction informations.
+	Displays rule reduction informations into execution.
+
+ (2) Sets spy.
+	Sets followin spy points.
+
+	(a) Specified rules.
+	(b) Specified rule status.
+	    This rule status is as follows.
+
+	    	* call rule(CALL)
+	    	* reduction rule(REDU)
+		* fail rule(FAIL)
+
+Display of rule information is as follows.
+
+<Display of rule information>::=
+	<CALL rule number> <Rule status> {<Rule name> ":"} <H term>
+	{ "<-" <Body>}
+
+	When there is <Rule name> ":",rule status is only REDU.
+	When there is "<-" <Body>,rule status is only REDU.
+
+<Call rule number>::=
+	<Integer>
+
+	Call rule number means to identify one call rule into call rules.
+
+<Rule status>::= 
+	"CALL"|"REDU"|"FAIL"
+
+<Body>::=
+	<H term> { <H term>}
+
+	Body is then part in rule.
+
+    Example:
+        1 CALL a (agent=x,object=y)
+        1 REDU r1:a(agent=x,object=y) <-
+        2       b(agent=x)
+        3       c(agent=y)
+        2 CALL b(agent=x)
+        2 REDU f1:b(agent=x)
+        3 CALL c(agent=y)
+        3 REDU f2:c(agent=y)
+
+Tracer commands only use in Initial state and Debate state.
+In Initial state,Tracer commands must be add <p|d>.
+In Debate state,Tracer commands must not be add <p|d>.
+
+6.7.1 Relation of tf
+
+These commands are management of tracer.
+
+(1) set [<p|d>] tf <on|off>
+
+    Function:
+	Sets wheither execute tracer or not.
+	"on" is execution of tracer.
+	"off" is not execution of tracer.
+
+    Example:
+	set p tf on
+
+(2) show [<p|d>] tf
+
+    Function:
+	Displays wheither executed tracer or not.
+
+    Example:
+	show p tf
+
+6.7.2 Relation of sr
+
+These commands are relation of spy rules.
+
+(1) set [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Sets the spy rules.
+
+    Example:
+	set p sr act0
+
+(2) add [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Adds the spy rules.
+
+    Example:
+	add p sr act0
+
+(3) remove [<p|d>] sr <RuleName {RuleName}>
+
+	RuleName 		Rule name.
+
+    Function:
+	Removes the spy rules.
+
+    Example:
+	remove p sr act0
+
+(4) clear [<p|d>] sr
+
+    Function:
+	Remove  all spy rules.
+
+    Example:
+	clear p sr
+
+(5) show [<p|d>] sr
+
+    Function:
+	Displays current spy rules.
+
+    Example:
+	show p sr
+
+6.7.2 Relation of sg
+
+These commands are relation of spy rule status.
+
+(1) set [<p|d>] sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Sets the spy rule status.
+
+    Example:
+	set p sg call fail
+
+(2) add [<p|d>] sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Adds the spy rule status.
+
+    Example:
+	add p sg redu
+
+(3) remove [<p|d>] sg <SG {SG}>
+
+	SG 		Rule status.
+			Kinds of rule status are call,redu and fail.
+
+    Function:
+	Removes the spy rule status.
+
+    Example:
+	remove p sg call
+
+(4) clear [<p|d>] sg
+
+    Function:
+	Remove all spy rule status.
+
+    Example:
+	clear p sg
+
+(5) show [<p|d>] sg
+
+    Function:
+	Displays current spy rule status.
+
+    Example:
+	show p sg
+
+6.8 Otherwise command
+
+(1) help [COMMAND]
+
+	COMMAND 	Command name.
+
+    Function:
+	Displays information of command.
+	"help" command uses all states(Initial state,Debate state,Show argument state).
+
+    Example:
+	help
+
+7．Execution example
+
+The process for proceeding the actual debate is shown below.
+"%" to a line feed explains the execution example, and "+" represents the user input.
+
+!cd cui/data
+ +++++++++++				%Change current directory
+!cui               
+ +++		 	   		%Start the program.
+HELIC-II>compile p type cntrct.type
+	 ++++++++++++++++++++++++++	%Read type definition file for prosecutor.
+ok
+HELIC-II>compile p rule cntrct.rule
+	 ++++++++++++++++++++++++++	%Read rule definition file for prosecutor.
+ok
+HELIC-II>compile p pom cntrct.pom
+	 ++++++++++++++++++++++++       %Read a partial order definition file for prosecutor.
+ok
+HELIC-II>compile d type cntrct.type
+	 ++++++++++++++++++++++++++	%Read type definition file for defendant.
+ok
+HELIC-II>compile d rule cntrct.rule
+	 ++++++++++++++++++++++++++	%Read rule definition file for defendant.
+ok
+HELIC-II>compile d pom cntrct.pom
+	 ++++++++++++++++++++++++	%Read a partial order definition file for defendant.
+ok
+HELIC-II>set goal canWithdraw(agent=father, object= contract(agent=tarou[age=>19]))
+         ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ok					%Set goal.
+HELIC-II>set  p solver user
+	 ++++++++++++++++++++		%Prosecutor agent is user.
+ok
+HELIC-II>set  d solver user
+	 ++++++++++++++++++		%Defendant agent is user.
+ok
+HELIC-II>set  p unit all
+	 +++++++++++++++		%Set a use unit of the prosecutor to all rules.
+ok
+HELIC-II>set  d unit all
+	 +++++++++++++++		%Set a use unit of the defendant to all rules.
+ok
+HELIC-II>set  p sp 
+	 +++++++++			%No viewpoint of the prosecutor is set.
+					%Namely, no priority relation exists between rules.
+HELIC-II>set  d sp 
+	 +++++++++			%No viewpoint of the defendant is set.
+ok
+HELIC-II>set  p pl 20 
+	 ++++++++++++			%Print length of H term 20byte for prosecutor.
+HELIC-II>set  d pl 20 
+	 ++++++++++++			%Print length of H term 20byte for defendant.
+ok
+HELIC-II>start
+	 +++++				%Start debate.
+Goal : canWithdraw(agent=fa
+0 :    >:0!:3<:0  canWithdraw(agent=fa
+Please input number > 0
+                      +			
+	%Since there exists one argument that indicates a goal,display the argument by
+	%selecting it.
+
+History : start
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>pose
+  ++++				%Notices this argument (p0) to the opponent.
+
+Status : prosecutor claim p0.
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(0)     r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>show counter 11
+  +++++++++++++++
+
+	% Sees a counter argument to the issue point number 11 of the opponent's
+	%argument (p0) currently displayed.
+
+ Arg ID: p0
+ Issue Pos: 11
+ Consequence: needAllow(agent=fath
+ RuleName: r2
+ Num Of Counter: 1
+0 :    !  >:0!:1<:0 -needAllow(agent=fat
+Please input number > 0
+		      +		
+	% Select the counter argument.
+History : claim(p0,nil)
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {nil,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,backward,justify,pose,end,show,set]
+D>pose
+  ++++
+	% Set the argument (d0) currently displayed as the counter argument of the
+	% defendant.
+	% For a defendant to issue a counter argument, it must have a dominant position
+	% or be unrelated.
+	% In this case, the TopRule relation of RuleInfo is "draw".  
+	% Therefore, the opponent may be noticed because of the unrelated relation.
+
+Status : defendant claim d0.
+Status : defendant claimed d0.
+History : claim(d0,issue(claim(p0,nil),11))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,backward,end,show,set]
+P>backward
+  ++++++++
+	% Prosecutor received counter argument(d0) from defendant for my argument(p0).
+	% In this case,prosecutor takes two method of strategies.
+	% One is to notice reason(standpoint) why p0 is stronger than d0 by using notice
+	% command.
+	% Other is to pose counter argument for d0 by using pose command.
+	% In this example,use notice command.
+	% Use the backward command to display the argument (p0) which has the dominant
+	% position in order to use the notice command.
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,justify,end,show,set]
+P>justify
+  +++++++
+	% Because the TopRule relation between p0 and d0 is unrelated in the current
+	% viewpoint, the priority notice cannot be issued in the case of a prosecutor.
+	% Therefore, modify the current viewpoint to make p0 stronger.
+
+0 : {importance_of_civil_code,[importance_of_civil_code]}
+Please input number > 0
+                      +
+	% Select new viewpoint to stronger than d0.
+
+History : claim(d0,issue(claim(p0,nil),11))
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,d0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1A)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,'show claim',jump,forward,notice,end,show,set]
+P>notice
+  ++++++	
+	% p0 is now stronger (">") than the counter argument (d0) of the issue point
+	% number 11.
+	% Now the priority notice of p0 can be issued.
+
+0 : [importance_of_civil_code]
+Please input number > 0
+		      +		
+	% Select the standpoint which is the base of the priority notice.
+
+Status : prosecutor notify that p0 is stronger than d0 by stanpoint of [importance_of_civil_code].
+Status : prosecutor notified that p0 was stronger than d0 by stanpoint of [importance_of_civil_code].But you draw.
+History : notice([importance_of_civil_code],claim(d0,issue(claim(p0,nil),11)))
+Issue : needAllow(agent=fath
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {d0,p0,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r3,draw}
+0  :             r3:-needAllow(agent=fat
+1  :              act1:give(agent=father,go
+2  :   !  1(0)    r4:interest(goal=money[
+3  :               act2:buy(agent=tarou[age=
+4  :               act3:win_prize(agent=taro
+5  :              r1:contract(agent=tarou
+6  :               act4:buy(agent=tarou[age=
+7  :               act5:loan(agent=tarou[age
+8  :               act6:causality(source=buy
+9  :              act0:isFather(a_object=fa
+UseCommand : [focus,cancel,'show claim',jump,backward,justify,notice,end,show,set]
+D>notice
+  ++++++
+	% Since the opponent sent a priority notice, send back the priority notice of
+	% the counter argument (d0) to it.
+	% In the case of a defendant, the priority notice can be issued even if it is
+	% unrelated.
+	% Since it is unrelated in this case, there is no selection of the standpoint
+	% that is the base of the priority relation.
+
+Status : defendant notify that p0 isn't always stronger than d0,because of non-relation of r3 and r2 in current viewpoint.
+Status : defendant notified that p0 wasn't always stronger than d0,because of non-relation of r2 and r3 in current viewpoint.But you win by [[importance_of_civil_code]].
+Status : prosecutor claimed p0.
+History : claim(p0,nil)
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,p0}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   !  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [focus,finish,'show claim',jump,end,show,set]
+D>finish
+  ++++++	
+	% End debate to p0.
+
+Status : defendant finish p0
+Status : defendant finished p0
+Goal : canWithdraw(agent=fa
+0 : *  >:1!:2<:0  canWithdraw(agent=fa
+Please input number > 0
+		      +
+History : start
+AidInfo({ArgID,ParentArgID,FocusArgID}) : {p0,nil,nil}
+RuleInfo({RuleName,TopRuleRel}) : {r11,nil}
+0  :             r11:canWithdraw(agent=fa
+1  :              r1:contract(agent=tarou
+2  :               act4:buy(agent=tarou[age=
+3  :               act5:loan(agent=tarou[age
+4  :               act6:causality(source=buy
+5  :   !  2(0)    r6:-valid(a_object=cont
+6  :               act5:loan(agent=tarou[age
+7  :               r1:contract(agent=tarou
+8  :                act4:buy(agent=tarou[age=
+9  :                act5:loan(agent=tarou[age
+10 :                act6:causality(source=buy
+11 :   >  1(1F)    r2:needAllow(agent=fath
+12 :                r1:contract(agent=tarou
+13 :                 act4:buy(agent=tarou[age=
+14 :                 act5:loan(agent=tarou[age
+15 :                 act6:causality(source=buy
+16 :                act0:isFather(a_object=fa
+17 :               act10:-allow(agent=father,
+18 :               act0:isFather(a_object=fa
+19 :              act0:isFather(a_object=fa
+UseCommand : [pose,end,show,set]
+P>end
+  +++		
+	% Exit from the debate mode.
+ok
+HELIC-II>quit
+	 ++++	
+	% End the program.
+
+[Appendix]
+
+ Viewpoint
+	The priority relation between standpoints.
+
+	 Example:
+		When written on a viewpoint definition file as follows;
+		view1 := {sp2<sp1}.
+		view2 := {sp1<sp2}.
+
+		Viewpoint name view1 : Priority relation of sp1 is higher than that of
+				       sp2.
+
+		Viewpoint name view2 : Priority relation of sp2 is higher than that of 
+				       sp1.
+
+ Standpoint
+	The priority relation between units.
+
+	 Example:
+		When written on a standpoint definition file as follows;
+
+		sp1 := {u2<u1}.
+		sp2 := {u1<u2}.
+
+		Standpoint name sp1 :  Priority relation of u1 is higher than that of 
+				       u2.
+		Standpoint name sp2 :  Priority relation of u2 is higher than that of
+				       u1.
+
+ Unit
+	A rule name or a set of rule names.
+
+	 Example:
+		When written on a unit definition file as follows;
+		(r1,r2,r3,r4,r5, and r6 are rule names. )
+
+		u1:= {r1,r2,r3}.
+		u2:= {r4,r5,r6}.
+
+		R1 to r6 , and u1 and u2 are unit names.
+		U1 contains r1, r2, and r3.
+		U2 contains r4, r5, and r6.
+
+ Argument
+	A set of facts and hypotheses to explain a conclusion.
+
+	Example:
+		A, b, and c are facts.
+		X and y are hypotheses.
+		There exist r1 and r2 as rules.
+
+		r1:x <- a,b,c.
+		r2:y <- x.
+
+		The argument [y, x, a, b, c] explains the conclusion y.
+		Y and x are hypotheses.
+
+ Hypothesis
+	It is the one requested by applying facts and hypotheses to a rule.
+
+ Issue point
+	A hypothesis within a certain argument, which is a counter argument.
+
+	 Example:
+		A, b, c, and d are facts.
+		X, y, and -x are hypotheses.
+
+		There exist r1, r2, and r3 as rules.
+
+			r1:x <- a,b,c.
+			r2:y <- x.
+			r3:-x<- d.
+
+		X is the issue point of the arguments [y, x, a, b, c].
+		There are counter arguments[-x, d] to the issue point.
+
+ Counter argument
+	An argument that denies a certain argument.
+
+	 Example:
+		In the above example, there exist counter arguments [-x, d] to the
+		arguments[y, x, a, b, c].
+
+ TopRule relation
+	The priority relation between an argument and its counter argument.
+
+	 Example:
+
+			r1
+		p0+-----*------+
+			r2
+		      d0+------+
+
+		Argument p0 and its counter argument d0 exist.
+		r2 is the rule name which indicates d0.
+
+		r1 is the rule name which indicates the issue point of p0.
+		The TopRule relation of this case indicates the relation between r1 and
+		r2, and r1 is stronger (r1>r2) or weaker (r1<r2) than ,or unrelated
+		(r1!r2) to r2.
+		When r1 is strictly stronger than r2 (r1>r2), p0 has a dominant position
+		over d0.
+
+ FOCUS argument
+	The argument that is currently focused.
+	A FOCUS argument depends on the opponent's notice.
+	The relation between a opponent's notice and a FOCUS argument is shown below;
+
+	Notice of the opponent		FOCUS argument
+	=============================================================================
+	Argument pose			Latest argument of the opponent
+	Priority notice ('N notice')	Latest argument of the opponent
+
+	For 'N notice', 'NN notice', refer to "6.3.2 Debate control command" (2) notice.
+
+ goal
+	A conclusion that a prosecutor tries to prove in the debate.
+
+ Initial argument
+	An argument that indicates a goal and is chosen first by a prosecutor.
+
+ Debate agent
+	Specifications whether the computer or the user will take charge of the
+	 defendant and the prosecutor.
+
+ Initial state
+	Refer to "3 State transition".
+
+ Debate state
+	Refer to "3 State transition".
+
+ Parent
+	Refer to [Relation between arguments] of "6.3.1 Show argument command".
+
+ Child
+	Refer to [Relation between argument periods] of "6.3.1 Show argument command".
+
+ Older brother
+	Refer to [Relation between arguments] of "6.3.1 Show argument command".
+
+ Younger brother
+	Refer to [Relation between arguments] of "6.3.1 Show argument command".
+
+
+

@@ -1,0 +1,36 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module main.
+
+:- with_macro pimos.
+
+main:- true |
+        unix:unix([bind(inet(9012),S1)]),
+        S1 = normal(Socket),
+        Socket = [accept(normal(Stream))],
+%       Stream = [fread(1024,RR)|ST1],
+%       io:outstream([print(RR),nl]),
+        netR1(Stream,0,[]).
+
+
+netR1(Stream,N,STTT2):- N=1 | Stream=STTT2.
+netR1(Stream,N,STTT2):- N=0 |
+        comkreceive:comkreceive(Stream,Int,_Command,_AgentName,_Parameter,
+                _Argument,St1),  
+        io:outstream([print(Int),nl]),
+        dummy:dummy(Int,SendMessageName,NAgentName,_SendParameter,SendArgument),
+        intCheck(Int,N1),
+        (N1 = 0 ->
+        comksend:comksend(St1,NAgentName,SendMessageName,SendArgument,NSt1),
+        netR1(NSt1,N1,STTT2);
+        N1 = 1 ->
+        netR1(St1,N1,STTT2)).
+
+intCheck(Int,N):- Int = 350 |
+        N=1.
+otherwise.
+intCheck(_Int,N):- true | N=0.
+

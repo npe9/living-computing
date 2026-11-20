@@ -1,0 +1,67 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+
+<title> (65) Experimental Parallel Hierarchical Recursive Layout
+System: Co-HLEX</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (65) Experimental Parallel Hierarchical Recursive Layout System: Co-HLEX</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI, PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 3.5 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Co-HLEX generates a layout diagram of a given circuit under a
+prespecified planned chip shape and a set of module proximity
+conditions. Bipolar analog circuit is the current repertoire.<P>
+
+<h2><b>Configuration</b></h2>
+<dl>
+	<dd><img src="065.gif">
+</dl>
+<p>
+
+<h2><b>Function</b></h2>
+
+The motivation of Co-HLEX development includes; the search for a new
+parallel layout algorithm, the representation power proof of KL1, and
+the problem solving power proof of parallel inference machines,
+Multi-PSI and PIM. The original flat circuit net data input is
+transformed into a hierarchical process network named CMPN. Then a
+hierarchical recursive concurrent theorem proving algorithm named
+HRCTL is applied to CMPN to generate a layout under the given planned
+chip shape. Due to the runtime co-operations among CMPN nodes running
+in parallel, module shape and wire abutments could newly be realized.
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Experimental Parallel Hierarchical Recursive Layout System:
+Co-HLEX [397K] <a
+href="../../../ifs/exper-apps/pimos/cohlex.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

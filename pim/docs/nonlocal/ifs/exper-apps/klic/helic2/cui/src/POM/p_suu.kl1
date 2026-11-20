@@ -1,0 +1,329 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module scopeUnitUnitTable.
+
+:- public 
+    initiate/4,
+    create/2,
+    quick_create/2.
+            
+:- with_macro pimos.
+
+    quick_create({SUURelList,SUList,UList},I):- true|
+        hLibrary:pool(keyed_bag,100,SUUKB1),
+        put_all(SUURelList,SUUKB1,SUUKB),
+        hset:create(SUList,SUB),
+        hset:create(UList,UB),
+        loop(I,SUUKB,SUB,UB).
+
+    create(SUUList,I):- true |
+        initiate(SUUList,SUUKB,SUB,UB),
+        loop(I,SUUKB,SUB,UB).
+
+    initiate(SUUList,SUUKB,SUB,UB):- true |
+        make_SUB(SUUList,SUB1,SUUList1),
+        make_UB(SUUList1,SUB1,SUB2,UB,SUUList2),
+        make_TMP_SUUKB(SUUList2,TMP_SUUKB),
+        make_SUUKB(SUB2,TMP_SUUKB,SUB,SUUKB).
+
+%make SUB
+    make_SUB(SUUList,SUB,SUUList1):-true |
+        hset:create(SUB1),
+        make_SUB1(SUUList,SUB1,SUB,SUUList1).
+
+    make_SUB1([],SUB1,SUB,SUUList):-true |
+        SUB = SUB1,
+        SUUList = [].
+    make_SUB1([{SU,UList}|T],SUB1,SUB,SUUList):-true |
+        SUB1 = [put(SU)|SUB2],
+        make_SUB1(T,SUB2,SUB,SUUList1),
+        SUUList = [{SU,UList}|SUUList1].
+
+%make UB
+
+    make_UB(SUUList,SUB1,SUB,UB,SUUList1):-true |
+        hset:create(UB1),
+        make_UB1(SUUList,SUB1,UB1,SUB,UB,SUUList1).
+
+    make_UB1([],SUB1,UB1,SUB,UB,SUUList):-true |
+        SUB = SUB1,
+        UB  = UB1,
+        SUUList = [].
+    make_UB1([{SU,UList}|T],SUB1,UB1,SUB,UB,SUUList):-true |
+        make_UB11(UList,SUB1,UB1,SUB2,UB2),
+        make_UB1(T,SUB2,UB2,SUB,UB,SUUList1),
+        SUUList = [{SU,UList}|SUUList1].
+
+    make_UB11([],SUB1,UB1,SUB,UB):- true |
+        SUB = SUB1,
+        UB  = UB1.
+    make_UB11([U|T],SUB1,UB1,SUB,UB):- true |
+        SUB1 = [in(U,YN)|SUB2],
+        (   YN = yes ->
+                UB2 = UB1
+        ;
+            YN = no  ->
+                UB1 = [put(U)|UB2]
+        ),
+        make_UB11(T,SUB2,UB2,SUB,UB).
+
+%make TMP SUUKB
+
+    make_TMP_SUUKB(SUUList,TMP_SUUKB):-
+        hLibrary:pool(keyed_bag,100,TMP_SUUKB1),
+        make_TMP_SUUKB1(SUUList,TMP_SUUKB1,TMP_SUUKB).
+
+    make_TMP_SUUKB1([],            TMP_SUUKB1,TMP_SUUKB):- true |
+        TMP_SUUKB = TMP_SUUKB1.
+    make_TMP_SUUKB1([{SU,UList}|T],TMP_SUUKB1,TMP_SUUKB):- true |
+        TMP_SUUKB1 = [empty(SU,YN)|TMP_SUUKB2],
+        (   YN = yes ->
+                hset:create(UB1),
+                TMP_SUUKB2 = TMP_SUUKB3
+        ;
+            YN = no  ->
+                TMP_SUUKB2 = [get(SU,UB1)|TMP_SUUKB3]
+        ),
+        make_TMP_SUUKB11(UList,SU,UB1,UB2),
+        TMP_SUUKB3 = [put(SU,UB2)|TMP_SUUKB4],
+        make_TMP_SUUKB1(T,TMP_SUUKB4,TMP_SUUKB).
+
+    make_TMP_SUUKB11([]    ,_, UB1,UB):-true |
+        UB = UB1.
+    make_TMP_SUUKB11([SU|T],SU,UB1,UB):-true |
+                                            %loop
+        make_TMP_SUUKB11(T,SU,UB1,UB).
+otherwise.
+    make_TMP_SUUKB11([U|T],SU,UB1,UB):-true |
+        UB1 = [put(U)|UB2],
+        make_TMP_SUUKB11(T,SU,UB2,UB).
+
+%make SUUKB
+    make_SUUKB(SUB1,TMP_SUUKB,SUB,SUUKB):-true |
+        SUB1 = [get_all(SUList)|SUB2],
+        make_SUUKB1(SUList,SUB2,TMP_SUUKB,SUB,SUUKB).
+
+    make_SUUKB1([],SUB1,TMP_SUUKB,SUB,SUUKB):-true |
+        SUB   = SUB1,
+        SUUKB = TMP_SUUKB.
+    make_SUUKB1([SU|T],SUB1,TMP_SUUKB,SUB,SUUKB):-true |
+        TMP_SUUKB = [get(SU,UB1)|TMP_SUUKB0],
+
+        UB1 = [get_all(UList1)|UB2],
+        TMP_SUUKB0 = [put(SU,UB2)|TMP_SUUKB1],
+
+        get_unitList(UList1,SUB1,TMP_SUUKB1,[SU],UList,SUB2,TMP_SUUKB2),
+        hset:create(UList,UB3),
+
+        TMP_SUUKB2 = [get(SU,[])|TMP_SUUKB21],
+
+        TMP_SUUKB21 = [put(SU,UB3)|TMP_SUUKB3],
+        make_SUUKB1(T,SUB2,TMP_SUUKB3,SUB,SUUKB).
+
+    get_unitList([],   SUB1,TMP_SUUKB1,_,UList,SUB,TMP_SUUKB):-true |
+        UList       = [],
+        SUB         = SUB1,
+        TMP_SUUKB   = TMP_SUUKB1.
+    get_unitList([U|T],SUB1,TMP_SUUKB1,SuperList1,UList,SUB,TMP_SUUKB):-true |
+        SUB1 = [in(U,YN)|SUB2],
+        (   YN = yes ->
+                TMP_SUUKB1 = [get(U,NewUB1)|TMP_SUUKB2],
+                NewUB1 = [get_all(NewUList)|NewUB2],
+                TMP_SUUKB2 = [put(U,NewUB2)|TMP_SUUKB3],
+
+                check_loopList([U|SuperList1],NewUList,NewUList1),
+
+                get_unitList(NewUList1,SUB2,TMP_SUUKB3,[U|SuperList1],SubUList,SUB3,TMP_SUUKB4)
+        ;
+            YN = no ->
+                SUB3 = SUB2,
+                TMP_SUUKB4 = TMP_SUUKB1,
+                SubUList = [U]
+        ),
+        get_unitList(T,SUB3,TMP_SUUKB4,SuperList1,UList1,SUB,TMP_SUUKB),
+        append(UList1,SubUList,UList).
+
+    append([],Y,Z):- true |
+        Z = Y.
+    append([L|X],Y,Z):- true |
+        member(Y,L,YN),
+        append(X,Y,Z1),
+        (   YN = yes ->
+                Z = Z1
+        ;
+            YN = no ->
+                Z = [L|Z1]
+        ).
+        
+    member([],_,S):- true |
+        S = no.
+    member([H|_],Data,S):- H = Data |
+        S = yes.
+otherwise.
+    member([_|T],Data,S):- true |
+        member(T,Data,S).
+
+% main rootin
+
+    loop([],SUUKB,SUB,UB):-true |
+        terminate(SUList,SUUKB),
+        SUB = [get_all(SUList)],
+        UB = [].
+    loop([get_allUnitList(NumOfUnit,UList)|T],SUUKB,SUB,UB1):-true |
+        UB1 = [get_all(UList)|UB2],
+        count(UList,NumOfUnit),
+        loop(T,SUUKB,SUB,UB2).
+    loop([get_allScopeUnitList(NumOfSUnit,SUList)|T],SUUKB,SUB1,UB):-true |
+        SUB1 = [get_all(SUList)|SUB2],
+        count(SUList,NumOfSUnit),
+        loop(T,SUUKB,SUB2,UB).
+    loop([get_unitList(SU,UList)|T],SUUKB1,SUB,UB):-true |
+        SUUKB1 = [get(SU,UB1)|SUUKB2],
+        UB1 = [get_all(UList)|UB2],
+        SUUKB2 = [put(SU,UB2)|SUUKB3],
+        loop(T,SUUKB3,SUB,UB).
+    loop([get_unitListList(SUList,UList)|T],SUUKB1,SUB1,UB1):-true |
+        get_unitListList(SUList,SUUKB1,SUB1,UB1,UList,SUUKB2,SUB2,UB2),
+        loop(T,SUUKB2,SUB2,UB2).
+    loop([is_scopeUnit(SU,YN)|T],SUUKB,SUB1,UB):-true |
+        SUB1 = [in(SU,YN)|SUB2],
+        loop(T,SUUKB,SUB2,UB).
+    loop([is_scopeUnitList(SUList,YN)|T],SUUKB,SUB1,UB):-true |
+        is_inList(SUList,SUB1,UnknownList,SUB2),
+        (   UnknownList = [] ->
+                YN = yes
+        ;
+            UnknownList \= [] ->
+                YN = {no,UnknownList}
+        ),
+        loop(T,SUUKB,SUB2,UB).
+    loop([is_unit(U,YN)|T],SUUKB,SUB,UB1):-true |
+        UB1 = [in(U,YN)|UB2],
+        loop(T,SUUKB,SUB,UB2).
+    loop([is_unitList(UList,YN)|T],SUUKB,SUB,UB1):-true |
+        is_inList(UList,UB1,UnknownList,UB2),
+        (   UnknownList = [] ->
+                YN = yes
+        ;
+            UnknownList \= [] ->
+                YN = {no,UnknownList}
+        ),
+        loop(T,SUUKB,SUB,UB2).
+    loop([is_unitOrScopeUnitList(SUList,YN)|T],SUUKB,SUB1,UB1):-true |
+        is_inList(SUList,SUB1,UnknownList1,SUB2),
+        is_inList(UnknownList1,UB1,UnknownList2,UB2),
+        (   UnknownList2 = [] ->
+                YN = yes
+        ;
+            UnknownList2 \= [] ->
+                YN = {no,UnknownList2}
+        ),
+        loop(T,SUUKB,SUB2,UB2).
+    loop([get_all(ALL)|T],SUUKB1,SUB1,UB1):-true |
+        UB1 = [get_all(UList)|UB2],
+        SUB1 = [get_all(SUList)|SUB2],
+        get_all(SUList,SUUKB1,SUURelList,SUUKB2),
+        ALL = {SUURelList,SUList,UList},
+        loop(T,SUUKB2,SUB2,UB2).
+
+    get_unitListList([],SUUKB1,SUB1,UB1,UList,SUUKB,SUB,UB):-true |
+        UList =[],
+        SUUKB = SUUKB1,
+        SUB = SUB1, 
+        UB = UB1.
+    get_unitListList([SU|T],SUUKB1,SUB1,UB1,UList,SUUKB,SUB,UB):-true |
+        SUB1 = [in(SU,YN)|SUB2],
+        (   YN = yes -> %scope unit
+                SUUKB1 = [get(SU,B1)|SUUKB2],
+                B1 = [get_all(UList1)|B2],
+                SUUKB2 = [put(SU,B2)|SUUKB3],
+                get_unitListList(T,SUUKB3,SUB2,UB1,UList2,SUUKB,SUB,UB),
+                append(UList1,UList2,UList)
+        ;
+            YN = no ->  %unit 
+                get_unitListList(T,SUUKB1,SUB2,UB1,UList1,SUUKB,SUB,UB),
+                UList = [SU|UList1] 
+        ).
+
+    get_all([],SUUKB1,SUURelList,SUUKB):-true|
+        SUUKB = SUUKB1,
+        SUURelList = [].
+    get_all([SU|T],SUUKB1,SUURelList,SUUKB):-true|
+        SUUKB1 = [get(SU,UB1)|SUUKB2],
+        UB1 = [get_all(UList)|UB2],
+        SUUKB2 = [put(SU,UB2)|SUUKB3],
+        get_all(T,SUUKB3,SUURelList1,SUUKB),
+        SUURelList = [{SU,UList}|SUURelList1].
+
+    put_all([],SUUKB1,SUUKB):-true|
+        SUUKB = SUUKB1.
+    put_all([{SU,UList}|T],SUUKB1,SUUKB):-true|
+        SUUKB1 = [empty(SU,YN)|SUUKB2],
+        (   YN = yes->
+                hset:create(UList,UB),
+                SUUKB2 = [put(SU,UB)|SUUKB3],
+                SUUKB4 = SUUKB3
+        ;
+            YN = no ->
+                SUUKB2 = [get(SU,UB1)|SUUKB3],
+                UB1 = [putList(UList)|UB2],
+                SUUKB3 = [put(SU,UB2)|SUUKB4]
+        ),
+        put_all(T,SUUKB4,SUUKB).
+
+    terminate([],POOL):-true |
+        POOL = [].
+    terminate([H|T],POOL1):-true |
+        POOL1 = [get(H,SUBPOOL)|POOL2],
+        SUBPOOL = [],
+        terminate(T,POOL2).
+
+    count(List,C):-true |
+        count1(List,0,C).
+
+    count1([],X,C):-true|
+        C=X.
+    count1([_|T],X1,C):-true|
+        X2 := X1+1,
+        count1(T,X2,C).
+
+%%%%%%%loop check
+
+    check_loopList(List1,List2,NewList2):-true |
+        check_loopList1(List2,List1,NewList2).
+
+    check_loopList1([],_,NewList2):-true |
+        NewList2 = [].
+    check_loopList1([H|T],List1,NewList2):-true |
+        member(List1,H,YN),
+        (   YN = yes ->
+                        %loop
+                check_loopList1(T,List1,NewList2)
+        ;
+            YN = no ->
+                check_loopList1(T,List1,NewList21),
+                NewList2 = [H|NewList21]
+        ).
+
+    is_inList([],B1,UnknownList,B):-true |
+        UnknownList = [],
+        B = B1.
+    is_inList([H|T],B1,UnknownList,B):-true |
+        B1 = [in(H,YN)|B2],
+        (   YN = yes ->
+                is_inList(T,B2,UnknownList,B)
+        ;
+            YN = no ->
+                is_inList(T,B2,UnknownList1,B),
+                UnknownList = [H|UnknownList1]
+        ).
+
+%    normal_append([],A,B):- true |
+%        B = A.
+%    normal_append([L|X],Y,Z):-true |
+%        normal_append(X,Y,Z1),
+%        Z = [L|Z1].
+

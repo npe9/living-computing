@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_guiCurrentState.
+
+:- public 
+    create/2.
+            
+:- with_macro pimos.
+
+%create
+    create(NH,I):-true| 
+        loop(I,NH,{xx,nil,     nil,         nil        ,nil,        nil},
+                  {xx,nil,     nil,         nil        ,nil,        nil}).
+              %       GoalList DispGoalList CurrentGoal ingiEnvList solution-table
+
+%loop
+    loop([],NH,_,_):-true|
+        NH=[].
+    loop([make_nh(NH1)|T],NH,PCS,DCS):-true|
+        merge({NH1,NH2},NH),
+        loop(T,NH2,PCS,DCS).
+    loop([set(p,ElementName,E)|T],NH,CS1,DCS):-true|
+        get_elementPos(ElementName,ElementPos),
+        set_vector_element(CS1,ElementPos,_,E,CS),
+        loop(T,NH,CS,DCS).
+    loop([set(d,ElementName,E)|T],NH,PCS,CS1):-true|
+        get_elementPos(ElementName,ElementPos),
+        set_vector_element(CS1,ElementPos,_,E,CS),
+        loop(T,NH,PCS,CS).
+    loop([get(p,ElementName,E)|T],NH,CS,DCS):-true|
+        get_elementPos(ElementName,ElementPos),
+        vector_element(CS,ElementPos,E,_),
+        loop(T,NH,CS,DCS).
+    loop([get(d,ElementName,E)|T],NH,PCS,CS):-true|
+        get_elementPos(ElementName,ElementPos),
+        vector_element(CS,ElementPos,E,_),
+        loop(T,NH,PCS,CS).
+
+%get_elementPos
+    get_elementPos(goalList,Pos):-true|
+        Pos = 1.
+    get_elementPos(dispGoalList,Pos):-true|
+        Pos = 2.
+    get_elementPos(currentGoal ,Pos):-true|
+        Pos = 3.
+    get_elementPos(ingiEnvList,Pos):-true|
+        Pos = 4.
+    get_elementPos(st,Pos):-true|
+        Pos = 5.

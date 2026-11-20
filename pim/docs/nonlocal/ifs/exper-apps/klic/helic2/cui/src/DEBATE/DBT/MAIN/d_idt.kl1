@@ -1,0 +1,57 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_IDManager.
+:- public create/1.
+:- with_macro pimos.
+
+    create(I):-true|
+        initiate(P,D),
+        loop(I,{0,0},P,D).
+
+    initiate(P,D):-true|
+        hset:create(P),
+        hset:create(D).
+
+    loop([],_,P,D):-true|
+        P = [],D = [].
+    loop([make_ID(Which,ID)|T],{PNum1,DNum1},P,D):-true|
+        make_ID(Which,PNum1,DNum1,PNum,DNum,ID),
+        (   Which = p ->
+                P  = [put(ID)|P1],
+                D1 = D
+        ;
+            Which = d ->
+                P1 = P,
+                D  = [put(ID)|D1]
+        ),
+        loop(T,{PNum,DNum},P1,D1).
+    loop([refer_IDList(Which,IDList)|T],Num,P,D):-true|
+        (   Which = p ->
+                P  = [get_all(IDList)|P1],
+                D1 = D
+        ;
+            Which = d ->
+                P1 = P,
+                D  = [get_all(IDList)|D1]
+        ),
+        loop(T,Num,P1,D1).
+
+    make_ID(Which,PNum1,DNum1,PNum,DNum,ID):-true|
+        (   Which = p->
+                make_ID1("p",PNum1,ID),
+                PNum := PNum1+1,
+                DNum  = DNum1
+        ;
+            Which = d->
+                make_ID1("d",DNum1,ID),
+                DNum := DNum1+1,
+                PNum  = PNum1
+        ).
+
+    make_ID1(Which,Num,ID):-true|
+        hLibrary:tTos(Num,S),
+        append_string:append_string([Which,S],ID1),
+        hLibrary:sTot(ID1,ID).

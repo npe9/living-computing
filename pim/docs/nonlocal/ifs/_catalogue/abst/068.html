@@ -1,0 +1,94 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (68) Experimental Sequence Analysis System</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (68) Experimental Sequence Analysis System</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 200 KB
+	Documents:   Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+Extracts common patterns(motifs) of amino acid sequences in some
+protein categories.<P>
+
+<h2><b>Characteristics</b></h2>
+
+Motif extraction is one of the important problems in genetic
+information processing.  Motifs are common patterns of amino acid
+sequences in the same protein category, which are conserved in the
+evolution process and characterize the function/structure of proteins. 
+The system extracts motifs using the MDL principle and genetic
+algorithms.<P>
+
+<h2><b>Function</b></h2>
+
+As a criterion for motif evaluation, the minimum description
+length(MDL) principle was adopted. The MDL principle selects a motif
+with the shortest description length ( = Complexity of motif +
+Classification error rate). It enables us to compare a simple motif
+with exceptions and a complex motif without exceptions.  <p>
+
+As a motif search method, genetic algorithms (GA) were adopted to deal
+with enormous search space. GA realizes probabilistic search by
+applying genetic operations to a population of motif candidates
+represented by binary strings. The genetic operations consist of
+crossover, mutation and selection. The MDL principle plays an
+essential role in selection.  <p>
+
+Three kinds of parallelism can be exploited in the system;trial,
+divide-and-conquer and data parallelism. They enable us to utilize the
+Parallel Inference Machine (PIM) effectively.<P>
+
+<h2><b>Bibliography</b></h2>
+
+<OL>
+
+<LI>Konagaya, Stochastic Motifs, Genome Informatics Workshop II, 1991. 
+(in Japanese)
+
+<LI>Konagaya, et al., The MDL Principle and Genetic Information
+Processing, Proceedings of JSAI, 1991. (in Japanese)
+
+<LI>Konagaya, et al., Stochastic Decision Predicate:A Scheme to
+Represent Motifs, AAAI Workshop, 1991. 
+
+<LI>Koyanagi el al., Protein Motif Extraction using Multi-PSI, Genome
+Informatics Workshop II, 1991. (in Japanese)
+
+<LI>Yamanishi, et al., Learning Stochastic Motifs from Genetic
+Sequences, Machine Learning Workshop, 1991.
+
+</OL>
+
+
+<h2>FTP</h2>
+<ul>
+
+<li> Experimental Sequence Analysis System [169K] <a
+href="../../../ifs/exper-apps/pimos/seqanal.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

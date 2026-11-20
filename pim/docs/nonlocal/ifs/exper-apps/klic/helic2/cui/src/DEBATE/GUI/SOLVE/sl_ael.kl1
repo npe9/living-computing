@@ -1,0 +1,162 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module slv_argumentElementList.
+
+:- public 
+    get_argumentElementList/4.
+
+:- with_macro pimos.
+
+%get_argumentElementList
+    get_argumentElementList(SV,APos,DP,AEL):-true|
+        get_initTabPos(InitTabPos),
+        get_argumentElementList1([APos],InitTabPos,APos,SV,DP,AEL).
+
+    get_argumentElementList1([],_,_,_,_,AEL):-true|
+        AEL     = [].
+    get_argumentElementList1([Pos|T],Tab,StartPos,SV,DP,AEL):-integer(Pos)|
+        get_line(Pos,Tab,StartPos,SV,DP,AE),
+        (   wait(AE)->
+                get_tabLength(TabLength),
+                NextTab := Tab+TabLength,
+                slv_solutionVecUtility:get_solution(SV,Pos,childList,ChildList),
+                get_argumentElementList1(ChildList,NextTab,StartPos,SV,DP,AEL1),
+                (   wait(AEL1)->
+                        get_argumentElementList1(T,Tab,StartPos,SV,DP,AEL2),
+                        append([AE|AEL1],AEL2,AEL))).
+    get_argumentElementList1([naf(Pos)|T],Tab,StartPos,SV,DP,AEL):-integer(Pos)|
+        get_line(naf(Pos),Tab,StartPos,SV,DP,AE),
+        (   wait(AE)->
+                get_argumentElementList1(T,Tab,StartPos,SV,DP,AEL1),
+                AEL = [AE|AEL1]).
+
+    get_line(Pos,Tab,StartPos,SV,{PL,PT},AE):-integer(Pos)|
+        get_ruleName(SV,Pos,RuleName),
+        get_similarity(SV,Pos,Sim),
+        slv_issueUtility:make_consequence(SV,Pos,PL,PT,Consequence1),
+        (   wait(Consequence1)->
+                get_attackInfo(SV,StartPos,Pos,AttackInfo),
+                make_attackInfoString(AttackInfo,AttackInfoString),
+                get_line1(Tab,AttackInfoString,RuleName,Consequence1,AE,Sim)).
+    get_line(naf(Pos),Tab,StartPos,SV,{PL,PT},AE):-true|
+        get_ruleName(SV,naf(Pos),RuleName),
+        get_similarity(SV,naf(Pos),Sim),
+        slv_issueUtility:make_consequence(SV,naf(Pos),PL,PT,Consequence1),
+        (   wait(Consequence1)->
+                get_attackInfo(SV,StartPos,naf(Pos),AttackInfo),
+                make_attackInfoString(AttackInfo,AttackInfoString),
+                get_line1(Tab,AttackInfoString,RuleName,Consequence1,AE,Sim)).
+
+%get_ruleName
+    get_ruleName(_,naf(_),RuleName):-true|
+        RuleName = "".
+    get_ruleName(SV,Pos,RuleName):-integer(Pos)|
+        slv_solutionVecUtility:get_solution(SV,Pos,ruleName,RuleName1),
+        hLibrary:tTos(RuleName1,RuleName).
+
+
+%get_similarity
+    get_similarity(_,naf(_),Sim):-true|
+        Sim = "".
+    get_similarity(SV,Pos,Sim):-integer(Pos)|
+        slv_solutionVecUtility:get_solution(SV,Pos,similarity,Sim1),
+        ( Sim1 = nil->
+                Sim = ""
+        ;
+        otherwise;
+          true->
+                hLibrary:tTos(Sim1,Sim)
+        ).
+
+%%%%%get_attackInfo
+    get_attackInfo(SV,StartPos,Pos,AttackInfo):-true|
+        slv_issueUtility:is_issue(SV,Pos,YN),
+        (   YN = yes->
+                get_attackInfo1(SV,StartPos,Pos,AttackInfo)
+        ;
+            YN = no->
+                IssueJudge = nil,NumOfAttack=nil,
+                AttackInfo = {IssueJudge,NumOfAttack}
+        ).
+
+%    get_attackInfo1(SV,StartPos,Pos,AttackInfo):-true|
+    get_attackInfo1(SV,_,Pos,AttackInfo):-true|
+        slv_issueUtility:get_numOfCounterArgument(SV,Pos,NumOfAttack),
+        slv_issueUtility:get_issueJudge(SV,Pos,IssueJudge),
+        AttackInfo = {IssueJudge,NumOfAttack}.
+
+    make_attackInfoString({nil,nil},AttackInfoString):-true|
+        AttackInfoString  = "          ".
+otherwise.
+    make_attackInfoString({IssueJudge,NumOfAttack},AttackInfoString):-true|
+        make_issueJudgeString(IssueJudge,S1),
+        hLibrary:tTos(NumOfAttack,S2),
+        append_string:append_string(["   ",S1," (",S2,") "],AttackInfoString).
+
+    make_issueJudgeString(sj,S):-true|
+        S = "<J".
+    make_issueJudgeString(sp,S):-true|
+        S = "<P".
+    make_issueJudgeString(uj,S):-true|
+        S = "!J".
+    make_issueJudgeString(up,S):-true|
+        S = "!P".
+    make_issueJudgeString(wj,S):-true|
+        S = ">J".
+    make_issueJudgeString(wp,S):-true|
+        S = ">P".
+    make_issueJudgeString(sd,S):-true|
+        S = "<D".
+    make_issueJudgeString(ud,S):-true|
+        S = "!D".
+    make_issueJudgeString(wd,S):-true|
+        S = ">D".
+
+    get_line1(Tab,AttackInfoString,RuleName,Consequence,AE,""):-
+        wait(AttackInfoString)|
+        make_tab(Tab,TabString),
+        append_string:append_string([AttackInfoString,"  ",TabString,RuleName,":",
+                Consequence],AE).
+%        append_string:append_string([AttackInfoString,"  ",TabString,
+%               Consequence,"(",RuleName,")"],AE).
+otherwise.
+    get_line1(Tab,AttackInfoString,RuleName,Consequence,AE,Sim):-
+        wait(AttackInfoString)|
+        make_tab(Tab,TabString),
+        append_string:append_string([AttackInfoString,"  ",TabString,RuleName,":",
+                Sim,":",Consequence],AE).
+%        append_string:append_string([AttackInfoString,"  ",TabString,
+%               Sim,":",Consequence,"(",RuleName,")"],AE).
+
+    make_tab(Length,String):-true|
+        string("",_,Type,_),
+        new_string(S,Length,Type),
+        set_space(S,0,Length,String).
+
+    set_space(S,L,L,String):-true|
+        String = S.
+otherwise.
+    set_space(S,P,L,String):-true|
+        set_string_element(S,P,#" ",S1),
+        P1 := P+1,
+        set_space(S1,P1,L,String).
+
+%%%
+%get_initTabPos
+    get_initTabPos(InitTabPos):-true|
+        InitTabPos = 0.
+
+%get_tabLength
+    get_tabLength(TabLength):-true|
+        TabLength = 1.
+
+%%%%%%%%utility
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+

@@ -1,0 +1,59 @@
+(i) About this System
+
+DDKLIC is a new implementation of a concurrent logic programming
+language KL1 based on demand driven scheduling.  Because data are
+generated on demand, this system may improve performance of many
+generate-and-test programs which are not done well by process driven
+scheduling.
+
+DDKLIC, like KLIC, compiles KL1 programs into C programs, then
+compiles them using C compilers of the host system, and then links the
+objects with runtime libraries (including libraries provided by UNIX).
+
+This distribution has another program ION which was developed as an
+analytical part of DDKLIC.  ION, like KLINT, analyze the mode and type
+of KL1 programs statically and it is very useful for debugging KL1
+programming.
+
+
+
+(ii) Execution Environment
+
+The system is meant to be portable to most UNIX systems, and runs on
+virtually any system.  If you are using KLIC 3.00x, this system may
+run on your system.
+
+DDKLIC is implemented as an extension of KLIC-3.002, so you need KLIC
+to install this system.  If you are using previous (2.00x, 3.001)
+version of KLIC, I recommend you to install KLIC-3.002.
+
+
+
+(iii) Files
+
+H9-11/
+ |- Makefile		Top level makefile
+ |- Readme-E		English version of README
+ |- Readme-J		Japanese version of README
+ |- use-of-software-E	English version of terms and conditions
+			for use of icot free software
+ |- use-of-software-J	Japanese version of terms and conditions
+			for use of icot free software
+ |- bin/
+    |- ddklic		Top level command (Bourne shell script)
+    |- klicclean	Cleaner program   (Bourne shell script)
+ |- compiler/
+    |- Makefile		DDKLIC compiler makefile
+    |- *.kl1		Source programs for DDKLIC compiler (in KL1)
+ |- runtime/
+    |- *.c		Source programs for DDKLIC runtime library (in C)
+    |- klic
+       |- *.h		Header file for DDKLIC runtime library (in C)
+ |- test/
+    |- Makefile		Makefile for tests
+    |- *.kl1		Test programs
+    |- result/
+       |- Makefile	Makefile for results
+       |- plot.*	Shell scripts and a template file to collect
+                        the results of tests
+

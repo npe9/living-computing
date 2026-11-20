@@ -1,0 +1,1103 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%       Module Name : ty_tlat
+%       File Name   : ty_tlat.kl1
+%       Function    : create lattice table from definition
+%$      Editor      : MTC SUZUKI Takayuki
+%$      History     :
+%$	1994/ 8/23  : quit internode atom quotation
+%$	1994/ 7/20  : tree version pool
+%$	1994/ 7/15  : typo fix
+%$	1994/ 7/14  : top lower code creation
+%$	1994/ 7/14  : string element size from 1 to 8
+%$	1994/ 7/13  : string utilities calling to osif
+%$	1994/ 7/13  : string_to_term to string_to_atom
+%$	1994/ 7/13  : term_to_string to atom_to_string
+%$	1994/ 7/ 5  : comment out debug options
+%$      1994/ 7/ 4  : expand macros
+%$      1994/ 5/18  : bug fix change get_with to get_at in flat_or_loop/5
+%$      1994/ 4/28  : change internode name separator to "&"
+%$      1994/ 4/26  : osif pool creation call
+%$      1994/ 4/26  : loop definition check
+%$      1994/ 4/25  : result yes/no to success/fail
+%$      1994/ 4/ 4  : 2 pass internode creation
+%$      1994/ 4/ 1  : 2 pass internode creation
+%$      1994/ 3/ 7  : result comment bug
+%$      1994/ 2/24  : a little bit of optimization of internode checking
+%$      1994/ 2/22  : debug print for internode creation
+%$      1994/ 2/10  : builtin encoded bug
+%$      1994/ 2/ 3  : illegal internode error
+%$      1994/ 2/ 3  : debug print for compile progress
+%$      1994/ 1/31  : some syntax error
+%$      1994/ 1/30  : redundant internode bug
+%$      1994/ 1/28  : shift_table_elements & propagation bug
+%$      1994/ 1/27  : shift_table_elements bug
+%$      1994/ 1/27  : move set builtin after set bottom
+%$      1994/ 1/27  : bug fix for redundant subsumption
+%$      1994/ 1/26  : debug#info codes
+%$      1994/ 1/25  : set attribute initial value in register_DB,register_glb
+%$      1994/ 1/21  : in/4 -> exist/4 for keyed_set
+%$      1994/ 1/18  : initial_typeDB
+%$      1994/ 1/ 8  : unify result format
+%$      1993/12/24  : latest update
+%$      1993/11/18  : scratch
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module ty_tlat.
+:- with_macro pimos.
+
+%:-include("debug.h").
+
+%:-if_not_equal(debug,no).
+%:-local_implicit debug:oldnew.
+%:-end_if.
+
+%:-if_equal(debug,no).
+:-public make_lattice_table/4.
+%:-else.
+%:-public make_lattice_table/6.
+%:-end_if.
+
+
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% S make_lattice_table(PoDefs,FlatNameTBL,TypeDB,Result)
+%+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+% PoDefs : list
+% FlatNameTBL : keyed_set
+% TypeDB :
+%   NameTBL : vector
+%   LowerTBL : vector
+%   UpperTBL : vector
+%   PosTBL : keyed_set
+%   ExpTBL : keyed_set
+%
+% SmallTBL : pool:keyd_bag
+% LargeTBL : pool:keyd_bag
+% CurrentLayer : pool:keyed_set
+% NextLayer : pool:bag_set
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name | loop_definition
+make_lattice_table(PoDefs,FlatNameTBL,NewTypeDB,Result):-
+%    debug#info(debug_tag#tlat,&debug,Info1),
+%    Info1 = initialize_tables(PoDefs,SmallTBL,LargeTBL,InitialLayer),
+    initialize_tables(PoDefs,SmallTBL,LargeTBL,InitialLayer),
+    initial_typeDB(TypeDB),
+    ty_osif:keyed_bag(LP),
+    ty_osif:keyed_set(NP),
+    ty_osif:keyed_bag(IP),
+    ty_osif:keyed_bag(ISP),
+    % bottom is level zero
+    set_bottom(TypeDB,TypeDB1),
+    %
+    set_builtin(LP,LP1,TypeDB1,TypeDB2),
+%    debug#info(debug_tag#tlat,&debug,Info2),
+%    Info2 = encode_layer(InitialLayer,SmallTBL,NewSmallTBL,
+%			 LargeTBL,NewLargeTBL,LayerLevel,CountOfLayer1,
+%			 lp,np,ip,isp,TypeDB3,TypeDB4,
+%			 FlatNameTBL,FlatNameTBL1,R1),
+    LayerLevel = 1,
+%    {{ typeDB#read(dbsize,CountOfLayer1,TypeDB2,TypeDB3) }},
+    vector_element(TypeDB2,0,CountOfLayer1,TypeDB3),
+    encode_layer(InitialLayer,SmallTBL,NewSmallTBL,
+		 LargeTBL,NewLargeTBL,LayerLevel,NewLayerLevel,CountOfLayer1,
+		 LP1,LP2,NP,NNP,IP,IP1,ISP,ISP1,TypeDB3,TypeDB4,
+		 FlatNameTBL,FlatNameTBL1,R1),
+    % close working tables
+%    NewSmallTBL = [],    % close pool
+%    NNP = [],            % close pool
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        % recreate lower table
+        TopLayer := NewLayerLevel-1,
+        recreate_lowerTBL(TopLayer,LP2,IP1,ISP1,TypeDB4,TypeDB5,R2),
+%        (R2 = normal(ty#yes) ->
+        (R2 = normal(success) ->
+	    make_flat_lattice(FlatNameTBL1,NewLargeTBL,
+			      TypeDB5,TypeDB6,Result),
+%	    (Result = normal(ty#yes) ->
+	    (Result = normal(success) ->
+	        set_top(TypeDB6,TypeDB7),
+	        % make upper table from lower table
+	        generate_upper_table(TypeDB7,NewTypeDB)
+	    ;otherwise;true ->
+	        NewTypeDB = TypeDB6
+	    )
+	;otherwise;true ->
+%	    NewLargeTBL = [],    % close pool
+%	    FlatNameTBL1 = [],   % close pool
+	    NewTypeDB = TypeDB5,
+	    Result = R2
+	)
+    ;otherwise;true ->
+%        LP2 = [], IP1 = [], ISP1 = [],   % close pools
+%        NewLargeTBL = [],                % close pool
+%        FlatNameTBL1 = [],               % close pool
+        NewTypeDB = TypeDB4,
+        Result = R1
+    ).
+
+
+initialize_tables(PoDefs,NewSmallTBL,NewLargeTBL,InitialLayer):-
+    ty_osif:keyed_bag(SmallTBL),
+    ty_osif:keyed_bag(LargeTBL),
+    ty_osif:keyed_set(CurrentLayer),
+    put_all_order_defs(PoDefs,SmallTBL,SmallTBL1,LargeTBL,LargeTBL1),
+    get_least_layer(SmallTBL1,SmallTBL2,LargeTBL1,LargeTBL2,
+		    CurrentLayer,CurrentLayer1),
+    ty_osif:get_contents(InitialLayer,CurrentLayer1,NewCurrentLayer),
+%    NewCurrentLayer = [],    % close pool
+    connect_least_with_bottom(InitialLayer,SmallTBL2,NewSmallTBL,
+			      LargeTBL2,NewLargeTBL).
+
+put_all_order_defs([{Small,Large}|PoDefs],
+		   SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL):-
+    convert_builtin_syntax(Small,InternalSmallName),
+    convert_builtin_syntax(Large,InternalLargeName),
+    ty_osif:add_at(InternalSmallName,InternalLargeName,LargeTBL,LargeTBL1),
+    ty_osif:add_at(InternalLargeName,InternalSmallName,SmallTBL,SmallTBL1),
+    put_all_order_defs(PoDefs,SmallTBL1,NewSmallTBL,LargeTBL1,NewLargeTBL).
+put_all_order_defs([],SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL):-
+    NewSmallTBL=SmallTBL,
+    NewLargeTBL=LargeTBL.
+
+convert_builtin_syntax(SyntaxName,InternalName):-
+%    syn#is_integer(SyntaxName)|
+    SyntaxName=integer|
+%	InternalName = ty#integer.
+	InternalName = '&integer'.
+convert_builtin_syntax(SyntaxName,InternalName):-
+%    syn#is_string(SyntaxName)|
+    SyntaxName=string|
+%	InternalName = ty#string.
+	InternalName = '&string'.
+otherwise.
+convert_builtin_syntax(SyntaxName,InternalName):-
+    InternalName = SyntaxName.
+
+
+get_least_layer(SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL,
+		CurrentLayer,NewCurrentLayer):-
+    ty_osif:get_keys(Keys,LargeTBL,NewLargeTBL),
+    check_small_table(Keys,CurrentLayer,NewCurrentLayer,SmallTBL,NewSmallTBL).
+
+
+check_small_table([Key|Keys],CurrentLayer,NewCurrentLayer,
+		  SmallTBL,NewSmallTBL):-
+    ty_osif:in(Key,SmallTBL,SmallTBL1,R1),
+%    (R1 = ty#yes ->
+    (R1 = success ->
+        check_small_table(Keys,CurrentLayer,NewCurrentLayer,
+			  SmallTBL1,NewSmallTBL)
+    ;otherwise;true ->
+        ty_osif:put_with(Key,Key,CurrentLayer,CurrentLayer1),
+        check_small_table(Keys,CurrentLayer1,NewCurrentLayer,
+			  SmallTBL1,NewSmallTBL)
+    ).
+check_small_table([],CurrentLayer,NewCurrentLayer,SmallTBL,NewSmallTBL):-
+    NewCurrentLayer=CurrentLayer,
+    NewSmallTBL=SmallTBL.
+
+
+connect_least_with_bottom([],SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL):-
+    NewSmallTBL = SmallTBL,
+    NewLargeTBL = LargeTBL.
+connect_least_with_bottom([LeastElement|LeastElements],
+			  SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL):-
+%    ty_osif:add_at(ty#bottom,LeastElement,LargeTBL,LargeTBL1),
+    ty_osif:add_at('&bottom',LeastElement,LargeTBL,LargeTBL1),
+%    ty_osif:add_at(LeastElement,ty#bottom,SmallTBL,SmallTBL1),
+    ty_osif:add_at(LeastElement,'&bottom',SmallTBL,SmallTBL1),
+    connect_least_with_bottom(LeastElements,
+			      SmallTBL1,NewSmallTBL,LargeTBL1,NewLargeTBL).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+initial_typeDB(NewTypeDB):-
+    ty_init:default_typeDB_size(Size),
+%    typeDB#new(TypeDB0),
+    new_vector(TypeDB0,7),
+    new_vector(NameTBL,Size),
+%    typeDB#set(nameTBL,NameTBL,TypeDB0,TypeDB1),
+    set_vector_element(TypeDB0,2,_,NameTBL,TypeDB1),
+    new_vector(LowerTBL,Size),
+%    typeDB#set(lowerTBL,LowerTBL,TypeDB1,TypeDB2),
+    set_vector_element(TypeDB1,3,_,LowerTBL,TypeDB2),
+    new_vector(UpperTBL,Size),
+%    typeDB#set(upperTBL,UpperTBL,TypeDB2,TypeDB3),
+    set_vector_element(TypeDB2,4,_,UpperTBL,TypeDB3),
+    new_vector(AttrTBL,Size),
+%    typeDB#set(attrTBL,AttrTBL,TypeDB3,TypeDB4),
+    set_vector_element(TypeDB3,5,_,AttrTBL,TypeDB4),
+    ty_osif:keyed_set(PosTBL),
+%    typeDB#set(posTBL,PosTBL,TypeDB4,TypeDB5),
+    set_vector_element(TypeDB4,1,_,PosTBL,TypeDB5),
+    ty_osif:keyed_set(ExpTBL),
+%    typeDB#set(expTBL,ExpTBL,TypeDB5,NewTypeDB).
+    set_vector_element(TypeDB5,6,_,ExpTBL,NewTypeDB).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+set_bottom(TypeDB,NewTypeDB):-
+%    Name = ty#bottom,
+    Name = '&bottom',
+%    new_string(Code0,1,1),
+    new_string(Code0,1,8),
+%    set_string_element(Code0,0,bit#on,Code),
+    set_string_element(Code0,0,1,Code),
+    register_to_DB(Name,Code,TypeDB,NewTypeDB).
+
+set_builtin(LP,NLP,TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,DBSize,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,DBSize,TypeDB1),
+    NewCodeSize := DBSize+1,
+    % integer
+%    IntName = ty#integer,
+    IntName = '&integer',
+%    new_string(Code1,NewCodeSize,1),
+    new_string(Code1,NewCodeSize,8),
+%    set_string_element(Code1,0,bit#on,Code2),  % bottom
+    set_string_element(Code1,0,1,Code2),  % bottom
+%    set_string_element(Code2,~(NewCodeSize-1),bit#on,IntCode),
+    set_string_element(Code2,~(NewCodeSize-1),1,IntCode),
+    % string
+%    StrName = ty#string,
+    StrName = '&string',
+%    new_string(Code3,~(NewCodeSize+1),1),
+    new_string(Code3,~(NewCodeSize+1),8),
+%    set_string_element(Code3,0,bit#on,Code4),  % bottom
+    set_string_element(Code3,0,1,Code4),  % bottom
+%    set_string_element(Code4,NewCodeSize,bit#on,StrCode),
+    set_string_element(Code4,NewCodeSize,1,StrCode),
+    %
+    register_to_DB(IntName,IntCode,TypeDB1,TypeDB2),
+    register_to_DB(StrName,StrCode,TypeDB2,NewTypeDB),
+    LayerLevel = 1,
+    ty_osif:add_at(LayerLevel,IntName,LP,LP1),
+    ty_osif:add_at(LayerLevel,StrName,LP1,NLP).
+
+set_top(TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,DBSize,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,DBSize,TypeDB1),
+    NewCodeSize := DBSize+1,
+%    TopName = ty#top,
+    TopName = '&top',
+%    new_string(Code,NewCodeSize,1),
+    new_string(Code,NewCodeSize,8),
+%    builtin#complement_string_elements(Code,0,NewCodeSize,TopCode),
+    set_all_one(NewCodeSize,Code,TopCode),
+    register_to_DB(TopName,TopCode,TypeDB1,NewTypeDB).
+
+% KLIC only supports 8 bit string. The complement value of 0 of 8 bit
+% string is 255, not 1.
+set_all_one(N,S,SS):-N=:=0|
+	SS=S.
+set_all_one(N,S,SS):-N>0|
+	M := N-1,
+	set_string_element(S,M,1,S1),
+	set_all_one(M,S1,SS).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name
+encode_layer([],SmallTBL,NewSmallTBL,
+	     LargeTBL,NewLargeTBL,LayerLevel,NewLayerLevel,_CountOfLayer1,
+	     LP,NLP,NP,NNP,IP,NIP,ISP,NISP,TypeDB,NewTypeDB,
+	     FlatNameTBL,NewFlatNameTBL,Result):-
+    NewLayerLevel = LayerLevel,
+    NewSmallTBL = SmallTBL,
+    NewLargeTBL = LargeTBL,
+    NLP=LP, NP=NNP, NIP=IP, NISP=ISP,
+    NewTypeDB = TypeDB,
+    NewFlatNameTBL = FlatNameTBL,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+otherwise.
+encode_layer(CurrentLayer,SmallTBL,NewSmallTBL,
+	     LargeTBL,NewLargeTBL,LayerLevel,NewLayerLevel,CountOfLayer1,
+	     LP,NLP,NP,NNP,IP,NIP,ISP,NISP,TypeDB,NewTypeDB,
+	     FlatNameTBL,NewFlatNameTBL,Result):-
+%    debug#print("~nencoding layer #~t...~n~T",
+%		[LayerLevel,CurrentLayer]),
+%    io:outstream([nl,puts("encoding layer #"),
+%		  print(LayerLevel),puts("..."),nl,
+%		  print(CurrentLayer)]),
+%    debug#info(debug_tag#tlat,&debug,Info1),
+%    Info1 = encode_current_layer(CurrentLayer,
+%				 SmallTBL,SmallTBL1,lp,np,TypeDB,TypeDB1,
+%				 FlatNameTBL,FlatNameTBL1,R1),
+    encode_current_layer(CurrentLayer,LayerLevel,
+			 SmallTBL,SmallTBL1,LP,LP1,NP,NP1,TypeDB,TypeDB1,
+			 FlatNameTBL,FlatNameTBL1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+%        debug#print("~ncreating inter nodes layer #~t...",[LayerLevel]),
+%        io:outstream([nl,puts("creating inter nodes layer #"),
+%		      print(LayerLevel),puts("...")]),
+        encode_current_internodes(CurrentLayer,SmallTBL1,NewSmallTBL,
+				  LargeTBL,NewLargeTBL,
+				  LayerLevel,NewLayerLevel,CountOfLayer1,
+				  LP1,NLP,NP1,NNP,IP,NIP,ISP,NISP,
+				  TypeDB1,NewTypeDB,
+				  FlatNameTBL1,NewFlatNameTBL,Result)
+    ;otherwise;true ->
+        NewLayerLevel = LayerLevel,
+	NewSmallTBL = SmallTBL1,
+	NewLargeTBL = LargeTBL,
+        NLP = LP1, NNP = NP1, NIP = IP, NISP = ISP,
+        NewTypeDB = TypeDB1,
+        NewFlatNameTBL = FlatNameTBL1,
+        Result = R1
+    ).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Current layer の要素を encode し、登録する。
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name
+encode_current_layer([Name|Layer],LayerLevel,
+		     SmallTBL,NewSmallTBL,LP,NLP,NP,NNP,
+		     TypeDB,NewTypeDB,FlatNameTBL,NewFlatNameTBL,Result):-
+%    (ty#blt_string(Name);ty#blt_integer(Name))|
+    (Name='&string';Name='&integer')|
+	encode_current_layer(Layer,LayerLevel,
+			     SmallTBL,NewSmallTBL,LP,NLP,NP,NNP,
+			     TypeDB,NewTypeDB,FlatNameTBL,NewFlatNameTBL,
+			     Result).
+otherwise.
+encode_current_layer([Name|Layer],LayerLevel,
+		     SmallTBL,NewSmallTBL,LP,NLP,NP,NNP,
+		     TypeDB,NewTypeDB,FlatNameTBL,NewFlatNameTBL,Result):-
+%    typeDB#read(dbsize,CurrentSize,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,CurrentSize,TypeDB1),
+    NewCodeSize := CurrentSize+1,
+%    new_string(Code,NewCodeSize,1),
+    new_string(Code,NewCodeSize,8),
+%    set_string_element(Code,CurrentSize,bit#on,Code1),
+    set_string_element(Code,CurrentSize,1,Code1),
+    ty_osif:get_contents_at(Name,Smallers,SmallTBL,SmallTBL1),
+    or_smallers(Smallers,Code1,Code2,TypeDB1,TypeDB2,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        register_to_DB(Name,Code2,TypeDB2,TypeDB3),
+        ty_osif:remove_at(Name,Name,FlatNameTBL,FlatNameTBL1),
+        ty_osif:add_at(LayerLevel,Name,LP,LP1),
+        ty_osif:put_with(Name,LayerLevel,NP,NP1),
+        encode_current_layer(Layer,LayerLevel,
+			     SmallTBL1,NewSmallTBL,LP1,NLP,NP1,NNP,
+			     TypeDB3,NewTypeDB,FlatNameTBL1,NewFlatNameTBL,
+			     Result)
+    ;otherwise;true ->
+        NewSmallTBL = SmallTBL1,
+        NLP = LP, NNP = NP,
+        NewTypeDB = TypeDB2,
+        NewFlatNameTBL = FlatNameTBL,
+        Result = R1
+    ).
+encode_current_layer([],_LayerLevel,SmallTBL,NewSmallTBL,LP,NLP,NP,NNP,
+		     TypeDB,NewTypeDB,FlatNameTBL,NewFlatNameTBL,Result):-
+    NewSmallTBL = SmallTBL,
+    NLP = LP, NNP = NP,
+    NewTypeDB = TypeDB,
+    NewFlatNameTBL = FlatNameTBL,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+
+
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name
+or_smallers([],Code,NewCode,TypeDB,NewTypeDB,Result):-
+    NewCode = Code,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+or_smallers([Small|Smallers],Code,NewCode,TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_lower_code(Small,LCode,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        % LCode は Code よりも小さいのでコードの長さは短いはず。
+        string(LCode,Size,_,LCode1),
+%        builtin#or_string_elements(Code,0,Size,LCode1,0,Code1,_),
+        ty_osif:or_string_elements(Code,0,Size,LCode1,0,Code1,_),
+        or_smallers(Smallers,Code1,NewCode,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewCode = Code,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+register_to_DB(Name,Code,TypeDB,NewTypeDB):-
+%    typeDB#get(dbsize,Size,NewSize,TypeDB,TypeDB1),
+    set_vector_element(TypeDB,0,Size,NewSize,TypeDB1),
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB1,TypeDB2),
+    set_vector_element(TypeDB1,2,NameTBL,NewNameTBL,TypeDB2),
+%    typeDB#get(posTBL,PosTBL,NewPosTBL,TypeDB2,TypeDB3),
+    set_vector_element(TypeDB2,1,PosTBL,NewPosTBL,TypeDB3),
+%    typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB3,TypeDB4),
+    set_vector_element(TypeDB3,3,LowerTBL,NewLowerTBL,TypeDB4),
+%    typeDB#get(attrTBL,AttrTBL,NewAttrTBL,TypeDB4,NewTypeDB),
+    set_vector_element(TypeDB4,5,AttrTBL,NewAttrTBL,NewTypeDB),
+    Position = Size,
+    ty_osif:put_with(Name,Position,PosTBL,NewPosTBL),
+    set_vector_element(NameTBL,Position,_,Name,NewNameTBL),
+    set_vector_element(LowerTBL,Position,_,Code,NewLowerTBL),
+    set_vector_element(AttrTBL,Position,_,[],NewAttrTBL),
+    NewSize := Size + 1.
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+encode_current_internodes(CurrentLayer,SmallTBL,NewSmallTBL,
+			  LargeTBL,NewLargeTBL,LayerLevel,NewLayerLevel,
+			  _CountOfLayer1,
+			  LP,NLP,NP,NNP,IP,NIP,ISP,NISP,TypeDB,NewTypeDB,
+			  FlatNameTBL,NewFlatNameTBL,Result):-
+    LayerLevel = 1 |
+%	    {{ typeDB#read(dbsize,NewCountOfLayer1,TypeDB,TypeDB1) }},
+	    vector_element(TypeDB,0,NewCountOfLayer1,TypeDB1),
+%	    debug#info(debug_tag#tlat,&debug,Info1),
+%	    Info1 = get_next_layer(CurrentLayer,NextLayer,SmallTBL,SmallTBL1,
+%				   LargeTBL,LargeTBL1,TypeDB1,TypeDB2),
+	    get_next_layer(CurrentLayer,NextLayer,SmallTBL,SmallTBL1,
+			   LargeTBL,LargeTBL1,TypeDB1,TypeDB2),
+	    encode_layer(NextLayer,
+			 SmallTBL1,NewSmallTBL,
+			 LargeTBL1,NewLargeTBL,
+			 ~(LayerLevel+1),NewLayerLevel,NewCountOfLayer1,
+			 LP,NLP,NP,NNP,IP,NIP,ISP,NISP,TypeDB2,NewTypeDB,
+			 FlatNameTBL,NewFlatNameTBL,Result).
+encode_current_internodes(CurrentLayer,SmallTBL,NewSmallTBL,
+			  LargeTBL,NewLargeTBL,LayerLevel,NewLayerLevel,
+			  CountOfLayer1,
+			  LP,NLP,NP,NNP,IP,NIP,ISP,NISP,TypeDB,NewTypeDB,
+			  FlatNameTBL,NewFlatNameTBL,Result):-
+    LayerLevel > 1 |
+%	debug#info(debug_tag#tlat,&debug,Info1),
+%	Info1 = create_inter_nodes(CurrentLayer,LayerLevel,CountOfLayer1,
+%				   np,ip,isp,TypeDB,TypeDB1,R1),
+	create_inter_nodes(CurrentLayer,LayerLevel,CountOfLayer1,
+			   NP,NP1,IP,IP1,ISP,ISP1,TypeDB,TypeDB1,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+%	    debug#info(debug_tag#tlat,&debug,Info2),
+%	    Info2 = get_next_layer(CurrentLayer,NextLayer,SmallTBL,SmallTBL1,
+%				   LargeTBL,LargeTBL1,TypeDB1,TypeDB2),
+	    get_next_layer(CurrentLayer,NextLayer,SmallTBL,SmallTBL1,
+			   LargeTBL,LargeTBL1,TypeDB1,TypeDB2),
+	    encode_layer(NextLayer,
+			 SmallTBL1,NewSmallTBL,
+			 LargeTBL1,NewLargeTBL,
+			 ~(LayerLevel+1),NewLayerLevel,CountOfLayer1,
+			 LP,NLP,NP1,NNP,IP1,NIP,ISP1,NISP,TypeDB2,NewTypeDB,
+			 FlatNameTBL,NewFlatNameTBL,Result)
+	;otherwise;true ->
+	    NewLayerLevel = LayerLevel,
+	    NewSmallTBL = SmallTBL,
+	    NewLargeTBL = LargeTBL,
+	    NLP = LP, NNP = NP1, NIP = IP1, NISP = ISP1,
+	    NewTypeDB = TypeDB1,
+	    NewFlatNameTBL = FlatNameTBL,
+	    Result = R1
+	).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Current layer の次の(上の) layer を取り出す。
+get_next_layer(CurrentLayer,NextLayer,SmallTBL,NewSmallTBL,
+	       LargeTBL,NewLargeTBL,TypeDB,NewTypeDB):-
+    ty_osif:keyed_set(LayerPool),
+    get_largers(CurrentLayer,SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL,
+		TypeDB,NewTypeDB,LayerPool,LayerPool1),
+    ty_osif:get_contents(NextLayer,LayerPool1,NewLayerPool).
+    % dispose working pool
+%    NewLayerPool = [].
+
+
+get_largers([],SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL,
+	    TypeDB,NewTypeDB,NextLayer,NewNextLayer):-
+    NewSmallTBL = SmallTBL,
+    NewLargeTBL = LargeTBL,
+    NewTypeDB = TypeDB,
+    NewNextLayer = NextLayer.
+get_largers([Current|Contents],SmallTBL,NewSmallTBL,LargeTBL,NewLargeTBL,
+	    TypeDB,NewTypeDB,NextLayer,NewNextLayer):-
+    ty_osif:get_contents_at(Current,Largers,LargeTBL,LargeTBL1),
+    get_smallers_in_lower_layers(Largers,SmallTBL,SmallTBL1,
+				 TypeDB,TypeDB1,NextLayer,NextLayer1),
+    get_largers(Contents,SmallTBL1,NewSmallTBL,LargeTBL1,NewLargeTBL,
+		TypeDB1,NewTypeDB,NextLayer1,NewNextLayer).
+
+
+get_smallers_in_lower_layers([Larger|Largers],SmallTBL,NewSmallTBL,
+			     TypeDB,NewTypeDB,NextLayer,NewNextLayer):-
+    ty_osif:get_contents_at(Larger,Smallers,SmallTBL,SmallTBL1),
+    check_smallers_in_lower_layers(Smallers,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        ty_osif:put_with(Larger,Larger,NextLayer,NextLayer1),
+        get_smallers_in_lower_layers(Largers,SmallTBL1,NewSmallTBL,
+				     TypeDB1,NewTypeDB,NextLayer1,NewNextLayer)
+    ;otherwise;true ->
+        get_smallers_in_lower_layers(Largers,SmallTBL1,NewSmallTBL,
+				     TypeDB1,NewTypeDB,NextLayer,NewNextLayer)
+    ).
+get_smallers_in_lower_layers([],SmallTBL,NewSmallTBL,TypeDB,NewTypeDB,
+			     NextLayer,NewNextLayer):-
+    NewSmallTBL = SmallTBL,
+    NewTypeDB = TypeDB,
+    NewNextLayer = NextLayer.
+
+
+
+% Result : normal(ty#yes|ty#no)
+check_smallers_in_lower_layers([Smaller|Smallers],TypeDB,NewTypeDB,Result):-
+    is_already_coded(Smaller,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        check_smallers_in_lower_layers(Smallers,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB1,
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+check_smallers_in_lower_layers([],TypeDB,NewTypeDB,Result):-
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+
+%
+is_already_coded(Name,TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_position(Name,_Pos,TypeDB,NewTypeDB,Result).
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) |  abnormal(Info)
+%        Info : illegal_type_name
+create_inter_nodes(LayerElements,LayerLevel,CountOfLayer1,
+		   NP,NNP,IP,NIP,ISP,NISP,TypeDB,NewTypeDB,Result):-
+%    debug#info(debug_tag#tlat,&debug,Info1),
+%    Info1 = check_lower_layer(LayerElements,InterNodes,CountOfLayer1,
+%			      TypeDB,NewTypeDB,Result),
+    check_lower_layer(LayerElements,[],InterNodes,CountOfLayer1,
+		      TypeDB,NewTypeDB,Result),
+    push_internodes(InterNodes,LayerLevel,NP,NNP,IP,NIP,ISP,NISP).
+
+%
+%
+check_lower_layer([],InterNodes,NewInterNodes,_CheckStart,
+		  TypeDB,NewTypeDB,Result):-
+    NewInterNodes = InterNodes,
+    NewTypeDB = TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+check_lower_layer([Name|Layer],InterNodes,NewInterNodes,CheckStart,
+		  TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_lower_code(Name,Code,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        string(Code,Size,_,Code1),
+        check_each_lower_element(CheckStart,Size,Code1,Name,
+				 InterNodes,InterNodes1,TypeDB1,TypeDB2),
+	check_lower_layer(Layer,InterNodes1,NewInterNodes,CheckStart,
+			  TypeDB2,NewTypeDB,Result)
+    ;otherwise;true ->
+	NewInterNodes = InterNodes,
+	NewTypeDB = TypeDB1,
+	Result = R1
+    ).
+
+
+check_each_lower_element(Position,End,_Code,_Name,InterNodes,NewInterNodes,
+			 TypeDB,NewTypeDB):-
+    Position >= End|
+	NewInterNodes = InterNodes,
+	NewTypeDB = TypeDB.
+check_each_lower_element(Position,End,Code,Name,InterNodes,NewInterNodes,
+			 TypeDB,NewTypeDB):-
+%    Position < End,string_element(Code,Position,bit#on)|
+    Position < End,string_element(Code,Position,1)|
+	check_each_lower_element(~(Position+1),End,Code,Name,
+				 InterNodes,NewInterNodes,TypeDB,NewTypeDB).
+check_each_lower_element(Position,End,Code,Name,InterNodes,NewInterNodes,
+			 TypeDB,NewTypeDB):-
+%    Position < End,string_element(Code,Position,bit#off)|
+    Position < End,string_element(Code,Position,0)|
+	get_andcode(Code,Position,AndCode,TypeDB,TypeDB1),
+        is_same_as_registered(AndCode,TypeDB1,TypeDB2,R1),
+%	(R1 = normal(ty#yes) ->
+	(R1 = normal(success) ->
+	    check_each_lower_element(~(Position+1),End,Code,Name,
+				     InterNodes,NewInterNodes,
+				     TypeDB2,NewTypeDB)
+	;otherwise;true ->
+	    position_to_name(Position,CheckPName,TypeDB2,TypeDB3),
+	    add_unique(AndCode,CheckPName,Name,InterNodes,InterNodes1),
+	    check_each_lower_element(~(Position+1),End,Code,Name,
+				     InterNodes1,NewInterNodes,
+				     TypeDB3,NewTypeDB)
+	).
+
+
+get_andcode(Code,Position,AndCode,TypeDB,NewTypeDB):-
+%    typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB,3,LowerTBL,NewLowerTBL,NewTypeDB),
+    vector_element(LowerTBL,Position,NonLowerCode,NewLowerTBL),
+    ty_lat:and_lower_code(Code,NonLowerCode,AndCode).
+
+
+% Result : normal(ty#yes) | normal(ty#no)
+is_same_as_registered(Code,TypeDB,NewTypeDB,Result):-
+%    typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB,3,LowerTBL,NewLowerTBL,NewTypeDB),
+    ty_lat:lower_code_to_position(Code,Position),
+    vector_element(LowerTBL,Position,RegisteredCode,NewLowerTBL),
+    (Code = RegisteredCode ->
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+%        Result = normal(ty#no)
+        Result = normal(fail)
+    ).
+
+add_unique(AndCode,CheckPName,Name,[],NewInterNodes):-
+    new_vector(InterNodeInfo,2),
+    set_vector_element(InterNodeInfo, 0,_,AndCode,    InterNodeInfo1),
+    set_vector_element(InterNodeInfo1,1,_,InterNames, NewInterNodeInfo),
+    InterNames = [CheckPName,Name],
+    NewInterNodes = [NewInterNodeInfo].
+add_unique(AndCode,CheckPName,Name,[InterNodeInfo|InterNodes],NewInterNodes):-
+    vector_element(InterNodeInfo,0,InterNodeCode),
+    AndCode = InterNodeCode |
+	set_vector_element(InterNodeInfo,1,InterNames,NewInterNames,
+			   NewInterNodeInfo),
+	unique_merge([CheckPName,Name],InterNames,NewInterNames),
+	NewInterNodes = [NewInterNodeInfo|InterNodes].
+otherwise.
+add_unique(AndCode,CheckPName,Name,[InterNodeInfo|InterNodes],NewInterNodes):-
+    NewInterNodes = [InterNodeInfo|InterNodes1],
+    add_unique(AndCode,CheckPName,Name,InterNodes,InterNodes1).
+
+
+unique(X,[],B):-B=[X].
+unique(X,[A|C],B):-X=A|
+    B=[A|C].
+otherwise.
+unique(X,[A|C],B):-X\=A|
+    unique(X,C,D),
+    B=[A|D].
+
+unique_merge([],A,B):-B=A.
+unique_merge([X|Y],A,B):-
+    unique(X,A,C),
+    unique_merge(Y,C,B).
+
+position_to_name(Position,Name,TypeDB,NewTypeDB):-
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TypeDB,NewTypeDB),
+    set_vector_element(TypeDB,2,NameTBL,NewNameTBL,NewTypeDB),
+    vector_element(NameTBL,Position,Name,NewNameTBL).
+
+
+%
+%
+%
+push_internodes([],_LayerNumber,NP,NNP,IP,NIP,ISP,NISP):-
+    NNP = NP, NIP = IP, NISP = ISP.
+push_internodes([InterNodeInfo|InterNodes],LayerNumber,
+		NP,NNP,IP,NIP,ISP,NISP):-
+    push_one_internode(InterNodeInfo,LayerNumber,NP,NP1,IP,IP1,ISP,ISP1),
+    push_internodes(InterNodes,LayerNumber,NP1,NNP,IP1,NIP,ISP1,NISP).
+
+
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : illegal_internode_name | illegal_type_name
+push_one_internode(InterNodeInfo,LayerNumber,NP,NNP,IP,NIP,ISP,NISP):-
+    vector_element(InterNodeInfo,0,AndCode,InterNodeInfo1),
+    set_vector_element(InterNodeInfo1,1,InterNames,GLBName,InterNodeInfo2),
+    make_internode_name(InterNames,GLBName),
+    get_least_layer_level(InterNames,LayerNumber,LeastLevel,NP,NNP),
+    ty_osif:add_at(LeastLevel,InterNodeInfo2,IP,NIP),
+    push_ISP(InterNames,GLBName,ISP,NISP).
+
+% 中間ノード名の元になった型名をキーにして中間ノード名を格納する
+push_ISP([],_,ISP,NISP):-
+    NISP=ISP.
+push_ISP([Name|InterNames],GLBName,ISP,NISP):-
+    ty_osif:add_at(Name,GLBName,ISP,ISP1),
+    push_ISP(InterNames,GLBName,ISP1,NISP).
+
+get_least_layer_level([],LeastLevel,NewLeastLevel,NP,NNP):-
+    NewLeastLevel = LeastLevel,
+    NNP = NP.
+get_least_layer_level([Name|InterNames],LeastLevel,NewLeastLevel,NP,NNP):-
+    ty_osif:get_with(Name,LevelNumber,NP,NP1),
+    (LevelNumber < LeastLevel ->
+        Least = LevelNumber
+    ;otherwise;true ->
+        Least = LeastLevel
+    ),
+    get_least_layer_level(InterNames,Least,NewLeastLevel,NP1,NNP).
+
+%
+make_internode_name(InterNames,GLBName):-
+    names_to_strings(InterNames,InterNameStrings),
+%    builtin#append_string(["'"|InterNameStrings],GLBNameString),
+%    ty_osif:append_string([string#"'"|InterNameStrings],GLBNameString),
+    ty_osif:append_string(InterNameStrings,GLBNameString),
+%    ty_osif:string_to_term(GLBNameString,GLBName).
+    ty_osif:string_to_atom(GLBNameString,GLBName).
+
+names_to_strings([],Strings):-
+    Strings = [].
+names_to_strings([Name],Strings):-
+%    ty_osif:term_to_string(Name,String),
+    ty_osif:atom_to_string(Name,String),
+%    Strings = [String,"'"].
+    Strings = [String].
+otherwise.
+names_to_strings([Name|Names],Strings):-
+%    ty_osif:term_to_string(Name,String),
+    ty_osif:atom_to_string(Name,String),
+%    Strings = [String,"↓"|NewStrings],
+    Strings = [String,"&"|NewStrings],
+    names_to_strings(Names,NewStrings).
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+% Result : normal(ty#yes) | abnormal(Info)
+%          Info : {ty#tyemid,loop_definition,Loop}
+make_flat_lattice(FlatNameTBL,LargeTBL,TypeDB,NewTypeDB,Result):-
+    ty_osif:get_contents(FlatNames,FlatNameTBL,NewFlatNameTBL),
+%    NewFlatNameTBL = [],    % close pool
+    flat_or_loop(FlatNames,Flat,Loop,LargeTBL,NewLargeTBL),
+%    NewLargeTBL = [],       % close pool
+    (Loop = [] ->
+        flat_codes(Flat,TypeDB,NewTypeDB),
+        % close working table
+%        Result = normal(ty#yes)
+        Result = normal(success)
+    ;otherwise;true ->
+        NewTypeDB = TypeDB,
+        Result = abnormal(Info),
+%        Info = {ty#typemid,loop_definition,Loop}
+        Info = {type,loop_definition,Loop}
+    ).
+
+flat_or_loop([],Flat,Loop,LargeTBL,NewLargeTBL):-
+    Flat = [], Loop = [], NewLargeTBL = LargeTBL.
+flat_or_loop([Name|Names],Flat,Loop,LargeTBL,NewLargeTBL):-
+    ty_osif:get_at(Name,X,LargeTBL,LargeTBL1),
+%    (X = ty#void ->
+    (X = '&void' ->
+        Flat = [Name|NewFlat],
+        flat_or_loop(Names,NewFlat,Loop,LargeTBL1,NewLargeTBL)
+    ;otherwise;true ->
+        Loop = [Name|NewLoop],
+        flat_or_loop(Names,Flat,NewLoop,LargeTBL1,NewLargeTBL)
+    ).
+
+flat_codes([Name|FlatNames],TypeDB,NewTypeDB):-
+%    (ty#blt_string(Name);ty#blt_integer(Name))|
+    (Name='&string';Name='&integer')|
+	flat_codes(FlatNames,TypeDB,NewTypeDB).
+otherwise.
+flat_codes([Name|FlatNames],TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,Size,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,Size,TypeDB1),
+    NewCodeSize := Size+1,
+%    new_string(Code,NewCodeSize,1),
+    new_string(Code,NewCodeSize,8),
+    % set bottom on
+%    set_string_element(Code,0,bit#on,Code1),
+    set_string_element(Code,0,1,Code1),
+    % set self on
+%    set_string_element(Code1,Size,bit#on,FlatCode),
+    set_string_element(Code1,Size,1,FlatCode),
+    register_to_DB(Name,FlatCode,TypeDB1,TypeDB2),
+    flat_codes(FlatNames,TypeDB2,NewTypeDB).
+flat_codes([],TypeDB,NewTypeDB):-
+    NewTypeDB = TypeDB.
+
+
+
+%---------------------------------------------------------------------
+% L
+%---------------------------------------------------------------------
+generate_upper_table(TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,Size,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,Size,TypeDB1),
+    new_vector(UpperTBL,Size),
+%    typeDB#get(lowerTBL,LowerTBL,NewLowerTBL,TypeDB1,TypeDB2),
+    set_vector_element(TypeDB1,3,LowerTBL,NewLowerTBL,TypeDB2),
+    reflect_lower_codes(Size,1,Size,LowerTBL,NewLowerTBL,UpperTBL,NewUpperTBL),
+%    typeDB#set(upperTBL,NewUpperTBL,TypeDB2,NewTypeDB).
+    set_vector_element(TypeDB2,4,_,NewUpperTBL,NewTypeDB).
+
+reflect_lower_codes(N,_L,_DBSize,LowerTBL,NewLowerTBL,UpperTBL,NewUpperTBL):-
+    N=<0|
+	NewLowerTBL = LowerTBL,
+	NewUpperTBL = UpperTBL.
+reflect_lower_codes(N,L,DBSize,LowerTBL,NewLowerTBL,UpperTBL,NewUpperTBL):-
+    N>0|
+	M := N-1,
+%	new_string(UCode,L,1),
+	new_string(UCode,L,8),
+	vertical_copy(L,M,~(DBSize-1),UCode,NewUCode,LowerTBL,LowerTBL1),
+	set_vector_element(UpperTBL,M,_,NewUCode,UpperTBL1),
+	reflect_lower_codes(M,~(L+1),DBSize,LowerTBL1,NewLowerTBL,
+			    UpperTBL1,NewUpperTBL).
+
+vertical_copy(N,_ScanPos,_Vpos,UCode,NewUCode,LowerTBL,NewLowerTBL):-
+    N=<0|
+	NewUCode = UCode,
+	NewLowerTBL = LowerTBL.
+vertical_copy(N,ScanPos,Vpos,UCode,NewUCode,LowerTBL,NewLowerTBL):-
+    N>0|
+	M := N-1,
+	set_vector_element(LowerTBL,Vpos,LCode,NewLCode,LowerTBL1),
+	string_element(LCode,ScanPos,ScanBit,NewLCode),
+	set_string_element(UCode,M,ScanBit,UCode1),
+	vertical_copy(M,ScanPos,~(Vpos-1),UCode1,NewUCode,
+		      LowerTBL1,NewLowerTBL).
+
+
+%
+%IP:keyed_bag key:layer number data:internode names created under the layer
+recreate_lowerTBL(TopLayer,LP,IP,ISP,TDB,NewTypeDB,Result):-
+%    debug#print("~nrecreating lower table...",[]),
+%    io:outstream([nl,print("recreating lower table...")]),
+    reinitial_typeDB(TypeDB),
+    set_bottom(TypeDB,TypeDB1),
+    move_first_layer(LP,LP1,TDB,TDB1,TypeDB1,TypeDB2),
+    recreate_layer(2,TopLayer,LP1,NLP,IP,NIP,ISP,NISP,
+		   TDB1,TDB2,TypeDB2,TypeDB3,Result),
+    reset_typeDB(TDB2,TypeDB3,NewTypeDB).
+%    NLP=[], NIP=[], NISP=[].    % close pool
+
+% temporary typeDB
+% only create nameTBL,lowerTBL,posTBL,attrTBL
+reinitial_typeDB(NewTypeDB):-
+    ty_init:default_typeDB_size(Size),
+%    typeDB#new(TypeDB0),
+    new_vector(TypeDB0,7),
+    new_vector(NameTBL,Size),
+%    typeDB#set(nameTBL,NameTBL,TypeDB0,TypeDB1),
+    set_vector_element(TypeDB0,2,_,NameTBL,TypeDB1),
+    new_vector(LowerTBL,Size),
+%    typeDB#set(lowerTBL,LowerTBL,TypeDB1,TypeDB2),
+    set_vector_element(TypeDB1,3,_,LowerTBL,TypeDB2),
+    new_vector(AttrTBL,Size),
+%    typeDB#set(attrTBL,AttrTBL,TypeDB2,TypeDB3),
+    set_vector_element(TypeDB2,5,_,AttrTBL,TypeDB3),
+    ty_osif:keyed_set(PosTBL),
+%    typeDB#set(posTBL,PosTBL,TypeDB3,NewTypeDB).
+    set_vector_element(TypeDB3,1,_,PosTBL,NewTypeDB).
+
+
+reset_typeDB(TDB,TypeDB,NewTypeDB):-
+    % move new data and free temporary typeDB
+%    typeDB#read(nameTBL,NameTBL,TypeDB,TypeDB1),
+    vector_element(TypeDB,2,NameTBL,TypeDB1),
+%    typeDB#read(lowerTBL,LowerTBL,TypeDB1,TypeDB2),
+    vector_element(TypeDB1,3,LowerTBL,TypeDB2),
+%    typeDB#get(posTBL,PosTBL,0,TypeDB2,TypeDB3),
+    set_vector_element(TypeDB2,1,PosTBL,0,TypeDB3),
+%    typeDB#read(dbsize,Size,TypeDB3,TypeDB4),
+    vector_element(TypeDB3,0,Size,TypeDB4),
+%    typeDB#read(attrTBL,AttrTBL,TypeDB4,_TypeDB5),
+    vector_element(TypeDB4,5,AttrTBL,_TypeDB5),
+%    typeDB#set(dbsize,Size,TDB,TDB1),
+    set_vector_element(TDB,0,_,Size,TDB1),
+%    typeDB#set(nameTBL,NameTBL,TDB1,TDB2),
+    set_vector_element(TDB1,2,_,NameTBL,TDB2),
+%    typeDB#set(lowerTBL,LowerTBL,TDB2,TDB3),
+    set_vector_element(TDB2,3,_,LowerTBL,TDB3),
+%    typeDB#set(attrTBL,AttrTBL,TDB3,TDB4),
+    set_vector_element(TDB3,5,_,AttrTBL,TDB4),
+%    typeDB#get(posTBL,OldPosTBL,PosTBL,TDB4,NewTypeDB),
+    set_vector_element(TDB4,1,OldPosTBL,PosTBL,NewTypeDB).
+%    OldPosTBL = [].    % close pool
+
+
+
+move_first_layer(LP,NLP,TDB,NTDB,TypeDB,NewTypeDB):-
+    FirstLayerNumber = 1,
+    ty_osif:get_contents_at(FirstLayerNumber,FirstLayer,LP,NLP),
+    move_layer_elements(FirstLayer,TypeDB,NewTypeDB),
+    NTDB = TDB.
+
+move_layer_elements([],TypeDB,NewTypeDB):-
+    NewTypeDB = TypeDB.
+move_layer_elements([Name|Layer],TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,Size,TypeDB,TypeDB1),
+    vector_element(TypeDB,0,Size,TypeDB1),
+    NewCodeSize := Size+1,
+%    new_string(Code,NewCodeSize,1),
+    new_string(Code,NewCodeSize,8),
+    % set bottom on
+%    set_string_element(Code,0,bit#on,Code1),
+    set_string_element(Code,0,1,Code1),
+    % set self on
+%    set_string_element(Code1,Size,bit#on,FlatCode),
+    set_string_element(Code1,Size,1,FlatCode),
+    register_to_DB(Name,FlatCode,TypeDB1,TypeDB2),
+    move_layer_elements(Layer,TypeDB2,NewTypeDB).
+
+%
+recreate_layer(M,N,LP,NLP,IP,NIP,ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    M>N|
+	NLP=LP,NIP=IP,NISP=ISP,NTDB=TDB,NewTypeDB=TypeDB,
+%	Result = normal(ty#yes).
+	Result = normal(success).
+recreate_layer(M,N,LP,NLP,IP,NIP,ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    M=<N|
+    encode_internodes(M,IP,IP1,TDB,TDB1,TypeDB,TypeDB1,R2),
+%    (R2 = normal(ty#yes) ->
+    (R2 = normal(success) ->
+        reencode_current_layer(M,LP,LP1,ISP,ISP1,TDB1,TDB2,TypeDB1,TypeDB2,R1),
+%        (R1 = normal(ty#yes) ->
+        (R1 = normal(success) ->
+	    recreate_layer(~(M+1),N,LP1,NLP,IP1,NIP,ISP1,NISP,
+			   TDB2,NTDB,TypeDB2,NewTypeDB,Result)
+	;otherwise;true ->
+	    NLP=LP1,NIP=IP1,NISP=ISP1,NTDB=TDB2,NewTypeDB=TypeDB2,
+	    Result = R1
+	)
+    ;otherwise;true ->
+        NLP = LP, NIP = IP1, NISP = ISP,
+        NTDB = TDB1,
+        NewTypeDB = TypeDB1,
+        Result = R2
+    ).
+
+encode_internodes(LayerNumber,IP,NIP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    ty_osif:get_contents_at(LayerNumber,Internodes,IP,NIP),
+    encode_inter(Internodes,TDB,NTDB,TypeDB,NewTypeDB,Result).
+
+encode_inter([],TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    NTDB=TDB,
+    NewTypeDB=TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+encode_inter([NodeInfo|Nodes],TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    % {OldCode,Name} = NodeInfo,
+    vector_element(NodeInfo,0,OldCode,NodeInfo1),
+    vector_element(NodeInfo1,1,Name,_NodeInfo2),
+    % 下界コードから下界の名前をとりだす
+    get_lower_names(OldCode,LowerNames,TDB,TDB1),
+    % 現在のdbsizeの新しいコードをつくる
+    new_code(Code,TypeDB,TypeDB1),
+    % 下界のビットをたてる
+    or_smallers(LowerNames,Code,NewCode,TypeDB1,TypeDB2,R1),
+    % 登録する
+    register_to_DB(Name,NewCode,TypeDB2,TypeDB3),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        encode_inter(Nodes,TDB1,NTDB,TypeDB3,NewTypeDB,Result)
+    ;otherwise;true ->
+        NTDB = TDB1,
+        NewTypeDB = TypeDB3,
+        Result = R1
+    ).
+
+% 名前から下界の名前をとりだす
+get_lower_names(Code,LowerNames,TDB,NTDB):-
+    string(Code,Size,_,Code1),
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TDB,NTDB),
+    set_vector_element(TDB,2,NameTBL,NewNameTBL,NTDB),
+    scan_lower_bit(Size,Code1,LowerNames,NameTBL,NewNameTBL).
+
+get_lowers_only(Code,LowerNames,TDB,NTDB):-
+    string(Code,Size,_,Code1),
+%    typeDB#get(nameTBL,NameTBL,NewNameTBL,TDB,NTDB),
+    set_vector_element(TDB,2,NameTBL,NewNameTBL,NTDB),
+    % 自身は含めない
+    scan_lower_bit(~(Size-1),Code1,LowerNames,NameTBL,NewNameTBL).
+
+scan_lower_bit(N,_Code,LowerNames,NameTBL,NewNameTBL):-N=<0|
+    LowerNames = [],
+    NewNameTBL = NameTBL.
+scan_lower_bit(N,Code,LowerNames,NameTBL,NewNameTBL):-N>0|
+    M := N-1,
+    string_element(Code,M,E,NewCode),
+%    (E = bit#on ->
+    (E = 1 ->
+        LowerNames = [Name|NewLowerNames],
+        vector_element(NameTBL,M,Name,NameTBL1)
+    ;otherwise;true ->
+        NewLowerNames = LowerNames,
+        NameTBL1 = NameTBL
+    ),
+    scan_lower_bit(M,NewCode,NewLowerNames,NameTBL1,NewNameTBL).
+
+new_code(Code,TypeDB,NewTypeDB):-
+%    typeDB#read(dbsize,CurrentSize,TypeDB,NewTypeDB),
+    vector_element(TypeDB,0,CurrentSize,NewTypeDB),
+    NewCodeSize := CurrentSize+1,
+%    new_string(Code0,NewCodeSize,1),
+    new_string(Code0,NewCodeSize,8),
+%    set_string_element(Code0,CurrentSize,bit#on,Code).
+    set_string_element(Code0,CurrentSize,1,Code).
+
+
+
+%
+% LP : keyed_bag : layer pool that contains names at the layer
+%      key : layer number, data : names
+reencode_current_layer(LayerNumber,LP,NLP,ISP,NISP,TDB,NTDB,
+		       TypeDB,NewTypeDB,Result):-
+    ty_osif:get_contents_at(LayerNumber,Layer,LP,NLP),
+    reencode_current(Layer,ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result).
+
+% ISP : keyed_bag : smaller internode name
+%       key : name (upper), data : name (lower--internode)
+reencode_current([],ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    NISP=ISP,
+    NTDB=TDB,
+    NewTypeDB=TypeDB,
+%    Result = normal(ty#yes).
+    Result = normal(success).
+reencode_current([Name|Nodes],ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    reencode_current_one(Name,ISP,ISP1,TDB,TDB1,TypeDB,TypeDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        reencode_current(Nodes,ISP1,NISP,TDB1,NTDB,TypeDB1,NewTypeDB,Result)
+    ;otherwise;true ->
+        NISP = ISP1,
+        NTDB = TDB1,
+        NewTypeDB = TypeDB1,
+        Result = R1
+    ).
+
+reencode_current_one(Name,ISP,NISP,TDB,NTDB,TypeDB,NewTypeDB,Result):-
+    ty_lat:name_to_lower_code(Name,OldCode,TDB,TDB1,R1),
+%    (R1 = normal(ty#yes) ->
+    (R1 = normal(success) ->
+        get_lowers_only(OldCode,LowerNames,TDB1,NTDB),
+        ty_osif:get_contents_at(Name,LowerInters,ISP,NISP),
+        merge({LowerNames,LowerInters},Lowers),
+        new_code(Code,TypeDB,TypeDB1),
+        or_smallers(Lowers,Code,NewCode,TypeDB1,TypeDB2,Result),
+        register_to_DB(Name,NewCode,TypeDB2,NewTypeDB)
+    ;otherwise;true ->
+        NISP = ISP,
+        NTDB = TDB1,
+        NewTypeDB = TypeDB,
+        Result = R1
+    ).

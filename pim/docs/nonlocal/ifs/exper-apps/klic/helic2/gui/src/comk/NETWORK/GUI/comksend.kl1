@@ -1,0 +1,77 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module comksend.
+:- public comksend/6.
+
+:- with_macro pimos.
+
+
+comksend(Stream,AgentName,Parameter,Argument,Result,St1):- true |
+	BufSize = 1023,
+%	builtin:print({AgentName,Parameter,Argument}),
+        comkRece:commandSend(Parameter,AgentName,Argument,SendString),
+        (wait(SendString) ->
+	string(SendString,_SendLen,_SendSize,_),
+%        io:outstream([print("SendString...."),print(Parameter),nl,
+%	print(SendLen),nl]),
+	builtin:print(SendString),
+        stringdiv(SendString,Stream,0,0,0,BufSize,St1,Result,0,_Size)).
+%       netR1(NSTTT1,N1,STTT2))).
+%       soPrint(NSTTT1,Respon,[]),              
+%       io:outstream([print(Respon),nl]))).
+
+
+stringdiv(String,Stream,N,0,M,BufSize,RSt,Result,Num0,Size):- N=0 |
+        generic:string(String,Len,_EleSt),
+        string_element(String,N,NEle,NString),
+        new_string(St0,1,8),
+        N1 := N + 1,
+	M1 := M + 1,
+        set_string_element(St0,0,NEle,NSt0),
+        Stream = [fwrite(NSt0,Num1)|NST1],
+	NNum := Num0 + Num1,
+%        builtin:print(NSt0),
+        stringdiv(NString,NST1,N1,M1,BufSize,Len,RSt,Result,NNum,Size).
+stringdiv(String,Stream,N,M,BufSize,EleSize,RSt,Result,Num0,Size):- 
+		N > 0 , N < EleSize ,M < BufSize|
+        string_element(String,N,NEle,NString),
+        new_string(St0,1,8),
+        N1 := N + 1,
+	M1 := M + 1,
+        set_string_element(St0,0,NEle,NSt0),
+        Stream = [fwrite(NSt0,Num1)|NST1],
+	NNum := Num0 + Num1,
+%        builtin:print(NSt0),
+        stringdiv(NString,NST1,N1,M1,BufSize,EleSize,RSt,Result,NNum,Size).
+stringdiv(String,Stream,N,M,BufSize,EleSize,RSt,Result,Num0,Size):- 
+		N > 0 , N < EleSize ,M = BufSize|
+        string_element(String,N,NEle,NString),
+        new_string(St0,1,8),
+        N1 := N + 1,
+%	M1 := M + 1,
+        set_string_element(St0,0,NEle,NSt0),
+        Stream = [fwrite(NSt0,Num1),fflush(RR)|NST1],
+	NNum := Num0 + Num1,
+	(wait(RR) ->
+%        builtin:print(NSt0),
+        stringdiv(NString,NST1,N1,0,BufSize,EleSize,RSt,Result,NNum,Size)).
+stringdiv(_String,Stream,N,_M,_BufSize,EleSize,RSt,Result,Num,Size):- 
+			N = EleSize |
+        Stream = [fflush(RR)|RSt],
+	(wait(RR) ->
+%	Stream = RSt,
+		Size = Num,
+		builtin:print(Size),
+        	builtin:print("Send Ok"),
+		Result = normal(success)).
+%        Result=normal(success)).
+otherwise.
+stringdiv(_String,_Stream,_N,_M,_BufSize,_EleSize,_RSt,Result,_Num,_Size):- 
+			true |
+        builtin:print("Send OUT"),
+        Result=abnormal({net,sendout,nil}).     
+
+

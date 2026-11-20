@@ -1,0 +1,147 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtgui_debateNetworkHandler.
+
+:- public 
+    create/3.
+            
+:- with_macro pimos.
+
+%create
+    create(NH,P,D):-true|
+        NH=[],
+        loop(P,D,nil).
+
+%loop
+    loop([],_,_):-true|
+        true.
+    loop(_,[],_):-true|
+        true.
+    loop([Protocol|P],D,BR1):-true|
+        execute(Protocol,p,BR1,BR,R),
+        (   wait(R)->
+                loop(P,D,BR)).
+    loop(P,[Protocol|D],BR1):-true|
+        execute(Protocol,d,BR1,BR,R),
+        (   wait(R)->
+                loop(P,D,BR)).
+
+%execute
+    execute(get_commandArguments(Command,Parameter,Arguments,Result),AgentName,BR1,BR,R):-true|
+        get_commandArguments(BR1,AgentName,Command,Parameter,Arguments,Result),
+        BR     = BR1,
+        R      = Result.
+    execute(receive(ok,_,Result),                     _,{_,Arguments},BR,R):-true|
+        dbtcui_ioUtility:show_string(nil,"ok",Result),
+        BR     = {dummy,Arguments},
+        R = normal(success).
+    execute(receive(explanation,[EXP],Result),                     _,{_,Arguments},BR,R):-true|
+        dbtcui_receiveProtocolShow:explanation([EXP],Result),
+        BR     = {dummy,Arguments},
+        R = normal(success).
+    execute(receive(errorInfo,[ErrorInfo],Result),                     _,{_,Arguments},BR,R):-true|
+        dbtcui_ioUtility:show_error(ErrorInfo,Result),
+        BR     = {dummy,Arguments},
+        R      = Result.
+
+    execute(receive(Parameter,Arguments,Result),                     _,_,BR,R):-
+                Parameter\=ok,Parameter\=errorInfo|
+        BR     = {Parameter,Arguments},
+        Result = normal(success),R = normal(success).
+    execute(show(argument,[AidInfo,Issue,_,{RuleName,TopRuleRel,Argument},Status,History],Result),
+                        _,BR1,BR,R):-true|
+        show(AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History,Result),
+        BR     = BR1,
+        R      = Result.
+
+%get_commandArguments
+    get_commandArguments({reasonList,[]},
+                _,Command,Parameter,Arguments,Result):-true|
+        Command=notice,Parameter=nil,Arguments=[-1],Result=normal(success).
+    get_commandArguments({reasonList,SPListList},
+                _,Command,Parameter,Arguments,Result):-SPListList\=[]|
+        dbtcui_receiveProtocolShow:reasonList(SPListList,R1),
+        (   wait(R1)->
+                count(SPListList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=notice,Parameter=nil,Arguments=[Num]).
+    get_commandArguments({justificationList,JustificationList},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_receiveProtocolShow:justificationList(JustificationList,R1),
+        (   wait(R1)->
+                count(JustificationList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=set,Parameter=justification,Arguments=[Num]).
+    get_commandArguments({argumentList,[ArgumentList,[Issue]]},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_receiveProtocolShow:argumentList([ArgumentList,[Issue]],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=argument,Arguments=[Num]).
+    get_commandArguments({counterList,[ArgumentList,AddInfo]},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_receiveProtocolShow:counterList([ArgumentList,AddInfo],R1),
+        (   wait(R1)->
+                count(ArgumentList,0,N),
+                dbtcui_ioUtility:get_num(N,Num,Result),
+                Command=send,Parameter=rebuttal,Arguments=[Num]).
+    get_commandArguments({claimList,[ArgumentList1,ArgumentList2,_]},
+                _,Command,Parameter,Arguments,Result):-true|
+        dbtcui_receiveProtocolShow:claimList([ArgumentList1,ArgumentList2,_],R1),
+        (   wait(R1)->
+                get_numForClaimList(ArgumentList1,ArgumentList2,Num,Result),
+                Command=jump,Parameter=claim,Arguments=[Num]).
+    get_commandArguments({dummy,Argument},
+                AgentName,Command,Parameter,Arguments,Result):-true|
+        Argument = [_,_,UCL|_],
+        dbtgui_parser2:get_commandArguments(AgentName,UCL,Command,
+		Parameter,Arguments,Result).
+    get_commandArguments({argument,Argument},
+                AgentName,Command,Parameter,Arguments,Result):-true|
+        dbtcui_receiveProtocolShow:argument(Argument,R1),
+        (   wait(R1)->
+                Argument = [_,_,UCL|_],
+                dbtgui_parser2:get_commandArguments(AgentName,UCL,Command,
+			Parameter,Arguments,Result)).
+
+%show
+    show(_,_,{_,_,[]},Status,_,Result):-true|
+        dbtcui_ioUtility:show_string("Status",Status,Result).
+otherwise.
+    show(AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History,Result):-true|
+        dbtcui_receiveProtocolShow:argument([AidInfo,Issue,{RuleName,TopRuleRel,Argument},Status,History],Result).
+        
+
+%%%%%%%%
+    get_numForClaimList(ArgumentList1,ArgumentList2,Num,R):-true|
+        append(ArgumentList1,[" "|ArgumentList2],ArgumentList),
+        count(ArgumentList,0,N),
+        count(ArgumentList1,0,N1),
+        dbtcui_ioUtility:get_num(N,Num1,R1),
+        (   N1=Num1->
+                dbtcui_ioUtility:show_error({cui,'Illegal Number',Num1},R2),
+                (   wait(R2)->
+                        get_numForClaimList(ArgumentList1,ArgumentList2,Num,R))
+        ;
+            N1\=Num1->
+                Num = Num1,
+                R   = normal(success)
+        ).
+
+%%%%%%
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+
+    count([],W,L):-true|
+        L = W.
+    count([_|T],W,L):-true|
+        W1 := W+1,
+        count(T,W1,L).
+

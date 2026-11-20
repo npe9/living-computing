@@ -1,0 +1,97 @@
+﻿<!--
+# modified by S.Tanabe '94/09/26
+-->
+<title>（１）UNIXのKL1プログラミング環境：PDSS</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2>（１）UNIXのKL1プログラミング環境：PDSS</h2>
+<p>
+
+<pre width="136">
+<b>	マシン　：UNIXマシン
+	環　　境：UNIX, (GNU Emacs)
+	言　　語：C, KL1 (Prolog, Emacs Lisp)
+	ソース量：3 MB
+	文　　書：マニュアル (日本語/英語)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2>概要</h2>
+
+　通常の (マルチプロセッサでない) UNIXシステム上に構築したKL1プログラ
+ミング環境。<p>
+
+<h2>構成</h2>
+<UL>
+
+<LI>KL1-B (バイトコード) のインタープリタ。Ｃで記述。
+
+<LI>KL1からKL1-Bへのコンパイラ。KL1とSICStus Prologで記述したもの２種。
+
+<LI>ランタイムサポートルーチン (コマンドインタープリタやI/O)。KL1で記
+述
+
+<LI>GNU Emacsのライブラリ　— KL1ソースプログラムを編集するときに使用
+するKL1-modeと、複数のEmacsバッファを使いながらPDSSを会話的に実行する
+ためのPDSS-modeがある。
+
+</UL>
+
+<p>
+
+<h2>機能</h2>
+
+PDSSはPIMOS Development Support Systemの略で、その名前が示す通り、
+PIMOSを開発するために使用したKL1システムです。PDSSは、通常のBSD系の
+UNIXマシン上で動作し、Multi-PSI上のKL1システムとは、実装方式や実行速度
+の違いをのぞいては、かなりの部分でコンパチビリティが確保されています。
+さらに、PDSSではGNU Emacsライブラリを用意しており、KL1ソースプログラム
+の編集の支援や複数のemacsバッファを通して会話的にPDSSを使うことができ
+るようになっています。従って、PDSSは一般のKL1プログラムを開発するため
+にも使い易く、有用になっています。
+
+<p>
+
+<h2>インストール環境</h2>
+
+<UL>
+
+<LI>PDSSはUNIXシステム (BSD系) の上で動作します。ICOTでは、SUN-3、
+SUN-4およびSequent Symmetry上で使用しています。
+
+<LI>PDSSの全体をインストールするためには、約20MBのディスクスペースが必
+要です。
+
+<LI>KL1コンパイラのうち一方はSICStus Prologで記述されています。これは
+オプショナルな部分ですが、この版のほうが良いコードが生成されます。
+
+<LI>PDSSはGNU Emacsとともに使用するべきです。とても使い易くなります。
+
+</UL>
+
+
+</pre>
+<p>
+
+<h2>ＦＴＰ</h2>
+<ul>
+
+<li>	PDSSソースプログラム、マニュアル [2,564K]<a
+href="../../../ifs/symbolic-proc/unix/pdss.tar.Z"><img
+src="I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>
+

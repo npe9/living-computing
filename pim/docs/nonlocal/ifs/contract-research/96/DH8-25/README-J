@@ -1,0 +1,100 @@
+
+                汎用日本語形態素解析規則 1.5 版
+                -------------------------------
+
+Copyright (C) 1994-1997 佐野洋
+
+
+ディレクトリーの構成は次の通り。
+
+JpnMorph ---+--- COPYRIGHT	著作権表示
+            |
+            +--- README(J)	当該ファイル
+            |
+            +--- RULE/		規則関連のファイル
+            |
+            +--- DICT/		辞書関連のファイル
+            |
+            +--- MISC/		シェルコマンド、マニュアル等のファイル
+
+
+
+1. 本ディレクトリに記録のソフトウェアならびに関係するドキュメント類の
+インストールの手順
+
+(1) MISC/MANUAL ディレクトリ以下の vol4.dvi を ps ファイルに変換し印刷
+する
+(2) 印刷したドキュメントの指示に従ってインストールを行なう
+
+2. 簡単インストールとパーザーの利用
+
+環境変数の設定
+
+% setenv JUMANPATH /...../juman
+% setenv JUMANVERSION 1.0 | 2.0
+% setenv MORPHPATH /..../JpnMorph
+
+JUMAN用データ(jumanrc)ファイルのセットアップ
+
+% MISC/LIB/mkjumanrc.sh
+
+汎用日本語形態素解析規則(JUMAN用規則ファイル)のセットアップとコンパイル
+
+% MISC/LIB/setjumanrc.sh bsic
+% MISC/LIB/cmplrule.sh -C default
+
+汎用日本語形態素解析規則用の附属語辞書の展開
+
+% DICT/CLOSEWORD/expand
+
+附属語辞書ファイル(*.dic)をコンパイルしパーザーを作成する
+
+% MISC/LIB/cmpldict.sh -C bsic
+
+作成したパーザーをJUMANエンジンで実行する
+
+% MISC/LIB/kaiseki < MISC/CORPUS/CNST/kenpo
+
+3. 本ソフトウェアを外部に配布する時の方法は次の通り
+
+(1) 本ディレクトリに対する tar ファイルを作成する
+    tar cvf jpnmorph.tar JpnMorph
+(2) 圧縮する
+    gzip jpnmorph.tar
+
+ (1),(2)の手順で jpnmorph.tar.gz が作成される。このファイルを ftp サイ
+トに置く。利用者は、逆の手順で解凍すること。
+
+4. 解凍の方法
+
+(1) gunzip -c jpnmorph.tar.gz
+(2) tar xvf jpnmorph.tar
+
+5. 規則と辞書のコンパイル
+
+(1) % MISC/LIB/cmplrule.sh -C bsic
+(2) % MISC/LIB/cmpldict.sh -C bsic
+
+6. JUMAN の実行
+
+ ・解析させる文章を入力して JUMAN を使って解析し(-eオプション)、整形出
+力するコマンド
+
+  % MISC/LIB/kaiseki < <INPUT_FILE>
+
+ ・文章を「。」で区切って整形処理を施し JUMAN を使って解析し(規定値オ
+プション)、整形出力するコマンド
+
+  % MISC/LIB/kaiseki0 < <INPUT_FILE>
+
+ ・文章を「。」で区切って整形処理を施し JUMAN を使って解析し(-eオプショ
+ン)、整形出力するコマンド
+
+  % MISC/LIB/kaiseki1 < <INPUT_FILE>
+
+ ・行毎の文章を整形処理を施し JUMAN を使って解析し(-eオプション)、整形
+出力するコマンド
+
+  % MISC/LIB/kaiseki2 < <INPUT_FILE>
+
+							-- 以上 --

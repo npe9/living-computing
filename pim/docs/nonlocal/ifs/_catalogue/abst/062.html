@@ -1,0 +1,71 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (62) KL1 Execution Data Collecting Tool: PerformanceMonitor</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (62) KL1 Execution Data Collecting Tool: PerformanceMonitor</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     pseudo Multi-PSI
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 200KB
+	Documents:   Manual(Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+A tool for collecting execution information for KL1.<P>
+
+<h2><b>Function</b></h2>
+
+PerformanceMonitor is a tool to collect running information (changes
+of reduction / suspension / communication-count for each nodes /
+goals), and display it graphically on SIMPOS window system.<P>
+
+<h2><b>Configuration</b></h2>
+
+PerformanceMonitor consists of 4 windows: <p>
+
+<dl>
+	<dd><img src="062.gif">
+</dl>
+<p>
+
+<i>METHOD WINDOW</i> is a menu window for information selection. 
+<i>SELECT WINDOW</i> is a menu window which restrict a information. 
+You can select goals which you want to display. <i>GRAPH WINDOW</i>
+displays informations in a gray-scale graph. You can scroll this
+window by <i>SCROLL WINDOW</i>.<P>
+ 
+<h2><b>Feature</b></h2>
+
+PerformanceMonitor is independent from KL0 firmware because collecting
+information are totally implemented by KL1. PerformanceMonitor runs on
+a SIMPOS window system. If you want to port this program to another
+platforms, you must rewrite all of display functions.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> KL1 Execution Data Collecting Tool: PerformanceMonitor [377K] <a
+href="../../../ifs/exper-apps/pimos/pmonitor.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

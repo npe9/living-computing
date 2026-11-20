@@ -1,0 +1,37 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbts_notice2.
+
+:- public 
+    notice/5.
+            
+:- with_macro pimos.
+                %Info         = {RBR,POM,UseKnowledge,Para} %rbr ni kaesu mono
+                %UseKnowledge = {UseView,UseUnit,Goal,AgentName}
+                %Para         = {Solver,Lang,Verbose},
+                %Data         = {O,Pool,Info}
+
+    notice(_,Notice,{O,Pool1,Info},Data,NextDR):-true|
+        initiate(Notice,Pool1,Pool2,R),
+        (   wait(R)->
+                Notice  = notice(_,claim(_,issue(claim(YA,MI),_))),
+                Pool2   = [makeList([at,hl],[AT,HL])|Pool],
+                AT      = [refer_arg(YA,YA_Arg,_)],
+                HL      = [put(send(m,{claim(YA,MI),YA_Arg}))],
+                Data    = {O,Pool,Info},
+                NextDR  = {claim(YA,MI),YA_Arg}).
+
+    initiate(notice(_,claim(MA,issue(claim(YA,_),IPos))),Pool1,Pool,R):-true|
+        Pool1 = [makeList([at,mat,ct,icat],[AT,MAT,CT,ICAT])|Pool],
+        AT    = [refer_arg(MA,MA_Arg,_)],
+        MAT   = [finish(MA_Arg)],
+        CT    = [finish({YA,IPos},MA)],
+        MA_Arg = {_,_,CPos},
+        ICAT  = [finish({YA,IPos,CPos})],
+        R     = normal(success).
+
+
+

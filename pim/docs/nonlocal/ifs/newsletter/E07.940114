@@ -1,0 +1,442 @@
+                                                          Jan 14, 1994
+
+                                                              No. 7
+                    ICOT FREE SOFTWARE NEWSLETTER
+                    -----------------------------
+
+
+[Newly Released ICOT Free Software]
+
+   To date, we have released 77 programs of ICOT  Free Software (IFS),
+as was reported in previous  issues of ICOT Free Software Newsletters.
+We are now preparing to release seven further programs as IFS, the KL1
+including the KLIC Version system.
+
+   The KLIC system is  a  programming environment for  parallel  logic
+programming language  for use on Unix-based general-purpose machines. 
+KLIC  Version 1 is the first  practical system to include  a debugging
+tool   and standard   manuals.    However,  its   use  is  limited to
+single-processor systems such as  standard workstations.  KL1 programs
+are therefore executed sequentially as pseudo parallel programs.  KLIC
+Version  2 will support real  parallel machines.  This version will be
+released in the second quarter  of  1994.  The experimental version of
+the  KLIC system, released about  six  months ago, should  be replaced
+with KLIC Version 1.  We  recommend that you  use this latest  version
+for    learning parallel  language and   discovering    the  merits of
+high-level parallel programming.
+
+   Using KLIC Version 1, it is now possible for  us to port  other KL1
+programs to Unix-based machines.  We  are  currently preparing  to the
+KLIC version of  the knowledge  representation language Quixote.   The
+Quixote KLIC version  is written  in KL1 and  is intended to be ported
+using KLIC Version 1.  As the Quixote coding is  rather large,  we are
+preparing  a  condensed version to  allow users  to quickly  try out a
+deductive and object-oriented programming using Quixote.  This will be
+named micro-Quixote  and  will  provide only   representative  Quixote
+functions.  However, it  is fully written  in  C and is small in size.
+We feel it is very well-suited to educational applications.
+
+   A  similar condensed version  is  being prepared  for  the  theorem
+prover  MGTP.   Two  versions of  MGTP, both  of  which are written in
+Prolog, are  being  prepared.   In  addition  to  these programs,  two
+convenient tools for  genome information processing will be  released.
+Currently, the archive files  of KLIC, and  micro-Quixote have already
+been installed on the ftp server machine.
+
+
+1) Newly released ICOT Free Software
+
+  The following lists the new programs:
+
+Symbol Processing: 1
+-- ------------------------------------------------------------------
+78  KLIC Version 1: An implementation of KL1 for general-purpose
+    computers
+
+Knowledge Representation, Knowledge-base, Constraint: 2
+-- ------------------------------------------------------------------
+79  Knowledge Representation Language: Quixote KLIC Version
+80  Knowledge Representation Language: micro-Quixote
+
+Problem Solving, Meta-reasoning, Theorem Proving: 2
+-- ------------------------------------------------------------------
+81  Parallel Theorem Prover: MGTP/G Prolog version
+82  Parallel Theorem Prover: MGTP/N Prolog version
+
+Experimental Application: 2
+-- ------------------------------------------------------------------
+83  Protein Motif Knowledge-Base and Retriever Based on Quixote
+84  Protein Structure Prediction Based on Multi-Level Description 
+
+
+2) Detailed Description
+
+1. KLIC Version 1: A  KL1 implementation for general-purpose computers
+
+      This  system is able  to  execute  programs  written in the  KL1
+      parallel logic programming language  on  commercially  available
+      unix machines.  Note that this   system does not support all  of
+      the functions provided by the KL1 language processor  running on
+      PIM, instead being intended to run on a single  processor system
+      in pseudo parallel mode.
+
+      For instance, the functions provided  by PIMOS are not supported
+      by the KLIC Version 1.  Using KLIC, you can execute KL1 programs
+      on  your  unix workstations,  and  furthermore,  you  can easily
+      combine KL1 programs  with programs  written in other languages,
+      such as C.
+
+      This program consists of the following:
+
+       * A KL1 to C compiler. Currently, the compiler is written in
+	 Prolog.  Therefore, you need some kind of Prolog system on
+	 your machine.
+
+       * Some PIMOS  functions,  including  those  for debugging,  are
+         provided as a run  time library of  C  code.  They are linked
+         with your program if you wish to use these functions.
+
+      The program has the following features:
+
+       * You can   execute  KL1 programs    on unix  workstations  and
+         personal computers supporting a C environment.
+
+       * The  KLIC system compiler   translates KL1    programs   into
+         equivalent C programs.  Then, the   resulting C program    is
+         compiled by a C compiler and  linked with run  time libraries
+         to produce  a  code  that can be   executed  under your  Unix
+         operating system.
+
+       * The KLIC system generates C  code instead of  native  machine
+         code.    Thus, it is not   affected by differences in machine
+         architectures.
+      
+       * Although the KLIC system uses the C  as its intermediate code
+         and C compiler,  it attains high  performance and  a  compact
+         object code, comparable  to when we  employ  a compiler  that
+         generates native machine code.
+
+      
+      We  released  "Portable    KL1 processing system:   experimental
+      version"  June   of 1993.  The   experimental version  should be
+      replaced with KLIC Version 1.
+
+      The archive file  of the KLIC system  has been installed  in the
+      following ftp server directory:
+
+		     /ifs/symbolic-proc/unix/klic
+
+2. Knowledge Representation Language: Quixote KLIC Version
+
+      This system is a variant of the Quixote system that was released
+      in 1992 as IFS.  It is a rewrite  of  Quixote that  allows to be
+      smoothly ported to a Unix environment using the KLIC system.
+
+      To install this system,  the KLIC system and   a C compiler  are
+      required,  in addition  to   GNU-Emacs and  an  X-window  system
+      interface.
+
+      This system has the following features:
+
+       * It consist of two parts;  one is a client  part providing the
+         user  interface  and I/O, written  in C. Another  is a server
+         part, providing a deductive database and written in KL1.
+
+       * The knowledge representation language Quixote is  based  on a
+         "Deductive   Object-Oriented   Database"  which combines  the
+         concepts of logic, object-orientation, and constraints.
+
+       * Compared  to other  knowledge  representation  languages,  it
+         provides more natural knowledge description in a more compact
+         program size.
+
+      Currently, we are still  preparing  for the  release   of   this
+      system.  We expect it to be ready in a couple of months.
+
+3. Knowledge Representation Language: micro-Quixote
+
+      micro-Quixote is a condensed version of the Quixote  system that
+      was  released  as  IFS  in   1992.  To  make  it compact,   only
+      representative functions are provided and it is implemented in C
+      to improve portability.
+
+      Some Emacs programs are needed for its user interface.  However,
+      it  will run  on most workstations  and personal  computers that
+      support a C environment.
+
+      The following functions have either been  omitted  or reduced in
+      scope, relative to the original Quixote system.
+
+       * Merging of more than two solutions
+
+       * Database updating
+
+       * Some property inheritance functions
+
+      Even with   this  condensed   version, you   can   make use   of
+      inheritance  based on a  lattice relation, constraint based on a
+      subsumption  relation,    hypothesis   generation,  hypothetical
+      reasoning, and a module facility.
+
+      The archive file of the micro-Quixote system has  been installed
+      in the following ftp server directory:
+
+			 /ifs/kbms-clp/unix/
+
+4. Parallel Theorem Prover: MGTP/G Prolog version
+
+      This  system  is a variant of  the MGTP  parallel theorem prover
+      that was released as IFS  in 1992  and which  produced very high
+      levels of performance on the parallel inference machine PIM.
+
+      To provide a condensed   version of  MGTP  that can  easily   be
+      executed  on   a  normal  workstations, all   MGTP   systems are
+      rewritten  using Prolog.   Thus, this condensed  version  is not
+      capable of parallel processing   and  thus  can not  attain high
+      performance. However,  you can  use  the prover for  educational
+      purposes  or  as an introductory  step prior  to moving  to  the
+      parallel version.
+
+      This MGTP/G prover is called the "MGTP ground version" since the
+      mathematical system handled  by this system  uses axioms, all of
+      which  can  be  represented by ground   terms.   In this system,
+      theorems to be proved  are compiled into Prolog  predicates, and
+      proof  is  done  by  executing  Prolog  programs   using forward
+      reasoning.
+
+      We are now preparing to  release this  system as IFS.  We expect
+      its release in the very near future.
+
+5. Parallel Theorem Prover: MGTP/N Prolog version 
+
+      This  prover is another variant of  the  parallel theorem prover
+      MGTP, being called "MGTP non ground version."   It is written in
+      Prolog and is a condensed version of  the original MGTP that can
+      be used on normal workstations.
+
+      This MGTP/N prover has some functions that  were not featured by
+      the original MGTP system and the previous MGTP/G prover.  It can
+      prove theorems   in  mathematical systems whose  axioms  contain
+      variables. In this system,  theorems  to be proved  are compiled
+      into Prolog predicates,  and  proof is  carried  by executing  a
+      Prolog program.
+
+      We are  now preparing to  release this system as IFS.  We expect
+      its release in the very near future.
+
+6. Protein Motif Knowledge-Base and Retriever Based on Quixote
+
+      Both of these, the  first being an experimental  knowledge base,
+      and   the  second its  retriever,  are   implemented   using the
+      knowledge representation language Quixote.  They  can be used to
+      extract and analyze DNA sequence patterns,  or protein sequences
+      when used  together with the   "Multiple Sequence  Alignment  by
+      Parallel  Iterative   Aligner" and the  "Intelligent Refiner for
+      Multiple Sequence Alignment", both of which were released as IFS
+      in March of 1993.
+
+      In some DNA  sequences   and some  protein  sequences, there are
+      parts called  "motifs"  that are   closely related  to important
+      biological  features.  We  can  find  some  special correlations
+      between some motifs.   We  can describe  the characteristics  of
+      these motifs as well as their correlations in Quixote, and store
+      them in  a knowledge base.  These  knowledge descriptions can be
+      useful   for producing better    analyses  of DNA   and  protein
+      sequences to detect important biological features.
+
+      We are currently preparing to release this system as IFS. 
+
+7. Protein Structure Prediction System based on Multi-Level 
+   Descriptions of Protein Sequences
+
+      This  system is intended for the  prediction of the higher order
+      structures of proteins.  It is  important to know  the functions
+      of  higher  order  structures of   proteins.   Although  several
+      methods of predicting higher order structures have been proposed
+      their prediction accuracies have  not  been  satisfactory, hence
+      more accurate prediction methods are required.
+
+      We analyzed proteins whose structures are well known, and set up
+      sample relations  between specific  protein  sequences and their
+      expected structures when the size  of the  proteins is  changed.
+      This system uses this table of  hierarchical sample relations to
+      predict unknown protein structures. It  gives us a more accurate
+      prediction  than  is  possible with existing    systems for some
+      proteins.
+
+      To execute this system, the KL1 programming environment, running
+      on the parallel  inference machine PIM,  a   C processor, and  a
+      Silicon Graphics workstation are required.
+
+      We are currently preparing to release this system as IFS. 
+
+  For detail of these seven programs, refer to the "ICOT Free Software
+Catalogue: Supplementary".   The  "ICOT Free Software Catalogue" has
+recently been published.  Its includes  the contents of all catalogues
+that  we  have   published to date.    Anyone wishing to  obtain these
+catalogues is invited to contact the IFS  desk via e-mail, mail or fax
+at the address given at the end of this newsletter.
+
+
+
+[Report on Access to IFS]
+
+   As of January 1, 1994, access to IFS can be summed up as follows:
+  
+   =====================================================
+                  Number of Persons     Number of Files
+    Country       Accessing             Transferred
+   =====================================================
+    Japan                  502              3,172
+    U.S.A.                 385              2,658
+    France                  40                381
+    German                  68                372
+    South Korea             15                317
+    U.K.                    70                277
+    Canada                  56                230
+    Australia               47                138
+    Sweden                  27                110
+    Netherlands             22                 62
+    Others*                204                722
+   =====================================================
+    Total                1,436              8,439
+   =====================================================
+
+  *"Others"   include  Portugal, Taiwan,   Austria,  Finland,   Italy,
+Singapore,  South  Africa,  Belgium, Switzerland,  Hong Kong, Denmark,
+Spain, Norway, Turkey, Brazil,  Thailand, Greece, New Zealand, Poland,
+Mexico, Czech   Republic, Israel,   India, Hungary,  Venezuela, Soviet
+Union,  Latvia, Lithuania, Slovakia,  Slovenia, and Cyprus.  The total
+number of countries and regions is 41.
+
+  The number of persons accessing in the above table include those who
+transferred only  "readme" files  that  are   not  archive   files for
+software.  Excluding readme file accesses gives the following figures.
+
+   =====================================================
+                  Number of Persons     Number of Files
+    Country       Accessing             Transferred
+   =====================================================
+    Japan                  371              1,638
+    U.S.A.                 226              1,429
+    South Korea             10                239
+    France                  29                229
+    German                  44                209
+    U.K.                    40                113
+    Canada                  29                 95
+    Sweden                  10                 48
+    Portugal                 4                 36
+    Australia               18                 27
+    Others                 118                284
+   =====================================================
+    Total                  899              4,347
+   =====================================================
+
+  The  above figures  show that  more  than   60%  of  all the persons
+accessing the server  actually transferred some  software  files, with
+about 52% of the total transferred files being such software files.
+
+  Among the 899 persons who transferred files, 597 were  from Japan or
+the U.S.  By looking at the  organizations to which  these 597 persons
+belong, we can  draw up the following  table  that shows  the types of
+organizations to which these persons belong.
+
+
+  ==============================================================
+                              Japan                U.S.A.
+                        ----------------------------------------
+                         No. of    No. of     No. of    No. of
+   Organization          Persons    Files     Persons    Files
+  ==============================================================
+   Educational(ac/edu)      300    1,294         132      705
+   Commercial(co/com)        46      279          74      577
+   Nonprofit(or/org)         16       37           7       71
+   Government(go/gov)         7       21          10       67
+   Others                     2        7           3        9
+  ==============================================================
+    Total                   371    1,638         226    1,429
+  ==============================================================
+
+
+
+[User's Group]
+
+  Anyone interested in organizing a user's group to carry out research
+on any  particular item of  ICOT  Free  Software,  for the purposes of
+revision or improvement, is invited to contact the IFS-desk via e-mail
+at the address given at the end of this newsletter.
+
+  We hope to feature some of your proposals in the  next  issue of the
+newsletter. Reactions to your proposals shall be forwarded to you.
+
+  Revised programs can be  stored on the  ftp server at ICOT,   if you
+feel that your revision would be useful to other users.
+
+1) User's Group for cu-Prolog
+
+  Following its release as  ICOT  Free Software, the  constraint logic
+programming  language    cu-Prolog,    including     Prof.    Shirai's
+Macintosh/MS-DOS  version, has been  used by many students, engineers,
+and CLP/NLP researchers.
+
+  Now, encourage the exchange  of comments and information relating to
+cu-Prolog,  constraint-based  grammar formalisms, and   CLP,  we  have
+organized a cu-Prolog user's group. The address is
+
+			    cup@icot.or.jp
+
+To join the mailing list, send  e-mail to 
+
+			cup-request@icot.or.jp
+
+  Currently, 15 domestic and 11  overseas researchers  have joined the
+ML.
+
+
+
+[About Common ESP]
+
+  Some ICOT  Free   Software programs  can be executed    under Common
+ESP(CESP).  CESP is not part of the ICOT  Free Software, instead being
+available from MITSUBISHI    ELECTRIC  COMPUTER  SYSTEMS(TOKYO)  CORP.
+(MTC).  The address  of MTC is  as follows.  To  contact MTC with  any
+questions related to Common ESP, use the following address.
+
+	2-nd Application Systems Develpment Dept.
+	Software Products Promotion Group
+
+	87-1, Kawakamicho, Totsukaku, Yokohama,  Kanagawa, 244 Japan
+
+	TEL:  +81-45-825-5679(Japanese Only)
+	FAX:  +81-45-825-5822
+
+
+
+[Contacts]
+
+  For information on IFS, use e-mail to access
+
+			    ifs@icot.or.jp
+
+  If you  receive a paper  edition of  this newsletter,  please let us
+know your e-mail address and we will send  you the electronic edition.
+If you do not have an e-mail facility, contact the address below.
+
+  All available IFS  is listed  in  the "ICOT Free Software Catalogue"
+and "ICOT Free Software Catalogue II"  . If you  do not have a copy of
+either catalog,  please let  the IFS-desk have  postal  address and we
+shall arrange to send a copy to you.
+
+  If any of  your colleagues  or acquaintances  are interested in IFS,
+let us know their names  and both  their e-mail  and postal addresses,
+and we shall send them both the newsletter and catalog.
+
+        ICOT Free Software desk
+
+        Institute for New Generation Computer Technology
+        21st Floor, Mita Kokusai Bldg.
+        4-28, Mita 1-chome
+        Minato-ku, Tokyo 108
+        Japan
+
+        FAX:   +81-3-3456-1618

@@ -1,0 +1,62 @@
+&define_unit.
+
+new0 := {case0, rules}.
+new1 := {case1, rules}.
+new2 := {case2, rules}.
+new3 := {case3, rules}.
+new4 := {case4, rules}.
+new5 := {case5, rules}.
+new6 := {case6, rules}.
+new7 := {case7, rules}.
+new8 := {case8, rules}.
+
+case0 := { act0, act1, act2, act3, act4, act5, act6,
+           act7a,  act8a,  act9a,
+           act7b,  act8b,  act9b, act10 }.
+
+case1 := { act0, act1, act2, act3, act4, act5, act6,
+           act7a,  act8a,  act9a, act10 }.
+case2 := { act0, act1, act2, act3, act4, act5, act6,
+           act7a, act8a, act9b, act10}.
+case3 := { act0, act1, act2, act3, act4, act5, act6,
+           act7a, act8b, act9a, act10 }.
+case4 := { act0, act1, act2, act3, act4, act5, act6,
+           act7a, act8b, act9b, act10 }.
+case5 := { act0, act1, act2, act3, act4, act5, act6,
+           act7b,  act8a,  act9a, act10 }.
+case6 := { act0, act1, act2, act3, act4, act5, act6,
+           act7b, act8a, act9b, act10}.
+case7 := { act0, act1, act2, act3, act4, act5, act6,
+           act7b, act8b, act9a, act10 }.
+case8 := { act0, act1, act2, act3, act4, act5, act6,
+           act7b, act8b, act9b,act10 }.
+
+rules := { transition, general_rule, civil_code, amount_money,
+           focus_form, focus_intension, r11 }.
+
+transition := {r4}.
+general_rule := {r1, r3, r5, r7}.
+civil_code := {r2, r8}.
+amount_money := {r6}.
+focus_form := {r9}.
+focus_intension := {r10}.
+
+
+&define_standpoint.
+
+psp := {{r8,r7}<r6,r3<r2,r4<r5,r9<r10,act7a<act7b,act8a<act8b,act9a<act9b}.
+dsp := {r6<{r8,r7},r2<r3,r5<r4,r10<r9,act7b<act7a,act8b<act8a,act9b<act9a}.
+
+
+&define_view.
+
+prosecutor0:={ psp }.
+defendant0 :={ dsp }.
+
+
+
+
+
+
+
+

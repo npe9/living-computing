@@ -1,0 +1,84 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (67) Experimental Adaptive Model-based Diagnostic System</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (67) Experimental Adaptive Model-based Diagnostic System</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     Multi-PSI
+	Environment: PIMOS
+	Language:    KL1
+	Source Code: 2.4 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+An adaptive diagnostic system with learning capability.<P>
+
+<h2><b>Characteristics</b></h2>
+
+<DL>
+
+<DT>Model-based diagnosis
+
+<DD>It performs model-based diagnosis, utilizing knowledge about the
+structure of the target device and the function of each component. 
+This eliminates the necessity of interviewing experts in order to
+build a diagnostic knowledge base.  <p>
+
+<DT>Adaptive diagnosis mechanism with learning capability
+
+<DD>It learns fault probability distribution, based on its diagnostic
+experience, in order to pinpoint the faulty component with minimum
+number of tests.  <p>
+
+<DT>Parallel processing
+
+<DD>Parallel computation on Multi-PSI machine reduces the computation
+time for the diagnosis and the learning function.
+</DL>
+
+<h2><b>Function</b></h2>
+
+The learning function of the system first estimates fault probability
+distribution for each component from the past case record. This
+learning is performed by an inductive learning algorithm, which is
+based on MDL measurement. This complex task is processed in parallel.
+<p>
+
+Then the system calculates the suspect list for given symptom and
+observation data.  This task is performed by utilizing a model-based
+knowledge which models behavior and interconnection of the target
+device components. This model knowledge is represented in first-order
+predicate scheme and written in the logic programming language KL1. 
+The system computes the suspect list by a hypothetical reasoning which
+calculates a set of explanations of giving the faulty output for the
+given input data on the device. This function is also complex and
+implemented in parallel.  <p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Experimental Adaptive Model-based Diagnostic System [1,048K] <a
+href="../../../ifs/exper-apps/pimos/examds.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

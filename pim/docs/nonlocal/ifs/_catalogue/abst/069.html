@@ -1,0 +1,85 @@
+﻿<!--
+# modified by K.Kawamura(1994.9.26)
+-->
+<title> (69) Case-Based Circuit Design Support System</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (69) Case-Based Circuit Design Support System</h2>
+<p>
+
+<pre wide="136">
+<b>	Machine:     PIM/m, Multi-PSI
+	Environment: PIMOS 3.4
+	Language:    KL1
+	Source Code: 6 MB
+	Documents:   None
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+System supports a user in designing a new circuits using similar
+precedential circuits.<P>
+
+<h2><b>Configuration</b></h2>
+
+<ul>
+<li>Function Analysis Module for Design Specifications
+<li>Case Retrieval Module
+<li>Case Modification Module
+<li>Circuit Block Diagram Output Module
+</ul>
+
+<h2><b>Function</b></h2>
+
+<ul>
+
+<li>Functional hierarchy trees, that represents functional structures
+of design objects, are created interactively and used as indices for
+case retrieval.
+
+<li>Structure Mapping Engine (SME) retrieves the cases whose
+functional structures are similar to the design object's.
+
+<li>To shorten run-time, cases are retrieved parallel. The structures
+of the design object and cases are mapped into each processor in good
+balance.
+
+<li>System verifies detail specs of retrieved cases, modifies them,
+recovers design failures with SME, and dembines circuit blocks.
+
+</ul>
+
+<h2><b>Reference</b></h2>
+<ul>
+
+<li>Tsubaki, K., et al. : Design Support Method by Structure Mapping
+Engine, Proc. of the 43th IPSG,, 1991(in Japanese)
+
+<li>Morishita, T., et al. : A Case-Based Reasoning System using
+Structure Mapping, Proc.  of the 17th JSAI KBS, 1991(in Japanese)
+
+</ul>
+<p>
+
+<h2>FTP</h2>
+<ul>
+
+<li> Case-Based Circuit Design Support System [1,050K] <a
+href="../../../ifs/exper-apps/pimos/cbcdss.tar.Z"> <img
+src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

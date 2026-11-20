@@ -1,0 +1,23 @@
+translaterの作り方
+
+1.yacc,lexをかけてCプログラムを作成する。
+	shellから以下を実行
+
+	%trans
+
+2.Cプログラムの修正
+	エディタでy_tab.cの以下の所のyyerror("syntax error")を
+
+
+           case 0:         /* new error */
+                   yyerror( "syntax error" );
+
+
+	以下に修正する。
+
+	yyerror("!trans-illegal syntax",yylval)
+
+	とする。
+
+3.Cプログラムをコンパイル、linkする。
+	shellからsrcの下にあるmakeを実行する。

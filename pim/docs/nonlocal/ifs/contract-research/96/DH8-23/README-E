@@ -1,0 +1,159 @@
+README file for TRIP2a	1997.05.12
+Copyright (C) 1997 Shin Takahashi
+
+- The manual is at trip2a-1_0/docs/main.ps, which is generate from
+  main.tex.
+
+- Please see the manual for the installation and the usages of TRIP2a
+
+- This directory contains the following files.
+
+  trip2a-1_0:
+	README-J : this file in Japanese
+	README-E : this file
+	asr	 : sample ASR data
+	beta     : source programs for translators 
+                   and sample visual mapping rules
+	dPR      : sample log files for the viewers
+	docs     : the manual of TRIP2a
+	viewers  : directories for three viewers
+
+  trip2a-1_0/asr : sample ASR data
+        *.asr.gz
+
+  trip2a-1_0/beta : source programs for translators 
+                    and sample visual mapping rules
+	Makefile	   : source programs for translators
+	constraint.kl1
+	graphical-stdio.kl1
+	trip-stdio.kl1
+	node.c
+	node.h
+	eq_solver.c
+	eq_solver.h
+	quad-tree.kl1
+	solve.c
+	solve.h
+
+	cos_demo.kl1	   : smaple visual mapping rules
+	cos_demo1.kl1
+	cos_demo2.kl1
+	cos_demo2_fire.kl1
+	cos_demo3.kl1
+	hanoi.kl1
+	matrix.kl1
+	move-test.kl1
+	mytree.kl1
+	mytree2-woline.kl1
+	mytree2.kl1
+	nbody.kl1
+	nbody2.kl1
+	queens-matrix7.kl1
+	text-test.kl1
+
+
+  trip2a-1_0/dPR:	: sample log files for the viewers
+	*.dPR.gz
+
+  trip2a-1_0/docs:      : manual (main.ps and main.tex)
+	ASRs-spec.tex
+	Install.tex
+	Introduction.tex
+	MappingRule.tex
+	Model.tex
+	Tutorial.tex
+	asr-seq.eps
+	bd-model.eps
+	eclepsf.sty
+	extended-model.eps
+	hanoi.eps
+	main.aux
+	main.bbl
+	main.blg
+	main.dvi
+	main.log
+	main.ps
+	main.tex
+	main.toc
+	naming.eps
+	vsrs-spec.tex
+	xscript.sty
+
+  trip2a-1_0/viewers/amulet-viewer.solaris: Sources for the viewer on X11
+	Makefile
+	MaterialType.h
+	Shape.cc
+	Shape.h
+	ShapeTable.h
+	TransitionType.h
+	VarType.h
+	VsrObjects.h
+	amulet-animator
+	amulet-animator.cc
+
+  trip2a-1_0/viewers/invparanim.sgi: Sources for the viewer on SGI
+	Box.c++
+	Box.h
+	Cone.c++
+	Cone.h
+	Cylinder.c++
+	Cylinder.h
+	Makedepend
+	Makefile
+	MaterialType.h
+	Shape.c++
+	Shape.h
+	ShapeTable.h
+	Sphere.c++
+	Sphere.h
+	TransitionType.h
+	VsrObjects.h
+	Word.c++
+	Word.h
+	graphical_object.c++
+	inventor-multipath
+	inventor-multipath.c++
+	trip2a.resource
+
+  trip2a-1_0/viewers/oglviewer.windows: Sources for the viewer on Win95/NT
+	box.cpp
+	box.h
+	cylinder.cpp
+	cylinder.h
+	glos.h
+	line.cpp
+	line.h
+	makedepend
+	materialtype.h
+	ogl-animator.cpp
+	oglviewe
+	oglviewer.mak
+	oglviewer.mdp
+	oglviewer.ncb
+	resource.h
+	shape.cpp
+	shape.h
+	shapetable.h
+	sphere.cpp
+	sphere.h
+	transitiontype.h
+	vartype.h
+	vsrobjects.h
+
+  trip2a-1_0/viewers/oglviewer.windows/oglviewe: Win95/NT executable
+	box.obj
+	cylinder.obj
+	line.obj
+	ogl-animator.obj
+	oglviewer.exe
+	oglviewer.ilk
+	oglviewer.pch
+	oglviewer.pdb
+	resource.h
+	script1.aps
+	script1.rc
+	script1.res
+	shape.obj
+	sphere.obj
+	vc40.idb
+	vc40.pdb

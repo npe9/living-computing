@@ -1,0 +1,93 @@
+﻿<!--
+# modified by Orie(1995.7.25)
+# modified by K.Kawamura(1994.9.26)
+# modified by	A.Aiba		97/08/15
+-->
+
+<title> (81) Parallel Theorem Prover: MGTP/G Prolog Version</title>
+
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#004E00"
+      LINK   ="#0000FF"
+      VLINK  ="#005090"
+      ALINK  ="#FF0000">
+
+<h2> (81) Parallel Theorem Prover: MGTP/G Prolog Version</h2> <p>
+
+<pre wide="136">
+<b>	Machine:     UNIX/PC
+	Environment: UNIX/MS-DOS
+	Language:    Prolog
+	Source Code: 60 KB
+	Documents:   User's Manual (English/Japanese)
+</b>
+</pre>
+<hr>
+<p>
+
+<h2><b>Overview</b></h2>
+
+MGTP/G is a theorem prover for non-Horn clauses that deal with ground
+atoms<P>
+
+<h2><b>Features</b></h2>
+<ul>
+
+<li>MGTP/G is a bottom-up theorem prover written in Sicstus-Prolog.
+
+<li>MGTP/G deals with a set of(non-Horn and Horn) clauses
+
+<li>Efficient inference is enables by eliminating redundant
+conjunctive matching(CJM) and compiling the clauses into Prolog
+
+<li>Unificationless in CJM and procedural interface for Prolog program
+
+</ul><P>
+
+<h2><b>Function</b></h2>
+
+MGTP/G (Model Generation Theorem Prover/Ground Version) is a first
+order theorem prover based on model generation. An MGTP clause is
+represented by an implicational form:<P>
+
+<dl>
+<dd><img src="081.gif">
+</dl>
+<p>
+
+
+Where an antecedent is a conjunction of <i>A1, A2, ..., An</i> ; a
+consequent is a disjunction of <i>C1, C2, ..., Cm</i>. When <i>n</i> =
+0, it gives the initial model(a set of facts). When <i>m</i>= 0, it
+represents a condition of contradiction. In MGTP, proving starts with
+the initial model and proceeds from the antecedent to the consequence
+in a forward reasoning manner. When <i>m</i> ＞ 1, a case-splitting is
+examined.  <p>
+
+The <i>range-restrictedness</i> condition is imposed on the problem
+clauses of MGTP/G . A clause is said to be range-restricted if every
+variable in the clause has at least one occurrence in its antecedent. 
+When range-restricedness is satisfied, it is sufficient to consider
+one-way unification, instead of full unificarion with an occurs check,
+because all atoms appearing in the proof are ground. Efficient
+implementation is made possible by the groundness.  <p>
+
+MGTP/G has is capable of dealing with most AI applications in spite of
+its range- restrictedness. It is easy to implement useful frame work
+in MGTP/G, such as negation as failure, hypothesis reasoning and modal
+reasoning by representing features in clauses.  <p>
+
+<h2>FTP</h2>
+
+<ul>
+<li> Parallel Theorem Prover: MGTP/G Prolog Version  [553K]
+<a href="../../../ifs/solver-prover/unix/MGTP-G/MGTP-G-Prolog.tgz">
+<img src="../../../PICS/I-ftp-copy.gif"></a>
+
+</ul>
+<p>
+
+<hr>
+
+<address><a
+href="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</a></address>

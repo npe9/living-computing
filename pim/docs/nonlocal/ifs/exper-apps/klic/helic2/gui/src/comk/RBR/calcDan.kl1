@@ -1,0 +1,79 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module cbr_calculateDansuu.
+:- public get_dansuu/7.
+
+%get_dansuu
+    get_dansuu(Ty,Ty,TS1,TS,Dansuu,R):-true| 
+        TS     = TS1,
+        Dansuu = 0,
+        R      = success.
+    get_dansuu('&top',_,TS1,TS,Dansuu,R):-true| 
+        TS     = TS1,
+        Dansuu = 0,
+        R      = success.
+    get_dansuu(_,'&top',TS1,TS,Dansuu,R):-true| 
+        TS     = TS1,
+        Dansuu = 0,
+        R      = success.
+otherwise.
+    get_dansuu(Ty1,Ty2,TS1,TS,Dansuu,R):-true| %From Ty1, To Ty2
+        get_dansuu1([Ty1],Ty2,0,TS1,TS,Dansuu,R).
+
+    get_dansuu1([],_,_,TS1,TS,_,R):-true|
+        TS = TS1,
+        R  = fail.
+otherwise.
+    get_dansuu1(Ty1L,Ty2,CurrentDansuu1,TS1,TS,Dansuu,R):-true|
+        member(Ty1L,Ty2,YN),
+        ( YN = yes->
+                TS     = TS1,
+                Dansuu = CurrentDansuu1,
+                R      = success
+        ;
+          YN = no->
+                get_upperList(Ty1L,TS1,TS2,UTy1L),
+                CurrentDansuu := CurrentDansuu1+1,
+                get_dansuu1(UTy1L,Ty2,CurrentDansuu,TS2,TS,Dansuu,R)
+        ).
+
+%%%%PTerm,Type utility method
+
+%get_upperList
+    get_upperList([],TS1,TS,UTyL):-true|
+        TS   = TS1,
+        UTyL = [].
+    get_upperList([Ty|T],TS1,TS,UTyL):-true|
+        get_upper(Ty,TS1,TS2,UTyL1),
+        get_upperList(T,TS2,TS,UTyL2),
+        append(UTyL1,UTyL2,UTyL).
+
+    get_upper(Ty,TS1,TS,UTyL):-true|
+        TS1 = [immediate_upper_bound(Ty,UTyL1,R1)|TS],
+        ( R1 = normal(success)->
+                UTyL = UTyL1
+        ;
+        otherwise;
+          true->
+                UTyL = []
+        ).
+
+%%%%list utility method
+
+    member([],_,YN):-true|
+        YN = no.
+    member([H|_],H,YN):-true|
+        YN = yes.
+otherwise.
+    member([_|T],H,YN):-true|
+        member(T,H,YN).
+
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+

@@ -1,0 +1,60 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbt_stringIo.
+
+output_stream(Stream,String) :-
+    klicio:default_operator_table(Ops),
+    klicio:out(Stream,Out,s(Ops,0)),
+    string_output(Out,String,Chars,Chars).
+
+string_output([],String,Chars,CharsT) :-
+    CharsT=[],
+    generic:new(string,String,Chars,8).
+string_output([C|T],String,Chars,CharsT) :- integer(C) |
+    CharsT=[C|CharsNT],
+    string_output(T,String,Chars,CharsNT).
+string_output([putc(C)|T],String,Chars,CharsT) :-
+    CharsT=[C|CharsNT],
+    string_output(T,String,Chars,CharsNT).
+string_output([fwrite(S)|T],String,Chars,CharsT) :- string(S,L,_) |
+    append_string_elements(0,L,S,CharsT,CharsNT),
+    string_output(T,String,Chars,CharsNT).
+string_output([fwrite(S,_)|T],String,Chars,CharsT) :- string(S,L,_) |
+    append_string_elements(0,L,S,CharsT,CharsNT),
+    string_output(T,String,Chars,CharsNT).
+
+append_string_elements(K,L,_,C,CT) :- K=:=L |
+    C=CT.
+append_string_elements(K,L,S,C,CT) :- K < L,
+    string_element(S,K,E), K1:=K+1 |
+    C=[E|C1],
+    append_string_elements(K1,L,S,C1,CT).
+
+input_stream(Stream,String) :- string(String,L,_) |
+    klicio:default_operator_table(Ops),
+    klicio:in(Stream,In,s(Ops,0)),
+    string_input(In,String,0,L,0).
+
+string_input([],_,_,_,_).
+string_input([linecount(LC1)|T],String,K,L,LC) :-
+    LC1=LC,
+    string_input(T,String,K,L,LC).
+string_input([getc(C)|T],String,K,L,LC) :- K >= L |
+    C = -1,
+%%oosaki remove 950807
+%    CharsT=[C|CharsNT],
+    string_input(T,String,K,L,LC).
+string_input([getc(C)|T],String,K,L,LC) :- K < L,
+    string_element(String,K,C0), K1:=K+1 |
+    C=C0,
+    update_lc(C,LC,LC1),
+%%oosaki modify 950807
+%    string_input(T,String,K1,L,LC).
+    string_input(T,String,K1,L,LC1).
+
+update_lc(C,LC,LC1) :- C=:=10 | LC1:=LC+1.
+update_lc(C,LC,LC1) :- C=\=10 | LC1=LC.
+

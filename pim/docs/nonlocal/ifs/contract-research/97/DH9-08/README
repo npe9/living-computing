@@ -1,0 +1,33 @@
+
+Windows 用インタフェース
+
+○ ファイル一覧
+
+README		当該ファイル
+COPYRIGHT	著作権表示
+README-J	利用者用 README ファイル(日本語)
+README-E	利用者用 README ファイル(英語)
+breakfast.txt	Breakfast 
+
+○ Windows 用インタフェース
+
+  プログラムは VB で作成。WinZip を使って圧縮。著作権等のファイルは 
+SJIS に変換して上記プログラムに梱包する。
+
+○ パッケージの構成
+
+  morph ---+--- bin		実行ファイル
+           |
+           +--- help		ヘルプファイル
+           |
+           +--- install		インストールの指示
+
+
+  winmorph の実行には、VB40032.DLL が必要
+
+○ 圧縮は WinZip を利用
+
+URL http://www.winzip.com
+
+
+-- 以上 --

@@ -1,0 +1,86 @@
+
+######## Readme-E in viewPP version1.00 ########
+
+                             Copyright (C) 1997  Jun Nagumo
+
+The following is contents of archive of viewPP.
+
+----- * ----- * ----- * -----
+Readme-J			contents of archive (Japanese)
+Readme-E			contents of archive (This file)
+
+viewpp.tcl			viewPP Main program
+viewpp_fileread.tcl		viewPP Sub program
+viewpp_gardpred.tcl		(as above)
+klitcld.c			klitcld Main program
+klitcl.kl1			klitcl Module
+viewpp.kl1			viewPP program klic part
+list.kl1			Sub program for viewpp.kl1
+
+bitmap/clear.ppm		Picture file for icon
+bitmap/exec.ppm			(as above)
+bitmap/exit.ppm			(as above)
+bitmap/file.ppm			(as above)
+bitmap/replace.ppm		(as above)
+
+sample/append.vpp		Sample for Input file
+sample/reverse.vpp		(as above)
+
+man_html/viewpp_man.html	User's Manual (Japanese)
+man_html/viewpp_glossary.html	Glossary of viewPP (Japanese)
+man_html/bug.gif		Picture for Manual
+man_html/example1.gif		(as above)
+man_html/example2.gif		(as above)
+man_html/example3.gif		(as above)
+man_html/items.gif		(as above)
+man_html/viewpp_sd.gif		(as above)
+man_html/vpp1.gif		(as above)
+man_html/vpp2.gif		(as above)
+man_html/vpp3.gif		(as above)
+
+klitcl/Readme			Readme about patch for klitcl
+klitcl/klitcl.patch		VersionUp patch for old klitcl
+----- * ----- * ----- * -----
+
+¡¦Execution environment
+
+  on Sun Workstation
+
+  OS  : SunOS 5.4 or 5.5.1 (Solaris2.4 or 2.5.1)
+  klic: version 2.002
+  Tcl : version 7.5
+  Tk  : version 4.1
+
+¡¦About Installation
+
+1) Edit Makefile
+
+You have to edit constans in Makefile.
+
+CC		C compiler
+XINCLUDE	Path of include file for X11
+XLIB		Path of library file for X11
+XRLIB		Path of library file for X11 (for Runtime)
+TCLTKINCLUDE	Path of include file for Tcl/Tk
+TCLTKLIB	Path of library file for Tcl/Tk
+
+2) Compile
+
+Type on shell prompt "make" after edit Makefile suitably.
+
+If compile process complete successfully, two executable
+file "klitcld" and "viewpp" is created in viewpp directory.
+
+3) Execution
+
+First: Extcute "klitcld" on background.
+
+  % ./klitcld &
+
+Next: Execute "viewpp".
+
+  % ./viewpp
+
+How to quit viewPP: Click the "exit button" on viewPP window.
+
+(eof)

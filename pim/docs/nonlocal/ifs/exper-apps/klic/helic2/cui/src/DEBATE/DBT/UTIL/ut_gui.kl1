@@ -1,0 +1,137 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%	(C)1994 Institute for New Generation Computer Technology	%%%%
+%%%%	(Read COPYRIGHT for detailed information.)			%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module dbtcui_guiUtility.
+
+:- public 
+    check_argumentLevel/3,
+
+    get_unitUnitRelReason/6,
+    get_justificationList/7,
+    justify/4,
+
+    has_claimList/3,
+
+    get_initialArgumentList/3,
+    is_initialArgument/4,
+    get_numOfInitialArgument/3,
+
+    make_noticeStatus/4.
+
+:- with_macro pimos.
+
+%check_argumentLevel
+    check_argumentLevel(1,_,YN):-true|
+        YN = yes.
+    check_argumentLevel(0,d,YN):-true|
+        YN = yes.
+otherwise.
+    check_argumentLevel(_,_,YN):-true|
+        YN = no.
+
+%get_unitUnitRelReason
+    get_unitUnitRelReason(R1,R2,Info1,Info,Rel,SPList):-true|
+        Info1 = {RBR,POM1,{ViewName,A,B,Which},D},
+        POM1  = [get({unitUnitRelReason,ViewName,R1,R2},{Rel,SPList},_)|POM2],
+        Info  = {RBR,POM2,{ViewName,A,B,Which},D}.
+
+%get_justificationList/7
+    get_justificationList(R1,R2,{Pool1,Info1},Data,SetJL,DispJL,Result):-true|
+        Info1 = {RBR,POM1,{ViewName,B,C,D},E},
+        POM1  = [get_jusify({ViewName,R1,R2,Pool1},{Pool,JL},Result)|POM2],
+        Info  = {RBR,POM2,{ViewName,B,C,D},E},
+        Data  = {Pool,Info},
+        (   Result = normal(success)->
+                get_justificationList1(JL,SetJL,DispJL)
+        ;
+            Result = abnormal(_)->
+                true
+        ).
+
+    get_justificationList1([],SetJL,DispJL):-true|
+        SetJL  = [],
+        DispJL = [].
+    get_justificationList1([{SP,[SPList|_]}|T],SetJL,DispJL):-true|
+        get_justificationList1(T,SetJL1,DispJL1),
+        reverse(SPList,[],DispSPList),
+        SetJL  = [SPList|SetJL1],
+        DispJL = [{SP,DispSPList}|DispJL1].
+
+%justify
+    justify(SPList,Info1,Info,R):-true|
+        Info1 = {RBR,POM1,{ViewName,B,C,D},E},
+        POM1  = [jusify({ViewName,SPList},R)|POM2],
+        Info  = {RBR,POM2,{ViewName,B,C,D},E}.
+
+%has_claimList
+    has_claimList(Pool1,Pool,YN):-true|
+        Pool1 = [make(mat,MAT),make(yat,YAT)|Pool],
+        MAT   = [refer_argList(ALL1)],
+        YAT   = [refer_argList(ALL2)],
+        append(ALL1,ALL2,ALL),
+        (   ALL = []->
+                YN = no
+        ;
+            ALL \= []->
+                YN = yes
+        ).
+
+%get_initialArgumentList
+    get_initialArgumentList(Pool1,Pool,IAL):-true|
+        Pool1 = [send(ial,refer_argList(IAL))|Pool].
+
+%is_initialArgument
+    is_initialArgument({SV,APos},Pool1,Pool,YN):-true|
+        Pool1 = [make(ial,IAL)|Pool],
+        IAL   = [is_inArg({SV,APos},YN)].
+otherwise.
+    is_initialArgument(_,Pool1,Pool,YN):-true|
+        Pool = Pool1,
+        YN   = no.
+
+%get_numOfInitialArgument
+    get_numOfInitialArgument(Pool1,Pool,C):-true|
+        Pool1 = [send(ial,refer_argList(IAL))|Pool],
+        count(IAL,0,C).
+
+%%make_noticeStatus
+    make_noticeStatus({Who,YSPList,MA,MR,YA,YR},Info1,Info,Status):-true|
+        (   YSPList = nil->
+                Type = noticeDraw
+        ;
+            YSPList \= nil->
+                Type = noticeWin
+        ),
+        dbtcui_guiUtility:get_unitUnitRelReason(MR,YR,Info1,Info,Rel,SPList),
+        (   Rel = 1->
+                Shouhai = {win,SPList}
+        ;
+            Rel = 0->
+                Shouhai = {draw,[]}
+        ;
+            Rel = -1->
+                Shouhai = {lose,SPList}
+        ),
+        Info1 = {_,_,{_,_,_,AgentName},_},
+        dbtcui_messagePool:make_message({Type,Who},{YSPList,AgentName,MA,MR,YA,YR,Shouhai},Status).
+
+%%%%%%utility
+
+    append([],Y,Z):-true|
+        Z = Y.
+    append([X1|X],Y,Z):-true|
+        append(X,Y,Z1),
+        Z = [X1|Z1].
+
+    count([],X,Y):-true|
+        Y = X.
+    count([_|T],X,Y):-true|
+        X1 :=X+1,
+        count(T,X1,Y).
+
+    reverse([],W,L):-true|
+        L = W.
+    reverse([H|T],W,L):-true|
+            reverse(T,[H|W],L).
