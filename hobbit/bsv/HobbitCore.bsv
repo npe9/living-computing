@@ -398,7 +398,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      MemCycles mcyc,
                      EuBypass byS2, EuBypass byS3, Reg#(Word) psw,
                      Reg#(Bool) kl, Bool squash, Bool drained,
-                     Word pcLimit,
+                     Bool s2Taken, Word pcLimit,
                      Reg#(Bool) eventActive)(HobbitEuS1);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: one module per EU stage with a
@@ -778,8 +778,19 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // Ask memory for the first word the slot still lacks.  The box must
   // be idle: a flush or a parked write means memory does not yet hold
   // every committed word, and a refill owns the read port.
+  // `!s2Taken`: no fetch while an instruction sits unexecuted in EU_S2's
+  // input slot.  Its result is not in the bypass network yet, so an
+  // address formed from a word it is about to write -- a pointer just
+  // being computed -- would be the *old* value, and the fetch would go
+  // to an address the program never uses (1e's `za`: a table scan read
+  // memory at `4*i` before the `ADD` of the table's base had executed;
+  // 2,399 such reads in 125,572 instructions).  The right word was
+  // always fetched afterwards, so nothing was wrong with the values; but
+  // it is a read the part would not make, and a device register would
+  // see it.  The instruction cannot be handed to EU_S2 before that slot
+  // empties anyway.
   rule fetchOperand (active && !squash && fullR && !eventActive &&
-                     curOut().memMiss && sc.memIdle());
+                     !s2Taken && curOut().memMiss && sc.memIdle());
     sc.memReq(curOut().memMissAddr);
   endrule
 
@@ -1816,8 +1827,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   Bool drained = !s2.occupied && !s3.occupied && !s3.framePending() &&
                  !sc.busy();
   HobbitEuS1 s1 <- mkHobbitEuS1(ic, sc, m, s2.bypass, s3.bypass, pswR,
-                                configKlR, squash, drained, pcLimit,
-                                eventActiveR);
+                                configKlR, squash, drained,
+                                !s2.canAccept, pcLimit, eventActiveR);
 
   // ---- PSW ownership ------------------------------------------------
   // One rule writes PSW.  A compare's F bit arrives on EU_S3's DWire in

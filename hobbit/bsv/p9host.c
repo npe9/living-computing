@@ -201,8 +201,19 @@ uint32_t
 p9h_read(uint32_t addr)
 {
 	init();
-	if (!legal(addr))
-		unmapped_reads++;	/* a wrong-path fetch may do this */
+	if (!legal(addr)) {
+		/* a wrong-path fetch may do this; $P9UNMAPPED=n prints the first n */
+		static long show = -1;
+
+		if (show < 0) {
+			const char *e = getenv("P9UNMAPPED");
+
+			show = e ? strtol(e, 0, 10) : 0;
+		}
+		if ((long)unmapped_reads < show)
+			printf("P9HOST unmapped read 0x%08x\n", addr);
+		unmapped_reads++;
+	}
 	return rd(addr);
 }
 

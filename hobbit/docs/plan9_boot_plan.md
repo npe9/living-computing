@@ -137,9 +137,9 @@ the reference model:
 
 | run on the core | retirements compared | also agree in `cyc` | kernel entries | clocks | result |
 |---|---|---|---|---|---|
-| `za main9.s` | 125,572 | 125,110 | 16 | 607,235 | `main9.z`, 309 bytes, **byte-identical to the shipped `libc.a` member** |
-| `za hello.s` | 107,164 | 106,785 | 16 | 520,077 | `hello.z`, 255 bytes |
-| `zl -o hello hello.z -lc` | 697,197 | 696,100 | 60 | 2,267,581 | `hello`, 2,014 bytes, linked against the shipped `libc.a` |
+| `za main9.s` | 125,572 | 125,110 | 16 | 607,737 | `main9.z`, 309 bytes, **byte-identical to the shipped `libc.a` member** |
+| `za hello.s` | 107,164 | 106,785 | 16 | 520,579 | `hello.z`, 255 bytes |
+| `zl -o hello hello.z -lc` | 697,197 | 696,100 | 60 | 2,268,867 | `hello`, 2,014 bytes, linked against the shipped `libc.a` |
 | `hello` (the program just linked) | 319 | 319 | 2 | 957 | prints `hello 1e` |
 | `echo hello world` | 1,808 | 1,808 | 2 | 10,259 | prints `hello world` |
 | `cat trap.c` | 388 | 388 | 8 | 1,662 | 10,642 bytes, byte-exact |
@@ -202,7 +202,11 @@ piece (`docs/conformance_1to1.md` §1c has the detail and the tests):
     in a scheduling cycle that bsc broke by making them conflict;
 12. (cycles only) a folded unconditional `JMP` was prefetched down its
     fall-through, "mispredicted" every time, and charged 3 where p. 4-3
-    gives it 0 -- 3,808 of `za`'s records (golden 020).
+    gives it 0 -- 3,808 of `za`'s records (golden 020);
+13. (bus reads only) EU_S1 fetched a memory operand through a pointer
+    whose newest value was still unexecuted in EU_S2 -- 2,399 reads of
+    addresses the program never uses on `za`.  No value was wrong; a
+    device register would have seen them.
 
 And one thing the *reference model* needed: `za` copies a stack word it
 never wrote.  What that reads is whatever the cache slot last held, so
@@ -289,10 +293,21 @@ What the reference run established before any Bluespec work:
    that returns from `main` exits with the status `"\x02\x08\x02"`,
    the first bytes of `KCALL $8; RETURN R0`.
 
-The vendored tree holds five of the release's 387 `hobbit/bin` files
-(`cat echo rc za zl`); `zc`, `mk`, `cpp`, `yacc` and `ar` are in the
-release (`plan9-1e.tar.bz2`, sha256 in `docs/plan9_port.md`) and A3
-needs them vendored.
+The vendored tree holds ten of the release's 387 `hobbit/bin` files:
+`cat echo rc za zl`, and since 2026-11-20 `zc mk cpp yacc ar`, taken
+from the same tarball (`plan9-1e.tar.bz2`, sha256 in
+`docs/plan9_port.md`, re-verified that day) for A3.  Nothing has been
+done with the new five beyond loading them on the reference model with
+no arguments: `zc` and `ar` print their usage lines, `cpp` copies an
+empty standard input, `mk` stops at `rfork` and `yacc` at `stat` --
+system calls `tools/p9run.py` refuses, which is where A3 starts.
+(`tools/p9exec.py`'s `_main` check rejects `zc`: its `_clock` is beyond
+16 bits, so the startup's MOV is the five-parcel form.  The check is too
+narrow, not the binary wrong; `p9run` does not use it.)
+
+Also vendored that day, because `tools/p9run.py` and the docs cite them
+as the authority for the system-call numbers and the exec frame:
+`sys/src/libc/9syscall/sys.h` and `sys/src/9/port/sysproc.c`.
 
 ### A3 — build the kernel
 

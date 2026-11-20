@@ -139,7 +139,7 @@ at" is the first record that disagreed.
 | # | what | found at | fixed in | pinned by |
 |---|---|---|---|---|
 | 1 | Little-endian data (PSW.UL, CONFIG.KL) | reference run: `echo` jumps to 0x361d0000 | `HobbitTypes.bsv` lane functions | golden 017 |
-| 2 | No on-demand prefetch fill: a fetch outside the 1 Kbyte boot window was `TR_FETCH_MISS` | `echo` record 19 (`CALL` to another window) | `mkHobbitPrefetch.demand`, `mkHobbitDecodeStore` (`missed`/`retry`) | the 1e runs (the goldens' 1 Kbyte memory cannot miss) |
+| 2 | No on-demand prefetch fill: a fetch outside the 1 Kbyte boot window was `TR_FETCH_MISS` | known beforehand (`docs/plan9_port.md`: `echo`'s `_main` 0x2ad0 and `main` 0x1020 are in different windows); with the fill disabled `echo` stops after 5 records | `mkHobbitPrefetch.demand`, `mkHobbitDecodeStore` (`missed`/`retry`) | the 1e runs (the goldens' 1 Kbyte memory cannot miss) |
 | 3 | **A misprediction resolved in EU_S3 squashed EU_S1 only**; the wrong-path instruction already in EU_S2 retired | `echo` record 48 | `redirect` rule: `if (s3.squash) s2.flush` | golden 018 |
 | 4 | Both operands indirect refused as "unimplemented" (the argument was a third cache port; none is needed) | `echo` record 274 (`CMPEQ *R24.UB, *R28.UB`) | decoder; EU_S1 `pt2Mem`/`pt2Word`; EU_S2 `readPointed2`; a fourth operand latch | golden 019 |
 | 5 | `CALL *Roffset`, `JMP **$addr` refused (Table 1-23 modes 0xD, 0xC) | `echo` record 367 (`CALL *R12`) | decoder `branch3`; `flowIndirect` (the RETURN path) | golden 019 |
@@ -149,6 +149,29 @@ at" is the first record that disagreed.
 | 9 | Stack cache: a store to a word a CATCH refill had not reached was dropped; a store in the same clock as a refill word dropped the refill word; a second CATCH or an ENTER's flush replaced a refill in flight | `za` record 3,865 | `HobbitStackCache.bsv` (per-word next value; unfilled stores go to memory); EU_S1 holds after CATCH until the box is idle | the `za` run |
 | 10 | Two rules each requested the memory's one read port; bsc let one *shadow* the other (warning G0117) | `za` record 21,638 (a parcel fetched as zero) | the box owns the port and lends it (`MemPort`, `sc.textPort`); the prefetch translates and asks | the `za` run |
 | 11 | With events on, `latchOperand` and `move2to3` were in a rule cycle that bsc broke by making them conflict (warning G0009) | reading the build log | `start` clears the latches through a toggle | the build has no G0009 |
+
+A twelfth and a thirteenth came from numbers the comparison does not
+compare:
+
+* **`cyc`.**  A folded unconditional `JMP` was prefetched down its
+  fall-through, "mispredicted" every time, squashed and charged 3 where
+  p. 4-3 gives a folded `JMP` 0 (`predictedTaken` did not list `JMP`).
+  3,808 of `za`'s records.  Golden 020.
+* **Reads outside the process's segments.**  `bsv/p9host.c` counts reads
+  of addresses in no segment.  After the `JMP` fix the count on `za` went
+  from 5 to 2,399, and the addresses were 0x4, 0x8, 0xc, ...: EU_S1 was
+  fetching a memory operand through a pointer whose newest value was
+  still unexecuted in EU_S2's input slot -- a table scan read `4*i`
+  before the `ADD` of the table's base had run.  The right word was
+  always fetched afterwards, so no value was wrong and no record
+  differed; but it is a bus read the program never asked for, and a
+  device register would see it.  `fetchOperand` now waits for that slot
+  to empty; the count is back to 55 (observed on the same run: 2,399
+  without the gate, 55 with).  The 55 that remain are 5 reads of address
+  0 and 50 of 0x80000000, the word just past USTKTOP; I read the second
+  as the refill engine requesting one word beyond its bound and
+  discarding it, and have not traced either further.  They are spurious
+  reads too, and open.
 
 Two things are worth keeping from this beyond the fixes.
 

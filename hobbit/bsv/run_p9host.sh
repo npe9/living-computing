@@ -58,6 +58,16 @@ PYTHONDONTWRITEBYTECODE=1 python3 "$here/../tools/p9run.py" \
     --root "$work/ref" --record "$work/p9.rec" --hri "$work/ref.hri" \
     "$bin" "$@" > "$work/ref.console" 2> "$work/ref.status" || status=$?
 cat "$work/ref.status"
+# The reference run must have run the program to its exits.  One that
+# stopped early (a refused system call, an instruction the reference
+# model refuses, the step limit) leaves a short trace, and the Bluespec
+# run would "match" it.  The exit *string* is not checked: a program
+# whose main returns exits with libc's `_exits<>` quirk
+# (docs/plan9_boot_plan.md), which is not a failure.
+if ! grep -q '^p9run: exits(' "$work/ref.status"; then
+  echo "run_p9host.sh: the reference run did not reach exits; nothing to compare with" >&2
+  exit 1
+fi
 echo "P9HOST reference: $(wc -l < "$work/ref.hri" | tr -d ' ') retirements, $(grep -c '^E ' "$work/p9.rec" || true) kernel entries"
 
 if [ "${P9HOST_KEEP_SIM:-0}" != 1 ] || [ ! -x sim_p9host ]; then

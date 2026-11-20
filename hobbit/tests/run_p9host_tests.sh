@@ -33,6 +33,15 @@ step() {
   fi
   grep '^MATCH\|^P9HOST EXIT\|^P9HOST console\|^P9HOST file' "$tmp/$name.out" |
       sed "s/^/$name: /"
+  # Reads of addresses in no segment.  The comparison cannot see them (a
+  # spurious read changes no record), and 2,399 of them on za were how a
+  # too-eager operand fetch was found (docs/conformance_1to1.md 1c).  The
+  # runs here make 5 to 83; a hundred is the alarm.
+  n=$(sed -n 's/^P9HOST EXIT.* \([0-9][0-9]*\) reads outside the segments$/\1/p' "$tmp/$name.out")
+  if [ -z "$n" ] || [ "$n" -gt 100 ]; then
+    echo "run_p9host_tests: $name made ${n:-?} reads outside the segments (limit 100)" >&2
+    exit 1
+  fi
 }
 
 # echo: its _main and main do not share a 1 Kbyte window (demand fill),
