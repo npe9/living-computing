@@ -671,6 +671,11 @@ class Machine:
         v = self.cells[pc][1]
         self.unify(self.reg[(v >> 24) & 31], (ATOM, v & 0xffffff))
 
+    def i_put_atom(self, pc, x, y, z, c16):
+        # one cell: opcode byte = 40 | register, low 24 bits = the atom
+        v = self.cells[pc][1]
+        self.reg[(v >> 24) & 31] = (ATOM, v & 0xffffff)
+
     def i_wait_atom(self, pc, x, y, z, c16):
         # one cell: opcode byte = 80 | register, low 24 bits = the atom
         v = self.cells[pc][1]
@@ -714,6 +719,10 @@ class Machine:
 
     def i_write_atom(self, pc, x, y, z, c16):
         self.mem[self.sp] = (ATOM, self.cells[pc][1] & 0xffffff)
+        self.sp += 1
+
+    def i_write_nil(self, pc, x, y, z, c16):
+        self.mem[self.sp] = NIL
         self.sp += 1
 
     def i_write_value(self, pc, x, y, z, c16):

@@ -61,6 +61,8 @@ of this module can check, on either model, and injections confirm it:
 | `get_atom` | `23:C0+r`, atom in the low 24 bits | unify `r[r]` with the atom | checked (`scsi_common:check_completion_code/4`) |
 | `put_vector_N` | `23:38+N x` | `r[x]` := a new vector of N cells; the structure pointer is set to its first cell | checked for N = 2, 3, 4. The pointer's tag is written with the low bit set, as the image builder writes every pointer; what the machine does there (MRB) is not known |
 | `write_atom` | `23:23`, atom in the low 24 bits | store the atom at the structure pointer and advance it | checked |
+| `write_nil` | `23:22` | store `[]` (atom 0) at the structure pointer and advance it | checked (`lockstep_gca.py`) |
+| `put_atom` | `23:40`+r, atom in the low 24 bits | `r` := the atom; the register is the opcode's low five bits, as for `get_atom` | checked for register 0 only (`lockstep_gca.py`): a wrong register field is NOT caught |
 | `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
 | `write_variable` | `23:24 x` | the element at the structure pointer becomes a new unbound variable, `r[x]` a reference to it; advance | checked with `x` = 31 only (`analyze_standard_format/5`): the cell and the register are in the trace, nothing reads the register. That the variable is the element itself is our choice |
 | `switch_on_non_list` | `23:2A x`, label | guard: `r[x]` a list, the structure pointer is set to its car; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`). |
@@ -133,9 +135,9 @@ are read and rebuilt (`switch_on_non_list`, `put_reused_structure`);
 the long form (7 or more) is made, read and updated by the same
 built-ins since `lockstep_deca.py`. Its layout has that one source
 (the image holds no long vector); why the length is there twice is not
-known, and both models read the first and write both. The guards
-`vector` and `switch_on_non_vector` on a long vector are written but
-NOT run; unifying two long vectors is not modelled.
+known, and both models read the first and write both. The guard `vector` on a long vector is checked by `lockstep_gca.py`
+(every module's information vector has 8 elements);
+`switch_on_non_vector` on one is written but NOT run; unifying two long vectors is not modelled.
 
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the

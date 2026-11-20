@@ -93,8 +93,11 @@ lists, the test also playing the atom table (`put(Id, Name, Atom)`,
 on terms cut from the real `pimm_kernel360E.sav`, strings included
 (17 real terms; the guard `modulo` and a divide box; vectors of 7 or
 more, the descriptor form, made by `new_vector` and filled by
-`set_vector_element`). Next: the module-level predicates, first the
-GC-area loop (`put_atom`). The rest of the module needs `put_list` 62, `get_nil` 27,
+`set_vector_element`). `lockstep_gca.py` the fourth:
+`decode_module_info/6` on the module information and the whole GC
+area of seven real modules, the largest (shoen, 30 elements) among
+them; all 42 modules of the kernel file hold only kinds it handles.
+Next: the entry table and the code area (`new_instruction`). The rest of the module needs `put_list` 62, `get_nil` 27,
 `wait_atom` 16, `put_structured_constant` 14, `put_constant` 8,
 `put_atom`, `write_nil`, `write_marked_*`, `set_atom`, `wait_constant`,
 `wait_value`, `integer`, `modulo`, `b_multiply`, `new_instruction`, and
@@ -159,8 +162,9 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: a long vector's size through the guards
-  `vector` / `switch_on_non_vector`, and the vector box's range check;
+- Not caught by any run: `put_atom` on a register other than 0; a
+  long vector through `switch_on_non_vector`, and the vector box's
+  range check;
   `put_constant` dropping the constant's tag;
   `modulo` with a zero divisor or a negative operand (not reached);
   `integer` on an unbound operand;

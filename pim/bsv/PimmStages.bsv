@@ -194,6 +194,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
   // wait_atom's base is 80
   Bool isWaitAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b100;
+  // put_atom's base is 40
+  Bool isPutAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b010;
   Cell atomHere = mkCell(tag_ATOMo, zeroExtend(ins.val[23:0]));
   // put_vector_N, N = 2..4: N cells, no header
   Bool isPutVector = op == op_put_vector_1 || op == op_put_vector_2 || op == op_put_vector_3
@@ -258,6 +260,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.unify(regs.r(zeroExtend(ins.val[28:24])), atomHere);
       st <= XUnify;
     end
+    else if (isPutAtom) begin
+      regs.wr(zeroExtend(ins.val[28:24]), atomHere);
+      next;
+    end
     else if (op == op_get_nil) begin
       dbox.unify(regs.r(x), mkCell(tag_ATOMo, 0));
       st <= XUnify;
@@ -272,6 +278,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_write_atom) begin
       smem.write(sp, atomHere);
+      sp <= sp + 1;
+      next;
+    end
+    else if (op == op_write_nil) begin
+      smem.write(sp, mkCell(tag_ATOMo, 0));
       sp <= sp + 1;
       next;
     end

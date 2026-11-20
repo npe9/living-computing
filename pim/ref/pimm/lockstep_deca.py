@@ -64,9 +64,9 @@ where shown and was restored:
 
 Not caught: a long vector's size read from the second length cell (the
 two are always equal); the vector box without its range check (the
-decoder stays in range); the box's info answer, which only the guards
-vector and switch_on_non_vector use on a long vector, and no test runs
-them on one.
+decoder stays in range).  The box's info answer is not caught here
+either (nothing here asks a long vector's size); lockstep_gca.py
+catches it.
 Not caught: modulo accepting a zero divisor, and nothing here divides a
 negative number: the decoder only takes a length mod 2.
 Not caught: put_constant forcing the integer tag.  Both constants the
@@ -230,6 +230,75 @@ def real_terms():
     return out
 
 
+def serve(s, at, atq, feed, table, names, heard):
+    """Run, answering the reader's requests on the stream at `at` from
+    the words `feed` and the atom table's on `atq`, until nothing more
+    is asked.  `table` is the atoms given so far; each name handed over
+    is appended to `heard` as (Id, words).  Returns what is left of
+    the three."""
+    while True:
+        s.run()
+        m = s.live()
+        progress = False
+        while True:                     # the reader
+            w = m.deref(at)
+            if m.unbound(w):
+                break
+            if w[0] & ~1 == pimm.LIST:
+                s.setslot(5, (pimm.REF, w[1]))
+                s.unifyc(5, (pimm.INT, feed[0]))
+                feed, at = feed[1:], (pimm.REF, w[1] + 1)
+            elif w[0] & ~1 == pimm.VECT0 + 4:
+                s.setslot(5, (pimm.REF, w[1]))
+                s.unifyc(5, (pimm.INT, feed[0] << 16 | feed[1]))
+                feed, at = feed[2:], (pimm.REF, w[1] + 1)
+            elif w[0] & ~1 == pimm.VECT0 + 6:
+                buf = m.deref((pimm.REF, w[1]))
+                if m.unbound(buf):
+                    break               # the buffer is not made yet
+                bits, elems = m.string(buf)
+                assert bits == 16
+                k = len(elems)
+                s.string(6, 16, feed[:k])
+                s.setslot(5, (pimm.REF, w[1] + 1))
+                s.unify(5, 6)
+                feed, at = feed[k:], (pimm.REF, w[1] + 2)
+            else:
+                raise AssertionError('an unknown request %r' % (w,))
+            m = s.live()
+            progress = True
+        while True:                     # the atom table
+            w = m.deref(atq)
+            if m.unbound(w):
+                break
+            assert w[0] & ~1 == pimm.LIST, w
+            req = m.deref((pimm.REF, w[1]))
+            size = (req[0] & ~1) - pimm.VECT0 >> 1
+            what = m.deref((pimm.REF, req[1]))
+            ident = pimm.signed(m.deref((pimm.REF, req[1] + 1))[1])
+            if size == 3 and what == (pimm.ATOM, names['get']):
+                answer = table[ident]
+            elif size == 4 and what == (pimm.ATOM, names['put']):
+                name = m.deref((pimm.REF, req[1] + 2))
+                if m.unbound(name):
+                    break               # the name is not read yet
+                bits, elems = m.string(name)
+                assert bits == 16
+                answer = 0 if elems == NIL_NAME else 0x10000 + ident
+                table[ident] = answer
+                heard.append((ident, elems))
+            else:
+                raise AssertionError('an unknown atom request %r' % (req,))
+            s.setslot(5, (pimm.REF, req[1] + size - 1))
+            s.unifyc(5, (pimm.ATOM, answer))
+            atq = (pimm.REF, w[1] + 1)
+            m = s.live()
+            progress = True
+        if not progress:
+            break
+    return at, atq, feed
+
+
 def script():
     im = pimm.kbndis.Image()
     s = driver.Script()
@@ -262,70 +331,11 @@ def script():
         s.arg(6, 3)
         s.arg(7, 4)
         s.spawn(pc, 7)
-        feed = words[1:]
         m = s.live()
-        at, atq = s.live_slot[0], s.live_slot[7]
+        heard = []
         table = {k: number(k, v) for k, v in before.items()}
-        while True:
-            s.run()
-            m = s.live()
-            progress = False
-            while True:                     # the reader
-                w = m.deref(at)
-                if m.unbound(w):
-                    break
-                if w[0] & ~1 == pimm.LIST:
-                    s.setslot(5, (pimm.REF, w[1]))
-                    s.unifyc(5, (pimm.INT, feed[0]))
-                    feed, at = feed[1:], (pimm.REF, w[1] + 1)
-                elif w[0] & ~1 == pimm.VECT0 + 4:
-                    s.setslot(5, (pimm.REF, w[1]))
-                    s.unifyc(5, (pimm.INT, feed[0] << 16 | feed[1]))
-                    feed, at = feed[2:], (pimm.REF, w[1] + 1)
-                elif w[0] & ~1 == pimm.VECT0 + 6:
-                    buf = m.deref((pimm.REF, w[1]))
-                    if m.unbound(buf):
-                        break               # the buffer is not made yet
-                    bits, elems = m.string(buf)
-                    assert bits == 16
-                    k = len(elems)
-                    s.string(6, 16, feed[:k])
-                    s.setslot(5, (pimm.REF, w[1] + 1))
-                    s.unify(5, 6)
-                    feed, at = feed[k:], (pimm.REF, w[1] + 2)
-                else:
-                    raise AssertionError('an unknown request %r' % (w,))
-                m = s.live()
-                progress = True
-            while True:                     # the atom table
-                w = m.deref(atq)
-                if m.unbound(w):
-                    break
-                assert w[0] & ~1 == pimm.LIST, w
-                req = m.deref((pimm.REF, w[1]))
-                size = (req[0] & ~1) - pimm.VECT0 >> 1
-                what = m.deref((pimm.REF, req[1]))
-                ident = pimm.signed(m.deref((pimm.REF, req[1] + 1))[1])
-                if size == 3 and what == (pimm.ATOM, names['get']):
-                    answer = table[ident]
-                elif size == 4 and what == (pimm.ATOM, names['put']):
-                    name = m.deref((pimm.REF, req[1] + 2))
-                    if m.unbound(name):
-                        break               # the name is not read yet
-                    bits, elems = m.string(name)
-                    assert bits == 16
-                    answer = 0 if elems == NIL_NAME else 0x10000 + ident
-                    table[ident] = answer
-                    want.append((label, 'name', ident, elems))
-                else:
-                    raise AssertionError('an unknown atom request %r' % (req,))
-                s.setslot(5, (pimm.REF, req[1] + size - 1))
-                s.unifyc(5, (pimm.ATOM, answer))
-                atq = (pimm.REF, w[1] + 1)
-                m = s.live()
-                progress = True
-            if not progress:
-                break
+        at, atq, feed = serve(s, s.live_slot[0], s.live_slot[7], words[1:], table, names, heard)
+        want += [(label, 'name', ident, elems) for ident, elems in heard]
         assert not feed, (label, feed)
         s.setslot(5, at)
         s.setslot(6, atq)

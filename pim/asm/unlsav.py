@@ -134,21 +134,22 @@ def parse_term(r):
         return ('module',)
     if t == 0x0900:
         r.rd()
-        read_atom_name(r)
-        read_atom_name(r)
-        return ('module',)
+        a1 = read_atom_name(r)
+        a2 = read_atom_name(r)
+        return ('module', a1, a2)
     if t == 0x0a00:
         r.rd()
-        read_atom_name(r)
-        read_atom_name(r)
-        r.rd()  # arity
+        a1 = read_atom_name(r)
+        a2 = read_atom_name(r)
+        arity = r.rd()
         pkg = r.peek()
+        a3 = None
         if pkg == 0x0000:
             r.rd()
-            read_atom_name(r)
+            a3 = read_atom_name(r)
         elif pkg == 0x0100:
             r.rd()
-        return ('extcall',)
+        return ('extcall', a1, a2, arity, a3)
     if t == 0x0500:
         r.rd()
         for _ in range(6):
