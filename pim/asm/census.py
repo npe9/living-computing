@@ -43,7 +43,7 @@ TARBALL = os.path.join(HERE, '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 MODEL = os.path.join(HERE, '..', 'bsv', 'PimKL1B.bsv')
 
 # Observed 2026-11-19 on pimosobj.tar.Z (sha256 2c9a8f69...).
-PINNED = dict(files=20, modules=502, instructions=726053,
+PINNED = dict(files=20, modules=502, instructions=726053, checksums=20,
               pred_heads=12344, floats=103, unknown=0, distinct=197)
 
 
@@ -134,7 +134,14 @@ def census(src):
                 else:
                     unknown[(tag, op)] += 1
         modules += nmod
-        per_file.append((name, nmod, n_inst, len(w) - r.i))
+        # What follows the last module is a 32-bit checksum: the XOR of
+        # every 16-bit word before it (load.kl1 reports "Checksum Error").
+        x = 0
+        for v in w[:r.i]:
+            x ^= v
+        left = 'checksum ok' if w[r.i:] == [0, x] else \
+            '%d trailing words UNEXPLAINED' % (len(w) - r.i)
+        per_file.append((name, nmod, n_inst, left))
     return key, used, unknown, per_file, heads, floats, modules
 
 
@@ -144,6 +151,7 @@ def main(argv):
     key, used, unknown, per_file, heads, floats, modules = census(paths[0] if paths else None)
     total = sum(used.values())
     got = dict(files=len(per_file), modules=modules, instructions=total,
+               checksums=sum(1 for f in per_file if f[3] == 'checksum ok'),
                pred_heads=heads, floats=floats, unknown=sum(unknown.values()),
                distinct=len(used))
     if '--check' in flags:
@@ -155,7 +163,7 @@ def main(argv):
               '0 unknown)' % got)
         return 0
     for name, nmod, n_inst, left in per_file:
-        print('%-30s %4d modules %7d instructions  (%d trailing words)'
+        print('%-30s %4d modules %7d instructions  (%s)'
               % (name, nmod, n_inst, left))
     print('total: %r' % got)
     for (tag, op), c in unknown.most_common():

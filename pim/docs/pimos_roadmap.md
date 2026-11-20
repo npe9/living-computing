@@ -179,7 +179,10 @@ ends in a gate; do not start the next before the gate is observed.
    labels are `target - (here + 2)` in cells.* The assembler computes labels as
    `target - (here + 2)`; settle what unit that is in a loaded image
    (the open `savaddr.py` question).
-5. **Runtime inventory.** From the census and the source: every
+5. **Runtime inventory.** *Done 2026-11-20 (`asm/inventory.py`): 245
+   mnemonics once sub-functions are broken out; the IPL image alone
+   uses 144, including shoen, priority and module-object instructions,
+   so no boot stage runs on the bench model's level of machine.* From the census and the source: every
    built-in (`f_r_r`, `f_r_r_r`, `r4`-`r7` types), every instruction
    that touches goals, priorities, shoen, MRB marks, external modules,
    the console and SCSI. One table: name, count in the images, source
@@ -190,7 +193,10 @@ ends in a gate; do not start the next before the gate is observed.
    and constant instructions that PDSS splits per position or type;
    50 are absent. A PDSS port is a translation layer, not a
    renumbering.*
-6. **What I/O boot needs.** Read `bios/boot/*.kl1`, `src/vm/*.kl1` and
+6. **What I/O boot needs.** *Instruction level done 2026-11-20: the
+   IPL needs a console sink and `scsi_init`/`scsi_command`; the SCSI
+   exchange itself is open until the IPL is disassembled (Phase 1).*
+   Read `bios/boot/*.kl1`, `src/vm/*.kl1` and
    `pimos.conf` to list every device operation between power-on and the
    shell prompt.
 7. **Measure Bluesim.** *Done 2026-11-20: about 14 million steps per

@@ -155,6 +155,12 @@ not a decode error. A code area also holds two kinds of non-instruction
 tagged word: predicate heads (tag `0x24`) and float constants (tag
 `0x30`). Counts and sources are in `pimos_boot_requirements.md`.
 
+### File trailer
+
+After the last module: two words, a 32-bit checksum equal to the XOR of
+every 16-bit word before it (verified on all 20 files by
+`asm/census.py`).
+
 ## What a loader needs
 
 1. Parse the `.sav` header and modules.
@@ -165,8 +171,8 @@ tagged word: predicate heads (tag `0x24`) and float constants (tag
 5. Load the `.kbn` heap image at its base address and set the entry
    point per `bios.kl1` (`go/4`).
 
-The `.kbn` base address and the exact heap-image layout are the
-remaining unknowns; the `.sav` format is documented above and by
+The `.kbn` layout is settled (`pimos_boot_requirements.md` §0.3); the
+`.sav` format is documented above and by
 `encoder.kl1`.
 
 ## The SCSI device PIMOS expects

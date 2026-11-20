@@ -136,6 +136,13 @@ arm at all:
 | `mark_element` | 23/1c | 353 |
 | `put_vector_0` | 23/38 | 328 |
 
+**The file trailer (2026-11-20).** After the last module each `.sav`
+ends in a 32-bit checksum, the XOR of every 16-bit word before it. All
+20 files verify (`asm/census.py --check` pins it; summing instead of
+XOR-ing failed all 20), so no word of any `.sav` is left unexplained,
+and the copies in `nonlocal/` are intact as ICOT wrote them. The "2
+trailing words" in the listing above are this checksum.
+
 ## 0.1 Firmware search (done 2026-11-19)
 
 Three KL1 executors survive in the ICOT Free Software archive; all
@@ -351,10 +358,83 @@ slower, perhaps by one or two orders of magnitude, and a boot of
 number of instructions PIMOS executes to reach its prompt is itself
 unmeasured.
 
-## 0.5 (built-ins), 0.6, and PDSS
+## 0.5 Runtime inventory (done 2026-11-20)
 
-Not started: the runtime inventory (built-ins by sub-function,
-`save`/`restore`) and boot I/O.
+`python3 asm/inventory.py --list` groups every instruction by the part
+of the runtime it needs, for the whole object set and for the IPL
+image, with the shared opcodes broken out by sub-function (bits 23-16
+of the word; `klb_opr.kl1` `p({f_r_r,F},...)`). `--check` pins the
+table and runs in `run_tests.sh`. The grouping is by mnemonic and is
+ours: it sizes the work, it does not define semantics.
+
+| Group | Object set: mnemonics | uses | IPL image: mnemonics | uses |
+|---|---|---|---|---|
+| unification/structure | 56 | 504,586 | 51 | 8,143 |
+| goal control | 14 | 117,634 | 9 | 2,197 |
+| heap/gc/profile (`collect_*`, `mark_element`, ...) | 8 | 57,556 | 4 | 911 |
+| indexing | 6 | 20,821 | 6 | 429 |
+| guard type/compare | 8 | 9,923 | 7 | 547 |
+| string/vector built-ins | 18 | 7,222 | 13 | 287 |
+| integer arithmetic | 21 | 5,176 | 18 | 397 |
+| code/module/atom objects | 13 | 1,228 | 11 | 51 |
+| device | 14 | 563 | 5 | 137 |
+| float | 16 | 485 | 2 | 8 |
+| bignum/extended integer | 9 | 322 | 0 | 0 |
+| shoen/priority/processor | 19 | 278 | 17 | 48 |
+| extended float | 43 | 259 | 1 | 1 |
+| **total** | **245** | **726,053** | **144** | **13,156** |
+
+245 mnemonics, not 197, because the nine shared opcodes are 57 distinct
+sub-functions in use. All but one are float or extended-float
+operations (631 uses in all); the other is `tag_and_value` (23/76
+sub-function 4, 87 uses), which the earlier tables listed under its
+opcode's first name, `export_entry`.
+
+**What this says.**
+
+- *The IPL is not a small subset.* 144 mnemonics, including 17 of the
+  19 shoen/priority/processor instructions and 11 of the 13
+  code/module object ones (`new_module`, `new_instruction`,
+  `predicate_to_code`: it builds modules from the `.sav` stream).
+  Rung R2 "the IPL runs" already needs goals, suspension, shoen, MRB
+  collection and the module objects. There is no boot stage that runs
+  on the bench model's level of machine.
+- *The long tail is cheap to defer.* Extended float, bignum and float
+  are 68 mnemonics and 1,066 uses in the whole set, 3 mnemonics and 9
+  uses in the IPL. They can fail loudly until something calls them.
+- *`save`/`restore`* (17,538 uses) do not occur in the IPL at all, nor
+  does `read_variable_without_deref` (20,625) or `jump`. What `save`
+  and `restore` do is still unread.
+
+## 0.6 Boot I/O at the instruction level (done 2026-11-20; protocol open)
+
+The device instructions, with uses in the object set and in the IPL:
+
+| Instruction | Set | IPL | |
+|---|---|---|---|
+| `display_console` | 451 | 61 | diagnostic output; every BIOS error path ends in one |
+| `put_console` | 72 | 71 | |
+| `read_console` | 16 | 0 | |
+| `scsi_init`, `scsi_command` | 2, 2 | 1, 1 | the whole SCSI path goes through these two (`bios/scsi/scsi_blt.kl1`: `scsi_init/3`, `scsi_command/7`) |
+| `scsi_where`, `scsi_transfer`, `scsi_abort`, `scsi_reset`, `scsi_bus_reset` | 7 | 0 | |
+| `system_timer`, `set_timer` | 12 | 0 | |
+| `log_event` | 1 | 0 | |
+| `halt` | 1 | 3 | |
+
+So the IPL needs a console sink and one SCSI command primitive, and
+nothing else from outside the machine. `pimos_binaries.md` ("The SCSI
+device PIMOS expects") has what the BIOS source says about the
+device.
+
+*Open:* which SCSI commands the IPL issues, in what order, and what the
+other end must answer. The IPL's source (modules `ipl`, `ipl_module`,
+`ipl_file_decoder`, named in `pimm_ipl.sym`) is not in `pimos.tar.Z`;
+its decoder shares predicate names with `library/unloader/decoder.kl1`.
+The answer has to come from disassembling the image, which needs the
+atom table joined to the code. That is Phase 1 work (the loader), not
+Phase 0.
+
+## PDSS
 
 Open before roadmap decision 3 is taken: whether PDSS builds and runs
 its own tests on a modern machine. `emulator/cell.h` stores pointers in
