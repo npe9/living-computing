@@ -434,11 +434,24 @@ The answer has to come from disassembling the image, which needs the
 atom table joined to the code. That is Phase 1 work (the loader), not
 Phase 0.
 
-## PDSS
+## PDSS runs (2026-11-20)
 
-Open before roadmap decision 3 is taken: whether PDSS builds and runs
-its own tests on a modern machine. `emulator/cell.h` stores pointers in
-a 32-bit `int` (`typedef struct cell { unsigned short type, mrb; int
-value; }`), so it does not build as it stands on a 64-bit machine; it
-needs a 32-bit environment or a port (widened cells, or a heap mapped
-below 4 GB).
+`ref/pdss/` builds PDSS V2.52.20 from `nonlocal/pdss.tar.Z` on the
+development machine and `ref/pdss/test.sh` (in `run_tests.sh`) runs a
+KL1 program on it end to end: PDSS's own KL1 compiler, running on the
+port, compiles N-queens; the result prints 2, 4 and 92 solutions for 4,
+6 and 8 queens, and again through four garbage collections with a
+small heap.
+
+The port is a 683-line patch and a shim, not a 64-bit rewrite: PDSS
+keeps pointers in `int`, so it is built x86_64 with code, heap and
+stack all placed below 2 GB (macOS on Apple Silicon therefore needs
+Rosetta; the Linux `-m32` recipe is written but untested). The one real
+64-bit bug was `long` used as a 32-bit code word in `klb.h`. Details,
+what is unverified (PDSS's own `test/` directory has not been run), and
+the observed fault injections are in `ref/pdss/README.md`.
+
+**Roadmap decision 3 can now be taken on evidence:** an executable
+KL1-B runtime by the PIMOS group exists to read and experiment
+against. It is a sibling dialect (§0.5a) and cannot load the PIMOS
+images.

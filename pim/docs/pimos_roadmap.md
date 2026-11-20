@@ -130,7 +130,8 @@ default until overruled.
    Bluespec an oracle. *Default: yes, in `pim/ref/`, labelled as
    scaffold; the Bluespec model stays the deliverable and every rung
    in §2 is claimed only on the Bluespec model. PDSS is the natural
-   starting point for it.* Bluesim steps/second
+   starting point for it.* *2026-11-20: PDSS builds and runs KL1 programs
+   on the development machine (`ref/pdss/`, in `run_tests.sh`).* Bluesim steps/second
    is unmeasured; Phase 0 measures it and this decision is revisited
    with the number.
 4. **How authentic the I/O is.** The real machine fetched files through

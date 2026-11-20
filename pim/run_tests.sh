@@ -23,6 +23,9 @@ python3 asm/kbn.py --check
 echo "=== runtime inventory (groups and sub-functions pinned) ==="
 python3 asm/inventory.py --check
 
+echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
+ref/pdss/test.sh
+
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
 

@@ -1,0 +1,37 @@
+:- module queens.
+:- public q/2, n/1, s/1.
+
+
+%queen4 :- true | queen([1,2,3,4],[],[],X,[]), display(X).
+%queen5 :- true | queen([1,2,3,4,5],[],[],X,[]), display(X).
+%queen6 :- true | queen([1,2,3,4,5,6],[],[],X,[]), display(X).
+%queen7 :- true | queen([1,2,3,4,5,6,7],[],[],X,[]), display(X).
+%queen8 :- true | queen([1,2,3,4,5,6,7,8],[],[],X,[]), display(X).
+
+ 	append([A|X],Y,Z):- true | 			
+		Z=[A|Z1], append(X,Y,Z1).		
+	append([],   Y,Z):- true | Z=Y.
+							
+	queen([P|U],C, L,I,O):- true | 			
+		append(U,C,N), c1(P,1,N,L,L,I,X),	
+		queen(U,[P|C],L,X,O).			
+	queen([],[_|_],_,I,O):- true | I=O.		
+	queen([],[],   L,I,O):- true | I=[L|O].
+
+	c1(T,D,N,[P|R],B,I,O):- T=\= P+D, T=\=P-D, D1:=D+1|	
+		c1(T,D1,N,R,B,I,O).		
+	c1(T,D,N,[P|_],B,I,O):- T=:=P+D | I=O.		
+	c1(T,D,N,[P|_],B,I,O):- T=:=P-D | I=O.		
+	c1(T,D,N,[],   B,I,O):- true    | queen(N,[],[T|B],I,O).
+
+	display(X) :- display_console(X) | true.
+
+q(N,X) :- N=6 | queen([1,2,3,4,5,6],[],[],X,[]).
+q(N,X) :- N=4 | queen([1,2,3,4],[],[],X,[]).
+q(N,X) :- N=8 | queen([1,2,3,4,5,6,7,8],[],[],X,[]).
+n(N) :- true | q(N,X), cnt(X,0,C), display(C).
+s(N) :- true | q(N,X), out(X).
+cnt([_|T],C0,C) :- C1 := C0+1 | cnt(T,C1,C).
+cnt([],C0,C) :- true | C=C0.
+out([X|T]) :- display_console(X) | out(T).
+out([]) :- display_console(end) | true.
