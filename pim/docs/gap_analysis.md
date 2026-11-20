@@ -113,6 +113,27 @@ classes: inference). What has no source is the IPL-time side: the
 image's `scsi_fep_*` and `ipl_scsi` modules. The survey reports the
 packet layout from `scsi_fep.kl1`; not rechecked here.
 
+*Second correction, from `binary_reverse_engineering.md` (2026-11-20).*
+The IPL-time side of C2 is now read from the object code:
+`asm/kl1decomp.py` decompiles all 349 predicates of the IPL image to
+KL1 clauses (checked here on `check_cdr/4`, `set_status/3`,
+`replace_position/3` and `boot/0` against hand readings). Sections 1.3
+and 1.4 of that note give the boot sequence to the first front-end
+request (`read_open` of `"pimos:pimos.ipl"` through SCSI SEND/RECEIVE
+on unit 7, then `getb` until end of file, then each `.sav`) and the
+packet format. `fep#ipl` and `fep#symbol` are NOT used by the IPL,
+against the inference above. That note is the specification for the R4
+front-end stand-in; its byte-level derivations are the agent's and
+have not been executed.
+
+Also from it: `asm/kbndis.py` names function-numbered opcodes by their
+first table entry, so the image's 9 "`export_entry`" are
+`tag_and_value` and its 8 "`floating_point_equal`" are other float
+operations; B2's list above and the census inherit this. To fix in
+`kbndis.py`. And the image's source-backed modules are older text than
+the held source where datable, so a source oracle must keep asserting
+the clauses it uses, as the tests do.
+
 ### D. The Bluespec side specifically
 
 - It has kept pace one for one, so its gaps are A-C above plus:

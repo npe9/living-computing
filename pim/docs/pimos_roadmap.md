@@ -144,6 +144,13 @@ default until overruled.
 
 ## 4. Phases
 
+*`binary_reverse_engineering.md` (2026-11-20) answers what reverse
+engineering the binary-only components takes: the IPL image decompiles
+to KL1 (`asm/kl1decomp.py`), the `.sav` set matches the held (patched)
+source by predicate set (`asm/savsrc.py`), the compiled ESP packages'
+container is parsed (`asm/ptfdump.py`) with the KL0 opcodes unnamed,
+and the firmware's own reverse assembler is held as compiled ESP.*
+
 *`gap_analysis.md` (2026-11-20) is the measured inventory of what is
 still missing against these phases, and the order to close it in. Its
 main finding for this section: `ipl:boot/0` calls `shoen:execute/4`

@@ -1,0 +1,787 @@
+# Reverse engineering the binaries: what a bounded probe recovered, and what finishing would take
+
+Written 2026-11-20 in answer to the owner's question, "see if you can
+reverse engineer the binaries and what that would take". Each of the
+binary-only components in `docs/nonlocal/` was actually attacked for a
+bounded time; this note records how far that got, what completing it
+needs, and what it buys on the way to booting PIMOS 3.6.
+
+**Labels.** MEASURED = output of a tool run in this session (the tool
+is named). READ = from a named file. INFERENCE = a conclusion not
+itself checked. DERIVED = worked out by hand from MEASURED or READ
+material and not executed.
+
+**Tools added (all read-only, all read the archives directly).**
+
+| Tool | What it does |
+|---|---|
+| `asm/kl1decomp.py` | KL1-B object code of the IPL image back to KL1 clauses. `MODULE [PRED/N]`, `--check`, `--fidelity MODULE SOURCE` |
+| `asm/savsrc.py` | the 502 modules of the 20 `.sav` files against the held source, by predicate set. `--modules`, `--patches`, `--diff MOD` |
+| `asm/ptfdump.py` | container, classes, predicates and constant tables of the compiled ESP packages (`.ptf`). `PKG [CLASS] [--pairs] [--list]`, `--opcodes`, `--check` |
+
+## 0. Answer in brief
+
+| # | Component | Probe result | Feasibility | What it unblocks |
+|---|---|---|---|---|
+| 1 | IPL image, 12 modules with no source | all 349 predicates decompile to readable KL1 (1,023 clauses); boot sequence and the FEP packet format are read out below | **done as a prototype; mechanical to finish** | gap C2 (the front end at boot), C3, B2; a specification for `scsi_command` at R4 |
+| 2 | the 20 `.sav` files | 501 of 502 modules have a source module; source is the *patched* text; the IPL image's source-backed modules are different (where datable, older) text | **done** (predicate-set depth) | says which oracle to trust per module |
+| 3 | Pseudo PIM/m microcode | not re-derived. New: the firmware's own reverse assembler is held as compiled ESP and its field-value tables already come out | **research today; mechanical once the KL0 code of `rassy` is read** | B1, B4, B6, B7, B8 and cycle counts; not on the shortest path to R4 |
+| 4 | compiled ESP packages (`.ptf`) | container fully parsed (554 classes); the FEP's command table recovered (99 of 105 codes equal PIMOS's, none differ); opcode *set* identified against `sysidat`; opcode *names* not | **container done; KL0 disassembler mechanical with a research tail** | C2, C4 from the FEP's side; component 3 through `rassy` |
+| 5 | others | `.ldb` and `.sym` are text; `paragraph.ptf` has source (the known plaintext for 4); `sysinit` not characterised | — | — |
+
+**Single most valuable next step:** name the KL0 opcodes from the
+`paragraph.ptf` / `src_util/paragraph/*.esp` pair, then read two
+targets with the result: `pimmutil##rassy` (gives the complete
+microinstruction format, component 3) and about 4,700 cells of
+`pimfep` (message assembly, dispatch, file service). For the boot path
+alone nothing more is needed from the binaries: section 1.3 and 1.4
+are enough to write the front-end stand-in for R4.
+
+## 1. The IPL image: KL1-B decompiles to KL1
+
+### 1.1 What was built (MEASURED, `python3 asm/kl1decomp.py --check`)
+
+`kl1decomp.py` walks a predicate's code symbolically, one walk per path
+through the indexing instructions (`try_me_else`, `switch_on_*`,
+`hash_on_constant`). Passive instructions bind the head's variables to
+patterns, guard built-ins become guard goals, the rest body goals; a
+path that reaches `proceed` or `execute` prints as one clause.
+
+- Instruction boundaries: 349 of 349 predicates sweep to exactly their
+  end; 1,183 labels, none off an instruction boundary.
+- 349 predicates give 1,023 clauses; no path limit hit; all 144
+  instruction names in the image are handled, none left as raw.
+- Structured constants (`put_structured_constant`) are resolved from
+  the image: strings, vectors, lists, module references.
+- `read_eagerly` is printed as `alternatively.` (INFERENCE from where
+  it stands, between clause groups, e.g. `top:top_level_monitor/4`).
+
+**Fidelity against source** (clause count per predicate; contents
+compared by hand for three predicates only, so this is reach, not
+depth):
+
+| Module | predicates | same name/arity in source | same clause count | source |
+|---|---|---|---|---|
+| `jis_to_ascii` | 3 | 3 | 3 | `bios/boot/jtoa.kl1` |
+| `shoen` | 22 | 21 | 21 | `kernel/builtin/shoen.kl1` |
+| `scsi_common` | 13 | 13 | 12 | `bios/scsi/scsi_common.kl1` |
+| `scsi` | 9 | 5 | 4 | `bios/scsi/scsi_handler.kl1` |
+| `scsi_builtin` | 2 | 2 | 2 | `bios/scsi/scsi_blt.kl1` |
+| `scsi_processor` | 3 | 1 | 1 | `bios/scsi/scsi_processor.kl1` |
+| `exception_table` | 14 | 3 | 1 | `kernel/builtin/excpt_tbl.kl1` |
+| `builtin_utility` | 8 | 4 | 0 | `kernel/builtin/string.kl1` |
+
+- Hand-compared and equal: `scsi_common:check_completion_code/4` is
+  the source's three clauses, same guards, same bodies (the compiler
+  adds `integer(A)`).
+- **All 8 predicates whose clause count differs were read against the
+  source; none is a decompiler artefact.** Each is different text in
+  the image:
+  - `builtin_utility` `substring/5`, `copy_string_elements/7`,
+    `append_string/2`, `append_string/3`: the image has the clauses
+    the held `string.kl1` keeps only as comments (the 16-bit guards,
+    `append_string([],S) :- S = ""`), so the image is the **older**
+    text.
+  - `scsi:request_manager/3`: the image's handler knows only
+    `processor` devices, and its `version/1` string is "SCSI KL1
+    Handler Release 1.6 03-Jul-91"; the held `scsi_handler.kl1` says
+    "Release 2.1 03-Feb-92" (and lists 1.5 and 2.0 before it, not
+    1.6: a side branch, INFERENCE).
+  - `scsi_common:check_inquiry_command/4`: one normal clause where
+    the source has five (by length).
+  - `exception_table` `translate_profiling_data/2`,
+    `get_builtin_name/3`: same clause structure as the source's
+    `/4` and `/5` forms without their two threaded arguments, and
+    different result terms. The source file is under `:- switch
+    (machine_type)`, `:- case(mpsi)`; which is older is not
+    established.
+- None of these files' `:- switch` branches gives the image's text
+  (`scsi_common.kl1`, `scsi_handler.kl1` switch on `fep_interface`
+  around the whole module, not around these predicates).
+- So the IPL image's source-backed modules are a weaker oracle than
+  assumed: `exception_table` shares 3 of 14 predicates with the source
+  file, where the same module in `pimm_kernel360E.sav` shares 16 of 16
+  (`python3 asm/savsrc.py --diff exception_table`).
+- One oddity is the object's, not the tool's: `ipl_scsi:check_status/6`
+  tests its first argument for 1 in both clauses, before and after
+  `otherwise` (cells 7466 and 7476 are the same `wait_integer`), so
+  its "cannot initiate file device" clause can never run.
+
+**Limits of the prototype** (each seen in the output):
+
+- No variable names, comments or macro forms: `fep#read_open` comes
+  back as `201`, `string#"..."` as a string.
+- Clause order inside a group is discovery order, not source order.
+- HEURISTIC: of the paths ending at the same exit with the same
+  constant keys, the shortest head and guard is printed. Without it an
+  else-branch reprints a clause with the earlier clause's pattern
+  still attached (`reply_with_attention/4` printed 11 clauses for 5).
+  It could hide a clause in a predicate where two source clauses share
+  compiled code and differ only in a non-constant pattern; none seen.
+- The compiler merges clauses with identical bodies under one
+  `switch_on_constant` (`reply_with_attention`: `reset` and
+  `next_attention` share one body); these print as separate clauses.
+- A body built-in that waits for an input prints before the goal that
+  produces the input; read bodies as dataflow, not sequence.
+- It reads the `.kbn` image only. The `.sav` files hold the same
+  instruction words (`asm/unlsav.py`); feeding them in needs the
+  label and external-reference forms of that container. Not done.
+
+**A defect found in passing** (MEASURED): `kbndis.py` names every
+function-numbered opcode by its first table entry. In the image the 9
+"`export_entry`" are `tag_and_value`, and the 8
+"`floating_point_equal`" are 4 `floating_point_not_less_than` and 4
+`floating_point_to_integer` (all in `ipl_pool`, hashing float keys).
+`gap_analysis.md` B2's `export_entry` and the census names for
+opcodes `6e 6f 76 fc fd` (tag 23) and `be bf ce cf` (tag 22) inherit
+this. `kl1decomp.py` decodes the function number (`klb_opr.kl1`
+`p({f_r_r,F}...)`: bits 23-16).
+
+### 1.2 Which no-source modules have near-source (MEASURED)
+
+`scsi_fep_module` (38 predicates) against `bios/fep_module/scsi_fep.kl1`
+(43): 8 share name and arity, and the packet layout is the same
+(1.4). `scsi_fep_file` matches `bios/fep_module/file_dvc.kl1` in its
+message shapes (`device_create`, `{DevID, fep#read_open, Node,
+Username, Password, Pathname}`, READ at `file_dvc.kl1` lines 19-26).
+The IPL modules are an earlier, smaller generation of the kernel's FEP
+client, not a different protocol.
+
+### 1.3 What `ipl:boot/0` does, through to the first front-end request
+
+Clauses are `kl1decomp.py` output with constants named by hand from
+`macro/pimos/pimos/pimos.vmac` (the `fep#` names are READ there; the
+numbers are in the object code). Everything in this section is READ
+from the decompiled code unless marked.
+
+```
+ipl:boot :-
+    predicate_to_code(module#ipl, boot0, 0, Code),
+    shoen:execute(Code, {}, [start|Ctl], Report),      % a shoen for the IPL
+    ipl_monitor(Report, Ctl, Done),
+    wait_finish(Done).                                 % then halt(0)
+
+ipl:boot0 :-
+    scsi_fep_module:create(0, 0, 7, 0, 1, 0, normal(Fep)),
+    ipl_scsi:scsi(Fep, GeneralTail, FileReq, ScsiEnd),
+    ipl_files(FileReq, "pimos:pimos.ipl", OpenReqs, Files),
+    ipl_loader:load(Files, OpenReqs, Close, Loaded),
+    top:go(Loaded, BootInfo, GeneralTail, ScsiEnd),
+    make_boot_info(BootInfo),
+    close(Close).
+```
+
+The variable names are chosen here (INFERENCE from use); the object
+has none. `GeneralTail` is the tail of the general request stream
+after the `{200, ...}` request (`ipl_scsi:wait_file_request/6`
+unifies it); `top:go/4` binds it to 0 at once, which is the
+end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
+
+1. **The shoen comes first.** `shoen:execute/4` is the first thing
+   executed; `ipl_monitor/3` answers `resource_low` with
+   `add_resource(1073741823, -1), allow_resource_report`, prints
+   exceptions on the console ("EXCEPTION WAS OCCURRED in IPL : error
+   code:") and ends with "SCSI-FEP END********".
+2. **`scsi_fep_module:create(0, 0, 7, 0, 1, 0, R)`**: processor 0,
+   SCSI object argument 0, target unit 7, send LUN 0, receive LUN 1,
+   first device id 0. (The names are INFERENCE from
+   `bios/boot/bios.kl1`, which gives the same five numbers as
+   Cluster, Processor, Unit, Send_LUN, Receive_LUN.) It runs
+   `scsi:create/2` on processor 0, which executes the built-in
+   `scsi_init(^Obj, ^Vec, ^Info)`.
+3. `[get_info(I)]` to the SCSI handler returns `normal(MaxLUN,
+   MaxBuffer)`, `MaxBuffer` being element 0 of `scsi_init`'s `Info`.
+   **The firmware chooses the packet buffer size**; the image has no
+   constant for it (the non-built-in stub in `scsi_blt.kl1` says
+   16000).
+4. `[processor(7, 0, S)]` opens the send device. Because the LUN is
+   0, the handler issues **TEST UNIT READY** first (CDB of six bytes,
+   `scsi_common.kl1` lines 21-42, READ). `[processor(7, 1, R)]` opens
+   the receive device with no command (its LUN is not 0).
+5. Two byte strings of `MaxBuffer` bytes are made (send and receive
+   buffers); an id manager, a sender and a receiver start.
+6. `ipl_scsi:scsi/4` sends the *general* request stream, as vectors
+   whose last element is the next request:
+   `{50, Abort, Attention, St, Next}` (`fep#reset`), then
+   `{200, File, St, Next}` (`fep#file`), then on the file stream
+   `{50, ...}` again. **None of these reaches the wire**:
+   `scsi_fep_general:request_device_io/5` and
+   `scsi_fep_file:request_device_process/4` answer them with status 1
+   locally.
+7. `ipl_files/4` asks `open("pimos:pimos.ipl", F)`; `ipl_scsi` turns
+   it into `{201, 0, 0, "pimos:pimos.ipl", File, St, Next}`
+   (`fep#read_open`; that the two zeros are user and password is
+   INFERENCE from `file_dvc.kl1`'s `{fep#read_open, Username,
+   Password, Pathname, ...}`). `scsi_fep_file` takes device
+   id 0 from the id manager and sends the message
+   `{0, 201, "", 0, 0, "pimos:pimos.ipl"}`. **This is the first
+   front-end request.** On the bus (DERIVED, not executed):
+
+   ```
+   SEND (0Ah) to unit 7 LUN 0, CDB 0a 00 00 00 48, 72 bytes:
+   00000000            device id 0
+   00000000            fep#packet_last
+   000000c9            201, fep#read_open
+   00000004            four arguments
+   00000000 ffffffff ffffffff 0000001e     "" , integer, integer, 30 bytes
+   00000000            (user)
+   00000000            (password)
+   2370 2369 236d 236f 2373 2127 2370 2369 236d 236f 2373 2125 2369 2370 236c 0000
+                       "pimos:pimos.ipl" in two-byte JIS, padded to 4
+
+   RECEIVE (08h) from unit 7 LUN 1, CDB 08 20 <MaxBuffer, 3 bytes>;
+   the expected answer is 16 bytes:
+   00000000 00000000 00000001 00000000      id 0, last, fep#normal, no arguments
+   ```
+8. Then, per read: `getb` is `{0, 210, 7936}` (24 bytes:
+   `00000000 00000000 000000d2 00000001 ffffffff 00001f00`), and the
+   answer `{0, 1, String}` carries the data as a byte string, which the
+   IPL widens to 16-bit elements; status 2 (`fep#eod`) ends the file.
+   The unit of 7936 (bytes or 16-bit characters) is not determined.
+9. `ipl:decompose/2` splits the text of `pimos.ipl` at 16-bit code 10
+   (line feed) and skips from JIS `%` (`2173`) to the end of the line.
+   Each name is opened the same way (device ids 1, 2, ...),
+   `ipl_loader` reads it as 16-bit words through
+   `ipl_file_decoder:decode/8`, sum-checks it, and prints "IPL
+   loading", then "Link Modules ...".
+10. `top:go/4` meanwhile starts the atom-number server (clients ask
+    with `supply_atom_number`; the server's constants are 16384,
+    8192 and 16777216, INFERENCE first number, range size and limit)
+    and waits for the loader. On
+    `normal(Atoms, Modules, Status, Code)`, with `Code` =
+    `predicate_to_code` of `go/4` in the module the atom table gives
+    for `"pim"`, it runs `apply(Code, {BootInfo, Atoms, Modules,
+    Status})`. Failure prints "No PIMOS Top Module", "No PIMOS Top
+    Predicate : pim:go/4" or "IPL Failed" and halts.
+11. `BootInfo` is a 16-bit string: elements 0-4 = 0, 0, 7, 0, 1,
+    element 16 = the length of the path, the path from element 17.
+    The held `bios.kl1` documents the length at element 5 and the path
+    from 6 (`decompose_boot_info`, READ at lines 364-378). This does
+    not matter for boot: `go2` there is under `:- switch
+    (ipl_parameter)`; one branch takes elements 0-4 and discards the
+    path, the other ignores the string and uses the constants 0, 0, 7,
+    0, 1. Which branch `pimm_bios360E.sav` was built with is not
+    determined; both give the same five numbers.
+
+### 1.4 The packet and message format the IPL speaks (READ from `scsi_fep_module`, `scsi_fep_file`, `scsi_processor`)
+
+**SCSI level.** One built-in, `scsi_command(Obj, {Unit, LUN, CDB,
+Length, Dir, Buffer, 0}, ^Data, ^TransferredLength, ^Id, ^Result,
+^NewObj)` (operand directions from `compiler/blt.kl1`). The IPL uses
+three commands, all to unit 7:
+
+| Command | CDB (5 bytes are set; a string of 5) | Dir | LUN |
+|---|---|---|---|
+| TEST UNIT READY | `00 LUN<<5 ...` | none | 0, once |
+| SEND | `0a LUN<<5 len>>16 len>>8 len` | 1 | 0 |
+| RECEIVE | `08 LUN<<5 len>>16 len>>8 len` | 2 | 1 |
+
+What the built-in must return (READ from the decompiled
+`scsi_common:analyze_scsi_command_result/7`, which equals the
+source's lines 153-157):
+
+- `Result` is one integer: status byte = `Result /\ 1Eh`, completion
+  code = `(Result >> 8) /\ FFh`, detail = `Result >> 16`. **Success is
+  `Result` = 0** (status 0, completion code 0, by
+  `check_completion_code/4`); completion-code bit 3 gives
+  `no_status`, status 2 makes the handler issue REQUEST SENSE
+  (`check_condition`, source line 163).
+- `Data` must be an 8-bit string (`check_send_command`,
+  `check_receive_command`).
+- `TransferredLength` must be the true byte count on RECEIVE: the
+  receiver takes the payload as bytes 8 to `TransferredLength`
+  (`receive_packet2_1/9`, `receive_packet3/9`: `Length - 8`).
+
+**Packet level** (all fields 32 bits, big-endian):
+
+```
+ 0  device id
+ 4  0 = last packet of the message, 1 = continued
+ 8  command (request) or status (reply)
+12  n = number of arguments
+16  n words: -1 for an integer, else the byte length of a string
+16+4n  the arguments in order: an integer as 4 bytes; a string as its
+       bytes, padded with zeros to a multiple of 4
+```
+
+- A 16-bit string is sent as its bytes (length = 2 x characters); a
+  received string is widened back to 16 bits.
+- A message longer than the buffer is cut: every piece repeats the
+  8-byte header, pieces but the last have flag 1, and the receiver
+  joins pieces by device id (`receive_packet2_1`, a pool keyed by id).
+- This is the same layout as the kernel's `scsi_fep.kl1`
+  (`send_packet/6`, `send_packet1/8`: id at 0, flag at 4, command at
+  8, count at 12, lengths from 16; READ at lines 266-340). Two
+  generations of the client agree.
+
+**Message level.**
+
+- A request is `{Id, Command, Args...}`; a reply is `{Id, Status,
+  Results...}` matched to its waiter by `Id`. `Id` is chosen by the
+  PIMOS side, 0 upward, one per opened device.
+- One RECEIVE is issued per message sent, except after `{Id, 70}`
+  (`fep#abort`), which expects none.
+- A reply whose status is 3 (`fep#attention`) is unsolicited: it sets
+  the device's attention variable and a further RECEIVE is issued.
+- Status 1 = normal, 2 = end of data, 5 = abnormal (set locally on a
+  send failure), 6 = aborted (set locally).
+
+| Request (wire) | Reply | Seen in |
+|---|---|---|
+| `{Id, 201, "", 0, 0, Path}` read_open (202 write, 203 append likewise) | `{Id, 1}` | `scsi_fep_file:device_create/5` |
+| `{Id, 210, N}` getb | `{Id, 1, String}` or `{Id, 2, ...}` | `device_io/7`, `ipl_scsi:wait_command_status/5` |
+| `{Id, 111, String}` putb | `{Id, St}` | `device_io/7` |
+| `{Id, 112}` flush; `{Id, 220}` end_of_file; `{Id, 221}` pathname; `{Id, 222}` attributes | `{Id, St, ...}` | `device_io/7` |
+| `{Id, 60}` close | `{Id, _}` | `device_io/7`, `device_terminate/5` |
+| `{Id, 70}` abort | none | `device_io/7`, `scsi_sender/6` |
+
+Not used by the IPL: `fep#ipl` (400) and `fep#symbol` (500). The IPL
+reads its files through the ordinary file service. (MEASURED: no 400
+or 500 in the decompiled `ipl*`, `scsi_fep_*` modules; the front end's
+side agrees, section 4.)
+
+**What an emulator for R4 must do** (DERIVED): implement `scsi_init`
+(return a buffer size) and `scsi_command` for the three CDBs above,
+returning `Result` 0 and the true length;
+answer `read_open` with `{Id, 1}`, `getb` with `{Id, 1, bytes}` then
+`{Id, 2}`, `close` with `{Id, st}`; serve `pimos.ipl` and the 20
+`.sav` files under the names `pimos.ipl` gives. No window, timer or
+string I/O is touched before `pim:go/4`.
+
+### 1.5 Feasibility, effort, order
+
+- **Feasibility: done as a prototype, mechanical to finish.**
+- **Effort to finish:** (a) a `.sav` front end for `kl1decomp.py`
+  (the container is already parsed by `unlsav.py`; needs labels and
+  the external-call form), so the 502 object modules can be read the
+  same way; (b) checking clause *contents* against source
+  automatically (parse source clauses to the same normal form;
+  today only counts are compared); (c) an executable check: run a
+  decompiled predicate's clauses and its object code on the same
+  inputs in `ref/pimm/pimm.py`. Nothing has to be found.
+- **Unblocks:** C2 is now specified from the IPL's side (1.3, 1.4);
+  B2's loader (`ipl_module`, `ipl_link_table`, `ipl_loader`: 70
+  predicates, readable, not yet read through); C3 (the atom-number
+  protocol, step 10).
+- **Not determined:** the buffer size `scsi_init` returns on the
+  machine; the unit of `getb`'s count; `string_operation`'s
+  sub-operation 3 (used as a substring copy; argument order read off
+  the uses, not settled); what `scsi_init`'s first two results must
+  be (the object is passed back to `scsi_command`; the second is
+  ignored).
+
+## 2. The 20 `.sav` object files against the held source
+
+MEASURED with `python3 asm/savsrc.py` (predicate heads of every module
+against the clauses of the source file declaring the same module).
+
+- **Version.** Each base file's comment decodes as `PIMM <SET>
+  :3.600:25-Nov-93`; the source's `kernel/init/version.kl1` says `"3.600"`,
+  `"20-May-93"` (READ). The patch files carry no comment and are dated
+  1994-05-12 in the archive.
+- **Coverage.** 502 modules; 501 have a source module of the same
+  name (the exception is `ifdef_filter`, 91 predicates, in
+  `library`). 12,120 predicates excluding 224 compiler-made `$` ones.
+
+| Object predicates | Count | Explanation |
+|---|---|---|
+| same name and arity in the source module | 8,839 (72.9%) | |
+| same name, other arity | 1,114 | `:- local_implicit` / `-->` clauses: the compiler adds arguments (`kl1cmp_optimize`: `optimize1/1` in source, `optimize1/5` and `/7` in object) |
+| name starts with `+` | 719 | request filters generated from protocol descriptions (`genRfil.kl1` style) |
+| other | 1,357 | mostly the same generated filters and the macro modules (`.mac` files the crude reader does not parse); not classified further |
+| in `ifdef_filter` | 91 | no source module |
+
+- 360 modules have every object predicate in source; 344 have
+  identical predicate sets. In `bios` all 473 predicates are in
+  source.
+- **Depth.** This compares predicate *names*, not code. No `.sav`
+  module was decompiled and compared clause by clause (1.5 (a)).
+
+**The patches, and what the source is** (`python3 asm/savsrc.py
+--patches`). 24 patch modules in 12 files; 22 replace a module of a
+base file, 2 are new (`mkdir`, `rmdir`).
+
+| Where base and patch differ in predicate set | patch in source | base in source |
+|---|---|---|
+| `fep_server` (fepsv) | 36 of 36 | 28 of 33 |
+| `hasher` (hash) | 9 of 9 | 9 of 10 |
+| `listener_cmd_directory` (lis) | 21 of 21 | 19 of 22 |
+| `hmonitor`, `rmonitor`, `xhmonitor`, `xrmonitor` (newpg) | 20/20, 21/21, 23/23, 23/23 | 10/20, 11/21, 16/23, 16/23 |
+| `x_profile_tcpip` (newpg) | 32 of 32 | 28 of 32 |
+
+- **The held source is the patched text.** Wherever a patch changes a
+  module's predicates, the source has the patch's set and not the
+  base's. INFERENCE: `pimos.tar.Z` `src/` is the May 1994 state, so
+  for a patched module the *patch* `.sav` is the object of the held
+  source, and the base module is older.
+- 13 patch modules have the same predicate set as their base and
+  differ in instruction count by 0 to 83 (`scsi_fep` 1,840 to 1,838;
+  `telnet_session` 4,831 to 4,865); two are identical in both
+  (`kl1_library_variable_pool`, and `kl1cmp_macro_driver` in
+  `patch_driver`; the same module is patched again by `patch_modu`,
+  10,853 to 10,907). `filereq_filter` (mkdir) gains 3 generated
+  predicates.
+- `pimos_core` (macro) has no parsed source predicates either way
+  (`.mac`).
+- Three patches touch the front-end path: `fepsv`, `scsifep`, `mkdir`
+  (which replaces `fep_directory_device` and
+  `fep_file_request_device` of `bios`).
+
+**Feasibility: done** at predicate-set depth. **Effort for
+instruction depth:** 1.5 (a), then a clause-shape diff over 502
+modules. **Buys:** evidence that source is the oracle for the
+loaded system (with the patches applied last, as `pimos.ipl` orders
+them), and the warning that it is *not* for the IPL image (1.1).
+
+## 3. The Pseudo PIM/m microcode
+
+State of knowledge is in `pseudo_pimm_microcode.md` (under edit by
+another agent; READ 2026-11-20, sections "Answer in brief", 4, 6,
+13-20) and `literature_gaps.md` Appendix C. Not re-derived here.
+
+*Who ran what.* Sections 3 and 4 were probed by a second agent of
+this session, which wrote `ptfdump.py`. Re-run afterwards by the
+author of this note: `ptfdump.py --check`, `--opcodes`, the package
+and `pimfep` class listings, `pimmutil rassy` with and without
+`--pairs`, and the command-code comparison of 4.3. Everything else
+marked MEASURED in sections 3 and 4 is that agent's run, reported and
+not repeated: the microcode sizes, the header and call-target counts
+of 4.1, the `sysidat` / `pimm.MEkbn` identity, the opcode readings
+of 4.2, the hash-table keys and per-class figures of 4.3.
+
+**Size** (MEASURED: `asm/psdpim.py`, `asm/mekbn.py --check` passes,
+`--entries`): the KL1 microprogram is image 2 of `pimm.MEkbn`, 26,624
+addresses, 18,343 non-zero 64-bit words; 324 populated KL1 decode
+entries are its instruction entry points. Image 1 (22,528 addresses,
+17,496 non-zero) is identical to `syspsi` `0..57ff`, the KL0 side.
+Subroutines are not counted in the doc (222 call sites lead to a
+return).
+
+**How much of the word is understood** (INFERENCE, a tally of the
+doc's statements, not a measurement): 55 of 64 bit positions have at
+least one verified use; about 23 of 64 have every value characterised
+(JMPF, the 16-bit EM, the three memory strobes, bit 57). Untouched:
+bit 63, SD2 38-37, ALF 28-26, 18, 17-16, all condition codes, most
+register numbers. Field boundaries are TR-733 fig. 4's geometry,
+confirmed for JMPF and EM only.
+
+**New in this probe: the firmware's reverse assembler is in the
+archive** (MEASURED, `python3 asm/ptfdump.py pimmutil rassy`).
+`INSTALL.DIR/pimmutil.ptf` class `rassy`: 15,713 cells, 98 predicates,
+one per field with TR-733's names (`ccf dstf sc1f sc2f sd1f sd2f
+as1f_and_as2f as2f adf alf jmpf cndf mcf tgif` and a `set_up_*`
+extractor each), with the string "version 1.3 (5-June-1989 by MTC
+KATAYAMA)" (the second agent reported "1.4 (15-June-1989 by
+A.KATAYAMA)"; only the 1.3 string was found on re-reading).
+That it is this processor's format is INFERENCE from its vocabulary:
+`pipeline_cancel`, `ic_trap`, `dc_trap_d`, `KL1F`, `GMI`, `MRP`,
+`SUSPF`, `CGCF`, and the KL1 tag names `into` = `00` .. `goal` = `3c`
+(which also gives the `GOAL` tag's value, open in
+`pseudo_pimm_firmware.md`).
+
+Its clause heads and constants already give value tables, before any
+KL0 disassembler (`--pairs`; which predicate each run of pairs belongs
+to was assigned by reading the listing, not by a tool):
+
+| Field | Values |
+|---|---|
+| source to adder (`sd1f`, `adf`) | 0 nop, 1 xr, 2 yr (`adf`), 4 mdr1, 5 mdr2, 6 mar1, 7 mar2 |
+| second source (`sd2f`, `as2f`) | 0 nop/0, 1 yr, 2 mdr1, 3 mdr2 |
+| `ccf` | 1 wait_mdr1, 2 wait_mdr2, 4 wait, 5 undo, 6 reset_TRB, 15 cancel |
+| register file | 0 cgp, 1 ap, 2 cpr, 3 cfpp, 4 gsp, 5 crr, 6 ccc, 7 ssp, 8 sst, 9 fvp, 10 flp, 11 fgp, 12 fwep, 13 fwip, 14 rcnt, 15 hp, 16-30 wr10-wr1e, 31 pstr |
+| second bank | 0 dr/nop, 1 sr, 2 gr, 3 lc, 4 pc, 5 ir, 6 rfar, 7 rvfr |
+| special registers | 8 alf_cc, 9 sw, 10 refr, 12 tdar, 16 jr, 17 mstkar, 18 mstkdr, 19 mstk, 20 mpc, 24-27 wcs0-3, 28/29 gevc_low/high, 30 mcr, 31 msr, 32 bpr, 33 imskr, 34 istr, 36 dpt_refr, 49 edr, 54 adr_refr, 55 adr_abr |
+| ALU | 0 +, 2 add_with_carry, 3 add_with_one, 4 -, 5 reverse_sub, 6 sub_with_carry, 7 sub_with_one, 8 and, 9 or, 10 pass_as2, 11 xor, 12 shift_left, 13 shift_left_rotate, 14 shift_right_32m, 15 shift_right_arithmetic |
+| memory commands (constants; numbering not recovered) | read / write `marN mdrN`, with `++`; `write_stack ++`; `unify_write`; `write_byte`; `write_hword`; `read_TRB_top`; `exec_misc_read/write`; `set_misc_command` |
+| conditions (constants; numbering not recovered) | alf_zero, alf_sign, alf_carry, alf_overflow, alf_same_tag, alf_equal, alf_less, alf_high, alf_less_zero, over_flow, less, excond_0/1, lc_zero, branch_condition, mm_trap, sw00-02, CGCF, SUSPF, exsw00-02, micro_trap, slit_check, PMPF, non_KL0, GMI, KL1F, MRP, COL, interrupt, interrupt_all, trcmd, csbrk, ic_trap, dc_trap_d, dc_trap_e, ovf_trap |
+| dispatch | `case_tag_setup mdrN k` (k 0-7), `case_gc_setup mdrN`, `eop`, `return`, `goto jr`, operand extraction `ir/8`, `ir/16`, `ir/24`, signed forms |
+
+- Agreement with the other agent's independent fit: `mekbn.py` has
+  `XR, MDR1, MDR2, MAR1, MAR2 = 1, 4, 5, 6, 7` and `SRC_YR = 1`.
+- Possible conflict, not resolved: `rassy`'s `ccf` is a value table;
+  the microcode doc reads CCF as separate strobe bits.
+- Not recovered: the bit positions (they are in the `set_up_*` code),
+  the numbering of memory commands and conditions, which table applies
+  in which mode. `set_mnemonic_file` loads an optional label file that
+  is not held.
+- A second reverse assembler, `pimmutil##csp_micro_reverse_assembler_main`
+  (17,281 cells; `am293`, `i_mode`), is a different format, INFERENCE
+  the PSI-II / Multi-PSI one.
+- Also held as compiled ESP in `pimmcsp`: `csp_goal_record_inspector`
+  (989 cells), `csp_goal_queue_inspector` (869), `csp_goal_converter`
+  (1,947), `csp_susp_record_inspector` (341),
+  `csp_suspend_stack_inspector` (540), `csp_fp_record_inspector`
+  (3,057). The goal-record layout that `pseudo_pimm_firmware.md` says
+  "is in the compiled code" is in the first three.
+
+**What a full microcode disassembler still needs:** bit positions and
+value sets for ALF, the condition field, SD2, bits 63, 18, 17-16; the
+register maps and their bank selection; the memory-command numbering.
+Two routes: (1) decompile `rassy` (15,713 cells; needs component 4's
+KL0 disassembler), which is the authority; (2) go on fitting in
+`mekbn.py`, now seeded with the tables above. No held report gives
+the value tables: TR-733 fig. 4 has names and widths; TM-849
+(Microlint), TM-212 (ZEUS) and TM-850 are listed unread in
+`literature_gaps.md` and might.
+
+**Feasibility: research today; mechanical once `rassy` is read.**
+Then 18,343 words and 324 entry points disassemble by table.
+**Buys:** authoritative semantics and step counts for every KL1-B
+instruction; goal and suspension record layouts (B6, B7); the
+priority mechanism (B4); `save`/`restore` (B1); MRB and the collector
+(B8). None is on the shortest path to R4; all of it changes the
+runtime the path is built on, and it is the only source of cycle
+counts.
+
+## 4. The compiled ESP packages (`.ptf`)
+
+### 4.1 Container (MEASURED, `python3 asm/ptfdump.py --check`: PASS)
+
+All six files (five in `psdpim` `INSTALL.DIR`, and
+`pimosobj`'s `object/paragraph.ptf`) are one format, 16-bit
+big-endian words:
+
+- File: `0001`, package name, attributes (`using_env` = simpos,
+  `version`, `lversion` = lib50, `release`), class names, then one
+  record per class.
+- Class record: length; `version` and `class_id` (`pkg##class`); a
+  symbol table of two-byte JIS names; a body `1b00, L, h1, h2`, the
+  cells `h2..L-1`, and a trailer of terms.
+- Cells: `20xx`/`21xx` + 32 bits = an instruction of class 0 / 1
+  (opcode in the top byte, three operand bytes: the shape of KL1-B);
+  `60rr sym` an instruction with an atom; `01aa sym` an atom or a
+  method selector of arity aa; `0000` integer; `0a00` float; `2400`
+  predicate head (`arity << 24 | offset`); `a000 ...` a hash table.
+- Predicate: name, `kind << 8 | arity`, head, 0, code.
+- Trailer: class links, method vectors, slot (attribute) names,
+  superclasses, used classes, constants. INFERENCE that it fills
+  cells `0..h2-1`: in `scsi_fep_macro` 105 constant references land
+  on cells 15..119, all below `h2` = 120.
+
+| Check | Result |
+|---|---|
+| classes whose cells land exactly on `L` | 552 of 554 (`csp_compare_break_menu`, `csp_mpsi_data_converter` overshoot; not investigated) |
+| predicate headers with code two cells after the head | 8,230 of 9,839 candidates; 1,609 not understood |
+| header kinds | `11` local 3,559; `12` local 1,904; `35` instance method 3,256; `25` class method 589; five other kinds, 156, unidentified |
+| local call target = cell + 2 + signed 16 bits | opcode `60`: 4,131 of 5,214 land on a head; `61`: 1,949 of 2,556; `62`: 1,384 of 1,851 |
+
+| Package | Classes | Cells | Class-0 instr. | Class-1 instr. | Symbols |
+|---|---|---|---|---|---|
+| `pimfep` | 47 | 28,832 | 18,574 | 1,764 | 2,747 |
+| `pimscsi` | 24 | 12,979 | 8,311 | 1,147 | 1,086 |
+| `pimmcsp` | 281 | 149,954 | 99,066 | 8,877 | 14,217 |
+| `pimmutil` | 51 | 53,639 | 39,720 | 3,161 | 3,085 |
+| `mpsicspR` | 30 | 14,897 | 9,148 | 674 | 2,124 |
+| `paragraph` | 121 | 89,204 | 53,717 | 14,429 | 5,705 |
+
+(`icot_software_survey.md` says 23 classes for `pimscsi` and 50 for
+`pimmutil`; the files hold 24 and 51.)
+
+### 4.2 Is the instruction encoding identifiable
+
+- **The opcode set: yes** (MEASURED, `ptfdump.py --opcodes`).
+  `PMPSI.DIR/sysidat` is the KL0 decode table, 1,024 entries indexed
+  by class x 256 + opcode, 214 populated in class 0 and 241 in class
+  1. Every opcode the six packages use has an entry: 228,536 class-0
+  and 30,052 class-1 instructions, 101 and 111 distinct opcodes, none
+  missing.
+- `sysidat`'s classes 0-1 are the table at the head of `pimm.MEkbn`'s
+  classes 0-1 (496 of 512 entries byte-identical): the "PMI"/"BLT"
+  classes `pseudo_pimm_firmware.md` could not match are the KL0
+  instructions.
+- **Dead end:** the task's suggestion that `syspsi` holds the table.
+  `syspsi`, `sysinit` and `sysidat` are 8-byte words after a 256-byte
+  header (32,768, 8,286 and 1,040 words), not the 5-byte `.kbn` words
+  `psdpim.words()` assumes; read that way `syspsi` shows spurious
+  "entries". `syspsi` is the 32K control store; the table is
+  `sysidat`.
+- **The opcode names: not from a document we hold.**
+  `docs/nonlocal/tr` and `tm` hold TR-564, TR-742, TR-799, TM-1074,
+  TM-1159, hardware papers. `literature_gaps.md` names the PSI-II
+  sources: TR-265 (instruction word: class 2 bits, code 8, operand 24,
+  the shape seen here), TM-444 (KL0 on PSI-II), TM-261/353/354
+  (firmware; titles only). None was opened in this probe.
+- **Names from known plaintext: started.** `paragraph.ptf` is compiled
+  ESP whose source is held (`pimos.tar.Z`
+  `src_util/paragraph/*.esp`, 83 files, 18,261 lines, against 121
+  classes). Not the identical version (`paragraph_version` is "3500"
+  in the object, "3200" in `version.esp`), but classes pair up.
+  Readings so far (INFERENCE, one to three witnesses each):
+
+| Opcode | Reading | Witness |
+|---|---|---|
+| `f0` | proceed | `:kill(Obj):-!;` compiles to `dc 01`, `f0` |
+| `dc n` / `dd` | neck cut, arity n / with environment | same |
+| `73` + selector, `74` + selector | method call / last call | `:create(...):-!, :new(Class,Obj)` gives `74 01 02` `new/2` |
+| `60`, `61`, `62` | local call / execute | target rule above |
+| `27 r, int16` | get_integer | every recovered table |
+| `60rr` atom cell | get atom (rr < `80`) / put atom | tables |
+| `29 r, rel` | get constant from the pool | `Res = "normal"` |
+| `5f n`, `6e` | allocate / deallocate | bracket multi-call bodies |
+| `20`, `a0`-`a4` | get/put variable/value family | not separated |
+| class 1 `27` | slot access | `Class!version` |
+
+### 4.3 The front end's side of the protocol (`pimfep.ptf`)
+
+**Command codes** (MEASURED, re-run: `ptfdump.py pimfep
+fep_command_code_table --pairs` against `pimos.vmac`, 104 `fep#`
+definitions outside comments). `fep_command_code_table:convert` holds
+102 code/name pairs, 100 distinct names: **98 have the number PIMOS
+gives them, none differs.** FEP only: `creation_fail` 900,
+`all_device_end` 901, `remote_echo_check` 902, `device_end` 903.
+PIMOS names not in that table: `window` 100, `listing` 230, `deleted`
+234, `next_filename` 236, `symbol` 500, `remote_socket` 704, and the
+two packet flags. A second table, `scsi_fep_macro:expand/7` (the
+FEP's own `fep#Name` expander), has 105 entries with the same
+integers; its names as listed below, and "99 of 105 equal to
+`pimos.vmac`, `getl_without_echo` 112 and `kill_window` 60 FEP-only",
+are the second agent's reading, not re-run.
+
+```
+nil=0 normal=1 eod=2 control_c=3 attention=3 continue=4 abnormal=5 aborted=6 yes=7 no=8
+wake_up=9 disconnected=10 end=11 reset=50 next_attention=51 close=60 abort=70 terminate=80
+window=100 create=101 create_with_buffer=102 get_max_size=103 create_window=104
+getl=110 putb=111 flush=112 beep=113 ungetb=114 set_size=120 set_inside_size=121
+get_inside_size=122 set_position_by_mouse=123 set_position=124 get_position=125
+reshape_by_mouse=126 reshape=127 set_title=130 get_title=131 set_font=132 get_font=133
+select_buffer=140 activate=141 deactivate=142 show=143 hide=144 clear=145 buffer_name=146
+file=200 read_open=201 write_open=202 append_open=203 directory=204 make_directory=205
+getb=210 end_of_file=220 pathname=221 attributes=222 delete=231 undelete=232 purge=233
+expunge=235 listing_all=237 deleted_all=238 kill=239 fep_attributes=240
+timer=300 get_count=301 on_at=302 on_after=303 get_date_time=304 create_timer=310
+ipl=400 string_io=600 create_string_io=601 io=620
+remote_window=700 remote_file=701 remote_timer=702 remote_string_io=703 node_name=710
+socket=800 create_socket=801 bind=802 listen=803 accept=804 connect=805
+set_socket_option=806 so_debug=807 so_reuseaddr=808 so_keepalive=809 send_timeout=810
+receive_timeout=811 connect_hostname=812 creation_fail=900 all_device_end=901
+remote_echo_check=902 device_end=903 packet_last=0 packet_continued=1
+getl_without_echo=112 kill_window=60 jiskanji=0 euc=1 jis=2 sjis=3
+```
+
+**Dispatch** (MEASURED: hash-table keys; INFERENCE: what they mean).
+`pimos_scsi_front_end` (2,437 cells; 4 class, 31 instance, 8 local
+predicates) has the dispatcher, local `command_type/2` (1,591 cells).
+Its hash keys are 103, 240, 70, 80, 901, 902 and the ten
+device-creating commands 104, 102, 201-205, 310, 601, 801, plus the
+atoms `error`, `network_error`. `refute_command/3` sends
+`disassemble/3`, `get_device_id/3`, `get_at/5`, `assemble/3`, `put/2`:
+a message is taken apart, routed by device id through
+`fep_device_table`, and the reply assembled. Everything else is
+dispatched by the device object (ESP method call on the command), so
+the per-device command set is the method list of the device class.
+
+**IPL-time service.** No class tests for 400 or 500 outside the two
+tables; `symbol` is not a symbol in the package. Together with 1.4
+(the IPL never sends them): the boot uses `read_open` and `getb` on a
+`pimos_file`, nothing special. (A reading of what is absent, on both
+sides; neither side was executed.)
+
+**Message framing.** `fep_message_assembler` (503 cells; class
+methods `get_command/3`, `get_device_id/3`, `connection_flag/3`,
+`assemble/3`, `disassemble/3`, `divide_message/4`, `append_message/3`,
+`pad_string/2`; locals `create_argument_string_list/5`,
+`take_argument/5`, `padding/5`, `divide_message_loop/4`). The names
+match the layout of 1.4 (device id, a connection flag, a command,
+arguments, padding, division into pieces); the code was not read, so
+the layout itself is established from the PIMOS side only.
+
+**Service classes** (MEASURED; predicates class/instance/local,
+cells):
+
+| Class | Preds | Cells | Methods seen |
+|---|---|---|---|
+| `pimos_file` | 4/18/15 | 1,157 | class `create/9`, `read_open/10`, `write_open/10`, `append_open/10`; instance `getb/4`, `putb/4`, `ungetb/4`, `end_of_file/3`, `close/3`, `flush/3`, `pathname/3`, `attributes/3` |
+| `pimos_directory` | 2/13/3 | 516 | |
+| `pimos_timer` | 1/8/3 | 349 | `create_timer/9`, `on_after`, `on_at`, `get_count`, `get_date_time`, `abort_timer` |
+| `pimos_window`, `_process`, `_editor`, `pimos_standard_io_window` | 1/7/0, 3/13/3, 0/29/25, 0/7/22 | 218, 456, 1,394, 762 | window keys in `pimos_standard_io_window`: 104, 60, 130, 124, 121, 141, 142, 111, 110, 112, 145 |
+| `as_pimos_string_io_device`, `pimos_string_io_invoker` | 0/10/5, 1/0/3 | 237, 191 | |
+| `as_pimos_device` (base) | 2/19/8 | 557 | |
+| `pimos_tcpip_socket` | 1/41/15 | 1,518 | |
+| `scsi_stream`, `fep_scsi_output`, `pseudo_scsi_fep`, `pimscsi_fep` | 1/15/26, 1/11/7, 0/1/2, 1/4/1 | 1,296, 438, 177, 201 | transport |
+| `pimfep_message_receiver`, `_sender` | 1/16/11, 1/18/15 | 594, 959 | |
+| `fep_device_table` | 0/12/7 | 499 | |
+
+`python3 asm/ptfdump.py pimfep CLASS` lists every predicate with the
+selectors it sends. The call graph is recoverable as predicate to
+selector/arity and predicate to local predicate; which class receives
+a send is not (ESP dispatches on the object). On the Pseudo PIM/m the
+link itself is in `pimscsi`: `pseudo_scsi_handler` has
+`send_packet_to_fep`, `send_buffering_packet_to_PE`,
+`change_packet_16_to_8`, `write_packet`.
+
+### 4.4 Feasibility, effort
+
+- **Container, class and method listing, fact tables: done.**
+- **KL0 disassembler: mechanical with a research tail.** To build:
+  names and operand formats for 212 opcodes (101 class 0, 111 class
+  1). Material: the `paragraph` pair (68,146 instructions with
+  source), and the microcode entry of each opcode as a tie-breaker.
+  The ten commonest class-0 opcodes (`a2 20 73 a0 a4 a7 a3 27 5f f0`)
+  are 118,126 of 228,536 uses, so a few dozen paired clauses settle
+  most of the volume (INFERENCE); the 111 built-in opcodes are the
+  tail, each needing a source witness or a document (TM-444, TR-265,
+  TM-261/353/354; a KL0 built-in manual is catalogued and not
+  obtained, `literature_gaps.md`). Also to settle: the 1,609
+  irregular headers, `h1`, the trailer's slot definitions.
+- **Decompiling the FEP services for a faithful stand-in: mechanical
+  after that.** For boot: `fep_message_assembler` (503 cells),
+  `pimos_scsi_front_end` `command_type/2` + `refute_command/3`
+  (1,708), `pimos_file` (1,157), `scsi_stream` (1,296): about 4,700
+  cells, each checkable against the PIMOS client source and section
+  1.4. All services: 47 classes, 28,832 cells. The SIMPOS classes
+  they call (`simpos##...`) are not held, so a decompiled FEP is a
+  specification to re-implement against, not something to run.
+- **Unblocks:** C2 and C4 from the server's side; the command numbers
+  are settled now from both sides. For R4 it adds nothing section 1
+  does not already give. It is the route to component 3 (`rassy`) and
+  to the goal-record inspectors.
+
+## 5. Other binary-only items
+
+| Item | What it is | Status |
+|---|---|---|
+| `object/pimm_ipl.ldb` (17,340 B) | two-byte JIS **text**, 777 lines: the image's atom names, then per module its name, address, length, table address and public predicates (name, arity, address), then load, end and start addresses and `ipl boot 0` | MEASURED by decoding; readable, agrees with `kbndis.py` on the start (`E0001E81`); nothing to reverse |
+| `object/pimm_ipl.sym` | text atom table | already used by `kbndis.py` |
+| `object/paragraph.ptf` (1,020,476 B) | compiled ESP with held source | the known plaintext of section 4 |
+| `PMPSI.DIR/syspsi` | 32,768 x 64-bit control store, KL0/SIMPOS microcode | same job as component 3, larger; not needed for PIMOS |
+| `PMPSI.DIR/sysidat` | KL0 decode table | read (4.2) |
+| `PMPSI.DIR/sysinit` (8,286 words at `5000`) | not characterised | open |
+| `FONT.DIR/*.font`, `csp.icon` | SIMPOS bitmap fonts and an icon | not examined; console cosmetics |
+| `pimm_patch.com` | named by `boot.init`, **not in the archive** | cannot be recovered; `icot_software_survey.md` |
+
+## 6. Recommended order
+
+1. **Write the R4 front-end stand-in from sections 1.3 and 1.4.** No
+   further reverse engineering needed. Check it by replaying the
+   derived packets through the image's own `scsi_fep_module` once
+   `scsi_command` exists in the model.
+2. **Give `kl1decomp.py` a `.sav` front end** (two operand forms to
+   add, 1.5 (a); nothing to find). Tells which `ipl_parameter` branch
+   the bios was built with (1.3 step 11), lets the kernel's
+   `scsi_fep` and `fep_server` patches be read as loaded, and makes
+   source-versus-object comparison clause-deep.
+3. **Name the KL0 opcodes from the `paragraph` pair** (the one
+   open-ended item; the 30 commonest first).
+4. **Decompile `pimmutil##rassy`**: the microinstruction format from
+   its own tool. Hand the tables in section 3 to the microcode work
+   now; they are usable as seeds before step 3 lands.
+5. **Decompile the pimfep boot path** (about 4,700 cells), then the
+   goal-record inspectors in `pimmcsp`, then the remaining services
+   as R5-R6 need them.
+
+## 7. Could not determine
+
+- The buffer size `scsi_init` returns on the machine, and the unit of
+  `getb`'s count (1.3).
+- Which `ipl_parameter` branch `pimm_bios360E.sav` was built with
+  (harmless either way, 1.3 step 11).
+- Clause-level identity of any `.sav` module with its source.
+- KL0 opcode names beyond the ten rows of 4.2; `h1`; 1,609 irregular
+  predicate headers; two overshooting `pimmcsp` classes.
+- The FEP's own message header code (names only).
+- `rassy`'s bit positions and the numbering of its memory commands
+  and conditions; whether its 1989 date matches the PIM/m chips in
+  every field.
+- What `sysinit` is.
+- Dead ends recorded above: `syspsi` as a decode table (wrong word
+  size); a TR for KL0 opcodes among the held PDFs (none).
