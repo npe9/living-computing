@@ -280,6 +280,14 @@ module mkPimKL1B(PimKL1B);
         // value's last use is detected (compiler mrb.kl1).  This model has
         // no collector, so the marker is a no-op by design, not a stand-in.
         8'h1d: noAction;
+        // otherwise N, label: commit the current choice point (discard the
+        // alternative), then execute the predicate with arity N at label.
+        // c8_c16_exe: a = arity, b:c = label.  Halts if there is no CP.
+        8'h6a: begin
+          if (cpsp == 0) haltR <= True;
+          else cpsp <= cpsp - 1;
+          narg <= a;
+        end
         // wait: passive unification, waits for a variable to be bound.
         // Without a suspension mechanism, halt loudly on an unbound UREF
         // rather than silently proceed; a bound argument advances.
@@ -299,6 +307,8 @@ module mkPimKL1B(PimKL1B);
       pcR <= zeroExtend((b << 8) | c);
     end else if (tag == 8'h23 && op == 8'h67) begin
       pcR <= zeroExtend((b << 8) | c);
+    end else if (tag == 8'h23 && op == 8'h6a) begin
+      pcR <= zeroExtend((b << 8) | c);   // otherwise: jump to label
     end else if (tag == 8'h23 && op == 8'h60 && rqfp != rqt) begin
       pcR <= goals.sub(rqfp);
       rqfp <= rqfp + 1;

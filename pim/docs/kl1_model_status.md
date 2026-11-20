@@ -73,6 +73,7 @@ The status labels are:
 | `jump` | 0x67 | `pc = label` (c16) | inferred (mnemonic and c16_exe packing) | `PimKL1BJumpTb` |
 | `try_me_else` | 0x68 | push CP {label,argPtr,narg,HP}, fall through | stand-in | `PimKL1BCpTb` |
 | `fail` | 0x73 | pop CP, restore state, jump to label; halt if empty | stand-in | `PimKL1BCpTb` |
+| `otherwise` | 0x6a | pop CP (discard the alternative), set arity, jump to label; halt if empty | inferred (instrtbl.kl1 `otherwise(N, Pred/N)`, c8_c16_exe type; 389 occurrences in `pimm_kernel360E.sav`, binary context shows execute/otherwise/try_me_else sequences) | `PimKL1BOtherwiseTb` |
 
 `deref` resolves one REF level: `deref(w) = (w[39:32] == REF) ?
 heap[w[11:0]] : w`. A REF whose heap cell is itself a REF does not
@@ -89,7 +90,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | atoms and vectors | `put_vector`, `put_structured_constant` | vector layouts and the structured-constant stream are not documented in the corpus |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `otherwise`, `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail` and guard backtracking are implemented, `otherwise` is not |
+| control beyond the queue | `switch_on_non_vector`, `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail`/`otherwise` and guard backtracking are implemented, the remaining switch forms are not |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same
