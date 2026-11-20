@@ -88,6 +88,24 @@ def atoms():
     return sym
 
 
+_FUNCTIONS = None
+
+
+def functions():
+    """{(tag, opcode): {function number: (name, form)}} for the opcodes
+    docs/kl1_encoding.md lists once per function (form f_r_r(F) or
+    f_r_r_r(F))."""
+    global _FUNCTIONS
+    if _FUNCTIONS is None:
+        _FUNCTIONS = {}
+        text = open(os.path.join(HERE, '..', 'docs', 'kl1_encoding.md')).read()
+        pat = (r'\| `([^`]+)` \| `16#"([0-9a-fA-F]+)"` \| `16#"([0-9a-fA-F]+)"` \| '
+               r'`(f_r_r(?:_r)?)\((\d+)\)` \|')
+        for name, tag, op, form, f in re.findall(pat, text):
+            _FUNCTIONS.setdefault((int(tag, 16), int(op, 16)), {})[int(f)] = (name, form)
+    return _FUNCTIONS
+
+
 class Image:
     def __init__(self):
         self.got, self.cells, mods, _t, _u, self.key = kbn.decode(kbn.image())
@@ -168,6 +186,19 @@ class Image:
             name = self.key[k][0]
             ty = self.typ.get(k, '')
             x, y, z, c16 = (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff
+            fn = functions().get((t, op))
+            if fn:
+                # a function-numbered opcode: the function is the x
+                # field, the registers y and z (klb_opr.kl1 p({f_r_r,F})
+                # and p({f_r_r_r,F}); the latter's third register is the
+                # top byte of the next cell)
+                if x not in fn:
+                    return '%s function %d ?, %d,%d' % (name, x, y, z)
+                name, ty = fn[x]
+                if ty == 'f_r_r_r':
+                    return '%s %d,%d,%d   ; f_r_r_r(%d)' % (
+                        name, y, z, self.cells[a + 1][1] >> 24, x)
+                return '%s %d,%d   ; f_r_r(%d)' % (name, y, z, x)
             if ty.startswith('atom'):
                 return '%s %s' % (name, self.atom(v))
             if name in ('execute_external', 'enqueue_goal_external'):

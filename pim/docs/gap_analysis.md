@@ -129,8 +129,10 @@ have not been executed.
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are
 `tag_and_value` and its 8 "`floating_point_equal`" are other float
-operations; B2's list above and the census inherit this. To fix in
-`kbndis.py`. And the image's source-backed modules are older text than
+operations; B2's list above and the census inherit this. *Fixed in
+`kbndis.py` the same day (the function number is the x field): it now
+prints 9 `tag_and_value`, 4 `floating_point_not_less_than` and 4
+`floating_point_to_integer`; `asm/census.py` still counts by opcode.* And the image's source-backed modules are older text than
 the held source where datable, so a source oracle must keep asserting
 the clauses it uses, as the tests do.
 
