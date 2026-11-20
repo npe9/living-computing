@@ -1,0 +1,73 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="en">A.1 Q-learning</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html153 HREF="node13.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html151 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html145 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html154 HREF="node13.html">A.2 今回用いたパラメータ</A>
+<strong>Up:</strong> <A NAME=tex2html152 HREF="node11.html">A 背景</A>
+<strong> Previous:</strong> <A NAME=tex2html146 HREF="node11.html">A 背景</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00041000000000000000>A.1 Q-learning</A></H2>
+<A NAME=subsecQlearning>&#160;</A>
+<P>
+バックプロパゲーションに代表されるようなニューラルネットの教師付き学習
+(supervised learning) は、ネットワークの目標とすべき出力パターンが
+与えられることを前提としている。これに対し、出力の目標パターンは
+与えられず、出力の良し悪しを示すスカラ値のみが与えられる場合に、
+それを最大化する出力を学習する枠組みは
+強化学習 (reinforcement learning) [<A HREF="node21.html#doya96">2</A>] とよばれる。
+<P>
+そのスカラ値 (報酬：reward) が一連の出力系列と環境の結果として、
+未知の遅れの後に与えられる場合、結果が得られるまでに行った
+様々な出力や通過した状態のうち、どれがその結果に影響を与えたのかを
+推定する必要がある。考えられる方法は、各状態に対する評価を
+経験を基に学習しておき、各時点で次の状態での評価が
+最大になるような出力を選ぶというものである。
+<P>
+状態 <IMG  ALIGN=MIDDLE SRC="img3.gif" alt="i_t">,
+出力 <IMG  ALIGN=MIDDLE SRC="img4.gif" alt="u_t">
+における報酬を
+<IMG  ALIGN=MIDDLE SRC="img5.gif" alt="r_t = r(i_t, u_t)"> とすると、
+状態における評価値 (value function)
+<IMG  ALIGN=MIDDLE ALT="V(i)" SRC="img6.gif"> は、
+<P><IMG  ALIGN=BOTTOM ALT="V(i) = r_t + gamma * r_{t+1} + gamma^2 *
+r_{t+2} + ..." SRC="img7.gif"><P>
+と定義される。これより、
+<P><IMG  ALIGN=BOTTOM ALT="V(i_t) = r_t + gamma * V(i_{t+1})" SRC="img8.gif"><P>
+学習の過程で評価値を記憶させる際の規準は、この両辺の差
+<P><IMG  ALIGN=BOTTOM ALT="rhat_t = r_t + gamma * V(i_{t+1}) - V(i)" SRC="img9.gif"><P>
+を 0 になるようにすることである。この
+<IMG  ALIGN=MIDDLE ALT="rhat(t)" SRC="img10.gif"> は、TD誤差
+(temporal difference error) と呼ばれ、これに基づく学習法を
+TD学習(TD learning) [<A HREF="node21.html#sutton88">3</A>]という。
+<P>
+システムの状態変化や報酬の法則性が既知あるいは予測可能である場合は、
+その時点での報酬と次の状態の評価値の和が最大となるものを
+選択すればよい。
+しかしシステムの状態変化の規則が未知の場合は、1ステップ後の評価値が
+分からない。この場合は、状態における出力の有用度 (utility function) 
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img11.gif"><P>
+を経験に基づいて記憶しておくことで、最も大きい有用度を与える出力を
+選べばよい。この有用度関数 (Q-function) の学習は
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img12.gif"><P>
+という形で行われる (Q-learning)。ここで <IMG  ALIGN=BOTTOM ALT="" SRC="img13.gif"> は学習率であり、
+簡単に学習率 <IMG  ALIGN=BOTTOM ALT="" SRC="img14.gif"> とすると、
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img15.gif"><P>
+と書ける。
+<P>
+TD学習や Q-learning といった強化学習は、
+移動ロボットの制御 [<A HREF="node21.html#asada95">4</A>]や
+脳のモデル化 [<A HREF="node21.html#barto94">5</A>]に応用が試みられているように、
+現在注目されている学習アルゴリズムである。
+<P>
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>

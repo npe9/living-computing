@@ -1,0 +1,559 @@
+\batchmode
+\documentstyle{jarticle}
+\makeatletter
+
+\makeatother
+\newenvironment{tex2html_wrap}{}{}
+\newwrite\lthtmlwrite
+\def\lthtmltypeout#1{{\let\protect\string\immediate\write\lthtmlwrite{#1}}}%
+\newbox\sizebox
+\begin{document}
+\pagestyle{empty}
+\stepcounter{section}
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \begin{figure}[ht]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\thicklines
+\begin{picture}(150,40)
+%
+
+
+
+
+\put(122,16){\makebox(0,0)[l]{データ操作}}
+\put(90,22){\makebox(0,0){スキーマ}}
+\put(90,16){\line(0,-1){16}}
+\put(90,14){\vector(1,0){30}}
+\put(90,14){\vector(-1,0){30}}
+\put(30,30){\makebox(0,0){一貫性制約}}
+\put(30,10){\makebox(0,0){データベース状態}}
+\put(0,20){\line(0,-1){20}}	\put(60,20){\line(-1,0){60}}
+\put(60,0){\line(0,1){20}}	\put(0,0){\line(1,0){60}}
+\end{picture}
+\label{f:model}
+\end{center}
+\end{figure}
+}
+
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$D_1, D_2, \cdots, D_n$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline938: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$D_1\times D_2\times\cdots\times D_n$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline940: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:tab1}
+\begin{tabular}{|l|c|l|}\hline
+{\dg 名前}	&{\dg 所属}	&{\dg 所在地}\\ \hline
+田中		&M		&鎌倉市\\ \hline
+横田		&O		&港区\\ \hline
+河村		&N		&川崎市\\ \hline
+永沼		&M		&鎌倉市\\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\{A_1,\cdots,A_n\}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline942: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R(A_1,\cdots,A_n)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline944: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R(A_1,\cdots,A_n)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline946: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$B_1=\{A_i,\cdots,A_j\}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline948: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$B_2=\{A_k,\cdots,A_l\}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline950: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$B_2$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline952: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$B_1$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline954: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$B_1\rightarrow B_2$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline956: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$A_i$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline960: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$r[A_i]$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline962: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$r_1$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline964: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$r_2$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline966: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}r_1[B_1]=r_2[B_1] \;\supset\; r_1[B_2]=r_2[B_2]\end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\rightarrow$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline968: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\rightarrow$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline970: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:tab2}
+\begin{tabular}{|l|c|l|c|l|}
+\multicolumn{2}{c}{(1)}&\multicolumn{1}{c}{}
+	&\multicolumn{2}{c}{(2)}\\ \cline{1-2}\cline{4-5}
+{\dg 名前}	&{\dg 所属}	&	&{\dg 所属}	&{\dg 所在地}
+\\ \cline{1-2}\cline{4-5}
+田中	&M	&	&M	&鎌倉市\\ \cline{1-2}\cline{4-5}
+横田	&O	&	&O	&港区\\ \cline{1-2}\cline{4-5}
+河村	&N	&	&N	&川崎市\\ \cline{4-5}
+永沼	&M\\ \cline{1-2}
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:tab3}
+\begin{tabular}{|l|l|l|}\hline
+{\dg 名前}	&{\dg 趣味}	&{\dg 同好会}\\ \hline
+河村		&音楽		&ゴルフ\\ \hline
+河村		&ゴルフ		&ゴルフ\\ \hline
+田中		&読書		&スキー\\ \hline
+田中		&読書		&卓球 \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:tab4}
+\begin{tabular}{|l|l|l|l|l|}
+\multicolumn{2}{c}{(1)}&\multicolumn{1}{c}{}
+	&\multicolumn{2}{c}{(2)}\\ \cline{1-2}\cline{4-5}
+{\dg 名前}	&{\dg 趣味}	&	&{\dg 名前}	&{\dg 同好会}
+\\ \cline{1-2}\cline{4-5}
+河村	&音楽	&	&河村	&ゴルフ\\ \cline{1-2}\cline{4-5}
+河村	&ゴルフ	&	&田中	&スキー\\ \cline{1-2}\cline{4-5}
+田中	&読書	&	&田中	&卓球\\ \cline{1-2}\cline{4-5}
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\rightarrow\hspace{-3mm}\rightarrow$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline972: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\rightarrow\hspace{-3mm}\rightarrow$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline974: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R\cup S$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline980: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R\setminus S$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline990: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R\times S$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1000: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}(r_1,\cdots,r_n)\in R\wedge(s_1,\cdots,s_m)\in S\;\supset\;
+	(r_1,\cdots,r_n,s_1,\cdots,s_m)\in R\times S\end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R'$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1008: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\sigma_C(R)=R'$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1014: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\{A_1,\cdots,A_k\}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1020: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\pi_{\{A_1,\cdots,A_k\}} R$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1024: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R\cap S = R\cup S\setminus(R\setminus S)\setminus(S\setminus R)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1030: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 1032
+$\theta$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1032: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 1034
+$\theta$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1034: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$A_i$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1040: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$A_j$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1042: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$A_i$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1048: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$A_j$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1050: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 1056
+$\theta$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1056: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 1058
+$A_i\bowtie_{\theta_{R\times S}} A_j$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1058: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 1060
+$\theta$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1060: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(r_1,\cdots,r_n,p_1,\cdots,p_m)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1070: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(s_1,\cdots,s_m)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1072: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$R\div S$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1074: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(s_1,\cdots,s_m)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1076: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(r_1,\cdots,r_n,s_1,\cdots,s_m)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1078: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(r_1,\cdots,r_n)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1082: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$(R\times S)\div S=R$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1084: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$P(t)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1088: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\{t|P(t)\}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1090: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:tab5}
+\begin{tabular}{|l|l|l|}\hline
+{\dg 名前}	&{\dg 趣味}	&{\dg 同好会}\\ \hline
+河村		&音楽		&ゴルフ\\ [-2mm]
+		&ゴルフ		&\\ \hline
+田中		&読書		&スキー\\ [-2mm]
+		&		&卓球\\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{eqnarray*}&&NR\subseteq E_1\times\cdots\times E_n\\ 
+&&E_i:=D\;|\;2^{NR}
+\end{eqnarray*}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$^2$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1092: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$nt=(v_1,\cdots,\{v_{i1},\cdots,v_{ik}\},\cdots,v_n)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1098: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}(NR\setminus\{nt\})\cup
+	\{(v_1,\cdots,v_{ij},\cdots,v_n)|1\leq j\leq n\}\end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$^2$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1102: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:nr1}
+
+\begin{tabular}[t]{|l|l|}
+\multicolumn{2}{c}{(1)}\\ \hline
+{\dg 名前}	&{\dg 趣味}\\ \hline
+河村		&音楽\\ [-2mm]
+		&ゴルフ\\ \hline
+河村		&ゴルフ\\ [-2mm]
+		&スキー\\ \hline
+\end{tabular}\hspace{5mm}
+\begin{tabular}[t]{|l|l|}
+\multicolumn{2}{c}{(2)}\\ \hline
+{\dg 名前}	&{\dg 趣味}\\ \hline
+河村		&音楽\\ [-2mm]
+		&ゴルフ\\ [-2mm]
+		&スキー\\ \hline
+\end{tabular}\hspace{5mm}
+\begin{tabular}[t]{|l|l|}
+\multicolumn{2}{c}{(3)}\\ \hline
+{\dg 名前}	&{\dg 趣味}\\ \hline
+河村		&音楽\\ [-2mm]
+		&ゴルフ\\ \cline{2-2}
+		&ゴルフ\\ [-2mm]
+		&スキー\\ \hline
+\end{tabular}
+
+\end{center}
+\end{table}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\sigma_{\mbox{趣味=読書}} R\;\cup\;\sigma_{\mbox{所属=M}}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline1106: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{table}[ht]
+\begin{center}
+\label{t:nr2}
+
+\begin{tabular}[t]{|l|l|c|}
+\multicolumn{3}{c}{(1)}\\ \hline
+{\dg 名前}	&{\dg 趣味}	&{\dg 所属}\\ \hline
+田中		&読書		&M\\ [-2mm]
+		&スキー		&I\\ \hline
+\end{tabular}\hspace{5mm}
+\begin{tabular}[t]{|l|l|c|}
+\multicolumn{3}{c}{(2)}\\ \hline
+{\dg 名前}	&{\dg 趣味}	&{\dg 所属}\\ \hline
+田中		&読書		&M\\ \hline
+田中		&読書		&I\\ \hline
+田中		&スキー		&M\\ \hline
+\end{tabular}
+\end{center}
+\end{table}
+}
+
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \begin{tabular}{|c|c|c|} \hline
+\multicolumn{3}{|c|}{\bf Modeと入出力} \\  \hline\hline
+\multicolumn{1}{|c|}{Mode} & {入力} & {出力} \\  \hline
+anm & メンバー情報 & メンバー情報 \\  \hline
+mm  & メンバー情報 & メンバー情報 \\  \hline
+dm  & メンバー情報 & normal   \\  \hline
+scd & 検索条件 & メンバー情報 \\  \hline
+shd & 検索条件 & メンバー情報 \\  \hline
+sad & 検索条件 & メンバー情報 \\  \hline
+\end{tabular}
+}
+
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsection}
+{\newpage
+\clearpage
+\samepage \begin{picture}(20,15)
+%
+\put(5.0,14.0){\circle{1.0}}
+\put(5.4,14.0){\vector(0,-1){0.2}}
+
+\put(5,13){\makebox(0,0)[b]{main:server\_main/4}}
+ \put(5,12.8){\vector(0,-1){1.2}}
+ \put(5.3,12.1){\makebox(0,0)[bl]{"irpr"}}
+
+ \put(8.5,13.2){\vector(1,0){2.5}}
+ \put(9.8,13.5){\makebox(0,0)[b]{"xxx"}}
+ \put(12.0,13.1){\makebox(0,0)[bl]{xxx\_request:client\_request/3}}
+
+\put(5,11){\makebox(0,0)[b]{irpr\_request:client\_request/3}}
+ \put(5,10.8){\vector(0,-1){1.2}}
+\put(5,9){\makebox(0,0)[b]{irpr\_service:service/2}}
+ \put(5,8.8){\vector(0,-1){1.2}}
+\put(5,7){\makebox(0,0)[b]{irpr\_kappa:create/4}}
+ \put(5,6.8){\vector(0,-1){1.2}}
+\put(5,5){\makebox(0,0)[b]{irpr\_kappa:irpr\_loop/4}}
+ \put(5,4.8){\vector(0,-1){1.2}}
+\put(5,3){\makebox(0,0)[b]{irpr\_kappa:exec/5}}
+%
+ \multiput(5,2.8)(0,-0.2){5}{\circle*{0.1}}
+ \put(5,1.8){\vector(0,-1){0.2}}
+\put(5,1){\makebox(0,0)[b]{kappa}}
+
+\put(15,9){\makebox(0,0)[b]{irpr\_service:service\_loop/7}}
+ \put(15,8.8){\vector(0,-1){3.2}}
+
+
+\put(15,5){\makebox(0,0)[b]{irpr\_service:exec\_irpr/5}}
+
+\put(17.3,7){\makebox(0,0)[b]{Mode, Search\_cond}}
+
+ \put(9.4,9.1){\vector(1,0){1.6}}
+  \put(10.2,9.4){\makebox(0,0)[b]{Mode}}
+
+ \multiput(11.0,5.1)(-0.2,0){7}{\circle*{0.1}}
+ \put(9.6,5.1){\vector(-1,0){0.2}}
+\end{picture}
+}
+
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+\stepcounter{subsection}
+\stepcounter{section}
+
+\end{document}

@@ -1,0 +1,521 @@
+%From: MIYAMOTO@twics.com
+%Return-Path: <MIYAMOTO@twics.com>
+%Date: Thu, 7 Dec 1995 10:34:04 +0900 (JST)
+%To: j-takaha@icot.or.jp
+%Subject: Text for Quixote from ICCS
+
+Quixote Primer - Part I
+by Chie Takahashi JIPDEC
+
+This series of stories is designed to introduce you to Quixote, 
+the deductive object-oriented database language developed here at ICOT.
+
+The name Quixote was taken, of course, from the famous novel of 
+the same name by the Spanish writer Cervantes.
+
+Let's first take a look at the history of the development of the database, 
+and hopefully this will give you a clue as to why we decided on 
+the name Quixote. 
+
+[Here is a hint: The most important word is missing. 
+Put it on, and use it as an acronym!]
+
+1. The Birth of the Relational Database
+
+Let's start our story in 1970, the year when E.F.Codd designed 
+the first relational database.
+
+In the age of pre-relational databases, users of hierarchical databases or 
+network databases could not easily determine how they should search for data 
+unless they knew how the data in the database was structured. 
+To solve this problem, Dr.Codd used a table format 
+for the basic data structure and built relational algebra and 
+relational logic operations into the design. 
+These operators were used to allow exact mathematical relations to be set 
+between items stored in the database. 
+This step was a catalyst in encouraging others to further develop 
+the relational database.
+
+As a result of this wave of research, 
+large improvements were made to the search speed, 
+and a consistent basis for database design made updating workable. 
+As a result the overall reliability of databases increased.
+
+During the 1980's the relational database came into its own and 
+made inroads into the office, 
+due mainly to the fact that 
+the table structure of the data matched the way 
+that information is recorded in an office. 
+At the same time, computers became faster to the point 
+where they could easily handle the operations 
+involved in relational database access, 
+and user interfaces for database access improved.
+
+
+2.  Birth of the Deductive Database, descendant of Relational Logic
+
+Of course, Dr.Codd didn't suddenly have the idea of relational data. 
+We can trace its roots back to the concept of the link 
+between logic and computers in the 1950's.
+
+Prolog, which is based on the first-order predicate calculus 
+of mathematical logic, 
+influenced the development of relational databases 
+because both were developed around the same basic concept. 
+This led people to looking at the whole database 
+on the basis of relational logic, 
+not just the query language as in a relational database. 
+This trend in turn led in 1977 to the development of the deductive database 
+as a combination of the relational database and logical programming languages.
+
+Unlike the relational database, 
+the deductive database has built in inference rules. 
+The conventional database is just a flat file which stores data, 
+with the ability to search for a record. 
+However, once inference rules are built in, 
+the deductive database can be used to support problem solving. 
+
+In addition the logic of the deductive database system means 
+that it searches only for unique solutions (soundness), 
+and searches until a solution is found (completeness). 
+These characteristics are important 
+because they guarantee the reliability of the database.
+
+
+3.  Both relational and deductive databases meet an impasse
+
+Let's look at the state of affairs in the world of computers 
+when the deductive database appeared.
+
+The number of application software packages 
+which can handle graphics and image data has been increasing steadily 
+since 1980, 
+but during the 1970's, when the relational database first emerged, 
+there were hardly any. 
+Many people tried to link software that had been successful 
+in the business area to relational databases, 
+but they found that it is difficult to use relational databases 
+for complex data items 
+because they have a relatively low processing efficiency 
+for this kind of data. 
+And the same problem occurred with deductive databases, 
+because the thrust of development on deductive databases was to 
+integrate relational databases and programming logic. 
+So both types of databases reached an impasse on the question of 
+how to handle complex data.
+
+
+4.  Fate takes a hand -- the object oriented database appears! 
+
+The first thesis on the feasibility of object-oriented databases, 
+written by Copeland and Mayer, appeared in 1984.
+
+Object-oriented programming tools, 
+from which object-oriented databases developed, 
+are rooted in the search for new software programming development techniques 
+and software maintenance. 
+Let's have a look at the most important concepts 
+in the development of object-oriented databases.
+
+The concept of an object first appeared in the mid-60's, 
+in the simulation programming language Simula '67. 
+The attractiveness of object-oriented programming lies in its ability 
+to use abstract objects to represent actual events. 
+Its strength is that it allows the programming of data types and procedures. 
+This saves users time spent in converting data to fit specific data formats 
+and has increased the number of objects that can be represented on a computer. 
+However, since the programmer can now determine freely 
+how the program deals with the data, 
+it is now the responsibility of the programmer to determine 
+whether the representation is the correct one or not.
+
+In the 1970's, the field of artificial intelligence started to use 
+the concept of a knowledge frame, 
+which incorporated the concept of inheritance. 
+This proved an effective method for sharing and reusing code, 
+as well as for organizing information.
+
+Object oriented programming sprang into the limelight in 1980 
+when it was used in SmallTalk-80, 
+a programming language developed at Xerox USA's Palo Alto Research Center. 
+Following this, 
+related concepts such as multiple inheritance introduced by Flavors, 
+were developed as object oriented programming gradually 
+adopted basic concepts. 
+
+These concepts emerged as the result of research and 
+experience with object oriented programming techniques, 
+and were not uniformly integrated into object-oriented databases. 
+Because of the versatility of its programming techniques, 
+a whole range of database programs with new functions 
+appeared in the late 1980's.
+
+
+5.  Integrating deductive databases and object-oriented databases
+
+Let's now compare the deductive database with the object-oriented database 
+and see how they would get along together.
+
+The deductive database is based on first-order predicate calculus, 
+part of formal mathematical logic. 
+This clear logical structure ensures the accuracy of a query result, 
+an important point in database design. 
+It is also upward compatible with conventional relational databases. 
+However predicate representation cannot handle very complex data types. 
+At that time, 
+databases capable of handling complex data were still under development, 
+and there were as yet none commercially available. 
+
+Object-oriented databases allow easy modeling of the target object, 
+and this representation can be further refined by the user. 
+There were many systems in commercial use. 
+However, there was still no formal base for development, 
+and there was no control over the licensing of techniques. 
+The results of a query and stop timing are determined 
+by the user's skill in programming. 
+In addition, the object-oriented database is basically not compatible 
+with the relational database.
+
+From the above, it should now be clear that 
+the strengths and weaknesses of the deductive database and 
+the object-oriented database complement each other. 
+This immediately suggests that 
+an appropriate combination of the two types would result in 
+a more powerful database, 
+adopting the strengths and evading the weaknesses of both.
+
+The deductive database has now taken this step forward. 
+As the weaknesses of the deductive database became clearer, 
+people started to integrate the strengths of 
+the object-oriented database to compensate. 
+The term :"Deductive Object-Oriented Database (DOOD)" came into use 
+around 1988, 
+and the first DOOD Conference was held in  1989.
+
+This ends our short tour of the history of the database. 
+Have you guessed yet why we chose the name Quixote for our database?
+
+Well, the important word that is missing from Quixote is the word "Don," 
+which in normal usage means "to put on." 
+Used as an acronym, DON stands for "Deductive Object-Oriented Nucleus." 
+We developed Quixote using a deductive object-oriented database language, 
+and so the name of the hero in Cervantes' novel seemed just right.
+
+You may well ask why we didn't name it after some other Don. 
+The answer to this lies in the development process for Quixote, 
+during which time its character was formed. 
+Let's look now at that process.
+
+
+6.  Birth of Quixote
+
+The design of Quixote started in 1990, 
+the first version was released in 1991, and the second version in 1992. 
+Actually the basic research on deductive object-oriented databases 
+was started in 1988, but as you can imagine, 
+the design and implementation involved a lot of exploring 
+as most of the techniques had not yet been established. 
+Now Cervantes' hero, the real Don Quixote, 
+was also an explorer, as well as an idealist and a dreamer. 
+Are you starting to see the similarities in character?
+
+When we started to develop Quixote, 
+because our project was so new, 
+and there was nothing similar to compare it with, 
+we often hesitated in making decisions about 
+how to proceed simply because we wondered whether our ideas were too far out, 
+too idealistic.
+
+But we encouraged each other with the thought 
+that without ideals we cannot develop anything new. 
+Although our project seemed like chasing a dream, 
+we believed that we could make our dream of developing a language 
+called Quixote come true. 
+We hoped that the language would be like Don Quixote himself 
+- aiming for the top, even when that involves risks.
+
+Note:	Actually people at ICOT started looking at 
+deductive object-oriented databases in 1988 as a research project, 
+and so by 1990, there already existed the forerunner to Quixote, 
+named Don Juan. 
+Quixote was born out of a tryst between Don Juan and QUINT, 
+an spin-off from the field of natural language processing.  
+People say that Mr.Fuchi, 
+ICOT's then director of research set up the first date between the couple, 
+but the truth is now shrouded in the mists of time...  
+Quixote was the result of many chance encounters like this, 
+just as the real Don Quixote's character was. 
+
+Can you see now why we had to choose the name Quixote?
+
+Well, now that I have told you the story behind the name Quixote, 
+I must go on to tell you next time about his early years; 
+the pain of integrating the object-oriented database and 
+the deductive database, 
+and more about his character.
+
+Join me again for the next episode.
+
+
+
+Quixote Primer - Part II
+by Chie Takahashi JIPDEC
+
+In the last issue, I told the story of how Quixote got its name, 
+and how the language was born out of the integration of deductive databases 
+and object-oriented databases.
+
+Now I would like to say some more about the practical problems of integrating, 
+specifically object rules and inheritance.
+
+Let me briefly explain the reason that we decided for connecting objects, 
+the basic structures in object-oriented databases, and rules, 
+the basic structures in deductive databases.
+
+
+1.  Objects and Rules
+
+Let's try to formulate one of the basic laws of Japan in Quixote:
+
+"If the head of the family dies, half of his property goes to his wife, 
+and the rest is shared between the children. 
+The parents, or brothers and sisters of the deceased inherit nothing.
+
+The first step in describing this law is to realize 
+that the paragraph is a set of conditions and their results. 
+The paragraph can be represented using a rule of the type 
+"If condition A is satisfied, the result is B." 
+There are also the objects "head of family," "property," 
+and concepts like "death."
+
+These are all objects.  
+If "shared," "head of family dies," "wife is still living," 
+"children are still living," "property," 
+and so on are chosen as objects, the law can be written as:
+
+If "head of family dies" and "wife is still living" 
+and "children are still living" and "property" is S, 
+then wife inherits S/2, children inherit S/2 and 
+parents, brothers, sisters inherit 0.
+
+This shows how the law of inheritance can be described 
+in an object based format. 
+
+Quixote contains rules characteristic of deductive databases 
+(such as "If condition A is satisfied the result B is also satisfied" 
+written as "B<=A) 
+and object terms characteristic of object-oriented databases.
+
+The previous paragraph can be represented by:
+
+Inheritance/[Wife=S/2, Children=S/2, Brothers & Sisters=0, Parents=0] 
+	<= Head of family dies, wife is still alive, 
+	   children are still alive, Property/[Sum=S];;
+
+Let's have a quick break :)
+
+Here are some technical terms used in Quixote. 
+The terms that represent objects like "head of family dies", 
+"wife is still alive," and so on are called Object Terms. 
+Terms that represent objects and their characteristics, 
+such as Inheritance/[Wife=S/2, Children=S/2, Brothers & Sisters=0, Parents=0], 
+and Property/[Sum=S];; are called Attribute Terms. 
+An Object Term is regarded as a special kind of Attribute Term 
+without the attribute symbol / and everything to the right of it.
+
+In the following section I will explain 
+the two kinds of inheritance used in Quixote, 
+both of which come from the field of artificial intelligence 
+where they were developed to enable re-use, 
+sharing and organization of information.
+
+
+2.  Two kinds of Inheritance
+
+In Quixote, 
+inheritance of characteristics was adopted from object-oriented databases. 
+A brief explanation follows:
+
+Human beings have the characteristics of the family mammals. 
+To represent this, 
+we do not need to include the characteristics of the family mammals 
+for human objects; 
+we can just let humans inherit this characteristic. 
+Allowing families to inherit characteristics like this allows us 
+to classify and organize those characteristics.
+
+Written in Quixote the inheritance rule might look like this:
+	Human beings =< Mammals
+	Mammals/[Breathing=Lung, Temperature=homeotherm]
+
+Quixote automatically assigns all the characteristics of mammals 
+to human beings; they need not be defined again at the human level.
+
+Anyone who had tried to represent the real world 
+using inheritance of characteristics know 
+that the real world has exceptions to the rule. 
+Quixote can also incorporate exceptions to inheritance of characteristics.
+
+
+2.2  Exceptions to the rule of inheritance of characteristics
+
+All objects introduced so far are atomic objects. 
+Quixote introduces structured object terms to enable exceptions 
+to the inheritance of characteristics.
+
+For example, here is a structured object term:
+	Apple[Color=Green]
+Note that a structured object term looks like an attribute. 
+The difference is that the structured term object has no slash / 
+after the object name.
+
+This object term represents a green apple. 
+Lets use this example to look at the concept of exceptions 
+to the rule of inheritance of characteristics.
+
+[Color=Green] represents the fact that the apple's color is green. 
+This is an important point - a green apple should be green. 
+If it is not green any more, it cannot be a green apple!
+
+When Apple [Color=Green] is written in Quixote, 
+it automatically inherits the characteristics of the parent apple.
+
+So   Apple[Color=Green] =< Apple   is also true. 
+A green apple is a kind of apple.
+
+If the attribute term Apple/[Shape=Round, Color=Red] 
+(Apples are round and red) is inherited by the object Apple, 
+there is a conflict between Color=Red and Color=Green, 
+and the attribute is not inherited.
+
+In general, 
+if there exist two different definitions for the same characteristic 
+in an attribute term or a structured object term, 
+the definition in the structured object term has the higher priority. 
+In the example, 
+Color=Green in the object term has higher priority 
+than Color-Red in the attribute term.
+
+This is the way that Quixote handles exceptions 
+to the inheritance of characteristics rule. 
+The following section shows 
+how Quixote implements the inheritance of rules for deductive databases.
+
+
+2.3  Inheritance of Rules
+
+Quixote uses modules in order to organize and classify rules. 
+A set of rules are contained in a module with a unique module name. 
+
+The following Quixote statement lets Module1 inherit all the rules of Module2:
+	Module1 >- Module2
+
+Then Module1 is assumed to contain all the rules that are in Module2.
+
+Let's look at the legal example we discussed previously. 
+The law of inheritance was represented by a rule. 
+The module containing the set of rules governing property inheritance 
+can be given the name "Law of Inheritance."
+
+In the same way, 
+the whole of the civil law could be represented 
+by a set of rules in a  module called "Civil Law."
+
+The module "Civil Law" can be made to inherit 
+the rules of the module "Law of Inheritance" by writing
+
+Civil Law >- Law of Inheritance
+
+Defining sets of rules as modules 
+and setting the inheritance of those rules 
+between modules saves redefining the rules in subsequent modules.
+
+
+2.4  Exception to Inheritance of Rules
+
+There can also be exceptions to the inheritance of rules in Quixote. 
+I am not going to go into this in detail here, but here is a brief description.
+Basically there are two kinds of exceptions to the rules of inheritance:
+
+	a.  Do not inherit
+	b.  Overwrite
+
+Exceptions to the rule of inheritance are implemented by adding a symbol 
+which specifies the type of inheritance for the target rule.
+
+To summarize, two kinds of inheritance were implemented in Quixote: 
+one came from deductive databases and 
+the other from object-oriented databases. 
+Rules are organized and classified, 
+shared and re-used based on these two kinds of inheritance 
+as shown in the legal example.
+
+I have explained the integration of objects and rules and 
+the two kinds of inheritance to demonstrate the way 
+that Quixote has merged deductive databases and object-oriented databases.
+
+Next time, 
+I want to explain the concepts of constraint representation 
+and extended query to let you know 
+that Quixote is not just another DOOD language.
+
+One last thing...
+
+You may know that both implementations of Quixote, 
+that is big-Quixote and Micro-Quixote, 
+are available as ICOT Free Software (IFS). 
+The aim of IFS is to spread our programs, 
+to let them drift on the wind into your computer system 
+and into other networks, to let people use them and appreciate them.
+
+Big-Quixote was developed over a 5-year period by a team of 21 people. 
+When we started, everyone said 
+"You'll never manage it - you can't integrate deductive databases 
+and object-oriented databases and also include constraint representation. 
+I just won't work!"
+
+When the software engineers on the project heard 
+this kind of remark repeatedly, 
+it made them even more determined to make the language work. 
+Others fell in love with Quixote. 
+At some times we were all utterly exhausted 
+with the kind of deadlines imposed by the development work 
+and we called this state "Quixote disease." between us. 
+Each of us had our own special feeling towards the project.
+
+I think that Quixote, 
+in incorporating both deductive databases and object-oriented databases, 
+contains something special. 
+Am I being too subjective? 
+
+One reason I think not is that people at ICOT say 
+that Quixote has transcended the character of Cervantes' hero. 
+They say that the Don Quixote in the story is a tragic figure: 
+he continues in vain with his quest and his challenges. 
+But the language Quixote has been moving in the right direction 
+and overcoming its challenges - the right decisions were made. 
+In future issues, I will tell you more of this story. 
+Please keep reading.
+
+Quixote has found you on  your computer. 
+Like a plant, it may need careful tending before it blooms. 
+Don't give up. 
+Support us in our development efforts and use it. 
+Micro-Quixote may suit you more 
+if you are working in a limited computing environment. 
+Try it. You will find that Quixote grows on you. 
+It has its own special character. 
+
+The Quixote project officially ended last March, 
+but I am continuing with this primer on Quixote for you. 
+Please take the time to learn more about Quixote with me.
+
+By the way, there is also a Users Guide available, 
+and many papers have been written on the subject. 
+Contact irpr@icot.or.jp for details. 
+
+Finally do not hesitate to send your questions, suggestions, comments 
+and requests to me here. 
+I look forward to hearing from you.
+
+Chie Takahashi

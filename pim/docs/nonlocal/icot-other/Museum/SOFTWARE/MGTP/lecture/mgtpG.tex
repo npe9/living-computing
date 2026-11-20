@@ -1,0 +1,805 @@
+%\documentstyle[12pt,epsf]{jreport}
+%                                
+%\begin{document}
+%
+%\tableofcontents
+%\pagestyle{plain}
+
+\def\ll{<\hspace{-.1ex}}
+\def\gg{\hspace{-.1ex}>}
+\def\prompt#1{%
+  {\rm prompt[#1]\%}}
+
+\newcounter{MGTPGsubsubsection}[subsection]
+\newcommand{\MGTPGsubsubsection}[1]
+{\addtocounter{MGTPGsubsubsection}{1}\setcounter{MGTPGsubsubsubsection}{0}
+\vspace{1ex}\noindent
+{\bf\dg \thesubsection.\theMGTPGsubsubsection ~#1}\vspace{0.5ex}}
+
+\newcounter{MGTPGsubsubsubsection}[MGTPGsubsubsection]
+\newcommand{\MGTPGsubsubsubsection}[1]
+{\addtocounter{MGTPGsubsubsubsection}{1}\vspace{1ex}\noindent
+{\bf\dg
+  \thesubsection.\theMGTPGsubsubsection.\theMGTPGsubsubsubsection ~#1}
+\vspace{0.5ex}}
+
+\chapter{MGTP/G マニュアル}
+
+本章では，MGTP/G のアルゴリズム概要を述べ操作説明を行なう．
+
+MGTP/G は，値域限定性を満たす節集合を対象にしたモデル生成型定理証明
+器である．値域限定性を満たす節とは，後件部に現れる全ての変数が前件部に
+現れる節のことをいう．
+
+MGTP/G には，SICStus Prolog 上で稼働する Prolog 版，KLIC 上で稼働する 
+KLIC 版，PIM 上で稼働する KL1 版がある．
+
+\section{MGTP/G の機能説明}
+
+MGTP/G では，値域限定性を満たす節集合を対象としているため，出現検査付
+き単一化が不要となり，照合操作のみで証明を進めていくことができる．その
+結果，入力節中の変数を直接 KL1 変数で表現することができ，入力節に対す
+る単一化を KL1 節の頭部単一化として実行できるなど，KL1 言語処理系を活
+用した効率の良い実装が可能となる．また，出現検査付き単一化が不要である
+ことは，Prolog の組込み単一化を直接利用できることも意味し，Prolog 上で
+も効率的な実装が可能となる．
+
+いずれの版も，MGTP 節によって与えられた問題は，前処理プログラムによっ
+て，Prolog 節集合もしくは KL1 節集合に変換される．そしてこれらは，
+MGTP/G 本体プログラムとリンクされ，証明が行なわれる．
+
+\subsection{Prolog 版}
+\label{sec:MGTPGProlog}
+Prolog 版はモデル生成定理証明器の基本となる連言照合時の冗長計算を除去す
+る方式 RAMS 法を用いて実装されており，戦略の違いから三つのタイプの処理
+系がある．
+
+\begin{description}
+\item[戦略I] 全てのモデル拡張候補によって拡張を行なう．得られるモデル
+  候補にモデル棄却規則を適用する．
+
+\item[戦略II] モデル拡張候補の内一つを選び，拡張を行なう．残りの
+  モデル拡張候補はスタック\footnote{各モデル候補について一つずつスタッ
+    クを用意する．このスタックは対応するモデル候補が棄却されると破棄さ
+    れる．}に積まれ次回のモデル拡張の候補となる．拡張されたモデル候補
+  についてモデル棄却規則を適用する．
+
+\item[戦略III] 選言を含まない全てのモデル拡張候補によって拡張を行なう．
+  選言を含むモデル拡張候補はスタックに積まれる．得られるモデル候補(一
+  つしかない)にモデル棄却規則を適用する．もし，選言を含むモデル拡張候
+  補しかなかった場合は，そのうちの一つを選び拡張する．残りのモデル拡張
+  候補はスタックに積まれる．得られるモデル候補(複数)にモデル棄却規則を
+  適用する．
+\end{description}
+
+いずれも，MGTP 節より，Prolog 述語の呼出が可能である．
+
+\subsection{KLIC 版}
+
+KLIC 版はモデル生成定理証明器の基本となる NAIVE とモデル生成法の性能劣
+化要因である連言照合時の冗長計算を除去する方式 RAMS 法と MERC 法を搭載し
+た RAMS, MERC の 3 タイプがある．いずれも基本形は NAIVE である．
+
+RAMS 法は，前件の照合の履歴を記憶する機構を設けることにより，連言照合に
+おける冗長計算を避けるものである．
+しかし，欠点があり，照合の履歴を保持するための必要メモリ量が増大する傾
+向にある．
+これに対して，MERC 法は RAMS 法の欠点を解決したものである．MERC 法は入力
+節の前件リテラルを照合すべき重複組合せのパターンに分解し，そのパターン
+に従い連言照合を行なうものである．
+
+以上の他に，次のような機能を持つ．
+\begin{itemize}
+\item 各処理方式の比較を公平に行なうための，証明図一致機能を持つ．
+
+\item 問題節からKL1述語を呼び出すことができる．
+
+\item オプションにより，証明トレース，証明の統計情報の表示を行なうこと
+  ができる．
+\end{itemize}
+
+\subsection{KL1 版}
+機能は Prolog 版(\ref{sec:MGTPGProlog}参照)と， Prolog 呼出の代わりに 
+KL1 呼出が行なえる点を除いて，全く同じ．
+
+前件部ではKL1 ガード述語，後件部ではKL1 ボディ述語呼出が可能である．
+
+\section{MGTP/G の操作方法}
+
+\subsection{Prolog 版}
+\label{sec:MGTPGPrologA}
+
+Prolog 版 MGTP/G (Prolog版) はグランド版 MGTP を SICStus-Prolog 処理系
+(Prolog 処理系)上に実装したものである．Prolog 版は与えられた入力節(MG
+節) を Prolog 節に変換する MG 節--Prolog 節変換, および Prolog 節に変換
+した MG 節と MGTP/G 本体のコンパイルにより実行可能となる．節変換，コンパ
+イル，実行は全て Prolog 処理系の環境下において行なわれる．
+
+以上の操作手順概略を図\ref{fig:MGTPGPCompile}~に示す．
+まず，~(1) トランスレータ{\tt mgtp2pl} を用いて MG節をProlog節に変換す
+る．次に，~(2) Prolog節を Prolog処理系上のコンパイラを用いてコンパイル
+する．最後に，~(3) あらかじめコンパイルしておいた本体を用いて実行する．
+
+%\begin{figure}[htbp]
+%  \begin{center}
+%    \leavevmode
+%    \epsfile{file=comp-link-p.eps,width=.6\textwidth}
+%  \end{center}
+%  \caption{節変換，コンパイル，実行過程}
+%  \label{fig:MGTPGPCompile}
+%\end{figure}
+
+\MGTPGsubsubsection{インストール}
+
+Prolog 版は Prolog 処理系上で動作するインタプリタである．そのためコン
+パイル，登録などのインストール作業は必要とせず，トランスレータ，本体な
+どのソース・ファイルをコンパイル時に認識可能な任意のディレクトリ位置に
+転送すれだけでよい．
+
+表\ref{tab:MGTPGPFile}~にインストールに必要なファイルを示す．
+ファイル構成は MGTP/G本体 {\tt top.pl} および MG節を Prolog節に変換す
+るプログラム {\tt mgtp2pl.pl}，そのユーティリティ群{\tt mgtp2uty.pl} 
+からなる．
+
+\begin{table}[htbp]
+    \caption{ファイル構成}
+    \label{tab:MGTPGPFile}
+  \begin{center}
+    \leavevmode
+    \begin{tabular}{l|l|c}\hline
+      \multicolumn{1}{c|}{ファイル名} &
+      \multicolumn{1}{c|}{ファイル内容} &
+      \multicolumn{1}{c}{使用言語}\\ \hline
+      {\tt topI.pl}      & MGTP/G本体(戦略I) & Prolog\\
+      {\tt topII.pl}      & MGTP/G本体(戦略II) & Prolog\\
+      {\tt topIII.pl}      & MGTP/G本体(戦略III) & Prolog\\
+      {\tt mgtp2pl.pl}  & MG節--Prolog節トランスレータ & Prolog\\
+      {\tt mgtp2uty.pl} & {\tt mgtp2pl.pl}のユーティリティ・プログラム & Prolog\\ \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\MGTPGsubsubsection{操作方法}
+
+先に述べたように Prolog 版は Prolog 処理系上のインタプリタとして実現されて
+いるため，全ての操作は Prolog 処理系上で行なわれる．
+本節ではトランスレータによる節変換，Prolog 処理系コンパイラによる 
+Prolog 節，本体のコンパイル方法を説明した後，実際に例題を解く過程を示す．
+以降に示す例および表記法は SICStus-Prolog 処理系によるものであり，他の 
+Prolog 処理系では異なる場合がある．
+
+\MGTPGsubsubsubsection{準備}
+
+{\tt top.pl mgtp2pl.pl} は Prolog 処理系上のインタプリタである．従って
+両者を使用するには， Prolog 処理系上のコンパイラを用いて事前にコンパイ
+ルする必要がある．
+\footnote{{\tt consult/1}による登録でもよい．{\tt compile/1,consult/1}
+  などのコマンドの使用方法は Prolog 処理系に依存するため，附属のマニュア
+  ルを参照のこと．}
+
+\begin{center}
+  {\large\tt compile(['mgtp2pl.pl','top.pl']).}
+\end{center}
+
+{\tt mgtp2uty.pl} は {\tt mgtp2pl.pl} 内部において呼び出されコンパイル
+するため，同一ディレクトリ上に存在する限り，明記する必要はない．
+
+\MGTPGsubsubsubsection{MG 節-- Prolog節 変換}
+\label{sec:MGTPGPtranslate}
+
+MG 節-- Prolog 節トランスレータ {\tt mgtp2pl.pl} を用いて MG 節を 
+Prolog 節に変換する．Prolog 節は本体とともにコンパイルすることにより実
+行可能となる．
+
+\begin{center}
+  {\large\tt mgtp2pl(\ll MGファイル\gg, \ll PROLOGファイル\gg).}
+\end{center}
+
+{\tt \ll MGファイル\gg}に MG 節で記述された問題のファイル名，
+{\tt \ll PROLOGファイル\gg}に Prolog 節を出力するファイル名を指定する．
+{\tt \ll MGファイル\gg}，{\tt \ll PROLOGファイル\gg} の拡張子
+{\tt (.mgtp, .pl)} は省略することができる．
+さらに，{\tt \ll PROLOGファイル\gg} そのものを省略することも可能である．
+{\tt \ll PROLOGファイル\gg}を省略した場合 {\tt \ll MGファイル\gg .pl} 
+を{\tt \ll PROLOGファイル\gg} として用いる．
+また，{\tt \ll PROLOGファイル\gg} に {\tt user} を指定した場合，変換し
+た Prolog節は現在使用している端末上に表示される．
+
+{\tt mgtp2pl} による MG 節--Prolog 節変換を行なった後，Prolog 処理系によ
+る後述のコンパイルを行なう．{\tt mgtp2pl.pl} には，これら 2 つの過程を 
+1 命令で行なう仕様がある．
+
+\begin{center}
+  {\large\tt mgtpcomp(\ll MGファイル\gg, \ll PROLOGファイル\gg).}
+\end{center}
+
+{\tt mgtpcomp} は内部処理において {\tt mgtp2pl} による節変換を行なった
+後，Prolog処理系のコンパイラを用いて {\tt \ll PROLOGファイル\gg} をコ
+ンパイルする．
+{\tt mgtpcomp} の {\tt \ll MGファイル\gg}，{\tt \ll PROLOGファイル\gg}
+も{\tt mgtp2pl}同様に拡張子，および {\tt \ll PROLOGファイル\gg} を省略
+することができる．
+
+\MGTPGsubsubsubsection{コンパイル}
+
+Prolog 節を Prolog 処理系のコンパイラを用いてコンパイル，登録する．
+
+\begin{center}
+  {\large\tt compile(\ll PROLOGファイル\gg).}
+\end{center}
+
+{\tt \ll PROLOGファイル\gg}に~\ref{sec:MGTPPtranslate}~の節変換により得ら
+れたProlog節のファイル名を指定する．
+{\tt \ll PROLOGファイル\gg}は，あらかじめコンパイルしてある
+本体{\tt top.pl} から呼び出され実行される．
+
+\MGTPGsubsubsubsection{実行}
+
+先の節変換，コンパイル過程を経て実行環境が整ったところで~{\tt do(S).}~
+を実行することにより推論が開始される．
+
+\begin{center}
+  {\large\tt do(S).}  
+\end{center}
+
+推論を終えると実行結果として変数{\tt S} に反駁失敗(sat) または成功
+(unsat) のいずれかが報告される．報告内容を以下に示す．反駁に失敗した場
+合，検出されたモデル群 {\tt model([{\it AtomM,$ \ldots $,AtomN}])} が
+変数{\tt S}に出力され，成功した場合，棄却されたモデル候補~{\tt
+  rejected([{\it AtomM,$\ldots$,AtomN}])}~が出力される．
+
+ \begin{center}
+   \tt
+   \begin{tabular}{rcl}
+     sat &:& 
+     S = [model([{\it Atom1,$\ldots$,AtomL}]),$\ldots$,model([{\it AtomM,$\ldots$,AtomN}])].\\
+     unsat &:&
+     S = [rejected([{\it Atom1,$\ldots$,AtomL}]),$\ldots$,rejected([{\it AtomM,$\ldots$,AtomN}])].
+   \end{tabular}
+ \end{center}
+
+\MGTPGsubsubsubsection{操作例}
+
+以上の準備，節変換，コンパイル，実行の一連の操作例を示す．以下は~図
+\ref{fig:MGTPPexample}~に示す例題{\tt example.mgtp} を解く例である．
+(誌面の例では都合上，ホーム，およびソースファイルのディレクトリ位置を 
+{\tt \$HOME}, {\tt \$HOME/mgtpg}として表記している．)
+
+\begin{figure}[htbp]
+  \begin{center}
+    \leavevmode
+    \fbox{%
+      \tt
+      \begin{minipage}{.45\textwidth}
+        p(A,B),p(B,C)-->p(A,C).\\
+        q(A,B),q(B,C)-->q(A,C).\\
+        q(A,B)-->q(B,A).\\
+        dom(A),dom(B)-->p(A,B);q(A,B).\\
+        p(a,b)-->false.\\
+        q(c,d)-->false.\\
+        true-->dom(a),dom(b),dom(c),dom(d).
+      \end{minipage}}
+    \caption{例題 ({\tt example.mgtp})}
+    \label{fig:MGTPPexample}
+  \end{center}
+\end{figure}
+
+\begin{enumerate}
+\item {\bf\dg 準備}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      \prompt{1} cd \$HOME/mgtpg\\
+      \prompt{2} ls -F\\
+      \begin{tabular}{p{8em}p{8em}p{8em}p{8em}}
+        example.mgtp & mgtp2pl.pl & mgtp2uty.pl & top.pl
+      \end{tabular}\\      
+      \prompt{3} sicstus\\
+      SICStus 2.1 \#8: Tue May 11 21:04:52 JST 1993\\
+      \{consulting \$HOME/.sicstusrc... \}\\
+      \{\$HOME/.sicstusrc consulted, 0 msec 80 bytes\}\\
+      | ?- compile(['mgtp2pl.pl','top.pl']).\\
+      \{compiling \$HOME/mgtpg/mgtp2pl.pl...\}\\
+      \{compiling \$HOME/mgtpg/mgtp2uty.pl...\}\\
+      \{\$HOME/mgtpg/mgtp2uty.pl compiled, 1750 msec 51216 bytes\}\\
+      \{\$HOME/mgtpg/mgtp2pl.pl compiled, 3540 msec 99312 bytes\}\\
+      \{compiling \$HOME/mgtpg/mgtp2x/top.pl...\}\\
+      \{Warning: [FLIS,LIS] - singleton variables in do/7 in lines 17-18\}\\
+      \{Warning: [False] - singleton variables in do1Decide/9 in lines 27-27\}\\
+      \{Warning: [DM,ID,M] - singleton variables in satisfyClause/9 in lines 41-42\}\\
+      \{\$HOME/mgtpg/top.pl compiled, 630 msec 11216 bytes\}\\
+      yes\\
+      | ?- 
+    \end{minipage}}
+    
+\item {\bf\dg MG節--KL1節 変換}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      | ?- mgtp2pl('example.mgtp','example.pl').\\
+      $[$ program saved in "example.pl". $]$\\
+      yes\\
+      | ?- 
+    \end{minipage}}
+  
+\item {\bf\dg コンパイル}\\  
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      | ?- compile('example.pl').\\
+      \{compiling \$HOME/mgtpg/example.pl...\}\\
+      \{\$HOME/mgtpg/example.pl compiled, 530 msec 22288 bytes\}\\
+      yes\\
+      | ?- 
+    \end{minipage}}
+
+\item {\bf\dg 実行}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      | ?- do(S).\\
+      S = [rejected([p(a,b),$\ldots$,dom(a)]),rejected([p(a,b),$\ldots$,dom(a)]),\\
+      $\cdots$,rejected([q(c,d),$\ldots$,dom(a)]),rejected([q(c,d),$\ldots$,dom(a)])] ? \\
+      yes\\
+      | ?- 
+    \end{minipage}}
+\end{enumerate}
+
+\vspace{2ex}
+以上が準備，節変換から実行までの操作例である．ここで，例題の結果は変数
+{\tt S} に棄却されたモデル候補
+{\tt [rejected([p(a,b),$\ldots$,dom(a)]),$\ldots$]} を出力していること
+から例題 {\tt example.mgtp} は {\tt unsat} であることが分かる．
+もし反駁に失敗すれば変数{\tt S}にはモデルが出力されるはずである．
+
+\subsection{KLIC 版}
+
+KLIC版の実行は既に紹介されている MGTP/G と同じく，与えられた入力節
+(MG節) を KL1節に変換する KL1コンパイル技術によって行なわれる．
+KL1節に変換された MG節は本体とともにコンパイル，リンクすることにより，
+実行オブジェクトを得ることができる．\\
+以上の操作手順概略を図\ref{fig:MGTPGKcompile}~に示す．
+まず，~(1) MG節をトランスレータ {\tt mg2kl1} により KL1節に変換する．
+次に，~(2) KL1節と本体(NAIVE, RAMS, MERC のいずれか)を KLIC でコンパイ
+ル，リンクすることにより実行ファイル (a.out) を得る．
+
+%\begin{figure}[htbp]
+%  \begin{center}
+%    \leavevmode
+%%%    \epsfxsize=.6\textwidth
+%%%    \epsffile{comp-link2.eps}    
+%    \epsfile{file=comp-link2.eps,width=.6\textwidth}
+%  \end{center}
+%  \caption{節変換，コンパイル，実行過程}
+%  \label{fig:MGTPGKcompile}
+%\end{figure}
+
+\MGTPGsubsubsection{インストール}
+
+NAIVE, RAMS, MERC本体ソースファイルの転送，およびトランスレータ
+{\tt mg2kl1} を登録する．
+
+\MGTPGsubsubsubsection{ファイル構成}
+
+表\ref{tab:MGTPGKfile}~にインストールに必要なファイルを示す．
+MG節を KL1節に変換するプログラム {\tt mg2kl1.pl} および，NAIVE, RAMS,
+MERCの本体プログラムがある．
+({\tt merc\_alls\_st.kl1} は，ある枝が反駁失敗を起こしても証明を中断す
+ることなく全てのモデルを求める全解探索型の MERC本体である．)
+
+各本体ソース・ファイルはコンパイル，リンク時に認識可能な任意のディレク
+トリ位置に転送すればよい．
+
+\begin{table}[htbp]
+    \caption{ファイル構成}
+    \label{tab:MGTPGKfile}
+  \begin{center}
+    \leavevmode
+    \begin{tabular}{l|l|c}\hline
+      \multicolumn{1}{c|}{ファイル名} &
+      \multicolumn{1}{c|}{ファイル内容} &
+      \multicolumn{1}{c}{使用言語}\\ \hline
+      {\tt mg2kl1.pl} & MG節--KL1節トランスレータ    & Prolog\\
+      {\tt naive\_a\_st.kl1} & NAIVE本体            & KL1\\
+      {\tt rams\_a2\_st.kl1} & RAMS本体             & KL1\\
+      {\tt merc\_a\_st.kl1}  & MERC本体             & KL1\\
+      {\tt merc\_alls\_st.kl1} & 全解探索型MERC本体 & KL1\\ \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\MGTPGsubsubsubsection{{\tt mg2kl1}の登録}
+
+{\tt mg2kl1.pl}は SICStus-Prolog で記述された MG節--KL1節トランスレー
+タである．SICStus-Prolog (または SICStus 相当の Prolog) でコンパイルし
+た後，実行形式ファイル {\tt mg2kl1} として登録する．\\以下に登録手順を
+示す．(誌面の例ではホーム，ソースファイル，パスの通う各ディレクトリを，
+それぞれ {\tt \$HOME}, {\tt \$HOME/mgtpg}, {\tt \$HOME/bin} としている．)
+\\ 
+
+\fbox{%
+  \begin{minipage}{.9\textwidth}
+    \begin{center}
+      \underline{{\tt mg2kl1}の登録例}
+    \end{center}
+    \small\tt
+    \begin{flushleft}
+      \prompt{1} \underline{cd \$HOME/mgtpg}\\
+      \prompt{2} \underline{sicstus}\\
+      SICStus 2.1 \#8: Tue May 11 21:04:52 JST 1993\\
+      \{ consulting \$HOME/.sicstusrc... \}\\
+      \{\$HOME/.sicstusrc consulted, 0 msec 80 bytes\}\\
+      | ?- \underline{compile(mg2kl1).}\\
+      \{compiling \$HOME/mgtpg/mg2kl1.pl $\ldots$ \}\\
+      \{\$HOME/mgtpg/mg2kl1.pl compiled, 3450 msec 92016 bytes\}\\
+      yes\\
+      | ?- \underline{save.}\\
+      \{SICStus state saved in \$HOME/mgtpg/mg2kl1\}\\
+      \prompt{3} \underline{ls -F}\\
+      \begin{tabular}{p{8em}p{8em}p{8em}}
+        merc\_alls\_st.kl1 & mg2kl1*   & naive\_a\_st.kl1\\
+        merc\_a\_st.kl1    & mg2kl1.pl & rams\_a2\_st.kl1\\
+      \end{tabular}\\
+      \prompt{4} \underline{mv mg2kl1 \$HOME/bin}\\
+      \prompt{5} 
+    \end{flushleft}
+  \end{minipage}}
+
+\MGTPGsubsubsection{操作方法}
+
+先に述べたように KLIC版は {\tt mg2kl1} による MG節--KL1節変換，{\tt
+  KLIC} による MG節，本体のコンパイル，リンク過程を経て実行オブジェク
+トを獲得する．本節では変換，コンパイル，リンクおよび実行方法を簡単に説
+明した後，実際に例題を解く過程を示す．
+
+
+\MGTPGsubsubsubsection{MG節--KL1節 変換}
+
+MG節--KL1節トランスレータ {\tt mg2kl1} を用いて MG節を KL1節に変換する．
+KL1節は本体とともにコンパイル，リンクすることにより実行オブジェクトと
+なる．
+
+\begin{center}
+  {\large\tt mg2kl1 \ll 問題名\gg ~\ll 実行形式\gg}
+\end{center}
+
+{\tt \ll 問題名\gg} に MG節で記述された問題のファイル名(拡張子無し)，
+{\tt \ll 実行形式\gg} に使用する本体 ({\tt naive, rams, merc}) のいずれかを
+指定する．
+{\tt mg2kl1} はファイル {\tt \ll 問題名\gg .mg} の MG節を読み込み KL1節に変
+換した後，ファイル {\tt \ll 問題名\gg\_\ll 実行形式\gg .kl1} を出力する．
+このように {\tt mg2kl1} は使用する本体に合わせて MG節を KL1節に変換す
+る為，同一 MG節においても本体が異なる場合，再度変換の必要がなる．
+
+\MGTPGsubsubsubsection{コンパイル，リンク}
+KL1節と本体をKLICを用いてコンパイル，リンクする．
+
+\begin{center}
+  {\large\tt klic -O2 \ll 問題名\gg\_\ll 実行形式\gg .kl1 \ll 実行形式\gg\_a\_st.kl1}
+\end{center}
+
+{\tt \ll 問題名\gg} に問題のファイル名 (拡張子無し)，{\tt \ll 実行形式\gg} に
+{\tt naive, rams, merc} のいずれかを指定する．
+コンパイル時のオプションとして {\tt -O2} をつけることにより，実行時間，
+ファイルサイズを短縮，減少させることができる．
+KLIC のオプションに関する詳細は {\tt klic -h} とすることで得られる．そ
+の他 KLIC に関する詳細は附属のマニュアルを参照のこと．
+
+\MGTPGsubsubsubsection{実行}
+
+先の変換，コンパイル，リンクによって生成した実行オブジェクト 
+{\bf a.out} (オブジェクト名を指定した場合はそのオブジェクト名) を実行
+する．
+
+\begin{center}
+  {\large\tt a.out -h1m}  
+\end{center}
+
+問題により実行時にメモリ不足で中断する場合がある．そのときはオプション
+として {\tt -h1m} を付随させることにより実行時のメモリが増加され実行で
+きる場合がある．
+({\tt -h1m} の付随により副作用として実行時間が若干短縮されるので注意す
+ること．)
+
+\MGTPGsubsubsubsection{操作例}
+
+以上の変換，コンパイル，リンク，実行の一連の操作例を示す．
+以下は~図\ref{fig:MGTPGKexample}~に示す例題 {\tt example.mg} を本体に
+{\tt merc\_a\_st.kl1} を使って解く例である．
+
+\begin{figure}[htbp]
+  \begin{center}
+    \leavevmode
+    \fbox{%
+      \tt
+      \begin{minipage}{.45\textwidth}
+        p(A,B),p(B,C)-->p(A,C).\\
+        q(A,B),q(B,C)-->q(A,C).\\
+        q(A,B)-->q(B,A).\\
+        dom(A),dom(B)-->p(A,B);q(A,B).\\
+        p(a,b)-->false.\\
+        q(c,d)-->false.\\
+        true-->dom(a),dom(b),dom(c),dom(d).
+      \end{minipage}}
+    \caption{例題 ({\tt example.mg})}
+    \label{fig:MGTPGKexample}
+  \end{center}
+\end{figure}
+
+\begin{enumerate}
+\item {\bf\dg MG節--KL1節 変換}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      \prompt{1} cd \$HOME/mgtpg\\
+      \prompt{2} mg2kl1 example merc\\
+      \prompt{3} ls -F\\
+      \begin{tabular}{p{8em}p{8em}p{8em}p{8em}}
+        example.mg         & merc\_alls\_st.kl1 & mg2kl1*   & naive\_a\_st.kl1\\
+        example\_merc.kl1  & merc\_a\_st.kl1    & mg2kl1.pl & rams\_a2\_st.kl1
+      \end{tabular}\\
+      \prompt{4}
+    \end{minipage}}
+    
+\item {\bf\dg コンパイル，リンク}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      \prompt{4} cd klic\\
+      \prompt{5} klic -O2 merc\_a\_st.kl1  example\_merc.kl1\\
+      \prompt{6} ls -F\\
+      \begin{tabular}{p{8em}p{8em}p{8em}p{8em}}
+        a.out* & example\_merc.kl1 & merc\_a\_st.kl1    & naive\_a\_st.kl1\\
+        atom.c & funct.c           & merc\_alls\_st.kl1 & predicates.c\\
+        atom.h & funct.h           & mg2kl1*            & predicates.o\\
+        atom.o & funct.o           & mg2kl1.pl          & rams\_a2\_st.kl1\\
+        example.mg & klic.db
+      \end{tabular}\\
+      \prompt{7}
+    \end{minipage}}
+    
+\item {\bf\dg 実行}\\
+  \fbox{%
+    \begin{minipage}{.9\textwidth}
+      \small\tt
+      \prompt{7} a.out -h1m\\
+      unsat
+      \begin{tabbing}
+        No. of \= branches \= = 384\\
+        average length of a branch = 26\\
+        \> minimum length of a branch = 6\\
+        \> maximum length of a branch = 30\\
+        total cons counts for M = 1902\\
+        No. of CJMs    \> \> = 106406\\
+        cjm calls      \> \> = 25878\\
+        cjm1 calls     \> \> = 88518\\
+        total cjm* calls \> \> = 114396
+      \end{tabbing}
+      \prompt{8}
+    \end{minipage}}
+\end{enumerate}
+
+\vspace{2ex}
+以上が変換から実行までの操作例である．
+ここで，例題の結果は {\tt unsat} となり反駁に成功していることが分かる．
+もし反駁に失敗すれば結果は {\tt sat} となる．また同時に得られる統計情
+報の意味を表\ref{tab:MGTPGKstats}に示す．
+
+\begin{table}[htbp]
+  \caption{統計情報の意味}
+  \label{tab:MGTPGKstats}
+  \begin{center}
+    \leavevmode
+    \tt
+    \begin{tabular}{l|l}\hline
+      \multicolumn{1}{c|}{表示項目} & \multicolumn{1}{c}{表示内容}\\ \hline
+      No. of branches            & 反駁証明木の分枝数\\
+      average length of a branch & 枝の長さ(棄却されたモデル候補の大きさ)の平均値\\
+      minimum length of a branch & 同 最短\\
+      maximum length of a branch & 同 最長\\
+      total cons counts for M & モデル拡張を行なったアトムの総数 \\
+      No. of CJMs & 連言照合におけるKL1節 \verb"c/4" の呼び出し総数\\
+      cjm calls   & 連言照合におけるKL1節 \verb"cjm/5" の呼び出し総数\\
+      cjm1 calls  & 連言照合におけるKL1節 \verb"cjm1/6" の呼び出し総数\\
+      total cjm* calls & cjm, cjm1 の呼び出し総数\\ \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsection{KL1 版}
+
+Prolog 版(\ref{sec:MGTPGPrologA}を参照)と処理手順は，ほほ同じである．
+
+\MGTPGsubsubsection{インストール}
+
+必要なファイルを，表\ref{tab:MGTPGPfile}に示す．
+
+\begin{table}[htbp]
+    \caption{ファイル構成}
+    \label{tab:MGTPGPfile}
+  \begin{center}
+    \leavevmode
+    \begin{tabular}{l|l|c}\hline
+      \multicolumn{1}{c|}{ファイル名} &
+      \multicolumn{1}{c|}{ファイル内容} &
+      \multicolumn{1}{c}{使用言語}\\ \hline
+      {\tt trans.kl1} & MG節--KL1節変換プログラム    & KL1\\
+      {\tt Pretrans.kl1} & MG節--KL1節変換プログラムの前処理    & KL1\\
+      {\tt mgtpI.kl1} & インタプリタ本体(戦略 I)  & KL1\\
+      {\tt mgtpII.kl1} & インタプリタ本体(戦略 II)  & KL1\\
+      {\tt mgtpIII.kl1} & インタプリタ本体(戦略 I)  & KL1\\
+      {\tt s1.kl1} & (ダミーの)問題節  & KL1\\
+      {\tt mgtpMac.mac} & マクロ集  & KL1マクロ\\
+      {\tt termMemoryG.kl1} & 弁別木プログラム  & KL1\\
+      {\tt plib.sav} & ライブラリ  & KL1(コンパイル済)\\
+      {\tt listlib.sav} & ライブラリ  & KL1(コンパイル済)\\ 
+      {\tt Startup} & システム起動用ファイル  & リスナ take ファイル\\ 
+      {\tt Install} & インストール用ファイル & リスナ take ファイル\\ \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+必要なファイルを一つのディレクトリに集め，リスナより \verb!take! で 
+\verb!Install! ファイルを指定する．
+
+\begin{verbatim}
+[17] take("Install").
+
+[18] load["plib","listlib"] .
+Load File : icpsi520::>sys>user>miyuki>KL1>MGTPG>plib.sav.1
+Load File : icpsi520::>sys>user>miyuki>KL1>MGTPG>listlib.sav.1
+"miyuki::$plib$error" Updated
+"miyuki::$plib$window" Updated
+"miyuki::$plib$timer" Updated
+"miyuki:: listlib" Updated
+"miyuki:: plib" Updated
+"miyuki::$plib$file" Updated
+"miyuki::$plib$string_io" Updated
+Load Succeeded
+
+[19] compile["termMemoryG"] .
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>termMemoryG.kl1.1
+!WARNING! no with_macro declaraion. assumed `pimos'.
+[termMemoryG.kl1@0] Compile Module : tmG
+=>  :- module tmG .
+Compile Succeeded : tmG
+
+"miyuki:: tmG" Updated
+Total Number of Warning : 1
+Compilation Time = 17558 [MSEC]
+
+[20] inter([prompt("Input ENGINE Name>> "),getl(L)])';' compile([L,"s1"]) .
+Input ENGINE Name>> mgtpI
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>mgtpI.kl1.1
+!WARNING! no with_macro declaraion. assumed `pimos'.
+[top.kl1@0] Compile Module : mgtp
+=>  :- module mgtp .
+Compile Succeeded : mgtp
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>s1.kl1.1
+!WARNING! no with_macro declaraion. assumed `pimos'.
+[s1.kl1@0] Compile Module : mgtp_p
+=>  :- module mgtp_p .
+Compile Succeeded : mgtp_p
+
+"miyuki:: mgtp" Updated
+"miyuki:: mgtp_p" Updated
+Total Number of Warning : 2
+Compilation Time = 18914 [MSEC]
+
+[22] compile["trans","preTrans"],compile["mgtpMac"] .
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>mgtpMac.mac.1
+[mgtpMac.mac@0] Compile Module : mgtpMac
+=>  :- macro_module(mgtpMac) .
+Compile Succeeded : mgtpMac
+
+"miyuki:: mgtpMac" Updated
+Compilation(s) Succeeded
+Compilation Time = 22233 [MSEC]
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>trans.kl1.3
+[trans1.kl1@0] Compile Module : mgtp_trans
+=>  :- module mgtp_trans .
+Compile Succeeded : mgtp_trans
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>preTrans.kl1.1
+[preTrans.kl1@0] Compile Module : mgtp_pre_trans
+=>  :- module mgtp_pre_trans .
+Compile Succeeded : mgtp_pre_trans
+
+"miyuki:: mgtp_pre_trans" Updated
+"miyuki:: mgtp_trans" Updated
+Compilation(s) Succeeded
+Compilation Time = 57689 [MSEC]
+
+[23] unload([mgtp_p,mgtp,mgtp_trans,mgtp_pre_trans,mgtpMac,tmG],L) .
+Unload File : icpsi520::>sys>user>miyuki>KL1>MGTPG>mgtpI.sav.4
+  miyuki::mgtp_p unloaded
+  miyuki::mgtp unloaded
+  miyuki::mgtp_trans unloaded
+  miyuki::mgtp_pre_trans unloaded
+  miyuki::mgtpMac unloaded
+  miyuki::tmG unloaded
+Unload Succeeded
+
+[24] 
+\end{verbatim}
+
+\MGTPGsubsubsection{操作方法}
+
+インストールが完了していれば，\verb!Startup! ファイルをリスナより 
+\verb!take! すれば，必要なファイルがコンパイル又は，ロードされた後，新
+たなウィンドウ(MGTPウィンドウ)が開かれる．
+
+以下では，MGTPG というディレクトリに全てのファイルが既に格納されている．
+
+\MGTPGsubsubsubsection{起動}
+
+\begin{verbatim}
+[5] cd("MGTPG").
+
+[6] take("Startup").        : 起動の開始
+
+[7] load["plib","listlib"] . : ライブラリのロード
+Load File : icpsi520::>sys>user>miyuki>KL1>MGTPG>plib.sav.1
+Load File : icpsi520::>sys>user>miyuki>KL1>MGTPG>listlib.sav.1
+"miyuki::$plib$error" Loaded
+"miyuki::$plib$window" Loaded
+"miyuki::$plib$timer" Loaded
+"miyuki:: listlib" Loaded
+"miyuki:: plib" Loaded
+"miyuki::$plib$file" Loaded
+"miyuki::$plib$string_io" Loaded
+Load Succeeded
+
+[8] inter([prompt("Input ENGINE Name>> "),getl(L)])';' load[L] .
+Input ENGINE Name>> mgtpI
+Load File : icpsi520::>sys>user>miyuki>KL1>MGTPG>mgtpI.sav.4
+"miyuki:: tmG" Loaded
+"miyuki:: mgtp" Loaded
+"miyuki:: mgtp_p" Loaded
+"miyuki:: mgtpMac" Loaded
+"miyuki:: mgtp_pre_trans" Loaded
+"miyuki:: mgtp_trans" Loaded
+Load Succeeded
+ L ="mgtpI"
+
+[9] pimos:: listener: go(at(109,199),char(70,30),"font:test_11") .
+                             ： ＭＧＴＰウィンドウの起動
+\end{verbatim}
+
+\MGTPGsubsubsubsection{MGTP 節のコンパイル}
+
+\begin{verbatim}
+[6] compile("s2.mgtp").      ：Ｓ２問題をコンパイル
+** KL1 Compiler **
+Parameter File : "icpsi520::>sys>user>miyuki>KL1>MGTPG>compile.param.2"
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPG>s2.mgtp.1
+!WARNING! no with_macro declaraion. assumed `pimos'.
+[s2.mgtp] Compile Module : mgtp_p
+Compile Succeeded : mgtp_p
+
+"miyuki:: mgtp_p" Updated
+Total Number of Warning : 1
+"miyuki:: mgtp" Updated
+Relink Succeeded
+Compilation Time = 14038 [MSEC]
+
+\end{verbatim}
+
+\MGTPGsubsubsubsection{実行}
+
+\begin{verbatim}
+[7] mgtp:do(U,S).     ：証明開始(充足不能なら U が unsatに，充足可能なら
+ S = S                ：S が sat に束縛される．
+ U = unsat
+
+[8] 
+\end{verbatim}
+
+%\end{document}
+

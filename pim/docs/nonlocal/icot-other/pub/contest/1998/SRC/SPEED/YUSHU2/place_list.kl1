@@ -1,0 +1,44 @@
+% -- for skeleton contest
+%
+% place_list.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+:- module place_list .
+
+%%% place_list 単語を置いた場所
+
+%%% shift_tb +ShiftSize +OldPlaceList -NewPlaceList
+%%% shift_lr +ShiftSize +OldPlaceList -NewPlaceList
+
+shift_tb(ShiftSize,OldPlaceList, NewPlaceList) :- ShiftSize > 0 |
+	shift_tb2(OldPlaceList,ShiftSize, NewPlaceList).
+
+shift_tb(ShiftSize,OldPlaceList, NewPlaceList) :- ShiftSize = 0 |
+	OldPlaceList=NewPlaceList .
+
+
+shift_tb2([]        ,Shift, Result) :- Result=[] .
+shift_tb2([One|Rest],Shift, Result) :- Result=[New|Tail],
+	One=place(Ident,Y,X,Dir), 
+	New=place(Ident,~(Y+Shift),X,Dir),
+	shift_tb2(Rest,Shift, Tail).
+
+
+
+shift_lr(ShiftSize,OldPlaceList, NewPlaceList) :- ShiftSize > 0 |
+	shift_lr2(OldPlaceList,ShiftSize, NewPlaceList) .
+
+shift_lr(ShiftSize,OldPlaceList, NewPlaceList) :- ShiftSize = 0 |
+	OldPlaceList=NewPlaceList .
+
+
+shift_lr2([]        ,Shift, Result) :- Result = []. 
+shift_lr2([One|Rest],Shift, Result) :- Result = [New|Tail],
+ 	One=place(Ident,Y,X,Dir),
+	New=place(Ident,Y,~(X+Shift),Dir),
+	shift_lr2(Rest,Shift, Tail).
+
+%%% end

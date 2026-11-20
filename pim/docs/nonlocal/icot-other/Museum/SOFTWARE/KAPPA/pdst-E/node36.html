@@ -1,0 +1,38 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Modules of the client</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Modules of the client">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html462 HREF="node37.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html460 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html456 HREF="node35.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html463 HREF="node37.html"> Processing flow</A>
+<B>Up:</B> <A NAME=tex2html461 HREF="node34.html"> System configuration</A>
+<B> Previous:</B> <A NAME=tex2html457 HREF="node35.html"> Modules of the </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00043200000000000000> Modules of the client</A></H3>
+<P>
+The source file directory is Kappa/src/irpr/irpr_client.
+<P>
+<DL ><DT>main(irpr_client.kl1)
+<DD>
+	The client module of irpr. Firstly, it sends the service name.
+	Secondly, it sends a commmand parameter to specify the
+	operation. Finally, it writes the contents of standard input 
+	to the socket and writes output contents of the socket to 
+	standard output.
+ <DT>irpr_lib(irpr_lib.kl1)
+<DD>
+	The library of irpr. The main functions are to write data from
+	standard input to the socket and to write data from the socket
+	to standard output. An idea of efficiently inputting string 
+	from the socket is implemented.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

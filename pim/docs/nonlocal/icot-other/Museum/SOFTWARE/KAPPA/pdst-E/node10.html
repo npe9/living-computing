@@ -1,0 +1,66 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> The semantics</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" The semantics">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html163 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html161 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html157 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html164 HREF="node11.html"> Basic functions of </A>
+<B>Up:</B> <A NAME=tex2html162 HREF="node9.html"> The data model </A>
+<B> Previous:</B> <A NAME=tex2html158 HREF="node9.html"> The data model </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00023100000000000000> The semantics</A></H3>
+<P>
+Intuitively, Kappa's sematic gives a flat expansion of a repetition. 
+In other words when a nested relation <b>NR</b> has a tuple of 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img56.gif">, 
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img57.gif"><P>
+also has the same meaning. The operation of expanding a repetition to 
+a flat expression is called unnest and nest vice versa.
+Using this vocaburary, Kappa's semantic is stated as follows.
+<P>
+<blockquote> The semantic of the nested relation in Kappa does not change by either 
+nest or unnest operation.
+</blockquote>
+<P>
+For example, the semantic of nested relational table<A HREF="node8.html#ttab5">5</A> 
+is the same as that of table<A HREF="node7.html#ttab3">3</A>. This is why Kappa returns 
+the same reply to a query to both tables. The nested relation in Kappa is 
+in this sense a natural extension of the relational model and efficient in
+both processing and expression.
+<P>
+Kappa's semantic is not necessarily the same as other nested
+relational models. Let's see how different replies are returned to a 
+query in some different semantics of nested relation. Take table
+<A HREF="node10.html#tnr1">6</A>(1) as an example. If table<A HREF="node10.html#tnr1">6</A>(1) is nested, we 
+will get table<A HREF="node10.html#tnr1">6</A>(2) in Kappa and Verso developed in INRIA, 
+however in DASDBS and AIP-P in which 
+NF<IMG  ALIGN=BOTTOM ALT="" SRC="img58.gif"> are used, we will get table<A HREF="node10.html#tnr1">6</A>(3) instead.
+<P>
+<P><A NAME=194>&#160;</A><A NAME=tnr1>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img59.gif">
+<BR><STRONG>Table 6:</STRONG> The semantics of nested relation(1)<BR>
+<P>
+<P>
+Take table<A HREF="node10.html#tnr2">7</A>(1) as the next example, which is a very simple 
+nested relation(<b>R</b>). After an operation of 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img60.gif">, we will get
+table<A HREF="node10.html#tnr2">7</A>(2) in Kappa, however in Verso, we will get the
+original table<A HREF="node10.html#tnr2">7</A>(1). In table<A HREF="node10.html#tnr2">7</A>(2) the relationship 
+between &quot;skiing&quot; and &quot;I&quot; is omitted.
+<P>
+<P><A NAME=233>&#160;</A><A NAME=tnr2>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img61.gif">
+<BR><STRONG>Table 7:</STRONG> The semantics of nested relation(2)<BR>
+<P>
+<P>
+This example shows that it is very important to understand the
+semantics of nested relational models.
+<P>
+<BR> <HR>
+<P>
+</BODY>

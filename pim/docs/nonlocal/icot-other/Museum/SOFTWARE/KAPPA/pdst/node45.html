@@ -1,0 +1,96 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> レコードの読み</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" レコードの読み">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html558 HREF="node46.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html556 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html550 HREF="node44.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html559 HREF="node46.html"> レコードの追加</A>
+<B>Up:</B> <A NAME=tex2html557 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html551 HREF="node44.html"> レコードの検索</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046400000000000000> レコードの読み</A></H3>
+<P>
+レコードの読みは、次の手順で行なう。
+<P>
+<UL><LI> テーブルを指定して内部フォーマットを生成する。
+ <LI> レコードのアンネストを行なう場合、テーブルを指定して
+	スキーマ情報を入手する。
+ <LI> 内部フォーマットを使ってレコードの実体を読み込む。
+</UL>
+<P>
+プログラミングテクニックとして、原始コマンドread_record/5の読み込み
+制御を利用した大量データへの対応が重要である。この点については、以下の
+read_record_loop/5を参照。
+<P>
+<PRE>read_record1(normal, TableName, ReadSeq, ValidF, VLS,NVLS,Status)-IFP :-
+    % 引数ReadSeqは読み順。集合の実体を読む場合、set(Set, _)を入力する。
+    IFP &lt;= create_format(TableName, (*), IFormat, Status1),
+    % (*)でテーブル全体を指定して、内部フォーマットIFormatを入手
+    IFP &lt;= get_table_info(TableName, [schema(Schema0)], Status2),
+    % スキーマ情報を入手
+    Schema0 = Schema,
+    lib:error_check([Status1,Status2],irpr_kappa:read_record1,Status3),
+    read_record2(Status3,TableName,ReadSeq,IFormat,ValidF,Schema,VLS,NVLS,Status)-IFP.
+otherwise.
+read_record1(PreStatus, _TableName, _ReadSeq, _ValidF, VLS,NVLS,Status)-IFP :-
+    NVLS = VLS, Status = PreStatus.
+
+read_record2(normal,TableName,ReadSeq,IFormat,ValidF,Schema,VLS,NVLS,Status)-IFP :-
+    IFP &lt;= read_record(TableName, IFormat, ReadSeq, RRVLS, Status),
+    ValidFL = [valid_flag(ValidF)],
+    read_record_loop(VLS, Schema, ValidFL, RRVLS, NVLS).
+otherwise.
+read_record2(PreStatus,_TableName,_ReadSeq,_IFormat,_ValidF,_Schema,VLS,NVLS,Status)-IFP :-
+    NVLS = VLS, Status = PreStatus.
+
+%%%%
+% read_record_loop/5
+read_record_loop([VLB|VLS], Schema, ValidFL, RRVLS, NVLS) :-
+    RRVLS = [RRVLB|RRVLS1],
+    % 原始コマンドread_record/5の第4引数を具体化
+    read_record_loop1(RRVLB, VLB, VLS, Schema, ValidFL, RRVLS1, NVLS).
+read_record_loop([], _Schema, _ValidFL, RRVLS, NVLS) :-
+    RRVLS = [], NVLS = [].
+</PRE>
+<P>
+read_record_loop/5の第1引数でリストセル具体化を待った後、
+RRVLSのリストセル具体化を行なっている。
+[VLB｜VLS]の具体化は、前節のコマンドステータスComStatusの受け取り側
+(irpr_service:output_vls/5,output_vls_loop/8)で行なっており、
+Car(VLB)の内容を出力し終ってから、Cdr(VLS)のリストセル具体化を
+行なうようにしている。
+<P>
+このように要求駆動でレコードを読み込む理由は、前述のように、
+大量データへの対応である。
+RRVLSのリストセル具体化が先に行なわれてしまうと、全レコードが一度に読み
+込まれ、大量データでは主記憶容量が不足する恐れがある。
+<P>
+<PRE>%%%%
+read_record_loop1(RRVLB, VLB, VLS, Schema, ValidFL,RRVLS,NVLS) :- list(RRVLB) |
+    unnest_record_vlb(RRVLB, UNVLB, Schema, ValidFL)+UNVLB+VLB,
+    % VLBには、RRVLBを全てアンネストしたUNVLBが一度に返される。
+    read_record_loop(VLS, Schema, ValidFL, RRVLS, NVLS).
+read_record_loop1(end, VLB, VLS, _Schema, _ValidFL, RRVLS, NVLS) :-
+    NVLS = [VLB|VLS], RRVLS = [].
+
+%%%%
+% read_record/5の結果は、1レコードずつアンネストされる。
+unnest_record_vlb([{_,VL}|RRVLB], UNVLB, Schema, ValidFL)-VLB :-
+    unnest_record(Schema,VL)+UnVL+ValidFL,
+    % VLをアンネストしたUnVLを作り、その最後にValidFLを繋げる。
+    UNVLB = [UnVL|UNVLB1],
+    unnest_record_vlb(RRVLB, UNVLB1, Schema, ValidFL)-VLB.
+unnest_record_vlb([], UNVLB, _Schema, _ValidFL)-VLB :-
+    UNVLB = [].
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

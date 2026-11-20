@@ -1,0 +1,932 @@
+﻿<HTML>
+<HEAD><TITLE>General Report of the FGCS Folow-on Project</TITLE></HEAD>
+<BODY BGCOLOR="#F9F8FF"
+      TEXT   ="#005000"
+      LINK   ="#0070FF"
+      VLINK  ="#854422"
+      ALINK  ="#FF0000">
+
+<i>Proc. of FGCS'94, ICOT, Tokyo, December 1994</i><br>
+<center>
+<h1>General Report of the FGCS Folow-on Project</h1>
+Shunichi Uchida<br>
+Institute for New Generation Computer Technology<br>
+4-28, Mita 1-chome, Minato-ku, Tokyo 108, Japan<br>
+<tt>uchida@icot.or.jp</tt>
+</center>
+<hr>
+
+<h3>Index</h3>
+<dl>
+<dd>0.<a href="#abstract"> Abstract</a>
+<dd>1.<a href="#intro"> Introduction</a>
+<dd>2.<a href="#r-and-d"> Research and development activities</a>
+<dd>3.<a href="#activities"> Activities for dissemination</a>
+<dd>4.<a href="#final"> Final remarks</a>
+<dd>5.<a href="#reference"> Reference</a>
+<dd>6.<a href="#ftp-all"> All of this proceedings</a>
+</dl>
+
+
+
+<H3><a name="abstract">Abstract</a></H3>
+<i>
+<p>
+
+<DD>This paper is to report activities of the two year FGCS Follow-on
+Project which was carried out after the eleven year FGCS Project.  <p>
+
+<DD>The activities in the Follow-on Project can be roughly divided
+into two kinds. One is research and development and the other is
+dissemination of the FGCS technology.  <p>
+
+<DD>The research and development activities include the development of
+a new KL1 programming environment called KLIC on Unix-based sequential
+and parallel machines, and the modification and extension of major
+knowledge processing tools and application systems to port them to
+these machines using KLIC.  <p>
+
+<DD>The dissemination activities include organization of various
+collaborative research projects with domestic and foreign research
+institutes and universities, holding workshops and seminars,
+distribution of software products as ICOT Free Software, and technical
+information on research and development activities by the anonymous
+FTP and World Wide Web (WWW) on the Internet.  <p>
+
+<DD>Now, KLIC is operational on dozens of Unix-based workstations and
+several MIMD parallel machines available on the market.  Several
+parallel tools and application systems have already been ported to
+these machines and used with various existing software systems
+available in Unix environments.  <p>
+
+<DD>All of these tools and application systems are distributed as ICOT
+Free Software. Since its first release in August 1992, more than 2,100
+people have transferred more than 12,000 files.  KLIC has already been
+used for teaching parallel languages in dozens of universities in
+Japan and overseas.  <p>
+
+<DD>We are now confident that the Follow-on Project will attain its
+general goal and successfully finish in March 1995.  After the ICOT
+research center closes in March 1995, we plan to continue maintenance
+and distribution of ICOT Free Software for a few years.  <p> </i><p>
+<p>
+
+<H1><a name="intro">1 Introduction</a></H1>
+<p>
+
+<DD>Recently, the main stream of computer science and technology is
+rapidly changing toward parallel and distributed computing.  This
+change could be regarded as the opening of a new era of computers.  It
+started from hardware technology and is now spreading to software
+technology and applications.  <p>
+
+<DD>In this new era, FGCS technology is becoming a more important and
+practical key technology which provides us with the capability of
+organizing larger-scale parallel and distributed knowledge processing
+systems.  <p>
+
+<DD>The successes of the FGCS Follow-on Project has expanded the use
+of the FGCS technology and will augment its contribution to the
+world-wide advance of computer science and technology.  <p>
+
+<DD>This paper reports the activities of the two year FGCS Follow-on
+Project which was started in April 1993 after the eleven year FGCS
+Project.  <p>
+
+<DD>The Follow-on Project aims to disseminate the FGCS technology
+which was developed in the FGCS Project by combining highly parallel
+processing and knowledge processing technologies using logic
+programming as its kernel language.  <p>
+
+<DD>The central portion of the FGCS technology is the KL1 parallel
+language and PIMOS operating system implemented on parallel inference
+machines (PIMs) having about 1000 element processors.  <p>
+
+<DD>Using this KL1 and PIMOS environment on PIMs, many parallel
+software systems have been developed.  Many of them, such as theorem
+prover MGTP, have proved that the KL1 and PIMOS environment has
+enabled us to gain a linear speed-up which is almost proportional to
+the number of element processors.  <p>
+
+<DD>This is probably the first time in the world that major knowledge
+processing or AI application systems could gain an almost linear
+speed-up using highly parallel processing.  The KL1 and PIMOS
+environment running on the PIMs is now the most powerful parallel
+system for knowledge processing.  <p>
+
+<DD>At the end of the FGCS Project, ICOT and the Ministry of
+International Trade and Industry (MITI) thought that the FGCS
+technology should be disseminated as a new common infrastructure for
+advanced research into computer science and technology.  For this
+reason, ICOT placed all the major software developed in the FGCS
+project in the public domain as ICOT Free Software.  <p>
+
+<DD>However, all the major software systems including the PIMOS
+operating system are written in KL1 and able to run only on PIMs. This
+is obviously an obstacle to the dissemination.  <p>
+
+<DD>Around the end of the FGCS Project, general purpose MIMD parallel
+machines started to appear in the market for large-scale numerical
+processing applications. The scale of these parallel machines is not
+as large as the PIMs. However, they have the potential to provide us
+with more processing power at low cost in the near future.
+Furthermore, they are equipped with a Unix-based operating system with
+some extension for parallel processing such as the software called
+``Parallel Virtual Machine'' (PVM).  <p>
+
+<DD>Considering this situation, ICOT and MITI decided to carry out the
+FGCS Follow-on Project.  The primary technical goal of the Follow-on
+Project is to develop a new KL1 and PIMOS environment on Unix-based
+parallel machines.  This new environment is named KLIC because a KL1
+program is compiled into a C program in this environment.  <p>
+
+<DD>The secondary goal is to port several new and interesting systems
+developed in the FGCS Project to Unix-based machines using KLIC.  To
+achieve this goal, these systems had to be made compact so that they
+could run on the Unix-based machines which are currently much smaller
+than the PIMs. Furthermore, new user interface portions have to be
+developed using standard software tools such as X-windows Motif.  <p>
+
+<DD>These goals have almost been attained now. Some of new software
+systems have already been distributed as ICOT Free Software. The rest
+will be completed and started to be distributed in March 1995 by the
+anonymous FTP and World Wide Web (WWW) on Internet.  <p>
+
+<DD>These software systems including the KLIC are now used not only
+for practical applications but also for education of parallel
+languages, programming methodology and parallel knowledge processing
+in universities. We are sure that the more inexpensive and popular
+large-scale parallel machines become, the greater the contribution of
+the FGCS technology will be.  <p>
+
+<H1><a name="r-and-d">2 Research and development activities</a></H1>
+<P>
+ <H2>2.1 Starting  the Follow-on Project </H2>
+<P>
+
+<DD>In June 1992, the decision to carry out the Follow-on Project was
+made and announced at the FGCS'92 international conference.  We then
+started the preparation for the Follow-on Project.  <P>
+
+<DD>We had determined an outline of the technical goals for the
+Follow-on Project, but detailed research topics had to be decided
+based on whether we would be able to keep the relevant researchers at
+the ICOT research center.  <P>
+
+<DD>In the final stage of the FGCS Project, many of the ICOT
+researchers had been at ICOT for 4 or 5 years. This length of stay was
+too long compared to the standard period for rotating researchers
+between ICOT and their companies.  Thus, we had to let many of them
+return to their parent companies and ask the companies to send new
+younger researchers to ICOT.  We negotiated with both the ICOT
+researchers and their companies.  <P>
+
+<DD>As the idea of a Follow-on Project was well received by
+researchers and companies, we were able to keep research leaders in
+the important research topics for the Follow-on Project and recruit
+about 20 new researchers.  Many of the new researchers had been
+involved in the FGCS Project in their companies or software houses and
+had sufficient knowledge and skill to perform their assigned job.  <P>
+
+<DD><b> Table 1</b>. shows the changes in budget and staffing levels
+from fiscal '91 to '94.
+
+<pre>
+-------------------------------------------------------------------------------
+Project		Fiscal year	Budget		<i>ICOT</i>		Subcontracted
+name		Apr. to Mar.	billion yen	members		company members
+-------------------------------------------------------------------------------
+FGCS(10th year)		'91		7.2	90		500
+FGCS(11th year)		'92		3.6	60('92/10)	200
+Follow-on(1st year)	'93		1.3	40('93/ 4)	 50
+Follow-on(1nd year)	'94		1.3	40		 50
+-------------------------------------------------------------------------------
+</pre>
+
+<P> <DD>In fiscal '92, the number of ICOT researchers decreased from
+90 to 40 and the 7 research sections were reduced to 2 research
+departments.  In affiliated companies and software houses, the number
+of researchers, engineers and managers decreased from 500 to 50.
+These 50 people were brought to work at the ICOT research center.  <P>
+
+<DD>While many researchers and engineers left the FGCS Project, about
+30 researchers who had been involved in the FGCS Project at ICOT or in
+their companies moved to major universities between fiscal '91 and
+'93. Many of them received Ph.D's for their research work with the
+FGCS Project.  These researchers are playing a very important role in
+the Follow-on Project.  <P>
+
+ <H2>2.2 Selection of research themes  </H2>
+
+<P> <DD>As the budget and the number of ICOT researchers shrank, we
+had to curtail research themes.  In the final stage of the FGCS
+Project, we had more than 50 research themes, including about 20
+parallel application systems.  These included practical research
+themes such as expert systems for job scheduling and VLSI CAD systems,
+as well as basic research.  <P>
+
+<DD>The general technical goal of the Follow-on Project is to make
+major software systems developed in the FGCS Project operational on
+Unix-based parallel machines.  Thus, the primary technical goal is the
+development of a new KL1 and PIMOS environment named KLIC on
+Unix-based machines.  <P>
+
+<DD>In choosing other themes, selection criteria included whether the
+theme would have a large impact on the future of computer science, and
+whether progress could be effectively accelerated by the use of
+parallel processing.  <P>
+
+<DD>We chose the following research themes for the Follow-on Project.
+They are divided into two groups.  <P>
+
+<UL>
+<LI> Parallel Basic Software
+<P>
+  <OL>
+  <LI> KLIC system: a KL1 programming environment for
+       sequential and parallel Unix-based machines
+  <LI> Evaluation of PIM architectures  and their KL1 language processors
+  <LI> Parallel nested relational DBMS, Kappa
+  </OL>
+<P>
+<LI> Knowledge Processing Software
+<P>
+  <OL>
+  <LI> Parallel theorem prover,  MGTP
+  <LI> Knowledge representation languages;
+    <UL>
+    <LI>  Deductive and object-oriented language, 
+    <LI>  Parallel constraint logic programming language, GDCC
+    <LI>  Heterogeneous distributed problem solving system, Helios
+    </UL>
+  <LI> Genetic information processing systems
+     <UL>
+     <LI>  DNA and protein sequence alignment and editing system
+     <LI>  New algorithms for sequence and structure  analysis
+     <LI>  Biological DBMS and KBMS
+     </UL>
+  <LI>  Legal reasoning system, new HELIC-II
+  </OL>
+<P>
+</UL>
+<P>
+ <H2>2.3 Research activity of each theme</H2>
+<P>
+ <H3>2.3.1 KLIC system</H3>
+
+<P> <DD>The KLIC system consists of a KL1 compiler and a run-time
+library.  The KL1 compiler is written in KL1 and compiles a KL1
+program into a C program.  The run-time library is prepared as a
+library of C programs which provide functions such as debugging,
+monitoring, parallel execution management, resource management and so
+on.  These functions are almost the same as the ones which PIMOS
+provides on the PIMs.  <P>
+
+<DD>Some of these C programs are linked to a user program, if it uses
+some of these functions. If the user program does not use any of these
+functions, it is compiled into a very simple C program which is
+executable even on a small personal computer. This nature of KLIC is
+very convenient for educational purposes.  <P>
+
+<DD>The development of KLIC was done in two steps. In the first step,
+a KLIC sequential version was developed. Development of the KL1
+compiler was a main topic. This version could attain a fairly good
+performance.  It attained 2 MLIPS on an SS-10/30 and 3.7 MLIPS on DEC
+AXP.  The KLIC sequential version was released in November 1993 as
+ICOT Free Software.  <P>
+
+<DD>In the second step, a KLIC parallel version was developed.  This
+version is more complicated than the sequential version.  It uses the
+software called PVM which provide us with a standard interface for
+inter-processor communications over parallel or distributed machines.
+This software is distributed as PDS and is provided for most of the
+recent parallel machines.  <P>
+
+<DD>A new KLIC run-time library for the parallel version was developed
+to provide functions for parallel execution management, resource
+management, debugging and monitoring, and so on.  First release of the
+KLIC parallel version was made in September 1994 and will be released
+in February 1995 as ICOT Free Software.  <P>
+
+<DD>The KLIC parallel version will be ported to parallel machines such
+as Sparc Center, DEC AXP 7000, CM-5, AP-1000+, Cenju-3, SR-2001, SP-2
+and so on.  <P>
+
+ <H3>2.3.2 Evaluation of PIM architectures</H3>
+
+<P> <DD>This theme intended to further investigate five models of
+PIMs.  All models support KL1; however, the architecture of the
+processing element and inter-processor connection mechanism in each
+model are different.  <P>
+
+<DD>Designers of the five PIM models formed a task group and had
+interesting discussions.  They gathered evaluation data and compared
+unique design features with each other.  The general evaluation
+results are presented at the FGCS'94 symposium.  <P>
+
+ <H3>2.3.3 Parallel nested relational DBMS, Kappa</H3>
+
+<P> <DD>Kappa is an extended relational DBMS which permits us to use
+nested tables to represent data.  <P>
+
+<DD>In a standard relational DBMS, we usually use two dimensional
+tables to represent data structures. One table is divided into many
+rectangular boxes by rows and columns. The structure of this table is
+very regular and rigid.  We are permitted to put only one data item in
+each box.  This regularity is an advantage as long as we use only
+simple data structures.  <P>
+
+<DD>A nested relational DBMS permits us to put multiple data items in
+one box. Thus, it is beneficial to handle complex data structures such
+as natural language dictionaries, biological data, and so on.  We can
+represent complex data in more compact and comprehensive format in a
+nested relational DBMS than in a standard relational DBMS.  <P>
+
+<DD>We developed Kappa on the PIM and made full use of parallel
+processing to gain better performance.  <P>
+
+<DD>In the Follow-on Project, Kappa was almost reconstructed to be a
+compact and faster system. Some of its low-level functions were
+re-written in C code for better performance.  <P>
+
+<DD>Now it can attain an almost comparable performance to ordinary
+relational DBMSs for a complex database such as GenBank on a
+sequential machine.  If it is used on a parallel machine, it will
+attain even better performance using parallel processing.  <P>
+
+ <H3>2.3.4 Parallel theorem prover, MGTP</H3>
+
+<P> <DD>MGTP is a model generation theorem prover for full first-order
+logic.  It is one of the most successful application programs in the
+FGCS Project.  It demonstrated the effectiveness of the KL1 and PIMOS
+environment on the PIMs.  <P>
+
+<DD>Generally, it has been well known that theorem provers have a very
+large search space and thus would be an interesting application of
+parallel processing. However, its computational structure is very
+irregular and it is hard to predict how its search tree will extend
+its branches.  <P>
+
+<DD>Thus, we need to divide the computation into parallel-processable
+processes and their allocate them to many element processors
+dynamically on the fly.  It is very hard job to do this with
+conventional methods.  <P>
+
+<DD>MGTP successfully implemented this job division and allocation in
+the KL1 and PIMOS environment on the PIM model in late 1991.  The
+execution speed increased almost proportional to the number of element
+processors.  <P>
+
+<DD>Furthermore, the program production period was surprisingly short.
+This was the first clear evidence that the KL1 and PIMOS environment
+on PIMs can successfully be applied for solving a large-scale AI
+problem.  <P>
+
+<DD>The experiences and skills of the MGTP group were quickly
+transferred to other research groups at ICOT. This encouraged all the
+researchers at ICOT and their companies.  <P>
+
+<DD>In the Follow-on Project, the MGTP group further developed their
+provers.  As a result, MGTP became the fastest theorem prover of this
+kind in the world and proved some open problems in quasi group theory.
+<P>
+
+<DD>Furthermore, some of the MGTP provers were provided as tools for
+practical applications such as the rule-based engine of the HELIC-II
+legal reasoning system.  <P>
+
+<DD>This indicates that a theorem prover can be regarded as a
+higher-level inference engine and that it can be adapted for knowledge
+processing applications such as KBMS, natural language understanding,
+and software engineering.  <P>
+
+<DD>In addition to the ordinary MGTP provers, the MGTP group for
+educational purposes is developing compact versions of their provers
+using Prolog.  <P>
+
+ <H3>2.3.5 Knowledge representation languages</H3>
+
+<P> <DD>In the FGCS Project, the research on knowledge representation
+languages at ICOT has been based on mathematical logic. The research
+started from nested relational databases and deductive languages. In
+the intermediate stage, research on constrained logic programming
+languages was started.  <P>
+
+<DD>On the other hand, research on object-oriented languages (O-O
+languages) at ICOT was mainly done with system description languages
+such as ESP, which is extended Prolog developed as a programming
+language for PSI machines.  <P>
+
+<DD>Outside of ICOT, some database researchers were attracted by O-O
+languages and their mechanisms for modularization and inheritance.
+They developed O-O databases and indicated that they are able to
+provide us with more flexible data models than relational databases
+and deductive databases. We started discussions on how to introduce
+the merits of O-O databases into our framework.  <P>
+
+<DD>In the final stage of the FGCS Project, we started the design of a
+deductive and O-O database language and DBMS. Finally, the design of
+this language and system was completed and became the knowledge
+representation language, Quixote.  The first version was implemented
+in KL1.  <P>
+
+<DD>As Quixote has rich O-O based functions combined with a deductive
+language, it can fulfill requirements for describing complex knowledge
+fragments such as legal rules and biological reactions. However,
+because of the wealth of its functions, implementation was so
+complicated that performance and the stability of the software system
+were not satisfactory.  <P>
+
+<DD>In the Follow-on Project, intensive efforts were made to improve
+language the specification and system implementation, and the system
+was ported to Unix-based machines using KLIC. Quixote will be released
+as a more practical system in March 1995.  <P>
+
+<DD>This system is now called the &quot;big&quot;-Quixote.
+Micro-Quixote, which is a compact subset was also developed for
+educational purposes. Micro-Quixote is small enough to run on a
+personal computer.  <P>
+
+ <H3>2.3.6 Genetic information processing systems</H3>
+
+<P> <DD>Research on genetic information processing was started with
+the parallel processing of multiple alignment of protein sequences.
+This research topic is continued in the Follow-on Project and has now
+been extended to a sequence alignment and editing system.  <P>
+
+<DD>This system can handle both protein and DNA sequences.  Its
+alignment algorithm is based on a DP matching algorithm and
+implemented in KL1.  Parallel implementation of this algorithm has
+been improved many times to attain better performance on a PIM.  <P>
+
+<DD>Recently, the use of a genetic algorithm has given us better
+alignments for some interesting cases.  The use of constraints between
+some amino acids or nucleic acids was tried in order to narrow the
+search space.  This system is now being ported to Unix-based parallel
+machines and is available to biologists.  <P>
+
+<DD>Research on the prediction of protein structures has been made in
+the Follow-on project.  The use of the Hidden Markov Model (HMM) has
+given us interesting results in some cases.  <P>
+
+<DD>Research on biological DBMS and KBMS has also been made in
+connection with research on knowledge representation languages.  Some
+biological reactions as well as the characteristics of biological and
+chemical materials are written in Quixote and stored in the knowledge
+base.  <P>
+
+<DD>Reactions were coded into hundreds of figures by biologists.  They
+are now described in Quixote and can be retrieved by the KBMS.  We
+expect that this kind of use of knowledge representation languages
+will be beneficial in many other application areas.  <P>
+
+<DD>In the research on genetic information processing, research
+collaboration is essential. We have set up several international and
+national collaborative research projects with biologists and computer
+specialists.  They have brou to us many fascinating problems in recent
+molecular biology.  We hope that the software tools we produced will
+continue to assist them with their research.  <P>
+
+ <H3>2.3.7 Legal reasoning system, new Helic-II </H3>
+
+<P> <DD>Research on the Helic-II legal reasoning system was started in
+the final stage of the FGCS Project.  It is one of the application
+systems developed to generally evaluate the KL1 and PIMOS environment,
+knowledge representation languages and other software tools.  <P>
+
+<DD>This sytem was very successful not only in demonstrating the
+usefullness of the FGCS technology, but also in showing us possible
+uses for the FGCS technology which are beyond our initial
+expectations.  This system gives us a better understanding of how FGCS
+technology can be used for applications in social-scientific areas.
+<P>
+
+<DD>To analyse a given case and predict all the possible judgements,
+Helic-II used two knowledge bases and two inference engines.  One is a
+case knowledge base combined with a case-based inference engine.  The
+other is a rule knowledge base combined with a rule-based engine.  The
+rule-based engine was built using the MGTP theorem prover as its
+kernel.  <P>
+
+<DD>To describe the penal code and case rules, some of the results of
+the research into knowledge representation languges were used. Both
+inference engines were implemented in KL1 and were speeded up by
+parallel processing on a PIM.  <P>
+
+<DD>As Helic-II used many other research results developed in the FGCS
+Project effectively, it was the most appropriate program for general
+evaluation of the FGCS technology.  <P>
+
+<DD>In the Follow-on Project, this research is progressing to include
+more sophisticated functions such as simulating a debate between a
+prosecutor and lawyer. This extended version is called the new
+Helic-II system and requires descriptions of more cases and rules.
+<P>
+
+<DD>To do this, more background knowledge on the law and legal systems
+is vital.  Thus, collaboration with researchers and experts in a low
+area is indespensable. Setting up this collaboration needed more
+effort than for genetic information processing because of the wider
+culture gap between computer science and law.  <P>
+
+<DD>The ultimate goal of this research is still very far away, but the
+spin-offs from reseach are expected to be used in many social
+scientific applications where the problems to be solved will be
+simpler than this system.  The new Helic-II is being ported to
+Unix-based machines and released as ICOT Free Software.  <P>
+
+ <H1><a name="activities">3 Activities for dissemination</a></H1>
+<P>
+ <H2>3.1 Framework for dissemination</H2>
+
+<P> <DD>Around the end of the FGCS Project, MITI organized a
+high-level committee to assess the research results of the FGCS
+Project. [DPBCT 1994] One of its conclusions was that the results were
+considered to be still so far away from the market's needs that
+computer companies could not commercialize them in a few years
+although they can be highly evaluated from the academic viewpoints.
+<P>
+
+<DD>Thus, dissemination activities were mainly directed at academia,
+that is, national and foreign research institutes and universities.
+However, quite recently, computer companies both of home and abroad
+have become more positive and supportive of our dissemination
+activities.  <P>
+
+<DD>We prepared for dissemination in two aspects.  For the first one,
+we prepared hardware and facilities such as file servers connected to
+the Internet accompanied by a team to maintain the programs and
+documentation of ICOT Free Software, and high-speed network links so
+that our research partners can use the PIMs from remote sites.  <P>
+
+<DD>For the second one, we have put our efforts into networking among
+ICOT members.  We have been able to keep some of the collaborative
+research projects which were set up in the FGCS Project and have tried
+to set up new ones with national and foreign institutes and
+universities based on the new research themes of the Follow-on
+Project.  <P>
+
+ <H2>3.2 Collaboration on research in Japan</H2>
+<P>
+ <H3>3.2.1 Organization of Task Groups</H3>
+
+<P> <DD>In the FGCS Project, we had several &quot;Working Groups
+(WGs)&quot; which recruited researchers from academia and industry and
+provided them with the opportunity to exchange technical information
+and provided some research tools at ICOT.  <P>
+
+<DD>The main activity of the WGs was to meet and discuss specific
+research topics and so the relationship between the WG members and
+ICOT was not so tight.  <P>
+
+<DD>In the Follow-on Project, we needed a tighter relationship with
+some researchers in universities and research institutes in order to
+to ask them to carry out parts of our research and development or to
+help us hold seminars and workshops and so on.  <P>
+
+<DD>Thus, we set up new Task Groups (TGs) to recruit researchers from
+universities and industry.  Naturally, many of them had been involved
+in the FGCS Project at ICOT or in their companies.  <P>
+
+<DD>They are playing a very important role in the dissemination
+process.  For example, we have held KLIC seminars several times at
+universities with the help of these TG members.  <P>
+
+<DD>We currently have the following 7 task groups.  The numbers shown
+in parentheses are the regular members excluding ICOT researchers.
+<P>
+
+<OL>
+<P>
+<LI> Parallel Symbolic Processing System Task Group  (18)
+<LI> Parallel Inference Machine Evaluation Task Group (10)
+<LI> KLIC Task Group (9)
+<LI> Parallel Theorem Proving Task Group (9)
+<LI> Heterogeneous Knowledge-Base Task Group (17)
+<LI> Protein Structure Prediction Task Group (17)
+<LI> Legal Reasoning System Task Group (7)
+<P>
+</OL>
+<P>
+
+ <H3>3.2.2 Collaboration with Japanese universities 
+and research institutes</H3>
+
+<P> <DD>Some of the research results of the FGCS Project are practical
+but some others are not. KLIC is an example of a practical one. 
+Results are integrated into software systems which can be used as
+useful tools. Thus, technology transfer is rather easy.  <P>
+
+<DD>However, some others were not well integrated into complete
+software systems. For example, parallel programming methodology using
+KL1 is partially described in technical papers and partially
+integrated into some KL1 programs, but mostly existing in the brains
+of the researchers.  <P>
+
+<DD>Results have not been well ordered yet and thus are very abstract.
+Experience on how to represent legal knowledge gained in the
+development of the legal reasoning system is another abstract result.
+<P>
+
+<DD>To disseminate these abstract research results, we decided to set
+up several small collaborative projects with Japanese universities. In
+these projects, professors are expected to use some of our results as
+seeds in starting new research projects.  Of course, they are asked to
+use practical results as educational tools or as new infrastructures.
+<P>
+
+<DD>Currently, we have the following 15 projects.  <P>
+
+<OL>
+<LI> Parallel language processors and environments;
+<P>
+ <UL>
+ <LI> Optimization of a language processor (Prof. H. Tanaka, Univ. of Tokyo)
+ <LI> Optimal implementation of KL1 (Prof. H. Nakashima, Kyoto Univ.)
+ <LI> Program analysis and optimization (Prof. K. Ueda, Waseda Univ.)
+<LI> Visual interface of parallel systems (Prof. J. Tanaka, Tsukuba Univ.)
+ </UL>
+<P>
+<LI> Parallel theorem proving;
+<P>
+ <UL>
+ <LI>  High-speed inference (Prof. K. Fuchi, Univ. of Tokyo)
+ <LI>  Lannguage processor based on theorem proving (Prof. M. Amamiya, Kyushu  Univ.)
+ </UL>
+<P>
+<LI>  Natural language processing;
+<P>
+ <UL>
+ <LI> NL processing on the PIM (Prof. H. Tanaka, Tokyo Institutes of Technology)
+ <LI> Parallel NL understanding (Prof. R. Taniguchi, Kyushu Univ.)
+ <LI> NL tools (Prof. Y. Matsumoto, AIST-Nara) 
+ </UL>
+<P>
+<LI>  Others;
+<P>
+ <UL>
+ <LI>  Distributed AI systems (Prof. K. Furukawa, Keio Univ.)
+ <LI> Constraint processing  (Prof. F. Mizoguchi, Science Univ. of Tokyo)
+ <LI> Parallel VLSI CAD systems (Prof. K. Taki, Kobe Univ.)
+ <LI> Evaluation of parallel architectures for LP (Prof. H. Tanaka, Univ. of Tokyo)
+ <LI> Transaction management (Prof. H. Yokota, JAIST-Hokuriku)
+ <LI> Methodology for parallel scientific computation (Prof. S. Kunifuji, JAIST-Hokuriku)
+ </UL>
+<P>
+</OL>
+
+<P> <DD>Furthermore, we have two collaborative projects with the
+Electrotechnical Laboratory (ETL) and the Mechanical Engineering
+Laboratory (MEL). These are national laboratories which belong to
+MITI. These projects are continuations of the FGCS Project.<P>
+
+ <H2>3.3 Collaboration on international research
+     and  achievement sharing</H2>
+
+<P> <DD>The technical goal of the FGCS Project was very advanced and
+needed the collaboration of the world's leading researchers.  Thus,
+international collaboration began in the initial stage of the FGCS
+Project. Early collaboration was based on invitation or mutual visits
+of individual researchers.  <P>
+
+<DD>From the intermediate stage, we concluded formal agreements for
+exchanging researchers and holding workshops with the following
+governmental organizations; <P>
+
+<UL>
+<LI> National Science Foundation (NSF) in the U.S.A.      (Mr. Y.T. Chien)
+<LI> Institute  National de Recherche en  Informatique et en Automatique (INRIA) in France (Dr. L. Kott and  Dr. G. Kahn)
+<LI> Swedish Institute for Computer Science (SICS)      (Dr. S. Haridi and  Dr. M. Nilsson)
+<LI> Department of Trade and Industry (DTI) in the UK       (Dr. K. Shotton and Dr. P. Rothwell)
+</UL>
+
+<P> <DD>In the final stage, we started more substantial research
+collaborations to find appropriate applications for the KL1, PIMOS and
+PIMs.  We exchanged ideas and research tools with the following U.S. 
+laboratories; <P>
+
+<UL>
+<LI> Argonne National Laboratory (ANL) (Dr. E. Lusk, Dr. R. Overbeek and Dr. R. Stevens)
+<LI> National Institute of Health  (NIH) (Mr. R.J. Feldmann and Dr. G.S. Michaels)
+<LI> Lowrence Berkeley Laboratory (LBL) (Dr. C. Cantor and  Dr. C. Smith)
+</UL>
+
+<P> <DD>With researchers at ANL, we conducted research on biological
+analysis and theorem proving.  They gave us several interesting
+problems on theorem proving. They greatly stimulated our research on
+parallel theorem proving and biological analysis. We held US-Japan
+workshops on logic programming and theorem proving twice at ANL
+sponsored by NSF and ICOT.  <P>
+
+<DD>With researchers at NIH and LBL, we conducted research on protein
+structure analysis and sequence alignment. We learned much about
+molecular biology through these collaborations.  <P>
+
+<DD>The collaborative research on theorem proving was extended to
+include Australian researchers.  <P>
+
+<UL>
+<LI> The Australian National University (ANU)      (Prof. M. McRobbie and Dr. J. Slaney)
+</UL>
+
+<P> <DD>ANU worked with us to try to solve some open problems in the
+quasi-group theory using the MGTP theorem prover on a PIM. This trial
+was very successful.  The achievements of this collaboration
+stimulated the world's researchers in this area very much.  We held
+several international workshops with these researchers to share our
+research results and experiences.  <P>
+
+<DD>These collaborations were really helpful to our growing research
+groups into genetic information processing and parallel theorem
+proving. Most of these collaborations are still continuing on an
+individual basis.  <P>
+
+<DD>In the Follow-on Project, we set up new tighter collaborative
+research projects with the following two universities; <P>
+
+<UL>
+<LI> The University of Bristol       (Prof. D. Warren and Prof. S. Gregory)
+<LI> The University of Oregon        (Prof. J. Conery and  Prof. E. Tick)
+</UL>
+
+<P> <DD>We hoped to further develop the KLIC system and application
+systems as well as the disseminating the KLIC system and other
+programs as ICOT Free Software.  <P>
+
+<DD>With researchers at the University of Bristol, we are working to
+develop a parallel debugger and a constraint solver which can be used
+as extended functions in the KLIC system.  <P>
+
+<DD>With researchers at the University of Oregon, we are conducting
+research on optimizing the compiler for KLIC and biological sequence
+analysis using constraints.  Based on this collaboration, we held the
+fifth US-Japan workshop at this University attended by international
+researchers.  <P>
+
+<DD>The results of all these collaborations will be placed in the
+public domain and distributed as extensions of ICOT Free Software.
+<P>
+
+<DD>With the completion of the Follow-on Project, we have to terminate
+all of these collaborations. We hope that the work will continue on
+individual bases.  <P>
+
+ <H2>3.4 Distribution of ICOT Free Software (IFS)  
+             and other technical information</H2>
+
+<P> <DD>We started the distribution of ICOT Free Software (IFS) using
+anonymous FTP on the Internet in August 1992.  Since then, 12,000
+files have been transferred to 2,200 sites in 45 countries.  Among
+these file transfers, 40 % were to Japan, 30 % to the U.S.A. and the
+remaining 30 % to other countries.  <P>
+
+<DD>In the final year of the FGCS Project, we placed 77 programs in
+the public domain as IFS and started up ICOT's FTP server in August
+1992.  These programs are relatively large. For example, the PIMOS
+operating system is counted as one program. These programs include
+many large programs written in KL1 which would not run without a PIM.
+<P>
+
+<DD>Thus, we wondered if there would be any interest from researchers
+outside of ICOT. Fortunately, the IFS server was frequently accessed
+from many countries from the beginning.  <P>
+
+<DD>In the Follow-on Project, we made great efforts to complete the
+sequential version of KLIC quickly so that IFS users could have an
+environment to be able to run KL1 programs on their machines.  We
+released 7 programs as IFS including the sequential version of KLIC in
+November 1993. As we expected, the KLIC was frequently transferred by
+many people.  <P>
+
+<DD>In March 1995, as the final release of IFS, we will add 16
+programs to IFS including the parallel version of KLIC and several
+interesting parallel application programs. They are actually
+operational on many workstations and parallel machines.  <P>
+
+<DD>In October 1994, we started up ICOT's World Wide Web server. We are
+providing general information on ICOT's activities, ICOT publications
+such as technical reports and ICOT journals, and outlines of major
+research results. ICOT Free Software is also accessible from this
+server.  <P>
+
+<DD>Since its start up, the ``ICOT Home Page'' file has been
+transferred to more than 800 sites. This is very encouraging. We plan
+to put many more recent achievements on the server.  <P>
+
+<DD>By using the Internet, we were able to distribute ICOT Free
+Software and other technical information quite effectively.  Although
+face to face communication is indispensable for successful
+collaborations, we naturally rely more on computer networks for
+sharing advanced technical information, research tools, and products.
+<P>
+
+<DD>We plan to organize a team of researchers and engineers to
+maintain ICOT Free Software and the other information for a few year
+after the ICOT Research Center closes in March 1995.  <P>
+
+ <H1><a name="final">4 Final remarks</a></H1>
+
+<P> <DD>The general goal of the Follow-on Project has two aspects; One
+is to disseminate the achievements of the FGCS Project.  The other is
+to make a &quot;soft-landing&quot; for the FGCS Project which has been
+Japan's largest national project in the area of computer technology.
+<P>
+
+<DD>We are sure that we can attain our goal for dissemination.  <P>
+
+<DD>First of all, the development of KLIC is proceeding smoothly. The
+KLIC sequential version is being smoothly ported to Unix-based
+workstations by many KLIC users outside of ICOT. The number of KLIC
+users is increasing rapidly both in Japan and other countries.  They
+use KLIC mainly for research and educational purposes.  <P>
+
+<DD>The KLIC parallel version is now being used at ICOT and is being
+debugged.  The KLIC parallel version is also being ported to several
+parallel machines at several different sites.  <P>
+
+<DD>Porting is rather easy. However, to get the best performance,
+optimization using dedicated hardware functions for parallel machines
+is necessary.  <P>
+
+<DD>We expect that this problem will be solved because middle-level
+software which supports parallel processing such as PVM is now rapidly
+being optimized on many parallel machines.  <P>
+
+<DD>Improvement and porting of the application systems are still
+underway.  One of the problems we have in this porting is that large
+scale MIMD parallel machines have not yet become popular so that many
+researchers do not have easy access.  Particularly the number of
+element procesasors and memory capacity is not large enough for us to
+port our application systems.  <P>
+
+<DD>The expectations of users of the parallel machines seems to be
+very large.  However, parallel machine vendors feel that the market is
+still small.  We understand that this gap is caused by the lack of an
+efficient parallel programming language and environment.  We are
+confident that KLIC is a promising solution to fill this gap.  <P>
+
+<DD>We will also accomplish the goal of a soft-landing for the FGCS
+Project.  We are glad that ICOT researchers are getting better
+opportunities and better positions in academia and industray.  <P>
+
+<DD>Many of the ICOT graduates who returned to their companies are
+engaged in interesting jobs such as development of parallel machines
+and distributed software.  ICOT researchers who were at ICOT for
+several years and led the FGCS Project are welcomed by many
+universities.  <P>
+
+<DD>We are happy that ICOT's PIMs have been welcomed by several
+universities. They will be moved to these universities and used to
+foster researchers for the next decades.  <P>
+
+<DD>To maintain and further disseminate ICOT Free Software, we plan to
+organize a virtual research laboratory on the Internet comprising ICOT
+graduates and collaborative research partners.  This will be a
+loosely-coupled research group who share a common interest in ICOT
+Free Software.  We hope that this group will act as a think-tank to
+foster future research projects.  <P>
+
+  <P><H2><a name="reference">5 References</a></H2><P>
+
+<DL COMPACT>
+
+<DT><A NAME=TC94><B>Chikayama 1994</B></A><DD> T. Chikayama,
+``Parallel Basic Software'', Proceedings of the International
+Symposium on Fifth Generation Computer Systems 1994, Dec. 1994.  <P>
+
+<DT><A NAME=KN94><B>Nitta et al. 1994</B></A><DD> K. Nitta, K. Yokota,
+A. Aiba and M. Ishikawa, ``Knowledge Processing Software'',
+Proceedings of the International Symposium on Fifth Generation
+Computer Systems 1994, Dec. 1994.  <P>
+
+<DT><A NAME=FE94><B>DPBCT 1994</B></A><DD> Committee for Development
+and Promotion of Basic Computer Technology, ``Fifth Generation
+Computer Systems Project Final Evaluation Report'', ICOT Journal, No. 
+40, pp-2-24, 1994.  <P>
+
+<DT><A NAME=SUampTCampKN93><B>Uchida et al. 1993</B></A><DD> S. 
+Uchida, T. Chikayama, and K. Nitta, ``Knowledge Information Processing
+by Highly Parallel Proccessing'', ICOT Technical Report TR-0854, Sep. 
+1993.  <P>
+
+<DT><A NAME=SU93><B>Uchida et al. 1993</B></A><DD> S. Uchida, R. 
+Hasegawa, K, Yokota, T. Chikayama, K. Nitta and A. Aiba, ``Outline of
+the FGCS Follow-on Project'', New Generation Computing, Vol. 11, No. 
+2, OHMSHA and Springer-Verlag, 1993.  <P>
+
+<DT><A NAME=SU92E><B>Uchida (Ed.) 1992</B></A><DD> S. Uchida (Ed.),
+``Proceedings of the FGCS PROJECT EVALUATION WORKSHOP'', ICOT
+Technical Memo TM-1216, Sep. 1992.
+
+</DL>
+<P><br><br>
+
+<a name=ftp-all><h2>All of this proceedings (Compressed PostScript file) :</h2></a>
+<b>General Report of the FGCS Folow-on Project (68KB)</b>
+<a href="PS/general-report.ps.gz">
+<img src="../../PICS/I-ftp-copy.gif"></a>
+<p>
+</BODY>
+<hr>
+<ADDRESS><A HREF="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</A></ADDRESS>
+</HTML>

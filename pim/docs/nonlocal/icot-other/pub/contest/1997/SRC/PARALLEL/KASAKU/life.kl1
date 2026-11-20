@@ -1,0 +1,345 @@
+/*
+ *                  LIFE GAME PROGRAM
+ *
+ *              Yasuhiro Ajiro (@Ueda Lab.)
+ *       Graduate School of Science and Engineering,
+ *                   Waseda University
+ *           e-mail: ajiro@ueda.info.waseda.ac.jp
+ *
+ *            Copyright (C) 1997 Yasuhiro Ajiro
+ */
+
+:- module life.
+
+
+compute(GN,Initstate,Finstate) :-
+    encode(Initstate,Estate,UR,LR), current_node(Node,NNodes),
+    border(GN,UR,LR,NNodes,NUR,Wid), make_nulls(GN,[],NULL),
+    compute_dist(GN,Estate,NULL,_,Fstate,-1048576,NUR,Wid,1,NNodes,NULL),
+    decode(Fstate,Finstate).
+
+compute_dist(GN,Estate,UIn,Uout,Fstate,Ulim,NUR,Wid,Node,NNodes,NULL)
+	:- Wid=:=0 |
+    compgen(GN,Estate,NULL,NULL,Fstate,-1048576,1048576,Uout,_,
+	1,0,0,0).
+compute_dist(GN,Estate,UIn,Uout,Fstate,Ulim,NUR,Wid,Node,NNodes,NULL)
+	:- Wid > 0 |
+    comp_dist(GN,Estate,UIn,Uout,Fstate,Ulim,NUR,Wid,Node,NNodes,NULL).
+
+comp_dist(GN,Estate,UIn,Uout,Fstate,Ulim,NUR,Wid,Node,NNodes,NULL)
+	:- Node =:= NNodes |
+    dist(GN,Estate,UIn,NULL,Fstate,Ulim,1048576,Uout,_,NNodes,0).
+
+comp_dist(GN,Estate,UIn,Uout,Fstate,Ulim,NUR,Wid,Node,NNodes,NULL)
+	:- Node  <  NNodes |
+    Llim:=NUR+Wid, divide(Llim,Estate,Estate0,Estate1),
+    dist(GN,Estate0,UIn,LIn,Fstate0,Ulim,Llim,Uout,Lout,NNodes,Node),
+    append(Fstate0,Fstate1,Fstate),
+    Ulim1 := Llim+1, Node1 := Node+1,
+    comp_dist(GN,Estate1,Lout,LIn,Fstate1,Ulim1,Llim,Wid,Node1,NNodes,NULL).
+
+dist(GN,Estate,UIn,LIn,Fstate,Ulim,Llim,Uout,Lout,NNodes,Node) :- Node =\= 0 |
+    compgen(GN,Estate,UIn,LIn,Fstate,Ulim,Llim,Uout,Lout,
+	NNodes,~(Node-1),0,0)@node(Node).
+dist(GN,Estate,UIn,LIn,Fstate,Ulim,Llim,Uout,Lout,NNodes,Node) :- Node =:= 0 |
+    compgen(GN,Estate,UIn,LIn,Fstate,Ulim,Llim,Uout,Lout,
+	NNodes,~(NNodes-1),0,0)@lower_priority.
+
+
+encode([],Edata,UR,LR) :- UR:=0, LR:=0, Edata=[].       % Edata: reverse-order
+encode([p(X,Y)|Ps],Edata,UR,LR) :- UR:=Y, enc(Ps,Y,[X],Edata,LR).
+
+enc([p(X,Y)|Ps],CY,Xs0,Edata,LR) :- CY =:= Y |
+    Xs=[X|Xs0], enc(Ps,CY,Xs,Edata,LR).
+enc([p(X,Y)|Ps],CY,Xs, Edata,LR) :- CY  <  Y |
+    Edata = [e(CY,Xs) | Edata1], enc(Ps,Y,[X],Edata1,LR).
+enc([],CY,Xs,Edata,LR) :- LR:=CY, Edata = [e(CY,Xs)].
+
+decode([],          Ddata) :- Ddata=[].
+decode([e(Y,Xs)|Ds],Ddata) :-
+    dec(Y,Xs,[],R), append(R,Ddata1,Ddata), decode(Ds,Ddata1).
+
+dec(Y,[],    S0,R) :- S0=R.
+dec(Y,[X|Xs],S0,R) :- S=[p(X,Y)|S0], dec(Y,Xs,S,R).
+
+make_nulls(N,S0,NULL) :- N > 0 | S=[[]|S0], make_nulls(~(N-1),S,NULL).
+make_nulls(N,S0,NULL) :- N=:=0 | S0=NULL.
+
+border(N,UR,LR,NP,NUR,Wid) :- NUR:=UR-N/30, NLR:=LR+N/30, Wid:=(NLR-NUR)/NP.
+
+divide(Llim,[e(Y,Xs)|Es],U,L) :- Llim >= Y |
+    U=[e(Y,Xs)|U1], divide(Llim,Es,U1,L).
+divide(Llim,[e(Y,Xs)|Es],U,L) :- Llim <  Y |  U=[], L=[e(Y,Xs)|Es].
+divide(Llim,[],          U,L) :- true      |  U=[], L=[].
+
+
+                                                   % my region: Ulim -- Llim
+compgen(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,Turn,Count)
+	:- GN > 0,  Count < 500 |                  % Count: shared at 1/500
+    UIn0=[UIn|UIs], LIn0=[LIn|LIs],
+    Uout=[Uout0|Uout1], Lout=[Lout0|Lout1],
+    init_ng(Ulim,Llim,Prev,UIn,LIn,Next0,Uout0,Lout0),
+    rm_null(Next0,Next1),
+    compgen(~(GN-1),Next1,UIs,LIs,Next,Ulim,Llim,Uout1,Lout1,
+	NNodes,Node,Turn,~(Count+1)).
+
+compgen(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,Turn,Count)
+	:- GN > 0, Count =:= 500 |                 % Count: share at 1/500
+    partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,Turn).
+
+compgen(GN,Prev,_,_,Next,_,_,Uout,Lout,_,_,_,_) :- GN =:= 0 |
+    Uout=[], Lout=[], Prev = Next.
+
+
+partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,0) :-
+	Node mod 2 =:= 0, Node+1 < NNodes |
+    own(Prev,0,Num), Lout=[Num|Lout1], LIn0=[LNum|LIs],
+    comm_with_low(Num,LNum,Prev,LIs,Lout1,Ulim,Llim,
+	NewPrev,NewLIs,NewLout,NewLlim),
+    compgen(GN,NewPrev,UIn0,NewLIs,Next,Ulim,NewLlim,Uout,NewLout,
+	NNodes,Node,1,0).
+
+partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,0) :-
+	Node mod 2 =:= 1, Node-1 >= 0 |
+    own(Prev,0,Num), Uout=[Num|Uout1], UIn0=[UNum|UIs],
+    comm_with_up(Num,UNum,Prev,UIs,Uout1,Ulim,Llim,
+	NewPrev,NewUIs,NewUout,NewUlim),
+    compgen(GN,NewPrev,NewUIs,LIn0,Next,NewUlim,Llim,NewUout,Lout,
+	NNodes,Node,1,0).
+
+partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,1) :-
+	Node mod 2 =:= 1, Node+1 < NNodes |
+    own(Prev,0,Num), Lout=[Num|Lout1], LIn0=[LNum|LIs],
+    comm_with_low(Num,LNum,Prev,LIs,Lout1,Ulim,Llim,
+	NewPrev,NewLIs,NewLout,NewLlim),
+    compgen(GN,NewPrev,UIn0,NewLIs,Next,Ulim,NewLlim,Uout,NewLout,
+	NNodes,Node,0,0).
+
+partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,1) :-
+	Node mod 2 =:= 0, Node-1 >= 0 |
+    own(Prev,0,Num), Uout=[Num|Uout1], UIn0=[UNum|UIs],
+    comm_with_up(Num,UNum,Prev,UIs,Uout1,Ulim,Llim,
+	NewPrev,NewUIs,NewUout,NewUlim),
+    compgen(GN,NewPrev,NewUIs,LIn0,Next,NewUlim,Llim,NewUout,Lout,
+	NNodes,Node,0,0).
+
+otherwise.
+partner(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,Turn0) :-
+    Turn := (Turn0 + 1) mod 2,
+    compgen(GN,Prev,UIn0,LIn0,Next,Ulim,Llim,Uout,Lout,NNodes,Node,Turn,0).
+
+
+own([],            T,Num) :- T=Num.
+own([e(_,List)|Es],T,Num) :- length(List,N), own(Es,~(T+N),Num).
+
+comm_with_low(Num,LNum,Prev,LIs,Lout,Ulim,Llim,NewPrev,NewLIs,NewLout,NewLlim)
+	:- Num >= LNum |                                               % give
+    Half := (Num+LNum)/2,
+    share(0,Half,Prev,Llim,UP,LOW,B), LIs=NewLIs,
+    Height:=B-Ulim,
+    check_height(Height,~(B-1),B,Prev,NewPrev,UP,LOW,Llim,~(Llim+1),NewLlim,
+	Lout,NewLout).
+
+comm_with_low(Num,LNum,Prev,[m(Y,Others)|Ms],Lout,Ulim,Llim,
+	NewPrev,NewLIs,NewLout,NewLlim)	:- Num <  LNum |               % take
+    NewLlim:=Y, append(Prev,Others,NewPrev), NewLIs=Ms, NewLout=Lout.
+
+comm_with_up(Num,UNum,Prev,UIs,Uout,Ulim,Llim,NewPrev,NewUIs,NewUout,NewUlim)
+	:- Num > UNum |                                                % give
+    Half := (Num+UNum)/2,
+    share(0,Half,Prev,Llim,UP,LOW,B), UIs=NewUIs,
+    Height:= Llim-B+1,
+    check_height(Height,B,~(B-1),Prev,NewPrev,LOW,UP,Ulim,~(Ulim-1),NewUlim,
+	Uout,NewUout).
+
+comm_with_up(Num,UNum,Prev,[m(Y,Others)|Ms],Uout,Ulim,Llim,
+	NewPrev,NewUIs,NewUout,NewUlim)	:- Num =<  UNum |              % take
+    NewUlim:=Y, append(Others,Prev,NewPrev), NewUIs=Ms, NewUout=Uout.
+
+
+share(T0,Half,[],          Lim,UP,LOW,B) :- true |
+    UP=[], LOW=[], B:=Lim+1.
+
+share(T0,Half,[e(Y,Xs)|Es],Lim,UP,LOW,B) :- T0 >= Half |
+    UP=[], LOW=[e(Y,Xs)|Es], B:=Y.
+
+share(T0,Half,[e(Y,Xs)|Es],Lim,UP,LOW,B) :- T0 <  Half |
+    length(Xs,L), T:=T0+L, UP=[e(Y,Xs)|UP1], share(T,Half,Es,Lim,UP1,LOW,B).
+
+check_height(Height,B,Y,Prev,NewPrev,Mine,Others,Mylim,Slim,NewUlim,
+	Out,NewOut) :- Height >= 10 |                     % 10: minimum height
+    NewPrev=Mine, NewUlim:=B, Out=[m(Y,Others)|NewOut].
+
+check_height(Height,B,Y,Prev,NewPrev,Mine,Others,Mylim,Slim,NewUlim,
+	Out,NewOut) :- Height <  10 |                     % 10: minimum height
+    NewPrev=Prev, NewUlim:=Mylim, Out=[m(Slim,[])|NewOut].
+
+
+rm_null([],          CS) :- CS=[].
+rm_null([e(_,[])|Ds],CS) :- rm_null(Ds,CS).
+rm_null([e(N,[X|Xs])|Ds],CS) :- CS=[e(N,[X|Xs])|CS1], rm_null(Ds,CS1).
+
+
+init_ng(Ulim,Llim,[],              UIn,LIn,Next,Uout,Lout) :-
+    Uout=[], fin_ng(Ulim,Llim,LIn,[],UIn,[],[],Next,Lout).
+
+init_ng(Ulim,Llim,[e(Y0,[X0|Xs0]),e(Y1,[X1|Xs1])|Ps],UIn,LIn,Next,Uout,Lout) :-
+	Ulim =:= Y0, Ulim+1 =:= Y1 |
+    Xdec0:=X0-1, Xinc0:=X0+1, C0=[Xinc0], UL0=[X0,Xinc0],
+    rowgen(Xdec0,Xs0,C0,UL0,CY0,ULY0), Uout=ULY0,
+    Xdec1:=X1-1, Xinc1:=X1+1, C1=[Xinc1], UL1=[X1,Xinc1],
+    rowgen(Xdec1,Xs1,C1,UL1,CY1,ULY1),
+    nextgen(UIn,CY0,[X0|Xs0],Y1,Ps,ULY0,CY1,ULY1,[X1|Xs1],Next,Llim,LIn,Lout).
+
+init_ng(Ulim,Llim,[e(Y0,[X0|Xs0]),e(Y1,[X1|Xs1])|Ps],UIn,LIn,Next,Uout,Lout) :-
+	Ulim =:= Y0, Ulim+2 =:= Y1 |
+    Xdec0:=X0-1, Xinc0:=X0+1, C0=[Xinc0], UL0=[X0,Xinc0],
+    rowgen(Xdec0,Xs0,C0,UL0,CY0,ULY0), Uout=ULY0,
+    nextrow(Ulim,[],UIn,CY0,[X0|Xs0],NCY), Next=[NCY|Next0],
+    Xdec1:=X1-1, Xinc1:=X1+1, C1=[Xinc1], UL1=[X1,Xinc1],
+    rowgen(Xdec1,Xs1,C1,UL1,CY1,ULY1),
+    nextgen([],ULY0,[],Y1,Ps,[],CY1,ULY1,[X1|Xs1],Next0,Llim,LIn,Lout).
+
+init_ng(Ulim,Llim,[e(Y0,[X0|Xs0]),e(Y1,[X1|Xs1])|Ps],UIn,LIn,Next,Uout,Lout) :-
+	Ulim =:= Y0, Ulim+2  <  Y1 |
+    Xdec0:=X0-1, Xinc0:=X0+1, C0=[Xinc0], UL0=[X0,Xinc0],
+    rowgen(Xdec0,Xs0,C0,UL0,CY0,ULY0), Uout=ULY0,
+    nextrow(Ulim,[],UIn,CY0,[X0|Xs0],NCY),
+    nextrow(~(Ulim+1),[],[],ULY0,[],NLY), Next=[NCY,NLY|Next0],
+    Xdec1:=X1-1, Xinc1:=X1+1, C1=[Xinc1], UL1=[X1,Xinc1],
+    rowgen(Xdec1,Xs1,C1,UL1,CY1,ULY1),
+    nextgen([],[],[],Y1,Ps,[],CY1,ULY1,[X1|Xs1],Next0,Llim,LIn,Lout).
+
+
+init_ng(Ulim,Llim,[e(Y,[X|Xs])],UIn,LIn,Next,Uout,Lout) :- Ulim =:= Y |
+    Xdec:=X-1, Xinc:=X+1, C=[Xinc], UL=[X,Xinc],
+    rowgen(Xdec,Xs,C,UL,CY,ULY), Uout=ULY,
+    fin_ng(Ulim,Llim,LIn,UIn,CY,[X|Xs],ULY,Next,Lout).
+
+init_ng(Ulim,Llim,[e(Y,[X|Xs])|Ps],UIn,LIn,Next,Uout,Lout) :-
+	Ulim < Y |
+    Uout=[],
+    nextgen([],[],[],Ulim,[e(Y,[X|Xs])|Ps],[],UIn,[],[],Next,Llim,LIn,Lout).
+
+
+nextgen(UY0,UY1,OldUY,Crow,[e(Y,[X|Xs])|Ps],CY0,CY1,ULY0,OldCY0,Next,
+	Llim,LIn,Lout) :- Crow+1 =:= Y |
+                                                % upper row
+    nextrow(~(Crow-1),UY0,UY1,ULY0,OldUY,NUY), Next=[NUY|Next0],
+                                                % current row
+    Xdec:=X-1, Xinc:=X+1, C=[Xinc], UL=[X,Xinc], rowgen(Xdec,Xs,C,UL,CY,ULY),
+    nextgen(CY0,CY1,OldCY0,Y,Ps,ULY0,CY,ULY,[X|Xs],Next0,Llim,LIn,Lout).
+
+nextgen(UY0,UY1,OldUY,Crow,[e(Y,[X|Xs])|Ps],CY0,CY1,ULY0,OldCY0,Next,
+	Llim,LIn,Lout) :- Crow+2 =:= Y |
+                                                % previous upper row
+    nextrow(~(Crow-1),UY0,UY1,ULY0,OldUY,NUY),
+                                                % previous current row
+    nextrow(Crow,[],CY0,CY1,OldCY0,NCY), Next=[NUY,NCY|Next0],
+                                                % current row
+    Xdec:=X-1, Xinc:=X+1, C=[Xinc], UL=[X,Xinc], rowgen(Xdec,Xs,C,UL,CY,ULY),
+    nextgen([],ULY0,[],Y,Ps,[],CY,ULY,[X|Xs],Next0,Llim,LIn,Lout).
+
+nextgen(UY0,UY1,OldUY,Crow,[e(Y,[X|Xs])|Ps],CY0,CY1,ULY0,OldCY0,Next,
+	Llim,LIn,Lout) :- Crow+2 < Y |
+                                                % previous upper row
+    nextrow(~(Crow-1),UY0,UY1,ULY0,OldUY,NUY),
+                                                % previous current row
+    nextrow(Crow,[],CY0,CY1,OldCY0,NCY),
+                                                % previous lower row
+    nextrow(~(Crow+1),[],[],ULY0,[],NLY), Next=[NUY,NCY,NLY|Next0],
+                                                % current row
+    Xdec:=X-1, Xinc:=X+1, C=[Xinc], UL=[X,Xinc], rowgen(Xdec,Xs,C,UL,CY,ULY),
+    nextgen([],[],[],Y,Ps,[],CY,ULY,[X|Xs],Next0,Llim,LIn,Lout).
+
+nextgen(UY0,UY1,OldUY,Crow,[],CY0,CY1,ULY0,OldCY0,Next, Llim,LIn,Lout) :-
+                                                % (previous) upper row
+    nextrow(~(Crow-1),UY0,UY1,ULY0,OldUY,NUY), Next=[NUY|Next0],
+                                                % do with LIn & Lout
+    fin_ng(Crow,Llim,LIn,CY0,CY1,OldCY0,ULY0,Next0,Lout).
+
+fin_ng(Crow,Llim,LIn,CY0,CY1,OldCY0,ULY0,Next,Lout) :- Crow+1  <  Llim |
+                                                % (previous) current row
+    nextrow(Crow,[],CY0,CY1,OldCY0,NCY),
+                                                % (previous) lower row
+    nextrow(~(Crow+1),[],[],ULY0,[],NLY),
+                                                % Llim row
+    Lout=[], nextrow(Llim,[],[],LIn,[],NlimY), Next=[NCY,NLY,NlimY].
+
+fin_ng(Crow,Llim,LIn,CY0,CY1,OldCY0,ULY0,Next,Lout) :- Crow+1 =:= Llim |
+                                                % (previous) current row
+    nextrow(Crow,[],CY0,CY1,OldCY0,NCY),
+                                                % (previous) lower row
+    Lout=[], nextrow(Llim,[],LIn,ULY0,[],NLY), Next=[NCY,NLY].
+
+fin_ng(Crow,Llim,LIn,CY0,CY1,OldCY0,ULY0,Next,Lout) :- Crow   =:= Llim |
+                                                % (previous) current row
+    nextrow(Crow,LIn,CY0,CY1,OldCY0,NCY), Next=[NCY],
+                                                % (previous) lower row
+    Lout=ULY0.
+
+
+rowgen(RightX,[X|Xs],C0,UL0,CY,ULY) :- X =:= RightX |
+    Xdec:=X-1, Xinc:=X+1, C=[X,Xinc | C0], UL=[X,X,Xinc | UL0],
+    rowgen(Xdec,Xs,C,UL,CY,ULY).
+rowgen(RightX,[X|Xs],C0,UL0,CY,ULY) :- X  <  RightX |
+    Xdec:=X-1, Xinc:=X+1, C=[Xinc,RightX | C0], UL=[X,Xinc,RightX | UL0],
+    rowgen(Xdec,Xs,C,UL,CY,ULY).
+rowgen(RightX,[],    C0,UL0,CY,ULY) :- true |
+    C=[RightX | C0], UL=[RightX | UL0], C=CY, UL=ULY.
+
+
+%nextrow(Crow,Y0,Y1,Y2,OldY,NUY) :- NUY=[Crow,Y0,Y1,Y2,OldY].
+
+%                               Crow,Y0,Y1,Y2: order  OldY,SY: reverse-order
+nextrow(Crow,Y0,Y1,Y2,OldY,NUY) :-
+    msort3(Y0,Y1,Y2,[],SY), row(1048578,0,SY,OldY,[],NR),
+    reverse(NR,RNR), NUY=e(Crow,RNR).
+
+msort3([],Y1,Y2,S0,SY) :- msort2(Y1,Y2,S0,SY).
+msort3(Y0,[],Y2,S0,SY) :- msort2(Y0,Y2,S0,SY).
+msort3(Y0,Y1,[],S0,SY) :- msort2(Y0,Y1,S0,SY).
+
+msort3([Y0|Ys0],[Y1|Ys1],[Y2|Ys2],S0,SY) :- Y0=<Y1, Y0=<Y2 |
+    S=[Y0|S0], msort3(Ys0,[Y1|Ys1],[Y2|Ys2],S,SY).
+msort3([Y0|Ys0],[Y1|Ys1],[Y2|Ys2],S0,SY) :- Y1=<Y0, Y1=<Y2 |
+    S=[Y1|S0], msort3([Y0|Ys0],Ys1,[Y2|Ys2],S,SY).
+msort3([Y0|Ys0],[Y1|Ys1],[Y2|Ys2],S0,SY) :- Y2=<Y0, Y2=<Y1 |
+    S=[Y2|S0], msort3([Y0|Ys0],[Y1|Ys1],Ys2,S,SY).
+
+msort2([],Y1,S0,SY) :- reverse(Y1,RY), append(RY,S0,S), S=SY.
+msort2(Y0,[],S0,SY) :- reverse(Y0,RY), append(RY,S0,S), S=SY.
+
+msort2([Y0|Ys0],[Y1|Ys1],S0,SY) :- Y0=<Y1 |
+    S=[Y0|S0], msort2(Ys0,[Y1|Ys1],S,SY).
+otherwise.
+msort2([Y0|Ys0],[Y1|Ys1],S0,SY) :- Y1=<Y0 |
+    S=[Y1|S0], msort2([Y0|Ys0],Ys1,S,SY).
+
+
+row(X,N,[],     OldY,S0,NR) :-  rule(N,X,OldY,_,S0,S), NR=S.
+row(X,N,[Y|Ys],OldY,S0,NR) :- X=:=Y | row(X,~(N+1),Ys,OldY,S0,NR).
+row(X,N,[Y|Ys],OldY,S0,NR) :- X > Y | 
+    rule(N,X,OldY,OY,S0,S), row(Y,1,Ys,OY,S,NR).
+
+rule(2,X,OldY,OY,S0,S) :- rule2(X,OldY,OY,S0,S).
+rule(3,X,OldY,OY,S0,S) :- S=[X|S0], OldY=OY.
+otherwise.
+rule(_,_,OldY,OY,S0,S) :- OY=OldY, S=S0.
+
+rule2(X,[],        OY,S0,S) :- OY=[], S=S0.
+rule2(X,[Old|Olds],OY,S0,S) :- X  <  Old | rule2(X,Olds,OY,S0,S).
+rule2(X,[Old|Olds],OY,S0,S) :- X  >  Old | OY=[Old|Olds], S=S0.
+rule2(X,[Old|Olds],OY,S0,S) :- X =:= Old | OY=Olds, S=[X|S0].
+
+
+append([],   Y,Z) :- true | Y=Z.
+append([A|X],Y,Z0) :- true | Z0=[A|Z], append(X,Y,Z).
+
+reverse(L,Lrev) :- true | rev1(L,[],Lrev).
+rev1([],   S,Lrev) :- true | Lrev=S.
+rev1([A|L],S,Lrev) :- true | rev1(L,[A|S],Lrev).
+
+length(L,N) :- true | length(L,0,N).
+length([],    N0,N) :- true | N:= N0.
+length([_|L0],N0,N) :- true | N1:=N0+1, length(L0,N1,N).

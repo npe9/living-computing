@@ -1,0 +1,66 @@
+\documentstyle[12pt]{jarticle}
+\pagestyle{empty}
+\begin{document}
+
+\parindent0pt
+
+\hbox to\hsize{\hfil '96.7.9}
+
+\hbox to\hsize{\hfil 藤田}
+
+\section*{C-MGTPマクロ}
+
+MG節の右辺の選言に次のような``[ ]''づきの記法を許す．
+
+\[
+A_1,\ldots,A_n\rightarrow
+[ C_{11},\ldots,C_{1{p_1}} ], B_1; \ldots ;
+[ C_{m1},\ldots,C_{1{p_m}} ], B_m.
+\]
+
+この論理的な意味は，単に次のような
+選言中にネストした連言である．
+
+\[
+A_1,\ldots,A_n\rightarrow
+( C_{11},\ldots,C_{1{p_1}},B_1 ); \ldots ;
+( C_{m1},\ldots,C_{1{p_m}},B_m ).
+\]
+
+しかしながら，このマクロの意図は，
+$C_{j1},\ldots,C_{j{p_j}}$がモデル候補$M$のもとで成立しない，
+すなわち，$M\not\models C_{j1},\ldots,C_{j{p_j}}$
+である場合に特に行いたい操作のためである．
+
+その操作とは，
+$C_{j1},\ldots,C_{j{p_j}}$
+がモデル候補$M$のもとで成立するときのみ
+$B_j$をモデル拡張候補として許す，
+言い換えれば，
+$C_{j1},\ldots,C_{j{p_j}}$
+が成立しないときには
+$B_j$を選言$B_1,\ldots,B_n$から除く，
+という操作である．
+
+例えば，
+\[
+p(X) \rightarrow [X\ne a], q(a) ; [X\ne b], q(b).
+\]
+において，前件$p(X)$で$X=a$に束縛された場合は，
+\[
+p(X) \rightarrow q(b).
+\]
+$X=b$に束縛された場合は，
+\[
+p(X) \rightarrow q(a).
+\]
+と等価な節であるかのように扱われる．
+
+(当然ながら，$X\ne a \wedge X\ne b$の場合には，
+\[
+p(X) \rightarrow q(a) ; q(b).
+\]
+と等価である．
+)
+
+\end{document}

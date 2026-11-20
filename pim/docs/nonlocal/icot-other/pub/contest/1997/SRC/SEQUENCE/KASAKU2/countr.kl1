@@ -1,0 +1,36 @@
+%%
+%% Rank Counter
+%%
+
+:- module solitaire_count_r.
+
+count_ranks(In, NU):- true |
+	count_ranks(In, NU, 0,0,0,0,0,0,0,0,0,0,0,0,0).
+count_ranks([],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- true |
+ NU = [X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA].
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=2 |
+ NX2 := X2+1,count_ranks(R, NU, NX2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=3 |
+ NX3 := X3+1,count_ranks(R, NU, X2,NX3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=4 |
+ NX4 := X4+1,count_ranks(R, NU, X2,X3,NX4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=5 |
+ NX5 := X5+1,count_ranks(R, NU, X2,X3,X4,NX5,X6,X7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=6 |
+ NX6 := X6+1,count_ranks(R, NU, X2,X3,X4,X5,NX6,X7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=7 |
+ NX7 := X7+1,count_ranks(R, NU, X2,X3,X4,X5,X6,NX7,X8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=8 |
+ NX8 := X8+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,NX8,X9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=9 |
+ NX9 := X9+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,NX9,X10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=10 |
+ NX10 := X10+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,X9,NX10,X11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=11 |
+ NX11 := X11+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,NX11,X12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=12 |
+ NX12 := X12+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,NX12,X13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=13 |
+ NX13 := X13+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,NX13,XA).
+count_ranks([X|R],NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA):- X/16=:=14 |
+ NXA := XA+1,count_ranks(R, NU, X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,NXA).

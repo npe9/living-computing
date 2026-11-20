@@ -1,0 +1,50 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<HEAD>
+<TITLE> 準群問題における制約伝搬</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 準群問題における制約伝搬">
+<meta name="keywords" value="mgtp-lec">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html104 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html102 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html98 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../../../PICS/previous_motif.gif"></A>   <A NAME=tex2html106 HREF="node1.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../../../../../PICS/contents_motif.gif"></A>      <BR>
+<B> Next:</B> <A NAME=tex2html105 HREF="node7.html"> 制約MGTP</A>
+<B>Up:</B> <A NAME=tex2html103 HREF="node4.html"> 準群問題</A>
+<B> Previous:</B> <A NAME=tex2html99 HREF="node5.html"> 定義(準群問題)</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00222000000000000000> 準群問題における制約伝搬</A></H2>
+<P>
+準群問題において必要とされるべき制約伝搬についてまとめよう。
+<P>
+図<A HREF="node6.html#rules"><IMG ALIGN=BOTTOM ALT="gif" SRC="../../../../../../PICS/cross_ref_motif.gif"></A>は、
+QG5において必要とされる制約伝搬ルールを前向き推論形式で記述したものである。
+ルール(a)は、任意の <b>x, y, a, b</b> に対して、
+<b>yx=a, ay=b</b> が成り立つならば、<b>by</b> は <b>x</b> でなければならないことを
+表しており、(b)(c)はルール(a)の対偶をとることによって得られる。
+これらのルールは負の情報からの制約伝搬を行なう際に必要とされるが、
+その意味するところは直観的に明らかであろう。
+また、ルール(d)(g)は、準群の定義によりルール(a)より導かれるものである。
+ルール(e)(f)はルール(d)の、またルール(h)(i)はルール(g)の対偶
+としてそれぞれ導かれるものである。
+<P>
+オリジナルのMGTPでは、ある枝における探索の終了は、
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img20.gif"><P>
+という棄却ルールによって検出していたので、
+負の情報を用いた候補の枝刈りを事前に行なうことができず、
+結果として、過剰に不必要な枝を探索していた。
+しかし、実際には負の情報から制約を伝搬させることによって、
+あらかじめ有り得ない候補を枝刈りしておくことができる。
+<P>
+<P><A NAME=68>&#160;</A><A NAME=rules>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img21.gif">
+<BR><STRONG>Figure:</STRONG> QG5において必要とされる制約伝搬ルール<BR>
+<P>
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Yasuyuki Shirai <BR>
+1997年10月06日(月) 22時34分43秒 JST</I>
+</ADDRESS>
+</BODY>

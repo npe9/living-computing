@@ -1,0 +1,148 @@
+﻿<HEAD>
+<TITLE> 制約MGTP</TITLE>
+</HEAD>
+<BODY bgcolor = "white">
+<BR> <HR> <P>
+<H1>制約 MGTP</H1>
+<P>
+
+<BR> <HR>
+<UL> 
+<LI> <A NAME=tex2html118 HREF="#char"> 制約MGTPの特徴</A>
+<LI> <A NAME=tex2html119 HREF="#algorithm"> アルゴリズム</A>
+<LI> <A NAME=tex2html120 HREF="#rules"> QG5.5に対するCMGTPのルール</A>
+</UL>
+<BR> <HR>
+<P>
+
+<!-- ******************************************************************** -->
+
+<H2><A NAME=char> 制約MGTPの特徴</A></H2>
+<P>
+MGTPによって準群問題を解くことの利点は、
+問題が一階述語形式で非常に簡潔に書けることである。
+たとえばQG5の場合は10個のMG節として表現できる。
+以下にQG5のMGTPでの記述例を示す。
+<P>
+<center><img src="image/mg.gif" alt="IMAGE:description in CMGTP"></center>
+<P>
+一方で、先にも述べたように、MGTPは前向き推論に基づくこと、
+また正アトムのみがモデルとして用いられることから、
+負の制約伝搬をすることができないという欠点も持っている。
+CMGTPではこれらの欠点を補うため、負アトムによる表現を許し、
+それらによる候補の枝刈り機能を備えている。
+<P>
+
+<BR> <HR>
+<P>
+
+<!-- ******************************************************************** -->
+<H2><A NAME=algorithm> アルゴリズム</A></H2>
+<P>
+以下にCMGTPのモデル生成プロセスを示す。
+
+<P>
+<center><img src="image/process.gif" alt="IMAGE:CMGTP processes"></center>
+<P>
+
+ここで、<b>D</b> はモデル拡張候補と呼ばれ、
+<b>M</b> はモデル候補と呼ばれる。
+これらは、OTTERにおける ``to be given list''と ``has been given list'' 
+にそれぞれ対応するものである。
+<P>
+CMGTPのモデル生成プロセスは、MGTPのモデル生成プロセスに2つの
+<b>Ref</b> プロセスと2つの <b>Simpl</b> プロセスを新たに付け加えたものである。
+MGTPのアルゴリズムについては [<A HREF="#FH91"></A>][<A HREF="#FHKF92"></A>] などを参照されたい。
+<P>
+CMGTPとMGTPの相違は、単位反駁(unit refutation)プロセスと
+単位簡約化(unit simplification)プロセスにある。
+単位反駁メカニズムにより、
+もし、<b>P</b> と 
+<b>¬P</b> が共に <b>M</b> にあれば、
+以下のように <b>false</b> が導出される。
+<P>
+<center><IMG SRC="image/ex1.gif" alt="IMAGE:unit refutation"></center><P>
+<P>
+また、もし <b>M</b> の中に ¬Pi (Pi) があり、また
+<b>D</b> に Pi (¬Pi) を含む選言が存在するならば、
+以下に示すような単位簡約化メカニズムによって
+Pi (¬Pi) はその選言から削除される。
+<P>
+
+<P>
+<P><center><IMG  SRC="image/ex2.gif" alt="IMAGE:unit simplification">
+</center><P>
+
+<P>
+単位簡約化の結果として <b>nil</b> (長さ 0 の選言) が
+生成されるときは、<b>false</b> が導出される。
+<P>
+<b>Ref</b>/2 と <b>Simpl</b>/2 は
+それぞれ上で述べたような単位反駁と単位簡約化を
+実行する関数である。
+
+すなわち Ref(U1,U2) は、アトムの集合 U1,U2 に対して
+あるアトム P∈U1, Q∈U2 があって、
+このとき P = ¬Q もしくは Q = ¬P が成り立つ時 <b>false</b> を
+返す。
+また、Simpl(U,D) は単位節の集合 <b>U</b> に含まれるアトムによって 
+選言の集合 <b>D</b> を simplify した結果を返すが、
+もしこの結果として <b>nil</b> が導出された時は、
+<b>Simpl</b> の結果として <b>false</b> を返す。
+<P>
+<b>Ref</b> や <b>Simpl</b> が <b>false</b> を返した時には、現在探索中の
+枝は <b>unsat</b> として終了 (terminate) する。
+容易にわかるように、アトムは長さ 1 の選言と見ることができるから、
+<b>Ref</b> は <b>Simpl</b> の特殊な形ともいえる。
+<P>
+オリジナルのMGTPに追加された単位反駁と単位簡約化のプロセスは
+以下の4つである。
+<P>
+<UL> 
+<LI> Ref({Δ},M)
+<LI> Ref(NewUnit,M∪{Δ})
+<LI> Simpl({Δ},D)
+<LI> Simpl(M∪{Δ},NewDisj)
+</UL> 
+<P>
+
+CMGTPがとる単位節優先戦略とこれらの関数により、
+任意のアトム P ∈ M  に対して、
+<b>P</b> と <b>¬P</b>が現在の <b>M</b> の中に共存しないこと、
+また、現在の <b>D</b> に含まれるすべての選言はすでに
+<b>M</b> 中のすべての単位節によって simplify されていることが保証される。
+<P>
+
+<BR> <HR>
+<P>
+
+<!-- ******************************************************************** -->
+
+<H2><A NAME=rules> QG5.5に対するCMGTPのルール</A></H2>
+<P>
+以下にQG5のオーダ5に対するCMGTPの入力節を示す。<P>
+<P><P>
+<center>
+<img src = "image/cmgtp-rules.gif" alt="IMAGE : CMGTP Rules">
+</center>
+<P><P>
+
+(CM1)から(CM5)はオリジナルのMGTPでのルールと同じである。
+(CM6)-(CM9)も同様に準群の定義と同型排除の
+ヒューリスティックスを表しているが、
+条件にあわない候補をあらかじめ否定モデルとして生成するルールに
+置き換えられていることに注意されたい。
+<P>
+
+そして、(CM10)-(CM18)はQG5での制約条件を表現したものとなっているが、
+これは、上で示した制約伝搬ルールそのものになっている。
+すなわち、準群問題において制約伝搬を
+行なうために必要なルールは
+CMGTPの入力節としてダイレクトに記述することが可能であり、
+この意味で、CMGTPは制約伝搬を記述するメタ言語と考えられる。
+<P>
+
+<BR> <HR>
+<A HREF="cmgtp.html">戻る</A><P>
+
+</BODY>

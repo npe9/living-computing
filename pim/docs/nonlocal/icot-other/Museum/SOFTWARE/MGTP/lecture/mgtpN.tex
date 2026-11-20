@@ -1,0 +1,1048 @@
+%\documentstyle[12pt,epsf]{jreport}
+%                                
+%\begin{document}
+%
+%\tableofcontents
+%\pagestyle{plain}
+
+\chapter{MGTP/Nマニュアル}
+
+本章では，MGTP/N のアルゴリズム概要を述べ操作説明を行なう．
+
+MGTP/N とは，証明対象領域をホーン問題のみに限定したモデル生成型定理証
+明器である．ホーン問題とは，ホーン節\footnote{後件アトムの数が高々1}の
+みからなる節集合のことである．MGTP/G にあった値域限定性は，特に課せら
+れない．
+
+MGTP/N には，SICStus Prolog 上で稼働する Prolog 版と PIM 上で稼働する 
+KL1 版がある．KL1 版には，内部記憶機構の違いから，モデル共有型とモデル
+分散型の二つのタイプがある．
+
+\section{MGTP/N の機能説明}
+
+\subsection{Prolog 版}
+Prolog 版は，システム核部分がコンパクト(A4 1ページ)であるのでユーザが
+容易に全貌を理解することができ，手を入れやすいという特徴がある．モデル
+候補やモデル拡張候補の格納は，全て Prolog の assert，retract 機能を使っ
+ているため，今後 Prolog の内部データベースへの参照・更新速度が向上すれ
+ば(例えば，インデックスアルゴリズムの改良により)，さらに推論速度が向上
+することが期待できる．
+
+また，前向き及び後向き包摂検査，ソーティング及び削除戦略の組込み，連言
+照合順の切替え，を指定することができる．
+
+\subsection{KL1 版}
+KL1 版は，PIM の能力を最大限に引き出すことを目指している．モデル候補及
+びモデル拡張候補の保持の違いにより，モデル共有型とモデル分散型の二つの
+タイプがある．モデル共有型では，モデル候補とモデル拡張候補の全体を各プ
+ロセッサが保持している．一方モデル分散型では，モデル候補とモデル拡張候
+補は，全プロセッサに分散して保持されており，各プロセッサは，その一部を
+保持しているのに過ぎない．
+
+モデル共有型では，包摂検査時の通信コストを低く抑えられ，結果として高い
+(計算)台数効果得ることができる．一方，
+モデル分散型では，包摂検査時の通信コストは高くなるものの，メモリ・スケー
+ラビリティ(領域台数効果)得ることができる．
+
+いずれも，前向き包摂検査を内蔵しており，削除戦略を組込むことができる．
+
+\section{MGTP/Nのアルゴリズム}
+
+本節では，逐次アルゴリズム，モデル共有型並列アルゴリズム，モデル分散型
+並列アルゴリズムについて述べる．なお，モデル共有型並列アルゴリズムにつ
+いてのさらに詳しい説明は，\cite{MGTPAND並列化}にある．
+
+\subsection{逐次アルゴリズム}
+
+図\ref{fig:MGTPNSeq}に逐次アルゴリズムを示す．ホーン節のみを扱うので，
+場合分けによる分岐は考慮されていない．本節で示すいずれの版もこのアルゴ
+リズムを元にしている．
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|l|}\hline
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 0123\= 0123\= 0123\= 0123\= 0123\= 0123\= 0123\= 0123  \kill
+{\tt (0)} \> Init: $MD[i] := C_{i}$ for $i = 1,\ldots,k$ 
+where $\{C_{1},C_{2},\ldots,C_{k}\} = \{C \mid (true \rightarrow C)\in S\}$ \\
+{\tt (1)} \> Init: $g := 1; s:= k;$ \\
+{\tt (2)} \> {\bf while} $g \leq s$ {\bf do begin}      \\
+{\tt (3)} \> \> {\bf foreach} $A_{1},\ldots,A_{n} \rightarrow C$ \\
+{\tt (4)} \> \> \> {\bf foreach} $(i_{1},\ldots,i_{n})$ s.t. 
+                $\forall j (1 \leq i_{j} \leq g)$ and
+                $\exists j (i_{j} = g)$ \\
+{\tt (5)} \> \> \> \> {\bf if} $\exists \sigma(\mbox{置換}) \forall j
+(MD[i_{j}]\sigma  = A_{j}\sigma \mbox{ and } C\sigma \mbox{ is new}) $
+{\bf then begin} \\
+{\tt (6)} \> \> \> \> \> $s := s+1; MD[s] := C\sigma;$ {\bf end}$;$ /* モデル拡張 */\\
+{\tt (7)} \> \> \> \> \> {\bf foreach} $A_{1},\ldots,A_{m} \rightarrow false$ {\bf do} \\
+{\tt (8)} \> \> \> \> \> \> {\bf foreach} $(i_{1},\ldots,i_{m})$ s.t. 
+                $\forall j (1 \leq i_{j} \leq s)$ and
+                $\exists j (i_{j} = s)$ {\bf do} \\
+{\tt (9)} \> \> \> \> \> \> \> {\bf if} $\exists \sigma'(置換) \forall j (MD[i_{j}]\sigma' = A_{j}\sigma')$ {\bf then ret
+
+urn} (unsat)$;$\\
+\> \> \> \> \> \> \> \> /* モデル棄却 */\\
+{\tt (10)} \> \> \> \> {\bf end}$;$ \\
+{\tt (11)} \> \> $g := g+1;$ \\
+{\tt (12)} \> {\bf end} $;$ \\
+{\tt (13)} \> {\bf return} (sat)$;$
+\end{tabbing}
+\end{minipage} \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{fig:MGTPNSeq} MGTP/N の逐次アルゴリズム}
+\end{figure}
+
+ここで，$MD$ はモデル拡張の適用によって生成された(後件)アトム
+を保持するための配列であり，$MD[1]$ から
+$MD[g-1]$までがモデル候補を，$MD[g]$ から $MD[s]$ までがモデル拡張候補
+(モデル候補に付加されるべき生成アトムの集合)を表す．
+モデル候補は空集合，モデル拡張候補は正節の後件アトムの集合で初期化され
+る ({\tt (0)}，{\tt (1)})．
+
+{\tt (3)} から {\tt (6)} までがモデル拡張に対応している．各混合節の前件部
+がモデル候補で充足されているか否かを判定し ({\tt (4)} と{\tt (5)} の条件
+の前半)，充足可能であれば後件部の包摂テストを行ない ({\tt (5)} の条件の
+後半)，包摂されなければ$MD$に加える ({\tt (6)})．
+
+{\tt (5)} の条件部中の $C\sigma$ is new は，
+生成アトム $C\sigma$ が $MD$ のどの要素にも包摂されない
+($\not\hspace{-1ex}\exists\sigma'(\mbox{置換})C\sigma = MD[i]\sigma'
+\mbox{ for }\forall i (1\leq i \leq s)$)
+ことを表す．
+包摂テストについては，本論文ではこの前方包摂テストのみを扱い，
+$C\sigma$ が $MD$ の要素を包摂している ($\exists i (1\leq i \leq s)
+\exists\sigma'(\mbox{置換}) C\sigma\sigma' =MD[i]$) かを調べる後方包摂テ
+ストは扱わない\footnote{$C\sigma$ に包摂される $MD[i]$ を消去しなければな
+らないので，データの一貫性を保つ必要が生じ，前方包摂テストより並列化は難
+しい．また，破壊代入を許していないKL1では，消去の際にコピーが必要にな
+る．}．
+
+その後の{\tt (7)}から{\tt (9)}がモデル棄却に対応する．各負節の前件部
+がモデル候補またはモデル拡張候補で充足されているかを判定し，充足されて
+いれば証明手続きは終了する．
+
+\subsection{モデル共有型並列アルゴリズム}
+\newcounter{MGTPNsubsubsection}[subsection]
+\newcommand{\MGTPNsubsubsection}[1]
+{\addtocounter{MGTPNsubsubsection}{1}\vspace{1ex}\noindent
+{\bf\dg \thesubsection.\theMGTPNsubsubsection ~#1}\vspace{0.5ex}}
+
+\MGTPNsubsubsection{ロックとアンロックを用いたアルゴリズム}
+
+図 \ref{fig:MGTPNSeq} の逐次アルゴリズムの並列化で最も簡単な方法は 
+{\bf while} ループの一つずつを並列に実行することである．ループ内部では，
+先ず混合節の連言照合({\tt (4)}と{\tt (5)}の前半)，包摂テスト({\tt (5)}
+の後半)，$MD$ の更新{\tt (6)}，そして負節の連言照合({\tt (7)}から{\tt
+  (9)})が行なわれる．
+
+我々は，これを混合節の連言照合を行なう生成プロセス (G プロセス) と負節
+の連言照合を行なう棄却テストプロセス (T プロセス) の二種のプロセス連結
+している generate-and-test 型計算と捉えてループ内部の並列アルゴリズム
+を考案した．
+
+ここで，問題となる点は，並列に行なわれる包摂テストと $MD$ の更新である．
+包摂テストおよび $MD$ の更新は競合的に行なわれるので，ある種のロック機構
+が必要となる．
+
+そこで，Gプロセスが新たに生成したアトムを一旦蓄えておくバッファを設け
+ることにした．図 \ref{fig:MGTPNPar} にそのバッファ($Buf$で表現)を用いた並
+列アルゴリズムを示す．$Buf$ を介してGプロセス群が生成したアトムはT プロ
+セス群に送られる．G プロセスは{\tt (G0)} から{\tt (G6)} までを，T プロセス
+は{\tt (T0)} から{\tt (T8)} までを繰り返す．G プロセスによって $Buf$ に生成
+アトムが入れられ ({\tt (G5)})，T プロセスによって $Buf$ からそれらが取り出
+される({\tt (T0)})．
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|l|}\hline
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (0)(1)} \> \> 図\ref{fig:MGTPNSeq}{\tt (0)(1)}と同じ \\
+{\tt (1)} \> \> 
+{\tt (2)} \> Init: $Buf := \emptyset; b := 1;$ 
+\end{tabbing} \vspace{1ex} 
+\end{minipage} \\ %\hline
+{\bf process} G \\
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (G0)} \> {\bf lock} $g; g' := g; g := g+1$; {\bf unlock} $g$;\\
+{\tt (G1)} \> {\bf foreach} $A_{1},\ldots,A_{n} \rightarrow C$ {\bf do }\\
+{\tt (G2)} \> \> {\bf foreach} $(i_{1},\ldots,i_{n})$ s.t. 
+$\forall j (1 \leq i_{j} \leq g') \;\wedge\;\exists j (i_{j} = g')$ {\bf do} \\
+{\tt (G3)} \> \> \> {\bf if} $\exists \sigma \forall j
+(MD[i_{j}]\sigma = A_{j}\sigma) $\\
+{\tt (G4)} \> \> \> \> {\bf then begin} {\bf lock} $Buf;$ \\
+{\tt (G5)} \> \> \> \> $Buf[b] := C\sigma; b := b +1;$ \\
+{\tt (G6)} \> \> \> \> {\bf unlock} $Buf;$ {\bf end};
+\end{tabbing} \vspace{1ex} 
+\end{minipage} \\%\hline
+{\bf process} T \\
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (T0)} \> {\bf lock} $Buf; \delta := Buf[b]; b := b-1;$ {\bf unlock} $Buf$;\\
+{\tt (T1)} \> {\bf lock} $MD$;\\
+{\tt (T2)} \> {\bf if} $\delta \mbox{ is new} $ {\bf then begin} \\
+{\tt (T3)} \> \> $s := s+1; MD[s] := \delta$; s' := s; {\bf unlock} $MD$; \\
+{\tt (T4)} \> \> {\bf foreach} $A_{1},\ldots,A_{m} \rightarrow false$ {\bf do} \\
+{\tt (T5)} \> \> \> {\bf foreach} $(i_{1},\ldots,i_{m})$ s.t. 
+$\forall j (1 \leq i_{j} \leq s') \;\wedge\;\exists j (i_{j} = s')$ {\bf do} \\
+{\tt (T6)} \> \> \> \> {\bf if} $\exists \sigma' \forall j (
+MD[i_{j}]\sigma' = A_{j}\sigma')$ {\bf then} \\
+{\tt (T7)} \> \> \> \> \> {\bf return} (unsat)$;$\\
+{\tt (T8)} \> {\bf end else} {\bf unlock} $MD$
+\end{tabbing}
+\end{minipage} \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{fig:MGTPNPar} MGTP/N の並列アルゴリズム (lock\&unlock)}
+\end{figure}
+
+複数の G プロセスの排他制御は $g$ に対するロックにより行なわれる({\tt (G0)})．
+{\tt (G1)} から {\tt (G3)} までの手続きは，逐次と変わらない．同様に{\tt
+(T4)} から{\tt (T6)} の処理も逐次と全く同じである．
+
+包摂テストは，T プロセスで行なわれる ({\tt (T2)})．$MD$ は時々刻々更新さ
+れていくので，包摂テストを完全に行なうためには，$MD$ をロックする必要が
+ある．$MD$ をロックした ({\tt (T1)}) 後，$Buf$ から取り出したアトム
+$\delta$ の包摂テストを行ない ({\tt (T2)})，包摂されなければこれを 
+$MD$ に登録し，ロックを解除する ({\tt (T3)})．
+
+\MGTPNsubsubsection{マスタープロセスを用いたアルゴリズム}
+
+このアルゴリズムに種々の検討結果を反映させたものが
+図\ref{fig:MGTPNSha}である．
+このアルゴリズム
+は，Gプロセス，Tプロセスに加えてマスター(M)プロセス
+の三種からなっている．これらのプロセスの論理的結合関係を示したのが
+図\ref{fig:MGTPNPara}である．
+中央のMプロセスを介して上部のGプロセス群と下部のTプロセス群が連結している．
+
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|l|}\hline
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (0)} \> 図\ref{fig:MGTPNSeq}{\tt (0)}と同じ \\
+{\tt (1)} \> Init: $s:= k;$ 
+\end{tabbing} \vspace{1ex} 
+\end{minipage} \\ 
+
+{\bf process} M \\
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (M0)} \> Init: $g := 1; g' := 1; b' := 1$ \\
+{\tt (M1)} \> $MGC$ {\bf !} $\{g,New_{g}\}$; $g := g + 1$;
+{\bf goto} {\tt (M1)};\\
+{\tt (M2)} \> {\bf while} $New_{g'}[b'] = close$ {\bf then begin} \\
+{\tt (M3)} \> \> $g' := g' +1; b' := 1$ {\bf end} \\
+{\tt (M4)} \> $MTC$ {\bf !} $\{New_{g'}[b'],s\}$; $TMC$ {\bf ?} s; 
+{\bf goto} {\tt (M2)};\\
+\end{tabbing} %\vspace{1ex} 
+\end{minipage} \\
+
+{\bf process} G \\
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (G0)} \> $MGC$ {\bf ?} $\{g,New_{g}\}$; $b := 1$;\\
+{\tt (G1)} \> {\bf foreach} $A_{1},\ldots,A_{n} \rightarrow C$ {\bf do }\\
+{\tt (G2)} \> \> {\bf foreach} $(i_{1},\ldots,i_{n})$ s.t. 
+$\forall j (i_{j} \leq g) \wedge \exists j (i_{j} = g)$ {\bf do} \\
+{\tt (G3)} \> \> \> {\bf if} $\exists \sigma \forall j
+(MD[i_{j}]\sigma = A_{j}\sigma \;\wedge\; $ 
+$C\sigma \mbox{ is new to }MD[1,\ldots,m]) $ {\bf then begin} \\
+{\tt (G4)} \> \> \> \> $New_{g}[b] := \{C\sigma,m\}; b := b + 1$ {\bf end};\\
+{\tt (G5)} \> \> $New_{g}[b] := close;$
+\end{tabbing} \vspace{1ex} 
+\end{minipage} \\
+
+{\bf process} T \\
+\begin{minipage}{10cm}
+\begin{tabbing}
+01234\= 012\= 012\= 012\= 012\= 012\= 012       \kill
+{\tt (T0)} \> $MTC$ {\bf ?} $\{\{\delta,m\},s'\}$;\\
+{\tt (T1)} \> {\bf if} $\delta \mbox{ is new to } MD[m+1,\ldots,s']$ {\bf
+then begin}\\ 
+{\tt (T2)} \> \> $MD[s'+1] := \delta$; $TMC$ {\bf !} $s'+1$; \\
+{\tt (T3)} \> \> {\bf foreach} $A_{1},\ldots,A_{m} \rightarrow false$ {\bf do} \\
+{\tt (T4)} \> \> \> {\bf foreach} $(i_{1},\ldots,i_{m})$ s.t. 
+$\forall j (i_{j} \leq s') \wedge \exists j (i_{j} = s')$ {\bf do} \\
+{\tt (T5)} \> \> \> \> {\bf if} $\exists \sigma' \forall j (
+MD[i_{j}]\sigma' = A_{j}\sigma')$ {\bf then} \\
+{\tt (T6)} \> \> \> \> \> {\bf return} (unsat)$;$\\
+{\tt (T7)} \> {\bf end else} $TMC$ {\bf !} $s'$;
+\end{tabbing}
+\end{minipage} \\ \hline
+\end{tabular}
+\end{center}
+\caption{\label{fig:MGTPNSha} モデル共有型 MGTP/N の並列アルゴリズム}
+\end{figure}
+
+図 \ref{fig:MGTPNSha} では，プロセス間通信を表現するために，Occam 風チャ
+ネル記法を用いた．$channel \mbox{\bf !} X$ で変数 $X$ の値をチャネル 
+$channel$ に出力し，$channel \mbox{\bf ?} X$ でチャネル $channel$ から
+変数 $X$ に値を入力することを表す．$MGC$ は M プロセスから G プロセス
+への，$MTC$ は M プロセスから T プロセスへの，$TMC$ は T プロセスから 
+M プロセスへの通信に用いられるチャネルである．これらの通信を利用するこ
+とによって，図 \ref{fig:MGTPNPar} で示されていたロック機能と等価な働き
+を実現することができる\footnote{実際の実装はKL1の未定義変数の送受信を
+  利用して行なわれる．}．
+
+M プロセスでは初期化の後，{\tt (M1)} と {\tt (M2)}$\sim${\tt (M4)}が並行
+実行される．{\tt (M1)}では各Gプロセスに連言照合の受け持ち範囲( $g$ で示
+される)を指示すると共に，生成されたアトムを蓄えるためのバッファ
+$New_{g}$ を用意しこれも送付する．$New_{g}$ は，各 G プロセス毎に用意され
+るので，この更新にロックは必要ではない({\tt (G4)})．
+
+包摂テストは，G プロセスと T プロセスで分離して行なわれる({\tt (G3)}と
+{\tt (T1)}の条件部)．包摂テストの内，G プロセスで行なわれるものを局所
+的包摂テスト (LS)，T プロセスで行なわれるものを大域的包摂テスト (GS) 
+と呼ぶことにする．ここでは，LS を行なう時点でその PE に保持されている 
+$MD$ の要素数を $m$ と仮定し，包摂テストの範囲を明示した．例えば，
+$C\sigma$ is new to $MD[1,\ldots,m]$ で，$\forall i (1\leq i
+\leq m) \not\exists\sigma'(C\sigma = MD[i]\sigma')$ を表している．
+
+生成され LS を通過したアトムは $New_{g}$ に蓄えられるが，同時に LS の適用範
+囲を示す $m$ も蓄えられる ({\tt (G4)})．
+
+T プロセスは，先ず G プロセスが生成したアトム $\delta$ と GS の範囲 
+($m,\ldots,s'$) の組を M プロセスから受けとる({\tt (T0)})．そして 
+$\delta$ が包摂されなければ，$MD[s'+1]$ に $\delta$ を代入し，$s'+1$ 
+を M プロセスに送る．$\delta$ が包摂されれば，$s'$ を M プロセスに送る．
+M プロセスに送った値 ($s'$ または $s'+1$) が $\delta$ の次のアトムに必
+要な GSの範囲を与える．
+
+\newcommand{\Process}[4]{
+\put(#1,#2){\circle{30}}
+\put(#1,#2){\makebox(0,0)[b]{\raisebox{1.5ex}{#3}}}
+\put(#1,#2){\makebox(0,0){$+$}}
+\put(#1,#2){\makebox(0,0)[t]{\raisebox{-3ex}{#4}}}
+}
+
+\newcommand{\GProcess}[5]{
+\Process{#1}{#2}{G}{LS}
+\put(#1,#2){\makebox(0,0)[b]{\raisebox{20\unitlength}{#3}}}
+\put(#1,#2){\begin{picture}(10,15)(5,38)
+\put(0,0){\line(0,1){15}}
+\put(10,0){\line(0,1){15}}
+\put(0,0){\line(1,0){10}}
+\put(12,5){\makebox(0,0)[l]{#4}}
+\put(-13,-7){\dashbox{2}(53,77){}}
+\put(15,72){\makebox(0,0)[b]{#5}}
+\end{picture}}
+}
+
+\newcommand{\TProcess}[6]{
+\Process{#1}{#2}{GS}{T}
+\put(#1,#2){\begin{picture}(10,15)(22,20)
+\put(0,0){\dashbox{2}(44,55)[b]{}}
+\put(23,-1){\makebox(0,0)[t]{#3}}
+\put(#4,#5){\makebox(0,0)[b]{#6}}
+\end{picture}}
+}
+
+\newcommand{\MProcess}[2]{
+\put(#1,#2){\begin{picture}(10,15)(0,-5)
+\put(0,0){\line(2,3){12}}
+\put(0,0){\line(-2,3){12}}
+\put(-12,18){\line(1,0){24}}
+\put(15,9){\makebox(0,0)[l]{serializer}}
+             \end{picture}}
+\put(#1,#2){\line(0,1){5}}
+\put(#1,#2){\begin{picture}(10,15)(0,0)
+\put(0,0){\line(2,-3){12}}
+\put(0,0){\line(-2,-3){12}}
+\put(-12,-18){\line(1,0){24}}
+\put(15,-9){\makebox(0,0)[l]{dispatcher}}
+             \end{picture}}
+\put(#1,#2){\begin{picture}(10,10)(-5,-5)
+\put(-30,0){\makebox(0,0)[r]{Master}}
+\put(-30,-33){\dashbox{2}(50,60){}}
+\end{picture}}
+}
+
+\begin{figure}
+\begin{picture}(200,250)(-190,-150)\footnotesize%\small
+\GProcess{-100}{50}{$\Delta_{1}$}{$New_{1}$}{$Generator_{1}$}
+\GProcess{-28}{50}{$\Delta_{2}$}{$New_{2}$}{$Generator_{2}$}
+\multiput(28,50)(10,0){3}{\circle*{3}}
+\GProcess{90}{50}{$\Delta_{n}$}{$New_{n}$}{$Generator_{n}$}
+\multiput(146,50)(10,0){2}{\circle*{3}}
+
+\put(-100,12){\line(3,-1){99}}
+\put(-28,12){\line(1,-1){33}}
+\put(90,12){\line(-5,-2){82}}
+
+\TProcess{-88}{-130}{$Tester_{1}$}{18}{40}{$\Delta'_{1}$}
+\TProcess{-18}{-130}{$Tester_{2}$}{13}{40}{$\Delta'_{2}$}
+\multiput(28,-130)(10,0){3}{\circle*{3}}
+\TProcess{92}{-130}{$Tester_{m}$}{30}{40}{$\Delta'_{m}$}
+\multiput(140,-130)(10,0){2}{\circle*{3}}
+
+\put(-88,-114){\line(5,3){86.5}}
+\put(-18,-114){\line(2,5){20.8}}
+\put(92,-114){\line(-5,3){86.5}}
+
+\MProcess{5}{-44}
+\end{picture}
+\caption{\label{fig:MGTPNPara} モデル共有型 MGTP/N のプロセス結合図}
+
+\end{figure}
+
+\MGTPNsubsubsection{逐次性低減のための幾つかの改良}
+
+本並列化方式には原理的に二つの逐次性があり，並列性能を引き出す上での阻
+害要因となっている．一つは包摂テストの逐次性であり，もう一つは証明不変
+を保証するための逐次性である．
+
+%\subsubsection{包摂テスト}
+\begin{enumerate}
+\item 包摂テスト
+
+新たに生成されたアトムの前方包摂テストを完全に行なうには，その生成順を
+保持して，以前に生成されたアトム集合に対して包摂テストを行なう必要があ
+るため逐次性が生じる．この逐次性の低減を図るため，包摂テストをLSとGSに
+分離した．
+
+モデル共有方式を採用しているので，各生成アトムに対する LS は他の PE に
+影響を与えることなく，各 PE 内でそれぞれ独立に行なうことができる．但し，
+LS の範囲は広ければ広いほど (図\ref{fig:MGTPNSha}の{\tt (G3)} 中の $m$ 
+が大きければ大きいほど)，アトムが包摂される可能性が高まり，結果として
+通信と GS の負荷が減るので好ましい．従って，ある PE での $MD$ の更新結
+果は，直ちに他の全 PE に伝搬するような実装が必要である．
+
+各 PE で独立に行なうことのできる LS に対し，GS には逐次性が残っている．
+これは，直前のアトムの包摂テストが終了しないと，次のアトムの包摂テスト
+が終了できないことに起因する．図 \ref{fig:MGTPNSha} でいうと，{\tt
+  (T1)}での $\delta \mbox{ is new to } MD[m+1,\ldots,s']$ の判定には，
+$MD[m+1],\ldots,MD[s']$ の値が全て確定，つまりそれらの包摂テストが全て
+終了している必要がある．
+
+この GS の逐次性を低減するために，LS 完了後のアトムを保持するための大域
+的な配列 $TMD$ (仮積みリストと呼ぶ) を用意する．これは，図
+\ref{fig:MGTPNPar} で使用している $Buf$ と実際には全く同じである．
+$TMD$ の要素の内 GS で包摂されなかったアトムが，$MD$ の要素となるので，
+$MD$ は $TMD$ の部分集合となる．
+
+$TMD$ を使った場合の手続きは，図 \ref{fig:MGTPNSha} を，次のように
+変更すればよい．$TMD$ は，$MD$ と同様な初期化手続きがなされ，$ts :=
+k+1$ と初期化がなされているとする．
+
+\begin{itemize}
+\item[(1)] {\tt (M4)}を次のように変更する：
+\parbox{1.5\textwidth}{$MTC$ {\bf !} $\{New_{g'}[b'],s,ts\}; ts := ts + 1; TMC$ {\bf ?} $s$;}
+\item[(2)] {\tt (T0)} を次のように変更する：
+$MTC$ {\bf ?} $\{\{\delta,m\},s',ts'\}$;
+\item[(3)] {\tt (T0)} と{\tt (T1)} の間に以下を挿入する：
+$TMD[ts'] := \delta$
+\item[(4)] {\tt (T1)} の条件部を次のように変更する：
+$\delta \mbox{ is new to } TMD[(m+1)^{\flat},\ldots,ts'-1]$ \\
+ここで，$()^{\flat}$ は，$MD$ のインデックスから $TMD$ のインデックスへの関
+数で $MD[m] = TMD[(m)^{\flat}]$ を満たす．
+\end{itemize}
+
+(3) によって，GS を始める前にアトムを仮積みリスト ($TMD$) に積んでおく
+ので，このアトムの GS の終了を，他のアトムの GS が待つことはない．但し，
+仮積みリストには，包摂されるかも知れないアトムも置かれる可能性があり，
+このようなアトムに対する包摂テストは，仮積みリストを設けない場合には行
+なわれないので，冗長である．仮積みリストによる逐次性の削減は，この冗長
+計算と引き替えに得られるものである．
+
+%\subsubsection{証明不変}
+\item 証明不変
+
+  証明を不変にするためには，生成されたアトムの取り出し順序を固定しなけ
+  ればならない．この順序を固定することは，逐次性が発生することに他なら
+  ない．例えば，二つの G プロセス $G_{1}$と$G_{2}$ が並列に動いている
+  時，$G_{1}$ の生成アトム集合 $New_{1}$ と $G_{2}$ の生成アトム集合 
+  $New_{2}$ は並列に生成されるが，早くできたアトムから取り出すわけには
+  いかない．予め決められた順序で取り出さなければ，実行のたびに証明が変
+  わり得る．さて，予め $New_{1}$ から取り出すことになっていたとすると，
+  $New_{1}$ の生成が何らかの理由で遅れた場合，$New_{2}$ がすでに生成さ
+  れていたとしても，次のアトムを取り出すことができないので，T プロセス
+  が動けない状態になってしまう．$G_{1}$ の実行が滞っていたとしても，
+  $G_{2}$，$G_{3}\ldots$ と次々に G プロセスを並列実行させれば見かけ上
+  暇な PE をなくすことはできるが，これは無駄なアトムの生成を引き起こす
+  可能性があり，遅延生成の考え方に反する．
+
+  そこで上記の逐次性を低減するために，G プロセスの粒度を細分化すること
+  にした．具体的には，これまで G プロセスが行なっていた仕事の単位(図
+  \ref{fig:MGTPNSha}において，一つのアトム $MD[g]$ に対する{\tt (G1)}
+  のループの処理)をさらに $1/k$ に均等分割し，これを仕事の単位とする．
+  このようにすることにより，G プロセスの粒度がより細かくなり，かつ不均
+  一さも顕著ではなくなった．
+\end{enumerate}
+
+\subsection{モデル分散型並列アルゴリズム}
+
+モデル分散型並列アルゴリズムは，マスタースレーブ方式で実装され，
+逐次アルゴリズム(図\ref{fig:MGTPNSeq})の (3) から (9) までを単位ステップ
+とし，生成過程({\it (4)} から{\it (5)} の条件部の前半)，
+包摂テスト({\it (5)} の条件部の後半)，
+棄却テスト({\it (8)} と{\it (9)}) をステップ内で並列化を行なうもので
+モデル候補とモデル拡張候補を分散管理している．
+
+単位ステップ内の処理の流れを図\ref{fig:MGTPNDis}に示す．
+
+%\begin{figure}
+%\begin{center}
+%\epsfile{file=../MGTPN/model.eps}
+%\caption{\label{fig:MGTPNDis} モデル分散型 MGTP/N の単位ステップ内並列化}
+%\end{center}
+%\end{figure}
+
+\begin{enumerate}
+\item モデル拡張候補の選択
+
+  あるプロセッサ $j$ から当該ステップのモデル拡張候補 $d$ が選択され
+  \footnote{連言照合終了後当該プロセッサに新たなモデル候補として登録される．}
+  他の全プロセッサに配布される．
+
+\item 連言照合
+
+  各ノードはモデル拡張候補 $d$ を入力とし，
+  \begin{enumerate}
+  \item 混合節と，当該ノードのモデル候補集合 $M$ と $d$，および $d$同
+    士の組合せによる連言照合(単一化)\footnote{$d$ 同士の組合せによる連言
+      照合はすべてのノードで重複して行なわれる．}を行なう．
+        
+  \item 充足されたら置換ずみの混合節後件アトム集合 $CS$ を求め，
+    ノード固有の番号keyを生成する．
+  \end{enumerate}
+
+\item 連言照合結果の編集
+
+  マスタプロセスでは連言照合結果 $C$ の到着順に当該の置換済み後件アトムが，
+  並列に実行される包摂テストにおいて,包摂された場合の情報を他のノード
+  にブロードキャストするためのスイッチを付加し $D$ とする．\footnote{プ
+    ロセッサプロセス後半部への入力データとなる}
+
+\item 包摂テスト
+
+  $D$ の要素とノードが分散管理しているモデル候補(+モデル拡張候補)集合
+  $MD$\footnote{$MD$に対する後向き包摂テストは行なわない} および $D$同
+  士とのパターンマッチ\footnote{$d$ 同士の組合せによるパターンマッチは
+    すべてのノードで重複して行なわれる．}を行ない，$MD$ または $D$ に
+  包摂された場合は当該の要素を削除する．
+
+\item 負節との連言照合テスト
+
+  負節と，当該プロセッサのモデル候補(+モデル拡張候補)集合 $MD$および包
+  摂されなかった $D$ の要素との組合せによる連言照合(単一化)を行ない充
+  足されたら処理を終了する．
+        
+\item 内部データの更新
+
+  マスタで指定されたモデル拡張候補\footnote{包摂されていない場合}を当
+  該ノードのモデル拡張候補集合 $MD$ に追加する．また，次のステップへのフィー
+  ドバック情報である内部データ状況 $Fd$を出力する．\footnote{この情報をも
+    とにモデル拡張候補が選択されるべきノード $j$が決定される}
+\end{enumerate}
+
+\section{操作方法}
+
+MGTP 入力節は，Prolog 版では Prolog 節に，KL1 版では KL1 節に変換されるが，
+今のところ，いずれの版もこの変換系は用意されていないが，\cite{Detachment}に
+掲載されている問題については，例題としてファイルが附属している．
+
+\subsection{Prolog 版操作法}
+
+\MGTPNsubsubsection{必要ファイル}
+
+\begin{tabular}{|l|l|} \hline
+\multicolumn{1}{|c|}{ファイル名} & 
+\multicolumn{1}{|c|}{ファイル内容} \\ \hline
+\verb!mgtp.pl! & インタプリタ本体 \\ \hline
+\verb!mgtpS.pl! & インタプリタ本体(ソート機能付) \\ \hline
+\verb!unify.pl! & 出現検査付単一化プログラム \\ \hline
+\verb!pro*.pl! & (変換済み)正節と混合節 \\ \hline
+\verb!pro*t.pl! & (変換済み)棄却節 \\ \hline
+\end{tabular}
+
+\MGTPNsubsubsection{コンパイル，実行例}
+
+\begin{enumerate}
+\item コンパイル：
+
+\begin{verbatim}
+koshi@ss130[3]% sicstus    : SISCtus Prolog の起動
+SICStus 2.1 #8: Tue May 11 21:04:52 JST 1993
+| ?- compile([mgtp,unify]).     : インタプリタ，単一化プログラムのコンパイル
+{compiling /home2/koshi/prolog/MGTPN/mgtp.pl...}
+{Warning: [X] - singleton variables in do1/1 in lines 7-8}
+{Warning: [F] - singleton variables in weight/3 in lines 35-36}
+{Warning: [T] - singleton variables in weightArg/4 in lines 36-38}
+{Warning: [X] - singleton variables in init/0 in lines 70-72}
+{Warning: [X] - singleton variables in init/0 in lines 72-73}
+{Warning: [X] - singleton variables in init/0 in lines 73-74}
+{Warning: [F,N,Ref] - singleton variables in countData/2 in lines 74-76}
+{Warning: [N,X] - singleton variables in countData/2 in lines 76-80}
+{Warning: [F] - singleton variables in countData/2 in lines 80-81}
+{compiled /home2/koshi/prolog/MGTPN/mgtp.pl in module mgtp, 340 msec 42976 bytes}
+{compiling /home2/koshi/prolog/MGTPN/unify.pl...}
+{Warning: [X,Y] - singleton variables in unifyArg/3 in lines 6-8}
+{Warning: [X] - singleton variables in notOccursIn/2 in lines 17-18}
+{Warning: [F] - singleton variables in notOccursIn/2 in lines 18-19}
+{Warning: [X,Y] - singleton variables in notOccursInArg/3 in lines 19-21}
+{compiled /home2/koshi/prolog/MGTPN/unify.pl in module unify, 160 msec 9248 bytes}
+
+yes
+| ?- 
+\end{verbatim}
+
+\item 実行例
+
+\begin{verbatim}
+| ?- compile([pro2,pro2t]).    : 問題節のコンパイル
+{compiling /home2/koshi/prolog/MGTPN/pro2.pl...}
+{compiling /home2/koshi/prolog/MGTPN/pro1.pl...}
+{Warning: [Y] - singleton variables in delta/1 in lines 6-8}
+{Warning: [X1,Y] - singleton variables in '$p/1'/3 in lines 25-26}
+{Warning: [F] - singleton variables in useless1/1 in lines 50-51}
+{Warning: [A,X] - singleton variables in useless1Arg/3 in lines 54-56}
+{Warning: [Fa] - singleton variables in useless1Arg/3 in lines 56-57}
+{compiled /home2/koshi/prolog/MGTPN/pro1.pl in module P, 170 msec 15232 bytes}
+The procedure delta/1 is being redefined.
+    Old file: /home2/koshi/prolog/MGTPN/pro1.pl
+    New file: /home2/koshi/prolog/MGTPN/pro2.pl
+Do you really want to redefine it? (y, n, p, or ?) p
+{Warning: [Y] - singleton variables in delta/1 in lines 4-6}
+{Warning: [Y] - singleton variables in delta/1 in lines 6-7}
+{/home2/koshi/prolog/MGTPN/pro2.pl compiled, 220 msec 15408 bytes}
+{compiling /home2/koshi/prolog/MGTPN/pro2t.pl...}
+{compiling /home2/koshi/prolog/MGTPN/pro1t.pl...}
+{compiled /home2/koshi/prolog/MGTPN/pro1t.pl in module Pt, 90 msec 2256 bytes}
+The procedure p/1 is being redefined.
+    Old file: /home2/koshi/prolog/MGTPN/pro1t.pl
+    New file: /home2/koshi/prolog/MGTPN/pro2t.pl
+Do you really want to redefine it? (y, n, p, or ?) p
+{/home2/koshi/prolog/MGTPN/pro2t.pl compiled, 130 msec 2624 bytes}
+
+yes
+| ?- do.     : 証明開始
+Succeed      : 証明成功
+
+yes
+| ?- 
+\end{verbatim}
+
+【注意】引続き問題を解く場合：
+\parbox[t]{0.6\textwidth}{内部データベースを \verb!init! 命令で初期化
+  した後，新たに問題節をコンパイルする必要がある．}
+
+\begin{verbatim}
+| ?- init.  : 内部データベース初期化
+
+yes
+| ?- compile([pro3,pro3t]).        : 問題節を新たにコンパイル
+{compiling /home2/koshi/prolog/MGTPN/pro3.pl...}
+{compiling /home2/koshi/prolog/MGTPN/pro2.pl...}
+{compiling /home2/koshi/prolog/MGTPN/pro1.pl...}
+{Warning: [Y] - singleton variables in delta/1 in lines 6-8}
+{Warning: [X1,Y] - singleton variables in '$p/1'/3 in lines 25-26}
+{Warning: [F] - singleton variables in useless1/1 in lines 50-51}
+{Warning: [A,X] - singleton variables in useless1Arg/3 in lines 54-56}
+{Warning: [Fa] - singleton variables in useless1Arg/3 in lines 56-57}
+{compiled /home2/koshi/prolog/MGTPN/pro1.pl in module P, 210 msec 3440 bytes}
+The procedure delta/1 is being redefined.
+    Old file: /home2/koshi/prolog/MGTPN/pro1.pl
+    New file: /home2/koshi/prolog/MGTPN/pro2.pl
+Do you really want to redefine it? (y, n, p, or ?) p
+{Warning: [Y] - singleton variables in delta/1 in lines 4-6}
+{Warning: [Y] - singleton variables in delta/1 in lines 6-7}
+{/home2/koshi/prolog/MGTPN/pro2.pl compiled, 270 msec 3504 bytes}
+{/home2/koshi/prolog/MGTPN/pro3.pl compiled, 290 msec 3584 bytes}
+{compiling /home2/koshi/prolog/MGTPN/pro3t.pl...}
+{compiling /home2/koshi/prolog/MGTPN/pro1t.pl...}
+{compiled /home2/koshi/prolog/MGTPN/pro1t.pl in module Pt, 90 msec 1744 bytes}
+The procedure p/1 is being redefined.
+    Old file: /home2/koshi/prolog/MGTPN/pro1t.pl
+    New file: /home2/koshi/prolog/MGTPN/pro3t.pl
+Do you really want to redefine it? (y, n, p, or ?) p
+{/home2/koshi/prolog/MGTPN/pro3t.pl compiled, 119 msec 2112 bytes}
+
+yes
+| ?- 
+\end{verbatim}
+\end{enumerate}
+
+\MGTPNsubsubsection{MGTP節変換例}
+
+\begin{enumerate}
+\item MGTP 入力節(問題1)
+\begin{itemize}
+\item[a)] 正節\\
+  \begin{tabular}{l}
+    $true  \rightarrow p(i(X,i(Y,X))).$ \\
+    $true  \rightarrow p(i(i(X,i(Y,Z)),i(i(X,Y),i(X,Z)))).$ \\
+    $true  \rightarrow p(i(n(n(X)),X)).$ \\
+    $true  \rightarrow p(i(X,n(n(X)))).$ \\
+    $true  \rightarrow p(i(i(X,Y),i(n(Y),n(X)))).$
+  \end{tabular}
+\item[b)] 負節\\
+  \begin{tabular}{l}
+    $p(i(i(a,i(b,c)),i(b,i(a,c)))) \rightarrow false.$
+  \end{tabular}
+\item[c)] 混合節\\
+  \begin{tabular}{l}
+    $p(X),p(i(X,Y)) -> p(Y).$
+  \end{tabular}
+\end{itemize}
+
+\item 変換後の Prolog 節
+\item[a)] 正節(モジュールは \verb!'P'!)
+\begin{verbatim}
+delta(p(i(X,i(Y,X)))).
+delta(p(i(i(X,i(Y,Z)),i(i(X,Y),i(X,Z))))).
+delta(p(i(n(n(X)),X))).
+delta(p(i(X,n(n(X))))).
+delta(p(i(i(X,Y),i(n(Y),n(X))))).
+\end{verbatim}
+\item[b)] 負節(モジュールは \verb!'Pt'!)
+\begin{verbatim}
+p(i(i(a,i(b,c)),i(b,i(a,c)))) :- mgtp:proofEnd.
+\end{verbatim}
+\item[c)] 混合節(モジュールは \verb!'P'!)
+\begin{verbatim}
+p(X) :- copy_term(X,Xc), '$p/1'(3, X,Xc).
+p(i(X1,Y)) :- '$p/1'(2, X, v(X,X1,Y)).
+p(X) :- '$p/1'(1, i(X1,Y), v(X,X1,Y)).
+
+'$p/1'(1, A2, Vars) :- model(p(A2)), '$p/2'(1,Vars).
+'$p/1'(2, A2, Vars) :- model(p(A2)), '$p/2'(2,Vars).
+'$p/1'(3, X, Xc) :- '$p/2'(3, Xc, v(X,X1,Y)).
+
+'$p/2'(1, v(X,X1,Y)) :- unify:unify(X,X1), mgtp:consq(p(Y)).
+'$p/2'(2, v(X,X1,Y)) :- unify:unify(X,X1), mgtp:consq(p(Y)).
+'$p/2'(3, i(X1,Y), v(X,X1,Y)) :- unify:unify(X,X1), mgtp:consq(p(Y)).
+\end{verbatim}
+
+\hspace*{-1em}【注意】~
+\begin{minipage}[t]{0.8\textwidth}
+MGTP 負節が $p(X),p(i(X,i(i(a,i(b,c)),i(b,i(a,c))))) \rightarrow false.$
+の時は，
+\begin{verbatim}
+p(X) :- '$p/1'(1, i(X1,i(i(a,i(b,c)),i(b,i(a,c)))), v(X,X1)).
+p(i(X1,i(i(a,i(b,c)),i(b,i(a,c))))) :- '$p/1'(2, X, v(X,X1)).
+%p(i(i(a,i(b,c)),i(b,i(a,c)))) :- mgtp:proofEnd.
+
+'$p/1'(1, A2, Vars) :- 'P':model(p(A2)), '$p/2'(1,Vars).
+'$p/1'(1, A2, Vars) :- 'P':current(p(A2)), '$p/2'(1,Vars).
+'$p/1'(1, A2, Vars) :- 'P':delta(p(A2)), '$p/2'(1,Vars).
+'$p/1'(2, A2, Vars) :- 'P':model(p(A2)), '$p/2'(2,Vars).
+'$p/1'(2, A2, Vars) :- 'P':current(p(A2)), '$p/2'(2,Vars).
+'$p/1'(2, A2, Vars) :- 'P':delta(p(A2)), '$p/2'(2,Vars).
+
+'$p/2'(1, v(X,X1)) :- unify:unify(X,X1), mgtp:proofEnd.
+'$p/2'(2, v(X,X1)) :- unify:unify(X,X1), mgtp:proofEnd.
+\end{verbatim}
+と変換される．
+\end{minipage}
+\end{enumerate}
+
+\subsection{KL1 版(モデル共有型)操作法}
+
+\MGTPNsubsubsection{必要ファイル}
+
+\begin{tabular}{|l|l|} \hline
+\multicolumn{1}{|c|}{ファイル名} & 
+\multicolumn{1}{|c|}{ファイル内容} \\ \hline
+\verb!mgtpN.kl1! & インタプリタ本体 \\ \hline  % lmgtpNp_mlvns1Debug2_6.kl1
+\verb!print.kl1! & 出力関係 \\ \hline        % dbg.kl1
+\verb!meta.kl1! & 単一化，照合手続き \\ \hline % metaOm1.kl1
+\verb!tm.kl1! & 弁別木プログラム \\ \hline     % tm_ne.kl1
+\verb!tmLib.kl1! & 弁別木プログラムのインターフェイス \\ \hline % mgtpLibne.kl1
+\verb!pro*.kl1! & (変換済み)問題節 \\ \hline % pro*Om2.kl1
+\end{tabular}
+
+
+\MGTPNsubsubsection{コンパイル，実行，演算例}
+
+\begin{enumerate}
+\item コンパイル：
+\begin{verbatim}
+[1] compile["mgtpN","print","meta","tm","tmLib","pro3"]. ： 必要ファイルの
+                                                         ： コンパイル
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>print.kl1.1
+[dbg.kl1@0] Compile Module : mgtp_d
+Compile Succeeded : mgtp_d
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>meta.kl1.1
+[metaOm1.kl1@0] Compile Module : meta
+Compile Succeeded : meta
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>tmLib.kl1.1
+!WARNING! no with_macro declaraion. assumed `pimos'.
+[mgtpLibne.kl1@1] Compile Module : mgtp_lib
+Compile Succeeded : mgtp_lib
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>tm.kl1.1
+[tm_ne.kl1@0] Compile Module : tm
+Compile Succeeded : tm
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>pro3.kl1.1
+[pro3Om2.kl1@1] Compile Module : mgtp_p
+Compile Succeeded : mgtp_p
+
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>lmgtpN.kl1.23
+[lmgtpNp_mlvns1Debug2_6.kl1@1] Compile Module : mgtp
+Compile Succeeded : mgtp
+
+!WARNING! register shortage in the guard 2 time(s) : master/ 19
+!WARNING![lmgtpNp_mlvns1Debug2_6.kl1@343] unused predicate found : min/ 3
+!WARNING![lmgtpNp_mlvns1Debug2_6.kl1@345] unused predicate found : max/ 3
+"mgtp:: meta" Loaded
+"mgtp:: mgtp_lib" Loaded
+"mgtp:: mgtp_d" Loaded
+"mgtp:: mgtp_p" Loaded
+"mgtp:: tm" Loaded
+"mgtp:: mgtp" Loaded
+Compilation Time = 121325 [MSEC]
+ 6664355 reductions
+ 122714 msec
+
+
+[2]
+\end{verbatim}
+
+\item 実行例：(1 PE 構成の場合)
+\begin{verbatim}
+[2] mgtp: do([{0,0}],[{0,0}],1000,10000,50,10,10,10,1,{1,1},4096,
+                        {3960,3980,2600},{4000,3900,4010,2500},S,0)@node(0).
+distribute(500,buf:7,store:473,tested:473,eqlast:0,ls_IML:486,
+           ls_ML:461,distrG:89)/0.
+store(500,21,[{0,{47,47,16}},{1,{47,47,16}}]) / 0.
+reach(500) / 0.
+distribute(1000,buf:6,store:973,tested:973,eqlast:0,ls_IML:982,
+           ls_ML:956,distrG:128)/0.
+store(1000,20,[{0,{51,51,18}},{1,{67,67,13}}]) / 0.
+reach(1000) / 0.
+distribute(1500,buf:26,store:1464,tested:1464,eqlast:0,ls_IML:1457,
+           ls_ML:1423,distrG:165)/0.
+store(1500,20,[{1,{71,71,17}},{0,{84,84,10}}]) / 0.
+reach(1500) / 0.
+goal([{1,{138,138,19}},{0,{1797,1758,13}}],i(i(a,i(b,c)),i(i(a,b),i(a,c)))).
+ S =[otterOrder,'unify+unifyOc',rejected,input: 5,model: 1758,
+     kept: 1753,tested: 1757,keptG: 61,distr: 1797,distrG: 183,eqlast: 0]
+ 65247574 reductions
+ 729807 msec
+
+
+[3]
+\end{verbatim}
+
+\hspace*{-1em}【注意】
+\begin{minipage}[t]{0.8\textwidth}
+  \begin{itemize}
+  \item PIM/m 64 PE 構成の場合 \vspace{-2ex}
+\begin{verbatim}
+mgtp:do([{0,62}],[{0,62}],1000,40,50,10,100,100,1,{2,2},4096,
+        {3960,3980,2600},{4000,3900,4010,2500},S,63)@node(63).
+\end{verbatim}
+  \item PIM/m 256 PE 構成の場合 \vspace{-2ex}
+\begin{verbatim}
+mgtp:do([{1,252}],[{1,252}],1000,80,50,10,400,400,1,{2,2},4096,
+        {3960,3980,2600},{4000,3900,4010,2500},S,253)@node(254).
+\end{verbatim}
+  \item PIM/p 32 PE(4 cluster) 構成の場合 \vspace{-2ex}
+\begin{verbatim}
+mgtp:do([{0,3}],[{0,3}],1000,160,50,10,50,50,8,{16,16},4096,
+        {3960,3980,2600},{4000,3900,4010,2500},S,3)@node(3).
+\end{verbatim}
+  \item PIM/p 64 PE(8 cluster) 構成の場合 \vspace{-2ex}
+\begin{verbatim}
+mgtp:do([{0,7}],[{0,7}],1000,200,50,10,100,100,8,{16,16},4096,
+        {3960,3980,2600},{4000,3900,4010,2500},S,7)@node(7).
+\end{verbatim}
+  \item PIM/p 128 PE(16 cluster) 構成の場合 \vspace{-2ex}
+\begin{verbatim}
+mgtp:do([{0,15}],[{0,15}],1000,200,50,10,200,200,8,{16,16},4096,
+        {3960,3980,2600},{4000,3900,4010,2500},S,15)@node(15).
+\end{verbatim}
+  \end{itemize}
+\end{minipage}
+
+\hspace*{-1em}【注意】~
+\begin{minipage}[t]{0.8\textwidth}
+他の問題を引続き証明したい場合は，当該問題ファイルをコンパイルした後，
+再リンクする必要がある．
+\begin{verbatim}
+[16] compile(["pro28Om2"]).      ：次の問題のコンパイル
+** KL1 Compiler **
+Compile File : icpsi520::>sys>user>miyuki>KL1>MGTPN>pro28Om2.kl1.1
+[pro28Om2.kl1@1] Compile Module : mgtp_p
+=>  :- module mgtp_p .
+Compile Succeeded : mgtp_p
+
+"mgtp:: mgtp_p" Updated
+Compilation(s) Succeeded
+Compilation Time = 16192 [MSEC]
+ 244554 reductions
+ 17024 msec
+
+[17] relink(mgtp,[mgtp_p]) .     ：再リンク
+"mgtp:: mgtp" Updated
+Relink Succeeded
+ 22115 reductions
+ 2159 msec
+
+[18]
+\end{verbatim}
+\end{minipage}
+
+\end{enumerate}
+
+
+\subsection{KL1 版(モデル分散型)操作法}
+
+\MGTPNsubsubsection{必要ファイル}
+
+\begin{tabular}{|l|l|} \hline
+\multicolumn{1}{|c|}{ファイル名} & \multicolumn{1}{|c|}{ファイル内容} \\ \hline
+\verb!mgtpv0.kl1! & インタプリタ本体 \\ \hline
+\verb!util.kl1! & ユーテリティ \\ \hline
+\end{tabular}
+
+
+\MGTPNsubsubsection{コンパイル，実行，演算例}
+
+PIM/m上でのモデル分散型MGTP/Nの起動および実行方法について述べる．
+
+\begin{enumerate}
+\item{起動:\ }
+
+\begin{verbatim}
+[1] compile(["mgtpv0","util"]).   :ディレクトリの下のソースファイルを
+                                   コンパイルする．
+
+[2] st.                           :タイマーの設定
+
+[3] pl.                           :印刷時の長さ
+ Print length: 10 => 100 
+ 
+[4] pd.                           :印刷時の深さ
+ Print depth: 4 => 20 
+\end{verbatim}
+
+\item{実行:\ }
+
+\begin{verbatim}
+述語と引数の定義は
+mgtpv0: main/10
+     Cnd      :負荷分散開始ノード(>=1)
+     Tnd      :負荷分散終了ノード(>=Cnd)
+     Ofset    :コードでは変数を{1}から始まる{整数}で定義する．
+               たとえば
+                   i(X,Y)->Y を  i({1},{2})->{2}のように表す．
+               混合節および負節の定義に使用した整数の最大値を指定する
+     Axiom    :正節後件アトムのリストである．一つのアトムのフォーマットは
+               ((0,0,0),Ofset値以上の偶数で変数定義した後件アトム，
+                      同じくOfset値以上の奇数で変数定義した後件アトム)
+             
+               また，(0,0,0)は初期値におけるダミー情報でありコード内では
+               連言照合による生成番号を意味する．すなわち
+                     (ノード番号，ノード内生成番号，予備)
+     Gen      :混合節のリストである．ひとつの混合節のフォーマットは 
+                gen(前件アトム ，後件アトム)  または  
+                gen(前件アトム1，前件アトム2，後件アトム)
+     Tst      :負節前件アトムのリスト．一つの負節のフォーマットは
+                tst(前件アトム)  または 
+                tst(前件アトム1，前件アトム2)
+     Jinit    :各ノードが参照するステップ情報の初期値(Js,Ja,Jn,YN)
+                Js:モデル拡張候補dが選択されるノードの番号
+                Ja:dがモデル候補として登録されるノードの番号
+                Jn:次ステップでdが選択される予定のノードの番号
+                YN:コード内でJnにモデル拡張候補が存在すればyes,
+                   しなければnoがセットされる．初期値は未定義変数．
+以降の引数は証明結果である．
+     Result   :sat/unsat=節集合が充足可能/充足不能
+     Count    :証明終了時までに登録されたモデル候補数
+     Delta    :証明終了時までに登録されたモデル候補のリスト
+\end{verbatim}
+\item{演算例:\ }
+
+\begin{verbatim}下記の問題を例にとってデータ入力方法および結果の見方を述べる．
+
+サンプル問題(問題2)
+a)正節
+true -> (p(i(X,i(n(X),Y)))).
+true -> (p(i(X,i(Y,X)))).
+true -> (p(i(i(X,i(Y,Z)),i(Y,i(X,Z))))).
+true -> (p(i(i(X,Y),i(i(Z,X),i(Z,Y))))).
+true -> (p(i(i(X,Y),i(i(n(X),Y),Y)))).
+b)負節
+p(i(i(a,i(a,b)),i(a,b))) -> false.
+c)混合節
+p(X),p(i(X,Y)) -> p(Y).
+
+
+実行定義は
+[5] mgtpv0: main(1,5,3,
+[((0,0,0),p(i({4},i(n({4}),{6}))),
+          p(i({5},i(n({5}),{7})))),
+((0,0,0),p(i({4},i({6},{4}))),
+         p(i({5},i({7},{5})))),
+((0,0,0),p(i(i({4},i({6},{8})),i({6},i({4},{8})))),
+         p(i(i({5},i({7},{9})),i({7},i({5},{9}))))),
+((0,0,0),p(i(i({4},{6}),i(i({8},{4}),i({8},{6})))),
+         p(i(i({5},{7}),i(i({9},{5}),i({9},{7}))))),
+((0,0,0),p(i(i({4},{6}),i(i(n({4}),{6}),{6}))),
+         p(i(i({5},{7}),i(i(n({5}),{7}),{7}))))],
+[gen(p({1}),p(i({1},{3})),p({3}))],
+[tst(p(i(i(a,i(a,b)),i(a,b))))],
+(1,1,2,YYNN),
+Result,Ncalc,Delta) . 
+
+   5台のノードを使用したこのケースの結果は
+ Result=unsat
+ Ncalc= 18 
+ time=385832 reductions 
+      2367 msec  
+ Delta=
+((0,0,0),p(i({4},i(n({4}),{6}))),(奇数で変数定義した情報は省略)
+((0,0,0),p(i({4},i({6},{4}))),
+((0,0,0),p(i(i({4},i({6},{8})),i({6},i({4},{8})))),
+((0,0,0),p(i(i({4},{6}),i(i({8},{4}),i({8},{6})))),
+((0,0,0),p(i(i({4},{6}),i(i(n({4}),{6}),{6}))),
+((1,3,dummy),p(i(n(i({4},i({6},{4}))),{8})),(ノード1で3番目に
+                                             発生したことを示す)
+((2,4,dummy),p(i({4},i(i({6},i({8},{10})),i({8},i({6},{10}))))),
+((3,5,dummy),p(i(i({4},{6}),i(i({6},{8}),i({4},{8})))),
+((4,1,dummy),p(i(n(i({4},i(n({4}),{6}))),{8})),
+((5,3,dummy),p(i({4},i(i({6},i({4},{8})),i({6},{8})))),
+((1,4,dummy),p(i({4},i({6},i(n({6}),{8})))),
+((2,5,dummy),p(i({4},i({6},{6}))),
+((3,6,dummy),p(i(i({4},i({6},i({8},{10}))),i({4},i({8},i({6},{10}))))),
+((4,2,dummy),p(i({4},i({6},i({8},{6})))),
+((5,6,dummy),p(i(i(n(n(i({4},i({6},{4})))),{8}),{8})),
+((1,6,dummy),p(i(n({4}),i({4},{6}))),
+((2,6,dummy),p(i(i({4},{6}),i({4},i({8},{6})))),
+((3,8,dummy),p(i(i(n({4}),{6}),i(i({4},{6}),{6}))),
+ であった．
+\end{verbatim}
+\end{enumerate}
+
+\begin{thebibliography}{99}
+\bibitem[越村 95]{MGTPAND並列化}
+越村 三幸，長谷川 隆三 : {\em モデル生成型定理証明系のAND並列化方式}，
+電子情報通信学会論文誌，VOL. J78-D-1 No. 2, 1995
+
+\bibitem[McCune]{Detachment}
+McCune, W. W. and Wos, L.:
+\newblock {Experiments in Automated Deduction with Condensed Detachment}.
+\newblock In {\em Proc. 11th Int. Conf. on Automated Deduction},
+pages 209--223, Saratoga Springs, NY, 1992.
+\end{thebibliography}
+
+%\end{document}
+

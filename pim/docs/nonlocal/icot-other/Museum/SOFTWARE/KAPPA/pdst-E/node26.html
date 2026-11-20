@@ -1,0 +1,40 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Table read</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Table read">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html347 HREF="node27.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html345 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html339 HREF="node25.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html348 HREF="node27.html"> Table update</A>
+<B>Up:</B> <A NAME=tex2html346 HREF="node22.html"> The primitive commands</A>
+<B> Previous:</B> <A NAME=tex2html340 HREF="node25.html"> Table search</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00036400000000000000> Table read</A></H3>
+<P>
+<DL ><DT>create_format(TableName,Format,^InternalFormat,
+	^Status)
+<DD>
+	transforms a specified format into an internal 
+	format.
+ <DT>read_record(TableName,InternalFormat,AccessType,^VLstream,
+	^Status)
+<DD>
+	reads all the records in a table or of a set 
+	according to &quot;AccessType&quot; in a specified format and returns 
+	pairs of RID element and value list in &quot;VLstream&quot;.
+	The contents of &quot;VLstream&quot; will be buffered, i.e. if 
+	&quot;VLstream&quot; is unified with a list cell whose elements are 
+	variables, a certain number of records are processed and 
+	the variables are unified with the values of the records.<BR> 
+	If all the records are read normally, &quot;Status&quot; will become normal 
+	and &quot;Buffer&quot; will become <b> end</b>.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

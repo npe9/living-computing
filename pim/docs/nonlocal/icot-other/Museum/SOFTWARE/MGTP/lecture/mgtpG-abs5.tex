@@ -1,0 +1,194 @@
+%-----------------------------------------------------------------------------
+\section{KL1によるMG節集合の表現}
+
+前件が2個以上のリテラルからなる一般の場合、例えば、
+\[C_n:\quad p(X,X), q(X,Z) \implies p(X,Z). \]
+のようなMG節についても、
+
+\begin{center}
+c(n,(p(X,X),q(X,Z)),R):-true|R=p(X,Z).
+\end{center}
+
+のような1本のKL1節で表現することができよう。この場合、連言照合の度に
+モデル候補中からアトムの対$\langle A_i, A_j\rangle$
+を作ることにすれば前件全体を一度に照合することができる。
+しかしこの方法には冗長性が含まれている。
+たとえば$\langle p(a,b), A_j\rangle$の対はすでに第1リテラルにおいて
+$p(X,X)$との照合で失敗することが明らかであるにもかかわらず、
+すべての$A_j$について無駄に連言照合を実行してしまうからである。
+
+このような冗長性を省くためには、連言照合を前件リテラル個別に実行できるように、
+1本のMG節を複数のKL1節に分離して表現すればよい。
+ただし、この場合には
+前件リテラル間の共有変数の同一性をいかに保つかという問題が生じる。
+これを解決するには、たとえば、\\
+
+\begin{tabular}{l}
+c(n,p(X,X),[],R):-true|R=(1:[X]). \\
+c(n,q(X,Z),1:[X],R):-true|R=p(X,Z).\\
+\end{tabular}\\
+
+のような2本のKL1節で表現すればよい。
+ここでは、$X$が第1リテラルと第2リテラルおよび後件との共有変数であり、
+第2リテラルに対応するc/4の第3引数で$1:[X]$を受ける
+ことにより、共有変数$X$の同一性を表現している。
+
+この表現方法に基づいて、前出の問題SのMG節集合をKL1節集合で表現した実例を
+図\ref{Fig:S-KL1}に示す。
+
+\newbox\sone
+%\setbox\sone=\vbox{\hsize 70 true mm\baselineskip 10pt\footnotesize
+\setbox\sone=\vbox{\hsize 100 true mm\baselineskip 10pt \def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+c(1,true,[],R):-true|R=(p(a,a);q(b)).  
+c(2,r(X,f(X)),[],R):-true|R=false.        
+c(3,p(X,X),[],R):-true|R=(1:[X]).
+c(3,p(X,Y),1:[X],R):-true|R=r(X,f(Y)).
+c(4,q(X),[],R):-true|R=p(f(X),f(X)).    
+otherwise.
+c(_,_,_,R):-true|R=fail.
+\end{verbatim}
+}
+
+\begin{figure}
+\vspace{3cm}
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+   \vbox{\vskip0pt\box\sone\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{問題SのKL1節表現}
+\label{Fig:S-KL1}
+\end{figure}
+
+$c(N,A,V,R)$において、$N$は節番号、$A$は前件リテラル、
+$V$はこの前件リテラルの番号と束縛済み共有変数のリスト、
+$R$は照合が成功した際証明系本体に返される値である。
+
+%-----------------------------------------------------------------------------
+\subsection{証明系本体}
+
+証明系本体は、図\ref{Fig:MGTP-main}および\ref{Fig:MGTP-CJM}
+に示すKL1プログラムとして実現することができる。
+
+メインループのmgtp/5は、モデル拡張候補集合$D$、モデル候補$M$、
+負節番号のリスト$Cn$、非負節番号のリスト$Cg$を受け、
+結果を$Res$に返す。
+$D$が空の場合、MG節集合は$M$で充足可能($M$がモデル)である
+という結果を得てメインループを終了する。
+$D$が空でない場合、\\
+pickup/3によりモデル拡張候補$\Delta$を
+一つ選び、これに対しsubsTest/3により$M$のもとでの充足性を調べる。
+もし$\Delta$が$M$で充足されているならば、
+モデル拡張候補集合の残り$D1$について再びメインループに入る。
+そうでなければ、
+$\Delta$が選言である場合、caseSplit/6により場合分けを行なう。
+$\Delta$がアトムである場合、$M$はこれを含むように拡張される。
+拡張されたモデル候補$[\Delta|M]$に対して、
+モデル棄却規則が適用できれば、
+MG節集合は$M$のもとで充足不可能である($M$はモデルになり得ない)
+という結果を得てメインループを終了する。
+モデル棄却規則が適用できない場合、
+拡張されたモデル候補$[\Delta|M]$に対して、
+前件の連言照合を適用し、
+新たなモデル拡張候補集合$New$とする。
+これをaddNew/3によってモデル拡張候補集合の残り$D1$に加え
+$NewD$として再びメインループに入る。
+
+連言照合手続きcjm/5は、節番号$N$のリストとモデル候補$M$を受け、
+リスト中のすべての節について連言照合cjm1/6を行ない、
+結果を差分リスト$Rh-Rt$に詰めて返す。
+1本のMG節に対する連言照合手続きcjm1/6では、
+各前件リテラルに対し、$M$中のすべてのアトムについて連言照合を行なう。
+このとき、MG節集合のKL1表現c/4が呼ばれる。
+当該リテラルについて$M$中のアトム$A$によるc/4での照合結果が
+$fail$の場合、このリテラル-アトム対の照合結果は空である。
+共有変数情報$(\_:\_)$が返された場合、
+引き続くリテラルについての連言照合を進める。
+それ以外の場合、前件全体の連言照合が成功して後件が返されているので、
+これを$Rh-Rm$の差分リストに詰めて返す。
+当該リテラルについて$M$中の他のアトムによる連言照合結果は、
+差分リスト$Rm-Rt$に詰めて返される。
+
+%------------------------------------------------------------------------------
+
+\begin{figure}
+\newbox\main
+\setbox\main=\vbox{\hsize 115 true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+mgtp(D,M,Cn,Cg,Res):-true|
+ empty(D,E),
+ (E=yes->
+   Res=sat;
+  otherwise;true->
+   pickup(D,Delta,D1),
+   subsTest(Delta,M,S),
+   (S=yes->mgtp(D1,M,Cn,Cg,Res);
+    S=no,Delta=(_;_)->
+     caseSplit(Delta,D1,M,Cn,Cg,Res);
+    otherwise;true->
+     cjm(Cn,Cn1,[Delta|M],F,[]),
+     (F=[false|_]->
+       Res=unsat;
+      otherwise;true->
+       cjm(Cg,Cg1,[Delta|M],New,[]),
+       addNew(New,D1,NewD),
+       mgtp(NewD,[Delta|M],Cn1,Cg1,Res)))).
+
+caseSplit((A;B),D,M,Cn,Cg,Res):-true|
+ caseSplit(A,D,M,Cn,Cg,R1),
+ (R1=sat->Res=sat;
+  otherwise;true->
+   caseSplit(B,D,M,Cn,Cg,Res)).
+otherwise.
+caseSplit(A,D,M,Cn,Cg,Res):-true|
+ addNew([A],D,NewD),
+ mgtp(NewD,M,Cn,Cg,Res).
+
+subsTest((A;B),M,S):-true|
+ subsTest(A,M,S1),
+ (S1=yes->S=yes;
+  otherwise;true->subsTest(B,M,S)).
+otherwise.
+subsTest(A,[A|_],S):-true|S=yes.
+otherwise.
+subsTest(A,[_|M],S):-true|subsTest(A,M,S).
+subsTest(_,[],S):-true|S=no.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip15pt
+   \vbox{\vskip0pt\box\main\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{基本MGTP証明系}
+\label{Fig:MGTP-main}
+\end{figure}
+
+\begin{figure}
+\newbox\cjm
+\setbox\cjm=\vbox{\hsize 104 true mm\baselineskip 10pt\footnotesize
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+cjm([N|Cs],Cs1,M,Rh,Rt):-true|
+ Cs1=[N|Cs2],
+ cjm1(N,M,[],M,Rh,Rm),
+ cjm(Cs,Cs2,M,Rm,Rt).
+cjm([],Cs1,_,Rh,Rt):-true|Cs1=[],Rh=Rt.
+
+cjm1(N,[A|M],V,Mh,Rh,Rt):-true|
+ problem:c(N,A,V,R),
+ (R=fail->Rh=Rm;
+  R=(_:_)->cjm1(N,Mh,R,Mh,Rh,Rm);
+  otherwise;true->Rh=[R|Rm]),
+ cjm1(N,M,V,Mh,Rm,Rt).
+cjm1(_,[],_,_,Rh,Rt):-true|Rh=Rt.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip15pt
+   \vbox{\vskip-5pt\hbox{\box\cjm}\vskip10pt}\hskip15pt\vrule}\hrule}}
+\caption{基本MGTP証明系の連言照合部}
+\label{Fig:MGTP-CJM}
+\end{figure}
+

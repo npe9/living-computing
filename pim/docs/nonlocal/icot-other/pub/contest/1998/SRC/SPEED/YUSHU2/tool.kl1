@@ -1,0 +1,117 @@
+% -- for skeleton contest
+%
+% tool.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+:- module word_list .
+
+%%% extend +WordList -ExtendedWordList
+extend([],         ExtendedWordList) :- ExtendedWordList=[].
+
+extend([One|Rest], ExtendedWordList) :-
+	One=word(Ident,Spell,Point), generic:size(Spell, Length),
+	New=word(Ident,Spell,Point,Length),
+	ExtendedWordList=[New|Tail],
+
+	extend(Rest, Tail).
+
+
+:- module tool . %% 雑多な道具
+
+and(A,B, X) :- A = true , B = true | X = true . 
+otherwise .
+and(A,B, X) :- X = false . 
+
+
+%%% 要素を [](=nil) で初期化した要素数 Size のベクタを生成する
+%%% nil_vector -Vector +Size
+nil_vector(Vector,Size) :- 
+	new_vector(TempVector, Size), nil_vector(Size,0) +TempVector +Vector .
+
+nil_vector(Size,N) -Vector :- N =:= Size | true .
+nil_vector(Size,N) -Vector :- N  <  Size |
+	my_set_vector_element(N,[]) -Vector ,
+
+	nil_vector(Size,~(N+1)) -Vector .
+
+
+%%% 作成した解を出力するかどうか？ 
+select_answer(Size,Board,PlaceList,Score,OldMaxScore,NewMaxScore) -OutStream :-
+	Score  > OldMaxScore |
+	%% check board:print(Size,Board) ,
+	NewMaxScore=Score , OutStream <= PlaceList .
+
+select_answer(Size,Board,PlaceList,Score,OldMaxScore,NewMaxScore) -OutStream :-
+	Score =< OldMaxScore | NewMaxScore=OldMaxScore .
+
+
+%%% 引数対のための細工
+my_set_vector_element(N, NewElement, OldVector, NewVector) :-
+	set_vector_element(OldVector, N, NewElement, NewVector).
+
+
+%%% サイズは範囲内か - H も同様
+check_size(W,Size, Chk) :- W  > Size | Chk = false .
+check_size(W,Size, Chk) :- W =< Size | Chk = true . 
+
+
+%%% 次の大きさ - H Y も同様
+next_size(OldW,X,Length,Pos, NewW) :-
+	max(X,Pos, MaxA),                   %% Pos の前の部分
+	max(~(Length-Pos),~(OldW-X), MaxB), %% Pos の後の部分
+	NewW := MaxA + MaxB .
+
+%%% 大きい方を返す next_sizeで使用
+max(A,B, Result) :- A >= B | Result=A .
+max(A,B, Result) :- A  < B | Result=B . 
+
+
+%%% シフトする長さ - 上下・左右 共用
+shift_length(X,Pos, ShiftLength) :- Pos  > X | ShiftLength := Pos - X .
+shift_length(X,Pos, ShiftLength) :- Pos =< X | ShiftLength := 0 .
+
+
+:- module list .
+
+%%% append +List1 +List2 -Result
+append(In1,In2, Out) :- In1=[] | Out=In2 .
+append(In1,In2, Out) :- In1=[One|Rest] |
+	Out=[One|Tail], append(Rest,In2, Tail) .
+
+
+reverse(List, Out) :- reverse(List,[], Out).
+reverse([],Temp, Out) :- Out = Temp .
+reverse([One|Rest],Temp, Out) :- reverse(Rest,[One|Temp], Out).
+
+
+%%% かき混ぜる
+random(List, Result) :-
+	timer:get_time_of_day(Time),
+	Time = time(_, _, USEC),
+	generic:new(random_numbers,Randoms, 2,USEC),
+	random(Randoms,List, Temp),
+	reverse(Temp,Temp2),
+	timer:get_time_of_day(Time2),
+	Time = time(_, _, USEC2),
+	generic:new(random_numbers,Randoms2, 2,USEC2),
+	random(Randoms2,Temp2, Result).
+	
+
+random([One|Rest],[Word1,Word2|WordListRest], Result) :- One = 1 |
+	Result=[Word1|Tail], random(Rest,[Word2|WordListRest], Tail).
+
+random([One|Rest],[Word1,Word2|WordListRest], Result) :- One = 0 |
+	Result=[Word2|Tail], random(Rest,[Word1|WordListRest], Tail).
+
+random([One|Rest],[Word], Result) :- Result = [Word].
+
+%%% end
+
+
+
+
+
+

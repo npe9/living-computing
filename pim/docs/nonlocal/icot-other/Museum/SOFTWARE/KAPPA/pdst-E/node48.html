@@ -1,0 +1,54 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Module main(irpr_client.kl1)</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Module main(irpr_client.kl1)">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html584 HREF="node49.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html582 HREF="node30.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html578 HREF="node47.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html585 HREF="node49.html"> About this document... </A>
+<B>Up:</B> <A NAME=tex2html583 HREF="node30.html"> Programing example:a personel </A>
+<B> Previous:</B> <A NAME=tex2html579 HREF="node47.html"> Modification and deletion </A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00047000000000000000> Module main(irpr_client.kl1)</A></H2>
+<P>
+This is the socket client program of irpr. The procedure is as follows.
+<P>
+<UL><LI> Connects to the port of Kappa server numbered 8888.
+ <LI> Sends the service name &quot;irpr&quot; with a new line code at the end of it.
+ <LI> Inputs a command parameter given as &quot;Mode&quot; from standard input 
+	and output the result of the command execution.
+</UL>
+<P>
+<PRE>:- module main.
+
+main :- client.
+
+client :-
+    unix:unix([connect(inet(&quot;localhost&quot;,8888),Result)]),
+    client1(Result).
+
+client1(normal(So)) :-
+    merge(Si, So),
+    unix:argv(ARGVL),
+    klicio:klicio([stdout(OutResult),stdin(InResult)]),
+    client2(ARGVL,InResult,OutResult,Si).
+
+client2([&quot;shutdown&quot;],normal(Stdin),normal(Stdout),S) :-
+    S = [fwrite(&quot;shutdown&quot;),#&quot;\n&quot;,fflush(_)],
+    Stdin = [], Stdout = [].
+otherwise.
+client2([Mode],normal(Stdin),normal(Stdout),Soc) :-
+    Soc = [ #&quot;i&quot;, #&quot;r&quot;, #&quot;p&quot;, #&quot;r&quot;, #&quot;\n&quot;, fflush(_),
+          fwrite(Mode), #&quot;\n&quot;, fflush(Stat1)|{SocIn,SocOut}],
+    irpr_lib:client_rw_loop(Stdin,SocOut,SocIn,Stdout).
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

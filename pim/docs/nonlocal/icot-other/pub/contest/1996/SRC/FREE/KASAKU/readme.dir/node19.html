@@ -1,0 +1,51 @@
+﻿<html><HEAD>
+<TITLE>B.5 game モジュール</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html227 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html225 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html219 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html228 HREF="node20.html">B.6 utils モジュール</A>
+<B>Up:</B> <A NAME=tex2html226 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<B> Previous:</B> <A NAME=tex2html220 HREF="node18.html">B.4 learn モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00055000000000000000>B.5 game モジュール</A></H2>
+<A NAME="subsecpreds_of_game">&#160;</A>
+<P>
+<DL ><DT>training <i> +Q, +Num</i>
+<DD>
+  <i> Q</i> を用いて、<i> Num</i> 試合だけ紅白戦を行う。
+<DT>game <i> +Q</i>
+<DD>
+  ユーザとの対戦を行う。この際に Q値の学習も行う。
+  プログラムはユーザに敗けると
+  トレーニングさせてもらえるようユーザに要求し、
+  それがユーザに受け入れられれば training/2 を用いて 200 回の
+  紅白戦を自主的に行う。
+<DT>endmsg <i> +Reward</i>
+<DD>
+  試合終了時に、報酬 <i> Reward</i> に応じたメッセージを表示する。
+<DT>do_prog
+  <i> +Q, +Turn, +Board, -NewBoard, -RedQ, -ActVec, -Action, -Blank</i>
+<DD>
+  プログラムが手番時に行う操作をまとめたもの。具体的には、
+  <UL><LI> 盤面情報 b/9 を d/10 に変換し、
+  <LI> <i> Q</i> を用いて手 <i> ActVec, Action</i> を選択し、
+  <LI> その手を実行する。
+  <LI> 新たな盤面 d/10 を b/9 の形に戻し、<i> NewBoard</i> に同一化する。
+  </UL>
+  <i> Turn</i> は今、何手めであるかを表す整数。
+<DT>do_user <i> +Turn, +Board, -NewBoard</i>
+<DD>
+  ユーザからの入力（手）を受け付け、その通りに盤面 <i> Board</i> に
+  変更を加えたものを <i> NewBoard</i> に同一化する。
+<P>
+ </DL>
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

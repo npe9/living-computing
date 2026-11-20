@@ -1,0 +1,108 @@
+%  Copyright (C) 1996 Haruhiko Usa  < usa@logos.t.u-tokyo.ac.jp >
+%						November 17, 1996
+
+:- module encode.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   要素の最大値と要素数のカウント, ハッシュ表サイズの決定
+
+count([A|L1],N,X,L,M) :- A>=X, N1:=N+1 |
+    count(L1,N1,A,L,M).
+count([A|L1],N,X,L,M) :- A=<X, N1:=N+1 |
+    count(L1,N1,X,L,M).
+count([],N,Xmax,L,M) :- Xmax < N*4, Hn:=Xmax+1 |
+    new_vector(H,Hn),
+    hash(L,[],[],Hn,H,M).
+otherwise.
+count([],N,Xmax,L,M) :- Hn:=N*4 |
+    new_vector(H,Hn),
+    hash(L,[],[],Hn,H,M).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   hash elements [ hash(X) = X ].
+
+hash([X|L],Minus,Plus,Hn,H,M) :- 0=<X, X<Hn |
+    set_vector_element(H,X,Xn0,Xn1,H1),
+    Xn1 := Xn0 + 1,
+    hash(L,Minus,Plus,Hn,H1,M).
+hash([X|L],Minus,Plus,Hn,H,M) :- X<0 |
+    Minus1=[X|Minus],
+    hash(L,Minus1,Plus,Hn,H,M).
+hash([X|L],Minus,Plus,Hn,H,M) :- X>=Hn |
+    Plus1=[X|Plus],
+    hash(L,Minus,Plus1,Hn,H,M).
+hash([],Minus,Plus,Hn,H,M) :- 
+    sort(Minus,MM),
+    sort(Plus,MP),
+    mklist(H,0,Hn,M1,MP),
+    append(MM,M1,M).
+
+append([],L,M) :- M=L.
+append([X|L],L1,M) :- M=[X|L2], append(L,L1,L2).
+
+
+mklist(H,N,Hn,M,M1) :- N < Hn, N1:=N+1 |
+    vector_element(H,N,Xn),
+  ( Xn=0 ->
+	mklist(H,N1,Hn,M,M1);
+    Xn\=0 ->
+	M=[N,Xn|M2],
+	mklist(H,N1,Hn,M2,M1)
+  ).
+mklist(_,Hn,Hn,M,M1) :- M=M1.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   merge sort.
+
+sort([],L1) :- L1=[].
+sort(L,L1) :- list(L) | mergesort_init(L,L2), mergesort(L2,L1).
+
+mergesort_init([],R)   :- R=[].
+mergesort_init([X0],R) :- R=[X0,1].
+mergesort_init([X0,X1|L],R) :- X0<X1 |
+    R=[[X0,1,X1,1]|R2],
+    mergesort_init(L,R2).
+mergesort_init([X0,X1|L],R) :- X1<X0 |
+    R=[[X1,1,X0,1]|R2],
+    mergesort_init(L,R2).
+mergesort_init([X0,X0|L],R) :- 
+    R=[[X0,2]|R2],
+    mergesort_init(L,R2).
+
+
+mergesort([],M) :- M=[].
+mergesort([A],M) :- list(A) | M=A.
+otherwise.
+mergesort(L,M) :- merge_pairs(L,R), mergesort(R,M).
+
+
+merge_pairs([A,B|L],R) :- list(A), list(B) |	% A, B are integer lists.
+    R=[R1|R2],
+    merge(A,B,R1),
+    merge_pairs(L,R2).
+merge_pairs([A,X|L],R) :- list(A), integer(X) |	% A, [X|L] are integer lists.
+    merge(A,[X|L],R).
+merge_pairs([],R) :- R=[].
+merge_pairs([A],R) :- R=[A].			% A is a integer list.
+otherwise.
+merge_pairs(A,R) :- R=[A].			% A is a integer list.
+
+
+merge([],[],L) :- L=[].
+merge(L0,[],L) :- list(L0) | L=L0.
+merge([],L1,L) :- list(L1) | L=L1.
+merge([X0,Xn0|L0],[X1,Xn1|L1],L) :- X0<X1 |
+    L=[X0,Xn0|L2],
+    merge(L0,[X1,Xn1|L1],L2).
+merge([X0,Xn0|L0],[X1,Xn1|L1],L) :- X1<X0 |
+    L=[X1,Xn1|L2],
+    merge([X0,Xn0|L0],L1,L2).
+merge([X0,Xn0|L0],[X0,Xn1|L1],L) :- Xn:=Xn0+Xn1 |
+    L=[X0,Xn|L2],
+    merge(L0,L1,L2).
+
+
+%%%%  encode EOF.
+

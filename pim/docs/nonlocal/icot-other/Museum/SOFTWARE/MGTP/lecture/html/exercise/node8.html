@@ -1,0 +1,30 @@
+﻿<HEAD>
+<TITLE> ヒント</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H2><A NAME=SECTION00231000000000000000> ヒント</A></H2>
+<P>
+これは、基本的には状態遷移の問題である。
+<P>
+今の状態から次に可能な状態への遷移が、
+遷移規則の形で記述される。
+ある状態が可能である、ということを<code>SPM_quot</code>can(...)&quot;という述語で
+表現しよう。
+状態変数としては、ここでは、登場するオブジェクトごとに、
+<UL><LI> <code>SPM_quot</code>monkey(A,B,C)&quot;: 猿が平面座標Aの垂直座標Bにいて、Cを手にしている
+<LI> <code>SPM_quot</code>ladder(A,B)&quot;: 踏台が平面座標Aの垂直座標Bにある
+<LI> <code>SPM_quot</code>banana(A,B)&quot;: バナナが平面座標Aの垂直座標Bにある
+</UL>
+という項で表現しよう。
+状態遷移規則は、MG節だと
+<PRE>can(...) --&gt; can(...).
+</PRE>
+という具合に素直に表現できる。
+<P>
+
+<BR> <HR>
+<P>
+
+</BODY>

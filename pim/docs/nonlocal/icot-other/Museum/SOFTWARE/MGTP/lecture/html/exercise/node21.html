@@ -1,0 +1,43 @@
+﻿<HEAD>
+<TITLE> 【演習問題３：パズル``猿とバナナ'' (TPTP/PLA003-1)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H1><A NAME=SECTION00330000000000000000> 【演習問題３：パズル``猿とバナナ'' (TPTP/PLA003-1)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>true--&gt;place(l0),place(l1),place(l2).
+true--&gt;can(monkey(l0,floor,nothing),ladder(l1,floor),
+           bananas(l2,ceiling)).
+
+can(monkey(A,floor,nothing),ladder(A,floor),B)
+    --&gt;can(monkey(A,ceiling,nothing),ladder(A,floor),B).
+can(monkey(A,ceiling,nothing),ladder(A,floor),B)
+    --&gt;can(monkey(A,floor,nothing),ladder(A,floor),B).
+can(monkey(A,floor,the_ladder),ladder(A,floor),B),place(C)
+    --&gt;can(monkey(C,floor,the_ladder),ladder(C,floor),B).
+can(monkey(A,floor,the_bananas),B,bananas(A,floor)),place(C)
+    --&gt;can(monkey(C,floor,the_bananas),B,bananas(C,floor)).
+can(monkey(A,floor,nothing),B,C),place(D)
+    --&gt;can(monkey(D,floor,nothing),B,C).
+can(monkey(A,B,the_ladder),ladder(A,C),D)
+    --&gt;can(monkey(A,B,nothing),ladder(A,floor),D).
+can(monkey(A,B,the_bananas),C,bananas(A,B))
+    --&gt;can(monkey(A,B,nothing),C,bananas(A,floor)).
+can(monkey(A,B,nothing),C,bananas(A,B))
+    --&gt;can(monkey(A,B,the_bananas),C,bananas(A,B)).
+can(monkey(A,B,nothing),ladder(A,B),C)
+    --&gt;can(monkey(A,B,the_ladder),ladder(A,B),C).
+
+can(monkey(A,B,the_bananas),C,D)--&gt;false.
+</PRE>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,63 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 意味論</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 意味論">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html163 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html161 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html157 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html164 HREF="node11.html"> Kappaの基本機能概要</A>
+<B>Up:</B> <A NAME=tex2html162 HREF="node9.html"> Kappaのモデル</A>
+<B> Previous:</B> <A NAME=tex2html158 HREF="node9.html"> Kappaのモデル</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00023100000000000000> 意味論</A></H3>
+<P>
+直観的にいえば、Kappa の意味論は、繰り返しを平坦に展開した場合と同じで
+ある。つまり非正規関係 <b>NR</b> にタプル
+<IMG  ALIGN=MIDDLE ALT="" SRC="img55.gif"> が含まれていると
+する。このとき、
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img56.gif"><P>
+は<b>NR</b>と同じ意味を持っている。このように繰り返しを平坦にすることを、ア
+ンネスト (unnest) といい、逆の操作をネスト (nest) という。Kappa の意味
+論はこの言葉を使えば、
+<blockquote> Kappa の非正規関係の意味は、ネスト、アンネスト操作によって変わらない。
+</blockquote>
+ということができる。たとえば、表<A HREF="node8.html#ttab5">5</A>の非正規関係は表
+<A HREF="node7.html#ttab3">3</A>と同じ意味である。つまりどちらの関係に対して問い合わせを出
+しても同じ回答が返ってくることを Kappa は保証している。これは別の言い
+方をすれば、関係モデルの素直な拡張となっており、処理・表現の双方におけ
+る効率を保証している。
+<P>
+この Kappa での意味論は、他の非正規関係モデルと必ずしも同じではない。
+<P>
+非正規関係の意味論によって問合せ結果がいかに異なるかを例で見てみよう。
+たとえば表<A HREF="node10.html#tnr1">6</A> (1) を考えよう。その非正規関係にネスト操作を施す
+と、Kappa や (INRIA で開発された) Verso では表-<A HREF="node10.html#tnr1">6</A> (2) が得ら
+れるが、西独で開発されている DASDBS や AIP-P で採用されているいわゆる 
+NF<IMG  ALIGN=BOTTOM ALT="" SRC="img57.gif"> モデルでは表<A HREF="node10.html#tnr1">6</A> (3) が得られる。
+<P><A NAME=190>&#160;</A><A NAME=tnr1>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img58.gif">
+<BR><STRONG>表 6:</STRONG> 非正規関係の意味論(1)<BR>
+<P>
+<P>
+別の例を考えよう。表<A HREF="node10.html#tnr2">7</A> (1) は非常に単純な非正規関係 (<b>R</b>) の
+例である。<IMG  ALIGN=MIDDLE ALT="" SRC="img59.gif"> 
+という操作を考えてみよう。Kappa では、表<A HREF="node10.html#tnr2">7</A> (2) の関係が得られ
+る。ネストすれば、属性 ``趣味'' と ``所属'' のどちらに注目するかで2つ
+の結果が得られる。これは ``スキー'' と ``I'' の組合せを除外したものと
+なっている。ところが Verso モデルでは、元の関係 (表<A HREF="node10.html#tnr2">7</A> (1)) 
+が得られる。
+<P><A NAME=228>&#160;</A><A NAME=tnr2>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img60.gif">
+<BR><STRONG>表 7:</STRONG> 非正規関係の意味論(2)<BR>
+<P>
+<P>
+このように、非正規関係では意味論をはっきり理解しておくことが非常に重要
+である。
+<P>
+<BR> <HR>
+<P>
+</BODY>

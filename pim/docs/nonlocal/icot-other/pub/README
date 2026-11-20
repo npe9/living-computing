@@ -1,0 +1,35 @@
+		IFS-related free software Directory 
+
+	----------------------------------------------------
+
+This directory contains IFS-based softwares developed outside of ICOT
+and other useful softwares. 
+For detailed information, please refer to README(.j) file of each
+directory. 
+
+* Directories
+cuprolog/
+	Macintosh and MS-DOS version of cu-Prolog developed by 
+	Prof. Hidetosi Sirai of Chukyo University.
+
+m-qxt/
+	Macintosh version of micro-Quixote developed by
+	Yukihiro Morita of Oki Electric Industry Co. Ltd.
+
+contest/
+       Sample proguram used by KLIC PROGRAMING CONTEST
+
+h8itaku/
+        This directory is created temporaly.
+
+h9itaku/
+        This directory is created temporaly.
+
+	----------------------------------------------------	
+
+Inquiries on IFS are welcome. Please contact the following e-mail 
+addresses for information :
+
+	On ICOT Free Software:		ifs@icot.or.jp
+	On Software related to IFS:	irpr@icot.or.jp
+        On KLIC PROGRAMING CONTEST:     klic-contest@icot.or.jp

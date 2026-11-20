@@ -1,0 +1,111 @@
+﻿<html>
+<title>
+仮説推論(例)
+</title>
+
+<body bgcolor="white">
+<h1>MGTP 上での仮説推論の例</h1>
+
+<HR>
+
+以下では、MGTP 上での仮説推論の例として、<P>
+
+<OL>
+<LI> Kオペレータを導入した変換例と推論結果
+<LI> Gelfond が論文「Disjunctive Defaults」の中で示した例題
+<LI> 法的推論への応用例(<A HREF="javaMGTP.html">JavaMGTP</A> による実行例含む)
+</OL>
+
+を説明する。
+
+<HR>
+<H3>1. Kオペレータを導入した変換例と推論結果</H3><P>
+
+以下の general logic program を考える。<P>
+
+R <- not R.<BR>
+R <- Q.<BR>
+P <- not Q.<BR>
+Q <- not P.<P>
+
+これらのルールは、以下のような MGTP 問題節に変換される。
+
+-> -K R, R ; K R.<BR>
+Q -> R.<BR>
+-> -K Q, P ; K Q.<BR>
+-> -K P, Q ; K P.<P>
+
+上記のルールに対して MGTP 実行を行うと、以下の3つのモデルが生成される。<P>
+
+S1={KR,-KQ,P,KP}<BR>
+S2={KR,KQ,-KP,Q,R}<BR>
+S3={KR,KQ,KP}<P>
+
+ここで、S1 と S2 は T-condition を満たさない。よって、
+S2 のみが求めるべき安定モデルとなる。<P>
+
+<HR>
+<H3>2. Gelfond が論文「Disjunctive Defaults」の中で示した例題</H3><P>
+(Inoue, et.al., "Embedding Negation as Failure into a Model Generation Theorem
+Prover" より)<P>
+
+Lh-Usable(X) <- Person(X), not Ab1(X).<BR>
+Rh-Usable(X) <- Person(X), not Ab2(X).<BR>
+Ab1(X) <- -Lh-Usable(X).<BR>
+Ab2(X) <- -Rh-Usable(X).<BR>
+Person(john) <-.<BR>
+-Lh-Usable(john) | -Rh-Usable(john) <- .<P>
+
+この問題においては、john が右利きであるという証拠も左利きであるという
+証拠もないが、逆に右利き(左利き)であることを否定する情報もない。
+したがって、右利き、左利き両方が安定モデルとなる。<P>
+上記のルールを MGTP ルールに変換してモデルを求めると以下の2つとなる。<P>
+
+S1={Person(john),-Lh-Usable(john),Ab1(john),K Ab1(john),-K Ab2(john), Rh-Usable(john)}<BR>
+S2={Person(john),-Rh-Usable(john),Ab2(john),K Ab2(john),-K Ab1(john), Lh-Usable(john)}<P>
+
+S1、S2はともに T-Condition を満足する。したがって、共に安定モデルである。<P>
+
+<HR>
+<H3>3. 法的推論への応用例</H3><P>
+
+MGTP 上での仮説推論の実現の応用として、法的推論への応用が考えられる。
+たとえば、以下のような例題を考えてみる。<P>
+
+                                                     
+<例題><BR>
+<center>
+<table border=1 width=80%><TR><TH align="left">
+ラクーン商会は、ソフト販売会社6社に対して、最初に承諾した会社1社
+に対して、3000万円のライセンス料でホームページ制作支援ソフトの販売
+権をライセンスする旨、契約条項を添付した電子メールを通知し
+た。ソフト販売会社レッドフォックスは、自社のサーバーのタイムスタンプで 7
+月7日午前0時12分にラクーン商会に承諾通知を発信したが、ラクーン商会のサー
+バーにメールが到着したのは、ラクーン商会のサーバーのタイムスタンプで
+午前0時15分であった。
+他方、同じくソフト販売会社であるキヌタ堂は、自社のサーバーのタイムスタ
+ンプで7月 6日午後8時にラクーン商会に承諾通知を発信したが、ラクーン商会
+のサーバーにメールが到着したのは、ラクーン商会のサーバーのタイムスタン
+プで翌日午後4時であった。
+いずれの販売会社との契約が成立するか ?
+</TH></TR></table>
+</center>
+<BR><BR>
+
+●<A HREF="sample.html">この例題に対するルールベースの記述</A>
+(記述は、<A HREF="ELP.html">拡張論理型言語</A>による)。<P>
+
+●<A HREF="sample-mgtp.html">MGTP 入力節</A><P>
+
+●<A HREF="sample-mgtp-result.html">MGTP 実行結果</A><P>
+
+
+
+
+
+<!-- =============================================================== -->
+<P><HR>
+<A HREF="hypothesis.html">「MGTP 上での仮説推論の実現について」に戻る</A>
+</body>
+</html>
+

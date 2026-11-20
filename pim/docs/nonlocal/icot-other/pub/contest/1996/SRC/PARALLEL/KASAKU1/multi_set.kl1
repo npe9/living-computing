@@ -1,0 +1,297 @@
+:- module multi_set.
+
+
+% ----- マルチ集合のリストL=[Int,...]を
+% ----- 形式multiset([e(Int,Num),...], ...)にエンコード
+encode(L, M)
+ :- current_node(_, NodeNum),
+    new_functor(Ms0, multiset, NodeNum),
+    new_functor(Ls0, divlist, NodeNum),
+    init_unbound_functor(NodeNum, Ls0, Ls1),
+    init_unbound_functor(NodeNum, Ms0, M),
+    gen_encoder(NodeNum, Ls1, M),
+    split_data(L, NodeNum, Ls1).
+
+%   各ノード上に、担当分のエンコードプロセスsort/3を生成
+gen_encoder(Node, Ls, Ms)
+ :- Node > 0
+  | arg(Node, Ls, L),
+    arg(Node, Ms, M),
+    sort(L, M, [])@node(~(Node-1)),
+    gen_encoder(~(Node-1), Ls, Ms).
+gen_encoder(0, Ls, Ms).
+
+
+%   リストを各ノード担当分にわけて、各ストリームに流す
+split_data([I | LLeft], NodeNum, Ls)
+ :- I >= 0
+  | Node := I mod NodeNum,
+    setarg(~(Node+1), Ls, L, NewL, NewLs),
+    L = [I | NewL],
+    split_data(LLeft, NodeNum, NewLs).
+otherwise.
+split_data([I | LLeft], NodeNum, Ls)
+ :- Node := (-I) mod NodeNum,
+    setarg(~(Node+1), Ls, L, NewL, NewLs),
+    L = [I | NewL],
+    split_data(LLeft, NodeNum, NewLs).
+split_data([], NodeNum, Ls)
+ :- terminate_functor(NodeNum, Ls).
+
+
+%   ストリーム保持用ファンクタの各引数ストリームを閉じる
+terminate_functor(Pos, F)
+ :- Pos > 0
+  | arg(Pos, F, Arg),
+    Arg = [],
+    terminate_functor(~(Pos-1), F).
+terminate_functor(0, F).
+
+
+%   クイックソートしつつ、e(Int,Num)形式をつくって出力
+sort([I | LLeft], MHead, MTail)
+ :- split3(I, 1, LLeft, LS, N, LL),
+    sort(LS, MHead, MSTail),
+    sort(LL, MLHead, MTail),
+    MSTail = [e(I,N) | MLHead].
+sort([], MHead, MTail)
+ :- MHead = MTail.
+
+%   Lを、Iより大きい数のリストLS, Iより小さい数のリストLL, Iの個数Nにわける
+split3(I, C, [I1 | LLeft], LS, N, LL)
+ :- I1 > I
+  | LL = [I1 | LLMid],
+    split3(I, C, LLeft, LS, N, LLMid).
+split3(I, C, [I1 | LLeft], LS, N, LL)
+ :- I1 < I
+  | LS = [I1 | LSMid],
+    split3(I, C, LLeft, LSMid, N, LL).
+otherwise.
+split3(I, C, [I1 | LLeft], LS, N, LL)
+ :- split3(I, ~(C+1), LLeft, LS, N, LL).
+split3(I, C, [], LS, N, LL)
+ :- LS = [],
+    N = C,
+    LL = [].
+
+
+% ----- 形式multiset([e(Int,Num),...], ...)を、
+% ----- マルチ集合のリストL=[Int,...]にデコード
+decode(M, L)
+ :- functor(M, _, Arity),
+    decode1(Arity, M, L).
+
+decode1(Pos, Ms, L)
+ :- Pos > 0
+  | arg(Pos, Ms, M),
+    decode2(M, L, LMid)@node(~(Pos-1)),
+    decode1(~(Pos-1), Ms, LMid).
+decode1(0, Ms, L)
+ :- L = [].
+
+
+% ----- エンコード形式[e(Int,Num),...]をマルチ集合のリストL=[Int,...]にデコード
+decode2([e(I,N) | MLeft], LHead, LTail)
+ :- decode3(I, N, LMid, LHead),
+    decode2(MLeft, LMid, LTail).
+decode2([], LHead, LTail)
+ :- LHead = LTail.
+
+decode3(I, N, L0, L)
+ :- N > 0
+  | L = [I | LMid],
+    decode3(I, ~(N-1), L0, LMid).
+decode3(I, 0, L0, L)
+ :- L = L0.
+
+
+% ----- union
+%   同じ要素なら和を出力
+union(M0, M1, M)
+ :- current_node(_, NodeNum),
+    new_functor(MM, multiset, NodeNum),
+    init_unbound_functor(NodeNum, MM, M),
+    split_union(NodeNum, M0, M1, M).
+
+split_union(Node, Ms0, Ms1, Ms)
+ :- Node > 0
+  | arg(Node, Ms0, M0),
+    arg(Node, Ms1, M1),
+    arg(Node, Ms, M),
+    union1(M0, M1, M),
+    split_union(~(Node-1), Ms0, Ms1, Ms)@node(~(Node-1)).
+split_union(0, Ms0, Ms1, Ms).
+
+
+union1([e(N,Num0) | M0Left], [e(N,Num1) | M1Left], M)
+ :- M = [e(N,~(Num0+Num1)) | MMid],
+    union1(M0Left, M1Left, MMid).
+otherwise.
+%   同じ要素でないなら、Intが小さい方をまず出力
+union1(M0, M1, M)
+ :- M0 = [E0 | M0Left],
+    M1 = [E1 | M1Left],
+    E0 = e(N0,Num0),
+    E1 = e(N1,Num1),
+    N0 < N1
+  | M = [E0 | MMid],
+    union1(M0Left, M1, MMid).
+otherwise.
+union1(M0, M1, M)
+ :- M0 = [_ | _],
+    M1 = [E1 | M1Left]
+  | M = [E1 | MMid],
+    union1(M0, M1Left, MMid).
+%   一方がなくなれば、もう一方の残りを出力して終わり
+union1([], M1, M)
+ :- M = M1.
+union1(M0, [], M)
+ :- M = M0.
+
+
+% ----- intersection
+intersection(M0, M1, M)
+ :- current_node(_, NodeNum),
+    new_functor(MM, multiset, NodeNum),
+    init_unbound_functor(NodeNum, MM, M),
+    split_intersection(NodeNum, M0, M1, M).
+
+split_intersection(Node, Ms0, Ms1, Ms)
+ :- Node > 0
+  | arg(Node, Ms0, M0),
+    arg(Node, Ms1, M1),
+    arg(Node, Ms, M),
+    intersection1(M0, M1, M),
+    split_intersection(~(Node-1), Ms0, Ms1, Ms)@node(~(Node-1)).
+split_intersection(0, Ms0, Ms1, Ms).
+
+
+%   同じ要素なら積(小さい方のNum)を出力
+intersection1([e(N,Num0) | M0Left], [e(N,Num1) | M1Left], M)
+ :- Num0 =< Num1
+  | M = [e(N,Num0) | MMid],
+    intersection1(M0Left, M1Left, MMid).
+otherwise.
+intersection1([e(N,Num0) | M0Left], [e(N,Num1) | M1Left], M)
+ :- M = [e(N,Num1) | MMid],
+    intersection1(M0Left, M1Left, MMid).
+otherwise.
+%   同じ要素でないなら、Intが小さい方をまず出力
+intersection1([e(N0,Num0) | M0Left], M1, M)
+ :- M1 = [e(N1,_)|M1Left],
+    N0 < N1
+  | intersection1(M0Left, M1, M).
+otherwise.
+intersection1(M0, [_|M1Left], M)
+ :- intersection1(M0, M1Left, M).
+otherwise.
+%   一方がなくなれば終了
+intersection1(_, _, M)
+ :- M = [].
+
+% ----- difference M0\M1
+difference(M0, M1, M)
+ :- current_node(_, NodeNum),
+    new_functor(MM, multiset, NodeNum),
+    init_unbound_functor(NodeNum, MM, M),
+    split_difference(NodeNum, M0, M1, M).
+
+split_difference(Node, Ms0, Ms1, Ms)
+ :- Node > 0
+  | arg(Node, Ms0, M0),
+    arg(Node, Ms1, M1),
+    arg(Node, Ms, M),
+    difference1(M0, M1, M),
+    split_difference(~(Node-1), Ms0, Ms1, Ms)@node(~(Node-1)).
+split_difference(0, Ms0, Ms1, Ms).
+
+
+%   同じ要素有りでM0の方が多いなら、その差を出力
+difference1([e(N,Num0) | M0Left], [e(N,Num1) | M1Left], M)
+ :- Num0 > Num1
+  | M = [e(N,~(Num0-Num1)) | MMid],
+    difference1(M0Left, M1Left, MMid).
+otherwise.
+%   同じ要素有りでM0はM1以下なら、出力しない
+difference1([e(N,Num0) | M0Left], [e(N,Num1) | M1Left], M)
+ :- difference1(M0Left, M1Left, M).
+otherwise.
+%   M0のみある要素は、そのまま出力
+difference1([e(N0,Num0) | M0Left], M1, M)
+ :- M1 = [e(N1,_) | _],
+    N0 < N1
+  | M = [e(N0,Num0) | MMid],
+    difference1(M0Left, M1, MMid).
+otherwise.
+%   M1のみある要素は、出力しない
+difference1(M0, [e(N1,Num1) | M1Left], M)
+ :- M0 = [_ | _]
+  | difference1(M0, M1Left, M).
+otherwise.
+%   M0がなくなれば終わり
+difference1([], _, M)
+ :- M = [].
+%   M1がなくなれば、のこりのM0を出力して終わり
+difference1(M0, [], M)
+ :- M = M0.
+
+
+% ----- contraction
+contraction(M0, M)
+ :- current_node(_, NodeNum),
+    new_functor(MM, multiset, NodeNum),
+    init_unbound_functor(NodeNum, MM, M),
+    split_contraction(NodeNum, M0, M).
+
+split_contraction(Node, Ms0, Ms)
+ :- Node > 0
+  | arg(Node, Ms0, M0),
+    arg(Node, Ms, M),
+    contraction1(M0, M),
+    split_contraction(~(Node-1), Ms0, Ms)@node(~(Node-1)).
+split_contraction(0, Ms0, Ms).
+
+
+%   e(Int,Num)のNumを1にして出力
+contraction1([e(N,Num) | M0Left], M)
+ :- M = [e(N,1) | MMid],
+    contraction1(M0Left, MMid).
+contraction1([], M)
+ :- M = [].
+
+
+% ----- choose
+choose(M, E, S)
+ :- choose(1, M, E, S).
+
+% Pos番目のノード担当分が空なら、次のノード担当分をチェック
+choose(Pos, Ms, E, Ss)
+ :- arg(Pos, Ms, M),
+    M = []
+  | choose(~(Pos+1), Ms, E, Ss).
+otherwise.
+choose(Pos, Ms, E, Ss)
+ :- arg(Pos, Ms, M)
+  | choose1(M, E, S),
+    setarg(Pos, Ms, S, Ss).
+
+
+%   先頭要素のNumが2以上なら、Numを1減らしてIntを返す
+choose1([e(N,Num) | MLeft], E, S)
+ :- Num > 1
+  | E = N,
+    S = [e(N,~(Num-1)) | MLeft].
+otherwise.
+%   先頭要素のNumが1なら、Intを返してそのエントリは削除
+choose1([e(N,Num) | MLeft], E, S)
+ :- E = N,
+    S = MLeft.
+
+%   ファンクタFInの各引数を、未具体化変数にする
+init_unbound_functor(Pos, FIn, FOut)
+ :- Pos > 0
+  | setarg(Pos, FIn, V, FMid),
+    init_unbound_functor(~(Pos-1), FMid, FOut).
+init_unbound_functor(0, FIn, FOut)
+ :- FOut = FIn.
+

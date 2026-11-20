@@ -1,0 +1,106 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Reading records</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Reading records">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html558 HREF="node46.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html556 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html550 HREF="node44.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html559 HREF="node46.html"> Appending a record</A>
+<B>Up:</B> <A NAME=tex2html557 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html551 HREF="node44.html"> Searching for records</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046400000000000000> Reading records</A></H3>
+<P>
+The procedure of reading records is as follows.
+<P>
+<UL><LI> Creates an internal format by designating a table.
+ <LI> In case of unnesting records, designates a table and get the 
+	schema information.
+ <LI> Reads the entities of records using the internal format.
+</UL>
+<P>
+As a programing technique, how to deal with large amount of data 
+using the reading control of primitive command read_record/5 is 
+important. For the details, see the part of read_record_loop/5 shown
+below.
+<P>
+<PRE>read_record1(normal, TableName, ReadSeq, ValidF, VLS,NVLS,Status)-IFP:-
+    % Argument &quot;ReadSeq&quot; is the reading order. Instantiate it by  
+    %  &quot;set(Set, _)&quot; to read the entities of the &quot;Set&quot;.
+    IFP &lt;= create_format(TableName, (*), IFormat, Status1),
+    % Designating the whole table by &quot;(*)&quot;, gets the internal format
+    % &quot;IFormat&quot;
+    IFP &lt;= get_table_info(TableName, [schema(Schema0)], Status2),
+    % Gets the schema information
+    Schema0 = Schema,
+    lib:error_check([Status1,Status2],irpr_kappa:read_record1,Status3),
+    read_record2(Status3,TableName,ReadSeq,IFormat,ValidF,Schema,VLS,NVLS,
+        Status)-IFP.
+otherwise.
+read_record1(PreStatus, _TableName, _ReadSeq, _ValidF, VLS,NVLS,Status)-IFP :-
+    NVLS = VLS, Status = PreStatus.
+
+read_record2(normal,TableName,ReadSeq,IFormat,ValidF,Schema,VLS,NVLS,Status)
+    -IFP :-
+    IFP &lt;= read_record(TableName, IFormat, ReadSeq, RRVLS, Status),
+    ValidFL = [valid_flag(ValidF)],
+    read_record_loop(VLS, Schema, ValidFL, RRVLS, NVLS).
+otherwise.
+read_record2(PreStatus,_TableName,_ReadSeq,_IFormat,_ValidF,_Schema,VLS,NVLS,
+    Status)-IFP :-
+    NVLS = VLS, Status = PreStatus.
+
+%%%%
+% read_record_loop/5
+read_record_loop([VLB|VLS], Schema, ValidFL, RRVLS, NVLS) :-
+    RRVLS = [RRVLB|RRVLS1],
+    % The fourth argument of primitive command read_record/5 is 
+    % instantiated here.
+    read_record_loop1(RRVLB, VLB, VLS, Schema, ValidFL, RRVLS1, NVLS).
+read_record_loop([], _Schema, _ValidFL, RRVLS, NVLS) :-
+    RRVLS = [], NVLS = [].
+</PRE>
+<P>
+After the first argument of read_record_loop/5 is instantiated as a 
+list cell, &quot;RRVLS&quot; is instantiated.
+The instantiation of the first argument as a &quot;[VLB <IMG  ALIGN=MIDDLE ALT="" SRC="img127.gif"> VLS]&quot; is done at the 
+receiver side of command status &quot;ComStatus&quot; mentioned in the previous 
+section. The concerning predicates are irpr_service:output_vls/5 and
+output_vls_loop/8, where after all the contents of the car(VLB) have
+been output, the cdr(VLS) is instantiated as a list cell.
+<P>
+This is how records are read on demand. The reason is to deal with 
+large amount of data. If &quot;RRVLS&quot; is instantiated in advance, all the 
+entities of concerning records are read at the same time, thereby 
+main memory shortage can happen in case of enormous data.
+<P>
+<PRE>%%%%
+read_record_loop1(RRVLB, VLB, VLS, Schema, ValidFL,RRVLS,NVLS) :- list(RRVLB) |
+    unnest_record_vlb(RRVLB, UNVLB, Schema, ValidFL)+UNVLB+VLB,
+    % &quot;VLB&quot; will be unified with &quot;UNVLB&quot; which is totally unnested
+    % &quot;RRVLB&quot;.
+    read_record_loop(VLS, Schema, ValidFL, RRVLS, NVLS).
+read_record_loop1(end, VLB, VLS, _Schema, _ValidFL, RRVLS, NVLS) :-
+    NVLS = [VLB|VLS], RRVLS = [].
+
+%%%%
+% The result of read_record/5 is unnested one record by one.
+unnest_record_vlb([{_,VL}|RRVLB], UNVLB, Schema, ValidFL)-VLB :-
+    unnest_record(Schema,VL)+UnVL+ValidFL,
+    % &quot;VL&quot; is unnested to &quot;UnVL&quot;, at the end of which &quot;ValidFL&quot; is 
+    % appended.
+    UNVLB = [UnVL|UNVLB1],
+    unnest_record_vlb(RRVLB, UNVLB1, Schema, ValidFL)-VLB.
+unnest_record_vlb([], UNVLB, _Schema, _ValidFL)-VLB :-
+    UNVLB = [].
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

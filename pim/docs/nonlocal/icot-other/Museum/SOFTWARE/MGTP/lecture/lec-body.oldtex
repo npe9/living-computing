@@ -1,0 +1,270 @@
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{会員制床屋}
+ある会員制床屋では、
+「会員Aが会員(自分自身でもよい)の鬚を剃れるのは、
+Aが(それ以前に)すべての会員に自分の鬚を剃ってもらっているときに限る。」
+会員は、Guido、Lorenzo、Petrucio、Cesareの四人である。
+すでにGuidoはCesareの鬚を剃ったことがある。
+さて、もうPetrucioはLorenzoの鬚を剃ったであろうか？
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+\begin{verbatim}
+true-->member(guido).
+true-->member(lorenzo).
+true-->member(petruchio).
+true-->member(cesare).
+true-->shaved(guido,cesare).
+
+member(A),member(B),shaved(A,B)
+  -->shaved(members,A).
+shaved(members,A),member(B)
+  -->shaved(B,A).
+
+shaved(petruchio,lorenzo)-->false.
+\end{verbatim}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{アガサ殺人事件}
+マンションの住人の誰かがアガサを殺した。
+マンションの住人は、アガサと執事とチャールズだけである。
+犯人は常日頃害者を憎んでおり、害者より裕福なことはなかった。
+チャールズはアガサが憎む人物の誰をも憎まない。
+アガサは執事以外の全員を憎んでいた。
+執事はアガサより裕福でない者の全員を憎んでいる。
+執事はまた、アガサが憎む者の全員を憎んでいる。
+全員を憎んでいる者はいない。
+アガサは執事ではない。
+以上から、アガサは自殺したと結論される。
+なぜ？
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\small
+\begin{verbatim}
+true-->lives(agatha).
+true-->lives(butler).
+true-->lives(charles).
+true-->hates(agatha,agatha).
+true-->hates(agatha,charles).
+true-->killed(butler,agatha);killed(charles,agatha).
+
+killed(A,B)-->n_richer(A,B).
+killed(A,B)-->hates(A,B).
+hates(agatha,A)-->hates(butler,A).
+lives(A),n_richer(A,agatha)-->hates(butler,A).
+
+hates(agatha,A),hates(charles,A)-->false.
+hates(A,agatha),hates(A,butler),hates(A,charles)-->false.
+\end{verbatim}
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{群の単位元}
+
+群：
+\begin{eqnarray*}
+\overline{A}*A &=& Id \\
+Id*A &=& A \\
+(A*B)*D &=& A*(B*D)
+\end{eqnarray*}
+において、
+
+「左単位元はまた右単位元でもある」
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\small
+\begin{verbatim}
+true-->product(inverse(A),A,identity).
+true-->product(identity,A,A).
+
+product(A,B,C),product(B,D,E),product(C,D,F)
+  -->product(A,E,F).
+product(A,B,C),product(B,D,E),product(A,E,F)
+  -->product(C,D,F).
+
+product(a,identity,a)-->false.
+\end{verbatim}
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\small
+\begin{verbatim}
+dom(A)-->product(inverse(A),A,identity).
+dom(A)-->product(identity,A,A).
+
+product(A,B,C),product(B,D,E),product(C,D,F)
+  -->product(A,E,F).
+product(A,B,C),product(B,D,E),product(A,E,F)
+  -->product(C,D,F).
+
+product(a,identity,a)-->false.
+
+true-->dom(identity),dom(a).
+dom(A)-->dom(inverse(A)).
+\end{verbatim}
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\scriptsize
+\[
+\begin{array}{l}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5).\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow \\
+\quad        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow \\
+\quad        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).\\
+p(M,N,X),p(M1,N,X),\{M1 \neq M\} \rightarrow false.\\
+p(M,N,X),p(M,N1,X),\{N1 \neq N\} \rightarrow false.\\
+p(M,N,X),p(M,N,X1),\{X1 \neq X\} \rightarrow false.\\
+p(X,5,Y),\{X1~:=~X-1,Y < X1\} \rightarrow false.\\
+p(Y,X,A),p(A,Y,B),p(B,Y,C),\{C \neq X\} \rightarrow false.
+\end{array}
+\]
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\scriptsize
+\[
+\begin{array}{l}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5).\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).\\
+p(M,N,X),dom(M1),\{M1 \neq M\} \rightarrow
+        \neg p(M1,N,X).\\
+p(M,N,X),dom(N1),\{N1 \neq N\} \rightarrow
+        \neg p(M,N1,X).\\
+p(M,N,X),dom(X1),\{X1 \neq X\} \rightarrow
+        \neg p(M,N,X1).\\
+dom(X),dom(Y),\{X1~:=~X-1,Y < X1\} \rightarrow  \neg p(X,5,Y).\\
+p(Y,X,A),p(A,Y,B) \rightarrow p(B,Y,X).\\
+p(Y,X,A),p(B,Y,X) \rightarrow p(A,Y,B).\\
+p(A,Y,B),p(B,Y,X) \rightarrow p(Y,X,A).\\
+p(Y,X,A), \neg p(B,Y,X) \rightarrow  \neg p(A,Y,B).\\
+p(Y,X,A), \neg p(A,Y,B) \rightarrow  \neg p(B,Y,X).\\
+\neg p(Y,X,A),p(B,Y,X) \rightarrow  \neg p(A,Y,B).\\
+\neg p(B,Y,X),p(A,Y,B) \rightarrow  \neg p(Y,X,A).\\
+\neg p(A,Y,B),p(B,Y,X) \rightarrow  \neg p(Y,X,A).\\
+p(A,Y,B),\neg p(Y,X,A) \rightarrow  \neg p(B,Y,X).
+\end{array}
+\]
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\scriptsize
+\[
+\begin{array}{l}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5).\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow \\
+\quad        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow \\
+\quad        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).\\
+p(M,N,X),p(M1,N,X),\{M1 \neq M\} \rightarrow false.\\
+p(M,N,X),p(M,N1,X),\{N1 \neq N\} \rightarrow false.\\
+p(M,N,X),p(M,N,X1),\{X1 \neq X\} \rightarrow false.\\
+p(X,5,Y),\{X1~:=~X-1,Y < X1\} \rightarrow false.\\
+p(Y,X,A),p(A,Y,B),p(B,Y,C),\{C \neq X\} \rightarrow false.
+\end{array}
+\]
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+{\scriptsize
+\[
+\begin{array}{l}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5).\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).\\
+dom(M),dom(N),\{M \neq N\} \rightarrow \\
+\quad        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).\\
+p(M,N,X),dom(M1),\{M1 \neq M\} \rightarrow
+        \neg p(M1,N,X).\\
+p(M,N,X),dom(N1),\{N1 \neq N\} \rightarrow
+        \neg p(M,N1,X).\\
+p(M,N,X),dom(X1),\{X1 \neq X\} \rightarrow
+        \neg p(M,N,X1).\\
+dom(X),dom(Y),\{X1~:=~X-1,Y < X1\} \rightarrow  \neg p(X,5,Y).\\
+p(Y,X,A),p(A,Y,B) \rightarrow p(B,Y,X).\\
+p(Y,X,A),p(B,Y,X) \rightarrow p(A,Y,B).\\
+p(A,Y,B),p(B,Y,X) \rightarrow p(Y,X,A).\\
+p(Y,X,A), \neg p(B,Y,X) \rightarrow  \neg p(A,Y,B).\\
+p(Y,X,A), \neg p(A,Y,B) \rightarrow  \neg p(B,Y,X).\\
+\neg p(Y,X,A),p(B,Y,X) \rightarrow  \neg p(A,Y,B).\\
+\neg p(B,Y,X),p(A,Y,B) \rightarrow  \neg p(Y,X,A).\\
+\neg p(A,Y,B),p(B,Y,X) \rightarrow  \neg p(Y,X,A).\\
+p(A,Y,B),\neg p(Y,X,A) \rightarrow  \neg p(B,Y,X).
+\end{array}
+\]
+}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+% Local Variables: 
+% mode: japanese-SliTeX
+% TeX-master: "ilp96-top"
+% End: 

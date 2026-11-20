@@ -1,0 +1,115 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> レコードの修正と削除</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" レコードの修正と削除">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html576 HREF="node48.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html574 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html570 HREF="node46.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html577 HREF="node48.html"> モジュール main(irpr_client.kl1)</A>
+<B>Up:</B> <A NAME=tex2html575 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html571 HREF="node46.html"> レコードの追加</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046600000000000000> レコードの修正と削除</A></H3>
+<P>
+レコードの修正と削除は、次の手順で行なう。
+<P>
+<UL><LI> idをキーとして、現在のテーブルを検索し、集合を得る。
+ <LI> 現在のテーブルに対する内部フォーマット(CTIFormat)を生成する。
+ <LI> 内部フォーマット(CTIFormat)で現在のテーブルを集合読みし、
+	操作対象のレコードの実体(Rec)とレコードID(RID)を得る。
+ <LI> レコード操作を行なう。
+  <UL><LI> レコード修正の場合、RIDのレコードを新しいレコードで置き換える。
+   <LI> レコード削除の場合、RIDのレコードを削除する。
+  </UL>
+ <LI> 履歴テーブルに対する内部フォーマット(HTIFormat)を生成する。
+ <LI> 修正、または削除前のレコード(Rec)を履歴テーブルに追加する。
+</UL>
+<P>
+<PRE>modify_member(normal, Member_info, Comm, Status)-IFP :-
+    % 第3引数Commには、アトムmodify(修正)またはdelete(消去)が入力される。
+    put_into_pool(Member_info, Pool),
+    get_id_and_version(ID, Version)+Pool+Pool1,
+    modify_member1(ID, Version, Comm, Pool1, Status1)-IFP,
+    end_transaction(Status1, Status)-IFP.
+otherwise.
+modify_member(PreStatus, _Member_info, _Comm, Status)-IFP :-
+    Status = PreStatus.
+
+%
+modify_member1([ID], [Version], Comm, Pool, Status)-IFP :- string(ID) |
+    IFP &lt;= search_index(meibo, ``(id=ID), Set, Status1),
+    IFP &lt;= create_format(meibo, (*), CTIFormat, Status2),
+    set_attribute(version, ~(Version+1))+Pool+Pool1,
+    make_record(meibo, NewRec, UnRec, Status3)+Pool1+[]-IFP,
+    lib:error_check([Status1,Status2,Status3],irpr_kappa:modify_member1,Status4),
+    modify_member2(Status4,Set,Comm,CTIFormat,Version,NewRec,UnRec,Status)-IFP.
+otherwise.
+modify_member1(ID, Version, _Comm, Pool, Status)-IFP :-
+    Pool = [],
+    Status = abnormal({&quot;Illegal id or version&quot;,ID,Version}).
+
+%
+modify_member2(normal, Set, Comm, CTIFormat,Version,NewRec,UnRec,Status)-IFP :-
+    IFP &lt;= read_record(meibo,CTIFormat,set(Set,_),[VLB],Status1),
+    IFP &lt;= get_attribute_info(meibo, version, [attr_path(AttrPath)], Status2),
+    lib:error_check([Status1,Status2], irpr_kappa:modify_member2, Status3),
+    modify_member3(Status3, VLB, Comm, CTIFormat, AttrPath, Version,
+                   NewRec, UnRec, Status)-IFP.
+otherwise.
+modify_member2(PreStatus,_Set,_Comm,_CTIFormat,_Version,_NewRec,_UnRec,Status)-IFP :-
+    Status = PreStatus.
+
+%
+modify_member3(normal, VLB, Comm, CTIFormat, [AttrPath], Version, NewRec,
+               UnRec, Status)-IFP :-
+    modify_member4(VLB,Comm,CTIFormat,AttrPath,Version,NewRec,UnRec,Status)-IFP.
+otherwise.
+modify_member3(PreStatus, _VLB, _Comm, _CTIFormat, _AttrPath, _Version,
+               _NewRec, _UnRec, Status)-IFP :-
+    Status = PreStatus.
+
+%
+modify_member4(end, _Comm,_CTIFormat,_AttrPath,_Version,_NewRec,_UnRec,Status)-IFP :-
+    Status = abnormal({&quot;Can not find any records.&quot;}).
+modify_member4([{RID,Rec}],modify,CTIFormat,AttrPath,Version,NewRec,UnRec,Status)-IFP :-
+        vector_element(Rec, AttrPath, Version) |
+    % レコード修正の場合
+    %   vector_element/3で、versionの一致を見ている。
+    IFP &lt;= replace_record(meibo, CTIFormat, RID, NewRec, Status1),
+    IFP &lt;= create_format(meibo_history, (*), HTIFormat, Status2),
+    lib:error_check([Status1,Status2],irpr_kappa:modify_member4,Status3),
+    modify_member5(Status3, HTIFormat, Rec, normal(UnRec), Status)-IFP.
+    % 修正前のunnestedレコード(UnRec)をコマンドステータスに返す。
+modify_member4([{RID,Rec}],delete,CTIFormat,AttrPath,Version,NewRec,UnRec,Status)-IFP :-
+        vector_element(Rec, AttrPath, Version) |
+    % レコード消去の場合
+    IFP &lt;= delete_record(meibo, RID, Status1),
+    IFP &lt;= create_format(meibo_history, (*), HTIFormat, Status2),
+    lib:error_check([Status1,Status2],irpr_kappa:modify_member4,Status3),
+    modify_member5(Status3, HTIFormat, Rec, normal, Status)-IFP.
+otherwise.
+modify_member4(_BF,_Comm,_CTIFormat,_AttrPath,_Version,_NewRec,_UnRec,Status)-IFP :-
+    Status = abnormal({&quot;Version number miss match.&quot;}).
+
+% 更新履歴として操作前のレコードを追加する。
+modify_member5(normal, HTIFormat, Rec, Status0, Status)-IFP :-
+    IFP &lt;= add_record(meibo_history, HTIFormat, Rec, _RID, Status1),
+    modify_member6(Status1, Status0, Status).
+otherwise.
+modify_member5(PreStatus, _HTIFormat, _Rec, Status0, Status)-IFP :-
+    Status = PreStatus.
+
+modify_member6(normal, Status0, Status) :- Status = Status0.
+otherwise.
+modify_member6(PreStatus, _Status0, Status) :- Status = PreStatus.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

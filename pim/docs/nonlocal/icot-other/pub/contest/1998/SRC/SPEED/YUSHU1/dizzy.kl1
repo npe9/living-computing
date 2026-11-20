@@ -1,0 +1,3646 @@
+%
+%
+%                      DIZZY.kl1
+%          KLIC 98 contest for speed course
+%          (C) Yoichi Kono <kono98@geocities.co.jp>
+%
+%
+%  
+%  This program  is Copyright 1998 by Yoichi Kono, 
+%                     a graduate of Muraoka Lab, Waseda Univ.
+%  This program  is Copyright 1998 by Yoichi Kono @ 
+%                     早稲田大学理工学部情報学科村岡研究室卒業.
+%
+%  
+%  委員会提供の評価プログラム(klicon98speed-v1.tgz)では, 正しく結果が
+%  表示できない可能性があります。実行時には,67行目/191行目/198行目を
+%  以下の例のようにプログラムに組み込むと, 正しい表示結果が得られます。
+%
+%  Default(comment out): 
+%   67: % io:outstream([print(["SCORE Current:",Score1,", Max:",Score2]),nl]),
+%  191: % printAnswer(0,~(Size*Size),Size,Answer),
+%  198: % printAnswer(0,~(Size*Size),Size,Answer),
+%  
+%  For Display the answers:
+%   67:  io:outstream([print(["SCORE Current:",Score1,", Max:",Score2]),nl]),
+%  191:  printAnswer(0,~(Size*Size),Size,Answer),
+%  198:  printAnswer(0,~(Size*Size),Size,Answer),
+%  
+%  
+%  
+%  実行方法( klicon98speed-v1.tgz を使用 ):
+%  
+%  # time ./make.sh kono98/
+%  # ./kono98/skel -p 16 20 test.dat
+%
+
+:- module skeleton.
+
+solve(Size, Words, Results) :-
+	qsort(Words, Words1),
+	generateMyData(Words1,MyWords,Size,0,N),
+	generateBinWords(N,MyWords,BinWords),
+	makeTable2D(MyWords,[],Table2D),
+	makeTable3D(MyWords,[],Table3D),
+	qsortTable2D(Table2D,Table2Ds),
+	qsortTable3D(Table3D,Table3Ds),
+	mainLoop(~(16000-1),MyWords,BinWords,N,Size,Table2Ds,Table3Ds,Results1)@lower_priority,
+	filter(Results1,Results).
+
+solve1(Size, [word(Key,String,Value)|Words], Results, Dir) :-
+	Results = [[place(Key,0,0,Dir)]|Results1],
+	next(Dir,Dir1),
+	solve1(Size, Words, Results1, Dir1).
+solve1(Size, [], Results,Dir) :- 
+	Results = [].
+
+next(lr,D) :- D = tb.
+next(tb,D) :- D = lr.
+
+%
+% Filter and myPlace() -> place() && Score calculation.
+%
+filter(Results1,Results):- filter1(Results1,Results,0).
+filter1([],Results,Score):- Results = [].
+filter1([R1|Results1],Results,Score):- wait(R1) |
+	transfer(R1,R2,Score1),
+%	io:outstream([print(["SCORE Current:",Score1,", Max:",Score2]),nl]),
+	addOrNot(Score,Score1,Score2,R2,Results,Results2),
+	filter1(Results1,Results2,Score2).
+
+addOrNot1(Score,Score1,Score2,R2,Results,Results2):- 
+	Score2 = Score,
+	Results = [R2|Results2].
+
+addOrNot(Score,Score1,Score2,R2,Results,Results2):- Score> Score1 |
+	Score2 = Score,
+	Results = Results2.
+addOrNot(Score,Score1,Score2,R2,Results,Results2):- Score=<Score1 |
+	Score2 = Score1,
+	Results = [R2|Results2].
+
+transfer([],R2,Score):-R2 = [], Score = 0.
+transfer([myplace(Id,Key,Str,Val,X,Y,Dir)|R1],R2,Score):- 
+	R2 = [ place(Key,X,Y,Dir) | R3 ],
+	Score := Val + Score1,
+	transfer(R1,R3,Score1).
+
+%
+% main loop!!
+%
+mainLoop(N,MyWords,BinWords,Number,Size,Table2D,Table3D,Results):- N <  0 |
+	Results = [].
+mainLoop(N,MyWords,BinWords,Number,Size,Table2D,Table3D,Results):- N >= 0 | 
+	Active = [],
+	new_string(Answer,~(Size*Size),8),
+	new_string(Used,  Number,      8),
+	myRandom(N,R1),
+	Number1 := Number/2 + (R1 mod (Number - Number/2 + 1) ),
+	makeHistTable(HistTB),
+	makeHistTable(HistLR),
+	cutTable(Number1,Table2D,Table2Dcut),
+	cutTable(Number1,Table3D,Table3Dcut),
+	neatTable(Table2Dcut,Table2Dneat,0,Counter2D),
+	neatTable(Table3Dcut,Table3Dneat,0,Counter3D),
+	generateBin2Dtable(Counter2D,Table2Dneat,Table2Dbin,id(100,100) ),
+	generateBin3Dtable(Counter3D,Table3Dneat,Table3Dbin,id(100,100,100)),
+	current_node(PID,PE),
+	mysolver(~(N+1),BinWords,MyWords,Number1,Size,[],Results1,
+			Active,Answer,HistTB,HistLR,
+			Table2Dbin,Table3Dbin,Used) @node( ~(N mod PE)),
+	Results = [Results1|Results2],
+	mainLoop(~(N-1),MyWords,BinWords,Number,Size,Table2D,Table3D,Results2)@lower_priority.
+
+%
+% Each loop main function.
+%
+mysolver(Seed,BinWords,MyWords,Number,Size,Results,Results2,
+		Active,Answer,HistTB,HistLR,Table2D,Table3D,Used):-
+	current_node(PID,PE),	
+%	io:outstream([print(["N=Seed,Id,PE",Seed,PID,PE]),nl]),	
+	firstPut(Seed,BinWords,Number,Size,
+			Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1),
+	count(Used1,Number,Counter),
+	greedy(1500,~(Seed+1),BinWords,MyWords,Number,Size,
+			Results1,Results2,Active1,Answer1,
+			HistTB1,HistLR1,Table2D,Table3D,Used1,Counter).
+
+%
+% 始めに置く単語。 Seedが奇数なら、縦に置く。
+%
+firstPut(Seed,BinWords,Number,Size,Results,Results1,
+		Active,Active1,Answer,Answer1,
+		HistTB,HistTB1,HistLR,HistLR1,Used,Used1):-
+		 ~(Seed mod 2) = 1 |
+	myRandom(Seed,R1),
+	R2 := R1 mod Number,
+	searchBinWords(R2,BinWords,Candidate,Used),
+	X = 0,
+	Y = 0,
+	putTB(Candidate,X,Y,Size,Results,Results1,
+				Active,Active1,Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,Used,Used1).
+
+%
+% 始めに置く単語。 Seedが偶数なら、横に置く。
+%
+firstPut(Seed,BinWords,Number,Size,Results,Results1,
+		Active,Active1,Answer,Answer1,
+		HistTB,HistTB1,HistLR,HistLR1,Used,Used1):-
+		 ~(Seed mod 2) = 0 |
+	myRandom(Seed,R1),
+	R2 := R1 mod Number,
+	searchBinWords(R2,BinWords,Candidate,Used),
+	X = 0,
+	Y = 0,
+	putLR(Candidate,X,Y,Size,Results,Results1,
+				Active,Active1,Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,Used,Used1).
+%
+% make Table2D binary tree.
+%
+cutTable(Number,[],TableCut):- TableCut=[].
+cutTable(Number,[[ID|ELM]|Table],TableCut):-
+	cutElement(Number,ELM,ELM1),
+	TableCut=[[ID|ELM1]|TableCut1],
+	cutTable(Number,Table,TableCut1).
+
+cutElement(Number,[],ELM1):-ELM1=[].
+cutElement(Number,[ elm(Key,Id,Head) |ELM],ELM1):- Id >= Number | 
+	cutElement(Number,ELM,ELM1).
+cutElement(Number,[ elm(Key,Id,Head) |ELM],ELM1):- Id <  Number | 
+	ELM1=[ elm(Key,Id,Head) |ELM2],
+	cutElement(Number,ELM,ELM2).
+
+neatTable([],TableNeat,N,C):- TableNeat=[], C=N.
+neatTable([[ID|[]]|TableCut],TableNeat,N,C):- 
+	neatTable(TableCut,TableNeat,N,C).
+otherwise.
+neatTable([[ID|ELM]|TableCut],TableNeat,N,C):-
+	TableNeat = [[N,ID|ELM]|TableNeat1],
+	N1 := N+1,
+	neatTable(TableCut,TableNeat1,N1,C).
+
+%
+% 貪欲法 終了
+%
+greedy(N,Seed,BinWords,MyWords,Number,Size,Results,Results1,Active,Answer,
+		HistTB,HistLR,Table2D,Table3D,Used,Counter):- 
+		N =<0 | 
+%	printAnswer(0,~(Size*Size),Size,Answer),
+%	ioutcheck(Results,Answer,Size),
+	Results1 = Results.
+
+greedy(N,Seed,BinWords,MyWords,Number,Size,Results,Results1,Active,Answer,
+		HistTB,HistLR,Table2D,Table3D,Used,Counter):- 
+		N > 0, Counter>=Number | 
+%	printAnswer(0,~(Size*Size),Size,Answer),
+%	ioutcheck(Results,Answer,Size),
+	Results1 = Results.
+
+%
+% 貪欲法 Seedが偶数なら、横に置く
+%
+greedy(N,Seed,BinWords,MyWords,Number,Size,Results,Results3,Active,Answer,
+		HistTB,HistLR,Table2D,Table3D,Used,Counter):-
+		N > 0, ~(Seed mod 2) = 0, Counter<Number  | 
+	findNewWords(Seed,Number,R2,Used),
+	searchBinWords(R2,BinWords,Candidate,Used),
+	try_put_candidateLR(0,Candidate,BinWords,Number,Size,
+				Results,Results1,Active,Active1,
+				Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,
+				Used,Used1,next),
+	activeSearch(BinWords,MyWords,Number,Size,
+			Results1,Results2,Active1,[],Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,
+			Table2D,Table3D,Used1,Used2),
+	count(Used2,Number,Counter1),
+	greedy(~(N-1),~(Seed+1),BinWords,MyWords,Number,Size,
+			Results2,Results3,Active2,Answer2,
+			HistTB2,HistLR2,Table2D,Table3D,Used2,Counter1).
+
+
+%
+% 貪欲法 Seedが奇数なら、縦に置く
+%
+greedy(N,Seed,BinWords,MyWords,Number,Size,Results,Results3,Active,Answer,	
+		HistTB,HistLR,Table2D,Table3D,Used,Counter):-
+		N > 0, ~(Seed mod 2) = 1, Counter<Number | 
+	findNewWords(Seed,Number,R2,Used),
+	searchBinWords(R2,BinWords,Candidate,Used),
+	try_put_candidateTB(0,Candidate,BinWords,Number,Size,
+				Results,Results1,Active,Active1,
+				Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,
+				Used,Used1,next),
+	activeSearch(BinWords,MyWords,Number,Size,
+			Results1,Results2,Active1,[],Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,
+			Table2D,Table3D,Used1,Used2),
+	count(Used2,Number,Counter1),
+	greedy(~(N-1),~(Seed+1),BinWords,MyWords,Number,Size,
+			Results2,Results3,Active2,Answer2,
+			HistTB2,HistLR2,Table2D,Table3D,Used2,Counter1).
+
+%
+% Seed から 乱数を発生させて、Used の値が 0 である R2(=新しい単語) を捜す
+%
+findNewWords(Seed,Number,R2,Used):- 
+	myRandom(Seed,R1),
+	myRandom(R1,R3), myAbs(R6,~((R1 mod Number)-(R3 mod Number))),
+	Cand := R6,
+%	Cand := R1 mod Number,	
+	findNewWordsLoop(R1,Cand,Number,R2,Used).
+
+findNewWordsLoop(Seed,Cand,Number,R2,Used):-
+		string_element(Used,Cand,V), V = 0 | R2 = Cand.
+findNewWordsLoop(Seed,Cand,Number,R2,Used):-
+		string_element(Used,Cand,V), V =\= 0 | 
+	myRandom(Seed,R1),
+	myRandom(R1,R3), myAbs(R6,~((R1 mod Number)-(R3 mod Number))),
+	Cand1 := R6,
+%	Cand1 := R1 mod Number,	
+	findNewWordsLoop(R1,Cand1,Number,R2,Used).
+
+myAbs(Ans, Inp):- Inp <  0 | Ans := -1 * Inp.
+myAbs(Ans, Inp):- Inp >= 0 | Ans = Inp.
+
+%
+% count number of the used words.
+%
+count(Used,Number,Counter):- count1(Used,~(Number-1),0,Counter).
+
+count1(Used,N,Tmp,Counter):- N <  0 | Counter = Tmp.
+count1(Used,N,Tmp,Counter):- N >= 0, string_element(Used,N,V), V=\=0 |
+	count1(Used,~(N-1),~(Tmp+1),Counter).
+count1(Used,N,Tmp,Counter):- N >= 0, string_element(Used,N,V), V=0   |
+	count1(Used,~(N-1),Tmp,Counter).	
+
+%
+% Strを現在を置く場所を探して、実際に置く処理 終了(置く場所がなかったから)
+%
+try_put_candidateLR(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,
+			Used,Used1,next):- N >= Len | 
+	Results1 = Results, Active1=Active, Answer1=Answer,
+	HistTB1=HistTB, HistLR1=HistLR, Used1=Used.
+
+%
+% Strを現在を置く場所を探して、実際に置く処理 終了(置けたから)
+%
+try_put_candidateLR(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,
+			Used,Used1,ok):-
+	Results1 = Results, Active1=Active, Answer1=Answer,
+	HistTB1=HistTB, HistLR1=HistLR, Used1=Used.
+
+%
+% Str の N 文字目の場所を探して、実際に置く処理
+%
+try_put_candidateLR(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results2,Active,Active2,Answer,Answer2,
+			HistTB,HistTB2,HistLR,HistLR2,
+			Used,Used2,next):- N < Len |
+	HistTB1 = HistTB,
+	string_element(Str,N,Char1),	
+	findLocation(HistTB, id(Char1), Cands), % get (x,y) using Char1
+	allocate_LR(Cands,N,Str,Len,Answer,Size,X,Y,next,Flag), % Flag==ok/next for loop stop
+	ifOKputLR(Flag,word(Id,U,Key,Str,Val,Len),X,Y,Size,
+				Results,Results1,Active,Active1,
+				Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,Used,Used1),
+	try_put_candidateLR(~(N+1),word(Id,U,Key,Str,Val,Len),
+				BinWords,Number,Size,Results1,Results2,
+				Active1,Active2,Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,
+				Used1,Used2,Flag).
+
+
+%
+% Strを現在を置く場所を探して、実際に置く処理 終了(置く場所がなかったから)
+%
+try_put_candidateTB(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,
+			Used,Used1,next):- N >= Len | 
+	Results1 = Results, Active1=Active, Answer1=Answer,
+	HistTB1=HistTB, HistLR1=HistLR, Used1=Used.
+
+%
+% Strを現在を置く場所を探して、実際に置く処理 終了(置けたから)
+%
+try_put_candidateTB(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,
+			Used,Used1,ok):-
+	Results1 = Results, Active1=Active, Answer1=Answer,
+	HistTB1=HistTB, HistLR1=HistLR, Used1=Used.
+	
+%
+% Str の N 文字目の場所を探して、実際に置く処理
+%
+try_put_candidateTB(N,word(Id,U,Key,Str,Val,Len),BinWords,Number,Size,
+			Results,Results2,Active,Active2,Answer,Answer2,
+			HistTB,HistTB2,HistLR,HistLR2,
+			Used,Used2,next):- N < Len |
+	HistLR1 = HistLR,
+	string_element(Str,N,Char1),	
+	findLocation(HistLR, id(Char1), Cands), % get (x,y) using Char1
+	allocate_TB(Cands,N,Str,Len,Answer,Size,X,Y,next,Flag), % Flag==ok/next for loop stop
+	ifOKputTB(Flag,word(Id,U,Key,Str,Val,Len),X,Y,Size,
+				Results,Results1,Active,Active1,
+				Answer,Answer1,
+				HistTB,HistTB1,HistLR,HistLR1,Used,Used1),
+	try_put_candidateTB(~(N+1),word(Id,U,Key,Str,Val,Len),
+				BinWords,Number,Size,Results1,Results2,
+				Active1,Active2,Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,
+				Used1,Used2,Flag).
+
+
+%
+% Str の N 番目の文字の一致する Cands(=xy(),xy()...) に置けるか確認。
+%
+allocate_LR(Cands,N,Str,Len,Answer,Size,X,Y,ok,Flag):- Flag = ok.
+allocate_LR([               ],N,Str,Len,Answer,Size,X,Y,next,Flag):- 
+	Flag=next, X=0, Y=0.
+allocate_LR([xy(X1,Y1)|Cands],N,Str,Len,Answer,Size,X,Y,next,Flag):-
+	X2 := X1,
+	Y2 := Y1 - N,
+	try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag1),
+	allocate_LR(Cands,N,Str,Len,Answer,Size,X,Y,Flag1,Flag).
+
+%
+% Str の N 番目の文字の一致する Cands(=xy(),xy()...) に置けるか確認。
+%
+allocate_TB(Cands,N,Str,Len,Answer,Size,X,Y,ok,Flag):- Flag = ok.
+allocate_TB([               ],N,Str,Len,Answer,Size,X,Y,next,Flag):- 
+	Flag=next, X=0, Y=0.
+allocate_TB([xy(X1,Y1)|Cands],N,Str,Len,Answer,Size,X,Y,next,Flag):-
+	X2 := X1 - N,
+	Y2 := Y1,
+	try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag1),
+	allocate_TB(Cands,N,Str,Len,Answer,Size,X,Y,Flag1,Flag).
+
+%
+% Str を( X2,Y2 )に置けるか確認。
+%
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- X2 < 0 | Flag=next.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- X2 >= Size | Flag=next.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- Y2 < 0 | Flag=next.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- ~(Y2+Len-1)>=Size | Flag=next.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+		~(Y2-1)>=0,   Y2<Size, 0=<X2, X2<Size,
+		string_element(Answer,~(X2*Size+Y2-1),W),  W>0  | Flag=next.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+		~(Y2+Len)<Size, 0=<Y2, 0=<X2, X2<Size,
+		string_element(Answer,~(X2*Size+Y2+Len),W),W>0  | Flag=next.
+otherwise.
+try_put_LR(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+	try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,0).
+
+try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- Len =< N | 
+		Flag = ok, 
+		X=X2, 
+		Y=Y2.
+try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, 
+		string_element(Answer,~(X2*Size+Y2+N),W1),
+		string_element(Str,N,W2), W1=\=W2, W1>0 | Flag=next.
+try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, X2-1>=0, 
+		string_element(Answer,~(X2*Size+Y2+N),W1),
+		string_element(Str,N,W2), W1=\=W2, 
+		string_element(Answer,~((X2-1)*Size+Y2+N),W3),W3>0 | Flag=next.
+try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, X2+1<Size, 
+		string_element(Answer,~(X2*Size+Y2+N),W1),
+		string_element(Str,N,W2), W1=\=W2,
+		string_element(Answer,~((X2+1)*Size+Y2+N),W3),W3>0 | Flag=next.
+otherwise.
+try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):-
+	try_put_LRsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,~(N+1)).
+
+
+%
+% Str を( X2,Y2 )に置けるか確認。
+%
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- Y2 < 0 | Flag=next.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- Y2 >= Size | Flag=next.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- X2 < 0 | Flag=next.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- ~(X2+Len-1)>=Size | Flag=next.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+		~(X2-1)>=0,   X2<Size, 0=<Y2, Y2<Size,
+		string_element(Answer,~((X2-1)*Size+Y2),W), W>0  | Flag=next.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+		~(X2+Len)<Size, 0=<X2, 0=<Y2, Y2<Size,
+		string_element(Answer,~((X2+Len)*Size+Y2),W),W>0  | Flag=next.
+otherwise.
+try_put_TB(X2,Y2,Str,Len,Answer,Size,X,Y,Flag):- 
+	try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,0).
+
+try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- Len =< N | 
+		Flag = ok, 
+		X=X2, 
+		Y=Y2.
+try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, 
+		string_element(Answer,~((X2+N)*Size+Y2),W1),
+		string_element(Str,N,W2), W1=\=W2, W1>0 | Flag=next.
+try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, Y2-1>=0, 
+		string_element(Answer,~((X2+N)*Size+Y2),W1),
+		string_element(Str,N,W2), W1=\=W2,
+		string_element(Answer,~((X2+N)*Size+Y2-1),W3), W3>0| Flag=next.
+try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):- 
+		Len>N, Y2+1<Size, 
+		string_element(Answer,~((X2+N)*Size+Y2),W1),
+		string_element(Str,N,W2), W1=\=W2,
+		string_element(Answer,~((X2+N)*Size+Y2+1),W3), W3>0| Flag=next.
+otherwise.
+try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,N):-
+	try_put_TBsub(X2,Y2,Str,Len,Answer,Size,X,Y,Flag,~(N+1)).
+
+%	
+% HistTB から、すでに置いたAnswer から char1 の文字の場所を探す。
+%
+findLocation([                      ], id(Char1), Cands):- Cands = [].
+findLocation([ [id(Id)|List] |HistTB], id(Char1), Cands):- Id = Char1 |
+	Cands = List.
+otherwise.
+findLocation([ [id(Id)|List] |HistTB], id(Char1), Cands):-
+	findLocation( HistTB, id(Char1), Cands).
+
+%
+% 実際に 縦 に置く処理
+%
+ifOKputTB(ok,  Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1) :-
+	putTB(Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1).
+ifOKputTB(next,Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1) :-
+	Results1 = Results,	Active1  = Active,	Answer1  = Answer,
+	HistTB1  = HistTB,	HistLR1  = HistLR,	Used1    = Used.
+
+%
+% 実際に 横 に置く処理
+%
+ifOKputLR(ok,  Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1) :-
+	putLR(Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1).
+ifOKputLR(next,Cand,X,Y,Size,Results,Results1,Active,Active1,Answer,Answer1,
+			HistTB,HistTB1,HistLR,HistLR1,Used,Used1) :-
+	Results1 = Results,	Active1  = Active,	Answer1  = Answer,
+	HistTB1  = HistTB,	HistLR1  = HistLR,	Used1    = Used.
+
+%
+% word(id,use,key,string,value,len)
+%
+generateMyData([],MyWords,Size,N0,Number):- 
+	MyWords = [],
+	Number = N0.
+generateMyData([word(Key,Str,Val)|Words],MyWords,Size,N0,Number):- 
+		string(Str,Len,_), Val >= 1, Len =< Size |
+	MyWords=[word(N0,0,Key,Str,Val,Len)|MyWords1],
+	N1 := N0+1,
+	generateMyData(Words,MyWords1,Size,N1,Number).		
+otherwise.
+generateMyData([word(Key,Str,Val)|Words],MyWords,Size,N0,Number):- 
+	generateMyData(Words,MyWords,Size,N0,Number).	
+
+%
+% print list
+%
+print( [] ).
+print( [L1|List] ) :- 
+	io:outstream([print(L1),nl]),	
+	print(List).
+
+printAnswer(N,Max,Size,Answer):- N >= Max | io:outstream([nl]).
+printAnswer(N,Max,Size,Answer):- N <  Max, ~(N mod Size) = ~(Size - 1) |
+	string_element(Answer,N,W),
+	printAnswerSub(W),
+	io:outstream([nl]),
+	printAnswer( ~(N+1),Max,Size,Answer ).
+printAnswer(N,Max,Size,Answer):- N <  Max, ~(N mod Size) =\= ~(Size - 1) |
+	string_element(Answer,N,W),
+	printAnswerSub(W),
+	printAnswer( ~(N+1),Max,Size,Answer ).
+
+printAnswerSub(W):- W =0  | 	io:outstream([print(" ")]).
+printAnswerSub(W):- W > 0 | 	
+	new_string(S,1,8),	
+	set_string_element(S,0,W,S1),
+	io:outstream([print(S1)]).
+
+%
+% quick sort words with 1.score & 2.length
+%        % words(Key,string,value )
+%
+qsort(Words, Words1):- qsort(Words, Words1,[]).
+qsort([], Y, Z):- Y = Z.
+qsort([ Word | X ], Y, Z):- 
+	partition(Word,X,X1,X2),
+	qsort(X1,Y,[Word|Y1]),
+	qsort(X2,Y1,Z).
+
+partition(_,[],Sm,Lg):- Sm=[], Lg=[].
+partition(word(Key1,Str1,Val1),[word(Key2,Str2,Val2)|X],Sm,Lg):-
+		Val1 < Val2 |
+	Sm=[word(Key2,Str2,Val2)|Sm1],
+	partition( word(Key1,Str1,Val1),X,Sm1,Lg).
+
+partition(word(Key1,Str1,Val1),[word(Key2,Str2,Val2)|X],Sm,Lg):-
+		Val1 > Val2 |
+	Lg=[word(Key2,Str2,Val2)|Lg1],
+	partition( word(Key1,Str1,Val1),X,Sm,Lg1).
+
+partition(word(Key1,Str1,Val1),[word(Key2,Str2,Val2)|X],Sm,Lg):-
+	Val1=Val2, string(Str1,Len1,_), string(Str2,Len2,_), Len1>=Len2 |
+	Sm=[word(Key2,Str2,Val2)|Sm1],
+	partition( word(Key1,Str1,Val1),X,Sm1,Lg).
+
+partition(word(Key1,Str1,Val1),[word(Key2,Str2,Val2)|X],Sm,Lg):-
+	Val1=Val2, string(Str1,Len1,_), string(Str2,Len2,_), Len1=<Len2 |
+	Lg=[word(Key2,Str2,Val2)|Lg1],
+	partition( word(Key1,Str1,Val1),X,Sm,Lg1).
+
+%
+% quick sort of Table2D :-)
+%
+qsortTable2D(Words, Words1):- qsort2D(Words, Words1,[]).
+qsort2D([], Y, Z):- Y = Z.
+qsort2D([ Word | X ], Y, Z):- 
+	part2D(Word,X,X1,X2),
+	qsort2D(X1,Y,[Word|Y1]),
+	qsort2D(X2,Y1,Z).
+
+part2D(_,[],Sm,Lg):- Sm=[], Lg=[].
+part2D([id(C1,C2) |ELM1],[[id(D1,D2) |ELM2]|X],Sm,Lg):- C1 > D1 |
+	Sm=[[id(D1,D2) |ELM2]|Sm1],
+	part2D( [id(C1,C2) |ELM1],X,Sm1,Lg).
+
+part2D([id(C1,C2) |ELM1],[[id(D1,D2) |ELM2]|X],Sm,Lg):- C1 < D1 |
+	Lg=[[id(D1,D2) |ELM2]|Lg1],
+	part2D( [id(C1,C2) |ELM1],X,Sm,Lg1).
+
+part2D([id(C1,C2) |ELM1],[[id(D1,D2) |ELM2]|X],Sm,Lg):- C1=D1, C2>=D2 |
+	Sm=[[id(D1,D2) |ELM2]|Sm1],
+	part2D( [id(C1,C2) |ELM1],X,Sm1,Lg).
+
+part2D([id(C1,C2) |ELM1],[[id(D1,D2) |ELM2]|X],Sm,Lg):- C1=D1, C2=<D2 |
+	Lg=[[id(D1,D2) |ELM2]|Lg1],
+	part2D( [id(C1,C2) |ELM1],X,Sm,Lg1).
+
+%
+% quick sort of Table3D :-)
+%
+qsortTable3D(Words, Words1):- qsort3D(Words, Words1,[]).
+qsort3D([], Y, Z):- Y = Z.
+qsort3D([ Word | X ], Y, Z):- 
+	part3D(Word,X,X1,X2),
+	qsort3D(X1,Y,[Word|Y1]),
+	qsort3D(X2,Y1,Z).
+
+part3D(_,[],Sm,Lg):- Sm=[], Lg=[].
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1 > D1 |
+	Sm=[[id(D1,D2,D3) |ELM2]|Sm1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm1,Lg).
+
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1 < D1 |
+	Lg=[[id(D1,D2,D3) |ELM2]|Lg1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm,Lg1).
+
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1=D1,C2>D2|
+	Sm=[[id(D1,D2,D3) |ELM2]|Sm1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm1,Lg).
+
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1=D1,C2<D2|
+	Lg=[[id(D1,D2,D3) |ELM2]|Lg1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm,Lg1).
+
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1=D1,C2=D2,C3>D3|
+	Sm=[[id(D1,D2,D3) |ELM2]|Sm1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm1,Lg).
+
+part3D([id(C1,C2,C3) |ELM1],[[id(D1,D2,D3) |ELM2]|X],Sm,Lg):-C1=D1,C2=D2,C3<D3|
+	Lg=[[id(D1,D2,D3) |ELM2]|Lg1],
+	part3D( [id(C1,C2,C3) |ELM1],X,Sm,Lg1).
+
+%
+% initialization of table=[ [ id(a),(x,y),(x,y)],[ id(b),(x,y),(x,y)],...]
+%
+makeHistTable(Hist):- makeHistTable("ABCDEFGHIJKLMNOPQRSTUVWXYZ",Hist,0).
+makeHistTable(Str,Hist,N):- N >= 26 | Hist = [].
+makeHistTable(Str,Hist,N):- N  < 26 | 
+	string_element(Str,N,H),
+	Hist = [[id(H)]|Hist1],
+	N1 := N + 1,
+	makeHistTable(Str,Hist1,N1).
+
+%
+% make table2D=[ ["aa",(key1,id,head),(key2,id,rear)...],
+%		 ["az",(key1,id,head),...],...],....
+%              word(id,use,key,string,value,len)
+%
+makeTable2D([],Table,Result):- Result = Table.
+makeTable2D([word(Id,U,Key,Str,Val,Len)|Words],Table,Result):-
+	string_element(Str,0,H1),
+	string_element(Str,1,H2),
+	string_element(Str,~(Len-2),R1),
+	string_element(Str,~(Len-1),R2),
+	findAndPut( id(H1,H2), elm(Key,Id,head), Table, Table2),
+	findAndPut( id(R1,R2), elm(Key,Id,rear), Table2,Table3),
+	makeTable2D(Words,Table3,Result).
+
+%
+% make table3D=[ ["aab",(key1,ID,head),(key2,ID,rear)...],
+%		 ["aza",(key1,ID,head),...],...],...
+%              word(id,use,key,string,value,len)
+%
+makeTable3D([],Table,Result):- Result = Table.
+makeTable3D([word(Id,U,Key,Str,Val,Len)|Words],Table,Result):- Len  < 3 |
+	makeTable3D(Words,Table,Result).
+makeTable3D([word(Id,U,Key,Str,Val,Len)|Words],Table,Result):- Len >= 3 |
+	string_element(Str,0,H1),
+	string_element(Str,1,H2),
+	string_element(Str,2,H3),
+	string_element(Str,~(Len-3),R1),
+	string_element(Str,~(Len-2),R2),
+	string_element(Str,~(Len-1),R3),
+	findAndPut( id(H1,H2,H3), elm(Key,Id,head), Table, Table2),
+	findAndPut( id(R1,R2,R3), elm(Key,Id,rear), Table2,Table3),
+	makeTable3D(Words,Table3,Result).
+
+findAndPut( Id, Elm, [],                   Table2):- Table2 = [[Id,Elm]].
+findAndPut( Id, Elm, [[Id1|Element]|Table],Table2):- Id = Id1 |
+	Table2 = [[Id1|[Elm|Element]]|Table].
+otherwise.
+findAndPut( Id, Elm, [[Id1|Element]|Table],Table2):- 
+	Table2 = [ [Id1|Element] | Table3 ],
+	findAndPut( Id, Elm, Table,Table3).
+
+%
+% Binary words list for speed up!!
+%              word(id,use,key,string,value,len)
+%
+generateBinWords(Number,MyWords,BinWords):- 
+	findBase(Number,1,Base),
+	makeBinary(0,Base,MyWords,BinWords).
+
+findBase(Number,B,B0):- Number =< B | B0 := B / 2.
+findBase(Number,B,B0):- Number  > B |
+	B1 := B * 2,
+	findBase(Number,B1,B0).	
+
+makeBinary(Base0,Base,Words,BinWords):- Base <1   | BinWords = Words. 
+makeBinary(Base0,Base,Words,BinWords):- Base>=1   | 
+	partForBin(~(Base0+Base),Words,W1,W2),
+	makeBinary(         Base0,~(Base/2),W1,W3),
+	makeBinary( ~(Base0+Base),~(Base/2),W2,W4),
+	BinWords=[  ~(Base0+Base), W3 | [W4] ].
+				
+partForBin(Base,[],W1,W2):- W1=[], W2=[].
+partForBin(Base,[word(Id,U,Key,Str,Val,Len)|Words],W1,W2):- Id >=Base |
+	W1 = [],
+	W2 = [word(Id,U,Key,Str,Val,Len)|Words].
+partForBin(Base,[word(Id,U,Key,Str,Val,Len)|Words],W1,W2):- Id < Base |
+	W1 = [word(Id,U,Key,Str,Val,Len)|W3],
+	partForBin(Base,Words,W3,W2).
+
+searchBinWords(R1,[],Result,Used):-  
+	io:outstream([print("ERROR something wrong in searchBinWords"),nl]).
+searchBinWords(R1,[L1],Result,Used):- Result = L1.  
+searchBinWords(R1,[L1,Sml,Big],Result,Used):- L1 =< R1 |
+	searchBinWords(R1,Big,Result,Used).
+searchBinWords(R1,[L1,Sml,Big],Result,Used):- L1 > R1 |
+	searchBinWords(R1,Sml,Result,Used).
+
+%
+% make binary 2D table
+%
+generateBin3Dtable(Number,Table3D,Table3Dbin,TAG):-
+	generateBin2Dtable(Number,Table3D,Table3Dbin,TAG).
+
+generateBin2Dtable(Number,Table2D,Table2Dbin,TAG):-
+	findBase(Number,1,Base),
+	make2DBinary(0,Base,Table2D,Table2Dbin,TAG).
+
+make2DBinary(Base0,Base,Table2D,Table2Dbin,TAG):-Base<1 |
+	Table2Dbin=Table2D.
+make2DBinary(Base0,Base,Table2D,Table2Dbin,TAG):-Base>=1|
+        partFor2DBin(~(Base0+Base),Table2D,T1,T2),
+	make2DBinary(         Base0,~(Base/2),T1,T3,TAG),
+	make2DBinary( ~(Base0+Base),~(Base/2),T2,T4,TAG),
+	header2DBinary(T2,Header,TAG),
+	Table2Dbin=[ ~(Base0+Base), Header, T3 | [T4] ].
+
+header2DBinary([],Head,TAG):- Head = TAG.
+header2DBinary([[Id1,Id2|ELM]|ELM1],Head,TAG):- Head = Id2.
+
+partFor2DBin(Base,[],T1,T2):- T1=[], T2=[].
+partFor2DBin(Base,[[Id|ELM]|Table],T1,T2):- Id >=Base |
+        T1 = [],
+        T2 = [[Id|ELM]|Table].
+partFor2DBin(Base,[[Id|ELM]|Table],T1,T2):- Id < Base |
+        T1 = [[Id|ELM]|T3],
+        partFor2DBin(Base,Table,T3,T2).
+
+search2DTable(id(R1,R2),[],Result):-  Result = [].
+search2DTable(id(R1,R2),[[Id1|[id(C1,C2)|ELM]]],Result):- R1=\=C1 |
+	Result = [].
+search2DTable(id(R1,R2),[[Id1|[id(C1,C2)|ELM]]],Result):- R2=\=C2 |
+	Result = [].
+search2DTable(id(R1,R2),[[Id1|[id(C1,C2)|ELM]]],Result):- R1=C1, R2=C2 |
+	Result = ELM.
+search2DTable(id(R1,R2),[Id1,id(C1,C2),Sml,Big],Result):- R1>C1 |
+	search2DTable(id(R1,R2),Big,Result).
+search2DTable(id(R1,R2),[Id1,id(C1,C2),Sml,Big],Result):- R1<C1 |
+ 	search2DTable(id(R1,R2),Sml,Result).
+search2DTable(id(R1,R2),[Id1,id(C1,C2),Sml,Big],Result):- R1=C1,R2>=C2 |
+	search2DTable(id(R1,R2),Big,Result).
+search2DTable(id(R1,R2),[Id1,id(C1,C2),Sml,Big],Result):- R1=C1,R2<C2 |
+ 	search2DTable(id(R1,R2),Sml,Result).
+
+search3DTable(id(R1,R2,R3),[],Result):-  Result = [].
+search3DTable(id(R1,R2,R3),[[Id1|[id(C1,C2,C3)|ELM]]],Result):- R1=\=C1 |
+	Result = [].
+search3DTable(id(R1,R2,R3),[[Id1|[id(C1,C2,C3)|ELM]]],Result):- R2=\=C2 |
+	Result = [].
+search3DTable(id(R1,R2,R3),[[Id1|[id(C1,C2,C3)|ELM]]],Result):- R3=\=C3 |
+	Result = [].
+search3DTable(id(R1,R2,R3),[[Id1|[id(C1,C2,C3)|ELM]]],Result):- R1=C1, R2=C2, R3=C3 |
+	Result = ELM.
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1>C1 |
+	search3DTable(id(R1,R2,R3),Big,Result).
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1<C1 |
+ 	search3DTable(id(R1,R2,R3),Sml,Result).
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1=C1,R2>C2 |
+	search3DTable(id(R1,R2,R3),Big,Result).
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1=C1,R2<C2 |
+ 	search3DTable(id(R1,R2,R3),Sml,Result).
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1=C1,R2=C2,R3>=C3 |
+	search3DTable(id(R1,R2,R3),Big,Result).
+search3DTable(id(R1,R2,R3),[Id1,id(C1,C2,C3),Sml,Big],Result):- R1=C1,R2=C2,R3<C3 |
+ 	search3DTable(id(R1,R2,R3),Sml,Result).
+
+
+%
+% Random generator!
+%
+myRandom(N,R) :-
+	R = ~(~(129 * N + 351751) mod 917687).
+
+% 
+% put TB!!  (X,Y) --> (X+Len,Y)
+%
+putTB(word(Id,U,Key,Str,Val,Len),X,Y,Size,Results,Results2,Active,Active2,
+		Answer,Answer1,HistTB,HistTB1,HistLR,HistLR1,Used,Used2):-
+	putTBsub(Len,0,X,Y,Size,Str,Answer,Answer1,HistTB,HistTB1),
+	delete_word(tb,X,Y,Len,Results,Results1,Used,Used1),
+	set_string_element(Used1,Id,1,Used2),	
+	HistLR1 = HistLR,
+	delete_Active(tb,X,Y,Len,Active,Active1),
+	Active2 = [actve(Id,X,Y,tb,Len)|Active1],
+	Results2 = [myplace(Id,Key,Str,Val,X,Y,tb)|Results1].
+
+putTBsub(Len,N,X,Y,Size,Str,Answer,Answer1,HistTB,HistTB1):- Len =< N |
+	Answer1 = Answer,
+	HistTB1 = HistTB.
+putTBsub(Len,N,X,Y,Size,Str,Answer,Answer1,HistTB,HistTB1):- Len >  N |
+	string_element(Str,N,Char1),
+	Position := X * Size + Y,
+	set_string_element(Answer,Position,Char1,Answer2),
+	putHist( id(Char1), xy(X,Y),HistTB,HistTB2),
+	putTBsub(Len,~(N+1),~(X+1),Y,Size,Str,Answer2,Answer1,HistTB2,HistTB1).
+
+%
+% NEEDED: rules[the them theme...] を区別する
+%
+delete_word(Dir,X,Y,Len,[],Results1,Used,Used1):- 
+	Results1 = [],
+	Used1 = Used.
+delete_word(tb,X,Y,Len,[myplace(Id,Key,Str,Val,X1,Y1,tb)|Results]
+			,Results1,Used,Used2):- Y=Y1, X=<X1, X1 < ~(X+Len) |
+	set_string_element(Used,Id,0,Used1),	
+	delete_word(tb,X,Y,Len,Results,Results1,Used1,Used2).
+delete_word(lr,X,Y,Len,[myplace(Id,Key,Str,Val,X1,Y1,lr)|Results]
+			,Results1,Used,Used2):- X=X1, Y=<Y1, Y1 < ~(Y+Len) |
+	set_string_element(Used,Id,0,Used1),	
+	delete_word(lr,X,Y,Len,Results,Results1,Used1,Used2).
+otherwise.
+delete_word(Dir,X,Y,Len,[MyPlace|Results],Results1,Used,Used2):- 
+	Results1 = [MyPlace|Results2],
+	delete_word(Dir,X,Y,Len,Results,Results2,Used,Used2).
+
+delete_Active(Dir,X,Y,Len,[],Active1):- Active1 = [].
+delete_Active(tb,X,Y,Len,[actve(Id,X1,Y1,tb,Len)|Active],Active1):-
+		 Y=Y1, X=<X1, X1 < ~(X+Len) |
+	delete_Active(tb,X,Y,Len,Active,Active1).
+delete_Active(lr,X,Y,Len,[actve(Id,X1,Y1,lr,Len)|Active],Active1):-
+		 X=X1, Y=<Y1, Y1 < ~(Y+Len) |
+	delete_Active(lr,X,Y,Len,Active,Active1).
+otherwise.
+delete_Active(Dir,X,Y,Len,[MyPlace|Active],Active1):- 
+	Active1 = [MyPlace|Active2],
+	delete_Active(Dir,X,Y,Len,Active,Active2).
+
+%
+% put LR!!  (X,Y) --> (X,Y+Len)
+%
+putLR(word(Id,U,Key,Str,Val,Len),X,Y,Size,Results,Results2,Active,Active2,
+		Answer,Answer1,HistTB,HistTB1,HistLR,HistLR1,Used,Used2):-
+	putLRsub(Len,0,X,Y,Size,Str,Answer,Answer1,HistLR,HistLR1),
+	delete_word(lr,X,Y,Len,Results,Results1,Used,Used1),
+	set_string_element(Used1,Id,1,Used2),	
+	HistTB1 = HistTB,
+	delete_Active(lr,X,Y,Len,Active,Active1),
+	Active2 = [actve(Id,X,Y,lr,Len)|Active1],
+	Results2 = [myplace(Id,Key,Str,Val,X,Y,lr)|Results1].
+
+putLRsub(Len,N,X,Y,Size,Str,Answer,Answer1,HistLR,HistLR1):- Len =< N |
+	Answer1 = Answer,
+	HistLR1 = HistLR.
+putLRsub(Len,N,X,Y,Size,Str,Answer,Answer1,HistLR,HistLR1):- Len >  N |
+	string_element(Str,N,Char1),
+	Position := X * Size + Y,
+	set_string_element(Answer,Position,Char1,Answer2),
+	putHist( id(Char1), xy(X,Y),HistLR,HistLR2),
+	putLRsub(Len,~(N+1),X,~(Y+1),Size,Str,Answer2,Answer1,HistLR2,HistLR1).
+
+%
+% Put History for TB/LR   Warning =\= could be use only for arithmatic eqaution...
+%
+putHist( ID, ELM, [],               Hist2):- Hist2 = [].
+putHist( ID, ELM, [[L1|List]|Hist], Hist2):- ID = L1 |
+	Hist2 = [ [ L1 | [ELM|List] ] |Hist].
+otherwise.
+putHist( ID, ELM, [[L1|List]|Hist], Hist2):- 
+	Hist2 = [ [L1|List] | Hist3 ],
+	putHist( ID, ELM, Hist, Hist3).	
+
+
+
+%
+% 単語の先頭／末尾を抜き出す。
+%
+tail2char(Str,Len,C1,C2):-
+	 string_element(Str,~(Len-2),C1),
+	 string_element(Str,~(Len-1),C2).
+head2char(Str,Len,C1,C2):-
+	 string_element(Str,0,C1),
+	 string_element(Str,1,C2).
+
+tail3char(Str,Len,C1,C2,C3):-
+	 string_element(Str,~(Len-3),C1),
+	 string_element(Str,~(Len-2),C2),
+	 string_element(Str,~(Len-1),C3).
+head3char(Str,Len,C1,C2,C3):-
+	 string_element(Str,0,C1),
+	 string_element(Str,1,C2),
+	 string_element(Str,2,C3).
+
+%
+% (X,Y) から縦に２/３文字置く。
+%
+put2charTB(X,Y,Size,Answer,C1,C2,Answer2):-
+	set_string_element(Answer, ~(X*Size+Y),    C1,Answer1),
+	set_string_element(Answer1,~((X+1)*Size+Y),C2,Answer2).
+put3charTB(X,Y,Size,Answer,C1,C2,C3,Answer3):-
+	set_string_element(Answer, ~(X*Size+Y),    C1,Answer1),
+	set_string_element(Answer1,~((X+1)*Size+Y),C2,Answer2),
+	set_string_element(Answer2,~((X+2)*Size+Y),C3,Answer3).
+
+%
+% (X,Y) から横に２/３文字置く。
+%
+put2charLR(X,Y,Size,Answer,C1,C2,Answer2):-
+	set_string_element(Answer, ~(X*Size+Y),    C1,Answer1),
+	set_string_element(Answer1,~(X*Size+Y+1),  C2,Answer2).
+put3charLR(X,Y,Size,Answer,C1,C2,C3,Answer3):-
+	set_string_element(Answer, ~(X*Size+Y),    C1,Answer1),
+	set_string_element(Answer1,~(X*Size+Y+1),  C2,Answer2),
+	set_string_element(Answer2,~(X*Size+Y+2),  C3,Answer3).
+
+%
+% (X,Y) から、横に２/３文字抜き出す
+%
+pick2charLR(X,Y,Size,Answer,C1,C2):-
+	string_element(Answer,~(X*Size+Y),  C1),
+	string_element(Answer,~(X*Size+Y+1),C2).
+pick3charLR(X,Y,Size,Answer,C1,C2,C3):-
+	string_element(Answer,~(X*Size+Y),  C1),
+	string_element(Answer,~(X*Size+Y+1),C2),
+	string_element(Answer,~(X*Size+Y+2),C3).
+
+%
+% (X,Y) から、縦に２/３文字抜き出す
+%
+pick2charTB(X,Y,Size,Answer,C1,C2):-
+	string_element(Answer,~(X*Size+Y),    C1),
+	string_element(Answer,~((X+1)*Size+Y),C2).
+pick3charTB(X,Y,Size,Answer,C1,C2,C3):-
+	string_element(Answer,~(X*Size+Y),    C1),
+	string_element(Answer,~((X+1)*Size+Y),C2),
+	string_element(Answer,~((X+2)*Size+Y),C3).
+
+
+
+%
+% active search
+%
+% dummy 
+activeSearch1(BinWords,MyWords,Number,Size,
+		Results1,Results2,ActiveOld,Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% Active1 の要素について、一つずつ try する。
+%
+activeSearch(BinWords,MyWords,Number,Size,
+		Results1,Results,[          ],Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+activeSearch(BinWords,MyWords,Number,Size,
+		Results1,Results,[A1|ActiveOld],Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	activeSearch2x3TB(BinWords,MyWords,Number,Size,
+			Results1,Results2,  A1  ,Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+
+	activeSearch2x3LR(BinWords,MyWords,Number,Size,
+			Results2,Results3,  A1  ,Active2,Active3,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3),
+
+	activeSearch2x2TB(BinWords,MyWords,Number,Size,
+			Results3,Results4,  A1  ,Active3,Active4,Answer3,Answer4,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4),
+
+	activeSearch2x2LR(BinWords,MyWords,Number,Size,
+			Results4,Results5,  A1  ,Active4,Active5,Answer4,Answer5,
+			HistTB4,HistTB5,HistLR4,HistLR5,Table2D,Table3D,Used4,Used5),
+
+	activeSearch(BinWords,MyWords,Number,Size,
+			Results5,Results,ActiveOld,Active5,Active,Answer5,Answer,
+			HistTB5,HistTB,HistLR5,HistLR,Table2D,Table3D,Used5,Used).
+
+%  ( 2x3 TB )
+%            s   s
+%            u L u
+%            b O b
+%            1 N 2
+%              G
+%              W
+%            s O s
+%            u R b 
+%            b D b
+%            3   4
+
+% dummy
+activeSearch2x3TB1(BinWords,MyWords,Number,Size,
+		Results1,Results,_ ,Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 対象となる active() は 横置きなので、キャンセル
+%
+activeSearch2x3TB(BinWords,MyWords,Number,Size,
+		Results1,Results,actve(Id,X,Y,lr,Len),Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 単語の長さが ３文字未満なので、キャンセル
+%
+activeSearch2x3TB(BinWords,MyWords,Number,Size,
+		Results1,Results,actve(Id,X,Y,tb,Len),Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):- Len < 3 |
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 対象となる active() について、上下左右４方向に 単語を一つずつ置いてみる。
+%
+otherwise.
+activeSearch2x3TB(BinWords,MyWords,Number,Size,
+		Results1,Results,actve(Id,X,Y,tb,Len),Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	active2x3TB_sub1( next, Flag1, BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id,X,Y,tb,Len), 
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	active2x3TB_sub2( Flag1, Flag2, BinWords,MyWords,Number,Size,
+			Results2,Results3, actve(Id,X,Y,tb,Len),
+			Active2,Active3,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3),
+	active2x3TB_sub3( next, Flag3, BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id,X,Y,tb,Len),
+			Active3,Active4,Answer3,Answer4,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4),
+	active2x3TB_sub4( Flag3, Flag4, BinWords,MyWords,Number,Size,
+			Results4,Results,  actve(Id,X,Y,tb,Len),
+			Active4,Active,Answer4,Answer,
+			HistTB4,HistTB,HistLR4,HistLR,Table2D,Table3D,Used4,Used).
+
+
+%
+%
+%   sub1 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3TB_sub1( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3TB_sub1( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3TB_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3TB_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3TB_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3TB_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3TB_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,                                          % enough length
+		Y>0,                                                % enough space? 
+		string_element(Answer1,~(X*Size+Y-1),W1),     W1=0, % next space ? 
+		string_element(Answer1,~((X+1)*Size+Y-1),W2), W2=0, %(X,Y-1)(X+1,Y-1)
+		string_element(Answer1,~((X+2)*Size+Y-1),W3), W3=0 |%   (X+2,Y-1)
+	tail3char(Str,Len1,C1,C2,C3),
+	put3charTB(X,~(Y-1),Size,Answer1,C1,C2,C3,Answer2),
+	pick2charLR(     X,~(Y-1),Size,Answer2,D1,D2),                  % north-west
+	pick2charLR(~(X+1),~(Y-1),Size,Answer2,D3,D4),                  % 
+	pick2charLR(~(X+2),~(Y-1),Size,Answer2,D5,D6),                  % south-west
+	try_put_TB(~(X+2-(Len1-1)),~(Y-1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_LR(Flag1,Flag2,List1,List2,List3,X,~(Y-1),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3TB_sub1(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,	
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3TB_sub1( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+%   sub2 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+%
+active2x3TB_sub2( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3TB_sub2( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3TB_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3TB_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3TB_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3TB_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3TB_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,                                          % enough length
+		Y< ~(Size-1),                                       % enough space? 
+		string_element(Answer1,~(X*Size+Y+1),W1),     W1=0, % next space ? 
+		string_element(Answer1,~((X+1)*Size+Y+1),W2), W2=0, %(X,Y+1)(X+1,Y+1)
+		string_element(Answer1,~((X+2)*Size+Y+1),W3), W3=0 |%   (X+2,Y+1)
+	tail3char(Str,Len1,C1,C2,C3),
+	put3charTB(X,~(Y+1),Size,Answer1,C1,C2,C3,Answer2),
+	pick2charLR(     X,Y,Size,Answer2,D1,D2),                  % north-west
+	pick2charLR(~(X+1),Y,Size,Answer2,D3,D4),                  % 
+	pick2charLR(~(X+2),Y,Size,Answer2,D5,D6),                  % south-west
+	try_put_TB(~(X+2-(Len1-1)),~(Y+1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_LR(Flag1,Flag2,List1,List2,List3,X,Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3TB_sub2(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,	
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3TB_sub2( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+%   sub3 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+
+active2x3TB_sub3( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3TB_sub3( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3TB_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3TB_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3TB_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3TB_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3TB_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,                                          % enough length
+		Y>0,                                                % enough space? 
+		string_element(Answer1,~((X+Len2-3)*Size+Y-1),W1), W1=0, % next space ? 
+		string_element(Answer1,~((X+Len2-2)*Size+Y-1),W2), W2=0, %(X+Len2-3,Y-1)(X+Len2-2,Y-1)
+		string_element(Answer1,~((X+Len2-1)*Size+Y-1),W3), W3=0 |%   (X+Len2-1,Y-1)
+	head3char(Str,Len1,C1,C2,C3),
+	put3charTB(~(X+Len2-3),~(Y-1),Size,Answer1,C1,C2,C3,Answer2),
+	pick2charLR(~(X+Len2-3),~(Y-1),Size,Answer2,D1,D2),          % north-west
+	pick2charLR(~(X+Len2-2),~(Y-1),Size,Answer2,D3,D4),          % 
+	pick2charLR(~(X+Len2-1),~(Y-1),Size,Answer2,D5,D6),          % south-west
+	try_put_TB(~(X+Len2-3),~(Y-1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_LR(Flag1,Flag2,List1,List2,List3,~(X+Len2-3),~(Y-1),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3TB_sub3(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,	
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3TB_sub3( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+%   sub4 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3TB_sub4( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3TB_sub4( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3TB_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3TB_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3TB_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3TB_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3TB_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,                                          % enough length
+		Y< ~(Size-1),                                       % enough space? 
+		string_element(Answer1,~((X+Len2-3)*Size+Y+1),W1), W1=0, % next space ? 
+		string_element(Answer1,~((X+Len2-2)*Size+Y+1),W2), W2=0, %(X+Len2-3,Y+1)(X+Len2-2,Y+1)
+		string_element(Answer1,~((X+Len2-1)*Size+Y+1),W3), W3=0 |%   (X+Len2-1,Y+1)
+	head3char(Str,Len1,C1,C2,C3),
+	put3charTB(~(X+Len2-3),~(Y+1),Size,Answer1,C1,C2,C3,Answer2),
+	pick2charLR(~(X+Len2-3),Y,Size,Answer2,D1,D2),          % north-west
+	pick2charLR(~(X+Len2-2),Y,Size,Answer2,D3,D4),          % 
+	pick2charLR(~(X+Len2-1),Y,Size,Answer2,D5,D6),          % south-west
+	try_put_TB(~(X+Len2-3),~(Y+1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_LR(Flag1,Flag2,List1,List2,List3,~(X+Len2-3),Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3TB_sub4(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,	
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3TB_sub4( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+
+
+%
+% 第一引数が next ということは、try_put_TB で失敗しているということ。
+%
+triple_try_put_LR(next,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+
+
+%
+% 第一引数が ok なので、 start!
+%
+% 新しい単語はすでに使われている。
+triple_try_put_LR( ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+		string_element(Used1,Cand1,U1),U1=\=0 |
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+otherwise.
+triple_try_put_LR( ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	triple_try_put_LR_main(next ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 3重ループの外側。
+%
+% OKが出ているから終了。
+triple_try_put_LR_main(ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List1 が空になったので、終了。
+triple_try_put_LR_main(next ,Flag,[],List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = AnswerOrg, % 古い解に戻す ！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_LR_main(next ,Flag,[L1|List1],List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_LR_sub(next ,Flag1, L1 ,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_LR_main(Flag1,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+	
+
+%
+% 3重ループの真ん中
+%
+% OKが出ているから終了。
+triple_try_put_LR_sub(ok ,Flag, L1 ,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List2 が空になったので、終了。
+triple_try_put_LR_sub(next ,Flag, L1 ,[],List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_LR_sub(next ,Flag, L1 ,[L2|List2],List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_LR_subsub(next, Flag1, L1 , L2 ,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_LR_sub(Flag1,Flag, L1 , List2,List3,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+
+%
+% 3重ループの内側
+%
+% OKが出ているから終了。
+triple_try_put_LR_subsub(ok ,Flag, L1 ,L2, List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List3 が空になったので、終了。
+triple_try_put_LR_subsub(next ,Flag, L1 ,L2, [],X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_LR_subsub(next ,Flag, L1 ,L2 ,[L3|List3],X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_LR_core(Flag1, L1 , L2 ,L3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_LR_subsub(Flag1,Flag, L1 , L2,List3,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+
+%
+% 一番内側の計算     (x,y),(x,y+1)
+%                  (x+1,y),(x+1,y+1)
+%                  (x+2,y),(x+2,y+1)
+triple_try_put_LR_core(Flag,elm(Atom1,Id1,rear),elm(Atom2,Id2,head),elm(Atom3,Id3,rear),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results4, Active1,Active4,AnswerOrg,Answer1,Answer4,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):- 
+		Id1=\=Id2, Id1=\=Id3, Id2=\=Id3,Id1=\=Cand1,Id2=\=Cand1,Id3=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 ,
+		string_element(Used1,Id3,U3), U3 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	searchBinWords(Id3,BinWords,word(_,U3,Key3,Str3,Val3,Len3),Used1),
+	try_put_LR(X,     ~(Y+1-(Len1-1)),Str1,Len1,Answer1,Size,X1,Y1,Flag1),% rear
+	try_put_LR(~(X+1),Y,              Str2,Len2,Answer1,Size,X2,Y2,Flag2),% head
+	try_put_LR(~(X+2),~(Y+1-(Len3-1)),Str3,Len3,Answer1,Size,X3,Y3,Flag3),% rear
+	ifTripleOK(Flag1,Flag2,Flag3,Flag),
+	ifOKputLR(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,
+				Results1,Results2,Active1,Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputLR(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	ifOKputLR(Flag,word(Id3,U3,Key3,Str3,Val3,Len3),X3,Y3,Size,
+				Results3,Results4,Active3,Active4,
+				Answer3,Answer4,
+				HistTB3,HistTB4,HistLR3,HistLR4,Used3,Used4).
+
+triple_try_put_LR_core(Flag,elm(Atom1,Id1,head),elm(Atom2,Id2,rear),elm(Atom3,Id3,head),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results4, Active1,Active4,AnswerOrg,Answer1,Answer4,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):- 
+		Id1=\=Id2, Id1=\=Id3, Id2=\=Id3,Id1=\=Cand1,Id2=\=Cand1,Id3=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 ,
+		string_element(Used1,Id3,U3), U3 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	searchBinWords(Id3,BinWords,word(_,U3,Key3,Str3,Val3,Len3),Used1),
+	try_put_LR(X,     Y,              Str1,Len1,Answer1,Size,X1,Y1,Flag1),% head
+	try_put_LR(~(X+1),~(Y+1-(Len2-1)),Str2,Len2,Answer1,Size,X2,Y2,Flag2),% rear
+	try_put_LR(~(X+2),Y,              Str3,Len3,Answer1,Size,X3,Y3,Flag3),% head
+	ifTripleOK(Flag1,Flag2,Flag3,Flag),
+	ifOKputLR(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,
+				Results1,Results2,[],Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputLR(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	ifOKputLR(Flag,word(Id3,U3,Key3,Str3,Val3,Len3),X3,Y3,Size,
+				Results3,Results4,Active3,Active4,
+				Answer3,Answer4,
+				HistTB3,HistTB4,HistLR3,HistLR4,Used3,Used4).
+otherwise.
+% 同じDir方向だから失敗
+% Atom1 と Atom2 が 同じ だから、失敗
+% Atom1 と Atom3 が 同じ だから、失敗
+% Atom2 と Atom3 が 同じ だから、失敗
+% Atom1 と Cand1 が 同じ だから、失敗
+% Atom2 と Cand1 が 同じ だから、失敗
+% Atom3 と Cand1 が 同じ だから、失敗
+% Atom1, Atom2, Atom3 とも、すでに使っていたから 失敗
+triple_try_put_LR_core(Flag,elm(Atom1,Id1,Dir1),elm(Atom2,Id2,Dir2),elm(Atom3,Id3,Dir3),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+
+ifTripleOK(ok,ok,ok,Flag):- Flag = ok.
+otherwise.
+ifTripleOK(_,_,_,Flag):- Flag = next.
+
+
+%  ( 2x3 LR )
+%          
+%          sub1  sub3
+%           LONGWORD
+%          sub2  sub4
+%          
+
+%
+% 単語の長さが ３文字以上でなくてはならない！
+%
+
+% dummy
+activeSearch2x3LR1(BinWords,MyWords,Number,Size,
+		Results1,Results,_ ,Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 対象となる active() は 縦置きなので、キャンセル
+%
+activeSearch2x3LR(BinWords,MyWords,Number,Size,
+		Results1,Results, actve(Id,X,Y,tb,Len) ,
+		Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+	
+%
+% 単語の長さが ３文字未満なので、キャンセル
+%
+activeSearch2x3LR(BinWords,MyWords,Number,Size,
+		Results1,Results, actve(Id,X,Y,lr,Len) ,
+		Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):- Len < 3 |
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+	
+%
+% 対象となる active() について、上下左右４方向に 単語を一つずつ置いてみる。
+%
+otherwise.
+activeSearch2x3LR(BinWords,MyWords,Number,Size,
+		Results1,Results, actve(Id,X,Y,lr,Len) ,
+		Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	active2x3LR_sub1( next, Flag1, BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id,X,Y,lr,Len), 
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	active2x3LR_sub2( Flag1, Flag2, BinWords,MyWords,Number,Size,
+			Results2,Results3, actve(Id,X,Y,lr,Len) ,
+			Active2,Active3,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3),
+	active2x3LR_sub3( next, Flag3, BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id,X,Y,lr,Len) ,
+			Active3,Active4,Answer3,Answer4,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4),
+	active2x3LR_sub4( Flag3, Flag4, BinWords,MyWords,Number,Size,
+			Results4,Results,  actve(Id,X,Y,lr,Len) ,
+			Active4,Active,Answer4,Answer,
+			HistTB4,HistTB,HistLR4,HistLR,Table2D,Table3D,Used4,Used).
+
+%
+%
+% sub1 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3LR_sub1( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3LR_sub1( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3LR_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3LR_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3LR_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3LR_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3LR_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,					    % enough length
+		X>0,                                                % enough space
+		string_element(Answer1,~((X-1)*Size+Y),W1),   W1=0, % next space?
+		string_element(Answer1,~((X-1)*Size+Y+1),W2), W2=0, %(X-1,Y)(X-1,Y+1)
+		string_element(Answer1,~((X-1)*Size+Y+2),W3), W3=0 |%    (X-1,Y+2)
+	tail3char(Str,Len1,C1,C2,C3),
+	put3charLR(~(X-1),Y,Size,Answer1,C1,C2,C3,Answer2),                      
+	pick2charTB(~(X-1),Y,     Size,Answer2,D1,D2),              % north-west
+	pick2charTB(~(X-1),~(Y+1),Size,Answer2,D3,D4),              % 
+	pick2charTB(~(X-1),~(Y+2),Size,Answer2,D5,D6),              % north-east
+	try_put_LR(~(X-1),~(Y+2-(Len1-1)),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_TB(Flag1,Flag2,List1,List2,List3,~(X-1),Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3LR_sub1(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3LR_sub1( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub2 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3LR_sub2( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3LR_sub2( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3LR_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3LR_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3LR_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3LR_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3LR_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,					    % enough length
+		X< ~(Size-1),                                       % enough space
+		string_element(Answer1,~((X+1)*Size+Y),W1),   W1=0, % next space?
+		string_element(Answer1,~((X+1)*Size+Y+1),W2), W2=0, %(X+1,Y)(X+1,Y+1)
+		string_element(Answer1,~((X+1)*Size+Y+2),W3), W3=0 |%    (X+1,Y+2)
+	tail3char(Str,Len1,C1,C2,C3),
+	put3charLR(~(X+1),Y,Size,Answer1,C1,C2,C3,Answer2),                      
+	pick2charTB(X,Y,     Size,Answer2,D1,D2),              % north-west
+	pick2charTB(X,~(Y+1),Size,Answer2,D3,D4),              % 
+	pick2charTB(X,~(Y+2),Size,Answer2,D5,D6),              % north-east
+	try_put_LR(~(X+1),~(Y+2-(Len1-1)),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_TB(Flag1,Flag2,List1,List2,List3,X,Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3LR_sub2(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3LR_sub2( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub3 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3LR_sub3( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3LR_sub3( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3LR_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3LR_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3LR_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3LR_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3LR_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,					    % enough length
+		X>0,                                                % enough space
+		string_element(Answer1,~((X-1)*Size+Y+Len2-3),W1), W1=0, % next space?
+		string_element(Answer1,~((X-1)*Size+Y+Len2-2),W2), W2=0, %(X-1,Y+Len2-3)(X-1,Y+Len2-2)
+		string_element(Answer1,~((X-1)*Size+Y+Len2-1),W3), W3=0 |%    (X-1,Y+Len2-1)
+	head3char(Str,Len1,C1,C2,C3),
+	put3charLR(~(X-1),~(Y+Len2-3),Size,Answer1,C1,C2,C3,Answer2),                      
+	pick2charTB(~(X-1),~(Y+Len2-3),Size,Answer2,D1,D2),      % north-west
+	pick2charTB(~(X-1),~(Y+Len2-2),Size,Answer2,D3,D4),      % 
+	pick2charTB(~(X-1),~(Y+Len2-1),Size,Answer2,D5,D6),      % north-east
+	try_put_LR(~(X-1),~(Y+Len2-3),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_TB(Flag1,Flag2,List1,List2,List3,~(X-1),~(Y+Len2-3),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3LR_sub3(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3LR_sub3( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub4 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x3LR_sub4( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x3LR_sub4( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x3LR_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x3LR_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 単語wordの語長が短いから、次の単語に移る。
+%		
+active2x3LR_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			Len1 < 3 |
+	active2x3LR_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x3LR_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Len1 >= 3,					    % enough length
+		X< ~(Size-1),                                       % enough space
+		string_element(Answer1,~((X+1)*Size+Y+Len2-3),W1), W1=0, % next space?
+		string_element(Answer1,~((X+1)*Size+Y+Len2-2),W2), W2=0, %(X+1,Y+Len2-3)(X+1,Y+Len2-2)
+		string_element(Answer1,~((X+1)*Size+Y+Len2-1),W3), W3=0 |%    (X+1,Y+Len2-1)
+	head3char(Str,Len1,C1,C2,C3),
+	put3charLR(~(X+1),~(Y+Len2-3),Size,Answer1,C1,C2,C3,Answer2),                      
+	pick2charTB(X,~(Y+Len2-3),Size,Answer2,D1,D2),      % north-west
+	pick2charTB(X,~(Y+Len2-2),Size,Answer2,D3,D4),      % 
+	pick2charTB(X,~(Y+Len2-1),Size,Answer2,D5,D6),      % north-east
+	try_put_LR(~(X+1),~(Y+Len2-3),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	search2DTable(id(D5,D6),Table2D,List3),
+	triple_try_put_TB(Flag1,Flag2,List1,List2,List3,X,~(Y+Len2-3),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x3LR_sub4(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x3LR_sub4( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+
+%
+% 第一引数が next ということは、try_put_LR で失敗しているということ。
+%
+triple_try_put_TB(next,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+
+
+%
+% 第一引数が ok なので、 start!
+%
+% 新しい単語はすでに使われている。
+triple_try_put_TB( ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+		string_element(Used1,Cand1,U1),U1=\=0 |
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+otherwise.
+triple_try_put_TB( ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	triple_try_put_TB_main(next ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% 3重ループの外側。
+%
+% OKが出ているから終了。
+triple_try_put_TB_main(ok ,Flag,List1,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List1 が空になったので、終了。
+triple_try_put_TB_main(next ,Flag,[],List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = AnswerOrg, % 古い解に戻す ！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_TB_main(next ,Flag,[L1|List1],List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_TB_sub(next ,Flag1, L1 ,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_TB_main(Flag1,Flag,    List1 ,List2,List3,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+	
+
+%
+% 3重ループの真ん中
+%
+% OKが出ているから終了。
+triple_try_put_TB_sub(ok ,Flag, L1 ,List2,List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List2 が空になったので、終了。
+triple_try_put_TB_sub(next ,Flag, L1 ,[],List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_TB_sub(next ,Flag, L1 ,[L2|List2],List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_TB_subsub(next, Flag1, L1 , L2 ,List3,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_TB_sub(Flag1,Flag, L1 , List2, List3 ,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+%
+% 3重ループの内側
+%
+% OKが出ているから終了。
+triple_try_put_TB_subsub(ok ,Flag, L1 ,L2, List3,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List3 が空になったので、終了。
+triple_try_put_TB_subsub(next ,Flag, L1 ,L2, [],X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+triple_try_put_TB_subsub(next ,Flag, L1 ,L2,[L3|List3],X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	triple_try_put_TB_core(Flag1, L1 , L2 ,L3 ,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	triple_try_put_TB_subsub(Flag1,Flag, L1 , L2, List3 ,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+%
+% 一番内側の計算     (x,y),(x,y+1),(x,y+2)
+%                  (x+1,y),(x+1,y+1),(x+1,y+2)
+triple_try_put_TB_core(Flag,elm(Atom1,Id1,rear),elm(Atom2,Id2,head),elm(Atom3,Id3,rear),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results4, Active1,Active4,AnswerOrg,Answer1,Answer4,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):- 
+		Id1=\=Id2, Id1=\=Id3, Id2=\=Id3,Id1=\=Cand1,Id2=\=Cand1,Id3=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 ,
+		string_element(Used1,Id3,U3), U3 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	searchBinWords(Id3,BinWords,word(_,U3,Key3,Str3,Val3,Len3),Used1),
+	try_put_TB(~(X+1-(Len1-1)),     Y,Str1,Len1,Answer1,Size,X1,Y1,Flag1), % rear
+	try_put_TB(X,              ~(Y+1),Str2,Len2,Answer1,Size,X2,Y2,Flag2), % head
+	try_put_TB(~(X+1-(Len3-1)),~(Y+2),Str3,Len3,Answer1,Size,X3,Y3,Flag3), % rear
+	ifTripleOK(Flag1,Flag2,Flag3,Flag),
+	ifOKputTB(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,          
+				Results1,Results2,Active1,Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputTB(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,          
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	ifOKputTB(Flag,word(Id3,U3,Key3,Str3,Val3,Len3),X3,Y3,Size,          
+				Results3,Results4,Active3,Active4,
+				Answer3,Answer4,
+				HistTB3,HistTB4,HistLR3,HistLR4,Used3,Used4).
+
+triple_try_put_TB_core(Flag,elm(Atom1,Id1,head),elm(Atom2,Id2,rear),elm(Atom3,Id3,head),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results4, Active1,Active4,AnswerOrg,Answer1,Answer4,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):- 
+		Id1=\=Id2, Id1=\=Id3, Id2=\=Id3,Id1=\=Cand1,Id2=\=Cand1,Id3=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 ,
+		string_element(Used1,Id3,U3), U3 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	searchBinWords(Id3,BinWords,word(_,U3,Key3,Str3,Val3,Len3),Used1),
+	try_put_TB(X,              Y,     Str1,Len1,Answer1,Size,X1,Y1,Flag1), % head
+	try_put_TB(~(X+1-(Len2-1)),~(Y+1),Str2,Len2,Answer1,Size,X2,Y2,Flag2), % rear
+	try_put_TB(X,              ~(Y+2),Str3,Len3,Answer1,Size,X3,Y3,Flag3), % head
+	ifTripleOK(Flag1,Flag2,Flag3,Flag),
+	ifOKputTB(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,          
+				Results1,Results2,[],Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputTB(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,          
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	ifOKputTB(Flag,word(Id3,U3,Key3,Str3,Val3,Len3),X3,Y3,Size,          
+				Results3,Results4,Active3,Active4,
+				Answer3,Answer4,
+				HistTB3,HistTB4,HistLR3,HistLR4,Used3,Used4).
+
+otherwise.
+% 同じDir方向だから失敗
+% Atom1 と Atom2 が 同じ だから、失敗
+% Atom1 と Atom3 が 同じ だから、失敗
+% Atom2 と Atom3 が 同じ だから、失敗
+% Atom1 と Cand1 が 同じ だから、失敗
+% Atom2 と Cand1 が 同じ だから、失敗
+% Atom3 と Cand1 が 同じ だから、失敗
+% Atom1, Atom2, Atom3 とも、すでに使っていたから 失敗
+triple_try_put_TB_core(Flag,elm(Atom1,Id1,Dir1),elm(Atom2,Id2,Dir2),elm(Atom3,Id3,Dir3),
+		X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+
+
+%  ( 2x2 TB )
+%            s   s
+%            u   u
+%            b W b
+%            1 O 2
+%              R
+%            s D s
+%            u S b 
+%            b   b
+%            3   4
+
+% dummy
+activeSearch2x2TB1(BinWords,MyWords,Number,Size,
+		Results1,Results,_,Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 対象となる active() は 横置きなので、キャンセル
+%
+activeSearch2x2TB(BinWords,MyWords,Number,Size,
+		Results1,Results,actve(Id,X,Y,lr,Len),Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+	
+%
+% 対象となる active() について、上下左右４方向に 単語を一つずつ置いてみる。
+%
+activeSearch2x2TB(BinWords,MyWords,Number,Size,
+		Results1,Results,actve(Id,X,Y,tb,Len),Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	active2x2TB_sub1( next, Flag1, BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id,X,Y,tb,Len), 
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	active2x2TB_sub2( Flag1, Flag2, BinWords,MyWords,Number,Size,
+			Results2,Results3, actve(Id,X,Y,tb,Len),
+			Active2,Active3,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3),
+	active2x2TB_sub3( next, Flag3, BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id,X,Y,tb,Len),
+			Active3,Active4,Answer3,Answer4,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4),
+	active2x2TB_sub4( Flag3, Flag4, BinWords,MyWords,Number,Size,
+			Results4,Results,  actve(Id,X,Y,tb,Len),
+			Active4,Active,Answer4,Answer,
+			HistTB4,HistTB,HistLR4,HistLR,Table2D,Table3D,Used4,Used).
+
+%
+%
+% sub1 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2TB_sub1( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2TB_sub1( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2TB_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2),
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2TB_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2TB_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Y>0,                                                % enough space? 
+		string_element(Answer1,~(X*Size+Y-1),W1),     W1=0, % next space ? 
+		string_element(Answer1,~((X+1)*Size+Y-1),W2), W2=0 |%(X,Y-1)(X+1,Y-1)
+	tail2char(Str,Len1,C1,C2),
+	put2charTB(X,~(Y-1),Size,Answer1,C1,C2,Answer2),                      
+	pick2charLR(     X,~(Y-1),Size,Answer2,D1,D2),                  % north-west
+	pick2charLR(~(X+1),~(Y-1),Size,Answer2,D3,D4),                  % south-west
+	try_put_TB(~(X+1-(Len1-1)),~(Y-1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_LR(Flag1,Flag2,List1,List2,X,~(Y-1),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2TB_sub1(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,	
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2TB_sub1( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub2 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2TB_sub2( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2TB_sub2( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2TB_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2TB_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2TB_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Y< ~(Size-1),                                       % enough space?
+		string_element(Answer1,~(X*Size+Y+1),W1),     W1=0, % next space?
+		string_element(Answer1,~((X+1)*Size+Y+1),W2), W2=0 |%(X,Y+1)(X+1,Y+1)
+	tail2char(Str,Len1,C1,C2),
+	put2charTB(X,~(Y+1),Size,Answer1,C1,C2,Answer2),                       
+	pick2charLR(     X,Y,Size,Answer2,D1,D2),                   % north-west 
+	pick2charLR(~(X+1),Y,Size,Answer2,D3,D4),                   % south-west
+	try_put_TB(~(X+1-(Len1-1)),~(Y+1),Str,Len1,Answer2,Size,X2,Y2,Flag1),     
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_LR(Flag1,Flag2,List1,List2,X,Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2TB_sub2(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2TB_sub2( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub3 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2TB_sub3( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2TB_sub3( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2TB_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2TB_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2TB_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Y>0,                                                % ecnough space
+		string_element(Answer1,~((X+Len2-2)*Size+Y-1),W1), W1=0, %next space?
+		string_element(Answer1,~((X+Len2-1)*Size+Y-1),W2), W2=0 |% (X+Len2-2,Y-1) (X+Len2-1,Y-1)
+	head2char(Str,Len1,C1,C2),
+	put2charTB(~(X+Len2-2),~(Y-1),Size,Answer1,C1,C2,Answer2), 
+	pick2charLR(~(X+Len2-2),~(Y-1),Size,Answer2,D1,D2),         % north-west
+	pick2charLR(~(X+Len2-1),~(Y-1),Size,Answer2,D3,D4),         % south-west
+	try_put_TB(~(X+Len2-2),~(Y-1),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_LR(Flag1,Flag2,List1,List2,~(X+Len2-2),~(Y-1),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2TB_sub3(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2TB_sub3( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub4 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2TB_sub4( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2TB_sub4( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2TB_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2TB_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,tb,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2TB_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,tb,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		Y< ~(Size-1),                                       % enough spave
+		string_element(Answer1,~((X+Len2-2)*Size+Y+1),W1), W1=0, %next space?
+		string_element(Answer1,~((X+Len2-1)*Size+Y+1),W2), W2=0 |% (X+Len2-2,Y+1) (X+Len2-1,Y+1)
+	head2char(Str,Len1,C1,C2),
+	put2charTB(~(X+Len2-2),~(Y+1),Size,Answer1,C1,C2,Answer2),  
+	pick2charLR(~(X+Len2-2),Y,Size,Answer2,D1,D2),              % north-west 
+	pick2charLR(~(X+Len2-1),Y,Size,Answer2,D3,D4),              % south-west
+	try_put_TB(~(X+Len2-2),~(Y+1),Str,Len1,Answer2,Size,X2,Y2,Flag1),     
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_LR(Flag1,Flag2,List1,List2,~(X+Len2-2),Y,Size,BinWords,Id1,     % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputTB(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2TB_sub4(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,tb,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2TB_sub4( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,tb,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+
+
+%
+% 第一引数が next ということは、try_put_TB で失敗しているということ。
+%
+double_try_put_LR(next,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+
+
+%
+% 第一引数が ok なので、 start!
+%
+% 新しい単語はすでに使われている。
+double_try_put_LR( ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+		string_element(Used1,Cand1,U1),U1=\=0 |
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+otherwise.
+double_try_put_LR( ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	double_try_put_LR_main(next ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% ２重ループの外側。
+%
+% OKが出ているから終了。
+double_try_put_LR_main(ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List1 が空になったので、終了。
+double_try_put_LR_main(next ,Flag,[],List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = AnswerOrg, % 古い解に戻す ！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+double_try_put_LR_main(next ,Flag,[L1|List1],List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	double_try_put_LR_sub(next ,Flag1, L1 ,List2,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	double_try_put_LR_main(Flag1,Flag,    List1 ,List2,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+	
+
+%
+% ２重ループの内側
+%
+% OKが出ているから終了。
+double_try_put_LR_sub(ok ,Flag, L1 ,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List2 が空になったので、終了。
+double_try_put_LR_sub(next ,Flag, L1 ,[],X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+double_try_put_LR_sub(next ,Flag, L1 ,[L2|List2],X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	double_try_put_LR_core(Flag1, L1 , L2 ,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	double_try_put_LR_sub(Flag1,Flag, L1 , List2 ,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+%
+% 一番内側の計算     (x,y),(x,y+1)
+%                  (x+1,y),(x+1,y+1)
+double_try_put_LR_core(Flag,elm(Atom1,Id1,rear),elm(Atom2,Id2,head),X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):- 
+		Id1=\=Id2, Id1=\=Cand1, Id2=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	try_put_LR(X,~(Y+1-(Len1-1)),Str1,Len1,Answer1,Size,X1,Y1,Flag1),  % rear
+	try_put_LR(~(X+1),Y,Str2,Len2,Answer1,Size,X2,Y2,Flag2),           % head
+	ifDoubleOK(Flag1,Flag2,Flag),
+	ifOKputLR(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,
+				Results1,Results2,Active1,Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputLR(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3).
+
+double_try_put_LR_core(Flag,elm(Atom1,Id1,head),elm(Atom2,Id2,rear),X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):- 
+		Id1=\=Id2, Id1=\=Cand1, Id2=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	try_put_LR(X,Y,Str1,Len1,Answer1,Size,X1,Y1,Flag1),                    % head
+	try_put_LR(~(X+1),~(Y+1-(Len2-1)),Str2,Len2,Answer1,Size,X2,Y2,Flag2), % rear
+	ifDoubleOK(Flag1,Flag2,Flag),
+	ifOKputLR(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,
+				Results1,Results2,[],Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputLR(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3).
+
+otherwise.
+% 同じDir方向だから失敗
+% Atom1 と Atom2 が 同じ だから、
+% Atom1 と Cand1 が 同じ だから、
+% Atom2 と Cand1 が 同じ だから、
+% Atom1, Atom2 とも、すでに使っていたから
+double_try_put_LR_core(Flag,elm(Atom1,Id1,Dir1),elm(Atom2,Id2,Dir2),X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+
+ifDoubleOK(ok,ok,Flag):- Flag = ok.
+otherwise.
+ifDoubleOK(_,_,Flag):- Flag = next.
+
+
+%  ( 2x2 LR )
+%          
+%          sub1 sub3
+%            WORDS
+%          sub2 sub4
+%          
+
+% dummy
+activeSearch2x2LR1(BinWords,MyWords,Number,Size,
+		Results1,Results,_ ,Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+
+%
+% 対象となる active() は 縦置きなので、キャンセル
+%
+activeSearch2x2LR(BinWords,MyWords,Number,Size,
+		Results1,Results, actve(Id,X,Y,tb,Len) ,
+		Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	Results  = Results1,
+	Active   = Active1,
+	Answer   = Answer1,
+	HistTB   = HistTB1,
+	HistLR   = HistLR1,
+	Used     = Used1.
+	
+%
+% 対象となる active() について、上下左右４方向に 単語を一つずつ置いてみる。
+%
+activeSearch2x2LR(BinWords,MyWords,Number,Size,
+		Results1,Results, actve(Id,X,Y,lr,Len) ,
+		Active1,Active,Answer1,Answer,
+		HistTB1,HistTB,HistLR1,HistLR,Table2D,Table3D,Used1,Used):-
+	active2x2LR_sub1( next, Flag1, BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id,X,Y,lr,Len), 
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	active2x2LR_sub2( Flag1, Flag2, BinWords,MyWords,Number,Size,
+			Results2,Results3, actve(Id,X,Y,lr,Len) ,
+			Active2,Active3,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3),
+	active2x2LR_sub3( next, Flag3, BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id,X,Y,lr,Len) ,
+			Active3,Active4,Answer3,Answer4,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4),
+	active2x2LR_sub4( Flag3, Flag4, BinWords,MyWords,Number,Size,
+			Results4,Results,  actve(Id,X,Y,lr,Len) ,
+			Active4,Active,Answer4,Answer,
+			HistTB4,HistTB,HistLR4,HistLR,Table2D,Table3D,Used4,Used).
+
+
+%
+%
+% sub1 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2LR_sub1( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2LR_sub1( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2LR_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2LR_sub1(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2LR_sub1(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		X>0,                                                % enough space
+		string_element(Answer1,~((X-1)*Size+Y),W1),   W1=0, % next space?
+		string_element(Answer1,~((X-1)*Size+Y+1),W2), W2=0 |%(X-1,Y)(X-1,Y+1)
+	tail2char(Str,Len1,C1,C2),
+	put2charLR(~(X-1),Y,Size,Answer1,C1,C2,Answer2),                      
+	pick2charTB(~(X-1),Y,Size,Answer2,D1,D2),                        % north-west
+	pick2charTB(~(X-1),~(Y+1),Size,Answer2,D3,D4),                   % north-east
+	try_put_LR(~(X-1),~(Y+1-(Len1-1)),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_TB(Flag1,Flag2,List1,List2,~(X-1),Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2LR_sub1(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2LR_sub1( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub2 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2LR_sub2( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2LR_sub2( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2LR_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2LR_sub2(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2LR_sub2(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		X< ~(Size-1),                                       % enough space?
+		string_element(Answer1,~((X+1)*Size+Y),W1),   W1=0, % next space?
+		string_element(Answer1,~((X+1)*Size+Y+1),W2), W2=0 |%(X+1,Y)(X+1,Y+1)
+	tail2char(Str,Len1,C1,C2),
+	put2charLR(~(X+1),Y,Size,Answer1,C1,C2,Answer2),                      
+	pick2charTB(X,Y,Size,Answer2,D1,D2),                        % north-west
+	pick2charTB(X,~(Y+1),Size,Answer2,D3,D4),                   % north-east
+	try_put_LR(~(X+1),~(Y+1-(Len1-1)),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_TB(Flag1,Flag2,List1,List2,X,Y,Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2LR_sub2(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2LR_sub2( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub3 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2LR_sub3( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2LR_sub3( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2LR_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2LR_sub3(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2LR_sub3(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		X>0,                                                   % enough space
+		string_element(Answer1,~((X-1)*Size+Y+Len2-2),W1),W1=0, % next space?
+		string_element(Answer1,~((X-1)*Size+Y+Len2-1),W2),W2=0 |% (X-1,Y+Len2-2) (X-1,Y+Len2-1)
+	head2char(Str,Len1,C1,C2),
+	put2charLR(~(X-1),~(Y+Len2-2),Size,Answer1,C1,C2,Answer2),           
+	pick2charTB(~(X-1),~(Y+Len2-2),Size,Answer2,D1,D2),      % north-west
+	pick2charTB(~(X-1),~(Y+Len2-1),Size,Answer2,D3,D4),      % north-east
+	try_put_LR(~(X-1),~(Y+Len2-2),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_TB(Flag1,Flag2,List1,List2,~(X-1),~(Y+Len2-2),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2LR_sub3(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2LR_sub3( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+%
+% sub4 対象となる active() について、未使用の単語をひとつずつ当てはめていく。
+%
+%
+active2x2LR_sub4( ok ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = ok,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+active2x2LR_sub4( next ,Flag,BinWords,[     ],Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+%
+% 単語wordがすでに使用されていたから、次の単語に移る。
+%		
+active2x2LR_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+			string_element(Used1,Id1,U1), U1 =\= 0 |
+	active2x2LR_sub4(next,Flag,BinWords,MyWords,Number,Size,
+			Results1,Results2, actve(Id2,X,Y,lr,Len2) ,
+			Active1,Active2,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+active2x2LR_sub4(next,Flag,BinWords,[word(Id1,U,Key,Str,Val,Len1)|MyWords],
+		Number,Size,
+		Results1,Results4, actve(Id2,X,Y,lr,Len2) ,
+		Active1,Active4,Answer1,Answer5,
+		HistTB1,HistTB4,HistLR1,HistLR4,Table2D,Table3D,Used1,Used4):-
+		string_element(Used1,Id1,U1), U1 = 0,               % not used yet
+		X< ~(Size-1),                                          % enough space
+		string_element(Answer1,~((X+1)*Size+Y+Len2-2),W1),W1=0, % next space?
+		string_element(Answer1,~((X+1)*Size+Y+Len2-1),W2),W2=0 |% (X+1,Y+Len2-2) (X+1,Y+Len2-1)
+	head2char(Str,Len1,C1,C2),
+	put2charLR(~(X+1),~(Y+Len2-2),Size,Answer1,C1,C2,Answer2),                      
+	pick2charTB(X,~(Y+Len2-2),Size,Answer2,D1,D2),                % north-west
+	pick2charTB(X,~(Y+Len2-1),Size,Answer2,D3,D4),                % north-east
+	try_put_LR(~(X+1),~(Y+Len2-2),Str,Len1,Answer2,Size,X2,Y2,Flag1),
+	search2DTable(id(D1,D2),Table2D,List1),
+	search2DTable(id(D3,D4),Table2D,List2),
+	double_try_put_TB(Flag1,Flag2,List1,List2,X,~(Y+Len2-2),Size,BinWords,Id1, % north-west
+			Results1,Results2, Active1,Active2,Answer1,Answer2,Answer3,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	ifOKputLR(Flag2,word(Id1,U,Key,Str,Val,Len1),X2,Y2,Size,
+				Results2,Results3,Active2,Active3,
+				Answer3,Answer4,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3),
+	active2x2LR_sub4(Flag2,Flag,BinWords,MyWords,Number,Size,
+			Results3,Results4, actve(Id2,X,Y,lr,Len2) ,
+			Active3,Active4,Answer4,Answer5,
+			HistTB3,HistTB4,HistLR3,HistLR4,Table2D,Table3D,Used3,Used4).
+otherwise.
+active2x2LR_sub4( next ,Flag,BinWords,MyWords,Number,Size,
+		Results1,Results2, actve(Id,X,Y,lr,Len) ,
+		Active1,Active2,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag     = next,
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = Answer1,
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1.
+
+
+%
+% 第一引数が next ということは、try_put_LR で失敗しているということ。
+%
+double_try_put_TB(next,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+
+
+%
+% 第一引数が ok なので、 start!
+%
+
+% 新しい単語はすでに使われている。
+double_try_put_TB( ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+		string_element(Used1,Cand1,U1),U1=\=0 |
+	Results2 = Results1,
+	Active2  = Active1,
+	Answer2  = AnswerOrg, % 解を元に戻す
+	HistTB2  = HistTB1,
+	HistLR2  = HistLR1,
+	Used2    = Used1,
+	Flag     = next.	
+otherwise.
+double_try_put_TB( ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	double_try_put_TB_main(next ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2).
+
+%
+% ２重ループの外側。
+%
+% OKが出ているから終了。
+double_try_put_TB_main(ok ,Flag,List1,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List1 が空になったので、終了。
+double_try_put_TB_main(next ,Flag,[],List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = AnswerOrg, % 古い解に戻す ！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+double_try_put_TB_main(next ,Flag,[L1|List1],List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	double_try_put_TB_sub(next ,Flag1, L1 ,List2,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	double_try_put_TB_main(Flag1,Flag,    List1 ,List2,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+	
+
+%
+% ２重ループの内側
+%
+% OKが出ているから終了。
+double_try_put_TB_sub(ok ,Flag, L1 ,List2,X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = ok,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,  % 新しい解に更新！
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+% List2 が空になったので、終了。
+double_try_put_TB_sub(next ,Flag, L1 ,[],X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):-
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1, 
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+double_try_put_TB_sub(next ,Flag, L1 ,[L2|List2],X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):-
+	double_try_put_TB_core(Flag1, L1 , L2 ,X,Y,Size,BinWords,Cand1,
+			Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+			HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2),
+	double_try_put_TB_sub(Flag1,Flag, L1 , List2 ,X,Y,Size,BinWords,Cand1,
+			Results2,Results3, Active2,Active3,AnswerOrg,Answer2,Answer3,
+			HistTB2,HistTB3,HistLR2,HistLR3,Table2D,Table3D,Used2,Used3).
+
+%
+% 一番内側の計算     (x,y),(x,y+1)
+%                  (x+1,y),(x+1,y+1)
+double_try_put_TB_core(Flag,elm(Atom1,Id1,rear),elm(Atom2,Id2,head),X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):- 
+		Id1=\=Id2, Id1=\=Cand1, Id2=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	try_put_TB(~(X+1-(Len1-1)),Y,Str1,Len1,Answer1,Size,X1,Y1,Flag1),  % rear
+	try_put_TB(X,~(Y+1),Str2,Len2,Answer1,Size,X2,Y2,Flag2),           % head
+	ifDoubleOK(Flag1,Flag2,Flag),
+	ifOKputTB(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,          
+				Results1,Results2,Active1,Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputTB(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,          
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3).
+
+double_try_put_TB_core(Flag,elm(Atom1,Id1,head),elm(Atom2,Id2,rear),X,Y,Size,BinWords,Cand1,
+		Results1,Results3, Active1,Active3,AnswerOrg,Answer1,Answer3,
+		HistTB1,HistTB3,HistLR1,HistLR3,Table2D,Table3D,Used1,Used3):- 
+		Id1=\=Id2, Id1=\=Cand1, Id2=\=Cand1,
+		string_element(Used1,Id1,U1), U1 = 0 ,
+		string_element(Used1,Id2,U2), U2 = 0 |
+	searchBinWords(Id1,BinWords,word(_,U1,Key1,Str1,Val1,Len1),Used1),
+	searchBinWords(Id2,BinWords,word(_,U2,Key2,Str2,Val2,Len2),Used1),
+	try_put_TB(X,Y,Str1,Len1,Answer1,Size,X1,Y1,Flag1),                    % head
+	try_put_TB(~(X+1-(Len2-1)),~(Y+1),Str2,Len2,Answer1,Size,X2,Y2,Flag2), % rear
+	ifDoubleOK(Flag1,Flag2,Flag),
+	ifOKputTB(Flag,word(Id1,U1,Key1,Str1,Val1,Len1),X1,Y1,Size,          
+				Results1,Results2,[],Active2,
+				Answer1,Answer2,
+				HistTB1,HistTB2,HistLR1,HistLR2,Used1,Used2),
+	ifOKputTB(Flag,word(Id2,U2,Key2,Str2,Val2,Len2),X2,Y2,Size,          
+				Results2,Results3,Active2,Active3,
+				Answer2,Answer3,
+				HistTB2,HistTB3,HistLR2,HistLR3,Used2,Used3).
+
+otherwise.
+% 同じDir方向だから失敗
+% Atom1 と Atom2 が 同じ だから、
+% Atom1 と Cand1 が 同じ だから、
+% Atom2 と Cand1 が 同じ だから、
+% Atom1, Atom2 とも、すでに使っていたから
+double_try_put_TB_core(Flag,elm(Atom1,Id1,Dir1),elm(Atom2,Id2,Dir2),X,Y,Size,BinWords,Cand1,
+		Results1,Results2, Active1,Active2,AnswerOrg,Answer1,Answer2,
+		HistTB1,HistTB2,HistLR1,HistLR2,Table2D,Table3D,Used1,Used2):- 
+	Flag = next,
+	Active2  = Active1,
+        Results2 = Results1,
+        Answer2  = Answer1,
+        HistTB2  = HistTB1,
+        HistLR2  = HistLR1,
+        Used2    = Used1.
+
+
+%
+% 自家製 単語のcheck!
+%
+ioutcheck([],Answer,Size):-
+	io:outstream([print(["ERROR check finish!! "]),nl]).
+ioutcheck([myplace(Id,Key,Str,Val,X,Y,Dir)|Results],Answer,Size):-
+	wordExist(Answer,Size,X,Y,Str,Dir,Flag),
+	printError(Flag,Str,X,Y,Dir),
+	ioutcheck(Results,Answer,Size).
+
+printError(ok,Str,X,Y,Dir).
+otherwise.
+printError(_,Str,X,Y,Dir):-
+	io:outstream([print(["ERROR... ",Str,X,Y,Dir]),nl]).
+
+wordExist(Answer,Size,X,Y,Str,tb,Flag):- wordExist2(Answer,Size,X,Y,Str,tb,Flag).
+wordExist(Answer,Size,X,Y,Str,lr,Flag):- 
+	string(Str,Len,_)| 
+	wordExist(Answer,Size,X,Y,Str,lr,Flag,Len).
+
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len):-
+		Y>0, string_element(Answer,~(X*Size+Y-1),W ), W=\=0 | Flag = no.
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len):-
+		~(Y+Len-1)< ~(Size-1), 
+		string_element(Answer,~(X*Size+Y+Len),W ),   W=\=0  | Flag = no.
+otherwise.
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len):-
+	wordExist(Answer,Size,X,Y,Str,lr,Flag,Len,0).
+
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len,N):- N>=Len | Flag = ok.
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len,N):- N<Len,
+		string_element(Answer,~(X*Size+Y+N),W1),
+		string_element(Str,N,W2), W1=W2 |
+	wordExist(Answer,Size,X,Y,Str,lr,Flag,Len,~(N+1)).
+otherwise.
+wordExist(Answer,Size,X,Y,Str,lr,Flag,Len,N):- Flag = no.
+
+
+wordExist2(Answer,Size,X,Y,Str,tb,Flag):- 
+	string(Str,Len,_)| 
+	wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len).
+
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len):-
+		X>0, string_element(Answer,~((X-1)*Size+Y),W ), W=\=0 | Flag = no.
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len):-
+		~(X+Len-1)< ~(Size-1), 
+		string_element(Answer,~((X+Len)*Size+Y),W ),   W=\=0  | Flag = no.
+otherwise.
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len):-
+	wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len,0).
+
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len,N):- N>=Len | Flag = ok.
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len,N):- N<Len,
+		string_element(Answer,~((X+N)*Size+Y),W1),
+		string_element(Str,N,W2), W1=W2 |
+	wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len,~(N+1)).
+otherwise.
+wordExist2(Answer,Size,X,Y,Str,tb,Flag,Len,N):- Flag = no.
+

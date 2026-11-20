@@ -1,0 +1,70 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<HEAD>
+<TITLE> 一階述語論理</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+<meta name="description" value=" 一階述語論理">
+<meta name="keywords" value="mgtp-lec">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00340000000000000000> 一階述語論理</A></H1>
+<P>
+命題論理では、アトムは真理値をとる命題変数と呼ばれた。
+一階述語論理では、アトムはそれ自身は真理値をもつが、
+その真理値はいくつかのパラメタ(引数)に依存する。
+引数として定数以外に変数、関数(項)という要素が加わってくる。
+<P>
+次の節集合を考えてみよう。
+<P><center>
+(C1")... true → p(a);r.<BR>
+(C2')... p(X) → q(X).  <BR>
+(C3')... q(b) → false. <BR>
+(C4) ...  r   → false. <BR>
+</center>
+<P>
+
+(C1&quot;)から得られるモデル候補は
+
+<P><center>
+M1 = {p(a)}, M2 = {r}
+</center><P>
+
+である。
+モデル候補 M2 の方は、(C4)により矛盾が出てモデルが得られない。
+モデル候補 M1 の方では、
+(C2')で X を a とおけば、
+
+<P><center>
+(C2&quot;) .... p(a) → q(a) 
+</center><P>
+
+が節集合に含まれていると考えられるので
+
+<P><center>
+M1' = {p(a), q(a)}
+</center><P>
+
+のように変更(拡張)する。
+ここで、qについては(C3')という負節があるが、
+引数を見ると、
+M1' の q(a) に対し、(C3') の前件部では q(b) になっており一致しない。
+したがって、(C3')が用いられることはなく矛盾が導出されないので、
+M1' は晴れてモデルということになる。
+すなわち、モデル {p(a),q(a)} が得られた。
+<P>
+(C3')を
+
+<P><center>
+(C3&quot;).... q(a) → false
+</center><P>
+
+で置き換えれば、M1' もモデルたりえなくなり、
+節集合(C1&quot;),(C2'),(C3&quot;),(C4)は充足不能ということになる。
+<P>
+
+<BR> <HR>
+<A HREF=intro.html>戻る</A><P>
+</BODY>

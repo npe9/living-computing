@@ -1,0 +1,78 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> What is database ?</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" What is database ?">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html108 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html106 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html100 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html109 HREF="node5.html"> Ideas of data </A>
+<B>Up:</B> <A NAME=tex2html107 HREF="node3.html"> Basic knowledge of </A>
+<B> Previous:</B> <A NAME=tex2html101 HREF="node3.html"> Basic knowledge of </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00021100000000000000> What is database ?</A></H3>
+<P>
+The word database is a composition of "data" and "base". "Data" are facts of
+the real world, which is supplied by "base". The word &quot;data base&quot; was
+first used in the beginning of 1960's, then written as &quot;data-base&quot; 
+and recently &quot;database&quot;.
+<P>
+There is another word, file, in the meaning of collection of facts of
+the real world. However, a file is an accumulation of data of the same
+kind of structure. On the other hand, a database is an integration of 
+different kind of data.
+<P>
+This concept of database is deeply concerned with the development of 
+computers. The computers were getting regarded as information processing
+machines rather than machines that calculate. As a result, people 
+demanded to use computers to store fastly increasing data of the real 
+world and utilize them communally with ease. For multi-purpose use, 
+not file systems but database managemant systems(DBMS) were expected  
+powerful in this sense. The purposes of database systems are 
+as follows.
+<P>
+<UL><LI> to store enormous amount of data efficiently
+ <LI> multi-purpose utilization of data
+ <LI> effective and easy utilization of data
+</UL>
+<P>
+In case of knowledge information processing, data are more complex.
+<P>
+There are following good points from the view point of using
+integrated data communally as databases.
+<P>
+<UL><LI> Redundancy of data decreases due to integration and
+	multi-purpose use of data
+ <LI> Unnecessary to keep redundant data consistent
+ <LI> Easy to protect data from attacks of users without access capabilities
+ <LI> Unnecessary to create the same data for each program 
+</UL>
+<P>
+Then, what fuctions of databases are required ? Let's start with
+the universal and basic functions.
+<P>
+<OL><LI> Data Definition Language or DDL to represent integrated 
+	information of the real world
+ <LI> Data Manipulation Language or DML to manipulate information 
+	in databases
+ <LI> Data independence to reduce influence on programs when data 
+	changes not only in contents but also in structures
+ <LI> Concurrency control to keep consistency of data when updated 
+	by plural users or user programs at the same time
+ <LI> Integrity constraints to justify the contents of databases, 
+	which are not given to each user but to databases in order to 
+	prevent redundancy and omissions
+ <LI> Recovery from database destruction on account of hardware,
+	software and human errors or accidents
+</OL>
+<P>
+These functions are impremented as the basic ones in Kappa.
+<P>
+<BR> <HR>
+<P>
+</BODY>

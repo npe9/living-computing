@@ -1,0 +1,70 @@
+﻿<HEAD>
+<TITLE>The Evaluation of Parallel Inference Machines</TITLE>
+</HEAD>
+<BODY BGCOLOR="#F8F7FF"
+      TEXT   ="#005E00"
+      LINK   ="#0000FF"
+      VLINK  ="#338899"
+      ALINK  ="#FF0000">
+
+<i>Proc. of FGCS '94, ICOT, Tokyo, December 1994</i>
+<center>
+
+<H1>The Evaluation of Parallel Inference Machines</H1>
+Kouichi KUMON and Hiroyoshi HATAZAWA<br>
+Institute for New Generation Computer Technology<br>
+4-28, Mita 1-Chome, Minatoku, Tokyo 108, JAPAN<br>
+<tt>{kumon,f-hataza}@icot.or.jp</tt>
+</center>
+<hr>
+
+<H2>Abstract:</H2>
+
+<DD>In this paper, we study the performance of various implementations
+of KL1 processing systems, including the parallel inference machine
+(PIM) system and the KLIC system. PIM systems are built on dedicated
+parallel hardware developed in the FGCS project for efficient KL1
+execution, while the KLIC system is KL1 ported to run on UNIX
+workstations. This difference makes the design policies of both
+systems quite different necessitating a quantitative analysis. KL1 is
+a parallel logic language running on hardware ranging from a single
+processor to several hundred processors. Thus performance measurements
+must cover this range.  <P>
+
+<DD>Firstly we use a set of small benchmark programs for single
+processor performance. It includes a naive reverse program to compare
+and characterize those systems. And we take a close look at the
+execution of instructions in both the PIM KL1 processing system and
+the KLIC system. The PIM/p system is a convenient platform because
+both the conventional KL1 system and the sequential core of the KLIC
+system are available on it, and thus we can compare both
+implementations on the same base. We also compare both system using
+the <tt> life</tt> program, which shows quite a different aspect to
+the <tt> append</tt> execution.  <P>
+
+<DD>Then, we evaluate the cluster performance for automatic load
+balancing.  Some PIM models have a cluster structure, in which
+processors are connected by a common bus and share memory. In parallel
+processing in a cluster, automatic load balancing is available to
+reduce the burden of writing load distribution code. It is thus
+meaningful to investigate load balancing mechanisms and measure the
+speed-up in parallel performance. To do this, we make execution models
+for a very small program, examine the parallel performance, and
+estimate the distribution overhead in the cluster.  <P>
+
+<DD>Finally, we investigate the distributed performance of the systems
+by using simple communication dependent benchmark programs. The PIM
+models use a dedicated network for communication between
+clusters/nodes. However as the KLIC system uses PVM for message
+passing primitives, we found that the performance of KLIC wholly
+depends on the PVM performance.  <P><br>
+
+<h2>All of this proceedings (Compressed PostScript) :</h2>
+<b>The Evaluation of Parallel Inference Machines (114KB)</b>
+<a href="PS/eval-of-PIM.ps.gz">
+<img src="../../PICS/I-ftp-copy.gif"></a>
+</BODY>
+<p>
+<hr>
+
+<ADDRESS><A HREF="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</A></ADDRESS>

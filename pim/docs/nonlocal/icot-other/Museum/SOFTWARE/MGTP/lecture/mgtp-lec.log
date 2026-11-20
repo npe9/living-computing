@@ -1,0 +1,162 @@
+This is JTeX, Version 1.31, based on TeX C Version 3.14t3 (format=jlplain 94.8.1)  7 OCT 1997 12:02
+**&jlatex mgtp-lec
+(mgtp-lec.tex
+** JLaTeX ver.1.3......Isozaki
+(/usr/local/lib/tex/inputs/jreport.sty
+Document Style `jreport'. Released 4 November 1988
+(/usr/local/lib/tex/inputs/jrep10.sty)
+\descriptionmargin=\dimen100
+\c@part=\count82
+\c@chapter=\count83
+\c@section=\count84
+\c@subsection=\count85
+\c@subsubsection=\count86
+\c@paragraph=\count87
+\c@subparagraph=\count88
+\c@figure=\count89
+\c@table=\count90
+
+(/usr/local/lib/tex/inputs/jtitlepage.sty)
+Conversion jlarge --> large etc.
+) (/usr/local/lib/tex/inputs/epsf.sty
+EPSF macro package for LaTeX. version 1.3 - Released October 31, 1990
+\@arga=\count91
+\@argb=\count92
+\@argc=\count93
+\@ctmpa=\count94
+\@ctmpb=\count95
+\@ctmpc=\count96
+\@ctmpd=\count97
+\@ctmpe=\count98
+\@darg=\dimen101
+\@bblen=\dimen102
+\ps@stream=\read0
+) (mgtp-lec.aux) [0
+
+] (mgtp-lec.toc)
+\tf@toc=\write3
+ [1
+
+]
+第 {1} 章
+(mgtpG-abs.tex
+\c@example=\count99
+
+Overfull \hbox (2.78398pt too wide) in paragraph at lines 32--37
+[]\tenrm MGTP の 入 力 節 は、 第 1 章 で 説 明 し た よ う に、 正 節 (Pos-i-t
+ive clause)、 負 節 (Neg-a-tive clause)、 混 合 節 (Neu-
+
+\hbox(7.70879+2.5)x469.47046, glue set - 1.0
+.\hbox(0.0+0.0)x15.0
+.\tenrm M
+.\tenrm G
+.\tenrm T
+.\tenrm P
+.etc.
+
+[2
+
+]
+Overfull \hbox (3.57957pt too wide) in paragraph at lines 97--102
+れ に 準 ず る。 ま た、 \tenrm Call は 該 当 プ ロ グ ラ ム の 呼 び 出 し 文 
+を 意 味 し、 例 え ば、 Pro-log で は X>Y や X1:=X+1,X1>Y
+
+\hbox(7.70879+1.94444)x469.47046, glue set - 1.0
+.\tendmjhira れ
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjhira に
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjf 準
+.etc.
+
+[3]
+Overfull \hbox (3.23904pt too wide) in paragraph at lines 232--238
+[]モ デ ル 生 成 法 の 推 論 過 程 で 動 的 に 生 成 さ れ る の は、 モ デ ル 
+候 補 要 素 と し て の ア ト ム の み で あ る。 こ の ア ト ム は、
+
+\hbox(7.70879+1.44539)x469.47046
+.\hbox(0.0+0.0)x15.0
+.\tendmjkata モ
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjkata デ
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.etc.
+
+[4] [5] [6]
+Underfull \hbox (badness 10000) in paragraph at lines 328--333
+
+
+\hbox(0.0+0.0)x469.47046
+.\glue(\rightskip) 0.0
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 334--338
+
+
+\hbox(0.0+0.0)x469.47046
+.\glue(\rightskip) 0.0
+
+\sone=\box26
+[7]
+\main=\box27
+\cjm=\box28
+
+LaTeX Warning: Citation `FH91' on page 8 undefined.
+[8]
+Overfull \hbox (25.52954pt too wide) in paragraph at lines 699--700
+ [] 
+
+\hbox(375.0+0.0)x469.47046
+.\glue(\leftskip) 0.0 plus 1.0fil
+.\hbox(375.0+0.0)x495.0, glue set 600.0fil
+..\glue -105.0
+..\hbox(405.0+22.5)x0.0, shifted 60.0
+...\hbox(0.0+0.0)x0.0, glue set - 282.0fil, shifted -285.0 []
+...\hbox(0.0+0.0)x0.0, glue set - 282.0fil, shifted -307.5 []
+...\hbox(0.0+0.0)x0.0, glue set - 282.0fil, shifted -322.5 []
+...\hbox(0.0+0.0)x0.0, glue set - 255.0fil, shifted -352.5 []
+...\hbox(0.0+0.0)x0.0, glue set - 309.0fil, shifted -352.5 []
+...etc.
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\penalty 10000
+.\glue(\parfillskip) 0.0
+.\glue(\rightskip) 0.0 plus 1.0fil
+
+
+Overfull \hbox (7.17914pt too wide) in paragraph at lines 708--710
+[]\tenrm MERC 法 で は、 MG 節 が $\tenmi n$ 個 の リ テ ラ ル を 含 む と き、
+ 等 価 な 複 数 の \tenrm MG 節 を 補 う、 と い う 処 理 が 必 要 に な る。 
+
+\hbox(7.70879+1.44539)x469.47046
+.\hbox(0.0+0.0)x15.0
+.\tenrm M
+.\tenrm E
+.\tenrm R
+.\kern-0.27779
+.etc.
+
+\slmerc=\box29
+
+Overfull \hbox (1.70949pt too wide) in paragraph at lines 775--779
+[]い ず れ の 版 も、 \tenrm MGTP 節 に よっ て 与 え ら れ た 問 題 は、 前 処
+ 理 プ ロ グ ラ ム に よっ て Pro-log 節 集 合 も し く は KL1
+
+\hbox(7.70879+1.94444)x469.47046
+.\hbox(0.0+0.0)x15.0
+.\tendmjhira い
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.\tendmjhira ず
+.\glue(\@@jintercharskip) 0.0 plus 0.25
+.etc.
+
+[9] [10]) [11] (mgtp-lec.aux) ) 
+Here is how much of TeX's memory you used:
+ 303 strings out of 3015
+ 2858 string characters out of 49116
+ 46656 words of memory out of 262141
+ 3043 multiletter control sequences out of 9500
+ 21228 words of font info for 150 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 16i,11n,20p,178b,480s stack positions out of 300i,40n,60p,3000b,4000s
+
+Output written on mgtp-lec.dvi (12 pages, 41420 bytes).

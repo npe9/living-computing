@@ -1,0 +1,447 @@
+% CMGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-12-02
+
+%\chapter{制約MGTP(CMGTP)}
+
+本章ではCMGTPの概要を述べる。
+
+CMGTPは、有限領域の制約充足問題を扱えるように拡張したMGTPである。
+
+%-----------------------------------------------------------------------------
+\section{概要}
+
+MGTPは、有限領域の制約充足問題も容易に記述することができる。
+実際、並列マシンのおかげもあって、有限代数における準群の存在問題において
+いくつかの未解決問題を解いてしまった。
+
+MGTPのこの成果をきっかけとして、世界中で準群問題に対して
+さまざまなアプローチから研究が進められた。
+その結果明らかになったことは、MGTPでは問題の記述は容易であるものの、
+枝刈りを行うのに必要な情報が伝搬されず、
+冗長な枝を大量に探索していたということである。
+そこで我々は、MGTPに改良を加えた制約MGTP(CMGTP)を開発した。
+
+%CMGTPは、入力節に負アトムを用いた表現を許し、
+%また負アトムによる候補の枝刈り機能を備えたシステムで、
+%制約伝搬ルールが負アトムを用いてダイレクトに記述できる
+%という利点を持っている。
+
+%CMGTPの有効なアプリケーション領域として、
+%代数分野における準群問題(quasigroup problems)があり、
+%ICOTではCMGTPを用いてこの問題にチャレンジしてきた。
+
+CMGTPは、MGTPの入力節に負のアトムによる表現を許すことによって、
+制約伝搬ルールを記述できるようにしたものである。
+これと単位簡約化(unit simplification)ルールなどの適用により、
+候補を削ることができる。
+こうして、CMGTPは準群問題における冗長な枝の探索を極力減らした上、
+さらに並列化によって極めて良い結果をおさめることができた。
+
+%CMGTPを用いることにより、従来のMGTPや制約論理型言語では
+%フォローできない制約伝搬を行なうことが可能になり、
+%これにより探索空間を大幅に縮小させることができる。
+%また、並列マシン上ではPIM/m上およびSparcCenter上での利用が可能で、
+%特にPIM/m上においては、
+%並列化方式等の工夫によりほぼ線形に近い台数効果が達成されている。
+
+準群問題に限らず、一般の制約充足問題もCMGTPで記述することができ、
+制約伝搬に関する実験を行うことが可能である。
+
+%-----------------------------------------------------------------------------
+\section{準群問題}
+
+準群問題は、CMGTPで最も成功した事例である。
+CMGTPにおける制約伝搬機能を説明する都合上からも
+%まず準群問題\cite{B89}について簡単に説明する。
+まず準群問題について簡単に説明する。
+なお、準群問題に関する詳しい説明や今までにとられてきた
+アプローチについては\cite{SH95}などを参照されたい。
+
+%-----------------------------------------------------------------------------
+\subsection{定義(準群問題)}
+
+\vspace{0.8em}\noindent
+{\bf 準群(Quasigroup)} 
+
+\vspace{0.5em}
+有限集合 $Q$ と $Q$ 上の二項演算 $\circ$ に対し、
+$Q$ の任意の元 $a,b,c$ に関して以下が成り立つとき、
+$\langle Q,\circ \rangle$ は準群であるという。
+\[a \circ b = a \circ c \Rightarrow b=c\]
+\[a \circ c = b \circ c \Rightarrow a=b.\]
+この二項演算 $\circ$ による掛算テーブルは
+よく知られたラテン方陣を構成する(図\ref{latin-square})。
+
+準群の上の定義は、「各行各列には同じ元が2度以上現れない方陣」、
+あるいは「各行各列がそれぞれ $Q$ の元の置換 (permutation) によって
+構成される方陣」と言い換えることができる。
+
+また、準群 $\langle Q, \circ \rangle$ が条件
+\[\forall x \in Q, x \circ x = x,\]
+を満足する時、その準群はベキ等であるといわれる。
+図\ref{latin-square}に示されるラテン方陣はベキ等準群である。
+
+\begin{figure}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\rule[-1ex]{0mm}{3ex} $\circ$  & 1 & 2 & 3 & 4 & 5\\
+\hline\hline
+\rule[-1.3ex]{0mm}{4ex} 1 & 1 & 3 & 2 & 5 & 4 \\ \hline
+\rule[-1.3ex]{0mm}{4ex} 2 & 5 & 2 & 4 & 3 & 1 \\ \hline
+\rule[-1.3ex]{0mm}{4ex} 3 & 4 & 5 & 3 & 1 & 2 \\ \hline
+\rule[-1.3ex]{0mm}{4ex} 4 & 2 & 1 & 5 & 4 & 3 \\ \hline
+\rule[-1.3ex]{0mm}{4ex} 5 & 3 & 4 & 1 & 2 & 5 \\ \hline
+\end{tabular}
+\end{center}
+\end{minipage}
+\end{center}
+\caption{オーダ5のラテン方陣}
+\label{latin-square}
+\end{figure}
+
+\vspace{0.8em}\noindent
+{\bf 準群問題(Quasigroup Problems)}
+
+\vspace{0.5em}
+準群に対してある制約を付加し、それらを満たす準群、すなわちラテン方陣
+が存在するかという問題を準群問題という。
+準群問題には、追加する制約によっていくつかの種類があるが、
+たとえば、QG5と呼ばれる問題では、以下のような制約が新たに
+準群の制約に対して追加される。
+
+\vspace{0.5em}
+\begin{array}[t]{ll}
+{\bf QG5:} & \forall ab \in Q.~((ba)b)b = a \\
+                % \Leftrightarrow b(ab.b) = a \Leftrightarrow (b.ab)b = a \\
+\end{array}
+\vspace{1em}
+
+図\ref{latin-square}に示したラテン方陣はQG5の条件を満足するので、
+少なくともQG5はオーダ5において1つのベキ等モデルを有することがわかる。
+現在多くの準群問題が未解決問題として残されており、
+例えば、QG5においては、オーダ $n~(n \geq 17)$ は
+すべて未解決問題となっている。
+
+%-----------------------------------------------------------------------------
+\subsection{準群問題における制約伝搬}
+
+準群問題において必要とされるべき制約伝搬についてまとめよう。
+
+図\ref{rules}は、
+QG5において必要とされる制約伝搬ルールを前向き推論形式で記述したものである。
+ルール(a)は、任意の $x, y, a, b$ に対して、
+$yx=a, ay=b$ が成り立つならば、$by$ は $x$ でなければならないことを
+表しており、(b)(c)はルール(a)の対偶をとることによって得られる。
+これらのルールは負の情報からの制約伝搬を行なう際に必要とされるが、
+その意味するところは直観的に明らかであろう。
+また、ルール(d)(g)は、準群の定義によりルール(a)より導かれるものである。
+ルール(e)(f)はルール(d)の、またルール(h)(i)はルール(g)の対偶
+としてそれぞれ導かれるものである。
+
+オリジナルのMGTPでは、ある枝における探索の終了は、
+\[p(Y,X,A),p(A,Y,B),p(B,Y,C),C \neq X \rightarrow false.\]
+という棄却ルールによって検出していたので、
+負の情報を用いた候補の枝刈りを事前に行なうことができず、
+結果として、過剰に不必要な枝を探索していた。
+しかし、実際には負の情報から制約を伝搬させることによって、
+あらかじめ有り得ない候補を枝刈りしておくことができる。
+
+\small
+\begin{figure}
+\begin{center}
+\begin{tabular}{|c|}\hline
+~\\
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\begin{tabular}{lc}
+$yx=a,ay=b \rightarrow by=x.$           & (a) \\
+$yx=a,by \neq x \rightarrow ay \neq b.$ & (b) \\
+$ay=b,by \neq x \rightarrow yx \neq a.$ & (c) \\
+$yx=a,ay \neq b \rightarrow by \neq x.$ & (d) \\
+$yx=a,by=x \rightarrow ay=b.$           & (e) \\
+$ay \neq b,by=x \rightarrow yx \neq a.$ & (f) \\
+$yx \neq a,ay=b \rightarrow by \neq x.$ & (g) \\
+$yx \neq a,by=x \rightarrow ay \neq b.$ & (h) \\
+$ay=b,by=x \rightarrow yx=a.$           & (i) \\
+\end{tabular}
+\end{center}
+\end{minipage}\\
+~\\
+\hline
+\end{tabular}
+\end{center}
+\caption{QG5において必要とされる制約伝搬ルール}
+\label{rules}
+\end{figure}
+\normalsize
+
+%-----------------------------------------------------------------------------
+\section{制約MGTP}
+
+%-----------------------------------------------------------------------------
+\subsection{制約MGTPの特徴}
+
+MGTPによって準群問題を解くことの利点は、
+問題が一階述語形式で非常に簡潔に書けることである。
+たとえばQG5の場合は10個のMG節として表現できる。
+図\ref{MGTP-rules}にQG5のMGTPでの記述例を示す。
+
+\small
+\begin{figure}
+\begin{tabular}{|c|}\hline
+~\\
+\begin{minipage}{0.95\textwidth}
+\begin{array}[t]{ll}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5). & (M1)\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).& (M2)\\
+dom(M),dom(N),\{M \neq N\} \rightarrow
+        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).& (M3)\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow
+        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).& (M4)\\
+dom(M),dom(N),\{M \neq  N\} \rightarrow
+        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).& (M5)\\
+p(M,N,X),p(M1,N,X),\{M1 \neq M\} \rightarrow false. & (M6)\\
+p(M,N,X),p(M,N1,X),\{N1 \neq N\} \rightarrow false. & (M7)\\
+p(M,N,X),p(M,N,X1),\{X1 \neq X\} \rightarrow false.& (M8) \\
+p(X,5,Y),\{X1~:=~X-1,Y < X1\} \rightarrow false.& (M9)\\
+p(Y,X,A),p(A,Y,B),p(B,Y,C),\{C \neq X\} \rightarrow false. & (M10) 
+\end{array}~\\
+\end{minipage}\\
+\hline
+\end{tabular}
+\caption{QG5(オーダ5)に対するMG節}
+\label{MGTP-rules}
+\end{figure}
+\normalsize
+
+一方で、先にも述べたように、MGTPは前向き推論に基づくこと、
+また正アトムのみがモデルとして用いられることから、
+負の制約伝搬をすることができないという欠点も持っている。
+CMGTPではこれらの欠点を補うため、負アトムによる表現を許し、
+それらによる候補の枝刈り機能を備えている。
+
+%-----------------------------------------------------------------------------
+\subsection{アルゴリズム}
+
+\begin{figure}
+\begin{center}
+\epsfile{file=CJMprocessCMGTP.eps,width=0.8\textwidth}
+\end{center}
+\caption{CMGTPにおけるモデル生成プロセス}
+\label{CMGTP-algorithm}
+\end{figure}
+
+図\ref{CMGTP-algorithm}にCMGTPのモデル生成プロセスを示す。
+ここで、$D$ はモデル拡張候補と呼ばれ、
+$M$ はモデル候補と呼ばれる。
+これらは、OTTERにおける ``to be given list''と ``has been given list'' 
+にそれぞれ対応するものである。
+
+CMGTPのモデル生成プロセスは、MGTPのモデル生成プロセスに2つの
+$Ref$ プロセスと2つの $Simpl$ プロセスを新たに付け加えたものである。
+MGTPのアルゴリズムについては \cite{FH91}\cite{FHKF92} などを参照されたい。
+
+CMGTPとMGTPの相違は、単位反駁(unit refutation)プロセスと
+単位簡約化(unit simplification)プロセスにある。
+単位反駁メカニズムにより、
+もし、$P$ と $\neg P$ が共に $M$ にあれば、
+以下のように $false$ が導出される。
+
+\vspace{1em}
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\begin{tabular}{cc}
+(M)    &   (M) \\
+ :     &    :  \\
+$ \neg P$   & $P$ \\ \cline{1-2}
+       & $false$\\
+\end{tabular}
+\end{center}
+\end{minipage}
+\vspace{1em}
+\noindent
+
+また、もし $M$ の中に $\neg P_i~(P_i)$ があり、また
+$D$ に $P_i(\neg P_i)$ を含む選言が存在するならば、
+以下に示すような単位簡約化メカニズムによって
+$P_i(\neg P_i)$ はその選言から削除される。
+
+\vspace{1em}
+{\small
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\begin{tabular}{cc}
+(M)    &   (D) \\
+ :     &    :  \\
+$ \neg P_i$   & $P_1 \lor \ldots \lor P_{i-1} 
+                \lor P_i \lor P_{i+1} \lor \ldots P_n$ \\ \cline{1-2}
+       & $P_1 \lor \ldots \lor P_{i-1} \lor P_{i+1} \lor \ldots \lor P_n$\\
+\end{tabular}
+\end{center}
+\end{minipage}
+\hspace{4em}
+\begin{minipage}{0.4\textwidth}
+\begin{center}
+\begin{tabular}{cc}
+(M)    &   (D) \\
+ :     &    :  \\
+$ P_i$   & $P_1 \lor \ldots \lor P_{i-1} 
+                \lor \neg P_i \lor P_{i+1} \lor \ldots P_n$ \\ \cline{1-2}
+       & $P_1 \lor \ldots \lor P_{i-1} \lor P_{i+1} \lor \ldots \lor P_n$\\
+\end{tabular}
+\end{center}
+\end{minipage}
+}
+\vspace{1em}
+
+\noindent
+単位簡約化の結果として $nil$ (長さ 0 の選言) が
+生成されるときは、$false$ が導出される。
+
+図\ref{CMGTP-algorithm}における
+$Ref$/2 と $Simpl$/2 は
+それぞれ上で述べたような単位反駁と単位簡約化を
+実行する関数である。
+すなわち $Ref(U_1,U_2)$ は、アトムの集合 $U_1, U_2$ に対して
+あるアトム $P \in U_1, Q \in U_2$ があって、
+このとき $P = \neg Q$ もしくは $\neg P = Q$ が成り立つ時 $false$ を
+返す。
+また、$Simpl(U,D)$ は単位節の集合 $U$ に含まれるアトムによって 
+選言の集合 $D$ を simplify した結果を返すが、
+もしこの結果として $nil$ が導出された時は、
+$Simpl$ の結果として $false$ を返す。
+
+$Ref$ や $Simpl$ が $false$ を返した時には、現在探索中の
+枝は $unsat$ として終了 (terminate) する。
+容易にわかるように、アトムは長さ 1 の選言と見ることができるから、
+$Ref$ は $Simpl$ の特殊な形ともいえる。
+
+オリジナルのMGTPに追加された単位反駁と単位簡約化のプロセスは
+以下の4つである。
+
+\begin{itemize}
+\item $Ref(\{ \Delta\},M)$
+\item $Ref(NewUnit, M \cup \{\Delta\})$
+\item $Simpl(\{\Delta\},D)$
+\item $Simpl(M \cup \{\Delta\}, NewDisj)$
+\end{itemize}
+
+CMGTPがとる単位節優先戦略とこれらの関数により、
+任意のアトム $P \in M$ に対して、
+$P$ と $\neg P$ が現在の $M$ の中に共存しないこと、
+また、現在の $D$ に含まれるすべての選言はすでに
+$M$ 中のすべての単位節によって simplify されていることが保証される。
+
+%-----------------------------------------------------------------------------
+\subsection{QG5.5に対するCMGTPのルール}
+
+図\ref{CMGTP-rules}にQG5のオーダ5に対するCMGTPの入力節を示す。
+(CM1)から(CM5)はオリジナルのMGTPでのルールと同じである。
+(CM6)-(CM9)も同様に準群の定義と同型排除の
+ヒューリスティックスを表しているが、
+条件にあわない候補をあらかじめ否定モデルとして生成するルールに
+置き換えられていることに注意されたい。
+
+そして、(CM10)-(CM18)はQG5での制約条件を表現したものとなっているが、
+これは、図\ref{rules}で示した制約伝搬ルールそのものになっている。
+すなわち、図\ref{rules}に示されるような制約伝搬ルールは
+CMGTPの入力節としてダイレクトに記述することが可能であり、
+この意味で、CMGTPは制約伝搬を記述するメタ言語と考えられる。
+
+\begin{figure}
+{\footnotesize
+\begin{tabular}{|c|}\hline
+~\\
+\begin{minipage}{0.95\textwidth}
+\begin{array}[t]{ll}
+true \rightarrow dom(1),dom(2),dom(3),dom(4),dom(5). & (CM1)\\
+true \rightarrow p(1,1,1),p(2,2,2),p(3,3,3),p(4,4,4),p(5,5,5).& (CM2)\\
+dom(M),dom(N),\{M \neq N\} \rightarrow
+        p(M,N,1);p(M,N,2);p(M,N,3);p(M,N,4);p(M,N,5).& (CM3)\\
+dom(M),dom(N),\{M \neq N\} \rightarrow
+        p(M,1,N);p(M,2,N);p(M,3,N);p(M,4,N);p(M,5,N).& (CM4)\\
+dom(M),dom(N),\{M \neq N\} \rightarrow
+        p(1,M,N);p(2,M,N);p(3,M,N);p(4,M,N);p(5,M,N).& (CM5)\\
+p(M,N,X),dom(M1),\{M1 \neq M\} \rightarrow
+        \neg p(M1,N,X).& (CM6)\\
+p(M,N,X),dom(N1),\{N1 \neq N\} \rightarrow
+        \neg p(M,N1,X).& (CM7)\\
+p(M,N,X),dom(X1),\{X1 \neq X\} \rightarrow
+        \neg p(M,N,X1).& (CM8) \\
+dom(X),dom(Y),\{X1~:=~X-1,Y < X1\} \rightarrow  \neg p(X,5,Y).& (CM9)\\
+p(Y,X,A),p(A,Y,B) \rightarrow p(B,Y,X).& (CM10)\\
+p(Y,X,A),p(B,Y,X) \rightarrow p(A,Y,B).& (CM11)\\
+p(A,Y,B),p(B,Y,X) \rightarrow p(Y,X,A).& (CM12)\\
+p(Y,X,A), \neg p(B,Y,X) \rightarrow  \neg p(A,Y,B).& (CM13) \\
+p(Y,X,A), \neg p(A,Y,B) \rightarrow  \neg p(B,Y,X).& (CM14)\\
+\neg p(Y,X,A),p(B,Y,X) \rightarrow  \neg p(A,Y,B).& (CM15)\\
+\neg p(B,Y,X),p(A,Y,B) \rightarrow  \neg p(Y,X,A).& (CM16)\\
+\neg p(A,Y,B),p(B,Y,X) \rightarrow  \neg p(Y,X,A).& (CM17)\\
+p(A,Y,B),\neg p(Y,X,A) \rightarrow  \neg p(B,Y,X). & (CM18)
+\end{array}~\\
+\end{minipage}\\
+\hline
+\end{tabular}
+}
+\caption{QG5(オーダ5)に対するCMGTP入力節}
+\label{CMGTP-rules}
+\end{figure}
+
+%-----------------------------------------------------------------------------
+\section{並列化}
+
+MGTPは並列化に非常に適した構造を有しており、
+実際AND並列、OR並列のいずれにおいても望ましい台数効果が
+達成されている\cite{FHKF92}。
+CMGTPは基本的にMGTPのアルゴリズムに従っているので、
+CMGTPもまた並列化効果が高いことが期待される。
+特に準群問題は、Non-Horn問題であり、
+場合分けが多数発生することなどからOR並列効果の高いことが期待できる。
+以下では、CMGTPの並列化の方法について説明する。
+
+CMGTPにおける証明木は図\ref{tree}に示すように、
+OR分岐による木構造となっている。
+ただし、準群問題の場合は、枝の長さが予期できない上、
+場合分けの個数もまちまちであるので、pegion hole問題などのような
+balanced treeではなくimbalanced treeである。
+
+\begin{figure}
+\begin{center}
+\epsfile{file=tree.eps,width=0.6\textwidth}
+\end{center}
+\caption{CMGTP の証明木}
+\label{tree}
+\end{figure}
+
+並列実行においては、木のあるノードで場合分けが生じた時、
+一本の枝は自分自身のプロセッサで処理し、
+その他の枝は他のプロセッサに投げるものとする。
+このとき、親ノードから受け継いだ枝を一つのジョブと考えると、
+図\ref{tree}の例では、合計12個のジョブが存在することになる。
+一般にジョブの長さはまちまちである。
+例えば、\verb+Job1+は非常に浅いレベルで生成された枝であり、
+非常に長いジョブになっているが、
+\verb+Job8+や\verb+Job12+はそれよりも深いレベルで生成された枝であり、
+\verb+Job1+に比べると短い枝となっている。
+
+並列化の方法は、このようなジョブをどのようにプロセッサに割り当てるか、
+という問題に置き換えることができる。
+たとえば、以下のような方法が考えられる。
+\begin{itemize}
+\item サイクリック割り当て方式
+\item 確率的割り当て方式
+\item 枝数制限方式
+\end{itemize}
+ただし、いづれの方法においても、浅いレベルで生成された枝は、
+自分自身が長くなる可能性が高いと共に、
+多くの分岐を生ずる可能性も高いので、
+各プロセッサ内では浅いレベルで生成された枝を
+深いレベルで生成された枝に対して優先的に処理するようにしている。
+
+いくつかの実験結果から、
+この中では枝数制限方式が平均的に有利である
+ということが言えるようである。
+
+% end.

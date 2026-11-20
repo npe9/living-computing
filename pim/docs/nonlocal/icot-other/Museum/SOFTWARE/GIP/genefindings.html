@@ -1,0 +1,132 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<title> gene findings</title>
+</head>
+<body bgcolor="#FAEBD7">
+
+<TABLE border=0 WIDTH=650>
+<TR>
+<TD WIDTH=150 VALIGN=TOP>
+<TABLE border=0>
+<TR>
+<TD  HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<a href="gene_gaiyou.html"> 遺伝子情報処理 Home Page</a>
+</TD>
+</TR>
+<TR>
+<TD  HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<a href = "gene_sequence.html">配列解析</a>
+</TD>
+</TR>
+<TR>
+<TD  HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<a href = "gene_alignment.html">アライメント</a>
+</TD>
+</TR>
+<TR>
+<TD  HIGHT=25 VALIGN=TOP BGCOLOR="#a7a7c7">
+遺伝子同定
+</TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD WIDTH=500>
+
+<TABLE  border=0 >
+<TR>
+<TD ALIGN=left valign="TOP">
+<img src="images/DNAt.gif" alt="DNA"></TD>
+<TD ALIGN="center"><a name = "part1"><H1 FONT SIZE=5> 遺伝子同定 </H1></a> </TD>
+</TR>
+</TABLE>
+
+<hr>
+<H2><img src="images/dotrd.gif" alt="●"> 構造情報と制御情報 </H2>
+<P>
+遺伝子は「コード領域」と「制御情報」の組とよぶことができます(下図)。
+<BR>
+<center>
+<img src="images/geneStruct.gif" alt="遺伝子の構造" width=443
+hight=143  vspace=10>
+<BR>
+</center>
+<a href="gene_about.html">「遺伝子情報処理って何?」</a> で紹介したように、タンパク質はアミノ酸が順に結合したものです。「コード領域」にはこのアミノ酸の並び方が記述されています。
+図の「上(下)流エンハンサー」領域と「プロモーター領域」が遺伝子の転写等をコントロールする制御情報の領域です。制御情報部分の内容に従い、必要に応じてタンパク質の合成を開始します。
+
+遺伝子同定は、このようなコード領域や制御領域を行ない、その結果を組み合わせてゲノム中の遺伝情報を同定するものです。<BR>
+</P>
+<H2><img src="images/dotrd.gif" alt="●"> コード領域の予測 </H2>
+<P>
+DNAやRNAは3種類の塩基の並びかたでアミノ酸を指定します。このアミノ酸を指定する3個の塩基の並びを<B>コドン</B>といいます。コード領域の開始点と終了点にはそれぞれ「開始コドン」「終止コドン」という特別のコドンが割り当てられています。<BR>
+コドンは3個の塩基によって指定されているので、同じ塩基配列に対して概念的には3個の異なる読み方(frame)が存在します。このうちのひとつが選択されて、開始コドンから同じ読み枠中の終止コドンまでがタンパク質に翻訳されます。<BR>
+開始コドンから終止コドンまでのタンパク質をコードしている可能性のある領域を<B>ORF</B>(Open Reading Frame)と呼びます。<br>
+このORFのうち実際に翻訳される領域を<B>コード領域</B>と呼びます。
+</P>
+<P>
+<!--
+一般的なコード領域の同定は，長い読み枠が存在する領域や既知のコード領域
+と高いホモロジーを示す領域を探索することによって行われます。
+この同定手法は，候補コード領域と高いホモロジーを示す既知のコード領域が
+存在すれば高い信頼性を示します。
+-->
+主なコード領域の予測手法には以下のものがあります。
+<UL>
+  <LI> コドン頻度表を用いる方法<BR>
+       調べたい生物種についてあらかじめコドン使用頻度の統計がとられている場合に用います。
+  <LI> 三塩基周期性に注目する方法<BR>
+       配列に現れる3文字の周期性に注目するFicketの予測法(TestCode法)が一般的です。与えられた配列断片から8つの量を計算し、各々の値に適当な重み付けを行なって各塩基の位置におけるスコアを計算し、その値によってコード領域かどうかの判定を行ないます。
+  <LI> ニューラルネットを用いる方法(<B>GRAIL</B>法)<BR>
+       ある塩基長(可変)のウィンドウ領域でコード領域の特徴を多数のプログラム群から検出し、その値をニューラルネットで組み合わせてコード領域の予測を行ないます。<BR>
+</UL>
+GRAIL法はスプライス部位予測なども取り込んで大幅に拡張されています。また、<A HREF="http://compbio.ornl.gov/Grail-1.3/">WWW上での利用</A>が提供されています。
+</P>
+
+<H2><img src="images/dotrd.gif" alt="●"> 制御配列情報の解読 </H2>
+<P>
+ゲノム配列中には遺伝子が正しい状況で発現するためにさまざまな制御シグナルが存在しています。これらの制御シグナルをコードしている領域を発見し、その制御内容を読むことが制御配列情報の解読です。<BR>
+上記のコード領域予測と合わせて、ゲノム配列中の遺伝子の位置を推定するという遺伝子同定システムが開発されつつあります。
+</P>
+<BR>
+<P>
+DNAの2本鎖のうちRNAにコピーされるのはどちらか片方だけです。まず2本鎖の一部がほどけ、ほどけた部分にRNAポリメラーゼという特別なタンパク質がつき、遺伝子毎に決まった転写開始点から一定の方向にDNAの情報をRNAにコピーしていきます。<BR>
+コード領域の上流部分には「プロモーター領域」と呼ばれる部分があります。
+この領域は
+<UL>
+  <LI> 遺伝子スイッチのオン／オフに関わる転写制御部分<BR>
+       多数の調節タンパク質＝<B>転写因子</B>＝によって認識される配列パターンの集まり
+  <LI> 転写開始位置を指定する配列パターン<BR>
+       この部分を専用のタンパク質が認識し、それを元にRNAポリメラーゼがDNAに結合
+</UL>
+からなっています。<BR>
+プロモーター領域の他に、<B>エンハンサー</B>と呼ばれる領域も遺伝子スイッチのオン／オフに関与しています。この領域は遺伝子の転写開始点から数キロ塩基離れていても働いたり遺伝子の上流や下流にあるなど、位置の自由度に特徴があります。<BR>
+エンハンサーはスイッチのオン／オフを強めたり弱めたりすると考えられており、広い意味では転写因子と統合して理解されていくと考えられています。
+</P>
+
+<H2><img src="images/dotrd.gif" alt="●"> 遺伝子同定システム </H2>
+<P>
+コード領域や制御因子等、さまざまな遺伝子配列の特徴に関する知識を駆使して、長大なゲノム配列上に散在している遺伝子を同定しようという<B>遺伝子同定(gene identification)</B>が現在活発に研究されています。いくつかのプログラムはWWW上で利用したり、メールサーバという形で利用することが出来ます。</P><BR>
+<UL>
+  <LI> <A HREF="http://genemark.biology.gatech.edu/GeneMark/">GeneMark</A>
+  <LI> <A HREF="http://gnomic.stanford.edu/GENSCANW.html">GENSCAN</A>
+  <LI> <A HREF="http://compbio.ornl.gov/Grail-1.3/">GRAIL</A><BR>
+       <A HREF="http://cs6400.ims.u-tokyo.ac.jp:8002/Grail-1.3">日本のミラーサイト</A>もあります。
+  <LI> <A HREF="http://www.itba.mi.cnr.it/webgene/">GeneView, ORFGene 他</A> 
+  <LI> <A HREF="http://dot.imgen.bcm.tmc.edu:9331/gene-finder/gf.html">GeneFinder</A>
+  <LI> <A HREF="http://www-hgc.lbl.gov/projects/genie.html">Genie</A>
+</UL>
+</P>
+</TD>
+</TR>
+</TABLE>
+<hr>
+<CENTER>
+[<a href="gene_gaiyou.html"> 遺伝子情報処理 Home Page]</a>
+[<a href = "gene_sequence.html">配列解析</a>]
+[<a href = "gene_alignment.html">アライメント</a>]
+[<a href = "genefindings.html">ページの先頭へもどる</a>]
+
+</CENTER>
+</body>
+</html>

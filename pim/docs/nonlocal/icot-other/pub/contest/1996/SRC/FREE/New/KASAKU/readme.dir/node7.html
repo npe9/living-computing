@@ -1,0 +1,49 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">2.2.3 Q値テーブル</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html101 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html99 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html95 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html102 HREF="node8.html">3 プログラムの使い方</A>
+<strong>Up:</strong> <A NAME=tex2html100 HREF="node4.html">2.2 内部表現</A>
+<strong> Previous:</strong> <A NAME=tex2html96 HREF="node6.html">2.2.2 状態</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022300000000000000>2.2.3 Q値テーブル</A></H3>
+<A NAME=subsubsecQfunction>&#160;</A>
+<P>
+各状態で指し得る手（空いているマス目の数だけある）
+のそれぞれにQ値が存在する。
+プログラムはこのQ値全体のテーブルを保持しており、
+プログラム終了時にファイルに書き込んで、
+次回起動時に利用することもできる。
+<P>
+Q値テーブルの構成を、以下でボトムアップの順に説明する。
+なお今回は状態番号を定数で mod を取り、その値をQ値探索の際の
+Hash 値に用いた。
+<P>
+<DL>
+ <DT><code>QL</code>
+ <DD>Q値のリスト、要素は可能な手の数（空きマスの数）だけ含まれる。
+ <DT><code>StateFun = q(State, QL)</code>
+ <DD>状態番号 <code>State</code> とそれに対応する
+   Q値リストを要素とするファンクタ。
+ <DT><code>HashList = [StateFun1, StateFun2, ...]</code>
+ <DD><code>StateFun</code> を要素に持つリスト。
+   要素である <code>StateFun</code> の状態値には、
+   上述の mod 値が同じという共通点がある。
+ <DT><code>Q = {HashList1, HashList2, ...}</code>
+ <DD>Q値テーブル全体。HashList のベクタ内の位置は、上述の mod 値
+   （Hash 値）に対応している．
+</DL>
+<P>
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

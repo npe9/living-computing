@@ -1,0 +1,36 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1 (Feb 5, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>行同士、列同士の入れ換え</TITLE>
+<META NAME="description" CONTENT="行同士、列同士の入れ換え">
+<META NAME="keywords" CONTENT="main">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+</HEAD>
+<BODY LANG="EN">
+ <A NAME="tex2html111" HREF="node10.html"><IMG WIDTH=37 HEIGHT=24 ALIGN=BOTTOM ALT="next" SRC="../../../../../../../PICS/next_motif.gif"></A> <A NAME="tex2html109" HREF="node3.html"><IMG WIDTH=26 HEIGHT=24 ALIGN=BOTTOM ALT="up" SRC="../../../../../../../PICS/up_motif.gif"></A> <A NAME="tex2html103" HREF="node8.html"><IMG WIDTH=63 HEIGHT=24 ALIGN=BOTTOM ALT="previous" SRC="../../../../../../../PICS/previous_motif.gif"></A>   <BR>
+<B> Next:</B> <A NAME="tex2html112" HREF="node10.html">モジュール</A>
+<B>Up:</B> <A NAME="tex2html110" HREF="node3.html">解説・アルゴリズム</A>
+<B> Previous:</B> <A NAME="tex2html104" HREF="node8.html">行内の入れ換えによる得点アップ</A>
+<BR> <P>
+<H2><A NAME="SECTION00036000000000000000">行同士、列同士の入れ換え</A></H2>
+<P>
+   最後の仕上げである。前段から吐かれた配置に付いて行同士、列同士の入れ
+   換えを行い得点アップを図る。この入れ換えでは、各行や列の得点は変わらな
+   いので評価用の得点計算は斜めのみで良い。
+<P>
+   まず行のみの入れ換えで左上から右下方向の斜めの役の得点アップを図る。
+   この行のみの 5!=120 回の入れ換えでこの斜めの役だけを見れば、最高の得
+   点を出す組合せが得られる。(行同士、列同士の入れ換えしか行わない場合)
+<P>
+   さらに、この役を壊さないように右上から左下方向の役の得点を最高にする。
+   この組合せは <IMG WIDTH=5 HEIGHT=10 ALIGN=MIDDLE ALT="tex2html_wrap_inline42" SRC="img6.gif"  > C <IMG WIDTH=25 HEIGHT=16 ALIGN=MIDDLE ALT="tex2html_wrap_inline44" SRC="img7.gif"  > C <IMG WIDTH=38 HEIGHT=24 ALIGN=MIDDLE ALT="tex2html_wrap_inline46" SRC="img8.gif"  >  15通りである。
+<P>
+   理想的には 120 x 15 = 1800 回の評価を行うのが良いが、これでは時間
+   がかかるので第一段の120の組合せのうち得点が最高になるものを一つ選びそ
+   の一つに付いてのみ第二段15通りの組合せを評価することにした。
+<P>
+  <BR> <HR>
+</BODY>
+</HTML>

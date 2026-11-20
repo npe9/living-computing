@@ -1,0 +1,222 @@
+KLICプログラミング・コンテスト並列環境部門用
+ライフゲームプログラム
+
+ 0. 処理の概要
+  与えられたセルのデータと世代数から、コンウェイ(John Horton Conway)の
+ライフゲームを作る。
+  与えられたデータをある行数で区切って別プロセスに計算させ、隣接プロセ
+スに必要なデータはストリームを介して通信させる。
+  次世代の計算方法は、現世代のオンのセルの周囲に加点していく方法をとり、
+各セルの点数から次世代のオンオフを判定する。
+  各プロセスが全世代の計算を終了したら、集計してdecodeし、出力する。
+
+
+ 1. 動作確認を行なったシステム
+  今回、動作確認のために用いた機材は、
+Machine: Ultra-Enterprise E/4000 (Ultra Sparc 167MHz * 10)
+Main Memory: 1248M
+swap size: 2257M
+OS: SunOS 5.5.1 ( Solaris 2.5.1 )
+
+
+ 2. テストデータの処理に要する実行時間
+  テスト用ディレクトリにあったexpo.lifeを300世代行なうシミュレーション
+の結果を、以下に示す。
+   ../life -p 1 exp.life > exp.1.out
+   Response time is 12520 msec
+   ../life -p 2 exp.life > exp.2.out
+   Response time is 13467 msec
+   ../life -p 3 exp.life > exp.3.out
+   Response time is 9439 msec
+   ../life -p 4 exp.life > exp.4.out
+   Response time is 6968 msec
+   ../life -p 5 exp.life > exp.5.out
+   Response time is 6178 msec
+   ../life -p 6 exp.life > exp.6.out
+   Response time is 7042 msec
+   ../life -p 7 exp.life > exp.7.out
+   Response time is 6286 msec
+   ../life -p 8 exp.life > exp.8.out
+   Response time is 6063 msec
+   ../life -p 9 exp.life > exp.9.out
+   Response time is 6029 msec
+   ../life -p 10 exp.life > exp.10.out
+   Response time is 5331 msec
+
+  また、近山研究室の作成したデータによる結果も添付する。
+    ../life -p 1 bx.life > bx.1.out
+    Response time is 22613 msec
+    ../life -p 2 bx.life > bx.2.out
+    Response time is 13199 msec
+    ../life -p 3 bx.life > bx.3.out
+    Response time is 15563 msec
+    ../life -p 4 bx.life > bx.4.out
+    Response time is 12687 msec
+    ../life -p 5 bx.life > bx.5.out
+    Response time is 16439 msec
+    ../life -p 6 bx.life > bx.6.out
+    Response time is 13050 msec
+    ../life -p 7 bx.life > bx.7.out
+    Response time is 13132 msec
+    ../life -p 8 bx.life > bx.8.out
+    Response time is 11873 msec
+    ../life -p 9 bx.life > bx.9.out
+    Response time is 13174 msec
+    ../life -p 10 bx.life > bx.10.out
+    Response time is 13307 msec
+
+    ../life -p 1 by.life > by.1.out
+    Response time is 25261 msec
+    ../life -p 2 by.life > by.2.out
+    Response time is 17116 msec
+    ../life -p 3 by.life > by.3.out
+    Response time is 12142 msec
+    ../life -p 4 by.life > by.4.out
+    Response time is 10145 msec
+    ../life -p 5 by.life > by.5.out
+    Response time is 7506 msec
+    ../life -p 6 by.life > by.6.out
+    Response time is 7558 msec
+    ../life -p 7 by.life > by.7.out
+    Response time is 6605 msec
+    ../life -p 8 by.life > by.8.out
+    Response time is 5887 msec
+    ../life -p 9 by.life > by.9.out
+    Response time is 5729 msec
+    ../life -p 10 by.life > by.10.out
+    Response time is 6314 msec
+
+
+ 3. アルゴリズムの解説
+  3-1. 並列化の方法
+      今回のライフゲームの並列化については、y軸方向に問題を切って、並列化
+    を行なった。最初に与えられたデータをyについて分離して、line(Y, [X1,
+    X2, ...])の形にencodeする。同時にyの最小値と最大値を調べ、問題の分配の
+    ための参考にする。
+
+      問題の分配法は、（与えられたデータの行数(Y軸方向) ÷ プロセッサ数）
+    行のデータの全世代を1プロセッサで計算するのを基本とする。ただし、この1
+    プロセッサ毎の計算量が小さい場合、計算コストの増加の不具合の方が大きく
+    なることが多いため、この1プロセッサで行なう計算行数の最小は、30行とし
+    た。この数字は、実験によって決定したが、最適な値は使用環境、問題によっ
+    て変わると思われる。
+      各プロセスは、自分に与えられた部分の最上行と最下行を、それぞれ自分の
+    上下の部分の計算を行なっているプロセスにストリームで渡す。
+
+      問題の最端行部分はダミープロセスが走っており、計算を行なっているプロ
+    セスから空リストが送られている限り、空リストを返す。空リスト以外がスト
+    リームから送られてきた場合、新しい計算プロセスを作成し、次のダミープロ
+    セスはさらにその外側のストリームにつながれる。この際、新しい計算プロセ
+    スは別のプロセッサに行なわせる。
+
+      このため、小さな問題に対しても、また小さな問題が世代が進むにつれて膨
+    れていっても、柔軟な問題分割が行なえる。
+
+      各述語の簡単な解説
+    ・pickline/4, pickline/5
+      与えられたデータのencodeを行なう。
+      具体的には、[p(1,1),p(2,1),p(2,2)]を[line(1,[1,2]), line(2,[2])]の形
+    式にする。また、最上行と最下行のYの値も返す。
+
+    ・calcunit/5
+      各プロセスに与える問題の単位を決める。
+      世代も考えた仕様のために世代数も与えているが、最終的な仕様では世代数
+    は評価していない。
+
+    ・pcontrol/6, pcontrol12
+      与えられた単位に問題を切りわけて各singleプロセスに渡し、プロセス間の
+    ストリームをつなぎ合わせる。
+      最上行より上はdummyupに、最下行より下はdummylowにつなげる。
+
+    ・decodeline/
+      picklineでencodeされた形を、元のp(X,Y)の形にdecodeする。
+
+    ・dummyup/9
+      ダミープロセスの上端部担当。
+      空リストがストリームから流れてくる間は、空リストを返し続ける。
+      ストリームから空リスト以外が流れてきた場合は、新しいプロセスを上端部
+    に作成し、さらに上側にまたダミープロセスを作成する。
+      また、新しいプロセスからの最終世代結果をつなげる。
+
+    ・dummylow/4
+      ダミープロセスの下端部担当。
+      空リストがストリームから流れてくる間は、空リストを返し続ける。
+      ストリームから空リスト以外が流れてきた場合は、新しいプロセスを下端部
+    に作成し、さらに下側にまたダミープロセスを作成する。
+      また、新しいプロセスからの最終世代結果をつなげる。
+
+  3-2. 次世代の求め方
+      分割された問題を与えられた次世代計算部分は、検索中の行にオンのセルが
+    あると、その周囲のセルをまず1点とし、すでに点数を持っていたら2点ずつを
+    加算する。また、自分自身には1点を加算する。ここで、自分自身がオンでも、
+    周囲にセルがなかった場合には0点とする。
+      これによって、現世代の自分自身がオンの場合は偶数点、オフの場合は奇数
+    点になるため、すべての周囲を計算し終った時点で4, 5, 6点となっているセ
+    ルが、次世代にオンになることが分かる。
+
+      現世代を上の行から調べていくと、現世代の注目行の一つ上の行はすでに加
+    点計算が終っているので、この行から評価をして次世代の行を作っていく。
+      逆に現世代の注目行とその下の行は、加点途中であるためさらに下の行のチェッ
+    クを待つ。
+
+      各述語の簡単な解説
+    ・single/9
+      世代のカウントと、上下のプロセスからの通信を受けとる。
+
+    ・checkline/8
+      セルのチェックの初期状態を設定する。最上行にセルがあるかないかで処理
+    が違う。
+      上のプロセスから与えられた行と最上行から、最初の行の加点計算を行ない、
+    checkdot/8に渡す。
+
+    ・checkdot/8
+      セルのチェックの実体。すでに加点された2行を受けとり、注目行より上の
+    行からは次世代のセル状態を計算する。加点中の2行を次の世代のcheckdotに
+    渡す。
+      注目行が前のcheckdotの注目行の何行下かで、処理が変わる。
+
+    ・lineupper/3
+      すでに自分と同じ行と、上の行からは加点されている点数リストと、自分の
+    1行下のセルのリストから、次世代のセルリストを作る。
+      名前の由来は、checkdotの注目行の上の行をチェックしていることから。
+
+    ・linemiddle/3
+      すでに自分の上の行からは加点されている点数リストと、自分と同じyの行
+    のセルリストから、新たな点数リストを作る。
+      次のcheckdotにおいて、次世代のセルリストを作成させる。
+      名前の由来は、checkdotの注目行をチェックしていることから。
+
+    ・linelower/2, linelower/5
+      自分の下の行から、点数リストを作る。
+      次以降のcheckdotにおいて、加点を完成させ、次世代のセルリストを作成さ
+    せる。
+      名前の由来は、checkdotの注目行の下の行をチェックしていることから。
+
+    ・upperleft/4, uppercenter/4, upperright/5
+      注目セルの左上、上、右上のセルに加点している。
+      左上の加点結果により、次世代のオンオフを計算して上位プロセスに返して
+    いる。
+
+    ・middleleft/4, middlecenter/6, middleright/3
+      注目セルの左、自身、右のセルに加点している。
+      加点結果は次のcheckdotでlineupperまたは、umpireによって次世代セル情
+    報に計算される。
+
+    ・umpire
+      途中で加点の必要がなくなった行のための判別部。
+      現在までのポイントから、次世代セルがオンになるものだけを取り出す。
+      つまり、ポイントが4, 5, 6点のXのリストを作成する。
+
+    ・getfirst/3
+      リストの先頭のYの値が最上行と一致した場合、そのXListを返す。
+      そうでなければ、空リストを返す。
+
+    ・putxstolist/4
+      Xsが空リストでない場合、line(Y,Xs)をListの上に加える。
+
+
+ 4. その他(KLIC システム、KL1 言語仕様に関する要望など)
+  デバッグ環境が充実していないのが、プログラムの困難さを増していると思
+われる。
+  例えば、一つの述語に1回しか出てこない変数は誤字の可能性が高いので警
+告する、などしてくれてもよいのではないか、と思う。

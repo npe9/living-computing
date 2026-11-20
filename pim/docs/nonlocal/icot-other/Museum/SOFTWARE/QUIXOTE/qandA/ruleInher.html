@@ -1,0 +1,32 @@
+﻿<title> How to inherit rules </title>
+<h1> [Q] ルールの継承ができません。</h1>
+
+<h3> [Q1] 「Quixote 言語マニュアル」の P9 にある、例8 を
+	big-Quixote で動かしたいのですが、どうしても syntax error
+	となってしまいます。
+</h3>
+<p>
+
+<hr>
+<pre>
+[A1] 例8 は、論文上の記法を用いていますので、そのままでは
+Quixote の syntax ではありません。
+
+england と europe の関係を示す、サブモジュール関係は、
+Quixote の syntax では、>- となります。
+ルール継承の上書きは、Quixote の syntax は &o です。
+
+結局、例8 は、以下のようになります。
+--------------------------------------------------------
+&program;;
+&module;;
+england >- europe;;
+france >- europe;;
+&rule;;
+europe::car/[drive=right];;
+england::(&o)car/[drive=left];;
+&end.
+--------------------------------------------------------
+
+</pre>
+<p>

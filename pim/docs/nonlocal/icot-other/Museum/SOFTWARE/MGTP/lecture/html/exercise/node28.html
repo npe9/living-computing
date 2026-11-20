@@ -1,0 +1,37 @@
+﻿<HEAD>
+<TITLE> 【演習問題１０：組合せ論理``不動点'' (TPTP/COL012-1)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H1><A NAME=SECTION003100000000000000000> 【演習問題１０：組合せ論理``不動点'' (TPTP/COL012-1)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>dom(A),dom(B)--&gt;
+   equal(apply(apply(u,A),B),
+         apply(B,apply(apply(A,A),B))).
+
+equal(A,apply(combinator,A))--&gt;false.
+
+dom(A)--&gt;equal(A,A).
+equal(A,B)--&gt;equal(B,A).
+equal(A,B),equal(B,C)--&gt;equal(A,C).
+
+equal(A,B),dom(C)--&gt;equal(apply(A,C),apply(B,C)).
+equal(A,B),dom(C)--&gt;equal(apply(C,A),apply(C,B)).
+
+true--&gt;dom(u),dom(combinator).
+dom(A),dom(B)--&gt;dom(apply(A,B)).
+</PRE>
+<P>
+
+<P>
+
+<P>
+<BR> <HR>
+<P>
+
+</BODY>

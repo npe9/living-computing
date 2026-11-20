@@ -1,0 +1,94 @@
+﻿<HTML>
+<HEAD>
+<TITLE>Data model of Kappa</TITLE>
+</HEAD>
+<BODY bgcolor="#FFEFDF">
+
+<TABLE border=0 WIDTH=650>
+<TR>
+<TD WIDTH=150 VALIGN=top>
+
+<TABLE border=0>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="outline.html"> Kappaホームページ </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="hist.html"> Kappaの歴史 </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#a7a7c7">
+<A HREF="nf2.html"> Kappaのデータモデル </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="dist.html"> 分散データベースとして </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="app.html"> Kappaプログラミング </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ifs.html"> IFS Kappa </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ref.html"> 参考文献 </A>
+</TD>
+</TR>
+
+</TABLE>
+
+<TD WIDTH=500>
+<TABLE border=0>
+<TR>
+<TD ALIGN=left VALIGN=TOP>
+<img src="kappa.gif">
+</TD>
+<TD ALIGN=center>
+<H1 ALIGN="center">Kappaのデータモデル</H1>
+</TD>
+</TR>
+</TABLE>
+<P>
+
+現在のータベースの主流は、関係データベースでしょう。
+関係データベースのデータ表現の基本は、第1正規形でした。
+第1正規形では、データはアトミック（原子的）なものでなければならず、
+データベースは平坦な表であると考えられます。これは、データが
+アトミックなものでなく構造を持つ複雑な場合には、
+第1正規形が制約となることを意味しています。<P>
+
+このような第1正規形の制約を取り払って、構造を持つデータを格納する
+データモデルが、Kappaの非正規関係モデル(nested relation)です。
+Kappaでは、正規形を非正規形の特別な場合として包含しています。<P>
+
+非正規関係データベースkappaの応用分野としては、遺伝子情報処理が有力でしたが、
+実用データベースでは、関係データベースが引続き使用されているというのが
+実状のようです。<P>
+
+データモデルについてのもっと立ち入った説明は、<A HREF="pdst/node2.html">
+Kappaプログラミング説明書</A>にあります。<P>
+
+</TD>
+</TR>
+</TABLE>
+
+<HR>
+<CENTER>
+[<A HREF="outline.html">Kappaホームページ</A>]
+[<A HREF="app.html">Kappaプログラミング</A>]
+[<A HREF="ifs.html">IFS Kappa</A>]
+[<A HREF="ref.html">参考文献</A>]
+</CENTER>
+
+</BODY>
+</HTML>

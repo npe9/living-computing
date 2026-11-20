@@ -1,0 +1,171 @@
+%% CMGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-11-28
+%%  based on ..
+
+\subsection{インストール}
+
+CMGTP の tar ファイルには以下のファイルが含まれている。
+
+\vspace{1em}
+\begin{tabular}{ll}
+\verb+cmgtp.kl1+   & CMGTP エンジン \\
+\verb+mg2kl1.pl+  &トランスレータ\\
+\verb+QG5-8.mg+    & 問題サンプルファイル\\
+\end{tabular}
+\vspace{1em}
+
+\verb+cmgtp.kl1+ は CMGTP のエンジンであり、
+与えられた入力節を読み込んでモデル生成プロセスを繰り返す
+プログラムである。
+
+\verb+mg2kl1.pl+ はユーザが記述した入力節を
+KL1 プログラムに変換するトランスレータである。
+トランスレータの詳細については、トランスレータの機能説明書を
+参照されたい。
+CMGTP KLIC 版におけるトランスレータは、他のバージョンのトランスレータ
+と同様に、項メモリのプログラムも生成するようになっている。
+
+また、KL1 版のところでも述べているように、
+現在 KL1 版についてはトランスレータが準備されていないので、
+この KLIC 版のトランスレータを使用することになる。
+
+\verb+QG5-8.mg+ は、サンプル問題の記述例で、
+準群問題 QG5 のオーダ 8 の例である。
+準群問題については、第1章のCMGTP の機能説明を参照のこと。
+
+%%------------------------------------------------------------
+\subsection{トランスレータのコンパイル}
+
+トランスレータは SICStus Prolog で書かれているので、
+実行形式を生成するためには、まず
+SICStus Prolog を起動させる必要がある。
+
+\begin{verbatim}
+$ sicstus
+SICStus 2.1 #8: Tue May 11 21:04:52 JST 1993
+| ?- 
+\end{verbatim}
+
+次に、\verb+mg2klic+ をコンパイルし、セーブする。
+
+\begin{verbatim}
+| ?- compile(mg2kl1).
+| ?- save.
+\end{verbatim}
+
+これで、コンパイルされた実行形式 \verb+mg2kl1+ が生成される。
+
+%%------------------------------------------------------------
+\subsection{問題の KL1 プログラムへの変換}
+
+問題ファイルを CMGTP エンジンが参照できるような KL1 プログラムに
+変換するには以下のようにする。
+
+\begin{verbatim}
+$ mg2kl1 <problem file> merc
+\end{verbatim}
+
+ここで、\verb+merc+ はバージョンの指定であり、
+今回のリリースバージョンでは、ここでは常に \verb+merc+ を指定する。
+また、問題は \verb+<problem file>.mg+ というファイル名になっている
+必要がある。
+上記の \verb+<problem file>+ の指定では、extension は不要である。
+
+トランスレータを用いて、KL1 プログラムへの変換を行なうことにより、\\
+\verb+<problem file>_merc.kl1+ という KL1 ファイルが生成される。
+
+%%------------------------------------------------------------
+\subsection{コンパイル}
+
+次に、CMGTP のエンジンと問題を KLIC でコンパイルし、
+リンクする。
+
+\begin{verbatim}
+$ klic cmgtp.kl1 <problem file>_merc.kl1
+\end{verbatim}
+
+コンパイルオプションは必要に応じてつけること。
+詳しくは KLIC のマニュアルを参照されたい。
+
+コンパイルされた結果として、実行オブジェクト \verb+a.out+ 
+が生成される。
+
+%%------------------------------------------------------------
+\subsection{実行}
+
+実行は以下のように行なう。
+
+\begin{verbatim}
+$ a.out
+\end{verbatim}
+
+実行時のオプションについては、
+KLIC のマニュアルを参照されたい。
+
+%%------------------------------------------------------------
+\subsection{実行結果}
+
+実行途中には、場合わけが生じた時やモデルが見つかった時、
+また、branch が fail した時にコメントがでる。
+実行が終了した時点で、モデルの総数、branch の総数、
+実行時間などについて表示される。
+
+QG5-8.mg に対して、CMGTP を実行した結果を以下に示す。
+
+fail した枝で、
+\verb+failed_branch_by_Fsimpl+ になっているものは、
+unit simplification によってある選言が空になって
+fail したもの、また、
+\verb+failed_branch_by_Fref+ になっているものは、
+unit refutation によって fail したものを表す。
+
+\small
+\begin{verbatim}
+[p(1,8,3),p(4,8,3)]
+--> p(1,8,3)
+[p(4,1,8),p(5,1,8),p(6,1,8),p(7,1,8)]
+--> p(4,1,8)
+failed_branch_by_Fref
+--> p(5,1,8)
+failed_branch_by_Fref
+--> p(6,1,8)
+failed_branch_by_Fref
+--> p(7,1,8)
+failed_branch_by_Fref
+--> p(4,8,3)
+[p(1,8,4),p(5,8,4)]
+--> p(1,8,4)
+[p(2,1,8),p(5,1,8),p(6,1,8),p(7,1,8)]
+--> p(2,1,8)
+failed_branch_by_Fsimpl
+--> p(5,1,8)
+failed_branch_by_Fref
+--> p(6,1,8)
+failed_branch_by_Fref
+--> p(7,1,8)
+failed_branch_by_Fref
+--> p(5,8,4)
+[p(1,8,5),p(6,8,5)]
+--> p(1,8,5)
+failed_branch_by_Fsimpl
+--> p(6,8,5)
+[p(2,1,8),p(4,1,8)]
+--> p(2,1,8)
+failed_branch_by_Fsimpl
+--> p(4,1,8)
+model found
+
+heap size = 1048576 words
+43950 ms total; 43570 user; 380 system
+  0 swaps; 34 minor page faults; 0 major page faults
+  0 block inputs; 0 block outputs
+  1226 context switches (0 voluntary)
+  122 GC
+  251 suspensions; 250 resumptions
+sat
+************************************ 
+No. of Failed Branches  = 10
+No. of Models           = 1
+************************************ 
+\end{verbatim}
+\normalsize
+

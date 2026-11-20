@@ -1,0 +1,10 @@
+/* ( 12605060 by SA) */
+		[card(king,spades), card(queen,spades), card(jack,spades),
+ 		card(10,spades), card(9,spades), card(king,hearts),
+ 		card(jack,diamonds), card(10,diamonds), card(9,diamonds),
+ 		card(king,clubs), card(queen,clubs), card(jack,clubs),
+ 		card(queen,hearts), card(jack,hearts), card(10,hearts),
+ 		card(9,hearts), card(king,diamonds), card(queen,diamonds),
+ 		card(10,clubs), card(9,clubs), card(8,spades),
+ 		card(ace,hearts), card(ace,diamonds), card(ace,clubs),
+ 		card(ace,spades)].

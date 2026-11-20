@@ -1,0 +1,46 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">2.1 基本仕様</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html62 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html60 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html54 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html63 HREF="node4.html">2.2 内部表現</A>
+<strong>Up:</strong> <A NAME=tex2html61 HREF="node2.html">2 仕様</A>
+<strong> Previous:</strong> <A NAME=tex2html55 HREF="node2.html">2 仕様</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00021000000000000000>2.1 基本仕様</A></H2>
+<A NAME="subsecspec_base">&#160;</A>
+<P>
+このプログラムは、両プレーヤを自らが受け持つことによって
+一人学習を行う。また人間と対戦することもでき、この際にも学習を行う。
+学習した知識（Q値）は、プログラム終了時にファイルに
+セーブすることができ、次回プログラム起動時に利用できる。
+<P>
+プログラムは局面（盤面）を内部表現として持っており、その局面と
+唯一に対応する状態をキーにして Q値のテーブルを引き、
+より報酬の期待値の高い手を選択してそれを実行する。
+ここで言う状態には自分の手番が回ってきたときの局面のみが含まれ、
+相手の手番である局面（自分が手を指した直後の局面）は含まれない。
+すなわち自分の手を決定しても状態の遷移は非決定的となる。
+よって学習アルゴリズムとして TD(<IMG  ALIGN=BOTTOM ALT="" SRC="img1.gif">) ではなく Q-learning
+を用いる。
+<P>
+勝ち負けの判断基準などは一切与えず、全て自ら獲得させるものとする。
+但し状態数の爆発を防ぐため、対称な局面の同値判定だけは
+できるものとする。
+<P>
+プログラムには、試合に勝ったときは正、敗けたときは
+負の報酬（すなわちコスト）が
+与えられ、得られる報酬がより高くなるように Q値を更新して行く。
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>

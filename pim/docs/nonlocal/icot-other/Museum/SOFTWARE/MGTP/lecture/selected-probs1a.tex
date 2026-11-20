@@ -1,0 +1,361 @@
+% MGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-12-02
+
+% selected-probs1a.tex
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題１：パズル``床屋'' (TPTP/PUZ003-1)】}
+
+% Domain   : Puzzles
+% Problem  : The Barber Puzzle
+% English  : There is a barbers' club that obeys the following three 
+%            conditions:
+%            (1) If any member has shaved any other member -- whether 
+%            himself or another -- then all members have shaved him, 
+%            though not necessarily at the same time.
+%            (2) Four of the members are named Guido, Lorenzo, 
+%            Petrucio, and Cesare.
+%            (3) Guido has shaved Cesare.
+%            Has Petrucio shaved Lorenzo or not?
+
+% Source   : ANL problem set
+
+一風変った約束事を守っている床屋倶楽部がある。
+その約束事とは、
+「会員Aが会員(自分自身でもよい)の鬚を剃れるのは、
+Aが(それ以前に)すべての会員に自分の鬚を剃ってもらっているときに限る、」
+というものである。
+この倶楽部の会員は、Guido、Lorenzo、Petrucio、Cesareの四人である。
+すでにGuidoはCesareの鬚を剃ったことがある。
+さて、もうPetrucioはLorenzoの鬚を剃ったであろうか？
+
+\subsection*{ヒント}
+
+次のような述語を用いて、上の問題をMG節集合で表現してみよ。
+\begin{itemize}
+\item \verb"shaved(A,B)": AがBの鬚を剃った
+\item \verb"member(A)": Aはこの床屋倶楽部の会員である
+\end{itemize}
+
+※ ``すべての会員''云々をどう表現したらよいか？
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題２：パズル``アガサ殺人事件'' (TPTP/PUZ001-1)】}
+
+% Domain   : Puzzles
+% Problem  : Dreadbury Mansion
+% English  : Someone who lives in Dreadbury Mansion killed Aunt 
+%            Agatha. Agatha, the butler, and Charles live in 
+%            Dreadbury Mansion, and are the only people who live 
+%            therein. A killer always hates his victim, and is never 
+%            richer than his victim. Charles hates no one that Aunt 
+%            Agatha hates. Agatha hates everyone except the butler. 
+%            The butler hates everyone not richer than Aunt Agatha. 
+%            The butler hates everyone Aunt Agatha hates. No one hates 
+%            everyone. Agatha is not the butler. Therefore : Agatha 
+%            killed herself.
+
+% Refs     : Len Schubert, As cited in [Pelletier, 1986].
+%          : Manthey R., Bry F. (1988), SATCHMO: a theorem prover
+%            implemented in Prolog, In Lusk E., Overbeek R. (Eds),
+%            Proceedings of the 9th International Conference on
+%            Automated Deduction (Argonne, IL, 1988), (Lecture Notes
+%            in Computer Science 310), Springer-Verlag, New York, NY,
+%            415-434. 
+%          : Pelletier F.J. (1986), Seventy-Five Problems for Testing 
+%            Automatic Theorem Provers, Journal of Automated Reasoning
+%            2(2), 191-216. Problem 55.
+% Source   : [Manthey & Bry, 1988]
+
+ドレッドベリー・マンションの住人の誰かがアガサを殺した。
+ドレッドベリー・マンションの住人は、アガサと執事とチャールズ
+だけである。
+犯人は常日頃害者を憎んでおり、害者より裕福なことはなかった。
+チャールズはアガサが憎む人物の誰をも憎まない。
+アガサは執事以外の全員を憎んでいた。
+執事はアガサより裕福でない者の全員を憎んでいる。
+執事はまた、アガサが憎む者の全員を憎んでいる。
+全員を憎んでいる者はいない。
+アガサは執事ではない。
+以上から、アガサは自殺したと結論される。
+なぜ？
+
+\subsection*{ヒント}
+
+次のような述語を用いて、上の問題をMG節集合で表現してみよ。
+\begin{itemize}
+\item \verb"lives(A)": Aはドレッドベリー・マンションの住人である
+\item \verb"hates(A,B)": AはBを憎んでいる
+\item \verb"killed(A,B)": AがBを殺した
+\item \verb"n\_richer(A,B)": AはBより裕福でない
+\end{itemize}
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題３：パズル``猿とバナナ'' (TPTP/PLA003-1)】}
+
+% Domain   : Planning
+% Problem  : Monkey and Bananas Problem
+
+% Refs     : SPRFN Problem Set.
+% Source   : [SPRFN]
+
+今、部屋のある場所に猿が一匹いる。
+また、部屋のある場所では天井からバナナが吊されている。
+さらにまたある場所に、踏台が置いてある。
+
+猿はいくつかの行動が可能であるとする。
+たとえば、
+「手ぶらの猿は、床上を部屋のどこにでも移動できる。」
+とか、
+「踏台の所にいる猿は、踏台に乗れば天井に手が届く。」
+とかいったことである。
+
+さて、この猿がバナナにありつけるためにはほかにどのような
+行動規則を用意すればよいか？
+
+\subsection*{ヒント}
+
+これは、基本的には状態遷移の問題である。
+
+今の状態から次に可能な状態への遷移が、
+遷移規則の形で記述される。
+ある状態が可能である、ということを\verb"can(...)"という述語で
+表現しよう。
+状態変数としては、ここでは、登場するオブジェクトごとに、
+\begin{itemize}
+\item \verb"monkey(A,B,C)": 猿が平面座標Aの垂直座標Bにいて、Cを手にしている
+\item \verb"ladder(A,B)": 踏台が平面座標Aの垂直座標Bにある
+\item \verb"banana(A,B)": バナナが平面座標Aの垂直座標Bにある
+\end{itemize}
+という項で表現しよう。
+状態遷移規則は、MG節だと
+\begin{verbatim}
+can(...) --> can(...).
+\end{verbatim}
+という具合に素直に表現できる。
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題４：パズル``果物箱'' (TPTP/PUZ012-1)】}
+
+% Domain   : Puzzles
+% Problem  : The Mislabeled Boxes
+% English  : There are three boxes a, b, and c on a table.
+%            Each box contains apples or bananas or oranges.
+%            No two boxes contain the same thing.
+%            Each box has a label that says it contains apples
+%            or says it contains bananas or says it contains
+%            oranges.
+%            No box contains what it says on its label.
+%            The label on box a says "apples".
+%            The label on box b says "oranges".
+%            The label on box c says "bananas".
+%            You pick up box b and it contains apples.
+%            What do the other two boxes contain?
+
+% Source   : ANL problem set
+
+三つの箱a,b,cがある。
+箱にはリンゴ、オレンジ、バナナのいずれかが入っている。
+二つ以上の箱に同じ果物が入っていることはない。
+箱の各々にはリンゴ、オレンジ、バナナのいずれかを示すラベルが貼ってある。
+ところが、どの箱もラベルが内容と一致していない。
+箱aにはリンゴ、箱bにはオレンジ、箱cにはバナナ
+とラベルが貼ってある。
+箱bを開けてみるとリンゴが入っていた。
+ほかの箱の中身は一体何？
+
+\subsection*{ヒント}
+
+まず、この問題における基本的な述語として、
+\begin{itemize}
+\item \verb"contain(A,B)": 箱Aの中身は果物Bである
+\item \verb"label(A,B)": 箱AにはラベルBが貼ってある
+\end{itemize}
+を考えよう。
+オブジェクト(個体定数)としては、箱a,b,c、果物リンゴ、オレンジ、バナナ
+の計６つである。
+
+※ 箱a,b,cがそれぞれほかの箱と違うこと、
+果物リンゴ、オレンジ、バナナがそれぞれほかの果物と違うこと、
+は我々にとっては自明で暗黙の知識と言えるが、
+定理証明の場合にはそれらもすべて明示的に表現しなければならない。
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題５：パズル``正直者と嘘つき'' (TPTP/PUZ025-1)】}
+
+% Domain   : Puzzles
+% Problem  : Knights and Knaves #35
+% English  : There is an island with exactly two types of people-- 
+%            truthtellers who always tell the truth and liars who 
+%            always lie. There are a group of three people, A, B, and 
+%            C on the island. A and B make the following statements. 
+%            A: "B and C are the same type". Someone asks "Are A and B 
+%            of the same type ? " What does C answer ? 
+%            Answer: "yes"
+
+% Refs     : Smullyan R.M. (1978), What is the name of this book? :
+%            The riddle of Dracula and other logical puzzles, Prentice-
+%            Hall, Englewood Cliffs, NJ. Problem 35.
+% Source   : ANL problem set
+
+ある島では、住人が正直者か嘘付きのいずれかであるという。
+正直者は決して嘘はつかず、嘘付きは決して本当のことを言わない。
+今、この島にa,b,cの３人が集まっている。
+aが、「bとcは同じタイプだ」と発言した。
+すると誰かが、「aとbは同じタイプか？」と質問した。
+cは何と答えたであろうか？
+
+\subsection*{ヒント}
+
+これは、本来、様相論理とか高階述語論理とかを用いて表現するべき
+内容の問題であるが、
+ここでは一階述語論理の範囲内で表現可能である。
+
+まず、ある言明Pが正しい(真である)ということを、
+\verb"a_truth(P)"で表現することにしよう。
+
+この問題で言及される言明には、以下のようなものがある。
+\begin{itemize}
+\item \verb"truthteller(A)": 住人Aは正直者である
+\item \verb"liar(A)": 住人Aは嘘付きである
+\item \verb"equal\_type(A,B)": 住人A,Bは同じタイプである
+\item \verb"says(A,B)": 住人Aが言明Bを発言する
+\end{itemize}
+これらは、真理値をもつので本来述語として扱われるべきであるが、
+ここでは、述語\verb"a_truth(P)"の\verb"P"に入る``項''であって、
+MG節の述語として出現することはない、ということにする。
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題６：``自明でない問題'' (TPTP/MSC006-1)】}
+
+% Domain   : Miscellaneous
+% Problem  : A "non-obvious" problem
+% English  : Suppose there are two relations, P and Q. P is 
+%            transitive, and Q is both transitive and symmetric. 
+%            Suppose further the "squareness" of P and Q: any two 
+%            things are related either in the P manner or the Q 
+%            manner. Prove that either P is total or Q is total.
+
+二つの関係pとqがある。
+pは推移的である。
+qは推移的である上に対称的でもある。
+あらゆるものはpかqで関係づけられるとする。
+このとき、すべてがpで関係づけられているか、
+すべてがqで関係づけられているかのいずれか(あるいは両方)である。
+
+% Refs     : Pelletier F.J., and Rudnicki P. (1986), Non-Obviousness, 
+%            In Wos L. (Ed.), Association for Automated Reasoning 
+%            Newsletter (6), Association for Automated Reasoning, 
+%            Argonne, Il, 4-5.
+% Source   : [Pelletier & Rudnicki, 1986]
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題７：群論``単位元'' (TPTP/GRP003-1)】}
+
+% Domain   : Group Theory
+% Problem  : The left identity is also a right identity
+
+% Refs     : Chang C.L. (1970), The Unit Proof and the Input Proof in
+%            Theorm Proving, Communications of the ACM 17(4), 698-707.
+%            Problem 3.
+%          : Chang C.L., Lee R.C.T. (1973), Symbolic Logic and
+%            Mechanical Theorem Proving, Academic Press, New York.
+% Source   : [Chang, 1970]
+
+「左単位元はまた右単位元でもある」という問題
+
+ただし、
+\begin{eqnarray*}
+\overline{A}*A &=& Id \\
+Id*A &=& A \\
+(A*B)*D &=& A*(B*D)
+\end{eqnarray*}
+
+※ 結合則は、MG節でどう表現されるか？
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題８：``ヘンキンの問題'' (TPTP/HEN001-5)】}
+
+% Domain   : Henkin Models
+% Problem  : X/identity = zero
+
+% Refs     : McCharen J.D., Overbeek R.A., Wos L.A. (1976), Problems
+%            and Experiments for and with Automated Theorem Proving
+%            Programs, IEEE Transactions on Computers C-25(8), 773-
+%            782. Problem H1.
+% Source   : ANL problem set
+
+\begin{eqnarray*}
+0 &=& 0/A \\
+0 &=& A/Id \\
+0 &=& (A/B)/A \\
+0 &=& ((A/B)/(C/B))/((A/C)/B)
+\end{eqnarray*}
+\[ A/B=0 かつ B/A=0 ならば A=B \]
+から、$A/Id=0$を示す。
+
+※ 等号に関する公理が必要。
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題９：含意論理``単一公理'' (TPTP/LCL038-1)】}
+
+% Domain   : Logic Calculi (Implication/Falsehood 2 valued sentential)
+% Problem  : C0-1 depends on a single axiom
+% English  : An axiomatisation for the Implication/Falsehood 2 valued
+%            sentential calculus is {C0-1,C0-2,C0-3,C0-4} by Tarski-
+%            Bernays. Show that C0-1 can be derived from this suspected
+%            single axiom.
+
+% Refs     : Overbeek R. (1990), ATP competition announced at CADE-10,
+%            Problem 5.
+% Source   : [Overbeek, 1990]
+
+\[ ((A\supset B)\supset C)\supset((C\supset A)\supset(D\supset A)) \]
+が含意論理の単一公理であることを示す。
+
+ただし、含意論理系における(唯一の)推論規則は、
+\[ Aが定理、かつ、(A\supset B)が定理、ならば、Bは定理 \]
+というものである。
+
+たとえば、
+\[ (A\supset B)\supset((B\supset C)\supset(A\supset C)) \]
+が定理であることを示せ。
+
+%-----------------------------------------------------------------------------
+\section*{【演習問題１０：組合せ論理``不動点'' (TPTP/COL012-1)】}
+
+% Domain   : Combinatory Logic
+% Problem  : Weak fixed point for U
+% English  : The weak fixed point property holds for the set P consisting
+%            of the combinator U, where (Ux)y = y((xx)y).
+
+% Refs     : Smullyan, R. M. (1985), To Mock a Mocking Bird and Other
+%            Logic Puzzles, Knopf, New York.
+%          : McCune W.W., Wos L. (1987), A Case Study in Automated Theorem
+%            Proving: Finding Sages in Combinatory Logic, Journal of
+%            Automated Reasoning 3(1), 91-107.
+%          : Wos L., McCune W.W (1988a), Challenge Problems Focusing on
+%            Equality and Combinatory Logic: Evaluating Automated Theorem-
+%            Proving Programs, Proceedings of the 9th International
+%            Conference on Automated Deduction (Argonne, IL, 1988),
+%            (Lecture Notes in Computer Science, 310), 714-729.
+%          : McCune W.W. , Wos L. (1988b), Some Fixed Point Problems in
+%            Combinatory Logic, AAR Newsletter 10, 7-8.
+% Source   : [McCune & Wos, 1988b]
+
+組合せ論理という分野での問題。
+次の性質
+\[ (Ux)y = y((xx)y) \]
+をもつ組合せ子$U$からなる集合において、弱い不動点に関する性質、
+\[ Cx_C=x_C \]
+(任意の組合せ子は不動点をもつ)
+が成立することを示す。
+
+式$Ux$は、
+\verb"apply(U,x)"で表現することにしよう。
+上の式は、
+\[ apply(apply(U,x),y) = apply(y,apply(apply(x,x),y)) \]
+と表現される。
+
+※ 等号に関する公理が必要
+
+% end.

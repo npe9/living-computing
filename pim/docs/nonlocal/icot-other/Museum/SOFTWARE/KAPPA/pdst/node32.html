@@ -1,0 +1,112 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> データベースの操作</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" データベースの操作">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html422 HREF="node33.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html420 HREF="node31.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html416 HREF="node31.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html423 HREF="node33.html"> 名簿管理システムのテーブル</A>
+<B>Up:</B> <A NAME=tex2html421 HREF="node31.html"> 名簿管理システムの外部仕様</A>
+<B> Previous:</B> <A NAME=tex2html417 HREF="node31.html"> 名簿管理システムの外部仕様</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00041100000000000000> データベースの操作</A></H3>
+<P>
+名簿管理システムでは、メンバーの追加/更新/削除/検索を行なうことができ
+る。
+<P>
+<b>コマンドの使い方</b>
+<P>
+名簿管理システムのコマンドは次のように使用する。
+<P>
+<PRE>        irpr_client Mode &lt; ファイル名
+</PRE>
+<P>
+上記のModeで操作を指定し、標準入力には検索条件やメンバー情報を与えると、
+実行結果が標準出力に出力される。
+<P>
+Modeには、以下のものが指定できる。
+<DL ><DT><b> anm </b>
+<DD> メンバー情報の追加
+ <DT><b> mm </b>
+<DD>  メンバーの修正
+ <DT><b> dm </b>
+<DD>  メンバーの削除
+ <DT><b> scd </b>
+<DD> 現在の名簿の検索
+ <DT><b> shd </b>
+<DD> 更新履歴名簿の検索
+ <DT><b> sad </b>
+<DD> 現在＋更新履歴名簿の検索
+<P>
+ </DL>
+<P>
+上記のModeと入出力内容の関係を表にまとめると、次のようになる。<BR> 
+ <BR>
+<P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img61.gif"><P>
+ <BR> 
+ <BR>
+<P>
+なお、異常終了の場合は、その旨、標準出力に出力される。<BR>
+<UL><LI> idとversionが一致しないと、メンバー情報の更新や削除はできない。
+ <LI> スキーマにあるid属性は、システムが自動的に付与するため、追加時には
+メンバー情報には必要ない。
+</UL>
+<P>
+更新と削除の場合、更新前及び削除されたメンバー情報は、テーブルmeibo-historyに移される。更新の場合は、与えられたメンバー情報のversionが、自動的に
+適正な値に更新される。
+<P>
+<b>メンバー情報</b>
+<P>
+次に、メンバー情報の例を示す。
+<P>
+<PRE>[id(&quot;0000000099&quot;),
+name_e(&quot;Tommy Hase&quot;),name_for_search(&quot;Tommy Hase&quot;),name_for_search(&quot;トミー・ヘイズ&quot;),
+name_for_search(&quot;トミーヘイズ&quot;),name_for_search(&quot;トミーヘーズ&quot;),
+prefix(&quot;Mr.&quot;),organization
+</PRE>
+<P>
+メンバー情報のデータ形式については、以下の規則に従わねばならない。
+<OL><LI> 属性名(値)のリストで，並びの順序は問わない。
+ <LI> スキーマ上で null_value(allowed)が指定されている属性に関しては省略可
+  能だが、null_value(not_allowed)の属性は、更新、削除時には必ず含ま
+れる必要がある。
+ <LI> 繰返し性質が set の属性の繰り返し値は，属性名が同じ要素を複数
+指定することで表す。上記のメンバー情報の例では、属性 name_for_search 
+がこれに相当し、&quot;Tommy Hase&quot;,&quot;トミー・ヘイズ&quot;,&quot;トミーヘイズ&quot;,&quot;トミーヘーズ&quot;の４つの要素を持つ繰り返し値を指定していることになる。
+</OL>
+<P>
+<b>検索条件</b>
+<P>
+次に、検索条件の例を示す。
+<P>
+<DL ><DT>例１
+<DD> (or(name_for_search = &quot;H*&quot;,name_for_search = &quot;トミー*&quot;)).
+ <DT>例２
+<DD> and((info2 = &quot;j&quot;), or((info1 = &quot;irpr&quot;), (info1 = &quot;ifs&quot;))).
+<P>
+ </DL>
+<P>
+検索条件は、次の規則に従わなければならない。
+<P>
+<PRE>&lt;条件&gt; ::= 属性名 &lt;比較演算子&gt; &lt;固定検索値&gt;
+         | 属性名 ＝ &lt;固定検索値&gt;
+         | 属性名 ＝ &lt;部分一致検索値&gt;
+         | ( &lt;条件&gt; )
+         | &lt;条件&gt; &lt;論理演算子&gt; &lt;条件&gt;
+
+&lt;部分一致検索値&gt; ::= &quot;*検索値&quot; | &quot;検索値*&quot; | &quot;*検索値*&quot;
+&lt;固定検索値&gt; ::= 整数値 | &lt;部分一致検索値&gt;でないストリング
+&lt;論理演算子&gt; ::= and | or | dif
+&lt;比較演算子&gt; ::= &gt; | &gt;= | &lt; | =&lt;
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

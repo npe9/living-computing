@@ -1,0 +1,89 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> データベースとは何か</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" データベースとは何か">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html108 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html106 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html100 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html109 HREF="node5.html"> データモデルの考え方</A>
+<B>Up:</B> <A NAME=tex2html107 HREF="node3.html"> データベースの基礎知識</A>
+<B> Previous:</B> <A NAME=tex2html101 HREF="node3.html"> データベースの基礎知識</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00021100000000000000> データベースとは何か</A></H3>
+<P>
+データベース(database)という語はデータ(data)とベース(base)の合成語であ
+る。データとは実世界についての事実であり、ベースとはその補給基地という
+のがその語源とされている。この語が使用され始めたのが1960年ごろからであ
+り、当初"data base"と綴られていたのが、"data-base"、そして最近では
+"database"として使われている。
+<P>
+実世界の事実を集めたものとしてはファイル(file)という語があるが、これは
+同じ構造のデータを集積したものであり、一方データベースはさまざまな種類
+の異なった構造のデータを統合化したものである、というのが直観的な区別で
+ある。
+<P>
+このデータベースの考え方はコンピュータの発達と深く結びついている。コン
+ピュータが単なる計算機械としてではなく、情報処理機械として注目を集め始
+めると、現実世界の増大する一方のデータをコンピュータに大量に蓄え、それ
+を共同で簡単に利用したいという要求が出てきた。ファイルもデータの蓄積を
+めざしているが，単一のデータ構造であるため多目的利用には適していない。
+そこでこの要求に答えようとするのがデータベース管理システム(DBMS)あるい
+は単にデータベース・システムである。これは次のようにまとめることができ
+る。
+<UL><LI> 大量のデータを効率よく格納できる。
+<LI> データの多目的の利用ができる。
+<LI> データの利用が効率よく簡単にできる。
+</UL>
+知識情報処理環境では、このデータがさらに複雑なものとなっている。
+<P>
+またデータをデータベースとして集中化して共同利用するという観点からは、
+次のような利点が考えられる。
+<UL><LI> 目的別に作られていたものを集中化することにより，データの冗長性が
+減少する。
+<LI> 重複したデータ間の矛盾を管理する必要がなくなる。
+<LI> アクセス権限のない利用者からデータを防御するのが容易となる。
+<LI> プログラムごとに準備していたデータの作成の労力が削減できる。
+</UL>
+<P>
+それではデータベースにはどんな機能が必要であろうか。まず全般的な基本機
+能を述べる。
+<OL><LI> データベースが実世界のさまざまな情報をデータとして集めたものであ
+るためにはそれをどのように表現するかを記述するための言語が必要となる。
+これをデータ記述言語(DDL, Data Definition Language)という。
+<P>
+<LI> データベースとして蓄積されている情報を利用するために、読む、探す、
+更新するなどの操作をする。このための言語をデータ操作言語(DML, Data
+Manipulation Language)という。
+<P>
+<LI> データは現実の変化に対応して、内容だけでなくその構造までも変化さ
+せていくことが多い。このときデータベースの中のデータ構造も変えなければ
+ならないが、それを使用している応用プログラムまでも変えなければならない
+としたら大変である。そこでプログラムに対する影響をいかに最少にするかが
+重要である。これをデータ独立性(Data Independence)という。
+<P>
+<LI> データを集中して統一的に管理するため、データベースでは共同利用が
+ふつうである。このとき同一のデータを複数の利用者(プログラム)が更新する
+ことも考えられるので、並行制御(Concurrency Control) の機能がないと矛盾
+したデータがデータベースに混在することも生じえる。
+<P>
+<LI> １つのデータが多目的に使用されるので、データそのものの妥当性を利
+用者ごとに設定すると重複があるだけでなく洩れのあることが考えられる。そ
+こでデータベースの内容の正当性を保証するための条件をデータベース側にも
+たせる。これをデータベースの一貫性制約(Integrity Constraint)という。
+<P>
+<LI> データの集中化、利用の共同化が大規模化すると、ハードウエア、ソフ
+トウエア、あるいは人為的な事故とか障害によってデータベースの中身が破壊
+されたときの対策も充分に考えておかねばならない。このための障害回復
+(recovery)の機能も重要である。
+</OL>
+これらの機能は、Kappa にとっても基本的なものとして備えられている。
+<P>
+<BR> <HR>
+<P>
+</BODY>

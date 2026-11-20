@@ -1,0 +1,62 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> スキーマ</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" スキーマ">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html242 HREF="node17.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html240 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html234 HREF="node15.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html243 HREF="node17.html"> 集合</A>
+<B>Up:</B> <A NAME=tex2html241 HREF="node11.html"> Kappaの基本機能概要</A>
+<B> Previous:</B> <A NAME=tex2html235 HREF="node15.html"> プログラムインタフェース</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00032000000000000000> スキーマ</A></H2>
+<P>
+BNF記法でスキーマ定義の文法を示す。太字はそのまま記述する文字を、斜字
+体はデータ型を表す。
+分散データベースに関する部分等、ここでは説明を省略しているところがある。
+詳細は、Kappaユーザズマニュアルを参照のこと。<BR>
+<P>
+<b>&lt;</b>スキーマ<b>&gt;</b>::=テーブル名（テーブル性質,属性リスト,ネストシーケンス,
+			水平分割情報）
+<P>
+テーブル名::=<i> ATOM</i>｜<b> nil</b>
+<P>
+テーブル性質::=<b> primitive</b>
+<P>
+属性リスト::={属性｜属性リスト}
+<P>
+ネストシーケンス::=[属性名｜ネストシーケンス]｜[]
+<P>
+属性名::=<i> ATOM</i>
+<P>
+水平分割情報::=<b> shd</b>（水平分割方法,水平分割テーブル情報リスト）｜<b> nil</b>
+<P>
+属性::=属性名（繰り返し性質,属性性質リスト）｜
+       属性名（繰り返し性質,属性リスト）
+<P>
+繰り返し性質::=<b> set</b>｜<b> single</b>
+<P>
+属性性質リスト::=[属性性質｜属性性質リスト]｜[]
+<P>
+属性性質::=<b> type</b>（データ型）｜<b> key</b>（キー指定）｜<b>
+key</b>（primary,参照キー情報）｜<b> access</b>（アクセス指定）｜
+<b> null_value</b>（空値指定）｜overflow（あふれ指定）
+<P>
+データ型::=<b> string</b>｜<b> integer</b>｜<b> term</b>
+<P>
+キー指定::=<b> table</b>｜<b> set</b>｜<b> non_key</b>
+<P>
+空値指定::=<b> not_allowed</b>｜<b> allowed</b>｜<b> not_nil</b>｜<b>
+not_bottom</b>
+<P>
+あふれ指定::=<b> not_allowed</b>
+<P>
+<BR> <HR>
+<P>
+</BODY>

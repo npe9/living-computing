@@ -1,0 +1,135 @@
+%%
+%% Straight Flash fishing
+%%
+
+:- module solitaire_strf.
+
+strf_checker(IS, A,B,C,D, GA,GB,GC,GD):- true |
+	distributor(IS, SA,SB,SC,SD),
+%	io:outstream([print(['- A -',SA,A,GA]),nl]),
+%	io:outstream([print(['- B -',SB,B,GB]),nl]),
+%	io:outstream([print(['- C -',SC,C,GC]),nl]),
+%	io:outstream([print(['- D -',SD,D,GD]),nl]),
+	check_str(SA, A,GA),
+	check_str(SB, B,GB),
+	check_str(SC, C,GC),
+	check_str(SD, D,GD).
+
+% distribute ( single-kind-sorted-list )
+
+distributor(IS, SA,SB,SC,SD):- true |
+	distrib(IS, KA,KB,KC,KD),
+	solitaire_sort:sort_r(KA, SA),
+	solitaire_sort:sort_r(KB, SB),
+	solitaire_sort:sort_r(KC, SC),
+	solitaire_sort:sort_r(KD, SD).
+
+distrib([], A,B,C,D):- true |
+	A = [],
+	B = [],
+	C = [],
+	D = [].
+
+distrib([X|R], A,B,C,D):- X mod 4 =:= 1 |
+	A = [X|NA],
+	distrib(R, NA,B,C,D).
+
+distrib([X|R], A,B,C,D):- X mod 4 =:= 2 |
+	B = [X|NB],
+	distrib(R, A,NB,C,D).
+
+distrib([X|R], A,B,C,D):- X mod 4 =:= 3 |
+	C = [X|NC],
+	distrib(R, A,B,NC,D).
+
+distrib([X|R], A,B,C,D):- X mod 4 =:= 0 |
+	D = [X|ND],
+	distrib(R, A,B,C,ND).
+
+% check straight
+check_str([X1,X2,X3,X4,X5|R], STR,GAB):- X1/16=:=14 |
+	check_str2(0, [X1,X2,X3,X4,X5|R], STR1,GAB1),
+	check_str2(X1, [X2,X3,X4,X5|R], STR2, GAB2),
+	solitaire_misc:members(STR1, M1),
+	solitaire_misc:members(STR2, M2),
+	( M2 >M1 -> STR = STR2, GAB0 = GAB2;
+%io:outstream([print('#### found out extra straight-flash!! ####'),nl]);
+	  M2=<M1 -> STR = STR1, GAB0 = GAB1 ),
+	solitaire_sort:sort_r(GAB0, GAB).
+check_str([X1,X2,X3,X4,X5|R], STR,GAB):- X1/16=\=14 |
+	check_str2(0, [X1,X2,X3,X4,X5|R], STR,GAB0),
+	solitaire_sort:sort_r(GAB0, GAB).
+otherwise.
+check_str(I, STR,GAB):- true |
+	STR = [], GAB = I.
+
+check_str2(Ace, [X1,X2,X3,X4,X5|R], STR,GAB):-
+	Top := X1/16,
+	X2/16 =:= Top-1, X3/16 =:= Top-2,
+	X4/16 =:= Top-3, X5/16 =:= Top-4 |
+	STR = [[X1,X2,X3,X4,X5]|NSTR],
+	( Top=:=14 -> NAce = 0;
+	  Top=\=14 -> NAce = Ace ),
+	check_str2(NAce, R, NSTR,GAB).
+otherwise.
+check_str2(Ace, [X1,X2,X3,X4|[]], STR,GAB):-
+	X1/16 =:= 5,
+	X2/16 =:= 4, X3/16 =:= 3,
+	X4/16 =:= 2, Ace =\= 0 |
+	STR = [[X1,X2,X3,X4,Ace]],
+	GAB = [].
+otherwise.
+check_str2(Ace, [X1,X2,X3,X4|[]], STR,GAB):- true |
+	STR = [],
+	( Ace=:=0 -> GAB = [X1,X2,X3,X4];
+	  Ace=\=0 -> GAB = [X1,X2,X3,X4,Ace] ).
+check_str2(Ace, [X1,X2,X3,X4,X5|R], STR,GAB):- true |
+	( X1/16=:=14 -> NAce = X1, GAB = NGAB;
+	  X1/16=\=14 -> NAce = Ace,GAB = [X1|NGAB] ),
+	check_str2(NAce, [X2,X3,X4,X5|R], STR,NGAB).
+otherwise.
+check_str2(Ace, L, STR,GAB):- true |
+	STR = [],
+	( Ace=:=0 -> GAB = L;
+	  Ace=\=0 -> GAB = [Ace|L] ).
+
+
+% layout straight
+
+layout_str(A,B,C,D, O):-
+	layout_str_k(A, LA),
+	layout_str_k(B, LB),
+	layout_str_k(C, LC),
+	layout_str_k(D, LD),
+	wait_and_merge(LA, LB, LC, LD, O).
+
+wait_and_merge([X|I1],I2,I3,I4, O):-
+	O = [X|NO],
+	wait_and_merge(I1, I2, I3, I4, NO).
+wait_and_merge([],[X|I2],I3,I4, O):-
+	O = [X|NO],
+	wait_and_merge([], I2, I3, I4, NO).
+wait_and_merge([],[],[X|I3],I4, O):-
+	O = [X|NO],
+	wait_and_merge([], [], I3, I4, NO).
+wait_and_merge([],[],[],[X|I4], O):-
+	O = [X|NO],
+	wait_and_merge([], [], [], I4, NO).
+wait_and_merge([],[],[],[], O):-
+	O = [].
+
+layout_str_k([], O):-
+	O = [].
+layout_str_k([A|R], O):-
+	layout_astr(A, O1, O2, O3, O4, O5),
+	O = [[O1,O2,O3,O4,O5]|NO],
+	layout_str_k(R, NO).
+
+layout_astr([A1,A2,A3,A4,A5], O1,O2,O3,O4,O5):-
+	M1 := A1 mod 5,
+	M2 := A2 mod 5,
+	M3 := A3 mod 5,
+	M4 := A4 mod 5,
+	M5 := A5 mod 5,
+	solitaire_sort:sort_r_key([item(M1,A1),item(M2,A2),item(M3,A3),
+		item(M4,A4),item(M5,A5)], [O1,O2,O3,O4,O5]).

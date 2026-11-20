@@ -1,0 +1,40 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">B.4 learn モジュール</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html217 HREF="node19.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html215 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html209 HREF="node17.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html218 HREF="node19.html">B.5 game モジュール</A>
+<strong>Up:</strong> <A NAME=tex2html216 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<strong> Previous:</strong> <A NAME=tex2html210 HREF="node17.html">B.3 decide モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00054000000000000000>B.4 learn モジュール</A></H2>
+<A NAME="subsecpreds_of_learn">&#160;</A>
+<P>
+<DL><DT>reward <em> +Board, -Reward, +OX</em>
+<DD>
+  <em> OX</em> を受け持つプレイヤの局面 <em> Board</em> における報酬値を 
+  <em> Reward</em> に同一化する。
+<DT>win <em> +Board, -Judge, +OX</em>
+<DD>
+  <em> OX</em> を受け持つプレイヤの局面 <em> Board</em> における勝利判定を行う。
+<DT>update_q
+  <em> +RedQ, +ActFun, +Action, +Blank, +Reward, +NowState, +Step, -NewQ</em>
+<DD>
+  ひとつ過去の状態に選択された手 <em> Action</em>、
+  その結果遷移した状態 <em> NowState</em> とその時の報酬値 <em> Reward</em> から、
+  Q値 <em> Q</em> を更新し、新たな Q値を <em> NewQ</em> に同一化する。
+</DL>
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

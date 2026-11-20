@@ -1,0 +1,19 @@
+﻿<html>
+<head>
+<title> Explanation of Slide No.1 </title>
+</head>
+
+<body>
+<a href="senslide1.html">
+<!--	<img align=left src="GIF/sentences.GIF"></a> -->
+	<img src="GIF/sentences.GIF"></a>
+<a href="AU/voice1.au">
+<!--	<img align=right src="GIF/smile.GIF"></a> -->
+	<img src="GIF/smile.GIF"></a>
+<p>
+<br>
+<hr>
+
+<a href="slide2.html" target="_top"> 次の OHP へ </a>
+</body>
+</html>

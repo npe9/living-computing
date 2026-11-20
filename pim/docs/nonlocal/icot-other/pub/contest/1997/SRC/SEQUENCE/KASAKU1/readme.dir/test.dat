@@ -1,0 +1,32 @@
+%			by Eiji Sugino (sugino@jaist.ac.jp) at [Sep.4.1997]
+%
+% 176052  176048  176044  176040  176036  
+% SK SQ SJ ST S9  ... 2745655
+% HK HQ HJ HT H9  ... 2745655
+% DK DQ DJ DT D9  ... 2745655
+% CK CQ CJ CT C9  ... 2745655
+% S8 H8 D8 C8 SA  ... 176032
+%   10827 / 10817
+%  --------------------------- TOTAL=12060516
+% 
+% ./test.sh -time 20 -data ../test.dat naive > naive.log
+% 
+/*
+[card(king,spades),card(queen,spades),card(jack,spades),card(10,spades),card(9,spades),
+card(king,hearts),card(queen,hearts),card(jack,hearts),card(10,hearts),card(9,hearts),
+card(king,diamonds),card(queen,diamonds),card(jack,diamonds),card(10,diamonds),card(9,diamonds),
+card(king,clubs),card(queen,clubs),card(jack,clubs),card(10,clubs),card(9,clubs),
+card(8,spades),card(8,hearts),card(8,diamonds),card(8,clubs),card(ace,spades)
+].
+*/
+[card(king,hearts),card(queen,hearts),card(jack,spades),
+ card(10,spades),card(9,spades),
+ card(8,clubs),card(ace,spades),card(king,spades),
+ card(queen,spades),card(jack,hearts),
+ card(10,hearts),card(9,hearts),card(king,diamonds),
+ card(queen,diamonds),card(10,diamonds),
+ card(9,diamonds),card(king,clubs),card(queen,clubs),
+ card(jack,clubs),card(10,clubs),
+ card(9,clubs),card(jack,diamonds),card(8,spades),
+ card(8,hearts),card(8,diamonds)
+].

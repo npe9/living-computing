@@ -1,0 +1,275 @@
+﻿<title> Quixote Primer - Part II</title>
+<!-- <h1>Quixote is a DOOD launguage</h1> -->
+<h1><img align=top src="../photos/QxtLabels.gif"> is a DOOD launguage</h1>
+<hr>
+
+<!-- Quixote Primer - Part II
+by Chie Takahashi JIPDEC
+
+In the last issue, I told the story of how Quixote got its name, 
+and how the language was born out of the integration of deductive databases 
+and object-oriented databases. -->
+
+Now I would like to say some more about the practical problems of integrating, 
+specifically objects and rules, and inheritances 
+in order to explain some features of Quixote. 
+<p>
+
+<ol>
+<!-- 1.  Objects and Rules -->
+<li> <a href="#fea1">Objects and Rules</a>
+<!-- 2.  Two kinds of Inheritance -->
+<li> <a href="#fea2">Two kinds of Inheritance</a>
+ <dl>
+ <dt> 2.1 <a href="#fea21">Property Inheritance</a>
+ <dt> 2.2 <a href="#fea22">Exceptions to the rule of property inheritance</a>
+ <dt> 2.3 <a href="#fea23">Inheritance of Rules</a>
+ <dt> 2.4 <a href="#fea24">Exception to Inheritance of Rules</a>
+ </dl>
+</ol>
+
+
+<hr>
+<h1><a name="fea1">1.  Objects and Rules</a></h1>
+
+Let me briefly explain what was happened, when we connected
+objects, the basic structures in object-oriented databases, 
+and rules, the basic structures in deductive databases. 
+<p>
+
+Let's try to formulate one of the basic laws of Japan in Quixote:
+<p>
+
+"If the head of the family dies, half of his property goes to his wife, 
+and the rest is shared between the children. 
+The parents, or brothers and sisters of the deceased inherit nothing.
+<p>
+
+The first step in describing this law is to realize 
+that the paragraph is a set of conditions and their results. 
+The paragraph can be represented using a rule of the type 
+"If condition A is satisfied, the result is B." 
+The next step is to realize 
+that there are the objects "head of family," "property," 
+and concepts like "death."
+<p>
+
+These are all objects.  
+If "inheritence," "death of head of family," "wife's existence," 
+"children's existence," "property," 
+and so on are chosen as objects, the law can be written as:
+<p>
+
+If "death of head of family" and "wife's existence" 
+and "children's existence" and "property" is S, 
+then wife inherits S/2, children inherit S/2 and 
+parents, brothers, sisters inherit 0.
+<p>
+
+This shows how the law of inheritance can be described 
+in an object based format. 
+<p>
+
+Quixote contains rules characteristic of deductive databases 
+(such as "If condition A is satisfied the result B is also satisfied" 
+written as "B<=A) 
+and object terms characteristic of object-oriented databases.
+<p>
+
+The previous paragraph can be represented in Quixote by:
+<pre>
+     inheritance/[wife=S/2, children=S/2, 
+		  parents=0, brothers=0, sisters=0] 
+	     <= death_of_head_of_family, wife's_existence, 
+	        children's_existence, property/[Sum=S];;
+</pre>
+<p>
+
+Let's have a quick break :)
+<p>
+
+Here are some technical terms used in Quixote. 
+The terms that represent objects like "death of head of family", 
+"wife's existence," and so on are called Object Terms. 
+Terms that represent objects and their characteristics, 
+such as inheritance/[wife=S/2, children=S/2, brothers=0, sisters=0, parents=0], 
+and property/[sum=S] are called Attribute Terms. 
+An Object Term is regarded as a special kind of Attribute Term 
+without the symbol / and everything to the right of it.
+<p>
+
+<hr>
+<h1><a name="fea2">2.  Two kinds of Inheritance</a></h1>
+
+In the following subsections I will explain 
+the two kinds of inheritance used in Quixote, 
+both of which come from the field of artificial intelligence 
+where they were developed to enable re-use, 
+sharing and organization of information.
+<p>
+
+
+<h1><a name="fea21">2.1 Property Inheritance</a></h1>
+
+In Quixote, 
+property inheritance was adopted from object-oriented databases. 
+A brief explanation follows:
+<p>
+
+Human beings have the characteristics of the family mammals. 
+To represent this, 
+we do not need to include the characteristics of the family mammals 
+for human objects; 
+we can just let humans inherit this characteristic. 
+Allowing families to inherit characteristics like this allows us 
+to classify and organize those characteristics.
+<p>
+
+Written in Quixote the inheritance rule might look like this:
+<pre>
+	human_beings =< mammals
+	mammals/[breathing=lung, temperature=homeotherm]
+</pre>
+<p>
+
+Quixote automatically assigns all the characteristics of mammals 
+to human beings; they need not be defined again at the human level.
+<p>
+
+Anyone who had tried to represent the real world 
+using a rule as the above property inheritance know 
+that the real world has exceptions to the rule. 
+Quixote can also incorporate exceptions to property inheritance.
+<p>
+
+
+<hr>
+<h1><a name="fea22">2.2  Exceptions to the rule of property inheritance </a></h1>
+
+All objects introduced so far are atomic objects. 
+Quixote introduces structured object terms to enable exceptions 
+to the property inheritance.
+<p>
+
+For example, here is a structured object term:
+<pre>
+	apple[color=green]
+</pre>
+Note that a structured object term looks like an attribute. 
+The difference is that the structured object term has no slash / .
+<p>
+
+This object term represents a green apple. 
+Let's use this example to look at the concept of exceptions 
+to the rule of property inheritance.
+<p>
+
+[color=green] represents the fact that the apple's color is green. 
+This is an important point - a green apple should be green. 
+If it is not green any more, it cannot be a green apple!
+<p>
+
+When apple[color=green] is written in Quixote, 
+apple[color=green] =< apple is automatically made.
+This relation means that a green apple is a kind of apple and
+it inherits the characteristics of the parent apple.
+<p>
+
+
+
+When the attribute term apple/[shape=round, color=red] 
+(apples are round and red) is written, 
+Quixote automatically assigns shape=round to apple[color=green],
+but doesn't assign color=red to it.
+<p>
+
+In general, 
+if there exist two different definitions for the same characteristic 
+in an attribute term and a structured object term, 
+the definition in the structured object term has the higher priority. 
+In the example, 
+color=green in the structured object term has higher priority 
+than color=red in the attribute term.
+<p>
+
+This is the way that Quixote handles exceptions 
+to the property inheritance rule. 
+<p>
+
+
+<hr>
+<h1><a name="fea23">2.3  Inheritance of Rules</a></h1>
+
+This subsection shows 
+how Quixote implements the inheritance of rules for deductive databases.
+<p>
+
+Quixote uses modules in order to organize and classify rules. 
+A set of rules are contained in a module with a unique module name. 
+<p>
+
+The following Quixote statement lets module1 inherit all the rules of module2:
+<pre>
+	module1 >- module2
+</pre>
+<p>
+
+Then module1 is assumed to contain all the rules that are in module2.
+<p>
+
+Let's look at the legal example we discussed previously. 
+The law of inheritance was represented by a rule. 
+The module containing the set of rules governing inheritance
+can be given the name "Law_of_Inheritance."
+<p>
+
+In the same way, 
+the whole of the civil law could be represented 
+by a set of rules in a  module called "Civil_Law."
+<p>
+
+The module "Civil_Law" can be made to inherit 
+the rules of the module "Law_of_Inheritance" by writing
+<p>
+
+<pre>
+	Civil_Law >- Law_of_Inheritance
+</pre>
+
+Defining sets of rules as modules 
+and setting the inheritance of those rules 
+between modules saves redefining the rules in subsequent modules.
+<p>
+
+
+<hr>
+<h1><a name="fea24">2.4  Exception to Inheritance of Rules</a></h1>
+
+There can also be exceptions to the inheritance of rules in Quixote. 
+I am not going to go into this in detail here, but here is a brief description.
+Basically there are two kinds of exceptions to the inheritance of rules:
+<p>
+
+<pre>
+	a.  Do not inherit
+	b.  Overwrite
+</pre>
+
+Exceptions to the inheritance of rules are implemented by adding a symbol 
+which specifies the type of inheritance for the target rule.
+<p>
+
+<hr>
+To summarize, two kinds of inheritance were implemented in Quixote: 
+one came from deductive databases and 
+the other from object-oriented databases. 
+Rules are organized and classified, 
+shared and re-used based on these two kinds of inheritance 
+as shown in the legal example.
+<p>
+
+I have explained the integration of objects and rules and 
+the two kinds of inheritance to demonstrate the way 
+that Quixote has merged deductive databases and object-oriented databases.
+<p>
+

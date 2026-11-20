@@ -1,0 +1,335 @@
+/*
+ * Copyright (c) 1998 Hyoudou,Kazuki.
+ */ 
+
+:- module board.
+
+% Boardに対する操作を集めたモジュール
+% ゴール分散完了後はcompute述語もこちらのものを使う 
+%
+
+
+% distribute:
+%    ゴール分散時に呼ばれる述語
+%    新しいcompute述語の呼び出しと、完成データの出力を行う
+%
+distribute(Board,Place,TWL,NBoard) :-
+	compute(Board,Place,TWL,NB),
+	distribute_end(NB,NBoard).
+
+distribute_end(Input,Output) :- wait(Input) | Output=Input.
+
+
+% compute:
+%    分散完了後のcompute述語
+%
+compute(Board,Place,[],NBoard) :- NBoard=Board.
+compute(Board,place(ID,Row,Col,Tail,Dir,CL,S),TWL,NBoard) :-
+	make_movelist(Board,Row,Col,Dir,CL,TWL,MoveList),
+	move_word(Board,MoveList,TWL,NBoard).
+
+move_word(Board,[],TWL,NBoard) :- NBoard=Board.
+move_word(Board,[Place|PL],TWL,NBoard) :-
+	set_word(Board,Place,NB),
+	remove_word(Place,TWL,NTWL),
+	compute(NB,Place,NTWL,NB1),
+	move_word(Board,PL,TWL,NB2),
+	max_board(NB1,NB2,NBoard).
+
+
+% make_movelist:
+%    次に配置可能な単語のリストを生成する
+%
+make_movelist(Board,Row,Col,Dir,[],TWL,MoveList) :-
+	MoveList=[].
+make_movelist(Board,Row,Col,Dir,[Ch|CL],TWL,MoveList) :- Dir=lr |
+	make_movelist1(Board,Row,Col,Dir,Ch,TWL,ML1),
+	NCol:=Col+1,
+	make_movelist(Board,Row,NCol,Dir,CL,TWL,ML2),
+	merge(ML1,ML2,MoveList).
+make_movelist(Board,Row,Col,Dir,[Ch|CL],TWL,MoveList) :- Dir=tb |
+	make_movelist1(Board,Row,Col,Dir,Ch,TWL,ML1),
+	NRow:=Row+1,
+	make_movelist(Board,NRow,Col,Dir,CL,TWL,ML2),
+	merge(ML1,ML2,MoveList).
+
+make_movelist1(Board,Row,Col,Dir,Ch,[],MoveList) :-
+	MoveList=[].
+make_movelist1(Board,Row,Col,Dir,Ch,[word(ID,Len,CL,S)|TWL],MoveList) :-
+	Dir=lr |
+	index(Row,Ch,CL,Index),
+	index_to_movelist(Board,Col,Dir,ID,Len,CL,S,Index,ML1),
+	make_movelist1(Board,Row,Col,Dir,Ch,TWL,ML2),
+	merge(ML1,ML2,MoveList).
+make_movelist1(Board,Row,Col,Dir,Ch,[word(ID,Len,CL,S)|TWL],MoveList) :-
+	Dir=tb |
+	index(Col,Ch,CL,Index),
+	index_to_movelist(Board,Row,Dir,ID,Len,CL,S,Index,ML1),
+	make_movelist1(Board,Row,Col,Dir,Ch,TWL,ML2),
+	merge(ML1,ML2,MoveList).
+
+
+merge([],In2,Out) :- Out=In2.
+merge(In1,[],Out) :- Out=In1.
+merge([Msg|In1],In2,Out) :- Out=[Msg|OutTail],merge(In1,In2,OutTail).
+merge(In1,[Msg|In2],Out) :- Out=[Msg|OutTail],merge(In1,In2,OutTail).
+
+
+% index:
+%    ある文字列にボード上に存在する文字C1がでてくるときの、
+%    文字列の位置(行または列のみ)をリストとして出力する
+%
+index(Num,C1,[C2|Rest],Index) :- C1\=C2 |
+	Num1:=Num-1,
+	index(Num1,C1,Rest,Index).
+index(Num,C1,[C2|Rest],Index) :- C1=C2 |
+	Num1:=Num-1,
+	index(Num1,C1,Rest,I),
+	Index=[Num|I].
+index(Num,C,[],Index) :- Index=[].
+
+% index_to_movelist:
+%    Indexリストから配置可能な単語のリストを生成する
+%
+index_to_movelist(Board,N,Dir,ID,Len,CL,S,[],MoveList) :-
+	MoveList=[].
+index_to_movelist(Board,N,Dir,ID,Len,CL,S,[M|Rest],MoveList) :- Dir=lr |
+	Tail:=M+Len-1,
+	check_lap(Board,M,N,Tail,tb,Check1),  % 単語の重なりをチェック
+	check_fence(Board,M,N,Tail,tb,Check2),% Boardからはみださないかチェック
+	index_to_movelist(Board,N,Dir,ID,Len,CL,S,Rest,ML),
+	check_merge(place(ID,M,N,Tail,tb,CL,S),ML,Check1,Check2,MoveList).
+index_to_movelist(Board,N,Dir,ID,Len,CL,S,[M|Rest],MoveList) :- Dir=tb |
+	Tail:=M+Len-1,
+	check_lap(Board,N,M,Tail,lr,Check1),
+	check_fence(Board,N,M,Tail,lr,Check2),
+	index_to_movelist(Board,N,Dir,ID,Len,CL,S,Rest,ML),
+	check_merge(place(ID,N,M,Tail,lr,CL,S),ML,Check1,Check2,MoveList).
+
+% check_merge:
+%    単語がBoard上に配置可能であった場合のみリストに加える
+%
+check_merge(In1,In2,C1,C2,Out) :- C1=1,C2=1 |
+	Out=[In1|In2].
+otherwise.
+check_merge(_,In2,C1,C2,Out) :-
+	Out=In2.
+
+
+% remove_word:
+%    配置した単語を単語リストから削除する
+%
+remove_word(Place,[],NTWL) :- NTWL=[].
+remove_word(Place,[TWord|Rest],NTWL) :-
+	Place=place(ID1,_,_,_,_,_,_),TWord=word(ID2,_,_,_),ID1\=ID2 |
+	remove_word(Place,Rest,NTWL1),
+	NTWL=[TWord|NTWL1].
+remove_word(Place,[TWord|Rest],NTWL) :-
+	Place=place(ID1,_,_,_,_,_,_),TWord=word(ID2,_,_,_),ID1=ID2 |
+	NTWL=Rest.
+
+
+% set_word:
+%    Board上に単語を配置する
+%    必要ならばBoardの状態(state)を変更する
+%
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	Row<MT,MB<Tail,Dir=tb |
+	Score:=BS+S,
+	NBoard=[state(Row,ML,Tail,MR,N,Score),Place|PL].
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	Row<MT,Tail=<MB,Dir=tb |
+	Score:=BS+S,
+	NBoard=[state(Row,ML,MB,MR,N,Score),Place|PL].
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	MT=<Row,MB<Tail,Dir=tb |
+	Score:=BS+S,
+	NBoard=[state(MT,ML,Tail,MR,N,Score),Place|PL].
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	Col<ML,MR<Tail,Dir=lr |
+	Score:=BS+S,
+	NBoard=[state(MT,Col,MB,Tail,N,Score),Place|PL].
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	Col<ML,Tail=<MR,Dir=lr |
+	Score:=BS+S,
+	NBoard=[state(MT,Col,MB,MR,N,Score),Place|PL].
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S),
+	ML=<Col,MR<Tail,Dir=lr |
+	Score:=BS+S,
+	NBoard=[state(MT,ML,MB,Tail,N,Score),Place|PL].
+otherwise.
+set_word([state(MT,ML,MB,MR,N,BS)|PL],Place,NBoard) :-
+	Place=place(_,Row,Col,Tail,Dir,_,S) |
+	Score:=BS+S,
+	NBoard=[state(MT,ML,MB,MR,N,Score),Place|PL].
+
+
+% max_board:
+%    与えられた2つのBoardのうち、得点の高い方を出力する
+%
+max_board(Board1,Board2,NBoard) :-
+	Board1=[state(_,_,_,_,_,S1)|_],Board2=[state(_,_,_,_,_,S2)|_],S1=<S2 |
+	NBoard=Board2.
+max_board(Board1,Board2,NBoard) :-
+	Board1=[state(_,_,_,_,_,S1)|_],Board2=[state(_,_,_,_,_,S2)|_],S1>S2 |
+	NBoard=Board1.
+
+
+
+%************************************************
+% ある位置へ単語の配置が可能かどうかをチェック
+%************************************************
+
+% check_fence:
+%    単語を配置したときに、Boardからはみ出さないかどうかをチェックする
+%
+check_fence([state(MT,ML,MB,MR,N,BS)|_],Row,Col,Tail,Dir,Check) :- 
+	Row<MT,Dir=tb |
+	NN:=MB-Row+1,
+	check_fence_1(NN,N,Check).
+check_fence([state(MT,ML,MB,MR,N,BS)|_],Row,Col,Tail,Dir,Check) :- 
+	Col<ML,Dir=lr |
+	NN:=MR-Col+1,
+	check_fence_1(NN,N,Check).
+check_fence([state(MT,ML,MB,MR,N,BS)|_],Row,Col,Tail,Dir,Check) :- 
+	MB<Tail,Dir=tb |
+	NN:=Tail-MT+1,
+	check_fence_1(NN,N,Check).
+check_fence([state(MT,ML,MB,MR,N,BS)|_],Row,Col,Tail,Dir,Check) :- 
+	MR<Tail,Dir=lr |
+	NN:=Tail-ML+1,
+	check_fence_1(NN,N,Check).
+otherwise.
+check_fence([state(MT,ML,MB,MR,N,BS)|_],Row,Col,Tail,Dir,Check) :- 
+	Check=1.
+
+check_fence_1(NN,N,Check) :- NN=<N | Check=1.
+check_fence_1(NN,N,Check) :- N<NN | Check=0.
+
+
+% check_lap:
+%    単語を配置したときに不正な重なりが起きないかどうかをチェックする
+%
+check_lap([S,Place|PL],Row,Col,Tail,Dir,Check) :-
+	check_lap_main(PL,Row,Col,Tail,Dir,Check).
+
+check_lap_main([],R2,C2,T2,D2,Check) :- Check=1.
+check_lap_main([place(_,R1,C1,T1,D1,_,_)|PL],R2,C2,T2,D2,Check) :-
+	D1=tb,D2=tb |
+	Diff:=C1-C2,
+	abs(Diff,Diff1),
+	check_lap_tb(PL,Diff1,R1,T1,R2,C2,T2,D2,Check).
+check_lap_main([place(_,R1,C1,T1,D1,_,_)|PL],R2,C2,T2,D2,Check) :-
+	D1=lr,D2=lr |
+	Diff:=R1-R2,
+	abs(Diff,Diff1),
+	check_lap_lr(PL,Diff1,C1,T1,R2,C2,T2,D2,Check).
+check_lap_main([place(_,R1,C1,T1,D1,_,_)|PL],R2,C2,T2,D2,Check) :-
+	D1=tb,D2=lr |
+	check_cross_tb_lr(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+check_lap_main([place(_,R1,C1,T1,D1,_,_)|PL],R2,C2,T2,D2,Check) :-
+	D1=lr,D2=tb |
+	check_cross_lr_tb(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+
+
+check_lap_tb(PL,Diff,R1,T1,R2,C2,T2,D2,Check) :- Diff=0 |
+	check_lap_tb1(PL,R1,T1,R2,C2,T2,D2,Check).
+check_lap_tb(PL,Diff,R1,T1,R2,C2,T2,D2,Check) :- Diff=1 |
+	check_lap_tb2(PL,R1,T1,R2,C2,T2,D2,Check).
+check_lap_tb(PL,Diff,R1,T1,R2,C2,T2,D2,Check) :- Diff>1 |
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_lap_tb1(PL,R1,T1,R2,C2,T2,D2,Check) :- R1<R2,R2=<T1+1 | Check=0.
+check_lap_tb1(PL,R1,T1,R2,C2,T2,D2,Check) :- R2<R1,R1=<T2+1 | Check=0.
+check_lap_tb1(PL,R1,T1,R2,C2,T2,D2,Check) :- R2=R1 | Check=0.
+otherwise.
+check_lap_tb1(PL,R1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_lap_tb2(PL,R1,T1,R2,C2,T2,D2,Check) :- R1<R2,R2=<T1 | Check=0.
+check_lap_tb2(PL,R1,T1,R2,C2,T2,D2,Check) :- R2<R1,R1=<T2 | Check=0.
+check_lap_tb2(PL,R1,T1,R2,C2,T2,D2,Check) :- R2=R1 | Check=0.
+otherwise.
+check_lap_tb2(PL,R1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+
+check_lap_lr(PL,Diff,C1,T1,R2,C2,T2,D2,Check) :- Diff=0 |
+	check_lap_lr1(PL,C1,T1,R2,C2,T2,D2,Check).
+check_lap_lr(PL,Diff,C1,T1,R2,C2,T2,D2,Check) :- Diff=1 |
+	check_lap_lr2(PL,C1,T1,R2,C2,T2,D2,Check).
+check_lap_lr(PL,Diff,C1,T1,R2,C2,T2,D2,Check) :- Diff>1 |
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_lap_lr1(PL,C1,T1,R2,C2,T2,D2,Check) :- C1<C2,C2=<T1+1 | Check=0.
+check_lap_lr1(PL,C1,T1,R2,C2,T2,D2,Check) :- C2<C1,C1=<T2+1 | Check=0.
+check_lap_lr1(PL,C1,T1,R2,C2,T2,D2,Check) :- C2=C1 | Check=0.
+otherwise.
+check_lap_lr1(PL,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_lap_lr2(PL,C1,T1,R2,C2,T2,D2,Check) :- C1<C2,C2=<T1 | Check=0.
+check_lap_lr2(PL,C1,T1,R2,C2,T2,D2,Check) :- C2<C1,C1=<T2 | Check=0.
+check_lap_lr2(PL,C1,T1,R2,C2,T2,D2,Check) :- C2=C1 | Check=0.
+otherwise.
+check_lap_lr2(PL,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+
+check_cross_tb_lr(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R1=<R2,R2=<T1 |
+	check_cross_tb_lr1(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+check_cross_tb_lr(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R2=:=R1-1 |
+	check_cross_tb_lr2(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+check_cross_tb_lr(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R2=:=T1+1 |
+	check_cross_tb_lr2(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+otherwise.
+check_cross_tb_lr(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_cross_tb_lr1(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- C2=<C1+1,C1=<T2+1 |
+	Check=0.
+otherwise.
+check_cross_tb_lr1(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_cross_tb_lr2(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- C2=<C1,C1=<T2 |
+	Check=0.
+otherwise.
+check_cross_tb_lr2(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+
+check_cross_lr_tb(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R2=<R1,R1=<T2 |
+	check_cross_lr_tb1(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+check_cross_lr_tb(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R1=:=R2-1 |
+	check_cross_lr_tb2(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+check_cross_lr_tb(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- R1=:=T2+1 |
+	check_cross_lr_tb2(PL,R1,C1,T1,R2,C2,T2,D2,Check).
+otherwise.
+check_cross_lr_tb(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_cross_lr_tb1(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- C1=<C2+1,C2=<T1+1 |
+	Check=0.
+otherwise.
+check_cross_lr_tb1(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+check_cross_lr_tb2(PL,R1,C1,T1,R2,C2,T2,D2,Check) :- C1=<C2,C2=<T1 |
+	Check=0.
+otherwise.
+check_cross_lr_tb2(PL,R1,C1,T1,R2,C2,T2,D2,Check) :-
+	check_lap_main(PL,R2,C2,T2,D2,Check).
+
+
+% abs:
+%    Inの絶対値を出力する
+%
+abs(In,Out) :- In<0 | Out := -In.
+abs(In,Out) :- In>=0 | Out:=In.

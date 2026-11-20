@@ -1,0 +1,557 @@
+%  Copyright (C) 1997 Haruhiko Usa  < usa@logos.t.u-tokyo.ac.jp >
+%						November 17, 1997
+
+
+:- module life.
+
+%  Data structure:
+%    Board = {B[0], ..., B[H], ..., B[2^14-1]}
+%    B[H]  = [pack(X,Y,A), pack(X',Y',A), ...]
+%    H     = (((X/\63)<<6) \/ (Y/\63))		( H := hash(X,Y) )
+%
+%  < pack 5x1 cells into one integer >
+%    A:  [ A4 A3 A2 A1 A0 ]			= 5 bits * 5 = 25 bits
+%    Ai: [on/off(1 bit) << 4]\/[0-8 (4 bits)]	= 5 bits
+%    left shift=(X_orig mod 5)*5  (x>0)
+%
+%  On/Off cells
+%    V     = [v(X,Y,F), ... ]
+%    F=| P4 P3 P2 P1 P0 | M4 M3 M2 M1 M0 | F4 F3 F2 F1 F0 |
+%    P4..F0 = 1 bit flag,  Fi=:=Pi\/Mi
+
+
+%  compute:
+%    in:  G, In
+%    out: Out
+%
+compute(0,In,Out) :- Out=In.
+compute(G,In,Out) :- G>0 |
+    current_node(_,P),
+    distribute(0,P,G,In,R,L,L,R,Out0,[])@node(0),
+    life_sort:sort(Out0,Out).
+
+distribute(P,P,G,In, BL,L,TBR,TR)-Out :- TR=BL, L=TBR.
+distribute(N,P,G,In, BL,L,TBR,TR)-Out :- N<P, N1:=N+1, Node:=N1 mod P |
+    distribute(N1,P,G,In, R,BR,TBR,TR)-Out@node(Node),
+    life_encode:encode_board(N,P,In,V,Board),
+    lifeone(G,V,BL,BR,L,R)-Board,
+    life_encode:decode(Board)-Out.
+
+
+%  lifeone:
+%    in:  G, V0, Board0
+%    out: L, R,  Board			% L/R: shared with left/right node
+%
+lifeone(0,V0,BL,BR,L,R)-Board :- L=[], R=[].
+lifeone(G,V0,BL,BR,L,R)-Board :- G>0, G1:=G-1 |
+    L=[L0|L1],				% export L0 to left node
+    R=[R0|R1],				% export R0 to right node
+    message(V0,CH,L0,R0)-Board,		% send message
+    communicate(G1,CH,BL,BR,L1,R1)-Board@lower_priority.
+
+%  communicate:
+%    in:  CH, BL, BR, Board0		% BL/BR: shared with left/right node
+%    out: V1, Board
+%
+communicate(G1,CH,BL,BR,L1,R1)-Board :- wait(CH), BL=[BL0|BL1], BR=[BR0|BR1] |
+    import(BL0,CH, CH1)-Board,		% import BL0 from left node
+    import(BR0,CH1,CH2)-Board,		% import BR0 from right node
+    collect(CH2,V1)-Board,		% renew Board
+    lifeone(G1,V1,BL1,BR1,L1,R1)-Board.
+
+
+%  message:
+%    in:  V=[v(X0,Y0,F0), ...], Board0
+%    out: CH=[H0,H1,...], Board		% CH: changed point (hash address)
+%
+message([],CH,L,R)-Board :- CH=[], L=[], R=[].
+message([v(X,Y,F)|V],CH,L,R,Board0,Board) :-
+    XL:=X-1, YL:=Y-1 |
+    around(V,CH,L,R,Board0,Board,XL,YL,F,0,ll).
+
+%  ll:<X-1,Y-1>  cl:<X,Y-1>  rl:<X+1,Y-1>
+%  lc:<X-1,Y>   [0 1 2 3 4]  rc:<X+1,Y>		% left <== center ==> right
+%  lr:<X-1,Y+1>  cr:<X,Y+1>  rr:<X+1,Y+1>
+%
+%  around: [ll->lc->lr]->[rl->rc->rr]->cc->cl->cr -> next message
+%
+
+%  skip ll,lc,lr  or set_pack(..ll) or export to L
+around(V,CH,L,R,Board0,Board,XL,YL,F,T,ll) :- (F/\17)=:=0,
+    XC:=XL+1, YC:=YL+1 |
+    set_pack(V,CH,L,R,Board0,Board,XC,YC,F,T,cc).
+around(V,CH,L,R,Board0,Board,XL,YL,F,T,ll) :- (F/\17)=:=16,
+    XR:=XL+2 |
+    around(V,CH,L,R,Board0,Board,XR,YL,F,T,rl).
+around(V,CH,L,R,Board0,Board,XL,YL,F,T,ll) :- (F/\1)=\=0, (XL/\3)=\=3 | %% W
+    set_pack(V,CH,L,R,Board0,Board,XL,YL,F,T,ll).
+around(V,CH,L,R,Board0,Board,XL,YL,F,T,ll) :- (F/\1)=\=0, (XL/\3)=:=3,  %% W
+    XR:=XL+2,
+    A:=((F/\32)<<15)-((F/\1024)<<10) |
+    L=[e(XL,YL,A)|L1],				% export to left node
+    around(V,CH,L1,R,Board0,Board,XR,YL,F,T,rl).
+%
+%  skip rl,rc,rl  or set_pack(..rl) or export to R
+around(V,CH,L,R,Board0,Board,XR,YL,F,T,rl) :- (F/\16)=:=0,
+    XC:=XR-1, YC:=YL+1 |
+    set_pack(V,CH,L,R,Board0,Board,XC,YC,F,T,cc).
+around(V,CH,L,R,Board0,Board,XR,YL,F,T,rl) :- (F/\16)=\=0, (XR/\3)=\=0 | %% W
+    set_pack(V,CH,L,R,Board0,Board,XR,YL,F,T,rl).
+around(V,CH,L,R,Board0,Board,XR,YL,F,T,rl) :- (F/\16)=\=0, (XR/\3)=:=0,  %% W
+    XC:=XR-1, YC:=YL+1,
+    A:=((F>>9)/\1)-((F>>14)/\1) |
+    R=[e(XR,YL,A)|R1],				% export to right node
+    set_pack(V,CH,L,R1,Board0,Board,XC,YC,F,T,cc).
+
+%  set_pack:
+%    in:  X, Y, F, K, Board0
+%    out: CH,L,R, Board
+%
+set_pack(V,CH,L,R,Board0,Board,X,Y,F,T,K) :-
+    H:=(((X/\63)<<6) \/ (Y/\63)) |				%% hash
+    set_vector_element(Board0,H,B0,B,Board1),
+    set_pack_0(V,CH,L,R,Board1,Board,X,Y,F,T,K,B0,B,H).
+
+set_pack_0(V,CH,L,R,Board0,Board,X,Y,F,T,K,0,B,H) :- true |
+    CH=[H|CH1],
+    B=c([C|0]),
+    pack(V,CH1,L,R,Board0,Board,X,Y,F,T,K,0,C).
+set_pack_0(V,CH,L,R,Board0,Board,X,Y,F,T,K,B0,B,H) :- list(B0) |
+    CH=[H|CH1],
+    B=c(B1),
+    set_pack_1(V,CH1,L,R,Board0,Board,X,Y,F,T,K,B0,B1).
+set_pack_0(V,CH,L,R,Board0,Board,X,Y,F,T,K,c(B0),B,_) :- true |
+    B=c(B1),
+    set_pack_1(V,CH,L,R,Board0,Board,X,Y,F,T,K,B0,B1).
+
+set_pack_1(V,CH,L,R,Board0,Board,X,Y,F,T,K,0,B) :- true |
+    B=[C|0],
+    pack(V,CH,L,R,Board0,Board,X,Y,F,T,K,0,C).
+set_pack_1(V,CH,L,R,Board0,Board,X,Y,F,T,K,[pack(X,Y,A)|B0],B) :- true |
+    B=[C|B0],
+    pack(V,CH,L,R,Board0,Board,X,Y,F,T,K,A,C).
+otherwise.
+set_pack_1(V,CH,L,R,Board0,Board,X,Y,F,T,K,[P|B0],B) :- true |
+    B=[P|B1],
+    set_pack_1(V,CH,L,R,Board0,Board,X,Y,F,T,K,B0,B1).
+
+%  pack:
+%    in:  X, Y, F, K, A
+%    out: C=pack(X,Y,A')
+%
+pack(V,CH,L,R,Board0,Board,XL,YL,F,_,ll,A,C) :-
+    T:=((F/\32)<<15)-((F/\1024)<<10),
+    An:=A+T,
+    YC:=YL+1 |
+    C=pack(XL,YL,An),
+    set_pack(V,CH,L,R,Board0,Board,XL,YC,F,T,lc).
+pack(V,CH,L,R,Board0,Board,XL,YC,F,T,lc,A,C) :-
+    An:=A+T,
+    YR:=YC+1 |
+    C=pack(XL,YC,An),
+    set_pack(V,CH,L,R,Board0,Board,XL,YR,F,T,lr).
+pack(V,CH,L,R,Board0,Board,XL,YR,F,T,lr,A,C) :-
+    An:=A+T,
+    XR:=XL+2, YL:=YR-2 |
+    C=pack(XL,YR,An),
+    around(V,CH,L,R,Board0,Board,XR,YL,F,T,rl).
+
+pack(V,CH,L,R,Board0,Board,XR,YL,F,_,rl,A,C) :-
+    T:=((F>>9)/\1)-((F>>14)/\1),
+    An:=A+T,
+    YC:=YL+1 |
+    C=pack(XR,YL,An),
+    set_pack(V,CH,L,R,Board0,Board,XR,YC,F,T,rc).
+pack(V,CH,L,R,Board0,Board,XR,YC,F,T,rc,A,C) :-
+    An:=A+T,
+    YR:=YC+1 |
+    C=pack(XR,YC,An),
+    set_pack(V,CH,L,R,Board0,Board,XR,YR,F,T,rr).
+pack(V,CH,L,R,Board0,Board,XR,YR,F,T,rr,A,C) :-
+    An:=A+T,
+    XC:=XR-1, YC:=YR-1 |
+    C=pack(XR,YR,An),
+    set_pack(V,CH,L,R,Board0,Board,XC,YC,F,T,cc).
+
+pack(V,CH,L,R,Board0,Board,XC,YC,F,_,cc,A,C) :-
+    P0:=(F>>5)/\1, P1:=(F>>6)/\1, P2:=(F>>7)/\1,
+    P3:=(F>>8)/\1, P4:=(F>>9)/\1,
+    M0:=(F>>10)/\1, M1:=(F>>11)/\1, M2:=(F>>12)/\1,
+    M3:=(F>>13)/\1, M4:=(F>>14)/\1,
+    Ap:=(P0<<5)+(P1)+(P1<<10)+(P2<<5)+(P2<<15)+(P3<<10)+(P3<<20)+(P4<<15),
+    Am:=(M0<<5)+(M1)+(M1<<10)+(M2<<5)+(M2<<15)+(M3<<10)+(M3<<20)+(M4<<15),
+    T:=Ap-Am,
+    An:=A+T,
+      % for next pack (cl and cr)
+      Ap1:=Ap+(P0)+(P1<<5)+(P2<<10)+(P3<<15)+(P4<<20),
+      Am1:=Am+(M0)+(M1<<5)+(M2<<10)+(M3<<15)+(M4<<20),
+      T1:=Ap1-Am1,
+    YL:=YC-1 |
+    C=pack(XC,YC,An),
+    set_pack(V,CH,L,R,Board0,Board,XC,YL,F,T1,cl).
+pack(V,CH,L,R,Board0,Board,XC,YL,F,T,cl,A,C) :-
+    An:=A+T,
+    YR:=YL+2 |
+    C=pack(XC,YL,An),
+    set_pack(V,CH,L,R,Board0,Board,XC,YR,F,T,cr).
+pack(V,CH,L,R,Board0,Board,XC,YR,F,T,cr,A,C) :-
+    An:=A+T |
+    C=pack(XC,YR,An),
+    message(V,CH,L,R,Board0,Board).
+
+
+%  import:
+%    in:  Imp=[e(X,YL,A), ....], CH0, Board0
+%    out: CH=[H0,H1,...|CH0], Board
+%
+%  import e(X,YL,A) to 3 packs [pack(X,YL,AL), pack(X,YC,AC), pack(X,YR,AR)]
+%                              ==> AL+=A, AC+=A, AR+=A
+%
+import([])-CH-Board.
+import([e(X,YL,A)|Imp],CH0,CH,Board0,Board) :- Y0:=YL-1 |
+    import1(Imp,CH0,CH,Board0,Board,0,X,Y0,A).
+
+import1(Imp,CH0,CH,Board0,Board,3,_,_,_) :- true |
+    import(Imp,CH0,CH,Board0,Board).
+import1(Imp,CH0,CH,Board0,Board,D,X,Y0,A) :- D<3, D1:=D+1,	% D=0,1,2
+    Y:=Y0+1,
+    H:=(((X/\63)<<6) \/ (Y/\63)) |				%% hash
+    set_vector_element(Board0,H,B0,B,Board1),
+    import2(Imp,CH0,CH,Board1,Board,D1,X,Y,A,B0,B,H).
+
+import2(Imp,CH0,CH,Board0,Board,D,X,Y,A,0, B,H) :- true |
+    CH1=[H|CH0],
+    B=c([pack(X,Y,A)|0]),
+    import1(Imp,CH1,CH,Board0,Board,D,X,Y,A).
+import2(Imp,CH0,CH,Board0,Board,D,X,Y,A,B0,B,H) :- list(B0) |
+    CH1=[H|CH0],
+    B=c(B1),
+    import_pack(Imp,CH1,CH,Board0,Board,D,X,Y,A,B0,B1).
+import2(Imp,CH0,CH,Board0,Board,D,X,Y,A,c(B0),B,_) :- true |
+    B=c(B1),
+    import_pack(Imp,CH0,CH,Board0,Board,D,X,Y,A,B0,B1).
+
+import_pack(Imp,CH0,CH,Board0,Board,D,X,Y,A,0, B) :- true |
+    B=[pack(X,Y,A)|0],
+    import1(Imp,CH0,CH,Board0,Board,D,X,Y,A).
+import_pack(Imp,CH0,CH,Board0,Board,D,X,Y,A,[pack(X,Y,A0)|B0],B) :- An:=A0+A |
+    B=[pack(X,Y,An)|B0],
+    import1(Imp,CH0,CH,Board0,Board,D,X,Y,A).
+otherwise.
+import_pack(Imp,CH0,CH,Board0,Board,D,X,Y,A,[P|B0],B) :- true |
+    B=[P|B1],
+    import_pack(Imp,CH0,CH,Board0,Board,D,X,Y,A,B0,B1).
+
+
+%  collect:
+%    in:  CH=[H0,H1,...], Board
+%    out: V=[v(X0,Y0,F0),v(X1,Y1,F1), ...]
+%
+collect([],V)-Board :- V=[].
+collect([H|CH],V,Board0,Board) :- true |
+    set_vector_element(Board0,H,B0,B,Board1),
+    collect1(CH,V,Board1,Board,B0,B).
+
+collect1(CH,V,Board0,Board,c(B0),B) :- true |
+    renew(CH,V,Board0,Board,B0,B).
+
+%  renew:
+%    in:  B0=[pack(X,Y,A),...|0]
+%    out: B =[pack(X,Y,A'),...|0]
+%
+renew(CH,V,Board0,Board,0,B) :- true |
+    B=0,
+    collect(CH,V,Board0,Board).
+renew(CH,V,Board0,Board,[P|B0],B) :- P=pack(X,Y,0) | % delete P=pack(X,Y,0)
+    renew(CH,V,Board0,Board,B0,B).
+renew(CH,V,Board0,Board,[P|B0],B) :- P=pack(X,Y,A), A\=0 |
+    B=[C|B1],
+    renew_pack_0(CH,V,Board0,Board,B0,B1,X,Y,A,0,C).
+
+%  renew_pack_0, ..., renew_pack_5:
+%    in:  X, Y, A, F
+%    out: C=pack(X,Y,An), V=[v(X,Y,F)|V1]
+%
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- (A/\31)=:=0  |
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- (A/\31)=:=18 |
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- (A/\31)=:=19 |
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- (A/\31)=:=3,    % off->on
+    An:=A+16, F1:=F+33 |		% 33	= 00000.00001.00001
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- (A/\16)=:=16,   % on->off
+    An:=A-16, F1:=F+1025 |		% 1025	= 00001.00000.00001
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_0(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- true |
+    renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>5)/\31)=:=0  |
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>5)/\31)=:=18 |
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>5)/\31)=:=19 |
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>5)/\31)=:=3,   % on
+    An:=A+512, F1:=F+66 |		% 66	= 00000.00010.00010
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>5)/\16)=:=16,  % off
+    An:=A-512, F1:=F+2050 |		% 2050	= 00010.00000.00010
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_1(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- true |
+    renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>10)/\31)=:=0  |
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>10)/\31)=:=18 |
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>10)/\31)=:=19 |
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>10)/\31)=:=3,  % on
+    An:=A+16384, F1:=F+132 |		% 132	= 00000.00100.00100
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>10)/\16)=:=16, % off
+    An:=A-16384, F1:=F+4100 |		% 4100	= 00100.00000.00100
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_2(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- true |
+    renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>15)/\31)=:=0  |
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>15)/\31)=:=18 |
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>15)/\31)=:=19 |
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>15)/\31)=:=3,  % on
+    An:=A+524288, F1:=F+264 |		% 264	= 00000.01000.01000
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>15)/\16)=:=16, % off
+    An:=A-524288, F1:=F+8200 |		% 8200	= 01000.00000.01000
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_3(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- true |
+    renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>20)/\31)=:=0  |
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>20)/\31)=:=18 |
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>20)/\31)=:=19 |
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>20)/\31)=:=3,  % on
+    An:=A+16777216, F1:=F+528 | 	% 528	= 00000.10000.10000
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- ((A>>20)/\16)=:=16,  % off
+    An:=A-16777216, F1:=F+16400 |	% 16400	= 10000.00000.10000
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, An,F1,C).
+otherwise.
+renew_pack_4(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- true |
+    renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,F,C).
+
+renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,0,C) :- true |
+    C=pack(X,Y,A),
+    renew(CH,V,Board0,Board,B0,B).
+renew_pack_5(CH,V,Board0,Board,B0,B,X,Y, A,F,C) :- F\=0 |
+    C=pack(X,Y,A),
+    V=[v(X,Y,F)|V1],
+    renew(CH,V1,Board0,Board,B0,B).
+
+
+
+:- module life_encode.
+
+%  encode:
+%    in:  In
+%    out: V, Board
+%
+encode_board(N,P,In,V,Board) :- M:=(1<<12)+1 |			%% hashsize
+    generic:new(vector,Board0,M),
+    make_board(N,P,In,Board0,Board),
+    collect(Board,M,V).
+
+%  make_board:
+%    in:  L, Board0
+%    out: Board
+%
+make_board(N,P,[])-Board.
+make_board(N,P,[p(Xr,Y)|L])-Board :-
+    Xp:=Xr+(1<<20),						%% X_SHIFT
+    X :=Xp/5,							% Xp>0, X>0
+    Xi:=Xp mod 5 |
+    make_board1(N,P,L,X,Y,Xi)-Board.
+
+make_board1(N,P,L,X,Y,Xi)-Board :-				% 0=<Xi<5
+    (X>>2) mod P =\= N |					%% W
+    make_board(N,P,L)-Board.
+make_board1(N,P,L,X,Y,Xi,Board0,Board) :-			% 0=<Xi<5
+    (X>>2) mod P =:= N ,					%% W
+    A:=16<<(Xi*5),						% 16=10000
+    H:=(((X/\63)<<6) \/ (Y/\63)) |				%% hash
+    set_vector_element(Board0,H,B0,B,Board1),
+    encode_cell(N,P,L,X,Y,A,B0,B,Board1,Board).
+
+%  encode_cell:
+%    in:  X, Y, B0
+%    out: B=[pack(X,Y,A),..|0]
+%
+encode_cell(N,P,L,X,Y,A,0,B)-Board :- true |
+    B=[pack(X,Y,A)|0],
+    make_board(N,P,L)-Board.
+encode_cell(N,P,L,X,Y,A,[pack(X,Y,A0)|B0],B)-Board :-
+    An:=A0\/A |
+    B=[pack(X,Y,An)|B0],
+    make_board(N,P,L)-Board.
+otherwise.
+encode_cell(N,P,L,X,Y,A,[C0|B0],B)-Board :- true |
+    B=[C0|B1],
+    encode_cell(N,P,L,X,Y,A,B0,B1)-Board.
+
+%  collect:
+%    in:  Board, N
+%    out: V=[v(X0,Y0,F0),v(X1,Y1,F1),...]
+%
+collect(Board,0,V) :- V=[].
+collect(Board,N,V) :- N>0, N1:=N-1 |
+    vector_element(Board,N1,B),
+    collect_pack(Board,N1,V,B).
+
+%  collect_pack:
+%    in:  B=[pack(X,Y,A),...]
+%    out: V=[v(X,Y,F),...]
+%
+collect_pack(Board,N,V,0) :- true |
+    collect(Board,N,V).
+collect_pack(Board,N,V,[pack(X,Y,A)|B]) :-
+    P0:=(A>>4)/\1, P1:=(A>>9)/\1, P2:=(A>>14)/\1,
+    P3:=(A>>19)/\1, P4:=(A>>24)/\1,
+    P:=P0+(P1<<1)+(P2<<2)+(P3<<3)+(P4<<4),
+    F:=(P<<5)+P |
+    V=[v(X,Y,F)|V1],
+    collect_pack(Board,N,V1,B).
+
+
+%  decode:
+%    in:  Board
+%    out: Out=[p(X0,Y0),p(X1,Y1),...]
+%
+decode(Board)-Out :- vector(Board,N) |
+    decode_board(N,Board)-Out.
+
+decode_board(0,Board)-Out.
+decode_board(N,Board)-Out :- N>0, N1:=N-1 |
+    vector_element(Board,N1,B),
+    decode_pack(N1,Board,B)-Out.
+
+%  decode_pack:
+%    in:  B=[pack(X,Y,A),...]
+%    out: Out
+%
+decode_pack(N,Board,0)-Out :- true |
+    decode_board(N,Board)-Out.
+decode_pack(N,Board,[pack(X,Y,A)|B])-Out :- Xr:=X*5-(1<<20) |	%% X_SHIFT
+    decode_x0(N,Board,B,Xr,Y,A)-Out.
+
+%  decode_x0, ..., decode_x4:
+%    in:  X, Y, A
+%    out: Out=[p(X,Y),...]
+%
+decode_x0(N,Board,B,Xr,Y,A)-Out :- (A/\16)=:=16 |
+    Out <= p(Xr,Y),
+    decode_x1(N,Board,B,Xr,Y,A)-Out.
+otherwise.
+decode_x0(N,Board,B,Xr,Y,A)-Out :- true |
+    decode_x1(N,Board,B,Xr,Y,A)-Out.
+
+decode_x1(N,Board,B,Xr,Y,A)-Out :- (A/\512)=\=0, X:=Xr+1 |
+    Out <= p(X,Y),
+    decode_x2(N,Board,B,Xr,Y,A)-Out.
+otherwise.
+decode_x1(N,Board,B,Xr,Y,A)-Out :- true |
+    decode_x2(N,Board,B,Xr,Y,A)-Out.
+
+decode_x2(N,Board,B,Xr,Y,A)-Out :- (A/\16384)=\=0, X:=Xr+2 |
+    Out <= p(X,Y),
+    decode_x3(N,Board,B,Xr,Y,A)-Out.
+otherwise.
+decode_x2(N,Board,B,Xr,Y,A)-Out :- true |
+    decode_x3(N,Board,B,Xr,Y,A)-Out.
+
+decode_x3(N,Board,B,Xr,Y,A)-Out :- (A/\524288)=\=0, X:=Xr+3 |
+    Out <= p(X,Y),
+    decode_x4(N,Board,B,Xr,Y,A)-Out.
+otherwise.
+decode_x3(N,Board,B,Xr,Y,A)-Out :- true |
+    decode_x4(N,Board,B,Xr,Y,A)-Out.
+
+decode_x4(N,Board,B,Xr,Y,A)-Out :- (A/\16777216)=\=0, X:=Xr+4 |
+    Out <= p(X,Y),
+    decode_pack(N,Board,B)-Out.
+otherwise.
+decode_x4(N,Board,B,Xr,Y,A)-Out :- true |
+    decode_pack(N,Board,B)-Out.
+
+
+
+:- module life_sort.
+
+sort-L :- mergesort_init-L, mergesort-L.
+
+mergesort_init([],R)   :- R=[].
+mergesort_init([X0],R) :- R=[X0].
+mergesort_init([P0,P1|L],R) :- P0=p(_,Y0), P1=p(_,Y1), Y0<Y1 |
+    R=[[P0,P1]|R1],
+    mergesort_init(L,R1).
+mergesort_init([P0,P1|L],R) :- P0=p(_,Y0), P1=p(_,Y1), Y1<Y0 |
+    R=[[P1,P0]|R1],
+    mergesort_init(L,R1).
+mergesort_init([P0,P1|L],R) :- P0=p(X0,Y), P1=p(X1,Y), X0<X1 |
+    R=[[P0,P1]|R1],
+    mergesort_init(L,R1).
+mergesort_init([P0,P1|L],R) :- P0=p(X0,Y), P1=p(X1,Y), X1<X0 |
+    R=[[P1,P0]|R1],
+    mergesort_init(L,R1).
+
+mergesort([],M) :- M=[].
+mergesort([A],M) :- list(A) | M=A.
+otherwise.
+mergesort(L,M) :- merge_pairs(L,R), mergesort(R,M).
+
+merge_pairs([A,B|L],R) :- list(A), list(B) |	% A, B are point lists.
+    R=[R1|R2],
+    merge(A,B,R1),
+    merge_pairs(L,R2).
+merge_pairs([A,X|L],R) :- list(A), X=p(_,_) |	% A, [X|L] are point lists.
+    merge(A,[X|L],R).
+merge_pairs([],R) :- R=[].
+merge_pairs([A],R) :- R=[A].			% A is a point list.
+otherwise.
+merge_pairs(A,R) :- R=[A].			% A is a point list.
+
+merge([],[],L) :- L=[].
+merge(L0,[],L) :- list(L0) | L=L0.
+merge([],L1,L) :- list(L1) | L=L1.
+merge(L0,L1,L) :- L0=[P0|Ps0], L1=[P1|Ps1], P0=p(_,Y0), P1=p(_,Y1), Y0<Y1 |
+    L=[P0|L2],
+    merge(Ps0,L1,L2).
+merge(L0,L1,L) :- L0=[P0|Ps0], L1=[P1|Ps1], P0=p(_,Y0), P1=p(_,Y1), Y1<Y0 |
+    L=[P1|L2],
+    merge(L0,Ps1,L2).
+merge(L0,L1,L) :- L0=[P0|Ps0], L1=[P1|Ps1], P0=p(X0,Y), P1=p(X1,Y), X0<X1 |
+    L=[P0|L2],
+    merge(Ps0,L1,L2).
+merge(L0,L1,L) :- L0=[P0|Ps0], L1=[P1|Ps1], P0=p(X0,Y), P1=p(X1,Y), X1<X0 |
+    L=[P1|L2],
+    merge(L0,Ps1,L2).
+
+
+%% life.kl1 EOF
+

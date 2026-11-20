@@ -1,0 +1,46 @@
+﻿<html><HEAD>
+<TITLE>A.2 今回用いたパラメータ</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html161 HREF="node14.html">
+<IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>
+<A NAME=tex2html159 HREF="node11.html">
+<IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>
+<A NAME=tex2html155 HREF="node12.html">
+<IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html162 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<B>Up:</B> <A NAME=tex2html160 HREF="node11.html">A 背景</A>
+<B> Previous:</B> <A NAME=tex2html156 HREF="node12.html">A.1 Q-learning</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00042000000000000000>A.2 今回用いたパラメータ</A></H2>
+<P>
+今回は、Q-learning のパラメータ値を以下のように定めた。
+Q-function の初期値および報酬を大きくとっているのは、
+浮動小数点計算を避けることで処理を高速にするためである。
+<P>
+<DL ><DT>割引率
+<DD>
+  <IMG  ALIGN=MIDDLE ALT="gamma" SRC="img16.gif"> = 95% (0.95)
+<DT>学習率
+<DD>
+  <IMG  ALIGN=MIDDLE ALT="alpha" SRC="img17.gif">
+  （但し <b>Step</b> は、初手からの手数）
+<DT>Q-function 初期値
+<DD>
+  <IMG  ALIGN=MIDDLE ALT="Q(i_0, u_0)" SRC="img18.gif"> = 10000
+<DT>報酬値
+<DD>
+  10000, 0, -10000
+<P>
+ </DL>
+<P>
+
+<P>
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

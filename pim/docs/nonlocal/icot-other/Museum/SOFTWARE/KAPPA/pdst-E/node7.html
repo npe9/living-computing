@@ -1,0 +1,198 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> The relational model</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" The relational model">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html138 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html136 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html130 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html139 HREF="node8.html"> The nested relational </A>
+<B>Up:</B> <A NAME=tex2html137 HREF="node6.html"> The relational model </A>
+<B> Previous:</B> <A NAME=tex2html131 HREF="node6.html"> The relational model </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022100000000000000> The relational model</A></H3>
+<A NAME=srm>&#160;</A>
+The relational model which E.F.Codd proposed in 1970 represents
+database as a set of relations. Relations are the subsets of 
+a direct product <IMG  ALIGN=MIDDLE ALT="" SRC="img2.gif">, where 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img3.gif"> are domains. Each domain has a domain name 
+called an attribute which must be unique. 
+Domains must be finite sets in databases.
+Table<A HREF="node7.html#ttab1">1</A> is an example of relation.
+<P>
+<P><A NAME=49>&#160;</A><A NAME=ttab1>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img4.gif">
+<BR><STRONG>Table 1:</STRONG> An example of relation<BR>
+<P>
+<P>
+Name, position and location are attributes under which there are
+attribute values. A row of attribute values is called a tuple,
+therefore, a relation is a set of tuples. And a relation is an ordered 
+set of attributes, i.e. <IMG  ALIGN=MIDDLE ALT="" SRC="img5.gif">. A relation is sometimes 
+represented as <IMG  ALIGN=MIDDLE ALT="" SRC="img6.gif">. Since relations have very simple 
+expressions, mathematical discussion of which is also simple.
+Even though relations are kind of tables, all tables are not
+recognized as relations. The following two conditions must be met for 
+a table to be a relation.
+<P>
+<OL><LI> Tuples must be unique in a relation.
+ <LI> Keys are a set of attributes to uniquely identify each tuple, of
+	which a primary key can be chosen. The primary key must not
+	be a null value.
+</OL>
+<P>
+How can we represent the real world as relations. First, collect 
+attributes of the world and make a table like table<A HREF="node7.html#ttab1">1</A>. This 
+flat table representation is a data structure of the relational data 
+model. However, this relation has redundancy, for example in
+combination of position and location. Furthermore, if you change a 
+combination of name and position, information of position and location
+might be meaningless. Thus, we normalize the original table(first normal 
+form) taking into account dependencies.
+<P>
+A functional dependency can be defined when a collection of attribute 
+values <IMG  ALIGN=MIDDLE ALT="" SRC="img7.gif"> in relation <IMG  ALIGN=MIDDLE ALT="" SRC="img8.gif"> uniquely
+decides another collection of attribute values
+<IMG  ALIGN=MIDDLE ALT="" SRC="img9.gif">. In this case, <IMG  ALIGN=MIDDLE ALT="" SRC="img10.gif"> is functionally
+dependent on <IMG  ALIGN=MIDDLE ALT="" SRC="img11.gif"> and expressed as <IMG  ALIGN=MIDDLE ALT="" SRC="img12.gif">. Suppose 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img13.gif"> is an attribute value of <IMG  ALIGN=MIDDLE ALT="" SRC="img14.gif"> in a tuple <b>r</b>, the functional
+dependency means as follows for arbitrary tuples <IMG  ALIGN=MIDDLE ALT="" SRC="img15.gif"> and <IMG  ALIGN=MIDDLE ALT="" SRC="img16.gif">.
+	<P><IMG  ALIGN=BOTTOM ALT="" SRC="img17.gif"><P>
+In table<A HREF="node7.html#ttab1">1</A>, there are two functional dependencies, that are 
+name<IMG  ALIGN=BOTTOM ALT="" SRC="img18.gif">position and position<IMG  ALIGN=BOTTOM ALT="" SRC="img19.gif">location.
+If Yokota changes his position, the location of which have to be also 
+changed. Then the information that position O is in Minato ward will 
+get lost. That is why we devide table<A HREF="node7.html#ttab1">1</A> into table<A HREF="node7.html#ttab2">2</A>.
+Generally, we should devide a table into tables in which functional 
+dependencies are all on their keys. This type of relation is in third 
+normal form. The decomposition based on functional dependencies includes 
+second normal form which is different from third normal form in terms
+of kind of functional dependencies. Third normal form not only
+prevents above mentioned loss of information but also makes tables 
+simpler excluding repetitive pairs of position and location as you can
+see in table<A HREF="node7.html#ttab2">2</A>. In other words data redundancy decreases, so
+you will have to update only one tuple if the location of position O
+changes.
+<P>
+<P><A NAME=68>&#160;</A><A NAME=ttab2>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img20.gif">
+<BR><STRONG>Table 2:</STRONG> Decomposition by functional dependencies<BR>
+<P>
+<P>
+Normalization of relations are done not only by functional
+dependencies but by multivalued dependencies. Let's look at table
+<A HREF="node7.html#ttab3">3</A>. This relation consists of three attributes of name, 
+hobby and club. It has no functional dependency.
+<P>
+<P><A NAME=102>&#160;</A><A NAME=ttab3>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img21.gif">
+<BR><STRONG>Table 3:</STRONG> Relation including multivalued dependencies<BR>
+<P>
+<P>
+If you devide table<A HREF="node7.html#ttab3">3</A> into table<A HREF="node7.html#ttab4">4</A>, redundancy 
+decreases. Both hobby and club have plural values against name. This 
+property is called multivalued dependency. In this case the
+multivalued dependencies are expressed as 
+name<IMG  ALIGN=BOTTOM ALT="" SRC="img22.gif">hobby and 
+name<IMG  ALIGN=BOTTOM ALT="" SRC="img23.gif">club, which means that the 
+original relation can be decomposed into two relations of 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img24.gif"> and <IMG  ALIGN=MIDDLE ALT="" SRC="img25.gif">. It is obvious that even if decomposed 
+relations are joined to a relation, no information loss occurs.
+<P>
+<P><A NAME=118>&#160;</A><A NAME=ttab4>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img26.gif">
+<BR><STRONG>Table 4:</STRONG> Decomposition by multivalued dependencies<BR>
+<P>
+<P>
+Dependencies other than functional and multivalued dependencies are 
+considered. The most important thing here is that joined relations have 
+the same amount of information as decomposed relations. Muximum 
+relationship among decomposable attributes are called join dependency.
+<P>
+Next, let's think about data manipulations of relations. In the relational
+model there are relational algebra which centers on set operations and
+relational calculus which uses first-order predicate calculus.
+<P>
+Relational algebra includes the following five operations.
+<P>
+<DL ><DT>(1)
+<DD> Union<BR> 
+	The union of two relations <b>R</b> and <b>S</b>, <IMG  ALIGN=BOTTOM ALT="" SRC="img27.gif"> is a set 
+	union of tuples in <b>R</b> and those in <b>S</b>.
+<P>
+ <DT>(2)
+<DD> Difference<BR> 
+	The difference of two relations <b>R</b> and <b>S</b>, <IMG  ALIGN=MIDDLE ALT="" SRC="img28.gif"> is
+	a set of tuples which belong to <b>R</b> and do not belong to <b>S</b>.
+<P>
+ <DT>(3)
+<DD> Cartesian Product<BR> 
+	The Cartesian product or direct product of two relations <b>R</b> 
+	and <b>S</b>, <IMG  ALIGN=MIDDLE ALT="" SRC="img29.gif"> is 
+	<P><IMG  ALIGN=BOTTOM ALT="" SRC="img30.gif"><P>
+<P>
+ <DT>(4)
+<DD> Selection<BR> 
+	To take a partial relation <IMG  ALIGN=BOTTOM ALT="" SRC="img31.gif"> which satisfies a conditional 
+	logical formula <b>C</b> out of a relation <b>R</b> is called selection
+	from <b>R</b> by <b>C</b>. The expression of the selection is
+	<IMG  ALIGN=MIDDLE ALT="" SRC="img32.gif">. <b>C</b> is a logical formula composed of 
+	attribute names, attribute values, arithmetic operators, 
+	comparison operatiors and logical operators. The evaluation of 
+	<b>C</b> is done by substituting attribute values of actual tuples 
+	for attibute names in <b>C</b>.
+<P>
+ <DT>(5)
+<DD> Projection<BR> 
+	This is an operation of making a new relation <b>S</b> whose
+	attributes are specified as <IMG  ALIGN=MIDDLE ALT="" SRC="img33.gif"> from relation
+	<b>R</b>. The operation is expressed as <IMG  ALIGN=MIDDLE ALT="" SRC="img34.gif">. For example, table<A HREF="node7.html#ttab3">3</A> is projected by name and 
+	hobby to make table<A HREF="node7.html#ttab4">4</A>(1).
+<P>
+ </DL>
+<P>
+The above basic operations are combined to define the following 
+operations.
+<P>
+<DL ><DT>(6)
+<DD> Intersection<BR> 
+	For two relations <b>R</b> and <b>S</b>,
+	<IMG  ALIGN=MIDDLE ALT="" SRC="img35.gif">.
+<P>
+ <DT>(7)
+<DD> <IMG  ALIGN=BOTTOM ALT="" SRC="img36.gif">-Join<BR> 
+	Suppose there are two relations <b>R</b> and <b>S</b>, and <IMG  ALIGN=MIDDLE ALT="" SRC="img37.gif"> and
+	<IMG  ALIGN=MIDDLE ALT="" SRC="img38.gif"> are attributes in <b>R</b> and <b>S</b> respectively. The
+	<IMG  ALIGN=BOTTOM ALT="" SRC="img39.gif">-join of <b>R</b> and <b>S</b> on <IMG  ALIGN=MIDDLE ALT="" SRC="img40.gif"> and <IMG  ALIGN=MIDDLE ALT="" SRC="img41.gif"> is a relation 
+	denoted by <IMG  ALIGN=MIDDLE ALT="" SRC="img42.gif">. Here,
+	<IMG  ALIGN=BOTTOM ALT="" SRC="img43.gif"> is an arithmetic comparison operator and if it is an 
+	equal, the operation is called equi-join. Furthermore, if the 
+	only one of the same attributes is left and the other is
+	removed from the equi-joined relation, the operation is called
+	natural-join.
+<P>
+ <DT>(8)
+<DD> Division<BR> 
+	Suppose there are two relations <b>R</b> and <b>S</b>, and denote tuples
+	in each relation 
+	<IMG  ALIGN=MIDDLE ALT="" SRC="img44.gif"> and <IMG  ALIGN=MIDDLE ALT="" SRC="img45.gif">.
+	The division <IMG  ALIGN=MIDDLE ALT="" SRC="img46.gif"> is an operation to find
+	<IMG  ALIGN=MIDDLE ALT="" SRC="img47.gif"> for which <IMG  ALIGN=MIDDLE ALT="" SRC="img48.gif">
+	are included in tuples of <b>R</b> for all <IMG  ALIGN=MIDDLE ALT="" SRC="img49.gif">. 
+	It is obvious that <IMG  ALIGN=MIDDLE ALT="" SRC="img50.gif">.
+<P>
+ </DL>
+<P>
+Those mentiond operations including the first five basic ones and 
+the latter three composites are so-called relational algebra.
+On the other hand, relational calculus is generaly a set of tuples 
+<IMG  ALIGN=MIDDLE ALT="" SRC="img51.gif"> which satisfies a logical formula <IMG  ALIGN=MIDDLE ALT="" SRC="img52.gif"> where an
+argument <b>t</b> is a tuple variable. It has been proved that all the 
+relational algebraic operations can be translated in relational 
+calculus and if the scope of tuple variables are specified, 
+they are equivalent.
+<P>
+<BR> <HR>
+<P>
+</BODY>

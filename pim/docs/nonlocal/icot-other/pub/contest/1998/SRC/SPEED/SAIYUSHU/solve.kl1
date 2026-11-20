@@ -1,0 +1,574 @@
+% solve.kl1
+% Copyright (C) 1998 TSURUOKA Yoshimasa (tsuruoka@logos.t.u-tokyo.ac.jp)
+% All rights reserved.
+
+:- module skeleton.
+
+solve(Size, Words, Out) :-
+	check_length(Words, Size, Words1),
+%	io:outstream([print(Words1), nl]),
+	dist_solve(Size, Words1, Out).
+
+
+%------------------------------------------------------------
+%	place_word(Board, Spelling, Row, Col, Dir, NewBoard)
+% places a word on the board
+%------------------------------------------------------------
+place_word(Board, Spelling, Row, Col, Dir, NewBoard) :-
+	string(Spelling, N, Dummy) |
+	( Dir = tb ->
+		place_word(Board, Spelling, Row, Col, 1, 0, N, NewBoard) ;
+	otherwise ; true ->
+		place_word(Board, Spelling, Row, Col, 0, 1, N, NewBoard) ).
+
+place_word(Board, Spelling, Row, Col, RowD, ColD, N, NewBoard) :-
+	place_word(Board, Spelling, Row, Col, RowD, ColD, 0, N, NewBoard).
+place_word(Board, Spelling, Row, Col, RowD, ColD, N, N, NewBoard) :-
+	Board = NewBoard.
+otherwise.
+place_word(Board, Spelling, Row, Col, RowD, ColD, I, N, NewBoard) :-
+	string_element(Spelling, I, Letter),
+	place_letter(Board, Row, Col, RowD, ColD, I, N, Letter, Board1),
+	Row1 := Row + RowD,
+	Col1 := Col + ColD,
+	place_word(Board1, Spelling, Row1, Col1, RowD, ColD, ~(I+1), N, NewBoard).
+
+%----------------------------------------------------------------------------
+%	place_letter(Board, Row, Col, RowDir, ColDir, I, N, Letter, NewBoard)
+% places a letter on the board
+% This predicate is called by place_word/9
+%----------------------------------------------------------------------------
+place_letter(board(Size, Bd, DirBd), Row, Col, RowD, ColD, I, N, Letter, NewBoard) :-
+	NewBoard = board(Size, NewBd, NewDirBd),
+	Index := Row*(Size+2)+Col,
+	set_vector_element(Bd, Index, Letter, NewBd),
+%	display(board(Size, NewDirBd, NewDirBd)),
+	( RowD = 1 ->
+		set_direction_mark(DirBd, Size, ~(Index-1), 0'|, DirBd1),
+		set_direction_mark(DirBd1, Size, ~(Index+1), 0'|, DirBd2),
+		set_direction_mark(DirBd2, Size, Index, 0'H, DirBd3) ;
+	otherwise ; true ->
+		set_direction_mark(DirBd, Size,~(Index-(Size+2)), 0'-, DirBd1),
+		set_direction_mark(DirBd1,Size,~(Index+(Size+2)), 0'-, DirBd2),
+		set_direction_mark(DirBd2,Size, Index, 0'=, DirBd3) ),
+	( I = 0 ->
+		Index1 := (Row-RowD)*(Size+2)+(Col-ColD),
+		set_vector_element(DirBd3, Index1, 0'*, NewDirBd) ;
+	otherwise ; I := N - 1 ->
+		Index1 := (Row+RowD)*(Size+2)+(Col+ColD),
+		set_vector_element(DirBd3, Index1, 0'*, NewDirBd) ;
+	otherwise ; true ->
+		NewDirBd = DirBd3 ).
+
+%---------------------------------------------------------
+%	set_direction_mark(DirBd, Size, Index, Mark, NewDirBd)
+% places a  direction-mark on the direction-board.
+% This predicate is called by place_letter/9
+%---------------------------------------------------------
+set_direction_mark(DirBd, Size, Index, Mark, NewDirBd) :-
+	vector_element(DirBd, Index, CurrentMark),
+	( CurrentMark = 0'* ->
+		NewDirBd = DirBd ;
+	otherwise ; Mark = 0'| , CurrentMark = 0'- ->
+		set_vector_element(DirBd, Index, 0'*, NewDirBd) ;
+	otherwise ; Mark = 0'-, CurrentMark = 0'| ->
+		set_vector_element(DirBd, Index, 0'*, NewDirBd) ;
+
+	otherwise ; Mark = 0'H, CurrentMark = 0'- ->
+		check_side_tb(Size, DirBd, Index, NewMark),
+		set_vector_element(DirBd, Index, NewMark, NewDirBd) ;
+	otherwise ; Mark = 0'-, CurrentMark = 0'H ->
+		check_side_tb(Size, DirBd, Index, NewMark),
+		set_vector_element(DirBd, Index, NewMark, NewDirBd) ;
+
+	otherwise ; Mark = 0'|, CurrentMark = 0'= ->
+		check_side_lr(Size, DirBd, Index, NewMark),
+		set_vector_element(DirBd, Index, NewMark, NewDirBd) ;
+	otherwise ; Mark = 0'=, CurrentMark = 0'| ->
+		check_side_lr(Size, DirBd, Index, NewMark),
+		set_vector_element(DirBd, Index, NewMark, NewDirBd) ;
+
+	otherwise ; Mark = 0'H, CurrentMark = 0'= ->
+		set_vector_element(DirBd, Index, 0'*, NewDirBd) ;
+	otherwise ; Mark = 0'=, CurrentMark = 0'H ->
+		set_vector_element(DirBd, Index, 0'*, NewDirBd) ;
+
+	otherwise ; true ->
+		set_vector_element(DirBd, Index, Mark, NewDirBd) ).
+
+%--------------------------------------------------------
+%	check_side
+
+check_side_tb(Size, DirBd, Index, Mark) :-
+	vector_element(DirBd, ~(Index-1), Dir1),
+	vector_element(DirBd, ~(Index+1), Dir2),
+	( Dir1 = 0'*, Dir2 = 0'* ->
+		Mark = 0'* ;
+	otherwise ; true ->
+		Mark = 0'H ).
+
+check_side_lr(Size, DirBd, Index, Mark) :-
+	vector_element(DirBd, ~(Index-(Size+2)), Dir1),
+	vector_element(DirBd, ~(Index+(Size+2)), Dir2),
+	( Dir1 = 0'*, Dir2 = 0'* ->
+		Mark = 0'* ;
+	otherwise ; true ->
+		Mark = 0'= ).
+
+
+%---------------------------------------------------------
+%	dist_solve(+Size, +Words, -Solution)
+% invokes single_solve/4 on each processor, giving different
+% seeds.
+%---------------------------------------------------------
+dist_solve(Size, Words, Out) :-
+	current_node(Dummy, N),
+	sort(Words, Sorted),
+	Sorted = [word(Id, Spelling, Points, Length)|Rest],
+%	builtin:print(word(Id, Spelling, Points, Length)),
+	randvec(Size, Length, N, InitVec),
+	dist_solve(Size, Sorted, ~(N-1), InitVec, Solutions),
+%	dist_solve(Size, Words, ~(N-1), Solutions),
+	generic:new(merge, Solutions, Solutions1),
+	max(Solutions1, Solution2),
+	filter_solutions(Solution2, Out).
+dist_solve(Size, Words, -1, InitVec, Out) :-
+	Out = [].
+otherwise.
+dist_solve(Size, Words, N, InitVec, Out) :-
+	vector_element(InitVec, N, InitList),
+	Out = {Out1, Out2},
+	single_solve(Size, Words, InitList, Out1)@node(N),
+	dist_solve(Size, Words, ~(N-1), InitVec, Out2).
+
+%----------------------------------------------------------
+%	single_solve(+Size, +Words, +Seed, -Solution)
+% solves the problem on a processor.
+% The predicate is called by dist_solve/3.
+%----------------------------------------------------------
+%single_solve(Size, Words, Out) :-
+%	single_solve(Size, Words, 0, Out).
+single_solve(Size, Words, InitList, Out) :-
+%	sort(Words, Sorted),
+%	Sorted = [word(Id, Spelling, Points, Length)|Rest],
+%	generic:new(random_numbers, Rand1, Size, ~(N*1997)),
+%	generic:new(random_numbers, Rand2, ~(Size-Length+1), ~(N*997)),
+	solve_different_init(Size, Words, InitList, Solutions),
+	generic:new(merge, Solutions, Solutions1),
+	max(Solutions1, Out).
+
+solve_different_init(Size, Words, 0, Out) :-
+	Out = [].
+otherwise.
+solve_different_init(Size, Words, [rowcol(Row, Col)|PosRest], Out) :-
+	Words = [word(Id, Spelling, Points, Length)|Rest] |
+	BoardSize := (Size+2)*(Size+2),
+	new_vector(Bd, BoardSize),
+	new_vector(DirBd, BoardSize),
+	Board = board(Size, Bd, DirBd),
+%	Row1 := Row+1,
+%	Col1 := Col+1,
+	place_word(Board, Spelling, Row, Col, lr, Board1), 
+	Solution = place(Id, Row, Col, lr, Points),
+	Out = {Out1, Out2},
+	Out1 = [[Solution]|Out1T],
+	search_position(Board1, 1, 1, Rest, [Solution],0,Out1T),
+	solve_different_init(Size, Words, PosRest, Out2)@lower_priority.
+
+%--------------------------------------------------------------
+randvec(Size, Length, N, NewVec) :-
+	make_initlist(Size, Length, Rowcols),
+	shuffle(Rowcols, Rowcols1),
+	new_vector(Vec, N),
+	randvec1(Vec, ~(N-1), ~(N-1), Rowcols1, NewVec).
+
+randvec1(Vec, I, N, [], NewVec) :-
+	NewVec = Vec.
+randvec1(Vec, -1, N, List, NewVec) :-
+	randvec1(Vec, N, N, List, NewVec).
+otherwise.
+randvec1(Vec, I, N, [Rowcol|Rest], NewVec) :-
+	vector_element(Vec, I, List),
+	set_vector_element(Vec, I, [Rowcol|List], Vec1),
+	randvec1(Vec1, ~(I-1), N, Rest, NewVec).
+	
+make_initlist(Size, Length, Out) :-
+	make_initlist(Size, 1, 1, Length, Out).
+make_initlist(Size, Row, Col, Length, Out) :-
+	Col := Size-Length+2, Row = Size |
+	Out = [].
+otherwise.
+make_initlist(Size, Row, Col, Length, Out) :-
+	Col := Size-Length+2 |
+	make_initlist(Size, ~(Row+1), 1, Length, Out).
+otherwise.
+make_initlist(Size, Row, Col, Length, Out) :-
+	Out = [rowcol(Row, Col)|Out1],
+	make_initlist(Size, Row, ~(Col+1), Length, Out1).
+
+%----------------------------------------------------------------
+shuffle(List, Out) :-
+	list_len(List, Len),
+	generic:new(random_numbers, Rand, 779, 12345),
+	shuffle(List, Rand, Len, Out).
+
+shuffle([], Rand, Len, Out) :-
+	Out = [].
+otherwise.
+shuffle(List, [N|Rest], Len, Out) :-
+	generic:new(random_numbers, [I|Rest1], Len, N),
+%	io:outstream([print(I), nl]),
+	take(List, ~(I+1), NewList, X),
+	Out = [X|Out1],
+	shuffle(NewList, Rest, ~(Len-1),Out1).
+
+take(List, N, Out, X) :-
+	take(List, 1, N, Out, X).
+take([Ele|Rest], N, N, Out, X) :-
+	X = Ele,
+	Out = Rest.
+otherwise.
+take([Ele|Rest], I, N, Out, X) :-
+	Out = [Ele|Out1],
+	take(Rest, ~(I+1), N, Out1, X).
+
+list_len(List, Len) :-
+	list_len(List, 0, Len).
+list_len([], N, Len) :-
+	N = Len.
+list_len([X|Rest], N, Len) :-
+	list_len(Rest, ~(N+1), Len).
+
+%-------------------------------------------------
+%	max(In, Out)
+% pass solutions whose score is max so far
+%-------------------------------------------------
+max(In, Out) :- max(In, 0, Out).
+max([], Max, Out) :- Out = [].
+max([Solution|Rest], Max, Out) :-
+	score(Solution, Score),
+	( Score > Max ->
+		Out = [Solution|Out1],
+%		io:outstream([print(Score), print(Solution), nl]),
+		max(Rest, Score, Out1) ;
+	otherwise; true ->
+		max(Rest, Max, Out) ).
+
+%---------------------------------------------
+%	score( +Solution, -Score)
+% calucate score from solution
+%---------------------------------------------
+score(Solution, Score) :- score(Solution, 0, Score).
+score([], Sum, Score) :- Score = Sum.
+score([place(Id, Row, Col, Dir, Points)|Rest], Sum, Score) :-
+	Sum1 := Sum + Points,
+	score(Rest, Sum1, Score).
+
+%------------------------------------------------
+%	filter_solutions(+In, -Out)
+%------------------------------------------------
+filter_solutions([], Out) :- Out = [].
+filter_solutions([Solution|Rest], Out) :-
+	wait(Solution) |
+	filter(Solution, Filtered),
+	Out = [Filtered|Out1],
+	filter_solutions(Rest, Out1).
+
+%------------------------------------------------
+%	filter(In, Out)
+% filter for output : zero-origin,.. etc
+%------------------------------------------------
+filter([], Out) :- Out = [].
+filter([place(Id, Row, Col, Dir, Points)|Rest], Out) :-
+	wait(Id), wait(Row), wait(Col), wait(Dir) |
+	Out = [place(Id, ~(Row-1), ~(Col-1), Dir)|Out1],
+	filter(Rest, Out1).
+
+%----------------------------------------------------------
+%	search_position(+Board, +Words, -Out)
+% searches positions where a word can be placed.
+%----------------------------------------------------------
+search_position(Board, Words, Out) :-
+	search_position(Board, 1, 1, Words, [], 0, Out).
+search_position(Board, Row, Col, [], Solution, Diff, Out) :-
+	Out = [].
+search_position(Board, Row, Col, Words, Solution, 0, Out) :-
+	Board = board(Size, Bd, DirBd),
+	Row := Size, Col := Size+1 |
+	Out = [].
+search_position(Board, Row, Col, Words, Solution, 1, Out) :-
+	Board = board(Size, Bd, DirBd),
+	Row := Size, Col := Size+1 |
+	search_position(Board, 1, 1, Words, Solution, 0, Out).
+otherwise.
+search_position(Board, Row, Col, Words, Solution, Diff, Out) :-
+	Board = board(Size, Bd, DirBd),
+	Col := Size+1 |
+	search_position(Board, ~(Row+1), 1, Words, Solution, Diff, Out).
+otherwise.
+search_position(Board, Row, Col, Words, Solution, Diff, Out) :-
+	Board = board(Size, Bd, DirBd) |
+	Index := Row*(Size+2) + Col,
+	vector_element(DirBd, Index, Dir),
+	( Dir = 0'= ->
+		search_word(Board, Row, Col, Words, Solution, Words, 0, tb, Diff, Out) ;
+	otherwise; Dir = 0'H ->
+		search_word(Board, Row, Col, Words, Solution, Words, 0, lr, Diff, Out) ;
+	otherwise; true ->
+		search_position(Board, Row, ~(Col+1), Words, Solution, Diff, Out) ).
+
+%----------------------------------------------------------------
+%	search_word( ... )
+% searches a placable word, and place it. 
+% This predicate is called by search_position.
+%----------------------------------------------------------------
+search_word(Board, Row, Col, Words, Solution, [], N, Dir, Diff, Out) :-
+	search_position(Board, Row, ~(Col+1), Words, Solution, Diff, Out).
+otherwise.
+search_word(Board, Row, Col, Words, Solution, [Word|Rest], N, Dir, Diff, Out) :-
+	Word = word(Id, Spelling, Points, Length),
+	N = Length |
+	search_word(Board, Row, Col, Words, Solution, Rest, 0, Dir, Diff, Out).
+otherwise.
+search_word(Board, Row, Col, Words, Solution, [Word|Rest], N, Dir, Diff, Out) :-
+	Board = board(Size, Bd, DirBd),
+	Word = word(Id, Spelling, Points, Length) |
+	Index := Row*(Size+2) + Col,
+	vector_element(Bd, Index, Letter),
+	generic:search_character(Spelling, N, ~(Length-1), Letter, I),
+	( I = -1 ->
+		search_word(Board, Row, Col, Words, Solution, Rest, 0, Dir, Diff, Out) ;
+	otherwise; true ->
+		check_place(Board, Row, Col, Word, I, Dir, YN),
+		( YN = yes ->
+			calc_head_position(Row, Col, Dir, I, Row1, Col1),
+			NewSolution = [place(Id, Row1, Col1, Dir, Points)|Solution],
+%			io:outstream([print(NewSolution), nl]),
+			Out = {Out1, Out2},
+			Out1 = [NewSolution|Out1Tail],
+
+%			generic:join(Bd, {}, CpBd),
+%			generic:join(DirBd, {}, CpDirBd),
+
+			place_word(Board,Spelling, Row1, Col1, Dir, NewBoard),
+
+			drop_word(Words, Id, Words1),
+
+%			NewBoard = board(Size, NewBd, NewDirBd),
+%			display(board(Size, NewBd, NewBd)),
+%			display(board(Size, NewDirBd, NewDirBd)),
+%
+			search_position(NewBoard, Row, ~(Col+1), Words1, NewSolution, 1, Out1Tail),
+			search_word(Board, Row, Col, Words, Solution, [Word|Rest], ~(I+1), Dir, Diff, Out2)@lower_priority;
+		otherwise; true ->
+			search_word(Board, Row, Col, Words, Solution, [Word|Rest], ~(I+1), Dir, Diff, Out) ) ).
+
+%---------------------------------------------------------
+%	calc_head_position(Row, Col, Dir, I, Row1, Col1)
+%---------------------------------------------------------
+calc_head_position(Row, Col, tb, I, Row1, Col1) :-
+	Row1 := Row - I,
+	Col1 := Col.
+calc_head_position(Row, Col, lr, I, Row1, Col1) :-
+	Col1 := Col - I, 
+	Row1 := Row.
+
+%--------------------------------------------------------------
+%	check_place(+Board, +Row, +Col, +Word, +I, +Dir, -YN)
+% checks if the word can be placed at the position.
+%--------------------------------------------------------------
+check_place(Board, Row, Col, Word, I, tb, YN) :-
+	Board = board(Size, Bd, DirBd),
+	Word = word(Id, Spelling, Points, Length) |
+	Row1 := Row - I,
+	Row2 := Row1 + Length - 1,
+	( Row1 > 0, Row2 < Size+1 ->
+		check_head_tail(Board, ~(Row1-1), Col, ~(Row2+1), Col, HT),
+		( HT = yes -> 
+			check_place1(Board, ~(Row1*(Size+2)+Col), Word, 0, tb, YN) ;
+		otherwise; true ->
+			YN = no );
+	otherwise; true ->
+		YN = no ).
+check_place(Board, Row, Col, Word, I, lr, YN) :-
+	Board = board(Size, Bd, DirBd),
+	Word = word(Id, Spelling, Points, Length) |
+	Col1 := Col - I,
+	Col2 := Col1 + Length - 1,
+	( Col1 > 0, Col2 < Size+1 ->
+		check_head_tail(Board, Row, ~(Col1-1), Row, ~(Col2+1), HT),
+		( HT = yes ->
+			check_place1(Board, ~(Row*(Size+2)+Col1), Word, 0, lr, YN) ;
+		otherwise; true ->
+			YN = no );
+	otherwise; true ->
+		YN = no ).
+
+check_head_tail(Board, Row1, Col1, Row2, Col2, YN) :-
+	Board = board(Size, Bd, DirBd) |
+	Index1 := Row1*(Size+2) + Col1,
+	Index2 := Row2*(Size+2) + Col2,
+	vector_element(Bd, Index1, Letter1),
+	vector_element(Bd, Index2, Letter2),
+	( Letter1 = 0, Letter2 = 0 ->
+		YN = yes;
+	otherwise; true ->
+		YN= no ).
+
+check_place1(Board, Row, Col, Word, J, Dir, YN) :-
+	Board = board(Size, Bd, DirBd) |
+	check_place1(Board, ~(Row*(Size+2)+Col), Word, J, Dir, YN).
+
+check_place1(Board, Index, Word, J, Dir, YN) :-
+	Word = word(Id, Spelling, Points, Length),
+	J = Length |
+	YN = yes.
+otherwise.
+check_place1(Board, Index, Word, J, tb, YN) :-
+	Board = board(Size, Bd, DirBd),
+	Word = word(Id, Spelling, Points, Length) |
+	vector_element(DirBd, Index, BdDir),
+	( BdDir = 0 ->
+		J1 := J+1, Index1 := Index + Size+2,
+		check_place1(Board, Index1, Word, J1, tb, YN);
+	otherwise; BdDir = 0'- ->
+		J1 := J+1, Index1 := Index + Size+2,
+		check_place1(Board, Index1, Word, J1, tb, YN);
+	otherwise; BdDir = 0'= ->
+		vector_element(Bd, Index, BoardLetter),
+		string_element(Spelling, J, WordLetter),
+		( BoardLetter = WordLetter ->
+			J1 := J+1, Index1 := Index + Size+2,
+			check_place1(Board, Index1, Word, J1, tb, YN);
+		otherwise; true ->
+			YN = no );
+	otherwise; true ->
+		YN = no ).
+
+check_place1(Board, Index, Word, J, lr, YN) :-
+	Board = board(Size, Bd, DirBd),
+	Word = word(Id, Spelling, Points, Length) |
+	vector_element(DirBd, Index, BdDir),
+	( BdDir = 0 ->
+		J1 := J+1, Index1 := Index + 1,
+		check_place1(Board, Index1, Word, J1, lr, YN);
+	otherwise; BdDir = 0'| ->
+		J1 := J+1, Index1 := Index + 1,
+		check_place1(Board, Index1, Word, J1, lr, YN);
+	otherwise; BdDir = 0'H ->
+		vector_element(Bd, Index, BoardLetter),
+		string_element(Spelling, J, WordLetter),
+		( BoardLetter = WordLetter ->
+			J1 := J+1, Index1 := Index + 1,
+			check_place1(Board, Index1, Word, J1, lr, YN);
+		otherwise; true ->
+			YN = no );
+	otherwise; true ->
+		YN = no ).
+
+%---------------------------------------------------------
+%	drop_word( +WordList, +Id, -Out)
+% drops a word which has an Identifier that is same as Id
+%---------------------------------------------------------
+drop_word([word(Id, Spelling, Points, Length)|Rest], Id1, Out) :- Id = Id1 |
+	Out = Rest.
+otherwise.
+drop_word([Word|Rest], Id, Out) :-
+	Out = [Word|Out1],
+	drop_word(Rest, Id, Out1).
+
+%-------------------------------------------------------
+%	display_solution( +Size, +Words, +Solution)
+% create board from Solution, and display board.
+%-------------------------------------------------------
+display_solution(Size, Words, Solution) :-
+	BoardSize := (Size+2)*(Size+2),
+	new_vector(Bd, BoardSize),
+	new_vector(DirBd, BoardSize),
+	Board = board(Size, Bd, DirBd),
+	display_solution1(Board, Words, Solution).
+display_solution1(Board, Words, []) :-
+	display(Board).
+display_solution1(Board, Words, [place(Id, Row, Col, Dir)|Rest]) :-
+	pickup_word(Words, Id, word(Dummy, Spelling, Dummy1)),
+	place_word(Board, Spelling, ~(Row+1), ~(Col+1), Dir, NewBoard),
+	display_solution1(NewBoard, Words, Rest).
+	
+%-----------------------------------------------
+%	pickup_word(+Words, +Id, -Word)
+% pick up a word whose Identifier is same as Id
+%------------------------------------------------
+pickup_word([word(Id, Spelling, Points)|Rest], Id1, Out) :- Id = Id1 |
+	Out = word(Id, Spelling, Points).
+otherwise.
+pickup_word([Word|Rest], Id, Out) :-
+	pickup_word(Rest, Id, Out).
+	
+%-----------------------------------------------------------
+%	display(+BoardSize, +Board, -Out, +OutT)
+% displays current status of the board
+%-----------------------------------------------------------
+display(Board) :-
+	klicio:klicio([stdout(normal(S))]),
+	display(Board, S, []).
+display(Board, Out, OutT) :- 
+        display(Board, 0, 0, Out, OutT).
+display(board(Size, Bd, DirBd), Row, Col, Out, OutT) :- 
+	Row := Size+2, Col := 0 |
+	Out = [nl|OutT].
+otherwise.
+display(board(Size, Bd, DirBd), Row, Col, Out, OutT) :- Col := Size+2 |
+        Out = [nl|Out1],
+	display(board(Size, Bd, DirBd), ~(Row+1), 0, Out1, OutT).
+otherwise.
+display(board(Size, Bd, DirBd), Row, Col, Out, OutT) :-
+	vector_element(Bd, ~(Row*(Size+2)+Col), Letter),
+	( Letter = 0 ->
+		Out = [putc(0'.)|Out1] ;
+	otherwise ; true ->
+		Out = [putc(Letter)|Out1] ),
+	display(board(Size, Bd, DirBd), Row, ~(Col+1), Out1, OutT).
+
+%-----------------------------------------------------------
+%        check_length(Words, BoardSize, Out)
+% drop words whose length is bigger than board's size
+%  and add length information.
+%-----------------------------------------------------------
+check_length([], Size, Out) :- Out = [].
+check_length([word(Id, Spelling, Points)|Rest], Size, Out) :-
+	string(Spelling, Length, Dummy) |
+	( Length > Size ->
+		check_length(Rest, Size, Out) ;
+	otherwise ; true ->
+		Out = [word(Id, Spelling, Points, Length)|OutT],
+		check_length(Rest, Size, OutT) ).
+
+%----------------------------------------------------------
+%	sort(Words, Words1)
+% sort words by points.
+%----------------------------------------------------------
+sort(X, Y) :- sort(X, Y, []).
+
+sort([], Y, Z) :- Y = Z.
+sort([P|X], Y, Z) :-
+   partition(P, X, X1, X2),
+   sort(X1, Y, [P|Y1]),
+   sort(X2, Y1, Z).
+
+partition(_, [], S, L) :-
+   S = [],
+   L = [].
+partition(P, [W|X], S, L) :- 
+   W = word(Id, Spelling, Points, Length),
+   P = word(Id1, Spelling1, Points1, Length1),
+   Points >= Points1 |
+   S = [W|S1],
+   partition(P, X, S1, L).
+partition(P, [W|X], S, L) :-
+   W = word(Id, Spelling, Points, Length),
+   P = word(Id1, Spelling1, Points1, Length1),
+   Points =< Points1 |
+   L = [W|L1],
+   partition(P, X, S, L1).
+
+

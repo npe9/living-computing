@@ -1,0 +1,42 @@
+﻿<HEAD>
+<TITLE> 【演習問題８：``ヘンキンの問題'' (TPTP/HEN001-5)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+
+<H1><A NAME=SECTION00380000000000000000> 【演習問題８：``ヘンキンの問題'' (TPTP/HEN001-5)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>dom(A),dom(B)--&gt;equal(divide(divide(A,B),A),zero).
+dom(A),dom(B),dom(C)
+    --&gt;equal(divide(divide(divide(A,B),divide(C,B)),
+                    divide(divide(A,C),B)),
+             zero).
+
+dom(A)--&gt;equal(divide(zero,A),zero).
+equal(divide(A,B),zero),equal(divide(B,A),zero)--&gt;equal(A,B).
+dom(A)--&gt;equal(divide(A,identity),zero).
+
+equal(divide(a,identity),zero)--&gt;false.
+
+dom(A)--&gt;equal(A,A).
+equal(A,B)--&gt;equal(B,A).
+equal(A,B),equal(B,C)--&gt;equal(A,C).
+
+equal(A,B),dom(C)--&gt;equal(divide(A,C),divide(B,C)).
+equal(A,B),dom(C)--&gt;equal(divide(C,A),divide(C,B)).
+
+true--&gt;dom(zero),dom(identity),dom(a).
+dom(A),dom(B)--&gt;dom(divide(A,B)).
+</PRE>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+
+</BODY>

@@ -1,0 +1,35 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> クライアント側のモジュール</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" クライアント側のモジュール">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html462 HREF="node37.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html460 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html456 HREF="node35.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html463 HREF="node37.html"> 処理の流れ</A>
+<B>Up:</B> <A NAME=tex2html461 HREF="node34.html"> システム構成</A>
+<B> Previous:</B> <A NAME=tex2html457 HREF="node35.html"> サーバ側のモジュール</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00043200000000000000> クライアント側のモジュール</A></H3>
+<P>
+ソースファイルの存在するディレクトリは、kappa/src/irpr/irpr_clientである。
+<P>
+<DL ><DT>main(irpr_client.kl1)
+<DD> 名簿管理システムのソケットクライ
+	アント。最初にサービス名を送る。次にコマンドパラメタを操作の区
+	別のために送る。次に標準入力をソケットに書き出し、ソケットから
+	の出力を標準出力に書き出す。
+ <DT>irpr_lib(irpr_lib.kl1)
+<DD>名簿管理システムのライブラリ。
+	主に標準入力からのデータをソケットに書き込み、ソケットから
+	入力したデータを標準出力に出力する。ソケットからストリングを
+	効率良く入力する工夫をしている。
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

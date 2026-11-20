@@ -1,0 +1,98 @@
+%*********************************************************************%
+%  pnm converter (palette control module)                             %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module palette.
+
+
+mask_color(color(R0, G0, B0), Mask, Color) :-
+	Color = color(R, G, B),
+	R := R0 /\ Mask,
+	G := G0 /\ Mask,
+	B := B0 /\ Mask.
+
+make_palette([color(CR, CG, CB) | Palette0], Index, R, G, B, Palette, CN) :-
+	CR = R, CG = G, CB = B |
+	Palette = [color(CR, CG, CB) | Palette0], CN = Index.
+otherwise.
+make_palette([Color | Palette0], Index, R, G, B, Palette, CN) :-
+	Index1 := Index + 1 |
+	Palette = [Color | Palette1],
+	make_palette(Palette0, Index1, R, G, B, Palette1, CN).
+make_palette([], Index, R, G, B, Palette, CN) :-
+	CN = Index,
+	Palette = [color(R, G, B)].
+
+decrease_palette(Palette0, Max, Palette, Table) :-
+	vector(Palette0, Size) |
+	palette_to_list(Palette0, 0, Size, PList0),
+	decrease(PList0, Max, 16'1, [], Palette, Table).
+decrease(PL0, Max, Mask, Table0, PL, Table) :-
+	mask_list(PL0, Mask, PL1),
+	decrease_table(PL1, 0, [], 0, PL2, Table1, Max0),
+	(Max0 =< Max ->
+		shallow_table([Table1 | Table0], Table),
+		PL2 = PL;
+	Max0 > Max ->
+		Mask1 := (Mask << 1) + 1,
+		decrease(PL2, Max, Mask1, [Table1 | Table0], PL, Table)
+	).
+
+shallow_table([Table0 | Tables], Table) :-
+	generic:new(vector, TV, Table0),
+	shallow_table(TV, Tables, Table).
+shallow_table(TV0, [Table0 | Tables], Table) :-
+	replace_table(TV0, Table0, Table1),
+	generic:new(vector, TV, Table1),
+	shallow_table(TV, Tables, Table).
+shallow_table(TV0, [], Table) :- Table = TV0.
+replace_table(TV, [Index | TL0], TL) :-
+	generic:element(TV, Index, NewIndex),
+	TL = [NewIndex | TL1],
+	replace_table(TV, TL0, TL1).
+replace_table(_TV, [], TL) :- TL = [].
+
+
+decrease_table([color(R, G, B) | PL0], Index, NewPL0, Max0, NewPL, Table, Max) :-
+	Index1 := Index + 1 |
+	make_palette(NewPL0, 0, R, G, B, NewPL1, NewIndex),
+	Table = [NewIndex | Table0],
+	(Max0 < NewIndex -> Max1 = NewIndex; Max0 =< NewIndex -> Max1 = Max0),
+	decrease_table(PL0, Index1, NewPL1, Max1, NewPL, Table0, Max).
+decrease_table([], NewPL0, _Index, Max0, NewPL, Table, Max) :-
+	NewPL = NewPL0, Table = [], Max = Max0.
+
+
+mask_list([], _Mask, PL) :- PL = [].
+mask_list([Color0 | PL0], Mask, PL) :-
+	mask_color(Color0, Mask, Color),
+	PL = [Color | PL1],
+	mask_list(PL0, Mask, PL1).
+
+palette_to_list(Palette, PaletteL) :-
+	generic:size(Palette, IndexMax),
+	palette_to_list(Palette, 0, IndexMax, PaletteL).
+palette_to_list(_Palette, Index, IndexMax, PaletteL) :-
+	Index >= IndexMax | PaletteL = [].
+palette_to_list(Palette, Index, IndexMax, PaletteL) :-
+	Index < IndexMax , Index1 := Index + 1 |
+	generic:element(Palette, Index, color(CR, CG, CB)),
+	PaletteL = [color(CR, CG, CB) | PaletteL1],
+	palette_to_list(Palette, Index1, IndexMax, PaletteL1).
+
+
+binary_palette(Palette0, Palette) :-
+	palette_to_list(Palette0, PL0),
+	binary_palette2(PL0, PL1),
+	generic:new(vector, Palette, PL1).
+binary_palette2([color(R, G, B) | PL0], NPL0) :-
+	R + G + B > 127 * 3 |
+	NPL0 = [0 | NPL],
+	binary_palette2(PL0, NPL).
+binary_palette2([color(R, G, B) | PL0], NPL0) :-
+	R + G + B =< 127 * 3 |
+	NPL0 = [1 | NPL],
+	binary_palette2(PL0, NPL).
+binary_palette2([], NPL) :- NPL = [].

@@ -1,0 +1,59 @@
+%%
+%% 5x5 poker - Sorting
+%%
+
+:- module solitaire_sort.
+
+sort(A,B):-
+	sort(A,B,[]).
+sort([], Out, C):-
+	Out = C.
+sort([X|In], Out, C):-
+	sort_insert(X,C,NC),
+	sort(In, Out, NC).
+
+	sort_insert(X, [], C):-
+		C = [X].
+	sort_insert(X, [Y|NY], C):- X=<Y |
+		C = [X|[Y|NY]].
+	sort_insert(X, [Y|NY], C):- X>Y |
+		C = [Y|NC],
+		sort_insert(X, NY, NC).
+
+sort_r(A,B):-
+	sort_r(A,B,[]).
+sort_r([], Out, C):-
+	Out = C.
+sort_r([X|In], Out, C):-
+	sort_insert_r(X,C,NC),
+	sort_r(In, Out, NC).
+
+	sort_insert_r(X, [], C):-
+		C = [X].
+	sort_insert_r(X, [Y|NY], C):- X>=Y |
+		C = [X|[Y|NY]].
+	sort_insert_r(X, [Y|NY], C):- X<Y |
+		C = [Y|NC],
+		sort_insert_r(X, NY, NC).
+
+sort_r_key(A,B):-
+	sort_r_key(A,KSA,[]),
+	eliminate_key(KSA, B).
+sort_r_key([], Out, C):-
+	Out = C.
+sort_r_key([X|In], Out, C):-
+	sort_insert_r_key(X,C,NC),
+	sort_r_key(In, Out, NC).
+
+	sort_insert_r_key(X, [], C):-
+		C = [X].
+	sort_insert_r_key(item(X,DX), [item(Y,DY)|NY], C):- X>=Y |
+		C = [item(X,DX)|[item(Y,DY)|NY]].
+	sort_insert_r_key(item(X,DX), [item(Y,DY)|NY], C):- X<Y |
+		C = [item(Y,DY)|NC],
+		sort_insert_r_key(item(X,DX), NY, NC).
+
+eliminate_key([], O):- O = [].
+eliminate_key([item(K,D)|N], O):- true |
+	O = [D|NO],
+	eliminate_key(N, NO).

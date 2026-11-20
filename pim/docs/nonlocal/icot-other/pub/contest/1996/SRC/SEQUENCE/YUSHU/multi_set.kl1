@@ -1,0 +1,97 @@
+%  Copyright (C) 1996 Haruhiko Usa  < usa@logos.t.u-tokyo.ac.jp >
+%						November 17, 1996
+
+:- module multi_set.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   1. マルチ集合 L を内部表現 M に変換: encode(L, M)
+
+encode(L,M) :- list(L) | encode:count(L,0,0,L,M).
+encode([],M) :- M=[].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   2. 内部表現 M をリスト表現 L に戻す: decode(M, L)
+
+decode([X,Xn|M],L) :- repeat(X,Xn,L,M).
+decode([],L) :- L=[].
+
+repeat(X,1,L,M) :-
+    L=[X|L2],
+    decode(M,L2).
+repeat(X,Xn,L,M) :- Xn>1, Xn1:=Xn-1 |
+    L=[X|L2],
+    repeat(X,Xn1,L2,M).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   3. 和集合 M0 ∪ M1 = M : union(M0, M1, M)
+
+union([X0,Xn0|L0],[X1|L1],L) :-  X0 < X1 |
+    L=[X0,Xn0|L2],
+    union(L0,[X1|L1],L2).
+union([X0|L0],[X1,Xn1|L1],L) :-  X1 < X0 |
+    L=[X1,Xn1|L2],
+    union([X0|L0],L1,L2).
+union([X,Xn0|L0],[X,Xn1|L1],L) :-  Xn:=Xn0 + Xn1 |
+    L=[X,Xn|L2],
+    union(L0,L1,L2).
+union([],L1,L) :- L=L1.
+union(L0,[],L) :- L=L0.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   4. 積集合 M0 ∩ M1 = M : intersection(M0, M1, M)
+
+intersection([X0,Xn0|L0],[X1|L1],L) :- X0 < X1 |
+    intersection(L0,[X1|L1],L).
+intersection([X0|L0],[X1,Xn1|L1],L) :- X1 < X0 |
+    intersection([X0|L0],L1,L).
+intersection([X,Xn0|L0],[X,Xn1|L1],L) :- Xn0 =< Xn1 |
+    L=[X,Xn0|L2],
+    intersection(L0,L1,L2).
+intersection([X,Xn0|L0],[X,Xn1|L1],L) :- Xn1 =< Xn0 |
+    L=[X,Xn1|L2],
+    intersection(L0,L1,L2).
+intersection([],_,L) :- L=[].
+intersection(_,[],L) :- L=[].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   5. 差集合 M0 ＼ M1 = M : difference(M0, M1, M)
+
+difference([X0,Xn0|L0],[X1|L1],L) :- X0 < X1 |
+    L=[X0,Xn0|L2],
+    difference(L0,[X1|L1],L2).
+difference([X0|L0],[X1,Xn1|L1],L) :- X1 < X0 |
+    difference([X0|L0],L1,L).
+difference([X,Xn0|L0],[X,Xn1|L1],L) :- Xn0 =< Xn1 |
+    difference(L0,L1,L).
+difference([X,Xn0|L0],[X,Xn1|L1],L) :- Xn1 < Xn0, Xn:=Xn0-Xn1 |
+    L=[X,Xn|L2],
+    difference(L0,L1,L2).
+difference([],_,L) :- L=[].
+difference(L0,[],L) :- L=L0.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   6. 重複を除いた集合 M  : contraction(M0, M)
+
+contraction([X,Xn|L],M) :-
+    M=[X,1|M1],
+    contraction(L,M1).
+contraction([],M) :- M=[].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   7. M(≠φ) の1要素 E と残りの集合 S(内部表現): choose(M, E, S)
+
+choose([X,Xn|L],E,S) :- Xn>1, Xn1:=Xn-1 |
+    E=X,
+    S=[X,Xn1|L].
+choose([X,1|L],E,S) :- 
+    E=X,
+    S=L.
+
+
+%%%%  multi_set EOF.
+

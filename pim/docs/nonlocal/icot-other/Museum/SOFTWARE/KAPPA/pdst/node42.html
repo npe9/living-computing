@@ -1,0 +1,47 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 名簿管理システムのサーバ</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 名簿管理システムのサーバ">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html528 HREF="node43.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html526 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html520 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html529 HREF="node43.html"> メッセージの実行</A>
+<B>Up:</B> <A NAME=tex2html527 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html521 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046100000000000000> 名簿管理システムのサーバ</A></H3>
+<P>
+以下に示すirpr_loop/4が名簿管理システムのサーバプロセスである。
+引数の意味は順に次の通り。
+<P>
+<DL ><DT>PreStatus
+<DD> 呼び出し元のステータス。
+ <DT>IrprITR
+<DD> 名簿管理サーバへのインタフェースストリーム。MSGは
+	Messageの略。
+ <DT>Mode
+<DD> 名簿管理サーバ生成時のモード(read_only｜
+	update)。read_onlyでは、テーブルの更新を許さない。
+ <DT>IFP
+<DD> kappaのインタフェースプロセスへのストリーム。
+<P>
+ </DL>
+<P>
+<PRE>irpr_loop(PreStatus,[MSG|IrprITR],Mode,IFP) :-
+        wait(PreStatus) |
+    exec(MSG,Mode,Status)+IFP+NewIFP,
+    irpr_loop(Status,IrprITR,Mode,NewIFP).
+otherwise.
+irpr_loop(_PreStatus,_IrprITR,_Mode,IFP) :-
+    IFP = [].
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

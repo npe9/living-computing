@@ -1,0 +1,116 @@
+
+	   KLIJava: KL1 to Java Compiler based on KLIC 3.002
+
+			    981209-SNAPSHOT
+
+  (C)1993, 1994, 1995 Institute for New Generation Computer Technology
+	       (Read COPYRIGHT for detailed information.)
+
+     (C)1996, 1997 Japan Information Processing Development Center
+	   (Read COPYRIGHT-JIPDEC for detailed information.)
+
+		  Copyright(C) 1998 Satoshi KURAMOCHI
+
+
+
+Introduction
+------------
+
+KLIJava is a compiler that compiles KL1 programs to Java programs.
+KLIJava is based on KLIC-3.002.
+
+Some programs in test directory will not work yet because of premature
+code.
+
+Manifest
+--------
+
+        compiler/	compiler
+	kl1/lang/	runtime library
+	test/		test programs
+
+Requirements
+------------
+
+    Compiler:		KLIC-3.002
+    Compiled Code:	JDK 1.1 or newer
+
+Confirmed Programs
+------------------
+
+  append.kl1, cmac.kl1, fact.kl1, fiblazy.kl1, hanoi.kl1, iotest.kl1,
+  kkqueen.kl1, life.kl1, mastermind.kl1, pascal.kl1, pp.kl1, primes.kl1,
+  primesp.kl1, prio.kl1, qlay.kl1, qsort.kl1
+
+Things to do
+------------
+
+  - Some builtin predicates (UNIX interface, timer, postmortem, etc.)
+  - Some generic objects (I/O etc.)
+  - Interface to Java (GUI, applet)
+  - Tracer
+  - Optimization
+  - Distributed execution mechanism
+  etc.
+
+New Features
+------------
+
+  - Inline Java :-)
+
+Compilation Instructions
+------------------------
+
+  To make compiler
+  % cd compiler
+  % make
+
+  To make runtime library
+  % cd ../kl1/lang
+  % make symlinks
+  % make
+
+How to execute test programs
+----------------------------
+
+  % setenv CLASSPATH $CLASSPATH:<top directory>
+  % ./compiler/kl1cmp foo.java
+  % cp foo.java Module_main.java
+  % javac Module_main.java
+  % java Module_main
+
+Benchmarks
+----------
+
+  compiler             KLIC      KLIJava (sec)
+  -----------------------------------------------------
+  primes(10000)        0.37      15.32        (x 41.40)
+  kkqueen(10)          0.33      15.34        (x 46.48)
+  life(120,38,38,4,4)  1.22      22.06        (x 18.08)
+  mastermind(3,3)      0.77      27.34        (x 35.51)
+
+  MMX-Pentium 266MHz, 64MB, Linux
+    KLIJava: JDK 1.1.5, w/o JIT
+             -ms32m -mx32m -noasyncgc -noclassgc -noverify
+    KLIC: 3.002, gcc -O2
+
+Distribution
+------------
+
+The latest version can be found at:
+    http://www.ueda.info.waseda.ac.jp/~satoshi/klijava/
+
+Please send bug-report or some comment to:
+    satoshi@ueda.info.waseda.ac.jp
+
+Bibliography
+------------
+
+  [1] Daigo Sekita. Inside KLIC Version 1.0, 1998
+
+  [2] jProlog  <http://www.cs.kuleuven.ac.be/~bmd/PrologInJava/>
+
+--
+Satoshi KURAMOCHI
+satoshi@ueda.info.waseda.ac.jp
+http://www.ueda.info.waseda.ac.jp/~satoshi/index-e.html

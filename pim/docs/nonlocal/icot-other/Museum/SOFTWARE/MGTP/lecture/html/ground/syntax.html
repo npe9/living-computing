@@ -1,0 +1,69 @@
+﻿<HTML>
+<title>
+ MGTP入力節の構文
+</title>
+<body bgcolor="white">
+<H1>MGTP入力節の構文</H1>
+
+
+MGTPの入力言語の標準的構文(シンタクス)について説明する。
+
+MGTPの入力節は、第1章で説明したように、
+正節(Positive clause)、負節(Negative clause)、混合節(Neutral clause)
+の3種類があるが、基本的にすべての節は含意(implicatoin)
+→ によって構成されている。
+含意の左辺を前件部(Antecedent)、後件部を(Consequent)と呼ぶ。
+
+正節の場合は、前件部を true に、
+また負節の場合は、後件部を false として記述する。
+値域限定の条件を満足しないような節については、あらかじめ
+dom 述語を用いることによって条件を
+満足するような節に変換することが可能である。
+
+この変換は、以下のように行なう。
+<UL><LI>
+値域限定の条件を満たさない節 A1,A2,...,An → B1;B2;...;Bm を、<P>
+A1, ..., An, dom(X1), ..., dom(Xk) → B1; ...; Bm <P>
+
+で置き換える。ただし、
+<P>{X1,...,Xk} = ∪[j=1;m] var(Bj)\∪[i=1;n] var(Ai)<P>
+である。
+<LI>
+節集合 S 中に現れる定数記号
+(定数記号が一つも現れない場合は、定数記号`<b>a</b>')
+の集合を consts(S)、関数記号の集合を
+functs(S)とするとき、
+節集合 S に dom 定義節集合
+<P>
+{true → dom(K) | K ∈ consts(S)} ∪ <BR>
+	{dom(X1),...,dom(Xn) →	{dom(Fn(X1,..,Xn)) | Fn ∈ functs(S)}
+
+<P>
+を加える。
+</UL>
+
+また、前件部、後件部においては、各対象言語を直接呼び出す
+ことも許されており、これにより整数間の比較演算などが可能になる。
+
+以下は、MGTP入力節のシンタクスについてBNFで記述したものである。
+<P><P>
+
+<center>
+<IMG SRC="image/syntax.gif" ALIGN=TOP ALT="Image : syntax">
+
+</center>
+
+ここで、Termは、PrologやKL1の項を表す。
+すなわち述語に相当する。変数の表現もPrologやKL1のそれに準ずる。
+また、Callは該当プログラムの呼び出し文を意味し、
+例えば、Prologでは {{X > Y}} や {{X1:=X+1,X1>Y}} などの
+ような記述が可能である。
+
+なお、細かいシンタクスの相違については各バージョンのマニュアルを参照
+されたい。
+
+<BR><BR><HR>
+<A HREF="ground.html">もどる</A>
+
+</body>
+</HTML>

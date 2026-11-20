@@ -1,0 +1,228 @@
+% -- for skeleton contest
+%
+% board.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+:- module board .
+
+%%% new -Board +Size
+%%% shift_tb +Size +OldBoard +ShiftLength -NewBoard
+%%% shift_lr +Size +OldBoard +ShiftLength -NewBoard
+%%% isPut_spell_tb +Spell +Length +Size +Board +Y +X -Chk
+%%% isPut_spell_lr +Spell +Length +Size +Board +Y +X -Chk
+%%% put_spell_tb +Size +Spell +Length +Y +X +OldBoard -NewBoard
+%%% put_spell_lr +Size +Spell +Length +Y +X +OldBoard -NewBoard
+
+%%% 中側では (Size+2)*(Size+2) の大きさになっているが
+%%% 外側からは Size * Size に見える
+
+new(Board, Size) :-
+	new_vector(Board, ~((Size+2)*(Size+2))) .
+
+
+
+%%% Board をずらす
+shift_tb(Size,OldBoard,ShiftLength, NewBoard) :- ShiftLength = 0 |
+	NewBoard=OldBoard .
+
+shift_tb(Size,OldBoard,ShiftLength, NewBoard) :- ShiftLength > 0 |
+	ShiftLength2 := ShiftLength * (Size+2),
+	VectorSize := (Size+2)*(Size+2),
+	shift_vector(OldBoard,VectorSize,ShiftLength2, NewBoard) .
+
+
+shift_lr(Size,OldBoard,ShiftLength, NewBoard) :- ShiftLength = 0 |
+	NewBoard=OldBoard .
+
+shift_lr(Size,OldBoard,ShiftLength, NewBoard) :- ShiftLength > 0 |
+	VectorSize := (Size+2)*(Size+2),
+	shift_vector(OldBoard,VectorSize,ShiftLength, NewBoard) .
+
+
+
+%%% vector 
+shift_vector(OldVector,VectorSize,ShiftLength, NewVector) :-
+	new_vector(TempVector, VectorSize), 
+	MaxIndex := VectorSize - ShiftLength ,
+
+	shift_vector(OldVector,ShiftLength,MaxIndex,0) +TempVector +NewVector .
+
+
+shift_vector(OldVector,ShiftLength,MaxIndex,N) -Vector :- N = MaxIndex |
+	true . 
+
+shift_vector(OldVector,ShiftLength,MaxIndex,N) -Vector :- N < MaxIndex |
+
+	vector_element(OldVector,N, Element),
+	tool:my_set_vector_element(~(ShiftLength+N),Element) -Vector ,
+
+	shift_vector(OldVector,ShiftLength,MaxIndex,~(N+1)) -Vector .
+
+
+
+% Board の Y,X の位置に Spell は置けるか
+isPut_spell_tb(Spell,Length, Size,Board,Y,X, Chk) :-
+	%% 前後が空いているか？
+	isEmpty(Size,Board,~(Y-1),X, Chk1),      % １つ前 Y - 1
+	isEmpty(Size,Board,~(Y+Length),X, Chk2), % １つ後 Y+Length-1 +1
+	tool:and(Chk1,Chk2,NowChk),
+	isPut_spell_tb(NowChk, Spell,Length,0, Size,Board,Y,X, Chk) .
+
+
+isPut_spell_tb(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = false | Chk=false .
+
+isPut_spell_tb(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = true, N = Length | Chk=true .
+
+isPut_spell_tb(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = true, N < Length | 
+
+	string_element(Spell,N, Letter),
+	isPut_letter_tb(Letter, Size,Board,~(Y+N),X, NowChk),
+
+	isPut_spell_tb(NowChk, Spell,Length,~(N+1), Size,Board,Y,X, Chk).
+
+
+% Board の Y,X の位置に Letter は置けるか？
+isPut_letter_tb(Letter, Size,Board,Y,X, Result) :-
+	board_element(Size,Board,Y,X, E), 
+	isPut_letter_tb(Letter, Size,Board,Y,X,E, Result).
+
+
+isPut_letter_tb(Letter, Size,Board,Y,X,E, Result) :- E = 0 |
+	isEmpty(Size,Board,Y,~(X-1), Chk1),
+	isEmpty(Size,Board,Y,~(X+1), Chk2),
+	tool:and(Chk1,Chk2, Result).
+
+isPut_letter_tb(Letter, Size,Board,Y,X,E, Result) :- E = Letter |
+	Result=true .
+
+otherwise .
+isPut_letter_tb(Letter, Size,Board,Y,X,E, Result) :-
+	Result=false .
+
+
+
+% Board の Y,X の位置に Spell は置けるか（left right)
+isPut_spell_lr(Spell,Length, Size,Board,Y,X, Chk) :-
+	%% 前後が空いているか？
+	isEmpty(Size,Board,Y,~(X-1),      Chk1), % １つ前 X - 1
+	isEmpty(Size,Board,Y,~(X+Length), Chk2), % １つ後 X + Length - 1 + 1
+	tool:and(Chk1,Chk2, NowChk),
+	isPut_spell_lr(NowChk, Spell,Length,0, Size,Board,Y,X, Chk).
+
+
+isPut_spell_lr(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = false | Chk=false .
+
+isPut_spell_lr(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = true, N = Length | Chk=true .
+
+isPut_spell_lr(PreChk, Spell,Length,N, Size,Board,Y,X, Chk) :-
+	PreChk = true, N < Length | 
+
+	string_element(Spell,N, Letter),
+	isPut_letter_lr(Letter, Size,Board,Y,~(X+N), NowChk),
+
+	isPut_spell_lr(NowChk, Spell,Length,~(N+1), Size,Board,Y,X, Chk).
+
+
+% Board の Y,X の位置に Letter は置けるか？
+isPut_letter_lr(Letter, Size,Board,Y,X, Result) :-
+	board_element(Size,Board,Y,X,E), 
+	isPut_letter_lr(Letter, Size,Board,Y,X,E, Result).
+
+
+isPut_letter_lr(Letter, Size,Board,Y,X,E, Result) :- E = 0 |
+	isEmpty(Size,Board,~(Y-1),X, Chk1),
+	isEmpty(Size,Board,~(Y+1),X, Chk2),
+	tool:and(Chk1,Chk2, Result).
+
+isPut_letter_lr(Letter, Size,Board,Y,X,E, Result) :- E = Letter |
+	Result=true.
+
+otherwise .
+isPut_letter_lr(Letter, Size,Board,Y,X,E, Result) :-
+	Result=false .
+
+
+
+%%% 置く 0'@ = 64 は空だけど置けないの印 (0'A = 65 の１個前)
+put_spell_tb(Size,Spell,Length,Y,X,Board, NewBoard) :-
+	set_board_element(Size,~(Y-1),X,0'@) -Board , % １つ前は置けませんの印
+	put_spell_tb(Size,Spell,Length,Y,X,0) +Board +NewBoard .
+
+put_spell_tb(Size,Spell,Length,Y,X,N) -Board :- N = Length |
+	set_board_element(Size,~(Y+N),X,0'@) -Board . % １つ後も置けませんの印
+
+put_spell_tb(Size,Spell,Length,Y,X,N) -Board :- N < Length |
+	string_element(Spell,N, Letter), 
+	set_board_element(Size,~(Y+N),X, Letter) -Board ,
+	put_spell_tb(Size,Spell,Length,Y,X,~(N+1)) -Board .
+
+
+%%% 置く
+put_spell_lr(Size,Spell,Length,Y,X,Board, NewBoard) :-
+	set_board_element(Size,Y,~(X-1),0'@) -Board , % １つ前は置けませんの印
+	put_spell_lr(Size,Spell,Length,Y,X,0) +Board +NewBoard .
+
+put_spell_lr(Size,Spell,Length,Y,X,N) -Board :- N = Length |
+	set_board_element(Size,Y,~(X+N),0'@) -Board . % １つ後も置けませんの印
+
+put_spell_lr(Size,Spell,Length,Y,X,N) -Board :- N < Length |
+	string_element(Spell,N, Letter),
+	set_board_element(Size,Y,~(X+N), Letter) -Board ,
+	put_spell_lr(Size,Spell,Length,Y,X,~(N+1)) -Board .
+
+
+
+%%% Y X の位置は空 (0 or 0'@) か ？
+isEmpty(Size,Board,Y,X, Chk) :-	Index := (Size+2) * (Y+1) + X+1,
+	%% E < 0'A : E = 0 or E = 0'@
+	vector_element(Board,Index, E), E <  0'A | Chk = true .
+
+isEmpty(Size,Board,Y,X, Chk) :-	Index := (Size+2) * (Y+1) + X+1,
+	vector_element(Board,Index, E), E >= 0'A | Chk = false .
+
+
+%%% Y X で指定される要素を参照する 
+board_element(Size,Board,Y,X, Element) :-
+	Index := (Size+2) * (Y+1) + X+1 ,
+	vector_element(Board,Index, Element).
+
+
+%%% Y X で指定される要素を変更する
+set_board_element(Size,Y,X,NewElement,OldBoard, NewBoard) :-
+	Index := (Size+2) * (Y+1) + X+1 ,
+	set_vector_element(OldBoard,Index,NewElement, NewBoard).
+
+
+
+%%% 表示する check用
+print(Size,Board) :-
+	klicio:klicio([stdout(normal(STDOUT))]),
+	print(Size,Board,0) +STDOUT +[] .
+
+
+print(Size,Vector,N) -Out :- N =:= Size + 2 | Out<=nl .
+print(Size,Vector,N) -Out :- N  <  Size + 2 |
+	print2(Size,Vector,N,0) -Out,
+
+	print(Size,Vector,~(N+1)) -Out .
+
+print2(Size,Vector,N,M) -Out :- M =:= Size + 2 | Out<=nl .
+print2(Size,Vector,N,M) -Out :- M  <  Size + 2 |
+	vector_element(Vector, ~(N *(Size+2) +M), Element),
+	print3(Element) -Out ,
+
+	print2(Size,Vector,N,~(M+1)) -Out .
+
+
+print3(Char)-Out :- Char = 0 | Out<=putc(95).
+print3(Char)-Out :- Char > 0 | Out<=putc(Char).
+
+%%% end

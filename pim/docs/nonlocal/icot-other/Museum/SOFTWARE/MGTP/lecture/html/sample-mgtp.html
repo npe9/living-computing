@@ -1,0 +1,281 @@
+﻿<html>
+<title>
+MGTP sample
+</title>
+
+<body bgcolor="white">
+<h1>MGTPによる記述例</h1>
+
+<HR>
+
+->隔地者である(ラクーン, レッドフォックス, log(隔地者_レッド)).<BR><BR>
+->隔地者である(レッドフォックス, ラクーン, <BR>
+　　　log(隔地者(ラクーン, レッドフォックス))).<BR><BR>
+->到達する(レッドフォックスの承諾, 電子メール, 7070015, log(到達_レッド)).<BR><BR>
+->発信される(レッドフォックスの承諾, 電子メール, 7070012, log(発信_レッド)).<BR><BR>
+->申し込む(ラクーン, レッドフォックス, レッドフォックスへのライセンス, <BR>
+　　　log(申込_レッドフォックス)).<BR><BR>
+->承諾する(レッドフォックス, ラクーン, レッドフォックスの承諾, <BR>
+　　　レッドフォックスへのライセンス, log(承諾_レッド)).<BR><BR>
+->ライセンス(ラクーン, 3000万円, レッドフォックス, <BR>
+　　　レッドフォックスへのライセンス, hp制作ソフト, <BR>
+　　　log(ライセンス_レッドフォックス)).<BR><BR>
+申し込む(ラクーン, A, B, C), 承諾する(A, ラクーン, D, B, E)-><BR>
+　　　-k(最初に承諾する(A, ラクーン, B, log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-契約が成立する(B, l(ラクーン, A), <BR>
+　　　log(事例111の契約不成立(A, B), C, E));<BR>
+　　　k(最初に承諾する(A, ラクーン, B, log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E))).<BR><BR>
+承諾する(A, B, C, D, E), 効力が発生する(C, F, G), 承諾する(H, B, I, J, K), <BR>
+　　　効力が発生する(I, L, M), {F<L}-><BR>
+　　　-最初に承諾する(H, B, J, <BR>
+　　　log(最初でない承諾(B, A, H, D, J, C, I, F, L), E, G, K, M)).<BR><BR>
+申し込む(ラクーン, A, B, C), 承諾する(A, ラクーン, D, B, E), <BR>
+　　　申し込む(ラクーン, A, B, F), 最初に承諾する(A, ラクーン, B, G), <BR>
+　　　ライセンス(ラクーン, 3000万円, A, B, hp制作ソフト, H)-><BR>
+　　　-k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k('<'(事例111の契約不成立(A, B), 事例111の契約成立(A, B), <BR>
+　　　log(defeated(事例111の契約成立(A, B), <BR>
+　　　事例111の契約不成立(A, B)), C, E, F, G, H))), <BR>
+　　　defeated(事例111の契約成立(A, B), <BR>
+　　　log(defeated(事例111の契約成立(A, B), <BR>
+　　　事例111の契約不成立(A, B)), C, E, F, G, H));k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k('<'(事例111の契約不成立(A, B), 事例111の契約成立(A, B), <BR>
+　　　log(defeated(事例111の契約成立(A, B), 事例111の契約不成立(A, B)), <BR>
+　　　C, E, F, G, H))).<BR><BR>
+申し込む(ラクーン, A, B, C), 承諾する(A, ラクーン, D, B, E), <BR>
+　　　申し込む(ラクーン, A, B, F), 承諾する(A, ラクーン, G, B, H)-><BR>
+　　　-k(defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　log(通常の契約成立(ラクーン, A, B), F, H))), <BR>
+　　　-k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k('<'(通常の契約成立(ラクーン, A, B), 事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　通常の契約成立(ラクーン, A, B)), C, E, F, H))), <BR>
+　　　defeated(事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　通常の契約成立(ラクーン, A, B)), C, E, F, H));<BR>
+　　　k(defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　log(通常の契約成立(ラクーン, A, B), F, H)));<BR>
+　　　k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k('<'(通常の契約成立(ラクーン, A, B), 事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　通常の契約成立(ラクーン, A, B)), C, E, F, H))).<BR><BR>
+申し込む(ラクーン, A, B, C), 承諾する(A, ラクーン, D, B, E), <BR>
+　　　申し込む(ラクーン, A, B, F), 最初に承諾する(A, ラクーン, B, G), <BR>
+　　　ライセンス(ラクーン, 3000万円, A, B, hp制作ソフト, H)-><BR>
+　　　-k(defeated(事例111の契約成立(A, B), <BR>
+　　　log(事例111の契約成立(A, B), F, G, H))), <BR>
+　　　-k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k('<'(事例111の契約成立(A, B), 事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　事例111の契約成立(A, B)), C, E, F, G, H))), <BR>
+　　　defeated(事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　事例111の契約成立(A, B)), C, E, F, G, H));<BR>
+　　　k(defeated(事例111の契約成立(A, B), <BR>
+　　　log(事例111の契約成立(A, B), F, G, H)));<BR>
+　　　k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k('<'(事例111の契約成立(A, B), 事例111の契約不成立(A, B), <BR>
+　　　log(defeated(事例111の契約不成立(A, B), <BR>
+　　　事例111の契約成立(A, B)), C, E, F, G, H))).<BR><BR>
+<BR>
+承諾する(A, B, C, D, E), 効力が発生する(C, F, G), 承諾する(H, B, I, J, K), <BR>
+　　　効力が発生する(I, L, M), {F<L}, 承諾する(H, B, N, J, O)-><BR>
+　　　-k-(最初に承諾する(H, B, J, log(最初の承諾(B, H, J), O))), <BR>
+　　　-k('<'(最初でない承諾(B, A, H, D, J, C, I, F, L), 最初の承諾(B, H, J), <BR>
+　　　log(defeated(最初の承諾(B, H, J), <BR>
+　　　最初でない承諾(B, A, H, D, J, C, I, F, L)), E, G, K, M, O))), <BR>
+　　　defeated(最初の承諾(B, H, J), <BR>
+　　　log(defeated(最初の承諾(B, H, J), <BR>
+　　　最初でない承諾(B, A, H, D, J, C, I, F, L)), E, G, K, M, O));<BR>
+　　　k-(最初に承諾する(H, B, J, <BR>
+　　　log(最初の承諾(B, H, J), O)));<BR>
+　　　k('<'(最初でない承諾(B, A, H, D, J, C, I, F, L), 最初の承諾(B, H, J), <BR>
+　　　log(defeated(最初の承諾(B, H, J), <BR>
+　　　最初でない承諾(B, A, H, D, J, C, I, F, L)), E, G, K, M, O))).<BR><BR>
+申し込む(ラクーン, A, B, C), 承諾する(A, ラクーン, D, B, E), <BR>
+　　　申し込む(ラクーン, A, B, F), 承諾する(A, ラクーン, G, B, H)-><BR>
+　　　-k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E))), <BR>
+　　　-k('<'(事例111の契約不成立(A, B), 通常の契約成立(ラクーン, A, B), <BR>
+　　　log(defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　事例111の契約不成立(A, B)), C, E, F, H))), <BR>
+　　　defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　log(defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　事例111の契約不成立(A, B)), C, E, F, H));<BR>
+　　　k(最初に承諾する(A, ラクーン, B, <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k(defeated(事例111の契約不成立(A, B), <BR>
+　　　log(事例111の契約不成立(A, B), C, E)));<BR>
+　　　k('<'(事例111の契約不成立(A, B), 通常の契約成立(ラクーン, A, B), <BR>
+　　　log(defeated(通常の契約成立(ラクーン, A, B), <BR>
+　　　事例111の契約不成立(A, B)), C, E, F, H))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 発信される(D, G, H, I), <BR>
+　　　隔地者である(J, K, L), 意思表示する(K, J, D, M, N), <BR>
+　　　到達する(D, O, P, Q), {P != H}-><BR>
+　　　-k(defeated(526条1項(A, B, D, H), log(526条1項(A, B, D, H), C, F, I))), <BR>
+　　　-k('<'(526条1項(A, B, D, H), 97条1項(J, K, D, P), <BR>
+　　　log(defeated(97条1項(J, K, D, P), 526条1項(A, B, D, H)), C, F, I, L, N, Q))), <BR>
+　　　defeated(97条1項(J, K, D, P), <BR>
+　　　log(defeated(97条1項(J, K, D, P), 526条1項(A, B, D, H)), C, F, I, L, N, Q));<BR>
+　　　k(defeated(526条1項(A, B, D, H), <BR>
+　　　log(526条1項(A, B, D, H), C, F, I)));<BR>
+　　　k('<'(526条1項(A, B, D, H), 97条1項(J, K, D, P), <BR>
+　　　log(defeated(97条1項(J, K, D, P), 526条1項(A, B, D, H)), C, F, I, L, N, Q))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 到達する(D, 電子メール, G, H), <BR>
+　　　隔地者である(I, J, K), 意思表示する(J, I, D, L, M), <BR>
+　　　到達する(D, N, O, P), {O != G}-><BR>
+　　　-k(defeated(到達主義(A, B, D, G), log(到達主義(A, B, D, G), C, F, H))), <BR>
+　　　-k('<'(到達主義(A, B, D, G), 97条1項(I, J, D, O), <BR>
+　　　log(defeated(97条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P))), <BR>
+　　　defeated(97条1項(I, J, D, O), <BR>
+　　　log(defeated(97条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P));<BR>
+　　　k(defeated(到達主義(A, B, D, G), <BR>
+　　　log(到達主義(A, B, D, G), C, F, H)));<BR>
+　　　k('<'(到達主義(A, B, D, G), 97条1項(I, J, D, O), <BR>
+　　　log(defeated(97条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 発信される(D, G, H, I), <BR>
+　　　隔地者である(J, K, L), 意思表示する(K, J, D, M, N), <BR>
+　　　到達する(D, O, P, Q), {P != H}-><BR>
+　　　-k(defeated(97条1項(J, K, D, P),  log(97条1項(J, K, D, P), L, N, Q))), <BR>
+　　　-k('<'(97条1項(J, K, D, P), 526条1項(A, B, D, H), <BR>
+　　　log(defeated(526条1項(A, B, D, H), 97条1項(J, K, D, P)), C, F, I, L, N, Q))), <BR>
+　　　defeated(526条1項(A, B, D, H), <BR>
+　　　log(defeated(526条1項(A, B, D, H), 97条1項(J, K, D, P)), C, F, I, L, N, Q));<BR>
+　　　k(defeated(97条1項(J, K, D, P), <BR>
+　　　log(97条1項(J, K, D, P), L, N, Q)));<BR>
+　　　k('<'(97条1項(J, K, D, P), 526条1項(A, B, D, H), <BR>
+　　　log(defeated(526条1項(A, B, D, H), 97条1項(J, K, D, P)), C, F, I, L, N, Q))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 到達する(D, 電子メール, G, H), <BR>
+　　　隔地者である(I, J, K), 承諾する(J, I, D, L, M), 発信される(D, N, O, P), {O != G}-><BR>
+　　　-k(defeated(到達主義(A, B, D, G), <BR>
+　　　log(到達主義(A, B, D, G), C, F, H))), <BR>
+-k('<'(到達主義(A, B, D, G), 526条1項(I, J, D, O), <BR>
+　　　log(defeated(526条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P))), <BR>
+　　　defeated(526条1項(I, J, D, O), <BR>
+　　　log(defeated(526条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P));<BR>
+　　　k(defeated(到達主義(A, B, D, G), <BR>
+　　　log(到達主義(A, B, D, G), C, F, H)));<BR>
+　　　k('<'(到達主義(A, B, D, G), 526条1項(I, J, D, O), <BR>
+　　　log(defeated(526条1項(I, J, D, O), 到達主義(A, B, D, G)), C, F, H, K, M, P))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 到達する(D, 電子メール, G, H), <BR>
+　　　隔地者である(I, J, K), 意思表示する(J, I, D, L, M), <BR>
+　　　到達する(D, N, O, P), {O != G}-><BR>
+　　　-k(defeated(97条1項(I, J, D, O), <BR>
+　　　log(97条1項(I, J, D, O), K, M, P))), <BR>
+　　　-k('<'(97条1項(I, J, D, O), 到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 97条1項(I, J, D, O)), C, F, H, K, M, P))), <BR>
+　　　defeated(到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 97条1項(I, J, D, O)), C, F, H, K, M, P));<BR>
+　　　k(defeated(97条1項(I, J, D, O), <BR>
+　　　log(97条1項(I, J, D, O), K, M, P)));<BR>
+　　　k('<'(97条1項(I, J, D, O), 到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 97条1項(I, J, D, O)), C, F, H, K, M, P))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 到達する(D, 電子メール, G, H), <BR>
+　　　隔地者である(I, J, K), 承諾する(J, I, D, L, M), 発信される(D, N, O, P), {O != G}-><BR>
+　　　-k(defeated(526条1項(I, J, D, O), <BR>
+　　　log(526条1項(I, J, D, O), K, M, P))), <BR>
+　　　-k('<'(526条1項(I, J, D, O), 到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 526条1項(I, J, D, O)), C, F, H, K, M, P))), <BR>
+　　　defeated(到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 526条1項(I, J, D, O)), C, F, H, K, M, P));<BR>
+　　　k(defeated(526条1項(I, J, D, O), <BR>
+　　　log(526条1項(I, J, D, O), K, M, P)));<BR>
+　　　k('<'(526条1項(I, J, D, O), 到達主義(A, B, D, G), <BR>
+　　　log(defeated(到達主義(A, B, D, G), 526条1項(I, J, D, O)), C, F, H, K, M, P))).<BR><BR>
+<BR>
+承諾する(A, B, C, D, E), 効力が発生する(C, F, G), 承諾する(H, B, I, J, K), <BR>
+　　　効力が発生する(I, L, M), {F<L}, 承諾する(H, B, N, J, O)-><BR>
+　　　-k-(最初に承諾する(H, B, J, log(最初の承諾(B, H, J), O))), <BR>
+　　　-k('<'(最初の承諾(B, H, J), 最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　log(defeated(最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　最初の承諾(B, H, J)), E, G, K, M, O))), <BR>
+　　　defeated(最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　log(defeated(最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　最初の承諾(B, H, J)), E, G, K, M, O));<BR>
+　　　k-(最初に承諾する(H, B, J, <BR>
+　　　log(最初の承諾(B, H, J), O)));<BR>
+　　　k('<'(最初の承諾(B, H, J), <BR>
+　　　最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　log(defeated(最初でない承諾(B, A, H, D, J, C, I, F, L), <BR>
+　　　最初の承諾(B, H, J)), E, G, K, M, O))).<BR><BR>
+<BR>
+申し込む(A, B, C, D), 承諾する(B, A, E, C, F)-><BR>
+　　　-k(defeated(通常の契約成立(A, B, C), <BR>
+　　　log(通常の契約成立(A, B, C), D, F))), 契約が成立する(C, l(A, B), <BR>
+　　　log(通常の契約成立(A, B, C), D, F));<BR>
+　　　　　　k(defeated(通常の契約成立(A, B, C), <BR>
+　　　log(通常の契約成立(A, B, C), D, F))).<BR><BR>
+<BR>
+申し込む(ラクーン, A, B, C), 最初に承諾する(A, ラクーン, B, D), <BR>
+　　　ライセンス(ラクーン, 3000万円, A, B, hp制作ソフト, E)-><BR>
+　　　-k(defeated(事例111の契約成立(A, B), <BR>
+　　　log(事例111の契約成立(A, B), C, D, E))), 契約が成立する(B, l(ラクーン, A), <BR>
+　　　log(事例111の契約成立(A, B), C, D, E));<BR>
+　　　　　　k(defeated(事例111の契約成立(A, B), <BR>
+　　　log(事例111の契約成立(A, B), C, D, E))).<BR><BR>
+<BR>
+隔地者である(A, B, C), 意思表示する(B, A, D, E, F), 到達する(D, G, H, I)-><BR>
+　　　-k(defeated(97条1項(A, B, D, H), <BR>
+　　　log(97条1項(A, B, D, H), C, F, I))), 効力が発生する(D, H, <BR>
+　　　log(97条1項(A, B, D, H), C, F, I));<BR>
+　　　　　　k(defeated(97条1項(A, B, D, H), <BR>
+　　　log(97条1項(A, B, D, H), C, F, I))).<BR><BR>
+<BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 発信される(D, G, H, I)-><BR>
+　　　-k(defeated(526条1項(A, B, D, H), <BR>
+　　　log(526条1項(A, B, D, H), C, F, I))), 効力が発生する(D, H, <BR>
+　　　log(526条1項(A, B, D, H), C, F, I));<BR>
+　　　　　　k(defeated(526条1項(A, B, D, H), <BR>
+　　　log(526条1項(A, B, D, H), C, F, I))).<BR><BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 到達する(D, 電子メール, G, H)-><BR>
+　　　<BR>
+　　　-k(defeated(到達主義(A, B, D, G), <BR>
+　　　log(到達主義(A, B, D, G), C, F, H))), 効力が発生する(D, G, <BR>
+　　　log(到達主義(A, B, D, G), C, F, H));<BR>
+　　　　　　k(defeated(到達主義(A, B, D, G), <BR>
+　　　log(到達主義(A, B, D, G), C, F, H))).<BR><BR>
+申し込む(A, B, C, D), 承諾する(B, A, E, C, F)-><BR>
+　　　'<'(通常の契約成立(A, B, C), 事例111の契約不成立(B, C), <BR>
+　　　log(事例111の契約不成立pr(A, B, C), D, F)).<BR><BR>
+<BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 発信される(D, G, H, I), 到達する(D, J, K, L)-><BR>
+　　　'<'(97条1項(A, B, D, K), 526条1項(A, B, D, H, K), <BR>
+　　　log(526条1項pr(A, B, D, K, H), C, F, I, L)).<BR><BR>
+<BR>
+隔地者である(A, B, C), 承諾する(B, A, D, E, F), 発信される(D, G, H, I), 到達する(D, J, K, L)-><BR>
+　　　'<'(526条1項(A, B, D, H), 到達主義(A, B, D, K, H), <BR>
+　　　log(通説pr(A, B, D, H, K), C, F, I, L)).<BR><BR>
+<BR>
+承諾する(A, B, C, D, E)-><BR>
+　　　-k-(最初に承諾する(A, B, D, <BR>
+　　　log(最初の承諾(B, A, D), E))), 最初に承諾する(A, B, D, <BR>
+　　　log(最初の承諾(B, A, D), E));<BR>
+　　　k-(最初に承諾する(A, B, D, <BR>
+　　　log(最初の承諾(B, A, D), E))).<BR><BR>
+<BR>
+承諾する(A, B, C, D, E)-><BR>
+　　　意思表示する(A, B, C, D, <BR>
+　　　log(意思表示_承諾(B, A, D, C), E)).<BR>
+<BR>
+<!-- =============================================================== -->
+
+<P><HR>
+<A HREF="hypoExample.html">「MGTP 上での仮説推論の例」に戻る</A>
+</body>
+</html>

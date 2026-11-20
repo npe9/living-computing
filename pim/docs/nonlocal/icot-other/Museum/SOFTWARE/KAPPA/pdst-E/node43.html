@@ -1,0 +1,58 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Execution of messages</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Execution of messages">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html538 HREF="node44.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html536 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html530 HREF="node42.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html539 HREF="node44.html"> Searching for records</A>
+<B>Up:</B> <A NAME=tex2html537 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html531 HREF="node42.html"> Irpr system server</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046200000000000000> Execution of messages</A></H3>
+<P>
+The first arguments of exec/5 shown below are the messages.
+<P>
+<PRE>exec(search_current_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(current,Search_cond,ComStatus,Status)-IFP.
+    % searches the current data
+exec(search_history_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(history,Search_cond,ComStatus,Status)-IFP.
+    % searches the historical data
+exec(search_all_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(all,Search_cond,ComStatus,Status)-IFP.
+    % searches both the current and the historical data
+exec(add_new_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    add_new_member(Status1,Member_info,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % adds the member information
+exec(modify_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    modify_member(Status1,Member_info,modify,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % modifies the member information
+exec(delete_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    modify_member(Status1,Member_info,delete,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % deletes the member information
+otherwise.
+exec(MSG,_Mode,Status)-IFP :-
+        functor(MSG, _P, A), arg(A, MSG, ComStatus) |
+    ComStatus = abnormal({&quot;Illegal Message or You can not update&quot;},end),
+    Status = normal.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

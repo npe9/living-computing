@@ -1,0 +1,79 @@
+% -- for skeleton contest
+%
+% letter_list.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+%%% letter_list 文字を置いた場所のリスト
+:- module letter_list .
+
+%%% new +Spell +Length +Y +X +Dir -Result Pos の場所は除外
+
+%%% 上〜下 top bottom 
+new_tb(Spell,Length,Pos,Y,X, Result) :-
+	new_tb2(Spell,Length,Pos,Y,X,0, Result).
+
+
+new_tb2(Spell,Length,Pos,Y,X,N, Result) :- N = Length | Result=[].
+new_tb2(Spell,Length,Pos,Y,X,N, Result) :- N < Length , N = Pos |
+	new_tb2(Spell,Length,Pos,Y,X, ~(N+1), Result).
+
+otherwise .
+new_tb2(Spell,Length,Pos,Y,X,N, Result) :- N < Length |
+	string_element(Spell,N, Letter),
+	%% 合わせられる方向は lr
+	Result=[letter(Letter,~(Y+N),X,lr)|Tail],
+	new_tb2(Spell,Length,Pos,Y,X,~(N+1), Tail).
+
+
+%%% 左〜右 left right
+new_lr(Spell,Length,Pos,Y,X, Result) :-
+	new_lr2(Spell,Length,Pos,Y,X,0, Result).
+
+
+new_lr2(Spell,Length,Pos,Y,X,N, Result) :- N = Length | Result=[].
+new_lr2(Spell,Length,Pos,Y,X,N, Result) :- N < Length , N = Pos |
+	new_lr2(Spell,Length,Pos,Y,X,~(N+1), Result).
+
+otherwise .
+new_lr2(Spell,Length,Pos,Y,X,N, Result) :- N < Length |
+	string_element(Spell,N, Letter),	
+	%% 合わせられる方向は tb	
+	Result=[letter(Letter,Y,~(X+N),tb)|Tail],	
+	new_lr2(Spell,Length,Pos,Y,X,~(N+1), Tail).
+
+
+
+%%% shift
+
+shift_tb(Shift,OldLetterFSList, NewLetterFSList) :- Shift = 0 | % 何もしない
+	OldLetterFSList = NewLetterFSList .
+
+shift_tb(Shift,OldLetterFSList, NewLetterFSList) :- Shift > 0 | 
+	shift_tb2(OldLetterFSList,Shift, NewLetterFSList).
+
+
+shift_tb2([],        Shift, Result) :- Result = [].
+shift_tb2([One|Rest],Shift, Result) :- Result = [New|Tail], 
+	One=letter(Letter,Y,X,Dir),
+	New=letter(Letter,~(Y+Shift),X,Dir),
+	shift_tb2(Rest,Shift, Tail).
+
+
+
+shift_lr(Shift,OldLetterFSList, NewLetterFSList) :- Shift = 0 |
+	OldLetterFSList = NewLetterFSList .
+
+shift_lr(Shift,OldLetterFSList, NewLetterFSList) :- Shift > 0 | 
+	shift_lr2(OldLetterFSList,Shift, NewLetterFSList).
+
+
+shift_lr2([],        Shift, Result) :- Result=[] .
+shift_lr2([One|Rest],Shift, Result) :- Result=[New|Tail], 
+	One=letter(Letter,Y,X,Dir),
+	New=letter(Letter,Y,~(X+Shift),Dir),
+	shift_lr2(Rest,Shift, Tail).
+
+%%% end

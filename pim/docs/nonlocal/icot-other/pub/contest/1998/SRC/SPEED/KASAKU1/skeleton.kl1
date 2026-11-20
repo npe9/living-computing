@@ -1,0 +1,834 @@
+% a skeleton puzzle solver	Copyright (C) Norio KATO, 1998
+
+:- module skeleton.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+
+AnsStream   (ansstream) list of ans(Answer)
+- Answer    (answer)    list of place(WordID,Row,Col,Orientation)
+
+Out         (outstream) list of ans(Screen,Quality,FrameLeft,FrameTop)
+- Screen    (screen)    list of place(WordID,X,Y,D)
+- Quality   total score, the sum of grades of the placed words
+- FrameLeft left margin (=<0)
+- FrameTop  top margin  (=<0)
+
+S           (screen)    list of place(WordID,X,Y,D)
+- is a placed word list.
+
+F           (frame)     f(FrameLeft,FrameTop,FrameRight,FrameBottom)
+- is a minimum bounding rectangle of the placed words.
+  The upper-left geometry of the first placed word
+  is internally at (0,0) and externally at (-FrameLeft,-FrameTop).
+- FL        FrameLeft   (left margin)
+- FT        FrameTop    (top margin)
+- FS        FrameRight  (frame stop)
+- FD        FrameBottom (frame down)
+
+          FL        FS
+          :         : 
+          :     /   : 
+   FT ~ ~ |~~~~~f~| :      Assume FT = -1 and FL = 0.
+        / H e l l o /      If Hello is the first placed word,
+          |     a |        then H is at (0,0),
+          |     g |        which is externally at (x=0, y=1),
+   FD ~ ~ ~~~~~~/~~        which is reported as (row=1, col=0)
+
+B       (B-list or free words list) list of b(WordID,C)
+- C     (C-list) list of all the potential connections for WordID
+
+C       (C-list or connection list) list of c(WordID,Index,LenT,T)
+- is usually LenT ascendingly sorted.
+- T       list of possible connection buddy at Index of WordID
+- LenT    length of T
+
+T       (T-list) list of t(BuddyWordID,BuddyAtHeadBut,BuddyAtTailBut)
+- BuddyWordID     WordID of the connection buddy
+- BuddyAtHeadBut  connecting index from head of the buddy word
+- BuddyAtTailBut  connecting index from tail of the buddy word
+
+G     (geometry) list of g(X,Y,Letter,WordID,AtHeadBut)
+- maps geometry (X,Y) to Letter,WordID,AtHeadBut
+-         or to (Letter,WordID,AtHeadBut) = (empty,_,_) for stop blocks
+- Letter          the letter at (X,Y)
+- WordID          WordID of word occurring (first) at (X,Y)
+- AtHeadBut       occurring index at (X,Y) of WordID
+
+W     (word list) list of w(WordID,WordCharList,WordGrade,WordLen)
+- WordCharList   list of shifted char codes (0 for 'A') composing the word
+- WordGrade      given grade of the word
+- WordLen        length of WordCharList
+    example: For word(b, "BEE", 8), w(b,[1,4,4],8,3)
+*/
+
+% solve(+Size,+Words,-AnsStream).
+% - solves the problem.
+% - Size        (extension) size of board
+% - Words       list of word(WordID,WordSpell,WordGrade)
+% - AnsStream   list of Answer
+% + Answer      list of place(WordID,Left,Top,Orientation)
+% + Problem     grade ascendingly sorted Words
+% + PNew        grade descendingly sorted list of usable WordID
+
+solve(Size,Words,AnsStream) :-
+	qsort_words(Words,Problem,[]),
+	init_wordlist(Problem,Size,PNew,WL,Unigram),
+	init_b(WL,WL,Unigram,BList),
+	output(0,OutStream,AnsStream),
+	current_node(_,PEs),
+	HalfPE := PEs/2,
+	solve1(PNew,WL,BList,Size,1,HalfPE,OutStream)@lower_priority.
+
+% solve1(+SortedWordList,+WL,+BList,+Size,+PE,+RestPE,-OutStream).
+% - places firstly a grade highest word in (0,0) to the right
+% - SortedWordList    grade descending list of WordID
+
+solve1([],_,_,_,_,_,OutStream) :- OutStream=[].
+solve1([W|W1],WL,BList,Size,PE,PE1,OutStream) :-
+	generic:new(merge,{Out1,Out2},OutStream),
+	do_place(W,0,0,lr,[],BList,[],f(0,0,1,1),[],0,Size,WL,Out1)@node(PE),
+	unload_b_entry(BList,W,_,BList1),
+	solve1(W1,WL,BList1,Size,PE1,PE1,Out2)@lower_priority(16).
+
+% init_wordlist(+P,+E,-PR,-L,-UR).
+% - initializes internal static tables.
+% - P     grade descending list of word(WordID,WordSpell,WordGrade)
+% - PR    grade descending list of WordID that the board can contain
+% - E     (extension) the size of the board
+% - L     translated word list of w(WordID,WordCharList,WordGrade,WordLen)
+% - UR    the unigram, 26-vector of list of
+%         t(BuddyWordID,BuddyAtHeadBut,BuddyAtTailBut)
+
+init_wordlist(P,E,PR,L,UR) :-
+	generic:new(vector,U,[[],[],[],[],[],[],[],[],[],[],[],[],[],
+		[],[],[],[],[],[],[],[],[],[],[],[],[]]),
+	init_wordlist1(P,E,PR,L,U,UR).
+
+init_wordlist1([],_,PR,L,U,UR) :- PR=[], L=[], U=UR.
+init_wordlist1([word(_,Z,_)|P],E,PR,L,U,UR) :- string(Z,B,_), B>E |
+	init_wordlist1(P,E,PR,L,U,UR).
+init_wordlist1([word(W,Z,G)|P],E,PR,L,U,UR) :- string(Z,B,_), B=<E |
+	init_wordlist2(Z,W,0,B,U,I,S,U1),
+	L=[w(W,I,G,S)|L1], PR=[W|PR1],
+	init_wordlist1(P,E,PR1,L1,U1,UR).
+
+init_wordlist2(_,_,B,B,U,IR,SR,UR) :- IR=[], SR=0, U=UR.
+otherwise.
+init_wordlist2(Z,W,A,B,U,IR,SR,UR) :-
+	string_element(Z,A,E),
+	I:=E-0'A,  A1:=A+1, IR=[I|I1],
+	vector_element(U,I,L,U1),
+	init_wordlist2(Z,W,A1,B,U2,I1,S,UR),
+	set_vector_element(U1,I,[t(W,A,S)|L],U2), SR:=S+1.
+
+% init_b(+WL1,+WL,+U,-B).
+% - creates initial B-list, the free words list.
+% - WL1 rest list of WL
+% - WL  original list of w(WordID,CharList,_,_)
+% - U   the unigram
+% - B   B-list of b(WordID,C) where
+% - C   list of c(WordID,Index,LenT,T) where
+% - T   list of t(BuddyWordID,BuddyAtHeadBut,BuddyAtTailBut)
+
+init_b([],_,_,B) :- B=[].
+init_b([w(W,I,_,_)|L],WL,U,B) :-
+	init_b1(W,I,0,WL,U,U1,C), B=[b(W,C)|B1],
+	init_b(L,WL,U1,B1).
+
+init_b1(_,[],_,_,U,UR,C) :- U=UR, C=[].
+init_b1(W,[I|I1],N,WL,U,UR,C) :-
+	vector_element(U,I,L,U1),
+	init_b2(W,L,A,T), C=[c(W,N,A,T)|C1], N1:=N+1,
+	init_b1(W,I1,N1,WL,U1,UR,C1).
+
+init_b2(_,[],AR,TR) :- AR=0, TR=[].
+init_b2(W,[t(W,_,_)|L],AR,TR) :- init_b2(W,L,AR,TR).
+otherwise.
+init_b2(W,[T|L],AR,TR) :- TR=[T|T1], init_b2(W,L,A,T1), AR:=A+1.
+
+% qsort_words(+W,-L,+LR).
+% - ascendingly quicksorts elements word(_,_,Grade) of W by Grade.
+% - W     list of word(_,_,Grade)
+% - L,LR  d-list of sorted elements word(_,_,Grade)
+
+qsort_words([],    L,LR) :- L=LR.
+qsort_words([W|W1],L,LR) :- W=word(_,_,G) |
+	qsort_words1(W1,G,W1GE,W1LT),
+	qsort_words(W1GE,L,[W|L1]),
+	qsort_words(W1LT,L1,LR).
+qsort_words1([],    _,LGE,LLT) :- LGE=[], LLT=[].
+qsort_words1([W|W1],G,LGE,LLT) :- W=word(_,_,G1), G1>=G |
+	LGE=[W|LGE1], qsort_words1(W1,G,LGE1,LLT).
+qsort_words1([W|W1],G,LGE,LLT) :- W=word(_,_,G1), G1<G |
+	LLT=[W|LLT1], qsort_words1(W1,G,LGE,LLT1).
+
+% output(+MaxQuality,+OutStream,-AnsStream).
+% - outputs final answer list with quality ascending
+% - MaxQuality  hitherto maximum quality
+% - OutStream   list of ans(Screen,Quality,FrameLeft,FrameTop)
+% - AnsStream   list of Answer
+% - Answer      list of place(WordID,Left,Top,Orientation)
+
+output(M,[ans(S,Q,FL,FT)|Out],X) :- M<Q |
+	output1(S,FL,FT,T),
+	X=[T|X1],
+	% X=[debug_output(Q,T)|X1],		% You may want to output quality
+	output(Q,Out,X1).
+%output(M,[debug(T)|Out],X) :- 		% You may want to send debug messages
+%	X=[debug(T)|X1], output(M,Out,X1).
+otherwise.
+output(M,[_|Out],X) :- output(M,Out,X).
+output(_,[],X) :- X=[].
+
+output1([],_,_,T) :- T=[].
+output1([place(W,X,Y,D)|S],FL,FT,T) :- X1:=X-FL, Y1:=Y-FT,
+	T=[place(W,Y1,X1,D)|T1], output1(S,FL,FT,T1).
+%
+
+%%%%%%%%%%%%%%%
+
+% reduce2(+C,+B,+G,+F,+S,+Q,+E,+WL,-Out).
+% - selects spot V[M] with the least connection paths of C and calls reduce3.
+% - C         (C-list)
+% - B         (free words list)
+% - G         (geometry)
+% - F         (frame) f(FrameLeft,FrameTop,_,_)
+% - S         (screen) list of place(WordID,X,Y,D)
+% - Q         quality of S
+% - E         extension (size of the board)
+% - Out       (outstream) list of ans(Screen,Quality,FrameLeft,FrameTop)
+
+reduce2([],_,_,f(FL,FT,_,_),S,Q,_,_,Out) :- wait(FL), wait(FT) |
+	Out=[ans(S,Q,FL,FT)].
+reduce2([c(V,M,A,T)|C],B,G,F,S,Q,E,WL,Out) :- A<5 |
+	lookup_place(S,V,X,Y,D),
+	reduce3(V,X,Y,D,M,T,C,B,G,F,S,Q,E,WL,Out).
+reduce2([c(V,M,A,T)|C],B,G,F,S,Q,E,WL,Out) :- A>=5 |
+	lookup_place(S,V,X,Y,D),
+	T =[T1,T2,T3|TB],
+	TA=[T1,T2,T3|okay],
+	current_node(PE,PEs), PE1 := (PE+1) mod PEs,
+	generic:new(merge,{Out1,Out2},Out),
+	reduce3(V,X,Y,D,M,TB,C,B,G,F,S,Q,E,WL,Out1)@node(PE1),
+	reduce3(V,X,Y,D,M,TA,C,B,G,F,S,Q,E,WL,Out2).
+
+% reduce3(+WordID,+X,+Y,+D,+M,+T,+C,+B,+G,+F,+S,+Q,+E,+WL,-Out) :- 
+% - chooses every connection buddy from T and calls do_place.
+% - WordID    the connecting word already placed
+% - X,Y,D     placement of WordID
+% - M         connecting position of WordID
+% - T         list of t(WordID,N,_)
+% - C         C-list
+% - B         (free words list)
+% - G         (geometry)
+% - F         (frame)
+% - S         (screen) list of place(WordID,X,Y,D)
+% - Q         quality of S
+% - E         extension (size of the board)
+% - Out       (outstream)
+
+reduce3(V,X,Y,D,M,[t(W,N,_)|T1],C, B,G,F,S,Q,E,WL,Out) :- 
+	calc_head(M,X,Y,D,N,X1,Y1,D1),
+	generic:new(merge,{Out1,Out2},Out),
+	do_place(W,X1,Y1,D1,    C, B,G,F,S,Q,E,WL,Out1),
+	reduce3(V,X,Y,D,M,T1,   C, B,G,F,S,Q,E,WL,Out2)@lower_priority.
+reduce3(V,X,Y,D,M,[],       C, B,G,F,S,Q,E,WL,Out) :- 
+	disconnect(X,Y,D,M,G,GR,Res1),
+	apply_stops(Res1,X,Y,D,M,C,CR,S,GR,Res),
+	reduce4(Res,CR,B,GR,F,S,Q,E,WL,Out).
+reduce3(_,_,_,_,_,okay,     _, _,_,_,_,_,_,_, Out) :- Out=[].
+
+reduce4(fail,_,_,_,_,_,_,_,_,Out) :- Out=[].
+otherwise.
+reduce4(_,C,B,G,F,S,Q,E,WL,Out) :- reduce2(C,B,G,F,S,Q,E,WL,Out).
+
+% do_place(+WordID,+X,+Y,+D,+C,+B,+G,+F,+S,+Q,+E,+WL,-Out).
+% - places WordID in (X,Y,D).
+%   The word must not be isolated from C.
+% - W          WordID to place
+% - X,Y,D      placement spot and orientation
+% - C->CR      C-list (connection list)
+% - B          B-list (free words list)
+% - G->GR      geometry list
+% - F->FR      frame
+% - S          screen
+% - Q->QR      quality
+% - E          extension (size of the board)
+% - WL         word list
+% - Out        (outstream)
+
+do_place(W,X,Y,D,C,B,G,F,S,Q,E,WL,Out) :-
+	wait(W), wait(X), wait(Y), wait(D) |
+	lookup_word(WL,W,WI,WG,WS), QR:=Q+WG,
+	embed(G,WI,W,X,Y,D,WS,C,B,F,S,E,FR,CR,BR,GR,Res),
+	do_place1(Res,W,X,Y,D,CR,BR,GR,FR,S,QR,E,WL,Out).
+do_place1(fail,_,_,_,_,_,_,_,_,_,_,_,_,Out) :- Out=[].
+otherwise.
+do_place1(_,W,X,Y,D,C,B,G,F,S,Q,E,WL,Out) :-
+	reduce2(C,B,G,F,[place(W,X,Y,D)|S],Q,E,WL,Out)
+		@lower_priority.
+
+% lookup_word(+WordList,+WordID,
+%             -CharList,-Grade,-Len).
+% - looks WordID up in WordList and returns its (CharList,Grade,Len).
+% - WordList      (word list) list of w(WordID,CharList,Grade,Len)
+% - WordID        WordID to find
+
+lookup_word([w(W,IL,GL,SL)|_],W,I,G,S) :- I=IL, G=GL, S=SL.
+otherwise.
+lookup_word([_|L],W,I,G,S) :- lookup_word(L,W,I,G,S).
+
+% lookup_place(+Screen,+WordID,
+%             -X,-Y,-D).
+% - looks WordID up in Screen and returns its placement (X,Y,D).
+% - Screen        (screen) list of place(WordID,X,Y,D)
+% - WordID        WordID to find
+
+lookup_place([place(W,XL,YL,DL)|_],W,X,Y,D) :- X=XL, Y=YL, D=DL.
+otherwise.
+lookup_place([_|L],W,X,Y,D) :- lookup_place(L,W,X,Y,D).
+
+% lookup_grid(+Geometry,+X,+Y,
+%             -Letter,-WordID,-AtHeadBut).
+% - looks (X,Y) up in Screen
+%   and returns the resident (Letter,WordID,AtHeadBut),
+%   or Letter=undef if undefined.
+% - Geometry      (geometry) list of g(X,Y,Letter,WordID,AtHeadBut)
+% - X,Y           spot to find
+
+lookup_grid([g(X,Y,IL,WL,NL)|_],X,Y,I,W,N) :- I=IL, W=WL, N=NL.
+otherwise.
+lookup_grid([_|L],X,Y,I,W,N) :- lookup_grid(L,X,Y,I,W,N).
+lookup_grid([],_,_,I,_W,_N) :- I=undef.
+
+% calc_head(+WordAtTopBut,+WordX,+WordY,+WordD,+BuddyAtTopBut,
+%           -BuddyX,-BuddyY,-BuddyD).
+% - calculates the placement(BuddyX,BuddyY,BuddyD) of buddy
+%   so as to connect at index BuddyAtTopBut to a word of
+%   placement (X,Y,D) which, in turn, connects at WordAtTopBut.
+
+calc_head(M,X,Y,lr,N,X1,Y1,D1) :- X1:=X+M, Y1:=Y-N, D1=tb.
+calc_head(M,X,Y,tb,N,X1,Y1,D1) :- X1:=X-N, Y1:=Y+M, D1=lr.
+
+% insert_sort_c(+C,+NewC,-CR).
+% - inserts every element in NewC into C and returns it to CR.
+%   Note that each element c(_,_,LenT,_) in C and CR is sorted by LenT.
+% - C->CR  (connection list)
+% - NewC   disordered connection list (for a particular WordID)
+
+insert_sort_c(C,[],    CR) :- C=CR.
+insert_sort_c(C,[L|L1],CR) :- L=c(_,_,B,_) |
+	insert_sort_c1(C,B,L,C1), insert_sort_c(C1,L1,CR).
+insert_sort_c1([],    B,L,CR) :- CR=[L].
+insert_sort_c1([C|C1],B,L,CR) :- C=c(_,_,A,_), A<B |
+	CR=[C|C2], insert_sort_c1(C1,B,L,C2).
+otherwise.
+insert_sort_c1(C,_,L,CR) :- CR=[L|C].
+
+% unload_b_entry(+B,+WordID,-Picked,-BR).
+% - picks WordID out of B-list and returns it to Picked.
+%   B must contain WordID as element.
+% - B->BR   (free words list)
+% - Picked  the C-list component of the picked b(WordID,C)
+
+unload_b_entry([b(W,C)|B],W,P,BR) :- P=C, unload_b_entry1(B,W,BR).
+otherwise.
+unload_b_entry([b(V,C)|B],W,P,BR) :- remove_word(C,W,CR),
+	BR=[b(V,CR)|B1], unload_b_entry(B,W,P,B1).
+
+unload_b_entry1([],_,BR) :- BR=[].
+unload_b_entry1([b(V,C)|B],W,BR) :- remove_word(C,W,CR),
+	BR=[b(V,CR)|B1], unload_b_entry1(B,W,B1).
+
+% remove_word(+C,+WordID,-CR).
+% - removes WordID from C.
+% - C->CR  (connection list) list of c(WordID,Index,Len,T)
+
+remove_word([],_,CR) :- CR=[].
+remove_word([c(V,M,A,T)|C],W,CR) :- remove_word1(A,T,W,AR,TR),
+	CR=[c(V,M,AR,TR)|C1], remove_word(C,W,C1).
+
+% remove_word1(+LenT,+T,+WordID,-LenTR,-TR)
+% - removes WordID from T of length LenT and returns it with its new length.
+% - T->TR       list of t(BuddyWordID,BuddyAtHeadBut,BuddyAtTailBut)
+% - LenT->LenTR length of T,TR
+
+remove_word1(A,[],_,AR,TR) :- A=AR, TR=[].
+remove_word1(A,[t(W,_,_)|T],W,AR,TR) :- A1:=A-1, remove_word1(A1,T,W,AR,TR).
+otherwise.
+remove_word1(A,[T|T1],W,AR,TR) :- TR=[T|T2], remove_word1(A,T1,W,AR,T2).
+
+% finish_word(+C,+WordID,-CR,-CS).
+% - deletes all occurrences of WordID from C
+%   and extract the disordered portion to CS.
+% - C->CR  (C-list) list of c(WordID,Index,LenT,T)
+% -  ->CS  C-list of extracted elements due to being disordered
+
+finish_word([],_,CR,CS) :- CR=[], CS=[].
+finish_word([c(V,M,A,T)|C],W,CR,CS) :- remove_word1(A,T,W,AR,TR),
+	finish_word1(A,AR,V,M,TR,C,W,CR,CS).
+
+% finish_word1(+AOld,+A,+V,+M,+T,+C,+WordID,-CR,-CS).
+finish_word1(A,A,V,M,T,C,W,CR,CS) :-
+	CR=[c(V,M,A,T)|C1], finish_word(C,W,C1,CS).
+otherwise.
+finish_word1(_,A,V,M,T,C,W,CR,CS) :-
+	CS=[c(V,M,A,T)|C1], finish_word(C,W,CR,C1).
+
+% remove_c_entries(+C,+WordID,+IndexList,-CR).
+% - for each Index in IndexList, removes a c(WordID,Index,_,_) from C.
+%   It is supposed that IndexList is very small.
+% - C->CR          C-list
+
+remove_c_entries(C,_,[],CR) :- C=CR.
+remove_c_entries(C,W,[N|N1],CR) :- remove_c_entry(C,W,N,C1),
+	remove_c_entries(C1,W,N1,CR).
+
+% remove_c_entry(+C,+WordID,+Index,-CR).
+% - removes a c(WordID,Index,_,_) from C.
+% - C->CR          C-list
+
+remove_c_entry([],_,_,CR) :- CR=[].
+remove_c_entry([c(W,N,_,_)|C],W,N,CR) :- C=CR.
+otherwise.
+remove_c_entry([E|C],W,N,CR) :- CR=[E|C1], remove_c_entry(C,W,N,C1).
+
+% enlargetb(+C,+FT,+FD,+Y,+YT,+S,+E,-FTR,-FDR,-CR).
+% - enlarge frame so as to contain Y through YT-1, inclusive.
+% - C->CR      c-list
+% - FT->FTR    frame top
+% - FD->FDR    frame bottom
+% - Y          y-coord of the head of the placed word
+% - YT         y-coord of the terminating empty of the placed word
+% - S          screen
+% - E          extension (size of the board)
+
+enlargetb(C,FT,FD,Y,YT,S,E,FTR,FDR,CR) :- Y<FT | FTR=Y,
+	outcheck_d(C,Y,S,E,C1,B), insert_sort_c(C1,B,C2), 
+	enlarge1tb(C2,FD,YT,S,E,FDR,CR).
+otherwise.
+enlargetb(C,FT,FD,_,YT,S,E,FTR,FDR,CR) :- FTR=FT,
+	enlarge1tb(C,FD,YT,S,E,FDR,CR).
+
+% enlarge1tb(+C,+FD,+YT,+S,+E,-FDR,-CR)
+
+enlarge1tb(C,FD,YT,S,E,FDR,CR) :- YT>FD | FDR=YT,
+	outcheck_t(C,YT,S,E,C1,B), insert_sort_c(C1,B,CR).
+otherwise.
+enlarge1tb(C,FD,_,_,_,FDR,CR) :- FDR=FD, C=CR.
+
+%
+
+enlargelr(C,FL,FS,X,XT,S,E,FLR,FSR,CR) :- X<FL | FLR=X,
+	outcheck_r(C,X,S,E,C1,B), insert_sort_c(C1,B,C2), 
+	enlarge1lr(C2,FS,XT,S,E,FSR,CR).
+otherwise.
+enlargelr(C,FL,FS,_,XT,S,E,FLR,FSR,CR) :- FLR=FL,
+	enlarge1lr(C,FS,XT,S,E,FSR,CR).
+
+enlarge1lr(C,FS,XT,S,E,FSR,CR) :- XT>FS | FSR=XT,
+	outcheck_l(C,XT,S,E,C1,B), insert_sort_c(C1,B,CR).
+otherwise.
+enlarge1lr(C,FS,_,_,_,FSR,CR) :- FSR=FS, C=CR.
+
+% accommodate(+C,+Y,+FT,+FD,+E,-CR).
+% - C->CR    (disordered C-list)
+% - Y        placement origin
+% - FT,FD    frame head/tail
+% - E        extension
+
+accommodate(C,Y,FT,FD,E,CR) :-
+	UT:=E-FD+Y, UD:=E+FT-Y, accommodate1(C,UT,UD,CR).
+accommodate1([],             _, _, CR) :- CR=[].
+accommodate1([c(W,N,_,T)|C1],UT,UD,CR) :-
+	accommodate2(T,UT,UD,AR,TR),
+	CR=[c(W,N,AR,TR)|C2], accommodate1(C1,UT,UD,C2).
+
+% :- accommodate2(T,UT,UD,AR,TR). is equivalent to
+% :- outcheck_head1(T,UT,_,T1), outcheck_tail1(T1,UD,AR,TR).
+%               :         T     :
+%               ? ? ? ? ? E     :
+%               :         N x x x
+%             x x x x x x N     :
+%               :         I ? ? :
+%               :         S     :
+%            UT <-------->      :
+%            UD :         <---->:
+%     Extension <-------------->:
+%                         Y     
+
+accommodate2([],_,_,AR,TR) :- AR=0, TR=[].
+accommodate2([T|T1],UT,UD,AR,TR) :- T=t(W,NT,ND), NT=<UT, ND<UD |
+	TR=[T|T2], accommodate2(T1,UT,UD,A,T2), AR:=A+1.
+otherwise.
+accommodate2([_|T],UT,UD,AR,TR) :- accommodate2(T,UT,UD,AR,TR).
+
+% outcheck_t(+C,+FD,+Screen,+E,-CR,-B)
+% - C->CR    (C-list) list of c(WordID,Index,LenT,T)
+% - B        (disordered C-list) portion of C
+%            extracted due to being disordered of LenT by pruning
+% - Screen   (screen) list of placed words
+% - FD       frame bottom
+% - E        extension (size of the board)
+% * U        top margin of W (count of characters left above W)
+
+outcheck_t([],_,_,_,CR,B) :- CR=[], B=[].
+outcheck_t([C|C1],FD,S,E,CR,B) :- C=c(W,N,A,T) |
+	lookup_place(S,W,_,Y,D), U:=E-FD+Y,
+	outcheck_head(A,T,U,D,tb,AR,TR),
+	outcheck_t1(A,AR,TR,C,W,N,C1,FD,S,E,CR,B).
+outcheck_t1(A,A,_,C,_,_,C1,FD,S,E,CR,B) :-
+	CR=[C|C2], outcheck_t(C1,FD,S,E,C2,B).
+otherwise.
+outcheck_t1(_,A,T,_,W,N,C, FD,S,E,CR,B) :-
+	B=[c(W,N,A,T)|B1], outcheck_t(C,FD,S,E,CR,B1).
+%
+outcheck_l([],_,_,_,CR,B) :- CR=[], B=[].
+outcheck_l([C|C1],FS,S,E,CR,B) :- C=c(W,N,A,T) |
+	lookup_place(S,W,X,_,D), U:=E-FS+X,
+	outcheck_head(A,T,U,D,lr,AR,TR),
+	outcheck_l1(A,AR,TR,C,W,N,C1,FS,S,E,CR,B).
+outcheck_l1(A,A,_,C,_,_,C1,FS,S,E,CR,B) :-
+	CR=[C|C2], outcheck_l(C1,FS,S,E,C2,B).
+otherwise.
+outcheck_l1(_,A,T,_,W,N,C, FS,S,E,CR,B) :-
+	B=[c(W,N,A,T)|B1], outcheck_l(C,FS,S,E,CR,B1).
+%
+outcheck_d([],_,_,_,CR,B) :- CR=[], B=[].
+outcheck_d([C|C1],FT,S,E,CR,B) :- C=c(W,N,A,T) |
+	lookup_place(S,W,_,Y,D), U:=E+FT-Y,
+	outcheck_tail(A,T,U,D,tb,AR,TR),
+	outcheck_d1(A,AR,TR,C,W,N,C1,FT,S,E,CR,B).
+outcheck_d1(A,A,_,C,_,_,C1,FT,S,E,CR,B) :-
+	CR=[C|C2], outcheck_d(C1,FT,S,E,C2,B).
+otherwise.
+outcheck_d1(_,A,T,_,W,N,C, FT,S,E,CR,B) :-
+	B=[c(W,N,A,T)|B1], outcheck_d(C,FT,S,E,CR,B1).
+%
+outcheck_r([],_,_,_,CR,B) :- CR=[], B=[].
+outcheck_r([C|C1],FL,S,E,CR,B) :- C=c(W,N,A,T) |
+	lookup_place(S,W,X,_,D), U:=E+FL-X,
+	outcheck_tail(A,T,U,D,lr,AR,TR),
+	outcheck_r1(A,AR,TR,C,W,N,C1,FL,S,E,CR,B).
+outcheck_r1(A,A,_,C,_,_,C1,FL,S,E,CR,B) :-
+	CR=[C|C2], outcheck_r(C1,FL,S,E,C2,B).
+otherwise.
+outcheck_r1(_,A,T,_,W,N,C, FL,S,E,CR,B) :-
+	B=[c(W,N,A,T)|B1], outcheck_r(C,FL,S,E,CR,B1).
+
+% outcheck_head(+LenT,+T,+Margin,+D,+NoOpD,-LenTR,-TR).
+% - if not D=NoOpD then restricts T so that every buddy entry in T
+%   connects within Margin AtHeadBut.
+% - T->TR        t-list of the word.
+%                If LenT=LenTR then TR remains uninstantiated.
+% - LenT->LenTR  length of T,TR
+% - Margin       heading margin
+% - D            placement orientation of the word
+% - NoOpD        if NoOpD = D then no restriction is involved
+
+outcheck_head(A,_T,_,D,D,AR,_TR) :- A=AR.
+otherwise.
+outcheck_head(_,T,U,_,_,AR,TR) :- outcheck_head1(T,U,AR,TR).
+
+% outcheck_head1(+T,+Margin,-LenTR,-TR).
+% - T->TR     t-list of the word
+%               :         /  
+%               :         A             D=tb, NoOp=lr
+%               :         P  
+%               ? ? ? m a P  
+%               :       / L i p /
+%               :         E  
+%               :         /  
+%     AtHeadBut       <--> 2            
+%     Margin    <--------> 5 = E-(FS-X) 
+%     Extension <--------------> 8 
+%                         X     FS
+%     * FS(frame right)   x-coord of the rightmost empty
+
+outcheck_head1([],_,AR,TR) :- AR=0, TR=[].
+outcheck_head1([T|T1],U,AR,TR) :- T=t(W,N,_), N=<U |
+	TR=[T|T2], outcheck_head1(T1,U,A,T2), AR:=A+1.
+otherwise.
+outcheck_head1([_|T],U,AR,TR) :- outcheck_head1(T,U,AR,TR).
+
+% outcheck_tail(+LenT,+T,+Margin,+D,+NoOpD,-LenTR,-TR).
+
+outcheck_tail(A,_T,_,D,D,AR,_TR) :- A=AR.
+otherwise.
+outcheck_tail(_,T,U,_,_,AR,TR) :- outcheck_tail1(T,U,AR,TR).
+
+% outcheck_tail1(+T,+Margin,-LenTR,-TR).
+% - T->TR     t-list of the word
+%                     /  
+%                     A             D=tb, NoOp=lr
+%                     P           :
+%                     P o s t ? ? :
+%               / p a L /         :
+%                     E           :
+%                     /           :
+%     AtTailBut       <---->3      
+%     Margin          <----------> 6 = E-(X-FL)
+%     Extension   <--------------> 8 
+%                 FL  X
+%     * FL(frame left)   x-coord of the leftmost letter
+
+outcheck_tail1([],_,AR,TR) :- AR=0, TR=[].
+outcheck_tail1([T|T1],U,AR,TR) :- T=t(W,_,N), N<U |
+	TR=[T|T2], outcheck_tail1(T1,U,A,T2), AR:=A+1.
+otherwise.
+outcheck_tail1([_|T],U,AR,TR) :- outcheck_tail1(T,U,AR,TR).
+
+% embed(+G,+WordCharList,+WordID,+X,+Y,+D,+WordLen,
+%       +C,+B,+F,+S,+E,-FR,-CR,-BR,-GR,-Res).
+% - tries to embed the word.
+% - G->GR         (geometry) list of g(X,Y,Letter,WordID,AtHeadBut)
+% - WordCharList  list of letters composing WordID
+% - WordID        WordID to place
+% - X,Y,D         placement for WordID
+% - WordLen       length of WordCharList
+% - C->CR         C-list (connection list)
+% - B             B-list (free words list)
+% - F->FR         frame
+% - S             (screen)
+% - E             extension (size of the board)
+%
+% * PL            list of indices which coincide already placed chars
+
+embed(G,WI,W,X,Y,tb,WS,C,B,F,S,E,FR,CR,BR,GR,Res) :-
+	embed_letter1tb(G,WI,W,X,Y,0,G,G1,PL,C,C1,Res1),
+	YH:=Y-1, embed_empty(G,X,YH,G1,GR,Res2),
+	finalizetb(Res1,Res2,W,X,Y,WS,PL,C1,B,F,S,E,FR,CR,BR,Res).
+embed(G,WI,W,X,Y,lr,WS,C,B,F,S,E,FR,CR,BR,GR,Res) :-
+	embed_letter1lr(G,WI,W,X,Y,0,G,G1,PL,C,C1,Res1),
+	XH:=X-1, embed_empty(G,XH,Y,G1,GR,Res2),
+	finalizelr(Res1,Res2,W,X,Y,WS,PL,C1,B,F,S,E,FR,CR,BR,Res).
+%
+
+finalizetb(fail,_,_,_,_,_,_,_C,_B,_F,_,_,_FR,_CR,_BR,Res) :- Res=fail.
+finalizetb(_,fail,_,_,_,_,_,_C,_B,_F,_,_,_FR,_CR,_BR,Res) :- Res=fail.
+otherwise.
+finalizetb(_,_,W,X,Y,WS,PL,C,B,f(FL,FT,FS,FD),S,E,FR,CR,BR,Res) :-
+	FR=f(FL,FTR,FS,FDR),		% new frame
+	unload_b_entry(B,W,P,BR),	% let P be a disordered C-list portion for W
+	remove_c_entries(P,W,PL,P1),% remove connections coinciding with this time
+	finish_word(C,W,C1,C2),		% W is no longer a possible connection buddy
+	insert_sort_c(C1,C2,C3),	% make C3 sorted C-list
+	YT:=Y+WS, enlargetb(C3,FT,FD,Y,YT,S,E,FTR,FDR,C4),	% enlarge frame height
+	accommodate(P1,X,FL,FS,E,PR),	% remove overrunning connections
+	insert_sort_c(C4,PR,CR),	% let CR be the integrated C-list
+	Res=okay.
+%
+finalizelr(fail,_,_,_,_,_,_,_C,_B,_F,_,_,_FR,_CR,_BR,Res) :- Res=fail.
+finalizelr(_,fail,_,_,_,_,_,_C,_B,_F,_,_,_FR,_CR,_BR,Res) :- Res=fail.
+otherwise.
+finalizelr(_,_,W,X,Y,WS,PL,C,B,f(FL,FT,FS,FD),S,E,FR,CR,BR,Res) :-
+	FR=f(FLR,FT,FSR,FD),
+	unload_b_entry(B,W,P,BR),
+	remove_c_entries(P,W,PL,P1),
+	finish_word(C,W,C1,C2),
+	insert_sort_c(C1,C2,C3),
+	XT:=X+WS, enlargelr(C3,FL,FS,X,XT,S,E,FLR,FSR,C4),
+	accommodate(P1,Y,FT,FD,E,PR),
+	insert_sort_c(C4,PR,CR),
+	Res=okay.
+
+% embed_letter1tb(+Geometry,+CharList,+WordID,+X,+Y,+Index,
+%                 +G1,-GR,-PL,+C,-CR,-Res),
+% - tries to place WordID along to (X,Y) in G1,
+%   with the check performed in Geometry.
+% - CharList     character list of WordID after the Index'th letter
+% - WordID       WordID to embed
+% - X,Y          current spot to embed letter
+% - Index        current embedding position in the characters of WordID
+% - Geometry     (geometry) for checking
+% - G1->GR       (geometry) list of g(X,Y,Letter,WordID,AtHeadBut)
+% - C->CR        C-list
+% - PL           index list to be removed
+
+embed_letter1tb(G,[],_,X,Y,_,G1,GR,PL,C,CR,Res) :- PL=[], C=CR,
+	embed_empty(G,X,Y,G1,GR,Res).
+embed_letter1tb(G,[W0|W1],W,X,Y,N,G1,GR,PL,C,CR,Res) :-
+	lookup_grid(G,X,Y,I,V,M),
+	embed_letter2tb(G,I,V,M,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res).
+
+% embed_letter2tb(+Geometry,+XYLetter,+XYWordID,+XYAtHeadBut,
+%                 +EmbedChar,+EmbedCharRest,+WordID,+X,+Y,+Index,
+%                 +G1,-GR,-PL,+C,-CR,-Res).
+% - XYLetter      character at spot (X,Y)
+% - XYWordID      WordID residing at spot (X,Y)
+% - XYAtHeadBut   index of XYWord at (X,Y)
+% - EmbedChar     char to embed in (X,Y)
+% - EmbedCharRest rest of embedding char list
+% - WordID        WordID to embed
+% - X,Y           current spot to embed letter
+% - Index         current embedding position in the characters of WordID
+% - Geometry      (geometry) for checking
+% - G1->GR        (geometry) list of g(X,Y,Letter,WordID,AtHeadBut)
+% - C->CR         C-list
+% - PL            index list to be removed
+
+embed_letter2tb(G,undef,_,_,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res) :-
+	Y1:=Y+1, N1:=N+1,
+	embed_letter1tb(G,W1,W,X,Y1,N1,[g(X,Y,W0,W,N)|G1],GR,PL,C,CR,Res).
+embed_letter2tb(G,W0,V,M,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res) :- 
+	PL=[N|PLR], remove_c_entry(C,V,M,C1), Y1:=Y+1, N1:=N+1,
+	embed_letter1tb(G,W1,W,X,Y1,N1,G1,GR,PLR,C1,CR,Res).
+otherwise.
+embed_letter2tb(_,_,_,_,_,_,_,_,_,_,_G1,_GR,_PL,_C,_CR,Res) :- Res=fail.
+
+%
+embed_letter1lr(G,[],_,X,Y,_,G1,GR,PL,C,CR,Res) :- PL=[], C=CR,
+	embed_empty(G,X,Y,G1,GR,Res).
+embed_letter1lr(G,[W0|W1],W,X,Y,N,G1,GR,PL,C,CR,Res) :-
+	lookup_grid(G,X,Y,I,V,M),
+	embed_letter2lr(G,I,V,M,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res).
+embed_letter2lr(G,undef,_,_,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res) :-
+	X1:=X+1, N1:=N+1,
+	embed_letter1lr(G,W1,W,X1,Y,N1,[g(X,Y,W0,W,N)|G1],GR,PL,C,CR,Res).
+embed_letter2lr(G,W0,V,M,W0,W1,W,X,Y,N,G1,GR,PL,C,CR,Res) :- 
+	PL=[N|PLR], remove_c_entry(C,V,M,C1), X1:=X+1, N1:=N+1,
+	embed_letter1lr(G,W1,W,X1,Y,N1,G1,GR,PLR,C1,CR,Res).
+otherwise.
+embed_letter2lr(_,_,_,_,_,_,_,_,_,_,_G1,_GR,_PL,_C,_CR,Res) :- Res=fail.
+
+% embed_empty(+Geometry,+X,+Y,+G1,-GR,-Res).
+% - tries to place an empty to spot (X,Y) in G1,
+%   with the check performed in Geometry.
+% - Geometry   (geometry) the geometry list in which to try to place an empty
+% - G1->GR     (geometry) the resulting geometry list
+
+embed_empty(G,X,Y,G1,GR,Res) :- 
+	lookup_grid(G,X,Y,I,_,_), embed_empty1(I,X,Y,G1,GR,Res).
+embed_empty1(undef,X,Y,G,GR,Res) :- GR=[g(X,Y,empty,0,0)|G], Res=okay.
+embed_empty1(empty,_,_,G,GR,Res) :- GR=G,                    Res=okay.
+otherwise.
+embed_empty1(_,_,_,_G,_GR,Res) :- Res=fail.
+
+% disconnect(+X,+Y,+D,+M,+G,-GR,-Res)
+% - tries to forbid any connections at M in the word at (X,Y,D).
+% - X,Y,D   placement of the word to be disconnected
+% - M       position to disconnect
+% - G->GR   list of geomerty
+% - Res     fail or okay
+
+disconnect(X,Y,tb,M,G,GR,Res) :- X1:=X-1, X2:=X+1, Y1:=Y+M,
+	lookup_grid(G,X1,Y1,I,_,_),
+	disconnect2(G,I,X1,Y1,X2,Y1,G, GR,Res).
+disconnect(X,Y,lr,M,G,GR,Res) :- Y1:=Y-1, Y2:=Y+1, X1:=X+M,
+	lookup_grid(G,X1,Y1,I,_,_),
+	disconnect2(G,I,X1,Y1,X1,Y2,G, GR,Res).
+
+disconnect2(G,undef,X1,Y1,X2,Y2,G1,GR,Res) :- 
+	lookup_grid(G,X2,Y2,I,_,_),
+	disconnect3(G,I,X2,Y2,[g(X1,Y1,empty,0,0)|G1],GR,Res).
+disconnect2(G,empty,_,_,X2,Y2,G1,GR,Res) :-
+	lookup_grid(G,X2,Y2,I,_,_),
+	disconnect3(G,I,X2,Y2,G1,GR,Res).
+otherwise.
+disconnect2(_,_,_,_,_,_,_G,_GR,Res) :- Res=fail.
+
+disconnect3(G,undef,X,Y,G1,GR,Res) :- GR=[g(X,Y,empty,0,0)|G1], Res=okay.
+disconnect3(G,empty,_,_,G1,GR,Res) :- GR=G1, Res=okay.
+otherwise.
+disconnect3(_,_,_,_,_G,_GR,Res) :- Res=fail.
+
+% apply_stops(+Res1,+X,+Y,+D,+Index,+C,-CR,+S,+G,-Res).
+% - applies disconnecion at (X,Y,D,Index) to C
+%   so as to prune restricted words.
+% - X,Y,D    geometry of the word to apply stops
+% - Index    index of the word to apply stops
+% - C->CR    C-list
+% - S        (screen)
+% - G        (geometry)
+%
+%	Y0             I1       D=lr
+%	Y1          I  /  I2 
+%	Y     a  p  p  l  e  
+%	Y2          I3 /  I5 
+%	Y3             I4    
+%	      X     X0 X1 X2 
+
+apply_stops(fail,_,_,_,_,_C,_CR,_,_,Res) :- Res=fail.
+otherwise.
+apply_stops(_,X,Y,lr,M,C,CR,S,G,Res) :-
+	X1:=X+M, X0:=X1-1, X2:=X1+1, Y0:=Y-2, Y1:=Y-1, Y2:=Y+1, Y3:=Y+2,
+	lookup_grid(G,X0,Y1,I ,V ,M0), absent(C, I, tb,V, M0,tail,S,C1,B, B1),
+	lookup_grid(G,X1,Y0,I1,V1,M1), absent(C1,I1,lr,V1,M1,tail,S,C2,B1,B2),
+	lookup_grid(G,X2,Y1,I2,V2,M2), absent(C2,I2,tb,V2,M2,head,S,C3,B2,B3),
+	lookup_grid(G,X0,Y2,I3,V3,M3), absent(C3,I3,tb,V3,M3,tail,S,C4,B3,B4),
+	lookup_grid(G,X1,Y3,I4,V4,M4), absent(C4,I4,lr,V4,M4,head,S,C5,B4,B5),
+	lookup_grid(G,X2,Y2,I5,V5,M5), absent(C5,I5,tb,V5,M5,head,S,C6,B5,[]),
+	insert_sort_c(C6,B,CR), Res=okay.
+apply_stops(_,X,Y,tb,M,C,CR,S,G,Res) :-
+	Y1:=Y+M, Y0:=Y1-1, Y2:=Y1+1, X0:=X-2, X1:=X-1, X2:=X+1, X3:=X+2,
+	lookup_grid(G,X1,Y0,I ,V ,M0), absent(C, I, tb,V, M0,tail,S,C1,B, B1),
+	lookup_grid(G,X0,Y1,I1,V1,M1), absent(C1,I1,lr,V1,M1,tail,S,C2,B1,B2),
+	lookup_grid(G,X1,Y2,I2,V2,M2), absent(C2,I2,tb,V2,M2,head,S,C3,B2,B3),
+	lookup_grid(G,X2,Y0,I3,V3,M3), absent(C3,I3,tb,V3,M3,tail,S,C4,B3,B4),
+	lookup_grid(G,X3,Y1,I4,V4,M4), absent(C4,I4,lr,V4,M4,head,S,C5,B4,B5),
+	lookup_grid(G,X2,Y2,I5,V5,M5), absent(C5,I5,tb,V5,M5,head,S,C6,B5,[]),
+	insert_sort_c(C6,B,CR), Res=okay.
+
+% absent(+C,+Letter,+D,+WordID,+Index,+Zip,+Screen,-CR,-B,+BR).
+% - reflects an empty along the word.
+% - D       If orientation of WordID is not D, no restriction preformed.
+% - Letter  character at WordID[Index].
+%           If Letter is empty or undef then WordID and Index are not used.
+% - Zip     restricted connection of buddy (tail or head) at WordID[Index].
+%           If head|tail, the spot must be the first|last letter of buddy.
+% - C->CR   (C-list)
+% - B->BR   d-list of pruned C-list
+% - Screen  (screen)
+
+absent(C,empty,_,_,_,_,_,CR,B,BR) :- C=CR, B=BR.
+absent(C,undef,_,_,_,_,_,CR,B,BR) :- C=CR, B=BR.
+otherwise.
+absent(C,_,D,V,M,Z,S,CR,B,BR) :-
+	lookup_place(S,V,_,_,DV), absent1(C,D,DV,V,M,Z,CR,B,BR).
+
+absent1(C,D,D,V,M,Z,CR,B,BR) :- absent2(C,V,M,Z,CR,B,BR).
+otherwise.
+absent1(C,_,_,_,_,_,CR,B,BR) :- C=CR, B=BR.
+
+% absent2(+C,+WordID,+Index,+Zip,-CR,-B,+BR).
+% - places partial stop (only for Zip) to WordID[Index].
+% - B->BR   d-list of pruned C-list
+% - C->CR   C-list
+
+absent2([],_,_,_,CR,B,BR) :- CR=[], B=BR.
+absent2([C|C1],V,M,Z,CR,B,BR) :- C=c(V,M,A,T) |
+	absent4(Z,T,AR,TR),
+	absent3(A,AR,TR,C,C1,V,M,Z,CR,B,BR).
+otherwise.
+absent2([C|C1],V,M,Z,CR,B,BR) :- CR=[C|C2], absent2(C1,V,M,Z,C2,B,BR).
+
+absent3(A,A,_,C,C1,V,M,Z,CR,B,BR) :- CR=[C|C2],
+	absent2(C1,V,M,Z,C2,B,BR).
+otherwise.
+absent3(_,A,T,_,C,V,M,Z,CR,B,BR) :- B=[c(V,M,A,T)|B1],
+	absent2(C,V,M,Z,CR,B1,BR).
+
+absent4(head,T,AR,TR) :- no_heads(T,AR,TR).
+absent4(tail,T,AR,TR) :- no_tails(T,AR,TR).
+
+% no_heads(+T,-LenTR,-TR).
+% - erases everything but (_,0,_) from T.
+% - T->TR  (T-list)
+
+no_heads([],AR,TR) :- AR=0, TR=[].
+no_heads([T|T1],AR,TR) :- T=t(_,0,_) | TR=[T|T2], no_heads(T1,A,T2), AR:=A+1.
+otherwise.
+no_heads([_|T],AR,TR) :- no_heads(T,AR,TR).
+
+% no_tails(+T,-LenTR,-TR).
+% - erases everything but (_,_,0) from T.
+% - T->TR  (T-list)
+
+no_tails([],AR,TR) :- AR=0, TR=[].
+no_tails([T|T1],AR,TR) :- T=t(_,_,0) | TR=[T|T2], no_tails(T1,A,T2), AR:=A+1.
+otherwise.
+no_tails([_|T],AR,TR) :- no_tails(T,AR,TR).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%

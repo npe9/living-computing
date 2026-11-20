@@ -1,0 +1,259 @@
+%-----------------------------------------------------------------------------
+\section{連言照合における冗長性除去}
+
+基本MGTPの連言照合では、前件リテラルとモデル候補$M$中のアトムの
+同じ組合せに対して
+重複した計算が行なわれる可能性がある。
+このような連言照合における冗長計算を防ぐために
+RAMS法\cite{FH91}とMERC法が考案されている。
+
+\subsection{RAMS法}
+
+RAMS法は、前件の照合の履歴を記憶する機構を設けることにより、
+連言照合における重複計算を避けるものである。
+図\ref{Fig:RAMS}にこの方法を図示している。
+
+\begin{figure}
+\setlength{\unitlength}{1.5pt}
+\large
+
+\begin{center}
+%\begin{picture}(330,250)(90,40)
+\begin{picture}(330,250)(70,40)
+
+%  M stack
+\put(188,190){\makebox(0,0){$M$}}
+
+\put(188,205){\makebox(0,0){1}}
+\put(188,215){\makebox(0,0){2}}
+\put(170,235){\makebox(0,0){3}}
+\put(206,235){\makebox(0,0){4}}
+\put(188,255){\makebox(0,0){5}}
+\put(224,255){\makebox(0,0){6}}
+
+\put(162,230){\line(1,0){16}}
+\put(162,240){\line(1,0){16}}
+\put(162,230){\line(0,1){20}}
+\put(178,230){\line(0,1){20}}
+\put(198,230){\line(1,0){16}}
+\put(198,240){\line(1,0){16}}
+\put(198,230){\line(0,1){10}}
+\put(214,230){\line(0,1){10}}
+\put(170,244){\makebox(0,0){.}}
+\put(170,247){\makebox(0,0){.}}
+\put(170,250){\makebox(0,0){.}}
+\put(180,250){\line(1,0){16}}
+\put(180,260){\line(1,0){16}}
+\put(180,250){\line(0,1){20}}
+\put(196,250){\line(0,1){20}}
+\put(180,200){\line(1,0){16}}
+\put(180,210){\line(1,0){16}}
+\put(180,220){\line(1,0){16}}
+\put(180,200){\line(0,1){20}}
+\put(196,200){\line(0,1){20}}
+\put(188,264){\makebox(0,0){.}}
+\put(188,267){\makebox(0,0){.}}
+\put(188,270){\makebox(0,0){.}}
+\put(216,250){\line(1,0){16}}
+\put(216,260){\line(1,0){16}}
+\put(216,250){\line(0,1){20}}
+\put(232,250){\line(0,1){20}}
+\put(224,264){\makebox(0,0){.}}
+\put(224,267){\makebox(0,0){.}}
+\put(224,270){\makebox(0,0){.}}
+\put(180,220){\line(-1,1){10}}
+\put(196,220){\line(1,1){10}}
+\put(198,240){\line(-1,1){10}}
+\put(214,240){\line(1,1){10}}
+\put(188,180){\vector(4,-1){50}}
+\put(188,180){\vector(-4,-1){50}}
+
+%  Clause
+\put(115,150){\framebox(200,16){}}
+\put(130,158){\makebox(0,0){$A_1$}}
+\put(140,153){\makebox(0,0){,}}
+\put(240,158){\makebox(0,0){$A_2$}}
+\put(250,153){\makebox(0,0){,}}
+\put(290,153){\makebox(0,0){$\ldots$}}
+
+%  S_1 stack
+\put(128,-15){\makebox(0,0){$S_1$}}
+
+\put(128,  5){\makebox(0,0){1}}
+\put(110, 25){\makebox(0,0){3}}
+\put(146, 25){\makebox(0,0){4}}
+\put(128, 45){\makebox(0,0){5}}
+\put(164, 45){\makebox(0,0){6}}
+
+\put(102, 20){\line(1,0){16}}
+\put(102, 30){\line(1,0){16}}
+\put(102, 20){\line(0,1){20}}
+\put(118, 20){\line(0,1){20}}
+\put(138, 20){\line(1,0){16}}
+\put(138, 30){\line(1,0){16}}
+\put(138, 20){\line(0,1){10}}
+\put(154, 20){\line(0,1){10}}
+\put(110, 34){\makebox(0,0){.}}
+\put(110, 37){\makebox(0,0){.}}
+\put(110, 40){\makebox(0,0){.}}
+\put(120, 40){\line(1,0){16}}
+\put(120, 50){\line(1,0){16}}
+\put(120, 40){\line(0,1){20}}
+\put(136, 40){\line(0,1){20}}
+\put(120,  0){\line(1,0){16}}
+\put(120, 10){\line(1,0){16}}
+\put(120,  0){\line(0,1){10}}
+\put(136,  0){\line(0,1){10}}
+\put(128, 54){\makebox(0,0){.}}
+\put(128, 57){\makebox(0,0){.}}
+\put(128, 60){\makebox(0,0){.}}
+\put(156, 40){\line(1,0){16}}
+\put(156, 50){\line(1,0){16}}
+\put(156, 40){\line(0,1){20}}
+\put(172, 40){\line(0,1){20}}
+\put(162, 54){\makebox(0,0){.}}
+\put(162, 57){\makebox(0,0){.}}
+\put(162, 60){\makebox(0,0){.}}
+\put(120, 10){\line(-1,1){10}}
+\put(136, 10){\line(1,1){10}}
+\put(138, 30){\line(-1,1){10}}
+\put(154, 30){\line(1,1){10}}
+
+%  S_2 stack
+\put(240,-15){\makebox(0,0){$S_2$}}
+
+\put(240,  5){\makebox(0,0){11}}
+\put(218, 25){\makebox(0,0){13}}
+\put(218, 35){\makebox(0,0){31}}
+\put(218, 45){\makebox(0,0){32}}
+\put(218, 55){\makebox(0,0){33}}
+\put(262, 25){\makebox(0,0){14}}
+\put(262, 35){\makebox(0,0){41}}
+\put(262, 45){\makebox(0,0){42}}
+\put(262, 55){\makebox(0,0){44}}
+\put(240, 75){\makebox(0,0){15}}
+\put(240, 85){\makebox(0,0){45}}
+\put(240, 95){\makebox(0,0){51}}
+\put(240,105){\makebox(0,0){52}}
+\put(240,115){\makebox(0,0){54}}
+\put(240,125){\makebox(0,0){55}}
+\put(284, 75){\makebox(0,0){16}}
+\put(284, 85){\makebox(0,0){46}}
+\put(284, 95){\makebox(0,0){61}}
+\put(284,105){\makebox(0,0){62}}
+\put(284,115){\makebox(0,0){64}}
+\put(284,125){\makebox(0,0){66}}
+
+\put(208, 20){\line(1,0){20}}
+\put(208, 30){\line(1,0){20}}
+\put(208, 40){\line(1,0){20}}
+\put(208, 50){\line(1,0){20}}
+\put(208, 60){\line(1,0){20}}
+\put(208, 20){\line(0,1){50}}
+\put(228, 20){\line(0,1){50}}
+\put(252, 20){\line(1,0){20}}
+\put(252, 30){\line(1,0){20}}
+\put(252, 40){\line(1,0){20}}
+\put(252, 50){\line(1,0){20}}
+\put(252, 60){\line(1,0){20}}
+\put(252, 20){\line(0,1){40}}
+\put(272, 20){\line(0,1){40}}
+\put(218, 64){\makebox(0,0){.}}
+\put(218, 67){\makebox(0,0){.}}
+\put(218, 70){\makebox(0,0){.}}
+\put(230, 70){\line(1,0){20}}
+\put(230, 80){\line(1,0){20}}
+\put(230, 90){\line(1,0){20}}
+\put(230,100){\line(1,0){20}}
+\put(230,110){\line(1,0){20}}
+\put(230,120){\line(1,0){20}}
+\put(230,130){\line(1,0){20}}
+\put(230, 70){\line(0,1){70}}
+\put(250, 70){\line(0,1){70}}
+\put(230,  0){\line(1,0){20}}
+\put(230, 10){\line(1,0){20}}
+\put(230,  0){\line(0,1){10}}
+\put(250,  0){\line(0,1){10}}
+\put(240,134){\makebox(0,0){.}}
+\put(240,137){\makebox(0,0){.}}
+\put(240,140){\makebox(0,0){.}}
+\put(274, 70){\line(1,0){20}}
+\put(274, 80){\line(1,0){20}}
+\put(274, 90){\line(1,0){20}}
+\put(274,100){\line(1,0){20}}
+\put(274,110){\line(1,0){20}}
+\put(274,120){\line(1,0){20}}
+\put(274,130){\line(1,0){20}}
+\put(274, 70){\line(0,1){70}}
+\put(294, 70){\line(0,1){70}}
+\put(284,134){\makebox(0,0){.}}
+\put(284,137){\makebox(0,0){.}}
+\put(284,140){\makebox(0,0){.}}
+\put(230, 10){\line(-1,1){10}}
+\put(250, 10){\line(1,1){10}}
+\put(252, 60){\line(-1,1){10}}
+\put(272, 60){\line(1,1){10}}
+
+\end{picture}
+\end{center}
+\vspace{4cm}
+\caption{分岐スタック}
+\label{Fig:RAMS}
+\end{figure}
+
+\subsection{MERC法}
+
+MERC法では、MG節が$n$個のリテラルを含むとき、
+等価な複数のMG節を補う、という処理が必要になる。
+
+例として、問題SのKL1節表現を
+図\ref{Fig:S-MERC}に示しておく。
+
+\begin{figure}
+\newbox\slmerc
+\setbox\slmerc=\vbox{\hsize 114 true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+c(c1,true,     [],R):-true|R=(p(a,a);q(b)).
+c(c2,r(X,f(X)),[],R):-true|R=false.
+c(c3_1,p(X,X),   [],R):-true|R=(1:[X]).
+c(c3_1,p(X,Y),1:[X],R):-true|R=r(X,f(Y)).
+c(c3_2,p(X,Y),   [],R):-true|R=(1:[X,Y]).
+c(c3_2,p(X,X),1:[X,Y],R):-true|R=r(X,f(Y)).
+c(c3_1_2,p(X,X), [],R):-true|R=r(X,f(X)).
+c(c4,q(X),     [],R):-true|R=p(f(X),f(X)).
+otherwise.
+c(_,_,_,R):-true|R=fail.
+\end{verbatim}
+}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+   \vbox{\vskip0pt\box\slmerc\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{問題SのMERC版KL1表現}
+\label{Fig:S-MERC}
+\end{figure}
+
+\subsection{RAMS法とMERC法の比較}
+
+RAMS法では前件リテラルに対するモデル候補との照合結果を記憶するので、
+照合計算の重複はない。
+それに対し、MERC法では前件の一部は照合を再計算するという冗長性がある。
+さらに、MERC法では1本のMG節から等価な節を何本か複製しているので、
+その冗長性は重複して現れる。
+
+一方、
+RAMS法では前件リテラルの照合順序が固定化されていることによって
+無駄な照合を繰り返す可能性がある。
+それに対し、MERC法では複製した節が前件リテラルの評価順序を公平に行う、
+という効果によりこの無駄が省かれる。
+
+メモリ消費に関しては、
+RAMS法では照合記憶のため、
+MERC法では節の複製のために、
+いずれも余計にメモリを消費する。
+
+このように、RAMS法とMERC法の優劣は必ずしも明確ではない。
+どちらが有利かは対象の問題に強く依存している。
+

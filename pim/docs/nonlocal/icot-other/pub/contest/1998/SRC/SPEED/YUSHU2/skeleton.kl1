@@ -1,0 +1,204 @@
+% -- for skeleton contest
+%
+% skeleton.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+:- module skeleton .
+
+solve(Size,NormalWordList, OutStream) :-
+	word_list:extend(NormalWordList, WordList),
+	list:random(WordList,RandomWordList), % かき混ぜる
+	board:new(Board, Size), 
+	loop1(RandomWordList,Size,Board) +0 +_ +OutStream +[] .
+
+
+
+%%% loop0 +WordList(Extend1) 最初の単語を置く
+loop1([]        ,Size,Board) -MaxScore -OutStream .
+loop1([One|Rest],Size,Board) -MaxScore -OutStream :-
+
+	One=word(Ident,Spell,Point,Length),
+
+	letter_list:new_tb(Spell,Length,99,0,0, LetterList), % 最初は特殊 99
+	array_of_list:new(ArrayOfWordList, Rest), % alphabet で分類した箱
+
+	W=1 , H=Length ,
+	board:put_spell_tb(Size,Spell,Length,0,0,Board, NewBoard),
+	PlaceList=[place(Ident,0,0,tb)],
+	Score=Point,
+
+	loop2(LetterList,ArrayOfWordList,Size,W,H,NewBoard,PlaceList,Score)
+    -MaxScore -OutStream ,
+
+	loop1(Rest,Size,Board) -MaxScore -OutStream .
+	
+
+
+%%% loop2 +LetterFSList 文字を置いた場所で試せるところが無くなるまで
+loop2([],        ArrayOfWordList,Size,W,H,Board,PlaceList,Score)
+-MaxScore -OutStream :- 
+	%% 解を出力
+	tool:select_answer(Size,Board,PlaceList,Score) -MaxScore -OutStream .
+
+loop2([One|Rest],ArrayOfWordList,Size,W,H,Board,PlaceList,Score)
+-MaxScore -OutStream :-
+
+	One=letter(Letter,Y,X,Dir) ,
+	array_of_list:get_list(ArrayOfWordList,Letter, WordList) ,
+
+	loop3(WordList,Y,X,Dir,Rest,
+	ArrayOfWordList,Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream ,
+
+	loop2(Rest,ArrayOfWordList,Size,W,H,Board,PlaceList,Score)
+    -MaxScore -OutStream .
+
+
+
+%%% loop3 +WordList(Extend2)特定の文字を含む
+loop3([]        , Y,X,Dir, LetterList,ArrayOfWordList,
+Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream .
+
+loop3([One|Rest], Y,X,Dir, LetterList,ArrayOfWordList,
+Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- 
+
+	One=word(Ident,Spell,Point,Length,Pos),
+
+	try(Ident,Spell,Point,Length,Pos, Y,X,Dir, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream ,
+
+	loop3(Rest, Y,X,Dir, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream .
+
+
+
+%%% top-bottom left-right で振り分け
+try(Ident,Spell,Point,Length,Pos, Y,X,Dir, LetterList,ArrayOfWordList,
+Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Dir = tb |
+
+	%% 置いた時のサイズを出す
+	tool:next_size(H,Y,Length,Pos, NewH),
+	tool:check_size(NewH,Size, Chk),
+
+	try2_tb(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,W,NewH,Board,PlaceList,Score) -MaxScore -OutStream .
+
+
+try(Ident,Spell,Point,Length,Pos, Y,X,Dir, LetterList,ArrayOfWordList,
+Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Dir = lr |
+
+	%% 置いた時のサイズを出す
+	tool:next_size(W,X,Length,Pos, NewW) ,
+	tool:check_size(NewW,Size, Chk),
+
+	try2_lr(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,NewW,H,Board,PlaceList,Score) -MaxScore -OutStream .
+
+
+
+%%% 本当に入るか調べる(サイズはOK)
+try2_tb(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = true |
+
+	tool:shift_length(Y,Pos, ShiftLength) ,
+	board:shift_tb(Size,Board,ShiftLength, TempBoard) ,
+
+	NewY := Y - Pos + ShiftLength , % 置く位置の頭
+	board:isPut_spell_tb(Spell,Length, Size,TempBoard,NewY,X, Chk2),
+
+	try3_tb(Chk2, Ident,Spell,Point,Length,Pos, ShiftLength,NewY,X, 
+	LetterList,ArrayOfWordList,
+	Size,W,H,  TempBoard,PlaceList,Score) -MaxScore -OutStream .
+
+
+try2_tb(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = false |
+	true .
+
+
+
+%%% 置く Y X の場所から Dirの方向に
+try3_tb(Chk, Ident,Spell,Point,Length,Pos, ShiftLength,Y,X,
+	LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = true | 
+
+	letter_list:shift_tb(ShiftLength,LetterList, ShiftedLetterList) ,
+	letter_list:new_tb(Spell,Length,Pos,Y,X, NowLetterList),
+	list:append(ShiftedLetterList,NowLetterList,NewLetterList),
+
+	array_of_list:remove_word(Ident,Spell,Length,
+	ArrayOfWordList, NewArrayOfWordList) ,
+
+ 	board:put_spell_tb(Size,Spell,Length,Y,X,Board, NewBoard),
+
+	place_list:shift_tb(ShiftLength,PlaceList, ShiftedPlaceList),
+	NewPlaceList=[place(Ident,Y,X,tb)|ShiftedPlaceList],
+	NewScore := Score + Point ,
+
+	loop2(NewLetterList,NewArrayOfWordList,Size,W,H,NewBoard,
+	NewPlaceList,NewScore) -MaxScore -OutStream .
+
+
+%%% 置けない	
+try3_tb(Chk, Ident,Spell,Point,Length,Pos, ShiftLength,Y,X, LetterList,
+	ArrayOfWordList, 
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = false |
+
+	true .
+
+
+
+%%% 本当に入るか調べる(サイズはOK)
+try2_lr(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = true |
+
+	tool:shift_length(X,Pos, ShiftLength) ,
+
+	board:shift_lr(Size,Board,ShiftLength, TempBoard) ,
+
+	NewX := X - Pos + ShiftLength , % 置く位置の頭
+	board:isPut_spell_lr(Spell,Length, Size,TempBoard,Y,NewX, Chk2),
+
+	try3_lr(Chk2, Ident,Spell,Point,Length,Pos, ShiftLength,Y,NewX,
+	LetterList,ArrayOfWordList,
+	Size,W,H,TempBoard,PlaceList,Score) -MaxScore -OutStream .
+
+
+try2_lr(Chk, Ident,Spell,Point,Length,Pos, Y,X, LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = false |
+
+	true .
+
+
+
+%%% 置く Y X の場所から Dirの方向に
+try3_lr(Chk, Ident,Spell,Point,Length,Pos, ShiftLength,Y,X,
+	LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :- Chk = true | 
+
+	letter_list:shift_lr(ShiftLength,LetterList, ShiftedLetterList) ,
+	letter_list:new_lr(Spell,Length,Pos,Y,X, NowLetterList),
+	list:append(ShiftedLetterList,NowLetterList,NewLetterList),
+
+	array_of_list:remove_word(Ident,Spell,Length,
+	ArrayOfWordList, NewArrayOfWordList) ,
+
+	board:put_spell_lr(Size,Spell,Length,Y,X,Board, NewBoard),
+
+	place_list:shift_lr(ShiftLength,PlaceList, ShiftedPlaceList),
+	NewPlaceList=[place(Ident,Y,X,lr)|ShiftedPlaceList],
+	NewScore := Score + Point ,
+
+	loop2(NewLetterList,NewArrayOfWordList,Size,W,H,NewBoard,
+	NewPlaceList,NewScore) -MaxScore -OutStream .
+
+
+%%% 置けない	
+try3_lr(Chk, Ident,Spell,Point,Length,Pos, ShiftLength,Y,X,
+	LetterList,ArrayOfWordList,
+	Size,W,H,Board,PlaceList,Score) -MaxScore -OutStream :-
+	Chk = false | true .
+
+%% end

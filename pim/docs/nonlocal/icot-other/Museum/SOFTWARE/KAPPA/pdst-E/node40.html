@@ -1,0 +1,81 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Message sending to irpr system server</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Message sending to irpr system server">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html502 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html500 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html496 HREF="node39.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html503 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B>Up:</B> <A NAME=tex2html501 HREF="node38.html"> Module irpr_service(irpr_service.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html497 HREF="node39.html"> Creation of irpr </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00045200000000000000> Message sending to irpr system server</A></H3>
+<P>
+After a command parameter of irpr_client is transformed into a 
+message to irpr system server, it is sent through the interface stream 
+IrprITR by a predicate exec_irpr/5. What will be done by these 
+messages are defined in irpr_kappa.kl1.
+<P>
+The first three arguments of exec_irpr/5 are described in order of 
+appearance below.
+<P>
+<DL ><DT>Mode
+<DD> A command parameter of irpr_client which has been  
+	changed to an atom.
+ <DT>Search_cond
+<DD> A string of search condition which was standard 
+	input of irpr_client.
+ <DT>Result
+<DD> specifies what will be written to standard output of 
+	irpr_client. There can be three types of vls(VLS), vl(VL) and
+	term(Term).
+<P>
+ </DL>
+<P>
+<PRE>exec_irpr(scd, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_current_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(shd, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_history_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(sad, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_all_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(anm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= add_new_member(Search_cond, Result0),
+    Result = vl(Result0).
+exec_irpr(mm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= modify_member(Search_cond, Result0),
+    Result = vl(Result0).
+exec_irpr(dm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= delete_member(Search_cond, Result0),
+    Result = term(Result0).
+otherwise.
+exec_irpr(Mode, _Search_cond, Result)-IrprITR :-
+    Result = term(abnormal(&quot;Illegal Parameter.&quot;,Mode)).
+</PRE>
+<P>
+Here, we give a supplementary explanation of output styles of an 
+argument &quot;Result&quot;.
+<P>
+<DL ><DT>vls(VLS)
+<DD> &quot;VLS&quot; is unified with a list each time output of it 
+	is finished in order for irpr_kappa:read_record/5 to be 
+	demand driven. It will be  written to standard output of 
+	irpr_client in the form of &quot;normal([...])&quot;.
+ <DT>vl(VL)
+<DD> &quot;VL&quot; is a term of result. It will be written to 
+	standard output of irpr_client in the form of &quot;normal(VL)&quot;.
+ <DT>term(Term)
+<DD> &quot;Term&quot; is a term of result. It will be written to 
+	standard output of irpr_client in the form of &quot;Term&quot;.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

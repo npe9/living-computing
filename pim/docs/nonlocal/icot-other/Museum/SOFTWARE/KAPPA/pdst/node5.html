@@ -1,0 +1,52 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> データモデルの考え方</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" データモデルの考え方">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html116 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html114 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html110 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html117 HREF="node6.html"> 関係モデルと非正規関係モデル</A>
+<B>Up:</B> <A NAME=tex2html115 HREF="node3.html"> データベースの基礎知識</A>
+<B> Previous:</B> <A NAME=tex2html111 HREF="node4.html"> データベースとは何か</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00021200000000000000> データモデルの考え方</A></H3>
+<P>
+次にデータ・モデルを考えてみよう。これは実世界をデータベースという視点
+から抽象化したモデルである。ふつう次の３つをデータ・モデルの構成要素と
+して考える:
+<DL ><DT>データ構造
+<DD> これは実世界の情報を１つの構造として、すなわちその基
+本要素と要素間の関係を定義するものである。このデータベース構造の不変部
+分をスキーマといい可変部分をデータベース状態(実現値の集まり)という。
+<P>
+<DT>データ操作
+<DD> データ構造に対して施される操作の定義であり、データ構
+造に対応して、スキーマに対する定義演算とデータベース状態に対する操作演
+算がある。
+<P>
+<DT>一貫性制約
+<DD> データベース状態が保つべき条件であり、１つの属性に対
+応する値が満足すべき条件と他の属性との関係で制約される条件がある。
+<P>
+ </DL>
+以上を簡単に図示すると、図<A HREF="node5.html#fmodel">1</A> のようになる。
+<P>
+<P><A NAME=39>&#160;</A><A NAME=fmodel>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img1.gif">
+<BR><STRONG>図 1:</STRONG> データモデル<BR>
+<P>
+<P>
+Kappa では、スキーマ中に(一貫性)制約も記述する。このスキーマは、データ
+ベースの論理(概念)モデルと考えることができる。データの物理的配置などは
+Kappa によって自動的に行われるので、それら (いわゆる内部モデル) はデー
+タベース管理者以外は意識する必要はない。データ操作としては、原始コマン
+ドがKLICプログラムとのインタフェースである。
+<P>
+<BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,132 @@
+﻿<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-2022-jp">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.03 [en] (X11; I; SunOS 4.1.4-JL sun4m) [Netscape]">
+   <TITLE>MGTP Primer</TITLE>
+</HEAD>
+<BODY TEXT="#003300" BGCOLOR="#FFFFFF" LINK="#3366FF" VLINK="#551A8B" ALINK="#009900">
+
+<CENTER>
+<H2>
+<br>
+<br>
+<image src="trans-mgtp1.gif"><br>
+<br>
+<image src="trans-mgtp2.gif">
+<br><br>
+<FONT FACE="Arial,Helvetica" color="red"><FONT SIZE=+2>Since 1989</FONT></FONT></H2></CENTER>
+
+<BR>
+
+<CENTER>
+<BR>このページでは、ICOT で研究開発されたモデル生成型の定理証明システム
+MGTP に関する説明をします。
+</CENTER>
+
+
+<BR>
+<BR>
+
+<CENTER>
+<FONT color="blue">定理証明システムは古くて新しい研究テーマです。</font>
+</CENTER>
+<BR><BR>
+定理証明システムは、AI という言葉がうまれた当初から、AI の有望な
+アプリケーションとして研究開発が行なわれてきた分野です。
+数学の定理を証明することだけではなく、その他の問題解決システムとして
+利用可能であるという点で、注目を集めてきました。
+日本では、定理証明システムというと、古典的 AI の研究というイメージが
+強いのですが、欧米では、依然として多くの研究者が研究開発に
+取り組んでおり、記述能力や推論効率、また、応用領域に関しても
+着実な進歩を遂げている領域となっています。<BR><BR>
+
+<CENTER>
+<FONT color="blue">MGTP は一階述語論理に基づいています。</font>
+</CENTER>
+<BR><BR>
+MGTP は、一階述語論理の論理体系に基づいており、
+Prolog のようにホーン節に限定されることもありません。
+フルの一階述語論理は、非常に広範囲な知識を表現することができます。
+また、MGTP においては、さらに失敗による否定や様相オペレータを
+取り込むことによって、非単調推論を取り扱うこともできます。<BR><BR>
+
+<CENTER>
+<FONT color="blue">MGTP はボトムアップ型のシステムです。</font>
+</CENTER>
+<BR><BR>
+MGTP は Prolog のようなトップダウン型のシステムではなく、
+事実から推論を行なっていくボトムアップ型のシステムです。
+ボトムアップ型のシステムでは、トップダウン型に見られるような
+同じ証明を繰り返し実行してしまうような冗長性を排除することが
+できます。また、ボトムアップ型に特有な、証明すべき定理と関連の
+ない推論を実行してしまうという問題については、マジックセット法
+と呼ばれるトップダウン推論との融合技術が考案されています。
+<BR><BR>
+
+<CENTER>
+<FONT color="blue">MGTP は並列化に適した構造を有しています。</font>
+</CENTER>
+<BR><BR>
+ボトムアップ型であり、また、値域制約という条件を満足する MGTP は
+並列化に非常に適した推論形式です。特に、OR 分岐については、
+他の枝と変数を共有することなく実行させることができるので、並列化
+方式を工夫することによって、ほぼ線形に近い台数効果を達成することが
+できます。ICOT で開発された PIM/m において、256 台のプロセッサを使用し、
+高い並列化効果を示すことができました。
+<BR><BR>
+
+<CENTER>
+<FONT color="blue">MGTP の研究は今も続けて行なわれています。</font>
+</CENTER>
+<BR><BR>
+ICOT から九州大学に移られた長谷川隆三教授を中心として、
+MGTP の研究開発は、現在も継続しておこなわれています。
+汎用並列機上での効率的な並列化手法、探索制御技術、
+GA などの確率的探索手法の取り込みなどが主なテーマです。
+また、最近では、MGTP をベースとして、法的推論への応用を考慮した
+システム開発も並行して行なわれています。
+
+<P>
+<CENTER>
+<FONT FACE="Arial,Helvetica" color="red"><FONT SIZE=+2>Menu</FONT></FONT></H2>
+</CENTER>
+
+<P>
+<HR WIDTH="100%">
+
+<CENTER><A HREF="lecture/html/index.html">MGTP 入門(MGTP Primer)</A></CENTER>
+
+<CENTER><A HREF="lecture/html/ifs.html">MGTP のダウンロード</A></CENTER>
+
+<CENTER><A HREF="http://ss104.is.kyushu-u.ac.jp/~koshi/mgtp.html">MGTP
+処理系 (CGI script) 九大サイト</A></CENTER>
+
+<CENTER><A HREF="lecture/html/results/results.html">MGTP を用いた実験結果等</A></CENTER>
+
+<BR>
+
+<CENTER><A HREF="lecture/html/efficiency.html">推論の効率化技法</A></CENTER> 
+
+<CENTER><A HREF="lecture/html/application.html">MGTP上の高度推論機能の紹介</A></CENTER> 
+
+
+<!-- <CENTER><A HREF="lecture/html/implementation.html">MGTP の実装</A></CENTER> -->
+
+<BR>
+
+<CENTER><A HREF="lecture/html/members.html">開発メンバーの紹介</A></CENTER>
+
+<CENTER><A HREF="lecture/html/otherSystems.html">関連サイト</A> 
+</CENTER>
+
+<CENTER>
+<HR WIDTH="100%"></CENTER>
+
+Last Update : 31 March, 1999<BR>
+<a href="mailto:shirai@mri.co.jp">shirai@mri.co.jp</a>
+
+
+</BODY>
+
+
+</HTML>

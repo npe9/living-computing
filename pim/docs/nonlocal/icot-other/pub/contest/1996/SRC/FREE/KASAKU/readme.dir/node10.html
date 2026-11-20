@@ -1,0 +1,50 @@
+﻿<html><HEAD>
+<TITLE>3.2 メニュー</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html131 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html129 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html125 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html132 HREF="node11.html">A 背景</A>
+<B>Up:</B> <A NAME=tex2html130 HREF="node8.html">3 プログラムの使い方</A>
+<B> Previous:</B> <A NAME=tex2html126 HREF="node9.html">3.1 知識データのロード</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00032000000000000000>3.2 メニュー</A></H2>
+<P>
+データのロード確認が終わると、プログラムはメニューを表示する。
+メニューは以下のような構成になっている。
+<P>
+<DL ><DT>1. : training mode
+<DD>
+  プログラムが紅白戦を行うことで学習（Q値の更新）を行う。
+  このメニューを選択するとトレーニング回数（何試合紅白戦を行うか）
+  の入力をユーザに促す。
+  この入力は Prolog 形式で行う<A NAME=tex2html4 HREF="footnode.html#83"><IMG  ALIGN=BOTTOM ALT="gif" SRC="foot_motif.gif"></A>。
+<DT>2. : game mode
+<DD>
+  プログラムとユーザが 1 試合対戦する。先攻後攻は
+  ランダムに決定される。
+  ユーザの入力（手の選択）は、``a2.'' といったように
+  「縦座標」「横座標」「終端を示すピリオド」の形で行う。
+<DT>3. : show the Q-function
+<DD>
+  現在の Q-function の値（Q値）を表示する。
+<DT>4. : quit
+<DD>
+  プログラムを終了する。このメニューを選択すると、
+  現在のQ値をファイル ``q.kl1'' としてセーブするかどうか
+  ユーザに確認を行う。
+<P>
+ </DL>
+<P>
+<b> 4</b> 以外は、各処理が終了すると
+再びメニュー選択に戻るようになっている。
+<P>
+
+<P>
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

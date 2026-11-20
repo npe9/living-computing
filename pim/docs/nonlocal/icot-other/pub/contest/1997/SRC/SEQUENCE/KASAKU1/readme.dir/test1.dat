@@ -1,0 +1,20 @@
+/*
+[card(7,hearts),card(queen,clubs),card(7,spades),card(queen,spades),
+card(queen,diamonds),card(8,hearts),card(8,clubs),card(6,spades),
+card(8,spades),card(6,diamonds),card(ace,hearts),card(ace,clubs),
+card(jack,diamonds),card(jack,spades),card(ace,diamonds),card(4,hearts),
+card(10,clubs),card(2,spades),card(10,spades),card(king,diamonds),
+card(9,hearts),card(3,clubs),card(5,diamonds),card(9,spades),
+card(9,diamonds)]    %2922218
+*/
+/* ( 2922218 by SA) */
+		[card(7,hearts),card(queen,clubs),card(7,spades),
+  		card(8,hearts),card(8,clubs),card(6,spades),
+		card(10,spades),card(king,diamonds),
+  		card(9,hearts), card(3,clubs),card(5,diamonds),
+		card(8,spades),card(6,diamonds),
+		card(jack,spades),card(ace,diamonds),
+  		card(4,hearts),card(10,clubs),card(2,spades),
+  		card(ace,hearts),card(ace,clubs),card(jack,diamonds),
+		card(queen,spades),card(queen,diamonds),
+		card(9,spades),card(9,diamonds)].

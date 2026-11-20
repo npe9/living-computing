@@ -1,0 +1,84 @@
+%  Copyright (C) 1996 Haruhiko Usa  < usa@logos.t.u-tokyo.ac.jp >
+%						November 17, 1996
+
+:- module encode.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   encode(L,M,N,P)
+%   ハッシュ表のサイズ : N, ノード数 : P.
+
+encode(L,M,N,P) :- 
+    generic:new(vector,M0,N),
+    hash(L,N,M0,M,P).
+
+
+hash([],N,M0,M,P) :- sort_all(M0,N,0,M,P).
+hash([X|L],N,M0,M,P) :- X>=0, H:=X mod N |
+    set_vector_element(M0,H,A0,[X|A0],M1),
+    hash(L,N,M1,M,P).
+hash([X|L],N,M0,M,P) :- X<0, H:=(- X) mod N |
+    set_vector_element(M0,H,A0,[X|A0],M1),
+    hash(L,N,M1,M,P).
+
+
+sort_all(M0,N,N,M,P) :- M=[].
+sort_all(M0,N,H,M,P) :- H<N, H1:=H+1 |
+    vector_element(M0,H,L),
+    M=[L1|M1],
+    Node:=H mod P,
+    sort_all(M0,N,H1,M1,P),
+    sort(L,L1)@node(Node).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   merge sort. 
+
+sort(L,L1) :- mergesort_init(L,L2), mergesort(L2,L1).
+
+mergesort_init(0,R)   :- R=[].
+mergesort_init([X0|0],R) :- R=[X0,1].
+mergesort_init([X0,X1|L],R) :- X0<X1 |
+    R=[[X0,1,X1,1]|R2],
+    mergesort_init(L,R2).
+mergesort_init([X0,X1|L],R) :- X1<X0 |
+    R=[[X1,1,X0,1]|R2],
+    mergesort_init(L,R2).
+mergesort_init([X0,X0|L],R) :- 
+    R=[[X0,2]|R2],
+    mergesort_init(L,R2).
+
+
+mergesort([],M) :- M=[].
+mergesort([A],M) :- list(A) | M=A.
+otherwise.
+mergesort(L,M) :- merge_pairs(L,R), mergesort(R,M).
+
+
+merge_pairs([A,B|L],R) :- list(A), list(B) |	% A, B are integer lists.
+    R=[R1|R2],
+    merge(A,B,R1),
+    merge_pairs(L,R2).
+merge_pairs([A,X|L],R) :- list(A), integer(X) |	% A, [X|L] are integer lists.
+    merge(A,[X|L],R).
+merge_pairs([],R) :- R=[].
+merge_pairs([A],R) :- R=[A].			% A is a integer list.
+otherwise.
+merge_pairs(A,R) :- R=[A].			% A is a integer list.
+
+
+merge([],[],L) :- L=[].
+merge(L0,[],L) :- list(L0) | L=L0.
+merge([],L1,L) :- list(L1) | L=L1.
+merge([X0,Xn0|L0],[X1,Xn1|L1],L) :- X0<X1 |
+    L=[X0,Xn0|L2],
+    merge(L0,[X1,Xn1|L1],L2).
+merge([X0,Xn0|L0],[X1,Xn1|L1],L) :- X1<X0 |
+    L=[X1,Xn1|L2],
+    merge([X0,Xn0|L0],L1,L2).
+merge([X0,Xn0|L0],[X0,Xn1|L1],L) :- Xn:=Xn0+Xn1 |
+    L=[X0,Xn|L2],
+    merge(L0,L1,L2).
+
+
+%%%%  encode EOF.
+

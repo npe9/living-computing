@@ -1,0 +1,542 @@
+%*********************************************************************
+%    Life game.
+%		by Daisaku Yokoyama  (yokoyama@logos.t.u-tokyo.ac.jp)
+%							Dec 19, 1997
+%*********************************************************************
+
+:- module life.
+
+compute(N,In,Out) :-
+	make_line(In,Lines,Top,Bottom,Count),
+	compute_part(N,Lines,Top,Bottom,Count,_,_,_,Out_Lines),
+	deline(Out_Lines)+Out+[].
+
+% compute_part:問題を100世代以下に分割、計算
+% 	+N		世代数
+% 	+Lines		line（点の内部表現）のリスト
+% 	+Top, +Bottom	lineのY座標最小値、最大値
+% 	+Count		line数
+% 	-ATop, -ABottom	N世代経過後のlineの最小値、最大値
+% 	-Out		N世代経過後のlineのリスト
+compute_part(N,Lines,Top,Bottom,Count,ATop,ABottom,ACount,Out) :- N =< 100 |
+	current_node(_,RealPEs),
+	TempRange := Count / RealPEs,
+	% 1ノードに16列以上割り振られるようにノード数を調整
+	(TempRange < 16 ->
+	    PEs := Count >> 4,
+	    Range := 16;
+	 TempRange >= 16 ->
+	    PEs := RealPEs - 1,
+	    Range := TempRange),
+	make_local_manager(N,0,PEs,TopS,BottomS,
+                           Lines,~(Top-N),~(Bottom+N),Range)@lower_priority,
+	global_manager(TopS,BottomS,ATop,ABottom,ACount,Out).
+compute_part(N,In,Top,Bottom,Count,ATop,ABottom,ACount,Out) :-
+    N >= 200, N1 := N - 100 |
+	compute_part(100,In,Top,Bottom,Count,Top1,Bottom1,Count1,Out1),
+	compute_part(N1,Out1,Top1,Bottom1,Count1,ATop,ABottom,ACount,Out)@lower_priority(101).
+otherwise.
+compute_part(N,In,Top,Bottom,Count,ATop,ABottom,ACount,Out) :-
+    N1 := N >> 1, N2 := N - N1, N3 := N1 + 1 |
+	compute_part(N1,In,Top,Bottom,Count,Top1,Bottom1,Count1,Out1),
+	compute_part(N2,Out1,Top1,Bottom1,Count1,ATop,ABottom,ACount,Out)@lower_priority(N3).
+
+% deline:点の内部表現をdecode
+deline([])-Out.
+deline([line(Y,Xs)|Ls])-Out :-
+	deline2(Y,Xs)-Out,
+	deline(Ls)-Out.
+
+deline2(Y,[])-Out.
+deline2(Y,[X|Xs])-Out :-
+	Out <= p(X,Y),
+	deline2(Y,Xs)-Out.
+
+
+%*********************************************************************
+%  データの内部表現化
+%	[p(X1,Y),p(X2,Y),...] => [line(Y,[X1,X2,...]),line(...),...]
+%*********************************************************************
+
+make_line([],Ls,Top,Bottom,Count) :-
+	Ls = [],
+	Top := 0,
+	Bottom := 0,
+	Count := 0.
+make_line([p(X,Y)|Ps],Ls,Top,Bottom,Count) :-
+	Top := Y,
+	make_line2([p(X,Y)|Ps],Y,Ls,Temp,Temp,Bottom)+0+Count.
+
+make_line2([],PreY,Ls,Temph,Temp,Bottom)-C :-
+	Bottom := PreY,
+	Temp = [],
+	C += 1,
+	Ls = [line(PreY,Temph)].
+make_line2([p(X,Y)|Ps],PreY,Ls,Temph,Temp,Bottom)-C :- PreY =:= Y |
+	Temp = [X|Tempe],
+	make_line2(Ps,PreY,Ls,Temph,Tempe,Bottom)-C.
+make_line2([p(X,Y)|Ps],PreY,Ls,Temph,Temp,Bottom)-C :- PreY =\= Y |
+	Temp = [],
+	C += 1,
+	Ls = [line(PreY,Temph)|Lse],
+	make_line2([p(X,Y)|Ps],Y,Lse,Temp1,Temp1,Bottom)-C.
+
+
+%*****************************************************
+%      local manager 起動
+%*****************************************************
+
+% make_local_manager: 計算すべきlineを分割し、local_managerを起動する
+% 	+N		計算世代数
+% 	+NowPE		このタスクが動いているノードの番号
+% 	+PEs		全ノード数
+% 	+TopS,+BottomS	ノード間通信用ストリーム、
+%			ここにlocal_managerをつないでゆく
+% 	+Lines		計算すべきlineの分割前のリスト
+% 	+LTop,+LBottom	計算すべき領域（lineのY座標の範囲）の最小値、最大値
+% 	+Range		1ノードに割り当てられるlineの数
+
+make_local_manager(N,NowPE,PEs,TopS,BottomS,Lines,LTop,LBottom,Range) :-
+    NowPE =:= PEs |
+	new_vector(Ary,1024),
+	next_ary(Ary,Lines,first,Change_Ls,Ary1),
+	local_manager(N,TopS,BottomS,Ary1,Change_Ls,
+		      LTop,LBottom,change,change).
+otherwise.
+make_local_manager(N,NowPE,PEs,TopS,BottomS,Lines,LTop,LBottom,Range) :-
+    NextPE := NowPE + 1 |
+	get_lines(Lines,Range,first,ThisBottom1,ThisL,RestL),
+	(ThisBottom1 = first ->
+	    ThisBottom := LTop;
+	 otherwise; true -> ThisBottom := ThisBottom1),
+	ThisB_1 := ThisBottom + 1,
+	(wait(ThisB_1) -> make_local_manager(N,NextPE,PEs,TopS1,BottomS,RestL,
+                           ThisB_1,LBottom,Range)@node(NextPE)),
+	new_vector(Ary,1024),
+	next_ary(Ary,ThisL,first,Change_Ls,Ary1),
+	local_manager(N,TopS,TopS1,Ary1,Change_Ls,
+		      LTop,ThisBottom,change,change).
+
+% get_lines(+InLines,+Range,+PreY,-LinesBottom,-OutLines,-RestLines)
+% 	InLinesからRange数だけlineをOutLinesに、最後のY座標をLinesBottomに、
+% 	残ったlineをRestLinesに出力
+get_lines([],_,PreY,ThisBottom,ThisL,RestL) :-
+	ThisL = [],
+	RestL = [],
+	ThisBottom := PreY.
+get_lines([line(Y,Xs)|Ls],N,PreY,ThisBottom,ThisL,RestL) :- N > 0 |
+	ThisL = [line(Y,Xs)|ThisL1],
+	get_lines(Ls,~(N-1),Y,ThisBottom,ThisL1,RestL).
+get_lines([line(Y,Xs)|Ls],N,PreY,ThisBottom,ThisL,RestL) :- N =:= 0 |
+	ThisL = [],
+	RestL = [line(Y,Xs)|Ls],
+	ThisBottom := PreY.
+
+
+%**********************************************************
+%    global manager
+%	local_managerの連なりの両端のストリームを監視し、
+%	dummyのlocal_managerとして振舞う。
+%	答がlocal_managerから返ってきたらまとめて出力する。
+%**********************************************************
+
+% global_manager:
+% 	+TopS,-BottomS	local_managerの連なりの先頭、終端とのストリーム
+% 	-ATop,-ABottom	計算結果（N世代後）のlineの最大、最小
+% 	-ACount		計算結果（N世代後）のline数
+% 	-Out		計算結果（N世代後）のlineのリスト
+global_manager([ans(Top,Bottom,C,P)|As],BottomS,ATop,ABottom,ACount,Out) :-
+	ATop := Top,
+	BottomS = [],
+	deans([ans(Top,Bottom,C,P)|As],Bottom,ABottom)+0+ACount+Out+[].
+global_manager([head(_,Upr_line)|TS],BottomS,ATop,ABottom,ACount,Out) :-
+	Upr_line = unchange([]),
+	BottomS = [head(unchange([]),_)|BS],
+	global_manager(TS,BS,ATop,ABottom,ACount,Out).
+
+% [ans(Top,Bottom,C,P),ans(),...] => [line(X,Y),...]
+deans([],Temp,ABottom)-C-Out :-
+	ABottom := Temp.
+deans([ans(Top,Bottom,Count,P)|Ps],Temp,ABottom)-C-Out :-
+	C += Count,
+	deans2(P)-Out,
+	deans(Ps,Bottom,ABottom)-C-Out.
+
+deans2([])-Out.
+deans2([line(Y,Xs)|Ls])-Out :-
+	Out <= line(Y,Xs),
+	deans2(Ls)-Out.
+
+
+%***************************************************************
+%    local manager
+%	1つのノードに与えられた範囲について、N世代後を計算する。
+%***************************************************************
+
+% local_manager:
+% 	+N		計算世代数
+% 	+Upper,+Lower	このノードが計算すべきY座標の最小、最大値
+% 	+Ary		現在のlineを収めたベクタ
+% 	+Change_pool	この世代で変化の可能性のあるY座標のリスト
+% 	+Top,+Bottom	隣のlocal_managerとの通信用ストリーム
+% 	+TopCorU,+BottomCorU	前の世代でこのノードのUpper,Lowerに当たるlineが
+%				変化した(change)かしなかった(unchange)か
+local_manager(N,Upper,Lower,Ary,Change_pool,Top,Bottom,TopCorU,BottomCorU) :-
+    wait(Ary) ,N > 0 |
+	Bot_1 := Bottom + 1, Top_1 := Top - 1, N_1 := N - 1,
+	% 上のノードにメッセージを送る
+	get_line(Top,Ary,Headline),
+	(wait(Headline), TopCorU = change ->
+	    Upper = [head(change(Headline),Upr_line)|UppE];
+	 wait(Headline), TopCorU = unchange ->
+	    Upper = [head(unchange(Headline),Upr_line)|UppE]),
+	% 下のノードからメッセージを受ける
+	getlower(Lower,Ary,Bottom,BottomCorU,Low_headline,LowE),
+	% ノードの下端を次世代で計算するかどうか
+	(Low_headline = change(Low_L1) ->
+	    NowBottomCorU = change,
+	    Low_L = Low_L1;
+	 Low_headline = unchange(Low_L1) ->
+	    NowBottomCorU = BottomCorU,
+	    Low_L = Low_L1),
+	% ノードの下端+1のlineを更新
+	put_line(Bot_1,Ary,Low_L,Ary1),
+	% ノードの上端を次世代で計算するかどうか
+	(Upr_line = change(Upr_L1) ->
+	    NowTopCorU = change,
+	    Upr_L = Upr_L1;
+	 Upr_line = unchange(Upr_L1) ->
+	    NowTopCorU = TopCorU,
+	    Upr_L = Upr_L1),
+	% ノードの上端-1のlineを更新
+	(wait(Ary1) -> put_line(Top_1,Ary1,Upr_L,Ary2)),
+	% 次世代を計算
+	(wait(Ary2) ->
+	    next_life(NowTopCorU,Change_pool,NowBottomCorU,Top,Bottom,
+                      Ary2,Next_change,Nextary,NTopCorU,NBottomCorU)),
+	local_manager(N_1,UppE,LowE,Nextary,Next_change,
+                      Top,Bottom,NTopCorU,NBottomCorU)@lower_priority.
+local_manager(N,Upper,Lower,Ary,Change_pool,Top,Bottom,_,_) :- N =:= 0 |
+	get_ans(Ary,Top,Bottom,first,ATop,Top,ABottom,Ans)+0+Count,
+	(Count =:= 0 -> Upper = Lower;
+	 Count =\= 0 -> Upper = [ans(ATop,ABottom,Count,Ans)|Lower]).
+
+% getlower: 下のlocal_managerからhead(+Headline,-Upr_line)が送られてくる。
+%		Headlineは下のノードの上端のline
+%		Upr_lineにこのノードの下端のlineを返す
+% 	+Ary		lineが格納されたベクタ
+% 	+Bottom		このノードの下端のY座標
+% 	+BottomCorU	このノードの下端のlineが前世代で変化したかどうか
+% 	-Low_headline	下のノードの上端のline
+% 	-LowE		下のノードとのストリームの続き
+getlower([head(Headline,Upr_line)|UppE],Ary,Bottom,BottomCorU,
+                                        Low_headline,LowE) :-
+	get_line(Bottom,Ary,Bottomline),
+	(BottomCorU = change ->
+	    Upr_line = change(Bottomline);
+	 BottomCorU = unchange ->
+	    Upr_line = unchange(Bottomline)),
+	Low_headline = Headline,
+	LowE = UppE.
+
+get_ans(Ary,Top,Bottom,TempTop,ATop,TempBottom,ABottom,Ans)-C :- Top > Bottom |
+	ABottom := TempBottom,
+	Ans = [].
+get_ans(Ary,Top,Bottom,TempTop,ATop,TempBottom,ABottom,Ans)-C :-
+    Top =< Bottom, Top1 := Top + 1 |
+	get_line(Top,Ary,Line),
+	(Line = [] ->
+	    get_ans(Ary,Top1,Bottom,TempTop,ATop,TempBottom,ABottom,Ans)-C;
+	 otherwise; TempTop = first ->
+	    C += 1,
+	    Ans = [line(Top,Line)|Ans1],
+	    ATop := Top,
+	    get_ans(Ary,Top1,Bottom,notfirst,_,Top,ABottom,Ans1)-C;
+	 otherwise; true ->
+	    C += 1,
+	    Ans = [line(Top,Line)|Ans1],
+	    get_ans(Ary,Top1,Bottom,TempTop,ATop,Top,ABottom,Ans1)-C).
+
+
+%***************************************************************
+%    1世代後のlineを計算
+%***************************************************************
+
+% next_life:
+% 	+TCorU		ノードの上端が前世代で変化したかどうか
+% 	+C_pool		今世代で変化の可能性のあるY座標リスト
+% 	+BCorU		ノードの下端が前世代で変化したかどうか
+% 	+Top,+Bottom	ノードの上端、下端のY座標
+% 	+L_ary		計算前のlineを収めたベクタ
+% 	-NL_ary		計算後のlineを収めたベクタ
+% 	-NTCorU,NBCorU	今回、ノードの上端、下端が変化したかどうか
+next_life(TCorU,C_pool,LCorU,Top,Bottom,L_ary,NC_pool,NL_ary,NTCorU,NBCorU) :-
+	doa_lines(TCorU,C_pool,LCorU,Top,Bottom,L_ary,
+                 Change_lines,NTCorU,NBCorU),
+	next_ary(L_ary,Change_lines,first,NC_pool,NL_ary).
+
+% doa_lines -- Dead or Alive line : 生死判定が終ったlineを出力
+%	ノードの上端より上のlineを読み飛ばし、
+%	上端をChange_poolに入れるか否かを考慮してdoa_lines2に仕事を引き継ぐ
+doa_lines(unchange,[],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+	NTCorU = unchange,
+	doa_lines2([],LCorU,Bottom,L_ary,nottop,_,_,
+		  Change_lines,unchange,NLCorU).
+doa_lines(unchange,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y < Top |
+	doa_lines(unchange,Ys,LCorU,Top,Bottom,L_ary,
+		 Change_lines,NTCorU,NLCorU).
+doa_lines(unchange,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y =:= Top |
+	doa_lines2([Y|Ys],LCorU,Bottom,L_ary,top,_,_,
+		  Change_lines,NTCorU,NLCorU).
+doa_lines(unchange,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y > Top |
+	NTCorU = unchange,
+	doa_lines2([Y|Ys],LCorU,Bottom,L_ary,nottop,_,_,
+		  Change_lines,unchange,NLCorU).
+doa_lines(change,[],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+	doa_lines2([Top],LCorU,Bottom,L_ary,top,_,_,
+		   Change_lines,NTCorU,NLCorU).
+doa_lines(change,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y < Top |
+	doa_lines(change,Ys,LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU).
+doa_lines(change,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y =:= Top |
+	doa_lines2([Y|Ys],LCorU,Bottom,L_ary,top,_,_,
+		  Change_lines,NTCorU,NLCorU).
+doa_lines(change,[Y|Ys],LCorU,Top,Bottom,L_ary,Change_lines,NTCorU,NLCorU) :-
+    Y > Top |
+	doa_lines2([Top|[Y|Ys]],LCorU,Bottom,L_ary,top,_,_,
+		  Change_lines,NTCorU,NLCorU).
+
+% doa_lines2: ノードの上端から下端-1までの生死判定を担当
+doa_lines2([],LCorU,Bottom,L_ary,PreY,L1,L2,Change_lines,NTCorU,NLCorU) :-
+	doa_lines3([],LCorU,Bottom,L_ary,PreY,L1,L2,Change_lines,NLCorU).
+doa_lines2([Y|Ys],LCorU,Bottom,L_ary,PreY,L1,L2,Change_lines,NTCorU,NLCorU) :-
+    Y < Bottom, YM1 := Y - 1, YP1 := Y + 1 |
+	% L1,L2は直前に読み込んだ前世代のlineであり、
+	% それが使えるならばそのまま使い、使えないならばget_lineで読み込む。
+	% （キャッシュを行なっていることになる）
+	(PreY =:= Y ->
+	    YM1Line = L1,
+	    YLine = L2;
+	 PreY =:= YM1 ->
+	    YM1Line = L2,
+	    get_line( Y ,L_ary,YLine);
+	 otherwise; true ->
+	    get_line(YM1,L_ary,YM1Line),
+	    get_line( Y ,L_ary,YLine)),
+	get_line(YP1,L_ary,YP1Line),
+	% doaln:注目している1行だけの生死判定
+	doaln(YM1Line,YLine,YP1Line,NewLine,CorU),
+	% 変化しているものだけをChange_linesに出力
+	(CorU = change ->
+	    Change_lines = [line(Y,NewLine)|Ls],
+	    (PreY = top -> NTCorU = change;
+	     otherwise; true -> true);
+	 CorU = unchange ->
+	    Change_lines = Ls,
+	    (PreY = top -> NTCorU = unchange;
+	     otherwise; true -> true)),
+	doa_lines2(Ys,LCorU,Bottom,L_ary,YP1,YLine,YP1Line,Ls,NTCorU,NLCorU).
+doa_lines2([Y|Ys],LCorU,Bottom,L_ary,PreY,L1,L2,Change_lines,NTCorU,NLCorU) :-
+    Y >= Bottom |
+	doa_lines3(Y,LCorU,Bottom,L_ary,PreY,L1,L2,Change_lines,NLCorU).
+
+% doa_lines3: ノードの下端の生死判定を担当（doa_lines2とほぼ同じ動き）
+doa_lines3([],unchange,Bottom,L_ary,PreY,L1,L2,Change_lines,NLCorU) :-
+	Change_lines = [],
+	NLCorU = unchange.
+doa_lines3(Y,unchange,Bottom,L_ary,PreY,L1,L2,Change_lines,NLCorU) :-
+    Y > Bottom |
+	Change_lines = [],
+	NLCorU = unchange.
+otherwise.
+doa_lines3(_,_,Bottom,L_ary,PreY,L1,L2,Change_lines,NLCorU) :-
+    YM1 := Bottom - 1, YP1 := Bottom + 1 |
+	(PreY =:= Bottom ->
+	    YM1Line = L1,
+	    YLine = L2;
+	 PreY =:= YM1 ->
+	    YM1Line = L2,
+	    get_line(Bottom,L_ary,YLine);
+	 otherwise; true ->
+	    get_line(YM1   ,L_ary,YM1Line),
+	    get_line(Bottom,L_ary,YLine)),
+	get_line(YP1,L_ary,YP1Line),
+	doaln(YM1Line,YLine,YP1Line,NewLine,CorU),
+	(CorU = change ->
+	    Change_lines = [line(Bottom,NewLine)],
+	    NLCorU = change;
+	 CorU = unchange ->
+	    Change_lines = [],
+	    NLCorU = unchange).
+
+% doaln: 注目している1行(YLine)の生死判定
+doaln(YM1Line,YLine,YP1Line,NewLine,CorU) :-
+	% 注目行について情報行を作る（後述）
+	markln(YM1Line,[],Mark1,_),
+	markln_center(YLine,Mark1,Mark2,_),
+	markln(YP1Line,Mark2,Marked,_),
+	% 情報行を基に生死判定をした行を求める
+	doa(Marked,NewLine,unchange,CorU).
+
+% markln: 注目行について、周囲には何個生きているセルがあるか、
+%	  という情報を含んだ「情報行」を作る。
+% 情報行: [M1,M2,...],
+%	  M1の下6bit以上 = X座標、
+%	  M1の下5bit目   = X座標のセルが生きているかどうか
+%	  M1の下4bit以下 = X座標の回りにある生きたセルの数、
+markln([],PreMark,Marked,MarkedE) :-
+	Marked = PreMark.
+markln([X|Xs],PreMark,Marked,MarkedE) :- XM1 := X - 1, XP1 := X + 1 |
+	% 注目点の周囲にある生きているセルをカウントして情報行を作っていく。
+	check(XM1,PreMark,Marked  ,MarkedE ,UnRead1),
+	check( X ,UnRead1,Marked1 ,MarkedE2,UnRead2),
+	check(XP1,UnRead2,MarkedE2,UnRead3 ,UnRead3),
+	markln(Xs,Marked1,MarkedE,MarkedE_dash).
+
+% markln_center: marklnと同様だが、注目点についてはそのセルが
+%		 「現在生きている」ことを示した情報行を作っていく。
+markln_center([],PreMark,Marked,MarkedE) :-
+	Marked = PreMark.
+markln_center([X|Xs],PreMark,Marked,MarkedE) :- XM1 := X - 1, XP1 := X + 1 |
+	check(XM1,PreMark,Marked  ,MarkedE ,UnRead1),
+	check_center(X,UnRead1,Marked1,MarkedE2,UnRead2),
+	check(XP1,UnRead2,MarkedE2,UnRead3 ,UnRead3),
+	markln_center(Xs,Marked1,MarkedE,MarkedE_dash).
+
+% check: 今までに作られた情報行について、
+%	 注目点の回りで生きているセル数（下4bitに収められている）を+1する。
+%	 なお、ガード部の(A1:=M>>4, A:=A1>>1)は5bit右シフトである
+check(X,[],CkdH,CkdE,UnRead) :-
+	M1 := (X << 5) + 1,
+	CkdH = [M1|CkdE],
+	UnRead = [].
+check(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X > A |
+	CkdH = [M|CkdH1],
+	check(X,Ms,CkdH1,CkdE,UnRead).
+check(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X =:= A |
+	M1 := M + 1,
+	CkdH = [M1|CkdE],
+	UnRead = Ms.
+check(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X < A |
+	M1 := (X << 5) + 1,
+	CkdH = [M1|CkdE],
+	UnRead = [M|Ms].
+% check_center: 今までに作られた情報行について、注目点が「生きている」
+%		ことを示すビットを立てる。（下から5bit目）
+check_center(X,[],CkdH,CkdE,UnRead) :-
+	M1 := (X << 5) \/ 2'10000 ,
+	CkdH = [M1|CkdE],
+	UnRead = [].
+% check_center はcheckと異なりここは通らないため、comment outしてある
+%check_center(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X > A |
+%	CkdH = [M|CkdH1],
+%	check_center(X,Ms,CkdH1,CkdE,UnRead).
+check_center(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X =:= A|
+	M1 := M \/ 2'10000,
+	CkdH = [M1|CkdE],
+	UnRead = Ms.
+check_center(X,[M|Ms],CkdH,CkdE,UnRead) :- A1 := M >> 4, A := A1 >> 1, X < A |
+	M1 := (X << 5) \/ 2'10000,
+	CkdH = [M1|CkdE],
+	UnRead = [M|Ms].
+
+% doa -- dead or alive: 情報行を読み込み、生死判定をする。
+doa([],Out,PreCorU,CorU) :-
+	Out = [],
+	CorU = PreCorU.
+% 生死bit = 死、周囲に3個のセルが生存 => 生
+doa([M|Ms],Out,PreCorU,CorU) :- A := M /\ 2'11111, A =:= 2'00011 |
+	D1 := M >> 4,
+	D  := D1 >> 1,
+	Out = [D|Outs],
+	doa(Ms,Outs,change,CorU).
+otherwise.
+% otherwise 生死bit = 死 => 死
+doa([M|Ms],Out,PreCorU,CorU) :- A := M /\ 2'11111, A =< 8 |
+	doa(Ms,Out,PreCorU,CorU).
+% 生死bit = 生、周囲に2個のセルが生存 => 生
+doa([M|Ms],Out,PreCorU,CorU) :- A := M /\ 2'11111, A =:= 2'10010 |
+	D1 := M >> 4,
+	D  := D1 >> 1,
+	Out = [D|Outs],
+	doa(Ms,Outs,PreCorU,CorU).
+% 生死bit = 生、周囲に3個のセルが生存 => 生
+doa([M|Ms],Out,PreCorU,CorU) :- A := M /\ 2'11111, A =:= 2'10011 |
+	D1 := M >> 4,
+	D  := D1 >> 1,
+	Out = [D|Outs],
+	doa(Ms,Outs,PreCorU,CorU).
+otherwise.
+% otherwise => 死
+doa([M|Ms],Out,PreCorU,CorU) :-
+	doa(Ms,Out,change,CorU).
+
+% next_ary: lineの収められているベクタを（変化したlineだけ）更新、
+%	    次の世代に変化の可能性のあるY座標（変化したlineとその両隣）を
+%	    NC_pool(NextChange_pool)に返す
+next_ary(L_ary,[],PreY,NC_pool,NL_ary) :-
+	NL_ary = L_ary,
+	NC_pool = [].
+next_ary(L_ary,[line(Y,Xs)|Ls],PreY,NC_pool,NL_ary) :- YP1 := Y + 1 |
+	put_line(Y,L_ary,Xs,L_ary1),
+	put_pool(PreY,Y,NC_pool,NC_poolE),
+	next_ary(L_ary1,Ls,YP1,NC_poolE,NL_ary).
+
+%put_pool: 次の世代に変化の可能性のあるY座標（変化したlineとその両隣）を
+%	   NC_pool(NextChange_pool)に返す
+put_pool(first,Y,NC_pool,NC_poolE) :- YM1 := Y - 1, YP1 := Y + 1 |
+	NC_pool = [YM1,Y,YP1|NC_poolE].
+put_pool(PreY,Y,NC_pool,NC_poolE) :- Y =:= PreY, YP1 := Y + 1 |
+	NC_pool = [YP1|NC_poolE].
+put_pool(PreY,Y,NC_pool,NC_poolE) :- Y =:= PreY + 1, YP1 := Y + 1 |
+	NC_pool = [Y,YP1|NC_poolE].
+otherwise.
+put_pool(PreY,Y,NC_pool,NC_poolE) :- YM1 := Y - 1, YP1 := Y + 1 |
+	NC_pool = [YM1,Y,YP1|NC_poolE].
+
+
+%**********************************************************
+%    line のベクタへの収納、取り出し
+%	ベクタの大きさは1024、lineのY座標の下10bitを取り出し、
+%	それをインデックスにベクタに格納する。
+%	ベクタの成分が1つだけの時はline(Y,[X1,..])の形のまま、
+%	2つ以上のlineが同じインデックスになる時は
+%	li([line(Y1,[..]),line(Y2,[...]),...])の形で格納。
+%**********************************************************
+
+put_line(Y,Ary,Xs,Ary1) :- I := Y /\ 1023 |
+	vector_element(Ary,I,Lines),
+	(Lines = 0 ->
+	    set_vector_element(Ary,I,_,line(Y,Xs),Ary1);
+	 Lines = line(Y1,Ls), Y1 =:= Y ->
+	    set_vector_element(Ary,I,_,line(Y,Xs),Ary1);
+	 Lines = line(Y1,Ls), Y1 =\= Y ->
+	    set_vector_element(Ary,I,_,li([line(Y,Xs),line(Y1,Ls)]),Ary1);
+	 Lines = li(As) ->
+	    get_line2(Y,As,OutLine,ModiAs),
+	    set_vector_element(Ary,I,_,li([line(Y,Xs)|ModiAs]),Ary1)).
+
+get_line(Y,Ary,OutLine) :- I := Y /\ 1023 |
+	vector_element(Ary,I,Lines),
+	(Lines = 0 ->
+	    OutLine = [];
+	 Lines = line(Y1,Xs), Y1 =:= Y ->
+	    OutLine = Xs;
+	 Lines = line(Y1,Xs), Y1 =\= Y ->
+	    OutLine = [];
+	 Lines = li(As) ->
+	    get_line2(Y,As,OutLine,_)).
+
+get_line2(Y,[],Out,ModiAs) :-
+	Out = [],
+	ModiAs = [].
+get_line2(Y,[line(Y1,Ls)|As],Out,ModiAs) :- Y1 =\= Y |
+	ModiAs = [line(Y1,Ls)|MoAs1],
+	get_line2(Y,As,Out,MoAs1).
+get_line2(Y,[line(Y1,Ls)|As],Out,ModiAs) :- Y1 =:= Y |
+	Out = Ls,
+	ModiAs = As.

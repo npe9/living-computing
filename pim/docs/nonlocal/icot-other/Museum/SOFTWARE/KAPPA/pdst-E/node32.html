@@ -1,0 +1,125 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Manipulations of database</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Manipulations of database">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html422 HREF="node33.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html420 HREF="node31.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html416 HREF="node31.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html423 HREF="node33.html"> Tables of irpr</A>
+<B>Up:</B> <A NAME=tex2html421 HREF="node31.html"> External specification of </A>
+<B> Previous:</B> <A NAME=tex2html417 HREF="node31.html"> External specification of </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00041100000000000000> Manipulations of database</A></H3>
+<P>
+Using irpr, you can add, update, delete and search members.
+<P>
+<b>How to use the commands</b>
+<P>
+Use irpr comannds as follows.
+<P>
+<PRE>        irpr_client Mode &lt; filename
+</PRE>
+<P>
+If you designate an operation by &quot;Mode&quot; argument, and give search
+condition or member information to standard input, the result will be 
+returned to standard output.
+<P>
+Operations you can designate by &quot;Mode&quot; argument are shown below.
+<P>
+<DL ><DT><b> anm </b>
+<DD> adds a new member
+ <DT><b> mm </b>
+<DD>  modifies a member information
+ <DT><b> dm </b>
+<DD>  deletes a member
+ <DT><b> scd </b>
+<DD> searches a member in the current data
+ <DT><b> shd </b>
+<DD> searches a member in the historical data
+ <DT><b> sad </b>
+<DD> searches a member in both current and historical data
+<P>
+ </DL>
+<P>
+The next table shows the relationship between &quot;Mode&quot;, input and output.<BR> 
+ <BR>
+<P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img125.gif"><P>
+ <BR> 
+ <BR>
+<P>
+Abnormal end is also reported to standard output when necessary.<BR>
+<UL><LI> Id and version must be matched to update or delete member informaion.
+ <LI> Id is not necessary in member information to add, because it
+	will be given automatically by the system.
+</UL>
+<P>
+Updated or deleted member information is added to meibo-history 
+table. The version of updated member information becomes a proper
+value automatically.
+<P>
+<b>Member Information</b>
+<P>
+Following is an example of member information.
+<P>
+<PRE>[id(&quot;0000000099&quot;),
+name_e(&quot;Tommy Hase&quot;),
+name_for_search(&quot;Tommy Hase&quot;),name_for_search(&quot;TommyHase&quot;),
+name_for_search(&quot;TOMMY HASE&quot;),neme_for_search(&quot;T.Hase&quot;),
+prefix(&quot;Mr.&quot;),organization_address(&quot;1352 carving ave newtown LA 18954usa&quot;),
+organization_e_mail(&quot;thase@cupper.com&quot;),info1(&quot;ifs&quot;),info2(&quot;e&quot;),
+source(&quot;ifsFF&quot;),version(3),date(&quot;Thur Sep 3 17:26:40 JST1998&quot;),user(&quot;kato&quot;),
+remarks(&quot;ff&quot;),valid_flag(valid)].
+</PRE>
+<P>
+The format of member information must abide by the following rules.
+<P>
+<OL><LI> It is a list of attribute_name(attribute_value), whose order is 
+	arbitrary.
+ <LI> Those attributes specified as null_value(allowed) in the
+	schema can be omitted. On the other hand, those attributes specified
+	as null_value(not_allowed) must be included in case of 
+	updating or deletion.
+ <LI> An attribute of repeating property set can have multiple values
+	of the same attribute name. In the example of member
+	information above, an attribute name_for_search gives the 
+	example, i.e. &quot;Tommy Hase&quot;,&quot;TommyHase&quot;,&quot;TOMMY HASE&quot;
+	and &quot;T.Hase&quot; are a set of its attribute values.
+</OL>
+<P>
+<b>Search conditions</b>
+<P>
+Examples of search condition are shown below.
+<P>
+<DL ><DT>ex.1
+<DD> (or(name_for_search = &quot;*Hase&quot;,name_for_search = &quot;Tommy*&quot;)).
+ <DT>ex.2
+<DD> and((info2 = &quot;j&quot;), or((info1 = &quot;irpr&quot;), (info1 = &quot;ifs&quot;))).
+<P>
+ </DL>
+<P>
+Search conditions must abide by the following rules.
+<P>
+<PRE>&lt;condition&gt; ::= attribute_name &lt;comparison operator&gt; &lt;fixed search value&gt;
+         | attribute_name = &lt;fixed search value&gt;
+         | attribute_name = &lt;partially matching search value&gt;
+         | ( &lt;condition&gt; )
+         | &lt;condition&gt; &lt;logical operator&gt; &lt;condition&gt;
+
+&lt;partially matching search value&gt; ::= &quot;*search_value&quot; |
+	&quot;search_value*&quot; | &quot;*search_value*&quot;
+&lt;fixed search value&gt; ::= integer | string of not partially matching
+	search value
+&lt;logical operator&gt; ::= and | or | dif
+&lt;comparison operator&gt; ::= &gt; | &gt;= | &lt; | =&lt;
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

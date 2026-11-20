@@ -1,0 +1,404 @@
+%*********************************************************************%
+%  skeleton --Cross word generator--                                  %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module skeleton.
+
+solve(Size, Words0, Results) :-
+	BoardSize := (Size + 1) * (Size + 2) |
+
+	diet_words(Words0, Size, Words, NoW),
+
+	generic:new(vector, AVec, 26),
+	vector_fil_nil(AVec, 26, Alpha),
+	generic:new(vector, Board, BoardSize),
+	current_node(_Node, All),
+	result_server(Results1, 0, Results),
+	solve_dealer(Words, NoW, Size, Board, Alpha, 0, All, Results1).
+
+solve_dealer(Words, NoW, Size, Board, Alpha, Node, All, Results) :-
+	Node < All, Node1 := Node + 1 |
+	generic:new(merge, {Results1, Results2}, Results), 	
+	skele_main(Words, NoW, Size, Board, Alpha, Node, Results2)@node(Node),
+	solve_dealer(Words, NoW, Size, Board, Alpha, Node1, All, Results1).
+solve_dealer(_Words, _NoW, _Size, _Board, _Alpha, Node, All, Results) :-
+	Node >= All | Results = [].
+
+result_server([result(Point1, Result) | Results0], Point, Results) :-
+	Point1 > Point |
+	Results = [Result | Results1],
+	result_server(Results0, Point1, Results1).
+result_server([result(Point1, _Result) | Results0], Point, Results) :-
+	Point1 =< Point |
+	result_server(Results0, Point, Results).
+result_server([], _Point, Results) :- Results = [].
+
+%  skele_main/7  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Words	list
+%  +Number of W	int
+%  +Size	int
+%  +Board0	vector
+%  +Alpha0	vector
+%  -Node	int
+%  -Results	stream
+skele_main(Words, NoW, Size, Board0, Alpha0, Node, Results) :-
+	NoW > 0, Seed := 54521 * Node |
+	generic:new(random_numbers, Randoms, 16'7ffffff, Seed),
+	generic:join({}, Alpha0, Alpha),
+	generic:join({}, Board0, Board),
+	first_word(Words, NoW, Randoms, Alpha, Board, Size, 0, Results).
+skele_main(_Words, NoW, _Size, _Board0, _Alpha0, _Node, Results) :-
+	NoW =< 0 |
+	Results = [].
+
+%  first_word/8  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Words	list
+%  +NoW		int
+%  -Randoms	stream
+%  +Board0	vector
+%  +Alpha0	vector
+%  +Size	int
+%  +Point	int
+%  -Results	stream
+first_word(Words, NoW, Randoms, Alpha0, Board0, Size, Point, Results) :-
+	Randoms = [NX, NY, NI | Rnd],
+	NoW1 := (NoW - 1),
+	NIndex := (NI mod NoW),
+	X := (NY mod Size),
+	Y := (NX mod (Size - Xl + 1)),
+	get_element(Words, NIndex, word(Xa, Xs, Xp, Xl), Words1),
+	make_table_lr(Alpha0, Board0, Size, Xs, Xl, X, Y, Alpha, Board),
+%	print_board(Board, Size, Alpha),
+	generic:new(merge, {Rand1, Rand2}, Rnd), 
+	add_word(Alpha, Board, Size, Words1, NoW1,
+		ChWT, ChWT, [place(Xa, X, Y, lr)], Xp, Rand1, Result, Point1),
+	(Point1 > Point ->
+		Results = [result(Point1, Result) | Results1], Point2 = Point1;
+	Point1 =< Point ->
+		Results = Results1, Point2 = Point
+	),
+	first_word(Words, NoW, Rand2, Alpha0, Board0, Size, Point2, Results1)@lower_priority.
+
+
+%  add_word/12  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Alpha0	vector	Alphabet vector
+%  +Board0	vector	Board vector
+%  +Size	int	Board's Size
+%  +Words	list	Words no check
+%  +Number of W	int	Number of Words
+%  +Checked Wrd	list	Words checked
+%  -Chkd W Tail	list	Tail of list ChW
+%  +Words on Bo	list	Words on Board.([place(X, Y, T_L)])
+%  +Current Poi	int	Current Point
+%  +Randoms	stream	Random stream
+%  -Result	list	Final list of Words on Board
+%  -Final Point	int	Final Point
+add_word(_A0, _B0, _Siz, [], _NoW, _ChW, _ChWT, Words_B, CP, Rand, Res, FP) :-
+	Res = Words_B, CP = FP, Rand = [].
+otherwise.
+add_word(Alp0, Brd0, Siz, Words, NoW, ChW, ChWT, Wrds_B, CP, Rand, Res, FP) :-
+	Rand = [N | Rand1],
+	N1 := N mod NoW, NoW1 := NoW - 1,
+%	print_board(Brd0, Siz, Alp0),
+%	io:outstream([print([NoW, Words]),nl]),
+	get_element(Words, N1, word(Xa, Xs, Xp, Xl), Words1),
+	add_word1(Alp0, Siz, Xs, Xl, 0, Res1)@lower_priority,
+	add_word2(Alp0, Brd0, Siz, Words1, NoW1, ChW, ChWT,
+		Wrds_B, CP, Rand1, Res1, word(Xa, Xs, Xp, Xl), Res, FP).
+
+add_word1(Alpha, Size, Xs, Xl, Index, Res1) :-
+	Index < Xl, Index1 := Index + 1 |
+	generic:element(Xs, Index, Char),
+	AIndex := Char - #"A",
+	generic:element(Alpha, AIndex, PlaceList),
+	range_check(Size, Xl, Index, PlaceList, Res1, Res1Tail),
+	add_word1(Alpha, Size, Xs, Xl, Index1, Res1Tail).
+add_word1(_Alp0, _Siz, _Xs, Xl, Index, Res1) :-
+	Index >= Xl |
+	Res1 = [].
+
+range_check(Size, Len, Index, [position(X, _Y, lr) | PList], Res, ResTail) :-
+	X - Index < 0 |
+	range_check(Size, Len, Index, PList, Res, ResTail).
+range_check(Size, Len, Index, [position(X, _Y, lr) | PList], Res, ResTail) :-
+	X + Len - Index > Size |
+	range_check(Size, Len, Index, PList, Res, ResTail).
+range_check(Size, Len, Index, [position(X, Y, lr) | PList], Res, ResTail) :-
+	X1 := X - Index, X1 >= 0, X + Len - Index =< Size |
+	Res = [position(X1, Y, tb) | Res1 ],
+	range_check(Size, Len, Index, PList, Res1, ResTail).
+range_check(Size, Len, Index, [position(_X, Y, tb) | PList], Res, ResTail) :-
+	Y - Index < 0 |
+	range_check(Size, Len, Index, PList, Res, ResTail).
+range_check(Size, Len, Index, [position(_X, Y, tb) | PList], Res, ResTail) :-
+	Y + Len - Index > Size |
+	range_check(Size, Len, Index, PList, Res, ResTail).
+range_check(Size, Len, Index, [position(X, Y, tb) | PList], Res, ResTail) :-
+	Y1 := Y - Index, Y1 >= 0, Y + Len - Index =< Size |
+	Res = [position(X, Y1, lr) | Res1 ],
+	range_check(Size, Len, Index, PList, Res1, ResTail).
+range_check(_Size, _Len, _Index, [], Res, ResTail) :-
+	Res = ResTail.
+
+add_word2(Alp0, Brd0, Siz, Words, NoW, ChW, ChWT, Wrds_B, CP, Rand, Res1, El, Res, FP) :-
+	Res1 = [position(X, Y, Dir) | Res2], El = word(Xa, Xs, Xp, Xl) |
+	(Dir = lr ->
+		make_table_lr(Alp0, Brd0, Siz, Xs, Xl, X, Y, Alpha, Board);
+	Dir = tb ->
+		make_table_tb(Alp0, Brd0, Siz, Xs, Xl, X, Y, Alpha, Board)
+	),
+	(integer(Alpha) ->
+		add_word2(Alp0, Brd0, Siz, Words, NoW,
+			ChW, ChWT, Wrds_B, CP, Rand, Res2, El, Res, FP);
+	vector(Alpha), CP1 := CP + Xp ->
+		ChWT = Words, length(ChW, 0, NNoW),
+		add_word(Alpha, Board, Siz, ChW, NNoW, ChWT2, ChWT2,
+			[place(Xa, X, Y, Dir) | Wrds_B], CP1, Rand, Res, FP)
+	).
+add_word2(Alpha, Board, Siz, Words, NoW, ChW, ChWT, Wrds_B, CP, Rand, [], El, Res, FP) :-
+	add_word(Alpha, Board, Siz, Words, NoW,
+		[El | ChW], ChWT, Wrds_B, CP, Rand, Res, FP).
+
+length([_El | List], Index, Max) :-
+	Index1 := Index + 1 | length(List, Index1, Max).
+length([], Index, Max) :- Index = Max.
+
+
+%  make_table_tb/9    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Alpha0	vector
+%  +Board0	vector
+%  +Size	int
+%  +String	string
+%  +Length	int
+%  +X		int
+%  +Y		int
+%  +Alpha	vector
+%  +Board	vector
+
+%%%  Check under String  %%%
+make_table_tb(Alp0, Brd0, Size, Str, Len, X, Y, Alpha, Board) :-
+	NX := X + Len, P1 := (Size + 1) * (NX + 1) + Y |
+	generic:element(Brd0, P1, El),
+	(integer(El) ->
+	table_tb1(Alp0, Brd0, Size, Str, Len, NX, Y, Alpha, Board, P1, point);
+	functor(El, _, _) ->
+		Alpha = 0, Board = Brd0
+	).
+
+%%%  Check target char  %%%
+table_tb1(A0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, PC) :-
+	Len > 0, L1 := Len - 1,  X1 := X - 1, P2 := P1 - Siz - 1 |
+	generic:element(Str, L1, Ch),
+	generic:set_element(Brd0, P2, El1, char(Ch, T_B), B1),
+	table_tb2(A0, B1, Siz, Str, L1, X1, Y, Alp, Brd, El1, T_B, P2, Ch, PC).
+table_tb1(Alp0, Brd0, Siz, _Str, Len, _X, _Y, Alp, Brd, P1, _PC) :-
+	Len =< 0, P2 := P1 - Siz - 1 |
+	generic:element(Brd0, P2, El1),
+	(integer(El1) ->
+		Alp = Alp0, Brd = Brd0;
+	functor(El1, _, _) ->
+		Alp = 3, Brd = Brd0
+	).
+
+%%%  Check target char's neither  %%%
+table_tb2(Alp0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, El1, T_B, P1, Chr, _PC) :-
+	integer(El1),
+	Point2 := P1 - 1, Point3 := P1 + 1 |
+	T_B = tb,
+	generic:element(Brd0, Point2, El2),
+	generic:element(Brd0, Point3, El3),
+	(integer(El2), integer(El3), AIdx := Chr - #"A" ->
+	generic:set_element(Alp0, AIdx, Plc, [position(X, Y, tb) | Plc], Alp1),
+	table_tb1(Alp1, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, point);
+	otherwise;
+	true ->
+		Alp = 1, Brd = Brd0
+	).
+table_tb2(Alp0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, El1, T_B, P1, Chr, PC) :-
+	El1 = char(Chr, lr), PC = point, AIdx := Chr - #"A" |
+	T_B = both,
+	generic:set_element(Alp0, AIdx, Place0, Place1, Alp1),
+	cut_element(Place0, X, Y, Place1),
+	table_tb1(Alp1, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, cross).
+otherwise.
+table_tb2(_A0, B0, _Sz, _St, _L, _X, _Y, Alp, Brd, El, T_B, _P1, _Ch, _PC) :-
+	El = char(Chr, _lr), Alp = 2, Brd = B0, T_B = Chr.
+
+
+%  make_table_lr/9    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Alpha0	vector
+%  +Board0	vector
+%  +Size	int
+%  +String	string
+%  +Length	int
+%  +X		int
+%  +Y		int
+%  +Alpha	vector
+%  +Board	vector
+
+%%%  Check right String  %%%
+make_table_lr(Alp0, Brd0, Size, Str, Len, X, Y, Alpha, Board) :-
+	NY := Y + Len, P1 := (Size + 1) * (X + 1) + NY |
+	generic:element(Brd0, P1, El),
+	(integer(El) ->
+	table_lr1(Alp0, Brd0, Size, Str, Len, X, NY, Alpha, Board, P1, point);
+	El \= 0 ->
+		Alpha = 4, Board = Brd0
+	).
+
+%%%  Check target char  %%%
+table_lr1(A0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, PC) :-
+	Len > 0, L1 := Len - 1,  Y1 := Y - 1, P2 := P1 - 1 |
+	generic:element(Str, L1, Ch),
+	generic:set_element(Brd0, P2, El1, char(Ch, L_B), B1),
+	table_lr2(A0, B1, Siz, Str, L1, X, Y1, Alp, Brd, El1, L_B, P2, Ch, PC).
+table_lr1(Alp0, Brd0, _Siz, _Str, Len, _X, _Y, Alp, Brd, P1, _PC) :-
+	Len =< 0, P2 := P1 - 1 |
+	generic:element(Brd0, P2, El1),
+	(integer(El1) ->
+		Alp = Alp0, Brd = Brd0;
+	functor(El1, _, _) ->
+		Alp = 7, Brd = Brd0
+	).
+
+%%%  Check target char's neither  %%%
+table_lr2(Alp0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, El1, L_B, P1, Chr, _PC) :-
+	integer(El1),
+	Point2 := P1 - Siz - 1, Point3 := P1 + Siz + 1 |
+	L_B = lr,
+	generic:element(Brd0, Point2, El2),
+	generic:element(Brd0, Point3, El3),
+	(integer(El2), integer(El3), AIdx := Chr - #"A" ->
+	generic:set_element(Alp0, AIdx, Plc, [position(X, Y, lr) | Plc], Alp1),
+	table_lr1(Alp1, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, point);
+	otherwise;
+	true ->
+		Alp = 5, Brd = Brd0
+	).
+table_lr2(Alp0, Brd0, Siz, Str, Len, X, Y, Alp, Brd, El1, L_B, P1, Chr, PC) :-
+	El1 = char(Chr, tb), PC = point, AIdx := Chr - #"A" |
+	L_B = both,
+	generic:set_element(Alp0, AIdx, Place0, Place1, Alp1),
+	cut_element(Place0, X, Y, Place1),
+	table_lr1(Alp1, Brd0, Siz, Str, Len, X, Y, Alp, Brd, P1, cross).
+otherwise.
+table_lr2(_A0, B0, _Sz, _St, _L, _X, _Y, Alp, Brd, El, L_B, _P1, _Ch, _PC) :-
+	El = char(Chr, _tb), Alp = 6, Brd = B0, L_B = Chr.
+
+
+%  cut_element/4  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Alpha0	list
+%  +X		int
+%  +Y		int
+%  -Alpha	list
+cut_element([position(Xp, Yp, _tb_lr) | Xs], X, Y, New) :-
+	Xp = X, Yp = Y |
+	Xs = New.
+otherwise.
+cut_element([Place | Ps], X, Y, New) :-
+	New = [Place | New1],
+	cut_element(Ps, X, Y, New1).
+cut_element([], _X, _Y, New) :-
+	New = [].
+
+
+%  vector_fil_nil/3  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Vector0	vector
+%  +Index	int
+%  -Vector	vector
+vector_fil_nil(Vec0, Index, Vec) :- Index =< 0 | Vec = Vec0.
+vector_fil_nil(Vec0, Index, Vec) :-
+	Index > 0, Index1 := Index - 1 |
+	generic:set_element(Vec0, Index1, _, [], Vec1),
+	vector_fil_nil(Vec1, Index1, Vec).
+
+
+%  get_element/4  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Words	list
+%  +Index	int
+%  -Return	element of list,
+%  -WordsN	list
+get_element([X | Xs], 0, Return, X1) :-
+	Return = X,
+	X1 = Xs.
+get_element([X | Xs], Index, Return, X1) :-
+	Index > 0 | Index1 := Index - 1,
+	X1 = [X | X2],
+	get_element(Xs, Index1, Return, X2).
+get_element([], _, Return, X1) :-
+	Return = too_long_index, X1 = [].
+
+
+%  diet_words/3  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Delete word which can never set on board.
+%  +Words0	list
+%  +Size	int
+%  -Words	list
+%  -Number of W	int
+diet_words([word(Atom, String, Point) | Words0], Size, Words, NoW) :-
+	string(String, Length, _EL) |
+	(Length > Size ->
+		diet_words(Words0, Size, Words, NoW);
+	Length =< Size ->
+		Words = [word(Atom, String, Point, Length) | Words1],
+		NoW := NoW0 + 1,
+		diet_words(Words0, Size, Words1, NoW0)
+	).
+diet_words([], _Size, Words, NoW) :- Words = [], NoW = 0.
+
+
+%  print_board/2  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  +Board	vector
+%  +Size	int
+%  +Alpha	vector
+print_board(Board, Size, Alpha) :-
+	integer(Alpha),
+	BSize := (Size + 2) * (Size + 1) |
+	io:outstream([print("error: "), print(Alpha), nl | Stream]),
+	A_table = {a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, 
+				p, q, r, s, t, u, v, w, x, y, z},
+	print_board(Board, Size, 0, BSize, A_table, Stream).
+print_board(Board, Size, Alpha) :-
+	vector(Alpha),
+	BSize := (Size + 2) * (Size + 1) |
+	io:outstream(Stream),
+	A_table = {a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, 
+				p, q, r, s, t, u, v, w, x, y, z},
+	print_board(Board, Size, 0, BSize, A_table, Stream).
+print_board(Board, Size, Index, BSize, Table, Stream) :-
+	Index < BSize, Index1 := Index + 1 |
+	generic:element(Board, Index, El),
+	(El = char(Char, _tb_lr) ->
+		generic:element(Table, ~(Char - #"A"), C);
+	integer(El) ->
+		C = El
+	),
+	(Index1 mod (Size + 1) =:= 0 ->
+		Stream = [print(C), nl | Stream1];
+	otherwise;
+	true ->
+		Stream = [print(C) | Stream1]
+	),
+	print_board(Board, Size, Index1, BSize, Table, Stream1).
+print_board(_Board, _Size, Index, BSize, _Table, Stream) :-
+	Index = BSize |
+	Stream = [nl].
+
+
+%  qsort/3  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  quick sort
+%  +In
+%  -Sorted
+%  +Tail
+%qsort([], Ys0, Ys ) :- Ys=Ys0.
+%qsort([X|Xs], Ys0, Ys3) :-
+%    part(X, Xs, S, L), qsort(S, Ys0, [X|Ys2]), qsort(L, Ys2, Ys3).
+%part(_, [], S, L) :- true | S=[], L=[].
+%part(word(Aa, As, Ap), [word(Xa, Xs, Xp) | Xr], S0, L0) :-
+%	(Ap =< Xp ->
+%		S0=[word(Xa, Xs, Xp) | S], part(word(Aa, As, Ap), Xr, S, L0);
+%	Ap > Xp ->
+%		L0=[word(Xa, Xs, Xp) | L], part(word(Aa, As, Ap), Xr, S0, L)
+%	).

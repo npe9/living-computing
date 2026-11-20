@@ -1,0 +1,80 @@
+% -- solitaire
+%
+% solitaire.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+%
+% 得点計算の部分の solitaire_eval.kl1 には
+% 評価プログラム（ Eiji Sugino (sugino@jaist.ac.jp)氏作）
+% のものを使わせてもらいました。この場をかりて感謝します。
+
+
+:- module solitaire.
+
+poker(Cards, Results) :- init(Cards)+Results+[].
+
+
+% 初期処理
+%
+init(Cards)-Results :- 
+	% カード（List）をソートする
+	solitaire_util:sort_A(Cards, Sorted_Cards_A),
+	solitaire_util:sort_B(Cards, Sorted_Cards_B),
+
+	% カード（List）を内部形式（String）に変換する
+	solitaire_util:encode(Sorted_Cards_A, Cards_String_A), 
+	solitaire_util:encode(Sorted_Cards_B, Cards_String_B), 
+
+	% 点数の計算をする
+	solitaire_util:score(Cards_String_A, Score_A),
+	solitaire_util:score(Cards_String_B, Score_B),
+
+	Table_A=[Score_A|Cards_String_A],
+	Table_B=[Score_B|Cards_String_B],
+
+	start(Table_A,Table_B)-Results.
+
+
+% 本体
+%
+start(T0,T5)-Results :-
+
+	% これでストレートフラッシュがあれば見つかる
+	solitaire_operator:rotate_table(T0, T1),
+	solitaire_operator:rotate_table(T1, T2),
+	solitaire_operator:rotate_table(T2, T3),
+	solitaire_operator:rotate_table(T3, T4),
+	solitaire_generator:generator(News, T0, TL0) @ lower_priority,
+	solitaire_generator:generator(News, T1, TL1) @ lower_priority,
+	solitaire_generator:generator(News, T2, TL2) @ lower_priority,
+	solitaire_generator:generator(News, T3, TL3) @ lower_priority,
+	solitaire_generator:generator(News, T4, TL4) @ lower_priority,
+
+	solitaire_operator:rotate_table(T5, T6),
+	solitaire_operator:rotate_table(T6, T7),
+	solitaire_operator:rotate_table(T7, T8),
+	solitaire_operator:rotate_table(T8, T9),
+	solitaire_generator:generator(News, T5, TL5) @ lower_priority,
+	solitaire_generator:generator(News, T6, TL6) @ lower_priority,
+	solitaire_generator:generator(News, T7, TL7) @ lower_priority,
+	solitaire_generator:generator(News, T8, TL8) @ lower_priority,
+	solitaire_generator:generator(News, T9, TL9) @ lower_priority,
+
+	solitaire_util:write(T0)-Results, solitaire_util:write(T1)-Results,
+	solitaire_util:write(T2)-Results, solitaire_util:write(T3)-Results,
+	solitaire_util:write(T4)-Results, solitaire_util:write(T5)-Results,
+	solitaire_util:write(T6)-Results, solitaire_util:write(T7)-Results,
+	solitaire_util:write(T8)-Results, solitaire_util:write(T9)-Results,
+
+	% 生産されたものを消費する
+	solitaire_consumer:consumer(
+		TL0,TL1,TL2,TL3,TL4,TL5,TL6,TL7,TL8,TL9,News)-Results.
+
+
+
+
+
+
+
+

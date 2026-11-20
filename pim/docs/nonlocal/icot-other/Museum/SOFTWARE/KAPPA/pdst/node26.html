@@ -1,0 +1,37 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> テーブル読み</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" テーブル読み">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html347 HREF="node27.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html345 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html339 HREF="node25.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html348 HREF="node27.html"> テーブル更新</A>
+<B>Up:</B> <A NAME=tex2html346 HREF="node22.html"> 原始コマンド</A>
+<B> Previous:</B> <A NAME=tex2html340 HREF="node25.html"> テーブル検索</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00036400000000000000> テーブル読み</A></H3>
+<P>
+<DL ><DT>create_format(TableName,Format,^InternalFormat,
+	^Status)
+<DD>指定されたフォーマットを内部フォーマットに
+	変換する。
+ <DT>read_record(TableName,InternalFormat,AccessType,^VLstream,
+	^Status)
+<DD>AccessTypeに従って、テーブルまたは集合の全
+	てのレコードを指定フォーマットで読んで、RID要素と値リストの組
+	をVLstreamに返す。この時、これらの値はバッファリングして返され
+	る。すなわち、VLstreamに変数を要素データとするリストセルが
+	与えられる度に一定数のレコードを処理して、各レコードの値を
+	リストにしてその変数にユニファイして返す。<BR> 
+	レコードが全て正常に読めたならば、Statusにnormalを返し、Buffer
+	には<b> end</b>を返す。
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

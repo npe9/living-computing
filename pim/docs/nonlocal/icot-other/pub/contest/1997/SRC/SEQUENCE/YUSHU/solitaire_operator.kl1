@@ -1,0 +1,56 @@
+% -- solitaire
+%
+% solitaire_operator.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+
+
+:- module solitaire_operator.
+
+change_table(T0, T1)-Random :- 
+	random(R0)-Random, random(R1)-Random, swap_card(T0,R0,R1, T1)-Random.
+
+swap_card(T0,I0,I1, T1)-Random :- I0 \= I1 | T0=[S0|CS0],
+	string_element(CS0,I0, C0), string_element(CS0,I1, C1),
+	set_string_element(CS0, I0, C1, Temp),
+	set_string_element(Temp, I1, C0, CS1),
+	solitaire_util:score(CS1, S1), T1=[S1|CS1].
+
+swap_card(T0,I0,I1, T1)-Random :- I0 =  I1 |
+	random(R0)-Random, random(R1)-Random, swap_card(T0,R0,R1, T1)-Random.
+
+
+% random(乱数)-乱数発生器in-乱数発生器out
+%
+random(Result ,R0,R1) :- R0=[Result|R1].
+
+
+rotate_table(T0,T1) :-
+	T0=[_|CS0], rotate_cs(CS0, CS1),
+	solitaire_util:score(CS1, S1), T1=[S1|CS1]. 
+
+
+rotate_cs(CS0, CS1) :- string_element(CS0,0, Now), rotate_cs(CS0,0,Now, CS1). 
+
+rotate_cs(CS0,Index,Pre, CS2) :- Index = 25 |
+	set_string_element(CS0,0,Pre, CS2).
+
+rotate_cs(CS0,Index,Pre, CS2) :- Index < 25 |	 
+	string_element(CS0,Index, Now), set_string_element(CS0,Index,Pre, CS1),
+	rotate_cs(CS1,~(Index+1),Now, CS2).
+
+
+% 出力するかどうかの判断（前の点数より高ければデコードして出力）
+%
+write(Old,New)-Results :-
+	Old=[Oldscore|_], New=[Newscore|Newscore_Cards_String],
+	Newscore > Oldscore | 
+	solitaire_translator:decode(Newscore_Cards_String, Cards), Results<=Cards.
+
+otherwise.
+write(Old,New)-Result.
+
+
+
+

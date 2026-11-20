@@ -1,0 +1,338 @@
+%*********************************************************************%
+%  pnm converter (pnm module)                                         %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module pnm.
+
+read(pbm_ascii, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Input),
+	read_p1(Input, Palette, Bmp).
+read(pbm_binary, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Input),
+	read_p4(Input, X, Y, Palette, Bmp).
+read(pgm_ascii, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Max, Input),
+	read_p2(Input, Max, [], Palette, Bmp).
+read(pgm_binary, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Max, Input),
+	read_p5(Input, Max, [], Palette, Bmp).
+read(ppm_ascii, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Max, Input),
+	read_p3(Input, Max, [], Palette, Bmp).
+read(ppm_binary, Input0, X, Y, Bmp, Palette) :-
+	read_header(Input0, X, Y, Max, Input),
+	Size := X * Y, 
+	read_p6(Input, Max, Size, [], Palette, Bmp).
+
+
+%  read  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+read_p1(Input, Palette, Bmp) :-
+	Palette = {color(255, 255, 255), color(0, 0, 0)},
+	read_p1(Input, Bmp).
+read_p1(Input0, Bmp0) :-
+	read_int(Input0, Data, Input),
+	(Data >= 0, Data =< 1 ->
+		Bmp0 = [Data | Bmp],
+		read_p1(Input, Bmp);
+	otherwise;
+	true ->
+		Bmp0 = [],
+		Input = []
+	).
+read_p4(Input, X, Y, Palette, Bmp) :-
+	Palette = {color(255, 255, 255), color(0, 0, 0)},
+	read_p4_(Input, X, X, Y, Bmp).
+read_p4_(Input0, X, XMax, Y, Bmp0) :-
+	X > 8, X1 := X - 8 |
+	Input0 = [getc(Data) | Input],
+	read_byte(Data, 8, Bmp0, Bmp),
+	read_p4_(Input, X1, XMax, Y, Bmp).
+read_p4_(Input0, X, XMax, Y, Bmp0) :-
+	X =< 8, Y > 1, Y1 := Y - 1 |
+	Input0 = [getc(Data) | Input],
+	read_byte(Data, X, Bmp0, Bmp),
+	read_p4_(Input, XMax, XMax, Y1, Bmp).
+read_p4_(Input0, X, _XMax, Y, Bmp0) :-
+	X =< 8, Y =< 1 |
+	Input0 = [getc(Data)],
+	read_byte(Data, X, Bmp0, []).
+read_byte(Data0, Index0, Bmp0, Bmp) :-
+	Index0 > 0, Index := Index0 - 1, Data := Data0 << 1,
+	Value := (Data0 /\ 128) >> 7 |
+	Bmp0 = [Value | Bmp1],
+	read_byte(Data, Index, Bmp1, Bmp).
+read_byte(_Data0, Index, Bmp0, Bmp) :-
+	Index =< 0 | Bmp0 = Bmp.
+
+read_p2(Input0, Max, Palette0, Palette, Bmp0) :-
+	read_int(Input0, Data0, Input),
+	(Data0 >= 0, Data0 =< Max ->
+		Dat := Data0 * 255 / Max,
+		palette:make_palette(Palette0, 0, Dat, Dat, Dat, Palette1, CN),
+		Bmp0 = [CN | Bmp],
+		read_p2(Input, Max, Palette1, Palette, Bmp);
+	otherwise;
+	true ->
+		generic:new(vector, Palette, Palette0),
+		Bmp0 = [],
+		Input = []
+	).
+read_p5(Input0, Max, Palette0, Palette, Bmp0) :-
+	Input0 = [getc(Data0) | Input],
+	(Data0 >= 0, Data0 =< Max ->
+		Dat := Data0 * 255 / Max,
+		palette:make_palette(Palette0, 0, Dat, Dat, Dat, Palette1, CN),
+		Bmp0 = [CN | Bmp],
+		read_p5(Input, Max, Palette1, Palette, Bmp);
+	otherwise;
+	true ->
+		generic:new(vector, Palette, Palette0),
+		Bmp0 = [],
+		Input = []
+	).
+
+read_p3(Input0, Max, Palette0, Palette, Bmp0) :-
+	read_int(Input0, R0, Input1),
+	read_int(Input1, G0, Input2),
+	read_int(Input2, B0, Input),
+	(R0 >= 0, R0 =< Max, G0 >= 0, G0 =< Max, B0 >= 0, B0 =< Max ->
+		R := R0 * 255 / Max,
+		G := G0 * 255 / Max,
+		B := B0 * 255 / Max,
+		palette:make_palette(Palette0, 0, R, G, B, Palette1, CN),
+		Bmp0 = [CN | Bmp],
+		read_p3(Input, Max, Palette1, Palette, Bmp);
+	otherwise;
+	true ->
+		generic:new(vector, Palette, Palette0),
+		Bmp0 = [],
+		Input = []
+	).
+read_p6(Input0, Max, Size0, Palette0, Palette, Bmp0) :-
+	Size0 > 0, Size := Size0 - 1 |
+	Input0 = [getc(R0) | Input1],
+	Input1 = [getc(G0) | Input2],
+	Input2 = [getc(B0) | Input],
+	(R0 >= 0, R0 =< Max, G0 >= 0, G0 =< Max, B0 >= 0, B0 =< Max ->
+		R := R0 * 255 / Max,
+		G := G0 * 255 / Max,
+		B := B0 * 255 / Max,
+		palette:make_palette(Palette0, 0, R, G, B, Palette1, CN),
+		Bmp0 = [CN | Bmp],
+		read_p6(Input, Max, Size, Palette1, Palette, Bmp);
+	otherwise;
+	true ->
+		generic:new(vector, Palette, Palette0),
+		Bmp0 = [],
+		Input = []
+	).
+read_p6(Input, _Max, Size, Palette0, Palette, Bmp) :-
+	Size =< 0 |
+	Input = [], Bmp = [],
+	generic:new(vector, Palette, Palette0).
+
+%  tool for read  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+read_header(Input0, X, Y, Input) :-
+	read_int(Input0, X, Input1),
+	read_int(Input1, Y, Input).
+read_header(Input0, X, Y, Color, Input) :-
+	read_int(Input0, X, Input1),
+	read_int(Input1, Y, Input2),
+	read_int(Input2, Color, Input).
+
+read_int(Input, Data, Input1) :-
+	Input = [getc(Char) | Input2],
+	read_int(Input2, Char, Data, Input1).
+
+read_int(Input, Char, Data, Input1) :-
+	Char = #" " |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input1).
+read_int(Input, Char, Data, Input1) :-
+	Char = #"\t" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input1).
+read_int(Input, Char, Data, Input1) :-
+	Char = #"\n" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input1).
+read_int(Input, Char, Data, Input1) :-
+	Char >= #"0", Char =< #"9", Int := Char - #"0" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Int, Data, Input1).
+read_int(Input0, Char, Data, Input) :-
+	Char = #"#" |
+	skip_char(Input0, #"\n", Input1),
+	Input1 = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input).
+read_int(Input, Char, Data, Input1) :-
+	Char = #"\f" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input1).
+read_int(Input, Char, Data, Input1) :-
+	Char = #"\r" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Data, Input1).
+read_int(Input, Char, Data, Input1) :-
+	Char = -1 |
+	Input = Input1,
+	Data = -1.
+
+read_int(Input, Char, Int, Data, Input1) :-
+	Char >= #"0", Char =< #"9", Int1 := Int * 10 + Char - #"0" |
+	Input = [getc(Char1) | Input2],
+	read_int(Input2, Char1, Int1, Data, Input1).
+read_int(Input, Char, Int, Data, Input1) :-
+	Char = -1 |
+	Input = Input1,
+	Int = Data.
+otherwise.
+read_int(Input, _Char, Int, Data, Input1) :-
+	Input = Input1, Data = Int.
+
+
+skip_char(Input0, STOP, Input) :-
+	Input0 = [getc(Char) | Input1],
+	skip_char(Input1, Char, STOP, Input).
+skip_char(Input0, Char, STOP, Input) :-
+	Char = STOP |
+	Input0 = Input.
+skip_char(Input0, Char, _Stop, Input) :-
+	Char = -1 |
+	Input0 = Input.
+otherwise.
+skip_char(Input0, _Char, Stop, Input) :-
+	Input0 = [getc(Char1) | Input1],
+	skip_char(Input1, Char1, Stop, Input).
+
+%  write  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+write_p1(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P1\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n") | Stream5],
+	palette:binary_palette(Palette, Palette1),
+	write_p1(Bmp, Palette1, Stream5).
+write_p1([Color | Bmp], Palette, Stream0) :-
+	generic:element(Palette, Color, Out),
+	write_int(Stream0, Out, Stream1),
+	Stream1 = [fwrite(" ") | Stream2],
+	write_p1(Bmp, Palette, Stream2).
+write_p1([], _Palette, Stream0) :- Stream0 = [fwrite("\n")].
+
+write_p4(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P4\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n") | Stream5],
+	palette:binary_palette(Palette, Palette1),
+	write_p4_(Bmp, X, X, Palette1, Stream5).
+write_p4_(Bmp0, X0, XMax, Palette, Stream0) :-
+	Bmp0 \= [], X0 > 8, X1 := X0 - 8 |
+	get_8bit(Bmp0, Palette, Out, Bmp),
+	Stream0 = [putc(Out) | Stream1],
+	write_p4_(Bmp, X1, XMax, Palette, Stream1).
+write_p4_(Bmp0, X0, XMax, Palette, Stream0) :-
+	Bmp0 \= [], X0 =< 8 |
+	get_8bit(Bmp0, X0, 0, Palette, Out0, Bmp),
+	Out := Out0 << (8 - X0),
+	Stream0 = [putc(Out) | Stream1],
+	write_p4_(Bmp, XMax, XMax, Palette, Stream1).
+write_p4_([], _X, _X, _Palette, Stream0) :- Stream0 = [].
+get_8bit(Bmp0, Palette, Out, Bmp) :- get_8bit(Bmp0, 8, 0, Palette, Out, Bmp).
+get_8bit([Index | Bmp0], Bit0, Out0, Palette, Out, Bmp) :-
+	Bit0 > 0, Bit1 := Bit0 - 1 |
+	generic:element(Palette, Index, Color),
+	Out1 := (Out0 << 1) \/ Color,
+	get_8bit(Bmp0, Bit1, Out1, Palette, Out, Bmp).
+get_8bit(Bmp0, Bit0, Out0, _Palette, Out, Bmp) :-
+	Bit0 =< 0 |
+	Out = Out0, Bmp = Bmp0.
+get_8bit([], Bit0, Out0, _Palette, Out, Bmp) :-
+	Out := Out0 << Bit0, Bmp = [].
+
+
+write_p2(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P2\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n255\n") | Stream5],
+	write_p2(Bmp, Palette, Stream5).
+write_p2([Color | Bmp], Palette, Stream0) :-
+	generic:element(Palette, Color, color(R, G, B)),
+	Out := (R + G + B) / 3,
+	write_int(Stream0, Out, Stream1),
+	Stream1 = [fwrite(" ") | Stream2],
+	write_p2(Bmp, Palette, Stream2).
+write_p2([], _Palette, Stream0) :- Stream0 = [fwrite("\n")].
+
+write_p5(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P5\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n255\n") | Stream5],
+	write_p5(Bmp, Palette, Stream5).
+write_p5([Color | Bmp], Palette, Stream0) :-
+	generic:element(Palette, Color, color(R, G, B)),
+	Out := (R + G + B) / 3,
+	Stream0 = [putc(Out) | Stream1],
+	write_p5(Bmp, Palette, Stream1).
+write_p5([], _Palette, Stream0) :- Stream0 = [].
+
+
+write_p3(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P3\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n255\n") | Stream5],
+	write_p3(Bmp, Palette, Stream5).
+write_p3([Color | Bmp], Palette, Stream0) :-
+	generic:element(Palette, Color, color(R, G, B)),
+	write_int(Stream0, R, Stream1),
+	Stream1 = [fwrite(" ") | Stream2],
+	write_int(Stream2, G, Stream3),
+	Stream3 = [fwrite(" ") | Stream4],
+	write_int(Stream4, B, Stream5),
+	Stream5 = [fwrite(" ") | Stream6],
+	write_p3(Bmp, Palette, Stream6).
+write_p3([], _Palette, Stream0) :- Stream0 = [fwrite("\n")].
+
+write_p6(Stream0, X, Y, Bmp, Palette) :-
+	Stream0 = [fwrite("P6\n#Generated by pnm.kl1.\n") | Stream1],
+	write_int(Stream1, X, Stream2),
+	Stream2 = [fwrite(" ") | Stream3],
+	write_int(Stream3, Y, Stream4),
+	Stream4 = [fwrite("\n255\n") | Stream5],
+	write_p6(Bmp, Palette, Stream5).
+write_p6([Color | Bmp], Palette, Stream0) :-
+	generic:element(Palette, Color, color(R, G, B)),
+	Stream0 = [putc(R), putc(G), putc(B) | Stream1],
+	write_p6(Bmp, Palette, Stream1).
+write_p6([], _Palette, Stream0) :- Stream0 = [].
+
+
+%  tool for write  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+write_int(Stream0, X, Stream) :-
+	write_int(Stream0, X, [], Stream).
+write_int(Stream0, X, Numbers0, Stream) :-
+	X >= 10, Lowest := X mod 10, X1 := X / 10 |
+	Numbers1 = [Lowest | Numbers0],
+	write_int(Stream0, X1, Numbers1, Stream).
+write_int(Stream0, X, Numbers0, Stream) :-
+	X < 10 |
+	write_int2(Stream0, [X | Numbers0], Stream).
+
+write_int2(Stream0, [X | Numbers0], Stream) :-
+	Char := X + #"0" |
+	Stream0 = [putc(Char) | Stream1],
+	write_int2(Stream1, Numbers0, Stream).
+write_int2(Stream0, [], Stream) :- Stream0 = Stream.

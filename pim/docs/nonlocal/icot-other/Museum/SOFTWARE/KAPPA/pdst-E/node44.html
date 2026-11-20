@@ -1,0 +1,77 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Searching for records</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Searching for records">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html548 HREF="node45.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html546 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html540 HREF="node43.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html549 HREF="node45.html"> Reading records</A>
+<B>Up:</B> <A NAME=tex2html547 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html541 HREF="node43.html"> Execution of messages</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046300000000000000> Searching for records</A></H3>
+<P>
+The searching procedure for records is as follows.
+<P>
+<UL><LI> If necessary, transforms a search condition into a formula
+	accepted by Kappa.
+ <LI> According to the form of the search condition, executes the 
+	corresponding primitive search commands.
+</UL>
+<P>
+The first argument &quot;SearchType&quot; of search_data/6 shown below is 
+one of these atoms, i.e. current, history and all which specifies the 
+table(s) to search.
+<P>
+<PRE>search_data(SearchType, Search_cond, ComStatus, Status)-IFP :-
+    get_table_list(read, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    search_data1(SearchType,Status1,Search_cond,VLS,ComStatus0)-IFP,
+    IFP &lt;= close(Status),
+    ComStatus0 = normal,
+    ComStatus = normal(VLS).
+</PRE>
+<P>
+Here, pay attention to the fact that VLS(ValueListStream) is returned 
+as an argument of the command status &quot;ComStatus&quot;. This &quot;VLS&quot; is
+related to the control of reading records mentioned in the next
+section.
+<P>
+The next program is where a search condition allowed in irpr 
+is transformed into Kappa formula and searching is done by 
+irpr_select:select/6.
+<P>
+<PRE>search1(TableName,Search_cond,Set,Status)-IFP :-
+    irpr_select:select(TableName,Search_cond,Set1,Status1)-IFP,
+    search2(Status1,TableName,{Set1,_Set1},Set,Status)-IFP.
+</PRE>
+<P>
+<PRE>% The following is extracted from module irpr_select(irpr_select.kl1).
+select(TableName,Cond,Set,Status)-IFP :-
+    conv_cond(Cond,normal,R,TableName,Status1)-IFP,  % converts the condition
+    exec_select(R,Status1,TableName,Set,Status)-IFP. % selects records
+
+exec_select(index(Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_index(TableName,Cond,Set,Status).
+exec_select(data(Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_data(TableName,Cond,Set,Status).
+exec_select(data_set(Set1,Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_data(TableName,{Set1,_},Cond,Set,Status).
+exec_select(mix(ICond,DCond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_index(TableName,ICond,Set1,Status1),
+    exec_select(data_set(Set1,DCond),Status1,TableName,Set,Status)-IFP.
+otherwise.
+exec_select(_R,PStatus,_TableName,Set,Status)-IFP :-
+    Set = {},
+    Status = PStatus.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

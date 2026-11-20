@@ -1,0 +1,69 @@
+﻿<title>Quixote System</title>
+<!-- (h1) Quixote システム(/h1) -->
+<h1> <img align=top src="photos/QxtLabels.gif"> システム</h1>
+<hr>
+
+<h2> 私達は、以下の２種類のシステムを持っています。</h2>
+<ul>
+<li> <a href="../../IFS/abst/079-J.html"> <b> big-Quixote </b> </a>
+<li> <a href="../../IFS/abst/080-J.html"> <b> micro-Quixote </b> </a>
+</ul>
+<p>
+
+<b> big-Quixote </b> は、<b> Quixote </b>の言語機能の全ての機能を
+実現するという目的で行なわれた実装です。<b> ICOT </b> における
+<b> Quixote </b>の研究に沿ってバージョンアップが続けられ、
+現在は第４版になりました。
+<b> big-Quixote </b>はクライアント・サーバ形式で実装されていて、
+サーバ は主として <b> ICOT </b> で開発された
+並列論理型言語 <b> KL1 </b> を用いて開発されました。
+ですから、始めは並列推論マシン <b> PIM </b> の上でのみ稼働していましたが、
+２年間の後継プロジェクトにおいて開発された
+<b> KLIC </b>により、全てUNIX上においても稼働するようになりました。
+クライアントには、Emacs をベースにしたユーザインタフェース、
+X-Window による GUI などがあります。また最新版では WWWのクライ
+アントとして良く知られている Mosaic を<b> Quixote </b>の GUI として
+用いることもできます。<p>
+
+<b> Quixote </b>はいろいろな機能を持った言語です。
+ですから、それを実装した<b> big-Quixote </b>もシステムとしてはやや大きく、
+メモリの点などから快適に動作する環境が限られることがあります。
+そこで、平成5年度より<b> big-Quixote </b>と並行して、
+<b> Quixote </b>の言語の主要機能に絞り、なるべく多くの環境で
+軽く動くような処理系として<b> micro-Quixote </b>を開発することに
+なりました。
+<b> micro-Quixote </b>はC言語により一から実装を行ない、
+現在 UNIX, Mac, MS-DOS などで稼働しています。
+<b> micro-Quixote </b>には、データベース機能はなく、
+(制約)論理型プログラム言語としての性格が強いシステムです。
+<b> micro-Quixote </b> では、オブジェクト項、
+包摂関係、属性継承、条件つき問い合わせ、仮説つき答え
+といった<b> Quixote </b>の機能が実現されています。
+また、実装を簡単にしたために、一部<b> big-Quixote </b>とは答が
+異なる場合があります。一方、外部処理系呼びだしのように、
+<b> big-Quixote </b>にはない特徴も持っています。<p>
+
+両者のシステムの比較をまとめると、以下のようになります。
+<h2> big-Quixote と micro-quixote との比較 </h2>
+<pre>
+				<b>big-Quixote</b>	<b>micro-Quixote</b>
+OS/マシン環境			UNIX (KLIC), PIMOS	UNIX, MS-DOS, Macintosh
+開発言語 			      KL1, C			C
+				 EmacsLisp, etc. 
+コードサイズ			      6Mbyte		     199Kbyte
+導出方法			 OLDT resolution	   Prolog-like
+包摂制約				○			○
+属性継承				○			○
+仮定つき答、条件つき問い合わせ		○			○
+モジュール				○			×
+集合、非等式制約			○			×
+NAF (Negation as Failure)		○			×
+解の合成				○			×
+データベース機能			○			×
+外部問題解決器の呼びだし	算術演算モジュール	外部制約呼び出し機構
+</pre><p>
+
+
+<hr>
+<a href="HomePage.html"> <!-- (img src="photos/QxtLabels.gif") -->
+<b>Quixote</b> のホームページ </a><p>

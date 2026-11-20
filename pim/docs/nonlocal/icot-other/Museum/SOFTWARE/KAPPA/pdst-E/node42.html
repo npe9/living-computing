@@ -1,0 +1,49 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Irpr system server</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Irpr system server">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html528 HREF="node43.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html526 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html520 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html529 HREF="node43.html"> Execution of messages</A>
+<B>Up:</B> <A NAME=tex2html527 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html521 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046100000000000000> Irpr system server</A></H3>
+<P>
+The following irpr_loop/4 is the process of irpr system server.
+The meaning of the arguments are shown first.
+<P>
+<DL ><DT>PreStatus
+<DD> Caller's status.
+ <DT>IrprITR
+<DD> The interface stream to the irpr server. MSG stands
+	for message.
+ <DT>Mode
+<DD> Mode of creating the irpr server, which is read_only 
+	or update.
+	If read_only is specified, updating of the table will be 
+	prohibited.
+ <DT>IFP
+<DD> The stream to the interface process of Kappa.
+<P>
+ </DL>
+<P>
+<PRE>irpr_loop(PreStatus,[MSG|IrprITR],Mode,IFP) :-
+        wait(PreStatus) |
+    exec(MSG,Mode,Status)+IFP+NewIFP,
+    irpr_loop(Status,IrprITR,Mode,NewIFP).
+otherwise.
+irpr_loop(_PreStatus,_IrprITR,_Mode,IFP) :-
+    IFP = [].
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,462 @@
+%!
+%%BoundingBox: 16.875 -361.999 449.749 -24.188
+
+%% @(#)$Header: /tmp_mnt/n/kona/tangram/u/william/X11/TGIF2/RCS/.psmac,v 2.0 91/03/05 14:14:52 william Exp $
+/ellipsedict 6 dict def
+ellipsedict /mtrx matrix put
+
+/ellipse
+ { ellipsedict begin
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 0 360 arc
+      savematrix setmatrix
+   end
+ } def
+
+/arrowtipdict 8 dict def
+arrowtipdict /mtrx matrix put
+
+/arrowtip
+ { arrowtipdict begin
+      /dy exch def
+      /dx exch def
+      /h exch def
+      /w exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      dy dx atan rotate
+      0 0 moveto
+      w neg h lineto
+      w neg h neg lineto
+      savematrix setmatrix
+   end
+ } def
+
+/tgifarcdict 8 dict def
+tgifarcdict /mtrx matrix put
+
+/tgifarcn
+ { tgifarcdict begin
+      /endangle exch def
+      /startangle exch def
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 startangle endangle arc
+      savematrix setmatrix
+   end
+ } def
+
+/tgifarc
+ { tgifarcdict begin
+      /endangle exch def
+      /startangle exch def
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 startangle endangle arcn
+      savematrix setmatrix
+   end
+ } def
+
+/setuserscreendict 22 dict def
+setuserscreendict begin
+   /tempctm matrix def
+   /temprot matrix def
+   /tempscale matrix def
+
+   /concatprocs
+    { /proc2 exch cvlit def
+      /proc1 exch cvlit def
+      /newproc proc1 length proc2 length add array def
+      newproc 0 proc1 putinterval
+      newproc proc1 length proc2 putinterval
+      newproc cvx
+    } def
+   /resmatrix matrix def
+   /findresolution
+    { 72 0 resmatrix defaultmatrix dtransform
+      /yres exch def /xres exch def
+      xres dup mul yres dup mul add sqrt
+    } def
+end
+
+/setuserscreen
+ { setuserscreendict begin
+      /spotfunction exch def
+      /screenangle exch def
+      /cellsize exch def
+
+      /m tempctm currentmatrix def
+      /rm screenangle temprot rotate def
+      /sm cellsize dup tempscale scale def
+
+      sm rm m m concatmatrix m concatmatrix pop
+
+      1 0 m dtransform /y1 exch def /x1 exch def
+
+      /veclength x1 dup mul y1 dup mul add sqrt def
+      /frequency findresolution veclength div def
+
+      /newscreenangle y1 x1 atan def
+
+      m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+
+      {{neg} /spotfunction load concatprocs
+         /spotfunction exch def
+      } if
+
+      frequency newscreenangle /spotfunction load setscreen
+   end
+ } def
+
+/setpatterndict 18 dict def
+setpatterndict begin
+   /bitison
+    { /ybit exch def /xbit exch def
+      /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+
+      /mask 1 7 xbit 8 mod sub bitshift def
+      bytevalue mask and 0 ne
+    } def
+end
+
+/bitpatternspotfunction
+ { setpatterndict begin
+      /y exch def /x exch def
+
+      /xindex x 1 add 2 div bpside mul cvi def
+      /yindex y 1 add 2 div bpside mul cvi def
+
+      xindex yindex bitison
+       { /onbits onbits 1 add def 1 }
+       { /offbits offbits 1 add def 0 }
+       ifelse
+   end
+ } def
+
+/setpattern
+ { setpatterndict begin
+      /cellsz exch def
+      /angle exch def
+      /bwidth exch def
+      /bpside exch def
+      /bstring exch def
+
+      /onbits 0 def /offbits 0 def
+      cellsz angle /bitpatternspotfunction load setuserscreen
+      {} settransfer
+      offbits offbits onbits add div setgray
+   end
+ } def
+
+/inch {72 mul} def
+
+/showpattern
+ { /ang exch def
+   /pat exch def
+   pat 8 1 ang 72 300 32 div div setpattern
+
+   newpath
+      0 0 moveto 1 inch 0 lineto
+      1 inch dup lineto 0 1 inch lineto
+   closepath fill
+ } def
+
+/patdict 10 dict def
+
+/patbyte
+ { currentdict /retstr get exch
+   pat i cellsz mod get put
+ } def
+
+/patproc
+ { 0 1 widthlim {patbyte} for retstr
+   /i i 1 add def
+ } def
+
+/patfill
+ { patdict begin
+      /h exch def
+      /w exch def
+      /lty exch def
+      /ltx exch def
+      /cellsz exch def
+      /pat exch def
+
+      /widthlim w cellsz div cvi 1 sub def
+      /retstr widthlim 1 add string def
+      /i 0 def
+
+      ltx lty translate
+      w h true [1 0 0 1 0 0] {patproc} imagemask
+      ltx neg lty neg translate
+   end
+ } def
+
+/pat1 <ffffffffffffffff> def
+/pat2 <0000000000000000> def
+/pat3 <8000000008000000> def
+/pat4 <8800000022000000> def
+/pat5 <8800220088002200> def
+/pat6 <8822882288228822> def
+/pat7 <aa55aa55aa55aa55> def
+/pat8 <8040201008040201> def
+/pat9 <8844221188442211> def
+/pat10 <77bbddee77bbddee> def
+/pat11 <c1e070381c0e0783> def
+/pat12 <8040200002040800> def
+/pat13 <40a00000040a0000> def
+/pat14 <ff888888ff888888> def
+/pat15 <ff808080ff080808> def
+/pat16 <f87422478f172271> def
+/pat17 <038448300c020101> def
+/pat18 <081c22c180010204> def
+/pat19 <8080413e080814e3> def
+
+/centertext { dup stringwidth pop 2 div neg 0 rmoveto } def
+
+/righttext { dup stringwidth pop neg 0 rmoveto } def
+
+1.415 setmiterlimit
+
+%####### .pskanjiEXT ############################
+% define Ryumin-Times-H font
+12 dict begin
+  /FontName /Ryumin-Times-H def
+  /FontType 0 def
+  /WMode 0 def
+  /FMapType 3 def
+  /FontMatrix matrix def
+  /Encoding [0 1] def
+  /FDepVector
+  [/Times-Roman findfont [1 0 0 1 0 0.01] makefont
+    /Ryumin-Light-Ext-H findfont
+  ] def
+  FontName currentdict
+end
+definefont pop
+
+% define Gothic-Helvetica-H font
+12 dict begin
+  /FontName /Gothic-Helvetica-H def
+  /FontType 0 def
+  /WMode 0 def
+  /FMapType 3 def
+  /FontMatrix matrix def
+  /Encoding [0 1] def
+  /FDepVector
+  [/Helvetica findfont [1 0 0 1 0 0.01] makefont
+    /GothicBBB-Medium-Ext-H findfont
+  ] def
+  FontName currentdict
+end
+definefont pop
+
+gsave
+
+0.565 -0.565 scale
+
+gsave
+   3 setlinewidth
+   newpath
+      64 576 moveto
+      592 576 lineto
+      608 576 lineto
+   stroke
+grestore
+
+gsave
+   3 setlinewidth
+   newpath
+      64 576 moveto
+      64 48 lineto
+   stroke
+grestore
+
+gsave
+   1 setlinewidth
+   newpath
+      64 576 moveto
+      576 64 lineto
+   stroke
+grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      120 602 moveto (32) show
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      184 602 moveto (64) show
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      304 602 moveto (128) show
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      560 602 moveto (256) show
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      432 602 moveto (192) show
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      50 160 moveto 270 rotate (Speedups) show
+      -270 rotate 
+   grestore
+
+/Helvetica findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      528 634 moveto (Num. of PEs) show
+   grestore
+
+/Ryumin-Times-H findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      597 292 moveto (\377\001%5%$%/%j%C%/J}<0) show
+   grestore
+
+/Ryumin-Times-H findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      598 258 moveto (\377\0013NN\(E*J}<0) show
+   grestore
+
+/Ryumin-Times-H findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      598 86 moveto (\377\001;^?t@\)8BJ}<0\377\000 \(Limit=1\)) show
+   grestore
+
+/Ryumin-Times-H findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      599 132 moveto (\377\001;^?t@\)8BJ}<0\377\000 \(Limit=\377\001!g\377\000\)) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      443 271 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      443 304 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      315 343 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      571 136 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      443 213 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      315 329 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      571 90 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      443 209 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      315 327 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      184 455 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      571 282 moveto (o) show
+   grestore
+
+/Courier findfont [18 0 0 -18 0 0] makefont setfont
+   gsave
+      571 266 moveto (o) show
+   grestore
+
+gsave
+   4 setlinewidth
+   newpath
+      191 450 moveto
+      279.67 363.33 346.00 299.50 390.00 258.50 curveto
+      434.00 217.50 496.33 159.00
+      577 83 curveto
+   stroke
+grestore
+
+gsave
+   4 setlinewidth
+   newpath
+      192 450 moveto
+      282.67 373.33 339.17 328.17 361.50 314.50 curveto
+      383.83 300.83 408.83 289.17 436.50 279.50 curveto
+      464.17 269.83 489.00 263.83 511.00 261.50 curveto
+      533.00 259.17 557.00 256.67
+      583 254 curveto
+   stroke
+grestore
+
+gsave
+   4 setlinewidth
+   newpath
+      191 450 moveto
+      280.33 380.67 340.83 339.00 372.50 325.00 curveto
+      404.17 311.00 434.33 301.00 463.00 295.00 curveto
+      491.67 289.00 529.67 283.67
+      577 279 curveto
+   stroke
+grestore
+
+gsave
+   4 setlinewidth
+   newpath
+      191 451 moveto
+      292.33 355.00 360.33 291.67 395.00 261.00 curveto
+      429.67 230.33 460.00 205.00 486.00 185.00 curveto
+      512.00 165.00 542.33 143.67
+      577 121 curveto
+   stroke
+grestore
+
+grestore
+

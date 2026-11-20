@@ -1,0 +1,46 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Job control and transaction control commands</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Job control and transaction control commands">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html327 HREF="node25.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html325 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html319 HREF="node23.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html328 HREF="node25.html"> Table search</A>
+<B>Up:</B> <A NAME=tex2html326 HREF="node22.html"> The primitive commands</A>
+<B> Previous:</B> <A NAME=tex2html320 HREF="node23.html"> Creation of the </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00036200000000000000> Job control and transaction control commands</A></H3>
+<P>
+A job is a session with Kappa. Use the primitive commands to begin and
+end a session. A transaction is a unit of database operation. Use 
+also the primitive commands to begin and end a transaction.
+<P>
+The job and transaction control commands must be called whenever you 
+use Kappa.
+<P>
+<DL ><DT>open(TableInfoList,^Status)
+<DD>
+	begins a job. If tables are specified, they will be locked.
+ <DT>close(^Status)
+<DD> ends a job.
+ <DT>begin_transaction(TableInfoList,LDBMSInfoList,^Status)
+<DD>
+	begins a transaction. If tables are specified, 
+	they will be locked. Do not lock tables which were locked in
+	read_only mode at the biginning of a job in exclusive mode here.
+ <DT>end_transaction(^Status)
+<DD>
+	ends a transaction.
+ <DT>roll_back(^Status)
+<DD>
+	cancels a transaction.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,37 @@
+﻿<html><HEAD>
+<TITLE>B.4 learn モジュール</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html217 HREF="node19.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html215 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html209 HREF="node17.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html218 HREF="node19.html">B.5 game モジュール</A>
+<B>Up:</B> <A NAME=tex2html216 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<B> Previous:</B> <A NAME=tex2html210 HREF="node17.html">B.3 decide モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00054000000000000000>B.4 learn モジュール</A></H2>
+<A NAME="subsecpreds_of_learn">&#160;</A>
+<P>
+<DL ><DT>reward <i> +Board, -Reward, +OX</i>
+<DD>
+  <i> OX</i> を受け持つプレイヤの局面 <i> Board</i> における報酬値を 
+  <i> Reward</i> に同一化する。
+<DT>win <i> +Board, -Judge, +OX</i>
+<DD>
+  <i> OX</i> を受け持つプレイヤの局面 <i> Board</i> における勝利判定を行う。
+<DT>update_q
+  <i> +RedQ, +ActFun, +Action, +Blank, +Reward, +NowState, +Step, -NewQ</i>
+<DD>
+  ひとつ過去の状態に選択された手 <i> Action</i>、
+  その結果遷移した状態 <i> NowState</i> とその時の報酬値 <i> Reward</i> から、
+  Q値 <i> Q</i> を更新し、新たな Q値を <i> NewQ</i> に同一化する。
+<P>
+ </DL>
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

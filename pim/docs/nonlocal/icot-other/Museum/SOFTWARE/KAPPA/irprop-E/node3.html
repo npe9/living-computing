@@ -1,0 +1,105 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Definition of schema</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Definition of schema">
+<meta name="keywords" value="irprop-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html45 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html43 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html37 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html46 HREF="node4.html"> Setting hash keys</A>
+<B>Up:</B> <A NAME=tex2html44 HREF="node2.html"> Schema</A>
+<B> Previous:</B> <A NAME=tex2html38 HREF="node2.html"> Schema</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00021000000000000000> Definition of schema</A></H2>
+<P>
+The schema is defined in get/2 of Kappa/src/add_utl/kp_schema.kl1 as
+follows.
+<P>
+Schema meibo_history is necessary for remembering changes of the list
+of members. What differs from schema meibo is that its id does not 
+include key(table).
+<P>
+Schema meibo_id is defined to keep a unique membership id.
+<P>
+<PRE>get(meibo, Schema):-
+    Schema = meibo(primitive,{
+    id(single,[type(string),key(table),access(indexed),null_value(not_allowed)]),
+    name_j(single,[type(string),access(indexed)]),
+    name_e(single,[type(string),access(indexed)]),
+    name_for_search(set,[type(string),access(indexed)]),
+    name_for_sort(single,[type(string),access(indexed)]),
+    prefix(single,[type(string)]),
+    icot(single,[type(string)]),
+    nation_code(single,[type(string),access(indexed)]),
+    home(single,{
+        home_address(single,[type(string),access(indexed)]),
+        sub_home_address(single,[type(string)]),
+        home_telephone(single,[type(string),access(indexed)]),
+        home_fax(single,[type(string)])}),
+    organization(single,{
+        organization_section(single,[type(string),access(indexed)]),
+        organization_address(single,[type(string),access(indexed)]),
+        organization_code(single,[type(string),access(indexed)]),
+        organization_title(single,[type(string)]),
+        organization_telephone(single,[type(string)]),
+        organization_fax(single,[type(string)]),
+        organization_e_mail(single,[type(string),access(indexed)]),
+        organization_telex(single,[type(string)])}),
+    wg_info(set,[type(string),access(indexed)]),
+    organization_kind(single,[type(string),access(indexed)]),
+    error_info(single,[type(string),access(indexed)]),
+    info1(set,[type(string),access(indexed)]),
+    info2(single,[type(string),access(indexed)]),
+    source(set,[type(string),access(indexed)]),
+    version(single,[type(integer),access(indexed)]),
+    date(single,[type(string)]),
+    user(single,[type(string),access(indexed)]),
+    remarks(set,[type(string),access(indexed)])},[],nil).
+
+get(meibo_history):-
+    Schema = meibo_history(primitive,{
+    id(single,[type(string),access(indexed),null_value(not_allowed)]),
+    name_j(single,[type(string),access(indexed)]),
+    name_e(single,[type(string),access(indexed)]),
+    name_for_search(set,[type(string),access(indexed)]),
+    name_for_sort(single,[type(string),access(indexed)]),
+    prefix(single,[type(string)]),
+    icot(single,[type(string)]),
+    nation_code(single,[type(string),access(indexed)]),
+    home(single,{
+        home_address(single,[type(string),access(indexed)]),
+        sub_home_address(single,[type(string)]),
+        home_telephone(single,[type(string),access(indexed)]),
+        home_fax(single,[type(string)])}),
+    organization(single,{
+        organization_section(single,[type(string),access(indexed)]),
+        organization_address(single,[type(string),access(indexed)]),
+        organization_code(single,[type(string),access(indexed)]),
+        organization_title(single,[type(string)]),
+        organization_telephone(single,[type(string)]),
+        organization_fax(single,[type(string)]),
+        organization_e_mail(single,[type(string),access(indexed)]),
+        organization_telex(single,[type(string)])}),
+    wg_info(set,[type(string),access(indexed)]),
+    organization_kind(single,[type(string),access(indexed)]),
+    error_info(single,[type(string),access(indexed)]),
+    info1(set,[type(string),access(indexed)]),
+    info2(single,[type(string),access(indexed)]),
+    source(set,[type(string),access(indexed)]),
+    version(single,[type(integer),access(indexed)]),
+    date(single,[type(string)]),
+    user(single,[type(string),access(indexed)]),
+    remarks(set,[type(string),access(indexed)])},[],nil).
+
+get(meibo_id, Schema):-
+    Schema = meibo_id(primitive,{id(single,[type(integer)])},[],nil).
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

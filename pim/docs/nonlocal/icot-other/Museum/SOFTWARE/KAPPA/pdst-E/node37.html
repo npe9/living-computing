@@ -1,0 +1,47 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Processing flow</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Processing flow">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html472 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html470 HREF="node30.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html464 HREF="node36.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html473 HREF="node38.html"> Module irpr_service(irpr_service.kl1)</A>
+<B>Up:</B> <A NAME=tex2html471 HREF="node30.html"> Programing example:a personel </A>
+<B> Previous:</B> <A NAME=tex2html465 HREF="node36.html"> Modules of the </A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00044000000000000000> Processing flow</A></H2>
+<P>
+The following figure shows the processing flow of irpr. 
+The arrows mean predicate calls and the broken arrows mean message 
+sending. (Attention: The number of argument increases 2 for an 
+argument pair.)
+<P>
+Main:server_main/4 is recursively called and forks when a service
+name is received. If the service name is &quot;irpr&quot;,
+irpr_request:client_request/3 will be called. Or if the service name
+is &quot;xxx&quot;, xxx_request:client_request/3 will be called.
+Irpr_request and xxx_request are modules for users to
+define the concrete contents of their services.
+<P>
+In irpr_service:service/2, a variable &quot;Mode&quot; which specifies a database 
+manipulation of irpr is read and carried across to 
+irpr_service:service_loop/7. <BR> 
+In service_loop/7, a search condition 
+&quot;Search_cond&quot; is read and handed over to irpr_service:exec_irpr/5 
+with &quot;Mode&quot;.
+<P>
+Exec_irpr/5 transforms &quot;Mode&quot; into a message and send it to
+irpr_kappa. In irpr_kappa, the message is handed over from 
+irpr_loop/4 to exec/5 and then transformed into a series of the 
+primitive commands of Kappa.
+<P><BR>
+<P><CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="../irprflow.gif"></CENTER>
+<P><BR> <HR>
+<P>
+</BODY>

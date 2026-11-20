@@ -1,0 +1,170 @@
+%% MGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-11-28
+%%  based on ..
+
+\chapter{MGTP 入力言語仕様}
+この章では、MGTP の入力言語の標準的シンタクスについて説明し、
+記述例を示す。
+
+%%----------------------------------------------------------------
+\section{MGTP 入力節シンタクス}
+
+MGTP の入力節は、第1章の機能説明のところでも説明したように、
+正節(Positive clause)、負節(Negative clause)、混合節(Neutral clause)
+の3種類があるが、基本的にすべての節は含意(implicatoin) \verb+-->+ に
+よって構成されている。
+含意の左辺を前件部(Antecedent)、後件部を(Consequent) と呼ぶ。
+
+正節の場合は、前件部を \verb+true+ に、また負節の場合は、
+後件部を \verb+false+ として記述する。
+値域限定の条件を満足しないような節については、あらかじめ
+\verb+dom+ などの述語を用いることによって条件を
+満足するような節に変換することが可能である。
+
+また、前件部、後件部においては、各対象言語を直接呼び出す
+ことも許されており、これにより整数間の比較演算などが
+可能になる。
+
+以下は、MGTP 入力節のシンタクスについて BNF で記述したものである。
+
+\vspace{1em}
+\begin{tabular}{ll}
+ MGTP-Clause ::= & Positive-Clause $|$ Negative-Clause $|$ Neutral-Clause\\
+ Positive-Clause ::= & ' \verb+true+' ' \verb+-->+' Consequent '.'\\
+ Negative-Clause ::= & Antecedent  ' \verb+-->+' ' \verb+false+' '.'\\
+ Neutral-Clause ::= & Antecedent ' \verb+-->+' Consequent '.'\\
+ Antecedent ::= & Antecedent-Atom { ',' Antecedent-Atom }*\\
+ Antecedent-Atom ::= & MGTP-Atom $|$ ' \verb+{{+' [ Guards ] ' \verb+}}+'\\
+ Consequent ::= & [ '\verb+{{+' [ Procedures ] '\verb+}}+' ' \verb+->+' ] Consequent-Group\\
+ Consequent-Group ::= & Consequent-Unit { ',' Consequent-Unit }*\\
+ Consequent-Unit ::= & Atom-Group $|$ Disjunctive-Atom-Group \\
+ Disjunctive-Atom-Group ::= & Atom-Group { ' \verb+;+' Atom-Group }*\\
+ Atom-Group ::= & MGTP-Atom { ',' MGTP-Atom }*\\
+ MGTP-Atom ::= & Term \\
+ Guards ::= & Call { ',' Call }*\\
+ Procedures ::= & Call { ',' Call }*\\
+\end{tabular}
+
+\vspace{1em}
+ここで、Term は、Prolog や KL1 の項を表す。
+すなわち述語に相当する。変数の表現も Prolog や KL1 のそれに準ずる。
+また、Call は該当プログラムの呼び出し文を意味し、
+例えば、Prolog では \verb+{{X>Y}}+ や \verb'{{X1:=X+1,X1>Y}}' などの
+ような記述が可能である。
+
+なお、細かいシンタクスの相違については各バージョンのマニュアルを参照
+されたい。
+
+%%----------------------------------------------------------------
+\section{例題}
+
+MGTP 入力節の例を図\ref{MGTP-input-ex}に示す。
+この問題は TPTP problem library\cite{SSY93} の
+MSC006-1(図 \ref{MSC006-1}) を MGTP 入力節に書き直したものである。
+
+\begin{figure}
+\small
+\begin{verbatim}
+%%  Problems/MSC/MSC006-1.mg  Ground-MGTP/pl input-clauses
+%%  infinite_domain(no).
+%%  max_number_of_doms_in_a_clause(2).
+%%  total_number_of_doms(2).
+%%  number_of_NonHorn_clauses(1).
+%%  max_number_of_consequents_in_a_clause(2).
+%%  number_of_negated_literals(0).
+
+true-->dom(a),dom(b),dom(c),dom(d).
+dom(A),dom(B)-->p(A,B);q(A,B).
+p(A,B),p(B,C)-->p(A,C).
+q(A,B),q(B,C)-->q(A,C).
+q(A,B)-->q(B,A).
+p(a,b)-->false.
+q(c,d)-->false.
+
+%%  Problems/MSC/MSC006-1.mg  EOF
+\end{verbatim}
+\caption{MGTP 入力節の例}
+\label{MGTP-input-ex}
+\end{figure}
+
+\begin{figure}
+\small
+\begin{verbatim}
+%--------------------------------------------------------------------------
+% File     : MSC006=NonObv-1 : Released v0.0.0, Updated v0.11.5.
+% Domain   : Miscellaneous
+% Problem  : A ``non-obvious'' problem
+% English  : Suppose there are two relations, P and Q. P is
+%            transitive, and Q is both transitive and symmetric.
+%            Suppose further the ``squareness'' of P and Q: any two
+%            things are related either in the P manner or the Q
+%            manner. Prove that either P is total or Q is total.
+% Refs     : Pelletier F.J., and Rudnicki P. (1986), Non-Obviousness,
+%            In Wos L. (Ed.), Association for Automated Reasoning
+%            Newsletter (6), Association for Automated Reasoning,
+%            Argonne, Il, 4-5.
+% Source   : [Pelletier & Rudnicki, 1986]
+% Names    : nonob.lop [SETHEO]
+% Syntax   : Number of clauses           :    6 (   1 non-Horn)(   2 units)
+%            Number of literals          :   12 (   0 equality)
+%            Number of predicate symbols :    2 (   0 propositions)
+%            Number of function symbols  :    4 (   4 constants)
+%            Number of variables         :   10 (   0 singletons)
+%            Maximal clause size         :    3
+%            Maximal term depth          :    1
+%--------------------------------------------------------------------------
+input_clause(p_transitivity,hypothesis,
+    [--p(X,Y),
+     --p(Y,Z),
+     ++p(X,Z)]).
+input_clause(q_transitivity,hypothesis,
+    [--q(X,Y),
+     --q(Y,Z),
+     ++q(X,Z)]).
+input_clause(q_symmetry,hypothesis,
+    [--q(X,Y),
+     ++q(Y,X)]).
+input_clause(all_related,hypothesis,
+    [++p(X,Y),
+     ++q(X,Y)]).
+input_clause(p_is_not_total,hypothesis,
+    [--p(a,b)]).
+input_clause(prove_q_is_total,theorem,
+    [--q(c,d)]).
+%--------------------------------------------------------------------------
+\end{verbatim}
+\caption{MSC006-1(TPTP problem library)}
+\label{MSC006-1}
+\end{figure}
+
+\normalsize
+
+また、8 クイーン問題を MGTP で記述した例を
+図 \ref{queen} に示す。
+述語 \verb+p(M,N)+ は \verb+M+ 行 \verb+M+ 列に
+クイーンが置かれることを表している。
+はじめに正節として、各行における値の候補が選言の形式で
+記述されている。
+ここの例では、\verb+{{ }}+ で囲まれたプログラム呼び出しが用いられており、
+これにより、同じ行や同じ列、あるいは対角線上にクイーンが置かれた
+ことを判定し、モデル候補を棄却するようになっている。
+
+\begin{figure}
+\small
+\begin{verbatim}
+true --> p(1,1);p(1,2);p(1,3);p(1,4);p(1,5);p(1,6);p(1,7);p(1,8).
+true --> p(2,1);p(2,2);p(2,3);p(2,4);p(2,5);p(2,6);p(2,7);p(2,8).
+true --> p(3,1);p(3,2);p(3,3);p(3,4);p(3,5);p(3,6);p(3,7);p(3,8).
+true --> p(4,1);p(4,2);p(4,3);p(4,4);p(4,5);p(4,6);p(4,7);p(4,8).
+true --> p(5,1);p(5,2);p(5,3);p(5,4);p(5,5);p(5,6);p(5,7);p(5,8).
+true --> p(6,1);p(6,2);p(6,3);p(6,4);p(6,5);p(6,6);p(6,7);p(6,8).
+true --> p(7,1);p(7,2);p(7,3);p(7,4);p(7,5);p(7,6);p(7,7);p(7,8).
+true --> p(8,1);p(8,2);p(8,3);p(8,4);p(8,5);p(8,6);p(8,8);p(8,8).
+
+p(N,M),p(N1,M),{{N \= N1}} --> false.
+p(N,M),p(N,M1),{{M \= M1}} --> false.
+p(N,M),p(N1,M1),{{N \= N1,M \= M1,A:=N-N1,B:=M-M1,A=B}} --> false.
+p(N,M),p(N1,M1),{{N \= N1,M \= M1,A:=N-N1,B:=M1-M,A=B}} --> false.
+\end{verbatim}
+\caption{8 クイーン問題の MGTP での記述例}
+\label{queen}
+\end{figure}

@@ -1,0 +1,8 @@
+[card(8,clubs),card(9,clubs),card(jack,clubs),card(10,clubs),
+card(7,clubs),card(8,diamonds),card(9,diamonds),card(4,diamonds),
+card(5,diamonds),card(ace,diamonds),card(3,spades),card(6,diamonds),
+card(4,clubs),card(3,diamonds),card(ace,clubs),card(8,spades),
+card(6,spades),card(jack,spades),card(queen,spades),card(king,spades),
+card(3,hearts),card(9,hearts),card(4,hearts),card(2,hearts),
+card(king,hearts)].
+

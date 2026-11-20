@@ -1,0 +1,934 @@
+%**********************************************************************
+%   Solitaire Poker.
+%		by Daisaku Yokoyama  (yokoyama@logos.t.u-tokyo.ac.jp)
+%							Dec 19, 1997
+%**********************************************************************
+
+:- module solitaire.
+
+poker(In,Out) :-
+	encode(In,Enc_cards),
+	make_hands(Enc_cards)+Hands+[],
+	make_25(Enc_cards,Hands,Out1),
+	cross_score(Out1,Score),
+	cross(Out1,Score,Out2),
+	get_best(first,Out2,BestS,Max)+Ans+Ans1,
+	generic:new(random_numbers,Rand,25),
+	sa(BestS,Max,Max,Rand,30000,100)+Ans1+[]@lower_priority(2),
+	decode(Ans)+Out+[].
+
+% get_best: 「crossから」次々に出される（点数が向上してくる）解のうち、
+% 	    最初と最後の解のみ出力する
+get_best(first,[S1|Cs],BestS,Max)-Out :-
+	Out <= S1,
+	get_best(S1,Cs,BestS,Max)-Out.
+otherwise.
+get_best(S,[],BestS,Max)-Out :-
+	Out <= S,
+	BestS = S,
+	score(S,Max).
+get_best(S,[S1|Cs],BestS,Max)-Out :-
+	get_best(S1,Cs,BestS,Max)-Out.
+
+
+%***********************************
+%   encode section
+%***********************************
+
+% encode:カードを内部表現にする（整数。下4bitはスートを表す）
+encode([],Enc) :- Enc = [].
+encode([card(Rank,Suit)|Cs],Enc) :-
+	enc_rank(Rank,Ranknum),
+	enc_suit(Suit,Suitnum),
+	E := (Ranknum << 4) \/ Suitnum,
+	Enc = [E|Es],
+	encode(Cs,Es).
+
+enc_rank(jack,Num)  :- Num := 11.
+enc_rank(queen,Num) :- Num := 12.
+enc_rank(king,Num)  :- Num := 13.
+enc_rank(ace,Num)   :- Num := 14.
+otherwise.
+enc_rank(N,Num)     :- Num := N.
+
+enc_suit(spades,Num)   :- Num := 2'0001.
+enc_suit(hearts,Num)   :- Num := 2'0010.
+enc_suit(diamonds,Num) :- Num := 2'0100.
+enc_suit(clubs,Num)    :- Num := 2'1000.
+
+
+%***********************************
+%       make possible hands
+%***********************************
+
+% make_hands:与えられたカードで作ることができる役を、得点の高い方から順に返す。
+make_hands(Cards)-Hands :-
+	sort_rank(Cards,Rank_sort),
+	sort_suit(Cards,Suit_sort),
+	search_sf(Suit_sort)-Hands,		%hand(str_flu,[...])
+	search_four(Rank_sort)-Hands,		%hand(four,[...])
+	search_full(Rank_sort)-Hands,		%hand(full,[...])
+	search_flush(Suit_sort)-Hands,		%hand(flush,[...])
+	search_str(Rank_sort)-Hands,		%hand(str,[...])
+	search_three(Rank_sort)-Hands,		%hand(three,[...])
+	search_two(Rank_sort)-Hands,		%hand(two,[...])
+	search_one(Rank_sort)-Hands.		%hand(pair,[...])
+
+% sort_rank:スートを無視してソート
+sort_rank(Cs,Sorted) :-
+	qsort(Cs)+Sorted+[].
+
+qsort([])-Out.
+qsort([X|Xs])-Out :- 
+	div(X,Xs,Left,Right),
+	qsort(Left)-Out,
+	Out <= X,
+	qsort(Right)-Out.
+
+div(X,[],Left,Right) :- Left = [], Right = [].
+div(X,[Y|Ys],Left,Right) :- Y > X |
+	Left = [Y|Ls],
+	div(X,Ys,Ls,Right).
+div(X,[Y|Ys],Left,Right) :- Y =< X |
+	Right = [Y|Rs],
+	div(X,Ys,Left,Rs).
+
+% sort_suit:スート毎に分けてソート
+sort_suit(Cs,Sorted) :-
+	classify(Cs,Spade,Heart,Diamond,Club),
+	qsort(Spade)+Sort_S+[],
+	qsort(Heart)+Sort_H+[],
+	qsort(Diamond)+Sort_D+[],
+	qsort(Club)+Sort_C+[],
+	Sorted = [Sort_S,Sort_H,Sort_D,Sort_C].
+
+classify([],S,H,D,C) :- S = [], H = [], D = [], C = [].
+classify([X|Xs],S,H,D,C) :- Suit := X /\ 2'1111, Suit =:= 2'0001 |
+	S = [X|S1],
+	classify(Xs,S1,H,D,C).
+classify([X|Xs],S,H,D,C) :- Suit := X /\ 2'1111, Suit =:= 2'0010 |
+	H = [X|H1],
+	classify(Xs,S,H1,D,C).
+classify([X|Xs],S,H,D,C) :- Suit := X /\ 2'1111, Suit =:= 2'0100 |
+	D = [X|D1],
+	classify(Xs,S,H,D1,C).
+classify([X|Xs],S,H,D,C) :- Suit := X /\ 2'1111, Suit =:= 2'1000 |
+	C = [X|C1],
+	classify(Xs,S,H,D,C1).
+
+% search straight flush
+search_sf([])-Hands.
+search_sf([C|Cs])-Hands :-
+	is_sf(C)-Hands,
+	ace_sf(C)-Hands,
+	search_sf(Cs)-Hands.
+
+% ace_sf:カードがエースを含む時（Aはソートにより必ず先頭にある）、
+%        [A,4,3,2,1]というstraight flushを見つける
+ace_sf([])-Hands.
+ace_sf([C|Cs])-Hands :- Rank := C >> 4, Rank =\= 14 |
+	true.
+ace_sf([C|Cs])-Hands :- Rank := C >> 4, Rank =:= 14 |
+	get_tail(5,Cs,Cs1),
+	(Cs1 = [Cs1Top|Cs1E] ->
+	    is_sf2(Cs1Top,Cs1E,4,Stat)+Temp+[],
+	    (Stat = yes ->
+		Hands <= hand(str_flu,[C|Temp]);
+	     otherwise; true -> true);
+	 otherwise; true -> true).
+
+get_tail(N,[],Out) :- Out = [].
+get_tail(N,[C|Cs],Out) :- Rank := C >> 4, Rank =< N |
+	Out = [C|Cs].
+get_tail(N,[C|Cs],Out) :- Rank := C >> 4, Rank > N |
+	get_tail(N,Cs,Out).
+
+is_sf([])-Hands.
+is_sf([C|Cs])-Hands :-
+	is_sf2(C,Cs,5,Stat)+Temp+[],
+	(Stat = yes ->
+	    Hands <= hand(str_flu,Temp),
+	    is_sf(Cs)-Hands;
+	 Stat = no ->
+	    is_sf(Cs)-Hands;
+	 Stat = end ->
+	    true).
+
+is_sf2(PreC,_,N,Stat)-Temp :- N =:= 1 |
+	Temp <= PreC,
+	Stat = yes.
+is_sf2(PreC,[],N,Stat)-Temp :- N > 1 |
+	Stat = end.
+is_sf2(PreC,[C|Cs],N,Stat)-Temp :-
+    N > 1, PreRank := PreC >> 4, Rank := C >> 4, PreRank =\= Rank + 1 |
+	Stat = no.
+is_sf2(PreC,[C|Cs],N,Stat)-Temp :-
+    N > 1, PreRank := PreC >> 4, Rank := C >> 4, PreRank =:= Rank + 1 |
+	Temp <= PreC,
+	is_sf2(C,Cs,~(N-1),Stat)-Temp.
+
+% search straight
+search_str(C)-Hands :-
+	search_str1(C)-Hands,
+	ace_str(C)-Hands.
+
+search_str1([])-Hands.
+search_str1([C|Cs])-Hands :- Rank := C >> 4, NextRank := Rank - 1 |
+	is_str(C,Cs,5,Ans),
+	(Ans = yes(Straits) ->
+	    div_str(Straits)-Hands;
+	 otherwise; true -> true),
+	get_tail(NextRank,[C|Cs],NextC),
+	search_str1(NextC)-Hands.
+
+is_str(PreC,_,N,Ans) :- N =:= 1 |
+	Ans = yes([[PreC]]).
+is_str(PreC,[C|Cs],N,Ans) :-
+    N > 1, PreR := PreC >> 4, R := C >> 4, PreR =:= R + 1 |
+	is_str(C,Cs,~(N-1),Ans1),
+	(Ans1 = yes(Straits) ->
+	    put_head(PreC,Straits,AnsStrs),
+	    Ans = yes(AnsStrs);
+	 otherwise; true ->
+	    Ans = no).
+is_str(PreC,[C|Cs],N,Ans) :-
+    N > 1, PreR := PreC >> 4, R := C >> 4, PreR =:= R |
+	get_tail(~(PreR - 1),Cs,Tail),
+	(Tail = [TC|TCs], TR := TC >> 4, TR =:= PreR - 1 ->
+	    is_str(TC,TCs,~(N-1),TC_str),
+	    (TC_str = yes(S) -> put_head(PreC,S,PreC_str);
+	     otherwise; true -> PreC_str = []);
+	 otherwise; true -> PreC_str = []),
+	is_str(C,Cs,N,C_str_ans),
+	(C_str_ans = yes(S2) -> C_str = S2;
+	 otherwise; true -> C_str = []),
+	append(PreC_str,C_str,Ans_cards),
+	(Ans_cards = [] -> Ans = no;
+	 otherwise; true -> Ans = yes(Ans_cards)).
+otherwise.
+is_str(PreC,C,N,Ans) :- Ans = no.
+
+put_head(C,[],Ans) :- Ans = [].
+put_head(C,[S|Ss],Ans) :-
+	Ans = [[C|S]|Ans1],
+	put_head(C,Ss,Ans1).
+
+% ace_str:カードにエースがある時、[A,4,3,2,1]というstraightを見つける
+ace_str([C|Cs])-Hands :- Rank := C >> 4, Rank =\= 14 |
+	true.
+ace_str([C|Cs])-Hands :- Rank := C >> 4, Rank =:= 14 |
+	get_tail(5,Cs,Tail),
+	(Tail = [TC|TCs] ->
+	    is_str(TC,TCs,4,Ans),
+	    (Ans = yes(S) -> put_head(C,S,Ans1);
+	     otherwise; true -> Ans1 = []),
+	    div_str(Ans1)-Hands;
+	 otherwise; true -> true),
+	ace_str(Cs)-Hands.
+
+div_str([])-Hands.
+div_str([Ans|Ans1])-Hands :-
+	Hands <= hand(str,Ans),
+	div_str(Ans1)-Hands.
+
+search_full(C)-Hands :-
+	search_three(C)+Three+[],
+	search_one(C)+One+[],
+	make_fullhouse(Three,One)-Hands.
+
+% make_fullhouse: スリーカードとワンペアのカードリストからフルハウスを作る
+make_fullhouse([],One)-Hands.
+make_fullhouse([hand(three,A)|Ts],One)-Hands :-
+	make_fullhouse2(A,One)-Hands,
+	make_fullhouse(Ts,One)-Hands.
+
+make_fullhouse2([],_)-Hands.
+make_fullhouse2(_,[])-Hands.
+make_fullhouse2([A,B,C],[hand(pair,[D,E])|Os])-Hands :-
+	(RankT := A >> 4, RankO := D >> 4, RankT =\= RankO ->
+	    Hands <= hand(full,[A,B,C,D,E]);
+	 otherwise; true -> true),
+	make_fullhouse2([A,B,C],Os)-Hands.
+
+search_flush([])-Hands.
+search_flush([C|Cs])-Hands :-
+	length(C)+0+L,
+	(L >= 5 ->	% 5枚以上カードがあったらcombinationをとる
+	    combi(L,5,C)+Temp+[],
+	    lavel(flush,Temp)-Hands;
+	 otherwise; true -> true),
+	search_flush(Cs)-Hands.
+
+search_two(C)-Hands :-
+	search_one(C)+One+[],
+	make_two(One,One)-Hands.
+
+% make_two: ワンペアのリスト二つからツーペアを作る
+make_two([],[])-Hands.
+make_two([hand(pair,A)|P1],[hand(pair,B)|P2s])-Hands :-
+	make_two2(A,P2s)-Hands,
+	make_two(P1,P2s)-Hands.
+
+make_two2([],_)-Hands.
+make_two2(_,[])-Hands.
+make_two2([A,B],[hand(pair,[C,D])|Cs2])-Hands :-
+	(Rank1 := A >> 4, Rank2 := C >> 4, Rank1 =\= Rank2 ->
+	    Hands <= hand(two,[A,B,C,D]);
+	 otherwise; true -> true),
+	make_two2([A,B],Cs2)-Hands.
+
+
+search_four([C|Cs])-Hands :-
+	search_same(3,C,Cs,3,Temp,Temp)-Hands.
+
+search_three([C|Cs])-Hands :-
+	search_same(2,C,Cs,2,Temp1,Temp1)-Hands,
+	search_same(3,C,Cs,3,Temp,Temp)+Four+[],
+	combi_4_3(Four)-Hands.
+
+search_one([C|Cs])-Hands :-
+	search_same(1,C,Cs,1,Temp,Temp)-Hands,
+	search_same(2,C,Cs,2,Temp,Temp)+Three+[],
+	combi_3_2(Three)-Hands,
+	search_same(3,C,Cs,3,Temp,Temp)+Four+[],
+	combi_4_2(Four)-Hands.
+
+% search_same: ランクが同じN-1枚のカードを探す
+search_same(N,PreC,[],Count,TempH,Temp)-Hands :- Count =:= 0 |
+	Temp = [PreC],
+	(N =:= 3 ->
+	    Hands <= hand(four,TempH);
+	 N =:= 2 ->
+	    Hands <= hand(three,TempH);
+	 N =:= 1 ->
+	    Hands <= hand(pair,TempH)).
+search_same(N,PreC,[],Count,TempH,Temp)-Hands :- Count > 0 |
+	true.
+search_same(N,PreC,[C|Cs],Count,TempH,Temp)-Hands :- 
+    Count =:= 0, PreRank := PreC >> 4, Rank := C >> 4, PreRank =\= Rank |
+	Temp = [PreC],
+	(N =:= 3 ->
+	    Hands <= hand(four,TempH);
+	 N =:= 2 ->
+	    Hands <= hand(three,TempH);
+	 N =:= 1 ->
+	    Hands <= hand(pair,TempH)),
+	search_same(N,C,Cs,N,Temp1,Temp1)-Hands.
+search_same(N,PreC,[C|Cs],Count,TempH,Temp)-Hands :- 
+    Count =:= 0, PreRank := PreC >> 4, Rank := C >> 4, PreRank =:= Rank |
+	(Cs = [NextC|NextCs] ->
+	    search_same(N,NextC,NextCs,N,Temp1,Temp1)-Hands;
+	 otherwise; true -> true).
+search_same(N,PreC,[C|Cs],Count,TempH,Temp)-Hands :-
+    Count > 0, PreRank := PreC >> 4, Rank := C >> 4, PreRank =:= Rank |
+	Temp = [PreC|TempE],
+	search_same(N,C,Cs,~(Count-1),TempH,TempE)-Hands.
+search_same(N,PreC,[C|Cs],Count,TempH,Temp)-Hands :-
+    Count > 0, PreRank := PreC >> 4, Rank := C >> 4, PreRank =\= Rank |
+	search_same(N,C,Cs,N,Temp1,Temp1)-Hands.
+
+%********** combination section *************************************
+
+combi_4_3([])-Hands.
+combi_4_3([hand(four,C)|Fs])-Hands :-
+	combi(4,3,C)+Temp+[],
+	lavel(three,Temp)-Hands,
+	combi_4_3(Fs)-Hands.
+
+combi_4_2([])-Hands.
+combi_4_2([hand(four,C)|Fs])-Hands :-
+	combi(4,2,C)+Temp+[],
+	lavel(pair,Temp)-Hands,
+	combi_4_2(Fs)-Hands.
+
+combi_3_2([])-Hands.
+combi_3_2([hand(three,C)|Ts])-Hands :-
+	combi(3,2,C)+Temp+[],
+	lavel(pair,Temp)-Hands,
+	combi_3_2(Ts)-Hands.
+
+% combi(X,Y,C)-Out: 汎用の「組合せ」
+%		    X個からY個選ぶ時のcombination（選ぶカードはC）を求める
+combi(X,Y,[C|Cs])-Out :- X =:= Y |
+	Out <= [C|Cs].
+otherwise.
+combi(X,Y,[C|Cs])-Out :- X > Y, Y =:= 1 |
+	Out <= [C],
+	combi(~(X-1),Y,Cs)-Out.
+combi(X,Y,[C|Cs])-Out :- X > Y, Y > 1 |
+	combi(~(X-1),~(Y-1),Cs)+Temp+[],
+	combi2(C,Temp)-Out,
+	combi(~(X-1),Y,Cs)-Out.
+
+combi2(Top,[])-Out.
+combi2(Top,[Cs|Cs1])-Out :-
+	Out <= [Top|Cs],
+	combi2(Top,Cs1)-Out.
+
+lavel(_,[])-Hands.
+lavel(L,[C|Cs])-Hands :-
+	Hands <= hand(L,C),
+	lavel(L,Cs)-Hands.
+
+
+%******************************************************
+%  put 25 cards (heuristics)
+%	     ----1--->
+%	     | | | | |
+%	     2 3 4 5 6
+%	     | | | | |
+%	     V V V V V
+%	のように高い役から順に並べていく。
+%******************************************************
+
+make_25(Cards,Hands,Out) :-
+	new_string(S,25,8),
+	% 最も高い役で、5枚のカードで構成されているもの(C)を求める
+	% （flushが存在するので、必ず見つかる）
+	search_top_5card(Hands,Temp,Temp,C,Hs),
+	% 残った役(Hs)のうち、Cと重複が1枚以内のものを求める
+	select_hand(C,Hs,1)+PutHands+[],
+	% 使っていないカードを求める
+	del(Cards,C,RemainCards),
+	% 0行目にカードを置く
+	put_row(S,0,0,C,S1),
+	% 列方向にカードを置いていく
+	make_ary(0,S1,PutHands,[],RemainCards,[],Out).
+
+search_top_5card([hand(H,C1)|Hs],TempH,Temp,Top,Hands) :-
+	length(C1)+0+L,
+	(L =:= 5 ->
+	    Top = C1,
+	    Temp = Hs,
+	    Hands = TempH;
+	 L < 5 ->
+	    Temp = [hand(H,C1)|Temp1],
+	    search_top_5card(Hs,TempH,Temp1,Top,Hands)).
+
+% make_ary:
+%	+L		縦に置く列の番号
+%	+S		途中まで作られた25枚のカードのストリング
+%	+R		[rep(重複度,重複カード,役),...]というリスト
+%	+UsedC		使った（すでに置いた）カードのリスト
+%			（1行目のカードは含まれていないことに注意）
+%	+RemainC	残っている（まだ置いていない）カードのリスト
+%	+Temp		これまでに作った列で、カードが置いてない場所のリスト
+%	-Out		完成した25枚のカードのストリング
+make_ary(L,S,R,UsedC,RemainC,Temp,Out) :- L =:= 5 |
+	% 列方向に役を置き終ったので、それを保持しつつ、
+	% 横方向にできるだけフラッシュを作りながら
+	% 25枚のカードのストリングを完成させる
+	make_flush(S,1,RemainC,Temp,Out).
+make_ary(L,S,[],UsedC,RemainC,Temp,Out) :- L < 5 |
+	make_nexttemp(0,L,Temp,NextTemp),
+	make_ary(~(L+1),S,[],UsedC,RemainC,NextTemp,Out).
+make_ary(L,S,[rep(N,Rep,hand(H,C))|Hs],UsedC,RemainC,Temp,Out) :- L < 5 |
+	% 1行目の役のカードと1枚しか重複がない、もしくは
+	% 1行目の役のカードと重複がなく4枚以下のカードで構成される役ならば、
+	% 縦に置くことができる  =>  Stat = put.
+	(N =:= 1            -> Stat = put;
+	 N =:= 0, H = four  -> Stat = put;
+	 N =:= 0, H = three -> Stat = put;
+	 N =:= 0, H = two   -> Stat = put;
+	 N =:= 0, H = pair  -> Stat = put;
+	 otherwise; true    -> Stat = noput),
+	(Stat = put ->
+	    % カードが置かれない箇所のリスト(Temp)に
+	    % この列のカードが置かれない箇所を加える(NextTemp)
+	    length(C)+0+Length,
+	    Length1 := Length - N,
+	    make_nexttemp(Length1,L,Temp,NextTemp),
+	    % 重複しているカードを0行L列に持ってくる
+	    config_ary(L,S,Rep,S1),
+	    % 重複カードを役のカードから除き、これから置くべきカードとする
+	    del(C,Rep,PutC),
+	    % 1行L列から縦にカードを置く
+	    put_column(S1,1,L,PutC,S2),
+	    % 使ったカード、残ったカードを更新
+	    append(UsedC,PutC,NextUsedC),
+	    del(RemainC,PutC,NextRemainC),
+	    % 次の列に置く役のうち、今の列に置いたカードを含むものを除去
+	    derep(NextUsedC,Hs)+NextHands+[],
+	    % 次の列へ
+	    make_ary(~(L+1),S2,NextHands,NextUsedC,NextRemainC,NextTemp,Out);
+	 Stat = noput ->
+	    make_ary(L,S,Hs,UsedC,RemainC,Temp,Out)).
+
+make_nexttemp(4,L,Temp,NextTemp) :- 
+	NextTemp = Temp.
+make_nexttemp(3,L,Temp,NextTemp) :- 
+	append(Temp,[~(20+L)],NextTemp).
+make_nexttemp(2,L,Temp,NextTemp) :- 
+	append(Temp,[~(15+L),~(20+L)],NextTemp).
+make_nexttemp(1,L,Temp,NextTemp) :- 
+	append(Temp,[~(10+L),~(15+L),~(20+L)],NextTemp).
+make_nexttemp(0,L,Temp,NextTemp) :- 
+	append(Temp,[~(5+L),~(10+L),~(15+L),~(20+L)],NextTemp).
+
+% config_ary: Aのカードを0行L列へ持ってくる(swap)
+config_ary(L,S,[],S1) :- S1 = S.
+config_ary(L,S,[A],S1) :-
+	generic:search_character(S,0,24,A,N),
+	string_element(S,L,B),
+	set_string_element(S,L,A,TempS),
+	set_string_element(TempS,N,B,S1).
+
+% derep: 役のうち、「縦方向に」使ったカードと重複するものを除く
+derep(UsedC,[])-Out.
+derep(UsedC,[rep(N,Rep,hand(H,C))|Hs])-Out :-
+	count_rep(UsedC,C)+0+N1-_,
+	(N1 =:= 0 ->
+	    Out <= rep(N,Rep,hand(H,C));
+	 otherwise; true -> true),
+	derep(UsedC,Hs)-Out.
+
+% select_hand: 役のうち、Targetのカードと重複がRepLim枚以下のものを求める
+select_hand(Target,[],RepLim)-Out.
+select_hand(Target,[hand(H,C)|Hs],RepLim)-Out :-
+	count_rep(Target,C)+0+N+Rep+[],
+	(N =< RepLim ->
+	    Out <= rep(N,Rep,hand(H,C));
+	         % rep(重複枚数,重複カードのリスト,ハンド)
+	 otherwise; true -> true),
+	select_hand(Target,Hs,RepLim)-Out.
+
+% count_rep: 2つのリストの重複枚数、重複カードを求める
+count_rep([],_)-N-Rep.
+count_rep([A|As],B)-N-Rep :-
+	count_rep2(A,B)-N-Rep,
+	count_rep(As,B)-N-Rep.
+
+count_rep2(A,[])-N-Rep.
+count_rep2(A,[B|Bs])-N-Rep :- A =:= B |
+	N += 1, Rep <= B.
+count_rep2(A,[B|Bs])-N-Rep :- A =\= B |
+	count_rep2(A,Bs)-N-Rep.
+
+% put_remain: 空いている箇所に使われていないカードを埋めていく
+put_remain(S,[],[],Out) :- Out = S.
+put_remain(S,[C|Cs],[N|Ns],Out) :-
+	set_string_element(S,N,C,S1), put_remain(S1,Cs,Ns,Out).
+
+% make_flush: 列方向を崩さずに、行方向にフラッシュを作る
+make_flush(S,N,RemainC,Temp,Out) :- N =:= 5 |
+	put_remain(S,RemainC,Temp,Out).
+make_flush(S,N,RemainC,Temp,Out) :- N < 5 |
+	get_row(S,N,0,Row),
+	% N行目はフラッシュか？
+	(Row = [R|Rs], R1 := R /\ 2'1111 -> is_flush(R1,Rs,Stat)),
+	(Stat = no ->
+	    make_suits_flush(2'0001,S,N,RemainC,Temp,
+			     RemainC1,Temp1,S1,Can_flush),
+	    (Can_flush = no ->
+		put_remain(S,RemainC,Temp,Out);
+	     Can_flush = yes ->
+		make_flush(S1,~(N+1),RemainC1,Temp1,Out));
+	 Stat = yes ->
+	    make_flush(S,~(N+1),RemainC,Temp,Out)).
+
+% make_suit_flush: フラッシュができるかどうかをsuitを変えながら試みる
+make_suits_flush(Suit,S,I,RemainC,Temp,RemainC1,Temp1,S1,Can_flush) :-
+    Suit > 2'1000 |
+	RemainC1 = RemainC1,
+	Temp1 = Temp,
+	S1 = S,
+	Can_flush = no.
+make_suits_flush(Suit,S,I,RemainC,Temp,RemainC1,Temp1,S1,Can_flush) :-
+    Suit =< 2'1000 |
+	make_suit_flush(Suit,S,I,0,RemainC,Temp,RemainCs,Temps,Ss,Can_suit),
+	(Can_suit = yes ->
+	    RemainC1 = RemainCs,
+	    Temp1 = Temps,
+	    S1 = Ss,
+	    Can_flush = yes;
+	 Can_suit = no ->
+	    Suit1 := Suit << 1,
+	    make_suits_flush(Suit1,S,I,RemainC,Temp,
+			     RemainC1,Temp1,S1,Can_flush)).
+
+% make_suit_flush: あるSuitでフラッシュができるかどうか
+make_suit_flush(Suit,S,I,J,RemainC,Temp,RemainC1,Temp1,S1,Can_flush) :-
+    J =:= 5 |
+	RemainC1 = RemainC, Temp1 = Temp, S1 = S, Can_flush = yes.
+make_suit_flush(Suit,S,I,J,RemainC,Temp,RemainC1,Temp1,S1,Can_flush) :-
+    J < 5 |
+	get_column(S,I,J,Col),
+	search_suit(Col,Suit,Head,Col0,Stat)+0+Num,
+	Index := (I + Num) * 5 + J,
+	(Stat = yes ->     % 希望のSuitが同じ列にある
+	    append([Head],Col0,Col1),
+	    put_column(S,I,J,Col1,S2),
+	    make_suit_flush(Suit,S2,I,~(J+1),RemainC,Temp,
+	                    RemainC1,Temp1,S1,Can_flush);
+	 Stat = can ->     % 希望のSuitがないが、列に空きがある
+	    append([Head],Col0,Col1),
+	    put_column(S,I,J,Col1,S3),
+	    search_suit(RemainC,Suit,C,RemainCs,RemainStat)+0+_,
+	    (RemainStat = yes ->  % 希望のSuitが残ったカードにある
+		set_string_element(S3,~(5*I+J),C,S4),
+		del(Temp,[Index],Temp2),
+		make_suit_flush(Suit,S4,I,~(J+1),RemainCs,Temp2,
+		                RemainC1,Temp1,S1,Can_flush);
+	     RemainStat = no ->   % 希望のSuitが残ったカードにない
+		Can_flush = no);
+	 Stat = no ->      % 希望のSuitが同じ列にない、空きもない
+	    Can_flush = no).
+
+is_flush(RS,[],Stat) :- Stat = yes.
+is_flush(RS,[C|Cs],Stat) :- CS := C /\ 2'1111, RS =:= CS |
+	is_flush(RS,Cs,Stat).
+is_flush(RS,[C|Cs],Stat) :- CS := C /\ 2'1111, RS =\= CS |
+	Stat = no.
+
+search_suit([],Suit,Head,Out,Stat)-Index :-
+	Stat = no.
+search_suit([C|Cs],Suit,Head,Out,Stat)-Index :-
+    Csuit := C /\ 2'1111, Csuit =:= 2'0000 |
+	Head = C, Out = Cs, Stat = can.
+otherwise.
+search_suit([C|Cs],Suit,Head,Out,Stat)-Index :-
+    Csuit := C /\ 2'1111, Csuit =:= Suit |
+	Head = C, Out = Cs, Stat = yes.
+search_suit([C|Cs],Suit,Head,Out,Stat)-Index :-
+    Csuit := C /\ 2'1111, Csuit =\= Suit |
+	Index += 1,
+	Out = [C|Outs],
+	search_suit(Cs,Suit,Head,Outs,Stat)-Index.
+
+
+%************************************************
+%   cross section
+%************************************************
+
+% cross:行方向、列方向の役を保持したまま、斜め方向の役を最高にする
+cross(S,Total,Out) :-
+	Out = [S|Outs],
+	perm(Perm),
+	cross_row(S,Perm,Perm,Total)+Outs+[]@lower_priority.
+
+% perm:斜め方向の役が変化する全ての行（列）の組合せ（30通り）のリストを返す
+perm(C) :- C =
+	[[3,1,0,2,4],[2,1,0,3,4],[2,1,0,4,3],
+	 [1,2,0,3,4],[1,2,0,4,3],[1,3,0,4,2],
+	 [3,0,1,2,4],[2,0,1,3,4],[2,0,1,4,3],
+	 [0,2,1,3,4],[0,2,1,4,3],[0,3,1,4,2],
+	 [3,0,2,1,4],[1,0,2,3,4],[1,0,2,4,3],
+	 [0,1,2,3,4],[0,1,2,4,3],[0,3,2,4,1],
+	 [2,0,3,1,4],[1,0,3,2,4],[1,0,3,4,2],
+	 [0,1,3,2,4],[0,1,3,4,2],[0,2,3,4,1],
+	 [2,0,4,1,3],[1,0,4,2,3],[1,0,4,3,2],
+	 [0,1,4,2,3],[0,1,4,3,2],[0,2,4,3,1]].
+
+% cross_row:行を与えられるリストの順番に並べ直してより高得点のものを探す
+cross_row(S,[],Perm,Total)-Out.
+cross_row(S,[P|Ps],Perm,Total)-Out :-
+	new_string(S0,25,8),
+	config_row(S,S0,0,P,S1),
+	cross_score(S1,Score),
+	(Score > Total ->
+	    Out <= S1,
+	    Max := Score;
+	 Score =< Total ->
+	    Max := Total),
+	 cross_column(S1,Perm,Max,NextMax)-Out,
+	 cross_row(S,Ps,Perm,NextMax)-Out.
+
+% cross_column:列を与えられるリストの順番に並べ直してより高得点のものを探す
+cross_column(S,[],Total,Max)-Out :- Max := Total.
+cross_column(S,[P|Ps],Total,Max)-Out :-
+	new_string(S0,25,8),
+	config_column(S,S0,0,P,S1),
+	cross_score(S1,Score),
+	(Score > Total ->
+	    Out <= S1,
+	    NextTotal := Score;
+	 Score =< Total ->
+	    NextTotal := Total),
+	cross_column(S,Ps,NextTotal,Max)-Out.
+
+config_row(S,S1,N,[],SOut) :- SOut = S1.
+config_row(S,S1,N,[P|Ps],SOut) :-
+	get_row(S,N,0,Row),
+	put_row(S1,P,0,Row,S2),
+	config_row(S,S2,~(N+1),Ps,SOut).
+
+config_column(S,S1,N,[],SOut) :- SOut = S1.
+config_column(S,S1,N,[P|Ps],SOut) :-
+	get_column(S,0,N,Col),
+	put_column(S1,0,P,Col,S2),
+	config_column(S,S2,~(N+1),Ps,SOut).
+
+
+%******************************************************
+%      "Simulated annealing"-like section
+%******************************************************
+
+% sa(S,MaxScore,PreScore,Random_num_list,Threshold,Counter)-Out:
+sa(S,Max,PreScore,Rand,Thres,Count)-Out :- Count =:= 0 |
+	NThres := (Thres * 95) / 100,	% 閾値を再設定
+	(NThres < 100 ->	% ある程度探索が進んでいたら
+				% 閾値を大きくしてやりなおし
+	    sa(S,Max,PreScore,Rand,30000,100)-Out;
+	 NThres >= 100 ->
+	    sa(S,Max,PreScore,Rand,NThres,100)-Out).
+sa(S,Max,PreScore,[R1,R2|Rand],Thres,Count)-Out :- Count > 0, R1 =:= R2 |
+	sa(S,Max,PreScore,[R2|Rand],Thres,Count)-Out.
+sa(S,Max,PreScore,[R1,R2|Rand],Thres,Count)-Out :- Count > 0, R1 =\= R2 |
+	C1 := Count - 1,
+	swap_str_element(S,R1,R2,S1),   % ランダムに2要素をswapしてみる
+	score(S1,Score),
+	(Score > Max ->		% 得点が良くなったら無条件に受理
+	    Out <= S1,
+	    sa(S1,Score,Score,Rand,Thres,C1)-Out;
+	 otherwise; Score + Thres > PreScore ->
+				% 得点の悪化が閾値以下なら受理
+	    sa(S1,Max,Score,Rand,Thres,C1)-Out;
+	 otherwise; true ->	% それ以外は不受理
+	    sa(S,Max,PreScore,Rand,Thres,C1)-Out).
+	    
+swap_str_element(S,I1,I2,S1) :-
+	string_element(S,I1,X1),
+	string_element(S,I2,X2),
+	set_string_element(S,I1,X2,Temp),
+	set_string_element(Temp,I2,X1,S1).
+
+
+%************************************************
+%      decode section
+%************************************************
+
+% decode:カードの内部表現(String)から所定の表現へのデコード
+decode([])-Out.
+decode([S|Cs])-Out :-
+	decode_s(S,0)+Out1+[],
+	Out <= Out1,
+	decode(Cs)-Out.
+
+decode_s(S,N)-Out :- N =:= 25 | true.
+decode_s(S,N)-Out :- N < 25 |
+	string_element(S,N,A),
+	decode_s2(A)-Out,
+	decode_s(S,~(N+1))-Out.
+
+decode_s2(C)-Out :-
+	S := C /\ 2'1111,
+	R := C >> 4,
+	desuit(S,Suit),
+	derank(R,Rank),
+	(wait(Suit), wait(Rank) -> Out <= card(Rank,Suit)).
+
+desuit(2'0001,Suit) :- Suit = spades.
+desuit(2'0010,Suit) :- Suit = hearts.
+desuit(2'0100,Suit) :- Suit = diamonds.
+desuit(2'1000,Suit) :- Suit = clubs.
+
+derank(14,Rank) :- Rank = ace.
+derank(13,Rank) :- Rank = king.
+derank(12,Rank) :- Rank = queen.
+derank(11,Rank) :- Rank = jack.
+otherwise.
+derank(N,Rank) :- Rank = N.
+
+
+%******** tools ***********************
+
+append([],B,Out) :- Out = B.
+append([A|As],B,Out) :- Out = [A|Outs], append(As,B,Outs).
+
+% del(A,B,Out) リストAからリストBの要素を除いて出力
+del(A,[],Out) :- Out = A.
+del(A,[B|Bs],Out) :-
+	del(A,Bs,Temp), del2(Temp,B,Out).
+
+del2([A|As],B,Out) :- A =\= B |
+	Out = [A|Outs], del2(As,B,Outs).
+del2([A|As],B,Out) :- A =:= B |
+	Out = As.
+
+length([])-L.
+length([C|Cs])-L :-
+	L += 1, length(Cs)-L.
+
+% put_row(S,I,J,Cards,Out) : SのI行J列から、行方向にCardsを置く
+put_row(S,I,J,_,SOut) :- J =:= 5 |
+	SOut = S.
+put_row(S,I,J,[C|Cs],SOut) :- J < 5, Index := I * 5 + J |
+	set_string_element(S,Index,C,S1),
+	put_row(S1,I,~(J+1),Cs,SOut).
+
+% put_column(S,I,J,Cards,Out) : SのI行J列から、列方向にCardsを置く
+put_column(S,I,J,[],SOut) :- SOut = S.
+put_column(S,I,J,[C|Cs],SOut) :-
+	Index := I * 5 + J,
+	set_string_element(S,Index,C,S1),
+	put_column(S1,~(I+1),J,Cs,SOut).
+
+% put_row(S,I,J,Out) : SのI行J列から、行方向にCardsを読む
+get_row(S,I,J,Row) :- J =:= 5 |
+	Row = [].
+get_row(S,I,J,Row) :- J < 5 |
+	Index := I * 5 + J,
+	string_element(S,Index,A),
+	Row = [A|Rows],
+	get_row(S,I,~(J+1),Rows).
+
+% put_column(S,I,J,Out) : SのI行J列から、列方向にCardsを読む
+get_column(S,I,J,Col) :- I =:= 5 |
+	Col = [].
+get_column(S,I,J,Col) :- I < 5 |
+	Index := I * 5 + J,
+	string_element(S,Index,A),
+	Col = [A|Cols],
+	get_column(S,~(I+1),J,Cols).
+
+%***************************************************************************
+% Evaluation program for Solitaire Poker
+%			by Eiji Sugino (sugino@jaist.ac.jp) at Jul.17.1997
+%						   Modified at Sep. 2.1997
+%
+%       <<  sample program (eval.kl1) より引用、修正 >>
+%
+
+% cross_score: 斜め方向の得点
+cross_score(CardsString,Cross) :-
+	eval_idx(11,Idx1),
+	score1(Idx1,CardsString)+0+Cross1,
+	eval_idx(12,Idx2),
+	score1(Idx2,CardsString)+Cross1+Cross.
+
+score(CardsString,Total) :-
+	score(1,12,CardsString)+0+Total.
+
+% --- evaluate 12 hands of a board 
+score(K,M,CS)-Total :- K =< M, K1 := K+1 |
+	eval_idx(K,Idx), 
+	score1(Idx,CS)-Total,
+	score(K1,M,CS)-Total.
+score(K,M,CS)-Total :- K > M | true.
+
+score1(i(I0,I1,I2,I3,I4),CS)-Total :- 
+    string_element(CS,I0,A0), string_element(CS,I1,A1),
+    string_element(CS,I2,A2), string_element(CS,I3,A3),
+    string_element(CS,I4,A4) |
+	hand_eval(A0,A1,A2,A3,A4,Hand),
+	score_point(Hand,Sc), 
+	Total += Sc.
+
+% lines
+eval_idx( 1,L) :- L = i( 0, 1, 2, 3, 4).
+eval_idx( 2,L) :- L = i( 5, 6, 7, 8, 9).
+eval_idx( 3,L) :- L = i(10,11,12,13,14).
+eval_idx( 4,L) :- L = i(15,16,17,18,19).
+eval_idx( 5,L) :- L = i(20,21,22,23,24).
+% columns
+eval_idx( 6,L) :- L = i( 0, 5,10,15,20).
+eval_idx( 7,L) :- L = i( 1, 6,11,16,21).
+eval_idx( 8,L) :- L = i( 2, 7,12,17,22).
+eval_idx( 9,L) :- L = i( 3, 8,13,18,23).
+eval_idx(10,L) :- L = i( 4, 9,14,19,24).
+% diagonals
+eval_idx(11,L) :- L = i( 0, 6,12,18,24).
+eval_idx(12,L) :- L = i( 4, 8,12,16,20).
+% --------------------------------------
+
+% --- evaluate 5 cards as a hand
+hand_eval(A0,A1,A2,A3,A4, Hand) :- 
+    card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4),
+    CC := B0 >> 4,
+    pairs([B1,B2,B3,B4],CC,1,Pairs),
+
+    ( Pairs = [N|L] -> 
+      
+      (% Four of a kind
+       N = [4|Rank] -> Hand = four_of_a_kind(Rank) ; 
+       % Three of a kind or ...
+       N = [3|Rank1] -> 
+         (% Full house!
+	  L = [[2|Rank2]] -> Hand = full_house(Rank1,Rank2) ;
+	  L = []          -> Hand = three_of_a_kind(Rank1) ) ;
+       % One pair or ... 
+       N = [2|Rank1] -> 
+         (L = [[M|Rank2]] -> 
+	    (% Full house!
+	     M =:= 3 -> Hand = full_house(Rank2,Rank1) ;
+	     % Two pairs
+	     M =:= 2 -> Hand = two_pairs(Rank1,Rank2) ) ;
+	  L = []          -> Hand = one_pair(Rank1)) ) ;
+      Pairs = []    -> is_straight_flush(B0,B1,B2,B3,B4,Hand) ).
+
+is_straight_flush(B0,B1,B2,B3,B4,Hand) :- 
+    U := B0 >> 4, L := B0 /\ 16'F |
+	is_straight([B1,B2,B3,B4],U,U,H1),
+	is_flush([B1,B2,B3,B4],   L,U,H2),
+	(H1 = straight(X) -> 
+%	   (H2 = flush(Y) -> R = straight_flush(Y) ;
+%          (H2 = flush(Y) -> Hand = straight_flush(Y) ;
+           (H2 = flush(Y) -> Hand = straight_flush(X) ;
+	    otherwise; 
+	    true       -> Hand = H1) ;
+	 otherwise;
+	 H2 = flush(Y) -> Hand = H2 ;
+	 otherwise;
+	 true       -> Hand = no_pair).
+
+is_straight([X|T],U,M,R) :- U1 := X >> 4, U1 =:= U+1,
+    M1 := M+U1 | is_straight(T,U1,M1,R).
+is_straight([]   ,U,M,R) :- R = straight(M).
+otherwise.
+% 2,3,4,5, A
+is_straight([X]  ,5,M,R) :- 14 =:= X >> 4 | R = straight(15).
+otherwise.
+is_straight(_    ,_,_,R) :- R = no.
+
+is_flush([X|T],L,U,R) :- L =:= X /\ 16'F, U1 := (X >> 4)+U | 
+	is_flush(T,L,U1,R).
+is_flush([],   L,U,R) :- R = flush(U).
+otherwise.
+is_flush(_,    _,_,R) :- R = no.
+
+% --- Sort 5 cards in rank order
+card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A0 < A1 |
+	card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A0 > A1 |
+	card_sort(1,A1,A0,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A1 < A2 |
+	card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A1 > A2 |
+	card_sort(0,A0,A2,A1,A3,A4,B0,B1,B2,B3,B4).
+card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A2 < A3 |
+	card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A2 > A3 |
+	card_sort(1,A0,A1,A3,A2,A4,B0,B1,B2,B3,B4).
+card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A3 < A4 |
+	A0:=B0,A1:=B1,A2:=B2,A3:=B3,A4:=B4.
+card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A3 > A4 |
+	card_sort(2,A0,A1,A2,A4,A3,B0,B1,B2,B3,B4).
+
+% --- Find pairs in sorted cards
+pairs([C1|Cs],C0, N,Pairs) :- CC := C1 >> 4 |
+	( CC =:= C0, N1 := N+1 -> pairs(Cs,C0,N1,Pairs) ;
+	  otherwise;
+	  N =:= 1 -> pairs(Cs,CC,N,Pairs) ;
+	  N > 1 -> ( Pairs = [[N|C0]|Pairs1], pairs(Cs,CC,1,Pairs1) )).
+pairs([],     C0, N,Pairs) :- 
+    ( N =:= 1 -> Pairs = [];  N > 1 -> Pairs = [[N|C0]] ).
+
+% --- Evaluate a hand and give score
+ %         Straight Flush       2745600 points
+ %         Four of a Kind        176000 
+ %         Full House             29333 
+ %         Flush                  21500 
+ %         Straight               10767 
+ %         Three of a Kind         2000 
+ %         Two Pairs                888 
+ %         One Pair                 100 
+
+score_point(straight_flush(X), S) :-  S := 2745600+X.
+score_point(four_of_a_kind(X), S) :-  S :=  176000+(X<<2).
+score_point(full_house(X,Y),   S) :-  S :=   29333+(X*3)+(Y<<1).
+score_point(flush(X),          S) :-  S :=   21500+X.
+score_point(straight(X),       S) :-  S :=   10767+X.
+score_point(three_of_a_kind(X),S) :-  S :=    2000+(X*3).
+score_point(two_pairs(X,Y),    S) :-  S :=     888+(X<<1)+(Y<<1).
+score_point(one_pair(X),       S) :-  S :=     100+(X<<1).
+score_point(no_pair,           S) :-  S = 0.

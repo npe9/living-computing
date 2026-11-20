@@ -1,0 +1,31 @@
+﻿<HEAD>
+<TITLE> 【演習問題２：パズル``アガサ殺人事件'' (TPTP/PUZ001-1)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H1><A NAME=SECTION00320000000000000000> 【演習問題２：パズル``アガサ殺人事件'' (TPTP/PUZ001-1)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>true--&gt;lives(agatha),lives(butler),lives(charles).
+true--&gt;hates(agatha,agatha),hates(agatha,charles).
+true--&gt;killed(butler,agatha);killed(charles,agatha).
+
+killed(A,B)--&gt;n_richer(A,B).
+killed(A,B)--&gt;hates(A,B).
+hates(agatha,A)--&gt;hates(butler,A).
+lives(A),n_richer(A,agatha)--&gt;hates(butler,A).
+
+hates(agatha,A),hates(charles,A)--&gt;false.
+hates(A,agatha),hates(A,butler),hates(A,charles)--&gt;false.
+</PRE>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+
+</BODY>

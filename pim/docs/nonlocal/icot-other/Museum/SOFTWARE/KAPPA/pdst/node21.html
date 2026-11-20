@@ -1,0 +1,64 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 値リスト</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 値リスト">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html292 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html290 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html284 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html293 HREF="node22.html"> 原始コマンド</A>
+<B>Up:</B> <A NAME=tex2html291 HREF="node11.html"> Kappaの基本機能概要</A>
+<B> Previous:</B> <A NAME=tex2html285 HREF="node20.html"> データ検索条件</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00035000000000000000> 値リスト</A></H2>
+<P>
+読みの返却値である値リストの形式は、フォーマットによって異なる。
+ここでは、フォーマットをテーブル全体指定(Format=*)とした場合のみを
+示す。
+<P>
+以下は、値リストが原始コマンドread_record/5の第4引数VLstreamの内部に現れる
+場合である。<BR>
+<P>
+VLstream::=[]｜[BufVar｜VLstream]
+<P>
+BufVar::=Buffer｜<b> end</b>
+<P>
+Buffer::=[Record]｜[Record｜Buffer]
+<P>
+Record::={RID_element, Value_list}
+<P>
+Value_list::={V1,V2,...,Vi,...,Vn}
+<P>
+Value_listの値は、スキーマが以下の場合に対応する。
+すなわち、ViはAttriに対応した値である。<BR>
+<P>
+スキーマ={Table_name,<b> primitive</b>,{Attr1,Attr2,...,Attri,...,Attrn},
+ネストシーケンス,水平分割情報}<BR>
+<P>
+Vi::=Simple属性に対応した値(Simple_value)｜Group属性に対応した値
+(Group_value)｜Repeating_simple属性に対応した値(RS_value)｜
+Repeating_group属性に対応した値(RG_value)
+<P>
+Simple_value::=<i> INTEGER</i>｜<i> STRING</i>｜<i> TERM</i>｜<b> nil</b>｜
+<b> bottom</b>
+<P>
+Group_value::={Child_value,...}
+<P>
+Child_value::=Simple_value｜Group_value｜RS_value｜RG_value
+<P>
+RS_value::=[RS_occ｜RS_value]
+<P>
+RS_occ::={Simple_value,...}
+<P>
+RG_value::=[RG_occ｜RG_value]
+<P>
+RG_occ::={Child_value,...}
+<P>
+<BR> <HR>
+<P>
+</BODY>

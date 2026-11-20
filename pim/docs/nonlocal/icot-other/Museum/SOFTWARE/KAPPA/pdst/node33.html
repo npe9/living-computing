@@ -1,0 +1,134 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 名簿管理システムのテーブル</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 名簿管理システムのテーブル">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html432 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html430 HREF="node30.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html424 HREF="node32.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html433 HREF="node34.html"> システム構成</A>
+<B>Up:</B> <A NAME=tex2html431 HREF="node30.html"> プログラミング例：名簿管理システム</A>
+<B> Previous:</B> <A NAME=tex2html425 HREF="node32.html"> データベースの操作</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00042000000000000000> 名簿管理システムのテーブル</A></H2>
+<P>
+名簿管理システムには、次の３つのテーブルがある。
+<P>
+<DL ><DT>meibo
+<DD> 名簿の最新データを保持するためのもの。
+ <DT>meibo_history
+<DD> 名簿の更新履歴を保持するためのもの。
+ <DT>meibo_id
+<DD> メンバーに与えた最大のIdを保持するためのもの。
+<P>
+ </DL>
+<P>
+コマンドパラメタMode毎に、テーブルの処理内容を記すと次のようになる。
+<P>
+<DL ><DT>anm
+<DD> add_new_member
+  <UL><LI> ジョブを開始する。
+   <LI> 3つのテーブルを排他ロックし、トランザクションを開始する。
+   <LI> テーブルmeibo_idから、最新のIdを取得する。
+    <UL><LI> レコードを読む。
+     <LI> レコードが存在すれば最大のId+1を、存在しなければ1を、新しい
+	最大のId(NewId)とする。
+     <LI> NewIdを新しい最大のIdとして、テーブルmeibo_idに書き戻す。
+    </UL>
+   <LI> テーブルmeiboにメンバーを追加する。
+    <UL><LI> メンバー情報に、NewIdとバージョン1を加える。
+     <LI> メンバー情報をレコードに加工する。
+     <LI> テーブルmeiboにレコードを追加する。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL>
+<P>
+ <DT>mm
+<DD> modify_member
+  <UL><LI> ジョブを開始する。
+   <LI> 3つのテーブルを排他ロックし、トランザクションを開始する。
+   <LI> メンバー情報からIdとバージョン(Version)を得る。
+   <LI> 索引を使った検索を検索条件(id=Id)で行ない、結果の集合(Set)を得る。
+   <LI> Versionを1インクリメントして、メンバー情報のバージョンを更新
+	する。
+   <LI> メンバー情報をレコード(NewRec)に加工する。
+   <LI> テーブルmeiboから集合(Set)のレコードを読み込む(Rec)。
+   <LI> 当該レコードを修正する。
+    <UL><LI> Recのバージョンと、メンバー情報に与えられていたバージョン
+	(Version)の一致を確認する。
+     <LI> テーブルmeiboのRec位置を、新しいレコード(NewRec)で上書きする。
+    </UL>
+   <LI> テーブルmeibo_historyに更新履歴を残す。
+    <UL><LI> テーブルhistory_tableにRecを追加する。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL>
+<P>
+ <DT>dm
+<DD> delete_member
+  <UL><LI> ジョブを開始する。
+   <LI> 3つのテーブルを排他ロックし、トランザクションを開始する。
+   <LI> メンバー情報からIdとバージョン(Version)を得る。
+   <LI> 索引を使った検索を検索条件(id=Id)で行ない、結果の集合(Set)を得る。
+   <LI> Versionを1インクリメントして、メンバー情報のバージョンを更新
+	する。
+   <LI> メンバー情報をレコード(NewRec)に加工する。
+   <LI> テーブルmeiboから集合(Set)のレコードを読み込む(Rec)。
+   <LI> 当該レコードを消去する。
+    <UL><LI> Recのバージョンと、メンバー情報に与えられていたバージョン
+	(Version)の一致を確認する。
+     <LI> テーブルmeiboのRec位置を消去する。
+    </UL>
+   <LI> テーブルmeibo_historyに更新履歴を残す。
+    <UL><LI> テーブルhistory_tableにRecを追加する。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL>
+<P>
+ <DT>scd
+<DD> search_current_data
+  <UL><LI> ジョブを開始する。
+   <LI> テーブルmeiboとmeibo_historyをreadロックして、
+	トランザクションを開始する。
+   <LI> テーブルmeiboを検索する。
+    <UL><LI> 検索条件に合う集合を選択する。
+     <LI> 集合で指定されるレコード群を、出力側の要求駆動で読み込む。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL>
+<P>
+ <DT>shd
+<DD> search_history_data
+  <UL><LI> ジョブを開始する。
+   <LI> テーブルmeiboとmeibo_historyをreadロックして、
+	トランザクションを開始する。
+   <LI> テーブルmeibo_historyを検索する。
+    <UL><LI> 検索処理の内容はscdと同じ。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL>
+<P>
+ <DT>sad
+<DD> search_all_data
+  <UL><LI> ジョブを開始する。
+   <LI> テーブルmeiboとmeibo_historyをreadロックして、
+	トランザクションを開始する。
+   <LI> テーブルmeiboとmeibo_historyの両方を検索する。
+    <UL><LI> 検索処理の内容はscdと同じ。
+    </UL>
+   <LI> トランザクションを終了する。
+   <LI> ジョブを終了する。
+  </UL> 
+ </DL><BR> <HR>
+<P>
+</BODY>

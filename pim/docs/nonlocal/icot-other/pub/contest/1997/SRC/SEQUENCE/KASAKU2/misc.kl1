@@ -1,0 +1,171 @@
+% miscellanies
+
+:- module solitaire_misc.
+
+% score of encoded card-list
+score_e(EC, Info):-
+	generic:new(string,CardsString,EC,8),
+	generic:new(vector,IVector, 13),
+	solitaire_evaluate:score(1,12,CardsString,0,IVector,Info).
+
+score_e_all(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(1,12,CardsString,0,SC).
+
+score_e_c(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(6,10,CardsString,0,SC).
+
+score_e_x1(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(11,11,CardsString,0,SC).
+
+score_e_x2(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(12,12,CardsString,0,SC).
+
+score_e_x(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(11,12,CardsString,0,SC).
+
+score_e_lc(EC, SC):- true |
+	generic:new(string,CardsString,EC,8),
+	ascore(1,10,CardsString,0,SC).
+
+ascore(K,M,CS,Total,SCORE) :- K =< M, K1 := K+1 |
+	solitaire_evaluate:eval_idx(K,Idx), 
+	ascore1(Idx,CS)+Total+Total1,
+	ascore(K1,M,CS,Total1,SCORE).
+ascore(K,M,CS,Total,SCORE) :- K > M | 
+	SCORE = Total.
+
+ascore1(i(I0,I1,I2,I3,I4),CS)-Total :- 
+    string_element(CS,I0,A0), string_element(CS,I1,A1),
+    string_element(CS,I2,A2), string_element(CS,I3,A3),
+    string_element(CS,I4,A4) |
+	solitaire_evaluate:hand_eval(A0,A1,A2,A3,A4,Hand),
+	solitaire_evaluate:score_point(Hand,Sc), 
+	Total += Sc.
+
+
+% decode one card
+decode_card(X, K, R):-
+	EK := X mod 4,
+	ER := X / 16,
+	kindof(EK, K),
+	rankof(ER, R).
+	
+	kindof(1, K):- K = clubs.
+	kindof(2, K):- K = diamonds.
+	kindof(3, K):- K = hearts.
+	kindof(0, K):- K = spades.
+	rankof(N, R):- N < 11 | R = N.
+	rankof(14, R):- R = ace.
+	rankof(13, R):- R = king.
+	rankof(12, R):- R = queen.
+	rankof(11, R):- R = jack.
+
+% decode card-list
+decode_ecs([], OUT):-
+	OUT = [].
+decode_ecs([X|ECS], OUT):-
+	decode_card(X, K, R),
+	OUT = [card(R,K)|NOUT],
+	decode_ecs(ECS, NOUT).
+
+decode([], OUT):-
+	OUT = [].
+decode([X|Tail], OUT):-
+	decode_ecs(X, D),
+	OUT = [D|NOUT],
+	decode(Tail, NOUT).
+
+% list&stream control
+insert_list_to_stream([], S, NS):-
+	S = NS.
+insert_list_to_stream([X|R], S, NS):-
+	S = [X|Splus],
+	insert_list_to_stream(R, Splus, NS).
+
+insert_list_to_stream_w([], S, NS):-
+	S = NS.
+insert_list_to_stream_w([X|R], S, NS):- wait(X)|
+	S = [X|Splus],
+	insert_list_to_stream(R, Splus, NS).
+
+
+connect_list(L2, L1, O):- true |
+	inspect_and_unify(S, O, T),
+	insert_list_to_stream_w(L2, T, S),
+	insert_list_to_stream_w(L1, S, []).
+connect_list(L3, L2, L1, O):- true |
+	inspect_and_unify(S, O, T),
+	insert_list_to_stream_w(L3, T, SS),
+	insert_list_to_stream_w(L2, SS, S),
+	insert_list_to_stream_w(L1, S, []).
+connect_list(L4, L3, L2, L1, O):- true |
+	inspect_and_unify(S, O, T),
+	insert_list_to_stream_w(L4, T, SSS),
+	insert_list_to_stream_w(L3, SSS, SS),
+	insert_list_to_stream_w(L2, SS, S),
+	insert_list_to_stream_w(L1, S, []).
+
+inspect_and_unify(X, A, B):- wait(X) | A = B.
+
+wait_all(A, B):-
+	wait_all(A, A, B).
+wait_all([], T, B):- true |
+	B = T.
+wait_all([X|R], T, B):- wait(X) |
+	wait_all(R, T, B).
+
+connect_members(I, O):- connect_members(I,[],O).
+connect_members([],C, O):- O = C.
+connect_members([I|R],C, O):- true |
+	connect_list(C,I, NC),
+	connect_members(R,NC, O).
+
+% count members in the list
+
+members(I, N):-
+	members(I, 0, N).
+members([], C, N):- true |
+	N = C.
+members([X|R], C, N):- true |
+	NC := C+1,
+	members(R, NC, N).
+
+
+% rember
+list_rember([], RL, O):- true |
+	O = [].
+list_rember([X|I], RL, O):- true |
+	ismember(X, RL, RES),
+	( RES = true -> list_rember(I, RL, O);
+	  RES = false-> O = [X|NO], list_rember(I, RL, NO) ).
+
+ismember(X, [], RES):- true |
+	RES = false.
+ismember(X, [Y|R], RES):- X=Y |
+	RES = true.
+ismember(X, [Y|R], RES):- X=\=Y |
+	ismember(X, R, RES).
+
+% split
+list_topn(0,I, T,R):- true |
+	R = I, T = [].
+list_topn(N,[X|I], T,R):- N>0 |
+	T = [X|NT],
+	NN := N-1,
+	list_topn(NN, I, NT, R).
+
+% merger
+merge([],In2,Out) :- Out=In2.
+merge(In1,[],Out) :- Out=In1.
+merge([Msg|In1],In2,Out) :- Out=[Msg|OutTail], merge(In1, In2, OutTail).
+merge(In1,[Msg|In2],Out) :- Out=[Msg|OutTail], merge(In1, In2, OutTail).
+
+merge(I1,I2,I3, O):- merge(I1,I2, O1), merge(O1,I3, O).
+merge(I1,I2,I3,I4, O):- merge(I1,I2, O1), merge(I3,I4, O2), merge(O1,O2, O).
+merge(I1,I2,I3,I4,I5, O):-
+	merge(I1,I2, O1), merge(I3,I4,I5, O2), merge(O1,O2, O).

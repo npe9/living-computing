@@ -1,0 +1,39 @@
+\batchmode
+\documentstyle{article}
+\makeatletter
+
+\makeatother
+\newenvironment{tex2html_wrap}{}{}
+\newwrite\lthtmlwrite
+\def\lthtmltypeout#1{{\let\protect\string\immediate\write\lthtmlwrite{#1}}}%
+\newbox\sizebox
+\begin{document}
+\pagestyle{empty}
+\stepcounter{section}
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \begin{tabular}{|c|c|c|} \hline
+\multicolumn{3}{|c|}{\bf Mode, input and output} \\  \hline\hline
+\multicolumn{1}{|c|}{Mode} & {input} & {output} \\  \hline
+anm & member information & member information \\  \hline
+mm  & member information & member information \\  \hline
+dm  & member information & normal \\  \hline
+scd & search condition & member information \\  \hline
+shd & search condition & member information \\  \hline
+sad & search condition & member information \\  \hline
+\end{tabular}
+}
+
+\stepcounter{subsubsection}
+\stepcounter{section}
+
+\end{document}

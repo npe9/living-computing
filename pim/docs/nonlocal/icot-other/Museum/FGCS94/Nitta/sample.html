@@ -1,0 +1,86 @@
+﻿<HEAD>
+<TITLE>Knowledge Information Processing Software</TITLE>
+</HEAD>
+<BODY>
+<right><i>Proc. of FGCS '94, ICOT, Tokyo, December 1994</i></right>
+<center>
+<H1>Knowledge Information Processing Software</h1>
+Katsumi Nitta, Kazumasa Yokota, Akira Aiba and Masato Ishikawa<p>
+Institute for New Generation Computer Technology<br>
+4-28, Mita 1-chome, Minato-ku, Tokyo 108, Japan<br>
+<tt> {nitta, kyokota, aiba, ishikawa}@icot.or.jp</tt>
+</center>
+<hr>
+
+ <H3>(1) Object Identity and Subsumption Constraints</H3>
+<P>
+An oid is in the form of a tuple called an <i> object term</i>. For example,<br><br>
+<pre>
+<i>apple,
+apple[color = red], and
+cider[alcohol = yes,
+      product = process[source = apple,
+                        process = ferment]]</i>
+</pre>
+<pre>
+	<b>if <i>assumptions</i> then <i> answer</i> because <i>explanation,</i>
+	if <i> hypotheses</i> then ?-<i>query</i>
+		(written as ?-<i>query;;hypotheses</i>).
+</b>
+</pre>
+	<P><IMG ALIGN=TOP ALT="" SRC="tabular777.gif">
+<p>
+<pre><b>
+&environment n-queens;
+      &common_type common-type-file:
+      &agent_dir   queen-1, queen-2, queen-3,
+                   queen-4, queen-5, queen-6,
+                   queen-7, queen-8;
+</b></pre>
+<pre><b>
+&type      simple;
+&parameter ID:int = 1;
+&agent     queen1;
+&env       n-Queen, nQ.env;
+&inside    prolog
+           &sub /app/nQueen/lib/queen-pr.pl;
+&substance_type prolog
+&connection pipe;
+&import_method
+  solve_n_queens @ #1:int -> #2:[position]
+    =>
+    n_queens @ #ID:INT, #1:INT, #2:[POSITION];
+                           ...
+
+
+&export_method
+   get_my_domain @ #1:position -> #2:positions
+   <=
+   bag_of!get_others_positions @ #1:POSITION,
+                                 #3:INT,
+                               [#2]:[POSITIONS];
+                           ...
+
+&convert
+  (id-#1,position=#2):position
+                  <-> [#1,#2]:POSITION;
+  (id-#1,position=#2):positions
+                  <-> [#1,#2]:POSITIONS;
+
+&self_model
+  &function 4queens, 5queens, 6queens,
+            7queens, 8queens;
+</b></pre>
+<p>
+
+
+
+are object terms, where the first term is <i> basic</i>, but the latter
+two are <i> complex</i>.
+<P>
+
+
+</BODY>
+<P>
+<hr>
+<ADDRESS>www-admin@icot.or.jp</ADDRESS>

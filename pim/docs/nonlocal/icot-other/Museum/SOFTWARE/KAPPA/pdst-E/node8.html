@@ -1,0 +1,62 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> The nested relational model</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" The nested relational model">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html146 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html144 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html140 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html147 HREF="node9.html"> The data model </A>
+<B>Up:</B> <A NAME=tex2html145 HREF="node6.html"> The relational model </A>
+<B> Previous:</B> <A NAME=tex2html141 HREF="node7.html"> The relational model</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022200000000000000> The nested relational model</A></H3>
+<A NAME=snr>&#160;</A>
+A drawback of relational model is that it can represent data only in 
+the simple first normal form. There are two proposals to improve it.
+<P>
+<OL><LI> Since the concept of dependencies has been proposed to eliminate
+	information loss accompanying updating, databases without 
+	updating such as those used only for searching do not have to be 
+	in the first normal form.
+ <LI> Decompositions of relations according to multivalued
+	dependencies are not always necessary in order to prevent 
+	errors in updating.
+</OL>
+<P>
+The first idea was developed in the fields of information searching 
+and so on. And the second one was proposed in 1977. The data model of 
+Kappa takes these ideas into account.
+<P>
+The second idea gives an example in table<A HREF="node8.html#ttab5">5</A> which is another 
+expression of table<A HREF="node7.html#ttab3">3</A>. The point is rather natural expression 
+of data than in table<A HREF="node7.html#ttab4">4</A>.
+<P>
+<P><A NAME=165>&#160;</A><A NAME=ttab5>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img53.gif">
+<BR><STRONG>Table 5:</STRONG> Nested relational expression<BR>
+<P>
+<P>
+A nested relational model is expressed as follows in general.
+<P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img54.gif"><P>
+<P>
+This tells us that each value in the model can be a set or a 
+hierarchical structure. There are two advantages, i.e. the 
+expressions of data in the model are natural or efficient and less 
+join operations are necessary, which means data processing becomes 
+generally faster.
+<P>
+In the biginning the model was called the non-first-normal-form(NF<IMG  ALIGN=BOTTOM ALT="" SRC="img55.gif">) 
+relation and so on, but calling it the nested relation was agreed upon
+internationally in 1986. However, the insistence that the nested relation 
+and the unnormalized relation should be distinguished still exists.
+In this guide we call the model the nested relation.
+<P>
+<BR> <HR>
+<P>
+</BODY>

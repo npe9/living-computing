@@ -1,0 +1,49 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> ジョブ制御、トランザクション制御コマンド</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" ジョブ制御、トランザクション制御コマンド">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html327 HREF="node25.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html325 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html319 HREF="node23.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html328 HREF="node25.html"> テーブル検索</A>
+<B>Up:</B> <A NAME=tex2html326 HREF="node22.html"> 原始コマンド</A>
+<B> Previous:</B> <A NAME=tex2html320 HREF="node23.html"> インタフェースプロセスの生成</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00036200000000000000> ジョブ制御、トランザクション制御コマンド</A></H3>
+<P>
+ジョブは、Kappaとのセッションであり、セッションの開始、終了を、
+原始コマンドを用いて行なう。
+トランザクションは、データベース操作の単位であり、操作の開始、終了、
+取消を原始コマンドを用いて行なう。
+<P>
+これらのコマンドは、Kappa使用時には必ず呼び出さねばならない。
+<P>
+<DL ><DT>open(TableInfoList,^Status)
+<DD>ジョブを開始する。
+	テーブルが指定されていれば、そのテーブルをロックする。
+ <DT>close(^Status)
+<DD>ジョブを終了する。
+ <DT>begin_transaction(TableInfoList,LDBMSInfoList,^Status)
+<DD>
+	トランザクションを開始する。
+	テーブルが指定されていれば、そのテーブルをロックする。
+	ここで、ジョブの開始にread_onlyでロックしたテーブルを、
+	exclusiveでロックしてはならない。
+ <DT>end_transaction(^Status)
+<DD>トランザクションを終了する。
+ <DT>roll_back(^Status)
+<DD>当該トランザクションを取り消す。
+<P>
+ </DL>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+</BODY>

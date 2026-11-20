@@ -1,0 +1,439 @@
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:COL012-1)}
+
+% Domain   : Combinatory Logic
+% Problem  : Weak fixed point for U
+% English  : The weak fixed point property holds for the set P consisting
+%            of the combinator U, where (Ux)y = y((xx)y).
+
+% Refs     : Smullyan, R. M. (1985), To Mock a Mocking Bird and Other
+%            Logic Puzzles, Knopf, New York.
+%          : McCune W.W., Wos L. (1987), A Case Study in Automated Theorem
+%            Proving: Finding Sages in Combinatory Logic, Journal of
+%            Automated Reasoning 3(1), 91-107.
+%          : Wos L., McCune W.W (1988a), Challenge Problems Focusing on
+%            Equality and Combinatory Logic: Evaluating Automated Theorem-
+%            Proving Programs, Proceedings of the 9th International
+%            Conference on Automated Deduction (Argonne, IL, 1988),
+%            (Lecture Notes in Computer Science, 310), 714-729.
+%          : McCune W.W. , Wos L. (1988b), Some Fixed Point Problems in
+%            Combinatory Logic, AAR Newsletter 10, 7-8.
+% Source   : [McCune & Wos, 1988b]
+
+dom(A)-->equal(A,A).
+
+equal(A,B)-->equal(B,A).
+
+equal(A,B),equal(B,C)-->equal(A,C).
+
+dom(A),dom(B)-->equal(apply(apply(u,A),B),apply(B,apply(apply(A,A),B))).
+
+equal(A,B),dom(C)-->equal(apply(A,C),apply(B,C)).
+
+equal(A,B),dom(C)-->equal(apply(C,A),apply(C,B)).
+
+equal(A,apply(combinator,A))-->false.
+
+true-->dom(u),dom(combinator).
+
+dom(A),dom(B)-->dom(apply(A,B)).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:GRP003-1)}
+
+% Domain   : Group Theory
+% Problem  : The left identity is also a right identity
+
+% Refs     : Chang C.L. (1970), The Unit Proof and the Input Proof in
+%            Theorm Proving, Communications of the ACM 17(4), 698-707.
+%            Problem 3.
+%          : Chang C.L., Lee R.C.T. (1973), Symbolic Logic and
+%            Mechanical Theorem Proving, Academic Press, New York.
+% Source   : [Chang, 1970]
+
+dom(A)-->product(inverse(A),A,identity).
+
+dom(A)-->product(identity,A,A).
+
+product(A,B,C),product(B,D,E),product(C,D,F)-->product(A,E,F).
+
+product(A,B,C),product(B,D,E),product(A,E,F)-->product(C,D,F).
+
+product(a,identity,a)-->false.
+
+true-->dom(identity),dom(a).
+
+dom(A)-->dom(inverse(A)).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:HEN001-5)}
+
+% Domain   : Henkin Models
+% Problem  : X/identity = zero
+
+% Refs     : McCharen J.D., Overbeek R.A., Wos L.A. (1976), Problems
+%            and Experiments for and with Automated Theorem Proving
+%            Programs, IEEE Transactions on Computers C-25(8), 773-
+%            782. Problem H1.
+% Source   : ANL problem set
+
+dom(A)-->equal(A,A).
+
+equal(A,B)-->equal(B,A).
+
+equal(A,B),equal(B,C)-->equal(A,C).
+
+dom(A),dom(B)-->equal(divide(divide(A,B),A),zero).
+
+dom(A),dom(B),dom(C)-->equal(divide(divide(divide(A,B),divide(C,B)),divide(divide(A,C),B)),zero).
+
+dom(A)-->equal(divide(zero,A),zero).
+
+equal(divide(A,B),zero),equal(divide(B,A),zero)-->equal(A,B).
+
+dom(A)-->equal(divide(A,identity),zero).
+
+equal(A,B),dom(C)-->equal(divide(A,C),divide(B,C)).
+
+equal(A,B),dom(C)-->equal(divide(C,A),divide(C,B)).
+
+equal(divide(a,identity),zero)-->false.
+
+true-->dom(zero),dom(identity),dom(a).
+
+dom(A),dom(B)-->dom(divide(A,B)).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:LCL024-1)}
+
+% Domain   : Logic Calculi (Equivalential)
+% Problem  : XGK depends on PYO
+% English  : Show that Kalman's shortest single axiom for the 
+%            equivalential calculus, XGK, can be derived from the 
+%            Meredith single axiom PYO.
+
+% Refs     : Overbeek R. (1990), ATP competition announced at CADE-10,
+%            Problem 4.
+% Source   : [Overbeek, 1990]
+
+is_a_theorem(equivalent(A,B)),is_a_theorem(A)-->is_a_theorem(B).
+
+true-->is_a_theorem(equivalent(A,equivalent(equivalent(B,equivalent(C,A)),equivalent(C,B)))).
+
+is_a_theorem(equivalent(equivalent(equivalent(a,equivalent(b,c)),c),equivalent(b,a)))-->false.
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:LCL038-1)}
+
+% Domain   : Logic Calculi (Implication/Falsehood 2 valued sentential)
+% Problem  : C0-1 depends on a single axiom
+% English  : An axiomatisation for the Implication/Falsehood 2 valued
+%            sentential calculus is {C0-1,C0-2,C0-3,C0-4} by Tarski-
+%            Bernays. Show that C0-1 can be derived from this suspected
+%            single axiom.
+
+% Refs     : Overbeek R. (1990), ATP competition announced at CADE-10,
+%            Problem 5.
+% Source   : [Overbeek, 1990]
+
+is_a_theorem(implies(A,B)),is_a_theorem(A)-->is_a_theorem(B).
+
+true-->is_a_theorem(implies(implies(implies(A,B),C),implies(implies(C,A),implies(D,A)))).
+
+is_a_theorem(implies(implies(a,b),implies(implies(b,c),implies(a,c))))-->false.
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:MSC006-1)}
+
+% Domain   : Miscellaneous
+% Problem  : A "non-obvious" problem
+% English  : Suppose there are two relations, P and Q. P is 
+%            transitive, and Q is both transitive and symmetric. 
+%            Suppose further the "squareness" of P and Q: any two 
+%            things are related either in the P manner or the Q 
+%            manner. Prove that either P is total or Q is total.
+
+% Refs     : Pelletier F.J., and Rudnicki P. (1986), Non-Obviousness, 
+%            In Wos L. (Ed.), Association for Automated Reasoning 
+%            Newsletter (6), Association for Automated Reasoning, 
+%            Argonne, Il, 4-5.
+% Source   : [Pelletier & Rudnicki, 1986]
+
+p(A,B),p(B,C)-->p(A,C).
+
+q(A,B),q(B,C)-->q(A,C).
+
+q(A,B)-->q(B,A).
+
+dom(A),dom(B)-->p(A,B);q(A,B).
+
+p(a,b)-->false.
+
+q(c,d)-->false.
+
+true-->dom(a),dom(b),dom(c),dom(d).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:PLA003-1)}
+
+% Domain   : Planning
+% Problem  : Monkey and Bananas Problem
+
+% Refs     : SPRFN Problem Set.
+% Source   : [SPRFN]
+
+can(monkey(A,floor,nothing),ladder(A,floor),B)-->can(monkey(A,ceiling,nothing),ladder(A,floor),B).
+
+can(monkey(A,ceiling,nothing),ladder(A,floor),B)-->can(monkey(A,floor,nothing),ladder(A,floor),B).
+
+can(monkey(A,floor,the_ladder),ladder(A,floor),B),dom(C)-->can(monkey(C,floor,the_ladder),ladder(C,floor),B).
+
+can(monkey(A,floor,the_bananas),B,bananas(A,floor)),dom(C)-->can(monkey(C,floor,the_bananas),B,bananas(C,floor)).
+
+can(monkey(A,floor,nothing),B,C),dom(D)-->can(monkey(D,floor,nothing),B,C).
+
+can(monkey(A,B,the_ladder),ladder(A,C),D)-->can(monkey(A,B,nothing),ladder(A,floor),D).
+
+can(monkey(A,B,the_bananas),C,bananas(A,B))-->can(monkey(A,B,nothing),C,bananas(A,floor)).
+
+can(monkey(A,B,nothing),C,bananas(A,B))-->can(monkey(A,B,the_bananas),C,bananas(A,B)).
+
+can(monkey(A,B,nothing),ladder(A,B),C)-->can(monkey(A,B,the_ladder),ladder(A,B),C).
+
+true-->can(monkey(l0,floor,nothing),ladder(l1,floor),bananas(l2,ceiling)).
+
+can(monkey(A,B,the_bananas),C,D)-->false.
+
+true-->dom(floor),dom(nothing),dom(ceiling),dom(the_ladder),dom(the_bananas),dom(l0),dom(l1),dom(l2).
+
+dom(A),dom(B)-->dom(ladder(A,B)),dom(bananas(A,B)).
+
+dom(A),dom(B),dom(C)-->dom(monkey(A,B,C)).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:PUZ001-1)}
+
+% Domain   : Puzzles
+% Problem  : Dreadbury Mansion
+% English  : Someone who lives in Dreadbury Mansion killed Aunt 
+%            Agatha. Agatha, the butler, and Charles live in 
+%            Dreadbury Mansion, and are the only people who live 
+%            therein. A killer always hates his victim, and is never 
+%            richer than his victim. Charles hates no one that Aunt 
+%            Agatha hates. Agatha hates everyone except the butler. 
+%            The butler hates everyone not richer than Aunt Agatha. 
+%            The butler hates everyone Aunt Agatha hates. No one hates 
+%            everyone. Agatha is not the butler. Therefore : Agatha 
+%            killed herself.
+
+% Refs     : Len Schubert, As cited in [Pelletier, 1986].
+%          : Manthey R., Bry F. (1988), SATCHMO: a theorem prover
+%            implemented in Prolog, In Lusk E., Overbeek R. (Eds),
+%            Proceedings of the 9th International Conference on
+%            Automated Deduction (Argonne, IL, 1988), (Lecture Notes
+%            in Computer Science 310), Springer-Verlag, New York, NY,
+%            415-434. 
+%          : Pelletier F.J. (1986), Seventy-Five Problems for Testing 
+%            Automatic Theorem Provers, Journal of Automated Reasoning
+%            2(2), 191-216. Problem 55.
+% Source   : [Manthey & Bry, 1988]
+
+true-->lives(agatha).
+
+true-->lives(butler).
+
+true-->lives(charles).
+
+killed(A,B)-->n_richer(A,B).
+
+hates(agatha,A),hates(charles,A)-->false.
+
+hates(A,agatha),hates(A,butler),hates(A,charles)-->false.
+
+true-->hates(agatha,agatha).
+
+true-->hates(agatha,charles).
+
+killed(A,B)-->hates(A,B).
+
+hates(agatha,A)-->hates(butler,A).
+
+lives(A),n_richer(A,agatha)-->hates(butler,A).
+
+true-->killed(butler,agatha);killed(charles,agatha).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:PUZ003-1)}
+
+% Domain   : Puzzles
+% Problem  : The Barber Puzzle
+% English  : There is a barbers' club that obeys the following three 
+%            conditions:
+%            (1) If any member has shaved any other member -- whether 
+%            himself or another -- then all members have shaved him, 
+%            though not necessarily at the same time.
+%            (2) Four of the members are named Guido, Lorenzo, 
+%            Petrucio, and Cesare.
+%            (3) Guido has shaved Cesare.
+%            Has Petrucio shaved Lorenzo or not?
+
+% Source   : ANL problem set
+
+member(A),member(B),shaved(A,B)-->shaved(members,A).
+
+shaved(members,A),member(B)-->shaved(B,A).
+
+true-->member(guido).
+
+true-->member(lorenzo).
+
+true-->member(petruchio).
+
+true-->member(cesare).
+
+true-->shaved(guido,cesare).
+
+shaved(petruchio,lorenzo)-->false.
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:PUZ012-1)}
+
+% Domain   : Puzzles
+% Problem  : The Mislabeled Boxes
+% English  : There are three boxes a, b, and c on a table.
+%            Each box contains apples or bananas or oranges.
+%            No two boxes contain the same thing.
+%            Each box has a label that says it contains apples
+%            or says it contains bananas or says it contains
+%            oranges.
+%            No box contains what it says on its label.
+%            The label on box a says "apples".
+%            The label on box b says "oranges".
+%            The label on box c says "bananas".
+%            You pick up box b and it contains apples.
+%            What do the other two boxes contain?
+
+% Source   : ANL problem set
+
+n_equal_fruits(A,A)-->false.
+
+n_equal_boxes(A,A)-->false.
+
+label(A,B),contains(A,B)-->false.
+
+dom(A)-->contains(boxa,A);contains(boxb,A);contains(boxc,A).
+
+dom(A)-->contains(A,apples);contains(A,bananas);contains(A,oranges).
+
+contains(A,B),contains(A,C),n_equal_fruits(B,C)-->false.
+
+contains(A,B),contains(C,B),n_equal_boxes(A,C)-->false.
+
+true-->n_equal_boxes(boxa,boxb).
+
+true-->n_equal_boxes(boxb,boxc).
+
+true-->n_equal_boxes(boxa,boxc).
+
+true-->n_equal_fruits(apples,bananas).
+
+true-->n_equal_fruits(bananas,oranges).
+
+true-->n_equal_fruits(apples,oranges).
+
+true-->label(boxa,apples).
+
+true-->label(boxb,oranges).
+
+true-->label(boxc,bananas).
+
+true-->contains(boxb,apples).
+
+contains(boxa,bananas),contains(boxc,oranges)-->false.
+
+true-->dom(boxa),dom(boxb),dom(boxc),dom(apples),dom(bananas),dom(oranges).
+
+\newline
+%-----------------------------------------------------------------------------
+\section{(TPTP:PUZ025-1)}
+
+% Domain   : Puzzles
+% Problem  : Knights and Knaves #35
+% English  : There is an island with exactly two types of people-- 
+%            truthtellers who always tell the truth and liars who 
+%            always lie. There are a group of three people, A, B, and 
+%            C on the island. A and B make the following statements. 
+%            A: "B and C are the same type". Someone asks "Are A and B 
+%            of the same type ? " What does C answer ? 
+%            Answer: "yes"
+
+% Refs     : Smullyan R.M. (1978), What is the name of this book? :
+%            The riddle of Dracula and other logical puzzles, Prentice-
+%            Hall, Englewood Cliffs, NJ. Problem 35.
+% Source   : ANL problem set
+
+dom(A)-->a_truth(truthteller(A));a_truth(liar(A)).
+
+a_truth(truthteller(A)),a_truth(liar(A))-->false.
+
+a_truth(truthteller(A)),a_truth(says(A,B))-->a_truth(B).
+
+a_truth(liar(A)),a_truth(says(A,B)),a_truth(B)-->false.
+
+a_truth(A),a_truth(says(B,A))-->a_truth(truthteller(B)).
+
+a_truth(says(A,B))-->a_truth(B);a_truth(liar(A)).
+
+people(A,B,C),a_truth(liar(A)),a_truth(liar(B))-->a_truth(equal_type(A,B)).
+
+people(A,B,C),a_truth(truthteller(A)),a_truth(truthteller(B))-->a_truth(equal_type(A,B)).
+
+a_truth(equal_type(A,B)),a_truth(truthteller(A))-->a_truth(truthteller(B)).
+
+a_truth(equal_type(A,B)),a_truth(liar(A))-->a_truth(liar(B)).
+
+a_truth(truthteller(A)),dom(B)-->a_truth(equal_type(A,B));a_truth(liar(B)).
+
+a_truth(liar(A)),dom(B)-->a_truth(equal_type(A,B));a_truth(truthteller(B)).
+
+a_truth(equal_type(A,B))-->a_truth(equal_type(B,A)).
+
+ask_1_if_2(A,B),a_truth(truthteller(A)),a_truth(B)-->answer(yes).
+
+ask_1_if_2(A,B),a_truth(truthteller(A))-->a_truth(B);answer(no).
+
+ask_1_if_2(A,B),a_truth(liar(A)),a_truth(B)-->answer(no).
+
+ask_1_if_2(A,B),a_truth(liar(A))-->a_truth(B);answer(yes).
+
+true-->people(b,c,a).
+
+true-->people(a,b,a).
+
+true-->people(a,c,b).
+
+true-->people(c,b,a).
+
+true-->a_truth(says(a,equal_type(b,c))).
+
+true-->ask_1_if_2(c,equal_type(a,b)).
+
+answer(A)-->false.
+
+true-->dom(yes),dom(no),dom(b),dom(c),dom(a).
+
+dom(A)-->dom(truthteller(A)),dom(liar(A)).
+
+dom(A),dom(B)-->dom(says(A,B)),dom(equal_type(A,B)).
+
+% end.

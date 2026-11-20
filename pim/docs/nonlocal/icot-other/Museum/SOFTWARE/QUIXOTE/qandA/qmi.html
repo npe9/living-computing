@@ -1,0 +1,117 @@
+﻿<title> What is QMI </title>
+<h1> [Q] QMI って、何？</h1>
+<hr>
+
+<h3> [Q1] QMI って、big-Quixote は Mosaic のインターフェースを
+     持っているのですか？
+</h3>
+<p>
+
+<hr>
+<pre>
+[A1] QMI というのは(名前からするとそう聞こえるのですが)一般的な big-Quixote と 
+Mosaic の Interface ではありません。big-Quixote のある一つのデータベースを 
+Mosaic からアクセスする一例とお考え下さい。その例をを動かすには, HTTP
+server (私たちが使ったのは gn というものでした), Perl (同じく 
+perl-4.035) が必要です。Install については root の権限が必要となる場合
+があります。QMI の各 script は perl の install 先などに依存しますから, 
+多少の修正が必要でしょう。
+
+QMI はそんなに複雑なことをしているわけではありません。big-Quixote の HTTP
+Server と通信するようにして, big-Quixote の出力を画像や音声と結び付けてい
+るのです。例となっている QMI を参考にして他のデータベースに応用するこ
+とは(技術的には)比較的簡単に可能でしょう。具体的に適用するには,
+big-Quixote の他に
+
+	HTTP Server
+	CGI Interface
+	Perl
+	HTML
+
+などの知識が必要になりますが, 今時の若い衆にはそういうの得意なのがたく
+さんいますよね。:-)
+
+さてさて、前置きはこのぐらいにして、
+「big-Quixote の Database を Mosaic を通して使う」方法につい
+て今から少し書きますので, 参考にしていただけると嬉しいです. 
+では, はじまりはじまり... (^_^)
+
+
+* big-Quixote の Database を Mosaic を通して使う
+
+QMI の directory に m1.html, m2.html, m3.html と 3つ WWW の page があ
+ります. これらは FORM を用いた簡単なものです. 
+
+この音楽 database のサンプルは以下のような構成で実現されています. 
+
+		   TCP/IP         CGI
+	[ Mosaic ] <--> [ HTTPD ] <--> [ music.cgi ]
+					    ^
+					    | TCP/IP
+					    v
+				       [qmi-server.pl]
+					    ^
+					    | stdin/stdout
+					    v
+				       [ Emacs (Qmacs)]
+					    ^
+					    |  TCP/IP(あるいは stdin/stdout)
+					    v  (QIF protocol)
+				       [ big-Quixote with music.qxt ]
+
+少し(必要以上に)複雑になっていますが, これには以下の二つの理由があります. 
+
+(1) big-Quixote を access するには QIF protocol で通信する必要があるが, こ
+    れの実現は大変なので, 既存の Qmacs を用いる方がいい.
+
+(2) music.cgi が起動されるたびに big-Quixote に access して,
+	create database, query, delete database
+    とやるより, music.qxt を読み込ませた状態にしておき,
+    query だけ出す方が応答性が良い. 
+
+いいわけはおいといて, どのように動くかを見てみましょう. 
+
+=========
+(0) qmi-server.pl は起動されている.  qmi-server.pl は Emacs を起動し,
+Qmacs を走らせ, big-Quixote に music.qxt を読み込ませる. qmi-server.pl は,
+TCP/IP の server として music.cgi からの質問の要求を待っている.
+
+(1) m1.html の page が Mosaic に表示される. FORM なので, user はそこで, 
+質問を入力し, [Start] を押すことで検索を要求する. 
+
+(2) POST の request が HTTPD に届く. 
+
+(3) HTTPD は music.cgi という script を起動する. ここで CGI (Common
+Gateway Interface)により, music.cgi へは標準入出力で質問の文字列が渡る. 
+m1.html で記述されているように, 質問は query という名前で渡る. 
+
+(4) music.cgi は qmi-server.pl と TCP/IP で接続し, 受けとった質問の文
+字列を渡す. 
+
+(5) qmi-server.pl は music.cgi から受けとった文字列をそのまま Qmacs に
+渡す.
+
+(6) Qmacs は big-Quixote に質問を投げる. big-Quixote は計算し, 結果を出す. 
+    Qmacs はその結果を人間が読む形にする. 
+
+(7) qmi-server.pl は Qmacs の出力のうち ** で始まる行以外を, music.cgi 
+    に返す.
+
+(8) music.cgi は music-head.html と qmi-server.pl の出力のうち file を
+示すものを URL に変換したものを組み合わせて HTML の形式で標準出力に出
+力する.
+
+(9) music.cgi の標準出力に出されたものは HTTPD を通じて Mosaic に渡る. 
+=========
+
+point は, (0) の database を big-Quixote に読み込ませて server として動い
+ているところと, (8) の URL の変換です. それ以外は渡しているだけです. 
+
+今の m1.html は big-Quixote の質問を文字列として直接使うようにしていますが,
+FORM の機能をいろいろ使うと, big-Quixote の質問を user に直接見せないよう
+にすることも可能です. 
+-- 
+ここまで. おしまい.
+
+</pre>
+

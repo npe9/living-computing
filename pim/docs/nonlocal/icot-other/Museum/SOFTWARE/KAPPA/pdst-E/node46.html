@@ -1,0 +1,69 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Appending a record</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Appending a record">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html568 HREF="node47.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html566 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html560 HREF="node45.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html569 HREF="node47.html"> Modification and deletion </A>
+<B>Up:</B> <A NAME=tex2html567 HREF="node41.html"> Module irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html561 HREF="node45.html"> Reading records</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046500000000000000> Appending a record</A></H3>
+<P>
+The procedure of appending a record is as follows.
+<P>
+<UL><LI> Prepares the entity of appending record.
+ <LI> Creates an internal format designating a table.
+ <LI> Writes the entity of the record using the internal format.
+</UL>
+<P>
+<PRE>add_new_member(normal, Member_info, Status)-IFP :-
+    put_into_pool(Member_info, Pool),
+    new_id(NewId, Status1)-IFP,
+    % returns the Id attribute of the appending record to &quot;NewId&quot;
+    add_new_member1(Status1, NewId, Status2)-IFP+Pool+[],
+    end_transaction(Status2, Status)-IFP.
+otherwise.
+add_new_member(PreStatus, _Member_info, Status)-IFP :-
+    Status = PreStatus.
+
+%
+add_new_member1(normal,NewId,ComStatus)-IFP-Pool :-
+    set_attribute(id, NewId)-Pool,
+    set_attribute(version, 1)-Pool,
+    % The version of the appending record is 1.
+    make_record(meibo, Rec, UnRec, Status1)-Pool-IFP,
+    IFP &lt;= create_format(meibo, (*), IFormat, Status2),
+    lib:error_check([Status1,Status2],irpr_kappa:add_new_member1,Status3),
+    add_new_member2(Status3, Rec, IFormat, UnRec, ComStatus)-IFP.
+otherwise.
+add_new_member1(PreStatus,_NewId,ComStatus)-IFP-Pool :-
+    ComStatus = PreStatus.
+
+%
+add_new_member2(normal,Rec,IFormat,UnRec,ComStatus)-IFP :-
+    IFP &lt;= add_record(meibo, IFormat, Rec, _RID, Status1),
+    add_new_member3(Status1,UnRec,ComStatus).
+otherwise.
+add_new_member2(PreStatus,Rec,_IFormat,_UnRec,ComStatus)-IFP :-
+    ComStatus = PreStatus.
+
+%
+add_new_member3(normal, UnRec, Status) :-
+    Status = normal(UnRec).
+    % The unnested record is returned in the command status.
+otherwise.
+add_new_member3(PreStatus, _UnRec, Status) :-
+    Status = PreStatus.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

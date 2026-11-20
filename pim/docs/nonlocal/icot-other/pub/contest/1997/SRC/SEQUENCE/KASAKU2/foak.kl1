@@ -1,0 +1,45 @@
+%%
+%% Four of a kind fishing
+%%
+
+:- module solitaire_foak.
+
+% Strait Frash laying-out
+% and data transration.
+layout_str(A,B,C,D, O):-
+	layout_str_k(A, LA),
+	layout_str_k(B, LB),
+	layout_str_k(C, LC),
+	layout_str_k(D, LD),
+	wait_and_merge(LA, LB, LC, LD, O).
+
+wait_and_merge([X|I1],I2,I3,I4, O):-
+	O = [X|NO],
+	wait_and_merge(I1, I2, I3, I4, NO).
+wait_and_merge([],[X|I2],I3,I4, O):-
+	O = [X|NO],
+	wait_and_merge([], I2, I3, I4, NO).
+wait_and_merge([],[],[X|I3],I4, O):-
+	O = [X|NO],
+	wait_and_merge([], [], I3, I4, NO).
+wait_and_merge([],[],[],[X|I4], O):-
+	O = [X|NO],
+	wait_and_merge([], [], [], I4, NO).
+wait_and_merge([],[],[],[], O):-
+	O = [].
+
+layout_str_k([], O):-
+	O = [].
+layout_str_k([A|R], O):-
+	layout_astr(A, O1, O2, O3, O4, O5),
+	O = [[O1,O2,O3,O4,O5]|NO],
+	layout_str_k(R, NO).
+
+layout_astr([A1,A2,A3,A4,A5], O1,O2,O3,O4,O5):-
+	M1 := A1 mod 5,
+	M2 := A2 mod 5,
+	M3 := A3 mod 5,
+	M4 := A4 mod 5,
+	M5 := A5 mod 5,
+	solitaire_sort:sort_r_key([item(M1,A1),item(M2,A2),item(M3,A3),
+		item(M4,A4),item(M5,A5)], [O1,O2,O3,O4,O5]).

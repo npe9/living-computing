@@ -1,0 +1,106 @@
+KLIC Programming Contest '98
+スピード・コース応募プログラム README
+
+a.処理の概要
+
+マス目に単語を置き，置いた文字に合わせて更に単語が置けないか調べる．
+これを繰り返す．
+
+プログラムは３つのループから成る
+    例として与えられた単語のリストのを次のようなものとする．
+	[
+	word(fifth, "FIFTH", 5),
+	word(gener, "GENERATION", 17),
+	word(klic,  "KLIC", 13),
+	word(speed, "SPEED", 4),
+	word(cont,  "CONTEST", 9),
+	word(prob,  "PROBLEM", 4),
+	word(solut, "SOLUTION", 15),
+	word(yours, "YOURS", 3),
+	word(winner,"WINNER",21),
+	word(or,    "OR", 1),
+	word(loser, "LOSER", 2) ]
+
+(1) 最初のひとつを置く
+loop1( 与えられた単語のリストが無くなるまで )
+
+	与えられた単語をひとつ置く
+
+	置いた単語の文字のリストを作る
+	(リストの要素: letter(文字,行,列,並べられる方向))
+
+    例)
+	"KLIC"を開始位置(0,0)に横(lr)に置くと
+	[letter(K,0,0,tb),letter(L,0,1,tb),letter(I,0,2,tb),letter(C,0,3,tb)]
+    というリストを作る．
+
+	-> loop2( 置いた単語の文字のリスト )
+	-> loop1( 単語の残り )
+
+(2)すでに置いた文字に合わせて単語が置けないか調べる．
+loop2( 置いた単語の文字のリストが無くなるまで )
+
+	文字をひとつ取り出す
+
+	その文字を含む単語のリストを作る
+	ex. 例えば "I" なら
+	[
+	word(fifth, "FIFTH", 5),
+	word(gener, "GENERATION", 17),
+	word(solut, "SOLUTION", 15),
+	word(solut, "SOLUTION", 15) ] 
+	というリストになる．
+
+	-> loop3( その文字を含む単語のリスト )
+	-> loop2( 文字のリストの残り )
+
+(3)
+loop3( 単語のリストが無くなるまで )
+
+	単語をひとつ取り出し，置けるか試す
+
+	if ( 置ける ) {
+	置いた単語の文字のリストを作り，今までの文字のリストに加える．
+	-> loop2 ( 新しい文字のリスト )
+	}
+	-> loop3( 単語のリストの残り )
+
+
+そして loop2 で文字のリストが無くなった場合に
+今まで置いた単語を解として出力するようにしている．
+
+
+b.動作確認を行なったシステムの概要(機種、ＯＳなど)
+
+OS     : FreeBSD 2.2.1
+CPU    : AMD K6 200MHz
+Memory : 80Mbyte
+
+
+c.テストデータの処理に要する実行時間
+
+> skel 10 ../test.dat
+
+.
+.
+.
+
+K__F_____G
+L_WINNER_E
+I__F_____N
+CONTEST__E
+_R_H_P___R
+__Y__E___A
+PROBLEM__T
+__U__D___I
+__R______O
+__SOLUTION
+=-=-=-=-=-=-=-=-=-=-=-=- SCORE=92 TIME=87250
+TOTAL TIME=281466
+=-=-= Normal end.
+
+
+d.アルゴリズム、プログラミング上で特に工夫した点
+
+３つのループを使って無駄なく解の組み合わせができるようにした．
+

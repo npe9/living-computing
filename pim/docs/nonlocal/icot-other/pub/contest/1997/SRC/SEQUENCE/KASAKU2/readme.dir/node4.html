@@ -1,0 +1,44 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1 (Feb 5, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>エンコード</TITLE>
+<META NAME="description" CONTENT="エンコード">
+<META NAME="keywords" CONTENT="main">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+</HEAD>
+<BODY LANG="EN">
+ <A NAME="tex2html61" HREF="node5.html"><IMG WIDTH=37 HEIGHT=24 ALIGN=BOTTOM ALT="next" SRC="../../../../../../../PICS/next_motif.gif"></A> <A NAME="tex2html59" HREF="node3.html"><IMG WIDTH=26 HEIGHT=24 ALIGN=BOTTOM ALT="up" SRC="../../../../../../../PICS/up_motif.gif"></A> <A NAME="tex2html53" HREF="node3.html"><IMG WIDTH=63 HEIGHT=24 ALIGN=BOTTOM ALT="previous" SRC="../../../../../../../PICS/previous_motif.gif"></A>   <BR>
+<B> Next:</B> <A NAME="tex2html62" HREF="node5.html">ストレートフラッシュ検索</A>
+<B>Up:</B> <A NAME="tex2html60" HREF="node3.html">解説・アルゴリズム</A>
+<B> Previous:</B> <A NAME="tex2html54" HREF="node3.html">解説・アルゴリズム</A>
+<BR> <P>
+<H2><A NAME="SECTION00031000000000000000">エンコード</A></H2>
+<P>
+   入力のカード列のままでは扱いが面倒なので、カードを各々一つの整数で表
+   すようにする。整数化の方法は評価用のサンプルプログラムと同じにした。
+   得点計算用の述語を使い回すのが影の目的だったりもする。
+<P>
+<PRE>% Evaluation program for Solitaire Poker
+%			by Eiji Sugino (sugino@jaist.ac.jp) at	Jul.17.1997
+
+encode_card(card(Rank,Suit),Encoded) :-
+    rank_code(Rank,RankCode), 
+    suit_code(Suit,SuitCode), 
+    Encoded := (RankCode &lt;&lt; 4) \/ SuitCode.
+
+suit_code(spades,  R) :- R = 4.
+suit_code(hearts,  R) :- R = 3.
+suit_code(diamonds,R) :- R = 2.
+suit_code(clubs,   R) :- R = 1.
+
+rank_code(N,      R) :- integer(N), 1 &lt; N, N &lt; 11 | R = N.
+rank_code(jack,   R) :- R = 11.
+rank_code(queen,  R) :- R = 12.
+rank_code(king,   R) :- R = 13.
+rank_code(ace,    R) :- R = 14.</PRE>
+
+   <BR> <HR>
+</BODY>
+</HTML>

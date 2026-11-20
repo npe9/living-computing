@@ -1,0 +1,771 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Copyright (C) 1998, Takumi Ouchi (ouchi@logos.t.u-tokyo.ac.jp)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module skeleton. 
+
+solve(EdgeLen, WordList, Out) :-
+
+	output_filter(Out1, Out), 
+	wordlist_filter(WordList, WordList1, 
+	                EdgeLen), 
+	wordlist_sort(WordList1, WordList2), 
+	solve_1(EdgeLen, WordList2, Out1, []). 
+
+
+solve_1(_, [], Out, OutTail) :-
+	Out = OutTail. 
+otherwise. 
+solve_1(EdgeLen, WordList, Out, OutTail) :-
+	WordList = [word(WordID, Str, Score)|WordList1] |
+	generic:new(vector, Board, ~(EdgeLen*EdgeLen)), 
+	generic:size(Str, StrLen), 
+	set_skipcounter_of_words(WordList1, WordList2), 
+	put_word_on_board(Board, 0, 0, lr, EdgeLen, 
+	                  Str, 0, Board1), 
+	new_attachpoint(AttachPoint, 0, 0, 0, 1, StrLen), 
+	attach_start(Board1, [place(WordID, 0, 0, lr, StrLen)], 
+	               [AttachPoint], 
+	               [], 
+	               WordList2, 
+	               1, 
+	               Score, 
+	               EdgeLen, 
+	               {0, 0, 0, ~(StrLen-1)}, 
+	               Out, Out1), 
+	solve_1(EdgeLen, WordList1, Out1, OutTail)@lower_priority(2). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+wordlist_filter([], WL2, _) :-
+	WL2 = []. 
+otherwise. 
+wordlist_filter(WL1, WL2, 
+                EdgeLen) :-
+	WL1 = [Word|WL1Tail], 
+	Word = word(WordID, Str, Score), 
+	generic:size(Str, StrLen), 
+	(StrLen > EdgeLen ->
+	  wordlist_filter(WL1Tail, WL2, 
+	                  EdgeLen);
+	 otherwise; true ->
+	  WL2 = [Word|WL2Tail], 
+	  wordlist_filter(WL1Tail, WL2Tail, 
+	                  EdgeLen)). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+wordlist_sort(WL1, WL2) :-
+%	wordlist_sort_1(WL1, WL2, []). 
+	wordlist_sort_3(WL1, WL2, []). 
+
+
+%%%%%%
+
+wordlist_sort_1([], WL2, WL2Tail) :-
+	WL2 = WL2Tail. 
+otherwise. 
+wordlist_sort_1(WL1, WL2, WL2Tail) :-
+	WL1 = [Word|WL1Tail], 
+	Word = word(WordID, Str, Score), 
+	wordlist_sort_1(Score, WL1Tail, Gt, Eq, Lt), 
+	wordlist_sort_1(Gt, WL2, EqSorted), 
+	wordlist_sort_2([Word|Eq], EqSorted, LtSorted), 
+	wordlist_sort_1(Lt, LtSorted, WL2Tail). 
+
+wordlist_sort_1(_, [], Gt, Eq, Lt) :-
+	Gt = [], 
+	Eq = [], 
+	Lt = []. 
+otherwise. 
+wordlist_sort_1(Score0, WL, Gt, Eq, Lt) :-
+	WL = [Word|WL1], 
+	Word = word(WordID, Str, Score), 
+	(Score =:= Score0 ->
+	  Eq = [Word|Eq1], 
+	  wordlist_sort_1(Score0, WL1, Gt, Eq1, Lt);
+	 Score > Score0 ->
+	  Gt = [Word|Gt1], 
+	  wordlist_sort_1(Score0, WL1, Gt1, Eq, Lt);
+	 otherwise; true ->
+	  Lt = [Word|Lt1], 
+	  wordlist_sort_1(Score0, WL1, Gt, Eq, Lt1)). 
+
+
+wordlist_sort_2([], WL2, WL2Tail) :-
+	WL2 = WL2Tail. 
+otherwise. 
+wordlist_sort_2(WL1, WL2, WL2Tail) :-
+	WL1 = [Word|WL1Tail], 
+	Word = word(WordID, Str, Score), 
+	generic:size(Str, StrLen), 
+	wordlist_sort_2(StrLen, WL1Tail, Short, Eq, EqTail, Long), 
+	wordlist_sort_2(Short, WL2, [Word|Eq]), 
+	wordlist_sort_2(Long, EqTail, WL2Tail). 
+
+wordlist_sort_2(_, [], Short, Eq, EqTail, Long) :-
+	Short = [], 
+	Eq = EqTail, 
+	Long = []. 
+otherwise. 
+wordlist_sort_2(StrLen0, WL, Short, Eq, EqTail, Long) :-
+	WL = [Word|WL1], 
+	Word = word(WordID, Str, Score), 
+	generic:size(Str, StrLen), 
+	(StrLen =:= StrLen0 ->
+	  Eq = [Word|Eq1], 
+	  wordlist_sort_2(StrLen0, WL1, Short, Eq1, EqTail, Long);
+	 StrLen > StrLen0 ->
+	  Long = [Word|Long1], 
+	  wordlist_sort_2(StrLen0, WL1, Short, Eq, EqTail, Long1);
+	 otherwise; true ->
+	  Short = [Word|Short1], 
+	  wordlist_sort_2(StrLen0, WL1, Short1, Eq, EqTail, Long)). 
+	
+%%%%%%
+
+wordlist_sort_3([], WL2, WL2Tail) :-
+	WL2 = WL2Tail. 
+otherwise. 
+wordlist_sort_3(WL1, WL2, WL2Tail) :-
+	WL1 = [Word|WL1Tail], 
+	Word = word(WordID, Str, Score), 
+	generic:size(Str, StrLen), 
+	ScorePerChar := Score*10/(StrLen-1), 
+	wordlist_sort_3(ScorePerChar, WL1Tail, Gt, Eq, EqTail, Lt), 
+	wordlist_sort_3(Gt, WL2, [Word|Eq]), 
+	wordlist_sort_3(Lt, EqTail, WL2Tail). 
+
+wordlist_sort_3(_, [], Gt, Eq, EqTail, Lt) :-
+	Gt = [], 
+	Eq = EqTail, 
+	Lt = []. 
+otherwise. 
+wordlist_sort_3(ScorePerChar0, WL, Gt, Eq, EqTail, Lt) :-
+	WL = [Word|WL1], 
+	Word = word(WordID, Str, Score), 
+	generic:size(Str, StrLen), 
+	ScorePerChar := Score*10/(StrLen-1), 
+	(ScorePerChar =:= ScorePerChar0 ->
+	  Eq = [Word|Eq1], 
+	  wordlist_sort_3(ScorePerChar0, WL1, Gt, Eq1, EqTail, Lt);
+	 ScorePerChar > ScorePerChar0 ->
+	  Gt = [Word|Gt1], 
+	  wordlist_sort_3(ScorePerChar0, WL1, Gt1, Eq, EqTail, Lt);
+	 otherwise; true ->
+	  Lt = [Word|Lt1], 
+	  wordlist_sort_3(ScorePerChar0, WL1, Gt, Eq, EqTail, Lt1)). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+output_filter(Out1, Out) :-
+	output_filter(Out1, 0, Out). 
+
+
+output_filter([], _, Out) :-
+	Out = []. 
+otherwise. 
+output_filter(Out1, MaxScore, Out) :-
+	Out1 = [{Ans1, Ymin, Xmin, Score}|Out1Tail], 
+	(MaxScore < Score ->
+	  output_filter_elem(Ans1, Ymin, Xmin, Ans2), 
+	  Out = [Ans2|Out2Tail], 
+	  output_filter(Out1Tail, Score, Out2Tail);
+	 otherwise; true ->
+
+	  output_filter_elem(Ans1, Ymin, Xmin, Ans2),   %
+	  Out = [Ans2|Out2Tail],                        %
+	  output_filter(Out1Tail, MaxScore, Out2Tail)). %
+
+%	  output_filter(Out1Tail, MaxScore, Out)). 
+
+
+output_filter_elem([], _, _, Out2) :-
+	Out2 = []. 
+otherwise. 
+output_filter_elem(Out1, Ymin, Xmin, Out2) :-
+	Out1 = [place(WordID, Y, X, Dir, StrLen)|Out1Tail] |
+	Y2 := Y-Ymin, 
+	X2 := X-Xmin, 
+	Out2 = [place(WordID, Y2, X2, Dir)|Out2Tail], 
+	output_filter_elem(Out1Tail, Ymin, Xmin, Out2Tail). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+set_skipcounter_of_words([], WordList2) :-
+	WordList2 = [].
+otherwise. 
+set_skipcounter_of_words(WordList1, WordList2) :-
+	WordList1 = [Word|WordList1Tail], 
+	WordList2 = [{Word, 0}|WordList2Tail], 
+	set_skipcounter_of_words(WordList1Tail, WordList2Tail). 
+
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+attach_start(Board, WordsGroup, 
+              AttachPoints, 
+              WordsRemainA, 
+              WordsRemainB, 
+              SizeOfWordsGroup, 
+              Score, 
+              EdgeLen, 
+              Region, 
+              Out, Out1) :-
+	current_node(Node, NNodes), 
+	attach_start(Board, WordsGroup, 
+	              AttachPoints, 
+	              WordsRemainA, 
+	              WordsRemainB, 
+	              SizeOfWordsGroup, 
+	              Score, 
+	              EdgeLen, 
+	              Region, 
+	              Out, Out1, 
+	              0, NNodes). 
+
+
+attach_start(_, WordsGroup, _, _, [], _, Score, _, 
+       {Ymin, _, Xmin, _}, Out, Out1, 
+       _, _) :-
+	Out = [{WordsGroup, Ymin, Xmin, Score}|Out1]. 
+otherwise. 
+attach_start(Board, WordsGroup, 
+              AttachPoints, 
+              WordsRemainA, 
+              WordsRemainB, 
+              SizeOfWordsGroup, 
+              Score, 
+              EdgeLen, 
+              Region, 
+              Out, Out1, 
+              Node, NNodes) :-
+	Node1 := (Node+1) mod NNodes, 
+	WordsRemainB = [{Word,Skip}|WordsRemainB1], 
+
+	Vars = { WordsRemainA, WordsRemainB1, 
+			WordsGroup, 
+	                AttachPoints, 
+			SizeOfWordsGroup, 
+			Board, 
+	                Score, 
+	                EdgeLen, 
+	                Region }, 
+
+	generic:new(merge, {Out3, Out2}, Out), 
+	
+%	attach_word_to_group_start(Word, WordsGroup, AttachPoints, Skip, 
+%	                     Vars, Out3, [], Node)@lower_priority(1), 
+
+	attach_word_to_group_start(Word, WordsGroup, AttachPoints, Skip, 
+	                     Vars, Out3, [], Node), 
+
+	append(WordsRemainA, 
+	       [{Word,SizeOfWordsGroup}], 
+	       WordsRemainA1), 
+
+	attach_start(Board, WordsGroup, 
+	              AttachPoints, 
+	              WordsRemainA1, 
+	              WordsRemainB1, 
+	              SizeOfWordsGroup, 
+	              Score, 
+	              EdgeLen, 
+	              Region, 
+	              Out2, Out1, 
+	              Node1, NNodes). 
+
+
+attach_word_to_group_start(Word, WordsGroup, AttachPoints, Skip, 
+	                     Vars, Out, Out2, Node) :-
+	attach_word_to_group(Word, WordsGroup, AttachPoints, Skip, 
+	                     Vars, Out, Out2)@node(Node). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+attach(_, WordsGroup, _, _, [], _, Score, _, 
+       {Ymin, _, Xmin, _}, Out, Out1) :-
+	Out = [{WordsGroup, Ymin, Xmin, Score}|Out1]. 
+otherwise. 
+attach(Board, WordsGroup, 
+              AttachPoints, 
+              WordsRemainA, 
+              WordsRemainB, 
+              SizeOfWordsGroup, 
+              Score, 
+              EdgeLen, 
+              Region, 
+              Out, Out1) :-
+	WordsRemainB = [{Word,Skip}|WordsRemainB1], 
+
+	Vars = { WordsRemainA, WordsRemainB1, 
+			WordsGroup, 
+	                AttachPoints, 
+			SizeOfWordsGroup, 
+			Board, 
+	                Score, 
+	                EdgeLen, 
+	                Region }, 
+	
+	attach_word_to_group(Word, WordsGroup, AttachPoints, Skip, 
+	                     Vars, Out, Out2), 
+
+	append(WordsRemainA, 
+	       [{Word,SizeOfWordsGroup}], 
+	       WordsRemainA1), 
+
+	attach(Board, WordsGroup, 
+	              AttachPoints, 
+	              WordsRemainA1, 
+	              WordsRemainB1, 
+	              SizeOfWordsGroup, 
+	              Score, 
+	              EdgeLen, 
+	              Region, 
+	              Out2, Out1). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+attach_word_to_group(_, [], _, _, _, Out, Out1) :-
+	Out = Out1. 
+otherwise. 
+attach_word_to_group(Word, WordsGroup, [AP|AttachPoints], 0, 
+                     Vars, Out, Out1) :-
+	WordsGroup = [WordTarget|WordsGroup1], 
+	attach_word_to_word(Word, WordTarget, AP, 
+	                    Vars, Out, Out2), 
+	attach_word_to_group(Word, WordsGroup1, AttachPoints, 0, 
+	                     Vars, Out2, Out1). 
+otherwise. 
+attach_word_to_group(Word, [_|WordsGroup], [_|AttachPoints], Skip, 
+                     Vars, Out, Out1) :-
+	attach_word_to_group(Word, WordsGroup, AttachPoints, ~(Skip-1), 
+	                     Vars, Out, Out1). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+attach_word_to_word(_, _, [], _, Out, Out1) :-
+	Out = Out1. 
+otherwise. 
+attach_word_to_word(Word, WordTarget, AttachPoint, 
+                    Vars, Out, Out1) :-
+	WordTarget = place(TgtWordID, Y, X, Dir, TgtLength), 
+	attach_word_to_word(Word, Y, X, Dir, AttachPoint, 
+	                    Vars, Out, Out1). 
+
+
+attach_word_to_word(_, _, _, _, [], 
+                    _, Out, Out1) :-
+	Out = Out1. 
+otherwise. 
+attach_word_to_word(Word, Y, X, tb, AttachPoint, 
+                    Vars, Out, Out1) :-
+	AttachPoint = [{Idx, Yap, Xap}|AttachPoint1], 
+	Vars = { _, _, 
+                    _, 
+                    _, 
+                    _, 
+                    Board, 
+	            _, 
+	            EdgeLen, 
+	            _ }, 
+	ELEL := EdgeLen*EdgeLen, 
+	XY := (Xap+Yap*EdgeLen+ELEL) mod ELEL, 
+	vector_element(Board, XY, TgtChar) |
+	attach_word_to_char(Word, TgtChar, Yap, Xap, tb, 
+	                    Vars, Out, Out2), 
+	attach_word_to_word(Word, Y, X, tb, AttachPoint1, 
+	                    Vars, Out2, Out1). 
+attach_word_to_word(Word, Y, X, lr, AttachPoint, 
+                    Vars, Out, Out1) :-
+	AttachPoint = [{Idx, Yap, Xap}|AttachPoint1], 
+	Vars = { _, _, 
+                    _, 
+                    _, 
+                    _, 
+                    Board, 
+	            _, 
+	            EdgeLen, 
+	            _ }, 
+	ELEL := EdgeLen*EdgeLen, 
+	XY := (Xap+Yap*EdgeLen+ELEL) mod ELEL, 
+	vector_element(Board, XY, TgtChar) |
+	attach_word_to_char(Word, TgtChar, Yap, Xap, lr, 
+	                    Vars, Out, Out2), 
+	attach_word_to_word(Word, Y, X, lr, AttachPoint1, 
+	                    Vars, Out2, Out1). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+attach_word_to_char(Word, TgtChar, Y, X, Dir, 
+                    Vars, Out, Out1) :-
+	Word = word(WordID, Str, Score), 
+	string(Str, Length, _) |
+	attach_word_to_char(WordID, Str, Score, 
+                            0, Length, TgtChar, Y, X, Dir, 
+	                    Vars, Out, Out1). 
+
+
+attach_word_to_char(_, _, _, Len, Len, _, _, _, _, 
+                    _, Out, Out1) :-
+	Out = Out1. 
+otherwise. 
+attach_word_to_char(WordID, Str, Score, 
+                    SearchStart, Len, TgtChar, Y, X, Dir, 
+                    Vars, Out, Out1) :-
+	Vars = { WordsRemainA, WordsRemainB, 
+                    WordsGroup, 
+	            AttachPoints, 
+                    SizeOfWordsGroup, 
+                    Board,
+	            TotalScore, 
+	            EdgeLen, 
+	            Region }, 
+	Region = { Ymin, Ymax, Xmin, Xmax } |
+	generic:search_character(Str, SearchStart, ~(Len-1), TgtChar, StrIdx), 
+	(StrIdx =\= -1 ->
+	  SearchStart1 := StrIdx+1, 
+	  check_region(Y, X, Dir, StrIdx, Len, 
+	               EdgeLen, Region, Region1,
+	               OutOfRegion), 
+	  (OutOfRegion = no ->
+	    check_collision(Board, Y, X, Dir, StrIdx, Len, Str, 
+                            EdgeLen, Region1, 
+	                    Collision);
+	   otherwise; true ->
+	    Collision = yes), 
+	  (Collision = no ->
+
+	    (Dir = tb ->
+	      Dir1 = lr, 
+	      Xtmp1 := X-StrIdx, 
+	      append(WordsGroup, 
+	             [place(WordID, Y, Xtmp1, lr, Len)], 
+	             WordsGroup1), 
+	      new_attachpoint(NewAP, Y, Xtmp1, 0, 1, Len);
+	     otherwise; true ->
+	      Dir1 = tb, 
+	      Ytmp1 := Y-StrIdx, 
+	      append(WordsGroup, 
+	             [place(WordID, Ytmp1, X, tb, Len)], 
+	             WordsGroup1), 
+	      new_attachpoint(NewAP, Ytmp1, X, 1, 0, Len)), 
+
+	    put_word_on_board(Board, Y, X, Dir1, EdgeLen, 
+	                      Str, StrIdx, Board1), 
+
+	    append(WordsRemainA, WordsRemainB, WordsRemain1), 
+
+	    append(AttachPoints, [NewAP], AttachPoints2), 
+
+	    update_attachpoints(AttachPoints2, AttachPoints1, 
+	                        Board1, EdgeLen, Region1), 
+
+	    attach(Board1, WordsGroup1, 
+	                   AttachPoints1, 
+	                   [], 
+	                   WordsRemain1, 
+	                   ~(SizeOfWordsGroup+1), 
+	                   ~(TotalScore+Score), 
+	                   EdgeLen, 
+	                   Region1, 
+	                   Out, Out2);
+
+	   otherwise; true ->
+	    Out = Out2);
+	 otherwise; true ->
+	  SearchStart1 = Len, 
+	  Out = Out2), 
+	attach_word_to_char(WordID, Str, Score, 
+	                    SearchStart1, Len, TgtChar, Y, X, Dir, 
+	                    Vars, Out2, Out1). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+check_region(Y, X, tb, I, Len, EdgeLen, 
+             Region, Region1, 
+             OutOfRegion) :-
+	Region = {Ymin, Ymax, Xmin, Xmax}, 
+	Region1 = {Ymin1, Ymax1, Xmin1, Xmax1}, 
+	Ymin1 = Ymin, 
+	Ymax1 = Ymax, 
+	check_region(X, I, Len, EdgeLen, Xmin, Xmax, Xmin1, Xmax1, 
+	             OutOfRegion). 
+check_region(Y, X, lr, I, Len, EdgeLen, 
+             Region, Region1, 
+             OutOfRegion) :-
+	Region = {Ymin, Ymax, Xmin, Xmax}, 
+	Region1 = {Ymin1, Ymax1, Xmin1, Xmax1}, 
+	Xmin1 = Xmin, 
+	Xmax1 = Xmax, 
+	check_region(Y, I, Len, EdgeLen, Ymin, Ymax, Ymin1, Ymax1, 
+	             OutOfRegion). 
+
+
+check_region(Orig, Offset, Len, EdgeLen, Min, Max, Min1, Max1, 
+             OutOfRegion) :-
+	Len > EdgeLen |
+	OutOfRegion = yes. 
+otherwise. 
+check_region(Orig, Offset, Len, EdgeLen, Min, Max, Min1, Max1, 
+             OutOfRegion) :-
+	St := Orig-Offset, 
+	Ed := St+Len-1 |
+	(St =< ~(Max-EdgeLen) ->
+	  OutOfRegion = yes;
+	 Ed >= ~(Min+EdgeLen) ->
+	  OutOfRegion = yes;
+	 otherwise; true ->
+	  OutOfRegion = no, 
+	  (St < Min ->        Min1 = St;
+	   otherwise; true -> Min1 = Min), 
+	  (Ed > Max ->        Max1 = Ed;
+	   otherwise; true -> Max1 = Max)). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+check_collision(Board, Y, X, tb, StrIdx, Len, Str, 
+                EdgeLen, Region, 
+                Collision) :-
+	Region = {Ymin, Ymax, Xmin, Xmax}, 
+	ELEL := EdgeLen*EdgeLen, 
+	XY := (X-StrIdx+Y*EdgeLen+ELEL) mod ELEL, 
+	St := -StrIdx, 
+	Ed := Len-StrIdx, 
+	Min := Xmin-X, 
+	Max := Xmax-X, 
+	(Y =:= Ymin -> EdgeFlag = -1;
+	 Y =:= Ymax -> EdgeFlag = 1;
+	 otherwise; true -> EdgeFlag = 0), 
+	check_collision_1(Board, XY, 1, EdgeLen, St, Ed, Str, 
+	                  EdgeLen, Min, Max, EdgeFlag, Collision). 
+check_collision(Board, Y, X, lr, StrIdx, Len, Str, 
+                EdgeLen, Region, 
+                Collision) :-
+	Region = {Ymin, Ymax, Xmin, Xmax}, 
+	ELEL := EdgeLen*EdgeLen, 
+	XY := (X+(Y-StrIdx)*EdgeLen+ELEL) mod ELEL, 
+	St := -StrIdx, 
+	Ed := Len-StrIdx, 
+	Min := Ymin-Y, 
+	Max := Ymax-Y, 
+	(X =:= Xmin -> EdgeFlag = -1;
+	 X =:= Xmax -> EdgeFlag = 1;
+	 otherwise; true -> EdgeFlag = 0), 
+	check_collision_1(Board, XY, EdgeLen, 1, St, Ed, Str, 
+	                  EdgeLen, Min, Max, EdgeFlag, Collision). 
+
+
+check_collision_1(Board, XY, DXY1, DXY2, St, Ed, Str, 
+                  EdgeLen, Min, Max, EdgeFlag, Collision) :-
+	(St =:= Min ->
+	  check_collision_2(Board, XY, DXY1, DXY2, St, St, Ed, Str, 
+	                    EdgeLen, Min, Max, EdgeFlag, Collision);
+	 otherwise; true ->
+	  ELEL := EdgeLen*EdgeLen, 
+	  TmpXY := (XY+ELEL-DXY1) mod ELEL, 
+	  vector_element(Board, TmpXY, Char0), 
+	  (Char0 =:= 0 ->
+	    check_collision_2(Board, XY, DXY1, DXY2, St, St, Ed, Str, 
+	                      EdgeLen, Min, Max, EdgeFlag, Collision);
+	   otherwise; true ->
+	    Collision = yes)). 
+
+
+check_collision_2(Board, XY, DXY1, DXY2, St, 0, Ed, Str, 
+                  EdgeLen, Min, Max, EdgeFlag, Collision) :-
+	NewXY := (XY+DXY1) mod (EdgeLen*EdgeLen), 
+	check_collision_2(Board, NewXY, DXY1, DXY2, St, 1, Ed, Str, 
+	                  EdgeLen, Min, Max, EdgeFlag, Collision). 
+check_collision_2(Board, XY, DXY1, DXY2, St, Ed, Ed, Str, 
+                  EdgeLen, Min, Max, EdgeFlag, Collision) :-
+	(Ed =:= Max+1 ->
+	  Collision = no;
+	 otherwise; true ->
+	  vector_element(Board, XY, Char0), 
+	  (Char0 =:= 0 ->
+	    Collision = no;
+	   otherwise; true ->
+	    Collision = yes)). 
+otherwise. 
+check_collision_2(Board, XY, DXY1, DXY2, St, I, Ed, Str, 
+                  EdgeLen, Min, Max, EdgeFlag, Collision) :-
+	ELEL := EdgeLen*EdgeLen, 
+
+	vector_element(Board, XY, CharB), 
+	string_element(Str, ~(I-St), CharS), 
+	(CharB =:= CharS ->
+	  NewXY := (XY+DXY1) mod ELEL, 
+	  NewI := I+1, 
+	  check_collision_2(Board, NewXY, DXY1, DXY2, St, NewI, Ed, Str, 
+	                    EdgeLen, Min, Max, EdgeFlag, Collision);
+	 otherwise; true ->
+	  Char0 = CharB, 
+	  (EdgeFlag =:= -1 ->
+	    Char1 = 0;
+	   otherwise; true ->
+	    XY1 := (XY-DXY2+ELEL) mod ELEL, 
+	    vector_element(Board, XY1, Char1)), 
+	  (EdgeFlag =:= 1 ->
+	    Char2 = 0;
+	   otherwise; true ->
+	    XY2 := (XY+DXY2) mod ELEL, 
+	    vector_element(Board, XY2, Char2)), 
+	  (Char0 =:= 0, 
+	   Char1 =:= 0, 
+	   Char2 =:= 0 ->
+	    NewXY := (XY+DXY1) mod ELEL, 
+	    NewI := I+1, 
+	    check_collision_2(Board, NewXY, DXY1, DXY2, St, NewI, Ed, Str, 
+	                      EdgeLen, Min, Max, EdgeFlag, Collision);
+	   otherwise; true ->
+	    Collision = yes)). 
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+put_word_on_board(Board, Y, X, Dir, EdgeLen, 
+                  Str, Offset, Board1) :-
+	ELEL := EdgeLen*EdgeLen, 
+	generic:size(Str, StrLen), 
+	(Dir = lr ->
+	  XY := (X+Y*EdgeLen-Offset+ELEL) mod ELEL, 
+	  put_word_on_board_1(Board, XY, 1, Str, 
+	                      0, StrLen, ELEL, Board1);
+	 otherwise; true ->
+	  XY := (X+(Y-Offset)*EdgeLen+ELEL) mod ELEL, 
+	  put_word_on_board_1(Board, XY, EdgeLen, Str, 
+	                      0, StrLen, ELEL, Board1)). 
+
+put_word_on_board_1(Board, _, _, _, StrLen, StrLen, _, Board1) :-
+	Board1 = Board. 
+otherwise. 
+put_word_on_board_1(Board, XY, DiffXY, Str, 
+                    I, StrLen, ELEL, Board1) :-
+	XY1 := (XY+DiffXY) mod ELEL, 
+	NewI := I+1, 
+	string_element(Str, I, Char), 
+	set_vector_element(Board, XY, Char, Board0), 
+	put_word_on_board_1(Board0, XY1, DiffXY, Str, 
+	                    NewI, StrLen, ELEL, Board1). 
+
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+read_char_on_board(Board, Y, X, EdgeLen, Region, Char) :-
+	Region = {Ymin, Ymax, Xmin, Xmax}, 
+	(X < Xmin -> Char = 0;
+	 X > Xmax -> Char = 0;
+	 Y < Ymin -> Char = 0;
+	 Y > Ymax -> Char = 0;
+	 otherwise; true ->
+	  ELEL := EdgeLen*EdgeLen, 
+	  XY := (X+Y*EdgeLen+ELEL) mod ELEL, 
+	  vector_element(Board, XY, Char)). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+new_attachpoint(AP, Y, X, DY, DX, Len) :-
+	new_attachpoint(AP, Y, X, DY, DX, 0, Len). 
+
+new_attachpoint(AP, _, _, _, _, Len, Len) :-
+	AP = []. 
+otherwise. 
+new_attachpoint(AP, Y, X, DY, DX, I, Len) :-
+	X1 := X+DX, 
+	Y1 := Y+DY, 
+	I1 := I+1, 
+	AP = [{I, Y, X}|AP1], 
+	new_attachpoint(AP1, Y1, X1, DY, DX, I1, Len). 
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+update_attachpoints([], NewAPs, _, _, _) :-
+	NewAPs = []. 
+otherwise. 
+update_attachpoints(APs, NewAPs, Board, EdgeLen, Region) :-
+	APs = [AP|APsTail], 
+	NewAPs = [NewAP|NewAPsTail], 
+	update_attachpoint(AP, NewAP, Board, EdgeLen, Region), 
+	update_attachpoints(APsTail, NewAPsTail, Board, EdgeLen, Region). 
+
+
+update_attachpoint([], NewAP, _, _, _) :-
+	NewAP = []. 
+otherwise. 
+update_attachpoint(AP, NewAP, Board, EdgeLen, Region) :-
+	AP = [APElem|APTail], 
+	APElem = {Idx, Y, X}, 
+	X1 := X-1, 
+	X2 := X+1, 
+	Y1 := Y-1, 
+	Y2 := Y+1, 
+	read_char_on_board(Board, Y, X1, EdgeLen, Region, Char10), 
+	read_char_on_board(Board, Y, X2, EdgeLen, Region, Char20), 
+	read_char_on_board(Board, Y1, X, EdgeLen, Region, Char01), 
+	read_char_on_board(Board, Y2, X, EdgeLen, Region, Char02), 
+	read_char_on_board(Board, Y1, X1, EdgeLen, Region, Char11), 
+	read_char_on_board(Board, Y1, X2, EdgeLen, Region, Char21), 
+	read_char_on_board(Board, Y2, X1, EdgeLen, Region, Char12), 
+	read_char_on_board(Board, Y2, X2, EdgeLen, Region, Char22), 
+	(Char10 =:= 0, Char20 =:= 0  ->
+	  X3 := X-2, 
+	  X4 := X+2, 
+	  read_char_on_board(Board, Y, X3, EdgeLen, Region, Char30), 
+	  read_char_on_board(Board, Y, X4, EdgeLen, Region, Char40), 
+	  (Char11 =:= 0, Char12 =:= 0, Char30 =:= 0  ->
+	    NewAP = [APElem|NewAPTail];
+	   Char21 =:= 0, Char22 =:= 0, Char40 =:= 0  ->
+	    NewAP = [APElem|NewAPTail];
+	   otherwise; true ->
+	    NewAP = NewAPTail);
+	 Char01 =:= 0, Char02 =:= 0  ->
+	  Y3 := Y-2, 
+	  Y4 := Y+2, 
+	  read_char_on_board(Board, Y3, X, EdgeLen, Region, Char03), 
+	  read_char_on_board(Board, Y4, X, EdgeLen, Region, Char04), 
+	  (Char11 =:= 0, Char21 =:= 0, Char03 =:= 0  ->
+	    NewAP = [APElem|NewAPTail];
+	   Char12 =:= 0, Char22 =:= 0, Char04 =:= 0  ->
+	    NewAP = [APElem|NewAPTail];
+	   otherwise; true ->
+	    NewAP = NewAPTail);
+	 otherwise; true ->
+	  NewAP = NewAPTail), 
+	update_attachpoint(APTail, NewAPTail, Board, EdgeLen, Region). 
+
+
+
+
+%%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% %%%%%% 
+
+append([], List2, List) :-
+	List = List2. 
+append([X|List1], List2, List) :-
+	List = [X|List3], 
+	append(List1, List2, List3). 

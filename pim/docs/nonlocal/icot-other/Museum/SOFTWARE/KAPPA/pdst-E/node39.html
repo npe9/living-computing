@@ -1,0 +1,31 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Creation of irpr system server</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Creation of irpr system server">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html494 HREF="node40.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html492 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html486 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html495 HREF="node40.html"> Message sending to </A>
+<B>Up:</B> <A NAME=tex2html493 HREF="node38.html"> Module irpr_service(irpr_service.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html487 HREF="node38.html"> Module irpr_service(irpr_service.kl1)</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00045100000000000000> Creation of irpr system server</A></H3>
+<P>
+Irpr system server is created by calling irpr_kappa:create/4 and 
+the interface stream IrprITR is kept.
+<P>
+<PRE>service(IFP,Soc) :-
+    klicio:klicio([stdout(normal(OUTS))]),
+    irpr_kappa:create(update,IrprITR,IFP,Status),
+    service1(Status,IrprITR,Soc,OUTS).
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

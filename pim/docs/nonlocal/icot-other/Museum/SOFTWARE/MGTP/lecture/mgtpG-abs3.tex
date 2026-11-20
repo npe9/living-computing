@@ -1,0 +1,91 @@
+%-----------------------------------------------------------------------------
+\section{モデル生成法}
+
+モデル生成法は、与えられた入力節(MG節と呼ぶ)集合$\cal S$に対するモデルを、
+次のような手続きに従って構成的に求めようとするものである。
+以下では、構成途中のモデルを$M$で表し、これをモデル候補と呼ぶ。
+また、モデル候補の集合を$\cal M$で表す。
+\begin{enumerate}
+\item ${\cal M}$の要素として、初期モデル候補$M_0 = \emptyset$を設定する。
+\item ${\cal M}$のある要素$M$に対し、
+後述のモデル拡張規則あるいはモデル棄却規則のいずれかが適用可能なとき、
+その規則を適用して${\cal M}$を更新する。
+\item 上記2のステップを可能な限り繰り返す。
+\item ${\cal M}$のすべての要素$M$に対して、
+いずれの規則も適用できなくなったとき、手続きは終了する。
+\end{enumerate}
+この手続きが終了したとき、${\cal M}$が空になっていれば、
+$\cal S$にはモデルが存在しない(すなわち、充足不能である)ことが結論できる。
+さもなければ、すべての要素$M\in{\cal M}$が
+いずれも$\cal S$のモデルとなっている。
+
+ここで、モデル拡張規則とモデル棄却規則は以下のとおりである。
+\begin{itemize}
+\item $\underline{\hbox{モデル拡張規則}}$：
+モデル候補$M$に対して、
+非負節$A_1, \ldots, A_n$ $\implies$ $B_1; \ldots; B_m$
+ならびに、ある基礎代入$\sigma$が存在して、
+$\sigma A_i$ $(1\le i\le n)$がすべて$M$で充足され、
+かつ$\sigma B_j$ $(1\le j\le m)$のいずれも$M$で充足されないならば、
+$M$を$m$個のモデル候補
+$M\cup\{\sigma B_j\}$ $(1\le i\le m)$で置き換えて拡張(場合分け)する。
+\item $\underline{\hbox{モデル棄却規則}}$：
+%モデル候補$M$に対して、負節$A_1,\ldots, A_n$ $\implies$ $\false$と
+モデル候補$M$に対して、負節$A_1,\ldots, A_n$ $\implies$ $\false$ならびに、
+ある基礎代入$\sigma$が存在して、
+$\sigma A_i$ $(1\le i\le n)$がすべて$M$で充足されるならば、
+$M$を棄却する。
+\end{itemize}
+ここで、前件$A_1, \ldots, A_n$が$M$で充足されるような
+$\sigma$を求める操作を連言照合と呼ぶ。
+
+例として次の節集合(問題Sと呼ぶ)に関するモデル生成法の
+証明木を図\ref{Fig:S-proof}に示す。
+\begin{eqnarray*}
+& C_1: &\ \true \rightarrow p(a,a); q(b). \\
+& C_2: &\ r(X,f(X)) \rightarrow \false. \\
+& C_3: &\ p(X,X), p(X,Y) \rightarrow r(X,f(Y)). \\
+& C_4: &\ q(X) \rightarrow p(f(X),f(X)).
+\end{eqnarray*}
+
+%-----------------------------------------------------------------------------
+\begin{figure}
+\setlength{\unitlength}{1.5pt}
+\large
+
+\begin{center}
+\begin{picture}(150,200)(30,0)
+
+\put(100,200){\makebox(0,0)[b]{$\emptyset$}}
+\put(65,155){\makebox(0,0)[b]{$p(a,a)$}}
+\put(135,155){\makebox(0,0)[b]{$q(b)$}}
+\put(65,110){\makebox(0,0)[b]{$r(a,f(a))$}}
+\put(65,65){\makebox(0,0)[b]{$\bot$}}
+
+\put(135,110){\makebox(0,0)[b]{$p(f(b),f(b))$}}
+\put(135,65){\makebox(0,0)[b]{$r(f(b),f(f(b)))$}}
+\put(135,20){\makebox(0,0)[b]{$\bot$}}
+
+\put(100,195){\line(-5,-4){35}}
+\put(100,195){\line(5,-4){35}}
+\put(100,185){\makebox(0,0){$C_1$}}
+
+\put(65,150){\line(0,-1){30}}
+\put(65,105){\line(0,-1){30}}
+\put(75,135){\makebox(0,0){$C_3$}}
+\put(75,90){\makebox(0,0){$C_2$}}
+
+\put(135,150){\line(0,-1){30}}
+\put(135,105){\line(0,-1){30}}
+\put(135,60){\line(0,-1){30}}
+\put(145,135){\makebox(0,0){$C_4$}}
+\put(145,90){\makebox(0,0){$C_3$}}
+\put(145,45){\makebox(0,0){$C_2$}}
+
+\end{picture}
+\end{center}
+\vspace{-5mm}
+\caption{問題Sの証明図}
+\label{Fig:S-proof}
+\end{figure}
+

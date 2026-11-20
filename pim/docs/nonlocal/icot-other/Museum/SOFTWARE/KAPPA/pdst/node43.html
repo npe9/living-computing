@@ -1,0 +1,58 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> メッセージの実行</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" メッセージの実行">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html538 HREF="node44.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html536 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html530 HREF="node42.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html539 HREF="node44.html"> レコードの検索</A>
+<B>Up:</B> <A NAME=tex2html537 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html531 HREF="node42.html"> 名簿管理システムのサーバ</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046200000000000000> メッセージの実行</A></H3>
+<P>
+次のexec/5の第1引数がメッセージである。
+<P>
+<PRE>exec(search_current_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(current,Search_cond,ComStatus,Status)-IFP.
+    % 現在のデータを検索
+exec(search_history_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(history,Search_cond,ComStatus,Status)-IFP.
+    % 履歴データを検索
+exec(search_all_data(Search_cond,ComStatus),_Mode,Status)-IFP :-
+    search_data(all,Search_cond,ComStatus,Status)-IFP.
+    % 現在、および履歴データを検索
+exec(add_new_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    add_new_member(Status1,Member_info,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % メンバ情報の追加
+exec(modify_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    modify_member(Status1,Member_info,modify,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % メンバ情報の修正
+exec(delete_member(Member_info, ComStatus),update,Status)-IFP :-
+    get_table_list(update, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    modify_member(Status1,Member_info,delete,ComStatus)-IFP,
+    IFP &lt;= close(Status).
+    % メンバ情報の削除
+otherwise.
+exec(MSG,_Mode,Status)-IFP :-
+        functor(MSG, _P, A), arg(A, MSG, ComStatus) |
+    ComStatus = abnormal({&quot;Illegal Message or You can not update&quot;},end),
+    Status = normal.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

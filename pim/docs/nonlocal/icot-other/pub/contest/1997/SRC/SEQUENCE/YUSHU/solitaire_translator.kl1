@@ -1,0 +1,52 @@
+% -- solitaire
+%
+% solitaire_translator.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+
+:- module solitaire_translator.
+
+% Decoding 
+decode(CardsString, Cards) :- 
+	string_to_list(CardsString, Temp),
+	decode_card_list(Temp, Cards).
+
+decode_card_list([],List) :- List = [].
+decode_card_list([C|Cards],List) :-
+    decode_card(C,D),    List = [D|List1],
+    decode_card_list(Cards,List1).
+
+decode_card(Encoded_Card, Decoded_Card):-
+	RankCode := Encoded_Card >> 4,
+	SuitCode := Encoded_Card /\ 16'F,
+    rank_code(RankCode, Rank), 
+    suit_code(SuitCode, Suit), 
+	Decoded_Card=card(Rank,Suit).
+
+suit_code(4, R) :- R = spades.
+suit_code(3, R) :- R = hearts.
+suit_code(2, R) :- R = diamonds.
+suit_code(1, R) :- R = clubs.
+
+rank_code(N,  R) :- integer(N), 1 < N, N < 11 | R = N.
+rank_code(14, R) :- R = ace.
+rank_code(11, R) :- R = jack.
+rank_code(12, R) :- R = queen.
+rank_code(13, R) :- R = king.
+% --------------------------------------
+
+% string_to_list ( generate list from vector )
+%
+string_to_list(S,I, L) :- I >= 25 | L=[].
+string_to_list(S,I, L) :- I <  25 | L=[Head|Tail], 
+	string_element(S,I, Head), string_to_list(S,~(I+1), Tail).
+
+string_to_list(String, List) :- string_to_list(String,0, List).
+
+
+
+
+
+
+

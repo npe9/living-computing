@@ -1,0 +1,59 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<HEAD>
+<TITLE> 逐次アルゴリズム</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 逐次アルゴリズム">
+<meta name="keywords" value="mgtp-lec">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html111 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html109 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html105 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../../../PICS/previous_motif.gif"></A>   <A NAME=tex2html113 HREF="node1.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../../../../../PICS/contents_motif.gif"></A>      <BR>
+<B> Next:</B> <A NAME=tex2html112 HREF="node9.html">   About this document </A>
+<B>Up:</B> <A NAME=tex2html110 HREF="node7.html"> MGTP/Nのアルゴリズム</A>
+<B> Previous:</B> <A NAME=tex2html106 HREF="node7.html"> MGTP/Nのアルゴリズム</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00221000000000000000> 逐次アルゴリズム</A></H2>
+<P>
+図<A HREF="node8.html#figMGTPNSeq"><IMG ALIGN=BOTTOM ALT="gif" SRC="../../../../../../PICS/cross_ref_motif.gif"></A>に逐次アルゴリズムを示す．ホーン節のみを扱うので，
+場合分けによる分岐は考慮されていない．
+<P>
+<P><A NAME=98>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img4.gif">
+<BR><STRONG>Figure:</STRONG> <A NAME=figMGTPNSeq>&#160;</A> MGTP/N の逐次アルゴリズム<BR>
+<P>
+<P>
+ここで，<b>MD</b> はモデル拡張の適用によって生成された(後件)アトム
+を保持するための配列であり，<IMG  ALIGN=BOTTOM ALT="" SRC="img5.gif"> から
+<IMG  ALIGN=BOTTOM ALT="" SRC="img6.gif">までがモデル候補を，<IMG  ALIGN=BOTTOM ALT="" SRC="img7.gif"> から <IMG  ALIGN=BOTTOM ALT="" SRC="img8.gif"> までがモデル拡張候補
+(モデル候補に付加されるべき生成アトムの集合)を表す．
+モデル候補は空集合，モデル拡張候補は正節の後件アトムの集合で初期化され
+る (<tt> (0)</tt>，<tt> (1)</tt>)．
+<P>
+<tt> (3)</tt> から <tt> (6)</tt> までがモデル拡張に対応している．各混合節の前件部
+がモデル候補で充足されているか否かを判定し (<tt> (4)</tt> と<tt> (5)</tt> の条件
+の前半)，充足可能であれば後件部の包摂テストを行ない (<tt> (5)</tt> の条件の
+後半)，包摂されなければ<b>MD</b>に加える (<tt> (6)</tt>)．
+<P>
+<tt> (5)</tt> の条件部中の <IMG  ALIGN=BOTTOM ALT="" SRC="img9.gif"> is new は，
+生成アトム <IMG  ALIGN=BOTTOM ALT="" SRC="img10.gif"> が <b>MD</b> のどの要素にも包摂されない
+(<IMG  ALIGN=BOTTOM ALT="" SRC="img11.gif">)
+ことを表す．
+包摂テストについては，本論文ではこの前方包摂テストのみを扱い，
+<IMG  ALIGN=BOTTOM ALT="" SRC="img12.gif"> が <b>MD</b> の要素を包摂している (<IMG  ALIGN=BOTTOM ALT="" SRC="img13.gif">) かを調べる後方包摂テ
+ストは扱わない<A NAME=tex2html2 HREF="footnode.html#94"><IMG ALIGN=BOTTOM ALT="gif" SRC="../../../../../../PICS/foot_motif.gif"></A>．
+<P>
+その後の<tt> (7)</tt>から<tt> (9)</tt>がモデル棄却に対応する．各負節の前件部
+がモデル候補またはモデル拡張候補で充足されているかを判定し，充足されて
+いれば証明手続きは終了する．
+<P>
+
+<P>
+
+<P>
+<BR> <HR>
+<P><ADDRESS>
+<I>Yasuyuki Shirai <BR>
+1997年10月06日(月) 22時33分56秒 JST</I>
+</ADDRESS>
+</BODY>

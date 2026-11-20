@@ -1,0 +1,51 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Modules of the server</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Modules of the server">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html454 HREF="node36.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html452 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html446 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html455 HREF="node36.html"> Modules of the </A>
+<B>Up:</B> <A NAME=tex2html453 HREF="node34.html"> System configuration</A>
+<B> Previous:</B> <A NAME=tex2html447 HREF="node34.html"> System configuration</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00043100000000000000> Modules of the server</A></H3>
+<P>
+The file pathnames of the modules are the relative pathnames whose origin 
+is directory Kappa/src.
+<P>
+<DL ><DT>main(main/main.kl1)
+<DD>
+	The server of application programs of Kappa is defined.
+ <DT>irpr_request(irpr/irpr_request.kl1)
+<DD>
+	receives requests for irpr from clients.
+ <DT>irpr_service(irpr/irpr_service.kl1)
+<DD> 
+	offers irpr's service. This module transforms irpr
+	commands into the database manipulation messages, which are 
+	sent to irpr_kappa.
+ <DT>irpr_kappa(irpr/irpr_kappa.kl1)
+<DD> 
+	transforms the database maniulation messages into the
+	primitive commands of Kappa and execute them.
+ <DT>irpr_select(irpr/irpr_select.kl1)
+<DD>
+	The search conditional formulae allowed by irpr are transformed
+	into those accepted by Kappa. Search conditional formulae can 
+	be arbitrarily defined in each application.
+ <DT>irpr_conv(irpr/irpr_conv.kl1)
+<DD>
+	Terms are transformed into lists of character codes and
+	are output. This process is necessary because putt is not
+	applicable to the socket.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

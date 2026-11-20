@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 1998 Hyoudou,Kazuki.
+ */
+
+:- module skeleton.
+
+% データ構造:
+%    Board = [state(MT,ML,MB,MR,Size,Score),PL[0],PL[1],...]
+%    PL[N] = place(ID,Row,Col,Tail,Dir,CharList,Value)
+%
+%    TWL   = [TW[0],TW[1],...]
+%    TW[N] = word(ID,Length,CharList,Value)
+%
+
+
+solve(Size,WL,Output) :-
+	qsort_word(WL,SWL),       % WLを得点の高い順にソートする
+	translation_word(SWL,TWL),% 単語リストをプログラム中で使用する形式に変換
+	solve_main(Size,TWL,MaxBoard),
+	solve_wait(MaxBoard,Output).   % 出力データがそろうまで待つ
+
+solve_wait(Input,Output) :- wait(Input) |
+	board_to_output(Input,Out),
+	Output=[Out].
+
+% solve_main:
+%    各初期化およびストリームの連結と終了処理
+%
+solve_main(Size,[word(ID,Len,CL,Val)|TWL],MaxBoard) :-
+	Tail:=Len-1,
+	current_node(PE,PEs),
+	Place=place(ID,0,0,Tail,lr,CL,Val),
+	Board=[state(0,0,0,Tail,Size,Val),Place],  % Boardの初期化
+	compute(0,Board,Place,TWL,PeServer,NBoard),% 計算の開始
+	next_pe(PeServer,PE,PEs),                  % ノード割り当てのためのサーバ
+	compute_end_check(Size,NBoard,TWL,Val,MaxBoard).
+
+
+% compute_end_check:
+%   得られたBoardの情報を出力するかどうかのチェック
+%
+compute_end_check(Size,Board,TWL,Val,MaxBoard) :-
+	Board=[state(_,_,_,_,_,BV)|_],BV>Val |
+	MaxBoard=Board.
+compute_end_check(Size,Board,TWL,Val,MaxBoard) :-
+	Board=[state(_,_,_,_,_,BV)|_],BV=<Val |
+	solve_main(Size,TWL,MB),
+	board:max_board(Board,MB,MaxBoard).
+
+% compute:
+%    配置可能な単語のリストを生成し、Board上に配置、評価をする
+%
+compute(_,Board,_,[],Next,NBoard) :- 
+	Next=[],
+	NBoard=Board.
+compute(Lv,Board,place(ID,Row,Col,Tail,Dir,CL,Val),TWL,Next,NBoard) :-
+	board:make_movelist(Board,Row,Col,Dir,CL,TWL,MoveList),
+	move_word(Lv,Board,MoveList,TWL,Next,NBoard).
+
+% move_word:
+%    生成された配置可能な単語のリストをからBoardの次の状態を生成し、
+%    生成されたBoardの中で最も得点の高いものを出力する
+%
+move_word(_,Board,[],_,Next,NBoard) :-
+	Next=[],
+	NBoard=Board.
+move_word(Lv,Board,[Place|PL],TWL,Next,NBoard) :- Lv<1 |
+                                        % Lvが0なら同一ノード上で実行
+	Lv1:=Lv+1,
+	board:set_word(Board,Place,NB),     % Board上に単語を配置する
+	board:remove_word(Place,TWL,NTWL),  % 単語リストから配置した単語を削除
+	compute(Lv1,NB,Place,NTWL,Next1,NB1)@lower_priority,
+	move_word(Lv,Board,PL,TWL,Next2,NB2),
+	board:merge(Next1,Next2,Next),
+	board:max_board(NB1,NB2,NBoard).    % 得点の高い方のBoardを出力
+move_word(Lv,Board,[Place|PL],TWL,Next,NBoard) :- Lv=:=1 |
+                                        % Lvが1になったらゴールを分散する
+	Next=[get(PE)|Rest],                % 分散先のノード番号を取得
+	move_word(Lv,Board,PL,TWL,Rest,NB1),
+	board:set_word(Board,Place,NB),
+	board:remove_word(Place,TWL,NTWL),
+	board:distribute(NB,Place,NTWL,NB2)@node(PE),
+	board:max_board(NB1,NB2,NBoard).
+
+
+% next_pe:
+%    ノード番号をサイクリックに与えるためのサーバ 
+%
+next_pe([],_,_).
+next_pe([get(PeNo)|Next],PE,PEs) :-
+	PE1:=PE+1,
+	PeNo:=PE mod PEs,
+	next_pe(Next,PE1,PEs).
+
+
+% board_to_output:
+%    Boardの形式のデータを出力データの形式に変換する
+%
+board_to_output([state(MT,ML,_,_,_,_)|PL],Output) :-
+	board_to_output(MT,ML,PL,Output).
+
+board_to_output(_,_,[],Output) :- Output=[].
+board_to_output(MT,ML,[place(ID,Row,Col,Tail,Dir,CL,Val)|PL],Output) :-
+	Row1:=Row-MT,
+	Col1:=Col-ML,
+	board_to_output(MT,ML,PL,O),
+	Output=[place(ID,Row1,Col1,Dir)|O].
+
+
+% translation_word:
+%    与えられた単語リストの各要素"word(ID,String,Value)"を
+%    "word(ID,Length,CharList,Value)"の形式に変換したリストを出力する
+translation_word([],TWL) :- TWL=[].
+translation_word([word(ID,Str,Val)|WL],TWL) :-
+	translation_word(WL,NTWL),
+	string_to_charlist(Str,CL,Len),
+	TWL=[word(ID,Len,CL,Val)|NTWL].
+
+string_to_charlist(Str,CL,L) :- string(Str,N,_) |
+	L:=N,string_to_charlist(Str,CL,0,N).
+
+string_to_charlist(Str,CL,P,N) :- P<N,P1:=P+1,string_element(Str,P,E) |
+	CL=[E|CL1],
+	string_to_charlist(Str,CL1,P1,N).
+string_to_charlist(Str,CL,P,N) :- P>=N | CL=[].
+
+
+% qsort_word:
+%   単語リストを得点の高い順にソートする
+%
+qsort_word(In,Out) :- terminal(In,Out,[]).
+
+terminal([],Xs,Ys) :- Xs=Ys.
+terminal([word(ID,Str,Val)|Rest],Xs0,Ys) :-
+        H=word(ID,Str,Val),
+        terminal(R,Xs0,Xs1),
+        node(Rest,Val,L,R),
+        Xs1=[H|Xs2],
+        terminal(L,Xs2,Ys).
+
+node([],V,L,R) :- L=[],R=[].
+node([word(ID,Str,Val)|Rest],V,L,R) :- Val>V |
+        H=word(ID,Str,Val),
+        R=[H|NR],
+        node(Rest,V,L,NR).
+node([word(ID,Str,Val)|Rest],V,L,R) :- Val<V |
+        H=word(ID,Str,Val),
+        L=[H|NL],
+        node(Rest,V,NL,R).
+node([word(ID,Str,Val)|Rest],V,L,R) :- Val=:=V |
+        H=word(ID,Str,Val),
+        L=[H|NL],
+        node(Rest,V,NL,R).

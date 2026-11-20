@@ -1,0 +1,338 @@
+%%
+%% Flush and Straight
+%%
+:- module solitaire_fl_str.
+
+%
+% 残りカードから、フラッシュを邪魔しないようにストレートを作る。
+%
+
+% LSTR : STRAIGHT列 候補群
+% TGS  : STRAIGHT 目標数
+% MAP  : Card Map
+% NA-ND: STRAIGHT で使用可能なカード数(suit毎)
+% IA-ID: 使用可能カード列(suit毎)
+
+setup_a(IA,IB,IC,ID, STRS, FA,FB,FC,FD):- true |
+	solitaire_sort:sort_r(IA, SIA),
+	solitaire_misc:members(IA, NCA), NA := NCA mod 5,
+	solitaire_sort:sort_r(IB, SIB),
+	solitaire_misc:members(IB, NCB), NB := NCB mod 5,
+	solitaire_sort:sort_r(IC, SIC),
+	solitaire_misc:members(IC, NCC), NC := NCC mod 5,
+	solitaire_sort:sort_r(ID, SID),
+	solitaire_misc:members(ID, NCD), ND := NCD mod 5,
+	TGS := (NA+NB+NC+ND)/5,
+	mapconst(SIA,SIB,SIC,SID, MAP,CDS),
+%		io:outstream([print('- List -'),
+%			print(SIA),print(SIB),print(SIC),print(SID),nl]),
+%	io:outstream([print('- fl_str Map -'),print(MAP),nl]),
+%	io:outstream([print('- TGS, CDS, LSTR -'),
+%		print(TGS),nl,print(CDS),nl,print(LSTR),nl]),
+%	search_str(TGS, CDS, LSTR),
+	straight(TGS, MAP,CDS, NA,NB,NC,ND, STRS,STRS2),
+	solitaire_misc:list_rember(SIA,STRS2, FA),
+	solitaire_misc:list_rember(SIB,STRS2, FB),
+	solitaire_misc:list_rember(SIC,STRS2, FC),
+	solitaire_misc:list_rember(SID,STRS2, FD).
+%	solitaire_misc:connect_list(FA,FB,FC,FD, GABS),
+%	io:outstream([print('- TGS, Straight - '),print(TGS),print(STRS),nl]).
+%	io:outstream([print('- KIND A - '),print([SIA,NCA,NA,FA]),nl]),
+%	io:outstream([print('- KIND B - '),print([SIB,NCB,NB,FB]),nl]),
+%	io:outstream([print('- KIND C - '),print([SIC,NCC,NC,FC]),nl]),
+%	io:outstream([print('- KIND D - '),print([SID,NCD,ND,FD]),nl]),
+%	io:outstream([print('- Flash - '),print([FA,FB,FC,FD]),nl]).
+
+
+mapconst(IA,IB,IC,ID, MAP, CDS):- true |
+	mapconst(14, IA,IB,IC,ID, MAP,CDS).
+
+mapconst(1, IA,IB,IC,ID, MAP,CDS):- true |
+	MAP = [], CDS = [].
+
+mapconst(N, IA,IB,IC,ID, MAP,CDS):- N=\=1 |
+	(IA = [] -> NA = [], A = 0;
+	 IA = [XA|RA] ->
+	  (XA/16 =:= N -> NA = RA, A = 1;
+	   otherwise;
+	   true -> NA = IA, A = 0)),
+	(IB = [] -> NB = [], B = 0;
+	 IB = [XB|RB] ->
+	  (XB/16 =:= N -> NB = RB, B = 1;
+	   otherwise;
+	   true -> NB = IB, B = 0)),
+	(IC = [] -> NC = [], C = 0;
+	 IC = [XC|RC] ->
+	  (XC/16 =:= N -> NC = RC, C = 1;
+	   otherwise;
+	   true -> NC = IC, C = 0)),
+	(ID = [] -> ND = [], D = 0;
+	 ID = [XD|RD] ->
+	  (XD/16 =:= N -> ND = RD, D = 1;
+	   otherwise;
+	   true -> ND = ID, D = 0)),
+	Cards := A+B+C+D,
+	CDS = [Cards|NCDS],
+	DAT = map(A, B, C, D),
+	MAP = [DAT|NMAP],
+	NN := N - 1,
+	mapconst(NN, NA,NB,NC,ND, NMAP,NCDS).
+
+%
+% STRAIGHT： フラッシュを邪魔せずに配置できるストレートを探す
+%
+straight(0, MAP,CDS, NA,NB,NC,ND, STRS,STRS2):- true |
+	STRS = [], STRS2 = [].
+straight(TGS, MAP,CDS, NA,NB,NC,ND, STRS,STRS2):- TGS>0 |
+%%	io:outstream([print(['straight',LSTRS,ANS]),nl]),
+	search_str(TGS, CDS, LSTRS),
+	scheck_all(MAP, LSTRS, NA,NB,NC,ND, ANS),
+	( ANS = fail ->
+		NTGS := TGS-1,
+		straight(NTGS, MAP,CDS, NA,NB,NC,ND, STRS,STRS2);
+	  otherwise;
+	  true ->
+		reconstruct_str(ANS, STRS),
+		STRS2 = ANS ).
+
+scheck_all(MAP, [], NA,NB,NC,ND, ANS):-
+	ANS = fail.
+scheck_all(MAP, [LSTR|LSTRS], NA,NB,NC,ND, ANS):-
+	scheck(MAP, LSTR, NA,NB,NC,ND, RES),
+	( RES = fail ->
+		scheck_all(MAP, LSTRS, NA,NB,NC,ND, ANS);
+	  otherwise;
+	  true ->
+		ANS = RES ).
+
+
+% STRAIGHT の再構成
+reconstruct_str([], STRS):- true |
+	STRS = [].
+otherwise.
+reconstruct_str(CDS, STRS):- true |
+	solitaire_sort:sort_r(CDS, SCDS),
+	reconstruct_str_s(SCDS, STRS).
+
+reconstruct_str_s(SCDS, STRS):-
+	reconst_str(SCDS, STR, REST),
+	STRS = [STR|NSTRS],
+	( REST=[] -> NSTRS = []; 
+	  otherwise;
+	  true -> reconstruct_str_s(REST, NSTRS) ).
+
+reconst_str([X|CDS], STR, REST):- true |
+	C := X/16,
+	reconst_str(0, C, [X|CDS], STR, REST).
+reconst_str(N, C, CDS, STR, REST):- N=:=5 |
+	STR = [],
+	REST = CDS.
+reconst_str(N, C, [X|CDS], STR, REST):-  C=:=X/16 |
+	STR = [X|NSTR],
+	NC := C-1,
+	NN := N+1,
+	reconst_str(NN, NC, CDS, NSTR, REST).
+reconst_str(N, C, [X|CDS], STR, REST):-  C=\=X/16 |
+	REST = [X|NREST],
+	reconst_str(N, C, CDS, STR, NREST).
+	
+
+%
+% STRAIGHT 検索(suitは考慮せず)
+%
+search_str(TGS, CDS, LSTR):-
+	search_str(TGS, 14, CDS, [], LSTR).
+search_str(0, MAX, CDS, PSTR, LSTR):- true |
+	NCDS = CDS,
+	LSTR = [].
+search_str(TGS, MAX, CDS, PSTR, LSTR):- TGS>0 |
+	check_str(MAX, CDS, LS),
+	NTGS := TGS-1,
+	search_str_child(NTGS, CDS, LS, PSTR, LSTR).
+
+% LSの各要素について再帰的にチェックを行う
+search_str_child(TGS, CDS, [], PSTR, LSTR):- true |
+	LSTR = [].
+otherwise.
+search_str_child(0, CDS, LS, PSTR, LSTR):- true |
+	search_str_end(LS, PSTR, LSTR).
+
+search_str_child(TGS, CDS, [X|LS], PSTR, LSTR):- TGS>0 |
+	setup_ncds(X, CDS, NCDS),
+	solitaire_misc:merge(LSTR1,LSTR2, LSTR),
+	list_add(PSTR, X, NPSTR),
+	search_str(TGS, X, NCDS, NPSTR, LSTR1),
+	search_str_child(TGS, CDS, LS, PSTR, LSTR2).
+
+	search_str_end([], PSTR, LSTR):- true | LSTR = [].
+	search_str_end([X|R], PSTR, LSTR):- true |
+		list_add(PSTR, X, I),
+		LSTR = [I|NLSTR],
+		search_str_end(R, PSTR, NLSTR).
+
+setup_ncds(X, CDS, ANS):- true |
+	Y := 14-X,
+	setup_ncds2(Y, CDS, ANS).
+setup_ncds2(Y, [A|CDS], ANS):- Y =< 0, Y > -5 |
+	NA := A-1,
+	ANS = [NA|NANS],
+	NY := Y-1,
+	setup_ncds2(NY, CDS, NANS).
+otherwise.
+setup_ncds2(Y, [], ANS):- true |
+	ANS = [].
+setup_ncds2(Y, [A|CDS], ANS):- true |
+	ANS = [A|NANS],
+	NY := Y-1,
+	setup_ncds2(NY, CDS, NANS).
+
+% STRAIGHT CHECK
+check_str(MAX, CDS, LS):-
+	N := 14-MAX,
+	list_ncdr(N, CDS, NCDS),
+	check_str2(NCDS, MAX, LS).
+
+check_str2([X1,X2,X3,X4,X5|R], C, D):- X1>0, X2>0, X3>0, X4>0, X5>0 |
+	D = [C|ND],
+	NC := C-1,
+	check_str2([X2,X3,X4,X5|R], NC, ND).
+otherwise.
+check_str2([X1,X2,X3,X4|[]], C, D):- true |
+	D = [].
+check_str2([X1,X2,X3,X4,X5|R], C, D):- true |
+	NC := C-1,
+	check_str2([X2,X3,X4,X5|R], NC, D).
+
+%
+% Suit 使用可能数制限を満たす STRAIGHT の組の選出
+%
+
+% 一つのストレート組についてチェック
+scheck(MAP, LSTR, NA,NB,NC,ND, ANS):-
+	lstr2rcds(LSTR, RCDS),
+%%	io:outstream([print('scheck'),print(LSTR),print(RCDS),print(ANS),nl]),
+	scheck_rank(14, MAP, RCDS, NA,NB,NC,ND, ANS).
+
+% STRAIGHT 開始ランク列 -> 必要カード数リスト
+lstr2rcds(LSTR, RCDS):- true |
+	lstr2rcds(LSTR, [0,0,0,0,0,0,0,0,0,0,0,0,0], RCDS).
+lstr2rcds([], I, O):- true |
+	O = I.
+lstr2rcds([X|R], I, O):- true |
+	Y := 14-X,
+	lstr2rcds2(Y, I, NI),
+	lstr2rcds(R, NI, O).
+lstr2rcds2(Y, [A|CDS], ANS):- Y =< 0, Y > -5 |
+	NA := A+1,
+	ANS = [NA|NANS],
+	NY := Y-1,
+	lstr2rcds2(NY, CDS, NANS).
+otherwise.
+lstr2rcds2(Y, [], ANS):- true |
+	ANS = [].
+lstr2rcds2(Y, [A|CDS], ANS):- true |
+	ANS = [A|NANS],
+	NY := Y-1,
+	lstr2rcds2(NY, CDS, NANS).
+
+% 各ランク毎にチェックしていく
+scheck_rank(R, M,C, NA,NB,NC,ND, ANS):- NA<0 | ANS = fail.
+scheck_rank(R, M,C, NA,NB,NC,ND, ANS):- NB<0 | ANS = fail.
+scheck_rank(R, M,C, NA,NB,NC,ND, ANS):- NC<0 | ANS = fail.
+scheck_rank(R, M,C, NA,NB,NC,ND, ANS):- ND<0 | ANS = fail.
+otherwise.
+scheck_rank(Rank, [], RCDS, NA,NB,NC,ND, ANS):- true |
+	ANS = [].
+otherwise.
+scheck_rank(Rank, [MAP|NMAP], [RCD|RCDS], NA,NB,NC,ND, ANS):- true |
+	scheck_rank_combi(MAP, RCD, LUC),
+%%	io:outstream([print(['- combi -',MAP,RCD,LUC]),nl]),
+	scheck_rank_branch(Rank, NMAP,RCDS, NA,NB,NC,ND, LUC, ANS).
+
+scheck_rank_branch(Rank, NMAP,RCDS, NA,NB,NC,ND, [], ANS):- true |
+	ANS = fail.
+scheck_rank_branch(Rank, NMAP,RCDS, NA,NB,NC,ND, [[DA,DB,DC,DD]|LUC], ANS):- true |
+	NNA := NA-DA,
+	NNB := NB-DB,
+	NNC := NC-DC,
+	NND := ND-DD,
+	NRank := Rank-1,
+	scheck_rank(NRank, NMAP,RCDS, NNA,NNB,NNC,NND, NANS),
+	( NANS = fail ->
+		scheck_rank_branch(Rank, NMAP,RCDS, NA,NB,NC,ND, LUC, ANS);
+	  otherwise;
+	  true ->
+		( DA=:=1 -> CA := Rank*16+1, AA = [CA|AB];
+		  DA=\=1 -> AA = AB ),
+		( DB=:=1 -> CB := Rank*16+2, AB = [CB|AC];
+		  DB=\=1 -> AB = AC ),
+		( DC=:=1 -> CC := Rank*16+3, AC = [CC|AD];
+		  DC=\=1 -> AC = AD ),
+		( DD=:=1 -> CD := Rank*16+4, AD = [CD|NANS];
+		  DD=\=1 -> AD = NANS ),
+		ANS = AA ).
+
+% MAP, RCD を満たす全組合せを返す
+scheck_rank_combi(map(A,B,C,D), 0, LUC):- true |
+	LUC = [[0,0,0,0]].
+otherwise.
+scheck_rank_combi(map(A,B,C,D), RCD, LUC):- A+B+C+D < RCD |
+	LUC = [].
+scheck_rank_combi(map(A,B,C,D), RCD, LUC):- A+B+C+D >= RCD |
+	N := A+B+C+D,
+	combination(N,RCD, CMB),
+%%	io:outstream([print(['combination',N,RCD,CMB]),nl]),
+	scheck_rank_choose([A,B,C,D], CMB, LUC).
+
+scheck_rank_choose(I, [], LUC):- true |
+	LUC = [].
+scheck_rank_choose(I, [CMB|NCMB], LUC):- true |
+	scheck_rank_choose2(I, CMB, X),
+	LUC = [X|NLUC],
+	scheck_rank_choose(I, NCMB, NLUC).
+
+scheck_rank_choose2(A,B,C):-
+	scheck_rank_choose2(1,A,B,C).
+scheck_rank_choose2(C, [], _, O):- true |
+	O = [].
+scheck_rank_choose2(C, [X|R], [], O):- true |
+	O = [0|NO],
+	scheck_rank_choose2(C, R, [], NO).
+scheck_rank_choose2(C, [0|R], CMB, O):- true |
+	O = [0|NO],
+	scheck_rank_choose2(C, R, CMB, NO).
+scheck_rank_choose2(C, [1|R], [M|CMB], O):- M = C |
+	O = [1|NO],
+	NC := C + 1,
+	scheck_rank_choose2(NC, R, CMB, NO).
+scheck_rank_choose2(C, [1|R], [M|CMB], O):- M =\= C |
+	O = [0|NO],
+	NC := C + 1,
+	scheck_rank_choose2(NC, R, [M|CMB], NO).
+
+combination(1,1, R):- R = [[1]].
+combination(2,1, R):- R = [[1],[2]].
+combination(3,1, R):- R = [[1],[2],[3]].
+combination(4,1, R):- R = [[1],[2],[3],[4]].
+combination(2,2, R):- R = [[1,2]].
+combination(3,2, R):- R = [[1,2],[1,3],[2,3]].
+combination(4,2, R):- R = [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]].
+combination(3,3, R):- R = [[1,2,3]].
+combination(4,3, R):- R = [[1,2,3],[1,2,4],[1,3,4],[2,3,4]].
+
+
+%
+% misc
+%
+list_ncdr(0, L, NL):- true |
+	NL = L.
+list_ncdr(N, [X|L], NL):- N>0 |
+	NN := N-1,
+	list_ncdr(NN, L, NL).
+
+list_add([], X, NL):- true |
+	NL = [X].
+list_add([Y|R], X, NL):- true |
+	NL = [Y|NNL],
+	list_add(R, X, NNL).
+

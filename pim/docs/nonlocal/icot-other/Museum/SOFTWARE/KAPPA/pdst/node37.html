@@ -1,0 +1,42 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 処理の流れ</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 処理の流れ">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html472 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html470 HREF="node30.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html464 HREF="node36.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html473 HREF="node38.html"> モジュール irpr_service(irpr_service.kl1)</A>
+<B>Up:</B> <A NAME=tex2html471 HREF="node30.html"> プログラミング例：名簿管理システム</A>
+<B> Previous:</B> <A NAME=tex2html465 HREF="node36.html"> クライアント側のモジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00044000000000000000> 処理の流れ</A></H2>
+<P>
+次の図は処理の流れを示す。矢印は述語呼び出しを、破線矢印はメッセージ
+送信を表している。
+（注意：述語の引数個数は、引数対を2と数えている。）
+<P>
+main:server_main/4はループしており、サービス名が送られて来ると分岐する。
+サービス名が&quot;irpr&quot;なら、<BR> irpr_request:client_request/3が、
+その他の、例えば&quot;xxx&quot;なら、xxx_request:client_request/3が呼ばれる。
+irpr_requestやxxx_requestは、ユーザが定義してサービスの具体的な内容
+を記述していくためのモジュールである。
+<P>
+irpr_service:service/2では、名簿管理データベースの操作を指定する変数Modeが
+読み込まれ、irpr_service:service_loop/7へ渡される。service_loop/7
+では、検索条件Search_condが読み込まれ、Modeと共に
+irpr_service:exec_irpr/5に渡される。
+<P>
+exec_irpr/5では、Modeをメッセージに変換して、irpr_kappaへ送る。
+irpr_kappaでは、irpr_loop/4からexec/5にメッセージが渡ると、
+kappaの原始コマンド群へと展開される。
+<P><BR>
+<P><CENTER><IMG  ALIGN=BOTTOM ALT="" SRC="../irprflow.gif"></CENTER>
+<P><BR> <HR>
+<P>
+</BODY>

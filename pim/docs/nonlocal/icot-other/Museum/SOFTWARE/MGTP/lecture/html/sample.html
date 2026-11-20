@@ -1,0 +1,164 @@
+﻿<html>
+<title>
+ELP sample
+</title>
+
+<body bgcolor="white">
+<h1>拡張論理型言語による記述例</h1>
+
+<HR>
+(% で始まる行はコメント)。<P>
+
+ゴールの記述<P>
+
+ラクーン商会との契約が成立することを証明するためのゴール : <P>
+ 
+契約が成立する(agt=レッドフォックスへのライセンス,basis=l(ラクーン,レッドフォックス)).<P>
+
+<HR>
+% 契約の成立条件<BR>
+通常の契約成立(X,Y,I)::<BR>
+契約が成立する(agt=I, basis=l(X,Y))<=<BR>
+　　申し込む(agt=X, goal=Y, obj=I),<BR>
+　　承諾する(agt=Y, goal=X, obj=I).<BR>
+<BR>
+事例111の契約成立(Y,I)::<BR>
+契約が成立する(agt=I, basis=l(ラクーン,Y))<=<BR>
+　　申し込む(agt=ラクーン, goal=Y, obj=I),<BR>
+　　最初に承諾する(agt=Y, goal=ラクーン, obj=I),<BR>
+　　ライセンス(agt=ラクーン, goal=Y, obj=hp制作ソフト, condition=3000万円, id=I).<BR>
+<BR>
+事例111の契約不成立(Y,I)::<BR>
+-契約が成立する(agt=I, basis=l(ラクーン,Y))<=<BR>
+　　申し込む(agt=ラクーン, goal=Y, obj=I),<BR>
+　　承諾する(agt=Y, goal=ラクーン, obj=I),<BR>
+　　not 最初に承諾する(agt=Y, goal=ラクーン, obj=I).<BR>
+<BR>
+事例111の契約不成立pr(X,Y,I)::<BR>
+通常の契約成立(X,Y,I)<事例111の契約不成立(Y,I)<-<BR>
+　　申し込む(agt=X, goal=Y, obj=I),<BR>
+　　承諾する(agt=Y, goal=X, obj=I).<BR>
+<BR>
+最初の承諾(X,Y,I)::<BR>
+最初に承諾する(agt=Y, goal=X, obj=I)<-<BR>
+　　承諾する(agt=Y, goal=X, obj=I),<BR>
+　　not -最初に承諾する(agt=Y, goal=X, obj=I).<BR>
+<BR>
+最初でない承諾(X,Y1,Y2,I1,I2,ID1,ID2,T1,T2)::<BR>
+-最初に承諾する(agt=Y2, goal=X, obj=I2)<-<BR>
+　　承諾する(agt=Y1, goal=X, obj=I1, id=ID1),<BR>
+　　効力が発生する(agt=ID1, time=T1),<BR>
+　　承諾する(agt=Y2, goal=X, obj=I2, id=ID2),<BR>
+　　効力が発生する(agt=ID2, time=T2),<BR>
+　 {T1<T2}.<BR>
+<BR>
+<BR>
+%% 民法<BR>
+<BR>
+97条1項(X,Y,I,T)::<BR>
+効力が発生する(agt=I, time=T)<=<BR>
+　　隔地者である(agt=X, basis=Y),<BR>
+　　意思表示する(agt=Y, goal=X, id=I),<BR>
+　　到達する(agt=I, time=T).<BR>
+<BR>
+意思表示_承諾(X,Y,I,ID)::<BR>
+意思表示する(agt=Y, goal=X, obj=I, id=ID)<-<BR>
+　　承諾する(agt=Y, goal=X, obj=I, id=ID).<BR>
+<BR>
+%隔地者(X,Y)::<BR>
+%隔地者である(agt=X, basis=Y)<-隔地者である(agt=Y, basis=X).<BR>
+<BR>
+526条1項(X,Y,I,T)::<BR>
+効力が発生する(agt=I, time=T)<=<BR>
+　　隔地者である(agt=X, basis=Y),<BR>
+　　承諾する(agt=Y, goal=X, id=I),<BR>
+　　発信される(agt=I, time=T).<BR>
+<BR>
+526条1項pr(X,Y,I,T1,T2)::<BR>
+97条1項(X,Y,I,T1)<526条1項(X,Y,I,T2,T1)<-<BR>
+　　隔地者である(agt=X, basis=Y),<BR>
+　　承諾する(agt=Y, goal=X, id=I),<BR>
+　　発信される(agt=I, time=T2),<BR>
+　　到達する(agt=I, time=T1).<BR>
+<BR>
+<BR>
+%% 学説<BR>
+<BR>
+到達主義(X,Y,I,T)::<BR>
+効力が発生する(agt=I, time=T)<=<BR>
+　　隔地者である(agt=X, basis=Y),<BR>
+　　承諾する(agt=Y, goal=X, id=I),<BR>
+　　到達する(agt=I, time=T, implement=電子メール).<BR>
+<BR>
+通説pr(X,Y,I,T1,T2)::<BR>
+526条1項(X,Y,I,T1)<到達主義(X,Y,I,T2,T1)<-<BR>
+　　隔地者である(agt=X, basis=Y),<BR>
+　　承諾する(agt=Y, goal=X, id=I),<BR>
+　　発信される(agt=I, time=T1),<BR>
+　　到達する(agt=I, time=T2).<BR>
+<BR>
+<BR>
+%% 無矛盾性制約<BR>
+<BR>
+ic(I,T1,T2):: <- 効力が発生する(agt=I, time=T1),<BR>
+　　効力が発生する(agt=I, time=T2),<BR>
+　　{T1!=T2}.<BR>
+%　　{equal(T1,T2)==false}.<BR>
+<BR>
+<BR>
+%% 事実関係<BR>
+<BR>
+申込_レッドフォックス::<BR>
+申し込む(agt=ラクーン, goal=レッドフォックス, <BR>
+　　　　　 obj=レッドフォックスへのライセンス)<-- .<BR>
+<BR>
+ライセンス_レッドフォックス::<BR>
+ライセンス(agt=ラクーン, goal=レッドフォックス, obj=hp制作ソフト,<BR>
+condition=3000万円, id=レッドフォックスへのライセンス)<-- .<BR>
+<BR>
+承諾_レッド::<BR>
+承諾する(agt=レッドフォックス, goal=ラクーン, <BR>
+　　　　　 obj=レッドフォックスへのライセンス, id=レッドフォックスの承諾)<-- .<BR>
+<BR>
+発信_レッド::<BR>
+発信される(agt=レッドフォックスの承諾, time=7070012, implement=電子メール)<-- .<BR>
+<BR>
+到達_レッド::<BR>
+到達する(agt=レッドフォックスの承諾, time=7070015, implement=電子メール)<-- .<BR>
+<BR>
+隔地者_レッド1::<BR>
+隔地者である(agt=ラクーン, basis=レッドフォックス)<-- .<BR>
+<BR>
+隔地者_レッド2::<BR>
+隔地者である(agt=レッドフォックス, basis=ラクーン)<-- .<BR>
+<BR>
+申込_キヌタ::<BR>
+申し込む(agt=ラクーン, goal=キヌタ, obj=キヌタへのライセンス)<-- .<BR>
+<BR>
+ライセンス_キヌタ::<BR>
+ライセンス(agt=ラクーン, goal=キヌタ, obj=hp制作ソフト, condition=3000万円, <BR>
+　　　　　　 id=キヌタへのライセンス)<-- .<BR>
+<BR>
+承諾_キヌタ::<BR>
+承諾する(agt=キヌタ, goal=ラクーン, obj=キヌタへのライセンス, <BR>
+　　　　　　 id=キヌタの承諾)<-- .<BR>
+<BR>
+発信_キヌタ::<BR>
+発信される(agt=キヌタの承諾, time=7062000, implement=電子メール)<-- .<BR>
+<BR>
+到達_キヌタ::<BR>
+到達する(agt=キヌタの承諾, time=7071600, implement=電子メール)<-- .<BR>
+<BR>
+隔地者_キヌタ1::<BR>
+隔地者である(agt=ラクーン, basis=キヌタ)<-- .<BR>
+<BR>
+隔地者_キヌタ2::<BR>
+隔地者である(agt=キヌタ, basis=ラクーン)<-- .<BR>
+<BR>
+
+<!-- =============================================================== -->
+<P><HR>
+<A HREF="hypoExample.html">「MGTP 上での仮説推論の例」に戻る</A>
+</body>
+</html>
+

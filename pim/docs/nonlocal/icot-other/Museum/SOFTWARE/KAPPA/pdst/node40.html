@@ -1,0 +1,74 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 名簿管理システムサーバへのメッセージ送信</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 名簿管理システムサーバへのメッセージ送信">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html502 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html500 HREF="node38.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html496 HREF="node39.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html503 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B>Up:</B> <A NAME=tex2html501 HREF="node38.html"> モジュール irpr_service(irpr_service.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html497 HREF="node39.html"> 名簿管理システムサーバの生成</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00045200000000000000> 名簿管理システムサーバへのメッセージ送信</A></H3>
+<P>
+  irpr_clientのコマンドパラメタを、名簿管理システムサーバへの
+メッセージに変換して、インターフェースストリームIrprITRを介して送る。
+これらのメッセージの実行内容は、irpr_kappa.kl1で定義されている。
+<P>
+引数の意味は順に次の通り。
+<DL ><DT>Mode
+<DD> irpr_clientのコマンドパラメタをアトム化したもの
+ <DT>Search_cond
+<DD> irpr_clientの標準入力をまとめてストリング化した
+	もの
+ <DT>Result
+<DD> irpr_clientの標準出力に書き出すものを指定する。
+	vls(VLS), vl(VL), term(Term)の3種類の出力方法がある。
+<P>
+ </DL>
+<P>
+<PRE>exec_irpr(scd, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_current_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(shd, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_history_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(sad, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= search_all_data(Search_cond, Result0),
+    Result = vls(Result0).
+exec_irpr(anm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= add_new_member(Search_cond, Result0),
+    Result = vl(Result0).
+exec_irpr(mm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= modify_member(Search_cond, Result0),
+    Result = vl(Result0).
+exec_irpr(dm, Search_cond, Result)-IrprITR :-
+    IrprITR &lt;= delete_member(Search_cond, Result0),
+    Result = term(Result0).
+otherwise.
+exec_irpr(Mode, _Search_cond, Result)-IrprITR :-
+    Result = term(abnormal(&quot;Illegal Parameter.&quot;,Mode)).
+</PRE>
+<P>
+引数Resultの出力方法について補足する。
+<P>
+<DL ><DT>vls(VLS)
+<DD> irpr_kappa:read_record/5の要求駆動のため、
+	出力が終了する毎にVLSがリストにユニファイされる。<BR> 
+	irpr_clientの標準出力には、normal([...])の形式で出力される。
+ <DT>vl(VL)
+<DD> VLは結果のタームで、irpr_clientの標準出力には
+	normal(VL)の形式で出力される。
+ <DT>term(Term)
+<DD> Termは結果のタームで、irpr_clientの標準出力には
+	Termの形式で出力される。
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

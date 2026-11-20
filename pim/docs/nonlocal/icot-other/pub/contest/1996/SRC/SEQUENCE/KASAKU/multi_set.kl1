@@ -1,0 +1,61 @@
+:- module multi_set.
+
+encode([]   ,Out) :- Out = [].
+encode([H|T],Out) :- terminal(T,H,1,Out,[]).
+
+node([]   ,V,L,R) :-          L = [], R = [].
+node([H|T],V,L,R) :- H >= V | R = [H|NR], node(T,V,L,NR).
+node([H|T],V,L,R) :- H <  V | L = [H|NL], node(T,V,NL,R).
+
+terminal([]   ,H0,N,Xs ,Ys) :- Xs=[H0,N|Ys].
+terminal([H|T],H0,N,Xs, Ys) :- H =:= H0 |
+    terminal(T,H0,~(N+1),Xs,Ys).
+terminal([H|T],H0,N,Xs0,Ys) :- H  >  H0 |
+    node(T,H ,L,R), terminal(L,H0,N,Xs0,Xs1), terminal(R,H,1,Xs1,Ys).
+terminal([H|T],H0,N,Xs0,Ys) :- H  <  H0 |
+    node(T,H0,L,R), terminal(L,H,1,Xs0,Xs1), terminal(R,H0,N,Xs1,Ys).
+
+decode([]     ,L) :- L = [].
+decode([H,N|T],L) :- decode(N,H,T,L).
+
+decode(N,H,T      ,L) :- N > 0 | L = [H|L1], decode(~(N-1),H,T,L1).
+decode(0,_,[]     ,L) :- L = [].
+decode(0,_,[H,N|T],L) :- decode(N,H,T,L).
+
+union([],M1,M) :- M1 = M.
+union(M0,[],M) :- M0 = M.
+union(M0,M1,M) :- M0 = [H0,_ |_ ], M1 = [H1,N1|T1], H0  >  H1 |
+    M = [H1,N1	    |MN], union(M0,T1,MN).
+union(M0,M1,M) :- M0 = [H0,N0|T0], M1 = [H1,_ |_ ], H0  <  H1 |
+    M = [H0,N0	    |MN], union(T0,M1,MN).
+union(M0,M1,M) :- M0 = [H0,N0|T0], M1 = [H1,N1|T1], H0 =:= H1 |
+    M = [H0,~(N0+N1)|MN], union(T0,T1,MN).
+
+intersection([],_ ,M) :- M = [].
+intersection(_ ,[],M) :- M = [].
+intersection(M0,M1,M) :- M0=[H0,_ |_ ], M1=[H1,_ |T1], H0  >  H1 |
+		    intersection(M0,T1,M ).
+intersection(M0,M1,M) :- M0=[H0,_ |T0], M1=[H1,_ |_ ], H0  <  H1 |
+		    intersection(T0,M1,M ).
+intersection(M0,M1,M) :- M0=[H0,N0|T0], M1=[H1,N1|T1], H0 =:= H1, N0 >= N1 |
+    M = [H0,N1|MN], intersection(T0,T1,MN).
+intersection(M0,M1,M) :- M0=[H0,N0|T0], M1=[H1,N1|T1], H0 =:= H1, N0 =< N1 |
+    M = [H0,N0|MN], intersection(T0,T1,MN).
+
+difference([],_ ,M) :- M = [].
+difference(M0,[],M) :- M = M0.
+difference(M0,M1,M) :- M0=[H0,_ |_ ], M1=[H1,_ |T1], H0  >  H1 |
+			  difference(M0,T1,M ).
+difference(M0,M1,M) :- M0=[H0,N0|T0], M1=[H1,_ |_ ], H0  <  H1 |
+    M = [H0,N0	    |MN], difference(T0,M1,MN).
+difference(M0,M1,M) :- M0=[H0,N0|T0], M1=[H1,N1|T1], H0 =:= H1, N0 >  N1 |
+    M = [H0,~(N0-N1)|MN], difference(T0,T1,MN).
+difference(M0,M1,M) :- M0=[H0,N0|T0], M1=[H1,N1|T1], H0 =:= H1, N0 =< N1 |
+			  difference(T0,T1,M ).
+
+contraction([]     ,M) :- M = [].
+contraction([H,_|T],M) :- M = [H,1|MN], contraction(T,MN).
+
+choose([H,1|T],E,S) :-	       E = H, S = T.
+choose([H,N|T],E,S) :- N > 1 | E = H, S = [H,~(N-1)|T].
+

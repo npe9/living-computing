@@ -1,0 +1,565 @@
+:- module multi_set.
+
+% encode/2
+% decode/2
+% union/3
+% intersection/3
+% difference/3
+% contraction/2
+% choose/3
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%                     %
+%     E N C O D E     %
+%                     %
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% encode(+L,-M) : リスト表現のマルチ集合を内部表現にする。
+%
+% [引数]
+% +L : 与えられたマルチ集合のリスト表現
+% -M : Lの内部表現
+%
+% ‥‥内部表現‥‥
+% 要素とその個数からなる2要素のファンクタのリストで、
+% 要素の大きさで昇順にソートされている。
+% ex.) [1,5,2,3,6,2,4,5,2,1] → [(1,2), (2,3), (3,1), (4,1), (5,2), (6,1)]
+%
+
+% まずリストを降順にソートしてから内部表現にする。
+encode(L, M) :-
+    sort(L, L2),
+    make_code(L2, [], M).
+
+%
+% make_code(+L,+M0,-M) : 降順にソートされたリストを内部表現にする。
+%
+% [引数]
+% +L : 降順にソートされたリスト
+% +M0 : 内部表現を作っている途中の結果
+% -M : Lの内部表現
+%
+
+% リストの先頭が前の要素と違っていれば、新しい要素としてM0に追加する
+make_code([X|L], [(Y,Count) | M0], M) :-
+    X < Y |
+	make_code(L, [(X,1) | [(Y,Count)|M0]], M).
+% リストの先頭が前と同じ要素ならば、要素の個数を1増やす。
+make_code([X|L], [(X,Count) | M0], M) :-
+    NewCount := Count + 1,
+    make_code(L, [(X,NewCount) | M0], M).
+% M0が空のとき(一番最初)
+make_code([X|L], [], M) :-
+    make_code(L, [(X,1)], M).
+% 最後までリストをたどったら、MをM0にする。
+make_code([], M0, M) :-
+    M = M0.
+
+
+%
+% sort(+L,-M) : リストLを降順にソートする
+%
+% [引数]
+% +L : ソートするリスト
+% -M : ソートした結果のリスト
+%
+
+% まず、リストの先頭部分で傾向を見て、傾向に応じたソート方法を使う。
+sort([X|L], M) :-
+    scan(X, L, 0, 1, 1, U, D),
+    sort([X|L], U, D, M).
+% 空リストをソートしても空リスト。
+sort([], M) :-
+    M = [].
+
+
+%
+% scan(+B,+L,+T,+UU,+DD,-U,-D) : リストの先頭100要素について、昇順列/降順列の
+%                                数を調べる。
+%
+% [引数]
+% +B : 一つ前の要素
+% +L : 調べるリスト
+% +T : 現在いくつの要素を調べたか
+% +UU : 現在までに見つかった昇順列の個数
+% +DD : 現在までに見つかった降順列の個数
+% -U : 先頭100要素に見使った昇順列の個数
+% -U : 先頭100要素に見使った降順列の個数
+%
+
+% 一つ前の要素より小さければ、昇順列の個数を1増やす。
+scan(B, [X|L], T, UU, DD, U, D) :-
+    B > X, T < 100 |
+	NewUU := UU + 1,
+	NewT := T + 1,
+	scan(X, L, NewT, NewUU, DD, U, D).
+% 一つ前の要素より大きければ、降順列の個数を1増やす。
+scan(B, [X|L], T, UU, DD, U, D) :-
+    B < X, T < 100 |
+	NewDD := DD + 1,
+	NewT := T + 1,
+	scan(X, L, NewT, UU, NewDD, U, D).
+% 一つ前の要素と同じであれば、昇順列にも降順列にも含まれる。
+scan(B, [B|L], T, UU, DD, U, D) :-
+    T < 100 |
+	NewT := T + 1,
+	scan(B, L, NewT, UU, DD, U, D).
+% リストが空になれば終り。
+scan(_, [], _, UU, DD, U, D) :-
+    U = UU,
+    D = DD.
+% 調べた個数が100個に達すれば終り。
+scan(_, _, 100, UU, DD, U, D) :-
+    U = UU,
+    D = DD.
+
+
+%
+% sort(+L,+U,+D,-M) : リストの先頭部分の傾向に適した方法で降順にソートする
+%
+% [引数]
+% +L : ソートするリスト
+% +U : Lの先頭100要素に存在する昇順列の個数
+% +D : Lの先頭100要素に存在する降順列の個数
+% -M : Lを降順にソートした結果のリスト
+%
+
+% 昇順列が少ない(1つの昇順列が大きい)ときは、昇順列を利用したマージソート。
+sort([X|L], U, D, M) :-
+    U =< D, U < 30 |
+	split_list_u(L, [X], LL),
+	merge_sort(LL, [], M).
+% 降順列が少ない(1つの降順列が大きい)ときは、降順列を利用したマージソート。
+sort([X|L], U, D, M) :-
+    D =< U, D < 30 |
+	split_list_d(L, [X|DL], X, DL, LL),
+	merge_sort(LL, [], M).
+% それ以外はクイックソート。
+sort(L, U, D, M) :-
+    U >= 30, D >= 30 |
+	quick_sort(L, [], M).
+
+
+%
+% split_list_u(+L,+D,+LL) : リストの昇順列毎のリストを作る(各小リストは降順)
+%
+% [引数]
+% +L : 与えられたリスト
+% +D : 現在調べている降順列
+% +LL : 各Dを要素とするリスト
+%
+% (ex.) [1,3,5,4,2,5,3,1,2] → [[5,3,1], [4], [5,2], [3], [2,1]]
+%
+
+% リストと現在の降順列の先頭要素X,Yが X >= Y ならばXは現在の降順列に含まれる
+split_list_u([X|L], [Y|D], LL) :-
+    X >= Y |
+	split_list_u(L, [X,Y|D], LL).
+% リストと現在の降順列の先頭要素X,Yが X > Y ならばXは現在の降順列に含まれない
+% ので、LLにDを追加してXを新しい降順列の要素とする。
+split_list_u([X|L], [Y|D], LL) :-
+    X < Y |
+	LL = [[Y|D] | NewLL],
+	split_list_u(L, [X], NewLL).
+% リストが空になったら、LLに最後の降順列を追加する。
+split_list_u([], D, LL) :-
+    LL = [D].
+
+%
+% split_list_d(+L,-DL,+Y,-D,-LL) : リストの降順列毎のリストを作る
+%
+% [引数]
+% +L : 与えられたリスト
+% -DL : 現在の降順列
+% +Y : 現在の降順列の最小の要素
+% -D : 現在の降順列の再後尾の要素
+% -LL : 各DLを要素とするリスト
+%
+% (ex.) [1,3,5,4,2,5,3,1,2] → [[1], [3], [5], [4,2], [5,3,1], [2]]
+%
+
+% リストの先頭要素Xと現在の降順列の最小要素Yが X =< Y ならば
+% Xは現在の降順列に含まれる
+split_list_d([X|L], DL, Y, D, LL) :-
+    X =< Y |
+	D = [X|NewD],
+	split_list_d(L, DL, X, NewD, LL).
+% リストの先頭要素Xと現在の降順列の最小要素Yが X > Y ならば
+% Xは現在の降順列に含まれないので、現在の降順列を閉じてLLに追加し、
+% Xを新しい降順列の要素とする。
+split_list_d([X|L], DL, Y, D, LL) :-
+    X > Y |
+	D = [],
+	LL = [DL|NewLL],
+	NewDL = [X|NewD],
+	split_list_d(L, NewDL, X, NewD, NewLL).
+% リストが空になったら、最後の降順列を閉じてLLに追加する。
+split_list_d([], DL, _, D, LL) :-
+    D = [],
+    LL = [DL].
+
+
+%
+% merge_sort(+LL,+NewLL,-M) : 降順列のリストをマージして単一の降順リストを作る
+%
+% [引数]
+% +LL : 降順列のリスト
+% +NewLL : LLの要素を2つずつマージした結果を要素とする降順列のリスト
+% -M : 単一の降順リスト
+%
+% ex.) [[5,3,1], [4], [5,2], [3], [2,1]] -> [5,5,4,3,3,2,2,1,1]
+%
+
+% LLが2要素以上ある場合、それをマージした結果をNewLLに追加する。
+merge_sort([X,Y|LL], NewLL, M) :-
+    merge(X, Y, Z),
+    merge_sort(LL, [Z|NewLL], M).
+% LLが1要素しかなくNewLLが空でない場合は、要素をそのままNewLLに追加する。
+merge_sort([X], NewLL, M) :-
+    NewLL \= [] |
+	merge_sort([X|NewLL], [], M).
+% LLの要素を最後までマージしたら、NewLLを新たにLLとしてマージする。
+% (sort/2 の定義から、元々LLが空ということはない)
+merge_sort([], NewLL, M) :-
+    merge_sort(NewLL, [], M).
+% LLが1要素しかなくNewLLが空の場合、MはLLの要素(単一降順リスト)
+merge_sort([X], [], M) :-
+    M = X.
+
+
+%
+% merge(+XL,+YL,-Z) : 2つの降順リストを降順にマージする
+%
+% [引数]
+% +XL,+YL : 与えられた2つの降順リスト
+% -Z : XLとYLをマージした結果の降順リスト
+%
+
+% XL,YLの先頭要素X,Yが X >= Y ならば、Xを先にZに追加する。
+merge([X|XL], [Y|YL], Z) :-
+    X >= Y |
+	Z = [X|NewZ],
+	merge(XL, [Y|YL], NewZ).
+% XL,YLの先頭要素X,Yが X =< Y ならば、Yを先にZに追加する。
+merge([X|XL], [Y|YL], Z) :-
+    X =< Y |
+	Z = [Y|NewZ],
+	merge([X|XL], YL, NewZ).
+% XLが空ならばZはYLそのもの。
+merge([], YL, Z) :-
+    Z = YL.
+% YLが空ならばZはXLそのもの。
+merge(XL, [], Z) :-
+    Z = XL.
+
+
+
+%
+% quick_sort(+X,+Z,-Y) : 与えられたリストをクイックソートで降順にソートする
+%
+% [引数]
+% +X : ソートするリスト
+% +Z : 分割したリストをつなぐためのリスト
+% -Y : ソート結果のリスト
+%
+
+% リストの先頭3要素の大小関係を調べ、真中の値を境界にして2つに分割し、
+% それぞれをソート
+quick_sort([P,Q,R|X], Z, Y) :-
+    P >= Q, Q >= R |
+	partition(Q, X, Large, Small),
+	quick_sort([P|Large], [Q|Y1], Y),
+	quick_sort([R|Small], Z, Y1).
+quick_sort([P,Q,R|X], Z, Y) :-
+    P >= R, R >= Q |
+	partition(R, X, Large, Small),
+	quick_sort([P|Large], [R|Y1], Y),
+	quick_sort([Q|Small], Z, Y1).
+quick_sort([P,Q,R|X], Z, Y) :-
+    Q >= P, P >= R |
+	partition(P, X, Large, Small),
+	quick_sort([Q|Large], [P|Y1], Y),
+	quick_sort([R|Small], Z, Y1).
+quick_sort([P,Q,R|X], Z, Y) :-
+    Q >= R, R >= P |
+	partition(R, X, Large, Small),
+	quick_sort([Q|Large], [R|Y1], Y),
+	quick_sort([P|Small], Z, Y1).
+quick_sort([P,Q,R|X], Z, Y) :-
+    R >= P, P >= Q |
+	partition(P, X, Large, Small),
+	quick_sort([R|Large], [P|Y1], Y),
+	quick_sort([Q|Small], Z, Y1).
+quick_sort([P,Q,R|X], Z, Y) :-
+    R >= Q, Q >= P |
+	partition(Q, X, Large, Small),
+	quick_sort([R|Large], [Q|Y1], Y),
+	quick_sort([P|Small], Z, Y1).
+% リストが2要素だけならば、大きい方から並べたものとZをYとする。
+quick_sort([P,Q], Z, Y) :-
+    P >= Q |
+	Y = [P,Q|Z].
+quick_sort([P,Q], Z, Y) :-
+    Q >= P |
+	Y = [Q,P|Z].
+% リストが要素だけならば、要素ZをYとする。
+quick_sort([P], Z, Y) :-
+    Y = [P|Z].
+% リストが空ならば、ZがそのままY。
+quick_sort([], Z, Y) :-
+    Y = Z.
+
+
+%
+% partition(+B,+L,-Large,-Small) : リストを基準値との大小関係で分割する
+%
+% [引数]
+% +B : 基準値
+% +L : 分割するリスト
+% -Large : B以上の要素を持つリスト
+% -Small : Bより小さい要素を持つリスト
+%
+
+% リストの先頭要素が基準値以上なら、Largeに追加する。
+partition(B, [X|XL], Large, Small) :-
+    X >= B |
+	Large = [X|NewLarge],
+	partition(B, XL, NewLarge, Small).
+% リストの先頭要素が基準値未満なら、Smallに追加する。
+partition(B, [X|XL], Large, Small) :-
+    X < B |
+	Small = [X|NewSmall],
+	partition(B, XL, Large, NewSmall).
+% リストが空ならば、Large,Smallともに空
+partition(_, [], Large, Small) :-
+    Large = [],
+    Small = [].
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%                     %
+%     D E C O D E     %
+%                     %
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% decode(+M,-L) : マルチ集合の内部表現をリストに戻す。
+%
+% [引数]
+% +M : 与えられた内部表現
+% -L : M のリスト表現
+%
+
+% 要素の個数が1以上なら要素をリストに追加し、個数を1減らす。
+decode([(X,Count) | M], L) :-
+    Count > 1 |
+	L = [X|NewL],
+	NewCount := Count - 1,
+	decode([(X,NewCount) | M], NewL).
+% 要素の個数が1なら要素をリストに追加し、次の要素へ。
+decode([(X,1) | M], L) :-
+    L = [X|NewL],
+    decode(M, NewL).
+decode([], L) :-
+    L = [].
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%
+%                   %
+%     U N I O N     %
+%                   %
+%%%%%%%%%%%%%%%%%%%%%
+
+%
+% union(+M0,+M1,-M) : 2つのマルチ集合の和集合を求める
+%
+% [引数]
+% +M0,+M1 : 与えられた2つのマルチ集合
+% -M : M0 ∪ M1 の結果のマルチ集合
+%
+
+% M0,M1の先頭要素X,Yを比較し、X < Y ならM1にXは存在しないのでXをそのまま
+% Mに追加する。
+union([(X,CountX) | M0], [(Y,CountY) | M1], M) :-
+    X < Y |
+	M = [(X,CountX) | NewM],
+	union(M0, [(Y,CountY) | M1], NewM).
+% M0,M1の先頭要素X,Yを比較し、X > Y ならM0にYは存在しないのでYをそのまま
+% Mに追加する。
+union([(X,CountX) | M0], [(Y,CountY) | M1], M) :-
+    X > Y |
+	M = [(Y,CountY) | NewM],
+	union([(X,CountX) | M0], M1, NewM).
+% M0,M1の先頭要素が同じならば、それぞれの個数の合計だけMに追加する。
+union([(X,Count1) | M0], [(X,Count2) | M1], M) :-
+    NewCount := Count1 + Count2,
+    M = [(X,NewCount) | NewM],
+    union(M0, M1, NewM).
+% M0が空ならMはM1そのもの。
+union([], M1, M) :-
+    M = M1.
+% M1が空ならMはM0そのもの。
+union(M0, [], M) :-
+    M = M0.
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                 %
+%     I N T E R S E C T I O N     %
+%                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% intersection(+M0,+M1,-M) : 2つのマルチ集合の積集合を求める
+%
+% [引数]
+% +M0,+M1 : 与えられた2つのマルチ集合
+% -M : M0 ∩ M1 の結果のマルチ集合
+%
+
+% M0,M1 の先頭要素を比較し、X > Y ならM0にYは存在しないのでYを捨てる。
+intersection([(X,_) | M0], [(Y,CountY) | M1], M) :-
+    X < Y |
+	intersection(M0, [(Y,CountY) | M1], M).
+% M0,M1 の先頭要素を比較し、X < Y ならM1にXは存在しないのでXを捨てる。
+intersection([(X,CountX) | M0], [(Y,_) | M1], M) :-
+    X > Y |
+	intersection([(X,CountX) | M0], M1, M).
+% M0,M1の先頭要素が同じでM0の中の個数の方が多ければ、M1に含まれる
+% 個数だけMに追加する。
+intersection([(X,Count1) | M0], [(X,Count2) | M1], M) :-
+    Count1 >= Count2 |
+	M = [(X,Count2) | NewM],
+	intersection(M0, M1, NewM).
+% M0,M1の先頭要素が同じでM1の中の個数の方が多ければ、M0に含まれる
+% 個数だけMに追加する。
+intersection([(X,Count1) | M0], [(X,Count2) | M1], M) :-
+    Count1 =< Count2 |
+	M = [(X,Count1) | NewM],
+	intersection(M0, M1, NewM).
+% M0が空ならMも空。
+intersection([], _, M) :-
+    M = [].
+% M1が空ならMも空。
+intersection(_, [], M) :-
+    M = [].
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                              %
+%     D I F F E R E N C E      %
+%                              %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% difference(+M0,+M1,-M) : 2つのマルチ集合の差集合を求める
+%
+% [引数]
+% +M0,+M1 : 与えられた2つのマルチ集合
+% -M : M0 \ M1 の結果のマルチ集合
+%
+
+% M0,M1の先頭要素X,Yを比較し、X > Y ならM0にYは存在しないのでYを捨てる。
+difference([(X,CountX) | M0], [(Y,_) | M1], M) :-
+    X > Y |
+	difference([(X,CountX) | M0], M1, M).
+% M0,M1の先頭要素X,Yを比較し、X < Y ならM1にXは存在しないのでXをそのまま
+% Mに追加する。
+difference([(X,CountX) | M0], [(Y,CountY) | M1], M) :-
+    X < Y |
+	M = [(X,CountX) | NewM],
+	difference(M0, [(Y,CountY) | M1], NewM).
+% M0,M1の先頭要素が同じでM0の中の個数の方が多ければ、M0に含まれる個数から
+% M1に含まれる個数を引いた数だけMに追加する。
+difference([(X,Count1) | M0], [(X,Count2) | M1], M) :-
+    Count1 > Count2 |
+	NewCount := Count1 - Count2,
+	M = [(X,NewCount) | NewM],
+	difference(M0, M1, NewM).
+% M0,M1の先頭要素が同じで、M0に含まれる個数の方が多くなければ捨てる。
+difference([(X,Count1) | M0], [(X,Count2) | M1], M) :-
+    Count1 =< Count2 |
+	difference(M0, M1, M).
+% M0が空ならMも空。
+difference([], _, M) :-
+    M = [].
+% M1が空ならMはM0そのもの。
+difference(M0, [], M) :-
+    M = M0.
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                               %
+%     C O N T R A C T I O N     %
+%                               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% contraction(+M0,-M) : 与えられたマルチ集合の重複を取り除く。
+%
+% [引数]
+% +M0 : 与えられたマルチ集合
+% -M : 重複を取り除いたマルチ集合
+%
+
+% 全ての要素について個数を1にする。
+contraction([(X,_) | M0], M) :-
+    M = [(X,1) | NewM],
+    contraction(M0, NewM).
+contraction([], M) :-
+    M = [].
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%                     %
+%     C H O O S E     %
+%                     %
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+% choose(+M,-E,-S) : 与えられたマルチ集合から要素を1つ取り出す。
+%
+% [引数]
+% +M : 与えられたマルチ集合
+% -E : Mから取り出した1個の要素
+% -S : MからEを取り出した残りのマルチ集合
+%
+
+% 集合の先頭要素が2個以上あるときは、個数を減らす。
+choose([(X,Count) | M], E, S) :-
+    Count > 1 |
+	E = X,
+	NewCount := Count - 1,
+	S = [(X,NewCount) | M].
+% 先頭要素が1個だけのときは、要素を取り除く。
+choose([(X,1) | M], E, S) :-
+    E = X,
+    S = M.

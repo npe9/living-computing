@@ -1,0 +1,519 @@
+%  Copyright (C) 1997 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp>
+%                                                 Nov 15, 1997
+
+:- module life.
+
+compute(Gmax,InitialPointList,FinalPointList) :-
+	pickline(InitialPointList, Lines, FirstLine, LastLine),
+	current_node(_N, NAll),
+	calcunit(FirstLine, LastLine, Gmax, NAll, Unit),
+	pcontrol(Gmax, Lines, FinalLines, NAll, Unit, FirstLine),
+	decodeline([], FinalLines, FinalPointList).
+
+% pcontrol/6 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Generation max
+%	+Lines
+%	-FinalLines
+%	+Number of All processor
+%	+Unit of single process
+%	+Y of FirstLine
+pcontrol(Gmax, Lines, FLs, NAll, Unit, FirstLine) :-
+	FL2 := FirstLine - 1, NextL := FL2 + Unit |
+	single(Gmax, PL, FL2, NextL, UpIn, UpOut, LoIn, LoOut, Result),
+	FLtail = [Result | FLRest],
+	dummyup(Gmax, NAll, Unit, FL2, [[] | UpOut], UpIn, 0, FLs, FLtail),
+	pcontrol(Gmax, Lines, FLRest, NAll, Unit, NextL, LoIn, LoOut, 0, PL, FL2, []).
+
+
+% pcontrol/12 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Generation max
+%	+Lines
+%	-FinalLines
+%	+Number of All processor
+%	+Unit of single process
+%	+NextLines	( First Line of next processor )
+%	+In Stream from Lower process
+%	+Out Stream to Lower process
+%	+Processor Engine Number
+%	+Lines for current processor
+%	+Previous Y
+%	+Previous Xs
+pcontrol(G, [], FL, NAll, Unit, NextL, LoIn, LoOut, PEN, PL, PrevY, PrevXs) :-
+	NPEN := (PEN + 1) mod NAll |
+	PL = [],
+	(PrevY =:= NextL - 1 ->
+		LoOut2 = [PrevXs | LoOut];
+	otherwise;
+	true->
+		LoOut2 = [[] | LoOut]
+	),
+	dummylow(G, NAll, Unit, NextL, LoOut2, LoIn, NPEN,  FL).
+pcontrol(G, [line(Y, Xs) | LR], FL, NAll, Unit, NextL, LoIn, LoOut, PEN, PL, PrevY, PrevXs) :-
+	Y >= NextL,
+	NewNextL := NextL + Unit, NPEN := ( PEN + 1 ) mod NAll |
+	PL = [],
+	single(G, PL2, NextL, NewNextL, NUpIn, NUpOut, NLoIn, NLoOut, Result)@node(NPEN),
+	FL = [Result | FLRest],
+	pcontrol(G, [line(Y, Xs) | LR], FLRest, NAll, Unit, NewNextL,
+					NLoIn, NLoOut, NPEN, PL2, Y, Xs),
+	(Y =:= NextL ->
+		LoIn = [Xs | NUpOut];
+	otherwise;
+	true ->
+		LoIn = [[] | NUpOut]
+	),
+	(PrevY =:= NextL - 1 ->
+		NUpIn = [PrevXs | LoOut];
+	otherwise;
+	true->
+		NUpIn = [[] | LoOut]
+	).
+otherwise.
+pcontrol(G, [line(Y, Xs) | LR], FL, NAll, Unit, NextL, LoIn, LoOut, PEN, PL, _PrevY, _PrevXs) :-
+	PL = [line(Y, Xs) | PLR],
+	pcontrol(G, LR, FL, NAll, Unit, NextL, LoIn, LoOut, PEN, PLR, Y, Xs).
+
+
+% single/9 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Generation max
+%	+Source Lines
+%	+Y of FirstLine
+%	+Y of LastLine + 1 ( Y of next process's FirsrtLine )
+%	+In Stream from Upper Lines Process
+%	-Out Stream to Upper Lines Process
+%	+In Stream from Lower Lines Process
+%	-Out Stream to Lower Lines Process
+%	-Result
+single(Gmax, Lines, _FL, _LL, _UpIn, UpOut, _LoIn, LoOut, Result) :-
+	Gmax =< 0 |
+	Lines = Result,
+	UpOut = [],
+	LoOut = [].
+otherwise.
+single(G, Lines, FirstL, LastL, [Up | UpIns], UpOuts, [Lo | LoIns], LoOuts, Result) :-
+	G2 := G - 1 |
+	checkline(Lines, NextLs, FirstL, LastL, Up, UpOut, Lo, LoOut),
+	LoOuts = [ LoOut | LoOuts2],
+	UpOuts = [ UpOut | UpOuts2],
+	single(G2, NextLs, FirstL, LastL, UpIns, UpOuts2, LoIns, LoOuts2, Result).
+
+% checkline/8 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+LineList
+%	-Result Point Lines
+%	+Y of first line
+%	+Y of last line + 1
+%	+Xs of last line from upper process
+%	-Xs of first line to upper process
+%	+Xs of first line from lower process
+%	-Xs of last line to lower process
+checkline([], ResultXLines, FirstL, LastL, Up, UpOut, Lo, LoOut) :-
+	Last := LastL - 1 |
+	linelower(Up, Points1),
+	umpire(Points1, UpOut),
+	linelower(Lo, Points2),
+	umpire(Points2, LoOut),
+	putxstolist(Last, LoOut, XL1, []),
+	putxstolist(FirstL, UpOut, ResultXLines, XL1).
+checkline([line(Y, Xs) | LineRest], ResultXs, FirstL, LastL, Up, UpOut, Lo, LoOut) :-
+	Y = FirstL |
+	linelower(Up, Points1),
+	linemiddle(Xs, Points1, Points2),
+	linelower(Xs, Points3),
+	checkdot(LineRest, Points2, Points3, Y, ResultXs, Lo, LoOut, LastL),
+	getfirst(FirstL, ResultXs, UpOut).
+otherwise.
+checkline(LineList, ResultXs, FirstL, LastL, Up, UpOut, Lo, LoOut) :-
+	Y1 := FirstL - 1 |
+	linelower(Up, Points1),
+	checkdot(LineList, [], Points1, Y1, ResultXs, Lo, LoOut, LastL),
+	getfirst(FirstL, ResultXs, UpOut).
+
+% checkdot/8 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+LineList
+%	+Points2 of previous line
+%	+Points3 of previous line
+%	+Y of previous line
+%	-Result X List
+%	+Xs of under the last line ( from Lower proccess )
+%	-Xs of the last line ( to  lower proccess )
+checkdot([line(Y, Xs) | LineRest], Points2, Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	Y =:= PrevY + 1 |
+	lineupper(Xs, Points2, Result),
+	linemiddle(Xs, Points3, NewPoints2),
+	linelower(Xs, NewPoints3),
+	putxstolist(PrevY, Result, ResultXL, ResultXL2),
+	checkdot(LineRest, NewPoints2, NewPoints3, Y, ResultXL2, Lo, LoOut, LastL).
+checkdot([line(Y, Xs) | LineRest], Points2, Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	Y =:= PrevY + 2,
+	Y1 := PrevY + 1 |
+	umpire(Points2, Result1),
+	lineupper(Xs, Points3, Result2),
+	linemiddle(Xs, [], NewPoints2),
+	linelower(Xs, NewPoints3),
+	putxstolist(Y1, Result2, XL1, ResultXL2),
+	putxstolist(PrevY, Result1, ResultXL, XL1),
+	checkdot(LineRest, NewPoints2, NewPoints3, Y, ResultXL2, Lo, LoOut, LastL).
+otherwise.
+checkdot([line(Y, Xs) | LineRest], Points2, Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	PrevY1 := PrevY + 1, Y1 := Y - 1 |
+	umpire(Points2, Result1),
+	umpire(Points3, Result2),
+	linelower(Xs, NewPoints1),
+	umpire(NewPoints1, Result3),
+	linemiddle(Xs, [], NewPoints2),
+	linelower(Xs, NewPoints3),
+	putxstolist(Y1, Result3, XL1, ResultXL2),
+	putxstolist(PrevY1, Result2, XL2, XL1),
+	putxstolist(PrevY, Result1, ResultXL, XL2),
+	checkdot(LineRest, NewPoints2, NewPoints3, Y, ResultXL2, Lo, LoOut, LastL).
+checkdot([], Points2, _Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	PrevY =:= LastL - 1 |
+	lineupper(Lo, Points2, LoOut),
+	putxstolist(PrevY, LoOut, ResultXL, []).
+checkdot([], Points2, Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	PrevY =:= LastL - 2, LastL2 := PrevY + 1 |
+	umpire(Points2, Result1),
+	lineupper(Lo, Points3, LoOut),
+	putxstolist(LastL2, LoOut, XL1, []),
+	putxstolist(PrevY, Result1, ResultXL, XL1).
+otherwise.
+checkdot([], Points2, Points3, PrevY, ResultXL, Lo, LoOut, LastL) :-
+	PrevY2 := PrevY + 1, LastL2 := LastL - 1 |
+	umpire(Points2, Result1),
+	umpire(Points3, Result2),
+	linelower(Lo, Pointlast),
+	umpire(Pointlast, LoOut),
+	putxstolist(LastL2, LoOut, XL1, []),
+	putxstolist(PrevY2, Result2, XL2, XL1),
+	putxstolist(PrevY, Result1, ResultXL, XL2).
+
+
+% lineupper/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X list
+%	+Point line from linemiddle or lineunder
+%	-Next generation's X List
+lineupper([X | Xs], [point(XX, Point) | BeforeRest], NXL) :-
+	XX < X - 1 |
+	(Point = 6 ->
+		lineupper([X | Xs], BeforeRest, NXL2),
+		NXL = [XX | NXL2];
+	Point = 5 ->
+		lineupper([X | Xs], BeforeRest, NXL2),
+		NXL = [XX | NXL2];
+	Point = 4 ->
+		lineupper([X | Xs], BeforeRest, NXL2),
+		NXL = [XX | NXL2];
+	otherwise;
+	true ->
+		lineupper([X | Xs], BeforeRest, NXL)
+	).
+otherwise.
+lineupper(Xs, [], NXL) :-
+	linelower(Xs, PL),
+	umpire(PL, NXL).
+otherwise.
+lineupper([X | Xs], Before, NXL) :-
+	X3 := X + 1 |
+	upperleft(X, X3, Xs, Before, NXL).
+lineupper([], Before, NXL) :-
+	umpire(Before, NXL).
+
+% upperleft/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X List
+%	+X3
+%	+Before
+%	-New X List
+upperleft(X, X3, Xs, [point(XX, Point) | BRest], NXL) :-
+	XX := X - 1 |
+	(Point > 1 , Point < 5 ->
+		NXL = [XX | NXL2],
+		uppercenter(X, X3, Xs, BRest, NXL2);
+	otherwise;
+	true ->
+		uppercenter(X, X3, Xs, BRest, NXL)
+	).
+otherwise.
+upperleft(X, X3, Xs, [point(XX, Point) | BRest], NXL) :-
+	uppercenter(X, X3, Xs, [point(XX, Point) | BRest], NXL).
+
+% uppercenter/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+X3
+%	+Before
+%	-NXL
+uppercenter(X, X3, Xs, [point(XX, Point) | BRest], NXL) :-
+	XX =:= X, Point1 := Point + 2 |
+	upperright(X, X3, Xs, Point1, BRest, NXL).
+otherwise.
+uppercenter(X, X3, Xs, Before, NXL) :-
+	upperright(X, X3, Xs, 1, Before, NXL).
+
+% upperright/5 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+X3
+%	+Point of center
+%	+Before
+%	-New X List
+upperright(X, X3, Xs, PointC, [point(XX, Point) | BRest], NXL) :-
+	(XX = X3, Point1 := Point + 2 ->
+		NewBefore = [point(X, PointC), point(X3, Point1) | BRest],
+		lineupper(Xs, NewBefore, NXL);
+	otherwise;
+	true ->
+		NewBefore = [point(X, PointC), point(X3, 1),
+					point(XX, Point) | BRest],
+		lineupper(Xs, NewBefore, NXL)
+	).
+upperright(X, X3, Xs, PointC, [], NXL) :-
+	NewBefore = [point(X, PointC), point(X3, 1)],
+	lineupper(Xs, NewBefore, NXL).
+
+% linemiddle/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+Before
+%	+After
+linemiddle([X | Xs], [point(XX, Point) | BeforeRest], After) :-
+	XX < X - 1 |
+	linemiddle([X | Xs], BeforeRest, After2),
+	After = [point(XX, Point) | After2].
+otherwise.
+linemiddle([X | Xs], Before, After) :-
+	middleleft(X, Xs, Before, After).
+linemiddle([], Before, After) :-
+	Before = After.
+
+
+% middleleft/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+Before
+%	-After
+middleleft(X, Xs, [point(XX, Point) | BRest], After) :-
+	X1 := X - 1, XX = X1, Point1 := Point + 2 |
+	After = [point(X1, Point1) | After2],
+	middlecenter(X, Xs, BRest, After2).
+otherwise.
+middleleft(X, Xs, Before, After) :-
+	X1 := X - 1 |
+	After = [point(X1, 1) | After2],
+	middlecenter(X, Xs, Before, After2).
+
+% middlecenter/6 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+Before
+%	-After
+middlecenter(X, Xs, [point(XX, Point) | BRest], After) :-
+	XX =:= X, Point1 := Point + 1 |
+	middleright(X, Xs, Point1, BRest, After).
+otherwise.
+middlecenter(X, Xs, Before, After) :-
+	middleright(X, Xs, 0, Before, After).
+
+% middleright/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+X
+%	+Point of center
+%	+Before
+%	-After
+middleright(X, Xs, PointC, [point(XX, Point) | BRest], After) :-
+	X3 := X + 1, XX = X3, Point1 := Point + 2 |
+	NewBefore = [point(X, PointC), point(X3, Point1) | BRest],
+	linemiddle(Xs, NewBefore, After).
+otherwise.
+middleright(X, Xs, PointC, Before, After) :-
+	X3 := X + 1 |
+	NewBefore = [point(X, PointC), point(X3, 1) | Before],
+	linemiddle(Xs, NewBefore, After).
+
+% linelower/2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Xs
+%	-Pointline
+linelower([X2 | XRest], PL) :-
+	X1 := X2 - 1, X3 := X2 + 1 |
+	PL = [point(X1, 1) | PLR],
+	linelower(X2, X3, 1, XRest, PLR).
+linelower([], PL) :-
+	PL = [].
+
+% linelower/5 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Previous X2
+%	+Previous X3
+%	+Point of Previous X2
+%	-Xs (Xs of this generation's dots)
+%	-Point Line Rest (from lower linelower)
+linelower(PX2, PX3, PX2P, [ X2 | XRest ], PL) :-
+	X2 =:= PX3, X3 := X2 + 1, NPX2P := PX2P + 2 |
+	PL = [point(PX2, NPX2P) | PLR],
+	linelower(X2, X3, 3, XRest, PLR).
+linelower(PX2, PX3, PX2P, [ X2 | XRest ], PL) :-
+	X2 =:= PX3 + 1, X3 := X2 + 1 |
+	PL = [point(PX2, PX2P), point(PX3, 3) | PLR],
+	linelower(X2, X3, 1, XRest, PLR).
+otherwise.
+linelower(PX2, PX3, PX2P, [ X2 | XRest ], PL) :-
+	X3 := X2 + 1, X1 := X2 - 1 |
+	PL = [point(PX2, PX2P), point(PX3, 1), point(X1, 1) | PLR],
+	linelower(X2, X3, 1, XRest, PLR).
+linelower(PX2, PX3, PX2P, [], PL) :-
+	PL = [point(PX2, PX2P), point(PX3, 1)].
+
+% umpire/2 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Points
+%	-ResultXs
+umpire([point(X,Point) | Points], Ans) :-
+	(Point < 7, Point > 3 ->
+		Ans = [X | NAns],
+		umpire(Points, NAns);
+	otherwise;
+	true ->
+		umpire(Points, Ans)
+	).
+umpire([], Ans) :- Ans = [].
+
+% decodeline/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Encoded Lines
+%	-Decoded FinalList
+decodeline([], [], FinalList) :-
+	true |
+	FinalList = [].
+otherwise.
+decodeline([], [XLList | XLLs], FinalList) :-
+	decodeline(XLList, XLLs, FinalList).
+decodeline([line(_, []) | LineRest], XLLs, FinalList) :-
+	decodeline(LineRest, XLLs, FinalList).
+decodeline([line(Y, [X | Xs]) | LineRest], XLLs, FinalList) :-
+	FinalList = [p(X, Y) | List2],
+	decodeline([line(Y, Xs) | LineRest], XLLs, List2).
+
+
+% pickline/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+PointList,
+%	-Encoded Line
+%	-Y of FirstLine
+%	-Y 0f LastLine
+pickline([], Lines, FirstLine, LastLine) :-
+	FirstLine = 0,
+	LastLine = 0,
+	Lines = [].
+pickline([p(HeadX, HeadY) | PointRest ], Lines, FirstLine, LastLine) :-
+	true |
+	pickline(PointRest, HeadY, Xs, LineRest, LastLine),
+	FirstLine = HeadY,
+	Lines = [ line( HeadY, [HeadX | Xs]) | LineRest ].
+
+
+% pickline/5 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+PointList,	(Rest Point List)
+%	+Y,		(Y data of current line)
+%	-Xs,		(Xs means Rest X data on current line)
+%	-LineRest	(Lines under current line)
+%	-LastLine	(Y data of Last Line)
+pickline([], PreviousY , Xs, LineRest, LastLine) :-
+	true |
+	Xs = [],
+	LineRest = [],
+	PreviousY = LastLine.
+pickline([p(HeadX, HeadY) | PointRest ], PreviousY, Xs, LineRest, LastLine) :-
+	HeadY =:= PreviousY |
+	pickline(PointRest, HeadY, Xs2, LineRest, LastLine),
+	Xs = [HeadX| Xs2 ].
+otherwise.
+pickline([p(HeadX, HeadY) | PointRest ], _, Xs, LineRest, LastLine) :-
+	true |
+	Xs = [],
+	pickline(PointRest, HeadY, NextXs, LineRest2, LastLine),
+	LineRest = [ line(HeadY, [HeadX | NextXs ]) | LineRest2].
+
+
+% calcunit/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+FirstLine
+%	+LastLine
+%	+Generation max
+%	+Number of All processor
+%	-Unit of single process
+calcunit(FirstLine, LastLine, Gmax, NAll, Unit) :-
+	AllLine := LastLine - FirstLine,
+%	AllLine := LastLine - FirstLine + Gmax,
+	Temp := AllLine / NAll, Temp > 30 |
+	Unit := Temp + 2.
+otherwise.
+calcunit(_FirstLine, _LastLine, _Gmax, _NAll, Unit) :-
+	Unit = 30.
+
+
+% dummylow/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Generation max
+%	+Number of All processor
+%	+Unit of single process
+%	+Y of FirstLine
+%	+In Stream from Upper process
+%	+Out Stream to Upper process
+%	+Processor Engine Number
+%	-Final Lines
+dummylow(G, _NAll, _Unit, _NextL, _UpIn, UpOut, _PEN, FL) :-
+	G =< 0 |
+	UpOut = [],
+	FL = [].
+dummylow(G, NAll, Unit, NextL, [[] | UpIns], UpOut, PEN, FL) :-
+	G2 := G - 1 |
+	UpOut = [[] | UpOut2],
+	dummylow(G2, NAll, Unit, NextL, UpIns, UpOut2, PEN, FL).
+otherwise.
+dummylow(G, NAll, Unit, NextL, UpIn, UpOut, PEN, FL) :-
+	G2 := G - 1, NPEN := ( PEN + 1 ) mod NAll, LastL := NextL + Unit |
+	UpOut = [[] | UpOut2],
+	NLoIn2 = [[] | NLoIn],
+	single(G, [], NextL, LastL, UpIn, UpOut2, NLoIn2, NLoOut, Result)@node(NPEN),
+	FL = [Result | FL2],
+	dummylow(G2, NAll, Unit, LastL, NLoOut, NLoIn, NPEN, FL2).
+
+
+% dummyup/9 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Generation max
+%	+Number of All processor
+%	+Unit of single process
+%	+Y of FirstLine
+%	+In Stream from Lower process
+%	+Out Stream to Lower process
+%	+Processor Engine Number
+%	-Final Lines
+%	+Final Lines Tail
+dummyup(G, _NAll, _Unit, _LastLine, _LoIn, LoOut, _PEN, FL, FLtail) :-
+	G =< 0 |
+	LoOut = [],
+	FL = FLtail.
+dummyup(G, NAll, Unit, LastLine, [[] | LoIns], LoOut, PEN, FL, FLtail) :-
+	G2 := G - 1 |
+	LoOut = [[] | LoOut2],
+	dummyup(G2, NAll, Unit, LastLine, LoIns, LoOut2, PEN, FL, FLtail).
+otherwise.
+dummyup(G, NAll, Unit, LastL, LoIn, LoOut, PEN, FL, FLtail) :-
+	G2 := G - 1, FirstL := LastL - Unit, NPEN := (PEN + 1) mod NAll |
+	LoOut = [[] | LoOut2],
+	UpIn2 = [[] | UpIn],
+	single(G, [], FirstL, LastL, UpIn2, UpOut, LoIn, LoOut2, Result)@node(NPEN),
+	FLtail2 = [Result | FLtail],
+	dummyup(G2, NAll, Unit, FirstL, UpOut, UpIn, NPEN, FL, FLtail2).
+
+
+% getfirst/3 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Y of First Line
+%	+Result Lines
+%	-Answer
+getfirst(FLY, [line(Y, Xs) | _Result], Ans) :- 
+	Y = FLY |
+	Ans = Xs.
+otherwise.
+getfirst(_FLY, _Result, Ans) :-
+	Ans = [].
+
+
+% putxstolist/4 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	+Y
+%	+Xs
+%	-List
+%	+Tail of List
+putxstolist(_Y, Xs, List, Listtail) :-
+	Xs = [] |
+	List = Listtail.
+otherwise.
+putxstolist(Y, Xs, List, Listtail) :-
+	List = [line(Y, Xs) | Listtail].

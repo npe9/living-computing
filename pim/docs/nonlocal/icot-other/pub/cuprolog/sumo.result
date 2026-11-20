@@ -1,0 +1,14 @@
+Quixote server on psiux539
+server> ** created : 1.1
+database> 
+
+** 1 answer exists **
+** Answer 1 **
+ IF 現在:花田勝.成績 == 優勝 THEN
+    X == 大関
+database> 
+
+** 1 answer exists **
+** Answer 1 **
+    X == 大関
+database> server> 

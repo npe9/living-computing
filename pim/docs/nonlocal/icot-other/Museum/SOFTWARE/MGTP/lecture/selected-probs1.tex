@@ -1,0 +1,376 @@
+% MGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-12-02
+
+% selected-probs1.tex
+
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£±¡§¥Ñ¥º¥ë``¾²²°'' (TPTP/PUZ003-1)¡Û}
+
+% Domain   : Puzzles
+% Problem  : The Barber Puzzle
+% English  : There is a barbers' club that obeys the following three 
+%            conditions:
+%            (1) If any member has shaved any other member -- whether 
+%            himself or another -- then all members have shaved him, 
+%            though not necessarily at the same time.
+%            (2) Four of the members are named Guido, Lorenzo, 
+%            Petrucio, and Cesare.
+%            (3) Guido has shaved Cesare.
+%            Has Petrucio shaved Lorenzo or not?
+
+% Source   : ANL problem set
+
+\begin{verbatim}
+true-->member(guido),member(lorenzo),member(petruchio),member(cesare).
+true-->shaved(guido,cesare).
+
+member(A),member(B),shaved(A,B)-->shaved(members,A).
+shaved(members,A),member(B)-->shaved(B,A).
+
+shaved(petruchio,lorenzo)-->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£²¡§¥Ñ¥º¥ë``¥¢¥¬¥µ»¦¿Í»ö·ï'' (TPTP/PUZ001-1)¡Û}
+
+% Domain   : Puzzles
+% Problem  : Dreadbury Mansion
+% English  : Someone who lives in Dreadbury Mansion killed Aunt 
+%            Agatha. Agatha, the butler, and Charles live in 
+%            Dreadbury Mansion, and are the only people who live 
+%            therein. A killer always hates his victim, and is never 
+%            richer than his victim. Charles hates no one that Aunt 
+%            Agatha hates. Agatha hates everyone except the butler. 
+%            The butler hates everyone not richer than Aunt Agatha. 
+%            The butler hates everyone Aunt Agatha hates. No one hates 
+%            everyone. Agatha is not the butler. Therefore : Agatha 
+%            killed herself.
+
+% Refs     : Len Schubert, As cited in [Pelletier, 1986].
+%          : Manthey R., Bry F. (1988), SATCHMO: a theorem prover
+%            implemented in Prolog, In Lusk E., Overbeek R. (Eds),
+%            Proceedings of the 9th International Conference on
+%            Automated Deduction (Argonne, IL, 1988), (Lecture Notes
+%            in Computer Science 310), Springer-Verlag, New York, NY,
+%            415-434. 
+%          : Pelletier F.J. (1986), Seventy-Five Problems for Testing 
+%            Automatic Theorem Provers, Journal of Automated Reasoning
+%            2(2), 191-216. Problem 55.
+% Source   : [Manthey & Bry, 1988]
+
+\begin{verbatim}
+true-->lives(agatha),lives(butler),lives(charles).
+true-->hates(agatha,agatha),hates(agatha,charles).
+true-->killed(butler,agatha);killed(charles,agatha).
+
+killed(A,B)-->n_richer(A,B).
+killed(A,B)-->hates(A,B).
+hates(agatha,A)-->hates(butler,A).
+lives(A),n_richer(A,agatha)-->hates(butler,A).
+
+hates(agatha,A),hates(charles,A)-->false.
+hates(A,agatha),hates(A,butler),hates(A,charles)-->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£³¡§¥Ñ¥º¥ë``±î¤È¥Ğ¥Ê¥Ê'' (TPTP/PLA003-1)¡Û}
+
+% Domain   : Planning
+% Problem  : Monkey and Bananas Problem
+
+% Refs     : SPRFN Problem Set.
+% Source   : [SPRFN]
+
+\begin{verbatim}
+true-->place(l0),place(l1),place(l2).
+true-->can(monkey(l0,floor,nothing),ladder(l1,floor),
+           bananas(l2,ceiling)).
+
+can(monkey(A,floor,nothing),ladder(A,floor),B)
+    -->can(monkey(A,ceiling,nothing),ladder(A,floor),B).
+can(monkey(A,ceiling,nothing),ladder(A,floor),B)
+    -->can(monkey(A,floor,nothing),ladder(A,floor),B).
+can(monkey(A,floor,the_ladder),ladder(A,floor),B),place(C)
+    -->can(monkey(C,floor,the_ladder),ladder(C,floor),B).
+can(monkey(A,floor,the_bananas),B,bananas(A,floor)),place(C)
+    -->can(monkey(C,floor,the_bananas),B,bananas(C,floor)).
+can(monkey(A,floor,nothing),B,C),place(D)
+    -->can(monkey(D,floor,nothing),B,C).
+can(monkey(A,B,the_ladder),ladder(A,C),D)
+    -->can(monkey(A,B,nothing),ladder(A,floor),D).
+can(monkey(A,B,the_bananas),C,bananas(A,B))
+    -->can(monkey(A,B,nothing),C,bananas(A,floor)).
+can(monkey(A,B,nothing),C,bananas(A,B))
+    -->can(monkey(A,B,the_bananas),C,bananas(A,B)).
+can(monkey(A,B,nothing),ladder(A,B),C)
+    -->can(monkey(A,B,the_ladder),ladder(A,B),C).
+
+can(monkey(A,B,the_bananas),C,D)-->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£´¡§¥Ñ¥º¥ë``²ÌÊªÈ¢'' (TPTP/PUZ012-1)¡Û}
+
+% Domain   : Puzzles
+% Problem  : The Mislabeled Boxes
+% English  : There are three boxes a, b, and c on a table.
+%            Each box contains apples or bananas or oranges.
+%            No two boxes contain the same thing.
+%            Each box has a label that says it contains apples
+%            or says it contains bananas or says it contains
+%            oranges.
+%            No box contains what it says on its label.
+%            The label on box a says "apples".
+%            The label on box b says "oranges".
+%            The label on box c says "bananas".
+%            You pick up box b and it contains apples.
+%            What do the other two boxes contain?
+
+% Source   : ANL problem set
+
+\begin{verbatim}
+true-->box(boxa),box(boxb),box(boxc).
+true-->fruit(apples),fruit(bananas),fruit(oranges).
+true-->n_equal_boxes(boxa,boxb).
+true-->n_equal_boxes(boxb,boxc).
+true-->n_equal_boxes(boxa,boxc).
+true-->n_equal_fruits(apples,bananas).
+true-->n_equal_fruits(bananas,oranges).
+true-->n_equal_fruits(apples,oranges).
+true-->label(boxa,apples).
+true-->label(boxb,oranges).
+true-->label(boxc,bananas).
+true-->contains(boxb,apples).
+
+fruit(A)-->contains(boxa,A);contains(boxb,A);contains(boxc,A).
+box(A)-->contains(A,apples);contains(A,bananas);contains(A,oranges).
+
+n_equal_fruits(A,A)-->false.
+n_equal_boxes(A,A)-->false.
+label(A,B),contains(A,B)-->false.
+contains(A,B),contains(A,C),n_equal_fruits(B,C)-->false.
+contains(A,B),contains(C,B),n_equal_boxes(A,C)-->false.
+contains(boxa,bananas),contains(boxc,oranges)-->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£µ¡§¥Ñ¥º¥ë``ÀµÄ¾¼Ô¤È±³¤Ä¤­'' (TPTP/PUZ025-1)¡Û}
+
+% Domain   : Puzzles
+% Problem  : Knights and Knaves #35
+% English  : There is an island with exactly two types of people-- 
+%            truthtellers who always tell the truth and liars who 
+%            always lie. There are a group of three people, A, B, and 
+%            C on the island. A and B make the following statements. 
+%            A: "B and C are the same type". Someone asks "Are A and B 
+%            of the same type ? " What does C answer ? 
+%            Answer: "yes"
+
+% Refs     : Smullyan R.M. (1978), What is the name of this book? :
+%            The riddle of Dracula and other logical puzzles, Prentice-
+%            Hall, Englewood Cliffs, NJ. Problem 35.
+% Source   : ANL problem set
+
+\begin{verbatim}
+true-->native(a),native(b),native(c).
+true-->a_truth(says(a,equal_type(b,c))).
+true-->ask_1_if_2(c,equal_type(a,b)).
+native(A)-->a_truth(truthteller(A));a_truth(liar(A)).
+
+native(A),native(B),a_truth(liar(A)),a_truth(liar(B))
+    -->a_truth(equal_type(A,B)).
+native(A),native(B),a_truth(truthteller(A)),a_truth(truthteller(B))
+    -->a_truth(equal_type(A,B)).
+
+a_truth(truthteller(A)),a_truth(says(A,B))-->a_truth(B).
+a_truth(A),a_truth(says(B,A))-->a_truth(truthteller(B)).
+a_truth(says(A,B))-->a_truth(B);a_truth(liar(A)).
+a_truth(equal_type(A,B)),a_truth(truthteller(A))
+    -->a_truth(truthteller(B)).
+a_truth(equal_type(A,B)),a_truth(liar(A))
+    -->a_truth(liar(B)).
+a_truth(truthteller(A)),native(B)
+    -->a_truth(equal_type(A,B));a_truth(liar(B)).
+a_truth(liar(A)),native(B)
+    -->a_truth(equal_type(A,B));a_truth(truthteller(B)).
+a_truth(equal_type(A,B))
+    -->a_truth(equal_type(B,A)).
+
+ask_1_if_2(A,B),a_truth(truthteller(A)),a_truth(B)
+    -->answer(yes).
+ask_1_if_2(A,B),a_truth(truthteller(A))
+    -->a_truth(B);answer(no).
+ask_1_if_2(A,B),a_truth(liar(A)),a_truth(B)-->answer(no).
+ask_1_if_2(A,B),a_truth(liar(A))-->a_truth(B);answer(yes).
+
+a_truth(truthteller(A)),a_truth(liar(A))-->false.
+a_truth(liar(A)),a_truth(says(A,B)),a_truth(B)-->false.
+answer(A)-->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£¶¡§``¼«ÌÀ¤Ç¤Ê¤¤ÌäÂê'' (TPTP/MSC006-1)¡Û}
+
+% Domain   : Miscellaneous
+% Problem  : A "non-obvious" problem
+% English  : Suppose there are two relations, P and Q. P is 
+%            transitive, and Q is both transitive and symmetric. 
+%            Suppose further the "squareness" of P and Q: any two 
+%            things are related either in the P manner or the Q 
+%            manner. Prove that either P is total or Q is total.
+
+% Refs     : Pelletier F.J., and Rudnicki P. (1986), Non-Obviousness, 
+%            In Wos L. (Ed.), Association for Automated Reasoning 
+%            Newsletter (6), Association for Automated Reasoning, 
+%            Argonne, Il, 4-5.
+% Source   : [Pelletier & Rudnicki, 1986]
+
+\begin{verbatim}
+dom(A),dom(B)-->p(A,B);q(A,B).
+
+p(A,B),p(B,C)-->p(A,C).
+q(A,B),q(B,C)-->q(A,C).
+q(A,B)-->q(B,A).
+
+p(a,b)-->false.
+q(c,d)-->false.
+
+true-->dom(a),dom(b),dom(c),dom(d).
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£·¡§·²ÏÀ``Ã±°Ì¸µ'' (TPTP/GRP003-1)¡Û}
+
+% Domain   : Group Theory
+% Problem  : The left identity is also a right identity
+
+% Refs     : Chang C.L. (1970), The Unit Proof and the Input Proof in
+%            Theorm Proving, Communications of the ACM 17(4), 698-707.
+%            Problem 3.
+%          : Chang C.L., Lee R.C.T. (1973), Symbolic Logic and
+%            Mechanical Theorem Proving, Academic Press, New York.
+% Source   : [Chang, 1970]
+
+\begin{verbatim}
+dom(A)-->product(inverse(A),A,identity).
+dom(A)-->product(identity,A,A).
+
+product(A,B,C),product(B,D,E),product(C,D,F)-->product(A,E,F).
+product(A,B,C),product(B,D,E),product(A,E,F)-->product(C,D,F).
+
+product(a,identity,a)-->false.
+
+true-->dom(identity),dom(a).
+dom(A)-->dom(inverse(A)).
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£¸¡§``¥Ø¥ó¥­¥ó¤ÎÌäÂê'' (TPTP/HEN001-5)¡Û}
+
+% Domain   : Henkin Models
+% Problem  : X/identity = zero
+
+% Refs     : McCharen J.D., Overbeek R.A., Wos L.A. (1976), Problems
+%            and Experiments for and with Automated Theorem Proving
+%            Programs, IEEE Transactions on Computers C-25(8), 773-
+%            782. Problem H1.
+% Source   : ANL problem set
+
+\begin{verbatim}
+dom(A),dom(B)-->equal(divide(divide(A,B),A),zero).
+dom(A),dom(B),dom(C)
+    -->equal(divide(divide(divide(A,B),divide(C,B)),
+                    divide(divide(A,C),B)),
+             zero).
+
+dom(A)-->equal(divide(zero,A),zero).
+equal(divide(A,B),zero),equal(divide(B,A),zero)-->equal(A,B).
+dom(A)-->equal(divide(A,identity),zero).
+
+equal(divide(a,identity),zero)-->false.
+
+dom(A)-->equal(A,A).
+equal(A,B)-->equal(B,A).
+equal(A,B),equal(B,C)-->equal(A,C).
+
+equal(A,B),dom(C)-->equal(divide(A,C),divide(B,C)).
+equal(A,B),dom(C)-->equal(divide(C,A),divide(C,B)).
+
+true-->dom(zero),dom(identity),dom(a).
+dom(A),dom(B)-->dom(divide(A,B)).
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£¹¡§´Ş°ÕÏÀÍı``Ã±°ì¸øÍı'' (TPTP/LCL038-1)¡Û}
+
+% Domain   : Logic Calculi (Implication/Falsehood 2 valued sentential)
+% Problem  : C0-1 depends on a single axiom
+% English  : An axiomatisation for the Implication/Falsehood 2 valued
+%            sentential calculus is {C0-1,C0-2,C0-3,C0-4} by Tarski-
+%            Bernays. Show that C0-1 can be derived from this suspected
+%            single axiom.
+
+% Refs     : Overbeek R. (1990), ATP competition announced at CADE-10,
+%            Problem 5.
+% Source   : [Overbeek, 1990]
+
+\begin{verbatim}
+true-->is_a_theorem(implies(implies(implies(A,B),C),
+                            implies(implies(C,A),implies(D,A)))).
+
+is_a_theorem(implies(A,B)),is_a_theorem(A)-->is_a_theorem(B).
+
+is_a_theorem(implies(implies(a,b),
+                     implies(implies(b,c),implies(a,c))))
+    -->false.
+\end{verbatim}
+
+%\newpage
+%-----------------------------------------------------------------------------
+\section*{¡Ú±é½¬ÌäÂê£±£°¡§ÁÈ¹ç¤»ÏÀÍı``ÉÔÆ°ÅÀ'' (TPTP/COL012-1)¡Û}
+
+% Domain   : Combinatory Logic
+% Problem  : Weak fixed point for U
+% English  : The weak fixed point property holds for the set P consisting
+%            of the combinator U, where (Ux)y = y((xx)y).
+
+% Refs     : Smullyan, R. M. (1985), To Mock a Mocking Bird and Other
+%            Logic Puzzles, Knopf, New York.
+%          : McCune W.W., Wos L. (1987), A Case Study in Automated Theorem
+%            Proving: Finding Sages in Combinatory Logic, Journal of
+%            Automated Reasoning 3(1), 91-107.
+%          : Wos L., McCune W.W (1988a), Challenge Problems Focusing on
+%            Equality and Combinatory Logic: Evaluating Automated Theorem-
+%            Proving Programs, Proceedings of the 9th International
+%            Conference on Automated Deduction (Argonne, IL, 1988),
+%            (Lecture Notes in Computer Science, 310), 714-729.
+%          : McCune W.W. , Wos L. (1988b), Some Fixed Point Problems in
+%            Combinatory Logic, AAR Newsletter 10, 7-8.
+% Source   : [McCune & Wos, 1988b]
+
+\begin{verbatim}
+dom(A),dom(B)-->
+   equal(apply(apply(u,A),B),
+         apply(B,apply(apply(A,A),B))).
+
+equal(A,apply(combinator,A))-->false.
+
+dom(A)-->equal(A,A).
+equal(A,B)-->equal(B,A).
+equal(A,B),equal(B,C)-->equal(A,C).
+
+equal(A,B),dom(C)-->equal(apply(A,C),apply(B,C)).
+equal(A,B),dom(C)-->equal(apply(C,A),apply(C,B)).
+
+true-->dom(u),dom(combinator).
+dom(A),dom(B)-->dom(apply(A,B)).
+\end{verbatim}
+
+% end.

@@ -1,0 +1,1109 @@
+%% MGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-11-28
+%%  based on ..
+
+MGTPはその問題記述の簡便性から、一階述語論理による知識表現
+言語と見ることもでき、Prologではフォローできない
+Non-Horn論理式を取り扱うことができるほか、
+並行論理型言語KL1では失われている探索の完全性が保証されている
+などの利点を持っている。
+
+MGTPは、適用すべき問題の性質によって、
+グランド版MGTP(MGTP/G)、ノングランド版MGTP(MGTP/N)、
+および制約充足問題を解くために拡張された制約MGTP(CMGTP)
+の3種類が用意されており、それぞれKL1、Prolog、Klicで実装されている。
+グランド版MGTPにおいては生成されるモデル候補はすべて基底項、
+すなわち変数を含まない項であり、
+ルールの後件部に選言を記述することができる。
+ノングランド版MGTPでは、変数を含む項が許されるが、
+現在の実装ではルールの後件部に選言を記述することはできない。
+また、CMGTPは、制約充足問題を解くために拡張されたMGTP 
+で、枝刈りを効率的に行なうために
+負アトムを用いて制約伝搬ルールを表現することが可能である。
+並列化に関しては、グランド版MGTPおよび
+CMGTPではOR並列が、またノングランド版MGTPではAND並列が
+それぞれ実現され、いくつかのベンチマーク問題に対して
+線形に近い台数効果が達成されている。
+
+%-----------------------------------------------------------------------------
+
+\let\implies=\rightarrow
+\def\var{\mathord{\hbox{\it{var}}\;}}
+\def\dom{\mathord{\hbox{\it{dom}}\;}}
+\def\true{\mathord{\hbox{\it{true}}\;}}
+\def\false{\mathord{\hbox{\it{false}}\;}}
+\newtheorem{example}{例}[section]
+
+\chapter{MGTP の機能説明}
+この章では、
+MGTP の基本的な機能について、特に
+モデル生成法の枠組、冗長性排除の方法などについて説明する。
+
+\section{モデル生成法}
+
+任意の一階述語論理式は、常に節形式(連言標準形)に変換可能である。
+1本の節は正負リテラルを任意の順で選言結合したものであるが、ここでは節
+$ \neg A_1 \vee \ldots \vee \neg A_n \vee
+       B_1 \vee \ldots \vee B_m $
+を次のような含意式の形で表現する。
+$$ A_1, \ldots, A_n \implies B_1; \ldots; B_m $$
+ここで、$A_i (1\le i\le n), B_j (1\le j\le m)$はアトム、
+``,''は論理積結合子、``;''は論理和結合子、``$\implies$''は含意結合子である。
+``$\implies$''の左辺(のアトム)を前件(リテラル)、
+右辺(のアトム)を後件(リテラル)という。
+前件が空の場合$A_0=\true$と置き正節、
+後件が空の場合$B_0=\false$と置き負節と呼ぶ。
+
+節$ A_1, \ldots, A_n \implies B_1; \ldots; B_m $において、
+$$  \bigcup_{i=1}^{n}{\var(A_i)} \supseteq
+              \bigcup_{j=1}^{m}{\var(B_j)} $$
+が成り立つとき、この節は値域限定({\it range-re\-strict\-ed\-ness})
+の条件を満たすといわれる。
+ここで、$\var(F)$は式$F$に現われるすべての変数の集合である。
+節集合$\cal S$に値域限定の条件を満たさない節が含まれる場合には、
+充足性について$\cal S$と等価で、かつ、すべての節が値域限定の条件を
+満たすような節集合に変換することができる。
+この変換は、$\dom$という予約された述語を導入し、以下のように行なう。
+\begin{itemize}
+\item
+値域限定の条件を満たさない節\\
+$ A_1, \ldots, A_n \implies B_1; \ldots; B_m $を、
+\begin{eqnarray*}
+& A_1, \ldots, A_n, \dom(X_1), \ldots, \dom(X_k) \implies \\
+& \quad B_1; \ldots; B_m
+\end{eqnarray*}
+で置き換える。ただし、
+\begin{eqnarray*}
+%& \{X_1, \ldots, X_k\} = \\
+& \{X_1, \ldots, X_k\} = 
+%& \quad \sum_{j=0}^{m}{\var(B_j)}\ \backslash\ \sum_{i=0}^{n}{\var(A_i)}
+%& \quad \bigcup_{j=1}^{m}{\var(B_j)}\ \backslash\
+&  \bigcup_{j=1}^{m}{\var(B_j)}\ \backslash\
+        \bigcup_{i=1}^{n}{\var(A_i)}
+\end{eqnarray*}
+である。
+\item
+節集合${\cal S}$中に現れる定数記号
+(定数記号が一つも現れない場合は、定数記号`$a$')
+の集合を$consts({\cal S})$、関数記号の集合を$functs({\cal S})$とするとき、
+節集合${\cal S}$に$\dom$定義節集合
+\begin{eqnarray*}
+\lefteqn{\{ \true \implies \dom(K) \mid K \in consts({\cal S}) \} \quad \cup} \\
+\lefteqn{ \{ \dom(X_1),\ldots,\dom(X_n) \implies}  \\
+& \{ \dom(F_n(X_1,\ldots,X_n)) \mid F_n \in functs({\cal S})  \} &
+\end{eqnarray*}
+を加える。
+\end{itemize}
+
+モデル生成法は、与えられた入力節(MG節と呼ぶ)集合$\cal S$に対するモデルを、
+次のような手続きに従って構成的に求めようとするものである。
+以下では、構成途中のモデルを$M$で表し、これをモデル候補と呼ぶ。
+また、モデル候補の集合を$\cal M$で表す。
+\begin{enumerate}
+\item ${\cal M}$の要素として、初期モデル候補$M_0 = \emptyset$を設定する。
+\item ${\cal M}$のある要素$M$に対し、
+後述のモデル拡張規則あるいはモデル棄却規則のいずれかが適用可能なとき、
+その規則を適用して${\cal M}$を更新する。
+\item 上記2のステップを可能な限り繰り返す。
+\item ${\cal M}$のすべての要素$M$に対して、
+いずれの規則も適用できなくなったとき、手続きは終了する。
+\end{enumerate}
+この手続きが終了したとき、${\cal M}$が空になっていれば、
+$\cal S$にはモデルが存在しない(すなわち、充足不能である)ことが結論できる。
+さもなければ、すべての要素$M\in{\cal M}$が
+いずれも$\cal S$のモデルとなっている。
+
+ここで、モデル拡張規則とモデル棄却規則は以下のとおりである。
+\begin{itemize}
+\item $\underline{\hbox{モデル拡張規則}}$：
+モデル候補$M$に対して、
+非負節$A_1, \ldots, A_n$ $\implies$ $B_1; \ldots; B_m$
+ならびに、ある基礎代入$\sigma$が存在して、
+$\sigma A_i$ $(1\le i\le n)$がすべて$M$で充足され、
+かつ$\sigma B_j$ $(1\le j\le m)$のいずれも$M$で充足されないならば、
+$M$を$m$個のモデル候補
+$M\cup\{\sigma B_j\}$ $(1\le i\le m)$で置き換えて拡張(場合分け)する。
+\item $\underline{\hbox{モデル棄却規則}}$：
+%モデル候補$M$に対して、負節$A_1,\ldots, A_n$ $\implies$ $\false$と
+モデル候補$M$に対して、負節$A_1,\ldots, A_n$ $\implies$ $\false$ならびに、
+ある基礎代入$\sigma$が存在して、
+$\sigma A_i$ $(1\le i\le n)$がすべて$M$で充足されるならば、
+$M$を棄却する。
+\end{itemize}
+ここで、前件$A_1, \ldots, A_n$が$M$で充足されるような
+$\sigma$を求める操作を連言照合と呼ぶ。
+
+例として次の節集合(問題Sと呼ぶ)に関するモデル生成法の
+証明木を図\ref{Fig:S-proof}に示す。
+\begin{eqnarray*}
+& C_1: &\ \true \rightarrow p(a,a); q(b). \\
+& C_2: &\ r(X,f(X)) \rightarrow \false. \\
+& C_3: &\ p(X,X), p(X,Y) \rightarrow r(X,f(Y)). \\
+& C_4: &\ q(X) \rightarrow p(f(X),f(X)).
+\end{eqnarray*}
+
+%%------------------------------------------------------------------------
+\begin{figure}
+\setlength{\unitlength}{1.5pt}
+\large
+
+\begin{center}
+\begin{picture}(150,200)(30,0)
+
+\put(100,200){\makebox(0,0)[b]{$\emptyset$}}
+\put(65,155){\makebox(0,0)[b]{$p(a,a)$}}
+\put(135,155){\makebox(0,0)[b]{$q(b)$}}
+\put(65,110){\makebox(0,0)[b]{$r(a,f(a))$}}
+\put(65,65){\makebox(0,0)[b]{$\bot$}}
+
+\put(135,110){\makebox(0,0)[b]{$p(f(b),f(b))$}}
+\put(135,65){\makebox(0,0)[b]{$r(f(b),f(f(b)))$}}
+\put(135,20){\makebox(0,0)[b]{$\bot$}}
+
+\put(100,195){\line(-5,-4){35}}
+\put(100,195){\line(5,-4){35}}
+\put(100,185){\makebox(0,0){$C_1$}}
+
+\put(65,150){\line(0,-1){30}}
+\put(65,105){\line(0,-1){30}}
+\put(75,135){\makebox(0,0){$C_3$}}
+\put(75,90){\makebox(0,0){$C_2$}}
+
+\put(135,150){\line(0,-1){30}}
+\put(135,105){\line(0,-1){30}}
+\put(135,60){\line(0,-1){30}}
+\put(145,135){\makebox(0,0){$C_4$}}
+\put(145,90){\makebox(0,0){$C_3$}}
+\put(145,45){\makebox(0,0){$C_2$}}
+
+\end{picture}
+\end{center}
+\vspace{-5mm}
+\caption{問題Sの証明図}
+\label{Fig:S-proof}
+\end{figure}
+
+%==============================================================================
+
+\section{モデル生成型定理証明系MGTP}
+
+\subsection{MGTPの基本構成}
+
+モデル生成法の推論過程で動的に生成されるのは、
+モデル候補要素としてのアトムのみである。
+このアトムは、値域限定条件を満たすMG節集合を対象とする場合、
+常に変数を含まない基底アトムとなる。
+節の前件の充足可能性テスト(連言照合)では、MG節の前件リテラルと
+モデル候補の要素であるアトムの単一化(照合)が行なわれる。
+
+さて、KL1ゴールとKL1節の頭部間の頭部単一化は、
+並行動作における同期機構を簡潔に実現する目的で、
+KL1節側の変数しか束縛を許さない一方向の単一化になっている。
+したがって、KL1で実装する場合は、MG節をKL1節で表現し、
+連言照合はKL1節の頭部単一化を利用するのが簡便かつ効果的と考えられる。
+これにより、MG節の複製に伴う新変数の導入もKL1実行系に委ねることができる。
+
+そこで、モデル生成型定理証明系MGTPをKL1で実現する際、
+図\ref{Fig:Prover}のような
+基本構成をとるのが適切である。
+すなわち、モデル候補$M$を管理する証明系本体と
+MG節集合を表現するKL1節の部分とを分離し、
+図中のMG節 $C_n: p(X,Y)\implies p(Y,X)$ は、
+以下のようなKL1節で表現する\footnote{
+実際には、照合が失敗する場合のために最後にotherwise節が置かれる。}。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\setlength{\unitlength}{1.5pt}
+\large
+\begin{center}
+\begin{picture}(150,200)(0,0)
+
+\put(15,120){\framebox(120,60){}}
+\put(15,20){\framebox(120,60){}}
+
+\put(15,185){証明系本体(モデル候補管理)}
+\put(15,9){MG節集合}
+
+\put(14,100){\makebox(0,0)[l]{単一化}}
+%\put(14,100){\makebox(0,0)[l]{{\small 単一化}}}
+\put(108,100){\makebox(0,0)[l]{$p(b,a)$}}
+
+\put(45,120){\vector(0,-1){40}}
+\put(105,80){\vector(0,1){40}}
+
+\put(45,160){\makebox(0,0){$M$}}
+\put(75,160){\makebox(0,0){$\Longleftarrow$}}
+\put(105,160){\makebox(0,0){$D$}}
+
+\put(45,140){\makebox(0,0){$p(a,b)$}}
+\put(45,60){\makebox(0,0){$p(X,Y)$}}
+\put(105,60){\makebox(0,0){$p(Y,X)$}}
+
+\put(45,40){\makebox(0,0){前件}}
+\put(75,40){\makebox(0,0){$\longrightarrow$}}
+\put(105,40){\makebox(0,0){後件}}
+
+\end{picture}
+\end{center}
+\caption{証明系のKL1による実現}
+\label{Fig:Prover}
+\end{figure}
+%------------------------------------------------------------------------------
+
+\begin{tabular}{l}
+   \verb"c(n,p(X,Y),R):-true|R=p(Y,X)."
+\end{tabular}%\\
+
+これにより、節の前件の充足可能性テストにおける単一化は、
+たとえば証明系本体が$M$からアトム$p(a,b)$を選び出し、
+MG節集合部のKL1節を呼んで、
+その頭部で表現された前件リテラル$p(X,Y)$に照合させる、
+というふうに実現することができる。
+
+ここで、$p(X,Y)$と$p(a,b)$の照合が成功すると、
+後件インスタンス$p(b,a)$が証明系本体に返される。
+$p(b,a)$が$M$によって充足されなければ$M$を拡張すべきアトムの候補となるので、
+証明系本体で一旦モデル拡張候補集合$D$に格納する\footnote{
+実際には、後件の充足性テストはそれがモデル拡張候補として選ばれる
+直前に行なえばよい。
+}。
+
+%==============================================================================
+
+\subsection{KL1によるMG節集合の表現}
+
+前件が2個以上のリテラルからなる一般の場合、例えば、
+\[C_n:\quad p(X,X), q(X,Z) \implies p(X,Z). \]
+のようなMG節についても、
+
+\begin{center}
+\verb"c(n,(p(X,X),q(X,Z)),R):-true|R=p(X,Z)."
+\end{center}
+
+のような1本のKL1節で表現することができよう。この場合、連言照合の度に
+モデル候補中からアトムの対$\langle A_i, A_j\rangle$
+を作ることにすれば前件全体を一度に照合することができる。
+しかしこの方法には冗長性が含まれている。
+たとえば$\langle p(a,b), A_j\rangle$の対はすでに第1リテラルにおいて
+$p(X,X)$との照合で失敗することが明らかであるにもかかわらず、
+すべての$A_j$について無駄に連言照合を実行してしまうからである。
+
+このような冗長性を省くためには、連言照合を前件リテラル個別に実行できるように、
+1本のMG節を複数のKL1節に分離して表現すればよい。
+ただし、この場合には
+前件リテラル間の共有変数の同一性をいかに保つかという問題が生じる。
+これを解決するには、たとえば、\\
+
+\begin{tabular}{l}
+\verb"c(n,p(X,X),[],R):-true|R=(1:[X])." \\
+\verb"c(n,q(X,Z),1:[X],R):-true|R=p(X,Z)."\\
+\end{tabular}\\
+
+のような2本のKL1節で表現すればよい。
+ここでは、$X$が第1リテラルと第2リテラルおよび後件との共有変数であり、
+第2リテラルに対応する\verb"c/4"の第3引数で$1:[X]$を受ける
+ことにより、共有変数$X$の同一性を表現している。
+
+この表現方法に基づいて、前出の問題SのMG節集合をKL1節集合で表現した実例を
+図\ref{Fig:S-KL1}に示す。
+
+%------------------------------------------------------------------------------
+\newbox\sone
+%\setbox\sone=\vbox{\hsize 70 true mm\baselineskip 10pt\footnotesize
+\setbox\sone=\vbox{\hsize 100 true mm\baselineskip 10pt \def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+c(1,true,[],R):-true|R=(p(a,a);q(b)).  
+c(2,r(X,f(X)),1:[X],R):-true|R=false.        
+c(3,p(X,X),[],R):-true|R=(1:[X]).
+c(3,p(X,Y),1:[X],R):-true|R=r(X,f(Y)).
+c(4,q(X),[],R):-true|R=p(f(X),f(X)).    
+otherwise.
+c(_,_,_,R):-true|R=fail.
+\end{verbatim}
+}
+
+\begin{figure}
+\vspace{3cm}
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+   \vbox{\vskip0pt\box\sone\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{問題SのKL1節表現}
+\label{Fig:S-KL1}
+\end{figure}
+%------------------------------------------------------------------------------
+
+$c(N,A,V,R)$において、$N$は節番号、$A$は前件リテラル、
+$V$はこの前件リテラルの番号と束縛済み共有変数のリスト、
+$R$は照合が成功した際証明系本体に返される値である。
+
+%==============================================================================
+
+\subsection{証明系本体の実現}
+
+証明系本体は、図\ref{Fig:MGTP-main}および\ref{Fig:MGTP-CJM}
+に示すKL1プログラムとして実現することができる。
+
+メインループの\verb"mgtp/5"は、モデル拡張候補集合$D$、モデル候補$M$、
+負節番号のリスト$Cn$、非負節番号のリスト$Cg$を受け、
+結果を$Res$に返す。
+%\verb"D"が空の場合、MG節集合は\verb"M"で充足可能(\verb"M"がモデル)である
+$D$が空の場合、MG節集合は$M$で充足可能($M$がモデル)である
+という結果を得てメインループを終了する。
+$D$が空でない場合、\\
+\verb"pickup/3"によりモデル拡張候補$\Delta$を
+一つ選び、これに対し\verb"subsTest/3"により$M$のもとでの充足性を調べる。
+もし$\Delta$が$M$で充足されているならば、
+モデル拡張候補集合の残り$D1$について再びメインループに入る。
+そうでなければ、
+$\Delta$が選言である場合、\verb"caseSplit/6"により場合分けを行なう。
+$\Delta$がアトムである場合、$M$はこれを含むように拡張される。
+拡張されたモデル候補$[\Delta|M]$に対して、
+モデル棄却規則が適用できれば、
+MG節集合は$M$のもとで充足不可能である($M$はモデルになり得ない)
+という結果を得てメインループを終了する。
+モデル棄却規則が適用できない場合、
+拡張されたモデル候補$[\Delta|M]$に対して、
+前件の連言照合を適用し、
+新たなモデル拡張候補集合$New$とする。
+これを\verb"addNew/3"によってモデル拡張候補集合の残り$D1$に加え
+$NewD$として再びメインループに入る。
+
+連言照合手続き\verb"cjm/5"は、節番号$N$のリストとモデル候補$M$を受け、
+リスト中のすべての節について連言照合\verb"cjm1/6"を行ない、
+結果を差分リスト$Rh-Rt$に詰めて返す。
+1本のMG節に対する連言照合手続き\verb"cjm1/6"では、
+各前件リテラルに対し、$M$中のすべてのアトムについて連言照合を行なう。
+このとき、MG節集合のKL1表現\verb"c/4"が呼ばれる。
+当該リテラルについて$M$中のアトム$A$による\verb"c/4"での照合結果が
+$fail$の場合、このリテラル-アトム対の照合結果は空である。
+共有変数情報$(\_:\_)$が返された場合、
+引き続くリテラルについての連言照合を進める。
+それ以外の場合、前件全体の連言照合が成功して後件が返されているので、
+%これを\verb"Rh-Rm"のD-listに詰めて返す。
+%これを\verb"Rh-Rm"の差分リストに詰めて返す。
+これを$Rh-Rm$の差分リストに詰めて返す。
+%当該リテラルについて\verb"M"中の他のアトムによる連言照合結果は、
+%差分リスト\verb"Rm-Rt"に詰めて返される。
+当該リテラルについて$M$中の他のアトムによる連言照合結果は、
+差分リスト$Rm-Rt$に詰めて返される。
+
+%------------------------------------------------------------------------------
+
+\begin{figure}
+\newbox\main
+%\setbox\main=\vbox{\hsize 65 true mm\baselineskip 10pt\footnotesize
+%\setbox\main=\vbox{\hsize 80 true mm\baselineskip 10pt\footnotesize
+\setbox\main=\vbox{\hsize 115 true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+mgtp(D,M,Cn,Cg,Res):-true|
+ empty(D,E),
+ (E=yes->
+   Res=sat;
+  otherwise;true->
+   pickup(D,Delta,D1),
+   subsTest(Delta,M,S),
+   (S=yes->mgtp(D1,M,Cn,Cg,Res);
+    S=no,Delta=(_;_)->
+     caseSplit(Delta,D1,M,Cn,Cg,Res);
+    otherwise;true->
+     cjm(Cn,Cn1,[Delta|M],F,[]),
+     (F=[false|_]->
+       Res=unsat;
+      otherwise;true->
+       cjm(Cg,Cg1,[Delta|M],New,[]),
+       addNew(New,D1,NewD),
+       mgtp(NewD,[Delta|M],Cn1,Cg1,Res)))).
+
+caseSplit((A;B),D,M,Cn,Cg,Res):-true|
+ caseSplit(A,D,M,Cn,Cg,R1),
+ (R1=sat->Res=sat;
+  otherwise;true->
+   caseSplit(B,D,M,Cn,Cg,Res)).
+otherwise.
+caseSplit(A,D,M,Cn,Cg,Res):-true|
+ addNew([A],D,NewD),
+ mgtp(NewD,M,Cn,Cg,Res).
+
+subsTest((A;B),M,S):-true|
+ subsTest(A,M,S1),
+ (S1=yes->S=yes;
+  otherwise;true->subsTest(B,M,S)).
+otherwise.
+subsTest(A,[A|_],S):-true|S=yes.
+otherwise.
+subsTest(A,[_|M],S):-true|subsTest(A,M,S).
+subsTest(_,[],S):-true|S=no.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip15pt
+%   \vbox{\vskip5pt\hbox{\box\main}\vskip5pt}\hskip15pt\vrule}\hrule}}
+   \vbox{\vskip0pt\box\main\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{基本MGTP証明系}
+\label{Fig:MGTP-main}
+\end{figure}
+
+%------------------------------------------------------------------------------
+
+%------------------------------------------------------------------------------
+
+\begin{figure}
+\newbox\cjm
+\setbox\cjm=\vbox{\hsize 104 true mm\baselineskip 10pt\footnotesize
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+cjm([N|Cs],Cs1,M,Rh,Rt):-true|
+ Cs1=[N|Cs2],
+ cjm1(N,M,[],M,Rh,Rm),
+ cjm(Cs,Cs2,M,Rm,Rt).
+cjm([],Cs1,_,Rh,Rt):-true|Cs1=[],Rh=Rt.
+
+cjm1(N,[A|M],V,Mh,Rh,Rt):-true|
+ problem:c(N,A,V,R),
+ (R=fail->Rh=Rm;
+  R=(_:_)->cjm1(N,Mh,R,Mh,Rh,Rm);
+  otherwise;true->Rh=[R|Rm]),
+ cjm1(N,M,V,Mh,Rm,Rt).
+cjm1(_,[],_,_,Rh,Rt):-true|Rh=Rt.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip15pt
+   \vbox{\vskip-5pt\hbox{\box\cjm}\vskip10pt}\hskip15pt\vrule}\hrule}}
+\caption{基本MGTP証明系の連言照合部}
+\label{Fig:MGTP-CJM}
+\end{figure}
+
+%==============================================================================
+
+\section{連言照合における冗長性除去}
+
+\subsection{連言照合の冗長性}
+
+基本MGTPの連言照合では、前件リテラルとモデル候補$M$中のアトムの
+同じ組合せに対して
+重複した計算が行なわれる可能性がある。
+以下では、このような連言照合における冗長計算を防ぐために考案した
+RAMS法\cite{FH91}とMERC法について述べる。
+
+%==============================================================================
+
+\subsection{RAMS法}
+
+RAMS法は、前件の照合の履歴を記憶する機構を設けることにより、
+連言照合における重複計算を避けるものである。
+図\ref{Fig:LIS}にこの方法を図示している。
+
+%一般に、前件$ A_1, \ldots, A_n $の各リテラル$A_i$につき
+一般に、MG節の前件$ A_1, \ldots, A_n $の各リテラル$A_i$につき
+一つのインスタンススタック$S_i$を割り当てる。
+各$S_i$には$ A_1, \ldots, A_i $のモデル候補$M$との照合結果
+%(成功した場合のインスタンス)が蓄えられる。
+(成功した場合の変数束縛情報)が蓄えられる。
+$S_1$には$A_1$の照合結果が格納され、
+$A_i (i>1)$の照合では、$S_{i-1}$に蓄えられた$ A_1, \ldots, A_{i-1} $
+の各照合結果のもとで、$A_i$自体と$M$との照合を行なう。
+以下、$A_i (i>1)$に対するこの照合演算を$S_{i-1} \circ M$と表す。
+
+各インスタンススタック$S_i$は、
+前ステージまでに積まれた部分$S_i^{k-1}$と、
+現在のステージにおいて積まれる部分$\delta S_i^k$との二つの部分に分けられる。
+ここで、指標$k$はメインループのステージ番号を表す。
+また、前ステージまでのモデル候補$M^{k-1}$を
+%拡張するアトムをモデル拡張アトムと呼び、$\Delta^k$で表現する。
+拡張するアトムをモデル拡張アトムと呼び、$\Delta^k$で表わす。
+
+%また、前件リテラル$A_1,A_2$に対し、$A_1$に$\Delta$を、$A_2$に
+%$M$からのアトムを照合させる連言照合演算を $\Delta \times M$と表す。
+
+$A_1$における作業$T_1^k$は、$A_1$と$\Delta^k$との照合であり、
+結果が$S_1$に積まれる。
+各リテラル$A_i (2\le i\le n-1)$における作業$T_i^k$は、
+連言照合の後、次のようにスタックの更新を行なう。
+\begin{eqnarray*}
+\delta S_i^k & := & \delta S_{i-1}^k \circ ( \Delta^k \cup M^{k-1} ) \cup
+                    S_{i-1}^{k-1} \circ \Delta^k \\
+       S_i^k & := & S_i^{k-1} \cup \delta S_i^k
+\end{eqnarray*}
+ただし、$T_n$は連言照合の最後であり、照合結果に対応する後件が得られた
+後は$ A_1, \ldots A_n $の照合計算結果自体をスタックに積む必要がない。
+したがって、最後のリテラル$A_n$に対するスタック$S_n$も実際に割り付ける
+必要はない。
+
+こうして、作業列$T_1 \ldots, T_n$をこの順に実行することにより、
+%前件$ A_1 \ldots, A_n $の連言照合を過不足なく実現することができる。
+前件$ A_1 \ldots, A_n $の連言照合を重複なしに実現することができる。
+図\ref{Fig:LIS}は、2ステージめで、
+$M$にアトム$1$が積まれ、$\Delta^2$がアトム$2$であるという状況を表している。
+まず、$A_1$と$\Delta^2$の照合が成功し、その結果(図中、簡単のため2
+と表記)が$\delta S_1^2$として$S_1$に積まれる。
+%$A_1=\delta S_1^2$のもとで$A_2$と$\Delta^2$の照合が成功し、この結果
+この$\delta S_1^2$のもとで$A_2$と$\Delta^2$の照合が成功し、その結果
+(図中22で表す)が$\delta S_2^2$の一つとして積まれている。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+
+\setlength{\unitlength}{1.2pt}
+\large
+\vspace{4cm}
+
+\begin{center}
+%\begin{picture}(360,230)(20,20)
+\begin{picture}(360,230)(0,20)
+%\setlength{\unitlength}{0.7pt}
+
+%  M stack
+\put(195,255){\makebox(0,0){$M$}}
+\thicklines
+\put(180,270){\line(0,1){64}}
+\put(210,270){\line(0,1){64}}
+\put(180,306){\line(1,0){30}}
+\put(180,288){\line(1,0){30}}
+\put(180,270){\line(1,0){30}}
+\thinlines
+\put(195,297){\makebox(0,0){2}}
+\put(215,297){\vector(0,1){9}}
+\put(215,297){\vector(0,-1){9}}
+\put(227,297){\makebox(0,0){$\Delta^2$}}
+\put(195,279){\makebox(0,0){1}}
+\put(215,279){\vector(0,1){9}}
+\put(215,279){\vector(0,-1){9}}
+\put(227,279){\makebox(0,0){$M^1$}}
+\put(210,306){\line(1,0){10}}
+\put(210,288){\line(1,0){10}}
+\put(210,270){\line(1,0){10}}
+
+%  Clause
+\put( 25,181){\framebox(320,18){}}
+\put( 45,190){\makebox(0,0){$A_1$}}
+\put( 60,185){\makebox(0,0){,}}
+\put(150,190){\makebox(0,0){$A_2$}}
+\put(165,185){\makebox(0,0){,}}
+\put(285,190){\makebox(0,0){$A_3$}}
+\put(310,190){\makebox(0,0){$\ldots$}}
+\thinlines
+\put(195,245){\vector(-3,-1){135}}
+\put(195,245){\vector(-1,-1){45}}
+\put(195,245){\vector( 2,-1){90}}
+
+%  A_1 stack
+\put( 45,-15){\makebox(0,0){$S_1$}}
+\thicklines
+\put( 30,  0){\line(0,1){64}}
+\put( 60,  0){\line(0,1){64}}
+\put( 30, 36){\line(1,0){30}}
+\put( 30, 18){\line(1,0){30}}
+\put( 30,  0){\line(1,0){30}}
+\thinlines
+\put( 45, 27){\makebox(0,0){2}}
+\put( 65, 27){\vector(0,1){9}}
+\put( 65, 27){\vector(0,-1){9}}
+\put( 79, 27){\makebox(0,0){$\delta S_1^2$}}
+\put( 45,  9){\makebox(0,0){1}}
+\put( 65,  9){\vector(0,1){9}}
+\put( 65,  9){\vector(0,-1){9}}
+\put( 77,  9){\makebox(0,0){$S_1^1$}}
+\put( 60, 36){\line(1,0){10}}
+\put( 60, 18){\line(1,0){10}}
+\put( 60,  0){\line(1,0){10}}
+
+%  A_2 stack
+\put(150,-15){\makebox(0,0){$S_2$}}
+\thicklines
+\put(100,  0){\line(0,1){96}}
+\put(190,  0){\line(0,1){96}}
+\put(100, 72){\line(1,0){90}}
+\put(100, 18){\line(1,0){90}}
+\put(100,  0){\line(1,0){90}}
+\thinlines
+\put(100, 54){\dashbox{1}(90,0){}}
+\put(100, 36){\dashbox{1}(90,0){}}
+\put(100, 54){\makebox(20,18){22}}
+\put(120, 54){\makebox(70,18){$\delta S_1^2 \circ \Delta^2$}}
+\put(100, 36){\makebox(20,18){21}}
+\put(120, 36){\makebox(70,18){$\delta S_1^2 \circ M^1$}}
+\put(100, 18){\makebox(20,18){12}}
+\put(120, 18){\makebox(70,18){$S_1^1 \circ \Delta^2$}}
+\put(100,  0){\makebox(20,18){11}}
+\put(120,  0){\makebox(70,18){$S_1^1 \circ M^1$}}
+\put(195, 45){\vector(0,1){27}}
+\put(195, 45){\vector(0,-1){27}}
+\put(209, 45){\makebox(0,0){$\delta S_2^2$}}
+\put(195,  9){\vector(0,1){9}}
+\put(195,  9){\vector(0,-1){9}}
+\put(207,  9){\makebox(0,0){$S_2^1$}}
+\put(190, 72){\line(1,0){10}}
+\put(190, 18){\line(1,0){10}}
+\put(190,  0){\line(1,0){10}}
+
+%  A_3 stack
+\put(285,-15){\makebox(0,0){$S_3$}}
+\thicklines
+\put(230,  0){\line(0,1){160}}
+\put(330,  0){\line(0,1){160}}
+\put(230,144){\line(1,0){100}}
+\put(230, 18){\line(1,0){100}}
+\put(230,  0){\line(1,0){100}}
+\thinlines
+\put(230,126){\dashbox{1}(25,0){}}
+\put(230,108){\dashbox{1}(25,0){}}
+\put(230, 90){\dashbox{1}(25,0){}}
+\put(230, 72){\dashbox{1}(25,0){}}
+\put(230, 54){\dashbox{1}(25,0){}}
+\put(230, 36){\dashbox{1}(100,0){}}
+\put(230,126){\makebox(25,18){222}}
+\put(230,108){\makebox(25,18){221}}
+\put(230, 90){\makebox(25,18){212}}
+\put(255, 90){\makebox(75,18){$\delta S_2^2 \circ$}}
+\put(255, 72){\makebox(75,18){$(\Delta^2 \cup M^1)$}}
+\put(230, 72){\makebox(25,18){211}}
+\put(230, 54){\makebox(25,18){122}}
+\put(230, 36){\makebox(25,18){121}}
+\put(230, 18){\makebox(25,18){112}}
+\put(255, 18){\makebox(75,18){$S_2^1 \circ \Delta^2$}}
+\put(230,  0){\makebox(25,18){111}}
+\put(255,  0){\makebox(75,18){$S_2^1 \circ M^1$}}
+\put(335, 81){\vector(0,1){63}}
+\put(335, 81){\vector(0,-1){63}}
+\put(349, 81){\makebox(0,0){$\delta S_3^2$}}
+\put(335,  9){\vector(0,1){9}}
+\put(335,  9){\vector(0,-1){9}}
+\put(347,  9){\makebox(0,0){$S_3^1$}}
+\put(330,144){\line(1,0){10}}
+\put(330, 18){\line(1,0){10}}
+\put(330,  0){\line(1,0){10}}
+
+\end{picture}
+\end{center}
+\vspace{2cm}
+\caption{インスタンススタック}
+\label{Fig:LIS}
+\end{figure}
+
+%------------------------------------------------------------------------------
+
+上で述べた方法と同様の効果を狙ったものにRETEが
+あるが、これはホーン節に限定されている。
+一方、RAMS法はスタックを用いているので、
+非ホーン節に対しても容易に対応できる。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\setlength{\unitlength}{1.5pt}
+\large
+
+\begin{center}
+%\begin{picture}(330,250)(90,40)
+\begin{picture}(330,250)(70,40)
+
+%  M stack
+\put(188,190){\makebox(0,0){$M$}}
+
+\put(188,205){\makebox(0,0){1}}
+\put(188,215){\makebox(0,0){2}}
+\put(170,235){\makebox(0,0){3}}
+\put(206,235){\makebox(0,0){4}}
+\put(188,255){\makebox(0,0){5}}
+\put(224,255){\makebox(0,0){6}}
+
+\put(162,230){\line(1,0){16}}
+\put(162,240){\line(1,0){16}}
+\put(162,230){\line(0,1){20}}
+\put(178,230){\line(0,1){20}}
+\put(198,230){\line(1,0){16}}
+\put(198,240){\line(1,0){16}}
+\put(198,230){\line(0,1){10}}
+\put(214,230){\line(0,1){10}}
+\put(170,244){\makebox(0,0){.}}
+\put(170,247){\makebox(0,0){.}}
+\put(170,250){\makebox(0,0){.}}
+\put(180,250){\line(1,0){16}}
+\put(180,260){\line(1,0){16}}
+\put(180,250){\line(0,1){20}}
+\put(196,250){\line(0,1){20}}
+\put(180,200){\line(1,0){16}}
+\put(180,210){\line(1,0){16}}
+\put(180,220){\line(1,0){16}}
+\put(180,200){\line(0,1){20}}
+\put(196,200){\line(0,1){20}}
+\put(188,264){\makebox(0,0){.}}
+\put(188,267){\makebox(0,0){.}}
+\put(188,270){\makebox(0,0){.}}
+\put(216,250){\line(1,0){16}}
+\put(216,260){\line(1,0){16}}
+\put(216,250){\line(0,1){20}}
+\put(232,250){\line(0,1){20}}
+\put(224,264){\makebox(0,0){.}}
+\put(224,267){\makebox(0,0){.}}
+\put(224,270){\makebox(0,0){.}}
+\put(180,220){\line(-1,1){10}}
+\put(196,220){\line(1,1){10}}
+\put(198,240){\line(-1,1){10}}
+\put(214,240){\line(1,1){10}}
+\put(188,180){\vector(4,-1){50}}
+\put(188,180){\vector(-4,-1){50}}
+
+%  Clause
+\put(115,150){\framebox(200,16){}}
+\put(130,158){\makebox(0,0){$A_1$}}
+\put(140,153){\makebox(0,0){,}}
+\put(240,158){\makebox(0,0){$A_2$}}
+\put(250,153){\makebox(0,0){,}}
+\put(290,153){\makebox(0,0){$\ldots$}}
+
+%  S_1 stack
+\put(128,-15){\makebox(0,0){$S_1$}}
+
+\put(128,  5){\makebox(0,0){1}}
+\put(110, 25){\makebox(0,0){3}}
+\put(146, 25){\makebox(0,0){4}}
+\put(128, 45){\makebox(0,0){5}}
+\put(164, 45){\makebox(0,0){6}}
+
+\put(102, 20){\line(1,0){16}}
+\put(102, 30){\line(1,0){16}}
+\put(102, 20){\line(0,1){20}}
+\put(118, 20){\line(0,1){20}}
+\put(138, 20){\line(1,0){16}}
+\put(138, 30){\line(1,0){16}}
+\put(138, 20){\line(0,1){10}}
+\put(154, 20){\line(0,1){10}}
+\put(110, 34){\makebox(0,0){.}}
+\put(110, 37){\makebox(0,0){.}}
+\put(110, 40){\makebox(0,0){.}}
+\put(120, 40){\line(1,0){16}}
+\put(120, 50){\line(1,0){16}}
+\put(120, 40){\line(0,1){20}}
+\put(136, 40){\line(0,1){20}}
+\put(120,  0){\line(1,0){16}}
+\put(120, 10){\line(1,0){16}}
+\put(120,  0){\line(0,1){10}}
+\put(136,  0){\line(0,1){10}}
+\put(128, 54){\makebox(0,0){.}}
+\put(128, 57){\makebox(0,0){.}}
+\put(128, 60){\makebox(0,0){.}}
+\put(156, 40){\line(1,0){16}}
+\put(156, 50){\line(1,0){16}}
+\put(156, 40){\line(0,1){20}}
+\put(172, 40){\line(0,1){20}}
+\put(162, 54){\makebox(0,0){.}}
+\put(162, 57){\makebox(0,0){.}}
+\put(162, 60){\makebox(0,0){.}}
+\put(120, 10){\line(-1,1){10}}
+\put(136, 10){\line(1,1){10}}
+\put(138, 30){\line(-1,1){10}}
+\put(154, 30){\line(1,1){10}}
+
+%  S_2 stack
+\put(240,-15){\makebox(0,0){$S_2$}}
+
+\put(240,  5){\makebox(0,0){11}}
+\put(218, 25){\makebox(0,0){13}}
+\put(218, 35){\makebox(0,0){31}}
+\put(218, 45){\makebox(0,0){32}}
+\put(218, 55){\makebox(0,0){33}}
+\put(262, 25){\makebox(0,0){14}}
+\put(262, 35){\makebox(0,0){41}}
+\put(262, 45){\makebox(0,0){42}}
+\put(262, 55){\makebox(0,0){44}}
+\put(240, 75){\makebox(0,0){15}}
+\put(240, 85){\makebox(0,0){45}}
+\put(240, 95){\makebox(0,0){51}}
+\put(240,105){\makebox(0,0){52}}
+\put(240,115){\makebox(0,0){54}}
+\put(240,125){\makebox(0,0){55}}
+\put(284, 75){\makebox(0,0){16}}
+\put(284, 85){\makebox(0,0){46}}
+\put(284, 95){\makebox(0,0){61}}
+\put(284,105){\makebox(0,0){62}}
+\put(284,115){\makebox(0,0){64}}
+\put(284,125){\makebox(0,0){66}}
+
+\put(208, 20){\line(1,0){20}}
+\put(208, 30){\line(1,0){20}}
+\put(208, 40){\line(1,0){20}}
+\put(208, 50){\line(1,0){20}}
+\put(208, 60){\line(1,0){20}}
+\put(208, 20){\line(0,1){50}}
+\put(228, 20){\line(0,1){50}}
+\put(252, 20){\line(1,0){20}}
+\put(252, 30){\line(1,0){20}}
+\put(252, 40){\line(1,0){20}}
+\put(252, 50){\line(1,0){20}}
+\put(252, 60){\line(1,0){20}}
+\put(252, 20){\line(0,1){40}}
+\put(272, 20){\line(0,1){40}}
+\put(218, 64){\makebox(0,0){.}}
+\put(218, 67){\makebox(0,0){.}}
+\put(218, 70){\makebox(0,0){.}}
+\put(230, 70){\line(1,0){20}}
+\put(230, 80){\line(1,0){20}}
+\put(230, 90){\line(1,0){20}}
+\put(230,100){\line(1,0){20}}
+\put(230,110){\line(1,0){20}}
+\put(230,120){\line(1,0){20}}
+\put(230,130){\line(1,0){20}}
+\put(230, 70){\line(0,1){70}}
+\put(250, 70){\line(0,1){70}}
+\put(230,  0){\line(1,0){20}}
+\put(230, 10){\line(1,0){20}}
+\put(230,  0){\line(0,1){10}}
+\put(250,  0){\line(0,1){10}}
+\put(240,134){\makebox(0,0){.}}
+\put(240,137){\makebox(0,0){.}}
+\put(240,140){\makebox(0,0){.}}
+\put(274, 70){\line(1,0){20}}
+\put(274, 80){\line(1,0){20}}
+\put(274, 90){\line(1,0){20}}
+\put(274,100){\line(1,0){20}}
+\put(274,110){\line(1,0){20}}
+\put(274,120){\line(1,0){20}}
+\put(274,130){\line(1,0){20}}
+\put(274, 70){\line(0,1){70}}
+\put(294, 70){\line(0,1){70}}
+\put(284,134){\makebox(0,0){.}}
+\put(284,137){\makebox(0,0){.}}
+\put(284,140){\makebox(0,0){.}}
+\put(230, 10){\line(-1,1){10}}
+\put(250, 10){\line(1,1){10}}
+\put(252, 60){\line(-1,1){10}}
+\put(272, 60){\line(1,1){10}}
+
+\end{picture}
+\end{center}
+\vspace{4cm}
+\caption{分岐スタック}
+\label{Fig:RAMS}
+\end{figure}
+%------------------------------------------------------------------------------
+
+RAMS法に基づいて、基本MGTP証明系の連言照合部を修正したものを
+図\ref{Fig:CJM-RAMS}に示す。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\newbox\cjmrams
+\setbox\cjmrams=\vbox{\hsize 122  true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+cjm([N:L|Cs],Cs1,Delta,M,Rh,Rt):-true|
+ Cs1=[N:L1|Cs2],
+ cjm1(N,L,L1,Delta,M,[[]],[],Rh,R1),
+ cjm(Cs,Cs2,Delta,M,R1,Rt).
+cjm([],Cs1,_,_,Rh,Rt):-true|Cs1=[],Rh=Rt.
+
+cjm1(N,[Sn|Ls],Ls1,Delta,M,Sp,Dp,Rh,Rt):-true|
+ Ls1=[NewSn|Ls2],
+ cjm2(N,[Delta|M],Dp,NewSn,S1,Dn,D1),
+ cjm2(N,[Delta],Sp,S1,Sn,D1,[]),
+ cjm1(N,Ls,Ls2,Delta,M,Sn,Dn,Rh,Rt).
+cjm1(N,[],Ls1,Delta,M,Sp,Dp,Rh,Rt):-true|
+ Ls1=[],
+ cjm2(N,[Delta|M],Dp,Rh,R1,_,_),
+ cjm2(N,[Delta],Sp,R1,Rt,_,_).
+
+cjm2(N,As,[V|Vs],Sh,St,Dh,Dt):-true|
+ cjm3(N,As,V,Sh,S1,Dh,D1),
+ cjm2(N,As,Vs,S1,St,D1,Dt).
+cjm2(_,_,[],Sh,St,Dh,Dt):-true|
+ Sh=St,Dh=Dt.
+
+cjm3(N,[A|As],V,Sh,St,Dh,Dt):-true|
+ problem:c(N,A,V,R),
+ (R=fail->Sh=S1,Dh=D1;
+  R=(_:_)->Sh=[R|S1],Dh=[R|D1];
+  otherwise;true->Sh=[R|S1]),
+ cjm3(N,As,V,S1,St,D1,Dt).
+cjm3(_,[],_,Sh,St,Dh,Dt):-true|
+ Sh=St,Dh=Dt.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+%   \vbox{\vskip5pt\box\cjmrams\vskip5pt}\hskip10pt\vrule}\hrule}}
+   \vbox{\vskip0pt\box\cjmrams\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{連言照合部のRAMS版}
+\label{Fig:CJM-RAMS}
+\end{figure}
+
+%==============================================================================
+
+\subsection{MERC法}
+
+MERC法では、一般にMG節の前件$ A_1, \ldots, A_n $に対し、
+$M$と$\Delta$に対する連言照合を図\ref{Fig:MERC}に示すような組合せで行う。
+%本図の第1行は、$A_1$に$\Delta$を、$A_2,\ldots,A_n$に$M$の要素を照合させる
+本図の第1行に示すパタンは、$A_1$に$\Delta$を、
+$A_2,\ldots,A_n$に$M$中のアトムを照合させる
+ことを表す。
+ここで、$A_1, \ldots, A_n $の少なくとも一つは$\Delta$と
+照合するような組み合わせのみを選ぶようにし、
+$A_1, \ldots, A_n$のすべてが$M$に含まれるアトムと
+%照合されるような組み合わせが排除されていることに注意。
+照合されるような組み合わせを排除すれば、
+ステージ間冗長性が避けられるわけである。
+
+以下では、$\Delta$と照合させるリテラルを入口リテラルと呼び、
+$M$中のアトムを照合させるリテラルを後続リテラルと呼ぶことにする。
+連言照合は、まず入口リテラルに$\Delta$を照合させ、
+これが成功した場合に後続リテラルを$M$中のアトムで照合させるように進める。
+%しかしながら、前節までに示したKL1節表現では、
+%リテラルの照合順序を証明実行時に変更することができない。
+%したがって、MG節のKL1節表現を与える際、
+%1本のMG節を異なる入口リテラル毎に別個のKL1節で表現する。
+しかしながら、前節までに示したKL1節表現では
+リテラル順序が一つに固定されており、任意のリテラルを入口リテラルとすることが
+できない。
+したがって、MERC法においては1本のMG節に対し、
+入口リテラルの異なる取り方ごとにそれぞれ別個のKL1節として表現する必要がある。
+
+図\ref{Fig:MERC}中(イ)に属する、入口リテラルが一つのパタンについては、
+各パタンにつき、$A_1, \ldots, A_n $の順序を入れ換えて入口リテラルを
+先頭とする1本のMG節を考え、これに対応するKL1節を用意する。
+一方、図中(ロ)に属する、複数の前件リテラルが
+入口リテラルとなるパタンについては、KL1節を省ける場合がある。
+たとえば、二つのリテラル$A_j, A_k$が同時に$\Delta$と照合するのは、
+これらが単一化可能な場合($A_j = A_k$と表す)、
+すなわちファクタリング可能な場合に限られる。
+したがって、図中(ロ)に属するパタンのうち、
+単一化不可能な入口リテラル対を含むものについてはKL1節を用意しなくてよい。
+一方、単一化可能な複数の入口リテラル$A_{i1} \ldots A_{il}$
+については、
+ファクタリングを行なった結果のリテラル$A_r$ ($A_{i1}=A_{i2}=\ldots 
+=A_{il}$) を計算し、これを一つの新たな入口リテラルとしたKL1節を用意する
+ことにする。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\setlength{\unitlength}{2.0pt}
+\Large
+
+\begin{center}
+\begin{tabular}{c|ccccccccc}
+& $A_1$ &  & $A_2$ &  & $A_3$ &  &
+  $\ldots$ &  & $A_n$ \\
+\hline
+(イ) & $\Delta$ &  & $M$ &  & $M$ &  &
+  $\ldots$ &  & $M$ \\
+& $M$ &  & $\Delta$ &  & $M$ &  &
+  $\ldots$ &  & $M$ \\
+& $M$ &  & $M$ &  & $\Delta$ &  &
+  $\ldots$ &  & $M$ \\
+&\multicolumn{9}{c}{$\ldots$} \\
+& $M$ &  & $M$ &  & $M$ &  &
+  $\ldots$ &  & $\Delta$ \\
+\hline
+(ロ) & $\Delta$ &  & $\Delta$ &  & $M$ &  &
+  $\ldots$ &  & $M$ \\
+& $M$ &  & $\Delta$ &  & $\Delta$ &  &
+  $\ldots$ &  & $M$ \\
+&\multicolumn{9}{c}{$\ldots$} \\
+& $\Delta$ &  & $\Delta$ &  & $\Delta$ &  &
+  $\ldots$ &  & $\Delta$
+\end{tabular}
+\end{center}
+\caption{MERC法による連言照合}
+\label{Fig:MERC}
+\end{figure}
+
+%------------------------------------------------------------------------------
+
+例として、問題SのKL1節表現を
+図\ref{Fig:S-MERC}に示しておく。
+MERC法を採用する場合、
+基本MGTP証明系の連言照合部の一部は、
+図\ref{Fig:CJM-MERC}のように修正される。
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\newbox\slmerc
+\setbox\slmerc=\vbox{\hsize 114 true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+c(c1,true,     [],R):-true|R=(p(a,a);q(b)).
+c(c2,r(X,f(X)),[],R):-true|R=false.
+c(c3_1,p(X,X),   [],R):-true|R=(1:[X]).
+c(c3_1,p(X,Y),1:[X],R):-true|R=r(X,f(Y)).
+c(c3_2,p(X,Y),   [],R):-true|R=(1:[X,Y]).
+c(c3_2,p(X,X),1:[X,Y],R):-true|R=r(X,f(Y)).
+c(c3_1_2,p(X,X), [],R):-true|R=r(X,f(X)).
+c(c4,q(X),     [],R):-true|R=p(f(X),f(X)).
+otherwise.
+c(_,_,_,R):-true|R=fail.
+\end{verbatim}
+}
+
+\setlength{\unitlength}{1.5pt}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+   \vbox{\vskip0pt\box\slmerc\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{問題SのMERC版KL1表現}
+\label{Fig:S-MERC}
+\end{figure}
+
+%------------------------------------------------------------------------------
+
+%------------------------------------------------------------------------------
+\begin{figure}
+\newbox\cjmmerc
+\setbox\cjmmerc=\vbox{\hsize 108 true mm\baselineskip 10pt
+\def\verbfont{\large\baselineskip6mm}
+\begin{verbatim}
+cjm([N|Cs],Cs1,[Delta|M],Rh,Rt):-true|
+ Cs1=[N|Cs2],
+ problem:c(N,Delta,[],R),
+ (R=fail->Rh=Rm;
+  R=(_:_)->cjm1(N,M,R,M,Rh,Rm);
+  otherwise;true->Rh=[R|Rm]),
+ cjm(Cs,Cs2,[Delta|M],Rm,Rt).
+cjm([],Cs1,_,Rh,Rt):-true|Cs1=[],Rh=Rt.
+\end{verbatim}}
+
+\setlength{\unitlength}{1.5pt}
+\vspace{3cm}
+
+\centerline{\vbox{\hrule\hbox{\vrule\hskip10pt
+   \vbox{\vskip0pt\box\cjmmerc\vskip10pt}\hskip10pt\vrule}\hrule}}
+\caption{連言照合部のMERC版}
+\label{Fig:CJM-MERC}
+\end{figure}
+
+%==============================================================================
+
+\section{RAMS 法と MERC 法の比較}
+
+RAMS法では前件リテラル$A_1,\ldots,A_{i-1}$に対するモデル候補$M$
+との照合結果を記憶し、
+その記憶をもとに$A_i$と最新のアトムである$\Delta$の照合を行なうのに対し、
+MERC法では$A_1,\ldots,A_{i-1}$に対する照合を再計算するという冗長性がある。
+これをM-M冗長性と呼ぶ。
+%さらに、MERC法では1本の節を入口リテラルの数だけ複製しているので、
+さらに、MERC法では1本のMG節を入口リテラルの数だけ複製しているので、
+上記の冗長性は複製分だけ重複して現れる。
+
+しかしながら、MERC法では入口リテラル$A_i$と$\Delta$との照合を優先し、
+後続リテラル$A_1,\ldots,A_{i-1}$と$M$中のアトムとの照合を後に行なうのに対し、
+RAMS法では、与えられたMG節の前件リテラルの並びの順序によって照合順序が
+固定されており、$\Delta$との照合が優先されるということはない。
+その結果、MERC法では$\Delta$による入口リテラルの照合が失敗したときには
+後続リテラルの照合が省略されるのに対し、
+RAMS法では後続リテラルの照合で成功する組み合わせのすべてについて
+入口リテラルと$\Delta$との無駄な照合を繰り返す可能性がある。
+これを$\Delta$失敗冗長性と呼ぶ。
+
+また、メモリ消費に関しては、
+RAMS法では証明実行時にインスタンススタックの分だけ余計にメモリを消費する
+のに対し、MERC法では入口リテラルの数の分だけ節の複製を必要とする。
+
+このように、ステージ間冗長性、M-M冗長性、ならびに$\Delta$失敗冗長性、
+さらにメモリ消費特性が、証明系の全体性能にどのように影響するかは、
+対象の問題に強く依存しており、RAMS法とMERC法の優劣は明確でない。
+加えて、RAMS法とMERC法では、連言照合で組み合わされるモデル候補中のアトム
+の組み合わせ順序が異なるので、モデル拡張候補アトムの並べ換えを行なわない
+限り、一般には$\Delta$の選ばれる順序が異なり証明も異なってくる。

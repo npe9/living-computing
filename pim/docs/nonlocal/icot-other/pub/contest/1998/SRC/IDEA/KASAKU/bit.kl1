@@ -1,0 +1,31 @@
+%*********************************************************************%
+%  pnm converter (bit control module)                                 %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module bit.
+
+
+bit_server(Input, Stream) :-
+	bit_server(Input, -1, 0, Stream).
+
+bit_server(Input, Bit, Char, Stream0) :-
+	Stream0 = [read(N, Dat) | Stream] |
+	bit_server(Input, Bit, Char, 0, N, 0, Dat, Stream).
+bit_server(Input, _Bit, _Char, []) :- Input = [].
+
+bit_server(Input0, Bit, _Char, N, NMax, Dat0, Dat, Stream) :-
+	Bit < 0 |
+	Input0 = [getc(Char) | Input],
+	bit_server(Input, 7, Char, N, NMax, Dat0, Dat, Stream).
+bit_server(Input, Bit0, Char0, N0, NMax, Dat0, Dat, Stream) :-
+	Bit0 >= 0, N0 < NMax, N1 := N0 + 1, Bit1 := Bit0 - 1,
+	Char1 := Char0 >> 1,
+	Dat1 := Dat0 \/ ((Char0 /\ 1) << N0) |
+	bit_server(Input, Bit1, Char1, N1, NMax, Dat1, Dat, Stream).
+bit_server(Input, Bit0, Char0, N0, NMax, Dat0, Dat, Stream) :-
+	Bit0 >= 0, N0 >= NMax |
+	Dat = Dat0,
+	bit_server(Input, Bit0, Char0, Stream).
+

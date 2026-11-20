@@ -1,0 +1,41 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Index search condition</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Index search condition">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html274 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html272 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html266 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html275 HREF="node20.html"> Data Search Condition</A>
+<B>Up:</B> <A NAME=tex2html273 HREF="node18.html"> Search condition</A>
+<B> Previous:</B> <A NAME=tex2html267 HREF="node18.html"> Search condition</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00034100000000000000> Index search condition</A></H3>
+<P>
+<b>&lt;</b>IndexSearchCond<b>&gt;</b>::=IndexSingleCond<BR> <IMG  ALIGN=MIDDLE ALT="" SRC="img83.gif"> 
+LogicalOperator(<b>&lt;</b>IndexSearchCond<b>&gt;</b>,<b>&lt;</b>IndexSearchCond<b>&gt;</b>)<BR> <IMG  ALIGN=MIDDLE ALT="" SRC="img84.gif"> 
+<b> compress</b>(Attr_name,<b>&lt;</b>IndexSearchCond<b>&gt;</b>)
+<P>
+IndexSingleCond::=RangeSearch <IMG  ALIGN=MIDDLE ALT="" SRC="img85.gif"> Attr_name ComparisonOperator Attr_value <IMG  ALIGN=MIDDLE ALT="" SRC="img86.gif"> 
+Attr_name=<b> concat</b>(String,*) <IMG  ALIGN=MIDDLE ALT="" SRC="img87.gif"> <b> not_exist</b>(Attr_name) <IMG  ALIGN=MIDDLE ALT="" SRC="img88.gif"> <b> is_null</b>(Attr_name)
+<P>
+String::=<i> STRING</i>
+<P>
+Attr_name::=<i> ATOM</i>
+<P>
+ComparisonOperator::= =<b>&lt;</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img89.gif"> <b>&lt;</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img90.gif"> <b>&gt;</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img91.gif"> <b>&gt;</b>= <IMG  ALIGN=MIDDLE ALT="" SRC="img92.gif"> =
+<P>
+LogicalOperator::= <b> and</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img93.gif"> <b> or</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img94.gif"> <b> dif</b>
+<P>
+RangeSearch::= <b> range</b>(Attr_name,Attr_value1,Attr_value2) <IMG  ALIGN=MIDDLE ALT="" SRC="img95.gif"> etc.
+<P>
+Attr_value::=<i> INTEGER</i> <IMG  ALIGN=MIDDLE ALT="" SRC="img96.gif"> <i> STRING</i>
+<P>
+<BR> <HR>
+<P>
+</BODY>

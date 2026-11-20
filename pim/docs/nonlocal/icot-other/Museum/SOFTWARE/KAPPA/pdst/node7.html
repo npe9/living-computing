@@ -1,0 +1,170 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 関係モデル</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 関係モデル">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html138 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html136 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html130 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html139 HREF="node8.html"> 非正規関係モデル</A>
+<B>Up:</B> <A NAME=tex2html137 HREF="node6.html"> 関係モデルと非正規関係モデル</A>
+<B> Previous:</B> <A NAME=tex2html131 HREF="node6.html"> 関係モデルと非正規関係モデル</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022100000000000000> 関係モデル</A></H3>
+<A NAME=srm>&#160;</A>
+<P>
+1970年にE.F.Coddが提唱した関係モデルは、データベースを関係の集合として
+表現したものである。関係とは、定義域(値の集合) <IMG  ALIGN=MIDDLE ALT="" SRC="img2.gif">
+の直積<IMG  ALIGN=MIDDLE ALT="" SRC="img3.gif"> の部分集合として定義される。
+領域には属性という名前がつけられる。属性名は一意的でなければならないが、
+領域としては重複していてもかまわない。また領域は無限集合であってもよい
+が、データベースで使う関係はつねに有限集合だけである。たとえば
+表<A HREF="node7.html#ttab1">1</A>
+<P><A NAME=49>&#160;</A><A NAME=ttab1>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img4.gif">
+<BR><STRONG>表 1:</STRONG> 関係の例<BR>
+<P>
+が関係の例である。名前、所属、所在地が属性であり、個々の値は属性の実現
+値である。実現値の組合せである行がタプルと呼ばれる。関係はタプルの集ま
+りとみることができる。データ構造の面からみれば、スキーマは属性の集合
+<IMG  ALIGN=MIDDLE ALT="" SRC="img5.gif"> で関係を定義することができる。この関係を
+<IMG  ALIGN=MIDDLE ALT="" SRC="img6.gif"> で表わしたりする。このように関係はひじょうに単純な
+表現であるので、データベース理論での数学的な扱いが容易にできるようになっ
+た。関係はこのような表形式で表現されるがすべての表が関係というわけでは
+ない。関係であるためには次の2つの条件が成立しなければならない。
+<OL><LI> タプルは1つの関係の中では一意的でなければならない。
+<LI> タプルを一意的に決定する(関係の中の)属性の集まりをキーといい、そ
+の中でのタプルの識別に使用するものを主キーというが、主キーは空値であっ
+てはならない。
+</OL>
+<P>
+それでは実世界を関係としてどのように表現するのだろうか。まず表現したい
+世界の属性を集め、表<A HREF="node7.html#ttab1">1</A>のような関係を作る。この平坦な表表現、
+これが関係モデルのデータ構造である。しかしこのままだと、所属-所在地に
+データの重複があったり、名前-所属の変更によって所属-所在地の情報が喪失
+する危険性がある。そこで属性間の意味制約、すなわち従属性(dependency)を
+考え、最初の表(第1正規形)に対し正規化(Normalization)をおこなう。
+<P>
+まず関数従属(functional dependency) が定義できる。これは関係
+<IMG  ALIGN=MIDDLE ALT="" SRC="img7.gif">の中の属性の集まり<IMG  ALIGN=MIDDLE ALT="" SRC="img8.gif">の値によっ
+て他の属性の集まり<IMG  ALIGN=MIDDLE ALT="" SRC="img9.gif">の値が一意的に決まるとき、
+<IMG  ALIGN=MIDDLE ALT="" SRC="img10.gif">は<IMG  ALIGN=MIDDLE ALT="" SRC="img11.gif">に関数従属であるといい、<IMG  ALIGN=MIDDLE ALT="" SRC="img12.gif">と書く。すなわ
+ち、もしタプル<b>r</b>の属性<IMG  ALIGN=MIDDLE ALT="" SRC="img13.gif">の値を<IMG  ALIGN=MIDDLE ALT="" SRC="img14.gif">と書けば、関数従属は任意のタ
+プル<IMG  ALIGN=MIDDLE ALT="" SRC="img15.gif">、<IMG  ALIGN=MIDDLE ALT="" SRC="img16.gif">に対して
+	<P><IMG  ALIGN=BOTTOM ALT="" SRC="img17.gif"><P>
+であることである。表<A HREF="node7.html#ttab1">1</A>では、名前<IMG  ALIGN=BOTTOM ALT="" SRC="img18.gif">所属、所属
+<IMG  ALIGN=BOTTOM ALT="" SRC="img19.gif">所在地の2つの関数従属がある。このままだと、もし横田が所属
+を変更した場合そのタプルの所属と所在地を更新しなければならない。すると
+O が港区にあるという情報は失われてしまう。そこで関係を関数従属性にした
+がって表<A HREF="node7.html#ttab2">2</A>のように分割する。もっと一般化すると、キーに対す
+る関数従属がその関係内でのすべての関数従属であるような関係に分割するこ
+とである。このような関係を第3正規形と呼ぶ。この関数従属に基づく分割に
+は第2正規型を始めいくつかのものがあるが、これらは関数従属をどのレベル
+でとらえるかの違いである。この第3正規形は上で述べたような情報の喪失を
+防ぐだけでなく、表<A HREF="node7.html#ttab2">2</A>
+<P><A NAME=67>&#160;</A><A NAME=ttab2>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img20.gif">
+<BR><STRONG>表 2:</STRONG> 関数従属による分割<BR>
+<P>
+のように、重複した所属と所在地の組が除去され表現が簡潔になっている、す
+なわちデータの冗長性が減っている。したがってＯの所在地が変更になったと
+しても更新するのは1カ所だけであり、第１正規形よりも優れていることがわ
+かる。
+<P>
+関係の正規化は関数従属だけによるものではない。多値従属性(multivalued
+dependency) も重要である。表<A HREF="node7.html#ttab3">3</A>
+<P><A NAME=100>&#160;</A><A NAME=ttab3>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img21.gif">
+<BR><STRONG>表 3:</STRONG> 多値従属の関係<BR>
+<P>
+を考えよう。この関係は名前、趣味、同好会の3つからからなっている。この
+関係の中には関数従属性はないが、この関係を表<A HREF="node7.html#ttab4">4</A>
+<P><A NAME=113>&#160;</A><A NAME=ttab4>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img22.gif">
+<BR><STRONG>表 4:</STRONG> 多値従属による分割<BR>
+<P>
+のように分割すると冗長性を減らすことができる。趣味とか同好会のように名
+前に対して複数の値をもつ場合を多値従属性と呼び、名前
+<IMG  ALIGN=BOTTOM ALT="" SRC="img23.gif">趣味(および名前
+<IMG  ALIGN=BOTTOM ALT="" SRC="img24.gif">同好会)と表わす。これは、もとの関
+係を名前と趣味、名前と同好会の2つの関係に分割してもよいことを意味して
+いる。複数に分割した関係を再び結合しても情報の喪失が生じないのは明らか
+だろう。
+<P>
+関数従属や多値従属の他にも多くの従属性が考えられている。ここでもっとも
+重要なことは、分割した関係を再びもとに戻しても情報の喪失がない、という
+ことである。このような分割可能な最大の属性集合どおしの関係を結合従属性
+と呼んでいる。
+<P>
+次に関係に対するデータ操作を考えてみよう。関係モデルでは、集合操作を中
+心とする関係代数(Relational Algebra)と、一階述語論理の記述を使用した関
+係論理(Relational Calculus)がある。
+<P>
+まず関係代数であるが、次の５種類からなる。
+<DL ><DT>(1)
+<DD> 和(Union)<BR> 
+2つの関係<b>R</b>と<b>S</b>の和<IMG  ALIGN=BOTTOM ALT="" SRC="img25.gif">は、<b>R</b>のタプルと<b>S</b>のタプルの集合和で
+ある。
+<P>
+<DT>(2)
+<DD> 差(Difference)<BR> 
+2つの関係<b>R</b>と<b>S</b>の差<IMG  ALIGN=MIDDLE ALT="" SRC="img26.gif">は、<b>R</b>に属しているが<b>S</b>には属して
+いないタプルの集合である。
+<P>
+<DT>(3)
+<DD> 直積(Cartesian Product)<BR> 
+2つの関係<b>R</b>と<b>S</b>の直積<IMG  ALIGN=MIDDLE ALT="" SRC="img27.gif">は、
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img28.gif"><P>
+で与えられる。
+<P>
+<DT>(4)
+<DD> 選択(Selection)<BR> 
+関係<b>R</b>から条件論理式<b>C</b>を満足する、<b>R</b>の部分関係<IMG  ALIGN=BOTTOM ALT="" SRC="img29.gif">を取り出す操作を、
+<b>C</b>による<b>R</b>の選択という。これを<IMG  ALIGN=MIDDLE ALT="" SRC="img30.gif">と書くことにする。<b>C</b>
+は属性名,実現値,四則演算子、比較演算子、論理演算子から構成される論理式
+であり、属性名に実際のタプルの値が代入されてその条件の充足可否が決定さ
+れる。
+<P>
+<DT>(5)
+<DD> 射影(Projection)<BR> 
+関係<b>R</b>から指定された属性<IMG  ALIGN=MIDDLE ALT="" SRC="img31.gif">のみからなる関係<b>S</b>を作り
+だす操作である。たとえば表<A HREF="node7.html#ttab3">3</A>から名前と趣味による射影は
+表<A HREF="node7.html#ttab4">4</A> (1) となる。これを<IMG  ALIGN=MIDDLE ALT="" SRC="img32.gif"> と書く。
+<P>
+ </DL>
+<P>
+以上の基本操作を合成することにより、以下の操作が定義される。
+<DL ><DT>(6)
+<DD> 共通部分(Intersection)<BR> 
+2つの関係<b>R</b>と<b>S</b>に関して、
+<IMG  ALIGN=MIDDLE ALT="" SRC="img33.gif">で定義される。
+<P>
+<DT>(7)
+<DD> <IMG  ALIGN=BOTTOM ALT="" SRC="img34.gif">-結合(<IMG  ALIGN=BOTTOM ALT="" SRC="img35.gif">-Join)<BR> 
+2つの関係<b>R</b>と<b>S</b>があり、<IMG  ALIGN=MIDDLE ALT="" SRC="img36.gif">と<IMG  ALIGN=MIDDLE ALT="" SRC="img37.gif">がそれぞれ<b>R</b>と<b>S</b>の属性であった
+とき、<IMG  ALIGN=MIDDLE ALT="" SRC="img38.gif">と<IMG  ALIGN=MIDDLE ALT="" SRC="img39.gif">による<b>R</b>と<b>S</b>の<IMG  ALIGN=BOTTOM ALT="" SRC="img40.gif">-結合とは、
+<IMG  ALIGN=MIDDLE ALT="" SRC="img41.gif">で与えられる関係のことである。<IMG  ALIGN=BOTTOM ALT="" SRC="img42.gif">
+は比較演算子であるが、とくにそれが等号であるとき等結合(equi-join) と呼
+び、さらに<b>R</b>と<b>S</b>の共通の属性を重複がないように除去したものを自然結合
+(natural join)という。
+<P>
+<DT>(8)
+<DD> 割算(Division)<BR> 
+2つの関係<b>R</b>と<b>S</b>があり、それぞれのタプルを
+<IMG  ALIGN=MIDDLE ALT="" SRC="img43.gif">、<IMG  ALIGN=MIDDLE ALT="" SRC="img44.gif">とする。割算
+<IMG  ALIGN=MIDDLE ALT="" SRC="img45.gif">は、すべての<IMG  ALIGN=MIDDLE ALT="" SRC="img46.gif">に対し
+<IMG  ALIGN=MIDDLE ALT="" SRC="img47.gif">が<b>R</b>のタプルであるような
+<IMG  ALIGN=MIDDLE ALT="" SRC="img48.gif">を求める操作である。明らかに<IMG  ALIGN=MIDDLE ALT="" SRC="img49.gif">で
+ある。
+<P>
+ </DL>
+以上の基本5種、合成3種からなる操作を関係代数と呼ぶ。一方関係論理はタプ
+ル変数<b>t</b>を引数とする論理式<IMG  ALIGN=MIDDLE ALT="" SRC="img50.gif">を満足するタプルの集合<IMG  ALIGN=MIDDLE ALT="" SRC="img51.gif">と
+一般的に指定することができる。関係代数の操作すべてが関係論理で表現可能
+であること、また関係論理がタプル変数のスコープを明確にしたとき、両者が
+同等であることがわかっている。
+<P>
+<BR> <HR>
+<P>
+</BODY>

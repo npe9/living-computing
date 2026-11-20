@@ -1,0 +1,77 @@
+% -- for skeleton contest
+%
+% array_of_list.kl1
+% 98/12/07
+% Copyright (C) 1998 All rights reserved .
+% Hideaki KURITA ( kurita@cs.tokyo-ct.ac.jp )
+
+
+:- module array_of_list .
+
+%%% アルファベット別に分類された単語のリストを持つ配列
+
+%%% new         -ArrayOfList +WordList
+%%% get_list    +ArrayOfList +Letter -WordList
+%%% remove_word +RemoveWord +OldArrayOfList -NewArrayOfList
+
+%%% 指定された文字の単語のリストを取り出す
+get_list(ArrayOfList,Letter, Result) :-	Index := Letter - 0'A ,
+	vector_element(ArrayOfList,Index, Result).
+
+
+
+%%% 指定された単語を取り除く
+remove_word(Ident,Spell,Length) -ArrayOfList :-
+	remove_word(Ident,Spell,Length,0) -ArrayOfList .
+
+remove_word(Ident,Spell,Length,N) -ArrayOfList :- N = Length | true .
+remove_word(Ident,Spell,Length,N) -ArrayOfList :- N < Length |
+
+	string_element(Spell,N, Letter), Index := Letter - 0'A ,
+	vector_element(ArrayOfList,Index, OldList),
+	remove_word2(Ident,OldList, NewList),
+	tool:my_set_vector_element(Index, NewList) -ArrayOfList ,
+
+	remove_word(Ident,Spell,Length,~(N+1)) -ArrayOfList .
+
+
+remove_word2(IdentOfRemoveWord,[],         Result) :- Result=[].
+remove_word2(IdentOfRemoveWord,[One|Rest], Result) :-
+	One=word(Ident,_,_,_,_), Ident = IdentOfRemoveWord |
+
+	remove_word2(IdentOfRemoveWord, Rest, Result).
+
+otherwise .
+remove_word2(IdentOfRemoveWord,[One|Rest], Result) :-
+	Result=[One|Tail], remove_word2(IdentOfRemoveWord,Rest, Tail).
+
+
+
+%%% alphabet 毎に分類する 
+new(ArrayOfWordList, WordList) :-
+	tool:nil_vector(Vector, 26), % A〜Z = 26
+	new(WordList) +Vector +ArrayOfWordList .
+
+new([]        ) -ArrayOfList .
+new([One|Rest]) -ArrayOfList :- 
+	add_word(One) -ArrayOfList , new(Rest) -ArrayOfList . 
+
+
+add_word(Word) -ArrayOfList :-
+	add_word(Word,0) -ArrayOfList .
+
+add_word(Word,N) -ArrayOfList :-
+	Word=word(Ident,Spell,Point,Length), N = Length | true .
+
+add_word(Word,N) -ArrayOfList :-
+	Word=word(Ident,Spell,Point,Length), N < Length |
+	string_element(Spell,N, Letter),
+	Index := Letter - 0'A ,
+	vector_element(ArrayOfList,Index, List),
+	%% word を更に拡張する
+	NewList=[word(Ident,Spell,Point,Length,N)|List], 
+	tool:my_set_vector_element(Index,NewList) -ArrayOfList ,
+
+	add_word(Word,~(N+1)) -ArrayOfList .
+
+%%% end

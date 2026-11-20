@@ -1,0 +1,494 @@
+%
+%  Documentation for KLIC Programming Contest 1997
+%                 
+%  Copyright 1997 by Yoichi Kono <kono@muraoka.info.waseda.ac.jp>
+%                 
+
+プログラムの説明
+
+(１)処理の概要
+
+探索エンジンに Simulated Annealing(SA) 法を採用した。
+処理の流れを以下に図示する。
+
+--------------------------
+|         poker          | 入力データ Cards を受け取る
+--------------------------
+           ↓ Cards (=[card(7,hearts),card(queen,clubs),...])
+           ↓
+--------------------------
+|         encode         | リストデータCardsを文字列型に変換
+--------------------------
+           ↓ CardsString (="文字列")
+           ↓
+--------------------------
+|     my_CS_Shuffle      | CardsStringを次々とShuffuleする
+|                        | 第３引数で、ループの回数を指定する
+--------------------------
+           ↓ ShuffleCards (=[SC1,SC2,SC3,...]. 但し、SC1,...="文字列")
+           ↓               
+--------------------------
+|   simulatedAnnealing   | ShuffleCardsの各要素に対して、SAで解を計算する
+--------------------------
+           ↓ Ans_Cards (=[Ans1,Ans2,Ans3,...]. 但し、Ans1,...="文字列")
+           ↓
+--------------------------
+|         filter         | SAで出力された解に対して良い解を選択する
+--------------------------
+           ↓ FilterCards(=[Ans1,Ans3,Ans5,...]. 但し、Ans1,...="文字列")
+           ↓
+--------------------------
+|         decode         |FilterCardsの各要素を文字列型からリストに変換
+--------------------------
+           ↓ Results (=[X1,X2,...]. 但し、X1,...=[card(7,hearts),...])
+
+
+(２)動作確認を行ったシステムの概要
+	機種                    OS
+	FM V-466D3              Linux 2.0.27
+	Ultra Enterprise 3000   SunOS Release 5.5.1
+
+
+(３)テストデータに対する実行時間
+	
+	探索エンジンがSA(Simulated Annealing)であるため、解の出現も確率的な
+	記述が適している。そこで、まず、100回のSAの実行時間を計測した。デー
+	タとして、後述の[data1][data2]を利用した。
+	
+           100回の SA にかかる時間(使用機器  Ultra Enterprise 3000)
+	            klic-2.002   klic-3.002	
+	[data1]     約490sec     約540sec
+	[data2]     約465sec     約520sec
+
+	Ultra Enterprise 3000を使った場合、約５秒で１回のSAが試行できる。
+	
+	次に、テストデータに対する実行結果を記す。実行は以下のように
+	poker_test/test.sh を利用、実行時間を １０分として行った。
+	
+	% ./test.sh -time 600 -data ../test.dat dummy  >data  
+	[data1]のデータ： readme.dir/test1.dat
+	[data2]のデータ： readme.dir/test.dat  % 委員会提供のデータファイル
+	[data3]のデータ： readme.dir/test3.dat
+	[data4]のデータ： readme.dir/test4.dat
+	[data5]のデータ： readme.dir/test7.dat
+	[data6]のデータ： readme.dir/test1997.dat
+	
+	評価結果として、実行委員会配布の evalpoker02/pk の出力を使用。
+	実行例として、	実行委員会配布の poker_test/test.sh の出力を使用。
+
+	-----------------------------------------------------------------
+	■■[data1] 委員会提供の klic-kadai.txt のデータ
+ 
+	●テストデータ	
+	[card(7,hearts),card(queen,clubs),card(7,spades),card(queen,spades),
+	card(queen,diamonds),card(8,hearts),card(8,clubs),card(6,spades),
+	card(8,spades),card(6,diamonds),card(ace,hearts),card(ace,clubs),
+	card(jack,diamonds),card(jack,spades),card(ace,diamonds),
+	card(4,hearts),card(10,clubs),card(2,spades),card(10,spades),
+	card(king,diamonds),card(9,hearts),card(3,clubs),card(5,diamonds),
+	card(9,spades),card(9,diamonds)]
+
+	●評価した結果
+	21542  21547  0  2745650  21554  
+	H7 CQ S7 SQ DQ  ... 29383
+	H8 C8 S6 S8 D6  ... 29369
+	HA CA DJ SJ DA  ... 29397
+	H4 CT S2 ST DK  ... 120
+	H9 C3 D5 S9 D9  ... 2027
+	  10812 / 10817
+	 --------------------------- TOTAL=2922218
+	このテストデータに対して、実行中に得られた最高スコアは
+	2922218である。しかしこの値は1000回以上のSAの結果得られ、
+	出現確率を評価できない。そこで高いスコアの解の出現確率で
+	評価すると、
+		
+	2900000以上のスコアの解の出現確率 約 30回に 1回
+	2910000以上のスコアの解の出現確率 約300回に 1回
+	2920000以上のスコアの解の出現確率 約800回に 1回
+
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+                1             2844967          5.640 
+                3             2851849         15.990
+                6             2869493         31.250
+               10             2900672         51.970
+               12             2909491         62.070
+               23             2920266        118.740
+
+	この実行は実行時間を１０分に制限してあるため、約110回のSAの試行
+	で終了している。当然、制限時間をもっと長くすれば、さらに良い解を
+	得ることができる。
+
+	-----------------------------------------------------------------
+	■■[data2] 委員会提供の poker_test_tar.gz の test.dat
+
+	●テストデータ	
+	[card(queen,spades),card(queen,diamonds),card(8,spades),
+	card(queen,hearts),card(queen,clubs),card(10,spades),
+	card(10,diamonds),card(8,diamonds),card(10,hearts),
+	card(10,clubs),card(9,spades),card(9,diamonds),card(ace,spades),
+	card(9,hearts),card(9,clubs),card(king,spades),card(king,diamonds),
+	card(8,clubs),card(king,hearts),card(king,clubs),card(jack,spades),
+	card(jack,diamonds),card(8,hearts),card(jack,hearts),card(jack,clubs)]
+	
+
+	●評価した結果
+	2745655  2745655  176032  2745655  2745655  
+	SQ DQ S8 HQ CQ  ... 176048
+	ST DT D8 HT CT  ... 176040
+	S9 D9 SA H9 C9  ... 176036
+	SK DK C8 HK CK  ... 176052
+	SJ DJ H8 HJ CJ  ... 176044
+	  10827 / 10827
+	 --------------------------- TOTAL=12060526
+	このテストデータに対して、実行中に得られた最高スコアは
+	12060526 で、約50回のSAの試行につき1回の割合で 12060526 の値を
+	得られた。
+	
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+                1            12060511          4.910
+                3            12060526         15.210
+
+	-----------------------------------------------------------------
+	■■[data3] 自作テストデータ１
+
+	●テストデータ	
+	使用した、カードの種類を以下に図示する。
+	  spades:    1, -, -, -, -, -, -, 8, 9,10,11,12,13
+	  hearts:    1, -, -, -, -  -  -  -, 9,10,11,12,13
+	  diamonds:  1, -, -, -, -, -, -, -, 9,10,11,12,13
+	  clubs:     1, -, -, -, -, -, -, -, 9,10,11,12,13
+ 
+	[card(queen,spades),card(queen,clubs),card(9,diamonds),
+	card(queen,hearts),card(queen,diamonds),card(jack,spades),
+	card(jack,clubs),card(8,spades),card(jack,hearts),card(jack,diamonds),
+	card(ace,spades),card(ace,clubs),card(9,spades),card(ace,hearts),
+	card(ace,diamonds),card(king,spades),card(king,clubs),card(9,clubs),
+	card(king,hearts),card(king,diamonds),card(10,spades),card(10,clubs),
+	card(9,hearts),card(10,hearts),card(10,diamonds)]
+	
+	●評価した結果
+	2745660  2745660  176036  2745660  2745660  
+	SQ CQ D9 HQ DQ  ... 176048
+	SJ CJ S8 HJ DJ  ... 176044
+	SA CA S9 HA DA  ... 176056
+	SK CK C9 HK DK  ... 176052
+	ST CT H9 HT DT  ... 176040
+	  10822 / 10822
+	 --------------------------- TOTAL=12060560
+	このテストデータに対して、実行中に得られた最高スコアは
+	12060560で、約45回のSAの試行につき1回の割合で 12060560 の値を
+	得られた。
+
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+
+                1            11554064          5.170
+                2            12049723         10.610
+                4            12060540         21.360
+               19            12060560         98.130
+
+	-----------------------------------------------------------------
+	■■[data4]  自作テストデータ２
+
+	●テストデータ	
+	使用した、カードの種類を以下に図示する。
+	  spades:    1, -, -, -, 5, 6, 7, 8, 9,10,11,12,13
+	  hearts:    1, -, -, -, -  -  -  -, -,10,11,12,13
+	  diamonds:  1, -, -, -, -, -, -, -, -,10,11,12,13
+	  clubs:     1, -, -, -, -, -, -, -, -,10,11,12,13
+
+	[card(queen,hearts),card(queen,spades),card(5,spades),
+	card(queen,clubs),card(queen,diamonds),card(10,hearts),
+	card(10,spades),card(7,spades),card(10,clubs),card(10,diamonds),
+	card(ace,hearts),card(ace,spades),card(9,spades),card(ace,clubs),
+	card(ace,diamonds),card(king,hearts),card(king,spades),
+	card(6,spades),card(king,clubs),card(king,diamonds),
+	card(jack,hearts),card(jack,spades),card(8,spades),card(jack,clubs),
+	card(jack,diamonds)]
+
+	●評価した結果
+	2745660  2745660  2745635  2745660  2745660  
+	HQ SQ S5 CQ DQ  ... 176048
+	HT ST S7 CT DT  ... 176040
+	HA SA S9 CA DA  ... 176056
+	HK SK S6 CK DK  ... 176052
+	HJ SJ S8 CJ DJ  ... 176044
+	  10822 / 10822
+	 --------------------------- TOTAL=14630159
+	このテストデータに対して、実行中に得られた最高スコアは
+	14630159で、約30回のSAの試行につき1回の割合で 14630159 の値を
+	得られた。
+
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+                1             6371530          5.450
+                2            14608515         10.760
+                3            14619337         15.720
+                4            14630159         20.790
+
+	-----------------------------------------------------------------
+	■■[data5] 委員会提供の poker_test_tar.gz の "-seed 7" の時のデータ
+
+	●テストデータ	(注意) Linux にて、データ生成
+	[card(7,hearts),card(ace,clubs),card(ace,spades),card(7,spades),
+	card(7,diamonds),card(10,hearts),card(3,clubs),card(10,spades),
+	card(8,spades),card(8,diamonds),card(2,spades),card(2,clubs),
+	card(4,hearts),card(4,spades),card(2,diamonds),card(jack,spades),
+	card(5,clubs),card(jack,clubs),card(5,spades),card(5,diamonds),
+	card(6,hearts),card(6,clubs),card(queen,hearts),card(6,spades),
+	card(6,diamonds)]
+
+	●評価した結果
+	21528  21538  0  2745630  0  
+	D7 CJ SJ S7 H7  ... 29376
+	D6 C6 HQ S6 H6  ... 176024
+	D2 C2 H4 S4 S2  ... 29347
+	D5 C5 HT S5 ST  ... 29368
+	D8 CA SA S8 C3  ... 932
+	  10792 / 10797
+	 --------------------------- TOTAL=3075332 TIME=199870
+
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+                1             3075324          5.110
+               35             3075332        193.700
+
+	-----------------------------------------------------------------
+	■■[data6] 委員会提供の poker_test_tar.gz の "-seed 1997" の時のデータ
+
+	●テストデータ	(注意) Linux にて、データ生成
+	[card(8,clubs),card(9,clubs),card(jack,clubs),card(10,clubs),
+	card(7,clubs),card(8,diamonds),card(9,diamonds),card(4,diamonds),
+	card(5,diamonds),card(ace,diamonds),card(3,spades),card(6,diamonds),
+	card(4,clubs),card(3,diamonds),card(ace,clubs),card(8,spades),
+	card(6,spades),card(jack,spades),card(queen,spades),card(king,spades),
+	card(3,hearts),card(9,hearts),card(4,hearts),card(2,hearts),
+	card(king,hearts)]
+
+	●評価した結果
+	21540  21540  2745645  21531  0  
+	S8 D8 C8 HK SK  ... 29383
+	S3 D5 CT H3 D3  ... 2009
+	SQ DA C7 H2 CA  ... 128
+	SJ D4 CJ H4 C4  ... 29367
+	S6 D9 C9 H9 D6  ... 29372
+	  10797 / 0
+	 --------------------------- TOTAL=2911312 TIME=551720
+
+	●実行例 (環境 Ultra Enterprise 3000, klic-3.002)
+	    SAの試行回数      スコア        実行時間[sec]
+                1             2910204          5.070
+               23             2910208        120.710
+               53             2910213        275.180
+              101             2911312        522.560
+
+	-----------------------------------------------------------------
+
+
+(４)アルゴリズム／プログラミング上で工夫したところ
+(a) 計算中のカードデータの表現について、
+	以下の理由により、カードを文字列で表現する。
+	1.)swap(カード要素の交換)を簡単に行うため
+	2.)委員会から配布された、eval.kl1 を効率良くつかうため
+
+	本プログラムでは
+	  encode（委員会提供）により文字列に変換し、
+	  decode（   自作   ）により文字列をリストに変換し、出力する。
+	
+(b) Simulated Annealing について
+	SAの概要は次の通りである。
+
+	t = T;
+	while( t > Limit ){
+		t *= alpha;
+		dc = ( Score の改悪量 );
+		random = ( 0以上 1未満の乱数 );
+		if(dc<0 || exp(dc/t)>random){
+			Score の更新;
+			解の更新;
+		}
+	}	
+
+	したがって、以下のパラメータを決める必要がある。
+		T	:初期温度
+		Limit	:収束判定のための最終温度
+		alpha	:温度低下の割合
+	以下(b1)から(b3)にかけて、最適な上記のパラメータを決定する。
+
+(b1) Limit : 収束判定のための最終温度
+	[data1]に対し、alpha=0.80/0.90, T=1500 Limit=0.01 として、
+	SAの計算中で最後にScoreを更新したときの温度tの統計を以下に示す。
+
+	画像ファイル：	readme.dir/limit.gif
+	データ：        readme.dir/limit_a=0.8.dat
+	                readme.dir/limit_a=0.9.dat
+	% xgraph -P -lnx readme.dir/limit_a=0.8.dat として出力
+	% xgraph -P -lnx readme.dir/limit_a=0.9.dat として出力
+	横軸に最終Score更新時の温度：Limit、縦軸に頻度を表示。
+
+	alphaの値が0.8と0.9の時のサンプル数の違いで、頻度が違うが、同じ傾向
+	を示していることが分かる。
+
+	   ●alpha=0.80 の時、全体の90％が Limit=1.0 以上
+	   ●alpha=0.90 の時、全体の96％が Limit=1.0 以上
+	この統計により、本プログラムではLimit を 1.0とする。
+
+(b2) T(:初期温度) と  alpha(:温度低下の割合) について、
+	[data1]に対して、4種類のalpha, 初期温度をT=30から3000000まで変化さ
+	せて、SAの平均Score を比較し、表１から表４にまとめる。
+	
+		       表１ alpha == 0.80 の時
+	     T     average 	MAX    	Score>=2900000 	TIME   2900000以上の
+	                                               [hour] スコアの発生間隔
+	     30 2.3502e+06 	2909622		4	0:30	7.5 [min]
+	    300 2.54743e+06	2911406		11	0:45	4.1
+	   3000 2.7167e+06 	2910175		18	1:00	3.3
+	  30000 2.82399e+06	2911406		27	1:20	3.0
+	 300000 2.81005e+06	2920148		31	1:50	3.5
+	3000000 2.80924e+06	2920301		21	2:10	6.2
+	([data1]に対し、alpha = 0.80, Limit = 1.0, 試行回数 1000回 として)
+		
+		       表２ alpha == 0.85 の時
+	     T     average 	MAX    	Score>=2900000 	TIME   2900000以上の
+	                                               [hour] スコアの発生間隔
+	     30 2.39474e+06  2911401		4	0:40	10[min]
+	    300 2.57109e+06  2920174		13	1:00	4.6
+	   3000 2.78532e+06  2920143		20	1:30	4.5
+	  30000 2.83209e+06  2920297		30	2:00	4
+	 300000 2.84276e+06  2920301		31	2:30	4.8
+	3000000 2.83886e+06  2920284		23	2:50	7.4
+	([data1]に対し、alpha = 0.85, Limit = 1.0, 試行回数 1000回 として)
+
+		       表３ alpha == 0.90 の時
+	     T     average 	MAX    	Score>=2900000 	TIME   2900000以上の
+	                                               [hour] スコアの発生間隔
+	     30 2.49884e+06 	2911398		9	1:00	6.7[min]
+	    300 2.67833e+06	2920301		23	1:30	3.9
+	   3000 2.78096e+06	2911401		37	2:30	4.1
+	  30000 2.85987e+06	2920301		44	3:00	4.1
+	 300000 2.85664e+06	2920294		43	4:00	5.6
+	3000000 2.85281e+06	2920295		40	4:40	7
+	([data1]に対し、alpha = 0.90, Limit = 1.0, 試行回数 1000回 として)
+
+		       表４ alpha == 0.95 の時
+	     T     average 	MAX    	Score>=2900000 	TIME   2900000以上の
+	                                               [hour] スコアの発生間隔
+	     30 2.60247e+06	2911406		11	2:00	10.9[min]
+	    300 2.7383e+06	2920295		32	3:30	6.6
+	   3000 2.81871e+06	2920297		57	5:00	5.3
+	  30000 2.86996e+06	2920148		48	6:30	8.1
+	 300000 2.86663e+06	2920174		59	8:00	8.1
+	3000000 2.86807e+06	2920294		59	9:30	9.7
+	([data1]に対し、alpha = 0.95, Limit = 1.0, 試行回数 1000回 として)
+
+
+	表１から表４の初期温度Tと、スコアの平均値の関係を以下のグラフに示す。
+
+	データ：        readme.dir/average1.dat
+	画像ファイル：  readme.dir/average1.gif
+	% xgraph -P -lnx readme.dir/average1.dat として、出力
+	横軸に初期温度：T、縦軸に平均スコアを表示。
+
+	このグラフから、初期温度T=3000 から T=30000 付近でスコアの平均値の
+	改善がストップすることが分かる。
+
+	次に、表１から表４の「2900000以上のスコアの発生間隔」という項目は、
+	TIME（1000回のSAの実行に必要な時間）を「Score>=2900000」（スコアが
+	2900000以上の発生回数）で割った値である。この値と初期温度Tの関係を
+	以下のグラフに示す。（実行時間はマルチユーザのマシンで計測したので、
+	正確ではないが、目安にはなる。）
+
+	データ：        readme.dir/period.dat
+	画像ファイル：  readme.dir/period.gif
+	% xgraph -P -lnx readme.dir/period.dat として、出力
+	横軸に初期温度：T、縦軸に平均時間間隔を表示。
+
+	このグラフをみると、初期温度T=3000 から T=30000 の付近がもっとも
+	効率良く、良いスコアを見つけているの分かる。初期温度がT=300未満では、
+	探索不足になり、初期温度がT=300000以上になると余分な探索をしているこ
+	とが分かる。	
+
+	以上の結果から、本SAプログラムでは、なるべく短い時間になるべく沢山の
+	解を出す方針から、T=3000 を採用する（コンテストの審査時の実行時間がわ
+	からないため）。
+
+	次にalpha の値を決定する。readme.dir/period.gif のグラフを見ると、
+	alpha = 0.80が効率的に良さそうであるが、表１をみると、alpha=0.80では
+	2920000以上の解の発生が少ない。そこで、本SAプログラムでは、alpha=0.85を
+	採用する（なるべく短い時間に沢山の答を出す方針からalpha=0.90は却下）。
+
+	以上、本プログラムでは、
+		T = 3000
+		alpha = 0.85
+	とする。
+	
+(b3) 改悪量 dc について、
+	SAでは、
+		改悪量dc = (解の候補)-(現在の最適な解)
+	として、
+		exp(改悪量dc／温度)>random 、
+	が成立するとき、Scoreが悪くても、(現在の最適な解)を更新する。しか
+	し、このコンテストの問題では、(解の候補)と(現在の最適な解)の値が同
+	じ場合も多く、この場合、上の判定式は
+		exp(0)>random 
+	となり、必ず、要素の交換が行われる。これは、SAのアイデアとは異なる
+	と考える。本来なら「(解の候補)と(現在の最適な解)が等しい場合は確率
+	によって、解を交換を決定する」とすべきと考え、改悪量dcの計算を以下
+	の式に変更した。
+		改悪量dc = (解の候補)-(現在の最適な解)-(補正)
+
+	([data1]に対し、Limit=1.0, alpha = 0.9 T = 3000 試行回数 100回)
+		                 表５
+		 補正       avrage            MAX   
+		  0.0      2718964         2898757  
+		  1.0      2804320         2898881  
+		  2.0      2803896         2920295  
+		  3.0      2776894         2920295  
+		  4.0      2777166         2920295  
+	
+	以上のデータにより、本プログラムでは、
+		改悪量dc = (解の候補)-(現在の最適な解)-1.0
+	とする。
+
+(c) 乱数について
+	C言語のインライン挿入を使えないので、以下の乱数を定義した。
+	myrandom(R,Seed) :- R      = [Seed|R1],
+			    Seed1 := ( ( 129 * Seed + 351751 ) mod 917687),
+	                    myrandom(R1,Seed1) @ lower_priority.
+	
+	この乱数列は 乱数のSeedが 348554 以外の時、周期：917686 で乱数を発
+	生する。乱数のSeedが 348554 の時には、生成する乱数がSeedと同じ、
+	348554になってしまう。しかし上記の式に、Seedとして348554を入力する
+	以外は、348554が生成されることはないため、乱数の質は十分と考える。
+	
+(c) score()について
+	SAでは何度もスコアを計算するため、score()の計算量を減らす必要があ
+	る。そこで、委員会のeval.kl1 のscore()のInfoを計算する部分を省いた。
+
+(d) 並行に動作させるため、以下のようにmy_CS_Shuffle()の優先度を下げる。
+	poker(Cards,Results) :- 
+		encode(Cards,CardsString),
+		my_CS_Shuffle(CardsString,ShuffleCards,10000)@lower_priority,
+		simulatedAnnealing(ShuffleCards,Ans_Cards,0),
+		filter(Ans_Cards,FilterCards,-1,0),
+		decode(FilterCards,Results).
+
+
+(５)その他
+	実行委員会から提供されたklic-kadai.txt のデータ(本READMEでは、
+	[data1])を解くことを中心に、プログラムを作成した。このデータでは、
+	本当の最適解が何か分からず、実験を繰り返すごとに新たな最高スコアの
+	解が発見できた。そのため、なるべく高い頻度で良い解が得られるかとい
+	うことに主眼を置いた。
+
+	実験条件として、SAの計算回数を約100回にするため、実行時間を600秒と
+	した。
+
+	実行委員会で、配布されたeval.kl1を少し改良して、solitaire.kl1に添付
+	しました。著作権の問題等で本来なら、ファイルを分割するべきかもしれ
+	ませんが、ファイルの扱いが簡単なため、１つにまとめ、プログラム中に
+	明記しました。問題があれば、ご指摘下さい。
+
+

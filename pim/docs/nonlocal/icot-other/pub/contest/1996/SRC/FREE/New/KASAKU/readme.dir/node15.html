@@ -1,0 +1,46 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">B.1 main モジュール</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+
+<P>
+ <BR> <HR><A NAME=tex2html187 HREF="node16.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html185 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html179 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html188 HREF="node16.html">B.2 encode モジュール</A>
+<strong>Up:</strong> <A NAME=tex2html186 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<strong> Previous:</strong> <A NAME=tex2html180 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00051000000000000000>B.1 main モジュール</A></H2>
+<A NAME="subsecpreds_of_main">&#160;</A>
+<P>
+<DL><DT>main
+<DD>
+  プログラム本体。
+<DT>menu <em> +Q</em>
+<DD>
+  メニューを表示し、ユーザに選択を促す。
+  対戦や紅白戦が選択された場合、<em> Q</em> を用いて手の選択を
+  行いながら新たな <em> Q</em> を作成してゆく。
+<DT>saveornot <em> +Q</em>
+<DD>
+  Q値をファイル ``q.kl1'' にセーブするかどうかユーザに確認する。
+  セーブするよう指示された場合、``q.kl1'' というファイルに
+  現在の Q値を項の形で上書きする。
+<DT>loadornot <em> +Q</em>
+<DD>
+  Q値をファイル ``q.kl1'' から読み出すかどうかユーザに確認する。
+  読み出さない場合は Q値を初期値で初期化する。この場合
+  プログラムは Tic-Tac-Toe に関して全く無知な状態から開始される。
+</DL>
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

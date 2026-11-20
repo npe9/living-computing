@@ -1,0 +1,54 @@
+﻿<HEAD>
+<TITLE>Parallel Theorem-Proving System : MGTP</TITLE>
+</HEAD>
+<BODY BGCOLOR="#F8F7FF"
+      TEXT   ="#005E00"
+      LINK   ="#0000FF"
+      VLINK  ="#338899"
+      ALINK  ="#FF0000">
+
+<i>Proc. of FGCS '94, ICOT, Tokyo, December 1994</i>
+<center>
+<H1>Parallel Theorem-Proving System : MGTP</H1>
+Ryuzo Hasegawa<br>
+Institute For New Generation Computer Technology<br>
+4-28, Mita 1-chome, Minato-ku, Tokyo 108, Japan<br> 
+<tt>hasegawa@icot.or.jp</tt><br>
+</center>
+<hr>
+
+<H2>Abstract:</H2>
+
+<DD>The parallel theorem-proving system MGTP has been developed at
+ICOT.<P>
+
+<DD>MGTP exploits OR-parallelism for non-Horn problems and
+AND-parallelism for Horn problems.  MGTP achieves a more than 200-fold
+speedup on a parallel inference machine PIM/m with 256 processing
+elements.  Using MGTP, we succeeded in proving difficult mathematical
+problems including open problems that cannot be proven on sequential
+systems.  <P>
+
+<DD>We added two new MGTP features: Non-Horn Magic Set (NHM) and
+Constraint MGTP (CMGTP).  NHM is a technique to enhance the search
+capacity by suppressing generation of irrelevant model candidates,
+thereby making MGTP a practical prover.  CMGTP is an extension of MGTP
+to deal with constraint satisfaction problems, enabling constraint
+propagations with negative atoms.  CMGTP can prune search spaces
+required for the original MGTP by orders of magnitude.  <P>
+
+<DD>We studied several techniques necessary for the development of
+applications, such as negation as failure, abductive reasoning and
+modal logic systems, on MGTP. These techniques share a basic idea,
+which is to use MGTP as a meta-programming system for each
+application.  <P><br>
+
+<h2>All of this proceedings (Compressed PostScript file) :</h2>
+<b>Parallel Theorem-Proving System : MGTP (180KB)</b>
+<a href="PS/mgtp.ps.gz">
+<img src="../../PICS/I-ftp-copy.gif"></a>
+</BODY>
+<P>
+
+<hr>
+<ADDRESS><A HREF="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</A></ADDRESS>

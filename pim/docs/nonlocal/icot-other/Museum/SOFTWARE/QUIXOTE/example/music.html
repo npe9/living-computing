@@ -1,0 +1,668 @@
+﻿<title>Music program</title>
+<h1>プログラム「音楽」</h1>
+<hr>
+
+<h2> <b> big-Quixote </b> プログラムの例として、「音楽」を
+紹介しましょう。</h2> <p>
+
+
+これが <b> big-Quixote </b> プログラム「音楽」です。
+
+<pre>
+&program;;
+
+%# <a href = "../syntax/smod.html">モジュール間関係 (>-)</a> を定義します。
+%%%%%%%%%%%%%%%%%%%%%%%%
+&submodule;;
+
+composer >- baroque +
+	classic +
+	roman +
+	contemporary +
+	picture;;
+music >- sound + 
+	piece + 
+	piece_rule;;
+
+
+%# <a href = "../syntax/ssump.html">基礎オブジェクト項間関係 (>=)</a> を定義します。
+%%%%%%%%%%%%%%%%%%%%%%%%
+&subsumption;;
+classical_music >= 
+    {symphony, chamber, concert};;
+concert >= 
+    {piano_concert, violin_concert};;
+chamber >= {quartet, quintet};;
+instrument >= {stringed,wind,
+	percussion};;
+stringed >= {violin, viola,cello};;
+wind >= {oboe, clarinet};;
+percussion >={cymbals,drum};;
+piano >= {upright, grand};;
+
+major >= {cmajor,
+    fmajor,bfmajor,efmajor,afmajor,
+    gmajor,amajor,emajor,bmajor};;
+minor >= {aminor,
+	dminor,gminor,cminor,fminor,
+	eminor,bminor,fsminor,csminor};;
+person >= {bob, ken};;
+    
+
+%# <a href = "../syntax/ruled.html">ルールを定義</a>します。
+&rule;;
+%%%%%%%%% fact %%%%%%%%%%
+
+%# "piece" モジュールには、作品のデータが格納されています。
+%%%%%%%%%%%%%%%%%%%%%%%
+% 以下は、モーツァルトの最後の６つの交響曲を記述しています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を示します。
+
+piece::k385/[composer=mozart, 
+	type=symphony, no=35, 
+	key=dmajor, year=1782];;
+piece::k425/[composer=mozart, 
+	type=symphony, no=36, 
+	key=cmajor, name=lintz, 
+	year=1783];;
+piece::k504/[composer=mozart, 
+	type=symphony, no=38, 
+	key=dmajor, name=prague, 
+	year=1786];;
+piece::k543/[composer=mozart, 
+	type=symphony, no=39, 
+	key=efmajor, year=1788];;
+piece::k550/[composer=mozart, 
+	type=symphony, no=40, 
+	key=gminor, year=1788];;
+piece::k551/[composer=mozart, 
+	type=symphony, no=41, 
+	name=jupiter, 
+	key=cmajor, year=1788];;
+
+% 以下は、モーツァルトの最後の７つのピアノ曲を記述しています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を示します。
+
+piece::k466/[composer=mozart, 
+	type=piano_concert, no=20, 
+	year=1785];;
+%	(key=dminor)
+piece::k467/[composer=mozart, 
+	type=piano_concert, no=21, 
+	year=1785];;
+% 	(key=cmajor)
+piece::k482/[composer=mozart, 
+	type=piano_concert, no=22, 
+	year=1785, key=efmajor];;
+piece::k488/[composer=mozart, 
+	type=piano_concert, no=23, 
+	year=1786, key=amajor];;
+piece::k491/[composer=mozart, 
+	type=piano_concert, no=24, 
+	year=1786, key=cminor];;
+piece::k503/[composer=mozart, 
+	type=piano_concert, no=25, 
+	year=1786, key=cmajor];;
+piece::k537/[composer=mozart, 
+	type=piano_concert, no=26, 
+	year=1788, key=dmajor, 
+	name=coronation];;
+piece::k595/[composer=mozart, 
+	type=piano_concert, no=27, 
+	year=1791, key=bfminor];;
+
+% 以下は、その他のタイプのモーツァルトの作品が記述されています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を、
+% instruments* で演奏される楽器を示します。
+
+piece::k388/[composer=mozart, 
+	type=ensemble, key=cminor, 
+	year=1782, 
+	name="a small night music"];;
+piece::k330/[composer=mozart, 
+	type=piano_sonata, 
+	key=cmajor, year=1778];;	
+piece::k331/[composer=mozart, 	
+	type=piano_sonata, 
+	name="Turkish march",
+	key=amajor, year=1778];;	
+piece::k301/[composer=mozart, 
+	type=violin_sonata, 
+	instruments* =*= {violin,piano}, 
+	key=gmajor, year=1778];;	
+piece::k622/[composer=mozart, 
+	type=clarinet_concert,
+	key=amajor, year=1791];;
+
+% 以下は、ベートーベンの９つの交響曲が記述されています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を示します。
+
+piece::op21[composer=beethoven]/
+     [type=symphony, no=1, 
+	key=cmajor, year=1800];;
+piece::op36[composer=beethoven]/
+     [type=symphony, no=2, 
+	key=dmajor, year=1802];;
+piece::op55[composer=beethoven]/
+     [type=symphony, no=3, 
+	key=efmajor, name=eroica, 
+	year=1804];;
+piece::op60[composer=beethoven]/
+     [type=symphony, no=4, 
+	key=bfmajor, year=1806];;
+piece::op67[composer=beethoven]/
+     [type=symphony, no=5, 
+	key=cminor, year=1808];;
+piece::op68[composer=beethoven]/
+     [type=symphony, no=6, 
+	key=fmajor, name=pastoral,
+	year=1808];;
+piece::op92[composer=beethoven]/
+     [type=symphony, no=7, 
+	key=amajor, year=1813];;
+piece::op93[composer=beethoven]/
+     [type=symphony, no=8, 
+	key=fmajor, year=1812];;
+piece::op125[composer=beethoven]/
+     [type=symphony, no=9, 
+	key=dminor, name=coral,
+	year=1824];;
+
+% 以下は、ベートーベンの５つのピアノ曲が記述されています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を示します。
+
+piece::op15[composer=beethoven]/
+     [type=piano_concert, no=1, 
+	key=cmajor, year=1795];;
+piece::op19[composer=beethoven]/
+     [type=piano_concert, no=2, 
+	key=bfmajor, year=1795];;
+piece::op37[composer=beethoven]/
+     [type=piano_concert, no=3, 
+	key=cminor, year=1803];;
+piece::op58[composer=beethoven]/
+     [type=piano_concert, no=4, 
+	year=1806];;
+%  (key=gmajor)
+piece::op73[composer=beethoven]/
+     [type=piano_concert, no=5, 
+	name="Emperor",key=efmajor, 
+	year=1809];;
+
+% 以下は、ベートーベンの最後の４つのピアノソナタが記述されています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を示します。
+
+piece::op106[composer=beethoven]/ 
+     [type=piano_sonata, no=29, 
+	name=hammerclavier, 
+	key=bfmajor, year=1818];; 
+piece::op109[composer=beethoven]/ 
+     [type=piano_sonata, no=30, 
+	key=emajor, year=1820];; 
+piece::op110[composer=beethoven]/ 
+     [type=piano_sonata, no=31, 
+	key=afmajor, year=1822];; 
+piece::op111[composer=beethoven]/
+     [type=piano_sonata, no=32, 
+	key=cmajor, year=1822];;
+
+% 以下は、他の作品が記述されています。
+% composer で作者名を、type で曲のタイプを、no で曲の番号を
+% key で曲の調を、year で作曲された年を、name で曲名を、
+% instruments* で演奏される楽器を示します。
+
+piece::op001[composer=satie]/
+    [type=chamber, key=cmajor, 
+	name=gimnopedi, year=1900];;
+
+piece::op002[composer=satie]/
+    [type=chamber, key=cmajor,year=1900];;
+
+piece::d667/[composer=schubert, 
+    type=quintet,
+    instruments* =*= {piano,
+	violin, viola, cello, 
+	double_bass}, 
+    name="trout", key=amajor, 
+    year=1800];;
+
+piece::op001[composer=chopin]/
+    [type=nocturne, key=cminor, 
+	instruments* =*= {piano}, 
+	name=nocturn10, year=1830];;
+
+piece::bwv578/
+    [composer=bach, type=fuga, 
+     instruments* =*= {organ}, 
+     key=gminor, name="little fuga", 
+     year=1707];;
+piece::bwv1068/
+    [composer=bach, type=ensemble,
+     instruments* =*= {violin,viola,cello}, 
+     name = "air on the G string",	
+     key=dmajor, year=1717];;
+piece::op30[composer=handel]/[
+	type=organ_concert,
+	year=1739, no=2,
+	instruments* =*= {organ,stringed,wind,percussion}];;
+
+
+%# "piece_rule" モジュールには、作品に関するルールが格納されています。
+%%%%%%%%% rule %%%%%%%%%%
+
+
+% 以下のルールは「ピアノ曲は、ピアノとオーケストラによって演奏される。」
+% を記述しています。
+piece_rule::X/[instruments* =*= 
+    {piano,stringed,wind,percussion}] 
+	<= 
+     piece:X/[type=piano_concert];;
+
+
+% 「交響曲は、オーケストラによって演奏される。」を記述しています。
+piece_rule::X/[instruments* =*= 
+    {stringed,wind,percussion}] 
+	<= 
+     piece:X/[type=symphony];;
+
+
+% 「ピアノソナタは、ピアノによって演奏される。」を記述しています。
+piece_rule::X/[instruments* =*= {piano}] 
+	<= 
+     piece:X/[type=piano_sonata];;
+
+
+% 「作曲した時の作曲者の年齢は、作品が作られた年から、作曲者の
+%   生まれた年の差から求まる。」ことを記述しています。
+piece_rule::X/[age_of_composer=A] <= 
+	piece:X/[composer=C,year=Y];
+	composer:C/[born=B];
+	math:subtract(Y,B,A);;
+
+
+%# "baroque" モジュールには、baroque 時代の作曲者のデータが
+% 格納されています。
+%%%%%%%%% fact %%%%%%%%%%
+% born で、生まれた年を、dead で、死んだ年を、first_name で名を、
+% middle_name で中間名を、last_name で姓を示します。
+
+baroque::bach/[born=1685, dead=1750, 
+	first_name="Johan",
+	middle_name="Sebastian",
+	last_name="Bach"];;
+baroque::vivaldi/[born=1678, 
+	dead=1741, first_name="Antonio",
+	last_name="Vivaldi"];;
+baroque::scarlatti/[born=1685, 
+	dead=1757, first_name="Domenico",
+	last_name="Scarlatti"];;
+baroque::handel/[born=1685, 
+	dead=1759, first_name="Georg",
+	middle_name="Frederich",
+	last_name="Handel"];;
+baroque::telemann/[born=1681, 
+	dead=1767, first_name="Georg",
+	middle_name="Philipp",
+	last_name="Telemann"];;
+
+%# "classic" モジュールには、古典の作曲者のデータが
+% 格納されています。
+% born で、生まれた年を、dead で、死んだ年を、first_name で名を、
+% middle_name で中間名を、last_name で姓を示します。
+
+classic::mozart/[born=1756, 
+	dead=1791, first_name="Wolfgang",
+	middle_name="Amadeus", 
+	last_name="Mozart"];;
+classic::beethoven/[born=1770, 
+	dead=1827, first_name="Ludwig",
+	middle_name="van",
+	last_name="Beethoven"];;
+classic::haydn/[born=1732, 
+	dead=1809, 
+	first_name="Franz",
+	middle_name="Joseph",
+	last_name="Haydn"];;
+
+%# "roman" モジュールには、roman 時代の作曲者のデータが
+% 格納されています。
+% born で、生まれた年を、dead で、死んだ年を、first_name で名を、
+% middle_name で中間名を、last_name で姓を示します。
+
+roman::brahms/[born=1833, 
+	dead=1897, 
+	first_name="Johannes",
+	last_name="Brahms"];;
+roman::schubert/[born=1797, 
+	dead=1828, 
+	first_name="Franz",
+	last_name="Schubert"];;
+roman::mendelssohn/[born=1809, 
+	dead=1847, first_name="Felix",
+	middle_name="Mendelssohn",
+	last_name="Bartholdy"];;
+roman::chopin/[born=1810, 
+	dead=1849, 
+	first_name="Fryderyk",
+	last_name="Chopin"];;
+roman::shumann/[born=1810, 
+	dead=1856, 
+	first_name="Robert",
+	last_name="Schumann"];;
+roman::liszt/[born=1811, 
+	dead=1886, first_name="Franz",
+	last_name="Liszt"];;
+roman::verdi/[born=1813, 
+	dead=1901, first_name="Giuseppe",
+	last_name="Verdi"];;
+roman::wagner/[born=1813, 
+	dead=1883, first_name="Richard",
+	last_name="Wagner"];;
+roman::mahler/[born=1860, 
+	dead=1911, first_name="Gustav",
+	last_name="Mahler"];;
+roman::strauss/[born=1864, 
+	dead=1949, first_name="Richard",
+	last_name="Strauss"];;
+roman::dvorak/[born=1841, 
+	dead=1904, first_name="Antonin",
+	last_name="Dvorak"];;
+roman::mussorgsky/[born=1839, 
+	dead=1881, first_name="Modest",
+	last_name="Mussorgsky"];;
+roman::tchaikovsky/[born=1840, 
+	dead=1893, first_name="Peter",
+	last_name="Tchaikovsky"];;
+roman::rakhmaninov/[born=1873, 
+	dead=1943, first_name="Sergey",
+	last_name="Rakhmaninov"];;
+roman::bizet/[born=1838, 
+	dead=1875, first_name="Gerges",
+	last_name="Bizet"];;
+
+%# "contemporary" モジュールには、現代の作曲者のデータが
+% 格納されています。
+% born で、生まれた年を、dead で、死んだ年を、first_name で名を、
+% middle_name で中間名を、last_name で姓を示します。
+
+contemporary::debussy/[born=1862, 
+	dead=1918, 
+	first_name="Claude",
+	middle_name="Achile",
+	last_name="Debussy"];;
+contemporary::ravel/[born=1875, 
+	dead=1937, 
+	first_name="Maurice",
+	last_name="Ravel"];;
+contemporary::satie/[born=1866, 
+	dead=1925, 
+	first_name="Eric",
+	last_name="Satie"];;
+contemporary::bartok/[born=1881, 
+	dead=1945, 
+	first_name="Bela",
+	last_name="Bartok"];;
+contemporary::schostakovisch/
+	[born=1906, dead=1975, 
+	first_name="Dmitri",
+	last_name="Schostakovisch"];;
+contemporary::prokofiev/
+	[born=1891, dead=1953, 
+	first_name="Sergey",
+	last_name="Prokofiev"];;
+contemporary::stravinsky/
+	[born=1882, dead=1971, 
+	first_name="Igor",
+	last_name="Stravinsky"];;
+contemporary::schonberg/
+	[born=1874, dead=1951, 
+	first_name="Arnold",
+	last_name="Schonberg"];;
+
+%# "listening" モジュールには、「聞く」ことに関することが
+% 格納されています。
+
+% 「長調の作品は、心地良くする。」「短調の作品は、気分を憂鬱にする。」
+% を記述しています。
+listening:: {
+    cheerful[tune=X] <= 
+	music:X/[key->major];;
+    gloom[tune=X]    <= 
+	music:X/[key->minor]
+				};;
+
+% 「気分が優れない時は、元気の出る作品がお勧め。」を記述しています。
+listening:: 
+     recommendation[for=A, piece=X]
+     <= A/[feeling->gloom], 
+        cheerful[tune=X] || 
+	{A =< person};;
+
+% 「bob の気分は、良くない。」「ken の気分はいい。」を記述しています。
+listening::bob/[feeling=gloom];;
+listening::ken/[feeling=fine];;
+
+
+%# "sound" モジュールは、音のソースの情報を格納しています。
+% sound は音のソースの在処とタイプを示します。
+sound::k388/[sound = 
+    sound[file="/home/qxt/snd/eine.au",
+    type=au]];;
+sound::k330/[sound = 
+    sound[file="/home/qxt/snd/k330.au",
+    type=au]];;
+sound::op001[composer=satie]/
+    [sound = 
+       sound[file="/home/qxt/snd/gimno.au",
+     type=au]];;
+sound::op002[composer=satie]/
+    [sound = 
+       sound[file="/home/qxt/snd/satie2.au",
+     type=au]];;
+sound::bwv578/[sound = 
+    sound[file="/home/qxt/snd/lfuga.au",
+    type=au]];;
+sound::bwv1068/[sound = 
+    sound[file="/home/qxt/snd/gair.au",
+    type=au]];;
+sound::op001[composer=chopin]/[sound = 
+     sound[file="/home/qxt/snd/noctrn.au",
+     type=au]];;
+
+%# "picture" モジュールは、絵のソースの情報を格納しています。
+% picture は絵のソースの在処とタイプを示します。
+picture::haydn/[picture = 
+    pict[file="/home/qxt/pict/haydn.gif",
+    type=gif]];;
+picture::mozart/[picture = 
+    pict[file="/home/qxt/pict/mozart.gif",
+    type=gif]];;
+picture::beethoven/[picture = 
+    pict[file="/home/qxt/pict/beethoven.gif", 
+    type=gif]];;
+
+&end.
+</pre><p>
+
+<hr>
+
+<h2> 質問の例としては、以下があります。</h2><p>
+
+<pre>
+%# (1) 「古典作曲者の絵にはどのようなものがあるか？」
+%       という問いは以下のように表されます。
+
+?- composer:X/[picture=P],classic:X. 
+
+% Quixote の答えは次の通りです。
+
+[Answer]
+database> ** 3 answers exist **
+** Answer 1 **
+    X == mozart, P == pict[type=gif,file="/home/qxt/pict/mozart.gif"]
+** Answer 2 **
+    X == beethoven, P == pict[type=gif,file="/home/qxt/pict/beethoven.gif"]
+** Answer 3 **
+    X == haydn, P == pict[type=gif,file="/home/qxt/pict/haydn.gif"]
+
+% この答えから、データベースに格納されている古典作曲者の絵は３つで、
+% そのソースの情報が分かります。
+
+<hr>
+
+%# (2) 「モーツァルトが２９歳の時に作曲した、ピアノを用いる曲は何か？」
+% 	という問いは以下のように表されます。
+
+?- music:X/[composer=mozart, type=T, 
+     age_of_composer=29, 
+     instruments* >* {piano}].
+
+% Quixote の答えは次の通りです。
+
+[Answer]
+database> ** 3 answers exist **
+** Answer 1 **
+    X == k482, T == piano_concert
+** Answer 2 **
+    X == k467, T == piano_concert
+** Answer 3 **
+    X == k466, T == piano_concert
+
+% この答から、モーツァルトは２９歳の時に、３つのピアノ曲を作曲した
+% ことが分かります。
+
+<hr>
+
+%# (3) 「交響曲以外で、1778年にモーツァルトが作曲した作品には
+%	 どのようなものがあるか？」
+%	という問いは以下のように表されます。
+
+?- music:Z/[composer=mozart, type=X, 
+	sound=S, year=1778] ||
+	{X=/=symphony}.
+
+% Quixote の答えは次の通りです。
+
+[Answer] 
+database> ** 3 answers exist **
+** Answer 1 **
+    Z == k330, X == piano_sonata, S == sound[type=au,file="/home/qxt/snd/k330.au"]
+** Answer 2 **
+    Z == k301, X == violin_sonata, S == Unbound
+** Answer 3 **
+    Z == k331, X == piano_sonata, S == Unbound
+database> 
+
+% この答から、1778年にモーツァルトは交響曲以外に３つの曲を作曲していて、
+% そのうち K330 は音がデータベースに格納されていることが分かります。
+
+<hr>
+
+%# (4a) 「Bob にお勧めのモーツァルトの作品は何か？」
+%	という問いは以下のように表されます。
+% (bob.feeling == gloom)
+
+?- listening:
+    recommendation[for=bob, piece=M], 
+    piece:M/[type = piano_concert, 
+	no=N, year=Y,composer=mozart].
+
+% Quixote の答えは次の通りです。
+
+[Answer] 
+database> ** 5 answers exist **
+** Answer 1 **
+ IF music:k466.key =< major THEN
+    M == k466, N == 20, Y == 1785
+** Answer 2 **
+ IF music:k467.key =< major THEN
+    M == k467, N == 21, Y == 1785
+** Answer 3 **
+    M == k482, N == 22, Y == 1785
+** Answer 4 **
+    M == k488, N == 23, Y == 1786
+** Answer 5 **
+    M == k503, N == 25, Y == 1786
+
+% この答から、Bob にお勧めのモーツァルトの作品は、５つあることが
+% 分かります。但しそのうち２つは、「長調なら」という<a href="../intro/feature2.html#fea4">仮定付き答え</a>
+% が返されています。
+
+<hr>
+
+%# (4b) 「もし k466 が d短調で、k467 が C長調なら、Bob に
+%	  お勧めのモーツァルトの作品は何か？」という、(4a) の
+%	 <a href="../intro/feature2.html#fea4">質問に仮説を付ける</a>こともできます。この質問は Quixote 
+%	では、以下のように表されます。
+
+?- listening:
+    recommendation[for=bob, piece=M], 
+    piece:M/[type = piano_concert,
+        year=Y,no=N,composer=mozart];;
+    &program;; &rule;; 
+	piece::k466/[key=dminor];; 
+	piece::k467/[key=cmajor];; 
+    &end.
+
+% Quixote の答えは次の通りです。
+
+[Answer]
+database> ** 4 answers exist **
+** Answer 1 **
+    M == k467, Y == 1785, N == 21
+** Answer 2 **
+    M == k482, Y == 1785, N == 22
+** Answer 3 **
+    M == k488, Y == 1786, N == 23
+** Answer 4 **
+    M == k503, Y == 1786, N == 25
+
+% この答から、Bob にお勧めの作品が４つあることが分かります。
+
+<hr>
+
+%# (5) 「バッハかモーツァルトの作品で、アンサンブルの作品は何か？」
+%	という問いは以下のように表されます。
+
+?- music:X/[composer=C, type=ensemble, sound=S]
+	|| {C &in {mozart,bach}}.
+
+% Quixote の答えは次の通りです。
+
+[Answer]
+database> ** 2 answers exist **
+** Answer 1 **
+    X == k388, C == mozart, S == sound[type=au,file="/home/qxt/snd/eine.au"]
+** Answer 2 **
+    X == bwv1068, C == bach, S == sound[type=au,file="/home/qxt/snd/gair.au"]
+
+% この答から、モーツァルトの作品は k388、バッハの作品は bwv1068 で
+% あることが分かります。また、音が格納されていることも分かります。
+
+<hr>
+
+%# (6) 「ヘンデルかバッハのオルガン曲は何か？」
+%	という問いは以下のように表されます。
+
+?- music:X/[composer=C,instruments* >* {organ},sound=S] || 
+{C &in {handel, bach}}.
+
+% Quixote の答えは次の通りです。
+
+[Answer]
+database> ** 2 answers exist **
+** Answer 1 **
+    X == bwv578, C == bach, S == sound[type=au,file="/home/qxt/snd/lfuga.au"]
+** Answer 2 **
+    X == op30[composer=handel], C == handel, S == Unbound
+
+% この答から、バッハのオルガン曲は、bwv578 で、音もデータベースに
+% 格納されているのが分かります。ヘンデルのオルガン曲は op30[composer=handel]
+% ですが、音はデータベースに格納されていません。
+</pre><p>

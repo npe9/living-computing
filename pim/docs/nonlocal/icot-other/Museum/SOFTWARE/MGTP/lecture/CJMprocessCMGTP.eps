@@ -1,0 +1,2646 @@
+%!
+%%BoundingBox: 23 314 582 724
+%%Title: CJMprocessCMGTP
+%%CreationDate: Thu Oct 13 17:26:15 1994
+%%Creator: Tgif-2.12 by William Chia-Wei Cheng (william@cs.UCLA.edu)
+%%Pages: 1
+%%DocumentFonts: Times-Roman Helvetica Courier NewCenturySchlbk Symbol
+%%EndComments
+%%BeginProlog
+%
+%	Due to bugs in Transcript, the 'PS-Adobe-' stuff is omitted from line 1
+%
+
+/tgifdict 130 dict def
+tgifdict begin
+
+/tgifellipsedict 6 dict def
+tgifellipsedict /mtrx matrix put
+
+/tgifellipse
+ { tgifellipsedict begin
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 0 360 arc
+      savematrix setmatrix
+   end
+ } def
+
+/tgifarrowtipdict 8 dict def
+tgifarrowtipdict /mtrx matrix put
+
+/tgifarrowtip
+ { tgifarrowtipdict begin
+      /dy exch def
+      /dx exch def
+      /h exch def
+      /w exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      dy dx atan rotate
+      0 0 moveto
+      w neg h lineto
+      w neg h neg lineto
+      savematrix setmatrix
+   end
+ } def
+
+/tgifarcdict 8 dict def
+tgifarcdict /mtrx matrix put
+
+/tgifarcn
+ { tgifarcdict begin
+      /endangle exch def
+      /startangle exch def
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 startangle endangle arc
+      savematrix setmatrix
+   end
+ } def
+
+/tgifarc
+ { tgifarcdict begin
+      /endangle exch def
+      /startangle exch def
+      /yrad exch def
+      /xrad exch def
+      /y exch def
+      /x exch def
+      /savematrix mtrx currentmatrix def
+      x y translate
+      xrad yrad scale
+      0 0 1 startangle endangle arcn
+      savematrix setmatrix
+   end
+ } def
+
+/tgifsetuserscreendict 22 dict def
+tgifsetuserscreendict begin
+   /tempctm matrix def
+   /temprot matrix def
+   /tempscale matrix def
+
+   /concatprocs
+    { /proc2 exch cvlit def
+      /proc1 exch cvlit def
+      /newproc proc1 length proc2 length add array def
+      newproc 0 proc1 putinterval
+      newproc proc1 length proc2 putinterval
+      newproc cvx
+    } def
+   /resmatrix matrix def
+   /findresolution
+    { 72 0 resmatrix defaultmatrix dtransform
+      /yres exch def /xres exch def
+      xres dup mul yres dup mul add sqrt
+    } def
+end
+
+/tgifsetuserscreen
+ { tgifsetuserscreendict begin
+      /spotfunction exch def
+      /screenangle exch def
+      /cellsize exch def
+
+      /m tempctm currentmatrix def
+      /rm screenangle temprot rotate def
+      /sm cellsize dup tempscale scale def
+
+      sm rm m m concatmatrix m concatmatrix pop
+
+      1 0 m dtransform /y1 exch def /x1 exch def
+
+      /veclength x1 dup mul y1 dup mul add sqrt def
+      /frequency findresolution veclength div def
+
+      /newscreenangle y1 x1 atan def
+
+      m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+
+      {{neg} /spotfunction load concatprocs
+         /spotfunction exch def
+      } if
+
+      frequency newscreenangle /spotfunction load setscreen
+   end
+ } def
+
+/tgifsetpatterndict 18 dict def
+tgifsetpatterndict begin
+   /bitison
+    { /ybit exch def /xbit exch def
+      /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+
+      /mask 1 7 xbit 8 mod sub bitshift def
+      bytevalue mask and 0 ne
+    } def
+end
+
+/tgifbitpatternspotfunction
+ { tgifsetpatterndict begin
+      /y exch def /x exch def
+
+      /xindex x 1 add 2 div bpside mul cvi def
+      /yindex y 1 add 2 div bpside mul cvi def
+
+      xindex yindex bitison
+       { /onbits onbits 1 add def 1 }
+       { /offbits offbits 1 add def 0 }
+       ifelse
+   end
+ } def
+
+/tgifsetpattern
+ { tgifsetpatterndict begin
+      /cellsz exch def
+      /angle exch def
+      /bwidth exch def
+      /bpside exch def
+      /bstring exch def
+
+      /onbits 0 def /offbits 0 def
+      cellsz angle /tgifbitpatternspotfunction load tgifsetuserscreen
+      {} settransfer
+      offbits offbits onbits add div setgray
+   end
+ } def
+
+/tgifxpmdict 4 dict def
+/tgifbwpicstr 1 string def
+/tgifcolorpicstr 3 string def
+
+/tgifsetpixels { tgifxpmdict begin /pixels exch def end } def
+
+/tgifsetpix { tgifxpmdict begin pixels 3 1 roll putinterval end } def
+
+/tgifbwspot
+ { tgifxpmdict begin
+      /index exch def
+      tgifbwpicstr 0
+      pixels index 3 mul 3 getinterval aload pop
+      255 mul .114 mul exch 255 mul .587 mul add exch 255 mul .299 mul add
+      cvi put
+      tgifbwpicstr
+   end
+ } def
+
+/tgifcolorspot
+ { tgifxpmdict begin
+      /index exch def
+      pixels index 3 mul 3 getinterval aload pop
+      255 mul cvi tgifcolorpicstr 2 3 -1 roll put
+      255 mul cvi tgifcolorpicstr 1 3 -1 roll put
+      255 mul cvi tgifcolorpicstr 0 3 -1 roll put
+      tgifcolorpicstr
+   end
+ } def
+
+/tgifnewcolorspot
+ { tgifxpmdict begin
+      /index exch def
+      pixels index 3 mul 3 getinterval aload pop setrgbcolor
+   end
+ } def
+
+/tgifcolordict 4 dict def
+
+/colorimage where
+ { pop }
+ { /colorimage
+   { tgifcolordict begin
+        pop pop pop pop pop
+        /ih exch def
+        /iw exch def
+        /x 0 def
+        /y 0 def
+        1 1 ih
+         { pop 1 1 iw
+            { pop currentfile
+              tgifbwpicstr readhexstring pop 0 get tgifnewcolorspot
+              x y moveto 1 0 rlineto 0 1 rlineto -1 0 rlineto
+              closepath fill
+              /x x 1 add def
+            } for
+           /y y 1 add def
+           /x 0 def
+         } for
+     end
+   } def
+ } ifelse
+
+/tgifpatdict 10 dict def
+
+/tgifpatbyte
+ { currentdict /retstr get exch
+   pat i cellsz mod get put
+ } def
+
+/tgifpatproc
+ { 0 1 widthlim {tgifpatbyte} for retstr
+   /i i 1 add def
+ } def
+
+/tgifpatfill
+ { tgifpatdict begin
+      /h exch def
+      /w exch def
+      /lty exch def
+      /ltx exch def
+      /cellsz exch def
+      /pat exch def
+
+      /widthlim w cellsz div cvi 1 sub def
+      /retstr widthlim 1 add string def
+      /i 0 def
+
+      ltx lty translate
+      w h true [1 0 0 1 0 0] {tgifpatproc} imagemask
+      ltx neg lty neg translate
+   end
+ } def
+
+/pat1 <ffffffffffffffff> def
+/pat2 <0000000000000000> def
+/pat3 <8000000008000000> def
+/pat4 <8800000022000000> def
+/pat5 <8800220088002200> def
+/pat6 <8822882288228822> def
+/pat7 <aa55aa55aa55aa55> def
+/pat8 <77dd77dd77dd77dd> def
+/pat9 <77ffddff77ffddff> def
+/pat10 <77ffffff77ffffff> def
+/pat11 <7fffffff7fffffff> def
+/pat12 <8040200002040800> def
+/pat13 <40a00000040a0000> def
+/pat14 <ff888888ff888888> def
+/pat15 <ff808080ff080808> def
+/pat16 <f87422478f172271> def
+/pat17 <038448300c020101> def
+/pat18 <081c22c180010204> def
+/pat19 <8080413e080814e3> def
+/pat20 <8040201008040201> def
+/pat21 <8844221188442211> def
+/pat22 <77bbddee77bbddee> def
+/pat23 <c1e070381c0e0783> def
+/pat24 <7fbfdfeff7fbfdfe> def
+/pat25 <3e1f8fc7e3f1f87c> def
+/pat26 <0102040810204080> def
+/pat27 <1122448811224488> def
+/pat28 <eeddbb77eeddbb77> def
+/pat29 <83070e1c3870e0c1> def
+/pat30 <fefdfbf7efdfbf7f> def
+/pat31 <7cf8f1e3c78f1f3e> def
+
+/tgifcentertext { dup stringwidth pop 2 div neg 0 rmoveto } def
+
+/tgifrighttext { dup stringwidth pop neg 0 rmoveto } def
+
+/tgifreencsmalldict 12 dict def
+/tgifReEncodeSmall
+ { tgifreencsmalldict begin
+      /newcodesandnames exch def
+      /newfontname exch def
+      /basefontname exch def
+
+      /basefontdict basefontname findfont def
+      /newfont basefontdict maxlength dict def
+
+      basefontdict
+      { exch dup /FID ne
+         { dup /Encoding eq
+            { exch dup length array copy newfont 3 1 roll put }
+            { exch newfont 3 1 roll put }
+            ifelse
+         }
+         { pop pop }
+         ifelse
+      }
+      forall
+
+      newfont /FontName newfontname put
+      newcodesandnames aload pop
+
+      newcodesandnames length 2 idiv
+      { newfont /Encoding get 3 1 roll put}
+      repeat
+
+      newfontname newfont definefont pop
+   end
+ } def
+
+/tgifgray { 8 1 0 72 300 32 div div tgifsetpattern } bind def
+
+/tgifboxdict 6 dict def
+/tgifboxstroke
+ { tgifboxdict begin
+      /pat def /w def /y2 exch def /x2 exch def /y1 exch def /x1 exch def
+      1.415 setmiterlimit
+      w 1 eq { w setlinewidth } if
+      pat pat1 ne pat pat2 ne and { gsave pat tgifgray } if
+      newpath x1 y1 moveto x2 y1 lineto x2 y2 lineto x1 y2 lineto closepath
+      pat pat2 eq { 1 setgray stroke 0 setgray } { stroke } ifelse
+      pat pat1 ne pat pat2 ne and { grestore } if
+      w 1 eq { 1 setlinewidth } if
+      1 setmiterlimit
+   end
+ } def
+/tgifboxfill
+ { tgifboxdict begin
+      /pat def /y2 exch def /x2 exch def /y1 exch def /x1 exch def
+      pat pat1 ne pat pat2 ne and { gsave pat tgifgray } if
+      newpath x1 y1 moveto x2 y1 lineto x2 y2 lineto x1 y2 lineto closepath
+      pat pat2 eq { 1 setgray fill 0 setgray } { fill } ifelse
+      pat pat1 ne pat pat2 ne and { grestore } if
+   end
+ } def
+
+%%Title: eucfont.ps
+%%Creator: shikida@cs.titech.ac.jp, ueno@cs.titech.ac.jp
+%%CreationDate: 1991-2-27
+%%EndComments
+
+% <font> copyfont <font>
+/copyfont {
+	dup maxlength 1 add dict begin
+	{
+		1 index /FID ne 2 index /UniqueID ne and
+		{def} {pop pop} ifelse
+	} forall
+	currentdict
+	end
+} bind def
+
+/slantfont {	% <SlantFontName> <FontName> <slant-degree> slantfont
+	exch dup type /nametype eq { findfont } if
+	copyfont begin
+		[ 1 0 4 -1 roll 1 0 0 ] FontMatrix exch matrix concatmatrix
+		/FontMatrix exch def
+		currentdict
+	end
+	definefont pop
+} def
+
+/Map2Encoding [
+	0 1 31 { pop 0 } for
+	0 1 8 { } for
+	1 1 7 { pop 0 } for
+	9 1 77 { } for
+	1 1 11 { pop 0 } for
+] def
+/Map5Encoding [
+	0 1 31 { pop 0 dup } for
+	0 1 8 { dup } for
+	1 1 7 { pop 0 dup } for
+	9 1 77 { dup } for
+	1 1 11 { pop 0 dup } for
+] def
+
+% <newfont> <asciifont> <kanjifont> eucfont
+/eucfont {
+	12 dict begin
+		dup type /nametype eq { findfont } if
+		dup /WMode known {
+			dup /WMode get /WMode exch def
+			WMode 1 eq {
+				[0.0 1.0 -1.0 0.0 0.0 0.3] makefont copyfont
+			} if
+		} if
+		dup /FMapType get /FMapType exch def
+		FMapType 2 eq {
+			copyfont dup begin
+				/Encoding Map2Encoding def
+			end /font1 exch definefont
+		} if
+		FMapType 5 eq {
+			copyfont dup begin
+				/Encoding Map5Encoding def
+			end /font1 exch definefont
+		} if
+		exch dup type /nametype eq { findfont } if exch
+		/FontType 0 def
+		/FMapType 4 def
+		/FontMatrix matrix def
+		/Encoding [ 0 1 ] def
+		/FDepVector [ 4 2 roll ] def
+		dup /FontName exch def
+		currentdict
+	end
+	definefont pop
+} def
+
+end
+
+%%EndProlog
+%%Page: 1 1
+
+tgifdict begin
+/tgifsavedpage save def
+
+1 setmiterlimit
+1 setlinewidth
+
+72 0 mul 72 11.7 mul translate
+72 128 div 100 mul 100 div dup neg scale
+
+gsave
+
+% TEXT
+0 setgray
+newpath
+   644 402 moveto 782 402 lineto 782 442 lineto 644 442 lineto
+closepath 1 setgray fill
+0 setgray
+/Times-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      646 434 moveto (Ref\(   ,M\)) show
+   grestore
+
+% TEXT
+0 setgray
+/Symbol findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      710 433 moveto (D) show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      358 314 moveto
+      358.00 312.67 358.00 311.83 358.00 311.50 curveto
+      358.00 311.17 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 310.83 358.00 310.50 curveto
+      358.00 310.17 358.00 310.00 358.00 310.00 curveto
+      358.00 310.00 358.00 309.83 358.00 309.50 curveto
+      358.00 309.17 358.00 309.00 358.00 309.00 curveto
+      358.00 309.00 358.00 308.83 358.00 308.50 curveto
+      358.00 308.17 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 307.83 358.00 307.50 curveto
+      358.00 307.17 358.00 307.00 358.00 307.00 curveto
+      358.00 307.00 358.00 307.00 358.00 307.00 curveto
+      358.00 307.00 358.00 306.83 358.00 306.50 curveto
+      358.00 306.17 358.17 306.00 358.50 306.00 curveto
+      358.83 306.00 359.00 306.00 359.00 306.00 curveto
+      359.00 306.00 359.00 305.83 359.00 305.50 curveto
+      359.00 305.17 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 304.83 359.00 304.50 curveto
+      359.00 304.17 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.17 304.00 359.50 304.00 curveto
+      359.83 304.00 360.00 303.83 360.00 303.50 curveto
+      360.00 303.17 360.00 303.00 360.00 303.00 curveto
+      360.00 303.00 360.00 303.00 360.00 303.00 curveto
+      360.00 303.00 360.17 302.67 360.50 302.00 curveto
+      360.83 301.33 361.17 300.83 361.50 300.50 curveto
+      361.83 300.17 362.00 300.00 362.00 300.00 curveto
+      362.00 300.00 362.00 300.00 362.00 300.00 curveto
+      362.00 300.00 362.00 299.83 362.00 299.50 curveto
+      362.00 299.17 362.17 298.83 362.50 298.50 curveto
+      362.83 298.17 363.17 297.83 363.50 297.50 curveto
+      363.83 297.17 364.00 297.00 364.00 297.00 curveto
+      364.00 297.00 364.33 296.83 365.00 296.50 curveto
+      365.67 296.17 366.00 296.00 366.00 296.00 curveto
+      366.00 296.00 366.17 296.00 366.50 296.00 curveto
+      366.83 296.00 367.00 296.00 367.00 296.00 curveto
+      367.00 296.00 367.00 296.00 367.00 296.00 curveto
+      367.00 296.00 367.33 296.00 368.00 296.00 curveto
+      368.67 296.00 369.17 295.83 369.50 295.50 curveto
+      369.83 295.17 370.17 294.83 370.50 294.50 curveto
+      370.83 294.17 371.00 294.00 371.00 294.00 curveto
+      371.00 294.00 371.33 294.00 372.00 294.00 curveto
+      372.67 294.00 373.00 294.00 373.00 294.00 curveto
+      373.00 294.00 373.17 294.00 373.50 294.00 curveto
+      373.83 294.00 374.00 294.00 374.00 294.00 curveto
+      374.00 294.00 374.00 294.00 374.00 294.00 curveto
+      374.00 294.00 374.17 294.00 374.50 294.00 curveto
+      374.83 294.00 375.17 294.00 375.50 294.00 curveto
+      375.83 294.00 376.17 294.00 376.50 294.00 curveto
+      376.83 294.00 377.17 294.00 377.50 294.00 curveto
+      377.83 294.00 378.00 294.00 378.00 294.00 curveto
+      378.00 294.00 378.17 294.00 378.50 294.00 curveto
+      378.83 294.00 379.00 293.83 379.00 293.50 curveto
+      379.00 293.17 379.00 292.83 379.00 292.50 curveto
+      379.00 292.17 379.00 292.00 379.00 292.00 curveto
+      379.00 292.00 379.00 292.00 379.00 292.00 curveto
+      379.00 292.00 379.00 291.83 379.00 291.50 curveto
+      379.00 291.17 379.00 290.67 379.00 290.00 curveto
+      379.00 289.33 379.00 289.00 379.00 289.00 curveto
+      379.00 289.00 379.00 288.83 379.00 288.50 curveto
+      379.00 288.17 379.00 288.00 379.00 288.00 curveto
+      379.00 288.00 379.00 287.83 379.00 287.50 curveto
+      379.00 287.17 379.00 286.83 379.00 286.50 curveto
+      379.00 286.17 379.00 286.00 379.00 286.00 curveto
+      379.00 286.00 379.00 285.83 379.00 285.50 curveto
+      379.00 285.17 379.17 285.00 379.50 285.00 curveto
+      379.83 285.00 380.00 284.83 380.00 284.50 curveto
+      380.00 284.17 380.00 284.00 380.00 284.00 curveto
+      380.00 284.00 380.17 284.00 380.50 284.00 curveto
+      380.83 284.00 381.17 283.83 381.50 283.50 curveto
+      381.83 283.17 382.17 282.67 382.50 282.00 curveto
+      382.83 281.33 383.17 281.00 383.50 281.00 curveto
+      383.83 281.00 384.17 280.67 384.50 280.00 curveto
+      384.83 279.33 385.33 279.00 386.00 279.00 curveto
+      386.67 279.00 387.17 278.83 387.50 278.50 curveto
+      387.83 278.17 388.33 277.67 389.00 277.00 curveto
+      389.67 276.33 390.17 276.00 390.50 276.00 curveto
+      390.83 276.00 391.17 276.00 391.50 276.00 curveto
+      391.83 276.00 392.50 276.00 393.50 276.00 curveto
+      394.50 276.00 395.00 276.00 395.00 276.00 curveto
+      395.00 276.00 395.33 276.00 396.00 276.00 curveto
+      396.67 276.00 397.33 276.00 398.00 276.00 curveto
+      398.67 276.00 399.17 276.00 399.50 276.00 curveto
+      399.83 276.00 400.33 276.00 401.00 276.00 curveto
+      401.67 276.00 402.33 276.00 403.00 276.00 curveto
+      403.67 276.00 404.17 276.00 404.50 276.00 curveto
+      404.83 276.00 405.00 276.00 405.00 276.00 curveto
+      405.00 276.00 405.17 276.00 405.50 276.00 curveto
+      405.83 276.00 406.00 276.00 406.00 276.00 curveto
+      406.00 276.00 406.00 275.83 406.00 275.50 curveto
+      406.00 275.17 406.00 274.83 406.00 274.50 curveto
+      406.00 274.17 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.17 273.83 406.50 273.50 curveto
+      406.83 273.17 407.33 272.83 408.00 272.50 curveto
+      408.67 272.17 409.17 272.00 409.50 272.00 curveto
+      409.83 272.00 410.33 271.67 411.00 271.00 curveto
+      411.67 270.33 412.67 269.50 414.00 268.50 curveto
+      415.33 267.50 416.33 266.83 417.00 266.50 curveto
+      417.67 266.17 418.50 265.83 419.50 265.50 curveto
+      420.50 265.17 421.50 265.00 422.50 265.00 curveto
+      423.50 265.00 424.83 265.17 426.50 265.50 curveto
+      428.17 265.83 429.33 266.17 430.00 266.50 curveto
+      430.67 266.83 431.00 267.00 431.00 267.00 curveto
+      431.00 267.00 431.33 267.00 432.00 267.00 curveto
+      432.67 267.00 433.50 267.17 434.50 267.50 curveto
+      435.50 267.83 436.17 268.00 436.50 268.00 curveto
+      436.83 268.00 437.67 268.33 439.00 269.00 curveto
+      440.33 269.67 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 269.83 441.00 269.50 curveto
+      441.00 269.17 441.67 268.83 443.00 268.50 curveto
+      444.33 268.17 445.33 267.83 446.00 267.50 curveto
+      446.67 267.17 447.17 267.00 447.50 267.00 curveto
+      447.83 267.00 449.17 266.50 451.50 265.50 curveto
+      453.83 264.50 455.50 263.83 456.50 263.50 curveto
+      457.50 263.17 458.50 262.83 459.50 262.50 curveto
+      460.50 262.17 461.33 262.00 462.00 262.00 curveto
+      462.67 262.00 463.67 262.17 465.00 262.50 curveto
+      466.33 262.83 467.17 263.17 467.50 263.50 curveto
+      467.83 263.83 469.00 264.17 471.00 264.50 curveto
+      473.00 264.83 474.33 265.33 475.00 266.00 curveto
+      475.67 266.67 476.17 267.17 476.50 267.50 curveto
+      476.83 267.83 477.00 268.17 477.00 268.50 curveto
+      477.00 268.83 477.00 269.00 477.00 269.00 curveto
+      477.00 269.00 477.17 268.83 477.50 268.50 curveto
+      477.83 268.17 478.17 268.00 478.50 268.00 curveto
+      478.83 268.00 479.00 268.00 479.00 268.00 curveto
+      479.00 268.00 479.33 267.83 480.00 267.50 curveto
+      480.67 267.17 481.67 266.83 483.00 266.50 curveto
+      484.33 266.17 485.50 265.83 486.50 265.50 curveto
+      487.50 265.17 489.17 264.83 491.50 264.50 curveto
+      493.83 264.17 495.33 264.00 496.00 264.00 curveto
+      496.67 264.00 497.83 264.00 499.50 264.00 curveto
+      501.17 264.00 502.17 264.17 502.50 264.50 curveto
+      502.83 264.83 503.83 265.33 505.50 266.00 curveto
+      507.17 266.67 508.67 267.33 510.00 268.00 curveto
+      511.33 268.67 512.17 269.17 512.50 269.50 curveto
+      512.83 269.83 513.00 270.00 513.00 270.00 curveto
+      513.00 270.00 513.17 270.33 513.50 271.00 curveto
+      513.83 271.67 514.17 272.00 514.50 272.00 curveto
+      514.83 272.00 515.00 271.83 515.00 271.50 curveto
+      515.00 271.17 515.17 270.83 515.50 270.50 curveto
+      515.83 270.17 516.33 269.83 517.00 269.50 curveto
+      517.67 269.17 518.17 268.83 518.50 268.50 curveto
+      518.83 268.17 519.50 268.00 520.50 268.00 curveto
+      521.50 268.00 524.00 268.00 528.00 268.00 curveto
+      532.00 268.00 534.50 268.00 535.50 268.00 curveto
+      536.50 268.00 537.33 268.17 538.00 268.50 curveto
+      538.67 268.83 540.00 269.50 542.00 270.50 curveto
+      544.00 271.50 545.50 272.17 546.50 272.50 curveto
+      547.50 272.83 548.17 273.17 548.50 273.50 curveto
+      548.83 273.83 549.00 274.33 549.00 275.00 curveto
+      549.00 275.67 549.17 276.00 549.50 276.00 curveto
+      549.83 276.00 550.00 276.33 550.00 277.00 curveto
+      550.00 277.67 550.33 277.83 551.00 277.50 curveto
+      551.67 277.17 552.33 277.00 553.00 277.00 curveto
+      553.67 277.00 554.17 277.00 554.50 277.00 curveto
+      554.83 277.00 555.50 277.00 556.50 277.00 curveto
+      557.50 277.00 558.33 277.33 559.00 278.00 curveto
+      559.67 278.67 560.83 279.33 562.50 280.00 curveto
+      564.17 280.67 565.83 281.50 567.50 282.50 curveto
+      569.17 283.50 570.50 284.33 571.50 285.00 curveto
+      572.50 285.67 573.17 286.33 573.50 287.00 curveto
+      573.83 287.67 575.00 289.00 577.00 291.00 curveto
+      579.00 293.00 580.17 294.83 580.50 296.50 curveto
+      580.83 298.17 581.17 299.50 581.50 300.50 curveto
+      581.83 301.50 582.00 302.50 582.00 303.50 curveto
+      582.00 304.50 582.00 305.33 582.00 306.00 curveto
+      582.00 306.67 582.17 307.00 582.50 307.00 curveto
+      582.83 307.00 583.67 307.17 585.00 307.50 curveto
+      586.33 307.83 587.50 308.00 588.50 308.00 curveto
+      589.50 308.00 590.17 308.17 590.50 308.50 curveto
+      590.83 308.83 592.50 309.67 595.50 311.00 curveto
+      598.50 312.33 600.67 314.67 602.00 318.00 curveto
+      603.33 321.33 603.67 323.83 603.00 325.50 curveto
+      602.33 327.17 601.50 328.67 600.50 330.00 curveto
+      599.50 331.33 598.67 332.50 598.00 333.50 curveto
+      597.33 334.50 596.83 335.17 596.50 335.50 curveto
+      596.17 335.83 595.83 336.50 595.50 337.50 curveto
+      595.17 338.50 595.00 339.17 595.00 339.50 curveto
+      595.00 339.83 595.00 340.00 595.00 340.00 curveto
+      595.00 340.00 595.33 340.17 596.00 340.50 curveto
+      596.67 340.83 597.17 341.33 597.50 342.00 curveto
+      597.83 342.67 599.17 345.00 601.50 349.00 curveto
+      603.83 353.00 603.67 357.67 601.00 363.00 curveto
+      598.33 368.33 596.50 371.67 595.50 373.00 curveto
+      594.50 374.33 593.33 375.17 592.00 375.50 curveto
+      590.67 375.83 589.83 376.17 589.50 376.50 curveto
+      589.17 376.83 589.17 377.00 589.50 377.00 curveto
+      589.83 377.00 590.00 377.83 590.00 379.50 curveto
+      590.00 381.17 590.00 382.17 590.00 382.50 curveto
+      590.00 382.83 589.17 384.50 587.50 387.50 curveto
+      585.83 390.50 584.17 393.00 582.50 395.00 curveto
+      580.83 397.00 578.83 398.83 576.50 400.50 curveto
+      574.17 402.17 572.67 403.00 572.00 403.00 curveto
+      571.33 403.00 570.33 403.17 569.00 403.50 curveto
+      567.67 403.83 566.67 403.83 566.00 403.50 curveto
+      565.33 403.17 565.50 403.67 566.50 405.00 curveto
+      567.50 406.33 568.00 408.17 568.00 410.50 curveto
+      568.00 412.83 567.17 415.50 565.50 418.50 curveto
+      563.83 421.50 560.83 423.67 556.50 425.00 curveto
+      552.17 426.33 548.17 427.00 544.50 427.00 curveto
+      540.83 427.00 538.33 425.83 537.00 423.50 curveto
+      535.67 421.17 534.50 421.00 533.50 423.00 curveto
+      532.50 425.00 531.33 426.33 530.00 427.00 curveto
+      528.67 427.67 526.67 428.33 524.00 429.00 curveto
+      521.33 429.67 519.33 430.00 518.00 430.00 curveto
+      516.67 430.00 514.67 430.00 512.00 430.00 curveto
+      509.33 430.00 505.50 429.67 500.50 429.00 curveto
+      495.50 428.33 491.67 426.83 489.00 424.50 curveto
+      486.33 422.17 485.00 420.83 485.00 420.50 curveto
+      485.00 420.17 484.67 420.00 484.00 420.00 curveto
+      483.33 420.00 482.67 420.67 482.00 422.00 curveto
+      481.33 423.33 479.83 424.67 477.50 426.00 curveto
+      475.17 427.33 470.67 428.00 464.00 428.00 curveto
+      457.33 428.00 451.83 426.83 447.50 424.50 curveto
+      443.17 422.17 440.17 420.17 438.50 418.50 curveto
+      436.83 416.83 435.67 416.00 435.00 416.00 curveto
+      434.33 416.00 434.33 415.83 435.00 415.50 curveto
+      435.67 415.17 433.50 415.67 428.50 417.00 curveto
+      423.50 418.33 419.17 418.50 415.50 417.50 curveto
+      411.83 416.50 409.00 415.33 407.00 414.00 curveto
+      405.00 412.67 403.17 410.50 401.50 407.50 curveto
+      399.83 404.50 398.83 403.17 398.50 403.50 curveto
+      398.17 403.83 396.33 404.67 393.00 406.00 curveto
+      389.67 407.33 386.50 407.33 383.50 406.00 curveto
+      380.50 404.67 377.50 402.50 374.50 399.50 curveto
+      371.50 396.50 370.00 393.83 370.00 391.50 curveto
+      370.00 389.17 369.67 387.50 369.00 386.50 curveto
+      368.33 385.50 367.67 385.00 367.00 385.00 curveto
+      366.33 385.00 364.83 384.50 362.50 383.50 curveto
+      360.17 382.50 358.50 380.83 357.50 378.50 curveto
+      356.50 376.17 356.83 373.00 358.50 369.00 curveto
+      360.17 365.00 360.50 363.00 359.50 363.00 curveto
+      358.50 363.00 355.83 361.17 351.50 357.50 curveto
+      347.17 353.83 346.17 350.00 348.50 346.00 curveto
+      350.83 342.00 352.67 339.67 354.00 339.00 curveto
+      355.33 338.33 356.00 337.83 356.00 337.50 curveto
+      356.00 337.17 356.00 337.00 356.00 337.00 curveto
+      356.00 337.00 355.67 336.50 355.00 335.50 curveto
+      354.33 334.50 353.83 333.67 353.50 333.00 curveto
+      353.17 332.33 353.00 331.83 353.00 331.50 curveto
+      353.00 331.17 353.00 330.33 353.00 329.00 curveto
+      353.00 327.67 353.00 326.50 353.00 325.50 curveto
+      353.00 324.50 353.50 322.67 354.50 320.00 curveto
+      355.50 317.33 356.17 316.00 356.50 316.00 curveto
+      356.83 316.00 357.17 315.67 357.50 315.00 curveto
+      357.83 314.33 358.33 313.67
+   359 313 curveto
+   closepath eofill
+grestore
+gsave
+   4 setlinewidth
+   newpath
+      358 314 moveto
+      358.00 312.67 358.00 311.83 358.00 311.50 curveto
+      358.00 311.17 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 311.00 358.00 311.00 curveto
+      358.00 311.00 358.00 310.83 358.00 310.50 curveto
+      358.00 310.17 358.00 310.00 358.00 310.00 curveto
+      358.00 310.00 358.00 309.83 358.00 309.50 curveto
+      358.00 309.17 358.00 309.00 358.00 309.00 curveto
+      358.00 309.00 358.00 308.83 358.00 308.50 curveto
+      358.00 308.17 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 308.00 358.00 308.00 curveto
+      358.00 308.00 358.00 307.83 358.00 307.50 curveto
+      358.00 307.17 358.00 307.00 358.00 307.00 curveto
+      358.00 307.00 358.00 307.00 358.00 307.00 curveto
+      358.00 307.00 358.00 306.83 358.00 306.50 curveto
+      358.00 306.17 358.17 306.00 358.50 306.00 curveto
+      358.83 306.00 359.00 306.00 359.00 306.00 curveto
+      359.00 306.00 359.00 305.83 359.00 305.50 curveto
+      359.00 305.17 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 305.00 359.00 305.00 curveto
+      359.00 305.00 359.00 304.83 359.00 304.50 curveto
+      359.00 304.17 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.00 304.00 359.00 304.00 curveto
+      359.00 304.00 359.17 304.00 359.50 304.00 curveto
+      359.83 304.00 360.00 303.83 360.00 303.50 curveto
+      360.00 303.17 360.00 303.00 360.00 303.00 curveto
+      360.00 303.00 360.00 303.00 360.00 303.00 curveto
+      360.00 303.00 360.17 302.67 360.50 302.00 curveto
+      360.83 301.33 361.17 300.83 361.50 300.50 curveto
+      361.83 300.17 362.00 300.00 362.00 300.00 curveto
+      362.00 300.00 362.00 300.00 362.00 300.00 curveto
+      362.00 300.00 362.00 299.83 362.00 299.50 curveto
+      362.00 299.17 362.17 298.83 362.50 298.50 curveto
+      362.83 298.17 363.17 297.83 363.50 297.50 curveto
+      363.83 297.17 364.00 297.00 364.00 297.00 curveto
+      364.00 297.00 364.33 296.83 365.00 296.50 curveto
+      365.67 296.17 366.00 296.00 366.00 296.00 curveto
+      366.00 296.00 366.17 296.00 366.50 296.00 curveto
+      366.83 296.00 367.00 296.00 367.00 296.00 curveto
+      367.00 296.00 367.00 296.00 367.00 296.00 curveto
+      367.00 296.00 367.33 296.00 368.00 296.00 curveto
+      368.67 296.00 369.17 295.83 369.50 295.50 curveto
+      369.83 295.17 370.17 294.83 370.50 294.50 curveto
+      370.83 294.17 371.00 294.00 371.00 294.00 curveto
+      371.00 294.00 371.33 294.00 372.00 294.00 curveto
+      372.67 294.00 373.00 294.00 373.00 294.00 curveto
+      373.00 294.00 373.17 294.00 373.50 294.00 curveto
+      373.83 294.00 374.00 294.00 374.00 294.00 curveto
+      374.00 294.00 374.00 294.00 374.00 294.00 curveto
+      374.00 294.00 374.17 294.00 374.50 294.00 curveto
+      374.83 294.00 375.17 294.00 375.50 294.00 curveto
+      375.83 294.00 376.17 294.00 376.50 294.00 curveto
+      376.83 294.00 377.17 294.00 377.50 294.00 curveto
+      377.83 294.00 378.00 294.00 378.00 294.00 curveto
+      378.00 294.00 378.17 294.00 378.50 294.00 curveto
+      378.83 294.00 379.00 293.83 379.00 293.50 curveto
+      379.00 293.17 379.00 292.83 379.00 292.50 curveto
+      379.00 292.17 379.00 292.00 379.00 292.00 curveto
+      379.00 292.00 379.00 292.00 379.00 292.00 curveto
+      379.00 292.00 379.00 291.83 379.00 291.50 curveto
+      379.00 291.17 379.00 290.67 379.00 290.00 curveto
+      379.00 289.33 379.00 289.00 379.00 289.00 curveto
+      379.00 289.00 379.00 288.83 379.00 288.50 curveto
+      379.00 288.17 379.00 288.00 379.00 288.00 curveto
+      379.00 288.00 379.00 287.83 379.00 287.50 curveto
+      379.00 287.17 379.00 286.83 379.00 286.50 curveto
+      379.00 286.17 379.00 286.00 379.00 286.00 curveto
+      379.00 286.00 379.00 285.83 379.00 285.50 curveto
+      379.00 285.17 379.17 285.00 379.50 285.00 curveto
+      379.83 285.00 380.00 284.83 380.00 284.50 curveto
+      380.00 284.17 380.00 284.00 380.00 284.00 curveto
+      380.00 284.00 380.17 284.00 380.50 284.00 curveto
+      380.83 284.00 381.17 283.83 381.50 283.50 curveto
+      381.83 283.17 382.17 282.67 382.50 282.00 curveto
+      382.83 281.33 383.17 281.00 383.50 281.00 curveto
+      383.83 281.00 384.17 280.67 384.50 280.00 curveto
+      384.83 279.33 385.33 279.00 386.00 279.00 curveto
+      386.67 279.00 387.17 278.83 387.50 278.50 curveto
+      387.83 278.17 388.33 277.67 389.00 277.00 curveto
+      389.67 276.33 390.17 276.00 390.50 276.00 curveto
+      390.83 276.00 391.17 276.00 391.50 276.00 curveto
+      391.83 276.00 392.50 276.00 393.50 276.00 curveto
+      394.50 276.00 395.00 276.00 395.00 276.00 curveto
+      395.00 276.00 395.33 276.00 396.00 276.00 curveto
+      396.67 276.00 397.33 276.00 398.00 276.00 curveto
+      398.67 276.00 399.17 276.00 399.50 276.00 curveto
+      399.83 276.00 400.33 276.00 401.00 276.00 curveto
+      401.67 276.00 402.33 276.00 403.00 276.00 curveto
+      403.67 276.00 404.17 276.00 404.50 276.00 curveto
+      404.83 276.00 405.00 276.00 405.00 276.00 curveto
+      405.00 276.00 405.17 276.00 405.50 276.00 curveto
+      405.83 276.00 406.00 276.00 406.00 276.00 curveto
+      406.00 276.00 406.00 275.83 406.00 275.50 curveto
+      406.00 275.17 406.00 274.83 406.00 274.50 curveto
+      406.00 274.17 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.00 274.00 406.00 274.00 curveto
+      406.00 274.00 406.17 273.83 406.50 273.50 curveto
+      406.83 273.17 407.33 272.83 408.00 272.50 curveto
+      408.67 272.17 409.17 272.00 409.50 272.00 curveto
+      409.83 272.00 410.33 271.67 411.00 271.00 curveto
+      411.67 270.33 412.67 269.50 414.00 268.50 curveto
+      415.33 267.50 416.33 266.83 417.00 266.50 curveto
+      417.67 266.17 418.50 265.83 419.50 265.50 curveto
+      420.50 265.17 421.50 265.00 422.50 265.00 curveto
+      423.50 265.00 424.83 265.17 426.50 265.50 curveto
+      428.17 265.83 429.33 266.17 430.00 266.50 curveto
+      430.67 266.83 431.00 267.00 431.00 267.00 curveto
+      431.00 267.00 431.33 267.00 432.00 267.00 curveto
+      432.67 267.00 433.50 267.17 434.50 267.50 curveto
+      435.50 267.83 436.17 268.00 436.50 268.00 curveto
+      436.83 268.00 437.67 268.33 439.00 269.00 curveto
+      440.33 269.67 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 270.00 441.00 270.00 curveto
+      441.00 270.00 441.00 269.83 441.00 269.50 curveto
+      441.00 269.17 441.67 268.83 443.00 268.50 curveto
+      444.33 268.17 445.33 267.83 446.00 267.50 curveto
+      446.67 267.17 447.17 267.00 447.50 267.00 curveto
+      447.83 267.00 449.17 266.50 451.50 265.50 curveto
+      453.83 264.50 455.50 263.83 456.50 263.50 curveto
+      457.50 263.17 458.50 262.83 459.50 262.50 curveto
+      460.50 262.17 461.33 262.00 462.00 262.00 curveto
+      462.67 262.00 463.67 262.17 465.00 262.50 curveto
+      466.33 262.83 467.17 263.17 467.50 263.50 curveto
+      467.83 263.83 469.00 264.17 471.00 264.50 curveto
+      473.00 264.83 474.33 265.33 475.00 266.00 curveto
+      475.67 266.67 476.17 267.17 476.50 267.50 curveto
+      476.83 267.83 477.00 268.17 477.00 268.50 curveto
+      477.00 268.83 477.00 269.00 477.00 269.00 curveto
+      477.00 269.00 477.17 268.83 477.50 268.50 curveto
+      477.83 268.17 478.17 268.00 478.50 268.00 curveto
+      478.83 268.00 479.00 268.00 479.00 268.00 curveto
+      479.00 268.00 479.33 267.83 480.00 267.50 curveto
+      480.67 267.17 481.67 266.83 483.00 266.50 curveto
+      484.33 266.17 485.50 265.83 486.50 265.50 curveto
+      487.50 265.17 489.17 264.83 491.50 264.50 curveto
+      493.83 264.17 495.33 264.00 496.00 264.00 curveto
+      496.67 264.00 497.83 264.00 499.50 264.00 curveto
+      501.17 264.00 502.17 264.17 502.50 264.50 curveto
+      502.83 264.83 503.83 265.33 505.50 266.00 curveto
+      507.17 266.67 508.67 267.33 510.00 268.00 curveto
+      511.33 268.67 512.17 269.17 512.50 269.50 curveto
+      512.83 269.83 513.00 270.00 513.00 270.00 curveto
+      513.00 270.00 513.17 270.33 513.50 271.00 curveto
+      513.83 271.67 514.17 272.00 514.50 272.00 curveto
+      514.83 272.00 515.00 271.83 515.00 271.50 curveto
+      515.00 271.17 515.17 270.83 515.50 270.50 curveto
+      515.83 270.17 516.33 269.83 517.00 269.50 curveto
+      517.67 269.17 518.17 268.83 518.50 268.50 curveto
+      518.83 268.17 519.50 268.00 520.50 268.00 curveto
+      521.50 268.00 524.00 268.00 528.00 268.00 curveto
+      532.00 268.00 534.50 268.00 535.50 268.00 curveto
+      536.50 268.00 537.33 268.17 538.00 268.50 curveto
+      538.67 268.83 540.00 269.50 542.00 270.50 curveto
+      544.00 271.50 545.50 272.17 546.50 272.50 curveto
+      547.50 272.83 548.17 273.17 548.50 273.50 curveto
+      548.83 273.83 549.00 274.33 549.00 275.00 curveto
+      549.00 275.67 549.17 276.00 549.50 276.00 curveto
+      549.83 276.00 550.00 276.33 550.00 277.00 curveto
+      550.00 277.67 550.33 277.83 551.00 277.50 curveto
+      551.67 277.17 552.33 277.00 553.00 277.00 curveto
+      553.67 277.00 554.17 277.00 554.50 277.00 curveto
+      554.83 277.00 555.50 277.00 556.50 277.00 curveto
+      557.50 277.00 558.33 277.33 559.00 278.00 curveto
+      559.67 278.67 560.83 279.33 562.50 280.00 curveto
+      564.17 280.67 565.83 281.50 567.50 282.50 curveto
+      569.17 283.50 570.50 284.33 571.50 285.00 curveto
+      572.50 285.67 573.17 286.33 573.50 287.00 curveto
+      573.83 287.67 575.00 289.00 577.00 291.00 curveto
+      579.00 293.00 580.17 294.83 580.50 296.50 curveto
+      580.83 298.17 581.17 299.50 581.50 300.50 curveto
+      581.83 301.50 582.00 302.50 582.00 303.50 curveto
+      582.00 304.50 582.00 305.33 582.00 306.00 curveto
+      582.00 306.67 582.17 307.00 582.50 307.00 curveto
+      582.83 307.00 583.67 307.17 585.00 307.50 curveto
+      586.33 307.83 587.50 308.00 588.50 308.00 curveto
+      589.50 308.00 590.17 308.17 590.50 308.50 curveto
+      590.83 308.83 592.50 309.67 595.50 311.00 curveto
+      598.50 312.33 600.67 314.67 602.00 318.00 curveto
+      603.33 321.33 603.67 323.83 603.00 325.50 curveto
+      602.33 327.17 601.50 328.67 600.50 330.00 curveto
+      599.50 331.33 598.67 332.50 598.00 333.50 curveto
+      597.33 334.50 596.83 335.17 596.50 335.50 curveto
+      596.17 335.83 595.83 336.50 595.50 337.50 curveto
+      595.17 338.50 595.00 339.17 595.00 339.50 curveto
+      595.00 339.83 595.00 340.00 595.00 340.00 curveto
+      595.00 340.00 595.33 340.17 596.00 340.50 curveto
+      596.67 340.83 597.17 341.33 597.50 342.00 curveto
+      597.83 342.67 599.17 345.00 601.50 349.00 curveto
+      603.83 353.00 603.67 357.67 601.00 363.00 curveto
+      598.33 368.33 596.50 371.67 595.50 373.00 curveto
+      594.50 374.33 593.33 375.17 592.00 375.50 curveto
+      590.67 375.83 589.83 376.17 589.50 376.50 curveto
+      589.17 376.83 589.17 377.00 589.50 377.00 curveto
+      589.83 377.00 590.00 377.83 590.00 379.50 curveto
+      590.00 381.17 590.00 382.17 590.00 382.50 curveto
+      590.00 382.83 589.17 384.50 587.50 387.50 curveto
+      585.83 390.50 584.17 393.00 582.50 395.00 curveto
+      580.83 397.00 578.83 398.83 576.50 400.50 curveto
+      574.17 402.17 572.67 403.00 572.00 403.00 curveto
+      571.33 403.00 570.33 403.17 569.00 403.50 curveto
+      567.67 403.83 566.67 403.83 566.00 403.50 curveto
+      565.33 403.17 565.50 403.67 566.50 405.00 curveto
+      567.50 406.33 568.00 408.17 568.00 410.50 curveto
+      568.00 412.83 567.17 415.50 565.50 418.50 curveto
+      563.83 421.50 560.83 423.67 556.50 425.00 curveto
+      552.17 426.33 548.17 427.00 544.50 427.00 curveto
+      540.83 427.00 538.33 425.83 537.00 423.50 curveto
+      535.67 421.17 534.50 421.00 533.50 423.00 curveto
+      532.50 425.00 531.33 426.33 530.00 427.00 curveto
+      528.67 427.67 526.67 428.33 524.00 429.00 curveto
+      521.33 429.67 519.33 430.00 518.00 430.00 curveto
+      516.67 430.00 514.67 430.00 512.00 430.00 curveto
+      509.33 430.00 505.50 429.67 500.50 429.00 curveto
+      495.50 428.33 491.67 426.83 489.00 424.50 curveto
+      486.33 422.17 485.00 420.83 485.00 420.50 curveto
+      485.00 420.17 484.67 420.00 484.00 420.00 curveto
+      483.33 420.00 482.67 420.67 482.00 422.00 curveto
+      481.33 423.33 479.83 424.67 477.50 426.00 curveto
+      475.17 427.33 470.67 428.00 464.00 428.00 curveto
+      457.33 428.00 451.83 426.83 447.50 424.50 curveto
+      443.17 422.17 440.17 420.17 438.50 418.50 curveto
+      436.83 416.83 435.67 416.00 435.00 416.00 curveto
+      434.33 416.00 434.33 415.83 435.00 415.50 curveto
+      435.67 415.17 433.50 415.67 428.50 417.00 curveto
+      423.50 418.33 419.17 418.50 415.50 417.50 curveto
+      411.83 416.50 409.00 415.33 407.00 414.00 curveto
+      405.00 412.67 403.17 410.50 401.50 407.50 curveto
+      399.83 404.50 398.83 403.17 398.50 403.50 curveto
+      398.17 403.83 396.33 404.67 393.00 406.00 curveto
+      389.67 407.33 386.50 407.33 383.50 406.00 curveto
+      380.50 404.67 377.50 402.50 374.50 399.50 curveto
+      371.50 396.50 370.00 393.83 370.00 391.50 curveto
+      370.00 389.17 369.67 387.50 369.00 386.50 curveto
+      368.33 385.50 367.67 385.00 367.00 385.00 curveto
+      366.33 385.00 364.83 384.50 362.50 383.50 curveto
+      360.17 382.50 358.50 380.83 357.50 378.50 curveto
+      356.50 376.17 356.83 373.00 358.50 369.00 curveto
+      360.17 365.00 360.50 363.00 359.50 363.00 curveto
+      358.50 363.00 355.83 361.17 351.50 357.50 curveto
+      347.17 353.83 346.17 350.00 348.50 346.00 curveto
+      350.83 342.00 352.67 339.67 354.00 339.00 curveto
+      355.33 338.33 356.00 337.83 356.00 337.50 curveto
+      356.00 337.17 356.00 337.00 356.00 337.00 curveto
+      356.00 337.00 355.67 336.50 355.00 335.50 curveto
+      354.33 334.50 353.83 333.67 353.50 333.00 curveto
+      353.17 332.33 353.00 331.83 353.00 331.50 curveto
+      353.00 331.17 353.00 330.33 353.00 329.00 curveto
+      353.00 327.67 353.00 326.50 353.00 325.50 curveto
+      353.00 324.50 353.50 322.67 354.50 320.00 curveto
+      355.50 317.33 356.17 316.00 356.50 316.00 curveto
+      356.83 316.00 357.17 315.67 357.50 315.00 curveto
+      357.83 314.33 358.33 313.67
+      359 313 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      92 374 moveto (Conjunctive ) show
+      92 403 moveto (matching) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      86 691 moveto (Generation of ) show
+      86 720 moveto (new atoms/) show
+      86 749 moveto (disjunctions) show
+   grestore
+
+% OVAL
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath 480 379 3 2 tgifellipse fill
+grestore
+gsave
+   4 setlinewidth
+   newpath 480 379 3 2 tgifellipse stroke
+   1 setlinewidth
+grestore
+
+% OVAL
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath 480 404 3 2 tgifellipse fill
+grestore
+gsave
+   4 setlinewidth
+   newpath 480 404 3 2 tgifellipse stroke
+   1 setlinewidth
+grestore
+
+% OVAL
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath 480 392 3 2 tgifellipse fill
+grestore
+gsave
+   4 setlinewidth
+   newpath 480 392 3 2 tgifellipse stroke
+   1 setlinewidth
+grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      398 287 moveto 461 287 lineto 461 328 lineto 398 328 lineto
+   closepath fill
+grestore
+/Helvetica-Bold-GothicBBB-Medium-EUC-H /Helvetica-Bold /GothicBBB-Medium-EUC-H eucfont
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      400 320 moveto (p\(a\)) show
+   grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      398 335 moveto 461 335 lineto 461 376 lineto 398 376 lineto
+   closepath fill
+grestore
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      400 368 moveto (q\(a\)) show
+   grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      496 287 moveto 561 287 lineto 561 328 lineto 496 328 lineto
+   closepath fill
+grestore
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      498 320 moveto (p\(b\)) show
+   grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      496 335 moveto 561 335 lineto 561 376 lineto 496 376 lineto
+   closepath fill
+grestore
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      498 368 moveto (q\(b\)) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      368 245 moveto (M:) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      412 245 moveto (model candidate) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      538 889 moveto (D:) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      582 889 moveto (model extending ) show
+      582 927 moveto (candidate) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      756 772 moveto (selection) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      872 656 moveto (Model) show
+      872 685 moveto (extension) show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   3 setlinewidth
+   newpath
+      821 688 moveto
+      817.00 685.33 812.83 684.00 808.50 684.00 curveto
+      804.17 684.00 802.17 685.67 802.50 689.00 curveto
+      802.83 692.33 804.33 695.17 807.00 697.50 curveto
+      809.67 699.83 812.33 702.00 815.00 704.00 curveto
+      817.67 706.00 821.17 708.00 825.50 710.00 curveto
+      829.83 712.00 834.00 713.33 838.00 714.00 curveto
+      842.00 714.67 844.83 713.67 846.50 711.00 curveto
+      848.17 708.33 845.33 704.00
+      838 698 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   5 setlinewidth
+   newpath
+      472 800 moveto
+      0 84 atan dup cos 18 mul 556 exch sub
+      exch sin 18 mul 800 exch sub lineto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      556 800 18 7 84 0 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      786 622 moveto
+      126 -56 atan dup cos 14 mul 730 exch sub
+      exch sin 14 mul 748 exch sub lineto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      730 748 14 6 -56 126 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      856 462 moveto
+      786 444 lineto
+   stroke
+   1 setlinewidth
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   3 setlinewidth
+   newpath
+      259 693 moveto
+      255.67 696.33 254.17 698.50 254.50 699.50 curveto
+      254.83 700.50 255.67 701.33 257.00 702.00 curveto
+      258.33 702.67 261.00 702.67 265.00 702.00 curveto
+      269.00 701.33 272.83 700.00 276.50 698.00 curveto
+      280.17 696.00 283.17 693.67 285.50 691.00 curveto
+      287.83 688.33 287.50 686.67 284.50 686.00 curveto
+      281.50 685.33 278.00 685.33
+      274 686 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      232 582 moveto
+      232.67 601.33 235.67 618.83 241.00 634.50 curveto
+      246.33 650.17 251.17 662.83 255.50 672.50 curveto
+      259.83 682.17 265.50 690.83 272.50 698.50 curveto
+      279.50 706.17 287.33 713.67 296.00 721.00 curveto
+      304.67 728.33 315.33 734.00
+      6 19 atan dup cos 14 mul 328 exch sub
+      exch sin 14 mul 738 exch sub curveto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      328 738 14 6 19 6 tgifarrowtip
+   closepath fill
+grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [24 0 0 -24 0 0] makefont setfont
+   gsave
+      478 788 moveto (added) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [24 0 0 -24 0 0] makefont setfont
+   gsave
+      686 322 moveto (added) show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   3 setlinewidth
+   newpath
+      252 380 moveto
+      244.00 380.00 239.17 380.17 237.50 380.50 curveto
+      235.83 380.83 235.33 382.00 236.00 384.00 curveto
+      236.67 386.00 238.00 388.00 240.00 390.00 curveto
+      242.00 392.00 249.67 396.17 263.00 402.50 curveto
+      276.33 408.83 286.50 413.33 293.50 416.00 curveto
+      300.50 418.67 305.83 420.67 309.50 422.00 curveto
+      313.17 423.33 316.67 424.00 320.00 424.00 curveto
+      323.33 424.00 325.00 422.17 325.00 418.50 curveto
+      325.00 414.83 322.67 412.33
+      318 411 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% TEXT
+0 setgray
+newpath
+   692 576 moveto 854 576 lineto 854 616 lineto 692 616 lineto
+closepath 1 setgray fill
+0 setgray
+/Times-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      694 608 moveto (Simpl\(   ,D\)) show
+   grestore
+
+% TEXT
+0 setgray
+/Symbol findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      788 607 moveto (D) show
+   grestore
+
+% TEXT
+0 setgray
+/Symbol findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      880 461 moveto (D:) show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold findfont [25 0 0 -25 0 0] makefont setfont
+   gsave
+      914 462 moveto (extending) show
+      914 491 moveto (atom) show
+   grestore
+
+% BOX
+gsave
+   1.415 setmiterlimit
+   4 setlinewidth
+   newpath
+      45 506 moveto 329 506 lineto 329 580 lineto 45 580 lineto
+   closepath stroke
+   1 setlinewidth
+   1 setmiterlimit
+grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      127 555 moveto (p\(x\), q\(x\)) tgifcentertext show
+   grestore
+
+% TEXT
+0 setgray
+/Helvetica-Bold-GothicBBB-Medium-EUC-H findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      291 555 moveto (r\(x\)) tgifcentertext show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      206 543 moveto
+      0 48 atan dup cos 14 mul 254 exch sub
+      exch sin 14 mul 543 exch sub lineto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      254 543 14 6 48 0 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      726 766 moveto
+      770.67 747.33 802.33 727.67 821.00 707.00 curveto
+      839.67 686.33 853.50 660.00 862.50 628.00 curveto
+      871.50 596.00 874.50 563.00 871.50 529.00 curveto
+      868.50 495.00 861.67 462.33 851.00 431.00 curveto
+      840.33 399.67 823.17 377.00 799.50 363.00 curveto
+      775.83 349.00 750.83 340.33 724.50 337.00 curveto
+      698.17 333.67 671.17 331.33 643.50 330.00 curveto
+      615.83 328.67 601.33 328.00
+      0 -2 atan dup cos 14 mul 600 exch sub
+      exch sin 14 mul 328 exch sub curveto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      600 328 14 6 -2 0 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      858 462 moveto
+      814 566 lineto
+   stroke
+   1 setlinewidth
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      562 778 moveto
+      562.00 777.33 562.00 776.83 562.00 776.50 curveto
+      562.00 776.17 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 775.83 562.00 775.50 curveto
+      562.00 775.17 562.00 775.00 562.00 775.00 curveto
+      562.00 775.00 562.00 774.83 562.00 774.50 curveto
+      562.00 774.17 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 773.83 562.00 773.50 curveto
+      562.00 773.17 562.17 773.00 562.50 773.00 curveto
+      562.83 773.00 563.00 773.00 563.00 773.00 curveto
+      563.00 773.00 563.00 772.83 563.00 772.50 curveto
+      563.00 772.17 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 771.83 563.00 771.50 curveto
+      563.00 771.17 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.33 770.67 564.00 770.00 curveto
+      564.67 769.33 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 768.83 565.00 768.50 curveto
+      565.00 768.17 565.17 767.83 565.50 767.50 curveto
+      565.83 767.17 566.17 767.00 566.50 767.00 curveto
+      566.83 767.00 567.00 767.00 567.00 767.00 curveto
+      567.00 767.00 567.33 766.83 568.00 766.50 curveto
+      568.67 766.17 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.17 766.00 569.50 766.00 curveto
+      569.83 766.00 570.17 765.83 570.50 765.50 curveto
+      570.83 765.17 571.33 765.00 572.00 765.00 curveto
+      572.67 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.17 765.00 573.50 765.00 curveto
+      573.83 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.17 765.00 574.50 765.00 curveto
+      574.83 765.00 575.33 765.00 576.00 765.00 curveto
+      576.67 765.00 577.00 765.00 577.00 765.00 curveto
+      577.00 765.00 577.00 765.00 577.00 765.00 curveto
+      577.00 765.00 577.17 765.00 577.50 765.00 curveto
+      577.83 765.00 578.00 764.83 578.00 764.50 curveto
+      578.00 764.17 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 763.83 578.00 763.50 curveto
+      578.00 763.17 578.00 762.83 578.00 762.50 curveto
+      578.00 762.17 578.00 762.00 578.00 762.00 curveto
+      578.00 762.00 578.00 761.83 578.00 761.50 curveto
+      578.00 761.17 578.00 761.00 578.00 761.00 curveto
+      578.00 761.00 578.00 760.83 578.00 760.50 curveto
+      578.00 760.17 578.00 760.00 578.00 760.00 curveto
+      578.00 760.00 578.00 760.00 578.00 760.00 curveto
+      578.00 760.00 578.00 759.83 578.00 759.50 curveto
+      578.00 759.17 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.17 759.00 578.50 759.00 curveto
+      578.83 759.00 579.00 758.83 579.00 758.50 curveto
+      579.00 758.17 579.17 757.83 579.50 757.50 curveto
+      579.83 757.17 580.33 757.00 581.00 757.00 curveto
+      581.67 757.00 582.00 756.67 582.00 756.00 curveto
+      582.00 755.33 582.17 755.00 582.50 755.00 curveto
+      582.83 755.00 583.17 755.00 583.50 755.00 curveto
+      583.83 755.00 584.33 754.67 585.00 754.00 curveto
+      585.67 753.33 586.17 753.00 586.50 753.00 curveto
+      586.83 753.00 587.00 753.00 587.00 753.00 curveto
+      587.00 753.00 587.50 753.00 588.50 753.00 curveto
+      589.50 753.00 590.00 753.00 590.00 753.00 curveto
+      590.00 753.00 590.17 753.00 590.50 753.00 curveto
+      590.83 753.00 591.17 753.00 591.50 753.00 curveto
+      591.83 753.00 592.00 753.00 592.00 753.00 curveto
+      592.00 753.00 592.50 753.00 593.50 753.00 curveto
+      594.50 753.00 595.17 753.00 595.50 753.00 curveto
+      595.83 753.00 596.00 753.00 596.00 753.00 curveto
+      596.00 753.00 596.00 753.00 596.00 753.00 curveto
+      596.00 753.00 596.17 753.00 596.50 753.00 curveto
+      596.83 753.00 597.00 753.00 597.00 753.00 curveto
+      597.00 753.00 597.00 752.83 597.00 752.50 curveto
+      597.00 752.17 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.33 751.83 598.00 751.50 curveto
+      598.67 751.17 599.17 750.83 599.50 750.50 curveto
+      599.83 750.17 600.00 750.00 600.00 750.00 curveto
+      600.00 750.00 600.17 749.83 600.50 749.50 curveto
+      600.83 749.17 601.50 748.67 602.50 748.00 curveto
+      603.50 747.33 604.17 747.00 604.50 747.00 curveto
+      604.83 747.00 605.50 746.83 606.50 746.50 curveto
+      607.50 746.17 608.33 746.00 609.00 746.00 curveto
+      609.67 746.00 610.50 746.17 611.50 746.50 curveto
+      612.50 746.83 613.17 747.00 613.50 747.00 curveto
+      613.83 747.00 614.00 747.00 614.00 747.00 curveto
+      614.00 747.00 614.50 747.00 615.50 747.00 curveto
+      616.50 747.00 617.17 747.17 617.50 747.50 curveto
+      617.83 747.83 618.33 748.00 619.00 748.00 curveto
+      619.67 748.00 620.33 748.17 621.00 748.50 curveto
+      621.67 748.83 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 748.83 622.00 748.50 curveto
+      622.00 748.17 622.67 748.00 624.00 748.00 curveto
+      625.33 748.00 626.17 747.83 626.50 747.50 curveto
+      626.83 747.17 627.00 747.00 627.00 747.00 curveto
+      627.00 747.00 628.00 746.67 630.00 746.00 curveto
+      632.00 745.33 633.33 745.00 634.00 745.00 curveto
+      634.67 745.00 635.33 744.83 636.00 744.50 curveto
+      636.67 744.17 637.33 744.00 638.00 744.00 curveto
+      638.67 744.00 639.17 744.17 639.50 744.50 curveto
+      639.83 744.83 640.33 745.00 641.00 745.00 curveto
+      641.67 745.00 642.67 745.17 644.00 745.50 curveto
+      645.33 745.83 646.33 746.17 647.00 746.50 curveto
+      647.67 746.83 648.00 747.17 648.00 747.50 curveto
+      648.00 747.83 648.00 748.00 648.00 748.00 curveto
+      648.00 748.00 648.00 748.00 648.00 748.00 curveto
+      648.00 748.00 648.33 748.00 649.00 748.00 curveto
+      649.67 748.00 650.00 748.00 650.00 748.00 curveto
+      650.00 748.00 650.00 748.00 650.00 748.00 curveto
+      650.00 748.00 650.33 747.83 651.00 747.50 curveto
+      651.67 747.17 652.33 747.00 653.00 747.00 curveto
+      653.67 747.00 654.33 746.83 655.00 746.50 curveto
+      655.67 746.17 656.83 745.83 658.50 745.50 curveto
+      660.17 745.17 661.33 745.00 662.00 745.00 curveto
+      662.67 745.00 663.67 745.00 665.00 745.00 curveto
+      666.33 745.00 667.00 745.17 667.00 745.50 curveto
+      667.00 745.83 667.67 746.17 669.00 746.50 curveto
+      670.33 746.83 671.33 747.17 672.00 747.50 curveto
+      672.67 747.83 673.17 748.17 673.50 748.50 curveto
+      673.83 748.83 674.00 749.00 674.00 749.00 curveto
+      674.00 749.00 674.33 749.17 675.00 749.50 curveto
+      675.67 749.83 676.00 750.00 676.00 750.00 curveto
+      676.00 750.00 676.00 750.00 676.00 750.00 curveto
+      676.00 750.00 676.17 749.83 676.50 749.50 curveto
+      676.83 749.17 677.17 748.83 677.50 748.50 curveto
+      677.83 748.17 678.33 748.00 679.00 748.00 curveto
+      679.67 748.00 680.17 748.00 680.50 748.00 curveto
+      680.83 748.00 682.50 748.00 685.50 748.00 curveto
+      688.50 748.00 690.50 748.00 691.50 748.00 curveto
+      692.50 748.00 693.17 748.00 693.50 748.00 curveto
+      693.83 748.00 694.67 748.33 696.00 749.00 curveto
+      697.33 749.67 698.17 750.17 698.50 750.50 curveto
+      698.83 750.83 699.33 751.17 700.00 751.50 curveto
+      700.67 751.83 701.00 752.17 701.00 752.50 curveto
+      701.00 752.83 701.17 753.00 701.50 753.00 curveto
+      701.83 753.00 702.00 753.33 702.00 754.00 curveto
+      702.00 754.67 702.17 754.83 702.50 754.50 curveto
+      702.83 754.17 703.17 754.00 703.50 754.00 curveto
+      703.83 754.00 704.00 754.00 704.00 754.00 curveto
+      704.00 754.00 704.50 754.00 705.50 754.00 curveto
+      706.50 754.00 707.17 754.17 707.50 754.50 curveto
+      707.83 754.83 708.67 755.33 710.00 756.00 curveto
+      711.33 756.67 712.67 757.33 714.00 758.00 curveto
+      715.33 758.67 716.33 759.17 717.00 759.50 curveto
+      717.67 759.83 718.17 760.17 718.50 760.50 curveto
+      718.83 760.83 719.67 761.67 721.00 763.00 curveto
+      722.33 764.33 723.17 765.50 723.50 766.50 curveto
+      723.83 767.50 724.00 768.33 724.00 769.00 curveto
+      724.00 769.67 724.00 770.33 724.00 771.00 curveto
+      724.00 771.67 724.00 772.33 724.00 773.00 curveto
+      724.00 773.67 724.17 774.00 724.50 774.00 curveto
+      724.83 774.00 725.50 774.00 726.50 774.00 curveto
+      727.50 774.00 728.50 774.00 729.50 774.00 curveto
+      730.50 774.00 731.00 774.17 731.00 774.50 curveto
+      731.00 774.83 732.00 775.50 734.00 776.50 curveto
+      736.00 777.50 737.50 779.00 738.50 781.00 curveto
+      739.50 783.00 739.67 784.50 739.00 785.50 curveto
+      738.33 786.50 737.67 787.50 737.00 788.50 curveto
+      736.33 789.50 735.67 790.33 735.00 791.00 curveto
+      734.33 791.67 734.00 792.17 734.00 792.50 curveto
+      734.00 792.83 734.00 793.33 734.00 794.00 curveto
+      734.00 794.67 734.00 795.00 734.00 795.00 curveto
+      734.00 795.00 734.00 795.00 734.00 795.00 curveto
+      734.00 795.00 734.00 795.17 734.00 795.50 curveto
+      734.00 795.83 734.33 796.17 735.00 796.50 curveto
+      735.67 796.83 736.83 798.33 738.50 801.00 curveto
+      740.17 803.67 739.83 806.67 737.50 810.00 curveto
+      735.17 813.33 733.83 815.50 733.50 816.50 curveto
+      733.17 817.50 732.67 818.17 732.00 818.50 curveto
+      731.33 818.83 730.67 819.00 730.00 819.00 curveto
+      729.33 819.00 729.33 819.00 730.00 819.00 curveto
+      730.67 819.00 731.00 819.50 731.00 820.50 curveto
+      731.00 821.50 731.00 822.17 731.00 822.50 curveto
+      731.00 822.83 730.33 824.00 729.00 826.00 curveto
+      727.67 828.00 726.33 829.67 725.00 831.00 curveto
+      723.67 832.33 722.17 833.50 720.50 834.50 curveto
+      718.83 835.50 717.67 836.00 717.00 836.00 curveto
+      716.33 836.00 715.67 836.17 715.00 836.50 curveto
+      714.33 836.83 713.67 836.83 713.00 836.50 curveto
+      712.33 836.17 712.50 836.50 713.50 837.50 curveto
+      714.50 838.50 715.00 839.67 715.00 841.00 curveto
+      715.00 842.33 714.33 844.17 713.00 846.50 curveto
+      711.67 848.83 709.50 850.33 706.50 851.00 curveto
+      703.50 851.67 700.67 852.00 698.00 852.00 curveto
+      695.33 852.00 693.33 851.33 692.00 850.00 curveto
+      690.67 848.67 689.83 848.50 689.50 849.50 curveto
+      689.17 850.50 688.33 851.33 687.00 852.00 curveto
+      685.67 852.67 684.17 853.17 682.50 853.50 curveto
+      680.83 853.83 679.50 854.00 678.50 854.00 curveto
+      677.50 854.00 676.00 854.00 674.00 854.00 curveto
+      672.00 854.00 669.17 853.83 665.50 853.50 curveto
+      661.83 853.17 659.00 852.17 657.00 850.50 curveto
+      655.00 848.83 654.00 848.00 654.00 848.00 curveto
+      654.00 848.00 654.00 848.00 654.00 848.00 curveto
+      654.00 848.00 653.67 848.33 653.00 849.00 curveto
+      652.33 849.67 651.00 850.50 649.00 851.50 curveto
+      647.00 852.50 643.50 853.00 638.50 853.00 curveto
+      633.50 853.00 629.50 852.17 626.50 850.50 curveto
+      623.50 848.83 621.33 847.50 620.00 846.50 curveto
+      618.67 845.50 617.83 845.00 617.50 845.00 curveto
+      617.17 845.00 617.17 844.83 617.50 844.50 curveto
+      617.83 844.17 616.33 844.50 613.00 845.50 curveto
+      609.67 846.50 606.67 846.67 604.00 846.00 curveto
+      601.33 845.33 599.33 844.50 598.00 843.50 curveto
+      596.67 842.50 595.33 841.00 594.00 839.00 curveto
+      592.67 837.00 591.83 836.17 591.50 836.50 curveto
+      591.17 836.83 589.83 837.33 587.50 838.00 curveto
+      585.17 838.67 583.00 838.67 581.00 838.00 curveto
+      579.00 837.33 576.83 836.00 574.50 834.00 curveto
+      572.17 832.00 571.00 830.17 571.00 828.50 curveto
+      571.00 826.83 570.83 825.67 570.50 825.00 curveto
+      570.17 824.33 569.83 824.00 569.50 824.00 curveto
+      569.17 824.00 568.00 823.67 566.00 823.00 curveto
+      564.00 822.33 562.67 821.33 562.00 820.00 curveto
+      561.33 818.67 561.67 816.67 563.00 814.00 curveto
+      564.33 811.33 564.50 810.00 563.50 810.00 curveto
+      562.50 810.00 560.50 808.83 557.50 806.50 curveto
+      554.50 804.17 553.83 801.67 555.50 799.00 curveto
+      557.17 796.33 558.50 794.83 559.50 794.50 curveto
+      560.50 794.17 561.00 793.83 561.00 793.50 curveto
+      561.00 793.17 561.00 793.00 561.00 793.00 curveto
+      561.00 793.00 560.83 792.67 560.50 792.00 curveto
+      560.17 791.33 560.00 790.83 560.00 790.50 curveto
+      560.00 790.17 560.00 789.83 560.00 789.50 curveto
+      560.00 789.17 560.00 788.50 560.00 787.50 curveto
+      560.00 786.50 560.00 785.67 560.00 785.00 curveto
+      560.00 784.33 560.17 783.17 560.50 781.50 curveto
+      560.83 779.83 561.00 779.00 561.00 779.00 curveto
+      561.00 779.00 561.17 778.83 561.50 778.50 curveto
+      561.83 778.17 562.33 778.00
+   563 778 curveto
+   closepath eofill
+grestore
+gsave
+   4 setlinewidth
+   newpath
+      562 778 moveto
+      562.00 777.33 562.00 776.83 562.00 776.50 curveto
+      562.00 776.17 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 776.00 562.00 776.00 curveto
+      562.00 776.00 562.00 775.83 562.00 775.50 curveto
+      562.00 775.17 562.00 775.00 562.00 775.00 curveto
+      562.00 775.00 562.00 774.83 562.00 774.50 curveto
+      562.00 774.17 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 774.00 562.00 774.00 curveto
+      562.00 774.00 562.00 773.83 562.00 773.50 curveto
+      562.00 773.17 562.17 773.00 562.50 773.00 curveto
+      562.83 773.00 563.00 773.00 563.00 773.00 curveto
+      563.00 773.00 563.00 772.83 563.00 772.50 curveto
+      563.00 772.17 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 772.00 563.00 772.00 curveto
+      563.00 772.00 563.00 771.83 563.00 771.50 curveto
+      563.00 771.17 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.00 771.00 563.00 771.00 curveto
+      563.00 771.00 563.33 770.67 564.00 770.00 curveto
+      564.67 769.33 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 769.00 565.00 769.00 curveto
+      565.00 769.00 565.00 768.83 565.00 768.50 curveto
+      565.00 768.17 565.17 767.83 565.50 767.50 curveto
+      565.83 767.17 566.17 767.00 566.50 767.00 curveto
+      566.83 767.00 567.00 767.00 567.00 767.00 curveto
+      567.00 767.00 567.33 766.83 568.00 766.50 curveto
+      568.67 766.17 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.00 766.00 569.00 766.00 curveto
+      569.00 766.00 569.17 766.00 569.50 766.00 curveto
+      569.83 766.00 570.17 765.83 570.50 765.50 curveto
+      570.83 765.17 571.33 765.00 572.00 765.00 curveto
+      572.67 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.00 765.00 573.00 765.00 curveto
+      573.00 765.00 573.17 765.00 573.50 765.00 curveto
+      573.83 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.00 765.00 574.00 765.00 curveto
+      574.00 765.00 574.17 765.00 574.50 765.00 curveto
+      574.83 765.00 575.33 765.00 576.00 765.00 curveto
+      576.67 765.00 577.00 765.00 577.00 765.00 curveto
+      577.00 765.00 577.00 765.00 577.00 765.00 curveto
+      577.00 765.00 577.17 765.00 577.50 765.00 curveto
+      577.83 765.00 578.00 764.83 578.00 764.50 curveto
+      578.00 764.17 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 764.00 578.00 764.00 curveto
+      578.00 764.00 578.00 763.83 578.00 763.50 curveto
+      578.00 763.17 578.00 762.83 578.00 762.50 curveto
+      578.00 762.17 578.00 762.00 578.00 762.00 curveto
+      578.00 762.00 578.00 761.83 578.00 761.50 curveto
+      578.00 761.17 578.00 761.00 578.00 761.00 curveto
+      578.00 761.00 578.00 760.83 578.00 760.50 curveto
+      578.00 760.17 578.00 760.00 578.00 760.00 curveto
+      578.00 760.00 578.00 760.00 578.00 760.00 curveto
+      578.00 760.00 578.00 759.83 578.00 759.50 curveto
+      578.00 759.17 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.00 759.00 578.00 759.00 curveto
+      578.00 759.00 578.17 759.00 578.50 759.00 curveto
+      578.83 759.00 579.00 758.83 579.00 758.50 curveto
+      579.00 758.17 579.17 757.83 579.50 757.50 curveto
+      579.83 757.17 580.33 757.00 581.00 757.00 curveto
+      581.67 757.00 582.00 756.67 582.00 756.00 curveto
+      582.00 755.33 582.17 755.00 582.50 755.00 curveto
+      582.83 755.00 583.17 755.00 583.50 755.00 curveto
+      583.83 755.00 584.33 754.67 585.00 754.00 curveto
+      585.67 753.33 586.17 753.00 586.50 753.00 curveto
+      586.83 753.00 587.00 753.00 587.00 753.00 curveto
+      587.00 753.00 587.50 753.00 588.50 753.00 curveto
+      589.50 753.00 590.00 753.00 590.00 753.00 curveto
+      590.00 753.00 590.17 753.00 590.50 753.00 curveto
+      590.83 753.00 591.17 753.00 591.50 753.00 curveto
+      591.83 753.00 592.00 753.00 592.00 753.00 curveto
+      592.00 753.00 592.50 753.00 593.50 753.00 curveto
+      594.50 753.00 595.17 753.00 595.50 753.00 curveto
+      595.83 753.00 596.00 753.00 596.00 753.00 curveto
+      596.00 753.00 596.00 753.00 596.00 753.00 curveto
+      596.00 753.00 596.17 753.00 596.50 753.00 curveto
+      596.83 753.00 597.00 753.00 597.00 753.00 curveto
+      597.00 753.00 597.00 752.83 597.00 752.50 curveto
+      597.00 752.17 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.00 752.00 597.00 752.00 curveto
+      597.00 752.00 597.33 751.83 598.00 751.50 curveto
+      598.67 751.17 599.17 750.83 599.50 750.50 curveto
+      599.83 750.17 600.00 750.00 600.00 750.00 curveto
+      600.00 750.00 600.17 749.83 600.50 749.50 curveto
+      600.83 749.17 601.50 748.67 602.50 748.00 curveto
+      603.50 747.33 604.17 747.00 604.50 747.00 curveto
+      604.83 747.00 605.50 746.83 606.50 746.50 curveto
+      607.50 746.17 608.33 746.00 609.00 746.00 curveto
+      609.67 746.00 610.50 746.17 611.50 746.50 curveto
+      612.50 746.83 613.17 747.00 613.50 747.00 curveto
+      613.83 747.00 614.00 747.00 614.00 747.00 curveto
+      614.00 747.00 614.50 747.00 615.50 747.00 curveto
+      616.50 747.00 617.17 747.17 617.50 747.50 curveto
+      617.83 747.83 618.33 748.00 619.00 748.00 curveto
+      619.67 748.00 620.33 748.17 621.00 748.50 curveto
+      621.67 748.83 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 749.00 622.00 749.00 curveto
+      622.00 749.00 622.00 748.83 622.00 748.50 curveto
+      622.00 748.17 622.67 748.00 624.00 748.00 curveto
+      625.33 748.00 626.17 747.83 626.50 747.50 curveto
+      626.83 747.17 627.00 747.00 627.00 747.00 curveto
+      627.00 747.00 628.00 746.67 630.00 746.00 curveto
+      632.00 745.33 633.33 745.00 634.00 745.00 curveto
+      634.67 745.00 635.33 744.83 636.00 744.50 curveto
+      636.67 744.17 637.33 744.00 638.00 744.00 curveto
+      638.67 744.00 639.17 744.17 639.50 744.50 curveto
+      639.83 744.83 640.33 745.00 641.00 745.00 curveto
+      641.67 745.00 642.67 745.17 644.00 745.50 curveto
+      645.33 745.83 646.33 746.17 647.00 746.50 curveto
+      647.67 746.83 648.00 747.17 648.00 747.50 curveto
+      648.00 747.83 648.00 748.00 648.00 748.00 curveto
+      648.00 748.00 648.00 748.00 648.00 748.00 curveto
+      648.00 748.00 648.33 748.00 649.00 748.00 curveto
+      649.67 748.00 650.00 748.00 650.00 748.00 curveto
+      650.00 748.00 650.00 748.00 650.00 748.00 curveto
+      650.00 748.00 650.33 747.83 651.00 747.50 curveto
+      651.67 747.17 652.33 747.00 653.00 747.00 curveto
+      653.67 747.00 654.33 746.83 655.00 746.50 curveto
+      655.67 746.17 656.83 745.83 658.50 745.50 curveto
+      660.17 745.17 661.33 745.00 662.00 745.00 curveto
+      662.67 745.00 663.67 745.00 665.00 745.00 curveto
+      666.33 745.00 667.00 745.17 667.00 745.50 curveto
+      667.00 745.83 667.67 746.17 669.00 746.50 curveto
+      670.33 746.83 671.33 747.17 672.00 747.50 curveto
+      672.67 747.83 673.17 748.17 673.50 748.50 curveto
+      673.83 748.83 674.00 749.00 674.00 749.00 curveto
+      674.00 749.00 674.33 749.17 675.00 749.50 curveto
+      675.67 749.83 676.00 750.00 676.00 750.00 curveto
+      676.00 750.00 676.00 750.00 676.00 750.00 curveto
+      676.00 750.00 676.17 749.83 676.50 749.50 curveto
+      676.83 749.17 677.17 748.83 677.50 748.50 curveto
+      677.83 748.17 678.33 748.00 679.00 748.00 curveto
+      679.67 748.00 680.17 748.00 680.50 748.00 curveto
+      680.83 748.00 682.50 748.00 685.50 748.00 curveto
+      688.50 748.00 690.50 748.00 691.50 748.00 curveto
+      692.50 748.00 693.17 748.00 693.50 748.00 curveto
+      693.83 748.00 694.67 748.33 696.00 749.00 curveto
+      697.33 749.67 698.17 750.17 698.50 750.50 curveto
+      698.83 750.83 699.33 751.17 700.00 751.50 curveto
+      700.67 751.83 701.00 752.17 701.00 752.50 curveto
+      701.00 752.83 701.17 753.00 701.50 753.00 curveto
+      701.83 753.00 702.00 753.33 702.00 754.00 curveto
+      702.00 754.67 702.17 754.83 702.50 754.50 curveto
+      702.83 754.17 703.17 754.00 703.50 754.00 curveto
+      703.83 754.00 704.00 754.00 704.00 754.00 curveto
+      704.00 754.00 704.50 754.00 705.50 754.00 curveto
+      706.50 754.00 707.17 754.17 707.50 754.50 curveto
+      707.83 754.83 708.67 755.33 710.00 756.00 curveto
+      711.33 756.67 712.67 757.33 714.00 758.00 curveto
+      715.33 758.67 716.33 759.17 717.00 759.50 curveto
+      717.67 759.83 718.17 760.17 718.50 760.50 curveto
+      718.83 760.83 719.67 761.67 721.00 763.00 curveto
+      722.33 764.33 723.17 765.50 723.50 766.50 curveto
+      723.83 767.50 724.00 768.33 724.00 769.00 curveto
+      724.00 769.67 724.00 770.33 724.00 771.00 curveto
+      724.00 771.67 724.00 772.33 724.00 773.00 curveto
+      724.00 773.67 724.17 774.00 724.50 774.00 curveto
+      724.83 774.00 725.50 774.00 726.50 774.00 curveto
+      727.50 774.00 728.50 774.00 729.50 774.00 curveto
+      730.50 774.00 731.00 774.17 731.00 774.50 curveto
+      731.00 774.83 732.00 775.50 734.00 776.50 curveto
+      736.00 777.50 737.50 779.00 738.50 781.00 curveto
+      739.50 783.00 739.67 784.50 739.00 785.50 curveto
+      738.33 786.50 737.67 787.50 737.00 788.50 curveto
+      736.33 789.50 735.67 790.33 735.00 791.00 curveto
+      734.33 791.67 734.00 792.17 734.00 792.50 curveto
+      734.00 792.83 734.00 793.33 734.00 794.00 curveto
+      734.00 794.67 734.00 795.00 734.00 795.00 curveto
+      734.00 795.00 734.00 795.00 734.00 795.00 curveto
+      734.00 795.00 734.00 795.17 734.00 795.50 curveto
+      734.00 795.83 734.33 796.17 735.00 796.50 curveto
+      735.67 796.83 736.83 798.33 738.50 801.00 curveto
+      740.17 803.67 739.83 806.67 737.50 810.00 curveto
+      735.17 813.33 733.83 815.50 733.50 816.50 curveto
+      733.17 817.50 732.67 818.17 732.00 818.50 curveto
+      731.33 818.83 730.67 819.00 730.00 819.00 curveto
+      729.33 819.00 729.33 819.00 730.00 819.00 curveto
+      730.67 819.00 731.00 819.50 731.00 820.50 curveto
+      731.00 821.50 731.00 822.17 731.00 822.50 curveto
+      731.00 822.83 730.33 824.00 729.00 826.00 curveto
+      727.67 828.00 726.33 829.67 725.00 831.00 curveto
+      723.67 832.33 722.17 833.50 720.50 834.50 curveto
+      718.83 835.50 717.67 836.00 717.00 836.00 curveto
+      716.33 836.00 715.67 836.17 715.00 836.50 curveto
+      714.33 836.83 713.67 836.83 713.00 836.50 curveto
+      712.33 836.17 712.50 836.50 713.50 837.50 curveto
+      714.50 838.50 715.00 839.67 715.00 841.00 curveto
+      715.00 842.33 714.33 844.17 713.00 846.50 curveto
+      711.67 848.83 709.50 850.33 706.50 851.00 curveto
+      703.50 851.67 700.67 852.00 698.00 852.00 curveto
+      695.33 852.00 693.33 851.33 692.00 850.00 curveto
+      690.67 848.67 689.83 848.50 689.50 849.50 curveto
+      689.17 850.50 688.33 851.33 687.00 852.00 curveto
+      685.67 852.67 684.17 853.17 682.50 853.50 curveto
+      680.83 853.83 679.50 854.00 678.50 854.00 curveto
+      677.50 854.00 676.00 854.00 674.00 854.00 curveto
+      672.00 854.00 669.17 853.83 665.50 853.50 curveto
+      661.83 853.17 659.00 852.17 657.00 850.50 curveto
+      655.00 848.83 654.00 848.00 654.00 848.00 curveto
+      654.00 848.00 654.00 848.00 654.00 848.00 curveto
+      654.00 848.00 653.67 848.33 653.00 849.00 curveto
+      652.33 849.67 651.00 850.50 649.00 851.50 curveto
+      647.00 852.50 643.50 853.00 638.50 853.00 curveto
+      633.50 853.00 629.50 852.17 626.50 850.50 curveto
+      623.50 848.83 621.33 847.50 620.00 846.50 curveto
+      618.67 845.50 617.83 845.00 617.50 845.00 curveto
+      617.17 845.00 617.17 844.83 617.50 844.50 curveto
+      617.83 844.17 616.33 844.50 613.00 845.50 curveto
+      609.67 846.50 606.67 846.67 604.00 846.00 curveto
+      601.33 845.33 599.33 844.50 598.00 843.50 curveto
+      596.67 842.50 595.33 841.00 594.00 839.00 curveto
+      592.67 837.00 591.83 836.17 591.50 836.50 curveto
+      591.17 836.83 589.83 837.33 587.50 838.00 curveto
+      585.17 838.67 583.00 838.67 581.00 838.00 curveto
+      579.00 837.33 576.83 836.00 574.50 834.00 curveto
+      572.17 832.00 571.00 830.17 571.00 828.50 curveto
+      571.00 826.83 570.83 825.67 570.50 825.00 curveto
+      570.17 824.33 569.83 824.00 569.50 824.00 curveto
+      569.17 824.00 568.00 823.67 566.00 823.00 curveto
+      564.00 822.33 562.67 821.33 562.00 820.00 curveto
+      561.33 818.67 561.67 816.67 563.00 814.00 curveto
+      564.33 811.33 564.50 810.00 563.50 810.00 curveto
+      562.50 810.00 560.50 808.83 557.50 806.50 curveto
+      554.50 804.17 553.83 801.67 555.50 799.00 curveto
+      557.17 796.33 558.50 794.83 559.50 794.50 curveto
+      560.50 794.17 561.00 793.83 561.00 793.50 curveto
+      561.00 793.17 561.00 793.00 561.00 793.00 curveto
+      561.00 793.00 560.83 792.67 560.50 792.00 curveto
+      560.17 791.33 560.00 790.83 560.00 790.50 curveto
+      560.00 790.17 560.00 789.83 560.00 789.50 curveto
+      560.00 789.17 560.00 788.50 560.00 787.50 curveto
+      560.00 786.50 560.00 785.67 560.00 785.00 curveto
+      560.00 784.33 560.17 783.17 560.50 781.50 curveto
+      560.83 779.83 561.00 779.00 561.00 779.00 curveto
+      561.00 779.00 561.17 778.83 561.50 778.50 curveto
+      561.83 778.17 562.33 778.00
+      563 778 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      607 756 moveto 674 756 lineto 674 797 lineto 607 797 lineto
+   closepath fill
+grestore
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      609 789 moveto (Unit) show
+   grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      610 796 moveto 674 796 lineto 674 837 lineto 610 837 lineto
+   closepath fill
+grestore
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      612 829 moveto (Disj) show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      281 778 moveto
+      281.00 776.67 281.00 775.83 281.00 775.50 curveto
+      281.00 775.17 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 774.83 281.00 774.50 curveto
+      281.00 774.17 281.00 774.00 281.00 774.00 curveto
+      281.00 774.00 281.00 773.83 281.00 773.50 curveto
+      281.00 773.17 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 772.83 281.00 772.50 curveto
+      281.00 772.17 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.17 772.00 281.50 772.00 curveto
+      281.83 772.00 282.00 772.00 282.00 772.00 curveto
+      282.00 772.00 282.00 771.83 282.00 771.50 curveto
+      282.00 771.17 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 770.83 282.00 770.50 curveto
+      282.00 770.17 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.17 770.00 282.50 770.00 curveto
+      282.83 770.00 283.00 769.83 283.00 769.50 curveto
+      283.00 769.17 283.00 769.00 283.00 769.00 curveto
+      283.00 769.00 283.00 769.00 283.00 769.00 curveto
+      283.00 769.00 283.17 768.83 283.50 768.50 curveto
+      283.83 768.17 284.00 767.83 284.00 767.50 curveto
+      284.00 767.17 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.17 766.83 284.50 766.50 curveto
+      284.83 766.17 285.00 765.83 285.00 765.50 curveto
+      285.00 765.17 285.00 765.00 285.00 765.00 curveto
+      285.00 765.00 285.33 764.83 286.00 764.50 curveto
+      286.67 764.17 287.00 764.00 287.00 764.00 curveto
+      287.00 764.00 287.17 764.00 287.50 764.00 curveto
+      287.83 764.00 288.00 764.00 288.00 764.00 curveto
+      288.00 764.00 288.00 764.00 288.00 764.00 curveto
+      288.00 764.00 288.33 764.00 289.00 764.00 curveto
+      289.67 764.00 290.17 764.00 290.50 764.00 curveto
+      290.83 764.00 291.00 763.83 291.00 763.50 curveto
+      291.00 763.17 291.00 763.00 291.00 763.00 curveto
+      291.00 763.00 291.17 763.00 291.50 763.00 curveto
+      291.83 763.00 292.00 763.00 292.00 763.00 curveto
+      292.00 763.00 292.17 763.00 292.50 763.00 curveto
+      292.83 763.00 293.00 763.00 293.00 763.00 curveto
+      293.00 763.00 293.00 763.00 293.00 763.00 curveto
+      293.00 763.00 293.17 763.00 293.50 763.00 curveto
+      293.83 763.00 294.17 763.00 294.50 763.00 curveto
+      294.83 763.00 295.17 763.00 295.50 763.00 curveto
+      295.83 763.00 296.00 763.00 296.00 763.00 curveto
+      296.00 763.00 296.00 763.00 296.00 763.00 curveto
+      296.00 763.00 296.17 763.00 296.50 763.00 curveto
+      296.83 763.00 297.00 763.00 297.00 763.00 curveto
+      297.00 763.00 297.00 762.67 297.00 762.00 curveto
+      297.00 761.33 297.00 761.00 297.00 761.00 curveto
+      297.00 761.00 297.00 761.00 297.00 761.00 curveto
+      297.00 761.00 297.00 760.83 297.00 760.50 curveto
+      297.00 760.17 297.00 759.83 297.00 759.50 curveto
+      297.00 759.17 297.00 759.00 297.00 759.00 curveto
+      297.00 759.00 297.00 758.83 297.00 758.50 curveto
+      297.00 758.17 297.00 758.00 297.00 758.00 curveto
+      297.00 758.00 297.00 757.83 297.00 757.50 curveto
+      297.00 757.17 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.17 757.00 297.50 757.00 curveto
+      297.83 757.00 298.00 756.83 298.00 756.50 curveto
+      298.00 756.17 298.00 756.00 298.00 756.00 curveto
+      298.00 756.00 298.17 756.00 298.50 756.00 curveto
+      298.83 756.00 299.17 755.83 299.50 755.50 curveto
+      299.83 755.17 300.00 754.83 300.00 754.50 curveto
+      300.00 754.17 300.17 754.00 300.50 754.00 curveto
+      300.83 754.00 301.00 753.83 301.00 753.50 curveto
+      301.00 753.17 301.33 753.00 302.00 753.00 curveto
+      302.67 753.00 303.17 752.83 303.50 752.50 curveto
+      303.83 752.17 304.33 751.83 305.00 751.50 curveto
+      305.67 751.17 306.17 751.00 306.50 751.00 curveto
+      306.83 751.00 307.00 751.00 307.00 751.00 curveto
+      307.00 751.00 307.33 751.00 308.00 751.00 curveto
+      308.67 751.00 309.00 751.00 309.00 751.00 curveto
+      309.00 751.00 309.33 750.83 310.00 750.50 curveto
+      310.67 750.17 311.33 750.00 312.00 750.00 curveto
+      312.67 750.00 313.00 750.00 313.00 750.00 curveto
+      313.00 750.00 313.33 750.00 314.00 750.00 curveto
+      314.67 750.00 315.33 750.00 316.00 750.00 curveto
+      316.67 750.00 317.00 750.00 317.00 750.00 curveto
+      317.00 750.00 317.00 750.00 317.00 750.00 curveto
+      317.00 750.00 317.17 750.00 317.50 750.00 curveto
+      317.83 750.00 318.00 750.00 318.00 750.00 curveto
+      318.00 750.00 318.00 749.83 318.00 749.50 curveto
+      318.00 749.17 318.00 748.83 318.00 748.50 curveto
+      318.00 748.17 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.33 748.00 319.00 748.00 curveto
+      319.67 748.00 320.33 748.00 321.00 748.00 curveto
+      321.67 748.00 322.33 747.50 323.00 746.50 curveto
+      323.67 745.50 324.33 744.67 325.00 744.00 curveto
+      325.67 743.33 326.33 742.83 327.00 742.50 curveto
+      327.67 742.17 328.33 742.00 329.00 742.00 curveto
+      329.67 742.00 330.50 742.00 331.50 742.00 curveto
+      332.50 742.00 333.50 742.00 334.50 742.00 curveto
+      335.50 742.00 336.33 742.17 337.00 742.50 curveto
+      337.67 742.83 338.00 743.00 338.00 743.00 curveto
+      338.00 743.00 338.33 743.00 339.00 743.00 curveto
+      339.67 743.00 340.33 743.17 341.00 743.50 curveto
+      341.67 743.83 342.17 744.00 342.50 744.00 curveto
+      342.83 744.00 343.50 744.17 344.50 744.50 curveto
+      345.50 744.83 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 744.83 346.00 744.50 curveto
+      346.00 744.17 346.50 744.00 347.50 744.00 curveto
+      348.50 744.00 349.33 743.83 350.00 743.50 curveto
+      350.67 743.17 351.00 743.00 351.00 743.00 curveto
+      351.00 743.00 352.00 742.83 354.00 742.50 curveto
+      356.00 742.17 357.33 741.83 358.00 741.50 curveto
+      358.67 741.17 359.33 740.83 360.00 740.50 curveto
+      360.67 740.17 361.33 740.00 362.00 740.00 curveto
+      362.67 740.00 363.50 740.17 364.50 740.50 curveto
+      365.50 740.83 366.17 741.17 366.50 741.50 curveto
+      366.83 741.83 367.67 742.00 369.00 742.00 curveto
+      370.33 742.00 371.33 742.17 372.00 742.50 curveto
+      372.67 742.83 373.17 743.17 373.50 743.50 curveto
+      373.83 743.83 374.00 744.00 374.00 744.00 curveto
+      374.00 744.00 374.00 744.00 374.00 744.00 curveto
+      374.00 744.00 374.17 744.00 374.50 744.00 curveto
+      374.83 744.00 375.00 744.00 375.00 744.00 curveto
+      375.00 744.00 375.00 744.00 375.00 744.00 curveto
+      375.00 744.00 375.17 743.83 375.50 743.50 curveto
+      375.83 743.17 376.67 742.83 378.00 742.50 curveto
+      379.33 742.17 380.33 742.00 381.00 742.00 curveto
+      381.67 742.00 382.83 742.00 384.50 742.00 curveto
+      386.17 742.00 387.33 742.00 388.00 742.00 curveto
+      388.67 742.00 389.67 742.00 391.00 742.00 curveto
+      392.33 742.00 393.00 742.00 393.00 742.00 curveto
+      393.00 742.00 393.67 742.17 395.00 742.50 curveto
+      396.33 742.83 397.67 743.17 399.00 743.50 curveto
+      400.33 743.83 401.00 744.17 401.00 744.50 curveto
+      401.00 744.83 401.00 745.00 401.00 745.00 curveto
+      401.00 745.00 401.17 745.50 401.50 746.50 curveto
+      401.83 747.50 402.00 748.00 402.00 748.00 curveto
+      402.00 748.00 402.00 747.67 402.00 747.00 curveto
+      402.00 746.33 402.17 745.83 402.50 745.50 curveto
+      402.83 745.17 403.33 744.83 404.00 744.50 curveto
+      404.67 744.17 405.17 744.00 405.50 744.00 curveto
+      405.83 744.00 406.33 744.00 407.00 744.00 curveto
+      407.67 744.00 409.67 744.00 413.00 744.00 curveto
+      416.33 744.00 418.17 744.00 418.50 744.00 curveto
+      418.83 744.00 419.33 744.00 420.00 744.00 curveto
+      420.67 744.00 422.00 744.67 424.00 746.00 curveto
+      426.00 747.33 427.33 748.00 428.00 748.00 curveto
+      428.67 748.00 429.17 748.00 429.50 748.00 curveto
+      429.83 748.00 430.00 748.50 430.00 749.50 curveto
+      430.00 750.50 430.17 751.00 430.50 751.00 curveto
+      430.83 751.00 431.00 751.17 431.00 751.50 curveto
+      431.00 751.83 431.17 752.00 431.50 752.00 curveto
+      431.83 752.00 432.33 752.00 433.00 752.00 curveto
+      433.67 752.00 434.17 752.00 434.50 752.00 curveto
+      434.83 752.00 435.33 752.00 436.00 752.00 curveto
+      436.67 752.00 437.17 752.17 437.50 752.50 curveto
+      437.83 752.83 438.83 753.17 440.50 753.50 curveto
+      442.17 753.83 443.50 754.33 444.50 755.00 curveto
+      445.50 755.67 446.33 756.17 447.00 756.50 curveto
+      447.67 756.83 448.17 757.17 448.50 757.50 curveto
+      448.83 757.83 449.67 758.83 451.00 760.50 curveto
+      452.33 762.17 453.17 763.67 453.50 765.00 curveto
+      453.83 766.33 454.17 767.17 454.50 767.50 curveto
+      454.83 767.83 455.00 768.50 455.00 769.50 curveto
+      455.00 770.50 455.00 771.17 455.00 771.50 curveto
+      455.00 771.83 455.17 772.00 455.50 772.00 curveto
+      455.83 772.00 456.50 772.17 457.50 772.50 curveto
+      458.50 772.83 459.33 773.00 460.00 773.00 curveto
+      460.67 773.00 461.17 773.00 461.50 773.00 curveto
+      461.83 773.00 463.17 773.50 465.50 774.50 curveto
+      467.83 775.50 469.50 777.17 470.50 779.50 curveto
+      471.50 781.83 471.67 783.67 471.00 785.00 curveto
+      470.33 786.33 469.83 787.50 469.50 788.50 curveto
+      469.17 789.50 468.67 790.50 468.00 791.50 curveto
+      467.33 792.50 466.83 793.00 466.50 793.00 curveto
+      466.17 793.00 465.83 793.50 465.50 794.50 curveto
+      465.17 795.50 465.00 796.00 465.00 796.00 curveto
+      465.00 796.00 465.00 796.00 465.00 796.00 curveto
+      465.00 796.00 465.33 796.17 466.00 796.50 curveto
+      466.67 796.83 467.17 797.17 467.50 797.50 curveto
+      467.83 797.83 468.83 799.33 470.50 802.00 curveto
+      472.17 804.67 472.00 807.83 470.00 811.50 curveto
+      468.00 815.17 466.67 817.50 466.00 818.50 curveto
+      465.33 819.50 464.33 820.17 463.00 820.50 curveto
+      461.67 820.83 461.00 821.33 461.00 822.00 curveto
+      461.00 822.67 461.00 823.00 461.00 823.00 curveto
+      461.00 823.00 461.00 823.50 461.00 824.50 curveto
+      461.00 825.50 461.00 826.17 461.00 826.50 curveto
+      461.00 826.83 460.50 828.00 459.50 830.00 curveto
+      458.50 832.00 457.17 833.83 455.50 835.50 curveto
+      453.83 837.17 452.17 838.50 450.50 839.50 curveto
+      448.83 840.50 447.83 841.00 447.50 841.00 curveto
+      447.17 841.00 446.50 841.17 445.50 841.50 curveto
+      444.50 841.83 443.83 841.83 443.50 841.50 curveto
+      443.17 841.17 443.17 841.33 443.50 842.00 curveto
+      443.83 842.67 444.00 843.83 444.00 845.50 curveto
+      444.00 847.17 443.50 849.33 442.50 852.00 curveto
+      441.50 854.67 439.33 856.33 436.00 857.00 curveto
+      432.67 857.67 429.33 858.00 426.00 858.00 curveto
+      422.67 858.00 420.50 857.17 419.50 855.50 curveto
+      418.50 853.83 417.67 853.83 417.00 855.50 curveto
+      416.33 857.17 415.50 858.00 414.50 858.00 curveto
+      413.50 858.00 412.00 858.33 410.00 859.00 curveto
+      408.00 859.67 406.33 860.00 405.00 860.00 curveto
+      403.67 860.00 402.00 860.00 400.00 860.00 curveto
+      398.00 860.00 395.17 859.67 391.50 859.00 curveto
+      387.83 858.33 385.00 857.33 383.00 856.00 curveto
+      381.00 854.67 380.00 853.83 380.00 853.50 curveto
+      380.00 853.17 379.67 853.00 379.00 853.00 curveto
+      378.33 853.00 377.67 853.50 377.00 854.50 curveto
+      376.33 855.50 375.17 856.33 373.50 857.00 curveto
+      371.83 857.67 368.50 858.00 363.50 858.00 curveto
+      358.50 858.00 354.33 857.33 351.00 856.00 curveto
+      347.67 854.67 345.33 853.33 344.00 852.00 curveto
+      342.67 850.67 341.83 850.00 341.50 850.00 curveto
+      341.17 850.00 341.17 849.67 341.50 849.00 curveto
+      341.83 848.33 340.00 848.83 336.00 850.50 curveto
+      332.00 852.17 328.67 852.33 326.00 851.00 curveto
+      323.33 849.67 321.17 848.67 319.50 848.00 curveto
+      317.83 847.33 316.33 846.00 315.00 844.00 curveto
+      313.67 842.00 312.83 841.17 312.50 841.50 curveto
+      312.17 841.83 310.67 842.33 308.00 843.00 curveto
+      305.33 843.67 302.83 843.67 300.50 843.00 curveto
+      298.17 842.33 296.00 840.83 294.00 838.50 curveto
+      292.00 836.17 291.00 834.17 291.00 832.50 curveto
+      291.00 830.83 290.67 829.67 290.00 829.00 curveto
+      289.33 828.33 288.67 828.00 288.00 828.00 curveto
+      287.33 828.00 286.17 827.67 284.50 827.00 curveto
+      282.83 826.33 281.50 825.00 280.50 823.00 curveto
+      279.50 821.00 279.83 818.83 281.50 816.50 curveto
+      283.17 814.17 283.50 813.00 282.50 813.00 curveto
+      281.50 813.00 279.33 811.50 276.00 808.50 curveto
+      272.67 805.50 271.83 802.67 273.50 800.00 curveto
+      275.17 797.33 276.50 795.83 277.50 795.50 curveto
+      278.50 795.17 279.00 794.83 279.00 794.50 curveto
+      279.00 794.17 279.00 794.00 279.00 794.00 curveto
+      279.00 794.00 278.83 793.83 278.50 793.50 curveto
+      278.17 793.17 277.83 792.50 277.50 791.50 curveto
+      277.17 790.50 277.00 789.67 277.00 789.00 curveto
+      277.00 788.33 277.00 787.67 277.00 787.00 curveto
+      277.00 786.33 277.00 785.67 277.00 785.00 curveto
+      277.00 784.33 277.33 783.17 278.00 781.50 curveto
+      278.67 779.83 279.17 779.00 279.50 779.00 curveto
+      279.83 779.00 280.17 778.83 280.50 778.50 curveto
+      280.83 778.17 281.33 777.33
+   282 776 curveto
+   closepath eofill
+grestore
+gsave
+   4 setlinewidth
+   newpath
+      281 778 moveto
+      281.00 776.67 281.00 775.83 281.00 775.50 curveto
+      281.00 775.17 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 775.00 281.00 775.00 curveto
+      281.00 775.00 281.00 774.83 281.00 774.50 curveto
+      281.00 774.17 281.00 774.00 281.00 774.00 curveto
+      281.00 774.00 281.00 773.83 281.00 773.50 curveto
+      281.00 773.17 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 773.00 281.00 773.00 curveto
+      281.00 773.00 281.00 772.83 281.00 772.50 curveto
+      281.00 772.17 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.00 772.00 281.00 772.00 curveto
+      281.00 772.00 281.17 772.00 281.50 772.00 curveto
+      281.83 772.00 282.00 772.00 282.00 772.00 curveto
+      282.00 772.00 282.00 771.83 282.00 771.50 curveto
+      282.00 771.17 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 771.00 282.00 771.00 curveto
+      282.00 771.00 282.00 770.83 282.00 770.50 curveto
+      282.00 770.17 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.00 770.00 282.00 770.00 curveto
+      282.00 770.00 282.17 770.00 282.50 770.00 curveto
+      282.83 770.00 283.00 769.83 283.00 769.50 curveto
+      283.00 769.17 283.00 769.00 283.00 769.00 curveto
+      283.00 769.00 283.00 769.00 283.00 769.00 curveto
+      283.00 769.00 283.17 768.83 283.50 768.50 curveto
+      283.83 768.17 284.00 767.83 284.00 767.50 curveto
+      284.00 767.17 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.00 767.00 284.00 767.00 curveto
+      284.00 767.00 284.17 766.83 284.50 766.50 curveto
+      284.83 766.17 285.00 765.83 285.00 765.50 curveto
+      285.00 765.17 285.00 765.00 285.00 765.00 curveto
+      285.00 765.00 285.33 764.83 286.00 764.50 curveto
+      286.67 764.17 287.00 764.00 287.00 764.00 curveto
+      287.00 764.00 287.17 764.00 287.50 764.00 curveto
+      287.83 764.00 288.00 764.00 288.00 764.00 curveto
+      288.00 764.00 288.00 764.00 288.00 764.00 curveto
+      288.00 764.00 288.33 764.00 289.00 764.00 curveto
+      289.67 764.00 290.17 764.00 290.50 764.00 curveto
+      290.83 764.00 291.00 763.83 291.00 763.50 curveto
+      291.00 763.17 291.00 763.00 291.00 763.00 curveto
+      291.00 763.00 291.17 763.00 291.50 763.00 curveto
+      291.83 763.00 292.00 763.00 292.00 763.00 curveto
+      292.00 763.00 292.17 763.00 292.50 763.00 curveto
+      292.83 763.00 293.00 763.00 293.00 763.00 curveto
+      293.00 763.00 293.00 763.00 293.00 763.00 curveto
+      293.00 763.00 293.17 763.00 293.50 763.00 curveto
+      293.83 763.00 294.17 763.00 294.50 763.00 curveto
+      294.83 763.00 295.17 763.00 295.50 763.00 curveto
+      295.83 763.00 296.00 763.00 296.00 763.00 curveto
+      296.00 763.00 296.00 763.00 296.00 763.00 curveto
+      296.00 763.00 296.17 763.00 296.50 763.00 curveto
+      296.83 763.00 297.00 763.00 297.00 763.00 curveto
+      297.00 763.00 297.00 762.67 297.00 762.00 curveto
+      297.00 761.33 297.00 761.00 297.00 761.00 curveto
+      297.00 761.00 297.00 761.00 297.00 761.00 curveto
+      297.00 761.00 297.00 760.83 297.00 760.50 curveto
+      297.00 760.17 297.00 759.83 297.00 759.50 curveto
+      297.00 759.17 297.00 759.00 297.00 759.00 curveto
+      297.00 759.00 297.00 758.83 297.00 758.50 curveto
+      297.00 758.17 297.00 758.00 297.00 758.00 curveto
+      297.00 758.00 297.00 757.83 297.00 757.50 curveto
+      297.00 757.17 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.00 757.00 297.00 757.00 curveto
+      297.00 757.00 297.17 757.00 297.50 757.00 curveto
+      297.83 757.00 298.00 756.83 298.00 756.50 curveto
+      298.00 756.17 298.00 756.00 298.00 756.00 curveto
+      298.00 756.00 298.17 756.00 298.50 756.00 curveto
+      298.83 756.00 299.17 755.83 299.50 755.50 curveto
+      299.83 755.17 300.00 754.83 300.00 754.50 curveto
+      300.00 754.17 300.17 754.00 300.50 754.00 curveto
+      300.83 754.00 301.00 753.83 301.00 753.50 curveto
+      301.00 753.17 301.33 753.00 302.00 753.00 curveto
+      302.67 753.00 303.17 752.83 303.50 752.50 curveto
+      303.83 752.17 304.33 751.83 305.00 751.50 curveto
+      305.67 751.17 306.17 751.00 306.50 751.00 curveto
+      306.83 751.00 307.00 751.00 307.00 751.00 curveto
+      307.00 751.00 307.33 751.00 308.00 751.00 curveto
+      308.67 751.00 309.00 751.00 309.00 751.00 curveto
+      309.00 751.00 309.33 750.83 310.00 750.50 curveto
+      310.67 750.17 311.33 750.00 312.00 750.00 curveto
+      312.67 750.00 313.00 750.00 313.00 750.00 curveto
+      313.00 750.00 313.33 750.00 314.00 750.00 curveto
+      314.67 750.00 315.33 750.00 316.00 750.00 curveto
+      316.67 750.00 317.00 750.00 317.00 750.00 curveto
+      317.00 750.00 317.00 750.00 317.00 750.00 curveto
+      317.00 750.00 317.17 750.00 317.50 750.00 curveto
+      317.83 750.00 318.00 750.00 318.00 750.00 curveto
+      318.00 750.00 318.00 749.83 318.00 749.50 curveto
+      318.00 749.17 318.00 748.83 318.00 748.50 curveto
+      318.00 748.17 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.00 748.00 318.00 748.00 curveto
+      318.00 748.00 318.33 748.00 319.00 748.00 curveto
+      319.67 748.00 320.33 748.00 321.00 748.00 curveto
+      321.67 748.00 322.33 747.50 323.00 746.50 curveto
+      323.67 745.50 324.33 744.67 325.00 744.00 curveto
+      325.67 743.33 326.33 742.83 327.00 742.50 curveto
+      327.67 742.17 328.33 742.00 329.00 742.00 curveto
+      329.67 742.00 330.50 742.00 331.50 742.00 curveto
+      332.50 742.00 333.50 742.00 334.50 742.00 curveto
+      335.50 742.00 336.33 742.17 337.00 742.50 curveto
+      337.67 742.83 338.00 743.00 338.00 743.00 curveto
+      338.00 743.00 338.33 743.00 339.00 743.00 curveto
+      339.67 743.00 340.33 743.17 341.00 743.50 curveto
+      341.67 743.83 342.17 744.00 342.50 744.00 curveto
+      342.83 744.00 343.50 744.17 344.50 744.50 curveto
+      345.50 744.83 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 745.00 346.00 745.00 curveto
+      346.00 745.00 346.00 744.83 346.00 744.50 curveto
+      346.00 744.17 346.50 744.00 347.50 744.00 curveto
+      348.50 744.00 349.33 743.83 350.00 743.50 curveto
+      350.67 743.17 351.00 743.00 351.00 743.00 curveto
+      351.00 743.00 352.00 742.83 354.00 742.50 curveto
+      356.00 742.17 357.33 741.83 358.00 741.50 curveto
+      358.67 741.17 359.33 740.83 360.00 740.50 curveto
+      360.67 740.17 361.33 740.00 362.00 740.00 curveto
+      362.67 740.00 363.50 740.17 364.50 740.50 curveto
+      365.50 740.83 366.17 741.17 366.50 741.50 curveto
+      366.83 741.83 367.67 742.00 369.00 742.00 curveto
+      370.33 742.00 371.33 742.17 372.00 742.50 curveto
+      372.67 742.83 373.17 743.17 373.50 743.50 curveto
+      373.83 743.83 374.00 744.00 374.00 744.00 curveto
+      374.00 744.00 374.00 744.00 374.00 744.00 curveto
+      374.00 744.00 374.17 744.00 374.50 744.00 curveto
+      374.83 744.00 375.00 744.00 375.00 744.00 curveto
+      375.00 744.00 375.00 744.00 375.00 744.00 curveto
+      375.00 744.00 375.17 743.83 375.50 743.50 curveto
+      375.83 743.17 376.67 742.83 378.00 742.50 curveto
+      379.33 742.17 380.33 742.00 381.00 742.00 curveto
+      381.67 742.00 382.83 742.00 384.50 742.00 curveto
+      386.17 742.00 387.33 742.00 388.00 742.00 curveto
+      388.67 742.00 389.67 742.00 391.00 742.00 curveto
+      392.33 742.00 393.00 742.00 393.00 742.00 curveto
+      393.00 742.00 393.67 742.17 395.00 742.50 curveto
+      396.33 742.83 397.67 743.17 399.00 743.50 curveto
+      400.33 743.83 401.00 744.17 401.00 744.50 curveto
+      401.00 744.83 401.00 745.00 401.00 745.00 curveto
+      401.00 745.00 401.17 745.50 401.50 746.50 curveto
+      401.83 747.50 402.00 748.00 402.00 748.00 curveto
+      402.00 748.00 402.00 747.67 402.00 747.00 curveto
+      402.00 746.33 402.17 745.83 402.50 745.50 curveto
+      402.83 745.17 403.33 744.83 404.00 744.50 curveto
+      404.67 744.17 405.17 744.00 405.50 744.00 curveto
+      405.83 744.00 406.33 744.00 407.00 744.00 curveto
+      407.67 744.00 409.67 744.00 413.00 744.00 curveto
+      416.33 744.00 418.17 744.00 418.50 744.00 curveto
+      418.83 744.00 419.33 744.00 420.00 744.00 curveto
+      420.67 744.00 422.00 744.67 424.00 746.00 curveto
+      426.00 747.33 427.33 748.00 428.00 748.00 curveto
+      428.67 748.00 429.17 748.00 429.50 748.00 curveto
+      429.83 748.00 430.00 748.50 430.00 749.50 curveto
+      430.00 750.50 430.17 751.00 430.50 751.00 curveto
+      430.83 751.00 431.00 751.17 431.00 751.50 curveto
+      431.00 751.83 431.17 752.00 431.50 752.00 curveto
+      431.83 752.00 432.33 752.00 433.00 752.00 curveto
+      433.67 752.00 434.17 752.00 434.50 752.00 curveto
+      434.83 752.00 435.33 752.00 436.00 752.00 curveto
+      436.67 752.00 437.17 752.17 437.50 752.50 curveto
+      437.83 752.83 438.83 753.17 440.50 753.50 curveto
+      442.17 753.83 443.50 754.33 444.50 755.00 curveto
+      445.50 755.67 446.33 756.17 447.00 756.50 curveto
+      447.67 756.83 448.17 757.17 448.50 757.50 curveto
+      448.83 757.83 449.67 758.83 451.00 760.50 curveto
+      452.33 762.17 453.17 763.67 453.50 765.00 curveto
+      453.83 766.33 454.17 767.17 454.50 767.50 curveto
+      454.83 767.83 455.00 768.50 455.00 769.50 curveto
+      455.00 770.50 455.00 771.17 455.00 771.50 curveto
+      455.00 771.83 455.17 772.00 455.50 772.00 curveto
+      455.83 772.00 456.50 772.17 457.50 772.50 curveto
+      458.50 772.83 459.33 773.00 460.00 773.00 curveto
+      460.67 773.00 461.17 773.00 461.50 773.00 curveto
+      461.83 773.00 463.17 773.50 465.50 774.50 curveto
+      467.83 775.50 469.50 777.17 470.50 779.50 curveto
+      471.50 781.83 471.67 783.67 471.00 785.00 curveto
+      470.33 786.33 469.83 787.50 469.50 788.50 curveto
+      469.17 789.50 468.67 790.50 468.00 791.50 curveto
+      467.33 792.50 466.83 793.00 466.50 793.00 curveto
+      466.17 793.00 465.83 793.50 465.50 794.50 curveto
+      465.17 795.50 465.00 796.00 465.00 796.00 curveto
+      465.00 796.00 465.00 796.00 465.00 796.00 curveto
+      465.00 796.00 465.33 796.17 466.00 796.50 curveto
+      466.67 796.83 467.17 797.17 467.50 797.50 curveto
+      467.83 797.83 468.83 799.33 470.50 802.00 curveto
+      472.17 804.67 472.00 807.83 470.00 811.50 curveto
+      468.00 815.17 466.67 817.50 466.00 818.50 curveto
+      465.33 819.50 464.33 820.17 463.00 820.50 curveto
+      461.67 820.83 461.00 821.33 461.00 822.00 curveto
+      461.00 822.67 461.00 823.00 461.00 823.00 curveto
+      461.00 823.00 461.00 823.50 461.00 824.50 curveto
+      461.00 825.50 461.00 826.17 461.00 826.50 curveto
+      461.00 826.83 460.50 828.00 459.50 830.00 curveto
+      458.50 832.00 457.17 833.83 455.50 835.50 curveto
+      453.83 837.17 452.17 838.50 450.50 839.50 curveto
+      448.83 840.50 447.83 841.00 447.50 841.00 curveto
+      447.17 841.00 446.50 841.17 445.50 841.50 curveto
+      444.50 841.83 443.83 841.83 443.50 841.50 curveto
+      443.17 841.17 443.17 841.33 443.50 842.00 curveto
+      443.83 842.67 444.00 843.83 444.00 845.50 curveto
+      444.00 847.17 443.50 849.33 442.50 852.00 curveto
+      441.50 854.67 439.33 856.33 436.00 857.00 curveto
+      432.67 857.67 429.33 858.00 426.00 858.00 curveto
+      422.67 858.00 420.50 857.17 419.50 855.50 curveto
+      418.50 853.83 417.67 853.83 417.00 855.50 curveto
+      416.33 857.17 415.50 858.00 414.50 858.00 curveto
+      413.50 858.00 412.00 858.33 410.00 859.00 curveto
+      408.00 859.67 406.33 860.00 405.00 860.00 curveto
+      403.67 860.00 402.00 860.00 400.00 860.00 curveto
+      398.00 860.00 395.17 859.67 391.50 859.00 curveto
+      387.83 858.33 385.00 857.33 383.00 856.00 curveto
+      381.00 854.67 380.00 853.83 380.00 853.50 curveto
+      380.00 853.17 379.67 853.00 379.00 853.00 curveto
+      378.33 853.00 377.67 853.50 377.00 854.50 curveto
+      376.33 855.50 375.17 856.33 373.50 857.00 curveto
+      371.83 857.67 368.50 858.00 363.50 858.00 curveto
+      358.50 858.00 354.33 857.33 351.00 856.00 curveto
+      347.67 854.67 345.33 853.33 344.00 852.00 curveto
+      342.67 850.67 341.83 850.00 341.50 850.00 curveto
+      341.17 850.00 341.17 849.67 341.50 849.00 curveto
+      341.83 848.33 340.00 848.83 336.00 850.50 curveto
+      332.00 852.17 328.67 852.33 326.00 851.00 curveto
+      323.33 849.67 321.17 848.67 319.50 848.00 curveto
+      317.83 847.33 316.33 846.00 315.00 844.00 curveto
+      313.67 842.00 312.83 841.17 312.50 841.50 curveto
+      312.17 841.83 310.67 842.33 308.00 843.00 curveto
+      305.33 843.67 302.83 843.67 300.50 843.00 curveto
+      298.17 842.33 296.00 840.83 294.00 838.50 curveto
+      292.00 836.17 291.00 834.17 291.00 832.50 curveto
+      291.00 830.83 290.67 829.67 290.00 829.00 curveto
+      289.33 828.33 288.67 828.00 288.00 828.00 curveto
+      287.33 828.00 286.17 827.67 284.50 827.00 curveto
+      282.83 826.33 281.50 825.00 280.50 823.00 curveto
+      279.50 821.00 279.83 818.83 281.50 816.50 curveto
+      283.17 814.17 283.50 813.00 282.50 813.00 curveto
+      281.50 813.00 279.33 811.50 276.00 808.50 curveto
+      272.67 805.50 271.83 802.67 273.50 800.00 curveto
+      275.17 797.33 276.50 795.83 277.50 795.50 curveto
+      278.50 795.17 279.00 794.83 279.00 794.50 curveto
+      279.00 794.17 279.00 794.00 279.00 794.00 curveto
+      279.00 794.00 278.83 793.83 278.50 793.50 curveto
+      278.17 793.17 277.83 792.50 277.50 791.50 curveto
+      277.17 790.50 277.00 789.67 277.00 789.00 curveto
+      277.00 788.33 277.00 787.67 277.00 787.00 curveto
+      277.00 786.33 277.00 785.67 277.00 785.00 curveto
+      277.00 784.33 277.33 783.17 278.00 781.50 curveto
+      278.67 779.83 279.17 779.00 279.50 779.00 curveto
+      279.83 779.00 280.17 778.83 280.50 778.50 curveto
+      280.83 778.17 281.33 777.33
+      282 776 curveto
+   stroke
+   1 setlinewidth
+grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      298 758 moveto 442 758 lineto 442 799 lineto 298 799 lineto
+   closepath fill
+grestore
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      300 791 moveto (New Unit) show
+   grestore
+
+% TEXT
+0 setgray
+gsave
+      pat6 8 1 0 72 300 32 div div tgifsetpattern
+   newpath
+      298 798 moveto 439 798 lineto 439 839 lineto 298 839 lineto
+   closepath fill
+grestore
+/Helvetica-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      300 831 moveto (New Disj) show
+   grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      588 394 moveto
+      14 56 atan dup cos 14 mul exch sin 14 mul rmoveto
+      644 408 lineto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      588 394 14 6 -56 -14 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      363 388 moveto
+      335.00 395.33 316.50 401.17 307.50 405.50 curveto
+      298.50 409.83 289.50 415.17 280.50 421.50 curveto
+      271.50 427.83 260.83 437.00 248.50 449.00 curveto
+      236.17 461.00 226.00 480.33
+      40 -12 atan dup cos 14 mul 218 exch sub
+      exch sin 14 mul 507 exch sub curveto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      218 507 14 6 -12 40 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      349 356 moveto
+      329.67 360.00 314.17 364.33 302.50 369.00 curveto
+      290.83 373.67 278.50 379.67 265.50 387.00 curveto
+      252.50 394.33 239.33 405.00 226.00 419.00 curveto
+      212.67 433.00 198.33 461.33
+      64 -23 atan dup cos 14 mul 183 exch sub
+      exch sin 14 mul 504 exch sub curveto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      183 504 14 6 -23 64 tgifarrowtip
+   closepath fill
+grestore
+
+% POLY/OPEN-SPLINE
+gsave
+   4 setlinewidth
+   newpath
+      462 430 moveto
+      306 -74 atan dup cos 14 mul 388 exch sub
+      exch sin 14 mul 736 exch sub lineto
+   stroke
+   1 setlinewidth
+grestore
+gsave
+   newpath
+      388 736 14 6 -74 306 tgifarrowtip
+   closepath fill
+grestore
+
+% TEXT
+0 setgray
+newpath
+   350 596 moveto 632 596 lineto 632 636 lineto 350 636 lineto
+closepath 1 setgray fill
+0 setgray
+/Times-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      352 628 moveto (Ref\(NewUnit,M+   \)) show
+   grestore
+
+% TEXT
+0 setgray
+/Symbol findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      596 627 moveto (D) show
+   grestore
+
+% TEXT
+0 setgray
+newpath
+   348 632 moveto 656 632 lineto 656 672 lineto 348 672 lineto
+closepath 1 setgray fill
+0 setgray
+/Times-Bold findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      350 664 moveto (Simpl\(M+   ,NewDisj\)) show
+   grestore
+
+% TEXT
+0 setgray
+/Symbol findfont [34 0 0 -34 0 0] makefont setfont
+   gsave
+      496 663 moveto (D) show
+   grestore
+
+grestore
+tgifsavedpage restore
+end
+%%Trailer
+%MatchingCreationDate: Thu Oct 13 17:26:15 1994
+%%EOF

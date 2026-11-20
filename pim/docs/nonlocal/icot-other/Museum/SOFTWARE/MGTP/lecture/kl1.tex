@@ -1,0 +1,161 @@
+\subsection{KL1 版の特徴}
+
+KL1 版においては、PIM/m 上での並列実行を行なうことを前提とし、
+並列版の準群問題用のプログラムのみをリリースする。
+
+また、トランスレータは KLIC のものを併用しているが、
+KL1 トランスレータは CMGTP においては用意されていないので、
+生成されたプログラムにおける KLIC と KL1 の組み込み関数などの
+相違は手入力で修正する必要がある。
+
+CMGTP の利用に関しては、今後は、PIM での利用から汎用の並列 UNIX マシン
+上での利用にシフトしていくことが予想されるため、
+KL1 版に関して今後サポートが行なわれる予定はない。
+
+今回のリリースに含まれるファイルを図 \ref{files} に示す。
+
+問題ファイルとしては、QG1 オーダ 6 から 9まで、
+QG2 オーダ7 から 9 まで、QG5 オーダ7 から16 まで、
+また QG7 はオーダ11 から 14 までとなっている。
+
+また CMGTP のエンジンの方では、並列化方式の違いに従って
+サイクリック方式版、確率的方式版、また枝数制限方式版では
+$Limit = 1,2,3,5,10, \infty$ を用意してある。
+なお枝数制限方式版におけるパラメータ $Limit$ の設定箇所は
+容易にわかるので、その部分を任意の数字に置き換えることにより
+好みのパラメータで実行させることが可能である。
+
+\begin{figure}
+\begin{center}
+\begin{minipage}{0.6\textwidth}
+\paragraph{問題ファイル : }~\\
+~\\
+\begin{tabular}{ll}
+\verb'QG1-6_index.kl1' & QG1 オーダ 6 \\
+\verb'QG1-7_index.kl1' & QG1 オーダ 7 \\
+\verb'QG1-8_index.kl1' & QG1 オーダ 8 \\
+\verb'QG1-9_index.kl1' & QG1 オーダ 9 \\
+\verb'QG2-7_index.kl1' & QG2 オーダ 7 \\
+\verb'QG2-8_index.kl1' & QG2 オーダ 8 \\
+\verb'QG2-9_index.kl1' & QG2 オーダ 9 \\
+\verb'QG5-7_index.kl1' & QG5 オーダ 7 \\
+\verb'QG5-8_index.kl1' & QG5 オーダ 8 \\
+\verb'QG5-9_index.kl1' & QG5 オーダ 9 \\
+\verb'QG5-10_index.kl1' & QG5 オーダ 10 \\
+\verb'QG5-11_index.kl1' & QG5 オーダ 11 \\
+\verb'QG5-12_index.kl1' & QG5 オーダ 12 \\
+\verb'QG5-13_index.kl1' & QG5 オーダ 13 \\
+\verb'QG5-14_index.kl1' & QG5 オーダ 14 \\
+\verb'QG5-15_index.kl1' & QG5 オーダ 15 \\
+\verb'QG5-16_index.kl1' & QG5 オーダ 16 \\
+\verb'QG7-11_index.kl1' & QG7 オーダ 11 \\
+\verb'QG7-12_index.kl1' & QG7 オーダ 12 \\
+\verb'QG7-13_index.kl1' & QG7 オーダ 13 \\
+\verb'QG7-14_index.kl1' & QG7 オーダ 14 \\
+\end{tabular}
+
+\vspace{1.7em}
+\paragraph{CMGTP エンジン : }~\\
+~\\
+\begin{tabular}{ll}
+\verb'cmgtpCycle.kl1' & サイクリック割り当て方式 \\
+\verb'cmgtpProb.kl1' & 確率的割り当て方式 \\
+\verb'cmgtpLimit1.kl1' & 枝数制限方式 ($Limit=1$) \\
+\verb'cmgtpLimit2.kl1' & 枝数制限方式 ($Limit=2$) \\
+\verb'cmgtpLimit3.kl1' & 枝数制限方式 ($Limit=3$) \\
+\verb'cmgtpLimit5.kl1' & 枝数制限方式 ($Limit=5$) \\
+\verb'cmgtpLimit10.kl1' & 枝数制限方式 ($Limit=10$) \\
+\verb'cmgtpLimitInf.kl1' & 枝数制限方式 ($Limit=\infty$) \\
+\end{tabular}
+
+\vspace{1.7em}
+\paragraph{ユーティリティ : }~\\
+~\\
+\begin{tabular}{ll}
+\verb'gc.sav' & MGTP 用 GC ユーティリティ\\
+\end{tabular}
+\end{minipage}
+\end{center}
+\caption{今回のリリースに含まれるファイル}
+\label{files}
+\end{figure}
+
+%%----------------------------------------------------------------------
+\subsection{PIM/m 上での実行方法}
+
+CMGTP での準群問題を実際に PIM 上で動作させる方法について
+説明する。
+
+ユーザはまずリスナを開き、モニタの表示、統計情報出力などの
+環境設定を好みに応じて行なう。
+以下の例は、xrmonitor を画面上に表示させ、
+統計情報を出力させるモードを指定している。
+
+\begin{verbatim}
+
+Shell> listener
+
+Listener> setenv pmeter:display_node = ss145 .
+Listener> xrmonitor & .
+Listener> st.
+Listener> 
+
+\end{verbatim}
+
+次に、MGTP 用の GC プログラムをロードし、
+レベルで 70 を指定する。
+これは、あるプロセッサのメモリ消費量が 70 \% を越えた時、
+一斉に GC をかけることを意味している。
+
+\begin{verbatim}
+
+Listener> load("gc.sav").
+Listener> mgtp_gc:allocate(70) & .
+Listener> 
+\end{verbatim}
+
+プログラムのコンパイルは、問題と CMGTP の
+エンジンを同時にコンパイルする。
+あるいは、それぞれコンパイルしたものをリンクする。
+
+\begin{verbatim}
+
+Listener> compile(['QG5-13_index.kl1','cmgtpLimit5.kl1']).
+Listener>
+
+\end{verbatim}
+
+実行は、モジュール名 \verb+mgtp+、述語名 \verb+do+ で、
+引数にはラテン方陣のサイズと使用するプロセッサ数を指定する。
+以下は、上の例に沿って、QG5 のオーダ 13 を256 プロセッサで
+解かせようとしたものである。
+
+\begin{verbatim}
+
+Listener> mgtp:do(13,256).
+Listener>
+
+\end{verbatim}
+
+実行が終了すると、
+枝数、モデル数、また実行時間などが表示される。
+
+\begin{verbatim}
+
+Listener> mgtp: do(13,256) .
+
+Number of Failed Branches = 15173
+Number of Models = 0
+ 5498685340 reductions
+ 229369 msec
+
+\end{verbatim}
+
+この実行例では、モデルの数が 0、失敗した枝数が 15,173 個で、
+実行時間が約 229秒であったことを表している。
+
+
+
+
+
+

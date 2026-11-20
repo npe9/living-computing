@@ -1,0 +1,176 @@
+%*********************************************************************%
+%  pnm converter (main module)                                        %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module main.
+
+
+main :- 
+	open_input(Input),
+	main_loop(Input, data(0, 0, [], {})).
+
+main_loop(Input0, Data) :-
+	Data \= [] |
+	Input0 = [gett(Command) | Input1],
+	server(Command, Data, Data1),
+	main_loop(Input1, Data1)@lower_priority.
+main_loop(Input0, Data) :-
+	Data = [] | Input0 = [].
+
+
+server(read(Filename), _Data0, Data) :-
+	read_file(Filename, Data).
+server(write(Type, Filename), Data0, Data) :-
+	write_file(Filename, Type, Data0), Data = Data0.
+server(end_of_file, _Data0, Data) :- Data = [].
+
+open_input(Input) :-
+	unix:argc(Argc),
+	(Argc >= 1 ->
+		unix:argv(Argv),
+		Argv = [Filename|_ArgvN],
+		klicio:klicio([read_open(Filename, Result)]);
+	otherwise;
+	true ->
+		klicio:klicio([stdin(Result)])
+	),
+	(Result = normal(String) ->
+		Input = String;
+	Result = abnormal ->
+		Input = []
+	).
+
+
+read_file(Filename, Data) :-
+	unix:unix([read_open(Filename, Result)]),
+	(Result = normal(String) ->
+		graphic_type(String, Type, Input0),
+		read_graphic(Type, Input0, X, Y, Bmp, Palette),
+		Data = data(X, Y, Bmp, Palette);
+	Result = abnormal ->
+		Data = data(0, 0, [], {})
+	).
+
+write_file(Filename, Type, Data) :-
+	unix:unix([write_open(Filename, Result)]),
+	(Result = normal(String) ->
+		write_graphic(Type, String, Data);
+	Result = abnormal ->
+		io:outstream([print(Filename),print(' cannot open'), nl])
+	).
+	
+
+
+graphic_type([], Type, Input) :- Type = readerror, Input = [].
+alternatively.
+graphic_type(Input, Type, Input2) :-
+	Input = [getc(Char) | InputN],
+	read_header(Char, InputN, Type, Input2).
+
+
+read_header(#"P", Input, Type, Input2) :-
+	Input = [getc(Char) | Input2],
+	p_bitmap_header(Char, Type).
+read_header(#"G", Input, Type, Input2) :-
+	Input = [fread(5, String) | Input2],
+	gif_header(String, Type).
+read_header(16'ff, Input, Type, Input2) :-
+	Input = [fread(5, _String), fread(4, String) | Input2],
+	jpeg_header(String, Type).
+otherwise.
+read_header(_first, Input, Type, Input2) :-
+	Type = unknown,
+	Input2 = Input.
+
+%  p_bitmap_header/2  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  pbm or pgm or ppm
+p_bitmap_header(#"1", Type) :-
+	Type = pbm_ascii.
+p_bitmap_header(#"2", Type) :-
+	Type = pgm_ascii.
+p_bitmap_header(#"3", Type) :-
+	Type = ppm_ascii.
+p_bitmap_header(#"4", Type) :-
+	Type = pbm_binary.
+p_bitmap_header(#"5", Type) :-
+	Type = pgm_binary.
+p_bitmap_header(#"6", Type) :-
+	Type = ppm_binary.
+otherwise.
+p_bitmap_header(_, Type) :-
+	Type = unknown.
+
+
+%  gif_header/2  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  gif87a or gif89a
+gif_header(String, Type) :-
+	(String = "IF87a" ->
+		Type = gif87a;
+	String = "IF89a" ->
+		Type = gif89a;
+	otherwise;
+	true ->
+		Type = unknown
+	).
+
+
+%  jpeg_header/2  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  jpeg
+jpeg_header(String, Type) :-
+	(String = "JFIF" ->
+		Type = jpeg;
+	otherwise;
+	true ->
+		Type = unknown
+	).
+
+
+%  read_graphic/6  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  read file cg's type.
+read_graphic(gif89a, Input, X, Y, Bmp, Palette) :- 
+%	io:outstream([print("Sorry, can not read gif89a file"), nl]),
+%	Input = [], X = 0, Y = 0, Bmp = [], Palette = {}.
+	gif:read(Input, X, Y, Bmp, Palette).
+read_graphic(gif87a, Input, X, Y, Bmp, Palette) :-
+	io:outstream([print("Sorry, can not read gif87a file"), nl]),
+%	Input = [], X = 0, Y = 0, Bmp = [], Palette = {}.
+	gif:read(Input, X, Y, Bmp, Palette).
+read_graphic(jpeg, Input, X, Y, Bmp, Palette) :-
+	io:outstream([print("Sorry, can not read jpeg file"), nl]),
+	Input = [], X = 0, Y = 0, Bmp = [], Palette = {}.
+read_graphic(pbm_ascii, Input, X, Y, Bmp, Palette) :-
+	pnm:read(pbm_ascii, Input, X, Y, Bmp, Palette).
+read_graphic(pgm_ascii, Input, X, Y, Bmp, Palette) :-
+	pnm:read(pgm_ascii, Input, X, Y, Bmp, Palette).
+read_graphic(ppm_ascii, Input, X, Y, Bmp, Palette) :-
+	pnm:read(ppm_ascii, Input, X, Y, Bmp, Palette).
+read_graphic(pbm_binary, Input, X, Y, Bmp, Palette) :-
+	pnm:read(pbm_binary, Input, X, Y, Bmp, Palette).
+read_graphic(ppm_binary, Input, X, Y, Bmp, Palette) :-
+	pnm:read(ppm_binary, Input, X, Y, Bmp, Palette).
+read_graphic(pgm_binary, Input, X, Y, Bmp, Palette) :-
+	pnm:read(pgm_binary, Input, X, Y, Bmp, Palette).
+otherwise.
+read_graphic(_unknown, Input, X, Y, Bmp, Palette) :-
+	Input = [], X = 0, Y = 0, Bmp = [], Palette = {}.
+
+
+write_graphic(pbm_ascii, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p1(Output, X, Y, Bmp, Palette).
+write_graphic(pbm_binary, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p4(Output, X, Y, Bmp, Palette).
+
+write_graphic(pgm_ascii, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p2(Output, X, Y, Bmp, Palette).
+write_graphic(pgm_binary, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p5(Output, X, Y, Bmp, Palette).
+
+write_graphic(ppm_ascii, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p3(Output, X, Y, Bmp, Palette).
+write_graphic(ppm_binary, Output, data(X, Y, Bmp, Palette)) :-
+	pnm:write_p6(Output, X, Y, Bmp, Palette).
+
+otherwise.
+write_graphic(_unknown, Output, _Data) :- Output = [].

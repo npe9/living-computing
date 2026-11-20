@@ -1,0 +1,122 @@
+﻿<HTML>
+<HEAD>
+<TITLE>Distributed DBMS Kappa</TITLE>
+</HEAD>
+<BODY bgcolor="#FFEFDF">
+
+<TABLE border=0 WIDTH=650>
+<TR>
+<TD WIDTH=150 VALIGN=top>
+
+<TABLE border=0>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="outline.html"> Kappaホームページ </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="hist.html"> Kappaの歴史 </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="nf2.html"> Kappaのデータモデル </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#a7a7c7">
+<A HREF="dist.html"> 分散データベースとして </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="app.html"> Kappaプログラミング </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ifs.html"> IFS Kappa </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ref.html"> 参考文献 </A>
+</TD>
+</TR>
+
+</TABLE>
+
+<TD WIDTH=500>
+<TABLE border=0>
+<TR>
+<TD ALIGN=left VALIGN=TOP>
+<img src="kappa.gif">
+</TD>
+<TD ALIGN=center>
+<H1 ALIGN="center">分散データベースとして</H1>
+</TD>
+</TR>
+</TABLE>
+
+<UL>
+<LI> システム構成<BR>
+     DBMSは大量のデータを扱うので、疎結合並列処理における通信量が大き
+     な意味を持ってくる。そのため、密接に関連するデータを同じクラスタ
+     に置くなどのデータの配置が重要で、さらに、問い合わせ処理において
+     通信量が少なくなるようなプランを立てる必要もある。これらを行なう
+     ためには、分散データベースの構成が向いている。<P>
+     
+     各クラスタにローカルDBMS(LDBMS)と呼ばれるDBMSを配置し、全体で一つ
+     のデータベースを管理する。このLDBMSは、それ自身でDBMSとしての全機
+     能を持ち、複数LDBMSが関与する問い合わせを処理するために、二相コミ
+     ットプロトコルに基づく分散トランザクションの機能を持っている。<P>
+
+     また、複数のLDBMSにより一つのデータベースを管理するためテーブル名
+     などの大域情報の管理が問題となるが、それを管理するサーバDBMS(SDBMS)の
+     複製を作ることにより、アクセスの集中を回避する。<P>
+
+     クラスタに割り当てられたLDBMSは、その内部処理で密結合向きの並列処理を
+     行なう。<P>
+
+<LI>データ配置と並列処理<BR>
+     効率的な並列処理を行なうためには、各クラスタの負荷とクラスタ間の
+     通信量をバランスさせてやる必要がある。DBMSの場合はデータが二次
+     記憶上に保存され、しかも大量であることから、データの配置と並列処
+     理方式が密接に関係してくる。<P>
+
+     <UL>
+       <LI>分散配置<BR>
+       分散配置は、複数PEの計算能力を利用する最も簡単な場合である。
+       この場合、問い合わせ処理時の通信量と負荷を考慮し、テーブルを配置
+       する必要がある。<P>
+       
+       <LI>水平分割<BR>
+       水平分割は、論理的には一つのテーブルをレコード単位に複数のテー
+       ブルに分割し、それらを異なるLDBMSに配置することで並列性を引き出
+       す手法である。分割された個々のテーブルには基本的に同じ演算が出
+       され、最後に個々の演算結果をまとめる。<BR>
+       一つのテーブルが一つのクラスタでは扱い切れない程の量の場合や、
+       特にデータ検索などのCPU負荷が大きい演算を重視する場合などに有効
+       である。<P>
+       
+       <LI>複製<BR>
+       関係の複製によって、可用性を高めたり、アクセスの集中を回避する
+       ことができる。<BR>
+     </UL>
+</UL>
+
+</TD>
+</TR>
+</TABLE>
+
+<HR>
+<CENTER>
+[<A HREF="outline.html">Kappaホームページ</A>]
+[<A HREF="app.html">Kappaプログラミング</A>]
+[<A HREF="ifs.html">IFS Kappa</A>]
+[<A HREF="ref.html">参考文献</A>]
+</CENTER>
+
+</BODY>
+</HTML>

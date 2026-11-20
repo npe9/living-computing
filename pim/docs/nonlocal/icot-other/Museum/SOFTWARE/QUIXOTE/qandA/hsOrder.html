@@ -1,0 +1,60 @@
+﻿<title> Hoare Order and Smyth Order </title>
+<h1> Hoare 順序 と Smyth 順序について</h1>
+<hr>
+
+<h3> Hoare 順序と Smyth 順序についてまとめましょう。</h3>
+(Quixote で用いているのは、Hoare 順序です。)
+<p>
+
+<hr>
+<pre>
+(1) Hoare の場合
+定義: X =&lth Y   &lt=>  ∀x∈X, ∃y∈Y, x=&lty
+
+- 標準系
+	S | ∀s1,s2∈X, s1=/=s2, s1 not=&lt s2
+	(相異なるどの2要素も、互いのsubsumptionでない)
+
+	Sと等価な集合Xは、 S =&lth X, X =&lth S より
+	少なくとも、Sの全要素を含んでおり、かつSの要素にsubsumeされる
+	要素は含んでいても良い( X =&lth Sに反しない )
+
+	(例)  {1,int} と {int} は等価
+
+- MがXとYのmeet
+	M =&lth X, M =&lth Y
+ 	∀m∈M, ∃x∈X, ∃y∈Y, m=&ltx, m=&lty (つまり、 m=&ltmeet(x,y))
+
+	ですから、XとYの要素の全組合せのmeetからなる集合がM
+
+- JがXとYのjoin
+	X =&lth J, Y =&lth J
+ 	∀x∈X, ∃j∈J, x=&ltj,
+ 	∀y∈Y, ∃j'∈J, y=&ltj'
+
+	ですから、XとYの集合のunion がJ
+
+(2) Smyth の場合
+定義: X =&lts Y   &lt=>  ∀y∈Y, ∃x∈X, x=&lty
+- 標準系
+	S | ∀s1,s2∈X, s1=/=s2, s1 not=&lt s2
+	(相異なるどの2要素も、互いのsubsumptionでない)
+
+	Sと等価な集合Xは、 S =&lts X, X =&lts S より
+	少なくとも、Sの全要素を含んでおり、かつSの要素をsubsumeする
+	要素は含んでいても良い( S =&lts Xに反しない )
+
+	(例)  {1,int} と {1} は等価
+
+- MがXとYのmeet
+	M =&lts X, M =&lts Y
+ 	∀x∈X, ∃m∈M, m=&ltx,
+ 	∀y∈Y, ∃m'∈M, m'=&lty
+	ですから、XとYの集合のunionがM	
+
+- JがXとYのjoin
+	X =&lth J, Y =&lth J
+ 	∀j∈J, ∃x∈X, ∃y∈Y, x=&ltj, y=&ltj (つまり、 join(x,y)=&ltj)
+	ですから、XとYの要素の全組合せのjoinからなる集合がJ
+
+</pre>

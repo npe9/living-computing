@@ -1,0 +1,42 @@
+﻿<HEAD>
+<TITLE> 【演習問題４：パズル``果物箱'' (TPTP/PUZ012-1)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H1><A NAME=SECTION00340000000000000000> 【演習問題４：パズル``果物箱'' (TPTP/PUZ012-1)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>true--&gt;box(boxa),box(boxb),box(boxc).
+true--&gt;fruit(apples),fruit(bananas),fruit(oranges).
+true--&gt;n_equal_boxes(boxa,boxb).
+true--&gt;n_equal_boxes(boxb,boxc).
+true--&gt;n_equal_boxes(boxa,boxc).
+true--&gt;n_equal_fruits(apples,bananas).
+true--&gt;n_equal_fruits(bananas,oranges).
+true--&gt;n_equal_fruits(apples,oranges).
+true--&gt;label(boxa,apples).
+true--&gt;label(boxb,oranges).
+true--&gt;label(boxc,bananas).
+true--&gt;contains(boxb,apples).
+
+fruit(A)--&gt;contains(boxa,A);contains(boxb,A);contains(boxc,A).
+box(A)--&gt;contains(A,apples);contains(A,bananas);contains(A,oranges).
+
+n_equal_fruits(A,A)--&gt;false.
+n_equal_boxes(A,A)--&gt;false.
+label(A,B),contains(A,B)--&gt;false.
+contains(A,B),contains(A,C),n_equal_fruits(B,C)--&gt;false.
+contains(A,B),contains(C,B),n_equal_boxes(A,C)--&gt;false.
+contains(boxa,bananas),contains(boxc,oranges)--&gt;false.
+</PRE>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+
+</BODY>

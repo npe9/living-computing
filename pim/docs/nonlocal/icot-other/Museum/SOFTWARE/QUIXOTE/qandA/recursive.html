@@ -1,0 +1,57 @@
+﻿<title> How to write recursive rules </title>
+<h1> 再帰ルールの書き方が分かりません。</h1>
+<hr>
+
+<h2> Prolog にある、再帰ルールを <b> Quixote </b> で
+     書けるのでしょうか？ </h2>
+<p>
+
+<hr>
+<pre>
+Quixote は、prolog の拡張とも考えられます。
+
+ですから、prolog の再帰的プログラム
+=====================================================
+&program;;
+&rule;;
+path(X,Y) <= arc(X,Z), path(Z,Y);;
+path(X,Y) <= arc(X,Y);;
+arc(1,2);;
+arc(2,3);;
+arc(3,4);;
+arc(3,5);;
+&end.
+
+?- path(1,Y).
+
+database> ** 4 answers exist **
+** Answer 1 **
+    Y == 4
+** Answer 2 **
+    Y == 5
+** Answer 3 **
+    Y == 3
+** Answer 4 **
+    Y == 2
+database>
+=====================================================
+も動きます。
+
+上記のプログラムを Quixote が基本としている拡張項で書くとすると
+=====================================================
+&program;;
+&rule;;
+path[b=X,e=Y] <= arc[b=X,e=Z], path[b=Z,e=Y];;
+path[b=X,e=Y] <= arc[b=X,e=Y];;
+arc[b=1,e=2];;
+arc[b=2,e=3];;
+arc[b=3,e=4];;
+arc[b=3,e=5];;
+&end.
+=====================================================
+とも書けます。
+(Quixote には「オブジェクト項」と呼んでいる項があるのですが、
+ 「prolog はオブジェクト項の特別な形」と Quixote では考えています。)
+
+</pre>
+

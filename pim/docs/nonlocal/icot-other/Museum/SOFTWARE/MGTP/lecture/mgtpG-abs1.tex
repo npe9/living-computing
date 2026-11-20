@@ -1,0 +1,105 @@
+% MGTP Lecture note  by fujita@is.kyushu-u.ac.jp  on 96-12-02
+
+%\chapter{グラウンド版MGTP/G}
+
+本章ではMGTP/Gの概要を述べる。
+
+MGTP/Gは、値域限定条件を満たす節集合を対象にした
+モデル生成型定理証明器である。
+値域限定条件を満たす節とは、後件部に現れる全ての変数が前件部に
+現れる節のことをいう。
+
+MGTP/Gには、SICStus Prolog上で稼働するProlog版、KLIC上で稼働するKLIC版、
+PIM上で稼働するKL1版がある。
+
+まず、MGTPの基本的な機能について、さらに
+モデル生成法の枠組などについて説明する。
+
+%-----------------------------------------------------------------------------
+
+\let\implies=\rightarrow
+\def\var{\mathord{\hbox{\it{var}}\;}}
+\def\dom{\mathord{\hbox{\it{dom}}\;}}
+\def\true{\mathord{\hbox{\it{true}}\;}}
+\def\false{\mathord{\hbox{\it{false}}\;}}
+\newtheorem{example}{例}[section]
+
+%-----------------------------------------------------------------------------
+\section{MGTP入力節の構文}
+
+MGTPの入力言語の標準的構文(シンタクス)について説明する。
+
+MGTPの入力節は、第1章で説明したように、
+正節(Positive clause)、負節(Negative clause)、混合節(Neutral clause)
+の3種類があるが、基本的にすべての節は含意(implicatoin)
+$\longrightarrow$ によって構成されている。
+含意の左辺を前件部(Antecedent)、後件部を(Consequent)と呼ぶ。
+
+正節の場合は、前件部を true に、
+また負節の場合は、後件部を false として記述する。
+値域限定の条件を満足しないような節については、あらかじめ
+dom 述語を用いることによって条件を
+満足するような節に変換することが可能である。
+
+この変換は、以下のように行なう。
+\begin{itemize}
+\item
+値域限定の条件を満たさない節\\
+$ A_1, \ldots, A_n \implies B_1; \ldots; B_m $を、
+\begin{eqnarray*}
+& A_1, \ldots, A_n, \dom(X_1), \ldots, \dom(X_k) \implies \\
+& \quad B_1; \ldots; B_m
+\end{eqnarray*}
+で置き換える。ただし、
+\begin{eqnarray*}
+& \{X_1, \ldots, X_k\} = 
+&  \bigcup_{j=1}^{m}{\var(B_j)}\ \backslash\
+        \bigcup_{i=1}^{n}{\var(A_i)}
+\end{eqnarray*}
+である。
+\item
+節集合${\cal S}$中に現れる定数記号
+(定数記号が一つも現れない場合は、定数記号`$a$')
+の集合を$consts({\cal S})$、関数記号の集合を$functs({\cal S})$とするとき、
+節集合${\cal S}$に$\dom$定義節集合
+\begin{eqnarray*}
+\lefteqn{\{ \true \implies \dom(K) \mid K \in consts({\cal S}) \} \quad \cup} \\
+\lefteqn{ \{ \dom(X_1),\ldots,\dom(X_n) \implies}  \\
+& \{ \dom(F_n(X_1,\ldots,X_n)) \mid F_n \in functs({\cal S})  \} &
+\end{eqnarray*}
+を加える。
+\end{itemize}
+
+また、前件部、後件部においては、各対象言語を直接呼び出す
+ことも許されており、これにより整数間の比較演算などが可能になる。
+
+以下は、MGTP入力節のシンタクスについてBNFで記述したものである。
+
+\vspace{1em}
+\begin{tabular}{ll}
+ MGTP-Clause ::= & Positive-Clause $|$ Negative-Clause $|$ Neutral-Clause\\
+ Positive-Clause ::= & ' true' ' -->' Consequent '.'\\
+ Negative-Clause ::= & Antecedent  ' -->' ' false' '.'\\
+ Neutral-Clause ::= & Antecedent ' -->' Consequent '.'\\
+ Antecedent ::= & Antecedent-Atom { ',' Antecedent-Atom }*\\
+ Antecedent-Atom ::= & MGTP-Atom $|$ ' {{' [ Guards ] ' }}'\\
+ Consequent ::= & [ '{{' [ Procedures ] '}}' ' ->' ] Consequent-Group\\
+ Consequent-Group ::= & Consequent-Unit { ',' Consequent-Unit }*\\
+ Consequent-Unit ::= & Atom-Group $|$ Disjunctive-Atom-Group \\
+ Disjunctive-Atom-Group ::= & Atom-Group { ' ;' Atom-Group }*\\
+ Atom-Group ::= & MGTP-Atom { ',' MGTP-Atom }*\\
+ MGTP-Atom ::= & Term \\
+ Guards ::= & Call { ',' Call }*\\
+ Procedures ::= & Call { ',' Call }*\\
+\end{tabular}
+
+\vspace{1em}
+ここで、Termは、PrologやKL1の項を表す。
+すなわち述語に相当する。変数の表現もPrologやKL1のそれに準ずる。
+また、Callは該当プログラムの呼び出し文を意味し、
+例えば、Prologでは X>Y や X1:=X+1,X1>Y などの
+ような記述が可能である。
+
+なお、細かいシンタクスの相違については各バージョンのマニュアルを参照
+されたい。
+

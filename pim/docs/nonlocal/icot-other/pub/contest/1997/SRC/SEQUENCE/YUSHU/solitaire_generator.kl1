@@ -1,0 +1,55 @@
+% -- solitaire
+%
+% solitaire_generator.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+
+
+:- module solitaire_generator.
+
+% 種を(Table)を素に得点の高いもの(Table)を作って未完成リストに足していく
+%
+generator(News_List,Seed_Table, Table_List) :-
+	% 乱数の List を作る
+	unix:times(Seed,_,_,_),	generic:new(random_numbers, Random, 25,Seed),
+
+	generator(News_List,Seed_Table)+Random+[]+Table_List+[].
+
+
+generator(News,T0)-Random-Output :-
+	solitaire_operator:change_table(T0, T1)-Random,
+	solitaire_operator:change_table(T1, T2)-Random,
+	solitaire_operator:change_table(T2, T3)-Random,
+	solitaire_operator:change_table(T3, T4)-Random,
+	solitaire_operator:change_table(T4, T5)-Random,
+	solitaire_util:highscore_table([T0,T1,T2,T3,T4,T5], Highscore_Table),
+	output(T0,Highscore_Table)-Output,  
+	generator(News,Highscore_Table)-Random-Output @ lower_priority.
+
+alternatively.
+
+generator([One|Rest],Table)-Random-Output :- % メッセージが来たら
+	% 自分の状態をチェック
+	switch(Table,One,Switch), % io:outstream([print(switch),nl]),
+	generator(Rest,Switch)-Random-Output @ lower_priority.
+
+
+% これ以上期待できない場合の切捨て（この値をうまく調整する）
+%
+switch(T0,T1, Result) :- T0=[S0|_], T1=[S1|_], S0+100000  > S1 | Result=T0.
+
+switch(T0,T1, Result) :- T0=[S0|_], T1=[S1|_], S0+100000 =< S1 | Result=T1,
+	io:outstream([print(level_change),nl]).
+
+otherwise.
+switch(_,_,_) :- io:outstream([print(switch_err),nl]).
+
+
+% 元と同じなら外に出す必要はない
+%
+output(Old,New)-Output :- Old=[OldS|_], New=[NewS|_], OldS \= NewS 
+	| Output<=New.
+
+output(Old,New)-Output :- Old=[OldS|_], New=[NewS|_], OldS  = NewS | true.
+

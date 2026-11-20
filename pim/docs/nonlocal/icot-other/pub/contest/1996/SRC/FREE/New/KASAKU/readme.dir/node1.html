@@ -1,0 +1,44 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">1 概要</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P><BR><HR>
+<A NAME=tex2html37 HREF="node2.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html35 HREF="main.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html29 HREF="main.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html38 HREF="node2.html">2 仕様</A>
+<strong>Up:</strong> <A NAME=tex2html36 HREF="main.html">ToC</A>
+<strong> Previous:</strong> <A NAME=tex2html30 HREF="main.html">ToC</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00010000000000000000>1 概要</A></H1>
+<A NAME=secoverview>&#160;</A>
+<P>
+Tic-Tac-Toe (3目並べ) を行うプログラムを作成した。このプログラムは
+Q-learning [<A HREF="node21.html#watkins89">1</A>]アルゴリズムによって学習を行う。
+自ら両プレイヤを受け持つことによって紅白戦による学習を行うことができ、
+また人間との対戦も行える。
+人間との対戦や紅白戦を重ねることで Tic-Tac-Toe の知識を更新し、
+ルールおよび勝ち方を学習してゆく。
+<P>
+プログラムが最初持っている知識は、
+<UL>
+ <LI>二人のプレーヤが交互に指す。
+</UL>
+ということだけであり、最初は勝ち負けのルールすら知らないものとする。
+但し状態数の増加を抑えるため、対称な局面の同値判定だけは
+できるものとした。
+プログラムは 1 ゲーム終了時に、その結果に応じた報酬が与えられ、
+それによってTic-Tac-Toe の勝ち負けのルール（どういう場合に
+高い報酬がもらえるかという情報）や
+良い手（高い報酬がもらえる状態に近づく手）を学習して行く。
+<P>
+詳しい仕様については、第<A HREF="node2.html#secspecifications">2</A>章で述べる。
+<P>
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>

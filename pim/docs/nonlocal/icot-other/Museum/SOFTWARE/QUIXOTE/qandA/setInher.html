@@ -1,0 +1,105 @@
+﻿<title> Set Property Inheritance </title>
+<h1> 集合の上向き継承について</h1>
+<hr>
+
+<h3> [Q] 集合を上向きに継承させる(現在は big-Quixote のみ実現)と、
+積集合が求まらないのでしょうか？</h3>
+<pre> つまり、
+-------------------------------------------------------
+&program;;
+&subsumption;;
+animal >= bird;;
+animal >= fish;;
+&rule;;
+bird/[can = fly, has* >* {backbone,blood,wing}];;
+fish/[can = swim, has* >* {backbone,fin,blood}];;
+animal;;
+&end.
+-------------------------------------------------------
+というプログラムにおいて、
+fishとbirdの共通の親であるanimalは
+fishの{backbone,fin,blood}とbirdの{backbone,blood,wing}
+という集合の積集合{backbone,blood}を持っていて欲しい訳です。
+</pre>
+<p>
+
+<hr>
+<pre> [A] 集合を上向きに継承させて、積集合が求まる／求まらないかは、
+集合間の順序の入れ方に因ります。
+(正確には、上位や継承に限らず、
+	「オブジェクトが持つ集合の値は、
+	  集合間の順序の入れ方に因る」
+ です。)
+
+因みに Quixote では、上記の例で、
+	?-animal/[has* =*= X*];;&q_mode[&inheritance=&all].
+とすると
+	database> ** 1 answer exists **
+	** Answer 1 **
+	    X* >* {backbone,blood,wing,fin}
+	database> 
+が得られます。
+
+さて、ここから Quixote における、集合間の順序の入れ方を説明します。
+
+集合間の順序は、集合間の包含関係でも入れられますが、
+要素間に順序がある場合、その順序を使って集合間に順序を
+入れることができます。その入れ方には、幾つかあって、
+Quixote では、Hoare 順序(operation を "*<" とします)を
+導入しています。
+
+Hoare 順序の定義は、
+	S1 *< S2   <===>   ∀x ∈ S1, ∃y ∈ S2  s.t. x =< y
+( "=<" が要素間の順序です。)
+
+他には、Smyth 順序、Egli-Milner 順序などがあります。
+(参考に定義だけ紹介します。
+ Smyth 順序を +<、Egli-Milner 順序を %< とします。
+ Smyth 順序は、
+	S1 +< S2   <===>   ∀y ∈ S2, ∃x ∈ S1  s.t. x =< y
+ Egli-Milner 順序は、
+	S1 %< S2   <===>   S1 *< S2 ∧ S1 +< S2
+ です。)
+
+
+それで、Quixote では Hoare 順序の元で、集合の join を
+以下のように定義しています。
+	S1 join S2   <===>   S1 ∪ S2
+
+
+さて、さて、
+	?-animal/[has* =*= X*];;&q_mode[&inheritance=&all].
+の答が、
+	    X* >* {backbone,blood,wing,fin}
+になる理由ですが、
+継承の規則( o >= p  ===>  o.l >= p.l or o.l* >* p.l* ) と
+		animal >= bird;;
+		animal >= fish;;
+より、
+		animal.has* >* bird.has*;;
+		animal.has* >* fish.has*;;
+それで、左の animal.has* の値を求めるために、右の join を取る訳ですが、
+		bird.has* >* {backbone,blood,wing}
+		fish.has* >* {backbone,fin,blood}
+で、先に説明したように、Quixote では、
+		S1 join S2   <===>   S1 ∪ S2
+ですから、
+	animal.has* >* {backbone,blood,wing} join {backbone,fin,blood}
+				== {backbone,blood,wing,fin}
+となります。
+
+
+
+ですから、ご希望である
+: ということはfishとbirdの共通の親であるanimalは
+: fishの{backbone,fin,blood}とbirdの{backbone,blood,wing}
+: という集合の積集合{backbone,blood}を持っていて欲しい訳です。
+には沿えません。
+
+只、集合間の順序を Smyth 順序にすれば、この例に限ればご希望に
+沿えます。
+
+しかし、「Quixote の言語マニュアル 2.3.7」にある area* ように
+応用によっては Hoare 順序が適しているものもあるので、Hoare、
+Smyth、どちらの順序がいいかは一概には言えないと考えています。
+</pre>

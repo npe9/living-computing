@@ -1,0 +1,48 @@
+﻿<html><HEAD>
+<TITLE>B.3 decide モジュール</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html207 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html205 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html199 HREF="node16.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html208 HREF="node18.html">B.4 learn モジュール</A>
+<B>Up:</B> <A NAME=tex2html206 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<B> Previous:</B> <A NAME=tex2html200 HREF="node16.html">B.2 encode モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00053000000000000000>B.3 decide モジュール</A></H2>
+<A NAME="subsecpreds_of_decide">&#160;</A>
+<P>
+<DL ><DT>decide <i> +NBoard, +State, +Q, -Action, -RedQ, -ActFun, -Blank</i>
+<DD>
+  局面 <i> Board</i> とその状態を表す <i> State</i>、Q値 <i> Q</i> から、
+  次の手を選択し <i> Action</i> と同一化する。この際、
+  当該状態の全ての手の情報を含む <i> ActFun</i> および、
+  <i> Q</i> から <i> ActFun</i> を除いた差分 <i> RedQ</i>、
+  現在の空きマスリスト <i> Blank</i> も返す。
+<DT>choose_action <i> +State, +Q, -ActFun, -RedList, -BlankNum</i>
+<DD>
+  状態 <i> State</i>、Q値 <i> Q</i> から、その状態において選択可能な
+  全ての手の情報 <i> ActFun</i> を得る。
+<DT>blanklist <i> +Board, -Blank</i>
+<DD>
+  局面 <i> Board</i> の空きマスリストを <i> Blank</i> に同一化する。
+  <i> Board</i> は b/9, d/10 のいずれの形でもよい。
+<DT>get_value <i> +Blank, +State, +Q, -Action</i>
+<DD>
+  空きマスリスト <i> Blank</i> と状態番号 <i> State</i> Q値 <i> Q</i> から、
+  次の手を選択し <i> Action</i> に同一化する。
+<DT>do <i> +Board, +Action, +OX, -NewNBoard</i>
+<DD>
+  局面 <i> Board</i> において手 <i> Action</i> を指した後の局面を、
+  <i> NewNBoard</i> に同一化する。
+  <i> Board</i> は b/9, d/10 のいずれの形でもよい。
+<P>
+ </DL>
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

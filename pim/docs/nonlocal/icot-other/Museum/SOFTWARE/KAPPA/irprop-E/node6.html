@@ -1,0 +1,61 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Creation of directories of irpr</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Creation of directories of irpr">
+<meta name="keywords" value="irprop-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html79 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html77 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html71 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html80 HREF="node7.html"> Initialization of database</A>
+<B>Up:</B> <A NAME=tex2html78 HREF="node5.html"> Operations of irpr</A>
+<B> Previous:</B> <A NAME=tex2html72 HREF="node5.html"> Operations of irpr</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00031000000000000000> Creation of directories of irpr</A></H2>
+<P>
+The database of irpr and the system's files should be located in such 
+directories as follows.
+<P>
+<DL ><DT>~/irpr
+<DD> Locate database.init, startup.kappa and 
+ AddInput.doc in this directory.<BR> 
+	Execute kappa command at this directory.
+ <DL ><DT>database.init
+<DD> This is the database initialization file. 
+	Following is an example of the content.
+    <PRE>     page_size(4096).
+     ldbms(&quot;LDBMS000&quot;):-
+         control(500),index(3500),record(3500),overflow(100),log([{1000,3}]).
+</PRE>
+  <DT>startup.kappa
+<DD> This is the kappa configuration file.
+	Following is an example of the content.
+    <PRE>     [
+      {&quot;LDBMS000&quot;,
+        {{150,500,10,2},{{{200,100},{200,100},{2,1}},20},
+         {&quot;system&quot;,'CLM_Table',10,10}},
+        [&quot;CA000&quot;,&quot;IA000&quot;,&quot;RA000&quot;,&quot;OA000&quot;],&quot;LG000&quot;, 0, nil}
+     ].
+</PRE>
+  <DT>AddInput.doc
+<DD> This file is used by the utility of adding redords.
+	Describe the information of the table definition as follows.
+    <PRE>      [meibo_history([1]),meibo([1]),meibo_id([1])].
+</PRE>
+	In this case three tables named meibo_history, meibo and meibo_id
+	are defined without horizontal patitioning.
+<P>
+ </DL>
+ <DT>~/irpr/bin
+<DD> Kappa executable file and irpr_client
+	executable file should be placed here. For these executable
+	files pathname of this directory should be added to PATH 
+	environment variable.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

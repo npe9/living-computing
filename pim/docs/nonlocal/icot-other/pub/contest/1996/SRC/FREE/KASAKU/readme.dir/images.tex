@@ -1,0 +1,175 @@
+\batchmode
+\documentstyle[a4,epsf]{jarticle}
+
+\def\ruby#1#2{%
+        \leavevmode
+        \setbox0=\hbox{#1}\setbox1=\hbox{\tiny#2}%
+        \ifdim\wd0>\wd1 \dimen0=\wd0 \else \dimen0=\wd1 \fi
+        \hbox{\kanjiskip=\fill
+                \vbox{\hbox to \dimen0{\tiny \hfil#2\hfil}%
+                \nointerlineskip
+                \hbox to \dimen0{\hfil#1\hfil}}}}
+
+\def\MARU#1{{\rm\ooalign{\hfil\lower.168ex\hbox{#1}\hfil
+        \crcr\mathhexbox20D}}}
+
+\def\kintou#1#2{\makebox[#1]{%
+        \kanjiskip=0pt plus 1fill minus 1fill
+        \xkanjiskip=\kanjiskip
+        #2}}
+
+\def\definitionslabel#1{\bf #1\hspace{\textwidth}}
+
+\def\definitions{\list{}{%
+    \labelwidth=\leftmargin
+    \advance \labelwidth by -\labelsep
+    \let\makelabel\definitionslabel}}
+\makeatletter
+\makeatother
+\newenvironment{tex2html_wrap}{}{}
+\newwrite\lthtmlwrite
+\def\lthtmltypeout#1{{\let\protect\string\immediate\write\lthtmlwrite{#1}}}%
+\newbox\sizebox
+\begin{document}
+\pagestyle{empty}
+\stepcounter{section}
+\stepcounter{section}
+\stepcounter{subsection}
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\lambda$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline474: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+\stepcounter{subsection}
+\stepcounter{subsubsection}
+\stepcounter{subsubsection}
+{\newpage
+\clearpage
+\samepage \begin{figure}\begin{center}
+    \epsfile{file=fig/ttt2.eps}
+  \end{center}
+  
+  \label{fig:symmetric}
+\end{figure}
+}
+
+\stepcounter{subsubsection}
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\appendix
+\stepcounter{section}
+\stepcounter{subsection}
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$i_t$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline488: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$u_t$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline490: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$r_t = r(i_t, u_t)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline492: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$V(i)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline494: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}V(i) = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
+~~~~~(0 \le \gamma \le 1)\end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}V( i_t )  = r_t + \gamma V( i_{t+1} ) \end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}\hat{r}_t = r_t + \gamma V( i_{t+1} ) - V( i_t ) \end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\hat{r}(t)$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline496: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}Q(i_t, u_t) = r_t + \gamma V ( i_{t+1} ) \end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}% latex2html id marker 480
+Q(i_t, u_t) :=
+Q(i_t, u_t) + \alpha_{i_tu_t}
+\left [ r_t + \gamma \max_u Q(i_{t+1},u) - Q(i_t, u_t) \right ] \end{displaymath}
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 498
+$\alpha$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline498: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 500
+$\alpha = 1$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline500: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \begin{displaymath}Q(i_t, u_t) := r_t + \gamma \max_u Q(i_{t+1},u) \end{displaymath}
+}
+
+\stepcounter{subsection}
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$\gamma$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline502: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{% latex2html id marker 504
+$\alpha = \frac{1}{Step}$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline504: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+{\newpage
+\clearpage
+\samepage \setbox\sizebox=\hbox{$Q(i_0, u_0) = 100000$}\lthtmltypeout{latex2htmlSize :tex2html_wrap_inline508: \the\ht\sizebox::\the\dp\sizebox.}\box\sizebox
+}
+
+\stepcounter{section}
+\stepcounter{subsection}
+\stepcounter{subsection}
+{\newpage
+\clearpage
+\samepage \begin{tabular}% latex2html id marker 137
+{ccc}
+      {\tt b(1,0,-1,1,0,1,-1,-1,0)}&
+      $\stackrel{OX = 1}{\longrightarrow}$&
+      {\tt d(0, 2,0,1,2,0,2,1,1,0)}\\ 
+      {\tt b(1,0,-1,1,0,1,-1,-1,0)}&
+      $\stackrel{OX = -1}{\longrightarrow}$&
+      {\tt d(0, 1,0,2,1,0,1,2,2,0)}\\ 
+      &&{\footnotesize 第一引数は
+        対称変換情報({\it c.f.} 図~\ref{fig:symmetric})}\\ 
+    \end{tabular}
+}
+
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{subsection}
+\stepcounter{section}
+
+\end{document}

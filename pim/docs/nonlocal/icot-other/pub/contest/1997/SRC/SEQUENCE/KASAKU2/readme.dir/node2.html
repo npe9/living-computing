@@ -1,0 +1,45 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1 (Feb 5, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>概説</TITLE>
+<META NAME="description" CONTENT="概説">
+<META NAME="keywords" CONTENT="main">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+</HEAD>
+<BODY LANG="EN">
+ <A NAME="tex2html34" HREF="node3.html"><IMG WIDTH=37 HEIGHT=24 ALIGN=BOTTOM ALT="next" SRC="../../../../../../../PICS/next_motif.gif"></A> <A NAME="tex2html32" HREF="main.html"><IMG WIDTH=26 HEIGHT=24 ALIGN=BOTTOM ALT="up" SRC="../../../../../../../PICS/up_motif.gif"></A> <A NAME="tex2html26" HREF="node1.html"><IMG WIDTH=63 HEIGHT=24 ALIGN=BOTTOM ALT="previous" SRC="../../../../../../../PICS/previous_motif.gif"></A>   <BR>
+<B> Next:</B> <A NAME="tex2html35" HREF="node3.html">解説・アルゴリズム</A>
+<B>Up:</B> <A NAME="tex2html33" HREF="main.html">No Title</A>
+<B> Previous:</B> <A NAME="tex2html27" HREF="node1.html">目的</A>
+<BR> <P>
+<H1><A NAME="SECTION00020000000000000000">概説</A></H1>
+<P>
+  総当たり的な探索をできるだけ使わず、高速に解を出力することを設計の指針
+  とした。なぜなら、もし全ての配置の得点を計算すると、25! <IMG WIDTH=84 HEIGHT=26 ALIGN=MIDDLE ALT="tex2html_wrap_inline32" SRC="img1.gif"  > もの評価が必要となるように、総当たり的な探索では高速に良い
+  得点を出すのは難しいと判断したためである。
+  (制限時間が固定でなかったことも高速性を設計の指針に据えた一因である)
+<P>
+  高速に解を出力するために以下のような基本戦略を立てた：
+  <UL><LI> 4 of a kind, Full House, 3 of a kind, 2 Pair, Pair 等のペア系の
+	 手役と Straight Flush, Flush, Straight の非ペア系の役との直交性
+	 を利用して問題を分割する。具体的には、非ペア系の役を行に配置し、
+	 ペア系の役を列に配置するようにする。<LI> Straight Flush は非常に得点が高いため優先して配置する。<LI> Flush, Straight が多くなる組合せを見つけて、行に配置する。<LI> 行内の入れ換えで列方向の得点が大きくなるようにする。<LI> 行、列同士の入れ換えでは行や列の得点合計が変わらないことを利用
+	 して斜めの得点を大きくする。これは、行、列の役の合計点を大きく
+	 する問題と、斜めの得点を大きくする問題が分離できることを意味し
+	 ている。まず行と列の役を決定した後で、斜めの得点を大きくするこ
+	 とにする。
+  </UL>
+<P>
+  4 of a kind も非常に得点が高いが、優先的に配置すると他の役の配置のアル
+  ゴリズムが繁雑になるため、優先的には配置しない。しかし、4 of a kind が
+  できることをあまり阻害しないように他の役を配置するようにプログラムする
+  必要がある。
+<P>
+<P><A NAME="10">&#160;</A><BR>
+<STRONG>Figure:</STRONG> 全体図<BR>
+  <IMG WIDTH=640 HEIGHT=315 ALT="network" SRC="network.gif">
+<P><BR> <HR>
+</BODY>
+</HTML>

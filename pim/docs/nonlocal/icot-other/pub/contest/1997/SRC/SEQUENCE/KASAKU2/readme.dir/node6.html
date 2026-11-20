@@ -1,0 +1,30 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1 (Feb 5, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>ストレート検索</TITLE>
+<META NAME="description" CONTENT="ストレート検索">
+<META NAME="keywords" CONTENT="main">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+</HEAD>
+<BODY LANG="EN">
+ <A NAME="tex2html81" HREF="node7.html"><IMG WIDTH=37 HEIGHT=24 ALIGN=BOTTOM ALT="next" SRC="../../../../../../../PICS/next_motif.gif"></A> <A NAME="tex2html79" HREF="node3.html"><IMG WIDTH=26 HEIGHT=24 ALIGN=BOTTOM ALT="up" SRC="../../../../../../../PICS/up_motif.gif"></A> <A NAME="tex2html73" HREF="node5.html"><IMG WIDTH=63 HEIGHT=24 ALIGN=BOTTOM ALT="previous" SRC="../../../../../../../PICS/previous_motif.gif"></A>   <BR>
+<B> Next:</B> <A NAME="tex2html82" HREF="node7.html">フラッシュ選択</A>
+<B>Up:</B> <A NAME="tex2html80" HREF="node3.html">解説・アルゴリズム</A>
+<B> Previous:</B> <A NAME="tex2html74" HREF="node5.html">ストレートフラッシュ検索</A>
+<BR> <P>
+<H2><A NAME="SECTION00033000000000000000">ストレート検索</A></H2>
+<P>
+   ストレートフラッシュの余りカードから、フラッシュとストレートを作るの
+   が目的である。各Kindについて余りカードから (余りカード数) mod 5 枚を
+   使ってストレートを作る。一度に解くのは難しそうなので、いくつかの段階
+   に分割した。
+<P>
+   <OL><LI> Kind自体は考慮せずに、各Rankのカード数のリストから、可能なスト
+	  レートの組のRankを決定し、出力する。複数の組が出力される。<LI> ストレートのRankの組から、各ランクのカードの必要数を算出する。<LI> (2)の必要数と、各Kindの使用可能カード数制限を満たすカードの組
+	  合せを片っ端から探す。<LI> 条件を満たす組みが一つでもあれば、探索を終了して、使用カードの
+	  リストからストレートを再構成する。
+   </OL><BR> <HR>
+</BODY>
+</HTML>

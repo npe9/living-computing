@@ -1,0 +1,38 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Table update</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Table update">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html357 HREF="node28.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html355 HREF="node22.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html349 HREF="node26.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html358 HREF="node28.html"> Set operation</A>
+<B>Up:</B> <A NAME=tex2html356 HREF="node22.html"> The primitive commands</A>
+<B> Previous:</B> <A NAME=tex2html350 HREF="node26.html"> Table read</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00036500000000000000> Table update</A></H3>
+<P>
+<DL ><DT>add_record(TableName,InternalFormat,ValueList,^RID,
+	^Status)
+<DD>
+	creates a record by &quot;ValueList&quot; and register the 
+	record to the table. The registration of indexes is
+	automatically done at the same time.
+ <DT>replace_record(TableName,InternalFormat,RID,ValueList,
+	^Status)
+<DD>
+	updates the specified record by &quot;ValueList&quot;.
+	The update of indexes is also done at the same time.
+ <DT>delete_record(TableName,RID,^Status)
+<DD>
+	deletes the specified record from the table.
+	The deletion of indexes is also done at the same time.
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,76 @@
+﻿<title>Quixote Systems</title>
+<!-- (h1) Quixote Systems(/h1) -->
+<h1> <img align=top src="photos/QxtLabels.gif"> Systems</h1>
+<hr>
+
+<h2> We have the following 2 systems. </h2>
+<ul>
+<li> <a href="../../IFS/abst/079.html"> <b> big-Quixote </b> </a>
+<li> <a href="../../IFS/abst/080.html"> <b> micro-Quixote </b> </a>
+</ul>
+<p>
+
+<b> Big-Quixote </b> is an implementation intended to implement the full
+specification of the language <b> Quixote </b>.
+It has been upgraded along with the research of <b> Quixote </b> itself,
+and current version is called ``Ver.4.''
+<b> Big-Quixote </b> is implemented in the form of client-server system. 
+<b> Big-Quixote </b> server was developed mainly by
+ the parallel logic programming language <b> KL1 </b>
+which was also developed at <b> ICOT </b>.  As a result, the server was
+originally operating only on the parallel inference machine <b> PIM </b>.
+Thanks to the <b> KLIC </b> system (KL1 to C translator) developed by FGCS's
+Follow-on project in 1993 and 1994, it has come to operate on all
+UNIX machines. For <b> big-Quixote </b> client,
+there are Emacs-based User Interface and GUI of X Window System.
+ Recently, well known Mosaic Interface has introduced. <p>
+
+<b> Quixote </b> is a language with diverse functions.
+This results in a somewhat large system in which
+ <b> big-Quixote </b> is incorporated, and there is a likelihood of limited
+environment for comfortable operation due to memory under constraint.
+In line with the work on <b> big-Quixote </b>, 
+the year of 1993 began with a challenge to 
+the development of <b> micro-Quixote </b> to work smoothly as a
+processing system in as many environments as possible with an emphasis
+placed on the major functions of <b> Quixote </b> language.
+<b> Micro-Quixote </b> was implemented from the scratch in C language 
+and is currently operating on UNIX, Mac, and MS-DOS machines. 
+<b> Micro-Quixote </b> has no database features and
+ may be thought of a system with a
+strong aptitude to a (constraint) logic programming language.
+<b> Micro-Quixote </b>
+incorporates <b> Quixote </b> function implemented in object term,
+subsumption relation, property inheritance, conditional query,
+and solution with assumption.
+Because of simplified implementation,
+solution is sometime different from some of <b> big-Quixote </b>.
+It also has some unique features such as external processing system
+call unavailable in <b> big-Quixote </b>. <p>
+
+Distinction between both systems is summarized in the following table.
+
+<h2> Distinction between big-Quixote and micro-quixote</h2>
+<pre>
+				<b>big-Quixote</b>	<b>micro-Quixote</b>
+OS/machine Environment		UNIX (KLIC), PIMOS	UNIX, MS-DOS, Macintosh
+Development Language		      KL1, C			C
+				 EmacsLisp, etc. 
+Code Size			      6Mbyte		     199Kbyte
+Method for Derivation		 OLDT resolution	   Prolog-like
+Subsumption Constraint			○			○
+Property Inheritance			○			○
+Answer with Hypothesis &		○			○
+Conditional Query
+Module					○			×
+Set, Inequality Constraint		○			×
+NAF (Negation as Failure)		○			×
+Solution Composition			○			×
+Database Functionality			○			×
+External Problem Solver Call    Arithmetic module    External Constraint Call
+</pre><p>
+
+
+<hr>
+<a href="HomePage-E.html"> <!-- (img src="photos/QxtLabels.gif") -->
+Home Page for <b>Quixote</b></a><p>

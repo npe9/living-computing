@@ -1,0 +1,23 @@
+\begin{thebibliography}{1}
+
+\bibitem{watkins-89}
+Watkins, C. J. C.~H.: {\em Learning from delayed rewards\/}, PhD Thesis,
+  Cambridge University (1989).
+
+\bibitem{doya-96}
+銅谷賢治: 強化学習 Reinforcement Learning,
+  日本神経回路学会第7回全国大会講演論文集, pp.\ 158--162 (1996).
+
+\bibitem{sutton-88}
+Sutton, R.~S.: Learning to Predict by the Methods of Temporal Differences,
+  {\em Machine Learning\/}, Vol.~3, pp.\ 9--44 (1988).
+
+\bibitem{asada-95}
+浅田, 野田, 俵積田, 細田: 視覚に基づく強化学習によるロボットの行動学習,
+  日本ロボット学会誌, Vol.~13, pp.\ 68--74 (1995).
+
+\bibitem{barto-94}
+Barto, A.~G.: Adaptive critics and the basal ganglia,  {\em Models of
+  Information processing in the Basal Ganglia\/}, pp.\ 215--232 (1994).
+
+\end{thebibliography}

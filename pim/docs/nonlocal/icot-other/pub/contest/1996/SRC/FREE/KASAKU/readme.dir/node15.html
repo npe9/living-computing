@@ -1,0 +1,43 @@
+﻿<html><HEAD>
+<TITLE>B.1 main モジュール</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+ <BR> <HR><A NAME=tex2html187 HREF="node16.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html185 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html179 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html188 HREF="node16.html">B.2 encode モジュール</A>
+<B>Up:</B> <A NAME=tex2html186 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<B> Previous:</B> <A NAME=tex2html180 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00051000000000000000>B.1 main モジュール</A></H2>
+<A NAME="subsecpreds_of_main">&#160;</A>
+<P>
+<DL ><DT>main
+<DD>
+  プログラム本体。
+<DT>menu <i> +Q</i>
+<DD>
+  メニューを表示し、ユーザに選択を促す。
+  対戦や紅白戦が選択された場合、<i> Q</i> を用いて手の選択を
+  行いながら新たな <i> Q</i> を作成してゆく。
+<DT>saveornot <i> +Q</i>
+<DD>
+  Q値をファイル ``q.kl1'' にセーブするかどうかユーザに確認する。
+  セーブするよう指示された場合、``q.kl1'' というファイルに
+  現在の Q値を項の形で上書きする。
+<DT>loadornot <i> +Q</i>
+<DD>
+  Q値をファイル ``q.kl1'' から読み出すかどうかユーザに確認する。
+  読み出さない場合は Q値を初期値で初期化する。この場合
+  プログラムは Tic-Tac-Toe に関して全く無知な状態から開始される。
+<P>
+ </DL>
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

@@ -1,0 +1,33 @@
+This is JTeX, Version 1.12, based on TeX C Version 2.95 (preloaded format=jlplain 92.2.20)  2 FEB 1999 16:02
+**&jlplain images.tex
+(images.tex
+** JLaTeX ver.1.3......Isozaki
+
+(/usr/local/share/lib/tex/inputs/article.sty
+Document Style `article' <16 Mar 88>.
+(/usr/local/share/lib/tex/inputs/art10.sty)
+\c@part=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+)
+\lthtmlwrite=\write3
+\sizebox=\box26
+(images.aux) [1
+
+
+] (images.aux) 
+Here is how much of TeX's memory you used:
+ 147 strings out of 3240
+ 1442 string characters out of 50788
+ 34470 words of memory out of 262141
+ 2825 multiletter control sequences out of 9500
+ 29508 words of font info for 126 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 13i,6n,15p,162b,129s stack positions out of 300i,40n,60p,2000b,4000s
+
+Output written on images.dvi (1 page, 1360 bytes).

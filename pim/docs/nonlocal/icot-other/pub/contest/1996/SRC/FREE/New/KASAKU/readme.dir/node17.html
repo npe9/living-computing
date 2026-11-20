@@ -1,0 +1,51 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">B.3 decide モジュール</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html207 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html205 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html199 HREF="node16.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html208 HREF="node18.html">B.4 learn モジュール</A>
+<strong>Up:</strong> <A NAME=tex2html206 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<strong> Previous:</strong> <A NAME=tex2html200 HREF="node16.html">B.2 encode モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00053000000000000000>B.3 decide モジュール</A></H2>
+<A NAME="subsecpreds_of_decide">&#160;</A>
+<P>
+<DL><DT>decide <em> +NBoard, +State, +Q, -Action, -RedQ, -ActFun, -Blank</em>
+<DD>
+  局面 <em> Board</em> とその状態を表す <em> State</em>、Q値 <em> Q</em> から、
+  次の手を選択し <em> Action</em> と同一化する。この際、
+  当該状態の全ての手の情報を含む <em> ActFun</em> および、
+  <em> Q</em> から <em> ActFun</em> を除いた差分 <em> RedQ</em>、
+  現在の空きマスリスト <em> Blank</em> も返す。
+<DT>choose_action <em> +State, +Q, -ActFun, -RedList, -BlankNum</em>
+<DD>
+  状態 <em> State</em>、Q値 <em> Q</em> から、その状態において選択可能な
+  全ての手の情報 <em> ActFun</em> を得る。
+<DT>blanklist <em> +Board, -Blank</em>
+<DD>
+  局面 <em> Board</em> の空きマスリストを <em> Blank</em> に同一化する。
+  <em> Board</em> は b/9, d/10 のいずれの形でもよい。
+<DT>get_value <em> +Blank, +State, +Q, -Action</em>
+<DD>
+  空きマスリスト <em> Blank</em> と状態番号 <em> State</em> Q値 <em> Q</em> から、
+  次の手を選択し <em> Action</em> に同一化する。
+<DT>do <em> +Board, +Action, +OX, -NewNBoard</em>
+<DD>
+  局面 <em> Board</em> において手 <em> Action</em> を指した後の局面を、
+  <em> NewNBoard</em> に同一化する。
+  <em> Board</em> は b/9, d/10 のいずれの形でもよい。
+</DL>
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

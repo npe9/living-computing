@@ -1,0 +1,64 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Schema</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Schema">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html242 HREF="node17.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html240 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html234 HREF="node15.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html243 HREF="node17.html"> Set</A>
+<B>Up:</B> <A NAME=tex2html241 HREF="node11.html"> Basic functions of </A>
+<B> Previous:</B> <A NAME=tex2html235 HREF="node15.html"> Programing interface</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00032000000000000000> Schema</A></H2>
+<P>
+In this section we show how to define schema in BNF notation. 
+Bold type words are those which must be written as they are, and slanted 
+type words are data types. Please see Kappa user's manual for the 
+details related to distributed databases and so on which are
+omitted here.<BR>
+<P>
+<b>&lt;</b>Schema<b>&gt;</b>::=TableName(TableProperty,AttrList,NestSequence,<BR> 
+			HorizontalDecompositionInfo)
+<P>
+TableName::=<i> ATOM</i> <IMG  ALIGN=MIDDLE ALT="" SRC="img62.gif"> <b> nil</b>
+<P>
+TableProperty::=<b> primitive</b>
+<P>
+AttrList::={Attr <IMG  ALIGN=MIDDLE ALT="" SRC="img63.gif"> AttrList}
+<P>
+NestSequence::=[AttrName <IMG  ALIGN=MIDDLE ALT="" SRC="img64.gif"> NestSequence] <IMG  ALIGN=MIDDLE ALT="" SRC="img65.gif"> []
+<P>
+AttrName::=<i> ATOM</i>
+<P>
+HorizontalDecompositionInfo::=<b> shd</b>(HorizontalDecompositionMethod,<BR> 
+HorizontalDecompositionInfoList) <IMG  ALIGN=MIDDLE ALT="" SRC="img66.gif"> <b> nil</b>
+<P>
+Attr::=AttrName(RepetitiveProperty,AttrPropertyList) <IMG  ALIGN=MIDDLE ALT="" SRC="img67.gif"> <BR> 
+       AttrName(RepetitiveProperty,AttrList)
+<P>
+RepetitiveProperty::=<b> set</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img68.gif"> <b> single</b>
+<P>
+AttrPropertyList::=[AttrProperty <IMG  ALIGN=MIDDLE ALT="" SRC="img69.gif"> AttrPropertyList] <IMG  ALIGN=MIDDLE ALT="" SRC="img70.gif"> []
+<P>
+AttrProperty::=<b> type</b>(DataType) <IMG  ALIGN=MIDDLE ALT="" SRC="img71.gif"> <b> key</b>(KeySpecification) <IMG  ALIGN=MIDDLE ALT="" SRC="img72.gif"> <b>
+key</b>(primary,ReferenceKeyInfo) <IMG  ALIGN=MIDDLE ALT="" SRC="img73.gif"> <b> access</b>(AccessSpecification) <IMG  ALIGN=MIDDLE ALT="" SRC="img74.gif"> 
+<b> null_value</b>(NullValueSpecificaion) <IMG  ALIGN=MIDDLE ALT="" SRC="img75.gif"> overflow(OverflowSpecification)
+<P>
+DataType::=<b> string</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img76.gif"> <b> integer</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img77.gif"> <b> term</b>
+<P>
+KeySpecification::=<b> table</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img78.gif"> <b> set</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img79.gif"> <b> non_key</b>
+<P>
+NullValueSpecification::=<b> not_allowed</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img80.gif"> <b> allowed</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img81.gif"> <b> not_nil</b> <IMG  ALIGN=MIDDLE ALT="" SRC="img82.gif"> <b>
+not_bottom</b>
+<P>
+OverflowSpecification::=<b> not_allowed</b>
+<P>
+<BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,53 @@
+﻿<HEAD>
+<TITLE> 【演習問題５：パズル``正直者と嘘つき'' (TPTP/PUZ025-1)】</TITLE>
+</HEAD>
+<BODY>
+
+<P>
+<H1><A NAME=SECTION00350000000000000000> 【演習問題５：パズル``正直者と嘘つき'' (TPTP/PUZ025-1)】</A></H1>
+<P>
+
+<P>
+
+<P>
+<PRE>true--&gt;native(a),native(b),native(c).
+true--&gt;a_truth(says(a,equal_type(b,c))).
+true--&gt;ask_1_if_2(c,equal_type(a,b)).
+native(A)--&gt;a_truth(truthteller(A));a_truth(liar(A)).
+
+native(A),native(B),a_truth(liar(A)),a_truth(liar(B))
+    --&gt;a_truth(equal_type(A,B)).
+native(A),native(B),a_truth(truthteller(A)),a_truth(truthteller(B))
+    --&gt;a_truth(equal_type(A,B)).
+
+a_truth(truthteller(A)),a_truth(says(A,B))--&gt;a_truth(B).
+a_truth(A),a_truth(says(B,A))--&gt;a_truth(truthteller(B)).
+a_truth(says(A,B))--&gt;a_truth(B);a_truth(liar(A)).
+a_truth(equal_type(A,B)),a_truth(truthteller(A))
+    --&gt;a_truth(truthteller(B)).
+a_truth(equal_type(A,B)),a_truth(liar(A))
+    --&gt;a_truth(liar(B)).
+a_truth(truthteller(A)),native(B)
+    --&gt;a_truth(equal_type(A,B));a_truth(liar(B)).
+a_truth(liar(A)),native(B)
+    --&gt;a_truth(equal_type(A,B));a_truth(truthteller(B)).
+a_truth(equal_type(A,B))
+    --&gt;a_truth(equal_type(B,A)).
+
+ask_1_if_2(A,B),a_truth(truthteller(A)),a_truth(B)
+    --&gt;answer(yes).
+ask_1_if_2(A,B),a_truth(truthteller(A))
+    --&gt;a_truth(B);answer(no).
+ask_1_if_2(A,B),a_truth(liar(A)),a_truth(B)--&gt;answer(no).
+ask_1_if_2(A,B),a_truth(liar(A))--&gt;a_truth(B);answer(yes).
+
+a_truth(truthteller(A)),a_truth(liar(A))--&gt;false.
+a_truth(liar(A)),a_truth(says(A,B)),a_truth(B)--&gt;false.
+answer(A)--&gt;false.
+</PRE>
+<P>
+
+<P>
+<BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,41 @@
+﻿<HEAD>
+<TITLE> MGTPシステムの用法</TITLE>
+</HEAD>
+<BODY bgcolor="white">
+<meta name="description" value=" MGTPシステムの用法">
+<meta name="keywords" value="mgtp-lec">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P><HR>
+<H1>MGTPシステムの用法</H1>
+<P>
+MGTPはその問題記述の簡便性から、一階述語論理による知識表現
+言語と見ることもでき、Prologではフォローできない
+<A HREF="nonhorn.html">Non-Horn論理式</a>を取り扱うことができるほか、
+並行論理型言語KL1では失われている探索の完全性が保証されている
+などの利点を持っている。
+<P>
+MGTPは、適用すべき問題の性質によって、
+グランド版MGTP(MGTP/G)、ノングランド版MGTP(MGTP/N)、
+および制約充足問題を解くために拡張された制約MGTP(CMGTP)
+の3種類が用意されており、それぞれKL1、Prolog、Klicで実装されている。
+グランド版MGTPにおいては生成されるモデル候補はすべて基底項、
+すなわち変数を含まない項であり、
+ルールの後件部に選言を記述することができる。
+ノングランド版MGTPでは、変数を含む項が許されるが、
+現在の実装ではルールの後件部に選言を記述することはできない。
+また、CMGTPは、制約充足問題を解くために拡張されたMGTP 
+で、枝刈りを効率的に行なうために
+負アトムを用いて制約伝搬ルールを表現することが可能である。
+並列化に関しては、グランド版MGTPおよび
+CMGTPではOR並列が、またノングランド版MGTPではAND並列が
+それぞれ実現され、いくつかのベンチマーク問題に対して
+線形に近い台数効果が達成されている。
+<P>
+
+<P>
+
+<P>
+<BR> <HR>
+<A HREF=intro.html>戻る</A><P>
+</BODY>

@@ -1,0 +1,313 @@
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çS¡§ 
+\fbox{
+\begin{minipage}{10cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p.     & ...(C1)\\
+   p &\longrightarrow& q.     & ...(C2)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+²ò¼á¦Õ¡§
+\fbox{£À}
+£À(C1)¤¬Ëþ¤¿¤µ¤ì¤Ê¤¤¡£
+
+$\qquad\Downarrow$
+
+²ò¼á£±¡§
+\fbox{£ð}
+£À(C2)¤¬Ëþ¤¿¤µ¤ì¤Ê¤¤¡£
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{£ð, £ñ}
+£À(C1)¤â(C2)¤âËþ¤¿¤µ¤ì¤Æ¤¤¤ë¡£
+
+\vspace{1cm}\hrule
+
+¡è ²ò¼á£²¤ÏÀá½¸¹çS¤Î¥â¥Ç¥ë¡£
+¡Ê½¼Â­²ÄÇ½¡Ë
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çS'¡§ 
+\fbox{
+\begin{minipage}{12cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p.     & ...(C1)\\
+   p &\longrightarrow& q.     & ...(C2)\\
+   q &\longrightarrow& false. & ...(C3)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+²ò¼á¦Õ¡§
+\fbox{£À}
+£À(C1)¤¬Ëþ¤¿¤µ¤ì¤Ê¤¤¡£
+
+$\qquad\Downarrow$
+
+²ò¼á£±¡§
+\fbox{£ð}
+£À(C2)¤¬Ëþ¤¿¤µ¤ì¤Ê¤¤¡£
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{£ð, £ñ}
+£À(C3)¤«¤éÌ·½â¤¬½Ð¤ë¡£
+
+\vspace{1cm}\hrule
+
+¡è Àá½¸¹çS'¤Î¥â¥Ç¥ë¤Ïºî¤ì¤Ê¤¤¡£
+¡Ê½¼Â­ÉÔÇ½¡Ë
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çS"¡§ 
+\fbox{
+\begin{minipage}{10cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p;r.   & ...(C1')\\
+   p &\longrightarrow& q.     & ...(C2)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+\begin{center}
+²ò¼á¦Õ¡§
+\fbox{£À}
+
+$\swarrow\qquad\qquad\searrow$
+\end{center}
+
+\begin{center}
+\begin{minipage}{17cm}
+\begin{minipage}{7cm}
+²ò¼á£±¡§
+\fbox{£ð}
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{£ð, £ñ}
+
+²ò¼á£²¤Ï¥â¥Ç¥ë
+\end{minipage}
+\hspace{2cm}
+\begin{minipage}{7cm}
+²ò¼á£±'¡§
+\fbox{£ò}
+
+²ò¼á£±'¤Ï¥â¥Ç¥ë
+\end{minipage}
+\end{minipage}
+\end{center}
+
+\vspace{1cm}\hrule
+
+¡è Àá½¸¹çS"¤Ï½¼Â­²ÄÇ½
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çS"'¡§ 
+\fbox{
+\begin{minipage}{12cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p;r.   & ...(C1')\\
+   p &\longrightarrow& q.     & ...(C2)\\
+   r &\longrightarrow& false. & ...(C4)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+\begin{center}
+²ò¼á¦Õ¡§
+\fbox{£À}
+
+$\swarrow\qquad\qquad\searrow$
+\end{center}
+
+\begin{center}
+\begin{minipage}{17cm}
+\begin{minipage}{7cm}
+²ò¼á£±¡§
+\fbox{£ð}
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{£ð, £ñ}
+
+²ò¼á£²¤Ï¥â¥Ç¥ë
+\end{minipage}
+\hspace{2cm}
+\begin{minipage}{7cm}
+²ò¼á£±'¡§
+\fbox{£ò}
+
+(C4)¤«¤éÌ·½â¤¬½Ð¤ë¡£
+
+²ò¼á£±'¤Ï¥â¥Ç¥ë¤Ë¤Ê¤ì¤Ê¤¤
+\end{minipage}
+\end{minipage}
+\end{center}
+
+\vspace{1cm}\hrule
+
+¡è Àá½¸¹çS"'¤Ï½¼Â­²ÄÇ½
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çS""¡§ 
+\fbox{
+\begin{minipage}{12cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p;r.   & ...(C1')\\
+   p &\longrightarrow& q.     & ...(C2)\\
+   q &\longrightarrow& false. & ...(C3)\\
+   r &\longrightarrow& false. & ...(C4)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+\begin{center}
+²ò¼á¦Õ¡§
+\fbox{£À}
+
+$\swarrow\qquad\qquad\searrow$
+\end{center}
+
+\begin{center}
+\begin{minipage}{17cm}
+\begin{minipage}{7cm}
+²ò¼á£±¡§
+\fbox{£ð}
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{£ð, £ñ}
+
+(C3)¤«¤éÌ·½â¤¬½Ð¤ë¡£
+\end{minipage}
+\hspace{2cm}
+\begin{minipage}{7cm}
+²ò¼á£±'¡§
+\fbox{£ò}
+
+(C4)¤«¤éÌ·½â¤¬½Ð¤ë¡£
+\end{minipage}
+\end{minipage}
+\end{center}
+
+\vspace{1cm}\hrule
+
+¡è Àá½¸¹çS""¤Ï½¼Â­ÉÔÇ½
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+Àá½¸¹çT¡§ 
+\fbox{
+\begin{minipage}{12cm}
+\[
+\begin{array}{rcll}
+true &\longrightarrow& p(a);r. & ...(C1')\\
+p(X) &\longrightarrow& q(X).   & ...(C2')\\
+q(b) &\longrightarrow& false.  & ...(C3')\\
+   r &\longrightarrow& false.  & ...(C4)
+\end{array}
+\]
+\end{minipage}
+}
+
+\vspace{1cm}\hrule
+
+\begin{center}
+²ò¼á¦Õ¡§
+\fbox{£À}
+
+$\swarrow\qquad\qquad\searrow$
+\end{center}
+
+\begin{center}
+\begin{minipage}{17cm}
+\begin{minipage}{8cm}
+²ò¼á£±'¡§
+\fbox{p(a)}
+
+$\qquad\Downarrow$
+
+²ò¼á£²¡§
+\fbox{p(a), q(a)}
+
+(C3')¤«¤éÌ·½â¤Ï½Ð¤Ê¤¤¡£
+\end{minipage}
+\hspace{1cm}
+\begin{minipage}{7cm}
+²ò¼á£±'¡§
+\fbox{£ò}
+
+(C4)¤«¤éÌ·½â¤¬½Ð¤ë¡£
+\end{minipage}
+\end{minipage}
+\end{center}
+
+\vspace{1cm}\hrule
+
+¡è Àá½¸¹çT¤Ï½¼Â­²ÄÇ½
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+% Local Variables: 
+% mode: japanese-SliTeX
+% TeX-master: "ilp96-top"
+% End: 

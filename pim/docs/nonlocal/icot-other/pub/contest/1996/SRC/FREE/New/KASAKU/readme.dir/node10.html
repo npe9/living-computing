@@ -1,0 +1,50 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">3.2 メニュー</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html131 HREF="node11.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html129 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html125 HREF="node9.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html132 HREF="node11.html">A 背景</A>
+<strong>Up:</strong> <A NAME=tex2html130 HREF="node8.html">3 プログラムの使い方</A>
+<strong> Previous:</strong> <A NAME=tex2html126 HREF="node9.html">3.1 知識データのロード</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00032000000000000000>3.2 メニュー</A></H2>
+<P>
+データのロード確認が終わると、プログラムはメニューを表示する。
+メニューは以下のような構成になっている。
+<P>
+<DL><DT>1: training mode
+<DD>
+  プログラムが紅白戦を行うことで学習（Q値の更新）を行う。
+  このメニューを選択するとトレーニング回数（何試合紅白戦を行うか）
+  の入力をユーザに促す。
+<DT>2: game mode
+<DD>
+  プログラムとユーザが 1 試合対戦する。先攻後攻は
+  ランダムに決定される。
+<DT>3: show the Q-function
+<DD>
+  現在の Q-function の値（Q値）を表示する。
+<DT>4: quit
+<DD>
+  プログラムを終了する。このメニューを選択すると、
+  現在のQ値をファイル ``q.kl1'' としてセーブするかどうか
+  ユーザに確認を行う。
+</DL>
+<P>
+入力は全て Prolog 形式で行う。
+<strong> 4</strong> 以外は、各処理が終了すると
+再びメニュー選択に戻るようになっている。
+<P>
+<img src="menu2.gif" alt="">
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

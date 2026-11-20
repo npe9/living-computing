@@ -1,0 +1,42 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> インデックス検索条件</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" インデックス検索条件">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html274 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html272 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html266 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html275 HREF="node20.html"> データ検索条件</A>
+<B>Up:</B> <A NAME=tex2html273 HREF="node18.html"> 検索条件</A>
+<B> Previous:</B> <A NAME=tex2html267 HREF="node18.html"> 検索条件</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00034100000000000000> インデックス検索条件</A></H3>
+<P>
+<b>&lt;</b>インデックス検索条件<b>&gt;</b>::=インデックス単一条件｜
+論理演算子（<b>&lt;</b>インデックス検索条件<b>&gt;</b>,<b>&lt;</b>インデックス検索条件<b>&gt;</b>）｜
+<b> compress</b>（Attr_name,<b>&lt;</b>インデックス検索条件<b>&gt;</b>）
+<P>
+インデックス単一条件::=範囲検索｜Attr_name 比較演算子 Attr_name｜
+Attr_name=<b> concat</b>(文字列,*)｜<BR> 
+<b> not_exist</b>(Attr_name)｜<b> is_null</b>(Attr_value)
+<P>
+文字列::=<i> STRING</i>
+<P>
+Attr_name::=<i> ATOM</i>
+<P>
+比較演算子::= =<b>&lt;</b>｜<b>&lt;</b>｜<b>&gt;</b>｜<b>&gt;</b>=｜=
+<P>
+論理演算子::= <b> and</b>｜<b> or</b>｜<b> dif</b>
+<P>
+範囲検索::= <b> range</b>(Attr_name,Attr_value1,Attr_value2)｜etc.
+<P>
+Attr_value::=<i> INTEGER</i>｜<i> STRING</i>
+<P>
+<BR> <HR>
+<P>
+</BODY>

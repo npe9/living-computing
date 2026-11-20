@@ -1,0 +1,105 @@
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{4-queen}
+
+\begin{verbatim}
+true --> p(1,1);p(1,2);p(1,3);p(1,4).
+true --> p(2,1);p(2,2);p(2,3);p(2,4).
+true --> p(3,1);p(3,2);p(3,3);p(3,4).
+true --> p(4,1);p(4,2);p(4,3);p(4,4).
+
+p(N,M),p(N1,M),{{N \= N1}} --> false.
+p(N,M),p(N,M1),{{M \= M1}} --> false.
+p(N,M),p(N1,M1),
+ {{N\=N1,M\=M1,A:=N-N1,B:=M-M1,A=B}}
+   --> false.
+p(N,M),p(N1,M1),
+ {{N\=N1,M\=M1,A:=N-N1,B:=M1-M,A=B}}
+   --> false.
+\end{verbatim}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{値域限定条件}
+
+MG節：
+\[
+   前件\longrightarrow 後件
+\]
+において、
+後件に現れる変数は、すべて前件に現れていること。
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+MG節：
+\[
+   true\longrightarrow p(X).
+\]
+において、後件に現れる変数Xが前件に現れていない。
+
+このとき、
+\[
+   dom(a)\longrightarrow p(X).
+\]
+のように、前件に$dom(変数)$を補う。
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+
+さらに、
+
+そのMG節集合に現れるすべての定数について、
+\[
+   true\longrightarrow dom(定数).
+\]
+
+そのMG節集合に現れるすべての関数\hfil\break
+($f_1(・),f_2(・,・),\ldots$)について、
+\[
+\begin{array}{rcl}
+          dom(X)&\longrightarrow& f_1(X).\\
+   dom(X),dom(Y)&\longrightarrow& f_2(X,Y).\\
+&\cdots&
+\end{array}
+\]
+を補う。
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+\begin{ohp}
+\ottl{含意論理の単一公理}
+
+\vspace{2cm}
+
+\begin{verbatim}
+true-->p(i(i(i(A,B),C),
+           i(i(C,A),i(D,A)))).
+
+p(i(A,B)),p(A)-->p(B).
+
+p(i(i(a,b),i(i(b,c),i(a,c))))
+    -->false.
+\end{verbatim}
+
+\end{ohp}
+
+%-----------------------------------------------------------------------------
+
+% Local Variables: 
+% mode: japanese-SliTeX
+% TeX-master: "ilp96-top"
+% End: 

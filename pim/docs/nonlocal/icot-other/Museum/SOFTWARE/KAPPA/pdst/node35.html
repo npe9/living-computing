@@ -1,0 +1,51 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> サーバ側のモジュール</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" サーバ側のモジュール">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html454 HREF="node36.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html452 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html446 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html455 HREF="node36.html"> クライアント側のモジュール</A>
+<B>Up:</B> <A NAME=tex2html453 HREF="node34.html"> システム構成</A>
+<B> Previous:</B> <A NAME=tex2html447 HREF="node34.html"> システム構成</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00043100000000000000> サーバ側のモジュール</A></H3>
+<P>
+モジュールのファイルパス名は、ディレクトリkappa/srcを起点とした
+相対パス名である。
+<P>
+<DL ><DT>main(main/main.kl1)
+<DD>
+	kappaを利用するアプリケーションプログラムの
+	サーバが定義されている。
+ <DT>irpr_request(irpr/irpr_request.kl1)
+<DD>
+	クライアントからの名簿管理システムの呼び出しを受け付ける。
+ <DT>irpr_service(irpr/irpr_service.kl1)
+<DD> 
+	名簿管理システムのサービスを提供する。
+	名簿管理システムへのコマンドを、データベース操作メッセージに
+	変換してirpr_kappaへ送る。
+ <DT>irpr_kappa(irpr/irpr_kappa.kl1)
+<DD> 
+	名簿管理データベースの操作メッセージを、kappaの
+	原始コマンドに変換して発行する。
+ <DT>irpr_select(irpr/irpr_select.kl1)
+<DD>
+	名簿管理システムで許している検索条件の形式を、
+	kappaが受け付ける検索条件の形式に変換して検索する。
+	検索条件の形式の選定は、アプリケーションに任されている。
+ <DT>irpr_conv(irpr/irpr_conv.kl1)
+<DD>
+	項を文字コードリストに変換して出力する。
+	ソケットに対してputtできないため必要。
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,48 @@
+﻿<HEAD>
+<TITLE>Distributed Pool and its Implementation</TITLE>
+</HEAD>
+<BODY BGCOLOR="#F8F7FF"
+      TEXT   ="#005E00"
+      LINK   ="#0000FF"
+      VLINK  ="#338899"
+      ALINK  ="#FF0000">
+
+<i>Proc. of FGCS '94, ICOT, Tokyo, December 1994</i>
+<center>
+<H1>Distributed Pool and its Implementation</H1>
+Masaki Sato Masahiko Yamauchi Takashi Chikayama<p>
+Institute for New Generation Computer Technology <br>
+4-28, Mita 1-chome, Minato-ku, Tokyo 108, Japan<br>
+<tt>{masaki, yamauchi, chikayama}@icot.or.jp</tt>
+</center>
+<hr>
+
+<H2>Abstract:</H2>
+
+<DD>PIMOS, an operating system for the parallel inference machine PIM,
+provides a utility, called <em> pool </em>, that manages tables of
+arbitrary KL1 data. This pool stores any KL1 data and enables it to be
+extracted and/or referenced when needed according to a search key.
+This pool is used with many application programs, reducing the cost of
+program development.  <P>
+
+<DD>However, its performance is not satisfactory for highly parallel
+applications, because stored data is located in the memory of the node
+where the pool was initially created. When its data is accessed from
+another node, the ensuing data transfer increases network traffic, and
+simultaneous access causes centralization of the computing load. To
+overcome this problem, we have developed a distributed pool. The pool
+is distributed to many nodes and, if a process accesses data existing
+in another node, the pool caches data in its node. It provides the
+same functionality as the original pool by maintaining cache
+coherence. This paper describes the mechanism of this distributed
+pool.  <P> <br>
+
+<h2>All of this proceedings (Compressed PostScript file) :</h2>
+<b>Distributed Pool and its Implementation <PS 108KB)</b>
+<a href="PS/distributed.ps.gz">
+<img src="../../PICS/I-ftp-copy.gif"></a>
+
+</BODY>
+<hr>
+<ADDRESS><A HREF="mailto:www-admin@icot.or.jp">www-admin@icot.or.jp</A></ADDRESS>

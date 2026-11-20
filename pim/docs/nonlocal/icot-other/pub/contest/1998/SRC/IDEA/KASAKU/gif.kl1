@@ -1,0 +1,88 @@
+%*********************************************************************%
+%  pnm converter (gif module)                                         %
+%  Copyright (C) 1998 FUKUTA, Shigeki  <fukuta@logos.t.u-tokyo.ac.jp> %
+%                                                       Dec  7, 1998  %
+%*********************************************************************%
+
+:- module gif.
+
+read(Input0, Width, Height, Bmp, Palette) :-
+	screen_desceptor(Input0, Width, Height, 
+			CMSize, CMBit, _CReso, _BG, _Aspect, Input1),
+	generic:new(vector, ColorMap0, CMSize),
+	colormap(Input1, 0, CMSize, ColorMap0, Palette, Input2),
+	pnm:skip_char(Input2, #",", Input3),
+	read_local(Input3, CMBit, Bmp).
+
+%  screen_desceptor/8  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  -Input	stream
+%  -Width	int
+%  -Hight	int
+%  -CMSize	int
+%  -CReso	int
+%  -BG		int
+%  -Aspect	int
+%  +Input2	stream
+screen_desceptor(Input, Wid, Hght, CMSize, CMBit, CReso, BG, Aspc, Input2) :-
+	Input = [getc(W1), getc(W2), getc(H1), getc(H2),
+			getc(CM), getc(BG), getc(Aspc) | Input2],
+	Wid := W1 + (W2 << 8),
+	Hght := H1 + (H2 << 8),
+	CMBit := (CM /\ 16'7) + 1,
+	CMSize := 1 << CMBit,
+	CReso := ((CM /\ 16'70) >> 4) + 1.
+
+%  colormap/6  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  -Input	stream
+%  +Offset	int
+%  +CMapSize	int
+%  +ColorMap0	vector
+%  -ColorMap	vector
+%  +InputEnd	stream
+colormap(Input, Offset, CMapSize, ColorMap0, ColorMap, InputEnd) :-
+	Offset < CMapSize , Offset1 := Offset + 1 |
+	Input = [getc(Red), getc(Green), getc(Blue) | Input2],
+	set_vector_element(ColorMap0, Offset, _Element, color(Red, Green, Blue), ColorMap1),
+	colormap(Input2, Offset1, CMapSize, ColorMap1, ColorMap, InputEnd).
+
+colormap(Input, Offset, CMapSize, ColorMap0, ColorMap, InputEnd) :-
+	Offset >= CMapSize |
+	ColorMap0 = ColorMap,
+	Input = InputEnd.
+
+
+
+read_local(Input0, CMBit, Bmp) :-
+	Input0 = [getc(_Image_Left_low), getc(_Image_Left_Up),
+		getc(_Image_Right_low), getc(_Image_Right_Up),
+		getc(_Image_Width_low), getc(_Image_Width_Up),
+		getc(_Image_Height_low), getc(_Image_Height_Up)
+		| Input1],
+	read_lzw(Input1, CMBit, Bmp).
+
+
+
+
+
+
+%  read_lzw/3  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  -Input0	stream
+%  +CMBit	int
+%  -Bmp		list
+read_lzw(Input0, CMBit, Bmp) :-
+	BitSize := CMBit + 1 |
+	bit:bit_server(Input0, -1, 0, Stream),
+	read_lzw2(Stream, BitSize, Bmp).
+
+read_lzw2(Stream, _BitSize, Bmp) :- Bmp = [], Stream = [].
+%	Stream = [read(BitSize, Dat0), read(BitSize, Dat1), read(BitSize, Dat2), read(BitSize, Dat3), read(BitSize, Dat4), read(BitSize, Dat5), read(BitSize, Dat6), read(BitSize, Dat7) ],
+%	Bmp = [Dat0, Dat1, Dat2, Dat3, Dat4, Dat5, Dat6, Dat7].
+
+
+read_file(Input, N, List) :-
+	N > 0 , N1 := N - 1 |
+	Input = [getc(S) | Input2],
+	List = [S |ListN],
+	read_file(Input2, N1, ListN).
+read_file(_Input, N, List) :-
+	N =< 0 | List = [].

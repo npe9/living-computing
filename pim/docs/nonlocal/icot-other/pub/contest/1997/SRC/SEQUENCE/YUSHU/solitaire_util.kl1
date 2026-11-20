@@ -1,0 +1,135 @@
+% -- solitaire
+%
+% solitaire_util.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+
+
+:- module solitaire_util.
+
+encode(Cards, Cards_String) :- solitaire_eval:encode(Cards, Cards_String). 
+
+
+score(Cards_String, Score) :- new_vector(Init_Vector, 13),
+	solitaire_eval:score(1,12,Cards_String,0,Init_Vector, Info),
+	string_element(Info,0, Score).
+
+highscore_table(Old,[], Result) :- Result=Old.
+highscore_table(Old,[One|Rest], Result) :- 
+	compare(Old,One, New), highscore_table(New,Rest, Result).
+
+highscore_table([One|Rest], Highscore_Table) :-
+	highscore_table(One,Rest, Highscore_Table).
+
+% Score が高い方を返す
+%
+compare(Table_A,Table_B, Result) :-
+	Table_A=[Score_A|_], Table_B=[Score_B|_], Score_A > Score_B |
+	Result=Table_A.
+
+otherwise.
+compare(Table_A,Table_B, Result) :- Result=Table_B.
+
+
+% sort
+%
+sort_A(Cards, Sorted_Cards) :- 
+	encode_vector(Cards, Vector), decode_vector(Vector, Sorted_Cards).
+
+sort_B(Cards, Sorted_Cards) :- 
+	encode_vector2(Cards, Vector), decode_vector(Vector, Sorted_Cards).
+
+encode_vector([])-Vector. 
+
+encode_vector([card(Rank,Symbol)|Rest])-Vector :-
+	rank_code(Rank, N0), symbol_code(Symbol, N1), Index:=N0+N1-1,
+	solitaire_util:my_set_vector_element(Index, _, card(Rank,Symbol))-Vector,
+	encode_vector(Rest)-Vector. 
+
+encode_vector(Cards, Vector) :-
+	Dummy={
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+	},
+	encode_vector(Cards)+Dummy+Vector.
+
+encode_vector2([])-Vector. 
+
+encode_vector2([card(Rank,Symbol)|Rest])-Vector :- Rank  = ace |
+	rank_code(Rank, N0), symbol_code(Symbol, N1), Index:=13+N1-1,
+	solitaire_util:my_set_vector_element(Index, _, card(Rank,Symbol))-Vector,
+	encode_vector2(Rest)-Vector. 
+
+encode_vector2([card(Rank,Symbol)|Rest])-Vector :- Rank \= ace |
+	rank_code(Rank, N0), symbol_code(Symbol, N1), Index:=N0+N1-1-1,
+	solitaire_util:my_set_vector_element(Index, _, card(Rank,Symbol))-Vector,
+	encode_vector2(Rest)-Vector. 
+
+encode_vector2(Cards, Vector) :-
+	Dummy={
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+		-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+	},
+	encode_vector2(Cards)+Dummy+Vector.
+
+
+rank_code(  ace, Out) :- Out= 1. 
+rank_code( jack, Out) :- Out=11.
+rank_code(queen, Out) :- Out=12. 
+rank_code( king, Out) :- Out=13.
+otherwise.
+rank_code(   In, Out) :- Out=In.
+
+symbol_code(  spades, Out) :- Out= 0.
+symbol_code(  hearts, Out) :- Out=13.
+symbol_code(diamonds, Out) :- Out=26.
+symbol_code(   clubs, Out) :- Out=39.
+
+
+% End
+decode_vector(Vector,Index, Cards) :- vector(Vector, Size), Index >= Size |
+	Cards=[].
+
+decode_vector(Vector,Index, Cards) :- vector(Vector, Size), Index < Size,
+	vector_element(Vector,Index, Element), Element =  -1 | 
+	decode_vector(Vector,~(Index+1), Cards). % 無いので飛ばす
+
+decode_vector(Vector,Index, Cards) :- vector(Vector, Size), Index < Size, 
+	vector_element(Vector,Index, Element), Element \= -1 | 
+	Cards=[Element|Tail], decode_vector(Vector,~(Index+1), Tail). 
+
+% Start
+decode_vector(Vector, Cards) :- decode_vector(Vector,0, Cards).
+
+
+% my_set_vector_element(Index,Old,New)-Vector （引数対に対応）
+% 
+my_set_vector_element(Index,Old,New,Vector_in,Vector_out) 
+	:- set_vector_element(Vector_in,Index,Old,New,Vector_out).
+
+highscore(Old,[One|Rest],Another)-Results :-
+	Old=[Old_Score|_], One=[New_Score|_], New_Score >  Old_Score |
+	write(One)-Results, highscore(One,Rest,Another)-Results.
+
+
+check_write(Old,One, New)-Results :-
+	Old=[Old_Score|_], One=[New_Score|_], New_Score >  Old_Score |
+	New=One, write(One)-Results.
+
+check_write(Old,One, New)-Results :-
+	Old=[Old_Score|_], One=[New_Score|_], New_Score =< Old_Score |
+	New=Old.
+
+% 無条件に書き出す（テスト用）
+write(Table)-Results :- Table=[_|Cards_String] |
+	solitaire_translator:decode(Cards_String, Cards), Results<=Cards.
+
+
+
+
+

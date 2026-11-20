@@ -1,0 +1,93 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<HEAD>
+<TITLE> アルゴリズム</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" アルゴリズム">
+<meta name="keywords" value="mgtp-lec">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html140 HREF="node10.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html138 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html132 HREF="node8.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../../../PICS/previous_motif.gif"></A>   <A NAME=tex2html142 HREF="node1.html"><IMG ALIGN=BOTTOM ALT="contents" SRC="../../../../../../PICS/contents_motif.gif"></A>      <BR>
+<B> Next:</B> <A NAME=tex2html141 HREF="node10.html"> QG5.5に対するCMGTPのルール</A>
+<B>Up:</B> <A NAME=tex2html139 HREF="node7.html"> 制約MGTP</A>
+<B> Previous:</B> <A NAME=tex2html133 HREF="node8.html"> 制約MGTPの特徴</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00232000000000000000> アルゴリズム</A></H2>
+<P>
+<P><A NAME=92>&#160;</A><A NAME=CMGTPalgorithm>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img23.gif">
+<BR><STRONG>Figure:</STRONG> CMGTPにおけるモデル生成プロセス<BR>
+<P>
+<P>
+図<A HREF="node9.html#CMGTPalgorithm">1.4</A>にCMGTPのモデル生成プロセスを示す。
+ここで、<b>D</b> はモデル拡張候補と呼ばれ、
+<b>M</b> はモデル候補と呼ばれる。
+これらは、OTTERにおける ``to be given list''と ``has been given list'' 
+にそれぞれ対応するものである。
+<P>
+CMGTPのモデル生成プロセスは、MGTPのモデル生成プロセスに2つの
+<b>Ref</b> プロセスと2つの <b>Simpl</b> プロセスを新たに付け加えたものである。
+MGTPのアルゴリズムについては [<A HREF="#FH91"></A>][<A HREF="#FHKF92"></A>] などを参照されたい。
+<P>
+CMGTPとMGTPの相違は、単位反駁(unit refutation)プロセスと
+単位簡約化(unit simplification)プロセスにある。
+単位反駁メカニズムにより、
+もし、<b>P</b> と <IMG  ALIGN=BOTTOM ALT="" SRC="img24.gif"> が共に <b>M</b> にあれば、
+以下のように <b>false</b> が導出される。
+<P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img25.gif"><P>
+<P>
+また、もし <b>M</b> の中に <IMG  ALIGN=MIDDLE ALT="" SRC="img26.gif"> があり、また
+<b>D</b> に <IMG  ALIGN=MIDDLE ALT="" SRC="img27.gif"> を含む選言が存在するならば、
+以下に示すような単位簡約化メカニズムによって
+<IMG  ALIGN=MIDDLE ALT="" SRC="img28.gif"> はその選言から削除される。
+<P>
+
+<P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img29.gif"><P>
+<P><IMG  ALIGN=BOTTOM ALT="" SRC="img30.gif"><P>
+
+<P>
+単位簡約化の結果として <b>nil</b> (長さ 0 の選言) が
+生成されるときは、<b>false</b> が導出される。
+<P>
+図<A HREF="node9.html#CMGTPalgorithm">1.4</A>における
+<b>Ref</b>/2 と <b>Simpl</b>/2 は
+それぞれ上で述べたような単位反駁と単位簡約化を
+実行する関数である。
+すなわち <IMG  ALIGN=MIDDLE ALT="" SRC="img31.gif"> は、アトムの集合 <IMG  ALIGN=MIDDLE ALT="" SRC="img32.gif"> に対して
+あるアトム <IMG  ALIGN=MIDDLE ALT="" SRC="img33.gif"> があって、
+このとき <IMG  ALIGN=MIDDLE ALT="" SRC="img34.gif"> もしくは <IMG  ALIGN=MIDDLE ALT="" SRC="img35.gif"> が成り立つ時 <b>false</b> を
+返す。
+また、<IMG  ALIGN=MIDDLE ALT="" SRC="img36.gif"> は単位節の集合 <b>U</b> に含まれるアトムによって 
+選言の集合 <b>D</b> を simplify した結果を返すが、
+もしこの結果として <b>nil</b> が導出された時は、
+<b>Simpl</b> の結果として <b>false</b> を返す。
+<P>
+<b>Ref</b> や <b>Simpl</b> が <b>false</b> を返した時には、現在探索中の
+枝は <b>unsat</b> として終了 (terminate) する。
+容易にわかるように、アトムは長さ 1 の選言と見ることができるから、
+<b>Ref</b> は <b>Simpl</b> の特殊な形ともいえる。
+<P>
+オリジナルのMGTPに追加された単位反駁と単位簡約化のプロセスは
+以下の4つである。
+<P>
+<UL><LI> <IMG  ALIGN=MIDDLE ALT="" SRC="img37.gif">
+<LI> <IMG  ALIGN=MIDDLE ALT="" SRC="img38.gif">
+<LI> <IMG  ALIGN=MIDDLE ALT="" SRC="img39.gif">
+<LI> <IMG  ALIGN=MIDDLE ALT="" SRC="img40.gif"></UL>
+<P>
+CMGTPがとる単位節優先戦略とこれらの関数により、
+任意のアトム <IMG  ALIGN=MIDDLE ALT="" SRC="img41.gif"> に対して、
+<b>P</b> と <IMG  ALIGN=BOTTOM ALT="" SRC="img42.gif"> が現在の <b>M</b> の中に共存しないこと、
+また、現在の <b>D</b> に含まれるすべての選言はすでに
+<b>M</b> 中のすべての単位節によって simplify されていることが保証される。
+<P>
+
+<BR> <HR>
+<P><ADDRESS>
+<I>Yasuyuki Shirai <BR>
+1997年10月06日(月) 22時34分43秒 JST</I>
+</ADDRESS>
+</BODY>

@@ -1,0 +1,70 @@
+% -- solitaire
+%
+% solitaire_consumer.kl1
+% 97/12/18
+% (c) 1997 All rights reserved .
+% Hideaki KURITA ( kurita@sp.cs.tokyo-ct.ac.jp )
+
+
+:- module solitaire_consumer.
+
+consumer(
+	[T0|TL0],[T1|TL1],[T2|TL2],[T3|TL3],[T4|TL4],
+	[T5|TL5],[T6|TL6],[T7|TL7],[T8|TL8],[T9|TL9],Info)-Results :-
+	solitaire_util:highscore_table(
+		[T0,T1,T2,T3,T4,T5,T6,T7,T8,T9], Highscore_Table),
+	consumer(Highscore_Table,
+		TL0,TL1,TL2,TL3,TL4,TL5,TL6,TL7,TL8,TL9)+Info+[]-Results.
+
+consumer(Old,[One|Rest],T1,T2,T3,T4,T5,T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,Rest,T1,T2,T3,T4,T5,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,[One|Rest],T2,T3,T4,T5,T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,Rest,T2,T3,T4,T5,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,[One|Rest],T3,T4,T5,T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,Rest,T3,T4,T5,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,[One|Rest],T4,T5,T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,Rest,T4,T5,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,[One|Rest],T5,T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,Rest,T5,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,T4,[One|Rest],T6,T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,T4,Rest,T6,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,T4,T5,[One|Rest],T7,T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,T4,T5,Rest,T7,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,T4,T5,T6,[One|Rest],T8,T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,T4,T5,T6,Rest,T8,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,T4,T5,T6,T7,[One|Rest],T9)-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,T4,T5,T6,T7,Rest,T9)-Info-Results.
+
+consumer(Old,T0,T1,T2,T3,T4,T5,T6,T7,T8,[One|Rest])-Info-Results :-
+	check_write(Old,One, New)-Info-Results,
+	consumer(New,T0,T1,T2,T3,T4,T5,T6,T7,T8,Rest)-Info-Results.
+
+% 今までと比べて大きければ出力
+check_write(Old,One, New)-Info-Results :-
+	Old=[Old_Score|_], One=[New_Score|_], New_Score >  Old_Score | New=One,
+	Info<=One, solitaire_util:write(One)-Results.
+
+check_write(Old,One, New)-Info-Results :-
+	Old=[Old_Score|_], One=[New_Score|_], New_Score =< Old_Score | New=Old.
+
+
+
+
+

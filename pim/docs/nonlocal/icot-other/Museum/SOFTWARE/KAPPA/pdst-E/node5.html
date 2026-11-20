@@ -1,0 +1,57 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Ideas of data models</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Ideas of data models">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html116 HREF="node6.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html114 HREF="node3.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html110 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html117 HREF="node6.html"> The relational model </A>
+<B>Up:</B> <A NAME=tex2html115 HREF="node3.html"> Basic knowledge of </A>
+<B> Previous:</B> <A NAME=tex2html111 HREF="node4.html"> What is database </A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00021200000000000000> Ideas of data models</A></H3>
+<P>
+Let's move on to data models. These are abstructed models of the real 
+world from the view point of database. A data model usually comprises 
+the following three elements.
+<P>
+<DL ><DT>Data structure
+<DD> defines basic elements and their relationship 
+	of the real world information. The invariant parts of this
+	database structure are called schema and the variable parts 
+	of it are called database states(sets of realized values).
+ <DT>Data manipulations
+<DD> are definitions of possible manipulations 
+	of data structures. There are two types of data manipulations,
+	one of which are definition operations on schema and the other
+	are manipulative operations on dataabase states.
+ <DT>Integrity constraints
+<DD> are conditions which databases should 
+	keep. There are two kinds of integrity constraints. The first 
+	kind is about values of attributes, and the second is about 
+	relationship among attributes.
+<P>
+ </DL>
+<P>
+These elements are shown in figure <A HREF="node5.html#fmodel">1</A>.
+<P>
+<P><A NAME=39>&#160;</A><A NAME=fmodel>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img1.gif">
+<BR><STRONG>Figure 1:</STRONG> data model<BR>
+<P>
+<P>
+Using Kappa, integrity constraints can be written in schema.
+The schema can be thought as a logical or conceptual model of 
+database. Because Kappa places physical data automatically, 
+users except database administrators do not have to be concerned 
+with the physical or internal model. The primitive commands to
+manipulate data are the interfaces to KLIC programs.
+<P>
+<BR> <HR>
+<P>
+</BODY>

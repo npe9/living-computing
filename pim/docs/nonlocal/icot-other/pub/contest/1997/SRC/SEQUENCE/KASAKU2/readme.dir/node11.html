@@ -1,0 +1,41 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN">
+<!--Converted with LaTeX2HTML 96.1 (Feb 5, 1996) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds -->
+<HTML>
+<HEAD>
+<TITLE>考察・感想</TITLE>
+<META NAME="description" CONTENT="考察・感想">
+<META NAME="keywords" CONTENT="main">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+</HEAD>
+<BODY LANG="EN">
+ <A NAME="tex2html129" HREF="node12.html"><IMG WIDTH=37 HEIGHT=24 ALIGN=BOTTOM ALT="next" SRC="../../../../../../../PICS/next_motif.gif"></A> <A NAME="tex2html127" HREF="main.html"><IMG WIDTH=26 HEIGHT=24 ALIGN=BOTTOM ALT="up" SRC="../../../../../../../PICS/up_motif.gif"></A> <A NAME="tex2html121" HREF="node10.html"><IMG WIDTH=63 HEIGHT=24 ALIGN=BOTTOM ALT="previous" SRC="../../../../../../../PICS/previous_motif.gif"></A>   <BR>
+<B> Next:</B> <A NAME="tex2html130" HREF="node12.html">  About this document </A>
+<B>Up:</B> <A NAME="tex2html128" HREF="main.html">No Title</A>
+<B> Previous:</B> <A NAME="tex2html122" HREF="node10.html">モジュール</A>
+<BR> <P>
+<H1><A NAME="SECTION00040000000000000000">考察・感想</A></H1>
+<P>
+ 予想よりはやいプログラムになった。コーディングの上ではまだ効率の良くな
+ い部分が残っているが、アルゴリズムの設計の段階で計算コストを下げている
+ ので、全体としては十分高速になったかと思う。
+<P>
+ 次に問題点であるが、このプログラムは 4 of a kind を逃す可能性がある。こ
+ の欠点を克服するには、4 of a kind を優先的に配置する流れを追加して、良
+ い結果を出すほうを選ぶのが効果的だろう。
+また、可能性は低いが、同カインドで９枚または１３枚の連番カードがあった場
+合ストレートフラッシュを見逃してしまう。
+ストレート検索時のAの処理も完全なものではないので
+ストレートを見逃す場合がある(これは単に手抜きである)。
+<P>
+わりと自由にKLICでプログラムが書けるようになったと思う。
+ただ、文法などを全く知らないところからスタートしたこともあり、
+今から見ると随所に効率の悪い書き方をしているところがある。
+得点計算部以外でもベクタ等を使うべき所があるし、
+マージャも組み込みのものを使ったほうがよい。
+とはいえ、自分としては予定どうりの、わりと満足のいくプログラムである。
+高速性に関して言えば(少なくとも開発に使った環境では)予想以上であった。
+<P>
+<BR> <HR>
+</BODY>
+</HTML>

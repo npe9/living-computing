@@ -1,0 +1,39 @@
+﻿<html><HEAD>
+<TITLE>2.2.1 局面(盤面)</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html83 HREF="node6.html"><IMG ALIGN=BOTTOM
+ALT="next" SRC="next_motif.gif"></A>
+<A NAME=tex2html81 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>
+<A NAME=tex2html75 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html84 HREF="node6.html">2.2.2 状態</A>
+<B>Up:</B> <A NAME=tex2html82 HREF="node4.html">2.2 内部表現</A>
+<B> Previous:</B> <A NAME=tex2html76 HREF="node4.html">2.2 内部表現</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022100000000000000>2.2.1 局面(盤面)</A></H3>
+<A NAME=subsubsecboard>&#160;</A>
+<P>
+局面を表すのには、以下の3つのファンクタ構造を用いる。
+<DL ><DT>ox/9
+<DD>
+アトム <tt> 'o'</tt>,<tt> 'x'</tt>,<tt> ' '</tt> を引数にもつ。
+これは便宜的に用意したもので、内部では特に使わない。
+<DT>b/9
+<DD>
+ox/9 の各コマを数値で表したもので、<tt> 'o'</tt> → 1,
+<tt> 'x'</tt>→ -1, <tt> ' '</tt>→ 0
+で局面を表す。
+<DT>d/10
+<DD>
+b/9 に対称変換を施し、同時にプレーヤから見た局面に変換したものである。
+d/10 では第1引数で対称変換情報を表し、残りの9引数で局面を表すが、
+その際自分のコマは 2, 相手のコマは 1 として表されている。
+<P>
+ </DL><BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>
+ 

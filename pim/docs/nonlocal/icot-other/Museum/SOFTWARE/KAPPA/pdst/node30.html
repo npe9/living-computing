@@ -1,0 +1,56 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> プログラミング例：名簿管理システム</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" プログラミング例：名簿管理システム">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html385 HREF="node31.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html383 HREF="pdst.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html377 HREF="node29.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html386 HREF="node31.html"> 名簿管理システムの外部仕様</A>
+<B>Up:</B> <A NAME=tex2html384 HREF="pdst.html"> Kappaプログラミング説明書 
+ 第1.0版</A>
+<B> Previous:</B> <A NAME=tex2html378 HREF="node29.html"> その他</A>
+<BR> <HR> <P>
+<H1><A NAME=SECTION00040000000000000000> プログラミング例：名簿管理システム</A></H1>
+<P>
+  Kappaは汎用のシステムなので、DBとしては良く使われる名簿管理の
+ような応用にも用いることができる。ここでは、実稼働している
+名簿管理システムirprを例として、Kappaプログラミングの実際について紹介する。
+<P>
+<BR> <HR>
+<UL> 
+<LI> <A NAME=tex2html387 HREF="node31.html#SECTION00041000000000000000"> 名簿管理システムの外部仕様</A>
+<UL> 
+<LI> <A NAME=tex2html388 HREF="node32.html#SECTION00041100000000000000"> データベースの操作</A>
+</UL> 
+<LI> <A NAME=tex2html389 HREF="node33.html#SECTION00042000000000000000"> 名簿管理システムのテーブル</A>
+<LI> <A NAME=tex2html390 HREF="node34.html#SECTION00043000000000000000"> システム構成</A>
+<UL> 
+<LI> <A NAME=tex2html391 HREF="node35.html#SECTION00043100000000000000"> サーバ側のモジュール</A>
+<LI> <A NAME=tex2html392 HREF="node36.html#SECTION00043200000000000000"> クライアント側のモジュール</A>
+</UL> 
+<LI> <A NAME=tex2html393 HREF="node37.html#SECTION00044000000000000000"> 処理の流れ</A>
+<LI> <A NAME=tex2html394 HREF="node38.html#SECTION00045000000000000000"> モジュール irpr_service(irpr_service.kl1)</A>
+<UL> 
+<LI> <A NAME=tex2html395 HREF="node39.html#SECTION00045100000000000000"> 名簿管理システムサーバの生成</A>
+<LI> <A NAME=tex2html396 HREF="node40.html#SECTION00045200000000000000"> 名簿管理システムサーバへのメッセージ送信</A>
+</UL> 
+<LI> <A NAME=tex2html397 HREF="node41.html#SECTION00046000000000000000"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<UL> 
+<LI> <A NAME=tex2html398 HREF="node42.html#SECTION00046100000000000000"> 名簿管理システムのサーバ</A>
+<LI> <A NAME=tex2html399 HREF="node43.html#SECTION00046200000000000000"> メッセージの実行</A>
+<LI> <A NAME=tex2html400 HREF="node44.html#SECTION00046300000000000000"> レコードの検索</A>
+<LI> <A NAME=tex2html401 HREF="node45.html#SECTION00046400000000000000"> レコードの読み</A>
+<LI> <A NAME=tex2html402 HREF="node46.html#SECTION00046500000000000000"> レコードの追加</A>
+<LI> <A NAME=tex2html403 HREF="node47.html#SECTION00046600000000000000"> レコードの修正と削除</A>
+</UL> 
+<LI> <A NAME=tex2html404 HREF="node48.html#SECTION00047000000000000000"> モジュール main(irpr_client.kl1)</A>
+</UL>
+<BR> <HR>
+<P>
+</BODY>

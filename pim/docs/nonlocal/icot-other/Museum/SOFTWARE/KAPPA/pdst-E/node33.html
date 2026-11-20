@@ -1,0 +1,143 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Tables of irpr</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Tables of irpr">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html432 HREF="node34.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html430 HREF="node30.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html424 HREF="node32.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html433 HREF="node34.html"> System configuration</A>
+<B>Up:</B> <A NAME=tex2html431 HREF="node30.html"> Programing example:a personel </A>
+<B> Previous:</B> <A NAME=tex2html425 HREF="node32.html"> Manipulations of database</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00042000000000000000> Tables of irpr</A></H2>
+<P>
+There are following three tables in irpr system.
+<P>
+<DL ><DT>meibo
+<DD> keeps the newest data of the membership list.
+ <DT>meibo_history
+<DD> keeps updated records of the membership list.
+ <DT>meibo_id
+<DD> keeps the maximum id given to the latest member.
+<P>
+ </DL>
+<P>
+The procedures related to each command parameter &quot;Mode&quot; are described .
+<P>
+<DL ><DT>anm
+<DD> add_new_member
+  <UL><LI> begins a job.
+   <LI> locks the three tables in exclusive mode and begins a
+	transaction.
+   <LI> gets the newest id from meibo_id table.
+    <UL><LI> reads the record.
+     <LI> If the record exists, the newest id(NewId) is the maximum
+	id plus 1. If not, &quot;NewId&quot; is 1.
+     <LI> writes back &quot;NewId&quot; as the new maximum id to meibo_id table.
+    </UL>
+   <LI> adds a member to meibo table.
+    <UL><LI> adds &quot;NewId&quot; and 1 as the version to the member information.
+     <LI> makes a record from the member information.
+     <LI> appends the record to meibo table.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL>
+<P>
+ <DT>mm
+<DD> modify_member
+  <UL><LI> begins a job.
+   <LI> locks the three tables in exclusive mode and begins a
+	transaction.
+   <LI> gets the id(ID) and the version(Version) from the member 
+	information.
+   <LI> gets the set(Set) as a result of index searching with a 
+	search condition(id=ID).
+   <LI> increments &quot;Version&quot; by 1 and updates the version of the
+	member information.
+   <LI> makes a record(NewRec) from the member information.
+   <LI> reads the record(Rec) specified by &quot;Set&quot; from meibo table.
+   <LI> modifies the record.
+    <UL><LI> checks if the version of &quot;Rec&quot; and &quot;Version&quot; in the member 
+	information matches.
+     <LI> writes &quot;NewRec&quot; on the position of &quot;Rec&quot; in meibo table.
+    </UL>
+   <LI> leaves a record in meibo_history table.
+    <UL><LI> appends &quot;Rec&quot; to meibo_history table.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL>
+<P>
+ <DT>dm
+<DD> delete_member
+  <UL><LI> begins a job.
+   <LI> locks the three tables in exclusive mode and begins a
+	transaction.
+   <LI> gets the id(ID) and the version(Version) from the member 
+	information.
+   <LI> gets the set(Set) as a result of index searching with a 
+	search condition(id=ID).
+   <LI> increments &quot;Version&quot; by 1 and updates the version of the
+	member information.
+   <LI> makes a record(NewRec) from the member information.
+   <LI> reads the record(Rec) specified by &quot;Set&quot; from meibo table.
+   <LI> deletes the record.
+    <UL><LI> checks if the version of &quot;Rec&quot; and &quot;Version&quot; in the member 
+	information matches.
+     <LI> delete a record at the position of &quot;Rec&quot; in meibo table.
+    </UL>
+   <LI> leaves a record in meibo_history table.
+    <UL><LI> appends &quot;Rec&quot; to meibo_history table.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL>
+<P>
+ <DT>scd
+<DD> search_current_data
+  <UL><LI> begins a job.
+   <LI> read-locks meibo and meibo_history tables and begins a
+	transaction.
+   <LI> searches meibo table.
+    <UL><LI> selects a set which matches the search condition.
+     <LI> reads the records specified by the set on demand of output.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL>
+<P>
+ <DT>shd
+<DD> search_history_data
+  <UL><LI> begins a job.
+   <LI> read-locks meibo and meibo_history tables and begins a
+	transaction.
+   <LI> searches meibo_history table.
+    <UL><LI> The procedures of searching is the same as scd.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL>
+<P>
+ <DT>sad
+<DD> search_all_data
+  <UL><LI> begins a job.
+   <LI> read-locks meibo and meibo_history tables and begins a
+	transaction.
+   <LI> searches both meibo and meibo_history tables.
+    <UL><LI> The procedures of searching is the same as scd.
+    </UL>
+   <LI> ends the transaction.
+   <LI> ends the job.
+  </UL> 
+ </DL>
+<P>
+<BR> <HR>
+<P>
+</BODY>

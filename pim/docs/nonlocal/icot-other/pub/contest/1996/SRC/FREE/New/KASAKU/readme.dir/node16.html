@@ -1,0 +1,58 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">B.2 encode モジュール</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html197 HREF="node17.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html195 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html189 HREF="node15.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html198 HREF="node17.html">B.3 decide モジュール</A>
+<strong>Up:</strong> <A NAME=tex2html196 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<strong> Previous:</strong> <A NAME=tex2html190 HREF="node15.html">B.1 main モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00052000000000000000>B.2 encode モジュール</A></H2>
+<A NAME="subsecpreds_of_encode">&#160;</A>
+<P>
+<DL><DT>encode <em> +Board, -NBoard, -StateNum, +OX</em>
+<DD>
+  局面 <em> Board</em> から、それに対応する状態番号 <em> StateNum</em> を
+  生成する。この <em> StateNum</em> は Q値を参照する際のインデックスとなる。
+  また、数値で表された局面 <em> Board</em> を、正数で表された局面に
+  変換したものを <em> NBoard</em> と同一化する。
+  数値で表された局面 <code> b/9</code> が両プレイヤに共通な形であるのに対し、
+  正数で表された局面 <code> d/10</code> は対称変換情報を含む上、
+  <em> OX</em> がわから見た主観的状態を表している点で異なっている。
+  <code> d/10</code> では持ち手 <em> OX</em> の駒が置かれているマス目は 2 で、
+  相手の駒が置かれているマス目は 1 で表す。
+  <P><IMG  ALIGN=BOTTOM ALT="" SRC="img19.gif"><P>
+<DT>minstate <em> +States, -StateVec</em>
+<DD>
+  生成された状態番号候補(対象形含め8通り)のリスト <em> States</em> から、
+  最小の状態番号を選択し、それを状態番号として採用する．
+<DT>decode <em> +State, +Sym, -Board, +OX</em>
+<DD>
+  状態番号 <em> State</em> と対称変換情報 <em> Sym</em> により、もとの局面
+  <em> Board</em> を再現する。
+<DT>d2b <em> +NBoard, -Board, +OX</em>
+<DD>
+  対称変換の施され正数化された局面表現 <em> NBoard</em> から、もとの局面情報
+  <em> Board</em> に変換する。
+<DT>sym <em> +Board, +Sym, -NewBoard</em>
+<DD>
+  局面 <em> Board</em> を、対称変換情報 <em> Sym</em> に基づき対称変換したものを、
+  <em> NewBoard</em> に同一化する。
+<DT>revsym <em> +Sym, -Rev</em>
+<DD>
+  対称変換情報 <em> Sym</em> の逆変換の対称変換情報で <em> Rev</em> を同一化する。
+</DL>
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

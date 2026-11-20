@@ -1,0 +1,30 @@
+% #O converted from klicon life game data
+% converted from xlife pattern library
+% (x,y) is given.
+life(
+  1500,
+  [
+    p(-8,-2),
+    p(1,-2),
+    p(6,-2),
+    p(-9,-1),
+    p(-3,-1),
+    p(0,-1),
+    p(5,-1),
+    p(-9,0),
+    p(-2,0),
+    p(-1,0),
+    p(0,0),
+    p(5,0),
+    p(-9,1),
+    p(-6,1),
+    p(5,1),
+    p(8,1),
+    p(-9,2),
+    p(-8,2),
+    p(-7,2),
+    p(5,2),
+    p(6,2),
+    p(7,2)
+  ]
+).

@@ -1,0 +1,55 @@
+%%
+%% Flash
+%%
+
+:- module solitaire_flash.
+
+flash(ALL, IA,IB,IC,ID, OUT):- true |
+	rank_server(ALL, R_REQ),
+	solitaire_misc:merge(QA,QB,QC,QD,QR, R_REQ),
+	chooser(IA, FA,RA, QA),
+	chooser(IB, FB,RB, QB),
+	chooser(IC, FC,RC, QC),
+	chooser(ID, FD,RD, QD),
+	solitaire_misc:connect_list(RA,RB,RC,RD, REST),
+	chooser(REST, FR,[], QR),
+	solitaire_misc:connect_list(FA,FB,FC,FD, FLASH),
+	solitaire_misc:connect_list(FLASH,FR, OUT).
+
+%
+% カード列から[0|5|10]枚のカードを選ぶ
+%
+chooser(IN, OUT,REST, REQ):- true |
+	chooser_setup_key(IN, KIN, REQ),
+	solitaire_sort:sort_r_key(KIN, S_IN),	% SIN : key無し
+	solitaire_misc:members(IN, M),
+	N := (M/5) *5,
+	solitaire_misc:list_topn(N, S_IN, OUT,REST).
+
+chooser_setup_key([], K, REQ):- true | K = [], REQ = [].
+chooser_setup_key([I|R], K, REQ):- true |
+	K = [item(X,I)|NK],
+	Rank := I/16,
+	REQ = [box(Rank,X)|NREQ],
+	chooser_setup_key(R, NK, NREQ).
+
+%
+% SERVER 各ランクのカード総数を提供する
+%
+rank_server(ALL, REQ):- true |
+	solitaire_count_r:count_ranks(ALL, RLIST),
+	rank_server_reply(RLIST, REQ).
+rank_server_reply(LST, []).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=2 | X=X2, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=3 | X=X3, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=4 | X=X4, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=5 | X=X5, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=6 | X=X6, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=7 | X=X7, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=8 | X=X8, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=9 | X=X9, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=10 | X=X10, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=11 | X=X11, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=12 | X=X12, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=13 | X=X13, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).
+rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA], [box(R,X)|NEXT]):- R=:=14 | X=XA, rank_server_reply([X2,X3,X4,X5,X6,X7,X8,X9,X10,X11,X12,X13,XA],NEXT).

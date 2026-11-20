@@ -1,0 +1,37 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> データ検索条件</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" データ検索条件">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html282 HREF="node21.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html280 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html276 HREF="node19.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html283 HREF="node21.html"> 値リスト</A>
+<B>Up:</B> <A NAME=tex2html281 HREF="node18.html"> 検索条件</A>
+<B> Previous:</B> <A NAME=tex2html277 HREF="node19.html"> インデックス検索条件</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00034200000000000000> データ検索条件</A></H3>
+<P>
+<b>&lt;</b>データ検索条件<b>&gt;</b>::=データ単一条件｜
+論理演算子（<b>&lt;</b>データ検索条件<b>&gt;</b>,<b>&lt;</b>データ検索条件<b>&gt;</b>）<BR> 
+｜<b> compress</b>(Attr_name,<b>&lt;</b>データ検索条件<b>&gt;</b>)
+<P>
+データ単一条件::=範囲検索｜Attr_name 比較演算子 Attr_value｜部分一致
+検索｜Attr_name 比較演算子 Attr_name｜<b> not_exist</b>(Attr_name)｜
+<b> is_null</b>(Attr_name)
+<P>
+Attr_name::=<i> ATOM</i>
+<P>
+部分一致検索::=Attr_name=<b> concat</b>(文字列,*)｜Attr_name=<b> concat</b>(*,文字列)｜
+Attr_name=<b> concat</b>(*,文字列,*)｜etc.
+<P>
+Attr_value::=<i> INTEGER</i>｜<i> STRING</i>
+<P>
+<BR> <HR>
+<P>
+</BODY>

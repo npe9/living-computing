@@ -1,0 +1,39 @@
+%%
+%% solitaire main
+%%
+
+% (C) 1997 K.Hiwada (hiwada@kuee.kyoto-u.ac.jp)
+
+:- module solitaire.
+
+poker(GC, OutS):-
+%% ENCODE Card data %%
+	solitaire_evaluate:encode_card_list(GC, EGC),
+%% STRAIGHT FLASH SEARCH %%
+	solitaire_strf:strf_checker(EGC, SFA,SFB,SFC,SFD, SFGA,SFGB,SFGC,SFGD),
+	solitaire_strf:layout_str(SFA,SFB,SFC,SFD, LSF),
+%% STRAIGHT (FLASH を壊さない範囲で) %% 
+	solitaire_fl_str:setup_a(SFGA,SFGB,SFGC,SFGD, STRS, FA,FB,FC,FD),
+	solitaire_strf:layout_str_k(STRS, S_STRS),
+%% FLASH AND THE OTHERS %%
+	solitaire_flash:flash(EGC, FA,FB,FC,FD, FLS),
+%% PAIR, CROSS ( TRY & CHECK ) %%
+	solitaire_misc:connect_members(LSF, CLSF),
+	solitaire_misc:connect_members(S_STRS, CSTRS),
+	solitaire_misc:connect_list(CLSF,FLS,CSTRS, HANDS),
+	outfilter(EOUTS, EFOUTS),
+	solitaire_misc:decode(EFOUTS, OutS),
+	solitaire_cross:cross_filter(PairedS, EOUTS),
+	solitaire_pairtry:try(HANDS, PairedS).
+
+
+% 得点が下がっていたら出力しない %
+outfilter(I, O):- outfilter(0, I, O).
+outfilter(SC, [], O):- true | O = [].
+outfilter(SC, [I|Tail], O):- true |
+	solitaire_misc:score_e_all(I, SCI),
+	( SC<SCI ->
+		O = [I|NO],
+		outfilter(SCI, Tail, NO);
+	  SC>=SCI ->
+		outfilter(SC, Tail, O) ).

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> レコードの検索</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" レコードの検索">
+<meta name="keywords" value="pdst">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html548 HREF="node45.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html546 HREF="node41.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html540 HREF="node43.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html549 HREF="node45.html"> レコードの読み</A>
+<B>Up:</B> <A NAME=tex2html547 HREF="node41.html"> モジュール irpr_kappa(irpr_kappa.kl1)</A>
+<B> Previous:</B> <A NAME=tex2html541 HREF="node43.html"> メッセージの実行</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00046300000000000000> レコードの検索</A></H3>
+<P>
+レコードの検索は、次のように行なう。
+<P>
+<UL><LI> 必要なら、検索条件をkappa形式に変換する。
+ <LI> 検索条件の内容に従い、検索系のコマンドを発行する。
+</UL>
+<P>
+次のsearch_data/6第1引数SearchTypeは、検索するテーブルの種別を決める
+アトム(current｜history｜all)である。
+<P>
+<PRE>search_data(SearchType, Search_cond, ComStatus, Status)-IFP :-
+    get_table_list(read, Tables),
+    IFP &lt;= begin_transaction(Tables,[],Status1),
+    search_data1(SearchType,Status1,Search_cond,VLS,ComStatus0)-IFP,
+    IFP &lt;= close(Status),
+    ComStatus0 = normal,
+    ComStatus = normal(VLS).
+</PRE>
+<P>
+ここで、VLS(ValueListStream)が、コマンドステータスComStatusの引数として
+返されていることに注意する。このVLSが、次節のレコードの読み込み制御に
+関係している。
+<P>
+次は、irpr_select:select/6で名簿管理システムで許された検索条件
+Search_condを、kappaの検索条件に変換して検索を行なっている部分である。
+<P>
+<PRE>search1(TableName,Search_cond,Set,Status)-IFP :-
+    irpr_select:select(TableName,Search_cond,Set1,Status1)-IFP,
+    search2(Status1,TableName,{Set1,_Set1},Set,Status)-IFP.
+</PRE>
+<P>
+<PRE>% 以下は、モジュールirpr_select(irpr_select.kl1)から抜粋。
+select(TableName,Cond,Set,Status)-IFP :-
+    conv_cond(Cond,normal,R,TableName,Status1)-IFP,  % 検索条件の変換
+    exec_select(R,Status1,TableName,Set,Status)-IFP. % レコードの選択
+
+exec_select(index(Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_index(TableName,Cond,Set,Status).
+exec_select(data(Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_data(TableName,Cond,Set,Status).
+exec_select(data_set(Set1,Cond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_data(TableName,{Set1,_},Cond,Set,Status).
+exec_select(mix(ICond,DCond),normal,TableName,Set,Status)-IFP :-
+    IFP &lt;= search_index(TableName,ICond,Set1,Status1),
+    exec_select(data_set(Set1,DCond),Status1,TableName,Set,Status)-IFP.
+otherwise.
+exec_select(_R,PStatus,_TableName,Set,Status)-IFP :-
+    Set = {},
+    Status = PStatus.
+</PRE>
+<P>
+<BR> <HR>
+<P>
+</BODY>

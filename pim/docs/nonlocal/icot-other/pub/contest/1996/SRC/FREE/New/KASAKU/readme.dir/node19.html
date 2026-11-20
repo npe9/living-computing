@@ -1,0 +1,54 @@
+﻿<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML i18n//EN">
+<html><HEAD>
+<TITLE LANG="ja">B.5 game モジュール</TITLE>
+<LINK REV=MADE HREF="mailto:tsumura@kuis.kyoto-u.ac.jp">
+<!--META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=ISO-2022-JP"-->
+</HEAD>
+<BODY LANG="ja">
+<P>
+ <BR> <HR><A NAME=tex2html227 HREF="node20.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html225 HREF="node14.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html219 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<strong> Next:</strong> <A NAME=tex2html228 HREF="node20.html">B.6 utils モジュール</A>
+<strong>Up:</strong> <A NAME=tex2html226 HREF="node14.html">B 主なモジュールと述語の説明</A>
+<strong> Previous:</strong> <A NAME=tex2html220 HREF="node18.html">B.4 learn モジュール</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00055000000000000000>B.5 game モジュール</A></H2>
+<A NAME="subsecpreds_of_game">&#160;</A>
+<P>
+<DL><DT>training <em> +Q, +Num</em>
+<DD>
+  <em> Q</em> を用いて、<em> Num</em> 試合だけ紅白戦を行う。
+<DT>game <em> +Q</em>
+<DD>
+  ユーザとの対戦を行う。この際に Q値の学習も行う。
+  プログラムはユーザに敗けると
+  トレーニングさせてもらえるようユーザに要求し、
+  それがユーザに受け入れられれば training/2 を用いて 200 回の
+  紅白戦を自主的に行う。
+<DT>endmsg <em> +Reward</em>
+<DD>
+  試合終了時に、報酬 <em> Reward</em> に応じたメッセージを表示する。
+<DT>do_prog
+  <em> +Q, +Turn, +Board, -NewBoard, -RedQ, -ActVec, -Action, -Blank</em>
+<DD>
+  プログラムが手番時に行う操作をまとめたもの。具体的には、
+  <UL><LI>盤面情報 b/9 を d/10 に変換し、
+  <LI><em> Q</em> を用いて手 <em> ActVec, Action</em> を選択し、
+  <LI>その手を実行する。
+  <LI>新たな盤面 d/10 を b/9 の形に戻し、<em> NewBoard</em> に同一化する。
+  </UL>
+  <em> Turn</em> は今、何手めであるかを表す整数。
+<DT>do_user <em> +Turn, +Board, -NewBoard</em>
+<DD>
+  ユーザからの入力（手）を受け付け、その通りに盤面 <em> Board</em> に
+  変更を加えたものを <em> NewBoard</em> に同一化する。
+</DL>
+<P>
+
+<BR> <HR>
+<img src="i18n-ok.gif" align=right alt="[i18n checked]">
+<P><ADDRESS>
+<em>Q-learning により学習を行う Tic-Tac-Toe プログラム</em>
+</ADDRESS>
+</BODY>
+</html>
+ 

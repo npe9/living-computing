@@ -1,0 +1,15 @@
+\contentsline {chapter}{\numberline {1}グラウンド版(MGTP/G)}{2}
+\contentsline {section}{\numberline {1.1}MGTP入力節の構文}{2}
+\contentsline {section}{\numberline {1.2}例題}{3}
+\contentsline {section}{\numberline {1.3}モデル生成法}{3}
+\contentsline {section}{\numberline {1.4}MGTPの基本構成}{4}
+\contentsline {section}{\numberline {1.5}KL1によるMG節集合の表現}{6}
+\contentsline {subsection}{\numberline {1.5.1}証明系本体}{7}
+\contentsline {section}{\numberline {1.6}連言照合における冗長性除去}{9}
+\contentsline {subsection}{\numberline {1.6.1}RAMS法}{9}
+\contentsline {subsection}{\numberline {1.6.2}MERC法}{9}
+\contentsline {subsection}{\numberline {1.6.3}RAMS法とMERC法の比較}{9}
+\contentsline {section}{\numberline {1.7}MGTP/G各版について}{11}
+\contentsline {subsection}{\numberline {1.7.1}Prolog 版}{11}
+\contentsline {subsection}{\numberline {1.7.2}KLIC版}{11}
+\contentsline {subsection}{\numberline {1.7.3}KL1版}{11}

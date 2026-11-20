@@ -1,0 +1,928 @@
+% Copyright (C) 1997 TSURUOKA Yoshimasa (tsuruoka@logos.t.u-tokyo.ac.jp)
+
+:- module solitaire.
+
+poker(Cards, Results) :-
+	encode(Cards, CardsList, CardsString),
+	make_cardstable(CardsList, CardsTable),
+	fix_sf(CardsTable, Table1),
+	fix_four(Table1, Table2),
+	fix_three(Table2, Table3),
+	fix_pair(Table3, Table4),
+	fix_others(Table4, Table5),
+	table2list(Table5, List),
+	decode(List, Result1),
+	Results = [Result1|Result2],
+	list2cs(List, CS),
+	raise_diagonal_score(CS, CL),
+	Result2 = [CL|Result3],
+	ex2_search_all(CL, Result3).
+
+ex2_search_all(CardList, Results) :-
+	encode(CardList, _, CS), 
+	score_total(CS, Score),
+	ex2_search_all(CS, 24, 24, 24, 24, CS, Score, Results).
+ex2_search_all(CS, -1, -1, 24, 24, BestCS, BestScore, Results) :-
+	ex2_search_all(BestCS, 24, 24, 24, 24, BestCS, BestScore, Results).
+otherwise.
+ex2_search_all(CS, Fa, -1, Sa, Sb, BestCS, BestScore, Results) :-
+	Fa1 := Fa - 1,
+	ex2_search_all(CS, Fa1, Fa1, 24, 24, BestCS, BestScore, Results).
+otherwise.
+ex2_search_all(CS, Fa, Fb, -1, -1, BestCS, BestScore, Results) :-
+	( Fb = 0 ->
+		Fb2 = 0 ;
+	otherwise ; true ->
+		Fb2 := Fb - 1 ),
+	Fb1 := Fb - 1,
+	exchange_cards(CS, Fa, Fb2, CS1),
+	score_total(CS, Sc),
+	score_total(CS1, Sc1),
+	( Sc - Sc1 < 22000 ->
+		ex2_search_all(CS, Fa, Fb1, 24, 24, BestCS, BestScore, Results) ;
+	otherwise ; true ->
+		ex2_search_all(CS, Fa, Fb1, -1, -1, BestCS, BestScore, Results) ).
+otherwise.
+ex2_search_all(CS, Fa, Fb, Sa, -1, BestCS, BestScore, Results) :-
+	Sa1 := Sa - 1,
+	ex2_search_all(CS, Fa, Fb, Sa1, Sa1, BestCS, BestScore, Results).
+otherwise.
+ex2_search_all(CS, Fa, Fb, Sa, Sb, BestCS, BestScore, Results) :-
+	exchange_cards(CS, Fa, Fb, CS1),
+	exchange_cards(CS1, Sa, Sb, CS2),
+	score_total(CS2, Score),
+	Sb1 := Sb - 1,
+	( Score > BestScore ->
+		raise_diagonal_score(CS2, CL),
+		encode(CL, _, CS3), 
+		score_total(CS3, Score1),
+		string2list(CS3, MyCL),
+		decode(MyCL, CL),
+		Results = [CL|Tail],
+		ex2_search_all(CS, Fa, Fb, Sa, Sb1, CS3, Score1, Tail) ;
+	otherwise ; true ->
+		ex2_search_all(CS, Fa, Fb, Sa, Sb1, BestCS, BestScore, Results) ).
+
+exchange_cards(CS, Ca, Cb, NewCS) :-
+	string_element(CS, Ca, Tmp1),
+	string_element(CS, Cb, Tmp2) |
+	set_string_element(CS, Ca, Tmp2, CS1),
+	set_string_element(CS1, Cb, Tmp1, NewCS).
+
+score_total(CS, Score) :-
+	score_total(1, 12, CS, 0, Score).
+score_total(K,M,CS,Sum,Total) :- K =< M, K1 := K+1 |
+        eval_idx(K,Idx), 
+        score2(K,Idx,CS)+Sum+Sum1,
+        score_total(K1,M,CS,Sum1,Total).
+score_total(K,M,CS,Sum,Total) :- K > M | 
+	Total = Sum.
+
+score2(N,i(I0,I1,I2,I3,I4),CS)-Sum :- 
+    string_element(CS,I0,A0), string_element(CS,I1,A1),
+    string_element(CS,I2,A2), string_element(CS,I3,A3),
+    string_element(CS,I4,A4) |
+        hand_eval(A0,A1,A2,A3,A4,Hand),
+        score_point(Hand,Sc), 
+        Sum += Sc.
+ 
+raise_diagonal_score(CS, CL) :-
+   	ExList = 
+  [[0,1,2,3,4], [0,1,3,2,4],[0,1,4,2,3],[0,2,3,1,4],[0,2,4,1,3],[0,3,4,1,2],
+   [1,0,2,3,4], [1,0,3,2,4],[1,0,4,2,3],[1,2,3,0,4],[1,2,4,0,3],[1,3,4,0,2],
+   [2,1,0,3,4], [2,1,3,0,4],[2,1,4,0,3],[2,0,3,1,4],[2,0,4,1,3],[2,3,4,1,0],
+   [3,1,2,0,4], [3,1,0,2,4],[3,1,4,2,0],[3,2,0,1,4],[3,2,4,1,0],[3,0,4,1,2],
+   [4,1,2,3,0], [4,1,3,2,0],[4,1,0,2,3],[4,2,3,1,0],[4,2,0,1,3],[4,3,0,1,2]],
+	raise_diagonal_score(CS, ExList, ExList, ExList, none, -1, CL).
+raise_diagonal_score(CS, [], ExList, ExList, BestCS, BestScore, CL) :-
+	string2list(BestCS, MyCL),
+	decode(MyCL, CL).
+raise_diagonal_score(CS, [PR|Rest], [], ExList, BestCS, BestScore, CL) :-
+	raise_diagonal_score(CS, Rest, ExList, ExList, BestCS, BestScore, CL).
+raise_diagonal_score(CS, [PR|Rest1], [PC|Rest2], ExList, BestCS, BestScore, CL) :-
+	permutate_rows(CS, PR, CS1),
+	permutate_columns(CS1, PC, CS2),
+	eval_diagonal(CS2, Score),
+	( Score > BestScore ->
+		raise_diagonal_score(CS, [PR|Rest1], Rest2, ExList, CS2, Score, CL) ;
+	otherwise ; true ->
+		raise_diagonal_score(CS, [PR|Rest1], Rest2, ExList, BestCS, BestScore, CL) ).
+
+permutate_rows(CS, [A1, A2, A3, A4, A5], NewCS) :-
+	new_string(CS1, 25, 8),
+	copy_row(CS1, CS, A1, 2, CS2),
+	copy_row(CS2, CS, A2, 1, CS3),
+	copy_row(CS3, CS, A3, 3, CS4),
+	copy_row(CS4, CS, A4, 0, CS5),
+	copy_row(CS5, CS, A5, 4, NewCS).
+
+permutate_columns(CS, [A1, A2, A3, A4, A5], NewCS) :-
+	new_string(CS1, 25, 8),
+	copy_column(CS1, CS, A1, 2, CS2),
+	copy_column(CS2, CS, A2, 1, CS3),
+	copy_column(CS3, CS, A3, 3, CS4),
+	copy_column(CS4, CS, A4, 0, CS5),
+	copy_column(CS5, CS, A5, 4, NewCS).
+
+copy_row(CS1, CS, Ya, Yb, NewCS) :-
+	IYa := Ya*5, IYb := Yb*5,
+	string_element(CS, IYa, A1), string_element(CS, ~(IYa+1), A2), 
+	string_element(CS, ~(IYa+2), A3), string_element(CS,~(IYa+3), A4), 
+	string_element(CS, ~(IYa+4), A5),
+	set_string_element(CS1, IYb, A1, CS2),
+	set_string_element(CS2, ~(IYb+1), A2, CS3),
+	set_string_element(CS3, ~(IYb+2), A3, CS4),
+	set_string_element(CS4, ~(IYb+3), A4, CS5),
+	set_string_element(CS5, ~(IYb+4), A5, NewCS).
+
+copy_column(CS1, CS, Xa, Xb, NewCS) :-
+	string_element(CS, Xa, A1), string_element(CS, ~(Xa+5), A2), 
+	string_element(CS, ~(Xa+10), A3), string_element(CS,~(Xa+15), A4), 
+	string_element(CS, ~(Xa+20), A5),
+	set_string_element(CS1, Xb, A1, CS2),
+	set_string_element(CS2, ~(Xb+5), A2, CS3),
+	set_string_element(CS3, ~(Xb+10), A3, CS4),
+	set_string_element(CS4, ~(Xb+15), A4, CS5),
+	set_string_element(CS5, ~(Xb+20), A5, NewCS).
+
+eval_diagonal(CS, Score) :-
+	string_element(CS, 0, A1), string_element(CS, 6, A2), 
+	string_element(CS, 12, A3), string_element(CS, 18, A4), 
+	string_element(CS, 24, A5),
+        hand_eval(A1,A2,A3,A4,A5,HandA),
+        score_point(HandA,Sc1),
+	string_element(CS, 4, B1), string_element(CS, 8, B2), 
+	string_element(CS, 12, B3), string_element(CS, 16, B4), 
+	string_element(CS, 20, B5),
+        hand_eval(B1,B2,B3,B4,B5,HandB),
+        score_point(HandB,Sc2),
+	Score := Sc1 + Sc2.
+
+string2list(CS, List) :- string2list(CS, 0, List).
+string2list(CS, 25, List) :-
+	List = [].
+otherwise.
+string2list(CS, I, List) :-
+	string_element(CS, I, String),
+	Rank := String >> 4,
+	Suit := String /\ 15,
+	Card := Suit*100 + Rank,
+	List = [Card|Tail],
+	string2list(CS, ~(I+1), Tail).
+	 
+list2cs(List, CS) :-
+	translate(List, List1),
+	new_string(CS, List1, 8).
+
+translate([], Out) :- Out = [].
+translate([One|Rest], Out) :-
+	Suit := One / 100,
+	Rank := One mod 100,
+	String := (Rank << 4) \/ Suit,
+	Out = [String|Tail],
+	translate(Rest, Tail).
+ 
+make_cardstable(List, CardsTable) :-
+	new_vector(EmptyTable, 1100),
+	make_cardstable(List, EmptyTable, CardsTable).
+make_cardstable([One|Rest], Table, CardsTable) :-
+	Rank := One >> 4,
+	Suit := One /\ 15,
+	Index := Suit * 100 + Rank,
+	set_vector_element(Table, Index, 1, Table1),
+	
+	% count the number of a certain rank
+	Index2 := Rank,
+	vector_element(Table1, Index2, NRank),
+	NRank1 := NRank + 1,
+	set_vector_element(Table1, Index2, NRank1, Table2), 
+
+	% make a list of a certain rank
+	Index3 := 500 + Rank,
+	vector_element(Table2, Index3, List),
+	NewList = [Index|List],
+	set_vector_element(Table2, Index3, NewList, Table3),
+
+	make_cardstable(Rest, Table3, CardsTable).
+make_cardstable([], Table, CardsTable) :- CardsTable = Table.
+
+search_sf(Table, SfList) :- search_sf(Table, 4, 14, 0, none, SfList).
+search_sf(Table, 0, Rank, BestScore, BestIndex, SfList) :- SfList = [].
+otherwise.
+search_sf(Table, Suit, 4, BestScore, BestIndex, SfList) :-
+	Suit1 := Suit - 1,
+	( integer(BestIndex) ->
+		SfList = [BestIndex|Tail],
+		search_sf(Table, Suit1, 14, 0, none, Tail) ;
+	otherwise ; true ->
+		search_sf(Table, Suit1, 14, 0, none, SfList) ).
+otherwise.
+search_sf(Table, Suit, Rank, BestScore, BestIndex, SfList) :- 
+	Index := Suit * 100 + Rank,
+	check_sf(Table, Index, Score, YN),
+	Rank1 := Rank - 1,
+	( YN = yes , Score > BestScore ->
+		search_sf(Table, Suit, Rank1, Score, Index, SfList) ;
+	otherwise ; true ->
+		search_sf(Table, Suit, Rank1, BestScore, BestIndex, SfList) ).
+
+check_sf(Table, Index, Score, YN) :- check_sf(Table, Index, 0, 0, Score, YN).
+check_sf(Table, Index, 5, Sum, Score, YN) :- 
+	YN = yes,
+	Score = Sum.
+otherwise.
+check_sf(Table, Index, J, Sum, Score, YN) :-
+	Index1 := Index - J, 
+	check_element(Table, Index1, Element),
+	( Element = 0 ->
+		YN = no ;
+	otherwise ; true ->
+		Index2 := Index1 mod 100,
+		check_element(Table, Index2, NRank),
+		point(NRank, Point),
+		Sum1 := Sum + Point,
+		J1 := J + 1,
+		check_sf(Table, Index, J1, Sum1, Score, YN) ).
+
+point(1, Point) :- Point = 0.
+point(2, Point) :- Point = 1.
+point(3, Point) :- Point = 10.
+point(4, Point) :- Point = 100.
+
+check_element(Table, Index, Element) :- Index mod 100 =:= 1 |
+	Index1 := Index + 13,
+	vector_element(Table, Index1, Element).
+otherwise.
+check_element(Table, Index, Element) :-
+	vector_element(Table, Index, Element).
+
+fix_sf(Table, NewTable) :-
+	search_sf(Table, SfList),
+	fix_sf(Table, SfList, SfList, NewTable).
+fix_sf(Table, [], SfList, NewTable) :- 
+	NewTable = Table.
+fix_sf(Table, [One|Rest], SfList, NewTable) :-
+	fix_sf(Table, [One|Rest], SfList, NewTable, first).
+fix_sf(Table, [One|Rest], SfList, NewTable, first) :-
+	fix_sf1(One, Table, Table1, SfList),
+	fix_sf(Table1, Rest, SfList, NewTable, non_first).
+fix_sf(Table, [], SfList, NewTable, non_first) :-
+	NewTable = Table.
+fix_sf(Table, [One|Rest], SfList, NewTable, non_first) :-
+	fix_sf2(One, Table, Table1, SfList),
+	fix_sf(Table1, Rest, SfList, NewTable, non_first).
+
+fix_sf1(Index, Table, NewTable, SfList) :-
+	fix_sf1(Index, Table, 1, NewTable, SfList).
+fix_sf1(Index, Table, 6, NewTable, SfList) :- 
+	NewTable = Table.
+otherwise.
+fix_sf1(Index, Table, I, NewTable, SfList) :-
+	CardIndex1 := Index - I + 1,
+	( CardIndex1 mod 100 =:= 1 ->
+		CardIndex := CardIndex1 + 13 ;
+	otherwise ; true ->
+		CardIndex := CardIndex1 ),
+	Row := CardIndex / 100,
+	place_in_the_row(Table, CardIndex, Row, Table1),
+	fix_sf_others(CardIndex, Table1, Table2, I, SfList),
+	I1 := I + 1,
+	fix_sf1(Index, Table2, I1, NewTable, SfList). 
+
+fix_sf2(Index, Table, NewTable, SfList) :-
+	fix_sf2(Index, Table, 1, NewTable, SfList).
+fix_sf2(Index, Table, 6, NewTable, SfList) :- 
+	NewTable = Table.
+otherwise.
+fix_sf2(Index, Table, I, NewTable, SfList) :-
+	CardIndex1 := Index - I + 1,
+	( CardIndex1 mod 100 =:= 1 ->
+		CardIndex := CardIndex1 + 13 ;
+	otherwise ; true ->
+		CardIndex := CardIndex1 ),
+	Row := CardIndex / 100,
+	place_in_the_row(Table, CardIndex, Row, Table1), 
+	I1 := I + 1,
+	fix_sf2(Index, Table1, I1, NewTable, SfList). 
+
+fix_sf_others(Index, Table, NewTable, X, SfList) :-
+	fix_sf_others(Index, Table, 1, NewTable, X, SfList).
+fix_sf_others(Index, Table, 5, NewTable, X, SfList) :-
+	NewTable = Table.
+otherwise.
+fix_sf_others(Index, Table, I, NewTable, X, SfList) :-
+	Rank := Index mod 100,
+	CardIndex := I * 100 + Rank,
+	check_sflist(Table, SfList, Rank, I, YN),
+	I1 := I + 1,
+	( YN = yes ->
+		Location := 1000 + I*10 + X,
+		set_vector_element(Table, CardIndex, 2, Table1),
+		set_vector_element(Table1, Location, CardIndex, Table2),
+		fix_sf_others(Index, Table2, I1, NewTable, X, SfList) ;
+	otherwise ; true ->
+		fix_sf_others(Index, Table, I1, NewTable, X, SfList) ).
+
+check_sflist(Table, SfList, Rank, I, YN) :-
+	Index := I * 100 + Rank,
+	vector_element(Table, Index, Element),
+	( Element = 1 ->
+		check_sflist1(SfList, Rank, I, YN) ;
+	otherwise ; true ->
+		YN = no ).
+
+check_sflist1([], Rank, I, YN) :- YN = no.
+check_sflist1([One|Rest], Rank, I, YN) :- One / 100 =\= I |
+	check_sflist1(Rest, Rank, I, YN).
+otherwise.
+check_sflist1([One|Rest], Rank, I, YN) :- (One mod 100) < Rank |
+	check_sflist1(Rest, Rank, I, YN).
+otherwise.
+check_sflist1([One|Rest], Rank, I, YN) :- (One mod 100) - 4 > Rank |
+	check_sflist1(Rest, Rank, I, YN).
+otherwise.
+check_sflist1([One|Rest], Rank, I, YN) :-
+	YN = yes.
+	
+place_in_the_row(Table, Index, Row, NewTable) :-
+	vector_element(Table, Index, Element),
+	( Element = 1 ->
+		place_in_the_row(Table, Index, Row, 1, NewTable) ;
+	otherwise ; true ->
+		NewTable = Table ).
+place_in_the_row(Table, Index, Row, 6, NewTable) :-
+		NewTable = Table.
+otherwise.
+place_in_the_row(Table, Index, Row, I, NewTable) :-
+	Location := 1000 + Row * 10 + I,
+	vector_element(Table, Location, Element),
+	( Element = 0 ->
+		set_vector_element(Table, Location, Index, Table1),
+		set_vector_element(Table1, Index, 2, NewTable) ;
+	otherwise ; true ->
+		I1 := I + 1,
+		place_in_the_row(Table, Index, Row, I1, NewTable) ).
+		
+change_element(Table, Index, Element, NewTable) :- Index mod 100 =:= 1 |
+	Index1 := Index + 13,
+	set_vector_element(Table, Index1, Element, NewTable).
+otherwise.
+change_element(Table, Index, Element, NewTable) :-
+	set_vector_element(Table, Index, Element, NewTable).
+
+fix_four(Table, NewTable) :-
+	search_four(Table, FourList),
+	fix_four(Table, FourList, NewTable).
+
+fix_four(Table, [], NewTable) :-
+	NewTable = Table.
+fix_four(Table, [One|Rest], NewTable) :-
+	search_column(Table, One, Column),
+	( integer(Column) ->
+		place_four_in_the_column(Table, One, Column, Table1),
+		fix_four(Table1, Rest, NewTable) ;
+	otherwise ; true ->
+		place_four_in_the_row(Table, One, 5, Table1),
+		fix_four(Table1, Rest, NewTable) ).
+
+place_four_in_the_row(Table, One, Row, NewTable) :-
+	place_four_in_the_row(Table, One, Row, 1, NewTable).
+place_four_in_the_row(Table, One, Row, 5, NewTable) :-
+	NewTable = Table.
+otherwise.
+place_four_in_the_row(Table, One, Row, Suit, NewTable) :-
+	Index := Suit * 100 + One,
+	place_in_the_row(Table, Index, Row, Table1),
+	Suit1 := Suit + 1,
+	place_four_in_the_row(Table1, One, Row, Suit1, NewTable).
+	
+search_column(Table, Rank, Column) :-
+	search_column(Table, Rank, 1, none, 0, Column).
+search_column(Table, Rank, 6, BestColumn, BestScore, Column) :-
+	Column = BestColumn.
+otherwise.
+search_column(Table, Rank, X, BestColumn, BestScore, Column) :-
+	check_column(Table, Rank, X, 1, Score),
+	X1 := X + 1,
+	( Score > BestScore ->
+		search_column(Table, Rank, X1, X, Score, Column) ;
+	otherwise ; true ->
+		search_column(Table, Rank, X1, BestColumn, BestScore, Column) ). 
+
+check_column(Table, Rank, X, MaxNFix, Score) :-
+	check_column(Table, Rank, X, 1, 0, MaxNFix, 0, Score).
+check_column(Table, Rank, X, 5, NFix, MaxNFix, Sum, Score) :-
+	( NFix =< MaxNFix ->
+		Score = Sum ;
+	otherwise ; true ->
+		Score = 0 ).
+otherwise.
+check_column(Table, Rank, X, Y, NFix, MaxNFix, Sum, Score) :-
+	Location := 1000 + 10*Y + X,
+	vector_element(Table, Location, Element),
+	ElementRank := Element mod 100,
+	Y1 := Y + 1,
+	( ElementRank = Rank ->
+		Sum1 := Sum + 10,
+		check_column(Table, Rank, X, Y1, NFix, MaxNFix, Sum1, Score) ;
+	otherwise ; Element = 0 ->
+		Sum1 := Sum + 1,
+		check_column(Table, Rank, X, Y1, NFix, MaxNFix, Sum1, Score) ;
+	otherwise ; true ->
+		NFix1 := NFix + 1,
+		check_column(Table, Rank, X, Y1, NFix1, MaxNFix, Sum, Score) ).
+
+place_four_in_the_column(Table, Rank, Column, NewTable) :-
+	place_four_in_the_column(Table, Rank, Column, 1, NewTable).
+place_four_in_the_column(Table, Rank, Column, 5, NewTable) :-
+	NewTable = Table.
+otherwise.
+place_four_in_the_column(Table, Rank, Column, Suit, NewTable) :-
+	Index := Suit * 100 + Rank,
+	place_in_the_column(Table, Index, Column, Table1),
+	Suit1 := Suit + 1,
+	place_four_in_the_column(Table1, Rank, Column, Suit1, NewTable).
+
+place_in_the_column(Table, Index, Column, NewTable) :-
+	vector_element(Table, Index, Element),
+	( Element = 1 ->
+		place_in_the_column(Table, Index, Column, first, NewTable) ;
+	otherwise ; true ->
+		NewTable = Table ).
+place_in_the_column(Table, Index, Column, 0, NewTable) :-
+		NewTable = Table.
+otherwise.
+place_in_the_column(Table, Index, Column, first, NewTable) :-
+	Location := 1000 + (Index / 100) * 10 + Column,
+	vector_element(Table, Location, Element),
+	( Element = 0 ->
+		set_vector_element(Table, Location, Index, Table1),
+		set_vector_element(Table1, Index, 2, NewTable) ;
+	otherwise ; true ->
+		place_in_the_column(Table, Index, Column, 5, NewTable) ).
+otherwise.
+place_in_the_column(Table, Index, Column, Y, NewTable) :-
+	Location := 1000 + Y * 10 + Column,
+	vector_element(Table, Location, Element),
+	( Element = 0 ->
+		set_vector_element(Table, Location, Index, Table1),
+		set_vector_element(Table1, Index, 2, NewTable) ;
+	otherwise ; true ->
+		Y1 := Y - 1,
+		place_in_the_column(Table, Index, Column, Y1, NewTable) ).
+		
+search_four(Table, FourList) :- search_four(Table, 14, FourList).
+search_four(Table, 1, FourList) :- FourList = [].
+otherwise.
+search_four(Table, Rank, FourList) :-
+	vector_element(Table, Rank, NRank),
+	Rank1 := Rank - 1,
+	( NRank = 4 ->
+		FourList = [Rank|Rest],
+		search_four(Table, Rank1, Rest) ;
+	otherwise ; true ->
+		search_four(Table, Rank1, FourList) ).
+
+fix_three(Table, NewTable) :-
+	search_three(Table, ThreeList),
+	fix_three(Table, ThreeList, NewTable).
+fix_three(Table, [], NewTable) :-
+	NewTable = Table.
+fix_three(Table, [One|Rest], NewTable) :-
+	search_column_for_three(Table, One, Column),
+	( integer(Column) ->
+		place_rank_in_the_column(Table, One, Column, Table1),
+		fix_three(Table1, Rest, NewTable) ;
+	otherwise ; true ->
+		fix_three(Table, Rest, NewTable) ).
+
+search_three(Table, ThreeList) :- search_three(Table, 14, ThreeList).
+search_three(Table, 1, ThreeList) :- ThreeList = [].
+otherwise.
+search_three(Table, Rank, ThreeList) :-
+	vector_element(Table, Rank, NRank),
+	Rank1 := Rank - 1,
+	( NRank = 3 ->
+		ThreeList = [Rank|Rest],
+		search_three(Table, Rank1, Rest) ;
+	otherwise ; true ->
+		search_three(Table, Rank1, ThreeList) ).
+
+search_column_for_three(Table, Rank, Column) :-
+	search_column_for_three(Table, Rank, 1, none, 0, Column).
+search_column_for_three(Table, Rank, 6, BestColumn, BestScore, Column) :-
+	Column = BestColumn.
+otherwise.
+search_column_for_three(Table, Rank, X, BestColumn, BestScore, Column) :-
+	check_column(Table, Rank, X, 2, Score),
+	X1 := X + 1,
+	( Score > BestScore ->
+		search_column_for_three(Table, Rank, X1, X, Score, Column) ;
+	otherwise ; true ->
+		search_column_for_three(Table, Rank, X1, BestColumn, BestScore, Column) ). 
+
+place_rank_in_the_column(Table, Rank, Column, NewTable) :-
+	Index := 500 + Rank,
+	vector_element(Table, Index, CardsList),
+	place_rank_in_the_column(Table, Rank, Column, CardsList, NewTable).
+place_rank_in_the_column(Table, Rank, Column, 0, NewTable) :-
+	NewTable = Table.
+otherwise.
+place_rank_in_the_column(Table, Rank, Column, [Index|Rest], NewTable) :-
+	place_in_the_column(Table, Index, Column, Table1),
+	place_rank_in_the_column(Table1, Rank, Column, Rest, NewTable).
+
+fix_pair(Table, NewTable) :-
+	search_pair(Table, PairList),
+	fix_pair(Table, PairList, NewTable).
+fix_pair(Table, [], NewTable) :-
+	NewTable = Table.
+fix_pair(Table, [One|Rest], NewTable) :-
+	search_column_for_pair(Table, One, Column),
+	( integer(Column) ->
+		place_rank_in_the_column(Table, One, Column, Table1),
+		fix_pair(Table1, Rest, NewTable) ;
+	otherwise ; true ->
+		fix_pair(Table, Rest, NewTable) ).
+
+search_pair(Table, PairList) :- search_pair(Table, 14, PairList).
+search_pair(Table, 1, PairList) :- PairList = [].
+otherwise.
+search_pair(Table, Rank, PairList) :-
+	vector_element(Table, Rank, NRank),
+	Rank1 := Rank - 1,
+	( NRank = 2 ->
+		PairList = [Rank|Rest],
+		search_pair(Table, Rank1, Rest) ;
+	otherwise ; true ->
+		search_pair(Table, Rank1, PairList) ).
+
+search_column_for_pair(Table, Rank, Column) :-
+	search_column_for_pair(Table, Rank, 1, none, 0, Column).
+search_column_for_pair(Table, Rank, 6, BestColumn, BestScore, Column) :-
+	Column = BestColumn.
+otherwise.
+search_column_for_pair(Table, Rank, X, BestColumn, BestScore, Column) :-
+	check_column(Table, Rank, X, 3, Score1),
+	check_column_for_fh(Table, X, Rank, Score2),
+	investigate_column(Table, X, YN1 ),
+	yn2score(YN1, Score3),
+	TotalScore := Score1 * 100 + Score3*10 + Score2,
+	X1 := X + 1,
+	( TotalScore > BestScore ->
+		search_column_for_pair(Table, Rank, X1, X, TotalScore, Column) ;
+	otherwise ; true ->
+		search_column_for_pair(Table, Rank, X1, BestColumn, BestScore, Column) ). 
+
+yn2score(yes, Score) :- Score = 10.
+yn2score(no, Score)  :- Score = 0.
+
+check_column_for_fh(Table, X, Rank, Score) :-
+	PairCardsListIndex := 500 + Rank,
+	vector_element(Table, PairCardsListIndex, PairCardsList),
+	check_column_for_fh(Table, X, PairCardsList, 1, 0, Score).
+check_column_for_fh(Table, X, PairCardsList, 6, Sum, Score) :-
+	Score = Sum.
+otherwise.
+check_column_for_fh(Table, X, PairCardsList, Y, Sum, Score) :-
+	Index := 1000 + Y*10 + X,
+	vector_element(Table, Index, Element),
+	check_paircardslist(PairCardsList, Y, YN),
+	Y1 := Y + 1,
+	( Element = 0, YN = yes ->
+		Sum1 := Sum + 10,
+		check_column_for_fh(Table, X, PairCardsList, Y1, Sum1, Score) ;
+	otherwise ; true ->
+		check_column_for_fh(Table, X, PairCardsList, Y1, Sum, Score) ).
+
+check_paircardslist(0, Y, YN) :- YN = no.
+check_paircardslist([One|Rest], Y, YN) :-
+	( One / 100 =:= Y ->
+		YN = yes ;
+	otherwise; true ->
+		check_paircardslist(Rest, Y, YN) ).
+
+investigate_column(Table, X, Result) :-
+	new_vector(RankVector, 30),
+	investigate_column(Table, RankVector, X, 1, Result).
+investigate_column(Table, RankVector, X, 6, Result) :-
+	search_three_in_rankvector(RankVector, YN),
+	count_fixedcards(RankVector, NFix),
+	Result = YN.
+otherwise.
+investigate_column(Table, RankVector, X, Y, Result) :-
+	Index := 1000 + Y*10 + X,
+	vector_element(Table, Index, Element),
+	Rank := Element mod 100,
+	vector_element(RankVector, Rank, NRank),
+	NRank1 := NRank + 1,
+	set_vector_element(RankVector, Rank, NRank1, RankVector1),
+	RankListIndex := 15 + Rank,
+	vector_element(RankVector1, RankListIndex, RankList),
+	RankList1 = [Element|RankList],
+	set_vector_element(RankVector1, RankListIndex, RankList1, RankVector2),
+	Y1 := Y + 1,
+	investigate_column(Table, RankVector2, X, Y1, Result).
+
+search_three_in_rankvector(RankVector, YN) :-
+	search_three_in_rankvector(RankVector, 2, YN).
+search_three_in_rankvector(RankVector, 15, YN) :-
+	YN = no.
+otherwise.
+search_three_in_rankvector(RankVector, Rank, YN) :-
+	vector_element(RankVector, Rank, Element),
+	Rank1 := Rank + 1,
+	( Element = 3 ->
+		YN = yes ;
+	otherwise ; true ->
+		search_three_in_rankvector(RankVector, Rank1, YN) ).
+
+count_fixedcards(RankVector, NFix) :-
+	count_fixedcards(RankVector, 2, 0, NFix).
+count_fixedcards(RankVector, 15, Sum, NFix) :-
+	NFix = Sum.
+otherwise.
+count_fixedcards(RankVector, Rank, Sum, NFix) :-
+	vector_element(RankVector, Rank, Element),
+	Rank1 := Rank + 1,
+	Sum1 := Sum + Element,
+	count_fixedcards(RankVector, Rank1, Sum1, NFix).
+
+fix_others(Table, NewTable) :-
+	search_unfixed(Table, CardsList),
+	fix_cardslist(Table, CardsList, NewTable).
+
+search_unfixed(Table, CardsList) :-
+	search_unfixed(Table, 1, 2, CardsList).
+search_unfixed(Table, 5, Rank, CardsList) :-
+	CardsList = [].
+otherwise.
+search_unfixed(Table, Suit, 15, CardsList) :-
+	Suit1 := Suit + 1,
+	search_unfixed(Table, Suit1, 2, CardsList).
+otherwise.
+search_unfixed(Table, Suit, Rank, CardsList) :-
+	Index := Suit*100 + Rank,
+	vector_element(Table, Index, State),
+	Rank1 := Rank + 1,
+	( State = 1 ->
+		CardsList = [Index|Tail],
+		search_unfixed(Table, Suit, Rank1, Tail) ;
+	otherwise ; true ->
+		search_unfixed(Table, Suit, Rank1, CardsList) ).
+
+fix_cardslist(Table, [], NewTable) :- 
+	NewTable = Table.
+fix_cardslist(Table, [One|Rest], NewTable) :-
+	search_space(Table, One, Location),
+	set_vector_element(Table, Location, One, Table1),
+	set_vector_element(Table1, One, 2, Table2),
+	fix_cardslist(Table2, Rest, NewTable).
+
+search_space(Table, Index, Location) :-
+	Suit := Index / 100,
+	search_space(Table, Suit, 1, Location, first).
+search_space(Table, Suit, 6, Location, first) :-
+	search_space(Table, 5, 1, Location, non_first).
+otherwise.
+search_space(Table, Suit, X, Location, first) :-
+	Index := 1000 + Suit*10 + X,
+	vector_element(Table, Index, Element),
+	( Element = 0 ->
+		Location = Index ;
+	otherwise ; true ->
+		X1 := X + 1,
+		search_space(Table, Suit, X1, Location, first) ).
+otherwise.
+search_space(Table, Row, 6, Location, non_first) :-
+	Row1 := Row - 1,
+	search_space(Table, Row1, 1, Location, non_first).
+otherwise.
+search_space(Table, Row, X, Location, non_first) :-
+	Index := 1000 + Row*10 + X,
+	vector_element(Table, Index, Element),
+	( Element = 0 ->
+		Location = Index ;
+	otherwise ; true ->
+		X1 := X + 1,
+		search_space(Table, Row, X1, Location, non_first) ).
+
+table2list(Table, List) :- table2list(Table, 5, 1, List).
+table2list(Table, 1, 6, List) :- List = [].
+otherwise.
+table2list(Table, Y, 6, List) :-
+	Y1 := Y - 1,
+	table2list(Table, Y1, 1, List).
+otherwise.
+table2list(Table, Y, X, List) :-
+	vector_element(Table, ~(1000 + Y*10 + X), Card),
+	List = [Card|Tail],
+	table2list(Table, Y, ~(X+1), Tail).
+
+decode([], Out) :- Out = [].
+decode([Card|Rest], Out) :-
+	Suit := Card / 100,
+	Rank := Card mod 100,
+	suit_decode(Suit, DS),
+	rank_decode(Rank, DR),
+	( wait(DS), wait(DR) -> 
+		Out = [card(DR, DS)|Tail] ),
+	decode(Rest, Tail).
+
+suit_decode(1, DS) :- DS = clubs.
+suit_decode(2, DS) :- DS = diamonds.
+suit_decode(3, DS) :- DS = hearts.
+suit_decode(4, DS) :- DS = spades.
+
+rank_decode(N, DR) :- N < 11 | DR = N.
+rank_decode(11, DR) :- DR = jack.
+rank_decode(12, DR) :- DR = queen.
+rank_decode(13, DR) :- DR = king.
+rank_decode(14, DR) :- DR = ace.
+
+%------------------ the followings were copied from eval.kl1
+
+% Give the Total Score for [card(Rank,Suit),....]
+
+score(Cards,Info) :-
+    encode(Cards, CardsList, CardsString),
+    ( string(CardsString,25,8) -> 
+          ( generic:new(vector,IVector, 13),
+            score(1,12,CardsString,0,IVector,Info) ) ;
+      string(CardsString,5,8)  -> score4one(CardsString,Info) ;
+      otherwise; true -> Info = error ).
+
+% for testing (for only five cards)
+score4one(CS,Info) :- string(CS,5,8),
+    string_element(CS,0,A0), string_element(CS,1,A1),
+    string_element(CS,2,A2), string_element(CS,3,A3),
+    string_element(CS,4,A4) |
+        hand_eval(A0,A1,A2,A3,A4,Hand),
+        score_point(Hand,Sc),
+        Info = [Sc,Hand].
+otherwise.
+score4one(CS,Info) :- Info = error.
+
+
+% Encoding 
+encode(Cards, CardsList, CardsString) :- 
+    encode_card_list(Cards,CardsList),
+    generic:new(string,CardsString,CardsList,8).
+
+encode_card_list([C|Cards],List) :-
+    encode_card(C,E),    List = [E|List1],
+    encode_card_list(Cards,List1).
+encode_card_list([],List) :- List = [].
+
+encode_card(card(Rank,Suit),Encoded) :-
+    rank_code(Rank,RankCode), 
+    suit_code(Suit,SuitCode), 
+    Encoded := (RankCode << 4) \/ SuitCode.
+
+suit_code(spades,  R) :- R = 4.
+suit_code(hearts,  R) :- R = 3.
+suit_code(diamonds,R) :- R = 2.
+suit_code(clubs,   R) :- R = 1.
+
+rank_code(N,      R) :- integer(N), 1 < N, N < 11 | R = N.
+rank_code(jack,   R) :- R = 11.
+rank_code(queen,  R) :- R = 12.
+rank_code(king,   R) :- R = 13.
+rank_code(ace,    R) :- R = 14.
+% --------------------------------------
+
+% --- evaluate 12 hands of a board 
+score(K,M,CS,Total)-Info :- K =< M, K1 := K+1 |
+        eval_idx(K,Idx), 
+        score1(K,Idx,CS)+Total+Total1-Info,
+        score(K1,M,CS,Total1)-Info.
+score(K,M,CS,Total)+Info0+Info :- K > M | 
+        set_vector_element(Info0,0,_,Total,Info).
+
+score1(N,i(I0,I1,I2,I3,I4),CS)-Total+S0+ST :- 
+    string_element(CS,I0,A0), string_element(CS,I1,A1),
+    string_element(CS,I2,A2), string_element(CS,I3,A3),
+    string_element(CS,I4,A4) |
+        hand_eval(A0,A1,A2,A3,A4,Hand),
+        score_point(Hand,Sc), 
+        Total += Sc,
+        set_vector_element(S0,N,_,Sc,ST).
+
+% lines
+eval_idx( 1,L) :- L = i( 0, 1, 2, 3, 4).
+eval_idx( 2,L) :- L = i( 5, 6, 7, 8, 9).
+eval_idx( 3,L) :- L = i(10,11,12,13,14).
+eval_idx( 4,L) :- L = i(15,16,17,18,19).
+eval_idx( 5,L) :- L = i(20,21,22,23,24).
+% columns
+eval_idx( 6,L) :- L = i( 0, 5,10,15,20).
+eval_idx( 7,L) :- L = i( 1, 6,11,16,21).
+eval_idx( 8,L) :- L = i( 2, 7,12,17,22).
+eval_idx( 9,L) :- L = i( 3, 8,13,18,23).
+eval_idx(10,L) :- L = i( 4, 9,14,19,24).
+% diagonals
+eval_idx(11,L) :- L = i( 0, 6,12,18,24).
+eval_idx(12,L) :- L = i( 4, 8,12,16,20).
+% --------------------------------------
+
+% --- evaluate 5 cards as a hand
+hand_eval(A0,A1,A2,A3,A4, Hand) :- 
+    card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4),
+    CC := B0 >> 4,
+    pairs([B1,B2,B3,B4],CC,1,Pairs),
+
+    ( Pairs = [N|L] -> 
+      
+      (% Four of a kind
+       N = [4|Rank] -> Hand = four_of_a_kind(Rank) ; 
+       % Three of a kind or ...
+       N = [3|Rank1] -> 
+         (% Full house!
+          L = [[2|Rank2]] -> Hand = full_house(Rank1,Rank2) ;
+          L = []          -> Hand = three_of_a_kind(Rank1) ) ;
+       % One pair or ... 
+       N = [2|Rank1] -> 
+         (L = [[M|Rank2]] -> 
+            (% Full house!
+             M = 3 -> Hand = full_house(Rank2,Rank1) ;
+             % Two pairs
+             M = 2 -> Hand = two_pairs(Rank1,Rank2) ) ;
+          L = []          -> Hand = one_pair(Rank1)) ) ;
+      Pairs = []    -> is_straight_flush(B0,B1,B2,B3,B4,Hand) ).
+
+is_straight_flush(B0,B1,B2,B3,B4,Hand) :- 
+    U := B0 >> 4, L := B0 /\ 16'F |
+        is_straight([B1,B2,B3,B4],U,U,H1),
+        is_flush([B1,B2,B3,B4],   L,U,H2),
+        (H1 = straight(X) -> 
+%          (H2 = flush(Y) -> R = straight_flush(Y) ;
+%          (H2 = flush(Y) -> Hand = straight_flush(Y) ;
+           (H2 = flush(Y) -> Hand = straight_flush(X) ;
+            otherwise; 
+            true       -> Hand = H1) ;
+         otherwise;
+         H2 = flush(Y) -> Hand = H2 ;
+         otherwise;
+         true       -> Hand = no_pair).
+
+is_straight([X|T],U,M,R) :- U1 := X >> 4, U1 =:= U+1,
+    M1 := M+U1 | is_straight(T,U1,M1,R).
+is_straight([]   ,U,M,R) :- R = straight(M).
+otherwise.
+% 2,3,4,5, A
+is_straight([X]  ,5,M,R) :- 14 =:= X >> 4 | R = straight(15).
+otherwise.
+is_straight(_    ,_,_,R) :- R = no.
+
+is_flush([X|T],L,U,R) :- L =:= X /\ 16'F, U1 := (X >> 4)+U | 
+        is_flush(T,L,U1,R).
+is_flush([],   L,U,R) :- R = flush(U).
+otherwise.
+is_flush(_,    _,_,R) :- R = no.
+
+% --- Sort 5 cards in rank order
+card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A0 < A1 |
+        card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(0,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A0 > A1 |
+        card_sort(1,A1,A0,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A1 < A2 |
+        card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(1,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A1 > A2 |
+        card_sort(0,A0,A2,A1,A3,A4,B0,B1,B2,B3,B4).
+card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A2 < A3 |
+        card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4).
+card_sort(2,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A2 > A3 |
+        card_sort(1,A0,A1,A3,A2,A4,B0,B1,B2,B3,B4).
+card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A3 < A4 |
+        A0=B0,A1=B1,A2=B2,A3=B3,A4=B4.
+card_sort(3,A0,A1,A2,A3,A4,B0,B1,B2,B3,B4) :- A3 > A4 |
+        card_sort(2,A0,A1,A2,A4,A3,B0,B1,B2,B3,B4).
+
+% --- Find pairs in sorted cards
+pairs([C1|Cs],C0, N,Pairs) :- CC := C1 >> 4 |
+        ( CC = C0, N1 := N+1 -> pairs(Cs,C0,N1,Pairs) ;
+          otherwise;
+          N = 1 -> pairs(Cs,CC,N,Pairs) ;
+          N > 1 -> ( Pairs = [[N|C0]|Pairs1], pairs(Cs,CC,1,Pairs1) )).
+pairs([],     C0, N,Pairs) :- 
+    ( N = 1 -> Pairs = [];  N > 1 -> Pairs = [[N|C0]] ).
+
+% --- Evaluate a hand and give score
+ %         Straight Flush       2745600 points
+ %         Four of a Kind        176000 
+ %         Full House             29333 
+ %         Flush                  21500 
+ %         Straight               10767 
+ %         Three of a Kind         2000 
+ %         Two Pairs                888 
+ %         One Pair                 100 
+
+score_point(straight_flush(X), S) :-  S := 2745600+X.
+score_point(four_of_a_kind(X), S) :-  S :=  176000+(X*4).
+score_point(full_house(X,Y),   S) :-  S :=   29333+(X*3)+(Y*2).
+score_point(flush(X),          S) :-  S :=   21500+X.
+score_point(straight(X),       S) :-  S :=   10767+X.
+score_point(three_of_a_kind(X),S) :-  S :=    2000+(X*3).
+score_point(two_pairs(X,Y),    S) :-  S :=     888+(X*2)+(Y*2).
+score_point(one_pair(X),       S) :-  S :=     100+(X*2).
+score_point(no_pair,           S) :-  S = 0.

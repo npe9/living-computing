@@ -1,0 +1,56 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> 名簿管理のディレクトリ作成</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" 名簿管理のディレクトリ作成">
+<meta name="keywords" value="irprop">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html79 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html77 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html71 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html80 HREF="node7.html"> データベースの初期化</A>
+<B>Up:</B> <A NAME=tex2html78 HREF="node5.html"> 名簿管理システムの運用</A>
+<B> Previous:</B> <A NAME=tex2html72 HREF="node5.html"> 名簿管理システムの運用</A>
+<BR> <HR> <P>
+<H2><A NAME=SECTION00031000000000000000> 名簿管理のディレクトリ作成</A></H2>
+<P>
+名簿管理DB及びシステムファイルなどは、例えば、次のようなディレクト
+リを作成して配置する。
+<DL ><DT>~/irpr
+<DD> database.init, startup.kappa, AddInput.docファ
+イルを置く。<BR> 
+	       kappaコマンドは、このディレクトリで呼ぶ。
+ <DL ><DT>database.init
+<DD> データベース初期化ファイルである。内容例を次に
+示す。
+    <PRE>     page_size(4096).
+     ldbms(&quot;LDBMS000&quot;):-
+         control(500),index(3500),record(3500),overflow(100),log([{1000,3}]).
+</PRE>
+  <DT>startup.kappa
+<DD> kappa構成ファイルである。内容例は次の通り。
+    <PRE>     [
+      {&quot;LDBMS000&quot;,
+        {{150,500,10,2},{{{200,100},{200,100},{2,1}},20},{&quot;system&quot;,'CLM_Table',10,10}},
+        [&quot;CA000&quot;,&quot;IA000&quot;,&quot;RA000&quot;,&quot;OA000&quot;],&quot;LG000&quot;, 0, nil}
+     ].
+</PRE>
+  <DT>AddInput.doc
+<DD> レコード追加ユーティリティで使用するファイルであ
+る。テーブル定義に関する情報を、次のように記述する。
+    <PRE>      [meibo_history([1]),meibo([1]),meibo_id([1])].
+</PRE>
+すなわち、meibo_history,meibo,meibo_idという３つのテーブルが、水平分割
+なしで定義された。
+<P>
+ </DL>
+ <DT>~/irpr/bin
+<DD> kappa実行ファイル、irpr_client実行ファイルを置く。
+		   これらのプログラムの実行のために、パスを切っておく。
+<P>
+ </DL><BR> <HR>
+<P>
+</BODY>

@@ -1,0 +1,126 @@
+﻿<HTML>
+<HEAD>
+<TITLE>Distributed DBMS Kappa</TITLE>
+</HEAD>
+<BODY bgcolor="#FFEFDF">
+
+<TABLE border=0 WIDTH=650>
+<TR>
+<TD WIDTH=150 VALIGN=top>
+
+<TABLE border=0>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="outline-E.html"> Kappa's Homepage </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="hist-E.html"> History of Kappa </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="nf2-E.html"> Data model of Kappa </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#a7a7c7">
+<A HREF="dist-E.html"> As a distributed DBMS </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="app-E.html"> Kappa programing </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ifs-E.html"> IFS Kappa </A>
+</TD>
+</TR>
+<TR>
+<TD HIGHT=25 VALIGN=TOP BGCOLOR="#dcdcdc">
+<A HREF="ref-E.html"> References </A>
+</TD>
+</TR>
+
+</TABLE>
+
+<TD WIDTH=500>
+<TABLE border=0>
+<TR>
+<TD ALIGN=left VALIGN=TOP>
+<img src="kappa.gif">
+</TD>
+<TD ALIGN=center>
+<H1 ALIGN="center">As a distributed DBMS</H1>
+</TD>
+</TR>
+</TABLE>
+
+<UL>
+<LI>System configuration<BR>
+     In order to manage large amount of data, we must examine
+     communications in loosely coupled parallel processing.
+     Closely related data should be located in the same cluster and
+     query processing plans are responsible for decreasing communications.<P>
+
+     Kappa is composed of local DBMSs(LDBMSs), all of which manage
+     one database. Each LDBMS has a full set of functions of DBMS.
+     Functions of distributed transactions are implemented based on
+     two phase commitment protocol to handle queries concerning
+     multiple LDBMS.<P>
+
+     Global information such as table names of a database is accessed by
+     multiple LDBMSs, which can cause concentration of access to a server
+     DBMS(SDBMS). Replicants of a SDBMS are created to prevent the
+     congestion.<P>
+     
+     LDBMSs on each cluster do parallel processing suited for tightly
+     coupled multi processors.<P>
+
+<LI>Data placement and parallel processing<BR>
+     Load of each cluster and communications among them must be
+     balanced for efficient parallel processing. In case of DBMS, large
+     amount of data are stored in secondary memories. Therefore,
+     data placement is closely related to methods of parallel processing.<P>
+
+     <UL>
+       <LI>Distribution<BR>
+	    Distribution of relations or tables is the simplest way of
+	    exploiting computational power of multiple processors.
+	    Tables must be distribued taking communications and load
+	    balance into account.<P>
+       
+       <LI>Horizontal partition<BR>
+	    Horizontal partitioning is a method of bringing out 
+	    parallelism. A relation is horizontally partitioned
+	    in records and distributed to different LDBMSs. Basically,
+	    the same operation is requested to each partitioned
+	    relation and the operational results are collected at last.<BR>
+	    This method is effective when a relation is too large to
+	    be operated in a cluster or when CPU bound operations
+	    such as data searching are important.<P>
+	    
+       <LI>Replication<BR>
+	    Replicated relations contribute availability and prevent
+	    database access from congestion.<BR>
+
+     </UL>
+</UL>
+
+</TD>
+</TR>
+</TABLE>
+
+<HR>
+<CENTER>
+[<A HREF="outline-E.html">Kappa's Homepage</A>]
+[<A HREF="app-E.html">Kappa programing</A>]
+[<A HREF="ifs-E.html">IFS Kappa</A>]
+[<A HREF="ref-E.html">References</A>]
+</CENTER>
+
+</BODY>
+</HTML>

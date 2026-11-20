@@ -1,0 +1,348 @@
+%
+%
+%                 README for DIZZY.kl1
+%          KLIC 98 contest for speed course
+%          (C) Yoichi Kono <kono98@geocities.co.jp>
+%
+%
+%  
+%  This document is Copyright 1998 by Yoichi Kono, 
+%                     a graduate of Muraoka Lab, Waseda Univ.
+%  This document is Copyright 1998 by Yoichi Kono @ 
+%                     早稲田大学理工学部情報学科村岡研究室卒業.
+%
+%  
+%  委員会提供の評価プログラム(klicon98speed-v1.tgz)では, 正しく結果が
+%  表示できない可能性があります。実行時には,67行目/191行目/198行目を
+%  以下の例のようにプログラムに組み込むと, 正しい表示結果が得られます。
+%
+%  Default(comment out): 
+%   67: % io:outstream([print(["SCORE Current:",Score1,", Max:",Score2]),nl]),
+%  191: % printAnswer(0,~(Size*Size),Size,Answer),
+%  198: % printAnswer(0,~(Size*Size),Size,Answer),
+%  
+%  For Display the answers:
+%   67:  io:outstream([print(["SCORE Current:",Score1,", Max:",Score2]),nl]),
+%  191:  printAnswer(0,~(Size*Size),Size,Answer),
+%  198:  printAnswer(0,~(Size*Size),Size,Answer),
+%  
+%  
+%  
+%  実行方法( klicon98speed-v1.tgz を使用 ):
+%  
+%  # time ./make.sh kono98/
+%  # ./kono98/skel -p 16 20 test.dat
+%
+
+
+---------------------
+1)プログラムの説明書
+---------------------
+
+
+■■■■ 処理の概要 ■■■■
+
+始めに solve() から、mainLoop を呼び出す。mainLoop の結果に対して、filter() 
+でフィルターを掛け、良い解のみを solve() に返す。@lower_priority を mainLoop()
+に付けることで、mainLoop() と filter() が並行に動作するようになる。
+
+	solve( Result ):-
+		mainLoop( 試行回数, R )@lower_priority,
+		filter( R, Result ).
+
+mainLoop() では、試行回数の数だけ、mySolver() を呼び出す。また @node を使って,
+並列に動作させる。
+
+	mainLoop(N,R):-
+		mySolver(R,R1) @ node(PID),
+		mainLoop(N-1,R1) @lower_priority.
+
+mySolver() では、乱数によって選択させた単語を、(0,0) から縦または横に置く。
+その置いた単語に対して、貪欲法 greedy() によって、解を作成していく。
+
+	mySolver(R,R1):-
+		始めに置く単語を乱数によって求める,
+		greedy( 1000, R, R1 ).
+		
+greedy() では、貪欲法を N 回繰り返す。毎回のループでは、後述のアルゴリズム
+で、解を作成していく。
+
+	greedy( N, R, R1 ):-
+		主に乱数によって、単語を置く,
+		greedy( N-1, R, R1 ).
+
+
+■■■■ 動作確認を行なったシステムの概要(機種、ＯＳなど) ■■■■
+
+	486 DX2-66MHz	Linux 2.0.29	klic-2.002
+	UltraSparc1	Solaris 2.6	klic-3.002
+	
+	手近に並列 klic システムがなかったので, UltraSparc1 に複数のプロセス
+	を走らせて,実行させました。委員会のマシンで並列に動かなければ, 逐次
+	プログラムとして(-p N をつけずに)実行してください。
+
+
+■■■■ テストデータの処理に要する実行時間 ■■■■
+
+	単語数 200 、サイズ 20 x 20 の問題に対して、
+	486 DX2-66MHz では、一回の試行に、約 26   秒必要であった。
+	UltraSparc1   では、一回の試行に、約  5.2 秒必要であった。
+
+	本プログラムでは、最大で 16000 回の試行を行なうようになっている。
+
+
+■■■■ アルゴリズム、プログラミング上で特に工夫した点 ■■■■
+
+(１) データ構造
+
+入力された単語は、点数の大きい順に sort し、また 単語の長さの短い順に sort
+する。この順序で、各単語に、Index を 0 から付ける。
+
+	● MyWords 
+	word( Index, 未使用, KEY, String, 点数, 単語の長さ ) を リストで格納
+	
+	[	word(0,0,winner,"WINNER",21,6),
+		word(1,0,gener,"GENERATION",17,10),
+		word(2,0,solut,"SOLUTION",15,8),
+		word(3,0,klic,"KLIC",13,4),
+		word(4,0,cont,"CONTEST",9,7),
+		...
+	]
+	
+	● BinWords 
+	乱数で、単語を選び出すのを高速にするため、上記の MyWords を 
+	Binary Tree にしたもの。次のような、階層構造になっている。
+		
+	[Index,[Index 未満の単語のリスト],[Index 以上の単語のリスト]] 
+	
+	[8,[4,[2,[1,[word(0,0,winner,"WINNER",21,6)],
+	            [word(1,0,gener,"GENERATION",17,10)]],
+	         [3,[word(2,0,solut,"SOLUTION",15,8)],
+	            [word(3,0,klic,"KLIC",13,4)]]],
+	      [6,[5,[word(4,0,cont,"CONTEST",9,7)],
+	            [word(5,0,fifth,"FIFTH",5,5)]],
+	         [7,[word(6,0,speed,"SPEED",4,5)],
+	            [word(7,0,prob,"PROBLEM",4,7)]]]],
+	            ...
+	]
+	
+	
+	● Results 
+	解を生成する単語のリストが入っている。
+
+	myplace(Index, Key, String, 点数, X座標, Y座標, Dir),
+	
+	[	myplace(0,winner,"WINNER",21,3,7,tb),
+		myplace(10,or,"OR",1,1,0,lr),		
+		myplace(5,fifth,"FIFTH",5,4,5,tb),
+		myplace(3,klic,"KLIC",13,4,2,tb),
+		...
+	]
+	
+	● Active
+	解を生成する単語のリストが入っている。このリストは、後述の 
+	activeSearch() で使用する。activeSearch() の処理が終った単語は、
+	このリストから外される。
+	
+	actve(Index, X座標, Y座標, Dir),
+	
+	[	actve(0,3,7,tb),	
+		actve(10,1,0,lr),	
+		actve(5,4,5,tb),
+		...
+	]
+	
+	● Answer
+	Size x Size の長さを持つ、String である。解の状態を保存する。
+	
+	"C\000\000\000\000\000\000\000\000\000\000\000\000\000\000OR\000\000\
+	000\000\000\000\000\000\000\000\000\000\000N\000\000\000\000\000\000\
+	000\000\000\000\000\000\000\000T\000\000\000\000\000\000W\000\000\000\
+	000\000\000\000E\000K\000\000F\000I\000\000\000\000\000\000\000SO...."
+	
+	● HistTB
+	縦方向に置いた単語の一文字一文字の座標を格納する。新たな単語を置く時、
+	このデータから、置ける場所を探す。
+	
+	[ id(文字の値), xy(X座標,Y座標), ... ]
+	
+	[	[id(65)],
+		[id(66)],
+		[id(67),xy(7,2),xy(0,0)],
+		[id(68)],
+		[id(69),xy(7,7),xy(4,0)],
+		....
+	]
+	
+	● HistLR
+	横方向に置いた単語の一文字一文字の座標を格納する。新たな単語を置く時、
+	このデータから、置ける場所を探す。
+	
+	[ id(文字の値), xy(X座標,Y座標), ... ]
+	
+	[	[id(65)],
+		[id(66)],
+		....
+		[id(72)],
+		[id(73),xy(5,5)],
+		...
+	]
+	
+	● Table2D
+	
+	activeSearch() で使用するテーブル。各単語の先頭 2 文字と、末尾 2 文字
+	とを格納してある。さらに、高速にアクセスするため、Binary tree の構造を
+	している。
+	
+	各要素:[ Flag, id(2 文字),elm(KEY,Index,先頭か末尾か) ]
+	         Flag: BinaryTree作成に必要な ID で Table2D を作成したら不要。
+	全体の階層構造:
+	[Flag, id(2 文字),[[ id(2 文字) より小さい要素 ]],
+	                  [[ id(2 文字) より小さい要素 ]] ]
+	
+	[4,id(75,76),
+	     [2,id(71,69),[1,id(69,82),[[0,id(67,79),elm(cont,4,head)]],
+	                               [[1,id(69,82),elm(winner,0,rear)]]],
+	                  [3,id(73,67),[[2,id(71,69),elm(gener,1,head)]],
+	                               [[3,id(73,67),elm(klic,3,rear)]]]],
+	     [6,id(83,79),[5,id(79,78),[[4,id(75,76),elm(klic,3,head)]],
+	                               [[5,id(79,78),elm(solut,2,rear),
+	                                             elm(gener,1,rear)]]],
+	                  [7,id(83,84),[[6,id(83,79),elm(solut,2,head)]],
+	                               [[7,id(83,84),elm(cont,4,rear)]]]]
+	],
+	
+	● Table3D
+	activeSearch() で使用するテーブル。各単語の先頭 3 文字と、末尾 3 文字と
+	を格納してある。さらに、高速にアクセスするため、Binary tree の構造を
+	している。(本プログラムでは、このデータを使っていない。今後、改良する時
+	に使うつもりです)
+	
+	各要素:[ Flag, id(3 文字),elm(KEY,Index,先頭か末尾か) ]
+	         Flag: BinaryTree作成に必要な ID で Table3D を作成したら不要。
+	
+	全体の階層構造:
+	[Flag, id(3 文字),[[ id(3 文字) より小さい要素 ]],
+	                  [[ id(3 文字) より小さい要素 ]] ]
+	
+	
+	[4,id(75,76,73),
+	[2,id(71,69,78),[1,id(69,83,84),[[0,id(67,79,78),elm(cont,4,head)]],
+	                                [[1,id(69,83,84),elm(cont,4,rear)]]],
+	                [3,id(73,79,78),[[2,id(71,69,78),elm(gener,1,head)]],
+	                                [[3,id(73,79,78),elm(solut,2,rear),
+	                                                 elm(gener,1,rear)]]]],
+	[6,id(78,69,82),[5,id(76,73,67),[[4,id(75,76,73),elm(klic,3,head)]],
+	                                [[5,id(76,73,67),elm(klic,3,rear)]]],
+	                [7,id(83,79,76),[[6,id(78,69,82),elm(winner,0,rear)]],
+	                                [[7,id(83,79,76),elm(solut,2,head)]]]]
+	],
+	
+	● Used
+	単語がすでに、解に組み込まれたか、未使用かを調べる 長さ Size の String.
+	
+	"\001\000\001\001\001\001\000\000\000\000\001"
+
+
+
+(２) 貪欲法
+
+	・始めに (0,0) の場所に縦もしくは横に、乱数で選んだ単語を置く。
+
+	・次に、２番目以降の単語については、乱数で候補を探し、 HistLR HistTB
+	を参照しながら、置くことのできる場所を探していく。
+
+	   初期解                                                 次の解
+	   FIRST → 乱数で選択された → HistLRを → 見つかった！   FIRST
+	   -----    次の単語は: TWO     調べる                     ----W
+	   -----                                                   ----O
+
+	・置く場所が見つかったら、Answer HistLR HistTB Used ... を更新して、
+	結果をResults に書き込む。仮に、the という単語の上に、them という単語
+	を置くような場合には、Results から the という単語を削除して、単語長の
+	長い them を新たな解とする。
+
+	・単語は点数の高い順に sort されている。そこで、最終解の点数が高くなる
+	ように、２番目以降の単語を探す時、乱数に偏りをもたせ、なるべく若い番号
+	の単語が候補として選ばれるようにした。
+
+	・各単語に割り当てられた点数にもよっては、単語の数を始めから半減すると
+	良い解が得られる場合がある。そこで、本プログラムでは、試行の回数ごとに
+	乱数で単語数を制限している。
+
+           単語数 := N/2 + ( random() mod (N - N/2 + 1) ); [N: 入力単語数 ]
+
+	・各単語を一つ置くたびに、次の active search を行なう。
+
+(３) active search 
+	◎ 2X2の active search
+	これは、右のような単語の置き方を                    B  
+	作成する処理である。              	            E
+	                                 *****          THOSE
+	                                    END   →       END
+                                                           N
+                                                           D
+
+	始めに Active のリストに [END] という単語があったとする。
+	[END] の左上に まだ割り当てられていない単語から一つ選び出す。
+        仮にこの単語を [THOSE] として、上の図のように ***** の場所に置く。
+	次に二つの単語の接する文字に注目する。上の場合 (S,E) (E,N) である。
+	この２文字を先頭か語尾に含む単語のリストを Table2D から探しだし、
+	上の図の右側のように置く。(これを本文では、2X2の置き方と表現する)
+
+	もし、[END] に対し、左上に 2X2 置き方が可能でないなら、次に [END] の
+	左下に対して、同じように置ける単語がないか試行錯誤を繰り返す。
+
+	同様にして、[END] の右上にたいして試行錯誤を行ない、それが失敗したなら
+	右下に対して、同様の処理を行なう。
+	                                                    S 
+	また、右図の縦に置かれた単語 [WORLD]       W       WONDER
+	に対しても同様の処理で 2X2 の置き方を      O     NOON 
+	試行錯誤で探していく。                     R  →   R 
+	                                           L       L
+	                                           D       D
+
+	◎ 2X3 の active search                          C
+	2x2 の active search と同じく、                W L
+	始めに[MOST]があった場合の例を                 H A             
+	右に示す。[MOST]の左上に、まだ    ***       TROOPS
+        使用していない単語を置く。        MOST →      MOST
+	右の図では、[TROOPS]を置く。                    I
+	次に Table2D から(O,M)(P,O)(S,S)                N
+	の綴をもつ単語のリストを求め、                  T
+	右の図のように、[WHOM][POINT][CLASS]のような
+	単語がみつかった場合、これを新たな解とする。
+	もし、左上に置いた単語[TROOPS]から上記のような 2x3 の組み合わせが
+	見つからなかったら、単語[MOST]の左下に対して、同様の探索を行なう。
+
+	同様に[MOST]の右上に対しても試行錯誤を行ない、それが失敗したなら、
+	右下に対して、同様の処理を行なう。
+
+	また 2x2 の active search と 同様に縦に置かれた単語に対しても同様の
+	探索を繰り返す。
+
+	◎ 3X2 の active search
+	◎ 3X3 の active search
+	本プログラムでは、時間切れのため、実装していないが、Table3D を使って
+	もっと効率の良い組合せを見つける処理を実装する予定でした。
+
+	     B                  BIGGEST
+	    MAN                     NORWAY
+	    ORIGINAL             ATHENA
+            R G                     R V
+            E H                     G E
+              T                     Y L
+
+
+■■■■ その他(KLIC システム、KL1 言語仕様に関する要望など) ■■■■
+	
+	今年の問題も楽しみながら、プログラミングをできました。最後に並列に
+	動作させる段になって、なかなか klic-2.002 が install できませんでした。
+	しかたなく、Bug があるらしい klic-3.002 で疑似的に 並列化させました。
+	是非、早く共有メモリ型の klic-3.002 を Release して下さい。
+	
+	2x2/2x3 の active search を作るプログラムを作ったら、プログラムが長く
+	なってしまいました。
+
+
+

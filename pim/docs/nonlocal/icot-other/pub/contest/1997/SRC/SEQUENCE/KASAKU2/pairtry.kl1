@@ -1,0 +1,67 @@
+%%
+%% Pair etc.  ( Try and Check )
+%%
+
+:- module solitaire_pairtry.
+
+%
+% 行内の入れ換えを行う。得点が上がった場合のみ採用。
+%
+try(IN, OUTS):- true |
+	solitaire_misc:score_e_c(IN, S_IN),
+	OUTS = [IN|NOUTS],
+	try_loop(IN,S_IN, NOUTS).
+
+try_loop(IN,S_IN, OUT):- true |
+	try_all(IN,S_IN, X,S_X),
+	( S_X > S_IN ->
+		OUT = [X|NOUT],
+		try_loop(X,S_X, NOUT);
+	  otherwise;
+	  true -> OUT = [] ).
+
+% ５行とも入れ換え
+try_all(IN,S_IN, X,S_X):- true |
+	try_line(0, IN,S_IN, L1,S1),
+	try_line(5, L1,S1, L2,S2),
+	try_line(10, L2,S2, L3,S3),
+	try_line(15, L3,S3, L4,S4),
+	try_line(20, L4,S4, X,S_X).
+
+% １行入れ換え
+try_line(N, I,SI, O,SO):- true |
+	solitaire_misc:list_topn(N,I, Head,R0),
+	solitaire_misc:list_topn(5,R0, Body,Tail),
+	try_line_loop(1, Head,Body,Tail,SI, O,SO).
+
+try_line_loop(120, H,B,T,SI, O,SO):- true |
+	solitaire_misc:connect_list(H,B,T, O),
+	SO = SI.
+try_line_loop(X, H,B,T,SI, O,SO):- X<120 | NX:=X+1,
+%	io:outstream([print(['shuffle:',B,SHUF]),nl]),
+	try_shuffle(X, B, SHUF),
+	solitaire_misc:connect_list(H,SHUF,T, TRY),
+	solitaire_misc:score_e_c(TRY, S_TRY),
+	( S_TRY > SI ->
+		O = TRY, SO = S_TRY;
+	  S_TRY=<SI ->
+		try_line_loop(NX, H,B,T,SI, O,SO) ).
+
+% 5 つのメンバーを持つリストのアイテムを入れ換える
+% X=0 で入れ換え無し。X<120
+try_shuffle(X, [I1,I2,I3,I4,I5], O):- true |
+	X1 := X  /24, R1 := X mod 24,
+	X2 := R1 / 6, R2 := R1 mod 6,
+	X3 := R2 / 2,
+	X4 := R2 mod 2,
+	list_getnth(X1, [4,3,2,1,0], K1, L1),
+	list_getnth(X2, L1, K2, L2),
+	list_getnth(X3, L2, K3, L3),
+	list_getnth(X4, L3, K4, [K5]),
+	solitaire_sort:sort_r_key([item(K1,I1),item(K2,I2),item(K3,I3),item(K4,I4),item(K5,I5)], O).
+
+list_getnth(N, L, TGT,REST):- true |
+	solitaire_misc:list_topn(N,L, Top,[TGT|Tail]),
+	solitaire_misc:connect_list(Top,Tail, REST).	
+
+

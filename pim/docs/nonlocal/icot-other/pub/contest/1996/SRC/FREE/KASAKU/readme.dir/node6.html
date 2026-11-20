@@ -1,0 +1,37 @@
+﻿<html><HEAD>
+<TITLE>2.2.2 状態</TITLE>
+</HEAD>
+<BODY>
+<P>
+ <BR> <HR><A NAME=tex2html93 HREF="node7.html"><IMG ALIGN=BOTTOM ALT="next" SRC="next_motif.gif"></A>   <A NAME=tex2html91 HREF="node4.html"><IMG ALIGN=BOTTOM ALT="up" SRC="up_motif.gif"></A>   <A NAME=tex2html85 HREF="node5.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html94 HREF="node7.html">2.2.3 Q値テーブル</A>
+<B>Up:</B> <A NAME=tex2html92 HREF="node4.html">2.2 内部表現</A>
+<B> Previous:</B> <A NAME=tex2html86 HREF="node5.html">2.2.1 局面(盤面)</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00022200000000000000>2.2.2 状態</A></H3>
+<A NAME=subsubsecstate>&#160;</A>
+<P>
+前述の局面 d/10 の第2 〜 10引数を3進数に見立て、それを10進数に
+変換したものを状態番号とする。8通りの状態番号を計算し、その最小値を
+現局面の状態番号とすることにより、対称同値な局面を
+同じ局面と看做すことが可能となる。
+<P>
+8つの対称形は以下の通りである（図 <A HREF="node6.html#figsymmetric">1</A>参照）。
+<UL><LI> 0. <tt> [A,B,C,D,E,F,G,H,I]</tt> ： (default)
+<LI> 1. <tt> [G,H,I,D,E,F,A,B,C]</tt> ： 上下反転
+<LI> 2. <tt> [C,F,I,B,E,H,A,D,G]</tt> ： 左90度回転
+<LI> 3. <tt> [A,D,G,B,E,H,C,F,I]</tt> ： ＼軸反転
+<LI> 4. <tt> [I,H,G,F,E,D,C,B,A]</tt> ： 180度回転
+<LI> 5. <tt> [C,B,A,F,E,D,I,H,G]</tt> ： 左右反転
+<LI> 6. <tt> [G,D,A,H,E,B,I,F,C]</tt> ： 右90度回転
+<LI> 7. <tt> [I,F,C,H,E,B,G,D,A]</tt> ： ／軸反転
+</UL>
+<P>
+<P><A NAME=70>&#160;</A><A NAME=figsymmetric>&#160;</A><IMG  ALIGN=BOTTOM ALT="" SRC="img2.gif">
+<BR><STRONG>図 1:</STRONG> 盤面の対称形<BR>
+<P><BR> <HR>
+<P><ADDRESS>
+<I>Q-learning により学習を行う Tic-Tac-Toe プログラム</I>
+</ADDRESS>
+</BODY>
+</html>

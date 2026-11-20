@@ -1,0 +1,36 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">
+<!Converted with LaTeX2HTML 95 (Thu Jan 19 1995) by Nikos Drakos (nikos@cbl.leeds.ac.uk), CBLU, University of Leeds >
+<!Actually with its Japanized version JLaTeX2HTML 95 (Wed Mar 1 1995) by Masahiro Kitagawa (kitagawa@ee.es.osaka-u.ac.jp), Osaka University >
+<HEAD>
+<TITLE> Data Search Condition</TITLE>
+</HEAD>
+<BODY>
+<meta name="description" value=" Data Search Condition">
+<meta name="keywords" value="pdst-E">
+<meta name="resource-type" value="document">
+<meta name="distribution" value="global">
+<P>
+ <BR> <HR><A NAME=tex2html282 HREF="node21.html"><IMG ALIGN=BOTTOM ALT="next" SRC="../../../../PICS/next_motif.gif"></A>   <A NAME=tex2html280 HREF="node18.html"><IMG ALIGN=BOTTOM ALT="up" SRC="../../../../PICS/up_motif.gif"></A>   <A NAME=tex2html276 HREF="node19.html"><IMG ALIGN=BOTTOM ALT="previous" SRC="../../../../PICS/previous_motif.gif"></A>         <BR>
+<B> Next:</B> <A NAME=tex2html283 HREF="node21.html"> Value list</A>
+<B>Up:</B> <A NAME=tex2html281 HREF="node18.html"> Search condition</A>
+<B> Previous:</B> <A NAME=tex2html277 HREF="node19.html"> Index search condition</A>
+<BR> <HR> <P>
+<H3><A NAME=SECTION00034200000000000000> Data Search Condition</A></H3>
+<P>
+<b>&lt;</b>DataSearchCond<b>&gt;</b>::=DataSingleCond<BR> <IMG  ALIGN=MIDDLE ALT="" SRC="img97.gif"> 
+LogicalOperator(<b>&lt;</b>DataSearchCond<b>&gt;</b>,<b>&lt;</b>DataSearchCond<b>&gt;</b>)<BR> 
+ <IMG  ALIGN=MIDDLE ALT="" SRC="img98.gif"> <b> compress</b>(Attr_name,<b>&lt;</b>DataSearchCond<b>&gt;</b>)
+<P>
+DataSingleCond::=RangeSearch <IMG  ALIGN=MIDDLE ALT="" SRC="img99.gif"> Attr_name ComparisonOperator Attr_value <IMG  ALIGN=MIDDLE ALT="" SRC="img100.gif"> PartialMatchingSearch <IMG  ALIGN=MIDDLE ALT="" SRC="img101.gif"> Attr_name ComparisonOperator Attr_name <IMG  ALIGN=MIDDLE ALT="" SRC="img102.gif"> <b> not_exist</b>(Attr_name) <IMG  ALIGN=MIDDLE ALT="" SRC="img103.gif"> 
+<b> is_null</b>(Attr_name)
+<P>
+Attr_name::=<i> ATOM</i>
+<P>
+PartialMatchingSearch::=Attr_name=<b> concat</b>(String,*) <IMG  ALIGN=MIDDLE ALT="" SRC="img104.gif"> Attr_name=<b> concat</b>(*,String) <IMG  ALIGN=MIDDLE ALT="" SRC="img105.gif"> 
+Attr_name=<b> concat</b>(*,String,*) <IMG  ALIGN=MIDDLE ALT="" SRC="img106.gif"> etc.
+<P>
+Attr_value::=<i> INTEGER</i> <IMG  ALIGN=MIDDLE ALT="" SRC="img107.gif"> <i> STRING</i>
+<P>
+<BR> <HR>
+<P>
+</BODY>

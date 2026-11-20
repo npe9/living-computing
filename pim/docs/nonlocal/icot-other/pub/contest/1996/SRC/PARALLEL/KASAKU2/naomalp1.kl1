@@ -1,0 +1,154 @@
+:- module multi_set.
+
+/* 呼びだし述語 */
+
+encode(L,V2) :-
+  current_node(PE,N),
+  division(L,N,V1),
+  do1(encode,V1,V2,N).
+decode(V,L) :-
+  generic:size(V,N),
+  decode1(V,L,N).
+union(In1,In2,Out) :-
+  generic:size(In1,N),
+  do2(union,In1,In2,Out,N).
+intersection(In1,In2,Out) :-
+  generic:size(In1,N),
+  do2(intersection,In1,In2,Out,N).
+difference(In1,In2,Out) :-
+  generic:size(In1,N),
+  do2(difference,In1,In2,Out,N).
+contraction(In,Out) :-
+  generic:size(In,N),
+  do1(contraction,In,Out,N).
+choose(In,X,Out) :-
+  choose1(In,X,Out,0).
+
+/* 共通下請け述語 */
+
+do1(Func,In,Out,N) :- N>0 |
+  N1:=N-1,
+  do1(Func,In,Out1,N1),
+  vector_element(In,N1,L1),
+  set_vector_element(Out1,N1,L2,Out),
+  do1(Func,L1,L2)@node(N1).
+do1(Func,In,Out,0) :- generic:size(In,L), new_vector(Out,L).
+do1(nil,In,Out) :-
+  Out=[].
+do1(encode,In,Out) :-
+  qsort(In,Out1),
+  encode1(Out1,Out).
+do1(contraction,In,Out) :-
+  contraction_list(In,Out).
+
+do2(Func,In1,In2,Out,N) :- N>0 |
+  N1:=N-1,
+  do2(Func,In1,In2,Out1,N1),
+  vector_element(In1,N1,L1),
+  vector_element(In2,N1,L2),
+  set_vector_element(Out1,N1,L3,Out),
+  do2(Func,L1,L2,L3)@node(N1).
+do2(Func,In1,In2,Out,0) :- generic:size(In1,L), new_vector(Out,L).
+do2(union,In1,In2,Out) :-
+  union_list(In1,In2,Out).
+do2(intersection,In1,In2,Out) :-
+  intersection_list(In1,In2,Out).
+do2(difference,In1,In2,Out) :-
+  difference_list(In1,In2,Out).
+
+/* encodeの下請け */
+
+division([],N,V) :-
+  new_vector(V1,N), do1(nil,V1,V,N).
+division([X|L],N,V) :-
+  XP := X mod N,
+  division(L,N,V1),
+  set_vector_element(V1,XP,LP,[X|LP],V).
+
+qsort(In,Out) :- qsort(In,Out,[]).
+qsort([],Xs,Ys) :- Xs = Ys.
+qsort([X],Xs,Ys) :- Xs = [X|Ys]. /* 若干速くなる */
+qsort([H|T],Xs0,Ys) :- T=[_|_] |
+  part(T,H,L,R), qsort(L,Xs0,[H|Xs1]), qsort(R,Xs1,Ys).
+part([],V,L,R) :- L=[], R=[].
+part([H|T],V,L,R) :- H>=V | R=[H|NR],part(T,V,L,NR).
+part([H|T],V,L,R) :- H<V | L=[H|NL],part(T,V,NL,R).
+
+encode1(In,Out) :- In=[c(X,N),X|L] |
+  N1:=N+1, encode1([c(X,N1)|L],Out).
+encode1(In,Out) :- In=[c(X,N),Y|L],X=\=Y |
+  encode1([c(Y,1)|L],Out1), Out=[c(X,N)|Out1].
+encode1(In,Out) :- In=[c(X,N)] | Out=In.
+otherwise.
+encode1([],Out) :- Out=[].
+encode1([X|L],Out) :-
+  encode1([c(X,1)|L],Out).
+
+/* decodeの下請け */
+
+decode1(In,Out,N) :- N>0 |
+  N1:=N-1,
+  decode1(In,L1,N1),
+  vector_element(In,N1,L),
+  decode2(L,Out,L1).
+decode1(In,Out,0) :- Out=[].
+decode2(In,Out,DL) :- In=[] | Out=DL.
+decode2(In,Out,DL) :- In=[c(X,1)|L] |
+  Out=[X|L1], decode2(L,L1,DL).
+decode2(In,Out,DL) :- In=[c(X,N)|L], N>1 |
+  Out=[X|L1], N1:=N-1, decode2([c(X,N1)|L],L1,DL).
+
+/* unionの下請け */
+
+union_list(In1,[],Out) :- Out=In1.
+union_list([],In2,Out) :- Out=In2.
+union_list(In1,In2,Out) :- In1=[c(X1,N1)|L1], In2=[c(X2,N2)|L2], X1=X2 |
+  N3:=N1+N2, union_list(L1,L2,Out1), Out=[c(X1,N3)|Out1].
+union_list(In1,In2,Out) :- In1=[c(X1,N1)|L1], In2=[c(X2,N2)|L2], X1>X2 |
+  union_list(In1,L2,Out1), Out=[c(X2,N2)|Out1].
+union_list(In1,In2,Out) :- In1=[c(X1,N1)|L1], In2=[c(X2,N2)|L2], X1<X2 |
+  union_list(L1,In2,Out1), Out=[c(X1,N1)|Out1].
+
+/* intersectionの下請け */
+
+intersection_list(In1,[],Out) :- Out=[].
+intersection_list([],In2,Out) :- Out=[].
+intersection_list(In1,In2,Out) :- In1=[c(X,N1)|L1], In2=[c(X,N2)|L2], N1>=N2 |
+  intersection_list(L1,L2,Out1), Out=[c(X,N2)|Out1].
+intersection_list(In1,In2,Out) :- In1=[c(X,N1)|L1], In2=[c(X,N2)|L2], N1=<N2 |
+  intersection_list(L1,L2,Out1), Out=[c(X,N1)|Out1].
+intersection_list(In1,In2,Out) :- In1=[c(X1,_)|_], In2=[c(X2,_)|L2], X1>X2 |
+  intersection_list(In1,L2,Out).
+intersection_list(In1,In2,Out) :- In1=[c(X1,_)|L1], In2=[c(X2,_)|_], X1<X2 |
+  intersection_list(L1,In2,Out).
+
+/* differenceの下請け */
+
+difference_list(In1,[],Out) :- Out=In1.
+difference_list([],In2,Out) :- Out=[].
+difference_list(In1,In2,Out) :- In1=[c(X,N1)|L1], In2=[c(X,N2)|L2], N1>N2 |
+  N3:=N1-N2, difference_list(L1,L2,Out1), Out=[c(X,N3)|Out1].
+difference_list(In1,In2,Out) :- In1=[c(X,N1)|L1], In2=[c(X,N2)|L2], N1=<N2 |
+  difference_list(L1,L2,Out).
+difference_list(In1,In2,Out) :- In1=[c(X1,_)|_], In2=[c(X2,_)|L2], X1>X2 |
+  difference_list(In1,L2,Out).
+difference_list(In1,In2,Out) :- In1=[c(X1,N1)|L1], In2=[c(X2,_)|_], X1<X2 |
+  difference_list(L1,In2,Out1), Out=[c(X1,N1)|Out1].
+
+/* contractionの下請け */
+
+contraction_list([],Out) :- Out=[].
+contraction_list(In,Out) :- In=[c(X,_)|L] |
+  contraction_list(L,Out1), Out=[c(X,1)|Out1].
+
+/* chooseの下請け */
+
+choose1(In,E,Out,N) :- vector_element(In,N,L1), L1=[] |
+  N1:=N+1,
+  choose1(In,E,Out,N1).
+choose1(In,E,Out,N) :- vector_element(In,N,L1), L1=[c(X,C)|L], C>1 |
+  set_vector_element(In,N,L2,Out),
+  E=X, C1:=C-1, L2=[c(X,C1)|L].
+choose1(In,E,Out,N) :- vector_element(In,N,L1), L1=[c(X,1)|L] |
+  set_vector_element(In,N,L2,Out),
+  E=X, L2=L.

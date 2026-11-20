@@ -1,0 +1,261 @@
+﻿<title>Find files program</title>
+<h1>プログラム「ソフトウェアの検索」</h1>
+<hr>
+
+<h2> <b> micro-Quixote </b> プログラムの例として、
+「ソフトウェアの検索」を紹介しましょう。</h2> <p>
+
+
+これが <b> micro-Quixote </b> プログラム「ソフトウェアの検索」です。
+但し、このプログラムは <b> IFS </b> で公開している <b> micro-Quixote </b> 
+では実現していない<a href="../intro/feature1.html#fea22">モジュール</a>
+を使用していて、プログラムの実行は、外部のフィルタとの組合せで実現しました。
+この外部フィルタは、残念ながら IFS で公開していません。
+(<a href = "findfileref.html">参考文献はこちら</a>)<p>
+
+<pre>
+&program;;
+<a href = "../syntax/ssump.html">&subsumption;;</a>
+gcc =< software;;
+	% 「gcc はソフトウェアである」ことを示しています。
+editor =< {software, tool};;
+	% 「エディタはソフトウェアであり、ツールである」
+emacs =< editor;;
+	% 「Emacs はエディタである」
+gnu >= {emacs, gcc};;
+	% 「Emacs, GCC は GNU の product である」
+mule =< emacs;;
+	% 「Mule は、Emacsを特化したものである」
+mule >= {"mule-1", "mule-2"};;
+	% 「Mule には、"mule-1" と "mule2" がある」
+media >= {"CMT", 8mmTape, floppy};;
+	% 「media には、カートリッジ、8mm テープ、
+	%   フロッピーがある。」
+
+&rule;;
+ftp::	% ftp サイトの情報を保持しています。
+{
+   ftp_site[category=mule,
+	    where="etlport.etl.go.jp",
+	    directory="/pub/mule"];;
+	% 「etlport には mule がある。」
+   ftp_site[category=gnu,
+	    where="prep.ai.mit.edu",
+	    directory="/pub/gnu"];;
+	% 「prep には gnu がある。」
+}
+
+editor::
+	% エディタ (mule emacs) に関する知識を保持しています。
+{
+   emacs/[ext_language="Emacs Lisp",
+	  required_memory="Big"];;
+	% 「emacs は拡張言語に "Emacs Lisp" を用い、
+	%   大きなメモリを使用する」
+   mule/[text=multi_lingual];;
+	% 「mule は 多言語の text を扱う」
+   "mule-1"[based="emacs-18"]
+	/[status=released, size="Big"];;
+	% 「"mule-1" は "emacs-18" をベースとし、
+	%   既にリリースされていて、大きなメモリを使用する」
+   "mule-2"[based="emacs-19"]
+	/[status=alpha, size="Very Big"];;
+	% 「"mule-2" は "emacs-19" をベースとし、
+	%   αリリースされていて、大変大きなメモリを使用する」
+   Software/[distribution=D]|{ Software =< software } <=
+	distribution:distributable[software=Software, 
+				   media=M, 
+				   form=FORM],
+	distribution:D/[media=M]
+	|| { D =< FORM };;
+	% 「ソフトウェアの配送は、配送形態とメディアにより
+	%   決定される。」
+}
+
+distribution::
+	% ソフトウェア配布に関する知識を保持しています。
+{
+   distributable[software=Software, media=M, form=FORM] <=
+	Software/[licence="GNU General Public Licence",
+		  size=SIZE],
+	distribution:M/[size=SIZE]
+	|| { Software =< software,
+	     M =< media,
+	     FORM=freely_distributable};;
+	% 「ソフトウェアのメディアと形態は、ソフトウェアの
+	%   ライセンスとサイズで決まる。」
+   floppy/[size=small];;
+   "CMT"/[size="Big"];;
+   8mmTape/[size="Very Big"];;
+	% メディアとそのサイズの情報が記述されています。
+   freely_ditributable[media=floppy];;
+   freely_ditributable[media="CMT"];;
+   freely_ditributable[media=8mmTape];;
+   charged[media=floppy];;
+	% 配布形態とメディアの情報が記述されています。
+}
+
+file::	% micro-Quixote のオブジェクトを外部のデータベース
+	% (ftp サイトのファイル)と結び付けるルールを保持し
+	% ています。このルールによって、プログラムには直接
+	% 記述されていないオブジェクトを、あたかもあるかの
+	% ように見せます。この micro-Quixote のオブジェクト
+	% と外部のデータベースの結び付きは、解の検索時に動
+	% 的に行なわれます。
+{
+   FILE/[category=C, where=Where] <=
+	ftp:ftp_site[category=C, where=Where, directory=P],
+	ext:ftp_ls[where=Where, directory=P, file=File],
+	ext:ftp_file_date[file=FILE],
+	ext:ftp_file_owner[file=FILE];;
+}
+
+ext::	% 外部呼び出しの手順を示す、ルールを保持しています。
+{
+   ftp_ls[where=Where, directory=D, file=F] <=
+	&true ||
+	   { F ## ftp_ls[site=Where, directory=D],
+	     F =< &top[where=Where, what=What]};;
+   ftp_ls[where=Where, directory=D, file=F] <=
+	ftp_ls[where=Where, directory=D, file=F] ||
+	   { F ## ftp_ls[site=Where, directory=D],
+	     F =< &top[where=Where, what=What]};;
+	% ftp サイトに対し、ls を行ないます。
+   ftp_file_date[file=FILE]
+	|{ FILE.data == Date } <= &true ||
+	 { Date ## ftp_file_date[file=FILE] };;
+	% ファイルの日時の情報を取得します。
+   ftp_file_owner[file=FILE]
+	|{ FILE.owner == Owner } <= &true ||
+	 { Owner ## ftp_file_owner[file=FILE] };;
+	% ファイルの所有者の情報を取得します。
+}
+
+
+&end.
+</pre><p>
+
+<hr>
+<h2> 質問は以下の通り。</h2><p>
+
+<pre>
+% Emacs に関するファイルを列挙したいなら、以下のようにすれば良い
+% です。
+
+?- file:FILE/[category=emacs].
+
+
+% micro-Quixote の答えは以下の通りです。
+
+no.
+
+% これは、カテゴリ emacs で直接サービスしている ftp サイトがない
+% ことを示しています。そこで、Quixote では次のように制約を用いて、
+% 検索条件を広げることができます。
+
+
+% まず、カテゴリに対する検索条件を上位概念を含めて検索することに
+% よって、検索する ftp サイトの対象を広げます。但し、関係ないもの
+% まで検索されるのを避けるために、ファイルが何であるかという属性の
+% what で emacs を指定します。
+
+?- file:FILE/[category <- emacs, what=emacs].
+
+
+% micro-Quixote の答えは以下の通りです。
+
+FILE = "emacs-18.59"[where="prep.ai.mit.edu",
+		     what=emacs]
+FILE = "emacs-19.25"[where="prep.ai.mit.edu",
+		     what=emacs]
+
+% emacs の２つのバージョンが見つかりました。これは、カテゴリに
+% emacs の上位概念である gnu が見つかり、gnu をサービスする ftp
+% サイト、"prep.ai.mit.edu" で emacs が検索されたためです。
+
+
+% 次に、もう一つの検索条件を広げる方法を説明します。
+% それは、最初の質問の答が求まらなかったのは、category=emacs と
+% いう指定が一般的過ぎて見つからなかったとも考えられるので、
+% カテゴリに関する検索条件をより具体的にし、emacs より下位概念と
+% して質問してみる方法です。それは以下のようになります。
+
+?- file:FILE/[category -> emacs].
+
+
+% micro-Quixote の答えは以下の通りです。
+
+FILE = "mule-1.0"[where="etlport.etl.go.jp",
+		  what=editor:mule]
+FILE = "patch-1.0-01"[where="etlport.etl.go.jp",
+		      what=patch]
+FILE = "README-1.0"[where="etlport.etl.go.jp",
+		    what="README"]
+
+% mule、patch、README が見つかりました。これは、emacs の下位
+% 概念である mule をサービスする ftp サイト "eltport.elt.go.jp"
+% でファイルが検索されたからです。属性の what を特に指定しなかった
+% ので、patch や README も解となっています。
+
+
+% mule の拡張言語に関する問い合わせは以下のようになります。
+
+?- editor:mule/[ext_language=EL].
+
+
+% micro-Quixote の答えは以下の通りです。
+
+EL = Unbound if { editor:mule.ext_language==EL }
+
+EL = Unbound { editor:mule.ext_language==EL,
+	       "Emacs List" >= EL }
+
+% 最初の解は、micro-Quixote は属性継承の実現を可能性の列挙と
+% している(<a href = "findfileref.html">参考文献はこちら</a>)
+% のために、問い合わせそのままが出力されています。
+% 二番目の解から、mule の拡張言語は Emacs Lisp に包摂されている
+% ものだということが分かります。
+% この問合せに対する答えは、属性継承の機能により得られています。
+% つまり、包摂関係を用いて mule は emacs の下位概念であると定義
+% されているので、ext_language、memory の属性が emacs から自動
+% 的に継承されています。
+
+
+% 「mule の一種」といえる、エディタの検索は以下の問合せで
+% 実行できます。
+
+?- editor:MULE|{MULE =< mule}.
+
+% micro-Quixote の答えは以下の通りです。
+
+MULE = mule
+
+MULE = "mule-1"[based="emacs-18"]
+
+MULE = "mule-2"[based="emacs-19"]
+
+% 「mule の一種」といえる、エディタは、３つあって、
+% mule と emacs-18 をベースとした mule-1 と
+% emacs-19 をベースとした mule-2 です。
+
+
+% emacs-19 をベースとした mule-2 の配布については
+% 以下のように問い合わせればよいです。
+
+?- editor:"mule-2"[based="emacs-19"]
+		/[distribution=D].
+
+% micro-Quixote の答えは以下の通りです。
+
+D = freely_distributable[media=8mmTape]
+	if { "mule-2"[based="emacs-19"].licence==
+			"GNU General Public Licence" }
+
+% これは、emacs-19 をベースとした mule-2 のライセンスが
+% "GNU General Public Licence" であったなら、(8mmTape で)
+% 自由に配布可能であるという、仮説付きの答です。
+% emacs-19 をベースとした mule-2 のライセンスについての
+% 情報がデータベースになかったので、このような仮説付きの
+% 答が返されました。
+
+</pre>
