@@ -607,6 +607,11 @@ class Machine:
     def i_put_nil(self, pc, x, y, z, c16):
         self.reg[x] = NIL
 
+    def i_put_constant(self, pc, x, y, z, c16):
+        # two cells: the constant is the whole next cell (klb_opr.kl1 r_c40)
+        self.reg[x] = self.cells[pc + 1]
+        return pc + 2
+
     def i_put_integer(self, pc, x, y, z, c16):
         self.reg[x] = (INT, sx16(c16) & 0xffffffff)
 

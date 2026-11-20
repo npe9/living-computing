@@ -28,8 +28,9 @@ reads vectors the script builds (`driver.Script.vector`), and
 decoder (`b_shift_right`), `lockstep_rss.py` the request-sense analysis
 (`integer`, guard `shift_right`, `put_vector_5`), `lockstep_dect.py`
 the file decoder on terms, answering its read requests (`put_list`,
-`get_nil`, `wait_atom`; `driver.Script.live` and `SLOT`); 64
-instructions now. No
+`get_nil`, `wait_atom`; `driver.Script.live` and `SLOT`),
+`lockstep_deca.py` atoms, proper lists and terms from a real `.sav`
+file (`put_constant`); 65 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py

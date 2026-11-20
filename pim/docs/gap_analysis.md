@@ -87,8 +87,11 @@ oracle is the data: real `.sav` term streams decoded independently by
 `asm/unlsav.py`. `lockstep_dec0.py` is the first step (one-word
 integers); `lockstep_dect.py` the second: integers, lists and vectors,
 with the test playing the reader (the decoder asks with `[W|Rest]` for
-a word and `{V, Rest}` for 32 bits). Atoms, strings and real `.sav`
-terms are next and need the atom-table side. The rest of the module needs `put_list` 62, `get_nil` 27,
+a word and `{V, Rest}` for 32 bits). `lockstep_deca.py` the third: atoms and proper
+lists, the test also playing the atom table (`put(Id, Name, Atom)`,
+`get(Id, Atom)`) and the reader's string request `{Buf, Out, Rest}`,
+on 10 terms cut from the real `pimm_kernel360E.sav`. Next: strings,
+vectors of more than six elements, then the module-level predicates. The rest of the module needs `put_list` 62, `get_nil` 27,
 `wait_atom` 16, `put_structured_constant` 14, `put_constant` 8,
 `put_atom`, `write_nil`, `write_marked_*`, `set_atom`, `wait_constant`,
 `wait_value`, `integer`, `modulo`, `b_multiply`, `new_instruction`, and
@@ -153,7 +156,8 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: `b_shift_right` arithmetic for logical;
+- Not caught by any run: `put_constant` dropping the constant's tag;
+  `b_shift_right` arithmetic for logical;
   `integer` on an unbound operand;
   `switch_on_constant` comparing an unbound key (not observable: every
   pair has the same else label); `execute` keeping the old alternative clause;

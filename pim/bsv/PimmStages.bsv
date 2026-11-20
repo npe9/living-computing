@@ -232,6 +232,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(x, intCell(c16));
       next;
     end
+    else if (op == op_put_constant) begin
+      regs.wr(x, ins2);            // the whole next cell
+      finish(tagged Next (pc + 2));
+    end
     else if (op == op_mark_element) next;     // MRB marking: not modelled
     else if (op == op_put_nil) begin
       regs.wr(x, mkCell(tag_ATOMo, 0));     // nil is the atom 0

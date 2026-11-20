@@ -82,6 +82,7 @@ of this module can check, on either model, and injections confirm it:
 | `integer` (guard) | `23:E2 x` | succeeds if `r[x]` is an integer; unbound is noted and fails (manual: suspend), anything else fails | checked, except the unbound case (a `wait` always precedes it) |
 | `put_vector_1`, `_5`, `_6` | `23:39`, `3D`, `3E` | as `put_vector_2..4` | `_5` checked; `_1`, `_6` not run |
 | `put_list` | `23:2E x` | two new cells, car then cdr, filled by the two `write_*` that follow; `r[x]` := a list pointer to them | checked (`lockstep_dect.py`) |
+| `put_constant` | `23:30 x`, then a cell | `r[x]` := the whole next cell (`klb_opr.kl1` `r_c40`); two cells | checked for an integer constant (`lockstep_deca.py`); the tag being carried is NOT checked |
 | `get_nil` | `23:BA x` | unify `r[x]` with `[]` (the atom 0) | checked |
 | `wait_atom` | `23:80+r`, atom in the low 24 bits | guard: `r` dereferenced must be that atom; unbound is noted and fails | checked |
 | `get_value` | `23:BC x y` | unify `r[x]` with `r[y]` | checked for integer against unbound only |
