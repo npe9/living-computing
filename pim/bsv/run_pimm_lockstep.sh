@@ -33,7 +33,7 @@ mkdir -p build_pimm
 
 # Each test writes its script, the driver executes it, the test
 # compares the trace with the reference model's.
-for t in jtoa conv get4 ccode; do
+for t in jtoa conv get4 ccode asf; do
   python3 ../ref/pimm/lockstep_$t.py --script generated/pimm_script.hex
   ./build_pimm/sim_pimm_driver | python3 ../ref/pimm/lockstep_$t.py
 done

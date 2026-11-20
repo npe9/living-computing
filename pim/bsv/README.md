@@ -78,12 +78,13 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Four tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Five tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
 (`scsi_common:check_completion_code/4`, which builds vectors and
-atoms). State: 40 instructions; goals as
+atoms) and `asf` (`scsi_common:analyze_standard_format/5`, which calls
+`get_4_bytes/4`). State: 41 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

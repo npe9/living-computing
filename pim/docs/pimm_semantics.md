@@ -32,7 +32,8 @@ does not catch (noted at `subtract`). A second module's predicate,
 by `ref/pimm/lockstep_get4.py`, its oracle the source's own
 `Int := ...` expression; `check_completion_code/4`, the first to build
 structures, by `ref/pimm/lockstep_ccode.py`, its oracle the three
-source clauses parsed from the text. The whole `jis_to_ascii` module also runs on the
+source clauses parsed from the text; `analyze_standard_format/5`, the
+first to call another predicate, by `ref/pimm/lockstep_asf.py`. The whole `jis_to_ascii` module also runs on the
 Bluespec core in lockstep with the reference model (see Trace): every
 instruction in the table is implemented there. Three readings no run
 of this module can check, on either model, and injections confirm it:
@@ -54,6 +55,7 @@ of this module can check, on either model, and injections confirm it:
 | `put_vector_N` | `23:38+N x` | `r[x]` := a new vector of N cells; the structure pointer is set to its first cell | checked for N = 2, 3, 4. The pointer's tag is written with the low bit set, as the image builder writes every pointer; what the machine does there (MRB) is not known |
 | `write_atom` | `23:23`, atom in the low 24 bits | store the atom at the structure pointer and advance it | checked |
 | `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
+| `write_variable` | `23:24 x` | the element at the structure pointer becomes a new unbound variable, `r[x]` a reference to it; advance | checked with `x` = 31 only (`analyze_standard_format/5`): the cell and the register are in the trace, nothing reads the register. That the variable is the element itself is our choice |
 | `get_bound_value` | `23:BD x y` | unify `r[x]` with `r[y]` (as `get_value`; the name says `r[y]` is known to be bound) | checked for a vector against an unbound variable |
 | `b_and`, `b_or` | `22:C7`, `22:C8 x y z` | `r[z]` := `r[x]` and / or `r[y]`, bitwise | checked (`scsi_common:get_4_bytes/4`) |
 | `b_shift_left` | `22:C5 x y z` | `r[z]` := `r[x] << r[y]`, 32 bits | checked for a count of 8; a count outside 0..31 is an exception in PDSS (`blt_basic.c`) and stops the model |

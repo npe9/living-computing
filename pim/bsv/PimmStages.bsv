@@ -239,6 +239,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
+    else if (op == op_write_variable) begin
+      // the element itself is the new variable; r[x] refers to it
+      smem.write(sp, mkCell(tag_UNDF, 0));
+      regs.wr(x, mkCell(tag_REFo, absAddr(sp)));
+      sp <= sp + 1;
+      next;
+    end
     else if (op == op_get_value || op == op_get_bound_value) begin
       dbox.unify(regs.r(x), regs.r(y));
       st <= XUnify;

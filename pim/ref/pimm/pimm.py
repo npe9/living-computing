@@ -246,7 +246,7 @@ class Machine:
         None for an unbound variable."""
         w = self.deref(w)
         t = w[0] & ~1
-        if self.unbound(w):
+        if self.unbound(w) or t in (UNDF, HOOK):    # the latter: an element cell
             return None
         if t == INT:
             return signed(w[1])
@@ -567,6 +567,14 @@ class Machine:
 
     def i_write_value(self, pc, x, y, z, c16):
         self.mem[self.sp] = self.reg[x]
+        self.sp += 1
+
+    def i_write_variable(self, pc, x, y, z, c16):
+        # the element itself is the new variable; r[x] refers to it
+        # (our choice: the machine's is not known).  The compiler names
+        # r31 when the variable is not used again.
+        self.mem[self.sp] = (UNDF, 0)
+        self.reg[x] = (REF, self.sp)
         self.sp += 1
 
     def i_collect_value(self, pc, x, y, z, c16):
