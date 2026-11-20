@@ -903,8 +903,17 @@ by ST, SV and SX and reads them back, and fails on the old 64-bit arm. Words 3
 and 6 got the same rule the same day: word 3 keeps bits 0-17, 32-49 and 57
 (printed p.35, "Address Boundaries"; `decks/boundary_width.strap`) and word 6
 bits 0-18 (printed p.35, "Other CPU Bits"; `decks/other_cpu_width.strap`), each
-proven to fail on its old 64-bit arm. Word 4 (maintenance bits, p.35: "Any
-store to location 4 causes it to contain a 0") is still open, docs/NEXT.md.
+proven to fail on its old 64-bit arm. Word 4, the maintenance bits, followed:
+outside maintenance mode (the model has none) "Any store to location 4 causes
+it to contain a 0 with correct check bits" (printed p.35), so `writeWord`'s
+arm now leaves 0 (`decks/maintenance_bits_store.strap`: ST, SV, SX, TI and an
+8-bit VFL field, all read back 0). The IPL's store of the tape's first word
+into word 4 (printed p.126 step 3; p.35 "After an initial program load, this
+location contains the first word read") is the exchange's, not a program
+store: it goes through the storage method `loadWord4`, chosen by
+StretchCore's `devStore` when `iplActive` and the address is 4, so the chain
+refill still reads the control word (the IPL test's `ipl_word4_control_word`).
+See docs/NEXT.md for the CE Vol. III sentence that disagrees.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an

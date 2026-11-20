@@ -30,7 +30,7 @@
 ! signal."  INDEPENDENT, not additional -- with the control bit set,
 ! words 4-31 are outside every area a program can name, so a rule
 ! written as "permanently protected OR outside the area" would signal
-! on the special registers.  Phase B checks word 4 for exactly that.
+! on the special registers.  Phase B checks word 13 for exactly that.
 !
 ! p.32: "An address which actuates indicator AD, address invalid, is
 ! not compared with the contents of the boundary registers and cannot
@@ -114,11 +114,21 @@ START   BD, $+.32                    ! disable: word 3 is protected
         BZB, 6.0, $                  ! hang if DS's routine did not run
         BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 !
-! word 4 is a special register: p.31 says 4 through 31 NEVER signal,
+! word 13 is a special register: p.31 says 4 through 31 NEVER signal,
 ! and with the control bit set it lies outside the area.  The store
 ! must land and DS must stay off.
-        BB1, 4.0, $+1.0
-        BZB, 4.0, $
+!
+! IT WAS WORD 4 UNTIL 2026-11-19, and word 4 stopped being a witness.
+! Reference Manual printed p.35 (PDF p.38), "Maintenance Bits": outside
+! maintenance mode "Any store to location 4 causes it to contain a 0
+! with correct check bits."  The model now does that, and BB1,4.0 left
+! bit 0 off: the BZB below hung at 004141.00 (PC 4290, observed in the
+! full suite).  A store that lands and one that is suppressed both read
+! 0 at word 4, so the witness moved to word 13 (the remainder
+! register, $RM, which keeps all 64 bits of a store) -- the same
+! carve-out, the same instruction lengths, the same PASS address.
+        BB1, 13.0, $+1.0
+        BZB, 13.0, $
         BB,  6.0, $                  ! the store must NOT have been suppressed
 !
 ! word 3 is permanently protected "regardless of... the setting of the
@@ -156,7 +166,7 @@ WABOVE  DD, 0                        ! == the upper boundary, first word out
 ! With the control bit set, EVERY address outside the monitored area
 ! signals -- so a marker in ordinary core would be suppressed and raise
 ! DS again, and the machine would interrupt forever.  Word 6 is in the
-! carve-out and cannot.  (Word 4 is already this program's witness THAT
+! carve-out and cannot.  (Word 13 is already this program's witness THAT
 ! the carve-out works, so the marker uses a different one.)
         SLC, (8)4500.0
 TBL     DD, 0                        ! entry N is at TBL+N words

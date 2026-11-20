@@ -1,0 +1,93 @@
+! maintenance_bits_store.strap -- WORD 4, THE MAINTENANCE BITS: OUTSIDE
+! MAINTENANCE MODE ANY STORE LEAVES IT 0.  Ones are stored into word 4
+! by five paths, and every read-back is zero.
+!
+! THE RULE, read from the page images (2026-11-19):
+!   * Reference Manual printed p.35 (PDF p.38), "Maintenance Bits": "The
+!     64 bits of storage location 4 are reserved for maintenance
+!     purposes.  These bits are active only when the machine is in the
+!     maintenance mode.  When it is not in this mode, they act like the
+!     bits of location 0.  After an initial program load, this location
+!     contains the first word read from the input unit.  This is the
+!     control word for the initial load.  Any store to location 4 causes
+!     it to contain a 0 with correct check bits."
+!   * C22-6578 Appendix A3, "7030 SPECIAL REGISTERS" (PDF p.56): "$MB
+!     (MAINTENANCE BITS WHEN MACHINE IS IN MAINTENANCE MODE.  ALSO
+!     INITIAL CONTROL WORD FOR IPL.  OTHERWISE BEHAVES LIKE $Z)", kind
+!     "MEMORY / MANUAL KEYS".
+!   * pocket card X22-6533-1 (docs/pcard-1.png): "4  Maintenance Bits
+!     64  0-63" -- the width in maintenance mode, not a contradiction.
+!   The model has no maintenance mode, so outside it is the only mode.
+!   The IPL's own store into word 4 is the exchange's, not a program
+!   store, and keeps its word (StretchStorage.bsv loadWord4; pinned by
+!   the IPL test's W4 check in tests/run_tests.sh).
+!
+! Word 4 is not in the protected area (the pocket card gives it no P).
+!
+! FIVE STORE PATHS, each read back by an instruction into ordinary
+! storage, not only by the testbench's look at word 4:
+!   1. ST(BU,64,8),W4 of 64 ones -- the whole word.  Read back at once
+!      (RB1) and again after two NOPs (RB2).
+!   2. SV,$X1,W4, value all ones -- STORE VALUE, bits 0-24 (RB3).
+!   3. SX,$X2,W4 of an index word of all ones -- STORE INDEX, 64 bits
+!      (RB4).
+!   4. TI,1,ONES,W4 -- TRANSMIT, one word, the core's rl_xmit path
+!      rather than an execute arm (RB5).
+!   5. ST(BU,8),W4+.32 of a byte of ones -- a VFL field of 8 bits in the
+!      middle of the word.  "Any store" means the whole word becomes 0,
+!      not just the field (RB6).
+!   Expected of each: 0.  W4 itself is 0 at the halt.
+!
+! The read-back words start as (16)5555555555555555, so a read-back that
+! never happened cannot pass as a 0.
+!
+! RESULT, 2026-11-19: PASS on the fixed model (StretchStorage.bsv's
+! addrMaintenanceBits arm pulses w4StoreW; commitWord4 writes 0): RB1-RB6
+! and W4 all 0, PC 4265.
+!
+! PROVEN DISCRIMINATING, OBSERVED (a scratch copy of the tree):
+!   INJECTION = THE STORE KEPT, as before 2026-11-19 (the arm made
+!     "addrMaintenanceBits: w4LoadW.wset(v);", i.e. the old
+!     "maintenanceBits <= v" through the one committing rule)
+!     -> FAIL on 7 pins: RB1-RB6 and W4 all 0xffffffffffffffff (RB6 too:
+!     the 8-bit field merged into the ones TI left).  PC 4265 passes.
+!   The same injection leaves decks/other_cpu_width.strap and the IPL
+!   test passing.  Reverted by the inverse substitution; cmp identical to
+!   the working file.
+!
+W4      SYN, 4.0                     ! word 4, the maintenance bits ($MB)
+        SLC, (8)4100.0
+START   BD,  $+.32
+        L(BU,64,8), ONES             ! accumulator := 64 ones
+        ST(BU,64,8), W4              ! 1. all of word 4
+        L(BU,64,8), W4               !    read back at once
+        ST(BU,64,8), RB1
+        NOP
+        NOP
+        L(BU,64,8), W4               !    and again, later
+        ST(BU,64,8), RB2
+        LV,  $X1, ONES               ! value field all ones
+        SV,  $X1, W4                 ! 2. STORE VALUE: bits 0-24
+        L(BU,64,8), W4
+        ST(BU,64,8), RB3
+        LX,  $X2, ONES               ! index word all ones
+        SX,  $X2, W4                 ! 3. STORE INDEX: all 64 bits
+        L(BU,64,8), W4
+        ST(BU,64,8), RB4
+        TI,  1, ONES, W4             ! 4. TRANSMIT one word
+        L(BU,64,8), W4
+        ST(BU,64,8), RB5
+        L(BU,64,8), ONES
+        ST(BU,8), W4+.32             ! 5. an 8-bit field at 4.32
+        L(BU,64,8), W4
+        ST(BU,64,8), RB6
+PASS    BEW, $
+        SLC, (8)6000.0
+ONES    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+RB1     DD(BU,64), (16)5555555555555555
+RB2     DD(BU,64), (16)5555555555555555
+RB3     DD(BU,64), (16)5555555555555555
+RB4     DD(BU,64), (16)5555555555555555
+RB5     DD(BU,64), (16)5555555555555555
+RB6     DD(BU,64), (16)5555555555555555
+        END, START

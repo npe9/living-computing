@@ -262,7 +262,11 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append(f'  RegFile#(Bit#(32), Bit#(96)) image <- mkRegFileLoad("{fast_load}", 0, {n_load - 1});')
         lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
         lines.append("    let e = image.sub(phase);")
-        lines.append("    core.mem.writeWord(truncate(e[95:64]), e[63:0]);")
+        # WORD 4 GOES IN BY loadWord4: a program store there leaves 0
+        # (Reference Manual printed p.35), and a pre-load is storage
+        # contents, not a program store (StretchStorage.bsv, loadWord4).
+        lines.append("    if (e[95:64] == 4) core.mem.loadWord4(e[63:0]);")
+        lines.append("    else core.mem.writeWord(truncate(e[95:64]), e[63:0]);")
         lines.append("    phase <= phase + 1;")
         lines.append("  endrule")
         lines.append("")
@@ -270,7 +274,9 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
         lines.append("    case (phase)")
         for i, (addr, val) in enumerate(words):
-            lines.append(f"      {i}: core.mem.writeWord({addr}, 64'h{val:016x});")
+            # Word 4 by loadWord4, as in the FASTLOAD rule above.
+            meth = "loadWord4(" if addr == 4 else f"writeWord({addr}, "
+            lines.append(f"      {i}: core.mem.{meth}64'h{val:016x});")
         lines.append("    endcase")
         lines.append("    phase <= phase + 1;")
         lines.append("  endrule")
