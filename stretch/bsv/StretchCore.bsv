@@ -92,6 +92,41 @@ interface StretchCore;
                                   // setup/inspection -- see StretchIO.bsv
 endinterface
 
+// ---- INTERRUPTION RECOVERY (plan §1c 5f, 2026-11-20) ----
+// What the instruction unit must be able to give back if the level it
+// belongs to raises an interruption: the index words and the indicators
+// as they stood when the level was LOADED (i.e. after this instruction's
+// own I-box processing, before any younger one), and the count of I-box
+// instructions started so far (advSeq), so that recovery can tell whether
+// anything ran ahead of it.  One per look-ahead slot; the guessed branch's
+// wrong-way recovery reads the same record (it used to keep its own
+// xSnap/indSnap, which were exactly this record of the branch's slot).
+typedef struct {
+  Vector#(16, Word64) x;
+  Word64              ind;
+  Bit#(8)             adv;
+  Bit#(8)             sto;   // storeSeq at the load: I-box STORES started so far
+  Bit#(8)             oth;   // otherSeq at the load: non-index indicator
+                             // rises NOT at a level's completion so far
+} IxRecov deriving (Bits);
+
+// The level that last completed in the E-box, with its record: the
+// candidate "operation during which the indicator is turned on"
+// (Ref. Manual printed p.48) for an interruption that becomes due in the
+// next two clocks (StretchStorage's interruptDue() is latched behind the
+// indicator write).  keepX names index words the level ITSELF wrote after
+// its load (progressive indexing's part 2, a store or tail write into
+// words 16-31), which recovery must not undo; ownInd says it set the
+// index indicators itself (progressive indexing), so they are kept too.
+typedef struct {
+  HWordAddr pc;
+  InstrLen  len;
+  IxRecov   rec;
+  Bit#(16)  keepX;
+  Bool      ownInd;
+  Bit#(32)  at;
+} RetiredLevel deriving (Bits);
+
 (* synthesize *)
 module mkStretchCore(StretchCore);
   StretchStorage st <- mkStretchStorage;
@@ -185,9 +220,51 @@ module mkStretchCore(StretchCore);
   // the younger levels and, on the next clock (`recover`), restore the
   // snapshot, reset the instruction counter to the target and refetch.
   Reg#(Bool)                 guessPending <- mkReg(False);
-  Reg#(Vector#(16, Word64))  xSnap        <- mkReg(replicate(0));
-  Reg#(Word64)               indSnap      <- mkReg(0);
+  // (The snapshot is the branch level's slot record, ixRec below; the
+  // slot is remembered in recoverSlot for rl_recover.)
   Reg#(Maybe#(HWordAddr))    recover      <- mkReg(tagged Invalid);
+  Reg#(Bit#(2))              recoverSlot  <- mkReg(0);
+  // ---- INTERRUPTION RECOVERY (see IxRecov / RetiredLevel above) ----
+  // Perf. Char. Vol. 1 printed p.3-22 (PDF 40): each I-box instruction
+  // loads a level, which "may be an index recovery level containing the
+  // old contents of an index register to enable the restoration in case
+  // of unexpected interruptions"; printed p.3-24 (PDF 42): "All changes in
+  // the index registers and/or index indicators due to the advance
+  // processing by the I-box must now be undone ... The correct instruction
+  // counter value is also shipped back to the I-box.  The interruption
+  // action is quite similar to branch recovery".  The model keeps a record
+  // per slot (as the wrong-way recovery always kept one per guess) rather
+  // than a recovery LEVEL per I-box instruction: same architectural
+  // effect, NOT the same level occupancy (docs/spec_lookahead.md's
+  // correction to plan §6d stands for both).
+  Vector#(4, Reg#(IxRecov))  ixRec        <- replicateM(mkReg(IxRecov{x: replicate(0), ind: 0, adv: 0, sto: 0, oth: 0}));
+  Reg#(Bit#(8))              advSeq       <- mkReg(0);   // I-box instructions started (rl_prepare)
+  Reg#(Bit#(8))              storeSeq     <- mkReg(0);   // ... of them, stores into storage (isIboxStore)
+  Reg#(Maybe#(RetiredLevel)) lastRet      <- mkReg(tagged Invalid);
+  // A recovery owed but not yet made (the clock the interruption became
+  // due, something -- an I-box instruction held for its operand, part 2 of
+  // a progressive level -- was still in the way).  Request/acknowledge
+  // counts so each register has one writer; ConfigReg so the watcher
+  // (rl_int_watch) can be ordered after the arms that read them.
+  Reg#(Bit#(8))              intRecReq    <- mkConfigReg(0);
+  Reg#(Bit#(8))              intRecAck    <- mkReg(0);
+  Reg#(Bool)                 intDuePrev   <- mkConfigReg(False);
+  // WHOSE INDICATOR IS IT.  interruptDue() names an entry, not who turned
+  // the indicator on; the recovery is only for the level that completed.
+  // rl_int_watch counts (otherSeq) every non-index indicator that rose in
+  // a clock other than the one just after a level's completion, or in that
+  // clock when an I-box instruction had started beside the completion
+  // (iboxAt): an I-box instruction run ahead, an I/O report, the timer.
+  // If one has risen since the level's load, recovering would move the
+  // counter back before an instruction that already raised its own
+  // indicator, and the routine's return would raise it again; so then no
+  // recovery (taken after the drain, as before).  Conservative: a level's
+  // rise that ever lands in another clock loses its recovery, never the
+  // reverse -- except an I-box instruction finishing a read in the very
+  // clock a level completes, which is counted as the level's.
+  Reg#(Bit#(8))              otherSeq     <- mkConfigReg(0);
+  Reg#(Word64)               indPrev      <- mkReg(0);
+  Reg#(Bit#(32))             iboxAt       <- mkReg('1);
   Reg#(Bit#(16)) ebusy  <- mkReg(0);       // E-box time of the last removed instruction
 
   // Stage 2b timing registers (the budgets: StretchTiming.bsv).
@@ -686,8 +763,8 @@ module mkStretchCore(StretchCore);
                      && clk < laarFreeAt;
   Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait && !lftWait
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
-  Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
-                     && !resumeReady && headReady;
+  Bool armRemoveBase = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
+                       && !resumeReady && headReady;
 
   // ---- THE INTERRUPTION MECHANISM (Ref. Manual p.48) ----
   //
@@ -739,19 +816,19 @@ module mkStretchCore(StretchCore);
   // therefore untouched and its "no program can observe it" note on the
   // latch still stands.
   //
-  // WHAT IS STILL NOT MODELLED.  An I-box-class instruction that the
-  // I-box has already run AHEAD of a pending level is committed and
-  // cannot be taken back, so an indicator set by a level is still not
-  // reported before an I-box instruction that overtook it.  The
-  // iboxHazard test keeps that case narrow -- every unconditional
-  // branch, every branch on a non-index indicator, and every store to
-  // an E-box register drains the levels first (Perf. Char. p.3-18:
-  // "BD ... empty the LA completely") -- but it is not empty, and
-  // closing it needs the look-ahead to be able to unwind.  Stated here,
-  // in bsv/README.md and in docs/NEXT.md item 3.  (run_tests.sh's two
-  // notes on interruption timing -- in the df_data_fetch_alarm section
-  // and the interrupt_pg0 one -- still describe the OLD behaviour and
-  // are stale.)
+  // WHAT THE RECOVERY COVERS, AND WHAT IT DOES NOT (2026-11-20).  An
+  // I-box-class instruction that ran AHEAD of the level raising the
+  // interruption is now undone -- its index words, its index indicators
+  // and the instruction counter -- by rl_int_recover (the "INTERRUPTION
+  // RECOVERY: WHEN" note below armResume), and younger levels are
+  // cancelled.  NOT when one of those instructions was an I-box STORE
+  // (taken late after the drain, as before), and not for an interruption
+  // with any other cause (an I/O report, the timer, an I-box
+  // instruction's own indicator): those still wait for the levels to
+  // drain here.  docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL".
+  // (run_tests.sh's two notes on interruption timing -- in the
+  // df_data_fetch_alarm section and the interrupt_pg0 one -- still
+  // describe the OLD behaviour and are stale.)
   // ---- THE INSTRUCTION BEING PREPARED (hoisted from rl_prepare, 2026-11-19) ----
   // While the interruption instruction is in flight, THAT is the
   // instruction being prepared; pcReg is left pointing at the
@@ -863,17 +940,20 @@ module mkStretchCore(StretchCore);
   // and returns that unit "to the point in the program at which
   // interruption occurred"; Ref. Manual printed p.9 (PDF 12), look-ahead
   // "makes the machine appear as if it were dealing with only one
-  // instruction at a time".  The model cannot undo
-  // (wrong-way recovery's snapshot is not used for interruption).  So the
-  // release is confined to the overlap the model ALREADY had with the add
-  // inline (the 981 pin): one instruction, in the clock after the result
-  // was formed.  That one is not what the pages describe either; it is
-  // kept because inline had it.  A first version also started I-box
-  // instructions during a multiply's four hold clocks, which nothing
-  // bounds; decks/fp_box_interrupt_landing.strap pins where a box-held
-  // multiply's interruption lands (a MODEL fact) and, with that version
-  // back, moved CYCLES only.  The gap is armInterrupt's stated window and
-  // docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
+  // instruction at a time".  Since 2026-11-20 the model undoes the
+  // index words, index indicators and counter (rl_int_recover), but NOT a
+  // store an I-box instruction made ahead (it then takes the interruption
+  // late, after the drain).  So the release stays confined to the overlap
+  // the model ALREADY had with the add inline (the 981 pin, now 1056: the
+  // recovery re-runs what ran ahead of the deck's five DS levels; with the
+  // recovery window injected off it is 981 again, 2026-11-20): one
+  // instruction, in the clock after the result was formed.  That one is
+  // not what the pages describe either; it is kept because inline had it.
+  // A first version also started I-box instructions during a multiply's
+  // four hold clocks; decks/fp_box_interrupt_landing.strap, which now
+  // lands where the pages say, moved CYCLES only with that version back.
+  // Lifting the confinement waits on the store case: docs/NEXT.md "AN
+  // INTERRUPTION RAISED BY A LEVEL" items 1-2.
   //
   // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
   // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
@@ -901,13 +981,50 @@ module mkStretchCore(StretchCore);
                         && prepWouldAct();
   Bool armResume   = armResumeBase && !yieldToPrepare;
 
+  // ---- INTERRUPTION RECOVERY: WHEN (plan §1c 5f, 2026-11-20) ----
+  // Buchholz §15.6 (printed p.246, PDF 271): "As soon as the arithmetic-
+  // bus counter senses an interrupt, the instruction unit and arithmetic
+  // unit are signaled to stop preparing and executing more instructions";
+  // the levels after it are housecleaned, "the old contents of the index
+  // word" put back for each level "for which the instruction unit has
+  // previously modified an index word", and (printed p.247, PDF 272) "the
+  // proper instruction-counter setting is sent to the instruction unit to
+  // return that unit to the point in the program at which interruption
+  // occurred".  In the model the indicator a level sets reaches
+  // interruptDue() two clocks after the level completes (StretchStorage
+  // latches it; measured with a $display on decks/int_recovery_resume.strap
+  // case F: completion at clock 478, the rise at 480), so:
+  //   intWin       -- the two clocks after a level completed with the
+  //                   system enabled: the next level is NOT removed into
+  //                   the E-box (it may be the one the interruption must
+  //                   keep from executing); the I-box may still prepare,
+  //                   which recovery undoes.  NO DECK REACHES THIS HOLD
+  //                   (injected away, 2026-11-20: nothing in the three
+  //                   recovery decks moves): a completing level charges
+  //                   `ebusy`, and headReady waits for it, so a younger
+  //                   level is removed in the window only after a level
+  //                   charged 0 or 1 clock.  Kept for that case.
+  //   intRecWanted -- an interruption became due inside that window (or
+  //                   did earlier and the recovery is still owed).
+  // An interruption due for any other reason (an I/O report, the timer,
+  // an I-box instruction's own indicator, or one already due at the
+  // level's completion) is taken as before, after the levels drain.
+  Bool intWin = st.irqEnabled() && isValid(lastRet)
+                && (clk - validValue(lastRet).at) >= 1 && (clk - validValue(lastRet).at) <= 2;
+  Bool intRise = isValid(intDue) && !intDuePrev && !isValid(intPC);
+  Bool intRecWanted = (intRecReq != intRecAck) || (intRise && intWin);
+  Bool armIntRecover = intRecWanted && !armRecover && !busyXfer && !isValid(pendingIdxWrite)
+                       && !ebox.busy();
+  Bool armRemove   = armRemoveBase && !intWin && !intRecWanted;
+
   Bool armInterrupt = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
-                      && !resumeReady && !headReady
+                      && !resumeReady && !headReady && !intRecWanted
                       && !isValid(intPC)          // one instruction, then done
                       && la.count() == 0 && !ebox.busy() && ibusy == 0
                       && isValid(intDue);
-  Bool armPrepare  = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
-                     && (!resumeReady || yieldToPrepare) && !headReady && !armInterrupt;
+  Bool armPrepare  = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && !armIntRecover
+                     && (!resumeReady || yieldToPrepare) && (!headReady || (armRemoveBase && !armRemove))   // removal held by intWin only
+                     && !armInterrupt;
 
   (* fire_when_enabled *)
   rule rl_clock (running);
@@ -958,17 +1075,121 @@ module mkStretchCore(StretchCore);
     end
   endrule
 
-  (* mutually_exclusive = "rl_recover, rl_io, rl_tail_write, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare" *)
+  // UNDO THE I-BOX'S ADVANCE: the index words and the index indicators
+  // as a level's record holds them (both recoveries; Perf. Char. Vol. 1
+  // printed p.3-24, PDF 42: "All changes in the index registers and/or
+  // index indicators due to the advance processing by the I-box must now
+  // be undone").  keepX / keepInd leave what the level itself wrote.
+  function Action undoAdvance(IxRecov r, Bit#(16) keepX, Bool keepInd) =
+    action
+      st.restoreIndex(r.x, keepX);   // keepX's words are left as they are
+      if (!keepInd) begin
+        Word64 ind = st.readIndicators();
+        st.setIndicatorBits((ind & ~indexIndMask) | (r.ind & indexIndMask));
+      end
+    endaction;
+
+  // What a completing level wrote into the index words itself (RetiredLevel).
+  function Bit#(16) ownIndexWrites(LaLevel h, ExecDone o);
+    Bit#(16) k = 0;
+    if (o.idxWrite matches tagged Valid {.j, .*}) k[j] = 1;
+    if (o.tailWrite matches tagged Valid {.a, .*} &&& a >= 16 &&& a <= 31) k[a - 16] = 1;
+    if (h.storeAddr matches tagged Valid .a &&& a >= 16 &&& a <= 31) k[a - 16] = 1;
+    if (h.storeAddr2 matches tagged Valid .a &&& a >= 16 &&& a <= 31) k[a - 16] = 1;
+    return k;
+  endfunction
+  function Action noteRetired(LaLevel h, ExecDone o) =
+    action
+      lastRet <= tagged Valid RetiredLevel{pc: h.pc, len: h.len, rec: ixRec[la.head()],
+                                           keepX: ownIndexWrites(h, o),
+                                           ownInd: isValid(o.idxWrite), at: clk};
+    endaction;
+
+  // The interruption's own watcher: the edge of interruptDue() and the
+  // owed recovery (intRecReq).  Reads what the arms write and writes only
+  // ConfigRegs the arms read, so it sits after them in the clock.
+  (* fire_when_enabled *)
+  rule rl_int_watch (running);
+    intDuePrev <= isValid(intDue);
+    Word64 indNow = st.readIndicators();
+    indPrev <= indNow;
+    Bool levelClock = isValid(lastRet) && clk == validValue(lastRet).at + 1
+                      && iboxAt != validValue(lastRet).at;
+    if ((indNow & ~indPrev & ~indexIndMask) != 0 && !levelClock)
+      otherSeq <= otherSeq + 1;
+    if (intRise && intWin && !armIntRecover) intRecReq <= intRecReq + 1;
+  endrule
+
+  // >>> INTERRUPTION RECOVERY, 2026-11-20 (plan §1c 5f). <<<  The level
+  // that completed last (lastRet) raised an interruption: as for a wrong
+  // branch, cancel the younger levels, give back the index words and index
+  // indicators the I-box changed after that level was loaded, and return
+  // the instruction counter to the instruction after it; rl_interrupt then
+  // takes the interruption there (Ref. Manual printed p.48: "at the end of
+  // the operation during which the indicator is turned on", "before
+  // execution of the next instruction").  Nothing to give back (nothing
+  // prepared after the level): no effect.
+  // NOT GIVEN BACK: a STORE TO CORE STORAGE an I-box instruction ahead
+  // made (SX, SV, SC, SR, Z, SIC: isIboxStore -- iboxHazard lets them run
+  // ahead of a level that does not name the word), so when one has started
+  // since the level's load there is no recovery at all (`stored`, below);
+  // and any indicator other than the index ones.  No time is charged for the housecleaning: no page found
+  // gives a number for it (Perf. Char. Vol. 1 PDF 11 and 63 list its
+  // steps only), so the I-box's own countdown runs on.
+  rule rl_int_recover (running && armIntRecover);
+    intRecAck <= intRecReq;
+    let r = validValue(lastRet);
+    HWordAddr nxt = r.pc + ((r.len == Full) ? 2 : 1);
+    Bool advanced = advSeq != r.rec.adv;
+    Bool stored   = storeSeq != r.rec.sto;
+    Bool foreign  = otherSeq != r.rec.oth;
+    if (foreign)
+      // SOMETHING ELSE RAISED AN INDICATOR since the level's load (the
+      // WHOSE INDICATOR note at otherSeq): no recovery, taken after the
+      // drain as before 2026-11-20.
+      $display("StretchCore: interruption at half-word %0d NOT recovered: an indicator rose outside the level's completion", nxt);
+    else if (stored)
+      // AN I-BOX STORE RAN AHEAD: the store cannot be taken back, and
+      // returning the counter would run it (and what led to it) AGAIN
+      // when the routine returns -- "LX / V+I / SX" behind the level would
+      // count twice.  So no recovery: the interruption is taken after the
+      // levels drain, late, as before 2026-11-20 (the wrong-way recovery
+      // never meets this: iboxHazard holds an I-box store while a guess is
+      // pending).  docs/NEXT.md "AN I-BOX STORE AHEAD OF AN INTERRUPTING
+      // LEVEL".
+      $display("StretchCore: interruption at half-word %0d NOT recovered: an I-box store ran ahead", nxt);
+    else if (advanced || la.count() != 0 || pcReg != nxt) begin
+      if (advanced) undoAdvance(r.rec, r.keepX, r.ownInd);
+      la.cancelAll();
+      guessPending <= False;
+      pcReg <= nxt;
+      // THE REFETCH COSTS TWO CLOCKS THE PAGES DO NOT GIVE: rl_interrupt
+      // follows and restarts the fetch at the routine, throwing this one
+      // away (MEASURED, injection: without this restart
+      // fp_box_interrupt_landing runs 424 clocks / 36 reads, every other
+      // pin unchanged; with it 426 / 40).  Kept because without it pcReg
+      // moves with no restart, and nothing guarantees an interruption then
+      // follows (an index indicator undone here may have been its cause).
+      // docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL" item 5.
+      branchSeq <= branchSeq + 1;
+      xholdPc <= tagged Invalid;
+      serialPc <= tagged Invalid;
+      $display("StretchCore: interruption recovery to half-word %0d (index %s, %0d younger level(s) cancelled)",
+               nxt, advanced ? "restored" : "unchanged", la.count());
+    end
+    ebusy <= eb;
+    ibusy <= ib;
+    haltedReg <= False;
+  endrule
+
+  (* mutually_exclusive = "rl_recover, rl_io, rl_tail_write, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare, rl_int_recover" *)
   rule rl_recover (running && armRecover);
     // Wrong-way recovery (Perf. Char. p.3-23): undo the index
     // registers and index indicators the I-box changed ahead, take the
     // branch, and refetch. Charged as the branch's own execution
     // cycles again plus the refill the restart costs.
     let tgt = validValue(recover);
-    st.restoreIndex(xSnap);
-    Word64 ind = st.readIndicators();
-    Word64 keep = ~indexIndMask;
-    st.setIndicatorBits((ind & keep) | (indSnap & indexIndMask));
+    undoAdvance(ixRec[recoverSlot], 0, False);
     pcReg <= tgt;
     branchSeq <= branchSeq + 1;
     recover <= tagged Invalid;
@@ -1645,6 +1866,7 @@ module mkStretchCore(StretchCore);
                    pc, boxK, ebudget);
         ebn = (boxK >= ebudget) ? 0 : ebudget - boxK;
         laarRetire(la.headLevel(), ebn);
+        noteRetired(la.headLevel(), o);
         la.retireHead();
       end else begin
         commitNext(pc, len, o.next);
@@ -1696,6 +1918,7 @@ module mkStretchCore(StretchCore);
         // taken.  No program is known to do that.
         la.cancelAll();
         recover <= tagged Valid h.target;
+        recoverSlot <= la.head();
       end else
         la.retireHead();
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles
@@ -1708,6 +1931,7 @@ module mkStretchCore(StretchCore);
         $display("StretchCore: SWAP started at half-word %0d, %0d words", h.pc, xs.remaining);
       ebn = eboxClocks(h.di);
       laarRetire(h, ebn);
+      noteRetired(h, o);
       la.retireHead();
     end
     // else: the E-box holds the level's instruction for its operand read.
@@ -1855,9 +2079,9 @@ module mkStretchCore(StretchCore);
       // the next instruction".  rl_interrupt waits for the levels to
       // drain (armInterrupt); until now rl_prepare went on starting
       // instructions while they drained, and an I-box instruction so
-      // started was committed for good -- the model has no index-
-      // recovery unwind (the "WHAT IS STILL NOT MODELLED" note at
-      // armInterrupt).  The 7030 undoes such an instruction's index
+      // started was committed for good (since 2026-11-20 rl_int_recover
+      // undoes what ran ahead of the level that raised it, but nothing
+      // started after the interruption is due is ever undone).  The 7030 undoes such an instruction's index
       // change from its IX Rec. level (Perf. Char. Vol. 1 Table A-2, PDF
       // 69-71, the LX row's "IX Rec." level, docs/spec_lookahead.md 1.7;
       // App. A, PDF 63: "Recovery information is shipped back to the
@@ -1867,7 +2091,9 @@ module mkStretchCore(StretchCore);
       // $SB+0.7" four clocks, long enough for "LX, $2, 19.0" behind it to
       // run before the $VF interruption its LWF had raised, and ENDCYC
       // then stored through the new $2 (16 of the hundred transposed words wrong).
-      // Levels ALREADY loaded still execute, as before.
+      // Levels ALREADY loaded still execute, as before -- unless the
+      // interruption was raised by the level that just completed, when
+      // rl_int_recover cancels them first.
       noAction;
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
@@ -2019,6 +2245,7 @@ module mkStretchCore(StretchCore);
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: prep.storeAddr,
                           storeAddr2: prep.storeAddr2, carry: carry});
+          ixRec[la.tail()] <= IxRecov{x: st.snapshotIndex(), ind: st.readIndicators(), adv: advSeq, sto: storeSeq, oth: otherSeq};
           pcReg <= pc + ((len == Full) ? 2 : 1);
           // Its preparation time, OF WHICH THIS CLOCK IS THE FIRST
           // (2026-11-17): `ibusy` clocks follow the load, so a
@@ -2048,8 +2275,7 @@ module mkStretchCore(StretchCore);
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
                         storeAddr: tagged Invalid, storeAddr2: tagged Invalid,
                         carry: LaCarry{addr: 0, lbo: 0}});
-        xSnap <= st.snapshotIndex();
-        indSnap <= st.readIndicators();
+        ixRec[la.tail()] <= IxRecov{x: st.snapshotIndex(), ind: st.readIndicators(), adv: advSeq, sto: storeSeq, oth: otherSeq};
         guessPending <= True;
         pcReg <= pc + ((len == Full) ? 2 : 1);
         ibusy <= 2 * 6;   // the branch's four-level load (Blosk p.39)
@@ -2068,6 +2294,9 @@ module mkStretchCore(StretchCore);
         let d1 <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;
+        advSeq <= advSeq + 1;   // the I-box has advanced (interruption recovery)
+        iboxAt <= clk;          // ... in this clock (rl_int_watch)
+        if (isIboxStore(di)) storeSeq <= storeSeq + 1;
         xholdPc <= tagged Invalid;
         serialPc <= tagged Invalid;
       end

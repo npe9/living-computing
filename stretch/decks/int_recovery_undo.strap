@@ -1,0 +1,93 @@
+! INTERRUPTION RECOVERY: WHAT IS UNDONE, 2026-11-20 (docs/microarchitecture_
+! plan.md §1c step 5f; StretchCore's rl_int_recover).
+!
+! THE PAGES.  Perf. Char. Vol. 1 printed p.3-24 (PDF 42): "All changes in
+! the index registers and/or index indicators due to the advance
+! processing by the I-box must now be undone", "The correct instruction
+! counter value is also shipped back to the I-box", "The interruption
+! action is quite similar to branch recovery".  Buchholz §15.6 (printed
+! pp.246-247): the levels after the interrupting one are housecleaned and
+! "the old contents of the index word" put back.  Ref. Manual printed p.48
+! (PDF 51): taken "before execution of the next instruction", and the
+! counter stored by the routine's SIC points at that instruction.
+!
+! THREE CASES, each with a trail of LVIs (X6-X12) that must stay 0 and a
+! routine "SIC, WHEREx / B, DONEx" (printed p.49's table form):
+!   A: L, * (ZM on, entry 33), then a YOUNGER E-box level (L(U) MARKF) that
+!      must be cancelled -- ACCA keeps the product, 0, not MARKF -- and two
+!      LVIs.  WHEREA = 4243, NEXTA.
+!   B: an older divide holds the E-box so that the LVIs run ahead of a VFL
+!      load that sets VF (entry 37).  WHEREB = 4253, NEXTB.
+!   C: the interrupting VFL level is PROGRESSIVE: it sets TF (entry 35) and
+!      X4 += .16 itself.  That index change is the level's own and is KEPT
+!      (X4 = FLDC + .16 = 0x0348500000000000); the LVIs after the NOP are
+!      undone.  The NOP is there because iboxHazard holds index-setting
+!      I-box instructions behind a progressive level: without it nothing
+!      runs ahead and the keep path is not reached (measured).
+!      WHEREC = 4262, NEXTC.
+! The run line in tests/run_tests.sh has the observed injections.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the masks are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $ZM,  $+1.0
+        BBZ, $TF,  $+1.0
+        BBZ, $VF,  $+1.0
+        BB1, 12.33, $+1.0            ! ZM's mask bit := ONE
+        BB1, 12.35, $+1.0            ! TF's mask bit := ONE
+        BB1, 12.37, $+1.0            ! VF's mask bit := ONE
+        LVI, $X4,  FLDC              ! case C's progressive index
+        BE,  $+.32                   ! ENABLE
+! CASE A: a younger E-box level behind the interrupting multiply.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+NEXTA   L(U), MARKF                  ! younger E-box level: must not run
+        LVI, $X6, 1                  ! the trail
+        LVI, $X7, 1
+DONEA   BD,  $+.32                   ! entry 33 branches here
+        ST(U), ACCA                  ! the accumulator the interruption left
+        BE,  $+.32
+! CASE B: a VFL level raises the interruption, the trail ahead of it.
+        L(N), NZF0                   ! an older divide holds the E-box
+        /(N), NZF0                   !   (0.5 / 0.5) so that the trail
+                                     !   runs ahead of the VFL level
+        L(B,16,8), FLDB              ! sign byte 00000001: VF on
+NEXTB   LVI, $X8, 1                  ! the trail
+        LVI, $X9, 1
+        LVI, $X10, 1
+DONEB   BD,  $+.32                   ! entry 37 branches here
+        BE,  $+.32
+! CASE C: the interrupting level writes its own index (progressive).
+        L(N), NZF0
+        /(N), NZF0
+        L(V+I)(B,16,8), 0.16($X4)    ! sign byte 00000100: TF on, X4 += .16
+NEXTC   NOP                          ! runs ahead: the I-box has advanced
+        LVI, $X11, 1                 ! held: an index-setting I-box
+        LVI, $X12, 1                 !   instruction waits for a pending
+DONEC   BD,  $+.32                   !   progressive level (iboxHazard)
+        B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+MARKF   DD(BU,64), 81985529216486895 ! a pattern no product here can be
+        SLC, (8)6400.0
+WHEREA  DD, 0                        ! the counter case A's interruption left
+WHEREB  DD, 0                        ! ... case B's
+WHEREC  DD, 0                        ! ... case C's
+ACCA    DD, 0
+        SLC, (8)6440.0
+FLDB    DD(BU,64), 281474976710656   ! bits 0-15 = 0x0001: sign byte flags 001
+FLDC    DD(BU,64), 1125899906842624  ! bits 0-15 = 0x0004: sign byte flags 100
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6541.0
+ZMRTN   SIC, WHEREA                  ! entry 33 = ZM
+        B,   DONEA
+        SLC, (8)6543.0
+TFRTN   SIC, WHEREC                  ! entry 35 = TF
+        B,   DONEC
+        SLC, (8)6545.0
+VFRTN   SIC, WHEREB                  ! entry 37 = VF
+        B,   DONEB
+        END, START

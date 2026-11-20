@@ -94,8 +94,8 @@ in parentheses); **open** = no stage assigned yet.
 | The FP divide skips over 0s and 1s and selects one of three divisor multiples (1, 3/4, 3/2) from 3 remainder bits and 5 divisor bits (Fig. 14.11), at most six shifts per add cycle and dummy shift cycles beyond six, about 3.5 quotient bits a cycle; reduction cycles are two clocks; the shift counter is loaded with 47 or 48 after the trial reduction; a zero divisor ends a divide, divide double or reciprocal divide after two clocks of execution | Buchholz, Planning a Computer System, pp.213-216 (PDF 238-241), Figs. 14.11-14.13; R23-9732 fig. 3.8.15 sheets 1-3 (PDF 239-241, printed 8-16 to 8-19); Perf. Char. Vol. 1 Table 2 (printed pp.3-4, 3-5, PDF 22-23); Vol. 2 PDF 41 ("about 10 us") | DONE 2026-11-17 for the LENGTH: `mkDivBox` walks the algorithm one reduction loop a clock beside its restoring divider and charges Table 2's divide row from it (`bsv/StretchDivBox.bsv`, "THE 7030'S REDUCTION LOOP"). Atlas /, R/ +1 (as `*`), D/ exact. The answer still comes from restoring steps. RECONSTRUCTION: the counter-loading cycle counted as a loop. |
 | An indexed FP operand in index storage costs one more I-box cycle (0.6 us): the index register and the operand are two reads of index storage | Perf. Char. Vol. 1 printed pp.3-17, 3-18, 3-23; Vol. 2 PDF 42, 64, 73 (I-BOX columns +0.6 us indexed) | DONE 2026-11-17: `StretchTiming.bsv` fpIndexedIboxClocks, +2 preparation clocks; + L LWF exact on PDF 42, 64, 65, 73, 95. `docs/atlas_oracle.md` "Closing the residuals" item 5 |
 | An immediate compare (KI ... KFEI) does not step through its own immediate bytes: 10 + 2(b − 24/y), read row by row | Perf. Char. Vol. 2 PDF 177-182 | DONE 2026-11-17 as a measurement at the atlas operands (`StretchTiming.bsv` eboxClocks, kFamily). The inverted-sign early end (PDF 127-132, 177-182: 12/14 clocks) is not modelled because eboxClocks sees no data. `docs/atlas_oracle.md` "Closing the residuals" item 4 |
-| I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
-| Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
+| I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c; 2026-11-20): a record per look-ahead slot (index words, indicators, I-box start counts at the load) stands in for them, for both recoveries; their per-level cost and occupancy are not charged |
+| Interrupt recovery / housecleaning | Buchholz §15.6 (printed pp.246-247, PDF 271-272); Perf. Char. Vol. 1 printed pp.3-22..3-24 (PDF 40-42), PDF 11, 63; CE figs 3.2.22-23 | partial (2026-11-20, §1c 5f "INTERRUPTION RECOVERY"): an interruption raised by the level that just completed cancels the younger levels, restores the index words and index indicators and returns the counter (`rl_int_recover`); NOT when an I-box store ran ahead, NOT for other sources, housecleaning not timed (docs/NEXT.md) |
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open. K compare VERIFIED against jb_af1c F202A1-6/A15-20 (all of AL/AE/AH, normal + XFN/XFP ranges). jb_af1c F202G (KR Compare-for-Range, p.45) RUNS and passes (`fp_compare_f202g.strap`, `verify_fp_compare_g_listing.py`): `Z,$IND` clears indicators (b1a6ad0), `BB1,$AH` sets the gate (63721f1), and KR was fixed to p.91 -- it sets AE to "accumulator low" and leaves AL and AH unchanged (the range path had wrongly set AH := acc>=opnd). Discriminating on KR's AE via G15. (F202G's own operands do not distinguish the AH-leave-vs-set aspect -- its AH-preset sub-tests all have cmp>=0 -- but p.91 mandates leaving AH.) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
@@ -6184,6 +6184,120 @@ Staged, each step green and committed:
      within 0.0045 clock; the `M+` EXTERNAL medians are the baseline's,
      +3.97 (PDF 69) and +6.31 (PDF 100) (StretchTiming's laarStorePost
      note).
+   - **5f (2026-11-20): INTERRUPTION RECOVERY, first milestone.** WHAT
+     THE PAGES SAY IS RESTORED: Perf. Char. Vol. 1 printed p.3-22 (PDF
+     40), an I-box instruction's level "may be an index recovery level
+     containing the old contents of an index register to enable the
+     restoration in case of unexpected interruptions"; printed p.3-23/3-24
+     (PDF 41-42), on "Interruption" as on a wrong branch, "All changes in
+     the index registers and/or index indicators due to the advance
+     processing by the I-box must now be undone ... The correct
+     instruction counter value is also shipped back to the I-box. The
+     interruption action is quite similar to branch recovery"; Buchholz
+     §15.6 (printed pp.246-247, PDF 271-272): the units "stop preparing
+     and executing more instructions", each level "for which the
+     instruction unit has previously modified an index word" gets the old
+     contents as a pseudo store, and "the proper instruction-counter
+     setting is sent to the instruction unit to return that unit to the
+     point in the program at which interruption occurred"; PDF 63, "I-box
+     is house-cleaned except the index storage ... Recovery information is
+     shipped back to the I-box. This includes all index register recovery
+     information and the interrupted IC value". So: the index words, the
+     index indicators and the instruction counter; and the younger levels
+     are not executed. Nothing is said of storage, which the 7030's I-box
+     does not write ahead (its stores go through store levels, §15.3).
+     THE MECHANISM, reusing the wrong-way recovery's: the snapshot that
+     recovery took for a guessed branch is now taken for EVERY level at
+     its load (`ixRec`, one `IxRecov` per slot: the 16 index words, the
+     indicators, and the counts of I-box instructions and I-box stores
+     started so far), and the branch's recovery reads its slot's record
+     (`recoverSlot`; `xSnap`/`indSnap` are gone; `undoAdvance` is the one
+     restore for both). A completing level leaves its record in
+     `lastRet` with what it wrote itself (`keepX`: progressive indexing's
+     index, a store or tail write into words 16-31; `ownInd`). When an
+     interruption becomes due (a rising `interruptDue()`) in the two
+     clocks after a level completes -- the model's latch, measured: the
+     rise comes at +2 -- `rl_int_recover` cancels the younger levels,
+     clears a pending guess, restores the index words and index
+     indicators if any I-box instruction started after the level's load,
+     sets the counter to the instruction after the level and refetches;
+     rl_interrupt then takes the interruption there, as before. In those
+     two clocks the next level is not removed into the E-box (`intWin`,
+     only with the system enabled); the I-box may prepare, which the
+     recovery undoes. NOT RECOVERED, loud (a `$display`): an I-box store
+     (`isIboxStore`) started after the level's load -- it cannot be taken
+     back, and re-running the counter would run it twice; the interruption
+     is then taken late, after the drain, as before. Not for any other
+     source of interruption. No time is charged (no page gives one).
+     FPGA COST: four 1,104-bit records and a fifth copy in `lastRet` replace one 1,088-bit snapshot (about 4.5 K more flip-flops).
+     THE LANDING (`decks/fp_box_interrupt_landing.strap`, re-pinned to
+     the pages): case 1 counter 4234, case 2 4249, no trail register set
+     (was 4236 with X6, X7; 4251 with X10). Case 2's sourced counter is
+     4249, not the 4250 the deck's header and this plan said: the LX at
+     4249 shares the multiply's word and is the next instruction. CYCLES
+     424 -> 426 and MEMREADS 36 -> 40: TRACED by injection (J8 below):
+     without the recovery's own refetch the deck gives 424 / 36 with every
+     other pin unchanged: the refetch at the restored counter, thrown away
+     by rl_interrupt's restart at the routine. Kept, because without it
+     the counter would move with no restart when no interruption follows.
+     NEW DECKS: `int_recovery_undo` (A: a younger `L(U)` level behind the
+     multiply cancelled, accumulator = the product; B: a VFL level raising
+     VF with three LVIs ahead of it; C: a progressive VFL level raising TF,
+     a NOP ahead of it, its own X4 += .16 kept) and `int_recovery_resume`
+     (the routine returns: D, the younger level and a `V+I` run exactly
+     once after it; E, `LX/V+I/SX` with the LX and V+I ahead, recovered,
+     CNT 1; F, the same with all three ahead behind an older divide: the
+     store guard, CNT2 1, taken late).
+     DISCRIMINATION (observed, real file, exact inverse edit, cmp
+     IDENTICAL; failure sets in tests/run_tests.sh at the three run
+     lines): J2 undo dropped -- land x6 x7 x10, undo x6 x8 x9, resume x5
+     (counted twice); J3 cancelAll dropped -- undo whereb CYCLES MEMREADS,
+     resume CYCLES MEMREADS; J5 keepX dropped -- undo x4 only; J6 store
+     guard dropped -- resume cnt2 x2 (counted twice) CYCLES MEMREADS; J8
+     refetch dropped -- land CYCLES MEMREADS only; J1b window off -- land
+     back to master's answer, undo whereabc x6, resume CYCLES MEMREADS; J1
+     arm forced off -- hangs (step cap); J4 removal hold dropped -- NOTHING
+     moves (no deck reaches it: a completing level charges `ebusy`); J7
+     recoverSlot+1 -- nothing (each guessing branch was the head level);
+     J7b rl_recover's restore dropped -- la_branch_guess X1 only; J9
+     foreign-indicator guard dropped -- nothing in any deck run.
+     HALT CLOCKS against master 857fb21 (`STRETCH_HALT_REPORT=1`, both
+     suites complete): the table is in this milestone's commit message
+     (it was made from the final suite run, after the last file edit).
+     THE ATLAS (Vol. 2 FP add/multiply pages, PDF 42-101, `atlas_oracle.py
+     --tsv`, 2560 cases): the TSV is byte-identical to master 857fb21's
+     (exact 899, 35%; mean -0.13; mean |resid| 1.52 clocks). Nothing moved.
+     WHOSE INDICATOR (found on review, 2026-11-20): `interruptDue()` names
+     an entry, not who raised it, so an I-box instruction run ahead that
+     raised its OWN indicator in the window would have been recovered
+     before and raised again on return. Guard: `rl_int_watch` counts
+     (`otherSeq`) every non-index indicator rise outside the clock after a
+     level's completion (or in it, beside an I-box start); one since the
+     level's load means no recovery. Conservative, and unreached by any
+     deck (injected off, J9: nothing moves).
+     THE SMOKE TEST (found by the suite, 2026-11-20): merging the kept index
+     words by reading them (`snapshotIndex()`) in `rl_int_recover` ordered
+     that rule before `writeWord` (which writes them), hence `getPC` /
+     `halted` before `writeWord`, a restricted pair that broke
+     StretchSmoke's setup rule. `restoreIndex` now takes the keep mask and
+     only writes; method relations otherwise identical to master's.
+     MOVED PINS (all MODEL, all J1b-attributed: the recovery window off
+     gives back master's numbers exactly; every landing checked to be the
+     instruction after the level): `fp_mplus_ds_not_df` 981/103 ->
+     1056/113, `cwf_df_fetch_type` 6031/569 -> 6110/581,
+     `vfl_cross_protect` 1196 -> 1225, `vfl_refill_df` 1115 -> 1155 --
+     the instructions run ahead of each DS-raising level re-run after the
+     return; the refetch's share by J8. Unpinned halt clocks also moved
+     (commit message): two by +1 with no recovery line (`df_fetch_suppress`,
+     `int_timing_bracket`), given back by J1b and not by J4; the likely
+     mechanism, UNTRACED, is a recovery with nothing to give back still
+     holding rl_interrupt one clock.
+     NOT DONE (docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL"): I-box
+     stores ahead (the fix moves enabled timing); the level release's
+     hold-clock beside starts stay confined -- recovery now undoes their
+     index changes but not a store, so lifting it is its own risk; a BD
+     in the latch clocks; other sources; housecleaning time; level
+     occupancy.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

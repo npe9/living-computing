@@ -131,7 +131,9 @@
 // instruction beside the held level (StretchCore's yieldToPrepare note;
 // mkEBox start()'s "beside" refusal).  So the one-clock add costs the
 // instruction unit nothing it did not cost inline
-// (decks/fp_mplus_ds_not_df.strap's 981 pin holds).  NOT during the hold
+// (decks/fp_mplus_ds_not_df.strap's 981 pin held; since the interruption
+// recovery, 2026-11-20, it is 1056, and 981 with the recovery's window
+// injected off -- the release itself is unchanged).  NOT during the hold
 // clocks: an instruction started there commits before the level's
 // indicators are set, and the 7030 undoes such advance on an interruption
 // (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6; Ref. Manual p.48),

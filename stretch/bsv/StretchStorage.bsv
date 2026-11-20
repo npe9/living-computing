@@ -265,7 +265,12 @@ interface StretchStorage;
   // them when it guesses a branch and restores them on a wrong guess
   // (standing for the look-ahead's index-recovery levels, plan §6d).
   method Vector#(16, Word64) snapshotIndex();
-  method Action restoreIndex(Vector#(16, Word64) v);
+  // keep: words NOT restored (a level's own index writes, StretchCore's
+  // interruption recovery).  Write-only on purpose: reading the index
+  // words here to merge would order the recovery rule before writeWord
+  // (which writes them) and so getPC/halted before writeWord, a
+  // restricted pair that broke StretchSmoke's setup rule (2026-11-20).
+  method Action restoreIndex(Vector#(16, Word64) v, Bit#(16) keep);
 
   // Dedicated accumulator accessors: addrAccLeft/addrAccRight (8, 9)
   // are compile-time CONSTANTS baked into readAcc/writeAcc
@@ -1166,8 +1171,9 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Vector#(16, Word64) snapshotIndex() = readVReg(xreg);
-  method Action restoreIndex(Vector#(16, Word64) v);
-    writeVReg(xreg, v);
+  method Action restoreIndex(Vector#(16, Word64) v, Bit#(16) keep);
+    for (Integer i = 0; i < 16; i = i + 1)
+      if (keep[i] == 0) xreg[i] <= v[i];
   endmethod
 
   method Word64 readAccSign();
