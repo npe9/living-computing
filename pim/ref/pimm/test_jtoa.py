@@ -58,6 +58,12 @@ Observed fault injections (2026-11-20), each restored afterwards:
   waiting built-in's goal one cell into
   its stub                               -> error: pc 18372 is not an
                                            instruction
+ on string packing:
+  elements packed from the bottom of the
+  word, in reading and writing alike     -> FAIL: the image's strings read
+                                           'ellI lag LPIeliF'.  Only the
+                                           image-string check sees this;
+                                           every conversion still agrees.
 """
 import io
 import os
@@ -175,11 +181,20 @@ def main():
         m.run()
         w = m.deref(out)
         ok &= w[0] & ~1 == pimm.STRG and m.string(w) == (8, [65, 66])
-    if not ok and (cwrong or note):
+    if not ok:
         print('pimm jtoa: convert/2: %d cases wrong, %d built-in waits %s'
               % (len(cwrong), bwaits, note))
         for c in cwrong[:3]:
             print('  %r' % (c,))
+    # String packing, against constants in the image itself: the IPL's
+    # message strings must read as text (elements from the top of each
+    # word; a 16-element and a 25-element one, so with and without pad).
+    def text(cell):
+        size, elems = m.string(m.im.cells[cell])
+        return size, bytes(elems).decode('latin1')
+    if text(1860) != (8, 'Illegal IPL File') or text(1896) != (8, 'Unable to Decode Constant'):
+        ok = False
+        note += ' image strings %r %r' % (text(1860), text(1896))
     if ok:
         print('pimm jtoa: PASS (from the IPL image: convert_element/2 agrees with its '
               'source on all 65536 keys, %d mapped; convert/2 on %d strings, '

@@ -6,6 +6,12 @@
 //   newVar      a fresh unbound cell; answers the reference to it
 //   record      write a goal record from r0.. or from the argument
 //               registers a1..; a READY one goes on the ready queue
+//   waitRecord  write the suspended goal of a body built-in that must
+//               wait (asm/pimm_stubs.py): its code is the stub, its
+//               arguments the instruction's operands; an output
+//               operand gets a fresh variable, in the record and in
+//               the register
+//   alloc       heap cells for another box
 //   hook        add a goal to the goals waiting on an unbound cell
 //   wake        walk a suspension list; each goal still SUSPENDED
 //               becomes READY and goes on the ready queue
@@ -17,6 +23,7 @@
 package PimmGBox;
 
 import FIFO::*;
+import Vector::*;
 import PimmGen::*;
 import PimmTypes::*;
 import PimmMem::*;
@@ -26,7 +33,10 @@ interface PimmGBox;
   method Action newVar;
   method ActionValue#(Cell) newVarResult;
   method Action record(Bit#(2) status, Addr code, Bit#(8) argn, Bool fromArgv, Bool wantResult);
-  method ActionValue#(Addr) recordResult;
+  method Action waitRecord(Addr code, Bit#(3) argn, Vector#(7, Bit#(8)) operands, Bit#(7) outs);
+  method ActionValue#(Addr) recordResult;       // of record (if asked) and waitRecord
+  method Action alloc(Addr cells);
+  method ActionValue#(Addr) allocResult;
   method Action hook(Addr g, Addr v);
   method Action wake(Bit#(32) s);
   method Action done;                           // a hook or a wake has finished
@@ -37,12 +47,14 @@ endinterface
 typedef union tagged {
   void NewVar;
   struct { Bit#(2) status; Addr code; Bit#(8) argn; Bool fromArgv; Bool want; } Record;
+  struct { Addr code; Bit#(3) argn; Vector#(7, Bit#(8)) operands; Bit#(7) outs; } WaitRecord;
+  Addr Alloc;
   struct { Addr g; Addr v; } Hook;
   Bit#(32) Wake;
   void Pickup;
 } GReq deriving (Bits);
 
-typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GHook1, GHook2, GHook3,
+typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GWArg, GWArg2, GHook1, GHook2, GHook3,
                GWk0, GWk1, GWk2, GWk3, GWk4, GWk5,
                GPk1, GPk2, GPk3, GPk4, GPk5 } GState deriving (Bits, Eq);
 
@@ -58,6 +70,11 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)    code  <- mkRegU;
   Reg#(Bool)    rFromArgv <- mkRegU;
   Reg#(Bool)    rWant <- mkRegU;
+  Reg#(Bool)    rBuiltin <- mkRegU;   // a waitRecord: arguments are operands
+  Reg#(Vector#(7, Bit#(8))) rOps <- mkRegU;
+  Reg#(Bit#(7)) rOuts <- mkRegU;
+  Reg#(Addr)    vAddr <- mkRegU;
+  FIFO#(Addr)   allocQ <- mkFIFO;
   Reg#(Addr)    var_  <- mkRegU;
   Reg#(Addr)    sAddr <- mkRegU;
   Reg#(Bit#(32)) s    <- mkRegU;
@@ -81,7 +98,7 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
 
   function Bit#(32) linkOf(Addr a) = (a == 0) ? 0 : absAddr(a);
 
-  function Action alloc(Addr cells);
+  function Action take(Addr cells);
     action
       Bit#(TAdd#(AddrBits, 1)) next = zeroExtend(hp) + zeroExtend(cells);
       if (next[valueOf(AddrBits)] == 1) fatal("heap full");
@@ -101,20 +118,38 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     reqQ.deq;
     case (reqQ.first) matches
       tagged NewVar: begin
-        alloc(1);
+        take(1);
         mem.write(hp, mkCell(tag_UNDF, 0));
         varQ.enq(mkCell(tag_REFo, absAddr(hp)));
       end
       tagged Record .q: begin
         g <= hp;
-        alloc(gArgs + zeroExtend(q.argn));
+        take(gArgs + zeroExtend(q.argn));
         rStatus <= q.status;
         code <= q.code;
         n <= q.argn;
         rFromArgv <= q.fromArgv;
         rWant <= q.want;
+        rBuiltin <= False;
         mem.write(hp + gLink, intC(q.status == ready ? linkOf(rq) : 0));
         st <= GRec1;
+      end
+      tagged WaitRecord .q: begin
+        g <= hp;
+        take(gArgs + zeroExtend(q.argn));
+        rStatus <= suspended;
+        code <= q.code;
+        n <= zeroExtend(q.argn);
+        rWant <= True;
+        rBuiltin <= True;
+        rOps <= q.operands;
+        rOuts <= q.outs;
+        mem.write(hp + gLink, intC(0));
+        st <= GRec1;
+      end
+      tagged Alloc .cells: begin
+        take(cells);
+        allocQ.enq(hp);
       end
       tagged Hook .q: begin
         g <= q.g;
@@ -153,7 +188,7 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     mem.write(g + gArgn, intC(zeroExtend(n)));
     i <= 0;
     if (n == 0) recordDone;
-    else st <= GRecArgs;
+    else st <= rBuiltin ? GWArg : GRecArgs;
   endrule
 
   rule recArgs (st == GRecArgs);
@@ -162,11 +197,45 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     else i <= i + 1;
   endrule
 
+  // a waiting built-in's arguments: an input operand's register, or a
+  // fresh variable for an output operand (which the register also gets)
+  function Action nextWArg();
+    action
+      if (i + 1 == n) recordDone;
+      else begin
+        i <= i + 1;
+        st <= GWArg;
+      end
+    endaction
+  endfunction
+
+  rule wArg (st == GWArg);
+    Bit#(3) k = truncate(i);
+    if (rOuts[k] == 1) begin
+      vAddr <= hp;
+      take(1);
+      mem.write(hp, mkCell(tag_UNDF, 0));
+      st <= GWArg2;
+    end
+    else begin
+      mem.write(g + gArgs + zeroExtend(i), regs.r(rOps[k]));
+      nextWArg;
+    end
+  endrule
+
+  rule wArg2 (st == GWArg2);
+    Bit#(3) k = truncate(i);
+    Cell v = mkCell(tag_REFo, absAddr(vAddr));
+    mem.write(g + gArgs + zeroExtend(i), v);
+    regs.wr(rOps[k], v);
+    nextWArg;
+  endrule
+
   // ---- hook --------------------------------------------------------
   rule hook1 (st == GHook1);
     let c <- mem.data;
     sAddr <= hp;
-    alloc(fromInteger(lay_S_SIZE));
+    take(fromInteger(lay_S_SIZE));
     mem.write(hp + sNext, intC(isHook(c) ? c.val : 0));
     st <= GHook2;
   endrule
@@ -286,6 +355,13 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method ActionValue#(Addr) recordResult;
     recQ.deq;
     return recQ.first;
+  endmethod
+  method Action waitRecord(Addr c, Bit#(3) argn, Vector#(7, Bit#(8)) operands, Bit#(7) outs) =
+    reqQ.enq(tagged WaitRecord { code: c, argn: argn, operands: operands, outs: outs });
+  method Action alloc(Addr cells) = reqQ.enq(tagged Alloc cells);
+  method ActionValue#(Addr) allocResult;
+    allocQ.deq;
+    return allocQ.first;
   endmethod
   method Action hook(Addr goal, Addr v) = reqQ.enq(tagged Hook { g: goal, v: v });
   method Action wake(Bit#(32) list) = reqQ.enq(tagged Wake list);

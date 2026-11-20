@@ -23,6 +23,7 @@ function Bool isRef(Cell c)  = (c.tag | 1) == tag_REFx;
 function Bool isInt(Cell c)  = (c.tag | 1) == tag_INTx;
 function Bool isAtom(Cell c) = (c.tag | 1) == tag_ATOMx;
 function Bool isHook(Cell c) = (c.tag | 1) == tag_HOOKx;
+function Bool isStrg(Cell c) = (c.tag | 1) == tag_STRGx;
 
 // What an unbound variable's cell holds: UNDF, or HOOK when goals wait.
 function Bool isUnboundCell(Cell c) = c.tag == tag_UNDF || isHook(c);
@@ -43,6 +44,7 @@ function Cell intC(Bit#(32) v) = mkCell(tag_INTo, v);
 typedef struct {
   Addr pc;
   Cell word;
+  Cell next;       // the cell after it: the second word of a two-word instruction
 } Fetched deriving (Bits, FShow);
 
 // How a reduction ends.  Unimp and Error are the model failing loud:

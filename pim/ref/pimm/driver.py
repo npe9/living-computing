@@ -102,6 +102,7 @@ class Script:
         """Yield (label, [trace lines]) for each labelled part."""
         m = m or pimm.Machine()
         self.machine = m
+        self.outs = []      # (label, word) of every OUT, in order
         slot = [(0, 0)] * 16
         label = 'start'
         m.tr = []
@@ -126,7 +127,9 @@ class Script:
                 except (pimm.Suspend, pimm.Fail):
                     pass
             elif k == OUT:
-                m.tr.append('O %02x%08x' % m.deref(slot[a]))
+                w = m.deref(slot[a])
+                self.outs.append((label, w))
+                m.tr.append('O %02x%08x' % w)
             elif k == UNIFY:
                 m.unify(slot[a], slot[b])
             elif k == UNIFYC:

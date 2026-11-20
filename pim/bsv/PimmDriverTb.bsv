@@ -43,6 +43,8 @@ module mkPimmDriverTb(Empty);
       Out:    begin core.derefReq(slot.sub(sa)); answer = True; end
       Unify:  begin core.unifyReq(slot.sub(sa), slot.sub(sb)); answer = True; end
       UnifyC: begin core.unifyReq(slot.sub(sa), cell_); answer = True; end
+      NewStr: begin core.newString(cell_.val >> 8, zeroExtend(cell_.val[7:0])); answer = True; end
+      SetEl:  begin core.setElement(slot.sub(sa), cell_.val >> 16, zeroExtend(cell_.val[15:0])); answer = True; end
       default: fatal("driver: operation not implemented");
     endcase
     if (answer) awaited <= True;
@@ -65,6 +67,13 @@ module mkPimmDriverTb(Empty);
   rule printed (awaited && kind == Out);
     let v <- core.derefResp;
     $display("O %02x%08x", v.tag, v.val);
+    awaited <= False;
+    ip <= ip + 1;
+  endrule
+
+  rule gotString (awaited && (kind == NewStr || kind == SetEl));
+    let v <- core.stringResult;
+    slot.upd(sa, v);
     awaited <= False;
     ip <= ip + 1;
   endrule

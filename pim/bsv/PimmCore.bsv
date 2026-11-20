@@ -17,6 +17,7 @@ import PimmRegs::*;
 import PimmDBox::*;
 import PimmHBox::*;
 import PimmGBox::*;
+import PimmSBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -31,6 +32,10 @@ interface PimmCore;
   method ActionValue#(Bool) unifyDone;
   method Action derefReq(Cell w);
   method ActionValue#(Cell) derefResp;
+  // between runs: make strings
+  method Action newString(Bit#(32) n, Bit#(32) bits);
+  method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
+  method ActionValue#(Cell) stringResult;
 endinterface
 
 module mkPimmCore#(String image)(PimmCore);
@@ -40,7 +45,8 @@ module mkPimmCore#(String image)(PimmCore);
   PimmHBox  hbox  <- mkPimmHBox(mem.port[1]);
   PimmDBox  dbox  <- mkPimmDBox(mem.port[2]);
   PimmGBox  gbox  <- mkPimmGBox(mem.port[3], regs);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox);
+  PimmSBox  sbox  <- mkPimmSBox(mem.port[4], gbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -122,6 +128,12 @@ module mkPimmCore#(String image)(PimmCore);
   endmethod
   method Action derefReq(Cell w) = dbox.deref(w);
   method ActionValue#(Cell) derefResp = dbox.derefResult;
+  method Action newString(Bit#(32) n, Bit#(32) bits) = sbox.newStr(n, bits);
+  method Action setElement(Cell s, Bit#(32) i, Bit#(32) e) = sbox.setElement(s, i, e);
+  method ActionValue#(Cell) stringResult;
+    let r <- sbox.result;
+    return r.a;
+  endmethod
 endmodule
 
 endpackage

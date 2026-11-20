@@ -65,11 +65,12 @@ instruction and is tested by trace comparison with it.
 | File | What |
 |---|---|
 | `PimmTypes.bsv` | cells, addresses, labels, how a reduction ends, the trace |
-| `PimmMem.bsv` | one block RAM of cells behind request/response, four clients; traces every write |
+| `PimmMem.bsv` | one block RAM of cells behind request/response, five clients; traces every write |
 | `PimmRegs.bsv` | the register file and the argument registers; traces every write |
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
-| `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal |
+| `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
+| `PimmSBox.bsv` | string box: length and size, element, new string, set element |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
 | `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`) |
@@ -77,13 +78,17 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. State: 13 instructions;
-goals as records in memory on a ready queue; a goal that cannot choose
-a clause is written back, hooked on the variables it waits for, and
-woken when one is bound (layouts: `../asm/pimm_layout.py`, the
-project's design, see `../docs/pimm_semantics.md`). Sequential (the
-next fetch waits for the instruction before it), no timing claimed.
-Not yet: strings, waiting built-ins, `enqueue_goal`/`execute`. The bench model and its benches are
+and pipes the trace into the test. Two tests: `jtoa` (`convert_element/2`, every
+key, suspension scenarios) and `conv` (`convert/2`, the whole
+`jis_to_ascii` module, on strings). State: 28 instructions; goals as
+records in memory on a ready queue; a goal that cannot choose a clause
+is written back, hooked on the variables it waits for, and woken when
+one is bound; a body built-in with an unbound input becomes a goal of
+its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
+`../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
+instruction before it), no timing claimed. Not modelled: MRB (strings
+are always copied), garbage collection, priorities, shoen, built-in
+exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
 
 ## FPGA flow (ULX3S / ECP5)

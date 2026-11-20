@@ -41,11 +41,11 @@ reference model plays:
 
     bsv/run_pimm_lockstep.sh
 
-`convert_element/2` is in lockstep, including a goal suspending on an
-unbound argument and waking when it is bound. `convert_loop/4` and
-`convert/2` are not yet on Bluespec: they need the string built-ins,
-waiting built-ins, `enqueue_goal` and `execute` there.
+The whole `jis_to_ascii` module is in lockstep: `lockstep_jtoa.py`
+(`convert_element/2` on every key, and goals suspending and waking) and
+`lockstep_conv.py` (`convert/2` on strings, with waiting built-ins).
 
-Next: those, then `convert/2` in lockstep; then the next module with
-source (`builtin_utility`, `scsi_common`). The reference model is
+Next: the next module with source (`builtin_utility`, `scsi_common`),
+one instruction group at a time, the reference model no more than one
+step ahead of the Bluespec; and a `.sav` loader. The reference model is
 kept no more than one such step ahead of the Bluespec.

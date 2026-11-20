@@ -1,7 +1,10 @@
 // PIM/m core: the memory, one block RAM of 40-bit cells behind
-// request/response, shared by four clients (instruction fetch, the
-// hash box, the data box, the goal box).  Client 0 has priority.
-// Every write is traced here, where it reaches the RAM.
+// request/response, shared by five clients (instruction fetch, the
+// hash box, the data box, the goal box, the string box).  Client 0 has
+// priority.  Every write is traced here, when it is requested: the
+// machine does one thing at a time, so request order is the order of
+// events, and the address and data printed are the ones queued for
+// the RAM.
 package PimmMem;
 
 import BRAM::*;
@@ -16,7 +19,7 @@ interface MemPort;
   method ActionValue#(Cell) data;        // the answer to a read, in order
 endinterface
 
-typedef 4 MemClients;
+typedef 5 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;
@@ -36,17 +39,17 @@ module mkPimmMem#(String file)(PimmMem);
   // dequeue side unguarded: `issue` tests notEmpty itself
   Vector#(MemClients, FIFOF#(MemReq)) reqs <- replicateM(mkGFIFOF(False, True));
   Vector#(MemClients, FIFO#(Cell)) resps <- replicateM(mkFIFO);
-  FIFO#(Bit#(2)) who <- mkSizedFIFO(4);
+  FIFO#(Bit#(3)) who <- mkSizedFIFO(4);
 
   rule issue (reqs[0].notEmpty || reqs[1].notEmpty || reqs[2].notEmpty
-              || reqs[3].notEmpty);
-    Bit#(2) i = reqs[0].notEmpty ? 0 : (reqs[1].notEmpty ? 1 : (reqs[2].notEmpty ? 2 : 3));
+              || reqs[3].notEmpty || reqs[4].notEmpty);
+    Bit#(3) i = reqs[0].notEmpty ? 0 : (reqs[1].notEmpty ? 1 : (reqs[2].notEmpty ? 2
+              : (reqs[3].notEmpty ? 3 : 4)));
     let r = reqs[i].first;
     reqs[i].deq;
     ram.portA.request.put(BRAMRequest { write: r.wr, responseOnWrite: False,
                                         address: r.addr, datain: r.data });
-    if (r.wr) traceM(r.addr, r.data);
-    else who.enq(i);
+    if (!r.wr) who.enq(i);
   endrule
 
   rule route;
@@ -62,6 +65,7 @@ module mkPimmMem#(String file)(PimmMem);
       endmethod
       method Action write(Addr a, Cell d);
         reqs[i].enq(MemReq { wr: True, addr: a, data: d });
+        traceM(a, d);
       endmethod
       method ActionValue#(Cell) data;
         resps[i].deq;

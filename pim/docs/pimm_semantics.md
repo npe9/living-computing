@@ -27,8 +27,12 @@ Evidence so far: module `jis_to_ascii` in `pimm_ipl.kbn` against
 `bios/boot/jtoa.kl1` (`ref/pimm/test_jtoa.py`): `convert_element/2` on
 all 65,536 keys, and `convert/2` (through `convert_loop/4`) on five
 strings, with eleven observed fault injections, one of which the test
-does not catch (noted at `subtract`). `convert_element/2` is also run
-on the Bluespec core, in lockstep (see Trace).
+does not catch (noted at `subtract`). The whole module also runs on the
+Bluespec core in lockstep with the reference model (see Trace): every
+instruction in the table is implemented there. Three readings no run
+of this module can check, on either model, and injections confirm it:
+`subtract`'s destination, `less_than` at equality, and whether
+`execute` clears the alternative clause (`ref/pimm/lockstep_conv.py`).
 
 | Instruction | Encoding | Meaning | Evidence |
 |---|---|---|---|
@@ -74,8 +78,9 @@ represents the waiting built-in is not known; PDSS's
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the
 top bit; type 3 is 8-bit elements, 4 is 16-bit (`kbnheap.kl1`
-`string_cdesc`). The packing order is read from string constants in
-the image (they spell their text top byte first), not from the test.
+`string_cdesc`). The packing is checked against the image itself:
+`test_jtoa.py` reads the IPL's message strings with it ("Illegal IPL
+File", "Unable to Decode Constant").
 The reference model copies on `set_string_element`; the machine may
 update in place when the string is singly referenced.
 
@@ -144,8 +149,8 @@ the shoen a goal belongs to, MRB) and is not a claim about the machine.
   `r[0..n)`, a `get_value` per output, `proceed`), with the
   instruction's operands as arguments, a fresh variable for each
   output, hooked on the first unbound input. PDSS does the same with
-  its `dc_*` pseudo-code (`body_builtin_suspend`). On the reference
-  model only so far.
+  its `dc_*` pseudo-code (`body_builtin_suspend`). Because a stub is
+  ordinary code, a test can also spawn one directly.
 
 Things this predicate shows about the compiler, useful for reading the
 rest: range guards compile to `put_integer` and a comparison per bound;

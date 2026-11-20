@@ -49,6 +49,22 @@ def main(argv):
             continue
         seen.add(name)
         lines.append("Bit#(16) op_%s = 16'h%02x%02x;" % (name, tag, op))
+    # the built-in stubs (asm/pimm_stubs.py): by opcode, where the
+    # stub is, how many operands, which are outputs (bit k = operand k)
+    from unlsav import load_opcodes
+    enc = {}
+    for op, ents in load_opcodes().items():
+        for name, _typ, tag in ents:
+            enc.setdefault(name, (tag, op))
+    _stubs, table = pimm_stubs.build(len(kbn.decode(kbn.image())[1]))
+    lines += ['', 'typedef struct { Bit#(AddrBits) addr; Bit#(3) n; Bit#(7) outs; } Stub',
+              '  deriving (Bits);', '',
+              'function Maybe#(Stub) stubOf(Bit#(16) op);', '  case (op)']
+    for name, e in table.items():
+        outs = sum(1 << k for k, d in enumerate(e['dirs']) if d == 'o')
+        lines.append("    16'h%02x%02x: return tagged Valid Stub { addr: %d, n: %d, outs: 7'h%02x };  // %s"
+                     % (enc[name][0], enc[name][1], e['addr'], len(e['dirs']), outs, name))
+    lines += ['    default: return tagged Invalid;', '  endcase', 'endfunction', '']
     # the address of every predicate's first instruction
     im = kbndis.Image()
     lines += ['', "Bit#(32) loadAddress = 32'h%08x;" % im.load,

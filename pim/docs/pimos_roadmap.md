@@ -247,9 +247,13 @@ line (2,015,622 lines), to the reference model's, which agrees with the
 source (`bsv/run_pimm_lockstep.sh`). Still owed for R2 proper:
 `convert_loop/4` and `convert/2` on Bluespec, and a predicate loaded
 from a `.sav`. Goal records, the ready queue and hooks are now memory
-cells in both models, and suspension and wake-up are in lockstep; the
-string built-ins, waiting built-ins, `enqueue_goal` and `execute` are
-not yet on Bluespec.*
+cells in both models, and suspension and wake-up are in lockstep.*
+*Then: **the whole module runs on Bluespec.** `convert/2`, through
+`convert_loop/4` and `convert_element/2`, from the image, turns 16-bit
+strings into the 8-bit strings its source gives (full-width
+"PIMOS 3.6" among them), in lockstep with the reference model
+(`ref/pimm/lockstep_conv.py`). That is the amended R2 gate for the IPL
+image; what R2 still owes is a predicate loaded from a `.sav`.*
 
 ### Phase 2 - The runtime
 
