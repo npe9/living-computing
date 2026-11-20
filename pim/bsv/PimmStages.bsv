@@ -1,10 +1,10 @@
 // PIM/m core: the two stages.
 //
 //   mkPimmFetch  reads the cell at a code address
-//   mkPimmExec   decodes it and carries it out: the register file, the
-//                clause-selection state (the alternative clause, and
-//                whether a guard met an unbound variable), using the
-//                data box and the hash box for everything multi-cycle
+//   mkPimmExec   decodes it and carries it out: the clause-selection
+//                state (the alternative clause, and the variables
+//                guards met unbound), using the data box, the hash box
+//                and the goal box for everything multi-cycle
 //
 // The machine is sequential here: the next fetch waits for the
 // instruction before it.  No timing is claimed.
@@ -15,8 +15,10 @@ import RegFile::*;
 import PimmGen::*;
 import PimmTypes::*;
 import PimmMem::*;
+import PimmRegs::*;
 import PimmDBox::*;
 import PimmHBox::*;
+import PimmGBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -40,21 +42,25 @@ endmodule
 
 interface PimmExec;
   method Action newGoal;                       // clear the clause-selection state
-  method Action setReg(Bit#(8) r, Cell w);     // untraced: a goal's arguments
   method Action enq(Fetched f);
   method ActionValue#(Step) out;
 endinterface
 
-typedef enum { XDecode, XDeref1, XDeref2, XUnify, XHash } XState deriving (Bits, Eq);
+typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
+               XSusp1, XSusp2, XSusp3 } XState deriving (Bits, Eq);
 
-module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
-  RegFile#(Bit#(8), Cell) regs <- mkRegFileFull;
+module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
-  Reg#(Bool)         waiting <- mkReg(False);           // a guard wanted a variable bound
+  // the variables guards wanted bound, in the order met (a variable
+  // met twice is there twice)
+  RegFile#(Bit#(4), Addr) noted <- mkRegFileFull;
+  Reg#(Bit#(5))      nNoted  <- mkReg(0);
   FIFO#(Fetched)     inQ     <- mkFIFO;
   FIFO#(Step)        outQ    <- mkFIFO;
   Reg#(XState)       st      <- mkReg(XDecode);
   Reg#(Cell)         opA     <- mkRegU;
+  Reg#(Addr)         sGoal   <- mkRegU;     // suspending: the record
+  Reg#(Bit#(5))      sI      <- mkRegU;     // suspending: the variable being hooked
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -86,17 +92,27 @@ module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
     endaction
   endfunction
 
-  function Action wreg(Bit#(8) r, Cell w);
-    action
-      regs.upd(r, w);
-      traceR(r, w);
-    endaction
-  endfunction
-
   function Action guardFail();
     action
       if (alt matches tagged Valid .a) finish(tagged Next a);
       else stop(EndError);
+    endaction
+  endfunction
+
+  function Action note(Cell a);
+    action
+      if (nNoted == 16) fatal("more than 16 variables noted by guards");
+      noted.upd(truncate(nNoted), cellAddr(a));
+      nNoted <= nNoted + 1;
+    endaction
+  endfunction
+
+  // The goal goes back to memory as a suspended record, entry = the
+  // label, arguments r[0..x), then is hooked on each noted variable.
+  function Action suspendGoal();
+    action
+      gbox.record(fromInteger(lay_SUSPENDED), labelOf(pc, c16), x, False, True);
+      st <= XSusp1;
     endaction
   endfunction
 
@@ -109,28 +125,31 @@ module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
     end
     else if (op == op_otherwise) begin
       // clauses below apply only if none above can
-      if (waiting) stop(EndSusp);
+      if (nNoted != 0) suspendGoal;
       else begin
         alt <= tagged Invalid;
         finish(tagged Next (pc + 1));
       end
     end
-    else if (op == op_suspend) stop(waiting ? EndSusp : EndFail);
+    else if (op == op_suspend) begin
+      if (nNoted != 0) suspendGoal;
+      else stop(EndFail);
+    end
     else if (op == op_switch_on_non_integer || op == op_hash_on_constant
              || op == op_not_less_than || op == op_b_add || op == op_b_subtract) begin
-      dbox.deref(regs.sub(x));
+      dbox.deref(regs.r(x));
       st <= XDeref1;
     end
     else if (op == op_put_integer) begin
-      wreg(x, intCell(c16));
+      regs.wr(x, intCell(c16));
       finish(tagged Next (pc + 1));
     end
     else if (op == op_get_integer) begin
-      dbox.unify(regs.sub(x), intCell(c16));
+      dbox.unify(regs.r(x), intCell(c16));
       st <= XUnify;
     end
     else if (op == op_get_value) begin
-      dbox.unify(regs.sub(x), regs.sub(y));
+      dbox.unify(regs.r(x), regs.r(y));
       st <= XUnify;
     end
     else if (op == op_collect_value) finish(tagged Next (pc + 1));  // MRB reclamation: not modelled
@@ -141,17 +160,17 @@ module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
   rule deref1 (st == XDeref1);
     let a <- dbox.derefResult;
     if (op == op_switch_on_non_integer) begin
-      if (isRef(a)) waiting <= True;
+      if (isRef(a)) note(a);
       finish(tagged Next (isInt(a) ? pc + 1 : labelOf(pc, c16)));
     end
     else if (op == op_hash_on_constant) begin
-      if (isRef(a)) waiting <= True;
+      if (isRef(a)) note(a);
       hbox.lookup(pc, a, c16, !isRef(a));
       st <= XHash;
     end
     else begin
       opA <= a;
-      dbox.deref(regs.sub(y));
+      dbox.deref(regs.r(y));
       st <= XDeref2;
     end
   endrule
@@ -163,17 +182,30 @@ module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
     Int#(32) ib = unpack(b.val);
     if (op == op_not_less_than) begin
       // guard: r[x] >= r[y]; an unbound operand is noted and the guard fails
-      if (isRef(a) || isRef(b)) waiting <= True;
-      if (isInt(a) && isInt(b) && ia >= ib) finish(tagged Next (pc + 1));
+      if (isRef(a) && isRef(b)) begin
+        note(a);
+        opA <= b;
+        st <= XNote2;
+      end
+      else if (isRef(a) || isRef(b)) begin
+        note(isRef(a) ? a : b);
+        guardFail;
+      end
+      else if (isInt(a) && isInt(b) && ia >= ib) finish(tagged Next (pc + 1));
       else guardFail;
     end
     else if (!isInt(a) || !isInt(b))
       stop(EndUnimp);     // a body built-in waiting on a variable, or its exception
     else begin
       // body arithmetic: r[z] := r[x] op r[y]
-      wreg(z, mkCell(tag_INTo, pack(op == op_b_add ? ia + ib : ia - ib)));
+      regs.wr(z, mkCell(tag_INTo, pack(op == op_b_add ? ia + ib : ia - ib)));
       finish(tagged Next (pc + 1));
     end
+  endrule
+
+  rule note2 (st == XNote2);
+    note(opA);
+    guardFail;
   endrule
 
   rule hashed (st == XHash);
@@ -183,19 +215,48 @@ module mkPimmExec#(PimmDBox dbox, PimmHBox hbox)(PimmExec);
 
   rule unified (st == XUnify);
     let r <- dbox.unifyResult;
-    case (r)
-      UOk:    finish(tagged Next (pc + 1));
-      UFail:  stop(EndFail);
-      UUnimp: stop(EndUnimp);
+    case (r) matches
+      tagged UOk:      finish(tagged Next (pc + 1));
+      tagged UWake .s: begin
+        gbox.wake(s);
+        st <= XWake;
+      end
+      tagged UFail:    stop(EndFail);
+      tagged UUnimp:   stop(EndUnimp);
     endcase
+  endrule
+
+  rule woke (st == XWake);
+    gbox.done;
+    finish(tagged Next (pc + 1));
+  endrule
+
+  rule susp1 (st == XSusp1);
+    let g <- gbox.recordResult;
+    sGoal <= g;
+    sI <= 0;
+    st <= XSusp2;
+  endrule
+
+  rule susp2 (st == XSusp2);
+    gbox.hook(sGoal, noted.sub(truncate(sI)));
+    st <= XSusp3;
+  endrule
+
+  rule susp3 (st == XSusp3);
+    gbox.done;
+    if (sI + 1 == nNoted) stop(EndSusp);
+    else begin
+      sI <= sI + 1;
+      st <= XSusp2;
+    end
   endrule
 
   method Action newGoal;
     alt <= tagged Invalid;
-    waiting <= False;
+    nNoted <= 0;
   endmethod
 
-  method Action setReg(Bit#(8) r, Cell w) = regs.upd(r, w);
   method Action enq(Fetched f) = inQ.enq(f);
   method ActionValue#(Step) out;
     outQ.deq;

@@ -1,6 +1,7 @@
 // PIM/m core: the memory, one block RAM of 40-bit cells behind
-// request/response, shared by three clients (instruction fetch, the
-// hash box, the data box).  Client 0 has priority.
+// request/response, shared by four clients (instruction fetch, the
+// hash box, the data box, the goal box).  Client 0 has priority.
+// Every write is traced here, where it reaches the RAM.
 package PimmMem;
 
 import BRAM::*;
@@ -15,7 +16,7 @@ interface MemPort;
   method ActionValue#(Cell) data;        // the answer to a read, in order
 endinterface
 
-typedef 3 MemClients;
+typedef 4 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;
@@ -37,13 +38,15 @@ module mkPimmMem#(String file)(PimmMem);
   Vector#(MemClients, FIFO#(Cell)) resps <- replicateM(mkFIFO);
   FIFO#(Bit#(2)) who <- mkSizedFIFO(4);
 
-  rule issue (reqs[0].notEmpty || reqs[1].notEmpty || reqs[2].notEmpty);
-    Bit#(2) i = reqs[0].notEmpty ? 0 : (reqs[1].notEmpty ? 1 : 2);
+  rule issue (reqs[0].notEmpty || reqs[1].notEmpty || reqs[2].notEmpty
+              || reqs[3].notEmpty);
+    Bit#(2) i = reqs[0].notEmpty ? 0 : (reqs[1].notEmpty ? 1 : (reqs[2].notEmpty ? 2 : 3));
     let r = reqs[i].first;
     reqs[i].deq;
     ram.portA.request.put(BRAMRequest { write: r.wr, responseOnWrite: False,
                                         address: r.addr, datain: r.data });
-    if (!r.wr) who.enq(i);
+    if (r.wr) traceM(r.addr, r.data);
+    else who.enq(i);
   endrule
 
   rule route;

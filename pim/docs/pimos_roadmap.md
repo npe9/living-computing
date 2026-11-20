@@ -245,9 +245,11 @@ stages) runs `convert_element/2` from the image for every 16-bit key,
 an atom and an unbound argument, and its trace is identical, line for
 line (2,015,622 lines), to the reference model's, which agrees with the
 source (`bsv/run_pimm_jtoa.sh`). Still owed for R2 proper:
-`convert_loop/4` and `convert/2` on Bluespec (goal records, the ready
-queue, hooks and waiting built-ins held in memory cells), and a
-predicate loaded from a `.sav`.*
+`convert_loop/4` and `convert/2` on Bluespec, and a predicate loaded
+from a `.sav`. Goal records, the ready queue and hooks are now memory
+cells in both models, and suspension and wake-up are in lockstep; the
+string built-ins, waiting built-ins, `enqueue_goal` and `execute` are
+not yet on Bluespec.*
 
 ### Phase 2 - The runtime
 

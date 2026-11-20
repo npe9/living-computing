@@ -65,19 +65,24 @@ instruction and is tested by trace comparison with it.
 | File | What |
 |---|---|
 | `PimmTypes.bsv` | cells, addresses, labels, how a reduction ends, the trace |
-| `PimmMem.bsv` | one block RAM of cells behind request/response, three clients |
+| `PimmMem.bsv` | one block RAM of cells behind request/response, four clients; traces every write |
+| `PimmRegs.bsv` | the register file and the argument registers; traces every write |
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
-| `PimmStages.bsv` | fetch stage; execute stage (registers, clause selection) |
+| `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal |
+| `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
 | `PimmJtoaTb.bsv` | lockstep bench: `jis_to_ascii:convert_element/2` |
-| `generated/PimmGen.bsv`, `generated/pimm_ipl.hex` | tags, opcodes, predicate addresses and the image, written by `../asm/gen_pimm_bsv.py`; no tag or opcode is typed by hand |
+| `generated/PimmGen.bsv`, `generated/pimm_ipl.hex` | tags, opcodes, predicate addresses, record layouts, and the image followed by the built-in stubs, written by `../asm/gen_pimm_bsv.py`; no tag or opcode is typed by hand |
 
 `run_pimm_jtoa.sh` builds into `build_pimm/` and pipes the bench's
-trace into `../ref/pimm/lockstep_jtoa.py`. State: 13 instructions, one
-reduction at a time, sequential (the next fetch waits for the
-instruction before it), no timing claimed, no goal queue: a suspended
-goal is reported and dropped. The bench model and its benches are
+trace into `../ref/pimm/lockstep_jtoa.py`. State: 13 instructions;
+goals as records in memory on a ready queue; a goal that cannot choose
+a clause is written back, hooked on the variables it waits for, and
+woken when one is bound (layouts: `../asm/pimm_layout.py`, the
+project's design, see `../docs/pimm_semantics.md`). Sequential (the
+next fetch waits for the instruction before it), no timing claimed.
+Not yet: strings, waiting built-ins, `enqueue_goal`/`execute`. The bench model and its benches are
 untouched and still run.
 
 ## FPGA flow (ULX3S / ECP5)

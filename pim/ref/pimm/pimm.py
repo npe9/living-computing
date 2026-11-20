@@ -8,25 +8,33 @@ not the deliverable (docs/pimos_roadmap.md decision 3): the Bluespec
 model is, and this exists to find out what the instructions do and to
 be diffed against it.
 
-Scope so far: goals on a single LIFO ready stack (no priorities, one
-processor), suspension on unbound variables kept in a side table (the
-machine's HOOK cells are not modelled), body built-ins that wait for
-their inputs, 8- and 16-bit strings.  No garbage collection, no MRB,
-no shoen, no exceptions.  An instruction this file does not
-implement raises Unimplemented: it never guesses.
+All machine state is registers and memory cells, so that the Bluespec
+core can hold the same state and be compared write for write: goal
+records, the ready queue, suspension records and hooked variables are
+cells on the heap (layouts in docs/pimm_semantics.md "Runtime state";
+they are this project's design, the firmware being lost).  One
+processor, a LIFO ready queue without priorities, 8- and 16-bit
+strings.  No garbage collection (the heap only grows), no MRB, no
+shoen, no exceptions.  An instruction this file does not implement
+raises Unimplemented: it never guesses.
 
-Every instruction's operand reading below is taken from object code
-paired with its KL1 source; docs/pimm_semantics.md records which.
+Every instruction's operand reading is taken from object code paired
+with its KL1 source; docs/pimm_semantics.md records which.
 """
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
-import kbn  # noqa: E402
+import kbn  # noqa: E402,F401
 import kbndis  # noqa: E402
+import pimm_stubs  # noqa: E402
+from census import opcode_table  # noqa: E402
 
-INT, ATOM, REF, UNDF, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0e, 0x25
+INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
+from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
+                         READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
+                         MEMORY_CELLS, HEAP)
 
 
 class Unimplemented(Exception):
@@ -34,15 +42,11 @@ class Unimplemented(Exception):
 
 
 class Suspend(Exception):
-    """A reduction cannot choose a clause until a variable is bound."""
+    """The ready queue is empty and goals are still suspended."""
 
 
 class Fail(Exception):
     """No clause applies (a reduction failure), or a body unification fails."""
-
-
-class Deadlock(Exception):
-    """Nothing is ready and goals are still suspended."""
 
 
 def sx16(v):
@@ -55,63 +59,66 @@ def signed(v):
 
 
 class _Regs(list):
-    """The register file; writes are traced while a reduction runs."""
+    """A register file; every write is traced."""
 
     def __setitem__(self, i, w):
         list.__setitem__(self, i, w)
         m = self.machine
-        if m.tr is not None and m.tracing:
-            m.tr.append('R %d %02x%08x' % (i, w[0], w[1]))
+        if m.tr is not None:
+            m.tr.append('%s %d %02x%08x' % (self.letter, i, w[0], w[1]))
 
 
 class _Mem(dict):
-    """Memory; writes are traced while a reduction runs."""
+    """Memory; every write is traced."""
 
     def __setitem__(self, a, w):
-        dict.__setitem__(self, a, w)
         m = self.machine
-        if m.tr is not None and m.tracing:
+        if not m.load <= a < m.load + m.size:
+            raise RuntimeError('write outside memory: %x' % a)
+        dict.__setitem__(self, a, w)
+        if m.tr is not None:
             m.tr.append('M %d %02x%08x' % (a - m.load, w[0], w[1]))
 
 
-class Goal:
-    """A goal record: code address and arguments, or a body built-in
-    waiting for its inputs (code is then a Python function)."""
-
-    def __init__(self, code, args, outs=None):
-        self.code, self.args, self.outs = code, list(args), outs
-        self.live = True
-
-
 class Machine:
-    def __init__(self, image=None, heap=0x100000):
+    def __init__(self, image=None, heap=HEAP, size=MEMORY_CELLS):
         self.im = image or kbndis.Image()
         self.load = self.im.load
+        self.size = size
         # The lockstep trace (docs/pimm_semantics.md "Trace"): None, or a
-        # list that receives one line per instruction, register write
-        # and memory write made while a reduction runs.
+        # list that receives one line per event.
         self.tr = None
-        self.tracing = False
-        # memory is addressed in cells, absolute (load address included)
-        self.mem = _Mem({self.load + i: c for i, c in enumerate(self.im.cells)})
+        # code = the image, then the built-in stubs
+        stubs, self.stubs = pimm_stubs.build(len(self.im.cells))
+        self.cells = list(self.im.cells) + stubs
+        assert len(self.cells) <= heap
+        self.mem = _Mem({self.load + i: c for i, c in enumerate(self.cells)})
         self.mem.machine = self
-        self.heap = self.load + heap          # fresh cells go here
         self.reg = _Regs([(INT, 0)] * 256)
-        self.reg.machine = self
-        self.argv = [(INT, 0)] * 256          # arguments of the goal being built
-        self.ready = []                       # LIFO: the newest goal runs first
-        self.hooks = {}                       # unbound cell -> goals waiting on it
+        self.reg.machine, self.reg.letter = self, 'R'
+        self.argv = _Regs([(INT, 0)] * 256)   # arguments of the goal being built
+        self.argv.machine, self.argv.letter = self, 'A'
+        self.hp = self.load + heap            # heap pointer: the next free cell
+        self.rq = 0                           # ready queue: the newest goal record
+        self.optab = opcode_table()
+        self.names = {}
+        # statistics, not machine state
         self.nsusp = 0
-        self.builtin_waits = 0
-        self.goal_waits = 0
         self.steps = 0
         self.reductions = 0
-        self.names = {}
+        self.builtin_waits = 0
+        self.goal_waits = 0
+
+    def event(self, text):
+        if self.tr is not None:
+            self.tr.append(text)
 
     # ---- data ----------------------------------------------------
     def alloc(self, n):
-        a = self.heap
-        self.heap += n
+        a = self.hp
+        if a + n >= self.load + self.size:
+            raise RuntimeError('heap full')
+        self.hp += n
         return a
 
     def new_var(self):
@@ -120,10 +127,12 @@ class Machine:
         return (REF, a)
 
     def deref(self, w):
+        """Follow references; the result is a value, or the reference to
+        an unbound cell (UNDF, or HOOK when goals wait on it)."""
         while w[0] & ~1 == REF:
             c = self.mem[w[1]]
-            if c[0] == UNDF:
-                return w                      # a reference to an unbound cell
+            if c[0] == UNDF or c[0] & ~1 == HOOK:
+                return w
             w = c
         return w
 
@@ -131,18 +140,21 @@ class Machine:
         return w[0] & ~1 == REF               # after deref
 
     def bind(self, ref, w):
-        assert self.mem[ref[1]][0] == UNDF
+        """Write w over the unbound cell, then wake every goal hooked on
+        it, in list order (the most recently hooked first)."""
+        old = self.mem[ref[1]]
         self.mem[ref[1]] = w
-        for g in self.hooks.pop(ref[1], ()):  # wake what waited on it
-            if g.live:
-                g.live = False
-                self.nsusp -= 1
-                self.ready.append(Goal(g.code, g.args, g.outs))
-
-    def hook(self, goal, cells):
-        self.nsusp += 1
-        for c in set(cells):
-            self.hooks.setdefault(c, []).append(goal)
+        if old[0] & ~1 == HOOK:
+            s = old[1]
+            while s:
+                g = self.mem[s + S_GOAL][1]
+                if self.mem[g + G_STATUS][1] == SUSPENDED:
+                    self.event('W %d' % (g - self.load))
+                    self.mem[g + G_STATUS] = (INT, READY)
+                    self.mem[g + G_LINK] = (INT, self.rq)
+                    self.rq = g
+                    self.nsusp -= 1
+                s = self.mem[s + S_NEXT][1]
 
     def unify(self, a, b):
         a, b = self.deref(a), self.deref(b)
@@ -199,74 +211,97 @@ class Machine:
         return (STRG | 1, a)
 
     # ---- goals -----------------------------------------------------
-    def call(self, pc, args):
-        self.ready.append(Goal(pc, args))
+    def record(self, status, code, args):
+        """Write a goal record; code is a cell index."""
+        g = self.alloc(G_ARGS + len(args))
+        self.mem[g + G_LINK] = (INT, self.rq if status == READY else 0)
+        self.mem[g + G_STATUS] = (INT, status)
+        self.mem[g + G_CODE] = (INT, self.load + code)
+        self.mem[g + G_ARGN] = (INT, len(args))
+        for i, a in enumerate(args):
+            self.mem[g + G_ARGS + i] = a
+        if status == READY:
+            self.rq = g
+        return g
+
+    def hook(self, g, var):
+        """Add goal record g to the goals waiting on the unbound cell."""
+        old = self.mem[var]
+        s = self.alloc(S_SIZE)
+        self.mem[s + S_NEXT] = (INT, old[1] if old[0] & ~1 == HOOK else 0)
+        self.mem[s + S_GOAL] = (INT, g)
+        self.mem[var] = (HOOK, s)
+
+    def spawn(self, pc, args):
+        """Make a ready goal, as enqueue_goal does: arguments through the
+        argument registers (from 1), then the record."""
+        for i, a in enumerate(args):
+            self.argv[i + 1] = a
+        self.record(READY, pc, self.argv[1:len(args) + 1])
+
+    call = spawn
 
     def run(self, pc=None, args=(), limit=10000000):
-        """Run until nothing is ready.  Raises Suspend if goals are left
-        waiting (a deadlock, or a goal waiting on the caller's variable)."""
+        """Run until the ready queue is empty.  Raises Suspend if goals
+        are left suspended."""
         if pc is not None:
-            self.call(pc, args)
+            self.spawn(pc, args)
         before = self.steps
-        while self.ready:
-            g = self.ready.pop()
-            if g.outs is not None:
-                self.resume_builtin(g)
-            else:
-                self.reduce(g, limit)
+        while self.rq:
+            g = self.rq
+            self.event('G %d' % (g - self.load))
+            self.rq = self.mem[g + G_LINK][1]
+            self.mem[g + G_STATUS] = (INT, TAKEN)
+            code = self.mem[g + G_CODE][1] - self.load
+            for i in range(self.mem[g + G_ARGN][1]):
+                self.reg[i] = self.mem[g + G_ARGS + i]
+            self.reduce(code, limit)
+        self.event('Q')
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
         return self.steps - before
 
     def abandon(self):
-        """Drop every suspended goal (a test's way of ending a run)."""
-        self.hooks.clear()
+        """Forget that goals are suspended (a test's way of ending a run).
+        Their records and hooks stay in memory."""
         self.nsusp = 0
 
-    def reduce(self, g, limit):
+    def opname(self, pc):
+        name = self.names.get(pc)
+        if name is None:
+            if pc < len(self.im.cells):
+                name = self.im.dis(pc).split()[0]
+            else:
+                t, v = self.cells[pc]
+                name = self.optab[(t, v >> 24)][0]
+            self.names[pc] = name
+        return name
+
+    def reduce(self, pc, limit):
         self.reductions += 1
-        pc = g.code
-        for i, a in enumerate(g.args):
-            self.reg[i] = a
         self.alt = None                       # next clause on guard failure
-        self.waiting = []                     # variables a guard wanted bound
-        cells = self.im.cells
-        self.tracing = True
+        self.waiting = []                     # variables guards wanted bound, in order
+        cells = self.cells
         try:
-            self.reduce_loop(pc, cells, limit)
-            self.end('done')
+            while True:
+                self.steps += 1
+                if self.steps > limit:
+                    raise RuntimeError('step limit')
+                t, v = cells[pc]
+                if t not in (0x22, 0x23):
+                    raise RuntimeError('pc %d is not an instruction: %02x:%08x' % (pc, t, v))
+                name = self.opname(pc)
+                self.event('I %d %02x%08x' % (pc, t, v))
+                fn = getattr(self, 'i_' + name, None)
+                if fn is None:
+                    raise Unimplemented('%s at %d' % (name, pc))
+                nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
+                if nxt == 'done':
+                    return
+                pc = pc + 1 if nxt is None else nxt
         except Fail:
-            self.end('fail')
+            self.event('E fail')
             raise
-        finally:
-            self.tracing = False
-
-    def end(self, how):
-        if self.tr is not None and not self.ended:
-            self.tr.append('E ' + how)
-        self.ended = True
-
-    def reduce_loop(self, pc, cells, limit):
-        self.ended = False
-        while True:
-            self.steps += 1
-            if self.steps > limit:
-                raise RuntimeError('step limit')
-            t, v = cells[pc]
-            if t not in (0x22, 0x23):
-                raise RuntimeError('pc %d is not an instruction: %02x:%08x' % (pc, t, v))
-            name = self.names.get(pc)
-            if name is None:
-                name = self.names[pc] = self.im.dis(pc).split()[0]
-            if self.tr is not None:
-                self.tr.append('I %d %02x%08x' % (pc, t, v))
-            fn = getattr(self, 'i_' + name, None)
-            if fn is None:
-                raise Unimplemented('%s at %d' % (name, pc))
-            nxt = fn(pc, (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff)
-            if nxt == 'done':
-                return
-            pc = pc + 1 if nxt is None else nxt
 
     def guard_fail(self):
         if self.alt is None:
@@ -274,11 +309,16 @@ class Machine:
         return self.alt
 
     def suspend_goal(self, pc, arity, c16):
-        """Put the goal back as a record, entry = the label, arguments =
-        r[0..arity), hooked on every variable a guard waited for."""
+        """Write the goal back as a suspended record, entry = the label,
+        arguments = r[0..arity), and hook it on every variable a guard
+        noted, in the order noted (a variable noted twice is hooked
+        twice; the status cell makes the goal wake once)."""
         self.goal_waits += 1
-        self.end('susp')
-        self.hook(Goal(pc + 2 + sx16(c16), self.reg[:arity]), self.waiting)
+        self.nsusp += 1
+        g = self.record(SUSPENDED, pc + 2 + sx16(c16), self.reg[:arity])
+        for var in self.waiting:
+            self.hook(g, var)
+        self.event('E susp')
         return 'done'
 
     # guard helpers: a value, or None after noting the variable / failing
@@ -296,31 +336,38 @@ class Machine:
         return signed(w[1])
 
     # ---- body built-ins ----------------------------------------------
-    def builtin(self, f, ins, outs):
-        """Apply f to the dereferenced inputs and put its results in the
-        output registers.  If an input is unbound the built-in becomes a
-        goal waiting on it, and each output register gets a fresh
-        variable that the built-in will bind when it runs."""
-        vals = [self.deref(w) for w in ins]
+    def builtin(self, name, operands, f):
+        """A body built-in with register operands, directions from the
+        stub table.  f takes the dereferenced inputs and returns the
+        output words.  If an input is unbound the built-in becomes a
+        suspended goal of its stub (asm/pimm_stubs.py), waiting on the
+        first such input; each output operand's argument is a fresh
+        variable, which the register also gets."""
+        stub = self.stubs[name]
+        dirs = stub['dirs']
+        ins = [r for r, d in zip(operands, dirs) if d == 'i']
+        outs = [r for r, d in zip(operands, dirs) if d == 'o']
+        vals = [self.deref(self.reg[r]) for r in ins]
         wait = [w[1] for w in vals if self.unbound(w)]
         if not wait:
             for r, w in zip(outs, f(*vals)):
                 self.reg[r] = w
             return
         self.builtin_waits += 1
-        outvars = [self.new_var() for _ in outs]
-        for r, w in zip(outs, outvars):
-            self.reg[r] = w
-        self.hook(Goal(f, vals, outvars), wait)
-
-    def resume_builtin(self, g):
-        vals = [self.deref(w) for w in g.args]
-        wait = [w[1] for w in vals if self.unbound(w)]
-        if wait:
-            self.hook(Goal(g.code, vals, g.outs), wait)
-            return
-        for var, w in zip(g.outs, g.code(*vals)):
-            self.unify(var, w)
+        self.nsusp += 1
+        g = self.alloc(G_ARGS + len(operands))
+        self.mem[g + G_LINK] = (INT, 0)
+        self.mem[g + G_STATUS] = (INT, SUSPENDED)
+        self.mem[g + G_CODE] = (INT, self.load + stub['addr'])
+        self.mem[g + G_ARGN] = (INT, len(operands))
+        for k, (r, d) in enumerate(zip(operands, dirs)):
+            if d == 'i':
+                self.mem[g + G_ARGS + k] = self.reg[r]
+            else:
+                var = self.new_var()
+                self.mem[g + G_ARGS + k] = var
+                self.reg[r] = var
+        self.hook(g, wait[0])
 
     def need_int(self, w):
         if w[0] & ~1 != INT:
@@ -360,7 +407,7 @@ class Machine:
         # count << 16 | offset from the slot} to `count` {key, offset}
         # pairs; a pair's target is offset-cell + 1 + offset (kbn.kl1
         # out_hash_table / set_entry_part, hash_on_cnst).
-        cells = self.im.cells
+        cells = self.cells
         miss = pc + 1 + 2 + sx16(cells[pc + 1][1])
         w = self.g_word(x)
         if w is None:
@@ -422,7 +469,9 @@ class Machine:
         self.reg[x] = self.reg[y]     # and marks both multiply referenced (MRB)
 
     def i_put_variable(self, pc, x, y, z, c16):
-        self.reg[x] = self.reg[y] = self.new_var()
+        var = self.new_var()
+        self.reg[x] = var
+        self.reg[y] = var
 
     def i_get_integer(self, pc, x, y, z, c16):
         self.unify(self.reg[x], (INT, sx16(c16) & 0xffffffff))
@@ -438,10 +487,12 @@ class Machine:
         self.argv[x] = self.reg[y]
 
     def i_set_variable(self, pc, x, y, z, c16):
-        self.argv[x] = self.reg[y] = self.new_var()
+        var = self.new_var()
+        self.argv[x] = var
+        self.reg[y] = var
 
     def i_enqueue_goal(self, pc, x, y, z, c16):
-        self.ready.append(Goal(pc + 2 + sx16(c16), self.argv[1:x + 1]))
+        self.record(READY, pc + 2 + sx16(c16), self.argv[1:x + 1])
 
     def i_execute(self, pc, x, y, z, c16):
         # the same goal goes on as a reduction of the predicate at the label
@@ -451,16 +502,17 @@ class Machine:
         return pc + 2 + sx16(c16)
 
     def i_proceed(self, pc, x, y, z, c16):
+        self.event('E done')
         return 'done'
 
     # body arithmetic: r[z] := r[x] op r[y]
     def i_b_add(self, pc, x, y, z, c16):
-        self.builtin(lambda a, b: [(INT, (self.need_int(a) + self.need_int(b)) & 0xffffffff)],
-                     [self.reg[x], self.reg[y]], [z])
+        self.builtin('b_add', [x, y, z], lambda a, b: [
+            (INT, (self.need_int(a) + self.need_int(b)) & 0xffffffff)])
 
     def i_b_subtract(self, pc, x, y, z, c16):
-        self.builtin(lambda a, b: [(INT, (self.need_int(a) - self.need_int(b)) & 0xffffffff)],
-                     [self.reg[x], self.reg[y]], [z])
+        self.builtin('b_subtract', [x, y, z], lambda a, b: [
+            (INT, (self.need_int(a) - self.need_int(b)) & 0xffffffff)])
 
     # strings.  The fourth register of a four-register built-in is the
     # top byte of the following cell (klb_opr.kl1 p(r4,...)).
@@ -468,30 +520,30 @@ class Machine:
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
             return [self.make_string(self.need_int(size), [0] * self.need_int(n))]
-        self.builtin(f, [self.reg[x], self.reg[y]], [z])
+        self.builtin('new_string', [x, y, z], f)
 
     def i_b_string_element(self, pc, x, y, z, c16):
         # string_element(S, I, ^E, ^S1): r[z] := element, r[w] := the string
-        w4 = self.im.cells[pc + 1][1] >> 24
+        w4 = self.cells[pc + 1][1] >> 24
 
         def f(s, i):
             _size, elems = self.need_string(s)
             return [(INT, elems[self.need_int(i)]), s]
-        self.builtin(f, [self.reg[x], self.reg[y]], [z, w4])
+        self.builtin('b_string_element', [x, y, z, w4], f)
         return pc + 2
 
     def i_set_string_element(self, pc, x, y, z, c16):
         # set_string_element(S, I, E, ^S1): r[w] := S with element I = r[z].
         # The machine may update in place when S is singly referenced;
         # this model always copies.
-        w4 = self.im.cells[pc + 1][1] >> 24
+        w4 = self.cells[pc + 1][1] >> 24
 
         def f(s, i, e):
             size, elems = self.need_string(s)
             elems = list(elems)
             elems[self.need_int(i)] = self.need_int(e) & ((1 << size) - 1)
             return [self.make_string(size, elems)]
-        self.builtin(f, [self.reg[x], self.reg[y], self.reg[z]], [w4])
+        self.builtin('set_string_element', [x, y, z, w4], f)
         return pc + 2
 
 

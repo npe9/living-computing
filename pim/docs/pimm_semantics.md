@@ -86,15 +86,66 @@ compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_jtoa.sh`):
 
     I pc cell      an instruction is taken (pc in cells from the load
                    address; cell = tag and value, ten hex digits)
-    R n cell       register n is written by an instruction
+    R n cell       register n is written
+    A n cell       argument register n (of the goal being built) is written
     M addr cell    a memory cell is written
     E how          the reduction ends: done, fail, susp
+    G addr         the goal record at addr is taken from the ready queue
+    W addr         the suspended goal at addr is woken
+    Q              the ready queue is empty
 
-The Bluespec core can also end with `E unimp` (an instruction or case
-it does not implement) or `E error`; the reference model raises an
-exception there, so neither can appear in a matching trace. Loading a
-goal's arguments is not traced. The trace has no cycle numbers: the
-two models agree on what happens and in what order, not on when.
+Every register and memory write is traced, whoever makes it: an
+instruction, the scheduler taking a goal, a wake-up, or the bench
+making a variable or a goal. In the Bluespec the `M` line is printed
+where the write reaches the RAM, not where it is requested. The
+Bluespec core can also end with `E unimp` (an instruction or case it
+does not implement) or `E error`; the reference model raises an
+exception there, so neither can appear in a matching trace. The trace
+has no cycle numbers: the two models agree on what happens and in what
+order, not on when.
+
+## Runtime state
+
+How the PIM/m firmware kept goals, the ready queue and suspended goals
+is lost with it. What follows is **this project's design**, shaped
+after PDSS (`emulator/record.h`, `goal.c`) and fixed in
+`asm/pimm_layout.py`, which both models read. It will grow (priorities,
+the shoen a goal belongs to, MRB) and is not a claim about the machine.
+
+- **Heap.** A heap pointer register; cells are taken in order and never
+  returned. Running out stops both models.
+- **Goal record**, 4 + n cells: `{INT, next record in the ready queue
+  or 0}`, `{INT, status}` (0 ready, 1 suspended, 2 taken),
+  `{INT, code address}`, `{INT, n}`, then the n arguments. Addresses in
+  cells are absolute.
+- **Ready queue.** A register holding the newest ready record; a new or
+  woken goal goes on the front and the front goal runs next (PDSS's
+  default, `enqueue` to the head of its priority's queue). No
+  priorities yet.
+- **Unbound variable.** `{UNDF, 0}`, or `{HOOK, first suspension
+  record}` when goals wait on it. Dereferencing stops at either.
+- **Suspension record**, 2 cells, one per (goal, variable):
+  `{INT, next suspension record on this variable or 0}`,
+  `{INT, goal record}`.
+- **Suspending.** `otherwise`/`suspend` write a new suspended record
+  (entry = the instruction's label, arguments `r[0..arity)`) and hook it
+  on each variable the guards met unbound, in the order met. A variable
+  met twice is hooked twice; the status cell makes the goal wake once.
+  The record the goal came from is not reused.
+- **Binding** writes the value over the variable's cell, then walks its
+  suspension list, newest first: each goal still suspended becomes
+  ready and goes on the queue (so the oldest waiter runs first). A
+  hooked variable bound to another unbound variable wakes its goals
+  too; they run, find the second variable and suspend on it. PDSS
+  merges the lists instead; this is simpler and costs reductions.
+- **A waiting built-in is a goal.** A body built-in with an unbound
+  input becomes a suspended goal whose code is a stub from a fixed
+  table placed after the image (`asm/pimm_stubs.py`: the built-in on
+  `r[0..n)`, a `get_value` per output, `proceed`), with the
+  instruction's operands as arguments, a fresh variable for each
+  output, hooked on the first unbound input. PDSS does the same with
+  its `dc_*` pseudo-code (`body_builtin_suspend`). On the reference
+  model only so far.
 
 Things this predicate shows about the compiler, useful for reading the
 rest: range guards compile to `put_integer` and a comparison per bound;

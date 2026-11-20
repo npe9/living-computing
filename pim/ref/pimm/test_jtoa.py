@@ -45,7 +45,19 @@ Observed fault injections (2026-11-20), each restored afterwards:
                                            use is `subtract 0,4,0`, where
                                            the two are the same register;
                                            the destination reading is
-                                           unverified.
+                                           unverified by a run (the
+                                           compiler source gives it:
+                                           asm/bltdir.py).
+ on the runtime state in cells (goal records, hooks, stubs):
+  woken goal not put on the ready queue  -> error: 93 goals still suspended
+  binding wakes nothing                  -> error: 1 goals still suspended
+  goal arguments taken from slot 0       -> error: unify of two different
+                                           strings
+  waiting built-in's output register not
+  given its variable                     -> FAIL, 4 of 5 strings wrong
+  waiting built-in's goal one cell into
+  its stub                               -> error: pc 18372 is not an
+                                           instruction
 """
 import io
 import os

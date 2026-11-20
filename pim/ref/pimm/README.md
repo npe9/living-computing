@@ -15,11 +15,12 @@ Rules it keeps:
 - Every operand reading comes from object code paired with KL1 source,
   and is written down in `docs/pimm_semantics.md` with what checked it.
 
-State: goals on one LIFO ready stack (no priorities, one processor);
-suspension on unbound variables, kept in a side table and not as the
-machine's HOOK cells; body built-ins that wait for their inputs; 8-
-and 16-bit strings; 28 instructions. No garbage collection, no MRB, no
-shoen, no exceptions.
+State: all machine state is registers and memory cells (goal records,
+the ready queue, suspension records, hooked variables; layouts in
+`asm/pimm_layout.py`, the project's design). One processor, newest
+goal first, no priorities; body built-ins that wait become goals of a
+stub (`asm/pimm_stubs.py`); 8- and 16-bit strings; 28 instructions. No
+garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py
 
@@ -37,11 +38,11 @@ the Bluespec core's (`bsv/PimmJtoaTb.bsv`), line for line:
 
     bsv/run_pimm_jtoa.sh
 
-`convert_element/2` is in lockstep. `convert_loop/4` and `convert/2`
-are not yet on Bluespec: the goals, hooks and waiting built-ins here
-are Python objects and a side table, and must first become memory
-cells both models lay out the same way.
+`convert_element/2` is in lockstep, including a goal suspending on an
+unbound argument and waking when it is bound. `convert_loop/4` and
+`convert/2` are not yet on Bluespec: they need the string built-ins,
+waiting built-ins, `enqueue_goal` and `execute` there.
 
-Next: that layout, then `convert/2` in lockstep; then the next module
-with source (`builtin_utility`, `scsi_common`). The reference model is
+Next: those, then `convert/2` in lockstep; then the next module with
+source (`builtin_utility`, `scsi_common`). The reference model is
 kept no more than one such step ahead of the Bluespec.
