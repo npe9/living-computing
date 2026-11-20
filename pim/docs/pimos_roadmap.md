@@ -229,8 +229,12 @@ stage/box structure the repository asks of Bluespec processors:
 The 26 existing benches are ported to the new conventions and stay
 green; their injection records are re-observed, not copied.
 
-*Gate (R2):* a real predicate from a PIMOS library or kernel module
-runs from its `.sav` and returns the right answer.
+*Gate (R2):* a real predicate from a PIMOS module runs and returns the
+right answer. *Amended 2026-11-20:* first from the IPL image, which is
+already linked (`jis_to_ascii:convert_element/2`, then
+`convert_loop/4`, then `convert/2`; source `bios/boot/jtoa.kl1`), with
+PDSS running the same source as the answer oracle; the `.sav` loader
+follows.
 
 ### Phase 2 - The runtime
 
@@ -288,13 +292,14 @@ with KLIC 2.002. *Gate:* R8. Then one period application (R9).
 | Unknown | Resolved in |
 |---|---|
 | Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
-| How far the PIM/m dialect differs from PDSS's, instruction by instruction | Phase 0.5 (name map) |
-| `.kbn` base address, layout, entry | Phase 0.3 |
+| How far the PIM/m dialect differs from PDSS's, instruction by instruction | by name: done (`asm/namemap.py`); by operand order and behaviour: Phase 1, from the eight IPL modules that have source |
+| `.kbn` base address, layout, entry | resolved (Phase 0.3): in the file's header; `asm/kbn.py` |
+| The machine's tag values, including unbound, reference and hook | resolved: `debugger/inspector/tagtbl.kl1` names 59 tags; the meaning of the low `o`/`x` bit is inferred (MRB) |
 | The 33 opcode values absent from the 1992 table | resolved: 13 real quick forms; the rest were predicate-head and float words |
-| Label address units | Phase 0.4 |
+| Label address units | resolved (Phase 0.4): cells; `target - (here + 2)` |
 | Why `library`, `macro`, `patch_macro` do not parse | resolved: tagged float constants in the GC area |
 | The built-ins' exact behaviour where the manual is silent | Phase 2, by trace against PIMOS's own use of them |
-| Bluesim throughput, and so the wall-clock cost of a boot | Phase 0.7 |
+| Bluesim throughput, and so the wall-clock cost of a boot | measured (Phase 0.7): about 14 million steps/s for the bench model |
 | How much of the FEP protocol the boot and shell need | Phase 0.6 |
 | Whether the IPL image expects state left by the PSI's own loader | Phase 3 |
 

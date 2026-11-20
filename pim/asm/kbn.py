@@ -34,17 +34,28 @@ import census  # noqa: E402
 
 TAR = os.path.join(HERE, '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 
-# kbnheap.kl1 tag/2, plus the instruction tags (inst_tab.kl1).
+# The machine's tags, from debugger/inspector/tagtbl.kl1 get_tag_name/2
+# (59 entries, transcribed whole).  kbnheap.kl1 tag/2 agrees on every tag
+# it names and adds 3F (ex_float).  The o/x suffix is not explained in
+# the source; it is the low bit, and every pointer the image builder
+# writes has it set.
 TAGS = {
-    0x00: 'integer', 0x02: 'atom', 0x05: 'list', 0x0d: 'vdesc',
-    0x0f: 'string', 0x10: 'vect0', 0x13: 'vect1', 0x15: 'vect2',
-    0x17: 'vect3', 0x19: 'vect4', 0x1b: 'vect5', 0x1d: 'vect6',
-    0x1f: 'vect', 0x22: 'instruction (22)', 0x23: 'instruction (23)',
-    0x24: 'predicate head', 0x25: 'cdesc', 0x27: 'module',
-    0x30: 'float', 0x3f: 'ex_float',
-    # Not in the 1992 kbnheap.kl1; named here from what the 1994 image
-    # does with them (see decode()).
-    0x06: 'module-table entry', 0x07: 'module-table reference',
+    0x00: 'INTo', 0x01: 'INTx', 0x02: 'ATOMo', 0x03: 'ATOMx',
+    0x04: 'LISTo', 0x05: 'LISTx', 0x06: 'REFo', 0x07: 'REFx',
+    0x08: 'UNDF', 0x0a: 'HOOKo', 0x0b: 'HOOKx', 0x0c: 'MHOOK',
+    0x0d: 'VDESC', 0x0e: 'STRGo', 0x0f: 'STRGx', 0x10: 'VECT0o',
+    0x11: 'VECT0x', 0x12: 'VECT1o', 0x13: 'VECT1x', 0x14: 'VECT2o',
+    0x15: 'VECT2x', 0x16: 'VECT3o', 0x17: 'VECT3x', 0x18: 'VECT4o',
+    0x19: 'VECT4x', 0x1a: 'VECT5o', 0x1b: 'VECT5x', 0x1c: 'VECT6o',
+    0x1d: 'VECT6x', 0x1e: 'VECTo', 0x1f: 'VECTx', 0x20: 'PMI',
+    0x21: 'BLT', 0x22: 'GMI', 0x23: 'KLB', 0x24: 'PREDH',
+    0x25: 'CDESC', 0x26: 'COD', 0x27: 'MOD', 0x28: 'MGHOK',
+    0x29: 'EXMRF', 0x2a: 'EUNDFo', 0x2b: 'EUNDFx', 0x2c: 'EHOOKo',
+    0x2d: 'EHOOKx', 0x2e: 'EMHOKo', 0x2f: 'EMHOKx', 0x30: 'FLTo',
+    0x31: 'FLTx', 0x32: 'EXREFo', 0x33: 'EXREFx', 0x34: 'EXVALo',
+    0x35: 'EXVALx', 0x36: 'RHOOKo', 0x37: 'RHOOKx', 0x38: 'SHREC',
+    0x39: 'FPREC', 0x3a: 'FPRECt', 0x3b: 'DREF',
+    0x3f: 'ex_float (kbnheap.kl1)',
 }
 
 CELLS_PER_BLOCK = 51
@@ -97,8 +108,10 @@ def decode(d):
             bad += inside[i]                           # overlap
             inside[i] = True
 
-    # The module table: the last len(mods) cells, tag 06, one per
-    # module, each pointing at a module's module-tag cell.
+    # The last len(mods) cells are REFo (06), one per module, each
+    # pointing at a module's MOD cell; the REFx (07) cells inside modules
+    # point at these.  An external module reference is thus a two-step
+    # reference chain, which lets a module be replaced by changing one cell.
     tbl = size - len(mods)
     heads = set(load + a for a, _, _ in mods)
     bad += set(v for t, v in cells[tbl:]) != heads

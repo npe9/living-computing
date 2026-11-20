@@ -298,19 +298,38 @@ tags, which the bench model has so far invented:
 | `0x0D` | `vdesc` | | `0x27` | module |
 | `0x0F` | string | | `0x30` / `0x3F` | float / extended float |
 
-`bsv/PimKL1B.bsv` uses `0x02` for integer, `0x06` for atom, `0x07` for
-vector and `0x01` for an unbound variable. Only its list tag (`0x05`)
-agrees. The image contains no unbound-variable or reference cell, so
-those tags are still unknown; the firmware binary or the PIM/m
-hardware papers have to supply them.
+**The full tag table is in the source too** (found 2026-11-20):
+`debugger/inspector/tagtbl.kl1` names 59 tags, and `asm/kbn.py` carries
+it whole. The ones the runtime turns on:
 
-**Two tags the 1992 source does not have.** The 1994 image uses `0x06`
-(20 cells, exactly the trailing table, one per module, each pointing at
-a module's first cell) and `0x07` (51 cells, all inside modules' GC
-areas, all pointing into that table). So an external module reference
-goes through a module table, where the 1992 `kbn.kl1` writes a direct
-`{module, address}` cell. The names "module-table entry" and
-"module-table reference" in `asm/kbn.py` are ours.
+| Tag | Name | | Tag | Name |
+|---|---|---|---|---|
+| `00`/`01` | INT | | `20`, `21`, `22`, `23` | PMI, BLT, GMI, KLB (instruction words) |
+| `02`/`03` | ATOM | | `24`, `25`, `26`, `27` | PREDH, CDESC, COD, MOD |
+| `04`/`05` | LIST | | `28` | MGHOK |
+| `06`/`07` | REF | | `29` | EXMRF |
+| `08` | UNDF (unbound) | | `2A`-`2F` | EUNDF, EHOOK, EMHOK |
+| `0A`/`0B` | HOOK (suspended goals wait here) | | `30`/`31` | FLT |
+| `0C` | MHOOK | | `32`-`35` | EXREF, EXVAL (other processors) |
+| `0D` | VDESC | | `36`/`37` | RHOOK |
+| `0E`/`0F` | STRG | | `38`, `39`, `3A` | SHREC, FPREC, FPRECt |
+| `10`-`1F` | VECT0..VECT6, VECT | | `3B` | DREF |
+
+Paired tags differ in the low bit and are printed with an `o` or `x`
+suffix (`INTo`/`INTx`). The source does not say what the bit means; the
+MRB (multiple-reference) bit is the obvious reading and is ours. Every
+pointer the image builder writes has it set.
+
+`bsv/PimKL1B.bsv` uses `0x02` for integer, `0x06` for atom, `0x07` for
+vector and `0x01` for an unbound variable; only its list tag agrees.
+
+**The `06` and `07` cells are references.** The 20 cells at the end of
+the image are REFo, one per module, each pointing at a module's MOD
+cell; the 51 `07` cells inside modules' GC areas are REFx pointing at
+those. So an external module reference is a two-step reference chain
+through one cell per module, where the 1992 `kbn.kl1` writes a direct
+`{module, address}` cell. (Before the tag table was found these were
+described here as a "module table" under names of our own.)
 
 **In-memory atom instructions.** In the image an atom instruction is
 one cell: opcode byte (the base plus a register for `set_atom`,
@@ -473,20 +492,41 @@ object was compiled from the 1992 text as it stands is unchecked.
 
 **What this gives.**
 
-- *Source paired with object code*, for seven modules. That is the
+- *Source paired with object code*, for eight modules. That is the
   material for settling operand order and behaviour instruction by
   instruction, which the name map could not.
 - *A first real predicate for rung R2:* `jis_to_ascii:convert/2` and
   its helpers. Three predicates, 317 cells, known source
   (`bios/boot/jtoa.kl1`), integer guards and arithmetic, one loop, two
-  string built-ins, no I/O and no shoen. It needs goals
-  (`enqueue_goal`, `execute`) but nothing from outside the machine.
+  string built-ins, no I/O and no shoen. In order of difficulty:
+  `convert_element/2` is a leaf (guards and arithmetic);
+  `convert_loop/4` needs goals (`enqueue_goal`, `execute`) and, as its
+  code reads, a body built-in (`set_string_element`) applied to a
+  variable that `convert_element` has not bound yet, which means
+  built-in suspension and wake-on-bind (unconfirmed against the
+  source); `convert/2` adds `new_string`.
+- *The image is closed.* All 92 `execute_external` and
+  `enqueue_goal_external` instructions resolve, by module and
+  predicate key, to a predicate present in the image (pinned). The
+  operand is a location, `target - (here + 2)`, of a four-cell entry:
+  `{integer}`, `{REFx to the module}`, `{atom, arity << 24 | atom
+  number + arity}`, `{atom, module name}`.
 - *Where the SCSI exchange is.* The image's only `scsi_init` and
   `scsi_command` are in module `scsi` (`command_executer/2` issues the
   command); what is sent comes down through `ipl_scsi` and the
   `scsi_fep_*` modules, which talk to the front-end processor as a
   SCSI device. Reading that exchange out is now a matter of
   disassembly, and is not done.
+
+## The firmware binary (one look, 2026-11-20)
+
+`psdpim`'s `PMPSI.DIR/pimm.MEkbn` (506,624 bytes) is in the same
+container as the IPL image: a 256-byte header and 51 five-byte words
+per block. Its header says load address `0x4200`, 100,864 words, start
+0. The words are not tagged KL1 cells (99% have a zero in the tag
+byte's place): they are the Pseudo PIM/m's microcode, 40 bits a word.
+Reading it needs the PSI-III microinstruction format, which we do not
+have. Set aside; recorded so that it is not looked at twice.
 
 ## PDSS runs (2026-11-20)
 

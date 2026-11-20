@@ -117,6 +117,36 @@ class Image:
     def atom(self, v):
         return self.sym.get(v & 0xffffff, '#%x' % (v & 0xffffff))
 
+    def predkey(self, v):
+        """A predicate key, arity << 24 | (atom number + arity)
+        (kbnatom.kl1 pred_atom), as 'name/arity'."""
+        ar = v >> 24
+        return '%s/%d' % (self.atom((v & 0xffffff) - ar), ar)
+
+    def external(self, a):
+        """The target of execute_external / enqueue_goal_external at a.
+        The operand is a location, target - (here + 2)
+        (klb_opr.kl1 cal_location_address), of a four-cell entry in
+        the module's GC area: {integer}, {REFx to the module's REFo cell},
+        {atom, predicate key}, {atom, module name}.
+        Returns (module name, 'pred/arity', code address or None)."""
+        c16 = self.cells[a][1] & 0xffff
+        e = a + 2 + (c16 - 0x10000 if c16 & 0x8000 else c16)
+        c = self.cells
+        if not (c[e][0] == 0x00 and c[e + 1][0] == 0x07
+                and c[e + 2][0] == 0x02 and c[e + 3][0] == 0x02):
+            return None
+        mod, pred = self.atom(c[e + 3][1]), self.predkey(c[e + 2][1])
+        head = c[c[e + 1][1] - self.load][1] - self.load   # via the table
+        for m in self.mods:
+            if m['addr'] == head:
+                if m['name'] != mod:
+                    return None
+                for n, _ln, addr in m['preds']:
+                    if n == pred:
+                        return mod, pred, addr
+        return mod, pred, None
+
     def where(self, addr):
         for m in self.mods:
             if m['addr'] <= addr < m['addr'] + 2 + m['length']:
@@ -140,6 +170,11 @@ class Image:
             x, y, z, c16 = (v >> 16) & 255, (v >> 8) & 255, v & 255, v & 0xffff
             if ty.startswith('atom'):
                 return '%s %s' % (name, self.atom(v))
+            if name in ('execute_external', 'enqueue_goal_external'):
+                ext = self.external(a)
+                if ext:
+                    return '%s %d, %s:%s%s' % (name, x, ext[0], ext[1],
+                                               '' if ext[2] else '   ; NOT IN IMAGE')
             if name in LABEL_OPS:
                 tgt = a + 2 + (c16 - 0x10000 if c16 & 0x8000 else c16)
                 m, p = self.where(tgt)
@@ -151,7 +186,7 @@ class Image:
         if t == 0x24:
             return '; predicate head %08x' % v
         if t == 0x02:
-            return 'atom %s' % self.atom(v)
+            return 'atom %s' % (self.predkey(v) if v >> 24 else self.atom(v))
         if t == 0x00:
             return 'integer %d' % (v - (1 << 32) if v >> 31 else v)
         return '%s %08x' % (kbn.TAGS.get(t, 'tag %02x' % t), v)
@@ -166,7 +201,11 @@ def main(argv):
         named = sum(len(m['preds']) for m in im.mods)
         allp = [(m['name'], n, ln) for m in im.mods for n, ln, _a in m['preds']]
         digest = hashlib.sha256(repr(allp).encode()).hexdigest()[:16]
+        ext = [im.external(a) for a, (t, v) in enumerate(im.cells)
+               if t == 0x23 and v >> 24 in (0x62, 0x66)]
+        # the image is closed: every external call lands on a predicate in it
         ok = (got == PINNED and start == PINNED_START
+              and len(ext) == 92 and all(e and e[2] for e in ext)
               and all(x in allp for x in PINNED_PREDS)
               and digest == PINNED_DIGEST
               and named == im.got['pred_heads'] and len(im.sym) == PINNED_ATOMS
