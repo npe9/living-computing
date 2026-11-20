@@ -234,7 +234,11 @@ right answer. *Amended 2026-11-20:* first from the IPL image, which is
 already linked (`jis_to_ascii:convert_element/2`, then
 `convert_loop/4`, then `convert/2`; source `bios/boot/jtoa.kl1`), with
 PDSS running the same source as the answer oracle; the `.sav` loader
-follows.
+follows. *2026-11-20: `convert_element/2` runs from the image on the
+host reference model (`ref/pimm/`) and agrees with its source on all
+65,536 keys. Not R2: R2 is claimed on the Bluespec model only. PDSS
+cannot be the oracle for this predicate, because its `#"X"` is ASCII
+where PIMOS's is 16-bit JIS; the oracle is the source text.*
 
 ### Phase 2 - The runtime
 

@@ -27,6 +27,9 @@ python3 asm/inventory.py --check
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
+echo "=== PIM/m reference model: a PIMOS predicate run from the IPL image ==="
+python3 ref/pimm/test_jtoa.py
+
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
 
