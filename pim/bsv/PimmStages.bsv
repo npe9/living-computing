@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -97,6 +97,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Addr)         sp      <- mkRegU;
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
+  Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -360,8 +361,26 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       next;
     end
     else if (op == op_enqueue_goal) begin
-      gbox.record(fromInteger(lay_READY), labelOf(pc, c16), x, True, True);
-      st <= XEnq;
+      // A goal has 11 argument slots; the compiler packs the arguments
+      // from the 11th on into a vector (library/compiler/pack.kl1,
+      // max_goal_slots).  It is spread into the argument registers
+      // here, as the goal is made (where the firmware does it is not
+      // known), and the record holds every argument.
+      if (x > 11) begin
+        // a short vector of exactly the arguments left over
+        if (x > 16 || (regs.a(11).tag & 8'hfe) != tag_VECT0o + ((truncate(x) - 10) << 1))
+          stop(EndUnimp);
+        else begin
+          opA <= regs.a(11);
+          packK <= 0;
+          vbox.element(regs.a(11), 0);
+          st <= XPack;
+        end
+      end
+      else begin
+        gbox.record(fromInteger(lay_READY), labelOf(pc, c16), x, True, True);
+        st <= XEnq;
+      end
     end
     else if (op == op_execute) begin
       // the same goal goes on as a reduction of the predicate at the label
@@ -722,6 +741,22 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     sp <= a;
     regs.wr(x, mkCell(reuseTag, absAddr(a)));
     next;
+  endrule
+
+  rule spread (st == XPack);
+    let r <- vbox.result;
+    if (!r.ok) stop(EndUnimp);          // the vector is too short
+    else begin
+      regs.wa(11 + packK, r.a);
+      if (packK + 11 == x) begin
+        gbox.record(fromInteger(lay_READY), labelOf(pc, c16), x, True, True);
+        st <= XEnq;
+      end
+      else begin
+        packK <= packK + 1;
+        vbox.element(opA, zeroExtend(packK) + 1);
+      end
+    end
   endrule
 
   rule enqueued (st == XEnq);

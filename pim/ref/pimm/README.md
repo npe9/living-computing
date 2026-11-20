@@ -38,7 +38,8 @@ areas (`b_multiply`, `write_marked_variable`, `write_integer`),
 `put_vector`), `lockstep_ext.py` calls between modules
 (`execute_external`, `wait_value`, `wait_constant`),
 `lockstep_ptab.py` the IPL's predicate-table builder (fourteen
-instructions, listed in its header); 89
+instructions, listed in its header), `lockstep_pack.py` a goal of
+more than eleven arguments; 89
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

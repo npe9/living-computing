@@ -916,6 +916,20 @@ class Machine:
         self.reg[y] = var
 
     def i_enqueue_goal(self, pc, x, y, z, c16):
+        # A goal has 11 argument slots; the compiler packs the
+        # arguments from the 11th on into a vector, which is the 11th
+        # (library/compiler/pack.kl1: max_goal_slots, "for V2").  The
+        # called predicate uses r10, r11, ... with no code to unpack
+        # them, so the firmware must spread the vector; where it does
+        # is not known.  Here it is spread as the goal is made, and
+        # this model's record holds every argument.
+        if x > 11:
+            v = self.argv[11]
+            if x > 16 or v[0] & ~1 != VECT0 + 2 * (x - 10):
+                raise Unimplemented('enqueue_goal %d without its argument vector' % x)
+            base = self.vbase(v)
+            for i in range(x - 10):
+                self.argv[11 + i] = self.taken(base + i)
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:x + 1])
 
     def i_execute(self, pc, x, y, z, c16):

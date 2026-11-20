@@ -106,7 +106,8 @@ whole real modules, first word to last (the general `put_vector`).
 Since then (2026-11-20): calls between modules
 (`lockstep_ext.py`), and the first part of the IPL's module builder
 `ipl_module:load/4`, the predicate entry table (`lockstep_ptab.py`;
-`tag_and_value` and `new_instruction` of B2 are done). Next: the rest
+`tag_and_value` and `new_instruction` of B2 are done), and goals of
+more than eleven arguments (`lockstep_pack.py`). Next: the rest
 of `ipl_module:load/4` (the GC area, the code area, `new_module`),
 then `load_modules/8` over a whole file, `decode/8` with the magic
 number, and the atom table at the end of the file.
