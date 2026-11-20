@@ -3,34 +3,40 @@
 Instructions for AI agents (Claude Code and others) working in this
 repository.
 
-## Scope — FINISH STRETCH FIRST
+## Scope — WORK IN YOUR OWN DIRECTORY
 
-**The owner's standing instruction, 2026-10-29, in-session: "only
-concentrate on the stretch. the stretch must be finished before moving
-on. Make that a rule."**
+**The owner's standing instruction, 2026-11-19, in-session: "It used to
+be stretch only, now each agent should work on the directory it is in
+and leave other directories alone. hobbit, pim and stretch are
+currently in flight."** This replaces the 2026-10-29 rule ("only
+concentrate on the stretch").
 
-This repository holds a sibling directory per machine — `atlas`,
-`b5000`, `cdc6600`, `cray1`, `pim`, `symbolics3600`, `transputer` and
-the rest. **They are not the work.** `stretch/` is the work, until it
-is finished.
+This repository holds a sibling directory per machine. Several are
+worked on at once, by different agents, in the same working tree:
+`hobbit/`, `pim/` and `stretch/` are in flight as of 2026-11-19.
 
-Concretely, for an agent working on Stretch:
-
-- **Do not start, plan, or extend another machine.** If a "keep going"
-  leaves you short of ideas, the next item comes from `stretch/`'s own
-  lists — `stretch/bsv/README.md`, `stretch/strap/README.md`,
+- **Your directory is the one the session was started in.** On "keep
+  going", the next item comes from that directory's own lists (for
+  Stretch: `stretch/bsv/README.md`, `stretch/strap/README.md`,
   `stretch/docs/archival_inventory.md`, and the goal set in
-  `stretch/docs/source_audit.md` — never from a sibling directory.
-- **Do not commit another machine's files.** `git add -A` run from
-  `stretch/` stages the WHOLE repository, and has swept a sibling
-  project's work into a Stretch commit (see
-  `stretch/docs/ebox_roadmap.md`). **Stage by path.**
+  `stretch/docs/source_audit.md`; for PIM: `pim/plan.md` and
+  `pim/docs/kl1_model_status.md`) — never from a sibling directory.
+- **Leave the other directories alone.** Do not edit, build in, revert,
+  clean or commit another machine's files, even when they show as
+  modified in `git status`: another agent is probably mid-change there.
+- **Stage by path.** `git add -A` stages the WHOLE repository, and has
+  swept a sibling project's work into a Stretch commit (see
+  `stretch/docs/ebox_roadmap.md`). Check `git status` before a push.
 - A comparison with another machine is research only, and belongs in
-  `stretch/docs/` as a citation, not as code in a sibling directory.
+  your own directory's `docs/` as a citation, not as code in a sibling
+  directory.
 
-"Finished" is defined by `stretch/docs/source_audit.md`'s goal set:
-Phase A (MCP runs), then G1 cycle accuracy, G2 the instruction set,
-G3 the assembler, G4 verification infrastructure, G5 the render queue.
+The sections below that name Stretch (current direction, the idiomatic
+Bluespec rewrite, the STRAP regression suite) apply to agents working in
+`stretch/`. "Finished" for Stretch is still defined by
+`stretch/docs/source_audit.md`'s goal set: Phase A (MCP runs), then G1
+cycle accuracy, G2 the instruction set, G3 the assembler, G4
+verification infrastructure, G5 the render queue.
 
 ## Autonomy
 
