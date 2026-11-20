@@ -235,6 +235,10 @@ module mkStretchCore(StretchCore);
   // charging the decode too would count it twice (and move PDF 48 and
   // 69, whose M+ indexed column another change owns).
   Reg#(Bool)     redecodeAfterHold <- mkReg(False);
+  // THE LEVEL RELEASE's one-clock yield (2026-11-19; see yieldToPrepare
+  // above armPrepare).  Set in the clock the FP box's resume yields to
+  // rl_prepare, cleared when the resume fires: one yield per box request.
+  Reg#(Bool)     resumeYielded <- mkReg(False);
   // THE CLOCK THE E-BOX FINISHES ITS CURRENT INSTRUCTION: the removal
   // clock + the charge + 1 (an E-box time of N occupies N + 1 clocks,
   // StretchTiming's removal-clock note).  Read by headReady for an FP
@@ -618,7 +622,8 @@ module mkStretchCore(StretchCore);
   Bool armTail     = !armRecover && !isValid(ioPending) && !isValid(xmitPending)
                      && isValid(pendingTailWrite);
   Bool resumeReady = ebox.canResume();
-  Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
+  // (armResume itself is defined below yieldToPrepare, which it waits for.)
+  Bool armResumeBase = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
   // head with the E-box free, i.e. once every earlier level has retired.)
   // >>> THE E-BOX MUST BE FREE OF AN I-BOX INSTRUCTION TOO, 2026-11-14. <<<
@@ -747,13 +752,162 @@ module mkStretchCore(StretchCore);
   // notes on interruption timing -- in the df_data_fetch_alarm section
   // and the interrupt_pg0 one -- still describe the OLD behaviour and
   // are stale.)
+  // ---- THE INSTRUCTION BEING PREPARED (hoisted from rl_prepare, 2026-11-19) ----
+  // While the interruption instruction is in flight, THAT is the
+  // instruction being prepared; pcReg is left pointing at the
+  // instruction the interruption displaced (p.48).
+  Vector#(4, LaLevel) prepNl = la.levels();
+  HWordAddr prepPc = fromMaybe(pcReg, intPC);
+  function Maybe#(Tuple2#(InstrLen, DecodedInstr)) preparedAt(HWordAddr pc);
+    Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = tagged Invalid;
+    if (ibuf.lookup(pc[18:1]) matches tagged Valid .w0) begin
+      HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
+      InstrLen len = instrLen(hw0);
+      if (len == Half)
+        prepared = tagged Valid tuple2(len, decode(hw0, tagged Invalid));
+      else begin
+        HWordAddr pc1 = pc + 1;
+        if (ibuf.lookup(pc1[18:1]) matches tagged Valid .w1) begin
+          HalfWord32 hw1 = (pc1[0] == 0) ? w1[63:32] : w1[31:0];
+          prepared = tagged Valid tuple2(Full, decode(hw0, tagged Valid hw1));
+        end
+      end
+    end
+    return prepared;
+  endfunction
+  Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepPrepared = preparedAt(prepPc);
+  function Bool progressiveIn(Vector#(4, LaLevel) nl);
+    Bool r = False;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (nl[k].valid && hasProgressive(nl[k].di)) r = True;
+    return r;
+  endfunction
+  Bool prepProgressivePending = progressiveIn(prepNl);
+  // >>> STORE CLOSE TO FETCH, FOR AN INSTRUCTION WORD, 2026-11-17. <<<
+  // Perf. Char. Vol. 1 printed p.3-21 (PDF 39): "One such conflict is a
+  // store into a location corresponding to a prefetched instruction ...
+  // When such a store is decoded, I-box invalidates the prefetched
+  // instructions and waits until the correct information is available."
+  // The model had the invalidation (mkInstrBuffers' program store
+  // compare) but only when the store is MADE, at the level's removal; an
+  // instruction prepared out of 1Y/2Y before that ran as it was
+  // assembled.  So: do not prepare an instruction whose word (either
+  // word, for a full-word one) a pending level stores.  CHOSEN: the 7030
+  // waits at the decoding of the store; the model waits at the
+  // instruction in the stored word, which holds back the same
+  // instructions.  Exposed when the preparation floor was fixed (`ib`):
+  // the 7030 STRAP II TABMAN's "ST(BU,6),TBEN4+.35" three instructions
+  // before TBEN4, and C22-6578 Problem 2.9's "ST(BU,4),SV+0.19" into the
+  // very next instruction, both ran the unmodified instruction
+  // (decks/store_into_prepared_instr.strap).
+  //
+  // AND FOR THE CLOCK AFTER THE STORE IS MADE.  The level retires in the
+  // clock its store enters the store queue; StretchStorage reports it
+  // through recentStore() on the next clock, and only then does
+  // rl_ic_controls invalidate the Y word (a ConfigReg, seen the clock
+  // after).  In between, the level is gone and the stale word is still
+  // in 1Y/2Y, so a store to the word reported this clock holds the
+  // preparation too.  Measured: without this term the deck's W0 still
+  // came back stale.
+  function Bool storesInto(WordAddr w);
+    Bool r = False;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (levelStores(prepNl[k], w)) r = True;
+    if (st.recentStore() matches tagged Valid .rs &&& rs == w) r = True;
+    return r;
+  endfunction
+  function Bool instrStoredAt(HWordAddr pc, Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared);
+    HWordAddr pcNext = pc + 1;
+    Bool r = storesInto(pc[18:1]);
+    if (prepared matches tagged Valid {.plen, .*} &&& plen == Full &&& storesInto(pcNext[18:1]))
+      r = True;
+    return r;
+  endfunction
+  Bool prepInstrStored = instrStoredAt(prepPc, prepPrepared);
+
+  // ---- THE LEVEL RELEASE: THE FP BOX'S RESUME YIELDS ONE CLOCK (2026-11-19) ----
+  //
+  // WHAT IT RECOVERS.  With the floating-point add inline (before plan
+  // §1c step 5f stage 2) a level's add completed in its removal clock, and
+  // the next clock was rl_prepare's: the I-box started the instruction
+  // behind it at once.  With the add in mkFpBox the removal clock issues
+  // the request, the box answers, and the NEXT clock is rl_exec_resume's,
+  // which takes the arm rl_prepare would have had; and while the box holds
+  // the level, rl_prepare would not start an I-box instruction anyway
+  // (`!ebox.busyFor(OwnerLA)`: one `held`).  Measured: the 981 CYCLES pin
+  // of decks/fp_mplus_ds_not_df.strap went to 985, the NOP behind each add
+  // a clock late.  So, in the clock the box has ANSWERED, and only then:
+  //
+  //   the resume YIELDS -- once per request (resumeYielded) -- if
+  //   rl_prepare would START AN I-BOX INSTRUCTION this clock (the ladder
+  //   rl_prepare walks: no I-box budget left, no interruption due, the
+  //   store queue free, no store wait, nothing storing into the
+  //   instruction, and iboxHazard clear), and rl_prepare may start that
+  //   one instruction BESIDE the held level.  mkEBox's start() runs it only
+  //   if it completes at once, and refuses it (no effect) if it would need
+  //   a read or a box of its own: there is one `held`.  The resume fires
+  //   the clock after.  The E-box's time is unchanged by the wait:
+  //   rl_exec_resume charges ebudget - boxK, and boxK counts the yielded
+  //   clock.
+  //
+  // WHY ONLY THEN, AND ONLY ONE (2026-11-20).  An I-box instruction started
+  // beside the level commits before the level's indicators are set, so an
+  // interruption the level raises is taken after it -- and the 7030 does
+  // not let that be seen: "All changes in the index registers and/or index
+  // indicators due to the advance processing by the I-box must now be
+  // undone" (Perf. Char. Vol. 1 printed p.3-24, PDF 42, of wrong-branch
+  // recovery and of interruption, listed together on p.3-23, PDF 41: "The
+  // interruption action is quite similar to branch recovery"); Buchholz
+  // §15.6 (printed pp.246-247, PDF 271-272): the look-ahead's
+  // housecleaning restores every index word the instruction unit modified
+  // and returns that unit "to the point in the program at which
+  // interruption occurred"; Ref. Manual printed p.9 (PDF 12), look-ahead
+  // "makes the machine appear as if it were dealing with only one
+  // instruction at a time".  The model cannot undo
+  // (wrong-way recovery's snapshot is not used for interruption).  So the
+  // release is confined to the overlap the model ALREADY had with the add
+  // inline (the 981 pin): one instruction, in the clock after the result
+  // was formed.  That one is not what the pages describe either; it is
+  // kept because inline had it.  A first version also started I-box
+  // instructions during a multiply's four hold clocks, which nothing
+  // bounds; decks/fp_box_interrupt_landing.strap pins where a box-held
+  // multiply's interruption lands (a MODEL fact) and, with that version
+  // back, moved CYCLES only.  The gap is armInterrupt's stated window and
+  // docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
+  //
+  // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
+  // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
+  // pending level: an I-box instruction that reads the accumulator, the
+  // factor or the indicator words (eboxRegister), or branches on a non-
+  // index indicator, or stores where the level stores, still waits.
+  function Bool prepWouldAct();
+    Bool r = False;
+    if (prepPrepared matches tagged Valid {.len, .di}) begin
+      Bool branchLevel = False;   // rl_prepare loads these into a level instead
+      if (di matches tagged BranchInd .bi &&& !indexIndicator(bi.indNum)) branchLevel = True;
+      // An E-box-class instruction or an indicator branch's guess does not
+      // yield: measured, that also moved Perf. Char. Vol. 2's M+ EXTERNAL
+      // columns (atlas PDF 100-101) further from the printed times.
+      if (!isEboxClass(di) && !branchLevel)
+        r = !iboxHazard(st, guessPending, di, prepNl);
+    end
+    return r;
+  endfunction
+  Bool yieldToPrepare = resumeReady && ebox.fpBoxWaiting() && !resumeYielded
+                        && !ebox.busyFor(OwnerIbox) && ibusy == 0
+                        && !isValid(intDue) && !isValid(intPC)
+                        && st.writeReady() && !storeWait(prepNl) && !(clk < xstoreFreeAt)
+                        && !redecodeAfterHold && !prepInstrStored
+                        && prepWouldAct();
+  Bool armResume   = armResumeBase && !yieldToPrepare;
+
   Bool armInterrupt = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                       && !resumeReady && !headReady
                       && !isValid(intPC)          // one instruction, then done
                       && la.count() == 0 && !ebox.busy() && ibusy == 0
                       && isValid(intDue);
   Bool armPrepare  = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
-                     && !resumeReady && !headReady && !armInterrupt;
+                     && (!resumeReady || yieldToPrepare) && !headReady && !armInterrupt;
 
   (* fire_when_enabled *)
   rule rl_clock (running);
@@ -1444,6 +1598,7 @@ module mkStretchCore(StretchCore);
     // time, which only the box knows (mkEBox.boxCharge; 0 for every
     // other instruction).  Added to the budget on both paths below.
     Bit#(16) boxX = ebox.boxCharge();
+    resumeYielded <= False;
     let r <- ebox.resume();
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
@@ -1677,66 +1832,18 @@ module mkStretchCore(StretchCore);
     // 1Y/2Y); an E-box-class instruction is loaded into a look-ahead
     // level, an I-box-class one executes here once the levels have
     // drained. Stall until the word(s) are buffered and checked.
-    Vector#(4, LaLevel) nl = la.levels();
+    Vector#(4, LaLevel) nl = prepNl;
     Bool done = False;
-    // While the interruption instruction is in flight, THAT is the
-    // instruction being prepared; pcReg is left pointing at the
-    // instruction the interruption displaced (p.48).
-    HWordAddr pc = fromMaybe(pcReg, intPC);
-    Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = tagged Invalid;
-    if (ibuf.lookup(pc[18:1]) matches tagged Valid .w0) begin
-      HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
-      InstrLen len = instrLen(hw0);
-      if (len == Half)
-        prepared = tagged Valid tuple2(len, decode(hw0, tagged Invalid));
-      else begin
-        HWordAddr pc1 = pc + 1;
-        if (ibuf.lookup(pc1[18:1]) matches tagged Valid .w1) begin
-          HalfWord32 hw1 = (pc1[0] == 0) ? w1[63:32] : w1[31:0];
-          prepared = tagged Valid tuple2(Full, decode(hw0, tagged Valid hw1));
-        end
-      end
-    end
-    Bool progressivePending = False;
-    for (Integer k = 0; k < 4; k = k + 1)
-      if (nl[k].valid && hasProgressive(nl[k].di)) progressivePending = True;
-    // >>> STORE CLOSE TO FETCH, FOR AN INSTRUCTION WORD, 2026-11-17. <<<
-    // Perf. Char. Vol. 1 printed p.3-21 (PDF 39): "One such conflict is a
-    // store into a location corresponding to a prefetched instruction ...
-    // When such a store is decoded, I-box invalidates the prefetched
-    // instructions and waits until the correct information is available."
-    // The model had the invalidation (mkInstrBuffers' program store
-    // compare) but only when the store is MADE, at the level's removal; an
-    // instruction prepared out of 1Y/2Y before that ran as it was
-    // assembled.  So: do not prepare an instruction whose word (either
-    // word, for a full-word one) a pending level stores.  CHOSEN: the 7030
-    // waits at the decoding of the store; the model waits at the
-    // instruction in the stored word, which holds back the same
-    // instructions.  Exposed when the preparation floor was fixed (`ib`):
-    // the 7030 STRAP II TABMAN's "ST(BU,6),TBEN4+.35" three instructions
-    // before TBEN4, and C22-6578 Problem 2.9's "ST(BU,4),SV+0.19" into the
-    // very next instruction, both ran the unmodified instruction
-    // (decks/store_into_prepared_instr.strap).
-    //
-    // AND FOR THE CLOCK AFTER THE STORE IS MADE.  The level retires in the
-    // clock its store enters the store queue; StretchStorage reports it
-    // through recentStore() on the next clock, and only then does
-    // rl_ic_controls invalidate the Y word (a ConfigReg, seen the clock
-    // after).  In between, the level is gone and the stale word is still
-    // in 1Y/2Y, so a store to the word reported this clock holds the
-    // preparation too.  Measured: without this term the deck's W0 still
-    // came back stale.
-    function Bool storesInto(WordAddr w);
-      Bool r = False;
-      for (Integer k = 0; k < 4; k = k + 1)
-        if (levelStores(nl[k], w)) r = True;
-      if (st.recentStore() matches tagged Valid .rs &&& rs == w) r = True;
-      return r;
-    endfunction
-    HWordAddr pcNext = pc + 1;
-    Bool instrStored = storesInto(pc[18:1]);
-    if (prepared matches tagged Valid {.plen, .*} &&& plen == Full &&& storesInto(pcNext[18:1]))
-      instrStored = True;
+    // The instruction being prepared and the tests on it below were
+    // computed in this rule until 2026-11-19; they are module-level now
+    // (prepPc ... prepInstrStored, above armPrepare) so that the FP box's
+    // resume can ask whether this rule would start an I-box instruction
+    // (yieldToPrepare).  The same expressions, read in the same clock.
+    HWordAddr pc = prepPc;
+    Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = prepPrepared;
+    Bool progressivePending = prepProgressivePending;
+    Bool instrStored = prepInstrStored;
+    if (yieldToPrepare) resumeYielded <= True;
     if (ebox.busyFor(OwnerIbox))
       noAction;             // an I-box instruction is waiting on its operand read
     else if (ibusy != 0)
@@ -1953,7 +2060,11 @@ module mkStretchCore(StretchCore);
       // I-box class: execute ahead of pending levels unless a hazard
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
-      if (!ebox.busyFor(OwnerLA) && !iboxHazard(st, guessPending, di, nl)) begin
+      // (or BESIDE a level the FP box holds, in the one clock the resume
+      // yields: the level release, above yieldToPrepare; mkEBox refuses an
+      // instruction that would bail.)
+      if ((!ebox.busyFor(OwnerLA) || yieldToPrepare)
+          && !iboxHazard(st, guessPending, di, nl)) begin
         let d1 <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;

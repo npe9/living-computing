@@ -2754,6 +2754,76 @@ run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_p
     "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
     "fw:3264=0x0028000000000000"
 
+# >>> THE FP BOX'S LEVEL RELEASE KEEPS THE INTERLOCK, 2026-11-19. <<<
+# Plan §1c step 5f: in the clock the FP box has answered, the resume yields
+# once to rl_prepare if it would start an I-box instruction, which may then
+# start beside the held level (mkEBox refuses one that needs a read)
+# (StretchCore yieldToPrepare).  The pinned deck above (981) is what the
+# release restores.  This deck: an accumulator read (LX,$X1,$L) and write
+# (Z,$L) straight behind a + must wait for it; ten LX's from an ordinary
+# word, near a multiply's answer, must be refused there and run after.
+# CYCLES 1142 -> 1153 on 2026-11-20 when the release was confined to the
+# answered clock (StretchCore's "WHY ONLY THEN, AND ONLY ONE"): MODEL.
+# OBSERVED injections, 2026-11-20, each in the REAL files, reverted by the
+# exact inverse edit and cmp IDENTICAL to a saved copy:
+#   iboxHazard dropped from both release paths   zout only (the Z ran
+#                                                beside the add; the LX
+#                                                needs a read: refused)
+#   start() does not refuse a bailing beside     CYCLES 1151 only
+#     instruction (held overwritten)
+#   beside starts during the box's hold clocks   CYCLES 1142 only
+#     too (the 2026-11-19 version)
+#   the release off (stage 2 as first built)     the pinned deck above:
+#                                                CYCLES 985 (2026-11-19)
+# CYCLES and MEMREADS are MODEL behaviour.
+run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan §1c 5f)" ./run_program.sh ../decks/fp_box_release_interlock.strap StretchFpRelIlTb \
+    "PC=381" \
+    "CYCLES=1153+-0" \
+    "MEMREADS=108" \
+    "out:193=0x004C000000000000" "sum1:194=0x004C000000000000" "zout:195=0x0" \
+    "xout0:197=0x0001230000000000" "xout1:198=0x0001230000000000" "xout2:199=0x0001230000000000" "xout3:200=0x0001230000000000" "xout4:201=0x0001230000000000" \
+    "xout5:202=0x0001230000000000" "xout6:203=0x0001230000000000" "xout7:204=0x0001230000000000" "xout8:205=0x0001230000000000" "xout9:206=0x0001230000000000" \
+    "prod0:207=0x0064000000000000" "prod1:208=0x0064000000000000" "prod2:209=0x0064000000000000" "prod3:210=0x0064000000000000" "prod4:211=0x0064000000000000" \
+    "prod5:212=0x0064000000000000" "prod6:213=0x0064000000000000" "prod7:214=0x0064000000000000" "prod8:215=0x0064000000000000" "prod9:216=0x0064000000000000"
+
+# >>> WHERE AN INTERRUPTION RAISED BY A BOX-HELD MULTIPLY LANDS, 2026-11-20. <<<
+# RefMan printed p.48: "at the end of the operation during which the
+# indicator is turned on"; the 7030 undoes the I-box's advance on an
+# interruption (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6), so the
+# printed answer is: nothing after the multiply has run -- the stored
+# counter 4234 and no trail register set in case 1, 4250 (the first LVI
+# after the held LX) and none set in case 2.  The model cannot undo;
+# these checks pin what it does, a MODEL fact (WHERE/WHERE1 = the counter
+# SIC stores at entry 33, ZM, half-word in bits 0-18; X6-X9 / X10-X14 the
+# trail, an LVI each):
+#   case 1 (multiply straight from the program)  4236, X6 X7 set: two
+#     LVIs ran -- ahead of the level, as for any pending level (they
+#     commit even with the I-box held at a raised indicator, injection D)
+#   case 2 (I-box held back to the multiply)     4251, X10 set: one ran
+#     (untraced which clock)
+# MEASURED at other commits, the deck's earlier NOP form (scratch trees):
+# case 1 two late at 7590ec8 (multiply inline), 2c1b098 (multiply box, no
+# release) and c823af2; case 2 NONE late inline at 7590ec8, one at
+# 2c1b098: the multiply box moved it, not the release (untraced).
+# OBSERVED injections, 2026-11-20, each in the REAL StretchCore.bsv,
+# reverted by the exact inverse edit, cmp IDENTICAL to a saved copy:
+#   beside starts during the box's hold clocks too  CYCLES 422 only (the
+#     (the 2026-11-19 version)                      landing unmoved here)
+#   rl_prepare also waits while an interruption     step cap 30000: hangs
+#     is due (!isValid(intDue))                     at PC 4236 with WHERE,
+#                                                   WHERE1 0, X10 unset
+#                                                   (X6 X7 still set)
+# No observed injection moves the landing alone.  The gap is
+# docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
+# CYCLES and MEMREADS are MODEL behaviour.
+run "FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS (printed p.48; MODEL)" ./run_program.sh ../decks/fp_box_interrupt_landing.strap StretchFpIntLandTb \
+    "PC=4256" \
+    "CYCLES=424+-0" \
+    "MEMREADS=36" \
+    "where_case2:3328=0x0213600000000000" "where1_case1:3329=0x0211800000000000" \
+    "x6:22=0x0000200000000000" "x7:23=0x0000200000000000" "x8:24=0" "x9:25=0" \
+    "x10:26=0x0000200000000000" "x11:27=0" "x12:28=0" "x14:30=0"
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and
@@ -10140,9 +10210,14 @@ run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_
 # MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
 # printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution
 # cycles), on 11 vectors checked bit for bit against the one-step fpMul /
-# fpMulDouble, two literal fractions and the literal clock count 4.  The
-# injections and their observed failure sets are in the box file's header.
-run "FLOATING-POINT BOX (multiply; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
+# fpMulDouble, two literal fractions and the literal clock count 4.
+# Stage 2 (the same day): the add's datapath (+, +MG, M+, M+MG, D+, D+MG,
+# F+), one clock (Table 2's one execution cycle), a 1s-complement adder
+# with end-around carry and recomplement (Buchholz printed p.210), on 17
+# more vectors against fpAdd / fpAddDouble (a different adder), seven
+# literals and the literal clock count 1.  The injections and their
+# observed failure sets are in the box file's header.
+run "FLOATING-POINT BOX (multiply and add; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block
