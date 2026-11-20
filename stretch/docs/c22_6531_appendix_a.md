@@ -35,6 +35,8 @@ Assignment appendix or derived from listings:
 | `$L` `$R` | halves of the accumulator | 8, 9 | 0-63 |
 | `$X0`…`$X15` | index registers | 16…31 | 0-63 |
 | `$IA` | Interruption Address | 2 | 0-17 |
+| `$CPUS` | CPU Signal (footnote 1) | 11 | 5 |
+| `$CPU` | Other CPU (footnote 2) | 6 | 0-18 |
 | `$MASK` | Mask | 12 | 21-49 |
 | `$IND` | Indicators | 11 | 0-63 |
 | `$FT` | Factor | 14 | 0-63 |

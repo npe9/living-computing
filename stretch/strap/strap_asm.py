@@ -235,6 +235,7 @@ from charsets import ENTRY_MODES
 from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
+    INDICATOR_SYMBOLS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
     VFL_INT_WRITTEN_MINUS,
     IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, MCP_PSEUDO_OPS_1964, BB_CODES,
@@ -800,8 +801,11 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
         n = int(up)
     if n is not None and 0 <= n <= 15:
         return n if reg_context else (16 + n) * 64
-    if up in INDICATOR_BITS:
-        return 11 * 64 + INDICATOR_BITS[up]  # word 11 (indicators), bit = number
+    # INDICATOR_SYMBOLS, not INDICATOR_BITS: "$CPU" is word 6, the
+    # Other CPU register, and only the bare branch mnemonic CPU is the
+    # indicator (opcodes.py, INDICATOR_SYMBOLS, with the pages).
+    if up in INDICATOR_SYMBOLS:
+        return 11 * 64 + INDICATOR_SYMBOLS[up]  # word 11 (indicators), bit = number
     if up in SYSTEM_SYMBOLS:
         w, b = SYSTEM_SYMBOLS[up]        # C22-6531 Appendix A register fields
         return w * 64 + b
@@ -2696,7 +2700,7 @@ def system_symbol_dds(text):
     row yet depends on them and attaching them could move rows that
     pass today."""
     t = text.strip().upper()
-    if t.startswith('$') and t[1:] in INDICATOR_BITS:
+    if t.startswith('$') and t[1:] in INDICATOR_SYMBOLS:   # not $CPU
         return 'BU,1,8'
     return None
 
@@ -4390,8 +4394,12 @@ def emit_statement(stmt, symtab, image):
             # WITNESS: MCP printed p.116 line 28 is "INDMK,$IF" and the
             # listing prints 000000.04 00 000000.00 00 -- bits 18-23 of
             # the first half word are 0o04, i.e. bit 21 alone.
-            if fld.startswith('$') and fld[1:].upper() in INDICATOR_BITS:
-                bit = INDICATOR_BITS[fld[1:].upper()]
+            #
+            # "$CPU" is NOT one: it is word 6 (opcodes.INDICATOR_SYMBOLS),
+            # so it falls to eval_expr, gives 384, and fails loud below.
+            # The indicator's $ name is $CPUS.
+            if fld.startswith('$') and fld[1:].upper() in INDICATOR_SYMBOLS:
+                bit = INDICATOR_SYMBOLS[fld[1:].upper()]
             else:
                 bit = eval_expr(fld, symtab, loc, lineno=stmt.lineno)
             if not 0 <= bit <= 63:

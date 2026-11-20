@@ -174,6 +174,12 @@ run "SYN CHAIN TO AN INDEX REGISTER keeps naming the register" python3 verify_sy
 # bsv/ fails by name; step_cap=6060000 fails with the value it found.
 run "SYN pseudo-op" python3 test_syn.py
 
+# -- 0a'. $CPU is word 6 (Other CPU), not indicator 11.5: the one name in
+# both INDICATOR_BITS and SYSTEM_SYMBOLS (C22-6531 printed pp.15, 56, 65;
+# C28-6129 printed pp.10, 43, 52).  Pure Python; four sites, each
+# discriminated alone -- see test_cpu_symbol.py's header.
+run "\$CPU system symbol is word 6" python3 test_cpu_symbol.py
+
 # -- 0b. DCP Maintenance Compool transcription (SYN symbol table from
 # the DCP manual, PDF pp.129-130) -- verifies every resolved symbol
 # against the manual's own printed address column. Pure Python, same
@@ -9278,7 +9284,8 @@ run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_
 #   * THE DECKS SPELL INDICATOR 5 "CPU".  The Reference Manual's Figure
 #     11 calls it "CPU Signal (CPUS)" and this project took CPUS from
 #     there; SSIP writes BCPUZ.  Both are now in INDICATOR_BITS as an
-#     alias.
+#     alias (C22-6531 printed p.65 lists CPU for BIND).  Only as a
+#     branch spelling: "$CPU" is word 6 (test_cpu_symbol.py).
 #
 # SIP16, the block above it, is transcribed too, and it is the one that
 # matters for the interrupt system: it resets the system's OWN control

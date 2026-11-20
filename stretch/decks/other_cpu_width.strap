@@ -27,12 +27,14 @@
 ! gives it no P), so no BD is needed; the deck starts with one anyway,
 ! like ia_width_18bit.
 !
-! WHY "W6 SYN, 6.0" AND NOT $CPU.  C22-6531 Appendix A (printed p.56)
-! lists "6.0 $CPU Other CPU", but its indicator table names indicator
-! 11.5 "CPU" too, and this assembler's eval_system_symbol looks the
-! indicator names up first: "$CPU" assembles to 11.5, the CPUS bit of
-! the indicator register (first draft of this deck, observed).  Recorded
-! in docs/NEXT.md; this deck spells word 6 by number.
+! WHY "W6 SYN, 6.0" AND NOT $CPU.  When this deck was written, "$CPU"
+! assembled to 11.5, the CPUS bit of the indicator register (first
+! draft of this deck, observed), so it spells word 6 by number.  FIXED
+! 2026-11-19: "$CPU" is now 6.0, as C22-6531 printed pp.15 and 56 and
+! C28-6129 printed pp.10 and 43 print it; the bare branch mnemonic CPU
+! (BCPUZ) is still indicator 5 (opcodes.INDICATOR_SYMBOLS).  The deck
+! keeps 6.0 so its pins are untouched; tests/test_cpu_symbol.py checks
+! that $CPU and 6.0 are the same address.
 !
 ! FOUR STORE PATHS, each read back by an instruction into ordinary
 ! storage, after Z,W6 clears the word.  SV stores a HALF WORD's bits

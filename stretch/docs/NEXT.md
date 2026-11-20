@@ -354,16 +354,22 @@ bits (the full suite passes unchanged). **Found while there, open:**
     chain refill from location 4), so a fix must tell the exchange's
     IPL write from a program store. The pocket card's "4 Maintenance
     Bits 64 0-63" is the width in maintenance mode, not a contradiction.
-  - **`$CPU` assembles to the indicator, not word 6.** C22-6531
-    Appendix A (printed p.56) lists "6.0 $CPU Other CPU" (and C28-6129
-    STRAP II, "Other CPU $CPU 6.0"), but C22-6531's indicator table
-    also names indicator 11.5 "CPU", and `strap_asm.eval_system_symbol`
-    tries `INDICATOR_BITS` (which aliases CPU -> 5 for ja_ua1_ssip's
-    BCPUZ) before `SYSTEM_SYMBOLS`, so `$CPU` is 11.5. No deck in the
-    tree writes `$CPU`; `other_cpu_width.strap` spells word 6 as `6.0`.
-    The fix is to prefer SYSTEM_SYMBOLS for the `$` form, keeping the
-    alias for branch mnemonics -- after reading Appendix A's page image
-    to confirm `$`-indicator names are meant to resolve at all.
+  - **DONE 2026-11-19: `$CPU` is word 6, 6.0, not indicator 11.5.**
+    Settled from the page images, one answer: C22-6531 printed p.15
+    (PDF 16) "6.0 $CPU Other CPU" and p.56 (PDF 57) "$ CPU 2 Other CPU
+    6 0-18"; C28-6129 printed p.10 (PDF 14) "Other CPU $CPU 6.0" and
+    p.43 (PDF 46). The indicator's `$` name is `$CPUS` ("$ CPUS 1 CPU
+    Signal 11 5" in both appendices). The bare `CPU` stays indicator 5
+    as a branch mnemonic only: C22-6531 printed p.65 (PDF 66) lists
+    "CPU ... 11.5" among the mnemonics "which may be used in BIND",
+    and SSIP's BCPUZ assembles to 1575.02 C6. CPU is the ONLY name in
+    both `INDICATOR_BITS` and `SYSTEM_SYMBOLS` (an import-time assert in
+    opcodes.py now guards that). Fixed at four `$name` sites through
+    `opcodes.INDICATOR_SYMBOLS`: `eval_system_symbol`,
+    `system_symbol_dds`, INDMK (now fails loud on `$CPU`), and
+    `strap2/optable.system_symbol`, with the 7030 STRAP II deck's SYSTAB
+    CPU entry regenerated. `tests/test_cpu_symbol.py`, each site
+    discriminated alone. No listing in the tree assembles `$CPU`.
   - Words 0, 1, 2, 5, 7, 10, 11 and 12 already follow their assigned
     widths (word 1's bits 19-27 are the p.34 programming-note
     exception, cleared by the next timer step); 8, 9 and 13-15 are
