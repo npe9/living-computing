@@ -19,6 +19,7 @@ python3 asm/namemap.py --check
 
 echo "=== IPL image pimm_ipl.kbn (every cell placed) ==="
 python3 asm/kbn.py --check
+python3 asm/kbndis.py --check
 
 echo "=== runtime inventory (groups and sub-functions pinned) ==="
 python3 asm/inventory.py --check

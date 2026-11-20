@@ -434,6 +434,55 @@ The answer has to come from disassembling the image, which needs the
 atom table joined to the code. That is Phase 1 work (the loader), not
 Phase 0.
 
+## The IPL by name (2026-11-20)
+
+`python3 asm/kbndis.py` joins the image with its atom table
+(`pimm_ipl.sym`, 486 atoms) and disassembles by module and predicate.
+`--check` pins the 20 module names, that all 349 predicate heads are
+named, and that the start address is `ipl:boot/0`; it runs in
+`run_tests.sh`.
+
+A predicate in the image is `{atom, name}`, `{integer, 0}`,
+`{predicate head, arity << 24 | offset in module}`,
+`{integer, length << 16}`, then the code. All 349 heads check against
+their own offset.
+
+| Module (all in package `pimos`) | Cells | Predicates | KL1 source in `pimos.tar.Z` |
+|---|---|---|---|
+| `ipl` (start: `boot/0`) | 1,440 | 34 | none |
+| `top` | 865 | 23 | none |
+| `ipl_file_decoder` | 1,857 | 41 | none (shares predicate names with `library/unloader/decoder.kl1`) |
+| `ipl_loader`, `ipl_module`, `ipl_pool`, `ipl_link_table`, `ipl_scsi` | 4,479 | 111 | none |
+| `scsi_fep_file`, `scsi_fep_module`, `scsi_fep_general`, `scsi_fep_util` | 3,177 | 66 | none under these names (`bios/fep_module/scsi_fep.kl1` is module `scsi_fep`) |
+| `exception_table` | 1,701 | 14 | `kernel/builtin/excpt_tbl.kl1` |
+| `shoen` | 1,343 | 22 | `kernel/builtin/shoen.kl1` |
+| `scsi_common` | 731 | 13 | `bios/scsi/scsi_common.kl1` |
+| `builtin_utility` | 349 | 8 | `kernel/builtin/string.kl1` |
+| `scsi_processor` | 340 | 3 | `bios/scsi/scsi_processor.kl1` |
+| `scsi` | 328 | 9 | `bios/scsi/scsi_handler.kl1` |
+| `jis_to_ascii` | 317 | 3 | `bios/boot/jtoa.kl1` |
+| `scsi_builtin` | 43 | 2 | `bios/scsi/scsi_blt.kl1` |
+
+The "source" column is by `:- module` name only; whether the 1994
+object was compiled from the 1992 text as it stands is unchecked.
+
+**What this gives.**
+
+- *Source paired with object code*, for seven modules. That is the
+  material for settling operand order and behaviour instruction by
+  instruction, which the name map could not.
+- *A first real predicate for rung R2:* `jis_to_ascii:convert/2` and
+  its helpers. Three predicates, 317 cells, known source
+  (`bios/boot/jtoa.kl1`), integer guards and arithmetic, one loop, two
+  string built-ins, no I/O and no shoen. It needs goals
+  (`enqueue_goal`, `execute`) but nothing from outside the machine.
+- *Where the SCSI exchange is.* The image's only `scsi_init` and
+  `scsi_command` are in module `scsi` (`command_executer/2` issues the
+  command); what is sent comes down through `ipl_scsi` and the
+  `scsi_fep_*` modules, which talk to the front-end processor as a
+  SCSI device. Reading that exchange out is now a matter of
+  disassembly, and is not done.
+
 ## PDSS runs (2026-11-20)
 
 `ref/pdss/` builds PDSS V2.52.20 from `nonlocal/pdss.tar.Z` on the
