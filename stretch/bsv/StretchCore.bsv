@@ -816,53 +816,59 @@ module mkStretchCore(StretchCore);
   // the level, rl_prepare would not start an I-box instruction anyway
   // (`!ebox.busyFor(OwnerLA)`: one `held`).  Measured: the 981 CYCLES pin
   // of decks/fp_mplus_ds_not_df.strap went to 985, the NOP behind each add
-  // a clock late.  Perf. Char. Vol. 1 printed p.3-16 (PDF 34) puts the
-  // overlap the other way -- "local autonomy of the major units" -- and
-  // printed p.3-17 (PDF 35) says "the decoding time for average floating
-  // point sequences is completely overlapped by concurrent E-box execution
-  // time".  So the arithmetic unit lets the instruction unit go on:
+  // a clock late.  So, in the clock the box has ANSWERED, and only then:
   //
-  //   1. While the FP box holds a level (EBox.fpBoxWaiting), rl_prepare
-  //      may start an I-box instruction BESIDE it.  mkEBox's start() runs
-  //      it only if it completes at once, and refuses it (no effect) if it
-  //      would need a read or a box of its own: there is one `held`.
-  //   2. In the clock the box has answered, the resume YIELDS -- once per
-  //      request (resumeYielded) -- if rl_prepare would act on the next
-  //      instruction this clock (the same ladder rl_prepare walks: no
-  //      I-box budget left, no interruption due, the store queue free, no
-  //      store wait, nothing storing into the instruction; then a free
-  //      level for an E-box-class instruction or an indicator branch's
-  //      guess, or iboxHazard clear for an I-box one).  The resume fires
-  //      the clock after.  The E-box's time is unchanged by the wait:
-  //      rl_exec_resume charges ebudget - boxK, and boxK counts the yielded
-  //      clock, so eboxDoneAt and the LAAR release land where they would
-  //      have.  A yield rl_prepare then cannot use (the LAAR or a serial
-  //      hold inside its E-box-class arm, not tested here) only moves the
-  //      level's retirement a clock.
+  //   the resume YIELDS -- once per request (resumeYielded) -- if
+  //   rl_prepare would START AN I-BOX INSTRUCTION this clock (the ladder
+  //   rl_prepare walks: no I-box budget left, no interruption due, the
+  //   store queue free, no store wait, nothing storing into the
+  //   instruction, and iboxHazard clear), and rl_prepare may start that
+  //   one instruction BESIDE the held level.  mkEBox's start() runs it only
+  //   if it completes at once, and refuses it (no effect) if it would need
+  //   a read or a box of its own: there is one `held`.  The resume fires
+  //   the clock after.  The E-box's time is unchanged by the wait:
+  //   rl_exec_resume charges ebudget - boxK, and boxK counts the yielded
+  //   clock.
+  //
+  // WHY ONLY THEN, AND ONLY ONE (2026-11-20).  An I-box instruction started
+  // beside the level commits before the level's indicators are set, so an
+  // interruption the level raises is taken after it -- and the 7030 does
+  // not let that be seen: "All changes in the index registers and/or index
+  // indicators due to the advance processing by the I-box must now be
+  // undone" (Perf. Char. Vol. 1 printed p.3-24, PDF 42, of wrong-branch
+  // recovery and of interruption, listed together on p.3-23, PDF 41: "The
+  // interruption action is quite similar to branch recovery"); Buchholz
+  // §15.6 (printed pp.246-247, PDF 271-272): the look-ahead's
+  // housecleaning restores every index word the instruction unit modified
+  // and returns that unit "to the point in the program at which
+  // interruption occurred"; Ref. Manual printed p.9 (PDF 12), look-ahead
+  // "makes the machine appear as if it were dealing with only one
+  // instruction at a time".  The model cannot undo
+  // (wrong-way recovery's snapshot is not used for interruption).  So the
+  // release is confined to the overlap the model ALREADY had with the add
+  // inline (the 981 pin): one instruction, in the clock after the result
+  // was formed.  That one is not what the pages describe either; it is
+  // kept because inline had it.  A first version also started I-box
+  // instructions during a multiply's four hold clocks, which nothing
+  // bounds; decks/fp_box_interrupt_landing.strap pins where a box-held
+  // multiply's interruption lands (a MODEL fact) and, with that version
+  // back, moved CYCLES only.  The gap is armInterrupt's stated window and
+  // docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
   //
   // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
   // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
   // pending level: an I-box instruction that reads the accumulator, the
   // factor or the indicator words (eboxRegister), or branches on a non-
   // index indicator, or stores where the level stores, still waits.
-  //
-  // WHAT IT WIDENS.  The window stated at armInterrupt ("an I-box-class
-  // instruction that the I-box has already run AHEAD of a pending level is
-  // committed and cannot be taken back") now includes the level the FP box
-  // is executing: an interruption its result raises is taken after the
-  // instructions that ran beside it.  No interruption is lost or invented,
-  // and the indicators the level sets are its own (printed p.51 item a's
-  // DS-not-DF is decided inside execute(), which this does not touch).
   function Bool prepWouldAct();
     Bool r = False;
     if (prepPrepared matches tagged Valid {.len, .di}) begin
       Bool branchLevel = False;   // rl_prepare loads these into a level instead
       if (di matches tagged BranchInd .bi &&& !indexIndicator(bi.indNum)) branchLevel = True;
-      if (isEboxClass(di))
-        r = la.count() < 4 && !prepProgressivePending;
-      else if (branchLevel)
-        r = !guessPending && la.count() < 4 && !prepProgressivePending;
-      else
+      // An E-box-class instruction or an indicator branch's guess does not
+      // yield: measured, that also moved Perf. Char. Vol. 2's M+ EXTERNAL
+      // columns (atlas PDF 100-101) further from the printed times.
+      if (!isEboxClass(di) && !branchLevel)
         r = !iboxHazard(st, guessPending, di, prepNl);
     end
     return r;
@@ -2034,9 +2040,10 @@ module mkStretchCore(StretchCore);
       // I-box class: execute ahead of pending levels unless a hazard
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
-      // (or BESIDE a level the FP box holds: the level release, above
-      // yieldToPrepare; mkEBox refuses an instruction that would bail.)
-      if ((!ebox.busyFor(OwnerLA) || ebox.fpBoxWaiting())
+      // (or BESIDE a level the FP box holds, in the one clock the resume
+      // yields: the level release, above yieldToPrepare; mkEBox refuses an
+      // instruction that would bail.)
+      if ((!ebox.busyFor(OwnerLA) || yieldToPrepare)
           && !iboxHazard(st, guessPending, di, nl)) begin
         let d1 <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);

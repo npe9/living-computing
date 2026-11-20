@@ -29,28 +29,33 @@ accumulate.
 Plan §1c step 5f stage 2 (the add's datapath in `mkFpBox`, one clock), as
 first built, moved one of the suite's `CYCLES` pins: `fp_mplus_ds_not_df`
 (printed p.51 item a), 981 -> 985. A MODEL pin; it was NOT re-pinned
-(decision 2026-11-19: 985 is the model's box hold, not a 7030 number, and
+(985 is the model's box hold, not a 7030 number, and
 Perf. Char. Vol. 1 printed pp.3-16/3-17 -- the units' "local autonomy";
 decoding "completely overlapped by concurrent E-box execution" -- lean
 toward the old overlap). TRACED: inline, the level completes at removal
 (clock 218) and the `NOP` behind it starts at 219; with the box, 219 was
 the resume clock and the `NOP` started at 220; five adds, +4.
 
-FIXED by the LEVEL RELEASE (StretchCore's `yieldToPrepare` note): while
-the FP box holds a level, rl_prepare may start an I-box instruction beside
-it (mkEBox's start() refuses one that would need a read or a box, since
-there is one `held`), and in the clock the box has answered, the resume
-yields once to rl_prepare if it would act on the next instruction (load
-a level, or start an I-box instruction iboxHazard lets past). The 981
+FIXED by the LEVEL RELEASE (StretchCore's `yieldToPrepare` note): in the
+clock the FP box has answered, the resume yields once to rl_prepare if it
+would start an I-box instruction iboxHazard lets past, and that ONE
+instruction may start beside the held level (mkEBox's start() refuses one
+that would need a read or a box, since there is one `held`). Confined
+2026-11-20: a first version also started I-box instructions during the
+box's hold clocks, and also yielded for an E-box-class load or an
+indicator branch's guess; the second moved the atlas's `M+` EXTERNAL
+columns (PDF 100-101) further from the printed times, and the first is
+exactly what the interruption sources rule out (next item). The 981
 pin passes unchanged. The interlock is iboxHazard on the level, which stays
 in the look-ahead until the resume retires it
 (`decks/fp_box_release_interlock.strap`, with its observed injections).
-WIDENED, not new: an interruption raised by the held level is taken after
-the I-box instructions that ran beside it -- the window armInterrupt's note
-already states for an I-box instruction run ahead of any pending level.
+The one instruction beside the answered level is the overlap the model
+had with the add inline (the 981 pin), kept for that reason and not
+because the pages describe it; the interruption landing is measured in
+the next item.
 NOT DONE: the other boxes (divide, decimal, VFL) do not release their
 level. NOT RECOVERED: the +1..+9 rows of the jb_af1c decks and fp_zm_cleared
-(570, was 566) did not move with the release, broadened or not (measured).
+(570, was 566) did not move with the release (measured, both versions).
 Their code puts a CONSUMER straight behind each add (`BB,$ZM` in
 fp_zm_cleared; `SIC,SEN` then `BZMOP` / `BZRLZ` after each `M+` in F204D),
 which must wait for the box's answer, and that answer reaches the
@@ -58,14 +63,51 @@ registers in the resume clock, a clock after inline's removal clock. That
 reading is from the decks' code and the measurement, not a per-clock
 trace.
 
-The release also moves the open `M+` EXTERNAL misfit (atlas PDF 69-70 a
-little closer, PDF 100-101 up to 0.62 clock a case further; plan §1c 5f
-stage 2, "THE ATLAS"); not traced.
-
 C22-6578 Problem 3.4's two big moves (Method 2 -170, Method 1 +27 at stage
-2 as first built, +21 with the release) were TRACED too: the same instructions, stores and data; one store and one
+2 as first built) were TRACED too: the same instructions, stores and data; one store and one
 instruction fetch reach the same storage unit in the other order (plan
 §1c 5f stage 2, "PROBLEM 3.4, TRACED").
+
+## AN INTERRUPTION RAISED BY A BOX-HELD LEVEL LANDS LATE -- open, 2026-11-20
+
+THE PAGES say the program must not see the I-box's advance: Ref. Manual
+printed p.48 (PDF 51), an interruption is taken "at the end of the
+operation during which the indicator is turned on" and "before execution
+of the next instruction"; Perf. Char. Vol. 1 printed p.3-23/3-24 (PDF
+41-42): on an interruption, as on a wrong branch, "All changes in the
+index registers and/or index indicators due to the advance processing by
+the I-box must now be undone", "The interruption action is quite similar
+to branch recovery"; Buchholz §15.6 (printed pp.246-247, PDF 271-272):
+the look-ahead's housecleaning restores each index word the instruction
+unit modified and returns it "to the point in the program at which
+interruption occurred"; Ref. Manual printed p.9 (PDF 12): look-ahead
+"makes the machine appear as if it were dealing with only one
+instruction at a time".
+
+THE MODEL cannot undo: an I-box instruction that ran ahead of a pending
+level is committed (armInterrupt's note; wrong-way recovery's `xSnap` /
+`indSnap` are not used for interruption). `decks/fp_box_interrupt_landing.strap`
+pins where a ZM interruption raised by a box-held multiply lands, as a
+MODEL fact, with a trail of LVIs (one index register each) after the
+multiply and the counter SIC stores at entry 33. The pages' answer is no
+LVI run in either case. The model: case 1 (the I-box running ahead as
+usual) two LVIs committed, counter 4236 -- and they commit even with
+rl_prepare stopped at a raised indicator (the deck's injection D), so they
+ran before ZM came on, ahead of the level as for any pending level, not
+beside the box; case 2 (the I-box held back to the multiply) one LVI,
+counter 4251. In the deck's earlier NOP form, case 1 was two late at
+7590ec8 (multiply inline), 2c1b098 and c823af2, and case 2 NONE late
+inline and one late from 2c1b098 on: the multiply box (stage 1) moved
+case 2, not the release; untraced. Beside starts in the box's hold clocks
+too (the first release) moved only the deck's CYCLES; nothing in the
+model bounds them in general, so they were taken out. The one instruction
+the release still starts beside the answered level is not what the pages
+describe either; it is kept because the add had exactly that overlap
+inline (the 981 pin). TO CLOSE: take the interruption at the level's
+result and undo what the I-box ran ahead (the snapshot recovery does it
+already for a wrong branch), or hold the I-box at an interrupt-enabled
+indicator a pending level might set (the simple form of that, rl_prepare
+waiting while an interruption is due, hangs the deck: the injection D).
 
 ## THE FP BOX'S REMAINING CLASSES -- open, 2026-11-19
 

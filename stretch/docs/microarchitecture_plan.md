@@ -5978,8 +5978,9 @@ Staged, each step green and committed:
      resume clock, and the `NOP` starts at 220. Every clock after moves
      by one; the deck's five adds cost +4. Letting rl_prepare share the
      resume clock would NOT recover it: an I-box instruction is not
-     started while `ebox.busyFor(OwnerLA)` (one `held`, one execute()
-     call site), and the level is still held at 219. Only releasing the
+     started while `ebox.busyFor(OwnerLA)` (one `held`, shared by
+     execute()'s two call sites in mkEBox, `start` and `resume`), and the
+     level is still held at 219. Only releasing the
      level at the request would. The pin is a MODEL pin ("CYCLES and
      MEMREADS are MODEL behaviour", run_tests.sh); no page gives either
      number, and the sources that speak to it favour the old overlap,
@@ -5989,9 +5990,10 @@ Staged, each step green and committed:
      average floating point sequences is completely overlapped by
      concurrent E-box execution time". Neither states when an I-box
      instruction behind an E-box one may EXECUTE, so neither sources
-     985 or 981. It is NOT re-pinned (the coordinator's decision,
-     2026-11-19: 985 is the model's box hold, not a 7030 number); the LEVEL
-     RELEASE below recovers the overlap and the pin passes at 981.
+     985 or 981. It is NOT re-pinned: 985 is the model's box hold, not a
+     7030 number, and the pages that speak to it lean toward the old
+     overlap; the LEVEL RELEASE below recovers it and the pin passes at
+     981.
      Verified: `tests/run_fpbox_test.sh`, 17 add vectors built by the
      preparation (shifts 0-4, 7, 47, 48, 95; carry out, LC, recomplement,
      exact cancellation with M+'s tie, a 47- and a 91-place
@@ -6065,101 +6067,123 @@ Staged, each step green and committed:
      0.0045 clock of the baseline (`atlas_oracle.py --tsv`, case by case).
      Line counts: `fpArithClass` 745 / 310 -> 767 / 322 (raw /
      non-comment): the four arms gained the request and the comment.
-     **THE LEVEL RELEASE (2026-11-19, same milestone).** The arithmetic
-     unit lets the instruction unit go on while mkFpBox holds a level
-     (StretchCore's `yieldToPrepare` note; mkEBox start()'s "beside"
-     refusal; `EBox.fpBoxWaiting`): (1) rl_prepare may start an I-box
-     instruction BESIDE the held level (`!busyFor(OwnerLA) ||
-     fpBoxWaiting()`); mkEBox runs it only if it completes at once and
-     REFUSES it, with no effect, if it would need a read or a box (one
-     `held`; execute() commits nothing on a bail, which start()'s read path
-     already relies on); (2) in the clock the box has answered, the resume
-     YIELDS once per request (`resumeYielded`) if rl_prepare would act on
-     the next instruction (rl_prepare's own ladder, hoisted to module level
-     as `prepPc`/`prepPrepared`/`prepInstrStored`/`prepProgressivePending`:
-     a free level for an E-box-class instruction or an indicator branch's
-     guess, `iboxHazard` clear for an I-box one). The E-box's time does not
-     move: the resume charges `ebudget - boxK`, and boxK counts the yielded
-     clock. NOT a second execute(): the beside start uses start()'s
-     existing call site in a clock the resume does not fire. THE
-     INTERLOCK: the level stays in the look-ahead until the resume retires
-     it, so `iboxHazard` holds back an I-box instruction that reads or
-     writes what it writes, exactly as for any pending level. SOUNDNESS
-     LIMIT, stated: an interruption the held level raises is taken after
-     the I-box instructions that ran beside it -- the window armInterrupt's
-     note already states for an I-box instruction run ahead of a pending
-     level, widened by the box's clocks; p.51 item a's DS-not-DF is decided
-     in execute(), untouched, and `fp_mplus_ds_not_df` passes (its DS and
-     DF routines run as pinned). NOT DONE: the divide, decimal and VFL
-     boxes do not release their level. **Discriminating**
-     (`decks/fp_box_release_interlock.strap`, OBSERVED, each in a scratch
-     tree holding the final files plus the one injection -- the real files
-     were never injected; the sets are also at its run line): iboxHazard
-     dropped from both release paths -> `zout` only (the `Z,$L` behind a
-     `+` ran beside it; the `LX,$X1,$L` needs a read and is refused);
-     start() not refusing a bailing beside instruction -> CYCLES 1139 only
-     (the overwritten `held` loses the multiply, whose level is still at
-     the head and is re-run at its removal); the release off -> the 981
-     pin at 985 (above). **Full suite on the final files** (stage 2 plus the
-     release; `STRETCH_TAPE` private, `STRETCH_HALT_REPORT=1`, run after
-     the last code edit; only these .md docs changed during it): "All
-     regression tests passed.", 1173 sections (1172 + the new deck), the
-     only FAIL lines the two expected `FAIL (UNREPRODUCED, expected)`
-     p359 DD(N) lines; the 981 pin passes; read counts identical in all
-     368 halt reports common with the baseline; no `OVERRAN` line.
-     **Halt clocks against the 2c1b098 baseline (stage 1 only)**, nineteen
-     moved:
+     **THE LEVEL RELEASE (2026-11-19, confined 2026-11-20, same
+     milestone).** In the clock mkFpBox has ANSWERED for a look-ahead
+     level, the resume YIELDS once per request (`resumeYielded`) if
+     rl_prepare would START AN I-BOX instruction (rl_prepare's own
+     ladder, hoisted to module level as `prepPc`/`prepPrepared`/
+     `prepInstrStored`/`prepProgressivePending`, and `iboxHazard` clear),
+     and rl_prepare may start that ONE instruction BESIDE the held level
+     (`!busyFor(OwnerLA) || yieldToPrepare`; StretchCore's `yieldToPrepare`
+     note; mkEBox start()'s "beside" refusal; `EBox.fpBoxWaiting`). mkEBox
+     runs it only if it completes at once and REFUSES it, with no effect,
+     if it would need a read or a box (one `held`; execute() commits
+     nothing on a bail, which start()'s read path already relies on). The
+     E-box's time does not move: the resume charges `ebudget - boxK`, and
+     boxK counts the yielded clock. NOT a second execute() call site: the
+     beside start uses start()'s, in a clock the resume does not fire.
+     THE INTERLOCK: the level stays in the look-ahead until the resume
+     retires it, so `iboxHazard` holds back an I-box instruction that reads
+     or writes what it writes, exactly as for any pending level.
+     **CONFINED, 2026-11-20, for two measured and sourced reasons.** The
+     first version (c823af2) also (i) started I-box instructions BESIDE
+     during the box's hold clocks (`|| fpBoxWaiting()`) and (ii) yielded
+     for an E-box-class load or an indicator branch's guess. (ii) moved
+     the atlas -- the Vol. 2 timing pages are the printed timing oracle --
+     the wrong way: PDF 100-101's `M+` EXTERNAL columns up to +0.62 clock
+     a case further from the page (ni_ext median +6.31 -> +6.94), and gave
+     an untraced +1 to ch.3 item 4. (i) commits instructions before the
+     held level's indicators are set, and the 7030 does not let a program
+     see that on an interruption: Ref. Manual printed p.48 (PDF 51), "at
+     the end of the operation during which the indicator is turned on";
+     Perf. Char. Vol. 1 printed p.3-23/3-24 (PDF 41-42), "All changes in
+     the index registers and/or index indicators due to the advance
+     processing by the I-box must now be undone", "The interruption action
+     is quite similar to branch recovery"; Buchholz §15.6 (printed
+     pp.246-247, PDF 271-272); Ref. Manual printed p.9 (PDF 12). The model
+     cannot undo, so nothing beside the box during its hold clocks is
+     allowed. The one instruction beside the ANSWERED level is not what
+     the pages describe either; it is kept because the add had exactly
+     that overlap inline (the 981 pin). **WHERE A BOX-HELD MULTIPLY'S
+     INTERRUPTION LANDS** (`decks/fp_box_interrupt_landing.strap`, MODEL
+     fact; the pages' answer is nothing after the multiply): case 1 (the
+     I-box running ahead) two trail LVIs committed, counter 4236 -- they
+     ran ahead of the level before ZM came on, the window armInterrupt's
+     note states for any pending level; case 2 (the I-box held back to
+     the multiply) one, counter 4251. Measured in the deck's earlier NOP
+     form in scratch trees: case 1 the same at 7590ec8 (inline), 2c1b098
+     and c823af2; case 2 none late inline, one late from 2c1b098 on -- the
+     multiply box moved it, not the release; untraced. The gap is
+     docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
+     p.51 item a's DS-not-DF is decided in execute(), untouched, and
+     `fp_mplus_ds_not_df` passes (its DS and DF routines run as pinned).
+     NOT DONE: the divide, decimal and VFL boxes do not release their
+     level. **Discriminating, OBSERVED 2026-11-20 with each injection in
+     the REAL files, reverted by the exact inverse edit and cmp IDENTICAL
+     to a saved copy** (the sets are also at the run lines):
+     `fp_box_release_interlock` -- iboxHazard dropped from both release
+     paths -> `zout` only (the `Z,$L` behind a `+` ran beside it; the
+     `LX,$X1,$L` needs a read and is refused); start() not refusing a
+     bailing beside instruction -> CYCLES 1151 only (was 1153); beside
+     starts in the hold clocks too -> CYCLES 1142 only (c823af2's value);
+     the release off -> the 981 pin at 985 (2026-11-19).
+     `fp_box_interrupt_landing` -- beside starts in the hold clocks too ->
+     CYCLES 422 only (was 424; the landing unmoved on this deck);
+     rl_prepare also waiting while an interruption is due -> the step cap,
+     hung at PC 4236 with WHERE, WHERE1 0 and X10 unset (X6, X7 set). No
+     observed injection moves the landing alone.
+     **Full suite on these files** (`STRETCH_TAPE` private,
+     `STRETCH_HALT_REPORT=1`, run after the last edit to any file): see
+     the commit message for its FAIL lines and halt-report diff. The
+     halt clocks below were measured with a targeted run of every row of
+     this and stage 1's tables on the final files, before that suite.
+     **Halt clocks against the 2c1b098 baseline (stage 1 only)**: of the
+     rows measured, eighteen halt reports moved, no pin:
 
-     | run | 2c1b098 | stage 2 as first built | stage 2 + release | delta |
-     |---|---|---|---|---|
-     | FP M+ / M+MG on a protected word (PINNED 981) | 981 | 985 | **981** | 0 |
-     | Every FP operation but MULTIPLY clears ZM | 566 | 570 | 570 | +4 |
-     | FP M+ indicators (F204D) | 2094 | 2103 | 2103 | +9 |
-     | FP +MG unchanged registers and LS (F205C/D) | 778 | 781 | 781 | +3 |
-     | FP M+MG indicators (F206D) | 1581 | 1586 | 1586 | +5 |
-     | FP add double indicators (F208D1-D6) | 448 | 453 | 453 | +5 |
-     | FP add double exp range (F208D7-D11) | 682 | 684 | 684 | +2 |
-     | FP add double magnitude indicators (F209D1-D5) | 591 | 596 | 596 | +5 |
-     | FP add double magnitude LS indicator (F209D6-D9) | 340 | 343 | 343 | +3 |
-     | FP add double magnitude forced zero (F209E9) | 97 | 98 | 98 | +1 |
-     | Buchholz B.3, matrix multiplication | 982 | 982 | 980 | -2 |
-     | C22-6578 Problem 3.3 Method 1 | 1475 | 1477 | 1471 | -4 |
-     | C22-6578 Problem 3.3 Method 3 | 1487 | 1489 | 1414 | -73 |
-     | C22-6578 Problem 3.4 Method 1 | 1533 | 1560 | 1554 | +21 |
-     | C22-6578 Problem 3.4 Method 2 | 2462 | 2292 | 2292 | -170 |
-     | C22-6578 Problem 3.9 Method 1, less / equal / greater (3 runs) | 156 | 157 | 157 | +1 each |
-     | C22-6578 Problem 3.9 Method 2, less | 213 | 214 | 214 | +1 |
-     | C22-6578 ch.3 item 4, an FP operand and store at address 8 | 140 | 140 | 141 | +1 |
+     | run | 2c1b098 | stage 2 as first built | first release (c823af2) | confined release | delta |
+     |---|---|---|---|---|---|
+     | FP M+ / M+MG on a protected word (PINNED 981) | 981 | 985 | 981 | **981** | 0 |
+     | Every FP operation but MULTIPLY clears ZM | 566 | 570 | 570 | 570 | +4 |
+     | FP M+ indicators (F204D) | 2094 | 2103 | 2103 | 2103 | +9 |
+     | FP +MG unchanged registers and LS (F205C/D) | 778 | 781 | 781 | 781 | +3 |
+     | FP M+MG indicators (F206D) | 1581 | 1586 | 1586 | 1586 | +5 |
+     | FP add double indicators (F208D1-D6) | 448 | 453 | 453 | 453 | +5 |
+     | FP add double exp range (F208D7-D11) | 682 | 684 | 684 | 684 | +2 |
+     | FP add double magnitude indicators (F209D1-D5) | 591 | 596 | 596 | 596 | +5 |
+     | FP add double magnitude LS indicator (F209D6-D9) | 340 | 343 | 343 | 343 | +3 |
+     | FP add double magnitude forced zero (F209E9) | 97 | 98 | 98 | 98 | +1 |
+     | Buchholz B.3, matrix multiplication | 982 | 982 | 980 | 983 | +1 |
+     | C22-6578 Problem 3.3 Method 1 | 1475 | 1477 | 1471 | 1476 | +1 |
+     | C22-6578 Problem 3.3 Method 3 | 1487 | 1489 | 1414 | 1452 | -35 |
+     | C22-6578 Problem 3.4 Method 1 | 1533 | 1560 | 1554 | 1560 | +27 |
+     | C22-6578 Problem 3.4 Method 2 | 2462 | 2292 | 2292 | 2292 | -170 |
+     | C22-6578 Problem 3.9 Method 1, less / equal / greater (3 runs) | 156 | 157 | 157 | 157 | +1 each |
+     | C22-6578 Problem 3.9 Method 2, less | 213 | 214 | 214 | 214 | +1 |
+     | C22-6578 ch.3 item 4, an FP operand and store at address 8 | 140 | 140 | 141 | 140 | 0 |
 
-     (The new deck, `fp_box_release_interlock`, 1142, has no baseline.)
-     STAGE 1's MULTIPLY HOLD COSTS PARTLY COME BACK: Problem 3.3 Method 1
-     (1471) and Method 3 (1414) return EXACTLY to their pre-stage-1 clocks
-     (the stage 1 table above: 1471, 1414), B.3 to 980 (973 before stage
-     1), Problem 3.4 Method 1 1560 -> 1554 (1449 before stage 1). Problem
-     3.3 Method 3's -73 and B.3's -2 were checked for behaviour (stores with
-     their data, in order, base vs final, scratch trees): identical, 99
-     stores. The consumer decks (`fp_zm_terms` 158, `fp_zm_cleared`, the
-     jb_af1c F2xx rows) did NOT move: each has a consumer straight behind
-     the add or multiply (`BB,$ZM`; `SIC,SEN` then an indicator branch),
-     which must wait for the box's answer, and the release does not let it
-     (that is the interlock). A first version of the yield asked only whether
-     rl_prepare would START AN I-BOX instruction; it passed the 981 pin and
-     the new deck (1142), and a partial suite of it (the first 202 halt
-     reports, then stopped) moved the same F2xx rows the same way. The
-     final version also yields for an E-box-class load or an indicator
-     branch's guess; measured on six decks (981, 1142, fp_zm_cleared 570,
-     F204D 2103, Problem 3.4 Method 2 2292, Method 1 1554 against stage
-     2's 1560), then the full suite above. The ch.3 item 4 +1 is NOT traced. THE ATLAS, on the final build against
-     2c1b098 (`atlas_oracle.py --tsv`, case by case, the FP add and multiply
-     pages): PDF 42, 43, 46, 47, 57, 62, 73, 74, 77, 78, 88, 93 within
-     0.002 clock a case; the `M+` / `M+MG` pages MOVED on the EXTERNAL
-     columns only: PDF 69 and 70 earlier (up to -0.13 a case; 69's ni_ext
-     median residual +3.97 -> +3.92, mean |resid| 2.54 -> 2.49), PDF 100
-     and 101 (`M+` into index storage) LATER (up to +0.62 a case; ni_ext
-     median +6.31 -> +6.94, mean +6.47 -> +6.93), the I-box and internal
-     columns unmoved. So the release moves the open `M+` EXTERNAL misfit
-     (StretchTiming's laarStorePost note, whose +3.97 / +6.31 are the
-     2c1b098 medians) a little each way; not traced.
+     (The two new decks have no baseline: `fp_box_release_interlock`
+     1153, `fp_box_interrupt_landing` 424.) THE CONFINEMENT COSTS MOST OF
+     WHAT THE FIRST RELEASE GAVE BACK of stage 1's multiply hold: c823af2
+     returned Problem 3.3 Methods 1 and 3 exactly to their pre-stage-1
+     clocks (1471, 1414); confined, Method 1 is 1476 and Method 3 1452,
+     and B.3 is 983, a clock LATER than with no release at all (982;
+     untraced). Problem 3.4 Method 1 is stage 2's 1560. Those were the
+     hold-clock beside starts, which the interruption sources rule out.
+     The ch.3 item 4 +1 is gone with the E-box-class yield. The 981 pin,
+     the add's case, is kept. Problem 3.4 Method 2's -170 and Method 1's
+     move were TRACED at stage 2 as first built (above); Problem 3.3
+     Method 3's and B.3's moves at c823af2 were checked for behaviour
+     (stores with their data, in order, base vs c823af2, scratch trees):
+     identical. The consumer decks (`fp_zm_terms` 158, `fp_zm_cleared`,
+     the jb_af1c F2xx rows) did NOT move with either release: each has a
+     consumer straight behind the add or multiply (`BB,$ZM`; `SIC,SEN`
+     then an indicator branch), which must wait for the box's answer.
+     THE ATLAS, on this build against 2c1b098 (`atlas_oracle.py --tsv`,
+     case by case, all sixteen FP add and multiply pages, PDF 42, 43, 46,
+     47, 57, 62, 69, 70, 73, 74, 77, 78, 88, 93, 100, 101): every case
+     within 0.0045 clock; the `M+` EXTERNAL medians are the baseline's,
+     +3.97 (PDF 69) and +6.31 (PDF 100) (StretchTiming's laarStorePost
+     note).
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

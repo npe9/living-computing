@@ -125,16 +125,22 @@
 // ahead level, and the resume clock taking rl_prepare's slot -- is
 // measured in microarchitecture_plan.md §1c step 5f and bsv/README.md.
 //
-// THE LEVEL IS RELEASED WHILE THIS BOX WORKS (2026-11-19).  While the box
-// holds a look-ahead level, the core may start an I-box instruction beside
-// it, and the resume yields its clock once to the instruction unit
-// (StretchCore's yieldToPrepare note; mkEBox start()'s "beside" refusal).
-// So the one-clock add costs the instruction unit nothing it did not cost
-// inline (decks/fp_mplus_ds_not_df.strap's 981 pin holds), and the
-// multiply's four clocks overlap I-box work.  The interlock is unchanged:
-// the level stays in the look-ahead until the resume retires it, so
-// iboxHazard holds back an instruction that reads or writes what it writes
-// (decks/fp_box_release_interlock.strap).
+// THE LEVEL IS RELEASED WHEN THIS BOX ANSWERS (2026-11-19, confined
+// 2026-11-20).  In the clock the box has answered for a look-ahead level,
+// the resume yields once to the instruction unit, which may start ONE I-box
+// instruction beside the held level (StretchCore's yieldToPrepare note;
+// mkEBox start()'s "beside" refusal).  So the one-clock add costs the
+// instruction unit nothing it did not cost inline
+// (decks/fp_mplus_ds_not_df.strap's 981 pin holds).  NOT during the hold
+// clocks: an instruction started there commits before the level's
+// indicators are set, and the 7030 undoes such advance on an interruption
+// (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6; Ref. Manual p.48),
+// which the model cannot.  Where a box-held multiply's interruption lands
+// is pinned, as a MODEL fact, by decks/fp_box_interrupt_landing.strap; the
+// gap is docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".  The
+// interlock is unchanged: the level stays in the look-ahead until the
+// resume retires it, so iboxHazard holds back an instruction that reads or
+// writes what it writes (decks/fp_box_release_interlock.strap).
 //
 // NOT YET IN THE BOX: MULTIPLY AND ADD's sum (`*+`: its product comes
 // from here, its fpAddDouble still runs in the arm, because a re-run

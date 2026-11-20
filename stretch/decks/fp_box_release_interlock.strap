@@ -4,22 +4,23 @@
 ! (docs/microarchitecture_plan.md §1c step 5f, the level release;
 ! StretchCore's yieldToPrepare note, mkEBox's start()).
 !
-! WHAT IS RELEASED.  While mkFpBox holds a look-ahead level (an add for
-! one clock, a multiply for four), the instruction unit may start an
-! I-box instruction BESIDE it, and the resume yields its clock once to
-! rl_prepare.  Only an instruction iboxHazard lets past a pending level
-! may do so.  Two that must NOT, each straight behind a + from the box:
+! WHAT IS RELEASED.  In the clock mkFpBox has answered for a look-ahead
+! level (an add after one clock, a multiply after four), the resume
+! yields once to rl_prepare, which may start ONE I-box instruction BESIDE
+! the held level.  Only an instruction iboxHazard lets past a pending
+! level may do so.  Two that must NOT, each straight behind a + from the box:
 !   LX, $X1, $L    reads the left accumulator (word 8, eboxRegister) --
 !                  a READ after the add's write.  Must see the SUM.
 !   Z, $L          writes it -- a WRITE after the add's write.  The word
 !                  must end ZERO, not the sum the box returns after it.
-! And ten that MAY start beside a multiply but cannot run there:
+! And ten that MAY reach the I-box near a multiply's answer but cannot
+! run beside it:
 !   LX, $X2, XW    an ordinary storage word no level stores: iboxHazard
 !                  lets it past, but it needs a read, and the E-box has
 !                  one `held` -- mkEBox's start() must REFUSE it (the
 !                  multiply keeps `held`) and it runs after the resume.
-!                  To bring it to the I-box inside the multiply's four
-!                  clocks, an "LX,$X3,TMP" ahead of it is held until an
+!                  To bring it to the I-box near the multiply's answer,
+!                  an "LX,$X3,TMP" ahead of it is held until an
 !                  earlier level's ST(U),TMP is gone, and 0-9 NOPs follow
 !                  that LX (the I-box otherwise runs ahead of the levels
 !                  and starts the LX before the multiply reaches the box).
@@ -33,8 +34,9 @@
 ! in FONE's layout.  The unnormalized product .1 x .1 = .01 x 2^3 is
 ! (16)0064000000000000.  CYCLES and MEMREADS are MODEL behaviour.
 !
-! DISCRIMINATING (OBSERVED, scratch tree, injected files restored, cmp
-! IDENTICAL) -- the sets are at this deck's run line in tests/run_tests.sh.
+! DISCRIMINATING -- OBSERVED 2026-11-20 with each injection in the REAL
+! files, reverted by the exact inverse edit and cmp IDENTICAL to a saved
+! copy; the sets are at this deck's run line in tests/run_tests.sh.
         SLC, (8)200.0
 START   L(U), FONE
         +(U), FTWO
