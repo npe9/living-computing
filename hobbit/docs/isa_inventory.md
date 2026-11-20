@@ -174,13 +174,14 @@ word-alignment rule and the pointed-to address's width-alignment rule
 (pp. 1-27, 1-4) are the exception `0x4` alignment fault (Table 1-26,
 p. 1-38).
 
-One form cannot be served by two ports: an instruction that needs a
+Until 2026-11-20 the decoder refused an instruction that needs a
 pointed-to word for *both* operands (both fields indirect and both read
 as values, e.g. `ADD *R4,*R8`, or an indirect byte/half store with an
-indirect source). The decoder refuses it loudly as the unimplemented
-sequence (`TR_UNIMP`, the model's existing loud-refusal path) rather
-than inventing a third port; `sem/hobbit_sem.py` still executes it, so
-this is a core limitation, recorded here rather than approximated.
+indirect source), on the argument that it would need a third cache
+port.  It does not: the two pointer words are EU_S1's reads and the two
+pointed-to words are EU_S2's, a clock later, on the same two ports
+(`HobbitCore.bsv` `readPointed2`; golden 019).  1st Edition Plan 9
+executes the form within 300 instructions (`CMPEQ *R24.UB, *R28.UB`).
 `MOV` with a word destination (including the one-parcel `MOV.II`) needs
 only the source's word — a word store has no old word to merge (p. 1-4)
 — and `MOVA` uses its source as an address (p. 3-33), so both fit the

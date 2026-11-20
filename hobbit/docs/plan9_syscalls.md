@@ -267,3 +267,75 @@ IEEE double, not `fpi.c`'s 53+3-bit `Internal`, so FADD/FSUB/FMUL/FDIV
 may round differently from 1e in a last bit; moves, compares and integer
 conversions are exact.  `za` executes one FMOV (0x26d0, `cinit`).
 
+## The Bluespec run's kernel entry (`bsv/P9HostTb.bsv`, 2026-11-20)
+
+The A1 shim (above) keeps running `cat` in the suite as it did.  The A2
+runs use a second testbench built on the reference runner's recording
+(`tools/p9run.py --record`, format in `bsv/p9host.c`), because a kernel
+written twice -- once in Python for the reference model, once in
+Bluespec or C for the core -- is two kernels that can disagree.  There is
+one kernel, the Python one; the Bluespec run *replays* it:
+
+* the boot memory is the recording's (`M` records): text and data at
+  their real addresses, the exec frame below USTKTOP = 0x80000000, and a
+  kernel page at 0x0c00 with the vector table, two stubs and their
+  device words;
+* memory is `p9host.c`'s sparse 32-bit store behind the core's ordinary
+  `HobbitMem` interface (one registered read, one write); a write
+  outside every segment stops the run;
+* at each kernel entry `p9host.c` checks what the *machine* presents --
+  the system-call id KCALL stored at `ISP-12`, the arguments at the
+  user's `CSP+4..`, or for floating point the PC the unimplemented
+  sequence stored at `*(SP)` -- against the recording, applies the bytes
+  the kernel stored into the process (`B`), takes what a `write` call
+  writes from the model's memory into a file (`O`), and hands back the
+  recorded result (`R`).
+
+**The stubs** (assembled by `asm/hobbit_asm.py` from `p9run.stub_source`;
+the vector at `VB+0` is the first, at `VB+12` the second):
+
+    ksys:   MOVA    R0, *$TMP        ; TMP = SP
+            ENTER   *$TMP            ; flush the whole cache; MSP = SP
+            MOV     $1, *$GO         ; ring: a system call
+    kwait:  CMPEQ   $0, *$RDY
+            JMPTY   kwait            ; wait (RDY is re-read every time)
+            MOV     $0, *$RDY
+            MOV     *$RES, R4        ; the result, into the accumulator
+            CMPEQ   $1, *$FLAG       ; leave PSW.F as the host asks
+            JMP     **$(ISP0-8)      ; the PC KCALL saved (p. 3-29)
+
+    kfp:    MOVA R0, *$TMP ; ENTER *$TMP ; MOV $2, *$GO ; wait ;
+            MOV $0, *$RDY ; CMPEQ $1, *$FLAG ; JMP **$RES
+
+Why each line is there:
+
+* `ENTER *$TMP` is the printed flush (p. 3-19: a source that is not a
+  stack offset "flush[es] stack cache unconditionally", `SHAD = MSP = SP
+  = target`; p. 3-20 case 4: the target is the word at the address).  The
+  host cannot see inside the stack cache, and after this it does not need
+  to: every stack word is in memory, including the arguments and any
+  buffer on the stack.  This removes the A1 shim's "host writes behind
+  the cache" limit.
+* The wait loop is host time; `tools/p9trace_cmp.py` drops every record
+  whose PC is in the kernel page, so the number of turns does not
+  matter.
+* `CMPEQ $1, *$FLAG` sets PSW.F from a word: for a system call the flag
+  the process had before the KCALL (bit 4 of the PSW saved at `ISP-4`),
+  for floating point the flag a compare produced.  The host never writes
+  PSW.F while user instructions are in the pipe.
+* `JMP **$addr` returns to the instruction *after* the KCALL, so libc's
+  own `RETURN R0` executes on the core as it does on the reference model
+  (the A1 stub returned over it).
+
+**What the host still does to the machine:** once per system call, after
+serving it, it sets the PSW to the one KCALL saved and the ISP back
+above the frame (`doKret`).  That is KRET, which the model does not have.
+
+**Testbench lessons, recorded because they cost two builds each.**  The
+host's poll rule fires every clock.  In its first form it called
+`setPsw`/`setIsp`, was scheduled against the pipeline's rules, and --
+being the more urgent -- starved them all: the machine never retired.
+In its second form it handed the KRET to another rule through a
+register, which closed a scheduling cycle that bsc broke the same way.
+It now reads only, and signals through a wire.
+

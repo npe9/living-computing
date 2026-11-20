@@ -537,6 +537,14 @@ def fpi(m, state):
         done.append(name)
 
 
+def kernel_entry_flush(state):
+    """The stub's `MOVA R0, *$TMP ; ENTER *$TMP` (see `stub_source`): the
+    whole window goes to memory and the cache is left empty, MSP = SP."""
+    hobbit_sem.cache_flush(state, None, state.msp,
+                           (state.msp - state.sp) // 16)
+    state.msp = state.sp
+
+
 def mnemonic_key(parcels):
     p0 = parcels[0]
     if p0 & 0x8000 == 0:
@@ -563,6 +571,10 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
     # memory, which is also the state after each kernel entry (the stub's
     # ENTER flush).  CATCH and ENTER then fill it as the program runs.
     state.msp = state.sp
+    # The cache's contents are modelled (hobbit_sem.State.cache): za reads
+    # a stack word it never wrote, and what it gets is what the cache slot
+    # held, which only a model of the array can say.
+    state.cache = [0] * 64
     stubs, _labels = build_stubs()
     state.memory.update(stubs)
     m = Machine(state)
@@ -592,6 +604,7 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
                 # The model did the sequence's store, *(CSP) = PC (which
                 # is why 1e's compiler keeps nothing in R0 across floating
                 # point); PC = *(VB+12) is the handler, played here.
+                kernel_entry_flush(state)
                 if recorder:
                     recorder.begin("F", pc, 0, [0, 0, 0, 0])
                     m.rec = recorder
@@ -603,7 +616,6 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
                         ops["fpi " + nm] += 1
                     if recorder:
                         recorder.end(state.pc, (state.psw >> 4) & 1, 0)
-                    state.msp = state.sp        # the stub's flush
                     continue
                 status = "TRAP pc=%08x insn=%04x: %s" % (pc, rec.insn0,
                                                          rec.reason)
@@ -613,6 +625,7 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
             if state.isp != isp:                    # a KCALL retired
                 num = m.word(isp - 12)
                 saved_psw = m.word(isp - 4)
+                kernel_entry_flush(state)
                 if recorder:
                     recorder.begin("K", num, NARGS.get(SYSCALLS.get(num), 0),
                                    [m.word(state.sp + 4 + 4 * i)
@@ -635,7 +648,6 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
                 state.pc = m.word(isp - 8)
                 state.psw = saved_psw
                 state.isp = isp
-                state.msp = state.sp            # the stub's flush
     except Stop as exc:
         status = str(exc)
     for f in k.fds.values():

@@ -56,6 +56,12 @@ suite was green before and after.  "za 12" means all twelve sources of
 Not discriminated by anything here: FADD/FMUL/FDIV rounding against
 fpi.c (the arithmetic is host IEEE double, not fpi.c's `Internal`), and
 errstr's text.
+
+`StackCacheContents` (added later the same day, with `State.cache`) has
+no injection table of its own: the injection that matters for it is the
+Bluespec comparison, where running the reference model without the
+array (`state.cache = None` in tools/p9run.py) makes `za main9.s` differ
+from the core at record 29,664 (docs/conformance_1to1.md 1c).
 """
 
 import io
@@ -351,6 +357,107 @@ class LittleEndian(unittest.TestCase):
         st.memory[0x104] = 0x0004 << 16
         rec, st = sem.step(st)
         self.assertEqual((rec.mem_addr, rec.mem_wdata), (0x1004, 0x33))
+
+
+class StackCacheContents(unittest.TestCase):
+    """The stack cache's 64 words, when the model keeps them
+    (`State.cache`): the printed loops of pp. 3-19 (ENTER) and 3-10/3-11
+    (CATCH), and p. 1-5/1-12's window.  The slot of an address is its
+    bits 7:2 -- the cache is 64 words and the window never exceeds 256
+    bytes -- which is the Bluespec core's indexing too, so the *value* an
+    uninitialised stack word reads is agreed between the two models by
+    construction, not independently derived."""
+
+    def state(self, sp, msp):
+        st = sem.State(pc=0x100, sp=sp, msp=msp, psw=sem.PSW_SP)
+        st.cache = [0] * 64
+        return st
+
+    @staticmethod
+    def put(st, addr, *parcels):
+        for i in range(0, len(parcels), 2):
+            pair = list(parcels[i:i + 2]) + [0]
+            st.memory[addr + 2 * i] = (pair[0] << 16) | pair[1]
+
+    def test_a_store_inside_the_window_goes_to_the_cache(self):
+        st = self.state(0x1000, 0x1100)
+        self.put(st, 0x100, 0x86FD, 0x0007, 0x0004)          # MOV $7, R4
+        rec, st = sem.step(st)
+        self.assertEqual((rec.mem_addr, rec.mem_wdata), (0x1004, 7))
+        self.assertEqual(st.cache[(0x1004 >> 2) & 63], 7)
+        self.assertNotIn(0x1004, st.memory)
+
+    def test_a_store_outside_the_window_goes_to_memory(self):
+        st = self.state(0x1000, 0x1000)                      # empty cache
+        self.put(st, 0x100, 0x86FD, 0x0007, 0x0004)
+        rec, st = sem.step(st)
+        self.assertEqual(st.memory[0x1004], 7)
+        self.assertEqual(st.cache, [0] * 64)
+
+    def test_without_the_array_every_store_is_memory(self):
+        st = sem.State(pc=0x100, sp=0x1000, msp=0x1100, psw=sem.PSW_SP)
+        self.put(st, 0x100, 0x86FD, 0x0007, 0x0004)
+        rec, st = sem.step(st)
+        self.assertEqual(st.memory[0x1004], 7)
+
+    def test_enter_extends_the_window_without_loading_it(self):
+        # p. 3-19: ENTER moves SP; it loads nothing.  The new frame's
+        # words read what their slots last held, not what memory holds.
+        st = self.state(0x1000, 0x1040)
+        st.memory[0xFF4] = 0x1234                    # memory's old word
+        st.cache[(0xFF4 >> 2) & 63] = 0xDEAD         # the slot's old word
+        self.put(st, 0x100, 0x0BFC, 0x6022)          # ENTER R-16; MOV R4,R8
+        rec, st = sem.step(st)
+        self.assertEqual((st.sp, st.msp), (0xFF0, 0x1040))
+        rec, st = sem.step(st)
+        self.assertEqual((rec.mem_addr, rec.mem_wdata), (0xFF8, 0xDEAD))
+        self.assertEqual(st.memory[0xFF4], 0x1234)   # untouched
+
+    def test_enter_flushes_whole_blocks_from_the_top(self):
+        # p. 3-19: while (MSP > SHAD && MSP - target > SCSIZE) the block
+        # at MSP-16 goes to memory and MSP -= 16.
+        st = self.state(0x1000, 0x1100)
+        st.cache = [0xC0DE0000 + i for i in range(64)]
+        self.put(st, 0x100, 0x0BFC)                  # ENTER R-16
+        rec, st = sem.step(st)
+        self.assertEqual((st.sp, st.msp), (0xFF0, 0x10F0))
+        self.assertEqual([st.memory[a] for a in range(0x10F0, 0x1100, 4)],
+                         [0xC0DE003C, 0xC0DE003D, 0xC0DE003E, 0xC0DE003F])
+        self.assertNotIn(0x10EC, st.memory)          # one block, no more
+
+    def test_catch_fills_the_words_it_brings_in(self):
+        # pp. 3-10/3-11: the cache is filled upward from MSP from memory.
+        st = self.state(0x1000, 0x1000)
+        for k in range(8):
+            st.memory[0x1000 + 4 * k] = 0xA0 + k
+        self.put(st, 0x100, 0x0809)                  # CATCH R32
+        rec, st = sem.step(st)
+        self.assertEqual((st.sp, st.msp), (0x1000, 0x1020))
+        self.assertEqual([st.cache[(a >> 2) & 63]
+                          for a in range(0x1000, 0x1020, 4)],
+                         [0xA0 + k for k in range(8)])
+        self.assertEqual(st.cache[(0x1020 >> 2) & 63], 0)   # not beyond
+
+    def test_enter_with_a_memory_target_flushes_everything(self):
+        # p. 3-19 "flush stack cache unconditionally"; p. 3-20 case 4:
+        # the target is the word AT the absolute address.
+        st = self.state(0x1000, 0x1020)
+        for a in range(0x1000, 0x1020, 4):
+            st.cache[(a >> 2) & 63] = 0xB000 + a
+        st.memory[0x2000] = 0xFF0
+        self.put(st, 0x100, 0x80C9, 0x0000, 0x2000)  # ENTER *$0x2000
+        rec, st = sem.step(st)
+        self.assertEqual((st.sp, st.msp), (0xFF0, 0xFF0))
+        self.assertEqual([st.memory[a] for a in range(0x1000, 0x1020, 4)],
+                         [0xB000 + a for a in range(0x1000, 0x1020, 4)])
+
+    def test_kernel_entry_flush_is_that_enter(self):
+        st = self.state(0x1000, 0x1020)
+        for a in range(0x1000, 0x1020, 4):
+            st.cache[(a >> 2) & 63] = 0xB000 + a
+        p9run.kernel_entry_flush(st)
+        self.assertEqual((st.sp, st.msp), (0x1000, 0x1000))
+        self.assertEqual(st.memory[0x1004], 0xB000 + 0x1004)
 
 
 if __name__ == "__main__":

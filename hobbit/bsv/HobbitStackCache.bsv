@@ -138,9 +138,25 @@ interface HobbitStackCache;
   method Maybe#(Word) memLive();
   method Word memData();
   method Bool memIdle();
+
+  // The same read port, lent to the prefetch buffer's fill (instruction
+  // words).  The prefetch buffer translates the address itself (a text
+  // reference) and asks for the *physical* word, which goes out on the
+  // untranslated memory.  Priority on the port: the CATCH refill, then
+  // an operand, then the prefetch.
+  interface MemPort textPort;
 endinterface
 
 module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
+  HobbitStackCache c <- mkHobbitStackCacheT(mem, mem, m);
+  return c;
+endmodule
+
+// `tmem` is the same memory without the data face's translation, for the
+// prefetch buffer's physical reads (HobbitCore); the plain constructor
+// above uses one for both.
+module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
+                            MemCycles m)(HobbitStackCache);
 
   Reg#(Word) spR   <- mkReg(0);
   Reg#(Word) mspR  <- mkReg(0);
@@ -200,6 +216,10 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   // word or nothing).
   Wire#(Maybe#(Word)) memReqW <- mkDWire(tagged Invalid);
   Reg#(Maybe#(Word)) memLiveR <- mkReg(tagged Invalid);
+  // The prefetch buffer's request, and whether the word on the port this
+  // clock is the one it asked for.
+  Wire#(Maybe#(Word)) pfReqW <- mkDWire(tagged Invalid);
+  Reg#(Bool) pfLiveR <- mkReg(False);
 
   function Bit#(6) cidx(Word a) = truncate(a >> 2);
 
@@ -329,37 +349,58 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
       refillReqAddr = c.mspBefore;
     end
 
-    // ---- the single array write port -------------------------------
+    // ---- the array's writes -----------------------------------------
+    // Two sources can want the array in one clock: the refill's arriving
+    // word (address refCap) and the EU's store.  Words the refill has
+    // not reached yet -- inside [SP, MSP) but at or above the fill
+    // watermark -- are still *memory* words: the EU reads them from
+    // memory (HobbitCore `inCache`), so a store to one goes to memory
+    // too, where the refill will pick it up.  The one exception is the
+    // word whose refill data is arriving in this very clock: memory was
+    // read before this store, so the store's data, not the arriving
+    // word, is what the array must keep.
+    //
+    // Until 2026-11-20 a store to a not-yet-refilled word went nowhere
+    // (it was "in range", so not a memory write, and "not filled", so not
+    // an array write) and the refill then installed the stale word; and
+    // a store to a filled word in the same clock as a refill step took
+    // the one array write and the arriving word was dropped.  Neither
+    // could happen while every run started with a full cache and CATCH
+    // was a no-op; 1e's za did both within 4,000 instructions once the
+    // cache started empty.
     Bool refillWr = refillStep;
-    Bool euCacheWr = False;
-    Word euWrAddr = 0;
-    Word euWrData = 0;
-    if (haveCmd) begin
-      if (c.we && inRange(c.waddr, c.spAfter, c.mspAfter) &&
-          (c.waddr < fillR)) begin
-        euCacheWr = True;
-        euWrAddr = c.waddr;
-        euWrData = c.wdata;
+    Bool euInWin = haveCmd && c.we &&
+                   inRange(c.waddr, c.spAfter, c.mspAfter);
+    Bool euFilled = euInWin && (c.waddr < fillR);
+    Bool euUnfilled = euInWin && !(c.waddr < fillR);
+    Bool euCacheWr = euFilled ||
+                     (euUnfilled && refillStep && (c.waddr == refCap));
+    Word euWrAddr = c.waddr;
+    Word euWrData = c.wdata;
+
+    // The reset does not rewrite the array (docs/area_analysis.md: the
+    // reference reg_64x32 has no parallel reset); only [SP, MSP) is
+    // architecturally valid, and the flush/refill rules fill it.  Each
+    // word has one next value per clock: the EU's store wins over the
+    // refill's word for the same address.
+    Bit#(64) nWritten = written;
+    for (Integer i = 0; i < 64; i = i + 1) begin
+      Bool ew = !doReset && euCacheWr && (cidx(euWrAddr) == fromInteger(i));
+      Bool rw = !doReset && refillWr && (cidx(refCap) == fromInteger(i));
+      if (ew) begin
+        cache[i] <= euWrData;
+        nWritten[i] = 1'b1;
+      end else if (rw) begin
+        cache[i] <= mem.readData();
+        nWritten[i] = 1'b1;
       end
     end
-
-    // One write port: the refill's arriving word and the EU's in-cache
-    // write are muxed to one address/data pair, then one upd.  The
-    // reset does not rewrite the array (docs/area_analysis.md: the
-    // reference reg_64x32 has no parallel reset); only [SP, MSP) is
-    // architecturally valid, and the flush/refill rules fill it.
-    Bool cacheWr = !doReset && (refillWr || euCacheWr);
-    Word cacheWrAddr = euCacheWr ? euWrAddr : refCap;
-    Word cacheWrData = euCacheWr ? euWrData : mem.readData();
-    if (cacheWr) begin
-      cache[cidx(cacheWrAddr)] <= cacheWrData;
-      written <= written | (64'd1 << cidx(cacheWrAddr));
-    end
+    written <= nWritten;
 
     // ---- the single memory write port ------------------------------
     // The flush wins; a non-cached EU write waits in memWrQ.
     Bool euMemWr = haveCmd && c.we &&
-                   !inRange(c.waddr, c.spAfter, c.mspAfter);
+                   (!inRange(c.waddr, c.spAfter, c.mspAfter) || euUnfilled);
     Bool doMemWr = False;
     Word mwAddr = 0;
     Word mwData = 0;
@@ -386,9 +427,12 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
     // One memory read port: the refill wins (EU_S1 only asks while the
     // box is idle, so the two do not meet outside a reset).
     Bool opReq = !doReset && !refillReq && isValid(memReqW);
+    Bool pfGrant = !refillReq && !opReq && isValid(pfReqW);
     if (refillReq) mem.readReq(refillReqAddr);
     else if (opReq) mem.readReq(validValue(memReqW));
+    else if (pfGrant) tmem.readReq(validValue(pfReqW));
     memLiveR <= opReq ? memReqW : tagged Invalid;
+    pfLiveR  <= pfGrant;
 
     // ---- commit the next state, each register once ------------------
     spR        <= nSp;
@@ -441,6 +485,13 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   // No flush or refill owns the port, and no EU write to memory is still
   // parked behind a flush: memory holds every committed word.
   method Bool memIdle() = (state == SC_IDLE) && !isValid(pendingMemWr);
+
+  interface MemPort textPort;
+    method Action req(Word addr);
+      pfReqW <= tagged Valid addr;
+    endmethod
+    method Bool live() = pfLiveR;
+  endinterface
 
 endmodule
 

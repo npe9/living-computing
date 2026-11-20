@@ -252,7 +252,26 @@ interface HobbitEvents;
   method Action memWrite(Word addr, Word val);
 endinterface
 
+// `cspInCore`: the unit is inside the core, which applies the
+// unimplemented sequence's `*(CSP) = PC` to the real stack itself when
+// the CSP is the SP (through the stack cache: EU_S3's commit).  The unit
+// then does not also write that word to its own 256-word memory, whose
+// index is addr[9:2]: a stack address aliases the vector table there, and
+// an SP that is 0x000 or 0x00C modulo 1 Kbyte would overwrite the very
+// vector the sequence reads next.  The standalone testbenches keep the
+// write (their memory *is* the stack).
 module mkHobbitEvents#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
+  HobbitEvents e <- mkHobbitEventsP(mem, mmu, False);
+  return e;
+endmodule
+
+module mkHobbitEventsCore#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
+  HobbitEvents e <- mkHobbitEventsP(mem, mmu, True);
+  return e;
+endmodule
+
+module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
+                        Bool cspInCore)(HobbitEvents);
   Reg#(EvState) state <- mkReg(EVS_IDLE);
   Reg#(EventCauses) cR <- mkRegU;
   Reg#(EventClass) clsR <- mkReg(EV_NONE);
@@ -401,7 +420,7 @@ module mkHobbitEvents#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
               as[0] = cspAddr;
               ds[0] = c.pc;
               vAddr = c.vb + (c.niladic ? 8 : 12);
-              nw    = 1;
+              nw    = (cspInCore && (c.psw[9] == 1'b1)) ? 0 : 1;
               nIsp  = isp;
               nShad = shad;
               nPsw  = c.psw;

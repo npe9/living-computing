@@ -340,6 +340,23 @@ class State:
     # one CONFIG bit is modelled; it selects the data byte order at kernel
     # level as PSW bit 15 does at user level (p. 1-3).
     config_kl: bool = False
+    # The stack cache's 64 words, indexed by address bits 7:2, or None.
+    #
+    # None (the default) keeps the model's original simplification: the
+    # cache is invisible, every word lives in ``memory``, and only the
+    # SP/MSP bounds are tracked.  That is exact for a program that reads
+    # only what it has written.  It is *not* what the part does for a word
+    # that was never written since it came into the window: ENTER extends
+    # the window downward without loading anything, so such a word reads
+    # whatever the cache slot last held (another frame's word, 256*k bytes
+    # away), and a later flush writes that stale slot to memory (the
+    # printed loops, pp. 3-19, 3-10).  1e's za copies such a word
+    # (a structure with a never-assigned member), so a run that must agree
+    # with the Bluespec core record for record sets this to 64 zeros
+    # (tools/p9run.py) and the model then keeps the array: operands inside
+    # [SP, MSP) are read from and stored to it, ENTER's flush copies
+    # 16-byte blocks from it to memory, CATCH's fill copies them back.
+    cache: Optional[List[int]] = None
 
 
 @dataclass
@@ -456,6 +473,15 @@ def _read_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
     README so a trace difference cannot hide behind it.
     """
     w = addr & ~3
+    if state.cache is not None and state.sp <= w < state.msp:
+        return state.cache[(w >> 2) & 63] & MASK32
+    return _memory_word(state, reader, w)
+
+
+def _memory_word(state: State,
+                 reader: Optional[Callable[[int], Optional[int]]],
+                 w: int) -> int:
+    """The word of memory at ``w``, behind the stack cache."""
     if w in state.memory:
         return state.memory[w] & MASK32
     if reader is not None:
@@ -463,6 +489,40 @@ def _read_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
         if value is not None:
             return value & MASK32
     return 0
+
+
+def _store_word(state: State, w: int, value: int) -> None:
+    """Store a whole word: into the stack cache inside [SP, MSP) when the
+    cache is modelled (p. 1-5, p. 1-12), otherwise into memory."""
+    if state.cache is not None and state.sp <= w < state.msp:
+        state.cache[(w >> 2) & 63] = value & MASK32
+    else:
+        state.memory[w] = value & MASK32
+
+
+def cache_flush(state: State,
+                reader: Optional[Callable[[int], Optional[int]]],
+                top: int, blocks: int) -> None:
+    """ENTER's flush (p. 3-19): ``blocks`` 16-byte blocks, from the one
+    below ``top`` downward, are copied from the stack cache to memory."""
+    if state.cache is None:
+        return
+    for b in range(blocks):
+        base = (top - 16 * (b + 1)) & MASK32
+        for k in range(4):
+            a = base + 4 * k
+            state.memory[a] = state.cache[(a >> 2) & 63] & MASK32
+
+
+def cache_fill(state: State,
+               reader: Optional[Callable[[int], Optional[int]]],
+               lo: int, hi: int) -> None:
+    """CATCH's fill (pp. 3-10, 3-11): the words of [lo, hi) are copied
+    from memory into the stack cache."""
+    if state.cache is None:
+        return
+    for a in range(lo, hi, 4):
+        state.cache[(a >> 2) & 63] = _memory_word(state, reader, a)
 
 
 def _fetch_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
@@ -860,10 +920,12 @@ def _enter_offset(state: State, target: int) -> Tuple[int, int, int, int]:
     """ENTER stack-offset form (pp. 3-19..3-21).
 
     Returns (new_sp, new_msp, new_psw, flush_blocks).  The cache is flushed
-    from the top until at most SCSIZE bytes remain; the model keeps the
-    SP/MSP bounds and does not copy cache contents (every cache write is
-    already visible through the ordinary-memory model).  ``flush_blocks``
-    is the Chapter 4 E term for Table 4-36's ``1 + (Q.E)``.
+    from the top until at most SCSIZE bytes remain.  By default the model
+    keeps only the SP/MSP bounds (every cache write is already visible
+    through the ordinary-memory model); with ``State.cache`` set, step()
+    copies the flushed blocks from the array to memory (``cache_flush``).
+    ``flush_blocks`` is the Chapter 4 E term for Table 4-36's
+    ``1 + (Q.E)``, and the number of blocks that copy moves.
     """
     if target > state.sp:
         raise Unsupported(
@@ -1988,13 +2050,23 @@ def step(state: State,
             store_op, store_value = store
             word_addr, new_word, mem_wdata, mem_wmask = _prepare_store(
                 state, memory_reader, store_op, store_value)
-            state.memory[word_addr] = new_word
+            _store_word(state, word_addr, new_word)
             mem_we = 1
             mem_addr = word_addr
         for extra_op, extra_value in extra_stores:
             extra_addr, extra_word, _, _ = _prepare_store(
                 state, memory_reader, extra_op, extra_value)
-            state.memory[extra_addr] = extra_word
+            _store_word(state, extra_addr, extra_word)
+
+        # The stack cache's contents, when modelled: ENTER flushes blocks
+        # from the top of the window before the pointers move, CATCH fills
+        # the words it brings in.  (No instruction both stores and moves
+        # SP or MSP, so the stores above used the window they belong to.)
+        if state.cache is not None:
+            if mnemonic == "ENTER" and flush_blocks:
+                cache_flush(state, memory_reader, pre_msp, flush_blocks)
+            elif mnemonic == "CATCH" and (new_msp & MASK32) > pre_msp:
+                cache_fill(state, memory_reader, pre_msp, new_msp & MASK32)
 
         state.pc = next_pc & ~1
         state.sp = new_sp & MASK32
@@ -2034,7 +2106,7 @@ def step(state: State,
             word_addr, new_word, trap_data, trap_mask = _prepare_store(
                 state, memory_reader,
                 Operand(4, True, ea=pre_sp), pre_pc)
-            state.memory[word_addr] = new_word
+            _store_word(state, word_addr, new_word)
             trap_addr = word_addr
         except Refusal:
             # The state cannot represent the save (for example an

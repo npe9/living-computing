@@ -115,4 +115,26 @@ python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/017.hex" \
 python3 "$here/hri_check.py" --dut-lines "$tmp/017.sem" \
     --spec-lines "$here/golden/017.trace"
 
+# 018: a mispredicted branch squashes the wrong-path instruction on a
+# loop's second pass (found by 1e's echo).  019: both operands indirect,
+# indirect CALL/JMP, ENTER's memory targets, DQM with a constant (the
+# forms 1e's echo and za needed).  020: a folded unconditional JMP costs
+# 0 (found as a cyc-only difference on 1e's za).  Each three ways.
+for n in 018 019 020; do
+    "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
+    grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
+        --spec-lines "$here/golden/$n.trace"
+
+    python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/$n.hex" \
+        --sp 0x100 --msp 0x180 2>/dev/null | grep '^HRI ' > "$tmp/$n.sem"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
+        --spec-lines "$here/golden/$n.trace"
+done
+
+# A2 on the Bluespec core: the shipped 1e za and zl run on the model,
+# every retirement compared with the reference run (bsv/run_p9host.sh);
+# za's object is compared with the shipped libc.a member.
+"$here/run_p9host_tests.sh"
+
 echo "hobbit: all tests passed"

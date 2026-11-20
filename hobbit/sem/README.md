@@ -776,10 +776,29 @@ this model ever disagree, the README is the tie-breaker for the checker.
 7. **Stack-cache hit relation.**  p. 1-5 displays `SP <= ADDR < MSP`;
    the prose on p. 1-12 says "greater than, or equal to, the SP and
    less than the MSP", but the displayed relation on the same page is
-   the strict `SP < ADDR < MSP`.  Because the model does not represent
-   cache contents, the discrepancy is not observable; the SP/MSP
-   bookkeeping follows p. 1-5 and the p. 1-13 `SP <= MSP <= SP+256`
-   bound.
+   the strict `SP < ADDR < MSP`.  By default the model does not
+   represent cache contents and the discrepancy is not observable; the
+   SP/MSP bookkeeping follows p. 1-5 and the p. 1-13 `SP <= MSP <=
+   SP+256` bound.  When the contents *are* represented (`State.cache`,
+   below) the window is p. 1-5's, `SP <= ADDR < MSP`.
+7a. **The stack cache's contents (optional, 2026-11-20).**  The default
+   model keeps every word in memory and only tracks SP/MSP, which is
+   exact for a word that was written before it is read.  It is not what
+   the part does for a word that came into the window without being
+   written: `ENTER` moves SP and loads nothing (p. 3-19), so such a word
+   reads whatever its cache slot last held, and a later flush writes
+   that slot to memory.  1st Edition Plan 9's `za` reads such a word.
+   With `State.cache` set to a list of 64 words the model keeps the
+   array: an operand inside `[SP, MSP)` is read from and stored to slot
+   `address[7:2]`; `ENTER`'s flush copies 16-byte blocks from the top of
+   the window to memory before the pointers move (the printed loop,
+   p. 3-19, both forms); `CATCH` copies the words it brings in from
+   memory (pp. 3-10, 3-11).  The slot index and the zero in a
+   never-written slot are the Bluespec core's choices, adopted so that
+   the two models can be compared record for record on such reads; they
+   are not derived from the manual, which does not say how the 64 words
+   are indexed.  `tools/p9run.py` sets it; the golden runs and the CLI
+   do not.  `tests/test_p9run.py` `StackCacheContents`.
 8. **`insn1` and multi-parcel operands.**  The fixed record has two
    parcel slots.  This model prints 0 for the second slot when the
    instruction is one parcel, and the first two parcels for a

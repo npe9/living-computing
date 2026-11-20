@@ -34,3 +34,6 @@ sim_p9
 sim_p9.so
 P9BootTb.ba
 P9BootTb.bo
+p9work/
+sim_p9host
+sim_p9host.so

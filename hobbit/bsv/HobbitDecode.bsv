@@ -200,24 +200,40 @@ module mkHobbitDecode(HobbitDecode);
 
   function Operand gen32(Bit#(4) m, Word v) = Operand { mode: m, val: v };
 
-  // Two pointed-to words in one instruction would need a second read in
-  // the execution unit's second stage, i.e. a third stack-cache port;
-  // Figure 1-1 prints the cache as 64x32x2 (p. 1-2).  Two forms fit the
-  // printed ports: MOVA, whose source is used as an address and not read
-  // as a value (p. 3-33), and MOV with a word destination, which needs
-  // no old word for its merge (p. 1-4).  Every other both-indirect form
-  // is refused loudly as the unimplemented sequence rather than given a
-  // port the printed diagram does not have.
-  function Bool twoIndirectWords(HobbitOp op, Bit#(4) sm, Bit#(4) dm);
-    return modeIsIndirect(sm) && modeIsIndirect(dm) &&
-           (op != OP_MOVA) &&
-           !((op == OP_MOV) && (modeSize(dm) == 4));
-  endfunction
+  // Two pointed-to words in one instruction (both operands indirect)
+  // were refused here as the unimplemented sequence until 2026-11-20, on
+  // the argument that EU_S2 would need a third stack-cache port.  The
+  // real part executes them -- 1e compares two bytes through two
+  // pointers (`CMPEQ *R24.UB, *R28.UB`, echo's 274th instruction) -- and
+  // no third port is needed: the two pointer words are EU_S1's reads and
+  // the two pointed-to words are EU_S2's, a clock later, on the same two
+  // printed ports (64x32x2, Figure 1-1, p. 1-2).
 
-  // Table 1-23, p. 1-26: CALL/JMP may be PC relative (0xE) or absolute
-  // (0xF) in this model; the indirect forms (0xC, 0xD) trap.
+  // Table 1-23, p. 1-26: CALL/JMP may be PC relative (0xE), absolute
+  // (0xF), absolute indirect (0xC, `**$addr`: the target is the word at
+  // the address) or stack offset indirect (0xD, `*Roffset`: the target
+  // is the word in the stack slot).  The direct forms carry their target
+  // as an immediate; the indirect forms keep a word operand (Table 1-21's
+  // 0xC / 0xD) that EU_S1 reads, and the jump is redirected from EU_S2
+  // as RETURN's is (HobbitCore.bsv, `flowIndirect`).  Until 2026-11-20
+  // the indirect forms trapped; 1e calls through a table of functions
+  // (`CALL *R12`, doprint's format dispatch).
   function DecodedInstr branch3(Word pc, HobbitOp op, Bit#(4) m, Word v, Bit#(8) len);
     case (m)
+      // Only CALL and JMP: a conditional jump with an indirect mode
+      // (p. 3-28) is not modelled and still traps below.
+      4'hC: if ((op == OP_CALL) || (op == OP_JMP))
+              return mkInstr(pc, len, op,
+                             Operand { mode: 4'hC, val: v },
+                             noOpnd(), TR_NONE);
+            else
+              return trapAt(pc, len, TR_BAD_MODE);
+      4'hD: if ((op == OP_CALL) || (op == OP_JMP))
+              return mkInstr(pc, len, op,
+                             Operand { mode: 4'hD, val: v },
+                             noOpnd(), TR_NONE);
+            else
+              return trapAt(pc, len, TR_BAD_MODE);
       4'hE: return mkInstr(pc, len, op,
                            Operand { mode: 4'hF, val: pc + v },
                            noOpnd(), TR_NONE);
@@ -226,6 +242,36 @@ module mkHobbitDecode(HobbitDecode);
                            noOpnd(), TR_NONE);
       default: return trapAt(pc, len, TR_BAD_MODE);
     endcase
+  endfunction
+
+  // DQM, opcode 0x07 (Tables 1-18/1-20; p. 3-18).  The destination mode
+  // field carries the size: 0x0/0x4/0x8 are a double word (the address
+  // forms of 0xC/0xD/0xE), 0xC/0xD/0xE a quad word; 0xF is an illegal
+  // instruction and so, by the page's Notes, is any other mode.  The
+  // source is a word mode or the constant.
+  //
+  // Only the constant source is modelled: the EU does one architectural
+  // write per instruction and DQM's remaining words leave from EU_S3's
+  // commit like KCALL's frame tail, which a constant can feed and a
+  // source in memory cannot.  1e's za and zl execute only this form
+  // (`DQM $0, *R4`, a structure cleared four words at a time).  A source
+  // in memory or the stack still fails loudly, as the unimplemented
+  // sequence.
+  function DecodedInstr dqm(Word pc, Bit#(8) len, Bit#(4) sm, Bit#(4) dm,
+                            Operand s, Operand t);
+    Bool dbl  = (dm == 4'h0) || (dm == 4'h4) || (dm == 4'h8);
+    Bool quad = (dm == 4'hC) || (dm == 4'hD) || (dm == 4'hE);
+    Bit#(4) wm = (dm == 4'h0) ? 4'hC : ((dm == 4'h4) ? 4'hD
+               : ((dm == 4'h8) ? 4'hE : dm));
+    if (!dbl && !quad)
+      return trapAt(pc, len, TR_BAD_MODE);
+    else if (sm == 4'hF)
+      return mkInstr(pc, len, dbl ? OP_DQM2 : OP_DQM4, s,
+                     Operand { mode: wm, val: t.val }, TR_NONE);
+    else if ((sm == 4'hC) || (sm == 4'hD) || (sm == 4'hE))
+      return trapAt(pc, len, TR_UNIMP);
+    else
+      return trapAt(pc, len, TR_BAD_MODE);
   endfunction
 
   // Tables 1-18 (p. 1-24) and 1-20 (p. 1-25): the three- and five-parcel
@@ -243,7 +289,7 @@ module mkHobbitDecode(HobbitDecode);
       6'h04: return OP_MOVA;
       6'h05: return OP_UREM;
       6'h06: return OP_MOV;
-      6'h07: return OP_NONE;   // DQM   -- block move, unmodelled
+      6'h07: return OP_NONE;   // DQM   -- decoded by `dqm`, before this table
       // row 001
       6'h0C: return OP_TADD;
       6'h0D: return OP_TSUB;
@@ -401,6 +447,16 @@ module mkHobbitDecode(HobbitDecode);
                   return mkInstr(pc, 3, OP_ENTER,
                                  Operand { mode: 4'hF, val: v32 },
                                  noOpnd(), TR_NONE);
+                // p. 3-20, cases 3 and 4: with a stack-offset-indirect
+                // (0xE) or absolute (0xC) source "the target value ... is
+                // fetched from memory (or the stack cache)" and the cache
+                // is set empty.  EU_S1 reads the word and passes the
+                // instruction on as the immediate form (HobbitCore.bsv,
+                // `enterMem`).
+                else if ((sm == 4'hC) || (sm == 4'hE))
+                  return mkInstr(pc, 3, OP_ENTER,
+                                 Operand { mode: sm, val: v32 },
+                                 noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_BAD_MODE);
           4'hF: if (sm == 4'hD)
@@ -423,11 +479,12 @@ module mkHobbitDecode(HobbitDecode);
                                noOpnd(), branch3(pc, OP_NOP, sm, v32, 3).tr);
           default: return trapAt(pc, 3, TR_UNIMP);
         endcase
+      end else if (opc == 6'h07) begin
+        return maybeFold(dqm(pc, 3, sm, dm, gen16(sm, p[1]),
+                             gen16(dm, p[2])), p);
       end else begin
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
-          return trapAt(pc, 3, TR_UNIMP);
-        else if (twoIndirectWords(op, sm, dm))
           return trapAt(pc, 3, TR_UNIMP);
         else
           return maybeFold(mkInstr(pc, 3, op, gen16(sm, p[1]), gen16(dm, p[2]),
@@ -441,11 +498,12 @@ module mkHobbitDecode(HobbitDecode);
 
       if (opc == 6'h00)
         return trapAt(pc, 5, TR_UNIMP);   // Table 1-20 row 000 col 000
+      else if (opc == 6'h07)
+        return maybeFold(dqm(pc, 5, sm, dm, gen32(sm, { p[1], p[2] }),
+                             gen32(dm, { p[3], p[4] })), p);
       else begin
         HobbitOp op = dyadicOp(opc);
         if (op == OP_NONE)
-          return trapAt(pc, 5, TR_UNIMP);
-        else if (twoIndirectWords(op, sm, dm))
           return trapAt(pc, 5, TR_UNIMP);
         else
           return maybeFold(mkInstr(pc, 5, op,
@@ -490,13 +548,28 @@ endmodule
 // 32-bit words from the synchronous memory and assembles one line, and
 // the PDU reads whole lines.  The model's memory is 1 KB (HobbitMem),
 // so the boot fill installs one line in every set, in way 0; that covers
-// every address the tests use.  There is no on-demand fill engine in
-// this milestone: a fetch whose line is absent is a model limitation,
-// and the PDU turns it into TR_FETCH_MISS so the core retires a loud
-// trap record rather than aliasing a line silently.  A fetch that hits
-// costs nothing extra: the p. 4-1 assumption "instruction fetches must
-// access in the instruction cache" is adopted, so no Table 4-37 fetch
-// delay is charged.
+// every address the tests use.
+//
+// On-demand fill (2026-11-20).  A fetch whose line is absent used to be
+// a model limitation (TR_FETCH_MISS); a 1e program does not fit one
+// 1 Kbyte window (`echo`'s `_main` is at 0x2ad0 and its `main` at
+// 0x1020), so the buffer now fills on demand: `demand(va)` reads the
+// three consecutive 64-bit lines a decode at `va` can need (the PDU's
+// l0, l1, l2) and installs each one that is not already present.  The
+// p. 1-36 reset description calls this "demand prefetch"; CONFIG's
+// prefetch-mode bit and the lookahead it selects are not modelled.
+//
+// Replacement is a model choice -- the manual prints the organization
+// (three ways, p. 1-1) and no policy: an invalid way of the set is used
+// first, otherwise one rotating victim pointer shared by all sets.
+//
+// Timing: a fetch that hits costs nothing extra (the p. 4-1 assumption
+// "instruction fetches must access in the instruction cache"), and a
+// demand fill stalls the fetch, not the instruction: like the decoded
+// store's own fill it adds nothing to `cyc`, so no Table 4-37 fetch
+// delay is charged.  Under translation the fill reads the virtual
+// address through the text face as the boot fill does; demand fill with
+// the MMU on is untested.
 interface HobbitPrefetch;
   method Action startFill();
   // Fill the 128-line window from an arbitrary 8-byte-aligned address
@@ -504,6 +577,10 @@ interface HobbitPrefetch;
   method Action startFillAt(Word addr);
   method Bool filling();
   method Bool ready();
+  // Fill, on demand, the three lines a decode at `va` can need.  Call
+  // only when !filling().
+  method Action demand(Word va);
+  method Bit#(32) demandFills();
   method Maybe#(Bit#(64)) lineAt(Word addr);
   // True when the fetch address has no valid MMU mapping (p. 2-3).
   method Bool faultAt(Word addr);
@@ -516,7 +593,8 @@ typedef struct {
   Bit#(64) data;     // {word at line+0, word at line+4}
 } PfcLine deriving (Bits);
 
-module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPrefetch);
+module mkHobbitPrefetch#(HobbitMem mem, MemPort port, HobbitMmu mmu,
+                         Reg#(Word) psw)(HobbitPrefetch);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: the cache is a box behind its own
   // interface, not logic inlined into a pipeline stage.
@@ -543,40 +621,11 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
   Reg#(Word) fillBase <- mkReg(0);
   Reg#(Bool) fillingR <- mkReg(False);
   Reg#(Bool) readyR <- mkReg(False);
-
-  // One 64-bit line per three clocks: request the low word, capture it
-  // and request the high word, capture it and install the line.
-  rule fillStep (fillingR);
-    Word lineAddr = fillBase + (zeroExtend(fillSet) << 3);
-    case (fillPhase)
-      2'd0: begin
-        mem.readReq(lineAddr);
-        fillPhase <= 2'd1;
-      end
-      2'd1: begin
-        fillLo <= mem.readData();
-        mem.readReq(lineAddr + 4);
-        fillPhase <= 2'd2;
-      end
-      default: begin
-        Bit#(64) line = { fillLo, mem.readData() };
-        PfcLine l = PfcLine { tag: lineAddr[31:10], data: line };
-        // The set is the address's own index, not the fill counter: a
-        // window filled from a base other than 0 must land in the sets
-        // that lineAt() looks up (addr[9:3]).
-        Bit#(7) set = lineAddr[9:3];
-        way0.upd(set, l);
-        valid0 <= valid0 | (128'd1 << set);
-        if (fillSet == 7'd127) begin
-          fillingR <= False;
-          readyR   <= True;
-        end else begin
-          fillSet   <= fillSet + 1;
-          fillPhase <= 2'd0;
-        end
-      end
-    endcase
-  endrule
+  // Demand fill: the same engine, three lines instead of 128, a way
+  // chosen per line instead of way 0.
+  Reg#(Bool) demandR <- mkReg(False);
+  Reg#(Bit#(2)) victim <- mkReg(0);
+  Reg#(Bit#(32)) ndemand <- mkReg(0);
 
   function MmuReq xreq(Word va) =
     MmuReq { va: va, isText: True, isWrite: False,
@@ -586,6 +635,74 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
     return mmu.translate(xreq(va)).pa;
   endfunction
 
+  // The fill reads two words per 64-bit line through the memory's one
+  // read port, which the stack-cache box owns (`port`, HobbitTypes
+  // MemPort): it asks for the word it needs, and when the box says the
+  // word on the port is the prefetch's it captures it.  A clock in which
+  // the box needed the port itself (a CATCH refill, an operand) costs the
+  // fill a clock and nothing else.  fillPhase is 0 while the line's first
+  // word is wanted and 1 while its second is.
+  //
+  // The address is translated here, as a text reference (p. 2-1), and the
+  // port is asked for the physical word; the text TLB's bookkeeping
+  // (`noteText`) is done once per word, when the word is taken.  A word
+  // whose translation faults is not read and counts as zero: the fetch
+  // that needs it reports the fault from lineAt()/faultAt().
+  rule fillStep (fillingR);
+    Word lineAddr = fillBase + (zeroExtend(fillSet) << 3);
+    Bool last = (fillSet == (demandR ? 7'd2 : 7'd127));
+    Word va = (fillPhase == 2'd0) ? lineAddr : lineAddr + 4;
+    let x = mmu.translate(xreq(va));
+    Bool ok = (x.fault == MMU_OK);
+    Word data = ok ? mem.readData() : 0;
+    if (ok && !port.live()) begin
+      port.req(x.pa);
+    end else if (fillPhase == 2'd0) begin
+      mmu.noteText(xreq(va));
+      fillLo <= data;
+      fillPhase <= 2'd1;
+    end else begin
+      mmu.noteText(xreq(va));
+      Word linePa = ok ? (x.pa & 32'hFFFFFFF8) : lineAddr;
+      Bit#(64) line = { fillLo, data };
+      PfcLine l = PfcLine { tag: linePa[31:10], data: line };
+      // The set is the address's own index, not the fill counter: a
+      // window filled from a base other than 0 must land in the sets
+      // that lineAt() looks up (addr[9:3] of the physical address).
+      Bit#(7) set = linePa[9:3];
+      Bit#(22) tag = linePa[31:10];
+      if (!demandR) begin
+        way0.upd(set, l);
+        valid0 <= valid0 | (128'd1 << set);
+      end else begin
+        Bool v0 = valid0[set] == 1'b1;
+        Bool v1 = valid1[set] == 1'b1;
+        Bool v2 = valid2[set] == 1'b1;
+        PfcLine e0 = way0.sub(set);
+        PfcLine e1 = way1.sub(set);
+        PfcLine e2 = way2.sub(set);
+        Bool present = (v0 && (e0.tag == tag)) || (v1 && (e1.tag == tag)) ||
+                       (v2 && (e2.tag == tag));
+        if (!present) begin
+          Bit#(2) w = !v0 ? 2'd0 : (!v1 ? 2'd1 : (!v2 ? 2'd2 : victim));
+          if (v0 && v1 && v2)
+            victim <= (victim == 2'd2) ? 2'd0 : victim + 1;
+          case (w)
+            2'd0: begin way0.upd(set, l); valid0 <= valid0 | (128'd1 << set); end
+            2'd1: begin way1.upd(set, l); valid1 <= valid1 | (128'd1 << set); end
+            default: begin way2.upd(set, l); valid2 <= valid2 | (128'd1 << set); end
+          endcase
+        end
+      end
+      fillPhase <= 2'd0;
+      if (last) begin
+        fillingR <= False;
+        readyR   <= True;
+      end else
+        fillSet <= fillSet + 1;
+    end
+  endrule
+
   method Action startFillAt(Word addr);
     if (!fillingR && !readyR) begin
       fillBase  <= addr & 32'hFFFFFFF8;
@@ -594,6 +711,19 @@ module mkHobbitPrefetch#(HobbitMem mem, HobbitMmu mmu, Reg#(Word) psw)(HobbitPre
       fillingR  <= True;
     end
   endmethod
+
+  method Action demand(Word va);
+    if (!fillingR) begin
+      fillBase  <= va & 32'hFFFFFFF8;
+      fillSet   <= 0;
+      fillPhase <= 0;
+      fillingR  <= True;
+      demandR   <= True;
+      ndemand   <= ndemand + 1;
+    end
+  endmethod
+
+  method Bit#(32) demandFills() = ndemand;
 
   method Action startFill();
     if (!fillingR && !readyR) begin
@@ -930,6 +1060,13 @@ endmodule
 // The EU asks for an entry by PC; a hit returns it, a miss starts one
 // PDU fill and the EU stalls until the install rule writes the entry.
 // A fill is a p. 4-1 in-cache fetch, so it adds no occupancy cycles.
+//
+// When the PDU reports that the prefetch buffer lacked a line (`miss`),
+// the store asks the buffer for a demand fill, drops that PDU result and
+// decodes the same PC again once the fill has ended; the entry is
+// installed from the second decode.  A PDU result for a PC the store is
+// no longer waiting for (the store was reset mid-fill) is dropped, so it
+// cannot sit in PDU_S3 in front of the next fill.
 interface HobbitDecodeStore;
   method Maybe#(DecInstEntry) lookup(Word pc);
   method Action fill(Word pc);
@@ -937,7 +1074,7 @@ interface HobbitDecodeStore;
   method Action reset();
 endinterface
 
-module mkHobbitDecodeStore#(HobbitPdu pdu)(HobbitDecodeStore);
+module mkHobbitDecodeStore#(HobbitPdu pdu, HobbitPrefetch pf)(HobbitDecodeStore);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: a decoded-instruction box with a
   // lookup/fill boundary, separate from the EU pipeline.
@@ -952,14 +1089,36 @@ module mkHobbitDecodeStore#(HobbitPdu pdu)(HobbitDecodeStore);
   Reg#(Bit#(32)) icValid <- mkReg(0);
   Reg#(Bool) fillingR <- mkReg(False);
   Reg#(Word) fillPc <- mkReg(0);
+  // A demand fill of the prefetch buffer is under way for fillPc; the
+  // PDU is asked again when it ends.
+  Reg#(Bool) refillR <- mkReg(False);
 
   function Bit#(5) idx(Word pc) = truncate(pc >> 1);
 
-  rule install (fillingR && pdu.outValid() && (pdu.out().pc == fillPc));
+  Bool mine = fillingR && !refillR && pdu.outValid() &&
+              (pdu.out().pc == fillPc);
+
+  rule install (mine && !pdu.out().miss);
     ic.upd(idx(fillPc), pdu.out().entry);
     icValid <= icValid | (1 << idx(fillPc));
     pdu.deq;
     fillingR <= False;
+  endrule
+
+  rule missed (mine && pdu.out().miss && !pf.filling());
+    pf.demand(fillPc);
+    pdu.deq;
+    refillR <= True;
+  endrule
+
+  rule retry (fillingR && refillR && !pf.filling() && pdu.accepting());
+    pdu.enq(fillPc);
+    refillR <= False;
+  endrule
+
+  rule dropStale (pdu.outValid() &&
+                  (!fillingR || refillR || (pdu.out().pc != fillPc)));
+    pdu.deq;
   endrule
 
   method Maybe#(DecInstEntry) lookup(Word pc);
@@ -983,6 +1142,7 @@ module mkHobbitDecodeStore#(HobbitPdu pdu)(HobbitDecodeStore);
   method Action reset();
     icValid <= 0;
     fillingR <= False;
+    refillR <= False;
   endmethod
 endmodule
 

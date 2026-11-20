@@ -129,12 +129,108 @@ for the same source: byte for byte where the source is unchanged.
 
 Gate: `za` reproduces a shipped object; `zl` (shipped) links it.
 
-**Status 2026-11-20: reached on the reference model, open on the
-Bluespec core.**  `tools/p9run.py` runs the shipped binaries on
-`sem/hobbit_sem.py` with the kernel's side played by the host (exec
-frame from `sysproc.c`/`execregs`, system calls from `9syscall/sys.h`,
-the floating-point handler from `fpihobbit.c`).  With it
-(`tests/test_p9run.py`, in the suite):
+**Status 2026-11-20: reached on the Bluespec core.**  The gate as
+written -- "`za` reproduces a shipped object; `zl` (shipped) links it" --
+holds on the core for these runs (`tests/run_p9host_tests.sh`, in the
+suite), each compared retirement by retirement with the same binary on
+the reference model:
+
+| run on the core | retirements compared | also agree in `cyc` | kernel entries | clocks | result |
+|---|---|---|---|---|---|
+| `za main9.s` | 125,572 | 125,110 | 16 | 607,235 | `main9.z`, 309 bytes, **byte-identical to the shipped `libc.a` member** |
+| `za hello.s` | 107,164 | 106,785 | 16 | 520,077 | `hello.z`, 255 bytes |
+| `zl -o hello hello.z -lc` | 697,197 | 696,100 | 60 | 2,267,581 | `hello`, 2,014 bytes, linked against the shipped `libc.a` |
+| `hello` (the program just linked) | 319 | 319 | 2 | 957 | prints `hello 1e` |
+| `echo hello world` | 1,808 | 1,808 | 2 | 10,259 | prints `hello world` |
+| `cat trap.c` | 388 | 388 | 8 | 1,662 | 10,642 bytes, byte-exact |
+
+(The gate's text names a file of `sys/src/9/hobbit`.  The release ships
+no kernel objects -- one loose `.z` in the whole tree, `lib/c++/__ctdt.z`
+-- so the shipped object to reproduce is a `libc.a` member, and `main9.s`
+is the source of the startup every binary begins with.)
+
+"Compared" means every HRI field but `cyc` agrees on every record
+(`tools/p9trace_cmp.py`); the files and the console are what the *model*
+wrote, taken from its memory at each `write` call.  What ran on the core
+is `main9.s` and `hello.s` through `za` and one link through `zl` -- not
+all twelve libc sources; those are reproduced on the reference model
+only (below).
+
+How the run is built (`bsv/run_p9host.sh`; details in
+`docs/plan9_syscalls.md`): `tools/p9run.py` runs the binary on the
+reference model and records the boot memory and every kernel entry;
+`bsv/P9HostTb.bsv` boots that memory on the core, with `bsv/p9host.c`
+(Bluesim BDPI) as a sparse 32-bit memory and a *replayer* that checks the
+machine's system-call id and arguments against the recording at each
+entry and hands back the recorded result.  The machine executes KCALL's
+frame, the unimplemented-instruction sequence for floating point, and two
+kernel-entry stubs itself; the host does KRET's PSW and ISP.
+
+**What the core needed.**  Each of these was found by the record-by-record
+comparison stopping, in this order, and each is its own defect or missing
+piece (`docs/conformance_1to1.md` §1c has the detail and the tests):
+
+1. little-endian data (golden 017);
+2. on-demand prefetch fill -- `echo`'s `_main` and `main` are not in one
+   1 Kbyte window;
+3. **a mispredicted branch resolved in EU_S3 did not squash the
+   wrong-path instruction already in EU_S2** -- it retired.  Needs a warm
+   decoded-instruction store, i.e. a loop's second pass; `echo`'s 48th
+   retirement (golden 018);
+4. both operands indirect (`CMPEQ *R24.UB, *R28.UB`), refused by the
+   decoder as "unimplemented" (golden 019);
+5. `CALL *Roffset` and `JMP **$addr`, refused likewise (golden 019);
+6. `ENTER *$addr` / `ENTER *Roffset`: refused by the decoder, and the EU
+   took the operand *field* as the target where p. 3-20 says the target
+   is fetched from memory (golden 019);
+7. `DQM` with a constant source (golden 019; a source in memory is still
+   not modelled and fails loudly);
+8. the unimplemented-instruction sequence's `*(CSP) = PC` reached only
+   the event unit's private memory, never the stack, so a handler that
+   returns through the stack read a stale word -- and that private
+   memory aliases addresses onto its vector table;
+9. the stack cache dropped a store to a word a `CATCH` refill had not
+   reached yet, and dropped the refill's word when a store coincided
+   with it; and a second stack operation could replace a refill in
+   flight.  None of this could happen while every run began with a full
+   cache;
+10. the prefetch fill and the stack cache each called the memory's one
+    read port, and bsc composed them with one request *shadowing* the
+    other (its G0117 warning said so): the fill installed the wrong
+    word.  The box now owns the port and lends it;
+11. with events enabled, the operand-latch rule and a pipeline rule were
+    in a scheduling cycle that bsc broke by making them conflict;
+12. (cycles only) a folded unconditional `JMP` was prefetched down its
+    fall-through, "mispredicted" every time, and charged 3 where p. 4-3
+    gives it 0 -- 3,808 of `za`'s records (golden 020).
+
+And one thing the *reference model* needed: `za` copies a stack word it
+never wrote.  What that reads is whatever the cache slot last held, so
+the reference model now keeps the cache's 64 words when asked to
+(`State.cache`).  The slot index and the zero for a never-written slot
+are the core's, so for uninitialised reads the two models agree by
+construction, not independently.
+
+**Known limits of the core run.**
+
+* Addressing is physical; a real 1e process runs with `PSW_VP`.
+* The cache starts empty (MSP = SP) and is emptied at each kernel entry
+  by the stub's `ENTER`; the real kernel returns with it loaded.
+* After KCALL the PSW says CSP = ISP, and the printed `ENTER` would then
+  move the ISP and flush nothing.  The core's execution unit does not
+  model CSP = ISP (only the event unit reads PSW bit 9), so the stub's
+  `ENTER` flushes the user's stack as intended; that is a property of the
+  model, not of the part.
+* KRET does not exist in the model; the host sets the PSW and ISP.
+* Floating point is replayed from the reference run's emulation
+  (`fpihobbit.c`'s decode, host doubles), not executed by 1e's handler.
+* `cyc` is reported, not compared.  The records that agree in everything
+  else and differ in `cyc` (462 on `za main9.s`) are all conditional
+  jumps, in three classes, and are open (`docs/conformance_1to1.md`
+  §1c).
+* The ULX3S build has not been re-run with any of this.
+
+**The reference model's run** (the oracle; `tests/test_p9run.py`):
 
 * the shipped `za` assembles **every** assembler source of
   `sys/src/libc/hobbit` into an object byte-identical to the member of
@@ -155,9 +251,7 @@ the floating-point handler from `fpihobbit.c`).  With it
 * `echo hello world` prints `hello world` (1,808 instructions) and `cat`
   copies a named file.
 
-This is the oracle, not the gate: the gate is the same run on the
-Bluespec core, compared record by record against this one.  What the
-reference run established, each of which the core needs:
+What the reference run established before any Bluespec work:
 
 1. **1e runs the Hobbit little-endian.**  `l.s` sets CONFIG.KL and a
    process's PSW carries PSW_UL (`machine.h:24,77`; `raml.s` builds the
@@ -194,16 +288,6 @@ reference run established, each of which the core needs:
    libc's `_exits` *function* (`cat`: `MOV $0x12da, R4`).  A program
    that returns from `main` exits with the status `"\x02\x08\x02"`,
    the first bytes of `KCALL $8; RETURN R0`.
-
-What the core still needs for the gate, in order: on-demand prefetch
-fill (`echo` is the small gate: its `_main` and
-`main` do not share a 1 Kbyte window); the exec frame and the full
-system-call set in the testbench, with the stack cache flushed at kernel
-entry (the printed `ENTER` has the form: a non-stack-offset source
-"flush[es] stack cache unconditionally", p. 3-19 -- and p. 3-20 says the
-absolute and indirect forms fetch the target from memory, which the
-core's `enterTarget` does not do yet); the unimplemented-instruction
-handler; then `za`.
 
 The vendored tree holds five of the release's 387 `hobbit/bin` files
 (`cat echo rc za zl`); `zc`, `mk`, `cpp`, `yacc` and `ar` are in the
@@ -386,7 +470,7 @@ failure set, revert).
 
 1. **A0** — closed: there is no parcel; the startup runs to the core's first refusal.
 2. **A1** — closed 2026-11-19: `cat` prints `raml.s` byte-exactly over the shim and exits 0.
-3. **A2** — `za`/`zl` bootstrap on the model; compare with shipped objects.
+3. **A2** — closed 2026-11-20: on the Bluespec core `za` reproduces the shipped `main9.z` and `zl` links what `za` assembled; the linked program runs.
 4. **A3** — assemble and link the kernel; image checks.
 5. **A4** — DUART model + boot to console; byte-exact banner gate.
 6. **A5** — `rc`, disk `cat`, on-model `za`.

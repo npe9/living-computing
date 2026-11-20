@@ -115,3 +115,41 @@ and the kernel (memory and the vector page).  The host puts a *data*
 value into the machine the way a kernel does, by writing memory: the
 p. 1-5 off-chip operand path is in the core (`docs/conformance_1to1.md`
 §1a), not in a harness device.
+
+## The A2 host testbench, and who owns the memory read port (2026-11-20)
+
+`bsv/P9HostTb.bsv` runs a 1st Edition Plan 9 process on the core with
+the kernel's side *replayed* from the reference run
+(`docs/plan9_syscalls.md`, last section).  Its pieces, by the same rule
+as above:
+
+| piece | where it lives | what it is |
+|---|---|---|
+| memory | `bsv/p9host.c` behind `mkP9HostMem`, an ordinary `HobbitMem` (one registered read, one write) | a sparse 32-bit store, so the process keeps its real addresses; two rules own it in a fixed order (`fetch`, then `commit`), because bsc cannot schedule C state |
+| vector table | `core.eventMemWrite`, from the recording's boot memory | as for A1 |
+| the two stubs | boot memory at 0x0c40, assembled by `asm/hobbit_asm.py` | ordinary parcels the machine executes |
+| the kernel | `tools/p9run.py`, recorded; `p9host.c` checks the machine's id and arguments against the recording and returns the recorded result | the one kernel, replayed |
+| KRET's PSW and ISP | `core.setPsw`, `core.setIsp`, once per system call | the model has no KRET |
+
+Two structural rules came out of building it, and they are rules for the
+core as much as for testbenches:
+
+**The memory's read port has one owner.**  `HobbitMem` has a single
+registered read address.  The stack-cache box used it for CATCH refills
+and operand fetches, and the prefetch buffer used it for fills, each
+from its own rule.  bsc composed the two rules with one `readReq`
+*shadowing* the other (warning G0117) -- legal Bluespec, and wrong: the
+loser read the winner's word.  The box now owns the port outright and
+lends it through `MemPort` (`HobbitTypes.bsv`): a second user asks
+(`req`) and is told a clock later whether the word on the port is its
+own (`live`).  Priority: refill, operand, prefetch.
+
+**A rule that fires every clock must not be scheduled against the
+pipeline.**  A testbench rule that polls every clock and calls an Action
+method of the core conflicts with the pipeline's rules, wins (it is the
+"more urgent"), and starves them on every clock; bsc reports it as
+G0010 and builds the frozen machine anyway.  The poll reads only and
+signals through a wire.  The same hazard inside the core was the
+operand-latch rule against `move2to3` with events on (G0009), fixed by
+making `start`'s latch clear a toggle the latch rule reads.
+

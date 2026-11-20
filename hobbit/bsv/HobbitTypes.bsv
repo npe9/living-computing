@@ -48,8 +48,16 @@ typedef enum {
   // --- stack class, niladic and kernel call ---------------------------
   OP_ENTER, OP_CATCH, OP_POPN, OP_RETURN, OP_NOP, OP_KCALL,
   // --- control flow ---------------------------------------------------
-  OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN
+  OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN,
+  // --- DQM with a constant source: two or four words (p. 3-18) ---------
+  OP_DQM2, OP_DQM4
 } HobbitOp deriving (Eq, Bits);
+
+// DQM (p. 3-18) moves two or four contiguous words; "if the source mode
+// is 0xF, the constant is replicated either two or four times".  Only the
+// constant-source form is modelled (HobbitDecode.bsv, `dqm`).
+function Bool isDqmOp(HobbitOp op) = (op == OP_DQM2) || (op == OP_DQM4);
+function Word dqmBytes(HobbitOp op) = (op == OP_DQM4) ? 16 : 8;
 
 typedef enum {
   TR_NONE,
@@ -59,7 +67,11 @@ typedef enum {
   TR_BAD_MODE,      // addressing mode documented but outside this milestone
   TR_RETURN_MODE,   // RETURN with anything but a stack offset (p. 3-40 note)
   TR_ALIGN,         // word operand with a non-word stack offset
-  TR_FETCH_MISS,    // fetch missed the model's 3 KB prefetch window (p. 1-2)
+  TR_FETCH_MISS,    // fetch missed the prefetch buffer.  No longer produced:
+                    // a miss starts a demand fill (HobbitDecode.bsv).  A
+                    // runaway PC therefore fetches whatever is there
+                    // instead of stopping here; the harnesses stop it by
+                    // their PC limit or their clock limit.
   TR_FETCH_FAULT    // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
 } TrapReason deriving (Eq, Bits);
 
@@ -231,8 +243,15 @@ function Word plenBytes(Bit#(8) n) = zeroExtend(n) << 1;
 // Static prediction, p. 1-33: the trailing Y/N of JMPT/JMPF is "the
 // expected result of the test", Y = taken.  JMPTY and JMPFY predict taken;
 // JMPTN and JMPFN predict not taken.
+// The direction the prefetch follows.  An unconditional JMP is always
+// taken, so its "prediction" is taken too: until 2026-11-20 it was not in
+// this list, a *folded* JMP was therefore prefetched down its
+// fall-through, "mispredicted" every time, squashed, and charged Table
+// 4-35's 3 where p. 4-3's note gives a folded JMP 0.  The values were
+// right and the cycles were not (3,808 of za's 125,572 records; golden
+// 020).  Every other use of this function is guarded by isCondJumpOp.
 function Bool predictedTaken(HobbitOp op);
-  return op == OP_JMPTY || op == OP_JMPFY;
+  return op == OP_JMPTY || op == OP_JMPFY || op == OP_JMP;
 endfunction
 
 // Build the next/alternate-next fields.  For a folded branch the target is
@@ -247,7 +266,8 @@ function DecInstEntry mkDecInstEntry(DecodedInstr d);
     Word pred = predictedTaken(d.foldOp) ? d.foldTarget : d.foldAfter;
     Word alt  = predictedTaken(d.foldOp) ? d.foldAfter  : d.foldTarget;
     return DecInstEntry { d: d, nextPc: pred, altNextPc: alt };
-  end else if (d.op == OP_JMP || d.op == OP_CALL) begin
+  end else if ((d.op == OP_JMP || d.op == OP_CALL) &&
+               (d.src.mode == 4'hF)) begin
     return DecInstEntry { d: d, nextPc: d.src.val, altNextPc: d.src.val };
   end else if (d.op == OP_RETURN) begin
     return DecInstEntry { d: d, nextPc: seqPc, altNextPc: seqPc };
@@ -630,6 +650,11 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     OP_USHR3: return 0;
     OP_MOVA:  return 0;                         // MOVA row, 1 (Table 4-32)
     OP_LDRAA: return 0;                         // LDRAA row, 1
+    // Table 4-34 (printed p. 4-4), DQM with a constant source: to the
+    // stack cache 3 (double-word) and 5 (quad-word); to memory 1 + D and
+    // 1 + Q, which are the same 3 and 5 with this model's D = 2, Q = 4.
+    OP_DQM2:  return 2;
+    OP_DQM4:  return 4;
     OP_TADD:  return 0;                         // TADD row, 1
     OP_TSUB:  return 0;                         // TSUB row, 1
     // Table 4-33 (printed p. 4-4), Multi-Cycle Arithmetic.  MUL/MUL3 print
@@ -670,7 +695,10 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     // Table 4-36 (printed p. 4-5), CATCH = 1.  The quad-word refill of
     // pp. 3-10/3-11 is a stack-cache fill, not an architectural value,
     // and the p. 4-1 assumptions charge no fetch or operand delay for
-    // it; the refill therefore overlaps the following instructions.
+    // it, so it adds nothing to `cyc`.  It does take clocks, one per
+    // word, and since 2026-11-20 nothing is issued behind a CATCH until
+    // the fill has ended (HobbitCore `present`); that wait, like a
+    // memory operand's, is outside the count.
     OP_CATCH: return 0;
     OP_JMPTY: return (taken == predictedTaken(d.op))
                         ? 0 : zeroExtend(condJumpBubbles(sinceCmp));
@@ -709,6 +737,18 @@ endfunction
 // never calls it, so an elaborated board has no second read port.  It
 // exists for the smoke checks that read back program results.
 // ---------------------------------------------------------------------
+
+// A grant of the memory's one read port to a second user.  The memory
+// has a single registered read address (HobbitMem), and one rule must own
+// it: two rules that each called readReq in a clock would be composed by
+// bsc with the later call *shadowing* the earlier (G0117), the loser
+// reading the winner's word.  The owner is the stack-cache box; the
+// prefetch buffer asks through this interface and is told, one clock
+// later, whether the word then on the port is its own.
+interface MemPort;
+  method Action req(Word addr);
+  method Bool live();
+endinterface
 
 interface HobbitMem;
   method Action readReq(Word addr);

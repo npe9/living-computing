@@ -75,7 +75,7 @@ How it is built, because the first attempt was not this:
   port, which is what a block RAM offers; the ULX3S build
   (`fpga/build.sh`) has **not** been re-run since this change, so the
   mapping, the LUT count and the 25.66 MHz figure in `plan.md` step 9
-  predate EU_S1's three operand latches and are not re-measured.  An earlier attempt
+  predate EU_S1's operand latches (four since 2026-11-20) and are not re-measured.  An earlier attempt
   read memory combinationally (`mem.peek`) from every operand site; that
   needs one RAM read port per site, which neither bsc's `mkRegFileFull`
   nor a block RAM has, and it was withdrawn before it was committed.
@@ -127,6 +127,104 @@ instructions without them (`docs/plan9_boot_plan.md`, A2).
   reference model only (`tests/test_p9run.py`); **on the core it is
   untested**.
 * The fetch path takes no such flag in either model.
+
+## 1c. What running 1st Edition Plan 9 on the core found (2026-11-20)
+
+`bsv/run_p9host.sh` runs a shipped 1e binary on the core and compares
+every retirement record with the same binary on the reference model
+(`docs/plan9_boot_plan.md`, A2).  The comparison stopped eleven times on
+the way to `za` and `zl` running; each stop was one of these.  "Found
+at" is the first record that disagreed.
+
+| # | what | found at | fixed in | pinned by |
+|---|---|---|---|---|
+| 1 | Little-endian data (PSW.UL, CONFIG.KL) | reference run: `echo` jumps to 0x361d0000 | `HobbitTypes.bsv` lane functions | golden 017 |
+| 2 | No on-demand prefetch fill: a fetch outside the 1 Kbyte boot window was `TR_FETCH_MISS` | `echo` record 19 (`CALL` to another window) | `mkHobbitPrefetch.demand`, `mkHobbitDecodeStore` (`missed`/`retry`) | the 1e runs (the goldens' 1 Kbyte memory cannot miss) |
+| 3 | **A misprediction resolved in EU_S3 squashed EU_S1 only**; the wrong-path instruction already in EU_S2 retired | `echo` record 48 | `redirect` rule: `if (s3.squash) s2.flush` | golden 018 |
+| 4 | Both operands indirect refused as "unimplemented" (the argument was a third cache port; none is needed) | `echo` record 274 (`CMPEQ *R24.UB, *R28.UB`) | decoder; EU_S1 `pt2Mem`/`pt2Word`; EU_S2 `readPointed2`; a fourth operand latch | golden 019 |
+| 5 | `CALL *Roffset`, `JMP **$addr` refused (Table 1-23 modes 0xD, 0xC) | `echo` record 367 (`CALL *R12`) | decoder `branch3`; `flowIndirect` (the RETURN path) | golden 019 |
+| 6 | `ENTER *$addr` / `ENTER *Roffset` refused; and the EU used the operand *field* as the target (p. 3-20 cases 3, 4: the target is fetched) | the kernel-entry stub's first execution | decoder; EU_S1 `enterMem` | golden 019 |
+| 7 | `DQM` unmodelled | `za` record 55 (`DQM $0, *R4`) | decoder `dqm`; `OP_DQM2/4`; EU_S3's frame drain; EU_S1 holds until drained | golden 019 (constant source only; a memory source still traps) |
+| 8 | The unimplemented sequence's `*(CSP) = PC` never reached the stack (only the event unit's private memory) | `za`'s FMOV: the handler read 0 at `*(SP)` | EU_S3 commit issues the store through the box; `mkHobbitEventsCore` no longer writes its private copy | the `za` run |
+| 9 | Stack cache: a store to a word a CATCH refill had not reached was dropped; a store in the same clock as a refill word dropped the refill word; a second CATCH or an ENTER's flush replaced a refill in flight | `za` record 3,865 | `HobbitStackCache.bsv` (per-word next value; unfilled stores go to memory); EU_S1 holds after CATCH until the box is idle | the `za` run |
+| 10 | Two rules each requested the memory's one read port; bsc let one *shadow* the other (warning G0117) | `za` record 21,638 (a parcel fetched as zero) | the box owns the port and lends it (`MemPort`, `sc.textPort`); the prefetch translates and asks | the `za` run |
+| 11 | With events on, `latchOperand` and `move2to3` were in a rule cycle that bsc broke by making them conflict (warning G0009) | reading the build log | `start` clears the latches through a toggle | the build has no G0009 |
+
+Two things are worth keeping from this beyond the fixes.
+
+**Why the goldens did not find them.**  Every one of 3, 9 and 10 needs
+state the 1 Kbyte, run-once, cache-full goldens never reach: a loop's
+second pass (a warm decoded-instruction store), a cache that is being
+refilled while the program runs, a fetch that misses while the data side
+is busy.  The goldens pin what an instruction *does*; the long run pins
+what instructions do to each other.
+
+**What bsc said.**  Items 10 and 11 were in the compiler's warnings
+before they were in a trace (G0117 "shadows the effects of", G0009
+"created a conflict ... to break the following cycle"), and the two
+testbench bugs made on the way were G0010s (an every-clock rule "treated
+as more urgent" than the pipeline's).  A scheduling warning that names a
+rule which fires every clock is a bug report.
+
+**The reference model's side.**  The reference model treated the stack
+cache as invisible, which is exact only for words a program wrote before
+reading.  `za` copies a structure with a never-assigned member, off the
+stack.  The reference model now keeps the cache's 64 words when
+`State.cache` is set (ENTER's flush and CATCH's fill from the printed
+loops, pp. 3-19, 3-10), and `tools/p9run.py` sets it.  For such
+uninitialised reads the agreement between the models is by construction:
+the slot index (address bits 7:2) and the zero a never-written slot reads
+are the core's choices, adopted.  `tests/test_p9run.py`
+`StackCacheContents` tests the model's flush, fill and window against the
+printed loops; nothing independent says what the *real* part's slot
+would have held.
+
+**Injections (observed 2026-11-20).**  The golden-level ones are in
+`018.md`, `019.md` and `020.md`.  Against the long runs, each bug put in
+alone, the simulator rebuilt, and the file restored from a saved copy:
+
+| injected bug | run | observed |
+|---|---|---|
+| a prefetch miss never requests a fill | `echo` | stops after 5 records, at the first `CALL` out of the boot window (clock limit) |
+| the unimplemented sequence's store not applied to the stack | `za` | the first floating-point entry: `trap PC 0x00000000 at *(SP), the recording has 0x000026d0`; 139 records |
+| the host does not do KRET's PSW and ISP | `echo` | record 1,808: the second KCALL's frame is at `0xce4`, 16 bytes low |
+| the reference model without the cache's contents (`State.cache = None`) | `za` | record 29,664: `data` (`MOV *R4, *R8` copying a never-written stack word) |
+| no hold after CATCH | `za`, `echo` | **every record still matched** |
+| a store to a not-yet-refilled word not sent to memory | `za` | **every record still matched** |
+| both of the last two together | `za` | record 22,545 (`pc`, `insn`, `data`), and the next system call's id is wrong |
+| the prefetch treats a word as its own when the box did not grant the port | `za` | **every record still matched** |
+| that, together with no hold after CATCH | `za` | record 21,638: a parcel fetched as zero -- the original symptom |
+| the refill's word dropped when a store coincides (with no hold after CATCH) | `za` | **every record still matched** |
+| three operand latches | `za`, `echo` | **every record still matched** |
+| operand fetch not gated on the box being idle; a latch not refreshed by EU_S3's write; the arriving word not overridden by a same-clock write | `za`, `zl` | **every record still matched** (each alone) |
+
+So, plainly: the hold after CATCH and the box's handling of a store
+during a refill are *redundant for these runs* -- either one alone
+passes, both removed fails -- and with the hold in place the box's path
+and the port's "not granted" path are not reached.  Both are kept: the
+hold also covers a second CATCH or an ENTER arriving during a refill,
+which the box's fix does not.  Untested, and resting on argument: the
+refill word surviving a coinciding store; the fourth operand latch; the
+hold after DQM; and the three operand-latch mechanisms listed in
+`tests/golden/016.md`.
+
+**What the long runs do not compare: `cyc`.**  It is reported
+(`tools/p9trace_cmp.py --cyc`).  After the folded-`JMP` fix (golden
+020), `echo` agrees in `cyc` on all 1,808 records and the program `za`
+and `zl` built on all 319; `za main9.s` on 125,110 of 125,572 and `zl`
+on 696,100 of 697,197.  Every remaining difference is a conditional jump
+(one-parcel opcodes 0x04..0x07), in three classes on `za main9.s`:
+
+| reference | core | count | reading |
+|---|---|---|---|
+| 1 | 0 | 224 | the core folds a correctly predicted jump the reference model counts as unfolded |
+| 2 | 3 | 161 | a misprediction the reference model places two instructions after its compare and the core places right after it |
+| 1 | 3 | 77 | a jump the reference model counts as correctly predicted and unfolded, and the core as mispredicted |
+
+These are open.  They are disagreements between the two models about
+fold eligibility and compare distance in particular instruction
+sequences, not yet traced to a page, and a cycle-accuracy claim for the
+core does not extend to them.
 
 ## 2a. Documented instruction interactions not yet modelled
 

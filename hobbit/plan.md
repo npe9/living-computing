@@ -213,10 +213,13 @@ then proves the refinement, with tool versions and hashes recorded.
 **Get 1e booting and printing on the UART, then support every device the
 1e Hobbit port drives.** The staged plan, its gates and the device
 inventory are in [`docs/plan9_boot_plan.md`](docs/plan9_boot_plan.md);
-the immediate work is A0 (run 1e user code to its first syscall), A1
-(the syscall shim) and A2 (bootstrap `za`/`zl` on the model), after
-which the kernel is assembled and linked from `sys/src/9/hobbit` and
-booted (A3, A4).
+A0 (run 1e user code to its first syscall), A1 (the syscall shim) and A2
+(bootstrap `za`/`zl` on the model) are closed -- A2 on 2026-11-20, with
+the shipped `za` and `zl` running on the Bluespec core and every
+retirement compared with the reference model.  Next the kernel is
+assembled and linked from `sys/src/9/hobbit` (A3, which needs the
+release's `zc`, `mk`, `cpp` and `yacc` vendored and run the same way)
+and booted (A4).
 
 ## Definition of the first milestone
 
