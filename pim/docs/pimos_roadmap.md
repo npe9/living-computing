@@ -180,6 +180,12 @@ ends in a gate; do not start the next before the gate is observed.
    that touches goals, priorities, shoen, MRB marks, external modules,
    the console and SCSI. One table: name, count in the images, source
    of its semantics, status.
+   *Name map against PDSS done 2026-11-20 (`asm/namemap.py`): 121 of
+   192 have a one-to-one PDSS counterpart by name and register count;
+   17, carrying 26% of uses, are PIM/m's implicit-position structure
+   and constant instructions that PDSS splits per position or type;
+   50 are absent. A PDSS port is a translation layer, not a
+   renumbering.*
 6. **What I/O boot needs.** Read `bios/boot/*.kl1`, `src/vm/*.kl1` and
    `pimos.conf` to list every device operation between power-on and the
    shell prompt.

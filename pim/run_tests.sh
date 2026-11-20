@@ -14,6 +14,9 @@ python3 asm/gen_isa_table.py --check
 echo "=== PIMOS object-set census (every .sav decodes) ==="
 python3 asm/census.py --check
 
+echo "=== PIM/m to PDSS instruction name map (class sizes pinned) ==="
+python3 asm/namemap.py --check
+
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
 

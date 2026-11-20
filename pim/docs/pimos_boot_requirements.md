@@ -172,7 +172,67 @@ the archive (MGTP, GDCC, Kappa-P, PAX, a Go player, LSI routing and
 logic simulation, among others); the list is in `MANIFEST.md` §1a.
 They are the candidates for rung R9.
 
-## 0.3-0.7
+## 0.5a Instruction name map against PDSS (done 2026-11-20)
+
+`python3 asm/namemap.py --table` classifies each of the 192 PIM/m
+instructions the object set uses against PDSS's table
+(`emulator/instr.h`, 350 names; formats from `emulator/instr.c`), by
+mnemonic and by number of register operands. `--check` pins the class
+sizes and runs in `run_tests.sh`.
+
+| Class | Opcodes | Uses | Share | Meaning |
+|---|---|---|---|---|
+| same | 69 | 428,329 | 63.8% | same mnemonic, same register count |
+| prefix | 46 | 12,920 | 1.9% | same name under PDSS's `g_`/`b_` built-in prefix (`less_than` is `g_less_than`), `floating_point` spelled `float` |
+| renamed | 5 | 11,699 | 1.7% | `switch_on_non_{atom,integer,list}` are `jump_on_non_*`; `calculate_priority_from_minimum` is `b_rate`, `..._from_current` is `b_rltv` (read in `blt_system.c`) |
+| merged | 1 | 19,249 | 2.9% | `get_bound_value`: PIM/m has it beside `get_value`; PDSS has only `get_value` |
+| differs | 4 | 2,495 | 0.4% | a name counterpart with a different register count: `switch_on_non_vector` (two registers; PDSS `jump_on_non_vector` has one), `collect_garbage`, `add_shoen_resource`, `shoen_statistics` |
+| split | 17 | 177,202 | 26.4% | one PIM/m instruction where PDSS has one per position or per type |
+| absent | 50 | 19,186 | 2.9% | nothing in PDSS's table |
+
+**What this says about a PDSS port: it is a translation layer, not a
+renumbering.**
+
+- *The split class is the structural difference.* PIM/m builds and
+  reads structures through an implicit position: `write_value`,
+  `write_variable`, `read_variable` and their relatives, 26% of all
+  instruction uses, with `put_vector_N`/`wait_vector_N` setting the
+  position up. PDSS names the cell in the instruction:
+  `write_car_value`, `write_cdr_value`, `write_element_value`,
+  `read_car`, `read_cdr`, `read_element`. The same holds for constants
+  (PIM/m `put_constant`, `switch_on_constant`, `hash_on_constant`
+  against PDSS's per-type `put_atom`/`put_integer`, `branch_on_atom`/
+  `branch_on_integer`). The semantics exist in PDSS; the instructions
+  do not, so a reference model needs PIM/m's structure-pointer state
+  that PDSS never had.
+- *`save` and `restore`* (17,538 uses) are absent from PDSS and present
+  by name in VPIM's table. What they save is not yet read from either
+  source; it belongs to 0.5.
+- *The rest of "absent"* is machine- or era-specific and small: extended
+  (bignum) arithmetic, extended floating point, SCSI, profiling,
+  `enqueue_goal_to_processor`, `export_entry`, `apply_tracing`,
+  `apply_spying`, timers, heap alerts. `module` (83 uses) matches a
+  PDSS name that is an assembler directive, not an instruction, and is
+  counted absent.
+- *False friends.* PIM/m `vector` (two registers) and `string` (three)
+  are guard built-ins; PDSS's `vector` and `string` are the
+  one-register wait-and-check instructions. The register count sends
+  them to `g_vector`/`g_string`. Name alone would have paired them
+  wrongly, which is why "same" here means a candidate, not a result.
+- *VPIM* shares only 12 mnemonics with the used set. Its table is at a
+  lower level (`READ_WAIT`, `WRITE_IND`, `GET_CODE`): it is a reference
+  for runtime mechanisms, not for instructions.
+
+**Limits.** By name and register count only: operand order,
+non-register operands and behaviour are unchecked. An opcode shared by
+several mnemonics through a sub-function field is classified by its
+first. The pinned check catches a changed table or decoder, not a wrong
+pairing of equal count (observed: removing the `b_rate` row from `RENAMED` moved
+renamed 5 to 4 and absent 50 to 51 and failed the check).
+
+## 0.3, 0.4, 0.5 (built-ins), 0.6, 0.7
 
 Not started: the `.kbn` layout, label address units, the runtime
-inventory (built-ins by sub-function), boot I/O, Bluesim throughput.
+inventory (built-ins by sub-function, `save`/`restore`), boot I/O,
+Bluesim throughput. Also open before decision 3 is taken: whether PDSS
+builds and runs its own tests on a modern machine.
