@@ -62,6 +62,10 @@ module mkPimKL1B(PimKL1B);
   // Goal-record argument save area (TR-246 p. 7): set_* writes here.
   RegFile#(Bit#(8), Word) args <- mkRegFileFull;
   Reg#(Bit#(8)) argPtr <- mkReg(0);
+  // switch_on_constant scans its table one entry per step(); this is
+  // the index of the entry the next step() examines (0 between
+  // instructions).
+  Reg#(Bit#(12)) swIdx <- mkReg(0);
 
   // Choice-point stack: minimal backtracking for try_me_else / fail.
   // Each entry saves the else-label, argPtr, narg, and HP.  Full
@@ -109,6 +113,7 @@ module mkPimKL1B(PimKL1B);
 
   method Action start(Word entry) if (!run);
     pcR <= entry;
+    swIdx <= 0;
     run <= True;
     haltR <= False;
   endmethod
@@ -121,7 +126,34 @@ module mkPimKL1B(PimKL1B);
     Bit#(8)  a   = val[23:16];
     Bit#(8)  b   = val[15:8];
     Bit#(8)  c   = val[7:0];
-    if (tag == 8'h23 && isC40(op)) begin
+    if (tag == 8'h23 && op == 8'h2c) begin
+      // switch_on_constant R, [K=Label, ...], Else: r_c16_c16_16s_sw
+      // (klb_opr.kl1 470-482, 504-535).  Word 0 = op | R<<16 | Length;
+      // then Length two-word entries: the constant K, and a data word
+      // with the else label in bits 31-16 and K's label in bits 15-0.
+      // Jump to K's label when the dereferenced register equals K, to
+      // the else label when no entry matches (optimize.kl1 30-42: a
+      // one-entry switch is wait_atom/wait_constant).  The assembler
+      // does not state a probe order; the model scans the entries in
+      // order, one per step().  Labels are absolute model addresses,
+      // as for the other switches.  An unbound value would suspend;
+      // that is not modelled, so it halts.  So does Length 0 (there is
+      // no entry to carry the else label) and a Length beyond the
+      // 12-bit model memory.
+      Bit#(12) ent = pcR[11:0] + 1 + (swIdx << 1);
+      Word kc = mem.sub(ent);
+      Word kd = mem.sub(ent + 1);
+      Word d_sw = deref(regs.sub(a));
+      if (val[15:0] == 0 || val[15:12] != 0 || d_sw[39:32] == tagVar)
+        haltR <= True;
+      else if (d_sw == kc) begin
+        pcR <= zeroExtend(kd[15:0]);
+        swIdx <= 0;
+      end else if (swIdx + 1 == val[11:0]) begin
+        pcR <= zeroExtend(kd[31:16]);
+        swIdx <= 0;
+      end else swIdx <= swIdx + 1;
+    end else if (tag == 8'h23 && isC40(op)) begin
       Word cw = mem.sub(pcR[11:0] + 1);
       Word d_get = deref(regs.sub(a));
       case (op)

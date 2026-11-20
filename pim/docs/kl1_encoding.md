@@ -63,6 +63,13 @@ The `c8_c16_exe`, `r_c16_i`, `r_r_c16_i`, `c16_exe`, `r_c16_c8_exe`,
 `r_c16_c16_16s_sw` and `r_c16_c16_16s_ha` types add address or label
 resolution on top of the same field layout; they are defined in
 `klb_opr.kl1` lines 310–500.
+Two of them are longer than one word. `r_r_c16_i` is two words: opcode
+31–24, reg1 23–16, reg2 15–8 in the first and the label alone in the
+second (`klb_opr.kl1` lines 334–348). `r_c16_c16_16s_sw` is
+`2*Length + 1` words: opcode 31–24, register 23–16, entry count in the
+low bits, then per entry the constant and a data word with the else
+label in bits 31–16 and the entry's label in bits 15–0 (lines 470–482,
+504–535).
 
 ### Length reconciliation
 

@@ -24,7 +24,9 @@ slot 0), `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,
 `switch_on_non_atom` and `switch_on_non_list` type dispatch, each
 injection failing only this bench), `PimKL1BSwitchVecTb.bsv`
 (`switch_on_non_vector` jumps on a non-vector and halts on a vector,
-whose arity the model cannot supply), `PimKL1BNoopTb.bsv` (the three
+whose arity the model cannot supply), `PimKL1BSwitchConstTb.bsv`
+(`switch_on_constant` reaches each key's label and the else label, and
+halts on an unbound value), `PimKL1BNoopTb.bsv` (the three
 stand-in opcodes advance PC when the argument is bound),
 `PimKL1BWaitUnboundTb.bsv` (wait halts on an unbound UREF; the
 sentinel instruction never executes), `PimKL1BPutAtomTb.bsv`
@@ -33,9 +35,17 @@ register), `PimKL1BCpTb.bsv` (the choice point stack),
 `PimKL1BOtherwiseTb.bsv` (otherwise commits the choice point and jumps
 to the label), `PimKL1BGuardBacktrackTb.bsv` (guard failure backtracks
 to the else label), `PimKL1BBindTb.bsv` (get_constant binds a UREF in
-the heap); `run_kl1b_tb.sh` builds and runs all twenty-five. The
+the heap); `run_kl1b_tb.sh` builds and runs all twenty-six. The
 implemented subset and the loud-failure rule for the rest are in the
 module header.
+
+Build hazard: never compile-check the model with
+`bsc -g mkPimKL1B PimKL1B.bsv`. That writes a `PimKL1B.bo` recording
+`mkPimKL1B` as a synthesis boundary, where each method has one port,
+and every bench that calls `readReg`/`readArg` more than once in a rule
+then fails with G0002 ("needs more than 1 ports") although nothing is
+wrong with it. Compile through a bench. If it has happened, delete
+`PimKL1B.bo` and `mkPimKL1B.{ba,cxx,h,o}` and rebuild.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),
 `PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`

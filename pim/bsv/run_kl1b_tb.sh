@@ -128,3 +128,7 @@ run_bench PimKL1BOtherwiseTb ./sim_kl1botherwise
 "$BSC" -sim -g mkPimKL1BSwitchVecTb -u PimKL1BSwitchVecTb.bsv
 "$BSC" -sim -e mkPimKL1BSwitchVecTb -o sim_kl1bswitchvec
 run_bench PimKL1BSwitchVecTb ./sim_kl1bswitchvec
+
+"$BSC" -sim -g mkPimKL1BSwitchConstTb -u PimKL1BSwitchConstTb.bsv
+"$BSC" -sim -e mkPimKL1BSwitchConstTb -o sim_kl1bswitchconst
+run_bench PimKL1BSwitchConstTb ./sim_kl1bswitchconst

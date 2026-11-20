@@ -75,6 +75,7 @@ The status labels are:
 | `fail` | 0x73 | pop CP, restore state, jump to label; halt if empty | stand-in | `PimKL1BCpTb` |
 | `otherwise` | 0x6a | pop CP (discard the alternative), set arity, jump to label; halt if empty | inferred (instrtbl.kl1 `otherwise(N, Pred/N)`, c8_c16_exe type; 389 occurrences in `pimm_kernel360E.sav`, binary context shows execute/otherwise/try_me_else sequences) | `PimKL1BOtherwiseTb` |
 | `switch_on_non_vector` | 0x2b | `switch_on_non_vector R, Ari, Label`, 2-word `r_r_c16_i` (word 1 = op, R, Ari; word 2 = label). Non-vector: jump to the label. Vector: **halt** -- Ari is an output register that receives the vector's arity, and the model has no vector layout to read it from. | partial; inferred (klb_opr.kl1 334-348 for the layout; regass.kl1 361-362 `Out=[X2]` and index.kl1 900-902 `switch_on_constant(Ari, ...)` for Ari; `tagVector` = 0x07 is a model convention) | `PimKL1BSwitchVecTb` |
+| `switch_on_constant` | 0x2c | `switch_on_constant R, [K=Label, ...], Else`, `r_c16_c16_16s_sw`: word 0 = op, R, Length; then Length two-word entries (K; else label in bits 31-16, K's label in bits 15-0). Jump to K's label when the deref equals K, to the else label when no entry matches. Model conventions: entries scanned in order, one per `step()`; absolute labels; an unbound value, Length 0, or Length > 4095 halts. | inferred (klb_opr.kl1 470-482 and 504-535 for the layout; optimize.kl1 30-42 and index.kl1 507-509 for match/else; the probe order is not stated in the corpus) | `PimKL1BSwitchConstTb` |
 
 `deref` resolves one REF level: `deref(w) = (w[39:32] == REF) ?
 heap[w[11:0]] : w`. A REF whose heap cell is itself a REF does not
@@ -91,7 +92,7 @@ encoding table but not executed, with the blocking reason:
 | passive unification reads | `read_eagerly` | needs the suspension machinery |
 | atoms and vectors | `put_vector`, `put_structured_constant` | vector layouts and the structured-constant stream are not documented in the corpus |
 | extended arithmetic | `add_extended`, `subtract_extended`, `multiply_extended`, `divide_extended` (tag 0x22) | the 64-bit/vector extended forms are not documented in the corpus |
-| control beyond the queue | `switch_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail`/`otherwise` and guard backtracking are implemented; `switch_on_non_vector` executes its non-vector jump only (the vector path halts, see the table above), `switch_on_constant` is not implemented |
+| control beyond the queue | `hash_on_constant` | goal/choice-point machinery partially modelled; `try_me_else`/`fail`/`otherwise`, guard backtracking and `switch_on_constant` are implemented; `switch_on_non_vector` executes its non-vector jump only (the vector path halts, see the table above); `hash_on_constant` (0x2d, `r_c16_c16_16s_ha`) is not implemented -- the assembler emits `{table, {Hashsize, Key_label_list}}` (klb_opr.kl1 483-497) and the hash function that places a key is not in the clauses read |
 | console and I/O | `get_console`, `put_console` | device shim not built |
 
 `get_structured_constant` and the structure reads halt in the same
