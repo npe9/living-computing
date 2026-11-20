@@ -1435,7 +1435,20 @@ AIST-hosted ICOT archive: 2,089 files, 1,049,624,271 bytes (the FGCS
 proceedings, the TR/TM reports, the Museum pages under
 `lit/web/www.airc.aist.go.jp/`). The other 1,067 files (IPSJ, J-STAGE,
 vendor reviews, journal scans, record pages, other web pages, and the
-ten FGCS'94 PostScript files taken from Wayback captures) are on the
+ten FGCS'94 PostScript files taken from Wayback captures -- but see
+below) are on the
 owner's disk only and ignored by `lit/.gitignore`; `lit/SOURCES.tsv`
 and `lit/SHA256SUMS` give the URL and SHA-256 of every one, so they
 can be fetched again and verified.
+
+Later the same day, at the owner's word ("commit the papers. save the
+journal issue"): the ten FGCS'94 PostScript papers under
+`lit/fgcs/1994/ps/` (ICOT's own papers, taken from Wayback captures of
+ICOT's server) were committed too. One of them is not what its name
+says: `knowledge-info.ps` is byte-identical to `helic2.ps`. And the
+FSTJ issue that was over the fetch's 95 MB limit,
+`lit/journals/fstj/Fujitsu_Scientific_and_Technical_Journal_V24_N04_198812.pdf`
+(96,600,175 bytes), was copied from the session's earlier download to
+stand with the other issues: on disk only, like them, with its row in
+`SOURCES.tsv` and `SHA256SUMS`. With it all 17 cited FSTJ issues are
+held.
