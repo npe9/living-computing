@@ -348,3 +348,34 @@ operand type that selects a `p(...)` clause in `klb_opr.kl1`.
 | `set_timer` | `16#"22"` | `16#"ff"` | `r_r` |
 | `processor_profile` | `16#"22"` | `16#"fc"` | `r_r` |
 | `modname_to_module` | `16#"22"` | `16#"ff"` | `r_r` |
+
+## Quick / inline-atom forms
+
+The assembler table contains explicit quick forms where the atom or
+vector-length operand is encoded in the opcode byte itself.  These
+reduce code size when the inline operand fits.  In the PIMOS source
+they are shown as comments or `%`-commented-out clauses in
+`inst_tab.kl1`; the assembler emits them in practice and they are
+visible in the kernel `.sav` files.
+
+| Family | Opcode range | Mnemonic pattern | Type |
+|---|---|---|---|
+| `set_atom` quick forms | `0x01`–`0x0f` | `set_atom_1` … `set_atom_15` | `atom` (atom ID = opcode) |
+| `put_atom` quick forms | `0x41`–`0x5f` | `put_atom_1` … `put_atom_31` | `atom` (atom ID = opcode – 0x40) |
+| `get_atom` quick forms | `0xc1`–`0xdf` | `get_atom_1` … `get_atom_31` | `atom` (atom ID = opcode – 0xc0) |
+| `wait_atom` quick forms | `0x81`–`0x9f` | `wait_atom_1` … `wait_atom_31` | `atom` (atom ID = opcode – 0x80) |
+| `put_vector` short forms | `0x38`–`0x3e` | `put_vector_0` … `put_vector_6` | `r_vector` |
+| `wait_vector` short forms | `0xa9`–`0xae` | `wait_vector_1` … `wait_vector_6` | `r_m` |
+
+(The `put_vector` / `wait_vector` families have a dedicated generic
+opcode — `0x3f` for `put_vector`, `0xaf` for `wait_vector` — for
+lengths that do not fit the inline range.)
+
+## Opcode conflicts and gaps
+
+- `0x19` is claimed by both `save` (`r_c16`) and the commented-out
+  `set_reused_structure` (`c8_r`).  In current PIMOS `inst_tab.kl1`
+  `save` is active and `set_reused_structure` is commented out.
+- `0x17` (`set_vector`) and `0xa3`, `0xa7` (older gaps) are unused.
+- `0xbe` and `0xbf` are unused in the core set (`0x23`).
+- `0xbb` is unused in the core set.

@@ -39,6 +39,15 @@ def code_to_words(code):
     with the atom ID in operand c, so sav2hex maps set_atom_N to
     set_atom with atom=N.  This loses the compact encoding but is
     functionally equivalent.
+
+    CRITICAL: code_to_words compacts items sequentially (pu.load(i,
+    ...) uses a sequential index i).  Strings, tables, and atom
+    definitions are skipped.  Original .sav code-area addresses are NOT
+    preserved, so entry-table Locs and execute/jump/try_me_else targets
+    are invalid in the output.  The output is usable for inspection and
+    manual hand-assembly only — not for running real kernel predicates
+    via entry-table dispatch — until address-preserving emission is
+    implemented.
     """
     out = []
     for item in code:
