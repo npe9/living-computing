@@ -239,6 +239,15 @@ host reference model (`ref/pimm/`) and agrees with its source on all
 65,536 keys. Not R2: R2 is claimed on the Bluespec model only. PDSS
 cannot be the oracle for this predicate, because its `#"X"` is ASCII
 where PIMOS's is 16-bit JIS; the oracle is the source text.*
+*Later the same day: **R2's first step is met on Bluespec.** The new
+core (`bsv/Pimm*.bsv`: memory, data box, hash box, fetch and execute
+stages) runs `convert_element/2` from the image for every 16-bit key,
+an atom and an unbound argument, and its trace is identical, line for
+line (2,015,622 lines), to the reference model's, which agrees with the
+source (`bsv/run_pimm_jtoa.sh`). Still owed for R2 proper:
+`convert_loop/4` and `convert/2` on Bluespec (goal records, the ready
+queue, hooks and waiting built-ins held in memory cells), and a
+predicate loaded from a `.sav`.*
 
 ### Phase 2 - The runtime
 

@@ -13,4 +13,5 @@ model_*.o
 sim_*
 *.sched
 generated/
+build_pimm/
 fpga_build/

@@ -67,6 +67,23 @@ the image (they spell their text top byte first), not from the test.
 The reference model copies on `set_string_element`; the machine may
 update in place when the string is singly referenced.
 
+## Trace
+
+Both models can write the same trace, one line per event, and are
+compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_jtoa.sh`):
+
+    I pc cell      an instruction is taken (pc in cells from the load
+                   address; cell = tag and value, ten hex digits)
+    R n cell       register n is written by an instruction
+    M addr cell    a memory cell is written
+    E how          the reduction ends: done, fail, susp
+
+The Bluespec core can also end with `E unimp` (an instruction or case
+it does not implement) or `E error`; the reference model raises an
+exception there, so neither can appear in a matching trace. Loading a
+goal's arguments is not traced. The trace has no cycle numbers: the
+two models agree on what happens and in what order, not on when.
+
 Things this predicate shows about the compiler, useful for reading the
 rest: range guards compile to `put_integer` and a comparison per bound;
 33 constant clauses compile to one `hash_on_constant`, placed after the

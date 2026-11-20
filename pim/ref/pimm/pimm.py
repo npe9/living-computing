@@ -54,6 +54,26 @@ def signed(v):
     return v - (1 << 32) if v >> 31 else v
 
 
+class _Regs(list):
+    """The register file; writes are traced while a reduction runs."""
+
+    def __setitem__(self, i, w):
+        list.__setitem__(self, i, w)
+        m = self.machine
+        if m.tr is not None and m.tracing:
+            m.tr.append('R %d %02x%08x' % (i, w[0], w[1]))
+
+
+class _Mem(dict):
+    """Memory; writes are traced while a reduction runs."""
+
+    def __setitem__(self, a, w):
+        dict.__setitem__(self, a, w)
+        m = self.machine
+        if m.tr is not None and m.tracing:
+            m.tr.append('M %d %02x%08x' % (a - m.load, w[0], w[1]))
+
+
 class Goal:
     """A goal record: code address and arguments, or a body built-in
     waiting for its inputs (code is then a Python function)."""
@@ -64,13 +84,20 @@ class Goal:
 
 
 class Machine:
-    def __init__(self, image=None):
+    def __init__(self, image=None, heap=0x100000):
         self.im = image or kbndis.Image()
         self.load = self.im.load
+        # The lockstep trace (docs/pimm_semantics.md "Trace"): None, or a
+        # list that receives one line per instruction, register write
+        # and memory write made while a reduction runs.
+        self.tr = None
+        self.tracing = False
         # memory is addressed in cells, absolute (load address included)
-        self.mem = {self.load + i: c for i, c in enumerate(self.im.cells)}
-        self.heap = self.load + 0x100000      # fresh cells go here
-        self.reg = [(INT, 0)] * 256
+        self.mem = _Mem({self.load + i: c for i, c in enumerate(self.im.cells)})
+        self.mem.machine = self
+        self.heap = self.load + heap          # fresh cells go here
+        self.reg = _Regs([(INT, 0)] * 256)
+        self.reg.machine = self
         self.argv = [(INT, 0)] * 256          # arguments of the goal being built
         self.ready = []                       # LIFO: the newest goal runs first
         self.hooks = {}                       # unbound cell -> goals waiting on it
@@ -80,7 +107,6 @@ class Machine:
         self.steps = 0
         self.reductions = 0
         self.names = {}
-        self.trace = None
 
     # ---- data ----------------------------------------------------
     def alloc(self, n):
@@ -205,6 +231,23 @@ class Machine:
         self.alt = None                       # next clause on guard failure
         self.waiting = []                     # variables a guard wanted bound
         cells = self.im.cells
+        self.tracing = True
+        try:
+            self.reduce_loop(pc, cells, limit)
+            self.end('done')
+        except Fail:
+            self.end('fail')
+            raise
+        finally:
+            self.tracing = False
+
+    def end(self, how):
+        if self.tr is not None and not self.ended:
+            self.tr.append('E ' + how)
+        self.ended = True
+
+    def reduce_loop(self, pc, cells, limit):
+        self.ended = False
         while True:
             self.steps += 1
             if self.steps > limit:
@@ -215,8 +258,8 @@ class Machine:
             name = self.names.get(pc)
             if name is None:
                 name = self.names[pc] = self.im.dis(pc).split()[0]
-            if self.trace is not None:
-                self.trace.append((pc, name))
+            if self.tr is not None:
+                self.tr.append('I %d %02x%08x' % (pc, t, v))
             fn = getattr(self, 'i_' + name, None)
             if fn is None:
                 raise Unimplemented('%s at %d' % (name, pc))
@@ -234,6 +277,7 @@ class Machine:
         """Put the goal back as a record, entry = the label, arguments =
         r[0..arity), hooked on every variable a guard waited for."""
         self.goal_waits += 1
+        self.end('susp')
         self.hook(Goal(pc + 2 + sx16(c16), self.reg[:arity]), self.waiting)
         return 'done'
 

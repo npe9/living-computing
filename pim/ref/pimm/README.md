@@ -28,5 +28,20 @@ its source and PIMOS's own ASCII-to-JIS table: `convert_element/2` for
 every 16-bit key, and `convert/2` on strings, where it turns
 full-width "PIMOS 3.6" into the 8-bit string `PIMOS 3.6`.
 
-Next: the same module on the Bluespec side (rung R2), then the next
-module with source (`builtin_utility`, `scsi_common`).
+## Lockstep
+
+With `m.tr = []` the model writes one line per event (instruction
+taken, register write, memory write, end of reduction; the format is in
+`docs/pimm_semantics.md`). `lockstep_jtoa.py` compares that trace with
+the Bluespec core's (`bsv/PimmJtoaTb.bsv`), line for line:
+
+    bsv/run_pimm_jtoa.sh
+
+`convert_element/2` is in lockstep. `convert_loop/4` and `convert/2`
+are not yet on Bluespec: the goals, hooks and waiting built-ins here
+are Python objects and a side table, and must first become memory
+cells both models lay out the same way.
+
+Next: that layout, then `convert/2` in lockstep; then the next module
+with source (`builtin_utility`, `scsi_common`). The reference model is
+kept no more than one such step ahead of the Bluespec.

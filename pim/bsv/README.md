@@ -54,6 +54,32 @@ and `PimMesh.bsv` (a parameterized `w × h` mesh with deterministic XY
 route tables). Their testbenches are `PimNUTb.bsv`, `PimLinkTb.bsv`,
 `PimNURoutedTb.bsv` and `PimMeshTb.bsv`.
 
+## The real-binary core (`Pimm*.bsv`)
+
+A second core, built beside the bench model `PimKL1B.bsv`, that
+executes the PIMOS binaries' own cells: 40-bit words with the machine's
+tags, its opcodes and its relative labels, from the IPL image
+`pimm_ipl.kbn`. It follows `../ref/pimm/pimm.py` instruction for
+instruction and is tested by trace comparison with it.
+
+| File | What |
+|---|---|
+| `PimmTypes.bsv` | cells, addresses, labels, how a reduction ends, the trace |
+| `PimmMem.bsv` | one block RAM of cells behind request/response, three clients |
+| `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
+| `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
+| `PimmStages.bsv` | fetch stage; execute stage (registers, clause selection) |
+| `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
+| `PimmJtoaTb.bsv` | lockstep bench: `jis_to_ascii:convert_element/2` |
+| `generated/PimmGen.bsv`, `generated/pimm_ipl.hex` | tags, opcodes, predicate addresses and the image, written by `../asm/gen_pimm_bsv.py`; no tag or opcode is typed by hand |
+
+`run_pimm_jtoa.sh` builds into `build_pimm/` and pipes the bench's
+trace into `../ref/pimm/lockstep_jtoa.py`. State: 13 instructions, one
+reduction at a time, sequential (the next fetch waits for the
+instruction before it), no timing claimed, no goal queue: a suspended
+goal is reported and dropped. The bench model and its benches are
+untouched and still run.
+
 ## FPGA flow (ULX3S / ECP5)
 
 `PimUlx3s.bsv` and `Top.v` are a downstream check, not the architecture.
