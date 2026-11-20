@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lockstep: shoen:ground_term/2 from the IPL image, on lists.
+"""Lockstep: shoen:ground_term/2 from the IPL image.
 
     python3 ref/pimm/lockstep_ground.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_ground.py compare
@@ -25,17 +25,29 @@ several goals at once.  Source (kernel/builtin/shoen.kl1):
     wait_and_unify(Wait, Term, Term1) :- wait(Wait) |
         Term1 = Term.
 
+    wait_vector(0, Vec, Vec1, Data, N_vec, Data1) :- true |
+        N_vec = Vec1, Data1 = Data.
+    otherwise.
+    wait_vector(L, Vec, Vec1, Data, N_vec, Data1) :-
+            L1 := L-1,
+            vector_element(Vec, L1, D) |
+        ground_term(D, Data, D1, Data2),
+        set_vector_element(Vec1, L1, _, D1, Vec2),
+        wait_vector(L1, Vec, Vec2, Data2, N_vec, Data1).
+
 So N_term is a copy of Term, given only when every leaf of Term is
 bound: an unbound leaf makes the first two clauses wait, and a clause
 after `otherwise` is not taken while an earlier one waits.  That is the
 oracle: the clauses are asserted to be in the source as written here;
 the answer must be unbound while any leaf is, and equal to the term
-when none is.  Terms here are lists and atomic values; the vector
-clause needs instructions not yet modelled (the model stops on one).
+when none is.  Terms here are lists, vectors of up to 6 elements and
+atomic values.
 
-New here: switch_on_non_list, switch_on_non_vector (the branch only),
-put_nil, put_reused_structure and read_variable on a list cell, and
-write_variable with its register used afterwards.
+New here: switch_on_non_list, switch_on_non_vector, put_nil,
+put_reused_structure and read_variable on a list cell, write_variable
+with its register used afterwards; for vectors the guards vector and
+vector_element, mark_element (nothing: no MRB), and the body built-ins
+new_vector and set_vector_element.
 
 Observed fault injections into the Bluespec, 2026-11-20, each FAILed
 where shown and was restored:
@@ -46,8 +58,21 @@ where shown and was restored:
   switch_on_non_vector does not note       an element bound late: one hook, not two
   put_nil puts integer 0                   an integer: R 1
   write_variable's register one cell on    (caught first by lockstep_asf)
-NOT caught: switch_on_non_list taking a vector for a list.  No term
-here has a vector, because the vector clause is not modelled.
+  switch_on_non_list takes a vector        {1,2}: the list clause entered
+  switch_on_non_vector gives size + 1      {1,2}: R 4
+  guard vector gives size - 1              {1,2}: R 0
+  set_vector_element waits for the new     {1,2}: a goal record where the
+    element                                  copy should be
+  vector box: an unbound element taken     a vector element bound late: R 0
+    as its cell, not a reference
+  vector box replaces the wrong element    {1,2}: the cell written
+  new_vector fills with 1                  {1,2}: M .. 1 for 0
+  set_vector_element's outputs swapped     {1,2}: R 2
+NOT caught, both because the predicate never asks: vector_element
+accepting an index equal to the size (wait_vector counts down from
+size - 1), and set_vector_element's copy duplicating an unbound cell
+(it only copies vectors new_vector made, whose cells are 0 or already
+replaced).  Also not exercised: either built-in waiting for an input.
 """
 import io
 import os
@@ -61,9 +86,13 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 
 TAR = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimos.tar.Z')
-PINNED = dict(parts=12, lines=2370)
+PINNED = dict(parts=20, lines=5410)
 
 CLAUSES = __doc__[__doc__.index('    ground_term(Term, N_term)'):__doc__.index('So N_term')]
+
+
+class Vec(list):
+    """A vector term (a Python list is a KL1 list)."""
 
 
 class Late:
@@ -89,6 +118,14 @@ def cases():
         ('two leaves, first then second', [c, d], [c, d]),
         ('two leaves, second then first', [c, d], [d, c]),
         ('the whole term bound late', Late([1, 2]), None),
+        ('{1,2}', Vec([1, 2]), []),
+        ('{normal}', Vec(['normal']), []),
+        ('{1,[2,3],{4}}', Vec([1, [2, 3], Vec([4])]), []),
+        ('[{1,2,3,4,5,6}]', [Vec([1, 2, 3, 4, 5, 6])], []),
+        ('a vector element bound late', Vec([1, a, 3]), [a]),
+        ('two vector elements, last then first', Vec([c, 2, d]), [d, c]),
+        ('two vector elements, first then last', Vec([c, 2, d]), [c, d]),
+        ('a vector bound late', Late(Vec([1, 2])), None),
     ]
 
 
@@ -96,6 +133,8 @@ def value(t):
     """The term with every Late leaf replaced by its value."""
     if isinstance(t, Late):
         return value(t.value)
+    if isinstance(t, Vec):
+        return tuple(value(e) for e in t)
     if isinstance(t, list):
         return [value(e) for e in t]
     if isinstance(t, tuple):
@@ -131,6 +170,26 @@ def script():
             return (pimm.INT, t & 0xffffffff)
         if isinstance(t, str):
             return (pimm.ATOM, number[t])
+        if isinstance(t, Vec):
+            # the pointer in slot p, its cells in slots p+1 ..
+            p, n = free[0], len(t)
+            free[0] += n + 1
+            assert free[0] <= 16
+            es = [build(e, free, late) for e in t]
+            for i, leaf in enumerate(t):
+                if isinstance(leaf, Late):
+                    late[id(leaf)] = p + 1 + i
+            for i in range(n):
+                s.newvar(p + 1 + i)
+            s._op(driver.PTR, p, p + 1, (pimm.VECT0 + 2 * n + 1, 0))
+            for i, e in enumerate(es):
+                if e is None:
+                    continue
+                if e[0] == 'slot':
+                    s.unify(p + 1 + i, e[1])
+                else:
+                    s.unifyc(p + 1 + i, e)
+            return ('slot', p)
         if t == []:
             return pimm.NIL
         car, cdr = (t[1], t[2]) if isinstance(t, tuple) else (t[0], t[1:])
@@ -216,9 +275,9 @@ def main(argv):
         print('pimm lockstep ground: FAIL, answers differ from the source: %r' % bad[:3])
         return 1
     print('pimm lockstep ground: PASS (shoen:ground_term/2 from the IPL image on the '
-          'Bluespec core, on lists: %d terms, %d trace lines identical to the reference '
+          'Bluespec core, lists and vectors: %d terms, %d trace lines identical to the reference '
           'model; each answer unbound while a leaf is and the term after, e.g. %r)'
-          % (s.counts['parts'], s.counts['lines'], seen['[[1,2],[normal]]'][-1]))
+          % (s.counts['parts'], s.counts['lines'], seen['{1,[2,3],{4}}'][-1]))
     return 0
 
 

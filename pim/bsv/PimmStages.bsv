@@ -21,6 +21,7 @@ import PimmDBox::*;
 import PimmHBox::*;
 import PimmGBox::*;
 import PimmSBox::*;
+import PimmVBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -72,11 +73,11 @@ endinterface
 
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
-               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2,
+               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
-                   PimmSBox sbox, MemPort smem)(PimmExec);
+                   PimmSBox sbox, PimmVBox vbox, MemPort smem)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -94,6 +95,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // the structure pointer: where the next write_* stores
   Reg#(Addr)         sp      <- mkRegU;
   Reg#(Bit#(8))      reuseTag <- mkRegU;
+  Reg#(Cell)         vnew    <- mkRegU;
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -119,7 +121,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool arithHere = op == op_b_add || op == op_b_subtract || op == op_b_and || op == op_b_or
                 || op == op_b_shift_left;
   Bool builtinHere = arithHere || op == op_new_string
-                  || op == op_b_string_element || op == op_set_string_element;
+                  || op == op_b_string_element || op == op_set_string_element
+                  || op == op_new_vector || op == op_set_vector_element;
+  // a vector pointer, short (0..6 elements, the size in the tag) or long
+  function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
+  function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
+  function Bit#(32) sizeOf(Cell c) = zeroExtend(vectorSize(c));
   Addr afterBuiltin = pc + (stub.n > 3 ? 2 : 1);
 
   function Action finish(Step s);
@@ -175,9 +182,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || isWaitVector || op == op_switch_on_non_list
-                      || op == op_switch_on_non_vector;
+                      || op == op_switch_on_non_vector || op == op_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
-                      || op == op_subtract || op == op_and;
+                      || op == op_subtract || op == op_and || op == op_vector_element;
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
@@ -215,6 +222,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(x, intCell(c16));
       next;
     end
+    else if (op == op_mark_element) next;     // MRB marking: not modelled
     else if (op == op_put_nil) begin
       regs.wr(x, mkCell(tag_ATOMo, 0));     // nil is the atom 0
       next;
@@ -323,8 +331,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_switch_on_non_vector) begin
       // two cells, the label in the second; only the branch is modelled
       if (isRef(a)) note(a);
-      if ((a.tag & 8'hf0) == tag_VECT0o) stop(EndUnimp);
+      if (isLongVec(a)) stop(EndUnimp);
+      else if (isVec(a)) begin
+        // r[y] := the number of elements ("Ari" in the compiler's
+        // index.kl1); the structure pointer at the first
+        regs.wr(y, intC(sizeOf(a)));
+        sp <= truncate(a.val);
+        finish(tagged Next (pc + 2));
+      end
       else finish(tagged Next labelOf(pc, ins2.val[15:0]));
+    end
+    else if (op == op_vector) begin
+      // guard vector(X, ^Size)
+      if (isRef(a)) begin
+        note(a);
+        guardFail;
+      end
+      else if (isLongVec(a)) stop(EndUnimp);
+      else if (isVec(a)) begin
+        regs.wr(y, intC(sizeOf(a)));
+        next;
+      end
+      else guardFail;
     end
     else if (isWaitVector) begin
       if (isRef(a)) note(a);
@@ -381,6 +409,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (isRef(a) || isRef(b)) begin
       note(isRef(a) ? a : b);
       guardFail;
+    end
+    else if (op == op_vector_element) begin
+      // guard vector_element(Vector, Position, ^Element)
+      if (isLongVec(a)) stop(EndUnimp);
+      else if (!isVec(a) || !isInt(b) || b.val >= sizeOf(a)) guardFail;
+      else begin
+        vbox.element(a, b.val);
+        st <= XVEl;
+      end
     end
     else if (!isInt(a) || !isInt(b)) guardFail;
     else if (op == op_subtract || op == op_and) begin
@@ -514,8 +551,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     st <= XBIn;
   endrule
 
+  // set_vector_element does not wait for the new element (operand 2)
   function Bool waitsOn(Integer i) =
-    fromInteger(i) < stub.n && stub.outs[i] == 0 && isRef(vals[i]);
+    fromInteger(i) < stub.n && stub.outs[i] == 0 && isRef(vals[i])
+    && !(op == op_set_vector_element && i == 2);
 
   rule bGo (st == XBGo);
     let a = vals[0];
@@ -558,6 +597,22 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBStr;
       end
     end
+    else if (op == op_new_vector) begin
+      // new_vector(Size, ^V)
+      if (!isInt(a) || a.val > 6) stop(EndUnimp);
+      else begin
+        vbox.newVec(a.val);
+        st <= XBVec;
+      end
+    end
+    else if (op == op_set_vector_element) begin
+      // set_vector_element(V, I, New, ^Old, ^V1)
+      if (!isVec(a) || isLongVec(a) || !isInt(b) || b.val >= sizeOf(a)) stop(EndUnimp);
+      else begin
+        vbox.setElement(a, b.val, c);
+        st <= XBVec;
+      end
+    end
     else begin
       // set_string_element(S, I, E, ^S1)
       if (!isStrg(a) || !isInt(b) || !isInt(c)) stop(EndUnimp);
@@ -594,6 +649,30 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(operand[3], r.a);
       finish(tagged Next afterBuiltin);
     end
+  endrule
+
+  rule vElement (st == XVEl);
+    let r <- vbox.result;
+    regs.wr(z, r.a);
+    next;
+  endrule
+
+  rule bVec (st == XBVec);
+    let r <- vbox.result;
+    if (op == op_new_vector) begin
+      regs.wr(y, r.a);
+      finish(tagged Next afterBuiltin);
+    end
+    else begin
+      regs.wr(operand[3], r.b);
+      vnew <= r.a;
+      st <= XBVec2;
+    end
+  endrule
+
+  rule bVec2 (st == XBVec2);
+    regs.wr(operand[4], vnew);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule bOut2 (st == XBOut2);

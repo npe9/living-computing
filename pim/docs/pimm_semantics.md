@@ -37,7 +37,8 @@ first to call another predicate, by `ref/pimm/lockstep_asf.py`. From a
 third module, `exception_table:replace_argument/3`, the first to read
 structures, by `ref/pimm/lockstep_repl.py`, its oracle the seven
 source clauses parsed from the text. From a fourth, `shoen:ground_term/2`
-on lists, the first to read lists and to run several goals at once, by
+with `ground_term/4`, `wait_vector/6` and `wait_and_unify/3`, on lists
+and vectors, the first to run several goals at once, by
 `ref/pimm/lockstep_ground.py`. The whole `jis_to_ascii` module also runs on the
 Bluespec core in lockstep with the reference model (see Trace): every
 instruction in the table is implemented there. Three readings no run
@@ -61,8 +62,13 @@ of this module can check, on either model, and injections confirm it:
 | `write_atom` | `23:23`, atom in the low 24 bits | store the atom at the structure pointer and advance it | checked |
 | `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
 | `write_variable` | `23:24 x` | the element at the structure pointer becomes a new unbound variable, `r[x]` a reference to it; advance | checked with `x` = 31 only (`analyze_standard_format/5`): the cell and the register are in the trace, nothing reads the register. That the variable is the element itself is our choice |
-| `switch_on_non_list` | `23:2A x`, label | guard: `r[x]` a list, the structure pointer is set to its car; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`). Not checked: that a vector is not taken for a list |
-| `switch_on_non_vector` | `23:2B x y`, then a cell holding the label | not a vector: go to the label (an unbound `r[x]` is noted first) | the branch only. On a vector the models stop: what `r[y]` receives is not established |
+| `switch_on_non_list` | `23:2A x`, label | guard: `r[x]` a list, the structure pointer is set to its car; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`). |
+| `switch_on_non_vector` | `23:2B x y`, then a cell holding the label | a vector: `r[y]` := its number of elements (the compiler's `index.kl1` calls the register `Ari` and switches on it), the structure pointer at its first; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`) |
+| `vector` | `23:E4 x y` | guard `vector(X, ^Size)`: `r[y]` := the number of elements | checked |
+| `vector_element` | `23:EE x y z` | guard `vector_element(V, I, ^E)`: `r[z]` := element `r[y]`, a reference if it is an unbound variable; fails outside 0..size-1 | checked, except the index equal to the size |
+| `mark_element` | `23:1C x y` | MRB marking of an element: nothing, no reference counts | runs; nothing to observe |
+| `new_vector` | `22:D3 x y` | body `new_vector(Size, ^V)`: `r[y]` := a vector of `r[x]` cells of integer 0 (PIMOS manual) | checked for 1..6 |
+| `set_vector_element` | `22:D0 x y z`, then `w4 w5` | body `set_vector_element(V, I, New, ^Old, ^V1)`: `r[w5]` := a copy of `r[x]` with element `r[y]` replaced by `r[z]`, `r[w4]` := the old element. Does not wait for `New` (manual: suspends on Vector or Position only). Always a copy, as `put_reused_structure` | checked on vectors made by `new_vector`; copying an unbound element is not exercised |
 | `put_nil` | `23:32 x` | `r[x]` := nil, the atom 0 (`library/kbn/kbnatom.kl1`: "The atom number of '[]' is fixed to zero") | checked |
 | `wait_vector_N` | `23:A8+N x` | guard: `r[x]` is a vector of N cells; the structure pointer is set to its first | checked for N = 2, 3, 5 (`exception_table:replace_argument/3`), including the wrong size and an unbound `r[x]` |
 | `read_variable` | `23:B4 x` | `r[x]` := the element at the structure pointer; advance. An element that is an unbound variable is taken as a reference to it | checked |
@@ -110,10 +116,12 @@ vector is `{VECT0, 0}`; 7 or more have a descriptor (`{VECT, a}` ->
 `heap/10`, the code that lays out the image's constants. A compound
 term `f(a, b)` is the vector `{f, a, b}`: `check_completion_code`
 builds `abnormal(no_status(C, D))` as a 3-vector inside a 2-vector, and
-the test reads it back by atom name. Vectors of 2 to 5 are built and
-read (`wait_vector_N`, `read_variable`), and list cells are read and
-rebuilt (`switch_on_non_list`, `put_reused_structure`); `put_list` and
-the long vector form are not.
+the test reads it back by atom name. Vectors of up to 6 are built, read
+and updated (`put_vector_N`, `wait_vector_N`, `read_variable`,
+`new_vector`, `set_vector_element`; `bsv/PimmVBox.bsv`), and list cells
+are read and rebuilt (`switch_on_non_list`, `put_reused_structure`);
+`put_list` is not run yet, and the long vector form (7 or more, with a
+descriptor) stops both models.
 
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the

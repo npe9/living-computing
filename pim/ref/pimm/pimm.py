@@ -391,7 +391,7 @@ class Machine:
         return signed(w[1])
 
     # ---- body built-ins ----------------------------------------------
-    def builtin(self, name, operands, f):
+    def builtin(self, name, operands, f, nowait=()):
         """A body built-in with register operands, directions from the
         stub table.  f takes the dereferenced inputs and returns the
         output words.  If an input is unbound the built-in becomes a
@@ -403,7 +403,7 @@ class Machine:
         ins = [r for r, d in zip(operands, dirs) if d == 'i']
         outs = [r for r, d in zip(operands, dirs) if d == 'o']
         vals = [self.deref(self.reg[r]) for r in ins]
-        wait = [w[1] for w in vals if self.unbound(w)]
+        wait = [w[1] for k, w in enumerate(vals) if self.unbound(w) and k not in nowait]
         if not wait:
             for r, w in zip(outs, f(*vals)):
                 self.reg[r] = w
@@ -468,9 +468,46 @@ class Machine:
         # Only the branch is modelled: what r[y] gets for a vector is
         # not established.
         w = self.g_word(x)
-        if w is not None and VECT0 <= w[0] & ~1 <= VECT0 + 14:
-            raise Unimplemented('switch_on_non_vector on a vector')
-        return pc + 2 + sx16(self.cells[pc + 1][1])
+        if w is None or self.vsize(w) is None:
+            return pc + 2 + sx16(self.cells[pc + 1][1])
+        # a vector: r[y] := its number of elements ("Ari", the arity,
+        # in the compiler's index.kl1), the structure pointer at the
+        # first
+        self.reg[y] = (INT, self.vsize(w))
+        self.sp = w[1]
+        return pc + 2
+
+    def vsize(self, w):
+        """The number of elements of a vector word, None if it is not
+        one.  Long vectors (a descriptor) are not modelled."""
+        t = w[0] & ~1
+        if t == VECT0 + 14:
+            raise Unimplemented('a vector of more than 6 elements')
+        return (t - VECT0) // 2 if VECT0 <= t <= VECT0 + 12 else None
+
+    def taken(self, a):
+        """What is taken from the cell at a: its value, or a reference
+        to it if it is an unbound variable."""
+        c = self.mem[a]
+        return (REF, a) if c[0] & ~1 in (UNDF, HOOK) else c
+
+    def i_vector(self, pc, x, y, z, c16):
+        # guard vector(X, ^Size)
+        w = self.g_word(x)
+        if w is None or self.vsize(w) is None:
+            return self.guard_fail()
+        self.reg[y] = (INT, self.vsize(w))
+
+    def i_vector_element(self, pc, x, y, z, c16):
+        # guard vector_element(Vector, Position, ^Element)
+        v, i = self.g_word(x), self.g_word(y)
+        if v is None or i is None or self.vsize(v) is None or i[0] & ~1 != INT \
+                or not i[1] < self.vsize(v):
+            return self.guard_fail()
+        self.reg[z] = self.taken(v[1] + i[1])
+
+    def i_mark_element(self, pc, x, y, z, c16):
+        pass        # MRB marking of an element: no reference counts here
 
     def i_hash_on_constant(self, pc, x, y, z, c16):
         # word 1: register, mask.  word 2: the miss label, relative to
@@ -622,8 +659,7 @@ class Machine:
         return self.wait_vector(5, x)
 
     def i_read_variable(self, pc, x, y, z, c16):
-        c = self.mem[self.sp]
-        self.reg[x] = (REF, self.sp) if c[0] & ~1 in (UNDF, HOOK) else c
+        self.reg[x] = self.taken(self.sp)
         self.sp += 1
 
     def i_put_reused_structure(self, pc, x, y, z, c16):
@@ -715,6 +751,41 @@ class Machine:
             self.need_string(s)
             return [self.set_element(s, self.need_int(i), self.need_int(e))]
         self.builtin('set_string_element', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_new_vector(self, pc, x, y, z, c16):
+        # new_vector(Size, ^V): n cells of integer 0 (PIMOS manual)
+        def f(n):
+            n = self.need_int(n)
+            if not 0 <= n <= 6:
+                raise Unimplemented('new_vector of %d elements' % n)
+            if n == 0:
+                return [(VECT0, 0)]
+            a = self.alloc(n)
+            for k in range(n):
+                self.mem[a + k] = (INT, 0)
+            return [(VECT0 + 2 * n + 1, a)]
+        self.builtin('new_vector', [x, y], f)
+
+    def i_set_vector_element(self, pc, x, y, z, c16):
+        # set_vector_element(V, I, New, ^Old, ^V1).  Always a copy (no
+        # MRB); an unbound element is copied as a reference to the old
+        # cell.  It does not wait for New.
+        w4, w5 = self.cells[pc + 1][1] >> 24, self.cells[pc + 1][1] >> 16 & 0xff
+
+        def f(v, i, e):
+            n, i = self.vsize(v), self.need_int(i)
+            if n is None or not 0 <= i < n:
+                raise Unimplemented('built-in exception: set_vector_element')
+            a = self.alloc(n)
+            old = None
+            for k in range(n):
+                c = self.taken(v[1] + k)
+                if k == i:
+                    old = c
+                self.mem[a + k] = e if k == i else c
+            return [old, (v[0], a)]
+        self.builtin('set_vector_element', [x, y, z, w4, w5], f, nowait=(2,))
         return pc + 2
 
 

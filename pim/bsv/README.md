@@ -85,8 +85,8 @@ key, suspension scenarios), `conv` (`convert/2`, the whole
 (`scsi_common:check_completion_code/4`, which builds vectors and
 atoms) `asf` (`scsi_common:analyze_standard_format/5`, which calls
 `get_4_bytes/4`) and `repl` (`exception_table:replace_argument/3`,
-which reads vectors) and `ground` (`shoen:ground_term/2` on lists).
-State: 49 instructions; goals as
+which reads vectors) and `ground` (`shoen:ground_term/2` on lists and
+vectors; `PimmVBox.bsv` is the vector box). State: 54 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
