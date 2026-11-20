@@ -78,6 +78,9 @@ of this module can check, on either model, and injections confirm it:
 | `b_and`, `b_or` | `22:C7`, `22:C8 x y z` | `r[z]` := `r[x]` and / or `r[y]`, bitwise | checked (`scsi_common:get_4_bytes/4`) |
 | `b_shift_left` | `22:C5 x y z` | `r[z]` := `r[x] << r[y]`, 32 bits | checked for a count of 8; a count outside 0..31 is an exception in PDSS (`blt_basic.c`) and stops the model |
 | `b_shift_right` | `22:C6 x y z` | `r[z]` := `r[x] >> r[y]`, logical (manual, `shift_right`: "Logically shifts Integer to the right"), 32 bits | checked for a count of 8 on positive values (`lockstep_dec0.py`); logical against arithmetic is NOT checked; a count outside 0..31 is an exception, not modelled |
+| `shift_right` (guard) | `23:E9 x y z` | `r[z]` := `r[x] >> r[y]`, logical; an unbound operand is noted and the guard fails; a non-integer or a count outside 0..31 fails the guard (manual: "Fail, Exception") | checked, logical against arithmetic included (`lockstep_rss.py`); the count limit is not run |
+| `integer` (guard) | `23:E2 x` | succeeds if `r[x]` is an integer; unbound is noted and fails (manual: suspend), anything else fails | checked, except the unbound case (a `wait` always precedes it) |
+| `put_vector_1`, `_5`, `_6` | `23:39`, `3D`, `3E` | as `put_vector_2..4` | `_5` checked; `_1`, `_6` not run |
 | `get_value` | `23:BC x y` | unify `r[x]` with `r[y]` | checked for integer against unbound only |
 | `get_integer` | `23:B9 x c16` | unify `r[x]` with integer `c16` | checked against unbound only |
 | `otherwise` | `23:6A x c16` | clauses below apply only if none above can: if a guard above was waiting on a variable, the goal suspends; else continue | both cases checked. `x` is the arity and the label is the predicate's own first instruction; what the machine uses them for is inferred (re-entry after suspension) |

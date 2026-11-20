@@ -128,6 +128,7 @@ packet layout from `scsi_fep.kl1`; not rechecked here.
 ### E. Verification debts (recorded where they arose, collected here)
 
 - Not caught by any run: `b_shift_right` arithmetic for logical;
+  `integer` on an unbound operand;
   `switch_on_constant` comparing an unbound key (not observable: every
   pair has the same else label); `execute` keeping the old alternative clause;
   `less_than` at equality; `vector_element` at index = size;

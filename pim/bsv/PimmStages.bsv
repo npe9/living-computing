@@ -182,16 +182,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
+                      || op == op_integer
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
-                      || op == op_subtract || op == op_and || op == op_vector_element;
+                      || op == op_subtract || op == op_and || op == op_vector_element
+                      || op == op_shift_right;
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
   Cell atomHere = mkCell(tag_ATOMo, zeroExtend(ins.val[23:0]));
   // put_vector_N, N = 2..4: N cells, no header
-  Bool isPutVector = op == op_put_vector_2 || op == op_put_vector_3 || op == op_put_vector_4;
+  Bool isPutVector = op == op_put_vector_1 || op == op_put_vector_2 || op == op_put_vector_3
+                  || op == op_put_vector_4 || op == op_put_vector_5 || op == op_put_vector_6;
   Bit#(8) vectorN = ins.val[31:24] - op_put_vector_0[7:0];
 
   rule decode (st == XDecode);
@@ -373,6 +376,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isInt(a) && a.val == signExtend(c16)) next;
       else guardFail;
     end
+    else if (op == op_integer) begin
+      if (isRef(a)) note(a);
+      if (isInt(a)) next;
+      else guardFail;
+    end
     else if (op == op_string) begin
       // string(S, ^Length, ^Bits)
       if (isRef(a)) note(a);
@@ -426,6 +434,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (!isInt(a) || !isInt(b)) guardFail;
+    else if (op == op_shift_right) begin
+      // logical; a count outside 0..31 fails the guard
+      Bit#(5) count = truncate(b.val);
+      if (b.val >= 32) guardFail;
+      else begin
+        regs.wr(z, intC(a.val >> count));
+        next;
+      end
+    end
     else if (op == op_subtract || op == op_and) begin
       // guard arithmetic: r[z] := r[x] op r[y]
       regs.wr(z, intC(op == op_subtract ? pack(ia - ib) : (a.val & b.val)));

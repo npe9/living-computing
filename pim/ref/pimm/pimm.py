@@ -578,6 +578,16 @@ class Machine:
             return self.guard_fail()
         self.reg[z] = (INT, (a & b) & 0xffffffff)
 
+    def i_shift_right(self, pc, x, y, z, c16):   # guard arithmetic, logical
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or not 0 <= b < 32:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a & 0xffffffff) >> b)
+
+    def i_integer(self, pc, x, y, z, c16):       # guard type check
+        if self.g_int(x) is None:
+            return self.guard_fail()
+
     def i_subtract(self, pc, x, y, z, c16):      # guard arithmetic
         a, b = self.g_int(x), self.g_int(y)
         if a is None or b is None:
@@ -631,6 +641,15 @@ class Machine:
         a = self.alloc(n)
         self.sp = a
         self.reg[x] = (VECT0 + 2 * n + 1, a)
+
+    def i_put_vector_1(self, pc, x, y, z, c16):
+        self.put_vector(1, x)
+
+    def i_put_vector_5(self, pc, x, y, z, c16):
+        self.put_vector(5, x)
+
+    def i_put_vector_6(self, pc, x, y, z, c16):
+        self.put_vector(6, x)
 
     def i_put_vector_2(self, pc, x, y, z, c16):
         self.put_vector(2, x)

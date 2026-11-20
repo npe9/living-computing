@@ -25,7 +25,8 @@ reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
 `lockstep_rpos.py` runs `exception_table:replace_position/3`
 (`switch_on_constant`), `lockstep_dec0.py` the first of the IPL's file
-decoder (`b_shift_right`); 56 instructions now. No
+decoder (`b_shift_right`), `lockstep_rss.py` the request-sense analysis
+(`integer`, guard `shift_right`, `put_vector_5`); 61 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py
