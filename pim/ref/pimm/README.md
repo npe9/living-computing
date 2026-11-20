@@ -15,16 +15,18 @@ Rules it keeps:
 - Every operand reading comes from object code paired with KL1 source,
   and is written down in `docs/pimm_semantics.md` with what checked it.
 
-State: one goal run to completion. No scheduler, no suspension queue
-(a goal that must wait raises `Suspend`), no garbage collection, 13
-instructions.
+State: goals on one LIFO ready stack (no priorities, one processor);
+suspension on unbound variables, kept in a side table and not as the
+machine's HOOK cells; body built-ins that wait for their inputs; 8-
+and 16-bit strings; 28 instructions. No garbage collection, no MRB, no
+shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py
 
-runs `jis_to_ascii:convert_element/2` from the image for every 16-bit
-key against an oracle built from the predicate's source and PIMOS's own
-ASCII-to-JIS table.
+runs module `jis_to_ascii` from the image against an oracle built from
+its source and PIMOS's own ASCII-to-JIS table: `convert_element/2` for
+every 16-bit key, and `convert/2` on strings, where it turns
+full-width "PIMOS 3.6" into the 8-bit string `PIMOS 3.6`.
 
-Next, in order: `convert_loop/4` (goals, `enqueue_goal`/`execute`, the
-string built-ins, and a body built-in waiting on an unbound variable),
-then `convert/2`.
+Next: the same module on the Bluespec side (rung R2), then the next
+module with source (`builtin_utility`, `scsi_common`).

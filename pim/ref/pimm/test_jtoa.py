@@ -11,9 +11,17 @@ nothing else:
   server/telnet/code_cv.kl1  table_ascii_to_jis/2, PIMOS's own table
                              for what 16-bit JIS code #"X" is
 
-The model is run for every 16-bit key and must agree with the oracle
-on all 65,536; then for a non-integer argument (the otherwise clause)
-and an unbound one (the goal must suspend).
+convert_element/2 is run for every 16-bit key and must agree with the
+oracle on all 65,536; then for a non-integer argument (the otherwise
+clause) and an unbound one (the goal must suspend).
+
+convert/2 (which calls convert_loop/4 and convert_element/2) is then
+run on 16-bit strings: empty, one element, every mapped key, a mixed
+one, and "PIMOS 3.6" in full-width characters.  Each result must be the
+8-bit string the oracle gives; set_string_element must have waited
+once per element (it is reached before its element is bound); an 8-bit
+argument must fail; an unbound argument must suspend the goal and
+complete after the variable is bound.
 
 Observed fault injections (2026-11-20), each restored afterwards:
   hash pair target one cell short        -> error: pc 9517 is not an
@@ -24,6 +32,20 @@ Observed fault injections (2026-11-20), each restored afterwards:
                                            gave 4, not '4')
   hash miss label relative to word 1     -> FAIL, 65,503 keys wrong
   hash index not key AND mask            -> FAIL, 32 keys wrong
+ on convert/2:
+  string_element's two outputs swapped   -> error: not a string
+  binding does not wake waiting goals    -> error: 1 goals still suspended
+  goal arguments taken from slot 0       -> error: unify of two different
+                                           strings
+  string/3 length and size swapped       -> error: no clause of convert/2
+                                           applies
+  make_string packing from the bottom    -> FAIL, 4 of 5 strings wrong
+  guard `subtract` writing its first
+  operand instead of its third           -> PASS: NOT caught.  The only
+                                           use is `subtract 0,4,0`, where
+                                           the two are the same register;
+                                           the destination reading is
+                                           unverified.
 """
 import io
 import os
@@ -103,10 +125,54 @@ def main():
         note = 'unbound argument did not suspend'
     except pimm.Suspend:
         note = ''
+        m.abandon()
+    # ---- convert/2: the whole module, strings in and out ----------
+    conv = pimm.predicate(m.im, 'jis_to_ascii', 'convert/2')
+    mapped = [k for k in range(0x10000) if f(k) != ord('?')]
+    cases = [[], [0x2350], mapped, mapped[::-1] + [0x3021, 0, 0xffff],
+             [0x2350, 0x2349, 0x234d, 0x234f, 0x2353, 0x2121, 0x2333, 0x2125, 0x2336]]
+    cwrong = []
+    waits0 = m.builtin_waits
+    for jis in cases:
+        out = m.new_var()
+        m.run(conv, [m.make_string(16, jis), out])
+        w = m.deref(out)
+        got = m.string(w) if w[0] & ~1 == pimm.STRG else w
+        if got != (8, [f(k) for k in jis]):
+            cwrong.append((jis[:4], got))
+    last = bytes(got[1]) if not cwrong else b''
+    # In convert_loop/4 set_string_element is reached before
+    # convert_element has bound its element: the built-in must wait.
+    bwaits = m.builtin_waits - waits0
+    ok &= not cwrong and last == b'PIMOS 3.6' and bwaits == sum(map(len, cases))
+    # an 8-bit string is not string(JIS,_,16): no clause applies
+    try:
+        m.run(conv, [m.make_string(8, [65]), m.new_var()])
+        ok = False
+        note += ' 8-bit string did not fail'
+    except pimm.Fail:
+        pass
+    # an unbound string: the goal suspends, and runs when it is bound
+    sv, out = m.new_var(), m.new_var()
+    try:
+        m.run(conv, [sv, out])
+        ok = False
+        note += ' unbound string did not suspend'
+    except pimm.Suspend:
+        m.unify(sv, m.make_string(16, [0x2341, 0x2342]))
+        m.run()
+        w = m.deref(out)
+        ok &= w[0] & ~1 == pimm.STRG and m.string(w) == (8, [65, 66])
+    if not ok and (cwrong or note):
+        print('pimm jtoa: convert/2: %d cases wrong, %d built-in waits %s'
+              % (len(cwrong), bwaits, note))
+        for c in cwrong[:3]:
+            print('  %r' % (c,))
     if ok:
-        print('pimm jtoa: PASS (convert_element/2 from the IPL image agrees with '
-              'its source on all 65536 keys, %d of them mapped; %d instructions)'
-              % (hits, m.steps))
+        print('pimm jtoa: PASS (from the IPL image: convert_element/2 agrees with its '
+              'source on all 65536 keys, %d mapped; convert/2 on %d strings, '
+              '%d built-in waits; %d instructions, %d reductions)'
+              % (hits, len(cases), bwaits, m.steps, m.reductions))
         return 0
     print('pimm jtoa: FAIL  %d keys wrong %s' % (len(wrong), note))
     for k, w, e in wrong[:8]:
