@@ -27,17 +27,27 @@ constants. `INSTALL` names the target as "PSI-II or PSI-UX", "Pseudo
 PIM/M system or Pseudo Multi-PSI system": the files are copied to a
 SIMPOS directory on a PSI and run by that machine's KL1 firmware.
 
-**What does not survive in the corpus: the thing that executes
-KL1-B.** On PIM/m and on the PSI the KL1-B instructions were
-microcode. So were the goal scheduler with priorities, suspension and
-resumption, garbage collection, the shoen (task/resource/exception)
-mechanism, the built-in predicates, external-module linkage, and the
-console and SCSI primitives. None of that firmware is in the archives
-we hold. A probe of the ICOT Free Software index on 2026-11-19 found no
-emulator or firmware entry, but the index pages returned 404 and only
-the PIMOS abstract loaded, so that result is "not found yet", not "does
-not exist". **This is the largest risk in the plan and step 1 of
-Phase 0.**
+**What executed KL1-B, and what survives of it.** On PIM/m and on the
+PSI the KL1-B instructions were microcode. So were the goal scheduler
+with priorities, suspension and resumption, garbage collection, the
+shoen (task/resource/exception) mechanism, the built-in predicates,
+external-module linkage, and the console and SCSI primitives. A search
+on 2026-11-19 (`pimos_boot_requirements.md` §0.1) found three
+survivors, now in `nonlocal/`:
+
+- `psdpim.tar.Z`: the Pseudo PIM/m firmware itself, **binary only**,
+  for a PSI-III under SIMPOS. No PSI emulator exists that we could
+  find.
+- `pdss.tar.Z`: **PDSS, a complete KL1-B interpreter in C** with the
+  whole runtime, written by the same group to develop PIMOS. A sibling
+  dialect: different save format and opcode numbering.
+- `vpim.tar.Z`: the runtime of the other PIM models in PSL source,
+  including the multi-PE parts.
+
+So the runtime's behaviour can be read from source rather than
+reconstructed from prose, but nothing runs our object set as it
+stands. Mapping the PIM/m dialect onto PDSS's is now the main
+uncertainty.
 
 **Static census of the object set** (all 20 `.sav` files; details and
 the per-opcode table in `pimos_boot_requirements.md`, reproduced by
@@ -119,7 +129,8 @@ default until overruled.
    diff, makes each attempt seconds instead of minutes and gives the
    Bluespec an oracle. *Default: yes, in `pim/ref/`, labelled as
    scaffold; the Bluespec model stays the deliverable and every rung
-   in §2 is claimed only on the Bluespec model.* Bluesim steps/second
+   in §2 is claimed only on the Bluespec model. PDSS is the natural
+   starting point for it.* Bluesim steps/second
    is unmeasured; Phase 0 measures it and this decision is revisited
    with the number.
 4. **How authentic the I/O is.** The real machine fetched files through
@@ -137,7 +148,9 @@ ends in a gate; do not start the next before the gate is observed.
 
 ### Phase 0 - Ground truth (no model changes)
 
-1. **Firmware search.** Find anything that executes KL1-B: the PSI-UX
+1. **Firmware search.** *Done 2026-11-19: PDSS, VPIM and the psdpim
+   binary found; Phase 2 takes the port branch, from PDSS. See
+   `pimos_boot_requirements.md` §0.1.* Find anything that executes KL1-B: the PSI-UX
    pseudo-parallel system the PIMOS README says "is distributed as a
    part of the ICOT Free Software", PDSS, VPIM (the C runtime used for
    PIM/p, /c, /i), PSI microcode listings. Look in the IFS index via
@@ -203,7 +216,9 @@ runs from its `.sav` and returns the right answer.
 
 ### Phase 2 - The runtime
 
-By branch of Phase 0 step 1. In dependency order:
+The port branch: semantics from PDSS's C (VPIM for what PDSS lacks),
+mapped by name onto the PIM/m table, with the PIMOS binaries deciding
+wherever the dialects differ. In dependency order:
 
 1. suspension and resumption (`wait`, `suspend`, hooking goals on
    variables, waking on bind) - *gate R3*;
@@ -254,7 +269,8 @@ with KLIC 2.002. *Gate:* R8. Then one period application (R9).
 
 | Unknown | Resolved in |
 |---|---|
-| Does any KL1-B firmware or emulator survive? | Phase 0.1 |
+| Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
+| How far the PIM/m dialect differs from PDSS's, instruction by instruction | Phase 0.5 (name map) |
 | `.kbn` base address, layout, entry | Phase 0.3 |
 | The 33 opcode values absent from the 1992 table | resolved: 13 real quick forms; the rest were predicate-head and float words |
 | Label address units | Phase 0.4 |
@@ -266,7 +282,8 @@ with KLIC 2.002. *Gate:* R8. Then one period application (R9).
 
 ## 6. Acquisition list
 
-- KL1-B firmware or emulators (Phase 0.1).
+- KL1-B firmware or emulators: acquired 2026-11-19 (`pdss`, `vpim`,
+  `psdpim`). Still wanted: any PSI-III emulator or microcode listing.
 - TR-373 "KL1 no jitsugen houshiki to heiretsu OS no kijutsu" and
   TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
   `nonlocal/MANIFEST.md` §3).
