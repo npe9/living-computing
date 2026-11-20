@@ -31,7 +31,10 @@
 ! Figure 11 calls it "CPU Signal (CPUS)" and this project took CPUS
 ! from there.  SSIP writes BCPUZ.  Both are now in INDICATOR_BITS, as
 ! an alias, because the manual's name is what every comment here uses
-! and the deck's name is what the listing needs.
+! and the deck's name is what the listing needs.  STRAP documents the
+! alias too: C22-6531 printed p.65 lists CPU, at 11.5, among the
+! mnemonics "which may be used in BIND".  It is a BRANCH spelling only:
+! "$CPU" is word 6, Other CPU (C22-6531 p.15; tests/test_cpu_symbol.py).
 !
 ! B,$.32 is written "B,$+.32" below: this assembler wants the explicit
 ! sign, and the assembled half-word is identical -- both branch to the

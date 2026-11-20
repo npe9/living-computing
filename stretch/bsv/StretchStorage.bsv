@@ -1008,10 +1008,41 @@ module mkStretchStorage(StretchStorage);
       // (printed p.31) is checked on the execute side, protViolates in
       // StretchExecute.bsv, not here.
       addrInterruptAddr: interruptionAddress <= {v[63:46], 46'b0};
-      addrUpperBoundary: boundaryReg <= v;           // permanently protected on real HW; not enforced
+      // WORD 3 HOLDS THE BOUNDARIES IN BITS 0-17, 32-49 AND 57 AND
+      // NOTHING ELSE.  Reference Manual printed p.35 (PDF p.38),
+      // "Address Boundaries": "The upper boundary register occupies bit
+      // positions 0-17 of location 3.  The lower boundary register
+      // occupies bit positions 32-49 of location 3.  The boundary
+      // control bit ... is located in bit 57 of location 3."  Pocket
+      // card X22-6533-1 (pcard-1.png), SPECIAL STORAGE ASSIGNMENT: "3,P
+      // Upper Boundary 18 0-17", "3,P Lower Boundary 18 32-49", "3,P
+      // Boundary Control Bit 1 57".  printed p.34 (PDF p.37): the bits
+      // of locations 0-15 not so assigned "are always zero.  Information
+      // stored in these positions is not recoverable."  So bits 18-31,
+      // 50-56 and 58-63 of a store are dropped
+      // (decks/boundary_width.strap).  Until 2026-11-19 this arm kept
+      // all 64 bits; protViolatesEn (StretchExecute.bsv) only ever read
+      // [63:46], [31:14] and [6], so only a read-back could see it.  The
+      // permanent protection (printed p.31) is checked on the execute
+      // side, not here.
+      addrUpperBoundary: boundaryReg <= {v[63:46], 14'b0, v[31:14], 7'b0, v[6], 6'b0};
       addrMaintenanceBits: maintenanceBits <= v;
       addrChannelAddress: noAction; // read-only ("b" footnote)
-      addrOtherCpuBits: otherCpuBits <= v;
+      // WORD 6 HOLDS THE OTHER-CPU REGISTER IN BITS 0-18 AND NOTHING
+      // ELSE.  Reference Manual printed p.35 (PDF p.38), "Other CPU
+      // Bits": "the other CPU register, bits 0-18 of location 6"; pocket
+      // card X22-6533-1, "6 Other CPU Bits 19 0-18"; and p.34's rule
+      // that unassigned bits of locations 0-15 are always zero.  So bits
+      // 19-63 of a store are dropped (decks/other_cpu_width.strap).
+      // Until 2026-11-19 this arm kept all 64 bits.  A MODELLING CHOICE,
+      // recorded in docs/NEXT.md: printed p.36 (PDF p.39) says the
+      // register "is provided only in computers which are to be used in
+      // multi-computer systems.  When not present, these bit positions
+      // behave like the bit positions of address 0" -- i.e. read zero.
+      // This model keeps the register PRESENT (bits 0-18 settable) and
+      // signals no other computer; decks/exic_addr.strap uses bit 0 of
+      // word 6 as a flag and depends on that.
+      addrOtherCpuBits: otherCpuBits <= {v[63:45], 45'b0};
       // Word 7: the counters only, through commitCounts (see there).
       addrLeftZerosCount: w7StW.wset(v);
       addrAccLeft: accLeft <= v;

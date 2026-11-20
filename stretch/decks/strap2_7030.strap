@@ -738,7 +738,11 @@ CHVAL   SYN, $
 ! words, sorted: the name in A8, eight characters blank-filled, then the
 ! value (.0, 24 bits) and dds (.24, 13 bits).  CHOSEN: generated from the
 ! host's optable.system_symbol (2026-11-13); the guide does not print the
-! table (docs/strap2/pass1.md gap 1).
+! table (docs/strap2/pass1.md gap 1).  CPU's entry regenerated 2026-11-19
+! when $CPU became word 6: the address 6.0 is C28-6129 printed p.10's;
+! the dds (BU,64,8) is the host's CHOSEN register placeholder
+! (optable.system_symbol).  It had been indicator 11.5 (BU,1,8).  $CPUS
+! stays 11.5.
 SYSCB   XW, GFKEY, 128, 193
         DRZ(BU,64), 8
 SYSTAB  SYN, $
@@ -1039,7 +1043,7 @@ SYSTAB  SYN, $
         DD(BU,64), (16)3326242410101010   ! COMM
         DD(BU,64), (16)0008E0A040000000
         DD(BU,64), (16)3327141010101010   ! CPU
-        DD(BU,64), (16)0002C5A0C0000000
+        DD(BU,64), (16)000180A040000000
         DD(BU,64), (16)3327141210101010   ! CPUS
         DD(BU,64), (16)0002C5A0C0000000
         DD(BU,64), (16)3331101010101010   ! CA

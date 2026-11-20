@@ -380,9 +380,9 @@ TRANSMIT_CODES = {
 # right half of the accumulator, word 9, so "KV,$X15,$R" (I-Box 4
 # section 138) compares against word 9's bits 0-24. Index registers
 # ($X0..$X15 / $0..$15) and the indicator names (INDICATOR_BITS, word
-# 11) are handled separately in strap_asm.eval_system_symbol. $MASK's
-# bit column is not legible enough on the scan to record; add it from
-# the page if a program ever needs it. $E/$M/$N/$PI are mathematical
+# 11) are handled separately in strap_asm.eval_system_symbol ($CPU is
+# in both tables and means word 6 here: see INDICATOR_SYMBOLS below).
+# $MASK is given its own provenance at its entry. $E/$M/$N/$PI are mathematical
 # constants (footnote 12), not addresses, and are not supported.
 SYSTEM_SYMBOLS = {
     "AOC": (7, 44),   # All Ones Count, 44-50
@@ -519,11 +519,15 @@ INDICATOR_BITS = {
     "LS": 26, "PSH": 27, "XPFP": 28, "XPO": 29, "XPH": 30, "XPL": 31,
     "XPU": 32, "ZM": 33, "RU": 34, "TF": 35, "UF": 36, "VF": 37,
     "XF": 38, "BTR": 39, "DTR": 40,
-    # "CPU" is the DECKS' spelling of indicator 5, which the Reference
-    # Manual's Figure 11 calls CPUS ("CPU Signal").  ja_ua1_ssip's SIP17
-    # reset chain writes BCPUZ, so the assembler has to know both; the
-    # bit is the same.  Kept as an alias rather than a rename because
-    # the manual's name is the one every comment here already uses.
+    # "CPU" is indicator 5 ONLY AS A BRANCH-ON-INDICATOR MNEMONIC.
+    # C22-6531 printed p.65 (PDF 66), the list of "indicator mnemonics
+    # which may be used in BIND", prints "CPU  Other CPU  11.5" (sic:
+    # the name column is Other CPU, the bit is the CPU Signal's), and
+    # ja_ua1_ssip's SIP17 reset chain writes BCPUZ, which IBM's listing
+    # assembles as 1575.02 C6 (tests/verify_ssip_sip17_listing.py).
+    # C28-6129 printed p.52 (PDF 55) renames that BIND entry CPUS.
+    # Every "$" spelling of the indicator is $CPUS, though: "$CPU" is
+    # word 6, the Other CPU register -- see INDICATOR_SYMBOLS below.
     "CPU": 5,
     # 41-47, the PROGRAM indicators.  Not in the Reference Manual's
     # Figure 11 text this project transcribed, but named by the decks
@@ -540,6 +544,31 @@ INDICATOR_BITS = {
     "XH": 54, "MOP": 55, "RLZ": 56, "RZ": 57, "RGZ": 58, "RN": 59,
     "AL": 60, "AE": 61, "AH": 62, "NM": 63,
 }
+# ---------------------------------------------------------------------
+# THE INDICATOR NAMES THAT ARE ALSO "$" SYSTEM SYMBOLS FOR AN INDICATOR
+# BIT: INDICATOR_BITS less every name SYSTEM_SYMBOLS gives a register.
+#
+# Exactly one name is in both tables, CPU, and the "$" form of it is the
+# register, not the indicator.  Every source that prints a "$CPU" gives
+# word 6: C22-6531 printed p.15 (PDF 16) "6.0  $CPU  Other CPU" and
+# printed p.56 (PDF 57) "$ CPU 2 Other CPU 6 0-18"; C28-6129 printed
+# p.10 (PDF 14) "Other CPU  $CPU  6.0" and printed p.43 (PDF 46) the
+# same Appendix A row.  The indicator's "$" name is CPUS, both
+# appendices' "$ CPUS 1 CPU Signal 11 5".  The bare "CPU" of a
+# branch mnemonic (BCPU, BCPUZ ...) stays indicator 5:
+# classify_branch_indicator reads INDICATOR_BITS, not this table.
+#
+# Used wherever a "$name" is resolved: strap_asm.eval_system_symbol,
+# strap_asm.system_symbol_dds, INDMK's mask fields, and the STRAP II
+# reconstruction's strap2/optable.system_symbol.
+# ---------------------------------------------------------------------
+assert set(INDICATOR_BITS) & set(SYSTEM_SYMBOLS) == {"CPU"}, (
+    "a new name is both an indicator and a register system symbol: "
+    "settle which one its $ form means from the sources, then update "
+    "this assertion", set(INDICATOR_BITS) & set(SYSTEM_SYMBOLS))
+INDICATOR_SYMBOLS = {k: v for k, v in INDICATOR_BITS.items()
+                     if k not in SYSTEM_SYMBOLS}
+
 # Sort longest-name-first so a greedy match doesn't stop early (e.g. so
 # "AL" in "BZAL" isn't mis-tried before a hypothetical longer name that
 # shares its prefix).

@@ -834,6 +834,26 @@ had in mind:
     and reads the next half-word from the next word), so only the
     assembler needed the fix. `test_slc.py`'s case 3, which had asserted
     the old rounding-up-to-a-word behavior, was corrected.
+20. **`$CPU` is word 6, the Other CPU register -- not indicator 11.5.**
+    CPU is the one name in both `INDICATOR_BITS` and `SYSTEM_SYMBOLS`,
+    and every `$name` path looked the indicators up first, so `$CPU`
+    assembled to 11.5 (found writing `other_cpu_width.strap`). The page
+    images give one answer: C22-6531 printed p.15 (PDF 16) "6.0 $CPU
+    Other CPU", printed p.56 (PDF 57) "$ CPU 2 Other CPU 6 0-18" beside
+    "$ CPUS 1 CPU Signal 11 5"; C28-6129 printed p.10 (PDF 14) "Other
+    CPU $CPU 6.0" and printed p.43 (PDF 46) the same two rows. The bare
+    `CPU` is still indicator 5 for branches only -- C22-6531 printed
+    p.65 (PDF 66) lists it among the mnemonics "which may be used in
+    BIND", and SSIP's `BCPUZ` assembles to IBM's 1575.02 C6 (C28-6129
+    printed p.52 renames that entry CPUS). `opcodes.INDICATOR_SYMBOLS`
+    (indicator names less the register names, with an import-time
+    assert that CPU is the only overlap) now feeds all four `$name`
+    sites: `eval_system_symbol`, `system_symbol_dds` (`$CPU` gets no
+    indicator dds), INDMK (`INDMK,$CPU` fails loud; write `$CPUS`), and
+    the STRAP II host's `strap2/optable.system_symbol`, whose generated
+    SYSTAB entry in `decks/strap2_7030.strap` was regenerated.
+    `tests/test_cpu_symbol.py`; each site reverted alone fails only its
+    own checks. No listing in the tree assembles `$CPU`.
 
 ## Halting
 

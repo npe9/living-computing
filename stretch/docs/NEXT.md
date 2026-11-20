@@ -328,11 +328,52 @@ the settable mask bits 20-47 (pp.14-21,
 IA's width followed (2026-11-19, `decks/ia_width_18bit.strap`): word 2
 now keeps bits 0-17 of a store, by printed p.34's rule that unassigned
 bits of locations 0-15 "are always zero" and p.35's "Bits 0-17 of
-location 2". **Open, same rule, not yet applied:** word 3 (UB 0-17, LB
-32-49, control bit 57; `boundaryReg <= v` keeps all 64 bits) and word 6
-(other-CPU bits 0-18; `otherCpuBits <= v`). Each wants its own
-store-ones-read-back deck and a check that no deck relies on the extra
-bits.
+location 2". Words 3 and 6 followed the same day under the same rule:
+word 3 keeps bits 0-17 (UB), 32-49 (LB) and 57 (boundary control) of a
+store (printed p.35, "Address Boundaries"; pocket card "3,P Upper
+Boundary 18 0-17 / Lower Boundary 18 32-49 / Boundary Control Bit 1
+57"), `decks/boundary_width.strap`; word 6 keeps bits 0-18 (printed
+p.35, "Other CPU Bits"; pocket card "6 Other CPU Bits 19 0-18"),
+`decks/other_cpu_width.strap`. No existing deck relied on the extra
+bits (the full suite passes unchanged). **Found while there, open:**
+  - **Word 6, a modelling choice.** printed p.36 (PDF p.39): the other
+    CPU register "is provided only in computers which are to be used in
+    multi-computer systems. When not present, these bit positions behave
+    like the bit positions of address 0." The model keeps the register
+    present (0-18 settable, nothing signalled); `decks/exic_addr.strap`
+    uses word 6 bit 0 as a flag and depends on that. A single-machine
+    7030 would read word 6 as zero.
+  - **Word 4, the maintenance bits, keeps every store; it should not.**
+    printed p.35 (PDF p.38): outside maintenance mode "they act like the
+    bits of location 0. After an initial program load, this location
+    contains the first word read from the input unit ... Any store to
+    location 4 causes it to contain a 0 with correct check bits."
+    `maintenanceBits <= v` keeps all 64 bits. Not trivial: the IPL
+    control word reaches word 4 through the same `writeWord` the
+    program's stores use (RefMan printed p.126; StretchCore.bsv's IPL
+    chain refill from location 4), so a fix must tell the exchange's
+    IPL write from a program store. The pocket card's "4 Maintenance
+    Bits 64 0-63" is the width in maintenance mode, not a contradiction.
+  - **DONE 2026-11-19: `$CPU` is word 6, 6.0, not indicator 11.5.**
+    Settled from the page images, one answer: C22-6531 printed p.15
+    (PDF 16) "6.0 $CPU Other CPU" and p.56 (PDF 57) "$ CPU 2 Other CPU
+    6 0-18"; C28-6129 printed p.10 (PDF 14) "Other CPU $CPU 6.0" and
+    p.43 (PDF 46). The indicator's `$` name is `$CPUS` ("$ CPUS 1 CPU
+    Signal 11 5" in both appendices). The bare `CPU` stays indicator 5
+    as a branch mnemonic only: C22-6531 printed p.65 (PDF 66) lists
+    "CPU ... 11.5" among the mnemonics "which may be used in BIND",
+    and SSIP's BCPUZ assembles to 1575.02 C6. CPU is the ONLY name in
+    both `INDICATOR_BITS` and `SYSTEM_SYMBOLS` (an import-time assert in
+    opcodes.py now guards that). Fixed at four `$name` sites through
+    `opcodes.INDICATOR_SYMBOLS`: `eval_system_symbol`,
+    `system_symbol_dds`, INDMK (now fails loud on `$CPU`), and
+    `strap2/optable.system_symbol`, with the 7030 STRAP II deck's SYSTAB
+    CPU entry regenerated. `tests/test_cpu_symbol.py`, each site
+    discriminated alone. No listing in the tree assembles `$CPU`.
+  - Words 0, 1, 2, 5, 7, 10, 11 and 12 already follow their assigned
+    widths (word 1's bits 19-27 are the p.34 programming-note
+    exception, cleared by the next timer step); 8, 9 and 13-15 are
+    full 64-bit words.
 Next on this line: 1260 TEST 3 (`16033`, p.24 on, "CHECK THE ABILITY
 TO INTERRUPT"; it fills `I60IT` from `I60XW1`/`I60K5`, runs enabled, and
 calls `I60S1` through `I60SX1` -- see `decks/ax5b_160s1_clr_inds.strap`),

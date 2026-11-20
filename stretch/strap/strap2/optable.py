@@ -19,7 +19,7 @@ from types import SimpleNamespace
 
 import strap_asm as _a
 from opcodes import (SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, MCP_PSEUDO_OPS_1964,
-                     INDICATOR_BITS, FP_CODES, VFL_INT_CODES, MODE_BITS,
+                     INDICATOR_SYMBOLS, FP_CODES, VFL_INT_CODES, MODE_BITS,
                      UNCOND_BRANCH_CODES, MISC_CODES, DIR_INDEX_CODES,
                      IMM_INDEX_CODES, IMM_INDEX_COUNT_OPS, CB_CODES,
                      TRANSMIT_CODES, BB_CODES, IO_OP)
@@ -266,8 +266,8 @@ def system_symbol(name):
         n = int(name)
     if n is not None and 0 <= n <= 15:
         return (16 + n) * 64, bu
-    if name in INDICATOR_BITS:
-        return 11 * 64 + INDICATOR_BITS[name], dds13("BU", 1, 8)
+    if name in INDICATOR_SYMBOLS:      # not $CPU: word 6, C28-6129 p.10
+        return 11 * 64 + INDICATOR_SYMBOLS[name], dds13("BU", 1, 8)
     for table in (SYSTEM_SYMBOLS, MCP_PSEUDO_OPS, MCP_PSEUDO_OPS_1964):
         if name in table:
             w, b = table[name]

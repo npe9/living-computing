@@ -899,7 +899,12 @@ dropping IA bit 9 on a store fails it at "BIT 9". Since 2026-11-19 word 2 keeps
 bits 0-17 of a store and drops 18-63 (printed p.35: "Bits 0-17 of location 2
 form the interruption address register"; p.34: unassigned bits of locations
 0-15 "are always zero"); `decks/ia_width_18bit.strap` stores ones into word 2
-by ST, SV and SX and reads them back, and fails on the old 64-bit arm.
+by ST, SV and SX and reads them back, and fails on the old 64-bit arm. Words 3
+and 6 got the same rule the same day: word 3 keeps bits 0-17, 32-49 and 57
+(printed p.35, "Address Boundaries"; `decks/boundary_width.strap`) and word 6
+bits 0-18 (printed p.35, "Other CPU Bits"; `decks/other_cpu_width.strap`), each
+proven to fail on its old 64-bit arm. Word 4 (maintenance bits, p.35: "Any
+store to location 4 causes it to contain a 0") is still open, docs/NEXT.md.
 
 **A negative effective address is used by its magnitude (fixed 2026-11-18).**
 `effAddr24`/`effAddr19`/`effAddr18` wrapped `raw - value` modulo 2**24, so an
