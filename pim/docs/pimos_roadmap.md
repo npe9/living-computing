@@ -169,10 +169,14 @@ ends in a gate; do not start the next before the gate is observed.
    `0x3a`-`0x3e`) or table/constant words misread as code (suspect for
    `0x02`-`0x07`, which sit where `switch_on_constant` and
    `hash_on_constant` tables would be).
-3. **The `.kbn`.** Base address, cell layout, entry point, and the real
+3. **The `.kbn`.** *Done 2026-11-20 (`asm/kbn.py`,
+   `pimos_boot_requirements.md` §0.3): load address `0xE0000000`, 20
+   modules, every cell placed, the machine's data tags from
+   `kbnheap.kl1`.* Base address, cell layout, entry point, and the real
    tag values, from `src/library/kbn/`, `pimm_ipl.sym`/`.ldb` and the
    bytes.
-4. **Address units.** The assembler computes labels as
+4. **Address units.** *Done 2026-11-20: one address is one cell;
+   labels are `target - (here + 2)` in cells.* The assembler computes labels as
    `target - (here + 2)`; settle what unit that is in a loaded image
    (the open `savaddr.py` question).
 5. **Runtime inventory.** From the census and the source: every
@@ -189,7 +193,8 @@ ends in a gate; do not start the next before the gate is observed.
 6. **What I/O boot needs.** Read `bios/boot/*.kl1`, `src/vm/*.kl1` and
    `pimos.conf` to list every device operation between power-on and the
    shell prompt.
-7. **Measure Bluesim.** Steps per second of the current model on an
+7. **Measure Bluesim.** *Done 2026-11-20: about 14 million steps per
+   second for the bench model; speed does not shape the plan.* Steps per second of the current model on an
    existing bench.
 
 *Gate (R1):* all images decode with zero unexplained words;
