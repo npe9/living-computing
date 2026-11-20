@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Fourteen tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Fifteen tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -104,7 +104,9 @@ information and whole GC areas of seven real modules; `put_atom`,
 `write_nil`) and `modc` (`decode_index_table/9` and
 `decode_code_area/8` on real modules, shoen's 1259 code items among
 them; `b_multiply` on the multiplier in `PimmMBox.bsv`,
-`write_marked_variable`, `write_integer`). State: 71 instructions; goals as
+`write_marked_variable`, `write_integer`) and `lmod` (`load_module/7`
+on four whole real modules; the general `put_vector`). State: 72
+instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

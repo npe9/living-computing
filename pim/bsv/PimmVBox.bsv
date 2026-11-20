@@ -14,6 +14,9 @@
 //   newVec(n)            a = a new vector of n cells holding integer 0
 //                        ("All elements of the vector are initialized
 //                        with integer 0", PIMOS manual, new_vector)
+//   build(n)             a = a new vector of n >= 7 cells, not
+//                        written; b = a reference to the first (for
+//                        put_vector, whose write_* fill it)
 //   setElement(v, i, e)  a = a copy of v with element i replaced by e,
 //                        b = the old element i.  The machine updates
 //                        in place when v is singly referenced; without
@@ -38,11 +41,12 @@ interface PimmVBox;
   method Action info(Cell v);
   method Action element(Cell v, Bit#(32) i);
   method Action newVec(Bit#(32) n);
+  method Action build(Bit#(32) n);
   method Action setElement(Cell v, Bit#(32) i, Cell e);
   method ActionValue#(VResult) result;
 endinterface
 
-typedef enum { VKInfo, VKElem, VKNew, VKSet } VKind deriving (Bits, Eq);
+typedef enum { VKInfo, VKElem, VKNew, VKSet, VKBuild } VKind deriving (Bits, Eq);
 typedef struct { VKind k; Cell v; Bit#(32) i; Cell e; } VReq deriving (Bits);
 typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr }
   VState deriving (Bits, Eq);
@@ -84,7 +88,7 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     rq <= q;
     k <= 0;
     h <= 0;
-    if (q.k == VKNew) begin
+    if (q.k == VKNew || q.k == VKBuild) begin
       n <= q.i;
       st <= VGo;
     end
@@ -115,7 +119,7 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   rule go (st == VGo);
     if (rq.k == VKInfo) answer(intC(n), mkCell(tag_REFo, absAddr(src)), True);
     else if (rq.k == VKNew && n == 0) answer(mkCell(tag_VECT0o, 0), ?, True);
-    else if (rq.k != VKNew && rq.i >= n) answer(?, ?, False);
+    else if ((rq.k == VKElem || rq.k == VKSet) && rq.i >= n) answer(?, ?, False);
     else if (rq.k == VKElem) begin
       mem.read(src + off(rq.i));
       st <= VElem;
@@ -141,7 +145,11 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   rule header (st == VHdr);
     mem.write(obj + zeroExtend(h), h == 0 ? mkCell(tag_VDESC, absAddr(dst)) : intC(n));
     h <= h + 1;
-    if (h == 2) st <= (rq.k == VKNew) ? VFill : VCopyRd;
+    if (h == 2) begin
+      if (rq.k == VKBuild)
+        answer(mkCell(newTag, absAddr(obj)), mkCell(tag_REFo, absAddr(dst)), True);
+      else st <= (rq.k == VKNew) ? VFill : VCopyRd;
+    end
   endrule
 
   rule fill (st == VFill);
@@ -171,6 +179,7 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   method Action element(Cell v, Bit#(32) i) =
     reqQ.enq(VReq { k: VKElem, v: v, i: i, e: ? });
   method Action newVec(Bit#(32) nn) = reqQ.enq(VReq { k: VKNew, v: ?, i: nn, e: ? });
+  method Action build(Bit#(32) nn) = reqQ.enq(VReq { k: VKBuild, v: ?, i: nn, e: ? });
   method Action setElement(Cell v, Bit#(32) i, Cell e) =
     reqQ.enq(VReq { k: VKSet, v: v, i: i, e: e });
   method ActionValue#(VResult) result;

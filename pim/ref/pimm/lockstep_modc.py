@@ -113,6 +113,7 @@ def modules():
         assert words[end - 1] == 0xffff
         out.append(dict(name=mod[1][0][1], index=words[index:code], atoms_index=atoms_index,
                         code=words[code:end], atoms_code=atoms_code, atoms=dict(r.atoms),
+                        whole=words[start:end], atoms_before=before, name_id=mod[1][0][0],
                         hs=mod[3], preds=mod[4], items=mod[5], detail=detail))
     return out
 

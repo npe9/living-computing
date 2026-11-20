@@ -699,6 +699,15 @@ class Machine:
         self.sp = a
         self.reg[x] = (VECT0 + 2 * n + 1, a)
 
+    def i_put_vector(self, pc, x, y, z, c16):
+        # the general form: the size is the low 16 bits (load_module
+        # builds module/9, ten cells, with put_vector r, 10).  The
+        # image uses it for 7, 8 and 10 only; below 7 it is refused
+        n = self.cells[pc][1] & 0xffff
+        if n < 7:
+            raise Unimplemented('put_vector of %d' % n)
+        self.reg[x], self.sp = self.vnew(n)
+
     def i_put_vector_1(self, pc, x, y, z, c16):
         self.put_vector(1, x)
 

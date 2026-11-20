@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -280,6 +280,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       smem.write(sp, atomHere);
       sp <= sp + 1;
       next;
+    end
+    else if (op == op_put_vector) begin
+      // the general form: the size is the low 16 bits.  The image
+      // uses it for 7, 8 and 10 elements only; below 7 it is refused
+      if (c16 < 7) stop(EndUnimp);
+      else begin
+        vbox.build(zeroExtend(c16));
+        st <= XVPut;
+      end
     end
     else if (op == op_write_integer) begin
       // the integer is the low 24 bits; whether bit 23 is a sign is not
@@ -769,6 +778,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(z, r.a);
       next;
     end
+  endrule
+
+  rule vPut (st == XVPut);
+    let r <- vbox.result;
+    regs.wr(x, r.a);
+    sp <= truncate(r.b.val);
+    next;
   endrule
 
   rule vInfo (st == XVInfo);
