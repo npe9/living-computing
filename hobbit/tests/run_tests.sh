@@ -24,6 +24,9 @@ python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
 python3 "$here/test_sem_extended.py"
 python3 "$here/test_p9shim.py"
+# A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
+# (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
+python3 "$here/test_p9run.py"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
@@ -99,5 +102,17 @@ for n in 013 014 015 016; do
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
         --spec-lines "$here/golden/$n.trace"
 done
+
+# 017 pins little-endian data (PSW.UL, PRM pp. 1-3/1-4): the same three-way
+# check with the PSW of its own pre-state, 0x8600 (017.md).  1st Edition
+# Plan 9 runs every process this way.
+"$hobbit/bsv/run_golden.sh" 017 > "$tmp/017.model.raw"
+grep '^HRI ' "$tmp/017.model.raw" > "$tmp/017.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/017.model" \
+    --spec-lines "$here/golden/017.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/017.hex" \
+    --sp 0x100 --msp 0x180 --psw 0x8600 2>/dev/null | grep '^HRI ' > "$tmp/017.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/017.sem" \
+    --spec-lines "$here/golden/017.trace"
 
 echo "hobbit: all tests passed"

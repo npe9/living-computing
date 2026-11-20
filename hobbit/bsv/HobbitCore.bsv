@@ -89,6 +89,8 @@ interface HobbitCore;
   // ---- MMU / event testbench surface --------------------------------
   method Word psw();
   method Action setPsw(Word psw);
+  // CONFIG bit 16 (kernel little-endian data, p. 1-10).
+  method Action setConfigKl(Bool kl);
   method Word vb();
   method Action setVb(Word vb);
   method Bit#(3) il();
@@ -387,7 +389,7 @@ endinterface
 module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      MemCycles mcyc,
                      EuBypass byS2, EuBypass byS3, Reg#(Word) psw,
-                     Bool squash, Word pcLimit,
+                     Reg#(Bool) kl, Bool squash, Word pcLimit,
                      Reg#(Bool) eventActive)(HobbitEuS1);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md: one module per EU stage with a
@@ -541,7 +543,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
                  ((sz == 2) && ((a & 1) != 0));
       let r = readWord(a & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode)),
+      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode),
+                                      dataLittle(psw, kl)),
                       ea: a, word: r.w, ok: r.ok, bad: bad,
                       wa: a & 32'hFFFFFFFC };
     end
@@ -562,7 +565,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
                  ((sz == 2) && ((a & 1) != 0));
       let r = readWord2(a & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode)),
+      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode),
+                                      dataLittle(psw, kl)),
                       ea: a, word: r.w, ok: r.ok, bad: bad,
                       wa: a & 32'hFFFFFFFC };
     end
@@ -854,7 +858,7 @@ interface HobbitEuS2;
   method Action flush();
 endinterface
 
-module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
+module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
                      HobbitStackCache sc, EuBypass byS3,
                      HobbitEvents events)(HobbitEuS2);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
@@ -963,9 +967,11 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
   function WrInfo memWr(EuS1Out i, Word old, Word res);
     Word sz = dstBytes(i.e.d.dst);
     Word a  = i.dstEa;
+    Bool le = dataLittle(psw, kl);
     return WrInfo { we: True, addr: a & 32'hFFFFFFFC,
-                    data: laneData(res, a, sz), mask: storeMask(a, sz),
-                    wdata: mergeStore(old, res, a, sz) };
+                    data: laneData(res, a, sz, le),
+                    mask: storeMask(a, sz, le),
+                    wdata: mergeStore(old, res, a, sz, le) };
   endfunction
 
   function BoxOp boxOpOf(HobbitOp op);
@@ -1038,12 +1044,12 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
         let w = readPointed(i, ea, i.spBefore, i.mspBefore);
         if (srcInd) begin
           src = extendLoad(w, i.srcEa, modeSize(d.src.mode),
-                           modeSigned(d.src.mode));
+                           modeSigned(d.src.mode), dataLittle(psw, kl));
           bad = bad || widthBad(i.srcEa, modeSize(d.src.mode));
         end else begin
           dstW = w;
           dst = extendLoad(w, i.dstEa, dstBytes(d.dst),
-                           modeSigned(d.dst.mode));
+                           modeSigned(d.dst.mode), dataLittle(psw, kl));
           bad = bad || widthBad(i.dstEa, dstBytes(d.dst));
         end
       end
@@ -1628,6 +1634,10 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
                          MmuTables tbl, Bool eventsOn)(HobbitCore);
 
   Reg#(Word) pswR <- mkReg(0);
+  // CONFIG bit 16, kernel little-endian (Table 1-2, p. 1-10): the data
+  // byte order at kernel level, as PSW bit 15 is at user level (p. 1-3).
+  // CONFIG's other bits are not modelled; reset value 0 (p. 1-36).
+  Reg#(Bool) configKlR <- mkReg(False);
   Reg#(Word) vbR <- mkReg(0);
   Reg#(Bit#(3)) ilR <- mkReg(7);
   Reg#(Bool) eventActiveR <- mkReg(False);
@@ -1659,7 +1669,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   // Instantiate the stages downstream-first so the bypass and flag
   // expressions can be passed as Flute passes stage2.out.bypass.
   HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn);
-  HobbitEuS2 s2 <- mkHobbitEuS2(pswR, vbR, sc, s3.bypass, events);
+  HobbitEuS2 s2 <- mkHobbitEuS2(pswR, configKlR, vbR, sc, s3.bypass, events);
 
   // EU_S3 resolves the youngest misprediction (a jump right after its
   // compare); otherwise EU_S2's.
@@ -1667,7 +1677,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   Word redirectPc = s3.squash ? s3.redirectPc : s2.redirectPc;
 
   HobbitEuS1 s1 <- mkHobbitEuS1(ic, sc, m, s2.bypass, s3.bypass, pswR,
-                                squash, pcLimit, eventActiveR);
+                                configKlR, squash, pcLimit, eventActiveR);
 
   // ---- PSW ownership ------------------------------------------------
   // One rule writes PSW.  A compare's F bit arrives on EU_S3's DWire in
@@ -1888,6 +1898,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   // ---- MMU / event testbench surface (added; no existing method
   // changed).  The machine never calls these.
   method Word psw() = pswR;
+  method Action setConfigKl(Bool kl);
+    configKlR <= kl;
+  endmethod
   method Action setPsw(Word p);
     setPswW <= tagged Valid p;
     traceFired <= False;

@@ -34,7 +34,7 @@ mkdir -p "$GEN"
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|013|014|015|016) ;;
+    001|002|003|004|005|006|013|014|015|016|017) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -45,6 +45,14 @@ run_one() {
     echo "run_golden: missing $img" >&2
     exit 1
   fi
+
+  # The pre-state is the README's for every golden except 017, which runs
+  # with PSW.UL set at user level (little-endian data, PRM p. 1-3):
+  # PSW 0x8600 = UL | X | S, as 017.md's "Pre-state" says.
+  case "$stem" in
+    017) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00008600);' ;;
+    *)   startcall='core.start(32'"'"'h00000100, 32'"'"'h00000180);' ;;
+  esac
 
   pkg=GoldenImage_$stem
   tb=GoldenTb_$stem
@@ -87,7 +95,7 @@ module mkGoldenTb_$stem(Empty);
     boot <= 1;
   endrule
   rule start ((boot == 1) && core.prefetchReady());
-    core.start(32'h00000100, 32'h00000180);
+    $startcall
     started <= True;
     boot <= 2;
   endrule

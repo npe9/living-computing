@@ -163,9 +163,9 @@ reference run established, each of which the core needs:
    process's PSW carries PSW_UL (`machine.h:24,77`; `raml.s` builds the
    first CRET's PSW as `PSW_VP|PSW_UL|PSW_S`).  PRM pp. 1-3/1-4: the bit
    selects the numbering of bytes within data words; text is always
-   big-endian.  Neither model had the mode.  The reference model has it
-   now; the core's lane functions (`HobbitTypes.bsv` `byteLane`,
-   `extendLoad`, `laneData`, `storeMask`) are still big-endian only.
+   big-endian.  Neither model had the mode.  Both have it now
+   (`docs/conformance_1to1.md` §1b; golden `017` pins the user-level
+   rule three ways; CONFIG.KL on the core is untested).
    `echo` jumps to 0x361d0000 without it (a function pointer read
    byte-reversed out of `doprint`'s format table).  **A1 did not see
    this and could not:** `cat` never looks at a byte, and the shim put
@@ -195,8 +195,8 @@ reference run established, each of which the core needs:
    that returns from `main` exits with the status `"\x02\x08\x02"`,
    the first bytes of `KCALL $8; RETURN R0`.
 
-What the core still needs for the gate, in order: little-endian lanes;
-on-demand prefetch fill (`echo` is the small gate: its `_main` and
+What the core still needs for the gate, in order: on-demand prefetch
+fill (`echo` is the small gate: its `_main` and
 `main` do not share a 1 Kbyte window); the exec frame and the full
 system-call set in the testbench, with the stack cache flushed at kernel
 entry (the printed `ENTER` has the form: a non-stack-offset source
@@ -333,8 +333,9 @@ Bluespec side: the kernel's call frame is still minimal (`argc = 1`, no
 `argv` strings, set by the shim's first two stub instructions), the
 instruction supply has no on-demand fill, so a program that leaves the
 3 Kbyte prefetch window stops, and -- found 2026-11-20 by running the
-binaries on the reference model -- the core has no little-endian data
-mode, which every 1e program but `cat` depends on (A2's status above).
+binaries on the reference model -- the core had no little-endian data
+mode, which every 1e program but `cat` depends on (A2's status above;
+added with golden `017`).
 
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 

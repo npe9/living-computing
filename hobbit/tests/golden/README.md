@@ -137,7 +137,12 @@ Totals: 001 = 8, 002 = 8, 003 = 7, 004 = 40, 005 = 11, 006 = 11 cycles.
 
 ## Pre-state assumed by every run
 
-Identical for all six programs. Reset leaves SP and MSP undefined and PSW
+Identical for all six programs -- and for every later golden except
+`017`, which runs with **PSW `0x00008600`** (user level, user
+little-endian data, CSP = SP) because the byte order it pins is selected
+by that PSW (pp. 1-3, 1-4); `017.md` states its own pre-state and the
+harnesses pass it (`sem/hobbit_sem.py --psw 0x8600`,
+`bsv/run_golden.sh 017`). Reset leaves SP and MSP undefined and PSW
 = 0 (p. 1-35, p. 1-36), and PSW bit 9 = 0 would make the *ISP* the CSP
 (Table 1-8 sheet 2, p. 1-15); the traces therefore need an explicit pre-state,
 and this is it:

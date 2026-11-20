@@ -103,6 +103,31 @@ not the faulting instruction's (the MMU/event path is not exercised by
 these tests); and the host side of a syscall shim writes user memory
 behind the cache's back (see `docs/plan9_syscalls.md`).
 
+## 1b. Byte order (2026-11-20)
+
+Printed p. 1-3: "The numbering of bytes, within data words, is
+selectable for the User and Kernel modes. The User mode is set via the
+program status word (PSW) UL-bit ... The Kernel mode is set via the
+configuration register (CONFIG) KL-bit."  Figures 1-2 and 1-3 (p. 1-4)
+give the two numberings; "Text is always in big-endian order."
+
+Both models were big-endian only until 1st Edition Plan 9 was run on the
+reference model: 1e sets both bits (`machine.h:24,77`), and every
+shipped program except `cat` goes wrong within a few hundred
+instructions without them (`docs/plan9_boot_plan.md`, A2).
+
+* `sem/hobbit_sem.py`: `_little_endian` / `_lane_shift`; the state has
+  `config_kl` for CONFIG bit 16.
+* `bsv/HobbitTypes.bsv`: `dataLittle(psw, kl)` and a `little` argument
+  on `byteLane`, `storeMask`, `extendLoad`, `laneData`, `mergeStore`;
+  the core has `configKlR` (CONFIG bit 16 only) and `setConfigKl`.
+* Golden `017` pins the user-level rule three ways (hand trace,
+  reference model, core) with four injected lane bugs recorded in
+  `017.md`.  The kernel-level rule (CONFIG.KL) is pinned on the
+  reference model only (`tests/test_p9run.py`); **on the core it is
+  untested**.
+* The fetch path takes no such flag in either model.
+
 ## 2a. Documented instruction interactions not yet modelled
 
 Printed p. 3-2 ("Certain combinations of instructions may produce

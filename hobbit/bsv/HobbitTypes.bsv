@@ -107,26 +107,42 @@ function Bool modeSigned(OpMode m) =
   (m == 4'h8) || (m == 4'hA) || (m == 4'hC) || (m == 4'hD) ||
   (m == 4'hE) || (m == 4'hF);
 
-// Big-endian byte lane for a byte address (Figure 1-2, p. 1-4): the byte at
-// the word address is bits 31:24, so lane 3 - addr[1:0].
-function Bit#(2) byteLane(Word addr) = truncate(~addr);
+// The numbering of bytes within data words is selectable (p. 1-3): "The
+// User mode is set via the program status word (PSW) UL-bit ... The
+// Kernel mode is set via the configuration register (CONFIG) KL-bit."
+// PSW bit 10 is the execution level (1 = user), bit 15 is UL; `kl` is
+// CONFIG bit 16 (Table 1-2, p. 1-10).  Text is always big-endian (p. 1-4
+// note): nothing in the fetch path takes this flag.
+function Bool dataLittle(Word psw, Bool kl) =
+  (psw[10] == 1'b1) ? (psw[15] == 1'b1) : kl;
 
-// Byte marks for a store of `size` bytes at `addr`: bit 3 is the byte at the
-// word address, bit 0 the byte at word+3 (the HRI mask convention).
-function Bit#(8) storeMask(Word addr, Word size);
+// Byte lane for a byte address.  Big-endian (Figure 1-2, p. 1-4): the
+// byte at the word address is bits 31:24, so lane 3 - addr[1:0].
+// Little-endian (Figure 1-3): it is bits 7:0, so lane addr[1:0].
+function Bit#(2) byteLane(Word addr, Bool little) =
+  little ? truncate(addr) : truncate(~addr);
+
+// True when a half-word at `addr` is the word's upper half (bits 31:16).
+function Bool halfHigh(Word addr, Bool little) =
+  little ? (addr[1] == 1'b1) : (addr[1] == 1'b0);
+
+// Byte marks for a store of `size` bytes at `addr`, by lane: bit 3 is
+// bits 31:24 and bit 0 is bits 7:0 (the HRI mask convention).
+function Bit#(8) storeMask(Word addr, Word size, Bool little);
   if (size == 4) return 8'h0F;
-  else if (size == 2) return ((addr[1:0] == 0) ? 8'h0C : 8'h03);
-  else return (8'd1 << byteLane(addr));
+  else if (size == 2) return (halfHigh(addr, little) ? 8'h0C : 8'h03);
+  else return (8'd1 << byteLane(addr, little));
 endfunction
 
 // Sign- or zero-extend a loaded byte/half-word (p. 1-3, p. 1-28).
-function Word extendLoad(Word word, Word addr, Word size, Bool sgn);
+function Word extendLoad(Word word, Word addr, Word size, Bool sgn,
+                         Bool little);
   if (size == 4) return word;
   else if (size == 2) begin
-    Word v = ((addr[1] == 1'b0) ? (word >> 16) : word) & 32'h0000FFFF;
+    Word v = (halfHigh(addr, little) ? (word >> 16) : word) & 32'h0000FFFF;
     return (sgn && (v[15] == 1'b1)) ? (v | 32'hFFFF0000) : v;
   end else begin
-    Bit#(2) lane = byteLane(addr);
+    Bit#(2) lane = byteLane(addr, little);
     Word v = (word >> ({30'd0, lane} << 3)) & 32'h000000FF;
     return (sgn && (v[7] == 1'b1)) ? (v | 32'hFFFFFF00) : v;
   end
@@ -134,18 +150,20 @@ endfunction
 
 // Place a stored value in its byte lanes, other lanes zero: the HRI record's
 // `data` field (sem/README.md's fixed mask convention, p. 1-4).
-function Word laneData(Word value, Word addr, Word size);
+function Word laneData(Word value, Word addr, Word size, Bool little);
   if (size == 4) return value;
-  else if (size == 2) return ((addr[1:0] == 0) ? ((value & 32'hFFFF) << 16)
-                                                : (value & 32'hFFFF));
-  else return ((value & 32'hFF) << ({30'd0, byteLane(addr)} << 3));
+  else if (size == 2) return (halfHigh(addr, little)
+                                ? ((value & 32'hFFFF) << 16)
+                                : (value & 32'hFFFF));
+  else return ((value & 32'hFF) << ({30'd0, byteLane(addr, little)} << 3));
 endfunction
 
 // Merge the addressed bytes of `value` into `old` (read-modify-write of the
 // surrounding word).  `storeMask` is the byte-mark set.
-function Word mergeStore(Word old, Word value, Word addr, Word size);
-  let laneBits = laneData(value, addr, size);
-  let m = storeMask(addr, size);
+function Word mergeStore(Word old, Word value, Word addr, Word size,
+                         Bool little);
+  let laneBits = laneData(value, addr, size, little);
+  let m = storeMask(addr, size, little);
   Word expanded = 0;
   for (Integer i = 0; i < 4; i = i + 1)
     if ((m[i] == 1'b1)) expanded = expanded | (32'hFF << (8 * i));
