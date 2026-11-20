@@ -52,8 +52,13 @@ independently"). Concretely:
   on inspection should be recorded as such, not attempted.
 - Commit finished, verified work without asking, one milestone per
   commit, with a message that says what was verified and how.
-- Push to `origin` (github.com/npe9/living-computing, private)
-  without asking.
+- Push to `origin` (github.com/npe9/living-computing) without asking.
+  The repository is PUBLIC (it was described here as private until
+  2026-11-20, when the owner confirmed in-session "Public is fine,
+  push"). So do not commit third-party documents whose source shows no
+  redistribution terms: `pim/docs/nonlocal/lit/.gitignore` and
+  `pim/docs/nonlocal/LIT_MANIFEST.md` are the pattern (files on disk,
+  manifest and checksums in git).
 - Edit any file in the repo, add files, and update the docs and the
   regression suite as part of the same change.
 - Do not ask "shall I proceed?" questions. State assumptions in the

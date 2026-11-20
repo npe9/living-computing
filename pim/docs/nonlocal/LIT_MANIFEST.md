@@ -1428,3 +1428,14 @@ No licence has been inferred. Each group below gives the statement the source it
 | G. Catalogue records | none obtained | — |
 | H. IFS mirrors | yes (for the software) | "Use, copying, modification, and distribution permitted" (ICOT, per CMU index) |
 
+## What is in git (added 2026-11-20, after the fetch)
+
+The owner chose to commit only the files whose source URL is the
+AIST-hosted ICOT archive: 2,089 files, 1,049,624,271 bytes (the FGCS
+proceedings, the TR/TM reports, the Museum pages under
+`lit/web/www.airc.aist.go.jp/`). The other 1,067 files (IPSJ, J-STAGE,
+vendor reviews, journal scans, record pages, other web pages, and the
+ten FGCS'94 PostScript files taken from Wayback captures) are on the
+owner's disk only and ignored by `lit/.gitignore`; `lit/SOURCES.tsv`
+and `lit/SHA256SUMS` give the URL and SHA-256 of every one, so they
+can be fetched again and verified.
