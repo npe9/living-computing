@@ -19,6 +19,7 @@ Usage:
     python3 asm/kbndis.py MODULE PRED/N   disassemble one predicate
     python3 asm/kbndis.py --check
 """
+import hashlib
 import io
 import os
 import re
@@ -48,6 +49,13 @@ PINNED = [
 ]
 PINNED_START = ('ipl', 'boot/0')
 PINNED_ATOMS = 486
+# Predicates with their arities and code lengths, spot-pinned, and a
+# digest of every (module, predicate/arity, length) in the image.
+PINNED_PREDS = [('jis_to_ascii', 'convert_loop/4', 27),
+                ('jis_to_ascii', 'convert_element/2', 241),
+                ('scsi', 'command_executer/2', 24),
+                ('ipl', 'ipl_monitor/3', 142)]
+PINNED_DIGEST = '865dfa48ec1130ab'
 
 
 def member(suffix):
@@ -156,13 +164,17 @@ def main(argv):
         m, p = im.where(im.got['start'] - im.load)
         start = (m['name'], p[0]) if m and p else None
         named = sum(len(m['preds']) for m in im.mods)
+        allp = [(m['name'], n, ln) for m in im.mods for n, ln, _a in m['preds']]
+        digest = hashlib.sha256(repr(allp).encode()).hexdigest()[:16]
         ok = (got == PINNED and start == PINNED_START
+              and all(x in allp for x in PINNED_PREDS)
+              and digest == PINNED_DIGEST
               and named == im.got['pred_heads'] and len(im.sym) == PINNED_ATOMS
               and all(m['package'] == 'pimos' for m in im.mods)
               and im.bad == 0)
         if not ok:
-            print('kbndis: FAIL\n  modules %r\n  start %r  named %d of %d  atoms %d  bad %d'
-                  % (got, start, named, im.got['pred_heads'], len(im.sym), im.bad))
+            print('kbndis: FAIL\n  modules %r\n  start %r  named %d of %d  atoms %d  bad %d  digest %s'
+                  % (got, start, named, im.got['pred_heads'], len(im.sym), im.bad, digest))
             return 1
         print('kbndis: PASS (20 modules named, %d of %d predicates named, '
               'start is %s:%s)' % ((named, named) + start))

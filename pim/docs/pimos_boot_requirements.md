@@ -439,8 +439,13 @@ Phase 0.
 `python3 asm/kbndis.py` joins the image with its atom table
 (`pimm_ipl.sym`, 486 atoms) and disassembles by module and predicate.
 `--check` pins the 20 module names, that all 349 predicate heads are
-named, and that the start address is `ipl:boot/0`; it runs in
-`run_tests.sh`.
+named, that the start address is `ipl:boot/0`, four predicates with
+their arities and lengths, and a digest of every predicate's name,
+arity and length; it runs in `run_tests.sh`. Observed injection:
+reading the arity from bits 23-16 of the head changed the digest and
+failed the check. (The check as first committed in 63ecc47e did not
+pin arities, and that injection passed it; the commit message there
+says otherwise and is wrong.)
 
 A predicate in the image is `{atom, name}`, `{integer, 0}`,
 `{predicate head, arity << 24 | offset in module}`,
