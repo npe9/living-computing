@@ -721,6 +721,15 @@ class Machine:
         self.mem[self.sp] = (ATOM, self.cells[pc][1] & 0xffffff)
         self.sp += 1
 
+    def i_write_integer(self, pc, x, y, z, c16):
+        # the integer is the low 24 bits.  Whether bit 23 is a sign is
+        # not established (the image has no such operand): refused
+        v = self.cells[pc][1] & 0xffffff
+        if v >> 23:
+            raise Unimplemented('write_integer with bit 23 set')
+        self.mem[self.sp] = (INT, v)
+        self.sp += 1
+
     def i_write_nil(self, pc, x, y, z, c16):
         self.mem[self.sp] = NIL
         self.sp += 1
@@ -736,6 +745,11 @@ class Machine:
         self.mem[self.sp] = (UNDF, 0)
         self.reg[x] = (REF, self.sp)
         self.sp += 1
+
+    def i_write_marked_variable(self, pc, x, y, z, c16):
+        # as write_variable; the variable is referenced more than once
+        # (MRB, not modelled)
+        return self.i_write_variable(pc, x, y, z, c16)
 
     # Reading a vector: wait_vector_N checks r[x] and points the
     # structure pointer at its first element; each read_variable takes
@@ -804,6 +818,16 @@ class Machine:
     def i_b_subtract(self, pc, x, y, z, c16):
         self.builtin('b_subtract', [x, y, z], lambda a, b: [
             (INT, (self.need_int(a) - self.need_int(b)) & 0xffffffff)])
+
+    def i_b_multiply(self, pc, x, y, z, c16):
+        # an overflow is the built-in's exception (PIMOS manual,
+        # multiply): not modelled
+        def f(a, b):
+            p = signed(self.need_int(a) & 0xffffffff) * signed(self.need_int(b) & 0xffffffff)
+            if not -(1 << 31) <= p < 1 << 31:
+                raise Unimplemented('built-in exception: multiply overflow')
+            return [(INT, p & 0xffffffff)]
+        self.builtin('b_multiply', [x, y, z], f)
 
     def i_b_and(self, pc, x, y, z, c16):
         self.builtin('b_and', [x, y, z], lambda a, b: [

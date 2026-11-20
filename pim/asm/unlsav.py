@@ -182,15 +182,23 @@ def parse_module(r):
     entries = r.rd()
     # decode_entry_table: [atom, Arity, Loc1, Loc2]
     preds = []
+    # r.detail: what the returned tuples leave out, for a reader that
+    # compares atom by atom (ref/pimm/lockstep_modc.py): the entry
+    # table's atom numbers, the code size, and per code address an
+    # atom item's number or a table's entries [(key, label)]
+    detail = dict(entry_ids=[], code={})
+    r.detail = detail
     for _ in range(entries):
         aid, name = read_atom_name(r)
         arity = r.rd()
         loc = (r.rd() << 16) | r.rd()
         preds.append((name, arity, loc))
+        detail['entry_ids'].append(aid)
     # decode_code_area: [S1,S2] = SizeOfCodeArea, then the code words
     # until 0xFFFF (decoder.kl1 decode_code_area -> decode_code).
     # The code starts immediately after the size field; no search.
     code_size = (r.rd() << 16) | r.rd()
+    detail['code_size'] = code_size
     code_base = r.i
     w = r.w
     code = []
@@ -206,6 +214,7 @@ def parse_module(r):
         elif t == 0x23:
             aid, name = read_atom_name(r)
             code.append(('atom', addr, tag, name))
+            detail['code'][addr] = aid
         elif t == 0x00 and o > 0:
             v1 = r.rd()
             v2 = r.rd()
@@ -229,25 +238,26 @@ def parse_module(r):
         elif tag == 0x1100:
             size = r.rd()
             ent = r.rd()
+            rows = []
             for _ in range(ent):
                 a = r.rd()
                 at = a >> 8
-                if at == 0x01 or at == 0x02:
-                    pass
+                if at == 0x01:
+                    key = ('int', a & 0xff)
+                elif at == 0x02:
+                    key = ('int', -((~a + 1) & 0xff))
                 elif at == 0x03:
-                    r.rd()
-                    r.rd()
+                    key = ('int', (r.rd() << 16) | r.rd())
                 elif at == 0x00 and (a & 0xff) == 0:
-                    read_atom_name(r)
+                    key = ('atom',) + read_atom_name(r)
                 elif at == 0x00:
                     # tagged 32-bit constant (decode_atomic, TAG > 0)
-                    r.rd()
-                    r.rd()
+                    key = ('tagged', a & 0xff, (r.rd() << 16) | r.rd())
                 else:
                     break
-                r.rd()  # L1
-                r.rd()  # L2
+                rows.append((key, (r.rd() << 16) | r.rd()))  # L1 L2
             code.append(('table', addr, size, ent))
+            detail['code'][addr] = rows
         else:
             break
     if not terminated:

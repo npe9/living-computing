@@ -32,7 +32,8 @@ the file decoder on terms, answering its read requests (`put_list`,
 `lockstep_deca.py` atoms, proper lists and terms from a real `.sav`
 file (`put_constant`, guard `modulo`), strings and long vectors
 included, `lockstep_gca.py` whole module-information and GC areas
-(`put_atom`, `write_nil`); 68
+(`put_atom`, `write_nil`), `lockstep_modc.py` entry tables and code
+areas (`b_multiply`, `write_marked_variable`, `write_integer`); 71
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

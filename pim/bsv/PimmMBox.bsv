@@ -1,5 +1,6 @@
-// PIM/m core: the divide box.  A 32-step restoring divider, one bit a
-// cycle, for the built-ins modulo and (later) divide.
+// PIM/m core: the multiply and divide box.  A 32-step restoring
+// divider, one bit a cycle, for the built-ins modulo and (later)
+// divide, and a 32-step shift-and-add multiplier for multiply.
 //
 // Signed, truncating toward zero, so the remainder has the dividend's
 // sign: that is PDSS's C `%` (emulator/blt_basic.c blt_b_modulo).  The
@@ -9,16 +10,23 @@
 // divisor (the built-in's failure or exception).  -2^31 by -1 gives
 // quotient -2^31 and remainder 0, as PDSS has it.
 //
-// The step count is ours: no source gives the machine's.
+// The multiplier is signed and says whether the product leaves 32
+// bits (the built-in's exception, PIMOS manual, multiply: "If an
+// overflow occurs").
+//
+// The step counts are ours: no source gives the machine's.
 package PimmMBox;
 
 import FIFO::*;
 
 typedef struct { Bit#(32) quotient; Bit#(32) remainder; } DivResult deriving (Bits, Eq);
+typedef struct { Bit#(32) value; Bool overflow; } MulResult deriving (Bits, Eq);
 
 interface PimmMBox;
   method Action divide(Bit#(32) dividend, Bit#(32) divisor);
   method ActionValue#(DivResult) result;
+  method Action multiply(Bit#(32) a, Bit#(32) b);
+  method ActionValue#(MulResult) product;
 endinterface
 
 module mkPimmMBox(PimmMBox);
@@ -30,6 +38,29 @@ module mkPimmMBox(PimmMBox);
   Reg#(Bool)     negQ   <- mkRegU;
   Reg#(Bool)     negR   <- mkRegU;
   FIFO#(DivResult) resQ <- mkFIFO;
+  // the multiplier
+  Reg#(Bool)     mBusy  <- mkReg(False);
+  Reg#(Bit#(6))  mLeft  <- mkRegU;
+  Reg#(Bit#(64)) acc    <- mkRegU;
+  Reg#(Bit#(64)) mcand  <- mkRegU;
+  Reg#(Bit#(32)) mplier <- mkRegU;
+  Reg#(Bool)     negP   <- mkRegU;
+  FIFO#(MulResult) prodQ <- mkFIFO;
+
+  rule mulStep (mBusy && mLeft != 0);
+    if (mplier[0] == 1) acc <= acc + mcand;
+    mcand <= mcand << 1;
+    mplier <= mplier >> 1;
+    mLeft <= mLeft - 1;
+  endrule
+
+  rule mulDone (mBusy && mLeft == 0);
+    Bit#(64) p = negP ? -acc : acc;
+    // it fits when bits 63..31 are all the sign
+    Bit#(33) top = p[63:31];
+    prodQ.enq(MulResult { value: p[31:0], overflow: top != 0 && top != '1 });
+    mBusy <= False;
+  endrule
 
   rule step (busy && left != 0);
     Bit#(33) r = truncate({rem, quot[31]});
@@ -61,6 +92,22 @@ module mkPimmMBox(PimmMBox);
   method ActionValue#(DivResult) result;
     resQ.deq;
     return resQ.first;
+  endmethod
+
+  method Action multiply(Bit#(32) a, Bit#(32) b) if (!mBusy);
+    Bool na = a[31] == 1;
+    Bool nb = b[31] == 1;
+    mcand <= zeroExtend(na ? -a : a);
+    mplier <= nb ? -b : b;
+    acc <= 0;
+    negP <= na != nb;
+    mLeft <= 32;
+    mBusy <= True;
+  endmethod
+
+  method ActionValue#(MulResult) product;
+    prodQ.deq;
+    return prodQ.first;
   endmethod
 endmodule
 

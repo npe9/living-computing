@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -121,7 +121,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Stub stub = fromMaybe(?, stubOf(op));
   Bool arithHere = op == op_b_add || op == op_b_subtract || op == op_b_and || op == op_b_or
                 || op == op_b_shift_left || op == op_b_shift_right;
-  Bool builtinHere = arithHere || op == op_new_string
+  Bool builtinHere = arithHere || op == op_b_multiply || op == op_new_string
                   || op == op_b_string_element || op == op_set_string_element
                   || op == op_new_vector || op == op_set_vector_element;
   // a vector pointer, short (0..6 elements, the size in the tag) or long
@@ -281,6 +281,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
+    else if (op == op_write_integer) begin
+      // the integer is the low 24 bits; whether bit 23 is a sign is not
+      // established (the image has no such operand): refused
+      if (ins.val[23] == 1) stop(EndUnimp);
+      else begin
+        smem.write(sp, intC(zeroExtend(ins.val[23:0])));
+        sp <= sp + 1;
+        next;
+      end
+    end
     else if (op == op_write_nil) begin
       smem.write(sp, mkCell(tag_ATOMo, 0));
       sp <= sp + 1;
@@ -299,7 +309,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.deref(regs.r(y));
       st <= XReuse1;
     end
-    else if (op == op_write_variable) begin
+    else if (op == op_write_variable || op == op_write_marked_variable) begin
+      // marked: the variable is referenced more than once (MRB, not
+      // modelled)
       // the element itself is the new variable; r[x] refers to it
       smem.write(sp, mkCell(tag_UNDF, 0));
       regs.wr(x, mkCell(tag_REFo, absAddr(sp)));
@@ -502,6 +514,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else guardFail;
   endrule
 
+  rule multiplied (st == XMul);
+    let p <- mbox.product;
+    if (p.overflow) stop(EndUnimp);
+    else begin
+      regs.wr(z, intC(p.value));
+      finish(tagged Next afterBuiltin);
+    end
+  endrule
+
   rule divided (st == XDiv);
     let d <- mbox.result;
     regs.wr(z, intC(d.remainder));
@@ -660,6 +681,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    : (a.val << count);
         regs.wr(z, intC(r));
         finish(tagged Next afterBuiltin);
+      end
+    end
+    else if (op == op_b_multiply) begin
+      // r[z] := r[x] * r[y] in the multiply box; a non-integer or an
+      // overflow is the built-in's exception: not modelled
+      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        mbox.multiply(a.val, b.val);
+        st <= XMul;
       end
     end
     else if (op == op_new_string) begin
