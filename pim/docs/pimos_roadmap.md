@@ -144,6 +144,13 @@ default until overruled.
 
 ## 4. Phases
 
+*`gap_analysis.md` (2026-11-20) is the measured inventory of what is
+still missing against these phases, and the order to close it in. Its
+main finding for this section: `ipl:boot/0` calls `shoen:execute/4`
+at its first step, so R4 needs code objects, inter-module calls, a
+minimal shoen and the front-end emulation, not only more
+instructions.*
+
 Order is by what boot executes, not by static frequency. Each phase
 ends in a gate; do not start the next before the gate is observed.
 
