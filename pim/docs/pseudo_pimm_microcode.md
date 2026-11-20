@@ -12,8 +12,20 @@ Sections 7-13 are a second pass the same day (control flow, the
 immediate, bit 62, two operand selects, the allocator; then what
 that does and does not give for goal records and suspension). They
 correct four statements of the first pass, each marked *Corrected* where
-it stands. Section 13 says what is still not known: **the goal record
-layout was not recovered.**
+it stands. Section 13 says what was not known after that pass.
+
+Sections 14-20 are a third pass (the memory datapath: read and write
+strobes, the two address and two data registers, timing; then the
+multiple-suspension record and the goal record). They correct the
+second pass in five places, listed in section 14. **Recovered: the memory datapath (read, write and step strobes, two
+address and two data registers, timing); the multiple-suspension
+record's four fields and which tags they carry, with their order
+(prev, next, goal, rival) resting on one addressing rule that is
+supported but not verified; that a `HOOK` pointer addresses the first
+cell of a goal record taken from the register `1b` list, and what
+`suspend` writes in its cells 12-14 on one path. Inference only: 16
+cells, cell 15 as the link, `R14` as the head of the ready list. Not
+recovered: arity, priority, the use of the Goal Stack Entry Table.**
 
 ## Answer in brief
 
@@ -477,7 +489,9 @@ The six `get_*` entries are 32 apart for that reason. DERIVED from
 
 **Bit 62 (the top bit of the figure's `CCF`) is a memory operation
 that every `set_*`/`write_*` has and register arithmetic never has. It
-is not shown to be "write".**
+is not shown to be "write".** *Corrected in section 15:* it is the
+write strobe; bit 61 is the read strobe; the "reads" below that carry
+bit 62 push a freed cell on a free list.
 
 - Fit (minimal pairs): `set_integer`, `set_value`, `set_atom` are the
   one word `4000000000800000`; `write_integer`, `write_atom`,
@@ -571,12 +585,17 @@ arms of `wait_*`).
   allocation is expected. Either `19` is not a free-list head or a
   5-bit select means different registers in different words. Not
   resolved; it is the reason no register is named beyond the ones
-  above.
+  above. *Resolved in section 15:* `38c0`-`38c1` is a push on the
+  one-cell free list (the shape of `collect_value`), not the unbound
+  case.
 
 ## 11. Goal records, suspension, the ready structure: what the code shows
 
 None of the three layouts was recovered. What follows is the part that
 stands on sections 8-10, and then what is only suggestive.
+*Superseded in part by sections 17 and 18* (third pass): the
+multiple-suspension record's four cells and the goal record's size,
+pointer and trailer are read there.
 
 MEASURED (from `SYSTEM.DIR/PIMM.PARAM`, the firmware's parameter
 file; the three `gse` lines are pinned as `gset_param`):
@@ -714,7 +733,8 @@ Not checked:
 - The work stopped on the time-box. The three approaches of section 7
   were all still producing results; none is exhausted.
 
-Most useful next step: settle the memory datapath on the two smallest
+*Done in sections 14-18; the current next step is in section 20.*
+Most useful next step (as it stood): settle the memory datapath on the two smallest
 routines that read and write through a known pointer, the one-cell
 allocator (`3320`-`3324`: take the head of a free list, replace it by
 the cell's link) and `write_variable`/`set_variable` (`318b`, `3195`:
@@ -724,3 +744,523 @@ data written, and the `19` conflict of section 10 has to come out of
 the same reading. With that, `1d3a`-`1d40` (five words) gives the
 multiple-suspension record's field order directly, and `1c08`-`1c3d`
 the suspended goal record's header.
+
+## 14. Third pass: the memory datapath (what was done, and the labels)
+
+Time-boxed, 2026-11-20, third pass. Goal: which fields read and write
+memory, where the address and the data come from; then the
+multiple-suspension record, the suspended goal record, and as much of
+the goal record as the evidence carries. Labels as in section 7, plus
+VERIFIED: a rule fitted on named routines that then predicted something
+specific in code it was not fitted on (both named each time). A layout
+is given only where it is DERIVED from VERIFIED rules; where a step
+rests on something weaker it says so.
+
+`mekbn.py --check` pins every number below (`img2_mem`, `syspsi_mem`,
+`fill_after_alloc`, `records`, `enqueue_trailer`). `--rtl ADDR N`
+prints the register transfers and memory accesses of each word under
+these rules; `--records` prints the record writes of sections 17-18.
+
+Seven predictions were written down before the routines were dumped
+(scratch file, not in the repository). Their outcomes are in section
+15; one was right for the wrong reason and one failed in `syspsi`.
+
+**Corrections to the second pass** (each also marked where it stands):
+
+- Section 10, "bit 62 is not shown to be write": **bit 62 is the write
+  strobe.** The reads are bit 61, which the second pass did not look
+  at. The "reading" routines that carry bit 62 push a cell on a free
+  list (section 15).
+- Section 10, the register `19` conflict: **resolved.** `wait`'s first
+  row (`38c0`-`38c1`) has the shape of `collect_value`: it frees a
+  cell. `19`, `1a`, `1b` are free-list heads.
+- Section 4 and `FIELDS`: **bits 36..34 are not an ALU input.** They
+  name the work register the ALU result goes to (section 16). The name
+  `AS1` is kept in the tool so that the earlier dumps still read.
+- Section 11, "the multiple-waiter code allocates from the N = 4 word
+  ... which cell gets which ... were not read": read in section 17.
+- Section 11, "a goal record is one record of the register `1b` class
+  ... (16 words if the free lists are the sibling's)": which cells the
+  code writes is now read (section 18); the size is still inference.
+
+## 15. The strobes: bit 61 reads, bit 62 writes, bit 60 steps the address
+
+The figure's five-bit `CCF` is five separate bits.
+
+| Bit | Meaning | Status |
+|---|---|---|
+| 62 | write memory | VERIFIED |
+| 61 | read memory | VERIFIED |
+| 60 | add one to the address register after the access | VERIFIED |
+| 59, 58 | in a strobe word: which MDR, which MAR (section 16). In a word without a strobe: "MDR2 is used", "MDR1 is used" | see section 16 |
+
+**Read (bit 61).** Fit: the free-list pops of `put_vector_1`
+(`31f9`-`31fa`), `put_list` (`31d0`-`31d1`) and the one-cell allocator
+(`3320`-`3322`): the word with the bit is followed by a word that moves
+`AS2` = 2 into the head register. Prediction: over the whole image the
+word after a read uses `AS2` = 2. It does in **854 of 1,386** (62%;
+`AS2` = 2 is in 25% of all words), and in `syspsi` in 907 of 1,867 (49%
+against 24%). `read_variable`'s first word (`34a0`), which the second
+pass counted as having no memory bit, has bit 61 and loads the
+structure pointer (register 2) into an address register.
+
+**Write (bit 62).** Fit: the `set_*`/`write_*` words of the second
+pass. Predictions written before the dump, and what was found:
+
+| Routine | Predicted | Found |
+|---|---|---|
+| `collect_value` `3000` | a write, and the head register takes the cell's address | `3001`: write, `DST` = `19` from `AS2` = 3 (the address); the word before loads the old `19` as data. Met |
+| `mark_element` `30a9` | at least one write | `30aa` reads, `30ab` writes. Met |
+| `wait` `38c0`-`38c1` | one write, no read ("pushes the variable on the suspension stack") | one write, no read, **but it is `collect_value`'s shape** (old `19` as data, `19` takes the address): it frees the cell the operand was reached through. Count met, reason wrong |
+| `new_vector` `1e7a` | a write in a loop | no loop; `1e84`-`1e88` call the 3-cell allocator and then write three times. Half met; it gave the next test |
+
+The test that carries the rule: **after a call of the N-cell allocator
+(section 10's words for N = 3..6), the writes on the fall-through path
+fill exactly cells 0..N-1 of the new record.** `mekbn.fill_after_alloc`
+follows each of the 77 call sites with the rules of section 16 and
+keeps those where it can name the address of a write:
+
+| Call | N | Cells written, in order |
+|---|---|---|
+| `30f3` | 6 | 0, 1, 2, 3, 4, 5 |
+| `312b` | 6 | 0, 1, 2, 3, 4, 5 |
+| `311d` | 5 | 0, 1, 2, 3, 4 |
+| `1b4a` | 3 | 0, 1, 2 |
+| `1d3a` | 4 | 2, 0, 1 (cell 3 is written elsewhere, section 17) |
+| `1f99` | 4 | 0, then the path leaves what the tracer models |
+
+None of the four complete ones was looked at before the rule was
+fixed; `1d3a` is the routine the pass was after. All four load the
+address register straight from the register that holds the new record
+(`SD1` = 6 or 7), so they test the strobes and the stepping, **not**
+the base-plus-constant addressing that `1d3a` uses (section 16). The other 71 sites
+compute the address in ways the tracer does not model, so this is 4 of
+4 where it could be checked, not 4 of 77.
+
+**Step (bit 60).** Fit: `1e86`-`1e88` (write, write, write with the
+bit on the first two). Predictions: the table above (N strobes and N-1
+steps give N distinct cells); and a word that jumps to itself and
+accesses memory must move its address. All 23 self-jumping words of
+image 2 have a strobe; 19 have bit 60, and the other four (`208b`,
+`3e59`, `4d17`, `6368`) reload the address register from a register the
+same word updates. In `syspsi` 36 of 37 have a strobe and all 36 have
+bit 60 (bit 60 is in 51% of its strobe words).
+
+**The strobes together.** Predicted: bits 61 and 62 are rarely set
+together. Image 2: 40 words, where chance gives 287. **`syspsi`: 512
+words, where chance gives 367: the prediction failed there.** They are
+`CCF` values `19`, `1d`, `1f` (132, 130, 181 words) spread over twenty
+pages. Not explained; a read-modify-write or a KL0-only operation
+(the trail) are guesses. Nothing below depends on it, but it means the
+five bits are not fully independent.
+
+**What the second pass's failed prediction was.** `3454`-`3455`, one of
+the `read_*` tails it counted as "a read that has bit 62", is
+`[..] <- MDR; R19 <- XR; [MAR1] <- MDR1`: the head of the one-cell
+free list takes a new value in a word that writes. That is the push of
+`collect_value` again. INFERENCE: reading an element through a
+singly-referenced pointer frees the cell it was reached through (MRB
+reclamation), and that is why reading routines write. `vector_element`
+(17 words with the bit) was not re-read.
+
+**`19`, `1a`, `1b` are free-list heads** (DERIVED; closes the conflict
+in section 10). A pop is "read at the head, head := the data"
+(`31f9`-`31fa`, `3349`-`334e`); a push is "data := old head, write at
+the cell, head := the cell's address" (`3000`-`3001`, `38c0`-`38c1`,
+`3454`-`3455`, and `proceed`'s first two words, section 18). The link
+in a free cell is stamped `VECT0x` (`3000`, `216c`).
+
+## 16. Registers, ports and timing
+
+**The phase-2 registers, as `SD1` and bits 36..34 number them:**
+
+| Number | Register | Evidence |
+|---|---|---|
+| 1 | XR | below, "one word later" |
+| 4 | MDR1 | the enable rule |
+| 5 | MDR2 | the enable rule |
+| 6 | MAR1 | the port rule |
+| 7 | MAR2 | the port rule |
+
+`SD2` = 1 loads a second operand register, called YR here; `SD2` = 2
+and 3 obey the enable rule as MDR1 and MDR2 do. The names are TR-564's
+(XR/YR, MAR1/2, MDR1/2); which physical register is which is not the
+claim, only that there are two data and two address registers and that
+the numbers pair up as shown.
+
+**The enable rule (MEASURED, both images).** In a word without a
+strobe, bit 58 is set whenever MDR1 is named and bit 59 whenever MDR2
+is:
+
+| Use | Image 2: bit missing | `syspsi` |
+|---|---|---|
+| `SD1` = 4, bit 58 | 0 of 833 | 8 of 1,053 |
+| bits 36..34 = 4, bit 58 | 0 of 918 | 12 of 1,142 |
+| `SD2` = 2, bit 58 | 0 of 355 | 10 of 607 |
+| `SD1` = 5, bit 59 | 0 of 327 | 0 of 466 |
+| bits 36..34 = 5, bit 59 | 1 of 483 | 15 of 967 |
+| `SD2` = 3, bit 59 | 0 of 300 | 0 of 390 |
+| `AS2` = 2, neither bit | 3 of 3,541 | 43 of 4,505 |
+
+So `AS2` = 2 is "the MDR", and which one is said by bits 59..58. This
+is what makes registers 4 and 5 a pair and what the two low `CCF` bits
+are for outside memory accesses. (The converse does not hold: 518 of
+the 6,251 strobe-free words with a low bit set name neither register
+in any field examined.)
+
+**Bits 36..34 are the ALU's destination** (VERIFIED). Fit: `set_nil`
+(`3189`: bits 36..34 = 4 with a tag immediate, then a write of that
+constant) and `add` (`3a68`: bits 36..34 = 1, and the next word passes
+XR to the destination register). Prediction: a word with 6 there is
+followed by a strobe on MAR1, with 7 by a strobe on MAR2 (next
+paragraph). Bits 31..29, the figure's "ALU output", then say what the
+ALU passes. 4 = XR is VERIFIED ("one word later", below). **5 = XR +
+YR is not VERIFIED**: it was fitted on `1d3a` itself and no routine
+with an independently known layout was found that uses it (looked for:
+a `VDESC` pointer made as "descriptor + 3", a vector size read at
+"+ 1"; neither is formed this way). What supports it: the constants
+are never above 15 in 133 uses; a constant of 13, 14 or 15 is never
+followed by a stepping access (0 of 27 uses), as an offset near the
+end of a 16-cell record would not be; the same field lands at +2 on
+two paths of section 17; and three routines carry 12 just before
+they write the `COD` cell (section 18), two of them by other address
+forms. 1 = YR is DERIVED from two words. The other values, and 4
+together with `AS2`, are not understood.
+
+**The port rule: in a strobe word bit 58 selects MAR2, else MAR1**
+(VERIFIED). Fit: `3320`-`3321` (`SD1` = 6, then a read with bit 58
+clear). Prediction, word before the strobe against bit 58 of the
+strobe word:
+
+| Word before | Image 2: bit 58 clear / set | `syspsi` |
+|---|---|---|
+| loads 6 through `SD1` | 188 / 10 | 244 / 33 |
+| loads 7 through `SD1` | 26 / 67 | 48 / 125 |
+| ALU destination 6 | 946 / 32 | 441 / 41 |
+| ALU destination 7 | 23 / 117 | 52 / 255 |
+
+**For a read, bit 59 selects the MDR the data arrive in** (VERIFIED).
+Fit: four pops (`31f9`, `31d4` without the bit, `3349`, `332b` with
+it). Prediction: the next word, if it has no strobe and uses `AS2` = 2
+with exactly one low bit, names that MDR: 320 and 136 right against 22
+and 15 wrong in image 2, 238 and 140 against 28 and 8 in `syspsi`.
+This is why the one-cell allocator can load `UNDF` into MDR1 in the
+word that reads the link (`3321`): the link goes to MDR2.
+
+**For a write, the data register when bit 59 is set is NOT settled.**
+With the bit clear the data are MDR1's: where the word before loaded
+exactly one of the two, it was MDR1 in 397 of 419 (image 2) and 147 of
+168 (`syspsi`). With the bit set the same count gives MDR2 in 50 of
+100 and 75 of 222. Six writes whose data are known from semantics
+(`31d7`, `38c1`, `3001` with the bit, `318f`, `3322`, `318c` without)
+fit "bit 59 = MDR2", and `enqueue_goal`'s `4c05`-`4c06` do not seem to.
+`--rtl` prints such a write with a question mark. Scratch counts for
+this paragraph, not pinned.
+
+**One word later** (VERIFIED). A register loaded in one word is seen by
+the next word, not by its own. Fit: `1d20`-`1d21` and `3a68`-`3a69`.
+Prediction: a word that names no ALU input and passes XR follows a
+word with `SD1` = 1: 420 of 487 (`SD1` = 1 is in 13% of words), in
+`syspsi` 245 of 341.
+
+**A write stores the MDR as it stood before its own word** (VERIFIED,
+on less than the others). Fit: `set_variable` (`318b`-`318f`: `UNDF`
+is made in the first word, the reference is loaded into MDR1 in the
+second, which writes, and the third writes again; the cell gets `UNDF`
+and the argument the reference only on this timing). Predictions: a
+word that loads MDR1 through `SD1` is followed by a write in 393 of
+628 (17% of words have a write), `syspsi` 258 of 721; and `new_vector`
+`1e86`-`1e88`, which loads `{INTo, size}` once and writes three times,
+then writes that value **twice, after one other cell**, which is the
+descriptor `kbnheap.kl1` lays out (`{VDESC, ..}`, `{INT, n}`,
+`{INT, n}`; `pimm_semantics.md`). With the data taken from the same
+word it would be three integers. A count that does tell the two
+timings apart: in a run of two or more consecutive writes of MDR1, a
+load of MDR1 in the *last* word is useless on this timing and
+necessary on the other. Image 2 has 181 such runs; MDR1 is loaded in
+196 of the 357 words before the last (55%) and in 17 of the 181 last
+words (9%). `syspsi`: 62 runs, 54 of 124 (44%) against 4 of 62 (6%).
+(`1e86`-`1e88` is also the fit for bit 60, so it is not an independent
+prediction for both.)
+
+**Bits 17..16** (VERIFIED for 1). 1 stamps the tag immediate (EM bits
+15..10) on what `SD1` loads: 396 of the 397 words with the value have
+an `SD1` load (30% of all words do), 460 of 461 in `syspsi`. 2 stamps
+it on the ALU result (DERIVED: `put_nil`, `set_nil`, `1d40`). 3 not
+understood.
+
+**Bit 57 makes `DST`, `SC1` and `SC2` name a second register file**
+(VERIFIED as a qualifier, INFERENCE as to which file). It is set in
+6,318 words of image 2 and 6,148 of `syspsi` and never in a word
+without a register select; never with `SC1` = 8..`b` (the operand
+selects of section 10); with it `DST` is `10`-`1f` in 3,266 of 3,373
+words. Written `W1c` against `R1c` below. INFERENCE: it is TM-858's
+40-bit by 32-word work register file. Fit: the allocators leave their
+result in `W1c` and the callers read `W1c`.
+
+**`SC2` = 8 and 9 are the immediates EM1 and EM2** (VERIFIED). Fit:
+the refill entries of the one- and two-cell lists (`3376`-`337e`:
+`SC2` = 8 with EM1 = 1 beside register `19`, EM1 = 2 beside `1a`).
+Prediction: a word cannot use the same EM bits twice, so `SC2` = 8
+excludes `JMPF` 5 and `SC2` = 9 excludes `JMPF` 3, 5, 6, 7:
+
+| | Image 2 | Expected by chance | `syspsi` |
+|---|---|---|---|
+| `SC2` = 8 with `JMPF` 5 | 0 of 718 | 83 | 0 of 1,339 |
+| `SC2` = 9 with `JMPF` 3, 5, 6, 7 | 0 of 211 | 47 | 0 of 426 |
+| `SC2` = `b` with any `JMPF` | 0 of 704 | 390 | 0 of 747 |
+
+What the table leaves out, so that the record shows it: `SC2` = 8 or 9
+occurs with `JMPF` 1 in 33 words of image 2 and 69 of `syspsi`, and
+**every one is an end or a return, none a jump** (58% of `JMPF` 1
+words are jumps, which carry address bits in EM); and `SC2` = 9 occurs
+with `JMPF` 2 in 3 words of image 2 (`0105`, `0107`, `2401`; about 6
+expected, so `JMPF` 2 is not excluded, and those three words use EM
+bits 9..4 both as the immediate 1 and in the target).
+
+`SC2` = `b` is therefore a wider immediate (its layout was not read);
+`a`, `c`, `d`, `e` look like immediates of other shapes and were not
+read either.
+
+**Base plus constant.** "XR := a register, YR := an immediate" and then
+"MAR1 := XR + YR" occurs 133 times in image 2. **The constant is never
+above 15**, though the field holds 63. That is the size of the largest
+fixed record (section 18).
+
+## 17. The multiple-suspension record (DERIVED)
+
+Rules used: sections 15 and 16. Two of them are not VERIFIED, and the
+table depends on them as follows:
+
+- **Which tagged value is written, in what sequence, and that "next"
+  is the cell after "prev"** stand on VERIFIED rules (strobes, stepping,
+  MDR1 through `SD1`, the stamp, the write timing).
+- **The cell numbers 0, 2 and 3** stand on "5 = XR + YR", which is
+  fitted on this routine and supported, not VERIFIED (section 16). If
+  that rule is wrong, what is recovered is the set of four fields and
+  the adjacency of two of them, not the order.
+- The write at `1d61` stands on "bit 59 = MDR2" for a write, which is
+  not settled.
+
+`mekbn.py --records` prints the writes; `--rtl 1d20 90` the code.
+
+Context (DERIVED from `1c60`-`1c65` and `1d20`-`1d39`): the code is a
+loop over the variables the goal is waiting on. For each it has the
+variable cell's address in `W16`, the cell's present content in `W14`,
+and `{HOOKo, goal record}` in `W11` (copied from `W15`, section 18).
+`1d3a` allocates four cells; `W17` becomes `{MHOOK, record}`.
+
+| Cell | Written at | Content | Console name (INFERENCE) |
+|---|---|---|---|
+| 0 | `1d3e` | `{DREF, address of the variable cell}` | prev |
+| 1 | `1d60` (`1d64` for the third group) | `{ATOMo, R06}` (rows `1d50`-`1d52`), `{HOOKx, W14}` (rows `1d53`-`1d55`, by `1d62`), `{MHOOK, W14}` (rows `1d56`-`1d58`, by `1d63`), `{RHOOKo, W14}` (rows `1d59`-`1d5a`, by `1d65`) | next |
+| 2 | `1d3d` | `{HOOKo, goal record}` | goal |
+| 3 | `1d2f`, `1d39` | `{MHOOK, the next record made for the same goal}`; `1d39` closes the ring by writing the first record (`W12`) into the last one's cell 3 | rival |
+
+Then `1d61` writes the variable cell itself (`W16`): `{tag, record}`
+with the tag the row chose (`MHOOK`, `EMHOKo` or `EMHOKx`). This is the
+write whose data register rests on the unsettled rule; the other
+candidate, MDR1, holds the value just written to cell 1, which makes
+no sense in a variable cell.
+
+So, DERIVED under the caveat above: **the record is four cells in the
+order the console's inspector lists them, prev / next / goal / rival**
+(the names are the console's, matched by position and by what the
+cells hold; that match is INFERENCE, the cell contents are not). The
+agreement of the derived order with the console's order was not used
+to choose the rule, and is the best single piece of support the
+"XR + YR" reading has. The record sits in a
+doubly-linked chain of the waiters on one variable, headed by the
+variable cell (cells 0 and 1), points at its goal with a `HOOK`
+pointer (cell 2), and is on a ring of all the records made for the
+same goal (cell 3). The ring is how a goal woken through one variable
+can be taken off the others: that use is INFERENCE, the code that
+walks it (`2d46`-`2ef8`) was not read.
+
+On the `1d63` path (the variable already held `{MHOOK, a record}`)
+`1d64` also sets MAR1 from that old content and `1d60` then writes
+`{MHOOK, new record}` there. The address is formed by an ALU
+combination the tracer does not model (YR, holding 0, with the MDR), so
+INFERENCE: it is cell 0 of the old record, whose "prev" becomes the new
+record, as a doubly-linked insertion at the head needs.
+
+A second path, `1d71`-`1d77`, adds a goal to a record that exists: it
+writes `{HOOKo, goal}` at `W17` + 2 again, which is the independent
+agreement on "cell 2 is the goal".
+
+Not read: which tag of the variable's old content selects which row
+(the rows are entered through `1d3f`-`1d40`, a dispatch on a tag whose
+mechanism is not understood; INFERENCE that the tag is `W14`'s); what
+`R06` holds (`{ATOMo, R06}` is written where a nil would stand, here
+and in section 18, so INFERENCE: zero); cell 1's content on the
+`1d63` path beyond the tag; `1d66`-`1d6a` and `1d6b`-`1d70`, the rows
+for `EXMRF` and for a plain `HOOKo` content.
+
+## 18. The goal record, and what `suspend`, `enqueue_goal` and `proceed` do with it
+
+**A goal record comes from the register `1b` free list, a `HOOK`
+pointer addresses its first cell, and it is written through cell 15**
+(DERIVED; the cell numbers again rest on "5 = XR + YR", section 16).
+That it is exactly 16 cells is INFERENCE: nothing was seen written
+past +15 of a `HOOK` record, but the bound is not general, because
+`create_shoen` (`1702`-`1715`) writes cells 8 to 23 of another kind of
+record.
+
+- `suspend` (`1c08`) calls `1c1d`, which pops the `1b` list through
+  the `HOOKo` entry (`3349`); `1c09` puts the result in `R10` and
+  takes the old `R10` as an address; `1c0a` makes `W15` :=
+  `{HOOKo, old R10}`. So `R10` holds a goal record kept ready, the
+  suspended goal goes into that one, and a fresh one replaces it.
+  This is TM-862's "base of a frame representing a goal, the execution
+  of which is postponed" (`literature_gaps.md` Appendix C 2.4).
+- `1c31`-`1c32` set the address to `W15` + 12, and four writes follow
+  (`1c0d`-`1c10`, three stepping): cells 12, 13, 14, 15. The same "+12,
+  then four writes" is in the routine that makes a goal for a built-in
+  that has to wait (`3d6a`, called from `new_vector`, `1e69`): `3d6f`
+  sets MAR1 in a word that carries the immediate 12 (in a form the
+  tracer does not model) and `3d70`-`3d73` are four writes, three
+  stepping; `1d73` writes at +15 of such a record.
+- The words `1c30` and `1c35` (section 11) are `MDR1 := R0c; write,
+  step`: the copy of the argument registers into the record, starting
+  at the address loaded at `1c09`, the record's first cell.
+
+The table is for one path only: `1c2c` returning through `1c32` (the
+other returns, `1c3d` and `1c52`, leave the address elsewhere and were
+not followed) and `1c0d`, `1c0e`, `1c0f` each falling through (each
+has a conditional exit: to `1c21`, `1c18`, `1c12`).
+
+| Cell | `suspend` writes (`1c0d`-`1c10`), on that path | Label |
+|---|---|---|
+| 0.. | the argument registers, by the counted loop | DERIVED for "from cell 0"; which argument is first, and how many fit, not read |
+| 12 | `{COD, the instruction's operand}`, made at `1c08` | DERIVED. INFERENCE: the operand is the label, so this is the predicate's code address |
+| 13 | `R12` | DERIVED; what `R12` holds is not known |
+| 14 | `R13` | DERIVED. `1c12` stamps `FPREC` on `R13`, so INFERENCE: the goal's parent (foster-parent record) |
+| 15 | a value made at `1c0f` that the tracer cannot name | not recovered |
+
+`enqueue_goal` (`4c00`) agrees where it can be read, and uses the
+other port:
+
+- `4c03` stamps `COD` and sets MAR2 in a word that carries the
+  immediate 12 (again in a form the tracer does not model); `4c04`-
+  `4c07` are four writes through MAR2, three stepping (pinned as
+  `enqueue_trailer`). The registers loaded for them, in order, are
+  `{COD, W10}`, `R12`, `R13`, `R14`: the same trailer.
+- `4c05`: `R10 := {HOOKo, XR}` with XR loaded from `R1b` the word
+  before, and `4c04`: `R1b := the MDR`. A fresh record replaces `R10`
+  again.
+- `4c06`: `R14 := {HOOKo, f(old R10)}`, the record just filled (f is
+  an ALU operation, `AL` = 1, that was not identified), and the last
+  value loaded for the trailer is the old `R14`.
+
+INFERENCE, not DERIVED: **cell 15 is the link, and `R14` is the head
+of a list of goal records linked through cell 15, newest first.** It
+rests on three steps that are each weaker than the rules of section
+16: MAR2 is set at `4c03` in a form the tracer does not model, so
+"these four writes are cells 12-15" is by the immediate 12 and the
+agreement with `suspend`; the data are paired to the cells by the
+order of the loads, and two of the four writes (`4c05`, `4c06`) have
+bit 59 clear after an MDR2 load, against the reading of bit 59 that
+fits elsewhere; and `R14`'s new value passes through an unidentified
+ALU operation. If it holds, the newest goal of a priority runs first,
+which is what the reference model does by choice
+(`pimm_semantics.md`); this pass does not establish it.
+
+`proceed` (`216c`): the first two words are a push on the `1b` list
+(data `{VECT0x, old R1b}`, a write, `R1b` := the address) and `216e`
+is `R10 := f(R14)` with the same unidentified `AL` = 1. DERIVED for
+those transfers; INFERENCE: it frees the
+record of the goal that has finished and takes the head of the `R14`
+list as the next one. The rest of `proceed` (the branches at `216e`,
+`216f`, the calls of `3349` at `2175` and `218a`) was not read.
+
+**Not recovered:** where the arity and the priority are (candidates:
+`R12`, and whatever cell 15 gets in `suspend`); the extension that
+`suspend`'s size tables allocate (`1c3a`-`1c5f`, with `VECTo` and
+`VDESC` stamps at `1c48`, `1c4d`: INFERENCE, a vector for arguments
+that do not fit); **how the Goal Stack Entry Table is used** (no word
+that forms an address from `B800` or shifts by `18` was looked for);
+whether `R14` is one stack or the current priority's.
+
+## 19. Fault injections into the third-pass checks (observed)
+
+Each was made on a scratch copy of `mekbn.py` by setting the named
+constant and running `measure()` against `PINNED`; each FAILed as
+listed.
+
+| Injection | Observed failures |
+|---|---|
+| `RD_BIT=60` | read followed by an MDR use 206 of 755 (`syspsi` 475 of 1,556); enable rule broken in up to 176 words; `read_port` (22, 21, 2, 1); `new_vector_descriptor` loses its second integer |
+| `MEM_BIT=61` | the second pass's `register_only_writes` and `writers_missing_bit`; MDR1 load followed by a write 26 of 628; every `fill_after_alloc` site and every record lost |
+| `INC_BIT=63` | no loop steps (0 of 23, 0 of 36); the fill sites write cell 0 N times; the suspension record's cell 1 and the trailer's cells 13-15 collapse |
+| bits 58 and 59 swapped | enable rule broken in 657 of 833 and five more rows; `read_port` (317, 105, 18, 53); `alu_dst_port` (732, 246, 71, 69); `1d61` loses its address |
+| `WRB_BIT=56` | 5 words with `SC1` = 8..`b`; no fill site found; every record names `R` registers |
+| `MDR1=5, MDR2=4` | enable rule broken in four rows; MDR1 load followed by a write 77 of 196; every record's data unknown or exchanged |
+| `MAR1=7, MAR2=6` | both port tables reversed; `base_plus_constant` (3, 52); every address unknown |
+| `WRITE_SAME_WORD=True` | **records only**: cell 2 of the suspension record gets `DREF`, the trailer shifts by one, the descriptor becomes three integers. No statistic changes: the constant only steers the tracer. The count that argues the timing is `write_runs` (section 16), which does not depend on the constant |
+| `SC2_EM1=9, SC2_EM2=8` | exclusions 182 of 718 and 368 of 1,339; largest constant 59; the suspension record's cells become 0, 10, 11 |
+| `SRC_SUM=1, SRC_YR=5` | one base-plus-constant left (with constant 49); `1d3a` and all `+constant` addresses lost |
+| `XR=2` | XR pass 0 of 487 and 0 of 341; addresses lost |
+| `SRC_XR=3` | XR pass 0 of 0; `{MHOOK, record}` values lost |
+| `AS2_MDR=3, AS2_MAR=2` | read followed by an MDR use 49 of 1,386; `AS2` with neither low bit 450 of 820 |
+
+## 20. Dead ends, not checked, and the next step
+
+Dead ends and things that misled:
+
+- **Bits 59..58 as one two-bit code.** Tabulating the four values
+  against neighbouring loads gave nothing clean, because the bits mean
+  one thing in a strobe word and another outside it. Splitting on
+  "has a strobe" is what separated them.
+- **Reading bits 31..29 as the ALU's destination** (the figure's
+  label). The first tracer treated "= 5" as "into MAR1"; the strobe
+  that follows depends on bits 36..34 instead (946 against 32).
+- **Lift tables of "field value in one word, field value in the
+  next"** across `SD1`, bits 36..34, 31..29 and `AS2`. Suggestive at
+  best (lifts of 2-5); the 0%/100% tables above came only after
+  conditioning on the strobe.
+- **A size sweep of `new_vector`** (N writes for size N). The routine
+  is not laid out one case per size.
+- **Bit 59 as the data select of a write.** Section 16: fits image 2
+  weakly, fails in `syspsi`.
+- The prediction "a `wait` on an unbound variable pushes on the
+  suspension stack with one write" matched the count and was wrong
+  about what the write is.
+
+Not checked:
+
+- `x18` (bit 18). `write_*` differ from `set_*` by bit 18 and EM1 =
+  `20`, which must be "advance the structure pointer", and the counted
+  loops carry bit 18 with EM1 = `10`: one field, at least two uses.
+- Every value of bits 31..29 except 1, 4, 5; `AS2` = 1; `SD1` = 2, 3;
+  bits 17..16 = 3; bit 63 (57 words); the condition codes; the
+  dispatch that enters the tables at `1d50` and `3440`.
+- The `syspsi` words with both strobes.
+- `vector_element`, page `2c00`-`2eff` (resumption), `execute`,
+  `try_me_else`, the rest of `proceed` and `enqueue_goal`, the
+  allocators for three cells and more (`3331`-`3347`: they keep their
+  heads in memory, through `R05`, and were only partly followed).
+- The tracer (`mekbn.Walk`) models the constructs named in section 16
+  and nothing else; an address or value it cannot name is printed `?`,
+  and it follows only the path it is given.
+
+State: the goal of this pass is met for the memory datapath; met for
+the multiple-suspension record's fields and tags, with the cell order
+conditional on the unverified "XR + YR" rule; met in part for the goal
+record (pointer, cells 12-14 on one path of `suspend`); inference only
+for its size, link and the ready list; not met for arity, priority and
+the Goal Stack Entry Table. The approaches are not exhausted.
+
+Most useful next step: first verify "5 = XR + YR" on held-out code
+with a layout known from elsewhere, since two record layouts hang on
+it (candidates: the list cell's cdr at +1 in `merge` `3e54` or the
+`get_list` rows, the string descriptor, the 14 fields of the
+foster-parent record against `create_shoen`'s run at `1702`). Then
+read `proceed` from `216e` and page `2c00` with
+`--rtl`, after settling two small things it will trip on: what a
+bit-59 write stores (take the 100 image-2 words with an unambiguous
+load before them and look at the 50 that disagree), and bit 18 with
+its EM1 codes (minimal pair: `set_value` `3187` against `write_value`
+`31c9`, and the loop at `1c30`). `proceed` must read the next goal's
+priority and code from the record, which names `R12` and cell 15, and
+it is the place the Goal Stack Entry Table has to appear if this
+firmware uses it per priority.

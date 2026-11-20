@@ -349,6 +349,18 @@ multiple-waiter code from a 4-cell allocator with `HOOK`, `DREF` and
 datapath fields (where a read or write takes its address and data)
 are not worked out, and that is the next step.*
 
+*A fourth pass, 2026-11-20 (`pseudo_pimm_microcode.md` sections
+14-20): the memory datapath is settled (read strobe, write strobe,
+address step, the work registers, write timing), verified on held-out
+code in both images. The multiple-suspension record's four fields and
+their tags are read: `{DREF, variable}`, a next-waiter link, `{HOOK,
+goal record}`, `{MHOOK, next record of the same goal}`; their cell
+order (prev, next, goal, rival, as the console menu has it) depends on
+one addressing rule that is supported but not verified. The goal
+record is only partly read (16 cells is an inference; arity, priority
+and the goal stack entry table not recovered). Next: verify that
+addressing rule on a layout known from elsewhere.*
+
 | Unknown | Resolved in |
 |---|---|
 | Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
