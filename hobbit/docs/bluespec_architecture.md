@@ -101,7 +101,7 @@ the core or the event box knows about:
 | vector-page contents | `core.eventMemWrite(VB, …)`, a method the core exposes for the MMU/event testbenches ("the machine never calls these") | the tests substitute a handler address for the kernel's `_vectors` word |
 | the stub | `tools/p9shim.py` assembles it, the loader pokes it into `0x1000..0x101f` (the Exec header, below the text) | ordinary Hobbit parcels, fetched through the same prefetch window |
 | the doorbell | `mem[ISP-12]`, polled and cleared by the testbench | the KCALL's own `src` word, i.e. architectural memory the hardware wrote |
-| the release | `core.setPsw(savedPsw \| PSW_F)` | `PSW.F` is the one host-writable bit the machine reads (`JMPFN`) |
+| the result | `mem[RES]` then `mem[RDY]`, two words of the device page written by the testbench | the stub reads them as absolute operands — ordinary memory operands, fetched through the core's one memory read port |
 | the interrupt stack top | `core.setIsp(0x0d00)` | the kernel's job in a real boot (`raml.s:16`) |
 | the user PSW restore | `core.setPsw(savedPsw)` when the handler returns | what `KRET` would do; the model has no KRET |
 | the file table, the console, `write`/`read`/`open`/`close` | the testbench and `tools/p9shim.py` | the kernel side the shim replaces |
@@ -111,8 +111,7 @@ state: everything a shimmed run retires is a parcel the machine executed,
 and the HRI stream is the same interface the smoke and golden tests use.
 The only testbench writes that survive into the trace are the ones the
 manual assigns to hardware (the frame, the PSW bits) or to the loader
-(memory and the vector page).  If a future milestone needs the host to
-put a *data* value into the machine, that is the p. 1-5 off-chip operand
-path (`docs/isa_inventory.md` §1.6), a core change, not a harness
-device — and it must be made in `HobbitStackCache`/`HobbitCore`, with the
-HRI record extended to show it.
+and the kernel (memory and the vector page).  The host puts a *data*
+value into the machine the way a kernel does, by writing memory: the
+p. 1-5 off-chip operand path is in the core (`docs/conformance_1to1.md`
+§1a), not in a harness device.

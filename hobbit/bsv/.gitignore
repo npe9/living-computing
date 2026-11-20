@@ -27,6 +27,9 @@ sim_core_mmu.so
 p9.img
 P9Image.bsv
 P9Entry.bsv
+P9Shim.bsv
+p9.console
+p9.log
 sim_p9
 sim_p9.so
 P9BootTb.ba

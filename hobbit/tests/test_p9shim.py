@@ -18,15 +18,34 @@ arguments are the three words at CSP+4/+8/+12 (the accumulator first) and
 the result comes back in the accumulator, because the stub's own
 `RETURN R0` pops nothing (offset 0, PRM p. 3-40).
 
-The two-value result contract is checked as a contract: every result the
-host model returns must be 0 or the file's length (`Kind.ZERO` /
-`Kind.SIZE`), because that is all PSW.F can name; a request that would
-need any other value is refused, and these tests pin the refusals.
+The result contract is the stub's: the host writes the result word and
+then the ready word, and the stub returns exactly that word in the
+accumulator.  So the host model may return any 32-bit value, and the
+tests pin the values that matter to 1e's cat: a partial read returns its
+count and advances the offset, end of file returns 0, open returns
+descriptor 3, write returns the caller's n.
 
-The stub's shape is checked parcel by parcel: the bootstrap's absolute
-jump, the two spins, the two ACKs in the user's stack word R20, and the
-generated size immediate.  Injecting a one-parcel change (for example
-swapping the ACK values 1 and 2) fails `test_the_handshake_parcels`.
+The stub's shape is checked parcel by parcel: the bootstrap's jump, the
+wait on RDY, the load of RES into the accumulator, and RETURN R0.
+
+Injections made and reverted (2026-11-19), with the tests observed to
+fail -- each list is the whole failure set of the 21 tests:
+
+  * RDY and RES swapped in `stub_source`: `test_the_stub_parcels`;
+  * `MOV *$RES, R4` changed to `MOV *$RES, R8`: `test_the_stub_parcels`;
+  * `JMPTY` changed to `JMPFY` (the loop sense inverted, which is how the
+    stub first went wrong): `test_the_stub_parcels`;
+  * `take = min(n, size - off)` changed to `take = n`:
+    `test_read_fills_the_users_buffer_and_returns_the_file_length`,
+    `test_read_at_eof_returns_zero` and
+    `test_open_returns_descriptor_three_and_reads_from_the_top`.
+    `test_a_partial_read_returns_its_count_and_advances` does *not* fail
+    under it (its requests are shorter than the file), so the short-file
+    bound is pinned by the other three.
+
+(Injecting by overwriting the file within one second left a stale
+`tools/__pycache__` once and showed a failure on the restored tree;
+remove the cache when a restored run disagrees with the source.)
 """
 
 from __future__ import annotations
@@ -99,73 +118,93 @@ class TestHostSyscalls(unittest.TestCase):
         self.mem.write(self.arg(0), 1)          # fd = stdout
         self.mem.write(self.arg(1), buf)
         self.mem.write(self.arg(2), len(self.FILE))
-        result, kind, what = self.shim.syscall(20, self.SP)
+        result, what = self.shim.syscall(20, self.SP)
         self.assertEqual(what, "write")
         self.assertEqual(result, len(self.FILE))
-        self.assertEqual(kind, p9shim.Kind.SIZE,
-                         "write returns the user's n, which is the size")
         self.assertEqual(bytes(self.shim.console), self.FILE)
 
-    def test_a_write_whose_count_the_channel_cannot_name_is_refused(self):
-        self.mem.write(self.arg(0), 1)
-        self.mem.write(self.arg(1), 0x6000)
+    def test_a_short_write_returns_the_callers_count(self):
+        buf = 0x6001                            # not word aligned
+        self.mem.write_bytes(buf, self.FILE)
+        self.mem.write(self.arg(0), 2)          # fd = stderr
+        self.mem.write(self.arg(1), buf)
         self.mem.write(self.arg(2), 5)
+        result, _ = self.shim.syscall(20, self.SP)
+        self.assertEqual(result, 5)
+        self.assertEqual(bytes(self.shim.console), self.FILE[:5])
+
+    def test_a_write_to_a_file_descriptor_is_refused(self):
+        self.mem.write(self.arg(0), 3)
         with self.assertRaises(SystemExit) as ctx:
             self.shim.syscall(20, self.SP)
-        self.assertIn("only 0 and", str(ctx.exception))
+        self.assertIn("only the console", str(ctx.exception))
+
+    def test_bytes_are_big_endian_in_the_word(self):
+        # PRM p. 1-4: the byte at a word address is bits 31:24.
+        self.mem.write_bytes(0x6000, b"\x11\x22\x33\x44")
+        self.assertEqual(self.mem.read(0x6000), 0x11223344)
+        self.assertEqual(self.mem.read_byte(0x6001), 0x22)
 
     def test_read_fills_the_users_buffer_and_returns_the_file_length(self):
         buf = 0x6000
         self.mem.write(self.arg(0), 0)      # fd = stdin
         self.mem.write(self.arg(1), buf)
         self.mem.write(self.arg(2), 8192)
-        result, kind, what = self.shim.syscall(15, self.SP)
+        result, what = self.shim.syscall(15, self.SP)
         self.assertEqual(what, "read")
         self.assertEqual(result, len(self.FILE))
-        self.assertEqual(kind, p9shim.Kind.SIZE)
         self.assertEqual(self.mem.read_bytes(buf, len(self.FILE)), self.FILE)
 
-    def test_read_at_eof_returns_zero_through_the_zero_path(self):
+    def test_read_at_eof_returns_zero(self):
         buf = 0x6000
         self.mem.write(self.arg(0), 0)
         self.mem.write(self.arg(1), buf)
         self.mem.write(self.arg(2), 8192)
         self.shim.syscall(15, self.SP)                 # consume the file
-        result, kind, what = self.shim.syscall(15, self.SP)
-        self.assertEqual(result, 0)
-        self.assertEqual(kind, p9shim.Kind.ZERO)
+        result, what = self.shim.syscall(15, self.SP)
+        self.assertEqual((result, what), (0, "read"))
 
-    def test_a_partial_read_is_refused_rather_than_returned_wrong(self):
+    def test_a_partial_read_returns_its_count_and_advances(self):
+        buf = 0x6000
         self.mem.write(self.arg(0), 0)
+        self.mem.write(self.arg(1), buf)
+        self.mem.write(self.arg(2), 4)
+        result, _ = self.shim.syscall(15, self.SP)
+        self.assertEqual(result, 4)
+        self.assertEqual(self.mem.read_bytes(buf, 4), self.FILE[:4])
+        result, _ = self.shim.syscall(15, self.SP)
+        self.assertEqual(result, 4)
+        self.assertEqual(self.mem.read_bytes(buf, 4), self.FILE[4:8])
+
+    def test_a_read_of_an_unopened_descriptor_is_refused(self):
+        self.mem.write(self.arg(0), p9shim.FILE_FD)
         self.mem.write(self.arg(1), 0x6000)
         self.mem.write(self.arg(2), 4)
         with self.assertRaises(SystemExit) as ctx:
             self.shim.syscall(15, self.SP)
-        self.assertIn("only 0 and", str(ctx.exception))
+        self.assertIn("refused read", str(ctx.exception))
 
-    def test_open_returns_the_file_length_as_its_fd(self):
+    def test_open_returns_descriptor_three_and_reads_from_the_top(self):
         path = 0x7000
         self.mem.write_bytes(path, self.NAME.encode() + b"\0")
         self.mem.write(self.arg(0), path)
         self.mem.write(self.arg(1), 0)
-        result, kind, what = self.shim.syscall(14, self.SP)
-        self.assertEqual((result, kind), (len(self.FILE), p9shim.Kind.SIZE))
+        result, what = self.shim.syscall(14, self.SP)
+        self.assertEqual((result, what), (3, "open"))
         buf = 0x6000
-        self.mem.write(self.arg(0), len(self.FILE))
+        self.mem.write(self.arg(0), 3)
         self.mem.write(self.arg(1), buf)
         self.mem.write(self.arg(2), 8192)
-        r, _, _ = self.shim.syscall(15, self.SP)
+        r, _ = self.shim.syscall(15, self.SP)
         self.assertEqual(r, len(self.FILE))
         self.assertEqual(self.mem.read_bytes(buf, len(self.FILE)), self.FILE)
-        self.mem.write(self.arg(0), len(self.FILE))
-        r, kind, what = self.shim.syscall(4, self.SP)
-        self.assertEqual((r, kind, what), (0, p9shim.Kind.ZERO, "close"))
-        self.assertFalse(self.shim.fd_open(len(self.FILE)))
+        self.mem.write(self.arg(0), 3)
+        self.assertEqual(self.shim.syscall(4, self.SP), (0, "close"))
+        self.assertFalse(self.shim.fd_open(3))
 
     def test_exits_has_no_result_and_stops(self):
-        result, kind, what = self.shim.syscall(8, self.SP)
+        result, what = self.shim.syscall(8, self.SP)
         self.assertIsNone(result)
-        self.assertIsNone(kind)
         self.assertEqual(what, "exits")
 
     def test_unknown_syscall_is_refused_with_the_number_and_the_cite(self):
@@ -181,70 +220,49 @@ class TestHostSyscalls(unittest.TestCase):
 
 class TestStub(unittest.TestCase):
     ENTRY = 0x12BC            # cat's _main
-    SIZE = 7532               # raml.s, the file the default run serves
 
-    def build(self, size=None, entry=None):
-        return p9shim.build_stub(entry if entry is not None else self.ENTRY,
-                                 self.SIZE if size is None else size)
+    def build(self, entry=None):
+        return p9shim.build_stub(entry if entry is not None else self.ENTRY)
 
-    def test_the_stub_fits_the_exec_header_exactly(self):
+    @staticmethod
+    def parcel(words, i):
+        return (words[i >> 1] >> (16 if (i & 1) == 0 else 0)) & 0xFFFF
+
+    def test_the_stub_fits_the_exec_header(self):
         words, addr, _ = self.build()
-        self.assertEqual(len(words) * 4, p9shim.EXEC_HEADER_BYTES)
-        for name in ("p9stub", "p9armed", "p9ret"):
-            self.assertIn(name, addr)
-            self.assertGreaterEqual(addr[name], p9shim.EXEC_HEADER)
-            self.assertLess(addr[name], p9shim.EXEC_HEADER + p9shim.EXEC_HEADER_BYTES)
+        self.assertLessEqual(len(words) * 4, p9shim.EXEC_HEADER_BYTES)
+        self.assertEqual(len(words), 5, "ten parcels")
+        self.assertEqual(addr["p9stub"], p9shim.EXEC_HEADER + 4)
 
-    def test_the_handshake_parcels(self):
+    def test_the_stub_parcels(self):
         words, addr, _ = self.build()
+        i = (addr["p9stub"] - p9shim.EXEC_HEADER) // 2
+        got = [self.parcel(words, i + k) for k in range(8)]
+        self.assertEqual(got[0], 0x9FFC, "CMPEQ $imm16, *$abs16 (Table 1-18)")
+        self.assertEqual(got[1], 0x0000, "the immediate: zero")
+        self.assertEqual(got[2], p9shim.RDY, "the ready word")
+        self.assertEqual(got[3], 0x1FFD, "JMPTY back three parcels")
+        self.assertEqual(got[4], 0x86CD, "MOV *$abs16, Roffset")
+        self.assertEqual(got[5], p9shim.RES, "the result word")
+        self.assertEqual(got[6], 0x0004, "R4: the accumulator (p. 1-7)")
+        self.assertEqual(got[7], 0x0802, "RETURN R0")
 
-        def parcel(i):
-            return (words[i >> 1] >> (16 if (i & 1) == 0 else 0)) & 0xFFFF
+    def test_the_device_words_are_distinct_and_outside_the_user_stack(self):
+        devs = {p9shim.RDY, p9shim.RES, p9shim.DB, p9shim.VB}
+        self.assertEqual(len(devs), 4)
+        self.assertEqual(p9shim.DB, p9shim.ISP0 - 12, "KCALL's *(ISP-12) = src")
+        for d in devs:
+            self.assertLess(d, p9shim.EXEC_HEADER)
 
-        def at(name):
-            return (addr[name] - p9shim.EXEC_HEADER) // 2
-
-        i = at("p9stub")
-        self.assertEqual(parcel(i), 0x1000, "JMPFN to itself: wait for F=1")
-        self.assertEqual(parcel(i + 1), 0x86FC, "MOV $1,*ACK: ACK 1")
-        self.assertEqual(parcel(i + 2), 0x0001)
-        self.assertEqual(parcel(i + 3), p9shim.ACK, "the ACK word")
-        a = at("p9armed")
-        self.assertEqual(parcel(a), 0x1400, "JMPFY to itself: wait for F=0")
-        self.assertEqual(parcel(a + 1), 0x86FC, "MOV $2,*ACK: ACK 2")
-        self.assertEqual(parcel(a + 2), 0x0002)
-        self.assertEqual(parcel(a + 3), p9shim.ACK)
-        # default zero, then the branch on the value bit, then the size
-        self.assertEqual(parcel(a + 4), 0x7001, "MOV $0,R4")
-        self.assertEqual(parcel(a + 5), 0x1004, "JMPFN p9ret")
-        self.assertEqual(parcel(a + 6), 0x86FD, "MOV $7532,R4")
-        self.assertEqual(parcel(a + 7), 7532)
-        self.assertEqual(parcel(a + 8), 0x0004)
-        self.assertEqual(parcel(at("p9ret")), 0x0802, "RETURN R0")
-
-    def test_the_stub_is_exactly_the_exec_header(self):
+    def test_the_bootstrap_jump_lands_on_main(self):
         words, _, _ = self.build()
-        self.assertEqual(len(words), 8)
-        # the bootstrap's jump is pcrel (the assembler's 0-based layout) and
-        # must land on _main when the stub is placed at 0x1000
-        p1 = (words[0] & 0xFFFF)
+        self.assertEqual(self.parcel(words, 0), 0x7021, "MOV $1,R4: argc")
+        # the jump is pcrel (the assembler's 0-based layout) and must land
+        # on _main when the stub is placed at 0x1000
+        p1 = self.parcel(words, 1)
         self.assertEqual(p1 >> 10, 0x03, "JMP")
         disp = p1 & 0x3FF
         self.assertEqual(0x1002 + 2 * disp, self.ENTRY)
-
-    def test_a_large_size_still_fits(self):
-        # 0x7fff is the largest size that still encodes as a signed 16-bit
-        # immediate; the three-parcel MOV carries it and the stub is 32 bytes.
-        words, _, _ = self.build(size=0x7FFF)
-        self.assertEqual(len(words) * 4, p9shim.EXEC_HEADER_BYTES)
-
-    def test_a_size_that_needs_the_wide_form_is_refused(self):
-        # 0xffff is negative as a 16-bit immediate, so the assembler picks
-        # the five-parcel MOV and the stub outgrows the Exec header: the
-        # generator must say so rather than overlap the text.
-        with self.assertRaises(SystemExit) as ctx:
-            self.build(size=0xFFFF)
-        self.assertIn("36 bytes", str(ctx.exception))
 
     def test_a_window_that_is_not_the_exec_header_is_refused(self):
         with self.assertRaises(SystemExit) as ctx:

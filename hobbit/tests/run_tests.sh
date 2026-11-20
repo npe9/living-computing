@@ -23,6 +23,7 @@ python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/bin/echo" >/dev
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
 python3 "$here/test_sem_extended.py"
+python3 "$here/test_p9shim.py"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
@@ -37,6 +38,15 @@ python3 "$here/golden/check_golden.py"
 # The bus face and the timers behind it.
 "$hobbit/bsv/run_bus.sh"
 "$hobbit/bsv/run_timer.sh"
+# A1: 1e `cat` reads a real file through the syscall shim, prints it over
+# the model's `write` byte-exactly, and exits 0 (run_p9.sh checks both and
+# fails otherwise).
+if ! "$hobbit/bsv/run_p9.sh" > "$tmp/p9.out" 2>&1; then
+    tail -20 "$tmp/p9.out"
+    echo "hobbit: the A1 cat run failed" >&2
+    exit 1
+fi
+grep '^P9SHIM' "$tmp/p9.out"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"

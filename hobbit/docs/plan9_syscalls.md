@@ -111,63 +111,59 @@ loader owns; text begins at 0x1020):
 
 ```
         MOV     $1, R4          ; argc = 1: cat reads its stdin
-        JMP     *$_main         ; the image's entry
-p9stub: JMPFN   p9stub          ; spin while PSW.F == 0
-        MOV     $0, R4          ; default result (close, errstr, EOF)
-        KCALL   $0              ; dispatch: VB+0 names the result handler
-p9ret:  RETURN  R0              ; back through the user's own stack
-p9fd:   MOV     $3, R4          ; open -> first fd after 0,1,2
-        RETURN  R0
-p9count:MOV     R12, R4         ; read/write: the user's n
-        RETURN  R0
-p9size: MOV     $<file length>, R4   ; the bytes actually transferred
-        RETURN  R0
+        JMP     _main           ; the image's entry
+p9stub: CMPEQ   $0, *$RDY       ; F = 1 while the host is still working
+        JMPTY   p9stub          ; jump if F is true, predicted taken
+        MOV     *$RES, R4       ; the result, into the accumulator
+        RETURN  R0              ; back to the libc stub
 ```
 
-Sixteen parcels, exactly the Exec header.
+Ten parcels (`7021 0d5d 9ffc 0000 0c14 1ffd 86cd 0c18 0004 0802`).
+`RDY` = `0x0c14` and `RES` = `0x0c18` are words of the testbench's device
+page, read as absolute operands.  (`JMPTY`: the T/F letter is the
+condition, the Y/N letter the static prediction — `JMPFY` here would
+leave the loop while the host is still working.)
 
-The three model facts that fix this shape (all measured, not assumed):
-
-1. **An operand outside `[SP, MSP)` reads as zero.**  The model's operand
-   path is the stack cache and the box's defined miss is 0
-   (`docs/isa_inventory.md` §1.6; `bsv/HobbitStackCache.bsv`, `readWord`).
-   A stub entered with the interrupt stack as CSP therefore *cannot read
-   any memory word* — not the event frame, not a doorbell word.  It can
-   only write memory and branch on `PSW.F`.
-2. **The host can write no machine state the machine can read**, except
-   PSW (through the core's testbench `setPsw`), `VB`/the vector page
-   (`eventMemWrite`), the ISP/SHAD, and a restart.  Writing the user's
-   accumulator or its buffer from the testbench is impossible: the
-   accumulator lives in the stack cache.
-3. **The model has no `KRET`, no `CRET` and no CPU-register
-   instructions.**  `bsv/HobbitDecode.bsv`'s niladic decode implements
-   only `NOP`; everything else traps (`TR_UNIMP`, `TR_CPU`).
-
-So the shim's protocol is:
+The protocol:
 
 * **The doorbell is the hardware's own frame write.**  The KCALL stores
-  the id at `ISP-12` (PRM p. 3-29); the frame lives on the interrupt
-  stack, outside `[SP, MSP)`, so it is in memory and the host polls and
-  clears that word.  This is the boot plan's reserved doorbell word,
-  with the hardware writing the id instead of the stub — the stub cannot
-  read the id, and does not need to: the host has it.
-* **The stub waits on `PSW.F`**, the only host-writable bit the machine
-  can read: `JMPFN p9stub` loops while F = 0 (JMPF = jump if F = 0,
-  PRM p. 3-28; `JMPFN` is `JMPF` with a predict-not-taken bit).
-* **The result is delivered by a result handler the host selects**
-  through the vector page: after the syscall the host writes the
-  handler's address into `evmem[VB]` and releases the stub; the stub's
-  `KCALL $0` jumps there.  The vector page is the one host-writable word
-  a KCALL reads, so it is the shim's dispatch table.  The handlers set
-  the accumulator from a value the machine actually has: the user's own
-  `n` (`MOV R12,R4`), the fd it allocated (`3`), zero, or the generated
-  count ("the bytes this shim transferred").
-* **The return is `RETURN R0`**, which takes the new PC from the user's
-  own stack word — the address `CALL write` left there — with the SP
-  unchanged, exactly as the libc stub's own `RETURN R0` would have done.
-  The model unwinds the *call*; the host restores what `KRET` would have
-  restored (the PSW, from the frame's `ISP-4` word, and the ISP) through
-  the core's testbench surface, because no instruction can.
+  the id at `ISP-12` (PRM p. 3-29); the host polls that word.
+* **The host does the syscall**, reading the three arguments from the
+  user's stack words and moving bytes between the host file, the console
+  and the user's buffer in memory.
+* **The host answers in order**: doorbell cleared, `RES` written, `RDY`
+  set.  The stub re-reads `RDY` from memory on every iteration, so the
+  host may answer at any clock; nothing has to land between two adjacent
+  stub instructions.
+* **The stub returns with `RETURN R0`**, which takes the new PC from the
+  user's own stack word — the address `CALL write` left there — with the
+  SP unchanged, exactly as the libc stub's own `RETURN R0` would have
+  done.
+* **The host finishes what `KRET` would do**: the PSW from the frame's
+  `ISP-4` word, `ISP += 16`, and `RDY` cleared for the next call.  The
+  model has no `KRET`/`CRET` yet.
+
+The host's writes to memory are queued behind the machine's: the
+testbench memory has one write port, the machine's write always takes it,
+and a host write waits one register for a free clock
+(`bsv/P9BootTb.bsv`, `mkP9Mem`).
+
+**History, because the shape changed.**  Until the core read operands
+outside the stack cache (`docs/conformance_1to1.md` §1a) the stub could
+read no memory word at all.  The first shim therefore signalled through
+`PSW.F` with a two-step ACK word, could return only 0 or one generated
+constant (the file's length), and refused every other count.  It also
+could not be made correct: the host had to change `PSW.F` between the
+stub's `MOV $2,*ACK` and the conditional jump two parcels later, and
+whether it managed to was a matter of clock phase.  That shim is gone;
+its refusals ("the machine's result channel can name only 0 and N") no
+longer exist.
+
+**Known limit.**  The host reads and writes the user's buffer in memory.
+A buffer word that is also inside `[SP, MSP)` has its current value in
+the stack cache, not in memory, so a program that touched such words
+itself would disagree with the host.  `cat` hands its buffer to `read`
+and `write` untouched.
 
 **What the shim does not depend on: O4.**  It never reads the kernel's
 eight-word `Ureg`; it reads the printed four-word frame the model
@@ -180,22 +176,20 @@ at +0.
 ## Per-syscall contract as implemented
 
 `fd` numbering follows the kernel's `newfd`: 0, 1, 2 are stdin, stdout,
-stderr; the first `open` returns 3.  Offsets are per fd.
+stderr; `open` returns 3.  The shim serves one host file: it is stdin,
+and it is what `open` opens, whatever path is named.
 
-| id | call | arguments (`CSP+4,+8,+12`) | result | handler |
-|---|---|---|---|---|
-| 1 | `errstr(buf,n)` | buf, n | 0 (no error text; copies nothing) | `p9ret` |
-| 4 | `close(fd)` | fd | 0 | `p9ret` |
-| 8 | `exits(msg)` | msg (a string pointer, 0 = none) | — the run stops, status 0 | — |
-| 14 | `open(path,mode)` | path, mode | 3 (the shim serves one file; a different path is refused) | `p9fd` |
-| 15 | `read(fd,buf,n)` | fd, buf, n | the bytes moved; 0 at EOF | `p9ret` (0), `p9count` (n), `p9size` (the file, when the request exceeds it) |
-| 20 | `write(fd,buf,n)` | fd, buf, n | n | `p9count` |
+| id | call | arguments (`CSP+4,+8,+12`) | result (`RES`) |
+|---|---|---|---|
+| 1 | `errstr(buf,n)` | buf, n | 0 (no error text; copies nothing) |
+| 4 | `close(fd)` | fd | 0 |
+| 8 | `exits(msg)` | msg (a string pointer, 0 = none) | — the run stops; status 0 for a nil message, 1 otherwise |
+| 14 | `open(path,mode)` | path, mode | 3 |
+| 15 | `read(fd,buf,n)` | fd, buf, n | the bytes moved, `min(n, left)`; 0 at EOF |
+| 20 | `write(fd,buf,n)` | fd, buf, n | n |
 
-`errstr`'s buffer is in the stack cache, so this shim cannot copy a
-message into it; it reports the empty string and returns 0.  Nothing on
-the boot path calls it (cat's `argc == 1` path is `cat(0, "<stdin>")`
-then `exits(0)`), and a program that printed the buffer would see
-whatever was there.
+`tools/p9shim.py`'s `Shim` class is the same contract in Python, and
+`tests/test_p9shim.py` (21 tests) drives it and pins the stub's parcels.
 
 ### Refusals
 
@@ -205,23 +199,5 @@ a plausible guess:
 * an id that is not one of the six: `P9SHIM REFUSED syscall <n> …not in
   the 1e syscall table (hobbit/bin/cat stubs; hobbit/lib/libc.a members;
   raml.s _vectors)`;
-* `read` from an fd other than 0 or 3, `write` to an fd other than 1 or
-  2;
-* a partial `read` whose count is neither the request nor the whole file:
-  the result handler's count is an immediate generated from the host file
-  (see below), and a count no handler can name is refused rather than
-  returned wrong;
-* an `open` whose path is not the shim's file.
-
-### The generated count, and why
-
-`read`'s count is data the host knows and the machine cannot receive:
-the only host-to-machine channels are `PSW.F` (one bit), the vector page
-(a code address) and the ISP.  So the shim's `p9size` handler carries
-the file's length as a 16-bit immediate, generated by
-`tools/p9shim.py --emit` from the same file table that serves the read;
-the count returned is the count actually moved.  Requests that the
-whole-file immediate cannot describe are refused (above).  This is a
-limit of the model's operand path, not of the syscall: with the p. 1-5
-off-chip operand path modelled, the host could write the accumulator
-directly and no generated immediate would be needed.
+* `read` from an fd other than 0 or an opened 3;
+* `write` to an fd other than 1 or 2.
