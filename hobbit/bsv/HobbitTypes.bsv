@@ -54,8 +54,9 @@ typedef enum {
 } HobbitOp deriving (Eq, Bits);
 
 // DQM (p. 3-18) moves two or four contiguous words; "if the source mode
-// is 0xF, the constant is replicated either two or four times".  Only the
-// constant-source form is modelled (HobbitDecode.bsv, `dqm`).
+// is 0xF, the constant is replicated either two or four times".  The two
+// ops are the two sizes; the source may be the constant or a word mode
+// (HobbitDecode.bsv, `dqm`).
 function Bool isDqmOp(HobbitOp op) = (op == OP_DQM2) || (op == OP_DQM4);
 function Word dqmBytes(HobbitOp op) = (op == OP_DQM4) ? 16 : 8;
 
@@ -653,6 +654,8 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     // Table 4-34 (printed p. 4-4), DQM with a constant source: to the
     // stack cache 3 (double-word) and 5 (quad-word); to memory 1 + D and
     // 1 + Q, which are the same 3 and 5 with this model's D = 2, Q = 4.
+    // (A source in memory or the stack takes the other rows of the
+    // table; EU_S1 sets those where it knows the addresses.)
     OP_DQM2:  return 2;
     OP_DQM4:  return 4;
     OP_TADD:  return 0;                         // TADD row, 1

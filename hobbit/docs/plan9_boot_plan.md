@@ -316,6 +316,51 @@ model, producing a 1e Hobbit kernel image. Gate: the image's `Exec`
 header passes `tools/p9exec.py` and the relocation/symbol checks the
 `zl` sources define; the image is reproducible from a recorded command.
 
+**Status 2026-11-20: started, paused.  Not closed.**  What is done and
+what is not:
+
+* *The compiler is reproduced on the reference model.*  The shipped
+  `zc`, run by `tools/p9run.py` in a tree laid out like the release
+  (`/sys/include`, `/hobbit/include`, `--cwd` the source directory),
+  compiles every C source of libc that has a member in the shipped
+  `libc.a` (`libc/hobbit`, `port`, `9sys`; 102 files, 197 million
+  instructions): **94 objects are byte-identical to the shipped members**
+  and none failed.  The 8 that differ are `port/{memmove, memset,
+  strchr, strcmp, strcpy, strlen, strncmp, strrchr}.c`, whose archive
+  members are built from `libc/hobbit`'s assembler versions instead
+  (`za` reproduces those, A2).  This was run once by hand
+  (a scratch script); **it is not in the suite yet.**
+* *The compiler runs on the Bluespec core.*  `zc frexp.c`: 1,651,700
+  retirements agree with the reference run, 101 kernel entries (75 of
+  them floating point, replayed), `frexp.z` identical.  One file, run by
+  hand (`P9CWD=sys/src/libc/hobbit bsv/run_p9host.sh TREE zc frexp.c`,
+  about a minute); **not in the suite yet.**  It needed three more
+  things from the core: `DQM` with a block source (golden 021); the
+  one-parcel `ENTER`'s 8-bit offset one-filled, not sign-extended
+  (p. 3-20 note a -- a frame over 2,048 bytes moved SP *up*; no golden
+  can hold such a frame, so this is pinned only by the run); and the
+  full PC in the retirement record (it printed 16 bits).
+* *The reference model* resolves Table 4-34's undefined `8.S` cell with
+  a stated choice (S = A), because `zc` executes that instruction.
+* *A real kernel file compiles on the reference model*: `zc -w -Dram
+  trap.c` in `sys/src/9/hobbit`, 8.5 million instructions, a 23,835-byte
+  object.  Nothing to compare it with yet.
+* *Vendored* for this: `sys/src/9/port`, `sys/src/9/boot`,
+  `sys/include`, `hobbit/include`, `sys/src/libc` (`port`, `9sys`,
+  `9syscall`, `hobbit`), `hobbit/mkfile`, and **`hobbit/s9term`**, a
+  kernel image the release ships (550,846 bytes) -- the candidate oracle
+  for the link.
+
+Not done: the kernel's generated inputs (`cpu.c` from `mkdevc`,
+`init.h`, `boot*.root`, `KERNDATE` -- rc pipelines needing fork, exec
+and pipes, which `p9run` refuses); `ar`; the link; a kernel-image mode
+for `tools/p9exec.py`; and the decision the cost implies -- about 100
+files at ~8 million instructions each is an hour on the reference model
+and several on the core, so the full build belongs in a recorded long
+run with a sample in the suite.  Open from the compiler run: 1,376 reads
+outside the segments (1,332 of address 0, 44 of 0x80000000), not
+traced.
+
 ### A4 — boot to the console
 
 Model side: the DUART registers of `io.h` (`Eiaaddr`, the `Duart`/

@@ -360,6 +360,12 @@ typedef struct {
   Word   ptWord;       // ... and this is it, in-flight writers applied
   Bool   pt2Mem;       // the same for the destination's pointed-to word
   Word   pt2Word;      // when both operands are indirect
+  // DQM with a source in memory or the stack is issued as two or four
+  // word moves (HobbitCore `curOut`): which word this is, and whether it
+  // is the last.
+  Bool   dqmMem;
+  Bit#(2) dqmIdx;
+  Bool   dqmLast;
 } EuS1Out deriving (Bits);
 
 // One bypass source: the instruction in EU_S2 or EU_S3.
@@ -474,6 +480,18 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   Reg#(Bool) latClrSeen <- mkReg(False);
   // Set by the handoff of a DQM; see `present`.
   Reg#(Bool) holdR <- mkReg(False);
+  // DQM whose source is a word mode (p. 3-18: "moves either two or four
+  // contiguous words from the source to the destination").  The EU moves
+  // one word per instruction slot, so such a DQM occupies the slot two
+  // or four times: this is the word being moved.  Each pass is an
+  // ordinary word MOV with both addresses advanced by 4*dqmIdx, so the
+  // source's words come through the same paths as any operand (cache,
+  // memory, bypass); only the first pass has a retirement record, and it
+  // carries the whole instruction's Table 4-34 count; PC moves on, and a
+  // folded branch is taken up, with the last.  A double- or quad-aligned
+  // source and destination either coincide or do not overlap, so the
+  // order of the words cannot matter.
+  Reg#(Bit#(2)) dqmIdx <- mkReg(0);
 
   function Maybe#(Word) latHit(Maybe#(Tuple2#(Word, Word)) l, Word wa);
     if (l matches tagged Valid {.a, .d} &&& (a == wa))
@@ -636,6 +654,12 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     else begin
       DecInstEntry e = validValue(m);
       let d = e.d;
+      Bool dqmM = isDqmOp(d.op) && (d.src.mode != 4'hF) &&
+                  (d.tr == TR_NONE);
+      Word dqmOff = dqmM ? (zeroExtend(dqmIdx) << 2) : 0;
+      Bool dqmLast = !dqmM || (dqmIdx == ((d.op == OP_DQM4) ? 2'd3 : 2'd1));
+      // Only the last word's pass may carry a folded branch.
+      if (dqmM && !dqmLast) e.d.fold = False;
       Word spb = fwdSp();
       Word mspb = fwdMsp();
       Word srcV = 0;
@@ -661,6 +685,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
         Operand so = d.src;
         if ((d.op == OP_KCALL) && (so.mode == 4'hD))
           so = Operand { mode: 4'hF, val: spb + so.val };
+        if (dqmM && !modeIsIndirect(so.mode))
+          so.val = so.val + dqmOff;
         // One operandA and one operandB call site per instruction: the
         // two read ports are the printed 64x32x2, and the branchy form
         // (a call per consumer) duplicated the ports bsc counts.  MOVA
@@ -679,7 +705,8 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
             (d.op == OP_RETURN) || flowIndirect(d) ||
             opNeedsSrcEa(d.op) || enterMem) begin
           let r = operandA(so, spb, mspb);
-          srcEa = r.ea; bad = bad || r.bad;
+          srcEa = (dqmM && modeIsIndirect(so.mode)) ? r.ea + dqmOff : r.ea;
+          bad = bad || r.bad;
           if (enterMem)
             e.d.src = Operand { mode: 4'hF,
                                 val: (so.mode == 4'hE) ? r.ea : r.val };
@@ -695,8 +722,12 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           end
         end
         if (opReadsDst(d.op) || opWritesDst(d.op)) begin
-          let r = operandB(d.dst, spb, mspb);
-          dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
+          Operand dop = d.dst;
+          if (dqmM && !modeIsIndirect(dop.mode))
+            dop.val = dop.val + dqmOff;
+          let r = operandB(dop, spb, mspb);
+          dstEa = (dqmM && modeIsIndirect(dop.mode)) ? r.ea + dqmOff : r.ea;
+          dstW = r.word; bad = bad || r.bad;
           if (opReadsDst(d.op)) dstV = r.val;
           // A word-wide store needs no old word (mergeStore ignores it at
           // width 4), so a write-only word destination is not fetched.
@@ -734,9 +765,22 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           end
         end
       end
-      return mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
-                   retPc, bad, sinceCmp, miss, missAddr, ptMem, ptWord,
-                   pt2Mem, pt2Word);
+      EuS1Out o = mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
+                        retPc, bad, sinceCmp, miss, missAddr, ptMem, ptWord,
+                        pt2Mem, pt2Word);
+      o.dqmMem  = dqmM;
+      o.dqmIdx  = dqmM ? dqmIdx : 0;
+      o.dqmLast = dqmLast;
+      if (dqmM) begin
+        // Table 4-34 (p. 4-4), by where the two blocks live.  Double
+        // word: SC to SC 4, SC/M to M/SC 2 + D, M to M 2.D -- all 4 with
+        // D = 2.  Quad word: SC to SC 8, SC/M to M/SC 4 + D = 6, M to M
+        // the printed 8.S = 8 (S read as A, sem/hobbit_sem.py S_CYC).
+        Bool srcSc = inCache(srcEa - dqmOff, spb, mspb);
+        Bool dstSc = inCache(dstEa - dqmOff, spb, mspb);
+        o.extra = (d.op == OP_DQM4) ? ((srcSc != dstSc) ? 5 : 7) : 3;
+      end
+      return o;
     end
   endfunction
 
@@ -851,6 +895,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     block    <= 0;
     sinceCmp <= 0;
     holdR    <= False;
+    dqmIdx   <= 0;
     latClrReq <= !latClrReq;
   endmethod
 
@@ -876,12 +921,17 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // never need to fire together -- and they cannot: `present` requires
   // an empty slot and this method is called on a full one.
   method Action deq(EuS1Out o);
+    // A DQM from memory stays at its PC until its last word has gone.
+    Bool stay = o.dqmMem && !o.dqmLast;
     fullR <= False;
-    pcR      <= o.nextPc;
-    block    <= o.extra;
-    sinceCmp <= isCompareOp(o.e.d.op) ? 0
-              : ((sinceCmp == 15) ? 15 : sinceCmp + 1);
-    holdR    <= isDqmOp(o.e.d.op) || (o.e.d.op == OP_CATCH);
+    if (!stay) begin
+      pcR      <= o.nextPc;
+      block    <= o.extra;
+      sinceCmp <= isCompareOp(o.e.d.op) ? 0
+                : ((sinceCmp == 15) ? 15 : sinceCmp + 1);
+      holdR    <= isDqmOp(o.e.d.op) || (o.e.d.op == OP_CATCH);
+    end
+    dqmIdx   <= stay ? dqmIdx + 1 : 0;
     latClearW <= True;
   endmethod
 
@@ -894,6 +944,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     block    <= 0;
     sinceCmp <= 0;
     holdR    <= False;
+    dqmIdx   <= 0;
     latClearW <= True;
   endmethod
 
@@ -931,6 +982,7 @@ typedef struct {
   Bool   divZero;      // the fatal case is the p. 3-17 zero divide
   Bool   kcall;        // KCALL: frame tail and ISP at commit
   Bit#(3) dqm;         // DQM: words in the block (0, 2 or 4)
+  Bool   silent;       // a later word of a DQM from memory: no record
   Word   kframe;       // KCALL's frame base (ISP before)
 } EuS2Out deriving (Bits);
 
@@ -1179,7 +1231,10 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
       // The block must be double- or quad-aligned (p. 3-18 Notes).
       OP_DQM2, OP_DQM4: begin
         res = src;
-        if ((i.dstEa & (dqmBytes(d.op) - 1)) != 0) fatal = True;
+        Word off = i.dqmMem ? (zeroExtend(i.dqmIdx) << 2) : 0;
+        if (((i.dstEa - off) & (dqmBytes(d.op) - 1)) != 0) fatal = True;
+        if (i.dqmMem && (((i.srcEa - off) & (dqmBytes(d.op) - 1)) != 0))
+          fatal = True;
       end
       OP_ADD, OP_ADD3: begin
         let a = addArith(dst, src); res = a.r; pu = pswCV(a.c, a.v);
@@ -1320,8 +1375,9 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
                       fatal: fatal && !trap,
                       divZero: divZero,
                       kcall: (d.op == OP_KCALL) && !trap && !fatal,
-                      dqm: (isDqmOp(d.op) && !trap && !fatal)
+                      dqm: (isDqmOp(d.op) && !i.dqmMem && !trap && !fatal)
                              ? ((d.op == OP_DQM4) ? 3'd4 : 3'd2) : 3'd0,
+                      silent: i.dqmMem && (i.dqmIdx != 0),
                       kframe: events.isp() };
     outFull <= True;
     inFull  <= False;
@@ -1590,11 +1646,11 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
       Bool lateMis = isCondJumpOp(d.op) && !d.fold && (o.sinceCmp == 0) &&
                      squashOf(o);
       Word occ = o.occ + (lateMis ? 2 : 0);
-      traceQ.enq(hostRecord(o, occ));
+      if (!o.silent) traceQ.enq(hostRecord(o, occ));
       if (d.fold)
         pendFold <= tagged Valid (foldRecord(o, foldMispredicted(o) ? 3 : 0));
       if (o.pswUpd.we) flagWW <= tagged Valid o.pswUpd;
-      ninstr <= ninstr + 1;
+      if (!o.silent) ninstr <= ninstr + 1;
       if (d.fold) nfold <= nfold + 1;
       lastPcR <= d.pc;
       if (o.kcall) begin
@@ -2005,11 +2061,21 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   rule retire (presentValid);
     let r = present;
-    $display("HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%0d",
-             r.pc[15:0], r.insn0, r.insn1,
-             r.sp_before, r.sp_after, r.msp_before, r.msp_after,
-             pack(r.mem_we), r.mem_addr, r.mem_wdata, r.mem_wmask,
-             pack(r.trap), r.cyc);
+    // The fixed line prints the PC in four hex digits; a PC that does not
+    // fit them is printed whole (1e's zc has its text above 64 Kbytes, and
+    // until 2026-11-20 its records lost the PC's upper half here).
+    if (r.pc[31:16] == 0)
+      $display("HRI pc=%04x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%0d",
+               r.pc[15:0], r.insn0, r.insn1,
+               r.sp_before, r.sp_after, r.msp_before, r.msp_after,
+               pack(r.mem_we), r.mem_addr, r.mem_wdata, r.mem_wmask,
+               pack(r.trap), r.cyc);
+    else
+      $display("HRI pc=%08x insn=%04x%04x sp=%08x>%08x msp=%08x>%08x we=%d addr=%08x data=%08x mask=%02x trap=%d cyc=%0d",
+               r.pc, r.insn0, r.insn1,
+               r.sp_before, r.sp_after, r.msp_before, r.msp_after,
+               pack(r.mem_we), r.mem_addr, r.mem_wdata, r.mem_wmask,
+               pack(r.trap), r.cyc);
     presentValid <= False;
   endrule
 

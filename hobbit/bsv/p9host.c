@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define PAGEBITS 12
 #define PAGEWORDS (1u << (PAGEBITS - 2))
@@ -264,7 +265,16 @@ put_file(const char *name, uint32_t off, uint32_t addr, uint32_t n)
 		snprintf(path, sizeof path, "%s/console", outdir);
 		f = fopen(path, "ab");
 	} else {
+		char *q;
+
 		snprintf(path, sizeof path, "%s/%s", outdir, name);
+		/* the file may be in a subdirectory of the tree: make the way */
+		for (q = path + strlen(outdir) + 1; *q; q++)
+			if (*q == '/') {
+				*q = 0;
+				mkdir(path, 0777);
+				*q = '/';
+			}
 		f = fopen(path, "r+b");
 		if (!f)
 			f = fopen(path, "w+b");

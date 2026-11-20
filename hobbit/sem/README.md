@@ -384,7 +384,7 @@ it is computed per ENTER (below).
 | `DQM` SC/M ↔ M/SC double | `2 + D` | 4 | Table 4-34, p. 4-4 |
 | `DQM` SC/M ↔ M/SC quad | `4 + D` | 6 | Table 4-34, p. 4-4; a quad transfer printed with D, not Q |
 | `DQM` M → M double | `2·D` | 4 | Table 4-34, p. 4-4 |
-| `DQM` M → M quad | `8·S` | **refused** | Table 4-34, p. 4-4; `S` is not defined on p. 4-2 |
+| `DQM` M → M quad | `8·S` | 8 | Table 4-34, p. 4-4; `S` is not defined on p. 4-2 and is read as a single-word access (`S_CYC = A_CYC`), a model choice made 2026-11-20 when 1e's `zc` executed the instruction; refused before that |
 | `KCALL` | `8 + D + A` | 11 | Table 4-36, p. 4-5 |
 | `KRET` | `10 + D` | 12 | Table 4-36, p. 4-5 |
 | `CRET` | `11 + Q` | 15 | Table 4-36, p. 4-5 |
@@ -402,7 +402,8 @@ it is computed per ENTER (below).
 The code's `CHAPTER4` tuple still transcribes the `Exception` row
 (`9 + D + A`, p. 4-5), which the model refuses because event processing
 is outside it, and the `DQM M quad-word to M quad-word = 8·S` cell, which
-has no encoded value because `S` is not defined on p. 4-2.  The one
+has no encoded value in the tuple because `S` is not defined on p. 4-2
+(`step()` resolves it with the model's `S_CYC`).  The one
 MUL row keeps its printed `Min 3/Max 20` range in the tuple; the named
 `MUL_CYC` choice supplies the single number the record needs.
 
@@ -673,8 +674,9 @@ unimplemented-instruction sequence (`FLUSHD`/`FLUSHDCE`).  Refused:
   so `step()` raises `unsupported:` rather than inventing a trap line.
 * **DQM's printed `8·S` cell.**  A quad-word memory-to-memory transfer
   selects Table 4-34's `8·S` row (p. 4-4), and `S` is not among the
-  p. 4-2 abbreviations.  The model refuses that cell rather than
-  substituting `Q`; every other DQM cell resolves.
+  p. 4-2 abbreviations.  The model refused that cell until 2026-11-20;
+  it now reads `S` as a single-word access (`S_CYC = A_CYC`, so 8), a
+  stated choice and not a printed fact.  No longer a refusal.
 * **DQM mode misuse.**  p. 3-18's description calls non-permitted
   addressing modes an alignment fault while its Notes call them an
   illegal instruction sequence.  The model follows the specific Notes

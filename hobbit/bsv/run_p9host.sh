@@ -20,6 +20,9 @@
 #      memory at each write call -- and its console are compared with
 #      the reference run's.
 #
+# $P9CWD is the program's working directory, as a path under TREE (the
+# kernel's sources include ../port/...).
+#
 # Everything is left in p9work/ (gitignored).  P9HOST_KEEP_SIM=1 reuses
 # an existing simulator (the testbench does not depend on the program).
 set -eu
@@ -55,7 +58,8 @@ cp -R "$tree" "$work/ref"
 
 status=0
 PYTHONDONTWRITEBYTECODE=1 python3 "$here/../tools/p9run.py" \
-    --root "$work/ref" --record "$work/p9.rec" --hri "$work/ref.hri" \
+    --root "$work/ref" --cwd "${P9CWD:-}" \
+    --record "$work/p9.rec" --hri "$work/ref.hri" \
     "$bin" "$@" > "$work/ref.console" 2> "$work/ref.status" || status=$?
 cat "$work/ref.status"
 # The reference run must have run the program to its exits.  One that

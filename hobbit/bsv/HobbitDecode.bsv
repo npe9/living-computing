@@ -112,8 +112,14 @@ module mkHobbitDecode(HobbitDecode);
     Bit#(2) sub = q[1:0];
     Bit#(8) off = q[9:2];
     case (sub)
+      // "The 8-bit stack offset is left padded with ones and multiplied
+      // by 16 giving it an effective range of -16 to -4096" (p. 3-20,
+      // note a).  One-filled, not sign-extended: a field below 0x80 is a
+      // frame of more than 2,048 bytes, and until 2026-11-20 this
+      // sign-extended it into a *positive* offset (1e's zc: `ENTER
+      // R-2160`, field 0x79, moved SP up by 0x790).
       2'd0: return unary(pc, 1, OP_ENTER,  4'hD,
-                         signExtend(off) << 4, TR_NONE);
+                         { 24'hFFFFFF, off } << 4, TR_NONE);
       2'd1: return unary(pc, 1, OP_CATCH,  4'hD,
                          zeroExtend(off) << 4, TR_NONE);
       2'd2: return unary(pc, 1, OP_RETURN, 4'hD,
@@ -250,13 +256,12 @@ module mkHobbitDecode(HobbitDecode);
   // instruction and so, by the page's Notes, is any other mode.  The
   // source is a word mode or the constant.
   //
-  // Only the constant source is modelled: the EU does one architectural
-  // write per instruction and DQM's remaining words leave from EU_S3's
-  // commit like KCALL's frame tail, which a constant can feed and a
-  // source in memory cannot.  1e's za and zl execute only this form
-  // (`DQM $0, *R4`, a structure cleared four words at a time).  A source
-  // in memory or the stack still fails loudly, as the unimplemented
-  // sequence.
+  // The EU does one architectural write per instruction slot.  With a
+  // constant source the remaining words leave from EU_S3's commit like
+  // KCALL's frame tail (1e's `DQM $0, *R4`, a structure cleared four
+  // words at a time); with a source in memory or the stack the
+  // instruction occupies EU_S1's slot once per word (HobbitCore.bsv,
+  // `dqmIdx`; 1e's compiler copies structures this way).
   function DecodedInstr dqm(Word pc, Bit#(8) len, Bit#(4) sm, Bit#(4) dm,
                             Operand s, Operand t);
     Bool dbl  = (dm == 4'h0) || (dm == 4'h4) || (dm == 4'h8);
@@ -269,7 +274,10 @@ module mkHobbitDecode(HobbitDecode);
       return mkInstr(pc, len, dbl ? OP_DQM2 : OP_DQM4, s,
                      Operand { mode: wm, val: t.val }, TR_NONE);
     else if ((sm == 4'hC) || (sm == 4'hD) || (sm == 4'hE))
-      return trapAt(pc, len, TR_UNIMP);
+      // A source in memory or the stack: the EU moves it a word at a
+      // time (HobbitCore.bsv, `dqmIdx`).
+      return mkInstr(pc, len, dbl ? OP_DQM2 : OP_DQM4, s,
+                     Operand { mode: wm, val: t.val }, TR_NONE);
     else
       return trapAt(pc, len, TR_BAD_MODE);
   endfunction

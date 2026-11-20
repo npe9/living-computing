@@ -370,9 +370,19 @@ class DqmTest(unittest.TestCase):
         self.assertEqual(state.memory[0x304], 0x22)
         self.assertEqual(record.cyc, 4)
 
-    def test_memory_to_memory_quad_word_refuses_undefined_s(self):
-        with self.assertRaises(h.Refusal):
-            run({0: 0x87CC0200, 4: 0x03000000})
+    def test_memory_to_memory_quad_word_copies_and_uses_the_chosen_s(self):
+        # Table 4-34's "8.S" (p. 4-4): S is undefined on p. 4-2.  The model
+        # refused this cell until 1e's zc executed the instruction; it now
+        # copies the four words (p. 3-18) and charges 8 * S_CYC with
+        # S_CYC = A_CYC, a stated choice (hobbit_sem.py).
+        record, state = run({0: 0x87CC0200, 4: 0x03000000},
+                            {0x200: 0x11, 0x204: 0x22, 0x208: 0x33,
+                             0x20C: 0x44})
+        self.assertEqual([state.memory[0x300 + 4 * k] for k in range(4)],
+                         [0x11, 0x22, 0x33, 0x44])
+        self.assertEqual((record.mem_addr, record.mem_wdata), (0x300, 0x11))
+        self.assertEqual(record.cyc, 8 * h.S_CYC)
+        self.assertEqual(h.S_CYC, h.A_CYC)
 
 
 class KernelTransferTest(unittest.TestCase):

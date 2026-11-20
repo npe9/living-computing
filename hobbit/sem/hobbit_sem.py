@@ -116,6 +116,16 @@ SCSIZE = 256            # 64 words, p. 1-5
 A_CYC = 1               # memory access, single word
 D_CYC = 2               # memory access, double word (two words)
 Q_CYC = 4               # memory access, quad word (four words)
+# Table 4-34's last cell, "M quad-word to M quad-word", is printed 8.S
+# (p. 4-4; read from the page image, not only the text layer), and S is
+# not among p. 4-2's symbols.  The cell was refused until 1st Edition
+# Plan 9's compiler executed the instruction (a structure copy); a
+# program cannot be run with a refusal in the middle of it.  S is read
+# here as a single-word access, i.e. A: the row above it prices two
+# double-word accesses as 2.D, and a quad word moved memory to memory is
+# eight word accesses, four read and four written.  A choice, like A, D
+# and Q themselves; `Presumably 8.Q` (docs/timing.csv) would give 32.
+S_CYC = A_CYC
 
 # Table 4-33 (printed p. 4-4) prints MUL and MUL3 only as a range,
 # "Min 3 / Max 20", and calls them data dependent; no page prints the
@@ -1173,8 +1183,8 @@ def _dqm_cycles(state: State, constant: bool, src_addr: int,
     stack cache (``SC``) when the address is inside ``[SP, MSP)``
     (p. 1-5), memory (``M``) otherwise, and ``Constant`` for source mode
     0xF.  The quad-word ``M`` to ``M`` row is the printed ``8.S``, and
-    ``S`` is not defined on p. 4-2, so that cell is refused rather than
-    guessed (README refusal).
+    ``S`` is not defined on p. 4-2; it is resolved with the model's
+    ``S_CYC`` (a choice, stated at its definition).
     """
     size = "quad-word" if quad else "double-word"
     dst_sc = _sc_contains(state, dst_addr)
@@ -1190,9 +1200,8 @@ def _dqm_cycles(state: State, constant: bool, src_addr: int,
             variant = "M %s to M %s" % (size, size)
     value = _DQM_BY_VARIANT[variant]
     if value is None:
-        raise Refusal(
-            "unsupported: DQM %s is the printed cell 8.S, and S is not "
-            "defined on p. 4-2 (Table 4-34, p. 4-4)" % variant)
+        # The printed 8.S cell; S is the model's S_CYC (see its comment).
+        return 8 * S_CYC
     return value
 
 

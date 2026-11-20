@@ -305,6 +305,7 @@ def exec_frame(state, argv):
 class Kernel:
     def __init__(self, root, machine, bss_end, console):
         self.root = os.path.realpath(root)
+        self.cwd = ""           # the working directory, relative to root
         self.m = machine
         self.brk = bss_end
         self.console = console
@@ -316,7 +317,13 @@ class Kernel:
         self.exit_msg = None
 
     def host_path(self, name):
-        p = os.path.realpath(os.path.join(self.root, name.lstrip("/")))
+        # An absolute path is under --root; a relative one is under the
+        # working directory (--cwd, itself a path under --root).
+        if name.startswith("/"):
+            rel = name.lstrip("/")
+        else:
+            rel = os.path.join(self.cwd, name)
+        p = os.path.realpath(os.path.join(self.root, rel))
         if p != self.root and not p.startswith(self.root + os.sep):
             raise Stop("p9run: refused path %r: outside --root" % name)
         return p
@@ -348,14 +355,32 @@ class Kernel:
             return 0
         if name == "open":
             path = m.cstring(a[0]).decode("latin-1")
+            # libc.h: OREAD 0, OWRITE 1, ORDWR 2, OEXEC 3 (read, checking
+            # execute permission); OTRUNC 16.  OCEXEC and ORCLOSE are not
+            # modelled, and a mode with any other bit is refused rather
+            # than quietly opened as something else.
+            if a[1] & ~(3 | 16):
+                raise Stop("p9run: refused open(%r, 0x%x): mode bits beyond "
+                           "OREAD/OWRITE/ORDWR/OEXEC|OTRUNC" % (path, a[1]))
             mode = a[1] & 3
             try:
-                f = open(self.host_path(path), {0: "rb", 1: "r+b", 2: "r+b"}[mode])
+                f = open(self.host_path(path),
+                         {0: "rb", 1: "r+b", 2: "r+b", 3: "rb"}[mode])
+                if a[1] & 16:
+                    f.close()
+                    f = open(self.host_path(path), "w+b")
             except OSError as e:
                 return self.fail("%s: %s" % (path, e.strerror))
             return self.new_fd(f)
         if name == "create":
             path = m.cstring(a[0]).decode("latin-1")
+            # create(name, mode, perm): the file is made (or truncated) and
+            # opened.  The same mode rule as open; a directory (CHDIR in
+            # perm, 0x80000000) is refused.  The permission bits have no
+            # effect here.
+            if (a[1] & ~(3 | 16)) or (a[2] & 0x80000000):
+                raise Stop("p9run: refused create(%r, 0x%x, 0x%x)"
+                           % (path, a[1], a[2]))
             try:
                 f = open(self.host_path(path), "w+b")
             except OSError as e:
@@ -555,7 +580,7 @@ def mnemonic_key(parcels):
 
 
 def run(binary, argv, root, max_steps, console, census=False, verbose=False,
-        record=None, hri=None):
+        record=None, hri=None, cwd=""):
     """Run `binary`; optionally write the Bluespec run's recording and
     the HRI trace (one line per retirement, the comparison's reference).
     """
@@ -579,6 +604,7 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
     state.memory.update(stubs)
     m = Machine(state)
     k = Kernel(root, m, bss_end, console)
+    k.cwd = cwd.strip("/")
     recorder = Recorder() if record else None
     boot_memory = dict(state.memory) if record else None
     start = (state.pc, state.sp, state.psw, state.isp, state.vb)
@@ -670,6 +696,8 @@ def main(argv):
     ap.add_argument("--census", action="store_true",
                     help="print the instruction forms retired")
     ap.add_argument("-v", "--verbose", action="store_true")
+    ap.add_argument("--cwd", default="", metavar="DIR",
+                    help="the working directory, as a path under --root")
     ap.add_argument("--record", metavar="FILE",
                     help="write the recording bsv/P9HostTb.bsv replays")
     ap.add_argument("--hri", metavar="FILE",
@@ -681,7 +709,8 @@ def main(argv):
     status, steps, k, ops = run(args.binary, [name] + args.args, args.root,
                                 args.max_steps, sys.stdout.buffer,
                                 args.census, args.verbose,
-                                record=args.record, hri=args.hri)
+                                record=args.record, hri=args.hri,
+                                cwd=args.cwd)
     sys.stdout.flush()
     print("p9run: %s after %d instructions, %d syscalls"
           % (status, steps, len(k.trace)), file=sys.stderr)

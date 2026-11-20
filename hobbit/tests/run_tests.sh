@@ -119,8 +119,9 @@ python3 "$here/hri_check.py" --dut-lines "$tmp/017.sem" \
 # loop's second pass (found by 1e's echo).  019: both operands indirect,
 # indirect CALL/JMP, ENTER's memory targets, DQM with a constant (the
 # forms 1e's echo and za needed).  020: a folded unconditional JMP costs
-# 0 (found as a cyc-only difference on 1e's za).  Each three ways.
-for n in 018 019 020; do
+# 0 (found as a cyc-only difference on 1e's za).  021: DQM with a block
+# source (1e's zc copies structures with it).  Each three ways.
+for n in 018 019 020 021; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
     grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
