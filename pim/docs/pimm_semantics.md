@@ -36,7 +36,9 @@ source clauses parsed from the text; `analyze_standard_format/5`, the
 first to call another predicate, by `ref/pimm/lockstep_asf.py`. From a
 third module, `exception_table:replace_argument/3`, the first to read
 structures, by `ref/pimm/lockstep_repl.py`, its oracle the seven
-source clauses parsed from the text. The whole `jis_to_ascii` module also runs on the
+source clauses parsed from the text. From a fourth, `shoen:ground_term/2`
+on lists, the first to read lists and to run several goals at once, by
+`ref/pimm/lockstep_ground.py`. The whole `jis_to_ascii` module also runs on the
 Bluespec core in lockstep with the reference model (see Trace): every
 instruction in the table is implemented there. Three readings no run
 of this module can check, on either model, and injections confirm it:
@@ -59,6 +61,9 @@ of this module can check, on either model, and injections confirm it:
 | `write_atom` | `23:23`, atom in the low 24 bits | store the atom at the structure pointer and advance it | checked |
 | `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
 | `write_variable` | `23:24 x` | the element at the structure pointer becomes a new unbound variable, `r[x]` a reference to it; advance | checked with `x` = 31 only (`analyze_standard_format/5`): the cell and the register are in the trace, nothing reads the register. That the variable is the element itself is our choice |
+| `switch_on_non_list` | `23:2A x`, label | guard: `r[x]` a list, the structure pointer is set to its car; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`). Not checked: that a vector is not taken for a list |
+| `switch_on_non_vector` | `23:2B x y`, then a cell holding the label | not a vector: go to the label (an unbound `r[x]` is noted first) | the branch only. On a vector the models stop: what `r[y]` receives is not established |
+| `put_nil` | `23:32 x` | `r[x]` := nil, the atom 0 (`library/kbn/kbnatom.kl1`: "The atom number of '[]' is fixed to zero") | checked |
 | `wait_vector_N` | `23:A8+N x` | guard: `r[x]` is a vector of N cells; the structure pointer is set to its first | checked for N = 2, 3, 5 (`exception_table:replace_argument/3`), including the wrong size and an unbound `r[x]` |
 | `read_variable` | `23:B4 x` | `r[x]` := the element at the structure pointer; advance. An element that is an unbound variable is taken as a reference to it | checked |
 | `put_reused_structure` | `23:2F x y n` | `r[x]` := a structure of n cells to fill with `write_*`, under the tag of the structure in `r[y]` | checked for vectors of 2, 3, 5. The machine reuses `r[y]`'s cells when nothing else refers to them (MRB); the models keep no reference counts and always take new cells, which is what the machine does for a shared structure |
@@ -106,8 +111,9 @@ vector is `{VECT0, 0}`; 7 or more have a descriptor (`{VECT, a}` ->
 term `f(a, b)` is the vector `{f, a, b}`: `check_completion_code`
 builds `abnormal(no_status(C, D))` as a 3-vector inside a 2-vector, and
 the test reads it back by atom name. Vectors of 2 to 5 are built and
-read (`wait_vector_N`, `read_variable`); lists and the long form are
-not.
+read (`wait_vector_N`, `read_variable`), and list cells are read and
+rebuilt (`switch_on_non_list`, `put_reused_structure`); `put_list` and
+the long vector form are not.
 
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the

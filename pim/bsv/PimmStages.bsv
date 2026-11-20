@@ -174,7 +174,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bit#(8) waitN = ins.val[31:24] - op_wait_vector_0[7:0];
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
-                      || isWaitVector;
+                      || isWaitVector || op == op_switch_on_non_list
+                      || op == op_switch_on_non_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -212,6 +213,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     // ---- moves and unification
     else if (op == op_put_integer) begin
       regs.wr(x, intCell(c16));
+      next;
+    end
+    else if (op == op_put_nil) begin
+      regs.wr(x, mkCell(tag_ATOMo, 0));     // nil is the atom 0
       next;
     end
     else if (op == op_put_value || op == op_put_marked_value) begin
@@ -306,6 +311,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         guardFail;
       end
       else next;
+    end
+    else if (op == op_switch_on_non_list) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_LISTo) begin
+        sp <= truncate(a.val);
+        next;
+      end
+      else finish(tagged Next labelOf(pc, c16));
+    end
+    else if (op == op_switch_on_non_vector) begin
+      // two cells, the label in the second; only the branch is modelled
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hf0) == tag_VECT0o) stop(EndUnimp);
+      else finish(tagged Next labelOf(pc, ins2.val[15:0]));
     end
     else if (isWaitVector) begin
       if (isRef(a)) note(a);

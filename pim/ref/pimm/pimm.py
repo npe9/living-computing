@@ -32,6 +32,8 @@ import pimm_stubs  # noqa: E402
 from census import opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
+LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
+NIL = (ATOM, 0)
 VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
@@ -251,7 +253,11 @@ class Machine:
         if t == INT:
             return signed(w[1])
         if t == ATOM:
-            return self.im.atom(w[1])
+            return [] if w[1] == 0 else self.im.atom(w[1])
+        if t == LIST:
+            # a Python list when the tail is one, else ('|', car, cdr)
+            car, cdr = self.term(self.mem[w[1]]), self.term(self.mem[w[1] + 1])
+            return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
         if VECT0 < t <= VECT0 + 12:
@@ -450,6 +456,22 @@ class Machine:
         if w is None or w[0] & ~1 != INT:
             return pc + 2 + sx16(c16)
 
+    def i_switch_on_non_list(self, pc, x, y, z, c16):
+        # a list: the structure pointer is set to its car, for read_*
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != LIST:
+            return pc + 2 + sx16(c16)
+        self.sp = w[1]
+
+    def i_switch_on_non_vector(self, pc, x, y, z, c16):
+        # two cells: the label is the second (klb_opr.kl1 r_r_c16_i).
+        # Only the branch is modelled: what r[y] gets for a vector is
+        # not established.
+        w = self.g_word(x)
+        if w is not None and VECT0 <= w[0] & ~1 <= VECT0 + 14:
+            raise Unimplemented('switch_on_non_vector on a vector')
+        return pc + 2 + sx16(self.cells[pc + 1][1])
+
     def i_hash_on_constant(self, pc, x, y, z, c16):
         # word 1: register, mask.  word 2: the miss label, relative to
         # itself.  Then mask+1 slots: {atom,0} empty, or {integer,
@@ -517,6 +539,9 @@ class Machine:
         self.reg[z] = (INT, size)
 
     # moves and unification
+    def i_put_nil(self, pc, x, y, z, c16):
+        self.reg[x] = NIL
+
     def i_put_integer(self, pc, x, y, z, c16):
         self.reg[x] = (INT, sx16(c16) & 0xffffffff)
 

@@ -19,9 +19,11 @@ State: all machine state is registers and memory cells (goal records,
 the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
-stub (`asm/pimm_stubs.py`); 8- and 16-bit strings; 46 instructions.
+stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
-reads vectors the script builds (`driver.Script.vector`). No
+reads vectors the script builds (`driver.Script.vector`), and
+`lockstep_ground.py` runs `shoen:ground_term/2` on lists; 49
+instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py

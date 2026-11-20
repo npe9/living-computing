@@ -98,6 +98,20 @@ class Script:
             else:
                 self.unifyc(first + i, e)
 
+    def cons(self, a, first, car, cdr):
+        """slot a := a list cell built in slots first, first+1; car and
+        cdr as vector()'s elements."""
+        self.newvar(first)
+        self.newvar(first + 1)
+        self._op(PTR, a, first, (pimm.LIST + 1, 0))
+        for i, e in enumerate((car, cdr)):
+            if e is None:
+                continue
+            if e[0] == 'slot':
+                self.unify(first + i, e[1])
+            else:
+                self.unifyc(first + i, e)
+
     def string(self, a, bits, elems):
         """slot a := a string with these elements (a new string, then
         one SETEL per nonzero element)."""
