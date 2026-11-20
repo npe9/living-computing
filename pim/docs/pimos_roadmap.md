@@ -333,6 +333,15 @@ each microinstruction is and which decode-entry bits are its address,
 so the goal, suspension and scheduling routines can now be located;
 none has been read.*
 
+*A third pass, same day (`pseudo_pimm_microcode.md` sections 7-13):
+the branch kinds (jump, call, return, end of instruction, short
+relative) and two register-select fields are verified, and `suspend`
+is seen to allocate first through a `HOOK`-stamping allocator and the
+multiple-waiter code from a 4-cell allocator with `HOOK`, `DREF` and
+`MHOOK` stamps. The record layouts were NOT recovered: the memory
+datapath fields (where a read or write takes its address and data)
+are not worked out, and that is the next step.*
+
 | Unknown | Resolved in |
 |---|---|
 | Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
