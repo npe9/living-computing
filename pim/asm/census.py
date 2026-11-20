@@ -43,8 +43,8 @@ TARBALL = os.path.join(HERE, '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 MODEL = os.path.join(HERE, '..', 'bsv', 'PimKL1B.bsv')
 
 # Observed 2026-11-19 on pimosobj.tar.Z (sha256 2c9a8f69...).
-PINNED = dict(files=20, modules=502, instructions=671080,
-              pred_heads=12344, floats=103, unknown=0, distinct=192)
+PINNED = dict(files=20, modules=502, instructions=726053,
+              pred_heads=12344, floats=103, unknown=0, distinct=197)
 
 
 def sav_files(src):
@@ -75,6 +75,17 @@ def opcode_table():
     return key
 
 
+def atom_base(op):
+    """Base opcode of an atom instruction: write_atom (23) and read_atom
+    (b3) stand alone; the others carry a register in the low bits."""
+    if op in (0x23, 0xb3):
+        return op
+    for base, span in ((0x00, 0x10), (0x40, 0x20), (0x80, 0x20), (0xc0, 0x20)):
+        if base <= op < base + span:
+            return base
+    raise ValueError('atom-form opcode %02x' % op)
+
+
 def model_opcodes():
     src = open(MODEL).read()
     arms = set(int(m.group(1), 16) for m in re.finditer(
@@ -101,6 +112,15 @@ def census(src):
         for _ in range(nmod):
             code = parse_module(r)[5]
             for it in code:
+                if it[0] == 'atom':
+                    # [0x23xx, atom name]: the five atom instructions.
+                    # xx carries the register in its low bits for four
+                    # of them (set_atom 00-0f, put_atom 40-5f, wait_atom
+                    # 80-9f, get_atom c0-df); they are counted under the
+                    # family's base opcode.
+                    used[(0x23, atom_base(it[2] & 0xff))] += 1
+                    n_inst += 1
+                    continue
                 if it[0] != 'inst':
                     continue
                 tag, op = it[3], (it[2] >> 24) & 0xff

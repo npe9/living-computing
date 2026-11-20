@@ -17,6 +17,9 @@ python3 asm/census.py --check
 echo "=== PIM/m to PDSS instruction name map (class sizes pinned) ==="
 python3 asm/namemap.py --check
 
+echo "=== IPL image pimm_ipl.kbn (every cell placed) ==="
+python3 asm/kbn.py --check
+
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
 

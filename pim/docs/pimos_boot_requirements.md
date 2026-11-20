@@ -7,8 +7,16 @@ measured. Reproduce the census with `python3 asm/census.py --model`;
 ## 0.2 Decoder: every `.sav` decodes (done 2026-11-19)
 
 All 20 `.sav` files in `nonlocal/pimosobj.tar.Z` decode with
-`asm/unlsav.py`: **502 modules, 671,080 instructions, 12,344
+`asm/unlsav.py`: **502 modules, 726,053 instructions, 12,344
 predicates, no unclassified word.**
+
+*Corrected 2026-11-20.* The figure published on 2026-11-19 was 671,080
+instructions and 192 distinct opcodes. It left out the 54,973
+atom-form instructions (`write_atom` 31,459, `wait_atom` 12,482,
+`get_atom` 6,184, `put_atom` 3,844, `set_atom` 1,004), which the `.sav`
+stream serialises differently (`[0x23xx, atom name]`) and the census
+skipped. The per-file listing below still shows the old per-file
+counts; `asm/census.py` prints the current ones.
 
 ```
 pimm_bios360E.sav                35 modules   22991 instructions  (2 trailing words)
@@ -74,12 +82,14 @@ length field; the 1994 object set uses the per-length quick forms for
 lengths up to 6. Whether the quick forms take the operand layout the
 commented-out types name is not yet confirmed against the binaries.
 
-**What the object set uses.** 192 distinct (tag, opcode) pairs. Some
+**What the object set uses.** 197 distinct (tag, opcode) pairs, the
+atom instructions counted once per family whatever register rides in
+the opcode byte. Some
 opcodes are shared by several built-ins that a sub-function byte tells
 apart (`f_r_r`, `f_r_r_r` types); those are not yet broken out.
 
-**Against the bench model.** `bsv/PimKL1B.bsv` has an arm for 48 of the
-192, covering 522,056 instruction words (77.8%) by static count. The
+**Against the bench model.** `bsv/PimKL1B.bsv` has an arm for 51 of the
+197, covering 533,088 instruction words (73.4%) by static count. The
 match is textual, so stand-in arms count. The most used opcodes with no
 arm at all:
 
@@ -154,7 +164,7 @@ VPIM is the reference for what PDSS leaves out (multiple PEs).
 
 **Three things this opens up, in order of cost:**
 
-1. *A name map.* PIM/m mnemonics (`inst_tab.kl1`, 192 used) against
+1. *A name map.* PIM/m mnemonics (`inst_tab.kl1`, 197 used) against
    PDSS `instr.h` and VPIM `p_opecode_table.psl.c`: which have a
    same-named counterpart, which do not. Cheap; it sizes the caveat.
 2. *PDSS as the lockstep model's starting point* (roadmap decision 3):
@@ -174,7 +184,7 @@ They are the candidates for rung R9.
 
 ## 0.5a Instruction name map against PDSS (done 2026-11-20)
 
-`python3 asm/namemap.py --table` classifies each of the 192 PIM/m
+`python3 asm/namemap.py --table` classifies each of the 197 PIM/m
 instructions the object set uses against PDSS's table
 (`emulator/instr.h`, 350 names; formats from `emulator/instr.c`), by
 mnemonic and by number of register operands. `--check` pins the class
@@ -182,20 +192,20 @@ sizes and runs in `run_tests.sh`.
 
 | Class | Opcodes | Uses | Share | Meaning |
 |---|---|---|---|---|
-| same | 69 | 428,329 | 63.8% | same mnemonic, same register count |
-| prefix | 46 | 12,920 | 1.9% | same name under PDSS's `g_`/`b_` built-in prefix (`less_than` is `g_less_than`), `floating_point` spelled `float` |
-| renamed | 5 | 11,699 | 1.7% | `switch_on_non_{atom,integer,list}` are `jump_on_non_*`; `calculate_priority_from_minimum` is `b_rate`, `..._from_current` is `b_rltv` (read in `blt_system.c`) |
-| merged | 1 | 19,249 | 2.9% | `get_bound_value`: PIM/m has it beside `get_value`; PDSS has only `get_value` |
-| differs | 4 | 2,495 | 0.4% | a name counterpart with a different register count: `switch_on_non_vector` (two registers; PDSS `jump_on_non_vector` has one), `collect_garbage`, `add_shoen_resource`, `shoen_statistics` |
-| split | 17 | 177,202 | 26.4% | one PIM/m instruction where PDSS has one per position or per type |
-| absent | 50 | 19,186 | 2.9% | nothing in PDSS's table |
+| same | 73 | 451,843 | 62.2% | same mnemonic, same register count |
+| prefix | 46 | 12,920 | 1.8% | same name under PDSS's `g_`/`b_` built-in prefix (`less_than` is `g_less_than`), `floating_point` spelled `float` |
+| renamed | 5 | 11,699 | 1.6% | `switch_on_non_{atom,integer,list}` are `jump_on_non_*`; `calculate_priority_from_minimum` is `b_rate`, `..._from_current` is `b_rltv` (read in `blt_system.c`) |
+| merged | 1 | 19,249 | 2.7% | `get_bound_value`: PIM/m has it beside `get_value`; PDSS has only `get_value` |
+| differs | 4 | 2,495 | 0.3% | a name counterpart with a different register count: `switch_on_non_vector` (two registers; PDSS `jump_on_non_vector` has one), `collect_garbage`, `add_shoen_resource`, `shoen_statistics` |
+| split | 18 | 208,661 | 28.7% | one PIM/m instruction where PDSS has one per position or per type |
+| absent | 50 | 19,186 | 2.6% | nothing in PDSS's table |
 
 **What this says about a PDSS port: it is a translation layer, not a
 renumbering.**
 
 - *The split class is the structural difference.* PIM/m builds and
   reads structures through an implicit position: `write_value`,
-  `write_variable`, `read_variable` and their relatives, 26% of all
+  `write_variable`, `write_atom`, `read_variable` and their relatives, 29% of all
   instruction uses, with `put_vector_N`/`wait_vector_N` setting the
   position up. PDSS names the cell in the instruction:
   `write_car_value`, `write_cdr_value`, `write_element_value`,
@@ -230,9 +240,125 @@ first. The pinned check catches a changed table or decoder, not a wrong
 pairing of equal count (observed: removing the `b_rate` row from `RENAMED` moved
 renamed 5 to 4 and absent 50 to 51 and failed the check).
 
-## 0.3, 0.4, 0.5 (built-ins), 0.6, 0.7
+## 0.3 The IPL image `pimm_ipl.kbn` (done 2026-11-20)
 
-Not started: the `.kbn` layout, label address units, the runtime
-inventory (built-ins by sub-function, `save`/`restore`), boot I/O,
-Bluesim throughput. Also open before decision 3 is taken: whether PDSS
-builds and runs its own tests on a modern machine.
+The format is in the source: `src/library/kbn/kbnfile.kl1` writes the
+file, `kbn.kl1` lays out modules, `kbnheap.kl1` names the tags.
+`python3 asm/kbn.py` decodes it; `--check` pins the result and runs in
+`run_tests.sh`. Every one of the 18,300 cells is placed.
+
+**File.** A 256-byte header, then 256-byte blocks of 51 five-byte
+cells and one pad byte. The header is 128 16-bit words, little-endian
+on disk, each field a 32-bit value as low word then high word. A cell
+is the 32-bit value low byte first, then the 8-bit tag.
+
+| Header words | Field | Value in `pimm_ipl.kbn` |
+|---|---|---|
+| 0-1 | LoadAddress | `0xE0000000` (the default in `kbn.kl1`) |
+| 2-3 | CodeSize, in cells | 18,300 |
+| 4-5 | StartAddress | `0xE0001E81` (cell 7,809) |
+| 6-7 | ModuleAddress | `0xE0001E25` (cell 7,717) |
+| 126-127 | Version | `0x01973460` (meaning not yet read) |
+
+92,160 bytes = 1 header block + 359 blocks of 51 cells = 18,309 cells,
+the last 9 zero.
+
+**Layout.** 20 modules, 17,010 cells, each followed by its structured
+constants (1,270 cells in all: strings, vectors, lists), then a
+20-entry module table at the very end.
+
+- A module is `{module, self+1}`, `{cdesc, 0x06<<24 | Length}`,
+  `{integer, GCSize}`, the GC area, the entry (predicate hash) table,
+  then code (`kbn.kl1` `encode_module`). Lengths run from 43 to 1,857
+  cells.
+- ModuleAddress is the `cdesc` cell of the module at cell 7,716;
+  StartAddress is an instruction 92 cells into it, directly after a
+  predicate head (`kbnlink.kl1`: StartAddress = module address + the
+  code offset of the start predicate).
+- 13,156 instruction cells (12,651 tag `0x23`, 505 tag `0x22`), 349
+  predicate heads; 143 distinct opcodes, none unnamed. The bench model
+  has some arm for 47 of them, 10,466 instruction cells by static
+  count.
+
+**Tags, from `kbnheap.kl1` `tag/2`.** These are the machine's own data
+tags, which the bench model has so far invented:
+
+| Tag | Type | | Tag | Type |
+|---|---|---|---|---|
+| `0x00` | integer | | `0x10`,`13`,`15`,`17`,`19`,`1B`,`1D` | vector of 0..6 elements |
+| `0x02` | atom | | `0x1F` | vector, 7 or more (through a `vdesc`) |
+| `0x05` | list | | `0x25` | `cdesc` (code/string descriptor) |
+| `0x0D` | `vdesc` | | `0x27` | module |
+| `0x0F` | string | | `0x30` / `0x3F` | float / extended float |
+
+`bsv/PimKL1B.bsv` uses `0x02` for integer, `0x06` for atom, `0x07` for
+vector and `0x01` for an unbound variable. Only its list tag (`0x05`)
+agrees. The image contains no unbound-variable or reference cell, so
+those tags are still unknown; the firmware binary or the PIM/m
+hardware papers have to supply them.
+
+**Two tags the 1992 source does not have.** The 1994 image uses `0x06`
+(20 cells, exactly the trailing table, one per module, each pointing at
+a module's first cell) and `0x07` (51 cells, all inside modules' GC
+areas, all pointing into that table). So an external module reference
+goes through a module table, where the 1992 `kbn.kl1` writes a direct
+`{module, address}` cell. The names "module-table entry" and
+"module-table reference" in `asm/kbn.py` are ours.
+
+**In-memory atom instructions.** In the image an atom instruction is
+one cell: opcode byte (the base plus a register for `set_atom`,
+`put_atom`, `wait_atom`, `get_atom`), then a 24-bit atom number
+(`kbn.kl1` `encode_code_1`). `pimm_ipl.sym` is the atom-number-to-name
+table (two-byte JIS text, 487 lines).
+
+**Observed injections on `asm/kbn.py --check`:** 50 cells per block
+instead of 51 gave 1 module instead of 20 and 11,449 structural
+violations; reading the header big-endian raised an error before any
+result. Both restored; PASS.
+
+This replaces the description in `pimos_binaries.md`, which read the
+header's four fields as heap cells.
+
+## 0.4 Address units (done 2026-11-20)
+
+One address is one 40-bit cell, and one instruction word is one cell.
+A module is a contiguous run of cells; the entry table and the
+`hash_on_constant` tables hold offsets in cells relative to the cell
+that holds them (`kbn.kl1` `set_entry_part`: `Loc - P1`, and
+`Loc - P1 - 1` for hash tables, both limited to 16 signed bits). The
+header's addresses are cell addresses.
+
+A label in an instruction is 16 signed bits, `target - (here + 2)` in
+cells: of the 492 `try_me_else` instructions in the IPL image, 475
+point, read that way, at another `try_me_else`, a `suspend` or an
+`otherwise`, which is what the next clause starts with (`asm/kbn.py
+--check` pins both numbers; with `here + 1` or `here` instead, fewer
+than half do). The other 17 are not yet looked at. The `.sav` stream's 16-bit word positions are not addresses: several
+stream words make one cell.
+
+## 0.7 Bluesim throughput (measured 2026-11-20)
+
+The bench model, stepping a three-instruction loop (`put_integer`,
+`put_integer`, `jump`): 30,000,000 steps in 2.08 s of CPU, about
+**14 million steps per second** on the development machine. The bench
+is not in the tree (the model's `step()` is driven by one rule; the
+loop touches no memory beyond 4,096-word register files).
+
+What it means: simulation speed does not shape the plan. A model with
+megaword memories, a scheduler and a cycle-level pipeline will be
+slower, perhaps by one or two orders of magnitude, and a boot of
+10^8-10^9 instructions would still be minutes to hours, not weeks. The
+number of instructions PIMOS executes to reach its prompt is itself
+unmeasured.
+
+## 0.5 (built-ins), 0.6, and PDSS
+
+Not started: the runtime inventory (built-ins by sub-function,
+`save`/`restore`) and boot I/O.
+
+Open before roadmap decision 3 is taken: whether PDSS builds and runs
+its own tests on a modern machine. `emulator/cell.h` stores pointers in
+a 32-bit `int` (`typedef struct cell { unsigned short type, mrb; int
+value; }`), so it does not build as it stands on a 64-bit machine; it
+needs a 32-bit environment or a port (widened cells, or a heap mapped
+below 4 GB).

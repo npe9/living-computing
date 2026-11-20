@@ -56,16 +56,16 @@ the per-opcode table in `pimos_boot_requirements.md`, reproduced by
 | | |
 |---|---|
 | images that decode | 20 of 20, 502 modules (three failed until a decoder fix on 2026-11-19) |
-| instruction words | 671,080 |
+| instruction words | 726,053 (corrected 2026-11-20: the first count left out 54,973 atom-form instructions) |
 | predicates | 12,344 |
 | unclassified words | 0 |
-| distinct (tag, opcode) pairs used | 192, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
-| of those, with any arm in `PimKL1B.bsv` | 48 |
+| distinct (tag, opcode) pairs used | 197, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
+| of those, with any arm in `PimKL1B.bsv` | 51 |
 
-The 48 cover 77.8% of instruction words by static count, but that
+The 51 cover 73.4% of instruction words by static count, but that
 figure flatters the model: several of the arms are stand-ins
 (`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
-`wait`), and the missing 144 are the ones that need a runtime. Most
+`wait`), and the missing 146 are the ones that need a runtime. Most
 used with no arm: `collect_vector` 26,833, `put_vector_2` 16,838,
 `put_structured_constant` 11,628, `put_vector_3` 10,350, `save` 9,605,
 `restore` 7,933, `wait_vector_2` 5,768, `write_marked_value` 5,082,
@@ -180,9 +180,9 @@ ends in a gate; do not start the next before the gate is observed.
    that touches goals, priorities, shoen, MRB marks, external modules,
    the console and SCSI. One table: name, count in the images, source
    of its semantics, status.
-   *Name map against PDSS done 2026-11-20 (`asm/namemap.py`): 121 of
-   192 have a one-to-one PDSS counterpart by name and register count;
-   17, carrying 26% of uses, are PIM/m's implicit-position structure
+   *Name map against PDSS done 2026-11-20 (`asm/namemap.py`): 125 of
+   197 have a one-to-one PDSS counterpart by name and register count;
+   18, carrying 29% of uses, are PIM/m's implicit-position structure
    and constant instructions that PDSS splits per position or type;
    50 are absent. A PDSS port is a translation layer, not a
    renumbering.*

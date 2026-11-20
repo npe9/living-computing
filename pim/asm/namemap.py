@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Map the PIM/m KL1-B instructions PIMOS uses onto PDSS and VPIM.
 
-The PIMOS object set (docs/nonlocal/pimosobj.tar.Z) uses 192 distinct
+The PIMOS object set (docs/nonlocal/pimosobj.tar.Z) uses 197 distinct
 instructions (asm/census.py).  Two KL1 executors survive as source:
 PDSS (C, docs/nonlocal/pdss.tar.Z, emulator/instr.h) and VPIM (PSL,
 docs/nonlocal/vpim.tar.Z, src/primitives/p_opecode_table.psl.c).  This
@@ -76,6 +76,7 @@ SPLIT = {
     'write_nil': 'write_{car,cdr,element}_nil',
     'write_integer': 'write_{car,cdr,element}_integer',
     'write_constant': 'write_{car,cdr,element}_{atom,integer,float}',
+    'write_atom': 'write_{car,cdr,element}_atom',
     'read_variable': 'read_{car,cdr,element}',
     'read_variable_without_deref': 'read_{car,cdr,element}',
     'put_constant': 'put_{atom,integer,float}',
@@ -90,7 +91,7 @@ SPLIT = {
 
 CLASSES = ('same', 'prefix', 'renamed', 'merged', 'differs', 'split', 'absent')
 
-PINNED = dict(same=69, prefix=46, renamed=5, merged=1, differs=4, split=17,
+PINNED = dict(same=73, prefix=46, renamed=5, merged=1, differs=4, split=18,
               absent=50)
 
 
@@ -129,6 +130,8 @@ def pdss_formats():
 
 def pimm_regs(t):
     """Register operands in an inst_tab.kl1 Type (r, r_r, r4, f_r_r(N))."""
+    if t == 'atom':          # a register or argument slot rides in the
+        return None          # opcode byte: no count to compare
     n = 0
     for tok in re.sub(r'\(.*\)', '', t).split('_'):
         m = re.fullmatch(r'r(\d*)', tok)

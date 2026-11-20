@@ -29,17 +29,19 @@ version 3.0 the files are produced by the PIMOS unloader.
 
 ## `.kbn`: a raw heap image
 
-`pimm_ipl.kbn` is **not** a stream of instructions. It is a memory
-image. 0xe0-prefixed 32-bit words are unbound-variable cells (tag
-`0xe0`, pointer in the low bits), and `0x00000000` is free memory.
-Disassembling every word as an instruction is meaningless; the code is
-embedded in the heap as tagged cells.
+`pimm_ipl.kbn` is a memory image of 40-bit tagged cells: a 256-byte
+header, then 18,300 five-byte cells in 256-byte blocks. The header
+states the load address (`0xE0000000`), the size, the start address
+(`0xE0001E81`) and the start module's address (`0xE0001E25`). The
+format, the 20 modules in it and the tag values are in
+`pimos_boot_requirements.md` §0.3, decoded by `asm/kbn.py` from
+`src/library/kbn/*.kl1`.
 
-The first words are `0xe0000000`, `0x0000477c`, `0xe0001e81`,
-`0xe0001e25`, then zeros. That is a UREF, a small value, two more UREFs,
-then free space — a heap, not code.
+*Corrected 2026-11-20.* This section used to read the header's four
+fields as heap cells ("a UREF, a small value, two more UREFs") and to
+say the load address and entry point were not in the file. They are
+the header.
 
-The load address and entry point are not stated in the `.kbn` itself.
 The boot contract is in `pimos/src/bios/boot/bios.kl1`: `go/4` is the
 top-level predicate; it initializes SCSI, merges the loaded modules,
 calls `predicate_to_code(module#init,go,0,PIMOS_TOP)` and executes
