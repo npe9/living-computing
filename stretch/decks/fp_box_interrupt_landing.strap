@@ -1,0 +1,81 @@
+! WHERE AN INTERRUPTION RAISED BY A BOX-HELD MULTIPLY LANDS, 2026-11-20
+! (docs/microarchitecture_plan.md §1c step 5f, the level release;
+! StretchCore's yieldToPrepare note, "WHY ONLY THEN, AND ONLY ONE").
+!
+! THE PAGES.  Ref. Manual printed p.48 (PDF 51): an interruption is taken
+! "at the end of the operation during which the indicator is turned on",
+! "before execution of the next instruction".  The 7030 runs the I-box
+! ahead of the E-box but UNDOES that advance on an interruption: Perf.
+! Char. Vol. 1 printed p.3-24 (PDF 42), "All changes in the index
+! registers and/or index indicators due to the advance processing by the
+! I-box must now be undone", "The interruption action is quite similar to
+! branch recovery"; Buchholz §15.6 (printed pp.246-247).  So on the real
+! machine the interruption lands IMMEDIATELY after the multiply.
+!
+! THE MODEL cannot undo, so it lets I-box instructions that ran ahead of
+! an E-box operation stand (armInterrupt's stated window).  The release is
+! confined to ONE instruction in the clock the box has answered.  This
+! deck PINS where the interruption lands, as a MODEL fact: the
+! interruption instruction (entry 33, ZM, mask bit 12.33) is "SIC, WHERE"
+! prefixed to "B, DONE" (printed p.49's table form), which stores the
+! instruction counter the interruption left (p.48: it points at the
+! instruction displaced) and skips the LVIs not yet run.  ZM comes on for
+! a zero product with exponent 0 (fp_zm_cleared's operands).
+!   CASE 1: L, *, then four LVIs -- the I-box runs ahead as usual.
+!   CASE 2: an LX held behind an earlier ST level keeps the I-box back
+!           until the multiply is about to reach the box, then four LVIs.
+! The LVIs are the trail: each sets one index register (X6-X9, X10-X14),
+! so what committed before the interruption is seen, not only the
+! counter.
+! The printed answer, for both, is the instruction right after the
+! multiply, with no LVI run: 4234 in case 1, 4250 (the first LVI after
+! the held LX) in case 2.  What the model gives,
+! at three commits, and the injection, are at this deck's run line in
+! tests/run_tests.sh; the gap is docs/NEXT.md's "AN INTERRUPTION RAISED
+! BY A BOX-HELD LEVEL".
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the mask are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $ZM,  $+1.0
+        BB1, 12.33, $+1.0            ! ZM's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+! CASE 1: the multiply straight from the program.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+TRL1    LVI, $X6, 1                  ! the trail: each sets one index
+        LVI, $X7, 1                  !   register, so what committed
+        LVI, $X8, 1                  !   before the interruption is seen
+        LVI, $X9, 1
+DONE    BD,  $+.32                   ! entry 33 branches here
+        BB,  CASEF+.0, FIN           ! case 2 done: finish
+        LX,  $X5, WHERE              ! keep case 1's counter
+        SX,  $X5, WHERE1
+        BB1, CASEF+.0, $+1.0
+        BE,  $+.32
+! CASE 2: the I-box held back until the multiply is about to reach the box.
+        L(U), ZF0
+        ST(U), TMP                   ! a level storing TMP ...
+        *(N), NZF0                   ! ZM on: the interruption
+        LX,  $X3, TMP                ! ... holds this LX until it is gone
+TRL2    LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        B,   DONE
+FIN     B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+        SLC, (8)6400.0
+WHERE   DD, 0                        ! the counter the interruption left
+WHERE1  DD, 0                        ! ... in case 1
+CASEF   DD, 0
+TMP     DD, 0
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6541.0
+ZMRTN   SIC, WHERE                   ! entry 33 = ZM: SIC prefixed to a
+        B,   DONE                    !   branch (p.49's SIC,X / B form)
+        END, START
