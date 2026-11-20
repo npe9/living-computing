@@ -80,6 +80,13 @@ def parse_term(r):
         r.rd()
         aid, name = read_atom_name(r)
         return ('atom', aid, name)
+    # decode_atomic(16#"00",TAG,...) with TAG > 0 is a tagged 32-bit
+    # object: [0x00TT, V1, V2] (decoder.kl1 line 322, new_instruction).
+    # Floats in a GC area arrive this way.
+    if (t >> 8) == 0x00:
+        r.rd()
+        v = (r.rd() << 16) | r.rd()
+        return ('tagged', t & 0xff, v)
     # A bare atom name is an AtomID >= 0x8000 (module/package name,
     # decode_module_name -> get_atom_name).  Atom IDs are 16-bit, not
     # confined to 0x8000-0x80ff.
@@ -222,8 +229,12 @@ def parse_module(r):
                 elif at == 0x03:
                     r.rd()
                     r.rd()
-                elif at == 0x00:
+                elif at == 0x00 and (a & 0xff) == 0:
                     read_atom_name(r)
+                elif at == 0x00:
+                    # tagged 32-bit constant (decode_atomic, TAG > 0)
+                    r.rd()
+                    r.rd()
                 else:
                     break
                 r.rd()  # L1

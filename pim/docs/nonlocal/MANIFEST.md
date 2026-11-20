@@ -124,6 +124,74 @@ note and warns "PLEASE DO NOT EXPECT THIS VERSION TO BE A COMPLETE
 SYSTEM". It predates KLIC and is useful for looking at the KL1-to-C
 translation before the v2 rewrite.
 
+## 1a. KL1 executors (retrieved 2026-11-19, later the same day)
+
+Found through the mirror's directory listings
+(`https://www.uedalab.jp/AITEC_ICOT_ARCHIVES/ICOT/ifs/`; the AIST host
+serves the same paths but no listings). Each was downloaded from the
+mirror; the AIST URL returned HTTP 200 with the same Content-Length.
+These three are the only KL1 executors in the 100-entry IFS index
+(`Museum/IFS/lang-E.html`) besides KLIC.
+
+| Local file | IFS # | URL (AIST) | Bytes | SHA-256 |
+|---|---|---|---|---|
+| `pdss.tar.Z` | 1 | https://www.airc.aist.go.jp/aitec-icot/ICOT/ifs/symbolic-proc/unix/pdss.tar.Z | 2564373 | `3da79c34abf3bcd5f30d0b178b869ee25b4cc544de82713552721da94888c13c` |
+| `vpim.tar.Z` | 2 | https://www.airc.aist.go.jp/aitec-icot/ICOT/ifs/symbolic-proc/unix/vpim.tar.Z | 1761111 | `836932343df272123a7e9574275c0c6c22fc1a46dd705b83672d25e558e4b7a8` |
+| `psdpim.tar.Z` | 3 | https://www.airc.aist.go.jp/aitec-icot/ICOT/ifs/symbolic-proc/pim-psi/psdpim.tar.Z | 1354121 | `f9e2f0874ce2b2856f94618c08574b6d06123ebd0378b757cf750df417c99c81` |
+
+### `pdss.tar.Z` - PDSS V2.52.20 (1992-05-25), a KL1-B interpreter in C
+
+"PIMOS Development Support System ... a KL1 system which was used to
+develop PIMOS", "widely compatible with the KL1 system found on
+Multi-PSI" (README). `emulator/` is 28,441 lines of C: `emulate.c` and
+`instr.h` (the interpreter), `goal.c` (scheduler), `passive.c`,
+`unify.c`, `deref.c` (unification and suspension), `gc*.c`, `mrbgc.c`
+(garbage collection, MRB), `shoen.c`, `blt_shoen.c`, `exception.c`
+(shoen), `blt_*.c` (built-ins), `saveload.c`, `module.c`. Also the
+KL1-to-KL1-B compiler in KL1 and in Prolog, Micro PIMOS (`mpimos/`),
+80 tests, and the manual (`doc.e/pdss.tex`).
+
+It is a sibling dialect, not an executor for our object set: its save
+files use magic `0xA5C3`-`0xA5C9` (`saveload.c` line 14) where ours
+start `0x5702`, and its opcode numbering differs (`instr.h`:
+`JUMP_ON_NON_INTEGER` = `0x02B`, `JUMP_ON_NON_VECTOR` = `0x02E`; the
+PIM/m table has `switch_on_non_vector` = `0x2b`).
+
+### `vpim.tar.Z` - VPIM, the PIM KL1 runtime in PSL
+
+"the source code for KL1 language processor of all models of the PIM
+except PIM/m ... written in our own language PSL ... distributed as
+read-only software" (README). `src/` holds 185 `.psl.c` files:
+`interpreter/` (`klb_*.psl.c`), `functions/` (reduction, suspension,
+shoen, GC within and between clusters, inter-cluster messages, SCSI),
+`structures/`, `basics/`, `primitives/`. `DOCUMENT/` holds the
+Japanese design documents and TM-1044. No Makefile, headers or
+PSL-to-C translator are in the archive, so it does not build as
+shipped. A third opcode numbering again.
+
+### `psdpim.tar.Z` - the Pseudo PIM/m firmware for PSI-III (binary)
+
+"a system used to execute the KL1 concurrent logic programming language
+efficiently, using firmware interpretation on the PSI-III" (README).
+This is the system our PIMOS object set was built to run on.
+`PMPSI.DIR/` ("KL0 and KL1 firmware"): `pimm.MEkbn` (506,624 bytes),
+`syspsi` (262,400), `sysinit`, `sysidat`. `INSTALL.DIR/`: the console
+system as SIMPOS package files (`pimmcsp.ptf`, `pimmutil.ptf`,
+`pimfep.ptf`, `pimscsi.ptf`, `mpsicspR.ptf`). `SYSTEM.DIR/`:
+`PIMM.CONFIG`, `PIMM.PARAM`, `boot.init`. Binary only: no microcode
+source or listing, and it needs a PSI-III under SIMPOS. No PSI
+emulator was found.
+
+### Recorded, not downloaded: KL1 applications for PIMOS
+
+Under `https://www.airc.aist.go.jp/aitec-icot/ICOT/ifs/` (HEAD 200 on
+2026-11-19): `symbolic-proc/pimos/` (`exreps`, `kl1graph`, `strtgysh`,
+`aya`, `ldlib`), `kbms-clp/pimos/` (`kappa-p`, `gdcc`),
+`solver-prover/pimos/` (`MGTP/mgtp.tgz`, `ppss`, `sme`),
+`natural-lang/pimos/` (`pax`, `laputa`), `exper-apps/pimos/`
+(`gog-kl1`, `helic2`, `aligndp`, `celplace`, `lsirout`, `logisim`,
+`pmonitor`, `cohlex`, `rodin`). The smallest is MGTP (20,229 bytes).
+
 ## 2. PIM/m-specific documents downloaded from the Museum
 
 Found by searching `Museum/TRTM/TR/TRlist.html` and

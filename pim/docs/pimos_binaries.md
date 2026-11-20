@@ -90,6 +90,7 @@ use `0x8000`/`0x8001`/`0x8002` for atoms. The observed encodings:
 | `0x0100\|v` | small integer | value |
 | `0x0200\|v` | small negative integer | value |
 | `0x0300` | large integer | hi, lo |
+| `0x00TT`, `TT` > 0 | tagged 32-bit object (floats use `TT` = `0x30`) | V1, V2 |
 | `0x0600\|size` | string | L1, L2, then one tagged char word per character |
 | `0x0700` | vector | L1, L2, then elements |
 | `0x0800` | list | L1, L2, then elements |
@@ -144,10 +145,13 @@ set_value 1, r20
 set_value 2, r21
 ```
 
-Opcodes `0x3a` and `0x3d` appear in this image but are commented out in
-the 1992 `inst_tab.kl1` (`put_vector_2`, etc.), so the 1994 binary uses
-a slightly larger instruction set than the 1992 table. That is a real
-version difference, not a decode error.
+Thirteen opcodes appear in the object set that are commented out in
+the 1992 `inst_tab.kl1`: `put_vector_0`..`put_vector_6` (`0x38`-`0x3e`)
+and `wait_vector_1`..`wait_vector_6` (`0xa9`-`0xae`). The 1994 binaries
+use these per-length quick forms; that is a real version difference,
+not a decode error. A code area also holds two kinds of non-instruction
+tagged word: predicate heads (tag `0x24`) and float constants (tag
+`0x30`). Counts and sources are in `pimos_boot_requirements.md`.
 
 ## What a loader needs
 

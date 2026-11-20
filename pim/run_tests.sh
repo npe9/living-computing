@@ -11,6 +11,9 @@ python3 asm/pimasm.py --selftest
 echo "=== ISA table check ==="
 python3 asm/gen_isa_table.py --check
 
+echo "=== PIMOS object-set census (every .sav decodes) ==="
+python3 asm/census.py --check
+
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
 

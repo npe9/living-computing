@@ -31,7 +31,7 @@ def main():
         mlen, names, gc_terms, hs, preds, code = parse_module(r)
         mod_name = names[0][1] if names[0][1] else '#%d' % names[0][0]
         for item in code:
-            if item[0] == 'inst':
+            if item[0] == 'inst' and item[3] == 0x23:   # instruction words only
                 _, addr, val, tag = item
                 op = (val >> 24) & 0xff
                 ent = ops.get(op)

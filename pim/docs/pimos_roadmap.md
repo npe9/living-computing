@@ -39,24 +39,28 @@ the PIMOS abstract loaded, so that result is "not found yet", not "does
 not exist". **This is the largest risk in the plan and step 1 of
 Phase 0.**
 
-**Static census of the object set** (all 20 `.sav` files):
+**Static census of the object set** (all 20 `.sav` files; details and
+the per-opcode table in `pimos_boot_requirements.md`, reproduced by
+`asm/census.py`):
 
 | | |
 |---|---|
-| images that decode | 17 of 20 (`library`, `macro`, `patch_macro` fail in `unlsav.py` with an IndexError in the first module) |
-| instructions decoded | 470,282 |
-| of those, opcodes not in the 1992 `inst_tab.kl1` | 35,212 (7.5%), 33 distinct values; most frequent `0x3a` 9,229, `0x3b` 6,179, `0xaa` 3,248, `0x3c` 2,899, `0x04` 2,477 |
-| distinct known opcodes used | 144 of the 160 the decoder's table holds |
-| of those, opcodes with any arm in `PimKL1B.bsv` | 56 |
+| images that decode | 20 of 20, 502 modules (three failed until a decoder fix on 2026-11-19) |
+| instruction words | 671,080 |
+| predicates | 12,344 |
+| unclassified words | 0 |
+| distinct (tag, opcode) pairs used | 192, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
+| of those, with any arm in `PimKL1B.bsv` | 48 |
 
-The 56 cover 85.5% of the known instructions by static count, but that
-figure flatters the model: several of the 56 arms are stand-ins
+The 48 cover 77.8% of instruction words by static count, but that
+figure flatters the model: several of the arms are stand-ins
 (`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
-`wait`), and the missing 88 are exactly the ones that need a runtime.
-Most frequent missing: `collect_vector` 14,493, `put_structured_constant`
-6,745, `save` 3,572, `execute_external` 3,437, `collect_list` 3,350,
-`write_marked_value` 3,338, `restore` 3,002, `put_reused_structure`
-2,910, the other `*_marked_*` forms, `enqueue_goal_external` 1,704,
+`wait`), and the missing 144 are the ones that need a runtime. Most
+used with no arm: `collect_vector` 26,833, `put_vector_2` 16,838,
+`put_structured_constant` 11,628, `put_vector_3` 10,350, `save` 9,605,
+`restore` 7,933, `wait_vector_2` 5,768, `write_marked_value` 5,082,
+`collect_list` 4,219, `execute_external` 4,030, `put_reused_structure`
+3,998, the other `*_marked_*` forms, `enqueue_goal_external` 2,096,
 the vector and string built-ins, `display_console` 451.
 
 **What `PimKL1B.bsv` is today.** A decode-and-semantics harness with
@@ -144,7 +148,9 @@ ends in a gate; do not start the next before the gate is observed.
    runtime's semantics, or *reconstruct* from TR-246, TR-389, the
    manual's `e-builtin.tex`, the compiler (`instrtbl.kl1`, `mactbl.kl1`)
    and KLIC's runtime as a cross-check.
-2. **Finish the decoder.** Fix the three failing images. Classify the
+2. **Finish the decoder.** *Done 2026-11-19, see
+   `pimos_boot_requirements.md`: the first suspect below was right,
+   the second was not (those words are predicate heads).* Fix the three failing images. Classify the
    33 unknown opcode values: real 1994 additions (the commented-out
    `put_vector_2` family in `inst_tab.kl1` is the first suspect for
    `0x3a`-`0x3e`) or table/constant words misread as code (suspect for
@@ -250,9 +256,9 @@ with KLIC 2.002. *Gate:* R8. Then one period application (R9).
 |---|---|
 | Does any KL1-B firmware or emulator survive? | Phase 0.1 |
 | `.kbn` base address, layout, entry | Phase 0.3 |
-| The 33 opcode values absent from the 1992 table | Phase 0.2 |
+| The 33 opcode values absent from the 1992 table | resolved: 13 real quick forms; the rest were predicate-head and float words |
 | Label address units | Phase 0.4 |
-| Why `library`, `macro`, `patch_macro` do not parse | Phase 0.2 |
+| Why `library`, `macro`, `patch_macro` do not parse | resolved: tagged float constants in the GC area |
 | The built-ins' exact behaviour where the manual is silent | Phase 2, by trace against PIMOS's own use of them |
 | Bluesim throughput, and so the wall-clock cost of a boot | Phase 0.7 |
 | How much of the FEP protocol the boot and shell need | Phase 0.6 |
