@@ -72,7 +72,7 @@ endinterface
 
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
-               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec,
+               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
@@ -93,6 +93,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(3))      bK      <- mkRegU;
   // the structure pointer: where the next write_* stores
   Reg#(Addr)         sp      <- mkRegU;
+  Reg#(Bit#(8))      reuseTag <- mkRegU;
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -168,8 +169,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
+  // wait_vector_N, N = 2, 3, 5
+  Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5;
+  Bit#(8) waitN = ins.val[31:24] - op_wait_vector_0[7:0];
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
-                      || op == op_wait || op == op_wait_integer || op == op_string;
+                      || op == op_wait || op == op_wait_integer || op == op_string
+                      || isWaitVector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -239,6 +244,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
+    else if (op == op_read_variable) begin
+      smem.read(sp);
+      st <= XRead;
+    end
+    else if (op == op_put_reused_structure) begin
+      dbox.deref(regs.r(y));
+      st <= XReuse1;
+    end
     else if (op == op_write_variable) begin
       // the element itself is the new variable; r[x] refers to it
       smem.write(sp, mkCell(tag_UNDF, 0));
@@ -293,6 +306,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         guardFail;
       end
       else next;
+    end
+    else if (isWaitVector) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_VECT0o + (waitN << 1)) begin
+        sp <= truncate(a.val);
+        next;
+      end
+      else guardFail;
     end
     else if (op == op_wait_integer) begin
       if (isRef(a)) note(a);
@@ -400,6 +421,31 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     let a <- gbox.allocResult;
     sp <= a;
     regs.wr(x, mkCell(tag_VECT0o + (vectorN << 1) + 1, absAddr(a)));
+    next;
+  endrule
+
+  // the next element of the structure being read; an unbound element
+  // is taken as a reference to it
+  rule readElement (st == XRead);
+    let d <- smem.data;
+    regs.wr(x, isUnboundCell(d) ? mkCell(tag_REFo, absAddr(sp)) : d);
+    sp <= sp + 1;
+    next;
+  endrule
+
+  // put_reused_structure: nothing is ever reused (no reference counts);
+  // new cells under the tag of the structure in r[y]
+  rule reuse1 (st == XReuse1);
+    let a <- dbox.derefResult;
+    reuseTag <= a.tag;
+    gbox.alloc(zeroExtend(z));
+    st <= XReuse2;
+  endrule
+
+  rule reuse2 (st == XReuse2);
+    let a <- gbox.allocResult;
+    sp <= a;
+    regs.wr(x, mkCell(reuseTag, absAddr(a)));
     next;
   endrule
 

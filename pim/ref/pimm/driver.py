@@ -24,6 +24,10 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
     NEWSTR  a val        slot a := a new string, val = length << 8 | bits
     SETEL   a val        slot a := slot a with element (val >> 16) set
                          to (val & 0xffff)
+    PTR     a b tag      slot a := {tag, the address in slot b}: a
+                         structure whose cells are the variables made
+                         by consecutive NEWVARs starting with slot b's
+                         (variables are single cells taken in order)
 """
 import os
 import sys
@@ -32,7 +36,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
-END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL = range(11)
+END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR = range(12)
 SCRIPT_BITS = 20            # the driver's script memory holds 1 << 20 operations
 
 
@@ -76,6 +80,23 @@ class Script:
 
     def setel(self, a, i, e):
         self._op(SETEL, a, 0, (0, i << 16 | e))
+
+    def vector(self, a, first, elems):
+        """slot a := a vector of len(elems) cells, built in slots first,
+        first+1, ...: each a new variable, bound to its element unless
+        that is None.  An element is a cell or ('slot', n)."""
+        n = len(elems)
+        assert 1 <= n <= 6
+        for i in range(n):
+            self.newvar(first + i)
+        self._op(PTR, a, first, (pimm.VECT0 + 2 * n + 1, 0))
+        for i, e in enumerate(elems):
+            if e is None:
+                continue
+            if e[0] == 'slot':
+                self.unify(first + i, e[1])
+            else:
+                self.unifyc(first + i, e)
 
     def string(self, a, bits, elems):
         """slot a := a string with these elements (a new string, then
@@ -138,6 +159,8 @@ class Script:
                 slot[a] = m.new_string(c[1] >> 8, c[1] & 0xff)
             elif k == SETEL:
                 slot[a] = m.set_element(slot[a], c[1] >> 16, c[1] & 0xffff)
+            elif k == PTR:
+                slot[a] = (c[0], slot[b][1])
             else:
                 raise ValueError(k)
         self.slots = slot

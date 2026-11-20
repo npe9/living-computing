@@ -577,6 +577,40 @@ class Machine:
         self.reg[x] = (REF, self.sp)
         self.sp += 1
 
+    # Reading a vector: wait_vector_N checks r[x] and points the
+    # structure pointer at its first element; each read_variable takes
+    # the next element.  An element that is an unbound variable is
+    # taken as a reference to it.
+    def wait_vector(self, n, x):
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != VECT0 + 2 * n:
+            return self.guard_fail()
+        self.sp = w[1]
+
+    def i_wait_vector_2(self, pc, x, y, z, c16):
+        return self.wait_vector(2, x)
+
+    def i_wait_vector_3(self, pc, x, y, z, c16):
+        return self.wait_vector(3, x)
+
+    def i_wait_vector_5(self, pc, x, y, z, c16):
+        return self.wait_vector(5, x)
+
+    def i_read_variable(self, pc, x, y, z, c16):
+        c = self.mem[self.sp]
+        self.reg[x] = (REF, self.sp) if c[0] & ~1 in (UNDF, HOOK) else c
+        self.sp += 1
+
+    def i_put_reused_structure(self, pc, x, y, z, c16):
+        # r[x] := a structure of z cells to be filled by write_*, which
+        # the machine takes from r[y]'s cells when nothing else refers
+        # to them (MRB).  No reference counts here, so nothing is ever
+        # reused: new cells, under the tag r[y]'s structure has.
+        w = self.deref(self.reg[y])
+        a = self.alloc(z)
+        self.sp = a
+        self.reg[x] = (w[0], a)
+
     def i_collect_value(self, pc, x, y, z, c16):
         pass        # MRB reclamation of what r[x] points at: no GC here
 
