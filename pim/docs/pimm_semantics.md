@@ -7,6 +7,17 @@ are to follow. An instruction is listed only when a runnable check
 depends on the reading; "inferred" marks what the check does not
 exercise.
 
+**Operand directions from source.** PIMOS's compiler
+(`library/compiler/blt.kl1`) has a clause per built-in naming the
+instruction it emits and which operands are read and written.
+`asm/bltdir.py` reads all 87 guard and 120 body built-ins out of it;
+every operand is marked. It agrees with each reading below that a run
+has checked (`b_add`, `b_subtract`, `new_string`, `b_string_element`,
+`set_string_element`, `string`, and `not_less_than a,b` = `a >= b`,
+which the compiler emits for `X1 >= X2` and, operands swapped, for
+`X1 =< X2`). The source is the 1992 release and the binaries are from
+1994, so a run still outranks the table where the two could differ.
+
 Notation: an instruction cell is `tag:op x y z`, with `x` = bits
 23-16, `y` = bits 15-8, `z` = bits 7-0, `c16` = bits 15-0 signed.
 `r[n]` is register n; the first argument of a goal is `r[0]`.
@@ -16,7 +27,8 @@ Evidence so far: module `jis_to_ascii` in `pimm_ipl.kbn` against
 `bios/boot/jtoa.kl1` (`ref/pimm/test_jtoa.py`): `convert_element/2` on
 all 65,536 keys, and `convert/2` (through `convert_loop/4`) on five
 strings, with eleven observed fault injections, one of which the test
-does not catch (noted at `subtract`).
+does not catch (noted at `subtract`). `convert_element/2` is also run
+on the Bluespec core, in lockstep (see Trace).
 
 | Instruction | Encoding | Meaning | Evidence |
 |---|---|---|---|
@@ -36,7 +48,7 @@ does not catch (noted at `subtract`).
 | `wait` | `23:E0 x` | guard: `r[x]` is bound; if not, note the variable and fail to the next clause | both cases checked |
 | `wait_integer` | `23:A1 x c16` | guard: `r[x]` is the integer `c16` | checked (0 ends `convert_loop`; 16 selects 16-bit strings) |
 | `less_than` | `23:F0 x y` | guard: `r[x] < r[y]` | weakly: the only use is `0 < N` after `N = 0` has been tried |
-| `subtract` | `23:F5 x y z` | guard arithmetic: `r[z]` := `r[x] - r[y]` | **destination unverified**: the only use has `x = z` |
+| `subtract` | `23:F5 x y z` | guard arithmetic: `r[z]` := `r[x] - r[y]` | the run cannot tell (the only use has `x = z`); the destination is from the compiler's table, `asm/bltdir.py`: `iio` |
 | `string` | `23:E5 x y z` | guard `string(S, Length, Size)`: `r[x]` is a string; `r[y]` := its length, `r[z]` := its element size in bits | checked |
 | `put_value` | `23:34 x y` | `r[x]` := `r[y]` | checked |
 | `put_marked_value` | `23:36 x y` | `r[x]` := `r[y]`, the value now multiply referenced | the move is checked; the MRB marking is not modelled |

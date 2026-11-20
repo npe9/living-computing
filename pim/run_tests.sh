@@ -24,6 +24,9 @@ python3 asm/kbndis.py --check
 echo "=== runtime inventory (groups and sub-functions pinned) ==="
 python3 asm/inventory.py --check
 
+echo "=== built-in operand directions, from the PIMOS compiler source ==="
+python3 asm/bltdir.py --check
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
