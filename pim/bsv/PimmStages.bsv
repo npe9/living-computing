@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -123,7 +123,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                 || op == op_b_shift_left || op == op_b_shift_right;
   Bool builtinHere = arithHere || op == op_b_multiply || op == op_new_string
                   || op == op_b_string_element || op == op_set_string_element
-                  || op == op_new_vector || op == op_set_vector_element;
+                  || op == op_new_vector || op == op_set_vector_element
+                  || op == op_b_vector_element || op == op_new_instruction;
+  // opcode 76 is numbered by its x field: 4 is the guard
+  // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
+  // top byte
+  Bool isTagAndValue = op == 16'h2376 && x == 4;
   // a vector pointer, short (0..6 elements, the size in the tag) or long
   function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
   function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
@@ -184,11 +189,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || op == op_integer || op == op_wait_constant
+                      || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
-                      || op == op_shift_right || op == op_modulo || op == op_wait_value;
+                      || op == op_shift_right || op == op_modulo || op == op_wait_value
+                      || op == op_add;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -226,6 +233,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (isWaitAtom) begin
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
+      st <= XDeref1;
+    end
+    else if (isTagAndValue) begin
+      dbox.deref(regs.r(y));
       st <= XDeref1;
     end
     else if (oneOperandGuard || twoOperandGuard) begin
@@ -307,12 +318,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
-    else if (op == op_write_value) begin
+    else if (op == op_write_value || op == op_write_marked_value) begin
       smem.write(sp, regs.r(x));
       sp <= sp + 1;
       next;
     end
-    else if (op == op_read_variable) begin
+    else if (op == op_read_variable || op == op_read_atom) begin
       smem.read(sp);
       st <= XRead;
     end
@@ -333,10 +344,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.unify(regs.r(x), regs.r(y));
       st <= XUnify;
     end
-    else if (op == op_collect_value) next;   // MRB reclamation: not modelled
+    else if (op == op_collect_value || op == op_collect_vector || op == op_collect_list) next;   // MRB reclamation: not modelled
+    else if (op == op_put_structured_constant) begin
+      // r[x] := the cell at the label, in the module's GC area
+      smem.read(labelOf(pc, c16));
+      st <= XSCnst;
+    end
     // ---- goals
-    else if (op == op_set_value) begin
-      regs.wa(x, regs.r(y));
+    else if (op == op_set_value || op == op_set_marked_value) begin
+      regs.wa(x, regs.r(y));       // marked: MRB, not modelled
+      next;
+    end
+    else if (op == op_set_integer) begin
+      regs.wa(x, intCell(c16));
       next;
     end
     else if (op == op_enqueue_goal) begin
@@ -367,9 +387,39 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ---- guards ----------------------------------------------------------
   rule deref1 (st == XDeref1);
     let a <- dbox.derefResult;
-    if (isWaitAtom) begin
+    if (isTagAndValue) begin
+      // the tag as it stands (whether an MRB bit is returned is not
+      // established), then the value
+      if (isRef(a)) begin
+        note(a);
+        guardFail;
+      end
+      else begin
+        regs.wr(z, intC(zeroExtend(a.tag)));
+        opA <= a;
+        st <= XTagVal;
+      end
+    end
+    else if (isWaitAtom) begin
       if (isRef(a)) note(a);
       if ((a.tag & 8'hfe) == tag_ATOMo && a.val == atomHere.val) next;
+      else guardFail;
+    end
+    else if (op == op_switch_on_non_atom) begin
+      if (isRef(a)) note(a);
+      finish(tagged Next ((a.tag & 8'hfe) == tag_ATOMo ? pc + 1 : labelOf(pc, c16)));
+    end
+    else if (op == op_wait_nil) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_ATOMo && a.val == 0) next;
+      else guardFail;
+    end
+    else if (op == op_wait_list) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_LISTo) begin
+        sp <= truncate(a.val);
+        next;
+      end
       else guardFail;
     end
     else if (op == op_switch_on_non_integer) begin
@@ -478,6 +528,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
   endrule
 
+  rule tagValue (st == XTagVal);
+    regs.wr(ins2.val[31:24], intC(opA.val));
+    finish(tagged Next (pc + 2));
+  endrule
+
   rule strInfo (st == XStrInfo);
     let r <- sbox.result;
     regs.wr(y, r.a);
@@ -537,6 +592,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (b.val >= 32) guardFail;
       else begin
         regs.wr(z, intC(a.val >> count));
+        next;
+      end
+    end
+    else if (op == op_add) begin
+      // an overflow fails the guard (manual)
+      Int#(33) sum = signExtend(ia) + signExtend(ib);
+      Bit#(33) sb = pack(sum);
+      if (sb[32] != sb[31]) guardFail;
+      else begin
+        regs.wr(z, intC(sb[31:0]));
         next;
       end
     end
@@ -620,9 +685,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // is taken as a reference to it
   rule readElement (st == XRead);
     let d <- smem.data;
-    regs.wr(x, isUnboundCell(d) ? mkCell(tag_REFo, absAddr(sp)) : d);
-    sp <= sp + 1;
-    next;
+    Cell el = isUnboundCell(d) ? mkCell(tag_REFo, absAddr(sp)) : d;
+    if (op == op_read_atom) begin
+      dbox.deref(el);
+      st <= XRAtom;
+    end
+    else begin
+      regs.wr(x, el);
+      sp <= sp + 1;
+      next;
+    end
+  endrule
+
+  // read_atom: the element must be the atom; an unbound one is noted
+  rule readAtom (st == XRAtom);
+    let a <- dbox.derefResult;
+    if (isRef(a)) note(a);
+    if ((a.tag & 8'hfe) == tag_ATOMo && a.val == atomHere.val) begin
+      sp <= sp + 1;
+      next;
+    end
+    else guardFail;
   endrule
 
   // put_reused_structure: nothing is ever reused (no reference counts);
@@ -744,6 +827,23 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBStr;
       end
     end
+    else if (op == op_new_instruction) begin
+      // new_instruction(Tag, Value, ^Cell): atomic tags and tags from
+      // 20h only; a reference or pointer tag is refused
+      if (!isInt(a) || !isInt(b) || a.val > 255 || (a.val > 3 && a.val < 32)) stop(EndUnimp);
+      else begin
+        regs.wr(z, mkCell(truncate(a.val), b.val));
+        finish(tagged Next afterBuiltin);
+      end
+    end
+    else if (op == op_b_vector_element) begin
+      // vector_element(V, I, ^E, ^V1); the vector box checks the index
+      if (!isVec(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        vbox.element(a, b.val);
+        st <= XBVEl;
+      end
+    end
     else if (op == op_new_vector) begin
       // new_vector(Size, ^V)
       if (!isInt(a) || a.val[31] == 1) stop(EndUnimp);
@@ -803,6 +903,25 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     if (!r.ok) guardFail;
     else begin
       regs.wr(z, r.a);
+      next;
+    end
+  endrule
+
+  rule bVectorElement (st == XBVEl);
+    let r <- vbox.result;
+    if (!r.ok) stop(EndUnimp);
+    else begin
+      regs.wr(z, r.a);
+      st <= XBOut2;
+    end
+  endrule
+
+  rule structuredConstant (st == XSCnst);
+    let c <- smem.data;
+    // a reference there is not a structure pointer: refused
+    if (isRef(c)) stop(EndUnimp);
+    else begin
+      regs.wr(x, c);
       next;
     end
   endrule

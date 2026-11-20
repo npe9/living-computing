@@ -457,6 +457,59 @@ class Machine:
         if w is None or w[0] & ~1 != INT:
             return pc + 2 + sx16(c16)
 
+    def i_tag_and_value(self, pc, x, y, z, c16):
+        # guard tag_and_value(X, ^Tag, ^Value): the cell's tag and its
+        # value, as integers (PDSS emulator/blt_system.c; the unloader
+        # writes instruction cells with it, encoder.kl1 encode_code,
+        # and the .sav files hold their tags as the image has them).
+        # Function 4 of opcode 76; two cells, the third register in
+        # the next cell's top byte.  For a tag that has an MRB bit,
+        # whether that bit is returned is not established: the tag is
+        # returned as it stands.
+        if x != 4:
+            raise Unimplemented('opcode 76 function %d' % x)
+        w = self.g_word(y)
+        if w is None:
+            return self.guard_fail()
+        self.reg[z] = (INT, w[0])
+        self.reg[self.cells[pc + 1][1] >> 24] = (INT, w[1])
+        return pc + 2
+
+    def i_switch_on_non_atom(self, pc, x, y, z, c16):
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != ATOM:
+            return pc + 2 + sx16(c16)
+
+    def i_wait_nil(self, pc, x, y, z, c16):
+        w = self.g_word(x)
+        if w is None or (w[0] & ~1, w[1]) != NIL:
+            return self.guard_fail()
+
+    def i_wait_list(self, pc, x, y, z, c16):
+        # a list: the structure pointer is set to its car, for read_*
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != LIST:
+            return self.guard_fail()
+        self.sp = w[1]
+
+    def i_read_atom(self, pc, x, y, z, c16):
+        # the element at the structure pointer must be the atom in the
+        # low 24 bits; an unbound one is noted and the guard fails
+        w = self.deref(self.taken(self.sp))
+        if self.unbound(w):
+            self.waiting.append(w[1])
+            return self.guard_fail()
+        if (w[0] & ~1, w[1]) != (ATOM, self.cells[pc][1] & 0xffffff):
+            return self.guard_fail()
+        self.sp += 1
+
+    def i_add(self, pc, x, y, z, c16):           # guard arithmetic
+        # an overflow fails the guard (PIMOS manual, add)
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or not -(1 << 31) <= a + b < 1 << 31:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a + b) & 0xffffffff)
+
     def i_switch_on_non_list(self, pc, x, y, z, c16):
         # a list: the structure pointer is set to its car, for read_*
         w = self.g_word(x)
@@ -774,6 +827,10 @@ class Machine:
         self.mem[self.sp] = NIL
         self.sp += 1
 
+    def i_write_marked_value(self, pc, x, y, z, c16):
+        # as write_value; marks it multiply referenced (MRB, not modelled)
+        return self.i_write_value(pc, x, y, z, c16)
+
     def i_write_value(self, pc, x, y, z, c16):
         self.mem[self.sp] = self.reg[x]
         self.sp += 1
@@ -830,6 +887,28 @@ class Machine:
     # building and starting goals
     def i_set_value(self, pc, x, y, z, c16):
         self.argv[x] = self.reg[y]
+
+    def i_set_marked_value(self, pc, x, y, z, c16):
+        self.argv[x] = self.reg[y]    # and marks it multiply referenced (MRB)
+
+    def i_set_integer(self, pc, x, y, z, c16):
+        self.argv[x] = (INT, sx16(c16) & 0xffffffff)
+
+    def i_collect_vector(self, pc, x, y, z, c16):
+        pass        # MRB reclamation of the vector r[x] of c16 cells: no GC here
+
+    def i_collect_list(self, pc, x, y, z, c16):
+        pass        # MRB reclamation of the list cell r[x]: no GC here
+
+    def i_put_structured_constant(self, pc, x, y, z, c16):
+        # r[x] := the cell at the label, a place in the module's GC
+        # area that holds the pointer to a constant built outside the
+        # module (TM-662).  A {REFx} there (ten in the image) is not a
+        # structure pointer and is refused until it is understood
+        w = self.mem[self.load + pc + 2 + sx16(c16)]
+        if w[0] & ~1 == REF:
+            raise Unimplemented('put_structured_constant of a reference')
+        self.reg[x] = w
 
     def i_set_variable(self, pc, x, y, z, c16):
         var = self.new_var()
@@ -955,6 +1034,31 @@ class Machine:
             self.need_string(s)
             return [self.element(s, self.need_int(i)), s]
         self.builtin('b_string_element', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_new_instruction(self, pc, x, y, z, c16):
+        # new_instruction(Tag, Value, ^Cell): the cell with that tag
+        # and value, tag_and_value's inverse (library/unloader
+        # decoder.kl1 decode_atomic, encoder.kl1 decode_pred_hash_key).
+        # Tags of references and pointers are refused: only atomic
+        # cells (0..3) and tags from 20h (instructions, descriptors)
+        def f(t, v):
+            t = self.need_int(t)
+            if not (0 <= t <= 3 or 0x20 <= t <= 0xff):
+                raise Unimplemented('new_instruction with tag %x' % t)
+            return [(t, self.need_int(v) & 0xffffffff)]
+        self.builtin('new_instruction', [x, y, z], f)
+
+    def i_b_vector_element(self, pc, x, y, z, c16):
+        # vector_element(V, I, ^E, ^V1): r[z] := element, r[w] := the vector
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(v, i):
+            n, i = self.vsize(v), self.need_int(i)
+            if n is None or not 0 <= i < n:
+                raise Unimplemented('built-in exception: vector_element')
+            return [self.taken(self.vbase(v) + i), v]
+        self.builtin('b_vector_element', [x, y, z, w4], f)
         return pc + 2
 
     def i_set_string_element(self, pc, x, y, z, c16):

@@ -29,7 +29,7 @@ is not used.)
 The same address check is made at every execute_external of the image
 that can be entered today: the goal is started at the instruction
 itself with unbound arguments (a use of the driver, not something the
-machine does), 49 of the 76 sites, 14 of the 23 predicates
+machine does), 59 of the 76 sites, 18 of the 23 predicates
 called.  The others' targets begin with an instruction not modelled.
 
 wait_constant.  ipl_pool:hash_int/2 (object code):
@@ -71,7 +71,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=62, lines=2654, entered=49, targets=14)
+PINNED = dict(parts=72, lines=3300, entered=59, targets=18)
 SIZES = (3, 5, 2, 6)
 INTS = (-(1 << 31), 0, 5, -7, -(1 << 31) + 1, (1 << 31) - 1)
 
