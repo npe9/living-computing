@@ -2681,10 +2681,19 @@ run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./
 #   CM classed fetch-type           resdf, resds (cases 13, 21), CYCLES 6036, MEMREADS 567
 #   prepareExec monitors VFL stores CYCLES 6040 only
 # CYCLES and MEMREADS are MODEL behaviour: no documented time or count.
+# RE-PINNED 2026-11-20 by the INTERRUPTION RECOVERY (plan §1c 5f), CYCLES/MEMREADS 6031/569 -> 6110/581:
+# two recoveries, cases 20 and 21: 4978 and 5016, the K behind the DS-suppressed ST and CM (one younger level cancelled each).  Cause MEASURED by injection in the real StretchCore.bsv (reverted,
+# cmp IDENTICAL): recovery's window off (J1b) gives back exactly CYCLES/MEMREADS 6031/569;
+# its refetch off (J8) gives 6110/581, unchanged; the removal hold off (J4) and the
+# foreign-indicator guard off (J9) move nothing.  The rest is the
+# instructions run ahead of each interrupting level, undone and run again
+# after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
+# landing checked: the counter is the instruction right after the level.
+# Injection numbers above this note were observed at the old pin.
 run "DF APPLIES TO EVERY FETCH-TYPE VFL OPERATION (printed p.32, p.45 item 20)" ./run_program.sh ../decks/cwf_df_fetch_type.strap StretchCwfDfTypeTb \
     "PC=5043" \
-    "CYCLES=6031+-0" \
-    "MEMREADS=569" \
+    "CYCLES=6110+-0" \
+    "MEMREADS=581" \
     "resae:3328=0xfffc200000000000" "resdf:3329=0xfff0d00000000000" \
     "resds:3330=0x000c2c0000000000" "whigh:3265=3002399751580320"
 
@@ -2747,10 +2756,19 @@ run "SIC PREFIXED TO BD STORES INTO A PROTECTED WORD (printed p.31, p.49; MCP p.
 #   execute() only                     resdf, resds, CYCLES 991, MEMREADS 105
 #   prepareExec only                   CYCLES 998 only
 # CYCLES and MEMREADS are MODEL behaviour.
+# RE-PINNED 2026-11-20 by the INTERRUPTION RECOVERY (plan §1c 5f), CYCLES/MEMREADS 981/103 -> 1056/113:
+# five recoveries, 4240 4258 4276 4298 4316 (the NOP behind each M+, M+MG and +).  Cause MEASURED by injection in the real StretchCore.bsv (reverted,
+# cmp IDENTICAL): recovery's window off (J1b) gives back exactly CYCLES/MEMREADS 981/103;
+# its refetch off (J8) gives 1051/108; the removal hold off (J4) and the
+# foreign-indicator guard off (J9) move nothing.  The rest is the
+# instructions run ahead of each interrupting level, undone and run again
+# after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
+# landing checked: the counter is the instruction right after the level.
+# Injection numbers above this note were observed at the old pin.
 run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_program.sh ../decks/fp_mplus_ds_not_df.strap StretchFpMpDsTb \
     "PC=4352" \
-    "CYCLES=981+-0" \
-    "MEMREADS=103" \
+    "CYCLES=1056+-0" \
+    "MEMREADS=113" \
     "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
     "fw:3264=0x0028000000000000"
 
@@ -2787,42 +2805,93 @@ run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan �
     "prod5:212=0x0064000000000000" "prod6:213=0x0064000000000000" "prod7:214=0x0064000000000000" "prod8:215=0x0064000000000000" "prod9:216=0x0064000000000000"
 
 # >>> WHERE AN INTERRUPTION RAISED BY A BOX-HELD MULTIPLY LANDS, 2026-11-20. <<<
-# RefMan printed p.48: "at the end of the operation during which the
-# indicator is turned on"; the 7030 undoes the I-box's advance on an
-# interruption (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6), so the
-# printed answer is: nothing after the multiply has run -- the stored
-# counter 4234 and no trail register set in case 1, 4250 (the first LVI
-# after the held LX) and none set in case 2.  The model cannot undo;
-# these checks pin what it does, a MODEL fact (WHERE/WHERE1 = the counter
-# SIC stores at entry 33, ZM, half-word in bits 0-18; X6-X9 / X10-X14 the
-# trail, an LVI each):
-#   case 1 (multiply straight from the program)  4236, X6 X7 set: two
-#     LVIs ran -- ahead of the level, as for any pending level (they
-#     commit even with the I-box held at a raised indicator, injection D)
-#   case 2 (I-box held back to the multiply)     4251, X10 set: one ran
-#     (untraced which clock)
-# MEASURED at other commits, the deck's earlier NOP form (scratch trees):
-# case 1 two late at 7590ec8 (multiply inline), 2c1b098 (multiply box, no
-# release) and c823af2; case 2 NONE late inline at 7590ec8, one at
-# 2c1b098: the multiply box moved it, not the release (untraced).
+# RefMan printed p.48 (PDF 51): "at the end of the operation during which
+# the indicator is turned on", "before execution of the next instruction";
+# the 7030 undoes the I-box's advance on an interruption (Perf. Char. Vol.
+# 1 printed p.3-24, PDF 42: "All changes in the index registers and/or
+# index indicators due to the advance processing by the I-box must now be
+# undone", "The correct instruction counter value is also shipped back to
+# the I-box"; Buchholz §15.6, printed pp.246-247).  So nothing after the
+# multiply runs: the stored counter (WHERE/WHERE1, SIC at entry 33, ZM,
+# half-word in bits 0-18) is 4234 in case 1 and 4249 in case 2, and no
+# trail register (X6-X9 / X10-X14, an LVI each) is set.  SOURCED PINS since
+# rl_int_recover (plan §1c 5f).  Case 2's sourced answer was written 4250
+# ("the first LVI after the held LX") until 2026-11-20; the LX follows the
+# multiply, so p.48 gives 4249 -- corrected with the pins, deck header.
+# BEFORE the recovery (master @857fb21) the model gave 4236 with X6 X7 set
+# and 4251 with X10 set, CYCLES 424, MEMREADS 36 (a MODEL fact then).
+# CYCLES and MEMREADS are MODEL behaviour: 426 / 40 includes the recovery's
+# own refetch, which rl_interrupt throws away (injection J8 below).
 # OBSERVED injections, 2026-11-20, each in the REAL StretchCore.bsv,
 # reverted by the exact inverse edit, cmp IDENTICAL to a saved copy:
-#   beside starts during the box's hold clocks too  CYCLES 422 only (the
-#     (the 2026-11-19 version)                      landing unmoved here)
-#   rl_prepare also waits while an interruption     step cap 30000: hangs
-#     is due (!isValid(intDue))                     at PC 4236 with WHERE,
-#                                                   WHERE1 0, X10 unset
-#                                                   (X6 X7 still set)
-# No observed injection moves the landing alone.  The gap is
-# docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".
-# CYCLES and MEMREADS are MODEL behaviour.
+#   J1b no recovery window (intWin = False)  where_case2 4251, where1_case1
+#                                            4236, x6 x7 x10 set, CYCLES
+#                                            424, MEMREADS 36 (= master)
+#   J2  no index undo (undoAdvance dropped)  x6 x7 x10 only
+#   J8  no refetch (branchSeq not bumped)    CYCLES 424, MEMREADS 36 only
+#   J4  no removal hold in the window        nothing (no deck reaches it;
+#                                            StretchCore's intWin note)
+#   J1  armIntRecover := False               step cap 30000 (hangs at PC
+#                                            4236, x6 x7 set)
+# The two found 2026-11-20 before the recovery still hold as stated at the
+# time: beside starts during the box's hold clocks too moved CYCLES only.
 run "FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS (printed p.48; MODEL)" ./run_program.sh ../decks/fp_box_interrupt_landing.strap StretchFpIntLandTb \
     "PC=4256" \
-    "CYCLES=424+-0" \
-    "MEMREADS=36" \
-    "where_case2:3328=0x0213600000000000" "where1_case1:3329=0x0211800000000000" \
-    "x6:22=0x0000200000000000" "x7:23=0x0000200000000000" "x8:24=0" "x9:25=0" \
-    "x10:26=0x0000200000000000" "x11:27=0" "x12:28=0" "x14:30=0"
+    "CYCLES=426+-0" \
+    "MEMREADS=40" \
+    "where_case2:3328=0x0213200000000000" "where1_case1:3329=0x0211400000000000" \
+    "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" \
+    "x10:26=0" "x11:27=0" "x12:28=0" "x14:30=0"
+
+# >>> INTERRUPTION RECOVERY: WHAT IS UNDONE, 2026-11-20 (plan §1c 5f). <<<
+# Perf. Char. Vol. 1 printed p.3-24 (PDF 42) and Buchholz §15.6 as above;
+# the deck header has the three cases.  Sourced pins: each WHEREx is the
+# instruction right after the interrupting level (NEXTA 4243, NEXTB 4253,
+# NEXTC 4262), ACCA keeps the product (the younger L(U) MARKF cancelled),
+# every trail register stays 0, and X4 keeps case C's own progressive
+# change (FLDC + .16).  CYCLES / MEMREADS are MODEL behaviour.
+# OBSERVED injections (real file, exact inverse edit, cmp IDENTICAL):
+#   J2  no index undo             x6 x8 x9 only
+#   J3  no cancel of younger      whereb 0x0215200000000000, CYCLES 489,
+#       levels (la.cancelAll)     MEMREADS 44
+#   J5  level's own index not     x4 0x0348400000000000 only
+#       kept (keepX := 0)
+#   J1b no recovery window        wherea, whereb, wherec, x6, CYCLES 484,
+#                                 MEMREADS 42
+#   J4  no removal hold           nothing
+run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_undo.strap StretchIntRecUndoTb \
+    "PC=4267" \
+    "CYCLES=558+-0" \
+    "MEMREADS=48" \
+    "wherea:3328=0x0212600000000000" "whereb:3329=0x0213A00000000000" "wherec:3330=0x0214C00000000000" \
+    "acca:3331=0" "x4:20=0x0348500000000000" \
+    "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" "x10:26=0" "x11:27=0" "x12:28=0"
+
+# >>> INTERRUPTION RECOVERY: RESUMING, 2026-11-20 (plan §1c 5f). <<<
+# What recovery gives back runs again exactly once when the routine (a
+# single non-branching BB1) returns; the deck header has the cases.  Case F
+# is the open one: an I-box store ran ahead, so the model does not recover
+# and takes the interruption after the drain (it prints "NOT recovered").
+# OBSERVED injections (real file, exact inverse edit, cmp IDENTICAL):
+#   J2  no index undo                      x5 0x0000400000000000 only
+#                                          (counted twice)
+#   J6  recover even after an I-box store  cnt2, x2 0x0000400000000000,
+#       ran ahead (store guard dropped)    CYCLES 612, MEMREADS 60
+#   J3  no cancel of younger levels        CYCLES 562, MEMREADS 57
+#   J1b no recovery window                 CYCLES 512, MEMREADS 49
+#   J4  no removal hold                    nothing
+# And the wrong-way recovery the mechanism is shared with: J7 (rl_recover
+# restoring slot recoverSlot+1 instead of the guessing level's) moved
+# nothing in la_guess_target_index or la_branch_guess -- the guessing
+# branch was the head level in each, so the slot choice is untested; J7b
+# (rl_recover's restore dropped) fails la_branch_guess's X1 only
+# (0x1800000000000).
+run "INTERRUPTION RECOVERY: what is given back runs again once (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_resume.strap StretchIntRecResTb \
+    "PC=4260" \
+    "CYCLES=561+-0" \
+    "MEMREADS=56" \
+    "accd:3328=0x0123456789ABCDE8" "cnt:3329=0x0000200000000000" "cnt2:3330=0x0000200000000000" "mark:3331=0x8000000000000000" \
+    "x5:21=0x0000200000000000" "x1:17=0x0000200000000000" "x2:18=0x0000200000000000"
 
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
@@ -4874,7 +4943,17 @@ run "VFL crossing store: STORE WAIT on its second word, an index register" ./run
 # progressive ST.  INJECTIONS, observed: the deck's header.  CYCLES 1209
 # a model pin; 1196 from 2026-11-17, the preparation floor (MEASURED with
 # it removed: 1209).
-run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1196+-0" \
+# RE-PINNED 2026-11-20 by the INTERRUPTION RECOVERY (plan §1c 5f), CYCLES 1196 -> 1225:
+# three recoveries, 2017 2074 2094
+# (the NOP behind the M+ at 2015 and the CMs at 2072 and 2092).  Cause MEASURED by injection in the real StretchCore.bsv (reverted,
+# cmp IDENTICAL): recovery's window off (J1b) gives back exactly CYCLES 1196;
+# its refetch off (J8) gives 1218; the removal hold off (J4) and the
+# foreign-indicator guard off (J9) move nothing.  The rest is the
+# instructions run ahead of each interrupting level, undone and run again
+# after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
+# landing checked: the counter is the instruction right after the level.
+# Injection numbers above this note were observed at the old pin.
+run "VFL protection: crossing M+ and CM, one-word CM, DS terminates the whole operation (printed pp.22, 31-32)" ./run_program.sh ../decks/vfl_cross_protect.strap StretchVflCrossProtectTb "PC=2129" "CYCLES=1225+-0" \
     "P1_PW0:1600=0xA5A5A5A5A5A5A5AF" "P1_PW1:1601=0xF5A5A5A5A5A5A5A5" "I1:1700=0" "D1:1705=0x8000000000000000" \
     "P2_UW0:1505=0xA5A5A5A5A5A5A5A0" "P2_UW1:1506=0x05A5A5A5A5A5A5A5" "I2:1701=0x20000000140" "D2:1706=0" \
     "I3:1702=0" "D3:1707=0x8000000000000000" "I4:1703=0" "D4:1708=0x8000000000000000" "X7_P4:1712=0x01905800000405DD" \
@@ -4926,7 +5005,17 @@ run "Stores into location 7, the connective counters (printed pp.34, 36, 76)" ./
 # (16)80000000000 (DF) only; Q5 and vfl_cross_protect pass.  CYCLES 1119
 # a model pin; 1115 from 2026-11-17, the preparation floor (MEASURED with
 # it removed: 1119).
-run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1115+-0" \
+# RE-PINNED 2026-11-20 by the INTERRUPTION RECOVERY (plan §1c 5f), CYCLES 1115 -> 1155:
+# one recovery, 2080 (the NOP behind
+# the progressive ST at 2078).  Cause MEASURED by injection in the real StretchCore.bsv (reverted,
+# cmp IDENTICAL): recovery's window off (J1b) gives back exactly CYCLES 1115;
+# its refetch off (J8) gives 1143; the removal hold off (J4) and the
+# foreign-indicator guard off (J9) move nothing.  The rest is the
+# instructions run ahead of each interrupting level, undone and run again
+# after the routine returns (Perf. Char. Vol. 1 printed p.3-24).  Every
+# landing checked: the counter is the instruction right after the level.
+# Injection numbers above this note were observed at the old pin.
+run "VFL refill DF suppressed with the store (printed pp.22, 32)" ./run_program.sh ../decks/vfl_refill_df.strap StretchVflRefillDfTb "PC=2117" "CYCLES=1155+-0" \
     "I1:1700=0" "I2:1701=0" "I3:1702=0" "I4:1703=0" "I5:1704=0x80000009120" \
     "D1:1705=0x8000000000000000" "D2:1706=0x8000000000000000" "D3:1707=0x8000000000000000" "D4:1708=0x8000000000000000" "D5:1709=0" \
     "X7A:1710=0x0190580000040642" "X6A:1711=0x0190680000040642" "X5A:1712=0x0190480000040642" "X4A:1713=0x0190380000040642" "X3A:1714=0x01348000013405dc"

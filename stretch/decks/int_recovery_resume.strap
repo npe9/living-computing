@@ -1,0 +1,84 @@
+! INTERRUPTION RECOVERY: RESUMING, 2026-11-20 (docs/microarchitecture_
+! plan.md §1c step 5f; StretchCore's rl_int_recover).
+!
+! What recovery gives back must be run again, exactly once, when the
+! routine returns (Perf. Char. Vol. 1 printed p.3-24, PDF 42: the I-box's
+! advance is "undone" and "the correct instruction counter value is also
+! shipped back"; Ref. Manual printed p.48, PDF 51: the program resumes at
+! the instruction the interruption displaced).  Entry 33 (ZM) is the
+! single I-box instruction "BB1, MARK, $+1.0", which does not branch, so
+! the program goes on at the stored counter (printed p.49).
+!   D: L, *, then a younger L(U) MARKF and V+I X5: both cancelled and run
+!      again once -- ACCD = what L(U) MARKF / ST(U) ACCD leave
+!      (0x0123456789ABCDE8, not the product 0), X5 = 1.
+!   E: L, *, then LX / V+I / SX on CNT: recovered before the SX starts,
+!      run once -- CNT = X1 = 1.
+!   F: as E behind an older divide, so the SX (an I-box STORE) runs ahead
+!      of the interrupting multiply.  A store is not given back, so the
+!      model does NOT recover (it says so) and takes the interruption after
+!      the levels drain, as before 2026-11-20 -- CNT2 = X2 = 1, not 2.
+!      This is the case left open: docs/NEXT.md "AN INTERRUPTION RAISED BY
+!      A LEVEL" item 1.
+! The run line in tests/run_tests.sh has the observed injections.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the mask are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $ZM,  $+1.0
+        BB1, 12.33, $+1.0            ! ZM's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+! CASE D: the trail and a younger E-box level are re-run once on return.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+        L(U), MARKF                  ! younger E-box level: runs once, after
+        V+I, $X5, 1                  ! X5 := X5 + 1, exactly once
+        ST(U), ACCD
+        BD,  $+.32
+        BBZ, MARK, $+1.0             ! the routine ran: clear its mark
+        BE,  $+.32
+! CASE E: an I-box store runs ahead of the interrupting multiply.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+        LX,  $X1, CNT                ! CNT := CNT + 1, exactly once
+        V+I, $X1, 1
+        SX,  $X1, CNT
+        BD,  $+.32
+        BBZ, MARK, $+1.0
+        BE,  $+.32
+! CASE F: as E, with an older divide holding the E-box so that the whole
+! LX / V+I / SX runs ahead of the multiply's interruption.
+        L(N), NZF0
+        /(N), NZF0
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+        LX,  $X2, CNT2               ! CNT2 := CNT2 + 1, exactly once
+        V+I, $X2, 1
+        SX,  $X2, CNT2
+        L(U), ZF0                    ! slack before the BD: a younger LEVEL.
+                                     !   interruptDue() is two clocks behind
+                                     !   the multiply; with nothing here, or
+                                     !   a NOP (which runs ahead), the BD
+                                     !   drained the look-ahead and disabled
+                                     !   the system in between and the
+                                     !   interruption was lost (measured;
+                                     !   int_timing_bracket's slack note)
+        BD,  $+.32
+        B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+MARKF   DD(BU,64), 81985529216486895
+        SLC, (8)6400.0
+ACCD    DD, 0
+CNT     DD, 0
+CNT2    DD, 0
+MARK    DD, 0                        ! the routine's only side effect
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6541.0
+ZMRTN   BB1, MARK, $+1.0             ! entry 33 = ZM: ONE instruction, I-box
+                                     !   class, not branching (MARK is 0),
+                                     !   so the program resumes at the
+                                     !   counter the interruption left
+        END, START

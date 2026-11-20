@@ -556,15 +556,38 @@ the look-ahead until the resume retires it, so iboxHazard is the interlock
 (`decks/fp_box_release_interlock.strap`, observed injections in
 run_tests.sh). Without it, the stage moved the PINNED
 `fp_mplus_ds_not_df` 981 -> 985 (the `NOP` behind each add a clock late,
-traced); with it, 981 passes unchanged. NOT during the box's hold clocks,
+traced); with it, 981 passed unchanged (1056 since the interruption
+recovery, 2026-11-20, which re-runs the instructions run ahead of each DS
+level; 981 again with the recovery's window injected off). NOT during the box's hold clocks,
 and not for an E-box-class load or an indicator branch's guess, both of
 which the first version (c823af2) did: the 7030 undoes the I-box's advance
 on an interruption (Ref. Manual printed p.48; Perf. Char. Vol. 1 printed
-p.3-24; Buchholz §15.6) and the model cannot, and the E-box-class yield
-moved the atlas's `M+` EXTERNAL columns (PDF 100-101) up to 0.62 clock a
-case further from the page. `decks/fp_box_interrupt_landing.strap` pins,
-as a MODEL fact, where a box-held multiply's interruption lands (two LVIs
-late running ahead, one held back; the pages say none; docs/NEXT.md).
+p.3-24; Buchholz §15.6), and the model's recovery (below) cannot undo a
+store made beside it; the E-box-class yield moved the atlas's `M+`
+EXTERNAL columns (PDF 100-101) up to 0.62 clock a case further from the
+page.
+
+**INTERRUPTION RECOVERY (2026-11-20, plan §1c 5f, first milestone).** An
+interruption raised by the level that just completed is taken where the
+pages put it: StretchCore `rl_int_recover` cancels the younger levels,
+restores the index words and index indicators the I-box changed after the
+level's load and returns the counter to the instruction after it (Perf.
+Char. Vol. 1 printed pp.3-22..3-24, PDF 40-42; Buchholz §15.6, printed
+pp.246-247). It reuses the wrong-way recovery's snapshot, now one record
+per look-ahead slot (`ixRec`, read by both). Not when an I-box store ran
+ahead (taken late, as before, and said), and not for other interruption
+sources. `decks/fp_box_interrupt_landing.strap` lands at the printed
+4234 / 4249 with no trail register set; `decks/int_recovery_undo.strap`
+and `decks/int_recovery_resume.strap` pin the younger level, a VFL level,
+a progressive level's own index, a routine that returns and the store
+guard (docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL"). Also no
+recovery when a non-index indicator rose since the level's load outside
+the clock after a level's completion (`otherSeq`: the interruption may not
+be the level's). `StretchStorage.restoreIndex` takes a keep mask and only
+writes: reading the index words in the recovery rule ordered it before
+`writeWord` and broke the smoke test's setup rule. Four MODEL pins moved
+by the recovery (re-run work after each return), each attributed by
+injection at its run line in tests/run_tests.sh.
 **Timing:** against 2c1b098 (stage 1 only), of the rows measured eighteen
 halt reports moved and no pin. Decks with a consumer straight behind each
 add (the jb_af1c F2xx rows, fp_zm_cleared) are +1 to +9: the consumer

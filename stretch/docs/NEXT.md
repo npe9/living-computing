@@ -50,7 +50,9 @@ pin passes unchanged. The interlock is iboxHazard on the level, which stays
 in the look-ahead until the resume retires it
 (`decks/fp_box_release_interlock.strap`, with its observed injections).
 The one instruction beside the answered level is the overlap the model
-had with the add inline (the 981 pin), kept for that reason and not
+had with the add inline (the 981 pin; 1056 since the interruption
+recovery re-runs what ran ahead of its DS levels, 981 again with the
+recovery's window injected off), kept for that reason and not
 because the pages describe it; the interruption landing is measured in
 the next item.
 NOT DONE: the other boxes (divide, decimal, VFL) do not release their
@@ -68,46 +70,101 @@ C22-6578 Problem 3.4's two big moves (Method 2 -170, Method 1 +27 at stage
 instruction fetch reach the same storage unit in the other order (plan
 §1c 5f stage 2, "PROBLEM 3.4, TRACED").
 
-## AN INTERRUPTION RAISED BY A BOX-HELD LEVEL LANDS LATE -- open, 2026-11-20
+## AN INTERRUPTION RAISED BY A LEVEL LANDS LATE -- FIRST MILESTONE DONE: interruption recovery, 2026-11-20
 
-THE PAGES say the program must not see the I-box's advance: Ref. Manual
-printed p.48 (PDF 51), an interruption is taken "at the end of the
-operation during which the indicator is turned on" and "before execution
-of the next instruction"; Perf. Char. Vol. 1 printed p.3-23/3-24 (PDF
-41-42): on an interruption, as on a wrong branch, "All changes in the
-index registers and/or index indicators due to the advance processing by
-the I-box must now be undone", "The interruption action is quite similar
-to branch recovery"; Buchholz §15.6 (printed pp.246-247, PDF 271-272):
-the look-ahead's housecleaning restores each index word the instruction
-unit modified and returns it "to the point in the program at which
-interruption occurred"; Ref. Manual printed p.9 (PDF 12): look-ahead
-"makes the machine appear as if it were dealing with only one
-instruction at a time".
+THE PAGES: Ref. Manual printed p.48 (PDF 51), an interruption is taken
+"at the end of the operation during which the indicator is turned on",
+"before execution of the next instruction"; Perf. Char. Vol. 1 printed
+p.3-22 (PDF 40), each I-box instruction's level "may be an index recovery
+level containing the old contents of an index register to enable the
+restoration in case of unexpected interruptions"; printed p.3-24 (PDF 42),
+"All changes in the index registers and/or index indicators due to the
+advance processing by the I-box must now be undone ... The correct
+instruction counter value is also shipped back to the I-box. The
+interruption action is quite similar to branch recovery"; Buchholz §15.6
+(printed pp.246-247, PDF 271-272), the instruction and arithmetic units
+"stop preparing and executing more instructions", the old index words are
+stored back from pseudo-store levels, and the counter returns the unit "to
+the point in the program at which interruption occurred".
 
-THE MODEL cannot undo: an I-box instruction that ran ahead of a pending
-level is committed (armInterrupt's note; wrong-way recovery's `xSnap` /
-`indSnap` are not used for interruption). `decks/fp_box_interrupt_landing.strap`
-pins where a ZM interruption raised by a box-held multiply lands, as a
-MODEL fact, with a trail of LVIs (one index register each) after the
-multiply and the counter SIC stores at entry 33. The pages' answer is no
-LVI run in either case. The model: case 1 (the I-box running ahead as
-usual) two LVIs committed, counter 4236 -- and they commit even with
-rl_prepare stopped at a raised indicator (the deck's injection D), so they
-ran before ZM came on, ahead of the level as for any pending level, not
-beside the box; case 2 (the I-box held back to the multiply) one LVI,
-counter 4251. In the deck's earlier NOP form, case 1 was two late at
-7590ec8 (multiply inline), 2c1b098 and c823af2, and case 2 NONE late
-inline and one late from 2c1b098 on: the multiply box (stage 1) moved
-case 2, not the release; untraced. Beside starts in the box's hold clocks
-too (the first release) moved only the deck's CYCLES; nothing in the
-model bounds them in general, so they were taken out. The one instruction
-the release still starts beside the answered level is not what the pages
-describe either; it is kept because the add had exactly that overlap
-inline (the 981 pin). TO CLOSE: take the interruption at the level's
-result and undo what the I-box ran ahead (the snapshot recovery does it
-already for a wrong branch), or hold the I-box at an interrupt-enabled
-indicator a pending level might set (the simple form of that, rl_prepare
-waiting while an interruption is due, hangs the deck: the injection D).
+BUILT (StretchCore `rl_int_recover`, plan §1c 5f "INTERRUPTION
+RECOVERY"): a record per look-ahead slot (index words, indicators, I-box
+start counts at the load; the guessed branch's wrong-way recovery now
+reads the same record instead of its own `xSnap`/`indSnap`); when an
+interruption becomes due in the two clocks after a level completes (the
+model's interruptDue() latch), the younger levels are cancelled, the index
+words and index indicators the I-box changed after the level's load are
+restored (minus what the level itself wrote: progressive indexing's index,
+a store into words 16-31), the counter is returned to the instruction
+after the level, and rl_interrupt takes the interruption there.
+`decks/fp_box_interrupt_landing.strap` now lands where the pages say:
+case 1 counter 4234, case 2 counter 4249, no trail register set (the
+deck's header said 4250 for case 2; the instruction after the multiply is
+the held LX at 4249, and p.48's "before execution of the next instruction"
+gives that). `decks/int_recovery_undo.strap` (a younger E-box level
+cancelled, a VFL level, a progressive level's own index kept) and
+`decks/int_recovery_resume.strap` (the routine returns: the trail and the
+younger level run exactly once) pin the rest.
+
+STILL OPEN, in order:
+
+1. **AN I-BOX STORE AHEAD OF AN INTERRUPTING LEVEL.** An I-box store
+   (`isIboxStore`: SX/SV/SC/SR, Z, SIC) that ran ahead of the level cannot
+   be taken back, and returning the counter would run it again
+   (`LX / V+I / SX` would count twice), so when one has started since the
+   level's load there is NO recovery and the interruption is taken late,
+   after the levels drain, as before (`int_recovery_resume` case F). The
+   wrong-way recovery never meets this: iboxHazard holds an I-box store
+   while a guess is pending. THE FIX is the same hold whenever an
+   interrupt-enabled level is pending (or the store as a real store level,
+   Buchholz §15.3, cancelled by housecleaning); it moves the timing of
+   every enabled run with a store behind a level (MCP), so it is its own
+   measured step.
+2. **THE HOLD-CLOCK BESIDE STARTS** (the level release's confinement, plan
+   §1c 5f stage 2). Recovery now undoes an index change made beside a held
+   level, but not a store (item 1), so lifting the confinement is still a
+   risk of its own. Measured before: lifting it gives back 11 clocks on
+   `fp_box_release_interlock` (1153 -> 1142) and 2 on this landing deck.
+   Do it after item 1.
+3. **A BD IN THE LATCH CLOCKS.** interruptDue() is two clocks behind the
+   indicator; an unconditional branch prepared in those clocks drains the
+   (empty) look-ahead and, if it disables, the interruption is lost
+   (`int_recovery_resume` case F's slack note; int_timing_bracket's).
+   p.48 allows no such window. The latch is StretchStorage's.
+4. **OTHER SOURCES.** An interruption due for any reason other than the
+   level that just completed (an I/O report, the timer, an I-box
+   instruction's own indicator, one due before the level completed) is
+   still taken after the levels drain, with no recovery.
+5. **THE TIME.** Housecleaning is not charged (no page found gives a
+   number; Perf. Char. Vol. 1 PDF 11 and 63 list its steps). The
+   recovery's refetch at the restored counter is discarded by
+   rl_interrupt's restart at the routine: MEASURED by injection (J8),
+   fp_box_interrupt_landing runs 424 clocks / 36 reads without it and
+   426 / 40 with it, every other pin unchanged. Two clocks the pages do
+   not give; dropping it needs a proof that an interruption always follows
+   the recovery (an undone index indicator may have been its cause).
+7. **THE REMOVAL HOLD IS UNREACHED.** `intWin`'s hold on removing the
+   next level moved nothing when injected away: a completing level charges
+   `ebusy`, so only a level charged 0-1 clocks could reach it. No deck
+   does. And rl_recover's slot choice (`recoverSlot`) is untested: every
+   guessing branch in the suite was the head level (injection J7).
+8. **THE FOREIGN-INDICATOR GUARD IS UNREACHED.** `otherSeq` (StretchCore's
+   WHOSE INDICATOR note) refuses recovery when a non-index indicator rose
+   since the level's load outside the clock after a level's completion --
+   an I-box instruction run ahead raising its own, I/O, the timer. No deck
+   reaches it (J9 moved nothing); a deck needs an I-box instruction that
+   raises a masked-on indicator in the two clocks after a level completes
+   (the one start beside an answered FP-box level is the likely place).
+   It also counts an I-box start beside the completion as foreign, so it
+   may refuse a level's own rise there; and an I-box instruction finishing
+   a read in the completion clock is counted as the level's.
+9. **A RECOVERY WITH NOTHING TO DO COSTS A CLOCK (untraced).**
+   `df_fetch_suppress` 1320 -> 1321 and `int_timing_bracket` 320 -> 321
+   (halt clocks, unpinned), with no recovery line; J1b gives them back, J4
+   does not.
+6. **LEVEL OCCUPANCY.** The record per slot gives the IX-Rec levels'
+   architectural effect, not their occupancy (docs/spec_lookahead.md's
+   correction to plan §6d).
 
 ## THE FP BOX'S REMAINING CLASSES -- open, 2026-11-19
 
