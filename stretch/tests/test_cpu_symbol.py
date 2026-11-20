@@ -17,6 +17,10 @@ THE SOURCES (page images read 2026-11-19; PDF page in parentheses):
     C28-6129 printed p.52 (PDF 55) prints that entry as "CPUS CPU Signal
     11.5".  IBM's SSIP listing assembles BCPUZ to 1575.02 C6, indicator 5
     (tests/verify_ssip_sip17_listing.py).
+MCP's own listing names the indicator CPUS too: printed p.131 line 20,
+"(IQSX)DC(BU), CPUS X" (MCP_Mar63 PDF 138).  No listing in the tree
+assembles "$CPU" (MCP searched through its OCR; the diagnostic-deck
+PDFs have no text layer).
 Every source that prints a "$CPU" gives 6.0; the indicator's "$" name is
 $CPUS.  The bare CPU of BCPU/BCPUZ stays indicator 5.  (Appendix A's
 footnote column puts 1, "system symbol" only, on CPUS and 2, "both an
@@ -30,7 +34,8 @@ FOUR "$name" SITES are fixed, each read through opcodes.INDICATOR_SYMBOLS:
   D strap2/optable.system_symbol      (the STRAP II reconstruction)
 
 DISCRIMINATION, OBSERVED 2026-11-19 (each site reverted alone to
-INDICATOR_BITS, run, restored by the exact inverse patch, git diff clean):
+INDICATOR_BITS, run, restored by the exact inverse patch; the restored
+files compared equal, by cmp, to copies taken before the injections):
   site A reverted: FAIL  $CPU SYN value; $CPU in an expression;
                    B,$CPU equals B,6.0
   site B reverted: FAIL  $CPU has no indicator dds
