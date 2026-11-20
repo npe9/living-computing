@@ -126,7 +126,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_string_element || op == op_set_string_element
                   || op == op_new_vector || op == op_set_vector_element
                   || op == op_b_vector_element || op == op_new_instruction
-                  || op == op_new_module;
+                  || op == op_new_module || op == op_calculate_priority_from_minimum;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -207,6 +207,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool isWaitAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b100;
   // put_atom's base is 40
   Bool isPutAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b010;
+  // set_atom's base is 00: the goal argument in the opcode byte
+  Bool isSetAtom = ins.tag == tag_KLB && ins.val[31:28] == 4'b0000;
   Cell atomHere = mkCell(tag_ATOMo, zeroExtend(ins.val[23:0]));
   // put_vector_N, N = 2..4: N cells, no header
   Bool isPutVector = op == op_put_vector_1 || op == op_put_vector_2 || op == op_put_vector_3
@@ -360,6 +362,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_set_integer) begin
       regs.wa(x, intCell(c16));
       next;
+    end
+    else if (isSetAtom) begin
+      regs.wa(zeroExtend(ins.val[27:24]), atomHere);
+      next;
+    end
+    else if (op == op_enqueue_goal_with_priority) begin
+      // two cells: the priority's register, the label; the arity in the
+      // next cell's top byte (klb_opr.kl1 p(r_c16_c8_exe)).  The
+      // priority must be an integer and is then dropped: one ready
+      // queue here, where the machine has a goal stack per priority
+      if (!isInt(regs.r(x)) || ins2.val[31:24] > 11) stop(EndUnimp);
+      else begin
+        gbox.record(fromInteger(lay_READY), labelOf(pc, c16), ins2.val[31:24], True, True);
+        st <= XEnq;
+      end
     end
     else if (op == op_enqueue_goal) begin
       // A goal has 11 argument slots; the compiler packs the arguments
@@ -762,7 +779,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule enqueued (st == XEnq);
     let g <- gbox.recordResult;
-    next;
+    finish(tagged Next (op == op_enqueue_goal_with_priority ? pc + 2 : pc + 1));
   endrule
 
   rule susp1 (st == XSusp1);
@@ -869,6 +886,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         vbox.toModule(a);
         st <= XBMod;
+      end
+    end
+    else if (op == op_calculate_priority_from_minimum) begin
+      // calculate_priority_from_minimum(X, ^Y), X in 0..4096 (manual).
+      // No shoen here: its priority range is taken as 0..4096, so
+      // Y = X.  That range is ours.
+      if (!isInt(a) || a.val > 4096) stop(EndUnimp);
+      else begin
+        regs.wr(y, intC(a.val));
+        finish(tagged Next afterBuiltin);
       end
     end
     else if (op == op_new_instruction) begin

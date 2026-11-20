@@ -242,8 +242,8 @@ def serve(s, at, atq, feed, table, names, heard):
         progress = False
         while True:                     # the reader
             w = m.deref(at)
-            if m.unbound(w):
-                break
+            if m.unbound(w) or w == (pimm.ATOM, 0):
+                break                   # nothing asked, or the stream closed
             if w[0] & ~1 == pimm.LIST:
                 s.setslot(5, (pimm.REF, w[1]))
                 s.unifyc(5, (pimm.INT, feed[0]))
@@ -269,7 +269,7 @@ def serve(s, at, atq, feed, table, names, heard):
             progress = True
         while True:                     # the atom table
             w = m.deref(atq)
-            if m.unbound(w):
+            if m.unbound(w) or w == (pimm.ATOM, 0):
                 break
             assert w[0] & ~1 == pimm.LIST, w
             req = m.deref((pimm.REF, w[1]))
@@ -287,6 +287,17 @@ def serve(s, at, atq, feed, table, names, heard):
                 answer = 0 if elems == NIL_NAME else 0x10000 + ident
                 table[ident] = answer
                 heard.append((ident, elems))
+            elif size == 3 and what == (pimm.ATOM, names['put_all']):
+                # put_all(Names, Status), the file's atom table at its
+                # end.  The IPL's own handler (ipl_loader:decode_atom/5,
+                # put_all_atom/6, resume_get/3) answers an empty list,
+                # with no get waiting, by Status = normal.  Every file
+                # held has an empty table; another is not played.
+                lst = m.deref((pimm.REF, req[1] + 1))
+                if m.unbound(lst):
+                    break
+                assert lst == (pimm.ATOM, 0), lst
+                answer = names['normal']
             else:
                 raise AssertionError('an unknown atom request %r' % (req,))
             s.setslot(5, (pimm.REF, req[1] + size - 1))

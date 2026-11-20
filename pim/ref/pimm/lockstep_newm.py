@@ -28,8 +28,7 @@ The oracle, per built object (every cell is accounted for):
   cell 2, 3       the module's atom; load_module/7's second argument,
                   which is therefore the package (the image has the
                   package atom there)
-  constants       the term the IPL file decoder made (itself checked
-                  against unlsav by lockstep_gca.py)
+  constants       the term asm/unlsav.py reads from the file
   external call   {0, reference to a variable, key, module atom, 0};
                   the key is arity << 24 | (atom + arity) & FFFFFFh,
                   as in the image's tables; the variable is the one
@@ -127,20 +126,24 @@ def number(a):
     return deca.number(a[0], a[1])
 
 
-def check_object(m, mod, tops, decoded, out, tail, status):
+def check_object(m, mod, tops, out, tail, status):
     """The list of what is wrong with one built module, and its size."""
     if m.unbound(status) or m.term(status) != 'normal':
         return ['status'], 0
     lst = m.deref(out)
     if lst[0] & ~1 != pimm.LIST or m.deref(m.mem[lst[1] + 1]) != m.deref(tail):
         return ['the output is not [_|Tail]'], 0
-    rec = m.deref(m.mem[lst[1]])
+    return check_record(m, mod, tops, m.deref(m.mem[lst[1]]))
+
+
+def check_record(m, mod, tops, rec):
+    """The same for a module(Package, Name, Module, ExternalModules)."""
     if m.vsize(rec) != 5:
         return ['the record'], 0
     rb = m.vbase(rec)
     f = [m.deref(m.mem[rb + i]) for i in range(5)]
     name_atom = (pimm.ATOM, deca.number(mod['name_id'], mod['name']))
-    if [(t & ~1, v) for t, v in f[1:3]] != [PACKAGE, name_atom] or f[3][0] & ~1 != pimm.MOD & ~1:
+    if [(t & ~1, v) for t, v in f[1:3]] != [PACKAGE, name_atom] or f[3][0] != pimm.MOD:
         return ['module(Package, Name, Module, _): %r' % (f,)], 0
     a = f[3][1]
     desc = m.mem[a]
@@ -162,8 +165,7 @@ def check_object(m, mod, tops, decoded, out, tail, status):
                     m.vsize(inner)))
         e = m.deref(m.mem[e[1] + 1])
     # the GC area
-    dec = m.term(decoded)          # module(Name, X, W3, Info, HashSize, Twice, Entries, Size, Code)
-    consts = list(dec[4])
+    consts = gca.expected(tops, {})
     i, k = 4, 0
     if plain[2] != name_atom or plain[3] != PACKAGE:
         bad.append('name, package: %r' % (plain[2:4],))
@@ -286,7 +288,7 @@ def check(s, m, want):
     bad, cells = [], 0
     for name, mod, tops in want:
         decoded, out, tail, status = got[name][-4:]
-        b, n = check_object(m, mod, tops, decoded, out, tail, status)
+        b, n = check_object(m, mod, tops, out, tail, status)
         cells += n
         bad += [(name, x) for x in b]
     return bad, cells

@@ -37,8 +37,9 @@ where shown and was restored:
   spread repeats the first element   the same: A 12 gets the 11th argument
   spread stops one short             the same: A 12 not written
 
-Not run: a goal of 13 arguments (decode/8's, a 3-vector), and the
-refusals (no vector, a vector of another size, more than 16).
+A goal of 13 arguments (decode/8's, a 3-vector) is run by
+lockstep_file.py.  Not run: the refusals (no vector, a vector of
+another size, more than 16).
 """
 import os
 import sys

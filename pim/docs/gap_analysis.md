@@ -114,9 +114,20 @@ layout of the image's own modules say. What that does not show: that
 code in a built module runs (both models fetch code from the image,
 not from the heap), and modules over about 2700 file words do not fit
 (every `set_vector_element` copies the vector). A built external-call
-descriptor has five cells where the image's own have four. Next:
-`load_modules/8` over a whole file, `decode/8` with the magic
-number, and the atom table at the end of the file.
+descriptor has five cells where the image's own have four.
+
+Then whole files: `ipl_file_decoder:decode/8`, the predicate the
+IPL's loader calls, on two real patch files from magic number to atom
+table (`lockstep_file.py`, `lockstep_file3.py`); B4's minimum is in
+(`calculate_priority_from_minimum` over a range of ours,
+`enqueue_goal_with_priority` with the priority dropped). Still stood
+in for by the test: the reader (`ipl_loader:read_unload_file/7`, the
+sum check) and the atom table (`ipl_loader:decode_atom/3`), both real
+IPL code that can replace the stand-ins. Left waiting: the file name
+on the console (C1). Next: `ipl_loader:load_file/9` with the IPL's
+own reader and atom table in place of the test's, which needs a
+stand-in only for the file's bytes (C2); then console output (C1),
+so that the name and a 5702h file's comment are displayed.
 
 ### C. The world outside the processor
 
@@ -177,7 +188,9 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: `new_module`'s refusals; integer keys in a
+- Not caught by any run: `calculate_priority_from_minimum`'s result
+  register (and its value is read by nothing); a file whose atom table
+  has names; a 5702h file's comment; `new_module`'s refusals; integer keys in a
   built `hash_on_constant` table; the guard `add`'s overflow; `wait_nil` and
   `read_atom` offered another atom; `set_integer` with a negative
   operand; `execute_external` to a predicate that is not

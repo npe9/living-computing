@@ -40,7 +40,8 @@ areas (`b_multiply`, `write_marked_variable`, `write_integer`),
 `lockstep_ptab.py` the IPL's predicate-table builder (fourteen
 instructions, listed in its header), `lockstep_pack.py` a goal of
 more than eleven arguments, `lockstep_newm.py` whole module objects
-(`new_module`); 90
+(`new_module`), `lockstep_file.py` and `lockstep_file3.py` whole real
+object files through `decode/8`; 93
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

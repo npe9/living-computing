@@ -75,14 +75,14 @@ def s32(v):
     return v - (1 << 32) if v >= 1 << 31 else v
 
 
-def modules():
+def modules(fname='pimm_kernel360E.sav'):
     """Per module of the kernel file: name, the index table's words and
     the atoms known before them, the code area's likewise, and
     unlsav's reading (hash size, entries, code items, detail)."""
     raw = subprocess.run(['gzip', '-dc', deca.OBJ], stdout=subprocess.PIPE, check=True).stdout
     with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
         for m in tf.getmembers():
-            if m.name.endswith('pimm_kernel360E.sav'):
+            if m.name.endswith('/' + fname):
                 data = tf.extractfile(m).read()
     words = list(struct.unpack('>%dH' % (len(data) // 2), data))
     r = unlsav.Reader(words)

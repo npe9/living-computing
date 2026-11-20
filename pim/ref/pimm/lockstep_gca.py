@@ -76,13 +76,13 @@ def plain(p):
     return p[0] in ('vector', 'list') and len(p[1]) >= 1 and all(plain(e) for e in p[1])
 
 
-def areas():
+def areas(fname='pimm_kernel360E.sav'):
     """(module name, words, atoms known before, the top-level terms)
     for every module of the kernel file, in file order."""
     raw = subprocess.run(['gzip', '-dc', deca.OBJ], stdout=subprocess.PIPE, check=True).stdout
     with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
         for m in tf.getmembers():
-            if m.name.endswith('pimm_kernel360E.sav'):
+            if m.name.endswith('/' + fname):
                 data = tf.extractfile(m).read()
     words = list(struct.unpack('>%dH' % (len(data) // 2), data))
     r = unlsav.Reader(words)

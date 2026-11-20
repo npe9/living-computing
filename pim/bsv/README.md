@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Nineteen tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Twenty-one tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -116,7 +116,11 @@ image's own tables have; fourteen instructions, among them
 compiler packs those from the 11th on into a vector, `enqueue_goal`
 spreads it) and `newm` (`ipl_module:load/4` builds five real modules
 as module objects, `new_module`; every cell checked against the file
-and the layout of the image's own modules). State: 90 instructions; goals as
+and the layout of the image's own modules) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
+whole real object files, one and three modules, from the magic number
+to the atom table; `set_atom`, `calculate_priority_from_minimum`,
+`enqueue_goal_with_priority` with the priority dropped). State: 93
+instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

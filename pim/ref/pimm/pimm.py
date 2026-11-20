@@ -262,7 +262,7 @@ class Machine:
             return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
-        if t == MOD & ~1:
+        if w[0] == MOD:                      # tags from 20h have no MRB bit
             return ('MOD', self.mem[w[1]][1] & 0xffffff)
         if VECT0 <= t <= VECT0 + 14:
             n, a = self.vsize(w), self.vbase(w)
@@ -893,6 +893,37 @@ class Machine:
 
     def i_set_marked_value(self, pc, x, y, z, c16):
         self.argv[x] = self.reg[y]    # and marks it multiply referenced (MRB)
+
+    def i_set_atom(self, pc, x, y, z, c16):
+        # one cell: opcode byte = the goal argument (0..15), low 24
+        # bits = the atom (assembler/inst_tab.kl1: set_atom_1..15)
+        v = self.cells[pc][1]
+        self.argv[v >> 24] = (ATOM, v & 0xffffff)
+
+    def i_calculate_priority_from_minimum(self, pc, x, y, z, c16):
+        # calculate_priority_from_minimum(X, ^Y): "the logical priority
+        # corresponding to X is calculated from the logical priority
+        # range for the shoen"; X is 0..4096 (manual).  There is no
+        # shoen here: the range is taken as 0..4096, so Y = X.  That
+        # range is ours.
+        def f(v):
+            v = self.need_int(v)
+            if not 0 <= v <= 4096:
+                raise Unimplemented('calculate_priority_from_minimum of %d' % v)
+            return [(INT, v)]
+        self.builtin('calculate_priority_from_minimum', [x, y], f)
+
+    def i_enqueue_goal_with_priority(self, pc, x, y, z, c16):
+        # two cells: the priority's register, the label; the arity in
+        # the next cell's top byte (assembler/klb_opr.kl1
+        # p(r_c16_c8_exe)).  The priority must be an integer and is
+        # then DROPPED: there is one ready queue here, where the
+        # machine has a goal stack per priority.
+        n = self.cells[pc + 1][1] >> 24
+        if self.reg[x][0] & ~1 != INT or n > 11:
+            raise Unimplemented('enqueue_goal_with_priority %r, %d arguments' % (self.reg[x], n))
+        self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
+        return pc + 2
 
     def i_set_integer(self, pc, x, y, z, c16):
         self.argv[x] = (INT, sx16(c16) & 0xffffffff)
