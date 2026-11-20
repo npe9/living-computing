@@ -233,6 +233,158 @@ function Tuple3#(Bit#(48), Int#(14), Bool) fpNormalize96(Bit#(1) ovf, Bit#(96) f
   return tuple3(w[95:48], adj, lc);
 endfunction
 
+// ---- THE ADD'S DATAPATH, SPLIT OUT (2026-11-19, plan §1c step 5f stage 2).
+// fpAdd and fpAddDouble are each three parts now:
+//   * a PREPARATION (fpAddPrep / fpAddDoublePrep): the flagged-operand
+//     rules, the "exponent difference exceeds 95" rule, which operand is
+//     big, the noisy extension (p.87) and the sign rules.  It either
+//     answers at once (`early`) or hands on an FpAddDp;
+//   * the DATAPATH: the alignment shift, the 97-bit add or subtract and
+//     the post-normalization -- the parallel unit's 96-bit shifter and
+//     adder (Buchholz printed p.210).  fpAddSumRef below is its ONE-STEP
+//     REFERENCE; mkFpBox (StretchFpBox.bsv) has its own;
+//   * a FINISH (fpAddFinish / fpAddDoubleFinish): the exponent, the
+//     order-of-magnitude-zero exponent, and LC, LS, PSH.
+// fpAdd and fpAddDouble are the three run in a row, and are what the
+// box's testbench checks the box against.  The rules themselves, and
+// the jb_af1c sub-tests that pinned each one, are in the comments that
+// moved with them; nothing in them changed.
+
+// What the datapath is asked.  `fb` is the larger-exponent operand's
+// fraction and `fs` the smaller's, BOTH UNSHIFTED and already extended
+// to 96 bits (with p.87's noisy ones where they belong); `shift` is the
+// exponent difference, at most 95 (the preparation answers larger ones
+// itself).  `tieSign` is the sign an exact cancellation takes (p.82).
+// The forced-zero rule of the two TO MAGNITUDE operations is
+// `magTest`: a non-zero sum whose sign is not `okSign` becomes a zero
+// with sign `okSign` (+MG and D+MG: okSign 0; M+MG: the addressed
+// operand's sign).
+typedef struct {
+  Bit#(96) fb;
+  Bit#(96) fs;
+  UInt#(7) shift;
+  Bit#(1)  bigSign;
+  Bit#(1)  smlSign;
+  Bit#(1)  tieSign;
+  Bool     magTest;
+  Bit#(1)  okSign;
+  Bool     normalized;
+  Bool     noisy;
+} FpAddDp deriving (Bits, Eq, FShow);
+
+// What the datapath answers: the normalized 96-bit fraction (a single-
+// precision result is its high 48, as fpNormalize96 always took), the
+// exponent adjustment, the lost carry, whether the (97-bit) sum was
+// zero, its sign, and whether the forced zero happened.
+typedef struct {
+  Bit#(96) frac;
+  Int#(14) adj;
+  Bool     lc;
+  Bool     zero;
+  Bit#(1)  sign;
+  Bool     forcedZero;
+} FpAddSum deriving (Bits, Eq, FShow);
+
+// What the finish needs from the operands.  `big` and `a` are used for
+// their exponent fields and `a` for its flags (the fraction is unused).
+typedef struct {
+  FpNum big;
+  FpNum a;
+  Bool  bothZero;
+  Bool  psh;
+  Bool  accIsB;
+} FpAddCtx deriving (Bits, Eq, FShow);
+
+typedef struct {
+  Bool     viaDp;    // False: `early` is the whole answer
+  FpResult early;
+  FpAddDp  dp;
+  FpAddCtx ctx;
+} FpAddPrep deriving (Bits, Eq, FShow);
+
+typedef struct {
+  Bool      viaDp;
+  FpdResult early;
+  FpAddDp   dp;
+  FpAddCtx  ctx;
+} FpdAddPrep deriving (Bits, Eq, FShow);
+
+// THE ONE-STEP REFERENCE DATAPATH: the code fpAdd and fpAddDouble ran
+// inline before the box, unchanged -- a barrel shift, a compare to pick
+// which magnitude to subtract from which, and fpNormalize96Wide.
+function FpAddSum fpAddSumRef(FpAddDp d);
+  Bit#(96) fsh = d.fs >> d.shift;
+  Bit#(97) sum;
+  Bit#(1) sign;
+  if (d.bigSign == d.smlSign) begin
+    sum = zeroExtend(d.fb) + zeroExtend(fsh);
+    sign = d.bigSign;
+  end else begin
+    // Subtract the smaller magnitude; sign of the larger magnitude.
+    if (d.fb >= fsh) begin sum = zeroExtend(d.fb - fsh); sign = d.bigSign; end
+    else begin sum = zeroExtend(fsh - d.fb); sign = d.smlSign; end
+    // Order-of-magnitude zero: the larger-exponent operand's sign;
+    // on an exponent tie, the accumulator's (p.82, see fpAdd's header).
+    if (d.fb == fsh) sign = d.tieSign;
+  end
+  Bool forcedZero = False;
+  if (d.magTest && sum != 0 && sign != d.okSign) begin
+    // ADD TO MAGNITUDE's forced zero; see fpAdd and fpAddDouble for
+    // the rule and the `sum != 0` guard.
+    forcedZero = True;
+    sum = 0;
+    sign = d.okSign;
+  end
+  let {f96, adj, lostCarry} = fpNormalize96Wide(sum[96], sum[95:0], d.normalized, d.noisy);
+  return FpAddSum { frac: f96, adj: adj, lc: lostCarry, zero: (sum == 0),
+                    sign: sign, forcedZero: forcedZero };
+endfunction
+
+function FpResult fpAddFinish(FpAddCtx x, FpAddSum s);
+  FpResult r = fpNoResult(x.a);
+  r.psh = x.psh;
+  Bool zeroResult = s.zero;
+  Int#(14) e = signExtend(fpExp(x.big)) + (zeroResult ? 0 : s.adj);
+  let {res, gen} = fpMakeExp(e, s.frac[95:48], s.sign, x.a.flags);
+  if (zeroResult) begin
+    // Order-of-magnitude zero: exponent of the larger-exponent
+    // operand, no normalization, no exponent change -- except a
+    // forced zero from M+MG, which takes the addressed operand's
+    // exponent whether or not that operand had the larger one
+    // (p.89).
+    FpNum ez = (s.forcedZero && x.accIsB) ? x.a : x.big;
+    res.ef = ez.ef; res.em = ez.em; res.es = ez.es;
+    gen = False;
+  end
+  r.res = res;
+  r.lc = s.lc;
+  r.generated = gen;
+  // LS: see fpAdd's note (the RESULT fraction, as ADD DOUBLE's).
+  r.ls = (res.frac == 0) && !x.bothZero && !s.forcedZero;
+  return r;
+endfunction
+
+function FpdResult fpAddDoubleFinish(FpAddCtx x, FpAddSum s);
+  Bool zeroResult = s.zero;
+  let {hd, gen} = fpMakeExp(signExtend(fpExp(x.big)) + (zeroResult ? 0 : s.adj),
+                            48'b0, s.sign, x.a.flags);
+  FpDouble res = FpDouble { ef: hd.ef, em: hd.em, es: hd.es, frac: s.frac,
+                            sign: s.sign, flags: x.a.flags };
+  Bool g = gen;
+  if (zeroResult) begin
+    // "If the 96-bit intermediate sum has a zero fraction,
+    // normalization, if specified, will be suppressed. The
+    // exponent replacing accumulator bits 0-11 will be the
+    // exponent of the intermediate result."
+    res.ef = x.big.ef; res.em = x.big.em; res.es = x.big.es;
+    g = False;
+  end
+  // LS: see fpAddDouble's note (F208D5); a forced zero leaves it off.
+  return FpdResult { res: res, lc: s.lc,
+                     ls: (res.frac == 0) && !x.bothZero && !s.forcedZero,
+                     psh: x.psh, generated: g, propagated: False, zm: False };
+endfunction
+
 // ---- ADD (p.86-87) and its variants. a = accumulator operand, b =
 // storage operand already sign-modified. addMag: ADD TO MAGNITUDE's
 // forced-zero rule (accumulator sign taken positive; negative sum ->
@@ -248,7 +400,8 @@ endfunction
 // (M-A of +1/3 with +1/3: the accumulator, negated by N, gives -0; with
 // the storage operand's sign the model stored +0 and the sign check
 // branched to SERS).
-function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag, Bool accIsB);
+function FpAddPrep fpAddPrep(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag, Bool accIsB);
+  FpAddPrep p = FpAddPrep { viaDp: False, early: fpNoResult(a), dp: unpack(0), ctx: unpack(0) };
   FpResult r = fpNoResult(a);
   // ADD TO MAGNITUDE (p.88) assumes the fraction sign of the operand IN
   // THE ACCUMULATOR positive -- that is `a` for +MG. ADD MAGNITUDE TO
@@ -328,7 +481,8 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
     end
     r.res = res; r.propagated = (res.ef == 1); r.generated = gen;
     r.ls = False;
-    return r;
+    p.early = r;
+    return p;
   end else begin
     Int#(13) ea = fpExp(a), eb = fpExp(b);
     Int#(14) diff = signExtend(ea) - signExtend(eb);   // positive: a has the larger exponent
@@ -343,7 +497,8 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       Bool bothZero = (a.frac == 0 && b.frac == 0);
       r.ls = False;
       if (big.frac == 0 && !bothZero) r.ls = True;
-      return r;
+      p.early = r;
+      return p;
     end else begin
       // NOISY MODE EXTENDS ONE OPERAND WITH ONES, NOT BOTH, AND ONLY
       // WHEN NORMALIZED.  p.87, verbatim: "When the noisy mode and
@@ -370,72 +525,54 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       Bool onesToBig = (diff != 0) || !accIsB;
       Bit#(48) ext = (normalized && noisy) ? 48'hFFFFFFFFFFFF : 48'h000000000000;
       Bit#(96) fb = { big.frac, onesToBig ? ext : 48'h000000000000 };
-      Bit#(96) fs = { sml.frac, onesToBig ? 48'h000000000000 : ext } >> adiff;
-      Bit#(97) sum;
-      Bit#(1) sign;
-      Bool forcedZero = False;
-      if (big.sign == sml.sign) begin
-        sum = zeroExtend(fb) + zeroExtend(fs);
-        sign = big.sign;
-      end else begin
-        // Subtract the smler magnitude; sign of the larger magnitude.
-        if (fb >= fs) begin sum = zeroExtend(fb - fs); sign = big.sign; end
-        else begin sum = zeroExtend(fs - fb); sign = sml.sign; end
-        // Order-of-magnitude zero: the larger-exponent operand's sign;
-        // on an exponent tie, the accumulator's (p.82, see the header).
-        if (fb == fs) sign = (diff == 0 && accIsB) ? b.sign : big.sign;
-      end
-      if (addMag && sum != 0 && (accIsB ? (sign != a.sign) : (sign == 1))) begin
-        // ADD TO MAGNITUDE: a sum whose fraction sign is reversed
-        // relative to the operand being replaced becomes a forced zero
-        // -- for +MG a negative sum, with the accumulator's sign and
-        // exponent (p.88); for M+MG a sum whose sign differs from the
-        // addressed operand's, with THAT operand's sign and exponent
-        // (p.89, and see the flagged path above).
-        //
-        // `sum != 0`: an exact cancellation is not "a fraction sign
-        // reversal obtained during the addition" (p.83) but an ordinary
-        // order-of-magnitude zero, which sets LS -- p.89 says a forced
-        // zero leaves LS off and that "this action distinguishes it
-        // from a zero sum". Without the guard M+MG of x and -x would be
-        // read as a forced zero, since the tie rule gives the zero the
-        // accumulator's (positive) sign against a negative addressed
-        // operand.
-        forcedZero = True;
-        sum = 0;
-        sign = accIsB ? a.sign : 0;   // overwritten by the M+ arm with
-                                      // the unmodified original sign;
-                                      // see the flagged path's note
-      end
-      let {frac48, adj, lostCarry} = fpNormalize96(sum[96], sum[95:0], normalized, noisy);
-      Bool zeroResult = (sum == 0);
-      Int#(14) e = signExtend(fpExp(big)) + (zeroResult ? 0 : adj);
-      let {res, gen} = fpMakeExp(e, frac48, sign, a.flags);
-      if (zeroResult) begin
-        // Order-of-magnitude zero: exponent of the larger-exponent
-        // operand, no normalization, no exponent change -- except a
-        // forced zero from M+MG, which takes the addressed operand's
-        // exponent whether or not that operand had the larger one
-        // (p.89).
-        FpNum ez = (forcedZero && accIsB) ? a : big;
-        res.ef = ez.ef; res.em = ez.em; res.es = ez.es;
-        gen = False;
-      end
-      r.res = res;
-      r.lc = lostCarry;
-      r.generated = gen;
-      // Same rule as ADD DOUBLE's below, and for the same reason: LS
+      // THE UNSHIFTED fraction: the alignment is the datapath's.
+      Bit#(96) fs = { sml.frac, onesToBig ? 48'h000000000000 : ext };
+      // THE DATAPATH (alignment, sum, ADD TO MAGNITUDE's forced zero,
+      // normalization) is fpAddSumRef here and mkFpBox in the machine;
+      // what it is handed is below, and its rules are in fpAddSumRef.
+      // The forced zero (p.83, p.88-89): for +MG a negative sum, with the
+      // accumulator's sign and exponent; for M+MG a sum whose sign differs
+      // from the addressed operand's, with THAT operand's sign and exponent
+      // (see the flagged path above).  `sum != 0`: an exact cancellation
+      // is not "a fraction sign reversal obtained during the addition"
+      // (p.83) but an ordinary order-of-magnitude zero, which sets LS --
+      // p.89 says a forced zero leaves LS off and that "this action
+      // distinguishes it from a zero sum".  Without the guard M+MG of x and
+      // -x would be read as a forced zero, since the tie rule gives the
+      // zero the accumulator's (positive) sign against a negative
+      // addressed operand.  The forced zero's sign is overwritten by the
+      // M+ arm with the unmodified original sign; see the flagged path's
+      // note.
+      p.viaDp = True;
+      p.dp = FpAddDp { fb: fb, fs: fs, shift: unpack(truncate(pack(adiff))),
+                       bigSign: big.sign, smlSign: sml.sign,
+                       // Order-of-magnitude zero: the larger-exponent
+                       // operand's sign; on an exponent tie, the
+                       // accumulator's (p.82, see the header).
+                       tieSign: (diff == 0 && accIsB) ? b.sign : big.sign,
+                       magTest: addMag, okSign: accIsB ? a.sign : 0,
+                       normalized: normalized, noisy: noisy };
+      // Same LS rule as ADD DOUBLE's below, and for the same reason: LS
       // asks whether the RESULT fraction is zero, and an unnormalized
       // add can carry out of the top leaving 48 zeros behind. Proven
       // for D+ by jb_af1c F208D5; NOT proven here -- no single-
       // precision sub-test in the suite distinguishes the two forms,
       // and the F204D/F206D indicator blocks reach LS only through
       // exact cancellations, where sum and result fraction are both
-      // zero anyway.
-      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0) && !forcedZero;
-      return r;
+      // zero anyway.  (fpAddFinish applies it.)
+      p.ctx = FpAddCtx { big: big, a: a, bothZero: (a.frac == 0 && b.frac == 0),
+                         psh: r.psh, accIsB: accIsB };
+      return p;
     end
   end
+endfunction
+
+// ADD as one step: the preparation, the reference datapath, the finish.
+// What the E-box arms ran before mkFpBox took the datapath, and what
+// mkFpBoxTb checks the box against.
+function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag, Bool accIsB);
+  FpAddPrep p = fpAddPrep(a, b, normalized, noisy, addMag, accIsB);
+  return p.viaDp ? fpAddFinish(p.ctx, fpAddSumRef(p.dp)) : p.early;
 endfunction
 
 // ---- DOUBLE PRECISION (p.79-80, p.95-96) ----------------------------
@@ -507,8 +644,9 @@ typedef struct {
 // destination. The rules below mirror fpAdd's non-accIsB arm exactly,
 // including the reading of "the accumulator operand" that jb_af1c
 // F205A7 forced on the single-precision case -- see fpAdd's header.
-function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy,
-                               Bool addMag);
+function FpdAddPrep fpAddDoublePrep(FpDouble a, FpDouble b, Bool normalized, Bool noisy,
+                                    Bool addMag);
+  FpdAddPrep p = FpdAddPrep { viaDp: False, early: unpack(0), dp: unpack(0), ctx: unpack(0) };
   FpdResult r = FpdResult { res: a, lc: False, ls: False, psh: False,
                             generated: False, propagated: False, zm: False };
   // Only the accumulator's MAGNITUDE takes part; its sign is what the
@@ -545,7 +683,8 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
       gen = g;
     end
     r.res = res; r.propagated = (res.ef == 1); r.generated = gen;
-    return r;
+    p.early = r;
+    return p;
   end else begin
     Int#(13) ea = fpExp(fpdHead(a)), eb = fpExp(fpdHead(b));
     Int#(14) diff = signExtend(ea) - signExtend(eb);
@@ -560,70 +699,48 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
       r.res = big;
       Bool bothZero = (a.frac == 0 && b.frac == 0);
       r.ls = (big.frac == 0 && !bothZero);
-      return r;
+      p.early = r;
+      return p;
     end else begin
-      Bit#(96) fb = big.frac;
-      Bit#(96) fs = sml.frac >> adiff;
-      Bit#(97) sum;
-      Bit#(1) sign;
-      if (big.sign == sml.sign) begin
-        sum = zeroExtend(fb) + zeroExtend(fs);
-        sign = big.sign;
-      end else begin
-        if (fb >= fs) begin sum = zeroExtend(fb - fs); sign = big.sign; end
-        else begin sum = zeroExtend(fs - fb); sign = sml.sign; end
-        // Order-of-magnitude zero on an exact cancellation: the
-        // larger-exponent operand's sign, and on a tie the
-        // accumulator's (p.82) -- which for D+ is `a`, and `a` is
-        // `big` whenever the exponents are equal.
-        if (fb == fs) sign = big.sign;
-      end
-      Bool forcedZero = False;
-      if (addMag && sum != 0 && sign == 1) begin
-        // A sum whose fraction sign came out negative becomes a forced
-        // zero. `sum != 0` because an exact cancellation is not "a
-        // fraction sign reversal obtained during the addition" but an
-        // ordinary order-of-magnitude zero, which DOES set LS -- the
-        // same guard F206A forced on the single-precision path.
-        forcedZero = True;
-        sum = 0;
-        sign = 0;
-      end
-      let {f96, adj, lostCarry} = fpNormalize96Wide(sum[96], sum[95:0], normalized, noisy);
-      Bool zeroResult = (sum == 0);
-      let {hd, gen} = fpMakeExp(signExtend(fpExp(fpdHead(big))) + (zeroResult ? 0 : adj),
-                                48'b0, sign, a.flags);
-      FpDouble res = FpDouble { ef: hd.ef, em: hd.em, es: hd.es, frac: f96,
-                                sign: sign, flags: a.flags };
-      Bool g = gen;
-      if (zeroResult) begin
-        // "If the 96-bit intermediate sum has a zero fraction,
-        // normalization, if specified, will be suppressed. The
-        // exponent replacing accumulator bits 0-11 will be the
-        // exponent of the intermediate result."
-        res.ef = big.ef; res.em = big.em; res.es = big.es;
-        g = False;
-      end
-      r.res = res; r.lc = lostCarry; r.generated = g;
-      // "LS is set to one when at least one operand is non-zero and
-      // when the 96 bits of the result fraction are zero" (p.96).
-      // LS asks about the RESULT fraction, not the intermediate sum:
-      // "LS is set to one when at least one operand is non-zero and
-      // when the 96 bits of the result fraction are zero" (p.96). An
-      // unnormalized add can carry out of the top with all 96 low bits
-      // zero -- the carry is lost, and what lands in the accumulator is
-      // 96 zeros -- so `sum` is non-zero while the result fraction is
-      // not. jb_af1c F208D5 is exactly that: 0xffffffffffff400000000000
-      // plus 0x600000000000 shifted right 47 gives 1 followed by 96
-      // zeros. Testing `sum` there leaves LS off and the listing
-      // demands it on. (zeroResult, on the 97-bit sum, stays as it is
-      // for the separate normalization-suppression rule.)
-      // A forced zero leaves LS off: p.89 says that "distinguishes it
-      // from a zero sum".
-      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0) && !forcedZero;
-      return r;
+      // THE DATAPATH is fpAddSumRef here and mkFpBox in the machine,
+      // handed the two fractions UNSHIFTED.  Its rules, as they stood
+      // here: an exact cancellation takes the larger-exponent operand's
+      // sign, and on a tie the accumulator's (p.82) -- which for D+ is
+      // `a`, and `a` is `big` whenever the exponents are equal; a sum
+      // whose fraction sign came out negative becomes a forced zero
+      // (D+MG), with `sum != 0` because an exact cancellation is not "a
+      // fraction sign reversal obtained during the addition" but an
+      // ordinary order-of-magnitude zero, which DOES set LS -- the same
+      // guard F206A forced on the single-precision path.
+      p.viaDp = True;
+      p.dp = FpAddDp { fb: big.frac, fs: sml.frac, shift: unpack(truncate(pack(adiff))),
+                       bigSign: big.sign, smlSign: sml.sign, tieSign: big.sign,
+                       magTest: addMag, okSign: 0,
+                       normalized: normalized, noisy: noisy };
+      // LS (fpAddDoubleFinish): "LS is set to one when at least one
+      // operand is non-zero and when the 96 bits of the result fraction
+      // are zero" (p.96). LS asks about the RESULT fraction, not the
+      // intermediate sum: an unnormalized add can carry out of the top
+      // with all 96 low bits zero -- the carry is lost, and what lands in
+      // the accumulator is 96 zeros -- so `sum` is non-zero while the
+      // result fraction is not. jb_af1c F208D5 is exactly that:
+      // 0xffffffffffff400000000000 plus 0x600000000000 shifted right 47
+      // gives 1 followed by 96 zeros. Testing `sum` there leaves LS off
+      // and the listing demands it on.  A forced zero leaves LS off: p.89
+      // says that "distinguishes it from a zero sum".
+      p.ctx = FpAddCtx { big: fpdHead(big), a: fpdHead(a),
+                         bothZero: (a.frac == 0 && b.frac == 0),
+                         psh: r.psh, accIsB: False };
+      return p;
     end
   end
+endfunction
+
+// ADD DOUBLE as one step, for the same two uses as fpAdd above.
+function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy,
+                               Bool addMag);
+  FpdAddPrep p = fpAddDoublePrep(a, b, normalized, noisy, addMag);
+  return p.viaDp ? fpAddDoubleFinish(p.ctx, fpAddSumRef(p.dp)) : p.early;
 endfunction
 
 // ---- COMPARE (p.90-91): algebraic comparison a ? b. Returns -1/0/+1

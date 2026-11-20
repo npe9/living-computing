@@ -57,7 +57,7 @@ pulled from bitsavers.org):
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
 | `StretchDivBox.bsv` | The divide boxes. `mkDivBox`, the one the core instantiates (once, inside `mkEBox`): a 96-by-48 iterative restoring divider behind `request`/`responseReady`/`response`, 24 quotient bits a clock, four clocks, reached by `execute()`'s `NeedBox` bail; for a floating-point divide it also walks the 7030's reduction loop for its length (`fpExtra`) -- see "The divide box" below. `mkFpDivBox`, the standalone sourced-structure FSM (trial/intermediate/last reduction, the normalisation loop) that the later timing step is to grow it into. Each has its own testbench (`mkCoreDivBoxTb`, `mkDivBoxTb`; `../tests/run_divbox_test.sh`). |
 | `StretchVflBox.bsv` | `mkVflBox`, the VFL arithmetic box (2026-11-18, plan §1c step 5e): `vflIntOp`'s datapath moved out class by class behind `request`/`responseReady`/`response`, instantiated once in `mkEBox` (boxKind 3) and reached by the `NeedBox` bail. Stage 1 is the 48-by-48 binary multiply of `*` and `*+`, twelve multiplier bits a clock in four clocks (Buchholz printed p.208 for the PAU, pp.210-211 for the rate). Its own testbench `mkVflBoxTb` (`../tests/run_vflbox_test.sh`): literal products and clock counts, a measured injection with a control. |
-| `StretchFpBox.bsv` | `mkFpBox`, the floating-point box (2026-11-19, plan §1c step 5f): `fpArithClass`'s datapath moved out class by class behind `request`/`responseReady`/`response`, instantiated once in `mkEBox` (boxKind 4, which made `boxKind` three bits) and reached by the `NeedBox` bail. Stage 1 is the multiply: `*` (fpMul), `D*` and the product of `*+` (fpMulDouble), twelve multiplier bits a clock in four clocks (Buchholz printed p.208 for the parallel unit, pp.210-211 for the rate; Perf. Char. Vol. 1 Table 2's four execution cycles). The exponent, normalization and indicators are `fpMulProd` / `fpMulDoubleProd` (StretchFP.bsv) applied to the box's product. Its own testbench `mkFpBoxTb` (`../tests/run_fpbox_test.sh`): 11 vectors against the one-step reference, two literal fractions, the literal clock count 4, four measured injections. |
+| `StretchFpBox.bsv` | `mkFpBox`, the floating-point box (2026-11-19, plan §1c step 5f): `fpArithClass`'s datapath moved out class by class behind `request`/`responseReady`/`response`, instantiated once in `mkEBox` (boxKind 4, which made `boxKind` three bits) and reached by the `NeedBox` bail. Stage 1 is the multiply: `*` (fpMul), `D*` and the product of `*+` (fpMulDouble), twelve multiplier bits a clock in four clocks (Buchholz printed p.208 for the parallel unit, pp.210-211 for the rate; Perf. Char. Vol. 1 Table 2's four execution cycles). The exponent, normalization and indicators are `fpMulProd` / `fpMulDoubleProd` (StretchFP.bsv) applied to the box's product. Stage 2 is the add's datapath: `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+` hand the box what `fpAddPrep` / `fpAddDoublePrep` prepared (flagged operands and a difference over 95 make no request), and the box aligns, adds in 1s complement with end-around carry and recomplement (Buchholz printed p.210; Perf. Char. Vol. 1 Table 2 note 1) and normalizes in one clock (Table 2's one execution cycle), then applies `fpAddFinish` / `fpAddDoubleFinish`. While the box holds a look-ahead level the level is RELEASED to the instruction unit: an I-box instruction may start beside it and the answered resume yields one clock to rl_prepare (StretchCore `yieldToPrepare`; `decks/fp_box_release_interlock.strap`). Its own testbench `mkFpBoxTb` (`../tests/run_fpbox_test.sh`): 11 multiply vectors and 17 add vectors against the one-step reference (for the add, `fpAddSumRef`, a different adder), nine literals, the literal clock counts 4 and 1, ten measured injections. |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
 | `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../tests/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
@@ -535,6 +535,40 @@ box's answer, +4 per such multiply on the ZM decks, shrinking to
 mechanism, the divide box's, was not traced on a multiply). The atlas's FP
 multiply pages (PDF 52, 53, 57, 83, 84, 88; 960 cases) did not move: every
 case within 0.004 clock.
+
+**THE FLOATING-POINT ADD'S DATAPATH IS IN THE BOX, 2026-11-19 (plan §1c
+step 5f stage 2).**  `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG` and `F+` ask
+`mkFpBox` (`FpReq.FpAdd`) for the alignment, the sum and the
+normalization; four inlined copies of that 96-bit datapath left the E-box
+rule. The preparation (`fpAddPrep` / `fpAddDoublePrep`, StretchFP.bsv)
+stays in the arm and answers flagged operands and a difference over 95
+itself. The box's adder is p.210's 1s-complement adder with end-around
+carry and recomplement; the reference, `fpAddSumRef`, compares and
+subtracts. One clock, Table 2's one execution cycle; the shifter's 4-right
+/ 6-left step is not walked (the data-dependent add time is open, NEXT.md).
+`*+`'s sum, COMPARE and the square root are not moved. **The level
+release** (same milestone): while the box holds a look-ahead level,
+rl_prepare may start an I-box instruction beside it (mkEBox's start()
+refuses one that would need a read or a box: one `held`), and the answered
+resume yields its clock once to rl_prepare when it would act on the
+next instruction (StretchCore `yieldToPrepare`). The level stays in the look-ahead until the
+resume retires it, so iboxHazard is the interlock
+(`decks/fp_box_release_interlock.strap`, observed injections in
+run_tests.sh). Without it, the stage moved the PINNED
+`fp_mplus_ds_not_df` 981 -> 985 (the `NOP` behind each add a clock late,
+traced); with it, 981 passes unchanged. **Timing:** against
+2c1b098 (stage 1 only), nineteen unpinned halt clocks moved and no pin;
+read counts identical in all 368 common halt reports. Stage 1's multiply
+hold partly comes back: C22-6578 Problem 3.3 Methods 1 and 3 return exactly
+to their pre-stage-1 clocks (1471, 1414), B.3 982 -> 980. Decks with a
+consumer straight behind each add (the jb_af1c F2xx rows, fp_zm_cleared)
+are +1 to +9: the consumer waits for the box's answer. C22-6578 Problem 3.4
+Method 2 is 170 earlier and Method 1 21 later: TRACED, same instructions,
+stores and data, only a store and an instruction fetch reaching one storage
+unit in the other order. The table is in the plan, §1c 5f stage 2. The
+atlas's FP pages are within 0.002 clock a case except the `M+` / `M+MG`
+EXTERNAL columns (PDF 69-70 up to 0.13 earlier, PDF 100-101 up to 0.62
+later).
 
 **THE COMPARES, stage 2 (2026-11-16): decimal `K`/`KF`, and `KE`, `KFE`,
 `KR`, `KFR` in both radices (printed pp.65-67).**  One arm.  A decimal

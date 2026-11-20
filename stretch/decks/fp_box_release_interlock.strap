@@ -1,0 +1,174 @@
+! THE FP BOX'S LEVEL RELEASE KEEPS THE INTERLOCK -- an I-box instruction
+! that reads or writes the accumulator waits for the add the FP box holds,
+! and one that needs a read of its own is refused beside it, 2026-11-19
+! (docs/microarchitecture_plan.md §1c step 5f, the level release;
+! StretchCore's yieldToPrepare note, mkEBox's start()).
+!
+! WHAT IS RELEASED.  While mkFpBox holds a look-ahead level (an add for
+! one clock, a multiply for four), the instruction unit may start an
+! I-box instruction BESIDE it, and the resume yields its clock once to
+! rl_prepare.  Only an instruction iboxHazard lets past a pending level
+! may do so.  Two that must NOT, each straight behind a + from the box:
+!   LX, $X1, $L    reads the left accumulator (word 8, eboxRegister) --
+!                  a READ after the add's write.  Must see the SUM.
+!   Z, $L          writes it -- a WRITE after the add's write.  The word
+!                  must end ZERO, not the sum the box returns after it.
+! And ten that MAY start beside a multiply but cannot run there:
+!   LX, $X2, XW    an ordinary storage word no level stores: iboxHazard
+!                  lets it past, but it needs a read, and the E-box has
+!                  one `held` -- mkEBox's start() must REFUSE it (the
+!                  multiply keeps `held`) and it runs after the resume.
+!                  To bring it to the I-box inside the multiply's four
+!                  clocks, an "LX,$X3,TMP" ahead of it is held until an
+!                  earlier level's ST(U),TMP is gone, and 0-9 NOPs follow
+!                  that LX (the I-box otherwise runs ahead of the levels
+!                  and starts the LX before the multiply reaches the box).
+!
+! THE CHECKS are the model's own words, not a page's: OUT is X1 stored by
+! SX after LX,$X1,$L, and must equal SUM1 (the accumulator stored by
+! ST(U) after the LX) in the bits an index word holds; ZOUT is the
+! accumulator after "+ ; Z,$L" and must be zero; XOUT+k must be XW and
+! PROD+k (SUM2+k) the product.  1.0 + 2.0 = 3.0 is exact (Ref. Manual
+! printed p.86-87, ADD): SUM1 is 3.0 = .11 x 2^2, (16)004C000000000000,
+! in FONE's layout.  The unnormalized product .1 x .1 = .01 x 2^3 is
+! (16)0064000000000000.  CYCLES and MEMREADS are MODEL behaviour.
+!
+! DISCRIMINATING (OBSERVED, scratch tree, injected files restored, cmp
+! IDENTICAL) -- the sets are at this deck's run line in tests/run_tests.sh.
+        SLC, (8)200.0
+START   L(U), FONE
+        +(U), FTWO
+        LX,  $X1, $L                 ! must wait for the sum
+        SX,  $X1, OUT
+        ST(U), SUM1
+        L(U), FONE
+        +(U), FTWO
+        Z,   $L                      ! must come after the sum
+        ST(U), ZOUT
+        L(U), FONE
+        ST(U), TMP+0.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+0.0              ! ... holds this LX until it is gone
+        LX,  $X2, XW                 ! 0 NOP(s) after that LX
+        SX,  $X2, XOUT+0.0
+        ST(U), SUM2+0.0
+        L(U), FONE
+        ST(U), TMP+1.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+1.0              ! ... holds this LX until it is gone
+        NOP
+        LX,  $X2, XW                 ! 1 NOP(s) after that LX
+        SX,  $X2, XOUT+1.0
+        ST(U), SUM2+1.0
+        L(U), FONE
+        ST(U), TMP+2.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+2.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 2 NOP(s) after that LX
+        SX,  $X2, XOUT+2.0
+        ST(U), SUM2+2.0
+        L(U), FONE
+        ST(U), TMP+3.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+3.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 3 NOP(s) after that LX
+        SX,  $X2, XOUT+3.0
+        ST(U), SUM2+3.0
+        L(U), FONE
+        ST(U), TMP+4.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+4.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 4 NOP(s) after that LX
+        SX,  $X2, XOUT+4.0
+        ST(U), SUM2+4.0
+        L(U), FONE
+        ST(U), TMP+5.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+5.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 5 NOP(s) after that LX
+        SX,  $X2, XOUT+5.0
+        ST(U), SUM2+5.0
+        L(U), FONE
+        ST(U), TMP+6.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+6.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 6 NOP(s) after that LX
+        SX,  $X2, XOUT+6.0
+        ST(U), SUM2+6.0
+        L(U), FONE
+        ST(U), TMP+7.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+7.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 7 NOP(s) after that LX
+        SX,  $X2, XOUT+7.0
+        ST(U), SUM2+7.0
+        L(U), FONE
+        ST(U), TMP+8.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+8.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 8 NOP(s) after that LX
+        SX,  $X2, XOUT+8.0
+        ST(U), SUM2+8.0
+        L(U), FONE
+        ST(U), TMP+9.0              ! a level storing TMP ...
+        *(U), FTWO
+        LX,  $X3, TMP+9.0              ! ... holds this LX until it is gone
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X2, XW                 ! 9 NOP(s) after that LX
+        SX,  $X2, XOUT+9.0
+        ST(U), SUM2+9.0
+        NOP                          ! puts the data on a word boundary
+        BEW, $
+FONE    DD(BU,64,8), (16)0028000000000000   ! 1.0 = .1 x 2^1
+FTWO    DD(BU,64,8), (16)0048000000000000   ! 2.0 = .1 x 2^2
+OUT     DD(BU,64,8), (16)A5A5A5A5A5A5A5A5   ! patterns: a store that
+SUM1    DD(BU,64,8), (16)A5A5A5A5A5A5A5A5   ! never happens shows
+ZOUT    DD(BU,64,8), (16)A5A5A5A5A5A5A5A5
+XW      DD(BU,64,8), (16)0001230000000000   ! an index word, value 0123
+XOUT    DR(BU,64,8), (10)
+SUM2    DR(BU,64,8), (10)
+TMP     DR(BU,64,8), (10)
+        END, START

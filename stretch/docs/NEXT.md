@@ -24,6 +24,74 @@ accumulate.
 
 
 
+## THE FP ADD'S BOX HOLD MOVED A PIN -- DONE: the level release, 2026-11-19
+
+Plan §1c step 5f stage 2 (the add's datapath in `mkFpBox`, one clock), as
+first built, moved one of the suite's `CYCLES` pins: `fp_mplus_ds_not_df`
+(printed p.51 item a), 981 -> 985. A MODEL pin; it was NOT re-pinned
+(decision 2026-11-19: 985 is the model's box hold, not a 7030 number, and
+Perf. Char. Vol. 1 printed pp.3-16/3-17 -- the units' "local autonomy";
+decoding "completely overlapped by concurrent E-box execution" -- lean
+toward the old overlap). TRACED: inline, the level completes at removal
+(clock 218) and the `NOP` behind it starts at 219; with the box, 219 was
+the resume clock and the `NOP` started at 220; five adds, +4.
+
+FIXED by the LEVEL RELEASE (StretchCore's `yieldToPrepare` note): while
+the FP box holds a level, rl_prepare may start an I-box instruction beside
+it (mkEBox's start() refuses one that would need a read or a box, since
+there is one `held`), and in the clock the box has answered, the resume
+yields once to rl_prepare if it would act on the next instruction (load
+a level, or start an I-box instruction iboxHazard lets past). The 981
+pin passes unchanged. The interlock is iboxHazard on the level, which stays
+in the look-ahead until the resume retires it
+(`decks/fp_box_release_interlock.strap`, with its observed injections).
+WIDENED, not new: an interruption raised by the held level is taken after
+the I-box instructions that ran beside it -- the window armInterrupt's note
+already states for an I-box instruction run ahead of any pending level.
+NOT DONE: the other boxes (divide, decimal, VFL) do not release their
+level. NOT RECOVERED: the +1..+9 rows of the jb_af1c decks and fp_zm_cleared
+(570, was 566) did not move with the release, broadened or not (measured).
+Their code puts a CONSUMER straight behind each add (`BB,$ZM` in
+fp_zm_cleared; `SIC,SEN` then `BZMOP` / `BZRLZ` after each `M+` in F204D),
+which must wait for the box's answer, and that answer reaches the
+registers in the resume clock, a clock after inline's removal clock. That
+reading is from the decks' code and the measurement, not a per-clock
+trace.
+
+The release also moves the open `M+` EXTERNAL misfit (atlas PDF 69-70 a
+little closer, PDF 100-101 up to 0.62 clock a case further; plan §1c 5f
+stage 2, "THE ATLAS"); not traced.
+
+C22-6578 Problem 3.4's two big moves (Method 2 -170, Method 1 +27 at stage
+2 as first built, +21 with the release) were TRACED too: the same instructions, stores and data; one store and one
+instruction fetch reach the same storage unit in the other order (plan
+§1c 5f stage 2, "PROBLEM 3.4, TRACED").
+
+## THE FP BOX'S REMAINING CLASSES -- open, 2026-11-19
+
+`mkFpBox` holds the FP multiply (plan §1c step 5f stage 1) and, since stage
+2, the add's datapath for `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+`, at
+Table 2's one execution cycle. Still in `fpArithClass`, in this order:
+
+1. **`*+`'s sum** (`fpAddDouble` after the box's product). A second box
+   trip on the re-run would be handed the multiply's answer (mkEBox's
+   "good for one run only"), so it needs ONE chained request: multiply,
+   then add, in the box. Its clock count (4 + 1, or the add inside the
+   fourth pass) changes the `*+` hold; measure it on F216B/F216D.
+2. **COMPARE** (`fpCompare`, K/KMG/KR/KMGR): "In the intermediate stage the
+   subtraction operation is identical to ADD" (Ref. Manual p.90), so it can
+   ask the same datapath; the PSH test in its arm goes with it.
+3. **The square root** (`fpSqrt`, SRT): "executed in unison by both units"
+   (Buchholz printed p.208); no rate is sourced yet.
+
+**The add's data-dependent time** ("Make the FP values data-dependent",
+below) now has its inputs in one place: the box sees the shift, whether it
+recomplements and the normalization count. Walking p.210's shifter (4 right
+/ 6 left a step) in the box is only right together with Table 2's charges
+through `boxCharge`, as for the divides; it moves every FP add's time, so
+it is its own milestone with the atlas's add pages (PDF 42-47, 62, 69-70,
+73-78, 93, 100-101) as the check.
+
 ## ONE PARALLEL-UNIT MULTIPLIER, NOT TWO -- open, 2026-11-19
 
 `mkVflBox` (VFL binary `*`/`*+`, plan §1c step 5e) and `mkFpBox` (FP `*`,
@@ -114,9 +182,8 @@ unchanged.**
   time. R23-9732 Fig. 3.2.2 sheet 2 (PDF 94): a "MOD TYPE 3" load sets
   LAAR BUSY after "FETCH ACCEPTED". Reading that as the fetch-and-store
   load is an INFERENCE (two-LAAR build, 2/1/62).
-* Stale comment: `StretchTiming.bsv`'s `laarStorePost` note says "+2.6
-  (PDF 69) and +5.8 (PDF 100)". It is +3.97 / +6.31 since item 13's
-  `fpYields`. Fix it with the next `bsv/` change.
+* The stale `laarStorePost` note in `StretchTiming.bsv` (+2.6 / +5.8) now
+  says +3.97 / +6.31 (fixed 2026-11-19 with §1c step 5f stage 2).
 
 ## D/ AND THE LAAR -- EXAMINED, NOT BUILT, A DECISION LEFT OPEN, 2026-11-18
 
@@ -3043,7 +3110,9 @@ bug.
    produce the ANSWERS, so the inputs exist.
    **DIVIDE DONE 2026-11-17** -- see "FP DIVIDE TIME" at the top of
    this file.  The add class, loads, stores, multiplies and SRT are
-   still at their minima.
+   still at their minima.  (2026-11-19: the add class's shift,
+   recomplement and normalization are now computed in one place,
+   mkFpBox; see "THE FP BOX'S REMAINING CLASSES" at the top.)
 3. **`*+`'s interlock**, "cannot enter execution cycles until Factor
    is available", is not a duration and belongs with the look-ahead.
 

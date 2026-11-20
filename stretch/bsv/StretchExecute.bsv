@@ -1754,7 +1754,10 @@ typedef struct {
   // NOT A WRITE EITHER: the floating-point box's request (2026-11-19,
   // plan §1c step 5f), exactly as divReq is the divider's.  `*`, `D*`
   // and `*+` report here the multiply they need (mkFpBox,
-  // StretchFpBox.bsv); execute() bails on it with NeedBox when it has no
+  // StretchFpBox.bsv), and since stage 2 `+`, `+MG`, `M+`, `M+MG`, `D+`,
+  // `D+MG` and `F+` the add datapath they need (none when the
+  // preparation answers by itself: flagged operands, an exponent
+  // difference over 95); execute() bails on it with NeedBox when it has no
   // answer, and on the re-run hands the answer in as fpArithClass's
   // `fpAns`.  commitFp ignores it.
   Maybe#(FpReq) fpReq;
@@ -2348,7 +2351,14 @@ function Tuple2#(Word64, FpCommit)
         FpDouble da = fpdFromAcc(accL, accR, accS);
         FpDouble db = fpdFromWord(operand);
         db.sign = opnd.sign;   // the sign modifiers, already applied
-        FpdResult r = fpAddDouble(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
+        // THE ADD'S DATAPATH IS THE FP BOX'S (2026-11-19, §1c step 5f
+        // stage 2, StretchFpBox.bsv): the preparation runs here and either
+        // answers (flagged operands, a difference over 95) or asks the box,
+        // whose answer comes back as fpAns -- the multiply's shape below.
+        FpdAddPrep ap = fpAddDoublePrep(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
+        if (ap.viaDp)
+          fpc.fpReq = tagged Valid (tagged FpAdd FpAddReq { dp: ap.dp, ctx: ap.ctx, dbl: True });
+        FpdResult r = ap.viaDp ? fpRspDouble(fpAns) : ap.early;
         // ADD DOUBLE TO MAGNITUDE keeps the accumulator's OWN
         // sign whatever the sum did -- "the sign remains
         // unchanged" for a positive sum, and for a forced zero
@@ -2422,7 +2432,11 @@ function Tuple2#(Word64, FpCommit)
         FpDouble db = fpdFromWord(operand);
         db.sign = opnd.sign;   // the sign modifiers, already applied
         db.ef = da.ef; db.em = da.em; db.es = da.es;
-        FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
+        // The datapath is the FP box's, as for D+ above.
+        FpdAddPrep ap = fpAddDoublePrep(da, db, normalized, noisy, False);
+        if (ap.viaDp)
+          fpc.fpReq = tagged Valid (tagged FpAdd FpAddReq { dp: ap.dp, ctx: ap.ctx, dbl: True });
+        FpdResult r = ap.viaDp ? fpRspDouble(fpAns) : ap.early;
         fpc.accLeft = tagged Valid fpdAccLeft(r.res);
         fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // Sign byte: bit 4 from the sum, flags from accS. NOTE
@@ -2464,7 +2478,14 @@ function Tuple2#(Word64, FpCommit)
         ind = setBit(ind, ind_ZM, 0);
       end
       fpop_PLUS, fpop_PLUS_MG: begin // + / +MG
-        FpResult r = fpAdd(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
+        // THE ADD'S DATAPATH IS THE FP BOX'S (2026-11-19, §1c step 5f
+        // stage 2, StretchFpBox.bsv): the preparation runs here and either
+        // answers (flagged operands, a difference over 95) or asks the box,
+        // whose answer comes back as fpAns -- the multiply's shape below.
+        FpAddPrep ap = fpAddPrep(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
+        if (ap.viaDp)
+          fpc.fpReq = tagged Valid (tagged FpAdd FpAddReq { dp: ap.dp, ctx: ap.ctx, dbl: False });
+        FpResult r = ap.viaDp ? fpRspSingle(fpAns) : ap.early;
         // ADD TO MAGNITUDE (p.88): only the accumulator's MAGNITUDE
         // takes part, and the result keeps the accumulator's own
         // sign -- a forced zero included. jb_af1c F205B checks the
@@ -2505,7 +2526,11 @@ function Tuple2#(Word64, FpCommit)
         // direction; see its header.)
         if (c == fpop_M_PLUS_MG) a.sign = 0;
         if (invSign == 1) a.sign = ~a.sign;
-        FpResult r = fpAdd(b, a, normalized, noisy, c == fpop_M_PLUS_MG, True);
+        // The datapath is the FP box's, as for + above.
+        FpAddPrep ap = fpAddPrep(b, a, normalized, noisy, c == fpop_M_PLUS_MG, True);
+        if (ap.viaDp)
+          fpc.fpReq = tagged Valid (tagged FpAdd FpAddReq { dp: ap.dp, ctx: ap.ctx, dbl: False });
+        FpResult r = ap.viaDp ? fpRspSingle(fpAns) : ap.early;
         FpNum v = r.res; v.flags = opnd0.flags;
         // ADD MAGNITUDE TO MEMORY keeps the ADDRESSED operand's own
         // original sign, whatever the sum's: only its magnitude took
@@ -8176,7 +8201,8 @@ function ActionValue#(ExecDispatch)
           // THE MULTIPLIES GO ROUND TWICE TOO, since 2026-11-19: `*`,
           // `D*` and `*+` come back carrying fpcA.fpReq, and bail on it
           // the same way for the FP box (StretchFpBox.bsv), whose answer
-          // goes in as fpAns.
+          // goes in as fpAns.  So do the adds (stage 2, the same day):
+          // `+`, `+MG`, `M+`, `M+MG`, `D+`, `D+MG`, `F+`.
           FpRsp fpAns = fromMaybe(unpack(0), fpOf(boxResult));
           let {indAr, fpcA} = fpArithClass(c, fp.absSign, fp.invSign, ea, acc,
                                            accL, accS, st.readAccRight(),
@@ -8612,6 +8638,11 @@ interface EBox;
   // (StretchDivBox's walk); 0 for every other instruction, including
   // the VFL divide, whose time is eboxClocks' fit.
   method Bit#(16) boxCharge();
+  // THE LEVEL RELEASE (2026-11-19, plan §1c step 5f stage 2): True while
+  // the held instruction is a look-ahead level's and is waiting on the FP
+  // box (boxKind 4) and nothing else.  While it is, start() may be called
+  // for an I-BOX instruction "beside" it: see start().
+  method Bool fpBoxWaiting();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -8712,9 +8743,20 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // program.  An EX dispatched here bails immediately for its subject
     // word and becomes the held instruction; resume() takes it from
     // there.
+    // >>> BESIDE A HELD FP-BOX INSTRUCTION, 2026-11-19. <<<  The core
+    // calls start() while `held` is occupied only for an I-box
+    // instruction, and only while fpBoxWaiting() (StretchCore's
+    // rl_prepare).  That instruction runs if it COMPLETES at once; if it
+    // would bail (a read, a box) it is REFUSED -- nothing is asked,
+    // nothing is held, `held` is untouched -- and returns Invalid, which
+    // the caller knows from having seen fpBoxWaiting() first.  execute()
+    // commits nothing on a bail, so a refused run has no effect.
+    Bool beside = isValid(held);
     let r <- execute(st, io, pc, len, di, pf, cnt, intIC, notSubject,
                      tagged Invalid);
     case (r) matches
+      tagged NeedOperand .a &&& beside: return tagged Invalid;
+      tagged NeedBox .* &&& beside: return tagged Invalid;
       tagged NeedOperand .a: begin
         st.readWordReq(a);
         held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
@@ -8767,6 +8809,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                                               : divBox.responseReady())
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
+  method Bool fpBoxWaiting() = isValid(held) && boxWait && boxKind == 4 && owner == OwnerLA;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
                                 ? divBox.response().fpExtra : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();

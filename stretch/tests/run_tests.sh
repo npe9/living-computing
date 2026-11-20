@@ -2748,6 +2748,35 @@ run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_p
     "resdf:3328=0x2400000000000000" "resds:3329=0xd800000000000000" \
     "fw:3264=0x0028000000000000"
 
+# >>> THE FP BOX'S LEVEL RELEASE KEEPS THE INTERLOCK, 2026-11-19. <<<
+# Plan §1c step 5f: while mkFpBox holds a level, an I-box instruction may
+# start beside it (mkEBox refuses one that needs a read), and the resume
+# yields its clock once to rl_prepare (StretchCore yieldToPrepare).  The
+# pinned deck above (981) is what the release restores.  This deck: an
+# accumulator read (LX,$X1,$L) and write (Z,$L) straight behind a + must
+# wait for it; ten LX's from an ordinary word, brought to the I-box inside
+# a multiply's four clocks, must be refused there and run after.
+# OBSERVED injections (scratch tree, restored, cmp IDENTICAL):
+#   iboxHazard dropped from both release paths   zout only (the Z ran
+#                                                beside the add; the LX
+#                                                needs a read: refused)
+#   start() does not refuse a bailing beside     CYCLES 1139 only (the
+#     instruction (held overwritten)            clobbered multiply's level
+#                                                is still at the head and
+#                                                is re-run at its removal)
+#   the release off (stage 2 as first built)     the pinned deck above:
+#                                                CYCLES 985
+# CYCLES and MEMREADS are MODEL behaviour.
+run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan §1c 5f)" ./run_program.sh ../decks/fp_box_release_interlock.strap StretchFpRelIlTb \
+    "PC=381" \
+    "CYCLES=1142+-0" \
+    "MEMREADS=108" \
+    "out:193=0x004C000000000000" "sum1:194=0x004C000000000000" "zout:195=0x0" \
+    "xout0:197=0x0001230000000000" "xout1:198=0x0001230000000000" "xout2:199=0x0001230000000000" "xout3:200=0x0001230000000000" "xout4:201=0x0001230000000000" \
+    "xout5:202=0x0001230000000000" "xout6:203=0x0001230000000000" "xout7:204=0x0001230000000000" "xout8:205=0x0001230000000000" "xout9:206=0x0001230000000000" \
+    "prod0:207=0x0064000000000000" "prod1:208=0x0064000000000000" "prod2:209=0x0064000000000000" "prod3:210=0x0064000000000000" "prod4:211=0x0064000000000000" \
+    "prod5:212=0x0064000000000000" "prod6:213=0x0064000000000000" "prod7:214=0x0064000000000000" "prod8:215=0x0064000000000000" "prod9:216=0x0064000000000000"
+
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50
 # (Reference Manual printed p.21, PDF 24, in the ink).  Decoded and
@@ -10133,9 +10162,14 @@ run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_
 # MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
 # printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution
 # cycles), on 11 vectors checked bit for bit against the one-step fpMul /
-# fpMulDouble, two literal fractions and the literal clock count 4.  The
-# injections and their observed failure sets are in the box file's header.
-run "FLOATING-POINT BOX (multiply; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
+# fpMulDouble, two literal fractions and the literal clock count 4.
+# Stage 2 (the same day): the add's datapath (+, +MG, M+, M+MG, D+, D+MG,
+# F+), one clock (Table 2's one execution cycle), a 1s-complement adder
+# with end-around carry and recomplement (Buchholz printed p.210), on 17
+# more vectors against fpAdd / fpAddDouble (a different adder), seven
+# literals and the literal clock count 1.  The injections and their
+# observed failure sets are in the box file's header.
+run "FLOATING-POINT BOX (multiply and add; against the one-step reference, literal clocks)" "$TESTS_DIR/run_fpbox_test.sh"
 
 # fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
 # Absolute path for the same reason the divbox line uses one: this block

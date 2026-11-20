@@ -111,8 +111,11 @@ Integer laarCheckClocks = 2;
 // store into index storage (item 9), and to LFT (below).  NOT to M+ and
 // M+MG into memory or an internal register: M+ prints LESS than ST to
 // memory (PDF 69: 15.42 against 16.00) with two more E-box cycles, and
-// it gets the documented events alone -- still +2.6 (PDF 69) and +5.8
-// (PDF 100) over the page on EXTERNAL; that inconsistency is open.
+// it gets the documented events alone -- still +3.97 (PDF 69) and +6.31
+// (PDF 100) over the page on EXTERNAL (ni_ext medians, atlas_oracle.py,
+// 2026-11-19; they were +2.6 and +5.8 before the FP look-ahead fetch
+// yielded the bus, docs/NEXT.md "FP M+ EXTERNAL"); that inconsistency is
+// open.
 //
 // >>> LFT, 2026-11-17: A STORE INTO MEMORY, WITH ST'S REMAINDER; ITS
 // OPERAND FETCH OVERLAPS THE LAAR WAIT -- RECONSTRUCTION. <<<  LFT
