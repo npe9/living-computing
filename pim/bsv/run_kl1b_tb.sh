@@ -108,3 +108,7 @@ run_bench PimKL1BGuardBacktrackTb ./sim_kl1bgbt
 "$BSC" -sim -g mkPimKL1BBindTb -u PimKL1BBindTb.bsv
 "$BSC" -sim -e mkPimKL1BBindTb -o sim_kl1bbind
 run_bench PimKL1BBindTb ./sim_kl1bbind
+
+"$BSC" -sim -g mkPimKL1BSetAtomTb -u PimKL1BSetAtomTb.bsv
+"$BSC" -sim -e mkPimKL1BSetAtomTb -o sim_kl1bsetatom
+run_bench PimKL1BSetAtomTb ./sim_kl1bsetatom

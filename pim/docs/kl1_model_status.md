@@ -42,7 +42,7 @@ The status labels are:
 | `set_constant` | 0x10 | `args[Gi] = c40` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `set_integer` | 0x11 | `args[Gi] = INT(c16)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `set_nil` | 0x12 | `args[Gi] = NIL` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
-| `set_atom` | 0x00 | `args[Gi] = ATOM` (placeholder value; atom table not modelled) | documented (TR-246 p. 7) | `PimKL1BMiscTb` |
+| `set_atom` | 0x00 | `args[Gi] = ATOM(c8)` — operand c is the atom ID; atom table not modelled | documented (TR-246 p. 7) | `PimKL1BMiscTb`, `PimKL1BSetAtomTb` |
 | `set_list` | 0x18 | `args[Gi] = LIST(HP)` | documented (TR-246 p. 7) | `PimKL1BSetTb` |
 | `read_constant` | 0xb0 | backtrack-or-halt if `args[argPtr] != c40`, else advance | documented (TR-246 p. 5) | `PimKL1BSetTb` |
 | `read_integer` | 0xb1 | backtrack-or-halt if `args[argPtr] != INT c24`, else advance | inferred (PIMOS c24 variant) | `PimKL1BSetTb` |

@@ -176,10 +176,12 @@ def parse_module(r):
     # until 0xFFFF (decoder.kl1 decode_code_area -> decode_code).
     # The code starts immediately after the size field; no search.
     code_size = (r.rd() << 16) | r.rd()
+    code_base = r.i
     w = r.w
     code = []
     terminated = False
     while r.i + 2 < len(w):
+        addr = r.i - code_base
         tag = r.rd()
         t = tag >> 8
         o = tag & 0xff
@@ -188,27 +190,27 @@ def parse_module(r):
             break
         elif t == 0x23:
             aid, name = read_atom_name(r)
-            code.append(('atom', tag, name))
+            code.append(('atom', addr, tag, name))
         elif t == 0x00 and o > 0:
             v1 = r.rd()
             v2 = r.rd()
-            code.append(('inst', (v1 << 16) | v2, o))
+            code.append(('inst', addr, (v1 << 16) | v2, o))
         elif t == 0x00 and o == 0:
             aid, name = read_atom_name(r)
-            code.append(('atomref', aid, name))
+            code.append(('atomref', addr, aid, name))
         elif t == 0x01:
-            code.append(('int', o))
+            code.append(('int', addr, o))
         elif t == 0x02:
-            code.append(('int', -((~o + 1) & 0xff)))
+            code.append(('int', addr, -((~o + 1) & 0xff)))
         elif t == 0x03:
             hi = r.rd()
             lo = r.rd()
-            code.append(('int', (hi << 16) | lo))
+            code.append(('int', addr, (hi << 16) | lo))
         elif t == 0x06:
             ln = (r.rd() << 16) | r.rd()
             nwords = 2 * ((ln * o + 31) // 32)
             chars = bytes(r.rd() & 0xff for _ in range(nwords))
-            code.append(('string', chars.decode('latin1')))
+            code.append(('string', addr, chars.decode('latin1')))
         elif tag == 0x1100:
             size = r.rd()
             ent = r.rd()
@@ -226,7 +228,7 @@ def parse_module(r):
                     break
                 r.rd()  # L1
                 r.rd()  # L2
-            code.append(('table', size, ent))
+            code.append(('table', addr, size, ent))
         else:
             break
     if not terminated:
@@ -236,21 +238,25 @@ def parse_module(r):
 
 
 def disasm(item, ops):
-    if item[0] == 'atom':
-        _, tag, name = item
-        return 'atom[%04x] %s' % (tag, name)
-    if item[0] == 'atomref':
-        _, aid, name = item
-        return 'atomref %d %s' % (aid, name)
-    if item[0] == 'int':
-        return 'int %d' % item[1]
-    if item[0] == 'string':
-        return 'string %r' % item[1]
-    _, val, tag = item
+    kind = item[0]
+    addr = item[1]
+    if kind == 'atom':
+        _, addr, tag, name = item
+        return '%04x: atom[%04x] %s' % (addr, tag, name)
+    if kind == 'atomref':
+        _, addr, aid, name = item
+        return '%04x: atomref %d %s' % (addr, aid, name)
+    if kind == 'int':
+        return '%04x: int %d' % (addr, item[2])
+    if kind == 'string':
+        return '%04x: string %r' % (addr, item[2])
+    if kind == 'table':
+        return '%04x: table size=%d ent=%d' % (addr, item[2], item[3])
+    _, addr, val, tag = item
     op = (val >> 24) & 0xff
     ent = ops.get(op)
     if not ent:
-        return '??? op=%02x val=%08x' % (op, val)
+        return '%04x: ??? op=%02x val=%08x' % (addr, op, val)
     name, typ, _ = ent[0]
     a, b, c = (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff
     imm16, imm24 = val & 0xffff, val & 0xffffff
@@ -266,7 +272,7 @@ def disasm(item, ops):
         'r_c16': '%s r%d, %d' % (name, a, imm16),
         'atom': '%s atom' % name,
     }
-    return forms.get(typ, '%s[%s] %08x' % (name, typ, val))
+    return '%04x: %s' % (addr, forms.get(typ, '%s[%s] %08x' % (name, typ, val)))
 
 
 def main():

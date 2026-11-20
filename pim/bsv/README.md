@@ -16,8 +16,8 @@ deref through `read_variable`), `PimKL1BFailTb.bsv`,
 `PimKL1BArithTb.bsv` (the guard built-ins), `PimKL1BGetTb.bsv` (the
 active-unification reads), `PimKL1BControlTb.bsv` (the goal queue's
 FIFO order), `PimKL1BSuspendTb.bsv` (suspend's empty-queue jump),
-`PimKL1BMiscTb.bsv` (put_variable/get_value and the placeholder
-set_atom/read_atom), `PimKL1BJumpTb.bsv` (the unconditional jump),
+`PimKL1BMiscTb.bsv` (put_variable/get_value), `PimKL1BSetAtomTb.bsv`
+(set_atom operand c is the atom ID), `PimKL1BJumpTb.bsv` (the unconditional jump),
 `PimKL1BNilTb.bsv` (put_nil/write_nil), `PimKL1BArgSlotTb.bsv`
 (the 8-bit argument-slot width; a 3-bit truncation aliases slot 8 onto
 slot 0) and `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,

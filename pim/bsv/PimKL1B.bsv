@@ -148,7 +148,7 @@ module mkPimKL1B(PimKL1B);
     end else begin
     if (tag == 8'h23) begin
       case (op)
-        8'h00: args.upd(a, {tagAtom, 24'h0, 0});  // set_atom A, Gi
+        8'h00: args.upd(a, {tagAtom, 24'h0, c});  // set_atom c8, Gi
         8'h11: args.upd(a, {tagInt, 16'h0, val[15:0]});  // set_integer c16, Gi
         8'h12: args.upd(a, {tagNil, 24'h0, 0});   // set_nil Gi
         8'h18: args.upd(a, {tagList, 20'h0, hp});  // set_list Gi
