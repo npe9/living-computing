@@ -142,6 +142,29 @@ after PDSS (`emulator/record.h`, `goal.c`) and fixed in
 `asm/pimm_layout.py`, which both models read. It will grow (priorities,
 the shoen a goal belongs to, MRB) and is not a claim about the machine.
 
+**What the literature says against it** (`docs/literature_gaps.md`
+section 0, a search made 2026-11-20). PIM/m's KL1 system was converted
+from the Multi-PSI/V2 microprogram (Taki, FGCS'92), so Multi-PSI/V2
+reports carry over and VPIM (the other PIMs) is a design reference
+only. Against those sources this design is wrong or unconfirmed in
+these ways, none yet changed in the models:
+
+- one ready list, where the machines have a goal stack per priority
+  (newest-first within a priority is confirmed);
+- `HOOK` -> suspension record always, where the documented siblings use
+  `HOOK` -> the goal record itself for a single waiter and `MHOOK` ->
+  suspension records sharing a flag record for several;
+- a status word in the goal record, which no source shows;
+- waking on variable-to-variable binding, where VPIM and PDSS merge the
+  hook chains;
+- a heap that only grows, where PIM/m has free pools, MRB reclamation
+  and a copying collector.
+
+A waiting built-in as a hooked goal, the low tag bit as the MRB, and
+the string descriptor agree with the sources. PIM/m's own field-level
+layouts were not found in print; the firmware binary we hold
+(`psdpim`'s `pimm.MEkbn`) is where they are.
+
 - **Heap.** A heap pointer register; cells are taken in order and never
   returned. Running out stops both models.
 - **Goal record**, 4 + n cells: `{INT, next record in the ready queue

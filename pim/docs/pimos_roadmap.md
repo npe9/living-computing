@@ -308,6 +308,17 @@ with KLIC 2.002. *Gate:* R8. Then one period application (R9).
 
 ## 5. Named unknowns
 
+*Literature search, 2026-11-20 (`literature_gaps.md`): what is in print
+and on the ICOT mirrors for each unknown below, for PIM/m and the other
+PIMs, with a table of where our invented runtime layouts disagree with
+the documented siblings. Two leads change the plan's options: the
+64-bit microinstruction field layout is published (TR-733 fig. 4), so
+the Pseudo PIM/m firmware we hold (`pimm.MEkbn`) may be readable, and
+with it the machine's real goal-record, suspension and GC layouts;
+and `psdpim`'s `PIMM.PARAM` and `boot.init` give the firmware's memory
+map and the boot sequence (clear, init, impl, patch, ipl, start).
+Neither binary has been decoded.*
+
 | Unknown | Resolved in |
 |---|---|
 | Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
