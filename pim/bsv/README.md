@@ -22,7 +22,9 @@ FIFO order), `PimKL1BSuspendTb.bsv` (suspend's empty-queue jump),
 (the 8-bit argument-slot width; a 3-bit truncation aliases slot 8 onto
 slot 0), `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,
 `switch_on_non_atom` and `switch_on_non_list` type dispatch, each
-injection failing only this bench), `PimKL1BNoopTb.bsv` (the three
+injection failing only this bench), `PimKL1BSwitchVecTb.bsv`
+(`switch_on_non_vector` jumps on a non-vector and halts on a vector,
+whose arity the model cannot supply), `PimKL1BNoopTb.bsv` (the three
 stand-in opcodes advance PC when the argument is bound),
 `PimKL1BWaitUnboundTb.bsv` (wait halts on an unbound UREF; the
 sentinel instruction never executes), `PimKL1BPutAtomTb.bsv`

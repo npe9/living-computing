@@ -124,3 +124,7 @@ run_bench PimKL1BPutAtomTb ./sim_kl1bputatom
 "$BSC" -sim -g mkPimKL1BOtherwiseTb -u PimKL1BOtherwiseTb.bsv
 "$BSC" -sim -e mkPimKL1BOtherwiseTb -o sim_kl1botherwise
 run_bench PimKL1BOtherwiseTb ./sim_kl1botherwise
+
+"$BSC" -sim -g mkPimKL1BSwitchVecTb -u PimKL1BSwitchVecTb.bsv
+"$BSC" -sim -e mkPimKL1BSwitchVecTb -o sim_kl1bswitchvec
+run_bench PimKL1BSwitchVecTb ./sim_kl1bswitchvec

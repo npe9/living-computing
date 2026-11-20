@@ -79,6 +79,7 @@ module mkPimKL1B(PimKL1B);
   Bit#(8) tagList = 8'h05;   // LIST: value points at consecutive car/cdr
   Bit#(8) tagNil = 8'h04;
   Bit#(8) tagAtom = 8'h06;
+  Bit#(8) tagVector = 8'h07;  // model convention; nothing in the model builds one
 
   function Word deref(Word w);
     return (w[39:32] == tagRef) ? heap.sub(w[11:0]) : w;
@@ -98,7 +99,8 @@ module mkPimKL1B(PimKL1B);
 
   function Bool isC40(Bit#(8) op);
     return (op == 8'h10 || op == 8'h20 || op == 8'h30
-         || op == 8'ha0 || op == 8'hb0 || op == 8'hb8);
+         || op == 8'ha0 || op == 8'hb0 || op == 8'hb8
+         || op == 8'h2b);  // switch_on_non_vector: 2-word, label in word 2
   endfunction
 
   method Action load(Bit#(12) a, Word w) = mem.upd(a, w);
@@ -139,11 +141,23 @@ module mkPimKL1B(PimKL1B);
             regs.upd(a, cw);
           end else backtrackOrHalt();
         end
+        // switch_on_non_vector R, Ari, Label: r_r_c16_i, 2 words
+        // (klb_opr.kl1 334-348: word 1 = op | R<<16 | Ari<<8, word 2 =
+        // the label).  R is the tested register; Ari is an OUTPUT
+        // register (regass.kl1 361-362, Out=[X2]) that the compiler
+        // feeds to switch_on_constant (index.kl1 900-902), i.e. the
+        // vector's arity.  A non-vector jumps to the label.  A vector
+        // would need its arity written to Ari; the model has no vector
+        // layout, so that path halts loudly instead of falling through
+        // with Ari unwritten.
+        8'h2b: if (d_get[39:32] == tagVector) haltR <= True;
         default: haltR <= True;   // unimplemented c40 opcode
       endcase
       Bool c40Backtrack = (op == 8'hb0 && args.sub(argPtr) != cw && cpsp > 0)
                        || (op == 8'hb8 && d_get != cw && d_get[39:32] != tagVar && cpsp > 0);
-      if (c40Backtrack) pcR <= zeroExtend(cpLabel.sub(cpsp - 1));
+      Bool c40Jump = (op == 8'h2b) && (d_get[39:32] != tagVector);
+      if (c40Jump) pcR <= zeroExtend(cw[15:0]);
+      else if (c40Backtrack) pcR <= zeroExtend(cpLabel.sub(cpsp - 1));
       else pcR <= pcR + 2;
     end else begin
     if (tag == 8'h23) begin
