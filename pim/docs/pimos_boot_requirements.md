@@ -528,6 +528,13 @@ byte's place): they are the Pseudo PIM/m's microcode, 40 bits a word.
 Reading it needs the PSI-III microinstruction format, which we do not
 have. Set aside; recorded so that it is not looked at twice.
 
+*Looked at again the same day, after the literature search found the
+format in print: the file begins with the instruction decode table,
+which agrees with our opcode map entry for entry, and the console
+packages name the shoen, foster-parent and suspension record fields.
+The microprogram proper is still unread. See
+`pseudo_pimm_firmware.md`.*
+
 ## PDSS runs (2026-11-20)
 
 `ref/pdss/` builds PDSS V2.52.20 from `nonlocal/pdss.tar.Z` on the

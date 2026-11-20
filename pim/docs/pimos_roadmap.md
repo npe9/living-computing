@@ -319,6 +319,15 @@ and `psdpim`'s `PIMM.PARAM` and `boot.init` give the firmware's memory
 map and the boot sequence (clear, init, impl, patch, ipl, start).
 Neither binary has been decoded.*
 
+*Same day, first reading (`pseudo_pimm_firmware.md`,
+`asm/psdpim.py --check`): the firmware file's head is the decode
+table, one entry per opcode, agreeing with `kl1_encoding.md` in both
+directions; `wait_different_value` and `scsi_transfer` are not in the
+firmware; the console text gives the field order of the shoen record
+(24), the foster-parent record (14), the multiple suspension record
+(`prev`, `next`, `goal`, `rival`) and the import/export entries. The
+goal record and the microprogram are not read.*
+
 | Unknown | Resolved in |
 |---|---|
 | Does any KL1-B firmware or emulator survive? | resolved: PDSS (C source, sibling dialect), VPIM (PSL source), psdpim (the real firmware, binary) |
