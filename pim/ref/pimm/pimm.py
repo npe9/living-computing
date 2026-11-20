@@ -580,6 +580,37 @@ class Machine:
         if self.g_int(x) != sx16(c16):
             return self.guard_fail()
 
+    @staticmethod
+    def atomic(w):
+        return w[0] & ~1 in (INT, ATOM)
+
+    def i_wait_value(self, pc, x, y, z, c16):
+        # the guard X = Y on two arguments (TR-246 p. 5).  Modelled for
+        # atomic values; two structures, or one variable twice, need
+        # the general passive unification and are refused
+        a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
+        if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
+            raise Unimplemented('wait_value of a variable with itself')
+        a, b = self.g_word(x), self.g_word(y)
+        if a is None or b is None:
+            return self.guard_fail()
+        if not (self.atomic(a) and self.atomic(b)):
+            raise Unimplemented('wait_value on a structure')
+        if (a[0] & ~1, a[1]) != (b[0] & ~1, b[1]):
+            return self.guard_fail()
+
+    def i_wait_constant(self, pc, x, y, z, c16):
+        # two cells: the constant is the whole next cell (r_c40), as
+        # put_constant's.  Atomic values only
+        w, k = self.g_word(x), self.cells[pc + 1]
+        if w is None:
+            return self.guard_fail()
+        if not (self.atomic(w) and self.atomic(k)):
+            raise Unimplemented('wait_constant on a structure')
+        if (w[0] & ~1, w[1]) != (k[0] & ~1, k[1]):
+            return self.guard_fail()
+        return pc + 2
+
     def compare(self, x, y, f):
         a, b = self.g_int(x), self.g_int(y)
         if a is None or b is None or not f(a, b):
@@ -814,6 +845,48 @@ class Machine:
         self.alt = None
         self.waiting = []
         return pc + 2 + sx16(c16)
+
+    def i_execute_external(self, pc, x, y, z, c16):
+        # The operand locates a four-cell predicate descriptor in the
+        # calling module's GC area (TM-662 fig. 2; asm/kbndis.py
+        # Image.external): the cache field, {REFx} to a cell holding
+        # {REFo} to the called module, the key {atom, arity << 24 |
+        # name}, the module's name.  The called module's code area
+        # begins with its predicate entry table (TM-662), which in the
+        # image is: {INT, mask}, mask + 1 slots indexed by key AND
+        # mask, a slot {INT, count << 16 | offset from the slot} to
+        # `count` pairs {key, {INT, off}}; the predicate's code is at
+        # the off cell + off.  Read from the image and checked on all
+        # 59 entries of its 20 modules (docs/pimm_semantics.md).
+        #
+        # TM-662 (Multi-PSI/V2) says the cache field is filled with the
+        # code address on the first call.  What is written there is not
+        # known: this model looks the predicate up at every call and
+        # writes nothing, and refuses a cache field that is not 0.
+        mem, e = self.mem, self.load + pc + 2 + sx16(c16)
+        if mem[e] != (INT, 0):
+            raise Unimplemented('execute_external: a filled cache field')
+        via = mem[e + 1]
+        head = mem[via[1]]
+        if via[0] & ~1 != REF or head[0] & ~1 != REF:
+            raise Unimplemented('execute_external: the module field')
+        h, key = head[1], mem[e + 2]
+        table = h + 3 + mem[h + 2][1]
+        slot = table + 1 + (key[1] & mem[table][1])
+        st, sv = mem[slot]
+        target = None
+        if st == INT:
+            for k in range(sv >> 16):
+                p = slot + (sv & 0xffff) + 2 * k
+                if mem[p] == key:
+                    target = p + 1 + mem[p + 1][1]
+                    break
+        if target is None:
+            raise Unimplemented('execute_external: no such predicate')
+        self.reductions += 1
+        self.alt = None
+        self.waiting = []
+        return target - self.load
 
     def i_proceed(self, pc, x, y, z, c16):
         self.event('E done')

@@ -19,6 +19,21 @@
 //
 // compared in order.  No match takes the last pair's else label; a key
 // that is not bound takes the first pair's.
+//
+// And it resolves an external call (execute_external).  The operand
+// locates a four-cell predicate descriptor in the caller's GC area
+// (TM-662 fig. 2): the cache field, {REFx} to a cell holding {REFo} to
+// the called module, the key, the module's name.  The called module's
+// code area begins with its predicate entry table, at the module's
+// address + 3 + its GC size:
+//
+//   {INT, mask}
+//   mask+1 slots, indexed by key AND mask, as above
+//   pair    {key, {INT, off}}, the code = the off cell + off
+//
+// (read from the image, all 59 entries of its 20 modules).  The cache
+// field is not used and not written (what the machine writes there is
+// not known); one that is not 0 is refused, as is a miss.
 package PimmHBox;
 
 import FIFO::*;
@@ -30,9 +45,12 @@ interface PimmHBox;
   method Action lookup(Addr pc, Cell key, Bit#(16) mask, Bool bound);
   method Action scan(Addr pc, Cell key, Bit#(16) count, Bool bound);
   method ActionValue#(Addr) target;
+  method Action external(Addr desc);
+  method ActionValue#(Maybe#(Addr)) resolved;
 endinterface
 
-typedef enum { HIdle, HMiss, HSlot, HKey, HOff, HSKey, HSLab } HState deriving (Bits, Eq);
+typedef enum { HIdle, HMiss, HSlot, HKey, HOff, HSKey, HSLab,
+               HXCache, HXMod, HXTab, HXHead, HXKey, HXMask } HState deriving (Bits, Eq);
 
 module mkPimmHBox#(MemPort mem)(PimmHBox);
   Reg#(HState)   st    <- mkReg(HIdle);
@@ -44,6 +62,66 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   Reg#(Addr)     ent   <- mkRegU;     // slot, then the pair being compared
   Reg#(Bit#(16)) left  <- mkRegU;     // pairs still to compare
   FIFO#(Addr)    resQ  <- mkFIFO;
+  Reg#(Bool)     ext   <- mkReg(False);   // resolving an external call
+  FIFO#(Maybe#(Addr)) extQ <- mkFIFO;
+
+  function Action missed();
+    action
+      if (ext) extQ.enq(tagged Invalid);
+      else resQ.enq(miss);
+      st <= HIdle;
+    endaction
+  endfunction
+
+  rule xCache (st == HXCache);
+    let c <- mem.data;
+    if (c.tag != tag_INTo || c.val != 0) missed;
+    else begin
+      mem.read(base + 1);
+      st <= HXMod;
+    end
+  endrule
+
+  rule xMod (st == HXMod);
+    let c <- mem.data;
+    if ((c.tag & 8'hfe) != tag_REFo) missed;
+    else begin
+      mem.read(cellAddr(c));
+      st <= HXTab;
+    end
+  endrule
+
+  rule xTab (st == HXTab);
+    let c <- mem.data;
+    if ((c.tag & 8'hfe) != tag_REFo) missed;
+    else begin
+      ent <= cellAddr(c);            // the module
+      mem.read(cellAddr(c) + 2);     // its GC size
+      st <= HXHead;
+    end
+  endrule
+
+  rule xHead (st == HXHead);
+    let c <- mem.data;
+    ent <= ent + 3 + truncate(c.val);   // the table's mask cell
+    mem.read(base + 2);
+    st <= HXKey;
+  endrule
+
+  rule xKey (st == HXKey);
+    let c <- mem.data;
+    want <= c;
+    mem.read(ent);
+    st <= HXMask;
+  endrule
+
+  rule xMask (st == HXMask);
+    let c <- mem.data;
+    Addr slot = ent + 1 + zeroExtend(want.val[15:0] & c.val[15:0]);
+    ent <= slot;
+    mem.read(slot);
+    st <= HSlot;
+  endrule
 
   rule gotMiss (st == HMiss);
     let c <- mem.data;
@@ -64,10 +142,7 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   rule gotSlot (st == HSlot);
     let c <- mem.data;
     Bit#(16) count = c.val[31:16];
-    if (c.tag != tag_INTo || count == 0) begin
-      resQ.enq(miss);
-      st <= HIdle;
-    end
+    if (c.tag != tag_INTo || count == 0) missed;
     else begin
       Addr e = ent + zeroExtend(c.val[15:0]);
       ent <= e;
@@ -83,10 +158,7 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
       mem.read(ent + 1);
       st <= HOff;
     end
-    else if (left == 1) begin
-      resQ.enq(miss);
-      st <= HIdle;
-    end
+    else if (left == 1) missed;
     else begin
       left <= left - 1;
       ent <= ent + 2;
@@ -96,7 +168,8 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
 
   rule gotOff (st == HOff);
     let c <- mem.data;
-    resQ.enq(ent + 1 + 1 + signExtend(c.val[15:0]));
+    if (ext) extQ.enq(tagged Valid (ent + 1 + truncate(c.val)));
+    else resQ.enq(ent + 1 + 1 + signExtend(c.val[15:0]));
     st <= HIdle;
   endrule
 
@@ -130,6 +203,7 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   endrule
 
   method Action scan(Addr pc, Cell key, Bit#(16) count, Bool bound) if (st == HIdle);
+    ext <= False;
     want <= mkCell(key.tag & 8'hfe, key.val);
     live <= bound;
     left <= count;
@@ -139,6 +213,7 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   endmethod
 
   method Action lookup(Addr pc, Cell key, Bit#(16) mask, Bool bound) if (st == HIdle);
+    ext <= False;
     base <= pc;
     want <= mkCell(key.tag & 8'hfe, key.val);
     msk <= mask;
@@ -150,6 +225,18 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   method ActionValue#(Addr) target;
     resQ.deq;
     return resQ.first;
+  endmethod
+
+  method Action external(Addr desc) if (st == HIdle);
+    ext <= True;
+    base <= desc;
+    mem.read(desc);
+    st <= HXCache;
+  endmethod
+
+  method ActionValue#(Maybe#(Addr)) resolved;
+    extQ.deq;
+    return extQ.first;
   endmethod
 endmodule
 

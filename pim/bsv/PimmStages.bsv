@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -183,12 +183,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
-                      || op == op_integer
+                      || op == op_integer || op == op_wait_constant
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
-                      || op == op_shift_right || op == op_modulo;
+                      || op == op_shift_right || op == op_modulo || op == op_wait_value;
+  function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
+  function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
   // atom in the low 24 bits; get_atom's base is c0
   Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
@@ -347,6 +349,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       nNoted <= 0;
       finish(tagged Next labelOf(pc, c16));
     end
+    else if (op == op_execute_external) begin
+      // the same goal goes on in another module: the hash box finds
+      // the predicate from the descriptor at the label
+      hbox.external(labelOf(pc, c16));
+      st <= XExt;
+    end
     else if (op == op_proceed) stop(EndDone);
     // ---- body built-ins
     else if (builtinHere) begin
@@ -438,6 +446,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isInt(a) && a.val == signExtend(c16)) next;
       else guardFail;
     end
+    else if (op == op_wait_constant) begin
+      // two cells: the constant is the whole next cell.  Atomic values
+      // only; a structure is refused
+      if (isRef(a)) begin
+        note(a);
+        guardFail;
+      end
+      else if (!isAtomic(a) || !isAtomic(ins2)) stop(EndUnimp);
+      else if (sameAtomic(a, ins2)) finish(tagged Next (pc + 2));
+      else guardFail;
+    end
     else if (op == op_integer) begin
       if (isRef(a)) note(a);
       if (isInt(a)) next;
@@ -477,7 +496,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     let a = opA;
     Int#(32) ia = unpack(a.val);
     Int#(32) ib = unpack(b.val);
-    if (isRef(a) && isRef(b)) begin
+    if (op == op_wait_value && isRef(a) && isRef(b) && a.val == b.val)
+      stop(EndUnimp);              // one variable twice: not modelled
+    else if (isRef(a) && isRef(b)) begin
       note(a);
       opA <= b;
       st <= XNote2;
@@ -485,6 +506,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (isRef(a) || isRef(b)) begin
       note(isRef(a) ? a : b);
       guardFail;
+    end
+    else if (op == op_wait_value) begin
+      // the guard X = Y, for atomic values; structures are refused
+      if (!isAtomic(a) || !isAtomic(b)) stop(EndUnimp);
+      else if (sameAtomic(a, b)) next;
+      else guardFail;
     end
     else if (op == op_vector_element) begin
       // guard vector_element(Vector, Position, ^Element)
@@ -778,6 +805,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(z, r.a);
       next;
     end
+  endrule
+
+  rule external (st == XExt);
+    let t <- hbox.resolved;
+    if (t matches tagged Valid .a) begin
+      alt <= tagged Invalid;
+      nNoted <= 0;
+      finish(tagged Next a);
+    end
+    else stop(EndUnimp);
   endrule
 
   rule vPut (st == XVPut);

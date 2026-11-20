@@ -56,7 +56,7 @@ from, and how it would be checked.
 | A5 | Arithmetic and comparison: `add`, `shift_right`, `shift_left`, `multiply`, `divide`, `modulo`, `exclusive_or`, `not_equal` and their body forms | manual; `asm/bltdir.py` directions | same; exceptions are B5 |
 | A6 | Strings: `string_operation` 16, `change_element_size`, guard `string_element`, body `string`; string types other than 8 and 16 bit | manual; `kernel/builtin/string.kl1` | `builtin_utility` predicates with source |
 | A7 | **Unification of two structures.** The models unify variables and atomic values only; vector-vector, list-list and string-string stop | standard; PDSS `unify.c` for order of binding | a lockstep scenario per shape |
-| A8 | Inter-module: `execute_external` 76, `enqueue_goal_external` 16 | the entry format is decoded (`kbndis.Image.external`) | call across two IPL modules |
+| A8 | Inter-module: `execute_external` 76 (done 2026-11-20, `lockstep_ext.py`: through the called module's predicate entry table; the cache field not modelled), `enqueue_goal_external` 16 (open) | the entry format is decoded (`kbndis.Image.external`) | call across two IPL modules |
 
 A1-A8 raise the IPL image's predicate coverage from 54 of 349 to most
 of it. They are the bulk of the remaining instruction *count* and
@@ -171,7 +171,9 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: the general `put_vector`'s size above 255;
+- Not caught by any run: `execute_external` to a predicate that is not
+  first in its slot, and from a clause with guard state; `wait_value`
+  on atoms; the general `put_vector`'s size above 255;
   `b_multiply` beyond N * 2 (a step short, the
   overflow); `put_atom` on a register other than 0; a
   long vector through `switch_on_non_vector`, and the vector box's
