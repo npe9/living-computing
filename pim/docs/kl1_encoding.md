@@ -369,7 +369,7 @@ visible in the kernel `.sav` files.
 |---|---|---|---|
 | `set_atom` register forms | `0x01`–`0x0f` | `set_atom_1` … `set_atom_15` | `atom` (argument = opcode; the atom is the low 24 bits) |
 | `put_atom` register forms | `0x41`–`0x5f` | `put_atom_1` … `put_atom_31` | `atom` (register = opcode – 0x40; the atom is the low 24 bits) |
-| `get_atom` register forms | `0xc1`–`0xdf` | `get_atom_1` … `get_atom_31` | `atom` (register = opcode – 0xc0; the atom is the low 24 bits). Corrected 2026-11-20: this table said the opcode's low bits were the atom ID. In the IPL image `c300000c` is `get_atom r3, normal`, and it runs that way against its source (`ref/pimm/lockstep_ccode.py`); the same reading of the set/put/wait forms is by analogy, not yet run |
+| `get_atom` register forms | `0xc1`–`0xdf` | `get_atom_1` … `get_atom_31` | `atom` (register = opcode – 0xc0; the atom is the low 24 bits). Corrected 2026-11-20: this table said the opcode's low bits were the atom ID. In the IPL image `c300000c` is `get_atom r3, normal`, and it runs that way against its source (`ref/pimm/lockstep_ccode.py`); the set/put/wait forms have not been run, but each family shares one entry in the Pseudo PIM/m firmware's decode table (`pseudo_pimm_firmware.md`), as it must if those bits are an operand |
 | `wait_atom` register forms | `0x81`–`0x9f` | `wait_atom_1` … `wait_atom_31` | `atom` (register = opcode – 0x80; the atom is the low 24 bits) |
 | `put_vector` short forms | `0x38`–`0x3e` | `put_vector_0` … `put_vector_6` | `r_vector` |
 | `wait_vector` short forms | `0xa9`–`0xae` | `wait_vector_1` … `wait_vector_6` | `r_m` |

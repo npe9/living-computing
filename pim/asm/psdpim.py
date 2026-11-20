@@ -18,7 +18,8 @@ Two things are read here, and nothing else in the archive is decoded:
 2. The text of the console packages (INSTALL.DIR/*.ptf): two-byte JIS
    characters, row 23 being the ASCII letters and digits.  The record
    inspectors' menus name the fields of the shoen record, the foster
-   parent record and the multiple suspension record in order.
+   parent record in order; the multiple suspension record's menu has
+   four unnumbered items.
 
 Everything here describes the Pseudo PIM/m (the PIM/m KL1 firmware on a
 PSI-III workstation, 1991-94), not a PIM/m processing element.
@@ -60,6 +61,7 @@ PINNED = dict(
     klb_named_but_empty=['wait_different_value'],
     gmi_named=80, gmi_empty=177, gmi_named_but_empty=['scsi_transfer'],
     image_cells=13156, image_empty=[],
+    sav_instructions=726053, sav_empty=['22/dc scsi_transfer x1'],
     shoen_fields=24, fp_fields=14,
 )
 
@@ -194,6 +196,12 @@ def measure():
     got['image_cells'] = sum(used.values())
     got['image_empty'] = sorted('%d:%02x x%d' % (c, op, n) for (c, op), n in used.items()
                                 if tb[c][op] == EMPTY)
+    # ... and every instruction of the .sav object set, but one
+    import census
+    key, used = census.census(None)[:2]
+    got['sav_instructions'] = sum(used.values())
+    got['sav_empty'] = sorted('%02x/%02x %s x%d' % (t, op, key[(t, op)][0], n)
+                              for (t, op), n in used.items() if tb[t & 3][op] == EMPTY)
     r = records()
     got['shoen_fields'] = len(r['shoen'])
     got['fp_fields'] = len(r['foster_parent'])
@@ -216,9 +224,11 @@ def check():
           'and %d GMI opcodes in kl1_encoding.md all have an entry but %s and %s, no '
           'opcode outside the table and its families has one, the atom families share '
           'an entry and the vector families do not; %d instruction cells of the IPL '
-          'image all decode; console menus give %d shoen and %d foster-parent fields)'
+          'image all decode, and the %d instructions of the .sav object set but one '
+          'scsi_transfer; console menus give %d shoen and %d foster-parent fields)'
           % (got['klb_named'], got['gmi_named'], got['klb_named_but_empty'][0],
-             got['gmi_named_but_empty'][0], got['image_cells'], got['shoen_fields'],
+             got['gmi_named_but_empty'][0], got['image_cells'], got['sav_instructions'],
+             got['shoen_fields'],
              got['fp_fields']))
     return 0
 

@@ -48,9 +48,13 @@ source and knows nothing of this file:
   (`38`-`3e`), `wait_vector_0`..`6` (`a8`-`ae`).
 - All 13,156 KLB and GMI instruction cells of `pimm_ipl.kbn` have an
   entry.
+- All 726,053 instructions of the `.sav` object set (`asm/census.py`)
+  have an entry, except one: `scsi_transfer`, used once.
 - **Two instructions the assembler knows are not in this firmware:**
-  `wait_different_value` and `scsi_transfer`. Neither occurs in the
-  IPL image. The ten KLB opcode values with no name (`17 6c 6d 72 a3
+  `wait_different_value`, which no PIMOS object uses, and
+  `scsi_transfer`, which the IPL image does not use and the object set
+  uses once. So this firmware build is not quite the one that object
+  set needs, or that one call was never reached. The ten KLB opcode values with no name (`17 6c 6d 72 a3
   b5 bb be bf e7`) have no entry either: they are unassigned, not
   undocumented instructions.
 - Classes 0 and 1 (PMI, BLT) are populated (class 0: 32 entries of one
@@ -86,11 +90,12 @@ E Statistics Counter, F Exception Mask, 10 Max Priority, 11 Min
 Priority (printed "Mix"), 12-13 Resource Limit, 14-15 Resource
 Consumed, 16-17 Last Consumed.
 
-**Multiple suspension record**: four fields, `prev`, `next`, `goal`,
-`rival`. That is a doubly linked record per (variable, goal) with a
-link to the same goal's other records, not the shared flag record of
-VPIM and the early PIM design (`literature_gaps.md` section 2). The
-single-waiter case has its own inspector ("Suspension Stack", "SST")
+**Multiple suspension record**: its inspector's menu has four
+unnumbered items, `prev >`, `next >`, `goal >`, `rival >`. Unlike the
+two menus above they carry no field numbers, so they may be the
+record's fields or only the inspector's ways of moving (to the
+previous and next record, to the goal, to the goal's other records).
+Whether they are fields is not established. The single-waiter case has its own inspector ("Suspension Stack", "SST")
 and no field names in the text.
 
 **Import/export tables.** Black import entry: Exref ID, Weight, Import
@@ -119,6 +124,11 @@ layout is in the compiled code.
 
 ## 3. Not read
 
+*Superseded in part the same day: `pseudo_pimm_microcode.md` and
+`asm/mekbn.py` locate the microprogram in the file and the address in
+a decode entry. The first two items below are answered there; the
+guess about address bits in the second was partly wrong.*
+
 - The microprogram itself. After the decode table the file is not a
   flat array: words 2,049-2,284 and the words before 47,529 are runs of
   16-bit pairs (values up to `3ff`, nearly a permutation) ending in a
@@ -141,6 +151,8 @@ layout is in the compiled code.
   machinery (roadmap R6-R7), which is not started; they replace "not
   found" in `literature_gaps.md` for the Pseudo PIM/m.
 - The suspension design question (`pimm_semantics.md`, "Runtime
-  state") has a third candidate, and it is the one from this firmware:
-  `MHOOK` records with `prev`, `next`, `goal`, `rival`.
-- `wait_different_value` and `scsi_transfer` need no model.
+  state") is not settled by the menu items above; the microprogram
+  would settle it.
+- `wait_different_value` needs no model (nothing uses it);
+  `scsi_transfer` is used once in the object set and is not in this
+  firmware.

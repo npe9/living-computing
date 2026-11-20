@@ -173,9 +173,9 @@ A waiting built-in as a hooked goal, the low tag bit as the MRB, and
 the string descriptor agree with the sources. PIM/m's own field-level
 layouts were not found in print; the firmware binary we hold
 (`psdpim`'s `pimm.MEkbn`) may hold them; its microprogram is not read.
-The console in the same archive does name the multiple suspension
-record's fields: `prev`, `next`, `goal`, `rival`
-(`pseudo_pimm_firmware.md`), which is neither our record nor VPIM's.
+The console's inspector for the multiple suspension record offers
+`prev`, `next`, `goal`, `rival` (`pseudo_pimm_firmware.md`); whether
+those are its fields is not established.
 
 - **Heap.** A heap pointer register; cells are taken in order and never
   returned. Running out stops both models.

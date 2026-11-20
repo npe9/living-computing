@@ -324,9 +324,14 @@ Neither binary has been decoded.*
 table, one entry per opcode, agreeing with `kl1_encoding.md` in both
 directions; `wait_different_value` and `scsi_transfer` are not in the
 firmware; the console text gives the field order of the shoen record
-(24), the foster-parent record (14), the multiple suspension record
-(`prev`, `next`, `goal`, `rival`) and the import/export entries. The
-goal record and the microprogram are not read.*
+(24), the foster-parent record (14), and the import/export entries (the multiple
+suspension record's menu offers `prev`, `next`, `goal`, `rival`, not
+established as fields). `scsi_transfer`, used once in the object set,
+is the only instruction PIMOS uses that this firmware lacks. A second
+pass (`pseudo_pimm_microcode.md`, `asm/mekbn.py --check`) found where
+each microinstruction is and which decode-entry bits are its address,
+so the goal, suspension and scheduling routines can now be located;
+none has been read.*
 
 | Unknown | Resolved in |
 |---|---|
