@@ -59,7 +59,11 @@ P9SHIM CONSOLE match: .../sys/src/9/hobbit/raml.s, 7532 bytes byte-exact
 ```
 
 The script fails unless the console file equals the input byte for byte
-and the run ends in `exits(0)`; it is in `tests/run_tests.sh`.
+and the run ends in `exits(0)`; it is in `tests/run_tests.sh`, twice:
+once with `raml.s` and once with `trap.c` (10,642 bytes), which is longer
+than `cat`'s 8,192-byte buffer and so makes `read` return 8192, then
+2450, then 0, and `write` take counts that are not the file's length —
+values the earlier one-bit shim could not return.
 
 **Mechanism.** The kernel's own code is not in hand as a running image,
 so the shim replaces only the *kernel side* of the syscall, never the
@@ -240,10 +244,11 @@ TRAP pc=0x00001178: unimplemented opcode (Tables 1-15..1-20)
 entry (0x2ad0) and `main` (0x1020) cannot share one 1 Kbyte boot window
 and `mkHobbitPrefetch` has no on-demand fill.
 
-Still open for A0/A1, in order: the kernel's call frame (`argc`/`argv`
-are zero today, so `cat` takes its `argc = 0` path and exits), one-parcel
-`SHL3`/`SHR3` in `HobbitDecode.bsv` (0x1E/0x1F), then the user-side
-trap (`CPU` escape) and the `write`/`exits` shim.
+A0 and A1 are closed (see A1 above).  What they left open for A2: the
+kernel's call frame is still minimal (`argc = 1`, no `argv` strings, set
+by the shim's first two stub instructions), and the instruction supply
+has no on-demand fill, so a program that leaves the 3 Kbyte prefetch
+window stops — `za` and `zl` will hit that first.
 
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 

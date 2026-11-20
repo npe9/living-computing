@@ -47,6 +47,15 @@ if ! "$hobbit/bsv/run_p9.sh" > "$tmp/p9.out" 2>&1; then
     exit 1
 fi
 grep '^P9SHIM' "$tmp/p9.out"
+# The same with a file longer than cat's 8,192-byte buffer: read returns
+# 8192, then the 2,450-byte remainder, then 0.
+if ! "$hobbit/bsv/run_p9.sh" cat \
+        "$hobbit/tools/plan9-1e/sys/src/9/hobbit/trap.c" > "$tmp/p9b.out" 2>&1; then
+    tail -20 "$tmp/p9b.out"
+    echo "hobbit: the A1 cat run on trap.c failed" >&2
+    exit 1
+fi
+grep '^P9SHIM' "$tmp/p9b.out"
 
 for n in 001 002 003 004 005 006; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"

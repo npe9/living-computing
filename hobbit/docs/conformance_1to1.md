@@ -72,7 +72,10 @@ How it is built, because the first attempt was not this:
 * **One read port, registered.**  The fetch goes through the stack-cache
   box's existing memory read (the `readReq`/`readData` pair the CATCH
   refill uses), one word per clock.  Program memory keeps a single read
-  port, so it still maps to block RAM on the board.  An earlier attempt
+  port, which is what a block RAM offers; the ULX3S build
+  (`fpga/build.sh`) has **not** been re-run since this change, so the
+  mapping, the LUT count and the 25.66 MHz figure in `plan.md` step 9
+  predate EU_S1's three operand latches and are not re-measured.  An earlier attempt
   read memory combinationally (`mem.peek`) from every operand site; that
   needs one RAM read port per site, which neither bsc's `mkRegFileFull`
   nor a block RAM has, and it was withdrawn before it was committed.
