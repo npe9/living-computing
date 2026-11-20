@@ -343,17 +343,60 @@ bits (the full suite passes unchanged). **Found while there, open:**
     present (0-18 settable, nothing signalled); `decks/exic_addr.strap`
     uses word 6 bit 0 as a flag and depends on that. A single-machine
     7030 would read word 6 as zero.
-  - **Word 4, the maintenance bits, keeps every store; it should not.**
-    printed p.35 (PDF p.38): outside maintenance mode "they act like the
-    bits of location 0. After an initial program load, this location
-    contains the first word read from the input unit ... Any store to
-    location 4 causes it to contain a 0 with correct check bits."
-    `maintenanceBits <= v` keeps all 64 bits. Not trivial: the IPL
-    control word reaches word 4 through the same `writeWord` the
-    program's stores use (RefMan printed p.126; StretchCore.bsv's IPL
-    chain refill from location 4), so a fix must tell the exchange's
-    IPL write from a program store. The pocket card's "4 Maintenance
-    Bits 64 0-63" is the width in maintenance mode, not a contradiction.
+  - **DONE 2026-11-19: word 4, the maintenance bits, leaves 0 on any
+    program store.** printed p.35 (PDF p.38), page image read: "These
+    bits are active only when the machine is in the maintenance mode.
+    When it is not in this mode, they act like the bits of location 0.
+    After an initial program load, this location contains the first
+    word read from the input unit.  This is the control word for the
+    initial load.  Any store to location 4 causes it to contain a 0
+    with correct check bits."  C22-6578 Appendix A3 (PDF p.56, image
+    read) agrees: "$MB (MAINTENANCE BITS WHEN MACHINE IS IN MAINTENANCE
+    MODE. ALSO INITIAL CONTROL WORD FOR IPL. OTHERWISE BEHAVES LIKE
+    $Z)", physical column "MEMORY / MANUAL KEYS".  The model has no
+    maintenance mode (no state for it in bsv/), so outside it is the
+    only mode.  **How IPL is kept:** word 4 now has two writers.
+    `writeWord`'s addrMaintenanceBits arm (every program store: ST,
+    SV, SX, T, a VFL field) pulses `w4StoreW` and word 4 becomes 0; the
+    new storage method `loadWord4` is the exchange's IPL store (p.126
+    step 3, "The first word read from the unit is stored in the special
+    core storage location referred to by means of address 4") and keeps
+    the word; one rule, `commitWord4`, writes the register.
+    StretchCore's `devStore` sends a device-to-core store to
+    `loadWord4` only when `iplActive` and the address is 4, so the
+    chain refill from location 4 still reads the control word.  The
+    harness pre-load (tests/gen_tb.py) also uses `loadWord4` for a word
+    at address 4 (no deck image has one today).  Pinned by
+    `decks/maintenance_bits_store.strap` and by a new check on the IPL
+    test, `ipl_word4_control_word` (word 4 = the tape's first word at
+    the halt, 237 cycles unchanged).  **One deck relied on the old
+    behaviour:** `decks/storage_protection_boundary.strap` used word 4
+    as its witness that a store into 4-31 is never suppressed by
+    boundary protection (p.31) -- `BB1,4.0` then `BZB,4.0,$`.  On the
+    fixed model the bit reads 0 and it hung at 004141.00 (PC 4290,
+    observed in the full suite).  A landed store and a suppressed one
+    both read 0 at word 4, so the witness moved to word 13 ($RM, all
+    64 bits kept); same instruction lengths, same PASS 4305.
+    **Left open:**
+    - *CE Vol. III disagrees on one point.* R23-9695 printed p.76 (PDF
+      p.76, image read): "Data word address 4 refers to a special core
+      storage location which is used only during initial program
+      loading.  It is normally inaccessible to the exchange and to the
+      computer.  This exchange reference to location 4 in no way
+      affects the contents of the register with address 4, which can be
+      addressed by the computer."  That manual's material is "as of
+      October 17, 1960" (its preface); the Reference Manual (22-6530-2)
+      and C22-6578 (Apr 1961) both say the CPU sees the IPL word at 4.
+      The model follows the later two.  Both readings agree on the store
+      rule, which is what was fixed.
+    - *A non-IPL READ into word 4.* printed p.34 item 4: "Data cannot be
+      transmitted to or from the special registers in an input-output
+      operation."  The model does not refuse one; it goes through
+      `writeWord` and leaves 0.  The exchange-program-check it should
+      raise is not modelled (no deck does it).
+    - *Maintenance mode itself* (word 4 reading the 64 panel keys,
+      docs/resuscitation_roadmap.md §5.3-5.4) is not modelled; the
+      diagnostic decks that read maintenance switches would need it.
   - **DONE 2026-11-19: `$CPU` is word 6, 6.0, not indicator 11.5.**
     Settled from the page images, one answer: C22-6531 printed p.15
     (PDF 16) "6.0 $CPU Other CPU" and p.56 (PDF 57) "$ CPU 2 Other CPU

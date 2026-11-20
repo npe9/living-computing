@@ -79,6 +79,20 @@ def main():
         # says".
         ("ipl_loaded_entry_word", str(entry), prog.words[lo]),
         ("ipl_loaded_second_word", str(entry + 1), prog.words[lo + 1]),
+        # WORD 4 STILL HOLDS THE TAPE'S FIRST WORD.  Reference Manual
+        # printed p.35 (PDF p.38): "After an initial program load, this
+        # location contains the first word read from the input unit.
+        # This is the control word for the initial load."  The same page
+        # makes any PROGRAM store there leave 0, so the IPL's store must
+        # take the exchange's own path (StretchStorage.bsv loadWord4) --
+        # routed through writeWord it would be 0, and the chain refill
+        # from location 4 would read a zero control word.  The program
+        # never stores to word 4.  Added 2026-11-19.  OBSERVED, on a
+        # scratch copy with devStore never choosing loadWord4 (the IPL
+        # store sent through writeWord): step cap 2000 reached, PC 1,
+        # this check 0 and every other check failed -- the refill read
+        # a zero control word and nothing loaded.  Reverted; cmp clean.
+        ("ipl_word4_control_word", "4", tape_image[0]),
     ]
 
     print(generate(module_name, prog, checks,

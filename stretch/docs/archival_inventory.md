@@ -1167,7 +1167,10 @@ boundary bit and **names it** -- injecting
 can see bits it should NOT keep. The model kept all 64 until
 2026-11-19; `decks/boundary_width.strap` (Reference Manual printed
 pp.34-35) now stores ones and reads back bits 0-17, 32-49 and 57 only,
-and `decks/other_cpu_width.strap` does the same for word 6's bits 0-18.
+and `decks/other_cpu_width.strap` does the same for word 6's bits 0-18. Word 4
+(maintenance bits) leaves 0 on any program store since 2026-11-19
+(printed p.35; `decks/maintenance_bits_store.strap`); the IPL's write
+keeps the control word.
 
 **ROUTINE 1262 -- "TEST EX AND EXIC", read first-hand 2026-09-23.**
 It begins at PDF p.87 and runs to ~p.110. Its purpose block, read at

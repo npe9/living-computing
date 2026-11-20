@@ -11712,6 +11712,18 @@ run "Other-CPU register: a store of ones into word 6 reads back bits 0-18 (print
     "RB3:3075=0xffffe00000000000" "RB4:3076=0" "RB5:3077=0xffffe00000000000" \
     "W6:6=0xffffe00000000000" STEPS=200000
 
+# ---- WORD 4, THE MAINTENANCE BITS: A STORE LEAVES 0 (2026-11-19) ----
+# Reference Manual printed p.35 (PDF p.38), "Maintenance Bits": outside
+# maintenance mode "they act like the bits of location 0 ... Any store to
+# location 4 causes it to contain a 0 with correct check bits."  The model
+# has no maintenance mode.  Ones go in by ST, SV, SX, TI and an 8-bit VFL
+# field; every read-back is 0.  The IPL's own store into word 4 is the
+# exchange's and keeps its word: the IPL test's ipl_word4_control_word.
+# Injection (the store kept, as before), observed: see the deck header.
+run "Maintenance bits: any store into word 4 leaves it 0 (printed p.35)" ./run_program.sh ../decks/maintenance_bits_store.strap StretchMaintBitsStoreTb \
+    PC=4265 "RB1:3073=0" "RB2:3074=0" "RB3:3075=0" "RB4:3076=0" "RB5:3077=0" \
+    "RB6:3078=0" "W4:4=0" STEPS=200000
+
 run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
 # Closes C+I and SC, two of the seven measured gaps.  The block has no
 # SERS: each step manufactures the next branch instruction out of the

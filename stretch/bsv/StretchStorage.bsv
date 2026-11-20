@@ -127,6 +127,22 @@ interface StretchStorage;
   // side rather than handled here -- see StretchExecute.bsv's ST arm.
   method Action writeWordTail(WordAddr a, Word64 v);
 
+  // THE EXCHANGE'S INITIAL-PROGRAM-LOAD STORE INTO WORD 4.  Reference
+  // Manual printed p.126 (PDF p.129), step 3: "The first word read from
+  // the unit is stored in the special core storage location referred to
+  // by means of address 4."  printed p.35 (PDF p.38), "Maintenance
+  // Bits": "After an initial program load, this location contains the
+  // first word read from the input unit.  This is the control word for
+  // the initial load.  Any store to location 4 causes it to contain a 0
+  // with correct check bits."  So word 4 has two writers that p.35
+  // treats differently, and they cannot share writeWord: a PROGRAM store
+  // (writeWord) leaves 0, this one leaves the word.  The core calls it
+  // only for the IPL read's store at address 4 (StretchCore.bsv,
+  // devStore); the test harness's pre-load of a core image calls it for
+  // a word at address 4 too (tests/gen_tb.py), because a pre-load stands
+  // for storage contents, not for a program store.
+  method Action loadWord4(Word64 v);
+
   // True on the one clock a tail is waiting to be queued.  The core
   // folds it into `busyXfer` so no instruction is armed while it
   // waits -- the same stall rl_xmit's multi-word transfer uses, for
@@ -376,6 +392,12 @@ module mkStretchStorage(StretchStorage);
   // See the interruptDue() comment in the interface above.
   Reg#(Maybe#(Tuple2#(Bit#(6), WordAddr))) intDueReg <- mkReg(tagged Invalid);
   Reg#(Word64) maintenanceBits       <- mkReg(0); // addr 4
+  // Word 4's two writers (see loadWord4 in the interface): the exchange's
+  // IPL store keeps its word, a program store (writeWord) leaves 0.  Two
+  // wires and one committing rule, the shape word 7 and word 11 use, so
+  // the register has one writer.
+  RWire#(Word64) w4LoadW  <- mkRWire;     // loadWord4 this clock
+  PulseWire      w4StoreW <- mkPulseWire; // a program store into word 4
   Reg#(Word64) channelAddress        <- mkReg(0); // addr 5
   Reg#(Word64) otherCpuBits          <- mkReg(0); // addr 6
   // WORD 7 IS TWO COUNTERS AND NOTHING ELSE, AND THEY HAVE ONE WRITER.
@@ -647,6 +669,15 @@ module mkStretchStorage(StretchStorage);
       ind[63 - ind_CS]   = ind[63 - ind_CS]   | s[0];
     end
     indicators <= ind;
+  endrule
+
+  // WORD 4'S ONE WRITER.  The exchange's IPL word wins over a program
+  // store in the same clock; no legal sequence produces both (the CPU
+  // is not started until the IPL read completes, printed p.126 step 4).
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule commitWord4;
+    if (w4LoadW.wget matches tagged Valid .v) maintenanceBits <= v;
+    else if (w4StoreW) maintenanceBits <= 0;
   endrule
 
   // THE CHANNEL ADDRESS REGISTER'S ONE WRITER.  Printed p.119: "The
@@ -977,6 +1008,10 @@ module mkStretchStorage(StretchStorage);
     return storeQ.notEmpty || isValid(storeTail);
   endmethod
 
+  method Action loadWord4(Word64 v);
+    w4LoadW.wset(v);
+  endmethod
+
   method Action writeWord(WordAddr a, Word64 v);
     case (a)
       addrZero: noAction; // writes to Zero are discarded (permanently protected)
@@ -1026,7 +1061,25 @@ module mkStretchStorage(StretchStorage);
       // permanent protection (printed p.31) is checked on the execute
       // side, not here.
       addrUpperBoundary: boundaryReg <= {v[63:46], 14'b0, v[31:14], 7'b0, v[6], 6'b0};
-      addrMaintenanceBits: maintenanceBits <= v;
+      // WORD 4, THE MAINTENANCE BITS: A PROGRAM STORE LEAVES 0.
+      // Reference Manual printed p.35 (PDF p.38), "Maintenance Bits":
+      // "These bits are active only when the machine is in the
+      // maintenance mode.  When it is not in this mode, they act like
+      // the bits of location 0.  After an initial program load, this
+      // location contains the first word read from the input unit.
+      // This is the control word for the initial load.  Any store to
+      // location 4 causes it to contain a 0 with correct check bits."
+      // C22-6578 Appendix A3 (PDF p.56) agrees: "$MB (MAINTENANCE BITS
+      // WHEN MACHINE IS IN MAINTENANCE MODE.  ALSO INITIAL CONTROL WORD
+      // FOR IPL.  OTHERWISE BEHAVES LIKE $Z)".  THE MODEL HAS NO
+      // MAINTENANCE MODE (no state for it anywhere in bsv/; the
+      // maintenance console is not modelled), so outside it is the only
+      // mode: every store through here --
+      // ST, SV, SX, T, a VFL field of any length -- leaves word 4 zero
+      // (decks/maintenance_bits_store.strap).  The IPL control word
+      // gets in by loadWord4, the exchange's path.  Until 2026-11-19
+      // this arm kept all 64 bits of a store.
+      addrMaintenanceBits: w4StoreW.send;
       addrChannelAddress: noAction; // read-only ("b" footnote)
       // WORD 6 HOLDS THE OTHER-CPU REGISTER IN BITS 0-18 AND NOTHING
       // ELSE.  Reference Manual printed p.35 (PDF p.38), "Other CPU

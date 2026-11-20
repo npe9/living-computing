@@ -311,6 +311,26 @@ module mkStretchCore(StretchCore);
   Reg#(UInt#(3)) ioScan    <- mkReg(0);   // rl_io_report's scanner
   Reg#(WordAddr) iplEntry  <- mkReg(0);
 
+  // A DEVICE-TO-CORE STORE.  Every READ-direction store below goes
+  // through here.  The one that differs is the IPL read's store into
+  // word 4: Reference Manual printed p.126 (PDF p.129), step 3, "The
+  // first word read from the unit is stored in the special core storage
+  // location referred to by means of address 4", and printed p.35 (PDF
+  // p.38), "After an initial program load, this location contains the
+  // first word read from the input unit" -- while "Any store to location
+  // 4 causes it to contain a 0", which is what writeWord does with it
+  // (StretchStorage.bsv).  So that one word takes the exchange's own
+  // path, loadWord4, and the chain refill from location 4 then reads the
+  // control word.  Any other store, including a non-IPL READ aimed at
+  // word 4 (printed p.34 item 4 forbids it; the model does not refuse
+  // it), is an ordinary writeWord.
+  function Action devStore(WordAddr a, Word64 v);
+    action
+      if (iplActive && a == addrMaintenanceBits) st.loadWord4(v);
+      else st.writeWord(a, v);
+    endaction
+  endfunction
+
   // (An instruction waiting on an operand read is held by the E-box
   // itself -- ebox.busy/busyFor/canResume/pending/resume, step 5c --
   // with the owner tag saying whether the instruction unit dispatched
@@ -1001,7 +1021,7 @@ module mkStretchCore(StretchCore);
           end
         end else begin
           Word64 dv <- ioDev.diskReadResp();
-          st.writeWord(x.memAddr, dv);
+          devStore(x.memAddr, dv);
         end
       end else if (kind == DevTape) begin
         TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
@@ -1022,7 +1042,7 @@ module mkStretchCore(StretchCore);
           // without issuing the read at all; this suppresses the
           // store while still issuing it, which is a different thing
           // and is why it is not spelled as SKIP.
-          if (!x.untilMark) st.writeWord(x.memAddr, tv);
+          if (!x.untilMark) devStore(x.memAddr, tv);
           markJustRead = (tv == tapeMarkWord);
         end
         // Tape position PERSISTS across instructions (StretchIO.bsv
@@ -1069,10 +1089,10 @@ module mkStretchCore(StretchCore);
           // other READ honours it (p.107: the flag suppresses the
           // core-storage write, not the device).
           if (!x.skip)
-            st.writeWord(x.memAddr, ioDev.consoleSwitchWord(truncate(x.devIdx)));
+            devStore(x.memAddr, ioDev.consoleSwitchWord(truncate(x.devIdx)));
         end else begin
           if (!x.skip)
-            st.writeWord(x.memAddr, ioDev.readerWord(di));
+            devStore(x.memAddr, ioDev.readerWord(di));
           // THE CARD FEEDS whether or not the word was stored: SKIP
           // suppresses the core-storage write, not the device's own
           // motion, which is exactly the rule the tape branch above
