@@ -102,6 +102,17 @@ a test driver that answers the decoder's requests as they appear.
 | C5 | A `.sav` loader for tests (owed for R2 as written) | `asm/unlsav.py` decodes; relocation and atom renumbering are what the IPL's own loader does, so B2 and C3 inform it |
 | C6 | More than one processing element: export/import tables, messages, weighted reference counts | field names known from the console (`pseudo_pimm_firmware.md`); defer: configure one PE. Distributed Pool and multi-node Kappa-P need it |
 
+*Correction from `icot_software_survey.md` (2026-11-20), spot-checked
+here.* C2 is better specified than the row above says. The released
+PIMOS source has the kernel's own FEP client, `src/bios/fep_module/`
+(`scsi_fep.kl1` and nine more files), and
+`src/macro/pimos/pimos/pimos.vmac` defines the FEP command numbers
+(`fep#ipl => 400`, `fep#symbol => 500` among them; those two are used
+nowhere else in the source, so they are probably the IPL's device
+classes: inference). What has no source is the IPL-time side: the
+image's `scsi_fep_*` and `ipl_scsi` modules. The survey reports the
+packet layout from `scsi_fep.kl1`; not rechecked here.
+
 ### D. The Bluespec side specifically
 
 - It has kept pace one for one, so its gaps are A-C above plus:

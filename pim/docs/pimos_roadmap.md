@@ -371,6 +371,10 @@ are not worked out, and that is the next step.*
   TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
   `nonlocal/MANIFEST.md` §3).
 - `pimosman.ps.Z` (the typeset manual; we hold only the LaTeX).
+  *`icot_software_survey.md` (2026-11-20) found it on the AIST mirror,
+  with the PIMOS 1.5 and 3.0 manuals, the primer and the ESP manuals;
+  that survey is the full inventory of ICOT software held, public and
+  lost, and its section 5 is the acquisition list. Not fetched yet.*
 - Multi-PSI KL1 implementation reports (the distributed
   implementation, export/import tables, weighted reference counts) for
   §7.
