@@ -72,11 +72,11 @@ endinterface
 
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
-               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2,
+               XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
-                   PimmSBox sbox)(PimmExec);
+                   PimmSBox sbox, MemPort smem)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -91,6 +91,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // a body built-in: its inputs, dereferenced, by operand position
   Vector#(4, Reg#(Cell)) vals <- replicateM(mkRegU);
   Reg#(Bit#(3))      bK      <- mkRegU;
+  // the structure pointer: where the next write_* stores
+  Reg#(Addr)         sp      <- mkRegU;
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -168,7 +170,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string;
-  Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_subtract;
+  Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
+                      || op == op_subtract || op == op_and;
+  // an atom instruction is one cell: opcode byte = base | register, the
+  // atom in the low 24 bits; get_atom's base is c0
+  Bool isGetAtom = ins.tag == tag_KLB && ins.val[31:29] == 3'b110;
+  Cell atomHere = mkCell(tag_ATOMo, zeroExtend(ins.val[23:0]));
+  // put_vector_N, N = 2..4: N cells, no header
+  Bool isPutVector = op == op_put_vector_2 || op == op_put_vector_3 || op == op_put_vector_4;
+  Bit#(8) vectorN = ins.val[31:24] - op_put_vector_0[7:0];
 
   rule decode (st == XDecode);
     traceI(pc, ins);
@@ -211,7 +221,25 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.unify(regs.r(x), intCell(c16));
       st <= XUnify;
     end
-    else if (op == op_get_value) begin
+    else if (isGetAtom) begin
+      dbox.unify(regs.r(zeroExtend(ins.val[28:24])), atomHere);
+      st <= XUnify;
+    end
+    else if (isPutVector) begin
+      gbox.alloc(zeroExtend(vectorN));
+      st <= XVec;
+    end
+    else if (op == op_write_atom) begin
+      smem.write(sp, atomHere);
+      sp <= sp + 1;
+      next;
+    end
+    else if (op == op_write_value) begin
+      smem.write(sp, regs.r(x));
+      sp <= sp + 1;
+      next;
+    end
+    else if (op == op_get_value || op == op_get_bound_value) begin
       dbox.unify(regs.r(x), regs.r(y));
       st <= XUnify;
     end
@@ -308,11 +336,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       guardFail;
     end
     else if (!isInt(a) || !isInt(b)) guardFail;
-    else if (op == op_subtract) begin
-      regs.wr(z, intC(pack(ia - ib)));       // guard arithmetic: r[z] := r[x] - r[y]
+    else if (op == op_subtract || op == op_and) begin
+      // guard arithmetic: r[z] := r[x] op r[y]
+      regs.wr(z, intC(op == op_subtract ? pack(ia - ib) : (a.val & b.val)));
       next;
     end
-    else if ((op == op_not_less_than && ia >= ib) || (op == op_less_than && ia < ib)) next;
+    else if ((op == op_not_less_than && ia >= ib) || (op == op_less_than && ia < ib)
+             || (op == op_equal && ia == ib)) next;
     else guardFail;
   endrule
 
@@ -356,6 +386,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule var2 (st == XVar2);
     regs.wr(y, opA);
+    next;
+  endrule
+
+  rule vectorMade (st == XVec);
+    let a <- gbox.allocResult;
+    sp <= a;
+    regs.wr(x, mkCell(tag_VECT0o + (vectorN << 1) + 1, absAddr(a)));
     next;
   endrule
 

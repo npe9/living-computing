@@ -32,6 +32,7 @@ import pimm_stubs  # noqa: E402
 from census import opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
+VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
                          MEMORY_CELLS, HEAP)
@@ -100,6 +101,7 @@ class Machine:
         self.argv.machine, self.argv.letter = self, 'A'
         self.hp = self.load + heap            # heap pointer: the next free cell
         self.rq = 0                           # ready queue: the newest goal record
+        self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
         self.names = {}
         # statistics, not machine state
@@ -172,8 +174,10 @@ class Machine:
                 raise Fail('unify %r %r' % (a, b))
             return
         if a[0] & ~1 == STRG:
-            if a[1] != b[1] and self.string(a) != self.string(b):
-                raise Fail('unify of two different strings')
+            # Only the same string object: comparing contents is not
+            # modelled (the Bluespec core stops there too).
+            if a[1] != b[1]:
+                raise Unimplemented('unify of two string objects')
             return
         raise Unimplemented('unify of %r and %r' % (a, b))
 
@@ -232,6 +236,28 @@ class Machine:
                 x = (x << size) | (padded[i * per + k] & ((1 << size) - 1))
             self.mem[a + 1 + i] = (INT, x)
         return (STRG | 1, a)
+
+    # vectors: {VECTn, address} -> n element cells, n = 1..6, no header
+    # (library/kbn/kbnheap.kl1 heap/10; a functor term f(a,b) is the
+    # vector {f, a, b}).  Longer vectors have a descriptor: not modelled.
+    def term(self, w):
+        """A term read out of memory, for tests: an integer, an atom's
+        name, a tuple for a vector, a string as (bits, elements), or
+        None for an unbound variable."""
+        w = self.deref(w)
+        t = w[0] & ~1
+        if self.unbound(w):
+            return None
+        if t == INT:
+            return signed(w[1])
+        if t == ATOM:
+            return self.im.atom(w[1])
+        if t == STRG:
+            return self.string(w)
+        if VECT0 < t <= VECT0 + 12:
+            n = (t - VECT0) // 2
+            return tuple(self.term(self.mem[w[1] + i]) for i in range(n))
+        raise Unimplemented('term with tag %02x' % w[0])
 
     # ---- goals -----------------------------------------------------
     def record(self, status, code, args):
@@ -466,6 +492,15 @@ class Machine:
     def i_less_than(self, pc, x, y, z, c16):
         return self.compare(x, y, lambda a, b: a < b)
 
+    def i_equal(self, pc, x, y, z, c16):
+        return self.compare(x, y, lambda a, b: a == b)
+
+    def i_and(self, pc, x, y, z, c16):           # guard arithmetic
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a & b) & 0xffffffff)
+
     def i_subtract(self, pc, x, y, z, c16):      # guard arithmetic
         a, b = self.g_int(x), self.g_int(y)
         if a is None or b is None:
@@ -501,6 +536,38 @@ class Machine:
 
     def i_get_value(self, pc, x, y, z, c16):
         self.unify(self.reg[x], self.reg[y])
+
+    def i_get_bound_value(self, pc, x, y, z, c16):
+        self.unify(self.reg[x], self.reg[y])   # as get_value; r[y] is known bound
+
+    def i_get_atom(self, pc, x, y, z, c16):
+        # one cell: opcode byte = c0 | register, low 24 bits = the atom
+        v = self.cells[pc][1]
+        self.unify(self.reg[(v >> 24) & 31], (ATOM, v & 0xffffff))
+
+    # Building a vector: put_vector_N takes N cells and points r[x] at
+    # them; the N write_* instructions that follow fill them in order.
+    def put_vector(self, n, x):
+        a = self.alloc(n)
+        self.sp = a
+        self.reg[x] = (VECT0 + 2 * n + 1, a)
+
+    def i_put_vector_2(self, pc, x, y, z, c16):
+        self.put_vector(2, x)
+
+    def i_put_vector_3(self, pc, x, y, z, c16):
+        self.put_vector(3, x)
+
+    def i_put_vector_4(self, pc, x, y, z, c16):
+        self.put_vector(4, x)
+
+    def i_write_atom(self, pc, x, y, z, c16):
+        self.mem[self.sp] = (ATOM, self.cells[pc][1] & 0xffffff)
+        self.sp += 1
+
+    def i_write_value(self, pc, x, y, z, c16):
+        self.mem[self.sp] = self.reg[x]
+        self.sp += 1
 
     def i_collect_value(self, pc, x, y, z, c16):
         pass        # MRB reclamation of what r[x] points at: no GC here

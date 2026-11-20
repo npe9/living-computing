@@ -19,7 +19,7 @@ State: all machine state is registers and memory cells (goal records,
 the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
-stub (`asm/pimm_stubs.py`); 8- and 16-bit strings; 31 instructions. No
+stub (`asm/pimm_stubs.py`); 8- and 16-bit strings; 40 instructions. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py
@@ -44,8 +44,8 @@ reference model plays:
 The whole `jis_to_ascii` module is in lockstep: `lockstep_jtoa.py`
 (`convert_element/2` on every key, and goals suspending and waking) and
 `lockstep_conv.py` (`convert/2` on strings, with waiting built-ins).
-`lockstep_get4.py` runs `scsi_common:get_4_bytes/4`, the first
-predicate of a second module.
+`lockstep_get4.py` and `lockstep_ccode.py` run two predicates of a
+second module, `scsi_common`; the latter builds vectors and atoms.
 
 Next: the next module with source (`builtin_utility`, `scsi_common`),
 one instruction group at a time, the reference model no more than one

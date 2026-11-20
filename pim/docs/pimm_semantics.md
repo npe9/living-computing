@@ -30,7 +30,9 @@ strings, with eleven observed fault injections, one of which the test
 does not catch (noted at `subtract`). A second module's predicate,
 `scsi_common:get_4_bytes/4` against `bios/scsi/scsi_common.kl1`, is run
 by `ref/pimm/lockstep_get4.py`, its oracle the source's own
-`Int := ...` expression. The whole `jis_to_ascii` module also runs on the
+`Int := ...` expression; `check_completion_code/4`, the first to build
+structures, by `ref/pimm/lockstep_ccode.py`, its oracle the three
+source clauses parsed from the text. The whole `jis_to_ascii` module also runs on the
 Bluespec core in lockstep with the reference model (see Trace): every
 instruction in the table is implemented there. Three readings no run
 of this module can check, on either model, and injections confirm it:
@@ -46,6 +48,13 @@ of this module can check, on either model, and injections confirm it:
 | `not_less_than` | `23:F1 x y` | guard: `r[x] >= r[y]`, else fail to the next clause | checked; unbound operands not exercised |
 | `b_subtract` | `22:C1 x y z` | `r[z]` := `r[x] - r[y]` | checked |
 | `b_add` | `22:C0 x y z` | `r[z]` := `r[x] + r[y]` | checked |
+| `equal` | `23:F2 x y` | guard: `r[x] = r[y]`, integers | checked |
+| `and` | `23:EA x y z` | guard arithmetic: `r[z]` := `r[x]` and `r[y]` | checked |
+| `get_atom` | `23:C0+r`, atom in the low 24 bits | unify `r[r]` with the atom | checked (`scsi_common:check_completion_code/4`) |
+| `put_vector_N` | `23:38+N x` | `r[x]` := a new vector of N cells; the structure pointer is set to its first cell | checked for N = 2, 3, 4. The pointer's tag is written with the low bit set, as the image builder writes every pointer; what the machine does there (MRB) is not known |
+| `write_atom` | `23:23`, atom in the low 24 bits | store the atom at the structure pointer and advance it | checked |
+| `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
+| `get_bound_value` | `23:BD x y` | unify `r[x]` with `r[y]` (as `get_value`; the name says `r[y]` is known to be bound) | checked for a vector against an unbound variable |
 | `b_and`, `b_or` | `22:C7`, `22:C8 x y z` | `r[z]` := `r[x]` and / or `r[y]`, bitwise | checked (`scsi_common:get_4_bytes/4`) |
 | `b_shift_left` | `22:C5 x y z` | `r[z]` := `r[x] << r[y]`, 32 bits | checked for a count of 8; a count outside 0..31 is an exception in PDSS (`blt_basic.c`) and stops the model |
 | `get_value` | `23:BC x y` | unify `r[x]` with `r[y]` | checked for integer against unbound only |
@@ -79,6 +88,17 @@ variable, and it runs when `convert_element` binds the element. The
 test counts one such wait per string element (201). How the machine
 represents the waiting built-in is not known; PDSS's
 `body_builtin_suspend` (`emulator/goal.c`) is the nearest description.
+
+**Vectors and terms.** A vector of 1 to 6 elements is `{VECTn,
+address}` pointing at its n element cells, with no header; the empty
+vector is `{VECT0, 0}`; 7 or more have a descriptor (`{VECT, a}` ->
+`{VDESC, a+3}`, `{INT, n}`, `{INT, n}`, elements). A list cell is
+`{LIST, address}` -> car, cdr. This is `library/kbn/kbnheap.kl1`
+`heap/10`, the code that lays out the image's constants. A compound
+term `f(a, b)` is the vector `{f, a, b}`: `check_completion_code`
+builds `abnormal(no_status(C, D))` as a 3-vector inside a 2-vector, and
+the test reads it back by atom name. Only vectors of 2 to 4 are built
+so far; nothing reads a vector yet.
 
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the
