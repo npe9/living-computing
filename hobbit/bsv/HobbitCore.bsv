@@ -1229,7 +1229,37 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   endfunction
 
   rule commit (!haltR && traceQ.notFull && !flushW);
-    if (pendFold matches tagged Valid .r) begin
+    if (fq0v) begin
+      // KCALL's frame tail (return PC at ISP-8, PSW at ISP-4; p. 3-29),
+      // one word per clock through the box's single command port, ahead
+      // of any retirement in this same rule.
+      ScCmd k = noScCmd();
+      k.op     = BX_WRITE;
+      k.we     = True;
+      k.waddr  = fq0a;
+      k.wdata  = fq0d;
+      k.spBefore  = sc.sp;
+      k.mspBefore = sc.msp;
+      k.spAfter   = sc.sp;
+      k.mspAfter  = sc.msp;
+      sc.commit(k);
+      fq0v <= fq1v;
+      fq0a <= fq1a;
+      fq0d <= fq1d;
+      fq1v <= False;
+    end else if (fq1v) begin
+      ScCmd k = noScCmd();
+      k.op     = BX_WRITE;
+      k.we     = True;
+      k.waddr  = fq1a;
+      k.wdata  = fq1d;
+      k.spBefore  = sc.sp;
+      k.mspBefore = sc.msp;
+      k.spAfter   = sc.sp;
+      k.mspAfter  = sc.msp;
+      sc.commit(k);
+      fq1v <= False;
+    end else if (pendFold matches tagged Valid .r) begin
       traceQ.enq(r);
       pendFold <= tagged Invalid;
     end else if (inFull) begin
@@ -1307,40 +1337,12 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end
   endrule
 
-  // One KCALL frame word per clock through the box's single command port.
-  // The guard requires the commit slot to be empty, so a retiring
-  // instruction's own command and a frame word never race for the port.
-  rule drainFrame (!inFull && !flushW && !haltR &&
-                   (fq0v || fq1v) && !isValid(pendFold));
-    if (fq0v) begin
-      ScCmd k = noScCmd();
-      k.op     = BX_WRITE;
-      k.we     = True;
-      k.waddr  = fq0a;
-      k.wdata  = fq0d;
-      k.spBefore  = sc.sp;
-      k.mspBefore = sc.msp;
-      k.spAfter   = sc.sp;
-      k.mspAfter  = sc.msp;
-      sc.commit(k);
-      fq0v <= fq1v;
-      fq0a <= fq1a;
-      fq0d <= fq1d;
-      fq1v <= False;
-    end else begin
-      ScCmd k = noScCmd();
-      k.op     = BX_WRITE;
-      k.we     = True;
-      k.waddr  = fq1a;
-      k.wdata  = fq1d;
-      k.spBefore  = sc.sp;
-      k.mspBefore = sc.msp;
-      k.spAfter   = sc.sp;
-      k.mspAfter  = sc.msp;
-      sc.commit(k);
-      fq1v <= False;
-    end
-  endrule
+  // KCALL's frame tail used to drain from a rule of its own (`drainFrame`).
+  // It is written from `commit` below instead: a second rule calling the
+  // box's commit method is starved by this one, and that starvation froze
+  // 1e's `cat` at its syscall stub for 20,000 clocks (frame word pending,
+  // commit slot empty, no fault, nothing retiring).  One rule, one box
+  // command per clock, frame words ahead of any retirement.
 
   rule rl_reset;
     f_reset_reqs.deq;
