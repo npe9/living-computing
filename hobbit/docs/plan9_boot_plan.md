@@ -40,32 +40,92 @@ blocked this was not a parcel at all: see below.
 
 Gate: `cat` prints a file over the shim's `write`; `exits` returns 0.
 Syscalls are taken from libc's own stubs (`hobbit/lib/libc.a` member
-records) and from `_vector0`'s calling convention (`raml.s`), never
-guessed. Required at first: `write`, `exit`/`exits`, `open`, `read`,
-`close`.
+records, linked at known addresses in `hobbit/bin/cat`) and from
+`_vector0`'s calling convention (`raml.s`), never guessed. Required at
+first: `write`, `exit`/`exits`, `open`, `read`, `close`.
 
-**Mechanism.** The kernel's own code is not in hand as a running image,
-so the shim replaces only the *kernel side* of the syscall, never the
-hardware's part of it:
+**Status: in progress 2026-11-19; the gate is red.**  Everything except
+the gate is in place (the syscall table from libc's stubs with 19 unit
+tests, the 16-parcel stub in the Exec header, the vector page, the
+doorbell = the KCALL's own frame word, the handshake, `run_p9.sh`'s
+byte-exact comparison).  The observed run stops after the first KCALL:
+
+```
+P9SHIM boot pc=00001000 sp=00008000 msp=00008100 isp=00000d00 psw=00000600
+P9SHIM syscall=15 read fd=0 buf=00005fd0 n=8192 -> 7532
+P9SHIM release value=1 psw=00000000
+P9SHIM TRACE clocks=768 pc=00001004 state=5 psw=00000010 ack=00000000
+P9SHIM STOP clocks=801 pc=00001004          (19 HRI records, console empty)
+```
+
+The KCALL retires, the vector redirect sets `pc = 0x1004` (the stub) and
+the host's `PSW.F` write lands, but no instruction at or after `0x1004`
+retires and the fetch never advances — a core-side stall that the
+`drainFrame` guard fix does not clear (see the finding below).
+
+**Mechanism, as built.** The kernel's own code is not in hand as a
+running image, so the shim replaces only the *kernel side* of the
+syscall, never the hardware's part:
 
 1. the model performs the whole printed event sequence on the `KCALL`
-   (`raml.s` entry, pp. 1-36…1-39): frame push, `PC = *(VB+0)`, PSW
-   switch, `ISP`/`SP` handover — no core change;
-2. the testbench supplies a small **vector page** at a chosen `VB` whose
-   `+0` word is a stub that stores the syscall id `R0` into a reserved
-   doorbell word and spins waiting for the doorbell to be cleared;
-3. on the doorbell write the testbench performs the operation in Python
-   (file table, reads, writes to the console), places the result where
-   the printed return convention puts it (`CSP+4` accumulator or `CSP`
-   return value — `docs/plan9_syscalls.md`), writes the user PC/PSW back
-   into the event frame and clears the doorbell;
-4. the stub then returns through `RETURN`, so the model, not the
-   testbench, unwinds the frame.
+   (PRM p. 3-29): `*(ISP-12) = src`, `*(ISP-8) = PC`, `*(ISP-4) = PSW`,
+   `ISP -= 16`, `PC = *(VB+0)`, `PSW &= 0xFFFF0000` — no core change;
+2. the testbench supplies the **vector page** (`evmem[VB]`, VB = 0x0c00)
+   whose `+0` word is the stub, and the stub is Hobbit machine code
+   (`tools/p9shim.py`, assembled by `asm/hobbit_asm.py`) placed in the
+   boot window's 32-byte Exec header (`0x1000..0x101f`, below the text):
+   it sets `argc = 1`, spins on `PSW.F` and returns through the model's
+   own `RETURN`;
+3. the **doorbell is the hardware's own frame write**: the `KCALL` stores
+   the id at `ISP-12` (p. 3-29, "R4 with respect to the new ISP"); the
+   host polls that word, decodes the arguments from the user's stack
+   (`CSP+4/+8/+12`, the 1e libc stub's convention), does the syscall
+   against a host file, writes the bytes the program named, and clears
+   the word;
+4. the result comes back through `PSW.F` plus a two-word ACK handshake in
+   memory (`0x0c14`), because one bit cannot be both "go" and "which
+   result"; the stub's `RETURN R0` then unwinds the call the way the
+   libc stub's own `RETURN R0` would have, and the host restores the
+   user PSW from the frame's `ISP-4` word.
 
-The one piece still open is the frame layout the stub must read and
-write (O4 in `docs/plan9_kernel_inventory.md`); the model's own
-`mkHobbitEvents` already defines it, and the shim must use that
-definition rather than assume one.
+**What the model forced, measured not assumed** (`docs/plan9_syscalls.md`
+carries the full account):
+
+* an operand outside `[SP, MSP)` reads as zero (`docs/isa_inventory.md`
+  §1.6), so the stub cannot read the frame or a doorbell and the host
+  cannot write the user's accumulator: `PSW.F` is the only host-writable
+  bit the machine reads, and a memory ACK word is the only
+  machine-writable word the host can read (a `core.cacheWord` probe in a
+  rule guard starves the EU — the scheduling lesson in `skill://hobbit`);
+* the model has no `KRET`, no `CRET` and no CPU-register instructions
+  (only `NOP` is implemented as a niladic), so `ISP += 16` and the PSW
+  restore are the testbench's, through the core's existing testbench
+  surface;
+* **a `KCALL` executed inside the stub deadlocks the pipeline**: the stub
+  runs, writes its first frame word and the machine then stops advancing
+  (the S3 slot holds a squashed entry, `squash` stays high and the fetch
+  is blocked).  That is a core limitation, recorded as a finding below;
+  it is why the vector page cannot be used as a second dispatch and the
+  result channel is two-valued.
+
+**Consequence: two results.**  A syscall can return 0 or the generated
+size, and nothing else.  Every result is true for this run — the bytes
+moved, the fd (the shim's one file, named by its length), or 0 — and the
+shim refuses, loudly and with the number, anything the channel cannot
+name: another syscall id, a partial read, a write whose count is not the
+file, a read/write on an fd that does not exist.  A program that needs a
+third value needs the off-chip operand path (p. 1-5), a core change.
+
+**Finding (core, not this milestone).**  `KCALL` from inside the
+handler stub deadlocks the pipeline.  Symptom: after the second KCALL
+retires, `core.pc()` sticks at the KCALL's target, `squash` stays true
+(`dbgState` bit 38), S2/S3 never drain and no further instruction
+retires; the HRI stream stops.  The first KCALL, the stub, and the
+`RETURN` back to the program all work (verified with a static `JMP` into
+the same result path).  The model's event tests never cover a KCALL from
+an event context, which is the "returning from an event (CRET/KCALL/
+KRET)" gap plan.md step 6 already names.  Until the core can take it, the
+shim must not dispatch through the vector page a second time.
 
 ### A2 — the toolchain bootstraps on the model
 

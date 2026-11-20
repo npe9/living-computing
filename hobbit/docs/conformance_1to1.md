@@ -49,6 +49,28 @@ Named choices, which the manual leaves open and which are therefore not
 violations: A = 1, D = 2, Q = 4 (p. 4-2 prints no memory terms); the TLB
 replacement policy (p. 2-1 prints none); the prefetch fill policy.
 
+## 1a. The stack cache's window and memory
+
+Printed p. 1-12: "If the stack cache is enabled and the current stack
+pointer is the SP, then any address greater than, or equal to, the SP and
+less than the MSP hits the stack cache" — so an access **outside** that
+window is an ordinary memory access, and `MSP` itself may not exceed
+`SP + 256` (the cache is 64 words).
+
+The model now does exactly that: a hit needs the address in `[SP, MSP)`
+**and** within the cache's own 256 bytes, and a miss reads external
+memory (writes are written through, so the two views agree).  Before this,
+a miss returned zero.  That zero is what sent 1st Edition `cat`'s
+`RETURN R8224` to address 0: the caller's frame sits above `MSP` after
+`cat`'s own `ENTER R-8224`, and the return PC read back as 0 instead of
+the word the matching `CALL` wrote.
+
+Consequence for the board build: the stack cache now has one more read
+site on program memory than `mkRegFileFull` allows.  The Bluesim
+testbenches use a register vector for that memory, and the ULX3S build
+will need the same treatment (or a real 2R1W memory) before it is
+re-run.
+
 ## 2a. Documented instruction interactions not yet modelled
 
 Printed p. 3-2 ("Certain combinations of instructions may produce
