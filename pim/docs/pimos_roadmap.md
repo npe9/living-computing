@@ -367,6 +367,14 @@ are not worked out, and that is the next step.*
 - Multi-PSI KL1 implementation reports (the distributed
   implementation, export/import tables, weighted reference counts) for
   §7.
+- Database software as an R9 candidate: `icot_databases.md` (a survey,
+  2026-11-20) covers how ICOT did databases and what survives. The
+  nearest candidates, in its order of feasibility: PIMOS pools (already
+  in PIMOS), Distributed Pool (IFS, 10,947 lines of KL1, needs several
+  nodes and no I/O), then Kappa-P (IFS, 151,683 lines of KL1) on one
+  node with pages kept by the front end, which needs a host shim for an
+  8-operation page-file protocol and the PIMOS KL1 compiler, since it
+  ships as source for PIMOS 3.4/3.45. Not fetched; nothing tried.
 - Period KL1 applications for R9: the benchmarks the FGCS'92 PIM/m
   paper reports, and the IFS KL1 programs (theorem provers, puzzle
   and search benchmarks) once the IFS index is reachable.
