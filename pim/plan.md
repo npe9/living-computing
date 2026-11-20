@@ -319,33 +319,13 @@ test or an explicit label.
    microcode.
 
    **Bluesim boot milestones.** The user's directive is to run PIMOS in
-   Bluesim, using the original binaries as the driver. The sequence:
-
-   1. **Decoder.** Complete `asm/unlsav.py`: walk all 42 modules of
-      `pimm_kernel360E.sav` (GC terms, predicate table, code area),
-      disassemble each module's code, and verify the module boundaries
-      against `0xFFFF`.
-   2. **KL1-B execution design.** Decide new module vs. extending the
-      diagnostic ISA; record the register set (`HP`, `SR`, `SSP`,
-      `RQFP`/`CRFP`/`SRFP`/`SSFP`, `Carg`, tag mask), the 40-bit tagged
-      word, and the fetch/decode/execute split in this plan before code.
-   3. **Interpreter module.** Fetch/decode/execute over
-      `docs/kl1_encoding.md`; start with a hand-assembled program and
-      the kernel's `set_value`/`get_bound_value` sequences.
-   4. **Device shims.** The IPL loads `.sav` modules over SCSI. Two
-      tiers: (A) bootstrap — preload the decoded `.sav` images into
-      SDRAM/BRAM at their load addresses and start the IPL, bypassing
-      the fetch; (B) target — a direct-access block device implementing
-      the DAM command set (INQUIRY device code 0, TEST UNIT READY,
-      READ(6), WRITE(6), MODE SENSE, READ CAPACITY) backed by a file or
-      the ULX3S SD card, so the unmodified IPL fetches the modules.
-      Block size is reported by READ CAPACITY / MODE SENSE, not chosen
-      by the shim. The full FEP protocol at unit 7, LUN 0/1 is only if
-      the protocol itself is the goal. Add the console the boot log
-      needs.
-   5. **Boot-log oracle.** The manual gives the successful sequence
-      "Link Modules ... / PIMOS booting ... / V 3.000 ... / SCSI UNITS
-      FOUND". A Bluesim boot that reproduces it is the acceptance test.
+   Bluesim, using the original binaries as the driver, and to run
+   applications under it. The plan of record is
+   `docs/pimos_roadmap.md` (2026-11-19): the rungs R1-R9, the phases,
+   the named unknowns, and the four decisions that are the owner's. It
+   supersedes the five-step list that stood here and the design notes
+   below where they differ: the notes below describe the bench model as
+   built, which the roadmap's Phase 1 replaces.
 
    **KL1-B execution design (milestone 2).** The model's current ISA is
    the diagnostic stand-in; KL1-B is a separate execution path. The

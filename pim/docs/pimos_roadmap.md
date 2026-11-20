@@ -1,0 +1,289 @@
+# Roadmap: from the KL1-B bench model to PIMOS running applications
+
+Written 2026-11-19. This is the plan of record for "boot the original
+PIMOS binaries on the model and run applications under it". It replaces
+the five-step "Bluesim boot milestones" list that used to sit under
+WP5.3 in `../plan.md`.
+
+Every number below was measured on 2026-11-19 with the tools in
+`../asm/`; the command is given where it is not obvious. Things not yet
+measured are listed as unknowns, not estimated.
+
+## 1. Where we are
+
+**What survives.** `docs/nonlocal/pimosobj.tar.Z` holds the bootable
+PIMOS 3.6 object set (file dates 1994-03-28): the IPL heap image
+`pimm_ipl.kbn` (92,160 bytes) with its `.sym`/`.ldb` tables, eight
+system module sets (`kernel`, `bios`, `library`, `macro`, `server`,
+`shell`, `utility`, `debugger`), twelve patch sets, and the startup
+files `pimos.ipl`, `pimos.conf`, `pimos.logins`, `pimos.groups`,
+`*.com`. `pimos.tar.Z` holds the matching KL1 source (version string
+`3.600` in `src/kernel/init/version.kl1`), including the whole
+toolchain: compiler, assembler, loader, unloader. `pimosman.tar.Z` is
+the manual.
+
+**What the binaries are.** KL1-B abstract-machine code plus tagged
+constants. `INSTALL` names the target as "PSI-II or PSI-UX", "Pseudo
+PIM/M system or Pseudo Multi-PSI system": the files are copied to a
+SIMPOS directory on a PSI and run by that machine's KL1 firmware.
+
+**What does not survive in the corpus: the thing that executes
+KL1-B.** On PIM/m and on the PSI the KL1-B instructions were
+microcode. So were the goal scheduler with priorities, suspension and
+resumption, garbage collection, the shoen (task/resource/exception)
+mechanism, the built-in predicates, external-module linkage, and the
+console and SCSI primitives. None of that firmware is in the archives
+we hold. A probe of the ICOT Free Software index on 2026-11-19 found no
+emulator or firmware entry, but the index pages returned 404 and only
+the PIMOS abstract loaded, so that result is "not found yet", not "does
+not exist". **This is the largest risk in the plan and step 1 of
+Phase 0.**
+
+**Static census of the object set** (all 20 `.sav` files):
+
+| | |
+|---|---|
+| images that decode | 17 of 20 (`library`, `macro`, `patch_macro` fail in `unlsav.py` with an IndexError in the first module) |
+| instructions decoded | 470,282 |
+| of those, opcodes not in the 1992 `inst_tab.kl1` | 35,212 (7.5%), 33 distinct values; most frequent `0x3a` 9,229, `0x3b` 6,179, `0xaa` 3,248, `0x3c` 2,899, `0x04` 2,477 |
+| distinct known opcodes used | 144 of the 160 the decoder's table holds |
+| of those, opcodes with any arm in `PimKL1B.bsv` | 56 |
+
+The 56 cover 85.5% of the known instructions by static count, but that
+figure flatters the model: several of the 56 arms are stand-ins
+(`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
+`wait`), and the missing 88 are exactly the ones that need a runtime.
+Most frequent missing: `collect_vector` 14,493, `put_structured_constant`
+6,745, `save` 3,572, `execute_external` 3,437, `collect_list` 3,350,
+`write_marked_value` 3,338, `restore` 3,002, `put_reused_structure`
+2,910, the other `*_marked_*` forms, `enqueue_goal_external` 1,704,
+the vector and string built-ins, `display_console` 451.
+
+**What `PimKL1B.bsv` is today.** A decode-and-semantics harness with
+26 discriminating benches. It is not the base of a machine that can
+hold PIMOS: 4,096-word code and heap memories, an 8-entry goal queue,
+tag values of the model's own choosing, absolute labels where the
+assembler emits relative ones, a backtracking choice-point stack
+standing in for KL1's commit, no suspension, no priorities, no GC, and
+one ~300-line `step()` method. The `.kbn` is a heap image carrying
+the real tags, so the binaries will contradict these conventions on
+contact. Adding opcodes one at a time to this module (the loop the
+model has been in) is **off the critical path** from here.
+
+## 2. Definition of done: a ladder of observable rungs
+
+Each rung is a runnable check that goes into `run_tests.sh` (or a
+longer `run_boot.sh` once runs exceed a few minutes).
+
+| Rung | Observable | Oracle |
+|---|---|---|
+| R1 | Every word of all 20 `.sav` files and the `.kbn` decodes or is itemised | round-trip: re-encode with the transcribed `encoder.kl1` rules, byte-identical |
+| R2 | One predicate from a real PIMOS module, loaded from its `.sav`, runs to completion with arguments we construct and returns the right answer | expected value computed independently (by hand for the first; by KLIC 2.002 for the rest) |
+| R3 | The same, for a predicate that suspends and is resumed | same |
+| R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
+| R5 | Boot log | the manual's sequence: "Link Modules ... / PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`; the version line must match the binaries, not the 3.000 the manual prints) |
+| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`) |
+| R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
+| R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
+| R9 | A period application (candidates in §6) | its published result |
+
+R8 is "PIMOS running applications" in the plain sense and is the
+target of this plan. R9 and everything in §7 are follow-ons.
+
+## 3. Decisions for the owner
+
+These change the shape of the work. The plan proceeds on the stated
+default until overruled.
+
+1. **A KL1-B machine is firmware-equivalent, not PIM/m hardware.**
+   `plan.md`'s historical-accuracy rule says every module must trace to
+   a PIM/m block diagram. The PIM/m processing element is a
+   microprogrammed CISC (`PimPU`); the microcode that made it a KL1
+   machine is lost. A Bluespec module that executes KL1-B directly is
+   therefore a reconstruction of the *firmware's behaviour*, and must
+   be labelled so everywhere. *Default: build it, as a separate,
+   clearly labelled layer (`PimKL1B*`), and keep `PimPU` as the
+   hardware-accurate element. Rewriting the runtime as microcode for
+   `PimPU` is not planned unless the microcode is found.*
+2. **One PE first.** The object set targets a pseudo-parallel single
+   machine, and R1-R8 need only one. *Default: single PE; the mesh
+   (already built: `PimMesh.bsv`) is joined in §7.*
+3. **A software lockstep model as scaffold.** Finding out what the lost
+   firmware did will take many boot attempts. A plain-software
+   executable spec of the same machine (same state, same step
+   boundaries), run in lockstep against the Bluesim model with a trace
+   diff, makes each attempt seconds instead of minutes and gives the
+   Bluespec an oracle. *Default: yes, in `pim/ref/`, labelled as
+   scaffold; the Bluespec model stays the deliverable and every rung
+   in §2 is claimed only on the Bluespec model.* Bluesim steps/second
+   is unmeasured; Phase 0 measures it and this decision is revisited
+   with the number.
+4. **How authentic the I/O is.** The real machine fetched files through
+   a front-end processor (a PSI running SIMPOS) over SCSI; the patch
+   set includes `fepsv`, `scsifep` and `tel`, and `pimos.conf` names a
+   default FEP per task. *Default: a host-side FEP stand-in that speaks
+   the documented protocol (`pimos/protocol/*.prt`, `src/server`,
+   `src/vm/`) to the unmodified PIMOS, serving a directory of files;
+   SIMPOS itself is out of scope.*
+
+## 4. Phases
+
+Order is by what boot executes, not by static frequency. Each phase
+ends in a gate; do not start the next before the gate is observed.
+
+### Phase 0 - Ground truth (no model changes)
+
+1. **Firmware search.** Find anything that executes KL1-B: the PSI-UX
+   pseudo-parallel system the PIMOS README says "is distributed as a
+   part of the ICOT Free Software", PDSS, VPIM (the C runtime used for
+   PIM/p, /c, /i), PSI microcode listings. Look in the IFS index via
+   its mirror, the Museum TR/TM lists, bitsavers, and the KLIC
+   distribution's own references. Fetch TR-373 and TM-1203 (already in
+   the manifest's candidate list) and read them for the runtime's
+   structure. **Outcome decides Phase 2's branch:** *port* a surviving
+   runtime's semantics, or *reconstruct* from TR-246, TR-389, the
+   manual's `e-builtin.tex`, the compiler (`instrtbl.kl1`, `mactbl.kl1`)
+   and KLIC's runtime as a cross-check.
+2. **Finish the decoder.** Fix the three failing images. Classify the
+   33 unknown opcode values: real 1994 additions (the commented-out
+   `put_vector_2` family in `inst_tab.kl1` is the first suspect for
+   `0x3a`-`0x3e`) or table/constant words misread as code (suspect for
+   `0x02`-`0x07`, which sit where `switch_on_constant` and
+   `hash_on_constant` tables would be).
+3. **The `.kbn`.** Base address, cell layout, entry point, and the real
+   tag values, from `src/library/kbn/`, `pimm_ipl.sym`/`.ldb` and the
+   bytes.
+4. **Address units.** The assembler computes labels as
+   `target - (here + 2)`; settle what unit that is in a loaded image
+   (the open `savaddr.py` question).
+5. **Runtime inventory.** From the census and the source: every
+   built-in (`f_r_r`, `f_r_r_r`, `r4`-`r7` types), every instruction
+   that touches goals, priorities, shoen, MRB marks, external modules,
+   the console and SCSI. One table: name, count in the images, source
+   of its semantics, status.
+6. **What I/O boot needs.** Read `bios/boot/*.kl1`, `src/vm/*.kl1` and
+   `pimos.conf` to list every device operation between power-on and the
+   shell prompt.
+7. **Measure Bluesim.** Steps per second of the current model on an
+   existing bench.
+
+*Gate (R1):* all images decode with zero unexplained words;
+`docs/pimos_boot_requirements.md` holds items 2-6 with counts.
+
+### Phase 1 - The machine's foundation
+
+Rebuild the KL1-B layer on the binaries' own conventions, in the
+stage/box structure the repository asks of Bluespec processors:
+
+- the real tagged word and tag values;
+- relative labels and real address units;
+- memory behind a request/response interface, sized for the images
+  (the kernel set alone is 408 KB of 16-bit words);
+- goal records, the prioritised ready queue, `enqueue_goal`/`execute`/
+  `proceed`, replacing the 8-entry queue and the choice-point stand-in
+  with KL1 commit semantics (`try_me_else`/`otherwise`/`suspend`);
+- full dereference chains;
+- a loader path: `.sav` -> linked memory image (atom table, predicate
+  table, module references), produced on the host for now;
+- fetch/decode, execute, and the multi-cycle units (unifier, structure
+  builder, arithmetic) as separate modules; the software lockstep model
+  alongside (decision 3).
+
+The 26 existing benches are ported to the new conventions and stay
+green; their injection records are re-observed, not copied.
+
+*Gate (R2):* a real predicate from a PIMOS library or kernel module
+runs from its `.sav` and returns the right answer.
+
+### Phase 2 - The runtime
+
+By branch of Phase 0 step 1. In dependency order:
+
+1. suspension and resumption (`wait`, `suspend`, hooking goals on
+   variables, waking on bind) - *gate R3*;
+2. structures: vectors, strings, structured constants, the
+   `put_/write_/collect_` families and the MRB (`*_marked_*`) forms
+   with reuse (`put_reused_structure`, `collect_*`);
+3. the built-ins, in the order the boot trace hits them;
+4. `save`/`restore`, `execute_external`/`enqueue_goal_external` and
+   module linkage;
+5. shoen, priorities and exceptions (the IPL starts PIMOS "at priority
+   4050");
+6. garbage collection - only when a run exhausts memory; until then
+   size memory to avoid it and record that.
+
+Each item gets directed benches with observed injections, and a
+predicate-level test against real PIMOS code.
+
+*Gate:* the kernel's initialisation predicate runs to its first device
+request.
+
+### Phase 3 - Boot
+
+1. Console (`display_console`) to the testbench's stdout.
+2. The loader path the IPL itself uses, in two tiers as before:
+   (A) modules preloaded into memory, IPL entered after the fetch;
+   (B) the IPL fetches them through the SCSI/FEP interface.
+3. The FEP stand-in (decision 4): enough of the protocol for the boot
+   file service.
+
+*Gates:* R4, then R5.
+
+### Phase 4 - A usable PIMOS
+
+1. The rest of the FEP services: login, files, the window/terminal the
+   shell wants (`pimos.logins`, `login.com`, `shell.com`).
+2. Whatever the shell, the servers and the library hit next in the
+   trace.
+3. GC, if not already forced.
+
+*Gates:* R6, then R7.
+
+### Phase 5 - Applications
+
+Compile and run the `pkl1` samples under PIMOS on the model; compare
+with KLIC 2.002. *Gate:* R8. Then one period application (R9).
+
+## 5. Named unknowns
+
+| Unknown | Resolved in |
+|---|---|
+| Does any KL1-B firmware or emulator survive? | Phase 0.1 |
+| `.kbn` base address, layout, entry | Phase 0.3 |
+| The 33 opcode values absent from the 1992 table | Phase 0.2 |
+| Label address units | Phase 0.4 |
+| Why `library`, `macro`, `patch_macro` do not parse | Phase 0.2 |
+| The built-ins' exact behaviour where the manual is silent | Phase 2, by trace against PIMOS's own use of them |
+| Bluesim throughput, and so the wall-clock cost of a boot | Phase 0.7 |
+| How much of the FEP protocol the boot and shell need | Phase 0.6 |
+| Whether the IPL image expects state left by the PSI's own loader | Phase 3 |
+
+## 6. Acquisition list
+
+- KL1-B firmware or emulators (Phase 0.1).
+- TR-373 "KL1 no jitsugen houshiki to heiretsu OS no kijutsu" and
+  TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
+  `nonlocal/MANIFEST.md` §3).
+- `pimosman.ps.Z` (the typeset manual; we hold only the LaTeX).
+- Multi-PSI KL1 implementation reports (the distributed
+  implementation, export/import tables, weighted reference counts) for
+  §7.
+- Period KL1 applications for R9: the benchmarks the FGCS'92 PIM/m
+  paper reports, and the IFS KL1 programs (theorem provers, puzzle
+  and search benchmarks) once the IFS index is reachable.
+
+## 7. After R8
+
+- Multiple PEs: goal distribution (`@node` pragmas), inter-PE messages
+  over the existing mesh, distributed unification and the export
+  tables. Needs its own firmware evidence.
+- Timing: only where a published figure exists (`plan.md` evidence
+  gate 4).
+- FPGA: memory budget for the images on the ULX3S, and the SD card as
+  the block device.
+
+## 8. What stops now
+
+The one-opcode-per-commit loop on the current `PimKL1B.bsv`. Its
+benches stay in the suite; no further instructions are added to that
+module except to support a Phase 0 measurement.
