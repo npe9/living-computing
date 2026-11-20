@@ -17,6 +17,17 @@
 //   build(n)             a = a new vector of n >= 7 cells, not
 //                        written; b = a reference to the first (for
 //                        put_vector, whose write_* fill it)
+//   toModule(v)          a = the module object made of v's cells:
+//                        {MOD, a} -> {CDESC, element 0's value}, then
+//                        the other elements as they are
+//                        (library/loader/loader.kl1: "First Element
+//                        is for CDESC created by new_module"; the
+//                        shape is that of the image's modules).  A
+//                        copy; ok is False if element 0 is not the
+//                        integer 06 << 24 | size - 1, or an element
+//                        is an unbound cell in place (a reference
+//                        to a variable is copied: the loader puts
+//                        one where another module will be)
 //   setElement(v, i, e)  a = a copy of v with element i replaced by e,
 //                        b = the old element i.  The machine updates
 //                        in place when v is singly referenced; without
@@ -42,13 +53,15 @@ interface PimmVBox;
   method Action element(Cell v, Bit#(32) i);
   method Action newVec(Bit#(32) n);
   method Action build(Bit#(32) n);
+  method Action toModule(Cell v);
   method Action setElement(Cell v, Bit#(32) i, Cell e);
   method ActionValue#(VResult) result;
 endinterface
 
-typedef enum { VKInfo, VKElem, VKNew, VKSet, VKBuild } VKind deriving (Bits, Eq);
+typedef enum { VKInfo, VKElem, VKNew, VKSet, VKBuild, VKMod } VKind deriving (Bits, Eq);
 typedef struct { VKind k; Cell v; Bit#(32) i; Cell e; } VReq deriving (Bits);
-typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr }
+typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr,
+               VModHead, VModRd, VModWr }
   VState deriving (Bits, Eq);
 
 // the number of elements of a short vector, from its tag
@@ -124,6 +137,13 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
       mem.read(src + off(rq.i));
       st <= VElem;
     end
+    else if (rq.k == VKMod) begin
+      if (n == 0) answer(?, ?, False);
+      else begin
+        mem.read(src);
+        st <= VModHead;
+      end
+    end
     else begin
       gbox.alloc(off(long ? n + 3 : n));
       st <= VAlloc;
@@ -135,7 +155,44 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     answer(taken(c, src + off(rq.i)), ?, True);
   endrule
 
-  rule gotAlloc (st == VAlloc);
+  // new_module: element 0 must be the descriptor's value
+  rule modHead (st == VModHead);
+    let c <- mem.data;
+    if ((c.tag & 8'hfe) != tag_INTo || c.val != ((32'h06000000) | (n - 1))) answer(?, ?, False);
+    else begin
+      oldEl <= c;
+      gbox.alloc(off(n));
+      st <= VAlloc;
+    end
+  endrule
+
+  rule modRd (st == VModRd);
+    if (k == n) answer(mkCell(tag_MOD, absAddr(obj)), ?, True);
+    else begin
+      mem.read(src + off(k));
+      st <= VModWr;
+    end
+  endrule
+
+  rule modWr (st == VModWr);
+    let c <- mem.data;
+    if (isUnboundCell(c)) answer(?, ?, False);
+    else begin
+      mem.write(obj + off(k), c);
+      k <= k + 1;
+      st <= VModRd;
+    end
+  endrule
+
+  rule gotAllocMod (st == VAlloc && rq.k == VKMod);
+    let a <- gbox.allocResult;
+    obj <= a;
+    mem.write(a, mkCell(tag_CDESC, oldEl.val));
+    k <= 1;
+    st <= VModRd;
+  endrule
+
+  rule gotAlloc (st == VAlloc && rq.k != VKMod);
     let a <- gbox.allocResult;
     obj <= a;
     dst <= long ? a + 3 : a;
@@ -180,6 +237,7 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     reqQ.enq(VReq { k: VKElem, v: v, i: i, e: ? });
   method Action newVec(Bit#(32) nn) = reqQ.enq(VReq { k: VKNew, v: ?, i: nn, e: ? });
   method Action build(Bit#(32) nn) = reqQ.enq(VReq { k: VKBuild, v: ?, i: nn, e: ? });
+  method Action toModule(Cell v) = reqQ.enq(VReq { k: VKMod, v: v, i: ?, e: ? });
   method Action setElement(Cell v, Bit#(32) i, Cell e) =
     reqQ.enq(VReq { k: VKSet, v: v, i: i, e: e });
   method ActionValue#(VResult) result;

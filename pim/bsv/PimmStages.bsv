@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -125,7 +125,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool builtinHere = arithHere || op == op_b_multiply || op == op_new_string
                   || op == op_b_string_element || op == op_set_string_element
                   || op == op_new_vector || op == op_set_vector_element
-                  || op == op_b_vector_element || op == op_new_instruction;
+                  || op == op_b_vector_element || op == op_new_instruction
+                  || op == op_new_module;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -862,6 +863,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBStr;
       end
     end
+    else if (op == op_new_module) begin
+      // new_module(Vector, ^Module): the vector box makes the object
+      if (!isVec(a)) stop(EndUnimp);
+      else begin
+        vbox.toModule(a);
+        st <= XBMod;
+      end
+    end
     else if (op == op_new_instruction) begin
       // new_instruction(Tag, Value, ^Cell): atomic tags and tags from
       // 20h only; a reference or pointer tag is refused
@@ -939,6 +948,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else begin
       regs.wr(z, r.a);
       next;
+    end
+  endrule
+
+  rule bModule (st == XBMod);
+    let r <- vbox.result;
+    if (!r.ok) stop(EndUnimp);
+    else begin
+      regs.wr(y, r.a);
+      finish(tagged Next afterBuiltin);
     end
   endrule
 

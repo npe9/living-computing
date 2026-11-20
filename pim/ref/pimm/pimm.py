@@ -32,6 +32,7 @@ import pimm_stubs  # noqa: E402
 from census import opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
+MOD = 0x27                  # a module object: {MOD, a} -> {CDESC, 06 << 24 | n}, n cells
 VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
@@ -261,6 +262,8 @@ class Machine:
             return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
+        if t == MOD & ~1:
+            return ('MOD', self.mem[w[1]][1] & 0xffffff)
         if VECT0 <= t <= VECT0 + 14:
             n, a = self.vsize(w), self.vbase(w)
             return tuple(self.term(self.mem[a + i]) for i in range(n))
@@ -1062,6 +1065,40 @@ class Machine:
                 raise Unimplemented('new_instruction with tag %x' % t)
             return [(t, self.need_int(v) & 0xffffffff)]
         self.builtin('new_instruction', [x, y, z], f)
+
+    def i_new_module(self, pc, x, y, z, c16):
+        # new_module(Vector, ^Module): the vector becomes a module
+        # object.  library/loader/loader.kl1: "First Element is for
+        # CDESC created by new_module", and its caller puts
+        # 06000000h \/ (size - 1) there.  The result has the shape of
+        # every module of the IPL image: {MOD, a} -> {CDESC, 06 << 24 |
+        # n}, then the n other elements as they are (module_element
+        # counts from the cell after the descriptor,
+        # library/unloader/encoder.kl1).  Whether the machine converts
+        # in place is not known; this model copies, as everywhere.
+        # An element may be a reference to a variable: the loader puts
+        # one where another module will be (loader.kl1 encode_gc_area,
+        # "set_vector_element(ModVec1,P1,_,Module,ModVec2)"), which is
+        # the {REF} of TM-662's predicate descriptor; it is copied as
+        # it is.  Refused: an element 0 that is not that integer, and
+        # an unbound cell in the vector itself.
+        def f(v):
+            n = self.vsize(v)
+            if not n:
+                raise Unimplemented('new_module of %r' % (v,))
+            base = self.vbase(v)
+            e0 = self.mem[base]
+            if e0[0] & ~1 != INT or e0[1] != (6 << 24 | n - 1):
+                raise Unimplemented('new_module: element 0 is %r' % (e0,))
+            a = self.alloc(n)
+            self.mem[a] = (CDESC, e0[1])
+            for i in range(1, n):
+                c = self.mem[base + i]
+                if c[0] & ~1 in (UNDF, HOOK):
+                    raise Unimplemented('new_module: element %d is unbound in place' % i)
+                self.mem[a + i] = c
+            return [(MOD, a)]
+        self.builtin('new_module', [x, y], f)
 
     def i_b_vector_element(self, pc, x, y, z, c16):
         # vector_element(V, I, ^E, ^V1): r[z] := element, r[w] := the vector

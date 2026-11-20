@@ -107,9 +107,15 @@ Since then (2026-11-20): calls between modules
 (`lockstep_ext.py`), and the first part of the IPL's module builder
 `ipl_module:load/4`, the predicate entry table (`lockstep_ptab.py`;
 `tag_and_value` and `new_instruction` of B2 are done), and goals of
-more than eleven arguments (`lockstep_pack.py`). Next: the rest
-of `ipl_module:load/4` (the GC area, the code area, `new_module`),
-then `load_modules/8` over a whole file, `decode/8` with the magic
+more than eleven arguments (`lockstep_pack.py`), and the whole of
+`ipl_module:load/4`: five real modules become module objects
+(`lockstep_newm.py`, `new_module`), each cell as the file and the
+layout of the image's own modules say. What that does not show: that
+code in a built module runs (both models fetch code from the image,
+not from the heap), and modules over about 2700 file words do not fit
+(every `set_vector_element` copies the vector). A built external-call
+descriptor has five cells where the image's own have four. Next:
+`load_modules/8` over a whole file, `decode/8` with the magic
 number, and the atom table at the end of the file.
 
 ### C. The world outside the processor
@@ -171,7 +177,8 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: the guard `add`'s overflow; `wait_nil` and
+- Not caught by any run: `new_module`'s refusals; integer keys in a
+  built `hash_on_constant` table; the guard `add`'s overflow; `wait_nil` and
   `read_atom` offered another atom; `set_integer` with a negative
   operand; `execute_external` to a predicate that is not
   first in its slot, and from a clause with guard state; `wait_value`
