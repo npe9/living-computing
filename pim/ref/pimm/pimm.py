@@ -743,6 +743,16 @@ class Machine:
             return [(INT, (self.need_int(a) << n) & 0xffffffff)]
         self.builtin('b_shift_left', [x, y, z], f)
 
+    def i_b_shift_right(self, pc, x, y, z, c16):
+        # logical (manual, shift_right: "Logically shifts Integer to
+        # the right"); the count as for b_shift_left
+        def f(a, b):
+            n = self.need_int(b)
+            if not 0 <= n < 32:
+                raise Unimplemented('built-in exception: shift count %d' % n)
+            return [(INT, (self.need_int(a) & 0xffffffff) >> n)]
+        self.builtin('b_shift_right', [x, y, z], f)
+
     # strings.  The fourth register of a four-register built-in is the
     # top byte of the following cell (klb_opr.kl1 p(r4,...)).
     def i_new_string(self, pc, x, y, z, c16):

@@ -119,7 +119,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   operand[6] = ins2.val[7:0];
   Stub stub = fromMaybe(?, stubOf(op));
   Bool arithHere = op == op_b_add || op == op_b_subtract || op == op_b_and || op == op_b_or
-                || op == op_b_shift_left;
+                || op == op_b_shift_left || op == op_b_shift_right;
   Bool builtinHere = arithHere || op == op_new_string
                   || op == op_b_string_element || op == op_set_string_element
                   || op == op_new_vector || op == op_set_vector_element;
@@ -575,13 +575,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (arithHere) begin
       // r[z] := r[x] op r[y].  A non-integer, or a shift count outside
       // 0..31, is the built-in's exception: not modelled.
-      if (!isInt(a) || !isInt(b) || (op == op_b_shift_left && b.val >= 32)) stop(EndUnimp);
+      if (!isInt(a) || !isInt(b) || ((op == op_b_shift_left || op == op_b_shift_right) && b.val >= 32))
+        stop(EndUnimp);
       else begin
         Bit#(5) count = truncate(b.val);
         Bit#(32) r = (op == op_b_add) ? pack(ia + ib)
                    : (op == op_b_subtract) ? pack(ia - ib)
                    : (op == op_b_and) ? (a.val & b.val)
                    : (op == op_b_or) ? (a.val | b.val)
+                   : (op == op_b_shift_right) ? (a.val >> count)
                    : (a.val << count);
         regs.wr(z, intC(r));
         finish(tagged Next afterBuiltin);

@@ -24,7 +24,8 @@ stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
 `lockstep_rpos.py` runs `exception_table:replace_position/3`
-(`switch_on_constant`); 55 instructions now. No
+(`switch_on_constant`), `lockstep_dec0.py` the first of the IPL's file
+decoder (`b_shift_right`); 56 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py

@@ -76,6 +76,21 @@ carry no open question.
 | B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_vector_element`, `set_string_element` always copy; `collect_*` and `mark_element` do nothing | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
 | B9 | Floats (59 names in the object set, 3 in the IPL image), bignum (9 names) | formats beyond the tag | manual; `kbnheap.kl1`; low priority, 0.1% of instructions |
 
+*The IPL's file decoder has near-source (found 2026-11-20).*
+`ipl_file_decoder` (41 predicates, the module that reads `.sav` files
+at boot) is a variant of `library/unloader/decoder.kl1`: 27 predicates
+match a source predicate by name and arity. It is not that file
+compiled (`set_status/3`, `check_cdr/4` and the input protocol differ:
+the image's decoder builds requests with unbound variables for a
+reader to fill, where the source consumes a list of words). So its
+oracle is the data: real `.sav` term streams decoded independently by
+`asm/unlsav.py`. `lockstep_dec0.py` is the first step (one-word
+integers). The rest of the module needs `put_list` 62, `get_nil` 27,
+`wait_atom` 16, `put_structured_constant` 14, `put_constant` 8,
+`put_atom`, `write_nil`, `write_marked_*`, `set_atom`, `wait_constant`,
+`wait_value`, `integer`, `modulo`, `b_multiply`, `new_instruction`, and
+a test driver that answers the decoder's requests as they appear.
+
 ### C. The world outside the processor
 
 | | Missing | Notes |
@@ -101,7 +116,9 @@ carry no open question.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: `execute` keeping the old alternative clause;
+- Not caught by any run: `b_shift_right` arithmetic for logical;
+  `switch_on_constant` comparing an unbound key (not observable: every
+  pair has the same else label); `execute` keeping the old alternative clause;
   `less_than` at equality; `vector_element` at index = size;
   `set_vector_element` copying an unbound element; either vector
   built-in waiting on an input; `write_variable`'s register read back
