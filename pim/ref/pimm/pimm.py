@@ -195,6 +195,29 @@ class Machine:
             out += [(x >> (32 - size * (k + 1))) & ((1 << size) - 1) for k in range(per)]
         return size, out[:len(out) - pad]
 
+    def new_string(self, n, size):
+        """A new string of n zero elements of `size` bits."""
+        if size not in (8, 16) or n < 0:
+            raise Unimplemented('new_string(%d, %d)' % (n, size))
+        return self.make_string(size, [0] * n)
+
+    def set_element(self, s, i, e):
+        """A copy of string s with element i set to e.  The machine may
+        update in place when s is singly referenced; this model always
+        copies."""
+        size, elems = self.string(s)
+        if not 0 <= i < len(elems):
+            raise Unimplemented('built-in exception: string index %d' % i)
+        elems = list(elems)
+        elems[i] = e & ((1 << size) - 1)
+        return self.make_string(size, elems)
+
+    def element(self, s, i):
+        _size, elems = self.string(s)
+        if not 0 <= i < len(elems):
+            raise Unimplemented('built-in exception: string index %d' % i)
+        return (INT, elems[i])
+
     def make_string(self, size, elems):
         typ = {8: 3, 16: 4}[size]
         per = 32 // size
@@ -519,7 +542,7 @@ class Machine:
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
-            return [self.make_string(self.need_int(size), [0] * self.need_int(n))]
+            return [self.new_string(self.need_int(n), self.need_int(size))]
         self.builtin('new_string', [x, y, z], f)
 
     def i_b_string_element(self, pc, x, y, z, c16):
@@ -527,22 +550,18 @@ class Machine:
         w4 = self.cells[pc + 1][1] >> 24
 
         def f(s, i):
-            _size, elems = self.need_string(s)
-            return [(INT, elems[self.need_int(i)]), s]
+            self.need_string(s)
+            return [self.element(s, self.need_int(i)), s]
         self.builtin('b_string_element', [x, y, z, w4], f)
         return pc + 2
 
     def i_set_string_element(self, pc, x, y, z, c16):
-        # set_string_element(S, I, E, ^S1): r[w] := S with element I = r[z].
-        # The machine may update in place when S is singly referenced;
-        # this model always copies.
+        # set_string_element(S, I, E, ^S1): r[w] := S with element I = r[z]
         w4 = self.cells[pc + 1][1] >> 24
 
         def f(s, i, e):
-            size, elems = self.need_string(s)
-            elems = list(elems)
-            elems[self.need_int(i)] = self.need_int(e) & ((1 << size) - 1)
-            return [self.make_string(size, elems)]
+            self.need_string(s)
+            return [self.set_element(s, self.need_int(i), self.need_int(e))]
         self.builtin('set_string_element', [x, y, z, w4], f)
         return pc + 2
 

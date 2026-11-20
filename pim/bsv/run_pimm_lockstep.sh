@@ -1,7 +1,8 @@
 #!/bin/sh
-# Lockstep: jis_to_ascii:convert_element/2 from the IPL image on the
-# Bluespec PIM/m core, its trace compared line for line with the
-# reference model's (ref/pimm/lockstep_jtoa.py).
+# Lockstep: PIMOS predicates from the IPL image on the Bluespec PIM/m
+# core, the trace compared line for line with the reference model's.
+# One driver bench (PimmDriverTb.bsv) executes each test's script
+# (ref/pimm/lockstep_*.py, ref/pimm/driver.py).
 # Objects go to build_pimm/, never beside the sources: a stale .bo
 # there would be picked up by the other benches.
 set -eu
@@ -24,9 +25,15 @@ export PATH
 python3 ../asm/gen_pimm_bsv.py generated
 mkdir -p build_pimm
 "$BSC" -sim -p generated:+ -bdir build_pimm -simdir build_pimm -info-dir build_pimm \
-  -g mkPimmJtoaTb -u PimmJtoaTb.bsv > build_pimm/compile.log 2>&1 \
+  -g mkPimmDriverTb -u PimmDriverTb.bsv > build_pimm/compile.log 2>&1 \
   || { cat build_pimm/compile.log; exit 1; }
-"$BSC" -sim -bdir build_pimm -simdir build_pimm -e mkPimmJtoaTb \
-  -o build_pimm/sim_pimm_jtoa >> build_pimm/compile.log 2>&1 \
+"$BSC" -sim -bdir build_pimm -simdir build_pimm -e mkPimmDriverTb \
+  -o build_pimm/sim_pimm_driver >> build_pimm/compile.log 2>&1 \
   || { cat build_pimm/compile.log; exit 1; }
-./build_pimm/sim_pimm_jtoa | python3 ../ref/pimm/lockstep_jtoa.py
+
+# Each test writes its script, the driver executes it, the test
+# compares the trace with the reference model's.
+for t in jtoa; do
+  python3 ../ref/pimm/lockstep_$t.py --script generated/pimm_script.hex
+  ./build_pimm/sim_pimm_driver | python3 ../ref/pimm/lockstep_$t.py
+done

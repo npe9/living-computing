@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Lockstep: the Bluespec core against the reference model.
 
-    bsv/build_pimm/sim_pimm_jtoa | python3 ref/pimm/lockstep_jtoa.py
+    python3 ref/pimm/lockstep_jtoa.py --script FILE     write the script
+    sim_pimm_driver | python3 ref/pimm/lockstep_jtoa.py compare
 
-Reads the Bluespec bench's trace on standard input (bsv/PimmJtoaTb.bsv)
-and compares it, line by line, with the trace ref/pimm/pimm.py produces
-for the same goals: jis_to_ascii:convert_element/2 from the IPL image
+The test is one script of operations (ref/pimm/driver.py).  The
+Bluespec driver bench (bsv/PimmDriverTb.bsv) executes it and prints
+its trace, read here on standard input and compared, line by line,
+with the trace ref/pimm/pimm.py produces playing the same script: jis_to_ascii:convert_element/2 from the IPL image
 for every 16-bit key and an atom; then with an unbound variable that
 is bound after the goal has suspended (directly; through a second
 variable; and with two goals waiting on it).
@@ -53,107 +55,87 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
+import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(goals=65540, lines=2933430)
+PINNED = dict(parts=65540, lines=2933430)
+KEY = (pimm.INT, 0x2341)
 
 
-def reference():
-    """Yield (what, [trace lines]) per goal or scenario: the script of
-    bsv/PimmJtoaTb.bsv, operation for operation."""
-    m = pimm.Machine()
-    pc = pimm.predicate(m.im, 'jis_to_ascii', 'convert_element/2')
-    key = (pimm.INT, 0x2341)
+def script():
+    s = driver.Script()
+    pc = pimm.predicate(pimm.kbndis.Image(), 'jis_to_ascii', 'convert_element/2')
 
-    def run():
-        try:
-            m.run()
-        except pimm.Suspend:
-            pass
-
-    def out(v):
-        m.tr.append('O %02x%08x' % m.deref(v))
+    def goal(arg_slot, out_slot):
+        s.arg(1, arg_slot)
+        s.arg(2, out_slot)
+        s.spawn(pc, 2)
 
     for k in list(range(0x10000)) + ['atom']:
-        m.tr = []
-        o = m.new_var()
-        m.spawn(pc, [(pimm.ATOM, 5) if k == 'atom' else (pimm.INT, k), o])
-        run()
-        out(o)
-        yield ('atom' if k == 'atom' else 'key %04x' % k), m.tr
+        s.label('atom' if k == 'atom' else 'key %04x' % k)
+        s.newvar(1)
+        s.argc(1, (pimm.ATOM, 5) if k == 'atom' else (pimm.INT, k))
+        s.arg(2, 1)
+        s.spawn(pc, 2)
+        s.run()
+        s.out(1)
 
-    # bound: the goal suspends on V, V is bound, the goal finishes
-    m.tr = []
-    v, o = m.new_var(), m.new_var()
-    m.spawn(pc, [v, o])
-    run()
-    out(o)
-    m.unify(v, key)
-    run()
-    out(o)
-    yield 'bound', m.tr
+    # the goal suspends on V; V is bound; the goal finishes
+    s.label('bound')
+    s.newvar(0)
+    s.newvar(1)
+    goal(0, 1)
+    s.run()
+    s.out(1)
+    s.unifyc(0, KEY)
+    s.run()
+    s.out(1)
 
-    # chain: V is bound to W first; the goal wakes, finds W through V
-    # and suspends again; W is bound and it finishes
-    m.tr = []
-    v, o = m.new_var(), m.new_var()
-    m.spawn(pc, [v, o])
-    run()
-    out(o)
-    w = m.new_var()
-    m.unify(v, w)
-    run()
-    out(o)
-    m.unify(w, key)
-    run()
-    out(o)
-    yield 'chain', m.tr
+    # V is bound to W first: the goal wakes, finds W through V and
+    # suspends again; W is bound and it finishes
+    s.label('chain')
+    s.newvar(0)
+    s.newvar(1)
+    goal(0, 1)
+    s.run()
+    s.out(1)
+    s.newvar(2)
+    s.unify(0, 2)
+    s.run()
+    s.out(1)
+    s.unifyc(2, KEY)
+    s.run()
+    s.out(1)
 
-    # two: two goals wait on one V
-    m.tr = []
-    v, o1 = m.new_var(), m.new_var()
-    m.spawn(pc, [v, o1])
-    o2 = m.new_var()
-    m.spawn(pc, [v, o2])
-    run()
-    out(o1)
-    m.unify(v, key)
-    run()
-    out(o1)
-    out(o2)
-    yield 'two', m.tr
+    # two goals wait on one V
+    s.label('two')
+    s.newvar(0)
+    s.newvar(1)
+    goal(0, 1)
+    s.newvar(2)
+    goal(0, 2)
+    s.run()
+    s.out(1)
+    s.unifyc(0, KEY)
+    s.run()
+    s.out(1)
+    s.out(2)
+    return s
 
 
-def main():
-    lines = goals = 0
-    src = sys.stdin
-    for what, want in reference():
-        for i, w in enumerate(want):
-            got = src.readline().rstrip('\n')
-            if got != w:
-                print('pimm lockstep jtoa: FAIL at goal %d (%s), line %d of its trace'
-                      % (goals, what, i))
-                print('  reference: %s' % w)
-                print('  bluespec:  %s' % (got or '(end of trace)'))
-                for prev in want[max(0, i - 3):i]:
-                    print('  after:     %s' % prev)
-                return 1
-        lines += len(want)
-        goals += 1
-    extra = src.readline()
-    if extra:
-        print('pimm lockstep jtoa: FAIL, the Bluespec trace goes on: %s' % extra.strip())
-        return 1
-    got = dict(goals=goals, lines=lines)
-    if got != PINNED:
-        print('pimm lockstep jtoa: FAIL, counts %r, pinned %r' % (got, PINNED))
+def main(argv):
+    s = script()
+    if '--script' in argv:
+        s.write(argv[argv.index('--script') + 1])
+        return 0
+    ok, _m = driver.compare(s, sys.stdin, 'pimm lockstep jtoa', PINNED)
+    if not ok:
         return 1
     print('pimm lockstep jtoa: PASS (convert_element/2 from the IPL image on the '
-          'Bluespec core: %d goals, %d trace lines identical to the reference model)'
-          % (goals, lines))
+          'Bluespec core: %d goals and scenarios, %d trace lines identical to the '
+          'reference model)' % (s.counts['parts'], s.counts['lines']))
     return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv))

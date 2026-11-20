@@ -72,11 +72,12 @@ instruction and is tested by trace comparison with it.
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
-| `PimmJtoaTb.bsv` | lockstep bench: `jis_to_ascii:convert_element/2` |
+| `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`) |
 | `generated/PimmGen.bsv`, `generated/pimm_ipl.hex` | tags, opcodes, predicate addresses, record layouts, and the image followed by the built-in stubs, written by `../asm/gen_pimm_bsv.py`; no tag or opcode is typed by hand |
 
-`run_pimm_jtoa.sh` builds into `build_pimm/` and pipes the bench's
-trace into `../ref/pimm/lockstep_jtoa.py`. State: 13 instructions;
+`run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
+(`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
+and pipes the trace into the test. State: 13 instructions;
 goals as records in memory on a ready queue; a goal that cannot choose
 a clause is written back, hooked on the variables it waits for, and
 woken when one is bound (layouts: `../asm/pimm_layout.py`, the

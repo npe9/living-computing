@@ -34,9 +34,12 @@ full-width "PIMOS 3.6" into the 8-bit string `PIMOS 3.6`.
 With `m.tr = []` the model writes one line per event (instruction
 taken, register write, memory write, end of reduction; the format is in
 `docs/pimm_semantics.md`). `lockstep_jtoa.py` compares that trace with
-the Bluespec core's (`bsv/PimmJtoaTb.bsv`), line for line:
+the Bluespec core's, line for line. A test is one script of operations
+(`driver.py`: make a variable, spawn a goal, run, bind, print) that the
+Bluespec driver bench (`bsv/PimmDriverTb.bsv`) executes and the
+reference model plays:
 
-    bsv/run_pimm_jtoa.sh
+    bsv/run_pimm_lockstep.sh
 
 `convert_element/2` is in lockstep, including a goal suspending on an
 unbound argument and waking when it is bound. `convert_loop/4` and

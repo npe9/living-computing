@@ -82,7 +82,7 @@ update in place when the string is singly referenced.
 ## Trace
 
 Both models can write the same trace, one line per event, and are
-compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_jtoa.sh`):
+compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_lockstep.sh`):
 
     I pc cell      an instruction is taken (pc in cells from the load
                    address; cell = tag and value, ten hex digits)

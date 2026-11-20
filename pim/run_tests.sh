@@ -35,7 +35,7 @@ echo "=== PIM/m reference model: a PIMOS predicate run from the IPL image ==="
 python3 ref/pimm/test_jtoa.py
 
 echo "=== PIM/m core (Bluespec) in lockstep with the reference model ==="
-bsv/run_pimm_jtoa.sh
+bsv/run_pimm_lockstep.sh
 
 echo "=== Bluesim smoke ==="
 bsv/run_smoke.sh
