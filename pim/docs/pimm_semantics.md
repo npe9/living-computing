@@ -27,7 +27,10 @@ Evidence so far: module `jis_to_ascii` in `pimm_ipl.kbn` against
 `bios/boot/jtoa.kl1` (`ref/pimm/test_jtoa.py`): `convert_element/2` on
 all 65,536 keys, and `convert/2` (through `convert_loop/4`) on five
 strings, with eleven observed fault injections, one of which the test
-does not catch (noted at `subtract`). The whole module also runs on the
+does not catch (noted at `subtract`). A second module's predicate,
+`scsi_common:get_4_bytes/4` against `bios/scsi/scsi_common.kl1`, is run
+by `ref/pimm/lockstep_get4.py`, its oracle the source's own
+`Int := ...` expression. The whole `jis_to_ascii` module also runs on the
 Bluespec core in lockstep with the reference model (see Trace): every
 instruction in the table is implemented there. Three readings no run
 of this module can check, on either model, and injections confirm it:
@@ -43,6 +46,8 @@ of this module can check, on either model, and injections confirm it:
 | `not_less_than` | `23:F1 x y` | guard: `r[x] >= r[y]`, else fail to the next clause | checked; unbound operands not exercised |
 | `b_subtract` | `22:C1 x y z` | `r[z]` := `r[x] - r[y]` | checked |
 | `b_add` | `22:C0 x y z` | `r[z]` := `r[x] + r[y]` | checked |
+| `b_and`, `b_or` | `22:C7`, `22:C8 x y z` | `r[z]` := `r[x]` and / or `r[y]`, bitwise | checked (`scsi_common:get_4_bytes/4`) |
+| `b_shift_left` | `22:C5 x y z` | `r[z]` := `r[x] << r[y]`, 32 bits | checked for a count of 8; a count outside 0..31 is an exception in PDSS (`blt_basic.c`) and stops the model |
 | `get_value` | `23:BC x y` | unify `r[x]` with `r[y]` | checked for integer against unbound only |
 | `get_integer` | `23:B9 x c16` | unify `r[x]` with integer `c16` | checked against unbound only |
 | `otherwise` | `23:6A x c16` | clauses below apply only if none above can: if a guard above was waiting on a variable, the goal suspends; else continue | both cases checked. `x` is the arity and the label is the predicate's own first instruction; what the machine uses them for is inferred (re-entry after suspension) |

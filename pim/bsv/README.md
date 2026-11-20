@@ -78,9 +78,10 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Two tests: `jtoa` (`convert_element/2`, every
-key, suspension scenarios) and `conv` (`convert/2`, the whole
-`jis_to_ascii` module, on strings). State: 28 instructions; goals as
+and pipes the trace into the test. Three tests: `jtoa` (`convert_element/2`, every
+key, suspension scenarios), `conv` (`convert/2`, the whole
+`jis_to_ascii` module, on strings) and `get4`
+(`scsi_common:get_4_bytes/4`). State: 31 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

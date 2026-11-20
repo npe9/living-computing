@@ -537,6 +537,24 @@ class Machine:
         self.builtin('b_subtract', [x, y, z], lambda a, b: [
             (INT, (self.need_int(a) - self.need_int(b)) & 0xffffffff)])
 
+    def i_b_and(self, pc, x, y, z, c16):
+        self.builtin('b_and', [x, y, z], lambda a, b: [
+            (INT, (self.need_int(a) & self.need_int(b)) & 0xffffffff)])
+
+    def i_b_or(self, pc, x, y, z, c16):
+        self.builtin('b_or', [x, y, z], lambda a, b: [
+            (INT, (self.need_int(a) | self.need_int(b)) & 0xffffffff)])
+
+    def i_b_shift_left(self, pc, x, y, z, c16):
+        # a count outside 0..31 is the built-in's exception (as PDSS,
+        # blt_basic.c blt_b_shift_left): not modelled
+        def f(a, b):
+            n = self.need_int(b)
+            if not 0 <= n < 32:
+                raise Unimplemented('built-in exception: shift count %d' % n)
+            return [(INT, (self.need_int(a) << n) & 0xffffffff)]
+        self.builtin('b_shift_left', [x, y, z], f)
+
     # strings.  The fourth register of a four-register built-in is the
     # top byte of the following cell (klb_opr.kl1 p(r4,...)).
     def i_new_string(self, pc, x, y, z, c16):
