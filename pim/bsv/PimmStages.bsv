@@ -75,7 +75,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
@@ -364,7 +364,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_switch_on_non_vector) begin
       // two cells, the label in the second; only the branch is modelled
       if (isRef(a)) note(a);
-      if (isLongVec(a)) stop(EndUnimp);
+      if (isLongVec(a)) begin
+        vbox.info(a);                 // the size is in the descriptor
+        st <= XVInfo;
+      end
       else if (isVec(a)) begin
         // r[y] := the number of elements ("Ari" in the compiler's
         // index.kl1); the structure pointer at the first
@@ -380,7 +383,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         note(a);
         guardFail;
       end
-      else if (isLongVec(a)) stop(EndUnimp);
+      else if (isLongVec(a)) begin
+        vbox.info(a);
+        st <= XVInfo;
+      end
       else if (isVec(a)) begin
         regs.wr(y, intC(sizeOf(a)));
         next;
@@ -450,8 +456,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_vector_element) begin
       // guard vector_element(Vector, Position, ^Element)
-      if (isLongVec(a)) stop(EndUnimp);
-      else if (!isVec(a) || !isInt(b) || b.val >= sizeOf(a)) guardFail;
+      // the vector box checks a long vector's size
+      if (!isVec(a) || !isInt(b) || (!isLongVec(a) && b.val >= sizeOf(a))) guardFail;
       else begin
         vbox.element(a, b.val);
         st <= XVEl;
@@ -663,7 +669,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_new_vector) begin
       // new_vector(Size, ^V)
-      if (!isInt(a) || a.val > 6) stop(EndUnimp);
+      if (!isInt(a) || a.val[31] == 1) stop(EndUnimp);
       else begin
         vbox.newVec(a.val);
         st <= XBVec;
@@ -671,7 +677,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_set_vector_element) begin
       // set_vector_element(V, I, New, ^Old, ^V1)
-      if (!isVec(a) || isLongVec(a) || !isInt(b) || b.val >= sizeOf(a)) stop(EndUnimp);
+      if (!isVec(a) || !isInt(b) || (!isLongVec(a) && b.val >= sizeOf(a))) stop(EndUnimp);
       else begin
         vbox.setElement(a, b.val, c);
         st <= XBVec;
@@ -717,13 +723,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule vElement (st == XVEl);
     let r <- vbox.result;
-    regs.wr(z, r.a);
-    next;
+    if (!r.ok) guardFail;
+    else begin
+      regs.wr(z, r.a);
+      next;
+    end
+  endrule
+
+  rule vInfo (st == XVInfo);
+    let r <- vbox.result;
+    regs.wr(y, r.a);
+    if (op == op_switch_on_non_vector) begin
+      sp <= truncate(r.b.val);
+      finish(tagged Next (pc + 2));
+    end
+    else next;
   endrule
 
   rule bVec (st == XBVec);
     let r <- vbox.result;
-    if (op == op_new_vector) begin
+    if (!r.ok) stop(EndUnimp);
+    else if (op == op_new_vector) begin
       regs.wr(y, r.a);
       finish(tagged Next afterBuiltin);
     end

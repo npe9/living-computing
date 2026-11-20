@@ -30,7 +30,8 @@ decoder (`b_shift_right`), `lockstep_rss.py` the request-sense analysis
 the file decoder on terms, answering its read requests (`put_list`,
 `get_nil`, `wait_atom`; `driver.Script.live` and `SLOT`),
 `lockstep_deca.py` atoms, proper lists and terms from a real `.sav`
-file (`put_constant`, guard `modulo`), strings included; 66
+file (`put_constant`, guard `modulo`), strings and long vectors
+included; 66
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

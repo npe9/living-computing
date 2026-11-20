@@ -1,9 +1,14 @@
 // PIM/m core: the vector box.  Multi-cycle vector built-ins over
 // memory.  A vector of n = 1..6 elements is {VECTn, address} -> n
-// cells, no header (library/kbn/kbnheap.kl1); the empty vector is
-// {VECT0, 0}.  Longer vectors have a descriptor and are not handled:
-// the caller must not ask.
+// cells, no header; the empty vector is {VECT0, 0}.  A vector of 7 or
+// more is {VECT, a} -> {VDESC, a+3}, {INT, n}, {INT, n}, then the n
+// elements (library/kbn/kbnheap.kl1, the linker's heap writer: the
+// only source, the IPL image holds no such vector).  Why the length
+// is there twice is not known; this box reads the first and writes
+// both.
 //
+//   info(v)              a = the number of elements, b = a reference
+//                        to the first
 //   element(v, i)        a = element i; if that cell is an unbound
 //                        variable, a reference to it
 //   newVec(n)            a = a new vector of n cells holding integer 0
@@ -16,8 +21,9 @@
 //                        element is copied as a reference to the old
 //                        cell, so the variable stays one variable.
 //
-// The caller checks that v is a vector of 1..6 elements, i is in range
-// and n is at most 6.
+// The caller checks that v is a vector of at least one element.  The
+// box checks i against the size: ok is False when it is out of range
+// (nothing is allocated then).
 package PimmVBox;
 
 import FIFO::*;
@@ -26,42 +32,48 @@ import PimmTypes::*;
 import PimmMem::*;
 import PimmGBox::*;
 
-typedef struct { Cell a; Cell b; } VResult deriving (Bits);
+typedef struct { Cell a; Cell b; Bool ok; } VResult deriving (Bits);
 
 interface PimmVBox;
+  method Action info(Cell v);
   method Action element(Cell v, Bit#(32) i);
   method Action newVec(Bit#(32) n);
   method Action setElement(Cell v, Bit#(32) i, Cell e);
   method ActionValue#(VResult) result;
 endinterface
 
-typedef enum { VKElem, VKNew, VKSet } VKind deriving (Bits, Eq);
-typedef struct { VKind k; Cell v; Bit#(3) i; Cell e; } VReq deriving (Bits);
-typedef enum { VIdle, VElem, VAlloc, VFill, VCopyRd, VCopyWr } VState deriving (Bits, Eq);
+typedef enum { VKInfo, VKElem, VKNew, VKSet } VKind deriving (Bits, Eq);
+typedef struct { VKind k; Cell v; Bit#(32) i; Cell e; } VReq deriving (Bits);
+typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr }
+  VState deriving (Bits, Eq);
 
 // the number of elements of a short vector, from its tag
 function Bit#(3) vectorSize(Cell c) = truncate((c.tag - tag_VECT0o) >> 1);
+function Bool isLongVector(Cell c) = (c.tag & 8'hfe) == 8'h1e;
 
 module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   Reg#(VState)   st    <- mkReg(VIdle);
   Reg#(VReq)     rq    <- mkRegU;
-  Reg#(Addr)     dst   <- mkRegU;     // the new vector
-  Reg#(Bit#(3))  k     <- mkRegU;     // the cell in hand
+  Reg#(Addr)     src   <- mkRegU;     // the old vector's first element
+  Reg#(Bit#(32)) n     <- mkRegU;     // the number of elements
+  Reg#(Addr)     obj   <- mkRegU;     // the new vector: what its word points at
+  Reg#(Addr)     dst   <- mkRegU;     // ... and its first element
+  Reg#(Bit#(2))  h     <- mkRegU;     // the descriptor cell in hand
+  Reg#(Bit#(32)) k     <- mkRegU;     // the element in hand
   Reg#(Cell)     oldEl <- mkRegU;     // the element replaced
   FIFO#(VReq)    reqQ  <- mkFIFO;
   FIFO#(VResult) resQ  <- mkFIFO;
 
-  Addr src = cellAddr(rq.v);
-  // a new vector's size: i for newVec, the old vector's for setElement
-  Bit#(3) n = rq.k == VKNew ? rq.i : vectorSize(rq.v);
-  function Addr off(Bit#(3) j) = zeroExtend(j);
+  Bool long = n > 6;
+  function Addr off(Bit#(32) j) = truncate(j);
   // what is taken from a cell: its value, or a reference to it if it
   // is an unbound variable
   function Cell taken(Cell c, Addr a) = isUnboundCell(c) ? mkCell(tag_REFo, absAddr(a)) : c;
+  Bit#(8) newTag = long ? 8'h1f : tag_VECT0o + (truncate(n) << 1) + 1;
 
-  function Action answer(Cell a, Cell b);
+  function Action answer(Cell a, Cell b, Bool ok);
     action
-      resQ.enq(VResult { a: a, b: b });
+      resQ.enq(VResult { a: a, b: b, ok: ok });
       st <= VIdle;
     endaction
   endfunction
@@ -71,31 +83,70 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     reqQ.deq;
     rq <= q;
     k <= 0;
-    if (q.k == VKElem) begin
-      mem.read(cellAddr(q.v) + off(q.i));
+    h <= 0;
+    if (q.k == VKNew) begin
+      n <= q.i;
+      st <= VGo;
+    end
+    else if (isLongVector(q.v)) begin
+      mem.read(cellAddr(q.v));
+      st <= VDesc;
+    end
+    else begin
+      src <= cellAddr(q.v);
+      n <= zeroExtend(vectorSize(q.v));
+      st <= VGo;
+    end
+  endrule
+
+  rule gotDesc (st == VDesc);
+    let c <- mem.data;
+    src <= cellAddr(c);
+    mem.read(cellAddr(rq.v) + 1);
+    st <= VLen;
+  endrule
+
+  rule gotLen (st == VLen);
+    let c <- mem.data;
+    n <= c.val;
+    st <= VGo;
+  endrule
+
+  rule go (st == VGo);
+    if (rq.k == VKInfo) answer(intC(n), mkCell(tag_REFo, absAddr(src)), True);
+    else if (rq.k == VKNew && n == 0) answer(mkCell(tag_VECT0o, 0), ?, True);
+    else if (rq.k != VKNew && rq.i >= n) answer(?, ?, False);
+    else if (rq.k == VKElem) begin
+      mem.read(src + off(rq.i));
       st <= VElem;
     end
-    else if (q.k == VKNew && q.i == 0) answer(mkCell(tag_VECT0o, 0), ?);
     else begin
-      gbox.alloc(zeroExtend(q.k == VKNew ? q.i : vectorSize(q.v)));
+      gbox.alloc(off(long ? n + 3 : n));
       st <= VAlloc;
     end
   endrule
 
   rule gotElem (st == VElem);
     let c <- mem.data;
-    answer(taken(c, src + off(rq.i)), ?);
+    answer(taken(c, src + off(rq.i)), ?, True);
   endrule
 
   rule gotAlloc (st == VAlloc);
     let a <- gbox.allocResult;
-    dst <= a;
-    st <= (rq.k == VKNew) ? VFill : VCopyRd;
+    obj <= a;
+    dst <= long ? a + 3 : a;
+    st <= long ? VHdr : (rq.k == VKNew) ? VFill : VCopyRd;
+  endrule
+
+  rule header (st == VHdr);
+    mem.write(obj + zeroExtend(h), h == 0 ? mkCell(tag_VDESC, absAddr(dst)) : intC(n));
+    h <= h + 1;
+    if (h == 2) st <= (rq.k == VKNew) ? VFill : VCopyRd;
   endrule
 
   rule fill (st == VFill);
     mem.write(dst + off(k), intC(0));
-    if (k + 1 == n) answer(mkCell(tag_VECT0o + (zeroExtend(n) << 1) + 1, absAddr(dst)), ?);
+    if (k + 1 == n) answer(mkCell(newTag, absAddr(obj)), ?, True);
     else k <= k + 1;
   endrule
 
@@ -109,18 +160,19 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     Cell old = taken(c, src + off(k));
     mem.write(dst + off(k), k == rq.i ? rq.e : old);
     if (k == rq.i) oldEl <= old;
-    if (k + 1 == n) answer(mkCell(rq.v.tag, absAddr(dst)), k == rq.i ? old : oldEl);
+    if (k + 1 == n) answer(mkCell(rq.v.tag, absAddr(obj)), k == rq.i ? old : oldEl, True);
     else begin
       k <= k + 1;
       st <= VCopyRd;
     end
   endrule
 
+  method Action info(Cell v) = reqQ.enq(VReq { k: VKInfo, v: v, i: ?, e: ? });
   method Action element(Cell v, Bit#(32) i) =
-    reqQ.enq(VReq { k: VKElem, v: v, i: truncate(i), e: ? });
-  method Action newVec(Bit#(32) nn) = reqQ.enq(VReq { k: VKNew, v: ?, i: truncate(nn), e: ? });
+    reqQ.enq(VReq { k: VKElem, v: v, i: i, e: ? });
+  method Action newVec(Bit#(32) nn) = reqQ.enq(VReq { k: VKNew, v: ?, i: nn, e: ? });
   method Action setElement(Cell v, Bit#(32) i, Cell e) =
-    reqQ.enq(VReq { k: VKSet, v: v, i: truncate(i), e: e });
+    reqQ.enq(VReq { k: VKSet, v: v, i: i, e: e });
   method ActionValue#(VResult) result;
     resQ.deq;
     return resQ.first;

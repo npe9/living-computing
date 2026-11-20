@@ -32,6 +32,7 @@ import pimm_stubs  # noqa: E402
 from census import opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
+VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
 VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
@@ -260,9 +261,9 @@ class Machine:
             return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
-        if VECT0 <= t <= VECT0 + 12:
-            n = (t - VECT0) // 2
-            return tuple(self.term(self.mem[w[1] + i]) for i in range(n))
+        if VECT0 <= t <= VECT0 + 14:
+            n, a = self.vsize(w), self.vbase(w)
+            return tuple(self.term(self.mem[a + i]) for i in range(n))
         raise Unimplemented('term with tag %02x' % w[0])
 
     # ---- goals -----------------------------------------------------
@@ -474,16 +475,37 @@ class Machine:
         # in the compiler's index.kl1), the structure pointer at the
         # first
         self.reg[y] = (INT, self.vsize(w))
-        self.sp = w[1]
+        self.sp = self.vbase(w)
         return pc + 2
 
     def vsize(self, w):
         """The number of elements of a vector word, None if it is not
-        one.  Long vectors (a descriptor) are not modelled."""
+        one.
+
+        A vector of 7 or more is {VECT, a} -> {VDESC, a+3}, {INT, n},
+        {INT, n}, then the n elements (library/kbn/kbnheap.kl1, the
+        linker's heap writer: the only source; the IPL image holds no
+        such vector).  Why the length is there twice is not known;
+        this model reads the first and writes both."""
         t = w[0] & ~1
         if t == VECT0 + 14:
-            raise Unimplemented('a vector of more than 6 elements')
+            return self.mem[w[1] + 1][1]
         return (t - VECT0) // 2 if VECT0 <= t <= VECT0 + 12 else None
+
+    def vbase(self, w):
+        """The address of a vector's first element."""
+        return self.mem[w[1]][1] if w[0] & ~1 == VECT0 + 14 else w[1]
+
+    def vnew(self, n):
+        """(word, address of the first element) of a new vector of n
+        cells, n >= 1, the elements not written."""
+        if n <= 6:
+            a = self.alloc(n)
+            return (VECT0 + 2 * n + 1, a), a
+        a = self.alloc(n + 3)
+        self.mem[a] = (VDESC, a + 3)
+        self.mem[a + 1] = self.mem[a + 2] = (INT, n)
+        return (VECT0 + 15, a), a + 3
 
     def taken(self, a):
         """What is taken from the cell at a: its value, or a reference
@@ -504,7 +526,7 @@ class Machine:
         if v is None or i is None or self.vsize(v) is None or i[0] & ~1 != INT \
                 or not i[1] < self.vsize(v):
             return self.guard_fail()
-        self.reg[z] = self.taken(v[1] + i[1])
+        self.reg[z] = self.taken(self.vbase(v) + i[1])
 
     def i_mark_element(self, pc, x, y, z, c16):
         pass        # MRB marking of an element: no reference counts here
@@ -834,14 +856,14 @@ class Machine:
         # new_vector(Size, ^V): n cells of integer 0 (PIMOS manual)
         def f(n):
             n = self.need_int(n)
-            if not 0 <= n <= 6:
+            if n < 0:
                 raise Unimplemented('new_vector of %d elements' % n)
             if n == 0:
                 return [(VECT0, 0)]
-            a = self.alloc(n)
+            w, a = self.vnew(n)
             for k in range(n):
                 self.mem[a + k] = (INT, 0)
-            return [(VECT0 + 2 * n + 1, a)]
+            return [w]
         self.builtin('new_vector', [x, y], f)
 
     def i_set_vector_element(self, pc, x, y, z, c16):
@@ -854,14 +876,15 @@ class Machine:
             n, i = self.vsize(v), self.need_int(i)
             if n is None or not 0 <= i < n:
                 raise Unimplemented('built-in exception: set_vector_element')
-            a = self.alloc(n)
+            src = self.vbase(v)
+            w, a = self.vnew(n)
             old = None
             for k in range(n):
-                c = self.taken(v[1] + k)
+                c = self.taken(src + k)
                 if k == i:
                     old = c
                 self.mem[a + k] = e if k == i else c
-            return [old, (v[0], a)]
+            return [old, (v[0], w[1])]
         self.builtin('set_vector_element', [x, y, z, w4, w5], f, nowait=(2,))
         return pc + 2
 

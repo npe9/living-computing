@@ -130,8 +130,12 @@ the test reads it back by atom name. Vectors of up to 6 are built, read
 and updated (`put_vector_N`, `wait_vector_N`, `read_variable`,
 `new_vector`, `set_vector_element`; `bsv/PimmVBox.bsv`), and list cells
 are read and rebuilt (`switch_on_non_list`, `put_reused_structure`);
-`put_list` is not run yet, and the long vector form (7 or more, with a
-descriptor) stops both models.
+the long form (7 or more) is made, read and updated by the same
+built-ins since `lockstep_deca.py`. Its layout has that one source
+(the image holds no long vector); why the length is there twice is not
+known, and both models read the first and write both. The guards
+`vector` and `switch_on_non_vector` on a long vector are written but
+NOT run; unifying two long vectors is not modelled.
 
 **Strings.** `{STRG, address}` points at `{CDESC, pad << 27 | type <<
 24 | words}` and then `words` 32-bit cells, elements packed from the

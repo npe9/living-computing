@@ -27,10 +27,9 @@ For a put, the Name the decoder hands over is checked against the
 words of the file: that is the check on the string path.
 
 Terms: some written here, and the first terms of the GC areas of the
-real pimm_kernel360E.sav that consist of integers, atoms, lists and
-vectors of at most six elements (larger vectors and strings of other
-element sizes or more than 40 elements are left out).  For the real ones the words are the file's and the
-atoms defined earlier in the file are answered as gets.  The oracle
+real pimm_kernel360E.sav that consist of integers, atoms, lists,
+vectors of at most 40 elements and strings of 8- or 16-bit elements,
+at most 40 of them.  For the real ones the words are the file's and the atoms defined earlier in the file are answered as gets.  The oracle
 is asm/unlsav.py's reading of the same words.
 
 A string in the file is 06ss (ss the element size), its length (32
@@ -38,6 +37,10 @@ bits), then the elements packed from the top into 32-bit words.  The
 decoder asks for a 16-bit string whole with {Buf, Out, Rest} (and one
 more word when the length is odd), and for an 8-bit one a 32-bit word
 at a time, which it unpacks with shifts and set_string_element.
+
+A vector is made with new_vector and filled with set_vector_element;
+one of 7 or more elements is the long form with a descriptor (see
+pimm.Machine.vsize), which this test is the first to make.
 
 New here: put_constant, and the guard modulo with the Bluespec divide
 box (PimmMBox.bsv).
@@ -53,7 +56,17 @@ where shown and was restored:
   divide box never subtracts         the same: R 6 = 2 for 0
   b_shift_right arithmetic           the 8-bit string with a5 last: R 3 = ffffffa5
                                      for a5 (in the trace; the element is masked)
+  long vector: elements at a+2       the vector of 7: the descriptor's pointer
+  long vector: a 6-vector's tag      the same: R 0 = 1d... for 1f...
+  long vector: copy reads from the   the same: an element copied as the
+    descriptor, not the elements     length 7
+  long vector: 3 cells too few       the same: the next allocation overlaps
 
+Not caught: a long vector's size read from the second length cell (the
+two are always equal); the vector box without its range check (the
+decoder stays in range); the box's info answer, which only the guards
+vector and switch_on_non_vector use on a long vector, and no test runs
+them on one.
 Not caught: modulo accepting a zero divisor, and nothing here divides a
 negative number: the decoder only takes a length mod 2.
 Not caught: put_constant forcing the integer tag.  Both constants the
@@ -73,11 +86,12 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import unlsav  # noqa: E402
 
-PINNED = dict(parts=28, lines=36383, real=16)
+PINNED = dict(parts=32, lines=49485, real=17)
 OBJ = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 NIL_NAME = [0x214e, 0x214f]
 REAL = 10            # real terms without strings
 REAL_STRINGS = 6     # and with
+REAL_LONG = 6        # and with a vector of 7 or more elements
 
 
 def jis(text):
@@ -101,6 +115,9 @@ WRITTEN = [
     ('s', 16, []),
     ('s', 8, []),
     ('v', [('s', 8, [65]), ('l', [('s', 16, [7])], NIL0)]),
+    ('v', [1, 2, 3, 4, 5, 6, 7]),
+    ('v', [('a', 3, jis('q')), ('v', list(range(9))), 0, ('s', 8, [9]), 4, 5, 6, ('a', 3, None)]),
+    ('v', list(range(6))),
 ]
 
 
@@ -159,13 +176,18 @@ def has_string(p):
     return p[0] == 'string' or (p[0] in ('vector', 'list') and any(has_string(e) for e in p[1]))
 
 
+def has_long(p):
+    return (p[0] == 'vector' and len(p[1]) > 6) or \
+        (p[0] in ('vector', 'list') and any(has_long(e) for e in p[1]))
+
+
 def simple(p):
     if p[0] in ('int', 'atom'):
         return True
     if p[0] == 'string':
         return p[2] in (8, 16) and p[1] <= 40
     if p[0] == 'vector':
-        return 1 <= len(p[1]) <= 6 and all(simple(e) for e in p[1])
+        return 1 <= len(p[1]) <= 40 and all(simple(e) for e in p[1])
     return p[0] == 'list' and all(simple(e) for e in p[1])
 
 
@@ -184,7 +206,7 @@ def real_terms():
         r.i += 2 + ((words[r.i] << 16) | words[r.i + 1])
     # every term unlsav.parse_module reads at top level (the module
     # information and the GC area), with where it lies in the file
-    out, depth, inner, count = [], [0], unlsav.parse_term, [0, 0]
+    out, depth, inner, count = [], [0], unlsav.parse_term, [0, 0, 0]
 
     def outer(rd):
         i, before = rd.i, dict(rd.atoms)
@@ -194,8 +216,8 @@ def real_terms():
         finally:
             depth[0] -= 1
         if depth[0] == 0 and simple(p) and p[0] != 'int':
-            k = 1 if has_string(p) else 0
-            if count[k] < (REAL, REAL_STRINGS)[k]:
+            k = 2 if has_long(p) else 1 if has_string(p) else 0
+            if count[k] < (REAL, REAL_STRINGS, REAL_LONG)[k]:
                 count[k] += 1
                 out.append((words[i:rd.i], before, p))
         return p

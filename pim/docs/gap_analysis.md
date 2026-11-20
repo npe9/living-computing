@@ -51,7 +51,7 @@ from, and how it would be checked.
 |---|---|---|---|
 | A1 | Lists and structure completion: `put_list` 179, `get_nil` 112, `collect_vector` 139, `collect_list` 89, `wait_nil` 59, `write_marked_value` 94, `write_integer` 62, `write_nil`, `write_marked_variable`, `set_integer`, `set_atom`, `set_nil`, `set_marked_*`, `read_atom`, `read_eagerly`, `wait_value`, `wait_list`, `wait_constant` | compiler source, PIMOS manual, the patterns already run | lockstep on a source-backed predicate, as now |
 | A2 | Atoms: `wait_atom` 94, `put_atom` 49, `switch_on_non_atom` 30, `atom`/`integer` type guards 77 | same; encoding now doubly witnessed | same |
-| A3 | Vector sizes 0, 1, 5, 6 and the general `put_vector`/`wait_vector`; **long vectors (7 or more, with a `VDESC` descriptor)**, which stop both models today | `library/kbn/kbnheap.kl1` gives the layout | image constants as fixtures |
+| A3 | Vector sizes 0, 1, 5, 6 and the general `put_vector`/`wait_vector`; long vectors (7 or more, with a `VDESC` descriptor): made, read and updated since `lockstep_deca.py` (2026-11-20), the size guards on them not run | `library/kbn/kbnheap.kl1` gives the layout | image constants as fixtures |
 | A4 | Constants: `put_structured_constant` 132, `put_constant` 61, `switch_on_constant` 77 (*done 2026-11-20, `lockstep_rpos.py`*) | `klb_opr.kl1`, `kbn.kl1` | same |
 | A5 | Arithmetic and comparison: `add`, `shift_right`, `shift_left`, `multiply`, `divide`, `modulo`, `exclusive_or`, `not_equal` and their body forms | manual; `asm/bltdir.py` directions | same; exceptions are B5 |
 | A6 | Strings: `string_operation` 16, `change_element_size`, guard `string_element`, body `string`; string types other than 8 and 16 bit | manual; `kernel/builtin/string.kl1` | `builtin_utility` predicates with source |
@@ -91,8 +91,10 @@ a word and `{V, Rest}` for 32 bits). `lockstep_deca.py` the third: atoms and pro
 lists, the test also playing the atom table (`put(Id, Name, Atom)`,
 `get(Id, Atom)`) and the reader's string request `{Buf, Out, Rest}`,
 on terms cut from the real `pimm_kernel360E.sav`, strings included
-(16 real terms; the guard `modulo` and a divide box). Next: vectors of
-more than six elements, then the module-level predicates. The rest of the module needs `put_list` 62, `get_nil` 27,
+(17 real terms; the guard `modulo` and a divide box; vectors of 7 or
+more, the descriptor form, made by `new_vector` and filled by
+`set_vector_element`). Next: the module-level predicates, first the
+GC-area loop (`put_atom`). The rest of the module needs `put_list` 62, `get_nil` 27,
 `wait_atom` 16, `put_structured_constant` 14, `put_constant` 8,
 `put_atom`, `write_nil`, `write_marked_*`, `set_atom`, `wait_constant`,
 `wait_value`, `integer`, `modulo`, `b_multiply`, `new_instruction`, and
@@ -157,7 +159,9 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not caught by any run: `put_constant` dropping the constant's tag;
+- Not caught by any run: a long vector's size through the guards
+  `vector` / `switch_on_non_vector`, and the vector box's range check;
+  `put_constant` dropping the constant's tag;
   `modulo` with a zero divisor or a negative operand (not reached);
   `integer` on an unbound operand;
   `switch_on_constant` comparing an unbound key (not observable: every

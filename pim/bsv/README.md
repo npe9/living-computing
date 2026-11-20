@@ -98,7 +98,8 @@ decoder's read requests through the script's `SLOT` operation;
 proper lists, with terms from the real `pimm_kernel360E.sav`; the test
 also plays the atom table; `put_constant`; strings, with the guard
 `modulo` on the divide box `PimmMBox.bsv`, a 32-step restoring
-divider). State: 66 instructions; goals as
+divider; vectors of 7 or more elements, the descriptor form, in
+`PimmVBox.bsv`). State: 66 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
