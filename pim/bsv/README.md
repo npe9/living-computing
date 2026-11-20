@@ -20,11 +20,17 @@ FIFO order), `PimKL1BSuspendTb.bsv` (suspend's empty-queue jump),
 (set_atom operand c is the atom ID), `PimKL1BJumpTb.bsv` (the unconditional jump),
 `PimKL1BNilTb.bsv` (put_nil/write_nil), `PimKL1BArgSlotTb.bsv`
 (the 8-bit argument-slot width; a 3-bit truncation aliases slot 8 onto
-slot 0) and `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,
+slot 0), `PimKL1BSwitchTb.bsv` (the `switch_on_non_integer`,
 `switch_on_non_atom` and `switch_on_non_list` type dispatch, each
-injection failing only this bench); `run_kl1b_tb.sh` builds and runs
-all sixteen. The implemented subset and the loud-failure rule for the
-rest are in the module header.
+injection failing only this bench), `PimKL1BNoopTb.bsv` (the three
+stand-in opcodes advance PC when the argument is bound),
+`PimKL1BWaitUnboundTb.bsv` (wait halts on an unbound UREF; the
+sentinel instruction never executes), `PimKL1BCpTb.bsv` (the choice
+point stack), `PimKL1BGuardBacktrackTb.bsv` (guard failure backtracks
+to the else label), `PimKL1BBindTb.bsv` (get_constant binds a UREF in
+the heap); `run_kl1b_tb.sh` builds and runs all twenty-three. The
+implemented subset and the loud-failure rule for the rest are in the
+module header.
 
 The network model is `PimNU.bsv` (one NU's per-port FIFOs),
 `PimLink.bsv` (one output port to one input port), `PimNURouted.bsv`

@@ -1,11 +1,14 @@
-// PimKL1BNoopTb.bsv -- discriminating test for three no-op stand-ins.
+// PimKL1BNoopTb.bsv -- discriminating test for the three 0x23 opcodes
+// that advance PC without changing state.
 //
-// read_variable_without_deref (0xa7), wait (0xe0) and collect_value
-// (0x1d) appear in real PIMOS binaries.  As stand-ins they are no-ops
-// rather than halts, so the model can step past them and reach later
-// instructions.  This test proves that each one advances PC without
-// halting, because a sentinel register is written only after all three
-// have executed.
+// read_variable_without_deref (0xa7) and collect_value (0x1d) are no-ops
+// by design in this model: the register already holds the raw value
+// (only read_variable 0xb4 follows a REF), and collect_value is a
+// garbage-collection marker with no collector here.  wait (0xe0) is a
+// real instruction that halts on an unbound UREF; in this test the
+// argument is bound to an INT, so wait advances.  This test proves all
+// three advance PC without halting, because a sentinel register is
+// written only after all three have executed.
 //
 // Program:
 //   0: put_integer r1, 42

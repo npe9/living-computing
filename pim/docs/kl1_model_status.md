@@ -60,9 +60,9 @@ The status labels are:
 | `modulo` | 0xf8 | `R[c] = INT(R[a] % R[b])`, halt on zero | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
 | `equal` | 0xf2 | backtrack-or-halt unless both INT and equal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BGuardBacktrackTb` |
 | `not_equal` | 0xf3 | backtrack-or-halt unless both INT and unequal | inferred (guard built-in, TR-246 p. 5) | `PimKL1BArithTb` |
-| `read_variable_without_deref` | 0xa7 | no-op stand-in | stand-in | `PimKL1BNoopTb` |
-| `wait` | 0xe0 | no-op stand-in | stand-in | `PimKL1BNoopTb` |
-| `collect_value` | 0x1d | no-op stand-in | stand-in | `PimKL1BNoopTb` |
+| `read_variable_without_deref` | 0xa7 | no-op by design: the register already holds the raw value; only read_variable (0xb4) follows a REF | inferred (regass.kl1: read_variable_without_deref = read_variable minus deref) | `PimKL1BNoopTb` |
+| `wait` | 0xe0 | halt on unbound UREF; a bound argument advances | inferred (TR-246 p. 5 passive unification; no suspension in this model) | `PimKL1BNoopTb`, `PimKL1BWaitUnboundTb` |
+| `collect_value` | 0x1d | no-op GC marker: emitted when a value's last use is detected; this model has no collector | inferred (compiler mrb.kl1) | `PimKL1BNoopTb` |
 | `execute` | 0x61 | `narg = a; pc = label(b:c)` | stand-in | `PimKL1BControlTb` |
 | `enqueue_goal` | 0x63 | append label to an 8-entry queue | stand-in | `PimKL1BControlTb` |
 | `suspend` | 0x69 | append label; jump to it when the queue was empty, else the head | stand-in | `PimKL1BSuspendTb` |

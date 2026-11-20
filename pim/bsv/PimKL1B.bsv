@@ -241,7 +241,10 @@ module mkPimKL1B(PimKL1B);
           end else backtrackOrHalt();
         end
         8'hb4: regs.upd(a, deref(regs.sub(a)));   // read_variable
-        8'ha7: noAction;                          // read_variable_without_deref: stand-in (no deref)
+        // read_variable_without_deref: the register already holds the raw
+        // value; only read_variable (0xb4) follows the REF.  A no-op is the
+        // correct model behavior, not a stand-in.
+        8'ha7: noAction;
         8'h28: noAction;                          // switch_on_non_integer: PC block
         8'h29: noAction;                          // switch_on_non_atom: PC block
         8'h2a: noAction;                          // switch_on_non_list: PC block
@@ -273,8 +276,14 @@ module mkPimKL1B(PimKL1B);
             cpsp <= cpsp - 1;
           end
         end
-        8'h1d: noAction;                          // collect_value: stand-in
-        8'he0: noAction;                          // wait: stand-in (no suspension)
+        // collect_value: emitted as a garbage-collection marker when a
+        // value's last use is detected (compiler mrb.kl1).  This model has
+        // no collector, so the marker is a no-op by design, not a stand-in.
+        8'h1d: noAction;
+        // wait: passive unification, waits for a variable to be bound.
+        // Without a suspension mechanism, halt loudly on an unbound UREF
+        // rather than silently proceed; a bound argument advances.
+        8'he0: if (deref(regs.sub(a))[39:32] == tagVar) haltR <= True;
         default: haltR <= True;                   // unimplemented: stop loud
       endcase
     end else begin
