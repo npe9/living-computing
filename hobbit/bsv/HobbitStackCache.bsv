@@ -95,8 +95,8 @@ interface HobbitStackCache;
 
   // The read port.  `lo` and `hi` are the architectural bounds the EU
   // has already forwarded past the instructions in flight; the box adds
-  // its refill watermark.  A miss returns 0 and the EU reports it
-  // loudly (a p. 4-1 operand-capture violation).
+  // its refill watermark.  A miss returns 0: the caller tests the window
+  // itself and takes a word outside it from memory (memReq below).
   method Word read(Word addr, Word lo, Word hi);
   // Second read port: the printed stack cache is "64x32x2" (Figure 1-1,
   // p. 1-2), and an instruction's two memory operands are read in the
@@ -123,6 +123,21 @@ interface HobbitStackCache;
   method Word cacheWord(Word addr);
   method Bool cached(Word addr);
   method Word fillWatermark();
+
+  // The operand path to external memory.  A stack access hits the cache
+  // only inside the printed window, SP <= address < MSP with
+  // MSP <= SP + 256 (p. 1-5, p. 1-12); every other operand -- an absolute
+  // address, a pointer's target, a caller's frame above MSP after a large
+  // ENTER -- is a word of memory, and the box owns the one data-memory
+  // read port (the same registered readReq/readData pair the CATCH
+  // refill uses).  EU_S1 asks for a word with memReq while memIdle; the
+  // box names the word whose data is on the port in the next clock with
+  // memLive/memData.  One word per clock, so a memory operand costs the
+  // model's A = 1 cycle per word fetched (the p. 4-2 choice, HobbitTypes).
+  method Action memReq(Word addr);
+  method Maybe#(Word) memLive();
+  method Word memData();
+  method Bool memIdle();
 endinterface
 
 module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
@@ -179,6 +194,12 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   // array, the pointers and the engines.
   Wire#(Maybe#(ScCmd)) cmdW <- mkDWire(tagged Invalid);
   Wire#(Maybe#(SpMsp)) resetW <- mkDWire(tagged Invalid);
+
+  // EU_S1's operand-memory request, and the address whose word is on the
+  // memory read port this clock (Invalid when the port carried a refill
+  // word or nothing).
+  Wire#(Maybe#(Word)) memReqW <- mkDWire(tagged Invalid);
+  Reg#(Maybe#(Word)) memLiveR <- mkReg(tagged Invalid);
 
   function Bit#(6) cidx(Word a) = truncate(a >> 2);
 
@@ -362,7 +383,12 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
     end
     pendingMemWr <= nPend;
     if (doMemWr) mem.write(mwAddr, mwData);
+    // One memory read port: the refill wins (EU_S1 only asks while the
+    // box is idle, so the two do not meet outside a reset).
+    Bool opReq = !doReset && !refillReq && isValid(memReqW);
     if (refillReq) mem.readReq(refillReqAddr);
+    else if (opReq) mem.readReq(validValue(memReqW));
+    memLiveR <= opReq ? memReqW : tagged Invalid;
 
     // ---- commit the next state, each register once ------------------
     spR        <= nSp;
@@ -406,6 +432,15 @@ module mkHobbitStackCache#(HobbitMem mem, MemCycles m)(HobbitStackCache);
   method Word cacheWord(Word addr) = readWord(addr, spR, fillR);
   method Bool cached(Word addr) = inRange(addr, spR, fillR);
   method Word fillWatermark() = fillR;
+
+  method Action memReq(Word addr);
+    memReqW <= tagged Valid addr;
+  endmethod
+  method Maybe#(Word) memLive() = memLiveR;
+  method Word memData() = mem.readData();
+  // No flush or refill owns the port, and no EU write to memory is still
+  // parked behind a flush: memory holds every committed word.
+  method Bool memIdle() = (state == SC_IDLE) && !isValid(pendingMemWr);
 
 endmodule
 

@@ -319,7 +319,15 @@ typedef struct {
   Word word;
   Bool ok;
   Bool bad;
+  Word wa;        // the word address this operand read
 } OpRead deriving (Bits);
+
+// One word read by EU_S1: `ok` False means the word is neither in flight,
+// nor in the stack cache, nor yet fetched from memory.
+typedef struct {
+  Word w;
+  Bool ok;
+} WordRd deriving (Bits);
 
 typedef struct {
   DecInstEntry e;
@@ -337,6 +345,11 @@ typedef struct {
   Bit#(4) sinceCmp;    // issue distance from the last compare
   Word   extra;        // table extras beyond the pipeline slot
   Bool   bad;          // operand resolution found an alignment fault
+  // External-memory operands (see "Memory operands" in mkHobbitEuS1).
+  Bool   memMiss;      // a needed word is still in memory: not ready
+  Word   memMissAddr;  // the first such word's address
+  Bool   ptMem;        // the pointed-to word lies outside the stack cache
+  Word   ptWord;       // ... and this is it, in-flight writers applied
 } EuS1Out deriving (Bits);
 
 // One bypass source: the instruction in EU_S2 or EU_S3.
@@ -409,27 +422,94 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     return (a >= spb) && (a < mspb) && (a < sc.fillWatermark());
   endfunction
 
-  // A word read with the p. 1-1 "operand bypass mechanism": the youngest
-  // in-flight writer wins, then the committed stack cache.  `wa` is a word
-  // address, so a byte store and a later byte load of the same word meet.
-  function Tuple2#(Word, Bool) readWord(Word wa, Word spb, Word mspb);
-    if (byS2.we && (byS2.addr == wa))
-      return tuple2(byS2.data, True);
-    else if (byS3.we && (byS3.addr == wa))
-      return tuple2(byS3.data, True);
+  // ---- Memory operands ------------------------------------------------
+  // The stack cache holds only [SP, MSP), at most 256 bytes (p. 1-5,
+  // p. 1-12).  An operand anywhere else -- an absolute address, a
+  // pointer's target, the caller's frame that RETURN's displacement
+  // reaches after a large ENTER -- is a word of external memory.  The
+  // memory has one registered read port, owned by the stack-cache box, so
+  // such a word is fetched before the slot is handed to EU_S2: one
+  // request per clock, the word usable in the following clock straight
+  // off the port (`sc.memLive`) and kept in one of three latches after
+  // that.  Three, because an instruction names at most a source word, a
+  // destination word and one pointed-to word (the decoder refuses two
+  // pointed-to words).  The wait is the model's A = 1 cycle per word
+  // (p. 4-2; a choice, HobbitTypes) and, like the forwarding stalls, is
+  // not part of `cyc`: Table 4-38's operand delays are outside the p. 4-1
+  // assumptions the HRI count is stated under.
+  //
+  // A latched word must not go stale while it waits: every architectural
+  // write passes through EU_S3, so the latch rule copies EU_S3's write
+  // into a latch that holds the same address, and the bypass network
+  // covers the writers still in flight when the word is used.
+  Reg#(Maybe#(Tuple2#(Word, Word))) lat0 <- mkReg(tagged Invalid);
+  Reg#(Maybe#(Tuple2#(Word, Word))) lat1 <- mkReg(tagged Invalid);
+  Reg#(Maybe#(Tuple2#(Word, Word))) lat2 <- mkReg(tagged Invalid);
+  Reg#(Bit#(2)) latNext <- mkReg(0);
+  Wire#(Bool) latClearW <- mkDWire(False);
+
+  function Maybe#(Word) latHit(Maybe#(Tuple2#(Word, Word)) l, Word wa);
+    if (l matches tagged Valid {.a, .d} &&& (a == wa))
+      return tagged Valid d;
     else
-      return tuple2(sc.read(wa, spb, mspb), inCache(wa, spb, mspb));
+      return tagged Invalid;
+  endfunction
+
+  function WordRd memWord(Word wa);
+    if (sc.memLive() matches tagged Valid .a &&& (a == wa))
+      return WordRd { w: sc.memData(), ok: True };
+    else if (latHit(lat0, wa) matches tagged Valid .d)
+      return WordRd { w: d, ok: True };
+    else if (latHit(lat1, wa) matches tagged Valid .d)
+      return WordRd { w: d, ok: True };
+    else if (latHit(lat2, wa) matches tagged Valid .d)
+      return WordRd { w: d, ok: True };
+    else
+      return WordRd { w: 0, ok: False };
+  endfunction
+
+  // A word read with the p. 1-1 "operand bypass mechanism": the youngest
+  // in-flight writer wins, then the committed stack cache, then memory.
+  // `wa` is a word address, so a byte store and a later byte load of the
+  // same word meet.
+  function WordRd readWord(Word wa, Word spb, Word mspb);
+    if (byS2.we && (byS2.addr == wa))
+      return WordRd { w: byS2.data, ok: True };
+    else if (byS3.we && (byS3.addr == wa))
+      return WordRd { w: byS3.data, ok: True };
+    else if (inCache(wa, spb, mspb))
+      return WordRd { w: sc.read(wa, spb, mspb), ok: True };
+    else
+      return memWord(wa);
   endfunction
 
   // The second read port ("64x32x2", Figure 1-1, p. 1-2): the destination
   // operand's word, read in the same cycle as the source's.
-  function Tuple2#(Word, Bool) readWord2(Word wa, Word spb, Word mspb);
+  function WordRd readWord2(Word wa, Word spb, Word mspb);
     if (byS2.we && (byS2.addr == wa))
-      return tuple2(byS2.data, True);
+      return WordRd { w: byS2.data, ok: True };
     else if (byS3.we && (byS3.addr == wa))
-      return tuple2(byS3.data, True);
+      return WordRd { w: byS3.data, ok: True };
+    else if (inCache(wa, spb, mspb))
+      return WordRd { w: sc.read2(wa, spb, mspb), ok: True };
     else
-      return tuple2(sc.read2(wa, spb, mspb), inCache(wa, spb, mspb));
+      return memWord(wa);
+  endfunction
+
+  // The word a pointer names, when it is not in the stack cache.  A word
+  // inside the cache is left to EU_S2's own read (the two stages share
+  // the two printed ports and never read in the same clock), so this
+  // touches no cache port: in-flight writers, then memory.  The Bool says
+  // "EU_S1 supplies the word".
+  function Tuple2#(WordRd, Bool) readPt(Word wa, Word spb, Word mspb);
+    if (byS2.we && (byS2.addr == wa))
+      return tuple2(WordRd { w: byS2.data, ok: True }, True);
+    else if (byS3.we && (byS3.addr == wa))
+      return tuple2(WordRd { w: byS3.data, ok: True }, True);
+    else if (inCache(wa, spb, mspb))
+      return tuple2(WordRd { w: 0, ok: True }, False);
+    else
+      return tuple2(memWord(wa), True);
   endfunction
 
   // Resolve one Table 1-21 operand (p. 1-25) on the first stack-cache read
@@ -448,44 +528,52 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // checked against the operand's width in EU_S2 (p. 1-4).
   function OpRead operandA(Operand o, Word spb, Word mspb);
     if (modeIsImm(o.mode)) begin
-      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False,
+                      wa: 0 };
     end else if (modeIsIndirect(o.mode)) begin
-      match { .w, .h } = readWord((spb + o.val) & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: 0, ea: w, word: 0, ok: h,
-                      bad: ((o.val & 3) != 0) };
+      Word wa = (spb + o.val) & 32'hFFFFFFFC;
+      let r = readWord(wa, spb, mspb);
+      return OpRead { val: 0, ea: r.w, word: 0, ok: r.ok,
+                      bad: ((o.val & 3) != 0), wa: wa };
     end else begin
       Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
       Word sz = modeSize(o.mode);
       Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
                  ((sz == 2) && ((a & 1) != 0));
-      match { .w, .h } = readWord(a & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: extendLoad(w, a, sz, modeSigned(o.mode)),
-                      ea: a, word: w, ok: h, bad: bad };
+      let r = readWord(a & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode)),
+                      ea: a, word: r.w, ok: r.ok, bad: bad,
+                      wa: a & 32'hFFFFFFFC };
     end
   endfunction
 
   function OpRead operandB(Operand o, Word spb, Word mspb);
     if (modeIsImm(o.mode)) begin
-      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False };
+      return OpRead { val: o.val, ea: 0, word: 0, ok: True, bad: False,
+                      wa: 0 };
     end else if (modeIsIndirect(o.mode)) begin
-      match { .w, .h } = readWord2((spb + o.val) & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: 0, ea: w, word: 0, ok: h,
-                      bad: ((o.val & 3) != 0) };
+      Word wa = (spb + o.val) & 32'hFFFFFFFC;
+      let r = readWord2(wa, spb, mspb);
+      return OpRead { val: 0, ea: r.w, word: 0, ok: r.ok,
+                      bad: ((o.val & 3) != 0), wa: wa };
     end else begin
       Word a  = modeIsSpRel(o.mode) ? (spb + o.val) : o.val;
       Word sz = modeSize(o.mode);
       Bool bad = ((sz == 4) && ((a & 3) != 0)) ||
                  ((sz == 2) && ((a & 1) != 0));
-      match { .w, .h } = readWord2(a & 32'hFFFFFFFC, spb, mspb);
-      return OpRead { val: extendLoad(w, a, sz, modeSigned(o.mode)),
-                      ea: a, word: w, ok: h, bad: bad };
+      let r = readWord2(a & 32'hFFFFFFFC, spb, mspb);
+      return OpRead { val: extendLoad(r.w, a, sz, modeSigned(o.mode)),
+                      ea: a, word: r.w, ok: r.ok, bad: bad,
+                      wa: a & 32'hFFFFFFFC };
     end
   endfunction
 
 
   function EuS1Out mkOut(DecInstEntry e, Word pc, Word spb, Word mspb,
                          Word srcV, Word srcEa, Word dstV, Word dstEa,
-                         Word dstW, Word retPc, Bool bad, Bit#(4) dcmp);
+                         Word dstW, Word retPc, Bool bad, Bit#(4) dcmp,
+                         Bool memMiss, Word memMissAddr,
+                         Bool ptMem, Word ptWord);
     let d = e.d;
     Word base = pc + plenBytes(d.plen);
     // A conditional jump issued three or more instructions after its
@@ -503,7 +591,9 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      dstVal: dstV, dstEa: dstEa, dstWord: dstW,
                      retPc: retPc,
                      base: base, nextPc: npc, sinceCmp: dcmp,
-                     extra: extra, bad: bad };
+                     extra: extra, bad: bad,
+                     memMiss: memMiss, memMissAddr: memMissAddr,
+                     ptMem: ptMem, ptWord: ptWord };
   endfunction
 
   function EuS1Out curOut();
@@ -522,6 +612,10 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Word dstW = 0;
       Word retPc = 0;
       Bool bad = False;
+      Bool miss = False;
+      Word missAddr = 0;
+      Bool ptMem = False;
+      Word ptWord = 0;
       if (d.tr == TR_NONE) begin
         // The first read port carries the source operand.  KCALL's Table
         // 3-2 word32 operand (p. 3-4) is the same operand: mode 0xD means
@@ -545,15 +639,44 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
             srcV = r.val;
             if (d.op == OP_RETURN) retPc = r.val;
           end
+          // MOVA/LDRAA want only the address; a pointer word is always
+          // needed, because it *is* the address.
+          Bool need = !opNeedsSrcEa(d.op) || modeIsIndirect(so.mode);
+          if (need && !r.ok) begin
+            miss = True; missAddr = r.wa;
+          end
         end
         if (opReadsDst(d.op) || opWritesDst(d.op)) begin
           let r = operandB(d.dst, spb, mspb);
           dstEa = r.ea; dstW = r.word; bad = bad || r.bad;
           if (opReadsDst(d.op)) dstV = r.val;
+          // A word-wide store needs no old word (mergeStore ignores it at
+          // width 4), so a write-only word destination is not fetched.
+          Bool need = opReadsDst(d.op) || modeIsIndirect(d.dst.mode) ||
+                      (!modeIsImm(d.dst.mode) && (modeSize(d.dst.mode) < 4));
+          if (need && !r.ok && !miss) begin
+            miss = True; missAddr = r.wa;
+          end
+        end
+        // The pointed-to word, exactly when EU_S2 will want one (the same
+        // two predicates as its `step`), once the pointer itself is here.
+        Bool srcInd = modeIsIndirect(d.src.mode) &&
+                      (opReadsSrc(d.op) || (d.op == OP_KCALL) ||
+                       (d.op == OP_RETURN));
+        Bool dstInd = modeIsIndirect(d.dst.mode) &&
+                      (opReadsDst(d.op) ||
+                       (opWritesDst(d.op) && (modeSize(d.dst.mode) < 4)));
+        if ((srcInd || dstInd) && !miss) begin
+          Word pa = (srcInd ? srcEa : dstEa) & 32'hFFFFFFFC;
+          match { .r, .fromS1 } = readPt(pa, spb, mspb);
+          ptMem = fromS1; ptWord = r.w;
+          if (!r.ok) begin
+            miss = True; missAddr = pa;
+          end
         end
       end
       return mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
-                   retPc, bad, sinceCmp);
+                   retPc, bad, sinceCmp, miss, missAddr, ptMem, ptWord);
     end
   endfunction
 
@@ -576,12 +699,56 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     end
   endrule
 
+  // Ask memory for the first word the slot still lacks.  The box must
+  // be idle: a flush or a parked write means memory does not yet hold
+  // every committed word, and a refill owns the read port.
+  rule fetchOperand (active && !squash && fullR && !eventActive &&
+                     curOut().memMiss && sc.memIdle());
+    sc.memReq(curOut().memMissAddr);
+  endrule
+
+  // The single writer of the latches.  The word on the memory port is
+  // kept (round robin), EU_S3's write refreshes any latch holding its
+  // address, and a handoff, a squash or a start empties all three.
+  rule latchOperand;
+    function Maybe#(Tuple2#(Word, Word)) snoop(Maybe#(Tuple2#(Word, Word)) l);
+      if (l matches tagged Valid {.a, .d} &&& (byS3.we && (byS3.addr == a)))
+        return tagged Valid tuple2(a, byS3.data);
+      else
+        return l;
+    endfunction
+    if (latClearW) begin
+      lat0 <= tagged Invalid;
+      lat1 <= tagged Invalid;
+      lat2 <= tagged Invalid;
+      latNext <= 0;
+    end else begin
+      let n0 = snoop(lat0);
+      let n1 = snoop(lat1);
+      let n2 = snoop(lat2);
+      if (sc.memLive() matches tagged Valid .a) begin
+        Word d = (byS3.we && (byS3.addr == a)) ? byS3.data : sc.memData();
+        let v = tagged Valid tuple2(a, d);
+        case (latNext)
+          0: n0 = v;
+          1: n1 = v;
+          default: n2 = v;
+        endcase
+        latNext <= (latNext == 2) ? 0 : latNext + 1;
+      end
+      lat0 <= n0;
+      lat1 <= n1;
+      lat2 <= n2;
+    end
+  endrule
+
   rule rl_reset;
     f_reset_reqs.deq;
     active   <= False;
     fullR    <= False;
     block    <= 0;
     sinceCmp <= 0;
+    latClearW <= True;
     f_reset_rsps.enq(?);
   endrule
 
@@ -591,13 +758,15 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     fullR    <= False;
     block    <= 0;
     sinceCmp <= 0;
+    latClearW <= True;
   endmethod
 
   method Action stop();
     active <= False;
   endmethod
 
-  method Bool notEmpty() = fullR;
+  // The slot is presentable once every memory word it needs is here.
+  method Bool notEmpty() = fullR && !curOut().memMiss;
 
   // Probe layout, bits 41..34 of dbgState: {active, full, blocked,
   // squash, lookupValid, 3'b0}.  `full` replaces the retired `stall`
@@ -619,6 +788,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     block    <= o.extra;
     sinceCmp <= isCompareOp(o.e.d.op) ? 0
               : ((sinceCmp == 15) ? 15 : sinceCmp + 1);
+    latClearW <= True;
   endmethod
 
   // A squash does not go through `deq`: it must redirect even when the
@@ -629,6 +799,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
     pcR      <= target;
     block    <= 0;
     sinceCmp <= 0;
+    latClearW <= True;
   endmethod
 
   interface Server server_reset;
@@ -728,9 +899,15 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
   // in the same clock (`deliver` needs an empty input slot, `step` a full
   // one), so this second-stage read shares the box's two printed ports
   // (Figure 1-1, p. 1-2) without a third.
-  function Word readPointed(Word ea, Word spb, Word mspb);
+  //
+  // A pointer usually names a word *outside* the stack cache (data, a
+  // buffer, a frame above MSP).  EU_S1 fetched that word from memory
+  // with the writers then in flight applied (`ptMem`/`ptWord`); the only
+  // one of those still in flight now is in EU_S3, and it bypasses here.
+  function Word readPointed(EuS1Out i, Word ea, Word spb, Word mspb);
     Word wa = ea & 32'hFFFFFFFC;
     if (byS3.valid && byS3.we && (byS3.addr == wa)) return byS3.data;
+    else if (i.ptMem) return i.ptWord;
     else return sc.read(wa, spb, mspb);
   endfunction
 
@@ -858,7 +1035,7 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Word) vb,
                      (opWritesDst(d.op) && (dstBytes(d.dst) < 4)));
       if (srcInd || dstInd) begin
         Word ea = srcInd ? i.srcEa : i.dstEa;
-        let w = readPointed(ea, i.spBefore, i.mspBefore);
+        let w = readPointed(i, ea, i.spBefore, i.mspBefore);
         if (srcInd) begin
           src = extendLoad(w, i.srcEa, modeSize(d.src.mode),
                            modeSigned(d.src.mode));
@@ -1682,7 +1859,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   endmethod
 
   method Action startAt(Word pc, Word sp, Word msp, Word psw);
-    startCoreAt(sp, msp, 0, pc);
+    startCoreAt(sp, msp, psw, pc);
   endmethod
 
   method Bool halted() = s3.faulted;

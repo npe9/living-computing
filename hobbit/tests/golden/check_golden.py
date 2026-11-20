@@ -100,6 +100,11 @@ def parcel_count(first, where, errs):
 
 def is_branch(first, count):
     if count == 1:
+        # The one-parcel stack class (opcode 0x02, Table 1-16, p. 1-22)
+        # carries its subcode in bits 1:0; subcode 2 is RETURN, which
+        # transfers control (p. 3-40).  ENTER, CATCH and POPN do not.
+        if (first >> 10) == 0x02 and (first & 0x3) == 0x2:
+            return True
         return (first >> 10) in P1_BRANCH
     if count == 3 and (first >> 8) & 0x3F == 0:
         return (first & 0xF) in P3_SUBCODE_BRANCH

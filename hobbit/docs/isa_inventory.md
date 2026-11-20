@@ -195,15 +195,16 @@ combinational muxes and the one write per retirement is unchanged. The
 cost is LUTs (`docs/area_analysis.md` measured 12,107 LUT4 for this
 shape against 132 LUT4 for a `RegFile`), not ports.
 
-The model's operand path is the stack cache, so a word outside
-`[SP, MSP)` reads as zero (the box's defined miss). p. 1-27 sends a
-negative stack offset off-chip and p. 1-5 says such addresses are
-"normal memory"; that off-chip operand path is not modelled, and the
-absolute modes `0x0`-`0x3`/`0xC` have the same limitation. A pointer
-whose target is unwritten memory therefore agrees with the reference
-model's zero fill, which is the BSS case the Plan 9 `exits` scan
-exercises; a pointer to a non-zero off-chip word is a known gap, not a
-silent approximation of a different rule.
+A word outside `[SP, MSP)` is memory (p. 1-5: such addresses are
+"normal memory"; p. 1-27 sends a negative stack offset off-chip), and the
+model reads it from memory: the absolute modes `0x0`-`0x3`/`0xC`, a
+stack offset outside the window and a pointer's target are fetched
+through the stack-cache box's one registered memory read port before the
+instruction leaves EU_S1, one clock per word
+(`docs/conformance_1to1.md` §1a).  Until 2026-11-19 such a word read as
+zero; golden `016` pins the five cases, and the pointed-to word still
+reaches EU_S2 on one port — EU_S1 supplies it only when it is not in the
+cache.
 
 ### 1.7 Width suffixes
 

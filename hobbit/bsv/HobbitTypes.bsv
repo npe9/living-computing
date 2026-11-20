@@ -450,17 +450,26 @@ function Word ceilBlocks(Word bytes) = (bytes + 15) >> 4;
 
 // Blocks the ENTER flush loop of printed pp. 3-19/3-20 moves.  A
 // stack-offset ENTER sets SP to a new target and then runs
-// "MSP -= 16" while MSP is more than 256 bytes above the target; an
-// ENTER in any other mode empties the cache, flushing every valid entry
-// between the old SP and MSP.  The timing table's E is this count
+//   while ((MSP > SHAD) && (MSP - target > SCSIZE)) { ...; MSP -= 16 }
+// (p. 3-19): one block per iteration while MSP is more than 256 bytes
+// above the target *and* still above SHAD, the old SP -- only blocks
+// that are in the cache are written.  The MSP > SHAD bound was missing
+// here until golden 016: a frame much larger than the cache (1e cat's
+// ENTER R-8224) then "flushed" 514 blocks the cache never held, writing
+// aliased cache words into the new frame and charging 2,057 cycles for
+// what the printed loop does in 16 blocks.  An ENTER in any other mode
+// empties the cache, flushing every valid entry between the old SP and
+// MSP.  The timing table's E is this count
 // (Table 4-36 prints ENTER = 1 + (Q.E), p. 4-5; the manual never states
 // E's unit, so the unit is read from the p. 3-19/3-20 loop: one
 // 16-byte block per iteration).
 function Word enterFlushBlocks(Word sp, Word msp, Word target, Bool stackMode);
   if (stackMode) begin
-    if ((msp > target) && ((msp - target) > 256))
-      return ceilBlocks(msp - (target + 256));
-    else
+    if ((msp > target) && ((msp - target) > 256) && (msp > sp)) begin
+      Word want  = ceilBlocks(msp - (target + 256));
+      Word valid = ceilBlocks(msp - sp);
+      return (want < valid) ? want : valid;
+    end else
       return 0;
   end else begin
     if (msp > sp) return ceilBlocks(msp - sp);

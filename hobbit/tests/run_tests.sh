@@ -64,9 +64,12 @@ done
 # SHR3.CS and MOVA.SS.  014 exercises the stack-offset-indirect word modes
 # 0xE (MOV.IS, MOV.II, MOV.SI and the three/five-parcel *Roffset:W forms);
 # 015 exercises the indirect byte/half modes 0x8-0xB as stores and loads.
+# 016 exercises operands outside the stack cache's window: absolute
+# words and bytes, a pointer into memory, a word an ENTER flushed, and a
+# RETURN across a frame larger than the cache.
 # Both the core and the spec model must reproduce each hand-derived trace
 # (the core implements all of these forms).
-for n in 013 014 015; do
+for n in 013 014 015 016; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
     grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \

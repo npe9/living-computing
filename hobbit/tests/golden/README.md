@@ -11,6 +11,14 @@ the Python 3 standard library, for the arithmetic written out in each `.md`.
 They are the oracle the implementation is measured against, so an
 implementation must never be used to regenerate them.
 
+One stated exception to "nothing here was produced by `asm/`": `016`
+(operands in memory, outside the stack cache's window) had its parcels
+assembled by `asm/hobbit_asm.py` and then checked by hand against the
+encoding tables, and one of its hand-derived cycle counts was corrected
+from the printed p. 3-19 loop after `sem/` disagreed. `016.md` says so
+under "How this file was derived"; its state transitions and the
+remaining cycle counts were derived by hand before either model ran.
+
 Printed-page arithmetic: the PDF page is the printed page plus 8 in
 Chapter 1, plus 48 in Chapter 2, plus 58 in Chapter 3. `T1-15` is the
 manual's own Table 1-15.

@@ -57,19 +57,48 @@ less than the MSP hits the stack cache" — so an access **outside** that
 window is an ordinary memory access, and `MSP` itself may not exceed
 `SP + 256` (the cache is 64 words).
 
-The model now does exactly that: a hit needs the address in `[SP, MSP)`
-**and** within the cache's own 256 bytes, and a miss reads external
-memory (writes are written through, so the two views agree).  Before this,
-a miss returned zero.  That zero is what sent 1st Edition `cat`'s
-`RETURN R8224` to address 0: the caller's frame sits above `MSP` after
-`cat`'s own `ENTER R-8224`, and the return PC read back as 0 instead of
-the word the matching `CALL` wrote.
+The model does that.  An operand whose word is not in `[SP, MSP)` — an
+absolute address, a pointer's target, a caller's word above `MSP` — is
+fetched from memory before the instruction leaves EU_S1
+(`bsv/HobbitCore.bsv`, "Memory operands"; `bsv/HobbitStackCache.bsv`,
+`memReq`/`memLive`/`memData`).  Before this a miss returned zero, and
+that zero is what sent 1st Edition `cat`'s `RETURN R8224` to address 0:
+the caller's frame sits above `MSP` after `cat`'s own `ENTER R-8224`, and
+the return PC read back as 0 instead of the word the matching `CALL`
+wrote.
 
-Consequence for the board build: the stack cache now has one more read
-site on program memory than `mkRegFileFull` allows.  The Bluesim
-testbenches use a register vector for that memory, and the ULX3S build
-will need the same treatment (or a real 2R1W memory) before it is
-re-run.
+How it is built, because the first attempt was not this:
+
+* **One read port, registered.**  The fetch goes through the stack-cache
+  box's existing memory read (the `readReq`/`readData` pair the CATCH
+  refill uses), one word per clock.  Program memory keeps a single read
+  port, so it still maps to block RAM on the board.  An earlier attempt
+  read memory combinationally (`mem.peek`) from every operand site; that
+  needs one RAM read port per site, which neither bsc's `mkRegFileFull`
+  nor a block RAM has, and it was withdrawn before it was committed.
+* **The wait is the A term.**  A fetched word costs one clock (A = 1, the
+  p. 4-2 choice).  It is not part of the HRI `cyc`: the p. 4-1
+  assumptions put operands in the stack cache, and Table 4-38's operand
+  delays are outside them.
+* **A fetched word cannot go stale.**  Every architectural write passes
+  through EU_S3; a word waiting in EU_S1's latches is refreshed from
+  EU_S3's write to the same address, and the bypass network covers the
+  writers still in flight when the word is used.
+* **Fetches wait for the box.**  No operand is fetched while an ENTER
+  flush or a parked write is still moving words into memory.
+
+Evidence: golden `016` (three-way: hand trace, `sem/`, core) and the 1e
+`cat` run (`bsv/run_p9.sh`).  `016`'s injection table says exactly what
+that evidence reaches: the read itself, the pointed-to word and the
+RETURN are pinned; the latch refresh and the wait-for-the-box gate are
+*not* reached by any test yet and rest on the argument above.  `016` also corrected `ENTER`'s flush count
+in the core: the printed loop is `while ((MSP > SHAD) && (MSP - target >
+SCSIZE))` (p. 3-19), and the core had dropped the `MSP > SHAD` bound.
+
+Not modelled: a data fault on such a fetch reports the last retired PC,
+not the faulting instruction's (the MMU/event path is not exercised by
+these tests); and the host side of a syscall shim writes user memory
+behind the cache's back (see `docs/plan9_syscalls.md`).
 
 ## 2a. Documented instruction interactions not yet modelled
 
