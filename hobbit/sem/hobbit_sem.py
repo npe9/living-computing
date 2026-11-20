@@ -101,7 +101,7 @@ PSW_V = 1 << 6          # overflow
 PSW_SP = 1 << 9         # 1 = SP is the current stack pointer (CSP)
 PSW_USER = 1 << 10      # 0 = kernel, 1 = user (not used, recorded for clarity)
 PSW_E = 1 << 11         # enter guard
-PSW_USER_LE = 1 << 15   # user little-endian (not modelled)
+PSW_USER_LE = 1 << 15   # user little-endian data (p. 1-3; _little_endian)
 PSW_VIRTUAL = 1 << 16   # virtual addressing (not modelled)
 
 SCSIZE = 256            # 64 words, p. 1-5
@@ -336,6 +336,10 @@ class State:
     # values, not reset values (the manual does not print a reset ISP or VB).
     isp: int = 0x40
     vb: int = 0
+    # CONFIG bit 16, kernel little-endian (Table 1-2, p. 1-10).  Only this
+    # one CONFIG bit is modelled; it selects the data byte order at kernel
+    # level as PSW bit 15 does at user level (p. 1-3).
+    config_kl: bool = False
 
 
 @dataclass
@@ -598,6 +602,32 @@ def _wai5(field_value: int) -> Operand:
     return Operand(4, True, imm=(field_value << 2) & MASK32, is_imm=True)
 
 
+def _little_endian(state: State) -> bool:
+    """Data byte order for the current execution level (p. 1-3, p. 1-4).
+
+    "The User mode is set via the program status word (PSW) UL-bit ...
+    The Kernel mode is set via the configuration register (CONFIG)
+    KL-bit."  Text is always big-endian (p. 1-4 note): the parcel at the
+    even address is bits 31:16 in either mode, so only the byte and
+    half-word operand lanes below depend on this.
+    """
+    if state.psw & PSW_USER:
+        return bool(state.psw & PSW_USER_LE)
+    return state.config_kl
+
+
+def _lane_shift(state: State, ea: int, size: int) -> int:
+    """Bit position of a byte or half-word operand inside its word.
+
+    Figure 1-2 (big-endian): BYTE0 is bits 31:24.  Figure 1-3
+    (little-endian): BYTE0 is bits 7:0.
+    """
+    off = ea & 3
+    if _little_endian(state):
+        return 8 * off
+    return 8 * (4 - size - off)
+
+
 def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
           op: Operand) -> int:
     """Read and extend an operand (p. 1-3, p. 1-4, p. 1-28)."""
@@ -616,13 +646,14 @@ def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
             raise AlignmentFault(
                 "alignment: half-word access to 0x%08x is not "
                 "half-word-aligned (p. 1-4)" % op.ea)
-        value = ((word >> 16) & 0xFFFF) if off == 0 else (word & 0xFFFF)
+        value = (word >> _lane_shift(state, op.ea, 2)) & 0xFFFF
         if op.signed and (value & 0x8000):
             value -= 0x10000
         return value
-    # size == 1: bits 31:24 hold the byte at the lowest address (big-endian,
-    # Figure 1-2, p. 1-4).
-    value = (word >> (8 * (3 - off))) & 0xFF
+    # size == 1: bits 31:24 hold the byte at the lowest address when the
+    # data is big-endian (Figure 1-2, p. 1-4), bits 7:0 when it is
+    # little-endian (Figure 1-3).
+    value = (word >> _lane_shift(state, op.ea, 1)) & 0xFF
     if op.signed and (value & 0x80):
         value -= 0x100
     return value
@@ -634,9 +665,10 @@ def _prepare_store(state: State,
     """Return (word address, new word value, bus data, byte mask).
 
     The record's byte-mark convention is fixed here and in the README:
-    mask bit 3 is the byte at the word address (bits 31:24), bit 0 the
-    byte at word address + 3 (bits 7:0).  The data word is the big-endian
-    lane placement the bus would carry.  A word write has mask 0xF and
+    mask bit 3 is bits 31:24 of the word and bit 0 is bits 7:0 -- the
+    byte at the word address in big-endian data, the byte at word address
+    + 3 in little-endian data (Figures 1-2 and 1-3, p. 1-4).  The data
+    word is the lane placement the bus would carry.  A word write has mask 0xF and
     data == value.
     """
     if op.is_imm:
@@ -656,17 +688,14 @@ def _prepare_store(state: State,
                 "alignment: half-word access to 0x%08x is not "
                 "half-word-aligned (p. 1-4)" % op.ea)
         word_addr = op.ea & ~3
-        if (op.ea & 3) == 0:
-            mask = 0xC
-            data = (value & 0xFFFF) << 16
-        else:
-            mask = 0x3
-            data = value & 0xFFFF
+        shift = _lane_shift(state, op.ea, 2)
+        mask = 0x3 << (shift // 8)
+        data = (value & 0xFFFF) << shift
     else:  # size == 1
         word_addr = op.ea & ~3
-        lane = 3 - (op.ea & 3)
-        mask = 1 << lane
-        data = (value & 0xFF) << (8 * lane)
+        shift = _lane_shift(state, op.ea, 1)
+        mask = 1 << (shift // 8)
+        data = (value & 0xFF) << shift
 
     old = _read_word(state, reader, word_addr)
     expanded = 0
@@ -1188,10 +1217,6 @@ def step(state: State,
             raise Unsupported(
                 "unsupported: virtual addressing (PSW bit 16); this model "
                 "implements the physical address space only (p. 2-1)")
-        if state.psw & PSW_USER_LE:
-            raise Unsupported(
-                "unsupported: little-endian user data (PSW bit 15); this "
-                "model is big-endian only (p. 1-4)")
         if not (state.psw & PSW_SP):
             raise Unsupported(
                 "unsupported: CSP is ISP (PSW bit 9 = 0); the interrupt "
@@ -1936,8 +1961,16 @@ def step(state: State,
                 ]
 
             else:
-                raise Unsupported(
-                    "unsupported: %s opcode 0x%02x (Table 1-%d, p. 1-%d)"
+                # Every remaining cell of Tables 1-18 and 1-20 is printed
+                # "unimp*": "The unimplemented instruction sequence is
+                # performed" (pp. 1-24, 1-25), and "there are no tests
+                # performed on the addressing modes of unimplemented
+                # dyadic instructions" (p. 1-39).  These are the opcodes
+                # an operating system emulates -- 1e's floating point
+                # (FMOV 0x11, FADD 0x2b, ...) lives here.
+                raise Trap(
+                    "unimplemented: %s opcode 0x%02x (Table 1-%d, p. 1-%d; "
+                    "sequence p. 1-39)"
                     % ("five-parcel" if length == 5 else "three-parcel",
                        opcode, 20 if length == 5 else 18,
                        25 if length == 5 else 24))
@@ -2082,6 +2115,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="initial ISP (hex; default 0x40)")
     parser.add_argument("--vb", default="0x0",
                         help="initial VB (hex; default 0x0)")
+    parser.add_argument("--psw", default="0x200",
+                        help="initial PSW (hex; default 0x200, CSP = SP; "
+                             "0x8600 adds user level and user "
+                             "little-endian data, p. 1-3)")
     parser.add_argument("--max-steps", type=int, default=10000,
                         help="maximum instructions to execute (default 10000)")
     parser.add_argument("--stop-at-image-end",
@@ -2100,9 +2137,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         msp = _parse_hex(args.msp)
         isp = _parse_hex(args.isp)
         vb = _parse_hex(args.vb)
+        psw = _parse_hex(args.psw)
     except ValueError:
-        parser.error("--sp, --msp, --isp and --vb must be hexadecimal "
-                     "numbers")
+        parser.error("--sp, --msp, --isp, --vb and --psw must be "
+                     "hexadecimal numbers")
 
     if sp & 0xF or msp & 0xF or isp & 0xF or vb & 0xF:
         parser.error("--sp, --msp, --isp and --vb must be quad-word "
@@ -2115,7 +2153,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     reader = ImageReader(image)
-    state = State(pc=0, sp=sp, msp=msp, psw=PSW_SP, isp=isp, vb=vb)
+    state = State(pc=0, sp=sp, msp=msp, psw=psw, isp=isp, vb=vb)
     image_len = len(image) * 4
 
     for _ in range(args.max_steps):

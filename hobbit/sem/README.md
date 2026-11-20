@@ -102,8 +102,6 @@ use, is therefore the explicit `PSW = 0x00000200`.
 The model raises `Refusal` (no HRI line) for a state with:
 
 * `psw` bit 16 set (virtual addressing; there is no MMU here, p. 2-1);
-* `psw` bit 15 set (user little-endian data; this model is big-endian
-  only, p. 1-4);
 * `psw` bit 9 clear at instruction entry (CSP is ISP).  KCALL, KRET and
   CRET themselves are modelled from a CSP = SP state; the manual's
   ISP-as-CSP execution mode for the other instructions is still outside
@@ -118,15 +116,24 @@ is available at either level.  `SHAD` is not in the state.  The manual
 updates it on ENTER/RETURN/CRET/KCALL/KRET/popn (pp. 1-16, 1-17, 3-19,
 3-38, 3-40), but no modelled instruction *reads* it; it is a restart
 optimisation, not part of the one-instruction record.  `CONFIG` is fixed
-at its reset value 0 (p. 1-36): big-endian, no PC extension, and the
-cache-enable bits are irrelevant to this subset.  `ISP` and `VB` are
+at its reset value 0 (p. 1-36) -- no PC extension, and the cache-enable
+bits are irrelevant to this subset -- except bit 16, kernel
+little-endian, which is the state's `config_kl` (default clear).  `ISP` and `VB` are
 present (see the state table); KCALL/KRET/CRET maintain ISP exactly as
 printed, but the HRI line has no ISP or PSW field to show it.
 
 ## Memory, byte order and the stack cache
 
-Memory is byte-addressable, 32-bit words, big-endian: address 0 is bits
-31:24 (Figure 1-2, p. 1-4).  A byte or half-word load extracts the
+Memory is byte-addressable, 32-bit words.  The numbering of bytes within
+a data word is selectable (p. 1-3): at user level by PSW bit 15 (UL), at
+kernel level by CONFIG bit 16 (KL).  With the bit clear the data is
+big-endian, address 0 in bits 31:24 (Figure 1-2, p. 1-4); with it set it
+is little-endian, address 0 in bits 7:0 (Figure 1-3).  Only byte and
+half-word operands can tell the difference; "text is always in
+big-endian order" (p. 1-4 note), so the parcel at the even address is
+bits 31:16 in either mode.  1st Edition Plan 9 runs with both bits set
+(`sys/src/9/hobbit/machine.h:24,77`), and `tools/p9run.py` runs its
+binaries that way.  A byte or half-word load extracts the
 addressed bytes; a byte or half-word store is a read-modify-write of the
 surrounding word with byte marks.  Word operands must be 4-byte aligned,
 half-word operands 2-byte aligned, or the model raises an alignment
@@ -299,9 +306,9 @@ returned PC whose bit 0 is set is fetched with bit 0 ignored (p. 1-4).
 | `msp_after` | `MSP` after the instruction (CATCH/ENTER/POPN/RETURN change it) | pp. 3-10, 3-19, 3-38, 3-40 |
 | `we` | 1 if this instruction performs the record's one architectural write, else 0.  For the multi-write instructions (ADDI/ANDI/ORI, DQM, KCALL) the line carries the **primary** write only; see choice 26 | p. 1-5 (cache appears as normal memory), p. 1-7 (accumulator) |
 | `addr` | Word address of that write (`effective address & ~3`) | p. 1-4 |
-| `data` | Big-endian bus word for the write: the stored byte(s) in their byte lanes | p. 1-4, Figure 1-2 |
-| `mask` | Byte marks of the write, bit 3 = byte at `addr` (bits 31:24), bit 0 = byte at `addr+3` (bits 7:0); a word write is `0f` | p. 1-4 (byte stores), p. 1-5 |
-| `trap` | 0 = retired; 1 = the unimplemented-instruction sequence (FLUSHD/FLUSHDCE) with the p. 1-39 store; a `Refusal` produces no line | see below |
+| `data` | Bus word for the write: the stored byte(s) in their byte lanes (Figure 1-2 lanes for big-endian data, Figure 1-3 for little-endian) | p. 1-4 |
+| `mask` | Byte marks of the write by lane: bit 3 = bits 31:24, bit 0 = bits 7:0 (the byte at `addr` and at `addr+3` for big-endian data, the reverse for little-endian); a word write is `0f` | p. 1-4 (byte stores), p. 1-5 |
+| `trap` | 0 = retired; 1 = the unimplemented-instruction sequence (FLUSHD/FLUSHDCE, and every three- and five-parcel dyadic opcode Tables 1-18/1-20 print as "unimp", which is where an operating system's floating point lives) with the p. 1-39 store; a `Refusal` produces no line | see below |
 | `cyc` | Occupancy in core clock cycles between this retirement and the previous one (for the first record, from the core's start); the Chapter 4 base under the p. 4-1 assumptions | Tables 4-32..4-36 pp. 4-3..4-5; “Cycle accounting” below |
 
 The mask convention is fixed here so the model and the core can be
@@ -481,9 +488,18 @@ instruction, encoding or state the model already refused.
 There are two different outcomes, and the adjudication's convention C2
 requires that they not be conflated.
 
-**`trap=1` — the unimplemented-instruction sequence.**  Only `FLUSHD`
-and `FLUSHDCE` take it (p. 3-22, p. 3-23; both are not implemented in
-hardware).  The sequence is (p. 1-39):
+**`trap=1` — the unimplemented-instruction sequence.**  `FLUSHD` and
+`FLUSHDCE` take it (p. 3-22, p. 3-23; both are not implemented in
+hardware), and so does every three- or five-parcel dyadic opcode that
+Tables 1-18 and 1-20 print as "unimp" (pp. 1-24, 1-25: "The
+unimplemented instruction sequence is performed"; p. 1-39: "There are no
+tests performed on the addressing modes of unimplemented dyadic
+instructions").  Those opcodes are the ones an operating system
+emulates: 1e's floating point (`FMOV` 0x11, `FADD` 0x2b, ...,
+`sys/src/cmd/zl/optab.c`) is there, with `fprt0.s`/`fpihobbit.c` as the
+handler.  Until 2026-11-20 the model refused them; `tools/p9run.py`
+found the first one 138 instructions into `za`.  The sequence is
+(p. 1-39):
 
 ```
 *(CSP) = PC of the unimplemented opcode;  PC = *(VB+12)

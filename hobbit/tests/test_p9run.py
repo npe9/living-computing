@@ -1,0 +1,357 @@
+#!/usr/bin/env python3
+"""A2 on the reference model: the shipped 1e toolchain runs.
+
+`tools/p9run.py` runs a 1st Edition Plan 9 Hobbit binary on
+`sem/hobbit_sem.py` with the kernel's side (exec frame, system calls,
+the floating-point handler) played by the host.  These tests are the
+oracle for the Bluespec run of the same binaries:
+
+* the shipped `za` assembles every `.s` of `sys/src/libc/hobbit` into
+  an object **byte-identical** to the member of the shipped
+  `hobbit/lib/libc.a` built from the same source in 1993;
+* the shipped `zl` links an object `za` just made against the shipped
+  `libc.a`, and the linked program runs and prints;
+* `echo` prints its arguments and `cat` copies a file, byte-exact;
+* little-endian data (PSW.UL / CONFIG.KL, PRM pp. 1-3, 1-4), which 1e
+  runs with and which the model did not have before this file.
+
+Discriminating checks, observed 2026-11-20.  Twelve bugs were injected
+one at a time (22 tests; run with P9RUN_MAX_STEPS=1700000 so a program
+that loops fails quickly), each reverted by rewriting the saved file; the
+suite was green before and after.  "za 12" means all twelve sources of
+`test_za_reproduces_every_shipped_libc_object` failed.
+
+  sem: little-endian lanes read as big-endian (`_lane_shift`)
+      10 tests: the 3 LittleEndian lane tests, the kernel/user rule test,
+      the byte load through step(), echo, za usage, za main9, za 12,
+      za->zl->run, zl undefined.  cat did NOT fail: it never reads a byte.
+  sem: kernel level obeys PSW.UL (`_little_endian`)
+      1 test: test_user_bit_is_ignored_at_kernel_level_and_kl_decides
+  sem: an "unimp" dyadic opcode is refused instead of trapped
+      6 tests: both UnimplementedSequence tests, za usage, za main9,
+      za 12, za->zl->run
+  p9run: argv pointer one slot high (`exec_frame`)
+      9 tests: the frame test, echo, cat, the outside-root test, za usage,
+      za main9, za 12, za->zl->run, zl undefined
+  p9run: argc not written
+      4 tests: the frame test, echo, cat, the outside-root test (za and zl
+      never read argc: ARGBEGIN walks argv)
+  p9run: FSUB computed source - destination
+      1 test: test_fsub_is_destination_minus_source_and_fdiv_likewise
+  p9run: Double stored high word first
+      1 test: test_fmov_immediate_single_to_absolute_double (za's own
+      FMOV is of 0.0, so no object changed)
+  p9run: three-operand FP result stored to the destination
+      1 test: test_three_operand_result_goes_to_the_accumulator
+  p9run: seek ignores its type argument
+      2 tests: za->zl->run, zl undefined (za never seeks)
+  p9run: the system call's result not stored
+      5 tests: cat, za main9, za 12, za->zl->run, zl undefined
+  p9run: the data segment not loaded
+      6 tests: echo, za usage, za main9, za 12, za->zl->run, zl undefined
+  p9run: KRET's PSW not restored
+      7 tests: cat, echo, za usage, za main9, za 12, za->zl->run,
+      zl undefined
+
+Not discriminated by anything here: FADD/FMUL/FDIV rounding against
+fpi.c (the arithmetic is host IEEE double, not fpi.c's `Internal`), and
+errstr's text.
+"""
+
+import io
+import os
+import pathlib
+import shutil
+import sys
+import tempfile
+import unittest
+
+HERE = pathlib.Path(__file__).resolve().parent
+HOBBIT = HERE.parent
+sys.path.insert(0, str(HOBBIT / "tools"))
+sys.path.insert(0, str(HOBBIT / "sem"))
+import build_zl_inferno   # noqa: E402
+import hobbit_sem as sem  # noqa: E402
+import p9run              # noqa: E402
+
+REL = HOBBIT / "tools" / "plan9-1e"
+BIN = REL / "hobbit" / "bin"
+LIBC = REL / "hobbit" / "lib" / "libc.a"
+LIBSRC = REL / "sys" / "src" / "libc" / "hobbit"
+
+#: every assembler source of libc/hobbit; each has a libc.a member
+SOURCES = ["argv0", "main9", "main9p", "memmove", "memset", "setjmp",
+           "strchr", "strcmp", "strcpy", "strlen", "strncmp", "strrchr"]
+
+HELLO = """\
+TEXT main(SB), 1, $16
+	MOV	$1, R4
+	MOV	$hellomsg+0(SB), R8
+	MOV	$9, R12
+	CALL	write(SB)
+	RETURN
+
+DATA	hellomsg+0(SB), $"hello 1e"
+DATA	hellomsg+8(SB), $"\\n"
+GLOBL	hellomsg+0(SB), $16
+"""
+
+
+#: The longest run here is zl linking hello (697,197); a program that has
+#: gone wrong loops, and the cap keeps that a failure, not a wait.
+MAX_STEPS = int(os.environ.get("P9RUN_MAX_STEPS", "3000000"))
+
+
+def run(root, binary, *args):
+    out = io.BytesIO()
+    status, steps, kernel, _ops = p9run.run(
+        str(binary), [os.path.basename(str(binary))] + list(args),
+        str(root), MAX_STEPS, out)
+    return status, out.getvalue(), kernel, steps
+
+
+class Tree(unittest.TestCase):
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp(prefix="p9run-"))
+        self.addCleanup(shutil.rmtree, self.root)
+        (self.root / "hobbit" / "lib").mkdir(parents=True)
+        shutil.copy(LIBC, self.root / "hobbit" / "lib" / "libc.a")
+
+
+class Toolchain(Tree):
+    def test_za_reproduces_every_shipped_libc_object(self):
+        members = build_zl_inferno.read_members(str(LIBC))
+        for name in SOURCES:
+            with self.subTest(source=name):
+                shutil.copy(LIBSRC / (name + ".s"), self.root)
+                status, console, _k, _n = run(self.root, BIN / "za",
+                                              name + ".s")
+                self.assertEqual(status, "exits('')")
+                self.assertEqual(console, b"")
+                made = (self.root / (name + ".z")).read_bytes()
+                self.assertEqual(made, members[name + ".z"])
+
+    def test_za_main9_syscalls_and_count(self):
+        # The instruction count is the reference for the Bluespec run's
+        # retirement count; the syscall sequence is what its shim must do.
+        shutil.copy(LIBSRC / "main9.s", self.root)
+        status, _c, k, steps = run(self.root, BIN / "za", "main9.s")
+        self.assertEqual(status, "exits('')")
+        self.assertEqual([name for name, _r in k.trace],
+                         ["brk_", "open", "open", "create", "brk_",
+                          "open", "read", "read", "close",
+                          "open", "read", "read", "close",
+                          "write", "exits"])
+        self.assertEqual(steps, 125572)
+        # Floating point reaches the handler by the unimplemented
+        # instruction sequence; za's cinit has the one FMOV at 0x26d0.
+        self.assertEqual(k.fp_traps, [(0x26D0, ["FMOV"])])
+
+    def test_za_then_zl_then_the_program_runs(self):
+        (self.root / "hello.s").write_text(HELLO)
+        status, console, _k, _n = run(self.root, BIN / "za", "hello.s")
+        self.assertEqual((status, console), ("exits('')", b""))
+        status, console, _k, _n = run(self.root, BIN / "zl", "-o", "hello",
+                                      "hello.z", "-lc")
+        self.assertEqual((status, console), ("exits('')", b""))
+        status, console, k, _n = run(self.root, self.root / "hello")
+        self.assertEqual(console, b"hello 1e\n")
+        # `_main` passes exits() the address of `_exits<>`, which za
+        # records as a static in the MOV and as an extern in the DATA (so
+        # in every shipped binary it is libc's `_exits` *function*, e.g.
+        # cat's `MOV $0x12da,R4`): the status is that function's bytes,
+        # `KCALL $8; RETURN R0` read as little-endian data.
+        self.assertEqual(k.exit_msg, "\x02\x08\x02")
+
+    def test_zl_reports_an_undefined_symbol_and_removes_the_output(self):
+        members = build_zl_inferno.read_members(str(LIBC))
+        (self.root / "main9.z").write_bytes(members["main9.z"])
+        status, console, k, _n = run(self.root, BIN / "zl", "-o", "x.out",
+                                     "main9.z")
+        self.assertEqual(status, "exits('error')")
+        self.assertIn(b"_main: undefined: main", console)
+        self.assertIn("remove", [name for name, _r in k.trace])
+        self.assertFalse((self.root / "x.out").exists())
+
+
+class Programs(Tree):
+    def test_echo_prints_its_arguments(self):
+        status, console, _k, _n = run(self.root, BIN / "echo", "hello",
+                                      "world")
+        self.assertEqual((status, console), ("exits('')", b"hello world\n"))
+
+    def test_cat_copies_a_named_file(self):
+        src = REL / "sys" / "src" / "9" / "hobbit" / "trap.c"
+        shutil.copy(src, self.root / "trap.c")
+        status, console, _k, _n = run(self.root, BIN / "cat", "trap.c")
+        self.assertEqual(status, "exits('')")
+        self.assertEqual(console, src.read_bytes())
+
+    def test_za_usage(self):
+        status, console, _k, _n = run(self.root, BIN / "za")
+        self.assertEqual(status, "exits('error')")
+        self.assertEqual(console, b"usage: za [-options] file.s\n")
+
+    def test_a_path_outside_the_root_is_refused(self):
+        status, _c, _k, _n = run(self.root, BIN / "cat", "../../etc/passwd")
+        self.assertIn("outside --root", status)
+
+
+class ExecFrame(unittest.TestCase):
+    def test_frame_is_sysexec_and_execregs(self):
+        st = sem.State()
+        sp, msp = p9run.exec_frame(st, ["za", "main9.s"])
+        m = p9run.Machine(st)
+        # nbytes = 3 + 8 = 11 -> 12; ssize = 4*3 + 12 = 24; (24+4)&7 -> 28
+        self.assertEqual(msp, 0x80000000)
+        self.assertEqual(sp, 0x80000000 - 48)       # QUADALIGN(28 + 12)
+        self.assertEqual(m.word(sp), 0x80000000 - 4)
+        self.assertEqual(m.word(sp + 4), 2)         # argc, the accumulator
+        vec = m.word(sp + 8)
+        self.assertEqual(vec, 0x80000000 - 28)
+        self.assertEqual(m.cstring(m.word(vec)), b"za")
+        self.assertEqual(m.cstring(m.word(vec + 4)), b"main9.s")
+        self.assertEqual(m.word(vec + 8), 0)
+
+
+class Fpi(unittest.TestCase):
+    """fpihobbit.c's decode: operand order, modes, the sequence strings."""
+
+    def machine(self, parcels, sp=0x1000):
+        st = sem.State(pc=0x100, sp=sp, msp=sp + 0x100, psw=p9run.PSW_USER)
+        for i in range(0, len(parcels), 2):
+            pair = parcels[i:i + 2] + [0]
+            st.memory[0x100 + 2 * i] = (pair[0] << 16) | pair[1]
+        return st, p9run.Machine(st)
+
+    def test_fmov_immediate_single_to_absolute_double(self):
+        # za's cinit: d1f1 <single 1.5> <addr>; the next parcel is not FP
+        st, m = self.machine([0xD1F1, 0x3FC0, 0x0000, 0x0000, 0x2000, 0x7006])
+        self.assertEqual(p9run.fpi(m, st), ["FMOV"])
+        self.assertEqual(st.pc, 0x10A)
+        # fpi.h Double is {l, h}: the low word is at the lower address
+        self.assertEqual((m.word(0x2000), m.word(0x2004)),
+                         (0x00000000, 0x3FF80000))
+
+    def test_fsub_is_destination_minus_source_and_fdiv_likewise(self):
+        st, m = self.machine([0xA8DD, 0x0010, 0x0014,     # FSUB R16.W, R20.W
+                              0xAADD, 0x0010, 0x0014,     # FDIV R16.W, R20.W
+                              0x7006])
+        m.set_word(0x1010, 3)
+        m.set_word(0x1014, 20)
+        self.assertEqual(p9run.fpi(m, st), ["FSUB", "FDIV"])
+        self.assertEqual(m.word(0x1014), 5)               # (20 - 3) / 3 -> 5
+        self.assertEqual(st.pc, 0x10C)
+
+    def test_three_operand_result_goes_to_the_accumulator(self):
+        st, m = self.machine([0xBBDD, 0x0010, 0x0014, 0x7006])   # FADD3
+        m.set_word(0x1010, 3)
+        m.set_word(0x1014, 20)
+        p9run.fpi(m, st)
+        self.assertEqual((m.word(0x1004), m.word(0x1014)), (23, 20))
+
+    def test_compare_sets_and_clears_the_flag(self):
+        st, m = self.machine([0x99DD, 0x0010, 0x0014, 0x7006])   # FCMPGT
+        m.set_word(0x1010, 7)
+        m.set_word(0x1014, 2)
+        p9run.fpi(m, st)
+        self.assertTrue(st.psw & 0x10)                    # source > destination
+        st.pc = 0x100
+        m.set_word(0x1010, 1)
+        p9run.fpi(m, st)
+        self.assertFalse(st.psw & 0x10)
+
+    def test_a_non_fp_opcode_is_left_alone(self):
+        st, m = self.machine([0x86DC, 0x0000, 0x2004])
+        self.assertEqual(p9run.fpi(m, st), [])
+        self.assertEqual(st.pc, 0x100)
+
+
+class UnimplementedSequence(unittest.TestCase):
+    def test_fp_opcode_takes_the_p_1_39_sequence(self):
+        # FMOV $1.5, *$0x2000.D (five-parcel opcode 0x11, "unimp" in
+        # Table 1-20): trap=1, the one store is *(CSP) = PC, and PC, SP
+        # and MSP stay at their pre-state for the handler.
+        st = sem.State(pc=0x100, sp=0x1000, msp=0x1100, psw=p9run.PSW_USER)
+        st.memory[0x100] = 0xD1F13FC0
+        st.memory[0x104] = 0x00000000
+        st.memory[0x108] = 0x20000000
+        rec, st = sem.step(st)
+        self.assertEqual((rec.trap, rec.mem_we, rec.mem_addr, rec.mem_wdata,
+                          rec.mem_wmask), (1, 1, 0x1000, 0x100, 0xF))
+        self.assertEqual((st.pc, st.sp, st.msp), (0x100, 0x1000, 0x1100))
+        self.assertEqual(st.memory[0x1000], 0x100)
+
+    def test_three_parcel_unimp_opcode_also_traps(self):
+        st = sem.State(pc=0x100, sp=0x1000, msp=0x1100, psw=p9run.PSW_USER)
+        st.memory[0x100] = 0xA8DD0010          # FSUB R16.W, R20.W
+        st.memory[0x104] = 0x00140000
+        rec, st = sem.step(st)
+        self.assertEqual((rec.trap, rec.mem_wdata), (1, 0x100))
+
+
+class LittleEndian(unittest.TestCase):
+    """PRM p. 1-3/1-4: PSW.UL at user level, CONFIG.KL at kernel level."""
+
+    WORD = 0x11223344
+
+    def state(self, psw, kl=False):
+        st = sem.State(psw=psw, config_kl=kl)
+        st.memory[0x2000] = self.WORD
+        return st
+
+    def load(self, st, ea, size, signed=False):
+        return sem._load(st, None, sem.Operand(size, signed, ea=ea))
+
+    def test_big_endian_bytes_figure_1_2(self):
+        st = self.state(sem.PSW_SP | sem.PSW_USER)
+        self.assertEqual([self.load(st, 0x2000 + k, 1) for k in range(4)],
+                         [0x11, 0x22, 0x33, 0x44])
+        self.assertEqual([self.load(st, 0x2000 + k, 2) for k in (0, 2)],
+                         [0x1122, 0x3344])
+
+    def test_little_endian_bytes_figure_1_3(self):
+        st = self.state(sem.PSW_SP | sem.PSW_USER | sem.PSW_USER_LE)
+        self.assertEqual([self.load(st, 0x2000 + k, 1) for k in range(4)],
+                         [0x44, 0x33, 0x22, 0x11])
+        self.assertEqual([self.load(st, 0x2000 + k, 2) for k in (0, 2)],
+                         [0x3344, 0x1122])
+
+    def test_user_bit_is_ignored_at_kernel_level_and_kl_decides(self):
+        st = self.state(sem.PSW_SP | sem.PSW_USER_LE)          # kernel, UL set
+        self.assertEqual(self.load(st, 0x2000, 1), 0x11)
+        st = self.state(sem.PSW_SP, kl=True)
+        self.assertEqual(self.load(st, 0x2000, 1), 0x44)
+        st = self.state(sem.PSW_SP | sem.PSW_USER, kl=True)    # user, KL set
+        self.assertEqual(self.load(st, 0x2000, 1), 0x11)
+
+    def test_little_endian_store_lanes_and_mask(self):
+        st = self.state(sem.PSW_SP | sem.PSW_USER | sem.PSW_USER_LE)
+        got = sem._prepare_store(st, None, sem.Operand(1, False, ea=0x2001),
+                                 0xAB)
+        self.assertEqual(got, (0x2000, 0x1122AB44, 0x0000AB00, 0x2))
+        got = sem._prepare_store(st, None, sem.Operand(2, False, ea=0x2002),
+                                 0xBEEF)
+        self.assertEqual(got, (0x2000, 0xBEEF3344, 0xBEEF0000, 0xC))
+
+    def test_big_endian_store_lanes_and_mask(self):
+        st = self.state(sem.PSW_SP | sem.PSW_USER)
+        got = sem._prepare_store(st, None, sem.Operand(1, False, ea=0x2001),
+                                 0xAB)
+        self.assertEqual(got, (0x2000, 0x11AB3344, 0x00AB0000, 0x4))
+        got = sem._prepare_store(st, None, sem.Operand(2, False, ea=0x2002),
+                                 0xBEEF)
+        self.assertEqual(got, (0x2000, 0x1122BEEF, 0x0000BEEF, 0x3))
+
+    def test_a_little_endian_byte_load_through_step(self):
+        # MOV *$0x2001:UB, R4 (three-parcel MOV, source mode 1, dest 0xD)
+        st = self.state(sem.PSW_SP | sem.PSW_USER | sem.PSW_USER_LE)
+        st.pc, st.sp, st.msp = 0x100, 0x1000, 0x1100
+        st.memory[0x100] = (0x861D << 16) | 0x2001
+        st.memory[0x104] = 0x0004 << 16
+        rec, st = sem.step(st)
+        self.assertEqual((rec.mem_addr, rec.mem_wdata), (0x1004, 0x33))
+
+
+if __name__ == "__main__":
+    unittest.main()

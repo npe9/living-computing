@@ -113,6 +113,9 @@ evidence):
   path stays inside the window.
 * The model has no `KRET`/`CRET`; the host restores PSW and ISP through
   the core's testbench surface.
+* **The run says nothing about byte order.**  The shim's byte lanes are
+  big-endian and 1e's are little-endian (PSW_UL); `cat` passes because
+  it never reads a byte of its buffer.  See A2's status.
 * An earlier note here said a `KCALL` executed *inside* the stub
   deadlocks the pipeline.  The stub no longer does that, and the claim
   has not been re-tested since the frame-tail fix; treat it as open.
@@ -125,6 +128,87 @@ and A1 in place, run `za` on the model, assemble one file from
 for the same source: byte for byte where the source is unchanged.
 
 Gate: `za` reproduces a shipped object; `zl` (shipped) links it.
+
+**Status 2026-11-20: reached on the reference model, open on the
+Bluespec core.**  `tools/p9run.py` runs the shipped binaries on
+`sem/hobbit_sem.py` with the kernel's side played by the host (exec
+frame from `sysproc.c`/`execregs`, system calls from `9syscall/sys.h`,
+the floating-point handler from `fpihobbit.c`).  With it
+(`tests/test_p9run.py`, in the suite):
+
+* the shipped `za` assembles **every** assembler source of
+  `sys/src/libc/hobbit` into an object byte-identical to the member of
+  the shipped `hobbit/lib/libc.a` (3 January 1993) built from it:
+
+  | source | instructions | source | instructions |
+  |---|---|---|---|
+  | `argv0.s` | 56,027 | `strchr.s` | 116,470 |
+  | `main9.s` | 125,572 | `strcmp.s` | 690,377 |
+  | `main9p.s` | 215,997 | `strcpy.s` | 545,325 |
+  | `memmove.s` | 1,643,575 | `strlen.s` | 92,122 |
+  | `memset.s` | 759,201 | `strncmp.s` | 163,931 |
+  | `setjmp.s` | 190,011 | `strrchr.s` | 131,429 |
+
+* the shipped `zl` links an object `za` has just made against the
+  shipped `libc.a` (697,197 instructions, 60 system calls), and the
+  linked program runs and prints its line;
+* `echo hello world` prints `hello world` (1,808 instructions) and `cat`
+  copies a named file.
+
+This is the oracle, not the gate: the gate is the same run on the
+Bluespec core, compared record by record against this one.  What the
+reference run established, each of which the core needs:
+
+1. **1e runs the Hobbit little-endian.**  `l.s` sets CONFIG.KL and a
+   process's PSW carries PSW_UL (`machine.h:24,77`; `raml.s` builds the
+   first CRET's PSW as `PSW_VP|PSW_UL|PSW_S`).  PRM pp. 1-3/1-4: the bit
+   selects the numbering of bytes within data words; text is always
+   big-endian.  Neither model had the mode.  The reference model has it
+   now; the core's lane functions (`HobbitTypes.bsv` `byteLane`,
+   `extendLoad`, `laneData`, `storeMask`) are still big-endian only.
+   `echo` jumps to 0x361d0000 without it (a function pointer read
+   byte-reversed out of `doprint`'s format table).  **A1 did not see
+   this and could not:** `cat` never looks at a byte, and the shim put
+   bytes into words and took them out through the same (big-endian)
+   lanes.
+2. **Floating point is the unimplemented-instruction sequence.**  `za`'s
+   `cinit` executes `FMOV $0.0, nullgen.dval` (five-parcel opcode 0x11,
+   "unimp" in Table 1-20) 138 instructions in.  The chip performs
+   `*(CSP) = PC; PC = *(VB+12)` (p. 1-39) and 1e's user-level handler
+   (`fprt0.s`, `fpihobbit.c`, `fpi.c`) emulates the instruction.  The
+   reference model now retires the `trap=1` record for every "unimp"
+   dyadic opcode instead of refusing it, and `p9run` plays the handler
+   (a transcription of `fpihobbit.c`'s decode; arithmetic in host
+   doubles).  The core already decodes these as `TR_UNIMP`.
+3. **The exec frame** is `sysexec`/`execregs`: `argc` is the returned
+   accumulator at `CSP+4`, `argv` the pointer at `CSP+8`, the vector and
+   strings just below USTKTOP = 0x80000000, `msp = USTKTOP`.
+4. **System calls used by `za` and `zl`:** `brk_`, `open`, `create`,
+   `read`, `write`, `close`, `seek`, `remove`, `exits` (and `errstr` on
+   the failure paths).
+5. **A quirk worth knowing before reading a trace:** `main9.s`'s
+   `MOV $_exits<>+0(SB), R4` and its `DATA _exits<>+0(SB), $"main"` do
+   not name the same symbol in `za`'s output (static in the MOV, extern
+   in the DATA -- the bytes are in the shipped `main9.z`), so in every
+   shipped binary the exit string `_main` passes is the address of
+   libc's `_exits` *function* (`cat`: `MOV $0x12da, R4`).  A program
+   that returns from `main` exits with the status `"\x02\x08\x02"`,
+   the first bytes of `KCALL $8; RETURN R0`.
+
+What the core still needs for the gate, in order: little-endian lanes;
+on-demand prefetch fill (`echo` is the small gate: its `_main` and
+`main` do not share a 1 Kbyte window); the exec frame and the full
+system-call set in the testbench, with the stack cache flushed at kernel
+entry (the printed `ENTER` has the form: a non-stack-offset source
+"flush[es] stack cache unconditionally", p. 3-19 -- and p. 3-20 says the
+absolute and indirect forms fetch the target from memory, which the
+core's `enterTarget` does not do yet); the unimplemented-instruction
+handler; then `za`.
+
+The vendored tree holds five of the release's 387 `hobbit/bin` files
+(`cat echo rc za zl`); `zc`, `mk`, `cpp`, `yacc` and `ar` are in the
+release (`plan9-1e.tar.bz2`, sha256 in `docs/plan9_port.md`) and A3
+needs them vendored.
 
 ### A3 — build the kernel
 
@@ -244,11 +328,13 @@ TRAP pc=0x00001178: unimplemented opcode (Tables 1-15..1-20)
 entry (0x2ad0) and `main` (0x1020) cannot share one 1 Kbyte boot window
 and `mkHobbitPrefetch` has no on-demand fill.
 
-A0 and A1 are closed (see A1 above).  What they left open for A2: the
-kernel's call frame is still minimal (`argc = 1`, no `argv` strings, set
-by the shim's first two stub instructions), and the instruction supply
-has no on-demand fill, so a program that leaves the 3 Kbyte prefetch
-window stops — `za` and `zl` will hit that first.
+A0 and A1 are closed (see A1 above).  What they left open for A2 on the
+Bluespec side: the kernel's call frame is still minimal (`argc = 1`, no
+`argv` strings, set by the shim's first two stub instructions), the
+instruction supply has no on-demand fill, so a program that leaves the
+3 Kbyte prefetch window stops, and -- found 2026-11-20 by running the
+binaries on the reference model -- the core has no little-endian data
+mode, which every 1e program but `cat` depends on (A2's status above).
 
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 

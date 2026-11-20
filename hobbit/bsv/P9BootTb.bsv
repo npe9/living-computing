@@ -286,8 +286,11 @@ module mkP9BootTb(Empty);
   endrule
 
   // read: one byte per step from the host file into the user's buffer,
-  // merged into its word (the 1e Hobbit is big-endian: the byte at a
-  // word address is bits 31:24, PRM p. 1-4).  Each step waits for the
+  // merged into its word with big-endian lanes (the byte at a word
+  // address is bits 31:24, PRM Figure 1-2).  1e itself runs little-endian
+  // (PSW_UL, machine.h:77); cat cannot tell, because the same lanes are
+  // used on the way in and on the way out and cat never reads a byte --
+  // see tools/p9shim.py's Mem and tools/p9run.py.  Each step waits for the
   // previous poke to land, because the next byte may share its word.
   rule shim_read (boot == 2 && shState == SH_READ && pm.pokeIdle);
     let a = shAddr;

@@ -201,3 +201,69 @@ a plausible guess:
   raml.s _vectors)`;
 * `read` from an fd other than 0 or an opened 3;
 * `write` to an fd other than 1 or 2.
+
+## The reference runner's kernel (`tools/p9run.py`, 2026-11-20)
+
+The A1 shim above serves one file to one program.  `tools/p9run.py` is
+the kernel's side for the *reference model* (`sem/hobbit_sem.py`), and it
+is what the Bluespec testbench has to match next: it runs `za`, `zl`,
+`echo` and `cat` from the release (A2's status in
+`docs/plan9_boot_plan.md`; `tests/test_p9run.py`).
+
+**Exec** (`sys/src/9/port/sysproc.c` `sysexec`, `sys/src/9/hobbit/trap.c`
+`execregs`): with `nargs` strings totalling `nbytes`,
+
+    ssize = 4*(nargs+1) + roundup(nbytes, 4);  if((ssize+4) & 7) ssize += 4
+    argv[] at USTKTOP - ssize, the strings at USTKTOP - nbytes
+    sp    = USTKTOP - QUADALIGN(ssize + 12)
+    sp[0] = USTKTOP - 4;  sp[1] = nargs (the returned accumulator);
+    sp[2] = USTKTOP - ssize;  msp = USTKTOP;  pc = entry
+
+USTKTOP is KZERO = RAMBASE = 0x80000000 (`mem.h:42,58,67,73`).
+`main9.s` reads `argc+0(FP)` and `argv+4(FP)`, which are `sp[1]` and
+`sp[2]`.  The PSW is `PSW_UL|PSW_X|PSW_S` (0x8600): little-endian user
+data, user level, CSP = SP.  The real process also has `PSW_VP`; the
+runner is physical.
+
+**Entry and return.**  The model retires the KCALL (the frame at
+ISP-12/-8/-4, p. 3-29); the runner reads the id from `ISP-12`, the
+arguments from the *user's* `CSP+4..+16`, does the call, stores the
+result at `CSP+4`, and does KRET's part: PC from `ISP-8`, PSW from
+`ISP-4`, `ISP += 16`.
+
+| id | call | arguments | result |
+|---|---|---|---|
+| 1 | `errstr(buf)` | buf | 0; the last error text, 64 bytes (ERRLEN) |
+| 4 | `close(fd)` | fd | 0 |
+| 8 | `exits(msg)` | msg | the run ends with the string |
+| 14 | `open(path, mode)` | path, mode (low 2 bits: OREAD/OWRITE/ORDWR) | the lowest free fd, or -1 |
+| 15 | `read(fd, buf, n)` | fd, buf, n | bytes moved; 0 at EOF and on stdin |
+| 16 | `seek(fd, off, type)` | fd, off (signed), type 0/1/2 | the new offset |
+| 20 | `write(fd, buf, n)` | fd, buf, n | n; fds 1 and 2 are the console |
+| 22 | `create(path, mode, perm)` | path | the lowest free fd (the file truncated), or -1 |
+| 24 | `brk_(addr)` | addr | 0 |
+| 25 | `remove(path)` | path | 0, or -1 |
+
+Paths resolve inside `--root`, which is both `/` and the working
+directory (`zl` finds `/hobbit/lib/libc.a` there); a path that leaves it
+stops the run.  Any other id stops the run with its number and name.
+This is what `za` and `zl` use; it is not the 1e system-call set
+(`sys.h` has 37 numbers) and nothing here pretends to `fork`, `exec`,
+`stat`, `pipe` or `notify`.
+
+**Floating point** is not a system call: it is the
+unimplemented-instruction sequence (p. 1-39) and a user-level handler,
+`fprt0.s` + `fpihobbit.c` + `fpi.c`.  The reference model retires the
+`trap=1` record (`*(CSP) = PC`, which is why 1e's compiler keeps nothing
+in R0 across floating point) and the runner plays the handler:
+`fpihobbit.c`'s opcodes (FMOV 17, FCMPGT 25, FCMPEQ 26, FSUB 40, FMUL
+41, FDIV 42, FADD 43 and the `3` forms 56-59), its operand modes
+(0/1 absolute F/D, 4/5 stack, 8/9 indirect, 12-14 word, 15 immediate
+single), its operand order (FSUB and FDIV are destination op source;
+FCMPGT sets F when source > destination), its `sequence` strings (the
+`3` forms store to `CSP+4` in the *destination's* type), and its loop
+over consecutive floating-point instructions.  The arithmetic is host
+IEEE double, not `fpi.c`'s 53+3-bit `Internal`, so FADD/FSUB/FMUL/FDIV
+may round differently from 1e in a last bit; moves, compares and integer
+conversions are exact.  `za` executes one FMOV (0x26d0, `cinit`).
+

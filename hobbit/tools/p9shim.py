@@ -153,8 +153,14 @@ class Mem:
     def write(self, addr, value):
         self.words[addr & 0xFFFFFFFC] = value & 0xFFFFFFFF
 
-    # Big-endian byte lanes, as the 1e Hobbit runs: the byte at a word
-    # address is bits 31:24 (PRM p. 1-4).
+    # Big-endian byte lanes: the byte at a word address is bits 31:24
+    # (PRM Figure 1-2, p. 1-4).  This is NOT how 1e runs -- a 1e process
+    # has PSW_UL set and its data is little-endian (machine.h:77;
+    # tools/p9run.py) -- and `cat` cannot tell: read's bytes go into the
+    # words and write's bytes come out of them through the same lanes,
+    # and cat itself never looks at one.  The A1 gate therefore says
+    # nothing about byte order; tools/p9run.py and tests/test_p9run.py
+    # are where the order is pinned (echo, za and zl all depend on it).
     @staticmethod
     def _shift(addr):
         return 8 * (3 - (addr & 3))

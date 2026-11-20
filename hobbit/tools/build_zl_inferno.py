@@ -211,7 +211,8 @@ def apply_patches(text, pairs, name):
 
 def read_members(path):
     """Members of a 1e/Bell Labs ar archive: `!<arch>` and 60-byte headers."""
-    data = open(path, "rb").read()
+    with open(path, "rb") as handle:
+        data = handle.read()
     if data[:8] != b"!<arch>\n":
         raise SystemExit("%s: not an ar archive" % path)
     off, out = 8, {}

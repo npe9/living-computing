@@ -63,7 +63,8 @@ TEXTBASE = UTZERO + HEADER.size
 
 
 def read(path):
-    data = open(path, "rb").read()
+    with open(path, "rb") as handle:
+        data = handle.read()
     if len(data) < HEADER.size:
         raise SystemExit("%s: shorter than an Exec header" % path)
     magic, text, data_sz, bss, syms, entry, spsz, pcsz = HEADER.unpack_from(data)
