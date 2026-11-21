@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# Tandem 16 NonStop documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 29, printed p. 470 | book source; processor modules, Dynabus, dual-ported I/O, and online repair |
+| Tandem 16 hardware, NonStop operating-system, and maintenance manuals | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+Add processor, interprocessor-bus, I/O, power, and recovery documentation.
+Do not treat Tandem's availability design as ordinary multiprocessing.

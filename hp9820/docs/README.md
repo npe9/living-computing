@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# Hewlett-Packard 9820 documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 49, printed p. 801 | book source; family evolution and vertical microprogramming |
+| HP 9820 programming, service, and microcode documentation | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+Add model-specific manuals and program examples with printed-page citations.
+The 9810 and 9830 are related family members, not interchangeable evidence.

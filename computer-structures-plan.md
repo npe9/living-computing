@@ -90,3 +90,17 @@ source-backed model and tests exist.
   recorded separately from historical facts.
 - Each implemented behavior has a primary-source page and focused tests.
 - The repository's existing regression suite remains green.
+
+## Documentation audit (2026-11-21)
+
+The 34 new design directories currently contain no local manuals, scans,
+listings, schematics, or machine-readable software. Each `docs/README.md` now
+records the relevant book chapter and printed page, states that the local
+primary corpus is absent, and names the machine-specific documents required
+before implementation. The supplied 1982 book remains an external source and
+is intentionally not copied into this public repository.
+
+This is an inventory of available documentation, not a claim that the
+architectures are fully documented. A machine may move from “source inventory”
+to implementation only after its `docs/` directory contains checksummed
+primary material with page-level provenance.

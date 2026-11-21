@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# ARPA Interface Message Processor documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 24, printed p. 403 | book source; store-and-forward subnet, host interface, packets, and RFNMs |
+| BBN IMP hardware manual, IMP software source, and ARPANET interface specifications | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+Add checksummed IMP manuals, packet formats, and original software or traces.
+Host protocol descriptions must remain separate from IMP hardware behavior.

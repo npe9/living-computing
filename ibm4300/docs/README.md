@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# IBM 4300 documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 52 | book source; compatible-family range and implementation tradeoffs |
+| IBM 4300 architecture, programming, and processor manuals | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+The existing `s360/` corpus is comparative family evidence. Add 4300-specific
+configuration, addressing, storage, and timing documents with revision labels.

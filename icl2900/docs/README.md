@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# ICL 2900 documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 17, printed p. 251 | book source; virtual addressing, protection, instruction set, and multiprogramming |
+| ICL 2900 architecture, operating-system, and processor manuals | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+Add model and revision-specific manuals, instruction examples, and timing
+evidence. Do not substitute DEC PDP-11 or VAX documentation.

@@ -1,17 +1,9 @@
-# Computer Structures design stub
+# General Instrument PIC1650 documentation inventory
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+| source | status and role |
+|---|---|
+| Siewiorek, Bell, and Newell, *Computer Structures: Principles and Examples* (1982), ch. 35, printed p. 602 | book source; monolithic microcomputer organization |
+| PIC1650 programming manual, data sheet, mask/programming documentation, and examples | not present; acquire before implementation |
 
-Bluespec implementation: bsv/ (not started).
-
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+Add a PIC1650-specific opcode and memory/I/O oracle. Do not borrow the
+instruction set of unrelated later PIC microcontrollers.
