@@ -10,19 +10,17 @@ a printed page, and in which the programs that run are the real
 historical ones, transcribed row by row and checked against the machine
 code the listing prints next to them.
 
-**One machine has substance.** `stretch/` (the IBM 7030) is 697 tracked
-files: a STRAP-1 assembler in Python, a Bluespec model of the machine,
-303 card decks, 226 verify scripts, and 55 scanned PDFs of primary
-sources. Twenty-six of the other directories are documented stubs: each
-has a sourced README, a staged reproduction plan, a local source
-inventory, and an empty `bsv/`. Their initial corpus currently contains
-80 PDFs and four captured archive pages. 496 commits since 2026-08-24,
-almost all of them in `stretch/`.
+**`stretch/` is the repository's most complete machine.** It contains the
+IBM 7030 STRAP-1 assembler, Bluespec model, historical decks, verification
+harness, and primary-source corpus. Most other machine directories are
+documented, unimplemented designs with an empty `bsv/`; `hobbit/` and
+`pim/` are the exceptions with active executable models.
 
-`hobbit/` (the AT&T 92010) is the one stub that has grown code: a parcel
-assembler and disassembler, an independent one-instruction semantics
-model, a Bluespec core, six hand-derived golden programs, and the HRI
-(Hobbit Retirement Interface) records that make the three comparable.
+`hobbit/` (the AT&T 92010) has a parcel assembler and disassembler, an
+independent one-instruction semantics model, a Bluespec core, hand-derived
+golden programs, and HRI (Hobbit Retirement Interface) records. `pim/`
+contains the ICOT PIM/m assembler, architecture model, Bluespec components,
+and KL1 work in progress.
 
 ## Method
 
@@ -82,6 +80,8 @@ recorded as a survival with an expiry date.
 | `stretch/` | IBM 7030 "Stretch" (1961) | **the live project** — assembler, Bluespec model, boots MCP from tape |
 | `atlas/` | Ferranti / Manchester Atlas (1962) | stub; plan + sources |
 | `b5000/` | Burroughs B5000 (1961) | stub; plan + sources |
+| `b6500/` | Burroughs B6500 | stub; Computer Structures inventory |
+| `b7500/` | Burroughs B7500 | stub; Computer Structures inventory |
 | `baby/` | Manchester Baby / SSEM (1948) | stub; plan + sources |
 | `cdc6600/` | CDC 6600 (1964) | stub; plan + sources |
 | `colossus/` | Colossus (1944) | stub; plan + sources |
@@ -90,32 +90,61 @@ recorded as a survival with an expiry date.
 | `eniac/` | ENIAC (1945) | stub; plan + sources |
 | `hobbit/` | AT&T 92010 Hobbit (1993) | assembler, one-instruction spec, cycle-accurate Bluesim core; HRI-checked, ULX3S target |
 | `ias/` | IAS Machine (1952) | stub; plan + sources |
+| `icl2900/` | ICL 2900 series | stub; Computer Structures inventory |
+| `illiac4/` | ILLIAC IV | stub; Computer Structures inventory |
+| `imp/` | ARPA Interface Message Processor | stub; Computer Structures inventory |
+| `intel8008/` | Intel 8008 | stub; Computer Structures inventory |
+| `intel8080/` | Intel 8080 | stub; Computer Structures inventory |
+| `intel8086/` | Intel 8086 | stub; Computer Structures inventory |
 | `ibm1401/` | IBM 1401 (1959) | stub; plan + sources |
+| `ibm3030/` | IBM 3030 series | stub; Computer Structures inventory |
+| `ibm360m30/` | IBM System/360 Model 30 | stub; Computer Structures inventory |
+| `ibm360m91/` | IBM System/360 Model 91 | stub; Computer Structures inventory |
+| `ibm4300/` | IBM 4300 series | stub; Computer Structures inventory |
 | `ibm701/` | IBM 701 (1952) | stub; plan + sources |
 | `ibm704/` | IBM 704 (1954) | stub; plan + sources |
 | `ibm7090/` | IBM 7090 (1959) | stub; plan + sources |
 | `mark1/` | Manchester Mark 1 / Ferranti Mark 1 (1949–51) | stub; plan + sources |
+| `localess/` | Bell System local ESS processors | stub; Computer Structures inventory |
 | `pdp1/` | DEC PDP-1 (1959) | stub; plan + sources |
 | `pdp11/` | DEC PDP-11 (1970) | stub; plan + sources |
 | `pdp8/` | DEC PDP-8 (1965) | stub; plan + sources |
-| `pim/` | ICOT Parallel Inference Machine, initially PIM/m (1992) | stub; plan + sources |
+| `pic1650/` | General Instrument PIC1650 | stub; Computer Structures inventory |
+| `pim/` | ICOT Parallel Inference Machine, initially PIM/m (1992) | **in progress** — assembler, Bluespec components, KL1 work |
+| `pluribus/` | Pluribus fault-tolerant multiprocessor | stub; Computer Structures inventory |
 | `risc1/` | Berkeley RISC I (1981) | stub; plan + sources |
 | `s360/` | IBM System/360 (1964) | stub; plan + sources |
+| `s370/` | IBM System/370 | stub; Computer Structures inventory |
+| `star-fault/` | STAR fault-tolerant computer | stub; Computer Structures inventory |
+| `staran/` | STARAN associative array processor | stub; Computer Structures inventory |
 | `symbolics3600/` | Symbolics 3600 Lisp machine (1983) | stub; plan + sources |
+| `symbol/` | SYMBOL experimental computer | stub; Computer Structures inventory |
+| `system38/` | IBM System/38 | stub; Computer Structures inventory |
+| `tandem16/` | Tandem 16 NonStop | stub; Computer Structures inventory |
+| `ti-asc/` | Texas Instruments ASC | stub; Computer Structures inventory |
+| `tms1000/` | Texas Instruments TMS 1000 | stub; Computer Structures inventory |
+| `tms1200/` | Texas Instruments TMS 1200 | stub; Computer Structures inventory |
 | `transputer/` | INMOS IMS T800 transputer (1987) | stub; plan + sources |
 | `univac1/` | UNIVAC I (1951) | stub; plan + sources |
 | `vax/` | DEC VAX-11/780 (1977) | stub; plan + sources |
 | `whirlwind/` | Whirlwind I (1951) | stub; plan + sources |
 | `z3/` | Zuse Z3 (1941) | stub; plan + sources |
+| `alto/` | Xerox Alto | stub; Computer Structures inventory |
+| `aloha/` | ALOHA packet-broadcast system | stub; Computer Structures inventory |
+| `am2900/` | AMD Am2900 bit-sliced family | stub; Computer Structures inventory |
+| `cmmp/` | C.mmp/Hydra experimental multiprocessor | stub; Computer Structures inventory |
+| `ethernet/` | Experimental Ethernet | stub; Computer Structures inventory |
+| `hp9100a/` | Hewlett-Packard 9100A | stub; Computer Structures inventory |
+| `hp9810/` | Hewlett-Packard 9810 | stub; Computer Structures inventory |
+| `hp9820/` | Hewlett-Packard 9820 | stub; Computer Structures inventory |
+| `hp9830/` | Hewlett-Packard 9830 | stub; Computer Structures inventory |
+| `hp9845a/` | Hewlett-Packard 9845A | stub; Computer Structures inventory |
 
-A stub is a `README.md` on a fixed template — machine, year, the people
-and the place, what the machine introduced with concrete figures, the
-line `Bluespec implementation: bsv/ (not started)`, and the sources that
-would be used — plus a `bsv/` directory holding only `.gitkeep`. Each
-also has a `plan.md` fixing scope and evidence gates and a `docs/`
-directory containing an initial local source, its checksum, provenance,
-and a reproducible fetch script. They are sourced plans, not scaffolding
-for code that exists.
+A stub has a machine README, a `plan.md` fixing scope and evidence gates,
+a `docs/` source inventory, and a `bsv/` directory holding only
+`.gitkeep`. Existing historical stubs may also contain local sources,
+checksums, provenance, and reproducible fetch scripts. These directories
+are sourced plans, not scaffolding for code that exists.
 
 The staged inventory for machines described in Siewiorek, Bell, and Newell,
 *Computer Structures: Principles and Examples* (1982), is in
