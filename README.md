@@ -117,6 +117,12 @@ directory containing an initial local source, its checksum, provenance,
 and a reproducible fetch script. They are sourced plans, not scaffolding
 for code that exists.
 
+The staged inventory for machines described in Siewiorek, Bell, and Newell,
+*Computer Structures: Principles and Examples* (1982), is in
+[`computer-structures-plan.md`](computer-structures-plan.md). It records
+existing entries without duplicating them and adds only missing
+unimplemented-design directories.
+
 ## `stretch/`
 
 See [`stretch/README.md`](stretch/README.md) for the machine's own
