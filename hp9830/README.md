@@ -1,17 +1,12 @@
-# Computer Structures design stub
+# Hewlett-Packard 9830
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+The HP 9830 was a programmable desktop calculator and BASIC-oriented
+computer in Hewlett-Packard's 9810/20/30 series. It extended the calculator
+family toward general-purpose desk computing while retaining
+microprogrammed arithmetic, storage, and peripheral interfaces.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 49, printed p. 801, of *Computer Structures: Principles and
+Examples* (1982).

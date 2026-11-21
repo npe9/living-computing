@@ -1,17 +1,12 @@
-# Computer Structures design stub
+# IBM System/360 Model 91
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+The System/360 Model 91 was a high-performance implementation of the
+System/360 architecture. It used instruction look-ahead, multiple arithmetic
+units, reservation and register-tagging techniques, and a common data bus to
+execute independent operations concurrently while preserving dependencies.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 18, printed p. 300, of *Computer Structures: Principles and
+Examples* (1982).

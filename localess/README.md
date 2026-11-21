@@ -1,17 +1,13 @@
-# Computer Structures design stub
+# Bell System local ESS processors
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+The Bell System Electronic Switching System processors were fault-tolerant
+stored-program computers for telephone offices. The No. 1, No. 2, No. 3, No.
+1A, and No. 3A systems used duplicated or switchable processor, memory, and
+control units, with diagnostics and reconfiguration intended to preserve
+service through failures.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 28, printed p. 459, of *Computer Structures: Principles and
+Examples* (1982).

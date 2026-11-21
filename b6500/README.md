@@ -1,17 +1,13 @@
-# Computer Structures design stub
+# Burroughs B6500
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+The Burroughs B6500 extended the B5000's language-oriented stack architecture.
+It used tagged words, a hardware stack mechanism, procedure-oriented
+execution, and an executive designed around ALGOL, COBOL, and FORTRAN
+programs. Its architecture supports dynamic storage allocation,
+recursion, protection, multiprogramming, and multiprocessing.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 16, printed p. 244, of *Computer Structures: Principles and
+Examples* (1982); it remains distinct from the existing B5000 entry.

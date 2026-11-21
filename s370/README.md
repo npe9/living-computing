@@ -1,17 +1,13 @@
-# Computer Structures design stub
+# IBM System/370
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+IBM System/370 continued the System/360 architectural family while expanding
+addressing and implementation range. The book presents it as a compatible
+family architecture whose processors, storage systems, channels, and
+performance could evolve without discarding the established programming
+interface.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 51, printed p. 815, of *Computer Structures: Principles and
+Examples* (1982).

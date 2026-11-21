@@ -1,17 +1,13 @@
-# Computer Structures design stub
+# SYMBOL experimental computer
 
-This directory is an unimplemented Living Computing design from Siewiorek,
-Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
-The machine-specific name and printed chapter/page are tracked in
-computer-structures-plan.md.
+SYMBOL was an experimental language-oriented computer that moved substantial
+functionality from software into specialized hardware. Its processors
+included dynamic memory management, direct compilation support, variable
+field-length processing, and hardware assistance for high-level language data
+structures.
 
 Bluespec implementation: bsv/ (not started).
 
-Use the accompanying plan as the evidence gate. Preserve the machine's own
-ISP/ISPS behavior, PMS structure, performance dimensions, and historical
-relationships. Do not merge a family member into another machine or invent
-encodings and simulation behavior.
-
-The initial source is the 1982 book. Add checksummed primary manuals,
-schematics, diagnostics, listings, and original software under docs/ before
-implementation.
+See [`plan.md`](plan.md) and [`docs/README.md`](docs/README.md). The initial
+source is Chapter 30, printed p. 489, of *Computer Structures: Principles and
+Examples* (1982).
