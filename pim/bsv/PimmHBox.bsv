@@ -31,7 +31,9 @@
 //   mask+1 slots, indexed by key AND mask, as above
 //   pair    {key, {INT, off}}, the code = the off cell + off
 //
-// (read from the image, all 59 entries of its 20 modules).  The cache
+// (read from the image, all 59 entries of its 20 modules).  entry()
+// walks the same table for predicate_to_code, from a module object
+// {MOD, a}: a is the module's address + 1, its descriptor cell.  The cache
 // field is not used and not written (what the machine writes there is
 // not known); one that is not 0 is refused, as is a miss.
 package PimmHBox;
@@ -46,6 +48,7 @@ interface PimmHBox;
   method Action scan(Addr pc, Cell key, Bit#(16) count, Bool bound);
   method ActionValue#(Addr) target;
   method Action external(Addr desc);
+  method Action entry(Cell mod, Cell key);     // answered through resolved
   method ActionValue#(Maybe#(Addr)) resolved;
 endinterface
 
@@ -63,6 +66,7 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
   Reg#(Bit#(16)) left  <- mkRegU;     // pairs still to compare
   FIFO#(Addr)    resQ  <- mkFIFO;
   Reg#(Bool)     ext   <- mkReg(False);   // resolving an external call
+  Reg#(Bool)     keyed <- mkRegU;         // ... whose key is given (predicate_to_code)
   FIFO#(Maybe#(Addr)) extQ <- mkFIFO;
 
   function Action missed();
@@ -95,7 +99,9 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
     let c <- mem.data;
     if ((c.tag & 8'hfe) != tag_REFo) missed;
     else begin
-      ent <= cellAddr(c);            // the module
+      // the cell the module table refers to holds {MOD, the next
+      // cell}: the module's descriptor cell follows it
+      ent <= cellAddr(c) + 1;        // the module's descriptor cell
       mem.read(cellAddr(c) + 2);     // its GC size
       st <= HXHead;
     end
@@ -103,9 +109,16 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
 
   rule xHead (st == HXHead);
     let c <- mem.data;
-    ent <= ent + 3 + truncate(c.val);   // the table's mask cell
-    mem.read(base + 2);
-    st <= HXKey;
+    Addr maskAt = ent + 2 + truncate(c.val);   // the table's mask cell
+    ent <= maskAt;
+    if (keyed) begin
+      mem.read(maskAt);
+      st <= HXMask;
+    end
+    else begin
+      mem.read(base + 2);
+      st <= HXKey;
+    end
   endrule
 
   rule xKey (st == HXKey);
@@ -227,8 +240,20 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
     return resQ.first;
   endmethod
 
+  // the predicate with this key in the module {MOD, a}: the same
+  // table, the key given and not read from a descriptor
+  method Action entry(Cell mod, Cell key) if (st == HIdle);
+    ext <= True;
+    keyed <= True;
+    want <= key;
+    ent <= cellAddr(mod);
+    mem.read(cellAddr(mod) + 1);     // its GC size
+    st <= HXHead;
+  endmethod
+
   method Action external(Addr desc) if (st == HIdle);
     ext <= True;
+    keyed <= False;
     base <= desc;
     mem.read(desc);
     st <= HXCache;

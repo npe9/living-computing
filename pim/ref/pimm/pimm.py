@@ -34,6 +34,12 @@ from census import atom_base, opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
 MOD = 0x27                  # a module object: {MOD, a} -> {CDESC, 06 << 24 | n}, n cells
+# A code object: {COD, the address of a predicate's first instruction}
+# (the tag from debugger/inspector/tagtbl.kl1; where it points is
+# ASSUMED, see i_predicate_to_code).  COD and MOD differ only in the
+# low bit, which is NOT an MRB for tags from 20h: compare whole tags.
+COD = 0x26
+PREDH = 0x24                # a predicate head: arity << 24 | offset from the module
 VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
@@ -323,6 +329,8 @@ class Machine:
             return [car] + cdr if isinstance(cdr, list) else ('|', car, cdr)
         if t == STRG:
             return self.string(w)
+        if w[0] == COD:
+            return ('COD', w[1] - self.load)
         if w[0] == MOD:                      # tags from 20h have no MRB bit
             return ('MOD', self.mem[w[1]][1] & 0xffffff)
         if VECT0 <= t <= VECT0 + 14:
@@ -1232,20 +1240,32 @@ class Machine:
         head = mem[via[1]]
         if via[0] & ~1 != REF or head[0] & ~1 != REF:
             raise Unimplemented(what + ': the module field')
-        h, key = head[1], mem[e + 2]
-        table = h + 3 + mem[h + 2][1]
+        # the cell the image's module table refers to holds {MOD, the
+        # next cell}: the module's descriptor cell follows it
+        target = self.entry(head[1] + 1, mem[e + 2])
+        if target is None:
+            raise Unimplemented(what + ': no such predicate')
+        return target - self.load
+
+    def entry(self, a, key):
+        """The address of the first instruction of the predicate with
+        this key in the module whose descriptor cell is at a ({MOD, a}),
+        or None.  After the descriptor: {INT, GC-area size}, then that
+        area; the code area begins with the predicate entry table
+        (TM-662 fig. 2, read from the image): {INT, mask}, mask + 1
+        slots indexed by key AND mask, a slot {INT, count << 16 | off}
+        leading to `count` pairs {key, {INT, off}}, the code at the off
+        cell + off."""
+        mem = self.mem
+        table = a + 2 + mem[a + 1][1]
         slot = table + 1 + (key[1] & mem[table][1])
         st, sv = mem[slot]
-        target = None
         if st == INT:
             for k in range(sv >> 16):
                 p = slot + (sv & 0xffff) + 2 * k
                 if mem[p] == key:
-                    target = p + 1 + mem[p + 1][1]
-                    break
-        if target is None:
-            raise Unimplemented(what + ': no such predicate')
-        return target - self.load
+                    return p + 1 + mem[p + 1][1]
+        return None
 
     def i_proceed(self, pc, x, y, z, c16):
         self.event('E done')
@@ -1526,6 +1546,64 @@ class Machine:
                 self.mem[a + i] = c
             return [(MOD, a)]
         self.builtin('new_module', [x, y], f)
+
+    def i_predicate_to_code(self, pc, x, y, z, c16):
+        # predicate_to_code(Module, Name, Arity, ^Code), 22:F3, r4.
+        # "Unifies a code denoting module Module, predicate name Name
+        # and argument count Arity with Code.  If a corresponding
+        # predicate is absent in the module ... unifies a 3-element
+        # vector {Module, Name, Arity}" (PIMOS manual, e-builtin.tex
+        # predicate_to_code; PDSS takes an atom for the module and
+        # gives [], which is not this machine).  Module is a module
+        # object; anything else is the built-in's exception: refused.
+        # The predicate is found in the module's entry table as an
+        # external call finds it; its key is arity << 24 | (atom +
+        # arity) (library/kbn/kbnatom.kl1; an ATOM cell, as the table
+        # holds it).  The code object is {COD, the address of the
+        # predicate's first instruction}.  That target is ASSUMED for
+        # PIM/m: it agrees with code_to_predicate's "contents of <Code
+        # address - 3>" (manual) and with the image header's start
+        # address, two cells after a predicate head.
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(mod, name, arity):
+            n = self.need_int(arity)
+            if mod[0] != MOD or name[0] & ~1 != ATOM or not 0 <= n <= 255:
+                raise Unimplemented('built-in exception: predicate_to_code(%r, %r, %r)'
+                                    % (mod, name, arity))
+            key = (ATOM, n << 24 | (name[1] + n) & 0xffffff)
+            code = self.entry(mod[1], key)
+            if code is not None:
+                return [(COD, code)]
+            w, a = self.vnew(3)
+            self.mem[a], self.mem[a + 1], self.mem[a + 2] = mod, name, arity
+            return [w]
+        self.builtin('predicate_to_code', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_code(self, pc, x, y, z, c16):
+        # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.
+        # "Unifies the number of arguments of the code X with Arity,
+        # the module to which the code belongs with Module and the
+        # position from the beginning of the module with Position.
+        # Suspend: X uninstantiated.  Fail: X anything other than a
+        # code" (PIMOS manual, e-builtin.tex code).  The predicate head
+        # {PREDH, arity << 24 | offset} is two cells before the code
+        # and its offset leads back to the module's descriptor cell;
+        # Position is counted from that cell (library/kbn/kbnlink.kl1:
+        # the start address is the module's address + the offset
+        # code/4 gave).
+        w = self.g_word(x)
+        if w is None or w[0] != COD:
+            return self.guard_fail()
+        head = self.mem[w[1] - 2]
+        m = w[1] - 2 - (head[1] & 0xffffff)
+        if head[0] != PREDH or self.mem[m][0] != CDESC:
+            raise Unimplemented('code: no predicate head or module before %x' % w[1])
+        self.reg[y] = (INT, head[1] >> 24)
+        self.reg[z] = (MOD, m)
+        self.reg[self.cells[pc + 1][1] >> 24] = (INT, w[1] - m)
+        return pc + 2
 
     def i_new_atom(self, pc, x, y, z, c16):
         # new_atom(^Atom): "creates a new atom ... The atom has no

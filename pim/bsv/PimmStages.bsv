@@ -76,7 +76,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
@@ -92,6 +92,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   FIFO#(Step)        outQ    <- mkFIFO;
   Reg#(XState)       st      <- mkReg(XDecode);
   Reg#(Cell)         opA     <- mkRegU;
+  Reg#(Cell)         opB     <- mkRegU;
   Reg#(Addr)         sGoal   <- mkRegU;     // suspending: the record
   Reg#(Bit#(5))      sI      <- mkRegU;     // suspending: the variable being hooked
   // a body built-in: its inputs, dereferenced, by operand position
@@ -138,7 +139,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_vector_element || op == op_new_instruction
                   || op == op_new_module || op == op_calculate_priority_from_minimum
                   || op == op_change_element_size || op == op_string_operation
-                  || op == op_hash;
+                  || op == op_hash || op == op_predicate_to_code;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -206,7 +207,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || op == op_integer || op == op_wait_constant || op == op_floating_point
-                      || op == op_atom
+                      || op == op_atom || op == op_code
                       || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
@@ -532,6 +533,18 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShow;
       end
       else next;
+    end
+    else if (op == op_code) begin
+      // guard code(X, ^Arity, ^Module, ^Position): the whole tag is
+      // compared (COD and MOD differ in the low bit, which is no MRB
+      // from 20h on); the predicate head is two cells before the code
+      if (isRef(a)) note(a);
+      if (a.tag != tag_COD) guardFail;
+      else begin
+        opA <= a;
+        smem.read(cellAddr(a) - 2);
+        st <= XCode1;
+      end
     end
     else if (isWaitAtom) begin
       if (isRef(a)) note(a);
@@ -1107,6 +1120,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
       else stop(EndUnimp);
     end
+    else if (op == op_predicate_to_code) begin
+      // predicate_to_code(Module, Name, Arity, ^Code): the hash box
+      // finds the predicate in the module's entry table; the key is
+      // arity << 24 | (atom + arity), an ATOM cell.  Anything but a
+      // module, an atom and an arity of 0..255 is the built-in's
+      // exception: not modelled
+      if (a.tag != tag_MOD || (b.tag & 8'hfe) != tag_ATOMo || !isInt(c) || c.val > 255) stop(EndUnimp);
+      else begin
+        Bit#(24) nameN = truncate(b.val + c.val);
+        hbox.entry(a, mkCell(tag_ATOMo, {c.val[7:0], nameN}));
+        st <= XP2C;
+      end
+    end
     else if (op == op_new_module) begin
       // new_module(Vector, ^Module): the vector box makes the object
       if (!isVec(a)) stop(EndUnimp);
@@ -1272,6 +1298,74 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(z, r.a);
       next;
     end
+  endrule
+
+  // predicate_to_code: the code object, or the vector {Module, Name,
+  // Arity} when the module has no such predicate (PIMOS manual)
+  rule p2c (st == XP2C);
+    let t <- hbox.resolved;
+    if (t matches tagged Valid .at) begin
+      regs.wr(operand[3], mkCell(tag_COD, absAddr(at)));
+      finish(tagged Next afterBuiltin);
+    end
+    else begin
+      gbox.alloc(3);
+      st <= XP2Ca;
+    end
+  endrule
+
+  rule p2cAlloc (st == XP2Ca);
+    let at <- gbox.allocResult;
+    opA <= mkCell(tag_VECT0o + 7, absAddr(at));
+    smem.write(at, vals[0]);
+    st <= XP2Cw1;
+  endrule
+
+  rule p2cW1 (st == XP2Cw1);
+    smem.write(cellAddr(opA) + 1, vals[1]);
+    st <= XP2Cw2;
+  endrule
+
+  rule p2cW2 (st == XP2Cw2);
+    smem.write(cellAddr(opA) + 2, vals[2]);
+    st <= XP2Cw3;
+  endrule
+
+  rule p2cW3 (st == XP2Cw3);
+    regs.wr(operand[3], opA);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // the guard code: the head, then the module's descriptor cell
+  rule code1 (st == XCode1);
+    let h <- smem.data;
+    if (h.tag != tag_PREDH) stop(EndUnimp);
+    else begin
+      opB <= h;
+      Bit#(32) back = zeroExtend(h.val[23:0]);   // through 32 bits: any address width
+      smem.read(cellAddr(opA) - 2 - truncate(back));
+      st <= XCode2;
+    end
+  endrule
+
+  rule code2 (st == XCode2);
+    let d <- smem.data;
+    if (d.tag != tag_CDESC) stop(EndUnimp);
+    else begin
+      regs.wr(y, intC(zeroExtend(opB.val[31:24])));
+      st <= XCode3;
+    end
+  endrule
+
+  rule code3 (st == XCode3);
+    Bit#(32) m = opA.val - 2 - zeroExtend(opB.val[23:0]);
+    regs.wr(z, mkCell(tag_MOD, m));
+    st <= XCode4;
+  endrule
+
+  rule code4 (st == XCode4);
+    regs.wr(operand[3], intC(2 + zeroExtend(opB.val[23:0])));
+    finish(tagged Next (pc + 2));
   endrule
 
   rule bModule (st == XBMod);

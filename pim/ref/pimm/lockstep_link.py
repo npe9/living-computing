@@ -144,7 +144,8 @@ def one(s, im, names, label, FILES):
             s.setslot(15, (pimm.REF, req[1] + 2))
             s.unify(15, 9)
             m = s.live()
-            streams.append([s.live_slot[8], lfile.file_words(todo.pop(0))])
+            # a name may be a full path (pimos.ipl's are): the file is its last part
+            streams.append([s.live_slot[8], lfile.file_words(todo.pop(0).rsplit('>', 1)[-1])])
             opens = (pimm.REF, w[1] + 1)
             progress = True
         for st in streams:
