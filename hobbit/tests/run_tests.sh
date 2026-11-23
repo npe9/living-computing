@@ -26,6 +26,12 @@ python3 "$here/test_p9exec.py"
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
 python3 "$here/test_sem_extended.py"
+# The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
+# events -- what tools/p9boot.py boots the shipped kernel with.
+python3 "$here/test_sem_system.py"
+# A4: the shipped kernel s9term boots on the reference model as far as
+# pageinit's console line (tools/p9boot.py, docs/p9boot.md; ~25 s).
+python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
