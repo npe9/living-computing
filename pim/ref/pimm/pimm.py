@@ -266,7 +266,7 @@ class Machine:
 
     def new_string(self, n, size):
         """A new string of n zero elements of `size` bits."""
-        if size not in (8, 16) or n < 0:
+        if size not in (8, 16, 32) or n < 0:
             raise Unimplemented('new_string(%d, %d)' % (n, size))
         return self.make_string(size, [0] * n)
 
@@ -375,7 +375,7 @@ class Machine:
             code = self.mem[g + G_CODE][1] - self.load
             for i in range(self.mem[g + G_ARGN][1]):
                 self.reg[i] = self.mem[g + G_ARGS + i]
-            self.reduce(code, limit)
+            self.reduce(code, before + limit)     # the limit is this run's
         self.event('Q')
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
