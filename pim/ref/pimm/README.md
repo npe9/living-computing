@@ -44,9 +44,11 @@ more than eleven arguments, `lockstep_newm.py` whole module objects
 object files through `decode/8`, `lockstep_pool.py` the built-in
 merger under the IPL's keyed pool, `lockstep_load.py` a real file
 loaded by `ipl_loader:load_file/9` with the IPL's own reader and
-checksum; 102
+checksum, `lockstep_mrb.py` `set_vector_element` in place or copied
+as the MRB says; 102
 instructions now. No
-garbage collection, MRB bits kept but nothing reclaimed on them
+garbage collection, MRB bits kept and vectors updated in place on
+them but nothing reclaimed
 (`docs/pimm_semantics.md` "The MRB"), no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py

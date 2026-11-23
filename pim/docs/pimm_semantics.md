@@ -102,7 +102,7 @@ of this module can check, on either model, and injections confirm it:
 | `vector_element` | `23:EE x y z` | guard `vector_element(V, I, ^E)`: `r[z]` := element `r[y]`, a reference if it is an unbound variable; fails outside 0..size-1 | checked, except the index equal to the size |
 | `mark_element` | `23:1C x y` | the MRB of element `r[y]` of the vector `r[x]` is set, in the vector (PDSS `KL1B_MARK_ELEMENT`); both registers are dereferenced; a cell that is itself an unbound variable is left | checked (`lockstep_ptab.py`: the cell write) |
 | `new_vector` | `22:D3 x y` | body `new_vector(Size, ^V)`: `r[y]` := a vector of `r[x]` cells of integer 0 (PIMOS manual) | checked for 1..6 |
-| `set_vector_element` | `22:D0 x y z`, then `w4 w5` | body `set_vector_element(V, I, New, ^Old, ^V1)`: `r[w5]` := a copy of `r[x]` with element `r[y]` replaced by `r[z]`, `r[w4]` := the old element. Does not wait for `New` (manual: suspends on Vector or Position only). Always a copy, as `put_reused_structure` | checked on vectors made by `new_vector`; copying an unbound element is not exercised |
+| `set_vector_element` | `22:D0 x y z`, then `w4 w5` | body `set_vector_element(V, I, New, ^Old, ^V1)`: `r[w5]` := `r[x]` with element `r[y]` replaced by `r[z]`, `r[w4]` := the old element. Does not wait for `New` (manual: suspends on Vector or Position only). In place, `r[w5]` being `r[x]`, when the vector is reached with every MRB off; otherwise a copy (see "The MRB") | checked on vectors made by `new_vector`; both ways, by address and content, in `lockstep_mrb.py` |
 | `put_nil` | `23:32 x` | `r[x]` := nil, the atom 0 (`library/kbn/kbnatom.kl1`: "The atom number of '[]' is fixed to zero") | checked |
 | `wait_vector_N` | `23:A8+N x` | guard: `r[x]` is a vector of N cells; the structure pointer is set to its first | checked for N = 2, 3, 5 (`exception_table:replace_argument/3`), including the wrong size and an unbound `r[x]` |
 | `read_variable` | `23:B4 x` | `r[x]` := the element at the structure pointer; advance. An element that is an unbound variable is taken as a reference to it | checked |
@@ -208,8 +208,12 @@ order, not on when.
 
 The low tag bit of a reference or pointer (tags 04h to 1Fh; `REFo` 06,
 `REFx` 07) is kept as the multiple reference bit by both models, since
-2026-11-23. Nothing is reclaimed or reused on its strength yet:
-`set_vector_element` still copies. The rules are PDSS's
+2026-11-23. One thing is done on its strength: `set_vector_element`
+updates in place when the vector is reached with every MRB off
+(PDSS `blt_basic.c`: `if (Mrbof(vect) == MRBOFF)`), and copies
+otherwise, the copy's elements marked. Nothing is reclaimed
+(`collect_*` do nothing; strings and `put_reused_structure` still
+copy). The rules are PDSS's
 (`emulator/deref.c`, `emulate.c`, `blt_basic.c`, V2.52), the sibling
 whose code we hold; PIM/m's own are described in `M92` pp. 429-430 and
 TR-248 (`literature_gaps.md` section 3) and agree where they speak.
@@ -240,8 +244,18 @@ cells are always treated as multiply referenced; the copy in
 `set_vector_element` marks the new vector's elements but does not go
 back and mark the old one's (PDSS does; the old vector is only reached
 by marked pointers); an element cell that is itself an unbound
-variable is taken as `REFx`. All of these err towards "on", which
+variable is taken as `REFx`, and is never overwritten in place: such
+a vector is copied (the cell is the variable; PDSS, whose variables
+are cells too, does the same by another route, not followed here).
+A marked vector is copied whole, where the Multi-PSI had a
+mutable-array scheme. All of these err towards "on", which
 costs copies and never correctness.
+
+What the in-place update rests on: that every way a second reference
+to a vector can arise sets a bit. `lockstep_mrb.py` checks five ways
+by address and content, and the module objects the loader builds are
+checked cell by cell against their files (`lockstep_newm.py`,
+`lockstep_load.py`); paths the scripts do not run are not checked.
 
 Checked: the 23 lockstep tests agree line for line, and for 22 of them
 the reference model's trace before the change equals the trace after

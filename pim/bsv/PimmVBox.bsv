@@ -29,11 +29,13 @@
 //                        to a variable is copied: the loader puts
 //                        one where another module will be)
 //   setElement(v, i, e)  a = a copy of v with element i replaced by e,
-//                        b = the old element i.  The machine updates
-//                        in place when v is singly referenced; without
-//                        MRB this box always copies.  An unbound
-//                        element is copied as a reference to the old
-//                        cell, so the variable stays one variable.
+//                        b = the old element i.  When v's MRB is
+//                        off (the path to it is single) the update
+//                        is in place and a = v, unless the cell is
+//                        itself an unbound variable.  In a copy an
+//                        unbound element is a reference to the old
+//                        cell, so the variable stays one variable,
+//                        and the elements are marked.
 //
 // The caller checks that v is a vector of at least one element.  The
 // box checks i against the size: ok is False when it is out of range
@@ -62,7 +64,7 @@ endinterface
 typedef enum { VKInfo, VKElem, VKMark, VKNew, VKSet, VKBuild, VKMod } VKind deriving (Bits, Eq);
 typedef struct { VKind k; Cell v; Bit#(32) i; Cell e; } VReq deriving (Bits);
 typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr,
-               VModHead, VModRd, VModWr }
+               VModHead, VModRd, VModWr, VSetRd }
   VState deriving (Bits, Eq);
 
 // the number of elements of a short vector, from its tag
@@ -135,6 +137,12 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     if (rq.k == VKInfo) answer(intC(n), mkCell(tag_REFo, absAddr(src)), True);
     else if (rq.k == VKNew && n == 0) answer(mkCell(tag_VECT0o, 0), ?, True);
     else if ((rq.k == VKElem || rq.k == VKMark || rq.k == VKSet) && rq.i >= n) answer(?, ?, False);
+    else if (rq.k == VKSet && rq.v.tag[0] == 0) begin
+      // the path to the vector is single: in place, unless the cell is
+      // itself an unbound variable
+      mem.read(src + off(rq.i));
+      st <= VSetRd;
+    end
     else if (rq.k == VKElem || rq.k == VKMark) begin
       mem.read(src + off(rq.i));
       st <= VElem;
@@ -149,6 +157,18 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     else begin
       gbox.alloc(off(long ? n + 3 : n));
       st <= VAlloc;
+    end
+  endrule
+
+  rule setInPlace (st == VSetRd);
+    let c <- mem.data;
+    if (isUnboundCell(c)) begin
+      gbox.alloc(off(long ? n + 3 : n));
+      st <= VAlloc;
+    end
+    else begin
+      mem.write(src + off(rq.i), rq.e);
+      answer(rq.v, c, True);
     end
   endrule
 

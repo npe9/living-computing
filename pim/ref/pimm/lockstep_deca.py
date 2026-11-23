@@ -86,7 +86,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import unlsav  # noqa: E402
 
-PINNED = dict(parts=32, lines=50035, real=17)
+PINNED = dict(parts=32, lines=49582, real=17)
 OBJ = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
 NIL_NAME = [0x214e, 0x214f]
 REAL = 10            # real terms without strings

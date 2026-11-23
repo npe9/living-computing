@@ -1402,9 +1402,16 @@ class Machine:
         self.builtin('new_vector', [x, y], f)
 
     def i_set_vector_element(self, pc, x, y, z, c16):
-        # set_vector_element(V, I, New, ^Old, ^V1).  Always a copy (no
-        # MRB); an unbound element is copied as a reference to the old
-        # cell.  It does not wait for New.
+        # set_vector_element(V, I, New, ^Old, ^V1).  It does not wait
+        # for New.  In place when the vector was reached with every
+        # MRB off ("providing the path to the vector is single", M92
+        # p. 430; PDSS blt_b_set_vector_element: "if(Mrbof(vect) ==
+        # MRBOFF){ ... *x = newelem"), and V1 is V.  Otherwise a copy
+        # whose elements are marked, an unbound one copied as a
+        # reference to the old cell; that the copy is whole is ours
+        # (Multi-PSI/V2 had a mutable-array scheme, TR-466 4.1.1).
+        # Ours too: an element cell that is itself an unbound variable
+        # is never overwritten (Old would become New); that copies.
         w4, w5 = self.cells[pc + 1][1] >> 24, self.cells[pc + 1][1] >> 16 & 0xff
 
         def f(v, i, e):
@@ -1412,6 +1419,10 @@ class Machine:
             if n is None or not 0 <= i < n:
                 raise Unimplemented('built-in exception: set_vector_element')
             src = self.vbase(v)
+            if not v[0] & 1 and self.mem[src + i][0] & ~1 not in (UNDF, HOOK):
+                old = self.mem[src + i]
+                self.mem[src + i] = e
+                return [old, v]
             w, a = self.vnew(n)
             old = None
             for k in range(n):

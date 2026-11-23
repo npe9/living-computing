@@ -73,7 +73,7 @@ carry no open question.
 | B5 | Built-in exceptions. Every built-in error stops the model today (`Unimplemented('built-in exception ...')`) | how an exception becomes a report to the shoen (`exception(Info, Goal, NewGoal)`), and the info codes | `kernel/builtin/excpt_tbl.kl1` (source held, partly running already), manual |
 | B6 | Suspension layout: ours is `HOOK` -> suspension record always | the machine's: `HOOK` vs `MHOOK`, record fields, merge on variable-variable binding | microcode at `1c08`, `1d3a`; blocked on the memory datapath fields (`pseudo_pimm_microcode.md` section 13) |
 | B7 | Goal record layout | not in print, not in the console text | same microcode pass |
-| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_vector_element`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits themselves are kept since 2026-11-23 (`pimm_semantics.md` "The MRB"); a probe on the reference model found 5,635 of 5,646 `set_vector_element`s in 21 of the scripts single, and no later read of a vector so updated | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
+| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits are kept since 2026-11-23 (`pimm_semantics.md` "The MRB") and `set_vector_element` updates in place on them (`lockstep_mrb.py`): the heap used by `lockstep_newm.py` after loading the image fell from 749,440 cells to 107,059, `lockstep_load.py`'s from 509,438 to 200,064 | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
 | B9 | Floats (59 names in the object set, 3 in the IPL image), bignum (9 names) | formats beyond the tag | manual; `kbnheap.kl1`; low priority, 0.1% of instructions |
 
 *The IPL's file decoder has near-source (found 2026-11-20).*
@@ -112,8 +112,9 @@ more than eleven arguments (`lockstep_pack.py`), and the whole of
 (`lockstep_newm.py`, `new_module`), each cell as the file and the
 layout of the image's own modules say. What that does not show: that
 code in a built module runs (both models fetch code from the image,
-not from the heap), and modules over about 2700 file words do not fit
-(every `set_vector_element` copies the vector). A built external-call
+not from the heap). Modules over about 2700 file words did not fit
+while every `set_vector_element` copied the vector; since the update
+in place they should, which is not yet tried on one. A built external-call
 descriptor has five cells where the image's own have four.
 
 Then whole files: `ipl_file_decoder:decode/8`, the predicate the
@@ -131,15 +132,15 @@ not as the machine's merger cell, because every request to the IPL's
 keyed pool goes through one. The pool copies its table at every
 request (`set_vector_element` without MRB): `decode_atom/3`'s table
 is 1024 cells, `atom_table/1`'s 16384, so the IPL's own atom table
-cannot run until `set_vector_element` updates in place under the MRB
-bit; that is a milestone of its own, ahead of it.
+could not run until `set_vector_element` updated in place under the
+MRB bit, which it now does (`lockstep_mrb.py`).
 
 `ipl_loader:load_file/9` now loads a real file with the IPL's own
 reader, checksum and atom-number pool (`lockstep_load.py`); the test
 stands in only for the file's buffers (`getb`, a buffer size of ours)
-and for `intern`. Next: `set_vector_element` in place under MRB, so
-that the IPL's own `atom_table/1` (and `new_atom`) can answer
-`intern`; console output (C1), so that the file's name and a 5702h
+and for `intern`. Next: the IPL's own `atom_table/1` (and `new_atom`)
+answering `intern`, now that `set_vector_element` is in place under
+the MRB; console output (C1), so that the file's name and a 5702h
 file's comment are displayed; then `load_files/10` over the file
 list, with the FEP's `open` (C2).
 

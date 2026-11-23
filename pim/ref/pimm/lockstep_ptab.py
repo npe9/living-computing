@@ -76,7 +76,7 @@ import pimm  # noqa: E402
 import lockstep_deca as deca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=9, lines=121166, entries=40)
+PINNED = dict(parts=9, lines=106289, entries=40)
 MODULES = ('system2defined2servers', 'task2std2abnormal', 'shoen')
 POSITIONS = (0, 5)
 SPARE = 4

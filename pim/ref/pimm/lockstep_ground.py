@@ -86,7 +86,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 
 TAR = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimos.tar.Z')
-PINNED = dict(parts=20, lines=5467)
+PINNED = dict(parts=20, lines=5409)
 
 CLAUSES = __doc__[__doc__.index('    ground_term(Term, N_term)'):__doc__.index('So N_term')]
 

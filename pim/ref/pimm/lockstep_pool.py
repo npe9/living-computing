@@ -69,7 +69,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=2, lines=9263, answers=38)
+PINNED = dict(parts=2, lines=9113, answers=38)
 
 
 def requests(names):

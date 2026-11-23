@@ -83,7 +83,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=751898, cells=366, interned=13)
+PINNED = dict(parts=2, lines=443348, cells=366, interned=13)
 FILE = 'pimm_patch_hash360E.sav'
 BUFFER = 97
 MUST_RUN = ('read_32/8', 'read_str/9', 'sum_check/5', 'double_buffer/4', 'decode_atom/5')

@@ -98,7 +98,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=1, lines=225031, cells=366)
+PINNED = dict(parts=1, lines=90250, cells=366)
 FILES = ('pimm_patch_hash360E.sav',)
 NAME = 'file'
 
