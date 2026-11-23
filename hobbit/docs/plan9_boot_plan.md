@@ -316,8 +316,88 @@ model, producing a 1e Hobbit kernel image. Gate: the image's `Exec`
 header passes `tools/p9exec.py` and the relocation/symbol checks the
 `zl` sources define; the image is reproducible from a recorded command.
 
-**Status 2026-11-20: started, paused.  Not closed.**  What is done and
-what is not:
+**Status 2026-11-23: the kernel library is built; not closed.**
+`tools/p9kbuild.py` (the recorded command; module doc for the details)
+drives the release's own binaries on the reference model in a staged
+copy of the tree (`build/p9kbuild/<target>/root`, never the vendored
+tree), up to 8 processes, and logs every step's status, instructions,
+system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
+
+* **`libram.a` for `term`** (`python3 tools/p9kbuild.py kernel`): all
+  62 objects of the mkfile's `$OBJ` -- 61 by `zc -w -Dram` (port files
+  `-I. ../port/X.c`, `fcall` without `-I.`), `fprt0.s` by `za` -- and
+  `raml.s` by `za`, every run `exits('')`; 481,491,651 instructions for
+  the 63, 593 s wall at 8 processes on a loaded machine.  Smallest
+  `latin1` (1.8 M), largest `devbit` (26.4 M); the only console output
+  is zc's own `warning: scsi.c:808 param declared and not used: ur`.
+  Then `ar vu libram.a $OBJ` and `rl libram.a`, as the mkfile's
+  `$LIBRARY` rule says (`$RL` is `rl`, `/hobbit/mkfile`): `ar vu`
+  600,951 instructions, `rl` 40,564,708 (1,129 symbols), its `ar rb`
+  378,848, giving a 1,196,514-byte `libram.a`, `__.SYMDEF` then the 62
+  members in `$OBJ` order, sha256
+  `f709cea932f1a3694a08a93f4eb013c4a0703499938d0a9cd31ba0d8515b7ea6`.
+  The whole run takes about 17 minutes.  A second run in a fresh build
+  directory gave the same archive and the same status, instruction
+  count, system calls, size and sha256 for every one of its 68 steps
+  (initcode, init.out, 63 assemblies and compilations, ar vu, rl, ar
+  rb).  Nothing to compare the objects with: the release ships no kernel
+  objects.  Inputs that are *not* the release's tools, each marked in the
+  log and swappable:
+  * `$DEV $STREAM $MISC` come from `rc ../port/mk{dev,stream,misc}list
+    term` in the mkfile.  Until rc/sed/awk run on the model they are
+    `tools/p9kbuild/term.{dev,stream,misc}list`, written by hand from
+    those scripts and `term`, in the scripts' output format, so the
+    generated lists can replace them unchanged.  They agree with the
+    shipped `s9term` (`docs/s9term.md`): its 21 devices are in the
+    order of the device-character string `/ce|psMd2trikSwlaPIbT`, which
+    is the dev list's order, and its streams are urp, ip, async, fcall.
+  * `devtab.h` (`rc ../port/mkdevh $CONFLIST`, included by ~25 objects)
+    is a Python transcription of `mkdevh`/`mkextract`: **provisional**
+    (`--devtab-h FILE` swaps in a generated one).
+  * `init.h` (`rammain.c` includes it): `za initcode` and `zl -l -s -o
+    init.out -H2 -T0x1020 -R4 initcode.z` run on the model, but the text
+    step `xd -r -1x init.out | sed ...` is transcribed from `xd.c` and
+    the two sed expressions.  **Provisional, and so is `rammain.z`**
+    (`--init-h FILE` swaps).
+  * rl's fork: see `ar` below.
+  * Every object is given mode 0664 and mtime 726010682 before `ar`
+    (the shipped libc.a's member mode and its `__.SYMDEF` date), so
+    `libram.a`'s sha256 is reproducible; `ar` copies both into the
+    member headers.  The mkfile's `rm -f $names` is not done (the
+    objects stay for inspection).
+* **`ar` and `rl` are validated against the shipped `libc.a`**
+  (`python3 tools/p9kbuild.py archeck`, 36 s): `ar t` lists its 141
+  members; `ar x` extracts all 140 objects byte-exact; `ar vu` of them
+  (dated and moded as their headers say), then `rl` (8,351,588
+  instructions) and its `ar rb`, rebuild a 297,782-byte archive whose
+  members and all 141 headers are byte-identical to the shipped one and
+  whose `__.SYMDEF` has the same 201 entries -- offsets, names, types,
+  order.  212 bytes of the table differ, all after a name's NUL: stack
+  residue in libmach `readar()`'s uninitialised `Prog p`
+  (`docs/plan9_syscalls.md`).  Why the model's residue differs from the
+  1993 machine's at those positions is **open** (not traced; the model
+  is the core's oracle, so it matters).  For this `p9run` gained `fstat` and
+  `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` is
+  refused (one process), so `rl` stops at that call with its table
+  written and the driver runs the `ar` command line `writerl()` would
+  have, on the model.
+* **libc reproduction is recorded** (`python3 tools/p9kbuild.py libc
+  --check`, 260 s at 7 processes): the 102 C files of `libc/hobbit`,
+  `port` and `9sys` that have a member in the shipped `libc.a`,
+  196,999,046 instructions, none failed; **94 byte-identical** to their
+  members, and the 8 that differ are exactly `port/{memmove, memset,
+  strchr, strcmp, strcpy, strlen, strncmp, strrchr}.c`, whose members
+  are `libc/hobbit`'s assembler versions (A2), as found by hand on
+  2026-11-20.  A 3-file sample runs in
+  `tests/run_tests.sh`.
+
+Next: `cpu.c`/`term.c` (`mkdevc`), `boot$CONF.root`, `KERNDATE`, the
+link with `zl -l -R4 -H1 -T0x80004000 -E0x80004000` against `-lgnot -lg
+-lc` (libgnot.a and libg.a are in the release, not vendored yet), and
+the comparison with the shipped `hobbit/s9term`.
+
+**Status 2026-11-20 (kept for the record): started, paused.**  What was
+done and what was not:
 
 * *The compiler is reproduced on the reference model.*  The shipped
   `zc`, run by `tools/p9run.py` in a tree laid out like the release

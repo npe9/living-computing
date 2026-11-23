@@ -27,6 +27,15 @@ python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
 python3 "$here/test_p9run.py"
+# A3: the shipped zc reproduces shipped libc.a members, one file from each
+# libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
+# 94 identical, the 8 others built from assembler -- the long command in
+# docs/plan9_boot_plan.md A3).  --check fails on any object that differs:
+# observed 2026-11-23 with the expected-to-differ set emptied, `--only
+# port/strlen,port/toupper --check` printed "FAILED: port/strlen" and
+# exited 1; an --only name with no libc.a member stops the run.
+python3 "$hobbit/tools/p9kbuild.py" libc --check -j 3 --build "$tmp/p9kbuild" \
+    --only port/toupper,hobbit/getfcr,9sys/fork
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"

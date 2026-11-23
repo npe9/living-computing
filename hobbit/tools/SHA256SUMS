@@ -89,3 +89,7 @@ d7e5651d737bdfba19cd47f38071247fa8dd0e9ff49dec232f97a70dd507e0c4  plan9-1e/sys/s
 ec24b035c740cf97606955e82af6bd4a6edf9ea2e479a88ad7f746f71f9d93f2  plan9-1e/sys/src/libc/hobbit/vl.c
 ee062d80637dde3233cda96f16e7575f7443148c52a2baba303be29cbb51d7f7  plan9-1e/sys/src/libmach/z.c
 9600af22e70409f2bbdfb6226a541999ffb8de98cfc42f01100d645e9d871dab  plan9-1e/sys/src/libmach/zobj.c
+d788c1282b0328b28589cd1a6b3c3bfa9d80619b7f0b5ae0b68a3ef3ec7e4878  plan9-1e/hobbit/bin/rl
+8879c9b68ccd90648f6876bc24a79e7f54ea14837d443ebaaf23dad8d25d9e6f  plan9-1e/sys/src/cmd/ar.c
+076bc2a6f240101e9c9ef2136a410fb88129f180e61ab3a9831047253c1547fe  plan9-1e/sys/src/cmd/rl.c
+8b671a0e79e3df595473878c9c3dfa37a18b5838937d8c7097b3f0446bb1afe6  plan9-1e/sys/src/cmd/xd.c

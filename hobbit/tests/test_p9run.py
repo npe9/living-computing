@@ -57,6 +57,29 @@ Not discriminated by anything here: FADD/FMUL/FDIV rounding against
 fpi.c (the arithmetic is host IEEE double, not fpi.c's `Internal`), and
 errstr's text.
 
+`ArCalls` and `Ar` (A3, 2026-11-23): fstat and rfork(RFNOTEG) as the
+shipped `ar` uses them, and `ar t`/`x`/`vu` and `rl` on members of the
+shipped libc.a.  Five bugs injected one at a time into tools/p9run.py
+(each reverted by rewriting the saved file; `ArCalls Ar` green before
+and after), observed failures:
+
+  fstat: mtime + 1
+      test_fstat_writes_convD2M_of_the_host_file,
+      test_ar_vu_rebuilds_the_shipped_members_and_headers
+  fstat: length in VLONG's high word, not its low
+      the same two, and test_rl_writes_the_table_then_stops_at_its_fork
+  fstat: mode a constant 0644, not the file's bits
+      test_fstat_writes_convD2M_of_the_host_file,
+      test_ar_vu_rebuilds_the_shipped_members_and_headers
+  rfork: RFNOTEG refused
+      test_rfork_rfnoteg_returns_zero, test_ar_vu_..., test_rl_...
+  fstat: no evenaddr() check
+      test_fstat_to_an_odd_buffer_stops only
+
+`ar t` and `ar x` never call fstat or rfork, so none of these reach
+them; they are there as the oracle that the archive reader agrees with
+the shipped file.
+
 `StackCacheContents` (added later the same day, with `State.cache`) has
 no injection table of its own: the injection that matters for it is the
 Bluespec comparison, where running the reference model without the
@@ -458,6 +481,179 @@ class StackCacheContents(unittest.TestCase):
         p9run.kernel_entry_flush(st)
         self.assertEqual((st.sp, st.msp), (0x1000, 0x1000))
         self.assertEqual(st.memory[0x1004], 0xB000 + 0x1004)
+
+
+def archive(data):
+    """[(name, 60-byte header, body, offset of the header)]."""
+    out, off = [], 8
+    while off + 60 <= len(data):
+        hdr = data[off:off + 60]
+        size = int(hdr[48:58].decode().strip())
+        out.append((hdr[0:16].decode("latin-1").rstrip(), hdr,
+                    data[off + 60:off + 60 + size], off))
+        off += 60 + size + (size & 1)
+    return out
+
+
+def symdef_by_member(data):
+    """rl.c's table (4-byte offset, NNAME=20 name, type, 3 pad), as
+    (member the offset points at, name up to the NUL, 'T' or 'D')."""
+    members = archive(data)
+    at = {off: name for name, _h, _b, off in members}
+    body = members[0][2]
+    out = []
+    for i in range(0, len(body), 28):
+        e = body[i:i + 28]
+        out.append((at[int.from_bytes(e[0:4], "little")],
+                    e[4:24].split(b"\0")[0].decode(), "TD"[e[24]]))
+    return out
+
+
+class ArCalls(unittest.TestCase):
+    """fstat and rfork as ar uses them (sysfstat, sysrfork, convD2M)."""
+
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp(prefix="p9ar-"))
+        self.addCleanup(shutil.rmtree, self.root)
+        st = sem.State()
+        self.m = p9run.Machine(st)
+        self.k = p9run.Kernel(str(self.root), self.m, 0x2000, io.BytesIO())
+
+    def test_fstat_writes_convD2M_of_the_host_file(self):
+        path = self.root / "a-file-name.z"
+        path.write_bytes(b"x" * 1234)
+        os.chmod(path, 0o664)
+        os.utime(path, (726010000, 726010682))
+        f = open(path, "rb")
+        self.addCleanup(f.close)
+        self.k.fds[3] = f
+        self.m.set_bytes(0x3000, b"\xAA" * 120)
+        self.assertEqual(self.k.call(11, self._args(3, 0x3000)), 0)
+        d = self.m.bytes(0x3000, 116)
+        self.assertEqual(d[0:28], b"a-file-name.z" + b"\0" * 15)  # name
+        self.assertEqual(d[28:56], b"none" + b"\0" * 24)          # uid
+        self.assertEqual(d[56:84], b"none" + b"\0" * 24)          # gid
+        ino = os.stat(path).st_ino & 0x7FFFFFFF
+        self.assertEqual(d[84:88], ino.to_bytes(4, "little"))    # qid.path
+        self.assertEqual(d[88:92], bytes(4))                     # qid.vers
+        self.assertEqual(d[92:96], (0o664).to_bytes(4, "little"))  # mode
+        self.assertEqual(d[96:100], (726010000).to_bytes(4, "little"))
+        self.assertEqual(d[100:104], (726010682).to_bytes(4, "little"))
+        self.assertEqual(d[104:112], (1234).to_bytes(8, "little"))  # length
+        self.assertEqual(d[112:116], b"M\0\0\0")             # type 'M', dev 0
+        self.assertEqual(self.m.bytes(0x3000 + 116, 4), b"\xAA" * 4)
+
+    def test_fstat_of_a_directory_carries_chdir(self):
+        d = p9run.Kernel.dir_bytes("x", os.stat(self.root))
+        self.assertEqual(d[95] & 0x80, 0x80)                  # mode CHDIR
+        self.assertEqual(d[87] & 0x80, 0x80)                  # qid CHDIR
+
+    def test_fstat_of_a_closed_fd_is_ebadfd(self):
+        self.assertEqual(self.k.call(11, self._args(7, 0x3000)), 0xFFFFFFFF)
+        self.assertEqual(self.k.errstr, b"fd out of range or not open")
+
+    def test_fstat_to_an_odd_buffer_stops(self):
+        self.k.fds[3] = open(__file__, "rb")
+        self.addCleanup(self.k.fds[3].close)
+        with self.assertRaisesRegex(p9run.Stop, "odd address"):
+            self.k.call(11, self._args(3, 0x3002))
+
+    def test_fstat_of_the_console_is_refused(self):
+        with self.assertRaisesRegex(p9run.Stop, "console"):
+            self.k.call(11, self._args(1, 0x3000))
+
+    def test_rfork_rfnoteg_returns_zero(self):
+        self.assertEqual(self.k.call(19, self._args(8)), 0)
+
+    def test_rfork_of_a_process_is_refused(self):
+        with self.assertRaisesRegex(p9run.Stop, r"rfork\(0x14\): RFPROC"):
+            self.k.call(19, self._args(0x14))                # fork()
+
+    def test_rfork_other_flags_are_refused(self):
+        for flag in (0x1, 0x2, 0x4, 0x9):
+            with self.subTest(flag=flag):
+                with self.assertRaisesRegex(p9run.Stop, "only RFNOTEG"):
+                    self.k.call(19, self._args(flag))
+
+    def _args(self, *args):
+        sp = 0x4000
+        for i, v in enumerate(args):
+            self.m.set_word(sp + 4 + 4 * i, v)
+        return sp
+
+
+class Ar(Tree):
+    """The shipped `ar` and `rl` against the shipped libc.a (A3)."""
+
+    MEMBERS = ["abort.z", "strlen.z", "getfcr.z"]
+
+    def setUp(self):
+        super().setUp()
+        self.shipped = LIBC.read_bytes()
+        shutil.copy(LIBC, self.root / "libc.a")
+        self.entries = {n: (h, b) for n, h, b, _o in archive(self.shipped)}
+
+    def test_ar_t_lists_every_member(self):
+        status, console, _k, _n = run(self.root, BIN / "ar", "t", "libc.a")
+        self.assertEqual(status, "exits('')")
+        self.assertEqual(console.decode().split(),
+                         [n for n, _h, _b, _o in archive(self.shipped)])
+
+    def test_ar_x_extracts_members_byte_exact(self):
+        status, _c, _k, _n = run(self.root, BIN / "ar", "x", "libc.a",
+                                 *self.MEMBERS)
+        self.assertEqual(status, "exits('')")
+        for n in self.MEMBERS:
+            self.assertEqual((self.root / n).read_bytes(), self.entries[n][1])
+
+    def put_members(self):
+        """The members' bytes, dated and moded as their headers say."""
+        for n in self.MEMBERS:
+            hdr, body = self.entries[n]
+            (self.root / n).write_bytes(body)
+            os.chmod(self.root / n, int(hdr[40:48].decode().strip(), 8))
+            t = int(hdr[16:28].decode().strip())
+            os.utime(self.root / n, (t, t))
+
+    def test_ar_vu_rebuilds_the_shipped_members_and_headers(self):
+        self.put_members()
+        status, console, k, _n = run(self.root, BIN / "ar", "vu", "new.a",
+                                     *self.MEMBERS)
+        self.assertEqual(status, "exits('')")
+        self.assertEqual(console, b"ar: creating new.a\n" + b"".join(
+            b"a - " + n.encode() + b"\n" for n in self.MEMBERS))
+        self.assertIn("fstat", [name for name, _r in k.trace])
+        made = archive((self.root / "new.a").read_bytes())
+        self.assertEqual([(n, h, b) for n, h, b, _o in made],
+                         [(n,) + self.entries[n] for n in self.MEMBERS])
+
+    def test_rl_writes_the_table_then_stops_at_its_fork(self):
+        self.put_members()
+        status, _c, _k, _n = run(self.root, BIN / "ar", "vu", "new.a",
+                                 *self.MEMBERS)
+        self.assertEqual(status, "exits('')")
+        status, _c, _k, _n = run(self.root, BIN / "rl", "new.a")
+        # rl.c writerl(): the table is written and closed, then
+        # fexec() forks to run ar -- which p9run refuses, loudly.
+        self.assertEqual(status, "p9run: refused rfork(0x14): RFPROC (a new "
+                         "process) is not modelled")
+        hdr = self.entries["__.SYMDEF"][0]
+        os.chmod(self.root / "__.SYMDEF", int(hdr[40:48].decode(), 8))
+        t = int(hdr[16:28].decode())
+        os.utime(self.root / "__.SYMDEF", (t, t))
+        # writerl()'s next step, played: ar rb <first member> lib __.SYMDEF
+        status, _c, _k, _n = run(self.root, BIN / "ar", "rb", "abort.z",
+                                 "new.a", "__.SYMDEF")
+        self.assertEqual(status, "exits('')")
+        made = (self.root / "new.a").read_bytes()
+        self.assertEqual([n for n, _h, _b, _o in archive(made)],
+                         ["__.SYMDEF"] + self.MEMBERS)
+        # Every entry points at the member that defines it, with the
+        # shipped table's names and types in the shipped table's order.
+        want = [e for e in symdef_by_member(self.shipped)
+                if e[0] in self.MEMBERS]
+        self.assertEqual(symdef_by_member(made), want)
+        self.assertEqual(len(want), 6)      # abort, strlen, 4 in getfcr
 
 
 if __name__ == "__main__":

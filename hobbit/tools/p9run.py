@@ -61,6 +61,7 @@ import argparse
 import collections
 import os
 import pathlib
+import stat
 import struct
 import sys
 
@@ -182,7 +183,8 @@ def build_stubs():
 
 #: arguments each system call reads (the Bluespec run compares that many)
 NARGS = {"exits": 1, "errstr": 1, "brk_": 1, "open": 2, "create": 3,
-         "close": 1, "read": 3, "write": 3, "seek": 3, "remove": 1}
+         "close": 1, "read": 3, "write": 3, "seek": 3, "remove": 1,
+         "fstat": 2, "rfork": 1}
 
 
 class Recorder:
@@ -427,8 +429,94 @@ class Kernel:
             except OSError as e:
                 return self.fail("%s: %s" % (path, e.strerror))
             return 0
+        # ar's calls (A3); their own methods, below, kept apart from the
+        # calls above so that other additions merge cleanly.
+        if name == "fstat":
+            return self.ar_fstat(a)
+        if name == "rfork":
+            return self.ar_rfork(a)
         raise Stop("p9run: refused syscall %d (%s) args %s"
                    % (num, name, " ".join("%08x" % x for x in a)))
+
+    # ----------------------------------------------------------------
+    # The system calls 1e's `ar` needs (sys/src/cmd/ar.c): fstat for
+    # dirfstat() in armove() and the `u` test, and rfork(RFNOTEG) in
+    # install() and qcmd().  Transcribed from sys/src/9/port/sysfile.c
+    # sysfstat() and sysproc.c sysrfork(); the Dir is convD2M's layout
+    # (sys/src/libc/9sys/convD2M.c, sys/include/libc.h Dir, DIRLEN 116).
+    # ----------------------------------------------------------------
+
+    DIRLEN = 116
+    NAMELEN = 28
+    CHDIR = 0x80000000
+    RFNOTEG = 1 << 3
+    RFPROC = 1 << 4
+
+    @classmethod
+    def dir_bytes(cls, name, st, dev_type=ord("M"), dev=0):
+        """convD2M() of the Dir a file server returns for host file `st`.
+
+        The host is the file server, so the fields are its answer:
+          name    the last path element (NAMELEN bytes, NUL-padded)
+          uid,gid "none" -- the host's owner is not a Plan 9 user; ar
+                  and every caller seen so far ignore both
+          qid     path = the host inode (31 bits) | CHDIR for a
+                  directory, vers = 0
+          mode    the host permission bits (& 0777) | CHDIR
+          atime, mtime   the host's, in seconds
+          length  the host size, as convD2M's VLONG (high word 0)
+          type, dev      mntdirfix() (devmnt.c) stamps the mount driver's
+                  devchar 'M' and the mount's id; the id is not
+                  modelled and is 0
+        """
+        chdir = cls.CHDIR if stat.S_ISDIR(st.st_mode) else 0
+
+        def text(s):
+            b = s.encode("latin-1")[:cls.NAMELEN - 1]
+            return b + b"\0" * (cls.NAMELEN - len(b))
+        out = (text(name) + text("none") + text("none")
+               + struct.pack("<IIIii", (st.st_ino & 0x7FFFFFFF) | chdir, 0,
+                             (st.st_mode & 0o777) | chdir,
+                             int(st.st_atime), int(st.st_mtime))
+               + struct.pack("<II", st.st_size & 0xFFFFFFFF, 0)
+               + struct.pack("<HH", dev_type, dev))
+        assert len(out) == cls.DIRLEN
+        return out
+
+    def ar_fstat(self, a):
+        """sysfstat(): fstat(fd, buf) writes the fd's Dir (DIRLEN bytes)."""
+        fd, buf = a[0], a[1]
+        # evenaddr() (sys/src/9/hobbit/trap.c): a buffer not on a word
+        # boundary posts "sys: odd address" and fails; notes are not
+        # modelled, so the run stops.
+        if buf & 3:
+            raise Stop("p9run: fstat buffer 0x%08x: odd address" % buf)
+        f = self.fds.get(fd, "absent")
+        if f == "absent":
+            return self.fail("fd out of range or not open")   # Ebadfd
+        if f in (None, "console"):
+            raise Stop("p9run: refused fstat(%d): the console's Dir "
+                       "(devcons) is not modelled" % fd)
+        st = os.fstat(f.fileno())
+        self.m.set_bytes(buf, self.dir_bytes(os.path.basename(f.name), st))
+        return 0
+
+    def ar_rfork(self, a):
+        """sysrfork() without RFPROC: only RFNOTEG is modelled.
+
+        RFNOTEG gives the process a new note group (`p->noteid =
+        incref(&noteidalloc)`); this runner has no notes, so it changes
+        nothing observable.  Every other flag -- RFPROC above all, a new
+        process -- is refused, loudly, rather than half done.
+        """
+        flag = a[0]
+        if flag & self.RFPROC:
+            raise Stop("p9run: refused rfork(0x%x): RFPROC (a new process) "
+                       "is not modelled" % flag)
+        if flag != self.RFNOTEG:
+            raise Stop("p9run: refused rfork(0x%x): only RFNOTEG is "
+                       "modelled" % flag)
+        return 0
 
 
 # --------------------------------------------------------------------
