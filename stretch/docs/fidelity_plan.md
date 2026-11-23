@@ -117,6 +117,7 @@ charts, Figs 3.8.1-3.8.20, PDF 225-244; the SAU flow diagrams, Figs
 3.11.1-3.11.14, PDF 255-268, print no clock, so the serial unit's per-step
 time is Buchholz p.209's 0.6 µs per byte pair; no figure covers the
 connectives). LEFT: the LA flow diagrams and the memory timing.
+LA/I-BOX/MEMORY HALF DONE 2026-11-23: `ibox_la_spec.md` (Figs 3.1.6-3.1.24, 3.2.1-3.2.27, §4 Procedure 1; no flow diagram prints a time).
 - R23-9732 (7101 CE manual) Figs 3.8.1-3.8.19, the PAU/SAU per-cycle
   charts (source_audit.md G5 item 4, printed pp.225-243; Fig. 3.8.15
   and 3.8.19 already read, `ebox_roadmap.md`).
