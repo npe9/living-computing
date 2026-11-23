@@ -358,23 +358,27 @@ def report(mine, ref, mo, ro, ma, ra, out):
         out.write("\n")
     # text by object: where the text-size difference comes from
     ms, rs = dict(object_sizes(mine, mo)), dict(object_sizes(ref, ro))
-    deltas = []
-    for path in [o[0] for o in mo] + [o[0] for o in ro if o[0] not in ms]:
-        d = ms.get(path, 0) - rs.get(path, 0)
-        if d:
-            deltas.append((path, ms.get(path), rs.get(path), d))
-    out.write("  text by object: %d objects differ in size, sum %+d "
-              "(text %+d)\n" % (len(deltas), sum(d[3] for d in deltas),
-                                 mine.k["text"] - ref.k["text"]))
     rf = {o[0]: set(o[3]) for o in ro}
     mf = {o[0]: set(o[3]) for o in mo}
-    for path, a, b, d in deltas:
+    rows, ndiff = [], 0
+    for path in [o[0] for o in mo] + [o[0] for o in ro if o[0] not in ms]:
+        d = ms.get(path, 0) - rs.get(path, 0)
+        om = sorted(mf.get(path, set()) - rf.get(path, set()))
+        orf = sorted(rf.get(path, set()) - mf.get(path, set()))
+        if path not in rf or path not in mf:
+            om = orf = []           # a whole object: its size says it
+        if d or om or orf:
+            ndiff += bool(d)
+            rows.append((path, ms.get(path), rs.get(path), d, om, orf))
+    out.write("  text by object (this, s9term, difference): %d objects "
+              "differ in size, sum %+d (text %+d)\n"
+              % (ndiff, sum(r[3] for r in rows),
+                 mine.k["text"] - ref.k["text"]))
+    for path, a, b, d, om, orf in rows:
         extra = ""
-        if path in rf and path in mf:
-            om, orf = sorted(mf[path] - rf[path]), sorted(rf[path] - mf[path])
-            if om or orf:
-                extra = "  functions: this only %s; s9term only %s" % (
-                    ",".join(om) or "-", ",".join(orf) or "-")
+        if om or orf:
+            extra = "  functions: this only %s; s9term only %s" % (
+                ",".join(om) or "-", ",".join(orf) or "-")
         out.write("    %-28s %7s %7s %+6d%s\n" % (
             path, a if a is not None else "-", b if b is not None else "-",
             d, extra))

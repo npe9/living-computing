@@ -25,9 +25,20 @@ a build product, not committed, so the suite checks the tool here:
 * the device-character decoder reads both widths (s9term's one byte,
   the shipped zc's two-byte runes).
 
-Observed 2026-11-23 when the `initcode` check was deleted from
-`compare()`: test_initcode_must failed (exit 0 and no `initcode` line),
-and nothing else.  (Recorded below after the run.)
+Injections into tools/p9kcmp.py, each reversed after (observed
+2026-11-23):
+
+* the `initcode` check deleted from `compare()`: test_initcode_must and
+  test_s9term_against_itself failed (no `initcode` line, exit 0), and
+  nothing else;
+* `chars()`'s rune branch disabled (every string read as bytes):
+  test_runes and test_wide_rune_refused failed, and nothing else;
+* `assign()` searching every archive from the first, not from the
+  current one: test_assign_does_not_go_back failed, and nothing else.
+  (Before that test was written this injection passed the whole file:
+  on s9term no object's name is a member of two archives it links, so
+  the s9term cases cannot see it; print.z, alarm.z, segment.z and
+  bbmalloc.z are each in libram.a and one library.)
 """
 
 from __future__ import annotations
@@ -113,7 +124,7 @@ class TestSelf(unittest.TestCase):
             ["format", "header", "entry", "objects", "libraries", "kerndate",
              "conffile", "devchar", "devtab", "streams", "initcode"]))
         self.assertTrue(all(items.values()), text)
-        self.assertIn("text by object: 0 objects differ", text)
+        self.assertIn("difference): 0 objects differ in size, sum +0", text)
 
 
 class TestMustItems(unittest.TestCase):
@@ -254,9 +265,43 @@ class TestObjects(unittest.TestCase):
                          + ["-lgnot"] * len(gnot) + ["-lg"] * len(g)
                          + ["-lc"] * len(c))
 
+    def test_assign_does_not_go_back(self):
+        # print.z and alarm.z are both libram.a and libc.a members: once
+        # the link is in -lc, a print.c object is libc's.
+        archives = [("libram.a", set(p9kcmp.kernel_member_names())),
+                    ("-lc", set(p9kcmp.members(p9kcmp.LIB / "libc.a")))]
+        objs = [["raml.s"], ["term.c"], ["../port/print.c"], ["abs.c"],
+                ["print.c"]]
+        self.assertEqual(p9kcmp.assign(objs, archives),
+                         ["raml.s", "term.c", "libram.a", "-lc", "-lc"])
+
     def test_object_sizes_cover_the_text(self):
         sizes = p9kcmp.object_sizes(REF, REF.objects())
         self.assertEqual(sum(n for _p, n in sizes), REF.k["text"])
+
+
+class TestLinkCommand(unittest.TestCase):
+    """`p9kbuild.py link` runs the mkfile's 9term rule, word for word."""
+
+    def test_ld_line_is_the_mkfiles(self):
+        import p9kbuild
+        mk = (p9kbuild.REL / "sys/src/9/hobbit/mkfile").read_text()
+        rule = mk.split("9bart 9term 9termlocal:", 1)[1].split("\n\n", 1)[0]
+        ld = [ln.strip() for ln in rule.splitlines()
+              if ln.strip().startswith("$LD")][0].split()
+        subst = {"$target": "9term", "raml.$O": "raml.z", "$CONF.$O":
+                 "term.z", "boot$CONF.root.$O": "bootterm.root.z",
+                 "$LIBRARY": "libram.a"}
+        want = [subst.get(w, w) for w in ld[1:]]
+        got = (["-o", "9term"] + p9kbuild.LINK_FLAGS +
+               ["raml.z", "term.z", "bootterm.root.z", "libram.a"] +
+               p9kbuild.LINK_LIBS)
+        self.assertEqual(got, want)
+        cc = [ln.strip() for ln in rule.splitlines()
+              if ln.strip().startswith("$CC")][0]
+        self.assertEqual(cc, "$CC $CFLAGS '-DKERNDATE='`{date -n} $CONF.c")
+        self.assertIn("CFLAGS=-w -D$TYPE", mk)
+        self.assertEqual(p9kbuild.CFLAGS, ["-w", "-Dram"])
 
 
 class TestChars(unittest.TestCase):

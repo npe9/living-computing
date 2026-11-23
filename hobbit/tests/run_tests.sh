@@ -22,6 +22,11 @@ python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/bin/echo" >/dev
 # The shipped kernel image (-H1) and the facts docs/s9term.md reads from it.
 python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/s9term" >/dev/null
 python3 "$here/test_p9exec.py"
+# A3's link is compared with s9term by tools/p9kcmp.py (the linked 9term
+# is a build product, made by `p9kbuild.py link` in the long run); here
+# the comparison runs on s9term itself and on corrupted copies of it.
+python3 "$hobbit/tools/p9kcmp.py" "$hobbit/tools/plan9-1e/hobbit/s9term" >/dev/null
+python3 "$here/test_p9kcmp.py"
 
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
