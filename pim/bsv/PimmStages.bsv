@@ -80,7 +80,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2,
-               XSoW } XState deriving (Bits, Eq);
+               XSoW,
+               XReuse3 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
@@ -993,8 +994,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule reuse1 (st == XReuse1);
     let a <- dbox.derefResult;
     reuseTag <= a.tag;
-    gbox.alloc(zeroExtend(z));
-    st <= XReuse2;
+    if (isLongVec(a)) begin
+      // a vector of seven or more has its descriptor: the new one gets
+      // its own (the vector box, as put_vector).  Fewer than seven
+      // cells under a long vector's tag would be no vector: refused
+      if (z < 7) stop(EndUnimp);
+      else begin
+        vbox.build(zeroExtend(z));
+        st <= XReuse3;
+      end
+    end
+    else begin
+      gbox.alloc(zeroExtend(z));
+      st <= XReuse2;
+    end
+  endrule
+
+  rule reuse3 (st == XReuse3);
+    let r <- vbox.result;
+    regs.wr(x, mkCell(reuseTag, r.a.val));
+    sp <= truncate(r.b.val);
+    spSingle <= False;
+    next;
   endrule
 
   rule reuse2 (st == XReuse2);

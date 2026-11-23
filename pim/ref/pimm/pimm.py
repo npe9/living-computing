@@ -23,12 +23,18 @@ On this model ALONE (the Bluespec core has none of it yet), a
 prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
 what the IPL's SCSI stack needs besides (a merger input bound to a
-vector, scsi_command waiting on its vector's elements,
-put_reused_structure of a long vector).  ref/pimm/ref_scsi.py runs
-them.  The core has since been given read_eagerly, not_equal and
-wait_vector_1/4/6 (lockstep_alt.py), b_divide, b_modulo, b_string and
-enqueue_goal_to_processor (lockstep_body.py), and string_operation
-waiting on an element of its vector (lockstep_elw.py).
+vector, scsi_command waiting on its vector's elements).
+ref/pimm/ref_scsi.py runs them.  The core has since been given
+read_eagerly, not_equal and wait_vector_1/4/6 (lockstep_alt.py),
+b_divide, b_modulo, b_string and enqueue_goal_to_processor
+(lockstep_body.py), string_operation waiting on an element of its
+vector (lockstep_elw.py) and put_reused_structure of a long vector
+(lockstep_reuse.py).  The merger input bound to a vector is NOT
+given: the reference makes its goals' records from cells, with no
+register written, and the core's goal box makes a record only from
+the registers or the argument registers (whose writes are traced),
+so one model or the goal box has to change: a design decision, left
+with the gate in place.
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -1168,7 +1174,8 @@ class Machine:
         # new one gets its own.
         w = self.deref(self.reg[y])
         if w[0] & ~1 == VECT0 + 14:
-            self.alone('put_reused_structure of a long vector')
+            if z < 7:       # a long vector's tag on fewer than seven cells
+                raise Unimplemented('put_reused_structure of %d cells from a long vector' % z)
             new, self.sp = self.vnew(z)
             self.reg[x] = (w[0], new[1])
             return
@@ -1598,6 +1605,10 @@ class Machine:
             if n == 0:
                 self.unify(self.mem[rec], NIL)
         elif self.vsize(w) is not None:
+            # Still on this model alone: the records below are made
+            # from cells, and the Bluespec goal box makes one only
+            # from the registers or the argument registers (traced
+            # writes).  Which side changes is not decided.
             self.alone('a merger input bound to a vector')
             # "When a vector is unified to an MHV, as many input
             # streams (MHVs) as the arity of the vector are added to
