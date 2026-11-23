@@ -97,6 +97,12 @@ way and is labelled OURS; it is not an end state. A piece that cannot
 be found is reconstructed from its sources at the best fidelity they
 allow and labelled a reconstruction.
 
+**Order of work (owner, 2026-11-23): "PIM/m, PSI and then the other
+PIM machines."** First the PIM/m installation (R1..R9); then the PSI
+with SIMPOS (section 9, P0..P5); then the other machines of the PIM
+family (section 10). Searches and acquisitions for a later machine
+may run at any time; building it waits its turn.
+
 Each rung is a runnable check that goes into `run_tests.sh` (or a
 longer `run_boot.sh` once runs exceed a few minutes).
 
@@ -518,6 +524,18 @@ the ones `pimfep.ptf` and `pimmcsp.ptf` name; the document lists
 which classes are ICOT's code and which are rebuilt. If a PSI-II (not III)
 artifact is all that is found, the microcode held here does not run
 on it.
+
+## 10. The other PIM machines (added 2026-11-23, third in order)
+
+After PIM/m and the PSI: the other machines of the family, PIM/p,
+PIM/c, PIM/i and PIM/k, and Multi-PSI (built from PSI-II
+processors). Each would be its own sibling directory when its turn
+comes. What is held and documented for each, and what has not been
+searched for, is in `environment_audit.md` (area L). Two things
+already held bear on them: VPIM (a PIM-family runtime, `vpim.tar.Z`)
+and the PIMOS source tree, which carries per-machine variants; the
+`INSTALL` of the held 3.6 objects names "Pseudo Multi-PSI" beside
+"Pseudo PIM/M". No rungs are set until the audit's searches report.
 
 ## 8. What stops now
 
