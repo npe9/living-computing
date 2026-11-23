@@ -112,6 +112,11 @@ Exit: each row's status is backed by a named deck or a grep. Each
 "planned" row names the milestone below that closes it.
 
 **0.3 Read the per-cycle sources into specs, before A3/A4 need them.**
+ARITHMETIC-UNIT HALF DONE 2026-11-23: `sau_pau_spec.md` (20 PAU timing
+charts, Figs 3.8.1-3.8.20, PDF 225-244; the SAU flow diagrams, Figs
+3.11.1-3.11.14, PDF 255-268, print no clock, so the serial unit's per-step
+time is Buchholz p.209's 0.6 µs per byte pair; no figure covers the
+connectives). LEFT: the LA flow diagrams and the memory timing.
 - R23-9732 (7101 CE manual) Figs 3.8.1-3.8.19, the PAU/SAU per-cycle
   charts (source_audit.md G5 item 4, printed pp.225-243; Fig. 3.8.15
   and 3.8.19 already read, `ebox_roadmap.md`).
@@ -292,12 +297,21 @@ recommendation is built behind a switch until it is decided.
 1. **D/ and the LAAR** (`NEXT.md` "D/ AND THE LAAR", atlas item 14):
    the sources say D/ takes the LAAR, and the atlas has room only if
    the divide is 2 clocks shorter. *Recommend:* follow the sources, and
-   settle the divide's length from Fig. 3.8.16 in A4.
+   settle the divide's length from Fig. 3.8.16 in A4. Read 2026-11-23
+   (`sau_pau_spec.md` §7): Fig. 3.8.16 gives D/ = `/` + 5 for one
+   remainder-normalization pass (+2 a further pass), one clock under
+   Table 2's `/` + 6; the chart draws no wait for the remainder's store.
 2. **The shipped machine's two LAARs** (`NEXT.md` 2026-10-25):
    *recommend:* model the shipped machine, the one MCP ran on. Keep
    the one-LAAR reading of Perf. Char. as a switch.
-3. **One parallel multiplier or two:** *recommend:* decide from the CE
-   charts in A4, not the atlas.
+3. **One parallel multiplier or two: SETTLED BY THE SOURCES, one**
+   (`sau_pau_spec.md` §6, 2026-11-23). Fig. 3.8.18 says the SAU multiply
+   is "IDENTICAL TO FLOATING POINT MULTIPLY"; Figs. 3.11.1 and 3.11.10
+   say "WAIT FOR PAU TO MULT AND XFER RESULT TO AB"; Buchholz p.208 and
+   Fig. 14.7 show one CSA tree. The divider is shared the same way
+   (3.11.8; 3.8.19). A3/A4 build VFL `*` and `/` as an SAU
+   byte-assembly, a PAU request, then an SAU unload. No longer the
+   owner's decision.
 4. **CE Vol. III's word-4 contradiction:** *recommend:* keep the
    Reference Manual's reading (current behaviour), and record the CE
    reading.
