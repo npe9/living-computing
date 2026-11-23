@@ -20,15 +20,17 @@ from OCR alone. OCR (`docs/ocr/`) was used only to find pages.
   or `c258_2500_1150`) encode the crop origin in full-page pixels, so any
   reading can be re-cropped.
 - **Who read what.**
-  - §2's own sections were read first-hand by the author: 3.8.15 sheets
+  - §4's figures were read first-hand by the author: 3.8.15 sheets
     1 and 3, the end of sheet 2, 3.8.16, 3.8.18, 3.11.1, 3.11.8, 3.11.10,
     Buchholz pp.208-216 and Perf. Char. pp.3-3 to 3-10.
-  - The other figures were transcribed by four parallel readers. Their
+  - The other figures were transcribed by five parallel readers (A-E). Their
     transcriptions are Appendices A-E, essentially verbatim.
   - At least one tile of each reader's work was re-read by the author.
     Each agreed with the transcription: 3.8.1's clock and T0/T3 rows;
     3.8.20's preamble; 3.11.4's "CONVERT DEC TO BIN SIGNAL TO PAU" loop;
-    3.11.11's "NO WRITE IN AFTER EOC2" note.
+    3.11.11's "NO WRITE IN AFTER EOC2" note; and for reader B the whole
+    of 3.8.9 (PDF 232), re-rendered at 300 dpi after the first commit.
+    B's other charts (3.8.10-3.8.14) were not spot-checked.
 - **Markings.**
   - PRINTED: what the page says.
   - COUNTED: periods counted off the drawing.
@@ -293,7 +295,7 @@ n + 25 for pp.208-216 (p.208 = PDF 233, p.216 = PDF 241).
 | 3.8.6 | SHF | "SHIFT>3 BUT<12", two T4 periods drawn | 6 | 7 | 4 + 2 + 1 = 7 for shift 8-11 | agrees (for 8-11) |
 | 3.8.7 | ST | 2 norms | 4 | 5 | 2 + 1 + 2 = 5 | agrees |
 | 3.8.8 | SRD | norm ≤6 | 2 | **3** | 3 + 1 = **4** | **disagrees by 1, chart shorter** |
-| 3.8.9 | SLØ | "ONE NORMALIZATION SHIFT" | 6 | **7** | 2 + 15 or 17 (+2) = **17-21** | **disagrees badly**; see note (a) |
+| 3.8.9 | SLØ | "ONE NORMALIZATION SHIFT"; **break mark** between clocks 4 and 5 | 6 as numbered | **not countable** (break elides periods) | 2 + 15 or 17 (+2) = 17-21 | **consistent** (DERIVED); see note (a) |
 | 3.8.10 | SRT | sheet 1: PAU 0-3 on FP CLOCK; root on A PULSES (SCR 96 by 2) | — | not countable alone | 2 + 106 = 108 | reused: `clock_unit.md` §4.4 closes 108 with A = 2 periods |
 | 3.8.11 | * | "NORMALIZATION SHIFT OF 6 OR LESS" | 8 | 9 | 5 + 4 = 9 | agrees |
 | 3.8.12 | LMR | 2 norms | 4 | 5 | not in Table 2 | not comparable (same shape as L) |
@@ -313,16 +315,22 @@ n + 25 for pp.208-216 (p.208 = PDF 233, p.216 = PDF 241).
   end-of-operation that the 1961 Table predates. **Nothing printed says
   the same change applies to SRD or D/.**
 - **(a) SLØ** (Store Low Order). Table 2 charges 17 cycles unnormalized
-  and 15 if normalized, plus pre-execution. The 3.8.9 chart closes in 8
-  periods. The chart's SAU rows ("A EXP A INPUT, SHIFT AMOUNT C INPUT }
-  SAU"; Appendix B) show the low-order exponent being computed. Nothing
-  on the sheet accounts for the other ~10 cycles.
-  Its reader also notes that the ink draws T3 at 1, 3, a break mark, then
-  5: at least three normalize pairs, despite the printed "ONE
-  NORMALIZATION SHIFT". So even the chart's own example is uncertain.
-  - **NOT RESOLVED.** One of the two is wrong for the shipped machine,
-    or SLØ was redesigned between 3/61 and 2/62.
-  - The model charges 2 + 17 (`ebox_roadmap.md`).
+  and 15 if normalized, plus pre-execution. The 3.8.9 chart numbers its
+  clocks 0-7 consecutively, but **a break mark (a pair of wavy strokes)
+  crosses the FP CLOCK row between 4 and 5 and every row below it**:
+  the ring triggers, EXP LATCH/SAMPLE, the shift-register pulses, SHIFT
+  CONTROL A and the SAU rows. This was re-read at 300 dpi (PDF 232).
+  - So the numbering does not count the periods, and the chart's length
+    is not countable.
+  - DERIVED: the elided part is the T3,T4 shift loop. In period 0 the
+    chart loads "48 TO SH CTR ADDER" (SLØ FCT). Shifting 48 places at
+    six a T3,T4 pass is 8 passes = 16 periods, which with T0 and the
+    END OP period lands at Table 2's 15-17. The drawn T3 at 1 and 3 and
+    the T3 at 5 after the break are passes of that loop. The printed "ONE
+    NORMALIZATION SHIFT" then refers to the normalization after the
+    48-place shift.
+  - So **3.8.9 does not contradict Table 2**, and Table 2 stands for
+    SLØ. The model charges 2 + 17 (`ebox_roadmap.md`).
 - **(b) `*+`** (3.8.13). 0-10 main path, 0-13 alternative. Table 2 says
   3 + 17, and the Table's "cannot enter execution cycles until Factor is
   available" suggests the two count from different origins.
@@ -845,9 +853,10 @@ whether it repeats. **Still open.**
 7. **D/ chart length** is `/` + 5 (+2 per further remainder pass), one
    less than Table 2's + 6 (+2) (§7). Whatever the model charges from
    Table 2 for D/ is one clock longer than the 1962 chart.
-8. **SRD** is three chart periods against Table 2's four. **SLØ** is
-   seven periods against 17-21. **`*+`** is 11 or 14 against 20. The
-   model charges Table 2 for each (`ebox_roadmap.md`: SLØ 19, `*+` 20).
+8. **SRD** is three chart periods against Table 2's four. **`*+`** is
+   11 or 14 against 20. The model charges Table 2 for each
+   (`ebox_roadmap.md`: `*+` 20). SLØ is *not* in this list: 3.8.9 has a
+   break mark that elides the 48-place shift loop (§3 note a).
    - Not a model bug: Table 2 is a source.
    - But two sources disagree, and the model sides with the older one
      without saying so.
@@ -2510,8 +2519,8 @@ All join a bus → ◇ "EOC1":
 
 #### R23-9732 (7101 CPU CE manual, Jan 1963) — SAU flow diagrams, Figs 3.11.2 – 3.11.7 (transcription set D)
 
-Source: 300 dpi renders [scratch, deleted]/pdfNNN-NNN.png`. Tiles in
-`[scratch, deleted]/tD/`.
+Source: 300 dpi renders [scratch, deleted]/pdfNNN-NNN.png. Tiles in
+[scratch, deleted]/tD/.
 Tile naming: `tPPP_X_Y.png` = 1300x1200 crop at (X,Y) of PDF page PPP; `xPPP_*.png` = extra targeted crops.
 Conventions: labels quoted VERBATIM in capitals; a printed overbar is written as a `-bar` suffix (e.g. `OS-bar`). ALD numbers are given in parentheses.
 "Bus" = a horizontal line with several boxes hanging from it (parallel actions, joined by a lower line).
@@ -3154,7 +3163,7 @@ AB RES ACCUMULATOR; PAU shift control LEFT ONE / RIGHT EIGHT.
 
 #### E — SAU flow diagrams, R23-9732 (7101 CPU CE manual), PDF 263 and PDF 265
 
-Transcriber: agent tE. Source: 300 dpi renders [scratch, deleted]/pdf263-263.png`, `pdf265-265.png`.
+Transcriber: agent tE. Source: 300 dpi renders [scratch, deleted]/pdf263-263.png, pdf265-265.png.
 Tiles and zooms are in [scratch, deleted]/ (names given below; `a_X_Y.png` = PDF 263 crop at
 origin X,Y; `b_X_Y.png` = PDF 265; `z263_*`, `z265_*` = enlarged zooms).
 
@@ -3764,8 +3773,10 @@ a per-clock table (Appendices A-C and §4).
   is recorded as printed.
 - **3.8.8 SRD:** "ADD "1" TO POS 50", "SUPPRESS ADDER OUTPUT 50 & 51".
   Three periods against Table 2's four (§3).
-- **3.8.9 SLØ:** a per-period table exists. It **conflicts with Table 2**
-  by ~10 cycles (§3 note a). Do not build from either until resolved.
+- **3.8.9 SLØ:** T0 loads 48 into the shift-counter adder. Then a T3,T4
+  shift loop runs, with a break mark eliding its middle. Then
+  normalization and END OP. Build the loop from the shift counter, and
+  take the total from Table 2 (§3 note a).
 - **3.8.10 SRT:**
   - the PAU part is 0-3 on FP CLOCK;
   - the root development is "UNDER SAU CONTROL" on A PULSES: RFL 47 by 2
@@ -3817,7 +3828,7 @@ a per-clock table (Appendices A-C and §4).
 | **The VFL field crossing a word boundary inside the SAU.** | Not drawn on 3.11.9 or 3.11.11. The look-ahead appears only as LA GO / LA REJECT / LA START / "SIR TO LA". BAAB/BACD loaded to 127 / 64-1 suggests a two-word, 128-bit window (DERIVED). The fetch of the second word is the LA flows' (Fig. 3.1.24, per NEXT.md), outside this spec. |
 | **A per-cycle table for 3.8.15 sheet 2 (periods 9-21) and for 3.8.19.** | Reused from `ebox_roadmap.md` as extracts, per the brief. Neither has a period-by-period transcription here. Sheet 2's periods 20-25 were re-read (§4). |
 | **Whether the SDC is a loop.** | 3.8.15 sheet 2 (re-read only at 20-25), 3.8.16, 3.8.20. Not settled (§7). |
-| **SLØ's ~10 missing cycles; `*+`'s 20 against 11/14.** | 3.8.9, 3.8.13, Table 2. Unresolved (§3). |
+| **`*+`'s 20 against 11/14.** | 3.8.13, Table 2. Unresolved (§3). (SLØ's apparent gap is the break mark on 3.8.9, §3 note a.) |
 | **The 3.8.20 zero-divisor sub-chart's place on the main clock.** | 3.8.20 itself; its start condition names D4, which is not on the sheet. |
 | **The opcode legends' overbars on 3.11.9 and 3.11.11.** | ILLEGIBLE: M+ and M+MG print identically, so a bar was lost in printing (Appendix E). |
 
