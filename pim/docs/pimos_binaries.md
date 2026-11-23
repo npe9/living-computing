@@ -18,9 +18,19 @@ than guesswork.
 | `pimos.ipl` | 1,678 B | list of `.sav` files to load, in order |
 | `pimm_ipl.sym`, `pimm_ipl.ldb` | | symbol tables (tagged text) |
 
-`pimos.ipl` is a tagged KL1 list of module paths. Decoding the tag pairs
-gives `dsys:cs:PIMOS.DIR>pimm/kernel360E.sav`, and the rest of the
-sequence likewise.
+`pimos.ipl` is plain text in two-byte JIS, one full FEP path a line,
+lines ended by the 16-bit word 000Ah (corrected 2026-11-23: this
+said "a tagged KL1 list" decoding to `dsys:cs:PIMOS.DIR>pimm/kernel360E.sav`,
+a misreading of JIS `>` 2164h and `_` 2132h). Decoded with
+`asm/psdpim.py`'s table, 21 lines: the eight system files in the
+order kernel, shell, utility, library, debugger, server, bios, macro,
+each as `>sys>csp>PIMOS.DIR>pimm_kernel360E.sav`; an empty line; the
+twelve patches in the order macro, hash, tel, fepsv, driver, modu,
+mkdir, shutl, scsifep, libvar, newpg, lis, each as
+`>sys>csp>PIMOS.DIR>pimm_patch_macro360E.sav`. All twenty are in the
+same archive under those file names. The IPL's own reader of the
+list (`ipl:decompose/2`, decompiled) splits at code 10, skips empty
+lines and takes JIS `％` (2173h) to the end of the line as a comment.
 
 The PIMOS manual (`e-sysman.tex` §IPL Setup) states the contract:
 `*.kbn` is loaded from CSP and is "only the code required to IPL
