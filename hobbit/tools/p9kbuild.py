@@ -14,6 +14,15 @@ Targets
            object of $OBJ (`zc -w -Dram`, port files `-I. ../port/X.c`,
            `fcall` without -I., fprt0.s through za), raml.s through za,
            then `ar vu libram.a $OBJ` and `rl libram.a` ($RL, /hobbit/mkfile)
+  link     the mkfile's `9term` rule: `za raml.s`, `zc -w -Dram
+           -DKERNDATE=<kerndate> term.c`, `zc -w -Dram bootterm.root.c`
+           (term.c, bootterm.root.c and kerndate from tools/p9kgen.py,
+           --kgen DIR), then `zl -o 9term -l -R4 -H1 -T0x80004000
+           -E0x80004000 raml.z term.z bootterm.root.z libram.a -lgnot -lg
+           -lc` (libram.a from the kernel target, BUILD/libram.a, or
+           --libram); the image is checked by p9exec.check_kernel and
+           compared with s9term by tools/p9kcmp.py; --check also requires
+           the recorded sha256 (NINETERM_SHA256)
   libc     every C source of sys/src/libc/{hobbit,port,9sys} that has a
            member in the shipped hobbit/lib/libc.a, compiled with `zc` in
            its own directory and compared with that member
@@ -61,6 +70,9 @@ What is not the release's tooling, and why
   726010682 (the shipped libc.a's __.SYMDEF date) before ar runs.
 
     python3 tools/p9kbuild.py kernel            # everything, 8 processes
+    python3 tools/p9kgen.py --out K             # ~75 min (mkroot's sed)
+    python3 tools/p9kbuild.py kernel --kgen K
+    python3 tools/p9kbuild.py link --kgen K --check
     python3 tools/p9kbuild.py kernel --only trap,clock
     python3 tools/p9kbuild.py libc --only frexp,abs --check
     python3 tools/p9kbuild.py archeck
@@ -87,6 +99,7 @@ sys.path.insert(0, str(HOBBIT / "sem"))
 FIXED_MTIME = 726010682         # shipped libc.a __.SYMDEF header date
 FIXED_MODE = 0o664              # every shipped libc.a member's mode
 MAX_STEPS = 200_000_000
+LINK_STEPS = 2_000_000_000      # zl of 9term: see target_link's log
 
 #: libc/port C files whose libc.a member is built from libc/hobbit's
 #: assembler version instead (hobbit/mkfile OFILES), so the zc object
@@ -478,6 +491,113 @@ def target_kernel(a):
 
 
 # --------------------------------------------------------------------
+# The link: 9$CONF
+# --------------------------------------------------------------------
+
+#: sys/src/9/hobbit/mkfile, rule `9term 9bart 9termlocal`.
+LINK_FLAGS = ["-l", "-R4", "-H1", "-T0x80004000", "-E0x80004000"]
+LINK_LIBS = ["-lgnot", "-lg", "-lc"]
+#: The sha256 of `9term` as the recorded command makes it from the
+#: generated inputs of tools/p9kgen.py and libram.a f709cea9...
+#: (docs/plan9_boot_plan.md A3).  `link --check` fails on any other.
+NINETERM_SHA256 = ("002880c011bd7418c36c036b16f450e6"
+                   "1d1ed43e1ec963a6f5b4574a2eece1b1")
+
+
+def target_link(a):
+    """9$CONF: the mkfile's rule, with its three inputs made on the model:
+        $CC $CFLAGS '-DKERNDATE='`{date -n} $CONF.c
+        $LD -o $target -l -R4 -H1 -T0x80004000 -E0x80004000 \\
+            ${TYPE}l.$O $CONF.$O boot$CONF.root.$O lib$TYPE.a $LIB
+    ($LIB = -lgnot -lg -lc).  raml.s is assembled and boot$CONF.root.c
+    compiled here too (portmkfile's %.$O rules), so the link's inputs
+    are: tools/p9kgen.py's $CONF.c, boot$CONF.root.c and kerndate
+    (--kgen DIR), and libram.a (--libram, default BUILD/libram.a, the
+    `kernel` target's product).  The rule's last command, `size 9$CONF`,
+    is not run (`size` is not vendored); p9exec prints the sizes."""
+    if not a.kgen:
+        raise SystemExit("p9kbuild: link needs --kgen DIR (tools/p9kgen.py)")
+    kg = pathlib.Path(a.kgen)
+    build = pathlib.Path(a.build)
+    build.mkdir(parents=True, exist_ok=True)
+    libram = pathlib.Path(a.libram or build / "libram.a")
+    if not libram.exists():
+        raise SystemExit("p9kbuild: no %s (run the kernel target first, or "
+                         "give --libram)" % libram)
+    conf = a.conf
+    target = "9" + conf
+    root = stage(build, "link-" + conf)
+    cwd = "sys/src/9/hobbit"
+    hdir = root / cwd
+    log = Log(build / ("link-%s.log" % conf))
+    log.note("p9kbuild link CONF=%s; columns: step, command, status, "
+             "instructions, syscalls, seconds, size, sha256, note, console"
+             % conf)
+    kerndate = int((kg / "kerndate").read_text().split()[0])
+    for name in (conf + ".c", "boot%s.root.c" % conf, "devtab.h", "init.h"):
+        shutil.copy(kg / name, hdir / name)
+        log.note("input %s from %s sha256 %s" % (name, kg, sha(hdir / name)))
+    shutil.copy(libram, hdir / "libram.a")
+    log.note("input libram.a from %s sha256 %s"
+             % (libram, sha(hdir / "libram.a")))
+    for lib in ("libgnot.a", "libg.a", "libc.a"):
+        log.note("input /hobbit/lib/%s (vendored) sha256 %s"
+                 % (lib, sha(root / "hobbit/lib" / lib)))
+    log.note("KERNDATE %d from %s/kerndate" % (kerndate, kg))
+    specs = [("raml", cwd, "za", ["raml.s"]),
+             (conf, cwd, "zc", CFLAGS + ["-DKERNDATE=%d" % kerndate,
+                                         conf + ".c"]),
+             ("boot%s.root" % conf, cwd, "zc",
+              CFLAGS + ["boot%s.root.c" % conf])]
+    t0 = time.time()
+    res = run_many(root, a.jobs, specs, a.max_steps)
+    for key, _c, _t, _a in specs:
+        log.line(key, res[key], hdir / (key + ".z"))
+        if not ok(res[key]) or not (hdir / (key + ".z")).exists():
+            raise SystemExit("p9kbuild: %s failed: %s"
+                             % (key, res[key]["status"]))
+    for key in ("raml", conf, "boot%s.root" % conf):
+        theirs = kg / (key + ".z")
+        if theirs.exists():
+            log.note("%s.z %s the one in %s" % (
+                key, "same as" if theirs.read_bytes() ==
+                (hdir / (key + ".z")).read_bytes() else "DIFFERENT from",
+                kg))
+    args = (["-o", target] + LINK_FLAGS +
+            ["raml.z", conf + ".z", "boot%s.root.z" % conf, "libram.a"] +
+            LINK_LIBS)
+    r = run_tool(root, cwd, "zl", args, a.link_steps)
+    report("zl", r)
+    out = hdir / target
+    log.line("zl", r, out)
+    if not ok(r) or not out.exists() or r["console"]:
+        raise SystemExit("p9kbuild: zl: %s %r" % (r["status"], r["console"]))
+    shutil.copy2(out, build / target)
+    digest = sha(out)
+    msg = ("%s %d bytes sha256 %s; zl %d instructions, %.0f s; %.0f s in all"
+           % (target, out.stat().st_size, digest, r["steps"], r["seconds"],
+              time.time() - t0))
+    log.note(msg)
+    print("p9kbuild: " + msg)
+    import p9exec
+    import p9kcmp
+    k = p9exec.read_kernel(str(out))
+    problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k))
+    log.note("p9exec.check_kernel: %s" % ("; ".join(problems) or "passes"))
+    status = p9kcmp.compare(p9kcmp.Image(out), p9kcmp.Image(p9kcmp.S9TERM))
+    log.note("p9kcmp against s9term: exit %d" % status)
+    if problems or status:
+        return 1
+    if a.check and conf == "term":
+        if digest != NINETERM_SHA256:
+            print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
+                  % (target, digest, NINETERM_SHA256))
+            return 1
+        print("p9kbuild: %s is the recorded image" % target)
+    return 0
+
+
+# --------------------------------------------------------------------
 # libc: the compiler against the shipped archive
 # --------------------------------------------------------------------
 
@@ -659,7 +779,7 @@ def symdef_residue_only(got, want):
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("target", choices=["kernel", "libc", "archeck"])
+    ap.add_argument("target", choices=["kernel", "link", "libc", "archeck"])
     ap.add_argument("--build", default=str(HOBBIT / "build" / "p9kbuild"),
                     help="build directory (each target's staged tree is "
                     "BUILD/<target>/root)")
@@ -668,7 +788,12 @@ def main(argv):
     ap.add_argument("-j", "--jobs", type=int, default=8)
     ap.add_argument("--max-steps", type=int, default=MAX_STEPS)
     ap.add_argument("--check", action="store_true",
-                    help="libc: fail if any object differs unexpectedly")
+                    help="libc: fail if any object differs unexpectedly; "
+                    "link: fail unless 9term has the recorded sha256")
+    ap.add_argument("--libram", help="link: the libram.a to link "
+                    "(default BUILD/libram.a, the kernel target's)")
+    ap.add_argument("--link-steps", type=int, default=LINK_STEPS,
+                    help="link: zl's instruction limit")
     ap.add_argument("--devtab-h", help="use this devtab.h, not the "
                     "transcribed mkdevh")
     ap.add_argument("--init-h", help="use this init.h, not the "
@@ -679,8 +804,8 @@ def main(argv):
     ap.add_argument("--no-library", action="store_true",
                     help="kernel: compile only; no ar/rl")
     a = ap.parse_args(argv)
-    return {"kernel": target_kernel, "libc": target_libc,
-            "archeck": target_archeck}[a.target](a)
+    return {"kernel": target_kernel, "link": target_link,
+            "libc": target_libc, "archeck": target_archeck}[a.target](a)
 
 
 if __name__ == "__main__":
