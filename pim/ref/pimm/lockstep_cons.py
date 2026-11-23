@@ -67,7 +67,7 @@ import lockstep_deca as deca  # noqa: E402
 import lockstep_file as lfile  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=98749, waiting=8)
+PINNED = dict(parts=2, lines=95614, waiting=8)
 FILE = 'pimm_bios360E.sav'
 FILE2 = 'pimm_patch_hash360E.sav'
 # the second file's name in the archive; what the IPL's own file

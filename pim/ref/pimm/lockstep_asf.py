@@ -48,7 +48,7 @@ import driver  # noqa: E402
 import lockstep_get4  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=9, lines=2632)
+PINNED = dict(parts=9, lines=2563)
 
 CLAUSES = '''analyze_standard_format(Valid,ErrClass,ErrCode,Sense,SenseData) :-
     Valid =:= 1 |

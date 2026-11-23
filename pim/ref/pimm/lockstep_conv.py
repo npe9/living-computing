@@ -64,7 +64,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import test_jtoa  # noqa: E402
 
-PINNED = dict(parts=8, lines=35743)
+PINNED = dict(parts=8, lines=26473)
 PIMOS = [0x2350, 0x2349, 0x234d, 0x234f, 0x2353, 0x2121, 0x2333, 0x2125, 0x2336]
 
 

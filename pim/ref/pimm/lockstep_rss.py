@@ -59,7 +59,7 @@ import lockstep_asf  # noqa: E402
 import lockstep_get4  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=19, lines=4901)
+PINNED = dict(parts=19, lines=4756)
 CLAUSES = __doc__[__doc__.index('    analyze_request_sense_command_status1('):
                   __doc__.index('New here:')].replace('\\\\', '\\')
 SENSES = lockstep_asf.SENSES

@@ -48,7 +48,8 @@ checksum, `lockstep_mrb.py` `set_vector_element` in place or copied
 as the MRB says, `lockstep_atab.py` the IPL's own atom table
 (`new_atom`, `hash`) and a file loaded against it,
 `lockstep_cons.py` the console (`display_console`),
-`lockstep_run.py` a predicate of a loaded module run from the heap; 111
+`lockstep_run.py` a predicate of a loaded module run from the heap,
+`lockstep_link.py` the IPL's whole `load/4` with its linker; 112
 instructions now. No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed

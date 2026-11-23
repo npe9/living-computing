@@ -63,7 +63,7 @@ import pimm  # noqa: E402
 import unlsav  # noqa: E402
 import lockstep_deca as deca  # noqa: E402
 
-PINNED = dict(parts=7, lines=107544, elements=39)
+PINNED = dict(parts=7, lines=96340, elements=39)
 MODULES = 5
 
 

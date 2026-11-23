@@ -273,10 +273,21 @@ image; what R2 still owes is a predicate loaded from a `.sav`.*
 loaded by the IPL's own `load_file/9`, reader, checksum and atom
 table, and then run from the module object in the heap on both
 models (`ref/pimm/lockstep_run.py`); its answers for integers, an
-atom, a string, a list and a vector are those the KL1 source gives.
+atom, a string, a list and a vector are those the KL1 source gives
+(for the atom and the string the source says `builtin:hash`, whose
+function here is PDSS's, not known to be PIM/m's).
 The test stands in for the file's buffers and starts the goal
 itself: the IPL's linker (`ipl_link_table`) and a call between
 loaded modules are not run yet.*
+*The same day, towards R4: `ipl_loader:load/4` runs whole on both
+models for a list of ONE file (`ref/pimm/lockstep_link.py`): the
+console is given "IPL loading", the file's name and "Link Modules
+...", and the IPL's linker answers `abnormal` with "Undefined Module
+Found" and the module the file calls and does not hold. R4 itself
+needs the list in `pimos.ipl`; a second file of 41,359 words was
+tried on the reference model alone and needs 1.29 M cells (about 31
+a file word, 0.9 M of them goal and suspension records never reused)
+and the unification of two vectors, neither of which is in yet.*
 
 ### Phase 2 - The runtime
 

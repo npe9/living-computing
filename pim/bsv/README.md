@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Twenty-seven tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Twenty-eight tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -136,7 +136,12 @@ table, `ipl_loader:atom_table/1`: names interned, read back with
 real 5702h object file and a file's name; `C` and `S` trace lines) and `run` (rung R2: `hasher:hash/3`, loaded
 from its object file by the IPL's own loader and atom table, is RUN
 from the module object in the heap, and answers as its KL1 source
-says). State: 111
+says) and `link` (`ipl_loader:load/4` whole: the IPL's file loop,
+loader, atom table and linker, with the bench answering `open` and
+the buffers; the console is given "IPL loading", the file's name and
+"Link Modules ...", and the linker names the file's undefined
+module). The bench fills a string it has made in place (`SETW`),
+not through `set_string_element`. State: 112
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

@@ -8,6 +8,7 @@
 //   info(s)            a = {INT, length}, b = {INT, element bits}
 //   element(s, i)      a = {INT, element i}
 //   newStr(n, bits)    a = a new string of n zero elements
+//   poke(s, i, w)      word i := w in place: for the test bench only
 //   show(s)            the string's descriptor and words as `S` trace lines
 //   hashStr(s)         a = the hash code of the string (PDSS's function)
 //   equal(s1, s2)      ok is whether the strings are the same, word for word
@@ -57,10 +58,11 @@ interface PimmSBox;
   method Action hashStr(Cell s);
   method Action equal(Cell s1, Cell s2);
   method Action show(Cell s);
+  method Action poke(Cell s, Bit#(32) i, Bit#(32) w);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow, KPoke } SKind deriving (Bits, Eq);
 
 typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
   SReq deriving (Bits);
@@ -176,6 +178,12 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
       if (rq.i != 8 && rq.i != 16 && rq.i != 32) fatal("change_element_size: not 8, 16 or 32");
       gbox.alloc(toAddr(wordsOf(d)) + 1);
       st <= SAlloc;
+    end
+    else if (rq.k == KPoke) begin
+      // the bench's: word i written where it is
+      if (rq.i >= zeroExtend(wordsOf(d))) fatal("poke: word out of range");
+      mem.write(src + 1 + toAddr(truncate(rq.i)), intC(rq.e));
+      answer(rq.s, ?);
     end
     else if (rq.k == KShow) begin
       traceS(c);
@@ -386,6 +394,7 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     reqQ.enq(SReq { k: KOp, s: s1, i: p1, e: n, s2: s2, p2: p2, op: o });
   method Action hashStr(Cell s) = reqQ.enq(mk(KHash, s, ?, ?));
   method Action show(Cell s) = reqQ.enq(mk(KShow, s, ?, ?));
+  method Action poke(Cell s, Bit#(32) i, Bit#(32) w) = reqQ.enq(mk(KPoke, s, i, w));
   method Action equal(Cell s1, Cell s2) =
     reqQ.enq(SReq { k: KEq, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
   method ActionValue#(SResult) result;

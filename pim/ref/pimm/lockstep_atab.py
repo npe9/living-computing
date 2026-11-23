@@ -70,8 +70,12 @@ in part 1 at the trace line shown and was restored:
                                              was added)
   float guard succeeds on a non-float        16812: the next instruction
 NOT caught, because not run:
-  hash of an atom gives 0                    no atom, integer, list or
-                                             vector is hashed by any test
+  hash of an atom gives 0                    not run by this test; caught
+                                             since by lockstep_run.py (line
+                                             633 of its part 2); a list or
+                                             vector given to the hash
+                                             instruction itself is still
+                                             not run
   float guard reads its first register twice needs a float in the second
   a string and an atom: wait_value succeeds  never compared
 
@@ -99,7 +103,7 @@ import lockstep_load as lload  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=2114460, names=11, cells=366)
+PINNED = dict(parts=2, lines=2058423, names=11, cells=366)
 
 
 def jis(text):

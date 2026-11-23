@@ -72,7 +72,7 @@ import lockstep_file as lfile  # noqa: E402
 import lockstep_load as lload  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=1168720, answers=10)
+PINNED = dict(parts=2, lines=1112850, answers=10)
 MIN = 0x80000000
 
 

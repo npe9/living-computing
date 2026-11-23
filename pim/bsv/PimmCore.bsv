@@ -38,6 +38,7 @@ interface PimmCore;
   // between runs: make strings
   method Action newString(Bit#(32) n, Bit#(32) bits);
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
+  method Action pokeWord(Cell s, Bit#(32) i, Bit#(32) w);
   method ActionValue#(Cell) stringResult;
 endinterface
 
@@ -136,6 +137,7 @@ module mkPimmCore#(String image)(PimmCore);
   method ActionValue#(Cell) derefResp = dbox.derefResult;
   method Action newString(Bit#(32) n, Bit#(32) bits) = sbox.newStr(n, bits);
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e) = sbox.setElement(s, i, e);
+  method Action pokeWord(Cell s, Bit#(32) i, Bit#(32) w) = sbox.poke(s, i, w);
   method ActionValue#(Cell) stringResult;
     let r <- sbox.result;
     return r.a;

@@ -14,7 +14,7 @@ import sys
 
 import lockstep_file
 
-lockstep_file.PINNED = dict(parts=1, lines=637025, cells=1365)
+lockstep_file.PINNED = dict(parts=1, lines=624279, cells=1365)
 lockstep_file.FILES = ('pimm_patch_shutl360E.sav',)
 lockstep_file.NAME = 'file3'
 

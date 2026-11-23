@@ -133,6 +133,8 @@ class Machine:
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
+        # instruction names by code address; for code in the heap this
+        # assumes a heap cell is never reused for other code
         self.names = {}
         # statistics, not machine state
         self.nsusp = 0
@@ -850,6 +852,13 @@ class Machine:
         # unbound X is noted
         w = self.g_word(x)
         if w is None or w[0] & ~1 != FLT:
+            return self.guard_fail()
+
+    def i_atom(self, pc, x, y, z, c16):          # guard type check
+        # "If X is an atom, this predicate succeeds, otherwise it
+        # fails" (PDSS manual); an unbound X is noted
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != ATOM:
             return self.guard_fail()
 
     def i_integer(self, pc, x, y, z, c16):       # guard type check

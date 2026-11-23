@@ -12,7 +12,7 @@ import PimmTypes::*;
 import PimmCore::*;
 
 typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
-               NewStr, SetEl, Ptr, Slot } Kind deriving (Bits, Eq);
+               NewStr, SetEl, Ptr, Slot, SetW } Kind deriving (Bits, Eq);
 
 module mkPimmDriverTb(Empty);
   PimmCore core <- mkPimmCore("generated/pimm_ipl.hex");
@@ -50,6 +50,8 @@ module mkPimmDriverTb(Empty);
       UnifyC: begin core.unifyReq(marked(slot.sub(sa)), cell_); answer = True; end
       NewStr: begin core.newString(cell_.val >> 8, zeroExtend(cell_.val[7:0])); answer = True; end
       SetEl:  begin core.setElement(slot.sub(sa), cell_.val >> 16, zeroExtend(cell_.val[15:0])); answer = True; end
+      // a word of the bench's own new string, in place
+      SetW:   begin core.pokeWord(slot.sub(sa), zeroExtend({b, cell_.tag}), cell_.val); answer = True; end
       Ptr:    slot.upd(sa, mkCell(cell_.tag, slot.sub(sb).val));
       Slot:   slot.upd(sa, cell_);
       default: fatal("driver: operation not implemented");
@@ -87,7 +89,7 @@ module mkPimmDriverTb(Empty);
     ip <= ip + 1;
   endrule
 
-  rule gotString (awaited && (kind == NewStr || kind == SetEl));
+  rule gotString (awaited && (kind == NewStr || kind == SetEl || kind == SetW));
     let v <- core.stringResult;
     slot.upd(sa, v);
     awaited <= False;

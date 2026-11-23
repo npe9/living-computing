@@ -52,7 +52,7 @@ import lockstep_deca as deca  # noqa: E402
 import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=4, lines=503382, items=2928)
+PINNED = dict(parts=4, lines=489986, items=2928)
 MODULES = ('system2defined2servers', 'task2std2abnormal', 'copy', 'shoen')
 X = 77
 

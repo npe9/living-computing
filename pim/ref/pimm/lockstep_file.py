@@ -62,7 +62,8 @@ New on both models:
 What is left waiting: check_magic_num/13 makes $bar0(FileName) at
 priority 4096, which is ipl:display_console(FileName): the file's
 name on the console.  FileName is given unbound here, so that goal
-waits and nothing is displayed; console output is not modelled yet.
+waits and nothing is displayed here (with the name given it is
+displayed: lockstep_cons.py).
 Files with magic 5702h carry a comment that is displayed likewise;
 none is run here.
 
@@ -98,7 +99,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=1, lines=90250, cells=366)
+PINNED = dict(parts=1, lines=88217, cells=366)
 FILES = ('pimm_patch_hash360E.sav',)
 NAME = 'file'
 

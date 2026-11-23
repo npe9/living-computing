@@ -73,7 +73,7 @@ carry no open question.
 | B5 | Built-in exceptions. Every built-in error stops the model today (`Unimplemented('built-in exception ...')`) | how an exception becomes a report to the shoen (`exception(Info, Goal, NewGoal)`), and the info codes | `kernel/builtin/excpt_tbl.kl1` (source held, partly running already), manual |
 | B6 | Suspension layout: ours is `HOOK` -> suspension record always | the machine's: `HOOK` vs `MHOOK`, record fields, merge on variable-variable binding | microcode at `1c08`, `1d3a`; blocked on the memory datapath fields (`pseudo_pimm_microcode.md` section 13) |
 | B7 | Goal record layout | not in print, not in the console text | same microcode pass |
-| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits are kept since 2026-11-23 (`pimm_semantics.md` "The MRB") and `set_vector_element` updates in place on them (`lockstep_mrb.py`): the heap used by `lockstep_newm.py` after loading the image fell from 749,440 cells to 107,059, `lockstep_load.py`'s from 509,438 to 200,064. What is left is mostly goal records, which are never reused: in `lockstep_atab.py` (449,144 cells at the end, 33,687 of them the image and stubs) one `get_all` over the 16384-slot atom table takes 147,549 cells, 131,081 of them goal records (one goal a slot); loading one file takes about 100,000 more, 137,176 goal records in that part with its own `get_all`, 58,065 the file's buffer strings. Twenty files will not fit in 1 M cells until goal records are reused when their goal has run (the machine kept them on a free list, TR-466), which needs no MRB | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
+| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits are kept since 2026-11-23 (`pimm_semantics.md` "The MRB") and `set_vector_element` updates in place on them (`lockstep_mrb.py`): the heap used by `lockstep_newm.py` after loading the image fell from 749,440 cells to 107,059, `lockstep_load.py`'s from 509,438 to 200,064. What is left: goal and suspension records, never reused. Loading `pimm_patch_mkdir360E.sav` (41,359 words, six modules) through `ipl_loader:load/4` on the reference model with a larger memory takes 1,291,971 cells, about 31 a file word: 378,073 in suspended goals' records, 370,259 in new goals' records, 150,058 in hooks, against 68,922 in vectors and 61,384 in list cells. (An earlier figure that blamed buffer strings measured the test bench, whose `SETEL` copied a buffer per element; the bench now fills a buffer in place, `SETW`.) So the whole set of twenty files, about 2 M words, needs record reuse AND a memory larger than the 1 M cells of ours; the machine kept free lists for goal records (`M92` p. 427), which needs no MRB | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
 | B9 | Floats (59 names in the object set, 3 in the IPL image), bignum (9 names) | formats beyond the tag | manual; `kbnheap.kl1`; low priority, 0.1% of instructions |
 
 *The IPL's file decoder has near-source (found 2026-11-20).*
@@ -147,9 +147,13 @@ here is PDSS's, not known to be PIM/m's. The test stands in only for
 the file's buffers. Console output is in (`lockstep_cons.py`): the
 decoder shows the comment of a 5702h file ("PIMM BIOS       :3.600:25-Nov-93"
 for `pimm_bios360E.sav`) and the NAME of a 5502h file, not both
-(object code of `check_magic_num/13`). Next: goal records reused
-when their goal has run (B8: twenty files do not fit otherwise);
-then `load_files/10` over the file list, with the FEP's `open` (C2).
+(object code of `check_magic_num/13`). `ipl_loader:load/4` runs
+whole for a list of one file (`lockstep_link.py`): `load_files/10`,
+the link table (`ipl_link_table`) and `check_link_status/5`, the
+bench answering `open(Name, R)` with `normal(File)`. Next: the
+unification of two vectors (a second file needs it); goal and
+suspension records reused (B8); a memory beyond 1 M cells; then the
+real file list, and the FEP protocol under `open` (C2).
 
 ### C. The world outside the processor
 

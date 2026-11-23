@@ -40,7 +40,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 
 TAR = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimos.tar.Z')
-PINNED = dict(parts=11, lines=4971)
+PINNED = dict(parts=11, lines=4794)
 
 STRINGS = [
     (8, [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]),

@@ -206,6 +206,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || op == op_integer || op == op_wait_constant || op == op_floating_point
+                      || op == op_atom
                       || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
@@ -632,6 +633,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_integer) begin
       if (isRef(a)) note(a);
       if (isInt(a)) next;
+      else guardFail;
+    end
+    else if (op == op_atom) begin
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_ATOMo) next;
       else guardFail;
     end
     else if (op == op_floating_point) begin

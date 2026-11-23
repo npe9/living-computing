@@ -23,7 +23,11 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
     UNIFYC  a cell       unify slot a with cell
     NEWSTR  a val        slot a := a new string, val = length << 8 | bits
     SETEL   a val        slot a := slot a with element (val >> 16) set
-                         to (val & 0xffff)
+                         to (val & 0xffff): a copy, as the built-in
+    SETW    a i val      word i of the string in slot a := val, IN PLACE.
+                         The bench's own way to fill a string it has
+                         just made and nothing else refers to; i is 16
+                         bits (the b and tag fields)
     PTR     a b tag      slot a := {tag, the address in slot b}: a
                          structure whose cells are the variables made
                          by consecutive NEWVARs starting with slot b's
@@ -43,7 +47,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
-END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT = range(13)
+(END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT,
+ SETW) = range(14)
 SCRIPT_BITS = 20            # the driver's script memory holds 1 << 20 operations
 
 
@@ -87,6 +92,10 @@ class Script:
 
     def setel(self, a, i, e):
         self._op(SETEL, a, 0, (0, i << 16 | e))
+
+    def setw(self, a, i, v):
+        assert 0 <= i < 1 << 16
+        self._op(SETW, a, i >> 8, (i & 0xff, v))
 
     def setslot(self, a, cell):
         self._op(SLOT, a, 0, cell)
@@ -137,12 +146,16 @@ class Script:
                 self.unifyc(first + i, e)
 
     def string(self, a, bits, elems):
-        """slot a := a string with these elements (a new string, then
-        one SETEL per nonzero element)."""
+        """slot a := a string with these elements: a new string (all
+        zero), then one SETW per nonzero word."""
         self.newstr(a, len(elems), bits)
-        for i, e in enumerate(elems):
-            if e:
-                self.setel(a, i, e)
+        per = 32 // bits
+        for i in range(0, len(elems), per):
+            w = 0
+            for e in (list(elems[i:i + per]) + [0] * per)[:per]:
+                w = w << bits | e
+            if w:
+                self.setw(a, i // per, w)
 
     def words(self):
         out = [k << 56 | a << 48 | b << 40 | c[0] << 32 | c[1]
@@ -185,6 +198,10 @@ class Script:
             slot[a] = m.new_string(c[1] >> 8, c[1] & 0xff)
         elif k == SETEL:
             slot[a] = m.set_element(slot[a], c[1] >> 16, c[1] & 0xffff)
+        elif k == SETW:
+            i, at = b << 8 | c[0], slot[a][1]
+            assert m.mem[at][0] == pimm.CDESC and i < m.mem[at][1] & 0xffffff
+            m.mem[at + 1 + i] = (pimm.INT, c[1])
         elif k == PTR:
             slot[a] = (c[0], slot[b][1])
         elif k == SLOT:
