@@ -83,7 +83,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=748682, cells=366, interned=13)
+PINNED = dict(parts=2, lines=751898, cells=366, interned=13)
 FILE = 'pimm_patch_hash360E.sav'
 BUFFER = 97
 MUST_RUN = ('read_32/8', 'read_str/9', 'sum_check/5', 'double_buffer/4', 'decode_atom/5')
@@ -200,7 +200,7 @@ def check(s, m, want, ran):
         if m.vsize(iv) != 2 or m.deref(m.mem[m.vbase(iv)]) != name \
                 or m.deref(m.mem[m.vbase(iv) + 1]) != (pimm.ATOM, 0):
             bad.append(('Info',))
-        if not (m.unbound(ins) and ins == m.deref(itail)):
+        if not (m.unbound(ins) and ins[1] == m.deref(itail)[1]):
             bad.append(('the intern requests do not end in their tail',))
         lst = m.deref(out)
         for mod, top in zip(want['mods'], want['tops']):
@@ -211,7 +211,7 @@ def check(s, m, want, ran):
             cells += n
             bad += [(mod['name'], x) for x in b]
             lst = m.deref(m.mem[lst[1] + 1])
-        if not (m.unbound(lst) and lst == m.deref(tail)):
+        if not (m.unbound(lst) and lst[1] == m.deref(tail)[1]):
             bad.append(('the list does not end in ModulesTail',))
     status2 = got['the checksum altered'][-4]
     text = 'CheckSum Error'

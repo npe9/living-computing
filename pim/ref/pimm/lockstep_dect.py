@@ -69,7 +69,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import unlsav  # noqa: E402
 
-PINNED = dict(parts=19, lines=10308)
+PINNED = dict(parts=19, lines=10380)
 
 # a term: an integer, ('v', [terms]) a vector, ('l', [cars], cdr) a list
 TERMS = [

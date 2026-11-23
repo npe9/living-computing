@@ -67,7 +67,7 @@ import lockstep_deca as deca  # noqa: E402
 
 sys.setrecursionlimit(100000)       # a code list is shown recursively
 
-PINNED = dict(parts=6, lines=217484, items=1479)
+PINNED = dict(parts=6, lines=218965, items=1479)
 MODULES = ('system2defined2servers', 'task2std2abnormal', 'shoen')
 
 

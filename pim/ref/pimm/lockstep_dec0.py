@@ -52,7 +52,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import unlsav  # noqa: E402
 
-PINNED = dict(parts=13, lines=1327)
+PINNED = dict(parts=13, lines=1340)
 TAGS = ([0x0100, 0x0101, 0x017f, 0x0180, 0x01fe, 0x01ff]
         + [0x0201, 0x027f, 0x0280, 0x02fe, 0x02ff])
 

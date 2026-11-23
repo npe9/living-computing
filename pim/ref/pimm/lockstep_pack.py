@@ -52,7 +52,7 @@ import pimm  # noqa: E402
 import lockstep_deca as deca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=105554)
+PINNED = dict(parts=2, lines=106052)
 MODULES = ('system2defined2servers', 'task2std2abnormal')
 TEXT = 'Module Generation Error'
 

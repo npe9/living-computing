@@ -78,7 +78,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4,
-               XSEl, XSo1, XSo2, XSo3, XSo4 } XState deriving (Bits, Eq);
+               XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
@@ -99,6 +99,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(3))      bK      <- mkRegU;
   // the structure pointer: where the next write_* stores
   Reg#(Addr)         sp      <- mkRegU;
+  // sp was set by wait_vector_N from a vector reached with every MRB
+  // off: read_variable takes its elements as they are
+  Reg#(Bool)         spSingle <- mkReg(False);
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
@@ -204,7 +207,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
-                      || op == op_add || op == op_exclusive_or || op == op_string_element;
+                      || op == op_add || op == op_exclusive_or || op == op_string_element
+                      || op == op_mark_element;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -263,14 +267,22 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(x, ins2);            // the whole next cell
       finish(tagged Next (pc + 2));
     end
-    else if (op == op_mark_element) next;     // MRB marking: not modelled
     else if (op == op_put_nil) begin
       regs.wr(x, mkCell(tag_ATOMo, 0));     // nil is the atom 0
       next;
     end
-    else if (op == op_put_value || op == op_put_marked_value) begin
-      regs.wr(x, regs.r(y));        // the MRB marking is not modelled
+    else if (op == op_put_value) begin
+      regs.wr(x, regs.r(y));
       next;
+    end
+    else if (op == op_put_marked_value || op == op_set_marked_value || op == op_write_marked_value) begin
+      // "the MRB of the destination is always set.  They are for
+      // reference duplication" (TR-248): the source is marked first
+      // (PDSS), then copied
+      let src = op == op_write_marked_value ? x : y;
+      regs.wr(src, marked(regs.r(src)));
+      opA <= marked(regs.r(src));
+      st <= XMark;
     end
     else if (op == op_put_variable || op == op_set_variable) begin
       gbox.newVar;
@@ -333,7 +345,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
-    else if (op == op_write_value || op == op_write_marked_value) begin
+    else if (op == op_write_value) begin
       smem.write(sp, regs.r(x));
       sp <= sp + 1;
       next;
@@ -347,11 +359,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XReuse1;
     end
     else if (op == op_write_variable || op == op_write_marked_variable) begin
-      // marked: the variable is referenced more than once (MRB, not
-      // modelled)
-      // the element itself is the new variable; r[x] refers to it
+      // the element itself is the new variable; r[x] refers to it.
+      // marked: the variable is referenced more than once, MRB on
       smem.write(sp, mkCell(tag_UNDF, 0));
-      regs.wr(x, mkCell(tag_REFo, absAddr(sp)));
+      regs.wr(x, mkCell(op == op_write_marked_variable ? tag_REFx : tag_REFo, absAddr(sp)));
       sp <= sp + 1;
       next;
     end
@@ -366,8 +377,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XSCnst;
     end
     // ---- goals
-    else if (op == op_set_value || op == op_set_marked_value) begin
-      regs.wa(x, regs.r(y));       // marked: MRB, not modelled
+    else if (op == op_set_value) begin
+      regs.wa(x, regs.r(y));
       next;
     end
     else if (op == op_set_integer) begin
@@ -494,6 +505,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isRef(a)) note(a);
       if ((a.tag & 8'hfe) == tag_LISTo) begin
         sp <= truncate(a.val);
+        spSingle <= False;
         next;
       end
       else guardFail;
@@ -523,6 +535,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isRef(a)) note(a);
       if ((a.tag & 8'hfe) == tag_LISTo) begin
         sp <= truncate(a.val);
+        spSingle <= False;
         next;
       end
       else finish(tagged Next labelOf(pc, c16));
@@ -539,6 +552,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         // index.kl1); the structure pointer at the first
         regs.wr(y, intC(sizeOf(a)));
         sp <= truncate(a.val);
+        spSingle <= False;
         finish(tagged Next (pc + 2));
       end
       else finish(tagged Next labelOf(pc, ins2.val[15:0]));
@@ -563,6 +577,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isRef(a)) note(a);
       if ((a.tag & 8'hfe) == tag_VECT0o + (waitN << 1)) begin
         sp <= truncate(a.val);
+        spSingle <= a.tag[0] == 0;
         next;
       end
       else guardFail;
@@ -651,6 +666,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         vbox.element(a, b.val);
         st <= XVEl;
+      end
+    end
+    else if (op == op_mark_element) begin
+      // mark_element(Vector, Position): the element's MRB on, in the
+      // vector
+      if (!isVec(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        vbox.markElement(a, b.val);
+        st <= XMkEl;
       end
     end
     else if (op == op_string_element) begin
@@ -762,9 +786,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     next;
   endrule
 
+  // the second half of a marked instruction: the copy
+  rule markCopy (st == XMark);
+    if (op == op_put_marked_value) regs.wr(x, opA);
+    else if (op == op_set_marked_value) regs.wa(x, opA);
+    else begin
+      smem.write(sp, opA);
+      sp <= sp + 1;
+    end
+    next;
+  endrule
+
+  rule markedElement (st == XMkEl);
+    let r <- vbox.result;
+    if (!r.ok) stop(EndUnimp);
+    else next;
+  endrule
+
   rule vectorMade (st == XVec);
     let a <- gbox.allocResult;
     sp <= a;
+    spSingle <= False;
     regs.wr(x, op == op_put_list ? mkCell(tag_LISTo + 1, absAddr(a))
                                  : mkCell(tag_VECT0o + (vectorN << 1) + 1, absAddr(a)));
     next;
@@ -774,7 +816,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // is taken as a reference to it
   rule readElement (st == XRead);
     let d <- smem.data;
-    Cell el = isUnboundCell(d) ? mkCell(tag_REFo, absAddr(sp)) : d;
+    // the cell goes on holding it, so its MRB is on, unless the vector
+    // was reached with every MRB off (PDSS read_element)
+    Cell el = isUnboundCell(d) ? mkCell(spSingle ? tag_REFo : tag_REFx, absAddr(sp))
+                               : (spSingle ? d : marked(d));
     if (op == op_read_atom) begin
       dbox.deref(el);
       st <= XRAtom;
@@ -809,6 +854,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule reuse2 (st == XReuse2);
     let a <- gbox.allocResult;
     sp <= a;
+    spSingle <= False;
     regs.wr(x, mkCell(reuseTag, absAddr(a)));
     next;
   endrule
@@ -981,7 +1027,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // vector_element(V, I, ^E, ^V1); the vector box checks the index
       if (!isVec(a) || !isInt(b)) stop(EndUnimp);
       else begin
-        vbox.element(a, b.val);
+        vbox.markElement(a, b.val);     // V1 still holds the element
         st <= XBVEl;
       end
     end
@@ -1244,6 +1290,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     let r <- vbox.result;
     regs.wr(x, r.a);
     sp <= truncate(r.b.val);
+    spSingle <= False;
     next;
   endrule
 
@@ -1252,6 +1299,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     regs.wr(y, r.a);
     if (op == op_switch_on_non_vector) begin
       sp <= truncate(r.b.val);
+      spSingle <= False;
       finish(tagged Next (pc + 2));
     end
     else next;

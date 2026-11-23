@@ -36,13 +36,14 @@ module mkPimmDriverTb(Empty);
     case (kind)
       End:    $finish(0);
       NewVar: begin core.newVar; answer = True; end
-      Arg:    core.setArg(a, slot.sub(sb));
+      // a slot keeps what it gives: MRB on
+      Arg:    core.setArg(a, marked(slot.sub(sb)));
       ArgC:   core.setArg(a, cell_);
       Spawn:  core.spawn(truncate(cell_.val), a);
       Run:    begin core.run; answer = True; end
-      Out:    begin core.derefReq(slot.sub(sa)); answer = True; end
-      Unify:  begin core.unifyReq(slot.sub(sa), slot.sub(sb)); answer = True; end
-      UnifyC: begin core.unifyReq(slot.sub(sa), cell_); answer = True; end
+      Out:    begin core.derefReq(marked(slot.sub(sa))); answer = True; end
+      Unify:  begin core.unifyReq(marked(slot.sub(sa)), marked(slot.sub(sb))); answer = True; end
+      UnifyC: begin core.unifyReq(marked(slot.sub(sa)), cell_); answer = True; end
       NewStr: begin core.newString(cell_.val >> 8, zeroExtend(cell_.val[7:0])); answer = True; end
       SetEl:  begin core.setElement(slot.sub(sa), cell_.val >> 16, zeroExtend(cell_.val[15:0])); answer = True; end
       Ptr:    slot.upd(sa, mkCell(cell_.tag, slot.sub(sb).val));

@@ -98,7 +98,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=1, lines=224226, cells=366)
+PINNED = dict(parts=1, lines=225031, cells=366)
 FILES = ('pimm_patch_hash360E.sav',)
 NAME = 'file'
 
@@ -170,7 +170,7 @@ def check(s, m, want):
             cells += n
             bad += [(fname, mod['name'], x) for x in b]
             lst = m.deref(m.mem[lst[1] + 1])
-        if not (m.unbound(lst) and lst == m.deref(tail)):
+        if not (m.unbound(lst) and lst[1] == m.deref(tail)[1]):
             bad.append((fname, 'the list does not end in ModulesTail'))
     return bad, cells
 

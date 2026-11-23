@@ -163,7 +163,7 @@ class Script:
         if k == NEWVAR:
             slot[a] = m.new_var()
         elif k == ARG:
-            m.argv[a] = slot[b]
+            m.argv[a] = pimm.marked(slot[b])      # the slot keeps it: MRB on
         elif k == ARGC:
             m.argv[a] = c
         elif k == SPAWN:
@@ -174,13 +174,13 @@ class Script:
             except (pimm.Suspend, pimm.Fail):
                 pass
         elif k == OUT:
-            w = m.deref(slot[a])
+            w = m.deref(pimm.marked(slot[a]))
             outs.append((label, w))
             m.tr.append('O %02x%08x' % w)
         elif k == UNIFY:
-            m.unify(slot[a], slot[b])
+            m.unify(pimm.marked(slot[a]), pimm.marked(slot[b]))
         elif k == UNIFYC:
-            m.unify(slot[a], c)
+            m.unify(pimm.marked(slot[a]), c)
         elif k == NEWSTR:
             slot[a] = m.new_string(c[1] >> 8, c[1] & 0xff)
         elif k == SETEL:

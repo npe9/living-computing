@@ -46,7 +46,8 @@ merger under the IPL's keyed pool, `lockstep_load.py` a real file
 loaded by `ipl_loader:load_file/9` with the IPL's own reader and
 checksum; 102
 instructions now. No
-garbage collection, no MRB, no shoen, no exceptions.
+garbage collection, MRB bits kept but nothing reclaimed on them
+(`docs/pimm_semantics.md` "The MRB"), no shoen, no exceptions.
 
     python3 ref/pimm/test_jtoa.py
 

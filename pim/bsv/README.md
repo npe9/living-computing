@@ -131,8 +131,9 @@ is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
 its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
 `../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
-instruction before it), no timing claimed. Not modelled: MRB (strings
-are always copied), garbage collection, priorities, shoen, built-in
+instruction before it), no timing claimed. The MRB is kept but nothing is reclaimed
+or reused on it yet (strings and vectors are always copied;
+`../docs/pimm_semantics.md` "The MRB"). Not modelled: garbage collection, priorities, shoen, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
 

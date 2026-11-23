@@ -71,7 +71,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=72, lines=3300, entered=59, targets=18)
+PINNED = dict(parts=72, lines=3325, entered=59, targets=18)
 SIZES = (3, 5, 2, 6)
 INTS = (-(1 << 31), 0, 5, -7, -(1 << 31) + 1, (1 << 31) - 1)
 

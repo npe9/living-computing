@@ -14,8 +14,9 @@ records, the ready queue, suspension records and hooked variables are
 cells on the heap (layouts in docs/pimm_semantics.md "Runtime state";
 they are this project's design, the firmware being lost).  One
 processor, a LIFO ready queue without priorities, 8- and 16-bit
-strings.  No garbage collection (the heap only grows), no MRB, no
-shoen, no exceptions.  An instruction this file does not implement
+strings.  No garbage collection (the heap only grows); the MRB is
+kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
+it; no shoen, no exceptions.  An instruction this file does not implement
 raises Unimplemented: it never guesses.
 
 Every instruction's operand reading is taken from object code paired
@@ -61,6 +62,14 @@ def sx16(v):
 
 def signed(v):
     return v - (1 << 32) if v >> 31 else v
+
+
+def marked(w):
+    """The word with its MRB on: a reference or a pointer that is, or
+    may be, held more than once.  Integers and atoms are left alone
+    (PDSS marks them too; nothing reads their bit), as are the tags
+    from 20h, which have no such bit."""
+    return (w[0] | 1, w[1]) if 4 <= w[0] < 0x20 and w[0] & ~1 not in (UNDF, HOOK) else w
 
 
 class _Regs(list):
@@ -121,6 +130,19 @@ class Machine:
             self.tr.append(text)
 
     # ---- data ----------------------------------------------------
+    # The structure pointer.  sp_single: it was set by wait_vector_N
+    # from a vector reached with every MRB off, so that read_variable
+    # takes the elements as they are; anything else that sets it
+    # clears that.
+    @property
+    def sp(self):
+        return self._sp
+
+    @sp.setter
+    def sp(self, a):
+        self._sp = a
+        self.sp_single = False
+
     def alloc(self, n):
         a = self.hp
         if a + n >= self.load + self.size:
@@ -135,13 +157,17 @@ class Machine:
 
     def deref(self, w):
         """Follow references; the result is a value, or the reference to
-        an unbound cell (UNDF, or HOOK when goals wait on it)."""
+        an unbound cell (UNDF, or HOOK when goals wait on it).  If any
+        reference on the way has its MRB on, so has the result (PDSS
+        emulator/deref.c: SetAll(reg, ..., MRBON))."""
+        on = False
         while w[0] & ~1 == REF:
+            on = on or bool(w[0] & 1)
             c = self.mem[w[1]]
             if c[0] == UNDF or c[0] & ~1 == HOOK:
-                return w
+                break
             w = c
-        return w
+        return marked(w) if on else w
 
     def unbound(self, w):
         return w[0] & ~1 == REF               # after deref
@@ -506,7 +532,7 @@ class Machine:
             return self.guard_fail()
         if (w[0] & ~1, w[1]) != (ATOM, self.cells[pc][1] & 0xffffff):
             return self.guard_fail()
-        self.sp += 1
+        self._sp += 1
 
     def i_add(self, pc, x, y, z, c16):           # guard arithmetic
         # an overflow fails the guard (PIMOS manual, add)
@@ -565,11 +591,21 @@ class Machine:
         self.mem[a + 1] = self.mem[a + 2] = (INT, n)
         return (VECT0 + 15, a), a + 3
 
-    def taken(self, a):
+    def taken(self, a, single=False, mark=False):
         """What is taken from the cell at a: its value, or a reference
-        to it if it is an unbound variable."""
+        to it if it is an unbound variable.  The cell goes on holding
+        it, so what is taken has its MRB on, unless the structure is
+        `single`: reached by a path with every MRB off, and read by
+        read_variable (PDSS read_car/read_element: "if(Mrbof(ptr) ==
+        MRBON) SetMrbof(car, MRBON)").  With `mark` the cell itself is
+        marked too (PDSS b_vector_element, mark_element), written only
+        if that changes it."""
         c = self.mem[a]
-        return (REF, a) if c[0] & ~1 in (UNDF, HOOK) else c
+        if c[0] & ~1 in (UNDF, HOOK):
+            return (REF, a) if single else (REF + 1, a)
+        if mark and marked(c) != c:
+            self.mem[a] = marked(c)
+        return c if single else marked(c)
 
     def i_vector(self, pc, x, y, z, c16):
         # guard vector(X, ^Size)
@@ -587,7 +623,14 @@ class Machine:
         self.reg[z] = self.taken(self.vbase(v) + i[1])
 
     def i_mark_element(self, pc, x, y, z, c16):
-        pass        # MRB marking of an element: no reference counts here
+        # mark_element(Vector, Position): the element's MRB on, in the
+        # vector (PDSS emulate.c KL1B_MARK_ELEMENT; TR-733's "MRBを
+        # オンにする").  It follows a guard vector_element whose
+        # vector is used again.
+        v, i = self.deref(self.reg[x]), self.deref(self.reg[y])
+        if self.vsize(v) is None or i[0] & ~1 != INT or not i[1] < self.vsize(v):
+            raise Unimplemented('mark_element of %r, %r' % (v, i))
+        self.taken(self.vbase(v) + i[1], mark=True)
 
     def i_hash_on_constant(self, pc, x, y, z, c16):
         # word 1: register, mask.  word 2: the miss label, relative to
@@ -756,7 +799,11 @@ class Machine:
         self.reg[x] = self.reg[y]
 
     def i_put_marked_value(self, pc, x, y, z, c16):
-        self.reg[x] = self.reg[y]     # and marks both multiply referenced (MRB)
+        # "the same functions as those without it except that the MRB
+        # of the destination is always set.  They are for reference
+        # duplication" (TR-248 sec. 6); PDSS marks the source first
+        self.reg[y] = marked(self.reg[y])
+        self.reg[x] = self.reg[y]
 
     def i_put_variable(self, pc, x, y, z, c16):
         var = self.new_var()
@@ -837,7 +884,7 @@ class Machine:
 
     def i_write_atom(self, pc, x, y, z, c16):
         self.mem[self.sp] = (ATOM, self.cells[pc][1] & 0xffffff)
-        self.sp += 1
+        self._sp += 1
 
     def i_write_integer(self, pc, x, y, z, c16):
         # the integer is the low 24 bits.  Whether bit 23 is a sign is
@@ -846,19 +893,20 @@ class Machine:
         if v >> 23:
             raise Unimplemented('write_integer with bit 23 set')
         self.mem[self.sp] = (INT, v)
-        self.sp += 1
+        self._sp += 1
 
     def i_write_nil(self, pc, x, y, z, c16):
         self.mem[self.sp] = NIL
-        self.sp += 1
+        self._sp += 1
 
     def i_write_marked_value(self, pc, x, y, z, c16):
-        # as write_value; marks it multiply referenced (MRB, not modelled)
+        # as write_value, both copies marked (see put_marked_value)
+        self.reg[x] = marked(self.reg[x])
         return self.i_write_value(pc, x, y, z, c16)
 
     def i_write_value(self, pc, x, y, z, c16):
         self.mem[self.sp] = self.reg[x]
-        self.sp += 1
+        self._sp += 1
 
     def i_write_variable(self, pc, x, y, z, c16):
         # the element itself is the new variable; r[x] refers to it
@@ -866,12 +914,14 @@ class Machine:
         # r31 when the variable is not used again.
         self.mem[self.sp] = (UNDF, 0)
         self.reg[x] = (REF, self.sp)
-        self.sp += 1
+        self._sp += 1
 
     def i_write_marked_variable(self, pc, x, y, z, c16):
-        # as write_variable; the variable is referenced more than once
-        # (MRB, not modelled)
-        return self.i_write_variable(pc, x, y, z, c16)
+        # as write_variable; the variable is referenced more than
+        # once, so r[x]'s reference has its MRB on
+        self.mem[self.sp] = (UNDF, 0)
+        self.reg[x] = (REF + 1, self.sp)
+        self._sp += 1
 
     # Reading a vector: wait_vector_N checks r[x] and points the
     # structure pointer at its first element; each read_variable takes
@@ -882,6 +932,7 @@ class Machine:
         if w is None or w[0] & ~1 != VECT0 + 2 * n:
             return self.guard_fail()
         self.sp = w[1]
+        self.sp_single = not w[0] & 1
 
     def i_wait_vector_2(self, pc, x, y, z, c16):
         return self.wait_vector(2, x)
@@ -893,8 +944,8 @@ class Machine:
         return self.wait_vector(5, x)
 
     def i_read_variable(self, pc, x, y, z, c16):
-        self.reg[x] = self.taken(self.sp)
-        self.sp += 1
+        self.reg[x] = self.taken(self.sp, single=self.sp_single)
+        self._sp += 1
 
     def i_put_reused_structure(self, pc, x, y, z, c16):
         # r[x] := a structure of z cells to be filled by write_*, which
@@ -914,7 +965,8 @@ class Machine:
         self.argv[x] = self.reg[y]
 
     def i_set_marked_value(self, pc, x, y, z, c16):
-        self.argv[x] = self.reg[y]    # and marks it multiply referenced (MRB)
+        self.reg[y] = marked(self.reg[y])     # see put_marked_value
+        self.argv[x] = self.reg[y]
 
     def i_set_atom(self, pc, x, y, z, c16):
         # one cell: opcode byte = the goal argument (0..15), low 24
@@ -1321,7 +1373,7 @@ class Machine:
             n, i = self.vsize(v), self.need_int(i)
             if n is None or not 0 <= i < n:
                 raise Unimplemented('built-in exception: vector_element')
-            return [self.taken(self.vbase(v) + i), v]
+            return [self.taken(self.vbase(v) + i, mark=True), v]
         self.builtin('b_vector_element', [x, y, z, w4], f)
         return pc + 2
 
@@ -1346,7 +1398,7 @@ class Machine:
             w, a = self.vnew(n)
             for k in range(n):
                 self.mem[a + k] = (INT, 0)
-            return [w]
+            return [(w[0] & ~1, w[1])]        # the only reference: MRB off
         self.builtin('new_vector', [x, y], f)
 
     def i_set_vector_element(self, pc, x, y, z, c16):
@@ -1367,7 +1419,7 @@ class Machine:
                 if k == i:
                     old = c
                 self.mem[a + k] = e if k == i else c
-            return [old, (v[0], w[1])]
+            return [old, (v[0] & ~1, w[1])]   # a new vector: MRB off
         self.builtin('set_vector_element', [x, y, z, w4, w5], f, nowait=(2,))
         return pc + 2
 

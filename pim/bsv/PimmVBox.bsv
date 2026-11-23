@@ -51,6 +51,7 @@ typedef struct { Cell a; Cell b; Bool ok; } VResult deriving (Bits);
 interface PimmVBox;
   method Action info(Cell v);
   method Action element(Cell v, Bit#(32) i);
+  method Action markElement(Cell v, Bit#(32) i);
   method Action newVec(Bit#(32) n);
   method Action build(Bit#(32) n);
   method Action toModule(Cell v);
@@ -58,7 +59,7 @@ interface PimmVBox;
   method ActionValue#(VResult) result;
 endinterface
 
-typedef enum { VKInfo, VKElem, VKNew, VKSet, VKBuild, VKMod } VKind deriving (Bits, Eq);
+typedef enum { VKInfo, VKElem, VKMark, VKNew, VKSet, VKBuild, VKMod } VKind deriving (Bits, Eq);
 typedef struct { VKind k; Cell v; Bit#(32) i; Cell e; } VReq deriving (Bits);
 typedef enum { VIdle, VDesc, VLen, VGo, VElem, VAlloc, VHdr, VFill, VCopyRd, VCopyWr,
                VModHead, VModRd, VModWr }
@@ -85,7 +86,8 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   function Addr off(Bit#(32) j) = truncate(j);
   // what is taken from a cell: its value, or a reference to it if it
   // is an unbound variable
-  function Cell taken(Cell c, Addr a) = isUnboundCell(c) ? mkCell(tag_REFo, absAddr(a)) : c;
+  // the cell goes on holding it, so what is taken has its MRB on
+  function Cell taken(Cell c, Addr a) = isUnboundCell(c) ? mkCell(tag_REFx, absAddr(a)) : marked(c);
   Bit#(8) newTag = long ? 8'h1f : tag_VECT0o + (truncate(n) << 1) + 1;
 
   function Action answer(Cell a, Cell b, Bool ok);
@@ -132,8 +134,8 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   rule go (st == VGo);
     if (rq.k == VKInfo) answer(intC(n), mkCell(tag_REFo, absAddr(src)), True);
     else if (rq.k == VKNew && n == 0) answer(mkCell(tag_VECT0o, 0), ?, True);
-    else if ((rq.k == VKElem || rq.k == VKSet) && rq.i >= n) answer(?, ?, False);
-    else if (rq.k == VKElem) begin
+    else if ((rq.k == VKElem || rq.k == VKMark || rq.k == VKSet) && rq.i >= n) answer(?, ?, False);
+    else if (rq.k == VKElem || rq.k == VKMark) begin
       mem.read(src + off(rq.i));
       st <= VElem;
     end
@@ -152,6 +154,9 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
 
   rule gotElem (st == VElem);
     let c <- mem.data;
+    // markElement: the element's MRB on in the vector too (PDSS
+    // b_vector_element, mark_element)
+    if (rq.k == VKMark && !isUnboundCell(c) && marked(c) != c) mem.write(src + off(rq.i), marked(c));
     answer(taken(c, src + off(rq.i)), ?, True);
   endrule
 
@@ -211,7 +216,8 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
 
   rule fill (st == VFill);
     mem.write(dst + off(k), intC(0));
-    if (k + 1 == n) answer(mkCell(newTag, absAddr(obj)), ?, True);
+    // new_vector's is the only reference: MRB off
+    if (k + 1 == n) answer(mkCell(newTag & 8'hfe, absAddr(obj)), ?, True);
     else k <= k + 1;
   endrule
 
@@ -225,7 +231,8 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
     Cell old = taken(c, src + off(k));
     mem.write(dst + off(k), k == rq.i ? rq.e : old);
     if (k == rq.i) oldEl <= old;
-    if (k + 1 == n) answer(mkCell(rq.v.tag, absAddr(obj)), k == rq.i ? old : oldEl, True);
+    // the copy is a new vector: MRB off
+    if (k + 1 == n) answer(mkCell(rq.v.tag & 8'hfe, absAddr(obj)), k == rq.i ? old : oldEl, True);
     else begin
       k <= k + 1;
       st <= VCopyRd;
@@ -235,6 +242,8 @@ module mkPimmVBox#(MemPort mem, PimmGBox gbox)(PimmVBox);
   method Action info(Cell v) = reqQ.enq(VReq { k: VKInfo, v: v, i: ?, e: ? });
   method Action element(Cell v, Bit#(32) i) =
     reqQ.enq(VReq { k: VKElem, v: v, i: i, e: ? });
+  method Action markElement(Cell v, Bit#(32) i) =
+    reqQ.enq(VReq { k: VKMark, v: v, i: i, e: ? });
   method Action newVec(Bit#(32) nn) = reqQ.enq(VReq { k: VKNew, v: ?, i: nn, e: ? });
   method Action build(Bit#(32) nn) = reqQ.enq(VReq { k: VKBuild, v: ?, i: nn, e: ? });
   method Action toModule(Cell v) = reqQ.enq(VReq { k: VKMod, v: v, i: ?, e: ? });

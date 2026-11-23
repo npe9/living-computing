@@ -80,7 +80,7 @@ import lockstep_deca as deca  # noqa: E402
 import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=5, lines=965230, cells=1143)
+PINNED = dict(parts=5, lines=967969, cells=1143)
 MODULES = ('privileged2module', 'module2pool', 'pimos2version', 'task2std2abnormal',
            'stdio2filter')
 PACKAGE = (pimm.ATOM, 0x1fffe)       # stands for the package atom

@@ -55,7 +55,8 @@ module mkPimmNBox#(MemPort mem, PimmGBox gbox)(PimmNBox);
 
   Addr rec  = cellAddr(rq.rec);
   Addr list = cellAddr(rq.v);
-  function Cell taken(Cell c, Addr a) = isUnboundCell(c) ? mkCell(tag_REFo, absAddr(a)) : c;
+  // the cell goes on holding it: MRB on
+  function Cell taken(Cell c, Addr a) = isUnboundCell(c) ? mkCell(tag_REFx, absAddr(a)) : marked(c);
 
   function Action answer(Cell a, Cell b, Cell c, Bool ok);
     action

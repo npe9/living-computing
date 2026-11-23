@@ -47,13 +47,17 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
   Reg#(Cell)    pending  <- mkRegU;     // unify: side b, not yet followed
   Reg#(Bool)    isUnify  <- mkReg(False);
   Reg#(Bool)    second   <- mkReg(False);
+  // a reference on the way had its MRB on: so has the result (PDSS
+  // emulator/deref.c)
+  Reg#(Bool)    pathOn   <- mkReg(False);
   FIFO#(DReq)    reqQ   <- mkFIFO;
   FIFO#(Cell)    derefQ <- mkFIFO;
   FIFO#(UResult) unifyQ <- mkFIFO;
 
-  function Action chase(Cell w);
+  function Action chase(Cell w, Bool on);
     action
       cur <= w;
+      pathOn <= on || (isRef(w) && w.tag[0] == 1);
       if (isRef(w)) begin
         if (!inMemory(w.val)) fatal("reference outside memory");
         mem.read(cellAddr(w));
@@ -70,13 +74,13 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
     case (reqQ.first) matches
       tagged Deref .w: begin
         isUnify <= False;
-        chase(w);
+        chase(w, False);
       end
       tagged Unify .u: begin
         isUnify <= True;
         second <= False;
         pending <= u.b;
-        chase(u.a);
+        chase(u.a, False);
       end
     endcase
   endrule
@@ -87,23 +91,24 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
       curCell <= c;
       st <= DArrived;
     end
-    else chase(c);
+    else chase(c, pathOn);
   endrule
 
   rule arrived (st == DArrived);
+    let arrivedAt = pathOn ? marked(cur) : cur;
     if (!isUnify) begin
-      derefQ.enq(cur);
+      derefQ.enq(arrivedAt);
       st <= DIdle;
     end
     else if (!second) begin
-      first <= cur;
+      first <= arrivedAt;
       firstCell <= curCell;
       second <= True;
-      chase(pending);
+      chase(pending, False);
     end
     else begin
       let a = first;
-      let b = cur;
+      let b = arrivedAt;
       UResult r = tagged UOk;
       if (isRef(a)) begin
         if (!(isRef(b) && b.val == a.val)) begin

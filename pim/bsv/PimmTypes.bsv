@@ -25,6 +25,13 @@ function Bool isAtom(Cell c) = (c.tag | 1) == tag_ATOMx;
 function Bool isHook(Cell c) = (c.tag | 1) == tag_HOOKx;
 function Bool isStrg(Cell c) = (c.tag | 1) == tag_STRGx;
 
+// The word with its MRB on: a reference or a pointer that is, or may
+// be, held more than once.  Integers and atoms are left alone, as are
+// the tags from 20h, which have no such bit.
+function Cell marked(Cell c) =
+  (c.tag >= 4 && c.tag < 8'h20 && c.tag != tag_UNDF && (c.tag | 1) != tag_HOOKx)
+    ? mkCell(c.tag | 1, c.val) : c;
+
 // What an unbound variable's cell holds: UNDF, or HOOK when goals wait.
 function Bool isUnboundCell(Cell c) = c.tag == tag_UNDF || isHook(c);
 

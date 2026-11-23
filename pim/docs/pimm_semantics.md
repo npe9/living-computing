@@ -74,7 +74,7 @@ of this module can check, on either model, and injections confirm it:
 | `wait_list` | `23:A6 x` | guard: `r[x]` is a list; the structure pointer at its car | checked |
 | `read_atom` | `23:B3`, atom in the low 24 bits | the element at the structure pointer must be that atom; an unbound one is noted and the guard fails | run; another atom there is NOT run |
 | `switch_on_non_atom` | `23:29 x`, label | next if `r[x]` is an atom, else the label; an unbound one is noted | checked (`lockstep_ext.py`) |
-| `write_marked_value`, `set_marked_value` | `23:27 x`, `23:16 n y` | as `write_value`, `set_value`; the MRB marking is not modelled | checked |
+| `write_marked_value`, `set_marked_value` | `23:27 x`, `23:16 n y` | as `write_value`, `set_value`, with the MRB of the source register and of the copy set (see "The MRB") | checked: both writes are traced |
 | `set_integer` | `23:11 n`, c16 | goal argument n := the signed 16-bit integer | checked for non-negative operands |
 | `put_structured_constant` | `23:37 x`, label | `r[x]` := the cell at the label, a place in the GC area holding the pointer to a constant built outside the module (TM-662). A `{REFx}` there (ten in the image) is refused: not understood yet | checked: three error clauses return their string (`lockstep_ptab.py`) |
 | `collect_list`, `collect_vector` | `23:1E x`, `23:1F x n` | MRB reclamation of a list cell or vector: nothing here, as `collect_value` (no reference counts) | run |
@@ -91,7 +91,7 @@ of this module can check, on either model, and injections confirm it:
 | `string_element` (guard), `exclusive_or` (guard), `b_exclusive_or` | `23:EF x y z`, `23:EC x y z`, `22:C9 x y z` | element, or the guard fails outside the string; exclusive or | checked (`lockstep_load.py`): the IPL's checksum over a real file comes to 0, and to an error with one word altered |
 
 | `write_integer` | `23:21`, integer in the low 24 bits | store the integer at the structure pointer and advance it. Whether bit 23 is a sign is not established (no such operand in the image): both models refuse it | checked for 35 (`lockstep_modc.py`) |
-| `write_marked_variable` | `23:26 x` | as `write_variable`; "marked" is the MRB of a variable referenced more than once, not modelled | the write and the register are checked (`lockstep_modc.py`) |
+| `write_marked_variable` | `23:26 x` | as `write_variable`; the variable is referenced more than once, so `r[x]` gets `REFx` | the write and the register are checked (`lockstep_modc.py`) |
 | `b_multiply` | `22:C2 x y z` | `r[z]` := `r[x]` * `r[y]`; a non-integer or an overflow is the built-in's exception (manual, `multiply`), not modelled: both models stop. On the Bluespec a 32-step shift-and-add multiplier in `PimmMBox.bsv`; the count is ours | checked for N * 2, N at most 15 (`lockstep_modc.py`); large or negative operands and the overflow are NOT run |
 | `put_atom` | `23:40`+r, atom in the low 24 bits | `r` := the atom; the register is the opcode's low five bits, as for `get_atom` | checked for register 0 only (`lockstep_gca.py`): a wrong register field is NOT caught |
 | `write_value` | `23:25 x` | store `r[x]` at the structure pointer and advance it | checked |
@@ -100,7 +100,7 @@ of this module can check, on either model, and injections confirm it:
 | `switch_on_non_vector` | `23:2B x y`, then a cell holding the label | a vector: `r[y]` := its number of elements (the compiler's `index.kl1` calls the register `Ari` and switches on it), the structure pointer at its first; otherwise go to the label (an unbound `r[x]` is noted first) | checked (`shoen:ground_term/2`) |
 | `vector` | `23:E4 x y` | guard `vector(X, ^Size)`: `r[y]` := the number of elements | checked |
 | `vector_element` | `23:EE x y z` | guard `vector_element(V, I, ^E)`: `r[z]` := element `r[y]`, a reference if it is an unbound variable; fails outside 0..size-1 | checked, except the index equal to the size |
-| `mark_element` | `23:1C x y` | MRB marking of an element: nothing, no reference counts | runs; nothing to observe |
+| `mark_element` | `23:1C x y` | the MRB of element `r[y]` of the vector `r[x]` is set, in the vector (PDSS `KL1B_MARK_ELEMENT`); both registers are dereferenced; a cell that is itself an unbound variable is left | checked (`lockstep_ptab.py`: the cell write) |
 | `new_vector` | `22:D3 x y` | body `new_vector(Size, ^V)`: `r[y]` := a vector of `r[x]` cells of integer 0 (PIMOS manual) | checked for 1..6 |
 | `set_vector_element` | `22:D0 x y z`, then `w4 w5` | body `set_vector_element(V, I, New, ^Old, ^V1)`: `r[w5]` := a copy of `r[x]` with element `r[y]` replaced by `r[z]`, `r[w4]` := the old element. Does not wait for `New` (manual: suspends on Vector or Position only). Always a copy, as `put_reused_structure` | checked on vectors made by `new_vector`; copying an unbound element is not exercised |
 | `put_nil` | `23:32 x` | `r[x]` := nil, the atom 0 (`library/kbn/kbnatom.kl1`: "The atom number of '[]' is fixed to zero") | checked |
@@ -131,7 +131,7 @@ of this module can check, on either model, and injections confirm it:
 | `subtract` | `23:F5 x y z` | guard arithmetic: `r[z]` := `r[x] - r[y]` | the run cannot tell (the only use has `x = z`); the destination is from the compiler's table, `asm/bltdir.py`: `iio` |
 | `string` | `23:E5 x y z` | guard `string(S, Length, Size)`: `r[x]` is a string; `r[y]` := its length, `r[z]` := its element size in bits | checked |
 | `put_value` | `23:34 x y` | `r[x]` := `r[y]` | checked |
-| `put_marked_value` | `23:36 x y` | `r[x]` := `r[y]`, the value now multiply referenced | the move is checked; the MRB marking is not modelled |
+| `put_marked_value` | `23:36 x y` | `r[y]`'s MRB is set, then `r[x]` := `r[y]` (TR-248: "for reference duplication"; PDSS marks the source first) | checked: both register writes are traced |
 | `put_variable` | `23:33 x y` | `r[x]` and `r[y]` := one fresh unbound variable | checked |
 | `set_value` | `23:14 x y` | argument `x` (from 1) of the goal being built := `r[y]` | checked |
 | `set_variable` | `23:13 x y` | argument `x` of the goal being built and `r[y]` := one fresh variable | inferred from `ipl:boot/0`; not yet executed |
@@ -203,6 +203,59 @@ does not implement) or `E error`; the reference model raises an
 exception there, so neither can appear in a matching trace. The trace
 has no cycle numbers: the two models agree on what happens and in what
 order, not on when.
+
+## The MRB
+
+The low tag bit of a reference or pointer (tags 04h to 1Fh; `REFo` 06,
+`REFx` 07) is kept as the multiple reference bit by both models, since
+2026-11-23. Nothing is reclaimed or reused on its strength yet:
+`set_vector_element` still copies. The rules are PDSS's
+(`emulator/deref.c`, `emulate.c`, `blt_basic.c`, V2.52), the sibling
+whose code we hold; PIM/m's own are described in `M92` pp. 429-430 and
+TR-248 (`literature_gaps.md` section 3) and agree where they speak.
+
+- **Dereference.** If any reference on the way has its MRB on, the
+  result has (`deref.c`: `SetAll(reg, ..., MRBON)`). Otherwise the
+  value is taken as its cell holds it.
+- **Marked instructions.** `put_marked_value`, `set_marked_value`,
+  `write_marked_value` set the MRB of the source register, then copy;
+  `write_marked_variable` gives `REFx`.
+- **Elements.** What is taken from a cell that goes on holding it has
+  its MRB on: the guard and body `vector_element`, the merger's copy of
+  a message, a packed goal's arguments, the copy `set_vector_element`
+  makes. The body `vector_element` and `mark_element` also set it in
+  the cell. `read_variable` after `wait_vector_N` takes the element as
+  it is when the vector word's MRB is off (PDSS `read_element`: "if
+  (Mrbof(ptr) == MRBON) SetMrbof(car, MRBON)").
+- **Off:** the results of `new_vector` and of `set_vector_element` (a
+  new vector), and a new variable's two references.
+- **On:** every other structure pointer, as before (`put_vector_N`,
+  `put_list`, constants in a module), and whatever the test driver
+  passes from a slot, which it keeps.
+
+Ours, not the sources': integers and atoms are never marked (PDSS
+marks them; nothing reads the bit); the guard `vector_element` marks
+its result whatever the vector's MRB (PDSS only when it is on); list
+cells are always treated as multiply referenced; the copy in
+`set_vector_element` marks the new vector's elements but does not go
+back and mark the old one's (PDSS does; the old vector is only reached
+by marked pointers); an element cell that is itself an unbound
+variable is taken as `REFx`. All of these err towards "on", which
+costs copies and never correctness.
+
+Checked: the 23 lockstep tests agree line for line, and for 22 of them
+the reference model's trace before the change equals the trace after
+it once the lines the marking adds are dropped and the bit masked
+(`jtoa`, whose count did not move, was not compared). Twelve
+injections into the Bluespec FAILed (dereference forgetting a marked
+link, at the first or a later link; each half of a marked instruction;
+`write_marked_variable`; `read_variable` never marking; `wait_vector`
+always single; the vector box's elements; `mark_element`'s write;
+`new_vector` and the copy coming back marked; the driver's slots).
+**Not caught**: `read_variable` marking although the vector is single
+(no test reads a vector whose word is unmarked: `put_vector_N` marks),
+and the merger taking a message unmarked (every message so far is
+already marked or an unbound cell).
 
 ## Runtime state
 
