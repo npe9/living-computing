@@ -53,7 +53,14 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_unif.py` the unification of two vectors or lists,
 `lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
 the real `pimos.ipl`; 112
-instructions now. No
+instructions on both models.  On the reference model ALONE, a
+prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
+a small model of the front-end processor (`fep.py`), with
+`enqueue_goal_to_processor`, `read_eagerly` (`alternatively`),
+`b_string`, `b_divide`, `b_modulo`, `not_equal` and a merger input
+bound to a vector; `ref_scsi.py` runs the body of `ipl:boot0` on
+them, the IPL reading its list and its files through its own SCSI
+stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
 (`docs/pimm_semantics.md` "The MRB"), no shoen, no exceptions.

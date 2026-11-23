@@ -19,6 +19,14 @@ kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
 it; no shoen, no exceptions.  An instruction this file does not implement
 raises Unimplemented: it never guesses.
 
+On this model ALONE (the Bluespec core has none of it yet), a
+prototype: the SCSI built-ins scsi_init and scsi_command against a
+device that is a Python object (Machine.fep, ref/pimm/fep.py), and
+what the IPL's SCSI stack needs besides (enqueue_goal_to_processor,
+read_eagerly, b_string, b_divide, b_modulo, not_equal, a merger
+input bound to a vector, built-ins waiting on a vector's element).
+ref/pimm/ref_scsi.py runs them.
+
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
 """
@@ -143,6 +151,12 @@ class Machine:
         self.reductions = 0
         self.builtin_waits = 0
         self.goal_waits = 0
+        # the SCSI device (ref/pimm/fep.py), None if there is none; its
+        # commands that wait for the device; counts
+        self.fep = None
+        self.scsi_waiting = []
+        self.scsi_commands = 0
+        self.scsi_deferred = 0
 
     def event(self, text):
         if self.tr is not None:
@@ -422,6 +436,7 @@ class Machine:
                 self.steps += 1
                 if self.steps > limit:
                     raise RuntimeError('step limit')
+                self.pc = pc                  # for a message; not machine state
                 t, v = cells[pc]
                 if t not in (0x22, 0x23):
                     raise RuntimeError('pc %d is not an instruction: %02x:%08x' % (pc, t, v))
@@ -471,19 +486,25 @@ class Machine:
         return signed(w[1])
 
     # ---- body built-ins ----------------------------------------------
-    def builtin(self, name, operands, f, nowait=()):
+    def builtin(self, name, operands, f, nowait=(), elements=None):
         """A body built-in with register operands, directions from the
         stub table.  f takes the dereferenced inputs and returns the
         output words.  If an input is unbound the built-in becomes a
         suspended goal of its stub (asm/pimm_stubs.py), waiting on the
         first such input; each output operand's argument is a fresh
-        variable, which the register also gets."""
+        variable, which the register also gets.  `elements`, for a
+        built-in whose input is a vector of arguments: called with the
+        inputs once they are all bound, it returns the addresses of
+        the unbound cells among the elements it needs, and the
+        built-in waits on the first of those the same way."""
         stub = self.stubs[name]
         dirs = stub['dirs']
         ins = [r for r, d in zip(operands, dirs) if d == 'i']
         outs = [r for r, d in zip(operands, dirs) if d == 'o']
         vals = [self.deref(self.reg[r]) for r in ins]
         wait = [w[1] for k, w in enumerate(vals) if self.unbound(w) and k not in nowait]
+        if not wait and elements is not None:
+            wait = elements(*vals)
         if not wait:
             for r, w in zip(outs, f(*vals)):
                 self.reg[r] = w
@@ -503,6 +524,16 @@ class Machine:
                 self.mem[g + G_ARGS + k] = var
                 self.reg[r] = var
         self.hook(g, wait[0])
+
+    def unbound_elements(self, v):
+        """The addresses of the unbound cells among a vector's elements,
+        in order."""
+        out = []
+        for i in range(self.vsize(v)):
+            c = self.deref(self.taken(self.vbase(v) + i))
+            if self.unbound(c):
+                out.append(c[1])
+        return out
 
     def need_int(self, w):
         if w[0] & ~1 != INT:
@@ -800,6 +831,11 @@ class Machine:
     def i_equal(self, pc, x, y, z, c16):
         return self.compare(x, y, lambda a, b: a == b)
 
+    def i_not_equal(self, pc, x, y, z, c16):
+        # the guard X =\= Y on integers (scsi_fep_file:
+        # reply_with_attention/4, "H =\= 3", as decompiled)
+        return self.compare(x, y, lambda a, b: a != b)
+
     def i_floating_point_not_less_than(self, pc, x, y, z, c16):
         # guard floating_point_not_less_than(F1, F2), function 3 of
         # opcode 23:FC, registers y and z.  "If both Float1 and Float2
@@ -1074,6 +1110,15 @@ class Machine:
     def i_wait_vector_5(self, pc, x, y, z, c16):
         return self.wait_vector(5, x)
 
+    def i_wait_vector_1(self, pc, x, y, z, c16):
+        return self.wait_vector(1, x)
+
+    def i_wait_vector_4(self, pc, x, y, z, c16):
+        return self.wait_vector(4, x)
+
+    def i_wait_vector_6(self, pc, x, y, z, c16):
+        return self.wait_vector(6, x)
+
     def i_read_variable(self, pc, x, y, z, c16):
         self.reg[x] = self.taken(self.sp, single=self.sp_single)
         self._sp += 1
@@ -1093,7 +1138,13 @@ class Machine:
         # the machine takes from r[y]'s cells when nothing else refers
         # to them (MRB).  No reference counts here, so nothing is ever
         # reused: new cells, under the tag r[y]'s structure has.
+        # A vector of seven or more has its descriptor (vsize): the
+        # new one gets its own.
         w = self.deref(self.reg[y])
+        if w[0] & ~1 == VECT0 + 14:
+            new, self.sp = self.vnew(z)
+            self.reg[x] = (w[0], new[1])
+            return
         a = self.alloc(z)
         self.sp = a
         self.reg[x] = (w[0], a)
@@ -1270,6 +1321,30 @@ class Machine:
             return [(INT, p & 0xffffffff)]
         self.builtin('b_multiply', [x, y, z], f)
 
+    def i_b_divide(self, pc, x, y, z, c16):
+        # as the guard divide (truncated towards zero, PDSS's C /, not
+        # established for PIM/m); a zero divisor or the one overflow
+        # is the built-in's exception: not modelled
+        def f(a, b):
+            a, b = self.need_int(a), self.need_int(b)
+            if b == 0 or (a == -1 << 31 and b == -1):
+                raise Unimplemented('built-in exception: divide %d by %d' % (a, b))
+            q = abs(a) // abs(b)
+            return [(INT, (-q if (a < 0) != (b < 0) else q) & 0xffffffff)]
+        self.builtin('b_divide', [x, y, z], f)
+
+    def i_b_modulo(self, pc, x, y, z, c16):
+        # as the guard modulo (the remainder has the dividend's sign,
+        # PDSS's C %, not established for PIM/m); a zero divisor is
+        # the built-in's exception: not modelled
+        def f(a, b):
+            a, b = self.need_int(a), self.need_int(b)
+            if b == 0:
+                raise Unimplemented('built-in exception: modulo by 0')
+            r = abs(a) % abs(b)
+            return [(INT, (-r if a < 0 else r) & 0xffffffff)]
+        self.builtin('b_modulo', [x, y, z], f)
+
     def i_b_and(self, pc, x, y, z, c16):
         self.builtin('b_and', [x, y, z], lambda a, b: [
             (INT, (self.need_int(a) & self.need_int(b)) & 0xffffffff)])
@@ -1348,9 +1423,12 @@ class Machine:
         # on Len elements of Str1 from Pos1 and of Str2 from Pos2;
         # NewS1 is Str1 with those elements replaced (a copy here),
         # NewS2 is Str2 (manual).  The vectors of four and three
-        # elements (the shifting and unary forms) are refused, and so
-        # is an element of the vector that is not yet a value (the
-        # manual says the built-in waits).
+        # elements (the shifting and unary forms) are refused.  An
+        # element of the vector that is not yet a value is waited for
+        # (the manual says the built-in waits; builtin_utility:
+        # append_string/2 gives it a new_string whose length is not
+        # yet known): the goal of the stub waits on the first such
+        # element, as it would on an operand.
         w4 = self.cells[pc + 1][1] >> 24
 
         def f(op, v):
@@ -1358,8 +1436,6 @@ class Machine:
             if self.vsize(v) != 5 or not 0 <= op <= 15:
                 raise Unimplemented('string_operation %d on %r' % (op, v))
             e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(5)]
-            if any(self.unbound(c) for c in e):
-                raise Unimplemented('string_operation: an unbound element')
             p1, n, p2 = self.need_int(e[0]), self.need_int(e[2]), self.need_int(e[3])
             size1, s1 = self.need_string(e[1])
             size2, s2 = self.need_string(e[4])
@@ -1376,7 +1452,8 @@ class Machine:
                 self.mem[a] = (INT, w & ~(mask << sh) & 0xffffffff
                                | (fn(s1[p1 + i], s2[p2 + i]) & mask) << sh)
             return [new, e[4]]
-        self.builtin('string_operation', [x, y, z, w4], f)
+        self.builtin('string_operation', [x, y, z, w4], f, elements=lambda op, v: (
+            self.unbound_elements(v) if self.vsize(v) == 5 else []))
         return pc + 2
 
     def i_new_string(self, pc, x, y, z, c16):
@@ -1384,6 +1461,19 @@ class Machine:
         def f(n, size):
             return [self.new_string(self.need_int(n), self.need_int(size))]
         self.builtin('new_string', [x, y, z], f)
+
+    def i_b_string(self, pc, x, y, z, c16):
+        # body string(S, ^Length, ^ElementSize, ^NewS) (library/
+        # compiler/blt.kl1 active_builtin(string(X1,X2,X3,X4)): one
+        # input, three outputs): the guard string's two values and the
+        # string again
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(s):
+            size, elems = self.need_string(s)
+            return [(INT, len(elems)), (INT, size), s]
+        self.builtin('b_string', [x, y, z, w4], f)
+        return pc + 2
 
     def i_b_string_element(self, pc, x, y, z, c16):
         # string_element(S, I, ^E, ^S1): r[z] := element, r[w] := the string
@@ -1456,6 +1546,23 @@ class Machine:
             self.mem[rec + 1] = (INT, n)
             if n == 0:
                 self.unify(self.mem[rec], NIL)
+        elif self.vsize(w) is not None:
+            # "When a vector is unified to an MHV, as many input
+            # streams (MHVs) as the arity of the vector are added to
+            # the merger process and each element of the vector is
+            # unified to each new input stream" (TR-466 3.3; TR-483
+            # 2.7.2: merge({}, O) :- O = [], merge({I}, O) :-
+            # merge(I, O), merge({I1,I2}, O) :- merge(I1, I2, O)).
+            # Here: this input ends and each element gets a goal of
+            # merge_in, ready, the last element's first (it suspends
+            # itself if its stream is unbound).
+            n = self.vsize(w)
+            count = self.mem[rec + 1][1] - 1 + n
+            self.mem[rec + 1] = (INT, count)
+            if count == 0:
+                self.unify(self.mem[rec], NIL)
+            for i in range(n):
+                self.record(READY, pc, [self.taken(self.vbase(w) + i), self.reg[y]])
         else:
             raise Unimplemented('merger input %r' % (w,))
 
@@ -1638,6 +1745,151 @@ class Machine:
             return [old, (v[0] & ~1, w[1])]   # a new vector: MRB off
         self.builtin('set_vector_element', [x, y, z, w4, w5], f, nowait=(2,))
         return pc + 2
+
+    # ---- one processor ------------------------------------------------
+    def i_enqueue_goal_to_processor(self, pc, x, y, z, c16):
+        # Goal@processor(N).  Two cells, as enqueue_goal_with_priority
+        # (assembler/klb_opr.kl1 p(r_c16_c8_exe)): the processor's
+        # register, the label; the arity in the next cell's top byte.
+        # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY).  There
+        # is ONE processor here, number 0 (ours): for 0 the goal is
+        # made as enqueue_goal makes it; anything else is refused.
+        n = self.cells[pc + 1][1] >> 24
+        w = self.deref(self.reg[x])
+        if w[0] & ~1 != INT or w[1] != 0 or n > 11:
+            raise Unimplemented('enqueue_goal_to_processor %r, %d arguments' % (w, n))
+        self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
+        return pc + 2
+
+    def i_read_eagerly(self, pc, x, y, z, c16):
+        # What the compiler writes for `alternatively.` (library/
+        # compiler/indexornot.kl1 compile_one_block: "&code <<=
+        # [read_eagerly]").  The clauses after it are tried "not only
+        # when the first clause fails but also when it suspends"
+        # (TR-483 2.4.4); the instruction itself: "if external
+        # references are on the suspension stack, perform Eager Read
+        # on them", no branch (TM-1044 s3, alternatively()).  One
+        # processor has no external references: nothing is done, the
+        # variables noted so far stay noted, and the next clause is
+        # tried.
+        pass
+
+    # ---- the SCSI built-ins --------------------------------------------
+    # The firmware that ran them is lost.  What is known: the operand
+    # directions (library/compiler/blt.kl1 active_builtin(scsi_init /
+    # scsi_command)), the callers (bios/scsi/scsi_handler.kl1 =
+    # scsi:create/2, command_executer/2 in the image; scsi_common.kl1,
+    # scsi_processor.kl1) and the stand-in for a machine without the
+    # built-ins, bios/scsi/scsi_blt.kl1, which is also in the IPL image
+    # (scsi_builtin:scsi_init/3 at cell 13952).  The device is a Python
+    # object, Machine.fep (ref/pimm/fep.py): NOT machine state.
+    def i_scsi_init(self, pc, x, y, z, c16):
+        # scsi_init(^Obj, ^TargetInterruptVector, ^Info): three
+        # outputs, so it never waits.  OURS, all three values, taken
+        # from the stand-in (scsi_blt.kl1: "SCSI_Obj = 1,
+        # TargetInterruptVector = {0,0,0}, Info = {16000,8,4,0}").
+        # What the callers need: Obj bound (scsi:object_manager/2
+        # waits for it), Info a vector of four with integers at 0 (the
+        # largest transfer: scsi_fep_module makes its packet buffers
+        # that long) and 2.
+        if getattr(self, 'fep', None) is None:
+            raise Unimplemented('scsi_init: no device attached')
+        self.reg[x] = (INT, 1)
+        for r, elems in ((y, (0, 0, 0)), (z, (self.fep.MAX_BUFFER, 8, 4, 0))):
+            w, a = self.vnew(len(elems))
+            for k, e in enumerate(elems):
+                self.mem[a + k] = (INT, e)
+            self.reg[r] = (w[0] & ~1, w[1])      # the only reference: MRB off
+
+    def i_scsi_command(self, pc, x, y, z, c16):
+        # scsi_command(Obj, {Unit, LUN, CDB, Length, Dir, Buffer, 0},
+        # ^Data, ^TransferredLength, ^Id, ^Result, ^NewObj): seven
+        # registers, the last four in the next cell (klb_opr.kl1 r7).
+        # From the callers: Dir 0 none, 1 out, 2 in; Result 0 is
+        # success (scsi_common:analyze_scsi_command_result/7); Data is
+        # an 8-bit string the caller uses as its next buffer
+        # (scsi_fep_module:next_send/7, receive_packet*/9), so it is
+        # the WHOLE buffer with the bytes received written in (a copy
+        # here; the same string for a command that receives nothing).
+        # OURS:
+        #  - it waits for every element of the vector (the buffer of a
+        #    send is often still being filled when the command is
+        #    made), as string_operation waits for its vector's;
+        #  - Id is the count of commands so far (no caller reads it);
+        #  - NewObj is Obj;
+        #  - a command the device cannot finish yet (a RECEIVE with no
+        #    reply made: the IPL asks for the reply when it queues the
+        #    request, not when the request has gone) gives Id and
+        #    NewObj at once and leaves Data, TransferredLength and
+        #    Result unbound until the device has the reply, since the
+        #    next command (the SEND) is only issued once NewObj is
+        #    bound.  The waiting commands are in Python
+        #    (self.scsi_waiting), not in memory.
+        # The seventh element (0 from every caller) is not understood
+        # and must be the integer 0.
+        r7 = self.cells[pc + 1][1]
+        regs = [x, y, z, r7 >> 24, r7 >> 16 & 255, r7 >> 8 & 255, r7 & 255]
+
+        def f(obj, v):
+            if getattr(self, 'fep', None) is None:
+                raise Unimplemented('scsi_command: no device attached')
+            if self.vsize(v) != 7:
+                raise Unimplemented('scsi_command on %r' % (v,))
+            e = [self.deref(self.taken(self.vbase(v) + i)) for i in range(7)]
+            unit, lun, length, direction = (self.need_int(e[i]) for i in (0, 1, 3, 4))
+            cs, cdb = self.need_string(e[2])
+            bs, buf = self.need_string(e[5])
+            if cs != 8 or bs != 8 or self.need_int(e[6]) != 0 or not 0 <= length <= len(buf):
+                raise Unimplemented('scsi_command arguments %r' % (e,))
+            cmd = dict(unit=unit, lun=lun, cdb=cdb, length=length, dir=direction, buf=buf,
+                       word=e[5])
+            ident = (INT, self.scsi_commands)
+            self.scsi_commands += 1
+            done = self.scsi_do(cmd)
+            if done is None:
+                cmd['outs'] = [self.new_var() for _ in range(3)]
+                self.scsi_waiting.append(cmd)
+                self.scsi_deferred += 1
+                done = cmd['outs']
+            else:
+                self.scsi_poll()      # the device has moved
+            return [done[0], done[1], ident, done[2], obj]
+        self.builtin('scsi_command', regs, f, elements=lambda obj, v: (
+            self.unbound_elements(v) if self.vsize(v) == 7 else []))
+        return pc + 2
+
+    def scsi_poll(self):
+        """Give the device the commands that wait for it again, oldest
+        first; the outputs of one that finishes are bound (waking
+        whatever waits for them).  Returns how many finished.  Called
+        after any command that finishes, and by a bench when the
+        machine has nothing left to run (the device's interrupt, as
+        it were)."""
+        n = 0
+        for c in list(self.scsi_waiting):
+            got = self.scsi_do(c)
+            if got is not None:
+                self.scsi_waiting.remove(c)
+                for var, w in zip(c['outs'], got):
+                    self.unify(var, w)
+                n += 1
+        return n
+
+    def scsi_do(self, cmd):
+        """Give the command to the device: (Data, TransferredLength,
+        Result) words, or None if the device cannot finish it yet."""
+        got = self.fep.command(cmd['unit'], cmd['lun'], bytes(cmd['cdb']), cmd['length'],
+                               cmd['dir'], bytes(cmd['buf'][:cmd['length']]))
+        if got is None:
+            return None
+        result, data = got
+        word = cmd['word']
+        if data:
+            if len(data) > cmd['length']:
+                raise RuntimeError('the device gave %d bytes for %d' % (len(data), cmd['length']))
+            word = self.make_string(8, list(data) + cmd['buf'][len(data):])
+        n = len(data) if cmd['dir'] == 2 else cmd['length']
+        return [word, (INT, n), (INT, result)]
 
 
 def predicate(im, module, pred):

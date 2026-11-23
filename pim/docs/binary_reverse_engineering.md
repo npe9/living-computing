@@ -215,7 +215,11 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
    Password, Pathname, ...}`). `scsi_fep_file` takes device
    id 0 from the id manager and sends the message
    `{0, 201, "", 0, 0, "pimos:pimos.ipl"}`. **This is the first
-   front-end request.** On the bus (DERIVED, not executed):
+   front-end request.** On the bus (DERIVED; then EXECUTED on the
+   reference model, 2026-11-23, `ref/pimm/ref_scsi.py`: the TEST UNIT
+   READY, this SEND, the RECEIVE with `MaxBuffer` 16000 = `003e80`,
+   and the `getb` of item 8 came out byte for byte as derived here;
+   see "Run" at the end of 1.4):
 
    ```
    SEND (0Ah) to unit 7 LUN 0, CDB 0a 00 00 00 48, 72 bytes:
@@ -237,7 +241,9 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
    `00000000 00000000 000000d2 00000001 ffffffff 00001f00`), and the
    answer `{0, 1, String}` carries the data as a byte string, which the
    IPL widens to 16-bit elements; status 2 (`fep#eod`) ends the file.
-   The unit of 7936 (bytes or 16-bit characters) is not determined.
+   The unit of 7936 (bytes or 16-bit characters) is not determined
+   by the IPL (run both ways, same result; "Run" at the end of 1.4,
+   which also gives what the kernel source says).
 9. `ipl:decompose/2` splits the text of `pimos.ipl` at 16-bit code 10
    (line feed) and skips from JIS `%` (`2173`) to the end of the line.
    Each name is opened the same way (device ids 1, 2, ...),
@@ -340,7 +346,84 @@ reads its files through the ordinary file service. (MEASURED: no 400
 or 500 in the decompiled `ipl*`, `scsi_fep_*` modules; the front end's
 side agrees, section 4.)
 
-**What an emulator for R4 must do** (DERIVED): implement `scsi_init`
+**Run** (EXECUTED on the reference model alone, 2026-11-23:
+`python3 ref/pimm/ref_scsi.py`, against a model of the FEP written
+from this section, `ref/pimm/fep.py`; the firmware's choices it had
+to make are labelled OURS there and in `docs/pimm_semantics.md`).
+The body of `ipl:boot0` without `top:go/4` reads a file list and
+loads the files it names through the IPL's own stack; the answer of
+`load/4` is the one the bench-served run gets
+(`lockstep_link.py`). What the run adds to the reading above:
+
+- **The bytes of 1.3 items 7 and 8 are right**, all of them. The
+  second request is `getb` (24 bytes), answered here with
+  `{0, 1, <the 86 bytes of a one-line list>}`; a second `getb` gets
+  `{0, 2}`, then `{0, 60}` (close, 16 bytes) is sent and answered
+  before device 1 is opened.
+- **The loader asks again after the end of data**: a `.sav` file gets
+  two `getb` answered `{Id, 2}` before its close (the list gets
+  one). A front end must go on answering end of data.
+- **The unit of 7936 is not determined by the IPL.** It passes the
+  number through and joins whatever comes: a front end that gives
+  7,936 bytes a `getb` and one that gives 15,872 load the same files
+  to the same answer (parts "two files" and "characters"). The held
+  kernel source counts BYTES: `server/fep/file/file_dvcb.kl1` turns
+  the user's `getb(Size)` (16-bit elements) into
+  `Size2 = Size*2`, asks the front end for `{fep#getb, Size2+1}` and
+  counts what comes as 8-bit elements (lines 301, 397-400, 510-534,
+  READ); `file_dvc.kl1` line 390 asks for `Size*3+1`. The same
+  front end served the IPL and then the kernel in one boot, so
+  bytes is the reading with a source (INFERENCE for the IPL: the
+  kernel's client is a later generation, and a commented-out
+  `send_message_getb` in the same file passes `Size` unchanged for
+  code 0). `fep.py` takes bytes by default. Arithmetic only: 16 + 4
+  + 15,872 = 15,892 fits the stand-in's 16,000 as well.
+- **Widening is `change_element_size(S, 16, S1)`**
+  (`scsi_fep_module:str8_to_msg3/8` through `str8_to_str16/2`): two
+  bytes an element, the first the high byte, and an odd byte count
+  gets a zero byte at the END of that reply (the built-in's rule in
+  the manual). So every `getb` reply must have an even number of
+  bytes: with 1,001 bytes a reply the zero bytes land inside the
+  file and `load/4` answers `abnormal("internal error while reading
+  unloaded file")` (part "odd", observed).
+- **The IPL does not ask for the rest of a continued reply.**
+  `receive_packet2_1/9` stores a piece whose flag is 1 and goes back
+  to `receive_packet/6` on the SAME request list; a RECEIVE is only
+  issued per message sent (and once more after an attention). So a
+  reply cut into pieces stops the boot: with a 512-byte buffer the
+  IPL takes the first piece of a 2,604-byte reply and issues nothing
+  more (part "small buffer", observed). The kernel's receiver
+  (`scsi_fep.kl1` lines 473-558) loops on RECEIVE with no request
+  list and has no such limit. So `MaxBuffer` must hold a whole
+  `getb` reply: at least 7,956 bytes if 7936 counts bytes, 15,892 if
+  characters.
+- **`TransferredLength` need not be exact for the IPL** (correcting
+  "must be the true byte count" above): with the buffer's length
+  returned instead, the same files load to the same answer; the
+  payload is cut by the message's own length words (injection D in
+  `ref_scsi.py`'s header). `Data`, though, must be the whole buffer:
+  the IPL uses it as its next buffer, and an exact-length string
+  makes the next RECEIVE longer than its buffer (injection E).
+- **A check condition is followed up**: with TEST UNIT READY
+  answered 2 the handler sends REQUEST SENSE, CDB `03 00 00 00 08`,
+  direction in, 8 bytes (injection F, observed; not served).
+- The RECEIVE for a reply reaches the built-in AFTER its SEND in
+  this model's goal order (never before, in every part), so the
+  built-in's "not finished yet" path is only run by a test device
+  that refuses each RECEIVE once (part "late").
+- On the held `pimos.ipl` (`--real 130`: stopped after 130
+  commands): the twenty names, then `pimm_kernel360E.sav` read to
+  its end (408,482 bytes in 52 replies) and `pimm_shell360E.sav`
+  opened as device 2; the console is given "IPL loading", "PIMM
+  KERNEL     :3.600:25-Nov-93", "PIMM SHELL      :3.600:25-Nov-93"
+  (a system file's own title, where a patch file shows its path).
+  7.3 M heap cells, 14.2 M instructions, about six minutes.
+
+Not run: `top:go/4` and both shoens, a failing open, abort,
+attention, a message sent in more than one packet.
+
+**What an emulator for R4 must do** (DERIVED; the reference model's
+prototype does this, see "Run"): implement `scsi_init`
 (return a buffer size) and `scsi_command` for the three CDBs above,
 returning `Result` 0 and the true length;
 answer `read_open` with `{Id, 1}`, `getb` with `{Id, 1, bytes}` then
