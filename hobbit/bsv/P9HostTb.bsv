@@ -25,6 +25,7 @@ import HobbitTypes::*;
 import HobbitCore::*;
 
 import "BDPI" function ActionValue#(Bit#(32)) p9h_read(Bit#(32) addr);
+import "BDPI" function Action p9h_request(Bit#(32) addr);
 import "BDPI" function Action p9h_write(Bit#(32) addr, Bit#(32) v);
 import "BDPI" function ActionValue#(Bit#(32)) p9h_start(Bit#(32) which);
 import "BDPI" function ActionValue#(Bit#(32)) p9h_poll(Bit#(32) sp);
@@ -41,16 +42,29 @@ import "BDPI" function ActionValue#(Bit#(32)) p9h_unmapped_reads();
 // then `commit` applies this clock's write.  So a read sees the memory as
 // it stood at the start of the clock, as mkHobbitMem's RegFile does, and
 // a word written this clock is visible to a read requested this clock.
+//
+// `fetch` reads the registered address on every clock, because the word
+// there may have been written and readData must show memory as it stands.
+// So reads outside the process's segments are counted per *request*:
+// `fresh` is True on the clock after a readReq, and `fetch` then reports
+// that address once (p9host.c, p9h_request).
 (* synthesize *)
 (* execution_order = "fetch, commit" *)
 module mkP9HostMem(HobbitMem);
   Reg#(Word) raddr <- mkReg(0);
+  Reg#(Bool) fresh <- mkReg(False);
+  PulseWire reqW <- mkPulseWire;
   Wire#(Word) rdataW <- mkDWire(0);
   Wire#(Maybe#(Tuple2#(Word, Word))) wrW <- mkDWire(tagged Invalid);
 
   rule fetch;
     let v <- p9h_read(raddr & 32'hFFFFFFFC);
     rdataW <= v;
+    if (fresh) p9h_request(raddr & 32'hFFFFFFFC);
+  endrule
+
+  rule track;
+    fresh <= reqW;
   endrule
 
   rule commit (wrW matches tagged Valid {.a, .v});
@@ -59,6 +73,7 @@ module mkP9HostMem(HobbitMem);
 
   method Action readReq(Word addr);
     raddr <= addr;
+    reqW.send;
   endmethod
   method Word readData() = rdataW;
   method Action write(Word addr, Word val);

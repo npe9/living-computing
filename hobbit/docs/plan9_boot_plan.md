@@ -21,9 +21,13 @@ directory.
 | MMU | `mmu.c`; model has `HobbitMmu` | modelled, untested against kernel code |
 | user binaries | `hobbit/bin/` (shipped) | `_main` and `main` run on the model (A0 status) |
 
-**There is no kernel image in the release.** `plan9-1e.tar.bz2` ships no
-`/9/` tree (0 entries), only the kernel *sources*, the user binaries and
-the z libraries. So booting 1e has to produce the image ourselves.
+**One kernel image is in the release, and it is not from these
+sources.** `plan9-1e.tar.bz2` ships no `/9/` tree (0 entries), but
+`hobbit/s9term` is a `zl -H1` image of the `term` configuration, built
+1992-11-07 from an earlier revision of the kernel and libc than the
+sources the release ships (`docs/s9term.md`, found 2026-11-20/23).  It
+fixes the format, configuration and link order; booting the shipped
+sources still means producing the image ourselves.
 
 ## Goal A: boot and print
 
@@ -206,7 +210,10 @@ piece (`docs/conformance_1to1.md` §1c has the detail and the tests):
 13. (bus reads only) EU_S1 fetched a memory operand through a pointer
     whose newest value was still unexecuted in EU_S2 -- 2,399 reads of
     addresses the program never uses on `za`.  No value was wrong; a
-    device register would have seen them.
+    device register would have seen them.  (That 2,399 counted clocks,
+    not requests: the meter was fixed 2026-11-23, and the reads that
+    remain are wrong-path operand fetches the part makes too,
+    `docs/conformance_1to1.md` §1c.)
 
 And one thing the *reference model* needed: `za` copies a stack word it
 never wrote.  What that reads is whatever the cache slot last held, so
@@ -332,9 +339,12 @@ what is not:
   (a scratch script); **it is not in the suite yet.**
 * *The compiler runs on the Bluespec core.*  `zc frexp.c`: 1,651,700
   retirements agree with the reference run, 101 kernel entries (75 of
-  them floating point, replayed), `frexp.z` identical.  One file, run by
-  hand (`P9CWD=sys/src/libc/hobbit bsv/run_p9host.sh TREE zc frexp.c`,
-  about a minute); **not in the suite yet.**  It needed three more
+  them floating point, replayed), `frexp.z` identical to the reference
+  run's and to the shipped `libc.a` member (1,902 bytes).  **In the
+  suite since 2026-11-23** (`tests/run_p9host_tests.sh`, step
+  `zc-frexp`, about a minute; the tree is `sys/include`,
+  `hobbit/include` and the source, with `P9CWD=sys/src/libc/hobbit`).
+  It needed three more
   things from the core: `DQM` with a block source (golden 021); the
   one-parcel `ENTER`'s 8-bit offset one-filled, not sign-extended
   (p. 3-20 note a -- a frame over 2,048 bytes moved SP *up*; no golden
@@ -351,15 +361,34 @@ what is not:
   kernel image the release ships (550,846 bytes) -- the candidate oracle
   for the link.
 
+Done 2026-11-23:
+
+* *The oracle is read.*  `docs/s9term.md`: s9term is a `zl -H1` image
+  (80-byte COFF-style header, `zl/asm.c` case 1), not stripped, text
+  0x35b40 / data 0x112f4 / bss 0x180ac at 0x80004000, entry `_startup`;
+  KERNDATE 721,110,517 (1992-11-07); the `term` configuration (devices
+  `/ce|psMd2trikSwlaPIbT`, streams urp ip async fcall); a 26,796-byte
+  stripped boot program; the library members in load order.  It was
+  built from *older* sources than the release ships, so it can check our
+  link's format, configuration and layout, not its bytes.
+* *`tools/p9exec.py` reads kernel images* (`read_kernel`,
+  `check_kernel`: every header word asm.c writes, the file size, the
+  section bases, `etext/bdata/edata/end`, every symbol's section);
+  `tests/test_p9exec.py` pins it with four corrupted copies.
+* *`libgnot.a` and `libg.a` vendored* (the `9term` link's `-lgnot -lg`),
+  `docs/plan9_port.md`.
+* *`zc frexp.c` on the core is in the suite* (above).
+* *The compiler run's unmapped reads are traced*: 1,376 was a meter
+  counting clocks; the 51 real requests are operand fetches on the
+  predicted path of mispredicted conditional jumps, which PRM p. 2-3
+  says the part makes too (`docs/conformance_1to1.md` §1c).
+
 Not done: the kernel's generated inputs (`cpu.c` from `mkdevc`,
 `init.h`, `boot*.root`, `KERNDATE` -- rc pipelines needing fork, exec
-and pipes, which `p9run` refuses); `ar`; the link; a kernel-image mode
-for `tools/p9exec.py`; and the decision the cost implies -- about 100
-files at ~8 million instructions each is an hour on the reference model
-and several on the core, so the full build belongs in a recorded long
-run with a sample in the suite.  Open from the compiler run: 1,376 reads
-outside the segments (1,332 of address 0, 44 of 0x80000000), not
-traced.
+and pipes, which `p9run` refuses); `ar`; the link; and the decision the
+cost implies -- about 100 files at ~8 million instructions each is an
+hour on the reference model and several on the core, so the full build
+belongs in a recorded long run with a sample in the suite.
 
 ### A4 — boot to the console
 

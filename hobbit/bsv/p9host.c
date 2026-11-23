@@ -202,8 +202,30 @@ uint32_t
 p9h_read(uint32_t addr)
 {
 	init();
+	return rd(addr);
+}
+
+/*
+ * The machine asked memory for the word at `addr` (the testbench calls
+ * this once per readReq, on the clock after it).  The count of requests
+ * outside every segment is the alarm tests/run_p9host_tests.sh reads.
+ *
+ * It counts *requests*.  Until 2026-11-23 the count was taken in
+ * p9h_read, which the memory's `fetch` rule calls on every clock for the
+ * last registered address, so one request was counted again on every
+ * clock until the next one, and the clocks before the first request
+ * (the address register at its reset value, 0) counted as reads of
+ * address 0: `zc frexp.c` reported 1,376 for 51 requests.  Those 51 are
+ * operand fetches by instructions on the predicted path of a conditional
+ * jump that then mispredicted (docs/conformance_1to1.md 1c); PRM p. 2-3
+ * lets a read fault on such a read be ignored, so the part makes them
+ * too.  $P9UNMAPPED=n prints the first n.
+ */
+void
+p9h_request(uint32_t addr)
+{
+	init();
 	if (!legal(addr)) {
-		/* a wrong-path fetch may do this; $P9UNMAPPED=n prints the first n */
 		static long show = -1;
 
 		if (show < 0) {
@@ -215,7 +237,6 @@ p9h_read(uint32_t addr)
 			printf("P9HOST unmapped read 0x%08x\n", addr);
 		unmapped_reads++;
 	}
-	return rd(addr);
 }
 
 void
