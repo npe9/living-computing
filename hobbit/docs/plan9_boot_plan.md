@@ -331,7 +331,10 @@ every one of which the release's own tools made on the model:
     python3 tools/p9kbuild.py kernel --kgen K        # libram.a, f709cea9...
     python3 tools/p9kbuild.py link --kgen K --check  # 9term
 
-`link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
+(The first two were run once, on the p9kgen branch; their products --
+`term.c`, `bootterm.root.c`, `kerndate`, `libram.a` f709cea9... -- were
+copied and the third run on them, so the three have not yet been run
+end to end in one sitting.)  `link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
 raml.s`, `zc -w -Dram -DKERNDATE=721110517 term.c` and `zc -w -Dram
 bootterm.root.c` (the three objects equal the ones p9kgen and the kernel
 target made), then `zl -o 9term -l -R4 -H1 -T0x80004000 -E0x80004000
@@ -356,9 +359,14 @@ vendored `libgnot.a`, `libg.a`, `libc.a`.  The log
   the file size (80 + text + data + syms + lcsize), the section bases,
   `etext/bdata/edata/end` against the header, and every one of its
   8,287 symbols inside its section (`check_kernel`, the checks asm.c and
-  pass.c's `xdefine`s imply; the zl sources are not vendored, so these
-  are what "the relocation/symbol checks the zl sources define" can be
-  here).
+  pass.c's `xdefine`s imply).
+* **zl's own relocation/symbol checks passed**: every check in the
+  vendored `sys/src/cmd/zl` reports through `diag()` (44 call sites --
+  `undefined:` pass.c:302, `undefined external:` span.c:250 and
+  asm.c:544, among them), which counts `nerrors` (list.c:215), and
+  `errorexit()` (obj.c:209-216) removes the output and exits `"error"`
+  when any was counted.  zl exited `''` with nothing on its console (the
+  driver fails otherwise), so it counted none.
 * **`tools/p9kcmp.py 9term`** against s9term: **every MUST item agrees**
   -- header constants, entry 0x80004000 = `_startup` and its first four
   instructions, raml.s then term.c, the libraries in link-line order,
@@ -387,19 +395,22 @@ vendored `libgnot.a`, `libg.a`, `libc.a`.  The log
   from the sources and here from the two links.  `-lgnot`, `-lg` and
   `-lc` load the **same members in the same order** as s9term (7, 3,
   19).  `libram.a`'s order differs in four places (`deviic`, `scsibuf`,
-  `screen`/`devbit` placement) besides `kbd` and `latin1`: here it is the
-  `term` dev list's order, which is `$OBJ` order; s9term's suggests a
-  `libram.a` whose members were not in that order (an archive updated
-  member by member, `ar vu` appending new ones, would do it -- a guess,
-  not checked).  The embedded boot program is the 27,108-byte one p9kgen
+  `screen`/`devbit` placement) besides `kbd` and `latin1`: here those
+  members keep the relative order of the generated `DEV=` list
+  (`deviic` before `deveia`, `scsibuf` after `scsi`, `devbit screen kbd`
+  before `devkprof`); in s9term they do not (`deviic` after `devwren`,
+  `scsibuf screen devbit` after `fcall`).  Load order is by need (zl
+  scans `__.SYMDEF` from the start each pass), so this says s9term's
+  `libram.a` or its `term` file listed them differently; which, is not
+  known.  The embedded boot program is the 27,108-byte one p9kgen
   made (s9term's is 26,796; above).
 
 The gate -- "the image's `Exec` header passes `tools/p9exec.py` and the
 relocation/symbol checks ...; the image is reproducible from a recorded
 command" -- holds.  What it does not say, and is **not** shown: that this
 kernel boots (A4), or that it is the bytes Bell Labs would have linked
-from this tree (no oracle: s9term is older).  Not run on the Bluespec
-core: zl at 351 M instructions is days there.  In the suite: `p9kcmp`
+from this tree (no oracle: s9term is older).  The link was not
+attempted on the Bluespec core.  In the suite: `p9kcmp`
 on s9term and on corrupted copies (`tests/test_p9kcmp.py`, each MUST
 item injected, plus three injections into the tool itself recorded in
 its header); the link itself is the long run, as `9term` is a build
