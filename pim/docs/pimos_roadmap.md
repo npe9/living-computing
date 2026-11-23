@@ -288,7 +288,8 @@ needs the list in `pimos.ipl`; a second file of 41,359 words was
 tried on the reference model alone and needs 1.29 M cells (about 31
 a file word, 0.9 M of them goal and suspension records never reused);
 the unification of two vectors it also needs is in
-(`lockstep_unif.py`), the memory is not. The linker reports ONE
+(`lockstep_unif.py`), and so is the memory (2^26 cells): that file
+loads and links on both models (`lockstep_link.py` part 2). The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
 

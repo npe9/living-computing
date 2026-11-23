@@ -83,7 +83,12 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   FIFO#(SResult) resQ  <- mkFIFO;
 
   Addr src = cellAddr(rq.s);
-  function Addr toAddr(Bit#(24) v) = truncate(v);   // a word count or index as an address offset
+  // a word count or index as an address offset (through 32 bits: the
+  // address may be wider or narrower than a word count)
+  function Addr toAddr(Bit#(24) v);
+    Bit#(32) w = zeroExtend(v);
+    return truncate(w);
+  endfunction
 
   // from a descriptor
   // lg: log2 of the element bits (3, 4, 5); a word holds 1 << (5 - lg)

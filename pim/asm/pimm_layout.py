@@ -18,6 +18,6 @@ G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS = 0, 1, 2, 3, 4
 READY, SUSPENDED, TAKEN = 0, 1, 2
 S_NEXT, S_GOAL, S_SIZE = 0, 1, 2
 
-ADDR_BITS = 20                  # memory size in cells = 1 << ADDR_BITS
+ADDR_BITS = 26                  # memory size in cells = 1 << ADDR_BITS
 MEMORY_CELLS = 1 << ADDR_BITS
 HEAP = 0x8000                   # first heap cell, from the load address
